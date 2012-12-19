@@ -185,7 +185,6 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_controlSocket(NULL)
   , m_shutdownRead(false)
   , m_shutdownWrite(false)
-  , m_appliedQOS(false)
   , m_remoteBehindNAT(init.m_remoteBehindNAT)
   , m_localHasRestrictedNAT(false)
   , m_noTransmitErrors(0)
@@ -1582,6 +1581,17 @@ OpalMediaStream * OpalRTPSession::CreateMediaStream(const OpalMediaFormat & medi
                                                     unsigned sessionId, 
                                                     bool isSource)
 {
+  if (m_dataSocket != NULL) {
+    PIPSocket::QoS qos = m_connection.GetEndPoint().GetManager().GetMediaQoS(m_mediaType);
+    qos.m_receive.m_maxBandwidth = mediaFormat.GetMaxBandwidth();
+    qos.m_receive.m_maxPacketSize = mediaFormat.GetFrameSize()*mediaFormat.GetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption());
+    qos.m_transmit.m_maxBandwidth = mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption(), mediaFormat.GetMaxBandwidth());
+    qos.m_transmit.m_maxPacketSize = mediaFormat.GetFrameSize()*mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption());
+    qos.m_transmit.m_maxLatency = qos.m_receive.m_maxLatency = 500000;
+    qos.m_transmit.m_maxJitter = qos.m_receive.m_maxJitter = 100000;
+    m_dataSocket->SetQoS(qos);
+  }
+
   if (PAssert(m_sessionId == sessionId && m_mediaType == mediaFormat.GetMediaType(), PLogicError))
     return new OpalRTPMediaStream(dynamic_cast<OpalRTPConnection &>(m_connection),
                                   mediaFormat, isSource, *this,
@@ -1590,37 +1600,6 @@ OpalMediaStream * OpalRTPSession::CreateMediaStream(const OpalMediaFormat & medi
 
   return NULL;
 }
-
-
-void OpalRTPSession::ApplyQOS(const PIPSocket::Address & addr)
-{
-  if (m_controlSocket != NULL)
-    m_controlSocket->SetSendAddress(addr, m_remoteControlPort);
-  if (m_dataSocket != NULL)
-    m_dataSocket->SetSendAddress(addr, m_remoteDataPort);
-  m_appliedQOS = true;
-}
-
-#if P_QOS
-
-bool OpalRTPSession::ModifyQOS(RTP_QOS * rtpqos)
-{
-  bool retval = false;
-
-  if (rtpqos == NULL)
-    return retval;
-
-  if (m_controlSocket != NULL)
-    retval = m_controlSocket->ModifyQoSSpec(&(rtpqos->ctrlQoS));
-    
-  if (m_dataSocket != NULL)
-    retval &= m_dataSocket->ModifyQoSSpec(&(rtpqos->dataQoS));
-
-  m_appliedQOS = false;
-  return retval;
-}
-
-#endif
 
 
 void OpalRTPSession::SetExternalTransport(const OpalTransportAddressArray & transports)
@@ -1767,12 +1746,6 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
   PTRACE_CONTEXT_ID_TO(m_controlSocket);
 
 #ifndef __BEOS__
-  // Set the IP Type Of Service field for prioritisation of media UDP packets
-  // through some Cisco routers and Linux boxes
-  if (!m_dataSocket->SetOption(IP_TOS, manager.GetMediaTypeOfService(m_mediaType), IPPROTO_IP)) {
-    PTRACE(1, "RTP_UDP\tSession " << m_sessionId << ", could not set TOS field in IP header: " << m_dataSocket->GetErrorText());
-  }
-
   // Increase internal buffer size on media UDP sockets
   SetMinBufferSize(*m_dataSocket,    SO_RCVBUF, m_isAudio ? RTP_AUDIO_RX_BUFFER_SIZE : RTP_VIDEO_RX_BUFFER_SIZE);
   SetMinBufferSize(*m_dataSocket,    SO_SNDBUF, RTP_DATA_TX_BUFFER_SIZE);
@@ -1956,9 +1929,6 @@ bool OpalRTPSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress
       m_remoteDataPort = (WORD)(port - 1);
   }
 
-  if (!m_appliedQOS)
-      ApplyQOS(m_remoteAddress);
-
   if (m_localHasRestrictedNAT) {
     // If have Port Restricted NAT on local host then send a datagram
     // to remote to open up the port in the firewall for return data.
@@ -2049,9 +2019,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataOrControlPDU(BYTE * fr
                 " is " << addr << " should be " << m_remoteTransmitAddress);
       return e_IgnorePacket;
     }
-
-    if (m_remoteAddress.IsValid() && !m_appliedQOS) 
-      ApplyQOS(m_remoteAddress);
 
     m_noTransmitErrors = 0;
 

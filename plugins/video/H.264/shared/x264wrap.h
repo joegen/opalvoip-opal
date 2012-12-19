@@ -33,6 +33,7 @@
 #define OPAL_H264ENC_H 1
 
 #include "../../common/platform.h"
+#include <string>
 
 
 #if X264_LICENSED || GPL_HELPER_APP
@@ -120,7 +121,13 @@ class H264Encoder
     bool m_loaded;
 
   #if WIN32
+    HANDLE m_hStandardError;
+    std::string m_errorOutput;
+    void CheckStandardError();
+
     HANDLE m_hNamedPipe;
+    HANDLE m_hEvent;
+    bool CheckCompleted(OVERLAPPED & overlapped, LPDWORD bytes = NULL);
   #else // WIN32
     char  m_dlName[100];
     char  m_ulName[100];

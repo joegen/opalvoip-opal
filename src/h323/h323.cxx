@@ -4748,8 +4748,7 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
 H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability & capability,
                                                           H323Channel::Directions dir,
                                                                          unsigned sessionID,
-                                                     const H245_H2250LogicalChannelParameters * param,
-                                                                        RTP_QOS * rtpqos)
+                                       const H245_H2250LogicalChannelParameters * param)
 {
   OpalMediaType mediaType = capability.GetMediaFormat().GetMediaType();
 
@@ -4788,13 +4787,8 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
   }
 
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
-  if (rtpSession != NULL) {
-#if P_QOS
-    rtpSession->ModifyQOS(rtpqos);
-#endif
-
+  if (rtpSession != NULL)
     rtpSession->Restart(dir == H323Channel::IsReceiver);
-  }
 
   return CreateRTPChannel(capability, dir, *session);
 }

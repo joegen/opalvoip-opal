@@ -54,7 +54,7 @@
       <PreprocessorDefinitions>GPL_HELPER_APP;WIN32;_CONSOLE;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <ProgramDataBaseFileName>$(TargetDir)\$(TargetName).pdb</ProgramDataBaseFileName>
@@ -84,22 +84,28 @@ if exist ..\..\..\..\..\external\x264\libx264-*.dll xcopy /y/f ..\..\..\..\..\ex
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <AdditionalIncludeDirectories>.\x264;..\..\..\..\..\external\x264;..\..\common\ffmpeg;..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>GPL_HELPER_APP;WIN32;_CONSOLE;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <AdditionalDependencies>libx264.dll.a;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>.\x264;..\..\..\..\..\external\x264;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <OptimizeReferences>true</OptimizeReferences>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
+    <PostBuildEvent>
+      <Command>if not exist c:\ptlib_plugins exit
+xcopy /y/f $(TargetPath) c:\ptlib_plugins
+xcopy /y/f $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins
+if exist .\x264\libx264-*.dll xcopy /y/f .\x264\libx264-*.dll c:\ptlib_plugins
+if exist ..\..\..\..\..\external\x264\libx264-*.dll xcopy /y/f ..\..\..\..\..\external\x264\libx264-*.dll c:\ptlib_plugins
+</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="h264_helper.cxx" />

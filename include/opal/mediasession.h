@@ -240,7 +240,7 @@ class OpalMediaSession : public PObject
     bool Release() { return --m_referenceCount > 0; }
 
     void OfferCryptoSuite(const PString & cryptoSuite);
-    OpalMediaCryptoKeyList & GetOfferedCryptoKeys() { return m_offeredCryptokeys; }
+    virtual OpalMediaCryptoKeyList & GetOfferedCryptoKeys();
 
     virtual bool ApplyCryptoKey(
       OpalMediaCryptoKeyList & keys,

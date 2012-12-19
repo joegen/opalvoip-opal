@@ -328,7 +328,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -344,6 +344,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\cipher\aes.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -352,7 +357,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -368,6 +373,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\cipher\aes_cbc.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -376,7 +386,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -392,6 +402,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\cipher\aes_icm.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -400,7 +415,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -416,6 +431,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\cipher\cipher.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -424,7 +444,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -440,6 +460,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\cipher\null_cipher.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -448,7 +473,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -464,6 +489,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\hash\auth.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -472,7 +502,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -488,6 +518,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\hash\hmac.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -496,7 +531,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -512,6 +547,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\hash\null_auth.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -520,7 +560,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -536,6 +576,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\hash\sha1.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -544,7 +589,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -560,6 +605,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\kernel\alloc.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -568,7 +618,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -584,6 +634,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\kernel\crypto_kernel.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -592,7 +647,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -608,6 +663,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\kernel\key.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -616,7 +676,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -632,6 +692,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\math\datatypes.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -640,7 +705,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -656,6 +721,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\math\stat.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -664,7 +734,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -680,6 +750,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\replay\rdb.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -688,7 +763,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -704,6 +779,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\replay\rdbx.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -712,7 +792,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -728,6 +808,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\replay\ut_sim.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -736,7 +821,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -752,6 +837,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\rng\ctr_prng.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -760,7 +850,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -776,6 +866,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\rng\prng.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -784,7 +879,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -800,6 +895,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\crypto\rng\rand_source.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -808,7 +908,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -824,6 +924,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\rtp\libsrtp\srtp\srtp.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -832,7 +937,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ENABLE_DEBUGGING;PTRACING=2;HAVE_CONFIG_H;WIN32;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\rtp\libsrtp\Android;$(ProjectDir)..\rtp\libsrtp\include;$(ProjectDir)..\rtp\libsrtp\crypto\include</AdditionalIncludeDirectories>
@@ -848,6 +953,11 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">HAVE_CONFIG_H;PTRACING=2;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">PTRACING=0;HAVE_CONFIG_H;WIN32;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Level3</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Level3</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\h460\h46018_h225.cxx" />
     <ClCompile Include="..\h460\h46024b.cxx" />
@@ -1306,6 +1416,7 @@
     <ClInclude Include="..\rtp\libsrtp\crypto\include\alloc.h" />
     <ClInclude Include="..\rtp\libsrtp\crypto\include\auth.h" />
     <ClInclude Include="..\rtp\libsrtp\crypto\include\cipher.h" />
+    <ClInclude Include="..\rtp\libsrtp\crypto\include\config.h" />
     <ClInclude Include="..\rtp\libsrtp\crypto\include\crypto.h" />
     <ClInclude Include="..\rtp\libsrtp\crypto\include\cryptoalg.h" />
     <ClInclude Include="..\rtp\libsrtp\crypto\include\crypto_kernel.h" />
@@ -1330,7 +1441,6 @@
     <ClInclude Include="..\rtp\libsrtp\include\rtp.h" />
     <ClInclude Include="..\rtp\libsrtp\include\srtp.h" />
     <ClInclude Include="..\rtp\libsrtp\include\ut_sim.h" />
-    <ClInclude Include="..\rtp\libsrtp\win32\config.h" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\..\include\opal\buildopts.h.in">
@@ -1454,6 +1564,18 @@ if errorlevel 1 $(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)
     <None Include="..\asn\mcs.asn" />
     <None Include="..\asn\t38.asn" />
     <None Include="..\asn\x880.asn" />
+    <CustomBuild Include="..\rtp\libsrtp\config.hw">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">copy /Y "%(FullPath)" "%(RootDir)%(Directory)crypto\include\config.h" &gt; NUL</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Creating libsrtp config.h from config.hw</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RootDir)%(Directory)crypto\include\config.h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">copy /Y "%(FullPath)" "%(RootDir)%(Directory)crypto\include\config.h" &gt; NUL</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Creating libsrtp config.h from config.hw</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">%(RootDir)%(Directory)crypto\include\config.h</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy /Y "%(FullPath)" "%(RootDir)%(Directory)crypto\include\config.h" &gt; NUL</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Creating libsrtp config.h from config.hw</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RootDir)%(Directory)crypto\include\config.h</Outputs>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\ptlib\src\ptlib\msos\Console_2010.vcxproj">

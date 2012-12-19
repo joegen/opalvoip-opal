@@ -175,24 +175,28 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
 
 void OpalCall::InternalOnClear()
 {
-  if (connectionsActive.IsEmpty() && manager.activeCalls.Contains(GetToken())) {
-    OnCleared();
+  if (!connectionsActive.IsEmpty())
+    return;
+
+  if (m_isCleared.TestAndSet(true))
+    return;
+
+  OnCleared();
 
 #if OPAL_HAS_MIXER
-    StopRecording();
+  StopRecording();
 #endif
 
-    if (LockReadWrite()) {
-      while (!m_endCallSyncPoint.empty()) {
-        PTRACE(5, "Call\tSignalling end call.");
-        m_endCallSyncPoint.front()->Signal();
-        m_endCallSyncPoint.pop_front();
-      }
-      UnlockReadWrite();
+  if (LockReadWrite()) {
+    while (!m_endCallSyncPoint.empty()) {
+      PTRACE(5, "Call\tSignalling end call.");
+      m_endCallSyncPoint.front()->Signal();
+      m_endCallSyncPoint.pop_front();
     }
-
-    manager.activeCalls.RemoveAt(GetToken());
+    UnlockReadWrite();
   }
+
+  manager.activeCalls.RemoveAt(GetToken());
 }
 
 

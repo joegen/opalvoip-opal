@@ -563,6 +563,8 @@ cryptoalg_find_by_id(int id) {
   switch(id) {
   case 1:
     return cryptoalg;
+  default:
+    break;
   }
   return 0;
 }

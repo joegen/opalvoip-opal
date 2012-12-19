@@ -9,7 +9,7 @@
  */
 /*
  *	
- * Copyright (c) 2001-2005 Cisco Systems, Inc.
+ * Copyright (c) 2001-2006 Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -106,7 +106,7 @@ nibble_to_hex_char(uint8_t nibble) {
 
 char *
 octet_string_hex_string(const void *s, int length) {
-  const uint8_t *str = s;
+  const uint8_t *str = (const uint8_t *)s;
   int i;
   
   /* double length, since one octet takes two hex characters */
@@ -149,8 +149,10 @@ hex_char_to_nibble(uint8_t c) {
   case ('E'): return 0xe;
   case ('f'): return 0xf;
   case ('F'): return 0xf;
+  default: return -1;   /* this flags an error */
   }
-  return -1;   /* this flags an error */
+  /* NOTREACHED */
+  return -1;  /* this keeps compilers from complaining */
 }
 
 int
@@ -562,6 +564,8 @@ base64_char_to_sextet(uint8_t c) {
     return 63;
   case '=':
     return 64;
+  default:
+    break;
  }
  return -1;
 }
