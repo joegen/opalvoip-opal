@@ -241,7 +241,6 @@ OpalManager::OpalManager()
   : productInfo(OpalProductInfo::Default())
   , defaultUserName(PProcess::Current().GetUserName())
   , defaultDisplayName(defaultUserName)
-  , m_defaultMediaTypeOfService(0xb8)  // New DiffServ value for Expedited Forwarding as per RFC3246
   , rtpPayloadSizeMax(1400) // RFC879 recommends 576 bytes, but that is ancient history, 99.999% of the time 1400+ bytes is used.
   , rtpPacketSizeMax(10*1024)
   , minAudioJitterDelay(50)  // milliseconds
@@ -274,6 +273,9 @@ OpalManager::OpalManager()
   // use dynamic port allocation by default
   tcpPorts.current = tcpPorts.base = tcpPorts.max = 0;
   udpPorts.current = udpPorts.base = udpPorts.max = 0;
+
+  m_mediaQoS[OpalMediaType::Audio()].m_type = PIPSocket::VoiceQoS;
+  m_mediaQoS[OpalMediaType::Video()].m_type = PIPSocket::VideoQoS;
 
 #if OPAL_VIDEO
   PStringArray devices = PVideoInputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
@@ -1994,16 +1996,40 @@ WORD OpalManager::GetRtpIpPortPair()
 }
 
 
+const PIPSocket::QoS & OpalManager::GetMediaQoS(const OpalMediaType & type) const
+{
+  return m_mediaQoS[type];
+}
+
+
+void OpalManager::SetMediaQoS(const OpalMediaType & type, const PIPSocket::QoS & qos)
+{
+  m_mediaQoS[type] = qos;
+}
+
+
 BYTE OpalManager::GetMediaTypeOfService(const OpalMediaType & type) const
 {
-  std::map<OpalMediaType, BYTE>::const_iterator it = m_mediaTypeOfService.find(type);
-  return it != m_mediaTypeOfService.end() ? it->second : m_defaultMediaTypeOfService;
+  return (BYTE)(m_mediaQoS[type].m_dscp << 2);
 }
 
 
 void OpalManager::SetMediaTypeOfService(const OpalMediaType & type, unsigned tos)
 {
-  m_mediaTypeOfService[type] = (BYTE)tos;
+  m_mediaQoS[type].m_dscp = (tos>>2)&0x3f;
+}
+
+
+BYTE OpalManager::GetMediaTypeOfService() const
+{
+  return (BYTE)(m_mediaQoS[OpalMediaType::Audio()].m_dscp << 2);
+}
+
+
+void OpalManager::SetMediaTypeOfService(unsigned tos)
+{
+  for (MediaQoSMap::iterator it = m_mediaQoS.begin(); it != m_mediaQoS.end(); ++it)
+    it->second.m_dscp = (tos>>2)&0x3f;
 }
 
 

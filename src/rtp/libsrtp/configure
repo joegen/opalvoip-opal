@@ -844,7 +844,6 @@ if test -n "$ac_init_help"; then
 Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-pic            build with PIC
   --enable-kernel-linux   build library to run in Linux kernel context
   --disable-debug         do not compile in dynamic debugging system
   --enable-generic-aesicm compile in changes for ISMAcryp
@@ -2420,11 +2419,6 @@ test -z "$INSTALL_SCRIPT" && INSTALL_SCRIPT='${INSTALL}'
 test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
 
 
-# Check whether --enable-pic or --disable-pic was given.
-if test "${enable_pic+set}" = set; then
-  enableval="$enable_pic"
-  CFLAGS="-fPIC $CFLAGS"
-fi;
 
 # Check whether --enable-kernel-linux or --disable-kernel-linux was given.
 if test "${enable_kernel_linux+set}" = set; then

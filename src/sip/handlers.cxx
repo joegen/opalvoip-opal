@@ -340,11 +340,6 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
   // Received a response, so indicate that and collapse the forking on multiple interfaces.
   m_receivedResponse = true;
 
-  m_transactions.Remove(&transaction); // Take this transaction out of list
-
-  // And kill all the rest
-  AbortPendingTransactions();
-
   switch (response.GetStatusCode()) {
     case SIP_PDU::Failure_UnAuthorised :
     case SIP_PDU::Failure_ProxyAuthenticationRequired :
@@ -436,9 +431,11 @@ void SIPHandler::OnTransactionFailed(SIPTransaction & transaction)
 {
   SIPTransactionOwner::OnTransactionFailed(transaction);
 
+  if (transaction.IsCanceled())
+    return;
+
   OnFailed(transaction.GetStatusCode());
-  if (!transaction.IsCanceled())
-    RetryLater(m_offlineExpireTime);
+  RetryLater(m_offlineExpireTime);
 }
 
 
@@ -693,6 +690,7 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
   for (SIPURLList::iterator reply = replyContacts.begin(); reply != replyContacts.end(); ) {
     if (reply->GetTransportAddress() == externalAddress) {
       externalAddress.MakeEmpty(); // Clear this so no further action taken
+      m_externalAddress.MakeEmpty();
       ++reply;
     }
     else if (std::find(requestedContacts.begin(), requestedContacts.end(), *reply) != requestedContacts.end())
@@ -726,27 +724,29 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
     return;
   }
 
-  // Remember (possibly new) NAT address
-  m_externalAddress == externalAddress;
-
   if (GetExpire() == 0) {
     // If we had discovered we are behind NAT and had unregistered, re-REGISTER with new addresses
-    PTRACE(2, "SIP\tRe-registering with NAT address " << externalAddress);
+    PTRACE(2, "SIP\tRe-registering NAT address change (" << m_contactAddresses << ") to " << externalAddress);
     for (SIPURLList::iterator contact = m_contactAddresses.begin(); contact != m_contactAddresses.end(); ++contact)
       contact->SetHostAddress(externalAddress);
+    m_contactAddresses.unique();
     SetExpire(m_originalExpireTime);
   }
   else {
     /* If we got here then we have done a successful register, but registrar indicated
        that we are behind firewall. Unregister what we just registered */
-    PTRACE(2, "SIP\tRemote indicated change of REGISTER Contact header required due to NAT");
     for (SIPURLList::iterator contact = replyContacts.begin(); contact != replyContacts.end(); ++contact)
       contact->GetFieldParameters().Remove("expires");
+    PTRACE(2, "SIP\tRemote indicated change of REGISTER Contact address(s) (" << replyContacts
+           << ") required due to NAT address " << externalAddress << ", previous=" << m_externalAddress);
     m_contactAddresses = replyContacts;
     SetExpire(0);
   }
 
-  SendRequest(previousState);
+  // Remember (possibly new) NAT address
+  m_externalAddress == externalAddress;
+
+  SendRequest(Refreshing);
   SendStatus(SIP_PDU::Information_Trying, previousState);
 }
 
@@ -833,6 +833,12 @@ SIPHandlerWithDialog::SIPHandlerWithDialog(SIP_PDU::Methods method,
   : SIPHandler(method, ep, params, dialog.GetCallID())
   , m_dialog(dialog)
 {
+}
+
+
+OpalTransportAddress SIPHandlerWithDialog::GetRemoteTransportAddress(PINDEX dnsEntry) const
+{
+  return m_dialog.GetRemoteTransportAddress(dnsEntry);
 }
 
 

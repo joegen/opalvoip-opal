@@ -9,7 +9,7 @@
 
 /*
  *	
- * Copyright (c) 2001-2005, Cisco Systems, Inc.
+ * Copyright (c) 2001-2006, Cisco Systems, Inc.
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -112,6 +112,8 @@ rdb_add_index(rdb_t *rdb, uint32_t index) {
   } else { 
     
     delta -= rdb_bits_in_bitmask - 1;
+    if (delta > rdb_bits_in_bitmask)
+      return err_status_parse_err; // Must have got some rubbish from remote
 
     /* shift the window forward by delta bits*/
     v128_left_shift(&rdb->bitmask, delta);

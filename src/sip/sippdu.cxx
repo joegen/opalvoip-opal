@@ -726,8 +726,15 @@ bool SIPURLList::FromString(const PString & str, SIPURL::UsageContext context, b
 PString SIPURLList::ToString() const
 {
   PStringStream strm;
+  strm << *this;
+  return strm;
+}
+
+
+ostream & operator<<(ostream & strm, const SIPURLList & urls)
+{
   bool outputCommas = false;
-  for (const_iterator it = begin(); it != end(); ++it) {
+  for (SIPURLList::const_iterator it = urls.begin(); it != urls.end(); ++it) {
     if (it->IsEmpty())
       continue;
 
@@ -1864,6 +1871,9 @@ void SIP_PDU::InitialiseHeaders(const SIPURL & dest,
 
 PString SIP_PDU::CreateVia()
 {
+  if (m_transport == NULL)
+    return PString::Empty();
+
   OpalTransportAddress via = m_transport->GetLocalAddress();
 
   PCaselessString proto = via.GetProtoPrefix();
@@ -2670,6 +2680,19 @@ SIPTransactionOwner::~SIPTransactionOwner()
 }
 
 
+OpalTransportAddress SIPTransactionOwner::GetRemoteTransportAddress(PINDEX dnsEntry) const
+{
+  SIPURL proxy = GetProxy();
+  if (!proxy.IsEmpty())
+    return proxy.GetTransportAddress(dnsEntry);
+
+  if (!m_proxy.IsEmpty())
+    return m_proxy.GetTransportAddress(dnsEntry);
+
+  return GetTargetURI().GetTransportAddress(dnsEntry);
+}
+
+
 unsigned SIPTransactionOwner::GetAllowedMethods() const
 {
   return m_endpoint.GetAllowedMethods();
@@ -2693,8 +2716,20 @@ void SIPTransactionOwner::OnReceivedResponse(SIPTransaction & transaction, SIP_P
 
   transport->UnlockReadOnly();
 
+  // Take this transaction out of list
+  m_transactions.Remove(&transaction);
+
+  // And kill all the rest
+  AbortPendingTransactions();
+
+  // Then tell endpoint - backward compatibility API
   m_endpoint.OnReceivedResponse(transaction, response);
 
+  // Ignore the pending responses
+  if (response.GetStatusCode()/100 == 1)
+    return;
+
+  // Handling of specific responses
   switch (response.GetStatusCode()) {
     case SIP_PDU::Failure_UnAuthorised :
     case SIP_PDU::Failure_ProxyAuthenticationRequired :
@@ -2931,15 +2966,15 @@ void SIPTransaction::SetParameters(const SIPParameters & params)
 
 PBoolean SIPTransaction::Start()
 {
-  if (m_state == Completed)
-    return true;
+  PSafeLockReadWrite lock(*this);
+
+  if (!PAssert(m_state == NotStarted, PLogicError))
+    return false;
 
   GetEndPoint().AddTransaction(this);
 
-  if (m_state != NotStarted) {
-    PAssertAlways(PLogicError);
-    return false;
-  }
+  m_state = Trying;
+  m_retry = 0;
 
   m_owner.m_transactions.Append(this);
   m_owner.OnStartTransaction(*this);
@@ -2949,13 +2984,13 @@ PBoolean SIPTransaction::Start()
     m_owner.GetAuthenticator()->Authorise(auth);
   }
 
-  PSafeLockReadWrite lock(*this);
+  if (m_transport == NULL) {
+    SetTerminated(Terminated_TransportError);
+    return false;
+  }
 
   // Remember this for when we are forking on UDP
   m_localInterface = m_transport->GetInterface();
-
-  m_state = Trying;
-  m_retry = 0;
 
   // Use the connection transport to send the request
   if (!Write(*m_transport)) {
@@ -2979,8 +3014,10 @@ void SIPTransaction::WaitForCompletion()
   if (IsCompleted())
     return;
 
-  if (m_state == NotStarted)
-    Start();
+  if (m_state == NotStarted) {
+    if (!Start())
+      return;
+  }
 
   PTRACE(4, "SIP\tAwaiting completion of " << GetMethod() << " transaction id=" << GetTransactionID());
   m_completed.Wait();

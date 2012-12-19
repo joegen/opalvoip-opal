@@ -233,6 +233,7 @@ public:
     const SIPDialogContext & dialog
   );
 
+  virtual OpalTransportAddress GetRemoteTransportAddress(PINDEX dnsEntry) const;
   virtual SIPURL GetTargetURI() const;
   virtual bool IsDuplicateCSeq(unsigned sequenceNumber);
 

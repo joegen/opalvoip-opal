@@ -111,7 +111,6 @@ class H4507Handler;
 class H45011Handler;
 
 class OpalCall;
-class RTP_QOS;
 
 #if OPAL_H460
 class H460_FeatureSet;
@@ -1450,9 +1449,8 @@ class H323Connection : public OpalRTPConnection
       const H323Capability & capability, ///<  Capability creating channel
       H323Channel::Directions dir,       ///<  Direction of channel
       unsigned sessionID,                ///<  Session ID for RTP channel
-      const H245_H2250LogicalChannelParameters * param,
+      const H245_H2250LogicalChannelParameters * param
                                          ///<  Parameters for channel
-      RTP_QOS * rtpqos = NULL            ///<  QoS for RTP
     );
     
     /**Creates a new instance of an RTP channel.

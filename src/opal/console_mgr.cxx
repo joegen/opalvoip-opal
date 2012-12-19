@@ -167,6 +167,8 @@ PString OpalManagerConsole::GetArgumentSpec() const
          "-rtp-max:          Set RTP port max (default base+199)\n"
          "-rtp-tos:          Set RTP packet IP TOS bits to n\n"
          "-rtp-size:         Set RTP maximum payload size in bytes.\n"
+         "-aud-qos:          Set Audio RTP Quality of Service to n\n"
+         "-vid-qos:          Set Video RTP Quality of Service to n\n"
 
          "[Debug & General:]"
          PTRACE_ARGLIST
@@ -269,6 +271,12 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
     SetMediaTypeOfService(tos);
   }
 
+  if (args.HasOption("aud-qos"))
+    SetMediaQoS(OpalMediaType::Audio(), args.GetOptionString("aud-qos"));
+
+  if (args.HasOption("vid-qos"))
+    SetMediaQoS(OpalMediaType::Video(), args.GetOptionString("vid-qos"));
+
   if (args.HasOption("rtp-size")) {
     unsigned size = args.GetOptionString("rtp-size").AsUnsigned();
     if (size < 32 || size > 65500) {
@@ -282,7 +290,8 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
     cout << "TCP ports: " << GetTCPPortBase() << '-' << GetTCPPortMax() << "\n"
             "UDP ports: " << GetUDPPortBase() << '-' << GetUDPPortMax() << "\n"
             "RTP ports: " << GetRtpIpPortBase() << '-' << GetRtpIpPortMax() << "\n"
-            "RTP IP TOS: 0x" << hex << (unsigned)GetMediaTypeOfService() << dec << "\n"
+            "Audio QoS: " << GetMediaQoS(OpalMediaType::Audio()) << "\n"
+            "Video QoS: " << GetMediaQoS(OpalMediaType::Video()) << "\n"
             "RTP payload size: " << GetMaxRtpPayloadSize() << '\n';
 
 #if P_NAT

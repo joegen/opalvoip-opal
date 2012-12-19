@@ -46,7 +46,7 @@
 #if PLUGINCODEC_TRACING
 static void logCallbackFFMPEG(void * avcl, int severity, const char* fmt , va_list arg)
 {
-  int level;
+  unsigned level;
   if (severity <= AV_LOG_FATAL)
     level = 0;
   else if (severity <= AV_LOG_ERROR)
@@ -827,7 +827,7 @@ void FFMPEGCodec::EncodedFrame::RTPCallBack(void *, int, int)
 }
 
 
-void FFMPEGCodec::ErrorCallback(int level, const char * msg)
+void FFMPEGCodec::ErrorCallback(unsigned level, const char * msg)
 {
   PTRACE(level, m_prefix, msg);
 
