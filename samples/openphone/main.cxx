@@ -148,6 +148,8 @@ DEF_FIELD(Bandwidth);
 DEF_FIELD(RxBandwidth);
 DEF_FIELD(TxBandwidth);
 DEF_FIELD(RTPTOS);
+DEF_FIELD(DiffServAudio);
+DEF_FIELD(DiffServVideo);
 DEF_FIELD(MaxRtpPayloadSize);
 DEF_FIELD(CertificateAuthority);
 DEF_FIELD(LocalCertificate);
@@ -965,8 +967,20 @@ bool MyManager::Initialise()
   if (config->Read(TxBandwidthKey, &float1))
     h323EP->SetInitialBandwidth(OpalBandwidth::Tx, (unsigned)(float1*1000));
 #endif
-  if (config->Read(RTPTOSKey, &value1))
+  if (config->Read(RTPTOSKey, &value1)) {
     SetMediaTypeOfService(value1);
+    config->DeleteEntry(RTPTOSKey);
+  }
+  if (config->Read(DiffServAudioKey, &value1)) {
+    PIPSocket::QoS qos = GetMediaQoS(OpalMediaType::Audio());
+    qos.m_dscp = value1;
+    SetMediaQoS(OpalMediaType::Audio(), qos);
+  }
+  if (config->Read(DiffServVideoKey, &value1)) {
+    PIPSocket::QoS qos = GetMediaQoS(OpalMediaType::Video());
+    qos.m_dscp = value1;
+    SetMediaQoS(OpalMediaType::Video(), qos);
+  }
   if (config->Read(MaxRtpPayloadSizeKey, &value1))
     SetMaxRtpPayloadSize(value1);
 #if OPAL_PTLIB_SSL
@@ -4124,7 +4138,8 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   FindWindowByNameAs<wxChoice>(this, wxT("BandwidthClass"))->SetSelection(bandwidthClass);
 #endif
 
-  INIT_FIELD(RTPTOS, m_manager.GetMediaTypeOfService());
+  INIT_FIELD(DiffServAudio, m_manager.GetMediaQoS(OpalMediaType::Audio()).m_dscp);
+  INIT_FIELD(DiffServVideo, m_manager.GetMediaQoS(OpalMediaType::Video()).m_dscp);
   INIT_FIELD(MaxRtpPayloadSize, m_manager.GetMaxRtpPayloadSize());
 #if OPAL_PTLIB_SSL
   INIT_FIELD(CertificateAuthority, m_manager.GetSSLCertificateAuthorityFiles());
@@ -4697,7 +4712,15 @@ bool OptionsDialog::TransferDataFromWindow()
   config->Write(RxBandwidthKey, floatRxBandwidth);
   config->Write(TxBandwidthKey, floatTxBandwidth);
 
-  SAVE_FIELD(RTPTOS, m_manager.SetMediaTypeOfService);
+  {
+    PIPSocket::QoS qos = m_manager.GetMediaQoS(OpalMediaType::Audio());
+    SAVE_FIELD(DiffServAudio, qos.m_dscp = );
+    m_manager.SetMediaQoS(OpalMediaType::Audio(), qos);
+    qos = m_manager.GetMediaQoS(OpalMediaType::Video());
+    SAVE_FIELD(DiffServVideo, qos.m_dscp = );
+    m_manager.SetMediaQoS(OpalMediaType::Video(), qos);
+  }
+
   SAVE_FIELD(MaxRtpPayloadSize, m_manager.SetMaxRtpPayloadSize);
 #if OPAL_PTLIB_SSL
   SAVE_FIELD(CertificateAuthority, m_manager.SetSSLCertificateAuthorityFiles);

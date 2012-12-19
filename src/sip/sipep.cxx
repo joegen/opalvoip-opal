@@ -236,46 +236,39 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
                                             SIP_PDU::StatusCodes & reason)
 {
   SIPURL targetURI = transactor.GetTargetURI();
-  PString domain = targetURI.GetHostName();
-  PString localInterface = transactor.GetInterface();
-  PINDEX dnsEntry = transactor.GetDNSEntry();
-  OpalTransportAddress remoteAddress;
 
-  SIPURL proxy = transactor.GetProxy();
-  if (!proxy.IsEmpty())
-    remoteAddress = proxy.GetTransportAddress(dnsEntry);
-  else if (!m_proxy.IsEmpty())
-    remoteAddress = m_proxy.GetTransportAddress(dnsEntry);
-  else {
-    remoteAddress = targetURI.GetTransportAddress(dnsEntry);
-    if (remoteAddress.IsEmpty()) {
-      for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(); ; ++handler) {
-        if (handler == NULL) {
-          reason = SIP_PDU::Local_CannotMapScheme;
-          PTRACE(1, "SIP\tCannot use " << targetURI.GetScheme() << " URI without phone-context or existing registration.");
-          return NULL;
-        }
-        if (handler->GetMethod() == SIP_PDU::Method_REGISTER) {
-          remoteAddress = handler->GetTargetURI().GetTransportAddress();
-          break;
-        }
+  OpalTransportAddress remoteAddress = transactor.GetRemoteTransportAddress(transactor.GetDNSEntry());
+  if (remoteAddress.IsEmpty()) {
+    for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(); ; ++handler) {
+      if (handler == NULL) {
+        reason = SIP_PDU::Local_CannotMapScheme;
+        PTRACE(1, "SIP\tCannot use " << targetURI.GetScheme() << " URI without phone-context or existing registration.");
+        return NULL;
+      }
+      if (handler->GetMethod() == SIP_PDU::Method_REGISTER) {
+        remoteAddress = handler->GetTargetURI().GetTransportAddress();
+        break;
       }
     }
   }
 
   // See if already have a link to that remote
   OpalTransportPtr transport = m_transportsTable.FindWithLock(remoteAddress, PSafeReference);
-  if (transport != NULL && transport->IsOpen())
+  if (transport != NULL && transport->IsOpen()) {
+    PTRACE(4, "SIP\tFound existing transport " << *transport);
     return transport;
+  }
 
   if (transport == NULL) {
     // No link, so need to create one
     OpalTransportAddress localAddress;
+    PString localInterface = transactor.GetInterface();
     if (!localInterface.IsEmpty()) {
       if (localInterface != "*") // Nasty kludge to get around infinite recursion in REGISTER
         localAddress = OpalTransportAddress(localInterface, 0, remoteAddress.GetProtoPrefix());
     }
     else {
+      PString domain = targetURI.GetHostPort();
       PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByDomain(domain, SIP_PDU::Method_REGISTER, PSafeReadOnly);
       if (handler != NULL) {
         localAddress = handler->GetInterface();
@@ -331,7 +324,7 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
     return NULL;
   }
 
-  if (!transport->IsAuthenticated(domain)) {
+  if (!transport->IsAuthenticated(targetURI.GetHostName())) {
     PTRACE(1, "SIP\tCould not connect to " << remoteAddress << " - " << transport->GetErrorText());
     reason = SIP_PDU::Local_NotAuthenticated;
     transport->CloseWait();
@@ -1963,9 +1956,6 @@ void SIP_PDU_Work::Work()
   if (PAssertNULL(m_pdu) == NULL)
     return;
 
-  PSafePtr<SIPConnection> connection;
-  bool hasConnection = GetTarget(connection);
-
   if (m_pdu->GetMethod() == SIP_PDU::NumMethods) {
     PString transactionID = m_pdu->GetTransactionID();
     PSafePtr<SIPTransaction> transaction = m_endpoint.GetTransaction(transactionID, PSafeReference);
@@ -1979,12 +1969,14 @@ void SIP_PDU_Work::Work()
       PTRACE(2, "SIP\tCannot find transaction " << transactionID << " for response PDU \"" << *m_pdu << '"');
     }
   }
-
-  else if (hasConnection) {
-    PTRACE_CONTEXT_ID_PUSH_THREAD(*connection);
-    PTRACE(3, "SIP\tHandling PDU \"" << *m_pdu << "\" for token=" << m_token);
-    connection->OnReceivedPDU(*m_pdu);
-    PTRACE(4, "SIP\tHandled PDU \"" << *m_pdu << '"');
+  else {
+    PSafePtr<SIPConnection> connection = m_endpoint.GetSIPConnectionWithLock(m_token, PSafeReadWrite);
+    PTRACE_CONTEXT_ID_PUSH_THREAD(connection);
+    if (connection != NULL) {
+      PTRACE(3, "SIP\tHandling PDU \"" << *m_pdu << "\" for token=" << m_token);
+      connection->OnReceivedPDU(*m_pdu);
+      PTRACE(4, "SIP\tHandled PDU \"" << *m_pdu << '"');
+    }
   }
 }
 

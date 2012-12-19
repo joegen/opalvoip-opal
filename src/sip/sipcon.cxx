@@ -234,6 +234,7 @@ SIPConnection::SIPConnection(SIPEndPoint & ep, const Init & init)
   , m_responseFailTimer(ep.GetThreadPool(), ep, init.m_token, &SIPConnection::OnInviteResponseTimeout)
   , m_responseRetryTimer(ep.GetThreadPool(), ep, init.m_token, &SIPConnection::OnInviteResponseRetry)
   , m_responseRetryCount(0)
+  , m_inviteCollisionTimer(ep.GetThreadPool(), ep, init.m_token, &SIPConnection::OnInviteCollision)
   , m_referInProgress(false)
   , releaseMethod(ReleaseWithNothing)
   , m_receivedUserInputMethod(UserInputMethodUnknown)
@@ -310,14 +311,7 @@ void SIPConnection::OnApplyStringOptions()
 
 bool SIPConnection::GarbageCollection()
 {
-  if (!CleanPendingTransactions())
-    return false;
-
-  // Remove all the references to the transactions so garbage can be collected
-  m_pendingInvitations.RemoveAll();
-  m_forkedInvitations.RemoveAll();
-
-  return OpalConnection::GarbageCollection();
+  return CleanPendingTransactions() && OpalConnection::GarbageCollection();
 }
 
 
@@ -431,6 +425,10 @@ void SIPConnection::OnReleased()
   // Abort the queued up re-INVITEs we never got a chance to send.
   for (PSafePtr<SIPTransaction> invitation(m_pendingInvitations, PSafeReference); invitation != NULL; ++invitation)
     invitation->Abort();
+
+  // Remove all the references to the transactions so garbage can be collected
+  m_pendingInvitations.RemoveAll();
+  m_forkedInvitations.RemoveAll();
 
   // No termination event set yet, get it from the call end reason
   if (notifyDialogEvent == SIPDialogNotification::NoEvent) {
@@ -854,7 +852,6 @@ bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
   else {
     localMedia->AddMediaFormats(m_localMediaFormats, mediaType);
     localMedia->SetDirection((SDPMediaDescription::Direction)(3&(unsigned)GetAutoStart(mediaType)));
-    localMedia->SetCryptoKeys(mediaSession->GetOfferedCryptoKeys());
   }
 
   if (mediaType == OpalMediaType::Audio()) {
@@ -865,6 +862,8 @@ bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
     SetNxECapabilities(m_ciscoNSEHandler, m_localMediaFormats, m_remoteFormatList, OpalCiscoNSE, localMedia);
 #endif
   }
+
+  localMedia->SetCryptoKeys(mediaSession->GetOfferedCryptoKeys());
 
   sdp.AddMediaDescription(localMedia);
 
@@ -1510,6 +1509,12 @@ void SIPConnection::OnPauseMediaStream(OpalMediaStream & strm, bool paused)
   if (!m_symmetricOpenStream && !m_handlingINVITE && strm.IsSink())
     SendReINVITE(PTRACE_PARAM(paused ? "pausing channel" : "resume channel"));
   OpalConnection::OnPauseMediaStream(strm, paused);
+}
+
+
+void SIPConnection::OnInviteCollision()
+{
+  SendReINVITE(PTRACE_PARAM("resend after pending received"));
 }
 
 
@@ -2417,11 +2422,8 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
       return;
 
     case SIP_PDU::Failure_RequestPending :
-      m_handlingINVITE = false;
-      if (StartPendingReINVITE())
-        return;
-      // Is real error then
-      break;
+      m_inviteCollisionTimer = (IsOriginating() ? PRandom::Number(2100, 4000) : PRandom::Number(1, 2000));
+      return;
 
     default :
       switch (responseClass) {
@@ -3068,6 +3070,24 @@ void SIPConnection::OnReceivedTrying(SIPTransaction & transaction, SIP_PDU & /*r
     SetPhase(ProceedingPhase);
     OnProceeding();
   }
+}
+
+
+OpalTransportAddress SIPConnection::GetRemoteTransportAddress(PINDEX dnsEntry) const
+{
+  return m_dialog.GetRemoteTransportAddress(dnsEntry);
+}
+
+
+SIPURL SIPConnection::GetTargetURI() const
+{
+  return m_dialog.GetRequestURI();
+}
+
+
+PString SIPConnection::GetAuthID() const
+{
+  return m_dialog.GetLocalURI().GetUserName();
 }
 
 

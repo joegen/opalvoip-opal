@@ -250,6 +250,7 @@ class SIPURLList : public std::list<SIPURL>
       bool reversed = false
     );
     PString ToString() const;
+    friend ostream & operator<<(ostream & strm, const SIPURLList & urls);
 };
 
 
@@ -954,6 +955,7 @@ class SIPTransactionOwner
     );
     virtual ~SIPTransactionOwner();
 
+    virtual OpalTransportAddress GetRemoteTransportAddress(PINDEX dnsEntry) const;
     virtual SIPURL GetTargetURI() const = 0;
     virtual PString GetAuthID() const = 0;
     virtual PString GetPassword() const { return PString::Empty(); }

@@ -61,12 +61,14 @@ OpalMediaPatch::OpalMediaPatch(OpalMediaStream & src)
 
   PTRACE(5, "Patch\tCreated media patch " << this << ", session " << src.GetSessionID());
   src.SetPatch(this);
+  source.SafeReference();
 }
 
 
 OpalMediaPatch::~OpalMediaPatch()
 {
   StopThread();
+  source.SafeDereference();
   PTRACE(5, "Patch\tDestroyed media patch " << this);
 }
 

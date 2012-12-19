@@ -200,7 +200,7 @@ class FFMPEGCodec
 
     EncodedFrame * GetEncodedFrame() const { return m_fullFrame; }
 
-    virtual void ErrorCallback(int level, const char * msg);
+    virtual void ErrorCallback(unsigned level, const char * msg);
 
   protected:
     bool InitContext();

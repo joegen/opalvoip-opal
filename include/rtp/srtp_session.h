@@ -141,6 +141,7 @@ class OpalSRTPSession : public OpalRTPSession, OpalLibSRTP
 
     virtual const PCaselessString & GetSessionType() const { return RTP_SAVP(); }
     virtual bool Close();
+    virtual OpalMediaCryptoKeyList & GetOfferedCryptoKeys();
     virtual bool ApplyCryptoKey(OpalMediaCryptoKeyList & keys, bool rx);
 
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame);

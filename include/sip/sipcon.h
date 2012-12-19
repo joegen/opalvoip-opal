@@ -647,8 +647,9 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     );
 
     // Overrides from SIPTransactionOwner
-    virtual SIPURL GetTargetURI() const { return m_dialog.GetRequestURI(); }
-    virtual PString GetAuthID() const { return m_dialog.GetLocalURI().GetUserName(); }
+    virtual OpalTransportAddress GetRemoteTransportAddress(PINDEX dnsEntry) const;
+    virtual SIPURL GetTargetURI() const;
+    virtual PString GetAuthID() const;
 
 
     virtual void OnStartTransaction(SIPTransaction & transaction);
@@ -665,6 +666,7 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     void OnSessionTimeout();
     void OnInviteResponseRetry();
     void OnInviteResponseTimeout();
+    void OnInviteCollision();
 
     virtual bool OnSendOfferSDP(
       SDPSessionDescription & sdpOut,
@@ -784,6 +786,7 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     PoolTimer      m_responseFailTimer;
     PoolTimer      m_responseRetryTimer;
     unsigned       m_responseRetryCount;
+    PoolTimer      m_inviteCollisionTimer;
 
     bool                      m_referInProgress;
     PSafeList<SIPTransaction> m_forkedInvitations; // Not for re-INVITE
