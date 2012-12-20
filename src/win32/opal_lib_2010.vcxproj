@@ -1464,19 +1464,19 @@
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)\..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)\..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd $(ProjectDir)\..\..
-configure -DLIBDIR=$(ProjectDir)..\..\Lib\$(Platform) --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%
+configure -Dlibdir=$(ProjectDir)..\..\Lib\$(Platform) --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cd $(ProjectDir)\..\..
 configure -DLIBDIR=$(ProjectDir)..\..\Lib\$(Platform) --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">cd $(ProjectDir)\..\..
-configure -DLIBDIR=$(ProjectDir)..\..\Lib\$(Platform) --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%
+configure -Dlibdir=$(ProjectDir)..\..\Lib\$(Platform) --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">cd $(ProjectDir)\..\..
 configure -DLIBDIR=$(ProjectDir)..\..\Lib\$(Platform) --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd $(ProjectDir)\..\..
-configure -DLIBDIR=$(ProjectDir)..\..\Lib\$(Platform) --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%
+configure -Dlibdir=$(ProjectDir)..\..\Lib\$(Platform) --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cd $(ProjectDir)\..\..
 configure -DLIBDIR=$(ProjectDir)..\..\Lib\$(Platform) --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%

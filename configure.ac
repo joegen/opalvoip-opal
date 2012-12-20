@@ -673,7 +673,7 @@ dnl ########################################################################
 
 AC_CONFIG_FILES(make/opal_defs.mak)
 AC_CONFIG_FILES(make/toplevel.mak)
-AC_CONFIG_HEADERS(${LIBDIR}/opal/buildopts.h:include/opal/buildopts.h.in)
+AC_CONFIG_HEADERS($libdir/opal/buildopts.h:include/opal/buildopts.h.in)
 AC_CONFIG_FILES(opal.pc)
 AC_CONFIG_FILES(opal.spec)
 AC_CONFIG_FILES(opal_cfg.dxy)
