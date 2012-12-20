@@ -780,9 +780,9 @@ bool OpalEndPoint::FindListenerForProtocol(const char * protoPrefix, OpalTranspo
 }
 
 #if OPAL_PTLIB_SSL
-bool OpalEndPoint::GetSSLCredentials(PSSLContext & context, bool create) const
+bool OpalEndPoint::ApplySSLCredentials(PSSLContext & context, bool create) const
 {
-  return manager.GetSSLCredentials(*this, context, create);
+  return manager.ApplySSLCredentials(*this, context, create);
 }
 #endif
 
