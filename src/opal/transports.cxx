@@ -1681,7 +1681,7 @@ PBoolean OpalTransportTLS::Connect()
     return false;
 
   PSSLContext * context = new PSSLContext();
-  endpoint.GetSSLCredentials(*context, false);
+  endpoint.ApplySSLCredentials(*context, false);
   PSSLChannel * sslChannel = new PSSLChannel(context, true);
 
   bool ok = sslChannel->Connect(m_channel);
@@ -1759,7 +1759,7 @@ PBoolean OpalListenerTLS::Open(const AcceptHandler & acceptHandler, ThreadMode m
   m_sslContext = new PSSLContext();
   m_sslContext->SetCipherList("ALL");
 
-  if (!endpoint.GetSSLCredentials(*m_sslContext, true))
+  if (!endpoint.ApplySSLCredentials(*m_sslContext, true))
     return false;
 
   return OpalListenerTCP::Open(acceptHandler, mode);

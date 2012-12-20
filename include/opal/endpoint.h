@@ -158,9 +158,9 @@ class OpalEndPoint : public PObject
     virtual PString GetDefaultTransport() const;
 
 #if OPAL_PTLIB_SSL
-    /** Get the SSL certificates/key for SSL based calls, e.g. sips or h323s
+    /** Apply the SSL certificates/key for SSL based calls, e.g. sips or h323s
       */
-    virtual bool GetSSLCredentials(
+    virtual bool ApplySSLCredentials(
       PSSLContext & context,    ///< Context to which t set certificates
       bool create               ///< Create self signed cert/key if required
     ) const;
