@@ -1337,7 +1337,7 @@ class OpalManager : public PObject
   /**@name Networking and NAT Management */
   //@{
 #if OPAL_PTLIB_SSL
-    /** Get the SSL certificates/key for SSL based calls, e.g. sips or h323s
+    /** Apply the SSL certificates/key for SSL based calls, e.g. sips or h323s
         This function loads the certificates and keys for use by a OpalListener
         or OpalTransport on the \p endpoint parameter. It allows for embedded
         certificates and keys, while the default behaviour loads the
@@ -1349,9 +1349,9 @@ class OpalManager : public PObject
         performed. Similarly if a transport may have an optional cert/key for
         bi-directional authentication.
       */
-    virtual bool GetSSLCredentials(
+    virtual bool ApplySSLCredentials(
       const OpalEndPoint & ep,  ///< Endpoint transport is based on.
-      PSSLContext & context,    ///< Context to which t set certificates
+      PSSLContext & context,    ///< Context on which to set certificates
       bool create               ///< Create self signed cert/key if required
     ) const;
 

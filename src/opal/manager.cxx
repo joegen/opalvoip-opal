@@ -1647,71 +1647,11 @@ void OpalManager::SetDefaultDisplayName(const PString & name, bool updateAll)
 
 
 #if OPAL_PTLIB_SSL
-bool OpalManager::GetSSLCredentials(const OpalEndPoint & /*ep*/,
+bool OpalManager::ApplySSLCredentials(const OpalEndPoint & /*ep*/,
                                     PSSLContext & context,
                                     bool create) const
 {
-  if (!m_caFiles.IsEmpty()) {
-    if (PDirectory::Exists(m_caFiles))
-      context.SetVerifyLocations(PString::Empty(), m_caFiles);
-    else
-      context.SetVerifyLocations(m_caFiles, PString::Empty());
-    context.SetVerifyMode(PSSLContext::VerifyPeerMandatory);
-  }
-
-  if (m_certificateFile.IsEmpty() && m_privateKeyFile.IsEmpty())
-    return true;
-
-  PSSLCertificate cert;
-  PSSLPrivateKey key;
-
-  if (PFile::Exists(m_certificateFile) && PFile::Exists(m_privateKeyFile)) {
-    if (!cert.Load(m_certificateFile)) {
-      PTRACE(2, "OPALSSL\tCould not load certificate file \"" << m_certificateFile << '"');
-      return false;
-    }
-
-    if (!key.Load(m_privateKeyFile)) {
-      PTRACE(2, "OPALSSL\tCould not load private key file \"" << m_privateKeyFile << '"');
-      return false;
-    }
-  }
-  else {
-    if (!create)
-      return true;
-
-    if (!m_autoCreateCertificate)
-      return false;
-
-    PStringStream dn;
-    dn << "/O=" << PProcess::Current().GetManufacturer()
-       << "/CN=" << PIPSocket::GetHostName();
-
-    PSSLPrivateKey key(2048);
-    PSSLCertificate root;
-    if (!root.CreateRoot(dn, key)) {
-      PTRACE(1, "MTGW\tCould not create certificate");
-      return false;
-    }
-
-    root.Save(m_certificateFile);
-    PTRACE(2, "OPALSSL\tCreated new certificate file \"" << m_certificateFile << '"');
-
-    key.Save(m_privateKeyFile, true);
-    PTRACE(2, "OPALSSL\tCreated new private key file \"" << m_privateKeyFile << '"');
-  }
-
-  if (!context.UseCertificate(cert)) {
-    PTRACE(1, "OpalTLS\tCould not use certificate " << cert);
-    return false;
-  }
-
-  if (!context.UsePrivateKey(key)) {
-    PTRACE(1, "OpalTLS\tCould not use private key " << key);
-    return false;
-  }
-
-  return true;
+  return context.SetCredentials(m_caFiles, m_certificateFile, m_privateKeyFile, create && m_autoCreateCertificate);
 }
 #endif
 
