@@ -11,7 +11,6 @@ AC_CONFIG_AUX_DIR(make)
 
 m4_include(make/opal.m4)
 
-
 PKG_PROG_PKG_CONFIG()
 if test -z "$PKG_CONFIG" ; then
   AC_MSG_ERROR(OPAL must have pkg-config installed, 1)
@@ -91,7 +90,7 @@ OPAL_HAS_SIPIM=yes
 OPAL_HAS_RFC4103=yes
 OPAL_HAS_MIXER=yes
 OPAL_HAS_PCSS=yes
-PTLIB_REC_VERSION="2.11.0"
+PTLIB_REQUIRED_VERSION="2.13.0"
 
 # experimental options
 OPAL_DAHDI=no
@@ -131,12 +130,20 @@ AC_MSG_NOTICE(Opal version is ${OPAL_VERSION});
 AC_SUBST(OPAL_VERSION)
 AC_SUBST(BUILD_TYPE)
 
+dnl     ########################
+dnl     libdl
+dnl     ########################
+
+OPAL_FIND_LIBDL([HAVE_LIBDL=yes], [HAVE_LIBDL=no])
+if test "x$HAVE_LIBDL" = "xyes" ; then
+    OPAL_ADD_CFLAGS_LIBS([$DL_CFLAGS], [$DL_LIBS])
+fi
+
 dnl ########################################################################
 dnl Check for PTLIB
 dnl ########################################################################
 
 OPAL_FIND_PTLIB()
-
 
 PKG_REQUIRES="$PKG_REQUIRES ptlib"
 CFLAGS="$CFLAGS $PTLIB_CFLAGS"
@@ -235,7 +242,6 @@ else
   DEBUG_CFLAGS="-g -D_DEBUG"
 fi
 
-
 OPAL_MSG_CHECK([ptlib version], [$PTLIB_VERSION])
 
 OPAL_CHECK_PTLIB([URL],     [PTLIB_URL])
@@ -269,16 +275,6 @@ OPAL_CHECK_PTLIB([CLI],          [PTLIB_CLI])
 dnl ########################################################################
 dnl Check for other libraries
 dnl ########################################################################
-
-
-dnl     ########################
-dnl     libdl
-dnl     ########################
-
-OPAL_FIND_LIBDL([HAVE_LIBDL=yes], [HAVE_LIBDL=no])
-if test "x$HAVE_LIBDL" = "xyes" ; then
-    OPAL_ADD_CFLAGS_LIBS([$DL_CFLAGS], [$DL_LIBS])
-fi
 
 
 dnl     ########################
@@ -671,9 +667,16 @@ dnl ########################################################################
 dnl Output files
 dnl ########################################################################
 
+cfg_prefix=$libdir
+if test "$exec_prefix" = "NONE" ; then
+  cfg_prefix=./include
+fi
+
+echo cfg_prefix=$cfg_prefix
+
 AC_CONFIG_FILES(make/opal_defs.mak)
 AC_CONFIG_FILES(make/toplevel.mak)
-AC_CONFIG_HEADERS($libdir/opal/buildopts.h:include/opal/buildopts.h.in)
+AC_CONFIG_HEADERS(${cfg_prefix}/opal/buildopts.h:include/opal/buildopts.h.in)
 AC_CONFIG_FILES(opal.pc)
 AC_CONFIG_FILES(opal.spec)
 AC_CONFIG_FILES(opal_cfg.dxy)
