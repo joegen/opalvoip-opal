@@ -36,7 +36,7 @@
 PROG		= codecinfo
 SOURCES		:= main.cxx
 
-ifndef OPENH323DIR
+ifndef OPALDIR
 OPALDIR=$(CURDIR)/../..
 endif
 
