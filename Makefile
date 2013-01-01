@@ -26,9 +26,7 @@
 # $Date: 2012-03-17 21:28:55 +1100 (Sat, 17 Mar 2012) $
 #
 
-ifdef OPALDIR
-  override CFG_ARGS+=--prefix=$(OPALDIR)
-else
+ifndef OPALDIR
   export OPALDIR=$(CURDIR)
 endif
 
@@ -47,29 +45,38 @@ AUTOCONF       := autoconf
 ACLOCAL        := aclocal
 
 
-ifneq ($(MAKECMDGOALS),config)
-  $(MAKECMDGOALS): default
+ifeq (,$(findstring $(MAKECMDGOALS),config clean distclean default_clean sterile))
+$(MAKECMDGOALS): default
 endif
 
 default: $(CONFIG_FILES)
 	@$(MAKE) -f $(TOP_LEVEL_MAKE) $(MAKECMDGOALS)
 
 .PHONY:config
-config:
-	$(CONFIGURE) $(CFG_ARGS)
+config:	$(CONFIG_FILES)
+	$(CONFIGURE)
 
-# this complexity is so if any of CONFIG_FILES does not exist it is created
-# with ./configure only being executed once.
-FIRST_CONFIG := $(firstword $(CONFIG_FILES))
-OTHER_CONFIGS := $(wordlist 2,1000,$(CONFIG_FILES))
+.PHONY:clean
+clean:
+	@$(MAKE) -f $(TOP_LEVEL_MAKE) clean
 
-$(FIRST_CONFIG): $(OTHER_CONFIGS) $(CONFIGURE) $(PLUGIN_CONFIG) $(addsuffix .in, $(CONFIG_FILES))
-	$(CONFIGURE) $(CFG_ARGS)
-	touch $@
+.PHONY:default_clean
+default_clean:
+	@$(MAKE) -f $(TOP_LEVEL_MAKE) default_clean
 
-$(OTHER_CONFIGS):
-	touch $@
+.PHONY:distclean
+distclean:
+	@$(MAKE) -f $(TOP_LEVEL_MAKE) distclean
 
+.PHONY:sterile
+sterile:
+	@$(MAKE) -f $(TOP_LEVEL_MAKE) sterile
+
+$(CONFIG_FILES) : config.status $(addsuffix .in, $(CONFIG_FILES))
+	 ./config.status
+
+config.status: $(CONFIGURE) $(addsuffix .in, $(CONFIG_FILES))
+	$(CONFIGURE)
 
 ifneq (,$(AUTOCONF))
 ifneq (,$(shell which $(AUTOCONF)))

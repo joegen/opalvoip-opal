@@ -2795,6 +2795,12 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
+OBJ_ARCH=
+if test "x$OPALDIR" != "x" ; then
+  ac_default_prefix=$OPALDIR
+  OBJ_ARCH=1
+fi
+
 
 
 
@@ -5574,7 +5580,7 @@ PTLIB_REQUIRED_VERSION="2.13.0"
 OPAL_DAHDI=no
 
 
-if test "x$OPALDIR" = "x"; then
+if test "x$OBJ_ARCH" = "x"; then
    OPALDIR=`pwd`
 fi
 
@@ -6184,160 +6190,14 @@ $as_echo "debug, static" >&6; }
            fi
 
           if test "x$DEFAULT_LIBS" = "x" ; then
-            LDFLAGS+="-L$PTLIBDIR/lib_${target_os}_${target_cpu}"
-
-
-           suffix=""""""""
-	   if test "x$suffix" = "x" ; then
-             LIBS=`$PKG_CONFIG ptlib "" --libs`
-           else
-             LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=$suffix "" --libs`
-           fi
-	   LIBS+=$DL_LIBS
-
-           cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <ptlib.h>
-int
-main ()
-{
-PString str;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  found=1
-else
-  found=0
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-
-
-           if test "x$found" = "x1" ; then
-             DEFAULT_LIBS=$LIBS
-             { $as_echo "$as_me:${as_lineno-$LINENO}: result: opt, shared" >&5
-$as_echo "opt, shared" >&6; }
-           else
-
-           suffix="""_d"""
-	   if test "x$suffix" = "x" ; then
-             LIBS=`$PKG_CONFIG ptlib "" --libs`
-           else
-             LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=$suffix "" --libs`
-           fi
-	   LIBS+=$DL_LIBS
-
-           cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <ptlib.h>
-int
-main ()
-{
-PString str;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  found=1
-else
-  found=0
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-
-
-             if test "x$found" = "x1" ; then
-               DEFAULT_LIBS=$LIBS
-               { $as_echo "$as_me:${as_lineno-$LINENO}: result: debug, shared" >&5
-$as_echo "debug, shared" >&6; }
-             else
-               DEBUG_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_d_s --libs`
-               RELEASE_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_s --libs`
-
-           suffix="""""_s"
-	   if test "x$suffix" = "x" ; then
-             LIBS=`$PKG_CONFIG ptlib --static --libs`
-           else
-             LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=$suffix --static --libs`
-           fi
-	   LIBS+=$DL_LIBS
-
-           cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <ptlib.h>
-int
-main ()
-{
-PString str;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  found=1
-else
-  found=0
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-
-
-               if test "x$found" = "x1" ; then
-                 DEFAULT_LIBS=$LIBS
-                 { $as_echo "$as_me:${as_lineno-$LINENO}: result: release, static" >&5
-$as_echo "release, static" >&6; }
-               else
-
-           suffix="""_d_s"
-	   if test "x$suffix" = "x" ; then
-             LIBS=`$PKG_CONFIG ptlib --static --libs`
-           else
-             LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=$suffix --static --libs`
-           fi
-	   LIBS+=$DL_LIBS
-
-           cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <ptlib.h>
-int
-main ()
-{
-PString str;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  found=1
-else
-  found=0
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-
-
-                 if test "x$found" = "x1" ; then
-                   DEFAULT_LIBS=$LIBS
-                   { $as_echo "$as_me:${as_lineno-$LINENO}: result: debug, static" >&5
-$as_echo "debug, static" >&6; }
-                 fi
-               fi
-             fi
-           fi
-
-            if test "x$DEFAULT_LIBS" = "x" ; then
-              { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+                                                  { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
               echo PTLIB_VERSION=$PTLIB_VERSION
               echo PTLIB_CFLAGS=$PTLIB_CFLAGS
               echo PTLIB_CXXFLAGS=$PTLIB_CXXFLAGS
               echo PTLIB_LIBS=$PTLIB_LIBS
               exit -1
-            fi
-          fi
+                                              fi
 
           CXXFLAGS="$old_CXXFLAGS"
           LDFLAGS="$old_LDFLAGS"
@@ -6740,11 +6600,9 @@ case "$target_os" in
         ;;
 esac
 
-if test "$prefix" = "$OPALDIR"; then
+if test "x$OBJ_ARCH" != "x" ; then
    includedir=$OPALDIR/include
    libdir=$OPALDIR/lib_$target
-else
-   includedir="$includedir/opal"
 fi
 
 

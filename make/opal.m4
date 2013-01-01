@@ -333,16 +333,18 @@ echo "LIBS = $LIBS"
 
           OPAL_FIND_PTLIB_OBJ("")
           if test "x$DEFAULT_LIBS" = "x" ; then
-            LDFLAGS+="-L$PTLIBDIR/lib_${target_os}_${target_cpu}"
-            OPAL_FIND_PTLIB_OBJ("")
-            if test "x$DEFAULT_LIBS" = "x" ; then
+            dnl LDFLAGS+="-L$PTLIBDIR/lib_${target_os}_${target_cpu}"
+            dnl OPAL_FIND_PTLIB_OBJ("")
+            dnl if test "x$DEFAULT_LIBS" = "x" ; then
               AC_MSG_RESULT([not found])
               echo PTLIB_VERSION=$PTLIB_VERSION
               echo PTLIB_CFLAGS=$PTLIB_CFLAGS
               echo PTLIB_CXXFLAGS=$PTLIB_CXXFLAGS
               echo PTLIB_LIBS=$PTLIB_LIBS
               exit -1
-            fi
+            dnl fi
+            dnl DEBUG_LIBS+="-L$PTLIBDIR/lib_${target_os}_${target_cpu}"
+            dnl RELEASE_LIBS+="-L$PTLIBDIR/lib_${target_os}_${target_cpu}"
           fi
 
           CXXFLAGS="$old_CXXFLAGS"

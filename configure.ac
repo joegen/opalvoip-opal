@@ -11,6 +11,12 @@ AC_CONFIG_AUX_DIR(make)
 
 m4_include(make/opal.m4)
 
+OBJ_ARCH=
+if test "x$OPALDIR" != "x" ; then
+  ac_default_prefix=$OPALDIR
+  OBJ_ARCH=1
+fi
+
 PKG_PROG_PKG_CONFIG()
 if test -z "$PKG_CONFIG" ; then
   AC_MSG_ERROR(OPAL must have pkg-config installed, 1)
@@ -98,7 +104,7 @@ OPAL_DAHDI=no
 dnl ########################################################################
 dnl set the OPAL directory to the current directory
 
-if test "x$OPALDIR" = "x"; then
+if test "x$OBJ_ARCH" = "x"; then
    OPALDIR=`pwd`
 fi
 AC_SUBST(OPALDIR)
@@ -210,11 +216,9 @@ esac
 
 dnl ########################################################################
 dnl set libdir accordingly
-if test "$prefix" = "$OPALDIR"; then
+if test "x$OBJ_ARCH" != "x" ; then
    includedir=$OPALDIR/include
    libdir=$OPALDIR/lib_$target
-else
-   includedir="$includedir/opal"
 fi
 
 
