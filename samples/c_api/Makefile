@@ -71,4 +71,9 @@ $(OBJDIR)/$(PROG): $(OBJECTS)
 depend:
 
 clean:
-	rm $(OBJECTS) $(OBJDIR)/$(PROG)
+	rm -f $(OBJECTS) $(OBJDIR)/$(PROG)
+
+install_to:
+	cp $(OBJDIR)/$(PROG) $(DESTDIR)/$(PROG) 
+	chmod 755 $(DESTDIR)/$(PROG)
+

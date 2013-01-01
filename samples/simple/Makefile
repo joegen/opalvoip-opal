@@ -91,6 +91,10 @@ distclean:
 clean:
 	rm -rf $(OBJDIR) $(OBJDIR)_d
 
+install_to:
+	cp $(OBJDIR)/$(PROG) $(DESTDIR)/$(PROG) 
+	chmod 755 $(DESTDIR)/$(PROG)
+
 # Some extra targets for convenience
 
 opt:
