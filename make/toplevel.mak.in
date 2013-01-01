@@ -612,12 +612,6 @@ clean:
 	rm -rf $(OPAL_LIBDIR)
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) clean; fi ; )
 
-distclean: clean
-	rm -rf config.log config.err autom4te.cache config.status a.out aclocal.m4 lib*
-
-sterile: distclean
-	rm -rf configure opal.pc opal.dxy 
-
 depend:   $(DEPS) 
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) depend; fi ; )
 
@@ -794,5 +788,8 @@ update:
 distclean: clean
 	rm -rf config.log config.err autom4te.cache config.status a.out aclocal.m4
 	rm -rf lib*
+
+sterile: distclean
+	rm -rf configure opal.pc opal.dxy 
 
 # End of file #################################################################
