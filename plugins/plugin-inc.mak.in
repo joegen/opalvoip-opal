@@ -79,7 +79,7 @@ $(PLUGIN_PATH): $(SUBDIRS) $(OBJECTS)
 ifneq ($(SUBDIRS),)
 .PHONY: $(SUBDIRS)
 $(SUBDIRS):
-	$(MAKE) -C $@
+	$(MAKE) -C $@ CC=@CC@ CXX=@CXX@ LD=@CXX@
 endif
 
 install:

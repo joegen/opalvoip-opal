@@ -3658,7 +3658,7 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
       default:
         PStringArray lines = request.GetEntityBody().Lines();
         PINDEX i;
-        char tone = -1;
+        int tone = -1;
         int duration = -1;
         for (i = 0; i < lines.GetSize(); ++i) {
           PStringArray tokens = lines[i].Tokenise('=', false);
