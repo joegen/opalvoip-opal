@@ -386,7 +386,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     m_potsEP = new OpalLineEndPoint(*this);
 #endif
 
-#if OPAL_LID
+#if OPAL_CAPI
   if (m_capiEP == NULL)
     m_capiEP = new OpalCapiEndPoint(*this);
 #endif
