@@ -50,3 +50,7 @@ ifdef OPALDIR
 include $(OPALDIR)/opal_inc.mak
 endif
 
+install_to:
+	cp $(OBJDIR)/$(PROG) $(DESTDIR)/$(PROG) 
+	chmod 755 $(DESTDIR)/$(PROG)
+

@@ -40,31 +40,35 @@ ifeq ($(OPAL_PLUGINS),yes)
 SUBDIRS += plugins 
 endif
 
+SAMPLE_DIRS :=
+
 ifeq ($(OPAL_SAMPLES),yes)
 
-SUBDIRS += samples/c_api
+SAMPLE_DIRS += samples/c_api
 
 ifeq ($(OPAL_HAS_PCSS),yes)
-SUBDIRS += samples/simple
+SAMPLE_DIRS += samples/simple
 endif
 ifeq ($(OPAL_VIDEO),yes)
-SUBDIRS += samples/codectest
+SAMPLE_DIRS += samples/codectest
 endif
 ifeq ($(OPAL_IVR),yes)
-SUBDIRS += samples/callgen
+SAMPLE_DIRS += samples/callgen
 endif
 ifeq ($(OPAL_PTLIB_CLI)$(OPAL_PTLIB_EXPAT)$(OPAL_SIP), yesyesyes)
-SUBDIRS += samples/testpresent
+SAMPLE_DIRS += samples/testpresent
 endif
 ifeq ($(OPAL_PTLIB_CLI)$(OPAL_FAX), yesyes)
-SUBDIRS += samples/faxopal
+SAMPLE_DIRS += samples/faxopal
 endif
 ifeq ($(OPAL_PTLIB_CLI)$(OPAL_IVR),yesyes)
-SUBDIRS += samples/ivropal
+SAMPLE_DIRS += samples/ivropal
 endif
 ifeq ($(OPAL_PTLIB_CLI)$(OPAL_IVR)$(OPAL_HAS_MIXER),yesyesyes)
-SUBDIRS += samples/opalmcu
+SAMPLE_DIRS += samples/opalmcu
 endif
+
+SUBDIRS+=$(SAMPLE_DIRS)
 
 endif # OPAL_SAMPLES
 
@@ -606,7 +610,7 @@ default_depend :: depend
 .PHONY: subdirs $(SUBDIRS)
 
 subdirs:
-	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir); fi ; )
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) CC=@CC@ CXX=@CXX@ LD=@CXX@ ; fi ; )
 
 clean:
 	rm -rf $(OPAL_LIBDIR)
@@ -717,9 +721,11 @@ install:
 			$(INSTALL) -m 644 $$fn $(DESTDIR)$(includedir)/$$dir ; \
 		done); \
 	done)
-
 ifeq ($(OPAL_PLUGINS),yes)
 	$(MAKE) -C plugins install
+endif
+ifeq ($(OPAL_SAMPLES),yes)
+	( for dir in $(SAMPLE_DIRS) ; do $(MAKE) -C $$dir DESTDIR=$(DESTDIR)$(bindir) install_to ; done)
 endif
 
 uninstall:
