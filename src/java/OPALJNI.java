@@ -47,10 +47,10 @@ class OPALJNI {
   public final static native String OpalParamGeneral_m_autoRxMedia_get(long jarg1, OpalParamGeneral jarg1_);
   public final static native void OpalParamGeneral_m_autoTxMedia_set(long jarg1, OpalParamGeneral jarg1_, String jarg2);
   public final static native String OpalParamGeneral_m_autoTxMedia_get(long jarg1, OpalParamGeneral jarg1_);
-  public final static native void OpalParamGeneral_m_natRouter_set(long jarg1, OpalParamGeneral jarg1_, String jarg2);
-  public final static native String OpalParamGeneral_m_natRouter_get(long jarg1, OpalParamGeneral jarg1_);
-  public final static native void OpalParamGeneral_m_stunServer_set(long jarg1, OpalParamGeneral jarg1_, String jarg2);
-  public final static native String OpalParamGeneral_m_stunServer_get(long jarg1, OpalParamGeneral jarg1_);
+  public final static native void OpalParamGeneral_m_natMethod_set(long jarg1, OpalParamGeneral jarg1_, String jarg2);
+  public final static native String OpalParamGeneral_m_natMethod_get(long jarg1, OpalParamGeneral jarg1_);
+  public final static native void OpalParamGeneral_m_natServer_set(long jarg1, OpalParamGeneral jarg1_, String jarg2);
+  public final static native String OpalParamGeneral_m_natServer_get(long jarg1, OpalParamGeneral jarg1_);
   public final static native void OpalParamGeneral_m_tcpPortBase_set(long jarg1, OpalParamGeneral jarg1_, long jarg2);
   public final static native long OpalParamGeneral_m_tcpPortBase_get(long jarg1, OpalParamGeneral jarg1_);
   public final static native void OpalParamGeneral_m_tcpPortMax_set(long jarg1, OpalParamGeneral jarg1_, long jarg2);
