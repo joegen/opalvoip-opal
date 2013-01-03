@@ -1361,7 +1361,7 @@ H323PeerElement::Error H323PeerElement::SendAccessRequestByID(const OpalGlobally
     Request request(pdu.GetSequenceNumber(), pdu, peer);
     request.responseInfo = &confirmPDU;
     if (MakeRequest(request))
-      return Confirmed;
+      break;
 
     // if error was no service relationship, then establish relationship and try again
     switch (request.responseResult) {
@@ -1386,7 +1386,7 @@ H323PeerElement::Error H323PeerElement::SendAccessRequestByID(const OpalGlobally
     }
   }
 
-  return Rejected;
+  return Confirmed;
 }
 
 H323PeerElement::Error H323PeerElement::SendAccessRequestByAddr(const H323TransportAddress & peerAddr, 
