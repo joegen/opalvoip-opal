@@ -223,7 +223,8 @@ class OpalJitterBufferThread : public OpalJitterBuffer
        Override of base class so can terminate caller when shutting down.
       */
     virtual PBoolean ReadData(
-      RTP_DataFrame & frame   ///<  Frame to extract from jitter buffer
+      RTP_DataFrame & frame,  ///<  Frame to extract from jitter buffer
+      const PTimeInterval & tick = 0 ///< Real time tick for packet removal
     );
 
     /**This class instance collects data from the outside world in this
