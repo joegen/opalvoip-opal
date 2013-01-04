@@ -107,20 +107,20 @@ public class OpalParamGeneral {
     return OPALJNI.OpalParamGeneral_m_autoTxMedia_get(swigCPtr, this);
   }
 
-  public void setM_natRouter(String value) {
-    OPALJNI.OpalParamGeneral_m_natRouter_set(swigCPtr, this, value);
+  public void setM_natMethod(String value) {
+    OPALJNI.OpalParamGeneral_m_natMethod_set(swigCPtr, this, value);
   }
 
-  public String getM_natRouter() {
-    return OPALJNI.OpalParamGeneral_m_natRouter_get(swigCPtr, this);
+  public String getM_natMethod() {
+    return OPALJNI.OpalParamGeneral_m_natMethod_get(swigCPtr, this);
   }
 
-  public void setM_stunServer(String value) {
-    OPALJNI.OpalParamGeneral_m_stunServer_set(swigCPtr, this, value);
+  public void setM_natServer(String value) {
+    OPALJNI.OpalParamGeneral_m_natServer_set(swigCPtr, this, value);
   }
 
-  public String getM_stunServer() {
-    return OPALJNI.OpalParamGeneral_m_stunServer_get(swigCPtr, this);
+  public String getM_natServer() {
+    return OPALJNI.OpalParamGeneral_m_natServer_get(swigCPtr, this);
   }
 
   public void setM_tcpPortBase(long value) {

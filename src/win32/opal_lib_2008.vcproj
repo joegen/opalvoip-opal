@@ -3074,6 +3074,40 @@
 				<Filter
 					Name="libSRTP"
 					>
+					<File
+						RelativePath="..\rtp\libsrtp\config.hw"
+						>
+						<FileConfiguration
+							Name="Debug|Win32"
+							>
+							<Tool
+								Name="VCCustomBuildTool"
+								Description="Creating libsrtp config.h from config.hw"
+								CommandLine="copy /Y &quot;$(InputPath)&quot; &quot;$(InputDir)crypto\include\config.h&quot; &gt; NUL"
+								Outputs="$(InputDir)crypto\include\config.h"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCustomBuildTool"
+								Description="Creating libsrtp config.h from config.hw"
+								CommandLine="copy /Y &quot;$(InputPath)&quot; &quot;$(InputDir)crypto\include\config.h&quot; &gt; NUL"
+								Outputs="$(InputDir)crypto\include\config.h"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="No Trace|Win32"
+							>
+							<Tool
+								Name="VCCustomBuildTool"
+								Description="Creating libsrtp config.h from config.hw"
+								CommandLine="copy /Y &quot;$(InputPath)&quot; &quot;$(InputDir)crypto\include\config.h&quot; &gt; NUL"
+								Outputs="$(InputDir)crypto\include\config.h"
+							/>
+						</FileConfiguration>
+					</File>
 					<Filter
 						Name="Sources"
 						>
@@ -3085,10 +3119,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3096,9 +3131,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3106,9 +3142,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>
@@ -3120,10 +3157,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3131,9 +3169,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3141,9 +3180,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>
@@ -3155,10 +3195,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3166,9 +3207,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3176,9 +3218,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>
@@ -3190,10 +3233,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3201,9 +3245,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3211,9 +3256,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>
@@ -3225,10 +3271,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3236,9 +3283,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3246,9 +3294,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>
@@ -3260,10 +3309,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3271,9 +3321,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3281,9 +3332,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>
@@ -3295,10 +3347,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3306,9 +3359,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3316,9 +3370,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>
@@ -3330,10 +3385,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3341,9 +3397,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3351,9 +3408,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>
@@ -3365,10 +3423,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3376,9 +3435,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3386,9 +3446,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>
@@ -3400,10 +3461,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3411,9 +3473,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3421,9 +3484,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>
@@ -3435,10 +3499,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3446,9 +3511,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3456,9 +3522,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>
@@ -3470,10 +3537,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3481,9 +3549,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3491,9 +3560,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>
@@ -3505,10 +3575,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3516,9 +3587,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3526,9 +3598,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>
@@ -3540,10 +3613,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3551,9 +3625,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3561,9 +3636,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>
@@ -3575,10 +3651,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3586,9 +3663,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3596,9 +3674,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>
@@ -3610,10 +3689,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3621,9 +3701,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3631,9 +3712,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>
@@ -3645,10 +3727,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3656,9 +3739,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3666,9 +3750,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>
@@ -3680,10 +3765,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3691,9 +3777,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3701,9 +3788,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>
@@ -3715,10 +3803,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3726,9 +3815,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3736,9 +3826,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>
@@ -3750,10 +3841,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3761,9 +3853,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3771,9 +3864,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>
@@ -3785,10 +3879,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3796,9 +3891,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3806,9 +3902,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>
@@ -3820,10 +3917,11 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									PreprocessorDefinitions="ENABLE_DEBUGGING"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3831,9 +3929,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 							<FileConfiguration
@@ -3841,9 +3940,10 @@
 								>
 								<Tool
 									Name="VCCLCompilerTool"
-									AdditionalIncludeDirectories="..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
+									AdditionalIncludeDirectories="..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include"
 									UsePrecompiledHeader="0"
 									PrecompiledHeaderThrough=""
+									WarningLevel="3"
 								/>
 							</FileConfiguration>
 						</File>

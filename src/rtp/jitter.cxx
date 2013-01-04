@@ -651,10 +651,10 @@ void OpalJitterBufferThread::WaitForThreadTermination()
 }
 
 
-PBoolean OpalJitterBufferThread::ReadData(RTP_DataFrame & frame)
+PBoolean OpalJitterBufferThread::ReadData(RTP_DataFrame & frame, const PTimeInterval & tick)
 {
   if (m_running)
-    return OpalJitterBuffer::ReadData(frame);
+    return OpalJitterBuffer::ReadData(frame, tick);
 
   PTRACE(3, "Jitter\tShutting down " << *this);
   return false;

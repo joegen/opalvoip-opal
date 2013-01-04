@@ -592,7 +592,7 @@ void OpalMSRPManager::ListenerThread()
     {
       PWaitAndSignal m(m_connectionInfoMapAddMutex);
       connection.SetSafetyMode(PSafeReference);
-      m_connectionInfoMap.insert(ConnectionInfoMapType::value_type((const char *)remoteAddr.AsString(), connection));
+      m_connectionInfoMap[remoteAddr.AsString()] = connection;
       connection.SetSafetyMode(PSafeReadWrite);
     }
     connection->StartHandler();
@@ -648,7 +648,7 @@ PSafePtr<OpalMSRPManager::Connection> OpalMSRPManager::OpenConnection(const PURL
     }
 
     connectionPtr = PSafePtr<Connection>(new Connection(*this, connectionKey));
-    m_connectionInfoMap.insert(ConnectionInfoMapType::value_type(connectionKey, connectionPtr));
+    m_connectionInfoMap[connectionKey] = connectionPtr;
   }
 
   connectionPtr.SetSafetyMode(PSafeReadWrite);
@@ -692,7 +692,7 @@ void OpalMSRPManager::SetNotifier(const PURL & localUrl,
   PString key(localUrl.AsString() + '\t' + remoteUrl.AsString());
   PTRACE(2, "MSRP\tRegistering callback for incoming MSRP messages with '" << key << "'");
   PWaitAndSignal m(m_callBacksMutex);
-  m_callBacks.insert(CallBackMap::value_type(key, CallBack(notifier)));
+  m_callBacks[key] = notifier;
 }
 
 
