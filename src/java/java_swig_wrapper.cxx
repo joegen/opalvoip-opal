@@ -870,7 +870,7 @@ SWIGEXPORT jstring JNICALL Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1autoTx
 }
 
 
-SWIGEXPORT void JNICALL Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1natRouter_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1natMethod_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -885,17 +885,17 @@ SWIGEXPORT void JNICALL Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1natRouter
   }
   {
     if (arg2) {
-      arg1->m_natRouter = (char const *) (new char[strlen((const char *)arg2)+1]);
-      strcpy((char *)arg1->m_natRouter, (const char *)arg2);
+      arg1->m_natMethod = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->m_natMethod, (const char *)arg2);
     } else {
-      arg1->m_natRouter = 0;
+      arg1->m_natMethod = 0;
     }
   }
   if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
 }
 
 
-SWIGEXPORT jstring JNICALL Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1natRouter_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1natMethod_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *result = 0 ;
@@ -904,13 +904,13 @@ SWIGEXPORT jstring JNICALL Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1natRou
   (void)jcls;
   (void)jarg1_;
   arg1 = *(OpalParamGeneral **)&jarg1; 
-  result = (char *) ((arg1)->m_natRouter);
+  result = (char *) ((arg1)->m_natMethod);
   if (result) jresult = jenv->NewStringUTF((const char *)result);
   return jresult;
 }
 
 
-SWIGEXPORT void JNICALL Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1stunServer_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+SWIGEXPORT void JNICALL Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1natServer_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *arg2 = (char *) 0 ;
   
@@ -925,17 +925,17 @@ SWIGEXPORT void JNICALL Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1stunServe
   }
   {
     if (arg2) {
-      arg1->m_stunServer = (char const *) (new char[strlen((const char *)arg2)+1]);
-      strcpy((char *)arg1->m_stunServer, (const char *)arg2);
+      arg1->m_natServer = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->m_natServer, (const char *)arg2);
     } else {
-      arg1->m_stunServer = 0;
+      arg1->m_natServer = 0;
     }
   }
   if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
 }
 
 
-SWIGEXPORT jstring JNICALL Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1stunServer_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1natServer_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jstring jresult = 0 ;
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *result = 0 ;
@@ -944,7 +944,7 @@ SWIGEXPORT jstring JNICALL Java_org_opalvoip_OPALJNI_OpalParamGeneral_1m_1stunSe
   (void)jcls;
   (void)jarg1_;
   arg1 = *(OpalParamGeneral **)&jarg1; 
-  result = (char *) ((arg1)->m_stunServer);
+  result = (char *) ((arg1)->m_natServer);
   if (result) jresult = jenv->NewStringUTF((const char *)result);
   return jresult;
 }

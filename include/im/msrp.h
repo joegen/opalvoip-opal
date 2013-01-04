@@ -251,10 +251,10 @@ class OpalMSRPManager : public PObject
     PThread * m_listenerThread;
 
     PMutex m_connectionInfoMapAddMutex;
-    typedef std::map<std::string, PSafePtr<Connection> > ConnectionInfoMapType;
+    typedef std::map<PString, PSafePtr<Connection> > ConnectionInfoMapType;
     ConnectionInfoMapType m_connectionInfoMap;
 
-    typedef std::map<std::string, CallBack> CallBackMap;
+    typedef std::map<PString, CallBack> CallBackMap;
     CallBackMap m_callBacks;
     PMutex m_callBacksMutex;
 

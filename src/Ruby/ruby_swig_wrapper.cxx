@@ -2013,7 +2013,7 @@ SWIG_ruby_failed(void)
 } 
 
 
-/*@SWIG:c:\\tools\\Lib\\ruby\\rubyprimtypes.swg,23,%ruby_aux_method@*/
+/*@SWIG:C:\\Tools\\Lib\\ruby\\rubyprimtypes.swg,23,%ruby_aux_method@*/
 SWIGINTERN VALUE SWIG_AUX_NUM2ULONG(VALUE *args)
 {
   VALUE obj = args[0];
@@ -2072,7 +2072,7 @@ SWIG_From_unsigned_SS_int  (unsigned int value)
 }
 
 
-/*@SWIG:c:\\tools\\Lib\\ruby\\rubyprimtypes.swg,23,%ruby_aux_method@*/
+/*@SWIG:C:\\Tools\\Lib\\ruby\\rubyprimtypes.swg,23,%ruby_aux_method@*/
 SWIGINTERN VALUE SWIG_AUX_NUM2LONG(VALUE *args)
 {
   VALUE obj = args[0];
@@ -3079,26 +3079,26 @@ fail:
 
 
 /*
-  Document-method: Opal::OpalParamGeneral.m_natRouter
+  Document-method: Opal::OpalParamGeneral.m_natMethod
 
   call-seq:
-    m_natRouter -> char
+    m_natMethod -> char
 
 Get value of attribute.
 
 */
 
 /*
-  Document-method: Opal::OpalParamGeneral.m_natRouter=
+  Document-method: Opal::OpalParamGeneral.m_natMethod=
 
   call-seq:
-    m_natRouter=(x) -> char
+    m_natMethod=(x) -> char
 
 Set new value for attribute.
 
 */
 SWIGINTERN VALUE
-_wrap_OpalParamGeneral_m_natRouter_set(int argc, VALUE *argv, VALUE self) {
+_wrap_OpalParamGeneral_m_natMethod_set(int argc, VALUE *argv, VALUE self) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *arg2 = (char *) 0 ;
   void *argp1 = 0 ;
@@ -3112,19 +3112,19 @@ _wrap_OpalParamGeneral_m_natRouter_set(int argc, VALUE *argv, VALUE self) {
   }
   res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_OpalParamGeneral, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalParamGeneral *","m_natRouter", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalParamGeneral *","m_natMethod", 1, self )); 
   }
   arg1 = reinterpret_cast< OpalParamGeneral * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","m_natRouter", 2, argv[0] ));
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","m_natMethod", 2, argv[0] ));
   }
   arg2 = reinterpret_cast< char * >(buf2);
   if (arg2) {
     size_t size = strlen(reinterpret_cast< const char * >(reinterpret_cast< const char * >(arg2))) + 1;
-    arg1->m_natRouter = (char const *)reinterpret_cast< char* >(memcpy((new char[size]), arg2, sizeof(char)*(size)));
+    arg1->m_natMethod = (char const *)reinterpret_cast< char* >(memcpy((new char[size]), arg2, sizeof(char)*(size)));
   } else {
-    arg1->m_natRouter = 0;
+    arg1->m_natMethod = 0;
   }
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   return Qnil;
@@ -3135,7 +3135,7 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_OpalParamGeneral_m_natRouter_get(int argc, VALUE *argv, VALUE self) {
+_wrap_OpalParamGeneral_m_natMethod_get(int argc, VALUE *argv, VALUE self) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -3147,10 +3147,10 @@ _wrap_OpalParamGeneral_m_natRouter_get(int argc, VALUE *argv, VALUE self) {
   }
   res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_OpalParamGeneral, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalParamGeneral *","m_natRouter", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalParamGeneral *","m_natMethod", 1, self )); 
   }
   arg1 = reinterpret_cast< OpalParamGeneral * >(argp1);
-  result = (char *) ((arg1)->m_natRouter);
+  result = (char *) ((arg1)->m_natMethod);
   vresult = SWIG_FromCharPtr((const char *)result);
   return vresult;
 fail:
@@ -3160,26 +3160,26 @@ fail:
 
 
 /*
-  Document-method: Opal::OpalParamGeneral.m_stunServer
+  Document-method: Opal::OpalParamGeneral.m_natServer
 
   call-seq:
-    m_stunServer -> char
+    m_natServer -> char
 
 Get value of attribute.
 
 */
 
 /*
-  Document-method: Opal::OpalParamGeneral.m_stunServer=
+  Document-method: Opal::OpalParamGeneral.m_natServer=
 
   call-seq:
-    m_stunServer=(x) -> char
+    m_natServer=(x) -> char
 
 Set new value for attribute.
 
 */
 SWIGINTERN VALUE
-_wrap_OpalParamGeneral_m_stunServer_set(int argc, VALUE *argv, VALUE self) {
+_wrap_OpalParamGeneral_m_natServer_set(int argc, VALUE *argv, VALUE self) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   char *arg2 = (char *) 0 ;
   void *argp1 = 0 ;
@@ -3193,19 +3193,19 @@ _wrap_OpalParamGeneral_m_stunServer_set(int argc, VALUE *argv, VALUE self) {
   }
   res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_OpalParamGeneral, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalParamGeneral *","m_stunServer", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalParamGeneral *","m_natServer", 1, self )); 
   }
   arg1 = reinterpret_cast< OpalParamGeneral * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","m_stunServer", 2, argv[0] ));
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","m_natServer", 2, argv[0] ));
   }
   arg2 = reinterpret_cast< char * >(buf2);
   if (arg2) {
     size_t size = strlen(reinterpret_cast< const char * >(reinterpret_cast< const char * >(arg2))) + 1;
-    arg1->m_stunServer = (char const *)reinterpret_cast< char* >(memcpy((new char[size]), arg2, sizeof(char)*(size)));
+    arg1->m_natServer = (char const *)reinterpret_cast< char* >(memcpy((new char[size]), arg2, sizeof(char)*(size)));
   } else {
-    arg1->m_stunServer = 0;
+    arg1->m_natServer = 0;
   }
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   return Qnil;
@@ -3216,7 +3216,7 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_OpalParamGeneral_m_stunServer_get(int argc, VALUE *argv, VALUE self) {
+_wrap_OpalParamGeneral_m_natServer_get(int argc, VALUE *argv, VALUE self) {
   OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -3228,10 +3228,10 @@ _wrap_OpalParamGeneral_m_stunServer_get(int argc, VALUE *argv, VALUE self) {
   }
   res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_OpalParamGeneral, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalParamGeneral *","m_stunServer", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "OpalParamGeneral *","m_natServer", 1, self )); 
   }
   arg1 = reinterpret_cast< OpalParamGeneral * >(argp1);
-  result = (char *) ((arg1)->m_stunServer);
+  result = (char *) ((arg1)->m_natServer);
   vresult = SWIG_FromCharPtr((const char *)result);
   return vresult;
 fail:
@@ -17003,10 +17003,10 @@ SWIGEXPORT void Init_opal(void) {
   rb_define_method(SwigClassOpalParamGeneral.klass, "m_autoRxMedia", VALUEFUNC(_wrap_OpalParamGeneral_m_autoRxMedia_get), -1);
   rb_define_method(SwigClassOpalParamGeneral.klass, "m_autoTxMedia=", VALUEFUNC(_wrap_OpalParamGeneral_m_autoTxMedia_set), -1);
   rb_define_method(SwigClassOpalParamGeneral.klass, "m_autoTxMedia", VALUEFUNC(_wrap_OpalParamGeneral_m_autoTxMedia_get), -1);
-  rb_define_method(SwigClassOpalParamGeneral.klass, "m_natRouter=", VALUEFUNC(_wrap_OpalParamGeneral_m_natRouter_set), -1);
-  rb_define_method(SwigClassOpalParamGeneral.klass, "m_natRouter", VALUEFUNC(_wrap_OpalParamGeneral_m_natRouter_get), -1);
-  rb_define_method(SwigClassOpalParamGeneral.klass, "m_stunServer=", VALUEFUNC(_wrap_OpalParamGeneral_m_stunServer_set), -1);
-  rb_define_method(SwigClassOpalParamGeneral.klass, "m_stunServer", VALUEFUNC(_wrap_OpalParamGeneral_m_stunServer_get), -1);
+  rb_define_method(SwigClassOpalParamGeneral.klass, "m_natMethod=", VALUEFUNC(_wrap_OpalParamGeneral_m_natMethod_set), -1);
+  rb_define_method(SwigClassOpalParamGeneral.klass, "m_natMethod", VALUEFUNC(_wrap_OpalParamGeneral_m_natMethod_get), -1);
+  rb_define_method(SwigClassOpalParamGeneral.klass, "m_natServer=", VALUEFUNC(_wrap_OpalParamGeneral_m_natServer_set), -1);
+  rb_define_method(SwigClassOpalParamGeneral.klass, "m_natServer", VALUEFUNC(_wrap_OpalParamGeneral_m_natServer_get), -1);
   rb_define_method(SwigClassOpalParamGeneral.klass, "m_tcpPortBase=", VALUEFUNC(_wrap_OpalParamGeneral_m_tcpPortBase_set), -1);
   rb_define_method(SwigClassOpalParamGeneral.klass, "m_tcpPortBase", VALUEFUNC(_wrap_OpalParamGeneral_m_tcpPortBase_get), -1);
   rb_define_method(SwigClassOpalParamGeneral.klass, "m_tcpPortMax=", VALUEFUNC(_wrap_OpalParamGeneral_m_tcpPortMax_set), -1);
