@@ -200,7 +200,6 @@ Global
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.No Trace|Win32.ActiveCfg = No Trace|Win32
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.No Trace|Win32.Build.0 = No Trace|Win32
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.No Trace|x64.ActiveCfg = No Trace|x64
-		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.No Trace|x64.Build.0 = No Trace|x64
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.Release|Android.ActiveCfg = Release|x64
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.Release|Win32.ActiveCfg = Release|Win32
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.Release|Win32.Build.0 = Release|Win32
@@ -347,11 +346,12 @@ Global
 		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.No Trace|Android.ActiveCfg = Release|Win32
 		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.No Trace|Win32.ActiveCfg = Release|Win32
 		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.No Trace|Win32.Build.0 = Release|Win32
-		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.No Trace|x64.ActiveCfg = Release|Win32
+		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.No Trace|x64.ActiveCfg = Release|x64
 		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.Release|Android.ActiveCfg = Release|Win32
 		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.Release|Win32.ActiveCfg = Release|Win32
 		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.Release|Win32.Build.0 = Release|Win32
-		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.Release|x64.ActiveCfg = Release|Win32
+		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.Release|x64.ActiveCfg = Release|x64
+		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -196,7 +196,7 @@ class MyManager : public OpalManager
     OpalCapiEndPoint * m_capiEP;
     bool               m_enableCAPI;
 #endif
-#if OPAL_PTLIB_EXPAT
+#if OPAL_IVR
     OpalIVREndPoint * m_ivrEP;
 #endif
 #if OPAL_SCRIPT

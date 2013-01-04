@@ -1325,16 +1325,8 @@ void MyManager::TransferCall(const PString & dest)
     return;
   }
 
-  for (PSafePtr<OpalConnection> connection = call->GetConnection(0); connection != NULL; ++connection) {
-    if (PIsDescendant(&(*connection), OpalPCSSConnection))
-      break;
-#if OPAL_LID
-    if (PIsDescendant(&(*connection), OpalLineConnection))
-      break;
-#endif
-    connection->TransferConnection(dest.IsEmpty() ? heldCallToken : dest);
-    break;
-  }
+  if (!call->Transfer(dest))
+    cout << "Call transfer failed!\n";
 }
 
 

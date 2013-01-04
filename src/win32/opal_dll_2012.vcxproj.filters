@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="dllmain.cxx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="libver.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Private.def" />
+    <None Include="..\..\lib\Win32\Release\opal.def">
+      <Filter>Win32</Filter>
+    </None>
+    <None Include="..\..\lib\Win32\Debug\opald.def">
+      <Filter>Win32</Filter>
+    </None>
+    <None Include="..\..\lib\Win32\No Trace\opaln.def">
+      <Filter>Win32</Filter>
+    </None>
+    <None Include="..\..\lib\x64\Debug\opal64d.def">
+      <Filter>Win64</Filter>
+    </None>
+    <None Include="..\..\lib\x64\No Trace\opal64n.def">
+      <Filter>Win64</Filter>
+    </None>
+    <None Include="..\..\lib\x64\Release\opal64.def">
+      <Filter>Win64</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="opal_2010_x64.dtf">
+      <Filter>Win64</Filter>
+    </CustomBuild>
+    <CustomBuild Include="opaln_2010_x64.dtf">
+      <Filter>Win64</Filter>
+    </CustomBuild>
+    <CustomBuild Include="opald_2010_x64.dtf">
+      <Filter>Win64</Filter>
+    </CustomBuild>
+    <CustomBuild Include="opal_2010.dtf">
+      <Filter>Win32</Filter>
+    </CustomBuild>
+    <CustomBuild Include="opaln_2010.dtf">
+      <Filter>Win32</Filter>
+    </CustomBuild>
+    <CustomBuild Include="opald_2010.dtf">
+      <Filter>Win32</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Win32">
+      <UniqueIdentifier>{1ea6eb41-2c82-4209-b67f-41f1502b5639}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Win64">
+      <UniqueIdentifier>{de9060ab-dba1-48d8-85e9-5f6f39b8894d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
