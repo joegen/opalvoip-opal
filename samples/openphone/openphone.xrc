@@ -4,7 +4,7 @@
 <resource version="2.3.0.1">
     <object class="wxDialog" name="RegistrationDialog">
         <style>wxDEFAULT_DIALOG_STYLE</style>
-        <title>Registration/Subscribtions Configuration</title>
+        <title>Registration/Subscriptions Configuration</title>
         <object class="wxBoxSizer">
             <orient>wxVERTICAL</orient>
             <object class="sizeritem">
@@ -406,7 +406,7 @@
         </object>
     </object>
     <object class="wxDialog" name="IMDialog" subclass="IMDialog">
-        <style>wxDEFAULT_DIALOG_STYLE</style>
+        <style>wxCAPTION|wxCLOSE_BOX|wxRESIZE_BORDER|wxMAXIMIZE_BOX|wxMINIMIZE_BOX</style>
         <size>350, 200d</size>
         <title>IMDialog</title>
         <object class="wxBoxSizer">
