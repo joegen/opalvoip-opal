@@ -106,16 +106,23 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
     return false;
   }
 
+  MyFaxEndPoint * faxEP  = new MyFaxEndPoint(*this);
+  if (!faxEP->IsAvailable()) {
+    cerr << "No fax codecs, SpanDSP plug-in probably not installed." << endl;
+    return false;
+  }
+
+  static char const * FormatMask[] = { "!G.711*", "!@fax", "!@userinput" };
+  SetMediaFormatMask(PStringArray(PARRAYSIZE(FormatMask), FormatMask));
+
   PString prefix = args.HasOption('a') && !args.HasOption('A') ?  "fax" : "t38";
 
-  if (args.HasOption('q'))
+  bool quiet = args.HasOption('q');
+  if (quiet)
     cout.rdbuf(NULL);
 
-  if (!OpalManagerConsole::Initialise(args, !args.HasOption('q'), prefix + ":" + args[0] + ";receive"))
+  if (!OpalManagerConsole::Initialise(args, !quiet, prefix + ":" + args[0] + ";receive"))
     return false;
-
-  static char const * FormatMask[] = { "!G.711*", "!@fax" };
-  SetMediaFormatMask(PStringArray(PARRAYSIZE(FormatMask), FormatMask));
 
   cout << "Fax Mode: ";
   if (args.HasOption('A')) {
@@ -129,15 +136,8 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
     cout << "Switch to T.38";
   cout << '\n';
 
-  // Create audio or T.38 fax endpoint.
-  MyFaxEndPoint * fax  = new MyFaxEndPoint(*this);
   if (args.HasOption('d'))
-    fax->SetDefaultDirectory(args.GetOptionString('d'));
-
-  if (!fax->IsAvailable()) {
-    cerr << "No fax codecs, SpanDSP plug-in probably not installed." << endl;
-    return false;
-  }
+    faxEP->SetDefaultDirectory(args.GetOptionString('d'));
 
   OpalConnection::StringOptions stringOptions;
 
@@ -180,7 +180,7 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
   cout << "Completion timeout is " << m_competionTimeout.AsString(0, PTimeInterval::IncludeDays) << '\n';
 
   if (args.GetCount() == 1)
-    cout << "Receive directory: " << fax->GetDefaultDirectory() << "\n"
+    cout << "Receive directory: " << faxEP->GetDefaultDirectory() << "\n"
             "\n"
             "Awaiting incoming fax, saving as " << args[0];
   else {
