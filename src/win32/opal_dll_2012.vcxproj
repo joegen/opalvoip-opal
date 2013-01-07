@@ -322,10 +322,10 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\ptlib\src\ptlib\msos\PTLib_2010.vcxproj">
+    <ProjectReference Include="..\..\..\ptlib\src\ptlib\msos\PTLib_2012.vcxproj">
       <Project>{85f4f26a-1a5d-4685-a48a-448102c5c5bc}</Project>
     </ProjectReference>
-    <ProjectReference Include="opal_lib_2010.vcxproj">
+    <ProjectReference Include="opal_lib_2012.vcxproj">
       <Project>{11fb12b5-b5eb-4dff-bd6f-2a0bdf187c22}</Project>
       <Private>true</Private>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
