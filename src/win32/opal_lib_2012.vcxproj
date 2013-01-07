@@ -1331,7 +1331,7 @@ if errorlevel 1 $(ProjectDir)..\..\svn_getrev %(FullPath) %(RootDir)%(Directory)
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\ptlib\src\ptlib\msos\Console_2010.vcxproj">
+    <ProjectReference Include="..\..\..\ptlib\src\ptlib\msos\Console_2012.vcxproj">
       <Project>{d11e1c9d-406c-4d7c-8f37-913c0bfd9e0d}</Project>
       <Private>false</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
