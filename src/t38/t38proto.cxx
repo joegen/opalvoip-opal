@@ -81,6 +81,9 @@ PBoolean OpalFaxMediaStream::Open()
 
 bool OpalFaxMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 {
+  if (!IsOpen())
+    return false;
+
   m_session.ApplyMediaOptions(mediaFormat);
   return OpalMediaStream::InternalUpdateMediaFormat(mediaFormat);
 }
@@ -88,6 +91,9 @@ bool OpalFaxMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & media
 
 PBoolean OpalFaxMediaStream::ReadPacket(RTP_DataFrame & packet)
 {
+  if (!IsOpen())
+    return false;
+
   if (!m_session.ReadData(packet))
     return false;
 
@@ -98,6 +104,9 @@ PBoolean OpalFaxMediaStream::ReadPacket(RTP_DataFrame & packet)
 
 PBoolean OpalFaxMediaStream::WritePacket(RTP_DataFrame & packet)
 {
+  if (!IsOpen())
+    return false;
+
   timestamp = packet.GetTimestamp();
   return m_session.WriteData(packet);
 }
@@ -124,7 +133,7 @@ OpalFaxSession::OpalFaxSession(const Init & init)
   , m_rawUDPTL(false)
   , m_datagramSize(528)
   , m_consecutiveBadPackets(0)
-  , m_awaitingGoodPacket(false)
+  , m_awaitingGoodPacket(true)
   , m_receivedPacket(new T38_UDPTLPacket)
   , m_expectedSequenceNumber(0)
   , m_secondaryPacket(-1)
@@ -553,8 +562,6 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
 
   PINDEX pduSize = m_dataSocket->GetLastReadCount();
       
-  PTRACE(4, "UDPTL\tRead UDPTL of size " << pduSize);
-
   PPER_Stream rawData(thisUDPTL);
 
   // Decode the PDU, but not if still receiving RTP
@@ -564,7 +571,6 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
       PTRACE(1, "T38_UDPTL\tRaw data decode failed 1000 times, remote probably not switched from audio, aborting!");
       return false;
     }
-
 
 #if PTRACING
     static const unsigned Level = 2;
@@ -802,21 +808,26 @@ void OpalFaxConnection::OnApplyStringOptions()
 
 void OpalFaxConnection::SetFaxMediaFormatOptions(OpalMediaFormat & mediaFormat) const
 {
-  PTRACE(4, "FAX\tSetting fax media format options from string options " << m_stringOptions);
-
+  PTRACE_IF(3, mediaFormat.GetOptionString("TIFF-File-Name") != m_filename,
+            "FAX\tSet file name to \"" << m_filename << '"');
   mediaFormat.SetOptionString("TIFF-File-Name", m_filename);
+
+  PTRACE_IF(3, mediaFormat.GetOptionBoolean("Receiving") != m_receiving,
+            "FAX\tSet to " << (m_receiving ? "receive" : "originate") << " mode");
   mediaFormat.SetOptionBoolean("Receiving", m_receiving);
 
   PString str = m_stringOptions(OPAL_OPT_STATION_ID);
   if (!str.IsEmpty()) {
+    PTRACE_IF(3, mediaFormat.GetOptionString("Station-Identifier") != str,
+              "FAX\tSet Station-Identifier to \"" << str << '"');
     mediaFormat.SetOptionString("Station-Identifier", str);
-    PTRACE(4, "FAX\tSet Station-Identifier: \"" << str << '"');
   }
 
   str = m_stringOptions(OPAL_OPT_HEADER_INFO);
   if (!str.IsEmpty()) {
+    PTRACE_IF(3, mediaFormat.GetOptionString("Header-Info") != str,
+              "FAX\tSet Header-Info to \"" << str << '"');
     mediaFormat.SetOptionString("Header-Info", str);
-    PTRACE(4, "FAX\tSet Header-Info: \"" << str << '"');
   }
 }
 
