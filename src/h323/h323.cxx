@@ -4772,6 +4772,11 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
   if (PAssertNULL(session) == NULL)
     return NULL;
 
+  if (session->GetMediaType() != mediaType) {
+    PTRACE(1, "H323\tExisting " << session->GetMediaType() << " session " << sessionID << " does not match " << mediaType);
+    return NULL;
+  }
+
   if (ownerCall.IsSwitchingT38()) {
     OpalMediaSession * otherSession = GetMediaSession(sessionID == H323Capability::DefaultAudioSessionID
                           ? H323Capability::DefaultDataSessionID : H323Capability::DefaultAudioSessionID);
