@@ -5775,7 +5775,7 @@
     </object>
     <object class="wxDialog" name="RegistrationDialog" base="EditDialog">
         <style>wxDEFAULT_DIALOG_STYLE</style>
-        <title>Registration/Subscribtions Configuration</title>
+        <title>Registration/Subscriptions Configuration</title>
         <object class="wxBoxSizer" name="sizer_48" base="EditBoxSizer">
             <orient>wxVERTICAL</orient>
             <object class="sizeritem">
@@ -6283,7 +6283,7 @@
         </object>
     </object>
     <object class="IMDialog" name="IMDialog" base="EditDialog">
-        <style>wxDEFAULT_DIALOG_STYLE</style>
+        <style>wxCAPTION|wxCLOSE_BOX|wxRESIZE_BORDER|wxMAXIMIZE_BOX|wxMINIMIZE_BOX</style>
         <title>IMDialog</title>
         <size>350, 200d</size>
         <object class="wxBoxSizer" name="sizer_90" base="EditBoxSizer">

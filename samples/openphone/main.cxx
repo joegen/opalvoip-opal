@@ -1351,7 +1351,7 @@ bool MyManager::Initialise()
   int count = m_speedDials->GetItemCount();
   for (int i = 0; i < count; i++) {
     SpeedDialInfo * info = (SpeedDialInfo *)m_speedDials->GetItemData(i);
-    if (info != NULL && MonitorPresence(info->m_Presentity, info->m_Address, true))
+    if (info != NULL && MonitorPresence(info->m_Presentity, info->m_Address, true) && m_speedDialDetail)
       m_speedDials->SetItem(i, e_StatusColumn, IconStatusNames[Icon_Unknown]);
   }
 #endif // OPAL_SIP
