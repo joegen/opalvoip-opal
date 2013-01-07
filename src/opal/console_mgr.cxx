@@ -201,45 +201,13 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
 
   PTRACE_INITIALISE(args);
 
-  if (args.HasOption("option")) {
-    PStringArray options = args.GetOptionString("option").Lines();
-    for (PINDEX i = 0; i < options.GetSize(); ++i) {
-      PRegularExpression parse("\\([A-Za-z].*\\):\\([A-Za-z].*\\)=\\(.*\\)");
-      PStringArray subexpressions(4);
-      if (!parse.Execute(options[i], subexpressions)) {
-        cerr << "Invalid media format option \"" << options[i] << '"' << endl;
-        return false;
-      }
-
-      OpalMediaFormat format(subexpressions[1]);
-      if (!format.IsValid()) {
-        cerr << "Unknown media format \"" << subexpressions[1] << '"' << endl;
-        return false;
-      }
-      if (!format.HasOption(subexpressions[2])) {
-        cerr << "Unknown option name \"" << subexpressions[2] << "\""
-                " in media format \"" << subexpressions[1] << '"' << endl;
-        return false;
-      }
-      if (!format.SetOptionValue(subexpressions[2], subexpressions[3])) {
-        cerr << "Ilegal value \"" << subexpressions[3] << "\""
-                " for option name \"" << subexpressions[2] << "\""
-                " in media format \"" << subexpressions[1] << '"' << endl;
-        return false;
-      }
-      OpalMediaFormat::SetRegisteredMediaFormat(format);
-    }
-  }
-
-  if (args.HasOption("disable"))
-    SetMediaFormatMask(args.GetOptionString("disable").Lines());
-  if (args.HasOption("prefer"))
-    SetMediaFormatOrder(args.GetOptionString("prefer").Lines());
+  if (args.HasOption("user"))
+    SetDefaultUserName(args.GetOptionString("user"));
   if (verbose) {
-    OpalMediaFormatList formats = OpalMediaFormat::GetAllRegisteredMediaFormats();
-    formats.Remove(GetMediaFormatMask());
-    formats.Reorder(GetMediaFormatOrder());
-    cout << "Media Formats: " << setfill(',') << formats << setfill(' ') << endl;
+    cout << "Default user name: " << GetDefaultUserName();
+    if (args.HasOption("password"))
+      cout << " (with password)";
+    cout << '\n';
   }
 
   if (args.HasOption("portbase")) {
@@ -332,9 +300,6 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
     }
   }
 #endif // P_NAT
-
-  if (args.HasOption("user"))
-    SetDefaultUserName(args.GetOptionString("user"));
 
   if (verbose) {
     PIPSocket::InterfaceTable interfaceTable;
@@ -527,6 +492,47 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
     AttachEndPoint(ep, "tel");
     if (verbose)
       cout << "tel URI mapped to: " << ep->GetPrefixName() << '\n';
+  }
+
+  if (args.HasOption("option")) {
+    PStringArray options = args.GetOptionString("option").Lines();
+    for (PINDEX i = 0; i < options.GetSize(); ++i) {
+      PRegularExpression parse("\\([A-Za-z].*\\):\\([A-Za-z].*\\)=\\(.*\\)");
+      PStringArray subexpressions(4);
+      if (!parse.Execute(options[i], subexpressions)) {
+        cerr << "Invalid media format option \"" << options[i] << '"' << endl;
+        return false;
+      }
+
+      OpalMediaFormat format(subexpressions[1]);
+      if (!format.IsValid()) {
+        cerr << "Unknown media format \"" << subexpressions[1] << '"' << endl;
+        return false;
+      }
+      if (!format.HasOption(subexpressions[2])) {
+        cerr << "Unknown option name \"" << subexpressions[2] << "\""
+                " in media format \"" << subexpressions[1] << '"' << endl;
+        return false;
+      }
+      if (!format.SetOptionValue(subexpressions[2], subexpressions[3])) {
+        cerr << "Ilegal value \"" << subexpressions[3] << "\""
+                " for option name \"" << subexpressions[2] << "\""
+                " in media format \"" << subexpressions[1] << '"' << endl;
+        return false;
+      }
+      OpalMediaFormat::SetRegisteredMediaFormat(format);
+    }
+  }
+
+  if (args.HasOption("disable"))
+    SetMediaFormatMask(args.GetOptionString("disable").Lines());
+  if (args.HasOption("prefer"))
+    SetMediaFormatOrder(args.GetOptionString("prefer").Lines());
+  if (verbose) {
+    OpalMediaFormatList formats = OpalMediaFormat::GetAllRegisteredMediaFormats();
+    formats.Remove(GetMediaFormatMask());
+    formats.Reorder(GetMediaFormatOrder());
+    cout << "Media Formats: " << setfill(',') << formats << setfill(' ') << endl;
   }
 
   return true;
