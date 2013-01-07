@@ -223,9 +223,17 @@ void MyManager::Run()
               OpalMediaStatistics statistics;
               stream->GetStatistics(statistics);
 
+              bool printTime = true;
+
 #define SHOW_STAT(message, member) \
-              if (lastStatistics.m_fax.member != statistics.m_fax.member) \
-                cout << message << ": " << statistics.m_fax.member << endl;
+              if (lastStatistics.m_fax.member != statistics.m_fax.member) { \
+                if (printTime) { \
+                  cout << PTime().AsString("yyyy-MM-dd hh:mm:ss.uuu\n"); \
+                  printTime = false; \
+                } \
+                cout << "  " << message << ": " << statistics.m_fax.member << endl; \
+              }
+
               SHOW_STAT("Phase", m_phase);
               SHOW_STAT("Station identifier", m_stationId);
               SHOW_STAT("Tx pages", m_txPages);
