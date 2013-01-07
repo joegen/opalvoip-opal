@@ -246,10 +246,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\ptlib\src\ptlib\msos\PTLib_2010.vcxproj">
+    <ProjectReference Include="..\..\..\ptlib\src\ptlib\msos\PTLib_2012.vcxproj">
       <Project>{85f4f26a-1a5d-4685-a48a-448102c5c5bc}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\win32\opal_dll_2010.vcxproj">
+    <ProjectReference Include="..\..\src\win32\opal_dll_2012.vcxproj">
       <Project>{b2830e08-b1f1-492f-8849-f3d8461e450f}</Project>
     </ProjectReference>
   </ItemGroup>
