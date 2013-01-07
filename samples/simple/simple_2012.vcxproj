@@ -259,10 +259,10 @@
     <ClInclude Include="main.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\ptlib\src\ptlib\msos\Console_2010.vcxproj">
+    <ProjectReference Include="..\..\..\ptlib\src\ptlib\msos\Console_2012.vcxproj">
       <Project>{d11e1c9d-406c-4d7c-8f37-913c0bfd9e0d}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\win32\opal_lib_2010.vcxproj">
+    <ProjectReference Include="..\..\src\win32\opal_lib_2012.vcxproj">
       <Project>{11fb12b5-b5eb-4dff-bd6f-2a0bdf187c22}</Project>
     </ProjectReference>
   </ItemGroup>
