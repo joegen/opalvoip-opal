@@ -1343,7 +1343,6 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
       return false;
     }
 
-#if OPAL_STATISTICS
     void GetStatistics(OpalMediaStatistics & statistics) const
     {
       statistics.m_fax.m_result = -2;
@@ -1383,7 +1382,6 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
         }
       }
     }
-#endif // OPAL_STATISTICS
 };
 
 #endif // OPAL_FAX

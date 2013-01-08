@@ -49,7 +49,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories=".\spandsp-0.0.6\src;.\tiff-3.8.2\libtiff"
+				AdditionalIncludeDirectories="..\..\..\include;.\spandsp-0.0.6\src;.\tiff-3.8.2\libtiff"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_MATH_H;HAVE_TGMATH_H"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -139,7 +139,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".\spandsp-0.0.6\src;.\tiff-3.8.2\libtiff"
+				AdditionalIncludeDirectories="..\..\..\include;.\spandsp-0.0.6\src;.\tiff-3.8.2\libtiff"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_CONFIG_H"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"

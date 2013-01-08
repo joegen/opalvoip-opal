@@ -652,8 +652,8 @@ bool OpalSRTPSession::Close()
 
 OpalMediaCryptoKeyList & OpalSRTPSession::GetOfferedCryptoKeys()
 {
-  if (m_offeredCryptokeys.IsEmpty() && m_rx->m_keyInfo != NULL)
-    m_offeredCryptokeys.Append(new OpalSRTPKeyInfo(*m_rx->m_keyInfo));
+  if (m_offeredCryptokeys.IsEmpty() && m_tx->m_keyInfo != NULL)
+    m_offeredCryptokeys.Append(new OpalSRTPKeyInfo(*m_tx->m_keyInfo));
 
   return OpalRTPSession::GetOfferedCryptoKeys();
 }
