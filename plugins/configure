@@ -802,7 +802,9 @@ X264_LIBS
 VP8_CFLAGS
 VP8_LIBS
 THEORA_CFLAGS
-THEORA_LIBS'
+THEORA_LIBS
+SPANDSP_CFLAGS
+SPANDSP_LIBS'
 
 
 # Initialize some variables set by options.
@@ -1450,7 +1452,7 @@ Optional Features:
   --disable-theora        disable Theora support
   --enable-ixj            enable xJack cards
   --enable-vpb            enable voicetronix vpb
-  --enable-spandsp        enable spanDSP-based fax support
+  --disable-spandsp       disable spanDSP-based fax support
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1498,6 +1500,10 @@ Some influential environment variables:
   THEORA_CFLAGS
               C compiler flags for THEORA, overriding pkg-config
   THEORA_LIBS linker flags for THEORA, overriding pkg-config
+  SPANDSP_CFLAGS
+              C compiler flags for SPANDSP, overriding pkg-config
+  SPANDSP_LIBS
+              linker flags for SPANDSP, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -2714,10 +2720,6 @@ $as_echo "no" >&6; }
 		PKG_CONFIG=""
 	fi
 fi
-
-
-
-
 
 
 
@@ -9836,7 +9838,6 @@ fi
 
 
 
-
 if test -d fax/fax_spandsp ; then
   # Check whether --enable-spandsp was given.
 if test "${enable_spandsp+set}" = set; then :
@@ -9845,173 +9846,86 @@ fi
 
   if test "x${HAVE_SPANDSP}" = "xyes" ; then
 
-          saved_LIBS="$LIBS"
-          LIBS="$LIBS -lspandsp"
-          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for fax_free in -lspandsp" >&5
-$as_echo_n "checking for fax_free in -lspandsp... " >&6; }
-if ${ac_cv_lib_spandsp_fax_free+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lspandsp  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SPANDSP" >&5
+$as_echo_n "checking for SPANDSP... " >&6; }
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char fax_free ();
-int
-main ()
-{
-return fax_free ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_spandsp_fax_free=yes
+if test -n "$SPANDSP_CFLAGS"; then
+    pkg_cv_SPANDSP_CFLAGS="$SPANDSP_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"spandsp\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "spandsp") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_SPANDSP_CFLAGS=`$PKG_CONFIG --cflags "spandsp" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
-  ac_cv_lib_spandsp_fax_free=no
+  pkg_failed=yes
 fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
+ else
+    pkg_failed=untried
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_spandsp_fax_free" >&5
-$as_echo "$ac_cv_lib_spandsp_fax_free" >&6; }
-if test "x$ac_cv_lib_spandsp_fax_free" = xyes; then :
-
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for t38_core_get_logging_state in -lspandsp" >&5
-$as_echo_n "checking for t38_core_get_logging_state in -lspandsp... " >&6; }
-if ${ac_cv_lib_spandsp_t38_core_get_logging_state+:} false; then :
-  $as_echo_n "(cached) " >&6
+if test -n "$SPANDSP_LIBS"; then
+    pkg_cv_SPANDSP_LIBS="$SPANDSP_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"spandsp\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "spandsp") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_SPANDSP_LIBS=`$PKG_CONFIG --libs "spandsp" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lspandsp  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char t38_core_get_logging_state ();
-int
-main ()
-{
-return t38_core_get_logging_state ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_spandsp_t38_core_get_logging_state=yes
-else
-  ac_cv_lib_spandsp_t38_core_get_logging_state=no
+  pkg_failed=yes
 fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_spandsp_t38_core_get_logging_state" >&5
-$as_echo "$ac_cv_lib_spandsp_t38_core_get_logging_state" >&6; }
-if test "x$ac_cv_lib_spandsp_t38_core_get_logging_state" = xyes; then :
-  opal_spandsp=yes
-else
-  opal_spandsp=no
+ else
+    pkg_failed=untried
 fi
 
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        SPANDSP_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "spandsp" 2>&1`
+        else
+	        SPANDSP_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "spandsp" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$SPANDSP_PKG_ERRORS" >&5
+
+	HAVE_SPANDSP=no
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	HAVE_SPANDSP=no
 
 else
-  opal_spandsp=no
+	SPANDSP_CFLAGS=$pkg_cv_SPANDSP_CFLAGS
+	SPANDSP_LIBS=$pkg_cv_SPANDSP_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	HAVE_SPANDSP=yes
 fi
-
-          LIBS=$saved_LIBS
-          saved_CXXFLAGS=$CXXFLAGS
-          CXXFLAGS="$CXXFLAGS -D__STDC_LIMIT_MACROS"
-          if test "x${opal_spandsp}" = "xyes"; then
-              for ac_header in spandsp.h
-do :
-  ac_fn_c_check_header_compile "$LINENO" "spandsp.h" "ac_cv_header_spandsp_h" "#include <stdint.h>
-"
-if test "x$ac_cv_header_spandsp_h" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_SPANDSP_H 1
-_ACEOF
- opal_spandsp=yes
-else
-  opal_spandsp=no
-fi
-
-done
-
-          fi
-          if test $opal_spandsp = yes; then :
-  HAVE_SPANDSP=yes
-else
-  HAVE_SPANDSP=no
-fi
-
-	  if test "x$opal_spandsp" = "xyes" ; then
-            SPANDSP_LIBS="-lspandsp"
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for t38_set_fastest_image_data_rate in -lspandsp" >&5
-$as_echo_n "checking for t38_set_fastest_image_data_rate in -lspandsp... " >&6; }
-if ${ac_cv_lib_spandsp_t38_set_fastest_image_data_rate+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lspandsp  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char t38_set_fastest_image_data_rate ();
-int
-main ()
-{
-return t38_set_fastest_image_data_rate ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_spandsp_t38_set_fastest_image_data_rate=yes
-else
-  ac_cv_lib_spandsp_t38_set_fastest_image_data_rate=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_spandsp_t38_set_fastest_image_data_rate" >&5
-$as_echo "$ac_cv_lib_spandsp_t38_set_fastest_image_data_rate" >&6; }
-if test "x$ac_cv_lib_spandsp_t38_set_fastest_image_data_rate" = xyes; then :
-  SPANDSP_CFLAGS=-DHAS_T38_SET_FASTEST_IMAGE_DATA_RATE
-fi
-
-
-
-          fi
-
-          CXXFLAGS=$saved_CXXFLAGS
-
   fi
 else
   HAVE_SPANDSP=no
 fi
 
 if test "x$HAVE_SPANDSP" = "xyes" ; then
+
+
   ac_config_files="$ac_config_files fax/fax_spandsp/Makefile"
 
   SUBDIRS+=" fax/fax_spandsp"

@@ -30,7 +30,7 @@ SRCDIR	:= .
 SRCS	:= spandsp_fax.cpp
 
 CFLAGS += -D__STDC_LIMIT_MACROS @SPANDSP_CFLAGS@
-LIBS   += -lspandsp -ltiff
+LIBS   += @SPANDSP_LIBS@
 
 INSTALL_DIR := @FAX_PLUGIN_DIR@
 PLUGINDIR   := @PLUGINDIR@
