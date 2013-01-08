@@ -6,7 +6,7 @@ This plugin requires an external source code project, SpanDSP.
 Spandsp is a LGPL library and suite of programs that implement a faxmodem. A
 known version, compatible with OPAL, is available from the following URL:
 
-    http://www.soft-switch.org/downloads/spandsp/spandsp-0.0.6pre18.tgz
+    http://www.soft-switch.org/downloads/spandsp/spandsp-0.0.6pre21.tgz
 
 
 
@@ -36,6 +36,13 @@ variable. It should work in the same directory as your application as well.
 Additional note: If you get errors building libtiff, you may need to edit
 tiff-3.8.2\libtiff\tiffconf.h and comment out the entries for JPEG_SUPPORT,
 LZW_SUPPORT, PIXARLOG_SUPPORT and ZIP_SUPPORT.
+
+Another note: if using Visual Studio 2010 or 2012, the spandsp_fax_2008.sln
+file will upgrade. Normally we would provide the later solution/project
+files, but in this case the spandsp tar ball only has 2008 versions, and
+they cannot be converted if already in a 2010/2012 solution. It is
+recommended that you rename spandsp_fax_2008.sln to spandsp_fax_2010.sln
+after conversion to avoid SVN always reporting a modified file.
 
 
 Building on Linux
