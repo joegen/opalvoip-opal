@@ -246,8 +246,10 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
   if (args.HasOption("aud-qos"))
     SetMediaQoS(OpalMediaType::Audio(), args.GetOptionString("aud-qos"));
 
+#if OPAL_VIDEO
   if (args.HasOption("vid-qos"))
     SetMediaQoS(OpalMediaType::Video(), args.GetOptionString("vid-qos"));
+#endif
 
   if (args.HasOption("rtp-size")) {
     unsigned size = args.GetOptionString("rtp-size").AsUnsigned();
@@ -263,7 +265,9 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
             "UDP ports: " << GetUDPPortBase() << '-' << GetUDPPortMax() << "\n"
             "RTP ports: " << GetRtpIpPortBase() << '-' << GetRtpIpPortMax() << "\n"
             "Audio QoS: " << GetMediaQoS(OpalMediaType::Audio()) << "\n"
+#if OPAL_VIDEO
             "Video QoS: " << GetMediaQoS(OpalMediaType::Video()) << "\n"
+#endif
             "RTP payload size: " << GetMaxRtpPayloadSize() << '\n';
 
 #if P_NAT
