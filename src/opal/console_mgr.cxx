@@ -75,6 +75,10 @@ static bool SetRegistrationParams(SIPRegister::Params & params,
       params.m_compatibility = SIPRegister::e_CannotRegisterMultipleContacts;
     else if (str == "public")
       params.m_compatibility = SIPRegister::e_CannotRegisterPrivateContacts;
+    else if (str == "ALG")
+      params.m_compatibility = SIPRegister::e_HasApplicationLayerGateway;
+    else if (str == "RFC5626")
+      params.m_compatibility = SIPRegister::e_RFC5626;
     else {
       error = "Unknown SIP registration mode " + str;
       return false;
@@ -120,7 +124,7 @@ PString OpalManagerConsole::GetArgumentSpec() const
          "-register-auth-id: SIP registration authorisation id, default is username.\n"
          "-register-proxy:   SIP registration proxy, default is none.\n"
          "-register-ttl:     SIP registration Time To Live, default 300 seconds.\n"
-         "-register-mode:    SIP registration mode (normal, single, public).\n"
+         "-register-mode:    SIP registration mode (normal, single, public, ALG, RFC5626).\n"
          "-proxy:            SIP outbound proxy.\n"
          "-sip-ui:           SIP User Indication mode (inband,rfc2833,info-tone,info-string)\n"
 #endif
