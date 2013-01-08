@@ -213,14 +213,6 @@ void CodecTest::Main()
       if (cmd == "q" || cmd == "x" || cmd == "quit" || cmd == "exit")
         break;
 
-      if (cmd.NumCompare("n") == EqualTo) {
-        int steps = cmd.Mid(1).AsUnsigned();
-        do {
-          test.m_video.m_frameWait.Signal();
-        } while (--steps > 0);
-        continue;
-      }
-
       if (cmd == "vfu") {
         if (test.m_video.m_encoder == NULL)
           cout << "\nNo video encoder running!" << endl;
@@ -257,6 +249,14 @@ void CodecTest::Main()
         else if (!test.m_video.m_display->SetFrameSizeConverter(width, height))
           cout << "Video display device could not be set to size " << width << 'x' << height << endl;
         test.m_video.m_resume.Signal();
+        continue;
+      }
+
+      if (cmd.NumCompare("n") == EqualTo) {
+        int steps = cmd.Mid(1).AsUnsigned();
+        do {
+          test.m_video.m_frameWait.Signal();
+        } while (--steps > 0);
         continue;
       }
 
