@@ -736,6 +736,7 @@ OpalFaxConnection::OpalFaxConnection(OpalCall        & call,
   , m_receiving(receiving)
   , m_disableT38(disableT38)
   , m_tiffFileFormat(TIFF_File_FormatName)
+  , m_completed(false)
 {
   SetFaxMediaFormatOptions(m_tiffFileFormat);
 
@@ -854,6 +855,7 @@ void OpalFaxConnection::OnReleased()
 {
   m_switchTimer.Stop(false);
   OpalLocalConnection::OnReleased();
+  InternalOnFaxCompleted();
 }
 
 
@@ -866,13 +868,6 @@ OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & m
 void OpalFaxConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 {
   OpalLocalConnection::OnClosedMediaStream(stream);
-
-  if (ownerCall.IsSwitchingT38()) {
-    PTRACE(4, "FAX\tIgnoring switching "
-           << (stream.IsSource() ? "source" : "sink")
-           << " media stream id=" << stream.GetID());
-    return;
-  }
 
   bool bothClosed = false;
   OpalMediaStreamPtr other;
@@ -889,21 +884,22 @@ void OpalFaxConnection::OnClosedMediaStream(const OpalMediaStream & stream)
     if (patch != NULL)
       patch->ExecuteCommand(OpalFaxTerminate(), false);
 
-#if OPAL_STATISTICS
     if (m_finalStatistics.m_fax.m_result < 0) {
       stream.GetStatistics(m_finalStatistics);
       PTRACE_IF(3, m_finalStatistics.m_fax.m_result >= 0,
                 "FAX\tGot final statistics: result=" << m_finalStatistics.m_fax.m_result);
     }
-#endif
   }
 
   if (bothClosed) {
-#if OPAL_STATISTICS
-    OnFaxCompleted(m_finalStatistics.m_fax.m_result != OpalMediaStatistics::FaxSuccessful);
-#else
-    OnFaxCompleted(false);
-#endif
+    if (m_finalStatistics.m_fax.m_result == 0 /* success!*/ || !ownerCall.IsSwitchingT38())
+      InternalOnFaxCompleted();
+    else {
+      PTRACE(4, "FAX\tIgnoring switching "
+              << (stream.IsSource() ? "source" : "sink")
+              << " media stream id=" << stream.GetID());
+      m_finalStatistics.m_fax.m_result = OpalMediaStatistics::FaxNotStarted;
+    }
   }
   else {
     PTRACE(4, "FAX\tClosing " << (other->IsSource() ? "source" : "sink") << " media stream id=" << stream.GetID());
@@ -943,8 +939,6 @@ void OpalFaxConnection::OnFaxCompleted(bool failed)
 }
 
 
-#if OPAL_STATISTICS
-
 void OpalFaxConnection::GetStatistics(OpalMediaStatistics & statistics) const
 {
   if (m_finalStatistics.m_fax.m_result >= 0) {
@@ -972,7 +966,6 @@ void OpalFaxConnection::GetStatistics(OpalMediaStatistics & statistics) const
   stream->GetStatistics(statistics);
 }
 
-#endif
 
 void OpalFaxConnection::OnSwitchTimeout(PTimer &, INT)
 {
@@ -987,6 +980,7 @@ void OpalFaxConnection::OnSwitchTimeout(PTimer &, INT)
 
 bool OpalFaxConnection::SwitchFaxMediaStreams(bool enable)
 {
+  m_completed = false;
   PSafePtr<OpalConnection> other = GetOtherPartyConnection();
   return other != NULL && other->SwitchFaxMediaStreams(enable);
 }
@@ -996,14 +990,12 @@ void OpalFaxConnection::OnSwitchedFaxMediaStreams(bool toT38, bool success)
 {
   if (success) {
     m_switchTimer.Stop(false);
-#if OPAL_STATISTICS
     m_finalStatistics.m_fax.m_result = OpalMediaStatistics::FaxNotStarted;
-#endif
   }
   else {
     if (toT38 && m_stringOptions.GetBoolean(OPAL_NO_G111_FAX)) {
       PTRACE(4, "FAX\tSwitch request to fax failed, checking for fall back to G.711");
-      OnFaxCompleted(true);
+      InternalOnFaxCompleted();
     }
 
     m_disableT38 = true;
@@ -1030,6 +1022,17 @@ void OpalFaxConnection::OpenFaxStreams()
     UnlockReadWrite();
   }
 }
+
+
+void OpalFaxConnection::InternalOnFaxCompleted()
+{
+  if (m_completed)
+    return;
+
+  m_completed= true;
+  OnFaxCompleted(m_finalStatistics.m_fax.m_result != OpalMediaStatistics::FaxSuccessful);
+}
+
 
 #else
 

@@ -75,6 +75,10 @@ static bool SetRegistrationParams(SIPRegister::Params & params,
       params.m_compatibility = SIPRegister::e_CannotRegisterMultipleContacts;
     else if (str == "public")
       params.m_compatibility = SIPRegister::e_CannotRegisterPrivateContacts;
+    else if (str == "ALG")
+      params.m_compatibility = SIPRegister::e_HasApplicationLayerGateway;
+    else if (str == "RFC5626")
+      params.m_compatibility = SIPRegister::e_RFC5626;
     else {
       error = "Unknown SIP registration mode " + str;
       return false;
@@ -120,7 +124,7 @@ PString OpalManagerConsole::GetArgumentSpec() const
          "-register-auth-id: SIP registration authorisation id, default is username.\n"
          "-register-proxy:   SIP registration proxy, default is none.\n"
          "-register-ttl:     SIP registration Time To Live, default 300 seconds.\n"
-         "-register-mode:    SIP registration mode (normal, single, public).\n"
+         "-register-mode:    SIP registration mode (normal, single, public, ALG, RFC5626).\n"
          "-proxy:            SIP outbound proxy.\n"
          "-sip-ui:           SIP User Indication mode (inband,rfc2833,info-tone,info-string)\n"
 #endif
@@ -242,8 +246,10 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
   if (args.HasOption("aud-qos"))
     SetMediaQoS(OpalMediaType::Audio(), args.GetOptionString("aud-qos"));
 
+#if OPAL_VIDEO
   if (args.HasOption("vid-qos"))
     SetMediaQoS(OpalMediaType::Video(), args.GetOptionString("vid-qos"));
+#endif
 
   if (args.HasOption("rtp-size")) {
     unsigned size = args.GetOptionString("rtp-size").AsUnsigned();
@@ -259,7 +265,9 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
             "UDP ports: " << GetUDPPortBase() << '-' << GetUDPPortMax() << "\n"
             "RTP ports: " << GetRtpIpPortBase() << '-' << GetRtpIpPortMax() << "\n"
             "Audio QoS: " << GetMediaQoS(OpalMediaType::Audio()) << "\n"
+#if OPAL_VIDEO
             "Video QoS: " << GetMediaQoS(OpalMediaType::Video()) << "\n"
+#endif
             "RTP payload size: " << GetMaxRtpPayloadSize() << '\n';
 
 #if P_NAT

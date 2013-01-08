@@ -122,10 +122,6 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
   pcss->SetSoundChannelRecordDevice("Null Audio");
   pcss->SetSoundChannelPlayDevice("Null Audio");
 
-  videoInputDevice.deviceName = "Fake/NTSCTest";
-  videoOutputDevice.deviceName = "NULL";
-  videoPreviewDevice.deviceName.MakeEmpty();  // Don't want any preview for video, there could be ... lots
-
   if (!args.HasOption('W'))
     cout << "Not using outgoing audio file." << endl;
   else {
@@ -142,6 +138,11 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
     }
   }
 
+#if OPAL_VIDEO
+  videoInputDevice.deviceName = "Fake/NTSCTest";
+  videoOutputDevice.deviceName = "NULL";
+  videoPreviewDevice.deviceName.MakeEmpty();  // Don't want any preview for video, there could be ... lots
+
   if (!args.HasOption('Y'))
     cout << "Not using outgoing video file." << endl;
   else {
@@ -156,6 +157,7 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
       PTRACE(1, "CallGen\tOutgoing video file \"" << yuvFile << "\" does not exist");
     }
   }
+#endif // OPAL_VIDEO
 
   {
     PString incomingMediaDirectory = args.GetOptionString('I');
@@ -166,7 +168,9 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
       incomingMediaDirectory = PDirectory(incomingMediaDirectory);
       cout << "Using incoming media directory: " << incomingMediaDirectory << endl;
       pcss->SetSoundChannelPlayDevice(incomingMediaDirectory + "*.wav");
+#if OPAL_VIDEO
       videoOutputDevice.deviceName = incomingMediaDirectory + "*.yuv";
+#endif
     }
     else {
       cout << "Could not create incoming media directory \"" << incomingMediaDirectory << "\"!" << endl;
