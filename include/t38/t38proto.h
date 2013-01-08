@@ -229,13 +229,11 @@ class OpalFaxConnection : public OpalLocalConnection
       bool failed   ///< Fax ended with failure
     );
 
-#if OPAL_STATISTICS
     /**Get fax transmission/receipt statistics.
       */
     virtual void GetStatistics(
       OpalMediaStatistics & statistics  ///< Statistics for call
     ) const;
-#endif
 
     /**Get the file to send/receive
       */
@@ -260,9 +258,7 @@ class OpalFaxConnection : public OpalLocalConnection
 
     PTimer m_switchTimer;
 
-#if OPAL_STATISTICS
     OpalMediaStatistics m_finalStatistics;
-#endif
 };
 
 

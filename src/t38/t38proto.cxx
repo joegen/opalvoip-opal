@@ -889,22 +889,15 @@ void OpalFaxConnection::OnClosedMediaStream(const OpalMediaStream & stream)
     if (patch != NULL)
       patch->ExecuteCommand(OpalFaxTerminate(), false);
 
-#if OPAL_STATISTICS
     if (m_finalStatistics.m_fax.m_result < 0) {
       stream.GetStatistics(m_finalStatistics);
       PTRACE_IF(3, m_finalStatistics.m_fax.m_result >= 0,
                 "FAX\tGot final statistics: result=" << m_finalStatistics.m_fax.m_result);
     }
-#endif
   }
 
-  if (bothClosed) {
-#if OPAL_STATISTICS
+  if (bothClosed)
     OnFaxCompleted(m_finalStatistics.m_fax.m_result != OpalMediaStatistics::FaxSuccessful);
-#else
-    OnFaxCompleted(false);
-#endif
-  }
   else {
     PTRACE(4, "FAX\tClosing " << (other->IsSource() ? "source" : "sink") << " media stream id=" << stream.GetID());
     other->Close();
@@ -943,8 +936,6 @@ void OpalFaxConnection::OnFaxCompleted(bool failed)
 }
 
 
-#if OPAL_STATISTICS
-
 void OpalFaxConnection::GetStatistics(OpalMediaStatistics & statistics) const
 {
   if (m_finalStatistics.m_fax.m_result >= 0) {
@@ -972,7 +963,6 @@ void OpalFaxConnection::GetStatistics(OpalMediaStatistics & statistics) const
   stream->GetStatistics(statistics);
 }
 
-#endif
 
 void OpalFaxConnection::OnSwitchTimeout(PTimer &, INT)
 {
@@ -996,9 +986,7 @@ void OpalFaxConnection::OnSwitchedFaxMediaStreams(bool toT38, bool success)
 {
   if (success) {
     m_switchTimer.Stop(false);
-#if OPAL_STATISTICS
     m_finalStatistics.m_fax.m_result = OpalMediaStatistics::FaxNotStarted;
-#endif
   }
   else {
     if (toT38 && m_stringOptions.GetBoolean(OPAL_NO_G111_FAX)) {
