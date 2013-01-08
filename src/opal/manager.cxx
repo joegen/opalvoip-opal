@@ -275,9 +275,10 @@ OpalManager::OpalManager()
   udpPorts.current = udpPorts.base = udpPorts.max = 0;
 
   m_mediaQoS[OpalMediaType::Audio()].m_type = PIPSocket::VoiceQoS;
-  m_mediaQoS[OpalMediaType::Video()].m_type = PIPSocket::VideoQoS;
 
 #if OPAL_VIDEO
+  m_mediaQoS[OpalMediaType::Video()].m_type = PIPSocket::VideoQoS;
+
   PStringArray devices = PVideoInputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
   PINDEX i;
   for (i = 0; i < devices.GetSize(); ++i) {
