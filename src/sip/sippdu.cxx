@@ -421,6 +421,16 @@ PBoolean SIPURL::ReallyInternalParse(bool fromHeader, const char * cstr, const c
   if (!portSupplied)
     port = GetDefaultPort();
 
+  // Do sanity check of some parameters that cannot be doubled up
+  for (PStringToString::iterator it = paramVars.begin(); it != paramVars.end(); ++it) {
+    PINDEX pos = it->second.FindLast('\n');
+    if (pos != P_MAX_INDEX &&
+          (it->first == "user" || it->first == "ttl" || it->first == "method" || it->first == "transport")) {
+      it->second.Delete(0, pos+1);
+      Recalculate();
+    }
+  }
+
   return !IsEmpty();
 }
 
