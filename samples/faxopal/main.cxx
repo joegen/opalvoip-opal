@@ -166,7 +166,7 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
   if (args.HasOption('X')) {
     unsigned seconds = args.GetOptionString('X').AsUnsigned();
     stringOptions.SetInteger(OPAL_T38_SWITCH_TIME, seconds);
-    cout << "Switch to T.38 after " << seconds << "seconds\n";
+    cout << "Switch to T.38 after " << seconds << " seconds\n";
   }
   else
     cout << "No T.38 switch timeout set\n";
