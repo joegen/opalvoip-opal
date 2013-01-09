@@ -366,7 +366,7 @@ void DisplayMediaFormats(const OpalMediaFormatList & mediaList)
     str += ", sip=";
     str += fmt->IsValidForProtocol("sip") ? "yes" : "no";
     cout << setw(max_len+2) << *fmt << "  " << fmt->GetMediaType()
-         << ", bandwidth=" << fmt->GetMaxBandwidth() << ", RTP=" << fmt->GetPayloadType() << str << endl;
+         << ", bandwidth=" << fmt->GetBandwidth() << ", RTP=" << fmt->GetPayloadType() << str << endl;
   }
 
   cout << "\n\n";
