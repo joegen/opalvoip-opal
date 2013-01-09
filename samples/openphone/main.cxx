@@ -53,6 +53,7 @@
 #include <wx/splitter.h>
 #include <wx/valgen.h>
 #include <wx/notebook.h>
+#include <wx/progdlg.h>
 #undef LoadMenu // Bizarre but necessary before the xml code
 #include <wx/xrc/xmlres.h>
 
@@ -1590,6 +1591,9 @@ void MyManager::OnClose(wxCloseEvent & /*event*/)
 {
   ::wxBeginBusyCursor();
   SetTrayTipText("Exiting");
+
+  wxProgressDialog progress(wxT("OpenPhone"), wxT("Exiting ..."));
+  progress.Pulse();
 
   wxConfigBase * config = wxConfig::Get();
   config->SetPath(AppearanceGroup);
