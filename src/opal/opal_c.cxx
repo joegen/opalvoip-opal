@@ -1152,7 +1152,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
       response.SetError("Could not set NAT router method.");
       return;
     }
-    else if (nat->GetNatType() == PSTUNClient::BlockedNat) {
+    else if (nat->GetNatType() == PNatMethod::BlockedNat) {
       response.SetError(nat->GetName() + " indicates Blocked NAT.");
       return;
     }
