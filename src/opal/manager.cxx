@@ -1753,10 +1753,10 @@ PBoolean OpalManager::TranslateIPAddress(PIPSocket::Address & localAddress,
   if (IsLocalAddress(remoteAddress))
     return false; // Does not need to be translated
 
-#ifdef P_NAT
+#if P_NAT
   PIPSocket::Address stunInterface;
   if (m_natMethod != NULL &&
-      m_natMethod->GetNatType() != PSTUNClient::BlockedNat &&
+      m_natMethod->GetNatType() != PNatMethod::BlockedNat &&
       m_natMethod->GetInterfaceAddress(stunInterface) &&
       stunInterface == localAddress)
     return m_natMethod->GetExternalAddress(localAddress); // Translate it!

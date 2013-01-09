@@ -276,16 +276,22 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
     natMethod = PNatMethod_Fixed::GetNatMethodName();
     natServer = args.GetOptionString("translate");
   }
+#if P_STUN
   else if (args.HasOption("stun")) {
     natMethod = PSTUNClient::GetNatMethodName();
     natServer = args.GetOptionString("stun");
   }
+#endif
   else if (args.HasOption("nat-method")) {
     natMethod = args.GetOptionString("nat-method");
     natServer = args.GetOptionString("nat-server");
   }
-  else if (args.HasOption("nat-method")) {
+  else if (args.HasOption("nat-server")) {
+#if P_STUN
     natMethod = PSTUNClient::GetNatMethodName();
+#else
+    natMethod = PNatMethod_Fixed::GetNatMethodName();
+#endif
     natServer = args.GetOptionString("nat-server");
   }
 
@@ -301,7 +307,7 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
         PNatMethod::NatTypes natType = natMethod->GetNatType();
         cout << '"' << natMethod->GetServer() << "\" replies " << natType;
         PIPSocket::Address externalAddress;
-        if (natType != PSTUNClient::BlockedNat && natMethod->GetExternalAddress(externalAddress))
+        if (natType != PNatMethod::BlockedNat && natMethod->GetExternalAddress(externalAddress))
           cout << " with external address " << externalAddress;
       }
       cout << endl;
