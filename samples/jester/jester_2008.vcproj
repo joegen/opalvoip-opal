@@ -138,6 +138,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="2"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
 				PreprocessorDefinitions="NDEBUG;PTRACING=2"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -227,6 +228,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
 				PreprocessorDefinitions="_DEBUG;PTRACING=2"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
