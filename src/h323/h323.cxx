@@ -3964,7 +3964,7 @@ unsigned H323Connection::GetNextSessionID(const OpalMediaType & mediaType, bool 
 bool H323Connection::SwitchFaxMediaStreams(bool toT38)
 {
   if (ownerCall.IsSwitchingT38()) {
-    PTRACE(2, "H323\tNested call to SwitchT38 on " << *this);
+    PTRACE(2, "H323\tNested call to SwitchFaxMediaStreams on " << *this);
     return false;
   }
 

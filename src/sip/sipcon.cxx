@@ -1342,7 +1342,7 @@ bool SIPConnection::RequireSymmetricMediaStreams() const
 
 
 #if OPAL_T38_CAPABILITY
-bool SIPConnection::SwitchT38(bool toT38)
+bool SIPConnection::SwitchFaxMediaStreams(bool toT38)
 {
   if (ownerCall.IsSwitchingT38()) {
     PTRACE(2, "SIP\tNested call to SwitchT38 on " << *this);
