@@ -1049,7 +1049,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
   // For fax for example, we have to switch the media session according to mediaType
   bool replaceSession = mediaSession->GetMediaType() != mediaType;
   if (replaceSession) {
-    PTRACE(4, "SIP\tReplacing " << mediaSession->GetMediaType() << " session for " << mediaType);
+    PTRACE(3, "SIP\tReplacing " << mediaSession->GetMediaType() << " session " << sessionId << " with " << mediaType);
 #if OPAL_T38_CAPABILITY
     if (mediaType == OpalMediaType::Fax()) {
       if (!OnSwitchingFaxMediaStreams(true)) {
@@ -1345,7 +1345,7 @@ bool SIPConnection::RequireSymmetricMediaStreams() const
 bool SIPConnection::SwitchFaxMediaStreams(bool toT38)
 {
   if (ownerCall.IsSwitchingT38()) {
-    PTRACE(2, "SIP\tNested call to SwitchT38 on " << *this);
+    PTRACE(2, "SIP\tNested call to SwitchFaxMediaStreams on " << *this);
     return false;
   }
 
@@ -1406,12 +1406,12 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
 
   OpalMediaSession * mediaSession = UseMediaSession(sessionID, mediaType, sessionType);
   if (mediaSession == NULL) {
-    PTRACE(1, "RTPCon\tUnable to create media stream for session " << sessionID);
+    PTRACE(1, "SIP\tUnable to create media stream for session " << sessionID);
     return NULL;
   }
 
   if (mediaSession->GetMediaType() != mediaType) {
-    PTRACE(3, "RTPCon\tReplacing " << mediaSession->GetMediaType() << " session " << sessionID << " with " << mediaType);
+    PTRACE(3, "SIP\tReplacing " << mediaSession->GetMediaType() << " session " << sessionID << " with " << mediaType);
     mediaSession = CreateMediaSession(sessionID, mediaType, sessionType);
     ReplaceMediaSession(sessionID, mediaSession);
   }
