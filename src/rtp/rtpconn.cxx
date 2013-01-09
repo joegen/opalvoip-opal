@@ -319,16 +319,23 @@ void OpalRTPConnection::ReplaceMediaSession(unsigned sessionId, OpalMediaSession
 {
   SessionMap::iterator it = m_sessions.find(sessionId);
   if (it == m_sessions.end()) {
+    PTRACE(4, "RTPCon\tReplacing empty session " << sessionId);
     m_sessions[sessionId] = mediaSession;
     return;
   }
 
+  OpalTransportAddress remoteMedia = it->second->GetRemoteAddress(true);
+  OpalTransportAddress remoteCtrl = it->second->GetRemoteAddress(false);
+
   OpalMediaSession::Transport transport = it->second->DetachTransport();
   mediaSession->AttachTransport(transport);
-  mediaSession->SetRemoteAddress(it->second->GetRemoteAddress(true), true);
-  mediaSession->SetRemoteAddress(it->second->GetRemoteAddress(false), false);
+
+  mediaSession->SetRemoteAddress(remoteMedia, true);
+  mediaSession->SetRemoteAddress(remoteCtrl, false);
+
   delete it->second;
   it->second = mediaSession;
+  PTRACE(4, "RTPCon\tReplaced session " << sessionId << " media=" << remoteMedia << " ctrl=" << remoteCtrl);
 
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(mediaSession);
   if (rtpSession == NULL || !rtpSession->IsAudio())
