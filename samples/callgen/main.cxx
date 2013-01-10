@@ -122,6 +122,7 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
   pcss->SetSoundChannelRecordDevice("Null Audio");
   pcss->SetSoundChannelPlayDevice("Null Audio");
 
+#if P_WAVFILE
   if (!args.HasOption('W'))
     cout << "Not using outgoing audio file." << endl;
   else {
@@ -137,6 +138,7 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
       PTRACE(1, "CallGen\tOutgoing audio file \"" << wavFile << "\" does not exist");
     }
   }
+#endif // P_WAVFILE
 
 #if OPAL_VIDEO
   videoInputDevice.deviceName = "Fake/NTSCTest";
@@ -167,7 +169,9 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
              PDirectory::Create(incomingMediaDirectory)) {
       incomingMediaDirectory = PDirectory(incomingMediaDirectory);
       cout << "Using incoming media directory: " << incomingMediaDirectory << endl;
+#if P_WAVFILE
       pcss->SetSoundChannelPlayDevice(incomingMediaDirectory + "*.wav");
+#endif
 #if OPAL_VIDEO
       videoOutputDevice.deviceName = incomingMediaDirectory + "*.yuv";
 #endif

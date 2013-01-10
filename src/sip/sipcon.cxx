@@ -963,22 +963,32 @@ bool SIPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPS
     }
     else {
       SDPMediaDescription * incomingMedia = sdpOffer.GetMediaDescriptionByIndex(sessionId);
-      if (PAssert(incomingMedia != NULL, PLogicError)) {
-        OpalMediaType mediaType = incomingMedia->GetMediaType();
-        OpalMediaSession * mediaSession = NULL;
-        if (!mediaType.empty())
-          mediaSession = UseMediaSession(sessionId, mediaType, incomingMedia->GetSDPTransportType());
-        if (mediaSession == NULL)
-          mediaSession = UseMediaSession(sessionId, mediaType, SDPDummySession::SessionType());
-        if (PAssert(mediaSession != NULL, PLogicError)) {
-          mediaSession->Close();
-          SDPMediaDescription * outgoingMedia = mediaSession->CreateSDPMediaDescription();
-          if (PAssert(outgoingMedia != NULL, PLogicError)) {
-            outgoingMedia->Copy(*incomingMedia);
-            sdpOut.AddMediaDescription(outgoingMedia);
-          }
-        }
-      }
+      if (!PAssert(incomingMedia != NULL, PLogicError))
+        return false;
+
+      OpalMediaType mediaType = incomingMedia->GetMediaType();
+
+      // Create, if not already, a new session as a "place holder" in the SDP sessions
+      OpalMediaSession * mediaSession = NULL;
+      if (!mediaType.empty())
+        mediaSession = UseMediaSession(sessionId, mediaType, incomingMedia->GetSDPTransportType());
+      if (mediaSession == NULL)
+        mediaSession = UseMediaSession(sessionId, mediaType, SDPDummySession::SessionType());
+
+      if (!PAssert(mediaSession != NULL, PLogicError))
+        return false;
+
+      // Special hack for T.38 fax switch, make sure we send back a 488, always
+      if (m_needReINVITE && mediaSession->GetMediaType() != mediaType)
+        return false;
+
+      mediaSession->Close();
+      SDPMediaDescription * outgoingMedia = mediaSession->CreateSDPMediaDescription();
+      if (!PAssert(outgoingMedia != NULL, PLogicError))
+        return false;
+
+      outgoingMedia->Copy(*incomingMedia);
+      sdpOut.AddMediaDescription(outgoingMedia);
     }
   }
 
@@ -1049,7 +1059,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
   // For fax for example, we have to switch the media session according to mediaType
   bool replaceSession = mediaSession->GetMediaType() != mediaType;
   if (replaceSession) {
-    PTRACE(4, "SIP\tReplacing " << mediaSession->GetMediaType() << " session for " << mediaType);
+    PTRACE(3, "SIP\tReplacing " << mediaSession->GetMediaType() << " session " << sessionId << " with " << mediaType);
 #if OPAL_T38_CAPABILITY
     if (mediaType == OpalMediaType::Fax()) {
       if (!OnSwitchingFaxMediaStreams(true)) {
@@ -1342,10 +1352,10 @@ bool SIPConnection::RequireSymmetricMediaStreams() const
 
 
 #if OPAL_T38_CAPABILITY
-bool SIPConnection::SwitchT38(bool toT38)
+bool SIPConnection::SwitchFaxMediaStreams(bool toT38)
 {
   if (ownerCall.IsSwitchingT38()) {
-    PTRACE(2, "SIP\tNested call to SwitchT38 on " << *this);
+    PTRACE(2, "SIP\tNested call to SwitchFaxMediaStreams on " << *this);
     return false;
   }
 
@@ -1406,12 +1416,12 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
 
   OpalMediaSession * mediaSession = UseMediaSession(sessionID, mediaType, sessionType);
   if (mediaSession == NULL) {
-    PTRACE(1, "RTPCon\tUnable to create media stream for session " << sessionID);
+    PTRACE(1, "SIP\tUnable to create media stream for session " << sessionID);
     return NULL;
   }
 
   if (mediaSession->GetMediaType() != mediaType) {
-    PTRACE(3, "RTPCon\tReplacing " << mediaSession->GetMediaType() << " session " << sessionID << " with " << mediaType);
+    PTRACE(3, "SIP\tReplacing " << mediaSession->GetMediaType() << " session " << sessionID << " with " << mediaType);
     mediaSession = CreateMediaSession(sessionID, mediaType, sessionType);
     ReplaceMediaSession(sessionID, mediaSession);
   }

@@ -508,10 +508,12 @@ PBoolean MyManager::Initialise(PArgList & args)
 
   cout << "Jitter buffer: "  << GetMinAudioJitterDelay() << '-' << GetMaxAudioJitterDelay() << " ms\n";
 
+#if P_NAT
   if (args.HasOption("translate")) {
     SetNATServer("Fixed", args.GetOptionString("translate"));
     cout << "External address set to " << GetNATServer() << '\n';
   }
+#endif
 
   if (args.HasOption("portbase")) {
     unsigned portbase = args.GetOptionString("portbase").AsUnsigned();

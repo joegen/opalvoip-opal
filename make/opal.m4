@@ -20,6 +20,7 @@ dnl            $2 the variable to change, subst and define
 dnl            $3 the configure argument description
 dnl            $4 dependency variable #1
 dnl            $5 dependency variable #2 
+dnl            $6 dependency variable #26
 dnl Return:    $$2 The (possibly) changed variable
 AC_DEFUN([OPAL_SIMPLE_OPTION],
          [
@@ -40,6 +41,13 @@ AC_DEFUN([OPAL_SIMPLE_OPTION],
           if test "x$5" != "x"; then
             if test "x$$5" != "xyes"; then
               AC_MSG_NOTICE([$1 support disabled due to disabled dependency $5])
+	      $2=no
+	    fi
+	  fi
+
+          if test "x$6" != "x"; then
+            if test "x$$6" != "xyes"; then
+              AC_MSG_NOTICE([$1 support disabled due to disabled dependency $6])
 	      $2=no
 	    fi
 	  fi
@@ -693,43 +701,6 @@ AC_DEFUN([OPAL_FIND_GSM],
             OPAL_MSG_CHECK([System GSM], [$opal_gsm])
           fi
           AS_IF([test AS_VAR_GET([opal_gsm]) = yes], [$1], [$2])[]
-         ])
-
-
-dnl ########################################################################
-dnl SPANDSP
-dnl ########################################################################
-
-dnl OPAL_FIND_SPANDSP
-dnl Find spandsp
-dnl Arguments: $1 action if-found
-dnl            $2 action if-not-found
-dnl Return:    $SPANDSP_LIBS
-AC_DEFUN([OPAL_FIND_SPANDSP],
-         [
-          saved_LIBS="$LIBS"
-          LIBS="$LIBS -lspandsp"
-          AC_CHECK_LIB(spandsp, fax_free,
-              [
-                  AC_CHECK_LIB(spandsp, t38_core_get_logging_state, [opal_spandsp=yes], [opal_spandsp=no])
-              ],
-              [opal_spandsp=no])
-          LIBS=$saved_LIBS
-          saved_CXXFLAGS=$CXXFLAGS
-          CXXFLAGS="$CXXFLAGS -D__STDC_LIMIT_MACROS"
-          if test "x${opal_spandsp}" = "xyes"; then
-              AC_CHECK_HEADERS([spandsp.h], [opal_spandsp=yes], [opal_spandsp=no], [#include <stdint.h>])
-          fi
-          AS_IF([test AS_VAR_GET([opal_spandsp]) = yes], [$1], [$2])[]
-
-	  if test "x$opal_spandsp" = "xyes" ; then
-            SPANDSP_LIBS="-lspandsp"
-            AC_CHECK_LIB(spandsp, t38_set_fastest_image_data_rate, [SPANDSP_CFLAGS=-DHAS_T38_SET_FASTEST_IMAGE_DATA_RATE], [])
-            AC_SUBST(SPANDSP_CFLAGS)
-            AC_SUBST(SPANDSP_LIBS)
-          fi
-
-          CXXFLAGS=$saved_CXXFLAGS
          ])
 
 

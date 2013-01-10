@@ -724,7 +724,7 @@ class SIPEndPoint : public OpalRTPEndPoint
 
 
     /**Publish new state information.
-       A expire time of zero will cease to automatically update the publish.
+       An empty body, or expire time of zero, will cease to automatically update the publish.
      */
     bool Publish(
       const SIPSubscribe::Params & params,
