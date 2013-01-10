@@ -50,7 +50,7 @@ endif
 ifeq ($(OPAL_VIDEO),yes)
 SUBDIRS += samples/codectest
 endif
-ifeq ($(OPAL_IVR)$(OPAL_PTLIB_CLI),yesyes)
+ifeq ($(OPAL_HAS_PCSS)$(OPAL_IVR)$(OPAL_PTLIB_CLI),yesyesyes)
 SUBDIRS += samples/callgen
 endif
 ifeq ($(OPAL_PTLIB_CLI)$(OPAL_PTLIB_EXPAT)$(OPAL_SIP), yesyesyes)
