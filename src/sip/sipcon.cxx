@@ -2720,7 +2720,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   }
 
   if (replacedConnection->GetPhase() < ConnectedPhase) {
-    if (!replacedConnection->IsOriginating()) {
+    if (!m_stringOptions.GetBoolean(OPAL_OPT_ALLOW_EARLY_REPLACE) && !replacedConnection->IsOriginating()) {
       PTRACE(3, "SIP\tEarly connection " << *replacedConnection << " cannot be replaced by " << *this);
       Release(EndedByInvalidConferenceID);
       return;
