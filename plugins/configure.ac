@@ -693,19 +693,25 @@ dnl ########################################################################
 dnl     ########################
 dnl     spanDSP
 dnl     ########################
-AC_SUBST(SPANDSP_CFLAGS)
 if test -d fax/fax_spandsp ; then
   AC_ARG_ENABLE([spandsp],
-                [AC_HELP_STRING([--enable-spandsp],[enable spanDSP-based fax support])],
+                [AC_HELP_STRING([--disable-spandsp],[disable spanDSP-based fax support])],
                 [HAVE_SPANDSP=$enableval])
   if test "x${HAVE_SPANDSP}" = "xyes" ; then
-    OPAL_FIND_SPANDSP([HAVE_SPANDSP=yes], [HAVE_SPANDSP=no])
+    PKG_CHECK_MODULES(
+      [SPANDSP],
+      [spandsp],
+      [HAVE_SPANDSP=yes],
+      [HAVE_SPANDSP=no]
+    )
   fi
 else
   HAVE_SPANDSP=no
 fi
 
 if test "x$HAVE_SPANDSP" = "xyes" ; then
+  AC_SUBST(SPANDSP_CFLAGS)
+  AC_SUBST(SPANDSP_LIBS)
   AC_CONFIG_FILES(fax/fax_spandsp/Makefile)
   SUBDIRS+=" fax/fax_spandsp"
 fi
