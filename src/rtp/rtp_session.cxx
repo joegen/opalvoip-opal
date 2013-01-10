@@ -1583,12 +1583,40 @@ OpalMediaStream * OpalRTPSession::CreateMediaStream(const OpalMediaFormat & medi
 {
   if (m_dataSocket != NULL) {
     PIPSocket::QoS qos = m_connection.GetEndPoint().GetManager().GetMediaQoS(m_mediaType);
-    qos.m_receive.m_maxBandwidth = mediaFormat.GetMaxBandwidth();
-    qos.m_receive.m_maxPacketSize = mediaFormat.GetFrameSize()*mediaFormat.GetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption());
-    qos.m_transmit.m_maxBandwidth = mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption(), mediaFormat.GetMaxBandwidth());
-    qos.m_transmit.m_maxPacketSize = mediaFormat.GetFrameSize()*mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption());
-    qos.m_transmit.m_maxLatency = qos.m_receive.m_maxLatency = 500000;
-    qos.m_transmit.m_maxJitter = qos.m_receive.m_maxJitter = 100000;
+    qos.m_remote.SetAddress(m_remoteAddress, m_remoteDataPort);
+
+    unsigned maxBitRate = mediaFormat.GetMaxBandwidth();
+    if (maxBitRate != 0) {
+      unsigned overheadBytes = m_localAddress.GetVersion() == 4 ? (20+8+12) : (40+8+12);
+      unsigned overheadBits = overheadBytes*8;
+
+      unsigned frameSize = mediaFormat.GetFrameSize();
+      if (frameSize == 0)
+        frameSize = m_connection.GetEndPoint().GetManager().GetMaxRtpPayloadSize();
+
+      unsigned packetSize = frameSize*mediaFormat.GetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption(), 1);
+
+      qos.m_receive.m_maxPacketSize = packetSize + overheadBytes;
+      packetSize *= 8;
+      qos.m_receive.m_maxBandwidth = maxBitRate + (maxBitRate+packetSize-1)/packetSize * overheadBits;
+
+      maxBitRate = mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption(), maxBitRate);
+      packetSize = frameSize*mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1);
+
+      qos.m_transmit.m_maxPacketSize = packetSize + overheadBytes;
+      packetSize *= 8;
+      qos.m_transmit.m_maxBandwidth = maxBitRate + (maxBitRate+packetSize-1)/packetSize * overheadBits;
+    }
+
+    // Audio has tighter constraints to video
+    if (m_isAudio) {
+      qos.m_transmit.m_maxLatency = qos.m_receive.m_maxLatency = 250000; // 250ms
+      qos.m_transmit.m_maxJitter = qos.m_receive.m_maxJitter = 100000; // 100ms
+    }
+    else {
+      qos.m_transmit.m_maxLatency = qos.m_receive.m_maxLatency = 750000; // 750ms
+      qos.m_transmit.m_maxJitter = qos.m_receive.m_maxJitter = 250000; // 250ms
+    }
     m_dataSocket->SetQoS(qos);
   }
 
