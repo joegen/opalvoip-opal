@@ -552,6 +552,8 @@ OpalMediaStreamPacing::OpalMediaStreamPacing(const OpalMediaFormat & mediaFormat
   , m_delay(1000)
 {
   PAssert(m_timeOnMarkers || m_frameSize > 0, PInvalidParameter);
+  PTRACE(4, "Media", "Pacing " << mediaFormat << ", time=" << m_frameTime << " (" << (m_frameTime/m_timeUnits) << "ms), "
+            "size=" << m_frameSize << ", time " << (m_timeOnMarkers ? "on markers" : "every packet"));
 }
 
 
@@ -568,6 +570,9 @@ void OpalMediaStreamPacing::Pace(bool reading, PINDEX bytes, bool & marker)
       return;
   }
 
+  PTRACE(5, "Media", "Pacing delay: " << timeToWait << " (" << (timeToWait/m_timeUnits) << "ms), "
+            "time=" << m_frameTime << " (" << (m_frameTime/m_timeUnits) << "ms), "
+            "bytes=" << bytes << ", size=" << m_frameSize);
   m_delay.Delay(timeToWait/m_timeUnits);
 }
 
@@ -577,6 +582,8 @@ bool OpalMediaStreamPacing::UpdateMediaFormat(const OpalMediaFormat & mediaForma
   m_frameTime = mediaFormat.GetFrameTime();
   m_frameSize = mediaFormat.GetFrameSize();
   m_timeUnits = mediaFormat.GetTimeUnits();
+  PTRACE(4, "Media", "Pacing updated: " << mediaFormat << ",  time=" << m_frameTime
+         << " (" << (m_frameTime/m_timeUnits) << "ms), size=" << m_frameSize);
   return true;
 }
 
@@ -664,7 +671,8 @@ PBoolean OpalNullMediaStream::IsSynchronous() const
 
 bool OpalNullMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & newMediaFormat)
 {
-  return OpalMediaStream::InternalUpdateMediaFormat(newMediaFormat) && OpalMediaStreamPacing::UpdateMediaFormat(newMediaFormat);
+  return OpalMediaStream::InternalUpdateMediaFormat(newMediaFormat) &&
+         OpalMediaStreamPacing::UpdateMediaFormat(mediaFormat); // use the newly adjusted mediaFormat
 }
 
 

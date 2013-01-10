@@ -1603,7 +1603,7 @@ bool SIPEndPoint::Publish(const SIPSubscribe::Params & newParams, const PString 
   PTRACE(5, "SIP\tNormalised PUBLISH\n" << params);
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_PUBLISH, params.m_eventPackage, PSafeReadWrite);
   if (handler != NULL)
-    handler->SetBody(body);
+    handler->SetBody(params.m_expire != 0 ? body : PString::Empty());
   else {
     handler = new SIPPublishHandler(*this, params, body);
     activeSIPHandlers.Append(handler);

@@ -1872,6 +1872,9 @@ SIPPublishHandler::SIPPublishHandler(SIPEndPoint & endpoint,
 
 SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & transport)
 {
+  if (m_body.IsEmpty())
+    SetState(Unsubscribing);
+
   if (GetState() == Unsubscribing)
     return NULL;
 

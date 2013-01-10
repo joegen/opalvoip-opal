@@ -312,7 +312,7 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
 #if OPAL_T38_CAPABILITY
     /**Switch to/from T.38 fax mode.
       */
-    virtual bool SwitchT38(
+    virtual bool SwitchFaxMediaStreams(
       bool toT38  ///< T.38 or return to audio mode
     );
 #endif
