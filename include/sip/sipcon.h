@@ -82,6 +82,18 @@ class OpalSIPIMContext;
   */
 #define OPAL_OPT_SYMMETRIC_HOLD_PRODUCT "Symmetric-Hold-Product"
 
+/**Allow INVITE with Replaces to operate on "early" dialog.
+   While RFC 3891 explicitly forbids and incoming INVITE with Replaces to
+   replace a call which was incoming to the UA. It is allowed for a dialog
+   originated by the UA receiving the INVITE with Replace, but not for ones
+   where it is "ringing". Unfortunately, some systems (*cough Cisco) do it
+   anyway. This option allows the replacement and dows not send the 481
+   response as required by the specification.
+
+   Defaults to false.
+  */
+#define OPAL_OPT_ALLOW_EARLY_REPLACE "Allow-Early-Replace"
+
 /**OpalConnection::StringOption key to a string representing the precise SDP
    to be included in the INVITE offer. No media streams are opened or any
    checks whstsoever made on the string. It is simply included as the body of
