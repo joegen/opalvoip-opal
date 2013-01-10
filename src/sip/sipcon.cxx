@@ -963,22 +963,32 @@ bool SIPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPS
     }
     else {
       SDPMediaDescription * incomingMedia = sdpOffer.GetMediaDescriptionByIndex(sessionId);
-      if (PAssert(incomingMedia != NULL, PLogicError)) {
-        OpalMediaType mediaType = incomingMedia->GetMediaType();
-        OpalMediaSession * mediaSession = NULL;
-        if (!mediaType.empty())
-          mediaSession = UseMediaSession(sessionId, mediaType, incomingMedia->GetSDPTransportType());
-        if (mediaSession == NULL)
-          mediaSession = UseMediaSession(sessionId, mediaType, SDPDummySession::SessionType());
-        if (PAssert(mediaSession != NULL, PLogicError)) {
-          mediaSession->Close();
-          SDPMediaDescription * outgoingMedia = mediaSession->CreateSDPMediaDescription();
-          if (PAssert(outgoingMedia != NULL, PLogicError)) {
-            outgoingMedia->Copy(*incomingMedia);
-            sdpOut.AddMediaDescription(outgoingMedia);
-          }
-        }
-      }
+      if (!PAssert(incomingMedia != NULL, PLogicError))
+        return false;
+
+      OpalMediaType mediaType = incomingMedia->GetMediaType();
+
+      // Create, if not already, a new session as a "place holder" in the SDP sessions
+      OpalMediaSession * mediaSession = NULL;
+      if (!mediaType.empty())
+        mediaSession = UseMediaSession(sessionId, mediaType, incomingMedia->GetSDPTransportType());
+      if (mediaSession == NULL)
+        mediaSession = UseMediaSession(sessionId, mediaType, SDPDummySession::SessionType());
+
+      if (!PAssert(mediaSession != NULL, PLogicError))
+        return false;
+
+      // Special hack for T.38 fax switch, make sure we send back a 488, always
+      if (m_needReINVITE && mediaSession->GetMediaType() != mediaType)
+        return false;
+
+      mediaSession->Close();
+      SDPMediaDescription * outgoingMedia = mediaSession->CreateSDPMediaDescription();
+      if (!PAssert(outgoingMedia != NULL, PLogicError))
+        return false;
+
+      outgoingMedia->Copy(*incomingMedia);
+      sdpOut.AddMediaDescription(outgoingMedia);
     }
   }
 
