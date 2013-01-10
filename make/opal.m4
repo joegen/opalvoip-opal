@@ -20,6 +20,7 @@ dnl            $2 the variable to change, subst and define
 dnl            $3 the configure argument description
 dnl            $4 dependency variable #1
 dnl            $5 dependency variable #2 
+dnl            $6 dependency variable #26
 dnl Return:    $$2 The (possibly) changed variable
 AC_DEFUN([OPAL_SIMPLE_OPTION],
          [
@@ -40,6 +41,13 @@ AC_DEFUN([OPAL_SIMPLE_OPTION],
           if test "x$5" != "x"; then
             if test "x$$5" != "xyes"; then
               AC_MSG_NOTICE([$1 support disabled due to disabled dependency $5])
+	      $2=no
+	    fi
+	  fi
+
+          if test "x$6" != "x"; then
+            if test "x$$6" != "xyes"; then
+              AC_MSG_NOTICE([$1 support disabled due to disabled dependency $6])
 	      $2=no
 	    fi
 	  fi
