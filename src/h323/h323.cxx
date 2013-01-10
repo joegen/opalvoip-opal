@@ -4777,6 +4777,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
     return NULL;
   }
 
+#if OPAL_T38_CAPABILITY
   if (ownerCall.IsSwitchingT38()) {
     OpalMediaSession * otherSession = GetMediaSession(sessionID == H323Capability::DefaultAudioSessionID
                           ? H323Capability::DefaultDataSessionID : H323Capability::DefaultAudioSessionID);
@@ -4785,6 +4786,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
       session->AttachTransport(transport);
     }
   }
+#endif // OPAL_T38_CAPABILITY
 
   if (!session->Open(transport.GetLocalAddress(false).GetHostName(), remoteControlAddress, false)) {
     ReleaseMediaSession(sessionID);
