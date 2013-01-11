@@ -2729,14 +2729,26 @@ void SIPTransactionOwner::OnReceivedResponse(SIPTransaction & transaction, SIP_P
   // Take this transaction out of list
   m_transactions.Remove(&transaction);
 
-  // And kill all the rest
-  AbortPendingTransactions();
+  unsigned responseClass = response.GetStatusCode()/100;
+
+  switch (response.GetStatusCode()) {
+    default :
+      if (responseClass != 2)
+        break;
+
+    case SIP_PDU::Failure_UnAuthorised :
+    case SIP_PDU::Failure_ProxyAuthenticationRequired :
+    case SIP_PDU::Failure_IntervalTooBrief :
+    case SIP_PDU::Failure_TemporarilyUnavailable:
+      // And kill all the rest
+      AbortPendingTransactions();
+  }
 
   // Then tell endpoint - backward compatibility API
   m_endpoint.OnReceivedResponse(transaction, response);
 
   // Ignore the pending responses
-  if (response.GetStatusCode()/100 == 1)
+  if (responseClass == 1)
     return;
 
   // Handling of specific responses
