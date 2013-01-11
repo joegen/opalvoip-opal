@@ -223,11 +223,13 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
            GetManager().GetNatMethod(transport->GetRemoteAddress().GetHostName()) == NULL)
         continue;
 
+      PTRACE(4, "SIP\tNAT Binding refresh for " << handler->GetMethod()
+             << " to " << handler->GetAddressOfRecord() << ", id=" << handler->GetCallID());
       switch (natMethod) {
-
         case Options:
           {
             SIPOptions::Params params;
+            params.m_addressOfRecord = handler->GetAddressOfRecord().GetUserName();
             params.m_remoteAddress = transport->GetRemoteAddress().GetHostName();
             SendOPTIONS(params);
           }
