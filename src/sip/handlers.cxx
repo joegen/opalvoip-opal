@@ -408,15 +408,26 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
 
   m_transactions.Remove(&transaction); // Take this transaction out of list
 
-  // And kill all the rest
-  PSafePtr<SIPTransaction> transToGo;
-  while ((transToGo = m_transactions.GetAt(0)) != NULL) {
-    m_transactions.Remove(transToGo);
-    transToGo->Abort();
-  }
+  switch (response.GetStatusCode()) {
+    default :
+      if (responseClass != 2)
+        break;
 
-  // Finally end connect mode on the transport
-  m_transport->SetInterface(transaction.GetInterface());
+    case SIP_PDU::Failure_UnAuthorised :
+    case SIP_PDU::Failure_ProxyAuthenticationRequired :
+    case SIP_PDU::Failure_IntervalTooBrief :
+    case SIP_PDU::Failure_TemporarilyUnavailable:
+
+      // And kill all the rest
+      PSafePtr<SIPTransaction> transToGo;
+      while ((transToGo = m_transactions.GetAt(0)) != NULL) {
+        m_transactions.Remove(transToGo);
+        transToGo->Abort();
+      }
+
+      // Finally end connect mode on the transport
+      m_transport->SetInterface(transaction.GetInterface());
+  }
 
   switch (response.GetStatusCode()) {
     case SIP_PDU::Failure_UnAuthorised :
