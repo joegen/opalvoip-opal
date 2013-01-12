@@ -557,7 +557,7 @@ void OpalRTPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & p
 #endif
 }
 
-void OpalRTPConnection::OnUserInputInlineRFC2833(OpalRFC2833Info & info, INT type)
+void OpalRTPConnection::OnUserInputInlineRFC2833(OpalRFC2833Info & info, P_INT_PTR type)
 {
   // trigger on start of tone only
   if (type == 0)

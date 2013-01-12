@@ -568,7 +568,7 @@ PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, PBoole
 }
 
 
-void OpalMediaPatch::OnMediaCommand(OpalMediaCommand & command, INT)
+void OpalMediaPatch::OnMediaCommand(OpalMediaCommand & command, P_INT_PTR)
 {
   source.ExecuteCommand(command);
 }

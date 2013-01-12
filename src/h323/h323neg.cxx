@@ -61,7 +61,7 @@ H245Negotiator::H245Negotiator(H323EndPoint & end, H323Connection & conn)
 }
 
 
-void H245Negotiator::HandleTimeoutUnlocked(PTimer &, INT)
+void H245Negotiator::HandleTimeoutUnlocked(PTimer &, P_INT_PTR)
 {
   if (connection.LockReadWrite()) {
     HandleTimeout();

@@ -661,7 +661,7 @@ PBoolean OpalJitterBufferThread::ReadData(RTP_DataFrame & frame, const PTimeInte
 }
 
 
-void OpalJitterBufferThread::JitterThreadMain(PThread &, INT)
+void OpalJitterBufferThread::JitterThreadMain(PThread &, P_INT_PTR)
 {
   PTRACE(4, "Jitter\tReceive thread started: " << *this);
 
