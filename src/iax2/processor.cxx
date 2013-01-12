@@ -219,7 +219,7 @@ void IAX2Processor::StartNoResponseTimer(PINDEX msToWait)
   noResponseTimer = PTimeInterval(msToWait); 
 }
 
-void IAX2Processor::OnNoResponseTimeoutStart(PTimer &, INT)
+void IAX2Processor::OnNoResponseTimeoutStart(PTimer &, P_INT_PTR)
 {
   //call sub class to alert that there was a timeout for a response from the server
   OnNoResponseTimeout();

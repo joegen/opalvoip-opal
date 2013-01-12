@@ -950,7 +950,7 @@ bool OpalPluginLID::SetToneParameters(unsigned line,
 }
 
 
-void OpalPluginLID::TonePlayer(PThread &, INT tone)
+void OpalPluginLID::TonePlayer(PThread &, P_INT_PTR tone)
 {
   // CHeck if we have NumTones added to value which means high volume output
   // typically if handset has no ringer, then just hammer the speaker.

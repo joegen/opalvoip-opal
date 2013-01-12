@@ -141,7 +141,7 @@ OpalSilenceDetector::Mode OpalSilenceDetector::GetStatus(PBoolean * isInTalkBurs
 }
 
 
-void OpalSilenceDetector::ReceivedPacket(RTP_DataFrame & frame, INT)
+void OpalSilenceDetector::ReceivedPacket(RTP_DataFrame & frame, P_INT_PTR)
 {
   // Already silent
   if (frame.GetPayloadSize() == 0)

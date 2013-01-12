@@ -313,7 +313,7 @@ void IAX2RegProcessor::ProcessIaxCmdUnRegRej(IAX2FullFrameProtocol *src)
   delete src;
 }
 
-void IAX2RegProcessor::OnDoRegistration(PTimer &, INT)
+void IAX2RegProcessor::OnDoRegistration(PTimer &, P_INT_PTR)
 {
   //this is run in a different thread
   PWaitAndSignal m(stateMutex);

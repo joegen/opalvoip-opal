@@ -1315,7 +1315,7 @@ void IAX2CallProcessor::StartStatusCheckTimer(PINDEX msToWait)
   CleanPendingLists();
 }
 
-void IAX2CallProcessor::OnStatusCheck(PTimer &, INT)
+void IAX2CallProcessor::OnStatusCheck(PTimer &, P_INT_PTR)
 {
   StartStatusCheckTimer();
 }

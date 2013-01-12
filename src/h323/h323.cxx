@@ -1788,7 +1788,7 @@ PBoolean H323Connection::SetUpConnection()
 }
 
 
-void H323Connection::StartOutgoing(PThread &, INT)
+void H323Connection::StartOutgoing(PThread &, P_INT_PTR)
 {
   PTRACE(3, "H225\tStarted call thread");
 
@@ -2560,7 +2560,7 @@ PBoolean H323Connection::CreateOutgoingControlChannel(const H225_TransportAddres
 }
 
 
-void H323Connection::NewOutgoingControlChannel(PThread &, INT)
+void H323Connection::NewOutgoingControlChannel(PThread &, P_INT_PTR)
 {
   if (PAssertNULL(m_controlChannel) == NULL)
     return;
