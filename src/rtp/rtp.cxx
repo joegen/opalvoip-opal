@@ -301,7 +301,7 @@ BYTE * RTP_DataFrame::GetHeaderExtension(HeaderExtensionType type, unsigned idTo
 
   BYTE * ptr = (BYTE *)&theArray[MinHeaderSize + 4*GetContribSrcCount()];
   unsigned idPresent = *(PUInt16b *)ptr;
-  int extensionSize = *(PUInt16b *)(ptr += 2) * 4;
+  PINDEX extensionSize = *(PUInt16b *)(ptr += 2) * 4;
   ptr += 2;
 
   switch (type) {

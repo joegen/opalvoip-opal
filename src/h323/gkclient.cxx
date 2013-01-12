@@ -522,7 +522,7 @@ PBoolean H323Gatekeeper::RegistrationRequest(PBoolean autoReg, PBoolean didGkDis
     rrq.m_terminalAliasPattern.Append(new H225_AddressPattern);
     H225_AddressPattern &addressPattern = rrq.m_terminalAliasPattern[0];
     
-    for( int i = 0; i < aliasNamePatterns.GetSize(); i++){
+    for( PINDEX i = 0; i < aliasNamePatterns.GetSize(); i++){
       PStringArray nameRange = aliasNamePatterns[i].Tokenise('-', FALSE);
       if (nameRange.GetSize() == 2 &&
           nameRange[0].FindSpan("1234567890*#") == P_MAX_INDEX &&
@@ -1654,7 +1654,7 @@ void H323Gatekeeper::InfoRequestResponse(const H323Connection & connection,
                                          PBoolean sent)
 {
   // Are unknown Q.931 PDU
-  if (pdu.m_h323_message_body.GetTag() == P_MAX_INDEX)
+  if ((PINDEX)pdu.m_h323_message_body.GetTag() == P_MAX_INDEX)
     return;
 
   // Check mask of things to report on

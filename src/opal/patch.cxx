@@ -519,7 +519,7 @@ void OpalMediaPatch::FilterFrame(RTP_DataFrame & frame,
 
   for (PList<Filter>::iterator f = filters.begin(); f != filters.end(); ++f) {
     if (f->stage.IsEmpty() || f->stage == mediaFormat)
-      f->notifier(frame, (INT)this);
+      f->notifier(frame, (P_INT_PTR)this);
   }
 
   UnlockReadOnly();

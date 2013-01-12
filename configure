@@ -620,7 +620,6 @@ OPAL_PLUGINS
 OPAL_SCRIPT
 OPAL_HAS_PCSS
 OPAL_HAS_MIXER
-OPAL_STATISTICS
 OPAL_RTCP_XR
 OPAL_G711PLC
 OPAL_AEC
@@ -635,6 +634,7 @@ OPAL_H460_NAT
 OPAL_H460
 OPAL_H450
 OPAL_FAX
+OPAL_STATISTICS
 OPAL_HAS_RFC4103
 OPAL_HAS_SIPIM
 OPAL_HAS_MSRP
@@ -797,6 +797,7 @@ enable_t38
 enable_msrp
 enable_sipim
 enable_rfc4103
+enable_statistics
 enable_fax
 enable_h450
 enable_h460
@@ -811,7 +812,6 @@ enable_rfc2435
 enable_aec
 enable_g711plc
 enable_rtcpxr
-enable_statistics
 enable_mixer
 enable_pcss
 enable_script
@@ -1479,6 +1479,7 @@ Optional Features:
   --enable-msrp           whether to enable MSRP support
   --enable-sipim          whether to enable SIPIM session support
   --enable-rfc4103        whether to enable RFC4103 support
+  --enable-statistics     whether to enable statistics gathering support
   --enable-fax            whether to enable T.38 FAX protocol support
   --enable-h450           whether to enable H.450
   --enable-h460           whether to enable H.460
@@ -1494,7 +1495,6 @@ Optional Features:
                           support
   --enable-g711plc        whether to enable Packet Loss Concealment for G.711
   --enable-rtcpxr         whether to enable RTCP Extended Reports support
-  --enable-statistics     whether to enable statistics gathering support
   --enable-mixer          whether to enable media mixing support
   --enable-pcss           whether to enable PC sound system support
   --enable-script         whether to enable script language support
@@ -2715,10 +2715,6 @@ fi
 ac_config_guess="$SHELL $ac_aux_dir/config.guess"  # Please don't use this var.
 ac_config_sub="$SHELL $ac_aux_dir/config.sub"  # Please don't use this var.
 ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
-
-
-
-
 
 
 
@@ -7774,6 +7770,14 @@ $as_echo "$as_me: video support disabled due to disabled dependency " >&6;}
 	    fi
 	  fi
 
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: video support disabled due to disabled dependency " >&5
+$as_echo "$as_me: video support disabled due to disabled dependency " >&6;}
+	      OPAL_VIDEO=no
+	    fi
+	  fi
+
 
           { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable video codec support" >&5
 $as_echo_n "checking whether to enable video codec support... " >&6; }
@@ -7814,6 +7818,14 @@ $as_echo "$as_me: sip support disabled due to disabled dependency " >&6;}
 	    fi
 	  fi
 
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: sip support disabled due to disabled dependency " >&5
+$as_echo "$as_me: sip support disabled due to disabled dependency " >&6;}
+	      OPAL_SIP=no
+	    fi
+	  fi
+
 
           { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable SIP protocol support" >&5
 $as_echo_n "checking whether to enable SIP protocol support... " >&6; }
@@ -7837,6 +7849,14 @@ if test "${enable_h323+set}" = set; then :
   enableval=$enable_h323; OPAL_H323=$enableval
 fi
 
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: h323 support disabled due to disabled dependency " >&5
+$as_echo "$as_me: h323 support disabled due to disabled dependency " >&6;}
+	      OPAL_H323=no
+	    fi
+	  fi
 
           if test "x" != "x"; then
             if test "x$" != "xyes"; then
@@ -7900,6 +7920,14 @@ $as_echo "$as_me: iax2 support disabled due to disabled dependency " >&6;}
 	    fi
 	  fi
 
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: iax2 support disabled due to disabled dependency " >&5
+$as_echo "$as_me: iax2 support disabled due to disabled dependency " >&6;}
+	      OPAL_IAX2=no
+	    fi
+	  fi
+
 
           { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable IAX2 protocol support" >&5
 $as_echo_n "checking whether to enable IAX2 protocol support... " >&6; }
@@ -7928,6 +7956,14 @@ fi
             if test "x$OPAL_H323" != "xyes"; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: h224 support disabled due to disabled dependency OPAL_H323" >&5
 $as_echo "$as_me: h224 support disabled due to disabled dependency OPAL_H323" >&6;}
+	      OPAL_HAS_H224=no
+	    fi
+	  fi
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: h224 support disabled due to disabled dependency " >&5
+$as_echo "$as_me: h224 support disabled due to disabled dependency " >&6;}
 	      OPAL_HAS_H224=no
 	    fi
 	  fi
@@ -7980,6 +8016,14 @@ $as_echo "$as_me: h281 support disabled due to disabled dependency " >&6;}
 	    fi
 	  fi
 
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: h281 support disabled due to disabled dependency " >&5
+$as_echo "$as_me: h281 support disabled due to disabled dependency " >&6;}
+	      OPAL_HAS_H281=no
+	    fi
+	  fi
+
 
           { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable H.281 (Far End Camera Control) protocol support" >&5
 $as_echo_n "checking whether to enable H.281 (Far End Camera Control) protocol support... " >&6; }
@@ -8020,6 +8064,14 @@ $as_echo "$as_me: t38 support disabled due to disabled dependency " >&6;}
 	    fi
 	  fi
 
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: t38 support disabled due to disabled dependency " >&5
+$as_echo "$as_me: t38 support disabled due to disabled dependency " >&6;}
+	      OPAL_T38_CAPABILITY=no
+	    fi
+	  fi
+
 
           { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable T.38 capability support" >&5
 $as_echo_n "checking whether to enable T.38 capability support... " >&6; }
@@ -8043,6 +8095,14 @@ if test "${enable_msrp+set}" = set; then :
   enableval=$enable_msrp; OPAL_HAS_MSRP=$enableval
 fi
 
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: msrp support disabled due to disabled dependency " >&5
+$as_echo "$as_me: msrp support disabled due to disabled dependency " >&6;}
+	      OPAL_HAS_MSRP=no
+	    fi
+	  fi
 
           if test "x" != "x"; then
             if test "x$" != "xyes"; then
@@ -8101,6 +8161,14 @@ $as_echo "$as_me: sipim support disabled due to disabled dependency " >&6;}
 	    fi
 	  fi
 
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: sipim support disabled due to disabled dependency " >&5
+$as_echo "$as_me: sipim support disabled due to disabled dependency " >&6;}
+	      OPAL_HAS_SIPIM=no
+	    fi
+	  fi
+
 
           { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable SIPIM session support" >&5
 $as_echo_n "checking whether to enable SIPIM session support... " >&6; }
@@ -8141,6 +8209,14 @@ $as_echo "$as_me: rfc4103 support disabled due to disabled dependency " >&6;}
 	    fi
 	  fi
 
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: rfc4103 support disabled due to disabled dependency " >&5
+$as_echo "$as_me: rfc4103 support disabled due to disabled dependency " >&6;}
+	      OPAL_HAS_RFC4103=no
+	    fi
+	  fi
+
 
           { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable RFC4103 support" >&5
 $as_echo_n "checking whether to enable RFC4103 support... " >&6; }
@@ -8151,6 +8227,54 @@ $as_echo "$OPAL_HAS_RFC4103" >&6; }
           if test "x$OPAL_HAS_RFC4103" = "xyes"; then
 
 $as_echo "#define OPAL_HAS_RFC4103 1" >>confdefs.h
+
+          fi
+
+
+
+          if test "x$OPAL_STATISTICS" = "x"; then
+            as_fn_error $? "No default specified for OPAL_STATISTICS, please correct configure.ac" "$LINENO" 5
+	  fi
+          # Check whether --enable-statistics was given.
+if test "${enable_statistics+set}" = set; then :
+  enableval=$enable_statistics; OPAL_STATISTICS=$enableval
+fi
+
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: statistics support disabled due to disabled dependency " >&5
+$as_echo "$as_me: statistics support disabled due to disabled dependency " >&6;}
+	      OPAL_STATISTICS=no
+	    fi
+	  fi
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: statistics support disabled due to disabled dependency " >&5
+$as_echo "$as_me: statistics support disabled due to disabled dependency " >&6;}
+	      OPAL_STATISTICS=no
+	    fi
+	  fi
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: statistics support disabled due to disabled dependency " >&5
+$as_echo "$as_me: statistics support disabled due to disabled dependency " >&6;}
+	      OPAL_STATISTICS=no
+	    fi
+	  fi
+
+
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable statistics gathering support" >&5
+$as_echo_n "checking whether to enable statistics gathering support... " >&6; }
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OPAL_STATISTICS" >&5
+$as_echo "$OPAL_STATISTICS" >&6; }
+
+
+          if test "x$OPAL_STATISTICS" = "xyes"; then
+
+$as_echo "#define OPAL_STATISTICS 1" >>confdefs.h
 
           fi
 
@@ -8177,6 +8301,14 @@ $as_echo "$as_me: fax support disabled due to disabled dependency OPAL_T38_CAPAB
             if test "x$OPAL_PTLIB_ASN" != "xyes"; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: fax support disabled due to disabled dependency OPAL_PTLIB_ASN" >&5
 $as_echo "$as_me: fax support disabled due to disabled dependency OPAL_PTLIB_ASN" >&6;}
+	      OPAL_FAX=no
+	    fi
+	  fi
+
+          if test "xOPAL_STATISTICS" != "x"; then
+            if test "x$OPAL_STATISTICS" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: fax support disabled due to disabled dependency OPAL_STATISTICS" >&5
+$as_echo "$as_me: fax support disabled due to disabled dependency OPAL_STATISTICS" >&6;}
 	      OPAL_FAX=no
 	    fi
 	  fi
@@ -8209,6 +8341,14 @@ fi
             if test "x$OPAL_H323" != "xyes"; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: h450 support disabled due to disabled dependency OPAL_H323" >&5
 $as_echo "$as_me: h450 support disabled due to disabled dependency OPAL_H323" >&6;}
+	      OPAL_H450=no
+	    fi
+	  fi
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: h450 support disabled due to disabled dependency " >&5
+$as_echo "$as_me: h450 support disabled due to disabled dependency " >&6;}
 	      OPAL_H450=no
 	    fi
 	  fi
@@ -8261,6 +8401,14 @@ $as_echo "$as_me: h460 support disabled due to disabled dependency " >&6;}
 	    fi
 	  fi
 
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: h460 support disabled due to disabled dependency " >&5
+$as_echo "$as_me: h460 support disabled due to disabled dependency " >&6;}
+	      OPAL_H460=no
+	    fi
+	  fi
+
 
           { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable H.460" >&5
 $as_echo_n "checking whether to enable H.460... " >&6; }
@@ -8289,6 +8437,14 @@ fi
             if test "x$OPAL_H323" != "xyes"; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: h460nat support disabled due to disabled dependency OPAL_H323" >&5
 $as_echo "$as_me: h460nat support disabled due to disabled dependency OPAL_H323" >&6;}
+	      OPAL_H460_NAT=no
+	    fi
+	  fi
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: h460nat support disabled due to disabled dependency " >&5
+$as_echo "$as_me: h460nat support disabled due to disabled dependency " >&6;}
 	      OPAL_H460_NAT=no
 	    fi
 	  fi
@@ -8341,6 +8497,14 @@ $as_echo "$as_me: h239 support disabled due to disabled dependency " >&6;}
 	    fi
 	  fi
 
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: h239 support disabled due to disabled dependency " >&5
+$as_echo "$as_me: h239 support disabled due to disabled dependency " >&6;}
+	      OPAL_H239=no
+	    fi
+	  fi
+
 
           { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable H.239" >&5
 $as_echo_n "checking whether to enable H.239... " >&6; }
@@ -8369,6 +8533,14 @@ fi
             if test "x$OPAL_H323" != "xyes"; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: h501 support disabled due to disabled dependency OPAL_H323" >&5
 $as_echo "$as_me: h501 support disabled due to disabled dependency OPAL_H323" >&6;}
+	      OPAL_H501=no
+	    fi
+	  fi
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: h501 support disabled due to disabled dependency " >&5
+$as_echo "$as_me: h501 support disabled due to disabled dependency " >&6;}
 	      OPAL_H501=no
 	    fi
 	  fi
@@ -8421,6 +8593,14 @@ $as_echo "$as_me: t120 support disabled due to disabled dependency " >&6;}
 	    fi
 	  fi
 
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: t120 support disabled due to disabled dependency " >&5
+$as_echo "$as_me: t120 support disabled due to disabled dependency " >&6;}
+	      OPAL_T120DATA=no
+	    fi
+	  fi
+
 
           { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable T.120" >&5
 $as_echo_n "checking whether to enable T.120... " >&6; }
@@ -8444,6 +8624,14 @@ if test "${enable_lid+set}" = set; then :
   enableval=$enable_lid; OPAL_LID=$enableval
 fi
 
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: lid support disabled due to disabled dependency " >&5
+$as_echo "$as_me: lid support disabled due to disabled dependency " >&6;}
+	      OPAL_LID=no
+	    fi
+	  fi
 
           if test "x" != "x"; then
             if test "x$" != "xyes"; then
@@ -8501,6 +8689,14 @@ $as_echo "$as_me: ivr support disabled due to disabled dependency OPAL_PTLIB_VXM
 	    fi
 	  fi
 
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: ivr support disabled due to disabled dependency " >&5
+$as_echo "$as_me: ivr support disabled due to disabled dependency " >&6;}
+	      OPAL_IVR=no
+	    fi
+	  fi
+
 
           { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable IVR support" >&5
 $as_echo_n "checking whether to enable IVR support... " >&6; }
@@ -8529,6 +8725,14 @@ fi
             if test "x$OPAL_VIDEO" != "xyes"; then
               { $as_echo "$as_me:${as_lineno-$LINENO}: rfc4175 support disabled due to disabled dependency OPAL_VIDEO" >&5
 $as_echo "$as_me: rfc4175 support disabled due to disabled dependency OPAL_VIDEO" >&6;}
+	      OPAL_RFC4175=no
+	    fi
+	  fi
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: rfc4175 support disabled due to disabled dependency " >&5
+$as_echo "$as_me: rfc4175 support disabled due to disabled dependency " >&6;}
 	      OPAL_RFC4175=no
 	    fi
 	  fi
@@ -8581,6 +8785,14 @@ $as_echo "$as_me: rfc2435 support disabled due to disabled dependency " >&6;}
 	    fi
 	  fi
 
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: rfc2435 support disabled due to disabled dependency " >&5
+$as_echo "$as_me: rfc2435 support disabled due to disabled dependency " >&6;}
+	      OPAL_RFC2435=no
+	    fi
+	  fi
+
 
           { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable RFC2435 support (experimental)" >&5
 $as_echo_n "checking whether to enable RFC2435 support (experimental)... " >&6; }
@@ -8604,6 +8816,14 @@ if test "${enable_aec+set}" = set; then :
   enableval=$enable_aec; OPAL_AEC=$enableval
 fi
 
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: aec support disabled due to disabled dependency " >&5
+$as_echo "$as_me: aec support disabled due to disabled dependency " >&6;}
+	      OPAL_AEC=no
+	    fi
+	  fi
 
           if test "x" != "x"; then
             if test "x$" != "xyes"; then
@@ -8661,6 +8881,14 @@ $as_echo "$as_me: g711plc support disabled due to disabled dependency " >&6;}
 	    fi
 	  fi
 
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: g711plc support disabled due to disabled dependency " >&5
+$as_echo "$as_me: g711plc support disabled due to disabled dependency " >&6;}
+	      OPAL_G711PLC=no
+	    fi
+	  fi
+
 
           { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable Packet Loss Concealment for G.711" >&5
 $as_echo_n "checking whether to enable Packet Loss Concealment for G.711... " >&6; }
@@ -8701,6 +8929,14 @@ $as_echo "$as_me: rtcpxr support disabled due to disabled dependency " >&6;}
 	    fi
 	  fi
 
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: rtcpxr support disabled due to disabled dependency " >&5
+$as_echo "$as_me: rtcpxr support disabled due to disabled dependency " >&6;}
+	      OPAL_RTCP_XR=no
+	    fi
+	  fi
+
 
           { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable RTCP Extended Reports support" >&5
 $as_echo_n "checking whether to enable RTCP Extended Reports support... " >&6; }
@@ -8716,46 +8952,6 @@ $as_echo "#define OPAL_RTCP_XR 1" >>confdefs.h
 
 
 
-          if test "x$OPAL_STATISTICS" = "x"; then
-            as_fn_error $? "No default specified for OPAL_STATISTICS, please correct configure.ac" "$LINENO" 5
-	  fi
-          # Check whether --enable-statistics was given.
-if test "${enable_statistics+set}" = set; then :
-  enableval=$enable_statistics; OPAL_STATISTICS=$enableval
-fi
-
-
-          if test "x" != "x"; then
-            if test "x$" != "xyes"; then
-              { $as_echo "$as_me:${as_lineno-$LINENO}: statistics support disabled due to disabled dependency " >&5
-$as_echo "$as_me: statistics support disabled due to disabled dependency " >&6;}
-	      OPAL_STATISTICS=no
-	    fi
-	  fi
-
-          if test "x" != "x"; then
-            if test "x$" != "xyes"; then
-              { $as_echo "$as_me:${as_lineno-$LINENO}: statistics support disabled due to disabled dependency " >&5
-$as_echo "$as_me: statistics support disabled due to disabled dependency " >&6;}
-	      OPAL_STATISTICS=no
-	    fi
-	  fi
-
-
-          { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable statistics gathering support" >&5
-$as_echo_n "checking whether to enable statistics gathering support... " >&6; }
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OPAL_STATISTICS" >&5
-$as_echo "$OPAL_STATISTICS" >&6; }
-
-
-          if test "x$OPAL_STATISTICS" = "xyes"; then
-
-$as_echo "#define OPAL_STATISTICS 1" >>confdefs.h
-
-          fi
-
-
-
           if test "x$OPAL_HAS_MIXER" = "x"; then
             as_fn_error $? "No default specified for OPAL_HAS_MIXER, please correct configure.ac" "$LINENO" 5
 	  fi
@@ -8764,6 +8960,14 @@ if test "${enable_mixer+set}" = set; then :
   enableval=$enable_mixer; OPAL_HAS_MIXER=$enableval
 fi
 
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: mixer support disabled due to disabled dependency " >&5
+$as_echo "$as_me: mixer support disabled due to disabled dependency " >&6;}
+	      OPAL_HAS_MIXER=no
+	    fi
+	  fi
 
           if test "x" != "x"; then
             if test "x$" != "xyes"; then
@@ -8821,6 +9025,14 @@ $as_echo "$as_me: pcss support disabled due to disabled dependency " >&6;}
 	    fi
 	  fi
 
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: pcss support disabled due to disabled dependency " >&5
+$as_echo "$as_me: pcss support disabled due to disabled dependency " >&6;}
+	      OPAL_HAS_PCSS=no
+	    fi
+	  fi
+
 
           { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable PC sound system support" >&5
 $as_echo_n "checking whether to enable PC sound system support... " >&6; }
@@ -8844,6 +9056,14 @@ if test "${enable_script+set}" = set; then :
   enableval=$enable_script; OPAL_SCRIPT=$enableval
 fi
 
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: script support disabled due to disabled dependency " >&5
+$as_echo "$as_me: script support disabled due to disabled dependency " >&6;}
+	      OPAL_SCRIPT=no
+	    fi
+	  fi
 
           if test "x" != "x"; then
             if test "x$" != "xyes"; then
@@ -8903,6 +9123,14 @@ $as_echo "$as_me: plugins support disabled due to disabled dependency " >&6;}
 	    fi
 	  fi
 
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: plugins support disabled due to disabled dependency " >&5
+$as_echo "$as_me: plugins support disabled due to disabled dependency " >&6;}
+	      OPAL_PLUGINS=no
+	    fi
+	  fi
+
 
           { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable plugin support" >&5
 $as_echo_n "checking whether to enable plugin support... " >&6; }
@@ -8932,6 +9160,14 @@ if test "${enable_samples+set}" = set; then :
   enableval=$enable_samples; OPAL_SAMPLES=$enableval
 fi
 
+
+          if test "x" != "x"; then
+            if test "x$" != "xyes"; then
+              { $as_echo "$as_me:${as_lineno-$LINENO}: samples support disabled due to disabled dependency " >&5
+$as_echo "$as_me: samples support disabled due to disabled dependency " >&6;}
+	      OPAL_SAMPLES=no
+	    fi
+	  fi
 
           if test "x" != "x"; then
             if test "x$" != "xyes"; then
