@@ -1423,7 +1423,7 @@ void H4502Handler::StopctTimer()
 }
 
 
-void H4502Handler::OnCallTransferTimeOut(PTimer &, INT)
+void H4502Handler::OnCallTransferTimeOut(PTimer &, P_INT_PTR)
 {
   switch (ctState) {
     // CT-T3 Timeout
@@ -2462,7 +2462,7 @@ void H45011Handler::StopciTimer()
 }
 
 
-void H45011Handler::OnCallIntrudeTimeOut(PTimer &, INT)
+void H45011Handler::OnCallIntrudeTimeOut(PTimer &, P_INT_PTR)
 {
   switch (ciState) {
     // CI-T1 Timeout

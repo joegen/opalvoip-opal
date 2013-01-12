@@ -741,7 +741,7 @@ void OpalH281Handler::OnActivatePreset(BYTE /*presetNumber*/)
   // not handled
 }
 
-void OpalH281Handler::ContinueAction(PTimer &, INT)
+void OpalH281Handler::ContinueAction(PTimer &, P_INT_PTR)
 {
   PWaitAndSignal(h224Handler->GetTransmitMutex());
 	
@@ -750,7 +750,7 @@ void OpalH281Handler::ContinueAction(PTimer &, INT)
   h224Handler->TransmitClientFrame(*this, transmitFrame);
 }
 
-void OpalH281Handler::StopActionLocally(PTimer &, INT)
+void OpalH281Handler::StopActionLocally(PTimer &, P_INT_PTR)
 {
   requestedPanDirection = H281_Frame::NoPan;
   requestedTiltDirection = H281_Frame::NoTilt;

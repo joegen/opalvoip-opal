@@ -423,7 +423,7 @@ void OpalConnection::Release(CallEndReason reason, bool synchronous)
 }
 
 
-void OpalConnection::OnReleaseThreadMain(PThread & PTRACE_PARAM(thread), INT)
+void OpalConnection::OnReleaseThreadMain(PThread & PTRACE_PARAM(thread), P_INT_PTR)
 {
   PTRACE_CONTEXT_ID_TO(thread);
 
@@ -1046,7 +1046,7 @@ void OpalConnection::DisableRecording()
 }
 
 
-void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, INT param)
+void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, P_INT_PTR param)
 {
   const OpalMediaPatch * patch = (const OpalMediaPatch *)param;
   ownerCall.OnRecordAudio(MakeRecordingKey(*patch), frame);
@@ -1055,7 +1055,7 @@ void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, INT param)
 
 #if OPAL_VIDEO
 
-void OpalConnection::OnRecordVideo(RTP_DataFrame & frame, INT param)
+void OpalConnection::OnRecordVideo(RTP_DataFrame & frame, P_INT_PTR param)
 {
   const OpalMediaPatch * patch = (const OpalMediaPatch *)param;
   ownerCall.OnRecordVideo(MakeRecordingKey(*patch), frame);
@@ -1397,7 +1397,7 @@ PBoolean OpalConnection::PromptUserInput(PBoolean /*play*/)
 
 
 #if OPAL_PTLIB_DTMF
-void OpalConnection::OnDetectInBandDTMF(RTP_DataFrame & frame, INT)
+void OpalConnection::OnDetectInBandDTMF(RTP_DataFrame & frame, P_INT_PTR)
 {
   // This function is set up as an 'audio filter'.
   // This allows us to access the 16 bit PCM audio (at 8Khz sample rate)
@@ -1416,7 +1416,7 @@ void OpalConnection::OnDetectInBandDTMF(RTP_DataFrame & frame, INT)
   }
 }
 
-void OpalConnection::OnSendInBandDTMF(RTP_DataFrame & frame, INT)
+void OpalConnection::OnSendInBandDTMF(RTP_DataFrame & frame, P_INT_PTR)
 {
   if (m_inBandDTMF.IsEmpty())
     return;

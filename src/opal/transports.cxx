@@ -1074,7 +1074,7 @@ void OpalTransport::SetKeepAlive(const PTimeInterval & timeout, const PBYTEArray
 }
 
 
-void OpalTransport::KeepAlive(PTimer &, INT)
+void OpalTransport::KeepAlive(PTimer &, P_INT_PTR)
 {
   if (!IsOpen())
     return;

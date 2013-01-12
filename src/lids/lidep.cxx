@@ -405,7 +405,7 @@ bool OpalLineEndPoint::SetCountryCodeName(const PString & countryName)
 }
 
 
-void OpalLineEndPoint::MonitorLines(PThread &, INT)
+void OpalLineEndPoint::MonitorLines(PThread &, P_INT_PTR)
 {
   PTRACE(4, "LID EP\tMonitor thread started for " << GetPrefixName());
 
@@ -749,7 +749,7 @@ void OpalLineConnection::Monitor()
 }
 
 
-void OpalLineConnection::HandleIncoming(PThread &, INT)
+void OpalLineConnection::HandleIncoming(PThread &, P_INT_PTR)
 {
   PTRACE(3, "LID Con\tHandling incoming call on " << *this);
 

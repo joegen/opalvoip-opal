@@ -455,7 +455,7 @@ bool OpalFaxSession::WriteData(RTP_DataFrame & frame)
 }
 
 
-void OpalFaxSession::OnWriteDataIdle(PTimer &, INT)
+void OpalFaxSession::OnWriteDataIdle(PTimer &, P_INT_PTR)
 {
   PWaitAndSignal mutex(m_writeMutex);
 
@@ -967,7 +967,7 @@ void OpalFaxConnection::GetStatistics(OpalMediaStatistics & statistics) const
 }
 
 
-void OpalFaxConnection::OnSwitchTimeout(PTimer &, INT)
+void OpalFaxConnection::OnSwitchTimeout(PTimer &, P_INT_PTR)
 {
   if (m_disableT38)
     return;

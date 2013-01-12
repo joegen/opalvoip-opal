@@ -760,7 +760,7 @@ bool OpalCapiEndPoint::Controller::GetFreeLine(unsigned & bearer)
 }
 
 
-void OpalCapiEndPoint::ProcessMessages(PThread &, INT)
+void OpalCapiEndPoint::ProcessMessages(PThread &, P_INT_PTR)
 {
   PTRACE(4, "CAPI\tStarted message thread.");
 

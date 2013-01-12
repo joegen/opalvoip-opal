@@ -409,7 +409,7 @@ PBoolean H46018Handler::CreateH225Transport(const PASN_OctetString & information
 }
 
 
-void H46018Handler::SocketThread(PThread &, INT)
+void H46018Handler::SocketThread(PThread &, P_INT_PTR)
 {
   if (m_callId == PString()) {
     PTRACE(3, "H46018\tTCP Connect Abort: No Call identifier");
@@ -755,7 +755,7 @@ void H46019UDPSocket::InitialiseKeepAlive()
 }
 
 
-void H46019UDPSocket::Ping(PTimer &, INT)
+void H46019UDPSocket::Ping(PTimer &, P_INT_PTR)
 { 
   rtpSocket ? SendRTPPing(keepip,keepport) : SendRTCPPing();
 }
@@ -966,7 +966,7 @@ void H46019UDPSocket::BuildProbe(RTP_ControlFrame & report, bool probing)
 }
 
 
-void H46019UDPSocket::Probe(PTimer &, INT)
+void H46019UDPSocket::Probe(PTimer &, P_INT_PTR)
 { 
   m_probes++;
 
