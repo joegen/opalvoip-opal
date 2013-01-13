@@ -762,9 +762,7 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCodec
 
       m_context->idct_algo = FF_IDCT_H264;
       m_context->flags = CODEC_FLAG_INPUT_PRESERVED | CODEC_FLAG_EMU_EDGE;
-      m_context->flags2 = CODEC_FLAG2_BRDO |
-                          CODEC_FLAG2_MEMC_ONLY |
-                          CODEC_FLAG2_DROP_FRAME_TIMECODE |
+      m_context->flags2 = CODEC_FLAG2_DROP_FRAME_TIMECODE |
                           CODEC_FLAG2_SKIP_RD |
                           CODEC_FLAG2_CHUNKS;
 
