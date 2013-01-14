@@ -552,8 +552,14 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
   }
 
   PBYTEArray thisUDPTL(m_datagramSize);
-  if (!m_dataSocket->Read(thisUDPTL.GetPointer(), m_datagramSize))
+  if (!m_dataSocket->Read(thisUDPTL.GetPointer(), m_datagramSize)) {
+    if (m_dataSocket->GetErrorCode(PChannel::LastReadError) == PChannel::BufferTooSmall) {
+      PTRACE(4, "UDPTL\tProbable RTP packet");
+      return true;
+    }
+    PTRACE(2, "UDPTL\tRead socket failed: " << m_dataSocket->GetErrorText(PChannel::LastReadError));
     return false;
+  }
 
   if (m_shuttingDown) {
     PTRACE(4, "UDPTL\tRead UDPTL shutting down");
@@ -573,7 +579,7 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
     }
 
 #if PTRACING
-    static const unsigned Level = 2;
+    const unsigned Level = m_awaitingGoodPacket ? 4 : 2;
     if (PTrace::CanTrace(Level)) {
       ostream & trace = PTrace::Begin(Level, __FILE__, __LINE__);
       trace << "UDPTL\t";
