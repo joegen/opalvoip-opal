@@ -417,39 +417,49 @@ class H263_Base_Encoder : public PluginVideoEncoder<MY_CODEC>, public FFMPEGCode
 
     bool SetOption(const char * option, const char * value)
     {
+#ifdef CODEC_FLAG_H263P_UMV
       // Annex D: Unrestructed Motion Vectors
       // Level 2+ 
       // works with eyeBeam, signaled via  non-standard "D"
       if (strcasecmp(option, H263_ANNEX_D) == 0)
         return SetOptionBit(m_context->flags, CODEC_FLAG_H263P_UMV, value);
+#endif
 
+#ifdef CODEC_FLAG_OBMC
       // Annex F: Advanced Prediction Mode
       // does not work with eyeBeam
-    #if 1 // DO NOT ENABLE THIS FLAG. FFMPEG IS NOT THREAD_SAFE WHEN THIS FLAG IS SET
       if (strcasecmp(option, H263_ANNEX_F) == 0)
         return SetOptionBit(m_context->flags, CODEC_FLAG_OBMC, value);
-    #endif
+#endif
 
+#ifdef CODEC_FLAG_AC_PRED
       // Annex I: Advanced Intra Coding
       // Level 3+
       // works with eyeBeam
       if (strcasecmp(option, H263_ANNEX_I) == 0)
         return SetOptionBit(m_context->flags, CODEC_FLAG_AC_PRED, value);
+#endif
 
+#ifdef CODEC_FLAG_LOOP_FILTER
       // Annex J: Deblocking Filter
       // works with eyeBeam
       if (strcasecmp(option, H263_ANNEX_J) == 0)
         return SetOptionBit(m_context->flags, CODEC_FLAG_LOOP_FILTER, value);
+#endif
 
+#ifdef CODEC_FLAG_H263P_SLICE_STRUCT
       // Annex K: Slice Structure
       // does not work with eyeBeam
       if (strcasecmp(option, H263_ANNEX_K) == 0)
         return SetOptionBit(m_context->flags, CODEC_FLAG_H263P_SLICE_STRUCT, value);
+#endif
 
+#ifdef CODEC_FLAG_H263P_AIV
       // Annex S: Alternative INTER VLC mode
       // does not work with eyeBeam
       if (strcasecmp(option, H263_ANNEX_S) == 0)
         return SetOptionBit(m_context->flags, CODEC_FLAG_H263P_AIV, value);
+#endif
 
       if (strcasecmp(option, PLUGINCODEC_MEDIA_PACKETIZATION) == 0 ||
           strcasecmp(option, PLUGINCODEC_MEDIA_PACKETIZATIONS) == 0) {
@@ -484,12 +494,24 @@ class H263_Base_Encoder : public PluginVideoEncoder<MY_CODEC>, public FFMPEGCode
 
       #define CODEC_TRACER_FLAG(tracer, flag) \
         PTRACE(4, m_prefix, #flag " is " << ((m_context->flags & flag) ? "enabled" : "disabled"));
+#ifdef CODEC_FLAG_H263P_UMV
       CODEC_TRACER_FLAG(tracer, CODEC_FLAG_H263P_UMV);
+#endif
+#ifdef CODEC_FLAG_OBMC
       CODEC_TRACER_FLAG(tracer, CODEC_FLAG_OBMC);
+#endif
+#ifdef CODEC_FLAG_AC_PRED
       CODEC_TRACER_FLAG(tracer, CODEC_FLAG_AC_PRED);
+#endif
+#ifdef CODEC_FLAG_H263P_SLICE_STRUCT
       CODEC_TRACER_FLAG(tracer, CODEC_FLAG_H263P_SLICE_STRUCT)
+#endif
+#ifdef CODEC_FLAG_LOOP_FILTER
       CODEC_TRACER_FLAG(tracer, CODEC_FLAG_LOOP_FILTER);
+#endif
+#ifdef CODEC_FLAG_H263P_AIV
       CODEC_TRACER_FLAG(tracer, CODEC_FLAG_H263P_AIV);
+#endif
 
       return OpenCodec();
     }
@@ -544,13 +566,21 @@ class H263_RFC2190_Encoder : public H263_Base_Encoder
 
       m_context->rtp_payload_size = PluginCodec_RTP_MaxPayloadSize;
 
+    #ifdef CODEC_FLAG_H263P_UMV
       m_context->flags &= ~CODEC_FLAG_H263P_UMV;
+    #endif
+    #ifdef CODEC_FLAG_4MV
       m_context->flags &= ~CODEC_FLAG_4MV;
-    #if LIBAVCODEC_RTP_MODE
+    #endif
+    #if LIBAVCODEC_RTP_MODE && defined(CODEC_FLAG_H263P_AIC)
       m_context->flags &= ~CODEC_FLAG_H263P_AIC;
     #endif
+    #ifdef CODEC_FLAG_H263P_AIV
       m_context->flags &= ~CODEC_FLAG_H263P_AIV;
+    #endif
+    #ifdef CODEC_FLAG_H263P_SLICE_STRUCT
       m_context->flags &= ~CODEC_FLAG_H263P_SLICE_STRUCT;
+    #endif
 
       return true;
     }

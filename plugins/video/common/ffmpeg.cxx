@@ -453,7 +453,9 @@ bool FFMPEGCodec::InitDecoder(CodecID codecId)
 
   m_picture->quality = -1;
 
+#ifdef FF_ER_AGGRESSIVE
   m_context->error_recognition = FF_ER_AGGRESSIVE;
+#endif
   m_context->error_concealment = FF_EC_GUESS_MVS | FF_EC_DEBLOCK;
 
   return true;
@@ -656,7 +658,7 @@ bool FFMPEGCodec::EncodeVideoPacket(const PluginCodec_RTP & in, PluginCodec_RTP 
   */
   m_picture->pts = AV_NOPTS_VALUE;
 
-  m_picture->pict_type = (flags & PluginCodec_CoderForceIFrame) != 0 ? FF_I_TYPE : AV_PICTURE_TYPE_NONE;
+  m_picture->pict_type = (flags & PluginCodec_CoderForceIFrame) != 0 ? AV_PICTURE_TYPE_I : AV_PICTURE_TYPE_NONE;
   m_picture->key_frame = 0;
 
   if (m_fullFrame == NULL)

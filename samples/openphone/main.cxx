@@ -56,6 +56,7 @@
 #include <wx/progdlg.h>
 #undef LoadMenu // Bizarre but necessary before the xml code
 #include <wx/xrc/xmlres.h>
+#include <wx/cmdline.h>
 
 #include <opal/mediasession.h>
 #include <opal/transcoders.h>
@@ -539,7 +540,6 @@ OpenPhoneApp::OpenPhoneApp()
   : PProcess(MANUFACTURER_TEXT, PRODUCT_NAME_TEXT,
              MAJOR_VERSION, MINOR_VERSION, BUILD_TYPE, BUILD_NUMBER)
 {
-  wxConfig::Set(new wxConfig(PwxString(GetName()), PwxString(GetManufacturer())));
 }
 
 
@@ -558,11 +558,40 @@ bool OpenPhoneApp::OnInit()
     PProcess::HostSystemURLHandlerInfo::RegisterTypes(urlTypes, true);
   }
 
+  // Check command line arguments
+  static const wxCmdLineEntryDesc cmdLineDesc[] =
+  {
+      { wxCMD_LINE_SWITCH, "h", "help", NULL, wxCMD_LINE_VAL_NONE,  wxCMD_LINE_OPTION_HELP },
+      { wxCMD_LINE_OPTION, "n", "config-name", "Set name to use for configuration", wxCMD_LINE_VAL_STRING },
+      { wxCMD_LINE_OPTION, "f", "config-file", "Use specified file for configuration", wxCMD_LINE_VAL_STRING },
+      { wxCMD_LINE_SWITCH, "m", "minimised", "Start application minimised" },
+      { wxCMD_LINE_PARAM,  NULL, NULL, "URI to call", wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL },
+      { wxCMD_LINE_NONE }
+  };
+
+  wxCmdLineParser cmdLine(cmdLineDesc, wxApp::argc,  wxApp::argv);
+  if (cmdLine.Parse() != 0)
+    return false;
+
+  {
+    PwxString name(GetName());
+    PwxString manufacture(GetManufacturer());
+    PwxString filename;
+    cmdLine.Found("config-name", &name);
+    cmdLine.Found("config-file", &filename);
+    wxConfig::Set(new wxConfig(name, manufacture, filename));
+  }
+
   // Create the main frame window
   MyManager * main = new MyManager();
   SetTopWindow(main);
+
   wxBeginBusyCursor();
-  bool ok = main->Initialise();
+
+  bool ok = main->Initialise(cmdLine.FoundSwitch("minimised"));
+  if (ok && cmdLine.GetParamCount() > 0)
+    main->MakeCall(cmdLine.GetParam());
+
   wxEndBusyCursor();
   return ok;
 }
@@ -757,7 +786,7 @@ void MyManager::OnEvtAsyncNotification(wxCommandEvent &)
 }
 
 
-bool MyManager::Initialise()
+bool MyManager::Initialise(bool startMinimised)
 {
   wxImage::AddHandler(new wxGIFHandler);
   wxXmlResource::Get()->InitAllHandlers();
@@ -847,6 +876,8 @@ bool MyManager::Initialise()
   RecreateSpeedDials((SpeedDialViews)view);
 
   // Show the frame window
+  if (startMinimised)
+    Iconize();
   Show(true);
 
   LogWindow << PProcess::Current().GetName()
