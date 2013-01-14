@@ -879,8 +879,11 @@ static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
   if (stream == NULL)
     return false;
 
-  if (!stream->IsOpen())
+  if (!stream->IsOpen()) {
+    PTRACE(4, "SIP\tRe-INVITE of closed stream " << *stream);
+    stream.SetNULL();
     return false;
+  }
 
   if (!remoteChanged) {
     OpalMediaFormatList::const_iterator fmt = answerFormats.FindFormat(stream->GetMediaFormat());
