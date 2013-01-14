@@ -912,7 +912,7 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     MyManager();
     ~MyManager();
 
-    bool Initialise();
+    bool Initialise(bool startMinimised);
 
     void SetTrayTipText(const PwxString & text);
     void SetBalloonText(const PwxString & text);
