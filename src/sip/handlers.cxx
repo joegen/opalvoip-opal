@@ -2192,6 +2192,7 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
 bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo &,
                                   list<SIPPresenceInfo> &)
 {
+  PTRACE2(1, NULL, "SIPPres\tCould not parse entity, no XML support!");
   return false;
 }
 #endif // P_EXPAT
