@@ -385,12 +385,10 @@ class MPEG4_Encoder : public PluginVideoEncoder<MY_CODEC>, public FFMPEGCodec
 
       m_context->max_b_frames = 0; /*don't use b frames*/
       m_context->flags |= CODEC_FLAG_AC_PRED
-                       |  CODEC_FLAG_H263P_UMV
                     /* | CODEC_FLAG_QPEL */ // don't enable this one: this forces profile_level to advanced simple profile
                        | CODEC_FLAG_4MV
                        | CODEC_FLAG_GMC
-                       | CODEC_FLAG_LOOP_FILTER
-                       | CODEC_FLAG_H263P_SLICE_STRUCT;
+                       | CODEC_FLAG_LOOP_FILTER;
 
       return OpenCodec();
     }
@@ -460,8 +458,7 @@ class MPEG4_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCodec
       if (!InitDecoder(CODEC_ID_MPEG4))
         return false;
 
-      m_context->flags |= CODEC_FLAG_4MV
-                       |  CODEC_FLAG_PART;
+      m_context->flags |= CODEC_FLAG_4MV;
 
       return OpenCodec();
     }
