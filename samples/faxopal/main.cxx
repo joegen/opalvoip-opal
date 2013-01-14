@@ -78,7 +78,7 @@ PString MyManager::GetArgumentSpec() const
 void MyManager::Usage(ostream & strm, const PArgList & args)
 {
   args.Usage(strm,
-             "[ options ] filename [ remote-url ]") << "\n"
+             "[ options ] filename [ remote-url ... ]") << "\n"
             "Specific T.38 format options (using -O/--option):\n";
   PrintOption(strm, "Station-Identifier",    "string");
   PrintOption(strm, "Header-Info",           "string");
@@ -179,21 +179,28 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
   m_competionTimeout = PTimeInterval(args.GetOptionString('T', "365:0:0:0"));
   cout << "Completion timeout is " << m_competionTimeout.AsString(0, PTimeInterval::IncludeDays) << '\n';
 
-  if (args.GetCount() == 1)
+  PString tiff = args[0];
+  if (args.GetCount() == 1) {
     cout << "Receive directory: " << faxEP->GetDefaultDirectory() << "\n"
             "\n"
-            "Awaiting incoming fax, saving as " << args[0];
-  else {
-    cout << '\n';
-    if (SetUpCall(prefix + ":" + args[0], args[1]) == NULL) {
-      cerr << "Could not start call to \"" << args[1] << '"' << endl;
-      return false;
-    }
-    cout << "Sending " << args[0] << " to " << args[1];
+            "Awaiting incoming fax, saving as " << tiff << " ..." << endl;
+    return true;
   }
-  cout << " ..." << endl;
 
-  return true;
+  bool atLeastOne = false;
+
+  cout << '\n';
+  for (PINDEX arg = 1; arg < args.GetCount(); ++arg) {
+    PString destination = args[arg];
+    if (SetUpCall(prefix + ":" + tiff, destination) != NULL)
+      atLeastOne = true;
+    else
+      cerr << "Could not start call to \"" << destination << '"' << endl;
+    cout << "Sending " << tiff << " to " << destination << endl;
+  }
+  cout << "Awaiting transmission ..." << endl;
+
+  return atLeastOne;
 }
 
 
@@ -267,7 +274,8 @@ void MyManager::OnClearedCall(OpalCall & call)
       cerr << "Call error: " << OpalConnection::GetCallEndReasonText(call.GetCallEndReason());
   }
 
-  EndRun();
+  if (GetCallCount() == 1)
+    EndRun();
 }
 
 
