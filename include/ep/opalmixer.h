@@ -56,7 +56,8 @@ class OpalMixerConnection;
 //#define OPAL_MIXER_AUDIO_DEBUG 1
 
 
-#define OPAL_OPT_LISTEN_ONLY "Listen-Only" ///< String option for listen only mixer connection
+#define OPAL_OPT_LISTEN_ONLY "Listen-Only"      ///< String option for listen only mixer connection
+#define OPAL_OPT_CONF_OWNER  "Conference-Owner" ///< String option for listen only mixer connection
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1171,13 +1172,14 @@ class OpalMixerNode : public PSafeObject
     const PTime & GetCreationTime() const { return m_creationTime; }
 
     /**Set the owner connection.
-       If a conenction with GetRemotePartyURL() equivalent to this string
-       disconnects from the node, the node is shut down and all other
-       participants disconnected.
+       If a connection with GetToken(), GetLocalPartyURL() or
+       GetRemotePartyURL() equal to \p connectionIdentifier disconnects from
+       the node, then the node is shut down and all other participants
+       disconnected.
       */
     void SetOwnerConnection(
-      const PString & uri
-    ) { m_ownerConnection = uri; }
+      const PString & connectionIdentifier
+    ) { m_ownerConnection = connectionIdentifier; }
   //@}
 
   protected:
