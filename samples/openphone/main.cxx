@@ -106,7 +106,9 @@
 extern void InitXmlResource(); // From resource.cpp whichis compiled openphone.xrc
 
 
-#define CONFERENCE_NAME "conference"
+#define CONFERENCE_PREFIX "mcu"
+#define CONFERENCE_NAME   "conference"
+#define CONFERENCE_URI    CONFERENCE_PREFIX":"CONFERENCE_NAME
 
 
 // Definitions of the configuration file section and key names
@@ -929,7 +931,7 @@ bool MyManager::Initialise(bool startMinimised)
 #endif
 
 #if OPAL_HAS_MIXER
-  m_mcuEP = new OpalMixerEndPoint(*this, "mcu");
+  m_mcuEP = new OpalMixerEndPoint(*this, CONFERENCE_PREFIX);
   m_mcuEP->AddNode(new OpalMixerNodeInfo(CONFERENCE_NAME));
 #endif
 
@@ -2926,17 +2928,18 @@ void MyManager::AddToConference(OpalCall & call)
 {
   if (m_activeCall != NULL) {
     PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReference);
-    m_activeCall->Transfer("mcu:"CONFERENCE_NAME, connection);
+    m_activeCall->Transfer(CONFERENCE_URI, connection);
     LogWindow << "Added \"" << connection->GetRemotePartyName() << "\" to conference." << endl;
-    PString pc = "pc:*";
+
+    PString pc = "pc:*;" OPAL_URL_PARAM_PREFIX OPAL_OPT_CONF_OWNER;
     if (connection->GetMediaStream(OpalMediaType::Video(), true) == NULL)
-      pc += ";OPAL-AutoStart=video:no";
-    SetUpCall(pc, "mcu:"CONFERENCE_NAME);
+      pc += ";" OPAL_URL_PARAM_PREFIX OPAL_OPT_AUTO_START "=video:no";
+    SetUpCall(pc, CONFERENCE_URI);
     m_activeCall.SetNULL();
   }
 
   PSafePtr<OpalLocalConnection> connection = call.GetConnectionAs<OpalLocalConnection>();
-  call.Transfer("mcu:"CONFERENCE_NAME, connection);
+  call.Transfer(CONFERENCE_URI, connection);
   call.Retrieve();
   LogWindow << "Added \"" << connection->GetRemotePartyName() << "\" to conference." << endl;
 }

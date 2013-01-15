@@ -1011,6 +1011,8 @@ void OpalMixerConnection::OnApplyStringOptions()
 {
   OpalLocalConnection::OnApplyStringOptions();
   SetListenOnly(m_stringOptions.GetBoolean(OPAL_OPT_LISTEN_ONLY, GetListenOnly()));
+  if (m_stringOptions.GetBoolean(OPAL_OPT_CONF_OWNER))
+    m_node->SetOwnerConnection(GetToken());
 }
 
 
@@ -1281,7 +1283,10 @@ void OpalMixerNode::DetachConnection(OpalConnection * connection)
 
   m_manager.OnNodeStatusChanged(*this, OpalConferenceState::UserRemoved);
 
-  if (!m_ownerConnection.IsEmpty() && connection->GetRemotePartyURL() == m_ownerConnection)
+  if (!m_ownerConnection.IsEmpty() &&
+      (m_ownerConnection == connection->GetToken() ||
+       m_ownerConnection == connection->GetLocalPartyURL() ||
+       m_ownerConnection == connection->GetRemotePartyURL()))
     ShutDown();
 }
 
