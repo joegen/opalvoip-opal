@@ -856,9 +856,9 @@ bool OpalMixerEndPoint::GetConferenceStates(OpalConferenceStates & states, const
   else {
     PSafePtr<OpalMixerNode> node;
     if (name.NumCompare(GetPrefixName()+':') == EqualTo)
-      node = m_nodesByUID.FindWithLock(name.Mid(GetPrefixName().GetLength()+1));
+      node = m_nodesByUID.FindWithLock(name.Mid(GetPrefixName().GetLength()+1), PSafeReadOnly);
     else
-      node = m_nodesByName.GetAt(name);
+      node = m_nodesByName.FindWithLock(name, PSafeReadOnly);
 
     if (node != NULL) {
       states.push_back(OpalConferenceState());
@@ -1836,7 +1836,7 @@ OpalMixerNodeManager::~OpalMixerNodeManager()
 
 void OpalMixerNodeManager::ShutDown()
 {
-  PTRACE(4, "Mixer\tDestroying " << m_nodesByUID.GetSize() << ' ' << m_nodesByName.GetSize() << " nodes");
+  PTRACE(4, "Mixer\tDestroying " << m_nodesByUID.GetSize() << '/' << m_nodesByName.GetSize() << " nodes");
   while (!m_nodesByUID.IsEmpty()) {
     PSafePtr<OpalMixerNode> node = m_nodesByUID.GetAt(0);
     node->ShutDown();
@@ -1883,10 +1883,7 @@ void OpalMixerNodeManager::AddNode(OpalMixerNode * node)
 PSafePtr<OpalMixerNode> OpalMixerNodeManager::FindNode(const PString & name, PSafetyMode mode)
 {
   PGloballyUniqueID guid(name);
-  if (!guid.IsNULL())
-    return m_nodesByUID.FindWithLock(guid, mode);
-
-  return PSafePtr<OpalMixerNode>(m_nodesByName.GetAt(name), mode);
+  return guid.IsNULL() ? m_nodesByName.FindWithLock(name, mode) : m_nodesByUID.FindWithLock(guid, mode);
 }
 
 

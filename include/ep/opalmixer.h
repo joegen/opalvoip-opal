@@ -546,7 +546,7 @@ class OpalMixerNodeManager
     OpalManager & m_manager;
 
     PSafeDictionary<PGloballyUniqueID, OpalMixerNode> m_nodesByUID;
-    PDictionary<PString, OpalMixerNode>               m_nodesByName;
+    PSafeDictionary<PString, OpalMixerNode>           m_nodesByName;
 };
 
 
