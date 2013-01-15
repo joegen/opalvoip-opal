@@ -585,7 +585,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
       Reset();
     }
     else {
-      PTRACE(4, "Jitter\tPacket not ready" COMMON_TRACE_INFO << ", oldest=" << oldestFrame->first);
+      PTRACE(5, "Jitter\tPacket not ready" COMMON_TRACE_INFO << ", oldest=" << oldestFrame->first);
       ANALYSE(Out, requiredTimestamp, "Wait");
     }
     return true;
