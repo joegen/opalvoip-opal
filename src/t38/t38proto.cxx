@@ -860,7 +860,14 @@ void OpalFaxConnection::OnEstablished()
 void OpalFaxConnection::OnReleased()
 {
   m_switchTimer.Stop(false);
+
   OpalLocalConnection::OnReleased();
+
+  // Probably not be necessary, but just in case of race conditions
+  PTRACE_IF(4, !mediaStreams.IsEmpty(), "FAX", "Waiting for media streams to close.");
+  while (!mediaStreams.IsEmpty())
+    PThread::Sleep(20);
+
   InternalOnFaxCompleted();
 }
 
@@ -898,7 +905,8 @@ void OpalFaxConnection::OnClosedMediaStream(const OpalMediaStream & stream)
   }
 
   if (bothClosed) {
-    if (m_finalStatistics.m_fax.m_result == 0 /* success!*/ || !(IsReleased() || ownerCall.IsSwitchingT38()))
+    if (    m_finalStatistics.m_fax.m_result == 0 /* success!*/ ||
+          !(m_finalStatistics.m_fax.m_result < 0  /* in progress */ || IsReleased() || ownerCall.IsSwitchingT38()))
       InternalOnFaxCompleted();
     else {
       PTRACE(4, "FAX\tIgnoring switching "
@@ -1036,6 +1044,8 @@ void OpalFaxConnection::InternalOnFaxCompleted()
 {
   if (m_completed)
     return;
+
+  PTRACE(4, "FAX", "OnFaxCompleted, result=" << m_finalStatistics.m_fax.m_result);
 
   m_completed= true;
   OnFaxCompleted(m_finalStatistics.m_fax.m_result != OpalMediaStatistics::FaxSuccessful);
