@@ -1166,7 +1166,7 @@ OpalMediaPatch * OpalManager::CreateMediaPatch(OpalMediaStream & source,
 
 
 #if OPAL_SCRIPT
-static void OnStartStopmediaPatch(PScriptLanguage * script, const char * fn, OpalConnection & connection, OpalMediaPatch & patch)
+static void OnStartStopMediaPatch(PScriptLanguage * script, const char * fn, OpalConnection & connection, OpalMediaPatch & patch)
 {
   if (script == NULL)
     return;
@@ -1183,7 +1183,7 @@ static void OnStartStopmediaPatch(PScriptLanguage * script, const char * fn, Opa
 #if OPAL_SCRIPT
 void OpalManager::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
 {
-  OnStartStopmediaPatch(m_script, "OnStartMedia", connection, patch);
+  OnStartStopMediaPatch(m_script, "OnStartMedia", connection, patch);
 #else
 void OpalManager::OnStartMediaPatch(OpalConnection & /*connection*/, OpalMediaPatch & /*patch*/)
 {
@@ -1194,7 +1194,7 @@ void OpalManager::OnStartMediaPatch(OpalConnection & /*connection*/, OpalMediaPa
 #if OPAL_SCRIPT
 void OpalManager::OnStopMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
 {
-  OnStartStopmediaPatch(m_script, "OnStopMedia", connection, patch);
+  OnStartStopMediaPatch(m_script, "OnStopMedia", connection, patch);
 #else
 void OpalManager::OnStopMediaPatch(OpalConnection & /*connection*/, OpalMediaPatch & patch)
 {
