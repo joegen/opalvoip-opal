@@ -246,7 +246,7 @@ class OpalFaxConnection : public OpalLocalConnection
 
   protected:
     PDECLARE_NOTIFIER(PTimer,  OpalFaxConnection, OnSwitchTimeout);
-    void OpenFaxStreams();
+    void InternalOpenFaxStreams();
     void InternalOnFaxCompleted();
 
     void SetFaxMediaFormatOptions(OpalMediaFormat & mediaFormat) const;

@@ -898,7 +898,7 @@ void OpalFaxConnection::OnClosedMediaStream(const OpalMediaStream & stream)
   }
 
   if (bothClosed) {
-    if (m_finalStatistics.m_fax.m_result == 0 /* success!*/ || !ownerCall.IsSwitchingT38())
+    if (m_finalStatistics.m_fax.m_result == 0 /* success!*/ || !(IsReleased() || ownerCall.IsSwitchingT38()))
       InternalOnFaxCompleted();
     else {
       PTRACE(4, "FAX\tIgnoring switching "
@@ -924,14 +924,13 @@ PBoolean OpalFaxConnection::SendUserInputTone(char tone, unsigned duration)
 void OpalFaxConnection::OnUserInputTone(char tone, unsigned /*duration*/)
 {
   // Not yet switched and got a CNG/CED from the remote system, start switch
-  if (m_disableT38)
+  if (m_disableT38 || IsReleased())
     return;
 
   if (m_receiving ? (tone == 'X')
                   : (tone == 'Y' && m_stringOptions.GetBoolean(OPAL_SWITCH_ON_CED))) {
     PTRACE(3, "FAX\tRequesting mode change in response to " << (tone == 'X' ? "CNG" : "CED"));
-    GetEndPoint().GetManager().QueueDecoupledEvent(
-          new PSafeWorkNoArg<OpalFaxConnection>(this, &OpalFaxConnection::OpenFaxStreams));
+    SwitchFaxMediaStreams(true);
   }
 }
 
@@ -975,17 +974,20 @@ void OpalFaxConnection::GetStatistics(OpalMediaStatistics & statistics) const
 
 void OpalFaxConnection::OnSwitchTimeout(PTimer &, INT)
 {
-  if (m_disableT38)
+  if (m_disableT38 || IsReleased())
     return;
 
   PTRACE(2, "FAX\tDid not switch to T.38 mode, forcing switch");
   GetEndPoint().GetManager().QueueDecoupledEvent(
-          new PSafeWorkNoArg<OpalFaxConnection>(this, &OpalFaxConnection::OpenFaxStreams));
+          new PSafeWorkNoArg<OpalFaxConnection>(this, &OpalFaxConnection::InternalOpenFaxStreams));
 }
 
 
 bool OpalFaxConnection::SwitchFaxMediaStreams(bool enable)
 {
+  if (IsReleased())
+    return false;
+
   m_completed = false;
   PSafePtr<OpalConnection> other = GetOtherPartyConnection();
   return other != NULL && other->SwitchFaxMediaStreams(enable);
@@ -1021,7 +1023,7 @@ bool OpalFaxConnection::OnSwitchingFaxMediaStreams(bool toT38)
 }
 
 
-void OpalFaxConnection::OpenFaxStreams()
+void OpalFaxConnection::InternalOpenFaxStreams()
 {
   if (LockReadWrite()) {
     SwitchFaxMediaStreams(true);
