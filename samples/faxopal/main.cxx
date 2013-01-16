@@ -286,31 +286,32 @@ void MyFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool failed)
   connection.GetStatistics(stats);
   switch (stats.m_fax.m_result) {
     case -2 :
-      cerr << "Failed to establish T.30";
+      cerr << "Failed to establish T.30\n";
       break;
     case 0 :
       cout << "Success, "
            << (connection.IsReceive() ? stats.m_fax.m_rxPages : stats.m_fax.m_txPages)
-           << " of " << stats.m_fax.m_totalPages << " pages";
+           << " of " << stats.m_fax.m_totalPages << " pages\n";
       PProcess::Current().SetTerminationValue(0); // Indicate success
       break;
     case 41 :
-      cerr << "Failed to open TIFF file";
+      cerr << "Failed to open TIFF file\n";
       break;
     case 42 :
     case 43 :
     case 44 :
     case 45 :
     case 46 :
-      cerr << "Illegal TIFF file";
+      cerr << "Illegal TIFF file\n";
       break;
     default :
       cerr << "T.30 error " << stats.m_fax.m_result;
       if (!stats.m_fax.m_errorText.IsEmpty())
         cerr << " (" << stats.m_fax.m_errorText << ')';
+      cerr << '\n';
   }
 #else
-  cerr << (failed ? "Success" : "Failed");
+  cerr << (failed ? "Success\n" : "Failed\n");
 #endif // OPAL_STATISTICS
 
   OpalFaxEndPoint::OnFaxCompleted(connection, failed);
