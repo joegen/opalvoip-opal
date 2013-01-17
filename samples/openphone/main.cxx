@@ -561,11 +561,11 @@ bool OpenPhoneApp::OnInit()
   // Check command line arguments
   static const wxCmdLineEntryDesc cmdLineDesc[] =
   {
-      { wxCMD_LINE_SWITCH, "h", "help", NULL, wxCMD_LINE_VAL_NONE,  wxCMD_LINE_OPTION_HELP },
-      { wxCMD_LINE_OPTION, "n", "config-name", "Set name to use for configuration", wxCMD_LINE_VAL_STRING },
-      { wxCMD_LINE_OPTION, "f", "config-file", "Use specified file for configuration", wxCMD_LINE_VAL_STRING },
-      { wxCMD_LINE_SWITCH, "m", "minimised", "Start application minimised" },
-      { wxCMD_LINE_PARAM,  NULL, NULL, "URI to call", wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL },
+      { wxCMD_LINE_SWITCH, wxT("h"), wxT("help"), NULL, wxCMD_LINE_VAL_NONE,  wxCMD_LINE_OPTION_HELP },
+      { wxCMD_LINE_OPTION, wxT("n"), wxT("config-name"), wxT("Set name to use for configuration"), wxCMD_LINE_VAL_STRING },
+      { wxCMD_LINE_OPTION, wxT("f"), wxT("config-file"), wxT("Use specified file for configuration"), wxCMD_LINE_VAL_STRING },
+      { wxCMD_LINE_SWITCH, wxT("m"), wxT("minimised"), wxT("Start application minimised") },
+      { wxCMD_LINE_PARAM,  NULL, NULL, wxT("URI to call"), wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL },
       { wxCMD_LINE_NONE }
   };
 
@@ -577,8 +577,8 @@ bool OpenPhoneApp::OnInit()
     PwxString name(GetName());
     PwxString manufacture(GetManufacturer());
     PwxString filename;
-    cmdLine.Found("config-name", &name);
-    cmdLine.Found("config-file", &filename);
+    cmdLine.Found(wxT("config-name"), &name);
+    cmdLine.Found(wxT("config-file"), &filename);
     wxConfig::Set(new wxConfig(name, manufacture, filename));
   }
 
@@ -588,7 +588,7 @@ bool OpenPhoneApp::OnInit()
 
   wxBeginBusyCursor();
 
-  bool ok = main->Initialise(cmdLine.FoundSwitch("minimised"));
+  bool ok = main->Initialise(cmdLine.Found(wxT("minimised")));
   if (ok && cmdLine.GetParamCount() > 0)
     main->MakeCall(cmdLine.GetParam());
 
