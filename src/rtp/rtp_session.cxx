@@ -1946,15 +1946,17 @@ bool OpalRTPSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress
   allowRemoteTransmitAddressChange = true;
   allowSequenceChange = packetsReceived != 0;
 
-  if (isMediaAddress) {
-    m_remoteDataPort = port;
-    if (m_remoteControlPort == 0 || allowRemoteTransmitAddressChange)
-      m_remoteControlPort = (WORD)(port + 1);
-  }
-  else {
-    m_remoteControlPort = port;
-    if (m_remoteDataPort == 0 || allowRemoteTransmitAddressChange)
-      m_remoteDataPort = (WORD)(port - 1);
+  if (port != 0) {
+    if (isMediaAddress) {
+      m_remoteDataPort = port;
+      if (m_remoteControlPort == 0 || allowRemoteTransmitAddressChange)
+        m_remoteControlPort = (WORD)(port + 1);
+    }
+    else {
+      m_remoteControlPort = port;
+      if (m_remoteDataPort == 0 || allowRemoteTransmitAddressChange)
+        m_remoteDataPort = (WORD)(port - 1);
+    }
   }
 
   if (m_localHasRestrictedNAT) {
