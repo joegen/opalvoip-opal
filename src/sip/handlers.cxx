@@ -1301,10 +1301,12 @@ class SIPMwiEventPackageHandler : public SIPEventPackageHandler
 
     PMIMEInfo info(notifyInfo.m_request.GetEntityBody());
 
-    PString aor = notifyInfo.m_handler.GetAddressOfRecord().AsString();
+    const SIPURL & aor = notifyInfo.m_handler.GetAddressOfRecord();
     PString account = info.Get("Message-Account");
-    if (account.IsEmpty() || aor.NumCompare(account) == EqualTo)
-      account = aor;
+    SIPURL accountURI(account);
+    if (account.IsEmpty() || aor.GetUserName() == account ||
+            (accountURI.GetUserName() == "asterisk" && accountURI == aor.GetHostPort()))
+      account = aor.AsString();
 
     bool nothingSent = true;
     for (PINDEX z = 0 ; z < PARRAYSIZE(validMessageClasses); z++) {
