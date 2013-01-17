@@ -1274,7 +1274,12 @@ class SIPMwiEventPackageHandler : public SIPEventPackageHandler
 
     PMIMEInfo info(request.GetEntityBody());
 
-    PString account = info.Get("Message-Account", handler.GetAddressOfRecord().AsString());
+    const SIPURL & aor = handler.GetAddressOfRecord();
+    PString account = info.Get("Message-Account");
+    SIPURL accountURI(account);
+    if (account.IsEmpty() || aor.GetUserName() == account ||
+            (accountURI.GetUserName() == "asterisk" && accountURI == aor.GetHostName()))
+      account = aor.AsString();
 
     bool nothingSent = true;
     for (PINDEX z = 0 ; z < PARRAYSIZE(validMessageClasses); z++) {
