@@ -53,6 +53,8 @@ LD                      = @LD@
 ARCHIVE                 = @ARCHIVE@
 SWIG                    = @SWIG@
 
+OPAL_LIBDIR=@libdir@
+
 # The library file names
 RELEASE_LIB_NAME                = @RELEASE_LIB_NAME@
 RELEASE_LIB_FILENAME_STATIC     = @RELEASE_LIB_FILENAME_STATIC@
