@@ -609,8 +609,6 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     OpalTransportAddress GetDefaultSDPConnectAddress(WORD port = 0) const;
 
     SIPEndPoint & GetEndPoint() const { return SIPTransactionOwner::m_endpoint; }
-    SIPDialogContext & GetDialog() { return m_dialog; }
-    const SIPDialogContext & GetDialog() const { return m_dialog; }
     SIPAuthentication * GetAuthenticator() const { return m_authentication; }
 
     /// Mode for reliable provisional responses.
@@ -659,8 +657,6 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     );
 
     // Overrides from SIPTransactionOwner
-    virtual OpalTransportAddress GetRemoteTransportAddress(PINDEX dnsEntry) const;
-    virtual SIPURL GetTargetURI() const;
     virtual PString GetAuthID() const;
 
 
@@ -740,9 +736,8 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     );
 
     void UpdateRemoteAddresses();
-    bool SetNewTransportProto(const PString & proto);
 #if OPAL_SRTP
-    virtual bool CanDoSRTP() const { return GetTargetURI().GetTransportProto() == "tls"; }
+    virtual bool CanDoSRTP() const { return m_dialog.GetRequestURI().GetTransportProto() == "tls"; }
 #endif
 
     void NotifyDialogState(
@@ -783,7 +778,6 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     bool                  m_handlingINVITE;
     bool                  m_resolveMultipleFormatReINVITE;
     bool                  m_symmetricOpenStream;
-    SIPDialogContext      m_dialog;
     OpalGloballyUniqueID  m_dialogNotifyId;
     int                   m_appearanceCode;
     PString               m_alertInfo;
