@@ -69,6 +69,8 @@ static BYTE DefaultKeepAliveData[] = { '\r', '\n', '\r', '\n' };
 SIPEndPoint::SIPEndPoint(OpalManager & mgr, unsigned maxThreads)
   : OpalRTPEndPoint(mgr, "sip", CanTerminateCall|SupportsE164)
   , m_defaultPrackMode(SIPConnection::e_prackSupported)
+  , m_maxPacketSizeUDP(1300)         // As per RFC 3261 section 18.1.1
+  , maxRetries(10)
   , retryTimeoutMin(500)             // 0.5 seconds
   , retryTimeoutMax(0, 4)            // 4 seconds
   , nonInviteTimeout(0, 16)          // 16 seconds
@@ -88,7 +90,6 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr, unsigned maxThreads)
   , m_disableTrying(true)
 {
   defaultSignalPort = SIPURL::DefaultPort;
-  maxRetries = 10;
 
   m_allowedEvents += SIPEventPackage(SIPSubscribe::Dialog);
   m_allowedEvents += SIPEventPackage(SIPSubscribe::Conference);
@@ -235,18 +236,16 @@ void SIPEndPoint::TransportThreadMain(OpalTransportPtr transport)
 OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transactor,
                                             SIP_PDU::StatusCodes & reason)
 {
-  SIPURL targetURI = transactor.GetTargetURI();
-
-  OpalTransportAddress remoteAddress = transactor.GetRemoteTransportAddress(transactor.GetDNSEntry());
+  OpalTransportAddress remoteAddress = transactor.GetRemoteTransportAddress();
   if (remoteAddress.IsEmpty()) {
     for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(); ; ++handler) {
       if (handler == NULL) {
         reason = SIP_PDU::Local_CannotMapScheme;
-        PTRACE(1, "SIP\tCannot use " << targetURI.GetScheme() << " URI without phone-context or existing registration.");
+        PTRACE(1, "SIP\tCannot use " << transactor.GetRequestURI().GetScheme() << " URI without phone-context or existing registration.");
         return NULL;
       }
       if (handler->GetMethod() == SIP_PDU::Method_REGISTER) {
-        remoteAddress = handler->GetTargetURI().GetTransportAddress();
+        remoteAddress = handler->GetRemoteTransportAddress();
         break;
       }
     }
@@ -268,7 +267,7 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
         localAddress = OpalTransportAddress(localInterface, 0, remoteAddress.GetProtoPrefix());
     }
     else {
-      PString domain = targetURI.GetHostPort();
+      PString domain = transactor.GetRequestURI().GetHostPort();
       PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByDomain(domain, SIP_PDU::Method_REGISTER, PSafeReadOnly);
       if (handler != NULL) {
         localAddress = handler->GetInterface();
@@ -324,7 +323,7 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
     return NULL;
   }
 
-  if (!transport->IsAuthenticated(targetURI.GetHostName())) {
+  if (!transport->IsAuthenticated(transactor.GetRequestURI().GetHostName())) {
     PTRACE(1, "SIP\tCould not connect to " << remoteAddress << " - " << transport->GetErrorText());
     reason = SIP_PDU::Local_NotAuthenticated;
     transport->CloseWait();
@@ -345,10 +344,10 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
 void SIPEndPoint::HandlePDU(const OpalTransportPtr & transport)
 {
   // create a SIP_PDU structure, then get it to read and process PDU
-  SIP_PDU * pdu = new SIP_PDU;
+  SIP_PDU * pdu = new SIP_PDU(SIP_PDU::NumMethods, transport);
 
   PTRACE(4, "SIP\tWaiting for PDU on " << *transport);
-  SIP_PDU::StatusCodes status = pdu->Read(transport);
+  SIP_PDU::StatusCodes status = pdu->Read();
   switch (status/100) {
     case 0 :
       if (status == SIP_PDU::Local_KeepAlive)
@@ -367,7 +366,7 @@ void SIPEndPoint::HandlePDU(const OpalTransportPtr & transport)
           !mime.GetCallID().IsEmpty() &&
           !mime.GetFrom().IsEmpty() &&
           !mime.GetTo().IsEmpty())
-        pdu->SendResponse(*this, status);
+        pdu->SendResponse(status);
   }
 
   delete pdu;
@@ -651,7 +650,6 @@ bool SIPEndPoint::OnReceivedPDU(SIP_PDU * pdu)
       break;
 
     case SIP_PDU::Method_INVITE :
-      pdu->AdjustVia();   // // Adjust the Via list
       if (toToken.IsEmpty()) {
         PWaitAndSignal mutex(m_receivedConnectionMutex);
 
@@ -674,26 +672,25 @@ bool SIPEndPoint::OnReceivedPDU(SIP_PDU * pdu)
               case SIPConnection::IsLoopedINVITE : // Send back error if looped INVITE
                 SIP_PDU response(*pdu, SIP_PDU::Failure_LoopDetected);
                 response.GetMIME().SetProductInfo(GetUserAgent(), connection->GetProductInfo());
-                pdu->SendResponse(*this, response);
+                response.Send();
                 return false;
             }
           }
         }
 
-        pdu->SendResponse(*this, SIP_PDU::Information_Trying);
+        pdu->SendResponse(SIP_PDU::Information_Trying);
         return OnReceivedConnectionlessPDU(pdu);
       }
 
       if (!hasToConnection) {
         // Has to tag but doesn't correspond to anything, odd.
-        pdu->SendResponse(*this, SIP_PDU::Failure_TransactionDoesNotExist);
+        pdu->SendResponse(SIP_PDU::Failure_TransactionDoesNotExist);
         return false;
       }
-      pdu->SendResponse(*this, SIP_PDU::Information_Trying);
+      pdu->SendResponse(SIP_PDU::Information_Trying);
       break;
 
     case SIP_PDU::Method_ACK :
-      pdu->AdjustVia();   // // Adjust the Via list
       break;
 
     case SIP_PDU::NumMethods :  // unknown method
@@ -701,7 +698,7 @@ bool SIPEndPoint::OnReceivedPDU(SIP_PDU * pdu)
 
     default :   // any known method other than INVITE, CANCEL and ACK
       if (!m_disableTrying)
-        pdu->SendResponse(*this, SIP_PDU::Information_Trying);
+        pdu->SendResponse(SIP_PDU::Information_Trying);
       break;
   }
 
@@ -730,13 +727,13 @@ bool SIPEndPoint::OnReceivedConnectionlessPDU(SIP_PDU * pdu)
 
     PTRACE(2, "SIP\tReceived response for unmatched transaction, id=" << id);
     if (pdu->GetMethod() == SIP_PDU::Method_CANCEL)
-      pdu->SendResponse(*this, SIP_PDU::Failure_TransactionDoesNotExist);
+      pdu->SendResponse(SIP_PDU::Failure_TransactionDoesNotExist);
     return false;
   }
 
   // Prevent any new INVITE/SUBSCRIBE etc etc while we are on the way out.
   if (m_shuttingDown) {
-    pdu->SendResponse(*this, SIP_PDU::Failure_ServiceUnavailable);
+    pdu->SendResponse(SIP_PDU::Failure_ServiceUnavailable);
     return false;
   }
 
@@ -746,49 +743,43 @@ bool SIPEndPoint::OnReceivedConnectionlessPDU(SIP_PDU * pdu)
     PSafePtr<SIPResponse> transaction = PSafePtrCast<SIPTransaction, SIPResponse>(GetTransaction(id, PSafeReadOnly));
     if (transaction != NULL) {
       PTRACE(4, "SIP\tRetransmitting previous response for transaction id=" << id);
-      transaction->Send(*pdu);
+      transaction->Resend(*pdu);
       return false;
     }
   }
 
   switch (pdu->GetMethod()) {
     case SIP_PDU::Method_INVITE :
-      pdu->AdjustVia();   // // Adjust the Via list
       return OnReceivedINVITE(pdu);
 
     case SIP_PDU::Method_REGISTER :
-      pdu->AdjustVia();   // // Adjust the Via list
       if (OnReceivedREGISTER(*pdu))
         return false;
       break;
 
     case SIP_PDU::Method_SUBSCRIBE :
-      pdu->AdjustVia();   // // Adjust the Via list
       if (OnReceivedSUBSCRIBE(*pdu, NULL))
         return false;
       break;
 
     case SIP_PDU::Method_NOTIFY :
-      pdu->AdjustVia();   // // Adjust the Via list
        if (OnReceivedNOTIFY(*pdu))
          return false;
        break;
 
     case SIP_PDU::Method_MESSAGE :
-      pdu->AdjustVia();   // // Adjust the Via list
       if (OnReceivedMESSAGE(*pdu))
         return false;
       break;
    
     case SIP_PDU::Method_OPTIONS :
-      pdu->AdjustVia();   // // Adjust the Via list
       if (OnReceivedOPTIONS(*pdu))
         return false;
       break;
 
     case SIP_PDU::Method_BYE :
       // If we receive a BYE outside of the context of a connection, tell them.
-      pdu->SendResponse(*this, SIP_PDU::Failure_TransactionDoesNotExist);
+      pdu->SendResponse(SIP_PDU::Failure_TransactionDoesNotExist);
       return false;
 
       // If we receive an ACK outside of the context of a connection, ignore it.
@@ -801,7 +792,7 @@ bool SIPEndPoint::OnReceivedConnectionlessPDU(SIP_PDU * pdu)
 
   SIP_PDU response(*pdu, SIP_PDU::Failure_MethodNotAllowed);
   response.SetAllow(GetAllowedMethods()); // Required by spec
-  pdu->SendResponse(*this, response);
+  response.Send();
   return false;
 }
 
@@ -831,7 +822,7 @@ bool SIPEndPoint::OnReceivedSUBSCRIBE(SIP_PDU & request, SIPDialogContext * dial
     if ((canNotify = CanNotify(eventPackage, dialog->GetLocalURI())) == CannotNotify) {
       SIPResponse * response = new SIPResponse(*this, request, SIP_PDU::Failure_BadEvent);
       response->GetMIME().SetAllowEvents(m_allowedEvents); // Required by spec
-      response->Send(request);
+      response->Send();
       return true;
     }
 
@@ -846,10 +837,10 @@ bool SIPEndPoint::OnReceivedSUBSCRIBE(SIP_PDU & request, SIPDialogContext * dial
   unsigned expires = mime.GetExpires();
 
   SIPResponse * response = new SIPResponse(*this, request,
-        canNotify == CanNotifyImmediate ? SIP_PDU::Successful_OK : SIP_PDU::Successful_Accepted);
+                       canNotify == CanNotifyImmediate ? SIP_PDU::Successful_OK : SIP_PDU::Successful_Accepted);
   response->GetMIME().SetEvent(eventPackage); // Required by spec
   response->GetMIME().SetExpires(expires);    // Required by spec
-  response->Send(request);
+  response->Send();
 
   if (handler->IsDuplicateCSeq(mime.GetCSeqIndex()))
     return true;
@@ -935,7 +926,7 @@ bool SIPEndPoint::OnReceivedINVITE(SIP_PDU * request)
   SIPURL toAddr(mime.GetTo());
   if (!IsAcceptedAddress(toAddr)) {
     PTRACE(2, "SIP\tIncoming INVITE for " << request->GetURI() << " for unacceptable address " << toAddr);
-    request->SendResponse(*this, SIP_PDU::Failure_NotFound);
+    request->SendResponse(SIP_PDU::Failure_NotFound);
     return false;
   }
 
@@ -948,7 +939,7 @@ bool SIPEndPoint::OnReceivedINVITE(SIP_PDU * request)
     response.GetMIME().SetAccept("application/sdp");
     response.GetMIME().SetAcceptEncoding("identity");
     response.SetAllow(GetAllowedMethods());
-    request->SendResponse(*this, response);
+    response.Send();
     return false;
   }
 
@@ -962,7 +953,7 @@ bool SIPEndPoint::OnReceivedINVITE(SIP_PDU * request)
                 "SIP\tBad Replaces header in INVITE for " << request->GetURI());
       PTRACE_IF(2, errorCode==SIP_PDU::Failure_TransactionDoesNotExist,
                 "SIP\tNo connection matching dialog info in Replaces header of INVITE from " << request->GetURI());
-      request->SendResponse(*this, errorCode);
+      request->SendResponse(errorCode);
       return false;
     }
 
@@ -975,7 +966,7 @@ bool SIPEndPoint::OnReceivedINVITE(SIP_PDU * request)
     // Get new instance of a call, abort if none created
     call = manager.InternalCreateCall();
     if (call == NULL) {
-      request->SendResponse(*this, SIP_PDU::Failure_TemporarilyUnavailable);
+      request->SendResponse(SIP_PDU::Failure_TemporarilyUnavailable);
       return false;
     }
   }
@@ -989,7 +980,7 @@ bool SIPEndPoint::OnReceivedINVITE(SIP_PDU * request)
   SIPConnection *connection = CreateConnection(init);
   if (!AddConnection(connection)) {
     PTRACE(1, "SIP\tFailed to create SIPConnection for INVITE for " << request->GetURI() << " to " << toAddr);
-    request->SendResponse(*this, SIP_PDU::Failure_NotFound);
+    request->SendResponse(SIP_PDU::Failure_NotFound);
     return false;
   }
 
@@ -1029,7 +1020,7 @@ bool SIPEndPoint::OnReceivedNOTIFY(SIP_PDU & request)
   if (handler == NULL) {
     PTRACE(3, "SIP\tCould not find a SUBSCRIBE corresponding to the NOTIFY " << eventPackage);
     SIPResponse * response = new SIPResponse(*this, request, SIP_PDU::Failure_TransactionDoesNotExist);
-    response->Send(request);
+    response->Send();
     return true;
   }
 
@@ -1054,7 +1045,7 @@ bool SIPEndPoint::OnReceivedMESSAGE(SIP_PDU & request)
       case ConnectionlessMessageInfo::SendOK :
         {
           SIPResponse * response = new SIPResponse(*this, request, SIP_PDU::Successful_OK);
-          response->Send(request);
+          response->Send();
         }
         // Do next case
 
@@ -1078,7 +1069,7 @@ bool SIPEndPoint::OnReceivedMESSAGE(SIP_PDU & request)
 bool SIPEndPoint::OnReceivedOPTIONS(SIP_PDU & request)
 {
   SIPResponse * response = new SIPResponse(*this, request, SIP_PDU::Successful_OK);
-  response->Send(request);
+  response->Send();
   return true;
 }
 

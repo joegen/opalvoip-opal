@@ -405,7 +405,7 @@ void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
   }
 
   // After this, response is owned by transaction layer and will be deleted there
-  response->Send(request);
+  response->Send();
 }
 
 

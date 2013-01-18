@@ -1626,6 +1626,7 @@ bool OpalTransportUDP::WriteConnect(const WriteConnectCallback & function)
         ok = true;
     }
   }
+  socket->SetInterface(PString::Empty());
 
   return ok;
 }

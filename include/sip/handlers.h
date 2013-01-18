@@ -93,7 +93,6 @@ public:
   virtual Comparison Compare(const PObject & other) const;
 
   // Overrides from SIPTransactionOwner
-  virtual SIPURL GetTargetURI() const { return m_remoteAddress; }
   virtual PString GetAuthID() const        { return m_username; }
   virtual PString GetPassword() const      { return m_password; }
 
@@ -150,7 +149,6 @@ public:
   const OpalProductInfo & GetProductInfo() const { return m_productInfo; }
 
   const PString & GetRealm() const { return m_realm; }
-  const SIPURL & GetRemoteAddress() const { return m_remoteAddress; }
 
   virtual bool ShutDown();
 
@@ -166,7 +164,6 @@ protected:
 
   const SIP_PDU::Methods      m_method;
   const SIPURL                m_addressOfRecord;
-  SIPURL                      m_remoteAddress;
   SIPMIMEInfo                 m_mime;
 
   unsigned                    m_lastCseq;
@@ -222,29 +219,9 @@ protected:
 };
 
 
-class SIPHandlerWithDialog : public SIPHandler
+class SIPSubscribeHandler : public SIPHandler
 {
-  PCLASSINFO(SIPHandlerWithDialog, SIPHandler);
-public:
-  SIPHandlerWithDialog(
-    SIP_PDU::Methods method,
-    SIPEndPoint & ep,
-    const SIPParameters & params,
-    const SIPDialogContext & dialog
-  );
-
-  virtual OpalTransportAddress GetRemoteTransportAddress(PINDEX dnsEntry) const;
-  virtual SIPURL GetTargetURI() const;
-  virtual bool IsDuplicateCSeq(unsigned sequenceNumber);
-
-protected:
-  SIPDialogContext m_dialog;
-};
-
-
-class SIPSubscribeHandler : public SIPHandlerWithDialog
-{
-  PCLASSINFO(SIPSubscribeHandler, SIPHandlerWithDialog);
+  PCLASSINFO(SIPSubscribeHandler, SIPHandler);
 public:
   SIPSubscribeHandler(SIPEndPoint & ep, const SIPSubscribe::Params & params);
   ~SIPSubscribeHandler();
@@ -264,19 +241,17 @@ protected:
   virtual PBoolean SendRequest(SIPHandler::State state);
   virtual void WriteTransaction(OpalTransport & transport, bool & succeeded);
   void SendStatus(SIP_PDU::StatusCodes code, State state);
-  bool DispatchNOTIFY(SIP_PDU & request);
+  bool DispatchNOTIFY(SIP_PDU & request, SIP_PDU & response);
 
   SIPSubscribe::Params     m_parameters;
   bool                     m_unconfirmed;
   SIPEventPackageHandler * m_packageHandler;
-
-  SIP_PDU                  * m_previousResponse;
 };
 
 
-class SIPNotifyHandler : public SIPHandlerWithDialog
+class SIPNotifyHandler : public SIPHandler
 {
-  PCLASSINFO(SIPNotifyHandler, SIPHandlerWithDialog);
+  PCLASSINFO(SIPNotifyHandler, SIPHandler);
 public:
   SIPNotifyHandler(
     SIPEndPoint & ep,
