@@ -490,7 +490,7 @@ char OpalRFC2833Proto::RFC2833ToASCII(PINDEX rfc2833, bool hasNSE)
 }
 
 
-void OpalRFC2833Proto::AsyncTimeout(PTimer & timer, INT)
+void OpalRFC2833Proto::AsyncTimeout(PTimer & timer, P_INT_PTR)
 {
   if (m_sendMutex.Try()) {
     SendAsyncFrame();
@@ -595,7 +595,7 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, OpalRTPSession::Sen
 }
 
 
-void OpalRFC2833Proto::ReceiveTimeout(PTimer & timer, INT)
+void OpalRFC2833Proto::ReceiveTimeout(PTimer & timer, P_INT_PTR)
 {
   if (!m_receiveMutex.Try()) {
     timer = 2; // Try again in a couple of milliseconds

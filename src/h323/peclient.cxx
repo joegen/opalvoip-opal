@@ -252,7 +252,7 @@ void H323PeerElement::PrintOn(ostream & strm) const
   H323Transactor::PrintOn(strm);
 }
 
-void H323PeerElement::MonitorMain(PThread &, INT)
+void H323PeerElement::MonitorMain(PThread &, P_INT_PTR)
 {
   PTRACE(4, "PeerElement\tBackground thread started");
 
@@ -324,7 +324,7 @@ void H323PeerElement::MonitorMain(PThread &, INT)
   PTRACE(4, "PeerElement\tBackground thread ended");
 }
 
-void H323PeerElement::UpdateAllDescriptors(PThread &, INT)
+void H323PeerElement::UpdateAllDescriptors(PThread &, P_INT_PTR)
 {
   PTRACE(4, "PeerElement\tDescriptor update thread started");
 
@@ -347,7 +347,7 @@ void H323PeerElement::UpdateAllDescriptors(PThread &, INT)
   PTRACE(4, "PeerElement\tDescriptor update thread ended");
 }
 
-void H323PeerElement::TickleMonitor(PTimer &, INT)
+void H323PeerElement::TickleMonitor(PTimer &, P_INT_PTR)
 {
   monitorTickle.Signal();
 }

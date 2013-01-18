@@ -736,7 +736,7 @@ PCLI * OpalManagerCLI::CreatePCLI()
 
 
 #if OPAL_SIP
-void OpalManagerCLI::CmdRegister(PCLI::Arguments & args, INT)
+void OpalManagerCLI::CmdRegister(PCLI::Arguments & args, P_INT_PTR)
 {
   if (!args.Parse("a-auth-id: Override user for authorisation\n"
                   "r-realm: Set realm for authorisation\n"
@@ -773,7 +773,7 @@ void OpalManagerCLI::CmdRegister(PCLI::Arguments & args, INT)
 
 
 #if P_NAT
-void OpalManagerCLI::CmdNat(PCLI::Arguments & args, INT)
+void OpalManagerCLI::CmdNat(PCLI::Arguments & args, P_INT_PTR)
 {
   if (args.GetCount() < 2) {
     args.WriteUsage();
@@ -796,7 +796,7 @@ void OpalManagerCLI::CmdNat(PCLI::Arguments & args, INT)
 
 
 #if PTRACING
-void OpalManagerCLI::CmdTrace(PCLI::Arguments & args, INT)
+void OpalManagerCLI::CmdTrace(PCLI::Arguments & args, P_INT_PTR)
 {
   if (args.GetCount() == 0)
     args.WriteUsage();
@@ -808,7 +808,7 @@ void OpalManagerCLI::CmdTrace(PCLI::Arguments & args, INT)
 #endif // PTRACING
 
 
-void OpalManagerCLI::CmdListCodecs(PCLI::Arguments & args, INT)
+void OpalManagerCLI::CmdListCodecs(PCLI::Arguments & args, P_INT_PTR)
 {
   OpalMediaFormatList formats;
   OpalMediaFormat::GetAllRegisteredMediaFormats(formats);
@@ -840,7 +840,7 @@ void OpalManagerCLI::CmdListCodecs(PCLI::Arguments & args, INT)
 }
 
 
-void OpalManagerCLI::CmdDelay(PCLI::Arguments & args, INT)
+void OpalManagerCLI::CmdDelay(PCLI::Arguments & args, P_INT_PTR)
 {
   if (args.GetCount() < 1)
     args.WriteUsage();
@@ -851,13 +851,13 @@ void OpalManagerCLI::CmdDelay(PCLI::Arguments & args, INT)
 }
 
 
-void OpalManagerCLI::CmdVersion(PCLI::Arguments & args, INT)
+void OpalManagerCLI::CmdVersion(PCLI::Arguments & args, P_INT_PTR)
 {
   PrintVersion(args.GetContext());
 }
 
 
-void OpalManagerCLI::CmdQuit(PCLI::Arguments & args, INT)
+void OpalManagerCLI::CmdQuit(PCLI::Arguments & args, P_INT_PTR)
 {
   if (PIsDescendant(args.GetContext().GetBaseReadChannel(), PConsoleChannel))
     CmdShutDown(args, 0);
@@ -866,7 +866,7 @@ void OpalManagerCLI::CmdQuit(PCLI::Arguments & args, INT)
 }
 
 
-void OpalManagerCLI::CmdShutDown(PCLI::Arguments & args, INT)
+void OpalManagerCLI::CmdShutDown(PCLI::Arguments & args, P_INT_PTR)
 {
   args.GetContext().GetCLI().Stop();
 }

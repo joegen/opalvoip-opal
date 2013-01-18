@@ -128,7 +128,7 @@ void OpalEchoCanceler::SetClockRate(const int rate)
 }
 
 
-void OpalEchoCanceler::SentPacket(RTP_DataFrame& echo_frame, INT)
+void OpalEchoCanceler::SentPacket(RTP_DataFrame& echo_frame, P_INT_PTR)
 {
   if (echo_frame.GetPayloadSize() == 0)
     return;
@@ -141,7 +141,7 @@ void OpalEchoCanceler::SentPacket(RTP_DataFrame& echo_frame, INT)
 }
 
 
-void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, INT)
+void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, P_INT_PTR)
 {
   int inputSize = 0;
   int i = 1;

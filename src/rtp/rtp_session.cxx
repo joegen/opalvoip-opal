@@ -1016,7 +1016,7 @@ bool OpalRTPSession::InsertReportPacket(RTP_ControlFrame & report)
 }
 
 
-void OpalRTPSession::SendReport(PTimer&, INT)
+void OpalRTPSession::SendReport(PTimer&, P_INT_PTR)
 {
   PWaitAndSignal mutex(m_reportMutex);
 

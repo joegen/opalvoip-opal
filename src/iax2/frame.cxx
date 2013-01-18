@@ -816,7 +816,7 @@ void IAX2FullFrame::MarkDeleteNow()
   retries = P_MAX_INDEX;
 }
 
-void IAX2FullFrame::OnTransmissionTimeout(PTimer &, INT)
+void IAX2FullFrame::OnTransmissionTimeout(PTimer &, P_INT_PTR)
 {
   PTRACE(4, "Has had a TX timeout " << IdString() << " " << connectionToken);
   retryDelta = 4 * retryDelta.GetMilliSeconds();

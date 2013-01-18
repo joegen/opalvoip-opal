@@ -2084,7 +2084,7 @@ void OpalManager::CallDict::DeleteObject(PObject * object) const
 }
 
 
-void OpalManager::GarbageMain(PThread &, INT)
+void OpalManager::GarbageMain(PThread &, P_INT_PTR)
 {
   while (!garbageCollectExit.Wait(1000)) {
     if (garbageCollectSkip)

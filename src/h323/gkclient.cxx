@@ -1654,7 +1654,7 @@ void H323Gatekeeper::InfoRequestResponse(const H323Connection & connection,
                                          PBoolean sent)
 {
   // Are unknown Q.931 PDU
-  if ((PINDEX)pdu.m_h323_message_body.GetTag() > H225_H323_UU_PDU_h323_message_body::e_notify)
+  if (pdu.m_h323_message_body.GetTag() > H225_H323_UU_PDU_h323_message_body::e_notify)
     return;
 
   // Check mask of things to report on
@@ -1805,7 +1805,7 @@ void H323Gatekeeper::SetPassword(const PString & password,
 }
 
 
-void H323Gatekeeper::MonitorMain(PThread &, INT)
+void H323Gatekeeper::MonitorMain(PThread &, P_INT_PTR)
 {
   PTRACE(4, "RAS\tBackground thread started");
 
@@ -1829,7 +1829,7 @@ void H323Gatekeeper::MonitorMain(PThread &, INT)
 }
 
 
-void H323Gatekeeper::TickleMonitor(PTimer &, INT)
+void H323Gatekeeper::TickleMonitor(PTimer &, P_INT_PTR)
 {
   monitorTickle.Signal();
 }
