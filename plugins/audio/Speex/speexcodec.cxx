@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 #ifndef PLUGIN_CODEC_DLL_EXPORTS
 #include "plugin-config.h"
@@ -84,11 +85,7 @@ static int Speex_Bytes_Per_Frame(int mode, int sampleRate) {
 
 static void * create_encoder(const struct PluginCodec_Definition * codec)
 {
-#ifdef __linux__
-  int mode = (int)(long)(codec->userData);
-#else
-  uintptr_t mode = (uintptr_t)codec->userData;
-#endif
+  intptr_t mode = (intptr_t)codec->userData;
 
   struct PluginSpeexContext * context = new PluginSpeexContext;
 

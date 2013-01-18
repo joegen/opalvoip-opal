@@ -614,7 +614,7 @@ subdirs:
 
 clean:
 	rm -rf $(OPAL_LIBDIR)
-	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) clean; fi ; )
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) CC=@CC@ CXX=@CXX@ LD=@CXX@ clean; fi ; )
 
 depend:   $(DEPS) 
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) depend; fi ; )

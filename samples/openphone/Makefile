@@ -41,8 +41,6 @@
 PROG		:= openphone
 SOURCES		:= main.cxx openphone.cxx
 
-VERSION_FILE	= $(OPALDIR)/version.h
-
 
 ifndef OPALDIR
 ifneq (,$(wildcard ../../version.h))
@@ -62,6 +60,7 @@ endif
 endif
 endif
 
+VERSION_FILE	= $(OPALDIR)/version.h
 
 # Need this before the include of opal_inc.mak
 default_target: bundle
@@ -89,7 +88,23 @@ openphone.cxx : openphone.xrc
 
 
 ifneq ($(target_os),Darwin)
+
+BUNDLE_DIR	= ./openphone
+
 bundle: $(TARGET)
+	@mkdir -p $(BUNDLE_DIR)
+	@rm -f $(BUNDLE_DIR)/*
+	cp $(TARGET) $(BUNDLE_DIR)
+ifeq ($(DEBUG_BUILD),yes)
+	cp $(OPAL_LIBDIR)/$(DEBUG_LIB_FILENAME_SHARED) $(BUNDLE_DIR)
+	cp $(PTLIB_LIBDIR)/$(PTLIB_DEBUG_FILE) $(BUNDLE_DIR)
+else
+	cp $(OPAL_LIBDIR)/$(RELEASE_LIB_FILENAME_SHARED) $(BUNDLE_DIR)
+	cp $(PTLIB_LIBDIR)/$(PTLIB_FILE) $(BUNDLE_DIR)
+endif
+	find $(OPAL_LIBDIR)/plugins -name \*_ptplugin.$(SHAREDLIBEXT) -exec cp {} $(BUNDLE_DIR) \;
+	find $(PTLIB_LIBDIR)/device -name \*_ptplugin.$(SHAREDLIBEXT) -exec cp {} $(BUNDLE_DIR) \;
+
 else
 bundle: $(PROG).app
 
