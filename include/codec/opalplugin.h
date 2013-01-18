@@ -61,7 +61,7 @@ extern "C" {
 #pragma warning(disable:4201)
 #endif
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #  ifdef PLUGIN_CODEC_DLL_EXPORTS
 #    define PLUGIN_CODEC_DLL_API __declspec(dllexport)
 #  else

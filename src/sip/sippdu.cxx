@@ -2201,7 +2201,7 @@ SIP_PDU::StatusCodes SIP_PDU::Parse(istream & stream, bool truncated)
   // if a content length is specified, read that length
   // if no content length is specified (which is not the same as zero length)
   // then read until end of datagram or stream
-  PINDEX contentLength = m_mime.GetContentLength();
+  int contentLength = m_mime.GetContentLength();
   bool contentLengthPresent = m_mime.IsContentLengthPresent();
 
   if (!contentLengthPresent) {

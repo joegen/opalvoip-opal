@@ -2749,6 +2749,14 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
+OBJ_ARCH=
+if test "x$OPALDIR" != "x" ; then
+  ac_default_prefix=$OPALDIR
+  OBJ_ARCH=1
+fi
+
+
+
 
 
 
@@ -5526,7 +5534,7 @@ PTLIB_REQUIRED_VERSION="2.12.0"
 OPAL_DAHDI=no
 
 
-if test "x$OPALDIR" = "x"; then
+if test "x$OBJ_ARCH" = "x"; then
    OPALDIR=`pwd`
 fi
 
@@ -5611,6 +5619,7 @@ if test -n "$PTLIB_CFLAGS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_PTLIB_CFLAGS=`$PKG_CONFIG --cflags "ptlib >= ${PTLIB_REQUIRED_VERSION}" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -5627,6 +5636,7 @@ if test -n "$PTLIB_LIBS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_PTLIB_LIBS=`$PKG_CONFIG --libs "ptlib >= ${PTLIB_REQUIRED_VERSION}" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -5646,9 +5656,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "ptlib >= ${PTLIB_REQUIRED_VERSION}" 2>&1`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "ptlib >= ${PTLIB_REQUIRED_VERSION}" 2>&1`
         else
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors "ptlib >= ${PTLIB_REQUIRED_VERSION}" 2>&1`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "ptlib >= ${PTLIB_REQUIRED_VERSION}" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$PTLIB_PKG_ERRORS" >&5
@@ -5663,7 +5673,6 @@ installed software in a non-standard prefix.
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
-
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -5679,7 +5688,6 @@ See the pkg-config man page for more details.
 
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.
 See \`config.log' for more details" "$LINENO" 5; }
-
 else
 	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
@@ -5703,6 +5711,7 @@ if test -n "$PTLIB_CFLAGS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_PTLIB_CFLAGS=`$PKG_CONFIG --cflags "ptlib" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -5719,6 +5728,7 @@ if test -n "$PTLIB_LIBS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_PTLIB_LIBS=`$PKG_CONFIG --libs "ptlib" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -5738,9 +5748,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "ptlib" 2>&1`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "ptlib" 2>&1`
         else
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors "ptlib" 2>&1`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "ptlib" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$PTLIB_PKG_ERRORS" >&5
@@ -5755,7 +5765,6 @@ installed software in a non-standard prefix.
 Alternatively, you may set the environment variables PTLIB_CFLAGS
 and PTLIB_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
-
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -5771,7 +5780,6 @@ See the pkg-config man page for more details.
 
 To get pkg-config, see <http://pkg-config.freedesktop.org/>.
 See \`config.log' for more details" "$LINENO" 5; }
-
 else
 	PTLIB_CFLAGS=$pkg_cv_PTLIB_CFLAGS
 	PTLIB_LIBS=$pkg_cv_PTLIB_LIBS
@@ -5798,17 +5806,24 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
           old_LIBS="$LIBS"
           old_LDFLAGS="$LDFLAGS"
 
+echo "CXXFLAGS = $CXXFLAGS"
+echo "PKG_CONFIG_PATH = $PKG_CONFIG_PATH"
+echo "DL_LIBS = $DL_LIBS"
+echo "LIBS = $LIBS"
+
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           { $as_echo "$as_me:${as_lineno-$LINENO}: checking linkable PTLib" >&5
 $as_echo_n "checking linkable PTLib... " >&6; }
 
 
-           suffix=""""""
+
+           suffix=""""""""
 	   if test "x$suffix" = "x" ; then
              LIBS=`$PKG_CONFIG ptlib "" --libs`
            else
              LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=$suffix "" --libs`
            fi
+	   LIBS+=$DL_LIBS
 
            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5830,18 +5845,19 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
 
-          if test "x$found" = "x1" ; then
-            DEFAULT_LIBS=$LIBS
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: opt, shared" >&5
+           if test "x$found" = "x1" ; then
+             DEFAULT_LIBS=$LIBS
+             { $as_echo "$as_me:${as_lineno-$LINENO}: result: opt, shared" >&5
 $as_echo "opt, shared" >&6; }
-          else
+           else
 
-           suffix="_d"""
+           suffix="""_d"""
 	   if test "x$suffix" = "x" ; then
              LIBS=`$PKG_CONFIG ptlib "" --libs`
            else
              LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=$suffix "" --libs`
            fi
+	   LIBS+=$DL_LIBS
 
            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5863,20 +5879,21 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
 
-            if test "x$found" = "x1" ; then
-              DEFAULT_LIBS=$LIBS
-              { $as_echo "$as_me:${as_lineno-$LINENO}: result: debug, shared" >&5
+             if test "x$found" = "x1" ; then
+               DEFAULT_LIBS=$LIBS
+               { $as_echo "$as_me:${as_lineno-$LINENO}: result: debug, shared" >&5
 $as_echo "debug, shared" >&6; }
-            else
-              DEBUG_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_d_s --libs`
-              RELEASE_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_s --libs`
+             else
+               DEBUG_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_d_s --libs`
+               RELEASE_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_s --libs`
 
-           suffix="""_s"
+           suffix="""""_s"
 	   if test "x$suffix" = "x" ; then
              LIBS=`$PKG_CONFIG ptlib --static --libs`
            else
              LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=$suffix --static --libs`
            fi
+	   LIBS+=$DL_LIBS
 
            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5898,18 +5915,19 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
 
-              if test "x$found" = "x1" ; then
-                DEFAULT_LIBS=$LIBS
-                { $as_echo "$as_me:${as_lineno-$LINENO}: result: release, static" >&5
+               if test "x$found" = "x1" ; then
+                 DEFAULT_LIBS=$LIBS
+                 { $as_echo "$as_me:${as_lineno-$LINENO}: result: release, static" >&5
 $as_echo "release, static" >&6; }
-              else
+               else
 
-           suffix="_d_s"
+           suffix="""_d_s"
 	   if test "x$suffix" = "x" ; then
              LIBS=`$PKG_CONFIG ptlib --static --libs`
            else
              LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=$suffix --static --libs`
            fi
+	   LIBS+=$DL_LIBS
 
            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -5931,22 +5949,24 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
 
-                if test "x$found" = "x1" ; then
-                  DEFAULT_LIBS=$LIBS
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: result: debug, static" >&5
+                 if test "x$found" = "x1" ; then
+                   DEFAULT_LIBS=$LIBS
+                   { $as_echo "$as_me:${as_lineno-$LINENO}: result: debug, static" >&5
 $as_echo "debug, static" >&6; }
-                else
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+                 fi
+               fi
+             fi
+           fi
+
+          if test "x$DEFAULT_LIBS" = "x" ; then
+                                                  { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-                  echo PTLIB_VERSION=$PTLIB_VERSION
-                  echo PTLIB_CFLAGS=$PTLIB_CFLAGS
-                  echo PTLIB_CXXFLAGS=$PTLIB_CXXFLAGS
-                  echo PTLIB_LIBS=$PTLIB_LIBS
-                  exit -1
-                fi
-              fi
-            fi
-          fi
+              echo PTLIB_VERSION=$PTLIB_VERSION
+              echo PTLIB_CFLAGS=$PTLIB_CFLAGS
+              echo PTLIB_CXXFLAGS=$PTLIB_CXXFLAGS
+              echo PTLIB_LIBS=$PTLIB_LIBS
+              exit -1
+                                              fi
 
           CXXFLAGS="$old_CXXFLAGS"
           LDFLAGS="$old_LDFLAGS"
@@ -7053,6 +7073,7 @@ if test -n "$SPEEXDSP_CFLAGS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_SPEEXDSP_CFLAGS=`$PKG_CONFIG --cflags "speexdsp" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -7069,6 +7090,7 @@ if test -n "$SPEEXDSP_LIBS"; then
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
   pkg_cv_SPEEXDSP_LIBS=`$PKG_CONFIG --libs "speexdsp" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
 fi
@@ -7088,9 +7110,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        SPEEXDSP_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "speexdsp" 2>&1`
+	        SPEEXDSP_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "speexdsp" 2>&1`
         else
-	        SPEEXDSP_PKG_ERRORS=`$PKG_CONFIG --print-errors "speexdsp" 2>&1`
+	        SPEEXDSP_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "speexdsp" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$SPEEXDSP_PKG_ERRORS" >&5
@@ -9203,11 +9225,16 @@ $as_echo "${EXPANDED_PLUGIN_DIR}" >&6; }
 
 
 
+cfg_prefix=$libdir
+if test "$exec_prefix" = "NONE" ; then
+  cfg_prefix=./include
+fi
+
 ac_config_files="$ac_config_files make/opal_defs.mak"
 
 ac_config_files="$ac_config_files make/toplevel.mak"
 
-ac_config_headers="$ac_config_headers include/opal/buildopts.h"
+ac_config_headers="$ac_config_headers ${cfg_prefix}/opal/buildopts.h:include/opal/buildopts.h.in"
 
 ac_config_files="$ac_config_files opal.pc"
 
@@ -9922,7 +9949,7 @@ do
   case $ac_config_target in
     "make/opal_defs.mak") CONFIG_FILES="$CONFIG_FILES make/opal_defs.mak" ;;
     "make/toplevel.mak") CONFIG_FILES="$CONFIG_FILES make/toplevel.mak" ;;
-    "include/opal/buildopts.h") CONFIG_HEADERS="$CONFIG_HEADERS include/opal/buildopts.h" ;;
+    "${cfg_prefix}/opal/buildopts.h") CONFIG_HEADERS="$CONFIG_HEADERS ${cfg_prefix}/opal/buildopts.h:include/opal/buildopts.h.in" ;;
     "opal.pc") CONFIG_FILES="$CONFIG_FILES opal.pc" ;;
     "opal.spec") CONFIG_FILES="$CONFIG_FILES opal.spec" ;;
     "opal_cfg.dxy") CONFIG_FILES="$CONFIG_FILES opal_cfg.dxy" ;;

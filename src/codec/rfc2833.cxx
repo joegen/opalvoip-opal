@@ -479,7 +479,11 @@ char OpalRFC2833Proto::RFC2833ToASCII(PINDEX rfc2833, bool hasNSE)
   if (hasNSE && rfc2833 >= NSECodeBase && rfc2833 < NSECodeBase+(PINDEX)sizeof(NSEEvents)-1)
     return NSEEvents[rfc2833-NSECodeBase];
 
-  if (rfc2833 >= 0 && rfc2833 < (PINDEX)sizeof(RFC2833Table1Events)-1)
+  if (
+#ifndef __GNUC__
+      rfc2833 >= 0 &&
+#endif
+      rfc2833 < (PINDEX)sizeof(RFC2833Table1Events)-1)
     return RFC2833Table1Events[rfc2833];
 
   return '\0';

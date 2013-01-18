@@ -3640,7 +3640,7 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
       default:
         PStringArray lines = request.GetEntityBody().Lines();
         PINDEX i;
-        char tone = -1;
+        char tone = 0;
         int duration = -1;
         for (i = 0; i < lines.GetSize(); ++i) {
           PStringArray tokens = lines[i].Tokenise('=', false);
@@ -3654,7 +3654,7 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
               duration = val.AsInteger();
           }
         }
-        if (tone != -1)
+        if (tone != 0)
           OnUserInputTone(tone, duration == 0 ? 100 : duration);
         status = SIP_PDU::Successful_OK;
         break;

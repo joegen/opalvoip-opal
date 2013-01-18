@@ -217,7 +217,7 @@ void OpalFaxSession::ApplyMediaOptions(const OpalMediaFormat & mediaFormat)
   }
 
   optint = mediaFormat.GetOptionInteger("T38FaxMaxDatagram", m_datagramSize);
-  if (optint != m_datagramSize) {
+  if (optint != (int)m_datagramSize) {
     PWaitAndSignal mutex(m_writeMutex);
     m_datagramSize = optint;
     PTRACE(3, "UDPTL\tDatagram size set to " << m_datagramSize);
@@ -426,7 +426,7 @@ bool OpalFaxSession::WriteData(RTP_DataFrame & frame)
   int redundancy = 0;
 
   for (std::map<int, int>::iterator i = m_redundancy.begin() ; i != m_redundancy.end() ; i++) {
-    if (plLen <= i->first) {
+    if ((int)plLen <= i->first) {
       if (redundancy < i->second)
         redundancy = i->second;
 
@@ -609,7 +609,7 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
     if (secondaryPackets.GetSize() > 0) {
       PTRACE(4, "UDPTL\tUsing redundant data to reconstruct missing/out of order packet at SN=" << m_expectedSequenceNumber);
       m_secondaryPacket = missing;
-      if (m_secondaryPacket > secondaryPackets.GetSize())
+      if ((PINDEX)m_secondaryPacket > secondaryPackets.GetSize())
         m_secondaryPacket = secondaryPackets.GetSize();
       SetFrameFromIFP(frame, secondaryPackets[m_secondaryPacket-1], m_receivedPacket->m_seq_number - m_secondaryPacket);
       --m_secondaryPacket;

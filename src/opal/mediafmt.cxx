@@ -527,7 +527,11 @@ void OpalMediaOptionEnum::Assign(const OpalMediaOption & option)
 void OpalMediaOptionEnum::SetValue(PINDEX value)
 {
   PINDEX maxEnum = m_merge != IntersectionMerge ? m_enumerations.GetSize() : (1LL << m_enumerations.GetSize());
-  if (value >= 0 && value < maxEnum)
+  if (
+#ifndef __GNUC__
+      value >= 0 &&
+#endif
+      value < maxEnum)
     m_value = value;
   else {
     m_value = maxEnum;
