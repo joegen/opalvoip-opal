@@ -811,7 +811,9 @@ OpalListenerUDP::~OpalListenerUDP()
 
 PBoolean OpalListenerUDP::Open(const AcceptHandler & theAcceptHandler, ThreadMode /*mode*/)
 {
-  if (listenerBundle->Open(listenerPort) && OpalListenerIP::Open(theAcceptHandler, SingleThreadMode)) {
+  if (listenerBundle != NULL &&
+      listenerBundle->Open(listenerPort) &&
+      OpalListenerIP::Open(theAcceptHandler, SingleThreadMode)) {
     /* UDP packets need to be handled. Not so much at high speed, but must not be
        significantly delayed by media threads which are running at HighPriority.
        This, for example, helps make sure that a SIP BYE is received and processed
@@ -1624,6 +1626,7 @@ bool OpalTransportUDP::WriteConnect(const WriteConnectCallback & function)
         ok = true;
     }
   }
+  socket->SetInterface(PString::Empty());
 
   return ok;
 }

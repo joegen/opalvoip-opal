@@ -783,6 +783,9 @@ class SIPEndPoint : public OpalRTPEndPoint
       */
     void SetDefaultPRACKMode(SIPConnection::PRACKMode mode) { m_defaultPrackMode = mode; }
 
+    void SetMaxPacketSizeUDP(PINDEX sz) { m_maxPacketSizeUDP = sz; }
+    PINDEX GetMaxPacketSizeUDP() const { return m_maxPacketSizeUDP; }
+
     void SetMaxRetries(unsigned r) { maxRetries = r; }
     unsigned GetMaxRetries() const { return maxRetries; }
 
@@ -968,6 +971,7 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     SIPConnection::PRACKMode m_defaultPrackMode;
 
+    PINDEX        m_maxPacketSizeUDP;
     unsigned      maxRetries;
     PTimeInterval retryTimeoutMin;   // T1
     PTimeInterval retryTimeoutMax;   // T2

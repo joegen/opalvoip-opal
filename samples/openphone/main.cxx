@@ -106,7 +106,9 @@
 extern void InitXmlResource(); // From resource.cpp whichis compiled openphone.xrc
 
 
-#define CONFERENCE_NAME "conference"
+#define CONFERENCE_PREFIX "mcu"
+#define CONFERENCE_NAME   "conference"
+#define CONFERENCE_URI    CONFERENCE_PREFIX":"CONFERENCE_NAME
 
 
 // Definitions of the configuration file section and key names
@@ -561,12 +563,20 @@ bool OpenPhoneApp::OnInit()
   // Check command line arguments
   static const wxCmdLineEntryDesc cmdLineDesc[] =
   {
-      { wxCMD_LINE_SWITCH, wxT("h"), wxT("help"), NULL, wxCMD_LINE_VAL_NONE,  wxCMD_LINE_OPTION_HELP },
-      { wxCMD_LINE_OPTION, wxT("n"), wxT("config-name"), wxT("Set name to use for configuration"), wxCMD_LINE_VAL_STRING },
-      { wxCMD_LINE_OPTION, wxT("f"), wxT("config-file"), wxT("Use specified file for configuration"), wxCMD_LINE_VAL_STRING },
-      { wxCMD_LINE_SWITCH, wxT("m"), wxT("minimised"), wxT("Start application minimised") },
-      { wxCMD_LINE_PARAM,  NULL, NULL, wxT("URI to call"), wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL },
-      { wxCMD_LINE_NONE }
+#if wxCHECK_VERSION(2,9,0)
+  #define wxCMD_LINE_DESC(kind, shortName, longName, description, ...) \
+      { kind, shortName, longName, description, __VA_ARGS__ }
+#else
+  #define wxCMD_LINE_DESC(kind, shortName, longName, description, ...) \
+      { kind, wxT(shortName), wxT(longName), wxT(description), __VA_ARGS__ }
+  #define wxCMD_LINE_DESC_END { wxCMD_LINE_NONE, NULL, NULL, NULL, wxCMD_LINE_VAL_NONE, 0 }
+#endif
+      wxCMD_LINE_DESC(wxCMD_LINE_SWITCH, "h", "help", "", wxCMD_LINE_VAL_NONE,  wxCMD_LINE_OPTION_HELP),
+      wxCMD_LINE_DESC(wxCMD_LINE_OPTION, "n", "config-name", "Set name to use for configuration", wxCMD_LINE_VAL_STRING),
+      wxCMD_LINE_DESC(wxCMD_LINE_OPTION, "f", "config-file", "Use specified file for configuration", wxCMD_LINE_VAL_STRING),
+      wxCMD_LINE_DESC(wxCMD_LINE_SWITCH, "m", "minimised", "Start application minimised"),
+      wxCMD_LINE_DESC(wxCMD_LINE_PARAM,  "", "", "URI to call", wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL),
+      wxCMD_LINE_DESC_END
   };
 
   wxCmdLineParser cmdLine(cmdLineDesc, wxApp::argc,  wxApp::argv);
@@ -921,7 +931,7 @@ bool MyManager::Initialise(bool startMinimised)
 #endif
 
 #if OPAL_HAS_MIXER
-  m_mcuEP = new OpalMixerEndPoint(*this, "mcu");
+  m_mcuEP = new OpalMixerEndPoint(*this, CONFERENCE_PREFIX);
   m_mcuEP->AddNode(new OpalMixerNodeInfo(CONFERENCE_NAME));
 #endif
 
@@ -2918,17 +2928,18 @@ void MyManager::AddToConference(OpalCall & call)
 {
   if (m_activeCall != NULL) {
     PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReference);
-    m_activeCall->Transfer("mcu:"CONFERENCE_NAME, connection);
+    m_activeCall->Transfer(CONFERENCE_URI, connection);
     LogWindow << "Added \"" << connection->GetRemotePartyName() << "\" to conference." << endl;
-    PString pc = "pc:*";
+
+    PString pc = "pc:*;" OPAL_URL_PARAM_PREFIX OPAL_OPT_CONF_OWNER;
     if (connection->GetMediaStream(OpalMediaType::Video(), true) == NULL)
-      pc += ";OPAL-AutoStart=video:no";
-    SetUpCall(pc, "mcu:"CONFERENCE_NAME);
+      pc += ";" OPAL_URL_PARAM_PREFIX OPAL_OPT_AUTO_START "=video:no";
+    SetUpCall(pc, CONFERENCE_URI);
     m_activeCall.SetNULL();
   }
 
   PSafePtr<OpalLocalConnection> connection = call.GetConnectionAs<OpalLocalConnection>();
-  call.Transfer("mcu:"CONFERENCE_NAME, connection);
+  call.Transfer(CONFERENCE_URI, connection);
   call.Retrieve();
   LogWindow << "Added \"" << connection->GetRemotePartyName() << "\" to conference." << endl;
 }

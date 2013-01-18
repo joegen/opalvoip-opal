@@ -817,8 +817,10 @@ void OpalCall::OnReleased(OpalConnection & connection)
   if(connectionsActive.GetSize() == 1)
   {
     PSafePtr<OpalConnection> last = connectionsActive.GetAt(0, PSafeReference);
-    if (last != NULL)
+    if (last != NULL) {
+      PTRACE(4, "Call", "Releasing last connection in call");
       last->Release(connection.GetCallEndReason(), true);
+    }
   }
 
   InternalOnClear();
