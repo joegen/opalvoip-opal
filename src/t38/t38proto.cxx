@@ -552,8 +552,14 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
   }
 
   PBYTEArray thisUDPTL(m_datagramSize);
-  if (!m_dataSocket->Read(thisUDPTL.GetPointer(), m_datagramSize))
+  if (!m_dataSocket->Read(thisUDPTL.GetPointer(), m_datagramSize)) {
+    if (m_dataSocket->GetErrorCode(PChannel::LastReadError) == PChannel::BufferTooSmall) {
+      PTRACE(4, "UDPTL\tProbable RTP packet");
+      return true;
+    }
+    PTRACE(2, "UDPTL\tRead socket failed: " << m_dataSocket->GetErrorText(PChannel::LastReadError));
     return false;
+  }
 
   if (m_shuttingDown) {
     PTRACE(4, "UDPTL\tRead UDPTL shutting down");
@@ -573,7 +579,7 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
     }
 
 #if PTRACING
-    static const unsigned Level = 2;
+    const unsigned Level = m_awaitingGoodPacket ? 4 : 2;
     if (PTrace::CanTrace(Level)) {
       ostream & trace = PTrace::Begin(Level, __FILE__, __LINE__);
       trace << "UDPTL\t";
@@ -854,7 +860,14 @@ void OpalFaxConnection::OnEstablished()
 void OpalFaxConnection::OnReleased()
 {
   m_switchTimer.Stop(false);
+
   OpalLocalConnection::OnReleased();
+
+  // Probably not be necessary, but just in case of race conditions
+  PTRACE_IF(4, !mediaStreams.IsEmpty(), "FAX", "Waiting for media streams to close.");
+  while (!mediaStreams.IsEmpty())
+    PThread::Sleep(20);
+
   InternalOnFaxCompleted();
 }
 
@@ -892,7 +905,8 @@ void OpalFaxConnection::OnClosedMediaStream(const OpalMediaStream & stream)
   }
 
   if (bothClosed) {
-    if (m_finalStatistics.m_fax.m_result == 0 /* success!*/ || !ownerCall.IsSwitchingT38())
+    if (    m_finalStatistics.m_fax.m_result == 0 /* success!*/ ||
+          !(m_finalStatistics.m_fax.m_result < 0  /* in progress */ || IsReleased() || ownerCall.IsSwitchingT38()))
       InternalOnFaxCompleted();
     else {
       PTRACE(4, "FAX\tIgnoring switching "
@@ -918,14 +932,13 @@ PBoolean OpalFaxConnection::SendUserInputTone(char tone, unsigned duration)
 void OpalFaxConnection::OnUserInputTone(char tone, unsigned /*duration*/)
 {
   // Not yet switched and got a CNG/CED from the remote system, start switch
-  if (m_disableT38)
+  if (m_disableT38 || IsReleased())
     return;
 
   if (m_receiving ? (tone == 'X')
                   : (tone == 'Y' && m_stringOptions.GetBoolean(OPAL_SWITCH_ON_CED))) {
     PTRACE(3, "FAX\tRequesting mode change in response to " << (tone == 'X' ? "CNG" : "CED"));
-    GetEndPoint().GetManager().QueueDecoupledEvent(
-          new PSafeWorkNoArg<OpalFaxConnection>(this, &OpalFaxConnection::OpenFaxStreams));
+    SwitchFaxMediaStreams(true);
   }
 }
 
@@ -969,17 +982,20 @@ void OpalFaxConnection::GetStatistics(OpalMediaStatistics & statistics) const
 
 void OpalFaxConnection::OnSwitchTimeout(PTimer &, P_INT_PTR)
 {
-  if (m_disableT38)
+  if (m_disableT38 || IsReleased())
     return;
 
   PTRACE(2, "FAX\tDid not switch to T.38 mode, forcing switch");
   GetEndPoint().GetManager().QueueDecoupledEvent(
-          new PSafeWorkNoArg<OpalFaxConnection>(this, &OpalFaxConnection::OpenFaxStreams));
+          new PSafeWorkNoArg<OpalFaxConnection>(this, &OpalFaxConnection::InternalOpenFaxStreams));
 }
 
 
 bool OpalFaxConnection::SwitchFaxMediaStreams(bool enable)
 {
+  if (IsReleased())
+    return false;
+
   m_completed = false;
   PSafePtr<OpalConnection> other = GetOtherPartyConnection();
   return other != NULL && other->SwitchFaxMediaStreams(enable);
@@ -1015,7 +1031,7 @@ bool OpalFaxConnection::OnSwitchingFaxMediaStreams(bool toT38)
 }
 
 
-void OpalFaxConnection::OpenFaxStreams()
+void OpalFaxConnection::InternalOpenFaxStreams()
 {
   if (LockReadWrite()) {
     SwitchFaxMediaStreams(true);
@@ -1028,6 +1044,8 @@ void OpalFaxConnection::InternalOnFaxCompleted()
 {
   if (m_completed)
     return;
+
+  PTRACE(4, "FAX", "OnFaxCompleted, result=" << m_finalStatistics.m_fax.m_result);
 
   m_completed= true;
   OnFaxCompleted(m_finalStatistics.m_fax.m_result != OpalMediaStatistics::FaxSuccessful);

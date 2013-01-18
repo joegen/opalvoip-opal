@@ -84,7 +84,6 @@ SIPHandler::SIPHandler(SIP_PDU::Methods method,
   , m_realm(params.m_realm)
   , m_method(method)
   , m_addressOfRecord(params.m_addressOfRecord)
-  , m_remoteAddress(params.m_remoteAddress)
   , m_lastCseq(0)
   , m_lastResponseStatus(SIP_PDU::Information_Trying)
   , m_currentExpireTime(params.m_expire)
@@ -96,16 +95,24 @@ SIPHandler::SIPHandler(SIP_PDU::Methods method,
 {
   PTRACE_CONTEXT_ID_NEW();
 
+  m_dialog.SetRequestURI(m_addressOfRecord);
+  m_dialog.SetCallID(m_callID);
+
+  SIPURL remoteAddress(params.m_remoteAddress);
+
   // Look for a "proxy" parameter to override default proxy
-  m_proxy = params.m_proxyAddress;
-  if (m_remoteAddress.GetParamVars().Contains(OPAL_PROXY_PARAM)) {
-    if (m_proxy.IsEmpty())
-      m_proxy.Parse(m_remoteAddress.GetParamVars().Get(OPAL_PROXY_PARAM));
-    m_remoteAddress.SetParamVar(OPAL_PROXY_PARAM, PString::Empty());
+  SIPURL proxy = params.m_proxyAddress;
+  if (remoteAddress.GetParamVars().Contains(OPAL_PROXY_PARAM)) {
+    if (proxy.IsEmpty())
+      proxy.Parse(remoteAddress.GetParamVars().Get(OPAL_PROXY_PARAM));
+    remoteAddress.SetParamVar(OPAL_PROXY_PARAM, PString::Empty());
   }
 
-  if (m_proxy.IsEmpty())
-    m_proxy = ep.GetProxy();
+  if (proxy.IsEmpty())
+    proxy = ep.GetProxy();
+
+  m_dialog.SetProxy(proxy, true);
+  m_dialog.SetRemoteURI(remoteAddress);
 
   PTRACE(4, "SIP\tConstructed " << m_method << " handler for " << m_addressOfRecord);
 }
@@ -305,7 +312,7 @@ void SIPHandler::WriteTransaction(OpalTransport & transport, bool & succeeded)
 
   SIPMIMEInfo & mime = transaction->GetMIME();
 
-  if (m_localInterface.IsEmpty()) {
+  if (GetInterface().IsEmpty()) {
     if (m_lastCseq == 0)
       m_lastCseq = mime.GetCSeqIndex();
     else
@@ -519,7 +526,7 @@ SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister
   SIPURL local = params.m_localAddress.IsEmpty() ? params.m_addressOfRecord : params.m_localAddress;
   local.SetTag();
   m_parameters.m_localAddress = local.AsQuotedString();
-  m_parameters.m_proxyAddress = m_proxy.AsString();
+  m_parameters.m_proxyAddress = GetProxy().AsString();
 }
 
 
@@ -826,46 +833,13 @@ void SIPRegisterHandler::UpdateParameters(const SIPRegister::Params & params)
 
 /////////////////////////////////////////////////////////////////////////
 
-SIPHandlerWithDialog::SIPHandlerWithDialog(SIP_PDU::Methods method,
-                                           SIPEndPoint & ep,
-                                           const SIPParameters & params,
-                                           const SIPDialogContext & dialog)
-  : SIPHandler(method, ep, params, dialog.GetCallID())
-  , m_dialog(dialog)
-{
-}
-
-
-OpalTransportAddress SIPHandlerWithDialog::GetRemoteTransportAddress(PINDEX dnsEntry) const
-{
-  return m_dialog.GetRemoteTransportAddress(dnsEntry);
-}
-
-
-SIPURL SIPHandlerWithDialog::GetTargetURI() const
-{
-  return m_dialog.GetRequestURI();
-}
-
-
-bool SIPHandlerWithDialog::IsDuplicateCSeq(unsigned sequenceNumber)
-{
-  return m_dialog.IsDuplicateCSeq(sequenceNumber);
-}
-
-
-/////////////////////////////////////////////////////////////////////////
-
 SIPSubscribeHandler::SIPSubscribeHandler(SIPEndPoint & endpoint, const SIPSubscribe::Params & params)
-  : SIPHandlerWithDialog(SIP_PDU::Method_SUBSCRIBE, endpoint, params, SIPDialogContext())
+  : SIPHandler(SIP_PDU::Method_SUBSCRIBE, endpoint, params)
   , m_parameters(params)
   , m_unconfirmed(true)
   , m_packageHandler(SIPEventPackageFactory::CreateInstance(params.m_eventPackage))
-  , m_previousResponse(NULL)
 {
   PTRACE_CONTEXT_ID_TO(m_packageHandler);
-
-  m_parameters.m_proxyAddress = m_proxy.AsString();
 
   if (m_parameters.m_contentType.IsEmpty() && (m_packageHandler != NULL))
     m_parameters.m_contentType = m_packageHandler->GetContentType();
@@ -875,7 +849,6 @@ SIPSubscribeHandler::SIPSubscribeHandler(SIPEndPoint & endpoint, const SIPSubscr
 SIPSubscribeHandler::~SIPSubscribeHandler()
 {
   delete m_packageHandler;
-  delete m_previousResponse;
 }
 
 
@@ -884,13 +857,11 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport & transpor
   // Do all the following here as must be after we have called GetTransport()
   // which sets various fields correctly for transmission
   if (!m_dialog.IsEstablished()) {
-    m_dialog.SetRequestURI(GetAddressOfRecord());
     if (m_parameters.m_eventPackage.IsWatcher())
       m_parameters.m_localAddress = GetAddressOfRecord().AsString();
 
     m_dialog.SetRemoteURI(m_parameters.m_addressOfRecord);
     m_dialog.SetLocalURI(m_parameters.m_localAddress.IsEmpty() ? m_parameters.m_addressOfRecord : m_parameters.m_localAddress);
-    m_dialog.SetProxy(m_parameters.m_proxyAddress.IsEmpty() ? m_proxy : m_parameters.m_proxyAddress, true);
   }
 
   m_parameters.m_expire = GetState() != Unsubscribing ? GetExpire() : 0;
@@ -925,7 +896,7 @@ PBoolean SIPSubscribeHandler::SendRequest(SIPHandler::State s)
 
 void SIPSubscribeHandler::WriteTransaction(OpalTransport & transport, bool & succeeded)
 {
-  m_dialog.SetForking(m_localInterface.IsEmpty());
+  m_dialog.SetForking(GetInterface().IsEmpty());
   SIPHandler::WriteTransaction(transport, succeeded);
   m_dialog.SetForking(false);
 }
@@ -1025,24 +996,9 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 
   requestMIME.GetProductInfo(m_productInfo);
 
-  // If we received this NOTIFY before, send the previous response
-  if (m_dialog.IsDuplicateCSeq(requestMIME.GetCSeqIndex())) {
-
-    // duplicate CSEQ but no previous response? That's unpossible!
-    if (m_previousResponse == NULL)
-      return request.SendResponse(m_endpoint, SIP_PDU::Failure_InternalServerError);
-
-    /* Make sure our repeat response has the CSeq/Via etc of this request, due
-       to retries at various protocol layers we can have old and even older
-       NOTIFY packets still coming in requiring matching responses. */
-    m_previousResponse->InitialiseHeaders(request);
-    return request.SendResponse(m_endpoint, *m_previousResponse);
-  }
-
-  // remove last response
-  delete m_previousResponse;
-  m_previousResponse = new SIP_PDU(request, SIP_PDU::Failure_BadRequest);
-  PTRACE_CONTEXT_ID_TO(m_previousResponse);
+  // Remember response for retries by using transaction, note: deleted by SIPEndPoint
+  SIPResponse * response = new SIPResponse(m_endpoint, request, SIP_PDU::Failure_BadRequest);
+  PTRACE_CONTEXT_ID_TO(response);
 
   PStringToString subscriptionStateInfo;
   PCaselessString subscriptionState = requestMIME.GetSubscriptionState(subscriptionStateInfo);
@@ -1054,8 +1010,8 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
   // Check the susbscription state
   if (subscriptionState == "terminated") {
     PTRACE(3, "SIP\tSubscription is terminated, state=" << GetState());
-    m_previousResponse->SetStatusCode(SIP_PDU::Successful_OK);
-    request.SendResponse(m_endpoint, *m_previousResponse);
+    response->SetStatusCode(SIP_PDU::Successful_OK);
+    response->Send();
 
     switch (GetState()) {
       case Unsubscribed :
@@ -1078,9 +1034,9 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
   PString requestEvent = requestMIME.GetEvent();
   if (m_parameters.m_eventPackage != requestEvent) {
     PTRACE(2, "SIP\tNOTIFY received for incorrect event \"" << requestEvent << "\", requires \"" << m_parameters.m_eventPackage << '"');
-    m_previousResponse->SetStatusCode(SIP_PDU::Failure_BadEvent);
-    m_previousResponse->GetMIME().SetAt("Allow-Events", m_parameters.m_eventPackage);
-    return request.SendResponse(m_endpoint, *m_previousResponse);
+    response->SetStatusCode(SIP_PDU::Failure_BadEvent);
+    response->GetMIME().SetAt("Allow-Events", m_parameters.m_eventPackage);
+    return response->Send();
   }
 
   // Check any Requires field
@@ -1089,10 +1045,10 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
     require -= "eventlist";
   if (!require.IsEmpty()) {
     PTRACE(2, "SIPPres\tNOTIFY contains unsupported Require field \"" << setfill(',') << require << '"');
-    m_previousResponse->SetStatusCode(SIP_PDU::Failure_BadExtension);
-    m_previousResponse->GetMIME().SetUnsupported(require);
-    m_previousResponse->SetInfo("Unsupported Require");
-    return request.SendResponse(m_endpoint, *m_previousResponse);
+    response->SetStatusCode(SIP_PDU::Failure_BadExtension);
+    response->GetMIME().SetUnsupported(require);
+    response->SetInfo("Unsupported Require");
+    return response->Send();
   }
 
   // check the ContentType
@@ -1105,18 +1061,18 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
         ) {
       PTRACE(2, "SIPPres\tNOTIFY contains unsupported Content-Type \""
              << requestContentType << "\", expecting \"" << m_parameters.m_contentType << "\" or multipart/related or other validated type");
-      m_previousResponse->SetStatusCode(SIP_PDU::Failure_UnsupportedMediaType);
-      m_previousResponse->GetMIME().SetAt("Accept", m_parameters.m_contentType);
-      m_previousResponse->SetInfo("Unsupported Content-Type");
-      return request.SendResponse(m_endpoint, *m_previousResponse);
+      response->SetStatusCode(SIP_PDU::Failure_UnsupportedMediaType);
+      response->GetMIME().SetAt("Accept", m_parameters.m_contentType);
+      response->SetInfo("Unsupported Content-Type");
+      return response->Send();
     }
   }
 
   // Check if we know how to deal with this event
   if (m_packageHandler == NULL && m_parameters.m_onNotify.IsNULL()) {
     PTRACE(2, "SIP\tNo handler for NOTIFY received for event \"" << requestEvent << '"');
-    m_previousResponse->SetStatusCode(SIP_PDU::Failure_InternalServerError);
-    return request.SendResponse(m_endpoint, *m_previousResponse);
+    response->SetStatusCode(SIP_PDU::Failure_InternalServerError);
+    return response->Send();
   }
 
   // Adjust timeouts if state is a go
@@ -1131,11 +1087,11 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 
   // Check for empty body, if so then is OK, just a ping ...
   if (request.GetEntityBody().IsEmpty())
-    m_previousResponse->SetStatusCode(SIP_PDU::Successful_OK);
+    response->SetStatusCode(SIP_PDU::Successful_OK);
   else {
     PMultiPartList parts;
     if (!m_parameters.m_eventList || !requestMIME.DecodeMultiPartList(parts, request.GetEntityBody()))
-      sendResponse = DispatchNOTIFY(request);
+      sendResponse = DispatchNOTIFY(request, *response);
     else {
       // If GetMultiParts() returns true there as at least one part and that
       // part must be the meta list, guranteed by DecodeMultiPartList()
@@ -1144,8 +1100,8 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
       // First part is always Meta Information
       if (iter->m_mime.GetString(PMIMEInfo::ContentTypeTag) != "application/rlmi+xml") {
         PTRACE(2, "SIP\tNOTIFY received without RLMI as first multipart body");
-        m_previousResponse->SetInfo("No Resource List Meta-Information");
-        return request.SendResponse(m_endpoint, *m_previousResponse);
+        response->SetInfo("No Resource List Meta-Information");
+        return response->Send();
       }
 
 #if P_EXPAT
@@ -1153,12 +1109,12 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
       if (!xml.Load(iter->m_textBody)) {
         PTRACE(2, "SIP\tNOTIFY received with illegal RLMI\n"
                   "Line " << xml.GetErrorLine() << ", Column " << xml.GetErrorColumn() << ": " << xml.GetErrorString());
-        m_previousResponse->SetInfo("Bad Resource List Meta-Information");
-        return request.SendResponse(m_endpoint, *m_previousResponse);
+        response->SetInfo("Bad Resource List Meta-Information");
+        return response->Send();
       }
 
       if (parts.GetSize() == 1)
-        m_previousResponse->SetStatusCode(SIP_PDU::Successful_OK);
+        response->SetStatusCode(SIP_PDU::Successful_OK);
       else {
         while (++iter != parts.end()) {
           SIP_PDU pdu(request.GetMethod());
@@ -1188,7 +1144,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
             }
           }
 
-          if (DispatchNOTIFY(pdu))
+          if (DispatchNOTIFY(pdu, *response))
             sendResponse = false;
         }
       }
@@ -1206,14 +1162,14 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
   }
 
   if (sendResponse)
-    request.SendResponse(m_endpoint, *m_previousResponse);
+    response->Send();
   return true;
 }
 
 
-bool SIPSubscribeHandler::DispatchNOTIFY(SIP_PDU & request)
+bool SIPSubscribeHandler::DispatchNOTIFY(SIP_PDU & request, SIP_PDU & response)
 {
-  SIPSubscribe::NotifyCallbackInfo notifyInfo(*this, GetEndPoint(), request, *m_previousResponse);
+  SIPSubscribe::NotifyCallbackInfo notifyInfo(*this, GetEndPoint(), request, response);
 
   if (!m_parameters.m_onNotify.IsNULL()) {
     PTRACE(4, "SIP\tCalling NOTIFY callback for AOR \"" << m_addressOfRecord << "\"");
@@ -1228,7 +1184,7 @@ bool SIPSubscribeHandler::DispatchNOTIFY(SIP_PDU & request)
   }
 
   PTRACE(2, "SIP\tNo NOTIFY handler for AOR \"" << m_addressOfRecord << "\"");
-  m_previousResponse->SetStatusCode(SIP_PDU::Failure_BadEvent);
+  response.SetStatusCode(SIP_PDU::Failure_BadEvent);
   return true;
 }
 
@@ -1301,10 +1257,12 @@ class SIPMwiEventPackageHandler : public SIPEventPackageHandler
 
     PMIMEInfo info(notifyInfo.m_request.GetEntityBody());
 
-    PString aor = notifyInfo.m_handler.GetAddressOfRecord().AsString();
+    const SIPURL & aor = notifyInfo.m_handler.GetAddressOfRecord();
     PString account = info.Get("Message-Account");
-    if (account.IsEmpty() || aor.NumCompare(account) == EqualTo)
-      account = aor;
+    SIPURL accountURI(account);
+    if (account.IsEmpty() || aor.GetUserName() == account ||
+            (accountURI.GetUserName() == "asterisk" && accountURI == aor.GetHostPort()))
+      account = aor.AsString();
 
     bool nothingSent = true;
     for (PINDEX z = 0 ; z < PARRAYSIZE(validMessageClasses); z++) {
@@ -1774,15 +1732,17 @@ void SIPRegNotification::PrintOn(ostream & strm) const
 SIPNotifyHandler::SIPNotifyHandler(SIPEndPoint & endpoint,
                                    const SIPEventPackage & eventPackage,
                                    const SIPDialogContext & dialog)
-  : SIPHandlerWithDialog(SIP_PDU::Method_NOTIFY,
-                         endpoint,
-                         SIPParameters(dialog.GetLocalURI().AsString(), dialog.GetRemoteURI().AsString()),
-                         dialog)
+  : SIPHandler(SIP_PDU::Method_NOTIFY,
+               endpoint,
+               SIPParameters(dialog.GetLocalURI().AsString(), dialog.GetRemoteURI().AsString()),
+               dialog.GetCallID())
   , m_eventPackage(eventPackage)
   , m_reason(Deactivated)
   , m_packageHandler(SIPEventPackageFactory::CreateInstance(eventPackage))
 {
   PTRACE_CONTEXT_ID_TO(m_packageHandler);
+
+  m_dialog = dialog;
 }
 
 
@@ -1830,7 +1790,7 @@ PBoolean SIPNotifyHandler::SendRequest(SIPHandler::State state)
 
 void SIPNotifyHandler::WriteTransaction(OpalTransport & transport, bool & succeeded)
 {
-  m_dialog.SetForking(m_localInterface.IsEmpty());
+  m_dialog.SetForking(GetInterface().IsEmpty());
   SIPHandler::WriteTransaction(transport, succeeded);
   m_dialog.SetForking(false);
 }
@@ -1866,7 +1826,6 @@ SIPPublishHandler::SIPPublishHandler(SIPEndPoint & endpoint,
   , m_parameters(params)
   , m_body(body)
 {
-  m_parameters.m_proxyAddress = m_proxy.AsString();
 }
 
 
@@ -2192,6 +2151,7 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
 bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo &,
                                   list<SIPPresenceInfo> &)
 {
+  PTRACE2(1, NULL, "SIPPres\tCould not parse entity, no XML support!");
   return false;
 }
 #endif // P_EXPAT
@@ -2203,7 +2163,6 @@ SIPMessageHandler::SIPMessageHandler(SIPEndPoint & endpoint, const SIPMessage::P
   , m_parameters(params)
   , m_messageSent(false)
 {
-  m_parameters.m_proxyAddress = m_proxy.AsString();
   m_parameters.m_id = GetCallID();
 
   m_offlineExpireTime = 0; // No retries for offline, just give up
@@ -2272,8 +2231,6 @@ SIPOptionsHandler::SIPOptionsHandler(SIPEndPoint & endpoint, const SIPOptions::P
   : SIPHandler(SIP_PDU::Method_OPTIONS, endpoint, params)
   , m_parameters(params)
 {
-  m_parameters.m_proxyAddress = m_proxy.AsString();
-
   m_offlineExpireTime = 0; // No retries for offline, just give up
 
   SetState(Subscribed);
