@@ -233,6 +233,7 @@ AC_DEFUN([OPAL_CHECK_PTLIB_EXISTENCE],
            else
              LIBS=`$PKG_CONFIG ptlib --define-variable=suffix=$suffix $3 --libs`
            fi
+	   LIBS+=$DL_LIBS
 
            AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <ptlib.h>]],
                                            [[PString str;]])], 
@@ -244,6 +245,35 @@ AC_DEFUN([OPAL_CHECK_PTLIB_EXISTENCE],
 dnl ########################################################################
 dnl PTLIB
 dnl ########################################################################
+
+AC_DEFUN([OPAL_FIND_PTLIB_OBJ],
+         [
+           OPAL_CHECK_PTLIB_EXISTENCE(["$1"], [""], [""])
+           if test "x$found" = "x1" ; then
+             DEFAULT_LIBS=$LIBS
+             AC_MSG_RESULT([opt, shared])
+           else 
+             OPAL_CHECK_PTLIB_EXISTENCE([$1_d], [""], [""]) 
+             if test "x$found" = "x1" ; then
+               DEFAULT_LIBS=$LIBS
+               AC_MSG_RESULT([debug, shared])
+             else
+               DEBUG_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_d_s --libs`
+               RELEASE_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_s --libs`
+               OPAL_CHECK_PTLIB_EXISTENCE(["$1"], [_s], [--static])
+               if test "x$found" = "x1" ; then
+                 DEFAULT_LIBS=$LIBS
+                 AC_MSG_RESULT([release, static])
+               else
+                 OPAL_CHECK_PTLIB_EXISTENCE([$1_d], [_s], [--static])
+                 if test "x$found" = "x1" ; then
+                   DEFAULT_LIBS=$LIBS
+                   AC_MSG_RESULT([debug, static])
+                 fi
+               fi
+             fi
+           fi
+	])
 
 dnl OPAL_FIND_PTLIB
 dnl Find ptlib, either in PTLIBDIR or whereever on the system
@@ -301,40 +331,28 @@ AC_DEFUN([OPAL_FIND_PTLIB],
           old_LIBS="$LIBS"
           old_LDFLAGS="$LDFLAGS" 
 
+echo "CXXFLAGS = $CXXFLAGS"
+echo "PKG_CONFIG_PATH = $PKG_CONFIG_PATH"
+echo "DL_LIBS = $DL_LIBS"
+echo "LIBS = $LIBS"
+
           CXXFLAGS="$CXXFLAGS $PTLIB_CFLAGS $PTLIB_CXXFLAGS"
           AC_MSG_CHECKING([linkable PTLib])
 
-          OPAL_CHECK_PTLIB_EXISTENCE([""], [""], [""])
-          if test "x$found" = "x1" ; then
-            DEFAULT_LIBS=$LIBS
-            AC_MSG_RESULT([opt, shared])
-          else 
-            OPAL_CHECK_PTLIB_EXISTENCE([_d], [""], [""]) 
-            if test "x$found" = "x1" ; then
-              DEFAULT_LIBS=$LIBS
-              AC_MSG_RESULT([debug, shared])
-            else
-              DEBUG_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_d_s --libs`
-              RELEASE_LIBS=`$PKG_CONFIG ptlib --static --define-variable=suffix=_s --libs`
-              OPAL_CHECK_PTLIB_EXISTENCE([""], [_s], [--static])
-              if test "x$found" = "x1" ; then
-                DEFAULT_LIBS=$LIBS
-                AC_MSG_RESULT([release, static])
-              else
-                OPAL_CHECK_PTLIB_EXISTENCE([_d], [_s], [--static])
-                if test "x$found" = "x1" ; then
-                  DEFAULT_LIBS=$LIBS
-                  AC_MSG_RESULT([debug, static])
-                else
-                  AC_MSG_RESULT([not found])
-                  echo PTLIB_VERSION=$PTLIB_VERSION
-                  echo PTLIB_CFLAGS=$PTLIB_CFLAGS
-                  echo PTLIB_CXXFLAGS=$PTLIB_CXXFLAGS
-                  echo PTLIB_LIBS=$PTLIB_LIBS
-                  exit -1
-                fi
-              fi
-            fi
+          OPAL_FIND_PTLIB_OBJ("")
+          if test "x$DEFAULT_LIBS" = "x" ; then
+            dnl LDFLAGS+="-L$PTLIBDIR/lib_${target_os}_${target_cpu}"
+            dnl OPAL_FIND_PTLIB_OBJ("")
+            dnl if test "x$DEFAULT_LIBS" = "x" ; then
+              AC_MSG_RESULT([not found])
+              echo PTLIB_VERSION=$PTLIB_VERSION
+              echo PTLIB_CFLAGS=$PTLIB_CFLAGS
+              echo PTLIB_CXXFLAGS=$PTLIB_CXXFLAGS
+              echo PTLIB_LIBS=$PTLIB_LIBS
+              exit -1
+            dnl fi
+            dnl DEBUG_LIBS+="-L$PTLIBDIR/lib_${target_os}_${target_cpu}"
+            dnl RELEASE_LIBS+="-L$PTLIBDIR/lib_${target_os}_${target_cpu}"
           fi
 
           CXXFLAGS="$old_CXXFLAGS"

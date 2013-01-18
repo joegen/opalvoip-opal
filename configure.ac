@@ -11,6 +11,11 @@ AC_CONFIG_AUX_DIR(make)
 
 m4_include(make/opal.m4)
 
+OBJ_ARCH=
+if test "x$OPALDIR" != "x" ; then
+  ac_default_prefix=$OPALDIR
+  OBJ_ARCH=1
+fi
 
 PKG_PROG_PKG_CONFIG()
 if test -z "$PKG_CONFIG" ; then
@@ -99,7 +104,7 @@ OPAL_DAHDI=no
 dnl ########################################################################
 dnl set the OPAL directory to the current directory
 
-if test "x$OPALDIR" = "x"; then
+if test "x$OBJ_ARCH" = "x"; then
    OPALDIR=`pwd`
 fi
 AC_SUBST(OPALDIR)
@@ -671,9 +676,14 @@ dnl ########################################################################
 dnl Output files
 dnl ########################################################################
 
+cfg_prefix=$libdir
+if test "$exec_prefix" = "NONE" ; then
+  cfg_prefix=./include
+fi
+
 AC_CONFIG_FILES(make/opal_defs.mak)
 AC_CONFIG_FILES(make/toplevel.mak)
-AC_CONFIG_HEADERS(include/opal/buildopts.h)
+AC_CONFIG_HEADERS(${cfg_prefix}/opal/buildopts.h:include/opal/buildopts.h.in)
 AC_CONFIG_FILES(opal.pc)
 AC_CONFIG_FILES(opal.spec)
 AC_CONFIG_FILES(opal_cfg.dxy)

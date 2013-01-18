@@ -53,7 +53,7 @@ ostream & operator<<(ostream & o, OpalLineInterfaceDevice::CallProgressTones t)
   static const char * const CallProgressTonesNames[OpalLineInterfaceDevice::NumTones+1] = {
     "NoTone", "DialTone", "RingTone", "BusyTone", "CongestionTone", "ClearTone", "MwiTone", "RoutingTone", "CNGTone", "CEDTone", "UserTone"
   };
-  if (t+1 < PARRAYSIZE(CallProgressTonesNames) && CallProgressTonesNames[t+1] != NULL)
+  if ((size_t)t+1 < PARRAYSIZE(CallProgressTonesNames) && CallProgressTonesNames[t+1] != NULL)
     return o << CallProgressTonesNames[t+1];
   else
     return o << "UnknownTone:" << (unsigned)t;
