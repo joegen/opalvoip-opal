@@ -610,7 +610,8 @@ class SIP_PDU : public PSafeObject
     friend ostream & operator<<(ostream & strm, StatusCodes status);
 
     SIP_PDU(
-      Methods method = SIP_PDU::NumMethods
+      Methods method = SIP_PDU::NumMethods,
+      const OpalTransportPtr & transport = NULL
     );
 
     /** Construct a Response message
@@ -635,12 +636,10 @@ class SIP_PDU : public PSafeObject
       const SIPURL & to,
       const SIPURL & from,
       const PString & callID,
-      unsigned cseq,
-      const PString & via
+      unsigned cseq
     );
     void InitialiseHeaders(
       SIPDialogContext & dialog,
-      const PString & via,
       unsigned cseq = 0
     );
     void InitialiseHeaders(
@@ -662,38 +661,22 @@ class SIP_PDU : public PSafeObject
       */
     void SetAllow(unsigned bitmask);
 
-    /**Update the VIA field following RFC3261, 18.2.1 and RFC3581.
-      */
-    void AdjustVia();
-
-    PString CreateVia();
-
     /**Read PDU from the specified transport.
       */
-    StatusCodes Read(
-      const OpalTransportPtr & transport
-    );
+    StatusCodes Read();
     StatusCodes Parse(
       istream & strm,
       bool truncated
-      PTRACE_PARAM(, OpalTransport * transport = NULL)
     );
 
     /**Write the PDU to the transport.
       */
-    PBoolean Write(
-      OpalTransport & transport
-    );
+    bool Send();
 
     /**Write PDU as a response to a request.
     */
     bool SendResponse(
-      SIPEndPoint & endpoint,
       StatusCodes code
-    );
-    bool SendResponse(
-      SIPEndPoint & endpoint,
-      SIP_PDU & response
     );
 
     /** Construct the PDU string to output.
@@ -721,9 +704,14 @@ class SIP_PDU : public PSafeObject
     SDPSessionDescription * GetSDP()         { return m_SDP; }
     void SetSDP(SDPSessionDescription * sdp);
     bool DecodeSDP(const OpalMediaFormatList & masterList);
-    OpalTransport * GetTransport()  const    { return m_transport; }
+
+    const PString & GetExternalTransportAddress() const { return m_externalTransportAddress; }
+    OpalTransportPtr GetTransport()  const    { return m_transport; }
 
   protected:
+    void CalculateVia();
+    StatusCodes InternalSend(bool canDoTCP);
+
     Methods     m_method;                 // Request type, ==NumMethods for Response
     StatusCodes m_statusCode;
     SIPURL      m_uri;                    // display name & URI, no tag
@@ -736,7 +724,9 @@ class SIP_PDU : public PSafeObject
 
     SDPSessionDescription * m_SDP;
 
-    OpalTransportPtr m_transport;
+    OpalTransportPtr     m_transport;
+    OpalTransportAddress m_viaAddress;
+    OpalTransportAddress m_externalTransportAddress;
 };
 
 
@@ -805,6 +795,7 @@ class SIPDialogContext
 
     OpalTransportAddress GetRemoteTransportAddress(PINDEX dnsEntry) const;
     const PString & GetInterface() const { return m_interface; }
+    void SetInterface(const PString & newInterface) { m_interface = newInterface; }
 
     void SetForking(bool f) { m_forking = f; }
 
@@ -955,11 +946,10 @@ class SIPTransactionOwner
     );
     virtual ~SIPTransactionOwner();
 
-    virtual OpalTransportAddress GetRemoteTransportAddress(PINDEX dnsEntry) const;
-    virtual SIPURL GetTargetURI() const = 0;
     virtual PString GetAuthID() const = 0;
     virtual PString GetPassword() const { return PString::Empty(); }
     virtual unsigned GetAllowedMethods() const;
+
     virtual void OnStartTransaction(SIPTransaction & /*transaction*/) { }
     virtual void OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response);
     virtual void OnTransactionFailed(SIPTransaction & transaction);
@@ -971,20 +961,26 @@ class SIPTransactionOwner
       const OpalTransport::WriteConnectCallback & function
     );
 
+    SIP_PDU::StatusCodes SwitchTransportProto(const char * proto, OpalTransportPtr * transport);
+
     SIP_PDU::StatusCodes HandleAuthentication(const SIP_PDU & response);
 
     SIPEndPoint & GetEndPoint() const { return m_endpoint; }
-    const SIPURL & GetProxy() const { return m_proxy; }
-    const PString & GetInterface() const { return m_localInterface; }
-    void ResetInterface() { m_localInterface.MakeEmpty(); }
+    OpalTransportAddress GetRemoteTransportAddress() const { return m_dialog.GetRemoteTransportAddress(m_dnsEntry); }
+    const SIPURL & GetRequestURI() const { return m_dialog.GetRequestURI(); }
+    const SIPURL & GetRemoteURI() const { return m_dialog.GetRemoteURI(); }
+    const SIPURL & GetProxy() const { return m_dialog.GetProxy(); }
+    const PString & GetInterface() const { return m_dialog.GetInterface(); }
+    void ResetInterface() { m_dialog.SetInterface(PString::Empty()); }
     PINDEX GetDNSEntry() const { return m_dnsEntry; }
     SIPAuthentication * GetAuthenticator() const { return m_authentication; }
+    SIPDialogContext & GetDialog() { return m_dialog; }
+    const SIPDialogContext & GetDialog() const { return m_dialog; }
 
   protected:
     PSafeObject       & m_object;
     SIPEndPoint       & m_endpoint;
-    SIPURL              m_proxy;
-    PString             m_localInterface;
+    SIPDialogContext    m_dialog; // Not all derived classes use this as a dialog, but many fields useful
     PINDEX              m_dnsEntry;
     SIPAuthentication * m_authentication;
     unsigned            m_authenticateErrors;
@@ -1043,7 +1039,7 @@ class SIPTransaction : public SIPTransactionBase
        but different ID needs to be created, e.g. when get authentication error. */
     virtual SIPTransaction * CreateDuplicate() const = 0;
 
-    PBoolean Start();
+    bool Start();
     bool IsTrying()     const { return m_state == Trying; }
     bool IsProceeding() const { return m_state == Proceeding; }
     bool IsInProgress() const { return m_state == Trying || m_state == Proceeding; }
@@ -1066,7 +1062,6 @@ class SIPTransaction : public SIPTransactionBase
     static PString GenerateCallID();
 
   protected:
-    bool SendPDU(SIP_PDU & pdu);
     bool ResendCANCEL();
     void SetParameters(const SIPParameters & params);
 
@@ -1129,7 +1124,7 @@ class SIPResponse : public SIPTransaction
 
     virtual SIPTransaction * CreateDuplicate() const;
 
-    bool Send(SIP_PDU & command);
+    bool Resend(SIP_PDU & command);
 };
 
 
@@ -1168,8 +1163,8 @@ class SIPAck : public SIP_PDU
     PCLASSINFO(SIPAck, SIP_PDU);
   public:
     SIPAck(
-      SIPTransaction & invite,
-      SIP_PDU & response
+      const SIPTransaction & invite,
+      const SIP_PDU & response
     );
 
     virtual SIPTransaction * CreateDuplicate() const;
