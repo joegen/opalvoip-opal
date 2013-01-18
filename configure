@@ -9267,8 +9267,6 @@ if test "$exec_prefix" = "NONE" ; then
   cfg_prefix=./include
 fi
 
-echo cfg_prefix=$cfg_prefix
-
 ac_config_files="$ac_config_files make/opal_defs.mak"
 
 ac_config_files="$ac_config_files make/toplevel.mak"

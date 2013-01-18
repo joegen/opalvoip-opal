@@ -676,8 +676,6 @@ if test "$exec_prefix" = "NONE" ; then
   cfg_prefix=./include
 fi
 
-echo cfg_prefix=$cfg_prefix
-
 AC_CONFIG_FILES(make/opal_defs.mak)
 AC_CONFIG_FILES(make/toplevel.mak)
 AC_CONFIG_HEADERS(${cfg_prefix}/opal/buildopts.h:include/opal/buildopts.h.in)
