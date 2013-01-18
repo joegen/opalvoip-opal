@@ -1654,7 +1654,7 @@ void H323Gatekeeper::InfoRequestResponse(const H323Connection & connection,
                                          PBoolean sent)
 {
   // Are unknown Q.931 PDU
-  if ((PINDEX)pdu.m_h323_message_body.GetTag() == P_MAX_INDEX)
+  if (pdu.m_h323_message_body.GetTag() > H225_H323_UU_PDU_h323_message_body::e_notify)
     return;
 
   // Check mask of things to report on
