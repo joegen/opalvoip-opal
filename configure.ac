@@ -208,11 +208,9 @@ esac
 
 dnl ########################################################################
 dnl set libdir accordingly
-if test "$prefix" = "$OPALDIR"; then
+if test "x$OBJ_ARCH" != "x" ; then
    includedir=$OPALDIR/include
    libdir=$OPALDIR/lib_$target
-else
-   includedir="$includedir/opal"
 fi
 
 
