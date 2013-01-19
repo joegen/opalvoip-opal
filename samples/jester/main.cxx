@@ -313,7 +313,7 @@ void JesterProcess::Main()
 }
 
 
-void JesterProcess::GeneratePackets(PThread &, INT)
+void JesterProcess::GeneratePackets(PThread &, P_INT_PTR)
 {
   if (m_startTimeDelta > 0)
     PThread::Sleep(m_startTimeDelta);
@@ -411,7 +411,7 @@ bool JesterProcess::GenerateFrame(RTP_DataFrame & frame, PTimeInterval & delay)
 }
 
 
-void JesterProcess::ConsumePackets(PThread &, INT)
+void JesterProcess::ConsumePackets(PThread &, P_INT_PTR)
 {
   if (m_startTimeDelta < 0)
     PThread::Sleep(-m_startTimeDelta);
