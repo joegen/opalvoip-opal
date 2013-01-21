@@ -44,6 +44,7 @@
 #include <sip/sipep.h>
 
 #include <ptclib/enum.h>
+#include <sip/sippres.h>
 #include <im/sipim.h>
 
 
@@ -836,8 +837,7 @@ bool SIPEndPoint::OnReceivedSUBSCRIBE(SIP_PDU & request, SIPDialogContext * dial
   // Update expiry time
   unsigned expires = mime.GetExpires();
 
-  SIPResponse * response = new SIPResponse(*this, request,
-                       canNotify == CanNotifyImmediate ? SIP_PDU::Successful_OK : SIP_PDU::Successful_Accepted);
+  SIPResponse * response = new SIPResponse(*this, request, SIP_PDU::Successful_Accepted);
   response->GetMIME().SetEvent(eventPackage); // Required by spec
   response->GetMIME().SetExpires(expires);    // Required by spec
   response->Send();
@@ -1460,32 +1460,43 @@ bool SIPEndPoint::CanNotify(const PString & eventPackage)
   if (m_allowedEvents.Contains(eventPackage))
     return true;
 
-  PTRACE(3, "SIP\tCannot notify event \"" << eventPackage << "\" not one of "
-         << setfill(',') << m_allowedEvents << setfill(' '));
+  PTRACE(3, "SIP\tCannot notify event \"" << eventPackage << "\" not one of ["
+         << setfill(',') << m_allowedEvents << setfill(' ') << ']');
   return false;
 }
 
 
 SIPEndPoint::CanNotifyResult SIPEndPoint::CanNotify(const PString & eventPackage, const SIPURL & aor)
 {
-  if (SIPEventPackage(SIPSubscribe::Conference) != eventPackage)
-    return CanNotify(eventPackage) ? CanNotifyImmediate : CannotNotify;
+  if (SIPEventPackage(SIPSubscribe::Conference) == eventPackage) {
+    OpalConferenceStates states;
+    if (manager.GetConferenceStates(states, aor.GetUserName()) || states.empty()) {
+      PString uri = states.front().m_internalURI;
+      ConferenceMap::iterator it = m_conferenceAOR.find(uri);
+      while (it != m_conferenceAOR.end() && it->first == uri) {
+        if (it->second == aor)
+          return CanNotifyImmediate;
+      }
 
-  OpalConferenceStates states;
-  if (!manager.GetConferenceStates(states, aor.GetUserName()) || states.empty()) {
-    PTRACE(3, "SIP\tCannot notify event \"" << eventPackage << "\" event, no conferences enabled.");
+      m_conferenceAOR.insert(ConferenceMap::value_type(uri, aor));
+      return CanNotifyImmediate;
+    }
+
+    PTRACE(3, "SIP\tCannot notify \"" << eventPackage << "\" event, no conferences for " << aor);
     return CannotNotify;
   }
 
-  PString uri = states.front().m_internalURI;
-  ConferenceMap::iterator it = m_conferenceAOR.find(uri);
-  while (it != m_conferenceAOR.end() && it->first == uri) {
-    if (it->second == aor)
+  if (SIPEventPackage(SIPSubscribe::Presence) == eventPackage) {
+    PSafePtr<OpalPresentity> presentity = manager.GetPresentity(aor);
+    if (presentity != NULL && presentity->GetAttributes().GetEnum(
+                  SIP_Presentity::SubProtocolKey, SIP_Presentity::e_WithAgent) == SIP_Presentity::e_PeerToPeer)
       return CanNotifyImmediate;
+
+    PTRACE(3, "SIP\tCannot notify \"" << eventPackage << "\" event, no presentity " << aor);
+    return CannotNotify;
   }
 
-  m_conferenceAOR.insert(ConferenceMap::value_type(uri, aor));
-  return CanNotifyImmediate;
+  return CanNotify(eventPackage) ? CanNotifyImmediate : CannotNotify;
 }
 
 
