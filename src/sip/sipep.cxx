@@ -1494,6 +1494,7 @@ SIPEndPoint::CanNotifyResult SIPEndPoint::CanNotify(const PString & eventPackage
     return CannotNotify;
   }
 
+#if P_EXPAT
   if (SIPEventPackage(SIPSubscribe::Presence) == eventPackage) {
     PSafePtr<OpalPresentity> presentity = manager.GetPresentity(aor);
     if (presentity != NULL && presentity->GetAttributes().GetEnum(
@@ -1503,6 +1504,7 @@ SIPEndPoint::CanNotifyResult SIPEndPoint::CanNotify(const PString & eventPackage
     PTRACE(3, "SIP\tCannot notify \"" << eventPackage << "\" event, no presentity " << aor);
     return CannotNotify;
   }
+#endif // P_EXPAT
 
   return CanNotify(eventPackage) ? CanNotifyImmediate : CannotNotify;
 }
