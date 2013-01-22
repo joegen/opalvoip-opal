@@ -628,21 +628,28 @@ class SIPEndPoint : public OpalRTPEndPoint
       SIP_PDU::StatusCodes reason    ///< Status of subscription
     );
 
+    /** Indicate notification capability for an event package.
+        Default behaviour handles conference and presence event packages if the
+        \p aor parameter matches something we have.
+
+        All other event packages are checked against the m_allowedEvents set
+        member variable.
+      */
+    enum CanNotifyResult {
+      CannotNotify,       ///< Refuse SUBSCRIBE
+      CanNotifyImmediate, ///< Accept SUBSCRIBE and send NOTIFY
+      CanNotifyDeferrred  ///> Accept SUBSCRIBE, but NOTIFY will be sent at a later time by caller
+    };
+
     /** Indicate notifications for the specified event package are supported.
       */
-    virtual bool CanNotify(
-      const PString & eventPackage ///< Event package we support
-    );
-
-    enum CanNotifyResult {
-      CannotNotify,
-      CanNotifyImmediate,
-      CanNotifyDeferrred
-    };
     virtual CanNotifyResult CanNotify(
       const PString & eventPackage, ///< Event package we support
-      const SIPURL & aor
+      const SIPURL & aor            ///< Address of record for SUBSCRIBE
     );
+
+    // For backward compatobility
+    virtual bool CanNotify(const PString & eventPackage);
 
     /** Send notification to all remotes that are subcribed to the event package.
       */
