@@ -736,7 +736,7 @@ void VideoThread::Main()
   TranscoderThread::Main();
 }
 
-void TranscoderThread::OnTranscoderCommand(OpalMediaCommand & cmd, INT)
+void TranscoderThread::OnTranscoderCommand(OpalMediaCommand & cmd, P_INT_PTR)
 {
   if (PIsDescendant(&cmd, OpalVideoUpdatePicture)) {
     coutMutex.Wait();

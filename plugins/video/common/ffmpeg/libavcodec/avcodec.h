@@ -1040,6 +1040,7 @@ typedef struct AVPanScan{
 
 #ifndef AV_PICTURE_TYPE_NONE
 #define AV_PICTURE_TYPE_NONE 0
+#define AV_PICTURE_TYPE_I FF_I_TYPE
 #endif
 
 #define FF_I_TYPE  1 ///< Intra
