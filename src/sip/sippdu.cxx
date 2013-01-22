@@ -3481,10 +3481,11 @@ class SIPTransactionOwnerDummy : public PSafeObject, public SIPTransactionOwner
 };
 
 
-SIPResponse::SIPResponse(SIPEndPoint & endpoint, const SIP_PDU & command, StatusCodes code)
-  : SIPTransaction(NumMethods, *new SIPTransactionOwnerDummy(endpoint, command.GetURI()), command.GetTransport(), true)
+SIPResponse::SIPResponse(SIPEndPoint & endpoint, const SIP_PDU & request, StatusCodes code)
+  : SIPTransaction(NumMethods, *new SIPTransactionOwnerDummy(endpoint, request.GetURI()), request.GetTransport(), true)
 {
   m_statusCode = code;
+  InitialiseHeaders(request);
 }
 
 
