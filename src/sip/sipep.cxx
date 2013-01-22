@@ -209,7 +209,16 @@ void SIPEndPoint::AddTransport(const OpalTransportPtr & transport)
       break;
 
     case KeepAliveByOPTION :
+    {
+      SIPURL addr(transport->GetRemoteAddress());
+      SIP_PDU pdu(SIP_PDU::Method_OPTIONS, transport);
+      pdu.InitialiseHeaders(addr, addr, addr, SIPTransaction::GenerateCallID(), 1);
+      PString str;
+      PINDEX len;
+      pdu.Build(str, len);
+      transport->SetKeepAlive(m_keepAliveTimeout, PBYTEArray((const BYTE *)str.GetPointer(), len));
       break;
+    }
 
     default :
       break;
