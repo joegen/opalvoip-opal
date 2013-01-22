@@ -307,7 +307,6 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
 
     if (!transport->SetRemoteAddress(remoteAddress)) {
       PTRACE(1, "SIP\tCould not find " << remoteAddress);
-      delete transport;
       return NULL;
     }
 
