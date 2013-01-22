@@ -698,7 +698,7 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
 }
 
 
-void PlayRTP::OnTranscoderCommand(OpalMediaCommand & command, INT /*extra*/)
+void PlayRTP::OnTranscoderCommand(OpalMediaCommand & command, P_INT_PTR /*extra*/)
 {
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
     PStringStream msg;

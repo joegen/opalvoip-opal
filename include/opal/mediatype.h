@@ -197,7 +197,7 @@ class SimpleMediaType : public OpalMediaTypeDefinition
     static const char * Name() { return Type; }
 
     SimpleMediaType()
-      : OpalMediaTypeDefinition(Name(), SessionId)
+      : OpalMediaTypeDefinition(Name(), PString::Empty(), SessionId)
     { }
 };
 
