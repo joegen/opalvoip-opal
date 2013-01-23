@@ -417,6 +417,10 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
     case SIP_PDU::Failure_ProxyAuthenticationRequired :
     case SIP_PDU::Failure_IntervalTooBrief :
     case SIP_PDU::Failure_TemporarilyUnavailable:
+      // End connect mode on the transport
+      PString iface = transaction.GetInterface();
+      PTRACE(4, "SIP\tFinalising handlers interface \"" << iface << '"');
+      m_transport->SetInterface(iface);
 
       // And kill all the rest
       PSafePtr<SIPTransaction> transToGo;
@@ -424,9 +428,6 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
         m_transactions.Remove(transToGo);
         transToGo->Abort();
       }
-
-      // Finally end connect mode on the transport
-      m_transport->SetInterface(transaction.GetInterface());
   }
 
   switch (response.GetStatusCode()) {

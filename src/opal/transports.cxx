@@ -1480,6 +1480,7 @@ PBoolean OpalTransportUDP::WriteConnect(WriteConnectCallback function, void * us
     }
   }
 
+  socket->SetInterface(PString::Empty());
   return ok;
 }
 
