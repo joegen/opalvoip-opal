@@ -647,8 +647,7 @@ class SIP_PDU : public PSafeObject
 
     PString CreateVia(
       SIPEndPoint & endpoint,
-      const OpalTransport & transport,
-      SIPConnection * connection = NULL
+      const OpalTransport & transport
     );
 
     /**Read PDU from the specified transport.
