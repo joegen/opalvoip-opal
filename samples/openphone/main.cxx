@@ -2931,7 +2931,7 @@ void MyManager::AddToConference(OpalCall & call)
     m_activeCall->Transfer(CONFERENCE_URI, connection);
     LogWindow << "Added \"" << connection->GetRemotePartyName() << "\" to conference." << endl;
 
-    PString pc = "pc:*;" OPAL_URL_PARAM_PREFIX OPAL_OPT_CONF_OWNER;
+    PString pc = "pc:*;" OPAL_URL_PARAM_PREFIX OPAL_OPT_CONF_OWNER "=yes";
     if (connection->GetMediaStream(OpalMediaType::Video(), true) == NULL)
       pc += ";" OPAL_URL_PARAM_PREFIX OPAL_OPT_AUTO_START "=video:no";
     SetUpCall(pc, CONFERENCE_URI);
