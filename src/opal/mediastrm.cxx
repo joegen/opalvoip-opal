@@ -984,6 +984,7 @@ PBoolean OpalRawMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDE
   else {
     length = m_silence.GetSize();
     buffer = m_silence;
+    PTRACE(6, "Media\tPlaying silence " << length << " bytes");
   }
 
   if (!m_channel->Write(buffer, length))
@@ -1152,38 +1153,43 @@ OpalAudioMediaStream::OpalAudioMediaStream(OpalConnection & conn,
 
 PBoolean OpalAudioMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameTime)
 {
-  PINDEX frameSize = frameTime*sizeof(short);
-  unsigned clockRate = mediaFormat.GetClockRate();
-  unsigned frameMilliseconds = (frameTime*1000+clockRate-1)/clockRate;
+  PINDEX frameSize;
+  if (frameTime <= 1)
+    frameSize = (dataSize+m_soundChannelBuffers-1)/m_soundChannelBuffers;
+  else {
+    frameSize = frameTime*sizeof(short);
+    unsigned clockRate = mediaFormat.GetClockRate();
+    unsigned frameMilliseconds = (frameTime*1000+clockRate-1)/clockRate;
 
-  /* For efficiency reasons we will not accept a packet size that is too small.
-     We move it up to the next even multiple of the minimum, which has a danger
-     of the remote not sending an even number of our multiplier, but 10ms seems
-     universally done by everyone out there. */
-  const unsigned MinBufferTimeMilliseconds = 10;
-  if (frameMilliseconds < MinBufferTimeMilliseconds) {
-    PINDEX minFrameCount = (MinBufferTimeMilliseconds+frameMilliseconds-1)/frameMilliseconds;
-    frameSize = minFrameCount*frameTime*sizeof(short);
-    frameMilliseconds = (minFrameCount*frameTime*1000+clockRate-1)/clockRate;
+    /* For efficiency reasons we will not accept a packet size that is too small.
+       We move it up to the next even multiple of the minimum, which has a danger
+       of the remote not sending an even number of our multiplier, but 10ms seems
+       universally done by everyone out there. */
+    const unsigned MinBufferTimeMilliseconds = 10;
+    if (frameMilliseconds < MinBufferTimeMilliseconds) {
+      PINDEX minFrameCount = (MinBufferTimeMilliseconds+frameMilliseconds-1)/frameMilliseconds;
+      frameSize = minFrameCount*frameTime*sizeof(short);
+      frameMilliseconds = (minFrameCount*frameTime*1000+clockRate-1)/clockRate;
+    }
+
+    // Quantise dataSize up to multiple of the frame time
+    PINDEX frameCount = (dataSize+frameSize-1)/frameSize;
+    dataSize = frameCount*frameSize;
+
+    // Calculate number of sound buffers from global system settings
+    PINDEX soundChannelBuffers = (m_soundChannelBufferTime+frameMilliseconds-1)/frameMilliseconds;
+    if (m_soundChannelBuffers < soundChannelBuffers)
+      m_soundChannelBuffers = soundChannelBuffers;
+
+    // Increase sound buffers if negotiated maximum larger than global settings
+    if (m_soundChannelBuffers < frameCount)
+      m_soundChannelBuffers = frameCount;
   }
 
-  // Quantise dataSize up to multiple of the frame time
-  PINDEX frameCount = (dataSize+frameSize-1)/frameSize;
-  dataSize = frameCount*frameSize;
-
-  // Calculate number of sound buffers from global system settings
-  PINDEX soundChannelBuffers = (m_soundChannelBufferTime+frameMilliseconds-1)/frameMilliseconds;
-  if (soundChannelBuffers < m_soundChannelBuffers)
-    soundChannelBuffers = m_soundChannelBuffers;
-
-  // Increase sound buffers if negotiated maximum larger than global settings
-  if (soundChannelBuffers < frameCount)
-    soundChannelBuffers = frameCount;
-
   PTRACE(3, "Media\tAudio " << (IsSource() ? "source" : "sink") << " data size set to "
-         << dataSize << ", buffer size set to " << frameSize << " and " << soundChannelBuffers << " buffers.");
+         << dataSize << ", buffer size set to " << m_soundChannelBuffers << 'x' << frameSize << " byte buffers.");
   return OpalMediaStream::SetDataSize(dataSize, frameTime) &&
-         ((PSoundChannel *)m_channel)->SetBuffers(frameSize, soundChannelBuffers);
+         ((PSoundChannel *)m_channel)->SetBuffers(frameSize, m_soundChannelBuffers);
 }
 
 
