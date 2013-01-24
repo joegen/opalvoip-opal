@@ -1183,6 +1183,8 @@ OpalMixerNode::OpalMixerNode(OpalMixerNodeManager & manager,
   , m_videoMixer(*m_info)
 #endif
 {
+  PTRACE_CONTEXT_ID_NEW();
+
   m_connections.DisallowDeleteObjects();
 
   AddName(m_info->m_name);

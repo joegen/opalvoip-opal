@@ -129,8 +129,10 @@ void OpalEndPoint::SetInitialBandwidth(OpalBandwidth::Direction dir, OpalBandwid
 
 PBoolean OpalEndPoint::GarbageCollection()
 {
-  for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReference); connection != NULL; ++connection)
+  for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReference); connection != NULL; ++connection) {
+    PTRACE_CONTEXT_ID_PUSH_THREAD(connection);
     connection->GarbageCollection();
+  }
 
   return connectionsActive.DeleteObjectsToBeRemoved();
 }
