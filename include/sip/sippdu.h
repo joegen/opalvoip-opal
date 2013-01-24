@@ -905,6 +905,7 @@ class SIPTimeoutWorkItem : public SIPWorkItem
     {
       PSafePtr<Target_T> target;
       if (GetTarget(target)) {
+        PTRACE_CONTEXT_ID_PUSH_THREAD(target);
         (target->*m_callback)();
         PTRACE(4, "SIP\tHandled timeout");
       }

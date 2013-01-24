@@ -75,7 +75,7 @@ OpalMediaPatch::~OpalMediaPatch()
 
 void OpalMediaPatch::PrintOn(ostream & strm) const
 {
-  strm << "Patch[" << this << "] " << source;
+  strm << GetClass() << '[' << this << "] " << source;
 
   if (!LockReadOnly())
     return;

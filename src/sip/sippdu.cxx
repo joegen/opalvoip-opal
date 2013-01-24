@@ -2940,7 +2940,7 @@ SIPTransaction::SIPTransaction(Methods method, SIPTransactionOwner & owner, Opal
   , m_retryTimer(GetEndPoint().GetThreadPool(), GetEndPoint(), GetTransactionID(), &SIPTransaction::OnRetry)
   , m_completionTimer(GetEndPoint().GetThreadPool(), GetEndPoint(), GetTransactionID(), &SIPTransaction::OnTimeout)
 {
-  PTRACE_CONTEXT_ID_FROM(transport);
+  PTRACE_CONTEXT_ID_FROM(m_owner.m_object);
 
   PAssert(m_owner.m_object.SafeReference(), "Transaction created on owner pending deletion.");
 
@@ -4142,8 +4142,7 @@ bool SIPWorkItem::GetTarget(PSafePtr<SIPTransaction> & transaction)
     return false;
   }
 
-  PTRACE_CONTEXT_ID_PUSH_THREAD(*transaction);
-  PTRACE(3, "SIP\tHandling timeout for transaction using id=" << m_token);
+  PTRACE(3, transaction, "SIP\tHandling timeout for transaction using id=" << m_token);
   return true;
 }
 
@@ -4159,8 +4158,7 @@ bool SIPWorkItem::GetTarget(PSafePtr<SIPConnection> & connection)
     return false;
   }
 
-  PTRACE_CONTEXT_ID_PUSH_THREAD(*connection);
-  PTRACE(3, "SIP\tHandling timeout for connection using token=" << m_token);
+  PTRACE(3, connection, "SIP\tHandling timeout for connection using token=" << m_token);
   return true;
 }
 
@@ -4176,8 +4174,7 @@ bool SIPWorkItem::GetTarget(PSafePtr<SIPHandler> & handler)
     return false;
   }
 
-  PTRACE_CONTEXT_ID_PUSH_THREAD(*handler);
-  PTRACE(3, "SIP\tHandling timeout for handler using token=" << m_token);
+  PTRACE(3, handler, "SIP\tHandling timeout for handler using token=" << m_token);
   return true;
 }
 
