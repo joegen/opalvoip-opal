@@ -7150,7 +7150,12 @@ static void SetGauge(wxGauge * gauge, int level)
     return;
   }
   gauge->Show();
-  gauge->SetValue((int)(100*log10(1.0 + 9.0*level/8192.0))); // Convert to logarithmic scale
+  int val = (int)(100*log10(1.0 + 9.0*level/8192.0)); // Convert to logarithmic scale
+  if (val < 0)
+    val = 0;
+  else if (val > 100)
+    val = 100;
+  gauge->SetValue(val);
 }
 
 
