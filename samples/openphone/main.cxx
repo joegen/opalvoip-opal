@@ -106,8 +106,8 @@
 extern void InitXmlResource(); // From resource.cpp whichis compiled openphone.xrc
 
 
-#define CONFERENCE_PREFIX "mcu"
-#define CONFERENCE_NAME   "conference"
+#define CONFERENCE_PREFIX "conference"
+#define CONFERENCE_NAME   "local"
 #define CONFERENCE_URI    CONFERENCE_PREFIX":"CONFERENCE_NAME
 
 
