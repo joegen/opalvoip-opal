@@ -1666,6 +1666,7 @@ void MyManager::OnClose(wxCloseEvent & /*event*/)
   m_activeCall.SetNULL();
   m_callsOnHold.clear();
   m_registrations.clear();
+  m_tabs->DeleteAllPages();
   ShutDownEndpoints();
 
   m_taskBarIcon->RemoveIcon();
