@@ -262,7 +262,7 @@ void SDPMediaFormat::PrintOn(ostream & strm) const
   /* Even though officially, case is not significant for SDP encoding
      types, we make it upper case anyway as this seems to be the custom,
      and some very stupid endpoints assume it is always the case. */
-  strm << "a=rtpmap:" << (int)payloadType << ' ' << encodingName.ToUpper() << '/' << clockRate;
+  strm << "a=rtpmap:" << (int)payloadType << ' ' << encodingName << '/' << clockRate;
   if (!parameters.IsEmpty())
     strm << '/' << parameters;
   strm << "\r\n";

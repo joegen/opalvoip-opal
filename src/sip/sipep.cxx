@@ -307,7 +307,6 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
 
     if (!transport->SetRemoteAddress(remoteAddress)) {
       PTRACE(1, "SIP\tCould not find " << remoteAddress);
-      delete transport;
       return NULL;
     }
 
@@ -1069,7 +1068,7 @@ bool SIPEndPoint::OnReceivedMESSAGE(SIP_PDU & request)
 #if OPAL_HAS_SIPIM
   OpalSIPIMContext::OnReceivedMESSAGE(*this, NULL, request);
 #else
-  request.SendResponse(*this, SIP_PDU::Failure_BadRequest);
+  request.SendResponse(SIP_PDU::Failure_BadRequest);
 #endif
   return true;
 }
@@ -1495,6 +1494,7 @@ SIPEndPoint::CanNotifyResult SIPEndPoint::CanNotify(const PString & eventPackage
     return CannotNotify;
   }
 
+#if P_EXPAT
   if (SIPEventPackage(SIPSubscribe::Presence) == eventPackage) {
     PSafePtr<OpalPresentity> presentity = manager.GetPresentity(aor);
     if (presentity != NULL && presentity->GetAttributes().GetEnum(
@@ -1504,6 +1504,7 @@ SIPEndPoint::CanNotifyResult SIPEndPoint::CanNotify(const PString & eventPackage
     PTRACE(3, "SIP\tCannot notify \"" << eventPackage << "\" event, no presentity " << aor);
     return CannotNotify;
   }
+#endif // P_EXPAT
 
   return CanNotify(eventPackage) ? CanNotifyImmediate : CannotNotify;
 }

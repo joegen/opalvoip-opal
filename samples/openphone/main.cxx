@@ -106,8 +106,8 @@
 extern void InitXmlResource(); // From resource.cpp whichis compiled openphone.xrc
 
 
-#define CONFERENCE_PREFIX "mcu"
-#define CONFERENCE_NAME   "conference"
+#define CONFERENCE_PREFIX "conference"
+#define CONFERENCE_NAME   "local"
 #define CONFERENCE_URI    CONFERENCE_PREFIX":"CONFERENCE_NAME
 
 
@@ -339,8 +339,8 @@ static const char * const DefaultRoutes[] = {
 #if OPAL_FAX
     "t38:.* = sip:<da>",
     "fax:.* = sip:<da>",
-    ".*:.*\t.*:(fax|329)@.*|(fax|329) = fax:incoming.tif;receive",
-    ".*:.*\t.*:(t38|838)@.*|(t38|838) = t38:incoming.tif;receive",
+    ".*:.*\t.*:(fax|329)@.*|(fax|329) = fax:*;receive",
+    ".*:.*\t.*:(t38|838)@.*|(t38|838) = t38:*;receive",
 #endif
 
     "h323:.*  = pots:<dn>",
@@ -1666,6 +1666,7 @@ void MyManager::OnClose(wxCloseEvent & /*event*/)
   m_activeCall.SetNULL();
   m_callsOnHold.clear();
   m_registrations.clear();
+  m_tabs->DeleteAllPages();
   ShutDownEndpoints();
 
   m_taskBarIcon->RemoveIcon();
@@ -2931,7 +2932,7 @@ void MyManager::AddToConference(OpalCall & call)
     m_activeCall->Transfer(CONFERENCE_URI, connection);
     LogWindow << "Added \"" << connection->GetRemotePartyName() << "\" to conference." << endl;
 
-    PString pc = "pc:*;" OPAL_URL_PARAM_PREFIX OPAL_OPT_CONF_OWNER;
+    PString pc = "pc:*;" OPAL_URL_PARAM_PREFIX OPAL_OPT_CONF_OWNER "=yes";
     if (connection->GetMediaStream(OpalMediaType::Video(), true) == NULL)
       pc += ";" OPAL_URL_PARAM_PREFIX OPAL_OPT_AUTO_START "=video:no";
     SetUpCall(pc, CONFERENCE_URI);
@@ -7150,7 +7151,12 @@ static void SetGauge(wxGauge * gauge, int level)
     return;
   }
   gauge->Show();
-  gauge->SetValue((int)(100*log10(1.0 + 9.0*level/8192.0))); // Convert to logarithmic scale
+  int val = (int)(100*log10(1.0 + 9.0*level/8192.0)); // Convert to logarithmic scale
+  if (val < 0)
+    val = 0;
+  else if (val > 100)
+    val = 100;
+  gauge->SetValue(val);
 }
 
 
