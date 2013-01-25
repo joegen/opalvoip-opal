@@ -165,7 +165,7 @@ static bool SetDeviceNames(const PString & remoteParty, PString & playResult, PS
     PTRACE(2, "PCSS\tSound player device \"" << playDevice << "\" does not exist, " << operation << " aborted.");
     return false;
   }
-  PTRACE(4, "PCSS\tSound player device set to \"" << playDevice << '"');
+  PTRACE(4, "PCSS\tSound player device is \"" << playDevice << '"');
 
   if (recordDevice.IsEmpty() || recordDevice == "*")
     recordDevice = recordResult;
@@ -173,7 +173,7 @@ static bool SetDeviceNames(const PString & remoteParty, PString & playResult, PS
     PTRACE(2, "PCSS\tSound recording device \"" << recordDevice << "\" does not exist, " << operation << " aborted.");
     return false;
   }
-  PTRACE(4, "PCSS\tSound recording device set to \"" << recordDevice << '"');
+  PTRACE(4, "PCSS\tSound recording device is \"" << recordDevice << '"');
 
   return true;
 }
@@ -373,8 +373,9 @@ bool OpalPCSSConnection::TransferConnection(const PString & remoteParty)
   if (!SetDeviceNames(remoteParty, playDevice, recordDevice, "transfer"))
     return false;
 
-  if ((playDevice *= soundChannelPlayDevice) &&
-      (recordDevice *= soundChannelRecordDevice)) {
+  bool samePlayer = playDevice *= soundChannelPlayDevice;
+  bool sameRecorder = recordDevice *= soundChannelRecordDevice;
+  if (samePlayer && sameRecorder) {
     PTRACE(2, "PCSS\tTransfer to same sound devices, ignoring.");
     return true;
   }
@@ -387,7 +388,7 @@ bool OpalPCSSConnection::TransferConnection(const PString & remoteParty)
   // Now we be really sneaky and just change the sound devices in the OpalAudioMediaStream
   for (OpalMediaStreamPtr mediaStream = mediaStreams; mediaStream != NULL; ++mediaStream) {
     OpalRawMediaStream * rawStream = dynamic_cast<OpalRawMediaStream *>(&*mediaStream);
-    if (rawStream != NULL)
+    if (rawStream != NULL && ((samePlayer && mediaStream->IsSink()) || (sameRecorder && mediaStream->IsSource())))
       rawStream->SetChannel(CreateSoundChannel(rawStream->GetMediaFormat(), rawStream->IsSource()));
   }
   return true;

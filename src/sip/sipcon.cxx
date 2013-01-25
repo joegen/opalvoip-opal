@@ -3717,7 +3717,7 @@ void SIPConnection::OnReceivedMESSAGE(SIP_PDU & request)
 #if OPAL_HAS_SIPIM
   OpalSIPIMContext::OnReceivedMESSAGE(GetEndPoint(), this, request);
 #else
-  request.SendResponse(GetEndPoint(), SIP_PDU::Failure_BadRequest);
+  request.SendResponse(SIP_PDU::Failure_BadRequest);
 #endif
 }
 
