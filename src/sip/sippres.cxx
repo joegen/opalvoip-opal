@@ -179,7 +179,7 @@ bool SIP_Presentity::Open()
     // if none, use hostname portion of domain name
     m_presenceAgent = m_attributes.Get(PresenceAgentKey);
     if (m_presenceAgent.IsEmpty()) {
-      m_presenceAgent = m_aor.AsString(PURL::HostPortOnly);
+      m_presenceAgent = m_aor.GetHostPort();
 
 #if OPAL_PTLIB_DNS_RESOLVER
       if (m_aor.GetScheme() == "pres") {

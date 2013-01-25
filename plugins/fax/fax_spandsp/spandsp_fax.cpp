@@ -85,25 +85,9 @@ static PluginCodec_LogFunction LogFunction;
 static void SpanDSP_Message(int level, const char *text)
 {
   if (*text != '\0' && LogFunction != NULL) {
-    if (level >= SPAN_LOG_DEBUG)
-      level = 5;
-    else
-    if (level >= SPAN_LOG_FLOW)
-      level = 4;
-    //else
-    //if (level >= SPAN_LOG_PROTOCOL_WARNING)
-    //  level = 3;
-    else
-    if (level >= SPAN_LOG_PROTOCOL_ERROR)
-      level = 3;
-    //else
-    //if (level >= SPAN_LOG_WARNING)
-    //  level = 3;
-    //else
-    //if (level >= SPAN_LOG_ERROR)
-    //  level = 2;
-    else
-      level = 2;
+    // Close mapping between spandsp levels and OPAL ones, kust one tweak
+    if (level > SPAN_LOG_FLOW)
+      level = 6;
 
     if (!LogFunction(level, NULL, 0, NULL, NULL))
       return;

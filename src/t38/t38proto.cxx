@@ -672,9 +672,20 @@ PSafePtr<OpalConnection> OpalFaxEndPoint::MakeConnection(OpalCall & call,
       stationId = tokens[i].Mid(10);
   }
 
-  PString filename = tokens[0];
-  if (!PFilePath::IsAbsolutePath(filename))
-    filename.Splice(m_defaultDirectory, 0);
+  PFilePath filename;
+  PString fileparam = tokens[0];
+  PINDEX star = fileparam.Find('*');
+  if (star == 0)
+    filename = PFilePath("opal_fax_", m_defaultDirectory);
+  else if (star != P_MAX_INDEX)
+    filename = PFilePath(fileparam.Left(star), m_defaultDirectory);
+  else if (PFilePath::IsAbsolutePath(fileparam))
+    filename = fileparam;
+  else
+    filename = m_defaultDirectory + fileparam;
+
+  if (filename.GetType().IsEmpty())
+    filename.SetType(".tif");
 
   if (!receiving && !PFile::Exists(filename)) {
     PTRACE(2, "Fax\tCannot find filename '" << filename << "'");
