@@ -339,8 +339,8 @@ static const char * const DefaultRoutes[] = {
 #if OPAL_FAX
     "t38:.* = sip:<da>",
     "fax:.* = sip:<da>",
-    ".*:.*\t.*:(fax|329)@.*|(fax|329) = fax:incoming.tif;receive",
-    ".*:.*\t.*:(t38|838)@.*|(t38|838) = t38:incoming.tif;receive",
+    ".*:.*\t.*:(fax|329)@.*|(fax|329) = fax:*;receive",
+    ".*:.*\t.*:(t38|838)@.*|(t38|838) = t38:*;receive",
 #endif
 
     "h323:.*  = pots:<dn>",
