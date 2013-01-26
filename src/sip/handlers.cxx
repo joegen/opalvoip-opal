@@ -1279,7 +1279,7 @@ class SIPMwiEventPackageHandler : public SIPEventPackageHandler
     PString account = info.Get("Message-Account");
     SIPURL accountURI(account);
     if (account.IsEmpty() || aor.GetUserName() == account ||
-            (accountURI.GetUserName() == "asterisk" && accountURI == aor.GetHostName()))
+            (accountURI.GetUserName() == "asterisk" && accountURI.GetHostName() == aor.GetHostName()))
       account = aor.AsString();
 
     bool nothingSent = true;
