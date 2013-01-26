@@ -1356,7 +1356,7 @@ OpalManager::RouteEntry::RouteEntry(const PString & spec)
 void OpalManager::RouteEntry::CompileRegEx()
 {
   PStringStream pattern;
-  pattern << '^' << m_partyA << '\t' <<m_partyB << '$';
+  pattern << "^(" << m_partyA << ")\t(" << m_partyB << ")$";
   if (!m_regex.Compile(pattern, PRegularExpression::IgnoreCase|PRegularExpression::Extended)) {
     PTRACE(1, "OpalMan\tCould not compile route regular expression \"" << pattern << '"');
   }
