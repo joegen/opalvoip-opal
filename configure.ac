@@ -209,8 +209,8 @@ esac
 dnl ########################################################################
 dnl set libdir accordingly
 if test "x$OBJ_ARCH" != "x" ; then
-   includedir=$OPALDIR/include
-   libdir=$OPALDIR/lib_$target
+   includedir=${prefix}/include
+   libdir=$s{prefix}/lib_$target
 fi
 
 
