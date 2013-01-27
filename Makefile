@@ -60,19 +60,29 @@ config:	$(CONFIG_FILES)
 
 .PHONY:clean
 clean:
-	@$(MAKE) -f $(TOP_LEVEL_MAKE) clean
+	if test -e $(OPALDIR)/include/opal_defs.mak ; then \
+	  $(MAKE) -f $(TOP_LEVEL_MAKE) clean ; \
+	else \
+	  rm -f $(CONFIG_FILES) ; \
+	fi
 
 .PHONY:default_clean
-default_clean:
-	@$(MAKE) -f $(TOP_LEVEL_MAKE) default_clean
+default_clean: clean
+	if test -e $(OPALDIR)/include/opal_defs.mak ; then \
+	  $(MAKE) -f $(TOP_LEVEL_MAKE) default_clean ; \
+	fi
 
 .PHONY:distclean
-distclean:
-	@$(MAKE) -f $(TOP_LEVEL_MAKE) distclean
+distclean: clean
+	if test -e $(OPALDIR)/include/opal_defs.mak ; then \
+	  $(MAKE) -f $(TOP_LEVEL_MAKE) distclean ; \
+	fi
 
 .PHONY:sterile
-sterile:
-	@$(MAKE) -f $(TOP_LEVEL_MAKE) sterile
+sterile: clean
+	if test -e $(OPALDIR)/include/opal_defs.mak ; then \
+	  $(MAKE) -f $(TOP_LEVEL_MAKE) sterile ; \
+	fi
 
 ifneq (,$(shell which ./config.status))
 CONFIG_PARMS=$(shell ./config.status --config)
