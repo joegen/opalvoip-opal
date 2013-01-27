@@ -26,8 +26,10 @@
 # $Date: 2012-03-17 21:28:55 +1100 (Sat, 17 Mar 2012) $
 #
 
+ENV_OPALDIR := $(OPALDIR)
 ifndef OPALDIR
-  export OPALDIR=$(CURDIR)
+  export OPALDIR:=$(CURDIR)
+  $(info Setting default OPALDIR to $(OPALDIR))
 endif
 
 TOP_LEVEL_MAKE := $(OPALDIR)/make/toplevel.mak
@@ -58,38 +60,49 @@ config:	$(CONFIG_FILES)
 
 .PHONY:clean
 clean:
-	@$(MAKE) -f $(TOP_LEVEL_MAKE) clean
+	if test -e $(OPALDIR)/include/opal_defs.mak ; then \
+	  $(MAKE) -f $(TOP_LEVEL_MAKE) clean ; \
+	else \
+	  rm -f $(CONFIG_FILES) ; \
+	fi
 
 .PHONY:default_clean
-default_clean:
-	@$(MAKE) -f $(TOP_LEVEL_MAKE) default_clean
+default_clean: clean
+	if test -e $(OPALDIR)/include/opal_defs.mak ; then \
+	  $(MAKE) -f $(TOP_LEVEL_MAKE) default_clean ; \
+	fi
 
 .PHONY:distclean
-distclean:
-	@$(MAKE) -f $(TOP_LEVEL_MAKE) distclean
+distclean: clean
+	if test -e $(OPALDIR)/include/opal_defs.mak ; then \
+	  $(MAKE) -f $(TOP_LEVEL_MAKE) distclean ; \
+	fi
 
 .PHONY:sterile
-sterile:
-	@$(MAKE) -f $(TOP_LEVEL_MAKE) sterile
+sterile: clean
+	if test -e $(OPALDIR)/include/opal_defs.mak ; then \
+	  $(MAKE) -f $(TOP_LEVEL_MAKE) sterile ; \
+	fi
 
-$(CONFIG_FILES) : config.status $(addsuffix .in, $(CONFIG_FILES))
-	 ./config.status
+ifneq (,$(shell which ./config.status))
+CONFIG_PARMS=$(shell ./config.status --config)
+endif
 
-config.status: $(CONFIGURE) $(addsuffix .in, $(CONFIG_FILES))
-	$(CONFIGURE)
+$(CONFIG_FILES) : $(CONFIGURE) $(addsuffix .in, $(CONFIG_FILES))
+	OPALDIR=$(ENV_OPALDIR) $(CONFIGURE) $(CONFIG_PARMS)
 
 ifneq (,$(AUTOCONF))
 ifneq (,$(shell which $(AUTOCONF)))
 ifneq (,$(shell which $(ACLOCAL)))
 
-$(CONFIGURE): $(CONFIGURE).ac $(ACLOCAL).m4 $(OPALDIR)/make/*.m4 
+$(CONFIGURE): $(CONFIGURE).ac $(OPALDIR)/make/*.m4 $(ACLOCAL).m4
 	$(AUTOCONF)
- 
-$(PLUGIN_CONFIG): $(PLUGIN_CONFIG).ac $(PLUGIN_ACLOCAL) $(OPALDIR)/make/*.m4 
-	( cd $(dir $@) ; $(AUTOCONF) )
- 
+
 $(ACLOCAL).m4:
 	$(ACLOCAL)
+
+$(PLUGIN_CONFIG): $(PLUGIN_CONFIG).ac $(PLUGIN_ACLOCAL) $(OPALDIR)/make/*.m4 
+	( cd $(dir $@) ; $(AUTOCONF) )
 
 $(PLUGIN_ACLOCAL):
 	( cd $(dir $@) ; $(ACLOCAL) )
