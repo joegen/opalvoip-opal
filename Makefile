@@ -46,6 +46,10 @@ PLUGIN_ACLOCAL := $(OPALDIR)/plugins/aclocal.m4
 AUTOCONF       := autoconf
 ACLOCAL        := aclocal
 
+CONFIG_IN_FILES := $(addsuffix .in, $(CONFIG_FILES))
+ALLBUTFIRST = $(filter-out $(firstword $(CONFIG_FILES)), $(CONFIG_FILES))
+ALLBUTLAST = $(filter-out $(lastword $(CONFIG_FILES)), $(CONFIG_FILES))
+PAIRS = $(join $(ALLBUTLAST),$(addprefix :,$(ALLBUTFIRST)))
 
 ifeq (,$(findstring $(MAKECMDGOALS),config clean distclean default_clean sterile))
 $(MAKECMDGOALS): default
@@ -60,7 +64,7 @@ config:	$(CONFIG_FILES)
 
 .PHONY:clean
 clean:
-	if test -e $(OPALDIR)/include/opal_defs.mak ; then \
+	if test -e $(OPALDIR)/make/opal_defs.mak ; then \
 	  $(MAKE) -f $(TOP_LEVEL_MAKE) clean ; \
 	else \
 	  rm -f $(CONFIG_FILES) ; \
@@ -68,19 +72,19 @@ clean:
 
 .PHONY:default_clean
 default_clean: clean
-	if test -e $(OPALDIR)/include/opal_defs.mak ; then \
+	if test -e $(OPALDIR)/make/opal_defs.mak ; then \
 	  $(MAKE) -f $(TOP_LEVEL_MAKE) default_clean ; \
 	fi
 
 .PHONY:distclean
 distclean: clean
-	if test -e $(OPALDIR)/include/opal_defs.mak ; then \
+	if test -e $(OPALDIR)/make/opal_defs.mak ; then \
 	  $(MAKE) -f $(TOP_LEVEL_MAKE) distclean ; \
 	fi
 
 .PHONY:sterile
 sterile: clean
-	if test -e $(OPALDIR)/include/opal_defs.mak ; then \
+	if test -e $(OPALDIR)/make/opal_defs.mak ; then \
 	  $(MAKE) -f $(TOP_LEVEL_MAKE) sterile ; \
 	fi
 
@@ -88,8 +92,9 @@ ifneq (,$(shell which ./config.status))
 CONFIG_PARMS=$(shell ./config.status --config)
 endif
 
-$(CONFIG_FILES) : $(CONFIGURE) $(addsuffix .in, $(CONFIG_FILES))
+$(firstword $(CONFIG_FILES)) : $(CONFIGURE) $(CONFIG_IN_FILES)
 	OPALDIR=$(ENV_OPALDIR) $(CONFIGURE) $(CONFIG_PARMS)
+	touch $(CONFIG_FILES)
 
 ifneq (,$(AUTOCONF))
 ifneq (,$(shell which $(AUTOCONF)))
@@ -120,5 +125,6 @@ endif # aclocal installed
 endif # autoconf installed
 endif # autoconf enabled
 
+$(foreach pair,$(PAIRS),$(eval $(pair)))
 
 # End of Makefile.in
