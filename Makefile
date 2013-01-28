@@ -60,7 +60,7 @@ config:	$(CONFIG_FILES)
 
 .PHONY:clean
 clean:
-	if test -e $(OPALDIR)/include/opal_defs.mak ; then \
+	if test -e $(OPALDIR)/make/opal_defs.mak ; then \
 	  $(MAKE) -f $(TOP_LEVEL_MAKE) clean ; \
 	else \
 	  rm -f $(CONFIG_FILES) ; \
@@ -68,19 +68,19 @@ clean:
 
 .PHONY:default_clean
 default_clean: clean
-	if test -e $(OPALDIR)/include/opal_defs.mak ; then \
+	if test -e $(OPALDIR)/make/opal_defs.mak ; then \
 	  $(MAKE) -f $(TOP_LEVEL_MAKE) default_clean ; \
 	fi
 
 .PHONY:distclean
 distclean: clean
-	if test -e $(OPALDIR)/include/opal_defs.mak ; then \
+	if test -e $(OPALDIR)/make/opal_defs.mak ; then \
 	  $(MAKE) -f $(TOP_LEVEL_MAKE) distclean ; \
 	fi
 
 .PHONY:sterile
 sterile: clean
-	if test -e $(OPALDIR)/include/opal_defs.mak ; then \
+	if test -e $(OPALDIR)/make/opal_defs.mak ; then \
 	  $(MAKE) -f $(TOP_LEVEL_MAKE) sterile ; \
 	fi
 
@@ -90,6 +90,7 @@ endif
 
 $(CONFIG_FILES) : $(CONFIGURE) $(addsuffix .in, $(CONFIG_FILES))
 	OPALDIR=$(ENV_OPALDIR) $(CONFIGURE) $(CONFIG_PARMS)
+	touch $(CONFIG_FILES)
 
 ifneq (,$(AUTOCONF))
 ifneq (,$(shell which $(AUTOCONF)))
