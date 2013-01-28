@@ -11,18 +11,29 @@ AC_CONFIG_AUX_DIR(make)
 
 m4_include(make/opal.m4)
 
-OBJ_ARCH=
-if test "x$OPALDIR" != "x" ; then
-  ac_default_prefix=$OPALDIR
-  OBJ_ARCH=1
-fi
-
 PKG_PROG_PKG_CONFIG()
 if test -z "$PKG_CONFIG" ; then
   AC_MSG_ERROR(OPAL must have pkg-config installed, 1)
 fi
 
 
+dnl ########################################################################
+dnl Check for non-installed "environment variable" mode
+OBJ_ARCH=
+if test "x$OPALDIR" != "x" ; then
+   AC_PREFIX_DEFAULT($OPALDIR)
+   if test "x$prefix" = "xNONE" ; then
+      OBJ_ARCH=1
+   fi
+else
+   OPALDIR=`pwd`
+fi
+
+AC_SUBST(OPALDIR)
+
+
+dnl ########################################################################
+dnl Get architecture
 m4_include(make/canonical.m4)
 MY_CANONICAL_TARGET()
 
@@ -101,13 +112,6 @@ PTLIB_REQUIRED_VERSION="2.13.0"
 # experimental options
 OPAL_DAHDI=no
 
-dnl ########################################################################
-dnl set the OPAL directory to the current directory
-
-if test "x$OBJ_ARCH" = "x"; then
-   OPALDIR=`pwd`
-fi
-AC_SUBST(OPALDIR)
 
 dnl ########################################################################
 dnl Extract OPAL version number
