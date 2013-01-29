@@ -21,46 +21,15 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Log: Makefile,v $
-# Revision 1.3  2006/07/31 07:39:21  rjongbloed
-# Fixed default target to be PWlib one, not just to build opephone.cxx
-# Added OPAL directory default (no OPALDIR env var) to be ../.. before
-#   searhcing for $(HOME) and /usr/local/opal
-#
-# Revision 1.2  2006/07/22 00:24:55  dereksmithies
-# Add linux magic so it compiles and runs on linux.
-# Add the command wxrc to turn the openphone.xrc file into openphone.cxx
-# Compile openphone.cxx, which defines the function InitXmlResource();
-# Since openphone.cxx is an auto generated file, get cvs to ignore this file.
-#
-# Revision 1.1  2006/07/19 10:41:51  dereksmithies
-# First steps towards having a unix compiled openphone.
-#
+# $Revision$
+# $Author$
+# $Date$
 #
 
 PROG		:= openphone
 SOURCES		:= main.cxx openphone.cxx
 
-VERSION_FILE	= $(OPALDIR)/version.h
-
-
-ifndef OPALDIR
-ifneq (,$(wildcard ../../version.h))
-OPALDIR=$(wildcard ../..)
-else
-ifneq (,$(wildcard $(HOME)/opal))
-OPALDIR=$(HOME)/opal
-else
-ifneq (,$(wildcard /usr/local/opal))
-OPALDIR=/usr/local/opal
-else
-default_target :
-	@echo Cannot find OPAL in standard locations, you must set the OPALDIR
-	@echo environment variable to build this application.
-endif
-endif
-endif
-endif
+VERSION_FILE := version.h
 
 
 # Need this before the include of opal_inc.mak
@@ -68,7 +37,9 @@ default_target: bundle
 
 
 ifdef OPALDIR
-include $(OPALDIR)/opal_inc.mak
+  include $(OPALDIR)/opal_inc.mak
+else
+  include $(shell pkg-config opal --variable=makedir)/opal_inc.mak
 endif
 
 

@@ -26,25 +26,13 @@
 # $Date: 2008-12-08 19:14:44 +1100 (Mon, 08 Dec 2008) $
 #
 
-
-PROG = Regtest
+PROG = regtest
 SOURCES := main.cxx
 
-ifndef OPALDIR
-ifneq (,$(wildcard $(HOME)/opal))
-OPALDIR=$(HOME)/opal
-else
-ifneq (,$(wildcard /usr/local/opal))
-OPALDIR=/usr/local/opal
-else
-default_target :
-	@echo Cannot find OPAL in standard locations, you must set the OPALDIR
-	@echo environment variable to build this application.
-endif
-endif
-endif
-
 ifdef OPALDIR
-include $(OPALDIR)/opal_inc.mak
+  include $(OPALDIR)/opal_inc.mak
+else
+  include $(shell pkg-config opal --variable=makedir)/opal_inc.mak
 endif
 
+# End of Makefile
