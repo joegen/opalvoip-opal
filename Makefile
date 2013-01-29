@@ -80,7 +80,7 @@ default_clean: clean
 .PHONY:distclean
 distclean: clean
 	if test -e $(TOP_LEVEL_MAKE) ; then \
-	  $(MAKE) -f $(TOP_LEVEL_MAKE) distclean ; \
+	  $(MAKE) -f $(TOP_LEVEL_MAKE) clean ; \
 	fi
 
 .PHONY:sterile
