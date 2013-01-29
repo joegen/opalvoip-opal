@@ -155,7 +155,7 @@ class FFMPEGCodec
         virtual bool GetPacket(PluginCodec_RTP & rtp, unsigned & flags) = 0;
         virtual bool AddPacket(const PluginCodec_RTP & rtp, unsigned & flags) = 0;
 
-        virtual bool IsIntraFrame() const;
+        virtual bool IsIntraFrame() const = 0;
 
         virtual void RTPCallBack(void * data, int size, int mbCount);
 

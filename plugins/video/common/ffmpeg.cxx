@@ -603,6 +603,9 @@ bool FFMPEGCodec::EncodeVideoPacket(const PluginCodec_RTP & in, PluginCodec_RTP 
     return false;
   }
 
+  bool forceIFrame = (flags & PluginCodec_CoderForceIFrame) != 0;
+  flags = 0;
+
   out.SetTimestamp(in.GetTimestamp());
 
   if (m_fullFrame != NULL && m_fullFrame->GetPacket(out, flags))
@@ -658,7 +661,7 @@ bool FFMPEGCodec::EncodeVideoPacket(const PluginCodec_RTP & in, PluginCodec_RTP 
   */
   m_picture->pts = AV_NOPTS_VALUE;
 
-  m_picture->pict_type = (flags & PluginCodec_CoderForceIFrame) != 0 ? AV_PICTURE_TYPE_I : AV_PICTURE_TYPE_NONE;
+  m_picture->pict_type = forceIFrame ? AV_PICTURE_TYPE_I : AV_PICTURE_TYPE_NONE;
   m_picture->key_frame = 0;
 
   if (m_fullFrame == NULL)
@@ -669,6 +672,10 @@ bool FFMPEGCodec::EncodeVideoPacket(const PluginCodec_RTP & in, PluginCodec_RTP 
     return false;
 
   m_fullFrame->Reset(result);
+
+  if (m_fullFrame->IsIntraFrame())
+    flags |= PluginCodec_ReturnCoderIFrame;
+
   return m_fullFrame->GetPacket(out, flags);
 }
 
@@ -682,7 +689,7 @@ int FFMPEGCodec::EncodeVideoFrame(uint8_t * frame, size_t length, unsigned & fla
     return result;
   }
 
-  if (m_picture->key_frame || (m_fullFrame != NULL && m_fullFrame->IsIntraFrame()))
+  if (m_picture->key_frame)
     flags |= PluginCodec_ReturnCoderIFrame;
 
   if (result == 0) {
@@ -700,6 +707,8 @@ bool FFMPEGCodec::DecodeVideoPacket(const PluginCodec_RTP & in, unsigned & flags
     PTRACE(1, m_prefix, "Decoder did not open");
     return false;
   }
+
+  flags = 0;
 
   if (m_fullFrame == NULL)
     return DecodeVideoFrame(in.GetPayloadPtr(), in.GetPayloadSize(), flags);
@@ -728,7 +737,7 @@ bool FFMPEGCodec::DecodeVideoFrame(const uint8_t * frame, size_t length, unsigne
   errorsBefore += m_context->decode_error_count
 #endif
 
-
+  m_picture->pict_type = AV_PICTURE_TYPE_NONE;
   int gotPicture = 0;
   int bytesDecoded = FFMPEGLibraryInstance.AvcodecDecodeVideo(m_context, m_picture, &gotPicture, frame, length);
 
@@ -739,15 +748,16 @@ bool FFMPEGCodec::DecodeVideoFrame(const uint8_t * frame, size_t length, unsigne
 
   // if error occurred, tell the other end to send another I-frame and hopefully we can resync
   if (errorsAfter > errorsBefore)
-    flags = PluginCodec_ReturnCoderRequestIFrame;
+    flags |= PluginCodec_ReturnCoderRequestIFrame;
 
   if (gotPicture) {
-    if (m_picture->key_frame || (m_fullFrame != NULL && m_fullFrame->IsIntraFrame()))
+    bool isIntra = m_fullFrame != NULL ? m_fullFrame->IsIntraFrame() : (m_picture->pict_type == AV_PICTURE_TYPE_I);
+    if (isIntra)
       flags |= PluginCodec_ReturnCoderIFrame;
 
     PTRACE((size_t)bytesDecoded == length ? 5 : 4, m_prefix,
            "Decoded " << bytesDecoded << " of " << length << " bytes, " <<
-           (m_picture->key_frame ? 'I' : 'P') << "-Frame at " << m_context->width << "x" << m_context->height);
+           (isIntra ? 'I' : 'P') << "-Frame at " << m_context->width << "x" << m_context->height);
   }
   else {
     flags &= ~PluginCodec_ReturnCoderLastFrame;
@@ -815,12 +825,6 @@ bool FFMPEGCodec::EncodedFrame::Reset(size_t len)
 
   m_length = len;
   return true;
-}
-
-
-bool FFMPEGCodec::EncodedFrame::IsIntraFrame() const
-{
-  return false;
 }
 
 

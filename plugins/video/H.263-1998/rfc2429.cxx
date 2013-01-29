@@ -258,7 +258,7 @@ bool RFC2429Frame::AddPacket(const PluginCodec_RTP & packet, unsigned int & flag
   size_t payloadSize = packet.GetPayloadSize();
   if (payloadSize < 3) {
     PTRACE(2, GetName(), "Packet too short (<3)");
-    flags = PluginCodec_ReturnCoderRequestIFrame;
+    flags |= PluginCodec_ReturnCoderRequestIFrame;
     return true;
   }
 
@@ -281,7 +281,7 @@ bool RFC2429Frame::AddPacket(const PluginCodec_RTP & packet, unsigned int & flag
   if (headerPLEN > 0) {
     if (payloadSize < headerPLEN + (headerV ? 3U : 2U)) {
       PTRACE(2, GetName(), "Packet too short (header)");
-      flags = PluginCodec_ReturnCoderRequestIFrame;
+      flags |= PluginCodec_ReturnCoderRequestIFrame;
       return true;
     }
     // we store the extra header for now, but dont do anything with it right now
@@ -329,7 +329,7 @@ bool RFC2429Frame::Reset(size_t len)
 }
 
 
-bool RFC2429Frame::IsIntraFrame()
+bool RFC2429Frame::IsIntraFrame() const
 {
   Bitstream headerBits;
   headerBits.SetBytes (m_buffer, m_length, 0, 0);
