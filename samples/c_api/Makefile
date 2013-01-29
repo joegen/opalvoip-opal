@@ -1,9 +1,7 @@
 #
 # Makefile
 #
-# An example of the "C" interface to OPAL
-#
-# Open Phone Abstraction Library
+# An example of the "C" interface to Open Phone Abstraction Library
 #
 # Copyright (c) 2008 Vox Lucida
 #
@@ -26,6 +24,7 @@
 # $Revision$
 # $Author$
 # $Date$
+#
 
 PROG		= c_api
 SOURCES		:= main.c
@@ -71,9 +70,6 @@ $(OBJDIR)/$(PROG): $(OBJECTS)
 depend:
 
 clean:
-	rm -f $(OBJECTS) $(OBJDIR)/$(PROG)
+	rm $(OBJECTS) $(OBJDIR)/$(PROG)
 
-install_to:
-	cp $(OBJDIR)/$(PROG) $(DESTDIR)/$(PROG) 
-	chmod 755 $(DESTDIR)/$(PROG)
-
+# End of Makefile

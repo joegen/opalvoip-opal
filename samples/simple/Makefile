@@ -1,6 +1,8 @@
 #
 # Makefile
 #
+# Simple OPAL sample
+#
 # Copyright (C) 2008 Post Increment, All Rights Reserved
 #
 # The contents of this file are subject to the Mozilla Public License
@@ -13,15 +15,19 @@
 # the License for the specific language governing rights and limitations
 # under the License.
 #
-# The Original Code is OPAL library.
+# The Original Code is Open Phone Abstraction Library.
 #
 # The Initial Developer of the Original Code is Post Increment
 #
 # Contributor(s): Matthias Schneider (ma30002000@yahoo.de)
 #
+# $Revision: 21713 $
+# $Auther$
+# $Date: 2008-12-08 19:14:44 +1100 (Mon, 08 Dec 2008) $
+#
 
-PROG		= simpleopal
-SRCS            = main.cxx
+PROG = simpleopal
+SRCS = main.cxx
 
 
 # If we have environment variables for local copies of
@@ -121,4 +127,4 @@ depend: Makefile $(patsubst %.dep, $(OPAL_DEPDIR)/%.dep, $(SRCS) $(DEPS))
 	@echo Dependencies created.
 
 
-###########################################
+# End of Makefile

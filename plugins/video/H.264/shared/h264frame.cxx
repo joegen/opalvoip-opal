@@ -97,58 +97,42 @@ bool H264Frame::AddNALU(uint8_t type, uint32_t length, const uint8_t * payload)
 
 bool H264Frame::GetPacket(PluginCodec_RTP & frame, unsigned int & flags)
 {
-  flags = (IsSync()) ? PluginCodec_ReturnCoderIFrame : 0;
-
-  if (m_currentNAL < m_numberOfNALsInFrame) 
-  { 
-    uint32_t curNALLen = m_NALs[m_currentNAL].length;
-    const uint8_t *curNALPtr = m_buffer + m_NALs[m_currentNAL].offset;
-    /*
-     * We have 3 types of packets we can send:
-     * fragmentation units - if the NAL is > max_payload_size
-     * single nal units - if the NAL is < max_payload_size, and can only fit 1 NAL
-     * single time aggregation units - if we can put multiple NALs into one packet
-     *
-     * We don't send multiple time aggregation units
-     */
-
-    if (curNALLen > m_maxPayloadSize)
-    {
-      // fragmentation unit - break up into max_payload_size size chunks
-      return EncapsulateFU(frame, flags);
-    } 
-    else 
-    {
-      // it is the last NAL of that frame or doesnt fit into an STAP packet with next nal ?
-#ifdef SEND_STAP_PACKETS
-      if (((m_currentNAL + 1) >= m_numberOfNALsInFrame)  ||  
-          ((curNALLen + m_NALs[m_currentNAL + 1].length + 5) > m_maxPayloadSize)) 
-      { 
-#endif
-        // single nal unit packet
-
-        frame.SetPayloadSize(curNALLen);
-        memcpy(frame.GetPayloadPtr(), curNALPtr, curNALLen);
-        frame.SetTimestamp(m_timestamp);
-        frame.SetMarker((m_currentNAL + 1) >= m_numberOfNALsInFrame ? 1 : 0);
-        flags |= frame.GetMarker() ? PluginCodec_ReturnCoderLastFrame : 0;  // marker bit on last frame of video
-
-        PTRACE(6, GetName(), "Encapsulating NAL unit #" << m_currentNAL << "/" << (m_numberOfNALsInFrame-1) << " of " << curNALLen << " bytes as a regular NAL unit");
-        m_currentNAL++;
-        return true;
-#ifdef SEND_STAP_PACKETS
-      } 
-      else
-      {
-        return EncapsulateSTAP(frame, flags); 
-      }
-#endif
-    }
-  } 
-  else 
-  {
+  if (m_currentNAL >= m_numberOfNALsInFrame) 
     return false;
-  }
+
+  uint32_t curNALLen = m_NALs[m_currentNAL].length;
+  const uint8_t *curNALPtr = m_buffer + m_NALs[m_currentNAL].offset;
+  /*
+    * We have 3 types of packets we can send:
+    * fragmentation units - if the NAL is > max_payload_size
+    * single nal units - if the NAL is < max_payload_size, and can only fit 1 NAL
+    * single time aggregation units - if we can put multiple NALs into one packet
+    *
+    * We don't send multiple time aggregation units
+    */
+
+  // fragmentation unit - break up into max_payload_size size chunks
+  if (curNALLen > m_maxPayloadSize)
+    return EncapsulateFU(frame, flags);
+
+  // it is the last NAL of that frame or doesnt fit into an STAP packet with next nal ?
+#ifdef SEND_STAP_PACKETS
+  if (((m_currentNAL + 1) < m_numberOfNALsInFrame) &&
+      ((curNALLen + m_NALs[m_currentNAL + 1].length + 5) <= m_maxPayloadSize))
+    return EncapsulateSTAP(frame, flags); 
+#endif
+
+  // single nal unit packet
+  frame.SetPayloadSize(curNALLen);
+  memcpy(frame.GetPayloadPtr(), curNALPtr, curNALLen);
+  frame.SetTimestamp(m_timestamp);
+  frame.SetMarker((m_currentNAL + 1) >= m_numberOfNALsInFrame ? 1 : 0);
+  if (frame.GetMarker())
+    flags |= PluginCodec_ReturnCoderLastFrame;  // marker bit on last frame of video
+
+  PTRACE(6, GetName(), "Encapsulating NAL unit #" << m_currentNAL << "/" << (m_numberOfNALsInFrame-1) << " of " << curNALLen << " bytes as a regular NAL unit");
+  m_currentNAL++;
+  return true;
 }
 
 bool H264Frame::EncapsulateSTAP(PluginCodec_RTP & frame, unsigned int & flags)
@@ -201,7 +185,8 @@ bool H264Frame::EncapsulateSTAP(PluginCodec_RTP & frame, unsigned int & flags)
   memset (frame.GetPayloadPtr(), 24 | maxNRI, 1);
   frame.SetTimestamp(m_timestamp);
   frame.SetMarker(m_currentNAL >= m_numberOfNALsInFrame ? 1 : 0);
-  flags |= frame.GetMarker() ? PluginCodec_ReturnCoderLastFrame : 0;  // marker bit on last frame of video
+  if (frame.GetMarker())
+    flags |= PluginCodec_ReturnCoderLastFrame;  // marker bit on last frame of video
 
   return true;
 }
@@ -248,7 +233,8 @@ bool H264Frame::EncapsulateFU(PluginCodec_RTP & frame, unsigned int & flags)
     memcpy ((uint8_t*)frame.GetPayloadPtr()+2, m_currentNALFURemainingDataPtr, curFULen);
     frame.SetTimestamp(m_timestamp);
     frame.SetMarker((last && ((m_currentNAL+1) >= m_numberOfNALsInFrame)) ? 1 : 0);
-    flags |= frame.GetMarker() ? PluginCodec_ReturnCoderLastFrame : 0;  // marker bit on last frame of video
+    if (frame.GetMarker())
+      flags |= PluginCodec_ReturnCoderLastFrame;  // marker bit on last frame of video
 
     m_currentNALFURemainingDataPtr += curFULen;
     m_currentNALFURemainingLen -= curFULen;
@@ -290,12 +276,12 @@ bool H264Frame::AddPacket(const PluginCodec_RTP & frame, unsigned & flags)
   }
 
   Reset();
-  flags = PluginCodec_ReturnCoderRequestIFrame;
+  flags |= PluginCodec_ReturnCoderRequestIFrame;
   return true;
 }
 
 
-bool H264Frame::IsSync ()
+bool H264Frame::IsIntraFrame() const
 {
   uint32_t i;
 

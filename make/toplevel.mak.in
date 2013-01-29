@@ -40,35 +40,31 @@ ifeq ($(OPAL_PLUGINS),yes)
 SUBDIRS += plugins 
 endif
 
-SAMPLE_DIRS :=
-
 ifeq ($(OPAL_SAMPLES),yes)
 
-SAMPLE_DIRS += samples/c_api
+SUBDIRS += samples/c_api
 
 ifeq ($(OPAL_HAS_PCSS),yes)
-SAMPLE_DIRS += samples/simple
+SUBDIRS += samples/simple
 endif
 ifeq ($(OPAL_VIDEO),yes)
-SAMPLE_DIRS += samples/codectest
+SUBDIRS += samples/codectest
 endif
 ifeq ($(OPAL_HAS_PCSS)$(OPAL_IVR)$(OPAL_PTLIB_CLI),yesyesyes)
-SAMPLE_DIRS += samples/callgen
+SUBDIRS += samples/callgen
 endif
 ifeq ($(OPAL_PTLIB_CLI)$(OPAL_PTLIB_EXPAT)$(OPAL_SIP), yesyesyes)
-SAMPLE_DIRS += samples/testpresent
+SUBDIRS += samples/testpresent
 endif
 ifeq ($(OPAL_PTLIB_CLI)$(OPAL_FAX), yesyes)
-SAMPLE_DIRS += samples/faxopal
+SUBDIRS += samples/faxopal
 endif
 ifeq ($(OPAL_PTLIB_CLI)$(OPAL_IVR),yesyes)
-SAMPLE_DIRS += samples/ivropal
+SUBDIRS += samples/ivropal
 endif
 ifeq ($(OPAL_PTLIB_CLI)$(OPAL_IVR)$(OPAL_HAS_MIXER),yesyesyes)
-SAMPLE_DIRS += samples/opalmcu
+SUBDIRS += samples/opalmcu
 endif
-
-SUBDIRS+=$(SAMPLE_DIRS)
 
 endif # OPAL_SAMPLES
 
@@ -610,15 +606,17 @@ default_depend :: depend
 .PHONY: subdirs $(SUBDIRS)
 
 subdirs:
-	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) CC=@CC@ CXX=@CXX@ LD=@CXX@ ; fi ; )
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir); fi ; )
 
 clean:
 	rm -rf $(OPAL_LIBDIR)
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) CC=@CC@ CXX=@CXX@ LD=@CXX@ clean; fi ; )
 
+sterile: clean
+	rm -f make/toplevel.mak plugins/Makefile
+
 depend:   $(DEPS) 
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) depend; fi ; )
-
 
 
 ifneq ($(wildcard $(OPAL_DEPDIR)/*.dep),)
@@ -721,11 +719,9 @@ install:
 			$(INSTALL) -m 644 $$fn $(DESTDIR)$(includedir)/$$dir ; \
 		done); \
 	done)
+
 ifeq ($(OPAL_PLUGINS),yes)
 	$(MAKE) -C plugins install
-endif
-ifeq ($(OPAL_SAMPLES),yes)
-	( for dir in $(SAMPLE_DIRS) ; do $(MAKE) -C $$dir DESTDIR=$(DESTDIR)$(bindir) install_to ; done)
 endif
 
 uninstall:
@@ -794,8 +790,5 @@ update:
 distclean: clean
 	rm -rf config.log config.err autom4te.cache config.status a.out aclocal.m4
 	rm -rf lib*
-
-sterile: distclean
-	rm -rf configure opal.pc opal.dxy 
 
 # End of file #################################################################
