@@ -21,36 +21,18 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Log: Makefile,v $
-# Revision 1.1  2007/08/20 06:28:15  rjongbloed
-# Added new application to test audio and video codecs by taking real media
-#   (camera/YUV file/microphone/WAV file etc) encoding it, decoding it and playing
-#   back on real output device (screen/speaker etc)
+# $Revision$
+# $Author$
+# $Date$
 #
-
 
 PROG = codectest
 SOURCES := main.cxx
 
-ifndef OPALDIR
-ifneq (,$(wildcard $(HOME)/opal))
-OPALDIR=$(HOME)/opal
-else
-ifneq (,$(wildcard /usr/local/opal))
-OPALDIR=/usr/local/opal
-else
-default_target :
-	@echo Cannot find OPAL in standard locations, you must set the OPALDIR
-	@echo environment variable to build this application.
-endif
-endif
-endif
-
 ifdef OPALDIR
-include $(OPALDIR)/opal_inc.mak
+  include $(OPALDIR)/opal_inc.mak
+else
+  include $(shell pkg-config opal --variable=makedir)/opal_inc.mak
 endif
 
-install_to:
-	cp $(OBJDIR)/$(PROG) $(DESTDIR)/$(PROG) 
-	chmod 755 $(DESTDIR)/$(PROG)
-
+# End of Makefile

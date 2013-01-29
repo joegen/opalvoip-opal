@@ -35,3 +35,4 @@ else
   include $(shell pkg-config opal --variable=makedir)/opal_inc.mak
 endif
 
+# End of Makefile

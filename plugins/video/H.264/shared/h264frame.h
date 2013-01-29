@@ -67,6 +67,7 @@ public:
   virtual bool Reset(size_t len = 0);
   virtual bool GetPacket(PluginCodec_RTP & rtp, unsigned & flags);
   virtual bool AddPacket(const PluginCodec_RTP & frame, unsigned & flags);
+  virtual bool IsIntraFrame() const;
 
 
   void Allocate(uint32_t numberOfNALs);
@@ -81,8 +82,6 @@ public:
   {
     return m_currentNAL < m_numberOfNALsInFrame;
   }
-
-  bool IsSync ();
 
   unsigned GetProfile() const { return m_profile; }
   unsigned GetLevel() const { return m_level; }

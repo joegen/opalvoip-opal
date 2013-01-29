@@ -33,7 +33,11 @@ class PluginCodec_RTP;
 class RFC2190EncodedFrame : public FFMPEGCodec::EncodedFrame
 {
   public:
+    RFC2190EncodedFrame();
     virtual const char * GetName() const { return "RFC2190"; }
+    virtual bool IsIntraFrame() const;
+  protected:
+    bool m_isIFrame;
 };
 
 
@@ -53,7 +57,6 @@ class RFC2190Packetizer : public RFC2190EncodedFrame
   private:
     unsigned int TR;
     size_t m_frameSize;
-    int iFrame;
     int annexD, annexE, annexF, annexG, pQuant, cpm;
     int macroblocksPerGOB;
 
@@ -80,7 +83,6 @@ class RFC2190Depacketizer : public RFC2190EncodedFrame
     virtual void Reset();
     virtual bool GetPacket(PluginCodec_RTP & rtp, unsigned & flags);
     virtual bool AddPacket(const PluginCodec_RTP & rtp, unsigned & flags);
-    virtual bool IsIntraFrame() const;
 
   protected:
     bool LostSync(unsigned & flags);
@@ -88,7 +90,6 @@ class RFC2190Depacketizer : public RFC2190EncodedFrame
     bool     m_first;
     bool     m_skipUntilEndOfFrame;
     unsigned m_lastEbit;
-    bool     m_isIFrame;
 };
 
 #endif // _RFC2190_H_

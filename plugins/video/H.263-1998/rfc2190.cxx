@@ -114,10 +114,23 @@ static int FindGBSC(const unsigned char * base, int len, int & sbit)
 
 ///////////////////////////////////////////////////////////////////////////////////////3Y
 
+RFC2190EncodedFrame::RFC2190EncodedFrame()
+  : m_isIFrame(false)
+{
+}
+
+
+bool RFC2190EncodedFrame::IsIntraFrame() const
+{
+  return m_isIFrame;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////3Y
+
 RFC2190Packetizer::RFC2190Packetizer()
   : TR(0)
   , m_frameSize(0)
-  , iFrame(0)
   , annexD(0)
   , annexE(0)
   , annexF(0)
@@ -202,7 +215,7 @@ bool RFC2190Packetizer::Reset(size_t len)
   // get I-frame flag
   //     4
   // .... ..X.
-  iFrame = (m_buffer[4] & 2) == 0;
+  m_isIFrame = (m_buffer[4] & 2) == 0;
 
   // get annex bits:
   //   Annex D - unrestricted motion vector mode
@@ -319,7 +332,7 @@ bool RFC2190Packetizer::GetPacket(PluginCodec_RTP & outputFrame, unsigned int & 
   int eBit = 0;
   if (modeA) {
     ptr[0] = (unsigned char)(((sBit & 7) << 3) | (eBit & 7));
-    ptr[1] = (unsigned char)((m_frameSize << 5) | (iFrame ? 0 : 0x10) | (annexD ? 0x08 : 0) | (annexE ? 0x04 : 0) | (annexF ? 0x02 : 0));
+    ptr[1] = (unsigned char)((m_frameSize << 5) | (m_isIFrame ? 0 : 0x10) | (annexD ? 0x08 : 0) | (annexE ? 0x04 : 0) | (annexF ? 0x02 : 0));
     ptr[2] = ptr[3] = 0;
   }
   else
@@ -331,7 +344,7 @@ bool RFC2190Packetizer::GetPacket(PluginCodec_RTP & outputFrame, unsigned int & 
     ptr[1] = (unsigned char)(m_frameSize << 5);
     ptr[2] = (unsigned char)(((gobn << 3) & 0xf8) | ((mba >> 6) & 0x7));
     ptr[3] = (unsigned char)((mba << 2) & 0xfc);
-    ptr[4] = (iFrame ? 0 : 0x80) | (annexD ? 0x40 : 0) | (annexE ? 0x20 : 0) | (annexF ? 0x010: 0);
+    ptr[4] = (m_isIFrame ? 0 : 0x80) | (annexD ? 0x40 : 0) | (annexE ? 0x20 : 0) | (annexF ? 0x010: 0);
     ptr[5] = ptr[6] = ptr[7] = 0;
   }
 
@@ -341,13 +354,10 @@ bool RFC2190Packetizer::GetPacket(PluginCodec_RTP & outputFrame, unsigned int & 
   fragPtr += frag.length;
 
   // set marker bit
-  flags = 0;
   if (currFrag == fragments.end()) {
     flags |= PluginCodec_ReturnCoderLastFrame;
     outputFrame.SetMarker(1);
   }
-  if (iFrame)
-    flags |= PluginCodec_ReturnCoderIFrame;
 
   return true;
 }
@@ -392,12 +402,6 @@ void RFC2190Depacketizer::Reset()
 }
 
 
-bool RFC2190Depacketizer::IsIntraFrame() const
-{
-  return m_isIFrame;
-}
-
-
 bool RFC2190Depacketizer::GetPacket(PluginCodec_RTP &, unsigned &)
 {
   return false;
@@ -407,7 +411,7 @@ bool RFC2190Depacketizer::GetPacket(PluginCodec_RTP &, unsigned &)
 bool RFC2190Depacketizer::LostSync(unsigned & flags)
 {
   m_skipUntilEndOfFrame = true;
-  flags = PluginCodec_ReturnCoderRequestIFrame;
+  flags |= PluginCodec_ReturnCoderRequestIFrame;
   PTRACE(2, GetName(), "Error in received packet, resynchronising.");
   return true;
 }

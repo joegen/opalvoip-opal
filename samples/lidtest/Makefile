@@ -29,9 +29,10 @@
 PROG		= lidtest
 SOURCES		:= main.cxx
 
-ifndef OPALDIR
-OPALDIR=$(CURDIR)/../..
+ifdef OPALDIR
+  include $(OPALDIR)/opal_inc.mak
+else
+  include $(shell pkg-config opal --variable=makedir)/opal_inc.mak
 endif
 
-include $(OPALDIR)/opal_inc.mak
-
+# End of Makefile
