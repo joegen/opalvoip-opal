@@ -21,7 +21,8 @@ dnl ########################################################################
 dnl Check for non-installed "environment variable" mode
 OBJ_ARCH=
 if test "x$OPALDIR" != "x" ; then
-   AC_PREFIX_DEFAULT($OPALDIR)
+   AC_MSG_NOTICE(OPALDIR environment variable detected as $OPALDIR)
+   ac_default_prefix=$OPALDIR
    if test "x$prefix" = "xNONE" ; then
       OBJ_ARCH=1
    fi

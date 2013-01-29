@@ -75,7 +75,7 @@ public:
   virtual bool GetPacket(PluginCodec_RTP & frame, unsigned int & flags);
   virtual bool AddPacket(const PluginCodec_RTP & frame, unsigned int & flags);
 
-  virtual bool IsIntraFrame();
+  virtual bool IsIntraFrame() const;
 
 private:
   size_t ParseHeader(uint8_t* headerPtr, size_t headerMaxLen);

@@ -1,9 +1,7 @@
 #
 # Makefile
 #
-# Make file for opalgw
-#
-# Open Phone Abstraction Lebrary Project
+# Make file for OPAL gateway
 #
 # Copyright (c) 2003 Equivalence Pty. Ltd.
 #
@@ -23,32 +21,18 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Log: Makefile,v $
-# Revision 1.2  2003/03/26 03:03:52  robertj
-# Set correct project name
-#
-# Revision 1.1  2003/03/26 02:49:00  robertj
-# Added service/daemon sample application.
+# $Revision$
+# $Author$
+# $Date$
 #
 
 PROG	= opalgw
 SOURCES	:= main.cxx custom.cxx gkserv.cxx
 
-ifndef OPALDIR
-ifneq (,$(wildcard $(HOME)/opal))
-OPALDIR=$(HOME)/opal
-else
-ifneq (,$(wildcard /usr/local/opal))
-OPALDIR=/usr/local/opal
-else
-
-default_target :
-	@echo Cannot find OPAL in standard locations, you must set the OPALDIR
-	@echo environment variable to build this application.
-endif
-endif
-endif
- 
 ifdef OPALDIR
-include $(OPALDIR)/opal_inc.mak
+  include $(OPALDIR)/opal_inc.mak
+else
+  include $(shell pkg-config opal --variable=makedir)/opal_inc.mak
 endif
+
+# End of Makefile

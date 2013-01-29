@@ -21,26 +21,18 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Log: Makefile,v $
-# Revision 1.2  2006/07/24 14:03:39  csoutheren
-# Merged in audio and video plugins from CVS branch PluginBranch
-#
-# Revision 1.1  2006/03/13 06:56:37  csoutheren
-# Initial version
-#
-# Revision 1.1  2004/05/11 01:19:37  csoutheren
-# Initial version
-#
+# $Revision$
+# $Author$
+# $Date$
 #
 
 PROG		= codecinfo
 SOURCES		:= main.cxx
 
-ifndef OPALDIR
-OPALDIR=$(CURDIR)/../..
+ifdef OPALDIR
+  include $(OPALDIR)/opal_inc.mak
+else
+  include $(shell pkg-config opal --variable=makedir)/opal_inc.mak
 endif
 
-VERSION_FILE := $(OPALDIR)/version.h
-
-include $(OPALDIR)/opal_inc.mak
-
+# End of Makefile

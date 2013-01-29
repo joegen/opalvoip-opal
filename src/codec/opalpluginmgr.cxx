@@ -890,6 +890,7 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
                                 (PINDEX)getOutputDataSizeControl.Call((void *)NULL, (unsigned *)NULL, context));
 
   unsigned flags;
+  lastFrameWasIFrame = false;
 
   PTRACE_IF(4, forceIFrame, "OpalPlugin\tI-Frame forced from video codec at frame " << m_totalFrames);
   do {
@@ -908,7 +909,8 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
       return false;
     }
 
-    lastFrameWasIFrame = (flags & PluginCodec_ReturnCoderIFrame) != 0;
+    if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
+      lastFrameWasIFrame = true;
 
     if (toLen < RTP_DataFrame::MinHeaderSize || (PINDEX)toLen < dst->GetHeaderSize())
       delete dst;

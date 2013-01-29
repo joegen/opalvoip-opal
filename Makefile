@@ -38,7 +38,8 @@ CONFIG_FILES   := $(OPALDIR)/opal.pc \
                   $(OPALDIR)/opal_cfg.dxy \
                   $(TOP_LEVEL_MAKE) \
                   $(OPALDIR)/make/opal_defs.mak \
-                  $(OPALDIR)/include/opal/buildopts.h
+                  $(OPALDIR)/include/opal/buildopts.h \
+		  $(OPALDIR)/plugins/plugin-inc.mak
 
 PLUGIN_CONFIG  := $(OPALDIR)/plugins/configure
 PLUGIN_ACLOCAL := $(OPALDIR)/plugins/aclocal.m4
@@ -64,7 +65,7 @@ config:	$(CONFIG_FILES)
 
 .PHONY:clean
 clean:
-	if test -e $(OPALDIR)/make/opal_defs.mak ; then \
+	if test -e $(TOP_LEVEL_MAKE) ; then \
 	  $(MAKE) -f $(TOP_LEVEL_MAKE) clean ; \
 	else \
 	  rm -f $(CONFIG_FILES) ; \
@@ -72,27 +73,29 @@ clean:
 
 .PHONY:default_clean
 default_clean: clean
-	if test -e $(OPALDIR)/make/opal_defs.mak ; then \
-	  $(MAKE) -f $(TOP_LEVEL_MAKE) default_clean ; \
+	if test -e $(TOP_LEVEL_MAKE) ; then \
+	  $(MAKE) -f $(TOP_LEVEL_MAKE) clean ; \
 	fi
 
 .PHONY:distclean
 distclean: clean
-	if test -e $(OPALDIR)/make/opal_defs.mak ; then \
-	  $(MAKE) -f $(TOP_LEVEL_MAKE) distclean ; \
+	if test -e $(TOP_LEVEL_MAKE) ; then \
+	  $(MAKE) -f $(TOP_LEVEL_MAKE) clean ; \
 	fi
 
 .PHONY:sterile
-sterile: clean
-	if test -e $(OPALDIR)/make/opal_defs.mak ; then \
+sterile: distclean
+	if test -e $(TOP_LEVEL_MAKE) ; then \
 	  $(MAKE) -f $(TOP_LEVEL_MAKE) sterile ; \
+	else \
+	  rm -f $(CONFIGURE) config.log config.status ; \
 	fi
 
 ifneq (,$(shell which ./config.status))
 CONFIG_PARMS=$(shell ./config.status --config)
 endif
 
-$(firstword $(CONFIG_FILES)) : $(CONFIGURE) $(CONFIG_IN_FILES)
+$(lastword $(CONFIG_FILES)) : $(CONFIGURE) $(CONFIG_IN_FILES)
 	OPALDIR=$(ENV_OPALDIR) $(CONFIGURE) $(CONFIG_PARMS)
 	touch $(CONFIG_FILES)
 
