@@ -612,6 +612,9 @@ clean:
 	rm -rf $(OPAL_LIBDIR)
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) CC=@CC@ CXX=@CXX@ LD=@CXX@ clean; fi ; )
 
+sterile: clean
+	rm -f toplevel.mak plugins/Makefile
+
 depend:   $(DEPS) 
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) depend; fi ; )
 
