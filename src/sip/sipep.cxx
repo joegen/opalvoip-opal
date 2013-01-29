@@ -1508,7 +1508,7 @@ bool SIPEndPoint::SendOPTIONS(const SIPOptions::Params & newParams)
 
   PSafePtr<SIPHandler> handler = new SIPOptionsHandler(*this, params);
   activeSIPHandlers.Append(handler);
-  return handler->ActivateState(SIPHandler::Subscribing);
+  return handler->ActivateState(SIPHandler::Unsubscribing);
 }
 
 
