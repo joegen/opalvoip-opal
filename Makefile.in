@@ -365,6 +365,8 @@ SOURCES += $(OPAL_SRCDIR)/rtp/srtp.cxx \
 endif
 
 
+ifneq (,$(SWIG))
+
 ####################################################
 # Java interface
 
@@ -376,6 +378,7 @@ JAVA_WRAPPER     = $(JAVA_SRCDIR)/java_swig_wrapper.c
 VPATH_C         += $(JAVA_SRCDIR)
 SOURCES         += $(JAVA_WRAPPER)
 
+endif
 endif
 
 
@@ -391,6 +394,8 @@ VPATH_C         += $(RUBY_SRCDIR)
 SOURCES         += $(RUBY_WRAPPER)
 
 endif
+
+endif // SWIG
 
 
 ##################
