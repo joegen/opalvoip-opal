@@ -857,8 +857,11 @@ void SIPRegisterHandler::UpdateParameters(const SIPRegister::Params & params)
   if (params.m_expire > 0)
     SetExpire(m_parameters.m_expire = params.m_expire);
 
+  m_parameters.m_compatibility = params.m_compatibility;
   m_parameters.m_contactAddress = params.m_contactAddress;
   m_contactAddresses.clear();
+
+  PTRACE(4, "SIP\tREGISTER parameters updated.");
 }
 
 
