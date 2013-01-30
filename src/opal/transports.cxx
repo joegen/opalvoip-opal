@@ -722,7 +722,7 @@ PBoolean OpalListenerTCP::Open(const AcceptHandler & theAcceptHandler, ThreadMod
 }
 
 
-PBoolean OpalListenerTCP::IsOpen()
+bool OpalListenerTCP::IsOpen() const
 {
   return listener.IsOpen();
 }
@@ -827,7 +827,7 @@ PBoolean OpalListenerUDP::Open(const AcceptHandler & theAcceptHandler, ThreadMod
 }
 
 
-PBoolean OpalListenerUDP::IsOpen()
+bool OpalListenerUDP::IsOpen() const
 {
   return listenerBundle != NULL && listenerBundle->IsOpen();
 }
@@ -907,10 +907,10 @@ const PCaselessString & OpalListenerUDP::GetProtoPrefix() const
 #if P_NAT
 OpalTransportAddress OpalListenerUDP::GetLocalAddress(const OpalTransportAddress & remoteAddress) const
 {
-  if (IsOpen()) {
-    PIPSocket::Address localIP = PIPSocket::GetInvalidAddress();
-    WORD port = listenerPort;
+  PIPSocket::Address localIP = PIPSocket::GetInvalidAddress();
+  WORD port = listenerPort;
 
+  if (IsOpen()) {
     PIPSocket::Address remoteIP;
     if (remoteAddress.GetIpAddress(remoteIP)) {
       PNatMethod * natMethod = endpoint.GetManager().GetNatMethod(remoteIP);
