@@ -884,6 +884,9 @@ OpalTransport * OpalListenerUDP::CreateTransport(const OpalTransportAddress & lo
   if (!CanCreateTransport(localAddress, remoteAddress))
     return NULL;
 
+  if (!IsOpen())
+    return NULL;
+
   PString iface;
   if (!localAddress.IsEmpty()) {
     PIPSocket::Address addr;
@@ -904,22 +907,24 @@ const PCaselessString & OpalListenerUDP::GetProtoPrefix() const
 #if P_NAT
 OpalTransportAddress OpalListenerUDP::GetLocalAddress(const OpalTransportAddress & remoteAddress) const
 {
-  PIPSocket::Address localIP(""); // Make invalid
-  WORD port = listenerPort;
+  if (IsOpen()) {
+    PIPSocket::Address localIP = PIPSocket::GetInvalidAddress();
+    WORD port = listenerPort;
 
-  PIPSocket::Address remoteIP;
-  if (remoteAddress.GetIpAddress(remoteIP)) {
-    PNatMethod * natMethod = endpoint.GetManager().GetNatMethod(remoteIP);
-    if (natMethod != NULL) {
-      natMethod->GetInterfaceAddress(localIP);
-      listenerBundle->GetAddress(localIP.AsString(), localIP, port, true);
+    PIPSocket::Address remoteIP;
+    if (remoteAddress.GetIpAddress(remoteIP)) {
+      PNatMethod * natMethod = endpoint.GetManager().GetNatMethod(remoteIP);
+      if (natMethod != NULL) {
+        natMethod->GetInterfaceAddress(localIP);
+        listenerBundle->GetAddress(localIP.AsString(), localIP, port, true);
+      }
     }
-  }
 
-  if (!localIP.IsValid()) {
-    listenerBundle->GetAddress(PString::Empty(), localIP, port, false);
-    if (!localIP.IsValid() || localIP.IsAny())
-      localIP = localAddress;
+    if (!localIP.IsValid()) {
+      listenerBundle->GetAddress(PString::Empty(), localIP, port, false);
+      if (!localIP.IsValid() || localIP.IsAny())
+        localIP = localAddress;
+    }
   }
 
   return OpalTransportAddress(localIP, port, GetProtoPrefix());
