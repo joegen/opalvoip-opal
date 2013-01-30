@@ -296,6 +296,10 @@ void OpalRTPSession::AttachTransport(Transport & transport)
   else {
     PTRACE_CONTEXT_ID_TO(m_dataSocket);
     m_dataSocket->GetLocalAddress(m_localAddress, m_localDataPort);
+
+    OpalRTPEndPoint * ep = dynamic_cast<OpalRTPEndPoint *>(&m_connection.GetEndPoint());
+    if (PAssert(ep != NULL, "RTP createed by non OpalRTPEndPoint derived class"))
+      ep->SetConnectionByRtpLocalPort(this, &m_connection);
   }
 
   channel = transport.RemoveHead();
