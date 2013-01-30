@@ -379,7 +379,6 @@ VPATH_C         += $(JAVA_SRCDIR)
 SOURCES         += $(JAVA_WRAPPER)
 
 endif
-endif
 
 
 ####################################################
@@ -395,7 +394,7 @@ SOURCES         += $(RUBY_WRAPPER)
 
 endif
 
-endif // SWIG
+endif # SWIG
 
 
 ##################
