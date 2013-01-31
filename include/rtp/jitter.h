@@ -59,16 +59,28 @@ class OpalJitterBuffer : public PSafeObject
   PCLASSINFO(OpalJitterBuffer, PSafeObject);
 
   public:
+    /// Initialisation information
+    struct Init {
+      Init(unsigned minDelay = 0, unsigned maxDelay = 0)
+        : m_minJitterDelay(minDelay)
+        , m_maxJitterDelay(maxDelay != 0 ? maxDelay : minDelay)
+        , m_timeUnits(8)
+        , m_packetSize(2048)
+      { }
+
+      unsigned m_minJitterDelay; ///<  Minimum delay in RTP timestamp units
+      unsigned m_maxJitterDelay; ///<  Maximum delay in RTP timestamp units
+      unsigned m_timeUnits;      ///<  Time units, usually 8 or 16
+      PINDEX m_packetSize;       ///<  Max RTP packet size
+    };
+
   /**@name Construction */
   //@{
     /**Constructor for this jitter buffer. The size of this buffer can be
        altered later with the SetDelay method
       */
     OpalJitterBuffer(
-      unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
-      unsigned maxJitterDelay, ///<  Maximum delay in RTP timestamp units
-      unsigned timeUnits = 8,  ///<  Time units, usually 8 or 16
-      PINDEX packetSize = 2048 ///<  Max RTP packet size
+      const Init & init  ///< Initialisation information
     );
     
     /** Destructor, which closes this down and deletes the internal list of frames
@@ -92,9 +104,7 @@ class OpalJitterBuffer : public PSafeObject
     /**Set the maximum delay the jitter buffer will operate to.
       */
     void SetDelay(
-      unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
-      unsigned maxJitterDelay, ///<  Maximum delay in RTP timestamp units
-      PINDEX packetSize = 2048 ///<  Max RTP packet size
+      const Init & init  ///< Initialisation information
     );
 
     /**Reset jitter buffer.
@@ -206,10 +216,7 @@ class OpalJitterBufferThread : public OpalJitterBuffer
     PCLASSINFO(OpalJitterBufferThread, OpalJitterBuffer);
  public:
     OpalJitterBufferThread(
-      unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
-      unsigned maxJitterDelay, ///<  Maximum delay in RTP timestamp units
-      unsigned timeUnits = 8,  ///<  Time units, usually 8 or 16
-      PINDEX packetSize = 2048 ///<  Max RTP packet size
+      const Init & init  ///< Initialisation information
     );
     ~OpalJitterBufferThread();
 

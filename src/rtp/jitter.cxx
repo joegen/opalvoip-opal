@@ -204,21 +204,18 @@ const int      AverageFrameTimeDeadband = 16;
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalJitterBuffer::OpalJitterBuffer(unsigned minJitter,
-                                   unsigned maxJitter,
-                                   unsigned units,
-                                     PINDEX packetSize)
-  : m_timeUnits(units)
-  , m_packetSize(packetSize)
-  , m_minJitterDelay(minJitter)
-  , m_maxJitterDelay(maxJitter)
-  , m_jitterGrowTime(10*units) // 10 milliseconds @ 8kHz
-  , m_jitterShrinkPeriod(2000*units) // 2 seconds @ 8kHz
-  , m_jitterShrinkTime(-5*units) // 5 milliseconds @ 8kHz
-  , m_silenceShrinkPeriod(5000*units) // 5 seconds @ 8kHz
-  , m_silenceShrinkTime(-20*units) // 20 milliseconds @ 8kHz
-  , m_jitterDriftPeriod(500*units) // 0.5 second @ 8kHz
-  , m_currentJitterDelay(minJitter)
+OpalJitterBuffer::OpalJitterBuffer(const Init & init)
+  : m_timeUnits(init.m_timeUnits)
+  , m_packetSize(init.m_packetSize)
+  , m_minJitterDelay(init.m_minJitterDelay)
+  , m_maxJitterDelay(init.m_maxJitterDelay)
+  , m_jitterGrowTime(10*init.m_timeUnits) // 10 milliseconds @ 8kHz
+  , m_jitterShrinkPeriod(2000*init.m_timeUnits) // 2 seconds @ 8kHz
+  , m_jitterShrinkTime(-5*init.m_timeUnits) // 5 milliseconds @ 8kHz
+  , m_silenceShrinkPeriod(5000*init.m_timeUnits) // 5 seconds @ 8kHz
+  , m_silenceShrinkTime(-20*init.m_timeUnits) // 20 milliseconds @ 8kHz
+  , m_jitterDriftPeriod(500*init.m_timeUnits) // 0.5 second @ 8kHz
+  , m_currentJitterDelay(init.m_minJitterDelay)
   , m_packetsTooLate(0)
   , m_bufferOverruns(0)
   , m_maxConsecutiveMarkerBits(10)
@@ -256,14 +253,14 @@ void OpalJitterBuffer::PrintOn(ostream & strm) const
 }
 
 
-void OpalJitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay, PINDEX packetSize)
+void OpalJitterBuffer::SetDelay(const Init & init)
 {
   m_bufferMutex.Wait();
 
-  m_minJitterDelay     = minJitterDelay;
-  m_maxJitterDelay     = maxJitterDelay;
-  m_currentJitterDelay = minJitterDelay;
-  m_packetSize         = packetSize;
+  m_minJitterDelay     = init.m_minJitterDelay;
+  m_maxJitterDelay     = init.m_maxJitterDelay;
+  m_currentJitterDelay = init.m_minJitterDelay;
+  m_packetSize         = init.m_packetSize;
 
   PTRACE(3, "Jitter\tDelays set to " << *this);
 
@@ -613,11 +610,8 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalJitterBufferThread::OpalJitterBufferThread(unsigned minJitterDelay,
-                                               unsigned maxJitterDelay,
-                                               unsigned timeUnits,
-                                                 PINDEX packetSize)
-  : OpalJitterBuffer(minJitterDelay, maxJitterDelay, timeUnits, packetSize)
+OpalJitterBufferThread::OpalJitterBufferThread(const Init & init)
+  : OpalJitterBuffer(init)
   , m_jitterThread(NULL)
   , m_running(true)
 {

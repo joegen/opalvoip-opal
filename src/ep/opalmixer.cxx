@@ -144,8 +144,13 @@ bool OpalBaseMixer::AddStream(const Key_T & key)
   if (iter != m_inputStreams.end()) 
     return false;
 
-  m_inputStreams[key] = CreateStream();
-  PTRACE(4, "Mixer\tAdded input stream at key " << key);
+  Stream * stream = CreateStream();
+  if (stream == NULL)
+    return false;
+
+  m_inputStreams[key] = stream;
+  PTRACE_CONTEXT_ID_SET(*stream, key);
+  PTRACE(4, "Mixer\tAdded input stream " << stream << " at key " << key);
 
   StartPushThread();
   return true;
@@ -337,11 +342,12 @@ bool OpalAudioMixer::SetSampleRate(unsigned rate)
   m_mixedAudio.resize(m_periodTS);
   for (StreamMap_T::iterator iter = m_inputStreams.begin(); iter != m_inputStreams.end(); ++iter)
     ((AudioStream *)iter->second)->m_cacheSamples.SetSize(m_periodTS);
+  PTRACE(4, "Mixer\tSample rate set to " << rate);
   return true;
 }
 
 
-bool OpalAudioMixer::SetJitterBufferSize(const Key_T & key, unsigned minJitterDelay, unsigned maxJitterDelay)
+bool OpalAudioMixer::SetJitterBufferSize(const Key_T & key, const OpalJitterBuffer::Init & init)
 {
   PWaitAndSignal mutex(m_mutex);
 
@@ -349,10 +355,14 @@ bool OpalAudioMixer::SetJitterBufferSize(const Key_T & key, unsigned minJitterDe
   if (iter == m_inputStreams.end())
     return false;
 
-  OpalJitterBuffer * & jitter = ((AudioStream *)iter->second)->m_jitter;
+  AudioStream * audioStream = dynamic_cast<AudioStream *>(iter->second);
+  if (PAssertNULL(audioStream) == NULL)
+    return false;
+
+  OpalJitterBuffer * & jitter = audioStream->m_jitter;
   if (jitter != NULL) {
-    if (minJitterDelay != 0 && maxJitterDelay != 0)
-      jitter->SetDelay(minJitterDelay, maxJitterDelay);
+    if (init.m_maxJitterDelay > 0)
+      jitter->SetDelay(init);
     else {
       PTRACE(4, "AudioMix\tJitter buffer disabled");
       delete jitter;
@@ -360,9 +370,10 @@ bool OpalAudioMixer::SetJitterBufferSize(const Key_T & key, unsigned minJitterDe
     }
   }
   else {
-    if (minJitterDelay != 0 && maxJitterDelay != 0) {
+    if (init.m_maxJitterDelay > 0) {
       PTRACE(4, "AudioMix\tJitter buffer enabled");
-      jitter = new OpalJitterBuffer(minJitterDelay, maxJitterDelay, m_sampleRate/1000);
+      jitter = new OpalJitterBuffer(init);
+      PTRACE_CONTEXT_ID_SET(*jitter, audioStream);
     }
   }
 
@@ -553,6 +564,7 @@ bool OpalVideoMixer::SetFrameRate(unsigned rate)
   m_mutex.Wait();
   m_periodMS = 1000/rate;
   m_periodTS = OpalMediaFormat::VideoClockRate/rate;
+  PTRACE(4, "Mixer\tPushThread period adjusted to " << m_periodMS << " ms");
   m_mutex.Signal();
 
   return true;
@@ -1152,23 +1164,9 @@ PBoolean OpalMixerMediaStream::RequiresPatchThread() const
 }
 
 
-bool OpalMixerMediaStream::EnableJitterBuffer(bool enab) const
+bool OpalMixerMediaStream::InternalSetJitterBuffer(const OpalJitterBuffer::Init & init) const
 {
-  if (IsSource())
-    return false;
-
-  unsigned minJitter, maxJitter;
-
-  if (enab) {
-    minJitter = connection.GetMinAudioJitterDelay();
-    maxJitter = connection.GetMaxAudioJitterDelay();
-  }
-  else {
-    minJitter = 0;
-    maxJitter = 0;
-  }
-
-  return m_node->SetJitterBufferSize(GetID(), minJitter, maxJitter);
+  return m_node->SetJitterBufferSize(GetID(), init);
 }
 
 
@@ -1506,10 +1504,10 @@ public:
     PStringStream xml;
 
     xml << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-            "<conference-info xmlns=\"urn:ietf:params:xml:ns:conference-info\"\n"
-            "                 entity=\"" << handler.GetAddressOfRecord() << "\"\n"
-            "                 state=\"full\"\n"
-            "                 version=\"" << ++m_txSequenceNumber << "\">\n";
+           "<conference-info xmlns=\"urn:ietf:params:xml:ns:conference-info\"\n"
+           "                 entity=\"" << handler.GetAddressOfRecord() << "\"\n"
+           "                 state=\"full\"\n"
+           "                 version=\"" << ++m_txSequenceNumber << "\">\n";
 
     xml << "  <conference-description>\n";
     OutputIfNotEmpty(xml, state->m_displayText, "display-text", 4);
@@ -1523,10 +1521,10 @@ public:
     xml << "  </conference-description>\n";
 
     xml << "  <conference-state>\n"
-            "    <user-count>" << state->m_users.size() << "</user-count>\n"
-            "    <active>" << (state->m_active ? "true" : "false") << "</active>\n"
-            "    <locked>" << (state->m_locked ? "true" : "false") << "</locked>\n"
-            "  </conference-state>\n";
+           "    <user-count>" << state->m_users.size() << "</user-count>\n"
+           "    <active>" << (state->m_active ? "true" : "false") << "</active>\n"
+           "    <locked>" << (state->m_locked ? "true" : "false") << "</locked>\n"
+           "  </conference-state>\n";
 
     if (!state->m_users.empty()) {
       xml << "  <users>\n";
