@@ -1028,7 +1028,7 @@ class OpalConnection : public PSafeObject
     /**Open source media streams, if needed.
      */
     virtual void AutoStartMediaStreams(
-      bool force = false ///< Force re-open even if already open
+      bool transfer = false ///< Executing an internal transfer
     );
 
 #if OPAL_T38_CAPABILITY
