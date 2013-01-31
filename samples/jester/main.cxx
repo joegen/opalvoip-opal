@@ -63,7 +63,7 @@ ostream & operator<<(ostream & strm, const JitterProfileMap & profile)
 
 ///////////////////////////////////////////////////////////////
 JesterJitterBuffer::JesterJitterBuffer()
-: OpalJitterBuffer(400, 2000)
+  : OpalJitterBuffer(OpalJitterBuffer::Init(400, 2000))
 {
 
 }
@@ -130,8 +130,7 @@ void JesterProcess::Main()
 
   PTRACE_INITIALISE(args);
 
-  unsigned minJitterSize = 50;
-  unsigned maxJitterSize = 250;
+  OpalJitterBuffer::Init init(50, 250);
 
   if (args.HasOption('j')) {
     unsigned minJitterNew;
@@ -147,14 +146,14 @@ void JesterProcess::Main()
     }
 
     if (minJitterNew >= 20 && minJitterNew <= maxJitterNew && maxJitterNew <= 1000) {
-      minJitterSize = minJitterNew;
-      maxJitterSize = maxJitterNew;
+      init.m_minJitterDelay = minJitterNew*SAMPLES_PER_MILLISECOND;
+      init.m_maxJitterDelay = maxJitterNew*SAMPLES_PER_MILLISECOND;
     } else {
       cerr << "Jitter should be between 20 milliseconds and 1 seconds, is "
         << 20 << '-' << 1000 << endl;
     }
   } 
-  m_jitterBuffer.SetDelay(SAMPLES_PER_MILLISECOND * minJitterSize, SAMPLES_PER_MILLISECOND * maxJitterSize);
+  m_jitterBuffer.SetDelay(init);
 
   m_silenceSuppression = args.HasOption('s');
   m_dropPackets = args.HasOption('d');
@@ -225,7 +224,7 @@ void JesterProcess::Main()
          << endl;
   }
 
-  cout << "Jitter buffer size: " << minJitterSize << ".." << maxJitterSize << " ms" << endl;
+  cout << "Jitter buffer size: " << init.m_minJitterDelay << ".." << init.m_maxJitterDelay << " timestamp units" << endl;
 
   if (args.HasOption('R')) {
     PTimeInterval genTick = m_startTimeDelta;

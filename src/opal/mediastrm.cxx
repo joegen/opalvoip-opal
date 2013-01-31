@@ -76,6 +76,7 @@ OpalMediaStream::OpalMediaStream(OpalConnection & conn, const OpalMediaFormat & 
   , m_frameSize(mediaFormat.GetFrameSize())
 {
   PTRACE_CONTEXT_ID_FROM(conn);
+  PTRACE_CONTEXT_ID_TO(identifier);
 
   connection.SafeReference();
   PTRACE(5, "Media\tCreated " << (IsSource() ? "Source" : "Sink") << ' ' << this);
@@ -430,7 +431,24 @@ PBoolean OpalMediaStream::RequiresPatchThread() const
 }
 
 
-bool OpalMediaStream::EnableJitterBuffer(bool) const
+bool OpalMediaStream::EnableJitterBuffer(bool enab) const
+{
+  if (!IsOpen() || IsSink())
+    return false;
+
+  OpalJitterBuffer::Init init;
+  if (enab && mediaFormat.NeedsJitterBuffer()) {
+    init.m_minJitterDelay = connection.GetMinAudioJitterDelay()*mediaFormat.GetTimeUnits();
+    init.m_maxJitterDelay = connection.GetMaxAudioJitterDelay()*mediaFormat.GetTimeUnits();
+  }
+
+  init.m_timeUnits = mediaFormat.GetTimeUnits();
+  init.m_packetSize = connection.GetEndPoint().GetManager().GetMaxRtpPacketSize();
+  return InternalSetJitterBuffer(init);
+}
+
+
+bool OpalMediaStream::InternalSetJitterBuffer(const OpalJitterBuffer::Init &) const
 {
   return false;
 }
@@ -460,30 +478,41 @@ bool OpalMediaStream::SetPaused(bool pause, bool fromPatch)
 }
 
 
-PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
+OpalMediaPatchPtr OpalMediaStream::InternalSetPatchPart1(OpalMediaPatch * newPatch)
 {
-  OpalMediaPatchPtr mediaPatch = m_mediaPatch.Set(patch);
+  OpalMediaPatchPtr oldPatch = m_mediaPatch.Set(newPatch);
 
 #if PTRACING
-  if (PTrace::CanTrace(4) && (patch != NULL || mediaPatch != NULL)) {
+  if (PTrace::CanTrace(4) && (newPatch != NULL || oldPatch != NULL)) {
     ostream & trace = PTrace::Begin(4, __FILE__, __LINE__, this);
-    if (patch == NULL)
-      trace << "Removing patch " << *mediaPatch;
-    else if (mediaPatch == NULL)
-      trace << "Adding patch " << *patch;
+    if (newPatch == NULL)
+      trace << "Removing patch " << *oldPatch;
+    else if (oldPatch == NULL)
+      trace << "Adding patch " << *newPatch;
     else
-      trace << "Overwriting patch " << *mediaPatch << " with " << *patch;
+      trace << "Overwriting patch " << *oldPatch << " with " << *newPatch;
     trace << " on stream " << *this << PTrace::End;
   }
 #endif
 
-  if (mediaPatch != NULL) {
-    if (IsSink())
-      mediaPatch->RemoveSink(*this);
-    else
-      mediaPatch->Close();
-  }
+  return oldPatch;
+}
 
+
+void OpalMediaStream::InternalSetPatchPart2(const OpalMediaPatchPtr & oldPatch)
+{
+  if (oldPatch != NULL) {
+    if (IsSink())
+      oldPatch->RemoveSink(*this);
+    else
+      oldPatch->Close();
+  }
+}
+
+
+PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
+{
+  InternalSetPatchPart2(InternalSetPatchPart1(patch));
   return true;
 }
 
@@ -681,17 +710,10 @@ bool OpalNullMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & newM
 OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
                                    const OpalMediaFormat & mediaFormat,
                                                   PBoolean isSource,
-                                          OpalRTPSession & rtp,
-                                                  unsigned minJitter,
-                                                  unsigned maxJitter)
+                                          OpalRTPSession & rtp)
   : OpalMediaStream(conn, mediaFormat, rtp.GetSessionID(), isSource),
-    rtpSession(rtp),
-    minAudioJitterDelay(minJitter),
-    maxAudioJitterDelay(maxJitter)
+    rtpSession(rtp)
 {
-  if (!mediaFormat.NeedsJitterBuffer())
-    minAudioJitterDelay = maxAudioJitterDelay = 0;
-
   /* If we are a source then we should set our buffer size to the max
      practical UDP packet size. This means we have a buffer that can accept
      whatever the RTP sender throws at us. For sink, we set it to the
@@ -824,7 +846,7 @@ PBoolean OpalRTPMediaStream::SetDataSize(PINDEX PTRACE_PARAM(dataSize), PINDEX /
 PBoolean OpalRTPMediaStream::IsSynchronous() const
 {
   // Sinks never block, and source with jitter buffer never blocks
-  return IsSource() && maxAudioJitterDelay == 0;
+  return IsSource() && !(RequiresPatchThread() && connection.GetMaxAudioJitterDelay() != 0);
 }
 
 
@@ -835,22 +857,12 @@ PBoolean OpalRTPMediaStream::RequiresPatchThread() const
 }
 
 
-bool OpalRTPMediaStream::EnableJitterBuffer(bool enab) const
+bool OpalRTPMediaStream::InternalSetJitterBuffer(const OpalJitterBuffer::Init & init) const
 {
-  if (!IsOpen() || IsSink() || !RequiresPatchThread())
+  if (!RequiresPatchThread())
     return false;
 
-  unsigned minJitter, maxJitter;
-  if (enab && mediaFormat.NeedsJitterBuffer()) {
-    minJitter = minAudioJitterDelay*mediaFormat.GetTimeUnits();
-    maxJitter = maxAudioJitterDelay*mediaFormat.GetTimeUnits();
-  }
-  else
-    minJitter = maxJitter = 0;
-
-  rtpSession.SetJitterBufferSize(minJitter, maxJitter,
-                                 mediaFormat.GetTimeUnits(),
-                                 connection.GetEndPoint().GetManager().GetMaxRtpPacketSize());
+  rtpSession.SetJitterBufferSize(init);
   return true;
 }
 
@@ -860,10 +872,11 @@ PBoolean OpalRTPMediaStream::SetPatch(OpalMediaPatch * patch)
   if (!IsOpen() || IsSink())
     return OpalMediaStream::SetPatch(patch);
 
+  OpalMediaPatchPtr oldPatch = InternalSetPatchPart1(patch);
   rtpSession.Shutdown(true);
-  bool ok = OpalMediaStream::SetPatch(patch);
+  InternalSetPatchPart2(oldPatch);
   rtpSession.Restart(true);
-  return ok;
+  return true;
 }
 
 

@@ -648,14 +648,22 @@ unsigned OpalConnection::GetNextSessionID(const OpalMediaType & /*mediaType*/, b
 }
 
 
-void OpalConnection::AutoStartMediaStreams(bool force)
+void OpalConnection::AutoStartMediaStreams(bool transfer)
 {
-  PTRACE(4, "OpalCon\tAutoStartMediaStreams(" << force << ") on " << *this);
+  PTRACE(4, "OpalCon\tAutoStartMediaStreams(" << (transfer ? "transfer": "normal") << ") on " << *this);
   OpalMediaTypeList mediaTypes = OpalMediaType::GetList();
   for (OpalMediaTypeList::iterator iter = mediaTypes.begin(); iter != mediaTypes.end(); ++iter) {
     OpalMediaType mediaType = *iter;
-    if ((GetAutoStart(mediaType)&OpalMediaType::Transmit) != 0 && (force || GetMediaStream(mediaType, true) == NULL))
-      ownerCall.OpenSourceMediaStreams(*this, mediaType, mediaType->GetDefaultSessionId());
+    if ((GetAutoStart(mediaType)&OpalMediaType::Transmit) != 0 &&
+                      (transfer || GetMediaStream(mediaType, true) == NULL))
+      ownerCall.OpenSourceMediaStreams(*this,
+                                       mediaType,
+                                       mediaType->GetDefaultSessionId(),
+                                       OpalMediaFormat(),
+#if OPAL_VIDEO
+                                       OpalVideoFormat::eNoRole,
+#endif
+                                       transfer);
   }
   StartMediaStreams();
 }

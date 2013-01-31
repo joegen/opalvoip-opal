@@ -2292,6 +2292,9 @@ void MyManager::MakeCall(const PwxString & address, const PwxString & local, Opa
   if (from.empty())
     from = "pc:*";
 
+  if (m_activeCall != NULL)
+    m_activeCall->Hold();
+
   m_activeCall = SetUpCall(from, address, NULL, 0, options);
   if (m_activeCall == NULL)
     LogWindow << "Could not call \"" << address << '"' << endl;
@@ -2599,7 +2602,7 @@ void MyManager::OnHold(OpalConnection & connection, bool fromRemote, bool onHold
   if (onHold) {
     if (!connection.GetCall().Transfer("pc:*|moh.wav*"))
       connection.GetCall().Transfer("pc:*|Null Audio");
-    PostEvent(wxEvtOnHold, ID_ON_HOLD);
+    PostEvent(wxEvtOnHold, ID_ON_HOLD, connection.GetCall().GetToken());
   }
   else {
     connection.GetCall().Transfer("pc:*");
@@ -2622,11 +2625,14 @@ bool MyManager::OnTransferNotify(OpalConnection & connection, const PStringToStr
 }
 
 
-void MyManager::OnEvtOnHold(wxCommandEvent & )
+void MyManager::OnEvtOnHold(wxCommandEvent & theEvent)
 {
-  if (m_activeCall != NULL) {
-    AddCallOnHold(*m_activeCall);
-    m_activeCall.SetNULL();
+  PSafePtr<OpalCall> call = FindCallWithLock(PwxString(theEvent.GetString()).p_str(), PSafeReadOnly);
+
+  if (call != NULL) {
+    AddCallOnHold(*call);
+    if (call == m_activeCall)
+      m_activeCall.SetNULL();
   }
 }
 

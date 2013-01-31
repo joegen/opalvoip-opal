@@ -70,11 +70,8 @@ class RTP_JitterBuffer : public OpalJitterBufferThread
 public:
    RTP_JitterBuffer(
      OpalRTPSession & session, ///<  Associated RTP session for data to be read from
-     unsigned minJitterDelay,  ///<  Minimum delay in RTP timestamp units
-     unsigned maxJitterDelay,  ///<  Maximum delay in RTP timestamp units
-     unsigned timeUnits = 8,   ///<  Time units, usually 8 or 16
-     PINDEX packetSize = 2048  ///<  Max RTP packet size
-   ) : OpalJitterBufferThread(minJitterDelay, maxJitterDelay, timeUnits, packetSize)
+      const Init & init  ///< Initialisation information
+   ) : OpalJitterBufferThread(init)
      , m_session(session)
    {
       PTRACE_CONTEXT_ID_FROM(session);
@@ -296,6 +293,10 @@ void OpalRTPSession::AttachTransport(Transport & transport)
   else {
     PTRACE_CONTEXT_ID_TO(m_dataSocket);
     m_dataSocket->GetLocalAddress(m_localAddress, m_localDataPort);
+
+    OpalRTPEndPoint * ep = dynamic_cast<OpalRTPEndPoint *>(&m_connection.GetEndPoint());
+    if (PAssert(ep != NULL, "RTP createed by non OpalRTPEndPoint derived class"))
+      ep->SetConnectionByRtpLocalPort(this, &m_connection);
   }
 
   channel = transport.RemoveHead();
@@ -416,20 +417,17 @@ void OpalRTPSession::SetExtensionHeader(const RTPExtensionHeaders & ext)
 }
 
 
-void OpalRTPSession::SetJitterBufferSize(unsigned minJitterDelay,
-                                      unsigned maxJitterDelay,
-                                      unsigned timeUnits,
-                                        PINDEX packetSize)
+void OpalRTPSession::SetJitterBufferSize(const OpalJitterBuffer::Init & init)
 {
   PWaitAndSignal mutex(m_dataMutex);
 
   if (!IsOpen())
     return;
 
-  if (timeUnits > 0)
-    m_timeUnits = timeUnits;
+  if (init.m_timeUnits > 0)
+    m_timeUnits = init.m_timeUnits;
 
-  if (minJitterDelay == 0 && maxJitterDelay == 0) {
+  if (init.m_maxJitterDelay == 0) {
     PTRACE_IF(4, m_jitterBuffer != NULL, "RTP\tSwitching off jitter buffer " << *m_jitterBuffer);
     // This can block waiting for JB thread to end, signal mutex to avoid deadlock
     m_dataMutex.Signal();
@@ -438,13 +436,11 @@ void OpalRTPSession::SetJitterBufferSize(unsigned minJitterDelay,
   }
   else {
     resequenceOutOfOrderPackets = false;
-    if (m_jitterBuffer != NULL) {
-      PTRACE(4, "RTP\tSetting jitter buffer time from " << minJitterDelay << " to " << maxJitterDelay);
-      m_jitterBuffer->SetDelay(minJitterDelay, maxJitterDelay, packetSize);
-    }
+    if (m_jitterBuffer != NULL)
+      m_jitterBuffer->SetDelay(init);
     else {
       FlushData();
-      m_jitterBuffer = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, m_timeUnits, packetSize);
+      m_jitterBuffer = new RTP_JitterBuffer(*this, init);
       PTRACE(4, "RTP\tCreated RTP jitter buffer " << *m_jitterBuffer);
       m_jitterBuffer->Start();
     }
@@ -1621,10 +1617,7 @@ OpalMediaStream * OpalRTPSession::CreateMediaStream(const OpalMediaFormat & medi
   }
 
   if (PAssert(m_sessionId == sessionId && m_mediaType == mediaFormat.GetMediaType(), PLogicError))
-    return new OpalRTPMediaStream(dynamic_cast<OpalRTPConnection &>(m_connection),
-                                  mediaFormat, isSource, *this,
-                                  m_connection.GetMinAudioJitterDelay(),
-                                  m_connection.GetMaxAudioJitterDelay());
+    return new OpalRTPMediaStream(dynamic_cast<OpalRTPConnection &>(m_connection), mediaFormat, isSource, *this);
 
   return NULL;
 }
@@ -1823,7 +1816,7 @@ bool OpalRTPSession::Close()
   // We need to do this to make sure that the sockets are not
   // deleted before select decides there is no more data coming
   // over them and exits the reading thread.
-  SetJitterBufferSize(0, 0);
+  SetJitterBufferSize(OpalJitterBuffer::Init());
 
   PWaitAndSignal mutex(m_dataMutex);
 
@@ -1871,7 +1864,7 @@ bool OpalRTPSession::Shutdown(bool reading)
       }
     }
 
-    SetJitterBufferSize(0, 0); // Kill jitter buffer too, but outside mutex
+    SetJitterBufferSize(OpalJitterBuffer::Init()); // Kill jitter buffer too, but outside mutex
   }
   else {
     if (m_shutdownWrite) {

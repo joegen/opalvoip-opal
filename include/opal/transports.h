@@ -436,7 +436,7 @@ class OpalListener : public PObject
 
     /** Indicate if the listener is open.
       */
-    virtual PBoolean IsOpen() = 0;
+    virtual bool IsOpen() const = 0;
 
     /**Stop the listener thread and no longer accept incoming connections.
      */
@@ -604,7 +604,7 @@ class OpalListenerTCP : public OpalListenerIP
 
     /** Indicate if the listener is open.
       */
-    virtual PBoolean IsOpen();
+    virtual bool IsOpen() const;
 
     /**Stop the listener thread and no longer accept incoming connections.
      */
@@ -686,7 +686,7 @@ class OpalListenerUDP : public OpalListenerIP
 
     /** Indicate if the listener is open.
       */
-    virtual PBoolean IsOpen();
+    virtual bool IsOpen() const;
 
     /**Stop the listener thread and no longer accept incoming connections.
      */
