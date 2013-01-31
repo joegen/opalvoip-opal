@@ -41,6 +41,7 @@
 #include <opal/buildopts.h>
 
 #include <rtp/rtp.h>
+#include <rtp/jitter.h>
 #include <opal/mediasession.h>
 #include <ptlib/sockets.h>
 #include <ptlib/safecoll.h>
@@ -50,7 +51,6 @@
 #include <list>
 
 
-class OpalJitterBuffer;
 class PNatMethod;
 class RTCP_XR_Metrics;
 
@@ -111,10 +111,7 @@ class OpalRTPSession : public OpalMediaSession
        attached to this RTP session.
       */
     void SetJitterBufferSize(
-      unsigned minJitterDelay, ///<  Minimum jitter buffer delay in RTP timestamp units
-      unsigned maxJitterDelay, ///<  Maximum jitter buffer delay in RTP timestamp units
-      unsigned timeUnits = 0,  ///<  Time Units, zero uses default
-      PINDEX packetSize = 2048 ///<  Receive RTP packet size
+      const OpalJitterBuffer::Init & init   ///< Initialisation information
     );
 
     /**Get current size of the jitter buffer.

@@ -42,6 +42,7 @@
 
 #include <opal/mediafmt.h>
 #include <opal/mediacmd.h>
+#include <rtp/jitter.h>
 #include <ptlib/safecoll.h>
 #include <ptclib/guid.h>
 
@@ -418,6 +419,9 @@ class OpalMediaStream : public PSafeObject
   protected:
     void IncrementTimestamp(PINDEX size);
     bool InternalWriteData(const BYTE * data, PINDEX length, PINDEX & written);
+    OpalMediaPatchPtr InternalSetPatchPart1(OpalMediaPatch * newPatch);
+    void InternalSetPatchPart2(const OpalMediaPatchPtr & oldPatch);
+    virtual bool InternalSetJitterBuffer(const OpalJitterBuffer::Init & init) const;
 
     /**Close any internal components of the stream.
        This should be used in preference to overriding the Close() function as
@@ -578,9 +582,7 @@ class OpalRTPMediaStream : public OpalMediaStream
       OpalRTPConnection & conn,            ///<  Connection that owns the stream
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       bool isSource,                       ///<  Is a source stream
-      OpalRTPSession & rtpSession,         ///<  RTP session to stream to/from
-      unsigned minAudioJitterDelay,        ///<  Minimum jitter buffer size (if applicable)
-      unsigned maxAudioJitterDelay         ///<  Maximum jitter buffer size (if applicable)
+      OpalRTPSession & rtpSession          ///<  RTP session to stream to/from
     );
 
     /**Destroy the media stream for RTP sessions.
@@ -644,15 +646,6 @@ class OpalRTPMediaStream : public OpalMediaStream
       */
     virtual PBoolean RequiresPatchThread() const;
 
-    /**Enable jitter buffer for the media stream.
-       Returns true if a jitter buffer is enabled/disabled. Returns false if
-       no jitter buffer exists for the media stream.
-
-       The default behaviour sets the RTP_Session jitter buffer size according
-       to the connection parameters, then returns true.
-      */
-    virtual bool EnableJitterBuffer(bool enab = true) const;
-
     /**Set the patch thread that is using this stream.
       */
     virtual PBoolean SetPatch(
@@ -671,10 +664,9 @@ class OpalRTPMediaStream : public OpalMediaStream
 
   protected:
     virtual void InternalClose();
+    virtual bool InternalSetJitterBuffer(const OpalJitterBuffer::Init & init) const;
 
     OpalRTPSession & rtpSession;
-    unsigned         minAudioJitterDelay;
-    unsigned         maxAudioJitterDelay;
 #if OPAL_VIDEO
     bool             m_forceIntraFrameFlag;
     PSimpleTimer     m_forceIntraFrameTimer;
