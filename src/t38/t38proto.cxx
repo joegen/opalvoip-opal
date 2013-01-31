@@ -752,6 +752,7 @@ OpalFaxConnection::OpalFaxConnection(OpalCall        & call,
   , m_filename(filename)
   , m_receiving(receiving)
   , m_disableT38(disableT38)
+  , m_switchTime(0)
   , m_tiffFileFormat(TIFF_File_FormatName)
   , m_completed(false)
 {
@@ -821,6 +822,7 @@ void OpalFaxConnection::OnApplyStringOptions()
 {
   OpalLocalConnection::OnApplyStringOptions();
   SetFaxMediaFormatOptions(m_tiffFileFormat);
+  m_switchTime = m_stringOptions.GetInteger(OPAL_T38_SWITCH_TIME);
 }
 
 
@@ -856,15 +858,11 @@ void OpalFaxConnection::OnEstablished()
 
   // If switched and we don't need to do CNG/CED any more, or T.38 is disabled
   // in which case the SpanDSP will deal with CNG/CED stuff.
-  if (m_disableT38)
+  if (m_disableT38 || m_switchTime == 0)
     return;
 
-  PString str = m_stringOptions(OPAL_T38_SWITCH_TIME);
-  if (str.IsEmpty())
-    return;
-
-  m_switchTimer.SetInterval(0, str.AsUnsigned());
-  PTRACE(3, "FAX\tStarting timer for auto-switch to T.38");
+  m_switchTimer.SetInterval(0, m_switchTime);
+  PTRACE(3, "FAX\tStarting " << m_switchTime << " second timer for auto-switch to T.38");
 }
 
 
@@ -886,6 +884,15 @@ void OpalFaxConnection::OnReleased()
 OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
 {
   return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource, isSource, true);
+}
+
+
+void OpalFaxConnection::OnStartMediaPatch(OpalMediaPatch & patch)
+{
+  if (m_switchTime != 0)
+    patch.SetPaused(true);
+
+  OpalLocalConnection::OnStartMediaPatch(patch);
 }
 
 
@@ -1007,6 +1014,8 @@ bool OpalFaxConnection::SwitchFaxMediaStreams(bool enable)
   if (IsReleased())
     return false;
 
+  m_switchTime = 0;
+  m_switchTimer.Stop(false);
   m_completed = false;
   PSafePtr<OpalConnection> other = GetOtherPartyConnection();
   return other != NULL && other->SwitchFaxMediaStreams(enable);

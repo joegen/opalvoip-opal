@@ -152,7 +152,7 @@ class OpalBaseMixer : public PObject
     unsigned GetPeriodTS() const { return m_periodTS; }
 
   protected:
-    struct Stream {
+    struct Stream : public PObject {
       virtual ~Stream() { }
       virtual void QueuePacket(const RTP_DataFrame & rtp) = 0;
       std::queue<RTP_DataFrame> m_queue;
@@ -235,9 +235,8 @@ class OpalAudioMixer : public OpalBaseMixer
        attached to this mixer.
       */
     bool SetJitterBufferSize(
-      const Key_T & key,       ///< key for mixer stream
-      unsigned minJitterDelay, ///<  Minimum jitter buffer delay in RTP timestamp units
-      unsigned maxJitterDelay  ///<  Maximum jitter buffer delay in RTP timestamp units
+      const Key_T & key,                    ///< key for mixer stream
+      const OpalJitterBuffer::Init & init   ///< Initialisation information
     );
 
   protected:
@@ -346,7 +345,7 @@ class OpalVideoMixer : public OpalBaseMixer
     );
 
   protected:
-    struct VideoStream : public PObject, public Stream
+    struct VideoStream : public Stream
     {
       VideoStream(OpalVideoMixer & mixer);
       virtual void QueuePacket(const RTP_DataFrame & rtp);
@@ -969,15 +968,6 @@ class OpalMixerMediaStream : public OpalMediaStream
        then threading is from the mixer class.
       */
     virtual PBoolean RequiresPatchThread() const;
-
-    /**Enable jitter buffer for the media stream.
-       Returns true if a jitter buffer is enabled/disabled. Returns false if
-       no jitter buffer exists for the media stream.
-
-       The default behaviour sets the mixer jitter buffer size according
-       to the connection parameters, then returns true.
-      */
-    virtual bool EnableJitterBuffer(bool enab = true) const;
   //@}
 
   /**@name Member variable access */
@@ -989,6 +979,7 @@ class OpalMixerMediaStream : public OpalMediaStream
 
   protected:
     virtual void InternalClose();
+    virtual bool InternalSetJitterBuffer(const OpalJitterBuffer::Init & init) const;
 
     PSafePtr<OpalMixerNode> m_node;
     bool m_listenOnly;
@@ -1076,10 +1067,9 @@ class OpalMixerNode : public PSafeObject
        attached to this mixer.
       */
     bool SetJitterBufferSize(
-      const OpalBaseMixer::Key_T & key, ///< key for mixer stream
-      unsigned minJitterDelay,          ///<  Minimum jitter buffer delay in RTP timestamp units
-      unsigned maxJitterDelay           ///<  Maximum jitter buffer delay in RTP timestamp units
-    ) { return m_audioMixer.SetJitterBufferSize(key, minJitterDelay, maxJitterDelay); }
+      const OpalBaseMixer::Key_T & key,     ///< key for mixer stream
+      const OpalJitterBuffer::Init & init   ///< Initialisation information
+    ) { return m_audioMixer.SetJitterBufferSize(key, init); }
 
     /**Write data to mixer.
       */

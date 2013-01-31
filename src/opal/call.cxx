@@ -440,8 +440,8 @@ bool OpalCall::Transfer(const PString & newAddress, OpalConnection * connection)
   // Restart with new connection
   if (newConnection->SetUpConnection() && newConnection->OnSetUpConnection()) {
     connectionToKeep->AutoStartMediaStreams(true);
-    connection->Release(OpalConnection::EndedByCallForwarded);
-    newConnection->StartMediaStreams();
+    connection->Release(OpalConnection::EndedByCallForwarded, true);
+    StartMediaStreams(); // Just in case ...
     return true;
   }
 
@@ -511,11 +511,11 @@ void OpalCall::AdjustMediaFormats(bool local, const OpalConnection & connection,
 PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, 
                                      const OpalMediaType & mediaType,
                                                   unsigned sessionID, 
-                                   const OpalMediaFormat & preselectedFormat
+                                   const OpalMediaFormat & preselectedFormat,
 #if OPAL_VIDEO
-                            , OpalVideoFormat::ContentRole contentRole
+                              OpalVideoFormat::ContentRole contentRole,
 #endif
-                                   )
+                                                      bool transfer)
 {
   PTRACE_CONTEXT_ID_PUSH_THREAD(this);
 
@@ -541,7 +541,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
   // Check if already done
   OpalMediaStreamPtr sinkStream;
   OpalMediaStreamPtr sourceStream = connection.GetMediaStream(sessionID, true);
-  if (sourceStream != NULL) {
+  if (sourceStream != NULL && !transfer) {
     OpalMediaPatchPtr patch = sourceStream->GetPatch();
     if (patch != NULL)
       sinkStream = patch->GetSink();
