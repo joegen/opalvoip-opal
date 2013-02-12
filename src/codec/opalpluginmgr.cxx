@@ -1363,8 +1363,9 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
 
           if ((position = msg.Find('=', position)) != P_MAX_INDEX) {
             ++position;
-            statistics.m_fax.m_stationId = msg(position, msg.Find('\n', position)-1);
-            if ((position = msg.Find('=', position)) != P_MAX_INDEX)
+            PINDEX eol = msg.Find('\n', position);
+            statistics.m_fax.m_stationId = msg(position, eol-1);
+            if ((position = msg.Find('=', eol)) != P_MAX_INDEX)
               statistics.m_fax.m_phase = msg[++position];
           }
 
