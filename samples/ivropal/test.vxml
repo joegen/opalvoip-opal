@@ -2,14 +2,17 @@
 <vxml version="2.1" xmlns="http://www.w3.org/2001/vxml">
   <log expr="'Started test VXML script'" />
 
-  <!-- Main menu -->
+  <var name="TestGoto" expr="'MainMenu'"/>
+  <var name="TestWAV"  expr="'../callgen/ogm.wav'"/>
+
+    <!-- Main menu -->
   <menu id="MainMenu">
 
     <!-- Set this property for the time to wait for input -->
     <property name="timeout" value="30s"/>
 
     <!-- A prompt outputs to the remote -->
-    <prompt>
+    <prompt bargein="false">
       <!-- Audio plays the URI in src, or if absent uses speech synthesis of the body text -->
       <audio src="file:menu_prompt.wav">
         Welcome to the OPAL I V R example.
@@ -62,12 +65,12 @@
   <form id="PlayFile">
     <log expr="'Playing WAV file'"/>
     
-    <audio src="file:../callgen/ogm.wav"/>
+    <audio expr="application.TestWAV"/>
     <break time="5s"/>
-    <audio src="file:../callgen/ogm.wav"/>
+    <audio expr="application.TestWAV"/>
     
     <!-- No stack, have to go back to main menu explicitly  -->
-    <goto nextitem="MainMenu"/>
+    <goto expritem="application.TestGoto"/>
   </form>
 
   <!-- This form demonstrates how to record a message -->
@@ -112,7 +115,7 @@
         </audio>
 
         <!-- No stack, have to go back to main menu explicitly  -->
-        <goto next="#MainMenu"/>
+        <goto expr="'#'+application.TestGoto"/>
       </error>
     </transfer>
   </form>
