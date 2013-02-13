@@ -1580,10 +1580,8 @@ bool SIPEndPoint::SendOPTIONS(const SIPOptions::Params & newParams)
   SIPOptions::Params params(newParams);
   params.Normalise(GetDefaultLocalPartyName(), GetNotifierTimeToLive());
   PTRACE(5, "SIP\tNormalised OPTIONS\n" << params);
-
-  PSafePtr<SIPHandler> handler = new SIPOptionsHandler(*this, params);
-  activeSIPHandlers.Append(handler);
-  return handler->ActivateState(SIPHandler::Unsubscribing);
+  new SIPOptions(*this, params);
+  return true;
 }
 
 

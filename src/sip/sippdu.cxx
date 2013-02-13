@@ -2929,9 +2929,9 @@ PObject::Comparison SIPTransactionBase::Compare(const PObject & other) const
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-SIPTransaction::SIPTransaction(Methods method, SIPTransactionOwner & owner, OpalTransport * transport, bool deleteOwner)
+SIPTransaction::SIPTransaction(Methods method, SIPTransactionOwner * owner, OpalTransport * transport, bool deleteOwner)
   : SIPTransactionBase(method)
-  , m_owner(owner)
+  , m_owner(PAssertNULL(owner))
   , m_deleteOwner(deleteOwner)
   , m_retryTimeoutMin(GetEndPoint().GetRetryTimeoutMin())
   , m_retryTimeoutMax(GetEndPoint().GetRetryTimeoutMax())
@@ -2940,15 +2940,15 @@ SIPTransaction::SIPTransaction(Methods method, SIPTransactionOwner & owner, Opal
   , m_retryTimer(GetEndPoint().GetThreadPool(), GetEndPoint(), GetTransactionID(), &SIPTransaction::OnRetry)
   , m_completionTimer(GetEndPoint().GetThreadPool(), GetEndPoint(), GetTransactionID(), &SIPTransaction::OnTimeout)
 {
-  PTRACE_CONTEXT_ID_FROM(m_owner.m_object);
+  PTRACE_CONTEXT_ID_FROM(m_owner->m_object);
 
-  PAssert(m_owner.m_object.SafeReference(), "Transaction created on owner pending deletion.");
+  PAssert(m_owner->m_object.SafeReference(), "Transaction created on owner pending deletion.");
 
   if (transport != NULL)
     m_transport = transport;
   else {
     SIP_PDU::StatusCodes reason;
-    m_transport = GetEndPoint().GetTransport(m_owner, reason);
+    m_transport = GetEndPoint().GetTransport(*m_owner, reason);
   }
 
   SIPConnection * conn = GetConnection();
@@ -2976,9 +2976,9 @@ SIPTransaction::~SIPTransaction()
   m_retryTimer.Stop(true);
   m_completionTimer.Stop(true);
 
-  m_owner.m_object.SafeDereference();
+  m_owner->m_object.SafeDereference();
   if (m_deleteOwner)
-    delete &m_owner;
+    delete m_owner;
 
   PTRACE(4, "SIP\tTransaction id=" << GetTransactionID() << " destroyed.");
 }
@@ -2986,7 +2986,7 @@ SIPTransaction::~SIPTransaction()
 
 SIPConnection * SIPTransaction::GetConnection() const
 {
-  return dynamic_cast<SIPConnection *>(&m_owner);
+  return dynamic_cast<SIPConnection *>(m_owner);
 }
 
 
@@ -3021,12 +3021,12 @@ bool SIPTransaction::Start()
   m_state = Trying;
   m_retry = 0;
 
-  m_owner.m_transactions.Append(this);
-  m_owner.OnStartTransaction(*this);
+  m_owner->m_transactions.Append(this);
+  m_owner->OnStartTransaction(*this);
 
-  if (m_owner.GetAuthenticator() != NULL) {
+  if (m_owner->GetAuthenticator() != NULL) {
     SIPAuthenticator auth(*this);
-    m_owner.GetAuthenticator()->Authorise(auth);
+    m_owner->GetAuthenticator()->Authorise(auth);
   }
 
   if (m_transport == NULL) {
@@ -3053,9 +3053,9 @@ bool SIPTransaction::Start()
 
       case Failure_MessageTooLarge : // Can only occur if UDP && canDoTCP
         // switch to TCP as per RFC3261 18.1.1
-        if (m_owner.SwitchTransportProto("tcp", &m_transport) != Successful_OK) {
+        if (m_owner->SwitchTransportProto("tcp", &m_transport) != Successful_OK) {
           // Could not connect using TCP, go back to UDP and send it regardless of size
-          if (m_owner.SwitchTransportProto("udp", &m_transport) != Successful_OK)
+          if (m_owner->SwitchTransportProto("udp", &m_transport) != Successful_OK)
             return false; // Huh? We where able to a moment ago!
         }
 
@@ -3188,9 +3188,9 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
       m_statusCode = response.GetStatusCode();
     }
 
-    if (m_owner.m_object.LockReadWrite()) {
-      m_owner.OnReceivedResponse(*this, response);
-      m_owner.m_object.UnlockReadWrite();
+    if (m_owner->m_object.LockReadWrite()) {
+      m_owner->OnReceivedResponse(*this, response);
+      m_owner->m_object.UnlockReadWrite();
     }
 
     if (m_state == Completed) {
@@ -3296,7 +3296,7 @@ void SIPTransaction::SetTerminated(States newState)
   m_retryTimer.Stop(false);
   m_completionTimer.Stop(false);
 
-  m_owner.m_transactions.Remove(this);
+  m_owner->m_transactions.Remove(this);
 
   if (m_state >= Terminated_Success) {
     PTRACE_IF(3, newState != Terminated_Success, "SIP\tTried to set state " << newState 
@@ -3330,7 +3330,7 @@ void SIPTransaction::SetTerminated(States newState)
         break;
     }
 
-    m_owner.OnTransactionFailed(*this);
+    m_owner->OnTransactionFailed(*this);
   }
 
   m_completed.Signal();
@@ -3482,7 +3482,7 @@ class SIPTransactionOwnerDummy : public PSafeObject, public SIPTransactionOwner
 
 
 SIPResponse::SIPResponse(SIPEndPoint & endpoint, const SIP_PDU & request, StatusCodes code)
-  : SIPTransaction(NumMethods, *new SIPTransactionOwnerDummy(endpoint, request.GetURI()), request.GetTransport(), true)
+  : SIPTransaction(NumMethods, new SIPTransactionOwnerDummy(endpoint, request.GetURI()), request.GetTransport(), true)
 {
   m_statusCode = code;
   InitialiseHeaders(request);
@@ -3517,7 +3517,7 @@ bool SIPResponse::Resend(SIP_PDU & command)
 ////////////////////////////////////////////////////////////////////////////////////
 
 SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport * transport)
-  : SIPTransaction(Method_INVITE, connection, transport)
+  : SIPTransaction(Method_INVITE, &connection, transport)
 {
   connection.OnCreatingINVITE(*this);
 
@@ -3593,14 +3593,14 @@ SIPTransaction * SIPAck::CreateDuplicate() const
 /////////////////////////////////////////////////////////////////////////
 
 SIPBye::SIPBye(SIPEndPoint & endpoint, SIPDialogContext & dialog)
-  : SIPTransaction(Method_BYE, *new SIPTransactionOwnerDummy(endpoint, dialog.GetRemoteURI()), NULL, true)
+  : SIPTransaction(Method_BYE, new SIPTransactionOwnerDummy(endpoint, dialog.GetRemoteURI()), NULL, true)
 {
   InitialiseHeaders(dialog);
 }
 
 
-SIPBye::SIPBye(SIPConnection & conn)
-  : SIPTransaction(Method_BYE, conn, NULL)
+SIPBye::SIPBye(SIPConnection & connection)
+  : SIPTransaction(Method_BYE, &connection, NULL)
 {
 }
 
@@ -3618,7 +3618,7 @@ SIPRegister::SIPRegister(SIPTransactionOwner & owner,
                          const PString & id,
                          unsigned cseq,
                          const Params & params)
-  : SIPTransaction(Method_REGISTER, owner, &transport)
+  : SIPTransaction(Method_REGISTER, &owner, &transport)
 {
   InitialiseHeaders(params.m_registrarAddress,
                     params.m_addressOfRecord,
@@ -3626,7 +3626,7 @@ SIPRegister::SIPRegister(SIPTransactionOwner & owner,
                     id,
                     cseq);
 
-  SetAllow(m_owner.GetAllowedMethods());
+  SetAllow(m_owner->GetAllowedMethods());
 
   SetParameters(params);
 
@@ -3785,7 +3785,7 @@ SIPSubscribe::SIPSubscribe(SIPTransactionOwner & owner,
                            OpalTransport & transport,
                            SIPDialogContext & dialog,
                            const Params & params)
-  : SIPTransaction(Method_SUBSCRIBE, owner, &transport)
+  : SIPTransaction(Method_SUBSCRIBE, &owner, &transport)
 {
   InitialiseHeaders(dialog);
 
@@ -3814,7 +3814,7 @@ SIPSubscribe::SIPSubscribe(SIPTransactionOwner & owner,
   if (!acceptableContentTypes.IsEmpty())
     m_mime.SetAccept(acceptableContentTypes);
 
-  SetAllow(m_owner.GetAllowedMethods());
+  SetAllow(m_owner->GetAllowedMethods());
 
   SetParameters(params);
 
@@ -3844,7 +3844,7 @@ SIPNotify::SIPNotify(SIPTransactionOwner & owner,
                      const SIPEventPackage & eventPackage,
                      const PString & state,
                      const PString & body)
-  : SIPTransaction(Method_NOTIFY, owner, &transport)
+  : SIPTransaction(Method_NOTIFY, &owner, &transport)
 {
   InitialiseHeaders(dialog);
 
@@ -3877,7 +3877,7 @@ SIPPublish::SIPPublish(SIPTransactionOwner & owner,
                        const PString & sipIfMatch,
                        const SIPSubscribe::Params & params,
                        const PString & body)
-  : SIPTransaction(Method_PUBLISH, owner, &transport)
+  : SIPTransaction(Method_PUBLISH, &owner, &transport)
 {
   SIPURL addr = params.m_addressOfRecord;
   InitialiseHeaders(addr, addr, addr, id, GetEndPoint().GetNextCSeq());
@@ -3921,7 +3921,7 @@ SIPRefer::SIPRefer(SIPConnection & connection,
                    const SIPURL & referTo,
                    const SIPURL & referredBy,
                    bool referSub)
-  : SIPTransaction(Method_REFER, connection, NULL)
+  : SIPTransaction(Method_REFER, &connection, NULL)
 {
   m_mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
 
@@ -3950,7 +3950,7 @@ SIPTransaction * SIPRefer::CreateDuplicate() const
 /////////////////////////////////////////////////////////////////////////
 
 SIPReferNotify::SIPReferNotify(SIPConnection & connection, StatusCodes code)
-  : SIPTransaction(Method_NOTIFY, connection, NULL)
+  : SIPTransaction(Method_NOTIFY, &connection, NULL)
 {
   m_mime.SetSubscriptionState(code < Successful_OK ? "active" : "terminated;reason=noresource");
   m_mime.SetEvent("refer");
@@ -3973,7 +3973,7 @@ SIPTransaction * SIPReferNotify::CreateDuplicate() const
 SIPMessage::SIPMessage(SIPTransactionOwner & owner,
                        OpalTransport & transport,
                        const Params & params)
-  : SIPTransaction(Method_MESSAGE, owner, &transport)
+  : SIPTransaction(Method_MESSAGE, &owner, &transport)
   , m_parameters(params)
 {
   SIPURL addr(params.m_remoteAddress);
@@ -3994,7 +3994,7 @@ SIPMessage::SIPMessage(SIPTransactionOwner & owner,
 
 
 SIPMessage::SIPMessage(SIPConnection & conn, const Params & params)
-  : SIPTransaction(Method_MESSAGE, conn, NULL)
+  : SIPTransaction(Method_MESSAGE, &conn, NULL)
   , m_parameters(params)
 {
   Construct(params);
@@ -4020,11 +4020,8 @@ SIPTransaction * SIPMessage::CreateDuplicate() const
 
 /////////////////////////////////////////////////////////////////////////
 
-SIPOptions::SIPOptions(SIPTransactionOwner & owner,
-                       OpalTransport & transport,
-                       const PString & id,
-                       const Params & params)
-  : SIPTransaction(Method_OPTIONS, owner, &transport)
+SIPOptions::SIPOptions(SIPEndPoint & endpoint, const Params & params)
+  : SIPTransaction(Method_OPTIONS, new SIPTransactionOwnerDummy(endpoint, params.m_remoteAddress), NULL, true)
 {
   // Build the correct From field
   SIPURL remoteAddress = params.m_remoteAddress;
@@ -4033,7 +4030,11 @@ SIPOptions::SIPOptions(SIPTransactionOwner & owner,
     localAddress = GetEndPoint().GetDefaultLocalURL(*GetTransport());
   localAddress.SetTag();
 
-  InitialiseHeaders(remoteAddress, remoteAddress, localAddress, id, GetEndPoint().GetNextCSeq());
+  InitialiseHeaders(remoteAddress,
+                    remoteAddress,
+                    localAddress,
+                    SIPTransaction::GenerateCallID(),
+                    GetEndPoint().GetNextCSeq());
 
   Construct(params);
 
@@ -4041,8 +4042,8 @@ SIPOptions::SIPOptions(SIPTransactionOwner & owner,
 }
 
 
-SIPOptions::SIPOptions(SIPConnection & conn, const Params & params)
-  : SIPTransaction(Method_OPTIONS, conn, NULL)
+SIPOptions::SIPOptions(SIPConnection & connection, const Params & params)
+  : SIPTransaction(Method_OPTIONS, &connection, NULL)
 {
   Construct(params);
 }
@@ -4050,7 +4051,7 @@ SIPOptions::SIPOptions(SIPConnection & conn, const Params & params)
 
 void SIPOptions::Construct(const Params & params)
 {
-  SetAllow(m_owner.GetAllowedMethods());
+  SetAllow(m_owner->GetAllowedMethods());
   m_mime.SetAccept(params.m_acceptContent);
 
   if (!params.m_contentType.IsEmpty()) {
@@ -4070,8 +4071,8 @@ SIPTransaction * SIPOptions::CreateDuplicate() const
 
 /////////////////////////////////////////////////////////////////////////
 
-SIPInfo::SIPInfo(SIPConnection & conn, const Params & params)
-  : SIPTransaction(Method_INFO, conn, NULL)
+SIPInfo::SIPInfo(SIPConnection & connection, const Params & params)
+  : SIPTransaction(Method_INFO, &connection, NULL)
 {
   if (!params.m_contentType.IsEmpty()) {
     m_mime.SetContentType(params.m_contentType);
@@ -4089,7 +4090,7 @@ SIPTransaction * SIPInfo::CreateDuplicate() const
 /////////////////////////////////////////////////////////////////////////
 
 SIPPing::SIPPing(SIPTransactionOwner & owner, OpalTransport & transport,const SIPURL & address)
-  : SIPTransaction(Method_PING, owner, &transport)
+  : SIPTransaction(Method_PING, &owner, &transport)
 {
   InitialiseHeaders(address,
                     address,
@@ -4108,8 +4109,8 @@ SIPTransaction * SIPPing::CreateDuplicate() const
 
 /////////////////////////////////////////////////////////////////////////
 
-SIPPrack::SIPPrack(SIPConnection & conn, OpalTransport & transport, const PString & rack)
-  : SIPTransaction(Method_PRACK, conn, &transport)
+SIPPrack::SIPPrack(SIPConnection & connection, OpalTransport & transport, const PString & rack)
+  : SIPTransaction(Method_PRACK, &connection, &transport)
 {
   m_mime.SetAt("RAck", rack);
 }
