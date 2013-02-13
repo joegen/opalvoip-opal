@@ -3417,6 +3417,9 @@ void SIPParameters::Normalise(const PString & defaultUser, const PTimeInterval &
     aor.SetParamVar(OPAL_LOCAL_ID_PARAM, m_localAddress);
   }
 
+  if (!m_interface.IsEmpty())
+    server.SetParamVar(OPAL_INTERFACE_PARAM, m_interface);
+
   m_remoteAddress = server.AsString();
   m_addressOfRecord = aor.AsString();
 
