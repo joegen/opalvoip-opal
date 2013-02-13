@@ -820,6 +820,7 @@ struct SIPParameters
   PCaselessString m_proxyAddress;
   PCaselessString m_addressOfRecord;
   PCaselessString m_contactAddress;
+  PCaselessString m_interface;
   SIPMIMEInfo     m_mime;
   PString         m_authID;
   PString         m_password;
@@ -936,8 +937,9 @@ class SIPTransaction : public SIP_PDU
 };
 
 
-#define OPAL_PROXY_PARAM    "OPAL-proxy"
-#define OPAL_LOCAL_ID_PARAM "OPAL-local-id"
+#define OPAL_PROXY_PARAM     "OPAL-proxy"
+#define OPAL_LOCAL_ID_PARAM  "OPAL-local-id"
+#define OPAL_INTERFACE_PARAM "OPAL-interface"
 
 
 /////////////////////////////////////////////////////////////////////////
