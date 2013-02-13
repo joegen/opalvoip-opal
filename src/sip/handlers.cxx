@@ -2109,15 +2109,16 @@ SIPOptionsHandler::SIPOptionsHandler(SIPEndPoint & endpoint, const SIPOptions::P
 
   m_offlineExpireTime = 0; // No retries for offline, just give up
 
+  /* The "singleton" operation of the OPTION command is executed as though we
+     are unsubscribing from an existing subscription, so when completed the
+     handler is disposed of. So, we need to fake the subscribe state. */
   SetState(Subscribed);
+  m_receivedResponse = true;
 }
 
 
 SIPTransaction * SIPOptionsHandler::CreateTransaction(OpalTransport & transport)
 { 
-  if (GetState() == Unsubscribing)
-    return NULL;
-
   return new SIPOptions(endpoint, transport, GetCallID(), m_parameters);
 }
 
