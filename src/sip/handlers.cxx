@@ -304,13 +304,12 @@ OpalTransport * SIPHandler::GetTransport()
     m_transport = NULL;
   }
 
-  if (m_proxy.IsEmpty()) {
-    // Look for a "proxy" parameter to override default proxy
-    const PStringToString & params = m_remoteAddress.GetParamVars();
-    if (params.Contains(OPAL_PROXY_PARAM)) {
-      m_proxy.Parse(params(OPAL_PROXY_PARAM));
-      m_remoteAddress.SetParamVar(OPAL_PROXY_PARAM, PString::Empty());
-    }
+  const PStringToString & remoteParams = m_remoteAddress.GetParamVars();
+
+  // Look for a "proxy" parameter to override default proxy
+  if (m_proxy.IsEmpty() && remoteParams.Contains(OPAL_PROXY_PARAM)) {
+    m_proxy.Parse(remoteParams(OPAL_PROXY_PARAM));
+    m_remoteAddress.SetParamVar(OPAL_PROXY_PARAM, PString::Empty());
   }
 
   SIPURL url;
@@ -321,8 +320,11 @@ OpalTransport * SIPHandler::GetTransport()
     url.AdjustToDNS();
   }
 
-  // Must specify a network interface or get infinite recursion
-  m_transport = endpoint.CreateTransport(url, "*");
+  PString localInterface = remoteParams(OPAL_INTERFACE_PARAM);
+  if (localInterface.IsEmpty())
+    localInterface = "*"; // Must specify a network interface or get infinite recursion
+
+  m_transport = endpoint.CreateTransport(url, localInterface);
   return m_transport;
 }
 

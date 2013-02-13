@@ -3171,6 +3171,9 @@ void SIPParameters::Normalise(const PString & defaultUser, const PTimeInterval &
     aor.SetParamVar(OPAL_LOCAL_ID_PARAM, m_localAddress);
   }
 
+  if (!m_interface.IsEmpty())
+    server.SetParamVar(OPAL_INTERFACE_PARAM, m_interface);
+
   m_remoteAddress = server.AsString();
   m_addressOfRecord = aor.AsString();
 
@@ -3780,7 +3783,7 @@ SIPOptions::SIPOptions(SIPEndPoint & ep,
   SIPURL remoteAddress = params.m_remoteAddress;
   SIPURL localAddress = params.m_localAddress;
   if (localAddress.IsEmpty())
-    localAddress = ep.GetRegisteredPartyName(remoteAddress.GetHostAddress(), trans);
+    localAddress = ep.GetRegisteredPartyName(remoteAddress, trans);
   localAddress.SetTag();
 
   InitialiseHeaders(remoteAddress, remoteAddress, localAddress, id, ep.GetNextCSeq(), CreateVia(ep, trans));

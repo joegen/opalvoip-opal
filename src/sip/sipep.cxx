@@ -229,8 +229,9 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
         case Options:
           {
             SIPOptions::Params params;
-            params.m_addressOfRecord = handler->GetAddressOfRecord().GetUserName();
+            params.m_addressOfRecord = handler->GetAddressOfRecord();
             params.m_remoteAddress = transport->GetRemoteAddress().GetHostName();
+            params.m_interface = transport->GetInterface();
             SendOPTIONS(params);
           }
           break;
