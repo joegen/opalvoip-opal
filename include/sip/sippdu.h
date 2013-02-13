@@ -1029,7 +1029,7 @@ class SIPTransaction : public SIPTransactionBase
   protected:
     SIPTransaction(
       Methods method,
-      SIPTransactionOwner & owner,
+      SIPTransactionOwner * owner,
       OpalTransport * transport,
       bool deleteOwner = false
     );
@@ -1056,7 +1056,7 @@ class SIPTransaction : public SIPTransactionBase
     virtual PBoolean OnReceivedResponse(SIP_PDU & response);
     virtual PBoolean OnCompleted(SIP_PDU & response);
 
-    SIPEndPoint & GetEndPoint() const { return m_owner.GetEndPoint(); }
+    SIPEndPoint & GetEndPoint() const { return m_owner->GetEndPoint(); }
     SIPConnection * GetConnection() const;
     PString         GetInterface()  const { return m_localInterface; }
 
@@ -1086,7 +1086,7 @@ class SIPTransaction : public SIPTransactionBase
     );
     virtual void SetTerminated(States newState);
 
-    SIPTransactionOwner & m_owner;
+    SIPTransactionOwner * m_owner;
     bool                  m_deleteOwner;
 
     PTimeInterval m_retryTimeoutMin; 
@@ -1554,9 +1554,7 @@ class SIPOptions : public SIPTransaction
     };
 
     SIPOptions(
-      SIPTransactionOwner & owner,
-      OpalTransport & transport,
-      const PString & id,
+      SIPEndPoint & endpoint,
       const Params & params
     );
     SIPOptions(
