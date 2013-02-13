@@ -659,7 +659,7 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned rtpSessionId,
        port is zero indicating the media is not to be used. So don't return these
        bogus media formats from SDP to the "remote media format list". */
     m_remoteFormatList.Remove(PString('@')+mediaType);
-    return false;
+    return NULL;
   }
 
   OpalTransportAddress remoteMediaAddress = mediaDescription.GetTransportAddress();
