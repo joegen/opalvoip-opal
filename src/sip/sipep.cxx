@@ -256,7 +256,7 @@ OpalTransport * SIPEndPoint::CreateTransport(const SIPURL & remoteURL, const PSt
   if (remoteAddress.IsEmpty()) {
     if (GetRegistrationsCount() == 0) {
       PTRACE(1, "SIP\tCannot use tel URI with phone-context or existing registration.");
-      return false;
+      return NULL;
     }
     remoteAddress = SIPURL(GetRegistrations()[0]).GetHostAddress();
   }
