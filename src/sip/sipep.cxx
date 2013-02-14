@@ -272,10 +272,10 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
     // No link, so need to create one
     OpalTransportAddress localAddress;
     PString localInterface = transactor.GetInterface();
-    if (!localInterface.IsEmpty()) {
-      if (localInterface != "*") // Nasty kludge to get around infinite recursion in REGISTER
-        localAddress = OpalTransportAddress(localInterface, 0, remoteAddress.GetProtoPrefix());
-    }
+    if (localInterface.IsEmpty())
+      localInterface = transactor.GetRemoteURI().GetParamVars()(OPAL_INTERFACE_PARAM);
+    if (!localInterface.IsEmpty())
+      localAddress = OpalTransportAddress(localInterface, 0, remoteAddress.GetProtoPrefix());
     else {
       PString domain = transactor.GetRequestURI().GetHostPort();
       PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByDomain(domain, SIP_PDU::Method_REGISTER, PSafeReadOnly);
@@ -1580,10 +1580,8 @@ bool SIPEndPoint::SendOPTIONS(const SIPOptions::Params & newParams)
   SIPOptions::Params params(newParams);
   params.Normalise(GetDefaultLocalPartyName(), GetNotifierTimeToLive());
   PTRACE(5, "SIP\tNormalised OPTIONS\n" << params);
-
-  PSafePtr<SIPHandler> handler = new SIPOptionsHandler(*this, params);
-  activeSIPHandlers.Append(handler);
-  return handler->ActivateState(SIPHandler::Unsubscribing);
+  new SIPOptions(*this, params);
+  return true;
 }
 
 

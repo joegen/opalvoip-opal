@@ -1819,7 +1819,7 @@ bool OpalManager::SetNATServer(const PString & natType, const PString & server)
 PString OpalManager::GetTranslationHost() const
 {
   PNatMethod_Fixed * nat = dynamic_cast<PNatMethod_Fixed *>(m_natMethod);
-  return nat == NULL ? PString::Empty() : nat->GetExternalHost();
+  return nat == NULL ? PString::Empty() : nat->GetServer();
 }
 
 
