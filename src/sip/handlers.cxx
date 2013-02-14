@@ -2230,50 +2230,6 @@ void SIPMessageHandler::UpdateParameters(const SIPMessage::Params & params)
 
 /////////////////////////////////////////////////////////////////////////
 
-SIPOptionsHandler::SIPOptionsHandler(SIPEndPoint & endpoint, const SIPOptions::Params & params)
-  : SIPHandler(SIP_PDU::Method_OPTIONS, endpoint, params)
-  , m_parameters(params)
-{
-  m_offlineExpireTime = 0; // No retries for offline, just give up
-
-  SetState(Subscribed);
-}
-
-
-SIPTransaction * SIPOptionsHandler::CreateTransaction(OpalTransport & transport)
-{ 
-  if (GetState() == Unsubscribing)
-    return NULL;
-
-  return new SIPOptions(*this, transport, GetCallID(), m_parameters);
-}
-
-
-void SIPOptionsHandler::OnFailed(SIP_PDU::StatusCodes reason)
-{
-  SIP_PDU dummy;
-  dummy.SetStatusCode(reason);
-  GetEndPoint().OnOptionsCompleted(m_parameters, dummy);
-  SIPHandler::OnFailed(reason);
-}
-
-
-void SIPOptionsHandler::OnFailed(const SIP_PDU & response)
-{
-  GetEndPoint().OnOptionsCompleted(m_parameters, response);
-  SIPHandler::OnFailed(response.GetStatusCode());
-}
-
-
-void SIPOptionsHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
-{
-  GetEndPoint().OnOptionsCompleted(m_parameters, response);
-  SIPHandler::OnReceivedOK(transaction, response);
-}
-
-
-/////////////////////////////////////////////////////////////////////////
-
 SIPPingHandler::SIPPingHandler(SIPEndPoint & endpoint, const PURL & to)
   : SIPHandler(SIP_PDU::Method_MESSAGE, endpoint, SIPParameters(to.AsString()))
 {

@@ -328,22 +328,6 @@ protected:
 };
 
 
-class SIPOptionsHandler : public SIPHandler
-{
-  PCLASSINFO(SIPOptionsHandler, SIPHandler);
-public:
-  SIPOptionsHandler(SIPEndPoint & ep, const SIPOptions::Params & params);
-
-  virtual SIPTransaction * CreateTransaction (OpalTransport &);
-  virtual void OnFailed(SIP_PDU::StatusCodes);
-  virtual void OnFailed(const SIP_PDU & response);
-  virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
-
-protected:
-  SIPOptions::Params m_parameters;
-};
-
-
 class SIPPingHandler : public SIPHandler
 {
   PCLASSINFO(SIPPingHandler, SIPHandler);
