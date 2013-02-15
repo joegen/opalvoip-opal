@@ -1496,6 +1496,9 @@ void SIPConnection::OnInviteCollision()
 
 bool SIPConnection::SendReINVITE(PTRACE_PARAM(const char * msg))
 {
+  if (IsReleased())
+    return false;
+
   bool startImmediate = !m_handlingINVITE && m_pendingInvitations.IsEmpty();
 
   PTRACE(3, "SIP\t" << (startImmediate ? "Start" : "Queue") << "ing re-INVITE to " << msg);
