@@ -521,6 +521,7 @@ if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
         [
           AC_MSG_RESULT(no)
           AC_DEFINE([AV_PICTURE_TYPE_NONE], [0])
+          AC_DEFINE([AV_PICTURE_TYPE_I], [FF_I_TYPE])
         ]
       )
     ]
