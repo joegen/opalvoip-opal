@@ -1236,6 +1236,10 @@ class OpalConnection : public PSafeObject
       bool source          ///< Indicates the direction of stream.
     );
 
+    /**Indicate all media sessions have failed.
+      */
+    bool AllMediaFailed() const;
+
     /** Callback for media commands.
         Executes OnMediaCommand ont he other connection in call.
 
@@ -1941,6 +1945,9 @@ class OpalConnection : public PSafeObject
         ZeroTime() : PTime(0) { }
     };
     ZeroTime m_phaseTime[NumPhases];
+
+    std::vector<bool> m_mediaSessionFailed;
+
 
   private:
     P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(unsigned int), false);
