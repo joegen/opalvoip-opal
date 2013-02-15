@@ -414,7 +414,7 @@ PSafePtr<OpalConnection> SIPEndPoint::MakeConnection(OpalCall & call,
   if (listeners.IsEmpty())
     return NULL;
 
-  SIPConnection::Init init(call);
+  SIPConnection::Init init(call, *this);
   init.m_token = SIPURL::GenerateTag();
   init.m_userData = userData;
   init.m_address = TranslateENUM(remoteParty);
@@ -543,7 +543,7 @@ PBoolean SIPEndPoint::IsAcceptedAddress(const SIPURL & /*toAddr*/)
 
 SIPConnection * SIPEndPoint::CreateConnection(const SIPConnection::Init & init)
 {
-  return new SIPConnection(*this, init);
+  return new SIPConnection(init);
 }
 
 
@@ -567,7 +567,7 @@ PBoolean SIPEndPoint::SetupTransfer(const PString & token,
   options.SetAt(SIP_HEADER_REFERRED_BY, otherConnection->GetRedirectingParty());
   options.SetAt(OPAL_OPT_CALLING_PARTY_URL, otherConnection->GetLocalPartyURL());
 
-  SIPConnection::Init init(call);
+  SIPConnection::Init init(call, *this);
   init.m_token = SIPURL::GenerateTag();
   init.m_userData = userData;
   init.m_address = TranslateENUM(remoteParty);
@@ -590,7 +590,7 @@ PBoolean SIPEndPoint::ForwardConnection(SIPConnection & connection, const PStrin
 {
   OpalCall & call = connection.GetCall();
   
-  SIPConnection::Init init(call);
+  SIPConnection::Init init(call, *this);
   init.m_token = SIPURL::GenerateTag();
   init.m_address = forwardParty;
   SIPConnection * conn = CreateConnection(init);
@@ -982,7 +982,7 @@ bool SIPEndPoint::OnReceivedINVITE(SIP_PDU * request)
   PTRACE_CONTEXT_ID_PUSH_THREAD(call);
 
   // ask the endpoint for a connection
-  SIPConnection::Init init(*call);
+  SIPConnection::Init init(*call, *this);
   init.m_token = SIPURL::GenerateTag();
   init.m_invite = request;
   SIPConnection *connection = CreateConnection(init);

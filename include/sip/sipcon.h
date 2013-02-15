@@ -127,27 +127,28 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
   /**@name Construction */
   //@{
     struct Init {
-      Init(OpalCall & call)
+      Init(OpalCall & call, SIPEndPoint & endpoint)
         : m_call(call)
+        , m_endpoint(endpoint)
         , m_userData(NULL)
         , m_invite(NULL)
         , m_options(0)
         , m_stringOptions(NULL)
         { }
 
-      OpalCall & m_call;          ///<  Owner call for connection
-      PString m_token;            ///<  token to identify the connection
-      SIPURL m_address;           ///<  Destination address for outgoing call
-      void * m_userData;          ///<  User data
-      SIP_PDU * m_invite;         ///<  Invite packet
-      unsigned m_options;         ///<  Connection options
+      OpalCall    & m_call;      ///< Owner call for connection
+      SIPEndPoint & m_endpoint;  ///< SIP endpoint that controls the connection
+      PString       m_token;     ///< Token to identify the connection
+      SIPURL        m_address;   ///< Destination address for outgoing call
+      void        * m_userData;  ///< User data
+      SIP_PDU     * m_invite;    ///< Invite packet
+      unsigned m_options;        ///< Connection options
       OpalConnection::StringOptions * m_stringOptions;  ///<  complex string options
     };
 
     /**Create a new connection.
      */
     SIPConnection(
-      SIPEndPoint & endpoint,   ///< Owner endpoint for connection
       const Init & init         ///< Initialisation parameters
     );
 

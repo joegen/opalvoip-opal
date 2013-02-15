@@ -206,9 +206,9 @@ static OpalConnection::CallEndReason GetCallEndReasonFromResponse(SIP_PDU & resp
 
 ////////////////////////////////////////////////////////////////////////////
 
-SIPConnection::SIPConnection(SIPEndPoint & ep, const Init & init)
-  : OpalRTPConnection(init.m_call, ep, init.m_token, init.m_options, init.m_stringOptions)
-  , P_DISABLE_MSVC_WARNINGS(4355, SIPTransactionOwner(*this, ep))
+SIPConnection::SIPConnection(const Init & init)
+  : OpalRTPConnection(init.m_call, init.m_endpoint, init.m_token, init.m_options, init.m_stringOptions)
+  , P_DISABLE_MSVC_WARNINGS(4355, SIPTransactionOwner(*this, init.m_endpoint))
   , m_allowedMethods((1<<SIP_PDU::Method_INVITE)|
                      (1<<SIP_PDU::Method_ACK   )|
                      (1<<SIP_PDU::Method_CANCEL)|
@@ -217,7 +217,7 @@ SIPConnection::SIPConnection(SIPEndPoint & ep, const Init & init)
   , m_holdFromRemote(false)
   , m_lastReceivedINVITE(NULL)
   , m_delayedAckInviteResponse(NULL)
-  , m_delayedAckTimer(ep.GetThreadPool(), ep, init.m_token, &SIPConnection::OnDelayedAckTimeout)
+  , m_delayedAckTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnDelayedAckTimeout)
   , m_delayedAckTimeout(0, 1) // 1 second
   , m_lastSentAck(NULL)
   , m_sdpSessionId(PTime().GetTimeInSeconds())
@@ -226,15 +226,15 @@ SIPConnection::SIPConnection(SIPEndPoint & ep, const Init & init)
   , m_handlingINVITE(false)
   , m_resolveMultipleFormatReINVITE(true)
   , m_symmetricOpenStream(false)
-  , m_appearanceCode(ep.GetDefaultAppearanceCode())
-  , m_sessionTimer(ep.GetThreadPool(), ep, init.m_token, &SIPConnection::OnSessionTimeout)
-  , m_prackMode((PRACKMode)m_stringOptions.GetInteger(OPAL_OPT_PRACK_MODE, ep.GetDefaultPRACKMode()))
+  , m_appearanceCode(init.m_endpoint.GetDefaultAppearanceCode())
+  , m_sessionTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnSessionTimeout)
+  , m_prackMode((PRACKMode)m_stringOptions.GetInteger(OPAL_OPT_PRACK_MODE, init.m_endpoint.GetDefaultPRACKMode()))
   , m_prackEnabled(false)
   , m_prackSequenceNumber(0)
-  , m_responseFailTimer(ep.GetThreadPool(), ep, init.m_token, &SIPConnection::OnInviteResponseTimeout)
-  , m_responseRetryTimer(ep.GetThreadPool(), ep, init.m_token, &SIPConnection::OnInviteResponseRetry)
+  , m_responseFailTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnInviteResponseTimeout)
+  , m_responseRetryTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnInviteResponseRetry)
   , m_responseRetryCount(0)
-  , m_inviteCollisionTimer(ep.GetThreadPool(), ep, init.m_token, &SIPConnection::OnInviteCollision)
+  , m_inviteCollisionTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnInviteCollision)
   , m_referInProgress(false)
   , releaseMethod(ReleaseWithNothing)
   , m_receivedUserInputMethod(UserInputMethodUnknown)
