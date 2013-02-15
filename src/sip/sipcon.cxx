@@ -3353,10 +3353,12 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
   // Check if we had a stream and the remote has either changed the codec or
   // changed the direction of the stream
   OpalMediaStreamPtr sendStream = GetMediaStream(sessionId, false);
-  PauseOrCloseMediaStream(sendStream, m_answerFormatList, remoteChanged, (otherSidesDir&SDPMediaDescription::RecvOnly) == 0);
+  bool sendDisabled = (otherSidesDir&SDPMediaDescription::RecvOnly) == 0;
+  PauseOrCloseMediaStream(sendStream, m_answerFormatList, remoteChanged, sendDisabled);
 
   OpalMediaStreamPtr recvStream = GetMediaStream(sessionId, true);
-  PauseOrCloseMediaStream(recvStream, m_answerFormatList, remoteChanged, (otherSidesDir&SDPMediaDescription::SendOnly) == 0);
+  bool recvDisabled = (otherSidesDir&SDPMediaDescription::SendOnly) == 0;
+  PauseOrCloseMediaStream(recvStream, m_answerFormatList, remoteChanged, recvDisabled);
 
   // Then open the streams if the direction allows and if needed
   // If already open then update to new parameters/payload type
@@ -3369,9 +3371,9 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
 #endif
                                          ) && (recvStream = GetMediaStream(sessionId, true)) != NULL) {
       recvStream->UpdateMediaFormat(*m_localMediaFormats.FindFormat(recvStream->GetMediaFormat()));
-      recvStream->SetPaused((otherSidesDir&SDPMediaDescription::SendOnly) == 0);
+      recvStream->SetPaused(recvDisabled);
     }
-    else
+    else if (!recvDisabled)
       SendReINVITE(PTRACE_PARAM("close after rx open fail"));
   }
 
@@ -3384,8 +3386,8 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
                                            , mediaDescription->GetContentRole()
 #endif
                                            ) && (sendStream = GetMediaStream(sessionId, false)) != NULL)
-        sendStream->SetPaused((otherSidesDir&SDPMediaDescription::RecvOnly) == 0);
-      else
+        sendStream->SetPaused(sendDisabled);
+      else if (!sendDisabled)
         SendReINVITE(PTRACE_PARAM("close after tx open fail"));
     }
   }
