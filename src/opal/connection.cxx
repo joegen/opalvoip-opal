@@ -396,6 +396,13 @@ bool OpalConnection::TransferConnection(const PString & PTRACE_PARAM(remoteParty
 
 void OpalConnection::Release(CallEndReason reason, bool synchronous)
 {
+  /* Do a brief lock here to avoid a start up race condition where the
+     connection is released while it still being set up, gets really
+     confused when that happens. */
+  if (!LockReadOnly())
+    return;
+  UnlockReadOnly();
+
   {
     PWaitAndSignal mutex(m_phaseMutex);
     if (IsReleased()) {
