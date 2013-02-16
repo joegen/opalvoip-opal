@@ -2062,6 +2062,11 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataOrControlPDU(BYTE * fr
       // Shouldn't happen, but it does.
       return e_IgnorePacket;
 
+    case 0 :
+      PTRACE(3, "RTP_UDP\tSession " << m_sessionId << ", " << channelName
+             << " received UDP packet with no payload.");
+      return e_IgnorePacket;
+
     default:
       PTRACE(1, "RTP_UDP\tSession " << m_sessionId << ", " << channelName
              << " read error (" << socket.GetErrorNumber(PChannel::LastReadError) << "): "
