@@ -2279,6 +2279,11 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(BYTE * framePtr,
       // Shouldn't happen, but it does.
       return RTP_Session::e_IgnorePacket;
 
+    case 0 :
+      PTRACE(4, "RTP_UDP\tSession " << sessionID << ", " << channelName
+             << " received UDP packet with no payload.");
+      return e_IgnorePacket;
+
     default:
       PTRACE(1, "RTP_UDP\tSession " << sessionID << ", " << channelName
              << " read error (" << socket.GetErrorNumber(PChannel::LastReadError) << "): "
