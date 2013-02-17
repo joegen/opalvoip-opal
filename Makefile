@@ -99,9 +99,10 @@ $(lastword $(CONFIG_FILES)) : $(CONFIGURE) $(CONFIG_IN_FILES)
 	OPALDIR=$(ENV_OPALDIR) $(CONFIGURE) $(CONFIG_PARMS)
 	touch $(CONFIG_FILES)
 
-ifneq (,$(AUTOCONF))
-ifneq (,$(shell which $(AUTOCONF)))
-ifneq (,$(shell which $(ACLOCAL)))
+ifeq ($(shell which $(AUTOCONF) > /dev/null && \
+              which $(ACLOCAL) > /dev/null && \
+              test `autoconf --version | sed -n "s/autoconf.*2.\\([0-9]*\\)/\\1/p"` -ge 68 \
+              ; echo $$?),0)
 
 $(CONFIGURE): $(CONFIGURE).ac $(OPALDIR)/make/*.m4 $(ACLOCAL).m4
 	$(AUTOCONF)
@@ -115,7 +116,7 @@ $(PLUGIN_CONFIG): $(PLUGIN_CONFIG).ac $(PLUGIN_ACLOCAL) $(OPALDIR)/make/*.m4
 $(PLUGIN_ACLOCAL):
 	( cd $(dir $@) ; $(ACLOCAL) )
 
-else # autoconf installed
+else # autoconf
 
 $(CONFIGURE): $(CONFIGURE).ac
 	@echo ---------------------------------------------------------------------
@@ -124,9 +125,7 @@ $(CONFIGURE): $(CONFIGURE).ac
 	@echo touch $@
 	@echo ---------------------------------------------------------------------
 
-endif # aclocal installed
-endif # autoconf installed
-endif # autoconf enabled
+endif # autoconf good
 
 $(foreach pair,$(PAIRS),$(eval $(pair)))
 
