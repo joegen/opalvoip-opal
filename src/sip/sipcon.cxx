@@ -206,9 +206,9 @@ static OpalConnection::CallEndReason GetCallEndReasonFromResponse(SIP_PDU & resp
 
 ////////////////////////////////////////////////////////////////////////////
 
-SIPConnection::SIPConnection(SIPEndPoint & ep, const Init & init)
-  : OpalRTPConnection(init.m_call, ep, init.m_token, init.m_options, init.m_stringOptions)
-  , P_DISABLE_MSVC_WARNINGS(4355, SIPTransactionOwner(*this, ep))
+SIPConnection::SIPConnection(const Init & init)
+  : OpalRTPConnection(init.m_call, init.m_endpoint, init.m_token, init.m_options, init.m_stringOptions)
+  , P_DISABLE_MSVC_WARNINGS(4355, SIPTransactionOwner(*this, init.m_endpoint))
   , m_allowedMethods((1<<SIP_PDU::Method_INVITE)|
                      (1<<SIP_PDU::Method_ACK   )|
                      (1<<SIP_PDU::Method_CANCEL)|
@@ -217,7 +217,7 @@ SIPConnection::SIPConnection(SIPEndPoint & ep, const Init & init)
   , m_holdFromRemote(false)
   , m_lastReceivedINVITE(NULL)
   , m_delayedAckInviteResponse(NULL)
-  , m_delayedAckTimer(ep.GetThreadPool(), ep, init.m_token, &SIPConnection::OnDelayedAckTimeout)
+  , m_delayedAckTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnDelayedAckTimeout)
   , m_delayedAckTimeout(0, 1) // 1 second
   , m_lastSentAck(NULL)
   , m_sdpSessionId(PTime().GetTimeInSeconds())
@@ -226,15 +226,15 @@ SIPConnection::SIPConnection(SIPEndPoint & ep, const Init & init)
   , m_handlingINVITE(false)
   , m_resolveMultipleFormatReINVITE(true)
   , m_symmetricOpenStream(false)
-  , m_appearanceCode(ep.GetDefaultAppearanceCode())
-  , m_sessionTimer(ep.GetThreadPool(), ep, init.m_token, &SIPConnection::OnSessionTimeout)
-  , m_prackMode((PRACKMode)m_stringOptions.GetInteger(OPAL_OPT_PRACK_MODE, ep.GetDefaultPRACKMode()))
+  , m_appearanceCode(init.m_endpoint.GetDefaultAppearanceCode())
+  , m_sessionTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnSessionTimeout)
+  , m_prackMode((PRACKMode)m_stringOptions.GetInteger(OPAL_OPT_PRACK_MODE, init.m_endpoint.GetDefaultPRACKMode()))
   , m_prackEnabled(false)
   , m_prackSequenceNumber(0)
-  , m_responseFailTimer(ep.GetThreadPool(), ep, init.m_token, &SIPConnection::OnInviteResponseTimeout)
-  , m_responseRetryTimer(ep.GetThreadPool(), ep, init.m_token, &SIPConnection::OnInviteResponseRetry)
+  , m_responseFailTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnInviteResponseTimeout)
+  , m_responseRetryTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnInviteResponseRetry)
   , m_responseRetryCount(0)
-  , m_inviteCollisionTimer(ep.GetThreadPool(), ep, init.m_token, &SIPConnection::OnInviteCollision)
+  , m_inviteCollisionTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnInviteCollision)
   , m_referInProgress(false)
   , releaseMethod(ReleaseWithNothing)
   , m_receivedUserInputMethod(UserInputMethodUnknown)
@@ -1496,6 +1496,9 @@ void SIPConnection::OnInviteCollision()
 
 bool SIPConnection::SendReINVITE(PTRACE_PARAM(const char * msg))
 {
+  if (IsReleased())
+    return false;
+
   bool startImmediate = !m_handlingINVITE && m_pendingInvitations.IsEmpty();
 
   PTRACE(3, "SIP\t" << (startImmediate ? "Start" : "Queue") << "ing re-INVITE to " << msg);
@@ -3353,10 +3356,12 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
   // Check if we had a stream and the remote has either changed the codec or
   // changed the direction of the stream
   OpalMediaStreamPtr sendStream = GetMediaStream(sessionId, false);
-  PauseOrCloseMediaStream(sendStream, m_answerFormatList, remoteChanged, (otherSidesDir&SDPMediaDescription::RecvOnly) == 0);
+  bool sendDisabled = (otherSidesDir&SDPMediaDescription::RecvOnly) == 0;
+  PauseOrCloseMediaStream(sendStream, m_answerFormatList, remoteChanged, sendDisabled);
 
   OpalMediaStreamPtr recvStream = GetMediaStream(sessionId, true);
-  PauseOrCloseMediaStream(recvStream, m_answerFormatList, remoteChanged, (otherSidesDir&SDPMediaDescription::SendOnly) == 0);
+  bool recvDisabled = (otherSidesDir&SDPMediaDescription::SendOnly) == 0;
+  PauseOrCloseMediaStream(recvStream, m_answerFormatList, remoteChanged, recvDisabled);
 
   // Then open the streams if the direction allows and if needed
   // If already open then update to new parameters/payload type
@@ -3369,9 +3374,9 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
 #endif
                                          ) && (recvStream = GetMediaStream(sessionId, true)) != NULL) {
       recvStream->UpdateMediaFormat(*m_localMediaFormats.FindFormat(recvStream->GetMediaFormat()));
-      recvStream->SetPaused((otherSidesDir&SDPMediaDescription::SendOnly) == 0);
+      recvStream->SetPaused(recvDisabled);
     }
-    else
+    else if (!recvDisabled)
       SendReINVITE(PTRACE_PARAM("close after rx open fail"));
   }
 
@@ -3384,8 +3389,8 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
                                            , mediaDescription->GetContentRole()
 #endif
                                            ) && (sendStream = GetMediaStream(sessionId, false)) != NULL)
-        sendStream->SetPaused((otherSidesDir&SDPMediaDescription::RecvOnly) == 0);
-      else
+        sendStream->SetPaused(sendDisabled);
+      else if (!sendDisabled)
         SendReINVITE(PTRACE_PARAM("close after tx open fail"));
     }
   }

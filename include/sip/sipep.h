@@ -693,10 +693,13 @@ class SIPEndPoint : public OpalRTPEndPoint
 
     struct ConnectionlessMessageInfo {
       ConnectionlessMessageInfo(SIP_PDU & pdu)
-        : m_pdu(pdu), m_status(ResponseSent)
+        : m_pdu(pdu)
+        , m_transport(*pdu.GetTransport())
+        , m_status(ResponseSent)
       { }
 
       SIP_PDU & m_pdu;
+      OpalTransport & m_transport;
       enum {
         NotHandled,
         SendOK,
