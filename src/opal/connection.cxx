@@ -157,6 +157,7 @@ OpalConnection::OpalConnection(OpalCall & call,
 #if OPAL_STATISTICS
   , m_VideoUpdateRequestsSent(0)
 #endif
+  , m_mediaSessionFailed(32)
 {
   PTRACE_CONTEXT_ID_FROM(call);
 
@@ -396,6 +397,13 @@ bool OpalConnection::TransferConnection(const PString & PTRACE_PARAM(remoteParty
 
 void OpalConnection::Release(CallEndReason reason, bool synchronous)
 {
+  /* Do a brief lock here to avoid a start up race condition where the
+     connection is released while it still being set up, gets really
+     confused when that happens. */
+  if (!LockReadOnly())
+    return;
+  UnlockReadOnly();
+
   {
     PWaitAndSignal mutex(m_phaseMutex);
     if (IsReleased()) {
@@ -749,6 +757,11 @@ OpalMediaStreamPtr OpalConnection::OpenMediaStream(const OpalMediaFormat & media
       return NULL;
     }
     mediaStreams.Append(stream);
+
+    size_t index = sessionID*2 + isSource;
+    if (m_mediaSessionFailed.size() <= index)
+      m_mediaSessionFailed.resize(index+1);
+    m_mediaSessionFailed[index] = false;
   }
 
   if (stream->Open()) {
@@ -1691,7 +1704,22 @@ void OpalConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 
 bool OpalConnection::OnMediaFailed(unsigned sessionId, bool source)
 {
+  size_t index = sessionId*2 + source;
+  if (index < m_mediaSessionFailed.size())
+    m_mediaSessionFailed[index] = true;
   return GetEndPoint().GetManager().OnMediaFailed(*this, sessionId, source);
+}
+
+
+bool OpalConnection::AllMediaFailed() const
+{
+  for (OpalMediaStreamPtr mediaStream = mediaStreams; mediaStream != NULL; ++mediaStream) {
+    size_t index = mediaStream->GetSessionID()*2 + mediaStream->IsSource();
+    if (index >= m_mediaSessionFailed.size() || !m_mediaSessionFailed[index])
+      return false;
+  }
+
+  return true;
 }
 
 

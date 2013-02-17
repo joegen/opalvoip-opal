@@ -1208,7 +1208,8 @@ bool OpalManager::OnMediaFailed(OpalConnection & connection, unsigned PTRACE_PAR
 {
   PTRACE(2, "OpalMan\tSession " << sessionId << ' '
          << (source ? "receive" : "transmit") << " media failed, releasing " << connection);
-  connection.Release(OpalConnection::EndedByMediaFailed);
+  if (connection.AllMediaFailed())
+    connection.Release(OpalConnection::EndedByMediaFailed);
   return true;
 }
 
