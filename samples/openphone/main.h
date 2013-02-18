@@ -1058,8 +1058,9 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     void OnStopRecording(wxCommandEvent & /*event*/);
     void OnSendAudioFile(wxCommandEvent & /*event*/);
     void OnAudioDevicePair(wxCommandEvent & /*event*/);
-    void OnAudioDevicePreset(wxCommandEvent & /*event*/);
+    void OnAudioDeviceChange(wxCommandEvent & /*event*/);
     void OnNewCodec(wxCommandEvent & /*event*/);
+    void OnVideoDeviceChange(wxCommandEvent & /*event*/);
     void OnStartVideo(wxCommandEvent & /*event*/);
     void OnStopVideo(wxCommandEvent & /*event*/);
     void OnSendVFU(wxCommandEvent & /*event*/);
@@ -1243,7 +1244,7 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     PTimer        m_RingSoundTimer;
     PDECLARE_NOTIFIER(PTimer, MyManager, OnRingSoundAgain);
     void StopRingSound();
-    void UpdateAudioDevices();
+    void UpdateAudioVideoDevices();
 
     PwxString          m_incomingToken;
     PSafePtr<OpalCall> m_activeCall;

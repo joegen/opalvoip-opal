@@ -1301,6 +1301,22 @@ class OpalConnection : public PSafeObject
       PBoolean & autoDelete                     ///<  Flag for auto delete device
     );
 
+    /**Change a PVideoInputDevice for a source media stream.
+      */
+    virtual bool ChangeVideoInputDevice(
+      const PVideoDevice::OpenArgs & device,  ///< Device to change to
+      unsigned sessionID = 0                  ///< Session for media stream, 0 indicates first video stream
+    );
+
+    /**Create an PVideoOutputDevice for a sink media stream or the preview
+       display for a source media stream.
+      */
+    virtual bool ChangeVideoOutputDevice(
+      const PVideoDevice::OpenArgs & device,  ///< Device to change to
+      unsigned sessionID = 0,                 ///< Session for media stream, 0 indicates first video stream
+      bool preview = false                    ///< Flag indicating is a preview output device
+    );
+
     /** Send a Video Update Picture request to media stream.
         If \p force is set then a "force Intra frame" is sent, otherwise a
         "picture loss" is sent. The underlying protocol may or may not make a
