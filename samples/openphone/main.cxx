@@ -404,6 +404,7 @@ DEF_XRCID(SubMenuRetrieve);
 DEF_XRCID(SubMenuConference);
 DEF_XRCID(SubMenuTransfer);
 DEF_XRCID(SubMenuSound);
+DEF_XRCID(SubMenuGrabber);
 DEF_XRCID(SubMenuSpeedDial);
 
 
@@ -418,6 +419,8 @@ enum {
   ID_AUDIO_DEVICE_MENU_TOP = ID_AUDIO_DEVICE_MENU_BASE+99,
   ID_AUDIO_CODEC_MENU_BASE,
   ID_AUDIO_CODEC_MENU_TOP = ID_AUDIO_CODEC_MENU_BASE+99,
+  ID_VIDEO_DEVICE_MENU_BASE,
+  ID_VIDEO_DEVICE_MENU_TOP = ID_VIDEO_DEVICE_MENU_BASE+99,
   ID_VIDEO_CODEC_MENU_BASE,
   ID_VIDEO_CODEC_MENU_TOP = ID_VIDEO_CODEC_MENU_BASE+99,
   ID_SPEEDDIAL_MENU_BASE,
@@ -660,8 +663,9 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU_RANGE(ID_RETRIEVE_MENU_BASE,     ID_RETRIEVE_MENU_TOP,     MyManager::OnRetrieve)
   EVT_MENU_RANGE(ID_TRANSFER_MENU_BASE,     ID_TRANSFER_MENU_TOP,     MyManager::OnTransfer)
   EVT_MENU_RANGE(ID_CONFERENCE_MENU_BASE,   ID_CONFERENCE_MENU_TOP,   MyManager::OnConference)
-  EVT_MENU_RANGE(ID_AUDIO_DEVICE_MENU_BASE, ID_AUDIO_DEVICE_MENU_TOP, MyManager::OnAudioDevicePreset)
+  EVT_MENU_RANGE(ID_AUDIO_DEVICE_MENU_BASE, ID_AUDIO_DEVICE_MENU_TOP, MyManager::OnAudioDeviceChange)
   EVT_MENU_RANGE(ID_AUDIO_CODEC_MENU_BASE,  ID_AUDIO_CODEC_MENU_TOP,  MyManager::OnNewCodec)
+  EVT_MENU_RANGE(ID_VIDEO_DEVICE_MENU_BASE, ID_VIDEO_DEVICE_MENU_TOP, MyManager::OnVideoDeviceChange)
   EVT_MENU_RANGE(ID_VIDEO_CODEC_MENU_BASE,  ID_VIDEO_CODEC_MENU_TOP,  MyManager::OnNewCodec)
 
   EVT_SPLITTER_SASH_POS_CHANGED(SplitterID, MyManager::OnSashPositioned)
@@ -1088,7 +1092,7 @@ bool MyManager::Initialise(bool startMinimised)
   if (config->Read(DisableDetectInBandDTMFKey, &onoff))
     DisableDetectInBandDTMF(onoff);
 
-  UpdateAudioDevices();
+  UpdateAudioVideoDevices();
   StartLID();
 
 
@@ -1778,7 +1782,12 @@ void MyManager::OnAdjustMenus(wxMenuEvent & WXUNUSED(event))
       audioFormat = PwxString(stream->GetMediaFormat());
 
     stream = connection->GetMediaStream(OpalMediaType::Video(), false);
-    hasTxVideo = stream != NULL && stream->IsOpen();
+    if (stream != NULL) {
+      OpalVideoMediaStream * vidstream = dynamic_cast<OpalVideoMediaStream *>(&*stream);
+      if (vidstream != NULL)
+        deviceName = PwxString(vidstream->GetVideoInputDevice()->GetDeviceName());
+      hasTxVideo = stream->IsOpen();
+    }
 
     stream = connection->GetMediaStream(OpalMediaType::Video(), true);
     if (stream != NULL) {
@@ -1795,6 +1804,13 @@ void MyManager::OnAdjustMenus(wxMenuEvent & WXUNUSED(event))
     wxMenuItem * item = menubar->FindItem(id);
     if (item != NULL)
       item->Check(item->GetItemLabelText() == audioFormat);
+  }
+
+  menubar->Enable(ID_SubMenuGrabber, hasTxVideo);
+  for (id = ID_VIDEO_DEVICE_MENU_BASE; id <= ID_VIDEO_DEVICE_MENU_TOP; id++) {
+    wxMenuItem * item = menubar->FindItem(id);
+    if (item != NULL)
+      item->Check(item->GetItemLabelText() == deviceName);
   }
 
   menubar->Enable(ID_SubMenuVideo, !videoFormat.IsEmpty() && m_activeCall != NULL);
@@ -3037,9 +3053,32 @@ void MyManager::OnAudioDevicePair(wxCommandEvent & /*theEvent*/)
 }
 
 
-void MyManager::OnAudioDevicePreset(wxCommandEvent & theEvent)
+void MyManager::OnAudioDeviceChange(wxCommandEvent & theEvent)
 {
   m_activeCall->Transfer("pc:"+AudioDeviceNameFromScreen(GetMenuBar()->FindItem(theEvent.GetId())->GetItemLabelText()));
+}
+
+
+void MyManager::OnVideoDeviceChange(wxCommandEvent & theEvent)
+{
+  PwxString deviceName = GetMenuBar()->FindItem(theEvent.GetId())->GetItemLabelText();
+  if (deviceName[0] == '*') {
+    deviceName = wxFileSelector(wxT("Select Video File"),
+                                wxEmptyString,
+                                wxEmptyString,
+                                deviceName.Mid(1),
+                                deviceName,
+                                wxFD_OPEN|wxFD_FILE_MUST_EXIST);
+    if (deviceName.empty())
+      return;
+  }
+
+  PSafePtr<OpalConnection> local = GetConnection(true, PSafeReadWrite);
+  PVideoDevice::OpenArgs args = GetVideoInputDevice();
+  args.deviceName = deviceName.p_str();
+  if (!local->ChangeVideoInputDevice(args))
+    wxMessageBox(wxT("Cannot switch to video input device ")+deviceName,
+                  wxT("OpenPhone Error"), wxCANCEL|wxICON_EXCLAMATION);
 }
 
 
@@ -3584,21 +3623,31 @@ bool MyManager::AdjustVideoFormats()
 }
 
 
-void MyManager::UpdateAudioDevices()
+void MyManager::UpdateAudioVideoDevices()
 {
   wxMenuBar * menubar = GetMenuBar();
   wxMenuItem * item = PAssertNULL(menubar)->FindItem(ID_SubMenuSound);
-  wxMenu * audioMenu = PAssertNULL(item)->GetSubMenu();
-  while (audioMenu->GetMenuItemCount() > 2)
-    audioMenu->Delete(audioMenu->FindItemByPosition(2));
+  wxMenu * subMenu = PAssertNULL(item)->GetSubMenu();
+  while (subMenu->GetMenuItemCount() > 2)
+    subMenu->Delete(subMenu->FindItemByPosition(2));
 
   unsigned id = ID_AUDIO_DEVICE_MENU_BASE;
   PStringList playDevices = PSoundChannel::GetDeviceNames(PSoundChannel::Player);
   PStringList recordDevices = PSoundChannel::GetDeviceNames(PSoundChannel::Recorder);
   for (PINDEX i = 0; i < playDevices.GetSize(); i++) {
     if (recordDevices.GetValuesIndex(playDevices[i]) != P_MAX_INDEX)
-      audioMenu->Append(id++, AudioDeviceNameToScreen(playDevices[i]), wxEmptyString, true);
+      subMenu->Append(id++, AudioDeviceNameToScreen(playDevices[i]), wxEmptyString, true);
   }
+
+  item = PAssertNULL(menubar)->FindItem(ID_SubMenuGrabber);
+  subMenu = PAssertNULL(item)->GetSubMenu();
+  while (subMenu->GetMenuItemCount() > 0)
+    subMenu->Delete(subMenu->FindItemByPosition(0));
+
+  id = ID_VIDEO_DEVICE_MENU_BASE;
+  PStringArray grabDevices = PVideoInputDevice::GetDriversDeviceNames("*");
+  for (PINDEX i = 0; i < grabDevices.GetSize(); i++)
+    subMenu->Append(id++, PwxString(grabDevices[i]), wxEmptyString, true);
 }
 
 

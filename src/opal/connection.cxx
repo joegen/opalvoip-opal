@@ -1163,6 +1163,42 @@ PBoolean OpalConnection::CreateVideoOutputDevice(const OpalMediaFormat & mediaFo
 }
 
 
+bool OpalConnection::ChangeVideoInputDevice(const PVideoDevice::OpenArgs & deviceArgs, unsigned sessionID)
+{
+  PSafePtr<OpalVideoMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalVideoMediaStream>(
+                      sessionID != 0 ? GetMediaStream(sessionID, true) : GetMediaStream(OpalMediaType::Video(), true));
+  if (stream == NULL)
+    return false;
+
+  PVideoInputDevice * newDevice = PVideoInputDevice::CreateOpenedDevice(deviceArgs, false);
+  if (newDevice == NULL) {
+    PTRACE(2, "OpalCon\tCould not open video device \"" << deviceArgs.deviceName << '"');
+    return false;
+  }
+
+  stream->SetVideoInputDevice(newDevice);
+  return true;
+}
+
+
+bool OpalConnection::ChangeVideoOutputDevice(const PVideoDevice::OpenArgs & deviceArgs, unsigned sessionID, bool preview)
+{
+  PSafePtr<OpalVideoMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalVideoMediaStream>(
+                      sessionID != 0 ? GetMediaStream(sessionID, true) : GetMediaStream(OpalMediaType::Video(), preview));
+  if (stream == NULL)
+    return false;
+
+  PVideoOutputDevice * newDevice = PVideoOutputDevice::CreateOpenedDevice(deviceArgs, false);
+  if (newDevice == NULL) {
+    PTRACE(2, "OpalCon\tCould not open video device \"" << deviceArgs.deviceName << '"');
+    return false;
+  }
+
+  stream->SetVideoOutputDevice(newDevice);
+  return true;
+}
+
+
 bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, bool force) const
 {
   if (!ExecuteMediaCommand(force ? OpalVideoUpdatePicture() : OpalVideoPictureLoss(), sessionID, OpalMediaType::Video()))
