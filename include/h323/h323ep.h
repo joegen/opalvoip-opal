@@ -145,7 +145,7 @@ class H323EndPoint : public OpalRTPEndPoint
       OpalCall & call,                  ///<  Owner of connection
       const PString & party,            ///<  Remote party to call
       void * userData  = NULL,          ///<  Arbitrary data to pass to connection
-      unsigned int options = NULL,      ///<  options to pass to conneciton
+      unsigned int options = 0,         ///<  options to pass to connection
       OpalConnection::StringOptions * stringOptions = NULL
     );
   //@}
