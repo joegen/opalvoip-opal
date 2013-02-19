@@ -743,6 +743,9 @@ class OpalMixerEndPoint : public OpalLocalEndPoint, public OpalMixerNodeManager
        name.
       */
     virtual PString GetNewFactoryName();
+
+    /// Get manager
+    OpalManager & GetManager() const { return OpalLocalEndPoint::GetManager(); }
   //@}
 
   protected:
