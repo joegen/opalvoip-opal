@@ -1210,6 +1210,9 @@ OpalMixerNode::~OpalMixerNode()
 
 void OpalMixerNode::ShutDown()
 {
+  if (m_shuttingDown.TestAndSet(true))
+    return;
+
   PTRACE(4, "MixerNode\tShutting down " << *this);
 
   m_manager.OnNodeStatusChanged(*this, OpalConferenceState::Destroyed);
@@ -1226,6 +1229,8 @@ void OpalMixerNode::ShutDown()
 #endif
   m_manager.RemoveNodeNames(GetNames());
   m_names.RemoveAll();
+
+  m_manager.RemoveNode(*this);
 }
 
 
@@ -1291,10 +1296,12 @@ void OpalMixerNode::DetachConnection(OpalConnection * connection)
 
   m_manager.OnNodeStatusChanged(*this, OpalConferenceState::UserRemoved);
 
-  if (!m_ownerConnection.IsEmpty() &&
-      (m_ownerConnection == connection->GetToken() ||
-       m_ownerConnection == connection->GetLocalPartyURL() ||
-       m_ownerConnection == connection->GetRemotePartyURL()))
+  if ((m_info->m_closeOnEmpty && m_connections.IsEmpty())
+      ||
+      ( !m_ownerConnection.IsEmpty() &&
+        (m_ownerConnection == connection->GetToken() ||
+         m_ownerConnection == connection->GetLocalPartyURL() ||
+         m_ownerConnection == connection->GetRemotePartyURL())))
     ShutDown();
 }
 
@@ -1845,11 +1852,11 @@ OpalMixerNodeManager::~OpalMixerNodeManager()
 void OpalMixerNodeManager::ShutDown()
 {
   PTRACE(4, "Mixer\tDestroying " << m_nodesByUID.GetSize() << '/' << m_nodesByName.GetSize() << " nodes");
-  while (!m_nodesByUID.IsEmpty()) {
-    PSafePtr<OpalMixerNode> node = m_nodesByUID.GetAt(0);
+
+  PSafePtr<OpalMixerNode> node;
+  while ((node = m_nodesByUID.GetAt(0)) != NULL)
     node->ShutDown();
-    m_nodesByUID.RemoveAt(node->GetGUID());
-  }
+
   GarbageCollection();
 }
 
