@@ -678,6 +678,13 @@ class OpalMixerEndPoint : public OpalLocalEndPoint, public OpalMixerNodeManager
       unsigned options,             ///< Option bit mask to pass to connection
       OpalConnection::StringOptions * stringOptions ///< Options to pass to connection
     );
+
+    /**Get Node Info for the given alias name.
+       Default behaviour returns a clone of m_adHocNodeInfo.
+      */
+    virtual OpalMixerNodeInfo * FindNodeInfo(
+      const PString & name
+    );
   //@}
 
   /**@name Member variable access */
