@@ -383,6 +383,7 @@ struct OpalMixerNodeInfo
 {
   OpalMixerNodeInfo(const char * name = NULL)
     : m_name(name)
+    , m_closeOnEmpty(false)
     , m_listenOnly(false)
     , m_sampleRate(OpalMediaFormat::AudioClockRate)
 #if OPAL_VIDEO
@@ -400,6 +401,7 @@ struct OpalMixerNodeInfo
   virtual OpalMixerNodeInfo * Clone() const { return new OpalMixerNodeInfo(*this); }
 
   PString  m_name;                ///< Name for mixer node.
+  bool     m_closeOnEmpty;        ///< Mixer node is removed when last participant exits
   bool     m_listenOnly;          ///< Mixer only transmits data to "listeners"
   unsigned m_sampleRate;          ///< Audio sample rate, usually 8000
 #if OPAL_VIDEO
@@ -1188,6 +1190,7 @@ class OpalMixerNode : public PSafeObject
     PStringSet             m_names;
     OpalMixerNodeInfo    * m_info;
     PTime                  m_creationTime;
+    PAtomicBoolean         m_shuttingDown;
 
     PSafeList<OpalConnection> m_connections;
     PString                   m_ownerConnection;
