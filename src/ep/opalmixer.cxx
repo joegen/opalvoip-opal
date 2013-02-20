@@ -1294,7 +1294,10 @@ void OpalMixerNode::DetachConnection(OpalConnection * connection)
   if (m_connections.Remove(connection))
     UseMediaPassThrough(0, connection);
 
-  m_manager.OnNodeStatusChanged(*this, OpalConferenceState::UserRemoved);
+  if (LockReadOnly()) {
+    m_manager.OnNodeStatusChanged(*this, OpalConferenceState::UserRemoved);
+    UnlockReadOnly();
+  }
 
   if ((m_info->m_closeOnEmpty && m_connections.IsEmpty())
       ||
