@@ -831,10 +831,8 @@ PSafePtr<OpalConnection> OpalMixerEndPoint::MakeConnection(OpalCall & call,
   node = FindNode(name);
   if (node == NULL) {
     OpalMixerNodeInfo * info = FindNodeInfo(name);
-    if (info != NULL) {
-      info->m_name = name;
+    if (info != NULL)
       node = AddNode(info);
-    }
   }
 
   if (node == NULL) {
@@ -901,9 +899,14 @@ OpalMixerConnection * OpalMixerEndPoint::CreateConnection(PSafePtr<OpalMixerNode
 }
 
 
-OpalMixerNodeInfo * OpalMixerEndPoint::FindNodeInfo(const PString &)
+OpalMixerNodeInfo * OpalMixerEndPoint::FindNodeInfo(const PString & name)
 {
-  return m_adHocNodeInfo != NULL ? m_adHocNodeInfo->Clone() : NULL;
+  if (m_adHocNodeInfo == NULL)
+    return NULL;
+
+  OpalMixerNodeInfo * info = m_adHocNodeInfo->Clone();
+  info->m_name = name;
+  return info;
 }
 
 
