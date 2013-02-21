@@ -1043,31 +1043,31 @@ class OpalMixerNode : public PSafeObject
   //@{
     /**Attach a connection.
       */
-    void AttachConnection(
+    virtual void AttachConnection(
       OpalConnection * connection  ///< Connection to attach
     );
 
     /**Detach a connection.
       */
-    void DetachConnection(
+    virtual void DetachConnection(
       OpalConnection * connection  ///< Connection to detach
     );
 
     /**Attach a stream for output.
       */
-    bool AttachStream(
+    virtual bool AttachStream(
       OpalMixerMediaStream * stream     ///< Stream to attach
     );
 
     /**Detach a stream for output.
       */
-    void DetachStream(
+    virtual void DetachStream(
       OpalMixerMediaStream * stream     ///< Stream to detach
     );
 
     /**Use media bypass if applicable.
       */
-    void UseMediaPassThrough(
+    virtual void UseMediaPassThrough(
       unsigned sessionID,                 ///< Session ID to bypass, 0 indicates all
       OpalConnection * connection = NULL  ///< Just deleted connection
     );
