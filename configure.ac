@@ -525,9 +525,10 @@ dnl MSWIN_DISPLAY  statistics,Statistics gathering support
 dnl MSWIN_DEFINE   statistics,OPAL_STATISTICS
 OPAL_SIMPLE_OPTION(statistics,OPAL_STATISTICS, [whether to enable statistics gathering support])
 
-dnl MSWIN_DISPLAY  fax,T.38 FAX protocol
-dnl MSWIN_DEFINE   fax,OPAL_FAX
-OPAL_SIMPLE_OPTION(fax,OPAL_FAX, [whether to enable T.38 FAX protocol support],[OPAL_T38_CAPABILITY],[OPAL_PTLIB_ASN],[OPAL_STATISTICS])
+dnl MSWIN_DISPLAY    fax,T.38 FAX protocol
+dnl MSWIN_IF_FEATURE fax,t38
+dnl MSWIN_DEFINE     fax,OPAL_FAX
+OPAL_SIMPLE_OPTION(  fax,OPAL_FAX, [whether to enable T.38 FAX protocol support],[OPAL_T38_CAPABILITY],[OPAL_PTLIB_ASN],[OPAL_STATISTICS])
 
 dnl MSWIN_DISPLAY    h450,H.450
 dnl MSWIN_IF_FEATURE h450,h323
