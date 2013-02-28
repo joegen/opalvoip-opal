@@ -80,7 +80,36 @@ PLUGINCODEC_LICENSE(
 
 const unsigned MaxBitRate = 16000000;
 
-static struct PluginCodec_Option const MaxFrameSize =
+static struct PluginCodec_Option const MaxFR =
+{
+  PluginCodec_IntegerOption,          // Option type
+  "max-fr",                           // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_MinMerge,               // Merge mode
+  "30",                               // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  "1",                                // Minimum value
+  "30"                                // Maximum value
+};
+
+static struct PluginCodec_Option const MaxFS =
+{
+  PluginCodec_IntegerOption,          // Option type
+  "max-fs",                           // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_MinMerge,               // Merge mode
+  "31",                               // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  "48",                               // Minimum value
+  "65535"                             // Maximum value
+};
+
+#if INCLUDE_OM_CUSTOM_PACKETIZATION
+static struct PluginCodec_Option const MaxFrameSizeOM =
 {
   PluginCodec_StringOption,           // Option type
   "SIP/SDP Max Frame Size",           // User visible name
@@ -90,6 +119,7 @@ static struct PluginCodec_Option const MaxFrameSize =
   "x-mx-max-size",                    // FMTP option name
   ""                                  // FMTP default value (as per RFC)
 };
+#endif
 
 static struct PluginCodec_Option const TemporalSpatialTradeOff =
 {
@@ -114,9 +144,7 @@ static struct PluginCodec_Option const SpatialResampling =
   "0",                                // Initial value
   "dynamicres",                       // FMTP option name
   "0",                                // FMTP default value
-  0,                                  // H.245 generic capability code and bit mask
-  "0",                                // Minimum value
-  "100"                               // Maximum value
+  0                                   // H.245 generic capability code and bit mask
 };
 
 static struct PluginCodec_Option const SpatialResamplingUp =
@@ -147,8 +175,36 @@ static struct PluginCodec_Option const SpatialResamplingDown =
   "100"                               // Maximum value
 };
 
-static struct PluginCodec_Option const * OptionTable[] = {
-  &MaxFrameSize,
+static struct PluginCodec_Option const PictureID =
+{
+  PluginCodec_EnumOption,             // Option type
+  "Picture ID Size",                  // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_AlwaysMerge,            // Merge mode
+  "Word",                             // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  "None:Byte:Word"                    // Enumeration
+};
+
+static struct PluginCodec_Option const OutputPartition =
+{
+  PluginCodec_BoolOption,             // Option type
+  "Output Partition",                 // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_AndMerge,               // Merge mode
+  "1",                                // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  0                                   // H.245 generic capability code and bit mask
+};
+
+static struct PluginCodec_Option const * OptionTableRFC[] = {
+  &MaxFR,
+  &MaxFS,
+  &PictureID,
+  &OutputPartition,
   &TemporalSpatialTradeOff,
   &SpatialResampling,
   &SpatialResamplingUp,
@@ -157,33 +213,120 @@ static struct PluginCodec_Option const * OptionTable[] = {
 };
 
 
+#if INCLUDE_OM_CUSTOM_PACKETIZATION
+static struct PluginCodec_Option const * OptionTableOM[] = {
+  &MaxFrameSizeOM,
+  &TemporalSpatialTradeOff,
+  &SpatialResampling,
+  &SpatialResamplingUp,
+  &SpatialResamplingDown,
+  NULL
+};
+#endif
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
-class VP8FormatOM : public PluginCodec_VideoFormat<VP8_CODEC>
+class VP8Format : public PluginCodec_VideoFormat<VP8_CODEC>
 {
+  private:
     typedef PluginCodec_VideoFormat<VP8_CODEC> BaseClass;
 
+  protected:
+    bool m_partition;
+
   public:
-    VP8FormatOM()
-      : BaseClass("VP8-OM", "X-MX-VP8", "VP8 Video Codec (Open Market)", MaxBitRate, OptionTable)
+    VP8Format(const char * formatName, const char * payloadName, const char * description, OptionsTable options)
+      : BaseClass(formatName, payloadName, description, MaxBitRate, options)
+      , m_partition(false)
     {
 #ifdef VPX_CODEC_USE_ERROR_CONCEALMENT
       if ((vpx_codec_get_caps(vpx_codec_vp8_dx()) & VPX_CODEC_CAP_ERROR_CONCEALMENT) != 0)
         m_flags |= PluginCodec_ErrorConcealment; // Prevent video update request on packet loss
 #endif
+#ifdef VPX_CODEC_CAP_OUTPUT_PARTITION
+      if ((vpx_codec_get_caps(vpx_codec_vp8_dx()) & VPX_CODEC_CAP_OUTPUT_PARTITION) != 0)
+        m_partition = true;
+#endif
+    }
+};
+
+
+class VP8FormatRFC : public VP8Format
+{
+  public:
+    VP8FormatRFC()
+      : VP8Format("VP8-WebM", "VP8", "VP8 Video Codec (RFC)", OptionTableRFC)
+    {
     }
 
 
     virtual bool ToNormalised(OptionMap & original, OptionMap & changed)
     {
-      OptionMap::iterator it = original.find(MaxFrameSize.m_name);
+      OptionMap::iterator it = original.find(MaxFS.m_name);
+      if (it != original.end() && !it->second.empty()) {
+        unsigned maxFrameSize = String2Unsigned(it->second);
+        ClampResolution(m_maxWidth, m_maxHeight, maxFrameSize);
+        Change(maxFrameSize,  original, changed, MaxFS.m_name);
+        ClampMax(m_maxWidth,  original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
+        ClampMax(m_maxHeight, original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
+        ClampMax(m_maxWidth,  original, changed, PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH);
+        ClampMax(m_maxHeight, original, changed, PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT);
+      }
+
+      it = original.find(MaxFR.m_name);
+      if (it != original.end() && !it->second.empty())
+        ClampMin(PLUGINCODEC_VIDEO_CLOCK/String2Unsigned(it->second), original, changed, PLUGINCODEC_OPTION_FRAME_TIME);
+
+      if (!m_partition)
+        ClampMax(0, original, changed, OutputPartition.m_name);
+
+      return true;
+    }
+
+
+    virtual bool ToCustomised(OptionMap & original, OptionMap & changed)
+    {
+      Change(original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH)*
+             original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT)/256,
+             original, changed, MaxFS.m_name);
+
+      Change(PLUGINCODEC_VIDEO_CLOCK/original.GetUnsigned(PLUGINCODEC_OPTION_FRAME_TIME),
+             original, changed, MaxFR.m_name);
+
+      if (!m_partition)
+        ClampMax(0, original, changed, OutputPartition.m_name);
+
+      return true;
+    }
+};
+
+static VP8FormatRFC VP8MediaFormatInfoRFC;
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+#if INCLUDE_OM_CUSTOM_PACKETIZATION
+
+class VP8FormatOM : public VP8Format
+{
+  public:
+    VP8FormatOM()
+      : VP8Format("VP8-OM", "X-MX-VP8", "VP8 Video Codec (Open Market)", OptionTableOM)
+    {
+    }
+
+
+    virtual bool ToNormalised(OptionMap & original, OptionMap & changed)
+    {
+      OptionMap::iterator it = original.find(MaxFrameSizeOM.m_name);
       if (it != original.end() && !it->second.empty()) {
         std::stringstream strm(it->second);
         unsigned maxWidth, maxHeight;
         char x;
         strm >> maxWidth >> x >> maxHeight;
         if (maxWidth < 32 || maxHeight < 32) {
-          PTRACE(1, MY_CODEC_LOG, "Invalid " << MaxFrameSize.m_name << ", was \"" << it->second << '"');
+          PTRACE(1, MY_CODEC_LOG, "Invalid " << MaxFrameSizeOM.m_name << ", was \"" << it->second << '"');
           return false;
         }
         ClampMax(maxWidth,  original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
@@ -201,15 +344,14 @@ class VP8FormatOM : public PluginCodec_VideoFormat<VP8_CODEC>
       unsigned maxHeight = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
       std::stringstream strm;
       strm << maxWidth << 'x' << maxHeight;
-      Change(strm.str().c_str(), original, changed, MaxFrameSize.m_name);
+      Change(strm.str().c_str(), original, changed, MaxFrameSizeOM.m_name);
       return true;
     }
 };
 
-static PluginCodec_VideoFormat<VP8_CODEC> VP8MediaFormatInfoRFC("VP8-WebM", "VP8", "VP8 Video Codec (RFC)", MaxBitRate, OptionTable);
-#if INCLUDE_OM_CUSTOM_PACKETIZATION
 static VP8FormatOM VP8MediaFormatInfoOM;
-#endif
+
+#endif // INCLUDE_OM_CUSTOM_PACKETIZATION
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -242,10 +384,12 @@ enum Orientation {
 
 class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
 {
+  private:
     typedef PluginVideoEncoder<VP8_CODEC> BaseClass;
 
   protected:
     vpx_codec_enc_cfg_t        m_config;
+    unsigned                   m_initFlags;
     vpx_codec_ctx_t            m_codec;
     vpx_codec_iter_t           m_iterator;
     const vpx_codec_cx_pkt_t * m_packet;
@@ -254,6 +398,7 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
   public:
     VP8Encoder(const PluginCodec_Definition * defn)
       : BaseClass(defn)
+      , m_initFlags(0)
       , m_iterator(NULL)
       , m_packet(NULL)
       , m_offset(0)
@@ -313,7 +458,7 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
       if (m_keyFramePeriod != 0)
         m_config.kf_min_dist = m_config.kf_max_dist = m_keyFramePeriod;
       else {
-        m_config.kf_min_dist = 1;
+        m_config.kf_min_dist = 0;
         m_config.kf_max_dist = 10*PLUGINCODEC_VIDEO_CLOCK/m_frameTime;  // No slower than once every 10 seconds
       }
 
@@ -330,7 +475,7 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
       m_config.g_w = m_width;
       m_config.g_h = m_height;
       vpx_codec_destroy, (&m_codec);
-      return !IS_ERROR(vpx_codec_enc_init, (&m_codec, vpx_codec_vp8_cx(), &m_config, 0));
+      return !IS_ERROR(vpx_codec_enc_init, (&m_codec, vpx_codec_vp8_cx(), &m_config, m_initFlags));
     }
 
 
@@ -402,25 +547,86 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
 
 class VP8EncoderRFC : public VP8Encoder
 {
+  protected:
+    unsigned m_pictureId;
+    unsigned m_pictureIdSize;
+
   public:
     VP8EncoderRFC(const PluginCodec_Definition * defn)
       : VP8Encoder(defn)
+      , m_pictureId(1)
+      , m_pictureIdSize(0)
     {
+    }
+
+
+    virtual bool SetOption(const char * optionName, const char * optionValue)
+    {
+      if (strcasecmp(optionName, PictureID.m_name) == 0) {
+        if (strcasecmp(optionValue, "Byte") == 0) {
+          if (m_pictureIdSize != 0x80) {
+            m_pictureIdSize = 0x80;
+            m_optionsSame = false;
+          }
+          return true;
+        }
+
+        if (strcasecmp(optionValue, "Word") == 0) {
+          if (m_pictureIdSize != 0x8000) {
+            m_pictureIdSize = 0x8000;
+            m_optionsSame = false;
+          }
+          return true;
+        }
+
+        if (strcasecmp(optionValue, "None") == 0) {
+          if (m_pictureIdSize != 0) {
+            m_pictureIdSize = 0;
+            m_optionsSame = false;
+          }
+          return true;
+        }
+
+        PTRACE(2, MY_CODEC_LOG, "Unknown picture ID size: \"" << optionValue << '"');
+        return false;
+      }
+
+      if (strcasecmp(optionName, OutputPartition.m_name) == 0)
+        return SetOptionBit(m_initFlags, VPX_CODEC_USE_OUTPUT_PARTITION, optionValue);
+
+      return VP8Encoder::SetOption(optionName, optionValue);
     }
 
 
     virtual void Packetise(PluginCodec_RTP & rtp)
     {
-      size_t headerSize = 2;
+      size_t headerSize = 1;
 
-      rtp[0] = rtp[1] = 0;
+      rtp[0] = 0;
 
       if (m_offset == 0)
-        rtp[0] |= 0x10;
+        rtp[0] |= 0x10; // Add S bit if start of partition
 
-      if ((m_packet->data.frame.flags&VPX_FRAME_IS_KEY) != 0) {
-        rtp[0] |= 0x20;
-        rtp[1] |= 0x01;
+      if (m_packet->data.frame.partition_id >= 0)
+        rtp[0] |= (uint8_t)(m_packet->data.frame.partition_id&0x0f);
+
+      if ((m_packet->data.frame.flags&VPX_FRAME_IS_DROPPABLE) != 0)
+        rtp[0] |= 0x20; // Add N bit for non-reference frame
+
+      if (m_pictureIdSize > 0) {
+        headerSize += 2;
+        rtp[0] |= 0x80; // Add X bit for X (extension) bit mask byte
+        rtp[1] |= 0x80; // Add I bit for picture ID
+        if (m_pictureId < 128)
+          rtp[2] = (uint8_t)m_pictureId;
+        else {
+          ++headerSize;
+          rtp[2] = (uint8_t)(0x80 | (m_pictureId >> 8));
+          rtp[3] = (uint8_t)m_pictureId;
+        }
+
+        if (m_offset == 0 && ++m_pictureId >= m_pictureIdSize)
+          m_pictureId = 0;
       }
 
       size_t fragmentSize = GetPacketSpace(rtp, m_packet->data.frame.sz - m_offset + headerSize) - headerSize;
@@ -484,6 +690,7 @@ class VP8EncoderOM : public VP8Encoder
 
 class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
 {
+  private:
     typedef PluginVideoDecoder<VP8_CODEC> BaseClass;
 
   protected:
@@ -639,16 +846,26 @@ class VP8DecoderRFC : public VP8Decoder
         return false;
 
       size_t headerSize = 1;
-      if ((rtp[0]&0x80) != 0) {
-        ++headerSize;
-        if ((rtp[1]&0x80) != 0)
-          ++headerSize;
-        if ((rtp[1]&0x40) != 0)
-          ++headerSize;
-        if ((rtp[1]&0x20) != 0)
-          ++headerSize;
-        if ((rtp[1]&0x10) != 0)
-          ++headerSize;
+      if ((rtp[0]&0x80) != 0) { // Check X bit
+        ++headerSize;           // Allow for X byte
+
+        if ((rtp[1]&0x80) != 0) { // Check I bit
+          ++headerSize;           // Allow for I field
+          if ((rtp[2]&0x80) != 0) // > 7 bit picture ID
+            ++headerSize;         // Allow for extra bits of I field
+        }
+
+        if ((rtp[1]&0x40) != 0) // Check L bit
+          ++headerSize;         // Allow for L byte
+
+        if ((rtp[1]&0x30) != 0) // Check T or K bit
+          ++headerSize;         // Allow for T/K byte
+      }
+
+      if ((rtp[0]&0x10) != 0 && !m_fullFrame.empty()) {
+        PTRACE(3, MY_CODEC_LOG, "Missing start to frame, ignoring till next key frame.");
+        m_ignoreTillKeyFrame = true;
+        return false;
       }
 
       Accumulate(rtp.GetPayloadPtr()+headerSize, rtp.GetPayloadSize()-headerSize);
