@@ -36,6 +36,8 @@
 
 #include <opal/buildopts.h>
 
+#if OPAL_AEC
+
 #include <rtp/rtp.h>
 #include <ptclib/qchannel.h>
 
@@ -118,6 +120,9 @@ private:
   void * e_buf;
   void * noise;
 };
+
+
+#endif // OPAL_AEC
 
 #endif // OPAL_CODEC_ECHOCANCEL_H
 
