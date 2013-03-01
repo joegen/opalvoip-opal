@@ -3,6 +3,14 @@
  *
  * Java interface for OPAL
  *
+ * This primarily exists for the MSVC environment as when you go "Rebuild All"
+ * it will delete all output products, including the java_swig_wrapper.cxx
+ * from the custom build stage that runs swig.exe. All is fine if you have a
+ * swig.exe, but if you don't it then it can't be regenerated. We would like
+ * people without swig.exe to still be able to build the system, so we
+ * insulate the .cxx file, which is provided in SVN and tarballs, from being
+ * deleted by copying to a .inc file, and including that here.
+ *
  * Open Phone Abstraction Library (OPAL)
  * Formally known as the Open H323 project.
  *
@@ -30,8 +38,6 @@
  */
 
 #include <opal/buildopts.h>
-
-#pragma warning(disable:4206)
 
 #if OPAL_JAVA
 #include "java_swig_wrapper.inc"
