@@ -33,7 +33,9 @@
 #pragma implementation "echocancel.h"
 #endif
 
-#include <opal/buildopts.h>
+#include <codec/echocancel.h>
+
+#if OPAL_AEC
 
 extern "C" {
 #ifdef OPAL_SYSTEM_SPEEX
@@ -49,8 +51,6 @@ extern "C" {
 #include "speex/libspeex/speex_preprocess.h"
 #endif
 };
-
-#include <codec/echocancel.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -214,3 +214,6 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, P_INT_PTR)
   /* Use the result of the echo cancelation as capture frame */
   memcpy(input_frame.GetPayloadPtr(), e_buf, input_frame.GetPayloadSize());
 }
+
+
+#endif // OPAL_AEC
