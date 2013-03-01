@@ -33,7 +33,7 @@
 #pragma implementation "echocancel.h"
 #endif
 
-#include <codec/echocancel.h>
+#include <opal/buildopts.h>
 
 #if OPAL_AEC
 
@@ -51,6 +51,9 @@ extern "C" {
 #include "speex/libspeex/speex_preprocess.h"
 #endif
 };
+
+#include <codec/echocancel.h>
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
