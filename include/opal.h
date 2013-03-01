@@ -1301,33 +1301,36 @@ typedef struct OpalParamCallCleared {
 } OpalParamCallCleared;
 
 
+union OpalMessageParam {
+  const char *             m_commandError;       ///< Used by OpalIndCommandError
+  OpalParamGeneral         m_general;            ///< Used by OpalCmdSetGeneralParameters
+  OpalParamProtocol        m_protocol;           ///< Used by OpalCmdSetProtocolParameters
+  OpalParamRegistration    m_registrationInfo;   ///< Used by OpalCmdRegistration
+  OpalStatusRegistration   m_registrationStatus; ///< Used by OpalIndRegistration
+  OpalParamSetUpCall       m_callSetUp;          ///< Used by OpalCmdSetUpCall/OpalIndProceeding/OpalIndAlerting/OpalIndEstablished
+  const char *             m_callToken;          ///< Used by OpalCmdHoldcall/OpalCmdRetrieveCall/OpalCmdStopRecording
+  OpalStatusIncomingCall   m_incomingCall;       ///< Used by OpalIndIncomingCall
+  OpalParamAnswerCall      m_answerCall;         ///< Used by OpalCmdAnswerCall/OpalCmdAlerting
+  OpalStatusUserInput      m_userInput;          ///< Used by OpalIndUserInput/OpalCmdUserInput
+  OpalStatusMessageWaiting m_messageWaiting;     ///< Used by OpalIndMessageWaiting
+  OpalStatusLineAppearance m_lineAppearance;     ///< Used by OpalIndLineAppearance
+  OpalStatusCallCleared    m_callCleared;        ///< Used by OpalIndCallCleared
+  OpalParamCallCleared     m_clearCall;          ///< Used by OpalCmdClearCall
+  OpalStatusMediaStream    m_mediaStream;        ///< Used by OpalIndMediaStream/OpalCmdMediaStream
+  OpalParamSetUserData     m_setUserData;        ///< Used by OpalCmdSetUserData
+  OpalParamRecording       m_recording;          ///< Used by OpalCmdStartRecording
+  OpalStatusTransferCall   m_transferStatus;     ///< Used by OpalIndTransferCall
+  OpalStatusIVR            m_ivrStatus;          ///< Used by OpalIndCompletedIVR
+};
+
+
 /** Message to/from OPAL system.
     This is passed via the OpalGetMessage() or OpalSendMessage() functions.
   */
-struct OpalMessage {
-  OpalMessageType m_type;   ///< Type of message
-  union {
-    const char *             m_commandError;       ///< Used by OpalIndCommandError
-    OpalParamGeneral         m_general;            ///< Used by OpalCmdSetGeneralParameters
-    OpalParamProtocol        m_protocol;           ///< Used by OpalCmdSetProtocolParameters
-    OpalParamRegistration    m_registrationInfo;   ///< Used by OpalCmdRegistration
-    OpalStatusRegistration   m_registrationStatus; ///< Used by OpalIndRegistration
-    OpalParamSetUpCall       m_callSetUp;          ///< Used by OpalCmdSetUpCall/OpalIndProceeding/OpalIndAlerting/OpalIndEstablished
-    const char *             m_callToken;          ///< Used by OpalCmdHoldcall/OpalCmdRetrieveCall/OpalCmdStopRecording
-    OpalStatusIncomingCall   m_incomingCall;       ///< Used by OpalIndIncomingCall
-    OpalParamAnswerCall      m_answerCall;         ///< Used by OpalCmdAnswerCall/OpalCmdAlerting
-    OpalStatusUserInput      m_userInput;          ///< Used by OpalIndUserInput/OpalCmdUserInput
-    OpalStatusMessageWaiting m_messageWaiting;     ///< Used by OpalIndMessageWaiting
-    OpalStatusLineAppearance m_lineAppearance;     ///< Used by OpalIndLineAppearance
-    OpalStatusCallCleared    m_callCleared;        ///< Used by OpalIndCallCleared
-    OpalParamCallCleared     m_clearCall;          ///< Used by OpalCmdClearCall
-    OpalStatusMediaStream    m_mediaStream;        ///< Used by OpalIndMediaStream/OpalCmdMediaStream
-    OpalParamSetUserData     m_setUserData;        ///< Used by OpalCmdSetUserData
-    OpalParamRecording       m_recording;          ///< Used by OpalCmdStartRecording
-    OpalStatusTransferCall   m_transferStatus;     ///< Used by OpalIndTransferCall
-    OpalStatusIVR            m_ivrStatus;          ///< Used by OpalIndCompletedIVR
-  } m_param;
-};
+typedef struct OpalMessage {
+  OpalMessageType        m_type;    ///< Type of message
+  union OpalMessageParam m_param;   ///< Context sensitive parameter based on m_type
+} OpalMessage;
 
 
 #ifdef __cplusplus

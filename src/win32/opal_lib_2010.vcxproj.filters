@@ -106,6 +106,12 @@
     <Filter Include="Source Files\RTP\libSRTP\Android">
       <UniqueIdentifier>{f1df817b-4820-4c36-a791-a3a1745649b9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\SWIG">
+      <UniqueIdentifier>{1ddf6222-3ca5-4665-a093-554b67281c82}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\SWIG\Java Files">
+      <UniqueIdentifier>{f5b9cb75-61b3-4f16-86b9-b171460a4bd8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\asn\h4506.cxx">
@@ -657,6 +663,12 @@
     <ClCompile Include="..\codec\mpeg4mf.cxx">
       <Filter>Source Files\Codec</Filter>
     </ClCompile>
+    <ClCompile Include="..\java\java_swig_wrapper.cxx">
+      <Filter>Source Files\SWIG</Filter>
+    </ClCompile>
+    <ClCompile Include="..\java\java_msvc_wrapper.cxx">
+      <Filter>Source Files\SWIG</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\codec\echocancel.h">
@@ -1203,6 +1215,9 @@
     </CustomBuild>
     <CustomBuild Include="..\..\revision.h.in">
       <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\java\opal.i">
+      <Filter>Source Files\SWIG</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
