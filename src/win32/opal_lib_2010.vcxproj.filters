@@ -100,6 +100,12 @@
     <Filter Include="Header Files\Endpoints">
       <UniqueIdentifier>{e5ff36ca-f78c-42fa-b87d-03387fd6d751}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\RTP\libSRTP\Win32">
+      <UniqueIdentifier>{9afd8835-1f4f-41df-9339-89bc23f2d6fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\RTP\libSRTP\Android">
+      <UniqueIdentifier>{f1df817b-4820-4c36-a791-a3a1745649b9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\asn\h4506.cxx">
@@ -1184,8 +1190,11 @@
     <ClInclude Include="..\..\include\ep\opalmixer.h">
       <Filter>Header Files\Endpoints</Filter>
     </ClInclude>
-    <ClInclude Include="..\rtp\libsrtp\crypto\include\config.h">
-      <Filter>Source Files\RTP\libSRTP</Filter>
+    <ClInclude Include="..\rtp\libsrtp\Android\config.h">
+      <Filter>Source Files\RTP\libSRTP\Android</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rtp\libsrtp\Win32\config.h">
+      <Filter>Source Files\RTP\libSRTP\Win32</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1194,9 +1203,6 @@
     </CustomBuild>
     <CustomBuild Include="..\..\revision.h.in">
       <Filter>Header Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="..\rtp\libsrtp\config.hw">
-      <Filter>Source Files\RTP\libSRTP</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>

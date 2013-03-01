@@ -171,3 +171,6 @@
 
 
 #define PACK_STRUCTURE
+
+// Need this for correct ntohs etc
+#include <sys/endian.h>
