@@ -104,12 +104,21 @@ typedef struct OpalMessage OpalMessage;
     s used. There are two categories, network protocols (sip, h323, iax & pstn)
     and non-network protocols (pc, local, pots & ivr).
 
-    Additional options are:
+    Additional options are in similar form to command line arguments:
         <table border=0>
-        <tr><td>TraceLevel=1     <td>Level for tracing.
-        <tr><td>TraceAppend      <td>Append to the trace file.
-        <tr><td>TraceFile="name" <td>Set the filename for trace output. Note quotes are
-                                     required if spaces are in filename.
+        <tr><td>-t or --trace         <td>Enable trace log. Multiple instances
+                                          increase the trace level.
+        <tr><td>-l or --level X       <td>Enable trace log and set level to X.
+        <tr><td>-o or --output "name" <td>Set the filename for trace log output.
+        <tr><td>-a or --append        <td>Append to the trace log file.
+        <tr><td>-c or --config "dir"  <td>Configuration file or directory.
+        <tr><td>-p or --plugin "dir"  <td>Plugin module directory.
+        <tr><td>-m or --maaufacturer "str" <td>Manufacturer name for application.
+        <tr><td>-n or --name "str"    <td>Product name for application.
+        <tr><td>-M or --major X       <td>Major version number.
+        <tr><td>-N or --minor X       <td>Minor version number.
+        <tr><td>-R or --status X      <td>Code status ("alpha", "beta" or "release").
+        <tr><td>-B or --build X       <td>Build/patch number.
         </table>
     It should also be noted that there must not be spaces around the '=' sign
     in the above options.
