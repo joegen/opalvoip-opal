@@ -149,6 +149,7 @@
 #else // OPAL_H323
   #define H323_DISABLE_H225 1
   #define H323_DISABLE_H235 1
+  #define H323_DISABLE_H235_SRTP 1
   #define H323_DISABLE_H245 1
 #endif // OPAL_H323
 
