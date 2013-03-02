@@ -1586,13 +1586,13 @@ configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform) --no-search --exclude-
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)\..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)\..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">cd $(ProjectDir)\..\..
-configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform) --no-search --disable-capi --disable-dahdi --disable-lid --disable-t38 --disable-aec
+configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform) --no-search --disable-capi --disable-dahdi --disable-lid --disable-t38 --disable-aec --disable-iax2 --disable-h323 --disable-video
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">cd $(ProjectDir)\..\..
-configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform) --no-search --disable-capi --disable-dahdi --disable-lid --disable-t38
+configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform) --no-search --disable-capi --disable-dahdi --disable-lid --disable-t38 --disable-aec --disable-iax2 --disable-h323 --disable-video
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Android'">cd $(ProjectDir)\..\..
-configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform) --no-search --disable-capi --disable-dahdi --disable-lid --disable-t38
+configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform) --no-search --disable-capi --disable-dahdi --disable-lid --disable-t38 --disable-aec --disable-iax2 --disable-h323 --disable-video
 </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">Configuring Build Options</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">Configuring Build Options</Message>
