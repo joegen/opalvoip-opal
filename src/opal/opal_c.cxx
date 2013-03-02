@@ -46,6 +46,7 @@
 #include <lids/lidep.h>
 #include <t38/t38proto.h>
 #include <ep/ivr.h>
+#include <ep/opalmixer.h>
 
 #include <queue>
 
@@ -217,26 +218,15 @@ class SIPEndPoint_C : public SIPEndPoint
 class OpalManager_C : public OpalManager
 {
   public:
-    OpalManager_C(unsigned version)
-      : m_localEP(NULL)
-#if OPAL_HAS_PCSS
-      , m_pcssEP(NULL)
-#endif
-#if OPAL_IVR
-      , m_ivrEP(NULL)
-#endif
-      , m_apiVersion(version)
-      , m_manualAlerting(false)
-      , m_messagesAvailable(0, INT_MAX)
-    {
-    }
+    OpalManager_C(
+      unsigned version,
+      const PArgList & args
+    );
 
     ~OpalManager_C()
     {
       ShutDownEndpoints();
     }
-
-    bool Initialise(const PCaselessString & options);
 
     void PostMessage(OpalMessageBuffer & message);
     OpalMessage * GetMessage(unsigned timeout);
@@ -255,7 +245,7 @@ class OpalManager_C : public OpalManager
 
     void SendIncomingCallInfo(const OpalConnection & connection);
 
-  private:
+  protected:
     void HandleSetGeneral    (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleSetProtocol   (const OpalMessage & message, OpalMessageBuffer & response);
     void HandleRegistration  (const OpalMessage & message, OpalMessageBuffer & response);
@@ -283,6 +273,9 @@ class OpalManager_C : public OpalManager
 #if OPAL_IVR
     OpalIVREndPoint_C   * m_ivrEP;
 #endif
+#if OPAL_HAS_MIXER
+    OpalMixerEndPoint   * m_mcuEP;
+#endif
 
     unsigned                  m_apiVersion;
     bool                      m_manualAlerting;
@@ -293,60 +286,48 @@ class OpalManager_C : public OpalManager
 };
 
 
-class PProcess_C : public PLibraryProcess
+static PProcess::CodeStatus GetCodeStatus(const PString & str)
 {
-public:
-  PProcess_C(const PCaselessString & options)
-  {
-#if PTRACING
-    unsigned level = 0;
-    static char const TraceLevelKey[] = "TraceLevel=";
-    PINDEX pos = options.Find(TraceLevelKey);
-    if (pos != P_MAX_INDEX)
-      level = options.Mid(pos+sizeof(TraceLevelKey)-1).AsUnsigned();
+  static PConstCaselessString alpha("alpha");
+  if (alpha.NumCompare(str) == PObject::EqualTo)
+    return PProcess::AlphaCode;
 
-#ifdef WIN32
-    PString filename = "DEBUGSTREAM";
-#else
-    PString filename = "stderr";
-#endif
-    static char const TraceFileKey[] = "TraceFile=";
-    pos = options.Find(TraceFileKey);
-    if (pos != P_MAX_INDEX) {
-      pos += sizeof(TraceFileKey) - 1;
-      PINDEX end;
-      if (options[pos] == '"')
-        end = options.Find('"', ++pos);
-      else
-        end = options.Find(' ', pos);
-      filename = options(pos, end-1);
-    }
+  static PConstCaselessString beta("beta");
+  if (beta.NumCompare(str) == PObject::EqualTo)
+    return PProcess::BetaCode;
 
-    unsigned traceOpts = PTrace::Timestamp|PTrace::Thread|PTrace::Blocks;
-    if (options.Find("TraceAppend") != P_MAX_INDEX)
-      traceOpts |= PTrace::AppendToFile;
-
-    PTrace::Initialise(level, filename, traceOpts);
-    PTRACE(1, "OpalC\tStart Up, OPAL version " << OpalGetVersion());
-#endif
-  }
-
-  ~PProcess_C()
-  {
-    PTRACE(1, "OpalC\tShut Down.");
-  }
-};
+  return PProcess::ReleaseCode;
+}
 
 struct OpalHandleStruct
 {
-  OpalHandleStruct(unsigned version, const PCaselessString & options)
-    : process(options)
-    , manager(version)
+  OpalHandleStruct(unsigned version, const PArgList & args)
+    : m_process(args.GetOptionString("manufacturer", "OPAL VoIP"),
+                args.GetOptionString("name", "OPAL"),
+                args.GetOptionString("major", "1").AsUnsigned(),
+                args.GetOptionString("minor", "0").AsUnsigned(),
+                GetCodeStatus(args.GetOptionString("status")),
+                args.GetOptionString("build", "0").AsUnsigned(),
+                true)
   {
+    if (args.HasOption("config"))
+      m_process.SetConfigurationPath(args.GetOptionString("config"));
+
+    if (args.HasOption("plugin"))
+      PPluginManager::AddPluginDirs(args.GetOptionString("plugin"));
+
+    m_process.Startup();
+
+    m_manager = new OpalManager_C(version, args);
   }
 
-  PProcess_C     process;
-  OpalManager_C  manager;
+  ~OpalHandleStruct()
+  {
+    delete m_manager;
+  }
+
+  PLibraryProcess m_process;
+  OpalManager_C * m_manager;
 };
 
 
@@ -808,147 +789,145 @@ void SIPEndPoint_C::OnDialogInfoReceived(const SIPDialogNotification & info)
 
 ///////////////////////////////////////
 
-bool OpalManager_C::Initialise(const PCaselessString & options)
+static bool CheckProto(const PArgList & args, const char * proto, PString & defName, PINDEX & defPos)
+{
+  PCaselessString protocol = proto;
+  protocol.Delete(protocol.Find(':'), P_MAX_INDEX);
+
+  PINDEX pos = 0;
+  while (pos < args.GetCount()) {
+    if (protocol == args[pos]) {
+      if (pos < defPos) {
+        defName = proto;
+        defPos = pos;
+      }
+      return true;
+    }
+  }
+
+  return false;
+}
+
+
+OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
+  : m_localEP(NULL)
+#if OPAL_HAS_PCSS
+  , m_pcssEP(NULL)
+#endif
+#if OPAL_IVR
+  , m_ivrEP(NULL)
+#endif
+#if OPAL_HAS_MIXER
+  , m_mcuEP(NULL)
+#endif
+  , m_apiVersion(version)
+  , m_manualAlerting(false)
+  , m_messagesAvailable(0, INT_MAX)
 {
   PString defProto, defUser;
   PINDEX  defProtoPos = P_MAX_INDEX, defUserPos = P_MAX_INDEX;
 
 #if OPAL_H323
-  PINDEX h323Pos = options.Find("h323");
-  if (h323Pos < defProtoPos) {
-    defProto = "h323";
-    defProtoPos = h323Pos;
-  }
+  bool hasH323 = CheckProto(args, "h323", defProto, defProtoPos);
 #endif
 
 #if OPAL_SIP
-  PINDEX sipPos = options.Find("sip");
-  if (sipPos < defProtoPos) {
-    defProto = "sip";
-    defProtoPos = sipPos;
-  }
+  bool hasSIP = CheckProto(args, "sip", defProto, defProtoPos);
 #endif
 
 #if OPAL_IAX2
-  PINDEX iaxPos = options.Find("iax2");
-  if (iaxPos < defProtoPos) {
-    defProto = "iax2:<da>";
-    defProtoPos = iaxPos;
-  }
+  bool hasIAX2 = CheckProto(args, "iax2", defProto, defProtoPos);
 #endif
 
 #if OPAL_LID
-  PINDEX potsPos = options.Find("pots");
-  if (potsPos < defUserPos) {
-    defUser = "pots:<dn>";
-    defUserPos = potsPos;
-  }
-
-  PINDEX pstnPos = options.Find("pstn");
-  if (pstnPos < defProtoPos) {
-    defProto = "pstn:<dn>";
-    defProtoPos = pstnPos;
-  }
+  bool hasPOTS = CheckProto(args, "pots:<dn>", defUser, defUserPos);
+  bool hasPSTN = CheckProto(args, "pstn:<dn>", defProto, defProtoPos);
 #endif
 
 #if OPAL_FAX
-  PINDEX faxPos = options.Find("fax");
-  if (faxPos < defUserPos) {
-    defUser = "fax:";
-    defUserPos = faxPos;
-  }
-
-  PINDEX t38Pos = options.Find("t38");
-  if (t38Pos < defUserPos) {
-    defUser = "t38:";
-    defUserPos = t38Pos;
-  }
+  bool hasFAX = CheckProto(args, "fax:", defUser, defUserPos);
+  bool hasT38 = CheckProto(args, "t38:", defUser, defUserPos);
 #endif
 
-  PINDEX pcPos = options.Find("pc");
-  if (pcPos < defUserPos) {
-    defUser = "pc:*";
-    defUserPos = pcPos;
-  }
-
-  PINDEX localPos = options.Find("local");
-  if (localPos < defUserPos) {
-    defUser = "local:<du>";
-    defUserPos = localPos;
-  }
-
+  bool hasPC = CheckProto(args, "pc:*", defUser, defUserPos);
+  bool hasLocal = CheckProto(args, "local:<du>", defUser, defUserPos);
 
 #if OPAL_IVR
-  PINDEX ivrPos = options.Find("ivr");
-  if (ivrPos < defUserPos) {
-    defUser = "ivr:";
-    defUserPos = localPos;
-  }
+  bool hasIVR = CheckProto(args, "ivr:", defUser, defUserPos);
+#endif
+
+#if OPAL_HAS_MIXER
+  bool hasMIX = CheckProto(args, "mcu:", defUser, defUserPos);
 #endif
 
 #if OPAL_H323
-  if (h323Pos != P_MAX_INDEX) {
+  if (hasH323) {
     new H323EndPoint(*this);
     AddRouteEntry("h323:.*=" + defUser);
   }
 #endif
 
 #if OPAL_SIP
-  if (sipPos != P_MAX_INDEX) {
+  if (hasSIP) {
     new SIPEndPoint_C(*this);
     AddRouteEntry("sip:.*=" + defUser);
   }
 #endif
 
 #if OPAL_IAX2
-  if (options.Find("iax2") != P_MAX_INDEX) {
+  if (hasIAX2) {
     new IAX2EndPoint(*this);
     AddRouteEntry("iax2:.*=" + defUser);
   }
 #endif
 
 #if OPAL_LID
-  if (potsPos != P_MAX_INDEX || pstnPos != P_MAX_INDEX) {
+  if (hasPOTS || hasPSTN) {
     new OpalLineEndPoint(*this);
 
-    if (potsPos != P_MAX_INDEX)
+    if (hasPOTS)
       AddRouteEntry("pots:.*=" + defProto + ":<da>");
-    if (pstnPos != P_MAX_INDEX)
+    if (hasPSTN)
       AddRouteEntry("pstn:.*=" + defUser + ":<da>");
   }
 #endif
 
 #if OPAL_FAX
-  if (faxPos != P_MAX_INDEX || t38Pos != P_MAX_INDEX) {
+  if (hasFAX || hasT38) {
     new OpalFaxEndPoint(*this);
 
-    if (faxPos != P_MAX_INDEX)
+    if (hasFAX)
       AddRouteEntry("fax:.*=" + defProto + ":<da>");
-    if (t38Pos != P_MAX_INDEX)
+    if (hasT38)
       AddRouteEntry("t38:.*=" + defUser + ":<da>");
   }
 #endif
 
 #if OPAL_HAS_PCSS
-  if (pcPos != P_MAX_INDEX) {
+  if (hasPC) {
     m_pcssEP = new OpalPCSSEndPoint_C(*this);
     AddRouteEntry("pc:.*=" + defProto + ":<da>");
   }
 #endif
 
-  if (localPos != P_MAX_INDEX) {
+  if (hasLocal) {
     m_localEP = new OpalLocalEndPoint_C(*this);
     AddRouteEntry("local:.*=" + defProto + ":<da>");
   }
 
 #if OPAL_IVR
-  if (ivrPos != P_MAX_INDEX) {
+  if (hasIVR) {
     m_ivrEP = new OpalIVREndPoint_C(*this);
     AddRouteEntry("ivr:.*=" + defProto + ":<da>");
   }
 #endif
 
-  return true;
+#if OPAL_HAS_MIXER
+  if (hasMIX) {
+    m_mcuEP = new OpalMixerEndPoint(*this, "mcu");
+    AddRouteEntry("mcu:.*=" + defProto + ":<da>");
+  }
+#endif
 }
 
 
@@ -2193,11 +2172,27 @@ extern "C" {
 
   OpalHandle OPAL_EXPORT OpalInitialise(unsigned * version, const char * options)
   {
-    PCaselessString optionsString = IsNullString(options) ?
-#if OPAL_HAS_PCSS
-            "pcss "
-#endif
-            "h323 sip iax2 pots pstn fax t38 ivr" : options;
+    PCaselessString optionsString = IsNullString(options) ? "pcss h323 sip iax2 pots pstn fax t38 ivr" : options;
+
+    // For backward compatibility
+    optionsString.Replace("TraceLevel=", "--level ",  true);
+    optionsString.Replace("TraceFile=",  "--output ", true);
+    optionsString.Replace("TraceAppend", "--append", true);
+
+    PArgList args(optionsString,
+                  "t-trace."
+                  "l-level:"
+                  "o-output:"
+                  "a-append."
+                  "c-config:"
+                  "p-plugin:"
+                  "m-manufacturer:"
+                  "n-name:"
+                  "v-version:", false);
+    if (!PAssert(args.IsParsed(), "Invalid options: " + args.GetParseError()))
+      return NULL;
+
+    PTRACE_INITIALISE(args);
 
     unsigned callerVersion = 1;
     if (version != NULL) {
@@ -2206,11 +2201,12 @@ extern "C" {
         *version = OPAL_C_API_VERSION;
     }
 
-    OpalHandle opal = new OpalHandleStruct(callerVersion, optionsString);
-    if (opal->manager.Initialise(optionsString))
-      return opal;
+    OpalHandle handle = new OpalHandleStruct(callerVersion, args);
+    if (!handle->m_manager->GetEndPoints().IsEmpty())
+      return handle;
 
-    delete opal;
+    PTRACE(1, "OpalC API\tNo endpoints were available or selected using \"" << optionsString << '"');
+    delete handle;
     return NULL;
   }
 
@@ -2223,13 +2219,13 @@ extern "C" {
 
   OpalMessage * OPAL_EXPORT OpalGetMessage(OpalHandle handle, unsigned timeout)
   {
-    return handle == NULL ? NULL : handle->manager.GetMessage(timeout);
+    return handle == NULL ? NULL : handle->m_manager->GetMessage(timeout);
   }
 
 
   OpalMessage * OPAL_EXPORT OpalSendMessage(OpalHandle handle, const OpalMessage * message)
   {
-    return handle == NULL ? NULL : handle->manager.SendMessage(message);
+    return handle == NULL ? NULL : handle->m_manager->SendMessage(message);
   }
 
 
