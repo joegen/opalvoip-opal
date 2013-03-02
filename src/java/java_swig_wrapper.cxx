@@ -213,6 +213,7 @@ static void SWIGUNUSED SWIG_JavaThrowException(JNIEnv *jenv, SWIG_JavaExceptionC
 
     /* Includes the header in the wrapper code */
     #include "opal.h"
+    int opal_java_swig_wrapper_link;
   
 
 #ifdef __cplusplus

@@ -3,6 +3,7 @@
   %{
     /* Includes the header in the wrapper code */
     #include "opal.h"
+    int opal_java_swig_wrapper_link;
   %}
 
   %include "typemaps.i"
