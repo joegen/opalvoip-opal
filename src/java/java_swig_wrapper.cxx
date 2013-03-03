@@ -6080,7 +6080,7 @@ SWIGEXPORT jlong JNICALL Java_org_opalvoip_opal_OPALJNI_OpalMessagePtr_1GetProto
 }
 
 
-SWIGEXPORT jlong JNICALL Java_org_opalvoip_opal_OPALJNI_OpalMessagePtr_1GetRegistrationInfo(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_opal_OPALJNI_OpalMessagePtr_1GetRegistrationParams(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   OpalMessagePtr *arg1 = (OpalMessagePtr *) 0 ;
   OpalParamRegistration *result = 0 ;
@@ -6089,7 +6089,7 @@ SWIGEXPORT jlong JNICALL Java_org_opalvoip_opal_OPALJNI_OpalMessagePtr_1GetRegis
   (void)jcls;
   (void)jarg1_;
   arg1 = *(OpalMessagePtr **)&jarg1; 
-  result = (OpalParamRegistration *)((OpalMessagePtr const *)arg1)->GetRegistrationInfo();
+  result = (OpalParamRegistration *)((OpalMessagePtr const *)arg1)->GetRegistrationParams();
   *(OpalParamRegistration **)&jresult = result; 
   return jresult;
 }

@@ -319,10 +319,13 @@ struct OpalHandleStruct
     m_process.Startup();
 
     m_manager = new OpalManager_C(version, args);
+
+    PTRACE(1, "OpalC\tStart Up, OPAL version " << OpalGetVersion());
   }
 
   ~OpalHandleStruct()
   {
+    PTRACE(1, "OpalC\tShut Down.");
     delete m_manager;
   }
 
@@ -794,8 +797,7 @@ static bool CheckProto(const PArgList & args, const char * proto, PString & defN
   PCaselessString protocol = proto;
   protocol.Delete(protocol.Find(':'), P_MAX_INDEX);
 
-  PINDEX pos = 0;
-  while (pos < args.GetCount()) {
+  for (PINDEX pos = 0; pos < args.GetCount(); ++pos) {
     if (protocol == args[pos]) {
       if (pos < defPos) {
         defName = proto;
@@ -2493,7 +2495,7 @@ OpalParamProtocol * OpalMessagePtr::GetProtocolParams() const
 }
 
 
-OpalParamRegistration * OpalMessagePtr::GetRegistrationInfo() const
+OpalParamRegistration * OpalMessagePtr::GetRegistrationParams() const
 {
   return m_message->m_type == OpalCmdRegistration ? &m_message->m_param.m_registrationInfo : NULL;
 }
