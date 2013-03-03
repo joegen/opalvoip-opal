@@ -371,7 +371,7 @@ public class OPALJNI {
   public final static native String OpalMessagePtr_GetCommandError(long jarg1, OpalMessagePtr jarg1_);
   public final static native long OpalMessagePtr_GetGeneralParams(long jarg1, OpalMessagePtr jarg1_);
   public final static native long OpalMessagePtr_GetProtocolParams(long jarg1, OpalMessagePtr jarg1_);
-  public final static native long OpalMessagePtr_GetRegistrationInfo(long jarg1, OpalMessagePtr jarg1_);
+  public final static native long OpalMessagePtr_GetRegistrationParams(long jarg1, OpalMessagePtr jarg1_);
   public final static native long OpalMessagePtr_GetRegistrationStatus(long jarg1, OpalMessagePtr jarg1_);
   public final static native long OpalMessagePtr_GetCallSetUp(long jarg1, OpalMessagePtr jarg1_);
   public final static native long OpalMessagePtr_GetIncomingCall(long jarg1, OpalMessagePtr jarg1_);

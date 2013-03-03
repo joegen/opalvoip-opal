@@ -1365,7 +1365,7 @@ class OpalMessagePtr
 
     OpalParamGeneral         * GetGeneralParams() const;      ///< Used by OpalCmdSetGeneralParameters
     OpalParamProtocol        * GetProtocolParams() const;     ///< Used by OpalCmdSetProtocolParameters
-    OpalParamRegistration    * GetRegistrationInfo() const;   ///< Used by OpalCmdRegistration
+    OpalParamRegistration    * GetRegistrationParams() const; ///< Used by OpalCmdRegistration
     OpalStatusRegistration   * GetRegistrationStatus() const; ///< Used by OpalIndRegistration
     OpalParamSetUpCall       * GetCallSetUp() const;          ///< Used by OpalCmdSetUpCall/OpalIndProceeding/OpalIndAlerting/OpalIndEstablished
     OpalStatusIncomingCall   * GetIncomingCall() const;       ///< Used by OpalIndIncomingCall
