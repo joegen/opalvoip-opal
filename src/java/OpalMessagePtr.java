@@ -73,8 +73,8 @@ public class OpalMessagePtr {
     return (cPtr == 0) ? null : new OpalParamProtocol(cPtr, false);
   }
 
-  public OpalParamRegistration GetRegistrationInfo() {
-    long cPtr = OPALJNI.OpalMessagePtr_GetRegistrationInfo(swigCPtr, this);
+  public OpalParamRegistration GetRegistrationParams() {
+    long cPtr = OPALJNI.OpalMessagePtr_GetRegistrationParams(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalParamRegistration(cPtr, false);
   }
 
