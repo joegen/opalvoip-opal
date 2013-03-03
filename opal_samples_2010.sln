@@ -42,6 +42,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "regtest", "samples\regtest\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "External RTP", "samples\externrtp\ExternRTP_2010.vcxproj", "{764B6AB8-9D73-97FC-6708-C78E76B512DD}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL on Android", "samples\Android\andopal_2010.vcxproj", "{D38CA533-D522-4D9E-B2C9-D59F6C415268}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Android = Debug|Android
@@ -352,6 +354,21 @@ Global
 		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.Release|Win32.Build.0 = Release|Win32
 		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.Release|x64.ActiveCfg = Release|x64
 		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.Release|x64.Build.0 = Release|x64
+		{D38CA533-D522-4D9E-B2C9-D59F6C415268}.Debug|Android.ActiveCfg = Debug|Android
+		{D38CA533-D522-4D9E-B2C9-D59F6C415268}.Debug|Android.Build.0 = Debug|Android
+		{D38CA533-D522-4D9E-B2C9-D59F6C415268}.Debug|Android.Deploy.0 = Debug|Android
+		{D38CA533-D522-4D9E-B2C9-D59F6C415268}.Debug|Win32.ActiveCfg = Debug|Android
+		{D38CA533-D522-4D9E-B2C9-D59F6C415268}.Debug|x64.ActiveCfg = Debug|Android
+		{D38CA533-D522-4D9E-B2C9-D59F6C415268}.No Trace|Android.ActiveCfg = No Trace|Android
+		{D38CA533-D522-4D9E-B2C9-D59F6C415268}.No Trace|Android.Build.0 = No Trace|Android
+		{D38CA533-D522-4D9E-B2C9-D59F6C415268}.No Trace|Android.Deploy.0 = No Trace|Android
+		{D38CA533-D522-4D9E-B2C9-D59F6C415268}.No Trace|Win32.ActiveCfg = No Trace|Android
+		{D38CA533-D522-4D9E-B2C9-D59F6C415268}.No Trace|x64.ActiveCfg = No Trace|Android
+		{D38CA533-D522-4D9E-B2C9-D59F6C415268}.Release|Android.ActiveCfg = Release|Android
+		{D38CA533-D522-4D9E-B2C9-D59F6C415268}.Release|Android.Build.0 = Release|Android
+		{D38CA533-D522-4D9E-B2C9-D59F6C415268}.Release|Android.Deploy.0 = Release|Android
+		{D38CA533-D522-4D9E-B2C9-D59F6C415268}.Release|Win32.ActiveCfg = Release|Android
+		{D38CA533-D522-4D9E-B2C9-D59F6C415268}.Release|x64.ActiveCfg = Release|Android
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <None Include="AndroidManifest.xml">
+      <Filter>Build</Filter>
+    </None>
+    <None Include="ant.properties">
+      <Filter>Build</Filter>
+    </None>
+    <None Include="build.xml">
+      <Filter>Build</Filter>
+    </None>
+    <None Include="project.properties">
+      <Filter>Build</Filter>
+    </None>
+    <None Include="res\layout\main.xml">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="src\AndOPAL.java">
+      <Filter>Source</Filter>
+    </None>
+    <None Include="res\values\strings.xml">
+      <Filter>Resources</Filter>
+    </None>
+    <None Include="res\drawable\icon.png">
+      <Filter>Resources</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Build">
+      <UniqueIdentifier>{7e034975-3245-4369-bb19-c0ba5ee3ad32}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{6f7ff8f4-af42-4113-80c3-18138f86da4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{32b77415-3cf1-47a2-81d0-d3e9ad62ca5f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\opal-jni.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
