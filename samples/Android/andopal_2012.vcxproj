@@ -1,0 +1,128 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Android">
+      <Configuration>Debug</Configuration>
+      <Platform>Android</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="No Trace|Android">
+      <Configuration>No Trace</Configuration>
+      <Platform>Android</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Android">
+      <Configuration>Release</Configuration>
+      <Platform>Android</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>Android OPAL</ProjectName>
+    <ProjectGuid>{D38CA533-D522-4D9E-B2C9-D59F6C415268}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.21006.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">..\..\bin\$(ProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(OutDir)</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">..\..\bin\$(ProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(OutDir)</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Android'">..\..\bin\$(ProjectName)\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(OutDir)</IntDir>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\..\Lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(AndroidIncludeDir);$(AndroidStlIncludeDir)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\..\Lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(AndroidIncludeDir);$(AndroidStlIncludeDir)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\..\Lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(AndroidIncludeDir);$(AndroidStlIncludeDir)</IncludePath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\..\Lib\$(Platform);$(ProjectDir)..\..\..\ptlib\Lib\$(Platform);$(AndroidLibDir);$(AndroidStlLibPath);</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\..\Lib\$(Platform);$(ProjectDir)..\..\..\ptlib\Lib\$(Platform);$(AndroidLibDir);$(AndroidStlLibPath);</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\..\Lib\$(Platform);$(ProjectDir)..\..\..\ptlib\Lib\$(Platform);$(AndroidLibDir);$(AndroidStlLibPath);</LibraryPath>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">andopal</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">andopal</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Android'">andopal</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">
+    <ClCompile>
+      <PreprocessorDefinitions>_DEBUG=1;P_TRACING=1</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <AdditionalDependencies>-lopalsd;-lptlibsd</AdditionalDependencies>
+      <AndroidSystemLibs>dl;c;m;log;gcc</AndroidSystemLibs>
+    </Link>
+    <AntBuild>
+      <AntDeploy>None</AntDeploy>
+      <AntLibraryName>lib$(TargetName)</AntLibraryName>
+    </AntBuild>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <PreprocessorDefinitions>P_TRACING=0</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>-lopalsn;-lptlibsn</AdditionalDependencies>
+      <AndroidSystemLibs>dl;c;m;log;gcc</AndroidSystemLibs>
+    </Link>
+    <AntBuild />
+    <AntBuild />
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Android'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <PreprocessorDefinitions>P_TRACING=1</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>-lopals;-lptlibs</AdditionalDependencies>
+      <AndroidSystemLibs>dl;c;m;log;gcc</AndroidSystemLibs>
+    </Link>
+    <AntBuild />
+    <AntBuild />
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="AndroidManifest.xml">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="ant.properties" />
+    <None Include="build.xml">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="project.properties" />
+    <None Include="res\drawable\icon.png" />
+    <None Include="res\layout\main.xml" />
+    <None Include="res\values\strings.xml" />
+    <None Include="src\AndOPAL.java" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\opal-jni.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\ptlib\src\ptlib\msos\Console_2010.vcxproj">
+      <Project>{d11e1c9d-406c-4d7c-8f37-913c0bfd9e0d}</Project>
+      <Private>false</Private>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\win32\opal_lib_2010.vcxproj">
+      <Project>{11fb12b5-b5eb-4dff-bd6f-2a0bdf187c22}</Project>
+      <Private>false</Private>
+      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <UseLibraryDependencyInputs>false</UseLibraryDependencyInputs>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
