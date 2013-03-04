@@ -309,7 +309,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">
     <ClCompile>
-      <PreprocessorDefinitions>P_TRACING=1</PreprocessorDefinitions>
+      <PreprocessorDefinitions>P_TRACING=0</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Lib />
