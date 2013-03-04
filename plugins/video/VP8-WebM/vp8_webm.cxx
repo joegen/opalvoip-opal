@@ -554,7 +554,7 @@ class VP8EncoderRFC : public VP8Encoder
   public:
     VP8EncoderRFC(const PluginCodec_Definition * defn)
       : VP8Encoder(defn)
-      , m_pictureId(1)
+      , m_pictureId(rand()&0x7fff)
       , m_pictureIdSize(0)
     {
     }
@@ -699,6 +699,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
     vpx_codec_flags_t    m_flags;
     vpx_codec_iter_t     m_iterator;
     std::vector<uint8_t> m_fullFrame;
+    bool                 m_intraFrame;
     bool                 m_ignoreTillKeyFrame;
 
   public:
@@ -707,6 +708,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
       , m_iface(vpx_codec_vp8_dx())
       , m_flags(0)
       , m_iterator(NULL)
+      , m_intraFrame(false)
       , m_ignoreTillKeyFrame(false)
     {
       memset(&m_codec, 0, sizeof(m_codec));
@@ -743,7 +745,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
     {
       vpx_image_t * image;
 
-      flags = 0;
+      flags = m_intraFrame ? PluginCodec_ReturnCoderIFrame : 0;
 
       if ((image = vpx_codec_get_frame(&m_codec, &m_iterator)) == NULL) {
 
@@ -781,16 +783,20 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
            anything that isn't an I-Frame. Luckily it appears that the low bit
            of the first byte is the I-Frame indicator.
         */
-        if ((m_fullFrame[0]&1) == 0)
+        if ((m_fullFrame[0]&1) == 0) {
           flags |= PluginCodec_ReturnCoderIFrame;
+          m_intraFrame = true;
+        }
 #else
         vpx_codec_stream_info_t info;
         info.sz = sizeof(info);
         if (IS_ERROR(vpx_codec_get_stream_info, (&m_codec, &info)))
           flags |= PluginCodec_ReturnCoderRequestIFrame;
 
-        if (info.is_kf)
+        if (info.is_kf) {
           flags |= PluginCodec_ReturnCoderIFrame;
+          m_intraFrame = true;
+        }
 #endif
 
         m_fullFrame.clear();
@@ -808,6 +814,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
       PluginCodec_RTP dstRTP(toPtr, toLen);
       OutputImage(image->planes, image->stride, image->d_w, image->d_h, dstRTP, flags);
       toLen = dstRTP.GetPacketSize();
+      m_intraFrame = false;
       return true;
     }
 
