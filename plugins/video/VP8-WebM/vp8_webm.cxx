@@ -50,24 +50,10 @@
 #define MY_CODEC_LOG "VP8"
 class VP8_CODEC { };
 
-static unsigned   MyVersion = PLUGIN_CODEC_VERSION_INTERSECT;
-static const char MyDescription[] = "VP8 Video Codec";      // Human readable description of codec
-static const char FormatNameRFC[] = "VP8-WebM";             // OpalMediaFormat name string to generate
-static const char FormatNameOM[] = "VP8-OM";                // OpalMediaFormat name string to generate
-static const char MyPayloadNameRFC[] = "VP8";               // RTP payload name (IANA approved)
-static const char MyPayloadNameOM[] = "X-MX-VP8";           // RTP payload name (Open Market custom)
-static unsigned   MyClockRate = 90000;                      // RTP dictates 90000
-static unsigned   MyMaxFrameRate = 60;                      // Maximum frame rate (per second)
-static unsigned   MyMaxWidth = 2816;                        // Maximum width of frame
-static unsigned   MyMaxHeight = 2304;                       // Maximum height of frame
-static unsigned   MyMaxBitRate = 16000000;
-
-static const char YUV420PFormatName[] = "YUV420P";          // Raw media format
+PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
 
 
-static struct PluginCodec_information LicenseInfo = {
-  1143692893,                                                   // timestamp = Thu 30 Mar 2006 04:28:13 AM UTC
-
+PLUGINCODEC_LICENSE(
   "Robert Jongbloed, Vox Lucida Pty.Ltd.",                      // source code author
   "1.0",                                                        // source code version
   "robertj@voxlucida.com.au",                                   // source code email
@@ -76,7 +62,7 @@ static struct PluginCodec_information LicenseInfo = {
   "MPL 1.0",                                                    // source code license
   PluginCodec_License_MPL,                                      // source code license
   
-  MyDescription,                                                // codec description
+  "VP8 Video Codec",                                            // codec description
   "James Bankoski, John Koleszar, Lou Quillio, Janne Salonen, "
   "Paul Wilkins, Yaowu Xu, all from Google Inc.",               // codec author
   "8", 							        // codec version
@@ -87,17 +73,43 @@ static struct PluginCodec_information LicenseInfo = {
   "Copyright (c) 2010, 2011, Google Inc.",                      // codec copyright information
   "Copyright (c) 2010, 2011, Google Inc.",                      // codec license
   PluginCodec_License_BSD                                       // codec license code
-};
-
-
-PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
+);
 
 
 ///////////////////////////////////////////////////////////////////////////////
 
 const unsigned MaxBitRate = 16000000;
 
-static struct PluginCodec_Option const MaxFrameSize =
+static struct PluginCodec_Option const MaxFR =
+{
+  PluginCodec_IntegerOption,          // Option type
+  "max-fr",                           // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_MinMerge,               // Merge mode
+  "30",                               // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  "1",                                // Minimum value
+  "30"                                // Maximum value
+};
+
+static struct PluginCodec_Option const MaxFS =
+{
+  PluginCodec_IntegerOption,          // Option type
+  "max-fs",                           // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_MinMerge,               // Merge mode
+  "31",                               // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  "48",                               // Minimum value
+  "65535"                             // Maximum value
+};
+
+#if INCLUDE_OM_CUSTOM_PACKETIZATION
+static struct PluginCodec_Option const MaxFrameSizeOM =
 {
   PluginCodec_StringOption,           // Option type
   "SIP/SDP Max Frame Size",           // User visible name
@@ -107,6 +119,7 @@ static struct PluginCodec_Option const MaxFrameSize =
   "x-mx-max-size",                    // FMTP option name
   ""                                  // FMTP default value (as per RFC)
 };
+#endif
 
 static struct PluginCodec_Option const TemporalSpatialTradeOff =
 {
@@ -131,9 +144,7 @@ static struct PluginCodec_Option const SpatialResampling =
   "0",                                // Initial value
   "dynamicres",                       // FMTP option name
   "0",                                // FMTP default value
-  0,                                  // H.245 generic capability code and bit mask
-  "0",                                // Minimum value
-  "100"                               // Maximum value
+  0                                   // H.245 generic capability code and bit mask
 };
 
 static struct PluginCodec_Option const SpatialResamplingUp =
@@ -164,8 +175,36 @@ static struct PluginCodec_Option const SpatialResamplingDown =
   "100"                               // Maximum value
 };
 
-static struct PluginCodec_Option const * OptionTable[] = {
-  &MaxFrameSize,
+static struct PluginCodec_Option const PictureID =
+{
+  PluginCodec_EnumOption,             // Option type
+  "Picture ID Size",                  // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_AlwaysMerge,            // Merge mode
+  "Word",                             // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  0,                                  // H.245 generic capability code and bit mask
+  "None:Byte:Word"                    // Enumeration
+};
+
+static struct PluginCodec_Option const OutputPartition =
+{
+  PluginCodec_BoolOption,             // Option type
+  "Output Partition",                 // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_AndMerge,               // Merge mode
+  "1",                                // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  0                                   // H.245 generic capability code and bit mask
+};
+
+static struct PluginCodec_Option const * OptionTableRFC[] = {
+  &MaxFR,
+  &MaxFS,
+  &PictureID,
+  &OutputPartition,
   &TemporalSpatialTradeOff,
   &SpatialResampling,
   &SpatialResamplingUp,
@@ -173,6 +212,149 @@ static struct PluginCodec_Option const * OptionTable[] = {
   NULL
 };
 
+
+#if INCLUDE_OM_CUSTOM_PACKETIZATION
+static struct PluginCodec_Option const * OptionTableOM[] = {
+  &MaxFrameSizeOM,
+  &TemporalSpatialTradeOff,
+  &SpatialResampling,
+  &SpatialResamplingUp,
+  &SpatialResamplingDown,
+  NULL
+};
+#endif
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+class VP8Format : public PluginCodec_VideoFormat<VP8_CODEC>
+{
+  private:
+    typedef PluginCodec_VideoFormat<VP8_CODEC> BaseClass;
+
+  protected:
+    bool m_partition;
+
+  public:
+    VP8Format(const char * formatName, const char * payloadName, const char * description, OptionsTable options)
+      : BaseClass(formatName, payloadName, description, MaxBitRate, options)
+      , m_partition(false)
+    {
+#ifdef VPX_CODEC_USE_ERROR_CONCEALMENT
+      if ((vpx_codec_get_caps(vpx_codec_vp8_dx()) & VPX_CODEC_CAP_ERROR_CONCEALMENT) != 0)
+        m_flags |= PluginCodec_ErrorConcealment; // Prevent video update request on packet loss
+#endif
+#ifdef VPX_CODEC_CAP_OUTPUT_PARTITION
+      if ((vpx_codec_get_caps(vpx_codec_vp8_dx()) & VPX_CODEC_CAP_OUTPUT_PARTITION) != 0)
+        m_partition = true;
+#endif
+    }
+};
+
+
+class VP8FormatRFC : public VP8Format
+{
+  public:
+    VP8FormatRFC()
+      : VP8Format("VP8-WebM", "VP8", "VP8 Video Codec (RFC)", OptionTableRFC)
+    {
+    }
+
+
+    virtual bool ToNormalised(OptionMap & original, OptionMap & changed)
+    {
+      OptionMap::iterator it = original.find(MaxFS.m_name);
+      if (it != original.end() && !it->second.empty()) {
+        unsigned maxFrameSize = String2Unsigned(it->second);
+        ClampResolution(m_maxWidth, m_maxHeight, maxFrameSize);
+        Change(maxFrameSize,  original, changed, MaxFS.m_name);
+        ClampMax(m_maxWidth,  original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
+        ClampMax(m_maxHeight, original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
+        ClampMax(m_maxWidth,  original, changed, PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH);
+        ClampMax(m_maxHeight, original, changed, PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT);
+      }
+
+      it = original.find(MaxFR.m_name);
+      if (it != original.end() && !it->second.empty())
+        ClampMin(PLUGINCODEC_VIDEO_CLOCK/String2Unsigned(it->second), original, changed, PLUGINCODEC_OPTION_FRAME_TIME);
+
+      if (!m_partition)
+        ClampMax(0, original, changed, OutputPartition.m_name);
+
+      return true;
+    }
+
+
+    virtual bool ToCustomised(OptionMap & original, OptionMap & changed)
+    {
+      Change(original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH)*
+             original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT)/256,
+             original, changed, MaxFS.m_name);
+
+      Change(PLUGINCODEC_VIDEO_CLOCK/original.GetUnsigned(PLUGINCODEC_OPTION_FRAME_TIME),
+             original, changed, MaxFR.m_name);
+
+      if (!m_partition)
+        ClampMax(0, original, changed, OutputPartition.m_name);
+
+      return true;
+    }
+};
+
+static VP8FormatRFC VP8MediaFormatInfoRFC;
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+#if INCLUDE_OM_CUSTOM_PACKETIZATION
+
+class VP8FormatOM : public VP8Format
+{
+  public:
+    VP8FormatOM()
+      : VP8Format("VP8-OM", "X-MX-VP8", "VP8 Video Codec (Open Market)", OptionTableOM)
+    {
+    }
+
+
+    virtual bool ToNormalised(OptionMap & original, OptionMap & changed)
+    {
+      OptionMap::iterator it = original.find(MaxFrameSizeOM.m_name);
+      if (it != original.end() && !it->second.empty()) {
+        std::stringstream strm(it->second);
+        unsigned maxWidth, maxHeight;
+        char x;
+        strm >> maxWidth >> x >> maxHeight;
+        if (maxWidth < 32 || maxHeight < 32) {
+          PTRACE(1, MY_CODEC_LOG, "Invalid " << MaxFrameSizeOM.m_name << ", was \"" << it->second << '"');
+          return false;
+        }
+        ClampMax(maxWidth,  original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
+        ClampMax(maxHeight, original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
+        ClampMax(maxWidth,  original, changed, PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH);
+        ClampMax(maxHeight, original, changed, PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT);
+      }
+      return true;
+    }
+
+
+    virtual bool ToCustomised(OptionMap & original, OptionMap & changed)
+    {
+      unsigned maxWidth = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
+      unsigned maxHeight = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
+      std::stringstream strm;
+      strm << maxWidth << 'x' << maxHeight;
+      Change(strm.str().c_str(), original, changed, MaxFrameSizeOM.m_name);
+      return true;
+    }
+};
+
+static VP8FormatOM VP8MediaFormatInfoOM;
+
+#endif // INCLUDE_OM_CUSTOM_PACKETIZATION
+
+
+///////////////////////////////////////////////////////////////////////////////
 
 static bool IsError(vpx_codec_err_t err, const char * fn)
 {
@@ -197,60 +379,17 @@ enum Orientation {
   OrientationPktHdrShift = 5
 };
 
-///////////////////////////////////////////////////////////////////////////////
-
-class MyPluginMediaFormat : public PluginCodec_MediaFormat
-{
-public:
-  MyPluginMediaFormat(OptionsTable options)
-    : PluginCodec_MediaFormat(options)
-  {
-  }
-
-
-  virtual bool ToNormalised(OptionMap & original, OptionMap & changed)
-  {
-    OptionMap::iterator it = original.find(MaxFrameSize.m_name);
-    if (it != original.end() && !it->second.empty()) {
-      std::stringstream strm(it->second);
-      unsigned maxWidth, maxHeight;
-      char x;
-      strm >> maxWidth >> x >> maxHeight;
-      if (maxWidth < 32 || maxHeight < 32) {
-        PTRACE(1, MY_CODEC_LOG, "Invalid " << MaxFrameSize.m_name << ", was \"" << it->second << '"');
-        return false;
-      }
-      ClampMax(maxWidth,  original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
-      ClampMax(maxHeight, original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
-      ClampMax(maxWidth,  original, changed, PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH);
-      ClampMax(maxHeight, original, changed, PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT);
-    }
-    return true;
-  }
-
-
-  virtual bool ToCustomised(OptionMap & original, OptionMap & changed)
-  {
-    unsigned maxWidth = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
-    unsigned maxHeight = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
-    std::stringstream strm;
-    strm << maxWidth << 'x' << maxHeight;
-    Change(strm.str().c_str(), original, changed, MaxFrameSize.m_name);
-    return true;
-  }
-}; 
-
-static MyPluginMediaFormat MyMediaFormatInfo(OptionTable);
-
 
 ///////////////////////////////////////////////////////////////////////////////
 
 class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
 {
+  private:
     typedef PluginVideoEncoder<VP8_CODEC> BaseClass;
 
   protected:
     vpx_codec_enc_cfg_t        m_config;
+    unsigned                   m_initFlags;
     vpx_codec_ctx_t            m_codec;
     vpx_codec_iter_t           m_iterator;
     const vpx_codec_cx_pkt_t * m_packet;
@@ -259,6 +398,7 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
   public:
     VP8Encoder(const PluginCodec_Definition * defn)
       : BaseClass(defn)
+      , m_initFlags(0)
       , m_iterator(NULL)
       , m_packet(NULL)
       , m_offset(0)
@@ -287,7 +427,7 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
       m_config.g_lag_in_frames = 0;
       m_config.rc_end_usage = VPX_CBR;
       m_config.g_timebase.num = 1;
-      m_config.g_timebase.den = MyClockRate;
+      m_config.g_timebase.den = PLUGINCODEC_VIDEO_CLOCK;
 
       if (!OnChangedOptions())
         return false;
@@ -318,8 +458,8 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
       if (m_keyFramePeriod != 0)
         m_config.kf_min_dist = m_config.kf_max_dist = m_keyFramePeriod;
       else {
-        m_config.kf_min_dist = 1;
-        m_config.kf_max_dist = 10*MyClockRate/m_frameTime;  // No slower than once every 10 seconds
+        m_config.kf_min_dist = 0;
+        m_config.kf_max_dist = 10*PLUGINCODEC_VIDEO_CLOCK/m_frameTime;  // No slower than once every 10 seconds
       }
 
       m_config.rc_target_bitrate = m_maxBitRate/1000;
@@ -335,7 +475,7 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
       m_config.g_w = m_width;
       m_config.g_h = m_height;
       vpx_codec_destroy, (&m_codec);
-      return !IS_ERROR(vpx_codec_enc_init, (&m_codec, vpx_codec_vp8_cx(), &m_config, 0));
+      return !IS_ERROR(vpx_codec_enc_init, (&m_codec, vpx_codec_vp8_cx(), &m_config, m_initFlags));
     }
 
 
@@ -407,25 +547,86 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
 
 class VP8EncoderRFC : public VP8Encoder
 {
+  protected:
+    unsigned m_pictureId;
+    unsigned m_pictureIdSize;
+
   public:
     VP8EncoderRFC(const PluginCodec_Definition * defn)
       : VP8Encoder(defn)
+      , m_pictureId(rand()&0x7fff)
+      , m_pictureIdSize(0)
     {
+    }
+
+
+    virtual bool SetOption(const char * optionName, const char * optionValue)
+    {
+      if (strcasecmp(optionName, PictureID.m_name) == 0) {
+        if (strcasecmp(optionValue, "Byte") == 0) {
+          if (m_pictureIdSize != 0x80) {
+            m_pictureIdSize = 0x80;
+            m_optionsSame = false;
+          }
+          return true;
+        }
+
+        if (strcasecmp(optionValue, "Word") == 0) {
+          if (m_pictureIdSize != 0x8000) {
+            m_pictureIdSize = 0x8000;
+            m_optionsSame = false;
+          }
+          return true;
+        }
+
+        if (strcasecmp(optionValue, "None") == 0) {
+          if (m_pictureIdSize != 0) {
+            m_pictureIdSize = 0;
+            m_optionsSame = false;
+          }
+          return true;
+        }
+
+        PTRACE(2, MY_CODEC_LOG, "Unknown picture ID size: \"" << optionValue << '"');
+        return false;
+      }
+
+      if (strcasecmp(optionName, OutputPartition.m_name) == 0)
+        return SetOptionBit(m_initFlags, VPX_CODEC_USE_OUTPUT_PARTITION, optionValue);
+
+      return VP8Encoder::SetOption(optionName, optionValue);
     }
 
 
     virtual void Packetise(PluginCodec_RTP & rtp)
     {
-      size_t headerSize = 2;
+      size_t headerSize = 1;
 
-      rtp[0] = rtp[1] = 0;
+      rtp[0] = 0;
 
       if (m_offset == 0)
-        rtp[0] |= 0x10;
+        rtp[0] |= 0x10; // Add S bit if start of partition
 
-      if ((m_packet->data.frame.flags&VPX_FRAME_IS_KEY) != 0) {
-        rtp[0] |= 0x20;
-        rtp[1] |= 0x01;
+      if (m_packet->data.frame.partition_id >= 0)
+        rtp[0] |= (uint8_t)(m_packet->data.frame.partition_id&0x0f);
+
+      if ((m_packet->data.frame.flags&VPX_FRAME_IS_DROPPABLE) != 0)
+        rtp[0] |= 0x20; // Add N bit for non-reference frame
+
+      if (m_pictureIdSize > 0) {
+        headerSize += 2;
+        rtp[0] |= 0x80; // Add X bit for X (extension) bit mask byte
+        rtp[1] |= 0x80; // Add I bit for picture ID
+        if (m_pictureId < 128)
+          rtp[2] = (uint8_t)m_pictureId;
+        else {
+          ++headerSize;
+          rtp[2] = (uint8_t)(0x80 | (m_pictureId >> 8));
+          rtp[3] = (uint8_t)m_pictureId;
+        }
+
+        if (m_offset == 0 && ++m_pictureId >= m_pictureIdSize)
+          m_pictureId = 0;
       }
 
       size_t fragmentSize = GetPacketSpace(rtp, m_packet->data.frame.sz - m_offset + headerSize) - headerSize;
@@ -489,6 +690,7 @@ class VP8EncoderOM : public VP8Encoder
 
 class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
 {
+  private:
     typedef PluginVideoDecoder<VP8_CODEC> BaseClass;
 
   protected:
@@ -497,6 +699,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
     vpx_codec_flags_t    m_flags;
     vpx_codec_iter_t     m_iterator;
     std::vector<uint8_t> m_fullFrame;
+    bool                 m_intraFrame;
     bool                 m_ignoreTillKeyFrame;
 
   public:
@@ -505,6 +708,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
       , m_iface(vpx_codec_vp8_dx())
       , m_flags(0)
       , m_iterator(NULL)
+      , m_intraFrame(false)
       , m_ignoreTillKeyFrame(false)
     {
       memset(&m_codec, 0, sizeof(m_codec));
@@ -541,7 +745,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
     {
       vpx_image_t * image;
 
-      flags = 0;
+      flags = m_intraFrame ? PluginCodec_ReturnCoderIFrame : 0;
 
       if ((image = vpx_codec_get_frame(&m_codec, &m_iterator)) == NULL) {
 
@@ -579,16 +783,20 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
            anything that isn't an I-Frame. Luckily it appears that the low bit
            of the first byte is the I-Frame indicator.
         */
-        if ((m_fullFrame[0]&1) == 0)
+        if ((m_fullFrame[0]&1) == 0) {
           flags |= PluginCodec_ReturnCoderIFrame;
+          m_intraFrame = true;
+        }
 #else
         vpx_codec_stream_info_t info;
         info.sz = sizeof(info);
         if (IS_ERROR(vpx_codec_get_stream_info, (&m_codec, &info)))
           flags |= PluginCodec_ReturnCoderRequestIFrame;
 
-        if (info.is_kf)
+        if (info.is_kf) {
           flags |= PluginCodec_ReturnCoderIFrame;
+          m_intraFrame = true;
+        }
 #endif
 
         m_fullFrame.clear();
@@ -606,6 +814,10 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
       PluginCodec_RTP dstRTP(toPtr, toLen);
       OutputImage(image->planes, image->stride, image->d_w, image->d_h, dstRTP, flags);
       toLen = dstRTP.GetPacketSize();
+
+      if (flags&PluginCodec_ReturnCoderLastFrame)
+        m_intraFrame = false;
+
       return true;
     }
 
@@ -644,16 +856,26 @@ class VP8DecoderRFC : public VP8Decoder
         return false;
 
       size_t headerSize = 1;
-      if ((rtp[0]&0x80) != 0) {
-        ++headerSize;
-        if ((rtp[1]&0x80) != 0)
-          ++headerSize;
-        if ((rtp[1]&0x40) != 0)
-          ++headerSize;
-        if ((rtp[1]&0x20) != 0)
-          ++headerSize;
-        if ((rtp[1]&0x10) != 0)
-          ++headerSize;
+      if ((rtp[0]&0x80) != 0) { // Check X bit
+        ++headerSize;           // Allow for X byte
+
+        if ((rtp[1]&0x80) != 0) { // Check I bit
+          ++headerSize;           // Allow for I field
+          if ((rtp[2]&0x80) != 0) // > 7 bit picture ID
+            ++headerSize;         // Allow for extra bits of I field
+        }
+
+        if ((rtp[1]&0x40) != 0) // Check L bit
+          ++headerSize;         // Allow for L byte
+
+        if ((rtp[1]&0x30) != 0) // Check T or K bit
+          ++headerSize;         // Allow for T/K byte
+      }
+
+      if ((rtp[0]&0x10) != 0 && !m_fullFrame.empty()) {
+        PTRACE(3, MY_CODEC_LOG, "Missing start to frame, ignoring till next key frame.");
+        m_ignoreTillKeyFrame = true;
+        return false;
       }
 
       Accumulate(rtp.GetPayloadPtr()+headerSize, rtp.GetPayloadSize()-headerSize);
@@ -833,150 +1055,10 @@ class VP8DecoderOM : public VP8Decoder
 
 static struct PluginCodec_Definition VP8CodecDefinition[] =
 {
-  {
-    // Encoder
-    MyVersion,                          // codec API version
-    &LicenseInfo,                       // license information
-
-    PluginCodec_MediaTypeVideo |        // audio codec
-    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
-
-    MyDescription,                      // text decription
-    YUV420PFormatName,                  // source format
-    FormatNameRFC,                      // destination format
-
-    &MyMediaFormatInfo,                 // user data 
-
-    MyClockRate,                        // samples per second
-    MyMaxBitRate,                       // raw bits per second
-    1000000/MyMaxFrameRate,             // microseconds per frame
-
-    {{
-      MyMaxWidth,                       // frame width
-      MyMaxHeight,                      // frame height
-      MyMaxFrameRate,                   // recommended frame rate
-      MyMaxFrameRate                    // maximum frame rate
-    }},
-    
-    0,                                  // IANA RTP payload code
-    MyPayloadNameRFC,                   // IANA RTP payload name
-
-    PluginCodec<VP8_CODEC>::Create<VP8EncoderRFC>,  // create codec function
-    PluginCodec<VP8_CODEC>::Destroy,               // destroy codec
-    PluginCodec<VP8_CODEC>::Transcode,             // encode/decode
-    PluginCodec<VP8_CODEC>::GetControls(),         // codec controls
-
-    PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
-    NULL                                // h323CapabilityData
-  },
-  { 
-    // Decoder
-    MyVersion,                          // codec API version
-    &LicenseInfo,                       // license information
-
-    PluginCodec_MediaTypeVideo |        // audio codec
-    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
-
-    MyDescription,                      // text decription
-    FormatNameRFC,                      // source format
-    YUV420PFormatName,                  // destination format
-
-    &MyMediaFormatInfo,                 // user data 
-
-    MyClockRate,                        // samples per second
-    MyMaxBitRate,                       // raw bits per second
-    1000000/MyMaxFrameRate,             // microseconds per frame
-
-    {{
-      MyMaxWidth,                       // frame width
-      MyMaxHeight,                      // frame height
-      MyMaxFrameRate,                   // recommended frame rate
-      MyMaxFrameRate                    // maximum frame rate
-    }},
-    
-    0,                                  // IANA RTP payload code
-    MyPayloadNameRFC,                   // IANA RTP payload name
-
-    PluginCodec<VP8_CODEC>::Create<VP8DecoderRFC>,  // create codec function
-    PluginCodec<VP8_CODEC>::Destroy,               // destroy codec
-    PluginCodec<VP8_CODEC>::Transcode,             // encode/decode
-    PluginCodec<VP8_CODEC>::GetControls(),         // codec controls
-
-    PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
-    NULL                                // h323CapabilityData
-  },
-  {
-    // Encoder
-    MyVersion,                          // codec API version
-    &LicenseInfo,                       // license information
-
-    PluginCodec_MediaTypeVideo |        // audio codec
-    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
-
-    MyDescription,                      // text decription
-    YUV420PFormatName,                  // source format
-    FormatNameOM,                       // destination format
-
-    &MyMediaFormatInfo,                 // user data 
-
-    MyClockRate,                        // samples per second
-    MyMaxBitRate,                       // raw bits per second
-    1000000/MyMaxFrameRate,             // microseconds per frame
-
-    {{
-      MyMaxWidth,                       // frame width
-      MyMaxHeight,                      // frame height
-      MyMaxFrameRate,                   // recommended frame rate
-      MyMaxFrameRate                    // maximum frame rate
-    }},
-    
-    0,                                  // IANA RTP payload code
-    MyPayloadNameOM,                    // IANA RTP payload name
-
-    PluginCodec<VP8_CODEC>::Create<VP8EncoderOM>,   // create codec function
-    PluginCodec<VP8_CODEC>::Destroy,               // destroy codec
-    PluginCodec<VP8_CODEC>::Transcode,             // encode/decode
-    PluginCodec<VP8_CODEC>::GetControls(),         // codec controls
-
-    PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
-    NULL                                // h323CapabilityData
-  },
-  { 
-    // Decoder
-    MyVersion,                          // codec API version
-    &LicenseInfo,                       // license information
-
-    PluginCodec_MediaTypeVideo |        // audio codec
-    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
-
-    MyDescription,                      // text decription
-    FormatNameOM,                       // source format
-    YUV420PFormatName,                  // destination format
-
-    &MyMediaFormatInfo,                 // user data 
-
-    MyClockRate,                        // samples per second
-    MyMaxBitRate,                       // raw bits per second
-    1000000/MyMaxFrameRate,             // microseconds per frame
-
-    {{
-      MyMaxWidth,                       // frame width
-      MyMaxHeight,                      // frame height
-      MyMaxFrameRate,                   // recommended frame rate
-      MyMaxFrameRate                    // maximum frame rate
-    }},
-    
-    0,                                  // IANA RTP payload code
-    MyPayloadNameOM,                    // IANA RTP payload name
-
-    PluginCodec<VP8_CODEC>::Create<VP8DecoderOM>,   // create codec function
-    PluginCodec<VP8_CODEC>::Destroy,               // destroy codec
-    PluginCodec<VP8_CODEC>::Transcode,             // encode/decode
-    PluginCodec<VP8_CODEC>::GetControls(),         // codec controls
-
-    PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
-    NULL                                // h323CapabilityData
-  }
+  PLUGINCODEC_VIDEO_CODEC_CXX(VP8MediaFormatInfoRFC, VP8EncoderRFC, VP8DecoderRFC),
+#if INCLUDE_OM_CUSTOM_PACKETIZATION
+  PLUGINCODEC_VIDEO_CODEC_CXX(VP8MediaFormatInfoOM,  VP8EncoderOM,  VP8DecoderOM)
+#endif
 };
 
 PLUGIN_CODEC_IMPLEMENT_CXX(VP8_CODEC, VP8CodecDefinition);
