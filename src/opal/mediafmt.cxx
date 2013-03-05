@@ -2028,6 +2028,8 @@ OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(RTP_DataFram
 
   // First look for a matching encoding name
   if (name != NULL && *name != '\0') {
+    OpalMediaFormatList::const_iterator savedIterationStart = format;
+
     for (; format != end(); ++format) {
       // If encoding name matches exactly, then use it regardless of payload code.
       const char * otherName = format->GetEncodingName();
@@ -2036,19 +2038,19 @@ OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(RTP_DataFram
           (protocol  == NULL || format->IsValidForProtocol(protocol))) // if protocol is specified, must be valid for the protocol
         return format;
     }
+
+    format = savedIterationStart;
   }
 
   // Can't match by encoding name, try by known payload type.
   // Note we do two separate loops as it is possible (though discouraged) for
   // someone to override a standard payload type with another encoding name, so
   // have to search all formats by name before trying by number.
-  if (pt < RTP_DataFrame::DynamicBase) {
-    for (; format != end(); ++format) {
-      if (format->GetPayloadType() == pt &&
-          (clockRate == 0    || clockRate == format->GetClockRate()) && // if have clock rate, clock rate must match
-          (protocol  == NULL || format->IsValidForProtocol(protocol))) // if protocol is specified, must be valid for the protocol
-        return format;
-    }
+  for (; format != end(); ++format) {
+    if (format->GetPayloadType() == pt &&
+        (clockRate == 0    || clockRate == format->GetClockRate()) && // if have clock rate, clock rate must match
+        (protocol  == NULL || format->IsValidForProtocol(protocol))) // if protocol is specified, must be valid for the protocol
+      return format;
   }
 
   return end();

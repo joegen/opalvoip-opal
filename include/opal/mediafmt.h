@@ -169,13 +169,25 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
       const OpalMediaFormatList & formats    ///<  Formats to remove
     );
 
-    /**Get a format iterator in the list matching the payload type.
+    /**Get a format iterator in the list matching the payload type, etc.
+       If the \p clockRate is 0 then it takes no part in the search.
+
+       The \p rtpEncodingName, if not NULL or empty string, is searched for
+       first and only if not found is the payload type used. This is because
+       it is possible (though discouraged) for someone to override a standard
+       payload type, e.g. GSM, with another encoding name.
+
+       If the \p protocol is NULL or empty string, then it takes no part in the
+       search.
+
+       The search begins at the \t start iterator, if this is end() or simply
+       const_iterator() then the search is started at the begining.
 
        Returns end() if not in list.
       */
     const_iterator FindFormat(
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
-      const unsigned clockRate,                   ///<  clock rate
+      const unsigned clockRate = 0,               ///<  clock rate
       const char * rtpEncodingName = NULL,        ///<  RTP payload type name
       const char * protocol = NULL,               ///<  protocol to be valid for (if NULL, then all)
       const_iterator start = const_iterator()     ///<  location to start search
