@@ -2986,8 +2986,8 @@ SIPTransaction::~SIPTransaction()
 
   // Stop timers here so happens before the below trace log,
   // and not after it, if we wait for ~PTimer()
-  m_retryTimer.Stop(true);
-  m_completionTimer.Stop(true);
+  m_retryTimer.Stop();
+  m_completionTimer.Stop();
 
   m_owner->m_object.SafeDereference();
   if (m_deleteOwner)
@@ -3055,7 +3055,8 @@ bool SIPTransaction::Start()
     // Use the transactions transport to send the request
     switch (InternalSend(canDoTCP)) {
       case Successful_OK :
-        m_retryTimer = m_retryTimeoutMin;
+        if (!m_transport->IsReliable())
+          m_retryTimer = m_retryTimeoutMin;
         if (m_method == Method_INVITE)
           m_completionTimer = GetEndPoint().GetInviteTimeout();
         else
@@ -3111,7 +3112,8 @@ PBoolean SIPTransaction::Cancel()
   PTRACE(4, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " cancelled.");
   m_state = Cancelling;
   m_retry = 0;
-  m_retryTimer = m_retryTimeoutMin;
+  if (!m_transport->IsReliable())
+    m_retryTimer = m_retryTimeoutMin;
   m_completionTimer = GetEndPoint().GetPduCleanUpTimeout();
   return ResendCANCEL();
 }
@@ -3147,8 +3149,7 @@ bool SIPTransaction::ResendCANCEL()
 
 PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 {
-  // Stop the timers with asynchronous flag to avoid deadlock
-  m_retryTimer.Stop(false);
+  m_retryTimer.Stop();
 
   PString cseq = response.GetMIME().GetCSeq();
 
@@ -3185,7 +3186,10 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
         m_state = Proceeding;
 
       m_retry = 0;
-      m_retryTimer = m_retryTimeoutMax;
+      if (m_method != Method_INVITE && !m_transport->IsReliable())
+        m_retryTimer = m_retryTimeoutMax;
+      else
+        m_retryTimer = 0;
 
       int expiry = m_mime.GetExpires();
       if (expiry > 0)
@@ -3194,6 +3198,7 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
         m_completionTimer = GetEndPoint().GetProgressTimeout();
       else
         m_completionTimer = GetEndPoint().GetNonInviteTimeout();
+      PTRACE(4, "SIP\tTransaction timers set: retry=" << m_retryTimer << ", completion=" << m_completionTimer);
     }
     else {
       PTRACE(4, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " completing.");
@@ -3306,8 +3311,8 @@ void SIPTransaction::SetTerminated(States newState)
     return;
 
   // Terminated, so finished with timers
-  m_retryTimer.Stop(false);
-  m_completionTimer.Stop(false);
+  m_retryTimer.Stop();
+  m_completionTimer.Stop();
 
   m_owner->m_transactions.Remove(this);
 
