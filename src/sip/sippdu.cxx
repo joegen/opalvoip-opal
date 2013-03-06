@@ -2348,7 +2348,8 @@ SIP_PDU::StatusCodes SIP_PDU::InternalSend(bool canDoTCP)
       PTRACE(4, "SIP\tPDU is too large (" << pduLen << " bytes) using compact form.");
     }
 
-    m_transport->SetRemoteAddress(m_viaAddress);
+    if (!m_viaAddress.IsEmpty())
+      m_transport->SetRemoteAddress(m_viaAddress);
   }
 
 #if PTRACING
@@ -2732,26 +2733,34 @@ unsigned SIPTransactionOwner::GetAllowedMethods() const
 }
 
 
-void SIPTransactionOwner::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
+void SIPTransactionOwner::FinaliseForking(SIPTransaction & transaction, SIP_PDU & response)
 {
+  if (response.GetStatusCode() == SIP_PDU::Information_Trying)
+    return;
+
+  // Take this transaction out of list
+  if (!m_transactions.Remove(&transaction))
+    return;
+
   OpalTransport * transport = transaction.GetTransport();
-  if (PAssertNULL(transport) == NULL || !transport->LockReadOnly())
+  if (PAssertNULL(transport) == NULL || !transport->LockReadWrite())
     return;
 
   // Finally end connect mode on the transport
-  if (GetInterface().IsEmpty()) {
-    PString newInterface = transaction.GetInterface();
-    if (!newInterface.IsEmpty()) {
-      transport->SetInterface(newInterface);
-      m_dialog.SetInterface(newInterface);
-      PTRACE(4, "SIP\tSet local interface to " << newInterface);
-    }
+  PString localInterface = transaction.GetInterface();
+  if (!localInterface.IsEmpty()) {
+    transport->SetInterface(localInterface);
+    m_dialog.SetInterface(localInterface);
+    PTRACE(4, "SIP\tSet local interface to " << localInterface);
   }
 
-  transport->UnlockReadOnly();
+  transport->UnlockReadWrite();
+}
 
-  // Take this transaction out of list
-  m_transactions.Remove(&transaction);
+
+void SIPTransactionOwner::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
+{
+  FinaliseForking(transaction, response);
 
   unsigned responseClass = response.GetStatusCode()/100;
 
@@ -2837,9 +2846,11 @@ SIP_PDU::StatusCodes SIPTransactionOwner::StartTransaction(const OpalTransport::
 
   PTRACE_CONTEXT_ID_SET(transport, function);
 
+  if (!transport->LockReadWrite())
+    return SIP_PDU::Local_TransportLost;
+
   reason = SIP_PDU::Local_TransportError;
 
-  m_dialog.SetInterface(transport->GetInterface());
   if (GetInterface().IsEmpty()) {
     // Restoring or first time, try every interface
     if (transport->WriteConnect(function))
@@ -2852,6 +2863,8 @@ SIP_PDU::StatusCodes SIPTransactionOwner::StartTransaction(const OpalTransport::
     if (succeeded)
       reason = SIP_PDU::Successful_OK;
   }
+
+  transport->UnlockReadWrite();
 
   return reason;
 }
@@ -3546,6 +3559,8 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 {
   if (IsTerminated())
     return false;
+
+  m_owner->FinaliseForking(*this, response); // Need this before sending ACK
 
   if (response.GetMIME().GetCSeq().Find(MethodNames[Method_INVITE]) != P_MAX_INDEX &&
                             GetConnection()->OnReceivedResponseToINVITE(*this, response)) {

@@ -956,6 +956,7 @@ class SIPTransactionOwner
     virtual void OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response);
     virtual void OnTransactionFailed(SIPTransaction & transaction);
 
+    void FinaliseForking(SIPTransaction & transaction, SIP_PDU & response);
     bool CleanPendingTransactions();
     void AbortPendingTransactions();
 
