@@ -54,6 +54,9 @@
 class OpalManager_C;
 
 
+#define PTraceModule() "Opal C"
+
+
 ostream & operator<<(ostream & strm, OpalMessageType type)
 {
   static const char * const Types[] = {
@@ -320,12 +323,12 @@ struct OpalHandleStruct
 
     m_manager = new OpalManager_C(version, args);
 
-    PTRACE(1, "OpalC\tStart Up, OPAL version " << OpalGetVersion());
+    PTRACE(1, "Start Up, OPAL version " << OpalGetVersion());
   }
 
   ~OpalHandleStruct()
   {
-    PTRACE(1, "OpalC\tShut Down.");
+    PTRACE(1, "Shut Down.");
     delete m_manager;
   }
 
@@ -385,7 +388,7 @@ void OpalMessageBuffer::SetString(const char * * variable, const char * value)
 void OpalMessageBuffer::SetError(const char * errorText)
 {
   OpalMessage * message = (OpalMessage *)m_data;
-  PTRACE(2, "OpalC API\tCommand " << message->m_type << " error: " << errorText);
+  PTRACE(2, "Command " << message->m_type << " error: " << errorText);
 
   message->m_type = OpalIndCommandError;
   m_strPtrOffset.clear();
@@ -429,7 +432,7 @@ static void SetOutgoingCallInfo(OpalMessageBuffer & message, const OpalConnectio
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyA, call.GetPartyA());
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyB, call.GetPartyB());
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_callToken, call.GetToken());
-  PTRACE(4, "OpalC API\tOnOutgoingCall:"
+  PTRACE(4, "OnOutgoingCall:"
             " token=\"" << message->m_param.m_callSetUp.m_callToken << "\""
             " A=\""     << message->m_param.m_callSetUp.m_partyA << "\""
             " B=\""     << message->m_param.m_callSetUp.m_partyB << '"');
@@ -483,7 +486,7 @@ void OpalManager_C::SendIncomingCallInfo(const OpalConnection & connection)
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_alertingType,   network->GetAlertingType());
   SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_protocolCallId, connection.GetIdentifier());
 
-  PTRACE(4, "OpalC API\tOpalIndIncomingCall: token=\""  << message->m_param.m_incomingCall.m_callToken << "\"\n"
+  PTRACE(4, "OpalIndIncomingCall: token=\""  << message->m_param.m_incomingCall.m_callToken << "\"\n"
             "  Local  - URL=\"" << message->m_param.m_incomingCall.m_localAddress << "\"\n"
             "  Remote - URL=\"" << message->m_param.m_incomingCall.m_remoteAddress << "\""
                     " E.164=\"" << message->m_param.m_incomingCall.m_remotePartyNumber << "\""
@@ -658,7 +661,7 @@ bool OpalIVREndPoint_C::OnIncomingCall(OpalLocalConnection & connection)
 
 void OpalIVREndPoint_C::OnEndDialog(OpalIVRConnection & connection)
 {
-  PTRACE(4, "OpalC API\tOnEndDialog for " << connection);
+  PTRACE(4, "OnEndDialog for " << connection);
 
   // Do not call ancestor and start a long pause, as do not want it to hang up
   connection.TransferConnection("<vxml><form><break time=\"3600s\"/></form></vxml>"); 
@@ -721,7 +724,7 @@ void SIPEndPoint_C::OnRegistrationStatus(const RegistrationStatus & status)
     SET_MESSAGE_STRING(message, m_param.m_registrationStatus.m_error, strm);
     message->m_param.m_registrationStatus.m_status = status.m_wasRegistering ? OpalRegisterFailed : OpalRegisterRemoved;
   }
-  PTRACE(4, "OpalC\tOnRegistrationStatus " << status.m_addressofRecord << ", status=" << message->m_param.m_registrationStatus.m_status);
+  PTRACE(4, "OnRegistrationStatus " << status.m_addressofRecord << ", status=" << message->m_param.m_registrationStatus.m_status);
   m_manager.PostMessage(message);
 }
 
@@ -739,7 +742,7 @@ void SIPEndPoint_C::OnSubscriptionStatus(const PString & eventPackage,
       OpalMessageBuffer message(OpalIndMessageWaiting);
       SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_party, uri.AsString());
       SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_extraInfo, wasSubscribing ? "SUBSCRIBED" : "UNSUBSCRIBED");
-      PTRACE(4, "OpalC API\tOnSubscriptionStatus - MWI: party=\"" << message->m_param.m_messageWaiting.m_party
+      PTRACE(4, "OnSubscriptionStatus - MWI: party=\"" << message->m_param.m_messageWaiting.m_party
                                               << "\" info=" << message->m_param.m_messageWaiting.m_extraInfo);
       m_manager.PostMessage(message);
     }
@@ -747,7 +750,7 @@ void SIPEndPoint_C::OnSubscriptionStatus(const PString & eventPackage,
       OpalMessageBuffer message(OpalIndLineAppearance);
       SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_line, uri.AsString());
       message->m_param.m_lineAppearance.m_state = wasSubscribing ? OpalLineSubcribed : OpalLineUnsubcribed;
-      PTRACE(4, "OpalC API\tOnSubscriptionStatus - LineAppearance: line=\"" << message->m_param.m_lineAppearance.m_line);
+      PTRACE(4, "OnSubscriptionStatus - LineAppearance: line=\"" << message->m_param.m_lineAppearance.m_line);
       m_manager.PostMessage(message);
     }
   }
@@ -782,7 +785,7 @@ void SIPEndPoint_C::OnDialogInfoReceived(const SIPDialogNotification & info)
     SET_MESSAGE_STRING(message, m_param.m_lineAppearance.m_partyB, GetParticipantName(info.m_local));
   }
 
-  PTRACE(4, "OpalC API\tOnDialogInfoReceived: entity=\"" << message->m_param.m_lineAppearance.m_line
+  PTRACE(4, "OnDialogInfoReceived: entity=\"" << message->m_param.m_lineAppearance.m_line
                                           << "\" callId=" << message->m_param.m_lineAppearance.m_callId);
   m_manager.PostMessage(message);
 }
@@ -948,6 +951,7 @@ OpalMessage * OpalManager_C::GetMessage(unsigned timeout)
 {
   OpalMessage * msg = NULL;
 
+  PTRACE(5, "GetMessage: timeout=" << timeout);
   if (m_messagesAvailable.Wait(timeout)) {
     m_messageMutex.Wait();
 
@@ -959,7 +963,7 @@ OpalMessage * OpalManager_C::GetMessage(unsigned timeout)
     m_messageMutex.Signal();
   }
 
-  PTRACE_IF(4, msg != NULL, "OpalC API\tGiving message " << msg->m_type << " to application");
+  PTRACE_IF(4, msg != NULL, "Giving message " << msg->m_type << " to application");
   return msg;
 }
 
@@ -969,7 +973,7 @@ OpalMessage * OpalManager_C::SendMessage(const OpalMessage * message)
   if (message == NULL)
     return NULL;
 
-  PTRACE(4, "OpalC API\tHandling message " << message->m_type << " from application");
+  PTRACE(4, "Handling message " << message->m_type << " from application");
 
   OpalMessageBuffer response(message->m_type);
 
@@ -1023,6 +1027,7 @@ OpalMessage * OpalManager_C::SendMessage(const OpalMessage * message)
       return NULL;
   }
 
+  PTRACE(5, "Handled message " << message->m_type << " from application");
   return response.Detach();
 }
 
@@ -1275,7 +1280,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     PString optionValue = optionSpec.Mid(equal+1);
 
     if (mediaName.IsEmpty() || optionName.IsEmpty()) {
-      PTRACE(2, "OpalC API\tInvalid syntax for media format option: \"" << optionSpec << '"');
+      PTRACE(2, "Invalid syntax for media format option: \"" << optionSpec << '"');
     }
     else {
       OpalMediaType mediaType = mediaName.ToLower();
@@ -1285,11 +1290,11 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
           if (it->GetMediaType() == mediaType) {
             if (it->SetOptionValue(optionName, optionValue)) {
               OpalMediaFormat::SetRegisteredMediaFormat(*it);
-              PTRACE(4, "OpalC API\tSet " << mediaType << " media format \"" << *it
+              PTRACE(4, "Set " << mediaType << " media format \"" << *it
                      << "\" option \"" << optionName << "\" to \"" << optionValue << '"');
             }
             else {
-              PTRACE(2, "OpalC API\tCould not set " << mediaType
+              PTRACE(2, "Could not set " << mediaType
                      << " media format option \"" << optionName << "\" to \"" << optionValue << '"');
             }
           }
@@ -1300,16 +1305,16 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
         if (mediaFormat.IsValid()) {
           if (mediaFormat.SetOptionValue(optionName, optionValue)) {
             OpalMediaFormat::SetRegisteredMediaFormat(mediaFormat);
-            PTRACE(2, "OpalC API\tSet media format \"" << mediaFormat
+            PTRACE(2, "Set media format \"" << mediaFormat
                    << "\" option \"" << optionName << "\" to \"" << optionValue << '"');
           }
           else {
-            PTRACE(2, "OpalC API\tCould not set media format \"" << mediaFormat
+            PTRACE(2, "Could not set media format \"" << mediaFormat
                    << "\" option \"" << optionName << "\" to \"" << optionValue << '"');
           }
         }
         else {
-          PTRACE(2, "OpalC API\tTried to set option for unknown media format: \"" << mediaName << '"');
+          PTRACE(2, "Tried to set option for unknown media format: \"" << mediaName << '"');
         }
       }
     }
@@ -1996,7 +2001,7 @@ void OpalManager_C::OnEstablishedCall(OpalCall & call)
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyA, call.GetPartyA());
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyB, call.GetPartyB());
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_callToken, call.GetToken());
-  PTRACE(4, "OpalC API\tOnEstablishedCall:"
+  PTRACE(4, "OnEstablishedCall:"
             " token=\"" << message->m_param.m_callSetUp.m_callToken << "\""
             " A=\""     << message->m_param.m_callSetUp.m_partyA << "\""
             " B=\""     << message->m_param.m_callSetUp.m_partyB << '"');
@@ -2048,7 +2053,7 @@ void OpalManager_C::OnIndMediaStream(const OpalMediaStream & stream, OpalMediaSt
   SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_type, type);
   SET_MESSAGE_STRING(message, m_param.m_mediaStream.m_format, stream.GetMediaFormat().GetName());
   message->m_param.m_mediaStream.m_state = state;
-  PTRACE(4, "OpalC API\tOnIndMediaStream:"
+  PTRACE(4, "OnIndMediaStream:"
             " token=\"" << message->m_param.m_userInput.m_callToken << "\""
             " id=\"" << message->m_param.m_mediaStream.m_identifier << '"');
   PostMessage(message);
@@ -2081,7 +2086,7 @@ void OpalManager_C::OnUserInputString(OpalConnection & connection, const PString
     SET_MESSAGE_STRING(message, m_param.m_userInput.m_callToken, connection.GetCall().GetToken());
     SET_MESSAGE_STRING(message, m_param.m_userInput.m_userInput, value);
     message->m_param.m_userInput.m_duration = 0;
-    PTRACE(4, "OpalC API\tOnUserInputString:"
+    PTRACE(4, "OnUserInputString:"
               " token=\"" << message->m_param.m_userInput.m_callToken << "\""
               " input=\"" << message->m_param.m_userInput.m_userInput << '"');
     PostMessage(message);
@@ -2102,7 +2107,7 @@ void OpalManager_C::OnUserInputTone(OpalConnection & connection, char tone, int 
     SET_MESSAGE_STRING(message, m_param.m_userInput.m_callToken, connection.GetCall().GetToken());
     SET_MESSAGE_STRING(message, m_param.m_userInput.m_userInput, input);
     message->m_param.m_userInput.m_duration = duration;
-    PTRACE(4, "OpalC API\tOnUserInputTone:"
+    PTRACE(4, "OnUserInputTone:"
               " token=\"" << message->m_param.m_userInput.m_callToken << "\""
               " input=\"" << message->m_param.m_userInput.m_userInput << '"');
     PostMessage(message);
@@ -2122,7 +2127,7 @@ void OpalManager_C::OnMWIReceived(const PString & party, MessageWaitingType type
   if ((size_t)type < sizeof(TypeNames)/sizeof(TypeNames[0]))
     SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_type, TypeNames[type]);
   SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_extraInfo, extraInfo);
-  PTRACE(4, "OpalC API\tOnMWIReceived: party=\"" << message->m_param.m_messageWaiting.m_party
+  PTRACE(4, "OnMWIReceived: party=\"" << message->m_param.m_messageWaiting.m_party
                                    << "\" type=" << message->m_param.m_messageWaiting.m_type
                                    << "\" info=" << message->m_param.m_messageWaiting.m_extraInfo);
   PostMessage(message);
@@ -2139,7 +2144,7 @@ void OpalManager_C::OnProceeding(OpalConnection & connection)
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyA, call.GetPartyA());
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_partyB, call.GetPartyB());
   SET_MESSAGE_STRING(message, m_param.m_callSetUp.m_callToken, call.GetToken());
-  PTRACE(4, "OpalC API\tOnProceeding:"
+  PTRACE(4, "OnProceeding:"
             " token=\"" << message->m_param.m_callSetUp.m_callToken << "\""
             " A=\""     << message->m_param.m_callSetUp.m_partyA << "\""
             " B=\""     << message->m_param.m_callSetUp.m_partyB << '"');
@@ -2159,7 +2164,7 @@ void OpalManager_C::OnClearedCall(OpalCall & call)
   str << (unsigned)call.GetCallEndReason() << ": " << call.GetCallEndReasonText();
 
   SET_MESSAGE_STRING(message, m_param.m_callCleared.m_reason, str);
-  PTRACE(4, "OpalC API\tOnClearedCall:"
+  PTRACE(4, "OnClearedCall:"
             " token=\""  << message->m_param.m_callCleared.m_callToken << "\""
             " reason=\"" << message->m_param.m_callCleared.m_reason << '"');
   PostMessage(message);
@@ -2177,15 +2182,12 @@ extern "C" {
     PCaselessString optionsString = IsNullString(options) ? "pcss h323 sip iax2 pots pstn fax t38 ivr" : options;
 
     // For backward compatibility
-    optionsString.Replace("TraceLevel=", "--level ",  true);
+    optionsString.Replace("TraceLevel=", "--trace-level ",  true);
     optionsString.Replace("TraceFile=",  "--output ", true);
-    optionsString.Replace("TraceAppend", "--append", true);
+    optionsString.Replace("TraceAppend", "--trace-option +append", true);
 
     PArgList args(optionsString,
-                  "t-trace."
-                  "l-level:"
-                  "o-output:"
-                  "a-append."
+                  PTRACE_ARGLIST_EXT("t","l","o","R","O")
                   "c-config:"
                   "p-plugin:"
                   "m-manufacturer:"
@@ -2207,7 +2209,7 @@ extern "C" {
     if (!handle->m_manager->GetEndPoints().IsEmpty())
       return handle;
 
-    PTRACE(1, "OpalC API\tNo endpoints were available or selected using \"" << optionsString << '"');
+    PTRACE(1, "No endpoints were available or selected using \"" << optionsString << '"');
     delete handle;
     return NULL;
   }
@@ -2275,6 +2277,7 @@ void OpalContext::ShutDown()
 bool OpalContext::GetMessage(OpalMessagePtr & message, unsigned timeout)
 {
   if (m_handle == NULL) {
+    PTRACE(1, "OpalContext::GetMessage() called when conext not initialised");
     message.SetType(OpalIndCommandError);
     message.m_message->m_param.m_commandError = "Uninitialised OPAL context.";
     return false;
@@ -2284,6 +2287,7 @@ bool OpalContext::GetMessage(OpalMessagePtr & message, unsigned timeout)
   if (message.m_message != NULL)
     return true;
 
+  PTRACE(4, "OpalContext::GetMessage() timeout");
   message.SetType(OpalIndCommandError);
   message.m_message->m_param.m_commandError = "Timeout getting message.";
   return false;
