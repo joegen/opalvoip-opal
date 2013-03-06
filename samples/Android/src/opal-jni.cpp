@@ -1,7 +1,7 @@
 /*
  * opal-jni.h
  *
- * Copyright (c) 2008 Vox Lucida Pty. Ltd.
+ * Copyright (c) 2013 Vox Lucida Pty. Ltd.
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
