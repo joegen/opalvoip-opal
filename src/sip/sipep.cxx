@@ -1860,39 +1860,44 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, const SIPConnection * conn
   }
 
   if (!mime.Has("Contact") && pdu.GetStatusCode() != SIP_PDU::Information_Trying) {
-    OpalTransportAddress localAddress;
+    SIPURL contact;
     if (transport == NULL)
       transport = pdu.GetTransport();
-    if (transport != NULL)
-      localAddress = transport->GetLocalAddress();
+    if (transport == NULL || transport->GetInterface().IsEmpty()) {
+      OpalTransportAddress listenAddress = listeners[0].GetLocalAddress();
+      contact = SIPURL(user, listenAddress);
+      PTRACE(4, "SIP\tUsing first listener address (" << listenAddress << ") for Contact");
+    }
+    else {
+      OpalTransportAddress localAddress = transport->GetLocalAddress();
 
-    SIPURL contact;
-    if (registrar != NULL) {
-      const SIPURLList & contacts = registrar->GetContacts();
-      PTRACE(5, "SIP\tChecking " << localAddress << " against " << contacts.ToString());
+      if (registrar != NULL) {
+        const SIPURLList & contacts = registrar->GetContacts();
+        PTRACE(5, "SIP\tChecking " << localAddress << " against " << contacts.ToString());
 
-      SIPURLList::const_iterator it;
-      for (it = contacts.begin(); it != contacts.end(); ++it) {
-        if (localAddress == it->GetTransportAddress())
-          break;
-      }
-
-      if (it == contacts.end()) {
+        SIPURLList::const_iterator it;
         for (it = contacts.begin(); it != contacts.end(); ++it) {
-          if (localAddress.IsCompatible(it->GetTransportAddress()))
+          if (localAddress == it->GetTransportAddress())
             break;
+        }
+
+        if (it == contacts.end()) {
+          for (it = contacts.begin(); it != contacts.end(); ++it) {
+            if (localAddress.IsCompatible(it->GetTransportAddress()))
+              break;
+          }
+        }
+
+        if (it != contacts.end()) {
+          contact = *it;
+          PTRACE(4, "SIP\tAdjusted Contact to " << contact << " from registration " << registrar->GetAddressOfRecord());
         }
       }
 
-      if (it != contacts.end()) {
-        contact = *it;
-        PTRACE(4, "SIP\tAdjusted Contact to " << contact << " from registration " << registrar->GetAddressOfRecord());
+      if (contact.IsEmpty()) {
+        contact = SIPURL(user, localAddress);
+        PTRACE(4, "SIP\tUsing transport local address (" << localAddress << ") for Contact");
       }
-    }
-
-    if (contact.IsEmpty()) {
-      contact = SIPURL(user, localAddress);
-      PTRACE(4, "SIP\tUsing transport local address (" << localAddress << ") for Contact");
     }
 
     if (connection != NULL) {
