@@ -1956,7 +1956,7 @@ SIP_PDU_Work::SIP_PDU_Work(SIPEndPoint & ep, const PString & token, SIP_PDU * pd
 {
   PTRACE(4, "SIP\tQueueing PDU \"" << *m_pdu << "\", transaction="
          << m_pdu->GetTransactionID() << ", token=" << m_token);
-  ep.GetThreadPool().AddWork(this);
+  ep.GetThreadPool().AddWork(this, token);
 }
 
 
