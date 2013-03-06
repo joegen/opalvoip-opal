@@ -3433,7 +3433,7 @@ bool MyManager::MonitorPresence(const PString & aor, const PString & uri, bool s
     return false;
 
   PSafePtr<OpalPresentity> presentity = GetPresentity(aor);
-  if (presentity == NULL) {
+  if (presentity == NULL || !presentity->IsOpen()) {
     LogWindow << "Presence identity missing for " << aor << endl;
     return false;
   }
