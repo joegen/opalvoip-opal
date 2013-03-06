@@ -97,7 +97,9 @@
     </None>
     <None Include="project.properties" />
     <None Include="res\drawable\icon.png" />
-    <None Include="res\layout\main.xml" />
+    <None Include="res\layout\main.xml">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="res\values\strings.xml" />
     <None Include="src\AndOPAL.java" />
   </ItemGroup>
