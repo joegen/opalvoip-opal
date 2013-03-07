@@ -2097,7 +2097,6 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
         PTRACE(3, "SIP\tDuplicate response " << response.GetStatusCode() << ", already PRACK'ed");
       }
       else {
-        m_dialog.SetInterface(transaction.GetInterface()); // Make sure same as response
         SIPTransaction * prack = new SIPPrack(*this, *transaction.GetTransport(), rseq & transaction.GetMIME().GetCSeq());
         prack->Start();
       }
