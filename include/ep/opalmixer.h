@@ -383,6 +383,7 @@ struct OpalMixerNodeInfo
 {
   OpalMixerNodeInfo(const char * name = NULL)
     : m_name(name)
+    , m_closeOnEmpty(false)
     , m_listenOnly(false)
     , m_sampleRate(OpalMediaFormat::AudioClockRate)
 #if OPAL_VIDEO
@@ -400,6 +401,7 @@ struct OpalMixerNodeInfo
   virtual OpalMixerNodeInfo * Clone() const { return new OpalMixerNodeInfo(*this); }
 
   PString  m_name;                ///< Name for mixer node.
+  bool     m_closeOnEmpty;        ///< Mixer node is removed when last participant exits
   bool     m_listenOnly;          ///< Mixer only transmits data to "listeners"
   unsigned m_sampleRate;          ///< Audio sample rate, usually 8000
 #if OPAL_VIDEO
@@ -678,6 +680,13 @@ class OpalMixerEndPoint : public OpalLocalEndPoint, public OpalMixerNodeManager
       unsigned options,             ///< Option bit mask to pass to connection
       OpalConnection::StringOptions * stringOptions ///< Options to pass to connection
     );
+
+    /**Get Node Info for the given alias name.
+       Default behaviour returns a clone of m_adHocNodeInfo.
+      */
+    virtual OpalMixerNodeInfo * FindNodeInfo(
+      const PString & name
+    );
   //@}
 
   /**@name Member variable access */
@@ -743,6 +752,9 @@ class OpalMixerEndPoint : public OpalLocalEndPoint, public OpalMixerNodeManager
        name.
       */
     virtual PString GetNewFactoryName();
+
+    /// Get manager
+    OpalManager & GetManager() const { return OpalLocalEndPoint::GetManager(); }
   //@}
 
   protected:
@@ -1031,31 +1043,31 @@ class OpalMixerNode : public PSafeObject
   //@{
     /**Attach a connection.
       */
-    void AttachConnection(
+    virtual void AttachConnection(
       OpalConnection * connection  ///< Connection to attach
     );
 
     /**Detach a connection.
       */
-    void DetachConnection(
+    virtual void DetachConnection(
       OpalConnection * connection  ///< Connection to detach
     );
 
     /**Attach a stream for output.
       */
-    bool AttachStream(
+    virtual bool AttachStream(
       OpalMixerMediaStream * stream     ///< Stream to attach
     );
 
     /**Detach a stream for output.
       */
-    void DetachStream(
+    virtual void DetachStream(
       OpalMixerMediaStream * stream     ///< Stream to detach
     );
 
     /**Use media bypass if applicable.
       */
-    void UseMediaPassThrough(
+    virtual void UseMediaPassThrough(
       unsigned sessionID,                 ///< Session ID to bypass, 0 indicates all
       OpalConnection * connection = NULL  ///< Just deleted connection
     );
@@ -1178,6 +1190,7 @@ class OpalMixerNode : public PSafeObject
     PStringSet             m_names;
     OpalMixerNodeInfo    * m_info;
     PTime                  m_creationTime;
+    PAtomicBoolean         m_shuttingDown;
 
     PSafeList<OpalConnection> m_connections;
     PString                   m_ownerConnection;

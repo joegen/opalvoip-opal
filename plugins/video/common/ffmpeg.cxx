@@ -68,9 +68,9 @@ static void logCallbackFFMPEG(void * avcl, int severity, const char* fmt , va_li
   if (len <= 0)
     return;
 
-  // Drop extra trailing line feed, if present
-  if (buffer[--len] == '\n')
-    buffer[len] = '\0';
+  // Drop trailing white space, in particular line feed, if present
+  while (len > 0 && isspace(buffer[len-1]))
+    buffer[--len] = '\0';
 
   // Nothing to log
   if (buffer[0] == '\0')
@@ -79,7 +79,7 @@ static void logCallbackFFMPEG(void * avcl, int severity, const char* fmt , va_li
   // Check for bogus errors, everything works so what do these mean? Bump up level so don't get the noise
   if (strstr(buffer, "Frame num gap") != NULL ||
       strstr(buffer, "Too many slices") != NULL ||
-      (len == 3 && buffer[2] == ' ' && isxdigit(buffer[1])))
+      (len == 2 && isxdigit(buffer[1])))
     level = 6;
 
   if (avcl != NULL && strcmp((*(AVClass**)avcl)->class_name, "AVCodecContext") == 0)

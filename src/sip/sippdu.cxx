@@ -2348,7 +2348,8 @@ SIP_PDU::StatusCodes SIP_PDU::InternalSend(bool canDoTCP)
       PTRACE(4, "SIP\tPDU is too large (" << pduLen << " bytes) using compact form.");
     }
 
-    m_transport->SetRemoteAddress(m_viaAddress);
+    if (!m_viaAddress.IsEmpty())
+      m_transport->SetRemoteAddress(m_viaAddress);
   }
 
 #if PTRACING
@@ -2732,41 +2733,44 @@ unsigned SIPTransactionOwner::GetAllowedMethods() const
 }
 
 
-void SIPTransactionOwner::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
+void SIPTransactionOwner::FinaliseForking(SIPTransaction & transaction, SIP_PDU & response)
 {
+  if (response.GetStatusCode() == SIP_PDU::Information_Trying)
+    return;
+
+  // Take this transaction out of list
+  if (!m_transactions.Remove(&transaction))
+    return;
+
   OpalTransport * transport = transaction.GetTransport();
-  if (PAssertNULL(transport) == NULL || !transport->LockReadOnly())
+  if (PAssertNULL(transport) == NULL || !transport->LockReadWrite())
     return;
 
   // Finally end connect mode on the transport
-  if (GetInterface().IsEmpty()) {
-    PString newInterface = transaction.GetInterface();
-    if (!newInterface.IsEmpty()) {
-      transport->SetInterface(newInterface);
-      m_dialog.SetInterface(newInterface);
-      PTRACE(4, "SIP\tSet local interface to " << newInterface);
-    }
+  PString localInterface = transaction.GetInterface();
+  if (!localInterface.IsEmpty()) {
+    transport->SetInterface(localInterface);
+    m_dialog.SetInterface(localInterface);
+    PTRACE(4, "SIP\tSet local interface to " << localInterface);
   }
 
-  transport->UnlockReadOnly();
+  // About any transactions on a different interface, they are forks that have
+  // been resolved.
+  AbortPendingTransactions(false);
 
-  // Take this transaction out of list
-  m_transactions.Remove(&transaction);
+  transport->UnlockReadWrite();
+}
+
+
+void SIPTransactionOwner::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
+{
+  FinaliseForking(transaction, response);
 
   unsigned responseClass = response.GetStatusCode()/100;
 
-  switch (response.GetStatusCode()) {
-    default :
-      if (responseClass != 2)
-        break;
-
-    case SIP_PDU::Failure_UnAuthorised :
-    case SIP_PDU::Failure_ProxyAuthenticationRequired :
-    case SIP_PDU::Failure_IntervalTooBrief :
-    case SIP_PDU::Failure_TemporarilyUnavailable:
-      // And kill all the rest
-      AbortPendingTransactions();
-  }
+  // If 2xx response, kill any forked transactions, have the definitive answer.
+  if (responseClass == 2)
+    AbortPendingTransactions();
 
   // Then tell endpoint - backward compatibility API
   m_endpoint.OnReceivedResponse(transaction, response);
@@ -2813,17 +2817,19 @@ bool SIPTransactionOwner::CleanPendingTransactions()
 }
 
 
-void SIPTransactionOwner::AbortPendingTransactions()
+void SIPTransactionOwner::AbortPendingTransactions(bool all)
 {
   PTRACE_IF(3, !m_transactions.IsEmpty(), "SIP\tCancelling/Aborting " << m_transactions.GetSize() << " transactions.");
 
   PSafePtr<SIPTransaction> transaction;
   while ((transaction = m_transactions.GetAt(0)) != NULL) {
-    if (transaction->IsTrying())
-      transaction->Abort();
-    else
-      transaction->Cancel();
-    m_transactions.Remove(transaction);
+    if (all || transaction->GetInterface() != GetInterface()) {
+      if (transaction->IsTrying())
+        transaction->Abort();
+      else
+        transaction->Cancel();
+      m_transactions.Remove(transaction);
+    }
   }
 }
 
@@ -2837,9 +2843,11 @@ SIP_PDU::StatusCodes SIPTransactionOwner::StartTransaction(const OpalTransport::
 
   PTRACE_CONTEXT_ID_SET(transport, function);
 
+  if (!transport->LockReadWrite())
+    return SIP_PDU::Local_TransportLost;
+
   reason = SIP_PDU::Local_TransportError;
 
-  m_dialog.SetInterface(transport->GetInterface());
   if (GetInterface().IsEmpty()) {
     // Restoring or first time, try every interface
     if (transport->WriteConnect(function))
@@ -2852,6 +2860,8 @@ SIP_PDU::StatusCodes SIPTransactionOwner::StartTransaction(const OpalTransport::
     if (succeeded)
       reason = SIP_PDU::Successful_OK;
   }
+
+  transport->UnlockReadWrite();
 
   return reason;
 }
@@ -2973,8 +2983,8 @@ SIPTransaction::~SIPTransaction()
 
   // Stop timers here so happens before the below trace log,
   // and not after it, if we wait for ~PTimer()
-  m_retryTimer.Stop(true);
-  m_completionTimer.Stop(true);
+  m_retryTimer.Stop();
+  m_completionTimer.Stop();
 
   m_owner->m_object.SafeDereference();
   if (m_deleteOwner)
@@ -3042,7 +3052,8 @@ bool SIPTransaction::Start()
     // Use the transactions transport to send the request
     switch (InternalSend(canDoTCP)) {
       case Successful_OK :
-        m_retryTimer = m_retryTimeoutMin;
+        if (!m_transport->IsReliable())
+          m_retryTimer = m_retryTimeoutMin;
         if (m_method == Method_INVITE)
           m_completionTimer = GetEndPoint().GetInviteTimeout();
         else
@@ -3098,7 +3109,8 @@ PBoolean SIPTransaction::Cancel()
   PTRACE(4, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " cancelled.");
   m_state = Cancelling;
   m_retry = 0;
-  m_retryTimer = m_retryTimeoutMin;
+  if (!m_transport->IsReliable())
+    m_retryTimer = m_retryTimeoutMin;
   m_completionTimer = GetEndPoint().GetPduCleanUpTimeout();
   return ResendCANCEL();
 }
@@ -3134,8 +3146,7 @@ bool SIPTransaction::ResendCANCEL()
 
 PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 {
-  // Stop the timers with asynchronous flag to avoid deadlock
-  m_retryTimer.Stop(false);
+  m_retryTimer.Stop();
 
   PString cseq = response.GetMIME().GetCSeq();
 
@@ -3172,7 +3183,10 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
         m_state = Proceeding;
 
       m_retry = 0;
-      m_retryTimer = m_retryTimeoutMax;
+      if (m_method != Method_INVITE && !m_transport->IsReliable())
+        m_retryTimer = m_retryTimeoutMax;
+      else
+        m_retryTimer = 0;
 
       int expiry = m_mime.GetExpires();
       if (expiry > 0)
@@ -3181,6 +3195,7 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
         m_completionTimer = GetEndPoint().GetProgressTimeout();
       else
         m_completionTimer = GetEndPoint().GetNonInviteTimeout();
+      PTRACE(4, "SIP\tTransaction timers set: retry=" << m_retryTimer << ", completion=" << m_completionTimer);
     }
     else {
       PTRACE(4, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " completing.");
@@ -3293,8 +3308,8 @@ void SIPTransaction::SetTerminated(States newState)
     return;
 
   // Terminated, so finished with timers
-  m_retryTimer.Stop(false);
-  m_completionTimer.Stop(false);
+  m_retryTimer.Stop();
+  m_completionTimer.Stop();
 
   m_owner->m_transactions.Remove(this);
 
@@ -3546,6 +3561,8 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 {
   if (IsTerminated())
     return false;
+
+  m_owner->FinaliseForking(*this, response); // Need this before sending ACK
 
   if (response.GetMIME().GetCSeq().Find(MethodNames[Method_INVITE]) != P_MAX_INDEX &&
                             GetConnection()->OnReceivedResponseToINVITE(*this, response)) {
