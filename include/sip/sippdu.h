@@ -958,7 +958,7 @@ class SIPTransactionOwner
 
     void FinaliseForking(SIPTransaction & transaction, SIP_PDU & response);
     bool CleanPendingTransactions();
-    void AbortPendingTransactions();
+    void AbortPendingTransactions(bool all = true);
 
     virtual SIP_PDU::StatusCodes StartTransaction(
       const OpalTransport::WriteConnectCallback & function

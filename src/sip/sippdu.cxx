@@ -2754,6 +2754,10 @@ void SIPTransactionOwner::FinaliseForking(SIPTransaction & transaction, SIP_PDU 
     PTRACE(4, "SIP\tSet local interface to " << localInterface);
   }
 
+  // About any transactions on a different interface, they are forks that have
+  // been resolved.
+  AbortPendingTransactions(false);
+
   transport->UnlockReadWrite();
 }
 
@@ -2764,18 +2768,9 @@ void SIPTransactionOwner::OnReceivedResponse(SIPTransaction & transaction, SIP_P
 
   unsigned responseClass = response.GetStatusCode()/100;
 
-  switch (response.GetStatusCode()) {
-    default :
-      if (responseClass != 2)
-        break;
-
-    case SIP_PDU::Failure_UnAuthorised :
-    case SIP_PDU::Failure_ProxyAuthenticationRequired :
-    case SIP_PDU::Failure_IntervalTooBrief :
-    case SIP_PDU::Failure_TemporarilyUnavailable:
-      // And kill all the rest
-      AbortPendingTransactions();
-  }
+  // If 2xx response, kill any forked transactions, have the definitive answer.
+  if (responseClass == 2)
+    AbortPendingTransactions();
 
   // Then tell endpoint - backward compatibility API
   m_endpoint.OnReceivedResponse(transaction, response);
@@ -2822,17 +2817,19 @@ bool SIPTransactionOwner::CleanPendingTransactions()
 }
 
 
-void SIPTransactionOwner::AbortPendingTransactions()
+void SIPTransactionOwner::AbortPendingTransactions(bool all)
 {
   PTRACE_IF(3, !m_transactions.IsEmpty(), "SIP\tCancelling/Aborting " << m_transactions.GetSize() << " transactions.");
 
   PSafePtr<SIPTransaction> transaction;
   while ((transaction = m_transactions.GetAt(0)) != NULL) {
-    if (transaction->IsTrying())
-      transaction->Abort();
-    else
-      transaction->Cancel();
-    m_transactions.Remove(transaction);
+    if (all || transaction->GetInterface() != GetInterface()) {
+      if (transaction->IsTrying())
+        transaction->Abort();
+      else
+        transaction->Cancel();
+      m_transactions.Remove(transaction);
+    }
   }
 }
 
