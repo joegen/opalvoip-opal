@@ -1336,10 +1336,10 @@ union OpalMessageParam {
 /** Message to/from OPAL system.
     This is passed via the OpalGetMessage() or OpalSendMessage() functions.
   */
-typedef struct OpalMessage {
+struct OpalMessage {
   OpalMessageType        m_type;    ///< Type of message
   union OpalMessageParam m_param;   ///< Context sensitive parameter based on m_type
-} OpalMessage;
+};
 
 
 #ifdef __cplusplus
