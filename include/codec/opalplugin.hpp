@@ -310,28 +310,33 @@ class PluginCodec_Utilities
         OPAL_PLUGIN_CLAMPED_RESOLUTION( 128,   96)
       };
       static size_t const LastMaxVideoResolutions = sizeof(MaxVideoResolutions)/sizeof(MaxVideoResolutions[0]) - 1;
-      static unsigned const MinWidth = 4*16;  // Four macroblocks wide
-      static unsigned const MinHeight = 3*16; // Three macroblocks high
 
-      unsigned maxWidth  = maxFrameSize*16*16/MinHeight;
-      unsigned maxHeight = maxFrameSize*16*16/MinWidth;
+      size_t index = 0;
 
-      // Check if total frame size below threshold total of macroblocks.
-      unsigned macroBlocks = GetMacroBlocks(width, height);
-      if (macroBlocks <= maxFrameSize &&
-          width  >= MinWidth  && width  <= maxWidth &&
-          height >= MinHeight && height <= maxHeight)
-        return false;
+      if (maxFrameSize > 0) {
+        static unsigned const MinWidth = 4*16;  // Four macroblocks wide
+        static unsigned const MinHeight = 3*16; // Three macroblocks high
 
-      size_t i = 0;
-      while (i < LastMaxVideoResolutions &&
-              (MaxVideoResolutions[i].m_macroblocks > maxFrameSize ||
-              MaxVideoResolutions[i].m_width > maxWidth ||
-              MaxVideoResolutions[i].m_height > maxHeight))
-        ++i;
-      width = MaxVideoResolutions[i].m_width;
-      height = MaxVideoResolutions[i].m_height;
-      macroBlocks = MaxVideoResolutions[i].m_macroblocks;
+        unsigned maxWidth  = maxFrameSize*16*16/MinHeight;
+        unsigned maxHeight = maxFrameSize*16*16/MinWidth;
+
+        // Check if total frame size below threshold total of macroblocks.
+        unsigned macroBlocks = GetMacroBlocks(width, height);
+        if (macroBlocks <= maxFrameSize &&
+            width  >= MinWidth  && width  <= maxWidth &&
+            height >= MinHeight && height <= maxHeight)
+          return false;
+
+        while (index < LastMaxVideoResolutions &&
+                (MaxVideoResolutions[index].m_macroblocks > maxFrameSize ||
+                MaxVideoResolutions[index].m_width > maxWidth ||
+                MaxVideoResolutions[index].m_height > maxHeight))
+          ++index;
+      }
+
+      width = MaxVideoResolutions[index].m_width;
+      height = MaxVideoResolutions[index].m_height;
+      maxFrameSize = MaxVideoResolutions[index].m_macroblocks;
       return true;
     }
 };
