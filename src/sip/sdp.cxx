@@ -183,25 +183,32 @@ static PString GetConnectAddressString(const OpalTransportAddress & address)
 
 /////////////////////////////////////////////////////////
 
-SDPMediaFormat::SDPMediaFormat(SDPMediaDescription & parent, RTP_DataFrame::PayloadTypes pt, const char * _name)
+SDPMediaFormat::SDPMediaFormat(SDPMediaDescription & parent)
   : m_parent(parent) 
-  , payloadType(pt)
-  , clockRate(0)
-  , encodingName(_name)
+  , m_payloadType(RTP_DataFrame::DynamicBase)
+  , m_clockRate(0)
 {
   PTRACE_CONTEXT_ID_FROM(parent);
 }
 
 
-SDPMediaFormat::SDPMediaFormat(SDPMediaDescription & parent, const OpalMediaFormat & fmt)
-  : m_mediaFormat(fmt)
-  , m_parent(parent) 
-  , payloadType(fmt.GetPayloadType())
-  , clockRate(fmt.GetClockRate())
-  , encodingName(fmt.GetEncodingName())
+bool SDPMediaFormat::Initialise(const PString &)
 {
+  return true;
+}
+
+
+void SDPMediaFormat::Initialise(const OpalMediaFormat & fmt)
+{
+  m_mediaFormat = fmt;
+  m_payloadType = fmt.GetPayloadType();
+  m_clockRate = fmt.GetClockRate();
+  m_encodingName = fmt.GetEncodingName();
+
   if (fmt.GetMediaType() == OpalMediaType::Audio()) 
-    parameters = PString(PString::Unsigned, fmt.GetOptionInteger(OpalAudioFormat::ChannelsOption()));
+    m_parameters = PString(PString::Unsigned, fmt.GetOptionInteger(OpalAudioFormat::ChannelsOption()));
+
+  m_parent.ProcessMediaOptions(*this, m_mediaFormat);
 }
 
 
@@ -256,33 +263,28 @@ PString SDPMediaFormat::GetFMTP() const
 
 void SDPMediaFormat::PrintOn(ostream & strm) const
 {
-  if (!PAssert(!encodingName.IsEmpty(), "SDPMediaFormat encoding name is empty"))
+  if (!PAssert(!m_encodingName.IsEmpty(), "SDPMediaFormat encoding name is empty"))
     return;
 
   /* Even though officially, case is not significant for SDP encoding
      types, we make it upper case anyway as this seems to be the custom,
      and some very stupid endpoints assume it is always the case. */
-  strm << "a=rtpmap:" << (int)payloadType << ' ' << encodingName << '/' << clockRate;
-  if (!parameters.IsEmpty())
-    strm << '/' << parameters;
+  strm << "a=rtpmap:" << (int)m_payloadType << ' ' << m_encodingName << '/' << m_clockRate;
+  if (!m_parameters.IsEmpty())
+    strm << '/' << m_parameters;
   strm << "\r\n";
 
   PString fmtpString = GetFMTP();
   if (!fmtpString.IsEmpty())
-    strm << "a=fmtp:" << (int)payloadType << ' ' << fmtpString << "\r\n";
-
-#if OPAL_VIDEO
-  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb)
-    strm << "a=rtcp-fb:" << (int)payloadType << ' ' << m_rtcp_fb << "\r\n";
-#endif
+    strm << "a=fmtp:" << (int)m_payloadType << ' ' << fmtpString << "\r\n";
 }
 
 
 void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
 {
   mediaFormat.MakeUnique();
-  mediaFormat.SetPayloadType(payloadType);
-  mediaFormat.SetOptionInteger(OpalAudioFormat::ChannelsOption(), parameters.IsEmpty() ? 1 : parameters.AsUnsigned());
+  mediaFormat.SetPayloadType(m_payloadType);
+  mediaFormat.SetOptionInteger(OpalAudioFormat::ChannelsOption(), m_parameters.IsEmpty() ? 1 : m_parameters.AsUnsigned());
 
   // Fill in the default values for (possibly) missing FMTP options
   for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
@@ -304,12 +306,6 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
       return;
     }
   }
-
-#if OPAL_VIDEO
-  // Save the RTCP feedback (RFC4585) capability.
-  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb && !m_parent.GetOptionStrings().GetBoolean(OPAL_OPT_FORCE_RTCP_FB))
-    mediaFormat.SetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), m_rtcp_fb);
-#endif
 
   // No FMTP to parse, may as well stop here
   if (m_fmtp.IsEmpty())
@@ -391,9 +387,6 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
 bool SDPMediaFormat::PreEncode()
 {
   m_mediaFormat.SetOptionString(OpalMediaFormat::ProtocolOption(), PLUGINCODEC_OPTION_PROTOCOL_SIP);
-#if OPAL_VIDEO
-  m_rtcp_fb = m_mediaFormat.GetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), OpalVideoFormat::e_NoRTCPFb);
-#endif
   return m_mediaFormat.ToCustomisedOptions();
 }
 
@@ -401,28 +394,28 @@ bool SDPMediaFormat::PreEncode()
 bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsigned bandwidth)
 {
   // try to init encodingName from global list, to avoid PAssert when media has no rtpmap
-  if (encodingName.IsEmpty())
-    encodingName = m_mediaFormat.GetEncodingName();
+  if (m_encodingName.IsEmpty())
+    m_encodingName = m_mediaFormat.GetEncodingName();
 
   if (m_mediaFormat.IsEmpty()) {
-    PTRACE(5, "SDP\tMatching \"" << encodingName << "\", pt=" << payloadType << ", clock=" << clockRate);
-    for (OpalMediaFormatList::const_iterator iterFormat = mediaFormats.FindFormat(payloadType, clockRate, encodingName, "sip");
+    PTRACE(5, "SDP\tMatching \"" << m_encodingName << "\", pt=" << m_payloadType << ", clock=" << m_clockRate);
+    for (OpalMediaFormatList::const_iterator iterFormat = mediaFormats.FindFormat(m_payloadType, m_clockRate, m_encodingName, "sip");
          iterFormat != mediaFormats.end();
-         iterFormat = mediaFormats.FindFormat(payloadType, clockRate, encodingName, "sip", iterFormat)) {
+         iterFormat = mediaFormats.FindFormat(m_payloadType, m_clockRate, m_encodingName, "sip", iterFormat)) {
       OpalMediaFormat adjustedFormat = *iterFormat;
       SetMediaFormatOptions(adjustedFormat);
       // skip formats whose fmtp don't match options
       if (iterFormat->ValidateMerge(adjustedFormat)) {
-        PTRACE(3, "SDP\tMatched \"" << encodingName << "\", pt=" << payloadType << ", clock=" << clockRate << " to " << *iterFormat);
+        PTRACE(3, "SDP\tMatched \"" << m_encodingName << "\", pt=" << m_payloadType << ", clock=" << m_clockRate << " to " << *iterFormat);
         m_mediaFormat = adjustedFormat;
         break;
       }
 
-      PTRACE(4, "SDP\tDid not match\"" << encodingName << "\", pt=" << payloadType << ", clock=" << clockRate << " to " << *iterFormat);
+      PTRACE(4, "SDP\tDid not match\"" << m_encodingName << "\", pt=" << m_payloadType << ", clock=" << m_clockRate << " to " << *iterFormat);
     }
 
     if (m_mediaFormat.IsEmpty()) {
-      PTRACE(2, "SDP\tCould not find media format for \"" << encodingName << "\", pt=" << payloadType << ", clock=" << clockRate);
+      PTRACE(2, "SDP\tCould not find media format for \"" << m_encodingName << "\", pt=" << m_payloadType << ", clock=" << m_clockRate);
       return false;
     }
   }
@@ -452,7 +445,7 @@ bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsign
   if (m_mediaFormat.ToNormalisedOptions())
     return true;
 
-  PTRACE(2, "SDP\tCould not normalise format \"" << encodingName << "\", pt=" << payloadType << ", removing.");
+  PTRACE(2, "SDP\tCould not normalise format \"" << m_encodingName << "\", pt=" << m_payloadType << ", removing.");
   return false;
 }
 
@@ -661,9 +654,13 @@ void SDPMediaDescription::CreateSDPMediaFormats(const PStringArray & tokens)
 {
   // create the format list
   for (PINDEX i = 3; i < tokens.GetSize(); i++) {
-    SDPMediaFormat * fmt = CreateSDPMediaFormat(tokens[i]);
-    if (fmt != NULL) 
-      formats.Append(fmt);
+    SDPMediaFormat * fmt = CreateSDPMediaFormat();
+    if (fmt != NULL) {
+      if (fmt->Initialise(tokens[i]))
+        m_formats.Append(fmt);
+      else
+        delete fmt;
+    }
     else {
       PTRACE(2, "SDP\tCannot create SDP media format for port " << tokens[i]);
     }
@@ -716,12 +713,12 @@ bool SDPMediaDescription::PostDecode(const OpalMediaFormatList & mediaFormats)
       bw *= 1000;
   }
 
-  SDPMediaFormatList::iterator format = formats.begin();
-  while (format != formats.end()) {
+  SDPMediaFormatList::iterator format = m_formats.begin();
+  while (format != m_formats.end()) {
     if (format->PostDecode(mediaFormats, bw))
       ++format;
     else
-      formats.erase(format++);
+      m_formats.erase(format++);
   }
 
   return true;
@@ -769,7 +766,7 @@ SDPMediaFormat * SDPMediaDescription::FindFormat(PString & params) const
 
     // find the format that matches the payload type
     RTP_DataFrame::PayloadTypes pt = (RTP_DataFrame::PayloadTypes)params.Left(pos).AsUnsigned();
-    for (format = formats.begin(); format != formats.end(); ++format) {
+    for (format = m_formats.begin(); format != m_formats.end(); ++format) {
       if (format->GetPayloadType() == pt)
         break;
     }
@@ -778,13 +775,13 @@ SDPMediaFormat * SDPMediaDescription::FindFormat(PString & params) const
     // Check for it a format name
     pos = params.Find(' ');
     PString encodingName = params.Left(pos);
-    for (format = formats.begin(); format != formats.end(); ++format) {
+    for (format = m_formats.begin(); format != m_formats.end(); ++format) {
       if (format->GetEncodingName() == encodingName)
         break;
     }
   }
 
-  if (format == formats.end()) {
+  if (format == m_formats.end()) {
     PTRACE(2, "SDP\tMedia attribute found for unknown RTP type/name " << params.Left(pos));
     return NULL;
   }
@@ -802,7 +799,7 @@ SDPMediaFormat * SDPMediaDescription::FindFormat(PString & params) const
 
 bool SDPMediaDescription::PreEncode()
 {
-  for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
+  for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
     if (!format->PreEncode())
       return false;
   }
@@ -849,7 +846,7 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats() const
   OpalMediaFormatList list;
 
   if (m_port != 0) {
-    for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format) {
+    for (SDPMediaFormatList::const_iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
       OpalMediaFormat mediaFormat = format->GetMediaFormat();
       if (mediaFormat.IsValid())
         list += mediaFormat;
@@ -867,7 +864,7 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats() const
 void SDPMediaDescription::AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat)
 {
   if (sdpMediaFormat != NULL)
-    formats.Append(sdpMediaFormat);
+    m_formats.Append(sdpMediaFormat);
 }
 
 
@@ -882,7 +879,7 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
   const char * encodingName = mediaFormat.GetEncodingName();
   unsigned clockRate = mediaFormat.GetClockRate();
 
-  for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
+  for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
     const OpalMediaFormat & sdpMediaFormat = format->GetMediaFormat();
     if (mediaFormat == sdpMediaFormat) {
       PTRACE(2, "SDP\tSDP not including " << mediaFormat << " as already included");
@@ -903,10 +900,8 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
     }
   }
 
-  SDPMediaFormat * sdpFormat = new SDPMediaFormat(*this, mediaFormat);
-
-  ProcessMediaOptions(*sdpFormat, mediaFormat);
-
+  SDPMediaFormat * sdpFormat = CreateSDPMediaFormat();
+  sdpFormat->Initialise(mediaFormat);
   AddSDPMediaFormat(sdpFormat);
 }
 
@@ -931,7 +926,7 @@ PString SDPMediaDescription::GetSDPPortList() const
 
   // output encoding names for non RTP
   SDPMediaFormatList::const_iterator format;
-  for (format = formats.begin(); format != formats.end(); ++format)
+  for (format = m_formats.begin(); format != m_formats.end(); ++format)
     strm << ' ' << format->GetEncodingName();
 
   return strm;
@@ -941,7 +936,7 @@ PString SDPMediaDescription::GetSDPPortList() const
 void SDPMediaDescription::Copy(SDPMediaDescription & desc)
 {
   SDPMediaFormatList::iterator format;
-  for (format = desc.formats.begin(); format != desc.formats.end(); ++format)
+  for (format = desc.m_formats.begin(); format != desc.m_formats.end(); ++format)
     AddSDPMediaFormat(format->CloneAs<SDPMediaFormat>());
 }
 
@@ -979,7 +974,7 @@ PCaselessString SDPDummyMediaDescription::GetSDPTransportType() const
 }
 
 
-SDPMediaFormat * SDPDummyMediaDescription::CreateSDPMediaFormat(const PString & /*portString*/)
+SDPMediaFormat * SDPDummyMediaDescription::CreateSDPMediaFormat()
 {
   return NULL;
 }
@@ -1201,58 +1196,35 @@ PCaselessString SDPRTPAVPMediaDescription::GetSDPTransportType() const
 }
 
 
-SDPMediaFormat * SDPRTPAVPMediaDescription::CreateSDPMediaFormat(const PString & portString)
+bool SDPRTPAVPMediaDescription::Format::Initialise(const PString & portString)
 {
-  return new SDPMediaFormat(*this, (RTP_DataFrame::PayloadTypes)portString.AsUnsigned());
+  unsigned pt = portString.AsInteger();
+  if (pt < 0 || pt > 127)
+    return false;
+
+  m_payloadType = (RTP_DataFrame::PayloadTypes)pt;
+  return true;
+}
+
+
+SDPMediaFormat * SDPRTPAVPMediaDescription::CreateSDPMediaFormat()
+{
+  return new Format(*this);
 }
 
 
 PString SDPRTPAVPMediaDescription::GetSDPPortList() const
 {
-  if (formats.IsEmpty())
+  if (m_formats.IsEmpty())
     return "127"; // Have to have SOMETHING
 
   PStringStream strm;
 
   // output RTP payload types
-  for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format)
+  for (SDPMediaFormatList::const_iterator format = m_formats.begin(); format != m_formats.end(); ++format)
     strm << ' ' << (int)format->GetPayloadType();
 
   return strm;
-}
-
-
-bool SDPRTPAVPMediaDescription::PreEncode()
-{
-  if (!SDPMediaDescription::PreEncode())
-    return false;
-
-#if OPAL_VIDEO
-  if (formats.IsEmpty())
-    return true;
-
-  bool allSame = true;
-
-  if (m_enableFeedback || m_stringOptions.GetInteger(OPAL_OPT_OFFER_RTCP_FB, 1) == 1) {
-    SDPMediaFormatList::iterator format = formats.begin();
-    m_rtcp_fb = format->GetRTCP_FB();
-    for (++format; format != formats.end(); ++format) {
-      if (m_rtcp_fb != format->GetRTCP_FB()) {
-        allSame = false;
-        break;
-      }
-    }
-  }
-
-  if (allSame) {
-    for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format)
-      format->SetRTCP_FB(PString::Empty());
-  }
-  else
-    m_rtcp_fb = OpalVideoFormat::e_NoRTCPFb;
-#endif
-
-  return true;
 }
 
 
@@ -1262,14 +1234,8 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
   SDPMediaDescription::OutputAttributes(strm);
 
   // output attributes for each payload type
-  for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format)
+  for (SDPMediaFormatList::const_iterator format = m_formats.begin(); format != m_formats.end(); ++format)
     strm << *format;
-
-#if OPAL_VIDEO
-  // m_rtcp_fb is set via SDPRTPAVPMediaDescription::PreEncode according to various options
-  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb)
-    strm << "a=rtcp-fb:* " << m_rtcp_fb << "\r\n";
-#endif
 
   for (PList<SDPCryptoSuite>::const_iterator crypto = m_cryptoSuites.begin(); crypto != m_cryptoSuites.end(); ++crypto)
     strm << *crypto;
@@ -1333,24 +1299,6 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
 
     return;
   }
-
-#if OPAL_VIDEO
-  if (attr *= "rtcp-fb") {
-    if (value[0] == '*') {
-      PString params = value.Mid(1).Trim();
-      SDPMediaFormatList::iterator format;
-      for (format = formats.begin(); format != formats.end(); ++format)
-        format->SetRTCP_FB(params);
-    }
-    else {
-      PString params = value;
-      SDPMediaFormat * format = FindFormat(params);
-      if (format != NULL)
-        format->SetRTCP_FB(params);
-    }
-    return;
-  }
-#endif
 
   if (attr *= "crypto") {
     SDPCryptoSuite * cryptoSuite = new SDPCryptoSuite(0);
@@ -1418,7 +1366,7 @@ void SDPAudioMediaDescription::OutputAttributes(ostream & strm) const
 
   if (m_stringOptions.GetBoolean(OPAL_OPT_OFFER_SDP_PTIME)) {
     unsigned ptime = 0;
-    for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format) {
+    for (SDPMediaFormatList::const_iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
       const OpalMediaFormat & mediaFormat = format->GetMediaFormat();
       if (mediaFormat.HasOption(OpalAudioFormat::TxFramesPerPacketOption())) {
         unsigned ptime1 = mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption()) * mediaFormat.GetFrameTime() / mediaFormat.GetTimeUnits();
@@ -1434,7 +1382,7 @@ void SDPAudioMediaDescription::OutputAttributes(ostream & strm) const
   unsigned maxptime = UINT_MAX;
 
   // output attributes for each payload type
-  for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format) {
+  for (SDPMediaFormatList::const_iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
     const OpalMediaFormat & mediaFormat = format->GetMediaFormat();
     if (mediaFormat.HasOption(OpalAudioFormat::RxFramesPerPacketOption())) {
       unsigned frameTime = mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits();
@@ -1490,7 +1438,7 @@ bool SDPAudioMediaDescription::PostDecode(const OpalMediaFormatList & mediaForma
   if (!SDPRTPAVPMediaDescription::PostDecode(mediaFormats))
     return false;
 
-  for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
+  for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
     OpalMediaFormat & mediaFormat = format->GetWritableMediaFormat();
 
     // Set the frame size options from media's ptime & maxptime attributes
@@ -1531,6 +1479,12 @@ PString SDPVideoMediaDescription::GetSDPMediaType() const
 }
 
 
+SDPMediaFormat * SDPVideoMediaDescription::CreateSDPMediaFormat()
+{
+  return new Format(*this);
+}
+
+
 static const char * const ContentRoleNames[OpalVideoFormat::EndContentRole] = { NULL, "slides", "main", "speaker", "sl" };
 
 
@@ -1541,6 +1495,10 @@ void SDPVideoMediaDescription::OutputAttributes(ostream & strm) const
 
   if (m_contentRole < OpalVideoFormat::EndContentRole && ContentRoleNames[m_contentRole] != NULL)
     strm << "a=content:" << ContentRoleNames[m_contentRole] << "\r\n";
+
+  // m_rtcp_fb is set via SDPRTPAVPMediaDescription::PreEncode according to various options
+  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb)
+    strm << "a=rtcp-fb:* " << m_rtcp_fb << "\r\n";
 }
 
 
@@ -1568,6 +1526,31 @@ void SDPVideoMediaDescription::SetAttribute(const PString & attr, const PString 
     return;
   }
 
+  if (attr *= "rtcp-fb") {
+    if (value[0] == '*') {
+      PString params = value.Mid(1).Trim();
+      SDPMediaFormatList::iterator format;
+      for (format = m_formats.begin(); format != m_formats.end(); ++format)
+        dynamic_cast<Format *>(&*format)->SetRTCP_FB(params);
+    }
+    else {
+      PString params = value;
+      Format * format = dynamic_cast<Format *>(FindFormat(params));
+      if (format != NULL)
+        format->SetRTCP_FB(params);
+    }
+    return;
+  }
+
+  // As per http://tools.ietf.org/html/draft-ietf-mmusic-image-attributes-11
+  if (attr *= "imageattr") {
+    PString params = value;
+    Format * format = dynamic_cast<Format *>(FindFormat(params));
+    if (format != NULL)
+      format->ParseImageAttr(params);
+    return;
+  }
+
   return SDPRTPAVPMediaDescription::SetAttribute(attr, value);
 }
 
@@ -1577,7 +1560,7 @@ bool SDPVideoMediaDescription::PostDecode(const OpalMediaFormatList & mediaForma
   if (!SDPRTPAVPMediaDescription::PostDecode(mediaFormats))
     return false;
 
-  for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
+  for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
     OpalMediaFormat & mediaFormat = format->GetWritableMediaFormat();
     mediaFormat.SetOptionEnum(OpalVideoFormat::ContentRoleOption(), m_contentRole);
     m_contentMask |= mediaFormat.GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption());
@@ -1593,6 +1576,9 @@ bool SDPVideoMediaDescription::PreEncode()
   if (!SDPRTPAVPMediaDescription::PreEncode())
     return false;
 
+  if (m_formats.IsEmpty())
+    return true;
+
   /* Even though the bandwidth parameter COULD be used for audio, we don't
      do it as it has very limited use. Variable bit rate audio codecs are
      not common, and usually there is an fmtp value to select the different
@@ -1601,7 +1587,7 @@ bool SDPVideoMediaDescription::PreEncode()
 
      As per RFC3890 we set both AS and TIAS parameters.
   */
-  for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
+  for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
     const OpalMediaFormat & mediaFormat = format->GetMediaFormat();
 
     for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); ++i) {
@@ -1623,8 +1609,243 @@ bool SDPVideoMediaDescription::PreEncode()
       m_contentRole = format->GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole);
   }
 
+  bool allSame = true;
+
+  if (m_enableFeedback || m_stringOptions.GetInteger(OPAL_OPT_OFFER_RTCP_FB, 1) == 1) {
+    bool first = true;
+    for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
+      Format * vidFmt = dynamic_cast<Format *>(&*format);
+      if (vidFmt == NULL)
+        continue;
+      if (first) {
+        first = false;
+        m_rtcp_fb = vidFmt->GetRTCP_FB();
+      }
+      else if (m_rtcp_fb != vidFmt->GetRTCP_FB()) {
+        allSame = false;
+        break;
+      }
+    }
+  }
+
+  if (allSame) {
+    for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
+      Format * vidFmt = dynamic_cast<Format *>(&*format);
+      vidFmt->SetRTCP_FB(PString::Empty());
+    }
+  }
+  else
+    m_rtcp_fb = OpalVideoFormat::e_NoRTCPFb;
+
   return true;
 }
+
+
+SDPVideoMediaDescription::Format::Format(SDPVideoMediaDescription & parent)
+  : SDPRTPAVPMediaDescription::Format(parent)
+  , m_minRxWidth(0)
+  , m_minRxHeight(0)
+  , m_maxRxWidth(0)
+  , m_maxRxHeight(0)
+  , m_txWidth(0)
+  , m_txHeight(0)
+{
+}
+
+
+void SDPVideoMediaDescription::Format::PrintOn(ostream & strm) const
+{
+  SDPMediaFormat::PrintOn(strm);
+
+  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb)
+    strm << "a=rtcp-fb:" << (int)m_payloadType << ' ' << m_rtcp_fb << "\r\n";
+
+  if (m_mediaFormat.GetOptionBoolean(OpalVideoFormat::UseImageAttributeInSDP()))
+    strm << "a=imageattr:" << (int)m_payloadType
+         << " recv [x=[" << m_mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption())
+         << ":16:" << m_mediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption())
+         << "],y=[" << m_mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameHeightOption())
+         << ":16:" << m_mediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption())
+         << "]] send [x=[128:16:" << m_mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption())
+         << "],y=[96:16:" << m_mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption())
+         << "]]\r\n";
+}
+
+
+bool SDPVideoMediaDescription::Format::PreEncode()
+{
+  m_rtcp_fb = m_mediaFormat.GetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), OpalVideoFormat::e_NoRTCPFb);
+  return SDPMediaFormat::PreEncode();
+}
+
+
+void SDPVideoMediaDescription::Format::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
+{
+  SDPMediaFormat::SetMediaFormatOptions(mediaFormat);
+
+  // Save the RTCP feedback (RFC4585) capability.
+  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb && !m_parent.GetOptionStrings().GetBoolean(OPAL_OPT_FORCE_RTCP_FB))
+    mediaFormat.SetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), m_rtcp_fb);
+
+  bool add = false;
+  if (m_txWidth && m_txHeight) {
+    mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), m_txWidth);
+    mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), m_txHeight);
+    add = true;
+  }
+
+  if (m_minRxWidth && m_minRxHeight && m_maxRxWidth && m_maxRxHeight) {
+    mediaFormat.SetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption(), m_minRxWidth);
+    mediaFormat.SetOptionInteger(OpalVideoFormat::MinRxFrameHeightOption(), m_minRxHeight);
+    mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption(), m_maxRxWidth);
+    mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(), m_maxRxHeight);
+    add = true;
+  }
+
+  if (add)
+    mediaFormat.SetOptionBoolean(OpalVideoFormat::UseImageAttributeInSDP(), true);
+}
+
+
+void SDPVideoMediaDescription::Format::ParseImageAttr(const PString & params)
+{
+  bool sendAttr = false;
+  PINDEX pos = 0;
+  while (pos < params.GetLength()) {
+    while (isspace(params[pos]))
+      ++pos;
+
+    static PConstString send("send");
+    if (params.NumCompare(send, send.GetLength(), pos) == EqualTo) {
+      pos +=send.GetLength();
+      sendAttr = true;
+      continue;
+    }
+
+    static PConstString recv("recv");
+    if (params.NumCompare(recv, recv.GetLength(), pos) == EqualTo) {
+      pos += recv.GetLength();
+      sendAttr = false;
+      continue;
+    }
+
+    if (params[pos] == '*') {
+      while (isspace(params[++pos]))
+        ;
+      continue;
+    }
+
+    if (params[pos] != '[') {
+      PTRACE(2, "SDP\tIllegal imageattr (expected '['): \"" << params << '"');
+      return;
+    }
+
+    do {
+      PINDEX equal = params.Find('=', pos);
+      if (equal == P_MAX_INDEX) {
+        PTRACE(2, "SDP\tIllegal imageattr (expected '='): \"" << params << '"');
+        return;
+      }
+
+      PCaselessString attrName = params(pos+1, equal-1);
+      pos = equal+1;
+
+      PString attrValue;
+      if (params[pos] == '[') {
+        if ((pos = params.Find(']', equal)) == P_MAX_INDEX) {
+          PTRACE(2, "SDP\tIllegal imageattr (expected ']'): \"" << params << '"');
+          return;
+        }
+
+        attrValue = params(equal+2, pos-1);
+
+        ++pos;
+        if (params[pos] != ',' && params[pos] != ']') {
+          PTRACE(2, "SDP\tIllegal imageattr (expected ',' or ']'): \"" << params << '"');
+          return;
+        }
+      }
+      else {
+        while (params[pos] != ',' && params[pos] != ']') {
+          if (++pos >= params.GetLength()) {
+            PTRACE(2, "SDP\tIllegal imageattr (expected ',' or ']'): \"" << params << '"');
+            return;
+          }
+        }
+
+        attrValue = params(equal+1, pos-1);
+      }
+
+      if (attrName == "x" || attrName == "y") {
+        unsigned minimum, maximum;
+        PStringArray values = attrValue.Tokenise(':');
+        switch (values.GetSize()) {
+          case 3 :
+            minimum = values[0].AsUnsigned();
+            maximum = values[2].AsUnsigned();
+            break;
+
+          case 2 :
+            minimum = values[0].AsUnsigned();
+            maximum = values[1].AsUnsigned();
+            break;
+
+          default :
+            PTRACE(2, "SDP\tIllegal imageattr (expected ':'): \"" << params << '"');
+            return;
+        }
+
+        if (attrName == "x") {
+          if (sendAttr)
+            m_txWidth = maximum;
+          else {
+            m_minRxWidth = minimum;
+            m_maxRxWidth = maximum;
+          }
+        }
+        else {
+          if (sendAttr)
+            m_txHeight = maximum;
+          else {
+            m_minRxHeight = minimum;
+            m_maxRxHeight = maximum;
+          }
+        }
+      }
+#if 0
+      else if (attrName == "sar") {
+      }
+      else if (attrName == "par") {
+        PString w, h;
+        if (!attrValue.Split('-', w, h) {
+          PTRACE(2, "SDP\tIllegal imageattr (expected '-'): \"" << params << '"');
+          return;
+        }
+      }
+      else if (attrName == "q") {
+        PINDEX end = params.FindSpan("0123456789.", pos);
+        double q = params(pos, end).AsReal();
+        pos = end+1;
+      }
+#endif
+      else {
+        PTRACE(3, "SDP\tUnknown/unsupported imageattr attribute: \"" << params << '"');
+      }
+    } while (params[pos] == ',');
+
+    if (params[pos++] != ']') {
+      PTRACE(2, "SDP\tIllegal imageattr (expected ']'): \"" << params << '"');
+      return;
+    }
+  }
+
+  // Allow response SDP to include imageattr
+  PTRACE(4, "SDP\tparsed imageattr:"
+            " minRx=" << m_minRxWidth << 'x' << m_minRxHeight
+          << " maxRx=" << m_maxRxWidth << 'x' << m_maxRxHeight
+          << " tx=" << m_txWidth << 'x' << m_txHeight);
+}
+
 
 #endif // OPAL_VIDEO
 
@@ -1649,9 +1870,19 @@ PString SDPApplicationMediaDescription::GetSDPMediaType() const
 }
 
 
-SDPMediaFormat * SDPApplicationMediaDescription::CreateSDPMediaFormat(const PString & portString)
+SDPMediaFormat * SDPApplicationMediaDescription::CreateSDPMediaFormat()
 {
-  return new SDPMediaFormat(*this, RTP_DataFrame::DynamicBase, portString);
+  return new Format(*this);
+}
+
+
+bool SDPApplicationMediaDescription::Format::Initialise(const PString & portString)
+{
+  if (portString.IsEmpty())
+    return false;
+
+  m_encodingName = portString;
+  return true;
 }
 
 
