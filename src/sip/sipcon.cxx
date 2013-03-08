@@ -693,7 +693,9 @@ static bool SetNxECapabilities(OpalRFC2833Proto * handler,
   if (localMedia != NULL) {
     // Set the receive handler to what we are sending to remote in our SDP
     handler->SetRxMediaFormat(adjustedFormat);
-    localMedia->AddSDPMediaFormat(new SDPMediaFormat(*localMedia, adjustedFormat));
+    SDPMediaFormat * fmt = localMedia->CreateSDPMediaFormat();
+    fmt->Initialise(adjustedFormat);
+    localMedia->AddSDPMediaFormat(fmt);
   }
 
   return true;

@@ -1786,6 +1786,9 @@ const PString & OpalVideoFormat::RateControllerOption()           { static const
 const PString & OpalVideoFormat::ContentRoleOption()              { static const PConstString s("Content Role");                               return s; }
 const PString & OpalVideoFormat::ContentRoleMaskOption()          { static const PConstString s("Content Role Mask");                          return s; }
 const PString & OpalVideoFormat::RTCPFeedbackOption()             { static const PConstString s("RTCP Feedback"); return s; }
+#if OPAL_SIP
+const PString & OpalVideoFormat::UseImageAttributeInSDP()         { static const PConstString s("Use Image Attribute in SDP"); return s; }
+#endif
 
 
 OpalVideoFormat::OpalVideoFormat(const char * fullName,
@@ -1838,8 +1841,11 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::RateControlPeriodOption(),        false, OpalMediaOption::AlwaysMerge, 1000,                        100, 60000));
   AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxTxPacketSizeOption(),          true,  OpalMediaOption::AlwaysMerge, PluginCodec_RTP_MaxPayloadSize, 100    ));
   AddOption(new OpalMediaOptionString  (OpalVideoFormat::RateControllerOption(),           false                                                                       ));
-  AddOption(new OpalMediaOptionEnum    (OpalVideoFormat::RTCPFeedbackOption(),             false,  OpalVideoFormat::RTCPFeedback::Names(), P_MAX_INDEX,
+  AddOption(new OpalMediaOptionEnum    (OpalVideoFormat::RTCPFeedbackOption(),             false, OpalVideoFormat::RTCPFeedback::Names(), P_MAX_INDEX,
                                      OpalMediaOption::IntersectionMerge, OpalVideoFormat::e_PLI|OpalVideoFormat::e_FIR|OpalVideoFormat::e_TMMBR|OpalVideoFormat::e_TSTR));
+#if OPAL_SIP
+  AddOption(new OpalMediaOptionBoolean (OpalVideoFormat::UseImageAttributeInSDP(),         false, OpalMediaOption::AlwaysMerge));
+#endif
 
   static const char * const RoleEnumerations[OpalVideoFormat::EndContentRole] = {
     "No Role",
