@@ -119,18 +119,27 @@ class SDPSIPIMMediaDescription : public SDPMediaDescription
 
     virtual void CreateSDPMediaFormats(const PStringArray &);
     virtual void SetAttribute(const PString & attr, const PString & value);
-    virtual void ProcessMediaOptions(SDPMediaFormat & sdpFormat, const OpalMediaFormat & mediaFormat);
     virtual void AddMediaFormat(const OpalMediaFormat & mediaFormat);
 
     virtual OpalMediaFormatList GetMediaFormats() const;
 
     // CreateSDPMediaFormat is used for processing format lists. MSRP always contains only "*"
-    virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & ) { return NULL; }
+    virtual SDPMediaFormat * CreateSDPMediaFormat();
 
     // FindFormat is used only for rtpmap and fmtp, neither of which are used for MSRP
     virtual SDPMediaFormat * FindFormat(PString &) const { return NULL; }
 
   protected:
+    class Format : public SDPMediaFormat
+    {
+      public:
+        Format(SDPSIPIMMediaDescription & parent, const OpalMediaFormat & mediaFormat)
+          : SDPMediaFormat(parent)
+        {
+          Initialise(mediaFormat);
+        }
+    };
+
     OpalTransportAddress m_transportAddress;
     PString              m_fromURL;
 };
@@ -202,7 +211,13 @@ SDPSIPIMMediaDescription::SDPSIPIMMediaDescription(const OpalTransportAddress & 
 
 void SDPSIPIMMediaDescription::CreateSDPMediaFormats(const PStringArray &)
 {
-  formats.Append(new SDPMediaFormat(*this, OpalSIPIM));
+  m_formats.Append(CreateSDPMediaFormat());
+}
+
+
+SDPMediaFormat * SDPSIPIMMediaDescription::CreateSDPMediaFormat()
+{
+  return new Format(*this, OpalSIPIM);
 }
 
 
@@ -216,11 +231,6 @@ PString SDPSIPIMMediaDescription::GetSDPPortList() const
 
 
 void SDPSIPIMMediaDescription::SetAttribute(const PString & /*attr*/, const PString & /*value*/)
-{
-}
-
-
-void SDPSIPIMMediaDescription::ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*/, const OpalMediaFormat & /*mediaFormat*/)
 {
 }
 
@@ -244,9 +254,7 @@ void SDPSIPIMMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaForma
     return;
   }
 
-  SDPMediaFormat * sdpFormat = new SDPMediaFormat(*this, mediaFormat);
-  ProcessMediaOptions(*sdpFormat, mediaFormat);
-  AddSDPMediaFormat(sdpFormat);
+  AddSDPMediaFormat(new Format(*this, mediaFormat));
 }
 
 
