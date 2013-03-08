@@ -50,10 +50,24 @@
 #define MY_CODEC_LOG "VP8"
 class VP8_CODEC { };
 
-PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
+static unsigned   MyVersion = PLUGIN_CODEC_VERSION_INTERSECT;
+static const char MyDescription[] = "VP8 Video Codec";      // Human readable description of codec
+static const char FormatNameRFC[] = "VP8-WebM";             // OpalMediaFormat name string to generate
+static const char FormatNameOM[] = "VP8-OM";                // OpalMediaFormat name string to generate
+static const char MyPayloadNameRFC[] = "VP8";               // RTP payload name (IANA approved)
+static const char MyPayloadNameOM[] = "X-MX-VP8";           // RTP payload name (Open Market custom)
+static unsigned   MyClockRate = 90000;                      // RTP dictates 90000
+static unsigned   MyMaxFrameRate = 60;                      // Maximum frame rate (per second)
+static unsigned   MyMaxWidth = 2816;                        // Maximum width of frame
+static unsigned   MyMaxHeight = 2304;                       // Maximum height of frame
+static unsigned   MyMaxBitRate = 16000000;
+
+static const char YUV420PFormatName[] = "YUV420P";          // Raw media format
 
 
-PLUGINCODEC_LICENSE(
+static struct PluginCodec_information LicenseInfo = {
+  1143692893,                                                   // timestamp = Thu 30 Mar 2006 04:28:13 AM UTC
+
   "Robert Jongbloed, Vox Lucida Pty.Ltd.",                      // source code author
   "1.0",                                                        // source code version
   "robertj@voxlucida.com.au",                                   // source code email
@@ -62,7 +76,7 @@ PLUGINCODEC_LICENSE(
   "MPL 1.0",                                                    // source code license
   PluginCodec_License_MPL,                                      // source code license
   
-  "VP8 Video Codec",                                            // codec description
+  MyDescription,                                                // codec description
   "James Bankoski, John Koleszar, Lou Quillio, Janne Salonen, "
   "Paul Wilkins, Yaowu Xu, all from Google Inc.",               // codec author
   "8", 							        // codec version
@@ -73,7 +87,10 @@ PLUGINCODEC_LICENSE(
   "Copyright (c) 2010, 2011, Google Inc.",                      // codec copyright information
   "Copyright (c) 2010, 2011, Google Inc.",                      // codec license
   PluginCodec_License_BSD                                       // codec license code
-);
+};
+
+
+PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -87,8 +104,8 @@ static struct PluginCodec_Option const MaxFR =
   false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   "30",                               // Initial value
-  NULL,                               // FMTP option name
-  NULL,                               // FMTP default value
+  "max-fr",                           // FMTP option name
+  "30",                               // FMTP default value
   0,                                  // H.245 generic capability code and bit mask
   "1",                                // Minimum value
   "30"                                // Maximum value
@@ -100,9 +117,9 @@ static struct PluginCodec_Option const MaxFS =
   "max-fs",                           // User visible name
   false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
-  "31",                               // Initial value
-  NULL,                               // FMTP option name
-  NULL,                               // FMTP default value
+  "0",                                // Initial value
+  "max-fs",                           // FMTP option name
+  "0",                                // FMTP default value
   0,                                  // H.245 generic capability code and bit mask
   "48",                               // Minimum value
   "65535"                             // Maximum value
@@ -144,7 +161,9 @@ static struct PluginCodec_Option const SpatialResampling =
   "0",                                // Initial value
   "dynamicres",                       // FMTP option name
   "0",                                // FMTP default value
-  0                                   // H.245 generic capability code and bit mask
+  0,                                  // H.245 generic capability code and bit mask
+  "0",                                // Minimum value
+  "100"                               // Maximum value
 };
 
 static struct PluginCodec_Option const SpatialResamplingUp =
@@ -227,27 +246,84 @@ static struct PluginCodec_Option const * OptionTableOM[] = {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class VP8Format : public PluginCodec_VideoFormat<VP8_CODEC>
+class VP8Format : public PluginCodec_MediaFormat
 {
-  private:
-    typedef PluginCodec_VideoFormat<VP8_CODEC> BaseClass;
-
   protected:
-    bool m_partition;
+    unsigned m_maxWidth;
+    unsigned m_maxHeight;
+    bool     m_partition;
 
   public:
-    VP8Format(const char * formatName, const char * payloadName, const char * description, OptionsTable options)
-      : BaseClass(formatName, payloadName, description, MaxBitRate, options)
+    VP8Format(OptionsTable options)
+      : PluginCodec_MediaFormat(options)
+      , m_maxWidth(640)
+      , m_maxHeight(480)
       , m_partition(false)
     {
-#ifdef VPX_CODEC_USE_ERROR_CONCEALMENT
-      if ((vpx_codec_get_caps(vpx_codec_vp8_dx()) & VPX_CODEC_CAP_ERROR_CONCEALMENT) != 0)
-        m_flags |= PluginCodec_ErrorConcealment; // Prevent video update request on packet loss
-#endif
 #ifdef VPX_CODEC_CAP_OUTPUT_PARTITION
       if ((vpx_codec_get_caps(vpx_codec_vp8_dx()) & VPX_CODEC_CAP_OUTPUT_PARTITION) != 0)
         m_partition = true;
 #endif
+    }
+
+
+    static unsigned GetMacroBlocks(unsigned width, unsigned height)
+    {
+      return ((width+15)/16) * ((height+15)/16);
+    }
+
+
+    static bool ClampResolution(
+      unsigned & width,
+      unsigned & height,
+      unsigned & maxFrameSize)
+    {
+      static struct {
+        unsigned m_width;
+        unsigned m_height;
+        unsigned m_macroblocks;
+      } MaxVideoResolutions[] = {
+        #define OPAL_PLUGIN_CLAMPED_RESOLUTION(width, height) { width, height, ((width+15)/16) * ((height+15)/16) }
+        OPAL_PLUGIN_CLAMPED_RESOLUTION(2816, 2304),
+        OPAL_PLUGIN_CLAMPED_RESOLUTION(1920, 1080),
+        OPAL_PLUGIN_CLAMPED_RESOLUTION(1408, 1152),
+        OPAL_PLUGIN_CLAMPED_RESOLUTION(1280,  720),
+        OPAL_PLUGIN_CLAMPED_RESOLUTION( 704,  576),
+        OPAL_PLUGIN_CLAMPED_RESOLUTION( 640,  480),
+        OPAL_PLUGIN_CLAMPED_RESOLUTION( 352,  288),
+        OPAL_PLUGIN_CLAMPED_RESOLUTION( 320,  240),
+        OPAL_PLUGIN_CLAMPED_RESOLUTION( 176,  144),
+        OPAL_PLUGIN_CLAMPED_RESOLUTION( 128,   96)
+      };
+      static size_t const LastMaxVideoResolutions = sizeof(MaxVideoResolutions)/sizeof(MaxVideoResolutions[0]) - 1;
+
+      size_t index = 0;
+
+      if (maxFrameSize > 0) {
+        static unsigned const MinWidth = 4*16;  // Four macroblocks wide
+        static unsigned const MinHeight = 3*16; // Three macroblocks high
+
+        unsigned maxWidth  = maxFrameSize*16*16/MinHeight;
+        unsigned maxHeight = maxFrameSize*16*16/MinWidth;
+
+        // Check if total frame size below threshold total of macroblocks.
+        unsigned macroBlocks = GetMacroBlocks(width, height);
+        if (macroBlocks <= maxFrameSize &&
+            width  >= MinWidth  && width  <= maxWidth &&
+            height >= MinHeight && height <= maxHeight)
+          return false;
+
+        while (index < LastMaxVideoResolutions &&
+                (MaxVideoResolutions[index].m_macroblocks > maxFrameSize ||
+                MaxVideoResolutions[index].m_width > maxWidth ||
+                MaxVideoResolutions[index].m_height > maxHeight))
+          ++index;
+      }
+
+      width = MaxVideoResolutions[index].m_width;
+      height = MaxVideoResolutions[index].m_height;
+      maxFrameSize = MaxVideoResolutions[index].m_macroblocks;
+      return true;
     }
 };
 
@@ -256,7 +332,7 @@ class VP8FormatRFC : public VP8Format
 {
   public:
     VP8FormatRFC()
-      : VP8Format("VP8-WebM", "VP8", "VP8 Video Codec (RFC)", OptionTableRFC)
+      : VP8Format(OptionTableRFC)
     {
     }
 
@@ -276,7 +352,7 @@ class VP8FormatRFC : public VP8Format
 
       it = original.find(MaxFR.m_name);
       if (it != original.end() && !it->second.empty())
-        ClampMin(PLUGINCODEC_VIDEO_CLOCK/String2Unsigned(it->second), original, changed, PLUGINCODEC_OPTION_FRAME_TIME);
+        ClampMin(MyClockRate/String2Unsigned(it->second), original, changed, PLUGINCODEC_OPTION_FRAME_TIME);
 
       if (!m_partition)
         ClampMax(0, original, changed, OutputPartition.m_name);
@@ -287,11 +363,11 @@ class VP8FormatRFC : public VP8Format
 
     virtual bool ToCustomised(OptionMap & original, OptionMap & changed)
     {
-      Change(original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH)*
-             original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT)/256,
+      Change(GetMacroBlocks(original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH),
+                            original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT)),
              original, changed, MaxFS.m_name);
 
-      Change(PLUGINCODEC_VIDEO_CLOCK/original.GetUnsigned(PLUGINCODEC_OPTION_FRAME_TIME),
+      Change(MyClockRate/original.GetUnsigned(PLUGINCODEC_OPTION_FRAME_TIME),
              original, changed, MaxFR.m_name);
 
       if (!m_partition)
@@ -308,11 +384,11 @@ static VP8FormatRFC VP8MediaFormatInfoRFC;
 
 #if INCLUDE_OM_CUSTOM_PACKETIZATION
 
-class VP8FormatOM : public VP8Format
+class VP8FormatOM : public PluginCodec_MediaFormat
 {
   public:
     VP8FormatOM()
-      : VP8Format("VP8-OM", "X-MX-VP8", "VP8 Video Codec (Open Market)", OptionTableOM)
+      : PluginCodec_MediaFormat(OptionTableOM)
     {
     }
 
@@ -336,8 +412,8 @@ class VP8FormatOM : public VP8Format
       }
       return true;
     }
-
-
+ 
+ 
     virtual bool ToCustomised(OptionMap & original, OptionMap & changed)
     {
       unsigned maxWidth = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
@@ -347,7 +423,7 @@ class VP8FormatOM : public VP8Format
       Change(strm.str().c_str(), original, changed, MaxFrameSizeOM.m_name);
       return true;
     }
-};
+}; 
 
 static VP8FormatOM VP8MediaFormatInfoOM;
 
@@ -427,7 +503,7 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
       m_config.g_lag_in_frames = 0;
       m_config.rc_end_usage = VPX_CBR;
       m_config.g_timebase.num = 1;
-      m_config.g_timebase.den = PLUGINCODEC_VIDEO_CLOCK;
+      m_config.g_timebase.den = MyClockRate;
 
       if (!OnChangedOptions())
         return false;
@@ -459,7 +535,7 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
         m_config.kf_min_dist = m_config.kf_max_dist = m_keyFramePeriod;
       else {
         m_config.kf_min_dist = 0;
-        m_config.kf_max_dist = 10*PLUGINCODEC_VIDEO_CLOCK/m_frameTime;  // No slower than once every 10 seconds
+        m_config.kf_max_dist = 10*MyClockRate/m_frameTime;  // No slower than once every 10 seconds
       }
 
       m_config.rc_target_bitrate = m_maxBitRate/1000;
@@ -1055,10 +1131,150 @@ class VP8DecoderOM : public VP8Decoder
 
 static struct PluginCodec_Definition VP8CodecDefinition[] =
 {
-  PLUGINCODEC_VIDEO_CODEC_CXX(VP8MediaFormatInfoRFC, VP8EncoderRFC, VP8DecoderRFC),
-#if INCLUDE_OM_CUSTOM_PACKETIZATION
-  PLUGINCODEC_VIDEO_CODEC_CXX(VP8MediaFormatInfoOM,  VP8EncoderOM,  VP8DecoderOM)
-#endif
+  {
+    // Encoder
+    MyVersion,                          // codec API version
+    &LicenseInfo,                       // license information
+
+    PluginCodec_MediaTypeVideo |        // audio codec
+    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
+
+    MyDescription,                      // text decription
+    YUV420PFormatName,                  // source format
+    FormatNameRFC,                      // destination format
+
+    &VP8MediaFormatInfoRFC,             // user data 
+
+    MyClockRate,                        // samples per second
+    MyMaxBitRate,                       // raw bits per second
+    1000000/MyMaxFrameRate,             // microseconds per frame
+
+    {{
+      MyMaxWidth,                       // frame width
+      MyMaxHeight,                      // frame height
+      MyMaxFrameRate,                   // recommended frame rate
+      MyMaxFrameRate                    // maximum frame rate
+    }},
+    
+    0,                                  // IANA RTP payload code
+    MyPayloadNameRFC,                   // IANA RTP payload name
+
+    PluginCodec<VP8_CODEC>::Create<VP8EncoderRFC>,  // create codec function
+    PluginCodec<VP8_CODEC>::Destroy,               // destroy codec
+    PluginCodec<VP8_CODEC>::Transcode,             // encode/decode
+    PluginCodec<VP8_CODEC>::GetControls(),         // codec controls
+
+    PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
+    NULL                                // h323CapabilityData
+  },
+  { 
+    // Decoder
+    MyVersion,                          // codec API version
+    &LicenseInfo,                       // license information
+
+    PluginCodec_MediaTypeVideo |        // audio codec
+    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
+
+    MyDescription,                      // text decription
+    FormatNameRFC,                      // source format
+    YUV420PFormatName,                  // destination format
+
+    &VP8MediaFormatInfoRFC,             // user data 
+
+    MyClockRate,                        // samples per second
+    MyMaxBitRate,                       // raw bits per second
+    1000000/MyMaxFrameRate,             // microseconds per frame
+
+    {{
+      MyMaxWidth,                       // frame width
+      MyMaxHeight,                      // frame height
+      MyMaxFrameRate,                   // recommended frame rate
+      MyMaxFrameRate                    // maximum frame rate
+    }},
+    
+    0,                                  // IANA RTP payload code
+    MyPayloadNameRFC,                   // IANA RTP payload name
+
+    PluginCodec<VP8_CODEC>::Create<VP8DecoderRFC>,  // create codec function
+    PluginCodec<VP8_CODEC>::Destroy,               // destroy codec
+    PluginCodec<VP8_CODEC>::Transcode,             // encode/decode
+    PluginCodec<VP8_CODEC>::GetControls(),         // codec controls
+
+    PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
+    NULL                                // h323CapabilityData
+  },
+  {
+    // Encoder
+    MyVersion,                          // codec API version
+    &LicenseInfo,                       // license information
+
+    PluginCodec_MediaTypeVideo |        // audio codec
+    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
+
+    MyDescription,                      // text decription
+    YUV420PFormatName,                  // source format
+    FormatNameOM,                       // destination format
+
+    &VP8MediaFormatInfoOM,              // user data 
+
+    MyClockRate,                        // samples per second
+    MyMaxBitRate,                       // raw bits per second
+    1000000/MyMaxFrameRate,             // microseconds per frame
+
+    {{
+      MyMaxWidth,                       // frame width
+      MyMaxHeight,                      // frame height
+      MyMaxFrameRate,                   // recommended frame rate
+      MyMaxFrameRate                    // maximum frame rate
+    }},
+    
+    0,                                  // IANA RTP payload code
+    MyPayloadNameOM,                    // IANA RTP payload name
+
+    PluginCodec<VP8_CODEC>::Create<VP8EncoderOM>,   // create codec function
+    PluginCodec<VP8_CODEC>::Destroy,               // destroy codec
+    PluginCodec<VP8_CODEC>::Transcode,             // encode/decode
+    PluginCodec<VP8_CODEC>::GetControls(),         // codec controls
+
+    PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
+    NULL                                // h323CapabilityData
+  },
+  { 
+    // Decoder
+    MyVersion,                          // codec API version
+    &LicenseInfo,                       // license information
+
+    PluginCodec_MediaTypeVideo |        // audio codec
+    PluginCodec_RTPTypeDynamic,         // dynamic RTP type
+
+    MyDescription,                      // text decription
+    FormatNameOM,                       // source format
+    YUV420PFormatName,                  // destination format
+
+    &VP8MediaFormatInfoOM,              // user data 
+
+    MyClockRate,                        // samples per second
+    MyMaxBitRate,                       // raw bits per second
+    1000000/MyMaxFrameRate,             // microseconds per frame
+
+    {{
+      MyMaxWidth,                       // frame width
+      MyMaxHeight,                      // frame height
+      MyMaxFrameRate,                   // recommended frame rate
+      MyMaxFrameRate                    // maximum frame rate
+    }},
+    
+    0,                                  // IANA RTP payload code
+    MyPayloadNameOM,                    // IANA RTP payload name
+
+    PluginCodec<VP8_CODEC>::Create<VP8DecoderOM>,   // create codec function
+    PluginCodec<VP8_CODEC>::Destroy,               // destroy codec
+    PluginCodec<VP8_CODEC>::Transcode,             // encode/decode
+    PluginCodec<VP8_CODEC>::GetControls(),         // codec controls
+
+    PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
+    NULL                                // h323CapabilityData
+  }
 };
 
 PLUGIN_CODEC_IMPLEMENT_CXX(VP8_CODEC, VP8CodecDefinition);
