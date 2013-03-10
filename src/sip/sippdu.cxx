@@ -2949,6 +2949,7 @@ SIPTransaction::SIPTransaction(Methods method, SIPTransactionOwner * owner, Opal
   , m_retry(1)
   , m_retryTimer(GetEndPoint().GetThreadPool(), GetEndPoint(), GetTransactionID(), &SIPTransaction::OnRetry)
   , m_completionTimer(GetEndPoint().GetThreadPool(), GetEndPoint(), GetTransactionID(), &SIPTransaction::OnTimeout)
+  , m_pduSizeOK(true)
 {
   PTRACE_CONTEXT_ID_FROM(m_owner->m_object);
 
@@ -3047,10 +3048,10 @@ bool SIPTransaction::Start()
   // Remember this for when we are forking on UDP
   m_localInterface = m_transport->GetInterface();
 
-  bool canDoTCP = true;
+  m_pduSizeOK = true;
   for (;;) {
     // Use the transactions transport to send the request
-    switch (InternalSend(canDoTCP)) {
+    switch (InternalSend(m_pduSizeOK)) {
       case Successful_OK :
         if (!m_transport->IsReliable())
           m_retryTimer = m_retryTimeoutMin;
@@ -3071,7 +3072,7 @@ bool SIPTransaction::Start()
         }
 
         CalculateVia();
-        canDoTCP = false;
+        m_pduSizeOK = false;
         break;
 
       default :
@@ -3329,7 +3330,7 @@ void SIPTransaction::SetTerminated(States newState)
     switch (m_state) {
       case Terminated_Timeout :
       case Terminated_RetriesExceeded:
-        m_statusCode = SIP_PDU::Local_Timeout;
+        m_statusCode = m_pduSizeOK ? SIP_PDU::Local_Timeout : SIP_PDU::Failure_MessageTooLarge;
         break;
 
       case Terminated_TransportError :
