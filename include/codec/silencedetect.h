@@ -44,16 +44,16 @@ class OpalSilenceDetector : public PObject
 {
     PCLASSINFO(OpalSilenceDetector, PObject);
   public:
-    enum Mode {
+    P_DECLARE_ENUM(Modes,
       NoSilenceDetection,
       FixedSilenceDetection,
-      AdaptiveSilenceDetection,
-      NumModes
-    };
+      AdaptiveSilenceDetection
+    );
+    typedef Modes Mode; // Backward compatibility
 
     struct Params {
       Params(
-        Mode mode = AdaptiveSilenceDetection, ///<  New silence detection mode
+        Modes mode = AdaptiveSilenceDetection, ///<  New silence detection mode
         unsigned threshold = 0,               ///<  Threshold value if FixedSilenceDetection
         unsigned signalDeadband = 10,         ///<  10 milliseconds of signal needed
         unsigned silenceDeadband = 400,       ///<  400 milliseconds of silence needed
@@ -66,7 +66,7 @@ class OpalSilenceDetector : public PObject
           m_adaptivePeriod(adaptivePeriod)
         { }
 
-      Mode     m_mode;             /// Silence detection mode
+      Modes    m_mode;             /// Silence detection mode
       unsigned m_threshold;        /// Threshold value if FixedSilenceDetection
       unsigned m_signalDeadband;   /// milliseconds of signal needed
       unsigned m_silenceDeadband;  /// milliseconds of silence needed

@@ -174,6 +174,7 @@ static const wxChar AudioGroup[] = wxT("/Audio");
 DEF_FIELD(SoundPlayer);
 DEF_FIELD(SoundRecorder);
 DEF_FIELD(SoundBufferTime);
+DEF_FIELD(EchoCancellation);
 DEF_FIELD(LineInterfaceDevice);
 DEF_FIELD(AEC);
 DEF_FIELD(Country);
@@ -1072,6 +1073,12 @@ bool MyManager::Initialise(bool startMinimised)
     pcssEP->SetSoundChannelRecordDevice(str);
   if (config->Read(SoundBufferTimeKey, &value1))
     pcssEP->SetSoundChannelBufferTime(value1);
+
+#if OPAL_AEC
+  OpalEchoCanceler::Params aecParams = GetEchoCancelParams();
+  config->Read(EchoCancellationKey, &aecParams.m_enabled);
+  SetEchoCancelParams(aecParams);
+#endif
 
   if (config->Read(MinJitterKey, &value1)) {
     config->Read(MaxJitterKey, &value2, value1);
@@ -4310,6 +4317,9 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   ////////////////////////////////////////
   // Sound fields
   INIT_FIELD(SoundBufferTime, m_manager.pcssEP->GetSoundChannelBufferTime());
+#if OPAL_AEC
+  INIT_FIELD(EchoCancellation, m_manager.GetEchoCancelParams().m_enabled);
+#endif
   INIT_FIELD(MinJitter, m_manager.GetMinAudioJitterDelay());
   INIT_FIELD(MaxJitter, m_manager.GetMaxAudioJitterDelay());
   INIT_FIELD(SilenceSuppression, m_manager.GetSilenceDetectParams().m_mode);
@@ -4875,6 +4885,13 @@ bool OptionsDialog::TransferDataFromWindow()
   else
     wxMessageBox(wxT("Could not use sound recorder device."), wxT("OpenPhone Options"), wxCANCEL|wxICON_EXCLAMATION);
   SAVE_FIELD(SoundBufferTime, m_manager.pcssEP->SetSoundChannelBufferTime);
+
+#if OPAL_AEC
+  OpalEchoCanceler::Params aecParams;
+  SAVE_FIELD(EchoCancellation, aecParams.m_enabled =);
+  m_manager.SetEchoCancelParams(aecParams);
+#endif
+
   SAVE_FIELD2(MinJitter, MaxJitter, m_manager.SetAudioJitterDelay);
 
   OpalSilenceDetector::Params silenceParams;
