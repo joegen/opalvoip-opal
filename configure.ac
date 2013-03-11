@@ -2,14 +2,23 @@ dnl
 dnl OPAL configuration
 dnl
 
-AC_INIT(opal, 3)
-AC_CONFIG_SRCDIR([include/opal/manager.h])
+AC_INIT(opal, m4_esyscmd([sed -n -e "s/^#define MAJOR_VERSION \\(.*\\)/\\1./p" \
+                                    -e "s/#define MINOR_VERSION \\(.*\\)/\\1/p" \
+									-e "s/#define BUILD_TYPE \\(.*\\)/\\1/p" \
+									-e "s/#define BUILD_NUMBER \\(.*\\)/\\1/p" version.h \
+							 | tr -d '\n' \
+							 | sed -e "s/AlphaCode/a/" \
+							       -e "s/BetaCode/b/" \
+								   -e "s/ReleaseCode/./"]))
 
 AC_PREREQ([2.65])
 
 AC_CONFIG_AUX_DIR(make)
 
+AC_CONFIG_SRCDIR([include/opal.h])
+
 m4_include(make/opal.m4)
+
 
 PKG_PROG_PKG_CONFIG()
 if test -z "$PKG_CONFIG" ; then

@@ -1099,8 +1099,8 @@ class SIPTransaction : public SIPTransactionBase
     PoolTimer  m_retryTimer;
     PoolTimer  m_completionTimer;
     PSyncPoint m_completed;
-
-    PString         m_localInterface;
+    bool       m_pduSizeOK;
+    PString    m_localInterface;
 
   friend class SIPConnection;
 };
