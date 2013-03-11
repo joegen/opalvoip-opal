@@ -130,38 +130,28 @@ void OpalEchoCanceler::SetClockRate(const int rate)
 
 void OpalEchoCanceler::SentPacket(RTP_DataFrame& echo_frame, P_INT_PTR)
 {
-  if (echo_frame.GetPayloadSize() == 0)
-    return;
-
-  if (param.m_mode == NoCancelation)
-    return;
-
   /* Write to the soundcard, and write the frame to the PQueueChannel */
-  echo_chan->Write(echo_frame.GetPayloadPtr(), echo_frame.GetPayloadSize());
+  if (param.m_enabled && echo_frame.GetPayloadSize() > 0)
+    echo_chan->Write(echo_frame.GetPayloadPtr(), echo_frame.GetPayloadSize());
 }
 
 
 void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, P_INT_PTR)
 {
-  int inputSize = 0;
-  int i = 1;
-  
-  if (input_frame.GetPayloadSize() == 0)
-    return;
-  
-  if (param.m_mode == NoCancelation)
+  if (!param.m_enabled || input_frame.GetPayloadSize() == 0)
     return;
 
-  inputSize = input_frame.GetPayloadSize(); // Size is in bytes
+  size_t inputSize = input_frame.GetPayloadSize(); // Size is in bytes
 
   PWaitAndSignal m(stateMutex);
 
   if (echoState == NULL) 
-    echoState = speex_echo_state_init(inputSize/sizeof(short), 32*inputSize);
-  
+    echoState = speex_echo_state_init(inputSize/sizeof(short), param.m_duration);
+
   if (preprocessState == NULL) { 
     preprocessState = speex_preprocess_state_init(inputSize/sizeof(short), clockRate);
-    speex_preprocess_ctl(preprocessState, SPEEX_PREPROCESS_SET_DENOISE, &i);
+    int dummy = 0;
+    speex_preprocess_ctl(preprocessState, SPEEX_PREPROCESS_SET_DENOISE, &dummy);
   }
 
   if (echo_buf == NULL)
@@ -179,7 +169,7 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, P_INT_PTR)
 
   /* Remove the DC offset */
   short *j = (short *) input_frame.GetPayloadPtr();
-  for (i = 0 ; i < (int) (inputSize/sizeof(short)) ; i++) {
+  for (size_t i = 0 ; i < (int) (inputSize/sizeof(short)) ; i++) {
     mean = 0.999*mean + 0.001*j[i];
     ((spx_int16_t *)ref_buf)[i] = j[i] - (short) mean;
   }
