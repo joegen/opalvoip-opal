@@ -54,18 +54,15 @@ class OpalEchoCanceler : public PObject
 {
   PCLASSINFO(OpalEchoCanceler, PObject);
 public:
-  enum Mode {
-    NoCancelation,
-    Cancelation
-  };
-
   struct Params {
-    Params(
-	   Mode mode = NoCancelation
-	   ) : m_mode (mode)
+    Params()
+      : m_enabled(false)
+      , m_duration(2000) // 250ms at 8kHz
     { }
 
-    Mode m_mode;
+    bool    m_enabled;    ///< Echo cancellation will be performed
+    unsigned m_duration;  ///< Number of samples of echo to cancel
+
   };
 
   /**@name Construction */
@@ -105,8 +102,6 @@ protected:
 
   Params param;
 
-private:
-
   double mean;
   int clockRate;
   PQueueChannel *echo_chan;
@@ -125,5 +120,6 @@ private:
 #endif // OPAL_AEC
 
 #endif // OPAL_CODEC_ECHOCANCEL_H
+
 
 /////////////////////////////////////////////////////////////////////////////

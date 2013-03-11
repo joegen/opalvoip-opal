@@ -87,8 +87,8 @@ static struct PluginCodec_Option const MaxFR =
   false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   "30",                               // Initial value
-  NULL,                               // FMTP option name
-  NULL,                               // FMTP default value
+  "max-fr",                           // FMTP option name
+  "30",                               // FMTP default value
   0,                                  // H.245 generic capability code and bit mask
   "1",                                // Minimum value
   "30"                                // Maximum value
@@ -100,9 +100,9 @@ static struct PluginCodec_Option const MaxFS =
   "max-fs",                           // User visible name
   false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
-  "31",                               // Initial value
-  NULL,                               // FMTP option name
-  NULL,                               // FMTP default value
+  "0",                                // Initial value
+  "max-fs",                           // FMTP option name
+  "0",                                // FMTP default value
   0,                                  // H.245 generic capability code and bit mask
   "48",                               // Minimum value
   "65535"                             // Maximum value
@@ -287,8 +287,8 @@ class VP8FormatRFC : public VP8Format
 
     virtual bool ToCustomised(OptionMap & original, OptionMap & changed)
     {
-      Change(original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH)*
-             original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT)/256,
+      Change(GetMacroBlocks(original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH),
+                            original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT)),
              original, changed, MaxFS.m_name);
 
       Change(PLUGINCODEC_VIDEO_CLOCK/original.GetUnsigned(PLUGINCODEC_OPTION_FRAME_TIME),

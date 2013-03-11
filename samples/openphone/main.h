@@ -640,6 +640,9 @@ class OptionsDialog : public wxDialog
     PwxString m_SoundPlayer;
     PwxString m_SoundRecorder;
     int       m_SoundBufferTime;
+#if OPAL_AEC
+    bool      m_EchoCancellation;
+#endif
     PwxString m_LineInterfaceDevice;
     int       m_AEC;
     PwxString m_Country;
