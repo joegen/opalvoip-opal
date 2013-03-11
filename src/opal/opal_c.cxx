@@ -1208,6 +1208,9 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     case OpalEchoCancelEnabled :
       echoCancelParams.m_enabled = true;
       break;
+
+    default :
+      break;
   }
   SetEchoCancelParams(echoCancelParams);
 #endif
