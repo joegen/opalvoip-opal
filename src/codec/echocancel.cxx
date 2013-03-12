@@ -169,7 +169,7 @@ void OpalEchoCanceler::ReceivedPacket(RTP_DataFrame& input_frame, P_INT_PTR)
 
   /* Remove the DC offset */
   short *j = (short *) input_frame.GetPayloadPtr();
-  for (size_t i = 0 ; i < (int) (inputSize/sizeof(short)) ; i++) {
+  for (size_t i = 0 ; i < inputSize/sizeof(short) ; i++) {
     mean = 0.999*mean + 0.001*j[i];
     ((spx_int16_t *)ref_buf)[i] = j[i] - (short) mean;
   }
