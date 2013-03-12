@@ -6399,6 +6399,8 @@ esac
 
 if test "x$OBJ_ARCH" != "x" ; then
    libdir+=_$target
+else
+   includedir+="/opal"
 fi
 
 
