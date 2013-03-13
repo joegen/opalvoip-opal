@@ -350,7 +350,29 @@ MyManager::MyManager()
   , m_ivrEP(NULL)
 #endif
 {
+  // Make sure codecs are loaded
+  GetOpalG722();
+  GetOpalG7221_24K();
+  GetOpalG7221_32K();
+  GetOpalG7222();
+  GetOpalG726_40K();
+  GetOpalG726_32K();
+  GetOpalG726_24K();
+  GetOpalG726_16K();
+  GetOpalG728();
+  GetOpalG729();
+  GetOpalG7231_6k3();
+  GetOpalGSM0610();
+  GetOpalGSMAMR();
+  GetOpaliLBC();
 #if OPAL_VIDEO
+  //GetOpalH261();
+  GetOpalH263();
+  GetOpalH263plus();
+  GetOpalH264_MODE0();
+  GetOpalH264_MODE1();
+  //GetOpalMPEG4();
+
   SetAutoStartReceiveVideo(false);
   SetAutoStartTransmitVideo(false);
 #endif
