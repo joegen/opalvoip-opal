@@ -58,30 +58,32 @@ openphone.cxx : openphone.xrc
 	wxrc openphone.xrc -c -o openphone.cxx
 
 
-ifneq ($(target_os),Darwin)
-
-BUNDLE_DIR	= ./openphone
+ifeq ($(DEBUG_BUILD),yes)
 
 bundle: $(TARGET)
-	@mkdir -p $(BUNDLE_DIR)
-	@rm -f $(BUNDLE_DIR)/*
-	cp $(TARGET) $(BUNDLE_DIR)
-ifeq ($(DEBUG_BUILD),yes)
-	cp $(OPAL_LIBDIR)/$(DEBUG_LIB_FILENAME_SHARED) $(BUNDLE_DIR)
-	cp $(PTLIB_LIBDIR)/$(PTLIB_DEBUG_FILE) $(BUNDLE_DIR)
-else
-	cp $(OPAL_LIBDIR)/$(RELEASE_LIB_FILENAME_SHARED) $(BUNDLE_DIR)
-	cp $(PTLIB_LIBDIR)/$(PTLIB_FILE) $(BUNDLE_DIR)
-endif
-	find $(OPAL_LIBDIR)/plugins -name \*_ptplugin.$(SHAREDLIBEXT) -exec cp {} $(BUNDLE_DIR) \;
-	find $(PTLIB_LIBDIR)/device -name \*_ptplugin.$(SHAREDLIBEXT) -exec cp {} $(BUNDLE_DIR) \;
 
-else
-bundle: $(PROG).app
+else # DEBUG
+
+BUNDLE_DIR := ./$(PROG).app
+
+bundle: $(BUNDLE_DIR)
+
+ifneq ($(target_os),Darwin)
+
+$(BUNDLE_DIR): $(TARGET)
+	-mkdir -p $@
+	-rm -f $@/*
+	cp $(TARGET) $@
+	cp $(OPAL_LIBDIR)/$(RELEASE_LIB_FILENAME_SHARED) $@
+	cp $(PTLIB_LIBDIR)/$(PTLIB_FILE) $@
+	find $(OPAL_LIBDIR)/plugins -name \*_ptplugin.$(SHAREDLIBEXT) -exec cp {} $@ \;
+	find $(PTLIB_LIBDIR)/device -name \*_ptplugin.$(SHAREDLIBEXT) -exec cp {} $@ \;
+
+else # Darwin
 
 STRINGSFILE= #InfoPlist.strings
 
-$(PROG).app: $(TARGET) Info.plist version.plist $(PROG).icns $(STRINGSFILE)
+$(BUNDLE_DIR): $(TARGET) Info.plist version.plist $(PROG).icns $(STRINGSFILE)
 	@for dir in $@ \
 	           $@/Contents \
 	           $@/Contents/MacOS \
@@ -102,3 +104,4 @@ endif
 	cp $(TARGET)         $@/Contents/MacOS/$(PROG)
 
 endif
+endif # DEBUG
