@@ -91,7 +91,8 @@ PString SDPFaxMediaDescription::GetSDPMediaType() const
   return "image"; 
 }
 
-SDPMediaFormat * SDPFaxMediaDescription::CreateSDPMediaFormat(const PString & portString)
+
+bool SDPFaxMediaDescription::Format::Initialise(const PString & portString)
 {
   const OpalMediaFormat mediaFormat(RTP_DataFrame::DynamicBase, 0, portString, "sip");
   if (mediaFormat.IsEmpty()) {
@@ -100,21 +101,27 @@ SDPMediaFormat * SDPFaxMediaDescription::CreateSDPMediaFormat(const PString & po
   }
 
   PTRACE(3, "SDPFax\tUsing RTP payload " << mediaFormat.GetPayloadType() << " for " << portString);
+  Initialise(mediaFormat);
+  return true;
+}
 
-  return new SDPMediaFormat(*this, mediaFormat);
+
+SDPMediaFormat * SDPFaxMediaDescription::CreateSDPMediaFormat()
+{
+  return new Format(*this);
 }
 
 
 PString SDPFaxMediaDescription::GetSDPPortList() const
 {
-  if (formats.IsEmpty())
+  if (m_formats.IsEmpty())
     return " t38"; // Have to have SOMETHING
 
   PStringStream str;
 
   // output encoding names for non RTP
   SDPMediaFormatList::const_iterator format;
-  for (format = formats.begin(); format != formats.end(); ++format)
+  for (format = m_formats.begin(); format != m_formats.end(); ++format)
     str << ' ' << format->GetEncodingName();
 
   return str;
@@ -161,7 +168,7 @@ bool SDPFaxMediaDescription::PostDecode(const OpalMediaFormatList & mediaFormats
   if (!SDPMediaDescription::PostDecode(mediaFormats))
     return false;
 
-  for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
+  for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
     OpalMediaFormat & mediaFormat = format->GetWritableMediaFormat();
     if (mediaFormat.GetMediaType() == OpalMediaType::Fax()) {
       for (PINDEX i = 0; i < t38Attributes.GetSize(); ++i) {

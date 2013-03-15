@@ -1360,6 +1360,10 @@ class OpalVideoFormat : public OpalMediaFormat
     );
     /// RTP/RTCP Feedback options
     static const PString & RTCPFeedbackOption();
+
+#if OPAL_SIP
+    static const PString & UseImageAttributeInSDP();
+#endif
 };
 #endif
 

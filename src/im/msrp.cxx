@@ -173,12 +173,22 @@ class SDPMSRPMediaDescription : public SDPMediaDescription
     virtual OpalMediaFormatList GetMediaFormats() const;
 
     // CreateSDPMediaFormat is used for processing format lists. MSRP always contains only "*"
-    virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & ) { return NULL; }
+    virtual SDPMediaFormat * CreateSDPMediaFormat();
 
     // FindFormat is used only for rtpmap and fmtp, neither of which are used for MSRP
     virtual SDPMediaFormat * FindFormat(PString &) const { return NULL; }
 
   protected:
+    class Format : public SDPMediaFormat
+    {
+      public:
+        Format(SDPMSRPMediaDescription & parent, const OpalMediaFormat & mediaFormat)
+          : SDPMediaFormat(parent)
+        {
+          Initialise(mediaFormat);
+        }
+    };
+
     PString path;
     PString types;
 };
@@ -200,6 +210,7 @@ SDPMSRPMediaDescription::SDPMSRPMediaDescription(const OpalTransportAddress & ad
   SetDirection(SDPMediaDescription::SendRecv);
 }
 
+
 SDPMSRPMediaDescription::SDPMSRPMediaDescription(const OpalTransportAddress & address, const PString & _path)
   : SDPMediaDescription(address, MSRPMediaType)
   , path(_path)
@@ -207,9 +218,16 @@ SDPMSRPMediaDescription::SDPMSRPMediaDescription(const OpalTransportAddress & ad
   SetDirection(SDPMediaDescription::SendRecv);
 }
 
+
 void SDPMSRPMediaDescription::CreateSDPMediaFormats(const PStringArray &)
 {
-  formats.Append(new SDPMediaFormat(*this, RTP_DataFrame::MaxPayloadType, OpalMSRP));
+  m_formats.Append(CreateSDPMediaFormat());
+}
+
+
+SDPMediaFormat * SDPMSRPMediaDescription::CreateSDPMediaFormat()
+{
+  return new Format(*this, OpalMSRP);
 }
 
 
@@ -257,9 +275,7 @@ void SDPMSRPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat
     return;
   }
 
-  SDPMediaFormat * sdpFormat = new SDPMediaFormat(*this, mediaFormat);
-  ProcessMediaOptions(*sdpFormat, mediaFormat);
-  AddSDPMediaFormat(sdpFormat);
+  AddSDPMediaFormat(new Format(*this, mediaFormat));
 }
 
 
