@@ -87,53 +87,50 @@ class SDPMediaDescription;
 class SDPMediaFormat : public PObject
 {
   PCLASSINFO(SDPMediaFormat, PObject);
+  protected:
+    SDPMediaFormat(SDPMediaDescription & parent);
+
   public:
-    SDPMediaFormat(
-      SDPMediaDescription & parent,
-      RTP_DataFrame::PayloadTypes payloadType,
-      const char * name = NULL
+    virtual bool Initialise(
+      const PString & portString
     );
 
-    SDPMediaFormat(
-      SDPMediaDescription & parent,
+    virtual void Initialise(
       const OpalMediaFormat & mediaFormat
     );
 
     virtual void PrintOn(ostream & str) const;
+    virtual PObject * Clone() const { return new SDPMediaFormat(*this); }
 
-    RTP_DataFrame::PayloadTypes GetPayloadType() const { return payloadType; }
+    RTP_DataFrame::PayloadTypes GetPayloadType() const { return m_payloadType; }
 
-    const PCaselessString & GetEncodingName() const { return encodingName; }
-    void SetEncodingName(const PString & v) { encodingName = v; }
+    const PCaselessString & GetEncodingName() const { return m_encodingName; }
+    void SetEncodingName(const PString & v) { m_encodingName = v; }
 
     void SetFMTP(const PString & _fmtp); 
     PString GetFMTP() const;
 
-    unsigned GetClockRate(void)                        { return clockRate ; }
-    void SetClockRate(unsigned  v)                     { clockRate = v; }
+    unsigned GetClockRate(void)    { return m_clockRate ; }
+    void SetClockRate(unsigned  v) { m_clockRate = v; }
 
-    void SetParameters(const PString & v) { parameters = v; }
-    void SetRTCP_FB(const PString & v) { m_rtcp_fb.FromString(v); }
-    OpalVideoFormat::RTCPFeedback GetRTCP_FB() const { return m_rtcp_fb; }
+    void SetParameters(const PString & v) { m_parameters = v; }
 
     const OpalMediaFormat & GetMediaFormat() const { return m_mediaFormat; }
     OpalMediaFormat & GetWritableMediaFormat() { return m_mediaFormat; }
 
-    bool PreEncode();
-    bool PostDecode(const OpalMediaFormatList & mediaFormats, unsigned bandwidth);
+    virtual bool PreEncode();
+    virtual bool PostDecode(const OpalMediaFormatList & mediaFormats, unsigned bandwidth);
 
   protected:
-    void SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const;
+    virtual void SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const;
 
-    OpalMediaFormat m_mediaFormat;
-
-    SDPMediaDescription & m_parent;
-    RTP_DataFrame::PayloadTypes payloadType;
-    unsigned clockRate;
-    PCaselessString encodingName;
-    PString parameters;
-    PString m_fmtp;
-    OpalVideoFormat::RTCPFeedback m_rtcp_fb; // RFC4585
+    SDPMediaDescription       & m_parent;
+    OpalMediaFormat             m_mediaFormat;
+    RTP_DataFrame::PayloadTypes m_payloadType;
+    unsigned                    m_clockRate;
+    PCaselessString             m_encodingName;
+    PString                     m_parameters;
+    PString                     m_fmtp;
 };
 
 typedef PList<SDPMediaFormat> SDPMediaFormatList;
@@ -157,6 +154,8 @@ class SDPCommonAttributes
     SDPCommonAttributes()
       : m_direction(Undefined)
     { }
+
+    virtual ~SDPCommonAttributes() { }
 
     virtual void SetDirection(const Direction & d) { m_direction = d; }
     virtual Direction GetDirection() const { return m_direction; }
@@ -210,7 +209,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     virtual PCaselessString GetSDPTransportType() const = 0;
 
     virtual const SDPMediaFormatList & GetSDPMediaFormats() const
-      { return formats; }
+      { return m_formats; }
 
     virtual OpalMediaFormatList GetMediaFormats() const;
 
@@ -221,24 +220,25 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     virtual void SetAttribute(const PString & attr, const PString & value);
 
-    virtual Direction GetDirection() const { return transportAddress.IsEmpty() ? Inactive : m_direction; }
+    virtual Direction GetDirection() const { return m_transportAddress.IsEmpty() ? Inactive : m_direction; }
 
-    virtual const OpalTransportAddress & GetTransportAddress() const { return transportAddress; }
+    virtual const OpalTransportAddress & GetTransportAddress() const { return m_transportAddress; }
     virtual PBoolean SetTransportAddress(const OpalTransportAddress &t);
 
-    virtual WORD GetPort() const { return port; }
+    virtual WORD GetPort() const { return m_port; }
 
-    virtual OpalMediaType GetMediaType() const { return mediaType; }
+    virtual OpalMediaType GetMediaType() const { return m_mediaType; }
 
     virtual void CreateSDPMediaFormats(const PStringArray & tokens);
-    virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString) = 0;
+    virtual SDPMediaFormat * CreateSDPMediaFormat() = 0;
 
-    virtual PString GetSDPPortList() const = 0;
+    virtual PString GetSDPPortList() const;
 
     virtual void ProcessMediaOptions(SDPMediaFormat & sdpFormat, const OpalMediaFormat & mediaFormat);
 
-    unsigned GetPTime () const { return ptime; }
-    unsigned GetMaxPTime () const { return maxptime; }
+#if OPAL_VIDEO
+    virtual OpalVideoFormat::ContentRole GetContentRole() const { return OpalVideoFormat::eNoRole; }
+#endif
 
     void SetOptionStrings(const PStringOptions & options) { m_stringOptions = options; }
     const PStringOptions & GetOptionStrings() const { return m_stringOptions; }
@@ -246,16 +246,16 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
   protected:
     virtual SDPMediaFormat * FindFormat(PString & str) const;
 
-    OpalTransportAddress transportAddress;
+    OpalTransportAddress m_transportAddress;
     PCaselessString      m_transportType;
     PStringOptions       m_stringOptions;
-    WORD                 port;
-    WORD                 portCount;
-    OpalMediaType        mediaType;
+    WORD                 m_port;
+    WORD                 m_portCount;
+    OpalMediaType        m_mediaType;
 
-    SDPMediaFormatList  formats;
-    unsigned            ptime;
-    unsigned            maxptime;
+    SDPMediaFormatList   m_formats;
+
+  P_REMOVE_VIRTUAL(SDPMediaFormat *,CreateSDPMediaFormat(const PString &),0);
 };
 
 PARRAY(SDPMediaDescriptionArray, SDPMediaDescription);
@@ -268,7 +268,7 @@ class SDPDummyMediaDescription : public SDPMediaDescription
     SDPDummyMediaDescription(const OpalTransportAddress & address, const PStringArray & tokens);
     virtual PString GetSDPMediaType() const;
     virtual PCaselessString GetSDPTransportType() const;
-    virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString);
+    virtual SDPMediaFormat * CreateSDPMediaFormat();
     virtual PString GetSDPPortList() const;
 
   private:
@@ -288,17 +288,22 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     SDPRTPAVPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & mediaType);
     virtual bool Decode(const PStringArray & tokens);
     virtual PCaselessString GetSDPTransportType() const;
-    virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString);
+    virtual SDPMediaFormat * CreateSDPMediaFormat();
     virtual PString GetSDPPortList() const;
-    virtual bool PreEncode();
     virtual void OutputAttributes(ostream & str) const;
     virtual void SetAttribute(const PString & attr, const PString & value);
 
     void EnableFeedback() { m_enableFeedback = true; }
 
   protected:
+    class Format : public SDPMediaFormat
+    {
+      public:
+        Format(SDPRTPAVPMediaDescription & parent) : SDPMediaFormat(parent) { }
+        bool Initialise(const PString & portString);
+    };
+
     bool m_enableFeedback;
-    OpalVideoFormat::RTCPFeedback m_rtcp_fb;
 };
 
 /////////////////////////////////////////////////////////
@@ -314,6 +319,11 @@ class SDPAudioMediaDescription : public SDPRTPAVPMediaDescription
     virtual PString GetSDPMediaType() const;
     virtual void OutputAttributes(ostream & str) const;
     virtual void SetAttribute(const PString & attr, const PString & value);
+    virtual bool PostDecode(const OpalMediaFormatList & mediaFormats);
+
+  protected:
+    unsigned m_PTime;
+    unsigned m_maxPTime;
 };
 
 
@@ -330,9 +340,45 @@ class SDPVideoMediaDescription : public SDPRTPAVPMediaDescription
   public:
     SDPVideoMediaDescription(const OpalTransportAddress & address);
     virtual PString GetSDPMediaType() const;
+    virtual SDPMediaFormat * CreateSDPMediaFormat();
     virtual bool PreEncode();
     virtual void OutputAttributes(ostream & str) const;
-    void SetAttribute(const PString & attr, const PString & value);
+    virtual void SetAttribute(const PString & attr, const PString & value);
+    virtual bool PostDecode(const OpalMediaFormatList & mediaFormats);
+    virtual OpalVideoFormat::ContentRole GetContentRole() const { return m_contentRole; }
+
+  protected:
+    class Format : public SDPRTPAVPMediaDescription::Format
+    {
+      public:
+        Format(SDPVideoMediaDescription & parent);
+
+        virtual void PrintOn(ostream & str) const;
+        virtual PObject * Clone() const { return new Format(*this); }
+
+        virtual bool PreEncode();
+
+        void SetRTCP_FB(const PString & v) { m_rtcp_fb.FromString(v); }
+        OpalVideoFormat::RTCPFeedback GetRTCP_FB() const { return m_rtcp_fb; }
+
+        void ParseImageAttr(const PString & params);
+
+      protected:
+        virtual void SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const;
+
+        OpalVideoFormat::RTCPFeedback m_rtcp_fb; // RFC4585
+
+        unsigned m_minRxWidth;
+        unsigned m_minRxHeight;
+        unsigned m_maxRxWidth;
+        unsigned m_maxRxHeight;
+        unsigned m_txWidth;
+        unsigned m_txHeight;
+    };
+
+    OpalVideoFormat::RTCPFeedback m_rtcp_fb;
+    OpalVideoFormat::ContentRole  m_contentRole;
+    unsigned                      m_contentMask;
 };
 
 #endif // OPAL_VIDEO
@@ -349,9 +395,16 @@ class SDPApplicationMediaDescription : public SDPMediaDescription
   public:
     SDPApplicationMediaDescription(const OpalTransportAddress & address);
     virtual PCaselessString GetSDPTransportType() const;
-    virtual SDPMediaFormat * CreateSDPMediaFormat(const PString & portString);
+    virtual SDPMediaFormat * CreateSDPMediaFormat();
     virtual PString GetSDPMediaType() const;
-    virtual PString GetSDPPortList() const;
+
+  protected:
+    class Format : public SDPMediaFormat
+    {
+      public:
+        Format(SDPApplicationMediaDescription & parent) : SDPMediaFormat(parent) { }
+        bool Initialise(const PString & portString);
+    };
 };
 
 /////////////////////////////////////////////////////////
@@ -380,7 +433,7 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
 
     SDPMediaDescription * GetMediaDescriptionByType(const OpalMediaType & rtpMediaType) const;
     SDPMediaDescription * GetMediaDescriptionByIndex(PINDEX i) const;
-    void AddMediaDescription(SDPMediaDescription * md) { mediaDescriptions.Append(md); }
+    void AddMediaDescription(SDPMediaDescription * md) { mediaDescriptions.Append(PAssertNULL(md)); }
     
     virtual SDPMediaDescription::Direction GetDirection(unsigned) const;
     bool IsHold() const;
