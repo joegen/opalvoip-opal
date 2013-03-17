@@ -29,11 +29,11 @@ BASENAME := spandsp
 SRCDIR	:= .
 SRCS	:= spandsp_fax.cpp
 
-CFLAGS += -D__STDC_LIMIT_MACROS @SPANDSP_CFLAGS@
+CPPFLAGS += -D__STDC_LIMIT_MACROS @SPANDSP_CFLAGS@
 LIBS   += @SPANDSP_LIBS@
 
 INSTALL_DIR := @FAX_PLUGIN_DIR@
-PLUGINDIR   := @PLUGINDIR@
-include $(PLUGINDIR)/plugin-inc.mak
+PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
+include $(PLUGIN_SRC_DIR)/plugin-inc.mak
 
 ###########################################

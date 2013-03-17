@@ -29,7 +29,7 @@ BASENAME := iLBC
 SRCDIR := ./iLBC
 SRCS   := ilbccodec.c
 
-CFLAGS += @ILBC_CFLAGS@
+CPPFLAGS += @ILBC_CFLAGS@
 LIBS   += @ILBC_LIBS@
 
 ILBC_SYSTEM :=@ILBC_SYSTEM@
@@ -42,8 +42,8 @@ SRCS += $(SRCDIR)/anaFilter.c $(SRCDIR)/constants.c $(SRCDIR)/createCB.c $(SRCDI
         $(SRCDIR)/StateConstructW.c $(SRCDIR)/StateSearchW.c $(SRCDIR)/syntFilter.c
 endif
 
-INSTALL_DIR := @AC_PLUGIN_DIR@
-PLUGINDIR   := @PLUGINDIR@
-include $(PLUGINDIR)/plugin-inc.mak
+INSTALL_DIR := @AUD_PLUGIN_DIR@
+PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
+include $(PLUGIN_SRC_DIR)/plugin-inc.mak
 
 ###########################################

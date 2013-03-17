@@ -23,13 +23,13 @@
 # $Author$
 # $Date$
 
-VC_PLUGIN_DIR=@VC_PLUGIN_DIR@
+VID_PLUGIN_DIR=@VC_PLUGIN_DIR@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
 INSTALL:=@INSTALL@
 
-PLUGINDIR := ../../../
+PLUGIN_SRC_DIR := @PLUGIN_SRC_DIR@
 OPALDIR   := ../../../../
 TARGETDIR := $(OPALDIR)/lib_@target@/plugins
 OBJDIR    := $(TARGETDIR)/h264_x264_gpl
@@ -48,8 +48,8 @@ TARGET_PATH = $(TARGETDIR)/$(TARGET)
 
 CC	 	=@CC@
 CXX	 	=@CXX@
-CFLAGS  =@X264_CFLAGS@ @LIBAVCODEC_CFLAGS@ -I.. -I$(PLUGINDIR) -I$(OPALDIR)/include -DGPL_HELPER_APP -DPLUGINCODEC_TRACING
-LDFLAGS =@LDFLAGS@ @X264_LIBS@ @DL_LIBS@
+CPPFLAGS  =@X264_CFLAGS@ @LIBAVCODEC_CFLAGS@ -I.. -I$(PLUGIN_SRC_DIR) -I$(OPALDIR)/include -DGPL_HELPER_APP -DPLUGINCODEC_TRACING
+LDFLAGS =@LDFLAGS@ @X264_LIBS@ @DLFCN_LIBS@
 
 
 vpath	%.o   $(OBJDIR)
@@ -61,11 +61,11 @@ endif
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CXX) $(CFLAGS) -c $< -o $@
+	$(Q_CC)$(CXX) $(CPPFLAGS) -c $< -o $@
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(Q_CC)$(CC) $(CFLAGS) -c $< -o $@
+	$(Q_CC)$(CC) $(CPPFLAGS) -c $< -o $@
 
 
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SRCS)))))

@@ -35,8 +35,8 @@ SRCS := g726codec.c \
 	$(SRCDIR)/g726_40.c \
 	$(SRCDIR)/g72x.c 
 
-INSTALL_DIR := @AC_PLUGIN_DIR@
-PLUGINDIR   := @PLUGINDIR@
-include $(PLUGINDIR)/plugin-inc.mak
+INSTALL_DIR := @AUD_PLUGIN_DIR@
+PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
+include $(PLUGIN_SRC_DIR)/plugin-inc.mak
 
 ###########################################

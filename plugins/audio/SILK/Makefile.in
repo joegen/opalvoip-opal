@@ -29,12 +29,12 @@ BASENAME := silk
 SRCDIR := .
 SRCS   := SILKCodec.cpp
 
-LIBS += -L./SILK_SDK -lSKP_SILK_SDK
+LIBS += -L./SILK_SDK/obj_$(target) -lSKP_SILK_SDK
 
 SUBDIRS := ./SILK_SDK
 
-INSTALL_DIR := @AC_PLUGIN_DIR@
-PLUGINDIR   := @PLUGINDIR@
-include $(PLUGINDIR)/plugin-inc.mak
+INSTALL_DIR := @AUD_PLUGIN_DIR@
+PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
+include $(PLUGIN_SRC_DIR)/plugin-inc.mak
 
 ###########################################

@@ -34,18 +34,18 @@ SRCS      := h263-1998.cxx \
              $(COMMONDIR)/ffmpeg.cxx \
              $(COMMONDIR)/dyna.cxx
 
-CFLAGS += @LIBAVCODEC_CFLAGS@ -I$(COMMONDIR)
-LIBS   += @DL_LIBS@
+CPPFLAGS += @LIBAVCODEC_CFLAGS@ -I$(COMMONDIR)
+LIBS   += @DLFCN_LIBS@
 
 HAVE_LIBAVCODEC_RTP_MODE=@HAVE_LIBAVCODEC_RTP_MODE@
 ifeq ($(HAVE_LIBAVCODEC_RTP_MODE),yes)
-CFLAGS += -DLIBAVCODEC_RTP_MODE=1
+CPPFLAGS += -DLIBAVCODEC_RTP_MODE=1
 endif
 
 vpath   %.cxx $(COMMONDIR)
 
-INSTALL_DIR := @VC_PLUGIN_DIR@
-PLUGINDIR   := @PLUGINDIR@
-include $(PLUGINDIR)/plugin-inc.mak
+INSTALL_DIR := @VID_PLUGIN_DIR@
+PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
+include $(PLUGIN_SRC_DIR)/plugin-inc.mak
 
 ###########################################

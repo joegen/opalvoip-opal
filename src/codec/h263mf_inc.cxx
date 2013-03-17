@@ -233,15 +233,10 @@ static void FindBoundingBox(const PluginCodec_OptionMap & options,
       ft = origFrameTime;
     mpi[1] = (ft + 1502) / 3003;
 
-#ifdef DEFAULT_TO_FULL_CAPABILITIES
     minWidth  = PLUGINCODEC_QCIF_WIDTH;
     maxWidth  = PLUGINCODEC_CIF16_WIDTH;
     minHeight = PLUGINCODEC_QCIF_HEIGHT;
     maxHeight = PLUGINCODEC_CIF16_HEIGHT;
-#else
-    minWidth  = maxWidth  = PLUGINCODEC_QCIF_WIDTH;
-    minHeight = maxHeight = PLUGINCODEC_QCIF_HEIGHT;
-#endif
   }
 
   // find the smallest MPI size that is larger than the min frame size

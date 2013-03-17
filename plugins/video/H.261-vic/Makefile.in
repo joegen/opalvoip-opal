@@ -39,10 +39,10 @@ SRCS      := ./h261vic.cxx \
              $(SRCDIR)/bv.c \
 
 
-CFLAGS += -I$(COMMONDIR)
+CPPFLAGS += -I$(COMMONDIR)
 
-INSTALL_DIR := @VC_PLUGIN_DIR@
-PLUGINDIR   := @PLUGINDIR@
-include $(PLUGINDIR)/plugin-inc.mak
+INSTALL_DIR := @VID_PLUGIN_DIR@
+PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
+include $(PLUGIN_SRC_DIR)/plugin-inc.mak
 
 ###########################################

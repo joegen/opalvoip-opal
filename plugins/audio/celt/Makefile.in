@@ -29,11 +29,11 @@ BASENAME := celt
 SRCDIR := ./
 SRCS   := celtcodec.c
 
-CFLAGS += @CELT_CFLAGS@
+CPPFLAGS += @CELT_CFLAGS@
 LIBS   += @CELT_LIBS@
 
-INSTALL_DIR := @AC_PLUGIN_DIR@
-PLUGINDIR   := @PLUGINDIR@
-include $(PLUGINDIR)/plugin-inc.mak
+INSTALL_DIR := @AUD_PLUGIN_DIR@
+PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
+include $(PLUGIN_SRC_DIR)/plugin-inc.mak
 
 ###########################################

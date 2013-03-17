@@ -26,13 +26,13 @@
 # $Date$
 #
 
-include @OPALDIR@/make/opal_defs.mak
-
-SHELL		:= /bin/sh
-OS_NAME=$(shell uname -s)
-ifeq ($(OS_NAME),SunOS)
-  override SHELL=/usr/bin/bash
+ifndef OPALDIR
+  $(error OPALDIR must be defined)
 endif
+
+include $(OPALDIR)/make/opal_defs.mak
+
+CPPFLAGS += $(SHARED_CPPFLAGS)
 
 SUBDIRS := 
 
@@ -71,35 +71,38 @@ endif # OPAL_SAMPLES
 
 ifeq ($(V)$(VERBOSE),)
 Q=@
-Q_CC = @echo [CC] `echo $< | sed s^@OPALDIR@/^^` ; 
-Q_DEP= @echo [DEP] `echo $< | sed s^@OPALDIR@/^^` ; 
-Q_AR = @echo [AR] `echo $@ | sed s^@OPALDIR@/^^` ;
-Q_LD = @echo [LD] `echo $@ | sed s^@OPALDIR@/^^` ;
+Q_CC = @echo [CC] `echo $< | sed s^$(OPALDIR)/^^` ; 
+Q_DEP= @echo [DEP] `echo $< | sed s^$(OPALDIR)/^^` ; 
+Q_AR = @echo [AR] `echo $@ | sed s^$(OPALDIR)/^^` ;
+Q_LD = @echo [LD] `echo $@ | sed s^$(OPALDIR)/^^` ;
 endif
 
 
-OPAL_SRCDIR = @OPALDIR@/src
-OPAL_INCDIR = @OPALDIR@/include
-OPAL_LIBDIR = @OPAL_LIBDIR@
+OPAL_SRCDIR = $(OPALDIR)/src
+OPAL_INCDIR = $(OPALDIR)/include
 
-CFLAGS := -I$(OPAL_INCDIR) $(CFLAGS)
-CXXFLAGS := -I$(OPAL_INCDIR) $(CXXFLAGS)
+CPPFLAGS := -I$(OPAL_INCDIR) $(CPPFLAGS)
 
-ifeq ($(DEBUG_BUILD),yes)
-  LIB_FILENAME_STATIC=$(DEBUG_LIB_FILENAME_STATIC)
-  LIB_FILENAME_SHARED=$(DEBUG_LIB_FILENAME_SHARED)
-  LIB_FILENAME_SHARED_PAT=$(DEBUG_LIB_FILENAME_SHARED_PAT)
-  OPAL_OBJDIR=$(DEBUG_OPAL_OBJDIR)
-  OPAL_DEPDIR=$(DEBUG_OPAL_DEPDIR)
+ifdef DEBUG
+  SHARED_LIB_LINK  = $(OPAL_LIBDIR)/$(OPAL_DEBUG_SHARED_LINK)
+  SHARED_LIB_FILE  = $(OPAL_LIBDIR)/$(OPAL_DEBUG_SHARED_FILE)
+  STATIC_LIB_FILE  = $(OPAL_LIBDIR)/$(OPAL_DEBUG_STATIC_FILE)
+  LIB_SONAME       = $(OPAL_DEBUG_SHARED_BASE)
 else
-  LIB_FILENAME_STATIC=$(RELEASE_LIB_FILENAME_STATIC)
-  LIB_FILENAME_SHARED=$(RELEASE_LIB_FILENAME_SHARED)
-  LIB_FILENAME_SHARED_PAT=$(RELEASE_LIB_FILENAME_SHARED_PAT)
-  OPAL_OBJDIR=$(RELEASE_OPAL_OBJDIR)
-  OPAL_DEPDIR=$(RELEASE_OPAL_DEPDIR)
+  SHARED_LIB_LINK  = $(OPAL_LIBDIR)/$(OPAL_SHARED_LINK)
+  SHARED_LIB_FILE  = $(OPAL_LIBDIR)/$(OPAL_SHARED_FILE)
+  STATIC_LIB_FILE  = $(OPAL_LIBDIR)/$(OPAL_STATIC_FILE)
+  LIB_SONAME       = $(OPAL_SHARED_BASE)
 endif
 
-REVISION_FILE = @OPALDIR@/revision.h
+ifeq ($(P_SHAREDLIB),1)
+  TARGET=$(SHARED_LIB_LINK)
+else
+  TARGET=$(STATIC_LIB_FILE)
+endif
+
+
+REVISION_FILE = $(OPALDIR)/revision.h
 
 ASN_SRCDIR := $(OPAL_SRCDIR)/asn
 ASN_INCDIR := $(OPAL_INCDIR)/asn
@@ -183,7 +186,7 @@ ifeq ($(OPAL_HAS_MIXER), yes)
 SOURCES += $(OPAL_SRCDIR)/opal/recording.cxx \
            $(OPAL_SRCDIR)/ep/opalmixer.cxx
 ifeq ($(target_os),mingw)
-LIBS += -lvfw32
+LDFLAGS += -lvfw32
 endif
 endif
 
@@ -269,7 +272,7 @@ endif
 
 ifeq ($(OPAL_PTLIB_SSL), yes)
 SOURCES += $(OPAL_SRCDIR)/h235auth1.cxx
-LIBS += -lcrypto
+LDFLAGS += -lcrypto
 endif
 
 ifeq ($(OPAL_T120DATA), yes)
@@ -515,18 +518,6 @@ endif # SPEEXDSP_SYSTEM
 
 endif # ifeq ($(OPAL_AEC), yes)
 
-####################################################
-
-ifeq ($(target_os),Darwin)
-CFLAGS		+= -fno-common -dynamic
-ARCHIVE			:= libtool -static -o
-endif # Darwin
-
-####################################################
-
-#ifeq ($(target_os),mingw)
-#LDFLAGS += -enable-runtime-pseudo-reloc -fatal-warning
-#endif # mingw
 
 ###############################################################################
 # Build rules
@@ -554,12 +545,12 @@ OBJS	 := $(EXTERNALOBJS) $(patsubst %.o, $(OPAL_OBJDIR)/%.o, $(notdir $(SRC_OBJS
 # define rule for .cxx, .cpp and .c files
 #
 $(OPAL_OBJDIR)/%.o : %.cxx
-	@if [ ! -d $(OPAL_OBJDIR) ] ; then mkdir -p $(OPAL_OBJDIR) ; fi
-	$(Q_CC)$(CXX) $(CXXFLAGS) -c $< -o $@
+	@if [ ! -d $(dir $@) ] ; then $(MKDIR_P) $(dir $@) ; fi
+	$(Q_CC)$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
 $(OPAL_OBJDIR)/%.o :  %.c 
-	@if [ ! -d $(OPAL_OBJDIR) ] ; then mkdir -p $(OPAL_OBJDIR) ; fi
-	$(Q_CC)$(CC) $(CFLAGS) -c $< -o $@
+	@if [ ! -d $(dir $@) ] ; then $(MKDIR_P) $(dir $@) ; fi
+	$(Q_CC)$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 
 #
@@ -574,14 +565,14 @@ DEPS	 := $(patsubst %.dep, $(OPAL_DEPDIR)/%.dep, $(notdir $(SRC_DEPS) $(DEPS)))
 # define rule for .dep files
 #
 $(OPAL_DEPDIR)/%.dep : %.cxx 
-	@if [ ! -d $(OPAL_DEPDIR) ] ; then mkdir -p $(OPAL_DEPDIR) ; fi
+	@if [ ! -d $(dir $@) ] ; then $(MKDIR_P) $(dir $@) ; fi
 	@printf %s $(OPAL_OBJDIR)/ > $@
-	$(Q_DEP)$(CXX) $(subst $(DEBUG_CFLAGS),,$(CXXFLAGS)) -M $< >> $@
+	$(Q_DEP)$(CXX) $(CPPFLAGS) -M $< >> $@
 
 $(OPAL_DEPDIR)/%.dep : %.c 
-	@if [ ! -d $(OPAL_DEPDIR) ] ; then mkdir -p $(OPAL_DEPDIR) ; fi
+	@if [ ! -d $(dir $@) ] ; then $(MKDIR_P) $(dir $@) ; fi
 	@printf %s $(OPAL_OBJDIR)/ > $@
-	$(Q_DEP)$(CC) $(subst $(DEBUG_CFLAGS),,$(CFLAGS)) -M $< >> $@
+	$(Q_DEP)$(CC) $(CPPFLAGS) -M $< >> $@
 
 
 #####################################################################
@@ -594,13 +585,9 @@ $(OPAL_DEPDIR)/%.dep : %.c
 .PHONY: default_target
 
 ifeq ($(OPAL_SHARED_LIB),)
-default_target :: opt
+default_target : opt
 else
-default_target :: $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC)
-ifeq ($(OPAL_SHARED_LIB),1)
-default_target :: $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED)
-endif
-default_target :: subdirs
+default_target : $(TARGET) subdirs
 endif
 
 .PHONY: default_depend
@@ -613,7 +600,7 @@ subdirs:
 
 clean:
 	rm -rf $(OPAL_LIBDIR)
-	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) CC=@CC@ CXX=@CXX@ LD=@CXX@ clean; fi ; )
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) clean; fi ; )
 
 sterile: clean
 	rm -f make/toplevel.mak plugins/Makefile
@@ -630,26 +617,26 @@ endif
 #####################################################################
 # Targets for the libraries
 
-$(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC): $(OBJS) 
-	@if [ ! -d $(OPAL_LIBDIR) ] ; then mkdir $(OPAL_LIBDIR) ; fi
-	$(Q_AR)$(ARCHIVE) $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC) $(OBJS)
+$(STATIC_LIB_FILE): $(OBJS) 
+	@if [ ! -d $(dir $@) ] ; then $(MKDIR_P) $(dir $@) ; fi
+	$(Q_AR)$(AR) $(ARFLAGS) $@ $(OBJS)
 ifeq ($(HAVE_RANLIB),yes)
-	$(RANLIB) $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC)
+	$Q $(RANLIB) $@
 endif
-
-$(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED): $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC)
 
 ifeq ($(OPAL_SHARED_LIB),1)
 
-  $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED): $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT)
-	rm -f $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED) ; ln -sf  $(LIB_FILENAME_SHARED_PAT) $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED)
+  $(SHARED_LIB_LINK): $(SHARED_LIB_FILE)
+	$Q cd $(dir $@) ; rm -f $@ ; $(LN_S) $(notdir $<) $(notdir $@)
 
-  $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT): $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC)
-	@if [ ! -d $(OPAL_LIBDIR) ] ; then mkdir $(OPAL_LIBDIR) ; fi
-	$(Q_LD)$(LD) $(LDSOOPTS) -o $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT) $(LDFLAGS) $(OBJS) $(LIBS) $(EXTLIBS)
+  $(SHARED_LIB_FILE): $(STATIC_LIB_FILE)
+	@if [ ! -d $(dir $@) ] ; then $(MKDIR_P) $(dir $@) ; fi
+	$(Q_LD)$(LD) -o $@ $(SHARED_LDFLAGS:INSERT_SONAME=$(LIB_SONAME)) $(OBJS) $(LDFLAGS)
 
 endif # OPAL_SHARED_LIB
 
+
+####################################################
 
 ifneq (,$(SWIG))
 
@@ -694,30 +681,32 @@ endif
 # Install targets
 
 install:
-	mkdir -p $(DESTDIR)$(libdir); chmod 755 $(DESTDIR)$(libdir)
-	( if test -e $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC) ; then \
-	  $(INSTALL) -m 755 $(OPAL_LIBDIR)/$(LIB_FILENAME_STATIC) $(DESTDIR)$(libdir) ; \
+	$(MKDIR_P) $(DESTDIR)$(libdir); chmod 755 $(DESTDIR)$(libdir)
+	( if test -e $(OPAL_LIBDIR)/$(OPAL_STATIC_FILE) ; then \
+	  $(INSTALL) -m 755 $(OPAL_LIBDIR)/$(OPAL_STATIC_FILE) $(DESTDIR)$(libdir) ; \
 	fi )
-	( if test -e $(OPAL_LIBDIR)/$(DEBUG_LIB_FILENAME_STATIC) ; then \
-	  $(INSTALL) -m 755 $(OPAL_LIBDIR)/$(DEBUG_LIB_FILENAME_STATIC) $(DESTDIR)$(libdir) ; \
+	( if test -e $(OPAL_LIBDIR)/$(OPAL_DEBUG_STATIC_FILE) ; then \
+	  $(INSTALL) -m 755 $(OPAL_LIBDIR)/$(OPAL_DEBUG_STATIC_FILE) $(DESTDIR)$(libdir) ; \
 	fi )
-	( if test -e $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT) ; then \
-	  $(INSTALL) -m 755 $(OPAL_LIBDIR)/$(LIB_FILENAME_SHARED_PAT) $(DESTDIR)$(libdir) ; \
-	  ln -snf $(LIB_FILENAME_SHARED_PAT) $(DESTDIR)$(libdir)/$(LIB_FILENAME_SHARED) ; \
+	( if test -e $(OPAL_LIBDIR)/$(OPAL_SHARED_FILE) ; then \
+	  $(INSTALL) -m 755 $(OPAL_LIBDIR)/$(OPAL_SHARED_FILE) $(DESTDIR)$(libdir) ; \
+	  cd $(OPAL_LIBDIR) \
+          $(LN_S) -nf $(OPAL_SHARED_FILE) $(OPAL_SHARED_LINK) ; \
 	fi )
-	( if test -e $(OPAL_LIBDIR)/$(DEBUG_LIB_FILENAME_SHARED_PAT) ; then \
-	  $(INSTALL) -m 755 $(OPAL_LIBDIR)/$(DEBUG_LIB_FILENAME_SHARED_PAT) $(DESTDIR)$(libdir) ; \
-	  ln -snf $(DEBUG_LIB_FILENAME_SHARED_PAT) $(DESTDIR)$(libdir)/$(DEBUG_LIB_FILENAME_SHARED) ; \
+	( if test -e $(OPAL_LIBDIR)/$(OPAL_DEBUG_SHARED_FILE) ; then \
+	  $(INSTALL) -m 755 $(OPAL_LIBDIR)/$(OPAL_DEBUG_SHARED_FILE) $(DESTDIR)$(libdir) ; \
+	  cd $(OPAL_LIBDIR) \
+	  $(LN_S) -nf $(OPAL_DEBUG_SHARED_FILE) $(OPAL_DEBUG_SHARED_LINK) ; \
 	fi )
-	mkdir -p $(DESTDIR)$(libdir)/pkgconfig ; chmod 755 $(DESTDIR)$(libdir)/pkgconfig
+	$(MKDIR_P) $(DESTDIR)$(libdir)/pkgconfig ; chmod 755 $(DESTDIR)$(libdir)/pkgconfig
 	$(INSTALL) -m 644 opal.pc $(DESTDIR)$(libdir)/pkgconfig
-	mkdir -p $(DESTDIR)$(datarootdir)/opal/make ; chmod 755 $(DESTDIR)$(datarootdir)/opal/make
+	$(MKDIR_P) $(DESTDIR)$(datarootdir)/opal/make ; chmod 755 $(DESTDIR)$(datarootdir)/opal/make
 	$(INSTALL) -m 644 make/opal_defs.mak $(DESTDIR)$(datarootdir)/opal/make
 	$(INSTALL) -m 644 opal_inc.mak $(DESTDIR)$(datarootdir)/opal/make
-	mkdir -p $(DESTDIR)$(includedir); chmod 755 $(DESTDIR)$(includedir)
+	$(MKDIR_P) $(DESTDIR)$(includedir); chmod 755 $(DESTDIR)$(includedir)
 	$(INSTALL) -m 644 include/opal.h $(DESTDIR)$(includedir)
 	( for dir in asn codec ep h323 h460 iax2 im lids opal rtp sip t120 t38; \
-		do mkdir -p $(DESTDIR)$(includedir)/$$dir ; chmod 755 $(DESTDIR)$(includedir)/$$dir ; \
+		do $(MKDIR_P) $(DESTDIR)$(includedir)/$$dir ; chmod 755 $(DESTDIR)$(includedir)/$$dir ; \
 		( for fn in include/$$dir/*.h ; do \
 			$(INSTALL) -m 644 $$fn $(DESTDIR)$(includedir)/$$dir ; \
 		done); \
@@ -728,17 +717,14 @@ ifeq ($(OPAL_PLUGINS),yes)
 endif
 
 uninstall:
-	( for filename in $(LIB_FILENAME_SHARED) \
-                          $(LIB_FILENAME_SHARED_PAT) \
-                          $(LIB_FILENAME_STATIC) \
-                          $(DEBUG_LIB_FILENAME_SHARED) \
-                          $(DEBUG_LIB_FILENAME_SHARED_PAT) \
-                          $(DEBUG_LIB_FILENAME_STATIC) \
-                          ; \
-	do rm -f $(DESTDIR)$(libdir)/$$filename ;\
-	done)
 	rm -rf $(DESTDIR)$(includedir) \
                $(DESTDIR)$(datarootdir)/opal \
+	       $(DESTDIR)$(libdir)/$(OPAL_SHARED_LINK) \
+               $(DESTDIR)$(libdir)/$(OPAL_SHARED_FILE) \
+               $(DESTDIR)$(libdir)/$(OPAL_STATIC_FILE) \
+               $(DESTDIR)$(libdir)/$(OPAL_DEBUG_SHARED_LINK) \
+               $(DESTDIR)$(libdir)/$(OPAL_DEBUG_SHARED_FILE) \
+               $(DESTDIR)$(libdir)/$(OPAL_DEBUG_STATIC_FILE) \
 	       $(DESTDIR)$(libdir)/pkgconfig/opal.pc
 ifeq ($(OPAL_PLUGINS),yes)
 	$(MAKE) -C plugins uninstall
