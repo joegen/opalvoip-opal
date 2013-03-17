@@ -51,7 +51,7 @@ endif
 
 CPPFLAGS += $(shell $(WX_CONFIG) --cxxflags)
 CFLAGS	 += $(shell $(WX_CONFIG) --cxxflags) -Wno-strict-aliasing -Wno-float-equal
-ENDLDLIBS+= $(shell $(WX_CONFIG) --libs)
+LDFLAGS  += $(shell $(WX_CONFIG) --libs)
 
 
 openphone.cxx : openphone.xrc

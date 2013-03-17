@@ -32,20 +32,13 @@ SRCS      := mpeg4.cxx \
              $(COMMONDIR)/ffmpeg.cxx \
              $(COMMONDIR)/dyna.cxx
 
-CFLAGS += @LIBAVCODEC_CFLAGS@ -I$(COMMONDIR)
-LIBS   += @DL_LIBS@
-
-# Add LIBAVCODEC_SOURCE_DIR to the include path so we can #include <libavcodec/...h>
-# Also add libavutil, so ffmpeg headers can #include "log.h".
-LIBAVCODEC_SOURCE_DIR := @LIBAVCODEC_SOURCE_DIR@
-ifneq (,$(LIBAVCODEC_SOURCE_DIR))
-CFLAGS += -I$(LIBAVCODEC_SOURCE_DIR) -I$(LIBAVCODEC_SOURCE_DIR)/libavutil
-endif
+CPPFLAGS += @LIBAVCODEC_CFLAGS@ -I$(COMMONDIR)
+LIBS   += @DLFCN_LIBS@
 
 vpath   %.cxx $(COMMONDIR)
 
-INSTALL_DIR := @VC_PLUGIN_DIR@
-PLUGINDIR   := @PLUGINDIR@
-include $(PLUGINDIR)/plugin-inc.mak
+INSTALL_DIR := @VID_PLUGIN_DIR@
+PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
+include $(PLUGIN_SRC_DIR)/plugin-inc.mak
 
 ###########################################

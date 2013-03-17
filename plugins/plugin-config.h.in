@@ -1,8 +1,5 @@
 /* plugin-config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* default to full capabilities at empty fmtp lines */
-#undef DEFAULT_TO_FULL_CAPABILITIES
-
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
 
@@ -113,9 +110,6 @@
 
 /* Define to 1 if `vfork' works. */
 #undef HAVE_WORKING_VFORK
-
-/* ffmpeg */
-#undef HAVE_LIBAVCODEC
 
 /* Directory with libavcodec source code, for MPEG4 rate control correction */
 #undef LIBAVCODEC_HAVE_SOURCE_DIR

@@ -52,14 +52,21 @@ else
 endif
 
 
+CPPFLAGS += -I$(OPALDIR)/include
+
+OPAL_BASE = $(OPAL_PREFIX)$(OBJ_SUFFIX)
+ifneq ($(P_SHAREDLIB),1)
+  OPAL_BASE+=_s
+endif
+LDFLAGS := -L$(OPAL_LIBDIR) -l$(OPAL_BASE) $(LDFLAGS)
+
+
 ifdef PTLIBDIR
   include $(PTLIBDIR)/make/ptlib.mak
 else
   include $(shell pkg-config ptlib --variable=makedir)/ptlib.mak
 endif
 
-
-LDLIBS := -l$(LIB_NAME)$(LIB_TYPE) $(LDLIBS)
 
 $(TARGET) : $(OPAL_LIBDIR)/$(OPAL_FILE)
 

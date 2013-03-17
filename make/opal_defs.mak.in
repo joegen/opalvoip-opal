@@ -26,130 +26,165 @@
 # $Date$
 #
 
-ifndef DEBUG_BUILD
-DEBUG_BUILD := @DEBUG_BUILD@
-endif
+OPAL_MAJOR :=@OPAL_MAJOR@
+OPAL_MINOR :=@OPAL_MINOR@
+OPAL_STAGE :=@OPAL_STAGE@
+OPAL_BUILD :=@OPAL_BUILD@
 
-#detected by configure, needed by Makefile
-target_cpu := @target_cpu@
-target_os := @target_os@
-target := @target@
+# detected platform
+target_cpu       := @target_cpu@
+target_os        := @target_os@
+target           := @target@
 
 # The install directories
-prefix                  = @prefix@
-exec_prefix             = @exec_prefix@
-libdir                  = @libdir@
-bindir                  = @bindir@
-includedir              = @includedir@
-bindir                  = @bindir@
-datarootdir             = @datarootdir@
+prefix           := @prefix@
+exec_prefix      := @exec_prefix@
+libdir           := @libdir@
+includedir       := @includedir@
+datarootdir      := @datarootdir@
 
 # Tool names detected by configure
-CXX                     = @CXX@
-CC                      = @CC@
-INSTALL                 = @INSTALL@
-AR                      = @AR@
-RANLIB                  = @RANLIB@
-LD                      = @LD@
-ARCHIVE                 = @ARCHIVE@
-SWIG                    = @SWIG@
+CC               := @CC@
+CXX              := @CXX@
+LD               := @LD@
+AR               := @AR@
+RANLIB           := @RANLIB@
+LN_S             := @LN_S@
+MKDIR_P          := @MKDIR_P@
+INSTALL          := @INSTALL@
+SVN              := @SVN@
+SWIG             := @SWIG@
 
-OPAL_LIBDIR             =@libdir@
+CPPFLAGS         := @CPPFLAGS@ $(CPPFLAGS)
+CXXFLAGS         := @CXXFLAGS@ $(CXXFLAGS)
+CFLAGS           := @CFLAGS@ $(CFLAGS)
+LDFLAGS          := @LDFLAGS@ $(LDFLAGS)
+SHARED_CPPFLAGS  := @SHARED_CPPFLAGS@
+SHARED_LDFLAGS   := @SHARED_LDFLAGS@
+DEBUG_FLAGS      := @DEBUG_FLAGS@
+RELEASE_FLAGS    := @RELEASE_FLAGS@
+ARFLAGS          := @ARFLAGS@
 
-# The library file names
-RELEASE_LIB_NAME                = @RELEASE_LIB_NAME@
-RELEASE_LIB_FILENAME_STATIC     = @RELEASE_LIB_FILENAME_STATIC@
-RELEASE_LIB_FILENAME_SHARED     = @RELEASE_LIB_FILENAME_SHARED@
-RELEASE_LIB_FILENAME_SHARED_MAJ = @RELEASE_LIB_FILENAME_SHARED_MAJ@
-RELEASE_LIB_FILENAME_SHARED_MIN = @RELEASE_LIB_FILENAME_SHARED_MIN@
-RELEASE_LIB_FILENAME_SHARED_PAT = @RELEASE_LIB_FILENAME_SHARED_PAT@
-RELEASE_CFLAGS                  = @RELEASE_CFLAGS@
-RELEASE_LIBS                    = @RELEASE_LIBS@
-RELEASE_OPAL_OBJDIR	        = @RELEASE_OPAL_OBJDIR@
-RELEASE_OPAL_DEPDIR	        = @RELEASE_OPAL_OBJDIR@
+SHAREDLIBEXT     := @SHAREDLIBEXT@
+STATICLIBEXT     := @STATICLIBEXT@
 
-# The library file names
-DEBUG_LIB_NAME                  = @DEBUG_LIB_NAME@
-DEBUG_LIB_FILENAME_STATIC       = @DEBUG_LIB_FILENAME_STATIC@
-DEBUG_LIB_FILENAME_SHARED       = @DEBUG_LIB_FILENAME_SHARED@
-DEBUG_LIB_FILENAME_SHARED_MAJ   = @DEBUG_LIB_FILENAME_SHARED_MAJ@
-DEBUG_LIB_FILENAME_SHARED_MIN   = @DEBUG_LIB_FILENAME_SHARED_MIN@
-DEBUG_LIB_FILENAME_SHARED_PAT   = @DEBUG_LIB_FILENAME_SHARED_PAT@
-DEBUG_CFLAGS                    = @DEBUG_CFLAGS@
-DEBUG_LIBS                      = @DEBUG_LIBS@
-DEBUG_OPAL_OBJDIR	        = @DEBUG_OPAL_OBJDIR@
-DEBUG_OPAL_DEPDIR	        = @DEBUG_OPAL_OBJDIR@
-
-# Compile and linker flags
-ifeq ($(DEBUG_BUILD),yes)
-  CFLAGS   := $(DEBUG_CFLAGS) $(CFLAGS)
-  CXXFLAGS := $(DEBUG_CFLAGS) $(CXXFLAGS)
-  LIB_NAME := $(DEBUG_LIB_NAME)
-  LIBS     += $(DEBUG_LIBS)
-else
-  CFLAGS   := $(RELEASE_CFLAGS) $(CFLAGS)
-  CXXFLAGS := $(RELEASE_CFLAGS) $(CXXFLAGS)
-  LIB_NAME := $(RELEASE_LIB_NAME)
-  LIBS     += $(RELEASE_LIBS)
+ifndef DEBUG_BUILD
+  DEBUG_BUILD    := @DEBUG_BUILD@
 endif
 
-CFLAGS           := -I$(includedir) @CFLAGS@ $(CFLAGS)
-CXXFLAGS         := -I$(includedir) @CXXFLAGS@ $(CXXFLAGS)
-LDFLAGS          := -L$(libdir) @LDFLAGS@ $(LDFLAGS)
-LIBS             += @LIBS@
-LDSOOPTS          = @LDSOOPTS@
+OPAL_H323        := @OPAL_H323@
+OPAL_SIP         := @OPAL_SIP@
+OPAL_IAX2        := @OPAL_IAX2@
+OPAL_VIDEO       := @OPAL_VIDEO@
+OPAL_ZRTP        := @OPAL_ZRTP@
+OPAL_LID	 := @OPAL_LID@
+OPAL_CAPI	 := @OPAL_CAPI@
+OPAL_DAHDI	 := @OPAL_DAHDI@
+OPAL_IVR	 := @OPAL_IVR@
+OPAL_HAS_H224    := @OPAL_HAS_H224@
+OPAL_HAS_H281    := @OPAL_HAS_H281@
+OPAL_H450        := @OPAL_H450@
+OPAL_H460        := @OPAL_H460@
+OPAL_H501        := @OPAL_H501@
+OPAL_T120DATA    := @OPAL_T120DATA@
+OPAL_SRTP	 := @OPAL_SRTP@
+OPAL_RFC4175	 := @OPAL_RFC4175@
+OPAL_RFC2435	 := @OPAL_RFC2435@
+OPAL_AEC         := @OPAL_AEC@
+OPAL_G711PLC     := @OPAL_G711PLC@
+OPAL_T38_CAP	 := @OPAL_T38_CAPABILITY@
+OPAL_FAX         := @OPAL_FAX@
+OPAL_JAVA        := @OPAL_JAVA@
+SPEEXDSP_SYSTEM  := @SPEEXDSP_SYSTEM@
+OPAL_HAS_MSRP	 := @OPAL_HAS_MSRP@
+OPAL_HAS_SIPIM	 := @OPAL_HAS_SIPIM@
+OPAL_HAS_RFC4103 := @OPAL_HAS_RFC4103@
+OPAL_HAS_MIXER   := @OPAL_HAS_MIXER@
+OPAL_HAS_PCSS    := @OPAL_HAS_PCSS@
 
-HAVE_RANLIB      := @HAVE_RANLIB@
+OPAL_PLUGINS     := @OPAL_PLUGINS@
+OPAL_SAMPLES     := @OPAL_SAMPLES@
 
-OPAL_H323         = @OPAL_H323@
-OPAL_SIP          = @OPAL_SIP@
-OPAL_IAX2         = @OPAL_IAX2@
-OPAL_VIDEO        = @OPAL_VIDEO@
-OPAL_ZRTP         = @OPAL_ZRTP@
-OPAL_LID	  = @OPAL_LID@
-OPAL_CAPI	  = @OPAL_CAPI@
-OPAL_DAHDI	  = @OPAL_DAHDI@
-OPAL_IVR	  = @OPAL_IVR@
-OPAL_HAS_H224     = @OPAL_HAS_H224@
-OPAL_HAS_H281     = @OPAL_HAS_H281@
-OPAL_H450         = @OPAL_H450@
-OPAL_H460         = @OPAL_H460@
-OPAL_H501         = @OPAL_H501@
-OPAL_T120DATA     = @OPAL_T120DATA@
-OPAL_SRTP	  = @OPAL_SRTP@
-OPAL_RFC4175	  = @OPAL_RFC4175@
-OPAL_RFC2435	  = @OPAL_RFC2435@
-OPAL_AEC          = @OPAL_AEC@
-OPAL_G711PLC      = @OPAL_G711PLC@
-OPAL_T38_CAP	  = @OPAL_T38_CAPABILITY@
-OPAL_FAX          = @OPAL_FAX@
-OPAL_JAVA         = @OPAL_JAVA@
-SPEEXDSP_SYSTEM   = @SPEEXDSP_SYSTEM@
-OPAL_HAS_MSRP	  = @OPAL_HAS_MSRP@
-OPAL_HAS_SIPIM	  = @OPAL_HAS_SIPIM@
-OPAL_HAS_RFC4103  = @OPAL_HAS_RFC4103@
-OPAL_HAS_MIXER    = @OPAL_HAS_MIXER@
-OPAL_HAS_PCSS     = @OPAL_HAS_PCSS@
+OPAL_PTLIB_SSL   := @OPAL_PTLIB_SSL@
+OPAL_PTLIB_SSL_AES:=@OPAL_PTLIB_SSL_AES@
+OPAL_PTLIB_ASN   := @OPAL_PTLIB_ASN@
+OPAL_PTLIB_EXPAT := @OPAL_PTLIB_EXPAT@
+OPAL_PTLIB_AUDIO := @OPAL_PTLIB_AUDIO@
+OPAL_PTLIB_VIDEO := @OPAL_PTLIB_VIDEO@
+OPAL_PTLIB_WAVFILE:=@OPAL_PTLIB_WAVFILE@
+OPAL_PTLIB_DTMF  := @OPAL_PTLIB_DTMF@
+OPAL_PTLIB_IPV6  := @OPAL_PTLIB_IPV6@
+OPAL_PTLIB_DNS_RESOLVER:=@OPAL_PTLIB_DNS_RESOLVER@
+OPAL_PTLIB_LDAP  := @OPAL_PTLIB_LDAP@
+OPAL_PTLIB_VXML  := @OPAL_PTLIB_VXML@
+OPAL_PTLIB_CONFIG_FILE:=@OPAL_PTLIB_CONFIG_FILE@
+OPAL_PTLIB_STUN  := @OPAL_PTLIB_STUN@
+OPAL_PTLIB_CLI   := @OPAL_PTLIB_CLI@
 
-OPAL_PLUGINS      = @OPAL_PLUGINS@
-OPAL_SAMPLES      = @OPAL_SAMPLES@
 
-OPAL_PTLIB_SSL    = @OPAL_PTLIB_SSL@
-OPAL_PTLIB_SSL_AES= @OPAL_PTLIB_SSL_AES@
-OPAL_PTLIB_ASN    = @OPAL_PTLIB_ASN@
-OPAL_PTLIB_EXPAT  = @OPAL_PTLIB_EXPAT@
-OPAL_PTLIB_AUDIO  = @OPAL_PTLIB_AUDIO@
-OPAL_PTLIB_VIDEO  = @OPAL_PTLIB_VIDEO@
-OPAL_PTLIB_WAVFILE= @OPAL_PTLIB_WAVFILE@
-OPAL_PTLIB_DTMF   = @OPAL_PTLIB_DTMF@
-OPAL_PTLIB_IPV6   = @OPAL_PTLIB_IPV6@
-OPAL_PTLIB_DNS_RESOLVER = @OPAL_PTLIB_DNS_RESOLVER@
-OPAL_PTLIB_LDAP   = @OPAL_PTLIB_LDAP@
-OPAL_PTLIB_VXML   = @OPAL_PTLIB_VXML@
-OPAL_PTLIB_CONFIG_FILE=@OPAL_PTLIB_CONFIG_FILE@
-OPAL_PTLIB_STUN   = @OPAL_PTLIB_STUN@
-OPAL_PTLIB_CLI    = @OPAL_PTLIB_CLI@
+###############################################################################
+#
+# Determine the library name
+#
 
+ifdef OPALDIR
+  OPAL_LIBDIR  = $(OPALDIR)/lib_$(target)
+else
+  OPAL_LIBDIR  = $(shell pkg-config opal --variable=libdir)
+endif
+
+ifndef P_SHAREDLIB
+  P_SHAREDLIB=1
+endif
+
+ifeq ($(DEBUG_BUILD),yes)
+  DEBUG=1
+endif
+
+ifdef DEBUG
+  OBJ_SUFFIX := _d
+else
+  OBJ_SUFFIX :=
+endif # DEBUG
+
+ifndef OBJDIR_SUFFIX
+  OBJDIR_SUFFIX = $(OBJ_SUFFIX)
+endif
+
+OPAL_OBJDIR = $(OPAL_LIBDIR)/obj$(OBJDIR_SUFFIX)
+OPAL_DEPDIR = $(OPAL_LIBDIR)/dep$(OBJDIR_SUFFIX)
+
+OPAL_PREFIX := opal
+OPAL_STATIC_FILE = lib$(OPAL_PREFIX)_s.$(STATICLIBEXT)
+OPAL_SHARED_BASE = lib$(OPAL_PREFIX)
+OPAL_SHARED_LINK = $(OPAL_SHARED_BASE).$(SHAREDLIBEXT)
+OPAL_DEBUG_STATIC_FILE = lib$(OPAL_PREFIX)_d_s.$(STATICLIBEXT)
+OPAL_DEBUG_SHARED_BASE = lib$(OPAL_PREFIX)_d
+OPAL_DEBUG_SHARED_LINK = $(OPAL_DEBUG_SHARED_BASE).$(SHAREDLIBEXT)
+
+OPAL_FILE_VERSION = $(OPAL_MAJOR).$(OPAL_MINOR)$(OPAL_STAGE)$(OPAL_BUILD)
+
+ifneq (,$(findstring $(target_os),Darwin cygwin mingw))
+  OPAL_SHARED_FILE = $(OPAL_SHARED_BASE).$(OPAL_FILE_VERSION).$(SHAREDLIBEXT)
+  OPAL_DEBUG_SHARED_FILE = $(OPAL_DEBUG_SHARED_BASE).$(OPAL_FILE_VERSION).$(SHAREDLIBEXT)
+else
+  OPAL_SHARED_FILE = $(OPAL_SHARED_BASE).$(SHAREDLIBEXT).$(OPAL_FILE_VERSION)
+  OPAL_DEBUG_SHARED_FILE = $(OPAL_DEBUG_SHARED_BASE).$(SHAREDLIBEXT).$(OPAL_FILE_VERSION)
+endif
+
+
+###############################################################################
+#
+# Set up compiler flags and macros for debug/release versions
+#
+
+ifdef   DEBUG
+  CPPFLAGS += $(DEBUG_FLAGS)
+  LDFLAGS  += $(DEBUG_FLAGS)
+else
+  CPPFLAGS += $(OPT_FLAGS)
+  LDFLAGS  += $(OPT_FLAGS)
+endif
 
 
 # End of file

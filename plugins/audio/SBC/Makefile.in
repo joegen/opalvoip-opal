@@ -29,8 +29,8 @@ BASENAME := sbc
 SRCDIR := .
 SRCS   := sbccodec.cxx sbc.c sbc_primitives.c sbc_primitives_mmx.c sbc_primitives_neon.c
 
-INSTALL_DIR := @AC_PLUGIN_DIR@
-PLUGINDIR   := @PLUGINDIR@
-include $(PLUGINDIR)/plugin-inc.mak
+INSTALL_DIR := @AUD_PLUGIN_DIR@
+PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
+include $(PLUGIN_SRC_DIR)/plugin-inc.mak
 
 ###########################################

@@ -45,7 +45,7 @@ SRCDIR := .
 SRCS   := vpb.cpp
 
 INSTALL_DIR := @LID_PLUGIN_DIR@
-PLUGINDIR   := @PLUGINDIR@
-include $(PLUGINDIR)/plugin-inc.mak
+PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
+include $(PLUGIN_SRC_DIR)/plugin-inc.mak
 
 ###########################################

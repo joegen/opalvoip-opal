@@ -35,12 +35,12 @@ SRCS    += h264-x264.cxx \
            $(COMMONDIR)/ffmpeg.cxx \
            $(COMMONDIR)/dyna.cxx
 
-CFLAGS += @LIBAVCODEC_CFLAGS@ -I$(COMMONDIR) -DLIB_DIR='"$(libdir)"' -DVC_PLUGIN_DIR='"@VC_PLUGIN_DIR@"'
-LIBS   += @DL_LIBS@
+CPPFLAGS += @LIBAVCODEC_CFLAGS@ -I$(COMMONDIR) -DLIB_DIR='"$(libdir)"' -DVID_PLUGIN_DIR='"@VC_PLUGIN_DIR@"'
+LIBS   += @DLFCN_LIBS@
 
 IS_H264_LICENSED:=@IS_H264_LICENSED@
 ifeq ($(IS_H264_LICENSED),yes)
-  CFLAGS += @X264_CFLAGS@ -DX264_LICENSED
+  CPPFLAGS += @X264_CFLAGS@ -DX264_LICENSED
   LIBS   += @X264_LIBS@
 else
   SUBDIRS := gpl
@@ -50,7 +50,7 @@ vpath	%.cxx $(SHAREDDIR)
 vpath	%.cxx $(COMMONDIR)
 
 INSTALL_DIR := @VC_PLUGIN_DIR@
-PLUGINDIR   := @PLUGINDIR@
-include $(PLUGINDIR)/plugin-inc.mak
+PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
+include $(PLUGIN_SRC_DIR)/plugin-inc.mak
 
 ###########################################
