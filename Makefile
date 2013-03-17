@@ -36,7 +36,6 @@ TOP_LEVEL_MAKE := $(OPALDIR)/make/toplevel.mak
 CONFIGURE      := $(OPALDIR)/configure
 CONFIG_FILES   := $(OPALDIR)/opal.pc \
                   $(OPALDIR)/opal_cfg.dxy \
-                  $(TOP_LEVEL_MAKE) \
                   $(OPALDIR)/make/opal_defs.mak \
                   $(OPALDIR)/include/opal/buildopts.h \
 		  $(OPALDIR)/plugins/plugin-inc.mak

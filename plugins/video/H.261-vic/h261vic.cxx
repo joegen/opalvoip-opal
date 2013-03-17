@@ -615,16 +615,9 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
     frameTime = 3003*cif_mpi;
   }
   else {
-#ifdef DEFAULT_TO_FULL_CAPABILITIES
     maxWidth = 352;
     maxHeight = 288;
     frameTime = 3003*1;
-#else
-    // Default handling according to RFC 4587 (QCIF=1)
-    maxWidth = 176;
-    maxHeight = 144;
-    frameTime = 3003*1;
-#endif
   }
 
   char ** options = (char **)calloc(15, sizeof(char *));

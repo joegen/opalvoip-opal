@@ -30,11 +30,11 @@ COMMONDIR := ../common
 SRCDIR    := .
 SRCS      := theora_frame.cxx theora_plugin.cxx
 
-CFLAGS += @THEORA_CFLAGS@ -I$(COMMONDIR)
+CPPFLAGS += @THEORA_CFLAGS@ -I$(COMMONDIR)
 LIBS   += @THEORA_LIBS@
 
-INSTALL_DIR := @VC_PLUGIN_DIR@
-PLUGINDIR   := @PLUGINDIR@
-include $(PLUGINDIR)/plugin-inc.mak
+INSTALL_DIR := @VID_PLUGIN_DIR@
+PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
+include $(PLUGIN_SRC_DIR)/plugin-inc.mak
 
 ###########################################

@@ -7,19 +7,30 @@
 
 #Platform detection and settings
 
-BUILD_OS := $(shell uname | sed -e 's/^.*Darwin.*/MacOS-X/ ; s/^.*CYGWIN.*/Windows/')
-
-BUILD_ARCHITECTURE := $(shell uname -m | sed -e 's/i686/i386/')
-
 EXESUFFIX = 
 LIBPREFIX = lib
 LIBSUFFIX = .a
 OBJSUFFIX = .o
 
-CC     = $(TOOLCHAIN_PREFIX)gcc$(TOOLCHAIN_SUFFIX)
-AR     = $(TOOLCHAIN_PREFIX)ar
-RANLIB = $(TOOLCHAIN_PREFIX)ranlib
-CP     = $(TOOLCHAIN_PREFIX)cp
+ifdef target
+  OBJDIR=obj_$(target)/
+endif
+
+ifndef CC
+  CC = $(TOOLCHAIN_PREFIX)gcc$(TOOLCHAIN_SUFFIX)
+endif
+
+ifndef AR
+  AR = $(TOOLCHAIN_PREFIX)ar
+endif
+
+ifndef RANLIB
+  RANLIB = $(TOOLCHAIN_PREFIX)ranlib
+endif
+
+ifndef CP
+  CP = $(TOOLCHAIN_PREFIX)cp
+endif
 
 cflags-from-defines    = $(addprefix -D,$(1))
 cflags-from-includes   = $(addprefix -I,$(1))
@@ -34,11 +45,11 @@ CFLAGS  += $(call cflags-from-includes,$(CINCLUDES))
 LDFLAGS += $(call ldflags-from-ldlibdirs,$(LDLIBDIRS))
 LDLIBS  += $(call ldlibs-from-libs,$(LIBS))
 
-COMPILE.c.cmdline   = $(CC) -c $(CFLAGS) -o $@ $<
+COMPILE.c.cmdline   = $(CC) -c $(CPPFLAGS) $(CFLAGS) -o $@ $<
 LINK.o.cmdline      = $(LINK.o) $^ -lm $(LDLIBS) -o $@$(EXESUFFIX) 
 ARCHIVE.cmdline     = $(AR) $(ARFLAGS) $@ $^ && $(RANLIB) $@
 
-%$(OBJSUFFIX):%.c
+$(OBJDIR)%$(OBJSUFFIX):%.c
 	$(COMPILE.c.cmdline)
 
 # Directives
@@ -49,15 +60,16 @@ CINCLUDES += interface src test
 VPATH = ./ \
         interface \
         src \
-        test 
+        test \
+        $(OBJDIR)
 
 # Variable definitions
 LIB_NAME = SKP_SILK_SDK
-TARGET = $(LIBPREFIX)$(LIB_NAME)$(LIBSUFFIX)
+TARGET = $(OBJDIR)$(LIBPREFIX)$(LIB_NAME)$(LIBSUFFIX)
 
 SRCS_C = $(wildcard src/*.c)
 
-OBJS := $(patsubst %.c,%$(OBJSUFFIX),$(SRCS_C))
+OBJS := $(patsubst src/%,$(OBJDIR)%,$(patsubst %.c,%$(OBJSUFFIX),$(SRCS_C)))
 
 ENCODER_SRCS_C = test/Encoder.c
 ENCODER_OBJS := $(patsubst %.c,%$(OBJSUFFIX),$(ENCODER_SRCS_C))
@@ -83,6 +95,12 @@ lib: $(TARGET)
 $(TARGET): $(OBJS)
 	$(ARCHIVE.cmdline)
 
+ifdef OBJDIR
+$(OBJS): $(OBJDIR)
+$(OBJDIR):
+	mkdir $@
+endif
+
 encoder$(EXESUFFIX): $(TARGET) $(ENCODER_OBJS)	
 	$(LINK.o.cmdline)
 
@@ -96,6 +114,9 @@ clean:
 	$(RM) $(TARGET)* $(OBJS) $(ENCODER_OBJS) $(DECODER_OBJS) \
 		  $(SIGNALCMP_OBJS) $(TEST_OBJS) \
 		  encoder$(EXESUFFIX) decoder$(EXESUFFIX) signalcompare$(EXESUFFIX)
+ifdef OBJDIR
+	rmdir $(OBJDIR)
+endif
 
 install uninstall:
 	@true
