@@ -141,7 +141,7 @@ bool DahdiLineInterfaceDevice::Open(const PString &)
     baseChannel += spanInfo.totalchans;
   }
 
-  PTRACE(3, "DAHDI\t" << m_channelInfoList.size() << " channels defined" << endl;
+  PTRACE(3, "DAHDI\t" << m_channelInfoList.size() << " channels defined");
 
   // build the list of FDs to poll for events
   BuildPollFDs();
