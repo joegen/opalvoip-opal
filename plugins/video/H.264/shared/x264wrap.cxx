@@ -736,7 +736,7 @@ bool H264Encoder::Load(void * instance)
       break;
 
 #ifdef VID_PLUGIN_DIR
-    snprintf(executablePath, sizeof(executablePath), "%s/%s/%s", token, VC_PLUGIN_DIR, ExecutableName);
+    snprintf(executablePath, sizeof(executablePath), "%s/%s/%s", token, VID_PLUGIN_DIR, ExecutableName);
     if (IsExecutable(executablePath))
       break;
 #endif
