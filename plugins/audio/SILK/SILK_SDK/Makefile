@@ -50,6 +50,9 @@ LINK.o.cmdline      = $(LINK.o) $^ -lm $(LDLIBS) -o $@$(EXESUFFIX)
 ARCHIVE.cmdline     = $(AR) $(ARFLAGS) $@ $^ && $(RANLIB) $@
 
 $(OBJDIR)%$(OBJSUFFIX):%.c
+ifdef OBJDIR
+	mkdir $@
+endif
 	$(COMPILE.c.cmdline)
 
 # Directives
@@ -95,11 +98,6 @@ lib: $(TARGET)
 $(TARGET): $(OBJS)
 	$(ARCHIVE.cmdline)
 
-ifdef OBJDIR
-$(OBJS): $(OBJDIR)
-$(OBJDIR):
-	mkdir $@
-endif
 
 encoder$(EXESUFFIX): $(TARGET) $(ENCODER_OBJS)	
 	$(LINK.o.cmdline)
