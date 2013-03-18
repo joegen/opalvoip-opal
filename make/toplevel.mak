@@ -584,14 +584,15 @@ $(OPAL_DEPDIR)/%.dep : %.c
 
 .PHONY: default_target
 
-ifeq ($(OPAL_SHARED_LIB),)
-default_target : opt
-else
-default_target : $(TARGET) subdirs
-endif
+default_target : show_target $(TARGET) subdirs
+
 
 .PHONY: default_depend
 default_depend :: depend
+
+.PHONY: show_target
+show_target:
+	@echo OS=$(target_os), CPU=$(target_cpu)
 
 .PHONY: subdirs $(SUBDIRS)
 
@@ -605,7 +606,7 @@ clean:
 sterile: clean
 	rm -f make/toplevel.mak plugins/Makefile
 
-depend:   $(DEPS) 
+depend: show_target $(DEPS) 
 	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) depend; fi ; )
 
 
