@@ -63,12 +63,18 @@
   #include "stdint.h"
 #else
   #include "plugin-config.h"
-  #include <stdint.h>
+
+  #if defined HAVE_STDINT_H
+    #include <stdint.h>
+  #elif defined HAVE_INTTYPES_H
+    #include <inttypes.h>
+  #endif
+
   #include <semaphore.h>
   #include <dlfcn.h>
 
   #define STRCMPI  strcasecmp
-  typedef unsigned char BYTE;
+  typedef uint8_t BYTE;
 
 #endif
 

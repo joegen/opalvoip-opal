@@ -9,7 +9,7 @@ AC_INIT([OPAL], m4_esyscmd([sed -n \
                             -e "s/ *#define *BUILD_TYPE *BetaCode/beta/p" \
                             -e "s/ *#define *BUILD_TYPE *ReleaseCode/./p" \
                             -e "s/ *#define *BUILD_NUMBER *\\(.*\\)/\\1/p" \
-                            version.h | tr -u -d '\n']))
+                            version.h | tr -d '\n']))
 
 AC_PREREQ([2.65])
 
@@ -19,11 +19,6 @@ AC_CONFIG_SRCDIR([include/opal.h])
 
 m4_include(make/my_macros.m4)
 m4_include(make/opal.m4)
-
-
-dnl ########################################################################
-dnl Get architecture
-MY_CANONICAL_TARGET()
 
 
 dnl ########################################################################
