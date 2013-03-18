@@ -23,7 +23,7 @@
 # $Author$
 # $Date$
 
-VID_PLUGIN_DIR=@VC_PLUGIN_DIR@
+VID_PLUGIN_DIR=@VID_PLUGIN_DIR@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
@@ -74,11 +74,11 @@ $(TARGET_PATH): $(OBJECTS)
 	$(Q_LD)$(CXX) -o $@ $^ $(LDFLAGS)
 
 install:
-	mkdir -p $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
-	$(INSTALL) $(TARGET_PATH) $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)
+	mkdir -p $(DESTDIR)$(libdir)/$(VID_PLUGIN_DIR)
+	$(INSTALL) $(TARGET_PATH) $(DESTDIR)$(libdir)/$(VID_PLUGIN_DIR)
 
 uninstall:
-	rm -f $(DESTDIR)$(libdir)/$(VC_PLUGIN_DIR)/$(TARGET)
+	rm -f $(DESTDIR)$(libdir)/$(VID_PLUGIN_DIR)/$(TARGET)
 
 clean:
 	rm -rf $(OBJDIR)
