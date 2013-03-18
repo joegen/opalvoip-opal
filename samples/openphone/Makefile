@@ -65,19 +65,21 @@ bundle: $(TARGET)
 else # DEBUG
 
 BUNDLE_DIR := ./$(PROG).app
+PROG_AND_LIBS =\
+  $(TARGET) \
+  $(PTLIB_LIBDIR)/$(PTLIB_SHARED_FILE) \
+  `find $(OPAL_LIBDIR)/plugins -name \*$(PTLIB_PLUGIN_SUFFIX).$(SHAREDLIBEXT)` \
+  $(OPAL_LIBDIR)/$(OPAL_SHARED_FILE) \
+  `find $(PTLIB_LIBDIR)/device -name \*$(PTLIB_PLUGIN_SUFFIX).$(SHAREDLIBEXT)`
 
 bundle: $(BUNDLE_DIR)
 
 ifneq ($(target_os),Darwin)
 
 $(BUNDLE_DIR): $(TARGET)
-	-mkdir -p $@
-	-rm -f $@/*
-	cp $(TARGET) $@
-	cp $(OPAL_LIBDIR)/$(RELEASE_LIB_FILENAME_SHARED) $@
-	cp $(PTLIB_LIBDIR)/$(PTLIB_FILE) $@
-	find $(OPAL_LIBDIR)/plugins -name \*_ptplugin.$(SHAREDLIBEXT) -exec cp {} $@ \;
-	find $(PTLIB_LIBDIR)/device -name \*_ptplugin.$(SHAREDLIBEXT) -exec cp {} $@ \;
+	@-rm -f $@/*
+	@-mkdir -p $@
+	cp $(PROG_AND_LIBS) $@
 
 else # Darwin
 
@@ -101,7 +103,7 @@ ifneq ($(STRINGSFILE),)
 	cp InfoPlist.strings $@/Contents/Resources/English.lproj/
 endif
 	echo -n 'APPL????' > $@/Contents/PkgInfo
-	cp $(TARGET)         $@/Contents/MacOS/$(PROG)
+	cp $(PROG_AND_LIBS)         $@/Contents/MacOS/$(PROG)
 
 endif
 endif # DEBUG
