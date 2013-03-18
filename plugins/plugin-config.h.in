@@ -1,7 +1,31 @@
 /* plugin-config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define to 1 if you have the <arpa/inet.h> header file. */
-#undef HAVE_ARPA_INET_H
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define to 1 if you have the system header */
+#undef HAVE_UNISTD_H
+#undef HAVE_MALLOC_H
+
+/* Standard integer types */
+#undef HAVE_INTTYPES_H
+#undef HAVE_STDINT_H
+#undef int8_t
+#undef int16_t
+#undef int32_t
+#undef int64_t
+#undef intptr_t
+#undef uint8_t
+#undef uint16_t
+#undef uint32_t
+#undef uint64_t
+#undef uintptr_t
+
+/* define if posix_memalign is available */
+#undef HAVE_POSIX_MEMALIGN
+
+/* Define to `int' if <sys/types.h> does not define. */
+#undef pid_t
 
 /* Define to 1 if you have the <capi20.h> header file. */
 #undef HAVE_CAPI20_H
@@ -9,107 +33,11 @@
 /* celt */
 #undef HAVE_CELT
 
-/* Define to 1 if you have the <dlfcn.h> header file. */
-#undef HAVE_DLFCN_H
-
-/* Define to 1 if you have the <fcntl.h> header file. */
-#undef HAVE_FCNTL_H
-
-/* Define to 1 if you have the <float.h> header file. */
-#undef HAVE_FLOAT_H
-
-/* Define to 1 if you have the `fork' function. */
-#undef HAVE_FORK
-
-/* enable plugin supporting H.263 via patched FFMPEG */
-#undef HAVE_H263
-
-/* enable H.264 support */
-#undef HAVE_H264
-
-/* Define to 1 if you have the <inttypes.h> header file. */
-#undef HAVE_INTTYPES_H
-
-/* Define to 1 if you have the <limits.h> header file. */
-#undef HAVE_LIMITS_H
-
 /* Define to 1 if you have the <linux/telephony.h> header file. */
 #undef HAVE_LINUX_TELEPHONY_H
 
-/* Define to 1 if you have the <malloc.h> header file. */
-#undef HAVE_MALLOC_H
-
-/* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
-
-/* Define to 1 if you have the <netdb.h> header file. */
-#undef HAVE_NETDB_H
-
-/* Define to 1 if you have the <netinet/in.h> header file. */
-#undef HAVE_NETINET_IN_H
-
-/* Enable SBC codec */
-#undef HAVE_SBC
-
-/* Define to 1 if you have the <spandsp.h> header file. */
-#undef HAVE_SPANDSP_H
-
-/* Define to 1 if you have the <stddef.h> header file. */
-#undef HAVE_STDDEF_H
-
-/* Define to 1 if you have the <stdint.h> header file. */
-#undef HAVE_STDINT_H
-
-/* Define to 1 if you have the <stdlib.h> header file. */
-#undef HAVE_STDLIB_H
-
-/* Define to 1 if you have the <strings.h> header file. */
-#undef HAVE_STRINGS_H
-
-/* Define to 1 if you have the <string.h> header file. */
-#undef HAVE_STRING_H
-
-/* Define to 1 if you have the <sys/file.h> header file. */
-#undef HAVE_SYS_FILE_H
-
-/* Define to 1 if you have the <sys/ioctl.h> header file. */
-#undef HAVE_SYS_IOCTL_H
-
-/* Define to 1 if you have the <sys/socket.h> header file. */
-#undef HAVE_SYS_SOCKET_H
-
-/* Define to 1 if you have the <sys/stat.h> header file. */
-#undef HAVE_SYS_STAT_H
-
 /* Define to 1 if you have the <sys/telephony.h> header file. */
 #undef HAVE_SYS_TELEPHONY_H
-
-/* Define to 1 if you have the <sys/time.h> header file. */
-#undef HAVE_SYS_TIME_H
-
-/* Define to 1 if you have the <sys/types.h> header file. */
-#undef HAVE_SYS_TYPES_H
-
-/* theora */
-#undef HAVE_THEORA
-
-/* Define to 1 if you have the <unistd.h> header file. */
-#undef HAVE_UNISTD_H
-
-/* Define to 1 if you have the `vfork' function. */
-#undef HAVE_VFORK
-
-/* Define to 1 if you have the <vfork.h> header file. */
-#undef HAVE_VFORK_H
-
-/* enable voicetronix vpb */
-#undef HAVE_VPB
-
-/* Define to 1 if `fork' works. */
-#undef HAVE_WORKING_FORK
-
-/* Define to 1 if `vfork' works. */
-#undef HAVE_WORKING_VFORK
 
 /* Directory with libavcodec source code, for MPEG4 rate control correction */
 #undef LIBAVCODEC_HAVE_SOURCE_DIR
@@ -143,34 +71,4 @@
 
 /* For win32 build */
 #undef PLUGIN_CODEC_DLL_EXPORTS
-
-/* The size of `int', as computed by sizeof. */
-#undef SIZEOF_INT
-
-/* The size of `long', as computed by sizeof. */
-#undef SIZEOF_LONG
-
-/* The size of `long long', as computed by sizeof. */
-#undef SIZEOF_LONG_LONG
-
-/* The size of `short', as computed by sizeof. */
-#undef SIZEOF_SHORT
-
-/* Define to 1 if you have the ANSI C header files. */
-#undef STDC_HEADERS
-
-/* Filename of the libx264 library */
-#undef X264_LIB_NAME
-
-/* Statically link x264 to the plugin. Default for win32. */
-#undef X264_LINK_STATIC
-
-/* Define to `int' if <sys/types.h> does not define. */
-#undef pid_t
-
-/* Define as `fork' if `vfork' does not work. */
-#undef vfork
-
-/* define if posix_memalign is available */
-#undef HAVE_POSIX_MEMALIGN
 
