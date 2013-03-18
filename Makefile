@@ -94,7 +94,7 @@ ifneq (,$(shell which ./config.status))
 CONFIG_PARMS=$(shell ./config.status --config)
 endif
 
-$(lastword $(CONFIG_FILES)) : $(CONFIGURE) $(CONFIG_IN_FILES)
+$(lastword $(CONFIG_FILES)) : $(CONFIGURE) $(PLUGIN_CONFIG) $(CONFIG_IN_FILES)
 	OPALDIR=$(ENV_OPALDIR) $(CONFIGURE) $(CONFIG_PARMS)
 	touch $(CONFIG_FILES)
 

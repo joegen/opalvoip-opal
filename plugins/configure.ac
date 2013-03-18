@@ -9,9 +9,9 @@ AC_INIT([OPAL-Plugins], m4_esyscmd([sed -n \
                             -e "s/ *#define *BUILD_TYPE *BetaCode/beta/p" \
                             -e "s/ *#define *BUILD_TYPE *ReleaseCode/./p" \
                             -e "s/ *#define *BUILD_NUMBER *\\(.*\\)/\\1/p" \
-                            ../version.h | tr -u -d '\n']))
+                            ../version.h | tr -d '\n']))
 
-AC_PREREQ([2.65])
+AC_PREREQ([2.66])
 
 AC_CONFIG_AUX_DIR(../make)
 
@@ -22,14 +22,11 @@ m4_include(../make/opal.m4)
 
 
 dnl ########################################################################
-dnl Get architecture
-MY_CANONICAL_TARGET()
 
 AC_CHECK_TOOL([NM], [nm])
 AC_CHECK_TOOL([LDD], [ldd])
 
 AC_HEADER_STDC()
-AC_DEFINE(HAVE_STDINT_H)
 
 MY_CHECK_DLFCN()
 AC_SUBST(DLFCN_LIBS)
@@ -201,7 +198,14 @@ if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
       [x264 >= 0.102],
       [],
       [-lx264],
-      [#include <x264.h>],
+      [
+         #if defined HAVE_STDINT_H
+           #include <stdint.h>
+         #elif defined HAVE_INTTYPES_H
+           #include <inttypes.h>
+         #endif
+         #include <x264.h>
+      ],
       [
          x264_param_t param;
          x264_encoder_open(&param);
