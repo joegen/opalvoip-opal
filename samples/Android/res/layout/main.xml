@@ -57,6 +57,12 @@ $Date$
            android:layout_height="wrap_content"
            android:onClick="onHangUpButton"
            />
+   <Button android:id="@+id/shutdown"
+           android:text="Shut Down"
+           android:layout_width="fill_parent"
+           android:layout_height="wrap_content"
+           android:onClick="onShutDownButton"
+           />
    <TextView android:id="@+id/status"
              android:layout_width="fill_parent"
              android:layout_height="fill_parent"
