@@ -74,8 +74,10 @@ OpalPCSSEndPoint::OpalPCSSEndPoint(OpalManager & mgr, const char * prefix)
   soundChannelBuffers = 2;
 
   PTRACE(3, "PCSS\tCreated PC sound system endpoint.\n" << setfill('\n')
-         << "Players:\n"   << PSoundChannel::GetDeviceNames(PSoundChannel::Player)
-         << "Recorders:\n" << PSoundChannel::GetDeviceNames(PSoundChannel::Recorder));
+         << "Player=" << soundChannelPlayDevice << ", available devices:\n"
+         << PSoundChannel::GetDeviceNames(PSoundChannel::Player)
+         << "Recorders=" << soundChannelRecordDevice << ", available devices:\n"
+         << PSoundChannel::GetDeviceNames(PSoundChannel::Recorder));
 }
 
 
