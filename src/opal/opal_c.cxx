@@ -226,10 +226,7 @@ class OpalManager_C : public OpalManager
       const PArgList & args
     );
 
-    ~OpalManager_C()
-    {
-      ShutDownEndpoints();
-    }
+    ~OpalManager_C();
 
     void PostMessage(OpalMessageBuffer & message);
     OpalMessage * GetMessage(unsigned timeout);
@@ -286,6 +283,7 @@ class OpalManager_C : public OpalManager
     PMutex                    m_messageMutex;
     PSemaphore                m_messagesAvailable;
     OpalMessageAvailableFunction m_messageAvailableCallback;
+    bool                      m_shuttingDown;
 };
 
 
@@ -828,6 +826,7 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
   , m_apiVersion(version)
   , m_manualAlerting(false)
   , m_messagesAvailable(0, INT_MAX)
+  , m_shuttingDown(false)
 {
   PString defProto, defUser;
   PINDEX  defProtoPos = P_MAX_INDEX, defUserPos = P_MAX_INDEX;
@@ -936,6 +935,16 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
 }
 
 
+OpalManager_C::~OpalManager_C()
+{
+  ShutDownEndpoints();
+
+  m_shuttingDown = true;
+  m_messagesAvailable.Signal();
+  PThread::Sleep(100); // Make sure external message thread has stopped.
+}
+
+
 void OpalManager_C::PostMessage(OpalMessageBuffer & message)
 {
   m_messageMutex.Wait();
@@ -949,10 +958,16 @@ void OpalManager_C::PostMessage(OpalMessageBuffer & message)
 
 OpalMessage * OpalManager_C::GetMessage(unsigned timeout)
 {
+  if (m_shuttingDown)
+    return NULL;
+
   OpalMessage * msg = NULL;
 
   PTRACE(5, "GetMessage: timeout=" << timeout);
   if (m_messagesAvailable.Wait(timeout)) {
+    if (m_shuttingDown)
+      return NULL;
+
     m_messageMutex.Wait();
 
     if (!m_messageQueue.empty()) {
