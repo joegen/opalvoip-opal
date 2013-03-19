@@ -39,7 +39,7 @@ import android.content.Context;
 
 import org.opalvoip.opal.*;
 
-public class AndOPAL extends Activity implements Runnable
+public class AndOPAL extends Activity
 {
     static {
         System.loadLibrary("andopal");
@@ -63,6 +63,7 @@ public class AndOPAL extends Activity implements Runnable
     // OPAL elements
     private OpalContext m_opal;
     private Thread      m_opalMessageThread;
+    private Thread      m_opalShutDownThread;
     private boolean     m_opalReady = false;
     private String      m_callToken;
 
@@ -185,6 +186,8 @@ public class AndOPAL extends Activity implements Runnable
                 OpalStatusRegistration reg = message.GetRegistrationStatus();
                 if (reg.getM_status() == OpalRegistrationStates.OpalRegisterFailed)
                     OutputStatus("Register failed: " + reg.getM_error());
+                else if (reg.getM_status() == OpalRegistrationStates.OpalRegisterRemoved)
+                    OutputStatus("Unregistered.");
                 else if (reg.getM_status() == OpalRegistrationStates.OpalRegisterSuccessful) {
                     OutputStatus("Registered. Ready!");
                     m_opalReady = true;
@@ -193,7 +196,7 @@ public class AndOPAL extends Activity implements Runnable
         }
     };
 
-    public void run()
+    private void MessageLoop()
     {
         if (OpalInitialise()) {
             OpalMessagePtr message = new OpalMessagePtr();
@@ -201,6 +204,8 @@ public class AndOPAL extends Activity implements Runnable
                 m_opalMessageHandler.sendMessage(m_opalMessageHandler.obtainMessage(0, message));
                 message = new OpalMessagePtr();
             }
+            OutputStatus("OPAL shut down!");
+            m_opalReady = false;
         }
     }
 
@@ -230,9 +235,15 @@ public class AndOPAL extends Activity implements Runnable
                 }
                 public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
                 public void onTextChanged(CharSequence s, int start, int before, int count) { }
-            }); 
+            }
+        );
 
-        m_opalMessageThread = new Thread(this);
+        m_opalMessageThread = new Thread(new Runnable() {
+            public void run()
+            {
+                MessageLoop();
+            }
+        });
         m_opalMessageThread.start();
     }
 
@@ -281,5 +292,18 @@ public class AndOPAL extends Activity implements Runnable
             m_answerButton.setEnabled(false);
             m_hangUpButton.setEnabled(false);
         }
+    }
+
+    public void onShutDownButton(View view)
+    {
+        OutputStatus("Shutting down ...");
+        ((Button)findViewById(R.id.shutdown)).setEnabled(false);
+        m_opalShutDownThread = new Thread(new Runnable() {
+            public void run()
+            {
+                m_opal.ShutDown();
+            }
+        });
+        m_opalShutDownThread.start();
     }
 }
