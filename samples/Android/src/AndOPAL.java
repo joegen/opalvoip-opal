@@ -29,6 +29,7 @@ package org.opalvoip.opal.andsample;
 import java.lang.Thread;
 import android.app.Activity;
 import android.view.View;
+import android.view.*;
 import android.widget.*;
 import android.text.TextWatcher;
 import android.text.Editable;
@@ -44,6 +45,7 @@ public class AndOPAL extends Activity
     static {
         System.loadLibrary("andopal");
     }
+
 
     // Parameters
     String m_natMethod = "STUN";
@@ -62,10 +64,10 @@ public class AndOPAL extends Activity
 
     // OPAL elements
     private OpalContext m_opal;
-    private Thread      m_opalMessageThread;
     private Thread      m_opalShutDownThread;
-    private boolean     m_opalReady = false;
+    private boolean     m_loggedIn = false;
     private String      m_callToken;
+
 
     // Message handler for getting text from background thread to GUI
     private Handler m_statusHandler = new Handler() {
@@ -75,10 +77,12 @@ public class AndOPAL extends Activity
         }
     };
 
+
     private void OutputStatus(String str)
     {
         m_statusHandler.sendMessage(m_statusHandler.obtainMessage(0, str));
     }
+
 
     private boolean SendOpalCommand(OpalMessagePtr message, OpalMessagePtr response, String title)
     {
@@ -89,72 +93,13 @@ public class AndOPAL extends Activity
         return false;
     }
 
+
     private boolean SendOpalCommand(OpalMessagePtr message, String title)
     {
         OpalMessagePtr response = new OpalMessagePtr();
         return SendOpalCommand(message, response, title);
     }
 
-    private boolean OpalInitialise()
-    {
-        OutputStatus("Initialising OPAL ...");
-
-        // Initialise OPAL library
-        m_opal = new OpalContext();
-        long apiVersion = m_opal.Initialise(OPALConstants.OPAL_PREFIX_ALL +
-                                            " --config \"" + getFilesDir().getAbsolutePath() + '"' +
-                                            " --plugin \"" + getApplicationInfo().nativeLibraryDir + '"' +
-//                                            " -tttttosyslog"
-                                            " -ttttto \"" +  getCacheDir().getAbsolutePath() + "/opal.log\""
-                                            );
-        if (apiVersion == 0) {
-            OutputStatus("Could not initialise OPAL");
-            return false;
-        }
-
-        // Set up general parameters
-        OpalMessagePtr message = new OpalMessagePtr(OpalMessageType.OpalCmdSetGeneralParameters);
-        OpalParamGeneral general = message.GetGeneralParams();
-        general.setM_natMethod(m_natMethod);
-        general.setM_natServer(m_natServer);
-
-        if (!SendOpalCommand(message, "General set up"))
-            return false;
-
-        // Set up all protocol parameters
-        message = new OpalMessagePtr(OpalMessageType.OpalCmdSetProtocolParameters);
-        OpalParamProtocol proto = message.GetProtocolParams();
-        // The following should come from GUI, but I am too lazy to add.
-        proto.setM_userName(m_userName);
-        proto.setM_displayName(m_displayName);
-
-        if (!SendOpalCommand(message, "Protocol set up"))
-            return false;
-
-        // Set up sip specific parameters
-        message = new OpalMessagePtr(OpalMessageType.OpalCmdSetProtocolParameters);
-        proto = message.GetProtocolParams();
-        proto.setM_prefix("sip");
-        proto.setM_interfaceAddresses("*");
-
-        if (!SendOpalCommand(message, "SIP set up"))
-            return false;
-
-        // Register withn server
-        message = new OpalMessagePtr(OpalMessageType.OpalCmdRegistration);
-        OpalParamRegistration reg = message.GetRegistrationParams();
-        reg.setM_protocol("sip");
-        reg.setM_identifier(m_userName);
-        reg.setM_hostName(m_domain);
-        reg.setM_password(m_password);
-        reg.setM_timeToLive(300);
-
-        if (!SendOpalCommand(message, "Registration"))
-            return false;
-
-        OutputStatus("Registering ...");
-        return true;
-    }
 
     // Message handler for incoming calls
     private Handler m_opalMessageHandler = new Handler() {
@@ -189,25 +134,180 @@ public class AndOPAL extends Activity
                 else if (reg.getM_status() == OpalRegistrationStates.OpalRegisterRemoved)
                     OutputStatus("Unregistered.");
                 else if (reg.getM_status() == OpalRegistrationStates.OpalRegisterSuccessful) {
+                    m_loggedIn = true;
+                    invalidateOptionsMenu();
                     OutputStatus("Registered. Ready!");
-                    m_opalReady = true;
                 }
             }
         }
     };
 
+
     private void MessageLoop()
     {
-        if (OpalInitialise()) {
-            OpalMessagePtr message = new OpalMessagePtr();
-            while (m_opal.GetMessage(message, 1000000000)) {
-                m_opalMessageHandler.sendMessage(m_opalMessageHandler.obtainMessage(0, message));
-                message = new OpalMessagePtr();
-            }
-            OutputStatus("OPAL shut down!");
-            m_opalReady = false;
+        OutputStatus("OPAL ready.");
+
+        OpalMessagePtr message = new OpalMessagePtr();
+        while (m_opal.GetMessage(message, 1000000000)) {
+            m_opalMessageHandler.sendMessage(m_opalMessageHandler.obtainMessage(0, message));
+            message = new OpalMessagePtr();
+        }
+
+        OutputStatus("OPAL shut down!");
+    }
+
+
+    public void onCallButton(View view)
+    {
+        String dest = m_destination.getText().toString();
+
+        OpalMessagePtr message = new OpalMessagePtr(OpalMessageType.OpalCmdSetUpCall);
+        OpalParamSetUpCall setup = message.GetCallSetUp();
+        setup.setM_partyB(dest);
+
+        OpalMessagePtr response = new OpalMessagePtr();
+        if (!SendOpalCommand(message, response, "Call"))
+            return;
+
+        OutputStatus("Calling \"" + dest + '"');
+
+        setup = response.GetCallSetUp();
+        m_callToken = setup.getM_callToken();
+
+        m_callButton.setEnabled(false);
+        m_hangUpButton.setEnabled(true);
+    }
+
+
+    public void onAnswerButton(View view)
+    {
+        OpalMessagePtr message = new OpalMessagePtr(OpalMessageType.OpalCmdAnswerCall);
+        OpalParamAnswerCall answer = message.GetAnswerCall();
+        answer.setM_callToken(m_callToken);
+
+        if (SendOpalCommand(message, "Answer")) {
+            OutputStatus("Answering call");
+            m_hangUpButton.setEnabled(true);
         }
     }
+
+
+    public void onHangUpButton(View view)
+    {
+        OpalMessagePtr message = new OpalMessagePtr(OpalMessageType.OpalCmdClearCall);
+        OpalParamCallCleared clear = message.GetClearCall();
+        clear.setM_callToken(m_callToken);
+
+        if (SendOpalCommand(message, "Hang up")) {
+            OutputStatus("Hanging up");
+            m_callButton.setEnabled(m_destination.getText().length() > 0);
+            m_answerButton.setEnabled(false);
+            m_hangUpButton.setEnabled(false);
+        }
+    }
+
+
+    private void OpalLogIn()
+    {
+        // Set up general parameters
+        OpalMessagePtr message = new OpalMessagePtr(OpalMessageType.OpalCmdSetGeneralParameters);
+        OpalParamGeneral general = message.GetGeneralParams();
+        general.setM_audioRecordDevice("microphone");
+        general.setM_audioPlayerDevice("voice");
+        general.setM_natMethod(m_natMethod);
+        general.setM_natServer(m_natServer);
+
+        if (!SendOpalCommand(message, "General set up"))
+            return;
+
+        // Set up all protocol parameters
+        message = new OpalMessagePtr(OpalMessageType.OpalCmdSetProtocolParameters);
+        OpalParamProtocol proto = message.GetProtocolParams();
+        // The following should come from GUI, but I am too lazy to add.
+        proto.setM_userName(m_userName);
+        proto.setM_displayName(m_displayName);
+
+        if (!SendOpalCommand(message, "Protocol set up"))
+            return;
+
+        // Set up sip specific parameters
+        message = new OpalMessagePtr(OpalMessageType.OpalCmdSetProtocolParameters);
+        proto = message.GetProtocolParams();
+        proto.setM_prefix("sip");
+        proto.setM_interfaceAddresses("*");
+
+        if (!SendOpalCommand(message, "SIP set up"))
+            return;
+
+        // Register withn server
+        message = new OpalMessagePtr(OpalMessageType.OpalCmdRegistration);
+        OpalParamRegistration reg = message.GetRegistrationParams();
+        reg.setM_protocol("sip");
+        reg.setM_identifier(m_userName);
+        reg.setM_hostName(m_domain);
+        reg.setM_password(m_password);
+        reg.setM_timeToLive(300);
+
+        if (!SendOpalCommand(message, "Registration"))
+            return;
+
+        OutputStatus("Registering ...");
+    }
+
+
+    public void onLogIn(MenuItem item)
+    {
+        OutputStatus("Logging in ...");
+        item.setEnabled(false);
+
+        (new Thread(new Runnable() {
+            public void run()
+            {
+                OpalLogIn();
+            }
+        })).start();
+    }
+
+
+    public void onLogOut(MenuItem item)
+    {
+        m_loggedIn = false;
+        invalidateOptionsMenu();
+        OutputStatus("Shutting down ...");
+
+        m_callButton.setEnabled(false);
+        m_answerButton.setEnabled(false);
+        m_hangUpButton.setEnabled(false);
+    }
+
+
+    public static native boolean TestAudio();
+
+    public void onTestAudio(MenuItem item)
+    {
+        OutputStatus("Testing audio ... ");
+
+        (new Thread(new Runnable() {
+            public void run()
+            {
+                OutputStatus(TestAudio() ? "Audio test completed." : "Audio test error");
+            }
+        })).start();
+    }
+
+
+    public void onQuit(MenuItem item)
+    {
+
+        (new Thread(new Runnable() {
+            public void run()
+            {
+                m_opal.ShutDown();
+                finish();
+            }
+        })).start();
+    }
+
 
     /** Called when the activity is first created. */
     @Override
@@ -231,79 +331,48 @@ public class AndOPAL extends Activity
         m_destination.addTextChangedListener(
             new TextWatcher() {
                 public void afterTextChanged(Editable s) {
-                    m_callButton.setEnabled(m_opalReady && s.length() > 0);
+                    m_callButton.setEnabled(m_loggedIn && s.length() > 0);
                 }
                 public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
                 public void onTextChanged(CharSequence s, int start, int before, int count) { }
             }
         );
 
-        m_opalMessageThread = new Thread(new Runnable() {
-            public void run()
-            {
-                MessageLoop();
-            }
-        });
-        m_opalMessageThread.start();
-    }
-
-    public void onCallButton(View view)
-    {
-        String dest = m_destination.getText().toString();
-
-        OpalMessagePtr message = new OpalMessagePtr(OpalMessageType.OpalCmdSetUpCall);
-        OpalParamSetUpCall setup = message.GetCallSetUp();
-        setup.setM_partyB(dest);
-
-        OpalMessagePtr response = new OpalMessagePtr();
-        if (!SendOpalCommand(message, response, "Call"))
-            return;
-
-        OutputStatus("Calling \"" + dest + '"');
-
-        setup = response.GetCallSetUp();
-        m_callToken = setup.getM_callToken();
-
-        m_callButton.setEnabled(false);
-        m_hangUpButton.setEnabled(true);
-    }
-
-    public void onAnswerButton(View view)
-    {
-        OpalMessagePtr message = new OpalMessagePtr(OpalMessageType.OpalCmdAnswerCall);
-        OpalParamAnswerCall answer = message.GetAnswerCall();
-        answer.setM_callToken(m_callToken);
-
-        if (SendOpalCommand(message, "Answer")) {
-            OutputStatus("Answering call");
-            m_hangUpButton.setEnabled(true);
+        // Initialise OPAL library
+        m_opal = new OpalContext();
+        if (m_opal.Initialise(OPALConstants.OPAL_PREFIX_ALL +
+                              " --config \"" + getFilesDir().getAbsolutePath() + '"' +
+                              " --plugin \"" + getApplicationInfo().nativeLibraryDir + '"' +
+//                              " -tttttosyslog"
+                              " -ttttto \"" +  getCacheDir().getAbsolutePath() + "/opal.log\""
+                              ) == 0)
+            OutputStatus("Could not initialise OPAL");
+        else {
+            (new Thread(new Runnable() {
+                public void run()
+                {
+                    MessageLoop();
+                }
+            })).start();
         }
     }
 
-    public void onHangUpButton(View view)
-    {
-        OpalMessagePtr message = new OpalMessagePtr(OpalMessageType.OpalCmdClearCall);
-        OpalParamCallCleared clear = message.GetClearCall();
-        clear.setM_callToken(m_callToken);
 
-        if (SendOpalCommand(message, "Hang up")) {
-            OutputStatus("Hanging up");
-            m_callButton.setEnabled(m_destination.getText().length() > 0);
-            m_answerButton.setEnabled(false);
-            m_hangUpButton.setEnabled(false);
-        }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.popup, menu);
+        return true;
     }
 
-    public void onShutDownButton(View view)
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu)
     {
-        OutputStatus("Shutting down ...");
-        ((Button)findViewById(R.id.shutdown)).setEnabled(false);
-        m_opalShutDownThread = new Thread(new Runnable() {
-            public void run()
-            {
-                m_opal.ShutDown();
-            }
-        });
-        m_opalShutDownThread.start();
+        menu.findItem(R.id.testaudio).setEnabled(m_opal.IsInitialised());
+        menu.findItem(R.id.login).setEnabled(!m_loggedIn);
+        menu.findItem(R.id.logout).setEnabled(m_loggedIn);
+        return true;
     }
 }

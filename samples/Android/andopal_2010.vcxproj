@@ -109,6 +109,9 @@
     <None Include="res\layout\main.xml">
       <SubType>Designer</SubType>
     </None>
+    <None Include="res\menu\popup.xml">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="res\values\strings.xml" />
     <None Include="src\AndOPAL.java" />
   </ItemGroup>
