@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-main.xml
+my_menu.xml
 
 Copyright (c) 2013 Vox Lucida Pty. Ltd.
 
@@ -24,11 +24,24 @@ $Revision$
 $Author$
 $Date$
 -->
-<resources>
-   <string name="app_name">OPAL Sample</string>
-   <string name="title">OPAL VoIP Client</string>
-   <string name="destination">Destination system URI</string>
-   <string name="call">Call</string>
-   <string name="answer">Answer</string>
-   <string name="hangup">Hang Up</string>
-</resources>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+   <item android:id="@+id/testaudio"
+         android:title="Test Audio"
+         android:enabled="false"
+         android:onClick="onTestAudio"
+         />
+   <item android:id="@+id/login"
+         android:title="Log in"
+         android:enabled="false"
+         android:onClick="onLogIn"
+         />
+   <item android:id="@+id/logout"
+         android:title="Log Out"
+         android:enabled="false"
+         android:onClick="onLogOut"
+         />
+   <item android:id="@+id/quit"
+         android:title="Quit"
+         android:onClick="onQuit"
+         />
+</menu>
