@@ -2828,8 +2828,8 @@ void SIPTransactionOwner::AbortPendingTransactions(bool all)
         transaction->Abort();
       else
         transaction->Cancel();
-      m_transactions.Remove(transaction);
     }
+    m_transactions.Remove(transaction);
   }
 }
 
