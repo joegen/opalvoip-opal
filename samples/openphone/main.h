@@ -1128,7 +1128,6 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
       SpeedDialsID
     };
 
-    wxIcon             m_appIcon;
     bool               m_hideMinimised; // Task bar icon gets it back
     MyTaskBarIcon    * m_taskBarIcon;
     wxSplitterWindow * m_splitter;
