@@ -688,7 +688,6 @@ MyManager::MyManager()
   , m_currentAnswerMode(AnswerDetect)
   , m_defaultAnswerMode(AnswerDetect)
 #endif // OPAL_FAX
-  , m_appIcon(wxICON(AppIcon))
   , m_hideMinimised(false)
   , m_taskBarIcon(NULL)
   , m_splitter(NULL)
@@ -728,7 +727,7 @@ MyManager::MyManager()
 #endif
 {
   // Give it an icon
-  SetIcon(m_appIcon);
+  SetIcon(wxICON(AppIcon));
 
   // Make an image list containing large icons
   m_imageListSmall = new wxImageList(16, 16, true);
@@ -3657,7 +3656,7 @@ void MyManager::SetTrayTipText(const PwxString & tip)
 {
   PwxString text;
   text << PProcess::Current().GetName() << " - " << tip;
-  m_taskBarIcon->SetIcon(m_appIcon, text);
+  m_taskBarIcon->SetIcon(wxICON(AppIcon), text);
 }
 
 
