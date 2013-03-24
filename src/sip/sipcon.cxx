@@ -1466,14 +1466,12 @@ void SIPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch
 }
 
 
-bool SIPConnection::CloseMediaStream(OpalMediaStream & stream)
+void SIPConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 {
-  bool closed = OpalConnection::CloseMediaStream(stream);
-
   if (!m_symmetricOpenStream && !m_handlingINVITE && GetPhase() == EstablishedPhase)
-    closed = SendReINVITE(PTRACE_PARAM("close channel")) && closed;
+    SendReINVITE(PTRACE_PARAM("close channel"));
 
-  return closed;
+  OpalConnection::OnClosedMediaStream(stream);
 }
 
 
