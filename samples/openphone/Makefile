@@ -68,9 +68,9 @@ BUNDLE_DIR := ./$(PROG).app
 PROG_AND_LIBS =\
   $(TARGET) \
   $(PTLIB_LIBDIR)/$(PTLIB_SHARED_FILE) \
-  `find $(OPAL_LIBDIR)/plugins -name \*$(PTLIB_PLUGIN_SUFFIX).$(SHAREDLIBEXT)` \
+  `find $(OPAL_LIBDIR) -name \*$(PTLIB_PLUGIN_SUFFIX).$(SHAREDLIBEXT)` \
   $(OPAL_LIBDIR)/$(OPAL_SHARED_FILE) \
-  `find $(PTLIB_LIBDIR)/device -name \*$(PTLIB_PLUGIN_SUFFIX).$(SHAREDLIBEXT)`
+  `find $(PTLIB_LIBDIR) -name \*$(PTLIB_PLUGIN_SUFFIX).$(SHAREDLIBEXT)`
 
 bundle: $(BUNDLE_DIR)
 
@@ -103,7 +103,7 @@ ifneq ($(STRINGSFILE),)
 	cp InfoPlist.strings $@/Contents/Resources/English.lproj/
 endif
 	echo -n 'APPL????' > $@/Contents/PkgInfo
-	cp $(PROG_AND_LIBS)         $@/Contents/MacOS/$(PROG)
+	cp $(PROG_AND_LIBS)  $@/Contents/MacOS
 
 endif
 endif # DEBUG
