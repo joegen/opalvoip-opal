@@ -51,7 +51,7 @@ ARCHIVE.cmdline     = $(AR) $(ARFLAGS) $@ $^ && $(RANLIB) $@
 
 $(OBJDIR)%$(OBJSUFFIX):%.c
 ifdef OBJDIR
-	mkdir $@
+	mkdir -p $(dir $@)
 endif
 	$(COMPILE.c.cmdline)
 
