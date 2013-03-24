@@ -2303,13 +2303,7 @@ SIP_PDU::StatusCodes SIP_PDU::Parse(istream & stream, bool truncated)
 
 bool SIP_PDU::Send()
 {
-  if (InternalSend(false) != Successful_OK)
-    return false;
-
-  // Only send responses once, can clear reference to the transport
-  if (m_method == NumMethods)
-    m_transport.SetNULL();
-  return true;
+  return InternalSend(false) == Successful_OK;
 }
 
 
