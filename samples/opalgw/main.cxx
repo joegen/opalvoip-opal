@@ -227,7 +227,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   rsrc->Add(new PHTTPStringField(HTTPCertificateFileKey, 25, certificateFile,
             "Certificate for HTTPS user interface, if empty HTTP is used."));
   if (certificateFile.IsEmpty())
-    disableSSL = true;
+    DisableSSL();
   else if (!SetServerCertificate(certificateFile, true)) {
     PSYSTEMLOG(Fatal, "MyProcess\tCould not load certificate \"" << certificateFile << '"');
     return false;
