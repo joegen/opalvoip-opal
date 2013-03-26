@@ -305,8 +305,8 @@ bool RFC2429Frame::AddPacket(const PluginCodec_RTP & packet, unsigned int & flag
     return false;
 
   if (packet.GetMarker())  { 
-    if (headerP && (payloadPtr[0] & 0xfc) == 0x80) {
-      size_t hdrLen = ParseHeader(payloadPtr + (headerP ? 0 : 2), payloadSize - 2 - (headerP ? 0 : 2));
+    if (m_buffer[0] == 0 && m_buffer[1] == 0 && (m_buffer[2] & 0xfc) == 0x80) {
+      size_t hdrLen = ParseHeader(m_buffer + 2, m_length - 2);
       PTRACE(6, GetName(), "Frame includes a picture header of " << hdrLen << " bits");
     }
     else {
