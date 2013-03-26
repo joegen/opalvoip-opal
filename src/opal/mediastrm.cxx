@@ -845,8 +845,21 @@ PBoolean OpalRTPMediaStream::SetDataSize(PINDEX PTRACE_PARAM(dataSize), PINDEX /
 
 PBoolean OpalRTPMediaStream::IsSynchronous() const
 {
-  // Sinks never block, and source with jitter buffer never blocks
-  return IsSource() && !(RequiresPatchThread() && connection.GetMaxAudioJitterDelay() != 0);
+  // Sinks never block
+  if (!IsSource())
+    return false;
+
+  // Source will bock if no jitter buffer, either not needed ...
+  if (!mediaFormat.NeedsJitterBuffer())
+    return true;
+
+  // ... or is disabled
+  if (connection.GetMaxAudioJitterDelay() == 0)
+    return true;
+
+  // Finally, are asynchonous if external or in RTP bypass mode. These are the
+  // same conditions as used when not creating patch thread at all.
+  return RequiresPatchThread();
 }
 
 

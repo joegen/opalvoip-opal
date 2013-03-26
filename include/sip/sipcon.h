@@ -346,12 +346,12 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
       bool isSource                        ///< Stream is a source/sink
     );
 
-    /**Request close of a specific media stream.
-       Note that this is usually asymchronous, the OnClosedMediaStream() function is
-       called when the stream is really closed.
+    /**Call back for closed a media stream.
+
+       The default behaviour calls the OpalEndPoint function of the same name.
       */
-    virtual bool CloseMediaStream(
-      OpalMediaStream & stream  ///< Stream to close
+    virtual void OnClosedMediaStream(
+      const OpalMediaStream & stream     ///<  Media stream being closed
     );
 
     /**Get transports for the media session on the connection.
