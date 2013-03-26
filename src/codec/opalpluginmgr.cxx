@@ -1129,7 +1129,7 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
   if (lastFrameWasIFrame)
     m_keyFrames++;
 
-  PTRACE(5, "OpalPlugin\tVideo decoder returned "
+  PTRACE(lastFrameWasIFrame ? 4 : 5, "OpalPlugin\tVideo decoder returned "
          << (lastFrameWasIFrame ? 'I' : 'P') << "-Frame: "
          << videoHeader->width << 'x' << videoHeader->height
          << ", sn=" << sequenceNumber

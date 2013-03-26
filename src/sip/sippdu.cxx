@@ -2303,13 +2303,7 @@ SIP_PDU::StatusCodes SIP_PDU::Parse(istream & stream, bool truncated)
 
 bool SIP_PDU::Send()
 {
-  if (InternalSend(false) != Successful_OK)
-    return false;
-
-  // Only send responses once, can clear reference to the transport
-  if (m_method == NumMethods)
-    m_transport.SetNULL();
-  return true;
+  return InternalSend(false) == Successful_OK;
 }
 
 
@@ -2828,8 +2822,8 @@ void SIPTransactionOwner::AbortPendingTransactions(bool all)
         transaction->Abort();
       else
         transaction->Cancel();
-      m_transactions.Remove(transaction);
     }
+    m_transactions.Remove(transaction);
   }
 }
 
