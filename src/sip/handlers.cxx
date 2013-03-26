@@ -1080,7 +1080,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 
   // Adjust timeouts if state is a go
   if (subscriptionState == "active" || subscriptionState == "pending") {
-    PTRACE(3, "SIP\tSubscription is " << GetState());
+    PTRACE(3, "SIP\tSubscription is " << GetState() << " for " << GetAddressOfRecord() << ' ' << GetEventPackage());
     PString expire = SIPMIMEInfo::ExtractFieldParameter(GetState(), "expire");
     if (!expire.IsEmpty())
       SetExpire(expire.AsUnsigned());
@@ -1175,18 +1175,18 @@ bool SIPSubscribeHandler::DispatchNOTIFY(SIP_PDU & request, SIP_PDU & response)
   SIPSubscribe::NotifyCallbackInfo notifyInfo(*this, GetEndPoint(), request, response);
 
   if (!m_parameters.m_onNotify.IsNULL()) {
-    PTRACE(4, "SIP\tCalling NOTIFY callback for AOR \"" << m_addressOfRecord << "\"");
+    PTRACE(4, "SIP\tCalling NOTIFY callback for " << GetEventPackage() << " of AOR \"" << GetAddressOfRecord() << "\"");
     m_parameters.m_onNotify(*this, notifyInfo);
     return notifyInfo.m_sendResponse;
   }
 
   if (m_packageHandler != NULL) {
-    PTRACE(4, "SIP\tCalling package NOTIFY handler for AOR \"" << m_addressOfRecord << "\"");
+    PTRACE(4, "SIP\tCalling package NOTIFY handler for " << GetEventPackage() << " of AOR \"" << GetAddressOfRecord() << "\"");
     m_packageHandler->OnReceivedNOTIFY(notifyInfo);
     return notifyInfo.m_sendResponse;
   }
 
-  PTRACE(2, "SIP\tNo NOTIFY handler for AOR \"" << m_addressOfRecord << "\"");
+  PTRACE(2, "SIP\tNo NOTIFY handler for " << GetEventPackage() << " of AOR \"" << GetAddressOfRecord() << "\"");
   response.SetStatusCode(SIP_PDU::Failure_BadEvent);
   return true;
 }
