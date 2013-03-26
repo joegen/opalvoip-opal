@@ -79,7 +79,7 @@ class PWAVFileConverterXLaw : public PWAVFileConverter
     PBoolean SetPosition(PWAVFile & file, off_t pos, PFile::FilePositionOrigin origin)
     {
       pos /= 2;
-      return file.SetPosition(pos, origin);
+      return file.RawSetPosition(pos, origin);
     }
 
     unsigned GetSampleSize(const PWAVFile & /*file*/) const
@@ -223,7 +223,7 @@ class PWAVFileConverterPlugin : public PWAVFileConverter
 
     PBoolean SetPosition(PWAVFile & file, off_t pos, PFile::FilePositionOrigin origin)
     {
-      return file.SetPosition(pos*m_mediaFormat.GetFrameSize()/m_mediaFormat.GetFrameTime(), origin);
+      return file.RawSetPosition(pos*m_mediaFormat.GetFrameSize()/m_mediaFormat.GetFrameTime(), origin);
     }
 
     unsigned GetSampleSize(const PWAVFile & /*file*/) const
