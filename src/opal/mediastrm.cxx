@@ -1278,41 +1278,42 @@ PBoolean OpalVideoMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameTime)
 }
 
 
-bool OpalVideoMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & newMediaFormat)
+void OpalVideoMediaStream::SetVideoInputDevice(PVideoInputDevice * device, bool autoDelete)
 {
-  if (!OpalMediaStream::InternalUpdateMediaFormat(newMediaFormat))
-    return false;
+  PWaitAndSignal mutex(m_devicesMutex);
 
-  unsigned width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
-  unsigned height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::QCIFHeight);
+  if (m_autoDeleteInput)
+    delete m_inputDevice;
 
-  if (m_inputDevice != NULL) {
-    if (!m_inputDevice->SetFrameSizeConverter(width, height)) {
-      PTRACE(1, "Media\tCould not set frame size in grabber to " << width << 'x' << height << " in " << mediaFormat);
-      return false;
-    }
-    if (!m_inputDevice->SetFrameRate(mediaFormat.GetClockRate()/mediaFormat.GetFrameTime())) {
-      PTRACE(1, "Media\tCould not set frame rate in grabber to " << (mediaFormat.GetClockRate()/mediaFormat.GetFrameTime()));
-      return false;
-    }
-  }
+  m_inputDevice = device;
+  m_autoDeleteInput = autoDelete;
 
-  if (m_outputDevice != NULL) {
-    if (!m_outputDevice->SetFrameSizeConverter(width, height)) {
-      PTRACE(1, "Media\tCould not set frame size in video display to " << width << 'x' << height << " in " << mediaFormat);
-      return false;
-    }
-  }
-
-  return true;
+  InternalAdjustDevices();
 }
 
 
-PBoolean OpalVideoMediaStream::Open()
+void OpalVideoMediaStream::SetVideoOutputDevice(PVideoOutputDevice * device, bool autoDelete)
 {
-  if (IsOpen())
-    return true;
+  PWaitAndSignal mutex(m_devicesMutex);
 
+  if (m_autoDeleteOutput)
+    delete m_outputDevice;
+  m_outputDevice = device;
+  m_autoDeleteOutput = autoDelete;
+  InternalAdjustDevices();
+}
+
+
+bool OpalVideoMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & newMediaFormat)
+{
+  PWaitAndSignal mutex(m_devicesMutex);
+
+  return OpalMediaStream::InternalUpdateMediaFormat(newMediaFormat) && InternalAdjustDevices();
+}
+
+
+bool OpalVideoMediaStream::InternalAdjustDevices()
+{
   unsigned width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
   unsigned height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::QCIFHeight);
 
@@ -1329,11 +1330,6 @@ PBoolean OpalVideoMediaStream::Open()
       PTRACE(1, "Media\tCould not set frame rate in grabber to " << (mediaFormat.GetClockRate()/mediaFormat.GetFrameTime()));
       return false;
     }
-    if (!m_inputDevice->Start()) {
-      PTRACE(1, "Media\tCould not start video grabber");
-      return false;
-    }
-    m_lastGrabTime = PTimer::Tick();
   }
 
   if (m_outputDevice != NULL) {
@@ -1345,6 +1341,25 @@ PBoolean OpalVideoMediaStream::Open()
       PTRACE(1, "Media\tCould not set frame size in video display to " << width << 'x' << height << " in " << mediaFormat);
       return false;
     }
+  }
+
+  return true;
+}
+
+
+PBoolean OpalVideoMediaStream::Open()
+{
+  if (IsOpen())
+    return true;
+
+  InternalAdjustDevices();
+
+  if (m_inputDevice != NULL) {
+    if (!m_inputDevice->Start()) {
+      PTRACE(1, "Media\tCould not start video grabber");
+      return false;
+    }
+    m_lastGrabTime = PTimer::Tick();
   }
 
   SetDataSize(1, 1); // Gets set to minimum of device buffer requirements
@@ -1391,6 +1406,8 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
     PTRACE(1, "Media\tTried to read from sink media stream");
     return false;
   }
+
+  PWaitAndSignal mutex(m_devicesMutex);
 
   if (m_inputDevice == NULL) {
     PTRACE(1, "Media\tTried to read from video display device");
@@ -1453,6 +1470,8 @@ PBoolean OpalVideoMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
     PTRACE(1, "Media\tTried to write to source media stream");
     return false;
   }
+
+  PWaitAndSignal mutex(m_devicesMutex);
 
   if (m_outputDevice == NULL) {
     PTRACE(1, "Media\tTried to write to video capture device");
