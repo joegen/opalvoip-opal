@@ -591,8 +591,10 @@ class VP8EncoderRFC : public VP8Encoder
         return false;
       }
 
+#ifdef VPX_CODEC_USE_OUTPUT_PARTITION
       if (strcasecmp(optionName, OutputPartition.m_name) == 0)
         return SetOptionBit(m_initFlags, VPX_CODEC_USE_OUTPUT_PARTITION, optionValue);
+#endif
 
       return VP8Encoder::SetOption(optionName, optionValue);
     }
