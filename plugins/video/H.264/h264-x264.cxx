@@ -37,7 +37,7 @@
  */
 
 #ifndef PLUGIN_CODEC_DLL_EXPORTS
-#include "plugin-config.h"
+#include "../common/platform.h"
 #endif
 
 #define MY_CODEC x264  // Name of codec (use C variable characters)
