@@ -961,12 +961,26 @@ class OpalVideoMediaStream : public OpalMediaStream
       PINDEX frameTime  ///< Individual frame time (if applicable)
     );
 
+    /** Set the input device
+      */
+    virtual void SetVideoInputDevice(
+      PVideoInputDevice * device,
+      bool autoDelete = true
+    );
+
     /** Get the input device (e.g. for statistics)
       */
     virtual PVideoInputDevice * GetVideoInputDevice() const
     {
       return m_inputDevice;
     }
+
+    /** Set the output device
+      */
+    virtual void SetVideoOutputDevice(
+      PVideoOutputDevice * device,
+      bool autoDelete = true
+    );
 
     /** Get the output device (e.g. for statistics)
       */
@@ -980,6 +994,7 @@ class OpalVideoMediaStream : public OpalMediaStream
   protected:
     virtual void InternalClose();
     virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & newMediaFormat);
+    bool InternalAdjustDevices();
 
     PVideoInputDevice  * m_inputDevice;
     PVideoOutputDevice * m_outputDevice;
@@ -987,6 +1002,7 @@ class OpalVideoMediaStream : public OpalMediaStream
     bool                 m_autoDeleteOutput;
     PTimeInterval        m_lastGrabTime;
     bool                 m_needKeyFrame;
+    PMutex               m_devicesMutex;
 };
 
 #endif // OPAL_VIDEO
