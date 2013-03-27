@@ -1314,33 +1314,19 @@ bool OpalVideoMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & new
 
 bool OpalVideoMediaStream::InternalAdjustDevices()
 {
-  unsigned width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
-  unsigned height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::QCIFHeight);
+  PVideoFrameInfo video(mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth),
+                        mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::QCIFHeight),
+                        mediaFormat.GetName(),
+                       (mediaFormat.GetClockRate()+mediaFormat.GetFrameTime()/2)/mediaFormat.GetFrameTime());
 
   if (m_inputDevice != NULL) {
-    if (!m_inputDevice->SetColourFormatConverter(mediaFormat)) {
-      PTRACE(1, "Media\tCould not set colour format in grabber to " << mediaFormat);
+    if (!m_inputDevice->SetFrameInfoConverter(video))
       return false;
-    }
-    if (!m_inputDevice->SetFrameSizeConverter(width, height)) {
-      PTRACE(1, "Media\tCould not set frame size in grabber to " << width << 'x' << height << " in " << mediaFormat);
-      return false;
-    }
-    if (!m_inputDevice->SetFrameRate(mediaFormat.GetClockRate()/mediaFormat.GetFrameTime())) {
-      PTRACE(1, "Media\tCould not set frame rate in grabber to " << (mediaFormat.GetClockRate()/mediaFormat.GetFrameTime()));
-      return false;
-    }
   }
 
   if (m_outputDevice != NULL) {
-    if (!m_outputDevice->SetColourFormatConverter(mediaFormat)) {
-      PTRACE(1, "Media\tCould not set colour format in video display to " << mediaFormat);
+    if (!m_outputDevice->SetFrameInfoConverter(video))
       return false;
-    }
-    if (!m_outputDevice->SetFrameSizeConverter(width, height)) {
-      PTRACE(1, "Media\tCould not set frame size in video display to " << width << 'x' << height << " in " << mediaFormat);
-      return false;
-    }
   }
 
   return true;
