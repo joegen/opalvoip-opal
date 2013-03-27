@@ -609,8 +609,10 @@ class VP8EncoderRFC : public VP8Encoder
       if (m_offset == 0)
         rtp[0] |= 0x10; // Add S bit if start of partition
 
+#ifdef VPX_CODEC_USE_OUTPUT_PARTITION
       if (m_packet->data.frame.partition_id >= 0)
         rtp[0] |= (uint8_t)(m_packet->data.frame.partition_id&0x0f);
+#endif
 
       if ((m_packet->data.frame.flags&VPX_FRAME_IS_DROPPABLE) != 0)
         rtp[0] |= 0x20; // Add N bit for non-reference frame
