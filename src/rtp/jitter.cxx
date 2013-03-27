@@ -48,6 +48,9 @@ const unsigned JitterRoundingGuardBits = 4;
 const unsigned AverageFrameTimePackets = 8;
 const int      AverageFrameTimeDeadband = 16;
 
+#define EVERY_PACKET_TRACE_LEVEL 6
+#define ANALYSER_TRACE_LEVEL     5
+
 
 #if !PTRACING && !defined(NO_ANALYSER)
 #define NO_ANALYSER 1
@@ -56,7 +59,6 @@ const int      AverageFrameTimeDeadband = 16;
 #ifdef NO_ANALYSER
   #define ANALYSE(inout, time, extra)
 #else
-  #define ANALYSER_TRACE_LEVEL 5
 
   #define ANALYSE(inout, time, extra) \
     if (PTrace::CanTrace(ANALYSER_TRACE_LEVEL)) \
@@ -274,8 +276,10 @@ void OpalJitterBuffer::Reset()
 {
   m_bufferMutex.Wait();
 
-  m_averageFrameTime  = 0;
-  m_frameTimeSum      = 0;
+  m_incomingFrameTime = 0;
+  m_lastFrameTime[0]  = UINT_MAX;
+  m_lastFrameTime[1]  = UINT_MAX;
+  m_lastSequenceNum   = UINT_MAX;
   m_frameTimeCount    = 0;
   m_lastTimestamp     = UINT_MAX;
   m_bufferFilledTime  = 0;
@@ -329,41 +333,7 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
   }
 
 
-  /*Calculate the time between packets. While not actually dictated by any
-    standards, this is invariably a constant. We just need to allow for if we
-    are unlucky at the start and get a missing packet, in which case we are
-    twice as big (or more) as we should be. The smallest distance between
-    consecutive packets will be the frame time interval. */
-  if (m_lastTimestamp != UINT_MAX) {
-    int delta = timestamp - m_lastTimestamp;
-
-    /* Check for naughty systems that have discontinuous timestamps, that is
-       time has gone backwards or it has been 10 minutes since last packet,
-       or an out of order packet was hanging in a router for 2 seconds.
-       Neither likely! */
-    if (delta < -16000 || delta > (m_averageFrameTime == 0 ? 4000 : 4800000)) {
-      PTRACE(3, "Jitter\tTimestamps abruptly changed from "
-              << m_lastTimestamp << " to " << timestamp << ", resynching");
-      Reset();
-    }
-    else {
-      m_frameTimeSum += delta;
-      if (++m_frameTimeCount >= AverageFrameTimePackets) {
-        DWORD newFrameTime = m_frameTimeSum/m_frameTimeCount;
-        m_frameTimeSum = 0;
-        m_frameTimeCount = 0;
-
-        if (m_averageFrameTime == 0 || std::abs((int)m_averageFrameTime - (int)newFrameTime) > AverageFrameTimeDeadband)  {
-          m_averageFrameTime = newFrameTime;
-          PTRACE(4, "Jitter\tAverage frame time set to " << newFrameTime << " (" << (newFrameTime/m_timeUnits) << "ms)");
-          AdjustCurrentJitterDelay(0);
-        }
-      }
-    }
-  }
-  m_lastTimestamp = timestamp;
-
-
+  // Check for remote switching media senders, they shouldn't do this but do anyway
   if (frame.GetSyncSource() != m_lastSyncSource) {
     PTRACE_IF(4, m_lastSyncSource != 0, "Jitter\tBuffer reset due to SSRC change.");
     Reset();
@@ -371,10 +341,55 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
   }
 
 
+  /*Calculate the time between packets. While not actually dictated by any
+    standards, this is invariably a constant. We just need to allow for if we
+    are unlucky at the start and get a missing packet, in which case we are
+    twice as big (or more) as we should be. The smallest distance between
+    consecutive packets will be the frame time interval. */
+  if (m_lastTimestamp == UINT_MAX) {
+    m_lastTimestamp = timestamp;
+    return true;
+  }
+
+  // Only do the following calculations if no packets missing
+  unsigned currentSequenceNum = frame.GetSequenceNumber();
+  if (m_lastSequenceNum != UINT_MAX && m_lastSequenceNum+1 == currentSequenceNum) {
+    int delta = timestamp - m_lastTimestamp;
+    m_lastTimestamp = timestamp;
+
+    /* Check for naughty systems that have discontinuous timestamps, that is
+       time has gone backwards or it has been 10 minutes since last packet.
+       Neither likely! */
+    if (delta < 0 || delta > 10*60*1000*(int)m_timeUnits) {
+      PTRACE(3, "Jitter\tTimestamps abruptly changed from "
+              << m_lastTimestamp << " to " << timestamp << ", resynching");
+      Reset();
+    }
+    else {
+      if (m_lastFrameTime[0] == m_lastFrameTime[1] && m_lastFrameTime[0] == delta && m_incomingFrameTime != (DWORD)delta) {
+        m_incomingFrameTime = delta;
+        AdjustCurrentJitterDelay(0);
+        PTRACE(4, "Jitter\tFrame time set  : ts=" << timestamp << ", size=" << m_frames.size() << ","
+                  " time=" << delta << " (" << (delta/m_timeUnits) << "ms),"
+                  " delay=" << m_currentJitterDelay << " (" << (m_currentJitterDelay/m_timeUnits) << "ms)");
+      }
+      m_lastFrameTime[0] = m_lastFrameTime[1];
+      m_lastFrameTime[1] = delta;
+    }
+  }
+  m_lastSequenceNum = currentSequenceNum;
+
+  // Things don't work till we have a frame time, so don't queue anything
+  if (m_incomingFrameTime == 0) {
+    PTRACE(EVERY_PACKET_TRACE_LEVEL, "Jitter\tNeed frame time : ts=" << timestamp);
+    return true;
+  }
+
+
   if (!m_frames.empty()) {
     FrameMap::iterator oldestFrame;
     while ((oldestFrame = m_frames.begin()) != m_frames.end() &&
-                           (timestamp - oldestFrame->second.GetTimestamp()) > (m_maxJitterDelay + m_averageFrameTime)) {
+                           (timestamp - oldestFrame->second.GetTimestamp()) > (m_maxJitterDelay + m_incomingFrameTime)) {
       PTRACE(4, "Jitter\tBuffer overflow : ts=" << oldestFrame->second.GetTimestamp() << ", size=" << m_frames.size());
       m_frames.erase(oldestFrame);
     }
@@ -385,7 +400,7 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
   pair<FrameMap::iterator,bool> result = m_frames.insert(FrameMap::value_type(timestamp, frame));
   if (result.second) {
     ANALYSE(In, timestamp, m_synchronisationState != e_SynchronisationDone ? "PreBuf" : "");
-    PTRACE(6, "Jitter\tInserted packet : ts=" << timestamp);
+    PTRACE(EVERY_PACKET_TRACE_LEVEL, "Jitter\tInserted packet : ts=" << timestamp);
   }
   else {
     PTRACE(2, "Jitter\tAttempt to insert two RTP packets with same timestamp: " << timestamp);
@@ -404,7 +419,7 @@ DWORD OpalJitterBuffer::CalculateRequiredTimestamp(DWORD playOutTimestamp) const
 
 bool OpalJitterBuffer::AdjustCurrentJitterDelay(int delta)
 {
-  int minJitterDelay = max(m_minJitterDelay, 2*m_averageFrameTime);
+  int minJitterDelay = max(m_minJitterDelay, 2*m_incomingFrameTime);
   int maxJitterDelay = max(m_minJitterDelay, m_maxJitterDelay);
 
   if (delta < 0 && m_currentJitterDelay <= minJitterDelay)
@@ -449,34 +464,37 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
       m_bufferEmptiedTime = playOutTimestamp;
     }
 
-    PTRACE(m_synchronisationState == e_SynchronisationDone ? 4 : 6, "Jitter\tBuffer is empty " COMMON_TRACE_INFO);
+    PTRACE(m_synchronisationState == e_SynchronisationDone ? 4 : EVERY_PACKET_TRACE_LEVEL,
+           "Jitter\tBuffer is empty " COMMON_TRACE_INFO);
     return true;
   }
   m_bufferEmptiedTime = playOutTimestamp;
 
-  size_t framesInBuffer = m_frames.size(); // Disable Clock overrun check if no m_averageFrameTime yet
-  if (m_averageFrameTime > 0) {
-    framesInBuffer = m_currentJitterDelay/m_averageFrameTime;
+  size_t framesInBuffer = m_frames.size(); // Disable Clock overrun check if no m_incomingFrameTime yet
+  if (m_incomingFrameTime == 0)
+    m_synchronisationState = e_SynchronisationStart; // Can't start until we have an average packet time
+  else {
+    framesInBuffer = m_currentJitterDelay/m_incomingFrameTime;
     if (framesInBuffer < 2)
       framesInBuffer = 2;
 
-    /* Check for buffer low (less than half full) for prologed period, then that generally
+    /* Check for buffer low (one packet) for prologed period, then that generally
        means we have a sample clock drift problem, that is we have a clock of 8.01kHz and
        the remote has 7.99kHz so gradually the buffer drains as we take things out faster
        than they arrive. */
-    if (m_bufferLowTime == 0 || m_frames.size() > framesInBuffer/2)
+    if (m_bufferLowTime == 0 || m_frames.size() > 1)
       m_bufferLowTime = playOutTimestamp;
     else if ((playOutTimestamp - m_bufferLowTime) > m_jitterDriftPeriod) {
       m_bufferLowTime = playOutTimestamp;
       PTRACE(4, "Jitter\tClock underrun  " COMMON_TRACE_INFO << " <= " << framesInBuffer << "/2");
-      m_timestampDelta -= m_averageFrameTime;
+      m_timestampDelta -= m_incomingFrameTime;
       ANALYSE(Out, requiredTimestamp, "Drift");
       return true;
     }
 
     /* Check for buffer full (or nearly so) and count them. If full for a while
        then it is time to reduce the size of the jitter buffer */
-    if (m_bufferFilledTime == 0 || m_frames.size() < framesInBuffer)
+    if (m_bufferFilledTime == 0 || m_frames.size() < framesInBuffer-1)
       m_bufferFilledTime = playOutTimestamp;
     else if ((playOutTimestamp - m_bufferFilledTime) > m_jitterShrinkPeriod) {
       m_bufferFilledTime = playOutTimestamp;
@@ -501,13 +519,14 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
       m_timestampDelta = oldestFrame->first - playOutTimestamp;
       requiredTimestamp = CalculateRequiredTimestamp(playOutTimestamp);
       m_synchronisationState = e_SynchronisationFill;
-      PTRACE(5, "Jitter\tSynchronising   " COMMON_TRACE_INFO);
-      // Do next state
+      PTRACE(5, "Jitter\tSynchronising   " COMMON_TRACE_INFO << ", oldest=" << oldestFrame->first);
+      ANALYSE(Out, oldestFrame->first, "PreBuf");
+      return true;
 
     case e_SynchronisationFill :
       /* Now see if we have buffered enough yet */
-      if (m_averageFrameTime == 0 || requiredTimestamp < oldestFrame->first) {
-        PTRACE(6, "Jitter\tPre-buffering   " COMMON_TRACE_INFO);
+      if (requiredTimestamp < oldestFrame->first) {
+        PTRACE(EVERY_PACKET_TRACE_LEVEL, "Jitter\tPre-buffering   " COMMON_TRACE_INFO << ", oldest=" << oldestFrame->first);
         /* Nope, play out some silence */
         ANALYSE(Out, oldestFrame->first, "PreBuf");
         return true;
@@ -524,7 +543,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
 
     case e_SynchronisationDone :
       // Get rid of all the frames that are too late
-      while (requiredTimestamp >= oldestFrame->first + m_averageFrameTime) {
+      while (requiredTimestamp >= oldestFrame->first + m_incomingFrameTime) {
         if (++m_consecutiveLatePackets > 10) {
           PTRACE(3, "Jitter\tToo many late   " COMMON_TRACE_INFO);
           Reset();
@@ -532,10 +551,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
         }
 
         // Packets late, need a bigger jitter buffer
-#if PTRACING
-        bool adjusted =
-#endif
-        AdjustCurrentJitterDelay(m_jitterGrowTime);
+        PTRACE_PARAM(bool adjusted =) AdjustCurrentJitterDelay(m_jitterGrowTime);
         PTRACE(4, "Jitter\tPacket too late " COMMON_TRACE_INFO
                   << ", oldest=" << oldestFrame->first << ", "
                   << (adjusted ? "increasing" : "cannot increase") << " delay="
@@ -560,16 +576,16 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
          to have a clock of 8.01kHz and the receiver 7.99kHz so gradually the remote
          sends more data than we take out over time, gradually building up in the
          jitter buffer. So, drop a frame every now and then. */
-      if (m_frames.size() < framesInBuffer*2)
+      if (m_frames.size() <= framesInBuffer*2)
         break;
 
-      PTRACE(4, "Jitter\tClock overrun   " COMMON_TRACE_INFO << " >= " << framesInBuffer << "*2");
-      m_timestampDelta += m_averageFrameTime;
+      PTRACE(4, "Jitter\tClock overrun   " COMMON_TRACE_INFO << " greater than " << framesInBuffer << "*2");
+      m_timestampDelta += m_incomingFrameTime;
       // Do next case
 
     case e_SynchronisationShrink :
       requiredTimestamp = CalculateRequiredTimestamp(playOutTimestamp);
-      if (requiredTimestamp >= oldestFrame->first + m_averageFrameTime) {
+      if (requiredTimestamp >= oldestFrame->first + m_incomingFrameTime) {
         ANALYSE(Out, oldestFrame->first, "Shrink");
         m_frames.erase(oldestFrame);
         ++m_bufferOverruns;
@@ -600,7 +616,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
   // Finally can return the frame we have
   ANALYSE(Out, oldestFrame->first, "");
   frame = oldestFrame->second;
-  PTRACE(6, "Jitter\tDelivered packet" COMMON_TRACE_INFO << ", payload=" << frame.GetPayloadSize());
+  PTRACE(EVERY_PACKET_TRACE_LEVEL, "Jitter\tDelivered packet" COMMON_TRACE_INFO << ", payload=" << frame.GetPayloadSize());
   m_frames.erase(oldestFrame);
   frame.SetTimestamp(playOutTimestamp);
   m_consecutiveLatePackets = 0;
