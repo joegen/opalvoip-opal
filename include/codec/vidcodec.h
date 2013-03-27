@@ -175,7 +175,7 @@ OPAL_DEFINE_MEDIA_COMMAND(OpalVideoFreezePicture, "Freeze Picture");
   */
 class OpalVideoUpdatePicture : public OpalMediaCommand
 {
-  PCLASSINFO(OpalVideoUpdatePicture, OpalMediaCommand);
+    PCLASSINFO_WITH_CLONE(OpalVideoUpdatePicture, OpalMediaCommand);
   public:
     virtual PString GetName() const;
 };
@@ -187,7 +187,7 @@ class OpalVideoUpdatePicture : public OpalMediaCommand
   */
 class OpalVideoPictureLoss : public OpalVideoUpdatePicture
 {
-  PCLASSINFO(OpalVideoPictureLoss, OpalVideoUpdatePicture);
+    PCLASSINFO_WITH_CLONE(OpalVideoPictureLoss, OpalVideoUpdatePicture);
   public:
     OpalVideoPictureLoss(unsigned sequenceNumber = 0, unsigned timestamp = 0);
 
@@ -212,7 +212,7 @@ class OpalVideoPictureLoss : public OpalVideoUpdatePicture
   */
 class OpalTemporalSpatialTradeOff : public OpalMediaCommand
 {
-  PCLASSINFO(OpalTemporalSpatialTradeOff, OpalMediaCommand);
+    PCLASSINFO_WITH_CLONE(OpalTemporalSpatialTradeOff, OpalMediaCommand);
   public:
     OpalTemporalSpatialTradeOff(int tradeoff) : m_tradeOff(tradeoff) { }
 

@@ -40,6 +40,7 @@
 
 #include <opal/patch.h>
 #include <opal/mediastrm.h>
+#include <opal/endpoint.h>
 #include <opal/transcoders.h>
 
 #if OPAL_VIDEO
@@ -265,7 +266,7 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
     }
     primaryCodec->SetMaxOutputSize(stream->GetDataSize());
     primaryCodec->SetSessionID(patch.source.GetSessionID());
-    primaryCodec->SetCommandNotifier(PCREATE_NOTIFIER_EXT(&patch, OpalMediaPatch, OnMediaCommand));
+    primaryCodec->SetCommandNotifier(PCREATE_NOTIFIER_EXT(&patch, OpalMediaPatch, InternalOnMediaCommand1));
 
     patch.source.SetDataSize(primaryCodec->GetOptimalDataFrameSize(true), destinationFormat.GetFrameTime());
     patch.source.InternalUpdateMediaFormat(primaryCodec->GetInputFormat());
@@ -311,7 +312,7 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
 
   primaryCodec->SetMaxOutputSize(secondaryCodec->GetOptimalDataFrameSize(true));
   primaryCodec->SetSessionID(patch.source.GetSessionID());
-  primaryCodec->SetCommandNotifier(PCREATE_NOTIFIER_EXT(&patch, OpalMediaPatch, OnMediaCommand));
+  primaryCodec->SetCommandNotifier(PCREATE_NOTIFIER_EXT(&patch, OpalMediaPatch, InternalOnMediaCommand1));
   primaryCodec->UpdateMediaFormats(OpalMediaFormat(), secondaryCodec->GetInputFormat());
 
   if (!stream->SetDataSize(secondaryCodec->GetOptimalDataFrameSize(false), sourceFormat.GetFrameTime())) {
@@ -321,7 +322,7 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
   }
   secondaryCodec->SetMaxOutputSize(stream->GetDataSize());
   secondaryCodec->SetSessionID(patch.source.GetSessionID());
-  secondaryCodec->SetCommandNotifier(PCREATE_NOTIFIER_EXT(&patch, OpalMediaPatch, OnMediaCommand));
+  secondaryCodec->SetCommandNotifier(PCREATE_NOTIFIER_EXT(&patch, OpalMediaPatch, InternalOnMediaCommand1));
   secondaryCodec->UpdateMediaFormats(primaryCodec->GetInputFormat(), OpalMediaFormat());
 
   patch.source.SetDataSize(primaryCodec->GetOptimalDataFrameSize(true), destinationFormat.GetFrameTime());
@@ -568,9 +569,17 @@ PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, PBoole
 }
 
 
-void OpalMediaPatch::OnMediaCommand(OpalMediaCommand & command, P_INT_PTR)
+void OpalMediaPatch::InternalOnMediaCommand1(OpalMediaCommand & command, P_INT_PTR)
 {
-  source.ExecuteCommand(command);
+  source.GetConnection().GetEndPoint().GetManager().QueueDecoupledEvent(new PSafeWorkArg1<OpalMediaPatch, OpalMediaCommand *>(
+              this, command.CloneAs<OpalMediaCommand>(), &OpalMediaPatch::InternalOnMediaCommand2));
+}
+
+
+void OpalMediaPatch::InternalOnMediaCommand2(OpalMediaCommand * command)
+{
+  source.ExecuteCommand(*command);
+  delete command;
 }
 
 
