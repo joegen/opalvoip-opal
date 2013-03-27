@@ -474,7 +474,7 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
 
       m_config.g_w = m_width;
       m_config.g_h = m_height;
-      vpx_codec_destroy, (&m_codec);
+      vpx_codec_destroy(&m_codec);
       return !IS_ERROR(vpx_codec_enc_init, (&m_codec, vpx_codec_vp8_cx(), &m_config, m_initFlags));
     }
 
