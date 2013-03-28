@@ -30,7 +30,7 @@
             <Component Id='MainExecutable' Guid='*'>
               <File Id='OpenPhoneEXE'
                   Name='OpenPhone.exe'
-                  Source='$(var.OPALDir)\bin\OpenPhone\Release\OpenPhone.exe'
+                  Source='$(var.OPALDir)\bin\OpenPhone\Win32\Release\OpenPhone.exe'
                   DiskId='1'
                   KeyPath='yes'>
                 <Shortcut Id="startmenuOpenPhone"
