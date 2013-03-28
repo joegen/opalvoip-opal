@@ -748,17 +748,24 @@ endif
 ###############################################################################
 # A collection or random useful targets
 
-docs: FORCE
-	rm -rf html
-	doxygen opal_cfg.dxy > doxygen.out 2>&1
+DOCS_DIR := $(OPALDIR)/html
+DOXYGEN_CFG := $(OPALDIR)/opal_cfg.dxy
+DOXYGEN_OUT := /tmp/opal_doxygen.out
+DOXYGEN_GRAPH_CFG := /tmp/opal_graph_cfg.dxy
 
-graphdocs: FORCE
-	rm -rf html
-	sed "s/HAVE_DOT.*=.*/HAVE_DOT=YES/" opal_cfg.dxy > /tmp/docs.dxy
-	doxygen /tmp/docs.dxy > doxygen.out 2>&1
-	rm /tmp/docs.dxy
+.PHONY:docs
+docs:
+	rm -rf $(DOCS_DIR)
+	cd $(PTLIBDIR)
+	doxygen $(DOXYGEN_CFG) > $(DOXYGEN_OUT) 2>&1
 
-FORCE:
+.PHONY:graphdocs
+graphdocs:
+	rm -rf $(DOCS_DIR)
+	sed "s/HAVE_DOT.*=.*/HAVE_DOT=YES/" $(DOXYGEN_CFG) > $(DOXYGEN_GRAPH_CFG)
+	doxygen $(DOXYGEN_GRAPH_CFG) > $(DOXYGEN_OUT) 2>&1
+	rm $(DOXYGEN_GRAPH_CFG)
+
 
 opt:
 	$(MAKE) DEBUG_BUILD=no OPAL_SHARED_LIB=1
