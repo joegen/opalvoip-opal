@@ -213,7 +213,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   // HTTP authentication username/password
   rsrc->Add(new PHTTPStringField(UsernameKey, 25, username,
             "User name to access HTTP user interface for gateway."));
-  rsrc->Add(new PHTTPPasswordField(PasswordKey, 25, password));
+  rsrc->Add(new PHTTPPasswordField(PasswordKey, 20, password));
 
   // Log level for messages
   rsrc->Add(new PHTTPIntegerField(LogLevelKey,
@@ -224,8 +224,8 @@ PBoolean MyProcess::Initialise(const char * initMsg)
 #if OPAL_PTLIB_SSL
   // SSL certificate file.
   PString certificateFile = cfg.GetString(HTTPCertificateFileKey);
-  rsrc->Add(new PHTTPStringField(HTTPCertificateFileKey, 25, certificateFile,
-            "Certificate for HTTPS user interface, if empty HTTP is used."));
+  rsrc->Add(new PHTTPStringField(HTTPCertificateFileKey, 250, certificateFile,
+            "Certificate for HTTPS user interface, if empty HTTP is used.", 1, 50));
   if (certificateFile.IsEmpty())
     DisableSSL();
   else if (!SetServerCertificate(certificateFile, true)) {
@@ -478,8 +478,8 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     SetNATServer(method, server);
     rsrc->Add(new PHTTPStringField(NATMethodKey, 25, method,
               "Mothod for NAT traversal"));
-    rsrc->Add(new PHTTPStringField(NATServerKey, 25, server,
-              "Server IP/hostname for NAT traversal"));
+    rsrc->Add(new PHTTPStringField(NATServerKey, 100, server,
+              "Server IP/hostname for NAT traversal", 1, 30));
   }
 #endif // P_NAT
 
@@ -509,8 +509,8 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
   PString proxy = m_sipEP->GetProxy().AsString();
   m_sipEP->SetProxy(cfg.GetString(SIPProxyKey, proxy));
-  rsrc->Add(new PHTTPStringField(SIPProxyKey, 25, proxy,
-            "SIP outbound proxy IP/hostname"));
+  rsrc->Add(new PHTTPStringField(SIPProxyKey, 100, proxy,
+            "SIP outbound proxy IP/hostname", 1, 30));
 
 #if OPAL_PTLIB_SSL
   PINDEX security = 0;
@@ -567,9 +567,9 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   PHTTPCompositeField * registrationsFields = new PHTTPCompositeField(
         REGISTRATIONS_SECTION"\\"REGISTRATIONS_KEY" %u\\", REGISTRATIONS_SECTION,
         "Registration of SIP username at domain/hostname/IP address");
-  registrationsFields->Append(new PHTTPStringField(SIPAddressofRecordKey, 20));
-  registrationsFields->Append(new PHTTPStringField(SIPAuthIDKey, 15));
-  registrationsFields->Append(new PHTTPStringField(SIPPasswordKey, 15));
+  registrationsFields->Append(new PHTTPStringField(SIPAddressofRecordKey, 100, NULL, NULL, 1, 20));
+  registrationsFields->Append(new PHTTPStringField(SIPAuthIDKey, 100, NULL, NULL, 1, 15));
+  registrationsFields->Append(new PHTTPPasswordField(SIPPasswordKey, 10));
   rsrc->Add(new PHTTPFieldArray(registrationsFields, false));
 
   for (list<SIPRegister::Params>::iterator it = registrations.begin(); it != registrations.end(); ++it) {
@@ -606,8 +606,8 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #if OPAL_PTLIB_VXML
   // Set IVR protocol handler
   PString vxml = cfg.GetString(VXMLKey);
-  rsrc->Add(new PHTTPStringField(VXMLKey, 800, vxml,
-            "Interactive Voice Response VXML script, may be a URL or the actual VXML"));
+  rsrc->Add(new PHTTPStringField(VXMLKey, 0, vxml,
+            "Interactive Voice Response VXML script, may be a URL or the actual VXML", 10, 50));
   if (!vxml)
     m_ivrEP->SetDefaultVXML(vxml);
 #endif
@@ -622,8 +622,8 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
             languages.GetValuesIndex(language),"Interpreter script language."));
 
   PString script = cfg.GetString(ScriptTextKey);
-  rsrc->Add(new PHTTPStringField(ScriptTextKey, 800, script,
-            "Interpreter script, may be a filename or the actual script text"));
+  rsrc->Add(new PHTTPStringField(ScriptTextKey, 0, script,
+            "Interpreter script, may be a filename or the actual script text", 10, 50));
   if (m_scriptLanguage != language || m_scriptText != script) {
     m_scriptLanguage = language;
     m_scriptText = script;
@@ -664,9 +664,9 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   PHTTPCompositeField * routeFields = new PHTTPCompositeField(
         ROUTES_SECTION"\\"ROUTES_KEY" %u\\", ROUTES_SECTION,
         "Internal routing of calls to varous sub-systems");
-  routeFields->Append(new PHTTPStringField(RouteAPartyKey, 15));
-  routeFields->Append(new PHTTPStringField(RouteBPartyKey, 15));
-  routeFields->Append(new PHTTPStringField(RouteDestKey, 25));
+  routeFields->Append(new PHTTPStringField(RouteAPartyKey, 100, NULL, NULL, 1, 15));
+  routeFields->Append(new PHTTPStringField(RouteBPartyKey, 100, NULL, NULL, 1, 15));
+  routeFields->Append(new PHTTPStringField(RouteDestKey, 100, NULL, NULL, 1, 25));
   rsrc->Add(new PHTTPFieldArray(routeFields, true));
 
   SetRouteTable(routes);
