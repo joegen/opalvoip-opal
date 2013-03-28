@@ -285,11 +285,10 @@ class OpalRTPConnection : public OpalConnection
        the protocol, eg H.323 SETUP sourceCallSignalAddress or SIP "To" or
        "Contact" fields, and makes a guess that the remote is behind a NAT router.
      */
-    virtual PBoolean IsRTPNATEnabled(
+    virtual void DetermineRTPNAT(
       const PIPSocket::Address & localAddr,   ///< Local physical address of connection
       const PIPSocket::Address & peerAddr,    ///< Remote physical address of connection
-      const PIPSocket::Address & signalAddr,  ///< Remotes signaling address as indicated by protocol of connection
-      PBoolean incoming                       ///< Incoming/outgoing connection
+      const PIPSocket::Address & signalAddr   ///< Remotes signaling address as indicated by protocol of connection
     );
   //@}
 
@@ -323,6 +322,8 @@ class OpalRTPConnection : public OpalConnection
 #if OPAL_VIDEO
     PSimpleTimer m_rtcpIntraFrameRequestTimer;
 #endif
+
+    P_REMOVE_VIRTUAL(PBoolean,IsRTPNATEnabled(const PIPSocket::Address&,const PIPSocket::Address&,const PIPSocket::Address&,PBoolean),false);
 };
 
 
