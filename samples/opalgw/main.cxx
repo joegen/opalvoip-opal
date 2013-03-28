@@ -567,9 +567,9 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   PHTTPCompositeField * registrationsFields = new PHTTPCompositeField(
         REGISTRATIONS_SECTION"\\"REGISTRATIONS_KEY" %u\\", REGISTRATIONS_SECTION,
         "Registration of SIP username at domain/hostname/IP address");
-  registrationsFields->Append(new PHTTPStringField(SIPAddressofRecordKey, 100, NULL, NULL, 1, 20));
-  registrationsFields->Append(new PHTTPStringField(SIPAuthIDKey, 100, NULL, NULL, 1, 15));
-  registrationsFields->Append(new PHTTPPasswordField(SIPPasswordKey, 10));
+  registrationsFields->Append(new PHTTPStringField(SIPAddressofRecordKey, 0, NULL, NULL, 1, 40));
+  registrationsFields->Append(new PHTTPStringField(SIPAuthIDKey, 0, NULL, NULL, 1, 25));
+  registrationsFields->Append(new PHTTPPasswordField(SIPPasswordKey, 15));
   rsrc->Add(new PHTTPFieldArray(registrationsFields, false));
 
   for (list<SIPRegister::Params>::iterator it = registrations.begin(); it != registrations.end(); ++it) {
@@ -607,7 +607,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   // Set IVR protocol handler
   PString vxml = cfg.GetString(VXMLKey);
   rsrc->Add(new PHTTPStringField(VXMLKey, 0, vxml,
-            "Interactive Voice Response VXML script, may be a URL or the actual VXML", 10, 50));
+            "Interactive Voice Response VXML script, may be a URL or the actual VXML", 10, 80));
   if (!vxml)
     m_ivrEP->SetDefaultVXML(vxml);
 #endif
@@ -623,7 +623,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
   PString script = cfg.GetString(ScriptTextKey);
   rsrc->Add(new PHTTPStringField(ScriptTextKey, 0, script,
-            "Interpreter script, may be a filename or the actual script text", 10, 50));
+            "Interpreter script, may be a filename or the actual script text", 10, 80));
   if (m_scriptLanguage != language || m_scriptText != script) {
     m_scriptLanguage = language;
     m_scriptText = script;
@@ -664,9 +664,9 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   PHTTPCompositeField * routeFields = new PHTTPCompositeField(
         ROUTES_SECTION"\\"ROUTES_KEY" %u\\", ROUTES_SECTION,
         "Internal routing of calls to varous sub-systems");
-  routeFields->Append(new PHTTPStringField(RouteAPartyKey, 100, NULL, NULL, 1, 15));
-  routeFields->Append(new PHTTPStringField(RouteBPartyKey, 100, NULL, NULL, 1, 15));
-  routeFields->Append(new PHTTPStringField(RouteDestKey, 100, NULL, NULL, 1, 25));
+  routeFields->Append(new PHTTPStringField(RouteAPartyKey, 0, NULL, NULL, 1, 20));
+  routeFields->Append(new PHTTPStringField(RouteBPartyKey, 0, NULL, NULL, 1, 20));
+  routeFields->Append(new PHTTPStringField(RouteDestKey, 0, NULL, NULL, 1, 30));
   rsrc->Add(new PHTTPFieldArray(routeFields, true));
 
   SetRouteTable(routes);
