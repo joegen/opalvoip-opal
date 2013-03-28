@@ -1700,46 +1700,15 @@ class H323Connection : public OpalRTPConnection
       unsigned sessionID
     ) const;
 
-    /** NAT Detection algorithm
-    */
-    virtual void NatDetection(
-      const PIPSocket::Address & srcAddress,  ///< TCP socket source address
-      const PIPSocket::Address & sigAddress   ///< H.225 Signalling Address
+    /**Determine if the RTP session needs to accommodate a NAT router.
+       This override does a check for H.460.19, and if disabled, prevents
+       OpalRTPConnection::DetermineRTPNAT() from being called.
+      */
+    virtual void DetermineRTPNAT(
+      const PIPSocket::Address & localAddr,   ///< Local physical address of connection
+      const PIPSocket::Address & peerAddr,    ///< Remote physical address of connection
+      const PIPSocket::Address & signalAddr   ///< Remotes signaling address as indicated by protocol of connection
     );
-
-    /** Fires when a NAT may of been detected. Return true to activate NAT media
-        mechanism
-    */
-    virtual PBoolean OnNatDetected();
-
-    /** Return TRUE if the remote appears to be behind a NAT firewall
-    */
-    PBoolean IsBehindNAT() const
-    { return remoteIsNAT; }
-
-    /** Set Remote is behind NAT
-    */
-    void SetRemoteNAT()
-    { remoteIsNAT = true; }
-
-    /** Is NAT Support Available
-      */
-    PBoolean HasNATSupport() const
-    { return NATsupport; }
-
-    /** Disable NAT Support for allocation of RTP sockets
-      */
-    void DisableNATSupport()
-    { NATsupport = false; remoteIsNAT = false; }
-    
-    /** Set the information that the call parties are 
-        behind the same NAT device
-      */
-    void SetSameNAT() { sameNAT = true; };
-
-    /** Determine if the two parties are behind the same NAT
-      */
-    PBoolean IsSameNAT() const { return sameNAT; };
 
   /**@name Request Mode Changes */
   //@{
@@ -2244,11 +2213,6 @@ class H323Connection : public OpalRTPConnection
     bool m_h239Control;
 #endif
 
-    // used to detect remote NAT endpoints
-    bool remoteIsNAT;    ///< Remote Caller is NAT
-    bool NATsupport;     ///< Disable support for NATed callers
-    bool sameNAT;        ///< Call parties are behind the same NAT
-
 #if OPAL_H450
     H450xDispatcher * h450dispatcher;
     H4502Handler    * h4502handler;
@@ -2289,6 +2253,8 @@ class H323Connection : public OpalRTPConnection
     P_REMOVE_VIRTUAL_VOID(OnRTPStatistics(const OpalRTPSession &) const);
     P_REMOVE_VIRTUAL(PBoolean, OnOpenLogicalChannel(const H245_OpenLogicalChannel&,H245_OpenLogicalChannelAck&,unsigned&), false);
     P_REMOVE_VIRTUAL(PBoolean, OnOpenLogicalChannel(const H245_OpenLogicalChannel &, H245_OpenLogicalChannelAck &, unsigned &, const unsigned &), false);
+    P_REMOVE_VIRTUAL_VOID(NatDetection(const PIPSocket::Address &, const PIPSocket::Address &));
+    P_REMOVE_VIRTUAL(PBoolean, OnNatDetected(), false);
 };
 
 

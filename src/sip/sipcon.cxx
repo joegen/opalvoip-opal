@@ -1040,8 +1040,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
       }
     }
 #endif // OPAL_T38_CAPABILITY
-    mediaSession = OpalMediaSessionFactory::CreateInstance(incomingMedia->GetSDPTransportType(),
-                                            OpalMediaSession::Init(*this, sessionId, mediaType, m_remoteBehindNAT));
+    mediaSession = CreateMediaSession(sessionId, mediaType, incomingMedia->GetSDPTransportType());
     if (mediaSession == NULL) {
       PTRACE(2, "SIP\tCould not create session for " << mediaType);
       return false;
@@ -2630,7 +2629,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   request.GetTransport()->GetLocalAddress().GetIpAddress(localAddr);
 
   // allow the application to determine if RTP NAT is enabled or not
-  m_remoteBehindNAT = IsRTPNATEnabled(localAddr, peerAddr, sigAddr, true);
+  DetermineRTPNAT(localAddr, peerAddr, sigAddr);
 
   bool prackSupported = mime.GetSupported().Contains("100rel");
   bool prackRequired = mime.GetRequire().Contains("100rel");
