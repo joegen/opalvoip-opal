@@ -10,7 +10,7 @@
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
   <Product Name='Open Phone'
            Language='1033'
-           Version='3.12.1'
+           Version='3.12.2'
            Manufacturer='Vox Lucida Pty. Ltd.'
            Id='*'
            UpgradeCode='56E04FF6-6AEB-4917-B8FC-6C0C1F5831F1'>
