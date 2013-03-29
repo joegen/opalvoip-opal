@@ -68,6 +68,9 @@ class OpalMediaCommand : public PObject
     virtual Comparison Compare(
       const PObject & obj   ///<  Object to compare against.
     ) const;
+
+    // Redefine as pure, derived classes from here MUST implment it.
+    virtual PObject * Clone() const = 0;
   //@}
 
   /**@name Operations */
@@ -90,7 +93,7 @@ class OpalMediaCommand : public PObject
 #define OPAL_DEFINE_MEDIA_COMMAND(cls, name) \
   class cls : public OpalMediaCommand \
   { \
-      PCLASSINFO(cls, OpalMediaCommand) \
+      PCLASSINFO_WITH_CLONE(cls, OpalMediaCommand) \
     public: \
       cls() { } \
       virtual PString GetName() const { return name; } \
@@ -101,7 +104,7 @@ class OpalMediaCommand : public PObject
   */
 class OpalMediaFlowControl : public OpalMediaCommand
 {
-    PCLASSINFO(OpalMediaFlowControl, OpalMediaCommand);
+    PCLASSINFO_WITH_CLONE(OpalMediaFlowControl, OpalMediaCommand);
   public:
     OpalMediaFlowControl(unsigned maxBitRate)
       : m_maxBitRate(maxBitRate)  { }

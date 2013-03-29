@@ -282,8 +282,6 @@ H323Connection::H323Connection(OpalCall & call,
 #endif
 
 
-  NATsupport = true;
-
 #if OPAL_H460
   disableH460 = ep.FeatureSetDisabled();
   features->LoadFeatureSet(H460_Feature::FeatureSignal, this);
@@ -1001,7 +999,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
     m_signallingChannel->GetLocalAddress().GetIpAddress(localAddr);
 
     // allow the application to determine if RTP NAT is enabled or not
-    m_remoteBehindNAT = IsRTPNATEnabled(localAddr, peerAddr, sigAddr, true);
+    DetermineRTPNAT(localAddr, peerAddr, sigAddr);
   }
 
   // Anything else we need from setup PDU
@@ -2107,29 +2105,15 @@ PBoolean H323Connection::OnSendCallProceeding(H323SignalPDU & callProceedingPDU)
 }
 
 
-void H323Connection::NatDetection(const PIPSocket::Address & srcAddress, const PIPSocket::Address & sigAddress)
-{
-  // if the peer address is a public address, but the advertised source address is a private address
-  // then there is a good chance the remote endpoint is behind a NAT but does not know it.
-  // in this case, we active the NAT mode and wait for incoming RTP to provide the media address before 
-  // sending anything to the remote endpoint
-  if ((!sigAddress.IsRFC1918() && srcAddress.IsRFC1918()) ||    // Internet Address
-      ((sigAddress.IsRFC1918() && srcAddress.IsRFC1918()) && (sigAddress != srcAddress)))  // LAN on another LAN
-  {
-    PTRACE(3, "H225\tSource signal address " << srcAddress << " and TCP peer address " << sigAddress << " indicate remote endpoint is behind NAT");
-    if (OnNatDetected())
-      remoteIsNAT = true;
-  }
-}
-
-
-PBoolean H323Connection::OnNatDetected()
+void H323Connection::DetermineRTPNAT(const PIPSocket::Address & localAddr,
+                                     const PIPSocket::Address & peerAddr,
+                                     const PIPSocket::Address & signalAddr)
 {
 #if OPAL_H460
-  if (m_H46019enabled) 
-    return false;
+    if (m_H46019enabled) 
+      return;
 #endif
-  return true;
+  OpalRTPConnection::DetermineRTPNAT(localAddr, peerAddr, signalAddr);
 }
 
 

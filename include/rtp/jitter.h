@@ -183,9 +183,10 @@ class OpalJitterBuffer : public PSafeObject
     DWORD    m_maxConsecutiveMarkerBits;
     DWORD    m_consecutiveLatePackets;
 
-    DWORD    m_frameTimeSum;
     unsigned m_frameTimeCount;
-    DWORD    m_averageFrameTime;
+    DWORD    m_incomingFrameTime;
+    int      m_lastFrameTime[2];
+    DWORD    m_lastSequenceNum;
     DWORD    m_lastTimestamp;
     DWORD    m_lastSyncSource;
     DWORD    m_bufferFilledTime;

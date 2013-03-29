@@ -2184,26 +2184,26 @@ void MyManager::OnSpeedDialRightClick(wxListEvent & event)
 }
 
 
-void MyManager::OnSpeedDialEndEdit(wxListEvent & event)
+void MyManager::OnSpeedDialEndEdit(wxListEvent & theEvent)
 {
-  if (event.IsEditCancelled())
+  if (theEvent.IsEditCancelled())
     return;
 
-  int index = event.GetIndex();
+  int index = theEvent.GetIndex();
   SpeedDialInfo * oldInfo = (SpeedDialInfo *)m_speedDials->GetItemData(index);
   if (oldInfo == NULL)
     return;
 
-  if (oldInfo->m_Name == event.GetLabel())
+  if (oldInfo->m_Name.CmpNoCase(theEvent.GetLabel()) == 0)
     return;
 
-  if (HasSpeedDialName(event.GetLabel())) {
-    event.Veto();
+  if (HasSpeedDialName(theEvent.GetLabel())) {
+    theEvent.Veto();
     return;
   }
 
   SpeedDialInfo newInfo(*oldInfo);
-  newInfo.m_Name = event.GetLabel();
+  newInfo.m_Name = theEvent.GetLabel();
   UpdateSpeedDial(index, newInfo, true);
 }
 
@@ -4968,12 +4968,15 @@ bool OptionsDialog::TransferDataFromWindow()
     PSafePtr<OpalPresentity> activePresentity = m_manager.AddPresentity(aor);
     if (activePresentity != NULL) {
       activePresentity->GetAttributes() = presentity->GetAttributes();
-      if (presentity->GetAttributes().GetBoolean(PresenceActiveKey))
-        LogWindow << (activePresentity->Open() ? "Establishing" : "Could not establish")
-                  << " presence for identity " << aor << endl;
-      else if (activePresentity->IsOpen()) {
-        activePresentity->Close();
-        LogWindow << "Stopping presence for identity " << aor << endl;
+      bool active = presentity->GetAttributes().GetBoolean(PresenceActiveKey);
+      if (activePresentity->IsOpen() != active) {
+        if (active)
+          LogWindow << (activePresentity->Open() ? "Establishing" : "Could not establish")
+                    << " presence for identity " << aor << endl;
+        else {
+          activePresentity->Close();
+          LogWindow << "Stopping presence for identity " << aor << endl;
+        }
       }
     }
 
@@ -7716,7 +7719,7 @@ SpeedDialDialog::SpeedDialDialog(MyManager * manager, const SpeedDialInfo & info
 void SpeedDialDialog::OnChange(wxCommandEvent & WXUNUSED(event))
 {
   wxString newName = m_nameCtrl->GetValue();
-  bool inUse = newName != m_Name && m_manager.HasSpeedDialName(newName);
+  bool inUse = newName.CmpNoCase(m_Name) != 0 && m_manager.HasSpeedDialName(newName);
   m_inUse->Show(inUse);
 
   m_ok->Enable(!inUse && !newName.IsEmpty() && newName.find_first_of(wxT("/\\:")) == wxString::npos && !m_addressCtrl->GetValue().IsEmpty());

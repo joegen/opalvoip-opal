@@ -33,7 +33,7 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\plugins\audio\G.722.2\G.722.2_2008.vcxproj">
+    <ProjectReference Include="..\..\plugins\audio\G.722.2\G.722.2_2010.vcxproj">
       <Project>{b68ca250-5801-4f0c-87cd-bb9a73fa934a}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
@@ -46,12 +46,12 @@
       <Project>{92e9fa1e-2925-42fd-8226-a07cbd237e18}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\plugins\audio\GSM0610\gsm0610_2008.vcxproj">
+    <ProjectReference Include="..\..\plugins\audio\GSM0610\gsm0610_2010.vcxproj">
       <Project>{e6897206-9765-4b73-9a98-dac5787814ce}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\plugins\audio\gsm-amr\gsmamr_2008.vcxproj">
+    <ProjectReference Include="..\..\plugins\audio\gsm-amr\gsmamr_2010.vcxproj">
       <Project>{92e9fa1e-2925-42fd-8226-a07cbd237e18}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
@@ -76,7 +76,7 @@
       <Project>{4a1b92cb-ca8e-4511-a1d5-b0a322fde67c}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\plugins\video\H.263-1998\h263_2008.vcxproj">
+    <ProjectReference Include="..\..\plugins\video\H.263-1998\h263_2010.vcxproj">
       <Project>{e75af717-c8a6-40e7-82cb-80d67ce01611}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
@@ -85,12 +85,12 @@
       <Project>{e75af717-c8a6-40e7-82cb-80d67ce01611}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\plugins\video\H.264\h264-x264_2008.vcxproj">
+    <ProjectReference Include="..\..\plugins\video\H.264\h264-x264_2010.vcxproj">
       <Project>{4d3ee295-5953-498d-aedf-9c8792ab5723}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\plugins\audio\iLBC\ilbccodec_2008.vcxproj">
+    <ProjectReference Include="..\..\plugins\audio\iLBC\ilbccodec_2010.vcxproj">
       <Project>{f1c13640-a056-4280-b1c6-6582e5890b89}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
@@ -99,7 +99,7 @@
       <Project>{4d3ee295-5953-498d-aedf-9c8792ab5723}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\plugins\video\MPEG4-ffmpeg\mpeg_2008.vcxproj">
+    <ProjectReference Include="..\..\plugins\video\MPEG4-ffmpeg\mpeg_2010.vcxproj">
       <Project>{d96e9539-b594-4c4b-8782-33a54d990f5f}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
@@ -112,27 +112,27 @@
       <Project>{ae1c39fc-a03d-4947-9127-abe9fe7edf3a}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="OpenPhone_2008.vcxproj">
+    <ProjectReference Include="OpenPhone_2010.vcxproj">
       <Project>{56e04ff6-6aeb-4917-b8fc-6c0c1f5831f1}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\plugins\audio\Speex\Speex_2008.vcxproj">
+    <ProjectReference Include="..\..\plugins\audio\Speex\Speex_2010.vcxproj">
       <Project>{02afb070-a9d5-4fb7-a041-311722c9f8d4}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\plugins\video\H.261-vic\h261vic_2008.vcxproj">
+    <ProjectReference Include="..\..\plugins\video\H.261-vic\h261vic_2010.vcxproj">
       <Project>{4a1b92cb-ca8e-4511-a1d5-b0a322fde67c}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\plugins\LID\TigerJet\TJ_2008.vcxproj">
+    <ProjectReference Include="..\..\plugins\LID\TigerJet\TJ_2010.vcxproj">
       <Project>{9a4e2793-1d97-4b0c-bcfd-130136990e35}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\plugins\fax\fax_spandsp\spandsp_fax_2008.vcxproj">
+    <ProjectReference Include="..\..\plugins\fax\fax_spandsp\spandsp_fax_2010.vcxproj">
       <Project>{d875ec01-6bbf-48ee-93f8-800bd6d76443}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
