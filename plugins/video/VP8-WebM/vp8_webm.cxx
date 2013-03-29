@@ -474,7 +474,7 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
 
       m_config.g_w = m_width;
       m_config.g_h = m_height;
-      vpx_codec_destroy, (&m_codec);
+      vpx_codec_destroy(&m_codec);
       return !IS_ERROR(vpx_codec_enc_init, (&m_codec, vpx_codec_vp8_cx(), &m_config, m_initFlags));
     }
 
@@ -591,8 +591,10 @@ class VP8EncoderRFC : public VP8Encoder
         return false;
       }
 
+#ifdef VPX_CODEC_USE_OUTPUT_PARTITION
       if (strcasecmp(optionName, OutputPartition.m_name) == 0)
         return SetOptionBit(m_initFlags, VPX_CODEC_USE_OUTPUT_PARTITION, optionValue);
+#endif
 
       return VP8Encoder::SetOption(optionName, optionValue);
     }
@@ -607,8 +609,10 @@ class VP8EncoderRFC : public VP8Encoder
       if (m_offset == 0)
         rtp[0] |= 0x10; // Add S bit if start of partition
 
+#ifdef VPX_CODEC_USE_OUTPUT_PARTITION
       if (m_packet->data.frame.partition_id >= 0)
         rtp[0] |= (uint8_t)(m_packet->data.frame.partition_id&0x0f);
+#endif
 
       if ((m_packet->data.frame.flags&VPX_FRAME_IS_DROPPABLE) != 0)
         rtp[0] |= 0x20; // Add N bit for non-reference frame

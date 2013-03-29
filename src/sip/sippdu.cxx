@@ -2748,11 +2748,11 @@ void SIPTransactionOwner::FinaliseForking(SIPTransaction & transaction, SIP_PDU 
     PTRACE(4, "SIP\tSet local interface to " << localInterface);
   }
 
+  transport->UnlockReadWrite();
+
   // About any transactions on a different interface, they are forks that have
   // been resolved.
   AbortPendingTransactions(false);
-
-  transport->UnlockReadWrite();
 }
 
 

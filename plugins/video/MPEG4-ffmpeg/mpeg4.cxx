@@ -51,7 +51,7 @@
 #define _CRT_SECURE_NO_DEPRECATE
 
 #ifndef _MSC_VER
-#include "plugin-config.h"
+#include "../common/platform.h"
 #endif
 
 #define MY_CODEC FF_MP4V  // Name of codec (use C variable characters)

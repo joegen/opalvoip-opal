@@ -384,12 +384,11 @@ bool OpalRTPConnection::SetSessionQoS(OpalRTPSession * /*session*/)
 }
 
 
-PBoolean OpalRTPConnection::IsRTPNATEnabled(const PIPSocket::Address & localAddr, 
-                                            const PIPSocket::Address & peerAddr,
-                                            const PIPSocket::Address & sigAddr,
-                                                              PBoolean incoming)
+void OpalRTPConnection::DetermineRTPNAT(const PIPSocket::Address & localAddr, 
+                                        const PIPSocket::Address & peerAddr,
+                                        const PIPSocket::Address & sigAddr)
 {
-  return static_cast<OpalRTPEndPoint &>(endpoint).IsRTPNATEnabled(*this, localAddr, peerAddr, sigAddr, incoming);
+  m_remoteBehindNAT = dynamic_cast<OpalRTPEndPoint &>(endpoint).IsRTPNATEnabled(*this, localAddr, peerAddr, sigAddr, !IsOriginating());
 }
 
 
