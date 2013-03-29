@@ -61,7 +61,7 @@ class JesterJitterBuffer : public OpalJitterBuffer
     JesterJitterBuffer();
 
     PINDEX GetCurrentDepth() const { return m_frames.size(); }
-    DWORD GetAverageFrameTime() const { return m_averageFrameTime; }
+    DWORD GetIncomingFrameTime() const { return m_incomingFrameTime; }
 };
 
 /////////////////////////////////////////////////////////////////////////////

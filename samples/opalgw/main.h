@@ -99,7 +99,7 @@ class MyGatekeeperServer : public H323GatekeeperServer
         );
         RouteMap(
           const RouteMap & map
-        ) : alias(map.alias), regex(map.alias), host(map.host) { }
+        ) : PObject(map), alias(map.alias), regex(map.alias), host(map.host) { }
 
         void PrintOn(
           ostream & strm

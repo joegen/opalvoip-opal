@@ -20,7 +20,7 @@
  */
 
 #ifndef _MSC_VER
-#include "plugin-config.h"
+#include "../../common/platform.h"
 #endif
 
 #include <iostream>

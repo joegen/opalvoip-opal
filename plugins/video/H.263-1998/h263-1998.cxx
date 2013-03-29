@@ -46,7 +46,7 @@
  */
 
 #ifndef PLUGIN_CODEC_DLL_EXPORTS
-#include "plugin-config.h"
+#include "../common/platform.h"
 #endif
 
 #define MY_CODEC FF_H263  // Name of codec (use C variable characters)
