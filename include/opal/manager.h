@@ -1991,9 +1991,9 @@ class OpalManager : public PObject
     PSyncPoint     m_allCallsCleared;
     void InternalClearAllCalls(OpalConnection::CallEndReason reason, bool wait, bool first);
 
-    PThread    * garbageCollector;
-    PSyncPoint   garbageCollectExit;
-    bool         garbageCollectSkip;
+    PThread    * m_garbageCollector;
+    PSyncPoint   m_garbageCollectExit;
+    bool         m_garbageCollectSkip;
     PDECLARE_NOTIFIER(PThread, OpalManager, GarbageMain);
 
     friend OpalCall::OpalCall(OpalManager & mgr);
