@@ -149,7 +149,12 @@
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(WIX)\bin\candle" -nologo -dMSVCRT_VER=90 -out "$(IntDir)%(Filename).wixobj" "%(FullPath)"
 "$(WIX)\bin\light" -nologo -ext WixUIExtension -out "$(OutDir)OpenPhone.msi" "$(IntDir)%(Filename).wixobj"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)OpenPhone.msi;%(Outputs)</Outputs>
+      <SubType>Designer</SubType>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="version.wxs" />
+    <None Include="version.wxs.in" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

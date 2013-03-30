@@ -447,5 +447,6 @@ AC_CONFIG_HEADERS(${cfg_prefix}/opal/buildopts.h:include/opal/buildopts.h.in)
 AC_CONFIG_FILES(opal.pc)
 AC_CONFIG_FILES(opal.spec)
 AC_CONFIG_FILES(opal_cfg.dxy)
+AC_CONFIG_FILES(samples/openphone/version.wxs)
 
 AC_OUTPUT
