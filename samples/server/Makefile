@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# Make file for OPAL gateway
+# Make file for OPAL Server
 #
 # Copyright (c) 2003 Equivalence Pty. Ltd.
 #
@@ -26,7 +26,7 @@
 # $Date$
 #
 
-PROG	= opalgw
+PROG	= opalsrv
 SOURCES	:= main.cxx custom.cxx gkserv.cxx
 
 ifdef OPALDIR
