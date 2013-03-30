@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>opalgw</ProjectName>
+    <ProjectName>OPAL Server</ProjectName>
     <ProjectGuid>{48A0E613-0A49-4C11-900D-FDBBCA2B0591}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -94,7 +94,7 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Release/opalgw.tlb</TypeLibraryName>
+      <TypeLibraryName>.\Release/opalsrv.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
@@ -133,7 +133,7 @@
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TypeLibraryName>.\Release/opalgw.tlb</TypeLibraryName>
+      <TypeLibraryName>.\Release/opalsrv.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
@@ -172,7 +172,7 @@
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
-      <TypeLibraryName>.\Debug/opalgw.tlb</TypeLibraryName>
+      <TypeLibraryName>.\Debug/opalsrv.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
@@ -211,7 +211,7 @@
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MkTypLibCompatible>true</MkTypLibCompatible>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <TypeLibraryName>.\Debug/opalgw.tlb</TypeLibraryName>
+      <TypeLibraryName>.\Debug/opalsrv.tlb</TypeLibraryName>
       <HeaderFileName>
       </HeaderFileName>
     </Midl>
@@ -311,7 +311,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="messages.bin" />
-    <None Include="opalgw.ico" />
+    <None Include="opalsrv.ico" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="svcproc.rc" />

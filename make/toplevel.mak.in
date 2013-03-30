@@ -42,7 +42,8 @@ endif
 
 ifeq ($(OPAL_SAMPLES),yes)
 
-SUBDIRS += samples/c_api
+SUBDIRS += samples/c_api \
+           samples/server
 
 ifeq ($(OPAL_HAS_PCSS),yes)
 SUBDIRS += samples/simple

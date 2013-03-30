@@ -1,7 +1,7 @@
 /*
  * gkerv.cxx
  *
- * PWLib application source file for OPAL Gateway
+ * PWLib application source file for OPAL Server
  *
  * Main program entry point.
  *
