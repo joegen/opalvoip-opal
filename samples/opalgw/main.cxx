@@ -90,7 +90,7 @@ static const char LIDKey[] = "Line Interface Devices";
 static const char EnableCAPIKey[] = "CAPI ISDN";
 #endif
 
-#if OPAL_PTLIB_VXML
+#if OPAL_IVR
 static const char VXMLKey[] = "VXML Script";
 #endif
 
@@ -107,17 +107,35 @@ static const char RouteBPartyKey[] = "B Party";
 static const char RouteDestKey[]   = "Destination";
 
 static const char * const DefaultRoutes[] = {
+#if OPAL_IVR
   ".*:.*\t#|.*:#=ivr:",
+#endif
+#if OPAL_MIXER
+  ".*:.*\t.*conference.*=mcu:<dn>",
+#endif
+#if OPAL_LID
   "pots:\\+*[0-9]+ = tel:<dn>",
   "pstn:\\+*[0-9]+ = tel:<dn>",
+#endif
+#if OPAL_CAPI
   "capi:\\+*[0-9]+ = tel:<dn>",
+#endif
+#if OPAL_H323
   "h323:\\+*[0-9]+ = tel:<dn>",
-  "sip:\\+*[0-9]+@.* = tel:<dn>",
+ #if OPAL_SIP
   "h323:.+@.+ = sip:<da>",
   "h323:.* = sip:<db>@",
   "sip:.* = h323:<du>",
+ #else
+  "tel:[0-9]+\\*[0-9]+\\*[0-9]+\\*[0-9]+ = h323:<dn2ip>",
+  "tel:.*=h323:<dn>"
+ #endif
+#endif
+#if OPAL_SIP
+  "sip:\\+*[0-9]+@.* = tel:<dn>",
   "tel:[0-9]+\\*[0-9]+\\*[0-9]+\\*[0-9]+ = sip:<dn2ip>",
   "tel:.*=sip:<dn>"
+#endif
 };
 
 
@@ -346,7 +364,7 @@ MyManager::MyManager()
   , m_capiEP(NULL)
   , m_enableCAPI(true)
 #endif
-#if OPAL_PTLIB_VXML
+#if OPAL_IVR
   , m_ivrEP(NULL)
 #endif
 {
@@ -413,7 +431,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     m_capiEP = new OpalCapiEndPoint(*this);
 #endif
 
-#if OPAL_PTLIB_VXML
+#if OPAL_IVR
   if (m_ivrEP == NULL)
     m_ivrEP = new OpalIVREndPoint(*this);
 #endif
@@ -585,7 +603,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #if OPAL_LID
   // Add POTS and PSTN endpoints
   fieldArray = new PHTTPFieldArray(new PHTTPSelectField(LIDKey, OpalLineInterfaceDevice::GetAllDevices(),
-                                   0, "Line Interface Devices to monitor, if any"), false);
+                                   0, "Line Interface Devices (PSTN, ISDN etc) to monitor, if any"), false);
   PStringArray devices = fieldArray->GetStrings(cfg);
   if (!m_potsEP->AddDeviceNames(devices)) {
     PSYSTEMLOG(Error, "No LID devices!");
@@ -603,7 +621,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #endif
 
 
-#if OPAL_PTLIB_VXML
+#if OPAL_IVR
   // Set IVR protocol handler
   PString vxml = cfg.GetString(VXMLKey);
   rsrc->Add(new PHTTPStringField(VXMLKey, 0, vxml,
@@ -614,20 +632,22 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
 #if OPAL_SCRIPT
   PFactory<PScriptLanguage>::KeyList_T keys = PFactory<PScriptLanguage>::GetKeyList();
-  PStringArray languages;
-  for (PFactory<PScriptLanguage>::KeyList_T::iterator it = keys.begin(); it != keys.end(); ++it)
-    languages.AppendString(*it);
-  PString language = cfg.GetString(ScriptLanguageKey, languages[0]);
-  rsrc->Add(new PHTTPRadioField(ScriptLanguageKey, languages,
-            languages.GetValuesIndex(language),"Interpreter script language."));
-
-  PString script = cfg.GetString(ScriptTextKey);
-  rsrc->Add(new PHTTPStringField(ScriptTextKey, 0, script,
-            "Interpreter script, may be a filename or the actual script text", 10, 80));
-  if (m_scriptLanguage != language || m_scriptText != script) {
-    m_scriptLanguage = language;
-    m_scriptText = script;
-    RunScript(script, language);
+  if (!keys.empty()) {
+    PStringArray languages;
+    for (PFactory<PScriptLanguage>::KeyList_T::iterator it = keys.begin(); it != keys.end(); ++it)
+      languages.AppendString(*it);
+    PString language = cfg.GetString(ScriptLanguageKey, languages[0]);
+    rsrc->Add(new PHTTPRadioField(ScriptLanguageKey, languages,
+              languages.GetValuesIndex(language),"Interpreter script language."));
+  
+    PString script = cfg.GetString(ScriptTextKey);
+    rsrc->Add(new PHTTPStringField(ScriptTextKey, 0, script,
+              "Interpreter script, may be a filename or the actual script text", 10, 80));
+    if (m_scriptLanguage != language || m_scriptText != script) {
+      m_scriptLanguage = language;
+      m_scriptText = script;
+      RunScript(script, language);
+    }
   }
 #endif //OPAL_SCRIPT
 
@@ -662,8 +682,8 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   cfg.SetDefaultSection(defaultSection);
 
   PHTTPCompositeField * routeFields = new PHTTPCompositeField(
-        ROUTES_SECTION"\\"ROUTES_KEY" %u\\", ROUTES_SECTION,
-        "Internal routing of calls to varous sub-systems");
+           ROUTES_SECTION"\\"ROUTES_KEY" %u\\", ROUTES_SECTION,
+           "Internal routing of calls to varous sub-systems");
   routeFields->Append(new PHTTPStringField(RouteAPartyKey, 0, NULL, NULL, 1, 20));
   routeFields->Append(new PHTTPStringField(RouteBPartyKey, 0, NULL, NULL, 1, 20));
   routeFields->Append(new PHTTPStringField(RouteDestKey, 0, NULL, NULL, 1, 30));

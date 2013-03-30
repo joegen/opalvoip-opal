@@ -261,7 +261,8 @@ OpalManager::OpalManager()
   , m_natMethod(NULL)
 #endif
   , P_DISABLE_MSVC_WARNINGS(4355, activeCalls(*this))
-  , garbageCollectSkip(false)
+  , m_garbageCollector(NULL)
+  , m_garbageCollectSkip(false)
   , m_decoupledEventPool(5, 0, "Event Pool")
 #if OPAL_SCRIPT
   , m_script(NULL)
@@ -300,8 +301,6 @@ OpalManager::OpalManager()
   SetAutoStartReceiveVideo(!videoOutputDevice.deviceName.IsEmpty());
 #endif
 
-  garbageCollector = PThread::Create(PCREATE_NOTIFIER(GarbageMain), "Opal Garbage");
-
 #if P_NAT
   PInterfaceMonitor::GetInstance().AddNotifier(PCREATE_InterfaceNotifier(OnInterfaceChange));
 #endif
@@ -319,13 +318,14 @@ OpalManager::~OpalManager()
 #endif
 
   // Shut down the cleaner thread
-  garbageCollectExit.Signal();
-  garbageCollector->WaitForTermination();
+  if (m_garbageCollector != NULL) {
+    m_garbageCollectExit.Signal();
+    m_garbageCollector->WaitForTermination();
+    delete m_garbageCollector;
+  }
 
   // Clean up any calls that the cleaner thread missed on the way out
   GarbageCollection();
-
-  delete garbageCollector;
 
 #if P_NAT
   PInterfaceMonitor::GetInstance().RemoveNotifier(PCREATE_InterfaceNotifier(OnInterfaceChange));
@@ -421,9 +421,13 @@ void OpalManager::AttachEndPoint(OpalEndPoint * endpoint, const PString & prefix
   endpointMap[thePrefix] = endpoint;
 
   /* Avoid strange race condition caused when garbage collection occurs
-     on the endpoint instqance which has not completed cosntruction. This
-     is an ulgly hack andrelies on the ctors taking less than one second. */
-  garbageCollectSkip = true;
+     on the endpoint instance which has not completed construction. This
+     is an ulgly hack and relies on the ctors taking less than one second. */
+  m_garbageCollectSkip = true;
+
+  // Have something which requires garbage collections, so start it up
+  if (m_garbageCollector == NULL)
+    m_garbageCollector = PThread::Create(PCREATE_NOTIFIER(GarbageMain), "Opal Garbage");
 
   PTRACE(3, "OpalMan\tAttached endpoint with prefix " << thePrefix);
 }
@@ -611,6 +615,9 @@ void OpalManager::ClearAllCalls(OpalConnection::CallEndReason reason, PBoolean w
 
 void OpalManager::InternalClearAllCalls(OpalConnection::CallEndReason reason, bool wait, bool firstThread)
 {
+  if (m_garbageCollector == NULL)
+    return;
+
   PTRACE(3, "OpalMan\tClearing all calls " << (wait ? "and waiting" : "asynchronously")
                       << ", " << (firstThread ? "primary" : "secondary") << " thread.");
 
@@ -626,7 +633,7 @@ void OpalManager::InternalClearAllCalls(OpalConnection::CallEndReason reason, bo
        released from the PSyncPoint wait. */
     m_clearingAllCallsMutex.Wait();
     if (firstThread)
-      PAssert(m_allCallsCleared.Wait(120000), "All calls not cleared in a timely manner");
+      PAssert(m_allCallsCleared.Wait(20000), "All calls not cleared in a timely manner");
     m_clearingAllCallsMutex.Signal();
   }
 
@@ -2067,9 +2074,13 @@ void OpalManager::GarbageCollection()
 
   endpointsMutex.StartRead();
 
-  for (PList<OpalEndPoint>::iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep) {
-    if (!ep->GarbageCollection())
-      allCleared = false;
+  if (m_garbageCollectSkip)
+    m_garbageCollectSkip = false;
+  else {
+    for (PList<OpalEndPoint>::iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep) {
+      if (!ep->GarbageCollection())
+        allCleared = false;
+    }
   }
 
   endpointsMutex.EndRead();
@@ -2087,13 +2098,10 @@ void OpalManager::CallDict::DeleteObject(PObject * object) const
 
 void OpalManager::GarbageMain(PThread &, P_INT_PTR)
 {
-  while (!garbageCollectExit.Wait(1000)) {
-    if (garbageCollectSkip)
-      garbageCollectSkip = false;
-    else
-      GarbageCollection();
-  }
+  while (!m_garbageCollectExit.Wait(1000))
+    GarbageCollection();
 }
+
 
 void OpalManager::OnNewConnection(OpalConnection & /*conn*/)
 {
