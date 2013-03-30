@@ -199,6 +199,9 @@ class MyManager : public OpalManager
 #if OPAL_IVR
     OpalIVREndPoint * m_ivrEP;
 #endif
+#if OPAL_MIXER
+    OpalMixerEndPoint * m_mcuEP;
+#endif
 #if OPAL_SCRIPT
     PString m_scriptLanguage;
     PString m_scriptText;
