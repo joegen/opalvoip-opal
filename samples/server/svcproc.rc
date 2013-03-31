@@ -1,4 +1,4 @@
 LANGUAGE 0x9,0x1
 1 MESSAGETABLE messages.bin
-1 ICON "opalgw.ico" 
+1 ICON "opalsrv.ico" 
 RCINCLUDE custom.cxx 

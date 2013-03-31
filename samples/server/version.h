@@ -1,9 +1,7 @@
 /*
- * precompile.cxx
+ * version.h
  *
- * PWLib application source file for OPAL Gateway
- *
- * Precompiled header generation file.
+ * PWLib application header file for OPAL Server
  *
  * Copyright (c) 2003 Equivalence Pty. Ltd.
  *
@@ -23,12 +21,22 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision$
- * $Author$
- * $Date$
+ * Library dependencies:
+ *
+ *   pwlib: v1.4.0   CVS tag: v1_4_0
+ *   openh323: v1.10.0   CVS tag: v1_10_0
  */
 
-#include "precompile.h"
+#ifndef _OPAL_SERVER_VERSION_H
+#define _OPAL_SERVER_VERSION_H
+
+#define MAJOR_VERSION 1
+#define MINOR_VERSION 0
+#define BUILD_TYPE    AlphaCode
+#define BUILD_NUMBER 1
+
+
+#endif  // _OPAL_SERVER_VERSION_H
 
 
 // End of File ///////////////////////////////////////////////////////////////
