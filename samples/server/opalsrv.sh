@@ -19,7 +19,7 @@ case $1 in
   ;;
 esac
 
-NAME=opalgw
+NAME=opalsrv
 DIR=$HOME/.opalsrv
 EXE=`ls ./obj*[^d]/$NAME`
 

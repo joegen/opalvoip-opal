@@ -16,7 +16,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTLib Static", "..\ptlib\sr
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTLib DLL", "..\ptlib\src\ptlib\msos\PTLib_2008.vcproj", "{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "opalgw", "samples\opalgw\opalgw_2008.vcproj", "{48A0E613-0A49-4C11-900D-FDBBCA2B0591}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL Server", "samples\server\opalsrv_2008.vcproj", "{48A0E613-0A49-4C11-900D-FDBBCA2B0591}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "opalcodecinfo", "samples\opalcodecinfo\opalcodecinfo_2008.vcproj", "{7FF55F1C-87EB-4087-8814-FD494BE49170}"
 EndProject

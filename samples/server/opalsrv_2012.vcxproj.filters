@@ -46,7 +46,7 @@
     <None Include="messages.bin">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="opalgw.ico">
+    <None Include="opalsrv.ico">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

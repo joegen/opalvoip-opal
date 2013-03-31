@@ -65,8 +65,8 @@ opalecho
 Audio Echo server.  Default web interface is http://localhost:3246
 
 
-opalgw
-SIP/H.323 gateway server. Default web interface is http://localhost:1719.
+server
+SIP/H.323/PSTN/IVR/MCU server. Default web interface is http://localhost:1719.
 
 
 opalmcu

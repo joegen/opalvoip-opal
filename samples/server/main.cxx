@@ -1,7 +1,7 @@
 /*
  * main.cxx
  *
- * PWLib application source file for OPAL Gateway
+ * PWLib application source file for OPAL Server
  *
  * Main program entry point.
  *
@@ -230,7 +230,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
 
   // HTTP authentication username/password
   rsrc->Add(new PHTTPStringField(UsernameKey, 25, username,
-            "User name to access HTTP user interface for gateway."));
+            "User name to access HTTP user interface for server."));
   rsrc->Add(new PHTTPPasswordField(PasswordKey, 20, password));
 
   // Log level for messages
@@ -255,7 +255,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   // HTTP Port number to use.
   WORD httpPort = (WORD)cfg.GetInteger(HttpPortKey, DefaultHTTPPort);
   rsrc->Add(new PHTTPIntegerField(HttpPortKey, 1, 32767, httpPort,
-            "Port for HTTP user interface for gateway."));
+            "Port for HTTP user interface for server."));
 
   // Initialise the core of the system
   if (!m_manager.Initialise(cfg, rsrc))
@@ -706,7 +706,7 @@ void MyManager::AdjustMediaFormats(bool local,
                                    const OpalConnection & connection,
                                    OpalMediaFormatList & mediaFormats) const
 {
-  // Don't do the reorder done in OpalManager::AdjustMediaFormats if a gateway
+  // Don't do the reorder done in OpalManager::AdjustMediaFormats if acting as gateway
   if (local && connection.IsNetworkConnection()) {
     PSafePtr<OpalConnection> otherConnection = connection.GetOtherPartyConnection();
     if (otherConnection != NULL && otherConnection->IsNetworkConnection())
@@ -787,7 +787,7 @@ RegistrationStatusPage::RegistrationStatusPage(MyManager & mgr, PHTTPAuthority &
 
 const char * RegistrationStatusPage::GetTitle() const
 {
-  return "OPAL Gateway Registration Status";
+  return "OPAL Server Registration Status";
 }
 
 
@@ -889,7 +889,7 @@ CallStatusPage::CallStatusPage(MyManager & mgr, PHTTPAuthority & auth)
 
 const char * CallStatusPage::GetTitle() const
 {
-  return "OPAL Gateway Call Status";
+  return "OPAL Server Call Status";
 }
 
 

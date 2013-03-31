@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="opalgw"
+	Name="OPAL Server"
 	ProjectGUID="{48A0E613-0A49-4C11-900D-FDBBCA2B0591}"
 	TargetFrameworkVersion="131072"
 	>
@@ -41,7 +41,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/opalgw.tlb"
+				TypeLibraryName=".\Release/opalsrv.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -131,7 +131,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/opalgw.tlb"
+				TypeLibraryName=".\Debug/opalsrv.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -318,7 +318,7 @@
 				>
 			</File>
 			<File
-				RelativePath="opalgw.ico"
+				RelativePath="opalsrv.ico"
 				>
 			</File>
 			<File
