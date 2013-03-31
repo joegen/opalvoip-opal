@@ -1,7 +1,7 @@
 /*
  * precompile.h
  *
- * PWLib application source file for OPAL Gateway
+ * PWLib application source file for OPAL Server
  *
  * Precompiled header generation file.
  *

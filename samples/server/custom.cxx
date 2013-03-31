@@ -1,7 +1,7 @@
 /*
  * custom.cxx
  *
- * PWLib application source file for OPAL Gateway
+ * PWLib application source file for OPAL Server
  *
  * Customisable application configurationfor OEMs.
  *
@@ -45,11 +45,11 @@
 ////////////////////////////////////////////////////
 
 #ifndef PRODUCT_NAME_TEXT
-#define	PRODUCT_NAME_TEXT	"OPAL Gateway"
+#define	PRODUCT_NAME_TEXT	"OPAL Server"
 #endif
 
 #ifndef EXE_NAME_TEXT
-#define	EXE_NAME_TEXT	        "opalgw"
+#define	EXE_NAME_TEXT	        "opalsrv"
 #endif
 
 #ifndef MANUFACTURER_TEXT

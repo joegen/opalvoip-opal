@@ -1,7 +1,7 @@
 /*
  * custom.h
  *
- * PWLib application header file for OPAL Gateway
+ * PWLib application header file for OPAL Server
  *
  * Customisable application configurationfor OEMs.
  *

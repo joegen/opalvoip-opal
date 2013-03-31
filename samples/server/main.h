@@ -1,7 +1,7 @@
 /*
  * main.h
  *
- * PWLib application header file for OPAL Gateway
+ * PWLib application header file for OPAL Server
  *
  * Copyright (c) 2003 Equivalence Pty. Ltd.
  *
@@ -26,8 +26,8 @@
  * $Date$
  */
 
-#ifndef _OpalGw_MAIN_H
-#define _OpalGw_MAIN_H
+#ifndef _OPALSRV_MAIN_H
+#define _OPALSRV_MAIN_H
 
 
 class MyManager;
@@ -306,7 +306,7 @@ class GkStatusPage : public BaseStatusPage
 #endif // OPAL_H323
 
 
-#endif  // _OpalGw_MAIN_H
+#endif  // _OPALSRV_MAIN_H
 
 
 // End of File ///////////////////////////////////////////////////////////////
