@@ -660,13 +660,10 @@ endif
 $(OPAL_SRCDIR)/opal/manager.cxx: $(REVISION_FILE)
 
 $(REVISION_FILE) : $(REVISION_FILE).in
-ifeq ($(shell which svn 2> /dev/null),)
+ifeq ($(SVN),)
 	$(Q)sed -e "s/.WCREV./`sed -n -e 's/.*Revision: \([0-9]*\).*/\1/p' $<`/" $< > $@
 else
-ifeq ($(wildcard .svn),)
-	$(Q)sed -e "s/.WCREV./`sed -n -e 's/.*Revision: \([0-9]*\).*/\1/p' $<`/" $< > $@
-else
-	$(Q)sed "s/SVN_REVISION.*/SVN_REVISION `LC_ALL=C svn info | sed -n 's/Revision: //p'`/" $< > $@.tmp
+	$(Q)sed "s/SVN_REVISION.*/SVN_REVISION `LC_ALL=C $(SVN) info | sed -n 's/Revision: //p'`/" $< > $@.tmp
 	$(Q)if diff -q $@ $@.tmp >/dev/null 2>&1; then \
 	  rm $@.tmp; \
 	else \
@@ -675,7 +672,6 @@ else
 	fi
 
 .PHONY: $(REVISION_FILE)
-endif
 endif
 
 
@@ -774,9 +770,16 @@ bothnoshared:
 
 all: optdepend opt debugdepend debug
 
+.PHONY: update
+ifeq ($(SVN),)
 update:
-	svn update
+	@echo SVN not available
+	@false
+else
+update:
+	$(SVN) update
 	$(MAKE) all
+endif
 
 distclean: clean
 	rm -rf config.log config.err autom4te.cache config.status a.out aclocal.m4
