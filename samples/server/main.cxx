@@ -106,12 +106,14 @@ static const char RouteAPartyKey[] = "A Party";
 static const char RouteBPartyKey[] = "B Party";
 static const char RouteDestKey[]   = "Destination";
 
+#define CONFERENCE_NAME "conference"
+
 static const char * const DefaultRoutes[] = {
 #if OPAL_IVR
   ".*:.*\t#|.*:#=ivr:",
 #endif
-#if OPAL_MIXER
-  ".*:.*\t.*conference.*=mcu:<dn>",
+#if OPAL_HAS_MIXER
+  ".*:.*\t.*"CONFERENCE_NAME".*=mcu:<du>",
 #endif
 #if OPAL_LID
   "pots:\\+*[0-9]+ = tel:<dn>",
@@ -367,6 +369,9 @@ MyManager::MyManager()
 #if OPAL_IVR
   , m_ivrEP(NULL)
 #endif
+#if OPAL_HAS_MIXER
+  , m_mcuEP(NULL)
+#endif
 {
   // Make sure codecs are loaded
   GetOpalG722();
@@ -390,9 +395,6 @@ MyManager::MyManager()
   GetOpalH264_MODE0();
   GetOpalH264_MODE1();
   //GetOpalMPEG4();
-
-  SetAutoStartReceiveVideo(false);
-  SetAutoStartTransmitVideo(false);
 #endif
 }
 
@@ -434,6 +436,13 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #if OPAL_IVR
   if (m_ivrEP == NULL)
     m_ivrEP = new OpalIVREndPoint(*this);
+#endif
+
+#if OPAL_HAS_MIXER
+  if (m_mcuEP == NULL) {
+    m_mcuEP = new OpalMixerEndPoint(*this, "mcu");
+    m_mcuEP->AddNode(new OpalMixerNodeInfo(CONFERENCE_NAME));
+  }
 #endif
 
   // General parameters for all endpoint types
