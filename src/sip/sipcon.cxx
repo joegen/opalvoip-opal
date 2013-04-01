@@ -754,7 +754,7 @@ bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
     return false;
   }
 
-  OpalTransportAddress remoteMediaAddress(m_dialog.GetRequestURI().GetHostName(), 0, OpalTransportAddress::UdpPrefix());
+  OpalTransportAddress remoteMediaAddress(m_dialog.GetRemoteTransportAddress(m_dnsEntry).GetHostName(), 0, OpalTransportAddress::UdpPrefix());
   if (!mediaSession->Open(GetInterface(), remoteMediaAddress, true)) {
     PTRACE(1, "SIP\tCould not open RTP session " << sessionId << " for media type " << mediaType);
     return false;
