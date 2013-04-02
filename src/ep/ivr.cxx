@@ -178,6 +178,7 @@ OpalIVRConnection::OpalIVRConnection(OpalCall & call,
   , m_vxmlMediaFormats(IncludeMediaFormatsFromVXML(vxml))
   , P_DISABLE_MSVC_WARNINGS(4355, m_vxmlSession(*this, PFactory<PTextToSpeech>::CreateInstance(ep.GetDefaultTextToSpeech()), true))
 {
+  m_vxmlSession.SetCache(ep.GetTextToSpeechCache());
   PTRACE(4, "IVR\tConstructed");
 }
 
