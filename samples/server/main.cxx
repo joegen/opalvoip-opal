@@ -92,6 +92,7 @@ static const char EnableCAPIKey[] = "CAPI ISDN";
 
 #if OPAL_IVR
 static const char VXMLKey[] = "VXML Script";
+static const char IVRCacheKey[] = "TTS Cache Directory";
 #endif
 
 #if OPAL_SCRIPT
@@ -631,12 +632,21 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
 
 #if OPAL_IVR
-  // Set IVR protocol handler
-  PString vxml = cfg.GetString(VXMLKey);
-  rsrc->Add(new PHTTPStringField(VXMLKey, 0, vxml,
-            "Interactive Voice Response VXML script, may be a URL or the actual VXML", 10, 80));
-  if (!vxml)
-    m_ivrEP->SetDefaultVXML(vxml);
+  {
+    // Set IVR protocol handler
+    PString vxml = cfg.GetString(VXMLKey);
+    rsrc->Add(new PHTTPStringField(VXMLKey, 0, vxml,
+              "Interactive Voice Response VXML script, may be a URL or the actual VXML", 10, 80));
+    if (!vxml)
+      m_ivrEP->SetDefaultVXML(vxml);
+  }
+
+  {
+    PDirectory dir = cfg.GetString(IVRCacheKey, m_ivrEP->GetCacheDir());
+    rsrc->Add(new PHTTPStringField(IVRCacheKey, 0, dir,
+              "Interactive Voice Response directory to cache Text To Speech phrases", 1, 50));
+    m_ivrEP->SetCacheDir(dir);
+  }
 #endif
 
 #if OPAL_SCRIPT
