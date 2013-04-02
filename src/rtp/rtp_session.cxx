@@ -171,13 +171,13 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_reportTimer(0, 12)  // Seconds
   , m_closeOnBye(false)
   , m_byeSent(false)
-  , m_localAddress(0)
+  , m_localAddress(PIPSocket::GetInvalidAddress())
   , m_localDataPort(0)
   , m_localControlPort(0)
-  , m_remoteAddress(0)
+  , m_remoteAddress(PIPSocket::GetInvalidAddress())
   , m_remoteDataPort(0)
   , m_remoteControlPort(0)
-  , m_remoteTransmitAddress(0)
+  , m_remoteTransmitAddress(PIPSocket::GetInvalidAddress())
   , m_dataSocket(NULL)
   , m_controlSocket(NULL)
   , m_shutdownRead(false)
@@ -2012,6 +2012,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataOrControlPDU(BYTE * fr
   WORD port;
 
   if (socket.ReadFrom(framePtr, frameSize, addr, port)) {
+    // Ignore one byte packet, likely from the block breaker in OpalRTPSession::Shutdown()
+    if (socket.GetLastReadCount() == 1 && addr == m_localAddress)
+      return e_IgnorePacket;
+
     // If remote address never set from higher levels, then try and figure
     // it out from the first packet received.
     if (!m_remoteAddress.IsValid()) {
