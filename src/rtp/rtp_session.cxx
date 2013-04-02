@@ -2053,6 +2053,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataOrControlPDU(BYTE * fr
   switch (socket.GetErrorNumber(PChannel::LastReadError)) {
     case ECONNRESET :
     case ECONNREFUSED :
+    case EHOSTUNREACH :
+    case ENETUNREACH :
       return HandleUnreachable(PTRACE_PARAM(channelName)) ? e_IgnorePacket : e_AbortTransport;
 
     case EMSGSIZE :
