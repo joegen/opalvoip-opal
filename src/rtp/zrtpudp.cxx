@@ -190,9 +190,8 @@ PBoolean OpalZrtp_UDP::WriteZrtpData(RTP_DataFrame & frame) {
 								frame.GetHeaderSize()+frame.GetPayloadSize(),
 								remoteAddress, remoteDataPort))
     {
-		switch (dataSocket->GetErrorNumber()) {
-			case ECONNRESET :
-			case ECONNREFUSED :
+		switch (dataSocket->GetErrorCode(LastWriteError)) {
+			case PChannel::Unavailable :
     			break;
 			default:
 				return false;

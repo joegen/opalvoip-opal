@@ -286,9 +286,8 @@ void H323Transactor::HandleTransactions(PThread &, P_INT_PTR)
           break;
 
         default :
-          switch (transport->GetErrorNumber(PChannel::LastReadError)) {
-            case ECONNRESET:
-            case ECONNREFUSED:
+          switch (transport->GetErrorCode(PChannel::LastReadError)) {
+            case PChannel::Unavailable :
               PTRACE(2, "Trans\tCannot access remote " << transport->GetRemoteAddress());
               break;
 

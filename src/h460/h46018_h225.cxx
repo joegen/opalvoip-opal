@@ -166,7 +166,7 @@ PBoolean H46018Transport::HandleH46018SignallingSocket(H323SignalPDU & pdu)
     H323SignalPDU rpdu;
     if (!rpdu.Read(*this)) { 
       PTRACE(3, "H46018\tSocket Read Failure");
-      if (GetErrorNumber(PChannel::LastReadError) == 0) {
+      if (GetErrorCode(PChannel::LastReadError) == PChannel::NoError) {
         PTRACE(3, "H46018\tRemote SHUT DOWN or Intermediary Shutdown!");
         remoteShutDown = true;
       }
@@ -777,12 +777,9 @@ void H46019UDPSocket::SendRTPPing(const PIPSocket::Address & ip, const WORD & po
 
   rtp.SetMarker(TRUE);
 
-  if (!Internal_WriteTo(rtp.GetPointer(),
-    rtp.GetHeaderSize()+rtp.GetPayloadSize(),
-    ip, port)) {
-      switch (GetErrorNumber()) {
-      case ECONNRESET :
-      case ECONNREFUSED :
+  if (!Internal_WriteTo(rtp.GetPointer(), rtp.GetHeaderSize()+rtp.GetPayloadSize(), ip, port)) {
+    switch (GetErrorCode(LastWriteError)) {
+      case PChannel::Unavailable :
         PTRACE(2, "H46019UDP\t" << ip << ":" << port << " not ready.");
         break;
 
@@ -791,7 +788,7 @@ void H46019UDPSocket::SendRTPPing(const PIPSocket::Address & ip, const WORD & po
           << ", Write error on port ("
           << GetErrorNumber(PChannel::LastWriteError) << "): "
           << GetErrorText(PChannel::LastWriteError));
-      }
+    }
   } else {
     PTRACE(6, "H46019UDP\tRTP KeepAlive sent: " << ip << ":" << port << " seq: " << keepseqno);    
     keepseqno++;
@@ -813,11 +810,9 @@ void H46019UDPSocket::SendRTCPPing()
 
 PBoolean H46019UDPSocket::SendRTCPFrame(RTP_ControlFrame & report, const PIPSocket::Address & ip, WORD port) {
 
-  if (!Internal_WriteTo(report.GetPointer(),report.GetSize(),
-    ip, port)) {
-      switch (GetErrorNumber()) {
-      case ECONNRESET :
-      case ECONNREFUSED :
+  if (!Internal_WriteTo(report.GetPointer(),report.GetSize(), ip, port)) {
+    switch (GetErrorCode(LastWriteError)) {
+      case PChannel::Unavailable :
         PTRACE(2, "H46019UDP\t" << ip << ":" << port << " not ready.");
         break;
 
@@ -982,11 +977,9 @@ void H46019UDPSocket::Probe(PTimer &, P_INT_PTR)
   report.SetSize(4+sizeof(probe_packet));
   BuildProbe(report, true);
 
-  if (!PUDPSocket::WriteTo(report.GetPointer(),report.GetSize(),
-    m_altAddr, m_altPort)) {
-      switch (GetErrorNumber()) {
-      case ECONNRESET :
-      case ECONNREFUSED :
+  if (!PUDPSocket::WriteTo(report.GetPointer(),report.GetSize(), m_altAddr, m_altPort)) {
+    switch (GetErrorCode(LastWriteError)) {
+      case PChannel::Unavailable :
         PTRACE(2, "H46024A\t" << m_altAddr << ":" << m_altPort << " not ready.");
         break;
 
