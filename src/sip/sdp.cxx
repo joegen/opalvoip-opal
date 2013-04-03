@@ -1381,8 +1381,10 @@ SDPVideoMediaDescription::Format::Format(SDPVideoMediaDescription & parent)
   , m_minRxHeight(0)
   , m_maxRxWidth(0)
   , m_maxRxHeight(0)
-  , m_txWidth(0)
-  , m_txHeight(0)
+  , m_minTxWidth(0)
+  , m_minTxHeight(0)
+  , m_maxTxWidth(0)
+  , m_maxTxHeight(0)
 {
 }
 
@@ -1413,6 +1415,20 @@ bool SDPVideoMediaDescription::Format::PreEncode()
 }
 
 
+static bool AdjustResolution(OpalMediaFormat & mediaFormat, const PString & name, unsigned value, bool lower)
+{
+  if (value == 0)
+    return false;
+
+  unsigned oldValue = mediaFormat.GetOptionInteger(name);
+  if (lower ? (value < oldValue) : (value > oldValue)) {
+    mediaFormat.SetOptionInteger(name, value);
+    PTRACE(4, "SDP\tAdjusted " << mediaFormat << " option \"" << name << "\" from " << oldValue << " to " << value);
+  }
+
+  return true;
+}
+
 void SDPVideoMediaDescription::Format::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
 {
   SDPMediaFormat::SetMediaFormatOptions(mediaFormat);
@@ -1421,23 +1437,21 @@ void SDPVideoMediaDescription::Format::SetMediaFormatOptions(OpalMediaFormat & m
   if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb && !m_parent.GetOptionStrings().GetBoolean(OPAL_OPT_FORCE_RTCP_FB))
     mediaFormat.SetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), m_rtcp_fb);
 
-  bool add = false;
-  if (m_txWidth && m_txHeight) {
-    mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), m_txWidth);
-    mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), m_txHeight);
-    add = true;
-  }
-
-  if (m_minRxWidth && m_minRxHeight && m_maxRxWidth && m_maxRxHeight) {
-    mediaFormat.SetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption(), m_minRxWidth);
-    mediaFormat.SetOptionInteger(OpalVideoFormat::MinRxFrameHeightOption(), m_minRxHeight);
-    mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption(), m_maxRxWidth);
-    mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(), m_maxRxHeight);
-    add = true;
-  }
-
-  if (add)
+  if ((
+        AdjustResolution(mediaFormat, OpalVideoFormat::FrameWidthOption(),  m_minTxWidth,  true) &&
+        AdjustResolution(mediaFormat, OpalVideoFormat::FrameHeightOption(), m_minTxHeight, true) &&
+        AdjustResolution(mediaFormat, OpalVideoFormat::FrameWidthOption(),  m_maxTxWidth,  false) &&
+        AdjustResolution(mediaFormat, OpalVideoFormat::FrameHeightOption(), m_maxTxHeight, false)
+      ) ||
+      (
+        AdjustResolution(mediaFormat, OpalVideoFormat::MinRxFrameWidthOption(),  m_minRxWidth,  true) &&
+        AdjustResolution(mediaFormat, OpalVideoFormat::MinRxFrameHeightOption(), m_minRxHeight, true) &&
+        AdjustResolution(mediaFormat, OpalVideoFormat::MaxRxFrameWidthOption(),  m_maxRxWidth,  false) &&
+        AdjustResolution(mediaFormat, OpalVideoFormat::MaxRxFrameHeightOption(), m_maxRxHeight, false)
+      )) {
     mediaFormat.SetOptionBoolean(OpalVideoFormat::UseImageAttributeInSDP(), true);
+    PTRACE(4, "SDP\tEnabled imageattr in reply");
+  }
 }
 
 
@@ -1530,16 +1544,20 @@ void SDPVideoMediaDescription::Format::ParseImageAttr(const PString & params)
         }
 
         if (attrName == "x") {
-          if (sendAttr)
-            m_txWidth = maximum;
+          if (sendAttr) {
+            m_minTxWidth = minimum;
+            m_maxTxWidth = maximum;
+          }
           else {
             m_minRxWidth = minimum;
             m_maxRxWidth = maximum;
           }
         }
         else {
-          if (sendAttr)
-            m_txHeight = maximum;
+          if (sendAttr) {
+            m_minTxHeight = minimum;
+            m_maxTxHeight = maximum;
+          }
           else {
             m_minRxHeight = minimum;
             m_maxRxHeight = maximum;
@@ -1575,9 +1593,10 @@ void SDPVideoMediaDescription::Format::ParseImageAttr(const PString & params)
 
   // Allow response SDP to include imageattr
   PTRACE(4, "SDP\tparsed imageattr:"
-            " minRx=" << m_minRxWidth << 'x' << m_minRxHeight
+             " minRx=" << m_minRxWidth << 'x' << m_minRxHeight
           << " maxRx=" << m_maxRxWidth << 'x' << m_maxRxHeight
-          << " tx=" << m_txWidth << 'x' << m_txHeight);
+          << " minTx=" << m_minTxWidth << 'x' << m_minTxHeight
+          << " maxTx=" << m_maxTxWidth << 'x' << m_maxTxHeight);
 }
 
 
