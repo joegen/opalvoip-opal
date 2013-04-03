@@ -2736,9 +2736,11 @@ void SIPTransactionOwner::FinaliseForking(SIPTransaction & transaction, SIP_PDU 
   if (!m_transactions.Remove(&transaction))
     return;
 
-  OpalTransport * transport = transaction.GetTransport();
-  if (PAssertNULL(transport) == NULL || !transport->LockReadWrite())
+  OpalTransportPtr transport = transaction.GetTransport();
+  if (PAssertNULL(transport) == NULL)
     return;
+
+  m_forkMutex.Wait();
 
   // Finally end connect mode on the transport
   PString localInterface = transaction.GetInterface();
@@ -2748,7 +2750,7 @@ void SIPTransactionOwner::FinaliseForking(SIPTransaction & transaction, SIP_PDU 
     PTRACE(4, "SIP\tSet local interface to " << localInterface);
   }
 
-  transport->UnlockReadWrite();
+  m_forkMutex.Signal();
 
   // About any transactions on a different interface, they are forks that have
   // been resolved.
@@ -2837,9 +2839,6 @@ SIP_PDU::StatusCodes SIPTransactionOwner::StartTransaction(const OpalTransport::
 
   PTRACE_CONTEXT_ID_SET(transport, function);
 
-  if (!transport->LockReadWrite())
-    return SIP_PDU::Local_TransportLost;
-
   reason = SIP_PDU::Local_TransportError;
 
   if (GetInterface().IsEmpty()) {
@@ -2848,14 +2847,16 @@ SIP_PDU::StatusCodes SIPTransactionOwner::StartTransaction(const OpalTransport::
       reason = SIP_PDU::Successful_OK;
   }
   else {
+    m_forkMutex.Wait();
+
     // We contacted the server on an interface last time, assume it still works!
     bool succeeded = false;
     function(*transport, succeeded);
     if (succeeded)
       reason = SIP_PDU::Successful_OK;
-  }
 
-  transport->UnlockReadWrite();
+    m_forkMutex.Signal();
+  }
 
   return reason;
 }

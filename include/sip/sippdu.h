@@ -924,13 +924,19 @@ class SIPPoolTimer : public PPoolTimerArg3<SIPTimeoutWorkItem<Target_T>,
                                            void (Target_T::*)(),
                                            SIPWorkItem>
 {
-    typedef PPoolTimerArg3<SIPTimeoutWorkItem<Target_T>, SIPEndPoint &, PString, void (Target_T::*)(), SIPWorkItem> BaseClass;
+    typedef SIPTimeoutWorkItem<Target_T> Work_T;
+    typedef PPoolTimerArg3<Work_T, SIPEndPoint &, PString, void (Target_T::*)(), SIPWorkItem> BaseClass;
     PCLASSINFO(SIPPoolTimer, BaseClass);
+  private:
+    PString m_token;
   public:
     SIPPoolTimer(SIPThreadPool & pool, SIPEndPoint & ep, const PString & token, void (Target_T::* callback)())
       : BaseClass(pool, ep, token, callback)
+      , m_token(token)
     {
     }
+
+    virtual const char * GetGroup(const Work_T &) const { return m_token; }
 
     PTIMER_OPERATORS(SIPPoolTimer);
 };
@@ -989,6 +995,7 @@ class SIPTransactionOwner
     unsigned            m_authenticateErrors;
 
     PSafeList<SIPTransaction> m_transactions;
+    PMutex                    m_forkMutex;
 
   friend class SIPTransaction;
 };
