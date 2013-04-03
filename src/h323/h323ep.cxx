@@ -782,12 +782,9 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
 
   // if there is no gatekeeper, try altarnate address lookup methods
   if (gatekeeper == NULL) {
-    PString hostname = url.GetHostName();
-
-    // No host, so lets try ENUM on the username part
-    if (hostname.IsEmpty()) {
+    if (url.GetHostName().IsEmpty()) {
+      // No host, so lets try ENUM on the username part, and only has digits and +
       PString username = url.GetUserName();
-      // make sure the number has only digits and +
       if (OpalIsE164(username)) {
         PString newName;
         if (PDNS::ENUMLookup(username, "E2U+h323", newName)) {
@@ -797,28 +794,31 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
       }
     }
 
+    /* URL default for H.323 is if no @ then is username, but that does
+       not make sense when no GK, so we switch to being a host only */
+    if (url.GetHostName().IsEmpty()) {
+      url.SetHostName(url.GetUserName());
+      url.SetUserName(PString::Empty());
+    }
+
     // If it is a valid IP address then can't be a domain so do not try SRV record lookup
-    if (!hostname.IsEmpty()) {
-      PIPSocket::Address ip = hostname;
-      if (!ip.IsValid()) {
-        PIPSocketAddressAndPortVector addresses;
-        if (PDNS::LookupSRV(hostname, "_h323cs._tcp", url.GetPort(), addresses) && !addresses.empty()) {
-          // Only use first entry
-          url.SetHostName(addresses[0].GetAddress().AsString());
-          url.SetPort(addresses[0].GetPort());
-        }
+    if (!PIPSocket::Address(url.GetHostName()).IsValid() && !url.GetPortSupplied()) {
+      PIPSocketAddressAndPortVector addresses;
+      if (PDNS::LookupSRV(url.GetHostName(), "_h323cs._tcp", url.GetPort(), addresses) && !addresses.empty()) {
+        // Only use first entry
+        url.SetHostName(addresses[0].GetAddress().AsString());
+        url.SetPort(addresses[0].GetPort());
       }
     }
   }
 
 #endif // OPAL_PTLIB_DNS_RESOLVER
 
-  alias = url.GetUserName();
-
   address = url.GetHostName();
   if (!address && url.GetPort() != 0)
     address.sprintf(":%u", url.GetPort());
 
+  alias = url.GetUserName();
   if (alias.IsEmpty() && address.IsEmpty()) {
     PTRACE(1, "H323\tAttempt to use invalid URL \"" << remoteParty << '"');
     return false;
