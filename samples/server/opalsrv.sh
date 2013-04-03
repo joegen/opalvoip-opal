@@ -2,19 +2,25 @@
 
 NAME=opalsrv
 DIR=$HOME/.opalsrv
-EXE=`ls ./obj*[^d]/$NAME`
+PROG=`ls ./obj*[^d]/$NAME`
+ARGS="--pid-file $DIR/${NAME}.pid --ini-file $DIR/${NAME}.ini --log-file $DIR/${NAME}.log"
 
 case $1 in
   start )
-    OP="--daemon"
+    COMMAND="$PROG $ARGS --daemon"
   ;;
 
   stop )
-    OP="--kill"
+    COMMAND+="$PROG $ARGS --kill"
   ;;
 
   status )
-    OP="--status"
+    COMMAND+="$PROG $ARGS --status"
+  ;;
+
+  debug )
+    PROG=`ls ./obj*d/$NAME`
+    COMMAND="gdb -tui --args $PROG --execute $ARGS --execute"
   ;;
 
   log )
@@ -28,7 +34,7 @@ case $1 in
   ;;
 esac
 
-if [ ! -x $EXE ]; then
+if [ ! -x $PROG ]; then
   echo "No executable found"
   exit 1
 fi
@@ -41,7 +47,5 @@ if [ -n "$OPALDIR" -a -z "$PTLIBPLUGINDIR" ]; then
   export PTLIBPLUGINDIR=`ls -d $OPALDIR/lib*/plugins`
 fi
 
-$EXE --pid-file $DIR/${NAME}.pid \
-     --ini-file $DIR/${NAME}.ini \
-     --log-file $DIR/${NAME}.log \
-     $OP
+$COMMAND
+
