@@ -178,13 +178,26 @@ class OpalIVREndPoint : public OpalLocalEndPoint
     PString GetDefaultTextToSpeech() const
     { return m_defaultTTS; }
 
+    /**Get the text to speach cache directory to use.
+      */
+    const PDirectory & GetCacheDir() const { return m_ttsCache.GetDirectory(); }
+
+    /**Set the text to speach cache directory to use.
+      */
+    void SetCacheDir(
+      const PDirectory & dir
+    ) { m_ttsCache.SetDirectory(dir); }
   //@}
+
+    // Allow users to override cache algorithm
+    virtual PVXMLCache & GetTextToSpeechCache() { return m_ttsCache; }
 
   protected:
     PString             m_defaultVXML;
     OpalMediaFormatList m_defaultMediaFormats;
     PString             m_defaultTTS;
     PMutex              m_defaultsMutex;
+    PVXMLCache          m_ttsCache;
 
   private:
     P_REMOVE_VIRTUAL(OpalIVRConnection *, CreateConnection(OpalCall &,const PString &,void *,const PString &,OpalConnection::StringOptions *),0);

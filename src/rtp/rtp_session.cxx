@@ -171,13 +171,13 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_reportTimer(0, 12)  // Seconds
   , m_closeOnBye(false)
   , m_byeSent(false)
-  , m_localAddress(0)
+  , m_localAddress(PIPSocket::GetInvalidAddress())
   , m_localDataPort(0)
   , m_localControlPort(0)
-  , m_remoteAddress(0)
+  , m_remoteAddress(PIPSocket::GetInvalidAddress())
   , m_remoteDataPort(0)
   , m_remoteControlPort(0)
-  , m_remoteTransmitAddress(0)
+  , m_remoteTransmitAddress(PIPSocket::GetInvalidAddress())
   , m_dataSocket(NULL)
   , m_controlSocket(NULL)
   , m_shutdownRead(false)
@@ -2012,6 +2012,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataOrControlPDU(BYTE * fr
   WORD port;
 
   if (socket.ReadFrom(framePtr, frameSize, addr, port)) {
+    // Ignore one byte packet, likely from the block breaker in OpalRTPSession::Shutdown()
+    if (socket.GetLastReadCount() == 1 && addr == m_localAddress)
+      return e_IgnorePacket;
+
     // If remote address never set from higher levels, then try and figure
     // it out from the first packet received.
     if (!m_remoteAddress.IsValid()) {
@@ -2046,23 +2050,22 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataOrControlPDU(BYTE * fr
     return e_ProcessPacket;
   }
 
-  switch (socket.GetErrorNumber(PChannel::LastReadError)) {
-    case ECONNRESET :
-    case ECONNREFUSED :
+  switch (socket.GetErrorCode(PChannel::LastReadError)) {
+    case PChannel::Unavailable :
       return HandleUnreachable(PTRACE_PARAM(channelName)) ? e_IgnorePacket : e_AbortTransport;
 
-    case EMSGSIZE :
+    case PChannel::BufferTooSmall :
       PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", " << channelName
              << " read packet too large for buffer of " << frameSize << " bytes.");
       return e_IgnorePacket;
 
-    case EAGAIN :
+    case PChannel::Interrupted :
       PTRACE(4, "RTP_UDP\tSession " << m_sessionId << ", " << channelName
              << " read packet interrupted.");
       // Shouldn't happen, but it does.
       return e_IgnorePacket;
 
-    case 0 :
+    case PChannel::NoError :
       PTRACE(3, "RTP_UDP\tSession " << m_sessionId << ", " << channelName
              << " received UDP packet with no payload.");
       return e_IgnorePacket;
@@ -2216,9 +2219,8 @@ bool OpalRTPSession::WriteDataOrControlPDU(const BYTE * framePtr, PINDEX frameSi
   WORD port = toDataChannel ? m_remoteDataPort : m_remoteControlPort;
 
   while (!socket.WriteTo(framePtr, frameSize, m_remoteAddress, port)) {
-    switch (socket.GetErrorNumber(PChannel::LastWriteError)) {
-      case ECONNRESET :
-      case ECONNREFUSED :
+    switch (socket.GetErrorCode(PChannel::LastWriteError)) {
+      case PChannel::Unavailable :
         if (HandleUnreachable(PTRACE_PARAM(toDataChannel ? "Data" : "Control")))
           break;
         return false;

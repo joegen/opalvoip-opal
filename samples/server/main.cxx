@@ -92,6 +92,7 @@ static const char EnableCAPIKey[] = "CAPI ISDN";
 
 #if OPAL_IVR
 static const char VXMLKey[] = "VXML Script";
+static const char IVRCacheKey[] = "TTS Cache Directory";
 #endif
 
 #if OPAL_SCRIPT
@@ -106,12 +107,14 @@ static const char RouteAPartyKey[] = "A Party";
 static const char RouteBPartyKey[] = "B Party";
 static const char RouteDestKey[]   = "Destination";
 
+#define CONFERENCE_NAME "conference"
+
 static const char * const DefaultRoutes[] = {
 #if OPAL_IVR
   ".*:.*\t#|.*:#=ivr:",
 #endif
-#if OPAL_MIXER
-  ".*:.*\t.*conference.*=mcu:<dn>",
+#if OPAL_HAS_MIXER
+  ".*:.*\t.*"CONFERENCE_NAME".*=mcu:<du>",
 #endif
 #if OPAL_LID
   "pots:\\+*[0-9]+ = tel:<dn>",
@@ -367,6 +370,9 @@ MyManager::MyManager()
 #if OPAL_IVR
   , m_ivrEP(NULL)
 #endif
+#if OPAL_HAS_MIXER
+  , m_mcuEP(NULL)
+#endif
 {
   // Make sure codecs are loaded
   GetOpalG722();
@@ -390,9 +396,6 @@ MyManager::MyManager()
   GetOpalH264_MODE0();
   GetOpalH264_MODE1();
   //GetOpalMPEG4();
-
-  SetAutoStartReceiveVideo(false);
-  SetAutoStartTransmitVideo(false);
 #endif
 }
 
@@ -434,6 +437,13 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #if OPAL_IVR
   if (m_ivrEP == NULL)
     m_ivrEP = new OpalIVREndPoint(*this);
+#endif
+
+#if OPAL_HAS_MIXER
+  if (m_mcuEP == NULL) {
+    m_mcuEP = new OpalMixerEndPoint(*this, "mcu");
+    m_mcuEP->AddNode(new OpalMixerNodeInfo(CONFERENCE_NAME));
+  }
 #endif
 
   // General parameters for all endpoint types
@@ -622,12 +632,21 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
 
 #if OPAL_IVR
-  // Set IVR protocol handler
-  PString vxml = cfg.GetString(VXMLKey);
-  rsrc->Add(new PHTTPStringField(VXMLKey, 0, vxml,
-            "Interactive Voice Response VXML script, may be a URL or the actual VXML", 10, 80));
-  if (!vxml)
-    m_ivrEP->SetDefaultVXML(vxml);
+  {
+    // Set IVR protocol handler
+    PString vxml = cfg.GetString(VXMLKey);
+    rsrc->Add(new PHTTPStringField(VXMLKey, 0, vxml,
+              "Interactive Voice Response VXML script, may be a URL or the actual VXML", 10, 80));
+    if (!vxml)
+      m_ivrEP->SetDefaultVXML(vxml);
+  }
+
+  {
+    PDirectory dir = cfg.GetString(IVRCacheKey, m_ivrEP->GetCacheDir());
+    rsrc->Add(new PHTTPStringField(IVRCacheKey, 0, dir,
+              "Interactive Voice Response directory to cache Text To Speech phrases", 1, 50));
+    m_ivrEP->SetCacheDir(dir);
+  }
 #endif
 
 #if OPAL_SCRIPT
