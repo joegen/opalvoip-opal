@@ -433,8 +433,10 @@ class SDPVideoMediaDescription : public SDPRTPAVPMediaDescription
         unsigned m_minRxHeight;
         unsigned m_maxRxWidth;
         unsigned m_maxRxHeight;
-        unsigned m_txWidth;
-        unsigned m_txHeight;
+        unsigned m_minTxWidth;
+        unsigned m_minTxHeight;
+        unsigned m_maxTxWidth;
+        unsigned m_maxTxHeight;
     };
 
     OpalVideoFormat::RTCPFeedback m_rtcp_fb;
