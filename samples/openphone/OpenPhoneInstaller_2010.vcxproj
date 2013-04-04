@@ -147,7 +147,7 @@
       <FileType>Document</FileType>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compiling WiX ...</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(WIX)\bin\candle" -nologo -dMSVCRT_VER=90 -out "$(IntDir)%(Filename).wixobj" "%(FullPath)"
-"$(WIX)\bin\light" -nologo -ext WixUIExtension -out "$(OutDir)OpenPhone.msi" "$(IntDir)%(Filename).wixobj"</Command>
+"$(WIX)\bin\light" -nologo -sice:ICE03 -sice:ICE82 -ext WixUIExtension -out "$(OutDir)OpenPhone.msi" "$(IntDir)%(Filename).wixobj"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)OpenPhone.msi;%(Outputs)</Outputs>
       <SubType>Designer</SubType>
     </CustomBuild>
