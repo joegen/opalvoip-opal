@@ -443,6 +443,9 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #if OPAL_HAS_MIXER
   if (m_mcuEP == NULL) {
     m_mcuEP = new OpalMixerEndPoint(*this, "mcu");
+    OpalMixerNodeInfo adHoc;
+    adHoc.m_closeOnEmpty = true;
+    m_mcuEP->SetAdHocNodeInfo(adHoc);
     m_mcuEP->AddNode(new OpalMixerNodeInfo(CONFERENCE_NAME));
   }
 #endif
