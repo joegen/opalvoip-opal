@@ -187,6 +187,9 @@ class OpalIVREndPoint : public OpalLocalEndPoint
     void SetCacheDir(
       const PDirectory & dir
     ) { m_ttsCache.SetDirectory(dir); }
+
+    void SetRecordDirectory(const PDirectory & dir) { m_recordDirectory = dir; }
+    const PDirectory & GetRecordDirectory() const   { return m_recordDirectory; }
   //@}
 
     // Allow users to override cache algorithm
@@ -198,6 +201,7 @@ class OpalIVREndPoint : public OpalLocalEndPoint
     PString             m_defaultTTS;
     PMutex              m_defaultsMutex;
     PVXMLCache          m_ttsCache;
+    PDirectory          m_recordDirectory;
 
   private:
     P_REMOVE_VIRTUAL(OpalIVRConnection *, CreateConnection(OpalCall &,const PString &,void *,const PString &,OpalConnection::StringOptions *),0);
