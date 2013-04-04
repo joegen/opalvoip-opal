@@ -435,7 +435,17 @@ void OpalConnection::OnReleaseThreadMain(PThread & PTRACE_PARAM(thread), P_INT_P
 {
   PTRACE_CONTEXT_ID_TO(thread);
 
-  OnReleased();
+  /* Do a brief lock here to avoid race conditions where an operation (e.g. a
+     SIP re-INVITE) was started before release, but has not yet finished. Once
+     that operation has finished, no new operations should happen as they will
+     check GetPhase() for connection released before proceeding.
+     
+     Note, call to UnlockReadOnly() is BEFORE the call to OnReleased(), it is
+     up to OnReleased() to manage it's locking regime. */
+  if (LockReadOnly()) {
+    UnlockReadOnly();
+    OnReleased();
+  }
 
   PTRACE(4, "OpalCon\tOnRelease thread completed for " << *this);
 
