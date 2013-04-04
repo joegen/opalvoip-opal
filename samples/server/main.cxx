@@ -93,6 +93,7 @@ static const char EnableCAPIKey[] = "CAPI ISDN";
 #if OPAL_IVR
 static const char VXMLKey[] = "VXML Script";
 static const char IVRCacheKey[] = "TTS Cache Directory";
+static const char IVRRecordDirKey[] = "Record Message Directory";
 #endif
 
 #if OPAL_SCRIPT
@@ -442,6 +443,9 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #if OPAL_HAS_MIXER
   if (m_mcuEP == NULL) {
     m_mcuEP = new OpalMixerEndPoint(*this, "mcu");
+    OpalMixerNodeInfo adHoc;
+    adHoc.m_closeOnEmpty = true;
+    m_mcuEP->SetAdHocNodeInfo(adHoc);
     m_mcuEP->AddNode(new OpalMixerNodeInfo(CONFERENCE_NAME));
   }
 #endif
@@ -646,6 +650,11 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     rsrc->Add(new PHTTPStringField(IVRCacheKey, 0, dir,
               "Interactive Voice Response directory to cache Text To Speech phrases", 1, 50));
     m_ivrEP->SetCacheDir(dir);
+
+    dir = cfg.GetString(IVRRecordDirKey, m_ivrEP->GetRecordDirectory());
+    rsrc->Add(new PHTTPStringField(IVRRecordDirKey, 0, dir,
+              "Interactive Voice Response directory to save recorded messages", 1, 50));
+    m_ivrEP->SetRecordDirectory(dir);
   }
 #endif
 
