@@ -23,6 +23,10 @@
 
     <Media Id='1' Cabinet='OpenPhone.cab' EmbedCab='yes' DiskPrompt='CD-ROM #1' />
     <Property Id='DiskPrompt' Value="Open Phone 3.10 Installation [1]" />
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
+     
+    <UIRef Id="WixUI_InstallDir" />
+    <UIRef Id="WixUI_ErrorProgressText" />
 
     <Directory Id='TARGETDIR' Name='SourceDir'>
       <Directory Id='ProgramFilesFolder' Name='PFiles'>
@@ -280,14 +284,19 @@
 
     <Icon Id="OpenPhone.ico" SourceFile=".\OpenPhone.ico" />
 
-    <Feature Id='Complete' Level='1'>
+    <Feature Id='Complete'
+             Title='Open Phone'
+             Description='Full install'
+             Display='expand'
+             ConfigurableDirectory='INSTALLDIR'
+             Level='1'>
       <ComponentRef Id='MainExecutable' />
       <ComponentRef Id='ProgramMenuDir' />
     </Feature>
 
     <Feature Id='Codecs'
              Title="OPAL Codec Plug-ins"
-             Level='1'>
+             Level='2'>
       <ComponentRef Id='G.722' />
       <ComponentRef Id='G.722.1' />
       <ComponentRef Id='G.722.2' />
@@ -325,7 +334,7 @@
     </Feature>
 
     <Feature Id='PTLib'
-             Title="Portable Tool Library"
+             Title="Portable Tools Library"
              AllowAdvertise="no"
              Display="hidden"
              Level='1'>
