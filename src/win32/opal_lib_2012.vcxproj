@@ -83,12 +83,15 @@
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">
     <ConfigurationType>StaticLibrary</ConfigurationType>
+    <AndroidAPILevel>android-14</AndroidAPILevel>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">
     <ConfigurationType>StaticLibrary</ConfigurationType>
+    <AndroidAPILevel>android-14</AndroidAPILevel>
   </PropertyGroup>
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|Android'">
     <ConfigurationType>StaticLibrary</ConfigurationType>
+    <AndroidAPILevel>android-14</AndroidAPILevel>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -122,13 +125,11 @@
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\</IntDir>
     <TargetName>opalsd</TargetName>
     <IncludePath>$(ProjectDir)..\..\lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\..\..\ptlib\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\</IntDir>
     <TargetName>opal64sd</TargetName>
     <IncludePath>$(ProjectDir)..\..\lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\..\..\ptlib\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>..\..\lib\</OutDir>
@@ -146,25 +147,21 @@
     <IntDir>$(OutDir)$(Configuration)\</IntDir>
     <TargetName>opals</TargetName>
     <IncludePath>$(ProjectDir)..\..\lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\..\..\ptlib\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\</IntDir>
     <TargetName>opal64s</TargetName>
     <IncludePath>$(ProjectDir)..\..\lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\..\..\ptlib\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">
     <IntDir>$(OutDir)$(Configuration)\</IntDir>
     <TargetName>opalsn</TargetName>
     <IncludePath>$(ProjectDir)..\..\lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\..\..\ptlib\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\</IntDir>
     <TargetName>opal64sn</TargetName>
     <IncludePath>$(ProjectDir)..\..\lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\..\..\ptlib\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">
     <OutDir>$(ProjectDir)..\..\Lib\$(Platform)\</OutDir>
@@ -318,7 +315,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">
     <ClCompile>
-      <PreprocessorDefinitions>P_TRACING=1</PreprocessorDefinitions>
+      <PreprocessorDefinitions>P_TRACING=0</PreprocessorDefinitions>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Lib />
@@ -1574,22 +1571,22 @@
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)\..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)\..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd $(ProjectDir)\..\..
-configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform) --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%
+configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform)\ --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cd $(ProjectDir)\..\..
-configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform) --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%
+configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform)\ --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">cd $(ProjectDir)\..\..
-configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform) --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%
+configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform)\ --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">cd $(ProjectDir)\..\..
-configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform) --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%
+configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform)\ --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd $(ProjectDir)\..\..
-configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform) --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%
+configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform)\ --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cd $(ProjectDir)\..\..
-configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform) --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%
+configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform)\ --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%
 </Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)\..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)\..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
@@ -1803,6 +1800,47 @@ copy "%(RootDir)%(Directory)\java_swig_wrapper.cxx" "%(RootDir)%(Directory)\java
 exit 0
 </Command>
     </CustomBuild>
+    <None Include="..\java\OPAL.java" />
+    <None Include="..\java\OpalCallEndReason.java" />
+    <None Include="..\java\OPALConstants.java" />
+    <None Include="..\java\OpalContext.java" />
+    <None Include="..\java\OpalEchoCancelMode.java" />
+    <None Include="..\java\OPALJNI.java" />
+    <None Include="..\java\OpalLineAppearanceStates.java" />
+    <None Include="..\java\OpalMediaDataType.java" />
+    <None Include="..\java\OpalMediaStates.java" />
+    <None Include="..\java\OpalMediaTiming.java" />
+    <None Include="..\java\OpalMessage.java" />
+    <None Include="..\java\OpalMessageParam.java" />
+    <None Include="..\java\OpalMessagePtr.java" />
+    <None Include="..\java\OpalMessageType.java" />
+    <None Include="..\java\OpalParamAnswerCall.java" />
+    <None Include="..\java\OpalParamCallCleared.java" />
+    <None Include="..\java\OpalParamGeneral.java" />
+    <None Include="..\java\OpalParamProtocol.java" />
+    <None Include="..\java\OpalParamRecording.java" />
+    <None Include="..\java\OpalParamRegistration.java" />
+    <None Include="..\java\OpalParamSetUpCall.java" />
+    <None Include="..\java\OpalParamSetUserData.java" />
+    <None Include="..\java\OpalProductDescription.java" />
+    <None Include="..\java\OpalRegistrationStates.java" />
+    <None Include="..\java\OpalSilenceDetectMode.java" />
+    <None Include="..\java\OpalStatusCallCleared.java" />
+    <None Include="..\java\OpalStatusIncomingCall.java" />
+    <None Include="..\java\OpalStatusIVR.java" />
+    <None Include="..\java\OpalStatusLineAppearance.java" />
+    <None Include="..\java\OpalStatusMediaStream.java" />
+    <None Include="..\java\OpalStatusMessageWaiting.java" />
+    <None Include="..\java\OpalStatusRegistration.java" />
+    <None Include="..\java\OpalStatusTransferCall.java" />
+    <None Include="..\java\OpalStatusUserInput.java" />
+    <None Include="..\java\OpalUserInputModes.java" />
+    <None Include="..\java\OpalVideoRecordMixMode.java" />
+    <None Include="..\java\SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int.java" />
+    <None Include="..\java\SWIGTYPE_p_f_p_q_const__OpalMessage__int.java" />
+    <None Include="..\java\SWIGTYPE_p_OpalHandleStruct.java" />
+    <None Include="..\java\SWIGTYPE_p_OpalMessage.java" />
+    <None Include="..\java\SWIGTYPE_p_void.java" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\ptlib\src\ptlib\msos\Console_2012.vcxproj">
