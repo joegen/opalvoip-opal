@@ -714,7 +714,6 @@ class OpalRTPSession : public OpalMediaSession
     bool shutdownRead;
     bool shutdownWrite;
     bool appliedQOS;
-    bool remoteIsNAT;
     bool localHasNAT;
     bool m_firstControl;
 
