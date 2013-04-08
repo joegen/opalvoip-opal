@@ -112,6 +112,18 @@
     <Filter Include="Source Files\SWIG\Java Files">
       <UniqueIdentifier>{f5b9cb75-61b3-4f16-86b9-b171460a4bd8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\OS">
+      <UniqueIdentifier>{530100f5-343e-4e8b-a233-cff99c242ca0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\OS\Win64">
+      <UniqueIdentifier>{c174df58-4f50-4364-8f11-8f44d32ed4d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\OS\Win32">
+      <UniqueIdentifier>{8ab9d849-f663-41fe-92da-c4ac0ef8c1ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\OS\Android">
+      <UniqueIdentifier>{eef1cb49-cb0b-41b8-99cc-a06e880e2434}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\asn\h4506.cxx">
@@ -1067,9 +1079,6 @@
     <ClInclude Include="..\lids\capi_win32.h">
       <Filter>Source Files\LIDs</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\opal\buildopts.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\opal\mediasession.h">
       <Filter>Header Files\OPAL</Filter>
     </ClInclude>
@@ -1207,6 +1216,15 @@
     </ClInclude>
     <ClInclude Include="..\rtp\libsrtp\Win32\config.h">
       <Filter>Source Files\RTP\libSRTP\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\lib\Win32\include\opal\buildopts.h">
+      <Filter>Header Files\OS\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\lib\x64\include\opal\buildopts.h">
+      <Filter>Header Files\OS\Win64</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\lib\Android\include\opal\buildopts.h">
+      <Filter>Header Files\OS\Android</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

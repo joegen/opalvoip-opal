@@ -121,12 +121,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\</IntDir>
     <TargetName>opalsd</TargetName>
-    <IncludePath>$(ProjectDir)..\..\lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\Lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\</IntDir>
     <TargetName>opal64sd</TargetName>
-    <IncludePath>$(ProjectDir)..\..\lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\Lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>..\..\lib\</OutDir>
@@ -143,42 +143,42 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IntDir>$(OutDir)$(Configuration)\</IntDir>
     <TargetName>opals</TargetName>
-    <IncludePath>$(ProjectDir)..\..\lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\Lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\</IntDir>
     <TargetName>opal64s</TargetName>
-    <IncludePath>$(ProjectDir)..\..\lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\Lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">
     <IntDir>$(OutDir)$(Configuration)\</IntDir>
     <TargetName>opalsn</TargetName>
-    <IncludePath>$(ProjectDir)..\..\lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\Lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\</IntDir>
     <TargetName>opal64sn</TargetName>
-    <IncludePath>$(ProjectDir)..\..\lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\Lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">
     <OutDir>$(ProjectDir)..\..\Lib\$(Platform)\</OutDir>
     <IntDir>$(ProjectDir)..\..\Lib\$(Platform)\$(Configuration)\</IntDir>
     <TargetName>libopalsd</TargetName>
-    <IncludePath>$(ProjectDir)..\..\Lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(AndroidIncludeDir);$(AndroidStlIncludeDir)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\Lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(AndroidIncludeDir);$(AndroidStlIncludeDir)</IncludePath>
     <LibraryPath>$(ProjectDir)..\..\Lib\$(Platform);$(ProjectDir)..\..\..\ptlib\Lib\$(Platform);$(AndroidLibDir);$(AndroidStlLibPath);</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">
     <OutDir>$(ProjectDir)..\..\Lib\$(Platform)\</OutDir>
     <IntDir>$(ProjectDir)..\..\Lib\$(Platform)\$(Configuration)\</IntDir>
     <TargetName>libopalsn</TargetName>
-    <IncludePath>$(ProjectDir)..\..\Lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(AndroidIncludeDir);$(AndroidStlIncludeDir)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\Lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(AndroidIncludeDir);$(AndroidStlIncludeDir)</IncludePath>
     <LibraryPath>$(ProjectDir)..\..\Lib\$(Platform);$(ProjectDir)..\..\..\ptlib\Lib\$(Platform);$(AndroidLibDir);$(AndroidStlLibPath);</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Android'">
     <OutDir>$(ProjectDir)..\..\Lib\$(Platform)\</OutDir>
     <IntDir>$(ProjectDir)..\..\Lib\$(Platform)\$(Configuration)\</IntDir>
     <TargetName>libopals</TargetName>
-    <IncludePath>$(ProjectDir)..\..\Lib\$(Platform);$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform);$(ProjectDir)..\..\..\ptlib\include;$(AndroidIncludeDir);$(AndroidStlIncludeDir)</IncludePath>
+    <IncludePath>$(ProjectDir)..\..\Lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(AndroidIncludeDir);$(AndroidStlIncludeDir)</IncludePath>
     <LibraryPath>$(ProjectDir)..\..\Lib\$(Platform);$(ProjectDir)..\..\..\ptlib\Lib\$(Platform);$(AndroidLibDir);$(AndroidStlLibPath);</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -1470,7 +1470,6 @@
     <ClInclude Include="..\..\include\lids\lidplugin.h" />
     <ClInclude Include="..\..\include\lids\lidpluginmgr.h" />
     <ClInclude Include="..\..\include\opal.h" />
-    <ClInclude Include="..\..\include\opal\buildopts.h" />
     <ClInclude Include="..\..\include\opal\call.h" />
     <ClInclude Include="..\..\include\opal\connection.h" />
     <ClInclude Include="..\..\include\opal\console_mgr.h" />
@@ -1510,6 +1509,9 @@
     <ClInclude Include="..\..\include\t38\h323t38.h" />
     <ClInclude Include="..\..\include\t38\sipt38.h" />
     <ClInclude Include="..\..\include\t38\t38proto.h" />
+    <ClInclude Include="..\..\lib\Android\include\opal\buildopts.h" />
+    <ClInclude Include="..\..\lib\Win32\include\opal\buildopts.h" />
+    <ClInclude Include="..\..\lib\x64\include\opal\buildopts.h" />
     <ClInclude Include="..\..\revision.h" />
     <ClInclude Include="..\lids\capi_linux.h" />
     <ClInclude Include="..\lids\capi_win32.h" />
@@ -1555,12 +1557,12 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">Configuring Build Options</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Configuring Build Options</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Configuring Build Options</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\..\Lib\$(Platform)\opal\buildopts.h;%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)..\..\Lib\$(Platform)\opal\buildopts.h;%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(ProjectDir)..\..\Lib\$(Platform)\opal\buildopts.h;%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">$(ProjectDir)..\..\Lib\$(Platform)\opal\buildopts.h;%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\..\Lib\$(Platform)\opal\buildopts.h;%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)..\..\Lib\$(Platform)\opal\buildopts.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal\buildopts.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal\buildopts.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal\buildopts.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal\buildopts.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal\buildopts.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal\buildopts.h;%(Outputs)</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)\..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)\..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(ProjectDir)\..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
@@ -1589,20 +1591,20 @@ configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform)\ --no-search --exclude
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)\..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)\..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">cd $(ProjectDir)\..\..
-configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform) --no-search --disable-capi --disable-dahdi --disable-lid --disable-t38 --disable-aec --disable-iax2 --disable-h323 --disable-video
+configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform)\ --no-search --disable-capi --disable-dahdi --disable-lid --disable-t38 --disable-aec --disable-iax2 --disable-h323 --disable-video
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">cd $(ProjectDir)\..\..
-configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform) --no-search --disable-capi --disable-dahdi --disable-lid --disable-t38 --disable-aec --disable-iax2 --disable-h323 --disable-video
+configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform)\ --no-search --disable-capi --disable-dahdi --disable-lid --disable-t38 --disable-aec --disable-iax2 --disable-h323 --disable-video
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Android'">cd $(ProjectDir)\..\..
-configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform) --no-search --disable-capi --disable-dahdi --disable-lid --disable-t38 --disable-aec --disable-iax2 --disable-h323 --disable-video
+configure -Dcfg_prefix=$(ProjectDir)..\..\Lib\$(Platform)\ --no-search --disable-capi --disable-dahdi --disable-lid --disable-t38 --disable-aec --disable-iax2 --disable-h323 --disable-video
 </Command>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">Configuring Build Options</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">Configuring Build Options</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Android'">Configuring Build Options</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\..\Lib\$(Platform)\opal\buildopts.h</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\..\Lib\$(Platform)\opal\buildopts.h</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\..\Lib\$(Platform)\opal\buildopts.h</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal\buildopts.h</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal\buildopts.h</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal\buildopts.h</Outputs>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
