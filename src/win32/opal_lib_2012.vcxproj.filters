@@ -1288,5 +1288,128 @@
       <Filter>ASN Files</Filter>
     </None>
     <None Include="..\..\configure.ac" />
+    <None Include="..\java\SWIGTYPE_p_OpalMessage.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\SWIGTYPE_p_void.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OPAL.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalCallEndReason.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OPALConstants.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalContext.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalEchoCancelMode.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OPALJNI.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalLineAppearanceStates.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalMediaDataType.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalMediaStates.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalMediaTiming.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalMessage.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalMessageParam.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalMessagePtr.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalMessageType.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalParamAnswerCall.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalParamCallCleared.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalParamGeneral.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalParamProtocol.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalParamRecording.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalParamRegistration.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalParamSetUpCall.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalParamSetUserData.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalProductDescription.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalRegistrationStates.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalSilenceDetectMode.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalStatusCallCleared.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalStatusIncomingCall.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalStatusIVR.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalStatusLineAppearance.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalStatusMediaStream.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalStatusMessageWaiting.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalStatusRegistration.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalStatusTransferCall.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalStatusUserInput.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalUserInputModes.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\OpalVideoRecordMixMode.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\SWIGTYPE_p_f_p_q_const__OpalMessage__int.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\java\SWIGTYPE_p_OpalHandleStruct.java">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
