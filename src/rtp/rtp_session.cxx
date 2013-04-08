@@ -147,8 +147,9 @@ OpalRTPSession::OpalRTPSession(OpalConnection & conn, unsigned sessionId, const 
   , m_metrics(NULL)
 #endif
   , m_reportTimer(0, 12)  // Seconds
-  , remoteAddress(0)
-  , remoteTransmitAddress(0)
+  , localAddress(PIPSocket::GetInvalidAddress())
+  , remoteAddress(PIPSocket::GetInvalidAddress())
+  , remoteTransmitAddress(PIPSocket::GetInvalidAddress())
   , m_noTransmitErrors(0)
 {
   ignorePayloadTypeChanges = true;
@@ -2012,6 +2013,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataOrControlPDU(BYTE * fr
   WORD port;
 
   if (socket.ReadFrom(framePtr, frameSize, addr, port)) {
+    // Ignore one byte packet, likely from the block breaker in OpalRTPSession::Shutdown()
+    if (socket.GetLastReadCount() == 1 && addr == localAddress)
+      return e_IgnorePacket;
+
     // If remote address never set from higher levels, then try and figure
     // it out from the first packet received.
     if (!remoteAddress.IsValid()) {
