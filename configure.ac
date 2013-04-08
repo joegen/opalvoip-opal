@@ -689,13 +689,13 @@ dnl ########################################################################
 dnl Output files
 dnl ########################################################################
 
-if test "$exec_prefix" != "NONE" ; then
+if test -n "$exec_profix" -a "$exec_prefix" != "NONE" ; then
   cfg_prefix=$exec_prefix/
 fi
 
 AC_CONFIG_FILES(make/opal_defs.mak)
 AC_CONFIG_FILES(make/toplevel.mak)
-AC_CONFIG_HEADERS(${cfg_prefix}include//opal/buildopts.h:include/opal/buildopts.h.in)
+AC_CONFIG_HEADERS(${cfg_prefix}include/opal/buildopts.h:include/opal/buildopts.h.in)
 AC_CONFIG_FILES(opal.pc)
 AC_CONFIG_FILES(opal.spec)
 AC_CONFIG_FILES(opal_cfg.dxy)
