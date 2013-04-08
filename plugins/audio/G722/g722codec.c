@@ -270,6 +270,7 @@ static struct PluginCodec_Definition g722CodecDefn[] =
     PluginCodec_MediaTypeAudio |          // audio codec
     PluginCodec_InputTypeRaw |            // raw input data
     PluginCodec_OutputTypeRaw |           // raw output data
+    PluginCodec_EmptyPayload |            // Can accept and empty payload
     PluginCodec_RTPTypeExplicit,          // specified RTP type
 
     g722,                                 // text decription
