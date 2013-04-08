@@ -1,15 +1,21 @@
 Building OpenPhone
 ==================
 
-Last updated, 26 November 2007
+Last updated, 5 Apr 2013
 
+OpenPhone support Windows, Linux and Mac OS X.
+OpenPhone is the fully featured example of everything that OPAL does
+(SIP, H.323, H.239, Send FAX , GateKeeper, Start IM, Presence, Recording
+and Send Audio File, etc)
 
-OpenPhone is based onw wxWidgets so as well as all the usual PWLib and
+A precompiled Windows installer is available on Source Forge.
+
+OpenPhone is based on wxWidgets, so as well as all the usual PTLib and
 OPAL stuff, you also have to get wxWidgets installed and compiled before
-you can get OpenPhone built.
+you can get OpenPhone built. Though, many Linux distributions will have it
+as a system isntallable package.
 
 You can get wxWidgets from http://www.wxwidgets.org
-
 
 Before we start, the assumption is (since you are reading this) that you
 already have PWLib and OPAL installed, AND BUILT.
@@ -55,6 +61,9 @@ You should now be able to open %OPALDIR%/opal_samples_2003.sln or
 
 For Linux:
 ----------
+If a yum or apt-get package is available for your distribution, then you can
+skip this section.
+
   1.  Download the tar file, eg wxGTK-2.8.4.tar.gz, or later.
 
   2.  Unpack it somewhere, you don't need to be root (yet)
@@ -87,12 +96,29 @@ You should now be able to go to $OPALDIR/samples/openphone and do "make opt".
 For Mac OS-X
 ------------
 
-  1.  Use mac ports to install wxWidgets.
+  1.  Use mac ports to install wxWidgets. For Lion and Mountain Lion this is
+      very straightforward as the 64 bit version 2.9 of wxWidgets is \
+      supported.
+
+      Alternatively, download stable version at:
+         http://sourceforge.net/projects/wxwindows/files/2.8.12/wxMac-2.8.12.tar.gz/download?use_mirror=iweb
+	    and follow instructions at:
+         http://stackoverflow.com/questions/5341189/how-to-use-wxwidgets-in-mac
+
+      For 64bit support download V2.9.x
+         http://hivelocity.dl.sourceforge.net/project/wxwindows/2.9.4/wxWidgets-2.9.4.tar.bz2
+      or try latest at:
+         http://sourceforge.net/projects/wxwindows/files/latest/download
 
   2.  Build PTLib/OPAL as per OPAL VoIP web site, with one additional caveat.
-      If you are using 64 bit Snow Leopard, you must configure with the
-      --enable-force32 option as wxWidgets only supports 32 bit OS-X at the
-      time of writing.
+
+      If you are using 64 bit Snow Leopard (OS X 10.6) or other 64bit OS X,
+      you must configure with the --enable-force32 option as wxWidgets only
+      supports 32 bit OS-X at the time of writing.
+
+  	  Version 2.9 or later of wxWidgets supports 64bit on OS X.
+        See: http://wiki.wxwidgets.org/Development:_wxMac#Building_under_10.6_Snow_Leopard
+        and http://stackoverflow.com/questions/8675304/cant-compile-wxwidget-application-for-macosx
 
 You should now be able to go to $OPALDIR/samples/openphone and do "make".
 
