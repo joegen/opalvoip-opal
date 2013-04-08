@@ -149,7 +149,6 @@ OpalRTPSession::OpalRTPSession(OpalConnection & conn, unsigned sessionId, const 
   , m_reportTimer(0, 12)  // Seconds
   , remoteAddress(0)
   , remoteTransmitAddress(0)
-  , remoteIsNAT(false)
   , m_noTransmitErrors(0)
 {
   ignorePayloadTypeChanges = true;
@@ -1571,8 +1570,9 @@ OpalMediaStream * OpalRTPSession::CreateMediaStream(const OpalMediaFormat & medi
                                                     unsigned sessionId, 
                                                     bool isSource)
 {
-  if (PAssert(m_sessionId == sessionId && m_mediaType == mediaFormat.GetMediaType(), PLogicError))
-    return new OpalRTPMediaStream(dynamic_cast<OpalRTPConnection &>(m_connection),
+  OpalRTPConnection * rtpConn = dynamic_cast<OpalRTPConnection *>(&m_connection);
+  if (PAssert(rtpConn != NULL && m_sessionId == sessionId && m_mediaType == mediaFormat.GetMediaType(), PLogicError))
+    return new OpalRTPMediaStream(*rtpConn,
                                   mediaFormat, isSource, *this,
                                   m_connection.GetMinAudioJitterDelay(),
                                   m_connection.GetMaxAudioJitterDelay());
@@ -1776,7 +1776,7 @@ bool OpalRTPSession::Open(const PString & localInterface)
          << " ssrc=" << syncSourceOut);
 
   OpalRTPEndPoint * ep = dynamic_cast<OpalRTPEndPoint *>(&m_connection.GetEndPoint());
-  if (PAssert(ep != NULL, "RTP createed by non OpalRTPEndPoint derived class"))
+  if (PAssert(ep != NULL, PLogicError))
     ep->SetConnectionByRtpLocalPort(this, &m_connection);
 
   return true;
@@ -1790,7 +1790,7 @@ bool OpalRTPSession::Close()
   m_reportTimer.Stop(true);
 
   OpalRTPEndPoint * ep = dynamic_cast<OpalRTPEndPoint *>(&m_connection.GetEndPoint());
-  if (ep != NULL)
+  if (PAssert(ep != NULL, PLogicError))
     ep->SetConnectionByRtpLocalPort(this, NULL);
 
   // We need to do this to make sure that the sockets are not
@@ -1877,9 +1877,12 @@ PString OpalRTPSession::GetLocalHostName()
 
 bool OpalRTPSession::InternalSetRemoteAddress(PIPSocket::Address address, WORD port, bool isDataPort)
 {
-  if (remoteIsNAT) {
-    PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", ignoring remote socket info as remote is behind NAT");
-    return true;
+  {
+    OpalRTPConnection * rtpConn = dynamic_cast<OpalRTPConnection *>(&m_connection);
+    if (PAssert(rtpConn != NULL, PLogicError) && rtpConn->RemoteIsNAT()) {
+      PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", ignoring remote socket info as remote is behind NAT");
+      return true;
+    }
   }
 
   if (!PAssert(address.IsValid() && port != 0,PInvalidParameter))
