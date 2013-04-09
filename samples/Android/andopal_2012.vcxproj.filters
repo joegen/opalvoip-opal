@@ -25,6 +25,9 @@
     <None Include="res\drawable\icon.png">
       <Filter>Resources</Filter>
     </None>
+    <None Include="res\menu\popup.xml">
+      <Filter>Resources</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Build">
