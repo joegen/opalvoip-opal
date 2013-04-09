@@ -300,6 +300,7 @@ static PProcess::CodeStatus GetCodeStatus(const PString & str)
   return PProcess::ReleaseCode;
 }
 
+
 struct OpalHandleStruct
 {
   OpalHandleStruct(unsigned version, const PArgList & args)
@@ -315,7 +316,7 @@ struct OpalHandleStruct
       m_process.SetConfigurationPath(args.GetOptionString("config"));
 
     if (args.HasOption("plugin"))
-      PPluginManager::AddPluginDirs(args.GetOptionString("plugin"));
+      PPluginManager::GetPluginManager().SetDirectories(args.GetOptionString("plugin").Lines());
 
     m_process.Startup();
 
