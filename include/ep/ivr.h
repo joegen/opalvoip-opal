@@ -95,7 +95,7 @@ class OpalIVREndPoint : public OpalLocalEndPoint
        mean that the connection will succeed, only that an attempt is being
        made.
 
-       The default behaviour is pure.
+       The default behaviour sets up an IVR connection.
      */
     virtual PSafePtr<OpalConnection> MakeConnection(
       OpalCall & call,          ///<  Owner of connection
@@ -113,7 +113,7 @@ class OpalIVREndPoint : public OpalLocalEndPoint
        Note that a specific connection may not actually support all of the
        media formats returned here, but should return no more.
 
-       The default behaviour is pure.
+       The default behaviour returns the basic media formats for PCM/YUV.
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
   //@}
@@ -216,7 +216,7 @@ class OpalIVRConnection : public OpalLocalConnection
   public:
   /**@name Construction */
   //@{
-    /**Create a new endpoint.
+    /**Create a new connection.
      */
     OpalIVRConnection(
       OpalCall & call,            ///<  Owner calll for connection
@@ -227,7 +227,7 @@ class OpalIVRConnection : public OpalLocalConnection
       OpalConnection::StringOptions * stringOptions = NULL
     );
 
-    /**Destroy endpoint.
+    /**Destroy connection.
      */
     ~OpalIVRConnection();
   //@}
@@ -298,7 +298,7 @@ class OpalIVRConnection : public OpalLocalConnection
        protocol. This function is not the only way a stream can come into
        existance.
 
-       The default behaviour is pure.
+       The default behaviour creates a OpalIVRMediaStream.
      */
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
