@@ -9311,14 +9311,13 @@ $as_echo "\"\${libdir}/$PLUGIN_DIR\"" >&6; }
 
 
 
-cfg_prefix=$libdir
-if test "$exec_prefix" = "NONE" ; then
-  cfg_prefix=./include
+if test -n "$exec_profix" -a "$exec_prefix" != "NONE" ; then
+  cfg_prefix=$exec_prefix/
 fi
 
 ac_config_files="$ac_config_files make/opal_defs.mak"
 
-ac_config_headers="$ac_config_headers ${cfg_prefix}/opal/buildopts.h:include/opal/buildopts.h.in"
+ac_config_headers="$ac_config_headers ${cfg_prefix}include/opal/buildopts.h:include/opal/buildopts.h.in"
 
 ac_config_files="$ac_config_files opal.pc"
 
@@ -10020,7 +10019,7 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "make/opal_defs.mak") CONFIG_FILES="$CONFIG_FILES make/opal_defs.mak" ;;
-    "${cfg_prefix}/opal/buildopts.h") CONFIG_HEADERS="$CONFIG_HEADERS ${cfg_prefix}/opal/buildopts.h:include/opal/buildopts.h.in" ;;
+    "${cfg_prefix}include/opal/buildopts.h") CONFIG_HEADERS="$CONFIG_HEADERS ${cfg_prefix}include/opal/buildopts.h:include/opal/buildopts.h.in" ;;
     "opal.pc") CONFIG_FILES="$CONFIG_FILES opal.pc" ;;
     "opal.spec") CONFIG_FILES="$CONFIG_FILES opal.spec" ;;
     "opal_cfg.dxy") CONFIG_FILES="$CONFIG_FILES opal_cfg.dxy" ;;
