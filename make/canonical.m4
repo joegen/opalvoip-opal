@@ -144,6 +144,10 @@ AC_DEFUN([MY_CANONICAL_TARGET], [
          target_64bit=0
       ;;
 
+      aarch64* )
+         target_64bit=1
+      ;;
+
       * )
          AC_MSG_WARN([CPU \"$target_cpu\" not recognized - assuming 32 bit])
          target_64bit=0
@@ -161,10 +165,14 @@ AC_DEFUN([MY_CANONICAL_TARGET], [
 
       if test "$target_os" = "Darwin"; then
          CFLAGS="$CFLAGS -arch i386"
+         PTLIB_CFLAGS="$PTLIB_CFLAGS -arch i386"
          LDFLAGS="$LDFLAGS -arch i386"
+         LDSOFLAGS="$LDSOFLAGS -arch i386"
       else
          CFLAGS="$CFLAGS -m32"
+         PTLIB_CFLAGS="$PTLIB_CFLAGS -m32"
          LDFLAGS="$LDFLAGS -m32"
+         LDSOFLAGS="$LDSOFLAGS -m32"
       fi
 
       AC_MSG_NOTICE(Forcing 32 bit x86 compile)

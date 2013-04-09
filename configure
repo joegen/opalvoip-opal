@@ -3946,6 +3946,10 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
          target_64bit=0
       ;;
 
+      aarch64* )
+         target_64bit=1
+      ;;
+
       * )
          { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: CPU \"$target_cpu\" not recognized - assuming 32 bit" >&5
 $as_echo "$as_me: WARNING: CPU \"$target_cpu\" not recognized - assuming 32 bit" >&2;}
@@ -3968,10 +3972,14 @@ fi
 
       if test "$target_os" = "Darwin"; then
          CFLAGS="$CFLAGS -arch i386"
+         PTLIB_CFLAGS="$PTLIB_CFLAGS -arch i386"
          LDFLAGS="$LDFLAGS -arch i386"
+         LDSOFLAGS="$LDSOFLAGS -arch i386"
       else
          CFLAGS="$CFLAGS -m32"
+         PTLIB_CFLAGS="$PTLIB_CFLAGS -m32"
          LDFLAGS="$LDFLAGS -m32"
+         LDSOFLAGS="$LDSOFLAGS -m32"
       fi
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: Forcing 32 bit x86 compile" >&5
