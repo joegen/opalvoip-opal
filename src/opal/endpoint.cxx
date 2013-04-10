@@ -143,8 +143,10 @@ PBoolean OpalEndPoint::StartListeners(const PStringArray & listenerAddresses)
   PStringArray interfaces = listenerAddresses;
   if (interfaces.IsEmpty()) {
     interfaces = GetDefaultListeners();
-    if (interfaces.IsEmpty())
+    if (interfaces.IsEmpty()) {
+      PTRACE(1, "OpalMan", "No default listener interfaces specified for " << GetPrefixName());
       return false;
+    }
   }
 
   PBoolean startedOne = false;
@@ -183,8 +185,10 @@ PBoolean OpalEndPoint::StartListener(const OpalTransportAddress & listenerAddres
 
   if (iface.IsEmpty()) {
     PStringArray interfaces = GetDefaultListeners();
-    if (interfaces.IsEmpty())
+    if (interfaces.IsEmpty()) {
+      PTRACE(1, "OpalMan", "No default listener interfaces specified for " << GetPrefixName());
       return false;
+    }
     iface = OpalTransportAddress(interfaces[0], GetDefaultSignalPort());
   }
 
@@ -194,17 +198,13 @@ PBoolean OpalEndPoint::StartListener(const OpalTransportAddress & listenerAddres
     return false;
   }
 
-  if (StartListener(listener))
-    return true;
-
-  PTRACE(1, "OpalEP\tCould not start listener: " << iface);
-  return false;
+  return StartListener(listener);
 }
 
 
 PBoolean OpalEndPoint::StartListener(OpalListener * listener)
 {
-  if (listener == NULL)
+  if (PAssertNULL(listener) == NULL)
     return false;
 
   OpalListenerUDP * udpListener = dynamic_cast<OpalListenerUDP *>(listener);
@@ -215,6 +215,7 @@ PBoolean OpalEndPoint::StartListener(OpalListener * listener)
   // stopping the listener thread. This is good - it means that the 
   // listener Close function will appear to have stopped the thread
   if (!listener->Open(PCREATE_NOTIFIER(NewIncomingConnection))) {
+    PTRACE(1, "OpalEP\tCould not start listener: " << *listener);
     delete listener;
     return false;
   }
@@ -223,10 +224,12 @@ PBoolean OpalEndPoint::StartListener(OpalListener * listener)
   return true;
 }
 
+
 PString OpalEndPoint::GetDefaultTransport() const
 {
   return OpalTransportAddress::TcpPrefix();
 }
+
 
 PStringArray OpalEndPoint::GetDefaultListeners() const
 {
