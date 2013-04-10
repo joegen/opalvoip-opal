@@ -1,0 +1,321 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A3F5BCC7170D448600FB97F9 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3F5BCC6170D448600FB97F9 /* UIKit.framework */; };
+		A3F5BCC9170D448600FB97F9 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3F5BCC8170D448600FB97F9 /* Foundation.framework */; };
+		A3F5BCCB170D448600FB97F9 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3F5BCCA170D448600FB97F9 /* CoreGraphics.framework */; };
+		A3F5BCD1170D448600FB97F9 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A3F5BCCF170D448600FB97F9 /* InfoPlist.strings */; };
+		A3F5BCD3170D448600FB97F9 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = A3F5BCD2170D448600FB97F9 /* main.m */; };
+		A3F5BCD7170D448600FB97F9 /* iOpalAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = A3F5BCD6170D448600FB97F9 /* iOpalAppDelegate.m */; };
+		A3F5BCD9170D448600FB97F9 /* Default.png in Resources */ = {isa = PBXBuildFile; fileRef = A3F5BCD8170D448600FB97F9 /* Default.png */; };
+		A3F5BCDB170D448700FB97F9 /* Default@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = A3F5BCDA170D448700FB97F9 /* Default@2x.png */; };
+		A3F5BCDD170D448700FB97F9 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = A3F5BCDC170D448700FB97F9 /* Default-568h@2x.png */; };
+		A3F5BCE0170D448700FB97F9 /* MainStoryboard.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A3F5BCDE170D448700FB97F9 /* MainStoryboard.storyboard */; };
+		A3F5BCE3170D448700FB97F9 /* iOpalViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A3F5BCE2170D448700FB97F9 /* iOpalViewController.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A3F5BCC3170D448600FB97F9 /* iOPAL.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iOPAL.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A3F5BCC6170D448600FB97F9 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		A3F5BCC8170D448600FB97F9 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		A3F5BCCA170D448600FB97F9 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		A3F5BCCE170D448600FB97F9 /* iOPAL-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "iOPAL-Info.plist"; sourceTree = "<group>"; };
+		A3F5BCD0170D448600FB97F9 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		A3F5BCD2170D448600FB97F9 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		A3F5BCD4170D448600FB97F9 /* iOPAL-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "iOPAL-Prefix.pch"; sourceTree = "<group>"; };
+		A3F5BCD5170D448600FB97F9 /* iOpalAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = iOpalAppDelegate.h; sourceTree = "<group>"; };
+		A3F5BCD6170D448600FB97F9 /* iOpalAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = iOpalAppDelegate.m; sourceTree = "<group>"; };
+		A3F5BCD8170D448600FB97F9 /* Default.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Default.png; sourceTree = "<group>"; };
+		A3F5BCDA170D448700FB97F9 /* Default@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default@2x.png"; sourceTree = "<group>"; };
+		A3F5BCDC170D448700FB97F9 /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default-568h@2x.png"; sourceTree = "<group>"; };
+		A3F5BCDF170D448700FB97F9 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = en; path = en.lproj/MainStoryboard.storyboard; sourceTree = "<group>"; };
+		A3F5BCE1170D448700FB97F9 /* iOpalViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = iOpalViewController.h; sourceTree = "<group>"; };
+		A3F5BCE2170D448700FB97F9 /* iOpalViewController.m */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = iOpalViewController.m; sourceTree = "<group>"; wrapsLines = 0; xcLanguageSpecificationIdentifier = xcode.lang.objcpp; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A3F5BCC0170D448600FB97F9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A3F5BCC7170D448600FB97F9 /* UIKit.framework in Frameworks */,
+				A3F5BCC9170D448600FB97F9 /* Foundation.framework in Frameworks */,
+				A3F5BCCB170D448600FB97F9 /* CoreGraphics.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A3F5BCBA170D448600FB97F9 = {
+			isa = PBXGroup;
+			children = (
+				A3F5BCCC170D448600FB97F9 /* iOPAL */,
+				A3F5BCC5170D448600FB97F9 /* Frameworks */,
+				A3F5BCC4170D448600FB97F9 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A3F5BCC4170D448600FB97F9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A3F5BCC3170D448600FB97F9 /* iOPAL.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A3F5BCC5170D448600FB97F9 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A3F5BCC6170D448600FB97F9 /* UIKit.framework */,
+				A3F5BCC8170D448600FB97F9 /* Foundation.framework */,
+				A3F5BCCA170D448600FB97F9 /* CoreGraphics.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		A3F5BCCC170D448600FB97F9 /* iOPAL */ = {
+			isa = PBXGroup;
+			children = (
+				A3F5BCD5170D448600FB97F9 /* iOpalAppDelegate.h */,
+				A3F5BCD6170D448600FB97F9 /* iOpalAppDelegate.m */,
+				A3F5BCDE170D448700FB97F9 /* MainStoryboard.storyboard */,
+				A3F5BCE1170D448700FB97F9 /* iOpalViewController.h */,
+				A3F5BCE2170D448700FB97F9 /* iOpalViewController.m */,
+				A3F5BCCD170D448600FB97F9 /* Supporting Files */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		A3F5BCCD170D448600FB97F9 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				A3F5BCCE170D448600FB97F9 /* iOPAL-Info.plist */,
+				A3F5BCCF170D448600FB97F9 /* InfoPlist.strings */,
+				A3F5BCD2170D448600FB97F9 /* main.m */,
+				A3F5BCD4170D448600FB97F9 /* iOPAL-Prefix.pch */,
+				A3F5BCD8170D448600FB97F9 /* Default.png */,
+				A3F5BCDA170D448700FB97F9 /* Default@2x.png */,
+				A3F5BCDC170D448700FB97F9 /* Default-568h@2x.png */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A3F5BCC2170D448600FB97F9 /* iOPAL */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A3F5BCE6170D448700FB97F9 /* Build configuration list for PBXNativeTarget "iOPAL" */;
+			buildPhases = (
+				A3F5BCBF170D448600FB97F9 /* Sources */,
+				A3F5BCC0170D448600FB97F9 /* Frameworks */,
+				A3F5BCC1170D448600FB97F9 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = iOPAL;
+			productName = iOPAL;
+			productReference = A3F5BCC3170D448600FB97F9 /* iOPAL.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A3F5BCBB170D448600FB97F9 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				CLASSPREFIX = iOpal;
+				LastUpgradeCheck = 0460;
+				ORGANIZATIONNAME = "Vox Lucida Pty. Ltd.";
+			};
+			buildConfigurationList = A3F5BCBE170D448600FB97F9 /* Build configuration list for PBXProject "iOPAL" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = A3F5BCBA170D448600FB97F9;
+			productRefGroup = A3F5BCC4170D448600FB97F9 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A3F5BCC2170D448600FB97F9 /* iOPAL */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A3F5BCC1170D448600FB97F9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A3F5BCD1170D448600FB97F9 /* InfoPlist.strings in Resources */,
+				A3F5BCD9170D448600FB97F9 /* Default.png in Resources */,
+				A3F5BCDB170D448700FB97F9 /* Default@2x.png in Resources */,
+				A3F5BCDD170D448700FB97F9 /* Default-568h@2x.png in Resources */,
+				A3F5BCE0170D448700FB97F9 /* MainStoryboard.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A3F5BCBF170D448600FB97F9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A3F5BCD3170D448600FB97F9 /* main.m in Sources */,
+				A3F5BCD7170D448600FB97F9 /* iOpalAppDelegate.m in Sources */,
+				A3F5BCE3170D448700FB97F9 /* iOpalViewController.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		A3F5BCCF170D448600FB97F9 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A3F5BCD0170D448600FB97F9 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		A3F5BCDE170D448700FB97F9 /* MainStoryboard.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A3F5BCDF170D448700FB97F9 /* en */,
+			);
+			name = MainStoryboard.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		A3F5BCE4170D448700FB97F9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		A3F5BCE5170D448700FB97F9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
+				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
+				SDKROOT = iphoneos;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A3F5BCE7170D448700FB97F9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "src/iOPAL-Prefix.pch";
+				HEADER_SEARCH_PATHS = ../../include;
+				INFOPLIST_FILE = "src/iOPAL-Info.plist";
+				LIBRARY_SEARCH_PATHS = (
+					../../lib_iPhoneSimulator_x86,
+					"\"$(SRCROOT)/../../lib_iPhoneSimulator_x86\"",
+				);
+				OTHER_LDFLAGS = "-lopal_d";
+				"PRELINK_LIBS[arch=*]" = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Debug;
+		};
+		A3F5BCE8170D448700FB97F9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "src/iOPAL-Prefix.pch";
+				HEADER_SEARCH_PATHS = ../../include;
+				INFOPLIST_FILE = "src/iOPAL-Info.plist";
+				LIBRARY_SEARCH_PATHS = (
+					../../lib_iPhoneSimulator_x86,
+					"\"$(SRCROOT)/../../lib_iPhoneSimulator_x86\"",
+				);
+				OTHER_LDFLAGS = "-lopal";
+				PRELINK_LIBS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A3F5BCBE170D448600FB97F9 /* Build configuration list for PBXProject "iOPAL" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A3F5BCE4170D448700FB97F9 /* Debug */,
+				A3F5BCE5170D448700FB97F9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A3F5BCE6170D448700FB97F9 /* Build configuration list for PBXNativeTarget "iOPAL" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A3F5BCE7170D448700FB97F9 /* Debug */,
+				A3F5BCE8170D448700FB97F9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A3F5BCBB170D448600FB97F9 /* Project object */;
+}
