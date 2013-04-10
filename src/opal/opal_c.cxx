@@ -1424,7 +1424,7 @@ static void StartStopListeners(OpalEndPoint * ep, const PString & interfaces, Op
   if (interfaces != "*")
     interfaceArray = interfaces.Lines();
   if (!ep->StartListeners(interfaceArray))
-    response.SetError("Could not start listener(s).");
+    response.SetError(PSTRSTRM("Could not start " << ep->GetPrefixName() << " listener(s) " << interfaces));
 }
 
 
@@ -1460,7 +1460,7 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
 
   OpalEndPoint * ep = FindEndPoint(command.m_param.m_protocol.m_prefix);
   if (ep == NULL) {
-    response.SetError("No such protocol prefix");
+    response.SetError(PSTRSTRM("No such protocol prefix as " << command.m_param.m_protocol.m_prefix));
     return;
   }
 
@@ -1521,7 +1521,7 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
 {
   OpalEndPoint * ep = FindEndPoint(command.m_param.m_registrationInfo.m_protocol);
   if (ep == NULL) {
-    response.SetError("No such protocol prefix");
+    response.SetError(PSTRSTRM("No such protocol prefix as " << command.m_param.m_registrationInfo.m_protocol));
     return;
   }
 
