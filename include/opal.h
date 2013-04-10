@@ -214,7 +214,7 @@ typedef void (OPAL_EXPORT *OpalShutDownFunction)(OpalHandle opal);
             HandleHangUp(message);
             break;
         }
-        FreeMessageFunction(message);
+        OpalFreeMessage(message);
       }
       </code>
   */
@@ -1342,6 +1342,33 @@ struct OpalMessage {
 };
 
 
+#define OPALMSG_INIT(msg,type,field) (memset(&(msg), 0, sizeof(msg)),(msg).m_type=type,&(msg).m_param.field)
+  
+/// Initialise an OpalMessage for OpalCmdSetGeneralParameters, returns OpalParamGeneral*.
+#define OPALMSG_GENERAL_PARAM(msg) OPALMSG_INIT(msg,OpalCmdSetGeneralParameters,m_general)
+  
+/// Initialise an OpalMessage for OpalCmdSetProtocolParameters, returns OpalParamProtocol*.
+#define OPALMSG_PROTO_PARAM(msg) OPALMSG_INIT(msg,OpalCmdSetProtocolParameters,m_protocol)
+  
+/// Initialise an OpalMessage for OpalCmdRegistration, returns OpalParamRegistration*.
+#define OPALMSG_REGISTRATION(msg) OPALMSG_INIT(msg,OpalCmdRegistration,m_registrationInfo)
+  
+/// Initialise an OpalMessage for OpalCmdSetUpCall, returns OpalParamSetUpCall*.
+#define OPALMSG_SETUP_CALL(msg) OPALMSG_INIT(msg,OpalCmdSetUpCall,m_callSetUp)
+  
+/// Initialise an OpalMessage for OpalCmdAnswerCall, returns OpalParamAnswerCall*.
+#define OPALMSG_ANSWER_CALL(msg) OPALMSG_INIT(msg,OpalCmdAnswerCall,m_answerCall)
+  
+/// Initialise an OpalMessage for OpalCmdClearCall, returns OpalParamCallCleared*.
+#define OPALMSG_CLEAR_CALL(msg) OPALMSG_INIT(msg,OpalCmdClearCall,m_clearCall)
+
+/// Initialise an OpalMessage for OpalCmdSetUserData, returns OpalParamSetUserData*.
+#define OPALMSG_SET_USER_DATA(msg) OPALMSG_INIT(msg,OpalCmdSetUserData,m_setUserData)
+  
+/// Initialise an OpalMessage for OpalCmdStartRecording, returns OpalParamRecording*.
+#define OPALMSG_START_RECORDING(msg) OPALMSG_INIT(msg,OpalCmdStartRecording,m_recording)
+  
+  
 #ifdef __cplusplus
 };
 #endif
