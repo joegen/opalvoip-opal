@@ -58,15 +58,34 @@ ENDLDLIBS+= $(shell $(WX_CONFIG) --libs)
 openphone.cxx : openphone.xrc
 	wxrc openphone.xrc -c -o openphone.cxx
 
+ifeq ($(DEBUG_BUILD),yes)
+
+bundle: $(TARGET)
+
+else # DEBUG
+
+BUNDLE_DIR := ./$(PROG).app
+PROG_AND_LIBS =\
+  $(TARGET) \
+  $(OPAL_LIBDIR)/$(RELEASE_LIB_FILENAME_SHARED_PAT) \
+  `find $(OPAL_LIBDIR) -name \*plugin.$(SHAREDLIBEXT)` \
+  $(PTLIB_LIBDIR)/$(PTLIB_SONAME) \
+  `find $(PTLIB_LIBDIR) -name \*plugin.$(SHAREDLIBEXT)`
+
+bundle: $(BUNDLE_DIR)
 
 ifneq ($(target_os),Darwin)
-bundle: $(TARGET)
-else
-bundle: $(PROG).app
+
+$(BUNDLE_DIR): $(TARGET)
+	@-rm -f $@/*
+	@-mkdir -p $@
+	cp $(PROG_AND_LIBS) $@
+
+else # Darwin
 
 STRINGSFILE= #InfoPlist.strings
 
-$(PROG).app: $(TARGET) Info.plist version.plist $(PROG).icns $(STRINGSFILE)
+$(BUNDLE_DIR): $(TARGET) Info.plist version.plist $(PROG).icns $(STRINGSFILE)
 	@for dir in $@ \
 	           $@/Contents \
 	           $@/Contents/MacOS \
@@ -84,6 +103,8 @@ ifneq ($(STRINGSFILE),)
 	cp InfoPlist.strings $@/Contents/Resources/English.lproj/
 endif
 	echo -n 'APPL????' > $@/Contents/PkgInfo
-	cp $(TARGET)         $@/Contents/MacOS/$(PROG)
+	cp $(PROG_AND_LIBS)  $@/Contents/MacOS
 
 endif
+endif # DEBUG
+
