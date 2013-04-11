@@ -56,7 +56,7 @@
 		A3F5BCBA170D448600FB97F9 = {
 			isa = PBXGroup;
 			children = (
-				A3F5BCCC170D448600FB97F9 /* iOPAL */,
+				A3F5BCCC170D448600FB97F9 /* src */,
 				A3F5BCC5170D448600FB97F9 /* Frameworks */,
 				A3F5BCC4170D448600FB97F9 /* Products */,
 			);
@@ -80,7 +80,7 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		A3F5BCCC170D448600FB97F9 /* iOPAL */ = {
+		A3F5BCCC170D448600FB97F9 /* src */ = {
 			isa = PBXGroup;
 			children = (
 				A3F5BCD5170D448600FB97F9 /* iOpalAppDelegate.h */,
