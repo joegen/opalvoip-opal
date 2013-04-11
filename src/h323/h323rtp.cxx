@@ -221,6 +221,10 @@ PBoolean H323_RTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelParameters
       param.m_mediaPacketization.GetTag() == H245_H2250LogicalChannelParameters_mediaPacketization::e_rtpPayloadType)
     mediaPacketization = H323GetRTPPacketization(param.m_mediaPacketization);
 
+  // Hack for H.263 compatibility, default to RFC2190 if not told otherwise
+  if (mediaPacketization.IsEmpty() && m_mediaFormat == OPAL_H263)
+    mediaPacketization = "RFC2190";
+
   m_mediaFormat.SetPayloadType(rtpPayloadType);
   m_mediaFormat.SetMediaPacketizations(mediaPacketization);
   if (m_mediaStream != NULL)
