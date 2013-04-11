@@ -44,18 +44,18 @@ ifeq ($(P_SHARELIB),0)
 endif
 
 
+ifdef PTLIBDIR
+  include $(PTLIBDIR)/make/ptlib.mak
+else
+  include $(shell pkg-config ptlib --variable=makedir)/ptlib.mak
+endif
+
+
 ifdef OPALDIR
   include $(OPALDIR)/make/opal_defs.mak
   LIBDIRS  += $(OPALDIR)
 else
   include $(shell pkg-config opal --variable=makedir)/opal_defs.mak
-endif
-
-
-ifdef PTLIBDIR
-  include $(PTLIBDIR)/make/ptlib.mak
-else
-  include $(shell pkg-config ptlib --variable=makedir)/ptlib.mak
 endif
 
 
