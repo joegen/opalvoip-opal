@@ -398,6 +398,7 @@ case "$target_os" in
       AR="libtool"
       ARFLAGS="-static -o"
       RANLIB=
+      LDFLAGS="${LDFLAGS} -framework AudioToolbox -framework SystemConfiguration -framework Foundation -lobjc"
    ;;
 
    cygwin* | mingw* )
@@ -421,7 +422,7 @@ case "$target_os" in
       CC="${IOS_DEVROOT}/usr/bin/gcc"
       LD="$CXX"
       CPPFLAGS="${CPPFLAGS} -arch $target_cpu -isysroot ${IOS_SDKROOT}"
-      LDFLAGS="${LDFLAGS} -arch $target_cpu -isysroot ${IOS_SDKROOT} -L${IOS_SDKROOT}/usr/lib -framework SystemConfiguration -framework CoreFoundation"
+      LDFLAGS="-arch $target_cpu -isysroot ${IOS_SDKROOT} -L${IOS_SDKROOT}/usr/lib $LDFLAGS"
    ;;
 
    darwin* )
@@ -430,7 +431,7 @@ case "$target_os" in
       OS_MINOR=[`uname -r | sed -e 's/[0-9][0-9]*\.//' -e 's/\..*$//'`]
       target_release=`expr $OS_MAJOR \* 100 + $OS_MINOR`
       CPPFLAGS="${CPPFLAGS} -D__MACOSX_CORE__"
-      LDFLAGS="${LDFLAGS} -framework CoreAudio -framework SystemConfiguration -framework CoreFoundation"
+      LDFLAGS="-framework QTKit -framework CoreVideo $LDFLAGS"
    ;;
 
    linux* | Linux* | uclibc* )
