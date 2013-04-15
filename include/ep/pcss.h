@@ -441,14 +441,7 @@ class OpalPCSSConnection : public OpalLocalConnection
 };
 
 #else
-
-#ifdef _MSC_VER
-#pragma message("PTLib soundcard support not available")
-#else
-#warning "PTLib soundcard support not available"
-#endif
-
-
+  #pragma message("PTLib soundcard support not available")
 #endif // OPAL_HAS_PCSS
 
 #endif // OPAL_OPAL_PCSS_H
