@@ -44,6 +44,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "External RTP", "samples\ext
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Android OPAL", "samples\Android\andopal_2010.vcxproj", "{D38CA533-D522-4D9E-B2C9-D59F6C415268}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GStreamer Application", "samples\gstreamer\gst_2010.vcxproj", "{20D8FF73-CB30-250D-6829-E6B01FCB2403}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Android = Debug|Android
@@ -196,14 +198,17 @@ Global
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.Debug|Win32.ActiveCfg = Debug|Win32
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.Debug|Win32.Build.0 = Debug|Win32
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.Debug|x64.ActiveCfg = Debug|x64
+		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.Debug|x64.Build.0 = Debug|x64
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.No Trace|Android.ActiveCfg = No Trace|Win32
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.No Trace|Win32.ActiveCfg = No Trace|Win32
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.No Trace|Win32.Build.0 = No Trace|Win32
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.No Trace|x64.ActiveCfg = No Trace|x64
+		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.No Trace|x64.Build.0 = No Trace|x64
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.Release|Android.ActiveCfg = Release|Win32
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.Release|Win32.ActiveCfg = Release|Win32
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.Release|Win32.Build.0 = Release|Win32
 		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.Release|x64.ActiveCfg = Release|x64
+		{966ED653-88B9-4B83-85F0-4104EDFC2BDE}.Release|x64.Build.0 = Release|x64
 		{FFC2C809-4DF4-41C1-9D51-3BA5D3506533}.Debug|Android.ActiveCfg = Debug|Win32
 		{FFC2C809-4DF4-41C1-9D51-3BA5D3506533}.Debug|Win32.ActiveCfg = Debug|Win32
 		{FFC2C809-4DF4-41C1-9D51-3BA5D3506533}.Debug|Win32.Build.0 = Debug|Win32
@@ -343,7 +348,6 @@ Global
 		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.Debug|x64.Build.0 = Debug|x64
 		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.No Trace|Android.ActiveCfg = Release|Win32
 		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.No Trace|Win32.ActiveCfg = Release|Win32
-		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.No Trace|Win32.Build.0 = Release|Win32
 		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.No Trace|x64.ActiveCfg = Release|x64
 		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.Release|Android.ActiveCfg = Release|Win32
 		{764B6AB8-9D73-97FC-6708-C78E76B512DD}.Release|Win32.ActiveCfg = Release|Win32
@@ -365,6 +369,17 @@ Global
 		{D38CA533-D522-4D9E-B2C9-D59F6C415268}.Release|Android.Deploy.0 = Release|Android
 		{D38CA533-D522-4D9E-B2C9-D59F6C415268}.Release|Win32.ActiveCfg = Release|Android
 		{D38CA533-D522-4D9E-B2C9-D59F6C415268}.Release|x64.ActiveCfg = Release|Android
+		{20D8FF73-CB30-250D-6829-E6B01FCB2403}.Debug|Android.ActiveCfg = Debug|Win32
+		{20D8FF73-CB30-250D-6829-E6B01FCB2403}.Debug|Win32.ActiveCfg = Debug|Win32
+		{20D8FF73-CB30-250D-6829-E6B01FCB2403}.Debug|Win32.Build.0 = Debug|Win32
+		{20D8FF73-CB30-250D-6829-E6B01FCB2403}.Debug|x64.ActiveCfg = Debug|Win32
+		{20D8FF73-CB30-250D-6829-E6B01FCB2403}.No Trace|Android.ActiveCfg = Release|Win32
+		{20D8FF73-CB30-250D-6829-E6B01FCB2403}.No Trace|Win32.ActiveCfg = Release|Win32
+		{20D8FF73-CB30-250D-6829-E6B01FCB2403}.No Trace|x64.ActiveCfg = Release|Win32
+		{20D8FF73-CB30-250D-6829-E6B01FCB2403}.Release|Android.ActiveCfg = Release|Win32
+		{20D8FF73-CB30-250D-6829-E6B01FCB2403}.Release|Win32.ActiveCfg = Release|Win32
+		{20D8FF73-CB30-250D-6829-E6B01FCB2403}.Release|Win32.Build.0 = Release|Win32
+		{20D8FF73-CB30-250D-6829-E6B01FCB2403}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
