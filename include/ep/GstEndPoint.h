@@ -1,22 +1,33 @@
 /*
  * GstEndPoint.h
  *
- *  Created on: Jun 20, 2011
- *  Author: Jonathan M. Henson
- *  Contact: jonathan.michael.henson@gmail.com, jonathan.henson@innovisit.com
- *  Description: This class exposes a gstreamer media stream which supports multiple encoded formats as well as raw audio and video.
- *  To use this end point, create an instance in your OpalManager descendant.
- *  Then route the connections like so:
+ * GStreamer support.
  *
- *  AddRouteEntry("gst:.* = sip:<da>");
- *  AddRouteEntry("sip:.* = gst:");
- *  AddRouteEntry("gst:.* = h323:<da>");
- *  AddRouteEntry("h323:.* = gst:");
+ * Open Phone Abstraction Library (OPAL)
+ * Formally known as the Open H323 project.
  *
- *  It depends on GSTMediaStream. See GSTMediaStream.h for more information.
+ * Copyright (c) 2013 Vox Lucida Pty. Ltd. and Jonathan M. Henson
  *
- *  To create your own descendant of GSTMediaStream which is more specific to your platform and specific needs,
- *  create a descendant of this class and override CreateGstMediaStream() returning your GSTMediaStream descendant.
+ * The contents of this file are subject to the Mozilla Public License
+ * Version 1.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+ * the License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is Open Phone Abstraction Library.
+ *
+ * The Initial Developer of the Original Code is Jonathan M. Henson
+ * jonathan.michael.henson@gmail.com, jonathan.henson@innovisit.com
+ *
+ * Contributor(s): Robert Jongbloed (robertj@voxlucida.com.au).
+ *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef GSTREAMER_GSTENDPOINT_H
@@ -26,20 +37,45 @@
 
 #include <ptclib/gstreamer.h>
 
-#if P_GSTREAMER
+#if OPAL_GSTREAMER
 
-/**Endpoint for access via gstreamer.
-  */
+class GstMediaStream;
+
+
+/**Endpoint for performing OPAL media via gstreamer.
+   This class exposes a gstreamer media stream which supports multiple encoded
+   formats as well as raw audio and video. To use this end point, create an
+   instance in your OpalManager descendant. Then route the connections like so:
+
+      AddRouteEntry("gst:.* = sip:<da>");
+      AddRouteEntry("sip:.* = gst:");
+      AddRouteEntry("gst:.* = h323:<da>");
+      AddRouteEntry("h323:.* = gst:");
+
+   To create your own descendant of GSTMediaStream which is more specific to
+   your platform and specific needs, create a descendant of this class and
+   override the various BuildXXXXPipeline() functions.
+ */
 class GstEndPoint : public OpalLocalEndPoint
 {
     PCLASSINFO(GstEndPoint, OpalLocalEndPoint);
   public:
+  /**@name Construction */
+  //@{
+    /**Create a new endpoint.
+     */
     GstEndPoint(
       OpalManager & manager,
       const char *prefix = "gst"
     );
-    virtual ~GstEndPoint();
 
+    /**Destroy endpoint.
+     */
+    virtual ~GstEndPoint();
+  //@}
+
+  /**@name Overrides from OpalEndPoint */
+  //@{
     /**Get the data formats this endpoint is capable of operating.
        This provides a list of media data format names that may be used by an
        OpalMediaStream may be created by a connection from this endpoint.
@@ -61,13 +97,88 @@ class GstEndPoint : public OpalLocalEndPoint
       unsigned options,   ///< Option bit mask to pass to connection
       OpalConnection::StringOptions * stringOptions ///< Options to pass to connection
     );
+  //@}
+
+  /**@name Customisation call backs for building GStreamer pipeline */
+  //@{
+    /**Build the GStreamer pipeline description string.
+       Note that this may be called twice, once for audio and once for video,
+       and not necessarily in that order. This mecahnism is to allow for
+       things like media files where the source (or sink) for audio and video
+       is the same and must be "teed" into two sub-pipes.
+
+       Thus, if \p existingDescription is non-empty, its source (or sink)
+       element is checked for if is identical to the other of audio/video as
+       returned by BuildAudioSourceDevice()/BuildVideoSourceDevice() and a
+       split pipeline formed.
+
+       The OPAL "end" of each pipline is always appsrc (or appsink) and must
+       have the names defined by GetPipelineAudioSourceName(),
+       GetPipelineAudioSinkName(), GetPipelineVideoSourceName() and
+       GetPipelineVideoSinkName().
+
+      */
+    virtual bool BuildPipeline(
+      ostream & newDescription,
+      const PString & existingDescription,
+      const GstMediaStream & stream
+    );
+
+    virtual bool BuildAudioSourcePipeline(ostream & desc, const GstMediaStream & stream);
+    virtual bool BuildAudioSinkPipeline(ostream & desc, const GstMediaStream & stream);
+    virtual bool BuildAudioSourceDevice(ostream & desc, const GstMediaStream & stream);
+    virtual bool BuildAudioSinkDevice(ostream & desc, const GstMediaStream & stream);
+
+    virtual bool BuildEncoder(ostream & desc, const GstMediaStream & stream);
+    virtual bool BuildDecoder(ostream & desc, const GstMediaStream & stream);
+
+    static const PString & GetPipelineAudioSourceName();
+    static const PString & GetPipelineAudioSinkName();
+
+    void SetAudioSourceDevice(const PString & dev) { m_audioSourceDevice = dev; }
+    void SetAudioSinkDevice  (const PString & dev) { m_audioSinkDevice = dev; }
+    const PString & GetAudioSourceDevice() const { return m_audioSourceDevice; }
+    const PString & GetAudioSinkDevice()   const { return m_audioSinkDevice; }
+
+#if OPAL_VIDEO
+    virtual bool BuildVideoSourcePipeline(ostream & desc, const GstMediaStream & stream);
+    virtual bool BuildVideoSinkPipeline(ostream & desc, const GstMediaStream & stream);
+    virtual bool BuildVideoSourceDevice(ostream & desc, const GstMediaStream & stream);
+    virtual bool BuildVideoSinkDevice(ostream & desc, const GstMediaStream & stream);
+    static const PString & GetPipelineVideoSourceName();
+    static const PString & GetPipelineVideoSinkName();
+    void SetVideoSourceDevice(const PString & dev) { m_videoSourceDevice = dev; }
+    void SetVideoSinkDevice  (const PString & dev) { m_videoSinkDevice = dev; }
+    const PString & GetVideoSourceDevice() const { return m_videoSourceDevice; }
+    const PString & GetVideoSinkDevice()   const { return m_videoSinkDevice; }
+#endif // OPAL_VIDEO
+  //@}
+
+  protected:
+    PString m_audioSourceDevice;
+    PString m_audioSinkDevice;
+#if OPAL_VIDEO
+    PString m_videoSourceDevice;
+    PString m_videoSinkDevice;
+#endif // OPAL_VIDEO
+
+    // Translation tables
+    PStringToString     m_MediaFormatToGstEncoder;
+    PStringToString     m_MediaFormatToGstDecoder;
+    OpalMediaFormatList m_mediaFormatsAvailable;
 };
 
 
+/**Connection for performing OPAL media via gstreamer.
+  */
 class GstConnection : public OpalLocalConnection
 {
     PCLASSINFO(GstConnection, OpalLocalConnection);
   public:
+  /**@name Construction */
+  //@{
+    /**Create a new connection.
+     */
     GstConnection(
       OpalCall & call,
       GstEndPoint & ep,
@@ -76,7 +187,24 @@ class GstConnection : public OpalLocalConnection
       OpalConnection::StringOptions * stringOptions,
       char tokenPrefix = 'G'
     );
+  //@}
 
+  /**@name Overrides from OpalConnection */
+  //@{
+    /**Open a new media stream.
+       This will create a media stream of an appropriate subclass as required
+       by the underlying connection protocol. For instance H.323 would create
+       an OpalRTPStream.
+
+       The sessionID parameter may not be needed by a particular media stream
+       and may be ignored. In the case of an OpalRTPStream it us used.
+
+       Note that media streams may be created internally to the underlying
+       protocol. This function is not the only way a stream can come into
+       existance.
+
+       The default behaviour creates a GstMediaStream instance.
+     */
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat,
       unsigned sessionID,
@@ -84,23 +212,54 @@ class GstConnection : public OpalLocalConnection
     );
 
     virtual void OnReleased();
+  //@}
+
+  /**@name Customisation call backs for building GStreamer pipeline */
+  //@{
+    /**Build the GStreamer pipeline.
+       This will call GstEndPoint::BuildPipeline() for each of the source/sink
+       pipelines.
+      */
+    virtual bool BuildPipeline(const GstMediaStream & stream);
+
+    /**DEstroy the GStreamer pipeline.
+      */
+    virtual void DestroyPipeline(const GstMediaStream & stream);
+
+    /// Get the source pipeline
+    PGstPipeline & GetPipeline(bool isSource) { return m_pipeline[isSource]; }
+  //@}
+
+  protected:
+    GstEndPoint & m_endpoint;
+    PGstPipeline  m_pipeline[2]; // The GStreamer pipeline(s) for media: sink=0, source=1
+    PString       m_pipedesc[2];
 };
 
 
+/**Media stream for performing OPAL media via gstreamer.
+  */
 class GstMediaStream : public OpalMediaStream
 {
     PCLASSINFO(GstMediaStream, OpalMediaStream);
   public:
+  /**@name Construction */
+  //@{
+    /**Construct a new media stream for GStreamer session.
+      */
     GstMediaStream(
       GstConnection & conn,                ///<  Connection that owns the stream
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
       bool isSource                        ///<  Is a source stream
     );
+  //@}
 
+  /**@name Overrides of OpalMediaStream class */
+  //@{
     /**Open the media stream using the media format.
-
-       The default behaviour simply sets the isOpen variable to true.
+       This calls GstConenction::BuildPipeline() and creates the GStreamer
+       pipeline from the resultant desciption string.
       */
     virtual PBoolean Open();
 
@@ -122,6 +281,16 @@ class GstMediaStream : public OpalMediaStream
       RTP_DataFrame & packet
     );
 
+    /**Set the data size in bytes that is expected to be used. Some media
+       streams can make use of this information to perform optimisations.
+
+       The default behaviour does nothing.
+      */
+    virtual PBoolean SetDataSize(
+      PINDEX dataSize,  ///< New data size (in total)
+      PINDEX frameTime  ///< Individual frame time (if applicable)
+    );
+
     /**Indicate if the media stream is synchronous.
        If this returns true then the media stream will block of the amount of
        time it takes to annunciate the data. For example if the media stream
@@ -129,17 +298,7 @@ class GstMediaStream : public OpalMediaStream
        take 30 milliseconds to complete.
       */
     virtual PBoolean IsSynchronous() const;
-
-    virtual bool BuildAudioSourcePipeline(ostream & desc);
-    virtual bool BuildAudioSinkPipeline(ostream & desc);
-    virtual bool BuildVideoSourcePipeline(ostream & desc);
-    virtual bool BuildVideoSinkPipeline(ostream & desc);
-    virtual bool BuildOtherMediaPipeline(ostream & desc);
-
-    virtual bool BuildAudioSourceDevice(ostream & desc);
-    virtual bool BuildAudioSinkDevice(ostream & desc);
-    virtual bool BuildVideoSourceDevice(ostream & desc);
-    virtual bool BuildVideoSinkDevice(ostream & desc);
+  //@}
 
   protected:
     /**Close any internal components of the stream.
@@ -149,10 +308,13 @@ class GstMediaStream : public OpalMediaStream
       */
     virtual void InternalClose();
 
-
-    PGstPipeline m_pipeline;
+    // Member variables.
+    GstConnection & m_connection;
+    PGstAppSrc      m_pipeSource;
+    PGstAppSink     m_pipeSink;
 };
 
-#endif // P_GSTREAMER
+
+#endif // OPAL_GSTREAMER
 
 #endif // GSTREAMER_GSTENDPOINT_H
