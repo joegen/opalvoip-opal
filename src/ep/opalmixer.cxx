@@ -36,9 +36,7 @@
 
 #if OPAL_HAS_MIXER
 
-  #ifdef _MSC_VER
-    #pragma message("Mixer (MCU) support enabled")
-  #endif
+#pragma message("Mixer (MCU) support enabled")
 
 #include <opal/patch.h>
 #include <rtp/rtp.h>
@@ -1947,11 +1945,7 @@ void OpalMixerNodeManager::OnNodeStatusChanged(const OpalMixerNode &, OpalConfer
 
 
 #else
-
-  #ifdef _MSC_VER
-    #pragma message("Mixer (MCU) support DISABLED")
-  #endif
-
+  #pragma message("Mixer (MCU) support DISABLED")
 #endif // OPAL_HAS_MIXER
 
 

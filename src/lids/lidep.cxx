@@ -38,9 +38,8 @@
 
 #if OPAL_LID
 
-  #ifdef _MSC_VER
-    #pragma message("Line Interface Device support enabled")
-  #endif
+#pragma message("Line Interface Device support enabled")
+
 
 #include <opal/manager.h>
 #include <opal/call.h>
@@ -1190,11 +1189,7 @@ unsigned OpalLineSilenceDetector::GetAverageSignalLevel(const BYTE *, PINDEX)
 
 
 #else
-
-  #ifdef _MSC_VER
-    #pragma message("Line Interface Device support DISABLED")
-  #endif
-
+  #pragma message("Line Interface Device support DISABLED")
 #endif // OPAL_LID
 
 
