@@ -103,6 +103,9 @@
 #if defined(P_CONFIG_FILE) && !defined(OPAL_PTLIB_CONFIG_FILE)
   #define  OPAL_PTLIB_CONFIG_FILE P_CONFIG_FILE
 #endif
+#if defined(P_GSTREAMER) && !defined(OPAL_GSTREAMER)
+  #define  OPAL_GSTREAMER P_GSTREAMER
+#endif
 
 #undef  OPAL_PLUGIN_DIR
 
