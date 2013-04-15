@@ -38,9 +38,8 @@
 
 #if OPAL_FAX
 
-#ifdef _MSC_VER
-  #pragma message("T.38 Fax (spandsp) support enabled")
-#endif
+#pragma message("T.38 Fax (spandsp) support enabled")
+
 
 #include <asn/t38.h>
 #include <opal/patch.h>
@@ -1073,10 +1072,6 @@ void OpalFaxConnection::InternalOnFaxCompleted()
 
 
 #else
-
-  #ifdef _MSC_VER
-    #pragma message("T.38 Fax (spandsp) support DISABLED")
-  #endif
-
+  #pragma message("T.38 Fax (spandsp) support DISABLED")
 #endif // OPAL_FAX
 

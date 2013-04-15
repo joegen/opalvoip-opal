@@ -35,9 +35,8 @@
 
 #if OPAL_IAX2
 
-  #ifdef _MSC_VER
-    #pragma message("IAX2 support enabled")
-  #endif
+#pragma message("IAX2 support enabled")
+
 
 #ifdef P_USE_PRAGMA
 #pragma implementation "iax2ep.h"
@@ -847,11 +846,7 @@ void IAX2IncomingEthernetFrames::Main()
 
 
 #else
-
-  #ifdef _MSC_VER
-    #pragma message("IAX2 support DISABLED")
-  #endif
-
+  #pragma message("IAX2 support DISABLED")
 #endif // OPAL_IAX2
 
 /* The comment below is magic for those who use emacs to edit this file. 

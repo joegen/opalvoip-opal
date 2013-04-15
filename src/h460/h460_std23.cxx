@@ -52,11 +52,7 @@
 #include "h460/upnpcp.h"
 #endif
 
-#if _WIN32
 #pragma message("H.460.23/.24 Enabled. Contact consulting@h323plus.org for licensing terms.")
-#else
-#warning("H.460.23/.24 Enabled. Contact consulting@h323plus.org for licensing terms.")
-#endif
 
 #ifdef _MSC_VER
 #pragma warning(disable : 4239)
