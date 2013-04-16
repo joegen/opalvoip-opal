@@ -44,8 +44,10 @@ class OpalMPEG4ProfileAndLevel : public OpalMediaOptionUnsigned
 {
   public:
     OpalMPEG4ProfileAndLevel()
-      : OpalMediaOptionUnsigned(ProfileAndLevel, true, OpalMediaOption::IntersectionMerge, 1, 1, 127)
+      : OpalMediaOptionUnsigned(ProfileAndLevel, true, OpalMediaOption::IntersectionMerge, 5, 1, 127)
     {
+      OPAL_SET_MEDIA_OPTION_FMTP(this, ProfileAndLevel_SDP, "1");
+      OPAL_SET_MEDIA_OPTION_H245(this, H245_ANNEX_E_PROFILE_LEVEL);
     }
 
     virtual bool Merge(const OpalMediaOption & option)
@@ -68,6 +70,7 @@ class OpalMPEG4Format : public OpalVideoFormatInternal
 
       OpalMediaOption * option = new OpalMediaOptionUnsigned(H245ObjectId, true, OpalMediaOption::EqualMerge, 0, 0, 15);
       OPAL_SET_MEDIA_OPTION_H245(option, H245_ANNEX_E_OBJECT);
+      OPAL_SET_MEDIA_OPTION_FMTP(option, Object_SDP, "0");
       AddOption(option);
 
       option = new OpalMediaOptionOctets(DCI, true);
