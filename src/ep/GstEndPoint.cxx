@@ -54,7 +54,7 @@ const PString & GstEndPoint::GetPipelineVideoSinkName()   { static PConstString 
 
 static PConstString const PreferredAudioSourceDevice[] = {
 #if _WIN32
-  "wasapisrc",
+//  "wasapisrc",
   "directsoundsrc",
   "dshowaudiosrc",
 #else
@@ -122,104 +122,90 @@ static const PStringToString::Initialiser DefaultGstEncoderToMediaFormat[] = {
 };
 
 
-static const PStringToString::Initialiser DefaultMediaFormatToGstEncoder[] = {
-  { OpalG711_ULAW_64K, "mulawenc   name=audioEncoder ! rtppcmupay  name=audioPacketiser"  },
-  { OpalG711_ALAW_64K, "alawenc    name=audioEncoder ! rtppcmapay  name=audioPacketiser"  },
-  { OpalGSM0610,       "gsmenc     name=audioEncoder ! rtpgsmpay   name=audioPacketiser"   },
-  { OpalG726_40K,      "ffenc_g726 name=audioEncoder ! rtpg726pay  name=audioPacketiser"  },
-  { "CELT-32K",        "celtenc    name=audioEncoder ! rtpceltpay  name=audioPacketiser"  },
-  { "Speex",           "speexenc   name=audioEncoder ! rtpspeexpay name=audioPacketiser" },
-
+static struct GstInitInfo {
+  const char * m_mediaFormat;
+  const char * m_depacketiser;
+  const char * m_decoder;
+  const char * m_packetiser;
+  const char * m_encoder;
+} const DefaultMediaFormatToGStreamer[] = {
+  { OpalG711_ULAW_64K, "rtppcmudepay",  "mulawdec",    "rtppcmupay",         "mulawenc"   },
+  { OpalG711_ALAW_64K, "rtppcmadepay",  "alawdec",     "rtppcmapay",         "alawenc"    },
+  { OpalGSM0610,       "rtpgsmdepay",   "gsmdec",      "rtpgsmpay",          "gsmenc"     },
+  { OpalG726_40K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726"
+                                                                             " bitrate=40000"
+  },
+  { OpalG726_32K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726"
+                                                                             " bitrate=32000"
+  },
+  { OpalG726_24K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726"
+                                                                             " bitrate=24000"
+  },
+  { "CELT-32K",        "rtpceltdepay",  "celtdec",     "rtpceltpay",         "celtenc"    },
+  { "Speex",           "rtpspeexdepay", "speexdec",    "rtpspeexpay",        "speexenc"   },
 #if OPAL_VIDEO
-  { OpalH261,     "ffenc_h261  name=videoEncoder" },
-
-  { OpalH263,     "ffenc_h263  name=videoEncoder"
-                             " rtp-payload-size=1400"
-                             " max-key-interval=125"
-                             " me-method=5"
-                             " max-bframes=0"
-                             " gop-size=125"
-                             " rc-buffer-size=65536000"
-                             " rc-min-rate=0"
-                             " rc-max-rate=1024000"
-                             " rc-qsquish=0"
-                             " rc-eq=1"
-                             " max-qdiff=10"
-                             " qcompress=0.5"
-                             " i-quant-factor=-0.6"
-                             " i-quant-offset=0.0"
-                             " me-subpel-quality=8"
-                             " qmin=2"
-                  " ! "
-                   "rtph263pay name=videoPacketiser" },
-
-  { OpalH263plus, "ffenc_h263p name=videoEncoder"
-                             " rtp-payload-size=200"
-                             " max-key-interval=125"
-                             " me-method=5"
-                             " max-bframes=0"
-                             " gop-size=125"
-                             " rc-buffer-size=65536000"
-                             " rc-min-rate=0"
-                             " rc-max-rate=1024000"
-                             " rc-qsquish=0"
-                             " rc-eq=1"
-                             " max-qdiff=10"
-                             " qcompress=0.5"
-                             " i-quant-factor=-0.6"
-                             " i-quant-offset=0.0"
-                             " me-subpel-quality=8"
-                             " qmin=2"
-                             " ! "
-                  "rtph263ppay name=videoPacketiser" },
-
-  { OpalH264,         "x264enc name=videoEncoder"
-                             " byte-stream=true"
-                             " bframes=0"
-                             " b-adapt=0"
-                             " bitrate=1024"
-                             " tune=0x4"
-                             " speed-preset=3"
-                             " sliced-threads=false"
-                             " profile=0"
-                             " key-int-max=30"
-                             " ! "
-                   "rtph264pay name=videoPacketiser"
-                             " config-interval=5" },
-
-  { "theora",       "theoraenc name=videoEncoder"
-                             " keyframe-freq=125"
-                             " keyframe-force=125"
-                             " quality=16"
-                             " drop-frames=false"
-                             " bitrate=2048"
-                             " ! "
-                 "rtptheorapay name=videoPacketiser" },
-
-  { OpalMPEG4,    "ffenc_mpeg4 name=videoEncoder"
-                             " quantizer=0.8"
-                             " quant-type=1"
-                             " ! "
-                   "rtpmp4vpay name=videoPacketiser"
-                             " send-config=true"
-                             " config-interval=5" }
-#endif // OPAL_VIDEO
-};
-
-static const PStringToString::Initialiser DefaultMediaFormatToGstDecoder[] = {
-  { OpalG711_ULAW_64K, "rtppcmudepay  name=audioDepacketiser ! mulawdec   name=audioDecoder" },
-  { OpalG711_ALAW_64K, "rtppcmadepay  name=audioDepacketiser ! alawdec    name=audioDecoder" },
-  { OpalGSM0610,       "rtpgsmdepay   name=audioDepacketiser ! gsmdec     name=audioDecoder" },
-  { OpalG726_40K,      "rtpg726depay  name=audioDepacketiser ! ffdec_g726 name=audioDecoder" },
-  { "CELT-32K",        "rtpceltdepay  name=audioDepacketiser ! celtdec    name=audioDecoder" },
-  { "Speex",           "rtpspeexdepay name=audioDepacketiser ! speexdec   name=audioDecoder" },
-
-#if OPAL_VIDEO
-  { OpalH263,     "rtph263depay   name=videoDepacketiser ! ffdec_h263  name=videoDecode" },
-  { OpalH263plus, "rtph263pdepay  name=videoDepacketiser ! ffdec_h263p name=videoDecode" },
-  { OpalH264,     "rtph264depay   name=videoDepacketiser ! ffdec_h264  name=videoDecode" },
-  { "theora",     "rtptheoradepay name=videoDepacketiser ! theoradec   name=videoDecode" },
-  { OpalMPEG4,    "rtpmp4vdepay   name=videoDepacketiser ! ffdec_mpeg4 name=videoDecode" },
+  { OpalH261,          "",              "ffdec_h261",  "",                   "ffenc_h261" },
+  { OpalH263,          "rtph263depay",  "ffdec_h263",  "rtph263pay",         "ffenc_h263"
+                                                                             " rtp-payload-size=1400"
+                                                                             " max-key-interval=125"
+                                                                             " me-method=5"
+                                                                             " max-bframes=0"
+                                                                             " gop-size=125"
+                                                                             " rc-buffer-size=65536000"
+                                                                             " rc-min-rate=0"
+                                                                             " rc-max-rate=1024000"
+                                                                             " rc-qsquish=0"
+                                                                             " rc-eq=1"
+                                                                             " max-qdiff=10"
+                                                                             " qcompress=0.5"
+                                                                             " i-quant-factor=-0.6"
+                                                                             " i-quant-offset=0.0"
+                                                                             " me-subpel-quality=8"
+                                                                             " qmin=2"
+  },
+  { OpalH263plus,      "rtph263pdepay", "ffdec_h263",  "rtph263ppay",        "ffenc_h263p"
+                                                                             " rtp-payload-size=200"
+                                                                             " max-key-interval=125"
+                                                                             " me-method=5"
+                                                                             " max-bframes=0"
+                                                                             " gop-size=125"
+                                                                             " rc-buffer-size=65536000"
+                                                                             " rc-min-rate=0"
+                                                                             " rc-max-rate=1024000"
+                                                                             " rc-qsquish=0"
+                                                                             " rc-eq=1"
+                                                                             " max-qdiff=10"
+                                                                             " qcompress=0.5"
+                                                                             " i-quant-factor=-0.6"
+                                                                             " i-quant-offset=0.0"
+                                                                             " me-subpel-quality=8"
+                                                                             " qmin=2"
+  },
+  { OpalH264,          "rtph264depay",  "ffdec_h264",  "rtph264pay"
+                                                       " config-interval=5", "x264enc"
+                                                                             " byte-stream=true"
+                                                                             " bframes=0"
+                                                                             " b-adapt=0"
+                                                                             " bitrate=1024"
+                                                                             " tune=0x4"
+                                                                             " speed-preset=3"
+                                                                             " sliced-threads=false"
+                                                                             " profile=0"
+                                                                             " key-int-max=30"
+  },
+  { "theora",         "rtptheoradepay", "theoradec",   "rtptheorapay",       "theoraenc"
+                                                                             " name=videoEncoder"
+                                                                             " keyframe-freq=125"
+                                                                             " keyframe-force=125"
+                                                                             " quality=16"
+                                                                             " drop-frames=false"
+                                                                             " bitrate=2048"
+  },
+  { OpalMPEG4,        "rtpmp4vdepay",   "ffdec_mpeg4", "rtpmp4vpay"
+                                                       " send-config=true", "ffenc_mpeg4"
+                                                                             " quantizer=0.8"
+                                                                             " quant-type=1"
+  }
 #endif // OPAL_VIDEO
 };
 
@@ -245,26 +231,44 @@ GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
   , m_videoSourceDevice(GetDefaultDevice("Source/Video", PreferredVideoSourceDevice, PARRAYSIZE(PreferredVideoSourceDevice)))
   , m_videoSinkDevice(GetDefaultDevice("Sink/Video", PreferredVideoSinkDevice, PARRAYSIZE(PreferredVideoSinkDevice)))
 #endif // OPAL_VIDEO
-  , m_MediaFormatToGstEncoder(PARRAYSIZE(DefaultMediaFormatToGstEncoder), DefaultMediaFormatToGstEncoder, true)
-  , m_MediaFormatToGstDecoder(PARRAYSIZE(DefaultMediaFormatToGstDecoder), DefaultMediaFormatToGstDecoder, true)
 {
-  PStringList elements = PGstPluginFeature::Inspect("Codec/Encoder/Audio", false);
+  for (PINDEX i = 0; i < PARRAYSIZE(DefaultMediaFormatToGStreamer); ++i) {
+    OpalMediaFormat mediaFormat(DefaultMediaFormatToGStreamer[i].m_mediaFormat);
+    if (mediaFormat.IsValid()) {
+      GstInfo & info = m_MediaFormatToGStreamer[mediaFormat];
+      info.m_encoder      = DefaultMediaFormatToGStreamer[i].m_encoder;
+      info.m_packetiser   = DefaultMediaFormatToGStreamer[i].m_packetiser;
+      info.m_decoder      = DefaultMediaFormatToGStreamer[i].m_decoder;
+      info.m_depacketiser = DefaultMediaFormatToGStreamer[i].m_depacketiser;
+    }
+  }
+
+  PStringList encoders = PGstPluginFeature::Inspect("Codec/Encoder/Audio", false);
+  PStringList decoders = PGstPluginFeature::Inspect("Codec/Decoder/Audio", false);
   PTRACE(4, "Audio encoder elements:\n" << setfill('\n') << PGstPluginFeature::Inspect("Codec/Encoder/Audio", true));
   PTRACE(4, "Audio decoder elements:\n" << setfill('\n') << PGstPluginFeature::Inspect("Codec/Decoder/Audio", true));
 
 #if OPAL_VIDEO
-  elements += PGstPluginFeature::Inspect("Codec/Encoder/Video", false);
+  encoders += PGstPluginFeature::Inspect("Codec/Encoder/Video", false);
+  decoders += PGstPluginFeature::Inspect("Codec/Decoder/Video", false);
   PTRACE(4, "Video encoder elements:\n" << setfill('\n') << PGstPluginFeature::Inspect("Codec/Encoder/Video", true));
   PTRACE(4, "Video decoder elements:\n" << setfill('\n') << PGstPluginFeature::Inspect("Codec/Decoder/Video", true));
 #endif // OPAL_VIDEO
 
   PStringToString gstEncoderToMediaFormat(PARRAYSIZE(DefaultGstEncoderToMediaFormat), DefaultGstEncoderToMediaFormat, true);
-  for (PStringList::iterator it = elements.begin(); it != elements.end(); ++it) {
-    OpalMediaFormat mediaFormat = gstEncoderToMediaFormat(*it);
-    if (mediaFormat.IsValid() &&
-        m_MediaFormatToGstEncoder.Contains(mediaFormat) &&
-        m_MediaFormatToGstDecoder.Contains(mediaFormat))
-      m_mediaFormatsAvailable += mediaFormat;
+  for (PStringList::iterator enc = encoders.begin(); enc != encoders.end(); ++enc) {
+    OpalMediaFormat mediaFormat = gstEncoderToMediaFormat(*enc);
+    if (mediaFormat.IsValid()) {
+      GstInfoMap::iterator inf = m_MediaFormatToGStreamer.find(mediaFormat);
+      if (inf != m_MediaFormatToGStreamer.end()) {
+        for (PStringList::iterator dec = decoders.begin(); dec != decoders.end(); ++dec) {
+          if (inf->second.m_decoder.NumCompare(*dec)) {
+            m_mediaFormatsAvailable += mediaFormat;
+            break;
+          }
+        }
+      }
+    }
   }
 }
 
@@ -289,7 +293,7 @@ OpalLocalConnection * GstEndPoint::CreateConnection(OpalCall & call,
 }
 
 
-bool GstEndPoint::BuildPipeline(ostream & newDescription, const PString & existingDescription, const GstMediaStream & stream)
+bool GstEndPoint::BuildPipeline(ostream & description, const GstMediaStream & stream)
 {
 #if OPAL_VIDEO
 
@@ -306,45 +310,17 @@ bool GstEndPoint::BuildPipeline(ostream & newDescription, const PString & existi
     }
   }
 
-  if (!existingDescription.IsEmpty()) {
-    PStringStream device;
-    if (stream.IsSource()) {
-      // Get other media formats source device
-      if (!(isAudio ? BuildVideoSourceDevice(device, stream) : BuildAudioSourceDevice(device, stream)))
-        return false;
-
-      if (existingDescription.NumCompare(device) == EqualTo) {
-        // Do splitter
-        return false;
-      }
-    }
-    else {
-      // Get other media formats sink device
-      if (!(isAudio ? BuildVideoSinkDevice(device, stream) : BuildAudioSinkDevice(device, stream)))
-        return false;
-
-      if (existingDescription.NumCompare(device, P_MAX_INDEX, existingDescription.GetLength() - device.GetLength()) == EqualTo) {
-        // Do splitter
-        return false;
-      }
-    }
-
-    // Parallel pipelines
-    newDescription << existingDescription;
-  }
-
-
   if (stream.IsSource()) {
     if (isAudio)
-      return BuildAudioSourceDevice(newDescription, stream) && BuildAudioSourcePipeline(newDescription, stream);
+      return BuildAudioSourceDevice(description, stream) && BuildAudioSourcePipeline(description, stream);
     else
-      return BuildVideoSourceDevice(newDescription, stream) && BuildVideoSourcePipeline(newDescription, stream);
+      return BuildVideoSourceDevice(description, stream) && BuildVideoSourcePipeline(description, stream);
   }
   else {
     if (isAudio)
-      return BuildAudioSinkPipeline(newDescription, stream) && BuildAudioSinkDevice(newDescription, stream);
+      return BuildAudioSinkPipeline(description, stream) && BuildAudioSinkDevice(description, stream);
     else
-      return BuildVideoSinkPipeline(newDescription, stream) && BuildVideoSinkDevice(newDescription, stream);
+      return BuildVideoSinkPipeline(description, stream) && BuildVideoSinkDevice(description, stream);
   }
 
 #else //OPAL_VIDEO
@@ -355,9 +331,9 @@ bool GstEndPoint::BuildPipeline(ostream & newDescription, const PString & existi
   }
 
   if (stream.IsSource())
-    return BuildAudioSourceDevice(newDescription, stream) && BuildAudioSourcePipeline(newDescription, stream);
+    return BuildAudioSourceDevice(description, stream) && BuildAudioSourcePipeline(description, stream);
   else
-    return BuildAudioSinkPipeline(newDescription, stream) && BuildAudioSinkDevice(newDescription, stream);
+    return BuildAudioSinkPipeline(description, stream) && BuildAudioSinkDevice(description, stream);
 
 #endif //OPAL_VIDEO
 }
@@ -387,7 +363,7 @@ bool GstEndPoint::BuildAudioSourcePipeline(ostream & desc, const GstMediaStream 
 
 //  desc << "volume name=volumeFilter ! ";
 
-  desc << " ! appsink name=" << GetPipelineAudioSinkName() << " max-buffers=2 drop=true";
+  desc << " ! appsink name=" << GetPipelineAudioSinkName() << " async=true max-buffers=2 drop=true";
   return true;
 }
 
@@ -445,23 +421,24 @@ bool GstEndPoint::BuildVideoSourcePipeline(ostream & desc, const GstMediaStream 
 {
   const OpalMediaFormat & mediaFormat = stream.GetMediaFormat();
 
-  desc << " ! "
-          "video/x-raw-yuv, "
-          "format=(fourcc)I420, "
-          "width=" << mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption()) << ", "
-          "height=" << mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption()) << ", "
-          "framerate=(fraction)90000/" << mediaFormat.GetFrameTime() <<
-          " ! ";
+  desc << " ! ffmpegcolorspace"
+          " ! video/x-raw-yuv, "
+             "format=(fourcc)I420, "
+             "width=" << mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption()) << ", "
+             "height=" << mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption()) << ", "
+             "framerate=(fraction)90000/" << mediaFormat.GetFrameTime()
+       << " ! ";
 
   if (mediaFormat != OpalYUV420P) {
     if (!BuildEncoder(desc, stream))
       return false;
 
     desc << " mtu=" << mediaFormat.GetOptionInteger(OpalMediaFormat::MaxTxPacketSizeOption(), 1400) <<
-            " pt=" << (unsigned)mediaFormat.GetPayloadType();
+            " pt=" << (unsigned)mediaFormat.GetPayloadType()
+         << " ! ";
   }
 
-  desc << " ! appsink max-buffers=10 drop=true sync=false name=" << GetPipelineVideoSinkName();
+  desc << "appsink name=" << GetPipelineVideoSinkName() << " async=true";
   return true;
 }
 
@@ -470,32 +447,27 @@ bool GstEndPoint::BuildVideoSinkPipeline(ostream & desc, const GstMediaStream & 
 {
   const OpalMediaFormat & mediaFormat = stream.GetMediaFormat();
 
-  desc << "appsrc name=" << GetPipelineVideoSourceName() << " ! ";
+  desc << "appsrc name=" << GetPipelineVideoSourceName()
+       << " ! ";
 
   if (mediaFormat == OpalYUV420P)
     desc << "video/x-raw-yuv, "
             "format=(fourcc)I420, "
             "width=" << mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption()) << ", "
             "height=" << mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption()) << ", "
-            "framerate=(fraction)90000/" << mediaFormat.GetFrameTime();
-  else if (mediaFormat == OpalH261)
-    desc << "video/x-h261, "
-            "width=" << mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption()) << ", "
-            "height=" << mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption()) << ", "
-            "framerate=(fraction)90000/" << mediaFormat.GetFrameTime() <<
-            " ! "
-            "ffdec_h261";
+            "framerate=(fraction)9000/" << mediaFormat.GetFrameTime();
   else {
     desc << "application/x-rtp, "
             "media=video, "
             "payload=" << (unsigned)mediaFormat.GetPayloadType() << ", "
             "clock-rate=" << mediaFormat.GetClockRate() << ", "
-            "encoding-name=" << mediaFormat.GetEncodingName();
+            "encoding-name=" << mediaFormat.GetEncodingName()
+         << " ! ";
     if (!BuildDecoder(desc, stream))
       return false;
   }
 
-  desc << " ! ";
+  desc << " ! ffmpegcolorspace ! ";
 
   return true;
 }
@@ -519,24 +491,32 @@ bool GstEndPoint::BuildVideoSinkDevice(ostream & desc, const GstMediaStream & /*
 
 bool GstEndPoint::BuildEncoder(ostream & desc, const GstMediaStream & stream)
 {
-  PStringToString::iterator it = m_MediaFormatToGstEncoder.find(stream.GetMediaFormat());
-  if (it == m_MediaFormatToGstEncoder.end())
+  OpalMediaFormat mediaFormat = stream.GetMediaFormat();
+  GstInfoMap::iterator it = m_MediaFormatToGStreamer.find(mediaFormat);
+  if (it == m_MediaFormatToGStreamer.end())
     return false;
 
-  desc << it->second;
+  OpalMediaType mediaType = mediaFormat.GetMediaType();
+  desc << it->second.m_encoder << " name=" << mediaType << "Encoder";
+  if (!it->second.m_packetiser.IsEmpty())
+    desc << " ! " << it->second.m_packetiser << " name=" << mediaType << "Packetiser";
+
   return true;
 }
 
 
 bool GstEndPoint::BuildDecoder(ostream & desc, const GstMediaStream & stream)
 {
-  const OpalMediaFormat & mediaFormat = stream.GetMediaFormat();
-
-  PStringToString::iterator it = m_MediaFormatToGstDecoder.find(stream.GetMediaFormat());
-  if (it == m_MediaFormatToGstDecoder.end())
+  OpalMediaFormat mediaFormat = stream.GetMediaFormat();
+  GstInfoMap::iterator it = m_MediaFormatToGStreamer.find(mediaFormat);
+  if (it == m_MediaFormatToGStreamer.end())
     return false;
 
-  desc << it->second;
+  OpalMediaType mediaType = mediaFormat.GetMediaType();
+  if (!it->second.m_depacketiser.IsEmpty())
+    desc << it->second.m_depacketiser << " name=" << mediaType << "Depacketiser ! ";
+  desc << it->second.m_decoder << " name=" << mediaType << "Decoder";
+
   return true;
 }
 
@@ -572,23 +552,48 @@ OpalMediaStream* GstConnection::CreateMediaStream(const OpalMediaFormat & mediaF
 }
 
 
-bool GstConnection::BuildPipeline(const GstMediaStream & stream)
+bool GstConnection::OpenPipeline(PGstPipeline & pipeline, const GstMediaStream & stream)
 {
-  bool isSource = stream.IsSource();
-  PGstPipeline & pipeline = m_pipeline[isSource];
-
   PStringStream description;
-
-  if (!m_endpoint.BuildPipeline(description, m_pipedesc[isSource], stream))
+  if (!m_endpoint.BuildPipeline(description, stream))
     return false;
+
+  if (pipeline.IsValid()) {
+    PTRACE(4, "Reconfiguring gstreamer pipeline for " << stream);
+    if (!pipeline.SetState(PGstPipeline::Null, 1000)) {
+      PTRACE(2, "Could not stop gstreamer pipeline for " << stream);
+    }
+  }
+
+  bool isSource = stream.IsSource();
+  bool isAudio = stream.GetMediaFormat().GetMediaType() == OpalMediaType::Audio();
+
+  OpalMediaStreamPtr otherStream = GetMediaStream(isAudio ? OpalMediaType::Video() : OpalMediaType::Audio(), isSource);
+  if (otherStream != NULL) {
+    const GstMediaStream & audioStream = isAudio ? stream : dynamic_cast<const GstMediaStream &>(*otherStream);
+    const GstMediaStream & videoStream = isAudio ? dynamic_cast<const GstMediaStream &>(*otherStream) : stream;
+    PStringStream audioDevice, videoDevice;
+    if (isSource) {
+      m_endpoint.BuildAudioSourceDevice(audioDevice, audioStream);
+      m_endpoint.BuildVideoSourceDevice(videoDevice, videoStream);
+    }
+    else {
+      m_endpoint.BuildAudioSinkDevice(audioDevice, audioStream);
+      m_endpoint.BuildVideoSinkDevice(videoDevice, videoStream);
+    }
+    if (audioDevice == videoDevice) {
+      // Parallel pipelines
+      PTRACE(2, "Common audio/video source not yet supported");
+      return false;
+    }
+  }
 
   if (!pipeline.Parse(description)) {
     PTRACE(2, "Failed to parse gstreamer pipeline: \"" << description << '"');
     return false;
   }
 
-  pipeline.SetName(stream.IsSource() ? "SourcePipeline" : "SinkPipeline");
-  m_pipedesc[isSource] = description;
+  pipeline.SetName(isSource ? "SourcePipeline" : "SinkPipeline");
 
 #if PTRACING
   if (PTrace::CanTrace(5)) {
@@ -605,16 +610,6 @@ bool GstConnection::BuildPipeline(const GstMediaStream & stream)
 #endif // PTRACING
 
   return true;
-}
-
-
-void GstConnection::DestroyPipeline(const GstMediaStream & stream)
-{
-  // Need to be smarter when Audio & Video in pipeline
-  bool isSource = stream.IsSource();
-  m_pipeline[isSource].SetState(PGstElement::Null);
-  m_pipeline[isSource].SetNULL();
-  m_pipedesc[isSource].MakeEmpty();
 }
 
 
@@ -635,35 +630,34 @@ PBoolean GstMediaStream::Open()
   if (IsOpen())
     return true;
 
-  if (!m_connection.BuildPipeline(*this))
+  if (!m_connection.OpenPipeline(m_pipeline, *this))
     return false;
-
-  PGstPipeline & pipeline = m_connection.GetPipeline(IsSource());
 
   // Our source, their sink, and vice versa
   PString name = mediaFormat.GetMediaType();
   if (IsSource()) {
     name += APP_SINK_SUFFIX;
-    if (!pipeline.GetByName(name, m_pipeSink)) {
-      PTRACE(2, "Could not find " << name << " in pipeline");
+    if (!m_pipeline.GetByName(name, m_pipeSink)) {
+      PTRACE(2, "Could not find " << name << " in pipeline for " << *this);
       return false;
     }
   }
   else {
     name += APP_SOURCE_SUFFIX;
-    if (!pipeline.GetByName(name, m_pipeSource)) {
-      PTRACE(2, "Could not find " << name << " in pipeline");
+    if (!m_pipeline.GetByName(name, m_pipeSource)) {
+      PTRACE(2, "Could not find " << name << " in pipeline for " << *this);
       return false;
     }
     m_pipeSource.SetType(PGstAppSrc::Stream);
   }
 
-  if (!pipeline.SetState(PGstElement::Playing)) {
-    PTRACE(2, "Failed to start gstreamer pipeline");
+  if (!m_pipeline.SetState(PGstElement::Playing)) {
+    PTRACE(2, "Failed to start gstreamer pipeline for " << *this);
+    m_pipeline.SetNULL();
     return false;
   }
 
-  PTRACE(4, "Started gstreamer pipeline");
+  PTRACE(4, "Opened gstreamer pipeline for " << *this);
   return OpalMediaStream::Open();
 }
 
@@ -671,7 +665,8 @@ PBoolean GstMediaStream::Open()
 void GstMediaStream::InternalClose()
 {
   PTRACE(4, "Stopping gstreamer pipeline.");
-  m_connection.DestroyPipeline(*this);
+  m_pipeline.SetState(PGstPipeline::Null);
+  m_pipeline.SetNULL();
 }
 
 
@@ -716,7 +711,7 @@ PBoolean GstMediaStream::ReadPacket(RTP_DataFrame & packet)
     return true;
   }
 
-  PTRACE(2, "Error pulling data to pipeline");
+  PTRACE(2, "Error pulling data to pipeline for " << *this);
   return false;
 }
 
@@ -726,11 +721,12 @@ PBoolean GstMediaStream::WritePacket(RTP_DataFrame & packet)
   if (!IsOpen() || IsSource() || !m_pipeSource.IsValid())
     return false;
 
-  PTRACE(5, "Pushing " << (packet.GetHeaderSize()+packet.GetPayloadSize()) << " bytes");
-  if (m_pipeSource.Push(packet.GetPointer(), packet.GetHeaderSize()+packet.GetPayloadSize()))
+  PINDEX size = packet.GetHeaderSize() + packet.GetPayloadSize();
+  PTRACE(5, "Pushing " << size << " bytes");
+  if (m_pipeSource.Push(packet.GetPointer(), size))
     return true;
 
-  PTRACE(2, "Error pushing data to pipeline");
+  PTRACE(2, "Error pushing " << size <<" bytes of data to pipeline for " << *this);
   return false;
 }
 
