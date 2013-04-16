@@ -119,8 +119,7 @@ class GstEndPoint : public OpalLocalEndPoint
 
       */
     virtual bool BuildPipeline(
-      ostream & newDescription,
-      const PString & existingDescription,
+      ostream & description,
       const GstMediaStream & stream
     );
 
@@ -132,25 +131,26 @@ class GstEndPoint : public OpalLocalEndPoint
     virtual bool BuildEncoder(ostream & desc, const GstMediaStream & stream);
     virtual bool BuildDecoder(ostream & desc, const GstMediaStream & stream);
 
-    static const PString & GetPipelineAudioSourceName();
-    static const PString & GetPipelineAudioSinkName();
-
     void SetAudioSourceDevice(const PString & dev) { m_audioSourceDevice = dev; }
     void SetAudioSinkDevice  (const PString & dev) { m_audioSinkDevice = dev; }
     const PString & GetAudioSourceDevice() const { return m_audioSourceDevice; }
     const PString & GetAudioSinkDevice()   const { return m_audioSinkDevice; }
+
+    static const PString & GetPipelineAudioSourceName();
+    static const PString & GetPipelineAudioSinkName();
 
 #if OPAL_VIDEO
     virtual bool BuildVideoSourcePipeline(ostream & desc, const GstMediaStream & stream);
     virtual bool BuildVideoSinkPipeline(ostream & desc, const GstMediaStream & stream);
     virtual bool BuildVideoSourceDevice(ostream & desc, const GstMediaStream & stream);
     virtual bool BuildVideoSinkDevice(ostream & desc, const GstMediaStream & stream);
-    static const PString & GetPipelineVideoSourceName();
-    static const PString & GetPipelineVideoSinkName();
     void SetVideoSourceDevice(const PString & dev) { m_videoSourceDevice = dev; }
     void SetVideoSinkDevice  (const PString & dev) { m_videoSinkDevice = dev; }
     const PString & GetVideoSourceDevice() const { return m_videoSourceDevice; }
     const PString & GetVideoSinkDevice()   const { return m_videoSinkDevice; }
+
+    static const PString & GetPipelineVideoSourceName();
+    static const PString & GetPipelineVideoSinkName();
 #endif // OPAL_VIDEO
   //@}
 
@@ -162,9 +162,16 @@ class GstEndPoint : public OpalLocalEndPoint
     PString m_videoSinkDevice;
 #endif // OPAL_VIDEO
 
-    // Translation tables
-    PStringToString     m_MediaFormatToGstEncoder;
-    PStringToString     m_MediaFormatToGstDecoder;
+    // Translation table
+    struct GstInfo {
+      PString m_encoder;
+      PString m_packetiser;
+      PString m_decoder;
+      PString m_depacketiser;
+    };
+    typedef map<OpalMediaFormat, GstInfo> GstInfoMap;
+
+    GstInfoMap          m_MediaFormatToGStreamer;
     OpalMediaFormatList m_mediaFormatsAvailable;
 };
 
@@ -216,24 +223,18 @@ class GstConnection : public OpalLocalConnection
 
   /**@name Customisation call backs for building GStreamer pipeline */
   //@{
-    /**Build the GStreamer pipeline.
+    /**Open the GStreamer pipeline.
        This will call GstEndPoint::BuildPipeline() for each of the source/sink
        pipelines.
       */
-    virtual bool BuildPipeline(const GstMediaStream & stream);
-
-    /**DEstroy the GStreamer pipeline.
-      */
-    virtual void DestroyPipeline(const GstMediaStream & stream);
-
-    /// Get the source pipeline
-    PGstPipeline & GetPipeline(bool isSource) { return m_pipeline[isSource]; }
+    virtual bool OpenPipeline(
+      PGstPipeline & pipeline,
+      const GstMediaStream & stream
+    );
   //@}
 
   protected:
     GstEndPoint & m_endpoint;
-    PGstPipeline  m_pipeline[2]; // The GStreamer pipeline(s) for media: sink=0, source=1
-    PString       m_pipedesc[2];
 };
 
 
@@ -310,8 +311,11 @@ class GstMediaStream : public OpalMediaStream
 
     // Member variables.
     GstConnection & m_connection;
+    PGstPipeline    m_pipeline;
     PGstAppSrc      m_pipeSource;
     PGstAppSink     m_pipeSink;
+
+  friend bool GstConnection::OpenPipeline(PGstPipeline & pipeline, const GstMediaStream & stream);
 };
 
 
