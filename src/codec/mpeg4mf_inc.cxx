@@ -45,6 +45,8 @@
 static const char MPEG4FormatName[] = OPAL_MPEG4;
 static const char MPEG4EncodingName[] = "MP4V-ES";
 static const char ProfileAndLevel[] = "Profile & Level";
+static const char ProfileAndLevel_SDP[] = "profile-level-id";
+static const char Object_SDP[] = "object";
 static const char H245ObjectId[] = "H.245 Object Id";
 static const char DCI[] = "DCI";
 static const char DCI_SDP[] = "config";
