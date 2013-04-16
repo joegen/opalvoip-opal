@@ -42,30 +42,33 @@ endif
 
 ifeq ($(OPAL_SAMPLES),yes)
 
-SUBDIRS += samples/c_api \
-           samples/server
+  SUBDIRS += samples/c_api \
+             samples/server
 
-ifeq ($(OPAL_HAS_PCSS),yes)
-SUBDIRS += samples/simple
-endif
-ifeq ($(OPAL_VIDEO),yes)
-SUBDIRS += samples/codectest
-endif
-ifeq ($(OPAL_HAS_PCSS)$(OPAL_IVR)$(OPAL_PTLIB_CLI),yesyesyes)
-SUBDIRS += samples/callgen
-endif
-ifeq ($(OPAL_PTLIB_CLI)$(OPAL_PTLIB_EXPAT)$(OPAL_SIP), yesyesyes)
-SUBDIRS += samples/testpresent
-endif
-ifeq ($(OPAL_PTLIB_CLI)$(OPAL_FAX), yesyes)
-SUBDIRS += samples/faxopal
-endif
-ifeq ($(OPAL_PTLIB_CLI)$(OPAL_IVR),yesyes)
-SUBDIRS += samples/ivropal
-endif
-ifeq ($(OPAL_PTLIB_CLI)$(OPAL_IVR)$(OPAL_HAS_MIXER),yesyesyes)
-SUBDIRS += samples/opalmcu
-endif
+  ifeq ($(OPAL_HAS_PCSS),yes)
+    SUBDIRS += samples/simple
+  endif
+  ifeq ($(OPAL_VIDEO),yes)
+    SUBDIRS += samples/codectest
+  endif
+  ifeq ($(OPAL_HAS_PCSS)$(OPAL_IVR)$(OPAL_PTLIB_CLI),yesyesyes)
+    SUBDIRS += samples/callgen
+  endif
+  ifeq ($(OPAL_PTLIB_CLI)$(OPAL_PTLIB_EXPAT)$(OPAL_SIP), yesyesyes)
+    SUBDIRS += samples/testpresent
+  endif
+  ifeq ($(OPAL_PTLIB_CLI)$(OPAL_FAX), yesyes)
+    SUBDIRS += samples/faxopal
+  endif
+  ifeq ($(OPAL_PTLIB_CLI)$(OPAL_IVR),yesyes)
+    SUBDIRS += samples/ivropal
+  endif
+  ifeq ($(OPAL_PTLIB_CLI)$(OPAL_IVR)$(OPAL_HAS_MIXER),yesyesyes)
+    SUBDIRS += samples/opalmcu
+  endif
+  ifeq ($(OPAL_GSTREAMER),yes)
+    SUBDIRS += samples/gstreamer
+  endif
 
 endif # OPAL_SAMPLES
 
@@ -174,25 +177,29 @@ SOURCES += $(OPAL_SRCDIR)/opal/manager.cxx \
            $(OPAL_SRCDIR)/opal/pres_ent.cxx
 
 ifeq ($(OPAL_PTLIB_CLI), yes)
-SOURCES	+= $(OPAL_SRCDIR)/opal/console_mgr.cxx 
+  SOURCES	+= $(OPAL_SRCDIR)/opal/console_mgr.cxx 
 endif
 
 ifeq ($(OPAL_IVR), yes)
-SOURCES += $(OPAL_SRCDIR)/ep/ivr.cxx \
-           $(OPAL_SRCDIR)/ep/opalvxml.cxx 
+  SOURCES += $(OPAL_SRCDIR)/ep/ivr.cxx \
+             $(OPAL_SRCDIR)/ep/opalvxml.cxx 
 endif
 
 
 ifeq ($(OPAL_HAS_MIXER), yes)
-SOURCES += $(OPAL_SRCDIR)/opal/recording.cxx \
-           $(OPAL_SRCDIR)/ep/opalmixer.cxx
-ifeq ($(target_os),mingw)
-LDFLAGS += -lvfw32
-endif
+  SOURCES += $(OPAL_SRCDIR)/opal/recording.cxx \
+             $(OPAL_SRCDIR)/ep/opalmixer.cxx
+  ifeq ($(target_os),mingw)
+    LDFLAGS += -lvfw32
+  endif
 endif
 
 ifeq ($(OPAL_HAS_PCSS), yes)
-SOURCES += $(OPAL_SRCDIR)/ep/pcss.cxx
+  SOURCES += $(OPAL_SRCDIR)/ep/pcss.cxx
+endif
+
+ifeq ($(OPAL_GSTREAMER),yes)
+  SOURCES += $(OPAL_SRCDIR)/ep/GstEndPoint.cxx
 endif
 
 ########################################
@@ -480,8 +487,10 @@ SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
 
 ifeq ($(OPAL_VIDEO), yes)
 SOURCES += $(OPAL_SRCDIR)/codec/vidcodec.cxx \
+           $(OPAL_SRCDIR)/codec/h261mf.cxx \
            $(OPAL_SRCDIR)/codec/h263mf.cxx \
-           $(OPAL_SRCDIR)/codec/h264mf.cxx
+           $(OPAL_SRCDIR)/codec/h264mf.cxx \
+           $(OPAL_SRCDIR)/codec/mpeg4mf.cxx
 endif
 
 ifeq ($(OPAL_RFC4175), yes)
