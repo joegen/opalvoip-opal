@@ -52,7 +52,7 @@ const PString & GstEndPoint::GetPipelineVideoSinkName()   { static PConstString 
 #endif // OPAL_VIDEO
 
 
-static PConstString const PreferredAudioSourceDevice[] = {
+static const char * const PreferredAudioSourceDevice[] = {
 #if _WIN32
 //  "wasapisrc",
   "directsoundsrc",
@@ -67,7 +67,7 @@ static PConstString const PreferredAudioSourceDevice[] = {
 };
 
 
-static PConstString const PreferredAudioSinkDevice[] = {
+static const char * const PreferredAudioSinkDevice[] = {
 #if _WIN32
 //  "wasapisink", Deos not work, no idea why
   "directsoundsink",
@@ -83,7 +83,7 @@ static PConstString const PreferredAudioSinkDevice[] = {
 
 
 #if OPAL_VIDEO
-static PConstString const PreferredVideoSourceDevice[] = {
+static const char * const PreferredVideoSourceDevice[] = {
 #if _WIN32
   "dshowvideosrc",
 #else
@@ -93,7 +93,7 @@ static PConstString const PreferredVideoSourceDevice[] = {
 };
 
 
-static PConstString const PreferredVideoSinkDevice[] = {
+static const char * const PreferredVideoSinkDevice[] = {
 #if _WIN32
   "dshowvideosink",
   "directdrawsink",
@@ -210,13 +210,13 @@ static struct GstInitInfo {
 };
 
 
-static PString GetDefaultDevice(const char * klass, PConstString const * preferred, size_t count)
+static PString GetDefaultDevice(const char * klass, const char * const * preferred, size_t count)
 {
   PTRACE(4, "Devices:\n" << setfill('\n') << PGstPluginFeature::Inspect(klass, true));
 
   PStringArray available = PGstPluginFeature::Inspect(klass, false);
   for (size_t i = 0; i < count; ++i) {
-    if (available.GetValuesIndex(preferred[i]) != P_MAX_INDEX)
+    if (available.GetValuesIndex(PConstString(preferred[i])) != P_MAX_INDEX)
       return preferred[i];
   }
   return available[0];

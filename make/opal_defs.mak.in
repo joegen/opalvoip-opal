@@ -120,6 +120,7 @@ OPAL_PTLIB_VXML  := @OPAL_PTLIB_VXML@
 OPAL_PTLIB_CONFIG_FILE:=@OPAL_PTLIB_CONFIG_FILE@
 OPAL_PTLIB_STUN  := @OPAL_PTLIB_STUN@
 OPAL_PTLIB_CLI   := @OPAL_PTLIB_CLI@
+OPAL_GSTREAMER   := @OPAL_PTLIB_GSTREAMER@
 
 
 ###############################################################################
