@@ -135,6 +135,7 @@ OPAL_CHECK_PTLIB_OPTION([DNS resolver], [PTLIB_DNS_RESOLVER])
 OPAL_CHECK_PTLIB_OPTION([audio],        [PTLIB_AUDIO])
 OPAL_CHECK_PTLIB_OPTION([config],       [PTLIB_CONFIG_FILE])
 OPAL_CHECK_PTLIB_OPTION([CLI],          [PTLIB_CLI])
+OPAL_CHECK_PTLIB_OPTION([GSTREAMER],    [PTLIB_GSTREAMER])
 
 
 dnl ########################################################################
