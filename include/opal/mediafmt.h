@@ -1320,6 +1320,7 @@ class OpalVideoFormat : public OpalMediaFormat
     static const PString & RateControlEnableOption();
     static const PString & RateControllerOption();
     static const PString & RateControllerBitRateScalerOption();
+    static const PString & FreezeUntilIntraFrameOption();
 
     /**The "role" of the content in the video stream based on this media
        format. This is based on RFC4796 and H.239 semantics and is an
