@@ -148,16 +148,16 @@ class OpalVideoTranscoder : public OpalTranscoder
 #endif
 
     virtual bool HasErrorConcealment() const  { return m_errorConcealment; }
-    bool WasLastFrameIFrame() const { return lastFrameWasIFrame; }
-    void ForceIFrame()              { forceIFrame = true; }
+    bool WasLastFrameIFrame() const { return m_lastFrameWasIFrame; }
+    void ForceIFrame()              { m_forceIFrame = true; }
   //@}
 
   protected:
     bool   m_errorConcealment;
-    PINDEX inDataSize;
-    PINDEX outDataSize;
-    bool   forceIFrame;
-    bool   lastFrameWasIFrame;
+    PINDEX m_inDataSize;
+    PINDEX m_outDataSize;
+    bool   m_forceIFrame;
+    bool   m_lastFrameWasIFrame;
 
     DWORD m_totalFrames;
     DWORD m_keyFrames;
