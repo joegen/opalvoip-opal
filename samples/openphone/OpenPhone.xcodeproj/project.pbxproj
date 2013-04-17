@@ -7,25 +7,17 @@
 	objects = {
 
 /* Begin PBXContainerItemProxy section */
-		A3099D3A124CC9920033598E /* PBXContainerItemProxy */ = {
+		A32F20D1171C0A66001A0EA0 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A3099D36124CC9860033598E /* opal.xcodeproj */;
 			proxyType = 1;
-			remoteGlobalIDString = D28A88AD04BDD90700651E21;
-			remoteInfo = opal;
-		};
-		A3099D40124CC9DA0033598E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = A3099D3C124CC9AF0033598E /* ptlib.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = D28A88AD04BDD90700651E21;
-			remoteInfo = ptlib;
+			remoteGlobalIDString = A3BAF2C117169255002A1229;
+			remoteInfo = OPAL;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		A3099D36124CC9860033598E /* opal.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = opal.xcodeproj; path = ../../opal.xcodeproj; sourceTree = SOURCE_ROOT; };
-		A3099D3C124CC9AF0033598E /* ptlib.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = ptlib.xcodeproj; path = ../../../ptlib/ptlib.xcodeproj; sourceTree = SOURCE_ROOT; };
 		A370BDAB11D5FCC9008AE956 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A370BDAC11D5FCC9008AE956 /* InfoPlist.strings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; path = InfoPlist.strings; sourceTree = "<group>"; };
 		A370BDAD11D5FCC9008AE956 /* version.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = version.plist; sourceTree = "<group>"; };
@@ -51,7 +43,6 @@
 		08FB7794FE84155DC02AAC07 /* OpenPhone */ = {
 			isa = PBXGroup;
 			children = (
-				A3099D3C124CC9AF0033598E /* ptlib.xcodeproj */,
 				A3099D36124CC9860033598E /* opal.xcodeproj */,
 				A3CFF5E214B9649300220E66 /* Bundling */,
 				A370BE0611D7603D008AE956 /* Resources */,
@@ -65,13 +56,6 @@
 			sourceTree = "<group>";
 		};
 		A3099D37124CC9860033598E /* Products */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		A3099D3D124CC9AF0033598E /* Products */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -118,8 +102,7 @@
 			buildToolPath = /usr/bin/make;
 			buildWorkingDirectory = "";
 			dependencies = (
-				A3099D41124CC9DA0033598E /* PBXTargetDependency */,
-				A3099D3B124CC9920033598E /* PBXTargetDependency */,
+				A32F20D2171C0A66001A0EA0 /* PBXTargetDependency */,
 			);
 			name = OpenPhone;
 			passBuildSettingsInEnvironment = 1;
@@ -148,10 +131,6 @@
 					ProductGroup = A3099D37124CC9860033598E /* Products */;
 					ProjectRef = A3099D36124CC9860033598E /* opal.xcodeproj */;
 				},
-				{
-					ProductGroup = A3099D3D124CC9AF0033598E /* Products */;
-					ProjectRef = A3099D3C124CC9AF0033598E /* ptlib.xcodeproj */;
-				},
 			);
 			projectRoot = "";
 			targets = (
@@ -161,15 +140,10 @@
 /* End PBXProject section */
 
 /* Begin PBXTargetDependency section */
-		A3099D3B124CC9920033598E /* PBXTargetDependency */ = {
+		A32F20D2171C0A66001A0EA0 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			name = opal;
-			targetProxy = A3099D3A124CC9920033598E /* PBXContainerItemProxy */;
-		};
-		A3099D41124CC9DA0033598E /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = ptlib;
-			targetProxy = A3099D40124CC9DA0033598E /* PBXContainerItemProxy */;
+			name = OPAL;
+			targetProxy = A32F20D1171C0A66001A0EA0 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
