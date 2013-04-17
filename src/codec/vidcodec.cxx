@@ -95,10 +95,10 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
                                          const OpalMediaFormat & outputMediaFormat)
   : OpalTranscoder(inputMediaFormat, outputMediaFormat)
   , m_errorConcealment(false)
-  , inDataSize(10*1024)
-  , outDataSize(10*1024)
-  , forceIFrame(false)
-  , lastFrameWasIFrame(false)
+  , m_inDataSize(10*1024)
+  , m_outDataSize(10*1024)
+  , m_forceIFrame(false)
+  , m_lastFrameWasIFrame(false)
   , m_totalFrames(0)
   , m_keyFrames(0)
 {
@@ -123,8 +123,8 @@ bool OpalVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, cons
   if (!OpalTranscoder::UpdateMediaFormats(input, output))
     return false;
 
-  SetFrameBytes(inputMediaFormat,  OpalVideoFormat::MaxRxFrameWidthOption(), OpalVideoFormat::MaxRxFrameHeightOption(), inDataSize);
-  SetFrameBytes(outputMediaFormat, OpalVideoFormat::FrameWidthOption(),      OpalVideoFormat::FrameHeightOption(),      outDataSize);
+  SetFrameBytes(inputMediaFormat,  OpalVideoFormat::MaxRxFrameWidthOption(), OpalVideoFormat::MaxRxFrameHeightOption(), m_inDataSize);
+  SetFrameBytes(outputMediaFormat, OpalVideoFormat::FrameWidthOption(),      OpalVideoFormat::FrameHeightOption(),      m_outDataSize);
 
   if (outputMediaFormat.GetOptionInteger(OpalMediaFormat::MaxTxPacketSizeOption()) > (int)maxOutputSize) {
     PTRACE(4, "Media\tReducing \"" << OpalMediaFormat::MaxTxPacketSizeOption() << "\" to " << maxOutputSize);
@@ -138,10 +138,10 @@ bool OpalVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, cons
 PINDEX OpalVideoTranscoder::GetOptimalDataFrameSize(PBoolean input) const
 {
   if (input)
-    return inDataSize;
+    return m_inDataSize;
 
-  if (outDataSize < maxOutputSize)
-    return outDataSize;
+  if (m_outDataSize < maxOutputSize)
+    return m_outDataSize;
 
   return maxOutputSize;
 }
@@ -150,8 +150,8 @@ PINDEX OpalVideoTranscoder::GetOptimalDataFrameSize(PBoolean input) const
 PBoolean OpalVideoTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 {
   if (outputMediaFormat != OpalYUV420P && PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    PTRACE_IF(3, !forceIFrame, "Media\tI-Frame forced in video stream");
-    forceIFrame = true; // Reset when I-Frame is sent
+    PTRACE_IF(3, !m_forceIFrame, "Media\tI-Frame forced in video stream");
+    m_forceIFrame = true; // Reset when I-Frame is sent
     return true;
   }
 
