@@ -852,22 +852,10 @@ OpalTransport * OpalListenerUDP::Accept(const PTimeInterval & timeout)
   param.m_timeout = timeout;
   listenerBundle->ReadFromBundle(param);
 
-  switch (param.m_errorCode) {
-    case PChannel::NoError :
-      pdu.SetSize(param.m_lastCount);
-      break;
+  if (param.m_errorCode != PChannel::NoError)
+    return NULL;
 
-    case PChannel::BufferTooSmall :
-      break;
-
-    case PChannel::Interrupted :
-      PTRACE(4, "Listen\tInterfaces changed");
-      return NULL;
-
-    default :
-      PTRACE(1, "Listen\tUDP read error: " << PChannel::GetErrorText(param.m_errorCode, param.m_errorNumber));
-      return NULL;
-  }
+  pdu.SetSize(param.m_lastCount);
 
   OpalTransportUDP * transport = new OpalTransportUDP(endpoint, listenerBundle, param.m_iface);
   transport->m_preReadPacket = pdu;
