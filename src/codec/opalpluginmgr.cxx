@@ -822,6 +822,8 @@ OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const PluginCodec_Definitio
   , m_lastDecodedTimestamp(UINT_MAX)
   , m_lastMarkerTimestamp(UINT_MAX)
   , m_badMarkers(false)
+  , m_freezeTillIFrame(false)
+  , m_frozenTillIFrame(false)
 #if PTRACING
   , m_consecutiveIntraFrames(0)
 #endif
@@ -857,6 +859,8 @@ PBoolean OpalPluginVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & i
     outputMediaFormat.Merge(inputMediaFormat);
   }
 
+  m_freezeTillIFrame = inputMediaFormat.GetOptionBoolean(OpalVideoFormat::FreezeUntilIntraFrameOption()) ||
+                      outputMediaFormat.GetOptionBoolean(OpalVideoFormat::FreezeUntilIntraFrameOption());
   return true;
 }
 
@@ -890,9 +894,9 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
                                 (PINDEX)getOutputDataSizeControl.Call((void *)NULL, (unsigned *)NULL, context));
 
   unsigned flags;
-  lastFrameWasIFrame = false;
+  m_lastFrameWasIFrame = false;
 
-  PTRACE_IF(4, forceIFrame, "OpalPlugin\tI-Frame forced from video codec at frame " << m_totalFrames);
+  PTRACE_IF(4, m_forceIFrame, "OpalPlugin\tI-Frame forced from video codec at frame " << m_totalFrames);
   do {
     // Some plug ins a very rude and use more memory than we say they can, so add an extra 1k
     RTP_DataFrame * dst = new RTP_DataFrame((PINDEX)0, outputDataSize+1024);
@@ -902,7 +906,7 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
     // call the codec function
     unsigned int fromLen = src.GetHeaderSize() + src.GetPayloadSize();
     unsigned int toLen = outputDataSize;
-    flags = forceIFrame || m_totalFrames == 0 ? PluginCodec_CoderForceIFrame : 0;
+    flags = m_forceIFrame || m_totalFrames == 0 ? PluginCodec_CoderForceIFrame : 0;
 
     if (!Transcode((const BYTE *)src, &fromLen, dst->GetPointer(), &toLen, &flags)) {
       delete dst;
@@ -910,7 +914,7 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
     }
 
     if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
-      lastFrameWasIFrame = true;
+      m_lastFrameWasIFrame = true;
 
     if (toLen < RTP_DataFrame::MinHeaderSize || (PINDEX)toLen < dst->GetHeaderSize())
       delete dst;
@@ -923,13 +927,13 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
   } while ((flags & PluginCodec_ReturnCoderLastFrame) == 0);
 
   m_totalFrames++;
-  if (lastFrameWasIFrame)
+  if (m_lastFrameWasIFrame)
     m_keyFrames++;
 
 #if PTRACING
-  if (!lastFrameWasIFrame)
+  if (!m_lastFrameWasIFrame)
     m_consecutiveIntraFrames = 0;
-  else if (forceIFrame)
+  else if (m_forceIFrame)
     PTRACE(3, "OpalPlugin\tEncoder sent forced I-Frame at frame " << m_totalFrames);
   else if (++m_consecutiveIntraFrames == 1) 
     PTRACE(4, "OpalPlugin\tEncoder sending I-Frame at frame " << m_totalFrames);
@@ -955,8 +959,8 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
   }
 #endif
 
-  if (lastFrameWasIFrame)
-    forceIFrame = false;
+  if (m_lastFrameWasIFrame)
+    m_forceIFrame = false;
 
   return true;
 }
@@ -986,7 +990,7 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
       dstList.AllowDeleteObjects();
     }
 
-    lastFrameWasIFrame = false;
+    m_lastFrameWasIFrame = false;
   }
 
   dstList.RemoveAll();
@@ -1025,7 +1029,7 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
         return false;
       if (m_bufferRTP == NULL) {
         m_bufferRTP = new RTP_DataFrame((PINDEX)0, outputDataSize);
-        lastFrameWasIFrame = false;
+        m_lastFrameWasIFrame = false;
       }
     }
     if (m_lastMarkerTimestamp != UINT_MAX)
@@ -1087,11 +1091,14 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
 
   PTRACE_IF(3, packetsLost, "OpalPlugin\tPackets lost"
                           ", sending OpalVideoPictureLoss in hope of an I-Frame: sn=" << sequenceNumber);
-  if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0 || packetsLost)
+  bool pictureLost = packetsLost || (flags & PluginCodec_ReturnCoderRequestIFrame) != 0;
+  if (pictureLost) {
     NotifyCommand(OpalVideoPictureLoss(sequenceNumber, src.GetTimestamp()));
+    m_frozenTillIFrame = m_freezeTillIFrame;
+  }
 
   if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
-    lastFrameWasIFrame = true;
+    m_lastFrameWasIFrame = true;
 
   if ((flags & PluginCodec_ReturnCoderLastFrame) == 0)
     return true;
@@ -1120,20 +1127,25 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
     return false;
   }
 
-  m_bufferRTP->SetPayloadType(GetPayloadType(false));
-  dstList.Append(m_bufferRTP);
-  m_bufferRTP = NULL;
+  if (!m_frozenTillIFrame || (m_lastFrameWasIFrame && !pictureLost)) {
+    m_bufferRTP->SetPayloadType(GetPayloadType(false));
+    dstList.Append(m_bufferRTP);
+    m_bufferRTP = NULL;
+    m_frozenTillIFrame = false;
+  }
 
   m_totalFrames++;
 
-  if (lastFrameWasIFrame)
+  if (m_lastFrameWasIFrame)
     m_keyFrames++;
 
-  PTRACE(lastFrameWasIFrame ? 4 : 5, "OpalPlugin\tVideo decoder returned "
-         << (lastFrameWasIFrame ? 'I' : 'P') << "-Frame: "
+  PTRACE(m_lastFrameWasIFrame ? 4 : 5, "OpalPlugin\tVideo decoder returned "
+         << (m_lastFrameWasIFrame ? 'I' : 'P') << "-Frame: "
          << videoHeader->width << 'x' << videoHeader->height
          << ", sn=" << sequenceNumber
-         << ", ts=" << src.GetTimestamp());
+         << ", ts=" << src.GetTimestamp()
+         << (pictureLost ? ", decode error" : "")
+         << (m_frozenTillIFrame ? ", frozen" : ""));
 
   return true;
 };
