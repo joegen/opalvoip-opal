@@ -339,6 +339,8 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
     DWORD           m_lastDecodedTimestamp; // For missing marker bit detection
     DWORD           m_lastMarkerTimestamp;  // For continuous marker bit detection
     bool            m_badMarkers;
+    bool            m_freezeTillIFrame;
+    bool            m_frozenTillIFrame;
 
 #if PTRACING
     unsigned m_consecutiveIntraFrames;
