@@ -134,19 +134,11 @@ else
   OPAL_LIBDIR  = $(shell pkg-config opal --variable=libdir)
 endif
 
-ifndef P_SHAREDLIB
-  P_SHAREDLIB=1
-endif
-
 ifeq ($(DEBUG_BUILD),yes)
-  DEBUG=1
-endif
-
-ifdef DEBUG
   OBJ_SUFFIX := _d
 else
   OBJ_SUFFIX :=
-endif # DEBUG
+endif
 
 ifndef OBJDIR_SUFFIX
   OBJDIR_SUFFIX = $(OBJ_SUFFIX)
@@ -179,7 +171,7 @@ endif
 # Set up compiler flags and macros for debug/release versions
 #
 
-ifdef   DEBUG
+ifeq ($(DEBUG_BUILD),yes)
   CPPFLAGS += $(DEBUG_FLAGS)
   LDFLAGS  += $(DEBUG_FLAGS)
 else

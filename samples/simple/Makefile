@@ -41,11 +41,11 @@ endif
 
 # Determine which package to use debug or release
 ifeq ($(DEBUG_BUILD), yes)
-DEBUG_SUFFIX=_d
-CFLAGS += -g
+  DEBUG_SUFFIX=_d
+  CFLAGS += -g
 else
-DEBUG_SUFFIX=
-CFLAGS += -O3
+  DEBUG_SUFFIX=
+  CFLAGS += -O3
 endif
 
 ifeq ($(STATIC_BUILD), yes)
@@ -109,9 +109,7 @@ opt:
 debug:
 	$(MAKE) DEBUG_BUILD=yes STATIC_BUILD=no
 	
-both:
-	$(MAKE) DEBUG_BUILD=no STATIC_BUILD=no
-	$(MAKE) DEBUG_BUILD=yes STATIC_BUILD=no
+both: opt debug
 
 optnoshared:
 	$(MAKE) DEBUG_BUILD=no STATIC_BUILD=yes
@@ -119,9 +117,7 @@ optnoshared:
 debugnoshared:
 	$(MAKE) DEBUG_BUILD=yes STATIC_BUILD=yes
 	
-bothnoshared:
-	$(MAKE) DEBUG_BUILD=no STATIC_BUILD=yes
-	$(MAKE) DEBUG_BUILD=yes STATIC_BUILD=yes
+bothnoshared: optnoshared debugnoshared
 
 depend: Makefile $(patsubst %.dep, $(OPAL_DEPDIR)/%.dep, $(SRCS) $(DEPS))
 	@echo Dependencies created.
