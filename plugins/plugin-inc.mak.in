@@ -42,8 +42,8 @@ ARFLAGS       := @ARFLAGS@
 SHARED_LDFLAGS:= @SHARED_LDFLAGS@
 SHAREDLIBEXT  :=@SHAREDLIBEXT@
 
-ifneq ($(DEBUG),)
-CFLAGS        += -g
+ifeq ($(DEBUG_BUILD),yes)
+  CFLAGS      += -g
 endif
 
 OBJDIR := $(PLUGIN_SRC_DIR)/../lib_@target@/plugins/$(BASENAME)
