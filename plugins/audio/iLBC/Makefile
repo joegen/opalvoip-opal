@@ -32,30 +32,30 @@ SOURCES  := $(CURDIR)/ilbccodec.c
 PLUGIN_CPPFLAGS = $(ILBC_CFLAGS)
 PLUGIN_LIBS     = $(ILBC_LIBS)
 
-PLUGIN_SYSTEM   = $(ILBC_SYSTEM)
-SYSTEM_SOURCES := $(SRCDIR)/anaFilter.c \
-                  $(SRCDIR)/constants.c \
-                  $(SRCDIR)/createCB.c \
-                  $(SRCDIR)/doCPLC.c \
-                  $(SRCDIR)/enhancer.c \
-                  $(SRCDIR)/filter.c \
-                  $(SRCDIR)/FrameClassify.c \
-                  $(SRCDIR)/gainquant.c \
-                  $(SRCDIR)/getCBvec.c \
-                  $(SRCDIR)/helpfun.c \
-                  $(SRCDIR)/hpInput.c \
-                  $(SRCDIR)/hpOutput.c \
-                  $(SRCDIR)/iCBConstruct.c \
-                  $(SRCDIR)/iCBSearch.c \
-                  $(SRCDIR)/iLBC_decode.c \
-                  $(SRCDIR)/iLBC_encode.c \
-                  $(SRCDIR)/LPCdecode.c \
-                  $(SRCDIR)/LPCencode.c \
-                  $(SRCDIR)/lsf.c \
-                  $(SRCDIR)/packing.c \
-                  $(SRCDIR)/StateConstructW.c \
-                  $(SRCDIR)/StateSearchW.c \
-                  $(SRCDIR)/syntFilter.c
+PLUGIN_SYSTEM  = $(ILBC_SYSTEM)
+LOCAL_SOURCES := $(SRCDIR)/anaFilter.c \
+                 $(SRCDIR)/constants.c \
+                 $(SRCDIR)/createCB.c \
+                 $(SRCDIR)/doCPLC.c \
+                 $(SRCDIR)/enhancer.c \
+                 $(SRCDIR)/filter.c \
+                 $(SRCDIR)/FrameClassify.c \
+                 $(SRCDIR)/gainquant.c \
+                 $(SRCDIR)/getCBvec.c \
+                 $(SRCDIR)/helpfun.c \
+                 $(SRCDIR)/hpInput.c \
+                 $(SRCDIR)/hpOutput.c \
+                 $(SRCDIR)/iCBConstruct.c \
+                 $(SRCDIR)/iCBSearch.c \
+                 $(SRCDIR)/iLBC_decode.c \
+                 $(SRCDIR)/iLBC_encode.c \
+                 $(SRCDIR)/LPCdecode.c \
+                 $(SRCDIR)/LPCencode.c \
+                 $(SRCDIR)/lsf.c \
+                 $(SRCDIR)/packing.c \
+                 $(SRCDIR)/StateConstructW.c \
+                 $(SRCDIR)/StateSearchW.c \
+                 $(SRCDIR)/syntFilter.c
 
 INSTALL_DIR = $(AUD_PLUGIN_DIR)
 include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
