@@ -33,7 +33,7 @@
 #pragma implementation "g711codec.h"
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <codec/g711codec.h>
 

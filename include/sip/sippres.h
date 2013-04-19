@@ -32,7 +32,7 @@
 #define OPAL_SIP_SIPPRES_H
 
 #include <ptlib.h>
-#include <opal/buildopts.h>
+#include <opal_config.h>
 #include <sip/sipep.h>
 #include <ptlib/notifier_ext.h>
 

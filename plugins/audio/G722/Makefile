@@ -1,7 +1,7 @@
 #
-# Makefile for the Web-M VP8 Video Codec
+# Makefile for G.722 codec plugin
 #
-# Copyright (C) 2012 Vox Lucida Pty. Ltd., All Rights Reserved
+# Copyright (C) 2008 Vox Lucida Pty. Ltd., All Rights Reserved
 #
 # The contents of this file are subject to the Mozilla Public License
 # Version 1.0 (the "License"); you may not use this file except in
@@ -13,9 +13,9 @@
 # the License for the specific language governing rights and limitations
 # under the License.
 #
-# The Original Code is Open H323 library.
+# The Original Code is Open Phone Abstraction Library.
 #
-# The Initial Developer of the Original Code is Vox Lucida Pty. Ltd.
+# The Initial Developer of the Original Code is Robert Jongbloed
 #
 # Contributor(s): ______________________________________.
 #
@@ -24,16 +24,16 @@
 # $Date$
 #
 
-BASENAME := vp8_webm
+BASENAME := g722
 
-SRCDIR    := .
-SRCS    += vp8_webm.cxx \
+SRCDIR   := $(CURDIR)/VoIPCodecs
+SOURCES  := $(CURDIR)/g722codec.c \
+            $(SRCDIR)/g722_encode.c \
+            $(SRCDIR)/g722_decode.c \
+            $(SRCDIR)/bitstream.c 
 
-CPPFLAGS += @VP8_CFLAGS@ -DLIB_DIR='"$(libdir)"' -DVID_PLUGIN_DIR='"@VID_PLUGIN_DIR@"'
-LIBS   += @VP8_LIBS@
+INSTALL_DIR = $(AUD_PLUGIN_DIR)
+include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
 
-INSTALL_DIR := @VID_PLUGIN_DIR@
-PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
-include $(PLUGIN_SRC_DIR)/plugin-inc.mak
 
 ###########################################

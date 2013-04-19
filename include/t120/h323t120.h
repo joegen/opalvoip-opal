@@ -35,7 +35,7 @@
 #pragma interface
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <h323/h323caps.h>
 

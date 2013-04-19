@@ -35,7 +35,7 @@
 
 #include <ptlib.h>
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <lids/lidpluginmgr.h>
 #include <ptclib/dtmf.h>

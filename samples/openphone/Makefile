@@ -29,29 +29,20 @@
 PROG		:= openphone
 SOURCES		:= main.cxx openphone.cxx
 
-VERSION_FILE := version.h
+VERSION_FILE    := version.h
 
 # Need this before the include of opal_inc.mak
-default_target: bundle
+.DEFAULT_GOAL := bundle
 
-
-ifdef OPALDIR
-  include $(OPALDIR)/opal_inc.mak
-else
-  include $(shell pkg-config opal --variable=makedir)/opal_inc.mak
-endif
-
-
-WX_CONFIG=wx-config
-ifdef DEBUG
-WX_CONFIG+=--debug=yes
-else
-WX_CONFIG+=--debug=no
+WX_CONFIG := wx-config
+ifneq (,$(DEBUG_BUILD))
+  WX_CONFIG += --debug=$(DEBUG_BUILD)
 endif
 
 CPPFLAGS += $(shell $(WX_CONFIG) --cxxflags)
-CFLAGS	 += $(shell $(WX_CONFIG) --cxxflags) -Wno-strict-aliasing -Wno-float-equal
 LDFLAGS  += $(shell $(WX_CONFIG) --libs)
+
+include $(shell PKG_CONFIG_PATH="$(OPALDIR)" pkg-config opal --variable=makedir)/opal.mak
 
 
 openphone.cxx : openphone.xrc
@@ -60,32 +51,32 @@ openphone.cxx : openphone.xrc
 
 ifeq ($(DEBUG_BUILD),yes)
 
-bundle: $(TARGET)
+  bundle: $(TARGET)
 
-else # DEBUG
+else # DEBUG_BUILD
 
-BUNDLE_DIR := ./$(PROG).app
-PROG_AND_LIBS =\
-  $(TARGET) \
-  $(PTLIB_LIBDIR)/$(PTLIB_SHARED_FILE) \
-  `find $(OPAL_LIBDIR) -name \*$(PTLIB_PLUGIN_SUFFIX).$(SHAREDLIBEXT)` \
-  $(OPAL_LIBDIR)/$(OPAL_SHARED_FILE) \
-  `find $(PTLIB_LIBDIR) -name \*$(PTLIB_PLUGIN_SUFFIX).$(SHAREDLIBEXT)`
+  BUNDLE_DIR := ./$(PROG).app
+  PROG_AND_LIBS =\
+      $(TARGET) \
+      $(PTLIB_LIBDIR)/$(PTLIB_SHARED_FILE) \
+      `find $(OPAL_LIBDIR) -name \*$(PTLIB_PLUGIN_SUFFIX).$(SHAREDLIBEXT)` \
+      $(OPAL_LIBDIR)/$(OPAL_SHARED_FILE) \
+      `find $(PTLIB_LIBDIR) -name \*$(PTLIB_PLUGIN_SUFFIX).$(SHAREDLIBEXT)`
 
-bundle: $(BUNDLE_DIR)
+  bundle: $(BUNDLE_DIR)
 
-ifneq ($(target_os),Darwin)
+  ifneq ($(target_os),Darwin)
 
-$(BUNDLE_DIR): $(TARGET)
+    $(BUNDLE_DIR): $(TARGET)
 	@-rm -f $@/*
 	@-mkdir -p $@
 	cp $(PROG_AND_LIBS) $@
 
-else # Darwin
+  else # Darwin
 
-STRINGSFILE= #InfoPlist.strings
+    STRINGSFILE= #InfoPlist.strings
 
-$(BUNDLE_DIR): $(TARGET) Info.plist version.plist $(PROG).icns $(STRINGSFILE)
+    $(BUNDLE_DIR): $(TARGET) Info.plist version.plist $(PROG).icns $(STRINGSFILE)
 	@for dir in $@ \
 	           $@/Contents \
 	           $@/Contents/MacOS \
@@ -99,11 +90,11 @@ $(BUNDLE_DIR): $(TARGET) Info.plist version.plist $(PROG).icns $(STRINGSFILE)
 	cp Info.plist        $@/Contents/
 	cp version.plist     $@/Contents/
 	cp $(PROG).icns      $@/Contents/Resources/
-ifneq ($(STRINGSFILE),)	
-	cp InfoPlist.strings $@/Contents/Resources/English.lproj/
-endif
+    ifneq ($(STRINGSFILE),)	
+	cp $(STRINGSFILE)    $@/Contents/Resources/English.lproj/
+    endif
 	echo -n 'APPL????' > $@/Contents/PkgInfo
 	cp $(PROG_AND_LIBS)  $@/Contents/MacOS
 
-endif
-endif # DEBUG
+  endif # Darwin
+endif # DEBUG_BUILD

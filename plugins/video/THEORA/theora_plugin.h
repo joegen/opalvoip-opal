@@ -38,7 +38,7 @@
 #ifndef __THEORA_PLUGIN_H__
 #define __THEORA_PLUGIN_H__ 1
 
-#include "plugin-config.h"
+#include "plugin_config.h"
 #include <stdarg.h>
 #include <stdint.h>
 #include <codec/opalplugin.h>

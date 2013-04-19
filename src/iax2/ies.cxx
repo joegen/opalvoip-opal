@@ -30,7 +30,7 @@
  */
 
 #include <ptlib.h>
-#include <opal/buildopts.h>
+#include <opal_config.h>
 #include <ptclib/random.h>
 
 #if OPAL_IAX2

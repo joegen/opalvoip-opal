@@ -34,7 +34,7 @@
 #pragma implementation "localep.h"
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <ep/localep.h>
 #include <opal/call.h>

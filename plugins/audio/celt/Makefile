@@ -1,7 +1,7 @@
 #
-# Makefile for fax codec plugin
+# Makefile for Celt Codec Plugin
 #
-# Copyright (C) 2007 Post Increment, All Rights Reserved
+# Copyright (C) 2004 Post Increment, All Rights Reserved
 #
 # The contents of this file are subject to the Mozilla Public License
 # Version 1.0 (the "License"); you may not use this file except in
@@ -17,23 +17,23 @@
 #
 # The Initial Developer of the Original Code is Post Increment
 #
-# Contributor(s): ______________________________________.
+# Contributor(s): Matthias Schneider (ma30002000@yahoo.de)
 #
 # $Revision$
 # $Author$
 # $Date$
 #
 
-BASENAME := spandsp
+BASENAME := celt
 
-SRCDIR	:= .
-SRCS	:= spandsp_fax.cpp
+SRCDIR   := $(CURDIR)
+SOURCES  := celtcodec.c
 
-CPPFLAGS += -D__STDC_LIMIT_MACROS @SPANDSP_CFLAGS@
-LIBS   += @SPANDSP_LIBS@
+PLUGIN_CPPFLAGS = $(CELT_CFLAGS)
+PLUGIN_LIBS     = $(CELT_LIBS)
 
-INSTALL_DIR := @FAX_PLUGIN_DIR@
-PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
-include $(PLUGIN_SRC_DIR)/plugin-inc.mak
+INSTALL_DIR = $(AUD_PLUGIN_DIR)
+include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
+
 
 ###########################################

@@ -33,7 +33,7 @@
 
 #include <ptlib.h>
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 #if OPAL_H323
 
 #ifdef __GNUC__

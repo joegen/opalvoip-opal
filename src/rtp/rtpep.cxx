@@ -32,7 +32,7 @@
 #pragma implementation "rtpep.h"
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <rtp/rtpep.h>
 #include <rtp/rtpconn.h>

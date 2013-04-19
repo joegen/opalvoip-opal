@@ -34,7 +34,7 @@
 #pragma implementation "dahdi_ep.cxx"
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <lids/dahdi_ep.h>
 

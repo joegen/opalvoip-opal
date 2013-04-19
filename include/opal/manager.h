@@ -36,7 +36,7 @@
 #pragma interface
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <opal/pres_ent.h>
 #include <opal/call.h>

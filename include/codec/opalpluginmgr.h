@@ -37,7 +37,7 @@
 
 #include <ptlib/object.h>
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <ptlib/pluginmgr.h>
 #include <ptlib/pfactory.h>

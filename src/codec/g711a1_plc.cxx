@@ -30,7 +30,7 @@
 
 #ifndef SBC_DISABLE_PTLIB
 #include <ptlib.h>
-#include <opal/buildopts.h>
+#include <opal_config.h>
 #endif
 
 #include <codec/g711a1_plc.h>

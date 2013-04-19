@@ -26,28 +26,28 @@
 
 BASENAME := g7222
 
-SRCDIR := ./AMR-WB
-SRCS   := ./G7222Codec.cpp \
-	  $(SRCDIR)/dec_acelp.c \
-	  $(SRCDIR)/dec_dtx.c \
-	  $(SRCDIR)/dec_gain.c \
-	  $(SRCDIR)/dec_if.c \
-	  $(SRCDIR)/dec_lpc.c \
-	  $(SRCDIR)/dec_main.c \
-	  $(SRCDIR)/dec_rom.c \
-	  $(SRCDIR)/dec_util.c \
-	  $(SRCDIR)/enc_acelp.c \
-	  $(SRCDIR)/enc_dtx.c \
-	  $(SRCDIR)/enc_gain.c \
-	  $(SRCDIR)/enc_if.c \
-	  $(SRCDIR)/enc_lpc.c \
-	  $(SRCDIR)/enc_main.c \
-	  $(SRCDIR)/enc_rom.c \
-	  $(SRCDIR)/enc_util.c \
-	  $(SRCDIR)/if_rom.c
+SRCDIR   := $(CURDIR)/AMR-WB
+SOURCES  := $(CURDIR)/G7222Codec.cpp \
+            $(SRCDIR)/dec_acelp.c \
+            $(SRCDIR)/dec_dtx.c \
+            $(SRCDIR)/dec_gain.c \
+            $(SRCDIR)/dec_if.c \
+            $(SRCDIR)/dec_lpc.c \
+            $(SRCDIR)/dec_main.c \
+            $(SRCDIR)/dec_rom.c \
+            $(SRCDIR)/dec_util.c \
+            $(SRCDIR)/enc_acelp.c \
+            $(SRCDIR)/enc_dtx.c \
+            $(SRCDIR)/enc_gain.c \
+            $(SRCDIR)/enc_if.c \
+            $(SRCDIR)/enc_lpc.c \
+            $(SRCDIR)/enc_main.c \
+            $(SRCDIR)/enc_rom.c \
+            $(SRCDIR)/enc_util.c \
+            $(SRCDIR)/if_rom.c
 
-INSTALL_DIR := @AUD_PLUGIN_DIR@
-PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
-include $(PLUGIN_SRC_DIR)/plugin-inc.mak
+INSTALL_DIR = $(AUD_PLUGIN_DIR)
+include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
+
 
 ###########################################

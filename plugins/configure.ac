@@ -15,7 +15,7 @@ AC_PREREQ([2.66])
 
 AC_CONFIG_AUX_DIR(../make)
 
-AC_CONFIG_SRCDIR([plugin-config.h.in])
+AC_CONFIG_SRCDIR([plugin_config.h.in])
 
 m4_include(../make/my_macros.m4)
 m4_include(../make/opal.m4)
@@ -50,7 +50,7 @@ AC_SUBST(FAX_PLUGIN_DIR, "${PLUGIN_DIR}/fax")
 
 AC_SUBST(PLUGIN_SRC_DIR, `pwd`)
 
-AC_SUBST(SUBDIRS, "")
+AC_SUBST(PLUGIN_SUBDIRS, "")
 
 
 dnl ########################################################################
@@ -154,7 +154,6 @@ MY_MODULE_OPTION(
 )
 
 AC_SUBST(HAVE_LIBAVCODEC_RTP_MODE, 0)
-AC_SUBST(IS_H264_LICENSED, "no")
 
 if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
    MY_COMPILE_IFELSE(
@@ -210,15 +209,15 @@ if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
          x264_param_t param;
          x264_encoder_open(&param);
       ],
-      [AC_ARG_ENABLE(
-         [x264-licensed],
-         [AC_HELP_STRING([--enable-x264-licensed],[enable commercially licensed x264])],
-         [
-            IS_H264_LICENSED=$enableval
+      [
+         AC_ARG_ENABLE([x264-licensed], [AC_HELP_STRING([--enable-x264-licensed],[enable commercially licensed x264])])
+         if test "$enableval" = "yes" ;  then
+            X264_CFLAGS="$X264_CFLAGS -DX264_LICENSED"
             HAVE_H264="yes (Licensed x264)"
-         ],
-         [HAVE_H264="yes (GPL)"]
-      )]
+         else
+            HAVE_H264="yes (GPL)"
+         fi
+      ]
    )
 else
    HAVE_H263="no (missing FFMPEG)"
@@ -312,9 +311,8 @@ MY_COMPILE_IFELSE(
 dnl ########################################################################
 dnl Output configured files
 
-AC_CONFIG_FILES(plugin-inc.mak)
-AC_CONFIG_HEADERS(plugin-config.h)
-AC_CONFIG_FILES(Makefile)
+AC_CONFIG_FILES(plugin_config.mak)
+AC_CONFIG_HEADERS(plugin_config.h)
 
 AC_OUTPUT()
 
@@ -323,7 +321,7 @@ dnl ########################################################################
 dnl Summary
 dnl ########################################################################
 echo ""
-echo "=================== Plugin configuration ======================"
+echo "========================= Plugin configuration ========================="
 echo "                         OS Type  :  $target_os"
 echo "                    Machine Type  :  $target_cpu"
 echo "                          prefix  : $prefix"
@@ -367,5 +365,4 @@ echo ""
 echo "         Voicetronics VPB support :  $HAVE_VPB"
 
 echo ""
-echo " If all settings are OK, type make and make install "
-echo "========================================================"
+echo "========================================================================"

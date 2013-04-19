@@ -33,7 +33,7 @@
 #endif
 
 #include <ptlib.h>
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <im/t140.h>
 

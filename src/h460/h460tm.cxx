@@ -10,7 +10,7 @@
 
 #include <ptlib.h>
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include "h460/h460tm.h"
 

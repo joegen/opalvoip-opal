@@ -1,0 +1,80 @@
+#
+# Configuration Makefile for plug ins
+#
+# Copyright (C) 2011 Vox Lucida
+#
+# The contents of this file are subject to the Mozilla Public License
+# Version 1.0 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.mozilla.org/MPL/
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+# the License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is OPAL.
+#
+# The Initial Developer of the Original Code is Robert Jongbloed
+#
+# Contributor(s): ______________________________________.
+#
+# $Revision$
+# $Author$
+# $Date$
+#
+
+prefix         := @prefix@
+exec_prefix    := @exec_prefix@
+libdir         := @libdir@
+target_os      := @target_os@
+target         := @target@
+
+CC             := @CC@
+CXX            := @CXX@
+LD             := @LD@
+AR             := @AR@
+INSTALL        := @INSTALL@
+MKDIR_P        := @MKDIR_P@
+
+PLUGIN_SRC_DIR := @PLUGIN_SRC_DIR@
+AUD_PLUGIN_DIR := @AUD_PLUGIN_DIR@
+VID_PLUGIN_DIR := @AUD_PLUGIN_DIR@
+FAX_PLUGIN_DIR := @FAX_PLUGIN_DIR@
+
+CPPFLAGS       := @CPPFLAGS@ @SHARED_CPPFLAGS@ -I@prefix@/include -I$(PLUGIN_SRC_DIR)/../include -I$(PLUGIN_SRC_DIR) $(CPPFLAGS)
+CXXFLAGS       := @CXXFLAGS@ $(CXXFLAGS)
+CFLAGS         := @CFLAGS@ $(CFLAGS)
+LDFLAGS        := @LDFLAGS@ $(LDFLAGS)
+ARFLAGS        := @ARFLAGS@
+SHARED_LDFLAGS := @SHARED_LDFLAGS@
+SHAREDLIBEXT   :=@SHAREDLIBEXT@
+
+CELT_CFLAGS    := @CELT_CFLAGS@
+CELT_LIBS      := @CELT_LIBS@
+GSM_CFLAGS     := @GSM_CFLAGS@
+GSM_LIBS       := @GSM_LIBS@
+ILBC_CFLAGS    := @ILBC_CFLAGS@
+ILBC_LIBS      := @ILBC_LIBS@
+ILBC_SYSTEM    := @ILBC_SYSTEM@
+SPEEX_CFLAGS   := @SPEEX_CFLAGS@
+SPEEX_LIBS     := @SPEEX_LIBS@
+SPEEX_SYSTEM   := @SPEEX_SYSTEM@
+X264_CFLAGS    := @X264_CFLAGS@
+X264_LIBS      := @X264_LIBS@
+THEORA_CFLAGS  := @THEORA_CFLAGS@
+THEORA_LIBS    := @THEORA_LIBS@
+VP8_CFLAGS     := @VP8_CFLAGS@
+VP8_LIBS       := @VP8_LIBS@
+SPANDSP_CFLAGS := @SPANDSP_CFLAGS@
+SPANDSP_LIBS   := @SPANDSP_LIBS@
+
+LIBAVCODEC_CFLAGS        := @LIBAVCODEC_CFLAGS@
+HAVE_LIBAVCODEC_RTP_MODE := @HAVE_LIBAVCODEC_RTP_MODE@
+
+DLFCN_LIBS := @DLFCN_LIBS@
+
+PLUGIN_SUBDIRS := @PLUGIN_SUBDIRS@
+               
+               
+# End of file

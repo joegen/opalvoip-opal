@@ -29,10 +29,7 @@
 PROG	= opalsrv
 SOURCES	:= main.cxx custom.cxx gkserv.cxx
 
-ifdef OPALDIR
-  include $(OPALDIR)/opal_inc.mak
-else
-  include $(shell pkg-config opal --variable=makedir)/opal_inc.mak
-endif
+include $(shell PKG_CONFIG_PATH="$(OPALDIR)" pkg-config opal --variable=makedir)/opal.mak
+
 
 # End of Makefile

@@ -31,7 +31,7 @@
 #ifndef OPAL_IM_RFC4103_H
 #define OPAL_IM_RFC4103_H
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #if OPAL_HAS_RFC4103
 

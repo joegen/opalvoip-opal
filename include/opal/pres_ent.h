@@ -32,7 +32,7 @@
 #define OPAL_IM_PRES_ENT_H
 
 #include <ptlib.h>
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <ptlib/pfactory.h>
 #include <ptlib/safecoll.h>

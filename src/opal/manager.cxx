@@ -35,7 +35,7 @@
 #pragma implementation "manager.h"
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <opal/manager.h>
 #include <opal/endpoint.h>

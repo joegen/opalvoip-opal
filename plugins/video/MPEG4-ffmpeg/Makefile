@@ -1,7 +1,7 @@
 #
-# Makefile for SILK codec plugin
+# Makefile for MPEG4 video plugin for Unix
 #
-# Copyright (C) 2010 Vox Lucida Pty. Ltd., All Rights Reserved
+# Copyright (C) 2007 Post Increment, All Rights Reserved
 #
 # The contents of this file are subject to the Mozilla Public License
 # Version 1.0 (the "License"); you may not use this file except in
@@ -13,9 +13,9 @@
 # the License for the specific language governing rights and limitations
 # under the License.
 #
-# The Original Code is Open Phone Abstraction Library.
+# The Original Code is Open H323 library.
 #
-# The Initial Developer of the Original Code is Robert Jongbloed
+# The Initial Developer of the Original Code is Post Increment
 #
 # Contributor(s): ______________________________________.
 #
@@ -24,17 +24,21 @@
 # $Date$
 #
 
-BASENAME := silk
+BASENAME := mpeg4_ffmpeg
 
-SRCDIR := .
-SRCS   := SILKCodec.cpp
+COMMONDIR := $(abspath ../common)
+SRCDIR    := $(CURDIR)
+SOURCES   := $(CURDIR)/mpeg4.cxx \
+             $(COMMONDIR)/ffmpeg.cxx \
+             $(COMMONDIR)/dyna.cxx
 
-LIBS += -L./SILK_SDK/obj_$(target) -lSKP_SILK_SDK
+PLUGIN_CPPFLAGS = $(LIBAVCODEC_CFLAGS) -I$(COMMONDIR)
+PLUGIN_LIBS     = $(DLFCN_LIBS)
 
-SUBDIRS := ./SILK_SDK
+vpath   %.cxx $(COMMONDIR)
 
-INSTALL_DIR := @AUD_PLUGIN_DIR@
-PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
-include $(PLUGIN_SRC_DIR)/plugin-inc.mak
+INSTALL_DIR = $(VID_PLUGIN_DIR)
+include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
+
 
 ###########################################

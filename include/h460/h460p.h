@@ -41,7 +41,7 @@
 #ifndef OPAL_H460_H460P_H
 #define OPAL_H460_H460P_H
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #if OPAL_H460
 

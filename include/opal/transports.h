@@ -40,7 +40,7 @@
 #pragma interface
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <ptlib/sockets.h>
 #include <ptclib/psockbun.h>

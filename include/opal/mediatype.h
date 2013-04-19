@@ -31,7 +31,7 @@
 #ifndef OPAL_OPAL_MEDIATYPE_H
 #define OPAL_OPAL_MEDIATYPE_H
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <ptlib/pfactory.h>
 #include <ptlib/bitwise_enum.h>

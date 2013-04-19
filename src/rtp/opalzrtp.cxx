@@ -4,7 +4,7 @@
 
 #include <zrtp.h>
 #include <ptlib.h>
-#include <opal/buildopts.h>
+#include <opal_config.h>
 #include <zrtp/opalzrtp.h>
 #include <rtp/zrtp.h>
 #include <sip/sipcon.h>

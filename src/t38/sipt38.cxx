@@ -55,7 +55,7 @@ Either, or both, can be used in a call
 #pragma implementation "sipt38.h"
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <t38/sipt38.h>
 

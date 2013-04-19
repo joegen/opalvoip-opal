@@ -34,12 +34,12 @@
 #ifndef OPAL_H323_H323_H
 #define OPAL_H323_H323_H
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <h323/h323ep.h>
 #include <h323/h323con.h>
 #include <h323/gkclient.h>
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 PString  OpalGetVersion();
 unsigned OpalGetMajorVersion();
