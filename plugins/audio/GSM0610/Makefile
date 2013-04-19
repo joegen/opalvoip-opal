@@ -29,27 +29,23 @@ BASENAME := gsm0610
 SRCDIR   := $(CURDIR)/src
 SOURCES  := $(CURDIR)/gsm06_10_codec.c
 
-GSM_SYSTEM=@GSM_SYSTEM@
-ifeq ($(GSM_SYSTEM),no)
-  SOURCES := $(SRCDIR)/gsm_create.c \
-             $(SRCDIR)/gsm_destroy.c \
-             $(SRCDIR)/gsm_decode.c \
-             $(SRCDIR)/gsm_encode.c \
-             $(SRCDIR)/gsm_option.c \
-             $(SRCDIR)/code.c \
-             $(SRCDIR)/decode.c \
-             $(SRCDIR)/add.c \
-             $(SRCDIR)/gsm_lpc.c \
-             $(SRCDIR)/rpe.c \
-             $(SRCDIR)/preprocess.c \
-             $(SRCDIR)/long_term.c \
-             $(SRCDIR)/short_term.c \
-             $(SRCDIR)/table.c
-  PLUGIN_CPPFLAGS = -I$(CURDIR)/inc -DWAV49 -DNeedFunctionPrototypes=1
-else
-  PLUGIN_CPPFLAGS = $(GSM_CFLAGS)
-  PLUGIN_LIBS     = $(GSM_LIBS)
-endif
+PLUGIN_SYSTEM  = $(GSM_SYSTEM)
+LOCAL_SOURCES := $(SRCDIR)/gsm_create.c \
+                 $(SRCDIR)/gsm_destroy.c \
+                 $(SRCDIR)/gsm_decode.c \
+                 $(SRCDIR)/gsm_encode.c \
+                 $(SRCDIR)/gsm_option.c \
+                 $(SRCDIR)/code.c \
+                 $(SRCDIR)/decode.c \
+                 $(SRCDIR)/add.c \
+                 $(SRCDIR)/gsm_lpc.c \
+                 $(SRCDIR)/rpe.c \
+                 $(SRCDIR)/preprocess.c \
+                 $(SRCDIR)/long_term.c \
+                 $(SRCDIR)/short_term.c \
+                 $(SRCDIR)/table.c
+
+LOCAL_CPPFLAGS = -I$(CURDIR)/inc -DWAV49 -DNeedFunctionPrototypes=1
 
 INSTALL_DIR = $(AUD_PLUGIN_DIR)
 include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak

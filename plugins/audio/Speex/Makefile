@@ -29,46 +29,46 @@ BASENAME := speex
 SRCDIR   := $(CURDIR)/libspeex
 SOURCES  := $(CURDIR)/speexcodec.cxx 
 
-PLUGIN_SYSTEM   = $(SPEEX_SYSTEM)
-SYSTEM_SOURCES := $(SRCDIR)/bits.c \
-                  $(SRCDIR)/cb_search.c \
-                  $(SRCDIR)/exc_10_16_table.c \
-                  $(SRCDIR)/exc_10_32_table.c \
-                  $(SRCDIR)/exc_20_32_table.c \
-                  $(SRCDIR)/exc_5_256_table.c \
-                  $(SRCDIR)/exc_5_64_table.c \
-                  $(SRCDIR)/exc_8_128_table.c \
-                  $(SRCDIR)/fftwrap.c \
-                  $(SRCDIR)/filters.c \
-                  $(SRCDIR)/gain_table.c \
-                  $(SRCDIR)/gain_table_lbr.c \
-                  $(SRCDIR)/hexc_10_32_table.c \
-                  $(SRCDIR)/hexc_table.c \
-                  $(SRCDIR)/high_lsp_tables.c \
-                  $(SRCDIR)/kiss_fft.c \
-                  $(SRCDIR)/kiss_fftr.c \
-                  $(SRCDIR)/lbr_48k_tables.c \
-                  $(SRCDIR)/lpc.c \
-                  $(SRCDIR)/lsp.c \
-                  $(SRCDIR)/lsp_tables_nb.c \
-                  $(SRCDIR)/ltp.c \
-                  $(SRCDIR)/math_approx.c \
-                  $(SRCDIR)/mdf.c \
-                  $(SRCDIR)/medfilter.c \
-                  $(SRCDIR)/misc.c \
-                  $(SRCDIR)/modes.c \
-                  $(SRCDIR)/nb_celp.c \
-                  $(SRCDIR)/pcm_wrapper.c \
-                  $(SRCDIR)/quant_lsp.c \
-                  $(SRCDIR)/sb_celp.c \
-                  $(SRCDIR)/smallft.c \
-                  $(SRCDIR)/speex.c \
-                  $(SRCDIR)/speex_callbacks.c \
-                  $(SRCDIR)/speex_header.c \
-                  $(SRCDIR)/speex_preprocess.c \
-                  $(SRCDIR)/vbr.c \
-                  $(SRCDIR)/vorbis_psy.c \
-                  $(SRCDIR)/vq.c
+PLUGIN_SYSTEM  = $(SPEEX_SYSTEM)
+LOCAL_SOURCES := $(SRCDIR)/bits.c \
+                 $(SRCDIR)/cb_search.c \
+                 $(SRCDIR)/exc_10_16_table.c \
+                 $(SRCDIR)/exc_10_32_table.c \
+                 $(SRCDIR)/exc_20_32_table.c \
+                 $(SRCDIR)/exc_5_256_table.c \
+                 $(SRCDIR)/exc_5_64_table.c \
+                 $(SRCDIR)/exc_8_128_table.c \
+                 $(SRCDIR)/fftwrap.c \
+                 $(SRCDIR)/filters.c \
+                 $(SRCDIR)/gain_table.c \
+                 $(SRCDIR)/gain_table_lbr.c \
+                 $(SRCDIR)/hexc_10_32_table.c \
+                 $(SRCDIR)/hexc_table.c \
+                 $(SRCDIR)/high_lsp_tables.c \
+                 $(SRCDIR)/kiss_fft.c \
+                 $(SRCDIR)/kiss_fftr.c \
+                 $(SRCDIR)/lbr_48k_tables.c \
+                 $(SRCDIR)/lpc.c \
+                 $(SRCDIR)/lsp.c \
+                 $(SRCDIR)/lsp_tables_nb.c \
+                 $(SRCDIR)/ltp.c \
+                 $(SRCDIR)/math_approx.c \
+                 $(SRCDIR)/mdf.c \
+                 $(SRCDIR)/medfilter.c \
+                 $(SRCDIR)/misc.c \
+                 $(SRCDIR)/modes.c \
+                 $(SRCDIR)/nb_celp.c \
+                 $(SRCDIR)/pcm_wrapper.c \
+                 $(SRCDIR)/quant_lsp.c \
+                 $(SRCDIR)/sb_celp.c \
+                 $(SRCDIR)/smallft.c \
+                 $(SRCDIR)/speex.c \
+                 $(SRCDIR)/speex_callbacks.c \
+                 $(SRCDIR)/speex_header.c \
+                 $(SRCDIR)/speex_preprocess.c \
+                 $(SRCDIR)/vbr.c \
+                 $(SRCDIR)/vorbis_psy.c \
+                 $(SRCDIR)/vq.c
 
 INSTALL_DIR = $(AUD_PLUGIN_DIR)
 include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak

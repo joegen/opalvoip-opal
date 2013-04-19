@@ -29,9 +29,9 @@ BASENAME := silk
 SRCDIR   := $(CURDIR)
 SOURCES  := $(CURDIR)/SILKCodec.cpp
 
-PLUGIN_LIBS = -L./SILK_SDK/obj_$(target) -lSKP_SILK_SDK
+PLUGIN_LIBS = -L$(CURDIR)/SILK_SDK/obj_$(target) -lSKP_SILK_SDK
 
-SUBDIRS := ./SILK_SDK
+SUBDIRS := $(CURDIR)/SILK_SDK
 
 INSTALL_DIR := $(AUD_PLUGIN_DIR)
 include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
