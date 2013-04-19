@@ -32,7 +32,7 @@
 #ifdef __GNUC__
 #pragma implementation "silencedetect.h"
 #endif
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <codec/silencedetect.h>
 #include <opal/patch.h>

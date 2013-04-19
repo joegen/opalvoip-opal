@@ -36,7 +36,7 @@
 #endif
 
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <opal/patch.h>
 #include <opal/mediastrm.h>

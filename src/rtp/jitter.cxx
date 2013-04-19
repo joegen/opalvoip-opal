@@ -37,7 +37,7 @@
 #pragma implementation "jitter.h"
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <rtp/jitter.h>
 

@@ -32,7 +32,7 @@
 #ifndef OPAL_SIP_SIP_H
 #define OPAL_SIP_SIP_H
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #if OPAL_SIP
 

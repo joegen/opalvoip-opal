@@ -39,13 +39,13 @@
 #pragma implementation "transports.h"
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <opal/transports.h>
 #include <opal/manager.h>
 #include <opal/endpoint.h>
 #include <opal/call.h>
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <ptclib/pnat.h>
 

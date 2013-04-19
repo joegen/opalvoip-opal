@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "plugin-config.h"
+#include "plugin_config.h"
 
 #include <codec/opalplugin.h>
 #include <celt/celt.h>

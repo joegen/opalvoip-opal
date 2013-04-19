@@ -26,24 +26,14 @@
 # $Date$
 #
 
-PROG		= c_api
-SOURCES		:= main.c
-
-
-# If we have environment variables for local copies of
-# OPAL and PTLib then use those packages by overriding
-# the search path for pkg-config
-ifneq ($(PTLIBDIR),)
-ifneq ($(OPALDIR),)
-PKG_CONFIG_PATH=$(OPALDIR):$(PTLIBDIR)
-endif
-endif
+PROG    := c_api
+SOURCES := main.c
 
 
 # Get required flags from library
 
-CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_FLAGS) --cflags opal)
-LDFLAGS += -ldl $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_FLAGS) --libs opal)
+CPPFLAGS += $(shell pkg-config $(PKG_FLAGS) --cflags opal)
+LDFLAGS  += $(shell pkg-config $(PKG_FLAGS) --libs opal) -ldl
 
 
 OBJDIR := obj
@@ -52,22 +42,17 @@ vpath	%.o   $(OBJDIR)
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) $(CFLAGS) -c $< -o $@
-
-$(OPAL_DEPDIR)/%.dep : %.cxx 
-	@if [ ! -d $(OPAL_DEPDIR) ] ; then mkdir -p $(OPAL_DEPDIR) ; fi
-	@printf %s $(OPAL_OBJDIR)/ > $@
-	$(CC) $(CFLAGS:-g=) -M $< >> $@
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 
-# This builds the application
+all both opt optshared debug debugshared optstatic debugstatic : $(OBJDIR)/$(PROG)
 
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SOURCES)))))
 
 $(OBJDIR)/$(PROG): $(OBJECTS)
 	 $(CC) $^ $(LDFLAGS) -o $@
 
-depend:
+optdepend debugdepend bothdepend optlibs debuglibs bothlibs:
 
 clean:
 	rm $(OBJECTS) $(OBJDIR)/$(PROG)

@@ -32,7 +32,7 @@
 #define OPAL_IM_IM_H
 
 #include <ptlib.h>
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #if OPAL_HAS_IM
 

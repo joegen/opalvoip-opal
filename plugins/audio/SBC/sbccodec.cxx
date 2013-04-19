@@ -31,7 +31,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "plugin-config.h"
+#include "plugin_config.h"
 
 // #include <samplerate.h>
 #include <codec/opalplugin.h>

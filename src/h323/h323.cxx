@@ -30,14 +30,14 @@
 
 #include <ptlib.h>
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 #if OPAL_H323
 
 #ifdef __GNUC__
 #pragma implementation "h323con.h"
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <h323/h323con.h>
 

@@ -1,5 +1,5 @@
 #
-# Makefile for ffmpeg H.263 (1998 aka H.263+)
+# Makefile for x264 H.264 Video Codec Helper
 #
 # Copyright (C) 2004 Post Increment, All Rights Reserved
 #
@@ -17,35 +17,23 @@
 #
 # The Initial Developer of the Original Code is Post Increment
 #
-# Contributor(s): Matthias Schneider.
+# Contributor(s): ______________________________________.
 #
 # $Revision$
 # $Author$
 # $Date$
-#
 
-BASENAME := h263_ffmpeg
+BASENAME_win32 := x264plugin_helper.exe
+BASENAME := h264_video_pwplugin_helper
+SRCDIR   := $(CURDIR)
+SOURCES  := h264_helper.cxx
 
-COMMONDIR := ../common
-SRCDIR    := .
-SRCS      := h263-1998.cxx \
-             rfc2429.cxx \
-             rfc2190.cxx \
-             $(COMMONDIR)/ffmpeg.cxx \
-             $(COMMONDIR)/dyna.cxx
+PLUGIN_CPPFLAGS = $(X264_CFLAGS) -I.. -DGPL_HELPER_APP -DPLUGINCODEC_TRACING
+PLUGIN_LIBS     = $(X264_LIBS)
 
-CPPFLAGS += @LIBAVCODEC_CFLAGS@ -I$(COMMONDIR)
-LIBS   += @DLFCN_LIBS@
 
-HAVE_LIBAVCODEC_RTP_MODE=@HAVE_LIBAVCODEC_RTP_MODE@
-ifeq ($(HAVE_LIBAVCODEC_RTP_MODE),yes)
-CPPFLAGS += -DLIBAVCODEC_RTP_MODE=1
-endif
+INSTALL_DIR = $(VID_PLUGIN_DIR)
+include $(dir $(lastword $(MAKEFILE_LIST)))../../../plugin_inc.mak
 
-vpath   %.cxx $(COMMONDIR)
-
-INSTALL_DIR := @VID_PLUGIN_DIR@
-PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
-include $(PLUGIN_SRC_DIR)/plugin-inc.mak
 
 ###########################################

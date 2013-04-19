@@ -31,7 +31,7 @@
 
 #include <ptlib.h>
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #if defined(OPAL_HAS_MIXER) && defined(P_WAVFILE)
 

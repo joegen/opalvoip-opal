@@ -1,5 +1,5 @@
 #
-# Makefile for Celt Codec Plugin
+# Makefile for G.726 codec plugin
 #
 # Copyright (C) 2004 Post Increment, All Rights Reserved
 #
@@ -17,23 +17,26 @@
 #
 # The Initial Developer of the Original Code is Post Increment
 #
-# Contributor(s): Matthias Schneider (ma30002000@yahoo.de)
+# Contributor(s): ______________________________________.
 #
 # $Revision$
 # $Author$
 # $Date$
 #
 
-BASENAME := celt
+BASENAME := g726
 
-SRCDIR := ./
-SRCS   := celtcodec.c
+SRCDIR   := $(CURDIR)/g726
+SOURCES  := $(CURDIR)/g726codec.c \
+            $(CURDIR)/g711.c \
+            $(SRCDIR)/g726_16.c \
+            $(SRCDIR)/g726_24.c \
+            $(SRCDIR)/g726_32.c \
+            $(SRCDIR)/g726_40.c \
+            $(SRCDIR)/g72x.c 
 
-CPPFLAGS += @CELT_CFLAGS@
-LIBS   += @CELT_LIBS@
+INSTALL_DIR := $(AUD_PLUGIN_DIR)
+include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
 
-INSTALL_DIR := @AUD_PLUGIN_DIR@
-PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
-include $(PLUGIN_SRC_DIR)/plugin-inc.mak
 
 ###########################################

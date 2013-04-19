@@ -37,7 +37,7 @@
 #pragma implementation "ixjlid.h"
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <lids/ixjlid.h>
 

@@ -2,7 +2,7 @@
 #define OPAL_ZRTP_ZRTPEVENTPROC_H
 
 #include <zrtp.h>
-#include <opal/buildopts.h>
+#include <opal_config.h>
 #include <opal/connection.h>
 
 class ZrtpEventProcessor {

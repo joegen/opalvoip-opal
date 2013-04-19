@@ -36,7 +36,7 @@
 #pragma interface
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <opal/mediafmt.h>
 #include <opal/mediacmd.h>

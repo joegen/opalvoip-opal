@@ -30,14 +30,11 @@ PROG = simpleopal
 SRCS = main.cxx
 
 
-# If we have environment variables for local copies of
-# OPAL and PTLib then use those packages by overriding
-# the search path for pkg-config
-ifneq ($(PTLIBDIR),)
-ifneq ($(OPALDIR),)
-PKG_CONFIG_PATH=$(OPALDIR):$(PTLIBDIR)
-endif
-endif
+# using the following is SOOO much simpler, but in case you want a really
+# complex makefile where it doesn't work, this a sample of how to not use it
+
+# include $(shell pkg-config opal --variable=makedir)/opal.mak
+
 
 # Determine which package to use debug or release
 ifeq ($(DEBUG_BUILD), yes)
@@ -49,36 +46,36 @@ else
 endif
 
 ifeq ($(STATIC_BUILD), yes)
-SUFFIX=$(DEBUG_SUFFIX)_s --static
+  SUFFIX=$(DEBUG_SUFFIX)_s --static
 else
-SUFFIX=$(DEBUG_SUFFIX)
+  SUFFIX=$(DEBUG_SUFFIX)
 endif
 
 ifneq ($(SUFFIX),)
-PKG_FLAGS = --define-variable=suffix=$(SUFFIX)
+  PKG_FLAGS = --define-variable=suffix=$(SUFFIX)
 endif
 # Get required flags from library
 
 # The -I option allows to build the simple application in the same time as opal
 # (as used by distribution packagers)
-CFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_FLAGS) --cflags opal) -I../../include
-LDFLAGS += $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_FLAGS) --libs opal)
+CPPFLAGS += $(shell pkg-config $(PKG_FLAGS) --cflags opal)
+LDFLAGS  += $(shell pkg-config $(PKG_FLAGS) --libs opal)
 
 
 # This part is we like to be tidy and put all the build products
 # in a sub-directory of a name specific to platform type.
-OBJDIR = $(shell PKG_CONFIG_PATH=$(PKG_CONFIG_PATH) pkg-config $(PKG_FLAGS) --variable=objdir opal)
+OBJDIR = $(shell pkg-config $(PKG_FLAGS) --variable=objdir opal)
 
 vpath	%.o   $(OBJDIR)
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CXX) $(CFLAGS) -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)/%.dep : %.cxx 
 	@if [ ! -d $(OBJDIR) ] ; then mkdir -p $(OBJDIR) ; fi
 	@printf %s $(OBJDIR)/ > $@
-	$(CXX) $(CXXFLAGS:-g=) -M $< >> $@
+	$(CXX) $(CPPFLAGS) -M $< >> $@
 
 
 # This builds the application
@@ -119,8 +116,10 @@ debugnoshared:
 	
 bothnoshared: optnoshared debugnoshared
 
-depend: Makefile $(patsubst %.dep, $(OPAL_DEPDIR)/%.dep, $(SRCS) $(DEPS))
+depend debugdepend optdepend bothdepend: Makefile $(patsubst %.dep, $(OPAL_DEPDIR)/%.dep, $(SRCS) $(DEPS))
 	@echo Dependencies created.
+
+optlibs debuglibs bothlibs:
 
 
 # End of Makefile

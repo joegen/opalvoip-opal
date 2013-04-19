@@ -39,7 +39,7 @@ rm -rf $RPM_BUILD_ROOT
 
 make DEBUG_BUILD=yes DESTDIR=$RPM_BUILD_ROOT install
 
-rm -f $RPM_BUILD_ROOT/%{_datadir}/opal/opal_defs.mak
+rm -f $RPM_BUILD_ROOT/%{_datadir}/opal/opal_config.mak
 
 %clean
 rm -rf $RPM_BUILD_ROOT

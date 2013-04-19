@@ -32,7 +32,7 @@
 #define OPAL_CODEC_G711A1_PLC_H
 
 #ifndef SBC_DISABLE_PTLIB
-#include <opal/buildopts.h>
+#include <opal_config.h>
 #endif
 
 #if OPAL_G711PLC

@@ -34,7 +34,7 @@
 #define OPAL_OPAL_AUDIORECORD_H
 
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #if OPAL_HAS_MIXER
 

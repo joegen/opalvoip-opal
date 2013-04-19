@@ -34,7 +34,7 @@
 #pragma implementation "rfc4175.h"
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #if OPAL_RFC4175
 

@@ -37,7 +37,7 @@
 
 #include <ptlib.h>
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 #include <opal/rtpconn.h>
 
 #endif // OPAL_RTP_ZRTPUDP_H

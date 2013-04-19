@@ -1,7 +1,7 @@
 #
-# Makefile for G.722.1 codec plugin
+# Makefile for the Web-M VP8 Video Codec
 #
-# Copyright (C) 2004 Post Increment, All Rights Reserved
+# Copyright (C) 2012 Vox Lucida Pty. Ltd., All Rights Reserved
 #
 # The contents of this file are subject to the Mozilla Public License
 # Version 1.0 (the "License"); you may not use this file except in
@@ -15,7 +15,7 @@
 #
 # The Original Code is Open H323 library.
 #
-# The Initial Developer of the Original Code is Post Increment
+# The Initial Developer of the Original Code is Vox Lucida Pty. Ltd.
 #
 # Contributor(s): ______________________________________.
 #
@@ -24,24 +24,16 @@
 # $Date$
 #
 
-BASENAME := g7221
+BASENAME := vp8_webm
 
-SRCDIR := ./G722-1
-SRCS   := ./G7221Codec.c \
-	  $(SRCDIR)/basop32.c \
-	  $(SRCDIR)/coef2sam.c \
-	  $(SRCDIR)/common.c \
-	  $(SRCDIR)/count.c \
-	  $(SRCDIR)/dct4_a.c \
-	  $(SRCDIR)/dct4_s.c \
-	  $(SRCDIR)/decoder.c \
-	  $(SRCDIR)/encoder.c \
-	  $(SRCDIR)/huff_tab.c \
-	  $(SRCDIR)/sam2coef.c \
-	  $(SRCDIR)/tables.c
+SRCDIR   := $(CURDIR)
+SOURCES  := $(CURDIR)/vp8_webm.cxx
 
-INSTALL_DIR := @AUD_PLUGIN_DIR@
-PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
-include $(PLUGIN_SRC_DIR)/plugin-inc.mak
+PLUGIN_CPPFLAGS = $(VP8_CFLAGS) -DLIB_DIR='"$(libdir)"' -DVID_PLUGIN_DIR='"$(VID_PLUGIN_DIR)"'
+PLUGIN_LIBS     = $(VP8_LIBS)
+
+INSTALL_DIR = $(VID_PLUGIN_DIR)
+include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
+
 
 ###########################################

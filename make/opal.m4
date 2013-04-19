@@ -84,8 +84,6 @@ dnl $3 command line help
 dnl $4 source directory
 AC_DEFUN([OPAL_SIMPLE_PLUGIN],[
    if test -d "$4" ; then
-      AC_CONFIG_FILES($4/Makefile)
-
       AC_ARG_ENABLE(
          [$2],
          [AC_HELP_STRING([--disable-$2],[disable $3])],
@@ -103,7 +101,7 @@ AC_DEFUN([OPAL_SIMPLE_PLUGIN],[
          ]
       )
       if test "x$HAVE_$1" = "xyes" ; then
-         SUBDIRS+=" $4"
+         PLUGIN_SUBDIRS+=" $4"
       fi
    else
       HAVE_$1="no (missing directory $4)"
@@ -115,17 +113,15 @@ dnl OPAL_SYSTEM_PLUGIN
 dnl as MY_MODULE_OPTION but defines OPAL_xxx for make and define
 AC_DEFUN([OPAL_SYSTEM_PLUGIN],[
    if test -d "$4" ; then
-      AC_CONFIG_FILES($4/Makefile)
-
       MY_MODULE_OPTION([$1],[$2],[$3],[$5],[$6],[$7],[$8],[$9],[$10],[$11],[$12],[$13],[$14],[$15])
       if test "x$$1[_SYSTEM]" = "xno" ; then
-         SUBDIRS+=" $4"
+         PLUGIN_SUBDIRS+=" $4"
          HAVE_$1="yes (internal)"
       else
          if test "x$usable" = "xyes" ; then
             AC_SUBST($1[_CFLAGS])
             AC_SUBST($1[_LIBS])
-            SUBDIRS+=" $4"
+            PLUGIN_SUBDIRS+=" $4"
 
             if test "x$$1[_SYSTEM]" = "xyes" ; then
                HAVE_$1="yes (system)"

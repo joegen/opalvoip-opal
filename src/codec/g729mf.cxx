@@ -30,7 +30,7 @@
  */
 
 #include <ptlib.h>
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <opal/mediafmt.h>
 #include <h323/h323caps.h>

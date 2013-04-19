@@ -34,7 +34,7 @@
 #pragma implementation "mediatype.h"
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <opal/mediatype.h>
 #include <rtp/rtpconn.h>

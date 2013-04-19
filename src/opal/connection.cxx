@@ -35,7 +35,7 @@
 #pragma implementation "connection.h"
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <opal/connection.h>
 

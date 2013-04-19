@@ -1,5 +1,5 @@
 #
-# Makefile for MPEG4 video plugin for Unix
+# Makefile for fax codec plugin
 #
 # Copyright (C) 2007 Post Increment, All Rights Reserved
 #
@@ -24,21 +24,16 @@
 # $Date$
 #
 
-BASENAME := mpeg4_ffmpeg
+BASENAME := spandsp
 
-COMMONDIR := ../common
-SRCDIR    := .
-SRCS      := mpeg4.cxx \
-             $(COMMONDIR)/ffmpeg.cxx \
-             $(COMMONDIR)/dyna.cxx
+SRCDIR	 := $(CURDIR)
+SOURCES  := $(CURDIR)/spandsp_fax.cpp
 
-CPPFLAGS += @LIBAVCODEC_CFLAGS@ -I$(COMMONDIR)
-LIBS   += @DLFCN_LIBS@
+PLUGIN_CPPFLAGS = $(SPANDSP_CFLAGS) -D__STDC_LIMIT_MACROS
+PLUGIN_LIBS     = $(SPANDSP_LIBS)
 
-vpath   %.cxx $(COMMONDIR)
+INSTALL_DIR = $(FAX_PLUGIN_DIR)
+include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
 
-INSTALL_DIR := @VID_PLUGIN_DIR@
-PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
-include $(PLUGIN_SRC_DIR)/plugin-inc.mak
 
 ###########################################

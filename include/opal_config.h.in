@@ -31,7 +31,7 @@
 #ifndef OPAL_BUILDOPTS_H
 #define OPAL_BUILDOPTS_H
 
-#include <ptbuildopts.h>
+#include <ptlib_config.h>
 
 /////////////////////////////////////////////////
 //

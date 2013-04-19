@@ -32,7 +32,7 @@
 #include <codec/opalplugin.hpp>
 
 #ifndef PLUGIN_CODEC_DLL_EXPORTS
-#include "plugin-config.h"
+#include "plugin_config.h"
 #endif
 
 #include "SILK_SDK/interface/SKP_Silk_SDK_API.h"
