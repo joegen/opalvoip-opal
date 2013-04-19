@@ -1,5 +1,5 @@
 #
-# Makefile for G.726 codec plugin
+# Makefile for THEORA
 #
 # Copyright (C) 2004 Post Increment, All Rights Reserved
 #
@@ -17,26 +17,25 @@
 #
 # The Initial Developer of the Original Code is Post Increment
 #
-# Contributor(s): ______________________________________.
+# Contributor(s): Matthias Schneider (ma30002000@yahoo.de)
 #
 # $Revision$
 # $Author$
 # $Date$
 #
 
-BASENAME := g726
+BASENAME=theora
 
-SRCDIR := ./g726
-SRCS := g726codec.c \
-	g711.c \
-	$(SRCDIR)/g726_16.c \
-	$(SRCDIR)/g726_24.c \
-	$(SRCDIR)/g726_32.c \
-	$(SRCDIR)/g726_40.c \
-	$(SRCDIR)/g72x.c 
+COMMONDIR := $(abspath ../common)
+SRCDIR    := $(CURDIR)
+SOURCES   := $(CURDIR)/theora_frame.cxx \
+             $(CURDIR)/theora_plugin.cxx
 
-INSTALL_DIR := @AUD_PLUGIN_DIR@
-PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
-include $(PLUGIN_SRC_DIR)/plugin-inc.mak
+PLUGIN_CPPFLAGS = $(THEORA_CFLAGS) -I$(COMMONDIR)
+PLUGIN_LIBS     = $(THEORA_LIBS)
+
+INSTALL_DIR = $(VID_PLUGIN_DIR)
+include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
+
 
 ###########################################

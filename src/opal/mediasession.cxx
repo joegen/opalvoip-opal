@@ -34,7 +34,7 @@
 #pragma implementation "mediasession.h"
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <opal/mediasession.h>
 #include <opal/connection.h>

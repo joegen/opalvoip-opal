@@ -1,5 +1,5 @@
 #
-# Makefile for IMA-ADPCM codec plugin
+# Makefile for ffmpeg H.263 (1998 aka H.263+)
 #
 # Copyright (C) 2004 Post Increment, All Rights Reserved
 #
@@ -17,20 +17,30 @@
 #
 # The Initial Developer of the Original Code is Post Increment
 #
-# Contributor(s): ______________________________________.
+# Contributor(s): Matthias Schneider.
 #
 # $Revision$
 # $Author$
 # $Date$
 #
 
-BASENAME := ima_adpcm
+BASENAME := h263_ffmpeg
 
-SRCDIR := .
-SRCS   := ima_adpcm.c
+COMMONDIR := $(abspath ../common)
+SRCDIR    := $(CURDIR)
+SOURCES   := $(CURDIR)/h263-1998.cxx \
+             $(CURDIR)/rfc2429.cxx \
+             $(CURDIR)/rfc2190.cxx \
+             $(COMMONDIR)/ffmpeg.cxx \
+             $(COMMONDIR)/dyna.cxx
 
-INSTALL_DIR := @AUD_PLUGIN_DIR@
-PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
-include $(PLUGIN_SRC_DIR)/plugin-inc.mak
+PLUGIN_CPPFLAGS = $(LIBAVCODEC_CFLAGS) -I$(COMMONDIR) -DLIBAVCODEC_RTP_MODE=$(subst yes,1,$(HAVE_LIBAVCODEC_RTP_MODE))
+PLUGIN_LIBS     = $(DLFCN_LIBS)
+
+vpath	%.cxx $(COMMONDIR)
+
+INSTALL_DIR = $(VID_PLUGIN_DIR)
+include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
+
 
 ###########################################

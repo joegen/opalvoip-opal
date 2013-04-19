@@ -1,4 +1,4 @@
-/* plugin-config.h.in.  Generated from configure.ac by autoheader.  */
+/* plugin_config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS

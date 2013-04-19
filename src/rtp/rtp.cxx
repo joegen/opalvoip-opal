@@ -37,7 +37,7 @@
 #pragma implementation "rtp.h"
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <rtp/rtp.h>
 

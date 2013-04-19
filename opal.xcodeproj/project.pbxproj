@@ -127,8 +127,8 @@
 		A32F1E71171931B8001A0EA0 /* lidep.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lidep.h; sourceTree = "<group>"; };
 		A32F1E72171931B8001A0EA0 /* lidplugin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lidplugin.h; sourceTree = "<group>"; };
 		A32F1E73171931B8001A0EA0 /* lidpluginmgr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lidpluginmgr.h; sourceTree = "<group>"; };
-		A32F1E75171931B8001A0EA0 /* buildopts.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = buildopts.h; sourceTree = "<group>"; };
-		A32F1E76171931B8001A0EA0 /* buildopts.h.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = buildopts.h.in; sourceTree = "<group>"; };
+		A32F1E75171931B8001A0EA0 /* opal_config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = opal_config.h; sourceTree = "<group>"; };
+		A32F1E76171931B8001A0EA0 /* opal_config.h.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = opal_config.h.in; sourceTree = "<group>"; };
 		A32F1E77171931B8001A0EA0 /* call.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = call.h; sourceTree = "<group>"; };
 		A32F1E78171931B8001A0EA0 /* connection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = connection.h; sourceTree = "<group>"; };
 		A32F1E79171931B8001A0EA0 /* console_mgr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = console_mgr.h; sourceTree = "<group>"; };
@@ -497,8 +497,8 @@
 		A32F20A2171931E4001A0EA0 /* t38proto.cxx */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = t38proto.cxx; sourceTree = "<group>"; };
 		A32F20C91719325B001A0EA0 /* my_macros.m4 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = my_macros.m4; sourceTree = "<group>"; };
 		A32F20CA1719325B001A0EA0 /* opal.m4 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = opal.m4; sourceTree = "<group>"; };
-		A32F20CB1719325B001A0EA0 /* opal_defs.mak */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = opal_defs.mak; sourceTree = "<group>"; };
-		A32F20CC1719325B001A0EA0 /* opal_defs.mak.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = opal_defs.mak.in; sourceTree = "<group>"; };
+		A32F20CB1719325B001A0EA0 /* opal_config.mak */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = opal_config.mak; sourceTree = "<group>"; };
+		A32F20CC1719325B001A0EA0 /* opal_config.mak.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = opal_config.mak.in; sourceTree = "<group>"; };
 		A32F20CD1719325B001A0EA0 /* toplevel.mak */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = toplevel.mak; sourceTree = "<group>"; };
 		A32F20CE1719325B001A0EA0 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; name = Makefile; path = ../Makefile; sourceTree = "<group>"; };
 		A32F20D7171C0B2A001A0EA0 /* ptlib.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = ptlib.xcodeproj; path = ../ptlib/ptlib.xcodeproj; sourceTree = "<group>"; };
@@ -710,8 +710,8 @@
 		A32F1E74171931B8001A0EA0 /* opal */ = {
 			isa = PBXGroup;
 			children = (
-				A32F1E75171931B8001A0EA0 /* buildopts.h */,
-				A32F1E76171931B8001A0EA0 /* buildopts.h.in */,
+				A32F1E75171931B8001A0EA0 /* opal_config.h */,
+				A32F1E76171931B8001A0EA0 /* opal_config.h.in */,
 				A32F1E77171931B8001A0EA0 /* call.h */,
 				A32F1E78171931B8001A0EA0 /* connection.h */,
 				A32F1E79171931B8001A0EA0 /* console_mgr.h */,
@@ -1401,8 +1401,8 @@
 				A32F20E5171C0CE5001A0EA0 /* opal.spec.in */,
 				A32F20C91719325B001A0EA0 /* my_macros.m4 */,
 				A32F20CA1719325B001A0EA0 /* opal.m4 */,
-				A32F20CB1719325B001A0EA0 /* opal_defs.mak */,
-				A32F20CC1719325B001A0EA0 /* opal_defs.mak.in */,
+				A32F20CB1719325B001A0EA0 /* opal_config.mak */,
+				A32F20CC1719325B001A0EA0 /* opal_config.mak.in */,
 				A32F20CD1719325B001A0EA0 /* toplevel.mak */,
 			);
 			name = make;

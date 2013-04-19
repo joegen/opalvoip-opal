@@ -1,5 +1,5 @@
 #
-# Makefile for the x264 H.264 Video Codec
+# Makefile for G.722.1 codec plugin
 #
 # Copyright (C) 2004 Post Increment, All Rights Reserved
 #
@@ -24,33 +24,24 @@
 # $Date$
 #
 
-BASENAME := h264_x264
+BASENAME := g7221
 
-SHAREDDIR := ./shared
-COMMONDIR := ../common
-SRCDIR    := .
-SRCS    += h264-x264.cxx \
-           $(SHAREDDIR)/h264frame.cxx \
-           $(SHAREDDIR)/x264wrap.cxx \
-           $(COMMONDIR)/ffmpeg.cxx \
-           $(COMMONDIR)/dyna.cxx
+SRCDIR   := $(CURDIR)/G722-1
+SOURCES  := $(CURDIR)/G7221Codec.c \
+            $(SRCDIR)/basop32.c \
+            $(SRCDIR)/coef2sam.c \
+            $(SRCDIR)/common.c \
+            $(SRCDIR)/count.c \
+            $(SRCDIR)/dct4_a.c \
+            $(SRCDIR)/dct4_s.c \
+            $(SRCDIR)/decoder.c \
+            $(SRCDIR)/encoder.c \
+            $(SRCDIR)/huff_tab.c \
+            $(SRCDIR)/sam2coef.c \
+            $(SRCDIR)/tables.c
 
-CPPFLAGS += @LIBAVCODEC_CFLAGS@ -I$(COMMONDIR) -DLIB_DIR='"$(libdir)"' -DVID_PLUGIN_DIR='"@VID_PLUGIN_DIR@"'
-LIBS   += @DLFCN_LIBS@
+INSTALL_DIR = $(AUD_PLUGIN_DIR)
+include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
 
-IS_H264_LICENSED:=@IS_H264_LICENSED@
-ifeq ($(IS_H264_LICENSED),yes)
-  CPPFLAGS += @X264_CFLAGS@ -DX264_LICENSED
-  LIBS   += @X264_LIBS@
-else
-  SUBDIRS := gpl
-endif
-
-vpath	%.cxx $(SHAREDDIR)
-vpath	%.cxx $(COMMONDIR)
-
-INSTALL_DIR := @VID_PLUGIN_DIR@
-PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
-include $(PLUGIN_SRC_DIR)/plugin-inc.mak
 
 ###########################################

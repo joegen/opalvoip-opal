@@ -37,7 +37,7 @@ using namespace std;
 #pragma implementation "ratectl.h"
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 #include <codec/ratectl.h>
 
 #if OPAL_VIDEO

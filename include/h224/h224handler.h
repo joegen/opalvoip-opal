@@ -34,7 +34,7 @@
 #include <ptlib.h>
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <opal/connection.h>
 #include <opal/transports.h>

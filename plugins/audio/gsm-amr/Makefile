@@ -26,15 +26,15 @@
 
 BASENAME := gsmamrcodec
 
-SRCDIR := ./src
-SRCS   := amrcodec.c \
-	  interf_enc.c \
-	  interf_dec.c \
-	  sp_dec.c \
-	  sp_enc.c
+SRCDIR   := $(CURDIR)/src
+SOURCES  := $(CURDIR)/amrcodec.c \
+            $(SRCDIR)/interf_enc.c \
+            $(SRCDIR)/interf_dec.c \
+            $(SRCDIR)/sp_dec.c \
+            $(SRCDIR)/sp_enc.c
 
-INSTALL_DIR := @AUD_PLUGIN_DIR@
-PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
-include $(PLUGIN_SRC_DIR)/plugin-inc.mak
+INSTALL_DIR := $(AUD_PLUGIN_DIR)
+include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
+
 
 ###########################################

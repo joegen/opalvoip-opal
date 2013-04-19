@@ -49,7 +49,7 @@
 #include <stdlib.h>
 
 #ifndef PLUGIN_CODEC_DLL_EXPORTS
-#include "plugin-config.h"
+#include "plugin_config.h"
 #endif
 
 #include <codec/opalplugin.h>

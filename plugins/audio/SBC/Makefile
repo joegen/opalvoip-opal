@@ -26,11 +26,15 @@
 
 BASENAME := sbc
 
-SRCDIR := .
-SRCS   := sbccodec.cxx sbc.c sbc_primitives.c sbc_primitives_mmx.c sbc_primitives_neon.c
+SRCDIR   := $(CURDIR)
+SOURCES  := $(CURDIR)/sbccodec.cxx \
+            $(CURDIR)/sbc.c \
+            $(CURDIR)/sbc_primitives.c \
+            $(CURDIR)/sbc_primitives_mmx.c \
+            $(CURDIR)/sbc_primitives_neon.c
 
-INSTALL_DIR := @AUD_PLUGIN_DIR@
-PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
-include $(PLUGIN_SRC_DIR)/plugin-inc.mak
+INSTALL_DIR = $(AUD_PLUGIN_DIR)
+include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
+
 
 ###########################################

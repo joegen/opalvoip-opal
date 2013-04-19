@@ -30,7 +30,7 @@
  */
 
 #include <ptlib.h>
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <t38/t38proto.h>
 #include <opal/mediafmt.h>

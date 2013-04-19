@@ -35,7 +35,7 @@
 
 #include <ptlib.h>
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #if OPAL_RFC2435
 

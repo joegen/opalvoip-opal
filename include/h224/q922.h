@@ -34,7 +34,7 @@
 #include <ptlib.h>
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #define Q922_HEADER_SIZE 3
 

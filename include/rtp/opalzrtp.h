@@ -8,7 +8,7 @@
 #ifdef OPAL_ZRTP
 
 #include <zrtp.h>
-#include <opal/buildopts.h>
+#include <opal_config.h>
 #include <zrtp/zrtpeventproc.h>
 
 namespace PWLibStupidLinkerHacks {

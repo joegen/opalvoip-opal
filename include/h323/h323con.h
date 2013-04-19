@@ -38,13 +38,13 @@
 #pragma interface
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #if OPAL_H323
 
 #include <rtp/rtpconn.h>
 #include <opal/guid.h>
-#include <opal/buildopts.h>
+#include <opal_config.h>
 #include <h323/h323caps.h>
 #include <ptclib/dtmf.h>
 

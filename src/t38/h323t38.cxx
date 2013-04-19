@@ -34,7 +34,7 @@
 #pragma implementation "h323t38.h"
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #if OPAL_H323 && OPAL_T38_CAPABILITY
 

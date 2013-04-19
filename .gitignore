@@ -1,11 +1,11 @@
-include/opal/buildopts.h
+include/opal_config.h
 lib_linux_x86_64/
 opal.pc
 opal.spec
 opal_cfg.dxy
-opal_defs.mak
+opal_config.mak
 plugins/audio/Speex/libspeex/speex_config_types.h
-plugins/plugin-config.h
+plugins/plugin_config.h
 samples/callgen/obj_linux_x86_64_d/
 src/codec/speex/libspeex/speex_config_types.h
 

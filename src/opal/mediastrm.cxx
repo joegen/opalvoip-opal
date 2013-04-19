@@ -34,7 +34,7 @@
 #pragma implementation "mediastrm.h"
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <opal/mediastrm.h>
 

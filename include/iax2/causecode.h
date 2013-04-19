@@ -32,7 +32,7 @@
 #ifndef OPAL_IAX2_CAUSECODE_H
 #define OPAL_IAX2_CAUSECODE_H
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #if OPAL_IAX2
 

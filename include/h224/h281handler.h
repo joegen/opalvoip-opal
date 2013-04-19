@@ -34,7 +34,7 @@
 #include <ptlib.h>
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <h224/h224handler.h>
 #include <h224/h281.h>

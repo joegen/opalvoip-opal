@@ -35,7 +35,7 @@
 #ifndef OPAL_IAX2_IAX2_H
 #define OPAL_IAX2_IAX2_H
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #if OPAL_IAX2
 

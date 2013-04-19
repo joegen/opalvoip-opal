@@ -1,5 +1,5 @@
 #
-# Makefile for THEORA
+# Makefile for IMA-ADPCM codec plugin
 #
 # Copyright (C) 2004 Post Increment, All Rights Reserved
 #
@@ -17,24 +17,20 @@
 #
 # The Initial Developer of the Original Code is Post Increment
 #
-# Contributor(s): Matthias Schneider (ma30002000@yahoo.de)
+# Contributor(s): ______________________________________.
 #
 # $Revision$
 # $Author$
 # $Date$
 #
 
-BASENAME=theora
+BASENAME := ima_adpcm
 
-COMMONDIR := ../common
-SRCDIR    := .
-SRCS      := theora_frame.cxx theora_plugin.cxx
+SRCDIR   := $(CURDIR)
+SOURCES  := $(CURDIR)/ima_adpcm.c
 
-CPPFLAGS += @THEORA_CFLAGS@ -I$(COMMONDIR)
-LIBS   += @THEORA_LIBS@
+INSTALL_DIR := $(AUD_PLUGIN_DIR)
+include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
 
-INSTALL_DIR := @VID_PLUGIN_DIR@
-PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
-include $(PLUGIN_SRC_DIR)/plugin-inc.mak
 
 ###########################################

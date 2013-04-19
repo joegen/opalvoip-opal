@@ -30,7 +30,7 @@
 
 #include <ptlib.h>
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 #include <opal/manager.h>
 #include <ptclib/httpsvc.h>
 #include <sip/sip.h>

@@ -72,10 +72,13 @@ if test "x$OPALDIR" != "x" ; then
    if test "x$prefix" = "xNONE" ; then
       libdir+=_$target
    fi
+   makedir="$OPALDIR/make"
 else
+   makedir="\${datarootdir}/opal/make"
    OPALDIR=`pwd`
 fi
 
+AC_SUBST(makedir)
 AC_SUBST(OPALDIR)
 
 
@@ -113,8 +116,13 @@ dnl Check for PTLib
 
 PKG_CHECK_MODULES(
    [PTLIB],
-   [ptlib >= 2.13.0],
-   [MY_ADD_MODULE_FLAGS([PTLIB])],
+   [ptlib >= 2.13.2],
+   [
+      if test "x`pkg-config ptlib --variable=target`" != "x$target" ; then
+         AC_MSG_ERROR([PTLib is not for the same target platform!])
+      fi
+      MY_ADD_MODULE_FLAGS([PTLIB])
+   ],
    [AC_MSG_ERROR([No PTLib or old version!])]
 )
 
@@ -436,17 +444,82 @@ OPAL_DETERMINE_PLUGIN_DIR()
 
 dnl ########################################################################
 dnl Output files
+
+AC_CONFIG_FILES(opal.pc opal.spec opal_cfg.dxy make/opal_config.mak samples/openphone/version.wxs)
+AC_CONFIG_HEADERS(${ac_top_build_prefix}include/opal_config.h:include/opal_config.h.in)
+
+
 dnl ########################################################################
+dnl Add a Makefile in the platform dependent output directory, if necessary
 
-if test -n "$exec_profix" -a "$exec_prefix" != "NONE" ; then
-  cfg_prefix=$exec_prefix/
-fi
+AC_CONFIG_COMMANDS(
+  [Platform-Makefile],
+  [
+    if test -n "${srcdir}" && test `cd ${srcdir} ; pwd` != `pwd`; then
+      echo "all: ; @\$(MAKE) --file=${srcdir}/Makefile \$(MAKECMDGOALS)" > ${ac_top_build_prefix}Makefile
+    fi
+  ]
+)
 
-AC_CONFIG_FILES(make/opal_defs.mak)
-AC_CONFIG_HEADERS(${cfg_prefix}include/opal/buildopts.h:include/opal/buildopts.h.in)
-AC_CONFIG_FILES(opal.pc)
-AC_CONFIG_FILES(opal.spec)
-AC_CONFIG_FILES(opal_cfg.dxy)
-AC_CONFIG_FILES(samples/openphone/version.wxs)
+dnl ########################################################################
+dnl Do it!
 
 AC_OUTPUT
+
+
+dnl ########################################################################
+dnl Summary
+dnl ########################################################################
+echo ""
+echo "=========================== Configuration =============================="
+echo "                          OS Type :  $target_os"
+echo "                     Machine Type :  $target_cpu"
+echo "                           prefix :  $prefix"
+echo "                      exec_prefix :  $exec_prefix"
+echo "                           libdir :  $libdir"
+
+echo ""
+
+echo "                            Audio :  $OPAL_PTLIB_AUDIO"
+echo "                            Video :  $OPAL_PTLIB_VIDEO"
+echo ""
+
+echo "                            H.323 :  $OPAL_H323"
+echo "                            H.450 :  $OPAL_H450"
+echo "                            H.460 :  $OPAL_H460"
+echo "                H.460.18/19 (NAT) :  $OPAL_H460_NAT"
+echo "                            H.239 :  $OPAL_H239"
+echo "                            H.501 :  $OPAL_H501"
+echo ""
+echo "                              SIP :  $OPAL_SIP"
+echo "                 SIPIM capability :  $OPAL_HAS_SIPIM"
+echo "                  MSRP capability :  $OPAL_HAS_MSRP"
+echo "         RFC-4103 (IM) capability :  $OPAL_HAS_RFC4103"
+echo ""
+echo "                     IAX2 support :  $OPAL_IAX2"
+echo "            Line Interface Device :  $OPAL_LID"
+echo "                      CAPI (ISDN) :  $OPAL_CAPI"
+echo "                     DAHDI (PSTN) :  $OPAL_DAHDI"
+echo ""
+echo "                  T.38 capability :  $OPAL_T38_CAPABILITY"
+echo "                T.38 FAX protocol :  $OPAL_FAX"
+echo "     H.224 (H.221 media channels) :  $OPAL_HAS_H224"
+echo "   H.281 (Far End Camera Control) :  $OPAL_HAS_H281"
+echo ""
+echo "                             SRTP :  $OPAL_SRTP"
+echo "               RFC-4175 Raw Video :  $OPAL_RFC4175"
+echo "              RFC-2435 JPEG Video :  $OPAL_RFC2435  (experimental)"
+echo "      Accoustic Echo Cancellation :  $OPAL_AEC"
+echo "Packet Loss Concealment for G.711 :  $OPAL_G711PLC"
+echo "    RTCP Extended Reports support :  $OPAL_RTCP_XR"
+echo ""
+echo "         PC Sound System Endpoint :  $OPAL_HAS_PCSS"
+echo "                      IVR support :  $OPAL_IVR"
+echo "       Media mixing (conferences) :  $OPAL_HAS_MIXER"
+echo "     Statistics gathering support :  $OPAL_STATISTICS"
+echo "        Script language interface :  $OPAL_SCRIPT"
+echo "                     Java support :  $OPAL_JAVA"
+echo "                     Roby support :  $OPAL_RUBY"
+
+echo ""
+echo "========================================================================"

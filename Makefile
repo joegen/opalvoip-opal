@@ -26,106 +26,38 @@
 # $Date: 2012-03-17 21:28:55 +1100 (Sat, 17 Mar 2012) $
 #
 
-ENV_OPALDIR := $(OPALDIR)
-ifndef OPALDIR
-  export OPALDIR:=$(CURDIR)
-  $(info Setting default OPALDIR to $(OPALDIR))
+# autoconf.mak uses this for if we are run as "make -f ../Makefile"
+TOP_LEVEL_DIR := $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
+
+CONFIG_FILES   := $(CURDIR)/include/opal_config.h \
+                  $(CURDIR)/make/opal_config.mak \
+		  $(CURDIR)/opal.pc \
+                  $(CURDIR)/opal_cfg.dxy \
+                  $(CURDIR)/plugins/plugin_config.mak \
+                  $(CURDIR)/plugins/plugin_config.h
+
+PLUGIN_CONFIGURE  := $(CURDIR)/plugins/configure
+PLUGIN_ACLOCAL_M4 := $(CURDIR)/plugins/aclocal.m4
+
+
+ifdef PTLIBDIR
+  include $(PTLIBDIR)/make/autoconf.mak
+else
+  include $(shell pkg-config ptlib --variable=makedir)/autoconf.mak
 endif
 
-TOP_LEVEL_MAKE := $(OPALDIR)/make/toplevel.mak
-CONFIGURE      := $(OPALDIR)/configure
-CONFIG_FILES   := $(OPALDIR)/opal.pc \
-                  $(OPALDIR)/opal_cfg.dxy \
-                  $(OPALDIR)/make/opal_defs.mak \
-                  $(OPALDIR)/include/opal/buildopts.h \
-		  $(OPALDIR)/plugins/plugin-inc.mak
 
-PLUGIN_CONFIG  := $(OPALDIR)/plugins/configure
-PLUGIN_ACLOCAL := $(OPALDIR)/plugins/aclocal.m4
+ifeq ($(AUTOCONF_AVAILABLE),yes)
 
-AUTOCONF       := autoconf
-ACLOCAL        := aclocal
+  $(PRIMARY_CONFIG_FILE) : $(PLUGIN_CONFIGURE)
 
-CONFIG_IN_FILES := $(addsuffix .in, $(CONFIG_FILES))
-ALLBUTFIRST = $(filter-out $(firstword $(CONFIG_FILES)), $(CONFIG_FILES))
-ALLBUTLAST = $(filter-out $(lastword $(CONFIG_FILES)), $(CONFIG_FILES))
-PAIRS = $(join $(ALLBUTLAST),$(addprefix :,$(ALLBUTFIRST)))
+  $(PLUGIN_CONFIGURE): $(subst $(CURDIR),$(TOP_LEVEL_DIR),$(PLUGIN_CONFIGURE)).ac $(M4_FILES) $(PLUGIN_ACLOCAL)
+	cd $(dir $@) && $(AUTOCONF)
 
-ifeq (,$(findstring $(MAKECMDGOALS),config clean distclean default_clean sterile))
-$(MAKECMDGOALS): default
+  $(PLUGIN_ACLOCAL_M4):
+	cd $(dir $@) && $(ACLOCAL)
+
 endif
 
-default: $(CONFIG_FILES)
-	@$(MAKE) -f $(TOP_LEVEL_MAKE) $(MAKECMDGOALS)
 
-.PHONY:config
-config:	$(CONFIG_FILES)
-	$(CONFIGURE)
-
-.PHONY:clean
-clean:
-	if test -e $(TOP_LEVEL_MAKE) ; then \
-	  $(MAKE) -f $(TOP_LEVEL_MAKE) clean ; \
-	else \
-	  rm -f $(CONFIG_FILES) ; \
-	fi
-
-.PHONY:default_clean
-default_clean: clean
-	if test -e $(TOP_LEVEL_MAKE) ; then \
-	  $(MAKE) -f $(TOP_LEVEL_MAKE) clean ; \
-	fi
-
-.PHONY:distclean
-distclean: clean
-	if test -e $(TOP_LEVEL_MAKE) ; then \
-	  $(MAKE) -f $(TOP_LEVEL_MAKE) clean ; \
-	fi
-
-.PHONY:sterile
-sterile: distclean
-	if test -e $(TOP_LEVEL_MAKE) ; then \
-	  $(MAKE) -f $(TOP_LEVEL_MAKE) sterile ; \
-	else \
-	  rm -f $(CONFIGURE) config.log config.status ; \
-	fi
-
-ifneq (,$(shell which ./config.status))
-CONFIG_PARMS=$(shell ./config.status --config)
-endif
-
-$(lastword $(CONFIG_FILES)) : $(CONFIGURE) $(PLUGIN_CONFIG) $(CONFIG_IN_FILES)
-	OPALDIR=$(ENV_OPALDIR) $(CONFIGURE) $(CONFIG_PARMS)
-	touch $(CONFIG_FILES)
-
-ifeq ($(shell which $(AUTOCONF) > /dev/null && \
-              which $(ACLOCAL) > /dev/null && \
-              test `autoconf --version | sed -n "s/autoconf.*2.\\([0-9]*\\)/\\1/p"` -ge 68 \
-              ; echo $$?),0)
-
-$(CONFIGURE): $(CONFIGURE).ac $(OPALDIR)/make/*.m4 $(ACLOCAL).m4
-	$(AUTOCONF)
-
-$(ACLOCAL).m4:
-	$(ACLOCAL)
-
-$(PLUGIN_CONFIG): $(PLUGIN_CONFIG).ac $(PLUGIN_ACLOCAL) $(OPALDIR)/make/*.m4 
-	( cd $(dir $@) ; $(AUTOCONF) )
-
-$(PLUGIN_ACLOCAL):
-	( cd $(dir $@) ; $(ACLOCAL) )
-
-else # autoconf
-
-$(CONFIGURE): $(CONFIGURE).ac
-	@echo ---------------------------------------------------------------------
-	@echo The configure script requires updating but autoconf not is installed.
-	@echo Either install autoconf or execute the command:
-	@echo touch $@
-	@echo ---------------------------------------------------------------------
-
-endif # autoconf good
-
-$(foreach pair,$(PAIRS),$(eval $(pair)))
-
-# End of Makefile.in
+# End of Makefile

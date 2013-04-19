@@ -35,7 +35,7 @@
 #pragma implementation "endpoint.h"
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #include <opal/endpoint.h>
 #include <opal/manager.h>

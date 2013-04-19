@@ -37,7 +37,7 @@
 #pragma implementation "srtp_session.h"
 #endif
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #if OPAL_SRTP
 

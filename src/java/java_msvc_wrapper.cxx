@@ -37,7 +37,7 @@
  * $Date$
  */
 
-#include <opal/buildopts.h>
+#include <opal_config.h>
 
 #if OPAL_JAVA
 #include "java_swig_wrapper.inc"

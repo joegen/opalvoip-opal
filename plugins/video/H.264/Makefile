@@ -1,5 +1,5 @@
 #
-# Makefile for GSM 06.10
+# Makefile for the x264 H.264 Video Codec
 #
 # Copyright (C) 2004 Post Increment, All Rights Reserved
 #
@@ -24,35 +24,27 @@
 # $Date$
 #
 
-BASENAME := gsm0610
+BASENAME := h264_x264
 
-SRCDIR := ./src
-SRCS   := gsm06_10_codec.c
+SHAREDDIR := $(CURDIR)/shared
+COMMONDIR := $(abspath ../common)
+SRCDIR    := $(CURDIR)
+SOURCES   := $(CURDIR)/h264-x264.cxx \
+             $(SHAREDDIR)/h264frame.cxx \
+             $(SHAREDDIR)/x264wrap.cxx \
+             $(COMMONDIR)/ffmpeg.cxx \
+             $(COMMONDIR)/dyna.cxx
 
-GSM_SYSTEM=@GSM_SYSTEM@
-ifeq ($(GSM_SYSTEM),no)
-SRCS += $(SRCDIR)/gsm_create.c \
-        $(SRCDIR)/gsm_destroy.c \
-        $(SRCDIR)/gsm_decode.c \
-        $(SRCDIR)/gsm_encode.c \
-        $(SRCDIR)/gsm_option.c \
-        $(SRCDIR)/code.c \
-        $(SRCDIR)/decode.c \
-        $(SRCDIR)/add.c \
-        $(SRCDIR)/gsm_lpc.c \
-        $(SRCDIR)/rpe.c \
-        $(SRCDIR)/preprocess.c \
-        $(SRCDIR)/long_term.c \
-        $(SRCDIR)/short_term.c \
-        $(SRCDIR)/table.c
-CPPFLAGS += -I./inc -DWAV49 -DNeedFunctionPrototypes=1
-else
-CPPFLAGS += @GSM_CFLAGS@
-LIBS   += @GSM_LIBS@
-endif
+PLUGIN_CPPFLAGS = $(X264_CFLAGS) $(LIBAVCODEC_CFLAGS) -I$(COMMONDIR) -DLIB_DIR='"$(libdir)"' -DVID_PLUGIN_DIR='"$(VID_PLUGIN_DIR)"'
+PLUGIN_LIBS     = $(X264_LIBS) $(DLFCN_LIBS)
 
-INSTALL_DIR := @AUD_PLUGIN_DIR@
-PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
-include $(PLUGIN_SRC_DIR)/plugin-inc.mak
+SUBDIRS := $(CURDIR)/gpl
+
+vpath	%.cxx $(SHAREDDIR)
+vpath	%.cxx $(COMMONDIR)
+
+INSTALL_DIR = $(VID_PLUGIN_DIR)
+include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
+
 
 ###########################################

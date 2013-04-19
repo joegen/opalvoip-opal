@@ -1,7 +1,7 @@
 #
-# Makefile for vic H.261
+# Makefile for all plug ins
 #
-# Copyright (C) 2004 Post Increment, All Rights Reserved
+# Copyright (C) 2013 Vox Lucida Pty. Ltd.
 #
 # The contents of this file are subject to the Mozilla Public License
 # Version 1.0 (the "License"); you may not use this file except in
@@ -24,25 +24,10 @@
 # $Date$
 #
 
-BASENAME := h261_vic
+BASE_NAME:=
+SUBDIRS=$(PLUGIN_SUBDIRS)
 
-COMMONDIR := ../common
-SRCDIR    := ./vic
-SRCS      := ./h261vic.cxx \
-             $(SRCDIR)/encoder-h261.cxx \
-             $(SRCDIR)/transmitter.cxx \
-             $(SRCDIR)/vid_coder.cxx \
-             $(SRCDIR)/p64encoder.cxx \
-             $(SRCDIR)/p64.cxx \
-             $(SRCDIR)/dct.cxx \
-             $(SRCDIR)/huffcode.c \
-             $(SRCDIR)/bv.c \
+include plugin_inc.mak
 
 
-CPPFLAGS += -I$(COMMONDIR)
-
-INSTALL_DIR := @VID_PLUGIN_DIR@
-PLUGIN_SRC_DIR   := @PLUGIN_SRC_DIR@
-include $(PLUGIN_SRC_DIR)/plugin-inc.mak
-
-###########################################
+# End of file
