@@ -86,15 +86,9 @@ REVISION_FILE = $(OPAL_TOP_LEVEL_DIR)/revision.h
 
 DOXYGEN_CFG := $(OPAL_TOP_LEVEL_DIR)/opal_cfg.dxy
 
-ifeq ($(DEBUG_BUILD),yes)
-  SHARED_LIB_LINK  = $(OPAL_LIBDIR)/$(OPAL_DEBUG_SHARED_LINK)
-  SHARED_LIB_FILE  = $(OPAL_LIBDIR)/$(OPAL_DEBUG_SHARED_FILE)
-  STATIC_LIB_FILE  = $(OPAL_LIBDIR)/$(OPAL_DEBUG_STATIC_FILE)
-else
-  SHARED_LIB_LINK  = $(OPAL_LIBDIR)/$(OPAL_SHARED_LINK)
-  SHARED_LIB_FILE  = $(OPAL_LIBDIR)/$(OPAL_SHARED_FILE)
-  STATIC_LIB_FILE  = $(OPAL_LIBDIR)/$(OPAL_STATIC_FILE)
-endif
+SHARED_LIB_LINK = $(OPAL_SHARED_LIB_LINK)
+SHARED_LIB_FILE = $(OPAL_SHARED_LIB_FILE)
+STATIC_LIB_FILE = $(OPAL_STATIC_LIB_FILE)
 
 
 OPAL_SRCDIR = $(OPAL_TOP_LEVEL_DIR)/src
@@ -442,7 +436,10 @@ endif
 
 CPPFLAGS += $(SHARED_CPPFLAGS)
 
-include $(PTLIB_MAKE_DIR)/post.mak
+internal_build ::
+	@echo OPAL build: OS=$(target_os), CPU=$(target_cpu), DEBUG_BUILD=$(DEBUG_BUILD)
+
+include $(PTLIB_MAKE_DIR)/ptlib.mak
 
 
 ###############################################################################
