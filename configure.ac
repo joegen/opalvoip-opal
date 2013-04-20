@@ -121,7 +121,6 @@ PKG_CHECK_MODULES(
       if test "x`pkg-config ptlib --variable=target`" != "x$target" ; then
          AC_MSG_ERROR([PTLib is not for the same target platform!])
       fi
-      MY_ADD_MODULE_FLAGS([PTLIB])
    ],
    [AC_MSG_ERROR([No PTLib or old version!])]
 )
