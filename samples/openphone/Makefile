@@ -52,6 +52,7 @@ openphone.cxx : openphone.xrc
 ifeq ($(DEBUG_BUILD),yes)
 
   bundle: $(TARGET)
+	@echo Not creating bundle with debug version.
 
 else # DEBUG_BUILD
 

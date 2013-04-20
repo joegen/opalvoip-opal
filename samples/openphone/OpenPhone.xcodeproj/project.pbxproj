@@ -35,7 +35,6 @@
 		A3A08C4411BA297B00DB73D5 /* main.cxx */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.cpp.cpp; path = main.cxx; sourceTree = SOURCE_ROOT; };
 		A3A08C4511BA297B00DB73D5 /* main.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = main.h; sourceTree = SOURCE_ROOT; };
 		A3A08C4611BA297B00DB73D5 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = SOURCE_ROOT; };
-		A3A08C4711BA297B00DB73D5 /* openphone.wxg */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = text.xml; path = openphone.wxg; sourceTree = SOURCE_ROOT; };
 		A3A08C4811BA297B00DB73D5 /* version.h */ = {isa = PBXFileReference; fileEncoding = 5; lastKnownFileType = sourcecode.c.h; path = version.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
@@ -46,11 +45,10 @@
 				A3099D36124CC9860033598E /* opal.xcodeproj */,
 				A3CFF5E214B9649300220E66 /* Bundling */,
 				A370BE0611D7603D008AE956 /* Resources */,
-				A3A08C4511BA297B00DB73D5 /* main.h */,
-				A3A08C4811BA297B00DB73D5 /* version.h */,
-				A3A08C4411BA297B00DB73D5 /* main.cxx */,
 				A3A08C4611BA297B00DB73D5 /* Makefile */,
-				A3A08C4711BA297B00DB73D5 /* openphone.wxg */,
+				A3A08C4511BA297B00DB73D5 /* main.h */,
+				A3A08C4411BA297B00DB73D5 /* main.cxx */,
+				A3A08C4811BA297B00DB73D5 /* version.h */,
 			);
 			name = OpenPhone;
 			sourceTree = "<group>";
@@ -95,7 +93,7 @@
 /* Begin PBXLegacyTarget section */
 		D28A88AD04BDD90700651E21 /* OpenPhone */ = {
 			isa = PBXLegacyTarget;
-			buildArgumentsString = "DEBUG=$DEBUG $ACTION";
+			buildArgumentsString = $ACTION;
 			buildConfigurationList = 1DEB918F08733D9F0010E9CD /* Build configuration list for PBXLegacyTarget "OpenPhone" */;
 			buildPhases = (
 			);
@@ -115,7 +113,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = NO;
-				LastUpgradeCheck = 0420;
+				LastUpgradeCheck = 0460;
 			};
 			buildConfigurationList = 1DEB919308733D9F0010E9CD /* Build configuration list for PBXProject "OpenPhone" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -151,22 +149,26 @@
 		1DEB919008733D9F0010E9CD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				DEBUG = 1;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEBUG_BUILD = yes;
 				OPALDIR = $SOURCE_ROOT/../..;
 				PATH = "/opt/local/bin:$PATH";
 				PRODUCT_NAME = OpenPhone;
 				PTLIBDIR = $SOURCE_ROOT/../../../ptlib;
+				VERBOSE = 1;
 			};
 			name = Debug;
 		};
 		1DEB919108733D9F0010E9CD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				DEBUG = "";
+				COMBINE_HIDPI_IMAGES = YES;
+				DEBUG_BUILD = no;
 				OPALDIR = $SOURCE_ROOT/../..;
 				PATH = "/opt/local/bin:$PATH";
 				PRODUCT_NAME = OpenPhone;
 				PTLIBDIR = $SOURCE_ROOT/../../../ptlib;
+				VERBOSE = 1;
 			};
 			name = Release;
 		};
