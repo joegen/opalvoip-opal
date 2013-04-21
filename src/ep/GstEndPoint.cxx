@@ -212,13 +212,17 @@ static struct GstInitInfo {
 
 static PString GetDefaultDevice(const char * klass, const char * const * preferred, size_t count)
 {
-  PTRACE(4, "Devices:\n" << setfill('\n') << PGstPluginFeature::Inspect(klass, true));
-
   PStringArray available = PGstPluginFeature::Inspect(klass, false);
   for (size_t i = 0; i < count; ++i) {
-    if (available.GetValuesIndex(PConstString(preferred[i])) != P_MAX_INDEX)
+    if (available.GetValuesIndex(PConstString(preferred[i])) != P_MAX_INDEX) {
+      PTRACE(4, "Device set as preferred \"" << preferred[i] << "\", from possible:\n"
+             << setfill('\n') << PGstPluginFeature::Inspect(klass, true));
       return preferred[i];
+    }
   }
+
+  PTRACE(4, "Device set as first available: \"" << available[0] << "\", from possible:\n"
+          << setfill('\n') << PGstPluginFeature::Inspect(klass, true));
   return available[0];
 }
 
