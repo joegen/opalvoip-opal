@@ -27,9 +27,11 @@
 #
 
 OPAL_TOP_LEVEL_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))..)
+ifneq ($(CURDIR),$(OPAL_TOP_LEVEL_DIR))
+  $(info Doing out-of-source OPAL build in $(CURDIR))
+endif
 
 OPAL_BUILDING_ITSELF := yes
-
 include $(OPAL_TOP_LEVEL_DIR)/make/opal.mak
 
 
@@ -105,8 +107,6 @@ VPATH_CXX := $(OPAL_SRCDIR)/opal \
              $(OPAL_SRCDIR)/im
 
 VPATH_C := $(OPAL_SRCDIR)/codec
-
-LIBDIRS_EXCLUDE += $(OPAL_TOP_LEVEL_DIR)
 
 
 ###############################################################################
