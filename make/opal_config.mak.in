@@ -55,6 +55,7 @@ INSTALL          := @INSTALL@
 SVN              := @SVN@
 SWIG             := @SWIG@
 
+# Compile/tool flags
 CPPFLAGS         := @CPPFLAGS@ $(CPPFLAGS)
 CXXFLAGS         := @CXXFLAGS@ $(CXXFLAGS)
 CFLAGS           := @CFLAGS@ $(CFLAGS)
@@ -68,6 +69,7 @@ ARFLAGS          := @ARFLAGS@
 SHAREDLIBEXT     := @SHAREDLIBEXT@
 STATICLIBEXT     := @STATICLIBEXT@
 
+# Configuration options
 OPAL_PLUGINS     := @OPAL_PLUGINS@
 OPAL_SAMPLES     := @OPAL_SAMPLES@
 
@@ -101,6 +103,7 @@ OPAL_HAS_RFC4103 := @OPAL_HAS_RFC4103@
 OPAL_HAS_MIXER   := @OPAL_HAS_MIXER@
 OPAL_HAS_PCSS    := @OPAL_HAS_PCSS@
 
+# PTLib interlocks
 OPAL_PTLIB_SSL          := @OPAL_PTLIB_SSL@
 OPAL_PTLIB_SSL_AES      := @OPAL_PTLIB_SSL_AES@
 OPAL_PTLIB_ASN          := @OPAL_PTLIB_ASN@
@@ -117,6 +120,9 @@ OPAL_PTLIB_CONFIG_FILE  := @OPAL_PTLIB_CONFIG_FILE@
 OPAL_PTLIB_STUN         := @OPAL_PTLIB_STUN@
 OPAL_PTLIB_CLI          := @OPAL_PTLIB_CLI@
 OPAL_GSTREAMER          := @OPAL_PTLIB_GSTREAMER@
+
+PTLIB_MAKE_DIR   := @PTLIB_MAKE_DIR@
+PTLIB_LIB_DIR    := @PTLIB_LIB_DIR@
 
 
 # Remember where this make file is, it is the platform specific one and there

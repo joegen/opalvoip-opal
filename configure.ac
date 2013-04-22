@@ -73,13 +73,13 @@ if test "x$OPALDIR" != "x" ; then
       libdir+=_$target
    fi
    makedir="$OPALDIR/make"
+   VERSION_DIR="$OPALDIR"
 else
    makedir="\${datarootdir}/opal/make"
-   OPALDIR=`pwd`
+   VERSION_DIR="."
 fi
 
 AC_SUBST(makedir)
-AC_SUBST(OPALDIR)
 
 
 dnl ########################################################################
@@ -91,7 +91,7 @@ dnl MSWIN_VERSION version,OPAL_MINOR=MINOR_VERSION
 dnl MSWIN_VERSION version,OPAL_BUILD=BUILD_NUMBER
 dnl MSWIN_VERSION version,OPAL_VERSION=VERSION
 
-MY_VERSION_FILE([${OPALDIR}/version.h], [OPAL])
+MY_VERSION_FILE([$VERSION_DIR/version.h], [OPAL])
 
 
 dnl ################################
@@ -114,16 +114,31 @@ AC_RUN_IFELSE(
 dnl ########################################################################
 dnl Check for PTLib
 
+if test "x$PTLIBDIR" != "x" ; then
+   PKG_CONFIG_PATH=$PTLIBDIR/lib_$target:$PTLIBDIR
+   AC_MSG_NOTICE(PTLIBDIR environment variable detected as $PTLIBDIR)
+fi
+
 PKG_CHECK_MODULES(
    [PTLIB],
    [ptlib >= 2.13.2],
-   [
-      if test "x`pkg-config ptlib --variable=target`" != "x$target" ; then
-         AC_MSG_ERROR([PTLib is not for the same target platform!])
-      fi
-   ],
-   [AC_MSG_ERROR([No PTLib or old version!])]
+   [],
+   [AC_MSG_ERROR([
+      Cannot continue without PTLib!
+      PKG_CONFIG_PATH=$PKG_CONFIG_PATH
+    ])]
 )
+
+if test "x`pkg-config ptlib --variable=target`" != "x$target" ; then
+   AC_MSG_ERROR([
+      PTLib is not for the same target platform!
+      PKG_CONFIG_PATH=$PKG_CONFIG_PATH
+   ])
+fi
+
+AC_SUBST(PTLIB_MAKE_DIR, `pkg-config ptlib --variable=makedir`)
+AC_SUBST(PTLIB_LIB_DIR,  `pkg-config ptlib --variable=libdir`)
+
 
 OPAL_CHECK_PTLIB_OPTION([URL],          [PTLIB_URL],  [Must have URL functionality enabled in PTLib])
 OPAL_CHECK_PTLIB_OPTION([HTTP],         [PTLIB_HTTP], [Must have HTTP functionality enabled in PTLib])

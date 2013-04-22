@@ -307,6 +307,10 @@ AC_DEFUN([MY_VERSION_FILE],[
    stage=`cat $1 | grep BUILD_TYPE | cut -f 3 -d ' ' | sed 's/BetaCode/-beta/' | sed 's/AlphaCode/-alpha/' | sed 's/ReleaseCode/\./'`
    version="${major}.${minor}.${build}"
 
+   if test -z "$major" -o -z "$minor" -o -z "$build"; then
+      AC_MSG_ERROR(Could not determine version number from $1)
+   fi
+
    AC_SUBST($2[_MAJOR], $major)
    AC_SUBST($2[_MINOR], $minor)
    AC_SUBST($2[_BUILD], $build)
