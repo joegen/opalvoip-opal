@@ -29,15 +29,15 @@
 # autoconf.mak uses this for if we are run as "make -f ../Makefile"
 TOP_LEVEL_DIR := $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 
-CONFIG_FILES   := $(CURDIR)/include/opal_config.h \
-                  $(CURDIR)/make/opal_config.mak \
-		  $(CURDIR)/opal.pc \
-                  $(CURDIR)/opal_cfg.dxy \
-                  $(CURDIR)/plugins/plugin_config.mak \
-                  $(CURDIR)/plugins/plugin_config.h
+CONFIG_FILES := include/opal_config.h \
+                make/opal_config.mak \
+                opal.pc \
+                opal_cfg.dxy \
+                plugins/plugin_config.mak \
+                plugins/plugin_config.h
 
-PLUGIN_CONFIGURE  := $(CURDIR)/plugins/configure
-PLUGIN_ACLOCAL_M4 := $(CURDIR)/plugins/aclocal.m4
+PLUGIN_CONFIGURE  := $(TOP_LEVEL_DIR)/plugins/configure
+PLUGIN_ACLOCAL_M4 := $(TOP_LEVEL_DIR)/plugins/aclocal.m4
 
 
 ifdef PTLIBDIR
@@ -49,9 +49,9 @@ endif
 
 ifeq ($(AUTOCONF_AVAILABLE),yes)
 
-  $(PRIMARY_CONFIG_FILE) : $(PLUGIN_CONFIGURE)
+  $(CONFIG_STATUS) : $(PLUGIN_CONFIGURE)
 
-  $(PLUGIN_CONFIGURE): $(subst $(CURDIR),$(TOP_LEVEL_DIR),$(PLUGIN_CONFIGURE)).ac $(M4_FILES) $(PLUGIN_ACLOCAL)
+  $(PLUGIN_CONFIGURE): $(PLUGIN_CONFIGURE).ac $(M4_FILES) $(PLUGIN_ACLOCAL)
 	cd $(dir $@) && $(AUTOCONF)
 
   $(PLUGIN_ACLOCAL_M4):

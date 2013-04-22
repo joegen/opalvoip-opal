@@ -5593,12 +5593,22 @@ fi
 
 
 
+if test "x$OPALDIR" != "x" ; then
+   VERSION_DIR="$OPALDIR"
+else
+   VERSION_DIR=".."
+fi
 
-   major=`cat ../version.h | grep MAJOR_VERSION | cut -f3 -d' '`
-   minor=`cat ../version.h | grep MINOR_VERSION | cut -f3 -d' '`
-   build=`cat ../version.h | grep BUILD_NUMBER | cut -f3 -d' '`
-   stage=`cat ../version.h | grep BUILD_TYPE | cut -f 3 -d ' ' | sed 's/BetaCode/-beta/' | sed 's/AlphaCode/-alpha/' | sed 's/ReleaseCode/\./'`
+
+   major=`cat $VERSION_DIR/version.h | grep MAJOR_VERSION | cut -f3 -d' '`
+   minor=`cat $VERSION_DIR/version.h | grep MINOR_VERSION | cut -f3 -d' '`
+   build=`cat $VERSION_DIR/version.h | grep BUILD_NUMBER | cut -f3 -d' '`
+   stage=`cat $VERSION_DIR/version.h | grep BUILD_TYPE | cut -f 3 -d ' ' | sed 's/BetaCode/-beta/' | sed 's/AlphaCode/-alpha/' | sed 's/ReleaseCode/\./'`
    version="${major}.${minor}.${build}"
+
+   if test -z "$major" -o -z "$minor" -o -z "$build"; then
+      as_fn_error $? "Could not determine version number from $VERSION_DIR/version.h" "$LINENO" 5
+   fi
 
    OPAL_MAJOR=$major
 

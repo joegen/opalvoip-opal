@@ -29,25 +29,14 @@
 OPAL_TOP_LEVEL_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))..)
 
 OPAL_CONFIG_MAK := opal_config.mak
-ifneq (,$(OPAL_PLATFORM_DIR))
-  include $(OPAL_PLATFORM_DIR)/make/$(OPAL_CONFIG_MAK)
-  PTLIB_MAKE_DIR := $(PTLIBDIR)/make
-else ifdef OPALDIR
-  include $(OPALDIR)/make/$(OPAL_CONFIG_MAK)
-else
+ifeq ($(OPAL_BUILDING_ITSELF),yes)
+  include $(CURDIR)/make/$(OPAL_CONFIG_MAK)
+else ifndef OPALDIR
   include $(shell pkg-config opal --variable=makedir)/$(OPAL_CONFIG_MAK)
-endif
-
-ifndef PTLIB_MAKE_DIR
-  ifdef PTLIBDIR
-    PTLIB_MAKE_DIR := $(PTLIBDIR)/make
-  else
-    PTLIB_MAKE_DIR := $(shell pkg-config ptlib --variable=makedir)
-  endif
-endif
-
-ifeq (,$(wildcard $(PTLIB_MAKE_DIR)))
-  $(error Could not determine PTLib make directory for includes)
+else ifneq (,$(wildcard $(OPALDIR)/lib_$(target)/make/$(OPAL_CONFIG_MAK)))
+  include $(OPALDIR)/lib_$(target)/make/$(OPAL_CONFIG_MAK)
+else
+  include $(OPALDIR)/make/$(OPAL_CONFIG_MAK)
 endif
 
 include $(PTLIB_MAKE_DIR)/pre.mak
@@ -97,9 +86,11 @@ else
 endif
 
 
-ifdef OPALDIR
-  # Submodules built with make lib
-  LIBDIRS += $(OPALDIR)
+ifneq ($(OPAL_BUILDING_ITSELF),yes)
+  ifdef OPALDIR
+    # Submodules built with make lib
+    LIBDIRS += $(OPALDIR)
+  endif
 endif
 
 
