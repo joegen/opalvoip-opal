@@ -31,6 +31,8 @@ ifneq ($(CURDIR),$(OPAL_TOP_LEVEL_DIR))
   $(info Doing out-of-source OPAL build in $(CURDIR))
 endif
 
+export OPALDIR := $(OPAL_TOP_LEVEL_DIR)
+export OPAL_PLATFORM_DIR := $(CURDIR)
 OPAL_BUILDING_ITSELF := yes
 include $(OPAL_TOP_LEVEL_DIR)/make/opal.mak
 
