@@ -29,14 +29,23 @@
 OPAL_TOP_LEVEL_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))..)
 
 OPAL_CONFIG_MAK := opal_config.mak
-ifeq ($(OPAL_BUILDING_ITSELF),yes)
-  include $(CURDIR)/make/$(OPAL_CONFIG_MAK)
+ifneq ($(OPAL_PLATFORM_DIR),)
+  include $(OPAL_PLATFORM_DIR)/make/$(OPAL_CONFIG_MAK)
+  OPAL_INCFLAGS := -I$(OPAL_PLATFORM_DIR)/include
+  OPAL_LIBDIR = $(OPAL_PLATFORM_DIR)/lib_$(target)
 else ifndef OPALDIR
   include $(shell pkg-config opal --variable=makedir)/$(OPAL_CONFIG_MAK)
-else ifneq (,$(wildcard $(OPALDIR)/lib_$(target)/make/$(OPAL_CONFIG_MAK)))
-  include $(OPALDIR)/lib_$(target)/make/$(OPAL_CONFIG_MAK)
+  PTLIB_INCFLAGS := $(shell pkg-config opal --cflags-only-I)
+  PTLIB_LIBDIR := $(shell pkg-config opal --variable=libdir)
 else
-  include $(OPALDIR)/make/$(OPAL_CONFIG_MAK)
+  ifneq (,$(wildcard $(OPALDIR)/lib_$(target)/make/$(OPAL_CONFIG_MAK)))
+    include $(OPALDIR)/lib_$(target)/make/$(OPAL_CONFIG_MAK)
+  else
+    include $(OPALDIR)/make/$(OPAL_CONFIG_MAK)
+  endif
+  OPAL_INCFLAGS := -I$(OPALDIR)/include
+  OPAL_LIBDIR = $(OPALDIR)/lib_$(target)
+  LIBDIRS += $(OPALDIR)  # Submodules built with make lib
 endif
 
 include $(PTLIB_MAKE_DIR)/pre.mak
@@ -44,14 +53,6 @@ include $(PTLIB_MAKE_DIR)/pre.mak
 
 ###############################################################################
 # Determine the library name
-
-ifneq (,$(OPAL_PLATFORM_DIR))
-  OPAL_LIBDIR = $(OPAL_PLATFORM_DIR)
-else ifdef OPALDIR
-  OPAL_LIBDIR = $(OPALDIR)/lib_$(target)
-else
-  OPAL_LIBDIR = $(shell pkg-config ptlib --variable=libdir)
-endif
 
 OPAL_OBJDIR = $(OPAL_LIBDIR)/obj$(OBJDIR_SUFFIX)
 OPAL_DEPDIR = $(OPAL_LIBDIR)/dep$(OBJDIR_SUFFIX)
@@ -86,21 +87,13 @@ else
 endif
 
 
-ifneq ($(OPAL_BUILDING_ITSELF),yes)
-  ifdef OPALDIR
-    # Submodules built with make lib
-    LIBDIRS += $(OPALDIR)
-  endif
-endif
-
-
 ###############################################################################
-# Determine the include directory, may include a platform dependent one
+# Add common directory to include path
+# Note also have include directory that is always relative to the
+# ptlib_config.mak file in OPAL_PLATFORM_INC_DIR
 
-ifdef OPALDIR
-  CPPFLAGS := -I$(abspath $(OPALDIR)/include) $(CPPFLAGS)
-else
-  CPPFLAGS := $(shell pkg-config opal --cflags-only-I) $(CPPFLAGS)
+ifeq (,$(findstring $(OPAL_INCFLAGS),$(CPPFLAGS)))
+  CPPFLAGS := $(OPAL_INCFLAGS) $(CPPFLAGS)
 endif
 
 ifeq (,$(findstring $(OPAL_PLATFORM_INC_DIR),$(CPPFLAGS)))

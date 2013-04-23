@@ -29,6 +29,10 @@
 PROG		= jester
 SOURCES		:= main.cxx
 
-include $(shell PKG_CONFIG_PATH="$(OPALDIR)" pkg-config opal --variable=makedir)/opal.mak
+ifdef OPALDIR
+  include $(OPALDIR)/make/opal.mak
+else
+  include $(shell pkg-config opal --variable=makedir)/opal.mak
+endif
 
 # End of Makefile
