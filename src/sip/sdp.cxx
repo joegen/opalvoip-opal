@@ -1530,8 +1530,11 @@ void SDPVideoMediaDescription::SetAttribute(const PString & attr, const PString 
     if (value[0] == '*') {
       PString params = value.Mid(1).Trim();
       SDPMediaFormatList::iterator format;
-      for (format = m_formats.begin(); format != m_formats.end(); ++format)
-        dynamic_cast<Format *>(&*format)->SetRTCP_FB(params);
+      for (format = m_formats.begin(); format != m_formats.end(); ++format) {
+        Format * vidFmt = dynamic_cast<Format *>(&*format);
+        if (PAssertNULL(vidFmt) != NULL)
+          vidFmt->SetRTCP_FB(params);
+      }
     }
     else {
       PString params = value;
@@ -1631,7 +1634,8 @@ bool SDPVideoMediaDescription::PreEncode()
   if (allSame) {
     for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
       Format * vidFmt = dynamic_cast<Format *>(&*format);
-      vidFmt->SetRTCP_FB(PString::Empty());
+      if (PAssertNULL(vidFmt) != NULL)
+        vidFmt->SetRTCP_FB(PString::Empty());
     }
   }
   else
