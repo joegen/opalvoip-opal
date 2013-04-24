@@ -336,6 +336,23 @@ class H323Connection : public OpalRTPConnection
       const OpalMediaType & mediaType,       ///< Media type for session to return information
       OpalTransportAddressArray & transports ///<  Information on media session
     ) const;
+
+#if OPAL_H239
+    /**Send request for ability to send presentation video.
+       This requests the "presentation token" in H.239 terminology. It gives
+       permission to start secondary video channels with "presentation"
+       role. This is done via OpalCall::OpenSourceMediaStreams().
+
+       If called, and returns true, the OnChangedPresentationRole() should be
+       monitored for being this connections GetLocalPartyURL() value,
+       indicating success. Any other value indicates failure.
+
+       Default behaviour uses H.239 if available, otherwise returns false.
+      */
+    virtual bool RequestPresentationRole(
+      bool release   ///< Indicate we are acquiring or releasing the token
+    );
+#endif // OPAL_H239
   //@}
 
   /**@name Signalling Channel */
@@ -1187,7 +1204,7 @@ class H323Connection : public OpalRTPConnection
       unsigned logicalChannel,
       unsigned terminalLabel
     );
-#endif
+#endif // OPAL_H239
 
     /**Error discriminator for the OnControlProtocolError() function.
       */
@@ -2210,7 +2227,11 @@ class H323Connection : public OpalRTPConnection
     H245NegRoundTripDelay            * roundTripDelayProcedure;
 
 #if OPAL_H239
-    bool m_h239Control;
+    bool     m_h239Control;
+    unsigned m_h239SymmetryBreaking;
+    unsigned m_h239TokenChannel;
+    unsigned m_h239TerminalLabel;
+    bool     m_h239TokenOwned;
 #endif
 
 #if OPAL_H450
