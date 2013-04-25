@@ -64,6 +64,21 @@ endif
 
 ##############################################################################
 
+ifneq (,$(SUBDIRS))
+  export CC CXX LD AR RANLIB CPPFLAGS CFLAGS CXXFLAGS LDFLAGS ARFLAGS target target_os target_cpu
+  all install uninstall clean ::
+	$(Q)set -e; $(foreach dir,$(SUBDIRS), \
+          if test -d $(dir) ; then \
+            $(MAKE) --print-directory -C $(dir) $@; \
+          else \
+            echo Directory $(dir) does not exist; \
+          fi; \
+        )
+endif
+
+
+##############################################################################
+
 ifeq ($V$(VERBOSE),)
   Q   := @
   Q_CC = @echo [CC$(Q_SUFFIX)] $(subst $(CURDIR)/,,$<) ; 
@@ -114,21 +129,6 @@ both opt debug optshared debugshared optstatic debugstatic: all
 
 optdepend debugdepend bothdepend optlibs debuglibs bothlibs:
 	@true
-
-
-##############################################################################
-
-ifneq (,$(SUBDIRS))
-  export CC CXX LD AR RANLIB CPPFLAGS CFLAGS CXXFLAGS LDFLAGS ARFLAGS target target_os target_cpu
-  all install uninstall clean ::
-	$(Q)set -e; $(foreach dir,$(SUBDIRS), \
-          if test -d $(dir) ; then \
-            $(MAKE) --print-directory -C $(dir) $@; \
-          else \
-            echo Directory $(dir) does not exist; \
-          fi; \
-        )
-endif
 
 
 # End of file
