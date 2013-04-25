@@ -277,7 +277,6 @@ void OpalConnection::InternalSetAsOriginating()
   if (script != NULL)
     script->SetBoolean(m_scriptTableName  + ".originating", true);
 #endif
-
 }
 
 
@@ -414,26 +413,23 @@ void OpalConnection::Release(CallEndReason reason, bool synchronous)
     SetCallEndReason(reason);
   }
 
-  if (synchronous) {
-    PTRACE(3, "OpalCon\tReleasing synchronously " << *this);
-    OnReleased();
-    return;
-  }
-
-  PTRACE(3, "OpalCon\tReleasing asynchronously " << *this);
-
   // Add a reference for the thread we are about to start
   SafeReference();
-  PThread::Create(PCREATE_NOTIFIER(OnReleaseThreadMain), 0,
-                  PThread::AutoDeleteThread,
-                  PThread::NormalPriority,
-                  "OnRelease");
+
+  if (synchronous) {
+    PTRACE(3, "OpalCon\tReleasing synchronously " << *this);
+    InternalOnReleased();
+  }
+  else {
+    PTRACE(3, "OpalCon\tReleasing asynchronously " << *this);
+    new PThreadObj<OpalConnection>(*this, &OpalConnection::InternalOnReleased, true, "OnRelease");
+  }
 }
 
 
-void OpalConnection::OnReleaseThreadMain(PThread & PTRACE_PARAM(thread), P_INT_PTR)
+void OpalConnection::InternalOnReleased()
 {
-  PTRACE_CONTEXT_ID_TO(thread);
+  PTRACE_CONTEXT_ID_TO(PThread::Current());
 
   /* Do a brief lock here to avoid race conditions where an operation (e.g. a
      SIP re-INVITE) was started before release, but has not yet finished. Once
@@ -444,6 +440,13 @@ void OpalConnection::OnReleaseThreadMain(PThread & PTRACE_PARAM(thread), P_INT_P
      up to OnReleased() to manage it's locking regime. */
   if (LockReadOnly()) {
     UnlockReadOnly();
+
+    if (ownerCall.GetConnectionCount() == 2) {
+      PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+      if (other != NULL)
+        other->Release(callEndReason, true);
+    }
+
     OnReleased();
   }
 
