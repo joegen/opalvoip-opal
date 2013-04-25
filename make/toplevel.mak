@@ -469,42 +469,43 @@ endif
 ifeq ($(prefix),$(OPALDIR))
 
 install uninstall:
-	@echo install/uninstall not available as prefix=PTLIBDIR
+	@echo install/uninstall not available as prefix=OPALDIR
 	@false
 
 else # OPALDIR
 
 install:
-	$(MKDIR_P) $(DESTDIR)$(libdir); chmod 755 $(DESTDIR)$(libdir)
-	( if test -e $(OPAL_LIBDIR)/$(OPAL_STATIC_FILE) ; then \
-	  $(INSTALL) -m 755 $(OPAL_LIBDIR)/$(OPAL_STATIC_FILE) $(DESTDIR)$(libdir) ; \
-	fi )
-	( if test -e $(OPAL_LIBDIR)/$(OPAL_DEBUG_STATIC_FILE) ; then \
-	  $(INSTALL) -m 755 $(OPAL_LIBDIR)/$(OPAL_DEBUG_STATIC_FILE) $(DESTDIR)$(libdir) ; \
-	fi )
-	( if test -e $(OPAL_LIBDIR)/$(OPAL_SHARED_FILE) ; then \
-	  $(INSTALL) -m 755 $(OPAL_LIBDIR)/$(OPAL_SHARED_FILE) $(DESTDIR)$(libdir) ; \
-	  cd $(OPAL_LIBDIR) \
-          $(LN_S) -nf $(OPAL_SHARED_FILE) $(OPAL_SHARED_LINK) ; \
-	fi )
-	( if test -e $(OPAL_LIBDIR)/$(OPAL_DEBUG_SHARED_FILE) ; then \
-	  $(INSTALL) -m 755 $(OPAL_LIBDIR)/$(OPAL_DEBUG_SHARED_FILE) $(DESTDIR)$(libdir) ; \
-	  cd $(OPAL_LIBDIR) \
-	  $(LN_S) -nf $(OPAL_DEBUG_SHARED_FILE) $(OPAL_DEBUG_SHARED_LINK) ; \
-	fi )
-	$(MKDIR_P) $(DESTDIR)$(libdir)/pkgconfig ; chmod 755 $(DESTDIR)$(libdir)/pkgconfig
-	$(INSTALL) -m 644 opal.pc $(DESTDIR)$(libdir)/pkgconfig
-	$(MKDIR_P) $(DESTDIR)$(datarootdir)/opal/make ; chmod 755 $(DESTDIR)$(datarootdir)/opal/make
-	$(INSTALL) -m 644 make/opal_config.mak $(DESTDIR)$(datarootdir)/opal/make
-	$(INSTALL) -m 644 make/opal.mak $(DESTDIR)$(datarootdir)/opal/make
-	$(MKDIR_P) $(DESTDIR)$(includedir); chmod 755 $(DESTDIR)$(includedir)
-	$(INSTALL) -m 644 include/opal.h $(DESTDIR)$(includedir)
-	( for dir in asn codec ep h323 h460 iax2 im lids opal rtp sip t120 t38; \
-		do $(MKDIR_P) $(DESTDIR)$(includedir)/$$dir ; chmod 755 $(DESTDIR)$(includedir)/$$dir ; \
-		( for fn in include/$$dir/*.h ; do \
-			$(INSTALL) -m 644 $$fn $(DESTDIR)$(includedir)/$$dir ; \
-		done); \
-	done)
+	for dir in $(DESTDIR)$(libdir) \
+	           $(DESTDIR)$(libdir)/pkgconfig \
+		   $(DESTDIR)$(includedir) \
+                   $(DESTDIR)$(datarootdir)/opal/make ; \
+	do \
+	    $(MKDIR_P) $$dir ; \
+	    chmod 755 $$dir ; \
+	done
+	for lib in $(OPAL_OPT_SHARED_FILE) \
+	           $(OPAL_DEBUG_SHARED_FILE) \
+	           $(OPAL_OPT_STATIC_FILE) \
+	           $(OPAL_DEBUG_STATIC_FILE) ; \
+	do \
+	   if test -e $$lib ; then \
+	      $(INSTALL) -m 444 $$lib $(DESTDIR)$(libdir); \
+	   fi \
+	done
+	cd $(DESTDIR)$(libdir) ; \
+	$(LN_S) -f $(notdir $(OPAL_OPT_SHARED_FILE)) $(notdir $(OPAL_OPT_SHARED_LINK))
+	if test -e $(OPAL_DEBUG_SHARED_FILE); then \
+	   cd $(DESTDIR)$(libdir) ; \
+	   $(LN_S) -f $(notdir $(OPAL_DEBUG_SHARED_FILE)) $(notdir $(OPAL_DEBUG_SHARED_LINK)) ; \
+	fi
+	$(INSTALL) -m 644 make/*.mak $(DESTDIR)$(datarootdir)/opal/make
+	$(INSTALL) -m 644 include/*.h $(DESTDIR)$(includedir)
+	for dir in asn codec ep h323 h460 iax2 im lids opal rtp sip t120 t38; \
+	do \
+	   $(MKDIR_P) $(DESTDIR)$(includedir)/$$dir ; \
+	   chmod 755 $(DESTDIR)$(includedir)/$$dir ; \
+	   $(INSTALL) -m 644 include/$$dir/*.h $(DESTDIR)$(includedir)/$$dir ; \
+	done
 ifeq ($(OPAL_PLUGINS),yes)
 	$(Q_MAKE) -C plugins install
 endif
@@ -512,12 +513,12 @@ endif
 uninstall:
 	rm -rf $(DESTDIR)$(includedir) \
                $(DESTDIR)$(datarootdir)/opal \
-	       $(DESTDIR)$(libdir)/$(OPAL_SHARED_LINK) \
-               $(DESTDIR)$(libdir)/$(OPAL_SHARED_FILE) \
-               $(DESTDIR)$(libdir)/$(OPAL_STATIC_FILE) \
-               $(DESTDIR)$(libdir)/$(OPAL_DEBUG_SHARED_LINK) \
-               $(DESTDIR)$(libdir)/$(OPAL_DEBUG_SHARED_FILE) \
-               $(DESTDIR)$(libdir)/$(OPAL_DEBUG_STATIC_FILE) \
+	       $(DESTDIR)$(libdir)/$(notdir $(OPAL_OPT_SHARED_LINK)) \
+               $(DESTDIR)$(libdir)/$(notdir $(OPAL_OPT_SHARED_FILE)) \
+               $(DESTDIR)$(libdir)/$(notdir $(OPAL_OPT_STATIC_FILE)) \
+               $(DESTDIR)$(libdir)/$(notdir $(OPAL_DEBUG_SHARED_LINK)) \
+               $(DESTDIR)$(libdir)/$(notdir $(OPAL_DEBUG_SHARED_FILE)) \
+               $(DESTDIR)$(libdir)/$(notdir $(OPAL_DEBUG_STATIC_FILE)) \
 	       $(DESTDIR)$(libdir)/pkgconfig/opal.pc
 ifeq ($(OPAL_PLUGINS),yes)
 	$(Q_MAKE) -C plugins uninstall
