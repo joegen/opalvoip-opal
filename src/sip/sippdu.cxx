@@ -3542,7 +3542,7 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport * transport)
 
 SIPTransaction * SIPInvite::CreateDuplicate() const
 {
-  GetConnection()->m_sessions.Assign(m_sessions);
+  GetConnection()->m_sessions = m_sessions;
   SIPTransaction * newTransaction = new SIPInvite(*GetConnection(), m_transport);
 
   // Section 8.1.3.5 of RFC3261 tells that the authenticated

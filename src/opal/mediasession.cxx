@@ -140,7 +140,6 @@ OpalMediaSession::OpalMediaSession(const Init & init)
   , m_sessionId(init.m_sessionId)
   , m_mediaType(init.m_mediaType)
   , m_isExternalTransport(false)
-  , m_referenceCount(1)
 {
   PTRACE_CONTEXT_ID_FROM(init.m_connection);
   PTRACE(5, "Media\tSession " << m_sessionId << " for " << m_mediaType << " created.");

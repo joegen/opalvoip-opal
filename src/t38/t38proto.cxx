@@ -753,7 +753,6 @@ OpalFaxConnection::OpalFaxConnection(OpalCall        & call,
   , m_disableT38(disableT38)
   , m_switchTime(0)
   , m_tiffFileFormat(TIFF_File_FormatName)
-  , m_completed(false)
 {
   SetFaxMediaFormatOptions(m_tiffFileFormat);
 
@@ -1061,12 +1060,11 @@ void OpalFaxConnection::InternalOpenFaxStreams()
 
 void OpalFaxConnection::InternalOnFaxCompleted()
 {
-  if (m_completed)
+  if (m_completed.TestAndSet(true))
     return;
 
   PTRACE(4, "FAX", "OnFaxCompleted, result=" << m_finalStatistics.m_fax.m_result);
 
-  m_completed= true;
   OnFaxCompleted(m_finalStatistics.m_fax.m_result != OpalMediaStatistics::FaxSuccessful);
 }
 
