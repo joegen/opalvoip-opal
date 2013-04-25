@@ -35,8 +35,8 @@ ifneq ($(OPAL_PLATFORM_DIR),)
   OPAL_LIBDIR = $(OPAL_PLATFORM_DIR)/lib_$(target)
 else ifndef OPALDIR
   include $(shell pkg-config opal --variable=makedir)/$(OPAL_CONFIG_MAK)
-  PTLIB_INCFLAGS := $(shell pkg-config opal --cflags-only-I)
-  PTLIB_LIBDIR := $(shell pkg-config opal --variable=libdir)
+  OPAL_INCFLAGS := $(shell pkg-config opal --cflags-only-I)
+  OPAL_LIBDIR := $(shell pkg-config opal --variable=libdir)
 else
   ifneq (,$(wildcard $(OPALDIR)/lib_$(target)/make/$(OPAL_CONFIG_MAK)))
     include $(OPALDIR)/lib_$(target)/make/$(OPAL_CONFIG_MAK)
