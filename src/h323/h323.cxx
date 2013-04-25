@@ -201,6 +201,10 @@ H323Connection::H323Connection(OpalCall & call,
 #endif
 #if OPAL_H239
   , m_h239Control(ep.GetDefaultH239Control())
+  , m_h239SymmetryBreaking(0)
+  , m_h239TokenChannel(0)
+  , m_h239TerminalLabel(0)
+  , m_h239TokenOwned(false)
 #endif
 #if OPAL_H460
   , features(ep.GetFeatureSet())
@@ -3265,11 +3269,37 @@ bool H323Connection::OnH239PresentationRequest(unsigned logicalChannel, unsigned
 {
   PTRACE(3, "H239\tOnH239PresentationRequest(" << logicalChannel << ',' << symmetryBreaking << ',' << terminalLabel << ") - sending acknowledge");
 
+  bool ack;
+  if (m_h239SymmetryBreaking != 0) {
+    // Our request is in progress, 11.2.4/H.239
+    if (m_h239SymmetryBreaking > symmetryBreaking)
+      ack = false; // No, we have it
+    else if (m_h239SymmetryBreaking < symmetryBreaking) {
+      ack = true;
+      m_h239TokenOwned = false;
+      m_h239SymmetryBreaking = 0;
+      OnChangedPresentationRole(GetRemotePartyURL(), false);
+    }
+    else {
+      // Try again
+      m_h239SymmetryBreaking = PRandom::Number(1, 127);
+      return SendH239PresentationRequest(m_h239TokenChannel, m_h239SymmetryBreaking, m_h239TerminalLabel);
+    }
+  }
+  else if (!m_h239TokenOwned)
+    ack = true; // 11.2.1/H.239 not owned
+  else if (!OnChangedPresentationRole(GetRemotePartyURL(), true))
+    ack = false; // 11.2.2/H.239 Is owned but not giving it up
+  else {
+    m_h239TokenOwned =  false;
+    ack = true;
+  }
+
   H323ControlPDU pdu;
   H245_ArrayOf_GenericParameter & params = pdu.BuildGenericResponse(H239MessageOID, 4).m_messageContent;
   //Viji    08/05/2009 Fix the order of the generic parameters as per 
   //Table 13/H.239  - presentationTokenResponse syntax in the H.239 ITU spec
-  H323AddGenericParameterBoolean(params, 126, true); // Acknowledge
+  H323AddGenericParameterBoolean(params, ack ? 126 : 127, true); // Acknowledge/Reject
   H323AddGenericParameterInteger(params, 44, terminalLabel, H245_ParameterValue::e_unsignedMin);
   H323AddGenericParameterInteger(params, 42, logicalChannel, H245_ParameterValue::e_unsignedMin);
 
@@ -3301,15 +3331,15 @@ bool H323Connection::OnH239PresentationResponse(unsigned logicalChannel, unsigne
 {
   PTRACE(3, "H239\tOnH239PresentationResponse(" << logicalChannel << ',' << terminalLabel << ',' << rejected << ')');
 
-  if (rejected)
-    return true;
+  // Did we request it?
+  if (m_h239SymmetryBreaking == 0)
+    return SendH239PresentationRelease(logicalChannel, terminalLabel); // No
 
-  H323ControlPDU pdu;
-  H245_ArrayOf_GenericParameter & params = pdu.BuildGenericCommand(H239MessageOID, 5).m_messageContent;
-  //Viji    08/05/2009 Fix the order of the generic parameters as per Table 14 of H.239 ITU spec
-  H323AddGenericParameterInteger(params, 44, terminalLabel, H245_ParameterValue::e_unsignedMin);
-  H323AddGenericParameterInteger(params, 42, logicalChannel, H245_ParameterValue::e_unsignedMin);
-  return WriteControlPDU(pdu);
+  m_h239SymmetryBreaking = 0;
+  m_h239TokenOwned = !rejected;
+  OnChangedPresentationRole(m_h239TokenOwned ? GetLocalPartyURL() : GetRemotePartyURL(), false);
+
+  return true;
 }
 
 
@@ -3344,7 +3374,46 @@ bool H323Connection::OnH239PresentationIndication(unsigned PTRACE_PARAM(logicalC
   PTRACE(3, "H239\tOnH239PresentationIndication(" << logicalChannel << ',' << terminalLabel << ')');
   return true;
 }
-#endif
+
+
+bool H323Connection::GetRemoteH239Control() const
+{
+  return remoteCapabilities.FindCapability(H323H239ControlCapability()) != NULL;
+}
+
+
+OpalMediaFormatList H323Connection::GetRemoteH239Formats() const
+{
+  OpalMediaFormatList formats;
+
+  for (PINDEX i = 0; i < remoteCapabilities.GetSize(); ++i) {
+    const H323Capability & capability = remoteCapabilities[i];
+    if (capability.GetMainType() == H323Capability::e_Video &&
+        capability.GetSubType() == H245_VideoCapability::e_extendedVideoCapability)
+      formats += capability.GetMediaFormat();
+  }
+
+  return formats;
+}
+
+
+bool H323Connection::RequestPresentationRole(bool release)
+{
+  if (m_h239TokenOwned && release) {
+    m_h239TokenOwned = false;
+    SendH239PresentationRelease(m_h239TokenChannel, m_h239TerminalLabel); // 11.2.3/H.239
+    OnChangedPresentationRole(PString::Empty(), false);
+    return true;
+  }
+
+  if (m_h239TokenOwned || release || m_h239SymmetryBreaking != 0)
+    return false;
+
+  // 11.2.4/H.239 part 1
+  m_h239SymmetryBreaking = PRandom::Number(1, 127);
+  return SendH239PresentationRequest(m_h239TokenChannel, m_h239SymmetryBreaking, m_h239TerminalLabel);
+}
+#endif // OPAL_H239
 
 
 H323Channel * H323Connection::GetLogicalChannel(unsigned number, PBoolean fromRemote) const
@@ -3749,29 +3818,6 @@ void H323Connection::OnSetLocalCapabilities()
 
   PTRACE(3, "H323\tSetLocalCapabilities:\n" << setprecision(2) << localCapabilities);
 }
-
-
-#if OPAL_H239
-bool H323Connection::GetRemoteH239Control() const
-{
-  return remoteCapabilities.FindCapability(H323H239ControlCapability()) != NULL;
-}
-
-
-OpalMediaFormatList H323Connection::GetRemoteH239Formats() const
-{
-  OpalMediaFormatList formats;
-
-  for (PINDEX i = 0; i < remoteCapabilities.GetSize(); ++i) {
-    const H323Capability & capability = remoteCapabilities[i];
-    if (capability.GetMainType() == H323Capability::e_Video &&
-        capability.GetSubType() == H245_VideoCapability::e_extendedVideoCapability)
-      formats += capability.GetMediaFormat();
-  }
-
-  return formats;
-}
-#endif
 
 
 PBoolean H323Connection::IsH245Master() const

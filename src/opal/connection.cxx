@@ -1604,6 +1604,19 @@ bool OpalConnection::GetConferenceState(OpalConferenceState *) const
 }
 
 
+bool OpalConnection::RequestPresentationRole(bool)
+{
+  return false;
+}
+
+
+bool OpalConnection::OnChangedPresentationRole(const PString & PTRACE_PARAM(newChairURI), bool)
+{
+  PTRACE(3, "OpalCon", "OnChangedPresentationRole(" << newChairURI << ')');
+  return true;
+}
+
+
 void OpalConnection::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 {
   if (minDelay != 0 || maxDelay != 0) {
