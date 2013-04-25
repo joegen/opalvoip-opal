@@ -31,8 +31,12 @@ OPAL_TOP_LEVEL_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))..)
 OPAL_CONFIG_MAK := opal_config.mak
 ifneq ($(OPAL_PLATFORM_DIR),)
   include $(OPAL_PLATFORM_DIR)/make/$(OPAL_CONFIG_MAK)
-  OPAL_INCFLAGS := -I$(OPAL_PLATFORM_DIR)/include
-  OPAL_LIBDIR = $(OPAL_PLATFORM_DIR)/lib_$(target)
+  OPAL_INCFLAGS := -I$(OPAL_TOP_LEVEL_DIR)/include
+  ifeq ($(OPAL_TOP_LEVEL_DIR),$(OPAL_PLATFORM_DIR))
+    OPAL_LIBDIR = $(OPAL_PLATFORM_DIR)/lib_$(target)
+  else
+    OPAL_LIBDIR = $(OPAL_PLATFORM_DIR)
+  endif
 else ifndef OPALDIR
   include $(shell pkg-config opal --variable=makedir)/$(OPAL_CONFIG_MAK)
   OPAL_INCFLAGS := $(shell pkg-config opal --cflags-only-I)

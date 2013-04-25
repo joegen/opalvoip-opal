@@ -54,7 +54,7 @@ AC_SUBST(VID_PLUGIN_DIR, "${PLUGIN_DIR}/codecs/video")
 AC_SUBST(LID_PLUGIN_DIR, "${PLUGIN_DIR}/lid")
 AC_SUBST(FAX_PLUGIN_DIR, "${PLUGIN_DIR}/fax")
 
-AC_SUBST(PLUGIN_SRC_DIR, `pwd`)
+AC_SUBST(PLUGIN_SRC_DIR, $srcdir)
 
 AC_SUBST(PLUGIN_SUBDIRS, "")
 
@@ -63,20 +63,20 @@ dnl ########################################################################
 dnl Audio Codecs
 dnl ########################################################################
 
-OPAL_SIMPLE_PLUGIN([SILK],     [silk],     [Skype SILK audio codec],                [audio/SILK])
-OPAL_SIMPLE_PLUGIN([GSMAMR],   [gsmamr],   [GSM-AMR audio codec],                   [audio/gsm-amr])
-OPAL_SIMPLE_PLUGIN([G726],     [g.726],    [G.726 audio codec],                     [audio/G726])
-OPAL_SIMPLE_PLUGIN([IMA_ADPCM],[ima-adpcm],[IMA ADPCM codec],                       [audio/IMA_ADPCM])
-OPAL_SIMPLE_PLUGIN([G722],     [g.722],    [G.722 wideband audio codec],            [audio/G722])
-OPAL_SIMPLE_PLUGIN([G7221],    [g.722.1],  [G.722.1 wideband audio codec],          [audio/G.722.1])
-OPAL_SIMPLE_PLUGIN([G7222],    [g.722.2],  [G.722.2 wideband audio codec],          [audio/G.722.2])
-OPAL_SIMPLE_PLUGIN([LPC10],    [lpc10],    [LPC-10 very low bandwidth audio codec], [audio/LPC_10])
+OPAL_SIMPLE_PLUGIN([SILK],     [silk],     [Skype SILK audio codec],                [$srcdir/audio/SILK])
+OPAL_SIMPLE_PLUGIN([GSMAMR],   [gsmamr],   [GSM-AMR audio codec],                   [$srcdir/audio/gsm-amr])
+OPAL_SIMPLE_PLUGIN([G726],     [g.726],    [G.726 audio codec],                     [$srcdir/audio/G726])
+OPAL_SIMPLE_PLUGIN([IMA_ADPCM],[ima-adpcm],[IMA ADPCM codec],                       [$srcdir/audio/IMA_ADPCM])
+OPAL_SIMPLE_PLUGIN([G722],     [g.722],    [G.722 wideband audio codec],            [$srcdir/audio/G722])
+OPAL_SIMPLE_PLUGIN([G7221],    [g.722.1],  [G.722.1 wideband audio codec],          [$srcdir/audio/G.722.1])
+OPAL_SIMPLE_PLUGIN([G7222],    [g.722.2],  [G.722.2 wideband audio codec],          [$srcdir/audio/G.722.2])
+OPAL_SIMPLE_PLUGIN([LPC10],    [lpc10],    [LPC-10 very low bandwidth audio codec], [$srcdir/audio/LPC_10])
 
 OPAL_SYSTEM_PLUGIN(
    [GSM],
    [gsm],
    [GSM 06.10 audio codec],
-   [audio/GSM0610],
+   [$srcdir/audio/GSM0610],
    [gsm local-source],
    [],
    [-lgsm],
@@ -88,7 +88,7 @@ OPAL_SYSTEM_PLUGIN(
    [ILBC],
    [iLBC],
    [iLBC audio codec],
-   [audio/iLBC],
+   [$srcdir/audio/iLBC],
    [ilbc local-source],
    [],
    [-lilbc],
@@ -103,7 +103,7 @@ OPAL_SYSTEM_PLUGIN(
    [SPEEX],
    [speex],
    [Speex audio codec],
-   [audio/Speex],
+   [$srcdir/audio/Speex],
    [speex local-source],
    [],
    [-lspeex],
@@ -115,7 +115,7 @@ OPAL_SYSTEM_PLUGIN(
    [SBC],
    [sbc],
    [Bluetooth SBC audio codec],
-   [audio/SBC/bluez_sbc],
+   [$srcdir/audio/SBC/bluez_sbc],
    [samplerate],
    [],
    [-lsamplerate],
@@ -127,7 +127,7 @@ OPAL_SYSTEM_PLUGIN(
    [CELT],
    [celt],
    [CELT audio codec],
-   [audio/celt],
+   [$srcdir/audio/celt],
    [celt],
    [],
    [],
@@ -144,7 +144,7 @@ dnl ########################################################################
 dnl Video Codecs
 dnl ########################################################################
 
-OPAL_SIMPLE_PLUGIN([H261], [h.261], [H.261 video codec], [video/H.261-vic])
+OPAL_SIMPLE_PLUGIN([H261], [h.261], [H.261 video codec], [$srcdir/video/H.261-vic])
 
 MY_MODULE_OPTION(
    [LIBAVCODEC],
@@ -192,14 +192,14 @@ if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
       ]
    )
 
-   OPAL_SIMPLE_PLUGIN([H263],  [h.263], [H.263/H.263+ video codec], [video/H.263-1998])
-   OPAL_SIMPLE_PLUGIN([MPEG4], [mpeg4], [MPEG4 part 2 video codec], [video/MPEG4-ffmpeg])
+   OPAL_SIMPLE_PLUGIN([H263],  [h.263], [H.263/H.263+ video codec], [$srcdir/video/H.263-1998])
+   OPAL_SIMPLE_PLUGIN([MPEG4], [mpeg4], [MPEG4 part 2 video codec], [$srcdir/video/MPEG4-ffmpeg])
 
    OPAL_SYSTEM_PLUGIN(
       [X264],
       [x264],
       [VideoLan x264 H.264 video codec],
-      [video/H.264],
+      [$srcdir/video/H.264],
       [x264 >= 0.102],
       [],
       [-lx264],
@@ -236,7 +236,7 @@ OPAL_SYSTEM_PLUGIN(
    [VP8],
    [VP8],
    [VP8 (WebM) video codec],
-   [video/VP8-WebM],
+   [$srcdir/video/VP8-WebM],
    [vpx],
    [],
    [-lvpx],
@@ -251,7 +251,7 @@ OPAL_SYSTEM_PLUGIN(
    [THEORA],
    [theora],
    [Theora video codec],
-   [video/THEORA],
+   [$srcdir/video/THEORA],
    [theora],
    [],
    [-ltheora -logg],
@@ -271,7 +271,7 @@ OPAL_SYSTEM_PLUGIN(
    [VPB],
    [vpb],
    [Voicetronics VPB telephony card],
-   [LID/VPB],
+   [$srcdir/LID/VPB],
    [vpb],
    [],
    [-lvpb],
@@ -287,7 +287,7 @@ OPAL_SYSTEM_PLUGIN(
    [SPANDSP],
    [spandsp],
    [SpanDSP based fax],
-   [fax/fax_spandsp],
+   [$srcdir/fax/fax_spandsp],
    [spandsp],
    [],
    [-lspandsp],
