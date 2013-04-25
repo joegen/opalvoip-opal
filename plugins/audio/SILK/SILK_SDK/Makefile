@@ -75,13 +75,13 @@ SRCS_C = $(wildcard src/*.c)
 OBJS := $(patsubst src/%,$(OBJDIR)%,$(patsubst %.c,%$(OBJSUFFIX),$(SRCS_C)))
 
 ENCODER_SRCS_C = test/Encoder.c
-ENCODER_OBJS := $(patsubst %.c,%$(OBJSUFFIX),$(ENCODER_SRCS_C))
+ENCODER_OBJS := $(patsubst test/%,$(OBJDIR)%,$(patsubst %.c,%$(OBJSUFFIX),$(ENCODER_SRCS_C)))
 
 DECODER_SRCS_C = test/Decoder.c
-DECODER_OBJS := $(patsubst %.c,%$(OBJSUFFIX),$(DECODER_SRCS_C))
+DECODER_OBJS := $(patsubst test/%,$(OBJDIR)%,$(patsubst %.c,%$(OBJSUFFIX),$(DECODER_SRCS_C)))
 
 SIGNALCMP_SRCS_C = test/signalCompare.c
-SIGNALCMP_OBJS := $(patsubst %.c,%$(OBJSUFFIX),$(SIGNALCMP_SRCS_C))
+SIGNALCMP_OBJS := $(patsubst test/%,$(OBJDIR)%,$(patsubst %.c,%$(OBJSUFFIX),$(SIGNALCMP_SRCS_C)))
 
 LIBS = \
 	$(LIB_NAME)
