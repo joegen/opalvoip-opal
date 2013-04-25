@@ -179,9 +179,9 @@ typedef PFactory<OpalMediaCryptoSuite, PCaselessString> OpalMediaCryptoSuiteFact
 
 /** Class for carrying media session information
   */
-class OpalMediaSession : public PObject
+class OpalMediaSession : public PSafeObject
 {
-    PCLASSINFO(OpalMediaSession, PObject);
+    PCLASSINFO(OpalMediaSession, PSafeObject);
   public:
     /// Initialisation information for constructing a session
     struct Init {
@@ -236,9 +236,6 @@ class OpalMediaSession : public PObject
     virtual void GetStatistics(OpalMediaStatistics & statistics, bool receiver) const;
 #endif
 
-    void Use() { m_referenceCount++; }
-    bool Release() { return --m_referenceCount > 0; }
-
     void OfferCryptoSuite(const PString & cryptoSuite);
     virtual OpalMediaCryptoKeyList & GetOfferedCryptoKeys();
 
@@ -256,12 +253,11 @@ class OpalMediaSession : public PObject
     unsigned         m_sessionId;  // unique session ID
     OpalMediaType    m_mediaType;  // media type for session
     bool             m_isExternalTransport;
-    PAtomicInteger   m_referenceCount;
 
     OpalMediaCryptoKeyList m_offeredCryptokeys;
 
   private:
-    OpalMediaSession(const OpalMediaSession & other) : PObject(other), m_connection(other.m_connection) { }
+    OpalMediaSession(const OpalMediaSession & other) : PSafeObject(other), m_connection(other.m_connection) { }
     void operator=(const OpalMediaSession &) { }
 
     P_REMOVE_VIRTUAL(bool, Open(const PString &), false);

@@ -84,10 +84,12 @@ void OpalRTPConnection::OnReleased()
   OpalConnection::OnReleased();
 
   for (SessionMap::iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
-    OpalRTPSession * rtp = dynamic_cast<OpalRTPSession * >(it->second);
+    OpalRTPSession * rtp = dynamic_cast<OpalRTPSession * >(&*it->second);
     if (rtp != NULL && (rtp->GetPacketsSent() != 0 || rtp->GetPacketsReceived() != 0))
       rtp->SendBYE();
   }
+
+  m_sessions.RemoveAll();
 }
 
 
@@ -212,7 +214,7 @@ OpalMediaSession * OpalRTPConnection::GetMediaSession(unsigned sessionID) const
 OpalMediaSession * OpalRTPConnection::FindSessionByLocalPort(WORD port) const
 {
   for (SessionMap::const_iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
-    OpalRTPSession * rtp = dynamic_cast<OpalRTPSession * >(it->second);
+    OpalRTPSession * rtp = dynamic_cast<OpalRTPSession * >(&*it->second);
     if (rtp != NULL && (rtp->GetLocalDataPort() == port || rtp->GetLocalControlPort() == port))
       return rtp;
   }
@@ -228,13 +230,12 @@ OpalMediaSession * OpalRTPConnection::UseMediaSession(unsigned sessionId,
   SessionMap::iterator it = m_sessions.find(sessionId);
   if (it != m_sessions.end()) {
     PTRACE(4, "RTPCon\tFound existing " << mediaType << " session " << sessionId);
-    it->second->Use();
     return it->second;
   }
 
   OpalMediaSession * session = CreateMediaSession(sessionId, mediaType, sessionType);
   if (session != NULL)
-    m_sessions[sessionId] = session;
+    m_sessions.SetAt(sessionId, session);
 
   return session;
 }
@@ -295,7 +296,7 @@ bool OpalRTPConnection::ChangeSessionID(unsigned fromSessionID, unsigned toSessi
 
   PTRACE(3, "RTPCon\tChanging session ID " << fromSessionID << " to " << toSessionID);
 
-  m_sessions[toSessionID] = it->second;
+  m_sessions.SetAt(toSessionID, it->second);
   m_sessions.erase(it);
 
   for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
@@ -317,25 +318,26 @@ bool OpalRTPConnection::ChangeSessionID(unsigned fromSessionID, unsigned toSessi
 
 void OpalRTPConnection::ReplaceMediaSession(unsigned sessionId, OpalMediaSession * mediaSession)
 {
-  SessionMap::iterator it = m_sessions.find(sessionId);
-  if (it == m_sessions.end()) {
-    PTRACE(4, "RTPCon\tReplacing empty session " << sessionId);
-    m_sessions[sessionId] = mediaSession;
-    return;
+  {
+    SessionMap::iterator it = m_sessions.find(sessionId);
+    if (it == m_sessions.end()) {
+      PTRACE(4, "RTPCon\tReplacing empty session " << sessionId);
+      m_sessions.SetAt(sessionId, mediaSession);
+      return;
+    }
+
+    OpalTransportAddress remoteMedia = it->second->GetRemoteAddress(true);
+    OpalTransportAddress remoteCtrl = it->second->GetRemoteAddress(false);
+
+    OpalMediaSession::Transport transport = it->second->DetachTransport();
+    mediaSession->AttachTransport(transport);
+
+    mediaSession->SetRemoteAddress(remoteMedia, true);
+    mediaSession->SetRemoteAddress(remoteCtrl, false);
+    PTRACE(4, "RTPCon\tReplacing session " << sessionId << " media=" << remoteMedia << " ctrl=" << remoteCtrl);
   }
 
-  OpalTransportAddress remoteMedia = it->second->GetRemoteAddress(true);
-  OpalTransportAddress remoteCtrl = it->second->GetRemoteAddress(false);
-
-  OpalMediaSession::Transport transport = it->second->DetachTransport();
-  mediaSession->AttachTransport(transport);
-
-  mediaSession->SetRemoteAddress(remoteMedia, true);
-  mediaSession->SetRemoteAddress(remoteCtrl, false);
-
-  delete it->second;
-  it->second = mediaSession;
-  PTRACE(4, "RTPCon\tReplaced session " << sessionId << " media=" << remoteMedia << " ctrl=" << remoteCtrl);
+  m_sessions.SetAt(sessionId, mediaSession);
 
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(mediaSession);
   if (rtpSession == NULL || !rtpSession->IsAudio())
@@ -359,10 +361,7 @@ void OpalRTPConnection::ReleaseMediaSession(unsigned sessionID)
     return;
   }
 
-  if (it->second->Release())
-    return;
-
-  OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(it->second);
+  OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(&*it->second);
   if (rtpSession != NULL && rtpSession->IsAudio()) {
     if (m_rfc2833Handler != NULL)
       m_rfc2833Handler->UseRTPSession(false, NULL);
@@ -373,7 +372,6 @@ void OpalRTPConnection::ReleaseMediaSession(unsigned sessionID)
 #endif
   }
 
-  delete it->second;
   m_sessions.erase(it);
 }
 
@@ -567,28 +565,10 @@ void OpalRTPConnection::OnUserInputInlineRFC2833(OpalRFC2833Info & info, P_INT_P
                 &OpalConnection::OnUserInputTone));
 }
 
-/////////////////////////////////////////////////////////////////////////////
 
-OpalRTPConnection::SessionMap::SessionMap()
-  : m_deleteSessions(true)
+bool OpalRTPConnection::GarbageCollection()
 {
-}
-
-OpalRTPConnection::SessionMap::~SessionMap()
-{
-  if (m_deleteSessions) {
-    for (iterator it = begin(); it != end(); ++it)
-      delete it->second;
-  }
-}
-
-
-void OpalRTPConnection::SessionMap::Assign(SessionMap & other, bool move)
-{
-  BaseClass::operator=(other);
-  m_deleteSessions = move;
-  if (move)
-    other.clear();
+  return m_sessions.DeleteObjectsToBeRemoved() & OpalConnection::GarbageCollection();
 }
 
 
