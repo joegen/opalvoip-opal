@@ -503,7 +503,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
       PTRACE(4, "Jitter\tPackets on time " COMMON_TRACE_INFO << ", "
              << (adjusted ? "decreasing" : "cannot decrease") << " delay="
              << m_currentJitterDelay << " (" << (m_currentJitterDelay/m_timeUnits) << "ms)");
-      if (adjusted)
+      if (adjusted && m_frames.size() > 1)
         m_synchronisationState = e_SynchronisationShrink;
     }
   }
