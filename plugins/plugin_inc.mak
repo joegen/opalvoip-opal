@@ -130,5 +130,10 @@ both opt debug optshared debugshared optstatic debugstatic: all
 optdepend debugdepend bothdepend optlibs debuglibs bothlibs:
 	@true
 
+ifeq (,$(SUBDIRS)$(PLUGIN_PATH))
+all :
+	@echo No plugins to build
+endif
+
 
 # End of file
