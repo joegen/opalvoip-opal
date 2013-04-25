@@ -1512,9 +1512,9 @@
     <ClInclude Include="..\..\include\t38\h323t38.h" />
     <ClInclude Include="..\..\include\t38\sipt38.h" />
     <ClInclude Include="..\..\include\t38\t38proto.h" />
-    <ClInclude Include="..\..\lib\Android\include\opal\buildopts.h" />
-    <ClInclude Include="..\..\lib\Win32\include\opal\buildopts.h" />
-    <ClInclude Include="..\..\lib\x64\include\opal\buildopts.h" />
+    <ClInclude Include="..\..\lib\Android\include\opal_config.h" />
+    <ClInclude Include="..\..\lib\Win32\include\opal_config.h" />
+    <ClInclude Include="..\..\lib\x64\include\opal_config.h" />
     <ClInclude Include="..\..\revision.h" />
     <ClInclude Include="..\lids\capi_linux.h" />
     <ClInclude Include="..\lids\capi_win32.h" />
@@ -1552,7 +1552,7 @@
     <ClInclude Include="..\rtp\libsrtp\Win32\config.h" />
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\..\include\opal\buildopts.h.in">
+    <CustomBuild Include="..\..\include\opal_config.h.in">
       <FileType>Document</FileType>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Configuring Build Options</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Configuring Build Options</Message>
@@ -1560,12 +1560,12 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">Configuring Build Options</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Configuring Build Options</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Configuring Build Options</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal\buildopts.h;%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal\buildopts.h;%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal\buildopts.h;%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal\buildopts.h;%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal\buildopts.h;%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal\buildopts.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal_config.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal_config.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal_config.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal_config.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal_config.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal_config.h;%(Outputs)</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)\..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)\..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(ProjectDir)\..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
@@ -1605,9 +1605,9 @@ configure -Dac_top_build_prefix=$(ProjectDir)..\..\Lib\$(Platform)\ --no-search 
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">Configuring Build Options</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">Configuring Build Options</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Android'">Configuring Build Options</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal\buildopts.h</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal\buildopts.h</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal\buildopts.h</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal_config.h</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal_config.h</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)..\..\Lib\$(Platform)\include\opal_config.h</Outputs>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
