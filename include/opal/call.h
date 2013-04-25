@@ -291,6 +291,10 @@ class OpalCall : public PSafeObject
       const OpalConnection & connection  ///<  Source requesting formats
     ) const;
 
+    /**Get number of connections in call.
+      */
+    PINDEX GetConnectionCount() const { return connectionsActive.GetSize(); }
+
     /**Get the specified active connection in call.
       */
     PSafePtr<OpalConnection> GetConnection(
