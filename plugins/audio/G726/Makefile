@@ -35,7 +35,7 @@ SOURCES  := $(CURDIR)/g726codec.c \
             $(SRCDIR)/g726_40.c \
             $(SRCDIR)/g72x.c 
 
-INSTALL_DIR := $(AUD_PLUGIN_DIR)
+INSTALL_DIR = $(AUD_PLUGIN_DIR)
 include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
 
 

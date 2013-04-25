@@ -33,7 +33,7 @@ SOURCES  := $(CURDIR)/amrcodec.c \
             $(SRCDIR)/sp_dec.c \
             $(SRCDIR)/sp_enc.c
 
-INSTALL_DIR := $(AUD_PLUGIN_DIR)
+INSTALL_DIR = $(AUD_PLUGIN_DIR)
 include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
 
 
