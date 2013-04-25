@@ -311,7 +311,7 @@ void SIPConnection::OnApplyStringOptions()
 
 bool SIPConnection::GarbageCollection()
 {
-  return CleanPendingTransactions() && OpalConnection::GarbageCollection();
+  return CleanPendingTransactions() & OpalRTPConnection::GarbageCollection();
 }
 
 
@@ -1678,7 +1678,7 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
     m_dialog.SetInterface(request.GetTransport()->GetInterface());
     SDPSessionDescription * sdp = new SDPSessionDescription(m_sdpSessionId, m_sdpVersion, OpalTransportAddress());
     if (OnSendOfferSDP(*sdp, m_needReINVITE)) {
-      request.m_sessions.Assign(m_sessions, !m_needReINVITE);
+      request.m_sessions = m_sessions;
       request.SetSDP(sdp);
     }
     else {
@@ -2069,8 +2069,8 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   if (collapseForks) {
     // Save the sessions we are actually using out of all the forked INVITES sent
     SessionMap & sessionsInTransaction = ((SIPInvite &)transaction).m_sessions;
-    if (m_sessions.empty() && !sessionsInTransaction.empty())
-      m_sessions.Assign(sessionsInTransaction);
+    if (m_sessions.IsEmpty() && !sessionsInTransaction.IsEmpty())
+      m_sessions = sessionsInTransaction;
 
     // Have a positive response to the INVITE, so cancel all the other invitations sent.
     for (PSafePtr<SIPTransaction> invitation(m_forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {

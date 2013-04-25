@@ -292,21 +292,10 @@ class OpalRTPConnection : public OpalConnection
     );
   //@}
 
-    class SessionMap : public std::map<unsigned, OpalMediaSession *>
-    {
-      typedef std::map<unsigned, OpalMediaSession *> BaseClass;
-      public:
-        SessionMap();
-        ~SessionMap();
-        void Assign(SessionMap & other, bool move = true);
-      protected:
-        bool m_deleteSessions;
-      private:
-        SessionMap(const SessionMap & obj) : BaseClass(obj) { }
-        void operator=(const SessionMap &) { }
-    };
+    typedef PSafeDictionary<PKey<unsigned>, OpalMediaSession> SessionMap;
 
   protected:
+    virtual bool GarbageCollection();
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineRFC2833);
 
     void CheckForMediaBypass(OpalMediaSession & session);

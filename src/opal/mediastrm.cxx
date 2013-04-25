@@ -720,6 +720,8 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
      maximum size based on MTU (or other criteria). */
   defaultDataSize = isSource ? conn.GetEndPoint().GetManager().GetMaxRtpPacketSize() : conn.GetMaxRtpPayloadSize();
 
+  rtpSession.SafeReference();
+
   PTRACE(5, "Media\tCreated RTP media session, RTP=" << &rtp);
 }
 
@@ -727,6 +729,7 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
 OpalRTPMediaStream::~OpalRTPMediaStream()
 {
   Close();
+  rtpSession.SafeDereference();
 }
 
 
