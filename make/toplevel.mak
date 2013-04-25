@@ -506,6 +506,7 @@ install:
 	   chmod 755 $(DESTDIR)$(includedir)/$$dir ; \
 	   $(INSTALL) -m 644 include/$$dir/*.h $(DESTDIR)$(includedir)/$$dir ; \
 	done
+	$(INSTALL) -m 644 opal.pc $(DESTDIR)$(libdir)/pkgconfig
 ifeq ($(OPAL_PLUGINS),yes)
 	$(Q_MAKE) -C plugins install
 endif
