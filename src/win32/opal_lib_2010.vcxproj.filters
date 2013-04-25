@@ -1217,18 +1217,18 @@
     <ClInclude Include="..\rtp\libsrtp\Win32\config.h">
       <Filter>Source Files\RTP\libSRTP\Win32</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\lib\Win32\include\opal\buildopts.h">
+    <ClInclude Include="..\..\lib\Win32\include\opal_config.h">
       <Filter>Header Files\OS\Win32</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\lib\x64\include\opal\buildopts.h">
+    <ClInclude Include="..\..\lib\x64\include\opal_config.h">
       <Filter>Header Files\OS\Win64</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\lib\Android\include\opal\buildopts.h">
+    <ClInclude Include="..\..\lib\Android\include\opal_config.h">
       <Filter>Header Files\OS\Android</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="..\..\include\opal\buildopts.h.in">
+    <CustomBuild Include="..\..\include\opal_config.h.in">
       <Filter>Header Files</Filter>
     </CustomBuild>
     <CustomBuild Include="..\..\revision.h.in">
