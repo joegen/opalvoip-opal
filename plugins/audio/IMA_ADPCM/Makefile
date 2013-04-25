@@ -29,7 +29,7 @@ BASENAME := ima_adpcm
 SRCDIR   := $(CURDIR)
 SOURCES  := $(CURDIR)/ima_adpcm.c
 
-INSTALL_DIR := $(AUD_PLUGIN_DIR)
+INSTALL_DIR = $(AUD_PLUGIN_DIR)
 include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
 
 
