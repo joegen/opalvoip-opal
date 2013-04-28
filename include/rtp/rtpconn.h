@@ -292,7 +292,16 @@ class OpalRTPConnection : public OpalConnection
     );
   //@}
 
-    typedef PSafeDictionary<PKey<unsigned>, OpalMediaSession> SessionMap;
+    class SessionMap : public PSafeDictionary<PKey<unsigned>, OpalMediaSession>
+    {
+    public:
+      void MoveFrom(SessionMap & other)
+      {
+        *this = other;
+        other.DisallowDeleteObjects();
+        other.RemoveAll();
+      }
+    };
 
   protected:
     virtual bool GarbageCollection();
