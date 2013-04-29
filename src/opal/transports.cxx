@@ -1696,9 +1696,16 @@ const PCaselessString & OpalTransportTLS::GetProtoPrefix() const
 
 bool OpalTransportTLS::IsAuthenticated(const PString & domain) const
 {
+  if (PIPSocket::Address(domain).IsValid()) {
+    PTRACE(4, "OpalTLS\tIgnoring certificate AltName/CN as using IP address.");
+    return true;
+  }
+
   PSSLChannel * sslChannel = dynamic_cast<PSSLChannel *>(m_channel);
-  if (sslChannel == NULL)
+  if (sslChannel == NULL) {
+    PTRACE(2, "OpalTLS\tCertificate validation failed: no SSL channel");
     return false;
+  }
 
   PSSLCertificate cert;
   PString error;
@@ -1716,10 +1723,11 @@ bool OpalTransportTLS::IsAuthenticated(const PString & domain) const
   PString alt = cert.GetSubjectAltName();
   PTRACE(3, "OpalTLS\tPeer certificate: alt=\"" << alt << "\", subject=\"" << subject << '"');
 
-  if (alt.IsEmpty())
-    return subject.GetCommonName() == domain;
+  if (domain == (alt.IsEmpty() ? subject.GetCommonName() : alt))
+    return true;
 
-  return alt == domain;
+  PTRACE(1, "SIP\tCould not authenticate certificate against " << domain);
+  return false;
 }
 
 

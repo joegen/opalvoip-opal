@@ -333,7 +333,6 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
   }
 
   if (!transport->IsAuthenticated(transactor.GetRequestURI().GetHostName())) {
-    PTRACE(1, "SIP\tCould not connect to " << remoteAddress << " - " << transport->GetErrorText());
     reason = SIP_PDU::Local_NotAuthenticated;
     transport->CloseWait();
     return NULL;
