@@ -1804,38 +1804,36 @@ void SIP_PDU::InitialiseHeaders(const SIPURL & dest,
 }
 
 
-PString SIP_PDU::CreateVia(SIPEndPoint & endpoint, const OpalTransport & transport)
+PString SIP_PDU::CreateVia(SIPEndPoint & endpoint, const OpalTransport & transport, SIPConnection * connection)
 {
-  // construct Via
-  OpalTransportAddress via;
+  PString localPartyName;
 
-  if (transport.IsOpen())
-    via = transport.GetLocalAddress();
-  else {
-    PTRACE(3, "SIP\tCannot use transport for via, picking first compatible listener");
-    const OpalListenerList & listeners = endpoint.GetListeners();
-    for (OpalListenerList::const_iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
-      OpalTransportAddress binding = listener->GetLocalAddress();
-      if (transport.IsCompatibleTransport(binding)) {
-        via = binding;
-        break;
-      }
-    }
+  if (connection != NULL) {
+    localPartyName = connection->GetLocalPartyName();
+
+    PINDEX pos = localPartyName.Find('@');
+    if (pos != P_MAX_INDEX)
+      localPartyName = localPartyName.Left(pos);
+
+    pos = localPartyName.Find(' ');
+    if (pos != P_MAX_INDEX)
+      localPartyName.Replace(" ", "_", true);
   }
 
+  OpalTransportAddress via = endpoint.GetLocalURL(transport, localPartyName).GetHostAddress();
+
+  // construct Via:
   PINDEX dollar = via.Find('$');
 
   PStringStream str;
   str << "SIP/" << m_versionMajor << '.' << m_versionMinor << '/'
       << via.Left(dollar).ToUpper() << ' ';
-
   PIPSocket::Address ip;
   WORD port = 5060;
   if (via.GetIpAndPort(ip, port))
     str << ip.AsString(true) << ':' << port;
   else
     str << via.Mid(dollar+1);
-
   str << ";branch=z9hG4bK" << OpalGloballyUniqueID() << ";rport";
   return str;
 }
@@ -2753,10 +2751,8 @@ PBoolean SIPTransaction::Start()
   m_state = Trying;
   m_retry = 0;
 
-  if (m_localInterface.IsEmpty()) {
+  if (m_localInterface.IsEmpty())
     m_localInterface = m_transport.GetInterface();
-    PTRACE(4, "SIP\tTransaction remembering interface \"" << m_localInterface << '"');
-  }
 
   /* Get the address to which the request PDU should be sent, according to
      the RFC, for a request in a dialog. 
