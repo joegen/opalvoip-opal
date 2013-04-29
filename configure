@@ -10857,7 +10857,7 @@ echo "       Media mixing (conferences) :  $OPAL_HAS_MIXER"
 echo "     Statistics gathering support :  $OPAL_STATISTICS"
 echo "        Script language interface :  $OPAL_SCRIPT"
 echo "                     Java support :  $OPAL_JAVA"
-echo "                     Roby support :  $OPAL_RUBY"
+echo "                     Ruby support :  $OPAL_RUBY"
 
 echo ""
 echo "========================================================================"
