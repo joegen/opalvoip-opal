@@ -59,6 +59,7 @@
 #include <wx/cmdline.h>
 
 #include <opal/mediasession.h>
+#include <rtp/srtp_session.h>
 #include <opal/transcoders.h>
 #include <ep/ivr.h>
 #include <ep/opalmixer.h>
@@ -2665,7 +2666,13 @@ static void LogMediaStream(const char * stopStart, const OpalMediaStream & strea
     return;
 
   OpalMediaFormat mediaFormat = stream.GetMediaFormat();
-  LogWindow << stopStart << (stream.IsSource() ? " receiving " : " sending ") << mediaFormat;
+  LogWindow << stopStart << (stream.IsSource() ? " receiving " : " sending ");
+
+  const OpalRTPMediaStream * rtp = dynamic_cast<const OpalRTPMediaStream *>(&stream);
+  if (rtp != NULL && dynamic_cast<const OpalSRTPSession *>(&rtp->GetRtpSession()) != NULL)
+    LogWindow << "secured ";
+
+  LogWindow << mediaFormat;
 
   if (!stream.IsSource() && mediaFormat.GetMediaType() == OpalMediaType::Audio())
     LogWindow << " (" << mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption())*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits() << "ms)";
