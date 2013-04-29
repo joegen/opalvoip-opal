@@ -48,22 +48,22 @@ bool DynaLink::Open(const char *name)
     return true;
 
   // Try the current directory
-  if (InternalOpen(".", name))
-    return true;
-
+  char ptlibPath[1024] = ".";
   // try directories specified in PTLIBPLUGINDIR
-  char ptlibPath[1024];
   char * env = ::getenv("PTLIBPLUGINDIR");
-  if (env != NULL) 
-    strcpy(ptlibPath, env);
-  else
+  if (env != NULL && *env != '\0') {
+    strcat(ptlibPath, DIR_TOKENISER);
+    strcat(ptlibPath, env);
+  }
+  else {
 #ifdef P_DEFAULT_PLUGIN_DIR
-    strcpy(ptlibPath, P_DEFAULT_PLUGIN_DIR);
+    strcat(ptlibPath, DIR_TOKENISER P_DEFAULT_PLUGIN_DIR);
 #elif _WIN32
-    strcpy(ptlibPath, "C:\\PTLib_Plugins");
-#else
-    strcpy(ptlibPath, "/usr/local/lib:/opt/local/lib");
+    strcat(ptlibPath, DIR_TOKENISER "C:\\PTLib_Plugins");
 #endif
+  }
+  strcat(ptlibPath, DIR_TOKENISER "/usr/local/lib:/opt/local/lib");
+
   char * p = ::strtok(ptlibPath, DIR_TOKENISER);
   while (p != NULL) {
     if (InternalOpen(p, name))
@@ -113,11 +113,11 @@ bool DynaLink::InternalOpen(const char * dir, const char *name)
 #ifndef _WIN32
     const char * err = dlerror();
     if (err != NULL)
-      PTRACE(1, "DynaLink", "dlopen error " << err);
+      PTRACE(3, "DynaLink", "dlopen error " << err);
     else
-      PTRACE(1, "DynaLink", "dlopen error loading " << path);
+      PTRACE(3, "DynaLink", "dlopen error loading " << path);
 #else /* _WIN32 */
-    PTRACE(1, "DynaLink", "Error loading " << path);
+    PTRACE(3, "DynaLink", "Error loading " << path);
 #endif /* _WIN32 */
     return false;
   } 
