@@ -7411,6 +7411,15 @@ HAVE_LIBAVCODEC_RTP_MODE=0
 
 
 if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
+   cat >>confdefs.h <<_ACEOF
+#define LIBAVCODEC_LIB_NAME "libavcodec.$SHAREDLIBEXT"
+_ACEOF
+
+   cat >>confdefs.h <<_ACEOF
+#define LIBAVUTIL_LIB_NAME "libavutil.$SHAREDLIBEXT"
+_ACEOF
+
+
 
    oldCPPFLAGS="$CPPFLAGS"
    CPPFLAGS="$CPPFLAGS $LIBAVCODEC_CFLAGS"
