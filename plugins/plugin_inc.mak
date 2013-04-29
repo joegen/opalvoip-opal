@@ -47,6 +47,9 @@ ifneq (,$(BASENAME))
   PLUGIN_PATH = $(OBJDIR)/$(PLUGIN_NAME)
 endif
 
+CFLAGS += -dynamic -fno-common -D__MACOSX__
+CXXFLAGS += -dynamic -fno-common -D__MACOSX__
+
 ifeq ($(DEBUG_BUILD),yes)
   CFLAGS += -g
   CXXFLAGS += -g
@@ -111,7 +114,7 @@ ifneq (,$(PLUGIN_PATH))
 
   $(PLUGIN_PATH): $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(patsubst %.cpp,%.o,$(patsubst %.c,%.o,$(notdir $(SOURCES))))))
 	@if [ ! -d $(dir $@) ] ; then $(MKDIR_P) $(dir $@) ; fi
-	$(Q_LD)$(CXX) -o $@ $* $(SHARED_LDFLAGS:INSERT_SONAME=$(SONAME)) $(strip $(LDFLAGS))
+	$(Q_LD)$(CXX) $(SHARED_LDFLAGS:INSERT_SONAME=$(SONAME)) -o $@ $^ $(strip $(LDFLAGS))
 
   install ::
 	mkdir -p $(DESTDIR)$(libdir)/$(INSTALL_DIR)
