@@ -1169,7 +1169,8 @@ OpalTransportTCP::OpalTransportTCP(OpalEndPoint & ep,
 OpalTransportTCP::OpalTransportTCP(OpalEndPoint & ep, PChannel * channel)
   : OpalTransportIP(ep, channel, INADDR_ANY, 0)
 {
-  OnConnectedSocket(dynamic_cast<PTCPSocket *>(channel));
+  if (channel != NULL)
+    OnConnectedSocket(dynamic_cast<PTCPSocket *>(channel->GetBaseReadChannel()));
 }
 
 
