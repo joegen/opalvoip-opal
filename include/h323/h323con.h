@@ -352,6 +352,12 @@ class H323Connection : public OpalRTPConnection
     virtual bool RequestPresentationRole(
       bool release   ///< Indicate we are acquiring or releasing the token
     );
+
+    /**Indicate current presentation token ownership.
+
+       Default behaviour returns m_h239TokenOwned.
+      */
+    virtual bool HasPresentationRole() const;
 #endif // OPAL_H239
   //@}
 

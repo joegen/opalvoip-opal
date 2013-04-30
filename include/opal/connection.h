@@ -1580,6 +1580,12 @@ class OpalConnection : public PSafeObject
       bool request                   ///< Indicates change is requested
     );
 
+    /**Indicate current presentation token ownership.
+
+       Default behaviour returns false.
+      */
+    virtual bool HasPresentationRole() const;
+
     /** Execute garbage collection for endpoint.
         Returns true if all garbage has been collected.
         Default behaviour deletes the objects in the connectionsActive list.

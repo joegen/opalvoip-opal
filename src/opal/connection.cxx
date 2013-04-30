@@ -1613,10 +1613,15 @@ bool OpalConnection::RequestPresentationRole(bool)
 }
 
 
-bool OpalConnection::OnChangedPresentationRole(const PString & PTRACE_PARAM(newChairURI), bool)
+bool OpalConnection::OnChangedPresentationRole(const PString & newChairURI, bool request)
 {
-  PTRACE(3, "OpalCon", "OnChangedPresentationRole(" << newChairURI << ')');
-  return true;
+  return endpoint.GetManager().OnChangedPresentationRole(*this, newChairURI, request);
+}
+
+
+bool OpalConnection::HasPresentationRole() const
+{
+  return false;
 }
 
 
