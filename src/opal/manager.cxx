@@ -1301,6 +1301,15 @@ void OpalManager::OnConferenceStatusChanged(OpalEndPoint & endpoint, const PStri
 }
 
 
+bool OpalManager::OnChangedPresentationRole(OpalConnection & PTRACE_PARAM(connection),
+                                           const PString & PTRACE_PARAM(newChairURI),
+                                           bool)
+{
+  PTRACE(3, "OpalCon", "OnChangedPresentationRole to " << newChairURI << " on " << connection);
+  return true;
+}
+
+
 PStringList OpalManager::GetNetworkURIs(const PString & name) const
 {
   PStringList list;

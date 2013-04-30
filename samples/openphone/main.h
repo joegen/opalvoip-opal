@@ -993,6 +993,11 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     virtual void OnClosedMediaStream(
       const OpalMediaStream & stream     ///<  Stream being closed
     );
+    virtual bool OnChangedPresentationRole(
+      OpalConnection & connection,   ///< COnnection that has had the change
+      const PString & newChairURI,   ///< URI for new confernce chair
+      bool request                   ///< Indicates change is requested
+    );
     virtual void OnUserInputString(
       OpalConnection & connection,  /// Connection input has come from
       const PString & value         /// String value of indication
@@ -1070,6 +1075,7 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     void OnSendIntra(wxCommandEvent & /*event*/);
     void OnTxVideoControl(wxCommandEvent & /*event*/);
     void OnRxVideoControl(wxCommandEvent & /*event*/);
+    void OnMenuPresentationRole(wxCommandEvent & /*event*/);
     void OnDefVidWinPos(wxCommandEvent & /*event*/);
     void OnSashPositioned(wxSplitterEvent & /*event*/);
     void OnSpeedDialActivated(wxListEvent & /*event*/);
