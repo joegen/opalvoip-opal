@@ -738,7 +738,7 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
 
     void UpdateRemoteAddresses();
 #if OPAL_SRTP
-    virtual bool CanDoSRTP() const { return m_dialog.GetRequestURI().GetTransportProto() == "tls"; }
+    virtual bool CanDoSRTP() const { return m_dialog.GetRemoteTransportAddress(m_dnsEntry).GetProtoPrefix() == OpalTransportAddress::TlsPrefix(); }
 #endif
 
     void NotifyDialogState(
