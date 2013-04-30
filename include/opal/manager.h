@@ -1331,6 +1331,19 @@ class OpalManager : public PObject
       const PString & uri,      ///< Internal URI of conference node that changed
       OpalConferenceState::ChangeType change ///< Change that occurred
     );
+
+    /**Indicate presentation token change.
+       The \p request parameter indicates if this is an "after the fact"
+       indication has changed, or if the connection may reject the change and
+       retain the token it already has.
+
+       Default behaviour returns true.
+      */
+    virtual bool OnChangedPresentationRole(
+      OpalConnection & connection,   ///< COnnection that has had the change
+      const PString & newChairURI,   ///< URI for new confernce chair
+      bool request                   ///< Indicates change is requested
+    );
   //@}
 
 

@@ -393,6 +393,7 @@ DEF_XRCID(MenuSendVFU);
 DEF_XRCID(MenuSendIntra);
 DEF_XRCID(MenuTxVideoControl);
 DEF_XRCID(MenuRxVideoControl);
+DEF_XRCID(MenuPresentationRole);
 DEF_XRCID(MenuDefVidWinPos);
 DEF_XRCID(MenuPresence);
 #if OPAL_HAS_IM
@@ -654,6 +655,7 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU(ID_MenuSendIntra,        MyManager::OnSendIntra)
   EVT_MENU(ID_MenuTxVideoControl,   MyManager::OnTxVideoControl)
   EVT_MENU(ID_MenuRxVideoControl,   MyManager::OnRxVideoControl)
+  EVT_MENU(ID_MenuPresentationRole, MyManager::OnMenuPresentationRole)
   EVT_MENU(ID_MenuDefVidWinPos,     MyManager::OnDefVidWinPos)
   EVT_MENU(ID_MenuPresence,         MyManager::OnMyPresence)
 #if OPAL_HAS_IM
@@ -1833,6 +1835,8 @@ void MyManager::OnAdjustMenus(wxMenuEvent & WXUNUSED(event))
   menubar->Enable(ID_MenuSendIntra, hasRxVideo);
   menubar->Enable(ID_MenuTxVideoControl, hasTxVideo);
   menubar->Enable(ID_MenuRxVideoControl, hasRxVideo);
+  menubar->Enable(ID_MenuPresentationRole, connection != NULL);
+  menubar->Check(ID_MenuPresentationRole, connection != NULL && connection->HasPresentationRole());
   menubar->Enable(ID_MenuDefVidWinPos, hasRxVideo || hasTxVideo);
 
   menubar->Enable(ID_SubMenuRetrieve, !m_callsOnHold.empty());
@@ -3199,6 +3203,31 @@ void MyManager::OnRxVideoControl(wxCommandEvent & /*event*/)
 {
   VideoControlDialog dlg(this, true);
   dlg.ShowModal();
+}
+
+
+void MyManager::OnMenuPresentationRole(wxCommandEvent & /*event*/)
+{
+  PSafePtr<OpalConnection> conn = GetConnection(false, PSafeReadOnly);
+  if (conn != NULL && !conn->RequestPresentationRole(conn->HasPresentationRole()))
+    LogWindow << "Remote does not support presentation role request" << endl;
+}
+
+
+bool MyManager::OnChangedPresentationRole(OpalConnection & connection,
+                                           const PString & newChairURI,
+                                           bool request)
+{
+  LogWindow << "Presentation role token now owned by ";
+  if (newChairURI.IsEmpty())
+    LogWindow << "nobody";
+  else if (newChairURI == connection.GetLocalPartyURL())
+    LogWindow << "local user";
+  else
+    LogWindow << newChairURI;
+  LogWindow << endl;
+
+  return OpalManager::OnChangedPresentationRole(connection, newChairURI, request);
 }
 
 
