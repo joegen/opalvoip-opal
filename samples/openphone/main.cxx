@@ -2668,9 +2668,11 @@ static void LogMediaStream(const char * stopStart, const OpalMediaStream & strea
   OpalMediaFormat mediaFormat = stream.GetMediaFormat();
   LogWindow << stopStart << (stream.IsSource() ? " receiving " : " sending ");
 
+#if OPAL_SRTP
   const OpalRTPMediaStream * rtp = dynamic_cast<const OpalRTPMediaStream *>(&stream);
   if (rtp != NULL && dynamic_cast<const OpalSRTPSession *>(&rtp->GetRtpSession()) != NULL)
     LogWindow << "secured ";
+#endif
 
   LogWindow << mediaFormat;
 
