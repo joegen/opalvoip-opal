@@ -165,19 +165,30 @@ dnl SRTP
 dnl MSWIN_DISPLAY libsrtp,Cisco libSRTP support
 dnl MSWIN_DEFINE  libsrtp,OPAL_SRTP=2
 
+SRTP_MSG="no"
 OPAL_MODULE_OPTION(
    [SRTP],
    [srtp],
    [SRTP protocol support],
-   [libsrtp],
+   [libsrtp local-source],
    [],
    [-lsrtp],
    [#include <srtp/srtp.h>],
    [
       crypto_policy_t p;
       p.cipher_key_len = SRTP_MASTER_KEY_LEN;
+   ],
+   [
+      AC_DEFINE(HAS_SRTP_SRTP_H,1)
+      SRTP_MSG="yes (system)"
    ]
 )
+
+if test "x$OPAL_SRTP$SRTP_SYSTEM" = "xyesno" ; then
+   AC_CONFIG_SUBDIRS(src/rtp/libsrtp)
+   AC_DEFINE(HAS_SRTP_SRTP_H,0)
+   SRTP_MSG="yes (internal)"
+fi
 
 
 dnl ########################################################################
@@ -520,7 +531,7 @@ echo "                T.38 FAX protocol :  $OPAL_FAX"
 echo "     H.224 (H.221 media channels) :  $OPAL_HAS_H224"
 echo "   H.281 (Far End Camera Control) :  $OPAL_HAS_H281"
 echo ""
-echo "                             SRTP :  $OPAL_SRTP"
+echo "                             SRTP :  $SRTP_MSG"
 echo "               RFC-4175 Raw Video :  $OPAL_RFC4175"
 echo "              RFC-2435 JPEG Video :  $OPAL_RFC2435  (experimental)"
 echo "      Accoustic Echo Cancellation :  $OPAL_AEC"

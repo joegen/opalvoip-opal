@@ -60,12 +60,14 @@ class PNatMethod;
 //
 
 #if OPAL_SRTP==2
-#define uint32_t uint32_t
-#pragma warning(disable:4505)
-#include <srtp.h>
-#pragma comment(lib, "ws2_32.lib") // As libsrtp uses htonl etc
+  #define uint32_t uint32_t
+  #pragma warning(disable:4505)
+  #include <srtp.h>
+  #pragma comment(lib, "ws2_32.lib") // As libsrtp uses htonl etc
+#elif HAS_SRTP_SRTP_H
+  #include <srtp/srtp.h>
 #else
-#include <srtp/srtp.h>
+  #include <srtp.h>
 #endif
 
 
