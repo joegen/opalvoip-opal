@@ -42,7 +42,7 @@ include $(OPAL_TOP_LEVEL_DIR)/make/opal.mak
 SUBDIRS := 
 
 ifeq ($(OPAL_PLUGINS),yes)
-  SUBDIRS += $(OPAL_TOP_LEVEL_DIR)/plugins 
+  SUBDIRS += $(OPAL_TOP_LEVEL_DIR)/plugins
 endif
 
 ifeq ($(OPAL_SAMPLES),yes)
@@ -318,19 +318,24 @@ endif
 
 ####################################################
 
-ifeq ($(OPAL_FAX), yes)
-  SOURCES += $(OPAL_SRCDIR)/t38/t38proto.cxx \
-             $(ASN_SRCDIR)/t38.cxx
-endif
-
 ifeq ($(OPAL_SRTP), yes)
   SOURCES += $(OPAL_SRCDIR)/rtp/srtp_session.cxx
+
+  ifeq ($(SRTP_SYSTEM),no)
+    SRTP_DIR := $(OPAL_TOP_LEVEL_DIR)/src/rtp/libsrtp
+    CPPFLAGS += -I$(SRTP_DIR)/include -I$(SRTP_DIR)/crypto/include
+    LDFLAGS  += -L$(SRTP_DIR) -lsrtp
+    
+    internal_build :: $(SRTP_DIR)/libsrtp.a
+    
+    $(SRTP_DIR)/libsrtp.a :
+	$(MAKE) -C $(SRTP_DIR)
+  endif
 endif
 
-ifeq ($(OPAL_HAS_H224), yes)
-  SOURCES += $(OPAL_SRCDIR)/h224/q922.cxx \
-             $(OPAL_SRCDIR)/h224/h224.cxx \
-             $(OPAL_SRCDIR)/h224/h281.cxx
+ifeq ($(OPAL_ZRTP),yes)
+  SOURCES += $(OPAL_SRCDIR)/rtp/opalzrtp.cxx \
+             $(OPAL_SRCDIR)/rtp/zrtpudp.cxx
 endif
 
 
@@ -428,9 +433,17 @@ ifeq ($(OPAL_AEC), yes)
 endif # OPAL_AEC
 
 
-ifeq ($(OPAL_ZRTP),yes)
-  SOURCES += $(OPAL_SRCDIR)/rtp/opalzrtp.cxx \
-             $(OPAL_SRCDIR)/rtp/zrtpudp.cxx
+# Far end camera control
+ifeq ($(OPAL_HAS_H224), yes)
+  SOURCES += $(OPAL_SRCDIR)/h224/q922.cxx \
+             $(OPAL_SRCDIR)/h224/h224.cxx \
+             $(OPAL_SRCDIR)/h224/h281.cxx
+endif
+
+
+ifeq ($(OPAL_FAX), yes)
+  SOURCES += $(OPAL_SRCDIR)/t38/t38proto.cxx \
+             $(ASN_SRCDIR)/t38.cxx
 endif
 
 
