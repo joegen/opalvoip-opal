@@ -623,7 +623,6 @@ enable_option_checking=no
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
 PLUGIN_DIR
-subdirs
 OPAL_PLUGINS
 OPAL_SAMPLES
 OPAL_SCRIPT
@@ -684,6 +683,7 @@ ZRTP_USABLE
 ZRTP_LIBS
 ZRTP_CFLAGS
 ZRTP_SYSTEM
+subdirs
 OPAL_SRTP
 SRTP_USABLE
 SRTP_LIBS
@@ -805,6 +805,7 @@ enable_option_checking
 enable_ios
 enable_force32
 enable_srtp
+enable_localsrtp
 with_srtp_dir
 enable_zrtp
 with_zrtp_dir
@@ -882,7 +883,8 @@ JAVA_CFLAGS
 JAVA_LIBS
 RUBY_CFLAGS
 RUBY_LIBS'
-ac_subdirs_all='plugins'
+ac_subdirs_all='src/rtp/libsrtp
+plugins'
 
 # Initialize some variables set by options.
 ac_init_help=
@@ -1500,6 +1502,7 @@ Optional Features:
                           enable iOS support
   --enable-force32        Force 32-bit x86 build
   --disable-srtp          disable SRTP protocol support
+  --enable-localsrtp      force use internal source for SRTP protocol support
   --disable-zrtp          disable ZRTP protocol support
   --disable-speexdsp      disable Speex DSP support
   --enable-localspeexdsp  force use internal source for Speex DSP support
@@ -5659,6 +5662,7 @@ $as_echo "${OPAL_PTLIB_GSTREAMER}" >&6; }
 
 
 
+SRTP_MSG="no"
 
 
    SRTP_SYSTEM="yes"
@@ -5719,6 +5723,22 @@ fi
 
    if test "x$usable" = "xyes" ; then
 
+         # Check whether --enable-localsrtp was given.
+if test "${enable_localsrtp+set}" = set; then :
+  enableval=$enable_localsrtp;
+               if test "x$enableval" = "xyes" ; then
+                  SRTP_SYSTEM="no"
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for SRTP protocol support" >&5
+$as_echo "$as_me: Forced use of internal source for SRTP protocol support" >&6;}
+               else
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: Using system source for SRTP protocol support" >&5
+$as_echo "$as_me: Using system source for SRTP protocol support" >&6;}
+               fi
+
+
+fi
+
+
       if test "x$SRTP_SYSTEM" = "xyes" ; then
 
 # Check whether --with-srtp-dir was given.
@@ -5739,12 +5759,12 @@ if test -n "$SRTP_CFLAGS"; then
     pkg_cv_SRTP_CFLAGS="$SRTP_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libsrtp\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libsrtp") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libsrtp \""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libsrtp ") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_SRTP_CFLAGS=`$PKG_CONFIG --cflags "libsrtp" 2>/dev/null`
+  pkg_cv_SRTP_CFLAGS=`$PKG_CONFIG --cflags "libsrtp " 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -5756,12 +5776,12 @@ if test -n "$SRTP_LIBS"; then
     pkg_cv_SRTP_LIBS="$SRTP_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libsrtp\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libsrtp") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libsrtp \""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libsrtp ") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_SRTP_LIBS=`$PKG_CONFIG --libs "libsrtp" 2>/dev/null`
+  pkg_cv_SRTP_LIBS=`$PKG_CONFIG --libs "libsrtp " 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -5782,9 +5802,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        SRTP_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libsrtp" 2>&1`
+	        SRTP_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libsrtp " 2>&1`
         else
-	        SRTP_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libsrtp" 2>&1`
+	        SRTP_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libsrtp " 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$SRTP_PKG_ERRORS" >&5
@@ -5831,7 +5851,6 @@ main ()
       crypto_policy_t p;
       p.cipher_key_len = SRTP_MASTER_KEY_LEN;
 
-
   ;
   return 0;
 }
@@ -5867,11 +5886,27 @@ fi
          fi
 
 
+            if test "x$usable" = "xno" ; then
+               usable="yes"
+               SRTP_SYSTEM="no"
+               SRTP_CFLAGS=
+               SRTP_LIBS=
+               { $as_echo "$as_me:${as_lineno-$LINENO}: Using internal source for SRTP protocol support" >&5
+$as_echo "$as_me: Using internal source for SRTP protocol support" >&6;}
+            fi
+
       fi
    fi
 
 
+   if test "x$usable" = "xyes"; then :
 
+      $as_echo "#define HAS_SRTP_SRTP_H 1" >>confdefs.h
+
+      SRTP_MSG="yes (system)"
+
+
+fi
 
 
    SRTP_USABLE=$usable
@@ -5884,6 +5919,16 @@ fi
    OPAL_SRTP=$usable
 
 
+
+if test "x$OPAL_SRTP$SRTP_SYSTEM" = "xyesno" ; then
+
+
+subdirs="$subdirs src/rtp/libsrtp"
+
+   $as_echo "#define HAS_SRTP_SRTP_H 0" >>confdefs.h
+
+   SRTP_MSG="yes (internal)"
+fi
 
 
 
@@ -6332,6 +6377,7 @@ fi
 
 
             if test "x$usable" = "xno" ; then
+               usable="yes"
                SPEEXDSP_SYSTEM="no"
                SPEEXDSP_CFLAGS=
                SPEEXDSP_LIBS=
@@ -9322,9 +9368,7 @@ fi
 
 
 if test "x$OPAL_PLUGINS" = "xyes" ; then
-
-
-subdirs="$subdirs plugins"
+  subdirs="$subdirs plugins"
 
 fi
 
@@ -10844,7 +10888,7 @@ echo "                T.38 FAX protocol :  $OPAL_FAX"
 echo "     H.224 (H.221 media channels) :  $OPAL_HAS_H224"
 echo "   H.281 (Far End Camera Control) :  $OPAL_HAS_H281"
 echo ""
-echo "                             SRTP :  $OPAL_SRTP"
+echo "                             SRTP :  $SRTP_MSG"
 echo "               RFC-4175 Raw Video :  $OPAL_RFC4175"
 echo "              RFC-2435 JPEG Video :  $OPAL_RFC2435  (experimental)"
 echo "      Accoustic Echo Cancellation :  $OPAL_AEC"
