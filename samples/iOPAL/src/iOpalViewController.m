@@ -19,17 +19,24 @@
 @property (weak, nonatomic) IBOutlet UIButton *hangUpButton;
 @property (weak, nonatomic) IBOutlet UITextView *statusField;
 @property (weak, nonatomic) IBOutlet UISwitch *registerField;
+@property (weak, nonatomic) IBOutlet UIButton *holdButton;
+@property (weak, nonatomic) IBOutlet UIButton *retrieveButton;
+@property (weak, nonatomic) IBOutlet UIButton *transferButton;
 
 - (IBAction)makeCall:(id)sender;
 - (IBAction)answerCall:(id)sender;
 - (IBAction)hangUpCall:(id)sender;
 - (IBAction)onLogInOut:(id)sender;
 - (IBAction)onDestinationChanged:(id)sender;
+- (IBAction)holdCall:(id)sender;
+- (IBAction)retreiveCall:(id)sender;
+- (IBAction)transferCall:(id)sender;
 
 @end
 
 @implementation iOpalViewController
 
+NSString * currentCallURI;
 NSString * currentCallToken;
 
 - (void)viewDidLoad
@@ -51,6 +58,9 @@ NSString * currentCallToken;
   if ([NSThread isMainThread]) {
     self.statusField.text = [self.statusField.text stringByAppendingFormat:@"\n%@", str];
     self.statusField.selectedRange = NSMakeRange(self.statusField.text.length, 0);
+    
+    // This is a bit of cheat, during log in egisterField is disabled and whatever the
+    // message result, success/fail, it needs to be re-enabled.
     self.registerField.enabled = true;
   }
   else
@@ -90,13 +100,14 @@ NSString * currentCallToken;
 {
   if ([self.destinationField.text length] == 0)
     return;
-  
-  [self outputStatus:[NSString stringWithFormat:@"Calling %@ ...", self.destinationField.text]];
+
+  currentCallURI = self.destinationField.text;
+  [self outputStatus:[NSString stringWithFormat:@"Calling %@ ...", currentCallURI]];
 
   OpalMessage msg, *reply;
   
   OpalParamSetUpCall * call = OPALMSG_SETUP_CALL(msg);
-  call->m_partyB = [self.destinationField.text UTF8String];
+  call->m_partyB = [currentCallURI UTF8String];
   if (![self sendOpalMessage:&msg withReply:&reply])
     return;
   
@@ -121,14 +132,44 @@ NSString * currentCallToken;
 }
 
 
+- (IBAction)holdCall:(id)sender {
+  OpalMessage msg;
+  msg.m_type = OpalCmdHoldCall;
+  msg.m_param.m_callToken = [currentCallToken UTF8String];
+  if ([self sendOpalMessage:&msg]) {
+    [self outputStatus:@"Holding call"];
+    self.holdButton.enabled = false;
+    self.retrieveButton.enabled = true;
+  }
+}
+
+
+- (IBAction)retreiveCall:(id)sender {
+  OpalMessage msg;
+  msg.m_type = OpalCmdRetrieveCall;
+  msg.m_param.m_callToken = [currentCallToken UTF8String];
+  if ([self sendOpalMessage:&msg]) {
+    [self outputStatus:@"Retrieving call"];
+    self.holdButton.enabled = true;
+    self.retrieveButton.enabled = false;
+  }
+}
+
+
+- (IBAction)transferCall:(id)sender {
+}
+
+
 - (IBAction)hangUpCall:(id)sender
 {
   OpalMessage msg;
   
   OpalParamCallCleared * call = OPALMSG_CLEAR_CALL(msg);
   call->m_callToken = [currentCallToken UTF8String];
-  if ([self sendOpalMessage:&msg])
+  if ([self sendOpalMessage:&msg]) {
     [self outputStatus:@"Hanging up"];
+    self.hangUpButton.enabled = false;
+  }
 }
 
 
@@ -187,7 +228,11 @@ NSString * currentCallToken;
 
 - (IBAction)onDestinationChanged:(id)sender
 {
-  self.callButton.enabled = self.destinationField.text.length > 0;
+  bool nonEmpty = self.destinationField.text.length > 0;
+  if (currentCallToken == nullptr)
+    self.callButton.enabled = nonEmpty;
+  else
+    self.transferButton.enabled = nonEmpty && ![self.destinationField.text compare:currentCallURI];
 }
 
 
@@ -225,6 +270,14 @@ NSString * currentCallToken;
           break;
       }
       break;
+
+    case OpalIndOnHold :
+      [self outputStatus:@"Remote has put you on hold"];
+      break;
+      
+    case OpalIndOffHold :
+      [self outputStatus:@"Remote has put you off hold"];
+      break;
       
     case OpalIndIncomingCall :
       self.callButton.enabled = false;
@@ -237,6 +290,7 @@ NSString * currentCallToken;
       
     case OpalIndEstablished :
       [self outputStatus:@"Call established"];
+      self.holdButton.enabled = true;
       break;
       
     case OpalIndCallCleared :
@@ -244,6 +298,9 @@ NSString * currentCallToken;
       self.callButton.enabled = true;
       self.answerButton.enabled = false;
       self.hangUpButton.enabled = false;
+      self.holdButton.enabled = false;
+      self.retrieveButton.enabled = false;
+      self.transferButton.enabled = false;
       currentCallToken = nullptr;
       break;
       
