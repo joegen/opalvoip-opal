@@ -286,12 +286,6 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
   mediaFormat.SetPayloadType(m_payloadType);
   mediaFormat.SetOptionInteger(OpalAudioFormat::ChannelsOption(), m_parameters.IsEmpty() ? 1 : m_parameters.AsUnsigned());
 
-#if OPAL_VIDEO
-  // Save the RTCP feedback (RFC4585) capability.
-  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb && !m_parent.GetOptionStrings().GetBoolean(OPAL_OPT_FORCE_RTCP_FB))
-    mediaFormat.SetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), m_rtcp_fb);
-#endif
-
   // Fill in the default values for (possibly) missing FMTP options
   for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
     OpalMediaOption & option = const_cast<OpalMediaOption &>(mediaFormat.GetOption(i));
@@ -1310,8 +1304,10 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
     SDPCryptoSuite * cryptoSuite = new SDPCryptoSuite(0);
     if (cryptoSuite->Decode(value)) {
       m_cryptoSuites.Append(cryptoSuite);
+#if OPAL_SRTP
       if (m_transportType == OpalRTPSession::RTP_AVP())
         m_transportType = OpalSRTPSession::RTP_SAVP();
+#endif
     }
     else {
       delete cryptoSuite;
