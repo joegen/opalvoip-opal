@@ -3413,6 +3413,12 @@ bool H323Connection::RequestPresentationRole(bool release)
   m_h239SymmetryBreaking = PRandom::Number(1, 127);
   return SendH239PresentationRequest(m_h239TokenChannel, m_h239SymmetryBreaking, m_h239TerminalLabel);
 }
+
+
+bool H323Connection::HasPresentationRole() const
+{
+  return m_h239TokenOwned;
+}
 #endif // OPAL_H239
 
 
