@@ -286,6 +286,12 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
   mediaFormat.SetPayloadType(m_payloadType);
   mediaFormat.SetOptionInteger(OpalAudioFormat::ChannelsOption(), m_parameters.IsEmpty() ? 1 : m_parameters.AsUnsigned());
 
+#if OPAL_VIDEO
+  // Save the RTCP feedback (RFC4585) capability.
+  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb && !m_parent.GetOptionStrings().GetBoolean(OPAL_OPT_FORCE_RTCP_FB))
+    mediaFormat.SetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), m_rtcp_fb);
+#endif
+
   // Fill in the default values for (possibly) missing FMTP options
   for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
     OpalMediaOption & option = const_cast<OpalMediaOption &>(mediaFormat.GetOption(i));
@@ -298,6 +304,10 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
   if (mediaFormat.SetOptionString("FMTP", m_fmtp))
     return;
 
+  // No FMTP to parse, may as well stop here
+  if (m_fmtp.IsEmpty())
+    return;
+
   // Look for a specific option with "FMTP" as it's name, it is the whole thing then
   for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
     const OpalMediaOption & option = mediaFormat.GetOption(i);
@@ -306,10 +316,6 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
       return;
     }
   }
-
-  // No FMTP to parse, may as well stop here
-  if (m_fmtp.IsEmpty())
-    return;
 
   // Save the raw 'fmtp=' line so it is available for information purposes.
   mediaFormat.AddOption(new OpalMediaOptionString("RawFMTP", false, m_fmtp), true);
@@ -1045,7 +1051,7 @@ SDPCryptoSuite::SDPCryptoSuite(unsigned tag)
 
 bool SDPCryptoSuite::Decode(const PString & sdp)
 {
-  if (sdp.GetLength() < 7 || sdp[0] < '1' || sdp[0] > '2' || sdp[1] != ' ')
+  if (sdp.GetLength() < 7 || sdp[0] < '1' || sdp[0] > '9' || sdp[1] != ' ')
     return false;
 
   m_tag = sdp[0] - '0';
@@ -1302,8 +1308,11 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
 
   if (attr *= "crypto") {
     SDPCryptoSuite * cryptoSuite = new SDPCryptoSuite(0);
-    if (cryptoSuite->Decode(value))
+    if (cryptoSuite->Decode(value)) {
       m_cryptoSuites.Append(cryptoSuite);
+      if (m_transportType == OpalRTPSession::RTP_AVP())
+        m_transportType = OpalSRTPSession::RTP_SAVP();
+    }
     else {
       delete cryptoSuite;
       PTRACE(2, "SDP\tCannot decode SDP crypto attribute: \"" << value << '"');
