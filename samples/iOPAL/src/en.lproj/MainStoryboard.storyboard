@@ -33,6 +33,9 @@
                                 </connections>
                             </textField>
                             <button opaque="NO" contentMode="scaleToFill" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="brH-7F-egW">
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="136" id="kUP-k3-n5B"/>
+                                </constraints>
                                 <fontDescription key="fontDescription" type="boldSystem" pointSize="15"/>
                                 <state key="normal" title="Call">
                                     <color key="titleColor" red="0.19607843459999999" green="0.30980393290000002" blue="0.52156865600000002" alpha="1" colorSpace="calibratedRGB"/>
@@ -101,32 +104,81 @@
                                 <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <button opaque="NO" contentMode="scaleToFill" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="u6h-NA-rNE">
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="141" id="RiN-8h-MMU"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="15"/>
+                                <state key="normal" title="Hold">
+                                    <color key="titleColor" white="0.66666666666666663" alpha="1" colorSpace="calibratedWhite"/>
+                                    <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                                <state key="highlighted">
+                                    <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                                <connections>
+                                    <action selector="holdCall:" destination="2" eventType="touchUpInside" id="SdX-ym-3kV"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="nHR-2h-eoR">
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="15"/>
+                                <state key="normal" title="Retrieve">
+                                    <color key="titleColor" white="0.66666666666666663" alpha="1" colorSpace="calibratedWhite"/>
+                                    <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                                <state key="highlighted">
+                                    <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                                <connections>
+                                    <action selector="retreiveCall:" destination="2" eventType="touchUpInside" id="mIr-HM-QDE"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="m1Y-Aw-Nrk">
+                                <fontDescription key="fontDescription" type="boldSystem" pointSize="15"/>
+                                <state key="normal" title="Transfer">
+                                    <color key="titleColor" white="0.66666666666666663" alpha="1" colorSpace="calibratedWhite"/>
+                                    <color key="titleShadowColor" white="0.5" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                                <state key="highlighted">
+                                    <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                                <connections>
+                                    <action selector="transferCall:" destination="2" eventType="touchUpInside" id="wAI-lb-nOT"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                         <constraints>
-                            <constraint firstItem="hio-1P-zUG" firstAttribute="leading" secondItem="XWE-aE-Ow7" secondAttribute="leading" type="default" id="AcW-20-mb5"/>
-                            <constraint firstItem="hio-1P-zUG" firstAttribute="leading" secondItem="N8z-Ne-9kU" secondAttribute="leading" type="default" id="Dat-mL-dga"/>
-                            <constraint firstAttribute="trailing" secondItem="hio-1P-zUG" secondAttribute="trailing" constant="20" symbolic="YES" type="default" id="Jef-I3-GmG"/>
-                            <constraint firstItem="XWE-aE-Ow7" firstAttribute="trailing" secondItem="XCQ-XJ-tD4" secondAttribute="trailing" type="default" id="KeE-6f-auG"/>
+                            <constraint firstItem="nHR-2h-eoR" firstAttribute="baseline" secondItem="hio-1P-zUG" secondAttribute="baseline" type="default" id="3iY-es-thr"/>
+                            <constraint firstAttribute="trailing" secondItem="u6h-NA-rNE" secondAttribute="trailing" constant="20" symbolic="YES" type="default" id="7Ge-GG-Gxz"/>
+                            <constraint firstAttribute="trailing" secondItem="m1Y-Aw-Nrk" secondAttribute="trailing" constant="20" symbolic="YES" type="default" id="7k7-AH-Wse"/>
+                            <constraint firstItem="N8z-Ne-9kU" firstAttribute="leading" secondItem="3" secondAttribute="leading" constant="20" symbolic="YES" type="default" id="8kE-Mc-Qts"/>
+                            <constraint firstAttribute="trailing" secondItem="XCQ-XJ-tD4" secondAttribute="trailing" constant="20" symbolic="YES" type="default" id="9L7-RJ-MmD"/>
+                            <constraint firstAttribute="trailing" secondItem="nHR-2h-eoR" secondAttribute="trailing" constant="20" symbolic="YES" type="default" id="CtO-4L-doZ"/>
+                            <constraint firstItem="u6h-NA-rNE" firstAttribute="leading" secondItem="nHR-2h-eoR" secondAttribute="leading" type="default" id="IXt-ce-Mln"/>
+                            <constraint firstItem="m1Y-Aw-Nrk" firstAttribute="baseline" secondItem="N8z-Ne-9kU" secondAttribute="baseline" type="default" id="LeL-fw-j3f"/>
+                            <constraint firstItem="hio-1P-zUG" firstAttribute="leading" secondItem="3" secondAttribute="leading" constant="20" symbolic="YES" type="default" id="Nzb-GU-bdi"/>
                             <constraint firstAttribute="trailing" secondItem="XWE-aE-Ow7" secondAttribute="trailing" constant="20" symbolic="YES" type="default" id="OJb-wk-pUk"/>
-                            <constraint firstAttribute="trailing" secondItem="brH-7F-egW" secondAttribute="trailing" constant="20" symbolic="YES" type="default" id="U1s-rv-q0N"/>
                             <constraint firstAttribute="bottom" secondItem="gZi-rO-tv3" secondAttribute="bottom" constant="20" symbolic="YES" type="user" id="VD9-oD-4jb"/>
+                            <constraint firstItem="nHR-2h-eoR" firstAttribute="leading" secondItem="m1Y-Aw-Nrk" secondAttribute="leading" type="default" id="VRa-DS-9sT"/>
                             <constraint firstItem="JZo-X6-81a" firstAttribute="top" secondItem="N8z-Ne-9kU" secondAttribute="bottom" constant="8" symbolic="YES" type="user" id="WJO-ne-bJX"/>
                             <constraint firstAttribute="trailing" secondItem="JZo-X6-81a" secondAttribute="trailing" constant="20" symbolic="YES" type="default" id="X3h-8M-r5c"/>
+                            <constraint firstItem="JZo-X6-81a" firstAttribute="leading" secondItem="3" secondAttribute="leading" constant="20" symbolic="YES" type="default" id="XDm-fw-jJ8"/>
                             <constraint firstItem="gZi-rO-tv3" firstAttribute="top" secondItem="JZo-X6-81a" secondAttribute="bottom" constant="8" symbolic="YES" type="user" id="Zyo-Ep-INB"/>
                             <constraint firstItem="XWE-aE-Ow7" firstAttribute="top" secondItem="XCQ-XJ-tD4" secondAttribute="bottom" constant="8" symbolic="YES" type="user" id="b5E-Of-KuP"/>
                             <constraint firstItem="brH-7F-egW" firstAttribute="leading" secondItem="3" secondAttribute="leading" constant="20" symbolic="YES" type="default" id="dyq-1W-fxY"/>
                             <constraint firstItem="Cpc-c4-QGq" firstAttribute="centerY" secondItem="gZi-rO-tv3" secondAttribute="centerY" type="default" id="eaY-uG-HXd"/>
-                            <constraint firstItem="JZo-X6-81a" firstAttribute="leading" secondItem="N8z-Ne-9kU" secondAttribute="leading" type="default" id="gGX-YC-VAg"/>
                             <constraint firstItem="XCQ-XJ-tD4" firstAttribute="top" secondItem="3" secondAttribute="top" constant="20" symbolic="YES" type="user" id="h4T-Q0-Thx"/>
                             <constraint firstAttribute="trailing" secondItem="gZi-rO-tv3" secondAttribute="trailing" constant="20" symbolic="YES" type="default" id="hP5-RH-tKv"/>
                             <constraint firstItem="brH-7F-egW" firstAttribute="top" secondItem="XWE-aE-Ow7" secondAttribute="bottom" constant="8" symbolic="YES" type="user" id="iVB-dU-D1D"/>
-                            <constraint firstItem="Cpc-c4-QGq" firstAttribute="centerX" secondItem="brH-7F-egW" secondAttribute="centerX" type="default" id="imz-1Y-4cY"/>
+                            <constraint firstItem="hio-1P-zUG" firstAttribute="trailing" secondItem="brH-7F-egW" secondAttribute="trailing" type="default" id="lvx-y0-1hW"/>
                             <constraint firstItem="Cpc-c4-QGq" firstAttribute="centerX" secondItem="JZo-X6-81a" secondAttribute="centerX" type="default" id="mO8-lW-sRr"/>
-                            <constraint firstAttribute="trailing" secondItem="N8z-Ne-9kU" secondAttribute="trailing" constant="20" symbolic="YES" type="default" id="uqE-1n-Cdf"/>
-                            <constraint firstItem="XWE-aE-Ow7" firstAttribute="leading" secondItem="XCQ-XJ-tD4" secondAttribute="leading" type="default" id="wEx-sb-Lja"/>
+                            <constraint firstItem="XWE-aE-Ow7" firstAttribute="leading" secondItem="3" secondAttribute="leading" constant="20" symbolic="YES" type="default" id="sEe-B5-iC6"/>
+                            <constraint firstItem="XCQ-XJ-tD4" firstAttribute="leading" secondItem="3" secondAttribute="leading" constant="20" symbolic="YES" type="default" id="uR9-48-V6e"/>
+                            <constraint firstItem="hio-1P-zUG" firstAttribute="trailing" secondItem="N8z-Ne-9kU" secondAttribute="trailing" type="default" id="vss-CR-fw6"/>
                             <constraint firstItem="hio-1P-zUG" firstAttribute="top" secondItem="brH-7F-egW" secondAttribute="bottom" constant="8" symbolic="YES" type="user" id="wvx-qV-B2f"/>
                             <constraint firstItem="N8z-Ne-9kU" firstAttribute="top" secondItem="hio-1P-zUG" secondAttribute="bottom" constant="8" symbolic="YES" type="user" id="xgY-3v-RvF"/>
+                            <constraint firstItem="u6h-NA-rNE" firstAttribute="baseline" secondItem="brH-7F-egW" secondAttribute="baseline" type="default" id="zwq-P2-Fn8"/>
                         </constraints>
                     </view>
                     <connections>
@@ -134,8 +186,11 @@
                         <outlet property="callButton" destination="brH-7F-egW" id="h5J-CY-GQ8"/>
                         <outlet property="destinationField" destination="XWE-aE-Ow7" id="gH5-Tu-F2o"/>
                         <outlet property="hangUpButton" destination="N8z-Ne-9kU" id="9bu-ZK-yw1"/>
+                        <outlet property="holdButton" destination="u6h-NA-rNE" id="keh-7b-bCD"/>
                         <outlet property="registerField" destination="gZi-rO-tv3" id="m9d-1I-qbX"/>
+                        <outlet property="retrieveButton" destination="nHR-2h-eoR" id="igK-PG-777"/>
                         <outlet property="statusField" destination="JZo-X6-81a" id="cxY-aj-7fa"/>
+                        <outlet property="transferButton" destination="m1Y-Aw-Nrk" id="UmO-he-1Y7"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="4" sceneMemberID="firstResponder"/>
@@ -152,15 +207,21 @@
             <relationships>
                 <relationship kind="action" name="answerCall:"/>
                 <relationship kind="action" name="hangUpCall:"/>
+                <relationship kind="action" name="holdCall:"/>
                 <relationship kind="action" name="makeCall:"/>
                 <relationship kind="action" name="onDestinationChanged:"/>
                 <relationship kind="action" name="onLogInOut:"/>
+                <relationship kind="action" name="retreiveCall:"/>
+                <relationship kind="action" name="transferCall:"/>
                 <relationship kind="outlet" name="answerButton" candidateClass="UIButton"/>
                 <relationship kind="outlet" name="callButton" candidateClass="UIButton"/>
                 <relationship kind="outlet" name="destinationField" candidateClass="UITextField"/>
                 <relationship kind="outlet" name="hangUpButton" candidateClass="UIButton"/>
+                <relationship kind="outlet" name="holdButton" candidateClass="UIButton"/>
                 <relationship kind="outlet" name="registerField" candidateClass="UISwitch"/>
+                <relationship kind="outlet" name="retrieveButton" candidateClass="UIButton"/>
                 <relationship kind="outlet" name="statusField" candidateClass="UITextView"/>
+                <relationship kind="outlet" name="transferButton" candidateClass="UIButton"/>
             </relationships>
         </class>
     </classes>
