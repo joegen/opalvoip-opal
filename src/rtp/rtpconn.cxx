@@ -296,8 +296,11 @@ bool OpalRTPConnection::ChangeSessionID(unsigned fromSessionID, unsigned toSessi
 
   PTRACE(3, "RTPCon\tChanging session ID " << fromSessionID << " to " << toSessionID);
 
-  m_sessions.SetAt(toSessionID, it->second);
+  PSafePtr<OpalMediaSession> session = it->second;
+  m_sessions.DisallowDeleteObjects();
   m_sessions.erase(it);
+  m_sessions.AllowDeleteObjects();
+  m_sessions.SetAt(toSessionID, session);
 
   for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
     if (stream->GetSessionID() == fromSessionID) {
