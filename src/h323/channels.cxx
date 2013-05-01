@@ -184,18 +184,20 @@ PBoolean H323Channel::GetMediaTransportAddress(OpalTransportAddress & /*data*/,
 
 void H323Channel::Close()
 {
-  if (opened && m_terminating++ == 0)
+  if (m_terminating++ == 0)
     InternalClose();
 }
 
 
 void H323Channel::InternalClose()
 {
-  // Signal to the connection that this channel is on the way out
-  connection.OnClosedLogicalChannel(*this);
+  if (opened) {
+    // Signal to the connection that this channel is on the way out
+    connection.OnClosedLogicalChannel(*this);
 
-  connection.SetBandwidthUsed(GetDirection() == IsReceiver ? OpalBandwidth::Rx : OpalBandwidth::Tx, m_bandwidthUsed, 0);
-
+    connection.SetBandwidthUsed(GetDirection() == IsReceiver ? OpalBandwidth::Rx : OpalBandwidth::Tx, m_bandwidthUsed, 0);
+  }
+  
   PTRACE(4, "LogChan\tCleaned up " << number);
 }
 
