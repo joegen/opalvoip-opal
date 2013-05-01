@@ -3422,10 +3422,18 @@ void MyManager::OnForwardingTimeout(PTimer &, INT)
   if (call == NULL)
     return;
 
-  if (call->Transfer(m_ForwardingAddress, call->GetConnection(1)))
-    LogWindow << "Forwarded \"" << call->GetPartyB() << "\" to \"" << m_ForwardingAddress << '"' << endl;
-  else
-    LogWindow << "Could not forward \"" << call->GetPartyB() << "\" to \"" << m_ForwardingAddress << '"' << endl;
+  PSafePtr<OpalConnection> network = call->GetConnection(0, PSafeReference);
+  PString remote = network->GetRemotePartyURL();
+  PString forward = m_ForwardingAddress;
+  if (forward[0] == '*')
+    forward.Splice(remote.Left(remote.Find(':')), 0, 1);
+
+  if (call->Transfer(forward, network))
+    LogWindow << "Forwarded \"" << remote << "\" to \"" << forward << '"' << endl;
+  else {
+    LogWindow << "Could not forward \"" << remote << "\" to \"" << forward << '"' << endl;
+    call->Clear();
+  }
 
   m_incomingToken.clear();
 }
