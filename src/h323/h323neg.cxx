@@ -896,6 +896,8 @@ void H245NegLogicalChannel::Release()
 
   replyTimer.Stop(false);
 
+  PTRACE(4, "H245\tOLC Release: chan=" << chan);
+  
   if (chan != NULL) {
     chan->Close();
     delete chan;
