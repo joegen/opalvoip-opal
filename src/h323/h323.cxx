@@ -3317,7 +3317,7 @@ bool H323Connection::SendH239PresentationRequest(unsigned logicalChannel, unsign
   PTRACE(3, "H239\tSendH239PresentationRequest(" << logicalChannel << ',' << symmetryBreaking << ',' << terminalLabel << ')');
 
   H323ControlPDU pdu;
-  H245_ArrayOf_GenericParameter & params = pdu.BuildGenericResponse(H239MessageOID, 3).m_messageContent;
+  H245_ArrayOf_GenericParameter & params = pdu.BuildGenericRequest(H239MessageOID, 3).m_messageContent;
   // Note order is important (Table 12/H.239)
   H323AddGenericParameterInteger(params, 44, terminalLabel, H245_ParameterValue::e_unsignedMin);
   H323AddGenericParameterInteger(params, 42, logicalChannel, H245_ParameterValue::e_unsignedMin);
