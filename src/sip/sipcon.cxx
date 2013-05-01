@@ -349,7 +349,7 @@ void SIPConnection::OnReleased()
       else {
         SIP_PDU response(*m_lastReceivedINVITE, sipCode);
         AdjustInviteResponse(response);
-        response.GetMIME().SetContact(m_forwardParty);
+        response.GetMIME().SetContact(SIPURL(m_forwardParty).AsQuotedString());
         response.Send();
       }
 
@@ -440,6 +440,12 @@ void SIPConnection::OnReleased()
 
 bool SIPConnection::TransferConnection(const PString & remoteParty)
 {
+  if (IsReleased())
+    return false;
+
+  if (!IsEstablished())
+    return ForwardCall(remoteParty);
+
   // There is still an ongoing REFER transaction 
   if (m_referInProgress) {
     PTRACE(2, "SIP\tTransfer already in progress for " << *this);
