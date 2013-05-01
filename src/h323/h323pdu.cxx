@@ -1761,7 +1761,12 @@ H245_GenericMessage & H323ControlPDU::BuildGenericRequest(const PString & identi
 {
   H245_GenericMessage & msg = Build(H245_RequestMessage::e_genericRequest);
   H323SetCapabilityIdentifier(identifier, msg.m_messageIdentifier);
+  
+  msg.IncludeOptionalField(H245_GenericMessage::e_subMessageIdentifier);
   msg.m_subMessageIdentifier = subMsgId;
+  
+  // Assume always have a content
+  msg.IncludeOptionalField(H245_GenericMessage::e_messageContent);
   return msg;
 }
 
