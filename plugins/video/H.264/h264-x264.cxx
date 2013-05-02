@@ -516,7 +516,7 @@ public:
 
   virtual bool IsValidForProtocol(const char * protocol)
   {
-    return stricmp(protocol, PLUGINCODEC_OPTION_PROTOCOL_SIP) == 0 || m_options != MyOptionTable_0;
+    return strcasecmp(protocol, PLUGINCODEC_OPTION_PROTOCOL_SIP) == 0 || m_options != MyOptionTable_0;
   }
 
 
