@@ -2966,7 +2966,9 @@ OpalMediaFormatList H323Capabilities::GetMediaFormats() const
     OpalMediaFormat fmt = table[i].GetMediaFormat();
     OpalMediaFormatList::const_iterator it = formats.FindFormat(fmt);
     if (it != formats.end()) {
-
+      /* We really should create new OpalMediaFormat entries "on the fly" for
+         each H.239 version of a codec. Bit for now we just get a lowest common
+         denominator, until it proves unworkable. */
       fmt.Merge(*it);
       formats.erase(it);
     }
