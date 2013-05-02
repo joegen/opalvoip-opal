@@ -372,8 +372,8 @@ static struct PluginCodec_Option const MediaPacketizationsH323_1 =
   PLUGINCODEC_MEDIA_PACKETIZATIONS,   // User visible name
   false,                              // User Read/Only flag
   PluginCodec_IntersectionMerge,      // Merge mode
-  OpalPluginCodec_Identifer_H264_Aligned "," // Initial value
-  OpalPluginCodec_Identifer_H264_NonInterleaved
+  OpalPluginCodec_Identifer_H264_NonInterleaved "," // Initial value
+  OpalPluginCodec_Identifer_H264_Aligned
 };
 
 static struct PluginCodec_Option const PacketizationModeSDP_0 =
@@ -511,6 +511,12 @@ public:
   {
     m_h323CapabilityType = PluginCodec_H323Codec_generic;
     m_h323CapabilityData = &MyH323GenericData;
+  }
+
+
+  virtual bool IsValidForProtocol(const char * protocol)
+  {
+    return stricmp(protocol, PLUGINCODEC_OPTION_PROTOCOL_SIP) == 0 || m_options != MyOptionTable_0;
   }
 
 
