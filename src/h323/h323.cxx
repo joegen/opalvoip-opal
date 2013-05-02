@@ -4087,11 +4087,11 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
       PString name = mediaFormat.GetName();
 #if OPAL_H239
       if (sessionID > 2 && mediaFormat.GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole) != OpalVideoFormat::eNoRole)
-        name = "H.239-Video";
+        name += '+' + GetH239VideoMediaFormat().GetName();
 #endif
       H323Capability * capability = remoteCapabilities.FindCapability(name);
       if (capability == NULL) {
-        PTRACE(2, "H323\tOpenMediaStream could not find capability for " << mediaFormat);
+        PTRACE(2, "H323\tOpenMediaStream could not find capability for " << name);
         return NULL;
       }
 
