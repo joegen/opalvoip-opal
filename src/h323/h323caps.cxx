@@ -1575,7 +1575,10 @@ PBoolean H323H239VideoCapability::OnReceivedPDU(const H245_VideoCapability & pdu
   if (!H323ExtendedVideoCapability::OnReceivedPDU(pdu, type))
     return false;
 
-  if (!m_videoFormats.HasFormat(GetMediaFormat()))
+  OpalMediaFormatList::const_iterator it = m_videoFormats.FindFormat(GetMediaFormat());
+  if (it != m_videoFormats.end())
+    GetWritableMediaFormat().Merge(*it);
+  else
     GetWritableMediaFormat() = m_videoFormats.front();
   return true;
 }
@@ -2959,19 +2962,30 @@ OpalMediaFormatList H323Capabilities::GetMediaFormats() const
 {
   OpalMediaFormatList formats;
 
-  PINDEX outerSize = set.GetSize();
-  for (PINDEX outer = 0; outer < outerSize; outer++) {
-    PINDEX middleSize = set[outer].GetSize();
-    for (PINDEX middle = 0; middle < middleSize; middle++) {
-      PINDEX innerSize = set[outer][middle].GetSize();
-      for (PINDEX inner = 0; inner < innerSize; inner++)
-        formats += set[outer][middle][inner].GetMediaFormat();
+  for (PINDEX i = 0; i < table.GetSize(); i++) {
+    OpalMediaFormat fmt = table[i].GetMediaFormat();
+    OpalMediaFormatList::const_iterator it = formats.FindFormat(fmt);
+    if (it != formats.end()) {
+
+      fmt.Merge(*it);
+      formats.erase(it);
     }
+    formats += fmt;
   }
 
-  // Pick up anything missed in above.
-  for (PINDEX i = 0; i < table.GetSize(); i++)
-    formats += table[i].GetMediaFormat();
+  // Reorder to first entry, really should be selected entry, but we don't have that
+  if (!set.IsEmpty()) {
+    PStringArray order;
+    for (PINDEX middle = 0;  middle < set[0].GetSize(); ++middle) {
+      for (PINDEX inner = 0; inner < set[0][middle].GetSize(); ++inner) {
+        PString name = set[0][middle][inner].GetMediaFormat().GetName();
+        if (order.GetValuesIndex(name) == P_MAX_INDEX)
+          order += name;
+      }
+    }
+
+    formats.Reorder(order);
+  }
 
   return formats;
 }

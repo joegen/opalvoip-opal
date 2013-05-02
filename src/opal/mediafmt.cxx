@@ -1854,7 +1854,8 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
 
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::ContentRoleMaskOption(),
                                         false, OpalMediaOption::IntersectionMerge,
-                                        0, 0, OpalVideoFormat::ContentRoleMask));
+                                        OpalVideoFormat::ContentRoleMask,
+                                        0, OpalVideoFormat::ContentRoleMask));
 
   // For video the max bit rate and frame rate is adjustable by user
   FindOption(OpalVideoFormat::MaxBitRateOption())->SetReadOnly(false);
