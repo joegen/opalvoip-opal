@@ -1793,6 +1793,8 @@ H245_GenericMessage & H323ControlPDU::BuildGenericCommand(const PString & identi
   msg.IncludeOptionalField(H245_GenericMessage::e_subMessageIdentifier);
   msg.m_subMessageIdentifier = subMsgId;
 
+  // Assume always have a content
+  msg.IncludeOptionalField(H245_GenericMessage::e_messageContent);
   return msg;
 }
 
