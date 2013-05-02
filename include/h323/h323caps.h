@@ -71,6 +71,12 @@ class H245_CapabilityIdentifier;
 class H245_GenericCapability;
 class H245_GenericParameter;
 
+
+#if OPAL_H239
+  const OpalMediaFormat & GetH239VideoMediaFormat();
+#endif
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 /**This class describes the interface to a capability of the endpoint, usually
@@ -351,8 +357,9 @@ class H323Capability : public PObject
     unsigned            assignedCapabilityNumber;  /// Unique ID assigned to capability
     CapabilityDirection capabilityDirection;
 
-  private:
     mutable OpalMediaFormat m_mediaFormat;
+
+  private:
     P_REMOVE_VIRTUAL(PBoolean, IsMatch(const PASN_Choice &) const, false);
 
   friend class H323Capabilities;
@@ -1535,10 +1542,6 @@ class H323H239VideoCapability : public H323ExtendedVideoCapability
     /**Create a copy of the object.
       */
     virtual PObject * Clone() const;
-
-    /**Print name of capability.
-      */
-    void PrintOn(ostream & strm) const;
   //@}
 
   /**@name Identification functions */
