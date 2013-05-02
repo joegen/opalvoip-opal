@@ -1370,21 +1370,8 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
         sessionType = mediaDescription->GetSDPTransportType();
     }
 
-    if (sessionType.IsEmpty()) {
-      const SDPMediaDescriptionArray & mediaDescriptions = sdp->GetMediaDescriptions();
-      for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
-        const SDPMediaDescription & mediaDescription = mediaDescriptions[i];
-        if (mediaDescription.GetMediaType() == mediaType
-#if OPAL_SRTP
-              && (CanDoSRTP() || mediaDescription.GetCryptoKeys().IsEmpty())
-#endif
-        ) {
-          sessionType = mediaDescription.GetSDPTransportType();
-          sessionID = i+1;
-          break;
-        }
-      }
-    }
+    if (sessionType.IsEmpty())
+      sessionID = sdp->GetMediaDescriptions().GetSize()+1;
   }
 
   OpalMediaSession * mediaSession = UseMediaSession(sessionID, mediaType, sessionType);

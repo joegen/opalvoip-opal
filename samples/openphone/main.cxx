@@ -2505,6 +2505,8 @@ void MyManager::OnEstablishedCall(OpalCall & call)
 
 void MyManager::OnEvtEstablished(wxCommandEvent & theEvent)
 {
+  SetBalloonText(PString::Empty());
+
   PwxString token(theEvent.GetString());
 
   if (m_activeCall == NULL) {
@@ -2595,6 +2597,8 @@ void MyManager::OnClearedCall(OpalCall & call)
 
 void MyManager::OnEvtCleared(wxCommandEvent & theEvent)
 {
+  SetBalloonText(PString::Empty());
+
   PwxString token(theEvent.GetString());
 
   // Call gone away, get rid of any panels associated with it
