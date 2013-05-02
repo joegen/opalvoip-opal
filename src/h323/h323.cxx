@@ -3935,15 +3935,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
 
 OpalMediaFormatList H323Connection::GetMediaFormats() const
 {
-  OpalMediaFormatList list;
-
-  list += remoteCapabilities.GetMediaFormats();
-
-#if OPAL_H239
-  OpalMediaFormatList h239 = GetRemoteH239Formats();
-  for (OpalMediaFormatList::iterator format = h239.begin(); format != h239.end(); ++format)
-    list += *format;
-#endif
+  OpalMediaFormatList list = remoteCapabilities.GetMediaFormats();
 
   AdjustMediaFormats(false, NULL, list);
 
@@ -4092,7 +4084,12 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
       }
 
       // If transmitter, send OpenLogicalChannel using the capability associated with the media format
-      H323Capability * capability = remoteCapabilities.FindCapability(mediaFormat.GetName());
+      PString name = mediaFormat.GetName();
+#if OPAL_H239
+      if (sessionID > 2 && mediaFormat.GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole) != OpalVideoFormat::eNoRole)
+        name = "H.239-Video";
+#endif
+      H323Capability * capability = remoteCapabilities.FindCapability(name);
       if (capability == NULL) {
         PTRACE(2, "H323\tOpenMediaStream could not find capability for " << mediaFormat);
         return NULL;
