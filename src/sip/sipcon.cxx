@@ -443,9 +443,6 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
   if (IsReleased())
     return false;
 
-  if (!IsEstablished())
-    return ForwardCall(remoteParty);
-
   // There is still an ongoing REFER transaction 
   if (m_referInProgress) {
     PTRACE(2, "SIP\tTransfer already in progress for " << *this);
@@ -457,11 +454,14 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
     return false;
   }
 
-  PTRACE(3, "SIP\tTransferring " << *this << " to " << remoteParty);
-
   PURL url(remoteParty, "sip");
   StringOptions extra;
   extra.ExtractFromURL(url);
+
+  if (!IsEstablished() && !extra.GetBoolean(OPAL_OPT_FORWARD_REFER))
+    return ForwardCall(remoteParty);
+
+  PTRACE(3, "SIP\tTransfering " << *this << " to " << remoteParty);
 
   // Tell the REFER processing UA if it should suppress NOTIFYs about the REFER processing.
   // If we want to get NOTIFYs we have to clear the old connection on the progress message
