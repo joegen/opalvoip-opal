@@ -48,6 +48,12 @@
 class OpalSIPIMContext;
 
 
+/**OpalConnection::StringOption key to a boolean indicating that call
+   deflection/forwarding should use REFER rather tha  302 response.
+   Default false.
+  */
+#define OPAL_OPT_FORWARD_REFER   "Forward-Refer"
+
 /**OpalConnection::StringOption key to a boolean indicating the the state
    of the "Refer-Sub" header in the REFER request. Default true.
   */
