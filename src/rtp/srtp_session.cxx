@@ -450,7 +450,7 @@ bool OpalLibSRTP::Context::Open(DWORD ssrc, OpalMediaCryptoKeyList & keys)
       }
     }
     else {
-      PTRACE(3, "SRTP\tDifferent keys in this context.");
+      PTRACE(3, "SRTP\tDifferent keys in context " << this << ", now using " << keyInfo->ToString());
       CHECK_ERROR(srtp_dealloc,(m_ctx));
       CHECK_ERROR(srtp_create,(&m_ctx, NULL));
     }
