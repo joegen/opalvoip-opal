@@ -1062,8 +1062,10 @@ bool SDPCryptoSuite::Decode(const PString & sdp)
   PStringArray keyParams = sdp(space+1, sessionParamsPos-1).Tokenise(';');
   for (PINDEX kp =0; kp < keyParams.GetSize(); ++kp) {
     PCaselessString method, info;
-    if (!keyParams[kp].Split(':', method, info) || method != "inline" || info.IsEmpty())
+    if (!keyParams[kp].Split(':', method, info) || method != "inline" || info.IsEmpty()) {
+      PTRACE(2, "SDP", "Unsupported method \"" << method << '"');
       return false;
+    }
 
     PStringArray keyParts = info.Tokenise('|');
     m_keyParams.push_back(KeyParam(keyParts[0]));
@@ -1073,12 +1075,18 @@ bool SDPCryptoSuite::Decode(const PString & sdp)
       case 3 :
         {
           PString idx, len;
-          if (!keyParts[2].Split(':', idx, len))
+          if (!keyParts[2].Split(':', idx, len)) {
+            PTRACE(2, "SDP", "Expected colon in mki index/length: \"" << keyParts[2] << '"');
             return false;
-          if ((newKeyParam.m_mkiIndex = idx.AsUnsigned()) == 0)
+          }
+          if ((newKeyParam.m_mkiIndex = idx.AsUnsigned()) == 0) {
+            PTRACE(2, "SDP", "Must have non-zero mki index");
             return false;
-          if ((newKeyParam.m_mkiLength = len.AsUnsigned()) == 0)
+          }
+          if ((newKeyParam.m_mkiLength = len.AsUnsigned()) == 0) {
+            PTRACE(2, "SDP", "Must have non-zero mki length");
             return false;
+          }
         }
         // Do next case
 
@@ -1089,8 +1097,10 @@ bool SDPCryptoSuite::Decode(const PString & sdp)
             newKeyParam.m_lifetime = 1ULL << lifetime.Mid(2).AsUnsigned();
           else
             newKeyParam.m_lifetime = lifetime.AsUnsigned64();
-          if (newKeyParam.m_lifetime == 0)
+          if (newKeyParam.m_lifetime == 0) {
+            PTRACE(2, "SDP", "Must have non-zero lifetime");
             return false;
+          }
         }
     }
   }
