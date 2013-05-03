@@ -286,9 +286,10 @@
 // libSRTP support
 //
 
-#undef OPAL_SRTP
-#undef HAS_SRTP_SRTP_H
-
+#if OPAL_PTLIB_SSL
+  #undef OPAL_SRTP
+  #undef HAS_SRTP_SRTP_H
+#endif
 
 /////////////////////////////////////////////////
 //
