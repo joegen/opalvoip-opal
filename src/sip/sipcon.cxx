@@ -1668,7 +1668,12 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
       ++m_sdpVersion;
 
     PString oldInterface = GetInterface();
-    m_dialog.SetInterface(request.GetTransport()->GetInterface());
+
+    PString newInterface = request.GetTransport()->GetInterface();
+    if (newInterface.IsEmpty())
+      newInterface = request.GetTransport()->GetLocalAddress(false);
+    m_dialog.SetInterface(newInterface);
+
     SDPSessionDescription * sdp = new SDPSessionDescription(m_sdpSessionId, m_sdpVersion, OpalTransportAddress());
     if (OnSendOfferSDP(*sdp, m_needReINVITE)) {
       if (m_needReINVITE)
