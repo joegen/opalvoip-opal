@@ -111,6 +111,8 @@ bool OpalRTPEndPoint::CheckForLocalRTP(const OpalRTPMediaStream & stream)
     return false;
   }
 
+  PWaitAndSignal mutex(m_connectionsByRtpMutex);
+
   OpalTransportAddress localAddr = rtp->GetLocalAddress();
   LocalRtpInfoMap::iterator itLocal = m_connectionsByRtpLocalAddr.find(localAddr);
   if (!PAssert(itLocal != m_connectionsByRtpLocalAddr.end(), PLogicError))
