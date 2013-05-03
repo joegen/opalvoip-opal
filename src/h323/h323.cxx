@@ -3487,18 +3487,16 @@ bool H323Connection::TransferConnection(const PString & remoteParty)
   PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(remoteParty, PSafeReadOnly);
   if (call == NULL) {
 #if OPAL_H450
-    return TransferCall(remoteParty);
-#else
-    return ForwardCall(remoteParty);
+    if (IsEstablished() && TransferCall(remoteParty))
+      return true;
 #endif
+    return ForwardCall(remoteParty);
   }
 
 #if OPAL_H450
-  for (PSafePtr<OpalConnection> connection = call->GetConnection(0); connection != NULL; ++connection) {
-    PSafePtr<H323Connection> h323 = PSafePtrCast<OpalConnection, H323Connection>(connection);
-    if (h323 != NULL)
-      return TransferCall(h323->GetRemotePartyURL(), h323->GetToken());
-  }
+  PSafePtr<H323Connection> h323 = call->GetConnectionAs<H323Connection>();
+  if (h323 != NULL)
+    return TransferCall(h323->GetRemotePartyURL(), h323->GetToken());
 #endif
 
   PTRACE(2, "H323\tConsultation transfer requires other party to be H.323.");
