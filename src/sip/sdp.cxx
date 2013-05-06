@@ -1366,8 +1366,10 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
     SDPCryptoSuite * cryptoSuite = new SDPCryptoSuite(0);
     if (cryptoSuite->Decode(value)) {
       m_cryptoSuites.Append(cryptoSuite);
+#if OPAL_SRTP
       if (m_transportType == OpalRTPSession::RTP_AVP())
         m_transportType = OpalSRTPSession::RTP_SAVP();
+#endif
     }
     else {
       delete cryptoSuite;
