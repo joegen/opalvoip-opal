@@ -58,6 +58,7 @@ class OpalPresentityCommand;
   */
 class OpalPresenceInfo : public PObject
 {
+    PCLASSINFO_WITH_CLONE(OpalPresenceInfo, PObject);
   public:
     /// Presence states.
     enum State {
@@ -342,10 +343,10 @@ class OpalPresentity : public PSafeObject
       const OpalPresenceInfo & info ///< Info on other presentity that changed state
     );
 
-    typedef PNotifierTemplate<OpalPresenceInfo> PresenceChangeNotifier;
-    #define PDECLARE_PresenceChangeNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalPresentity, cls, fn, OpalPresenceInfo)
-    #define PDECLARE_ASYNC_PresenceChangeNotifier(cls, fn) PDECLARE_ASYNC_NOTIFIER2(OpalPresentity, cls, fn, OpalPresenceInfo)
-    #define PCREATE_PresenceChangeNotifier(fn) PCREATE_NOTIFIER2(fn, OpalPresenceInfo)
+    typedef PNotifierTemplate< std::auto_ptr<OpalPresenceInfo> > PresenceChangeNotifier;
+    #define PDECLARE_PresenceChangeNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalPresentity, cls, fn, std::auto_ptr<OpalPresenceInfo>)
+    #define PDECLARE_ASYNC_PresenceChangeNotifier(cls, fn) PDECLARE_ASYNC_NOTIFIER2(OpalPresentity, cls, fn, std::auto_ptr<OpalPresenceInfo>)
+    #define PCREATE_PresenceChangeNotifier(fn) PCREATE_NOTIFIER2(fn, std::auto_ptr<OpalPresenceInfo>)
 
     /// Set the notifier for the OnPresenceChange() function.
     void SetPresenceChangeNotifier(

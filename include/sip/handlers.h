@@ -428,6 +428,7 @@ class SIPHandlersList
   */
 class SIPPresenceInfo : public OpalPresenceInfo
 {
+  PCLASSINFO_WITH_CLONE(SIPPresenceInfo, OpalPresenceInfo)
 public:
   SIPPresenceInfo(
     State state = Unchanged
