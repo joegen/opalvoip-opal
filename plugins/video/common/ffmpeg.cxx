@@ -145,8 +145,7 @@ bool FFMPEGLibrary::Load()
     return false;
   }
 
-  if (!m_libAvcodec.GetFunction("avcodec_init", (DynaLink::Function &)Favcodec_init))
-    return false;
+  m_libAvcodec.GetFunction("avcodec_init", (DynaLink::Function &)Favcodec_init);
 
   if (!m_libAvcodec.GetFunction("av_init_packet", (DynaLink::Function &)Fav_init_packet))
     return false;
@@ -207,8 +206,9 @@ bool FFMPEGLibrary::Load()
            << (libVer >> 16) << ((libVer>>8) & 0xff) << (libVer & 0xff));
   }
 
-  Favcodec_init();
-  Favcodec_register_all ();
+  if (Favcodec_init != NULL)
+    Favcodec_init();
+  Favcodec_register_all();
 
 #if PLUGINCODEC_TRACING
   AvLogSetLevel(AV_LOG_DEBUG);
@@ -357,7 +357,7 @@ FFMPEGCodec::~FFMPEGCodec()
 
   delete m_fullFrame;
 
-  PTRACE(4, m_prefix, "Encoder closed");
+  PTRACE(4, m_prefix, "Codec closed");
 }
 
 
