@@ -2,8 +2,13 @@
 
 NAME=opalsrv
 DIR=$HOME/.opalsrv
-PROG=`ls ./obj*[^d]/$NAME`
 ARGS="--pid-file $DIR/${NAME}.pid --ini-file $DIR/${NAME}.ini --log-file $DIR/${NAME}.log"
+
+PROG=`ls ./obj*[^d]/$NAME | head -1`
+if [ ! -x $PROG ]; then
+  echo "No executable found"
+  exit 1
+fi
 
 case $1 in
   start )
@@ -11,11 +16,11 @@ case $1 in
   ;;
 
   stop )
-    COMMAND+="$PROG $ARGS --kill"
+    COMMAND="$PROG $ARGS --kill"
   ;;
 
   status )
-    COMMAND+="$PROG $ARGS --status"
+    COMMAND="$PROG $ARGS --status"
   ;;
 
   debug )
@@ -33,11 +38,6 @@ case $1 in
     exit 1
   ;;
 esac
-
-if [ ! -x $PROG ]; then
-  echo "No executable found"
-  exit 1
-fi
 
 if [ ! -d $DIR ]; then
   mkdir $DIR || exit $?
