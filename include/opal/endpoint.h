@@ -157,6 +157,10 @@ class OpalEndPoint : public PObject
       */
     virtual PString GetDefaultTransport() const;
 
+    /**Get the default signal port for this endpoint.
+     */
+    virtual WORD GetDefaultSignalPort() const;
+
 #if OPAL_PTLIB_SSL
     /** Apply the SSL certificates/key for SSL based calls, e.g. sips or h323s
       */
@@ -834,10 +838,6 @@ class OpalEndPoint : public PObject
       */
     PBoolean HasAttribute(Attributes opt) const { return (attributeBits&opt) != 0; }
 
-    /**Get the default signal port for this endpoint.
-     */
-    WORD GetDefaultSignalPort() const { return defaultSignalPort; }
-
     /**Get the product info for all endpoints.
       */
     const OpalProductInfo & GetProductInfo() const { return productInfo; }
@@ -908,7 +908,6 @@ class OpalEndPoint : public PObject
     OpalManager   & manager;
     PCaselessString prefixName;
     unsigned        attributeBits;
-    WORD            defaultSignalPort;
     PINDEX          m_maxSizeUDP;
     OpalProductInfo productInfo;
     PString         defaultLocalPartyName;

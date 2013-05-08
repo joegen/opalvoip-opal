@@ -84,6 +84,10 @@ class SIPEndPoint : public OpalRTPEndPoint
       */
     virtual PString GetDefaultTransport() const;
 
+    /**Get the default signal port for this endpoint.
+     */
+    virtual WORD GetDefaultSignalPort() const;
+
     /**Build a list of network accessible URIs given a user name.
        This typically gets URI's like sip:user@interface, h323:user@interface
        etc, for each listener of each endpoint.
