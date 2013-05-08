@@ -2789,4 +2789,32 @@ OpalStatusTransferCall * OpalMessagePtr::GetTransferStatus() const
 }
 
 
+OpalPresenceStatus * OpalMessagePtr::GetPresenceStatus() const
+{
+  switch (m_message->m_type) {
+    case OpalCmdAuthorisePresence :
+    case OpalCmdSubscribePresence :
+    case OpalCmdSetLocalPresence :
+    case OpalIndPresenceChange :
+      return &m_message->m_param.m_presenceStatus;
+
+    default :
+      return NULL;
+  }
+}
+
+
+OpalInstantMessage * OpalMessagePtr::GetInstantMessage() const
+{
+  switch (m_message->m_type) {
+    case OpalCmdSendIM :
+    case OpalIndReceiveIM :
+      return &m_message->m_param.m_instantMessage;
+
+    default :
+      return NULL;
+  }
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
