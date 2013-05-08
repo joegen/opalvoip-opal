@@ -105,13 +105,13 @@ class IAX2EndPoint : public OpalEndPoint
 {
   PCLASSINFO(IAX2EndPoint, OpalEndPoint);
  public:
+   enum { DefaultUdpPort = 4569 };
+
   /**@name Construction */
-  
   //@{
   /**Create the endpoint, and define local variables */
   IAX2EndPoint(
-    OpalManager & manager,
-    unsigned short port	= 4569
+    OpalManager & manager
   );
   
   /**Destroy the endpoint, and all associated connections*/
@@ -120,6 +120,16 @@ class IAX2EndPoint : public OpalEndPoint
   
   /**@name connection Connection handling */
   //@{
+    /**Get the default transports for the endpoint type.
+       Overrides the default behaviour to return udp and tcp.
+      */
+    virtual PString GetDefaultTransport() const;
+
+    /**Get the default signal port for this endpoint.
+     */
+    virtual WORD GetDefaultSignalPort() const;
+
+
   /**Set up a connection to a remote party.
      This is called from the OpalManager::MakeConnection() function once
      it has determined that this is the endpoint for the protocol.
@@ -412,9 +422,6 @@ class IAX2EndPoint : public OpalEndPoint
   
   /**The socket on which all data is sent/received.*/
   PUDPSocket  *sock;
-
-  /** The local port */
-  unsigned short localPort;
 
   /**Number of active calls */
   int callnumbs;

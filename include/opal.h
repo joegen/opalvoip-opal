@@ -80,7 +80,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 /// Current API version
-#define OPAL_C_API_VERSION 27
+#define OPAL_C_API_VERSION 28
 
 
 ///////////////////////////////////////
@@ -419,6 +419,21 @@ typedef enum OpalMessageType {
                                     more information. */
   OpalIndCompletedIVR,          /**<Indicates completion of the IVR (VXML) script. This message is returned in
                                     the OpalGetMessage() function. See the OpalStatusIVR structure for
+                                    more information. */
+  OpalCmdAuthorisePresence,     /**<Permit or deny authority for the remote presentity to view the presence
+                                    state of a local presentity. See the OpalPresenceStatus structure for
+                                    more information. */
+  OpalCmdSubscribePresence,     /**<Subscribe to the change in presence state for a presentity. See the
+                                    OpalPresenceStatus structure for more information. */
+  OpalCmdSetLocalPresence,      /**<Set, and publish, the local presence state. See the OpalPresenceStatus
+                                    structure for more information. */
+  OpalIndPresenceChange,        /**<Indicates a change the the presence state for a given presentity. This
+                                    message is returned in the OpalGetMessage() function. See the
+                                    OpalPresenceStatus structure for more information. */
+  OpalCmdSendIM,                /**<Send an Instant Message. See the OpalInstantMessage structure for more
+                                    information. */
+  OpalIndReceiveIM,             /**<Indicates receipt of an instant message. This message is returned in the
+                                    OpalGetMessage() function. See the OpalInstantMessage structure for
                                     more information. */
 
 // Always add new messages to ethe end to maintain backward compatibility
@@ -802,6 +817,17 @@ typedef struct OpalParamProtocol {
       if (response != NULL && response->m_type == OpalCmdRegistration)
         m_AddressOfRecord = response->m_param.m_registrationInfo.m_identifier
 
+      // Presence registration
+      memset(&command, 0, sizeof(command));
+      command.m_type = OpalCmdRegistration;
+      command.m_param.m_registrationInfo.m_protocol = "pres";
+      command.m_param.m_registrationInfo.m_identifier = "sip:rjongbloed@ekiga.net";
+      command.m_param.m_registrationInfo.m_password = "secret";
+      command.m_param.m_registrationInfo.m_timeToLive = 300;
+      response = OpalSendMessage(hOPAL, &command);
+      if (response != NULL && response->m_type == OpalCmdRegistration)
+        m_AddressOfRecord = response->m_param.m_registrationInfo.m_identifier
+
       // unREGISTER
       memset(&command, 0, sizeof(command));
       command.m_type = OpalCmdRegistration;
@@ -863,6 +889,10 @@ typedef struct OpalParamRegistration {
                                      A value of OPAL_LINE_APPEARANCE_EVENT_PACKAGE will cause the
                                      OpalIndLineAppearance to be sent.
                                      Other values are currently not supported. */
+  const char * m_attributes;    /**< Protocol dependent information in the form:
+                                           key=value\n
+                                           key=value\n
+                                           etc */
 } OpalParamRegistration;
 
 
@@ -1160,6 +1190,72 @@ typedef struct OpalStatusLineAppearance {
 } OpalStatusLineAppearance;
 
 
+/**Type code for presence states.
+   This is used by the OpalPresenceStatus structure.
+  */
+typedef enum OpalPresenceStates {
+  OpalPresenceAuthRequest = -4,
+  OpalPresenceError       = -3,
+  OpalPresenceForbidden   = -2,
+  OpalPresenceNone        = -1,
+  OpalPresenceUnchanged   = 0,
+  OpalPresenceAvailable,
+  OpalPresenceUnavailable,
+} OpalPresenceStates;
+
+
+/**Opal Presence information for the various presence messages.
+
+   For OpalIndPresenceChange, m_entity is the local presentity, m_target is
+   the presentity for which the status is changing. This may be a remote
+   presentity, or the same as the m_entity field. The latter would occur after
+   OpalCmdSetLocalPresence, for example, and can indicate if that operation
+   was successful or not.
+
+   For OpalCmdAuthorisePresence, m_entity is the local presentity, m_target is
+   the remote presentity asking for permission to view the local presentities
+   status. The m_state is used to deny acces (OpalPresenceForbidden), deny
+   access politely (OpalPresenceUnavailable) or permit access
+   (OpalPresenceAvailable). While this is usually called in response to an
+   OpalIndPresenceChange with m_state == OpalPresenceAuthRequest, it can also
+   be sent at any time to remove an authorisation. In this case m_state is set
+   to OpalPresenceNone.
+
+   For OpalCmdSetLocalPresence, m_target is unused, m_state should be a
+   positive value. If m_state is OpalPresenceUnchanged then no change is made
+   and the current presence state is returned. The m_note field can be used
+   to provide extra information about the state change.
+
+   For OpalCmdSubscribePresence, m_entity is the local presentity, m_target is
+   the remote presentity we wish to monitor. The m_state is OpalPresenceNone
+   when we wish to stop monitoring, any other value to request. The m_note
+   field may be used to give extra information to the remote system if
+   authorisation is required.
+  */
+typedef struct OpalPresenceStatus {
+  const char *       m_entity;    /**<The registered entity that is receiving the presence
+                                      status change. */
+  const char *       m_target;    /**<The entity for which the status is changing. */
+  OpalPresenceStates m_state;     /**<The new state of the target entity. */
+  const char *       m_note;      /**<Addition "note" that may be attached to the state
+                                      change, e.g. "sleeping" */
+} OpalPresenceStatus;
+
+
+/**Opal Instant Message information for the various presence messages.
+  */
+typedef struct OpalInstantMessage {
+  const char *  m_from;      /**<Address from whom the message is sent. */
+  const char *  m_to;        /**<Address to which the message is sent. */
+  const char *  m_id;        /**<Conversation identifier. */
+  const char *  m_textBody;  /**<Simple text body, ignored if m_bodyCount > 0.
+                                 This will always be MIME type "text/plain" */
+  unsigned      m_bodyCount; /**<Count of bodies in m_mimeType and m_bodies */
+  const char ** m_mimeType;  /**<MIME type for each body, e.g. "text/html" */
+  const char ** m_bodies;    /**<Body data for each MIME type */
+} OpalInstantMessage;
+
+
 /**Type of mixing for video when recording.
    This is used by the OpalCmdStartRecording command in the OpalParamRecording structure.
   */
@@ -1330,6 +1426,8 @@ union OpalMessageParam {
   OpalParamRecording       m_recording;          ///< Used by OpalCmdStartRecording
   OpalStatusTransferCall   m_transferStatus;     ///< Used by OpalIndTransferCall
   OpalStatusIVR            m_ivrStatus;          ///< Used by OpalIndCompletedIVR
+  OpalPresenceStatus       m_presenceStatus;     ///< used by OpalCmdAuthorisePresence/OpalCmdSubscribePresence/OpalIndPresenceChange/OpalCmdSetLocalPresence
+  OpalInstantMessage       m_instantMessage;     ///< Used by OpalCmdSendIM/OpalIndReceiveIM
 };
 
 
@@ -1337,7 +1435,7 @@ union OpalMessageParam {
     This is passed via the OpalGetMessage() or OpalSendMessage() functions.
   */
 struct OpalMessage {
-  OpalMessageType        m_type;    ///< Type of message
+  OpalMessageType m_type;   ///< Type of message
   union OpalMessageParam m_param;   ///< Context sensitive parameter based on m_type
 };
 
@@ -1406,6 +1504,8 @@ class OpalMessagePtr
     OpalParamSetUserData     * GetSetUserData() const;        ///< Used by OpalCmdSetUserData
     OpalParamRecording       * GetRecording() const;          ///< Used by OpalCmdStartRecording
     OpalStatusTransferCall   * GetTransferStatus() const;     ///< Used by OpalIndTransferCall
+    OpalPresenceStatus       * GetPresenceStatus() const;     ///< Used by OpalCmdAuthorisePresence/OpalCmdSubscribePresence/OpalIndPresenceChange/OpalCmdSetLocalPresence
+    OpalInstantMessage       * GetInstantMessage() const;     ///< Used by OpalCmdSendIM/OpalIndReceiveIM
 
   protected:
     OpalMessage * m_message;

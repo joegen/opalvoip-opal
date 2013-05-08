@@ -89,8 +89,6 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr, unsigned maxThreads)
   , m_threadPool(maxThreads, "SIP Pool")
   , m_disableTrying(true)
 {
-  defaultSignalPort = SIPURL::DefaultPort;
-
   m_allowedEvents += SIPEventPackage(SIPSubscribe::Dialog);
   m_allowedEvents += SIPEventPackage(SIPSubscribe::Conference);
 
@@ -162,6 +160,12 @@ PString SIPEndPoint::GetDefaultTransport() const
          ",tls$:5061"
 #endif
     ; 
+}
+
+
+WORD SIPEndPoint::GetDefaultSignalPort() const
+{
+  return SIPURL::DefaultPort;
 }
 
 

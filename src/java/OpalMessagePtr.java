@@ -143,4 +143,14 @@ public class OpalMessagePtr {
     return (cPtr == 0) ? null : new OpalStatusTransferCall(cPtr, false);
   }
 
+  public OpalPresenceStatus GetPresenceStatus() {
+    long cPtr = OPALJNI.OpalMessagePtr_GetPresenceStatus(swigCPtr, this);
+    return (cPtr == 0) ? null : new OpalPresenceStatus(cPtr, false);
+  }
+
+  public OpalInstantMessage GetInstantMessage() {
+    long cPtr = OPALJNI.OpalMessagePtr_GetInstantMessage(swigCPtr, this);
+    return (cPtr == 0) ? null : new OpalInstantMessage(cPtr, false);
+  }
+
 }
