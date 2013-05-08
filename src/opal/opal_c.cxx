@@ -42,6 +42,7 @@
 #include <ep/localep.h>
 #include <h323/h323ep.h>
 #include <sip/sipep.h>
+#include <sip/sippres.h>
 #include <iax2/iax2ep.h>
 #include <lids/lidep.h>
 #include <t38/t38proto.h>
@@ -252,25 +253,32 @@ class OpalManager_C : public OpalManager
     virtual void OnMWIReceived(const PString & party, MessageWaitingType type, const PString & extraInfo);
     virtual void OnProceeding(OpalConnection & conenction);
     virtual void OnClearedCall(OpalCall & call);
+    virtual void OnMessageReceived(const OpalIM & message);
+
+    PDECLARE_PresenceChangeNotifier(OpalManager_C, OnPresenceChange);
 
     void SendIncomingCallInfo(const OpalConnection & connection);
 
   private:
-    void HandleSetGeneral    (const OpalMessage & message, OpalMessageBuffer & response);
-    void HandleSetProtocol   (const OpalMessage & message, OpalMessageBuffer & response);
-    void HandleRegistration  (const OpalMessage & message, OpalMessageBuffer & response);
-    void HandleSetUpCall     (const OpalMessage & message, OpalMessageBuffer & response);
-    void HandleAlerting      (const OpalMessage & message, OpalMessageBuffer & response);
-    void HandleAnswerCall    (const OpalMessage & message, OpalMessageBuffer & response);
-    void HandleUserInput     (const OpalMessage & message, OpalMessageBuffer & response);
-    void HandleClearCall     (const OpalMessage & message, OpalMessageBuffer & response);
-    void HandleHoldCall      (const OpalMessage & message, OpalMessageBuffer & response);
-    void HandleRetrieveCall  (const OpalMessage & message, OpalMessageBuffer & response);
-    void HandleTransferCall  (const OpalMessage & message, OpalMessageBuffer & response);
-    void HandleMediaStream   (const OpalMessage & command, OpalMessageBuffer & response);
-    void HandleSetUserData   (const OpalMessage & command, OpalMessageBuffer & response);
-    void HandleStartRecording(const OpalMessage & command, OpalMessageBuffer & response);
-    void HandleStopRecording (const OpalMessage & command, OpalMessageBuffer & response);
+    void HandleSetGeneral       (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleSetProtocol      (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleRegistration     (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleSetUpCall        (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleAlerting         (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleAnswerCall       (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleUserInput        (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleClearCall        (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleHoldCall         (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleRetrieveCall     (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleTransferCall     (const OpalMessage & message, OpalMessageBuffer & response);
+    void HandleMediaStream      (const OpalMessage & command, OpalMessageBuffer & response);
+    void HandleSetUserData      (const OpalMessage & command, OpalMessageBuffer & response);
+    void HandleStartRecording   (const OpalMessage & command, OpalMessageBuffer & response);
+    void HandleStopRecording    (const OpalMessage & command, OpalMessageBuffer & response);
+    void HandleAuthorisePresence(const OpalMessage & command, OpalMessageBuffer & response);
+    void HandleSubscribePresence(const OpalMessage & command, OpalMessageBuffer & response);
+    void HandleSetLocalPresence (const OpalMessage & command, OpalMessageBuffer & response);
+    void HandleSendIM           (const OpalMessage & command, OpalMessageBuffer & response);
 
     void OnIndMediaStream(const OpalMediaStream & stream, OpalMediaStates state);
 
@@ -290,6 +298,48 @@ class OpalManager_C : public OpalManager
     PMutex                    m_messageMutex;
     PSemaphore                m_messagesAvailable;
     OpalMessageAvailableFunction m_messageAvailableCallback;
+
+    typedef void (OpalManager_C:: * HandlerFunc)(const OpalMessage &, OpalMessageBuffer &);
+    static HandlerFunc m_handlers[OpalMessageTypeCount];
+};
+
+OpalManager_C::HandlerFunc OpalManager_C::m_handlers[OpalMessageTypeCount] = {
+  NULL, // OpalIndCommandError
+  &OpalManager_C::HandleSetGeneral,
+  &OpalManager_C::HandleSetProtocol,
+  &OpalManager_C::HandleRegistration,
+  NULL, // OpalIndRegistration
+  &OpalManager_C::HandleSetUpCall,
+  NULL, // OpalIndIncomingCall
+  &OpalManager_C::HandleAnswerCall,
+  &OpalManager_C::HandleClearCall,
+  NULL, // OpalIndAlerting
+  NULL, // OpalIndEstablished
+  NULL, // OpalIndUserInput
+  NULL, // OpalIndCallCleared
+  &OpalManager_C::HandleHoldCall,
+  &OpalManager_C::HandleRetrieveCall,
+  &OpalManager_C::HandleTransferCall,
+  &OpalManager_C::HandleUserInput,
+  NULL, // OpalIndMessageWaiting
+  NULL, // OpalIndMediaStream
+  &OpalManager_C::HandleMediaStream,
+  &OpalManager_C::HandleSetUserData,
+  NULL, // OpalIndLineAppearance
+  &OpalManager_C::HandleStartRecording,
+  &OpalManager_C::HandleStopRecording,
+  NULL, // OpalIndProceeding
+  &OpalManager_C::HandleAlerting,
+  NULL, // OpalIndOnHold
+  NULL, // OpalIndOffHold
+  NULL, // OpalIndTransferCall
+  NULL, // OpalIndCompletedIVR
+  &OpalManager_C::HandleAuthorisePresence,
+  &OpalManager_C::HandleSubscribePresence,
+  &OpalManager_C::HandleSetLocalPresence,
+  NULL, // OpalIndPresenceChange
+  &OpalManager_C::HandleSendIM,
+  NULL, // OpalIndReceiveIM
 };
 
 
@@ -992,56 +1042,11 @@ OpalMessage * OpalManager_C::SendMessage(const OpalMessage * message)
 
   OpalMessageBuffer response(message->m_type);
 
-  switch (message->m_type) {
-    case OpalCmdSetGeneralParameters :
-      HandleSetGeneral(*message, response);
-      break;
-    case OpalCmdSetProtocolParameters :
-      HandleSetProtocol(*message, response);
-      break;
-    case OpalCmdRegistration :
-      HandleRegistration(*message, response);
-      break;
-    case OpalCmdSetUpCall :
-      HandleSetUpCall(*message, response);
-      break;
-    case OpalCmdAlerting :
-      HandleAlerting(*message, response);
-      break;
-    case OpalCmdAnswerCall :
-      HandleAnswerCall(*message, response);
-      break;
-    case OpalCmdUserInput :
-      HandleUserInput(*message, response);
-      break;
-    case OpalCmdClearCall :
-      HandleClearCall(*message, response);
-      break;
-    case OpalCmdHoldCall :
-      HandleHoldCall(*message, response);
-      break;
-    case OpalCmdRetrieveCall :
-      HandleRetrieveCall(*message, response);
-      break;
-    case OpalCmdTransferCall :
-      HandleTransferCall(*message, response);
-      break;
-    case OpalCmdMediaStream :
-      HandleMediaStream(*message, response);
-      break;
-    case OpalCmdSetUserData :
-      HandleSetUserData(*message, response);
-      break;
-    case OpalCmdStartRecording :
-      HandleStartRecording(*message, response);
-      break;
-    case OpalCmdStopRecording :
-      HandleStopRecording(*message, response);
-      break;
-    default :
-      return NULL;
-  }
+  HandlerFunc func = message->m_type < OpalMessageTypeCount ? m_handlers[message->m_type] : NULL;
+  if (func == NULL)
+    return NULL;
 
+  (this->*func)(*message, response);
   return response.Detach();
 }
 
@@ -1516,6 +1521,45 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
 
 void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageBuffer & response)
 {
+  static const PConstCaselessString PresPrefix("pres");
+  if (PresPrefix == command.m_param.m_registrationInfo.m_protocol) {
+    if (IsNullString(command.m_param.m_registrationInfo.m_identifier))
+      response.SetError("Must have URI as identifier for presence.");
+    else if (command.m_param.m_registrationInfo.m_timeToLive == 0) {
+      if (GetPresentity(command.m_param.m_registrationInfo.m_identifier) == NULL)
+        response.SetError("URI is not registered for presence.");
+      else
+        RemovePresentity(command.m_param.m_registrationInfo.m_identifier);
+    }
+    else {
+      PSafePtr<OpalPresentity> presentity = AddPresentity(command.m_param.m_registrationInfo.m_identifier);
+      if (presentity == NULL)
+        response.SetError("Illegal/unknown URI for presence.");
+      else {
+        PStringOptions & attr = presentity->GetAttributes();
+        attr.Set(OpalPresentity::AuthNameKey, command.m_param.m_registrationInfo.m_authUserName);
+        attr.Set(OpalPresentity::AuthPasswordKey, command.m_param.m_registrationInfo.m_password);
+        attr.SetInteger(OpalPresentity::TimeToLiveKey, command.m_param.m_registrationInfo.m_timeToLive);
+#if OPAL_SIP
+        attr.Set(SIP_Presentity::PresenceAgentKey, command.m_param.m_registrationInfo.m_hostName);
+#endif
+        if (m_apiVersion >= 28) {
+          PStringOptions newAttr(command.m_param.m_registrationInfo.m_attributes);
+          for (PStringOptions::iterator it = newAttr.begin(); it != newAttr.end(); ++it)
+            attr.Set(it->first, it->second);
+        }
+
+        presentity->SetPresenceChangeNotifier(PCREATE_PresenceChangeNotifier(OnPresenceChange));
+
+        if (presentity->Open())
+          SET_MESSAGE_STRING(response, m_param.m_registrationInfo.m_identifier, presentity->GetAOR().AsString());
+        else
+          response.SetError("Could not register URI for presence.");
+      }
+    }
+    return;
+  }
+
   OpalEndPoint * ep = FindEndPoint(command.m_param.m_registrationInfo.m_protocol);
   if (ep == NULL) {
     response.SetError("No such protocol prefix");
@@ -2141,23 +2185,6 @@ void OpalManager_C::OnUserInputTone(OpalConnection & connection, char tone, int 
 }
 
 
-void OpalManager_C::OnMWIReceived(const PString & party, MessageWaitingType type, const PString & extraInfo)
-{
-  OpalMessageBuffer message(OpalIndMessageWaiting);
-  SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_party, party);
-  static const char * const TypeNames[] = { "Voice", "Fax", "Pager", "Multimedia", "Text", "None" };
-  if ((size_t)type < sizeof(TypeNames)/sizeof(TypeNames[0]))
-    SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_type, TypeNames[type]);
-  SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_extraInfo, extraInfo);
-  PTRACE(4, "OpalC API\tOnMWIReceived: party=\"" << message->m_param.m_messageWaiting.m_party
-                                   << "\" type=" << message->m_param.m_messageWaiting.m_type
-                                   << "\" info=" << message->m_param.m_messageWaiting.m_extraInfo);
-  PostMessage(message);
-
-  OpalManager::OnMWIReceived(party, type, extraInfo);
-}
-
-
 void OpalManager_C::OnProceeding(OpalConnection & connection)
 {
   OpalCall & call = connection.GetCall();
@@ -2192,6 +2219,135 @@ void OpalManager_C::OnClearedCall(OpalCall & call)
   PostMessage(message);
 
   OpalManager::OnClearedCall(call);
+}
+
+
+void OpalManager_C::OnMWIReceived(const PString & party, MessageWaitingType type, const PString & extraInfo)
+{
+  OpalMessageBuffer message(OpalIndMessageWaiting);
+  SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_party, party);
+  static const char * const TypeNames[] = { "Voice", "Fax", "Pager", "Multimedia", "Text", "None" };
+  if ((size_t)type < sizeof(TypeNames)/sizeof(TypeNames[0]))
+    SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_type, TypeNames[type]);
+  SET_MESSAGE_STRING(message, m_param.m_messageWaiting.m_extraInfo, extraInfo);
+  PTRACE(4, "OpalC API\tOnMWIReceived: party=\"" << message->m_param.m_messageWaiting.m_party
+                                   << "\" type=" << message->m_param.m_messageWaiting.m_type
+                                   << "\" info=" << message->m_param.m_messageWaiting.m_extraInfo);
+  PostMessage(message);
+
+  OpalManager::OnMWIReceived(party, type, extraInfo);
+}
+
+
+void OpalManager_C::OnPresenceChange(OpalPresentity &, std::auto_ptr<OpalPresenceInfo> info)
+{
+  OpalMessageBuffer message(OpalIndPresenceChange);
+  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_entity, info->m_entity.AsString());
+  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_target, info->m_target.AsString());
+  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_note,   info->m_note);
+  message->m_param.m_presenceStatus.m_state = (OpalPresenceStates)info->m_state;
+  PTRACE(4, "OpalC API\tOnPresenceChange:"
+            " entity=\"" << message->m_param.m_presenceStatus.m_entity << "\""
+            " target=\"" << message->m_param.m_presenceStatus.m_target << '"');
+  PostMessage(message);
+}
+
+
+void OpalManager_C::HandleAuthorisePresence(const OpalMessage & command, OpalMessageBuffer & response)
+{
+  OpalPresentity::Authorisation auth;
+  switch (command.m_param.m_presenceStatus.m_state) {
+    case OpalPresenceForbidden :
+      auth = OpalPresentity::AuthorisationDenied;
+      break;
+    case OpalPresenceUnavailable :
+      auth = OpalPresentity::AuthorisationDeniedPolitely;
+      break;
+    case OpalPresenceAvailable :
+      auth = OpalPresentity::AuthorisationPermitted;
+      break;
+    case OpalPresenceNone :
+      auth = OpalPresentity::AuthorisationRemove;
+      break;
+    default :
+      response.SetError("Invalid state for presence authorisation.");
+      return;
+  }
+
+  PSafePtr<OpalPresentity> presentity = GetPresentity(command.m_param.m_presenceStatus.m_entity);
+  if (presentity == NULL)
+    response.SetError("URI is not registered for presence.");
+  else if (!presentity->SetPresenceAuthorisation(command.m_param.m_presenceStatus.m_target, auth))
+    response.SetError("Could not set presence authorisation.");
+}
+
+
+void OpalManager_C::HandleSubscribePresence(const OpalMessage & command, OpalMessageBuffer & response)
+{
+  PSafePtr<OpalPresentity> presentity = GetPresentity(command.m_param.m_presenceStatus.m_entity);
+  if (presentity == NULL)
+    response.SetError("URI is not registered for presence.");
+  else if (IsNullString(command.m_param.m_presenceStatus.m_target))
+    response.SetError("No target URI provided.");
+  else if (!presentity->SubscribeToPresence(command.m_param.m_presenceStatus.m_target,
+                                            command.m_param.m_presenceStatus.m_state != OpalPresenceNone,
+                                            command.m_param.m_presenceStatus.m_note))
+    response.SetError("Could not subscribe for presence status.");
+}
+
+
+void OpalManager_C::HandleSetLocalPresence(const OpalMessage & command, OpalMessageBuffer & response)
+{
+  PSafePtr<OpalPresentity> presentity = GetPresentity(command.m_param.m_presenceStatus.m_entity);
+  if (presentity == NULL)
+    response.SetError("URI is not registered for presence.");
+  else {
+    OpalPresenceInfo::State oldState;
+    PString note;
+    if (!presentity->GetLocalPresence(oldState, note))
+      response.SetError("Could not get local presence state.");
+    else if (!presentity->SetLocalPresence((OpalPresenceInfo::State)command.m_param.m_presenceStatus.m_state,
+                                                                    command.m_param.m_presenceStatus.m_note))
+      response.SetError("Could not set local presence state.");
+    else {
+      response->m_param.m_presenceStatus.m_state = (OpalPresenceStates)oldState;
+      SET_MESSAGE_STRING(response, m_param.m_presenceStatus.m_note, note);
+    }
+  }
+}
+
+
+void OpalManager_C::HandleSendIM(const OpalMessage & command, OpalMessageBuffer & response)
+{
+  OpalIM im;
+  im.m_from = command.m_param.m_instantMessage.m_from;
+  im.m_to = command.m_param.m_instantMessage.m_to;
+  im.m_conversationId = command.m_param.m_instantMessage.m_id;
+
+  if (command.m_param.m_instantMessage.m_bodyCount == 0)
+    im.m_bodies[PMIMEInfo::TextPlain()] = command.m_param.m_instantMessage.m_textBody;
+  else {
+    for (unsigned i = 0; i < command.m_param.m_instantMessage.m_bodyCount; ++i)
+      im.m_bodies[command.m_param.m_instantMessage.m_mimeType[i]] = command.m_param.m_instantMessage.m_bodies[i];
+  }
+
+  if (Message(im))
+    SET_MESSAGE_STRING(response, m_param.m_instantMessage.m_id, im.m_conversationId);
+  else
+    response.SetError("Could not send instant message.");
+}
+
+
+void OpalManager_C::OnMessageReceived(const OpalIM & im)
+{
+  OpalMessageBuffer message(OpalIndReceiveIM);
+  SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_from, im.m_from.AsString());
+  SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_to,   im.m_to.AsString());
+  SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_id,   im.m_conversationId);
+  PTRACE(4, "OpalC API\tOnMessageReceived:"
+            " from=\"" << message->m_param.m_instantMessage.m_from << "\""
+            " to=\"" << message->m_param.m_instantMessage.m_to << '"');
+  PostMessage(message);
 }
 
 
