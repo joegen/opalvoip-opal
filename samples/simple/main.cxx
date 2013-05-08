@@ -646,16 +646,13 @@ PBoolean MyManager::Initialise(PArgList & args)
   // Create IAX2 protocol handler
 
   if (!args.HasOption("no-iax2")) {
-    PINDEX port = 0;
-    if (args.HasOption("iaxport"))
-      port = args.GetOptionString("iaxport").AsInteger();
-    cerr << " port is " << port << endl;
+    iax2EP = new IAX2EndPoint(*this);
 
-    if (port > 0)
-      iax2EP = new IAX2EndPoint(*this, (WORD)port);
-    else
-      iax2EP = new IAX2EndPoint(*this);
-    
+    PStringArray listeners;
+    if (args.HasOption("iaxport"))
+      listeners += "udp$*:" + args.GetOptionString("iaxport");
+    iax2EP->StartListeners(listeners);
+
     if (!iax2EP->InitialisedOK()) {
       cerr << "IAX2 Endpoint is not initialised correctly" << endl;
       cerr << "Is there another application using the iax port? " << endl;
