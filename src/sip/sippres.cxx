@@ -105,7 +105,7 @@ SIP_Presentity::SIP_Presentity()
   , m_subProtocol(e_OMA)
   , m_watcherInfoVersion(-1)
 {
-  m_attributes.Set(SubProtocolKey, "OMA");
+  m_attributes.Set(SubProtocolKey, "Agent");
 }
 
 
