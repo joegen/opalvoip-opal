@@ -2105,14 +2105,16 @@ void MyManager::OnPasteSpeedDial(wxCommandEvent & WXUNUSED(event))
         wxStringTokenizer tabbedLines(myFormatData.GetText(), wxT("\r\n"));
         while (tabbedLines.HasMoreTokens()) {
           wxStringTokenizer tabbedText(tabbedLines.GetNextToken(), wxT("\t"), wxTOKEN_RET_EMPTY_ALL);
-          SpeedDialInfo info;
-          info.m_Name = MakeUniqueSpeedDialName(m_speedDials, tabbedText.GetNextToken());
-          info.m_Number = tabbedText.GetNextToken();
-          info.m_Address = tabbedText.GetNextToken();
-          info.m_Description = tabbedText.GetNextToken();
-          info.m_Presentity = tabbedText.GetNextToken();
+          if (tabbedText.CountTokens() >= 5) {
+            SpeedDialInfo info;
+            info.m_Name = MakeUniqueSpeedDialName(m_speedDials, tabbedText.GetNextToken());
+            info.m_Number = tabbedText.GetNextToken();
+            info.m_Address = tabbedText.GetNextToken();
+            info.m_Description = tabbedText.GetNextToken();
+            info.m_Presentity = tabbedText.GetNextToken();
 
-          UpdateSpeedDial(INT_MAX, info, true);
+            UpdateSpeedDial(INT_MAX, info, true);
+          }
         }
       }
     }
@@ -2141,7 +2143,7 @@ void MyManager::OnDeleteSpeedDial(wxCommandEvent & WXUNUSED(event))
     wxConfigBase * config = wxConfig::Get();
     config->SetPath(SpeedDialsGroup);
     config->DeleteGroup(info->m_Name);
-    m_speedDials->DeleteItem(m_speedDials->FindItem(-1, info->m_Name, true));
+    m_speedDials->DeleteItem(m_speedDials->FindItem(-1, info->m_Name, false));
     m_speedDialInfo.erase(*info);
   }
 }
