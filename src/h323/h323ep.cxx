@@ -112,8 +112,6 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   , disableH460(false)
 #endif
 {
-  defaultSignalPort = 1720; // Set port in OpalEndPoint class
-
   localAliasNames.AppendString(defaultLocalPartyName);
 
   secondaryConnectionsActive.DisallowDeleteObjects();
@@ -158,6 +156,12 @@ PString H323EndPoint::GetDefaultTransport() const
          ",tls$:1300"
 #endif
     ;
+}
+
+
+WORD H323EndPoint::GetDefaultSignalPort() const
+{
+  return DefaultTcpSignalPort;
 }
 
 

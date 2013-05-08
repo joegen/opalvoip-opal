@@ -55,11 +55,9 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-IAX2EndPoint::IAX2EndPoint(OpalManager & mgr, unsigned short port)
+IAX2EndPoint::IAX2EndPoint(OpalManager & mgr)
   : OpalEndPoint(mgr, "iax2", CanTerminateCall|SupportsE164)
-  , localPort(port)
 {
-  
   localUserName = mgr.GetDefaultUserName();
   localNumber   = "1234";
   
@@ -126,6 +124,18 @@ IAX2EndPoint::~IAX2EndPoint()
     delete sock; 
   
   PTRACE(6, "Iax2Ep\tDESTRUCTOR of IAX2 endpoint has Finished.");  
+}
+
+
+PString IAX2EndPoint::GetDefaultTransport() const
+{
+  return OpalTransportAddress::UdpPrefix();
+}
+
+
+WORD IAX2EndPoint::GetDefaultSignalPort() const
+{
+  return DefaultUdpPort;
 }
 
 
@@ -458,16 +468,16 @@ PBoolean IAX2EndPoint::Initialise()
   rand.SetSeed((DWORD)(PTime().GetTimeInSeconds() + 1));
   callnumbs = PRandom::Number() % 32000;
   
-  sock = new PUDPSocket(localPort);
+  sock = new PUDPSocket(GetDefaultSignalPort());
   PTRACE(4, "IAX2EndPoint\tCreate Socket " << sock->GetPort());
   
-  if (!sock->Listen(INADDR_ANY, 0, localPort)) {
-    PTRACE(3, "Receiver\tFailed to listen for incoming connections on " << localPort);
-    PTRACE(3, "Receiver\tFailed because the socket:::" << sock->GetErrorText());
+  if (!sock->Listen(INADDR_ANY, 0, sock->GetPort())) {
+    PTRACE(2, "Receiver\tFailed to listen for incoming connections on "
+           << sock->GetPort() << " - error: " << sock->GetErrorText());
     return false;
   }
   
-  PTRACE(6, "Receiver\tYES.. Ready for incoming connections on " << localPort);
+  PTRACE(5, "Receiver\tYES.. Ready for incoming connections on " << sock->GetPort());
   
   transmitter = new IAX2Transmit(*this, *sock);
   receiver    = new IAX2Receiver(*this, *sock);
