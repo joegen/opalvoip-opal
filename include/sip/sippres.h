@@ -282,7 +282,8 @@ class SIP_Presentity : public OpalPresentityWithCommandThread, public PValidated
 
     SIPEndPoint * m_endpoint;
     SubProtocol   m_subProtocol;
-    PString       m_presenceAgent;
+    SIPURL        m_presenceAgentURL;
+    PURL          m_defaultRootURL;
     PString       m_watcherSubscriptionAOR;
     int           m_watcherInfoVersion;
     PString       m_publishedTupleId;

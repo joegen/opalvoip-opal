@@ -168,18 +168,17 @@ bool SIP_Presentity::Open()
     return false;
   }
 
-  m_presenceAgent.MakeEmpty(); // Make invalid
-
   if (m_subProtocol == e_PeerToPeer) {
+    m_presenceAgentURL = PString::Empty();
     PTRACE(3, "SIPPres\tUsing peer to peer mode for " << m_aor);
   }
   else {
     // find presence server for Presentity as per RFC 3861
     // if not found, look for default presence server setting
     // if none, use hostname portion of domain name
-    m_presenceAgent = m_attributes.Get(PresenceAgentKey);
-    if (m_presenceAgent.IsEmpty()) {
-      m_presenceAgent = m_aor.GetHostPort();
+    PCaselessString presenceAgent = m_attributes.Get(PresenceAgentKey);
+    if (presenceAgent.IsEmpty()) {
+      presenceAgent = m_aor.GetHostPort();
 
 #if OPAL_PTLIB_DNS_RESOLVER
       if (m_aor.GetScheme() == "pres") {
@@ -188,12 +187,23 @@ bool SIP_Presentity::Open()
         PTRACE(2, "SIPPres\tSRV lookup for '_pres._sip." << m_aor.GetHostName()
                << "' " << (found ? "succeeded" : "failed"));
         if (found)
-          m_presenceAgent = hosts.front();
+          presenceAgent = hosts.front();
       }
 #endif // OPAL_PTLIB_DNS_RESOLVER
     }
 
-    PTRACE(3, "SIPPres\tUsing " << m_presenceAgent << " as presence server for " << m_aor);
+    m_presenceAgentURL.Parse(presenceAgent);
+    m_presenceAgentURL.SetParamVar("transport", m_attributes.Get(TransportKey, "tcp").ToLower());
+
+    m_defaultRootURL.Parse(m_attributes.Get(XcapRootKey), "http");
+    if (m_defaultRootURL.IsEmpty()) {
+      presenceAgent.Splice("http://", 0, presenceAgent.NumCompare("sip:") == EqualTo ? 4 : 0);
+      presenceAgent += '/';
+      m_defaultRootURL.Parse(presenceAgent);
+      m_defaultRootURL.SetPort(0);
+    }
+
+    PTRACE(3, "SIPPres\tPresentity " << m_aor << " using agent " << m_presenceAgentURL << " and XCAP root " << m_defaultRootURL);
   }
 
   m_watcherSubscriptionAOR.MakeEmpty();
@@ -276,8 +286,7 @@ void SIP_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPresenceC
 
     param.m_localAddress    = m_aor.AsString();
     param.m_addressOfRecord = cmd.m_presentity;
-    if (m_subProtocol >= e_XCAP)
-      param.m_remoteAddress = m_presenceAgent + ";transport=" + m_attributes.Get(TransportKey, "tcp").ToLower();
+    param.m_remoteAddress   = m_presenceAgentURL;
     param.m_authID          = m_attributes.Get(OpalPresentity::AuthNameKey, m_aor.GetUserName());
     param.m_password        = m_attributes.Get(OpalPresentity::AuthPasswordKey);
     param.m_expire          = GetExpiryTime();
@@ -380,7 +389,7 @@ void SIP_Presentity::Internal_SubscribeToWatcherInfo(const SIPWatcherInfoCommand
   param.m_contentType      = "application/watcherinfo+xml";
   param.m_localAddress     = aorStr;
   param.m_addressOfRecord  = aorStr;
-  param.m_remoteAddress    = m_presenceAgent + ";transport=" + m_attributes.Get(TransportKey, "tcp").ToLower();
+  param.m_remoteAddress    = m_presenceAgentURL;
   param.m_authID           = m_attributes.Get(OpalPresentity::AuthNameKey, m_aor.GetUserName());
   param.m_password         = m_attributes.Get(OpalPresentity::AuthPasswordKey);
   param.m_expire           = GetExpiryTime();
@@ -556,8 +565,7 @@ void SIP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceComman
   sipPresence.m_personId = PString(++g_idNumber);
   SetPIDFEntity(sipPresence.m_entity);
   sipPresence.m_contact =  m_aor;  // As required by OMA-TS-Presence_SIMPLE-V2_0-20090917-C
-  if (m_subProtocol != e_PeerToPeer)
-    sipPresence.m_presenceAgent = m_presenceAgent;
+  sipPresence.m_presenceAgent = m_presenceAgentURL.AsString();
   sipPresence.m_state = cmd.m_state;
   sipPresence.m_note = cmd.m_note;
 
@@ -642,7 +650,7 @@ void SIP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationReques
   }
 
   XCAPClient xcap;
-  InitRootXcap(xcap);
+  xcap.SetRoot(m_defaultRootURL);
   xcap.SetApplicationUniqueID(m_attributes.Get(XcapAuthAuidKey,
                 m_subProtocol == e_OMA ? "org.openmobilealliance.pres-rules" : "pres-rules")); // As per RFC5025/9.1
   xcap.SetContentType("application/auth-policy+xml");   // As per RFC5025/9.4
@@ -786,18 +794,9 @@ void SIP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationReques
 }
 
 
-void SIP_Presentity::InitRootXcap(XCAPClient & xcap)
-{
-  PString root = m_attributes.Get(XcapRootKey);
-  if (root.IsEmpty())
-    root = "http:" + m_presenceAgent + '/';
-  xcap.SetRoot(root);
-}
-
-
 void SIP_Presentity::InitBuddyXcap(XCAPClient & xcap, const PString & entryName, const PString & listName)
 {
-  InitRootXcap(xcap);
+  xcap.SetRoot(m_defaultRootURL);
   xcap.SetApplicationUniqueID("resource-lists");            // As per RFC5025/9.1
   xcap.SetContentType("application/resource-lists+xml");    // As per RFC5025/9.4
   xcap.SetUserIdentifier(m_aor.AsString());                 // As per RFC5025/9.7
@@ -1061,7 +1060,7 @@ OpalPresentity::BuddyStatus SIP_Presentity::SubscribeBuddyListEx(PINDEX & numSuc
 
   PXML xml;
   XCAPClient xcap;
-  InitRootXcap(xcap);
+  xcap.SetRoot(m_defaultRootURL);
   xcap.SetApplicationUniqueID("rls-services");
   xcap.SetContentType("application/rls-services+xml");
   xcap.SetUserIdentifier(m_aor.AsString());
