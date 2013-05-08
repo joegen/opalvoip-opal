@@ -383,6 +383,14 @@ static void HandleMessages(unsigned timeout)
           printf("Call cleared: %s\n", message->m_param.m_callCleared.m_reason);
         break;
 
+      case OpalIndPresenceChange :
+        printf("Presence change: entity=%s target=%s state=%d note=%s.\n",
+               message->m_param.m_presenceStatus.m_entity,
+               message->m_param.m_presenceStatus.m_target,
+               message->m_param.m_presenceStatus.m_state,
+               message->m_param.m_presenceStatus.m_note);
+        break;
+
       default :
         break;
     }
@@ -601,6 +609,64 @@ int DoPlay(const char * to, const char * file)
 }
 
 
+int DoPresence(const char * local, const char * remote, const char * pwd, const char * host)
+{
+  // Example cmd line: presence fred@flintstone.com wilma@flintstone.com
+  OpalMessage command;
+  OpalMessage * response;
+
+  printf("Registering presentity %s\n", local);
+
+  memset(&command, 0, sizeof(command));
+  command.m_type = OpalCmdRegistration;
+  command.m_param.m_registrationInfo.m_protocol = "pres";
+  command.m_param.m_registrationInfo.m_identifier = local;
+  command.m_param.m_registrationInfo.m_hostName = host;
+  command.m_param.m_registrationInfo.m_password = pwd;
+  command.m_param.m_registrationInfo.m_timeToLive = 300;
+
+  if ((response = MySendCommand(&command, "Could not register presentity")) == NULL)
+    return 0;
+
+  FreeMessageFunction(response);
+
+  printf("Subscribing to presentity %s\n", remote);
+
+  memset(&command, 0, sizeof(command));
+  command.m_type = OpalCmdSubscribePresence;
+  command.m_param.m_presenceStatus.m_entity = local;
+  command.m_param.m_presenceStatus.m_target = remote;
+  command.m_param.m_presenceStatus.m_state = OpalPresenceAuthRequest;
+
+  if ((response = MySendCommand(&command, "Could not subscribe to presentity")) == NULL)
+    return 0;
+
+  FreeMessageFunction(response);
+  return 1;
+}
+
+
+int DoPresenceChange(const char * local, OpalPresenceStates state)
+{
+  OpalMessage command;
+  OpalMessage * response;
+
+  printf("Changing status for presentity %s\n", local);
+
+  memset(&command, 0, sizeof(command));
+  command.m_type = OpalCmdSetLocalPresence;
+  command.m_param.m_presenceStatus.m_entity = local;
+  command.m_param.m_presenceStatus.m_state = state;
+  command.m_param.m_presenceStatus.m_note = state ==OpalPresenceUnavailable ? "Busy" : "Talk to me";
+
+  if ((response = MySendCommand(&command, "Could not change status of presentity")) == NULL)
+    return 0;
+
+  FreeMessageFunction(response);
+  return 1;
+}
+
+
 typedef enum
 {
   OpListen,
@@ -613,14 +679,29 @@ typedef enum
   OpSubscribe,
   OpRecord,
   OpPlay,
+  OpPresence,
   NumOperations
 } Operations;
 
 static const char * const OperationNames[NumOperations] =
-  { "listen", "call", "mute", "hold", "transfer", "consult", "register", "subscribe", "record", "play" };
+  { "listen", "call", "mute", "hold", "transfer", "consult", "register", "subscribe", "record", "play", "presence" };
 
 static int const RequiredArgsForOperation[NumOperations] =
-  { 2, 3, 3, 3, 4, 4, 3, 3, 3, 3 };
+  { 2, 3, 3, 3, 4, 4, 3, 3, 3, 3, 4 };
+
+static const char * const OperationHelp[NumOperations] = {
+  "",
+  "<destination-URL> [ <local-URL> ]",
+  "<destination-URL>",
+  "<destination-URL>",
+  "<destination-URL> <transfer-URL>",
+  "<destination-URL> <transfer-URL>",
+  "<address-of-record> [ <pwd> ]",
+  "<package> <address-of-record> [ <pwd> ]",
+  "<destination-URL> <filename>",
+  "<destination-URL> <filename>",
+  "<local-URL> <remote-URL> [ <pwd> [ <host> ] ]"
+};
 
 
 static Operations GetOperation(const char * name)
@@ -643,13 +724,9 @@ int main(int argc, char * argv[])
   
   if (argc < 2 || (operation = GetOperation(argv[1])) == NumOperations || argc < RequiredArgsForOperation[operation]) {
     Operations op;
-    fputs("usage: c_api { ", stderr);
-    for (op = OpListen; op < NumOperations; op++) {
-      if (op > OpListen)
-        fputs(" | ", stderr);
-      fputs(OperationNames[op], stderr);
-    }
-    fputs(" } [ A-party [ B-party | file ] ]\n", stderr);
+    fputs("usage:\n", stderr);
+    for (op = OpListen; op < NumOperations; op++)
+      fprintf(stderr, "  c_api %s %s\n", OperationNames[op], OperationHelp[op]);
     return 1;
   }
 
@@ -740,6 +817,18 @@ int main(int argc, char * argv[])
 
     case OpPlay :
       if (!DoPlay(argv[2], argv[3]))
+        break;
+      HandleMessages(INT_MAX); // More or less forever
+      break;
+
+    case OpPresence :
+      if (!DoPresence(argv[2], argv[3], argc > 4 ? argv[4] : NULL, argc > 5 ? argv[5] : NULL))
+        break;
+      HandleMessages(5000);
+      if (!DoPresenceChange(argv[2], OpalPresenceUnavailable))
+        break;
+      HandleMessages(5000);
+      if (!DoPresenceChange(argv[2], OpalPresenceAvailable))
         break;
       HandleMessages(INT_MAX); // More or less forever
       break;
