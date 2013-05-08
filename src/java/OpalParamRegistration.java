@@ -107,6 +107,14 @@ public class OpalParamRegistration {
     return OPALJNI.OpalParamRegistration_m_eventPackage_get(swigCPtr, this);
   }
 
+  public void setM_attributes(String value) {
+    OPALJNI.OpalParamRegistration_m_attributes_set(swigCPtr, this, value);
+  }
+
+  public String getM_attributes() {
+    return OPALJNI.OpalParamRegistration_m_attributes_get(swigCPtr, this);
+  }
+
   public OpalParamRegistration() {
     this(OPALJNI.new_OpalParamRegistration(), true);
   }

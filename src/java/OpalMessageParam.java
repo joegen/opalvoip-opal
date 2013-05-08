@@ -204,6 +204,24 @@ public class OpalMessageParam {
     return (cPtr == 0) ? null : new OpalStatusIVR(cPtr, false);
   }
 
+  public void setM_presenceStatus(OpalPresenceStatus value) {
+    OPALJNI.OpalMessageParam_m_presenceStatus_set(swigCPtr, this, OpalPresenceStatus.getCPtr(value), value);
+  }
+
+  public OpalPresenceStatus getM_presenceStatus() {
+    long cPtr = OPALJNI.OpalMessageParam_m_presenceStatus_get(swigCPtr, this);
+    return (cPtr == 0) ? null : new OpalPresenceStatus(cPtr, false);
+  }
+
+  public void setM_instantMessage(OpalInstantMessage value) {
+    OPALJNI.OpalMessageParam_m_instantMessage_set(swigCPtr, this, OpalInstantMessage.getCPtr(value), value);
+  }
+
+  public OpalInstantMessage getM_instantMessage() {
+    long cPtr = OPALJNI.OpalMessageParam_m_instantMessage_get(swigCPtr, this);
+    return (cPtr == 0) ? null : new OpalInstantMessage(cPtr, false);
+  }
+
   public OpalMessageParam() {
     this(OPALJNI.new_OpalMessageParam(), true);
   }
