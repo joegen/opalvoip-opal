@@ -55,7 +55,6 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
   : manager(mgr)
   , prefixName(prefix)
   , attributeBits(attributes)
-  , defaultSignalPort(0)
   , m_maxSizeUDP(4096)
   , productInfo(mgr.GetProductInfo())
   , defaultLocalPartyName(manager.GetDefaultUserName())
@@ -227,7 +226,13 @@ PBoolean OpalEndPoint::StartListener(OpalListener * listener)
 
 PString OpalEndPoint::GetDefaultTransport() const
 {
-  return OpalTransportAddress::TcpPrefix();
+  return PString::Empty();
+}
+
+
+WORD OpalEndPoint::GetDefaultSignalPort() const
+{
+  return 0;
 }
 
 

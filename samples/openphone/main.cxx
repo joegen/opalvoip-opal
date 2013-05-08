@@ -2105,14 +2105,16 @@ void MyManager::OnPasteSpeedDial(wxCommandEvent & WXUNUSED(event))
         wxStringTokenizer tabbedLines(myFormatData.GetText(), wxT("\r\n"));
         while (tabbedLines.HasMoreTokens()) {
           wxStringTokenizer tabbedText(tabbedLines.GetNextToken(), wxT("\t"), wxTOKEN_RET_EMPTY_ALL);
-          SpeedDialInfo info;
-          info.m_Name = MakeUniqueSpeedDialName(m_speedDials, tabbedText.GetNextToken());
-          info.m_Number = tabbedText.GetNextToken();
-          info.m_Address = tabbedText.GetNextToken();
-          info.m_Description = tabbedText.GetNextToken();
-          info.m_Presentity = tabbedText.GetNextToken();
+          if (tabbedText.CountTokens() >= 5) {
+            SpeedDialInfo info;
+            info.m_Name = MakeUniqueSpeedDialName(m_speedDials, tabbedText.GetNextToken());
+            info.m_Number = tabbedText.GetNextToken();
+            info.m_Address = tabbedText.GetNextToken();
+            info.m_Description = tabbedText.GetNextToken();
+            info.m_Presentity = tabbedText.GetNextToken();
 
-          UpdateSpeedDial(INT_MAX, info, true);
+            UpdateSpeedDial(INT_MAX, info, true);
+          }
         }
       }
     }
@@ -2141,7 +2143,7 @@ void MyManager::OnDeleteSpeedDial(wxCommandEvent & WXUNUSED(event))
     wxConfigBase * config = wxConfig::Get();
     config->SetPath(SpeedDialsGroup);
     config->DeleteGroup(info->m_Name);
-    m_speedDials->DeleteItem(m_speedDials->FindItem(-1, info->m_Name, true));
+    m_speedDials->DeleteItem(m_speedDials->FindItem(-1, info->m_Name, false));
     m_speedDialInfo.erase(*info);
   }
 }
@@ -3553,18 +3555,18 @@ bool MyManager::MonitorPresence(const PString & aor, const PString & uri, bool s
 }
 
 
-void MyManager::OnPresenceChange(OpalPresentity &, OpalPresenceInfo info)
+void MyManager::OnPresenceChange(OpalPresentity &, std::auto_ptr<OpalPresenceInfo> info)
 {
   int count = m_speedDials->GetItemCount();
   for (int index = 0; index < count; index++) {
     SpeedDialInfo * sdInfo = (SpeedDialInfo *)m_speedDials->GetItemData(index);
 
     SIPURL speedDialURL(sdInfo->m_Address.p_str());
-    if (info.m_entity == speedDialURL ||
-        (info.m_entity.GetScheme() == "pres" &&
-        info.m_entity.GetUserName() == speedDialURL.GetUserName() &&
-        info.m_entity.GetHostName() == speedDialURL.GetHostName())) {
-      PwxString status = info.m_note;
+    if ( info->m_entity == speedDialURL ||
+        (info->m_entity.GetScheme() == "pres" &&
+         info->m_entity.GetUserName() == speedDialURL.GetUserName() &&
+         info->m_entity.GetHostName() == speedDialURL.GetHostName())) {
+      PwxString status = info->m_note;
 
       wxListItem item;
       item.m_itemId = index;
@@ -3575,7 +3577,7 @@ void MyManager::OnPresenceChange(OpalPresentity &, OpalPresenceInfo info)
       IconStates oldIcon = (IconStates)item.m_image;
 
       IconStates newIcon;
-      switch (info.m_state) {
+      switch (info->m_state) {
         case OpalPresenceInfo::Unchanged :
           newIcon = oldIcon;
           break;
@@ -3610,7 +3612,7 @@ void MyManager::OnPresenceChange(OpalPresentity &, OpalPresenceInfo info)
 
       if (oldIcon != newIcon) {
         m_speedDials->SetItemImage(index, newIcon);
-        LogWindow << "Presence notification received for " << info.m_entity << ", \"" << status << '"' << endl;
+        LogWindow << "Presence notification received for " << info->m_entity << ", \"" << status << '"' << endl;
       }
       break;
     }

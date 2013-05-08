@@ -1306,7 +1306,14 @@ class H323EndPoint : public OpalRTPEndPoint
     unsigned GetNextH450CallIdentityValue() const { return ++nextH450CallIdentity; }
 #endif
 
-    PString GetDefaultTransport() const;
+    /**Get the default transports for the endpoint type.
+       Overrides the default behaviour to return udp and tcp.
+      */
+    virtual PString GetDefaultTransport() const;
+
+    /**Get the default signal port for this endpoint.
+     */
+    virtual WORD GetDefaultSignalPort() const;
 
     /// Gets the current regular expression for the compatibility issue
     PString GetCompatibility(

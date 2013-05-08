@@ -399,14 +399,14 @@ void MyManager::AuthorisationRequest(OpalPresentity & presentity, OpalPresentity
 }
 
 
-void MyManager::PresenceChange(OpalPresentity & presentity, OpalPresenceInfo info)
+void MyManager::PresenceChange(OpalPresentity & presentity, std::auto_ptr<OpalPresenceInfo> info)
 {
   cout << "Presentity " << presentity.GetAOR();
-  if (info.m_entity != info.m_target)
-    cout << " received presence change from " << info.m_entity;
+  if (info->m_entity != info->m_target)
+    cout << " received presence change from " << info->m_entity;
   else
     cout << " changed locally";
-  cout << " to " << info.AsString() << endl;
+  cout << " to " << info->AsString() << endl;
 }
 
 
