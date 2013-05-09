@@ -271,8 +271,8 @@ class OpalMediaSession : public PSafeObject
 
 typedef PParamFactory<OpalMediaSession, const OpalMediaSession::Init &, PCaselessString> OpalMediaSessionFactory;
 
-#ifdef OPAL_SRTP
-PFACTORY_LOAD(OpalSRTPSession);
+#if OPAL_SRTP
+  PFACTORY_LOAD(OpalSRTPSession);
 #endif
 
 
