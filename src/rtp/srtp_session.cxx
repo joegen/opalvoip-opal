@@ -699,4 +699,6 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
 }
 
 
+#else
+  #pragma message("SRTP support DISABLED")
 #endif // OPAL_SRTP

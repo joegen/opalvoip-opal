@@ -1044,7 +1044,7 @@ OpalMessage * OpalManager_C::SendMessage(const OpalMessage * message)
   OpalMessageBuffer response(message->m_type);
 
   HandlerFunc func = message->m_type < OpalMessageTypeCount ? m_handlers[message->m_type] : NULL;
-  if (func == NULL)
+  if (func == (HandlerFunc)NULL)
     return NULL;
 
   (this->*func)(*message, response);
@@ -1543,7 +1543,7 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
         attr.Set(OpalPresentity::AuthNameKey, command.m_param.m_registrationInfo.m_authUserName);
         attr.Set(OpalPresentity::AuthPasswordKey, command.m_param.m_registrationInfo.m_password);
         attr.SetInteger(OpalPresentity::TimeToLiveKey, command.m_param.m_registrationInfo.m_timeToLive);
-#if OPAL_SIP
+#if P_EXPAT && OPAL_SIP
         attr.Set(SIP_Presentity::PresenceAgentKey, command.m_param.m_registrationInfo.m_hostName);
 #endif
         if (m_apiVersion >= 28) {
