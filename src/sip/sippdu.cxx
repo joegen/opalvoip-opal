@@ -741,6 +741,36 @@ PString SIPURLList::ToString() const
 }
 
 
+SIPURL SIPURLList::FindCompatible(const OpalTransportAddress & addr PTRACE_PARAM(, const char * listType)) const
+{
+  PTRACE(5, "SIP\tFinding " << addr << " in " << listType << " addresses: " << *this);
+
+  SIPURLList::const_iterator it;
+
+  // First look for exact match
+  for (it = begin(); it != end(); ++it) {
+    if (addr.IsEquivalent(it->GetTransportAddress()))
+      return *it;
+  }
+
+  // Then look for match on address only (same interface)
+  OpalTransportAddress wild(addr.GetHostName(), 0, addr.GetProtoPrefix());
+  for (it = begin(); it != end(); ++it) {
+    if (wild.IsEquivalent(it->GetTransportAddress(), true))
+      return *it;
+  }
+
+  // Then look for something of the same type (UDP/TCP/TLS)
+  for (it = begin(); it != end(); ++it) {
+    if (addr.GetProto() == it->GetTransportAddress().GetProto())
+      return *it;
+  }
+
+  // Give up
+  return SIPURL();
+}
+
+
 ostream & operator<<(ostream & strm, const SIPURLList & urls)
 {
   bool outputCommas = false;

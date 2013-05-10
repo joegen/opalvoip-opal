@@ -250,6 +250,7 @@ class SIPURLList : public std::list<SIPURL>
       bool reversed = false
     );
     PString ToString() const;
+    SIPURL FindCompatible(const OpalTransportAddress & addr PTRACE_PARAM(, const char * listType)) const;
     friend ostream & operator<<(ostream & strm, const SIPURLList & urls);
 };
 
