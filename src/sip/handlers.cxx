@@ -1054,23 +1054,6 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
     return response->Send();
   }
 
-  // check the ContentType
-  if (!m_parameters.m_contentType.IsEmpty()) {
-    PCaselessString requestContentType = requestMIME.GetContentType();
-    if (
-        (m_parameters.m_contentType.Find(requestContentType) == P_MAX_INDEX) && 
-        !(m_parameters.m_eventList && (requestContentType == "multipart/related")) &&
-        !((m_packageHandler != NULL) && m_packageHandler->ValidateContentType(requestContentType, requestMIME))
-        ) {
-      PTRACE(2, "SIPPres\tNOTIFY contains unsupported Content-Type \""
-             << requestContentType << "\", expecting \"" << m_parameters.m_contentType << "\" or multipart/related or other validated type");
-      response->SetStatusCode(SIP_PDU::Failure_UnsupportedMediaType);
-      response->GetMIME().SetAt("Accept", m_parameters.m_contentType);
-      response->SetInfo("Unsupported Content-Type");
-      return response->Send();
-    }
-  }
-
   // Check if we know how to deal with this event
   if (m_packageHandler == NULL && m_parameters.m_onNotify.IsNULL()) {
     PTRACE(2, "SIP\tNo handler for NOTIFY received for event \"" << requestEvent << '"');
@@ -1086,87 +1069,104 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
       SetExpire(expire.AsUnsigned());
   }
 
-  bool sendResponse = true;
-
   // Check for empty body, if so then is OK, just a ping ...
-  if (request.GetEntityBody().IsEmpty())
+  if (request.GetEntityBody().IsEmpty()) {
     response->SetStatusCode(SIP_PDU::Successful_OK);
-  else {
-    PMultiPartList parts;
-    if (!m_parameters.m_eventList || !requestMIME.DecodeMultiPartList(parts, request.GetEntityBody()))
-      sendResponse = DispatchNOTIFY(request, *response);
-    else {
-      // If GetMultiParts() returns true there as at least one part and that
-      // part must be the meta list, guranteed by DecodeMultiPartList()
-      PMultiPartList::iterator iter = parts.begin();
+    return response->Send();
+  }
 
-      // First part is always Meta Information
-      if (iter->m_mime.GetString(PMIMEInfo::ContentTypeTag) != "application/rlmi+xml") {
-        PTRACE(2, "SIP\tNOTIFY received without RLMI as first multipart body");
-        response->SetInfo("No Resource List Meta-Information");
-        return response->Send();
-      }
-
-#if P_EXPAT
-      PXML xml;
-      if (!xml.Load(iter->m_textBody)) {
-        PTRACE(2, "SIP\tNOTIFY received with illegal RLMI\n"
-                  "Line " << xml.GetErrorLine() << ", Column " << xml.GetErrorColumn() << ": " << xml.GetErrorString());
-        response->SetInfo("Bad Resource List Meta-Information");
-        return response->Send();
-      }
-
-      if (parts.GetSize() == 1)
-        response->SetStatusCode(SIP_PDU::Successful_OK);
-      else {
-        while (++iter != parts.end()) {
-          SIP_PDU pdu(request.GetMethod());
-          SIPMIMEInfo & pduMIME = pdu.GetMIME();
-
-          pduMIME.AddMIME(iter->m_mime);
-          pdu.SetEntityBody(iter->m_textBody);
-
-          PStringToString cid;
-          if (iter->m_mime.GetComplex(PMIMEInfo::ContentIdTag, cid)) {
-            PINDEX index = 0;
-            PXMLElement * resource;
-            while ((resource = xml.GetElement("resource", index++)) != NULL) {
-              SIPURL uri = resource->GetAttribute("uri");
-              if (!uri.IsEmpty()) {
-                PXMLElement * instance = resource->GetElement("instance");
-                if (instance != NULL && instance->GetAttribute("cid") == cid[PString::Empty()]) {
-                  pduMIME.SetSubscriptionState(instance->GetAttribute("state"));
-                  PXMLElement * name = resource->GetElement("name");
-                  if (name != NULL)
-                    uri.SetDisplayName(name->GetData());
-                  pduMIME.SetFrom(uri);
-                  pduMIME.SetTo(uri);
-                  break;
-                }
-              }
-            }
-          }
-
-          if (DispatchNOTIFY(pdu, *response))
-            sendResponse = false;
-        }
-      }
-#else
-      for ( ; iter != parts.end(); ++iter) {
-        SIP_PDU pdu(request.GetMethod());
-        pdu.GetMIME().AddMIME(iter->m_mime);
-        pdu.SetEntityBody(iter->m_textBody);
-
-        if (DispatchNOTIFY(pdu, *response))
-          sendResponse = false;
-      }
-#endif
+  // check the ContentType
+  if (!m_parameters.m_contentType.IsEmpty()) {
+    PCaselessString requestContentType = requestMIME.GetContentType();
+    if (
+        (m_parameters.m_contentType.Find(requestContentType) == P_MAX_INDEX) && 
+        !(m_parameters.m_eventList && (requestContentType == "multipart/related")) &&
+        !((m_packageHandler != NULL) && m_packageHandler->ValidateContentType(requestContentType, requestMIME))
+        ) {
+      PTRACE(2, "SIPPres\tNOTIFY contains unsupported Content-Type \""
+              << requestContentType << "\", expecting \"" << m_parameters.m_contentType << "\" or multipart/related or other validated type");
+      response->SetStatusCode(SIP_PDU::Failure_UnsupportedMediaType);
+      response->GetMIME().SetAt("Accept", m_parameters.m_contentType);
+      response->SetInfo("Unsupported Content-Type");
+      return response->Send();
     }
   }
 
-  if (sendResponse)
-    response->Send();
-  return true;
+  PMultiPartList parts;
+  if (!m_parameters.m_eventList || !requestMIME.DecodeMultiPartList(parts, request.GetEntityBody())) {
+    if (DispatchNOTIFY(request, *response))
+      return true;
+    return response->Send();
+  }
+
+  // If GetMultiParts() returns true there as at least one part and that
+  // part must be the meta list, guranteed by DecodeMultiPartList()
+  PMultiPartList::iterator iter = parts.begin();
+
+  // First part is always Meta Information
+  if (iter->m_mime.GetString(PMIMEInfo::ContentTypeTag) != "application/rlmi+xml") {
+    PTRACE(2, "SIP\tNOTIFY received without RLMI as first multipart body");
+    response->SetInfo("No Resource List Meta-Information");
+    return response->Send();
+  }
+
+#if P_EXPAT
+  PXML xml;
+  if (!xml.Load(iter->m_textBody)) {
+    PTRACE(2, "SIP\tNOTIFY received with illegal RLMI\n"
+              "Line " << xml.GetErrorLine() << ", Column " << xml.GetErrorColumn() << ": " << xml.GetErrorString());
+    response->SetInfo("Bad Resource List Meta-Information");
+    return response->Send();
+  }
+
+  if (parts.GetSize() == 1) {
+    response->SetStatusCode(SIP_PDU::Successful_OK);
+    return response->Send();
+  }
+
+  while (++iter != parts.end()) {
+    SIP_PDU pdu(request.GetMethod());
+    SIPMIMEInfo & pduMIME = pdu.GetMIME();
+
+    pduMIME.AddMIME(iter->m_mime);
+    pdu.SetEntityBody(iter->m_textBody);
+
+    PStringToString cid;
+    if (iter->m_mime.GetComplex(PMIMEInfo::ContentIdTag, cid)) {
+      PINDEX index = 0;
+      PXMLElement * resource;
+      while ((resource = xml.GetElement("resource", index++)) != NULL) {
+        SIPURL uri = resource->GetAttribute("uri");
+        if (!uri.IsEmpty()) {
+          PXMLElement * instance = resource->GetElement("instance");
+          if (instance != NULL && instance->GetAttribute("cid") == cid[PString::Empty()]) {
+            pduMIME.SetSubscriptionState(instance->GetAttribute("state"));
+            PXMLElement * name = resource->GetElement("name");
+            if (name != NULL)
+              uri.SetDisplayName(name->GetData());
+            pduMIME.SetFrom(uri);
+            pduMIME.SetTo(uri);
+            break;
+          }
+        }
+      }
+    }
+
+    if (DispatchNOTIFY(pdu, *response))
+      return true;
+  }
+#else
+  for ( ; iter != parts.end(); ++iter) {
+    SIP_PDU pdu(request.GetMethod());
+    pdu.GetMIME().AddMIME(iter->m_mime);
+    pdu.SetEntityBody(iter->m_textBody);
+
+    if (DispatchNOTIFY(pdu, *response))
+      return true;
+  }
+#endif
+
+  return response->Send();
 }
 
 

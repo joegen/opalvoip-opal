@@ -434,7 +434,8 @@ enum {
   ID_ON_HOLD,
   ID_CLEARED,
   ID_STREAMS_CHANGED,
-  ID_ASYNC_NOTIFICATION
+  ID_ASYNC_NOTIFICATION,
+  ID_SET_TRAY_TIP_TEXT
 };
 
 DEFINE_EVENT_TYPE(wxEvtLogMessage)
@@ -444,6 +445,7 @@ DEFINE_EVENT_TYPE(wxEvtEstablished)
 DEFINE_EVENT_TYPE(wxEvtOnHold)
 DEFINE_EVENT_TYPE(wxEvtCleared)
 DEFINE_EVENT_TYPE(wxEvtAsyncNotification)
+DEFINE_EVENT_TYPE(wxEvtSetTrayTipText)
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -685,6 +687,7 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_COMMAND(ID_CLEARED,             wxEvtCleared,            MyManager::OnEvtCleared)
   EVT_COMMAND(ID_STREAMS_CHANGED,     wxEvtStreamsChanged,     MyManager::OnStreamsChanged)
   EVT_COMMAND(ID_ASYNC_NOTIFICATION,  wxEvtAsyncNotification,  MyManager::OnEvtAsyncNotification)
+  EVT_COMMAND(ID_SET_TRAY_TIP_TEXT,   wxEvtSetTrayTipText,     MyManager::OnSetTrayTipText)
   
 END_EVENT_TABLE()
 
@@ -3753,11 +3756,21 @@ void MyManager::ApplyMediaInfo()
 }
 
 
+void MyManager::OnSetTrayTipText(wxCommandEvent & theEvent)
+{
+  SetTrayTipText(theEvent.GetString());
+}
+
+
 void MyManager::SetTrayTipText(const PwxString & tip)
 {
-  PwxString text;
-  text << PProcess::Current().GetName() << " - " << tip;
-  m_taskBarIcon->SetIcon(wxICON(AppIcon), text);
+  if (PThread::Current() != &PProcess::Current())
+    PostEvent(wxEvtSetTrayTipText, ID_SET_TRAY_TIP_TEXT, tip);
+  else {
+    PwxString text;
+    text << PProcess::Current().GetName() << " - " << tip;
+    m_taskBarIcon->SetIcon(wxICON(AppIcon), text);
+  }
 }
 
 

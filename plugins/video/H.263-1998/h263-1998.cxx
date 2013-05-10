@@ -45,11 +45,9 @@
  * $Date$
  */
 
-#ifndef PLUGIN_CODEC_DLL_EXPORTS
 #include "../common/platform.h"
-#endif
 
-#define MY_CODEC FF_H263  // Name of codec (use C variable characters)
+#define MY_CODEC AV_H263  // Name of codec (use C variable characters)
 
 #define OPAL_H323 1
 #define OPAL_SIP 1

@@ -1863,41 +1863,27 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, const SIPConnection * conn
     SIPURL contact;
     if (transport == NULL)
       transport = pdu.GetTransport();
-    if (transport == NULL || transport->GetInterface().IsEmpty()) {
-      OpalTransportAddress listenAddress = listeners[0].GetLocalAddress();
-      contact = SIPURL(user, listenAddress);
-      PTRACE(4, "SIP\tUsing first listener address (" << listenAddress << ") for Contact");
-    }
-    else {
+    if (transport != NULL) {
       OpalTransportAddress localAddress = transport->GetLocalAddress();
 
       if (registrar != NULL) {
-        const SIPURLList & contacts = registrar->GetContacts();
-        PTRACE(5, "SIP\tChecking " << localAddress << " against " << contacts.ToString());
-
-        SIPURLList::const_iterator it;
-        for (it = contacts.begin(); it != contacts.end(); ++it) {
-          if (localAddress == it->GetTransportAddress())
-            break;
-        }
-
-        if (it == contacts.end()) {
-          for (it = contacts.begin(); it != contacts.end(); ++it) {
-            if (localAddress.IsCompatible(it->GetTransportAddress()))
-              break;
-          }
-        }
-
-        if (it != contacts.end()) {
-          contact = *it;
-          PTRACE(4, "SIP\tAdjusted Contact to " << contact << " from registration " << registrar->GetAddressOfRecord());
-        }
+        contact = registrar->GetContacts().FindCompatible(localAddress PTRACE_PARAM(, "registered"));
+        PTRACE_IF(4, !contact.IsEmpty(), "SIP\tAdjusted Contact to "
+                  << contact << " from registration " << registrar->GetAddressOfRecord());
       }
 
       if (contact.IsEmpty()) {
-        contact = SIPURL(user, localAddress);
-        PTRACE(4, "SIP\tUsing transport local address (" << localAddress << ") for Contact");
+        SIPURLList listenerAddresses;
+        for (OpalListenerList::iterator it = listeners.begin(); it != listeners.end(); ++it)
+          listenerAddresses.push_back(SIPURL(user, it->GetLocalAddress(transport->GetRemoteAddress())));
+        contact = listenerAddresses.FindCompatible(localAddress PTRACE_PARAM(, "listening"));
+        PTRACE_IF(4, !contact.IsEmpty(), "SIP\tAdjusted Contact to " << contact << " from listeners.");
       }
+    }
+
+    if (contact.IsEmpty()) {
+      contact = SIPURL(user, listeners[0].GetLocalAddress());
+      PTRACE(4, "SIP\tAdjusted Contact to " << contact << " from first listener.");
     }
 
     if (connection != NULL) {

@@ -1094,6 +1094,7 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     void OnEvtEstablished(wxCommandEvent & /*event*/ theEvent);
     void OnEvtOnHold(wxCommandEvent & /*event*/ theEvent);
     void OnEvtCleared(wxCommandEvent & /*event*/ theEvent);
+    void OnSetTrayTipText(wxCommandEvent & /*event*/);
 
     bool CanDoFax() const;
     bool CanDoIM() const;
