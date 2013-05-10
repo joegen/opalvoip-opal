@@ -55,6 +55,7 @@
   HINSTANCE hDLL;
 
   #define snprintf _snprintf
+  #define strncasecmp strnicmp
 
 #else // _WIN32
 
@@ -609,11 +610,13 @@ int DoPlay(const char * to, const char * file)
 }
 
 
-int DoPresence(const char * local, const char * remote, const char * pwd, const char * host)
+int DoPresence(const char * local, const char * remote, int argc, const char ** argv)
 {
   // Example cmd line: presence fred@flintstone.com wilma@flintstone.com
   OpalMessage command;
   OpalMessage * response;
+  char * attributes = NULL;
+  size_t attrLen = 0;
 
   printf("Registering presentity %s\n", local);
 
@@ -621,11 +624,31 @@ int DoPresence(const char * local, const char * remote, const char * pwd, const 
   command.m_type = OpalCmdRegistration;
   command.m_param.m_registrationInfo.m_protocol = "pres";
   command.m_param.m_registrationInfo.m_identifier = local;
-  command.m_param.m_registrationInfo.m_hostName = host;
-  command.m_param.m_registrationInfo.m_password = pwd;
   command.m_param.m_registrationInfo.m_timeToLive = 300;
 
-  if ((response = MySendCommand(&command, "Could not register presentity")) == NULL)
+  for (; argc > 0; --argc,++argv) {
+    if (strncasecmp(*argv, "pwd=", 4) == 0)
+      command.m_param.m_registrationInfo.m_password = *argv + 4;
+    else if (strncasecmp(*argv, "host=", 5) == 0)
+      command.m_param.m_registrationInfo.m_hostName = *argv + 5;
+    else {
+      const char * equal = strchr(*argv, '=');
+      if (equal != NULL) {
+        size_t argLen = strlen(*argv);
+        attributes = (char *)realloc(attributes, attrLen+argLen+2);
+        strcpy(attributes+attrLen, *argv);
+        strcpy(attributes+attrLen+argLen, "\n");
+        attrLen += argLen + 1;
+      }
+    }
+  }
+  command.m_param.m_registrationInfo.m_attributes = attributes;
+
+  response = MySendCommand(&command, "Could not register presentity");
+
+  free(attributes);
+
+  if (response == NULL)
     return 0;
 
   FreeMessageFunction(response);
@@ -700,7 +723,7 @@ static const char * const OperationHelp[NumOperations] = {
   "<package> <address-of-record> [ <pwd> ]",
   "<destination-URL> <filename>",
   "<destination-URL> <filename>",
-  "<local-URL> <remote-URL> [ <pwd> [ <host> ] ]"
+  "<local-URL> <remote-URL> [ <attr>=<value> ... ]    attr:=pwd/host/transport/sub-protocol etc"
 };
 
 
@@ -822,7 +845,7 @@ int main(int argc, char * argv[])
       break;
 
     case OpPresence :
-      if (!DoPresence(argv[2], argv[3], argc > 4 ? argv[4] : NULL, argc > 5 ? argv[5] : NULL))
+      if (!DoPresence(argv[2], argv[3], argc-4, argv+4))
         break;
       HandleMessages(5000);
       if (!DoPresenceChange(argv[2], OpalPresenceUnavailable))

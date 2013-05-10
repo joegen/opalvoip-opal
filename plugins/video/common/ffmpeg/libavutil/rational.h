@@ -2,20 +2,20 @@
  * rational numbers
  * Copyright (c) 2003 Michael Niedermayer <michaelni@gmx.at>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -31,6 +31,11 @@
 #include <stdint.h>
 #include <limits.h>
 #include "attributes.h"
+
+/**
+ * @addtogroup lavu_math
+ * @{
+ */
 
 /**
  * rational number numerator/denominator
@@ -110,6 +115,17 @@ AVRational av_add_q(AVRational b, AVRational c) av_const;
 AVRational av_sub_q(AVRational b, AVRational c) av_const;
 
 /**
+ * Invert a rational.
+ * @param q value
+ * @return 1 / q
+ */
+static av_always_inline AVRational av_inv_q(AVRational q)
+{
+    AVRational r = { q.den, q.num };
+    return r;
+}
+
+/**
  * Convert a double precision floating point number to a rational.
  * inf is expressed as {1,0} or {-1,0} depending on the sign.
  *
@@ -131,5 +147,9 @@ int av_nearer_q(AVRational q, AVRational q1, AVRational q2);
  * @return the index of the nearest value found in the array
  */
 int av_find_nearest_q_idx(AVRational q, const AVRational* q_list);
+
+/**
+ * @}
+ */
 
 #endif /* AVUTIL_RATIONAL_H */

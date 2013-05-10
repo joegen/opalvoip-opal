@@ -19,9 +19,6 @@
     <ClCompile Include="rfc2190.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\common\dyna.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\common\ffmpeg.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -37,9 +34,6 @@
       <Filter>Include Files</Filter>
     </ClInclude>
     <ClInclude Include="..\common\ffmpeg.h">
-      <Filter>Include Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\common\dyna.h">
       <Filter>Include Files</Filter>
     </ClInclude>
   </ItemGroup>
