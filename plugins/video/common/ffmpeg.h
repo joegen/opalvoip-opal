@@ -44,25 +44,30 @@
 #define __FFMPEG_H__ 1
 
 #include <codec/opalplugin.hpp>
+#include "platform.h"
 
 extern "C" {
   #include "libavcodec/avcodec.h"
   #include "libavutil/mem.h"
 };
 
+#ifndef LIBAVCODEC_VERSION_INT
+  #error Libavcodec include is not correct
+#endif
+
+// Compile time version checking
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(51,11,0)
+  #error Libavcodec LIBAVCODEC_VERSION_INT too old.
+#endif
+
 // AVPacket was declared in avformat.h before April 2009
 #if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52, 25, 0)
   #include "libavformat/avformat.h"
 #endif
 
-#ifndef LIBAVCODEC_VERSION_INT
-#error Libavcodec include is not correct
-#endif
-
-
-// Compile time version checking
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(51,11,0)
-#error Libavcodec LIBAVCODEC_VERSION_INT too old.
+// Move to libav
+#if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(54, 0, 0)
+  #define avcodec_free_frame av_free
 #endif
 
 
