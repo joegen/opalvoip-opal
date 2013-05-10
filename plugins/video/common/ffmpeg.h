@@ -65,11 +65,6 @@ extern "C" {
   #include "libavformat/avformat.h"
 #endif
 
-// Move to libav
-#if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(54, 0, 0)
-  #define avcodec_free_frame av_free
-#endif
-
 
 /////////////////////////////////////////////////////////////////
 

@@ -119,7 +119,11 @@ FFMPEGCodec::~FFMPEGCodec()
   if (m_context != NULL)
     av_free(m_context);
   if (m_picture != NULL)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(54, 0, 0)
+    av_free(m_picture);
+#else
     avcodec_free_frame(&m_picture);
+#endif
   if (m_alignedInputYUV != NULL)
     free(m_alignedInputYUV);
 
