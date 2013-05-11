@@ -105,6 +105,8 @@ FFMPEGCodec::FFMPEGCodec(const char * prefix, EncodedFrame * fullFrame)
 {
   avcodec_register_all();
 
+  av_init_packet(&m_packet);
+
 #if PLUGINCODEC_TRACING
   av_log_set_level(AV_LOG_DEBUG);
   av_log_set_callback(&logCallbackFFMPEG);
@@ -453,7 +455,10 @@ bool FFMPEGCodec::EncodeVideoPacket(const PluginCodec_RTP & in, PluginCodec_RTP 
 
 int FFMPEGCodec::EncodeVideoFrame(uint8_t * frame, size_t length, unsigned & flags)
 {
-  int result = avcodec_encode_video(m_context, frame, length, m_picture);
+  m_packet.data = frame;
+  m_packet.size = length;
+  int gotPacket = 0;
+  int result = avcodec_encode_video2(m_context, &m_packet, m_picture, &gotPacket);
 
   if (result < 0) {
     PTRACE(1, m_prefix, "Encoder failed");
@@ -463,12 +468,12 @@ int FFMPEGCodec::EncodeVideoFrame(uint8_t * frame, size_t length, unsigned & fla
   if (m_picture->key_frame)
     flags |= PluginCodec_ReturnCoderIFrame;
 
-  if (result == 0) {
-    PTRACE(3, m_prefix, "Encoder returned no data");
-    flags |= PluginCodec_ReturnCoderLastFrame;
-  }
+  if (gotPacket)
+    return m_packet.size;
 
-  return result;
+  PTRACE(3, m_prefix, "Encoder returned no data");
+  flags |= PluginCodec_ReturnCoderLastFrame;
+  return 0;
 }
 
 
@@ -510,11 +515,9 @@ bool FFMPEGCodec::DecodeVideoFrame(const uint8_t * frame, size_t length, unsigne
 
   m_picture->pict_type = AV_PICTURE_TYPE_NONE;
   int gotPicture = 0;
-  AVPacket avpkt;
-  av_init_packet(&avpkt);
-  avpkt.data = (uint8_t *)frame;
-  avpkt.size = length;
-  int bytesDecoded = avcodec_decode_video2(m_context, m_picture, &gotPicture, &avpkt);
+  m_packet.data = (uint8_t *)frame;
+  m_packet.size = length;
+  int bytesDecoded = avcodec_decode_video2(m_context, m_picture, &gotPicture, &m_packet);
 
   int errorsAfter = m_errorCount;
 #ifdef FFMPEG_HAS_DECODE_ERROR_COUNT

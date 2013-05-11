@@ -110,6 +110,7 @@ class FFMPEGCodec
     AVCodec        * m_codec;
     AVCodecContext * m_context;
     AVFrame        * m_picture;
+    AVPacket         m_packet;
     uint8_t        * m_alignedInputYUV;
     size_t           m_alignedInputSize;
     EncodedFrame   * m_fullFrame;
