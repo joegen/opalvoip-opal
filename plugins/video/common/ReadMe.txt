@@ -41,7 +41,7 @@ do not come crying to us!
 
 1) Easy way: get precompiled binaries from:
 
-   http://www.opalvoip.org/bin/libav_x264.zip
+   http://www.opalvoip.org/bin/libav_DLLs.zip
 
 and drop its contents into wherever you are putting the plug ins, typically
 C:\PTLib_Plugins.
