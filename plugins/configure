@@ -643,6 +643,10 @@ X264_CFLAGS
 X264_SYSTEM
 HAVE_LIBAVCODEC_RTP_MODE
 LIBAVCODEC_USABLE
+LIBAVUITL_USABLE
+LIBAVUITL_LIBS
+LIBAVUITL_CFLAGS
+LIBAVUITL_SYSTEM
 LIBAVCODEC_LIBS
 LIBAVCODEC_CFLAGS
 LIBAVCODEC_SYSTEM
@@ -792,6 +796,8 @@ enable_celt
 enable_h_261
 enable_libavcodec
 with_libavcodec_dir
+enable_libavutil
+with_libavutil_dir
 enable_h_263
 enable_mpeg4
 enable_x264
@@ -833,6 +839,8 @@ CELT_CFLAGS
 CELT_LIBS
 LIBAVCODEC_CFLAGS
 LIBAVCODEC_LIBS
+LIBAVUITL_CFLAGS
+LIBAVUITL_LIBS
 X264_CFLAGS
 X264_LIBS
 VP8_CFLAGS
@@ -1478,6 +1486,7 @@ Optional Features:
   --disable-celt          disable CELT audio codec
   --disable-h.261         disable H.261 video codec
   --disable-libavcodec    disable FFMPEG libavcodec library
+  --disable-libavutil     disable FFMPEG libavutil library
   --disable-h.263         disable H.263/H.263+ video codec
   --disable-mpeg4         disable MPEG4 part 2 video codec
   --disable-x264          disable VideoLan x264 H.264 video codec
@@ -1498,6 +1507,8 @@ Optional Packages:
   --with-sbc-dir=<dir>    location for Bluetooth SBC audio codec
   --with-libavcodec-dir=<dir>
                           location for FFMPEG libavcodec library
+  --with-libavutil-dir=<dir>
+                          location for FFMPEG libavutil library
   --with-x264-dir=<dir>   location for VideoLan x264 H.264 video codec
   --with-VP8-dir=<dir>    location for VP8 (WebM) video codec
   --with-theora-dir=<dir> location for Theora video codec
@@ -1536,6 +1547,10 @@ Some influential environment variables:
               C compiler flags for LIBAVCODEC, overriding pkg-config
   LIBAVCODEC_LIBS
               linker flags for LIBAVCODEC, overriding pkg-config
+  LIBAVUITL_CFLAGS
+              C compiler flags for LIBAVUITL, overriding pkg-config
+  LIBAVUITL_LIBS
+              linker flags for LIBAVUITL, overriding pkg-config
   X264_CFLAGS C compiler flags for X264, overriding pkg-config
   X264_LIBS   linker flags for X264, overriding pkg-config
   VP8_CFLAGS  C compiler flags for VP8, overriding pkg-config
@@ -7399,7 +7414,226 @@ fi
 
 
    if test "x$usable" = "xyes"; then :
-  HAVE_LIBAVCODEC=yes
+
+   LIBAVUITL_SYSTEM="yes"
+
+
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking FFMPEG libavutil library" >&5
+$as_echo_n "checking FFMPEG libavutil library... " >&6; }
+
+   # Check whether --enable-libavutil was given.
+if test "${enable_libavutil+set}" = set; then :
+  enableval=$enable_libavutil;
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+$as_echo "disabled by user" >&6; }
+         fi
+
+else
+
+         enableval=${DEFAULT_LIBAVUITL:-yes}
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+$as_echo "disabled by default" >&6; }
+         fi
+
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   if test "x${enableval}" = "xyes"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+   fi
+
+
+   if test "x$enableval" = "xyes"; then :
+  usable=yes
+else
+  usable=no
+fi
+
+
+   enable_libavutil="$enableval"
+
+
+   if test "x$usable" = "xyes" ; then
+
+      if test "x$LIBAVUITL_SYSTEM" = "xyes" ; then
+
+# Check whether --with-libavutil-dir was given.
+if test "${with_libavutil_dir+set}" = set; then :
+  withval=$with_libavutil_dir;
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: Using directory $withval for FFMPEG libavutil library" >&5
+$as_echo "$as_me: Using directory $withval for FFMPEG libavutil library" >&6;}
+                  LIBAVUITL_CFLAGS="-I$withval/include "
+                  LIBAVUITL_LIBS="-L$withval/lib -lavutil"
+
+else
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBAVUITL" >&5
+$as_echo_n "checking for LIBAVUITL... " >&6; }
+
+if test -n "$LIBAVUITL_CFLAGS"; then
+    pkg_cv_LIBAVUITL_CFLAGS="$LIBAVUITL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libavutil >= 51.11.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libavutil >= 51.11.0") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBAVUITL_CFLAGS=`$PKG_CONFIG --cflags "libavutil >= 51.11.0" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LIBAVUITL_LIBS"; then
+    pkg_cv_LIBAVUITL_LIBS="$LIBAVUITL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libavutil >= 51.11.0\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libavutil >= 51.11.0") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBAVUITL_LIBS=`$PKG_CONFIG --libs "libavutil >= 51.11.0" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LIBAVUITL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libavutil >= 51.11.0" 2>&1`
+        else
+	        LIBAVUITL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libavutil >= 51.11.0" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LIBAVUITL_PKG_ERRORS" >&5
+
+
+                     LIBAVUITL_CFLAGS=""
+                     LIBAVUITL_LIBS="-lavutil"
+
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+                     LIBAVUITL_CFLAGS=""
+                     LIBAVUITL_LIBS="-lavutil"
+
+
+else
+	LIBAVUITL_CFLAGS=$pkg_cv_LIBAVUITL_CFLAGS
+	LIBAVUITL_LIBS=$pkg_cv_LIBAVUITL_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi
+
+fi
+
+
+         if test "x$usable" = "xyes" ; then
+
+   oldCPPFLAGS="$CPPFLAGS"
+   oldLDFLAGS="$LDFLAGS"
+   CPPFLAGS="$CPPFLAGS $LIBAVUITL_CFLAGS"
+   LDFLAGS="$LIBAVUITL_LIBS $LDFLAGS"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FFMPEG libavutil library usability" >&5
+$as_echo_n "checking for FFMPEG libavutil library usability... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <libavutil/avutil.h>
+int
+main ()
+{
+avutil_version()
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+   LDFLAGS="$oldLDFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+
+
+   LDFLAGS="$LIBAVUITL_LIBS $LDFLAGS"
+   CPPFLAGS="$CPPFLAGS $LIBAVUITL_CFLAGS"
+
+
+
+
+else
+  usable=no
+
+fi
+
+
+         fi
+
+
+      fi
+   fi
+
+
+   if test "x$usable" = "xyes"; then :
+
+         HAVE_LIBAVCODEC=yes
+
+else
+  HAVE_LIBAVCODEC=no
+
+fi
+
+
+   LIBAVUITL_USABLE=$usable
+
+
 else
   HAVE_LIBAVCODEC=no
 
