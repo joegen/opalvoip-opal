@@ -155,7 +155,20 @@ MY_MODULE_OPTION(
    [-lavcodec],
    [#include <libavcodec/avcodec.h>],
    [avcodec_version()],
-   [HAVE_LIBAVCODEC=yes],
+   [MY_MODULE_OPTION(
+      [LIBAVUITL],
+      [libavutil],
+      [FFMPEG libavutil library],
+      [libavutil >= 51.11.0],
+      [],
+      [-lavutil],
+      [#include <libavutil/avutil.h>],
+      [avutil_version()],
+      [
+         HAVE_LIBAVCODEC=yes
+      ],
+      [HAVE_LIBAVCODEC=no]
+   )],
    [HAVE_LIBAVCODEC=no]
 )
 
