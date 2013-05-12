@@ -6391,11 +6391,13 @@ $as_echo "$as_me: Using internal source for Speex DSP support" >&6;}
 
    if test "x$usable" = "xyes"; then :
 
+      if test "x$OPAL_SYSTEM_SPEEX" = "xyes"; then
 
 $as_echo "#define OPAL_SYSTEM_SPEEX 1" >>confdefs.h
 
-      $as_echo "#define OPAL_HAVE_SPEEX_SPEEX_H 1" >>confdefs.h
+        $as_echo "#define OPAL_HAVE_SPEEX_SPEEX_H 1" >>confdefs.h
 
+      fi
 
    oldCPPFLAGS="$CPPFLAGS"
    oldLDFLAGS="$LDFLAGS"

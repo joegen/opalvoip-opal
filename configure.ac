@@ -219,8 +219,10 @@ MY_MODULE_OPTION(
    [#include <speex/speex_echo.h>],
    [speex_echo_state_init(0, 0)],
    [
-      AC_DEFINE(OPAL_SYSTEM_SPEEX, [1], [Has system speex dsp library])
-      AC_DEFINE(OPAL_HAVE_SPEEX_SPEEX_H, [1])
+      if test "x$OPAL_SYSTEM_SPEEX" = "xyes"; then
+        AC_DEFINE(OPAL_SYSTEM_SPEEX, [1], [Has system speex dsp library])
+        AC_DEFINE(OPAL_HAVE_SPEEX_SPEEX_H, [1])
+      fi
       MY_LINK_IFELSE(
          [for Speex noise reduction],
          [$SPEEXDSP_CFLAGS],
