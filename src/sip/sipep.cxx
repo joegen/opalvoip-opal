@@ -1905,13 +1905,14 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, const SIPConnection * conn
         pdu.SetRoute(registrar->GetProxy());
     }
 
-    // For many registrars From address must be address-of-record, but don;t touch if dialog already done
-    if (connection != NULL && !connection->GetDialog().IsEstablished()) {
+    // For many servers the From address must be address-of-record, but don't touch if dialog already done
+    if (connection == NULL || !connection->GetDialog().IsEstablished()) {
       PStringToString fieldParams = from.GetFieldParameters();
       from = registrar->GetAddressOfRecord();
       from.GetFieldParameters() = fieldParams;
       from.Sanitise(SIPURL::FromURI);
       mime.SetFrom(from);
+      PTRACE(4, "SIP\tAdjusted 'From' to " << from << " from registered user.");
     }
   }
 }
