@@ -455,10 +455,15 @@ bool FFMPEGCodec::EncodeVideoPacket(const PluginCodec_RTP & in, PluginCodec_RTP 
 
 int FFMPEGCodec::EncodeVideoFrame(uint8_t * frame, size_t length, unsigned & flags)
 {
+#if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(54, 0, 0)
+  int result = avcodec_encode_video(m_context, frame, length, m_picture);
+  int gotPacket = result > 0;
+#else
   m_packet.data = frame;
   m_packet.size = length;
   int gotPacket = 0;
   int result = avcodec_encode_video2(m_context, &m_packet, m_picture, &gotPacket);
+#endif
 
   if (result < 0) {
     PTRACE(1, m_prefix, "Encoder failed");
