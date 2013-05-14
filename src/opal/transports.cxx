@@ -643,7 +643,7 @@ OpalTransportAddress OpalListenerIP::GetLocalAddress(const OpalTransportAddress 
 #endif // P_NAT
 
     if (!localIP.IsValid() || localIP.IsAny())
-      localIP = PIPSocket::GetRouteAddress(remoteIP);
+      localIP = PIPSocket::GetRouteInterfaceAddress(remoteIP);
   }
 
   return OpalTransportAddress(localIP, listenerPort, GetProtoPrefix());
