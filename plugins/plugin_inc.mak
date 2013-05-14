@@ -47,8 +47,8 @@ ifneq (,$(BASENAME))
   PLUGIN_PATH = $(OBJDIR)/$(PLUGIN_NAME)
 endif
 
-CFLAGS += -dynamic -fno-common -D__MACOSX__
-CXXFLAGS += -dynamic -fno-common -D__MACOSX__
+CFLAGS += -fno-common -D__MACOSX__
+CXXFLAGS += -fno-common -D__MACOSX__
 
 ifeq ($(DEBUG_BUILD),yes)
   CFLAGS += -g
