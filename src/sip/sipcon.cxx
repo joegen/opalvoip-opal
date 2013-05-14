@@ -466,8 +466,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
   // Tell the REFER processing UA if it should suppress NOTIFYs about the REFER processing.
   // If we want to get NOTIFYs we have to clear the old connection on the progress message
   // where the connection is transfered. See OnTransferNotify().
-  const char * referSub = extra.GetBoolean(OPAL_OPT_REFER_SUB,
-                m_stringOptions.GetBoolean(OPAL_OPT_REFER_SUB, true)) ? "true" : "false";
+  bool referSub = extra.GetBoolean(OPAL_OPT_REFER_SUB, m_stringOptions.GetBoolean(OPAL_OPT_REFER_SUB, true));
 
   PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(url.GetHostName(), PSafeReadOnly);
   if (call == NULL) {
