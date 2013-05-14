@@ -2325,10 +2325,10 @@ void OpalManager_C::HandleSendIM(const OpalMessage & command, OpalMessageBuffer 
   im.m_conversationId = command.m_param.m_instantMessage.m_id;
 
   if (command.m_param.m_instantMessage.m_bodyCount == 0)
-    im.m_bodies[PMIMEInfo::TextPlain()] = command.m_param.m_instantMessage.m_textBody;
+    im.m_bodies.SetAt(PMIMEInfo::TextPlain(), command.m_param.m_instantMessage.m_textBody);
   else {
     for (unsigned i = 0; i < command.m_param.m_instantMessage.m_bodyCount; ++i)
-      im.m_bodies[command.m_param.m_instantMessage.m_mimeType[i]] = command.m_param.m_instantMessage.m_bodies[i];
+      im.m_bodies.SetAt(command.m_param.m_instantMessage.m_mimeType[i], command.m_param.m_instantMessage.m_bodies[i]);
   }
 
   if (Message(im))
