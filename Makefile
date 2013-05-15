@@ -52,12 +52,19 @@ ALLBUTFIRST = $(filter-out $(firstword $(CONFIG_FILES)), $(CONFIG_FILES))
 ALLBUTLAST = $(filter-out $(lastword $(CONFIG_FILES)), $(CONFIG_FILES))
 PAIRS = $(join $(ALLBUTLAST),$(addprefix :,$(ALLBUTFIRST)))
 
-ifeq (,$(findstring $(MAKECMDGOALS),config clean distclean default_clean sterile))
-$(MAKECMDGOALS): default
+#
+# The following goals do not generate a call to configure
+NO_CONFIG_GOALS += clean distclean config
+
+ifneq (,$(MAKECMDGOALS))
+  CONFIG_GOALS:=$(filter-out $(NO_CONFIG_GOALS),$(MAKECMDGOALS))
+  ifneq (,$(CONFIG_GOALS))
+    $(CONFIG_GOALS): default
+  endif
 endif
 
 default: $(CONFIG_FILES)
-	@$(MAKE) -f $(TOP_LEVEL_MAKE) $(MAKECMDGOALS)
+	@$(MAKE) -f $(TOP_LEVEL_MAKE) $(filter-out config,$(MAKECMDGOALS))
 
 .PHONY:config
 config:	$(CONFIG_FILES)
@@ -91,12 +98,14 @@ sterile: distclean
 	  rm -f $(CONFIGURE) config.log config.status ; \
 	fi
 
-ifneq (,$(shell which ./config.status))
-CONFIG_PARMS=$(shell ./config.status --config)
+ifndef CFG_ARGS
+  ifneq (,$(shell which ./config.status))
+    CFG_ARGS=$(shell ./config.status --config)
+  endif
 endif
 
 $(lastword $(CONFIG_FILES)) : $(CONFIGURE) $(CONFIG_IN_FILES)
-	OPALDIR=$(ENV_OPALDIR) $(CONFIGURE) $(CONFIG_PARMS)
+	OPALDIR=$(ENV_OPALDIR) $(CONFIGURE) $(CFG_ARGS)
 	touch $(CONFIG_FILES)
 
 ifeq ($(shell which $(AUTOCONF) > /dev/null && \
