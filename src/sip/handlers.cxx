@@ -1288,13 +1288,15 @@ static SIPEventPackageFactory::Worker<SIPMwiEventPackageHandler> mwiEventPackage
 
 ///////////////////////////////////////////////////////////////////////////////
 
+static PConstCaselessString const SIPPresenceEventPackageContentType("application/pidf+xml");
+
 // This package is on for backward compatibility, presence should now use the
 // the OpalPresence classes to manage SIP presence.
 class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
 {
   virtual PCaselessString GetContentType() const
   {
-    return "application/pidf+xml";
+    return SIPPresenceEventPackageContentType;
   }
 
   virtual void OnReceivedNOTIFY(SIPSubscribe::NotifyCallbackInfo & notifyInfo)
@@ -2097,6 +2099,9 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
 
       info.m_entity = entity;
       info.m_tupleId = tupleElement->GetAttribute("id");
+
+      info.m_infoType = SIPPresenceEventPackageContentType;
+      info.m_infoData = tupleElement->AsString();
 
       SetNoteFromElement(rootElement, info.m_note);
       SetNoteFromElement(tupleElement, info.m_note);
