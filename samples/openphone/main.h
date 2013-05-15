@@ -662,6 +662,8 @@ class OptionsDialog : public wxDialog
 
     void ChangedSoundPlayer(wxCommandEvent & /*event*/);
     void ChangedSoundRecorder(wxCommandEvent & /*event*/);
+    void TestPlayer(wxCommandEvent & /*event*/);
+    void TestRecorder(wxCommandEvent & /*event*/);
     void SelectedLID(wxCommandEvent & /*event*/);
 
     ////////////////////////////////////////
