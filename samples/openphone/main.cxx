@@ -69,6 +69,7 @@
 #include <ptclib/pstun.h>
 #include <codec/vidcodec.h>
 #include <ptclib/pwavfile.h>
+#include <ptclib/dtmf.h>
 
 #include <algorithm>
 
@@ -309,6 +310,7 @@ static const wxChar SpeedDialTabTitle[] = wxT("Speed Dials");
 
 
 static const wxChar NotAvailableString[] = wxT("N/A");
+static const wxChar OpenPhoneErrorString[] = wxT("OpenPhone Error");
 
 
 enum IconStates {
@@ -1945,7 +1947,7 @@ void MyManager::OnStartIM(wxCommandEvent & /*event*/)
   CallIMDialog dlg(this);
   if (dlg.ShowModal() == wxID_OK) {
     if (m_imEP->CreateContext(dlg.m_Presentity.p_str(), dlg.m_Address.p_str()) == NULL)
-      wxMessageBox(wxString(wxT("Cannot send IMs to ")) + dlg.m_Address, wxT("Error"));
+      wxMessageBox(wxString(wxT("Cannot send IMs to ")) + dlg.m_Address, OpenPhoneErrorString);
   }
 }
 
@@ -1956,7 +1958,7 @@ void MyManager::OnInCallIM(wxCommandEvent & /*event*/)
     return;
 
   if (m_imEP->CreateContext(*m_activeCall) == NULL)
-    wxMessageBox(wxT("Cannot send IMs to active call"), wxT("Error"));
+    wxMessageBox(wxT("Cannot send IMs to active call"), OpenPhoneErrorString);
 }
 
 
@@ -1965,7 +1967,7 @@ void MyManager::OnSendIMSpeedDial(wxCommandEvent & /*event*/)
   SpeedDialInfo * info = GetSelectedSpeedDial();
   if (info != NULL && !info->m_Presentity.IsEmpty() && !info->m_Address.IsEmpty()) {
     if (m_imEP->CreateContext(info->m_Presentity, info->m_Address) == NULL)
-      wxMessageBox(wxString(wxT("Cannot send IMs to")) + info->m_Address, wxT("Error"));
+      wxMessageBox(wxString(wxT("Cannot send IMs to")) + info->m_Address, OpenPhoneErrorString);
   }
 }
 #endif // OPAL_HAS_IM
@@ -3026,7 +3028,7 @@ void MyManager::OnStartRecording(wxCommandEvent & /*event*/)
     m_lastRecordFile = dlg.GetPath();
     if (!m_activeCall->StartRecording(m_lastRecordFile, m_recordingOptions))
       wxMessageBox(wxT("Cannot record to ")+m_lastRecordFile,
-                   wxT("OpenPhone Error"), wxCANCEL|wxICON_EXCLAMATION);
+                   OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
   }
 }
 
@@ -3065,7 +3067,7 @@ void MyManager::OnSendAudioFile(wxCommandEvent & /*event*/)
                   "</vxml>";
     if (!m_activeCall->Transfer(ivrXML, connection))
       wxMessageBox(wxT("Cannot send ")+m_lastPlayFile,
-                   wxT("OpenPhone Error"), wxCANCEL|wxICON_EXCLAMATION);
+                   OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
   }
 }
 
@@ -3106,7 +3108,7 @@ void MyManager::OnVideoDeviceChange(wxCommandEvent & theEvent)
   args.deviceName = deviceName.p_str();
   if (!local->ChangeVideoInputDevice(args))
     wxMessageBox(wxT("Cannot switch to video input device ")+deviceName,
-                  wxT("OpenPhone Error"), wxCANCEL|wxICON_EXCLAMATION);
+                  OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
 }
 
 
@@ -4077,7 +4079,7 @@ public:
       return true;
 
     wxMessageBox(wxT("Illegal value \"") + size + wxT("\" for video size."),
-                 wxT("OpenPhone Error"), wxCANCEL|wxICON_EXCLAMATION);
+                 OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
     return false;
   }
 };
@@ -4122,6 +4124,8 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_COMBOBOX(wxXmlResource::GetXRCID(SoundPlayerKey), OptionsDialog::ChangedSoundPlayer)
   EVT_COMBOBOX(wxXmlResource::GetXRCID(SoundRecorderKey), OptionsDialog::ChangedSoundRecorder)
   EVT_COMBOBOX(wxXmlResource::GetXRCID(LineInterfaceDeviceKey), OptionsDialog::SelectedLID)
+  EVT_BUTTON(XRCID("TestPlayer"), OptionsDialog::TestPlayer)
+  EVT_BUTTON(XRCID("TestRecorder"), OptionsDialog::TestRecorder)
 
   ////////////////////////////////////////
   // Video fields
@@ -4943,11 +4947,11 @@ bool OptionsDialog::TransferDataFromWindow()
   if (m_manager.pcssEP->SetSoundChannelPlayDevice(AudioDeviceNameFromScreen(m_SoundPlayer)))
     config->Write(SoundPlayerKey, PwxString(m_manager.pcssEP->GetSoundChannelPlayDevice()));
   else
-    wxMessageBox(wxT("Could not use sound player device."), wxT("OpenPhone Options"), wxCANCEL|wxICON_EXCLAMATION);
+    wxMessageBox(wxT("Could not use sound player device."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
   if (m_manager.pcssEP->SetSoundChannelRecordDevice(AudioDeviceNameFromScreen(m_SoundRecorder)))
     config->Write(SoundRecorderKey, PwxString(m_manager.pcssEP->GetSoundChannelRecordDevice()));
   else
-    wxMessageBox(wxT("Could not use sound recorder device."), wxT("OpenPhone Options"), wxCANCEL|wxICON_EXCLAMATION);
+    wxMessageBox(wxT("Could not use sound recorder device."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
   SAVE_FIELD(SoundBufferTime, m_manager.pcssEP->SetSoundChannelBufferTime);
 
 #if OPAL_AEC
@@ -5512,6 +5516,82 @@ void OptionsDialog::ChangedSoundRecorder(wxCommandEvent & /*event*/)
 }
 
 
+void OptionsDialog::TestPlayer(wxCommandEvent & /*event*/)
+{
+  PSoundChannel player;
+  player.SetBuffers(320, (m_SoundBufferTime+19)/20);
+  if (!player.Open(m_SoundPlayer, PSoundChannel::Player)) {
+    wxMessageBox(wxT("Could not use sound player device."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
+    return;
+  }
+
+  PTones tones("C:0.2/D:0.2/E:0.2/F:0.2/G:0.2/A:0.2/B:0.2/C5:0.2/"
+               "C5:0.2/B:0.2/A:0.2/G:0.2/F:0.2/E:0.2/D:0.2/C:2.0");
+
+  PTRACE(3, "OpenPhone\tTones using " << tones.GetSize() << " samples, "
+          << PTimeInterval(1000*tones.GetSize()/tones.GetSampleRate()) << " seconds");
+
+  int seconds = (tones.GetSize()+tones.GetSampleRate()-1)/tones.GetSampleRate();
+
+  tones.SetSize(seconds*tones.GetSampleRate());
+
+  wxProgressDialog progress(wxT("OpenPhone"), wxT("Testing player ..."), seconds);
+
+  PTime then;
+  for (int second = 0; second < seconds; ++second) {
+    progress.Update(second);
+    if (!player.Write(tones.GetPointer()+second*tones.GetSampleRate(), tones.GetSampleRate()*sizeof(short))) {
+      wxMessageBox(wxT("Could not write to sound player device."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
+      return;
+    }
+  }
+
+  PTRACE(3, "OpenPhone\tAudio queued");
+  player.WaitForPlayCompletion();
+  PTRACE(3, "OpenPhone\tFinished tone output: " << PTime() - then << " seconds");
+}
+
+
+void OptionsDialog::TestRecorder(wxCommandEvent & /*event*/)
+{
+  static const unsigned seconds = 5;
+
+  PSoundChannel recorder;
+  recorder.SetBuffers(320, (m_SoundBufferTime+19)/20);
+  if (!recorder.Open(m_SoundRecorder, PSoundChannel::Recorder)) {
+    wxMessageBox(wxT("Could not use sound recorder device."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
+    return;
+  }
+
+  PINDEX sizeOneSecond = recorder.GetSampleRate()*sizeof(short);
+  PBYTEArray recording(seconds*sizeOneSecond);
+
+  {
+    wxProgressDialog progress(wxT("OpenPhone"), wxT("Testing recorder ..."), seconds);
+    PTRACE(1, "OpenPhone\tStarted recording");
+    PTime then;
+    for (unsigned second = 0; second < seconds; ++second) {
+      progress.Update(second);
+      if (!recorder.ReadBlock(recording.GetPointer()+second*sizeOneSecond, sizeOneSecond))
+        return;
+    }
+    PTRACE(1, "OpenPhone\tFinished recording " << PTime() - then << " seconds");
+  }
+
+  wxProgressDialog progress(wxT("OpenPhone"), wxT("Playing back recording ..."), seconds);
+  PSoundChannel player(m_SoundPlayer, PSoundChannel::Player);
+  PTRACE(1, "OpenPhone\tStarted play back");
+  PTime then;
+  for (unsigned second = 0; second < seconds; ++second) {
+    progress.Update(second);
+    if (!player.Write(recording.GetPointer()+second*sizeOneSecond, sizeOneSecond))
+      return;
+  }
+  player.WaitForPlayCompletion();
+  PTRACE(1, "OpenPhone\tFinished play back " << PTime() - then << " seconds");
+}
+
+
 void OptionsDialog::SelectedLID(wxCommandEvent & /*event*/)
 {
   bool enabled = m_selectedLID->GetSelection() > 0;
@@ -5619,7 +5699,7 @@ void OptionsDialog::TestVideoCapture(wxCommandEvent & /*event*/)
 
   PVideoInputDevice * grabber = PVideoInputDevice::CreateOpenedDevice(grabberArgs);
   if (grabber == NULL) {
-    wxMessageBox(wxT("Could not open video capture."), wxT("OpenPhone Video Test"), wxCANCEL|wxICON_EXCLAMATION);
+    wxMessageBox(wxT("Could not open video capture."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
     return;
   }
 
@@ -5643,7 +5723,7 @@ void OptionsDialog::TestVideoCapture(wxCommandEvent & /*event*/)
     m_TestVideoThread = new PThreadObj<OptionsDialog>(*this, &OptionsDialog::TestVideoThreadMain, false, "TestVideo");
   }
   else {
-    wxMessageBox(wxT("Could not start video capture."), wxT("OpenPhone Video Test"), wxCANCEL|wxICON_EXCLAMATION);
+    wxMessageBox(wxT("Could not start video capture."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
     delete display;
     delete grabber;
   }
@@ -5732,7 +5812,7 @@ void OptionsDialog::EditedPresentity(wxListEvent & evt)
       }
     }
 
-    wxMessageBox(wxT("Cannot create presence identity ")+newAOR);
+    wxMessageBox(wxT("Cannot create presence identity ")+newAOR, OpenPhoneErrorString);
   }
 
   if (oldAOR == NewPresenceStr)
@@ -6431,7 +6511,7 @@ bool PresenceDialog::TransferDataFromWindow()
 
   PSafePtr<OpalPresentity> presentity = m_manager.GetPresentity(m_address.p_str());
   if (presentity == NULL) {
-    wxMessageBox(wxT("Presence identity disappeared!"));
+    wxMessageBox(wxT("Presence identity disappeared!"), OpenPhoneErrorString);
     return false;
   }
 
