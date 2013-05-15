@@ -504,6 +504,7 @@ echo "                     Machine Type :  $target_cpu"
 echo "                           prefix :  $prefix"
 echo "                      exec_prefix :  $exec_prefix"
 echo "                           libdir :  $libdir"
+echo "                Plug in diractory :  $OPAL_PLUGIN_DIR"
 
 echo ""
 

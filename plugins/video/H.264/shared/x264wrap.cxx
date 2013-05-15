@@ -587,9 +587,7 @@ bool H264Encoder::WritePipe(const void * ptr, size_t len)
 
 
 static const char DefaultPluginDirs[] = "." DIR_TOKENISER
-#ifdef LIB_DIR
-                                        LIB_DIR DIR_TOKENISER
-#endif
+                                        VID_PLUGIN_DIR DIR_TOKENISER
                                         "/usr/lib" DIR_TOKENISER "/usr/local/lib";
 
 
@@ -734,12 +732,6 @@ bool H264Encoder::Load(void * instance)
     snprintf(executablePath, sizeof(executablePath), "%s/%s", token, ExecutableName);
     if (IsExecutable(executablePath))
       break;
-
-#ifdef VID_PLUGIN_DIR
-    snprintf(executablePath, sizeof(executablePath), "%s/%s/%s", token, VID_PLUGIN_DIR, ExecutableName);
-    if (IsExecutable(executablePath))
-      break;
-#endif
 
     token = strtok(NULL, DIR_TOKENISER);
   }
