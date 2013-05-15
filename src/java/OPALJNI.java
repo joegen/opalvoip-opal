@@ -281,6 +281,10 @@ public class OPALJNI {
   public final static native int OpalPresenceStatus_m_state_get(long jarg1, OpalPresenceStatus jarg1_);
   public final static native void OpalPresenceStatus_m_note_set(long jarg1, OpalPresenceStatus jarg1_, String jarg2);
   public final static native String OpalPresenceStatus_m_note_get(long jarg1, OpalPresenceStatus jarg1_);
+  public final static native void OpalPresenceStatus_m_infoType_set(long jarg1, OpalPresenceStatus jarg1_, String jarg2);
+  public final static native String OpalPresenceStatus_m_infoType_get(long jarg1, OpalPresenceStatus jarg1_);
+  public final static native void OpalPresenceStatus_m_infoData_set(long jarg1, OpalPresenceStatus jarg1_, String jarg2);
+  public final static native String OpalPresenceStatus_m_infoData_get(long jarg1, OpalPresenceStatus jarg1_);
   public final static native long new_OpalPresenceStatus();
   public final static native void delete_OpalPresenceStatus(long jarg1);
   public final static native void OpalInstantMessage_m_from_set(long jarg1, OpalInstantMessage jarg1_, String jarg2);
