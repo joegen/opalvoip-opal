@@ -2245,9 +2245,11 @@ void OpalManager_C::OnMWIReceived(const PString & party, MessageWaitingType type
 void OpalManager_C::OnPresenceChange(OpalPresentity &, std::auto_ptr<OpalPresenceInfo> info)
 {
   OpalMessageBuffer message(OpalIndPresenceChange);
-  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_entity, info->m_entity.AsString());
-  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_target, info->m_target.AsString());
-  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_note,   info->m_note);
+  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_entity,   info->m_entity.AsString());
+  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_target,   info->m_target.AsString());
+  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_note,     info->m_note);
+  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_infoType, info->m_infoType);
+  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_infoData, info->m_infoData);
   message->m_param.m_presenceStatus.m_state = (OpalPresenceStates)info->m_state;
   PTRACE(4, "OpalC API\tOnPresenceChange:"
             " entity=\"" << message->m_param.m_presenceStatus.m_entity << "\""
@@ -2328,10 +2330,10 @@ void OpalManager_C::HandleSendIM(const OpalMessage & command, OpalMessageBuffer 
   im.m_conversationId = command.m_param.m_instantMessage.m_id;
 
   if (command.m_param.m_instantMessage.m_bodyCount == 0)
-    im.m_bodies[PMIMEInfo::TextPlain()] = command.m_param.m_instantMessage.m_textBody;
+    im.m_bodies.SetAt(PMIMEInfo::TextPlain(), command.m_param.m_instantMessage.m_textBody);
   else {
     for (unsigned i = 0; i < command.m_param.m_instantMessage.m_bodyCount; ++i)
-      im.m_bodies[command.m_param.m_instantMessage.m_mimeType[i]] = command.m_param.m_instantMessage.m_bodies[i];
+      im.m_bodies.SetAt(command.m_param.m_instantMessage.m_mimeType[i], command.m_param.m_instantMessage.m_bodies[i]);
   }
 
   if (Message(im))

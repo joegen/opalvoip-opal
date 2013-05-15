@@ -108,6 +108,8 @@ class OpalPresenceInfo : public PObject
     PURL    m_entity;   ///< The presentity whose state had changed
     PURL    m_target;   ///< The presentity that is being informed about the state change
     PTime   m_when;     ///< Time/date of state change
+    PString m_infoType; ///< MIME tyupe for m_infoData, e.g. application/pidf+xml
+    PString m_infoData; ///< Raw information as provided by underlying protocol, e.g. XML.
 
     OpalPresenceInfo(State state = Unchanged) : m_state(state) { }
 

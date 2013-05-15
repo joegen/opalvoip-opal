@@ -1239,6 +1239,8 @@ typedef struct OpalPresenceStatus {
   OpalPresenceStates m_state;     /**<The new state of the target entity. */
   const char *       m_note;      /**<Addition "note" that may be attached to the state
                                       change, e.g. "sleeping" */
+  const char *       m_infoType;  ///< MIME tyupe for m_infoData, e.g. application/pidf+xml
+  const char *       m_infoData;  ///< Raw information as provided by underlying protocol, e.g. XML.
 } OpalPresenceStatus;
 
 
