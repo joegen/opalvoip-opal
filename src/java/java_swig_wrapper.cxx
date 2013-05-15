@@ -4706,6 +4706,86 @@ SWIGEXPORT jstring JNICALL Java_org_opalvoip_opal_OPALJNI_OpalPresenceStatus_1m_
 }
 
 
+SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_OpalPresenceStatus_1m_1infoType_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+  OpalPresenceStatus *arg1 = (OpalPresenceStatus *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalPresenceStatus **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return ;
+  }
+  {
+    if (arg2) {
+      arg1->m_infoType = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->m_infoType, (const char *)arg2);
+    } else {
+      arg1->m_infoType = 0;
+    }
+  }
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+}
+
+
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_opal_OPALJNI_OpalPresenceStatus_1m_1infoType_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jstring jresult = 0 ;
+  OpalPresenceStatus *arg1 = (OpalPresenceStatus *) 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalPresenceStatus **)&jarg1; 
+  result = (char *) ((arg1)->m_infoType);
+  if (result) jresult = jenv->NewStringUTF((const char *)result);
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_OpalPresenceStatus_1m_1infoData_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+  OpalPresenceStatus *arg1 = (OpalPresenceStatus *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalPresenceStatus **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return ;
+  }
+  {
+    if (arg2) {
+      arg1->m_infoData = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->m_infoData, (const char *)arg2);
+    } else {
+      arg1->m_infoData = 0;
+    }
+  }
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+}
+
+
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_opal_OPALJNI_OpalPresenceStatus_1m_1infoData_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jstring jresult = 0 ;
+  OpalPresenceStatus *arg1 = (OpalPresenceStatus *) 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalPresenceStatus **)&jarg1; 
+  result = (char *) ((arg1)->m_infoData);
+  if (result) jresult = jenv->NewStringUTF((const char *)result);
+  return jresult;
+}
+
+
 SWIGEXPORT jlong JNICALL Java_org_opalvoip_opal_OPALJNI_new_1OpalPresenceStatus(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   OpalPresenceStatus *result = 0 ;

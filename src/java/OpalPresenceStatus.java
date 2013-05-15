@@ -67,6 +67,22 @@ public class OpalPresenceStatus {
     return OPALJNI.OpalPresenceStatus_m_note_get(swigCPtr, this);
   }
 
+  public void setM_infoType(String value) {
+    OPALJNI.OpalPresenceStatus_m_infoType_set(swigCPtr, this, value);
+  }
+
+  public String getM_infoType() {
+    return OPALJNI.OpalPresenceStatus_m_infoType_get(swigCPtr, this);
+  }
+
+  public void setM_infoData(String value) {
+    OPALJNI.OpalPresenceStatus_m_infoData_set(swigCPtr, this, value);
+  }
+
+  public String getM_infoData() {
+    return OPALJNI.OpalPresenceStatus_m_infoData_get(swigCPtr, this);
+  }
+
   public OpalPresenceStatus() {
     this(OPALJNI.new_OpalPresenceStatus(), true);
   }
