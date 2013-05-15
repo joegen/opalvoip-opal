@@ -42,6 +42,7 @@ exec_prefix      := @exec_prefix@
 libdir           := @libdir@
 includedir       := @includedir@
 datarootdir      := @datarootdir@
+OPAL_PLUGIN_DIR  := @OPAL_PLUGIN_DIR@
 
 # Tool names detected by configure
 CC               := @CC@

@@ -49,10 +49,10 @@ dnl Directories
 
 OPAL_DETERMINE_PLUGIN_DIR()
 
-AC_SUBST(AUD_PLUGIN_DIR, "${PLUGIN_DIR}/codecs/audio")
-AC_SUBST(VID_PLUGIN_DIR, "${PLUGIN_DIR}/codecs/video")
-AC_SUBST(LID_PLUGIN_DIR, "${PLUGIN_DIR}/lid")
-AC_SUBST(FAX_PLUGIN_DIR, "${PLUGIN_DIR}/fax")
+AC_SUBST(AUD_PLUGIN_DIR, "${OPAL_PLUGIN_DIR}/codecs/audio")
+AC_SUBST(VID_PLUGIN_DIR, "${OPAL_PLUGIN_DIR}/codecs/video")
+AC_SUBST(LID_PLUGIN_DIR, "${OPAL_PLUGIN_DIR}/lid")
+AC_SUBST(FAX_PLUGIN_DIR, "${OPAL_PLUGIN_DIR}/fax")
 
 AC_SUBST(PLUGIN_SRC_DIR, `cd $srcdir ; pwd`)
 
@@ -346,13 +346,13 @@ echo ""
 echo "========================= Plugin configuration ========================="
 echo "                         OS Type  :  $target_os"
 echo "                    Machine Type  :  $target_cpu"
-echo "                          prefix  : $prefix"
-echo "                     exec_prefix  : $exec_prefix"
-echo "                          libdir  : $libdir"
-echo "  Audio Codec plugin install dir  : "'${libdir}'"/$AUD_PLUGIN_DIR"
-echo "  Video Codec plugin install dir  : "'${libdir}'"/$VID_PLUGIN_DIR"
-echo "       LID plugin install prefix  : "'${libdir}'"/$LID_PLUGIN_DIR"
-echo "       FAX plugin install prefix  : "'${libdir}'"/$FAX_PLUGIN_DIR"
+echo "                          prefix  :  $prefix"
+echo "                     exec_prefix  :  $exec_prefix"
+echo "                          libdir  :  $libdir"
+echo "  Audio Codec plugin install dir  :  "'${libdir}'"/$AUD_PLUGIN_DIR"
+echo "  Video Codec plugin install dir  :  "'${libdir}'"/$VID_PLUGIN_DIR"
+echo "       LID plugin install prefix  :  "'${libdir}'"/$LID_PLUGIN_DIR"
+echo "       FAX plugin install prefix  :  "'${libdir}'"/$FAX_PLUGIN_DIR"
 
 echo ""
 

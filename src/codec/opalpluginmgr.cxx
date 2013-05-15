@@ -100,14 +100,6 @@ inline static bool IsValidMPI(int mpi)
 
 /////////////////////////////////////////////////////////////////////////////
 
-#ifdef OPAL_PLUGIN_DIR
-// Add default OPAL plug in directory so PPluginManager loads these too
-static bool DummyPluginDirs = PPluginManager::AddPluginDirs(OPAL_PLUGIN_DIR);
-#endif // OPAL_PLUGIN_DIR
-
-
-/////////////////////////////////////////////////////////////////////////////
-
 template <class base>
 class OpalPluginMediaOption : public base
 {
@@ -1407,6 +1399,10 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
 OpalPluginCodecManager::OpalPluginCodecManager(PPluginManager * _pluginMgr)
   : PPluginModuleManager(PLUGIN_CODEC_GET_CODEC_FN_STR, _pluginMgr)
 {
+#ifdef OPAL_PLUGIN_DIR
+   pluginMgr->AddDirectory(OPAL_PLUGIN_DIR); // Add default OPAL plug in directory so PPluginManager loads these too
+#endif // OPAL_PLUGIN_DIR
+
   // instantiate all of the static codecs
   {
     H323StaticPluginCodecFactory::KeyList_T keyList = H323StaticPluginCodecFactory::GetKeyList();

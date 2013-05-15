@@ -68,12 +68,18 @@ AC_DEFUN([OPAL_DETERMINE_PLUGIN_DIR],[
    AC_ARG_WITH(
       [plugin-installdir],
       AS_HELP_STRING([--with-plugin-installdir=DIR],[Location where plugins are installed]),
-      [PLUGIN_DIR="$withval"],
-      [PLUGIN_DIR="opal-${OPAL_VERSION}"]
+      [OPAL_PLUGIN_DIR="\${libdir}/$withval"],
+      [
+         if test "x$OPALDIR" != "x" && test "x$prefix" = "xNONE" ; then
+            OPAL_PLUGIN_DIR="$OPALDIR/lib_$target/plugins"
+         else
+            OPAL_PLUGIN_DIR="\${libdir}/opal-${OPAL_VERSION}"
+         fi
+      ]
    )
 
-   AC_MSG_RESULT("\${libdir}/$PLUGIN_DIR")
-   AC_SUBST(PLUGIN_DIR)
+   AC_MSG_RESULT("$OPAL_PLUGIN_DIR")
+   AC_SUBST(OPAL_PLUGIN_DIR)
 ])
 
 

@@ -107,8 +107,6 @@
   #define  OPAL_GSTREAMER P_GSTREAMER
 #endif
 
-#undef  OPAL_PLUGIN_DIR
-
 // Video
 #if P_VIDEO
   #undef  OPAL_VIDEO

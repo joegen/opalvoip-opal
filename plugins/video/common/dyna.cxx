@@ -56,8 +56,8 @@ bool DynaLink::Open(const char *name)
     strcat(ptlibPath, env);
   }
   else {
-#ifdef P_DEFAULT_PLUGIN_DIR
-    strcat(ptlibPath, DIR_TOKENISER P_DEFAULT_PLUGIN_DIR);
+#ifdef OPAL_PLUGIN_DIR
+    strcat(ptlibPath, DIR_TOKENISER OPAL_PLUGIN_DIR);
 #elif _WIN32
     strcat(ptlibPath, DIR_TOKENISER "C:\\PTLib_Plugins");
 #endif
