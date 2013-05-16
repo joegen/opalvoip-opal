@@ -424,6 +424,8 @@ class SIPHandlersList
 };
 
 
+#if OPAL_SIP_PRESENCE
+
 /** Information for SIP "presence" event package notification messages.
   */
 class SIPPresenceInfo : public OpalPresenceInfo
@@ -461,6 +463,7 @@ public:
 
   PString m_personId;
 };
+#endif // OPAL_SIP_PRESENCE
 
 
 /** Information for SIP "dialog" event package notification messages.

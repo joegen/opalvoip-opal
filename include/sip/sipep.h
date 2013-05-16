@@ -759,6 +759,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     ) const { return activeSIPHandlers.GetAddresses(includeOffline, SIP_PDU::Method_PUBLISH, eventPackage); }
 
 
+#if OPAL_SIP_PRESENCE
     /**Publish new state information.
      * Only the basic & note fields of the PIDF+xml are supported for now.
      */
@@ -777,6 +778,7 @@ class SIPEndPoint : public OpalRTPEndPoint
       const PString & basic,
       const PString & note
     );
+#endif // OPAL_SIP_PRESENCE
 
 
     /**Send a SIP PING to the remote host

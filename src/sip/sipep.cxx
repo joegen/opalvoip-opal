@@ -1637,6 +1637,7 @@ bool SIPEndPoint::Publish(const PString & to, const PString & body, unsigned exp
 }
 
 
+#if OPAL_SIP_PRESENCE
 bool SIPEndPoint::PublishPresence(const SIPPresenceInfo & info, unsigned expire)
 {
   SIPSubscribe::Params params(SIPSubscribe::Presence);
@@ -1673,6 +1674,7 @@ void SIPEndPoint::OnPresenceInfoReceived(const PString & /*entity*/,
                                          const PString & /*note*/)
 {
 }
+#endif // OPAL_SIP_PRESENCE
 
 
 void SIPEndPoint::OnDialogInfoReceived(const SIPDialogNotification & PTRACE_PARAM(info))

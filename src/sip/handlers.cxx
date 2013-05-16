@@ -1288,6 +1288,8 @@ static SIPEventPackageFactory::Worker<SIPMwiEventPackageHandler> mwiEventPackage
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#if OPAL_SIP_PRESENCE
+
 static PConstCaselessString const SIPPresenceEventPackageContentType("application/pidf+xml");
 
 // This package is on for backward compatibility, presence should now use the
@@ -1326,6 +1328,7 @@ class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
 
 static SIPEventPackageFactory::Worker<SIPPresenceEventPackageHandler> presenceEventPackageHandler(SIPSubscribe::Presence);
 
+#endif // OPAL_SIP_PRESENCE
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1867,6 +1870,8 @@ void SIPPublishHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & res
 
 ///////////////////////////////////////////////////////////////////////
 
+#if OPAL_SIP_PRESENCE
+
 static PAtomicInteger DefaultTupleIdentifier(PRandom::Number());
 
 SIPPresenceInfo::SIPPresenceInfo(State state)
@@ -2015,7 +2020,6 @@ PString SIPPresenceInfo::AsXML() const
 }
 
 
-#if P_EXPAT
 static void SetNoteFromElement(PXMLElement * element, PString & note)
 {
   PXMLElement * noteElement = element->GetElement("note");
@@ -2155,14 +2159,8 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
 
   return true;
 }
-#else // P_EXPAT
-bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo &,
-                                  list<SIPPresenceInfo> &)
-{
-  PTRACE2(1, NULL, "SIPPres\tCould not parse entity, no XML support!");
-  return false;
-}
-#endif // P_EXPAT
+#endif // OPAL_SIP_PRESENCE
+
 
 /////////////////////////////////////////////////////////////////////////
 
