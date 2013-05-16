@@ -31,14 +31,8 @@
 #include <opal/console_mgr.h>
 #include <sip/sippres.h>
 
-#if P_EXPAT
-#else
-#error Cannot compile Presentity test program without XML support!
-#endif
-
-#if OPAL_SIP
-#else
-#error Cannot compile Presentity test program without SIP support!
+#if !OPAL_SIP_PRESENCE
+  #error Cannot compile Presentity test program without XML and SIP support!
 #endif
 
 

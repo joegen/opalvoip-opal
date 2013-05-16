@@ -1540,7 +1540,7 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
         attr.Set(OpalPresentity::AuthNameKey, command.m_param.m_registrationInfo.m_authUserName);
         attr.Set(OpalPresentity::AuthPasswordKey, command.m_param.m_registrationInfo.m_password);
         attr.SetInteger(OpalPresentity::TimeToLiveKey, command.m_param.m_registrationInfo.m_timeToLive);
-#if OPAL_SIP
+#if OPAL_SIP_PRESENCE
         attr.Set(SIP_Presentity::PresenceAgentKey, command.m_param.m_registrationInfo.m_hostName);
 #endif
         if (m_apiVersion >= 28) {

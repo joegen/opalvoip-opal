@@ -117,6 +117,7 @@ OPAL_HAS_SIPIM=yes
 OPAL_HAS_RFC4103=yes
 OPAL_HAS_MIXER=yes
 OPAL_HAS_PCSS=yes
+OPAL_HAS_PRESENCE=yes
 PTLIB_REQUIRED_VERSION="2.12.3"
 
 # experimental options
@@ -612,6 +613,10 @@ OPAL_SIMPLE_OPTION(mixer,OPAL_HAS_MIXER, [whether to enable media mixing support
 dnl MSWIN_DISPLAY  pcss,PC Sound System Endpoint
 dnl MSWIN_DEFINE   pcss,OPAL_HAS_PCSS
 OPAL_SIMPLE_OPTION(pcss,OPAL_HAS_PCSS, [whether to enable PC sound system support])
+
+dnl MSWIN_DISPLAY  presence,Presence support
+dnl MSWIN_DEFINE   presence,OPAL_HAS_PRESENCE
+OPAL_SIMPLE_OPTION(presence,OPAL_HAS_PRESENCE, [whether to enable presence support])
 
 dnl MSWIN_DISPLAY  script,Script language interface
 dnl MSWIN_DEFINE   script,OPAL_SCRIPT
