@@ -255,7 +255,9 @@ class OpalManager_C : public OpalManager
     virtual void OnClearedCall(OpalCall & call);
     virtual void OnMessageReceived(const OpalIM & message);
 
+#if OPAL_HAS_PRESENCE
     PDECLARE_PresenceChangeNotifier(OpalManager_C, OnPresenceChange);
+#endif // OPAL_HAS_PRESENCE
 
     void SendIncomingCallInfo(const OpalConnection & connection);
 
@@ -1521,6 +1523,7 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
 
 void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageBuffer & response)
 {
+#if OPAL_HAS_PRESENCE
   static const PConstCaselessString PresPrefix("pres");
   if (PresPrefix == command.m_param.m_registrationInfo.m_protocol) {
     if (IsNullString(command.m_param.m_registrationInfo.m_identifier))
@@ -1559,6 +1562,7 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
     }
     return;
   }
+#endif // OPAL_HAS_PRESENCE
 
   OpalEndPoint * ep = FindEndPoint(command.m_param.m_registrationInfo.m_protocol);
   if (ep == NULL) {
@@ -2239,6 +2243,7 @@ void OpalManager_C::OnMWIReceived(const PString & party, MessageWaitingType type
 }
 
 
+#if OPAL_HAS_PRESENCE
 void OpalManager_C::OnPresenceChange(OpalPresentity &, std::auto_ptr<OpalPresenceInfo> info)
 {
   OpalMessageBuffer message(OpalIndPresenceChange);
@@ -2253,10 +2258,12 @@ void OpalManager_C::OnPresenceChange(OpalPresentity &, std::auto_ptr<OpalPresenc
             " target=\"" << message->m_param.m_presenceStatus.m_target << '"');
   PostMessage(message);
 }
+#endif // OPAL_HAS_PRESENCE
 
 
 void OpalManager_C::HandleAuthorisePresence(const OpalMessage & command, OpalMessageBuffer & response)
 {
+#if OPAL_HAS_PRESENCE
   OpalPresentity::Authorisation auth;
   switch (command.m_param.m_presenceStatus.m_state) {
     case OpalPresenceForbidden :
@@ -2281,11 +2288,15 @@ void OpalManager_C::HandleAuthorisePresence(const OpalMessage & command, OpalMes
     response.SetError("URI is not registered for presence.");
   else if (!presentity->SetPresenceAuthorisation(command.m_param.m_presenceStatus.m_target, auth))
     response.SetError("Could not set presence authorisation.");
+#else
+  response.SetError("Presence not supported by library.");
+#endif // OPAL_HAS_PRESENCE
 }
 
 
 void OpalManager_C::HandleSubscribePresence(const OpalMessage & command, OpalMessageBuffer & response)
 {
+#if OPAL_HAS_PRESENCE
   PSafePtr<OpalPresentity> presentity = GetPresentity(command.m_param.m_presenceStatus.m_entity);
   if (presentity == NULL)
     response.SetError("URI is not registered for presence.");
@@ -2295,11 +2306,15 @@ void OpalManager_C::HandleSubscribePresence(const OpalMessage & command, OpalMes
                                             command.m_param.m_presenceStatus.m_state != OpalPresenceNone,
                                             command.m_param.m_presenceStatus.m_note))
     response.SetError("Could not subscribe for presence status.");
+#else
+  response.SetError("Presence not supported by library.");
+#endif // OPAL_HAS_PRESENCE
 }
 
 
 void OpalManager_C::HandleSetLocalPresence(const OpalMessage & command, OpalMessageBuffer & response)
 {
+#if OPAL_HAS_PRESENCE
   PSafePtr<OpalPresentity> presentity = GetPresentity(command.m_param.m_presenceStatus.m_entity);
   if (presentity == NULL)
     response.SetError("URI is not registered for presence.");
@@ -2316,6 +2331,9 @@ void OpalManager_C::HandleSetLocalPresence(const OpalMessage & command, OpalMess
       SET_MESSAGE_STRING(response, m_param.m_presenceStatus.m_note, note);
     }
   }
+#else
+  response.SetError("Presence not supported by library.");
+#endif // OPAL_HAS_PRESENCE
 }
 
 

@@ -32,6 +32,8 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 
+#if OPAL_HAS_PRESENCE
+
 #include <opal/pres_ent.h>
 
 #include <opal/manager.h>
@@ -678,5 +680,7 @@ void OpalPresentityWithCommandThread::ThreadMain()
 
   PTRACE(4, "OpalPres\tCommand thread ended");
 }
+
+#endif // OPAL_HAS_PRESENCE
 
 /////////////////////////////////////////////////////////////////////////////
