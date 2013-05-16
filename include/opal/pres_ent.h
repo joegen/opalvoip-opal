@@ -34,13 +34,15 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 
+#if OPAL_HAS_PRESENCE
+
 #include <ptlib/pfactory.h>
 #include <ptlib/safecoll.h>
 #include <ptclib/url.h>
 #include <ptclib/guid.h>
 
 #ifdef P_VCARD
-#include <ptclib/vcard.h>
+  #include <ptclib/vcard.h>
 #endif
 
 #include <im/im.h>
@@ -732,9 +734,12 @@ class OpalSendMessageToCommand : public OpalPresentityCommand
 ///////////////////////////////////////////////////////////////////////////////
 
 // Include concrete classes here so the factories are initialised
-#if OPAL_SIP && OPAL_PTLIB_EXPAT
-PFACTORY_LOAD(SIP_Presentity);
+#if OPAL_SIP_PRESENCE
+  PFACTORY_LOAD(SIP_Presentity);
 #endif
+
+
+#endif // OPAL_HAS_PRESENCE
 
 
 #endif  // OPAL_IM_PRES_ENT_H

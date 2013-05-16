@@ -44,6 +44,7 @@
 #include <opal/guid.h>
 #include <codec/silencedetect.h>
 #include <codec/echocancel.h>
+#include <im/im.h>
 
 #include <ptclib/pstun.h>
 #include <ptclib/url.h>
@@ -229,6 +230,7 @@ class OpalManager : public PObject
   //@}
 
 
+#if OPAL_HAS_PRESENCE
   /**@name Presence management */
   //@{
     /**Add a presentity.
@@ -258,6 +260,7 @@ class OpalManager : public PObject
       const PString & presentity  ///< Presentity URI
     );
   //@}
+#endif // OPAL_HAS_PRESENCE
 
 
   /**@name Call management */
@@ -1997,7 +2000,9 @@ class OpalManager : public PObject
         OpalManager & manager;
     } activeCalls;
 
+#if OPAL_HAS_PRESENCE
     PSafeDictionary<PString, OpalPresentity> m_presentities;
+#endif // OPAL_HAS_PRESENCE
 
     PAtomicInteger m_clearingAllCallsCount;
     PMutex         m_clearingAllCallsMutex;
