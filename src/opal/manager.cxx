@@ -1129,7 +1129,7 @@ PBoolean OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection
 
   autoDelete = true;
   device = PVideoInputDevice::CreateOpenedDevice(args, false);
-  PTRACE_IF(2, device == NULL, "OpalCon\tCould not open video device \"" << args.deviceName << '"');
+  PTRACE_IF(4, device == NULL, "OpalMan\tCould not open video input device \"" << args.deviceName << '"');
   return device != NULL;
 }
 
@@ -1142,8 +1142,10 @@ PBoolean OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
 {
   // Make copy so we can adjust the size
   PVideoDevice::OpenArgs args = preview ? videoPreviewDevice : videoOutputDevice;
-  if (args.deviceName.IsEmpty() && args.driverName.IsEmpty())
+  if (args.deviceName.IsEmpty() && args.driverName.IsEmpty()) {
+    PTRACE(4, "OpalMan\tNo video output device specified.");
     return false; // Disabled
+  }
 
   mediaFormat.AdjustVideoArgs(args);
 
@@ -1156,6 +1158,7 @@ PBoolean OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
 
   autoDelete = true;
   device = PVideoOutputDevice::CreateOpenedDevice(args, false);
+  PTRACE_IF(4, device == NULL, "OpalMan\tCould not open video output device \"" << args.deviceName << '"');
   return device != NULL;
 }
 

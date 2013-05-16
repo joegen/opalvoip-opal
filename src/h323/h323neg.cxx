@@ -576,10 +576,14 @@ PBoolean H245NegLogicalChannel::Open(const H323Capability & capability,
 
 PBoolean H245NegLogicalChannel::Close()
 {
-  PTRACE(3, "H245\tClosing channel: " << channelNumber << ", state=" << state);
+  switch (state) {
+    case e_Establishing :
+    case e_AwaitingRelease :
+    case e_Released :
+      return true;
+  }
 
-  if (state != e_AwaitingEstablishment && state != e_Established)
-    return true;
+  PTRACE(3, "H245\tClosing channel: " << channelNumber << ", state=" << state);
 
   replyTimer = endpoint.GetLogicalChannelTimeout();
 
@@ -610,7 +614,7 @@ PBoolean H245NegLogicalChannel::HandleOpen(const H245_OpenLogicalChannel & pdu)
     channel = NULL;
   }
 
-  state = e_AwaitingEstablishment;
+  state = e_Establishing;
 
   H323ControlPDU reply;
   H245_OpenLogicalChannelAck & ack = reply.BuildOpenLogicalChannelAck(channelNumber);
@@ -637,6 +641,7 @@ PBoolean H245NegLogicalChannel::HandleOpen(const H245_OpenLogicalChannel & pdu)
       }
     }
     else {
+      channel->Close();
       delete channel;
       channel = NULL;
       ok = false;
