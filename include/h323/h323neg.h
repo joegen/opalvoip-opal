@@ -205,6 +205,7 @@ class H245NegLogicalChannel : public H245Negotiator
     enum States {
       e_Released,
       e_AwaitingEstablishment,
+      e_Establishing,
       e_Established,
       e_AwaitingRelease,
       e_AwaitingConfirmation,
