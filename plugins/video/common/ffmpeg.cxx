@@ -137,7 +137,11 @@ FFMPEGCodec::~FFMPEGCodec()
 
 bool FFMPEGCodec::InitContext()
 {
+#if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52, 25, 0)
+  m_context = avcodec_alloc_context2(m_codec->type);
+#else
   m_context = avcodec_alloc_context3(m_codec);
+#endif
   if (m_context == NULL) {
     PTRACE(1, m_prefix, "Failed to allocate context for encoder");
     return false;
@@ -238,9 +242,13 @@ bool FFMPEGCodec::OpenCodec()
     return false;
   }
 
+#if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52, 25, 0)
+  int result = avcodec_open(m_context, m_codec);
+#else
   AVDictionary * options = NULL;
   int result = avcodec_open2(m_context, m_codec, &options);
   av_dict_free(&options);
+#endif
 
   if (result < 0) {
     PTRACE(1, m_prefix, "Failed to open codec");
@@ -520,9 +528,13 @@ bool FFMPEGCodec::DecodeVideoFrame(const uint8_t * frame, size_t length, unsigne
 
   m_picture->pict_type = AV_PICTURE_TYPE_NONE;
   int gotPicture = 0;
+#if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52, 25, 0)
+  int bytesDecoded = avcodec_decode_video(m_context, m_picture, &gotPicture, frame, length);
+#else
   m_packet.data = (uint8_t *)frame;
   m_packet.size = length;
   int bytesDecoded = avcodec_decode_video2(m_context, m_picture, &gotPicture, &m_packet);
+#endif
 
   int errorsAfter = m_errorCount;
 #ifdef FFMPEG_HAS_DECODE_ERROR_COUNT
