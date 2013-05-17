@@ -920,6 +920,17 @@ class H323EndPoint : public OpalRTPEndPoint
       PBoolean mode ///<  New default mode
     ) { disableH245inSetup = mode; } 
 
+    /**Get the default H.245 tunneling mode.
+      */
+    bool IsForcedSymmetricTCS() const
+      { return m_forceSymmetricTCS; }
+
+    /**Set the default H.245 tunneling mode.
+      */
+    void ForceSymmetricTCS(
+      bool mode ///<  New default mode
+    ) { m_forceSymmetricTCS = mode; } 
+
     /** find out if h245 is disabled or enabled 
       * @return true if h245 is disabled 
       */
@@ -1372,6 +1383,7 @@ class H323EndPoint : public OpalRTPEndPoint
     PBoolean        disableFastStart;
     PBoolean        disableH245Tunneling;
     PBoolean        disableH245inSetup;
+    bool            m_forceSymmetricTCS;
     PBoolean        m_bH245Disabled; /* enabled or disabled h245 */
     PBoolean        canDisplayAmountString;
     PBoolean        canEnforceDurationLimit;
