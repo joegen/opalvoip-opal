@@ -581,6 +581,9 @@ PBoolean H245NegLogicalChannel::Close()
     case e_AwaitingRelease :
     case e_Released :
       return true;
+
+    default :
+      break;
   }
 
   PTRACE(3, "H245\tClosing channel: " << channelNumber << ", state=" << state);
