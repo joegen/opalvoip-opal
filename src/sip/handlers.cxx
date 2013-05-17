@@ -1907,61 +1907,6 @@ void SIPPresenceInfo::PrintOn(ostream & strm) const
   }
 }
 
-// defined in RFC 4480
-static const char * const ExtendedSIPActivities[] = {
-      "appointment",
-      "away",
-      "breakfast",
-      "busy",
-      "dinner",
-      "holiday",
-      "in-transit",
-      "looking-for-work",
-      "lunch",
-      "meal",
-      "meeting",
-      "on-the-phone",
-      "other",
-      "performance",
-      "permanent-absence",
-      "playing",
-      "presentation",
-      "shopping",
-      "sleeping",
-      "spectator",
-      "steering",
-      "travel",
-      "tv",
-      "vacation",
-      "working",
-      "worship"
-};
-
-bool SIPPresenceInfo::AsSIPActivityString(State state, PString & str)
-{
-  if ((state >= Appointment) && (state <= Worship)) {
-    str = PString(ExtendedSIPActivities[state - Appointment]);
-    return true;
-  }
-
-  return false;
-}
-
-bool SIPPresenceInfo::AsSIPActivityString(PString & str) const
-{
-  return AsSIPActivityString(m_state, str);
-}
-
-OpalPresenceInfo::State SIPPresenceInfo::FromSIPActivityString(const PString & str)
-{
-  for (size_t i = 0; i < sizeof(ExtendedSIPActivities)/sizeof(ExtendedSIPActivities[0]);++i) {
-    if (str == ExtendedSIPActivities[i])
-      return (State)(Appointment + i);
-  }
-
-  return NoPresence;
-}
-
 PString SIPPresenceInfo::AsXML() const
 {
   if (m_entity.IsEmpty() || m_tupleId.IsEmpty()) {
@@ -1980,13 +1925,15 @@ PString SIPPresenceInfo::AsXML() const
          "    <status>\r\n";
   if (m_state != Unchanged)
     xml << "      <basic>" << (m_state != NoPresence ? "open" : "closed") << "</basic>\r\n";
-  xml << "    </status>\r\n"
-         "    <contact priority=\"1\">";
-  if (m_contact.IsEmpty())
-    xml << m_entity;
-  else
-    xml << m_contact;
-  xml << "</contact>\r\n";
+  xml << "    </status>\r\n";
+  if (m_state == Available) {
+    xml << "    <contact priority=\"1\">";
+    if (m_contact.IsEmpty())
+      xml << m_entity;
+    else
+      xml << m_contact;
+    xml << "</contact>\r\n";
+  }
 
   if (!m_note.IsEmpty()) {
     //xml << "    <note xml:lang=\"en\">" << PXML::EscapeSpecialChars(m_note) << "</note>\r\n";
@@ -1995,20 +1942,13 @@ PString SIPPresenceInfo::AsXML() const
 
   xml << "    <timestamp>" << PTime().AsString(PTime::RFC3339) << "</timestamp>\r\n"
          "  </tuple>\r\n";
-  if (!m_personId.IsEmpty() && (((m_state >= Appointment) && (m_state <= Worship)) || (m_activities.GetSize() > 0))) {
+  if (!m_personId.IsEmpty() && !m_activities.IsEmpty()) {
     xml << "  <dm:person id=\"p" << m_personId << "\">\r\n"
            "    <rpid:activities>\r\n";
-    bool doneState = false;
-    for (PINDEX i = 0; i < m_activities.GetSize(); ++i) {
-      State s = FromString(m_activities[i]);
-      if (s >= Appointment) {
-        if (s == m_state)
-          doneState = true;
-        xml << "      <rpid:" << ExtendedSIPActivities[s - Appointment] <<"/>\r\n";
-      }
+    for (PStringSet::const_iterator it = m_activities.begin(); it != m_activities.end(); ++it) {
+      if (it->FindSpan("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz- ") == P_MAX_INDEX)
+        xml << "      <rpid:" << *it <<"/>\r\n";
     }
-    if (!doneState)
-      xml << "      <rpid:" << ExtendedSIPActivities[m_state - Appointment] <<"/>\r\n";
 
     xml << "    </rpid:activities>\r\n"
            "  </dm:person>\r\n";
@@ -2115,14 +2055,17 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
         if ((element = element->GetElement("basic")) != NULL) {
           PCaselessString value = element->GetData();
           if (value == "open")
-            info.m_state = Available;
+            info.m_state = Unavailable;
           else if (value == "closed")
             info.m_state = NoPresence;
         }
       }
 
-      if ((element = tupleElement->GetElement("contact")) != NULL)
+      if ((element = tupleElement->GetElement("contact")) != NULL) {
         info.m_contact = element->GetData();
+        if (info.m_state == Unavailable)
+          info.m_state = Available;
+      }
 
       if ((element = tupleElement->GetElement("timestamp")) == NULL || !info.m_when.Parse(element->GetData()))
         info.m_when = defaultTimestamp;
@@ -2143,11 +2086,7 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
           continue;
 
         name.Delete(0, rpid.GetLength());
-        info.m_activities.AppendString(name);
-
-        State newState = SIPPresenceInfo::FromSIPActivityString(name);
-        if (newState != SIPPresenceInfo::NoPresence && info.m_state == Available)
-          info.m_state = newState;
+        info.m_activities += name;
       }
     }
   }

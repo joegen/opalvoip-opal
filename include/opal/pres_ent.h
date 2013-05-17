@@ -56,62 +56,35 @@ class OpalPresentityCommand;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/**Presencu state information
+/**Presence state information.
+   While protocol independent, this is based on the basic model provided
+   by RFC 3863 and RFC 4480.
   */
 class OpalPresenceInfo : public PObject
 {
     PCLASSINFO_WITH_CLONE(OpalPresenceInfo, PObject);
   public:
-    /// Presence states.
-    enum State {
-      InternalError = -3,    // something bad happened
-      Forbidden     = -2,    // access to presence information was specifically forbidden
-      NoPresence    = -1,    // remove presence status - not the same as Unavailable or Away
+    /** Presence states. Basic states (from RFC 3863) plus system states not
+        included in the specification. Note, in the RFC 3863 context, the
+        difference between Available and Unavailable is the presence of the
+        Contact field. */
+    P_DECLARE_STREAMABLE_ENUM_EX(State,StateCount,
+      InternalError,-3,   ///< Something bad happened
+      Forbidden,          ///< Access to presence information was specifically forbidden
+      NoPresence,         ///< No presence status - not the same as Unavailable or Away
+      Unchanged,          ///< State has not changed from last time
+      Available,          ///< User has a presence and is available to be contacted
+      Unavailable         ///< User has a presence, but is cannot be contacted
+    );
 
-      // basic states (from RFC 3863)
-      Unchanged,
-      Available,
-      Unavailable,
-
-      // extended states (from RFC 4480)
-      // if this is changed, also change the tables in sippres.cxx and handlers.cxx - look for RFC 4480
-      ExtendedBase    = 100,
-      UnknownExtended = ExtendedBase,
-      Appointment,
-      Away,
-      Breakfast,
-      Busy,
-      Dinner,
-      Holiday,
-      InTransit,
-      LookingForWork,
-      Lunch,
-      Meal,
-      Meeting,
-      OnThePhone,
-      Other,
-      Performance,
-      PermanentAbsence,
-      Playing,
-      Presentation,
-      Shopping,
-      Sleeping,
-      Spectator,
-      Steering,
-      Travel,
-      TV,
-      Vacation,
-      Working,
-      Worship
-    };
-
-    State   m_state;    ///< New state for presentity
-    PString m_note;     ///< Additional information about state change
-    PURL    m_entity;   ///< The presentity whose state had changed
-    PURL    m_target;   ///< The presentity that is being informed about the state change
-    PTime   m_when;     ///< Time/date of state change
-    PString m_infoType; ///< MIME tyupe for m_infoData, e.g. application/pidf+xml
-    PString m_infoData; ///< Raw information as provided by underlying protocol, e.g. XML.
+    State      m_state;      ///< New state for presentity
+    PStringSet m_activities; ///< Activity (from RFC 4480)
+    PString    m_note;       ///< Additional information about state change
+    PURL       m_entity;     ///< The presentity whose state had changed
+    PURL       m_target;     ///< The presentity that is being informed about the state change
+    PTime      m_when;       ///< Time/date of state change
+    PString    m_infoType;   ///< MIME tyupe for m_infoData, e.g. application/pidf+xml
+    PString    m_infoData;   ///< Raw information as provided by underlying protocol, e.g. XML.
 
     OpalPresenceInfo(State state = Unchanged) : m_state(state) { }
 

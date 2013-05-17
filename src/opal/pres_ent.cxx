@@ -55,98 +55,25 @@ PString OpalPresenceInfo::AsString() const
   return AsString(m_state);
 }
 
-ostream & operator<<(ostream & strm, OpalPresenceInfo::State state)
-{
-  return strm << OpalPresenceInfo::AsString(state);
-}
-
-//
-//  defined in RFC 3856
-//
-static const char * const BasicNames[] = {
-  "Internal Error",
-  "Forbidden",
-  "No Presence",
-  "Unchanged",
-  "Available",
-  "Unavailable"
-};
-
-//
-// defined in RFC 4480 as "activities"
-//
-static const char * const ExtendedNames[] = {
-  "UnknownExtended",
-  "Appointment",
-  "Away",
-  "Breakfast",
-  "Busy",
-  "Dinner",
-  "Holiday",
-  "InTransit",
-  "LookingForWork",
-  "Lunch",
-  "Meal",
-  "Meeting",
-  "OnThePhone",
-  "Other",
-  "Performance",
-  "PermanentAbsence",
-  "Playing",
-  "Presentation",
-  "Shopping",
-  "Sleeping",
-  "Spectator",
-  "Steering",
-  "Travel",
-  "TV",
-  "Vacation",
-  "Working",
-  "Worship"
-};
-
 PString OpalPresenceInfo::AsString(State state)
 {
-  if (state >= OpalPresenceInfo::InternalError) {
-    PINDEX index = state - OpalPresenceInfo::InternalError;
-    if (index < PARRAYSIZE(BasicNames)) 
-      return BasicNames[index];
-  }
-
-  if (state >= OpalPresenceInfo::ExtendedBase) {
-    PINDEX index = state - OpalPresenceInfo::ExtendedBase;
-    if (index < PARRAYSIZE(ExtendedNames))
-      return ExtendedNames[index];
-  }
-
   PStringStream strm;
-  strm << "Presence<" << (unsigned)state << '>';
+  strm << state;
   return strm;
 }
 
 
 OpalPresenceInfo::State OpalPresenceInfo::FromString(const PString & stateString)
 {
-  if (stateString.IsEmpty() || (stateString *= "Unchanged"))
-    return Unchanged;
-
-  if (stateString *= "Available")
-    return Available;
-
-  if (stateString *= "Unavailable")
-    return Unavailable;
-
-  if ((stateString *= "Invisible") ||
+  if ((stateString *= "None") ||
       (stateString *= "Offline") ||
-      (stateString *= "NoPresence"))
+      (stateString *= "Invisible"))
     return NoPresence;
 
-  for (size_t k = 0; k < sizeof(ExtendedNames)/sizeof(ExtendedNames[0]); ++k) {
-    if (stateString *= ExtendedNames[k]) 
-      return (State)(ExtendedBase + k);
-  }
-
-  return InternalError;
+  State state = InternalError;
+  PStringStream strm(stateString);
+  strm >> state;
+  return strm.fail() ? InternalError : state;
 }
 
 

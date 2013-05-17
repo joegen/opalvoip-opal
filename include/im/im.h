@@ -78,6 +78,7 @@ class OpalIMEndPoint;
   */
 class OpalIM : public PObject
 {
+    PCLASSINFO_WITH_CLONE(OpalIM, PObject);
   public:
     OpalIM();
 

@@ -47,6 +47,7 @@
 #include <lids/lidep.h>
 #include <t38/t38proto.h>
 #include <ep/ivr.h>
+#include <im/im_ep.h>
 
 #include <queue>
 
@@ -866,74 +867,74 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
   PINDEX  defProtoPos = P_MAX_INDEX, defUserPos = P_MAX_INDEX;
 
 #if OPAL_H323
-  PINDEX h323Pos = options.Find("h323");
+  PINDEX h323Pos = options.Find(OPAL_PREFIX_H323);
   if (h323Pos < defProtoPos) {
-    defProto = "h323";
+    defProto = OPAL_PREFIX_H323":";
     defProtoPos = h323Pos;
   }
 #endif
 
 #if OPAL_SIP
-  PINDEX sipPos = options.Find("sip");
+  PINDEX sipPos = options.Find(OPAL_PREFIX_SIP);
   if (sipPos < defProtoPos) {
-    defProto = "sip";
+    defProto = OPAL_PREFIX_SIP":";
     defProtoPos = sipPos;
   }
 #endif
 
 #if OPAL_IAX2
-  PINDEX iaxPos = options.Find("iax2");
+  PINDEX iaxPos = options.Find(OPAL_PREFIX_IAX2);
   if (iaxPos < defProtoPos) {
-    defProto = "iax2:<da>";
+    defProto = OPAL_PREFIX_IAX2":<da>";
     defProtoPos = iaxPos;
   }
 #endif
 
 #if OPAL_LID
-  PINDEX potsPos = options.Find("pots");
+  PINDEX potsPos = options.Find(OPAL_PREFIX_POTS);
   if (potsPos < defUserPos) {
-    defUser = "pots:<dn>";
+    defUser = OPAL_PREFIX_POTS":<dn>";
     defUserPos = potsPos;
   }
 
-  PINDEX pstnPos = options.Find("pstn");
+  PINDEX pstnPos = options.Find(OPAL_PREFIX_PSTN);
   if (pstnPos < defProtoPos) {
-    defProto = "pstn:<dn>";
+    defProto = OPAL_PREFIX_PSTN":<dn>";
     defProtoPos = pstnPos;
   }
 #endif
 
 #if OPAL_FAX
-  PINDEX faxPos = options.Find("fax");
+  PINDEX faxPos = options.Find(OPAL_PREFIX_FAX);
   if (faxPos < defUserPos) {
-    defUser = "fax:";
+    defUser = OPAL_PREFIX_FAX":";
     defUserPos = faxPos;
   }
 
-  PINDEX t38Pos = options.Find("t38");
+  PINDEX t38Pos = options.Find(OPAL_PREFIX_T38);
   if (t38Pos < defUserPos) {
-    defUser = "t38:";
+    defUser = OPAL_PREFIX_T38":";
     defUserPos = t38Pos;
   }
 #endif
 
-  PINDEX pcPos = options.Find("pc");
+  PINDEX pcPos = options.Find(OPAL_PREFIX_PCSS);
   if (pcPos < defUserPos) {
-    defUser = "pc:*";
+    defUser = OPAL_PREFIX_PCSS":*";
     defUserPos = pcPos;
   }
 
-  PINDEX localPos = options.Find("local");
+  PINDEX localPos = options.Find(OPAL_PREFIX_LOCAL);
   if (localPos < defUserPos) {
-    defUser = "local:<du>";
+    defUser = OPAL_PREFIX_LOCAL":<du>";
     defUserPos = localPos;
   }
 
 
 #if OPAL_IVR
-  PINDEX ivrPos = options.Find("ivr");
+  PINDEX ivrPos = options.Find(OPAL_PREFIX_IVR);
   if (ivrPos < defUserPos) {
-    defUser = "ivr:";
+    defUser = OPAL_PREFIX_IVR":";
     defUserPos = localPos;
   }
 #endif
@@ -941,21 +942,21 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
 #if OPAL_H323
   if (h323Pos != P_MAX_INDEX) {
     new H323EndPoint(*this);
-    AddRouteEntry("h323:.*=" + defUser);
+    AddRouteEntry(OPAL_PREFIX_H323":.*=" + defUser);
   }
 #endif
 
 #if OPAL_SIP
   if (sipPos != P_MAX_INDEX) {
     new SIPEndPoint_C(*this);
-    AddRouteEntry("sip:.*=" + defUser);
+    AddRouteEntry(OPAL_PREFIX_SIP":.*=" + defUser);
   }
 #endif
 
 #if OPAL_IAX2
-  if (options.Find("iax2") != P_MAX_INDEX) {
+  if (iaxPos != P_MAX_INDEX) {
     new IAX2EndPoint(*this);
-    AddRouteEntry("iax2:.*=" + defUser);
+    AddRouteEntry(OPAL_PREFIX_IAX2":.*=" + defUser);
   }
 #endif
 
@@ -964,9 +965,9 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
     new OpalLineEndPoint(*this);
 
     if (potsPos != P_MAX_INDEX)
-      AddRouteEntry("pots:.*=" + defProto + ":<da>");
+      AddRouteEntry(OPAL_PREFIX_POTS":.*=" + defProto + ":<da>");
     if (pstnPos != P_MAX_INDEX)
-      AddRouteEntry("pstn:.*=" + defUser + ":<da>");
+      AddRouteEntry(OPAL_PREFIX_PSTN":.*=" + defUser + ":<da>");
   }
 #endif
 
@@ -975,29 +976,34 @@ bool OpalManager_C::Initialise(const PCaselessString & options)
     new OpalFaxEndPoint(*this);
 
     if (faxPos != P_MAX_INDEX)
-      AddRouteEntry("fax:.*=" + defProto + ":<da>");
+      AddRouteEntry(OPAL_PREFIX_FAX":.*=" + defProto + ":<da>");
     if (t38Pos != P_MAX_INDEX)
-      AddRouteEntry("t38:.*=" + defUser + ":<da>");
+      AddRouteEntry(OPAL_PREFIX_T38":.*=" + defUser + ":<da>");
   }
 #endif
 
 #if OPAL_HAS_PCSS
   if (pcPos != P_MAX_INDEX) {
     m_pcssEP = new OpalPCSSEndPoint_C(*this);
-    AddRouteEntry("pc:.*=" + defProto + ":<da>");
+    AddRouteEntry(OPAL_PREFIX_PCSS":.*=" + defProto + ":<da>");
   }
 #endif
 
   if (localPos != P_MAX_INDEX) {
     m_localEP = new OpalLocalEndPoint_C(*this);
-    AddRouteEntry("local:.*=" + defProto + ":<da>");
+    AddRouteEntry(OPAL_PREFIX_LOCAL":.*=" + defProto + ":<da>");
   }
 
 #if OPAL_IVR
   if (ivrPos != P_MAX_INDEX) {
     m_ivrEP = new OpalIVREndPoint_C(*this);
-    AddRouteEntry("ivr:.*=" + defProto + ":<da>");
+    AddRouteEntry(OPAL_PREFIX_IVR":.*=" + defProto + ":<da>");
   }
+#endif
+
+#if OPAL_HAS_IM
+  if (options.Find(OPAL_PREFIX_IM) != P_MAX_INDEX)
+    new OpalIMEndPoint(*this);
 #endif
 
   return true;
@@ -2255,7 +2261,9 @@ void OpalManager_C::OnPresenceChange(OpalPresentity &, std::auto_ptr<OpalPresenc
   message->m_param.m_presenceStatus.m_state = (OpalPresenceStates)info->m_state;
   PTRACE(4, "OpalC API\tOnPresenceChange:"
             " entity=\"" << message->m_param.m_presenceStatus.m_entity << "\""
-            " target=\"" << message->m_param.m_presenceStatus.m_target << '"');
+            " target=\"" << message->m_param.m_presenceStatus.m_target << "\""
+            " state=" << message->m_param.m_presenceStatus.m_state <<
+            " note=\"" << message->m_param.m_presenceStatus.m_note << '"');
   PostMessage(message);
 }
 #endif // OPAL_HAS_PRESENCE

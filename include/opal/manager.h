@@ -1221,9 +1221,12 @@ class OpalManager : public PObject
 
     /**Send an Instant Message to a remote party.
        Details of the message must be filled out in the \p message structure.
+
        Note that message is non-const as this function can be used to initiate
        a conversation, and the created conversation ID is returned in the
        message.m_conversationId member variable.
+
+       This will fail if an OpalIMEndPoint has not been created.
      */
     virtual PBoolean Message(
       OpalIM & message

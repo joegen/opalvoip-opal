@@ -2253,12 +2253,15 @@ bool OpalManager::Message(OpalIM & message)
   }
 
   PSafePtr<OpalIMContext> context = ep->FindContextForMessageWithLock(message);
-  if (context == NULL)
+  if (context == NULL) {
     context = ep->CreateContext(message.m_from, message.m_to);
-  if (context == NULL)
-    return false;
+    if (context == NULL)
+      return false;
 
-  return context->Send(new OpalIM(message)) < OpalIMContext::DispositionErrors;
+    message.m_conversationId = context->GetID();
+  }
+
+  return context->Send(message.CloneAs<OpalIM>()) < OpalIMContext::DispositionErrors;
 }
 
 

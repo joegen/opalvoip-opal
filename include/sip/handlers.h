@@ -432,19 +432,13 @@ class SIPPresenceInfo : public OpalPresenceInfo
 {
   PCLASSINFO_WITH_CLONE(SIPPresenceInfo, OpalPresenceInfo)
 public:
-  SIPPresenceInfo(
-    State state = Unchanged
-  );
-
   // basic presence defined by RFC 3863
   PString m_tupleId;
   PString m_contact;
 
-  // presence extensions defined by RFC 4480
-  PStringArray m_activities;  // list of activities, seperated by newline
-
   // presence agent
   PString m_presenceAgent;
+  PString m_personId;
 
   PString AsXML() const;
 
@@ -456,12 +450,10 @@ public:
   void PrintOn(ostream & strm) const;
   friend ostream & operator<<(ostream & strm, const SIPPresenceInfo & info) { info.PrintOn(strm); return strm; }
 
-  static State FromSIPActivityString(const PString & str);
-
-  static bool AsSIPActivityString(State state, PString & str);
-  bool AsSIPActivityString(PString & str) const;
-
-  PString m_personId;
+  // Constructor
+  SIPPresenceInfo(
+    State state = Unchanged
+  );
 };
 #endif // OPAL_SIP_PRESENCE
 
