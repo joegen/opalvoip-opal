@@ -304,7 +304,10 @@ typedef void (OPAL_EXPORT *OpalFreeMessageFunction)(OpalMessage * message);
 #define OPAL_PREFIX_LOCAL "local"   ///< Local endpoint supported string for OpalInitialise()
 #define OPAL_PREFIX_POTS  "pots"    ///< Plain Old Telephone System supported string for OpalInitialise()
 #define OPAL_PREFIX_PSTN  "pstn"    ///< Public Switched Network supported string for OpalInitialise()
+#define OPAL_PREFIX_FAX   "fax"     ///< G.711 fax supported string for OpalInitialise()
+#define OPAL_PREFIX_T38   "t38"     ///< G.711 fax supported string for OpalInitialise()
 #define OPAL_PREFIX_IVR   "ivr"     ///< Interactive Voice Response supported string for OpalInitialise()
+#define OPAL_PREFIX_IM    "im"      ///< Interactive Voice Response supported string for OpalInitialise()
 
 #define OPAL_PREFIX_ALL OPAL_PREFIX_H323  " " \
                         OPAL_PREFIX_SIP   " " \
@@ -313,7 +316,10 @@ typedef void (OPAL_EXPORT *OpalFreeMessageFunction)(OpalMessage * message);
                         OPAL_PREFIX_LOCAL " " \
                         OPAL_PREFIX_POTS  " " \
                         OPAL_PREFIX_PSTN  " " \
-                        OPAL_PREFIX_IVR
+                        OPAL_PREFIX_FAX  " " \
+                        OPAL_PREFIX_T38  " " \
+                        OPAL_PREFIX_IVR  " " \
+                        OPAL_PREFIX_IM
 
 
 /**Type code for messages defined by OpalMessage.
@@ -1185,13 +1191,13 @@ typedef struct OpalStatusLineAppearance {
    This is used by the OpalPresenceStatus structure.
   */
 typedef enum OpalPresenceStates {
-  OpalPresenceAuthRequest = -4,
-  OpalPresenceError       = -3,
-  OpalPresenceForbidden   = -2,
-  OpalPresenceNone        = -1,
-  OpalPresenceUnchanged   = 0,
-  OpalPresenceAvailable,
-  OpalPresenceUnavailable,
+  OpalPresenceAuthRequest = -4,   ///< Authorsiation to view a users state is required
+  OpalPresenceError,              ///< Something bad happened
+  OpalPresenceForbidden,          ///< Access to presence information was specifically forbidden
+  OpalPresenceNone,               ///< No presence status - not the same as Unavailable or Away
+  OpalPresenceUnchanged,          ///< State has not changed from last time
+  OpalPresenceAvailable,          ///< User has a presence and is available to be contacted
+  OpalPresenceUnavailable         ///< User has a presence, but is cannot be contacted
 } OpalPresenceStates;
 
 
@@ -1228,8 +1234,12 @@ typedef struct OpalPresenceStatus {
                                       status change. */
   const char *       m_target;    /**<The entity for which the status is changing. */
   OpalPresenceStates m_state;     /**<The new state of the target entity. */
+  const char *       m_activity;  /**<The optional activity if m_state is OpalPresenceAvailable
+                                      or OpalPresenceUnavailable. Typically something like
+                                      "busy" or "Away". This can be a '\n' seaparated
+                                      list of simultaneous activities. */
   const char *       m_note;      /**<Addition "note" that may be attached to the state
-                                      change, e.g. "sleeping" */
+                                      change, e.g. "I want to be frends with you" */
   const char *       m_infoType;  ///< MIME tyupe for m_infoData, e.g. application/pidf+xml
   const char *       m_infoData;  ///< Raw information as provided by underlying protocol, e.g. XML.
 } OpalPresenceStatus;

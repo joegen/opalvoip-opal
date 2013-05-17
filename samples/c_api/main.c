@@ -51,6 +51,7 @@
 
   #define OPEN_LIBRARY(name)             LoadLibrary(name)
   #define GET_LIBRARY_FUNCTION(dll, fn)  GetProcAddress(dll, fn)
+  #define GET_ERRNO GetLastError()
 
   HINSTANCE hDLL;
 
@@ -66,6 +67,7 @@
 
   #define OPEN_LIBRARY(name)             dlopen(name, RTLD_NOW|RTLD_GLOBAL)
   #define GET_LIBRARY_FUNCTION(dll, fn)  dlsym(dll, (const char *)(fn));
+  #define GET_ERRNO errno
 
   void * hDLL;
 
@@ -156,21 +158,11 @@ int InitialiseOPAL()
   OpalMessage * response;
   unsigned      version;
 
-  static const char OPALOptions[] = OPAL_PREFIX_H323  " "
-                                    OPAL_PREFIX_SIP   " "
-                                    OPAL_PREFIX_IAX2  " "
-#if LOCAL_MEDIA
-                                    OPAL_PREFIX_LOCAL
-#else
-                                    OPAL_PREFIX_PCSS
-#endif
-                                                      " "
-                                    OPAL_PREFIX_IVR
-                                    " TraceLevel=4 TraceFile=debugstream";
+  static const char OPALOptions[] = OPAL_PREFIX_ALL " TraceLevel=4 TraceFile=debugstream";
 
 
   if ((hDLL = OPEN_LIBRARY(OPAL_DLL)) == NULL) {
-    fprintf(stderr, "Could not file %s\n", OPAL_DLL);
+    fprintf(stderr, "Could not file %s, error=%u\n", OPAL_DLL, GET_ERRNO);
     return 0;
   }
 
@@ -198,16 +190,6 @@ int InitialiseOPAL()
     fputs("Could not initialise OPAL\n", stderr);
     return 0;
   }
-
-#if 0
-  // Test shut down and re-initialisation
-  ShutDownFunction(hOPAL);
-  if ((hOPAL = InitialiseFunction(&version, OPALOptions)) == NULL) {
-    fputs("Could not re-initialise OPAL\n", stderr);
-    return 0;
-  }
-#endif
-
 
   // General options
   memset(&command, 0, sizeof(command));
@@ -390,6 +372,14 @@ static void HandleMessages(unsigned timeout)
                message->m_param.m_presenceStatus.m_target,
                message->m_param.m_presenceStatus.m_state,
                message->m_param.m_presenceStatus.m_note);
+        break;
+
+      case OpalIndReceiveIM :
+        printf("Instant Message: from=%s to=%s id=%s\n%s\n",
+               message->m_param.m_instantMessage.m_from,
+               message->m_param.m_instantMessage.m_to,
+               message->m_param.m_instantMessage.m_id,
+               message->m_param.m_instantMessage.m_textBody);
         break;
 
       default :
@@ -610,13 +600,14 @@ int DoPlay(const char * to, const char * file)
 }
 
 
-int DoPresence(const char * local, const char * remote, int argc, const char ** argv)
+int DoPresence(const char * local, int argc, const char ** argv)
 {
   // Example cmd line: presence fred@flintstone.com wilma@flintstone.com
   OpalMessage command;
   OpalMessage * response;
   char * attributes = NULL;
   size_t attrLen = 0;
+  int arg;
 
   printf("Registering presentity %s\n", local);
 
@@ -626,17 +617,19 @@ int DoPresence(const char * local, const char * remote, int argc, const char ** 
   command.m_param.m_registrationInfo.m_identifier = local;
   command.m_param.m_registrationInfo.m_timeToLive = 300;
 
-  for (; argc > 0; --argc,++argv) {
-    if (strncasecmp(*argv, "pwd=", 4) == 0)
-      command.m_param.m_registrationInfo.m_password = *argv + 4;
-    else if (strncasecmp(*argv, "host=", 5) == 0)
-      command.m_param.m_registrationInfo.m_hostName = *argv + 5;
+  for (arg = 0; arg < argc; ++arg) {
+    if (strncasecmp(argv[arg], "pwd=", 4) == 0)
+      command.m_param.m_registrationInfo.m_password = argv[arg] + 4;
+    else if (strncasecmp(argv[arg], "host=", 5) == 0)
+      command.m_param.m_registrationInfo.m_hostName = argv[arg] + 5;
     else {
-      const char * equal = strchr(*argv, '=');
-      if (equal != NULL) {
-        size_t argLen = strlen(*argv);
+      size_t equal = strspn(argv[arg], "ABCDEFGHIJKLMNOPQRSTOVWXYZabcdefghijklmnopqrstovwxyz0123456789-");
+      if (argv[arg][equal] != '=')
+        break;
+      {
+        size_t argLen = strlen(argv[arg]);
         attributes = (char *)realloc(attributes, attrLen+argLen+2);
-        strcpy(attributes+attrLen, *argv);
+        strcpy(attributes+attrLen, argv[arg]);
         strcpy(attributes+attrLen+argLen, "\n");
         attrLen += argLen + 1;
       }
@@ -653,18 +646,20 @@ int DoPresence(const char * local, const char * remote, int argc, const char ** 
 
   FreeMessageFunction(response);
 
-  printf("Subscribing to presentity %s\n", remote);
+  for (; arg < argc; ++arg) {
+    printf("Subscribing to presentity %s\n", argv[arg]);
+    memset(&command, 0, sizeof(command));
+    command.m_type = OpalCmdSubscribePresence;
+    command.m_param.m_presenceStatus.m_entity = local;
+    command.m_param.m_presenceStatus.m_target = argv[arg];
+    command.m_param.m_presenceStatus.m_state = OpalPresenceAuthRequest;
 
-  memset(&command, 0, sizeof(command));
-  command.m_type = OpalCmdSubscribePresence;
-  command.m_param.m_presenceStatus.m_entity = local;
-  command.m_param.m_presenceStatus.m_target = remote;
-  command.m_param.m_presenceStatus.m_state = OpalPresenceAuthRequest;
+    if ((response = MySendCommand(&command, "Could not subscribe to presentity")) == NULL)
+      return 0;
 
-  if ((response = MySendCommand(&command, "Could not subscribe to presentity")) == NULL)
-    return 0;
+    FreeMessageFunction(response);
+  }
 
-  FreeMessageFunction(response);
   return 1;
 }
 
@@ -690,8 +685,31 @@ int DoPresenceChange(const char * local, OpalPresenceStates state)
 }
 
 
+int DoSendIM(const char * from, const char * to, const char * msg)
+{
+  OpalMessage command;
+  OpalMessage * response;
+
+  printf("Sending message from %s to %s\n", from, to);
+
+  memset(&command, 0, sizeof(command));
+  command.m_type = OpalCmdSendIM;
+  command.m_param.m_instantMessage.m_from = from;
+  command.m_param.m_instantMessage.m_to = to;
+  command.m_param.m_instantMessage.m_textBody = msg;
+
+  if ((response = MySendCommand(&command, "Could not change status of presentity")) == NULL)
+    return 0;
+
+  printf("Message conversation id is %s\n", response->m_param.m_instantMessage.m_id);
+  FreeMessageFunction(response);
+  return 1;
+}
+
+
 typedef enum
 {
+  OpShutdown,
   OpListen,
   OpCall,
   OpMute,
@@ -703,16 +721,18 @@ typedef enum
   OpRecord,
   OpPlay,
   OpPresence,
+  OpInstantMessage,
   NumOperations
 } Operations;
 
 static const char * const OperationNames[NumOperations] =
-  { "listen", "call", "mute", "hold", "transfer", "consult", "register", "subscribe", "record", "play", "presence" };
+  { "shutdown", "listen", "call", "mute", "hold", "transfer", "consult", "register", "subscribe", "record", "play", "presence", "im" };
 
 static int const RequiredArgsForOperation[NumOperations] =
-  { 2, 3, 3, 3, 4, 4, 3, 3, 3, 3, 4 };
+  { 2, 2, 3, 3, 3, 4, 4, 3, 3, 3, 3, 4, 5 };
 
 static const char * const OperationHelp[NumOperations] = {
+  "",
   "",
   "<destination-URL> [ <local-URL> ]",
   "<destination-URL>",
@@ -723,7 +743,9 @@ static const char * const OperationHelp[NumOperations] = {
   "<package> <address-of-record> [ <pwd> ]",
   "<destination-URL> <filename>",
   "<destination-URL> <filename>",
-  "<local-URL> <remote-URL> [ <attr>=<value> ... ]    attr:=pwd/host/transport/sub-protocol etc"
+  "<local-URL> [ <attr>=<value> ... ] <remote-URL> ...\n"
+  "    attrib one of pwd/host/transport/sub-protocol etc",
+  "<from> <to> <msg>"
 };
 
 
@@ -759,6 +781,16 @@ int main(int argc, char * argv[])
     return 1;
 
   switch (operation) {
+    case OpShutdown :
+      // Test shut down and re-initialisation
+      ShutDownFunction(hOPAL);
+
+      if (!InitialiseOPAL()) {
+        fputs("Could not re-initialise OPAL\n", stderr);
+        return 1;
+      }
+      break;
+
     case OpListen :
       puts("Listening.\n");
       HandleMessages(60000);
@@ -845,13 +877,19 @@ int main(int argc, char * argv[])
       break;
 
     case OpPresence :
-      if (!DoPresence(argv[2], argv[3], argc-4, argv+4))
+      if (!DoPresence(argv[2], argc-3, argv+3))
         break;
       HandleMessages(5000);
       if (!DoPresenceChange(argv[2], OpalPresenceUnavailable))
         break;
       HandleMessages(5000);
       if (!DoPresenceChange(argv[2], OpalPresenceAvailable))
+        break;
+      HandleMessages(INT_MAX); // More or less forever
+      break;
+
+    case OpInstantMessage :
+      if (!DoSendIM(argv[2], argv[3], argv[4]))
         break;
       HandleMessages(INT_MAX); // More or less forever
       break;
