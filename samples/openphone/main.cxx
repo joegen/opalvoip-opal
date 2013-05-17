@@ -232,6 +232,7 @@ DEF_FIELD(CallIntrusionProtectionLevel);
 DEF_FIELD(DisableFastStart);
 DEF_FIELD(DisableH245Tunneling);
 DEF_FIELD(DisableH245inSETUP);
+DEF_FIELD(ForceSymmetricTCS);
 DEF_FIELD(ExtendedVideoRoles);
 DEF_FIELD(EnableH239Control);
 DEF_FIELD(H323SignalingSecurity);
@@ -1315,6 +1316,8 @@ bool MyManager::Initialise(bool startMinimised)
     h323EP->DisableH245Tunneling(onoff);
   if (config->Read(DisableH245inSETUPKey, &onoff))
     h323EP->DisableH245inSetup(onoff);
+  if (config->Read(ForceSymmetricTCSKey, &onoff))
+    h323EP->ForceSymmetricTCS(onoff);
 
 #if OPAL_H239
   value1 = m_ExtendedVideoRoles;
@@ -4612,6 +4615,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(DisableFastStart, m_manager.h323EP->IsFastStartDisabled() != false);
   INIT_FIELD(DisableH245Tunneling, m_manager.h323EP->IsH245TunnelingDisabled() != false);
   INIT_FIELD(DisableH245inSETUP, m_manager.h323EP->IsH245inSetupDisabled() != false);
+  INIT_FIELD(ForceSymmetricTCS, m_manager.h323EP->IsForcedSymmetricTCS() != false);
 
   INIT_FIELD(ExtendedVideoRoles, m_manager.m_ExtendedVideoRoles);
   INIT_FIELD(EnableH239Control, m_manager.h323EP->GetDefaultH239Control());
@@ -5111,6 +5115,7 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(DisableFastStart, m_manager.h323EP->DisableFastStart);
   SAVE_FIELD(DisableH245Tunneling, m_manager.h323EP->DisableH245Tunneling);
   SAVE_FIELD(DisableH245inSETUP, m_manager.h323EP->DisableH245inSetup);
+  SAVE_FIELD(ForceSymmetricTCS, m_manager.h323EP->ForceSymmetricTCS);
 
   SAVE_FIELD(ExtendedVideoRoles, m_manager.m_ExtendedVideoRoles = (MyManager::ExtendedVideoRoles));
   SAVE_FIELD(EnableH239Control, m_manager.h323EP->SetDefaultH239Control);
