@@ -3792,7 +3792,7 @@ SIPSubscribe::NotifyCallbackInfo::NotifyCallbackInfo(SIPSubscribeHandler & handl
 }
 
 
-#if P_EXPAT
+#if OPAL_PTLIB_EXPAT
 bool SIPSubscribe::NotifyCallbackInfo::LoadAndValidate(PXML & xml,
                                                        const PXML::ValidationInfo * validator,
                                                        PXML::Options options)
