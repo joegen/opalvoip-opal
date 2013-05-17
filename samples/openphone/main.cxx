@@ -3592,11 +3592,7 @@ void MyManager::OnPresenceChange(OpalPresentity &, std::auto_ptr<OpalPresenceInf
           newIcon = Icon_Unavailable;
           break;
 
-        case OpalPresenceInfo::Busy :
-          newIcon = Icon_Busy;
-          break;
-
-        case OpalPresenceInfo::Away :
+        case OpalPresenceInfo::Unavailable :
           newIcon = Icon_Away;
           break;
 
