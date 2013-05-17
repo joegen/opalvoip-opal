@@ -1483,7 +1483,7 @@ public:
   }
 
   virtual void OnReceivedNOTIFY(SIPSubscribe::NotifyCallbackInfo & 
-#if P_EXPAT
+#if OPAL_PTLIB_EXPAT
     notifyInfo
 #endif
     )
@@ -1492,7 +1492,7 @@ public:
 
     OpalConferenceState state;
 
-#if P_EXPAT
+#if OPAL_PTLIB_EXPAT
     static PXML::ValidationInfo const ConferenceInfoValidation[] = {
       { PXML::SetDefaultNamespace,        "urn:ietf:params:xml:ns:conference-info" },
       { PXML::ElementName,                "conference-info", },
@@ -1517,7 +1517,7 @@ public:
     if (state == NULL)
       return PString::Empty();
 
-#if P_EXPAT
+#if OPAL_PTLIB_EXPAT
     if (state->m_xml.IsLoaded())
       return state->m_xml.AsString();
 #endif

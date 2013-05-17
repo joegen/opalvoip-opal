@@ -1110,7 +1110,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
     return response->Send();
   }
 
-#if P_EXPAT
+#if OPAL_PTLIB_EXPAT
   PXML xml;
   if (!xml.Load(iter->m_textBody)) {
     PTRACE(2, "SIP\tNOTIFY received with illegal RLMI\n"
@@ -1332,7 +1332,7 @@ static SIPEventPackageFactory::Worker<SIPPresenceEventPackageHandler> presenceEv
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if P_EXPAT
+#if OPAL_PTLIB_EXPAT
 
 static void ParseParticipant(PXMLElement * participantElement, SIPDialogNotification::Participant & participant)
 {
@@ -1372,7 +1372,7 @@ static void ParseParticipant(PXMLElement * participantElement, SIPDialogNotifica
   }
 }
 
-#endif // P_EXPAT
+#endif // OPAL_PTLIB_EXPAT
 
 
 class SIPDialogEventPackageHandler : public SIPEventPackageHandler
@@ -1392,7 +1392,7 @@ public:
   {
     PINDEX index = 0;
 
-#if P_EXPAT
+#if OPAL_PTLIB_EXPAT
     static PXML::ValidationInfo const DialogInfoValidation[] = {
       { PXML::SetDefaultNamespace,        "urn:ietf:params:xml:ns:dialog-info" },
       { PXML::ElementName,                "dialog-info", },
@@ -1451,7 +1451,7 @@ public:
 #else
     SIPDialogNotification info(notifyInfo.m_request.GetMIME().GetFrom());
     notifyInfo.SendResponse();
-#endif // P_EXPAT
+#endif // OPAL_PTLIB_EXPAT
 
     if (index == 0)
       notifyInfo.m_endpoint.OnDialogInfoReceived(info);
@@ -1505,7 +1505,7 @@ class SIPRegEventPackageHandler : public SIPEventPackageHandler
 
   virtual void OnReceivedNOTIFY(SIPSubscribe::NotifyCallbackInfo & notifyInfo)
   {
-#if P_EXPAT
+#if OPAL_PTLIB_EXPAT
     static PXML::ValidationInfo const RegInfoValidation[] = {
       { PXML::SetDefaultNamespace,        "urn:ietf:params:xml:ns:reginfo" },
       { PXML::ElementName,                "reginfo", },
@@ -1560,7 +1560,7 @@ class SIPRegEventPackageHandler : public SIPEventPackageHandler
 
     SIPRegNotification info(notifyInfo.m_request.GetMIME().GetFrom());
     notifyInfo.m_endpoint.OnRegInfoReceived(info);
-#endif // P_EXPAT
+#endif // OPAL_PTLIB_EXPAT
   }
 };
 

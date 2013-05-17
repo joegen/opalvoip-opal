@@ -484,7 +484,7 @@ OpalIMContext::MessageDisposition OpalSIPIMContext::InternalSendInsideCall(OpalI
 }
 
 
-#if P_EXPAT
+#if OPAL_PTLIB_EXPAT
 
 OpalIMContext::MessageDisposition OpalSIPIMContext::InternalOnCompositionIndication(const OpalIM & message)
 {
@@ -583,7 +583,7 @@ OpalIMContext::MessageDisposition OpalSIPIMContext::InternalOnDisposition(const 
   return DeliveryOK;
 }
 
-#else // P_EXPAT
+#else // OPAL_PTLIB_EXPAT
 
 OpalIMContext::MessageDisposition OpalSIPIMContext::InternalOnCompositionIndication(const OpalIM &)
 {
@@ -595,7 +595,7 @@ OpalIMContext::MessageDisposition OpalSIPIMContext::InternalOnDisposition(const 
   return UnsupportedFeature;
 }
 
-#endif // P_EXPAT
+#endif // OPAL_PTLIB_EXPAT
 
 
 OpalIMContext::MessageDisposition OpalSIPIMContext::OnMessageReceived(const OpalIM & message)
