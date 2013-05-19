@@ -191,7 +191,7 @@ class H245NegLogicalChannel : public H245Negotiator
 
     H323Channel * GetChannel() const;
 
-    bool IsAwaitingEstablishment() const { return state == e_AwaitingEstablishment; }
+    bool IsAwaitingEstablishment() const { return state == e_AwaitingEstablishment || state == e_Establishing; }
     bool IsEstablished() const { return state == e_Established; }
 
   protected:
