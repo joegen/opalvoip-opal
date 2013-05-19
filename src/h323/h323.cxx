@@ -4077,7 +4077,7 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
     if (channel == NULL) {
       // Logical channel not open, if receiver that is an error
       if (isSource) {
-        PTRACE(2, "H323\tOpenMediaStream canot have logical channel for session " << sessionID);
+        PTRACE(2, "H323\tNo receive logical channel for session " << sessionID);
         return NULL;
       }
 
