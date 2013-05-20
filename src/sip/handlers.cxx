@@ -293,10 +293,24 @@ void SIPHandler::SetExpire(int e)
     m_originalExpireTime = e;
 
   // retry before the expire time.
-  // if the expire time is more than 20 mins, retry 10mins before expiry
-  // if the expire time is less than 20 mins, retry after half of the expiry time
-  if (GetExpire() > 0 && GetState() < Unsubscribing)
-    m_expireTimer.SetInterval(0, (unsigned)(GetExpire() < 20*60 ? GetExpire()/2 : GetExpire()-10*60));
+  if (GetExpire() > 0 && GetState() < Unsubscribing) {
+    // Allow for max number of retries at max timeout, plus 10 seconds for good measure
+    // But don't make it any shorter than half the expiry time.
+    int deadband = GetEndPoint().GetRetryTimeoutMax().GetSeconds() * GetEndPoint().GetMaxRetries() + 10;
+    int timeout = GetExpire();
+    if (timeout*2 > deadband)
+      timeout -= deadband;
+    else {
+      // Short timeout, try for allowing just one retry, plus a couple of seconds
+      deadband = GetEndPoint().GetRetryTimeoutMax().GetSeconds() + 2;
+      if (timeout*2 > deadband)
+        timeout -= deadband;
+      else
+        timeout /= 2; // Really short, just use half the expire time
+    }
+    m_expireTimer.SetInterval(0, timeout);
+    PTRACE(4, "SIP\tExpiry timer running: " << m_expireTimer);
+  }
 }
 
 
