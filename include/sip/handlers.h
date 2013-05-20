@@ -138,7 +138,7 @@ public:
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnTransactionFailed(SIPTransaction & transaction);
 
-  virtual void OnFailed(const SIP_PDU & response);
+//  virtual void OnFailed(const SIP_PDU & response);
   virtual void OnFailed(SIP_PDU::StatusCodes);
 
   bool ActivateState(SIPHandler::State state);
@@ -229,7 +229,7 @@ public:
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
   virtual PBoolean OnReceivedNOTIFY(SIP_PDU & response);
-  virtual void OnFailed(const SIP_PDU & response);
+  virtual void OnFailed(SIP_PDU::StatusCodes);
   virtual SIPEventPackage GetEventPackage() const
     { return m_parameters.m_eventPackage; }
 
