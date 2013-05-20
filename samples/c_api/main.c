@@ -62,6 +62,7 @@
 
   #include <memory.h>
   #include <dlfcn.h>
+  #include <errno.h>
 
   #define OPAL_DLL "libopal.so"
 
