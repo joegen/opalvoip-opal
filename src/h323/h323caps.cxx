@@ -2984,6 +2984,7 @@ OpalMediaFormatList H323Capabilities::GetMediaFormats() const
 
   for (PINDEX i = 0; i < table.GetSize(); i++) {
     OpalMediaFormat fmt = table[i].GetMediaFormat();
+#if 0 // Yep, proved unworkable!
     OpalMediaFormatList::const_iterator it = formats.FindFormat(fmt);
     if (it != formats.end()) {
       /* We really should create new OpalMediaFormat entries "on the fly" for
@@ -2992,6 +2993,7 @@ OpalMediaFormatList H323Capabilities::GetMediaFormats() const
       fmt.Merge(*it);
       formats.erase(it);
     }
+#endif
     formats += fmt;
   }
 
