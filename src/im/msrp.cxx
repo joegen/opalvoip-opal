@@ -604,8 +604,8 @@ void OpalMSRPManager::ListenerThread()
 PSafePtr<OpalMSRPManager::Connection> OpalMSRPManager::OpenConnection(const PURL & localURL, const PURL & remoteURL)
 {
   // get hostname of remote 
-  PIPSocket::Address ip = remoteURL.GetHostName();
-  WORD port             = remoteURL.GetPort();
+  PIPSocket::Address ip(remoteURL.GetHostName());
+  WORD port = remoteURL.GetPort();
   if (!ip.IsValid()) {
     if (remoteURL.GetPortSupplied()) {
       if (!PIPSocket::GetHostAddress(remoteURL.GetHostName(), ip)) {

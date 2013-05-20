@@ -425,7 +425,9 @@ bool H323EndPoint::InternalCreateGatekeeper(H323Transport * transport, const H32
     OpalTransportAddressArray interfaces = GetInterfaceAddresses();
     for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
       if (interfaces[i].IsCompatible(gkAddress)) {
-        transport = new H323TransportUDP(*this, interfaces[i]);
+        PIPSocket::Address ip;
+        if (interfaces[i].GetIpAddress(ip))
+          transport = new H323TransportUDP(*this, ip);
         break;
       }
     }
