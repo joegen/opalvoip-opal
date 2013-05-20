@@ -636,7 +636,7 @@ OpalTransportAddress OpalListenerIP::GetLocalAddress(const OpalTransportAddress 
     OpalManager & manager = endpoint.GetManager();
     PNatMethod * natMethod = manager.GetNatMethod(remoteIP);
     if (natMethod != NULL) {
-      if (localIP.IsAny())
+      if (!localIP.IsValid() || localIP.IsAny())
         natMethod->GetInterfaceAddress(localIP);
       manager.TranslateIPAddress(localIP, remoteIP);
     }
@@ -797,7 +797,7 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
   , m_bufferSize(32768)
 {
   if (binding.GetHostName() == "*")
-    localAddress.FromString(""); // Set invalid to distinguish between "*", "0.0.0.0" and "[::]"
+    localAddress = PIPSocket::GetInvalidAddress(); // Set invalid to distinguish between "*", "0.0.0.0" and "[::]"
 }
 
 
@@ -895,8 +895,12 @@ OpalTransportAddress OpalListenerUDP::GetLocalAddress(const OpalTransportAddress
   PIPSocket::Address localIP = PIPSocket::GetInvalidAddress();
   WORD port = listenerPort;
 
-  if (IsOpen() && listenerBundle->GetAddress(PString::Empty(), localIP, port, !endpoint.GetManager().IsLocalAddress(remoteAddress)))
-    return OpalTransportAddress(localIP, port, GetProtoPrefix());
+  if (IsOpen()) {
+    PIPSocket::Address remoteIP;
+    if (remoteAddress.GetIpAddress(remoteIP) &&
+        listenerBundle->GetAddress(PString::Empty(), localIP, port, !endpoint.GetManager().IsLocalAddress(remoteIP)))
+      return OpalTransportAddress(localIP, port, GetProtoPrefix());
+  }
 
   return OpalListenerIP::GetLocalAddress(remoteAddress);
 }
