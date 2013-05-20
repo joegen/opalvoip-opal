@@ -379,7 +379,7 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
       if (responseClass == 2)
         OnReceivedOK(transaction, response);
       else
-        OnFailed(response);
+        OnFailed(response.GetStatusCode());
   }
 }
 
@@ -467,12 +467,6 @@ void SIPHandler::RetryLater(unsigned after)
 
   PTRACE(3, "SIP\tRetrying " << GetMethod() << " after " << after << " seconds.");
   m_expireTimer.SetInterval(0, after); // Keep trying to get it back
-}
-
-
-void SIPHandler::OnFailed(const SIP_PDU & response)
-{
-  OnFailed(response.GetStatusCode());
 }
 
 
@@ -886,10 +880,8 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport & transpor
 }
 
 
-void SIPSubscribeHandler::OnFailed(const SIP_PDU & response)
+void SIPSubscribeHandler::OnFailed(SIP_PDU::StatusCodes responseCode)
 {
-  SIP_PDU::StatusCodes responseCode = response.GetStatusCode();
-
   SendStatus(responseCode, GetState());
 
   if (GetState() != Unsubscribing && responseCode == SIP_PDU::Failure_TransactionDoesNotExist) {
