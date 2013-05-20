@@ -69,7 +69,8 @@ class OpalPresenceInfo : public PObject
         difference between Available and Unavailable is the presence of the
         Contact field. */
     P_DECLARE_STREAMABLE_ENUM_EX(State,StateCount,
-      InternalError,-3,   ///< Something bad happened
+      UnknownUser,-4,     ///< Presentity does not exist
+      InternalError,      ///< Something bad happened
       Forbidden,          ///< Access to presence information was specifically forbidden
       NoPresence,         ///< No presence status - not the same as Unavailable or Away
       Unchanged,          ///< State has not changed from last time

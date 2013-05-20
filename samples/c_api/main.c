@@ -367,11 +367,17 @@ static void HandleMessages(unsigned timeout)
         break;
 
       case OpalIndPresenceChange :
-        printf("Presence change: entity=%s target=%s state=%d note=%s.\n",
+        printf("Presence change: entity=%s, target=%s, state=%d",
                message->m_param.m_presenceStatus.m_entity,
                message->m_param.m_presenceStatus.m_target,
-               message->m_param.m_presenceStatus.m_state,
-               message->m_param.m_presenceStatus.m_note);
+               message->m_param.m_presenceStatus.m_state);
+        if (message->m_param.m_presenceStatus.m_activities != NULL && *message->m_param.m_presenceStatus.m_activities != '\0')
+          printf(strchr(message->m_param.m_presenceStatus.m_activities, '\n') != NULL
+                      ? "%s:\n%s" : "%s=\"%s\"", ", activities", message->m_param.m_presenceStatus.m_activities);
+        if (message->m_param.m_presenceStatus.m_note != NULL && *message->m_param.m_presenceStatus.m_note != '\0')
+          printf(strchr(message->m_param.m_presenceStatus.m_note, '\n') != NULL
+                      ? "%s:\n%s" : "%s=\"%s\"", ", note", message->m_param.m_presenceStatus.m_note);
+        putchar('\n');
         break;
 
       case OpalIndReceiveIM :
