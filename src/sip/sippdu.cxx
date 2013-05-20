@@ -507,7 +507,7 @@ OpalTransportAddress SIPURL::GetTransportAddress(PINDEX entry) const
   PCaselessString proto = GetTransportProto();
 
   // Or it is a valid IP address, not a domain name
-  PIPSocket::Address ip = GetHostName();
+  PIPSocket::Address ip(GetHostName());
   if (ip.IsValid())
     return OpalTransportAddress(ip, port, proto);
 
@@ -743,7 +743,7 @@ PString SIPURLList::ToString() const
 
 SIPURL SIPURLList::FindCompatible(const OpalTransportAddress & addr PTRACE_PARAM(, const char * listType)) const
 {
-  PTRACE(5, "SIP\tFinding " << addr << " in " << listType << " addresses: " << *this);
+  PTRACE(5, "SIP\tFinding \"" << addr << "\" in " << listType << " addresses: " << *this);
 
   SIPURLList::const_iterator it;
 

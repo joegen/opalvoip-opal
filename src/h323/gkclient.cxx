@@ -729,8 +729,11 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
   // NAT Detection with GNUGK
   if (rcf.HasOptionalField(H225_RegistrationConfirm::e_nonStandardData)) {
     PString NATaddr = rcf.m_nonStandardData.m_data.AsString();
-    if (NATaddr.NumCompare("NAT=") == EqualTo)
-      endpoint.OnGatekeeperNATDetect(NATaddr.Mid(4), endpointIdentifier, gkRouteAddress);
+    if (NATaddr.NumCompare("NAT=") == EqualTo) {
+      PIPSocket::Address ip(NATaddr.Mid(4));
+      if (ip.IsValid())
+        endpoint.OnGatekeeperNATDetect(ip, endpointIdentifier, gkRouteAddress);
+    }
   }
   
   SetRegistrationFailReason(RegistrationSuccessful);
