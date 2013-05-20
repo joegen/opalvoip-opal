@@ -433,10 +433,23 @@ void SIP_Presentity::OnWatcherInfoSubscriptionStatus(SIPSubscribeHandler &, cons
 
   m_notificationMutex.Wait();
 
-  if (status.m_reason/100 == 4)
-    info.m_state = OpalPresenceInfo::Forbidden;
-  else if (status.m_reason/100 != 2) 
-    info.m_state = OpalPresenceInfo::InternalError;
+  if (status.m_reason/100 != 2) {
+    info.m_note = SIP_PDU::GetStatusCodeDescription(status.m_reason);
+
+    switch (status.m_reason) {
+      case SIP_PDU::Failure_NotFound :
+        info.m_state = OpalPresenceInfo::UnknownUser;
+        break;
+
+      case SIP_PDU::Failure_Forbidden :
+      case SIP_PDU::Failure_UnAuthorised :
+        info.m_state = OpalPresenceInfo::Forbidden;
+        break;
+
+      default :
+          info.m_state = OpalPresenceInfo::InternalError;
+    }
+  }
 
   OnPresenceChange(info);
 

@@ -1191,7 +1191,8 @@ typedef struct OpalStatusLineAppearance {
    This is used by the OpalPresenceStatus structure.
   */
 typedef enum OpalPresenceStates {
-  OpalPresenceAuthRequest = -4,   ///< Authorsiation to view a users state is required
+  OpalPresenceAuthRequest = -100, ///< Authorisation to view a users state is required
+  OpalUnknownPresentity = -4,     ///< Presentity does not exist
   OpalPresenceError,              ///< Something bad happened
   OpalPresenceForbidden,          ///< Access to presence information was specifically forbidden
   OpalPresenceNone,               ///< No presence status - not the same as Unavailable or Away
@@ -1234,12 +1235,14 @@ typedef struct OpalPresenceStatus {
                                       status change. */
   const char *       m_target;    /**<The entity for which the status is changing. */
   OpalPresenceStates m_state;     /**<The new state of the target entity. */
-  const char *       m_activity;  /**<The optional activity if m_state is OpalPresenceAvailable
+  const char *       m_activities;/**<The optional activities, if m_state is OpalPresenceAvailable
                                       or OpalPresenceUnavailable. Typically something like
-                                      "busy" or "Away". This can be a '\n' seaparated
+                                      "Busy" or "Away". This can be a '\n' seaparated
                                       list of simultaneous activities. */
   const char *       m_note;      /**<Addition "note" that may be attached to the state
-                                      change, e.g. "I want to be frends with you" */
+                                      change, e.g. "I want to be frends with you". If
+                                      m_state is OpalPresenceError, then this may contain
+                                      extra information on the error. */
   const char *       m_infoType;  ///< MIME tyupe for m_infoData, e.g. application/pidf+xml
   const char *       m_infoData;  ///< Raw information as provided by underlying protocol, e.g. XML.
 } OpalPresenceStatus;
