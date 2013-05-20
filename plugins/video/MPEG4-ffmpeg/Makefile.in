@@ -33,7 +33,7 @@ SRCS      := mpeg4.cxx \
              $(COMMONDIR)/dyna.cxx
 
 CFLAGS += @LIBAVCODEC_CFLAGS@ -I$(COMMONDIR)
-LIBS   += @LIBAVCODEC_LIBS@
+LIBS   += @LIBAVCODEC_LIBS@ @LIBAVUTIL_LIBS@
 
 # Add LIBAVCODEC_SOURCE_DIR to the include path so we can #include <libavcodec/...h>
 # Also add libavutil, so ffmpeg headers can #include "log.h".
