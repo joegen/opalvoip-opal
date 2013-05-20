@@ -815,6 +815,7 @@ bool MyManager::Initialise(bool startMinimised)
 
   // Task bar icon
   m_taskBarIcon = new MyTaskBarIcon(*this);
+  m_taskBarIcon->SetIcon(wxICON(AppIcon), wxEmptyString);
   SetTrayTipText("Initialising");
 
   // Make a menubar
@@ -3765,7 +3766,7 @@ void MyManager::SetTrayTipText(const PwxString & tip)
 {
   if (PThread::Current() != &PProcess::Current())
     PostEvent(wxEvtSetTrayTipText, ID_SET_TRAY_TIP_TEXT, tip);
-  else {
+  else if (m_taskBarIcon->IsIconInstalled()) {
     PwxString text;
     text << PProcess::Current().GetName() << " - " << tip;
     m_taskBarIcon->SetIcon(wxICON(AppIcon), text);
@@ -3777,7 +3778,8 @@ void MyManager::SetBalloonText(const PwxString & text)
 {
 #ifdef __WXMSW__
 #if wxUSE_TASKBARICON_BALLOONS
-  m_taskBarIcon->ShowBalloon(PwxString(PProcess::Current().GetName()), text);
+  if (m_taskBarIcon->IsIconInstalled())
+    m_taskBarIcon->ShowBalloon(PwxString(PProcess::Current().GetName()), text);
 #else
   NOTIFYICONDATA notify;
   memset(&notify, 0, sizeof(notify));
