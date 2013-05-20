@@ -1863,11 +1863,13 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, const SIPConnection * conn
   }
 
   if (!mime.Has("Contact") && pdu.GetStatusCode() != SIP_PDU::Information_Trying) {
+    OpalTransportAddress remoteAddress = pdu.GetURI().GetTransportAddress();
     SIPURL contact;
     if (transport == NULL)
       transport = pdu.GetTransport();
     if (transport != NULL) {
       OpalTransportAddress localAddress = transport->GetLocalAddress();
+      remoteAddress = transport->GetRemoteAddress();
 
       if (registrar != NULL) {
         contact = registrar->GetContacts().FindCompatible(localAddress PTRACE_PARAM(, "registered"));
@@ -1878,14 +1880,14 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, const SIPConnection * conn
       if (contact.IsEmpty()) {
         SIPURLList listenerAddresses;
         for (OpalListenerList::iterator it = listeners.begin(); it != listeners.end(); ++it)
-          listenerAddresses.push_back(SIPURL(user, it->GetLocalAddress(transport->GetRemoteAddress())));
+          listenerAddresses.push_back(SIPURL(user, it->GetLocalAddress(remoteAddress)));
         contact = listenerAddresses.FindCompatible(localAddress PTRACE_PARAM(, "listening"));
         PTRACE_IF(4, !contact.IsEmpty(), "SIP\tAdjusted Contact to " << contact << " from listeners.");
       }
     }
 
     if (contact.IsEmpty()) {
-      contact = SIPURL(user, listeners[0].GetLocalAddress());
+      contact = SIPURL(user, listeners[0].GetLocalAddress(remoteAddress));
       PTRACE(4, "SIP\tAdjusted Contact to " << contact << " from first listener.");
     }
 
