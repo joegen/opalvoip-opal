@@ -2253,17 +2253,24 @@ void OpalManager_C::OnMWIReceived(const PString & party, MessageWaitingType type
 void OpalManager_C::OnPresenceChange(OpalPresentity &, std::auto_ptr<OpalPresenceInfo> info)
 {
   OpalMessageBuffer message(OpalIndPresenceChange);
-  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_entity,     info->m_entity.AsString());
-  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_target,     info->m_target.AsString());
-  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_activities, PSTRSTRM(setfill('\n') << info->m_activities));
-  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_note,       info->m_note);
-  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_infoType,   info->m_infoType);
-  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_infoData,   info->m_infoData);
-  message->m_param.m_presenceStatus.m_state = (OpalPresenceStates)   info->m_state;
+  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_entity,   info->m_entity.AsString());
+  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_target,   info->m_target.AsString());
+  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_note,     info->m_note);
+  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_infoType, info->m_infoType);
+  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_infoData, info->m_infoData);
+
+  if (info->m_activities.IsEmpty())
+    SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_activities, PString::Empty());
+  else
+    SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_activities, PSTRSTRM(setfill('\n') << info->m_activities));
+
+  message->m_param.m_presenceStatus.m_state = (OpalPresenceStates)info->m_state;
+
   PTRACE(4, "OpalC API\tOnPresenceChange:"
             " entity=\"" << message->m_param.m_presenceStatus.m_entity << "\""
             " target=\"" << message->m_param.m_presenceStatus.m_target << "\""
             " state=" << message->m_param.m_presenceStatus.m_state <<
+            " activities=\"" << message->m_param.m_presenceStatus.m_activities << "\""
             " note=\"" << message->m_param.m_presenceStatus.m_note << '"');
   PostMessage(message);
 }
