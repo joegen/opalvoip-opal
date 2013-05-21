@@ -317,22 +317,29 @@ void SIP_Presentity::Internal_SubscribeToPresence(const OpalSubscribeToPresenceC
 
 void SIP_Presentity::OnPresenceSubscriptionStatus(SIPSubscribeHandler &, const SIPSubscribe::SubscriptionStatus & status)
 {
-  if (status.m_reason == SIP_PDU::Information_Trying)
+  if (status.m_reason/100 == 1)
     return;
 
   m_notificationMutex.Wait();
-  if (!status.m_wasSubscribing || status.m_reason >= 400) {
-    PString id = status.m_handler->GetCallID();
-    StringMap::iterator aor = m_presenceAorById.find(id);
-    if (aor != m_presenceAorById.end()) {
-      PTRACE(status.m_reason >= 400 ? 2 : 3, "SIPPres\t'" << m_aor << "' "
-             << (status.m_wasSubscribing ? "error " : "un")
-             << "subscribing to presence of '" << aor->second << '\'');
-      m_endpoint->Unsubscribe(SIPSubscribe::Presence, status.m_addressofRecord, true);
+
+  PString id = status.m_handler->GetCallID();
+  StringMap::iterator aor = m_presenceAorById.find(id);
+  if (aor == m_presenceAorById.end()) {
+    PTRACE(2, "SIPPres\t'" << m_aor << "' " << "recieved subscription status for unknown ID " << id);
+  }
+  else {
+    SIPPresenceInfo info(status.m_reason, status.m_wasSubscribing);
+    SetPIDFEntity(info.m_entity);
+    info.m_target = aor->second;
+
+    OnPresenceChange(info);
+
+    if (!status.m_wasSubscribing) {
       m_presenceIdByAor.erase(aor->second);
       m_presenceAorById.erase(aor);
     }
   }
+
   m_notificationMutex.Signal();
 }
 
@@ -424,39 +431,19 @@ void SIP_Presentity::SetPIDFEntity(PURL & entity)
 
 void SIP_Presentity::OnWatcherInfoSubscriptionStatus(SIPSubscribeHandler &, const SIPSubscribe::SubscriptionStatus & status)
 {
-   if (status.m_reason == SIP_PDU::Information_Trying)
+  if (status.m_reason/100 == 1)
     return;
 
-  OpalPresenceInfo info(status.m_wasSubscribing ? OpalPresenceInfo::Unchanged : OpalPresenceInfo::NoPresence);
+  SIPPresenceInfo info(status.m_reason, status.m_wasSubscribing);
   SetPIDFEntity(info.m_entity);
   info.m_target = info.m_entity;
 
   m_notificationMutex.Wait();
 
-  if (status.m_reason/100 != 2) {
-    info.m_note = SIP_PDU::GetStatusCodeDescription(status.m_reason);
-
-    switch (status.m_reason) {
-      case SIP_PDU::Failure_NotFound :
-        info.m_state = OpalPresenceInfo::UnknownUser;
-        break;
-
-      case SIP_PDU::Failure_Forbidden :
-      case SIP_PDU::Failure_UnAuthorised :
-        info.m_state = OpalPresenceInfo::Forbidden;
-        break;
-
-      default :
-          info.m_state = OpalPresenceInfo::InternalError;
-    }
-  }
-
   OnPresenceChange(info);
 
-  if (!status.m_wasSubscribing) {
-    m_endpoint->Unsubscribe(SIPSubscribe::Presence | SIPSubscribe::Watcher, status.m_addressofRecord, true);
+  if (!status.m_wasSubscribing)
     m_watcherSubscriptionAOR.MakeEmpty();
-  }
 
   m_notificationMutex.Signal();
 }

@@ -262,6 +262,8 @@ bool SIPHandler::ActivateState(SIPHandler::State newState)
 
 PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
 {
+  SendStatus(SIP_PDU::Information_Trying, newState);
+
   m_expireTimer.Stop(false); // Stop automatic retry
 
   SetState(newState);
@@ -455,6 +457,9 @@ void SIPHandler::OnTransactionFailed(SIPTransaction & transaction)
   if (transaction.IsCanceled())
     return;
 
+  if (transaction.GetStatusCode() < 100 && GetInterface().IsEmpty())
+    return;
+
   OnFailed(transaction.GetStatusCode());
   RetryLater(m_offlineExpireTime);
 }
@@ -474,6 +479,8 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
 {
   m_lastResponseStatus = code;
 
+  SendStatus(code, GetState());
+
   switch (code) {
     case SIP_PDU::Local_TransportError :
     case SIP_PDU::Local_Timeout :
@@ -491,8 +498,15 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
       PTRACE(4, "SIP\tNot retrying " << GetMethod() << " due to error response " << code);
       m_currentExpireTime = 0; // OK, stop trying
       m_expireTimer.Stop(false);
+      if (GetState() != Unsubscribing)
+        SendStatus(SIP_PDU::Successful_OK, Unsubscribing);
       SetState(Unsubscribed); // Allow garbage collection thread to clean up
   }
+}
+
+
+void SIPHandler::SendStatus(SIP_PDU::StatusCodes, State)
+{
 }
 
 
@@ -766,16 +780,8 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 }
 
 
-void SIPRegisterHandler::OnFailed(SIP_PDU::StatusCodes r)
-{
-  SendStatus(r, GetState());
-  SIPHandler::OnFailed(r);
-}
-
-
 PBoolean SIPRegisterHandler::SendRequest(SIPHandler::State s)
 {
-  SendStatus(SIP_PDU::Information_Trying, s);
   m_sequenceNumber = GetEndPoint().GetNextCSeq();
   return SIPHandler::SendRequest(s);
 }
@@ -882,24 +888,16 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport & transpor
 
 void SIPSubscribeHandler::OnFailed(SIP_PDU::StatusCodes responseCode)
 {
-  SendStatus(responseCode, GetState());
-
   if (GetState() != Unsubscribing && responseCode == SIP_PDU::Failure_TransactionDoesNotExist) {
-    // Resubscribe as previous subscription totally lost, but dialog processing
-    // may have altered the target so restore the original target address
+    // Resubscribe as previous subscription totally lost, reset the dialog and
+    // hopefully tht Call-ID not changing is not a problem.
     m_parameters.m_addressOfRecord = GetAddressOfRecord().AsString();
-    PString dummy;
-    GetEndPoint().Subscribe(m_parameters, dummy);
+    m_dialog.SetLocalTag(PString::Empty());     // If this is empty
+    m_dialog.SetLocalURI(GetAddressOfRecord()); // This will regenerate tag
+    m_dialog.SetRemoteTag(PString::Empty());
   }
 
   SIPHandler::OnFailed(responseCode);
-}
-
-
-PBoolean SIPSubscribeHandler::SendRequest(SIPHandler::State s)
-{
-  SendStatus(SIP_PDU::Information_Trying, s);
-  return SIPHandler::SendRequest(s);
 }
 
 
@@ -1884,6 +1882,34 @@ SIPPresenceInfo::SIPPresenceInfo(State state)
   : OpalPresenceInfo(state)
   , m_tupleId(PString::Printf, "T%08X", ++DefaultTupleIdentifier)
 {
+}
+
+
+SIPPresenceInfo::SIPPresenceInfo(SIP_PDU::StatusCodes status, bool subscribing)
+{
+  if (status/100 == 2)
+    return;
+
+  m_note = SIP_PDU::GetStatusCodeDescription(status);
+
+  if (!subscribing) {
+    m_state = NoPresence;
+    return;
+  }
+
+  switch (status) {
+    case SIP_PDU::Failure_NotFound :
+      m_state = UnknownUser;
+      break;
+
+    case SIP_PDU::Failure_Forbidden :
+    case SIP_PDU::Failure_UnAuthorised :
+      m_state = Forbidden;
+      break;
+
+    default :
+      m_state = InternalError;
+  }
 }
 
 

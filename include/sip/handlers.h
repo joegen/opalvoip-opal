@@ -140,6 +140,7 @@ public:
 
 //  virtual void OnFailed(const SIP_PDU & response);
   virtual void OnFailed(SIP_PDU::StatusCodes);
+  virtual void SendStatus(SIP_PDU::StatusCodes code, State state);
 
   bool ActivateState(SIPHandler::State state);
   virtual bool SendNotify(const PObject * /*body*/) { return false; }
@@ -196,8 +197,6 @@ public:
   virtual SIPTransaction * CreateTransaction(OpalTransport &);
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
 
-  virtual void OnFailed(SIP_PDU::StatusCodes r);
-
   void UpdateParameters(const SIPRegister::Params & params);
 
   const SIPRegister::Params & GetParams() const { return m_parameters; }
@@ -207,7 +206,7 @@ public:
 
 protected:
   virtual PBoolean SendRequest(SIPHandler::State state);
-  void SendStatus(SIP_PDU::StatusCodes code, State state);
+  virtual void SendStatus(SIP_PDU::StatusCodes code, State state);
   PString CreateRegisterContact(const OpalTransportAddress & address, int q);
 
   SIPRegister::Params  m_parameters;
@@ -238,9 +237,8 @@ public:
   const SIPSubscribe::Params & GetParams() const { return m_parameters; }
 
 protected:
-  virtual PBoolean SendRequest(SIPHandler::State state);
   virtual void WriteTransaction(OpalTransport & transport, bool & succeeded);
-  void SendStatus(SIP_PDU::StatusCodes code, State state);
+  virtual void SendStatus(SIP_PDU::StatusCodes code, State state);
   bool DispatchNOTIFY(SIP_PDU & request, SIP_PDU & response);
 
   SIPSubscribe::Params     m_parameters;
@@ -453,6 +451,10 @@ public:
   // Constructor
   SIPPresenceInfo(
     State state = Unchanged
+  );
+  SIPPresenceInfo(
+    SIP_PDU::StatusCodes status,
+    bool subscribing
   );
 };
 #endif // OPAL_SIP_PRESENCE
