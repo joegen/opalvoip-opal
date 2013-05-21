@@ -1099,8 +1099,8 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
   PMultiPartList parts;
   if (!m_parameters.m_eventList || !requestMIME.DecodeMultiPartList(parts, request.GetEntityBody())) {
     if (DispatchNOTIFY(request, *response))
-      return true;
-    return response->Send();
+      return response->Send();
+    return true;
   }
 
   // If GetMultiParts() returns true there as at least one part and that
@@ -1156,7 +1156,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
       }
     }
 
-    if (DispatchNOTIFY(pdu, *response))
+    if (!DispatchNOTIFY(pdu, *response))
       return true;
   }
 #else
@@ -1165,7 +1165,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
     pdu.GetMIME().AddMIME(iter->m_mime);
     pdu.SetEntityBody(iter->m_textBody);
 
-    if (DispatchNOTIFY(pdu, *response))
+    if (!DispatchNOTIFY(pdu, *response))
       return true;
   }
 #endif
