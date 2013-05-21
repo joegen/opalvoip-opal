@@ -247,7 +247,7 @@ static void HandleMessages(unsigned timeout)
   OpalMessage * message;
     
 
-  while ((message = GetMessageFunction(hOPAL, timeout)) != NULL) {
+  while ((message = GetMessageFunction(hOPAL, timeout*1000)) != NULL) {
     switch (message->m_type) {
       case OpalIndRegistration :
         switch (message->m_param.m_registrationStatus.m_status) {
@@ -800,7 +800,7 @@ int main(int argc, char * argv[])
 
     case OpListen :
       puts("Listening.\n");
-      HandleMessages(60000);
+      HandleMessages(120);
       break;
 
     case OpCall :
@@ -811,94 +811,94 @@ int main(int argc, char * argv[])
         if (!DoCall(NULL, argv[2]))
           break;
       }
-      HandleMessages(15000);
+      HandleMessages(15);
       break;
 
     case OpMute :
       if (!DoCall(NULL, argv[2]))
         break;
-      HandleMessages(15000);
+      HandleMessages(15);
       if (!DoMute(1))
         break;
-      HandleMessages(15000);
+      HandleMessages(15);
       if (!DoMute(0))
         break;
-      HandleMessages(15000);
+      HandleMessages(15);
       break;
 
     case OpHold :
       if (!DoCall(NULL, argv[2]))
         break;
-      HandleMessages(15000);
+      HandleMessages(15);
       if (!DoHold())
         break;
-      HandleMessages(15000);
+      HandleMessages(15);
       break;
 
     case OpTransfer :
       if (!DoCall(NULL, argv[2]))
         break;
-      HandleMessages(15000);
+      HandleMessages(15);
       if (!DoTransfer(argv[3]))
         break;
-      HandleMessages(15000);
+      HandleMessages(15);
       break;
 
     case OpConsult :
       if (!DoCall(NULL, argv[2]))
         break;
-      HandleMessages(15000);
+      HandleMessages(15);
       if (!DoHold())
         break;
-      HandleMessages(15000);
+      HandleMessages(15);
       if (!DoCall(NULL, argv[3]))
         break;
-      HandleMessages(15000);
+      HandleMessages(15);
       if (!DoTransfer(HeldCallToken))
         break;
-      HandleMessages(15000);
+      HandleMessages(15);
       break;
 
     case OpRegister :
       if (!DoRegister(argv[2], argv[3]))
         break;
-      HandleMessages(15000);
+      HandleMessages(15);
       break;
 
     case OpSubscribe :
       if (!DoSubscribe(argv[2], argv[3], argv[4]))
         break;
-      HandleMessages(INT_MAX); // More or less forever
+      HandleMessages(60);
       break;
 
     case OpRecord :
       if (!DoRecord(argv[2], argv[3]))
         break;
-      HandleMessages(INT_MAX); // More or less forever
+      HandleMessages(120);
       break;
 
     case OpPlay :
       if (!DoPlay(argv[2], argv[3]))
         break;
-      HandleMessages(INT_MAX); // More or less forever
+      HandleMessages(120);
       break;
 
     case OpPresence :
       if (!DoPresence(argv[2], argc-3, argv+3))
         break;
-      HandleMessages(5000);
+      HandleMessages(5);
       if (!DoPresenceChange(argv[2], OpalPresenceUnavailable))
         break;
-      HandleMessages(5000);
+      HandleMessages(5);
       if (!DoPresenceChange(argv[2], OpalPresenceAvailable))
         break;
-      HandleMessages(INT_MAX); // More or less forever
+      HandleMessages(60);
       break;
 
     case OpInstantMessage :
       if (!DoSendIM(argv[2], argv[3], argv[4]))
         break;
-      HandleMessages(INT_MAX); // More or less forever
+      HandleMessages(30);
       break;
 
     default :
