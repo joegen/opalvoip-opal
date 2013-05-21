@@ -310,6 +310,7 @@ static const wxChar SpeedDialTabTitle[] = wxT("Speed Dials");
 
 
 static const wxChar NotAvailableString[] = wxT("N/A");
+static const wxChar OpenPhoneString[] = wxT("OpenPhone");
 static const wxChar OpenPhoneErrorString[] = wxT("OpenPhone Error");
 
 
@@ -695,7 +696,7 @@ END_EVENT_TABLE()
 
 
 MyManager::MyManager()
-  : wxFrame(NULL, -1, wxT("OpenPhone"), wxDefaultPosition, wxSize(640, 480))
+  : wxFrame(NULL, -1, OpenPhoneString, wxDefaultPosition, wxSize(640, 480))
 #if OPAL_FAX
   , m_currentAnswerMode(AnswerDetect)
   , m_defaultAnswerMode(AnswerDetect)
@@ -1651,7 +1652,7 @@ void MyManager::OnClose(wxCloseEvent & /*event*/)
   ::wxBeginBusyCursor();
   SetTrayTipText("Exiting");
 
-  wxProgressDialog progress(wxT("OpenPhone"), wxT("Exiting ..."));
+  wxProgressDialog progress(OpenPhoneString, wxT("Exiting ..."));
   progress.Pulse();
 
   wxConfigBase * config = wxConfig::Get();
@@ -5516,79 +5517,136 @@ void OptionsDialog::ChangedSoundRecorder(wxCommandEvent & /*event*/)
 }
 
 
+static void TestResult(vector<int64_t> & times, size_t base)
+{
+  // Skip first few buffers as they are not indicative
+  base *= 4;
+  
+  // Calculate times for each read/write
+  for (int i = times.size()-1; i >= base; --i)
+    times[i] -= times[i-1];
+  
+  // Calculate mean
+  double average = 0;
+  for (size_t i = base; i < times.size(); ++i)
+    average += times[i];
+  average /= times.size() - base;
+  
+  // Calculate standard deviation
+  double variance = 0;
+  for (size_t i = base; i < times.size(); ++i) {
+    double diff = times[i] - average;
+    variance += diff * diff;
+  }
+  variance /= times.size() - base - 1;
+
+  ostringstream text;
+  text << "Test completed:\n" << fixed << setprecision(2)
+  << "average=" << average << " ms, "
+  "deviation=" << sqrt(variance) << " ms";
+  wxMessageBox(text.str(), OpenPhoneString, wxOK);
+}
+
+
 void OptionsDialog::TestPlayer(wxCommandEvent & /*event*/)
 {
-  PSoundChannel player;
-  player.SetBuffers(320, (m_SoundBufferTime+19)/20);
-  if (!player.Open(m_SoundPlayer, PSoundChannel::Player)) {
-    wxMessageBox(wxT("Could not use sound player device."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
-    return;
-  }
-
+  const unsigned sampleRate = 8000;
+  const unsigned samplesPerFrame = 160; // 20 milliseconds
+  
   PTones tones("C:0.2/D:0.2/E:0.2/F:0.2/G:0.2/A:0.2/B:0.2/C5:0.2/"
-               "C5:0.2/B:0.2/A:0.2/G:0.2/F:0.2/E:0.2/D:0.2/C:2.0");
+               "C5:0.2/B:0.2/A:0.2/G:0.2/F:0.2/E:0.2/D:0.2/C:2.0",
+               PTones::MaxVolume, sampleRate);
 
   PTRACE(3, "OpenPhone\tTones using " << tones.GetSize() << " samples, "
           << PTimeInterval(1000*tones.GetSize()/tones.GetSampleRate()) << " seconds");
 
-  int seconds = (tones.GetSize()+tones.GetSampleRate()-1)/tones.GetSampleRate();
+  unsigned bufferCount = (m_SoundBufferTime*tones.GetSampleRate()/1000+samplesPerFrame-1)/samplesPerFrame;
+  unsigned frameCount = (tones.GetSize()+samplesPerFrame-1)/samplesPerFrame;
 
-  tones.SetSize(seconds*tones.GetSampleRate());
+  tones.SetSize(samplesPerFrame*frameCount);
+  
+  vector<int64_t> times(frameCount+1);
 
-  wxProgressDialog progress(wxT("OpenPhone"), wxT("Testing player ..."), seconds);
+  {
+    wxProgressDialog progress(OpenPhoneString, wxT("Testing player ..."), frameCount);
 
-  PTime then;
-  for (int second = 0; second < seconds; ++second) {
-    progress.Update(second);
-    if (!player.Write(tones.GetPointer()+second*tones.GetSampleRate(), tones.GetSampleRate()*sizeof(short))) {
-      wxMessageBox(wxT("Could not write to sound player device."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
+    PSoundChannel player;
+    player.SetBuffers(samplesPerFrame*sizeof(short), bufferCount);
+    if (!player.Open(m_SoundPlayer, PSoundChannel::Player)) {
+      wxMessageBox(wxT("Could not use sound player device."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
       return;
     }
+    
+    PTime then;
+    for (unsigned i = 0; i < frameCount; ++i) {
+      progress.Update(i);
+      times[i] = PTimer::Tick().GetMilliSeconds();
+      if (!player.Write(tones.GetPointer()+i*samplesPerFrame, samplesPerFrame*sizeof(short))) {
+        wxMessageBox(wxT("Could not write to sound player device."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
+        return;
+      }
+    }
+    times[frameCount] = PTimer::Tick().GetMilliSeconds();
+
+    PTRACE(3, "OpenPhone\tAudio queued");
+    player.WaitForPlayCompletion();
+    PTRACE(3, "OpenPhone\tFinished tone output: " << PTime() - then << " seconds");
   }
 
-  PTRACE(3, "OpenPhone\tAudio queued");
-  player.WaitForPlayCompletion();
-  PTRACE(3, "OpenPhone\tFinished tone output: " << PTime() - then << " seconds");
+  TestResult(times, bufferCount);
 }
 
 
 void OptionsDialog::TestRecorder(wxCommandEvent & /*event*/)
 {
-  static const unsigned seconds = 5;
+  const unsigned sampleRate = 8000;
+  const unsigned samplesPerFrame = 160; // 20 milliseconds
+  
+  PShortArray recording(5*sampleRate);
+  
+  unsigned bufferCount = (m_SoundBufferTime*sampleRate/1000+samplesPerFrame-1)/samplesPerFrame;
+  unsigned frameCount = (recording.GetSize()+samplesPerFrame-1)/samplesPerFrame;
+
+  std::vector<int64_t> times(frameCount+1);
 
   PSoundChannel recorder;
-  recorder.SetBuffers(320, (m_SoundBufferTime+19)/20);
+  recorder.SetBuffers(samplesPerFrame*sizeof(short), bufferCount);
   if (!recorder.Open(m_SoundRecorder, PSoundChannel::Recorder)) {
     wxMessageBox(wxT("Could not use sound recorder device."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
     return;
   }
-
-  PINDEX sizeOneSecond = recorder.GetSampleRate()*sizeof(short);
-  PBYTEArray recording(seconds*sizeOneSecond);
-
+  
   {
-    wxProgressDialog progress(wxT("OpenPhone"), wxT("Testing recorder ..."), seconds);
+    wxProgressDialog progress(OpenPhoneString, wxT("Testing recorder ..."), frameCount);
     PTRACE(1, "OpenPhone\tStarted recording");
     PTime then;
-    for (unsigned second = 0; second < seconds; ++second) {
-      progress.Update(second);
-      if (!recorder.ReadBlock(recording.GetPointer()+second*sizeOneSecond, sizeOneSecond))
+    for (unsigned i = 0; i < frameCount; ++i) {
+      progress.Update(i);
+      times[i] = PTimer::Tick().GetMilliSeconds();
+      if (!recorder.ReadBlock(recording.GetPointer()+i*samplesPerFrame, samplesPerFrame*sizeof(short))) {
+        wxMessageBox(wxT("Could not read from sound recorder device."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
         return;
+      }
     }
+    times[frameCount] = PTimer::Tick().GetMilliSeconds();
     PTRACE(1, "OpenPhone\tFinished recording " << PTime() - then << " seconds");
   }
 
-  wxProgressDialog progress(wxT("OpenPhone"), wxT("Playing back recording ..."), seconds);
+  wxProgressDialog progress(OpenPhoneString, wxT("Playing back recording ..."), frameCount);
   PSoundChannel player(m_SoundPlayer, PSoundChannel::Player);
   PTRACE(1, "OpenPhone\tStarted play back");
   PTime then;
-  for (unsigned second = 0; second < seconds; ++second) {
-    progress.Update(second);
-    if (!player.Write(recording.GetPointer()+second*sizeOneSecond, sizeOneSecond))
+  for (unsigned i = 0; i < frameCount; ++i) {
+    progress.Update(i);
+    if (!player.Write(recording.GetPointer()+i*samplesPerFrame, samplesPerFrame*sizeof(short))) {
+      wxMessageBox(wxT("Could not write to sound player device."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
       return;
+    }
   }
   player.WaitForPlayCompletion();
   PTRACE(1, "OpenPhone\tFinished play back " << PTime() - then << " seconds");
+  
+  TestResult(times, bufferCount);
 }
 
 
