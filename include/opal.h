@@ -1456,6 +1456,9 @@ struct OpalMessage {
 /// Initialise an OpalMessage for OpalCmdSetUpCall, returns OpalParamSetUpCall*.
 #define OPALMSG_SETUP_CALL(msg) OPALMSG_INIT(msg,OpalCmdSetUpCall,m_callSetUp)
   
+/// Initialise an OpalMessage for OpalCmdTransferCall, returns OpalParamSetUpCall*.
+#define OPALMSG_TRANSFER(msg) OPALMSG_INIT(msg,OpalCmdTransferCall,m_callSetUp)
+  
 /// Initialise an OpalMessage for OpalCmdAnswerCall, returns OpalParamAnswerCall*.
 #define OPALMSG_ANSWER_CALL(msg) OPALMSG_INIT(msg,OpalCmdAnswerCall,m_answerCall)
   

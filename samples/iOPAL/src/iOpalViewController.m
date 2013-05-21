@@ -36,6 +36,7 @@
 
 @implementation iOpalViewController
 
+NSString * registeredAOR;
 NSString * currentCallURI;
 NSString * currentCallToken;
 
@@ -105,12 +106,12 @@ NSString * currentCallToken;
   [self outputStatus:[NSString stringWithFormat:@"Calling %@ ...", currentCallURI]];
 
   OpalMessage msg, *reply;
-  
+
   OpalParamSetUpCall * call = OPALMSG_SETUP_CALL(msg);
   call->m_partyB = [currentCallURI UTF8String];
   if (![self sendOpalMessage:&msg withReply:&reply])
     return;
-  
+
   self.destinationField.enabled = false;
   self.callButton.enabled = false;
   self.hangUpButton.enabled = true;
@@ -122,7 +123,6 @@ NSString * currentCallToken;
 - (IBAction)answerCall:(id)sender
 {
   OpalMessage msg;
-  
   OpalParamAnswerCall * call = OPALMSG_ANSWER_CALL(msg);
   call->m_callToken = [currentCallToken UTF8String];
   if ([self sendOpalMessage:&msg]) {
@@ -132,7 +132,8 @@ NSString * currentCallToken;
 }
 
 
-- (IBAction)holdCall:(id)sender {
+- (IBAction)holdCall:(id)sender
+{
   OpalMessage msg;
   msg.m_type = OpalCmdHoldCall;
   msg.m_param.m_callToken = [currentCallToken UTF8String];
@@ -144,7 +145,8 @@ NSString * currentCallToken;
 }
 
 
-- (IBAction)retreiveCall:(id)sender {
+- (IBAction)retreiveCall:(id)sender
+{
   OpalMessage msg;
   msg.m_type = OpalCmdRetrieveCall;
   msg.m_param.m_callToken = [currentCallToken UTF8String];
@@ -156,14 +158,21 @@ NSString * currentCallToken;
 }
 
 
-- (IBAction)transferCall:(id)sender {
+- (IBAction)transferCall:(id)sender
+{
+  OpalMessage msg;
+  OpalParamSetUpCall * call = OPALMSG_TRANSFER(msg);
+  call->m_callToken = [currentCallToken UTF8String];
+  call->m_partyB = [self.destinationField.text UTF8String];
+  if ([self sendOpalMessage:&msg]) {
+    [self outputStatus:@"Transferring"];
+  }
 }
 
 
 - (IBAction)hangUpCall:(id)sender
 {
   OpalMessage msg;
-  
   OpalParamCallCleared * call = OPALMSG_CLEAR_CALL(msg);
   call->m_callToken = [currentCallToken UTF8String];
   if ([self sendOpalMessage:&msg]) {
@@ -197,7 +206,13 @@ NSString * currentCallToken;
   reg->m_hostName = "ekiga.net";
   reg->m_password = "ported";
   reg->m_timeToLive = 300;
-  [self sendOpalMessage:&msg];
+  
+  OpalMessage * reply;
+  if (![self sendOpalMessage:&msg withReply:&reply])
+    return;
+
+  registeredAOR = [NSString stringWithUTF8String:reply->m_param.m_registrationInfo.m_identifier];
+  OpalFreeMessage(reply);
 }
 
 
@@ -212,8 +227,7 @@ NSString * currentCallToken;
     OpalMessage msg;
     OpalParamRegistration * reg = OPALMSG_REGISTRATION(msg);
     reg->m_protocol = OPAL_PREFIX_SIP;
-    reg->m_identifier = "opal_ios";
-    reg->m_hostName = "ekiga.net";
+    reg->m_identifier = [registeredAOR UTF8String];
     reg->m_timeToLive = 0; // Zero is un-register
     [self sendOpalMessage:&msg];
         
