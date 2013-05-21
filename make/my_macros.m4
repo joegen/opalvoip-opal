@@ -246,7 +246,6 @@ AC_DEFUN([MY_MODULE_OPTION],[
 
          m4_bmatch([$4], [.*local-source.*], [
             if test "x$usable" = "xno" ; then
-               usable="yes"
                $1[_SYSTEM]="no"
                $1[_CFLAGS]=
                $1[_LIBS]=
@@ -403,7 +402,7 @@ case "$target_os" in
       AR="libtool"
       ARFLAGS="-static -o"
       RANLIB=
-      LDFLAGS="${LDFLAGS} -framework AudioToolbox -framework SystemConfiguration -framework Foundation -lobjc"
+      LDFLAGS="${LDFLAGS} -framework AudioToolbox -framework CoreAudio -framework SystemConfiguration -framework Foundation -lobjc"
    ;;
 
    cygwin* | mingw* )
@@ -420,23 +419,32 @@ case "$target_os" in
          AC_MSG_ERROR([Unable to determine iOS release number])
       fi
 
+      MIN_IOS_VER="5.0"
+      if test $target_release \< $MIN_IOS_VER ; then
+         AC_MSG_ERROR([Requires iOS release $MIN_IOS_VER, has $target_release])
+      fi
+
       IOS_DEVROOT="`xcode-select -print-path`/Platforms/${target_os}.platform/Developer"
       IOS_SDKROOT=${IOS_DEVROOT}/SDKs/${target_os}${target_release}.sdk
 
       CXX="${IOS_DEVROOT}/usr/bin/g++"
       CC="${IOS_DEVROOT}/usr/bin/gcc"
       LD="$CXX"
-      CPPFLAGS="${CPPFLAGS} -arch $target_cpu -isysroot ${IOS_SDKROOT}"
+      CPPFLAGS="${CPPFLAGS} -arch $target_cpu -isysroot ${IOS_SDKROOT} -miphoneos-version-min=$MIN_IOS_VER"
       LDFLAGS="-arch $target_cpu -isysroot ${IOS_SDKROOT} -L${IOS_SDKROOT}/usr/lib $LDFLAGS"
    ;;
 
    darwin* )
       target_os=Darwin
-      OS_MAJOR=`uname -r | sed 's/\..*$//'`
-      OS_MINOR=[`uname -r | sed -e 's/[0-9][0-9]*\.//' -e 's/\..*$//'`]
-      target_release=`expr $OS_MAJOR \* 100 + $OS_MINOR`
-      CPPFLAGS="${CPPFLAGS} -D__MACOSX_CORE__"
-      LDFLAGS="-framework QTKit -framework CoreVideo $LDFLAGS"
+      target_release=`sw_vers -productVersion`
+
+      MIN_MACOSX_VER="10.6"
+      if test $target_release \< $MIN_MACOSX_VER ; then
+         AC_MSG_ERROR([Requires Mac OS-X release $MIN_MACOSX_VER, is $target_release])
+      fi
+
+      CPPFLAGS="${CPPFLAGS} -mmacosx-version-min=$MIN_MACOSX_VER"
+      LDFLAGS="-framework QTKit -framework CoreVideo -framework AudioUnit $LDFLAGS"
    ;;
 
    linux* | Linux* | uclibc* )
