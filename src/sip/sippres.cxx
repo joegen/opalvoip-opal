@@ -560,14 +560,13 @@ void SIP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceComman
 {
   PTRACE(3, "SIPPres\t'" << m_aor << "' sending own presence " << cmd.m_state << "/" << cmd.m_note);
 
-  SIPPresenceInfo sipPresence;
+  SIPPresenceInfo sipPresence(cmd);
+
   static PAtomicInteger::IntegerType g_idNumber;
   sipPresence.m_personId = PString(++g_idNumber);
   SetPIDFEntity(sipPresence.m_entity);
   sipPresence.m_contact =  m_aor;  // As required by OMA-TS-Presence_SIMPLE-V2_0-20090917-C
   sipPresence.m_presenceAgent = m_presenceAgentURL.AsString();
-  sipPresence.m_state = cmd.m_state;
-  sipPresence.m_note = cmd.m_note;
 
   if (m_publishedTupleId.IsEmpty())
     m_publishedTupleId = sipPresence.m_tupleId;

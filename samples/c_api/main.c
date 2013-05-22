@@ -680,6 +680,36 @@ int DoPresence(const char * local, int argc, const char ** argv)
 }
 
 
+int UndoPresence(const char * local, int argc, const char ** argv)
+{
+  OpalMessage command;
+  OpalMessage * response;
+  int arg;
+
+  for (arg = 0; arg < argc; ++arg) {
+    size_t equal = strspn(argv[arg], "ABCDEFGHIJKLMNOPQRSTOVWXYZabcdefghijklmnopqrstovwxyz0123456789-");
+    if (argv[arg][equal] != '=')
+      break;
+  }
+
+  for (; arg < argc; ++arg) {
+    printf("Subscribing to presentity %s\n", argv[arg]);
+    memset(&command, 0, sizeof(command));
+    command.m_type = OpalCmdSubscribePresence;
+    command.m_param.m_presenceStatus.m_entity = local;
+    command.m_param.m_presenceStatus.m_target = argv[arg];
+    command.m_param.m_presenceStatus.m_state = OpalPresenceNone;
+
+    if ((response = MySendCommand(&command, "Could not unsubscribe to presentity")) == NULL)
+      return 0;
+
+    FreeMessageFunction(response);
+  }
+
+  return 1;
+}
+
+
 int DoPresenceChange(const char * local, OpalPresenceStates state)
 {
   OpalMessage command;
@@ -691,7 +721,8 @@ int DoPresenceChange(const char * local, OpalPresenceStates state)
   command.m_type = OpalCmdSetLocalPresence;
   command.m_param.m_presenceStatus.m_entity = local;
   command.m_param.m_presenceStatus.m_state = state;
-  command.m_param.m_presenceStatus.m_note = state ==OpalPresenceUnavailable ? "Busy" : "Talk to me";
+  command.m_param.m_presenceStatus.m_activities = state == OpalPresenceUnavailable ? "busy\ntravel" : "available";
+  command.m_param.m_presenceStatus.m_note = state == OpalPresenceUnavailable ? "Leave me alone" : "Talk to me";
 
   if ((response = MySendCommand(&command, "Could not change status of presentity")) == NULL)
     return 0;
@@ -908,6 +939,9 @@ int main(int argc, char * argv[])
         break;
       HandleMessages(5);
       if (!DoPresenceChange(argv[2], OpalPresenceAvailable))
+        break;
+      HandleMessages(5);
+      if (!UndoPresence(argv[2], argc-3, argv+3))
         break;
       HandleMessages(60);
       break;

@@ -2341,12 +2341,16 @@ void OpalManager_C::HandleSetLocalPresence(const OpalMessage & command, OpalMess
     PString note;
     if (!presentity->GetLocalPresence(oldState, note))
       response.SetError("Could not get local presence state.");
-    else if (!presentity->SetLocalPresence((OpalPresenceInfo::State)command.m_param.m_presenceStatus.m_state,
-                                                                    command.m_param.m_presenceStatus.m_note))
-      response.SetError("Could not set local presence state.");
     else {
-      response->m_param.m_presenceStatus.m_state = (OpalPresenceStates)oldState;
-      SET_MESSAGE_STRING(response, m_param.m_presenceStatus.m_note, note);
+      OpalPresenceInfo info((OpalPresenceInfo::State)command.m_param.m_presenceStatus.m_state);
+      info.m_note = command.m_param.m_presenceStatus.m_note;
+      info.m_activities = PString(command.m_param.m_presenceStatus.m_activities).Lines();
+      if (!presentity->SetLocalPresence(info))
+        response.SetError("Could not set local presence state.");
+      else {
+        response->m_param.m_presenceStatus.m_state = (OpalPresenceStates)oldState;
+        SET_MESSAGE_STRING(response, m_param.m_presenceStatus.m_note, note);
+      }
     }
   }
 #else
