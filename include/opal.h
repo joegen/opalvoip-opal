@@ -1253,6 +1253,8 @@ typedef struct OpalPresenceStatus {
 typedef struct OpalInstantMessage {
   const char *  m_from;      /**<Address from whom the message is sent. */
   const char *  m_to;        /**<Address to which the message is sent. */
+  const char *  m_host;      /**<Optional host/proxy. If blank then it is
+                                derived from the m_to address. */
   const char *  m_id;        /**<Conversation identifier. */
   const char *  m_textBody;  /**<Simple text body, ignored if m_bodyCount > 0.
                                  This will always be MIME type "text/plain" */

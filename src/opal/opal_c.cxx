@@ -2358,6 +2358,7 @@ void OpalManager_C::HandleSendIM(const OpalMessage & command, OpalMessageBuffer 
   OpalIM im;
   im.m_from = command.m_param.m_instantMessage.m_from;
   im.m_to = command.m_param.m_instantMessage.m_to;
+  im.m_toAddr = command.m_param.m_instantMessage.m_host;
   im.m_conversationId = command.m_param.m_instantMessage.m_id;
 
   if (command.m_param.m_instantMessage.m_bodyCount == 0)
