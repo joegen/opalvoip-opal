@@ -2162,7 +2162,7 @@ SIPTransaction * SIPMessageHandler::CreateTransaction(OpalTransport & transport)
   SetExpire(m_originalExpireTime);
 
   SIPMessage * msg = new SIPMessage(*this, transport, m_parameters);
-  m_parameters.m_localAddress = msg->GetLocalAddress().AsString();
+  m_parameters.m_localAddress = msg->GetLocalAddress().AsQuotedString();
   return msg;
 }
 

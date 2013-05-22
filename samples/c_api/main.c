@@ -692,7 +692,7 @@ int DoPresenceChange(const char * local, OpalPresenceStates state)
 }
 
 
-int DoSendIM(const char * from, const char * to, const char * msg)
+int DoSendIM(const char * from, const char * to, int argc, const char ** argv)
 {
   OpalMessage command;
   OpalMessage * response;
@@ -703,7 +703,13 @@ int DoSendIM(const char * from, const char * to, const char * msg)
   command.m_type = OpalCmdSendIM;
   command.m_param.m_instantMessage.m_from = from;
   command.m_param.m_instantMessage.m_to = to;
-  command.m_param.m_instantMessage.m_textBody = msg;
+
+  if (strncasecmp(argv[0], "host=", 5) != 0)
+    command.m_param.m_instantMessage.m_textBody = argv[0];
+  else {
+    command.m_param.m_instantMessage.m_host = &argv[0][5];
+    command.m_param.m_instantMessage.m_textBody = argv[1];
+  }
 
   if ((response = MySendCommand(&command, "Could not change status of presentity")) == NULL)
     return 0;
@@ -752,7 +758,7 @@ static const char * const OperationHelp[NumOperations] = {
   "<destination-URL> <filename>",
   "<local-URL> [ <attr>=<value> ... ] <remote-URL> ...\n"
   "    attrib one of pwd/host/transport/sub-protocol etc",
-  "<from> <to> <msg>"
+  "<from> <to> [ host=<host> ] <msg>"
 };
 
 
@@ -896,7 +902,7 @@ int main(int argc, char * argv[])
       break;
 
     case OpInstantMessage :
-      if (!DoSendIM(argv[2], argv[3], argv[4]))
+      if (!DoSendIM(argv[2], argv[3], argc-4, argv+4))
         break;
       HandleMessages(30);
       break;
