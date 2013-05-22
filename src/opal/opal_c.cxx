@@ -255,6 +255,8 @@ class OpalManager_C : public OpalManager
     virtual void OnProceeding(OpalConnection & conenction);
     virtual void OnClearedCall(OpalCall & call);
     virtual void OnMessageReceived(const OpalIM & message);
+    virtual void OnMessageDisposition(const OpalIMContext::DispositionInfo &);
+    virtual void OnCompositionIndication(const OpalIMContext::CompositionInfo &);
 
 #if OPAL_HAS_PRESENCE
     PDECLARE_PresenceChangeNotifier(OpalManager_C, OnPresenceChange);
@@ -2359,7 +2361,7 @@ void OpalManager_C::HandleSendIM(const OpalMessage & command, OpalMessageBuffer 
   im.m_from = command.m_param.m_instantMessage.m_from;
   im.m_to = command.m_param.m_instantMessage.m_to;
   im.m_toAddr = command.m_param.m_instantMessage.m_host;
-  im.m_conversationId = command.m_param.m_instantMessage.m_id;
+  im.m_conversationId = command.m_param.m_instantMessage.m_conversationId;
 
   if (command.m_param.m_instantMessage.m_bodyCount == 0)
     im.m_bodies.SetAt(PMIMEInfo::TextPlain(), command.m_param.m_instantMessage.m_textBody);
@@ -2368,8 +2370,10 @@ void OpalManager_C::HandleSendIM(const OpalMessage & command, OpalMessageBuffer 
       im.m_bodies.SetAt(command.m_param.m_instantMessage.m_mimeType[i], command.m_param.m_instantMessage.m_bodies[i]);
   }
 
-  if (Message(im))
-    SET_MESSAGE_STRING(response, m_param.m_instantMessage.m_id, im.m_conversationId);
+  if (Message(im)) {
+    SET_MESSAGE_STRING(response, m_param.m_instantMessage.m_conversationId, im.m_conversationId);
+    response->m_param.m_instantMessage.m_messageId = im.m_messageId;
+  }
   else
     response.SetError("Could not send instant message.");
 }
@@ -2380,11 +2384,33 @@ void OpalManager_C::OnMessageReceived(const OpalIM & im)
   OpalMessageBuffer message(OpalIndReceiveIM);
   SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_from, im.m_from.AsString());
   SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_to,   im.m_to.AsString());
-  SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_id,   im.m_conversationId);
+  SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_conversationId, im.m_conversationId);
   PTRACE(4, "OpalC API\tOnMessageReceived:"
             " from=\"" << message->m_param.m_instantMessage.m_from << "\""
-            " to=\"" << message->m_param.m_instantMessage.m_to << '"');
+            " to=\"" << message->m_param.m_instantMessage.m_to << "\""
+            " ID=\"" << message->m_param.m_instantMessage.m_conversationId << '"');
   PostMessage(message);
+}
+
+
+void OpalManager_C::OnMessageDisposition(const OpalIMContext::DispositionInfo & dispostion)
+{
+  OpalMessageBuffer message(OpalIndSentIM);
+
+//  SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_from, im.m_from.AsString());
+//  SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_to,   im.m_to.AsString());
+  SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_conversationId, dispostion.m_conversationId);
+  message->m_param.m_instantMessage.m_messageId = dispostion.m_messageId;
+  SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_textBody, PSTRSTRM(dispostion.m_disposition));
+  PTRACE(4, "OpalC API\tOnMessageDisposition:"
+            " ID=\"" << message->m_param.m_instantMessage.m_conversationId << "\""
+            " state=\"" << message->m_param.m_instantMessage.m_textBody << '"');
+  PostMessage(message);
+}
+
+
+void OpalManager_C::OnCompositionIndication(const OpalIMContext::CompositionInfo &)
+{
 }
 
 

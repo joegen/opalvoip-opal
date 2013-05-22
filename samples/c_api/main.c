@@ -382,10 +382,19 @@ static void HandleMessages(unsigned timeout)
         break;
 
       case OpalIndReceiveIM :
-        printf("Instant Message: from=%s to=%s id=%s\n%s\n",
+        printf("Received Instant Message: from=%s to=%s id=%s\n%s\n",
                message->m_param.m_instantMessage.m_from,
                message->m_param.m_instantMessage.m_to,
-               message->m_param.m_instantMessage.m_id,
+               message->m_param.m_instantMessage.m_conversationId,
+               message->m_param.m_instantMessage.m_textBody);
+        break;
+
+      case OpalIndSentIM :
+        printf("Sent Instant Message: from=%s to=%s id=%s msg=%u disposition=%s\n",
+               message->m_param.m_instantMessage.m_from,
+               message->m_param.m_instantMessage.m_to,
+               message->m_param.m_instantMessage.m_conversationId,
+               message->m_param.m_instantMessage.m_messageId,
                message->m_param.m_instantMessage.m_textBody);
         break;
 
@@ -714,7 +723,9 @@ int DoSendIM(const char * from, const char * to, int argc, const char ** argv)
   if ((response = MySendCommand(&command, "Could not change status of presentity")) == NULL)
     return 0;
 
-  printf("Message conversation id is %s\n", response->m_param.m_instantMessage.m_id);
+  printf("Sending message number %u, with conversation id is %s\n",
+         response->m_param.m_instantMessage.m_messageId,
+         response->m_param.m_instantMessage.m_conversationId);
   FreeMessageFunction(response);
   return 1;
 }

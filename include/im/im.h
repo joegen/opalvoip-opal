@@ -150,7 +150,7 @@ class OpalIMContext : public PSafeObject
        is handled by teh network, and how it is handled by the remote entity,
        such as described in RFC5438.
       */
-    enum MessageDisposition {
+    P_DECLARE_STREAMABLE_ENUM(MessageDisposition,
       DispositionPending,     ///< Indicates mesage is on it's way
       DispositionAccepted,    ///< Indicates message was accepted by remote system
       DeliveryOK,             ///< Indicates message delivered to remote entity (RFC5438)
@@ -169,8 +169,8 @@ class OpalIMContext : public PSafeObject
       TransportFailure,       ///< Underlying network transport failed
       ConversationClosed,     ///< The conversation with remote was closed
       UnsupportedFeature,     ///< Feature is not supported
-      DeliveryFailed,         ///< Indicates message could not be delivered to remote entity (RFC5438)
-    };
+      DeliveryFailed          ///< Indicates message could not be delivered to remote entity (RFC5438)
+    );
 
     /** Send message in this conversation.
         This is generally asynchronous and will return quickly with the
