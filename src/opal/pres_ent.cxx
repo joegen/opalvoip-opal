@@ -104,7 +104,7 @@ PObject::Comparison OpalPresenceInfo::Compare(const PObject & obj) const
 OpalPresentity::OpalPresentity()
   : m_manager(NULL)
   , m_temporarilyUnavailable(false)
-  , m_localState(OpalPresenceInfo::NoPresence)
+  , m_localInfo(OpalPresenceInfo::NoPresence)
 {
 }
 
@@ -114,7 +114,7 @@ OpalPresentity::OpalPresentity(const OpalPresentity & other)
   , m_manager(other.m_manager)
   , m_attributes(other.m_attributes)
   , m_temporarilyUnavailable(false)
-  , m_localState(OpalPresenceInfo::NoPresence)
+  , m_localInfo(OpalPresenceInfo::NoPresence)
 {
 }
 
@@ -202,31 +202,45 @@ bool OpalPresentity::SetPresenceAuthorisation(const PURL & presentity, Authorisa
 }
 
 
-bool OpalPresentity::SetLocalPresence(OpalPresenceInfo::State state, const PString & note)
+bool OpalPresentity::SetLocalPresence(const OpalPresenceInfo & info)
 {
   if (!IsOpen())
     return false;
 
-  m_localState     = state;
-  m_localStateNote = note;
+  m_localInfo = info;
 
   OpalSetLocalPresenceCommand * cmd = CreateCommand<OpalSetLocalPresenceCommand>();
   if (cmd == NULL)
     return false;
 
-  cmd->m_state = state;
-  cmd->m_note = note;
+  *static_cast<OpalPresenceInfo *>(cmd) = info;
   SendCommand(cmd);
   return true;
 }
+
+
+bool OpalPresentity::SetLocalPresence(OpalPresenceInfo::State state, const PString & note)
+{
+  m_localInfo.m_state = state;
+  m_localInfo.m_note = note;
+  return SetLocalPresence(m_localInfo);
+}
+
+
+bool OpalPresentity::GetLocalPresence(OpalPresenceInfo & info)
+{
+  info = m_localInfo;
+  return true;
+}
+
 
 bool OpalPresentity::GetLocalPresence(OpalPresenceInfo::State & state, PString & note)
 {
   if (!IsOpen())
     return false;
 
-  state = m_localState;
-  note  = m_localStateNote;
+  state = m_localInfo.m_state;
+  note  = m_localInfo.m_note;
 
   return true;
 }

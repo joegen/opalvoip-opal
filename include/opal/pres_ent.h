@@ -241,14 +241,24 @@ class OpalPresentity : public PSafeObject
         mean the command succeeded, only that the underlying protocol is
         capabable of the action.
       */
-    virtual bool SetLocalPresence(
+    bool SetLocalPresence(
+      const OpalPresenceInfo & info   ///< Presence information to set
+    );
+
+    // For backward compatibility
+    bool SetLocalPresence(
       OpalPresenceInfo::State state,            ///< New state for our presentity
-      const PString & note = PString::Empty()   ///< Additional note attached to the state change
+      const PString & note = PString::Empty()  ///< Additional note attached to the state change
     );
 
     /** Get our presence state
     */
-    virtual bool GetLocalPresence(
+    bool GetLocalPresence(
+      OpalPresenceInfo & info   ///< Previous presence information
+    );
+
+    // For backward compatibility
+    bool GetLocalPresence(
       OpalPresenceInfo::State & state, 
       PString & note
     );
@@ -529,8 +539,7 @@ class OpalPresentity : public PSafeObject
     PAtomicBoolean m_open;
     PMutex m_notificationMutex;
     bool m_temporarilyUnavailable;
-    OpalPresenceInfo::State m_localState;      ///< our presentity state
-    PString m_localStateNote;                  ///< Additional note attached to the 
+    OpalPresenceInfo m_localInfo;
 };
 
 

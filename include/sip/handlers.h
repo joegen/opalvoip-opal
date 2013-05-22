@@ -429,10 +429,18 @@ class SIPHandlersList
 class SIPPresenceInfo : public OpalPresenceInfo
 {
   PCLASSINFO_WITH_CLONE(SIPPresenceInfo, OpalPresenceInfo)
+
+  class TupleString : public PString
+  {
+    public:
+      TupleString();
+      PString & operator=(const PString & str) { return PString::operator=(str); }
+  };
+
 public:
   // basic presence defined by RFC 3863
-  PString m_tupleId;
-  PString m_contact;
+  TupleString m_tupleId;
+  PString     m_contact;
 
   // presence agent
   PString m_presenceAgent;
@@ -451,11 +459,14 @@ public:
   // Constructor
   SIPPresenceInfo(
     State state = Unchanged
-  );
+  ) : OpalPresenceInfo(state) { }
   SIPPresenceInfo(
     SIP_PDU::StatusCodes status,
     bool subscribing
   );
+  SIPPresenceInfo(
+    const OpalPresenceInfo & info
+  ) : OpalPresenceInfo(info) { }
 };
 #endif // OPAL_SIP_PRESENCE
 

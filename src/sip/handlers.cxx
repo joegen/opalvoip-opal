@@ -1876,11 +1876,43 @@ void SIPPublishHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & res
 
 #if OPAL_SIP_PRESENCE
 
+// defined in RFC 4480
+static const char * const RFC4480ActivitiesInit[] = {
+  "appointment",
+  "away",
+  "breakfast",
+  "busy",
+  "dinner",
+  "holiday",
+  "in-transit",
+  "looking-for-work",
+  "lunch",
+  "meal",
+  "meeting",
+  "on-the-phone",
+  "other",
+  "performance",
+  "permanent-absence",
+  "playing",
+  "presentation",
+  "shopping",
+  "sleeping",
+  "spectator",
+  "steering",
+  "travel",
+  "tv",
+  "vacation",
+  "working",
+  "worship"
+};
+
+static PStringSet const RFC4480Activities(PARRAYSIZE(RFC4480ActivitiesInit), RFC4480ActivitiesInit);
+
+
 static PAtomicInteger DefaultTupleIdentifier(PRandom::Number());
 
-SIPPresenceInfo::SIPPresenceInfo(State state)
-  : OpalPresenceInfo(state)
-  , m_tupleId(PString::Printf, "T%08X", ++DefaultTupleIdentifier)
+SIPPresenceInfo::TupleString::TupleString()
+  : PString(Printf, "T%08X", ++DefaultTupleIdentifier)
 {
 }
 
@@ -1939,6 +1971,7 @@ void SIPPresenceInfo::PrintOn(ostream & strm) const
   }
 }
 
+
 PString SIPPresenceInfo::AsXML() const
 {
   if (m_entity.IsEmpty() || m_tupleId.IsEmpty()) {
@@ -1978,8 +2011,10 @@ PString SIPPresenceInfo::AsXML() const
     xml << "  <dm:person id=\"p" << m_personId << "\">\r\n"
            "    <rpid:activities>\r\n";
     for (PStringSet::const_iterator it = m_activities.begin(); it != m_activities.end(); ++it) {
-      if (it->FindSpan("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz- ") == P_MAX_INDEX)
+      if (RFC4480Activities.Contains(*it))
         xml << "      <rpid:" << *it <<"/>\r\n";
+      else
+        xml << "      <rpid:other>" << *it << "</rpid:other>\r\n";
     }
 
     xml << "    </rpid:activities>\r\n"
@@ -2056,6 +2091,8 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
 
   SIPPresenceInfo info;
   info.m_tupleId.MakeEmpty();
+  info.m_infoType = SIPPresenceEventPackageContentType;
+  info.m_infoData = notifyInfo.m_request.GetEntityBody();
 
   PTime defaultTimestamp; // Start with "now"
 
@@ -2075,9 +2112,6 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
 
       info.m_entity = entity;
       info.m_tupleId = tupleElement->GetAttribute("id");
-
-      info.m_infoType = SIPPresenceEventPackageContentType;
-      info.m_infoData = tupleElement->AsString();
 
       SetNoteFromElement(rootElement, info.m_note);
       SetNoteFromElement(tupleElement, info.m_note);
