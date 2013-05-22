@@ -252,14 +252,9 @@ SIPURL & SIPURL::operator=(const OpalTransportAddress & address)
 
 void SIPURL::ParseAsAddress(const PString & name,
                             const OpalTransportAddress & address,
-                            WORD listenerPort,
+                            WORD port,
                             const char * scheme)
 {
-  PIPSocket::Address ip;
-  WORD port;
-  if (!address.GetIpAndPort(ip, port))
-    return;
-
   PCaselessString proto = address.GetProtoPrefix();
 
   PCaselessString actualScheme = scheme;
@@ -289,16 +284,21 @@ void SIPURL::ParseAsAddress(const PString & name,
 #endif
   }
 
+  if (port == 0)
+    port = defaultPort;
+
+  PIPSocket::Address ip;
+  if (!address.GetIpAndPort(ip, port))
+    return;
+
   PStringStream uri;
   uri << actualScheme << ':';
   if (!name.IsEmpty())
     uri << name << '@';
   uri << ip.AsString(true, true);
 
-  if (listenerPort == 0)
-    listenerPort = port;
-  if (listenerPort != 0 && listenerPort != defaultPort)
-    uri << ':' << listenerPort;
+  if (port != 0 && port != defaultPort)
+    uri << ':' << port;
 
   if (proto != defaultProto) {
     proto.Delete(proto.Find('$'), 1); // Remove dollar
