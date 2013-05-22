@@ -432,6 +432,9 @@ typedef enum OpalMessageType {
   OpalIndReceiveIM,             /**<Indicates receipt of an instant message. This message is returned in the
                                     OpalGetMessage() function. See the OpalInstantMessage structure for
                                     more information. */
+  OpalIndSentIM,                /**<Get indication of the disposition of a sent instant message. This message
+                                    is returned in the OpalGetMessage() function. See the OpalInstantMessage
+                                    structure for more information. */
 
 // Always add new messages to ethe end to maintain backward compatibility
   OpalMessageTypeCount
@@ -1249,18 +1252,31 @@ typedef struct OpalPresenceStatus {
 
 
 /**Opal Instant Message information for the various presence messages.
+   This can be filled out and used in the OpalCmdSendIM command. The result
+   of that transmission is returned by OpalIndSentIM, where m_textBody contains
+   a string indicating the disposition of the message.
+
+   The OpalIndReceiveIM message uses this structure for incoming instant
+   messages from a remote.
   */
 typedef struct OpalInstantMessage {
   const char *  m_from;      /**<Address from whom the message is sent. */
   const char *  m_to;        /**<Address to which the message is sent. */
   const char *  m_host;      /**<Optional host/proxy. If blank then it is
                                 derived from the m_to address. */
-  const char *  m_id;        /**<Conversation identifier. */
+  const char *  m_conversationId; /**<Conversation identifier. This may be
+                                provided by the caller if athe conversation
+                                exists. If starting a new conversation, leave
+                                empty and OpalCmdSendIM will return it. */
   const char *  m_textBody;  /**<Simple text body, ignored if m_bodyCount > 0.
                                  This will always be MIME type "text/plain" */
   unsigned      m_bodyCount; /**<Count of bodies in m_mimeType and m_bodies */
   const char ** m_mimeType;  /**<MIME type for each body, e.g. "text/html" */
   const char ** m_bodies;    /**<Body data for each MIME type */
+  unsigned      m_messageId; /**<Identifer for this message. This can be used
+                                 to match a message sent with OpalCmdSendIM with
+                                 the disposition in OpalIndSentIM. It is not set
+                                 by the user, and is returned by OpalCmdSendIM. */
 } OpalInstantMessage;
 
 

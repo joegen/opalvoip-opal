@@ -323,10 +323,21 @@ void OpalSIPIMContext::OnMESSAGECompleted(SIPEndPoint & endpoint,
     return;
   }
 
-  PSafePtr<OpalSIPIMContext> context = PSafePtrCast<OpalIMContext,OpalSIPIMContext>(
-                                          imEP->FindContextByIdWithLock(params.m_id));
+  PSafePtr<OpalIMContext> imContext = imEP->FindContextByIdWithLock(params.m_id + ConversationIdSeparator + params.m_tag);
+  if (imContext == NULL) {
+    imContext = imEP->FindContextByIdWithLock(params.m_id);
+    if (imContext == NULL) {
+      imContext = imEP->FindContextByIdWithLock(params.m_tag);
+      if (imContext == NULL) {
+        PTRACE2(2, &endpoint, "SIPIM\tCannot find IM context for " << params.m_id << ',' << params.m_tag);
+        return;
+      }
+    }
+  }
+
+  PSafePtr<OpalSIPIMContext> context = PSafePtrCast<OpalIMContext,OpalSIPIMContext>(imContext);
   if (context == NULL) {
-    PTRACE2(2, &endpoint, "SIPIM\tCannot find IM context for \"" << params.m_id << '"');
+    PTRACE2(2, &endpoint, "SIPIM\tNot a SIP context for " << params.m_id << ',' << params.m_tag);
     return;
   }
 
@@ -419,15 +430,13 @@ void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
 
 void OpalSIPIMContext::PopulateParams(SIPMessage::Params & params, const OpalIM & message)
 {
-  PString tag;
-  if (!message.m_conversationId.Split(' ', params.m_id, tag))
+  if (!message.m_conversationId.Split(ConversationIdSeparator, params.m_id, params.m_tag))
     params.m_id = message.m_conversationId;
 
   SIPURL from(message.m_from);
   params.m_addressOfRecord = from.AsString();
 
   from.SetDisplayName(m_localName);
-  from.SetTag(tag);
   params.m_localAddress = from.AsQuotedString();
 
   params.m_remoteAddress = message.m_to.AsString();
