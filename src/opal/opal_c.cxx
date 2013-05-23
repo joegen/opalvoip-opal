@@ -2434,6 +2434,13 @@ void OpalManager_C::OnCompositionIndication(const OpalIMContext::CompositionInfo
 {
 }
 
+#else
+
+void OpalManager_C::HandleSendIM(const OpalMessage &, OpalMessageBuffer & response)
+{
+  response.SetError("Presence not supported by library.");
+}
+
 #endif // OPAL_HAS_IM
 
 
