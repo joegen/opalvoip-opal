@@ -368,17 +368,27 @@ static void HandleMessages(unsigned timeout)
         break;
 
       case OpalIndPresenceChange :
-        printf("Presence change: entity=%s, target=%s, state=%d",
+        printf("Presence change:\n"
+               "state        = %d\n"
+               "entity       = %s\n"
+               "target       = %s\n"
+               "service      = \"%s\"\n"
+               "contact      = \"%s\"",
+               message->m_param.m_presenceStatus.m_state,
                message->m_param.m_presenceStatus.m_entity,
                message->m_param.m_presenceStatus.m_target,
-               message->m_param.m_presenceStatus.m_state);
+               message->m_param.m_presenceStatus.m_service,
+               message->m_param.m_presenceStatus.m_contact);
+        if (message->m_param.m_presenceStatus.m_capabilities != NULL && *message->m_param.m_presenceStatus.m_capabilities != '\0')
+          printf(strchr(message->m_param.m_presenceStatus.m_capabilities, '\n') != NULL
+                      ? "%s:\n%s" : "%s = \"%s\"", "\ncapabilities", message->m_param.m_presenceStatus.m_capabilities);
         if (message->m_param.m_presenceStatus.m_activities != NULL && *message->m_param.m_presenceStatus.m_activities != '\0')
           printf(strchr(message->m_param.m_presenceStatus.m_activities, '\n') != NULL
-                      ? "%s:\n%s" : "%s=\"%s\"", ", activities", message->m_param.m_presenceStatus.m_activities);
+                      ? "%s:\n%s" : "%s   = \"%s\"", "\nactivities", message->m_param.m_presenceStatus.m_activities);
         if (message->m_param.m_presenceStatus.m_note != NULL && *message->m_param.m_presenceStatus.m_note != '\0')
           printf(strchr(message->m_param.m_presenceStatus.m_note, '\n') != NULL
-                      ? "%s:\n%s" : "%s=\"%s\"", ", note", message->m_param.m_presenceStatus.m_note);
-        putchar('\n');
+                      ? "%s:\n%s" : "%s         = \"%s\"", "\nnote", message->m_param.m_presenceStatus.m_note);
+        puts("\n\n");
         break;
 
       case OpalIndReceiveIM :
@@ -721,6 +731,7 @@ int DoPresenceChange(const char * local, OpalPresenceStates state)
   command.m_type = OpalCmdSetLocalPresence;
   command.m_param.m_presenceStatus.m_entity = local;
   command.m_param.m_presenceStatus.m_state = state;
+  command.m_param.m_presenceStatus.m_capabilities = "audio\nvideo\ntext\ntype=text/plain";
   command.m_param.m_presenceStatus.m_activities = state == OpalPresenceUnavailable ? "busy\ntravel" : "available";
   command.m_param.m_presenceStatus.m_note = state == OpalPresenceUnavailable ? "Leave me alone" : "Talk to me";
 

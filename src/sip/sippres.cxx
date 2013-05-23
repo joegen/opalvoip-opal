@@ -569,9 +569,8 @@ void SIP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceComman
   sipPresence.m_presenceAgent = m_presenceAgentURL.AsString();
 
   if (m_publishedTupleId.IsEmpty())
-    m_publishedTupleId = sipPresence.m_tupleId;
-  else
-    sipPresence.m_tupleId = m_publishedTupleId;
+    m_publishedTupleId = PGloballyUniqueID().AsString();
+  sipPresence.m_service = m_publishedTupleId;
 
   if (m_subProtocol != e_PeerToPeer)
     m_endpoint->PublishPresence(sipPresence, GetExpiryTime());

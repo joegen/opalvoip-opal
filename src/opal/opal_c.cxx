@@ -2252,27 +2252,35 @@ void OpalManager_C::OnMWIReceived(const PString & party, MessageWaitingType type
 
 
 #if OPAL_HAS_PRESENCE
+PString ConvertStringSetWithoutLastNewine(const PStringSet & set)
+{
+  PStringStream strm;
+  strm << setfill('\n') << set;
+  return strm.Left(strm.GetLength()-1);
+}
+
 void OpalManager_C::OnPresenceChange(OpalPresentity &, std::auto_ptr<OpalPresenceInfo> info)
 {
   OpalMessageBuffer message(OpalIndPresenceChange);
   SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_entity,   info->m_entity.AsString());
   SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_target,   info->m_target.AsString());
+  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_service,  info->m_service);
+  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_contact,  info->m_contact);
   SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_note,     info->m_note);
   SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_infoType, info->m_infoType);
   SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_infoData, info->m_infoData);
 
-  if (info->m_activities.IsEmpty())
-    SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_activities, PString::Empty());
-  else
-    SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_activities, PSTRSTRM(setfill('\n') << info->m_activities));
+  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_activities, ConvertStringSetWithoutLastNewine(info->m_activities));
+  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_capabilities, ConvertStringSetWithoutLastNewine(info->m_capabilities));
 
   message->m_param.m_presenceStatus.m_state = (OpalPresenceStates)info->m_state;
 
-  PTRACE(4, "OpalC API\tOnPresenceChange:"
+  PTRACE(4, "OpalC API\tOnPresenceChange:\n"
             " entity=\"" << message->m_param.m_presenceStatus.m_entity << "\""
             " target=\"" << message->m_param.m_presenceStatus.m_target << "\""
+            " service=\"" << message->m_param.m_presenceStatus.m_service << "\""
+            " contact=\"" << message->m_param.m_presenceStatus.m_contact << "\""
             " state=" << message->m_param.m_presenceStatus.m_state <<
-            " activities=\"" << message->m_param.m_presenceStatus.m_activities << "\""
             " note=\"" << message->m_param.m_presenceStatus.m_note << '"');
   PostMessage(message);
 }
@@ -2345,6 +2353,7 @@ void OpalManager_C::HandleSetLocalPresence(const OpalMessage & command, OpalMess
       OpalPresenceInfo info((OpalPresenceInfo::State)command.m_param.m_presenceStatus.m_state);
       info.m_note = command.m_param.m_presenceStatus.m_note;
       info.m_activities = PString(command.m_param.m_presenceStatus.m_activities).Lines();
+      info.m_capabilities = PString(command.m_param.m_presenceStatus.m_capabilities).Lines();
       if (!presentity->SetLocalPresence(info))
         response.SetError("Could not set local presence state.");
       else {

@@ -50,6 +50,12 @@ const PCaselessString & OpalPresentity::AuthPasswordKey() { static const PConstC
 const PCaselessString & OpalPresentity::TimeToLiveKey()   { static const PConstCaselessString s("Time to Live");  return s; }
 
 
+OpalPresenceInfo::OpalPresenceInfo(State state)
+  : m_state(state)
+{
+}
+
+
 PString OpalPresenceInfo::AsString() const
 {
   return AsString(m_state);
