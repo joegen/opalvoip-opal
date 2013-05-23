@@ -626,6 +626,7 @@ OPAL_PLUGIN_DIR
 OPAL_PLUGINS
 OPAL_SAMPLES
 OPAL_SCRIPT
+OPAL_HAS_PRESENCE
 OPAL_HAS_PCSS
 OPAL_HAS_MIXER
 OPAL_RTCP_XR
@@ -847,6 +848,7 @@ enable_g711plc
 enable_rtcpxr
 enable_mixer
 enable_pcss
+enable_presence
 enable_script
 enable_samples
 enable_plugins
@@ -1538,6 +1540,7 @@ Optional Features:
   --disable-rtcpxr        disable RTCP Extended Reports support
   --disable-mixer         disable media mixing support
   --disable-pcss          disable PC sound system support
+  --enable-presence       whether to enable presence support
   --disable-script        disable script language support
   --enable-samples        enable samples build
   --disable-plugins       disable plugin support
@@ -5272,6 +5275,7 @@ OPAL_HAS_SIPIM=yes
 OPAL_HAS_RFC4103=yes
 OPAL_HAS_MIXER=yes
 OPAL_HAS_PCSS=yes
+OPAL_HAS_PRESENCE=yes
 
 # experimental options
 OPAL_DAHDI=no
@@ -9189,6 +9193,67 @@ fi
 
 
    enable_pcss="$enableval"
+
+
+
+
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable presence support" >&5
+$as_echo_n "checking whether to enable presence support... " >&6; }
+
+   # Check whether --enable-presence was given.
+if test "${enable_presence+set}" = set; then :
+  enableval=$enable_presence;
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+$as_echo "disabled by user" >&6; }
+         fi
+
+else
+
+         enableval=$OPAL_HAS_PRESENCE
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+$as_echo "disabled by default" >&6; }
+         fi
+
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   if test "x${enableval}" = "xyes"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+   fi
+
+
+   if test "x$enableval" = "xyes"; then :
+
+         OPAL_HAS_PRESENCE=yes
+
+
+$as_echo "#define OPAL_HAS_PRESENCE 1" >>confdefs.h
+
+
+else
+  OPAL_HAS_PRESENCE=no
+fi
+
+
+   enable_presence="$enableval"
 
 
 
