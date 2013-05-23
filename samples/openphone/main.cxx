@@ -233,6 +233,7 @@ DEF_FIELD(CallIntrusionProtectionLevel);
 DEF_FIELD(DisableFastStart);
 DEF_FIELD(DisableH245Tunneling);
 DEF_FIELD(DisableH245inSETUP);
+DEF_FIELD(ForceSymmetricTCS);
 DEF_FIELD(ExtendedVideoRoles);
 DEF_FIELD(EnableH239Control);
 DEF_FIELD(H323SignalingSecurity);
@@ -817,6 +818,7 @@ bool MyManager::Initialise(bool startMinimised)
 
   // Task bar icon
   m_taskBarIcon = new MyTaskBarIcon(*this);
+  m_taskBarIcon->SetIcon(wxICON(AppIcon), wxEmptyString);
   SetTrayTipText("Initialising");
 
   // Make a menubar
@@ -1318,6 +1320,8 @@ bool MyManager::Initialise(bool startMinimised)
     h323EP->DisableH245Tunneling(onoff);
   if (config->Read(DisableH245inSETUPKey, &onoff))
     h323EP->DisableH245inSetup(onoff);
+  if (config->Read(ForceSymmetricTCSKey, &onoff))
+    h323EP->ForceSymmetricTCS(onoff);
 
 #if OPAL_H239
   value1 = m_ExtendedVideoRoles;
@@ -3592,11 +3596,7 @@ void MyManager::OnPresenceChange(OpalPresentity &, std::auto_ptr<OpalPresenceInf
           newIcon = Icon_Unavailable;
           break;
 
-        case OpalPresenceInfo::Busy :
-          newIcon = Icon_Busy;
-          break;
-
-        case OpalPresenceInfo::Away :
+        case OpalPresenceInfo::Unavailable :
           newIcon = Icon_Away;
           break;
 
@@ -3769,7 +3769,7 @@ void MyManager::SetTrayTipText(const PwxString & tip)
 {
   if (PThread::Current() != &PProcess::Current())
     PostEvent(wxEvtSetTrayTipText, ID_SET_TRAY_TIP_TEXT, tip);
-  else {
+  else if (m_taskBarIcon->IsIconInstalled()) {
     PwxString text;
     text << PProcess::Current().GetName() << " - " << tip;
     m_taskBarIcon->SetIcon(wxICON(AppIcon), text);
@@ -3781,7 +3781,8 @@ void MyManager::SetBalloonText(const PwxString & text)
 {
 #ifdef __WXMSW__
 #if wxUSE_TASKBARICON_BALLOONS
-  m_taskBarIcon->ShowBalloon(PwxString(PProcess::Current().GetName()), text);
+  if (m_taskBarIcon->IsIconInstalled())
+    m_taskBarIcon->ShowBalloon(PwxString(PProcess::Current().GetName()), text);
 #else
   NOTIFYICONDATA notify;
   memset(&notify, 0, sizeof(notify));
@@ -4617,6 +4618,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(DisableFastStart, m_manager.h323EP->IsFastStartDisabled() != false);
   INIT_FIELD(DisableH245Tunneling, m_manager.h323EP->IsH245TunnelingDisabled() != false);
   INIT_FIELD(DisableH245inSETUP, m_manager.h323EP->IsH245inSetupDisabled() != false);
+  INIT_FIELD(ForceSymmetricTCS, m_manager.h323EP->IsForcedSymmetricTCS() != false);
 
   INIT_FIELD(ExtendedVideoRoles, m_manager.m_ExtendedVideoRoles);
   INIT_FIELD(EnableH239Control, m_manager.h323EP->GetDefaultH239Control());
@@ -5116,6 +5118,7 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(DisableFastStart, m_manager.h323EP->DisableFastStart);
   SAVE_FIELD(DisableH245Tunneling, m_manager.h323EP->DisableH245Tunneling);
   SAVE_FIELD(DisableH245inSETUP, m_manager.h323EP->DisableH245inSetup);
+  SAVE_FIELD(ForceSymmetricTCS, m_manager.h323EP->ForceSymmetricTCS);
 
   SAVE_FIELD(ExtendedVideoRoles, m_manager.m_ExtendedVideoRoles = (MyManager::ExtendedVideoRoles));
   SAVE_FIELD(EnableH239Control, m_manager.h323EP->SetDefaultH239Control);
@@ -5523,7 +5526,7 @@ static void TestResult(vector<int64_t> & times, size_t base)
   base *= 4;
   
   // Calculate times for each read/write
-  for (int i = times.size()-1; i >= base; --i)
+  for (size_t i = times.size()-1; i >= base; --i)
     times[i] -= times[i-1];
   
   // Calculate mean

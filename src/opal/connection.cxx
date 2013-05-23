@@ -877,6 +877,7 @@ OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat & medi
 
         return new OpalVideoMediaStream(*this, mediaFormat, sessionID, videoDevice, previewDevice, autoDeleteGrabber, autoDeletePreview);
       }
+      PTRACE(2, "OpalCon\tCould not create video input device");
     }
     else {
       PVideoOutputDevice * videoDevice;
@@ -885,6 +886,7 @@ OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat & medi
         PTRACE(4, "OpalCon\tCreated display device \"" << videoDevice->GetDeviceName() << '"');
         return new OpalVideoMediaStream(*this, mediaFormat, sessionID, NULL, videoDevice, false, autoDelete);
       }
+      PTRACE(2, "OpalCon\tCould not create video output device");
     }
   }
 

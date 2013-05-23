@@ -1511,11 +1511,12 @@ class SIPMessage : public SIPTransaction
       Params()
         : m_contentType("text/plain;charset=UTF-8")
       { 
-        m_expire = 5000;
+        m_expire = 3600; // Try to get mesage through for an hour
       }
 
       PCaselessString             m_contentType;
       PString                     m_id;
+      PString                     m_tag;
       PString                     m_body;
       PAtomicInteger::IntegerType m_messageId;
     };

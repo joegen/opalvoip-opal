@@ -313,7 +313,11 @@ typedef void (OPAL_EXPORT *OpalFreeMessageFunction)(OpalMessage * message);
 #define OPAL_PREFIX_LOCAL "local"   ///< Local endpoint supported string for OpalInitialise()
 #define OPAL_PREFIX_POTS  "pots"    ///< Plain Old Telephone System supported string for OpalInitialise()
 #define OPAL_PREFIX_PSTN  "pstn"    ///< Public Switched Network supported string for OpalInitialise()
+#define OPAL_PREFIX_FAX   "fax"     ///< G.711 fax supported string for OpalInitialise()
+#define OPAL_PREFIX_T38   "t38"     ///< G.711 fax supported string for OpalInitialise()
 #define OPAL_PREFIX_IVR   "ivr"     ///< Interactive Voice Response supported string for OpalInitialise()
+#define OPAL_PREFIX_MIXER "mcu"     ///< Mixer for conferencing
+#define OPAL_PREFIX_IM    "im"      ///< Interactive Voice Response supported string for OpalInitialise()
 
 #define OPAL_PREFIX_ALL OPAL_PREFIX_H323  " " \
                         OPAL_PREFIX_SIP   " " \
@@ -322,7 +326,11 @@ typedef void (OPAL_EXPORT *OpalFreeMessageFunction)(OpalMessage * message);
                         OPAL_PREFIX_LOCAL " " \
                         OPAL_PREFIX_POTS  " " \
                         OPAL_PREFIX_PSTN  " " \
-                        OPAL_PREFIX_IVR
+                        OPAL_PREFIX_FAX   " " \
+                        OPAL_PREFIX_T38   " " \
+                        OPAL_PREFIX_IVR   " " \
+                        OPAL_PREFIX_MIXER " " \
+                        OPAL_PREFIX_IM
 
 
 /**Type code for messages defined by OpalMessage.
@@ -435,6 +443,9 @@ typedef enum OpalMessageType {
   OpalIndReceiveIM,             /**<Indicates receipt of an instant message. This message is returned in the
                                     OpalGetMessage() function. See the OpalInstantMessage structure for
                                     more information. */
+  OpalIndSentIM,                /**<Get indication of the disposition of a sent instant message. This message
+                                    is returned in the OpalGetMessage() function. See the OpalInstantMessage
+                                    structure for more information. */
 
 // Always add new messages to ethe end to maintain backward compatibility
   OpalMessageTypeCount
@@ -1194,13 +1205,14 @@ typedef struct OpalStatusLineAppearance {
    This is used by the OpalPresenceStatus structure.
   */
 typedef enum OpalPresenceStates {
-  OpalPresenceAuthRequest = -4,
-  OpalPresenceError       = -3,
-  OpalPresenceForbidden   = -2,
-  OpalPresenceNone        = -1,
-  OpalPresenceUnchanged   = 0,
-  OpalPresenceAvailable,
-  OpalPresenceUnavailable,
+  OpalPresenceAuthRequest = -100, ///< Authorisation to view a users state is required
+  OpalUnknownPresentity = -4,     ///< Presentity does not exist
+  OpalPresenceError,              ///< Something bad happened
+  OpalPresenceForbidden,          ///< Access to presence information was specifically forbidden
+  OpalPresenceNone,               ///< No presence status - not the same as Unavailable or Away
+  OpalPresenceUnchanged,          ///< State has not changed from last time
+  OpalPresenceAvailable,          ///< User has a presence and is available to be contacted
+  OpalPresenceUnavailable         ///< User has a presence, but is cannot be contacted
 } OpalPresenceStates;
 
 
@@ -1233,28 +1245,56 @@ typedef enum OpalPresenceStates {
    authorisation is required.
   */
 typedef struct OpalPresenceStatus {
-  const char *       m_entity;    /**<The registered entity that is receiving the presence
-                                      status change. */
-  const char *       m_target;    /**<The entity for which the status is changing. */
+  const char *       m_entity;    /**<For OpalIndPresenceChange, this is the presentity
+                                      whose state had changed, usually a remote. For other
+                                      messages, this is the local registered presentity. */
+  const char *       m_target;    /**<The presentity that is being informed about the state
+                                      change. Only used for OpalIndPresenceChange. */
+  const char *       m_service;   /**<Device/system for the presentity that is getting a
+                                      state change. Ignored for commands. */
+  const char *       m_contact;   /**<Contact address, typically a URL, for the service. */
+  const char *       m_capabilities;/**<Capabilities for the service. A '\n' separated list
+                                      of keywords, such as "audio", "Video", "text" etc. */
   OpalPresenceStates m_state;     /**<The new state of the target entity. */
-  const char *       m_note;      /**<Addition "note" that may be attached to the state
-                                      change, e.g. "sleeping" */
+  const char *       m_activities;/**<The optional activities, if m_state is OpalPresenceAvailable
+                                      or OpalPresenceUnavailable. Typically something like
+                                      "Busy" or "Away". This can be a '\n' seaparated
+                                      list of simultaneous activities. */
+  const char *       m_note;      /**<Additional "note" that may be attached to the state
+                                      change, e.g. "I want to be frends with you". If
+                                      m_state is OpalPresenceError, then this may contain
+                                      extra information on the error. */
   const char *       m_infoType;  ///< MIME tyupe for m_infoData, e.g. application/pidf+xml
   const char *       m_infoData;  ///< Raw information as provided by underlying protocol, e.g. XML.
 } OpalPresenceStatus;
 
 
 /**Opal Instant Message information for the various presence messages.
+   This can be filled out and used in the OpalCmdSendIM command. The result
+   of that transmission is returned by OpalIndSentIM, where m_textBody contains
+   a string indicating the disposition of the message.
+
+   The OpalIndReceiveIM message uses this structure for incoming instant
+   messages from a remote.
   */
 typedef struct OpalInstantMessage {
   const char *  m_from;      /**<Address from whom the message is sent. */
   const char *  m_to;        /**<Address to which the message is sent. */
-  const char *  m_id;        /**<Conversation identifier. */
+  const char *  m_host;      /**<Optional host/proxy. If blank then it is
+                                derived from the m_to address. */
+  const char *  m_conversationId; /**<Conversation identifier. This may be
+                                provided by the caller if athe conversation
+                                exists. If starting a new conversation, leave
+                                empty and OpalCmdSendIM will return it. */
   const char *  m_textBody;  /**<Simple text body, ignored if m_bodyCount > 0.
                                  This will always be MIME type "text/plain" */
   unsigned      m_bodyCount; /**<Count of bodies in m_mimeType and m_bodies */
   const char ** m_mimeType;  /**<MIME type for each body, e.g. "text/html" */
   const char ** m_bodies;    /**<Body data for each MIME type */
+  unsigned      m_messageId; /**<Identifer for this message. This can be used
+                                 to match a message sent with OpalCmdSendIM with
+                                 the disposition in OpalIndSentIM. It is not set
+                                 by the user, and is returned by OpalCmdSendIM. */
 } OpalInstantMessage;
 
 

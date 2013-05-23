@@ -252,14 +252,9 @@ SIPURL & SIPURL::operator=(const OpalTransportAddress & address)
 
 void SIPURL::ParseAsAddress(const PString & name,
                             const OpalTransportAddress & address,
-                            WORD listenerPort,
+                            WORD port,
                             const char * scheme)
 {
-  PIPSocket::Address ip;
-  WORD port;
-  if (!address.GetIpAndPort(ip, port))
-    return;
-
   PCaselessString proto = address.GetProtoPrefix();
 
   PCaselessString actualScheme = scheme;
@@ -289,16 +284,21 @@ void SIPURL::ParseAsAddress(const PString & name,
 #endif
   }
 
+  if (port == 0)
+    port = defaultPort;
+
+  PIPSocket::Address ip;
+  if (!address.GetIpAndPort(ip, port))
+    return;
+
   PStringStream uri;
   uri << actualScheme << ':';
   if (!name.IsEmpty())
     uri << name << '@';
   uri << ip.AsString(true, true);
 
-  if (listenerPort == 0)
-    listenerPort = port;
-  if (listenerPort != 0 && listenerPort != defaultPort)
-    uri << ':' << listenerPort;
+  if (port != 0 && port != defaultPort)
+    uri << ':' << port;
 
   if (proto != defaultProto) {
     proto.Delete(proto.Find('$'), 1); // Remove dollar
@@ -507,7 +507,7 @@ OpalTransportAddress SIPURL::GetTransportAddress(PINDEX entry) const
   PCaselessString proto = GetTransportProto();
 
   // Or it is a valid IP address, not a domain name
-  PIPSocket::Address ip = GetHostName();
+  PIPSocket::Address ip(GetHostName());
   if (ip.IsValid())
     return OpalTransportAddress(ip, port, proto);
 
@@ -743,7 +743,7 @@ PString SIPURLList::ToString() const
 
 SIPURL SIPURLList::FindCompatible(const OpalTransportAddress & addr PTRACE_PARAM(, const char * listType)) const
 {
-  PTRACE(5, "SIP\tFinding " << addr << " in " << listType << " addresses: " << *this);
+  PTRACE(5, "SIP\tFinding \"" << addr << "\" in " << listType << " addresses: " << *this);
 
   SIPURLList::const_iterator it;
 
@@ -3792,7 +3792,7 @@ SIPSubscribe::NotifyCallbackInfo::NotifyCallbackInfo(SIPSubscribeHandler & handl
 }
 
 
-#if P_EXPAT
+#if OPAL_PTLIB_EXPAT
 bool SIPSubscribe::NotifyCallbackInfo::LoadAndValidate(PXML & xml,
                                                        const PXML::ValidationInfo * validator,
                                                        PXML::Options options)
@@ -4030,6 +4030,8 @@ SIPMessage::SIPMessage(SIPTransactionOwner & owner,
     if (m_localAddress.IsEmpty())
       m_localAddress = GetEndPoint().GetDefaultLocalURL(*GetTransport());
   }
+  if (!params.m_tag.IsEmpty())
+    m_localAddress.SetTag(params.m_tag);
 
   InitialiseHeaders(addr, addr, m_localAddress, params.m_id, GetEndPoint().GetNextCSeq());
 

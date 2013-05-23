@@ -765,6 +765,7 @@ class OptionsDialog : public wxDialog
     bool         m_DisableFastStart;
     bool         m_DisableH245Tunneling;
     bool         m_DisableH245inSETUP;
+    bool         m_ForceSymmetricTCS;
     int          m_ExtendedVideoRoles;
     bool         m_EnableH239Control;
 

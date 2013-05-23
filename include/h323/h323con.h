@@ -2192,6 +2192,7 @@ class H323Connection : public OpalRTPConnection
     bool       h245versionSet;
     bool       doH245inSETUP;
     bool       lastPDUWasH245inSETUP;
+    bool       m_forceSymmetricTCS;
 
     bool       mustSendDRQ;
     bool       mediaWaitForConnect;

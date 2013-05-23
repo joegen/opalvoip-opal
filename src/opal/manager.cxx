@@ -373,6 +373,7 @@ void OpalManager::ShutDownEndpoints()
   // Clear any pending calls, set flag so no calls can be received before endpoints removed
   InternalClearAllCalls(OpalConnection::EndedByLocalUser, true, m_clearingAllCallsCount++ == 0);
 
+#if OPAL_HAS_PRESENCE
   // Remove (and unsubscribe) all the presentities
   PTRACE(4, "OpalIM\tShutting down all presentities");
   for (PSafePtr<OpalPresentity> presentity(m_presentities, PSafeReference); presentity != NULL; ++presentity)
@@ -380,6 +381,7 @@ void OpalManager::ShutDownEndpoints()
   m_presentities.RemoveAll();
   while (!m_presentities.DeleteObjectsToBeRemoved())
     PThread::Sleep(100);
+#endif // OPAL_HAS_PRESENCE
 
   PTRACE(4, "OpalMan\tShutting down endpoints.");
   // Deregister the endpoints
@@ -1129,7 +1131,7 @@ PBoolean OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection
 
   autoDelete = true;
   device = PVideoInputDevice::CreateOpenedDevice(args, false);
-  PTRACE_IF(2, device == NULL, "OpalCon\tCould not open video device \"" << args.deviceName << '"');
+  PTRACE_IF(4, device == NULL, "OpalMan\tCould not open video input device \"" << args.deviceName << '"');
   return device != NULL;
 }
 
@@ -1142,8 +1144,10 @@ PBoolean OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
 {
   // Make copy so we can adjust the size
   PVideoDevice::OpenArgs args = preview ? videoPreviewDevice : videoOutputDevice;
-  if (args.deviceName.IsEmpty() && args.driverName.IsEmpty())
+  if (args.deviceName.IsEmpty() && args.driverName.IsEmpty()) {
+    PTRACE(4, "OpalMan\tNo video output device specified.");
     return false; // Disabled
+  }
 
   mediaFormat.AdjustVideoArgs(args);
 
@@ -1156,6 +1160,7 @@ PBoolean OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
 
   autoDelete = true;
   device = PVideoOutputDevice::CreateOpenedDevice(args, false);
+  PTRACE_IF(4, device == NULL, "OpalMan\tCould not open video output device \"" << args.deviceName << '"');
   return device != NULL;
 }
 
@@ -2077,7 +2082,9 @@ PBoolean OpalManager::SetVideoOutputDevice(const PVideoDevice::OpenArgs & args)
 
 void OpalManager::GarbageCollection()
 {
+#if OPAL_HAS_PRESENCE
   m_presentities.DeleteObjectsToBeRemoved();
+#endif // OPAL_HAS_PRESENCE
 
   bool allCleared = activeCalls.DeleteObjectsToBeRemoved();
 
@@ -2160,6 +2167,7 @@ void OpalManager::OnApplyStringOptions(OpalConnection &, OpalConnection::StringO
 }
 
 
+#if OPAL_HAS_PRESENCE
 PSafePtr<OpalPresentity> OpalManager::AddPresentity(const PString & presentity)
 {
   if (presentity.IsEmpty())
@@ -2201,6 +2209,7 @@ bool OpalManager::RemovePresentity(const PString & presentity)
   PTRACE(4, "OpalMan\tRemoving presentity for " << presentity);
   return m_presentities.RemoveAt(presentity);
 }
+#endif // OPAL_HAS_PRESENCE
 
 
 #if OPAL_HAS_IM
@@ -2244,17 +2253,21 @@ bool OpalManager::Message(OpalIM & message)
   }
 
   PSafePtr<OpalIMContext> context = ep->FindContextForMessageWithLock(message);
-  if (context == NULL)
+  if (context == NULL) {
     context = ep->CreateContext(message.m_from, message.m_to);
-  if (context == NULL)
-    return false;
+    if (context == NULL)
+      return false;
 
-  return context->Send(new OpalIM(message)) < OpalIMContext::DispositionErrors;
+    message.m_conversationId = context->GetID();
+  }
+
+  return context->Send(message.CloneAs<OpalIM>()) < OpalIMContext::DispositionErrors;
 }
 
 
 void OpalManager::OnMessageReceived(const OpalIM & message)
 {
+#if OPAL_HAS_PRESENCE
   // find a presentity to give the message to
   for (PSafePtr<OpalPresentity> presentity(m_presentities, PSafeReference); presentity != NULL; ++presentity) {
     if (message.m_to == presentity->GetAOR()) {
@@ -2262,6 +2275,7 @@ void OpalManager::OnMessageReceived(const OpalIM & message)
       break;
     }
   }
+#endif // OPAL_HAS_PRESENCE
 }
 
 

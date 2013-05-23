@@ -51,12 +51,20 @@ public class OpalInstantMessage {
     return OPALJNI.OpalInstantMessage_m_to_get(swigCPtr, this);
   }
 
-  public void setM_id(String value) {
-    OPALJNI.OpalInstantMessage_m_id_set(swigCPtr, this, value);
+  public void setM_host(String value) {
+    OPALJNI.OpalInstantMessage_m_host_set(swigCPtr, this, value);
   }
 
-  public String getM_id() {
-    return OPALJNI.OpalInstantMessage_m_id_get(swigCPtr, this);
+  public String getM_host() {
+    return OPALJNI.OpalInstantMessage_m_host_get(swigCPtr, this);
+  }
+
+  public void setM_conversationId(String value) {
+    OPALJNI.OpalInstantMessage_m_conversationId_set(swigCPtr, this, value);
+  }
+
+  public String getM_conversationId() {
+    return OPALJNI.OpalInstantMessage_m_conversationId_get(swigCPtr, this);
   }
 
   public void setM_textBody(String value) {
@@ -91,6 +99,14 @@ public class OpalInstantMessage {
   public SWIGTYPE_p_p_char getM_bodies() {
     long cPtr = OPALJNI.OpalInstantMessage_m_bodies_get(swigCPtr, this);
     return (cPtr == 0) ? null : new SWIGTYPE_p_p_char(cPtr, false);
+  }
+
+  public void setM_messageId(long value) {
+    OPALJNI.OpalInstantMessage_m_messageId_set(swigCPtr, this, value);
+  }
+
+  public long getM_messageId() {
+    return OPALJNI.OpalInstantMessage_m_messageId_get(swigCPtr, this);
   }
 
   public OpalInstantMessage() {

@@ -401,7 +401,7 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & 
                                                         PBoolean isSource)
 {
   if (mediaFormat.GetMediaType() != OpalMediaType::Audio())
-    return OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource);
+    return OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource); // Skip over OpalLocalConnection
 
   PSoundChannel * soundChannel = CreateSoundChannel(mediaFormat, isSource);
   if (soundChannel == NULL)
