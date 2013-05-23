@@ -59,15 +59,23 @@ class OpalPresentityCommand;
 /**Presence state information.
    While protocol independent, this is based on the basic model provided
    by RFC 3863 and RFC 4480.
+
+   A presence change may be sent for the same presentity, but multiple
+   services. A service may be a physical device, e.g. laptop, desktop or
+   smart phone, or a particular piece of software. This is indicated by the
+   m_service field, which can be a completely arbitrary string. This field
+   is ignored and system generated when supplied in SetLocalPresence().
+
+   A particular service has a set of capabilities such as "audio", "Video",
+   "text", "type=text/plain" etc as returned in m_capabilities.
   */
 class OpalPresenceInfo : public PObject
 {
     PCLASSINFO_WITH_CLONE(OpalPresenceInfo, PObject);
   public:
     /** Presence states. Basic states (from RFC 3863) plus system states not
-        included in the specification. Note, in the RFC 3863 context, the
-        difference between Available and Unavailable is the presence of the
-        Contact field. */
+        included in the specification.
+      */
     P_DECLARE_STREAMABLE_ENUM_EX(State,StateCount,
       UnknownUser,-4,     ///< Presentity does not exist
       InternalError,      ///< Something bad happened
@@ -78,16 +86,21 @@ class OpalPresenceInfo : public PObject
       Unavailable         ///< User has a presence, but is cannot be contacted
     );
 
-    State      m_state;      ///< New state for presentity
-    PStringSet m_activities; ///< Activity (from RFC 4480)
-    PString    m_note;       ///< Additional information about state change
-    PURL       m_entity;     ///< The presentity whose state had changed
-    PURL       m_target;     ///< The presentity that is being informed about the state change
-    PTime      m_when;       ///< Time/date of state change
-    PString    m_infoType;   ///< MIME tyupe for m_infoData, e.g. application/pidf+xml
-    PString    m_infoData;   ///< Raw information as provided by underlying protocol, e.g. XML.
+    State      m_state;        ///< New state for presentity
+    PStringSet m_activities;   ///< Activity (from RFC 4480)
+    PString    m_note;         ///< Additional information about state change
+    PTime      m_when;         ///< Time/date of state change
 
-    OpalPresenceInfo(State state = Unchanged) : m_state(state) { }
+    PURL       m_entity;       ///< The presentity whose state had changed, usually remote
+    PURL       m_target;       ///< The presentity that is being informed about the state change
+    PString    m_service;      ///< Device/system(s) for the presentity that is getting a state change.
+    PString    m_contact;      ///< Contact address for the service.
+    PStringSet m_capabilities; ///< Capabilities of this service, e.g. "audio".
+
+    PString    m_infoType;     ///< MIME tyupe for m_infoData, e.g. application/pidf+xml
+    PString    m_infoData;     ///< Raw information as provided by underlying protocol, e.g. XML.
+
+    OpalPresenceInfo(State state = Unchanged);
 
     static PString AsString(State state);
     static State FromString(const PString & str);

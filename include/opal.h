@@ -1234,15 +1234,22 @@ typedef enum OpalPresenceStates {
    authorisation is required.
   */
 typedef struct OpalPresenceStatus {
-  const char *       m_entity;    /**<The registered entity that is receiving the presence
-                                      status change. */
-  const char *       m_target;    /**<The entity for which the status is changing. */
+  const char *       m_entity;    /**<For OpalIndPresenceChange, this is the presentity
+                                      whose state had changed, usually a remote. For other
+                                      messages, this is the local registered presentity. */
+  const char *       m_target;    /**<The presentity that is being informed about the state
+                                      change. Only used for OpalIndPresenceChange. */
+  const char *       m_service;   /**<Device/system for the presentity that is getting a
+                                      state change. Ignored for commands. */
+  const char *       m_contact;   /**<Contact address, typically a URL, for the service. */
+  const char *       m_capabilities;/**<Capabilities for the service. A '\n' separated list
+                                      of keywords, such as "audio", "Video", "text" etc. */
   OpalPresenceStates m_state;     /**<The new state of the target entity. */
   const char *       m_activities;/**<The optional activities, if m_state is OpalPresenceAvailable
                                       or OpalPresenceUnavailable. Typically something like
                                       "Busy" or "Away". This can be a '\n' seaparated
                                       list of simultaneous activities. */
-  const char *       m_note;      /**<Addition "note" that may be attached to the state
+  const char *       m_note;      /**<Additional "note" that may be attached to the state
                                       change, e.g. "I want to be frends with you". If
                                       m_state is OpalPresenceError, then this may contain
                                       extra information on the error. */

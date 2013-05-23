@@ -1909,12 +1909,31 @@ static const char * const RFC4480ActivitiesInit[] = {
 static PStringSet const RFC4480Activities(PARRAYSIZE(RFC4480ActivitiesInit), RFC4480ActivitiesInit);
 
 
-static PAtomicInteger DefaultTupleIdentifier(PRandom::Number());
+// Cisco specific extensions
+static const char * const CiscoActivitiesInit[] = {
+  "available",
+  "away",
+  "dnd"
+};
 
-SIPPresenceInfo::TupleString::TupleString()
-  : PString(Printf, "T%08X", ++DefaultTupleIdentifier)
-{
-}
+static PStringSet const CiscoActivities(PARRAYSIZE(CiscoActivitiesInit), CiscoActivitiesInit);
+
+
+// RFC 5196 extensions
+static const char * const RFC5196CapabilitiesInit[] = {
+  "audio",
+  "application",
+  "data",
+  "control",
+  "video",
+  "text",
+  "message",
+  "automata",
+  "type"
+};
+
+static PStringSet const RFC5196Capabilities(PARRAYSIZE(RFC5196CapabilitiesInit), RFC5196CapabilitiesInit);
+
 
 
 SIPPresenceInfo::SIPPresenceInfo(SIP_PDU::StatusCodes status, bool subscribing)
@@ -1974,7 +1993,7 @@ void SIPPresenceInfo::PrintOn(ostream & strm) const
 
 PString SIPPresenceInfo::AsXML() const
 {
-  if (m_entity.IsEmpty() || m_tupleId.IsEmpty()) {
+  if (m_entity.IsEmpty() || m_service.IsEmpty()) {
     PTRACE(1, "SIP\tCannot encode Presence XML as no address or no id.");
     return PString::Empty();
   }
@@ -1985,8 +2004,26 @@ PString SIPPresenceInfo::AsXML() const
          "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\" "
                   " xmlns:dm=\"urn:ietf:params:xml:ns:pidf:data-model\""
                   " xmlns:rpid=\"urn:ietf:params:xml:ns:pidf:rpid\""
-                  " entity=\"" << m_entity << "\">\r\n"
-         "  <tuple id=\"" << m_tupleId << "\">\r\n"
+                  " xmlns:sc=\"urn:ietf:params:xml:ns:pidf:caps\""
+                  " xmlns:ce=\"urn:cisco:params:xml:ns:pidf:rpid\""
+                  " entity=\"" << m_entity << "\">\r\n";
+  if (!m_personId.IsEmpty() && !m_activities.IsEmpty()) {
+    xml << "  <dm:person id=\"p" << m_personId << "\">\r\n"
+           "    <rpid:activities>\r\n";
+    for (PStringSet::const_iterator it = m_activities.begin(); it != m_activities.end(); ++it) {
+      if (RFC4480Activities.Contains(*it))
+        xml << "      <rpid:" << *it <<"/>\r\n";
+      else if (CiscoActivities.Contains(*it))
+        xml << "      <ce:" << *it <<" />\r\n";
+      else
+        xml << "      <rpid:other>" << *it << "</rpid:other>\r\n";
+    }
+
+    xml << "    </rpid:activities>\r\n"
+           "  </dm:person>\r\n";
+  }
+
+  xml << "  <tuple id=\"" << m_service << "\">\r\n"
          "    <status>\r\n";
   if (m_state != Unchanged)
     xml << "      <basic>" << (m_state != NoPresence ? "open" : "closed") << "</basic>\r\n";
@@ -2000,6 +2037,20 @@ PString SIPPresenceInfo::AsXML() const
     xml << "</contact>\r\n";
   }
 
+  if (!m_capabilities.IsEmpty()) {
+    xml << "    <sc:servcaps>\r\n";
+    for (PStringSet::const_iterator it = m_capabilities.begin(); it != m_capabilities.end(); ++it) {
+      PString name, value;
+      if (!it->Split('=', name, value)) {
+        name = *it;
+        value = "true";
+      }
+      if (RFC5196Capabilities.Contains(name))
+        xml << "      <sc:" << name << '>' << value << "</sc:" << name << ">\r\n";
+    }
+    xml << "    </sc:servcaps>\r\n";
+  }
+
   if (!m_note.IsEmpty()) {
     //xml << "    <note xml:lang=\"en\">" << PXML::EscapeSpecialChars(m_note) << "</note>\r\n";
     xml << "    <note>" << PXML::EscapeSpecialChars(m_note) << "</note>\r\n";
@@ -2007,19 +2058,6 @@ PString SIPPresenceInfo::AsXML() const
 
   xml << "    <timestamp>" << PTime().AsString(PTime::RFC3339) << "</timestamp>\r\n"
          "  </tuple>\r\n";
-  if (!m_personId.IsEmpty() && !m_activities.IsEmpty()) {
-    xml << "  <dm:person id=\"p" << m_personId << "\">\r\n"
-           "    <rpid:activities>\r\n";
-    for (PStringSet::const_iterator it = m_activities.begin(); it != m_activities.end(); ++it) {
-      if (RFC4480Activities.Contains(*it))
-        xml << "      <rpid:" << *it <<"/>\r\n";
-      else
-        xml << "      <rpid:other>" << *it << "</rpid:other>\r\n";
-    }
-
-    xml << "    </rpid:activities>\r\n"
-           "  </dm:person>\r\n";
-  }
 
   xml << "</presence>\r\n";
 
@@ -2033,6 +2071,35 @@ static void SetNoteFromElement(PXMLElement * element, PString & note)
   if (noteElement != NULL)
     note = noteElement->GetData();
 }
+
+
+static void ExtractPersonInfo(const PString & prefix, PXMLElement * element, SIPPresenceInfo & info)
+{
+  if (element->GetName() != prefix + "person")
+    return;
+
+  PXMLElement * activities = element->GetElement(prefix + "activities");
+  if (activities == NULL)
+    return;
+
+  for (PINDEX i = 0; i < activities->GetSize(); ++i) {
+    PXMLElement * activity = dynamic_cast<PXMLElement *>(activities->GetElement(i));
+    if (activity == NULL)
+      continue;
+
+    PCaselessString name(activity->GetName());
+    if (name.NumCompare(prefix) != PObject::EqualTo)
+      continue;
+
+    name.Delete(0, prefix.GetLength());
+    PCaselessString data = activity->GetData().Trim();
+    if (data.IsEmpty())
+      info.m_activities += name;
+    else
+      info.m_activities += name + '=' + data;
+  }
+}
+
 
 bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
                                   list<SIPPresenceInfo> & infoList)
@@ -2089,8 +2156,8 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
     return false;
   }
 
-  SIPPresenceInfo info;
-  info.m_tupleId.MakeEmpty();
+  SIPPresenceInfo info(Unavailable);
+  info.m_service.MakeEmpty();
   info.m_infoType = SIPPresenceEventPackageContentType;
   info.m_infoData = notifyInfo.m_request.GetEntityBody();
 
@@ -2104,14 +2171,14 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
     if (element->GetName() == "urn:ietf:params:xml:ns:pidf|tuple") {
       PXMLElement * tupleElement = element;
 
-      if (!info.m_tupleId.IsEmpty()) {
+      if (!info.m_service.IsEmpty()) {
         infoList.push_back(info);
         defaultTimestamp = info.m_when - PTimeInterval(0, 1); // One second older
-        info = SIPPresenceInfo();
+        info = SIPPresenceInfo(Unavailable);
       }
 
       info.m_entity = entity;
-      info.m_tupleId = tupleElement->GetAttribute("id");
+      info.m_service = tupleElement->GetAttribute("id");
 
       SetNoteFromElement(rootElement, info.m_note);
       SetNoteFromElement(tupleElement, info.m_note);
@@ -2121,43 +2188,41 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
         if ((element = element->GetElement("basic")) != NULL) {
           PCaselessString value = element->GetData();
           if (value == "open")
-            info.m_state = Unavailable;
+            info.m_state = Available;
           else if (value == "closed")
             info.m_state = NoPresence;
         }
       }
 
-      if ((element = tupleElement->GetElement("contact")) != NULL) {
+      if ((element = tupleElement->GetElement("contact")) != NULL)
         info.m_contact = element->GetData();
-        if (info.m_state == Unavailable)
-          info.m_state = Available;
-      }
 
-      if ((element = tupleElement->GetElement("timestamp")) == NULL || !info.m_when.Parse(element->GetData()))
+      if ((element = tupleElement->GetElement("timestamp")) != NULL && !info.m_when.Parse(element->GetData()))
         info.m_when = defaultTimestamp;
-    }
-    else if (element->GetName() == "urn:ietf:params:xml:ns:pidf:data-model|person") {
-      static PConstCaselessString rpid("urn:ietf:params:xml:ns:pidf:rpid|");
-      PXMLElement * activities = element->GetElement(rpid + "activities");
-      if (activities == NULL)
-        continue;
 
-      for (PINDEX i = 0; i < activities->GetSize(); ++i) {
-        PXMLElement * activity = dynamic_cast<PXMLElement *>(activities->GetElement(i));
-        if (activity == NULL)
-          continue;
-
-        PCaselessString name(activity->GetName());
-        if (name.NumCompare(rpid) != PObject::EqualTo)
-          continue;
-
-        name.Delete(0, rpid.GetLength());
-        info.m_activities += name;
+      if ((element = tupleElement->GetElement("urn:ietf:params:xml:ns:pidf:caps|servcaps")) != NULL ||
+          (element = tupleElement->GetElement("urn:ietf:params:xml:ns:pidf:servcaps|servcaps")) != NULL) {
+        for (PINDEX idx = 0; idx < element->GetSize(); ++idx) {
+          PXMLElement * cap = dynamic_cast<PXMLElement *>(element->GetElement(idx));
+          if (cap != NULL) {
+            PCaselessString name = cap->GetName();
+            name.Delete(0, name.Find('|')+1);
+            PCaselessString data = cap->GetData().Trim();
+            if (data == "true")
+              info.m_capabilities += name;
+            else if (!data.IsEmpty() && data != "false")
+              info.m_capabilities += name + '=' + data;
+          }
+        }
       }
+    }
+    else {
+      ExtractPersonInfo("urn:ietf:params:xml:ns:pidf:rpid|", element, info);
+      ExtractPersonInfo("urn:cisco:params:xml:ns:pidf:rpid|", element, info);
     }
   }
 
-  if (!info.m_tupleId.IsEmpty())
+  if (!info.m_service.IsEmpty())
     infoList.push_back(info);
 
   infoList.sort();
