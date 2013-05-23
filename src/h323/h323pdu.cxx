@@ -1357,7 +1357,7 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection, bool insert
   PString displayName = connection.GetDisplayName();
 
   PString number = connection.GetStringOptions()(OPAL_OPT_CALLING_PARTY_NUMBER);
-  if (!number.IsEmpty()) {
+  if (number.IsEmpty()) {
     if (OpalIsE164(localName))
       number = localName;
     else {

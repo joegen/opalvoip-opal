@@ -187,6 +187,7 @@ H323Connection::H323Connection(OpalCall & call,
   , h245version(H245_PROTOCOL_VERSION)
   , h245versionSet(false)
   , lastPDUWasH245inSETUP(false)
+  , m_forceSymmetricTCS(ep.IsForcedSymmetricTCS())
   , mustSendDRQ(false)
   , mediaWaitForConnect(false)
   , transmitterSidePaused(false)
@@ -3756,10 +3757,16 @@ void H323Connection::OnSetLocalCapabilities()
     }
   }
 
-  H323Capability::CapabilityDirection symmetric = H323Capability::e_Receive;
-  PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
-  if (otherConnection != NULL &&otherConnection->RequireSymmetricMediaStreams())
+  H323Capability::CapabilityDirection symmetric;
+  if (m_forceSymmetricTCS)
     symmetric = H323Capability::e_ReceiveAndTransmit;
+  else {
+    PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
+    if (otherConnection != NULL && otherConnection->RequireSymmetricMediaStreams())
+      symmetric = H323Capability::e_ReceiveAndTransmit;
+    else
+      symmetric = H323Capability::e_Receive;
+  }
 
   // Add those things that are in the other parties media format list
   static const OpalMediaType mediaList[] = {
@@ -4070,7 +4077,7 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
     if (channel == NULL) {
       // Logical channel not open, if receiver that is an error
       if (isSource) {
-        PTRACE(2, "H323\tOpenMediaStream canot have logical channel for session " << sessionID);
+        PTRACE(2, "H323\tNo receive logical channel for session " << sessionID);
         return NULL;
       }
 

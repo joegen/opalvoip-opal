@@ -44,6 +44,7 @@
 #include <opal/guid.h>
 #include <codec/silencedetect.h>
 #include <codec/echocancel.h>
+#include <im/im.h>
 
 #include <ptclib/pstun.h>
 #include <ptclib/url.h>
@@ -229,6 +230,7 @@ class OpalManager : public PObject
   //@}
 
 
+#if OPAL_HAS_PRESENCE
   /**@name Presence management */
   //@{
     /**Add a presentity.
@@ -258,6 +260,7 @@ class OpalManager : public PObject
       const PString & presentity  ///< Presentity URI
     );
   //@}
+#endif // OPAL_HAS_PRESENCE
 
 
   /**@name Call management */
@@ -1218,9 +1221,12 @@ class OpalManager : public PObject
 
     /**Send an Instant Message to a remote party.
        Details of the message must be filled out in the \p message structure.
+
        Note that message is non-const as this function can be used to initiate
        a conversation, and the created conversation ID is returned in the
        message.m_conversationId member variable.
+
+       This will fail if an OpalIMEndPoint has not been created.
      */
     virtual PBoolean Message(
       OpalIM & message
@@ -1997,7 +2003,9 @@ class OpalManager : public PObject
         OpalManager & manager;
     } activeCalls;
 
+#if OPAL_HAS_PRESENCE
     PSafeDictionary<PString, OpalPresentity> m_presentities;
+#endif // OPAL_HAS_PRESENCE
 
     PAtomicInteger m_clearingAllCallsCount;
     PMutex         m_clearingAllCallsMutex;

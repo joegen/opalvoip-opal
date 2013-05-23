@@ -244,7 +244,8 @@ bool OpalFaxSession::Open(const PString & localInterface,
   else
     m_dataSocket = new PTCPSocket();
 
-  if (!m_dataSocket->Listen(localInterface)) {
+  PIPSocket::Address localIP(localInterface);
+  if (!localIP.IsValid() || !m_dataSocket->Listen(localIP)) {
     PTRACE(2, "UDPTL\tCould listen on interface=\"" << localInterface << '"');
     return false;
   }

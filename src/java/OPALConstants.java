@@ -22,7 +22,11 @@ public interface OPALConstants {
   public final static String OPAL_PREFIX_LOCAL = OPALJNI.OPAL_PREFIX_LOCAL_get();
   public final static String OPAL_PREFIX_POTS = OPALJNI.OPAL_PREFIX_POTS_get();
   public final static String OPAL_PREFIX_PSTN = OPALJNI.OPAL_PREFIX_PSTN_get();
+  public final static String OPAL_PREFIX_FAX = OPALJNI.OPAL_PREFIX_FAX_get();
+  public final static String OPAL_PREFIX_T38 = OPALJNI.OPAL_PREFIX_T38_get();
   public final static String OPAL_PREFIX_IVR = OPALJNI.OPAL_PREFIX_IVR_get();
+  public final static String OPAL_PREFIX_MIXER = OPALJNI.OPAL_PREFIX_MIXER_get();
+  public final static String OPAL_PREFIX_IM = OPALJNI.OPAL_PREFIX_IM_get();
   public final static String OPAL_PREFIX_ALL = OPALJNI.OPAL_PREFIX_ALL_get();
   public final static String OPAL_MWI_EVENT_PACKAGE = OPALJNI.OPAL_MWI_EVENT_PACKAGE_get();
   public final static String OPAL_LINE_APPEARANCE_EVENT_PACKAGE = OPALJNI.OPAL_LINE_APPEARANCE_EVENT_PACKAGE_get();

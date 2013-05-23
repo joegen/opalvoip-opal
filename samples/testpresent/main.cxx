@@ -31,14 +31,8 @@
 #include <opal/console_mgr.h>
 #include <sip/sippres.h>
 
-#if P_EXPAT
-#else
-#error Cannot compile Presentity test program without XML support!
-#endif
-
-#if OPAL_SIP
-#else
-#error Cannot compile Presentity test program without SIP support!
+#if !OPAL_SIP_PRESENCE
+  #error Cannot compile Presentity test program without XML and SIP support!
 #endif
 
 
@@ -154,7 +148,7 @@ bool MyManager::Initialise(PArgList & args, bool verbose)
                     "<url-watched> <url-watcher> [ deny | deny-politely | remove ]");
   m_cli->SetCommand("publish", PCREATE_NOTIFIER(CmdSetLocalPresence),
                     "Publish local presence state for presentity.",
-                    "<url> { available | unavailable | busy } [ <note> ]");
+                    "<url> { available | offline | busy } [ <note> ]");
   m_cli->SetCommand("buddy list\nshow buddies", PCREATE_NOTIFIER(CmdBuddyList),
                     "Show buddy list for presentity.",
                     "<presentity>");
@@ -309,10 +303,10 @@ void MyManager::CmdSetLocalPresence(PCLI::Arguments & args, P_INT_PTR)
     args.WriteError() << "Presentity \"" << args[0] << "\" does not exist." << endl;
   else if (args[1] *= "available")
     m_presentities[args[0]].SetLocalPresence(OpalPresenceInfo::Available, note);
-  else if (args[1] *= "unavailable")
+  else if (args[1] *= "offline")
     m_presentities[args[0]].SetLocalPresence(OpalPresenceInfo::NoPresence, note);
   else if (args[1] *= "busy")
-    m_presentities[args[0]].SetLocalPresence(OpalPresenceInfo::Busy, note);
+    m_presentities[args[0]].SetLocalPresence(OpalPresenceInfo::Unavailable, note);
   else
     args.WriteUsage();
 }

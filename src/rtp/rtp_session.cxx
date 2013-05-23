@@ -1681,7 +1681,7 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
   m_localDataPort    = firstPort;
   m_localControlPort = (WORD)(firstPort + 1);
 
-  PIPSocket::Address bindingAddress = localInterface;
+  PIPSocket::Address bindingAddress(localInterface);
 
 #if P_NAT
   if (natMethod != NULL && natMethod->IsAvailable(bindingAddress)) {
@@ -1853,7 +1853,7 @@ bool OpalRTPSession::Shutdown(bool reading)
         PIPSocketAddressAndPort addrAndPort;
         m_controlSocket->PUDPSocket::InternalGetLocalAddress(addrAndPort);
         if (!addrAndPort.IsValid())
-          addrAndPort.SetAddress(PIPSocket::GetHostName());
+          addrAndPort.Parse(PIPSocket::GetHostName());
         if (!m_dataSocket->WriteTo("", 1, addrAndPort)) {
           PTRACE(1, "RTP_UDP\tSession " << m_sessionId << ", could not write to unblock read socket: "
                  << m_dataSocket->GetErrorText(PChannel::LastReadError));
