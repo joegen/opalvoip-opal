@@ -59,16 +59,28 @@ class OpalJitterBuffer : public PSafeObject
   PCLASSINFO(OpalJitterBuffer, PSafeObject);
 
   public:
+    /// Initialisation information
+    struct Init {
+      Init(unsigned minDelay = 0, unsigned maxDelay = 0, unsigned units = 8, PINDEX sz = 2048)
+        : m_minJitterDelay(minDelay)
+        , m_maxJitterDelay(maxDelay != 0 ? maxDelay : minDelay)
+        , m_timeUnits(units)
+        , m_packetSize(sz)
+      { }
+
+      unsigned m_minJitterDelay; ///<  Minimum delay in RTP timestamp units
+      unsigned m_maxJitterDelay; ///<  Maximum delay in RTP timestamp units
+      unsigned m_timeUnits;      ///<  Time units, usually 8 or 16
+      PINDEX m_packetSize;       ///<  Max RTP packet size
+    };
+
   /**@name Construction */
   //@{
     /**Constructor for this jitter buffer. The size of this buffer can be
        altered later with the SetDelay method
       */
     OpalJitterBuffer(
-      unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
-      unsigned maxJitterDelay, ///<  Maximum delay in RTP timestamp units
-      unsigned timeUnits = 8,  ///<  Time units, usually 8 or 16
-      PINDEX packetSize = 2048 ///<  Max RTP packet size
+      const Init & init  ///< Initialisation information
     );
     
     /** Destructor, which closes this down and deletes the internal list of frames
@@ -86,12 +98,13 @@ class OpalJitterBuffer : public PSafeObject
 
   /**@name Operations */
   //@{
+    /// Start jitter buffer.
+    virtual void Start() { }
+
     /**Set the maximum delay the jitter buffer will operate to.
       */
     void SetDelay(
-      unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
-      unsigned maxJitterDelay, ///<  Maximum delay in RTP timestamp units
-      PINDEX packetSize = 2048 ///<  Max RTP packet size
+      const Init & init  ///< Initialisation information
     );
 
     /**Reset jitter buffer.
@@ -170,9 +183,10 @@ class OpalJitterBuffer : public PSafeObject
     DWORD    m_maxConsecutiveMarkerBits;
     DWORD    m_consecutiveLatePackets;
 
-    DWORD    m_frameTimeSum;
     unsigned m_frameTimeCount;
-    DWORD    m_averageFrameTime;
+    DWORD    m_incomingFrameTime;
+    int      m_lastFrameTime[2];
+    DWORD    m_lastSequenceNum;
     DWORD    m_lastTimestamp;
     DWORD    m_lastSyncSource;
     DWORD    m_bufferFilledTime;
@@ -203,12 +217,12 @@ class OpalJitterBufferThread : public OpalJitterBuffer
     PCLASSINFO(OpalJitterBufferThread, OpalJitterBuffer);
  public:
     OpalJitterBufferThread(
-      unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
-      unsigned maxJitterDelay, ///<  Maximum delay in RTP timestamp units
-      unsigned timeUnits = 8,  ///<  Time units, usually 8 or 16
-      PINDEX packetSize = 2048 ///<  Max RTP packet size
+      const Init & init  ///< Initialisation information
     );
     ~OpalJitterBufferThread();
+
+    /// Start jiter buffer
+    virtual void Start();
 
     /**Read a data frame from the jitter buffer.
        This function never blocks. If no data is available, an RTP packet
@@ -217,7 +231,8 @@ class OpalJitterBufferThread : public OpalJitterBuffer
        Override of base class so can terminate caller when shutting down.
       */
     virtual PBoolean ReadData(
-      RTP_DataFrame & frame   ///<  Frame to extract from jitter buffer
+      RTP_DataFrame & frame,  ///<  Frame to extract from jitter buffer
+      const PTimeInterval & tick = 0 ///< Real time tick for packet removal
     );
 
     /**This class instance collects data from the outside world in this
@@ -230,9 +245,6 @@ class OpalJitterBufferThread : public OpalJitterBuffer
 
   protected:
     PDECLARE_NOTIFIER(PThread, OpalJitterBufferThread, JitterThreadMain);
-
-    /// Internal function to be called from derived class constructor
-    void StartThread();
 
     /// Internal function to be called from derived class destructor
     void WaitForThreadTermination();

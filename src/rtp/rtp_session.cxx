@@ -74,11 +74,11 @@ public:
      unsigned maxJitterDelay,  ///<  Maximum delay in RTP timestamp units
      unsigned timeUnits = 8,   ///<  Time units, usually 8 or 16
      PINDEX packetSize = 2048  ///<  Max RTP packet size
-   ) : OpalJitterBufferThread(minJitterDelay, maxJitterDelay, timeUnits, packetSize)
+   ) : OpalJitterBufferThread(Init(minJitterDelay, maxJitterDelay, timeUnits, packetSize))
      , m_session(session)
    {
       PTRACE_CONTEXT_ID_FROM(session);
-      StartThread();
+      Start();
    }
 
    ~RTP_JitterBuffer()
@@ -420,7 +420,7 @@ void OpalRTPSession::SetJitterBufferSize(unsigned minJitterDelay,
     FlushData();
     if (m_jitterBuffer != NULL) {
       PTRACE(4, "RTP\tSetting jitter buffer time from " << minJitterDelay << " to " << maxJitterDelay);
-      m_jitterBuffer->SetDelay(minJitterDelay, maxJitterDelay, packetSize);
+      m_jitterBuffer->SetDelay(OpalJitterBuffer::Init(minJitterDelay, maxJitterDelay, packetSize));
     }
     else {
       m_jitterBuffer = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, m_timeUnits, packetSize);
