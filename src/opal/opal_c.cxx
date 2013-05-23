@@ -254,9 +254,12 @@ class OpalManager_C : public OpalManager
     virtual void OnMWIReceived(const PString & party, MessageWaitingType type, const PString & extraInfo);
     virtual void OnProceeding(OpalConnection & conenction);
     virtual void OnClearedCall(OpalCall & call);
+
+#if OPAL_HAS_IM
     virtual void OnMessageReceived(const OpalIM & message);
     virtual void OnMessageDisposition(const OpalIMContext::DispositionInfo &);
     virtual void OnCompositionIndication(const OpalIMContext::CompositionInfo &);
+#endif
 
 #if OPAL_HAS_PRESENCE
     PDECLARE_PresenceChangeNotifier(OpalManager_C, OnPresenceChange);
@@ -2368,6 +2371,8 @@ void OpalManager_C::HandleSetLocalPresence(const OpalMessage & command, OpalMess
 }
 
 
+#if OPAL_HAS_IM
+
 void OpalManager_C::HandleSendIM(const OpalMessage & command, OpalMessageBuffer & response)
 {
   OpalIM im;
@@ -2425,6 +2430,8 @@ void OpalManager_C::OnMessageDisposition(const OpalIMContext::DispositionInfo & 
 void OpalManager_C::OnCompositionIndication(const OpalIMContext::CompositionInfo &)
 {
 }
+
+#endif // OPAL_HAS_IM
 
 
 ///////////////////////////////////////////////////////////////////////////////
