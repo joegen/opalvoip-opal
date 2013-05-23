@@ -48,6 +48,7 @@
 #include <t38/t38proto.h>
 #include <ep/ivr.h>
 #include <ep/opalmixer.h>
+#include <im/im_ep.h>
 
 #include <queue>
 
@@ -243,9 +244,16 @@ class OpalManager_C : public OpalManager
     virtual void OnMWIReceived(const PString & party, MessageWaitingType type, const PString & extraInfo);
     virtual void OnProceeding(OpalConnection & conenction);
     virtual void OnClearedCall(OpalCall & call);
-    virtual void OnMessageReceived(const OpalIM & message);
 
+#if OPAL_HAS_IM
+    virtual void OnMessageReceived(const OpalIM & message);
+    virtual void OnMessageDisposition(const OpalIMContext::DispositionInfo &);
+    virtual void OnCompositionIndication(const OpalIMContext::CompositionInfo &);
+#endif
+
+#if OPAL_HAS_PRESENCE
     PDECLARE_PresenceChangeNotifier(OpalManager_C, OnPresenceChange);
+#endif // OPAL_HAS_PRESENCE
 
     void SendIncomingCallInfo(const OpalConnection & connection);
 
@@ -883,56 +891,56 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
   PINDEX  defProtoPos = P_MAX_INDEX, defUserPos = P_MAX_INDEX;
 
 #if OPAL_H323
-  bool hasH323 = CheckProto(args, "h323", defProto, defProtoPos);
+  bool hasH323 = CheckProto(args, OPAL_PREFIX_H323, defProto, defProtoPos);
 #endif
 
 #if OPAL_SIP
-  bool hasSIP = CheckProto(args, "sip", defProto, defProtoPos);
+  bool hasSIP = CheckProto(args, OPAL_PREFIX_SIP, defProto, defProtoPos);
 #endif
 
 #if OPAL_IAX2
-  bool hasIAX2 = CheckProto(args, "iax2", defProto, defProtoPos);
+  bool hasIAX2 = CheckProto(args, OPAL_PREFIX_IAX2, defProto, defProtoPos);
 #endif
 
 #if OPAL_LID
-  bool hasPOTS = CheckProto(args, "pots:<dn>", defUser, defUserPos);
-  bool hasPSTN = CheckProto(args, "pstn:<dn>", defProto, defProtoPos);
+  bool hasPOTS = CheckProto(args, OPAL_PREFIX_POTS":<dn>", defUser, defUserPos);
+  bool hasPSTN = CheckProto(args, OPAL_PREFIX_PSTN":<dn>", defProto, defProtoPos);
 #endif
 
 #if OPAL_FAX
-  bool hasFAX = CheckProto(args, "fax:", defUser, defUserPos);
-  bool hasT38 = CheckProto(args, "t38:", defUser, defUserPos);
+  bool hasFAX = CheckProto(args, OPAL_PREFIX_FAX, defUser, defUserPos);
+  bool hasT38 = CheckProto(args, OPAL_PREFIX_T38, defUser, defUserPos);
 #endif
 
-  bool hasPC = CheckProto(args, "pc:*", defUser, defUserPos);
-  bool hasLocal = CheckProto(args, "local:<du>", defUser, defUserPos);
+  bool hasPC = CheckProto(args, OPAL_PREFIX_PCSS":*", defUser, defUserPos);
+  bool hasLocal = CheckProto(args, OPAL_PREFIX_LOCAL":<du>", defUser, defUserPos);
 
 #if OPAL_IVR
-  bool hasIVR = CheckProto(args, "ivr:", defUser, defUserPos);
+  bool hasIVR = CheckProto(args, OPAL_PREFIX_IVR, defUser, defUserPos);
 #endif
 
 #if OPAL_HAS_MIXER
-  bool hasMIX = CheckProto(args, "mcu:", defUser, defUserPos);
+  bool hasMIX = CheckProto(args, OPAL_PREFIX_MIXER, defUser, defUserPos);
 #endif
 
 #if OPAL_H323
   if (hasH323) {
     new H323EndPoint(*this);
-    AddRouteEntry("h323:.*=" + defUser);
+    AddRouteEntry(OPAL_PREFIX_H323":.*=" + defUser);
   }
 #endif
 
 #if OPAL_SIP
   if (hasSIP) {
     new SIPEndPoint_C(*this);
-    AddRouteEntry("sip:.*=" + defUser);
+    AddRouteEntry(OPAL_PREFIX_SIP":.*=" + defUser);
   }
 #endif
 
 #if OPAL_IAX2
   if (hasIAX2) {
     new IAX2EndPoint(*this);
-    AddRouteEntry("iax2:.*=" + defUser);
+    AddRouteEntry(OPAL_PREFIX_IAX2":.*=" + defUser);
   }
 #endif
 
@@ -941,9 +949,9 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
     new OpalLineEndPoint(*this);
 
     if (hasPOTS)
-      AddRouteEntry("pots:.*=" + defProto + ":<da>");
+      AddRouteEntry(OPAL_PREFIX_POTS":.*=" + defProto + ":<da>");
     if (hasPSTN)
-      AddRouteEntry("pstn:.*=" + defUser + ":<da>");
+      AddRouteEntry(OPAL_PREFIX_PSTN":.*=" + defUser + ":<da>");
   }
 #endif
 
@@ -952,28 +960,28 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
     new OpalFaxEndPoint(*this);
 
     if (hasFAX)
-      AddRouteEntry("fax:.*=" + defProto + ":<da>");
+      AddRouteEntry(OPAL_PREFIX_FAX":.*=" + defProto + ":<da>");
     if (hasT38)
-      AddRouteEntry("t38:.*=" + defUser + ":<da>");
+      AddRouteEntry(OPAL_PREFIX_T38":.*=" + defUser + ":<da>");
   }
 #endif
 
 #if OPAL_HAS_PCSS
   if (hasPC) {
     m_pcssEP = new OpalPCSSEndPoint_C(*this);
-    AddRouteEntry("pc:.*=" + defProto + ":<da>");
+    AddRouteEntry(OPAL_PREFIX_PCSS":.*=" + defProto + ":<da>");
   }
 #endif
 
   if (hasLocal) {
     m_localEP = new OpalLocalEndPoint_C(*this);
-    AddRouteEntry("local:.*=" + defProto + ":<da>");
+    AddRouteEntry(OPAL_PREFIX_LOCAL":.*=" + defProto + ":<da>");
   }
 
 #if OPAL_IVR
   if (hasIVR) {
     m_ivrEP = new OpalIVREndPoint_C(*this);
-    AddRouteEntry("ivr:.*=" + defProto + ":<da>");
+    AddRouteEntry(OPAL_PREFIX_IVR":.*=" + defProto + ":<da>");
   }
 #endif
 
@@ -982,6 +990,11 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
     m_mcuEP = new OpalMixerEndPoint(*this, "mcu");
     AddRouteEntry("mcu:.*=" + defProto + ":<da>");
   }
+#endif
+
+#if OPAL_HAS_IM
+  if (CheckProto(args, OPAL_PREFIX_IM, defUser, defUserPos))
+    new OpalIMEndPoint(*this);
 #endif
 }
 
@@ -1524,6 +1537,7 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
 
 void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageBuffer & response)
 {
+#if OPAL_HAS_PRESENCE
   static const PConstCaselessString PresPrefix("pres");
   if (PresPrefix == command.m_param.m_registrationInfo.m_protocol) {
     if (IsNullString(command.m_param.m_registrationInfo.m_identifier))
@@ -1543,7 +1557,7 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
         attr.Set(OpalPresentity::AuthNameKey, command.m_param.m_registrationInfo.m_authUserName);
         attr.Set(OpalPresentity::AuthPasswordKey, command.m_param.m_registrationInfo.m_password);
         attr.SetInteger(OpalPresentity::TimeToLiveKey, command.m_param.m_registrationInfo.m_timeToLive);
-#if P_EXPAT && OPAL_SIP
+#if OPAL_SIP_PRESENCE
         attr.Set(SIP_Presentity::PresenceAgentKey, command.m_param.m_registrationInfo.m_hostName);
 #endif
         if (m_apiVersion >= 28) {
@@ -1562,6 +1576,7 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
     }
     return;
   }
+#endif // OPAL_HAS_PRESENCE
 
   OpalEndPoint * ep = FindEndPoint(command.m_param.m_registrationInfo.m_protocol);
   if (ep == NULL) {
@@ -2242,24 +2257,45 @@ void OpalManager_C::OnMWIReceived(const PString & party, MessageWaitingType type
 }
 
 
+#if OPAL_HAS_PRESENCE
+PString ConvertStringSetWithoutLastNewine(const PStringSet & set)
+{
+  PStringStream strm;
+  strm << setfill('\n') << set;
+  return strm.Left(strm.GetLength()-1);
+}
+
 void OpalManager_C::OnPresenceChange(OpalPresentity &, std::auto_ptr<OpalPresenceInfo> info)
 {
   OpalMessageBuffer message(OpalIndPresenceChange);
   SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_entity,   info->m_entity.AsString());
   SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_target,   info->m_target.AsString());
+  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_service,  info->m_service);
+  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_contact,  info->m_contact);
   SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_note,     info->m_note);
   SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_infoType, info->m_infoType);
   SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_infoData, info->m_infoData);
+
+  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_activities, ConvertStringSetWithoutLastNewine(info->m_activities));
+  SET_MESSAGE_STRING(message, m_param.m_presenceStatus.m_capabilities, ConvertStringSetWithoutLastNewine(info->m_capabilities));
+
   message->m_param.m_presenceStatus.m_state = (OpalPresenceStates)info->m_state;
-  PTRACE(4, "OpalC API\tOnPresenceChange:"
+
+  PTRACE(4, "OpalC API\tOnPresenceChange:\n"
             " entity=\"" << message->m_param.m_presenceStatus.m_entity << "\""
-            " target=\"" << message->m_param.m_presenceStatus.m_target << '"');
+            " target=\"" << message->m_param.m_presenceStatus.m_target << "\""
+            " service=\"" << message->m_param.m_presenceStatus.m_service << "\""
+            " contact=\"" << message->m_param.m_presenceStatus.m_contact << "\""
+            " state=" << message->m_param.m_presenceStatus.m_state <<
+            " note=\"" << message->m_param.m_presenceStatus.m_note << '"');
   PostMessage(message);
 }
+#endif // OPAL_HAS_PRESENCE
 
 
 void OpalManager_C::HandleAuthorisePresence(const OpalMessage & command, OpalMessageBuffer & response)
 {
+#if OPAL_HAS_PRESENCE
   OpalPresentity::Authorisation auth;
   switch (command.m_param.m_presenceStatus.m_state) {
     case OpalPresenceForbidden :
@@ -2284,11 +2320,15 @@ void OpalManager_C::HandleAuthorisePresence(const OpalMessage & command, OpalMes
     response.SetError("URI is not registered for presence.");
   else if (!presentity->SetPresenceAuthorisation(command.m_param.m_presenceStatus.m_target, auth))
     response.SetError("Could not set presence authorisation.");
+#else
+  response.SetError("Presence not supported by library.");
+#endif // OPAL_HAS_PRESENCE
 }
 
 
 void OpalManager_C::HandleSubscribePresence(const OpalMessage & command, OpalMessageBuffer & response)
 {
+#if OPAL_HAS_PRESENCE
   PSafePtr<OpalPresentity> presentity = GetPresentity(command.m_param.m_presenceStatus.m_entity);
   if (presentity == NULL)
     response.SetError("URI is not registered for presence.");
@@ -2298,11 +2338,15 @@ void OpalManager_C::HandleSubscribePresence(const OpalMessage & command, OpalMes
                                             command.m_param.m_presenceStatus.m_state != OpalPresenceNone,
                                             command.m_param.m_presenceStatus.m_note))
     response.SetError("Could not subscribe for presence status.");
+#else
+  response.SetError("Presence not supported by library.");
+#endif // OPAL_HAS_PRESENCE
 }
 
 
 void OpalManager_C::HandleSetLocalPresence(const OpalMessage & command, OpalMessageBuffer & response)
 {
+#if OPAL_HAS_PRESENCE
   PSafePtr<OpalPresentity> presentity = GetPresentity(command.m_param.m_presenceStatus.m_entity);
   if (presentity == NULL)
     response.SetError("URI is not registered for presence.");
@@ -2311,23 +2355,34 @@ void OpalManager_C::HandleSetLocalPresence(const OpalMessage & command, OpalMess
     PString note;
     if (!presentity->GetLocalPresence(oldState, note))
       response.SetError("Could not get local presence state.");
-    else if (!presentity->SetLocalPresence((OpalPresenceInfo::State)command.m_param.m_presenceStatus.m_state,
-                                                                    command.m_param.m_presenceStatus.m_note))
-      response.SetError("Could not set local presence state.");
     else {
-      response->m_param.m_presenceStatus.m_state = (OpalPresenceStates)oldState;
-      SET_MESSAGE_STRING(response, m_param.m_presenceStatus.m_note, note);
+      OpalPresenceInfo info((OpalPresenceInfo::State)command.m_param.m_presenceStatus.m_state);
+      info.m_note = command.m_param.m_presenceStatus.m_note;
+      info.m_activities = PString(command.m_param.m_presenceStatus.m_activities).Lines();
+      info.m_capabilities = PString(command.m_param.m_presenceStatus.m_capabilities).Lines();
+      if (!presentity->SetLocalPresence(info))
+        response.SetError("Could not set local presence state.");
+      else {
+        response->m_param.m_presenceStatus.m_state = (OpalPresenceStates)oldState;
+        SET_MESSAGE_STRING(response, m_param.m_presenceStatus.m_note, note);
+      }
     }
   }
+#else
+  response.SetError("Presence not supported by library.");
+#endif // OPAL_HAS_PRESENCE
 }
 
+
+#if OPAL_HAS_IM
 
 void OpalManager_C::HandleSendIM(const OpalMessage & command, OpalMessageBuffer & response)
 {
   OpalIM im;
   im.m_from = command.m_param.m_instantMessage.m_from;
   im.m_to = command.m_param.m_instantMessage.m_to;
-  im.m_conversationId = command.m_param.m_instantMessage.m_id;
+  im.m_toAddr = command.m_param.m_instantMessage.m_host;
+  im.m_conversationId = command.m_param.m_instantMessage.m_conversationId;
 
   if (command.m_param.m_instantMessage.m_bodyCount == 0)
     im.m_bodies.SetAt(PMIMEInfo::TextPlain(), command.m_param.m_instantMessage.m_textBody);
@@ -2336,8 +2391,10 @@ void OpalManager_C::HandleSendIM(const OpalMessage & command, OpalMessageBuffer 
       im.m_bodies.SetAt(command.m_param.m_instantMessage.m_mimeType[i], command.m_param.m_instantMessage.m_bodies[i]);
   }
 
-  if (Message(im))
-    SET_MESSAGE_STRING(response, m_param.m_instantMessage.m_id, im.m_conversationId);
+  if (Message(im)) {
+    SET_MESSAGE_STRING(response, m_param.m_instantMessage.m_conversationId, im.m_conversationId);
+    response->m_param.m_instantMessage.m_messageId = im.m_messageId;
+  }
   else
     response.SetError("Could not send instant message.");
 }
@@ -2348,12 +2405,36 @@ void OpalManager_C::OnMessageReceived(const OpalIM & im)
   OpalMessageBuffer message(OpalIndReceiveIM);
   SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_from, im.m_from.AsString());
   SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_to,   im.m_to.AsString());
-  SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_id,   im.m_conversationId);
+  SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_conversationId, im.m_conversationId);
   PTRACE(4, "OpalC API\tOnMessageReceived:"
             " from=\"" << message->m_param.m_instantMessage.m_from << "\""
-            " to=\"" << message->m_param.m_instantMessage.m_to << '"');
+            " to=\"" << message->m_param.m_instantMessage.m_to << "\""
+            " ID=\"" << message->m_param.m_instantMessage.m_conversationId << '"');
   PostMessage(message);
 }
+
+
+void OpalManager_C::OnMessageDisposition(const OpalIMContext::DispositionInfo & dispostion)
+{
+  OpalMessageBuffer message(OpalIndSentIM);
+
+//  SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_from, im.m_from.AsString());
+//  SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_to,   im.m_to.AsString());
+  SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_conversationId, dispostion.m_conversationId);
+  message->m_param.m_instantMessage.m_messageId = dispostion.m_messageId;
+  SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_textBody, PSTRSTRM(dispostion.m_disposition));
+  PTRACE(4, "OpalC API\tOnMessageDisposition:"
+            " ID=\"" << message->m_param.m_instantMessage.m_conversationId << "\""
+            " state=\"" << message->m_param.m_instantMessage.m_textBody << '"');
+  PostMessage(message);
+}
+
+
+void OpalManager_C::OnCompositionIndication(const OpalIMContext::CompositionInfo &)
+{
+}
+
+#endif // OPAL_HAS_IM
 
 
 ///////////////////////////////////////////////////////////////////////////////

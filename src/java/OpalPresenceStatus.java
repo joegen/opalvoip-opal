@@ -51,12 +51,44 @@ public class OpalPresenceStatus {
     return OPALJNI.OpalPresenceStatus_m_target_get(swigCPtr, this);
   }
 
+  public void setM_service(String value) {
+    OPALJNI.OpalPresenceStatus_m_service_set(swigCPtr, this, value);
+  }
+
+  public String getM_service() {
+    return OPALJNI.OpalPresenceStatus_m_service_get(swigCPtr, this);
+  }
+
+  public void setM_contact(String value) {
+    OPALJNI.OpalPresenceStatus_m_contact_set(swigCPtr, this, value);
+  }
+
+  public String getM_contact() {
+    return OPALJNI.OpalPresenceStatus_m_contact_get(swigCPtr, this);
+  }
+
+  public void setM_capabilities(String value) {
+    OPALJNI.OpalPresenceStatus_m_capabilities_set(swigCPtr, this, value);
+  }
+
+  public String getM_capabilities() {
+    return OPALJNI.OpalPresenceStatus_m_capabilities_get(swigCPtr, this);
+  }
+
   public void setM_state(OpalPresenceStates value) {
     OPALJNI.OpalPresenceStatus_m_state_set(swigCPtr, this, value.swigValue());
   }
 
   public OpalPresenceStates getM_state() {
     return OpalPresenceStates.swigToEnum(OPALJNI.OpalPresenceStatus_m_state_get(swigCPtr, this));
+  }
+
+  public void setM_activities(String value) {
+    OPALJNI.OpalPresenceStatus_m_activities_set(swigCPtr, this, value);
+  }
+
+  public String getM_activities() {
+    return OPALJNI.OpalPresenceStatus_m_activities_get(swigCPtr, this);
   }
 
   public void setM_note(String value) {

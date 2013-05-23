@@ -1494,7 +1494,7 @@ SIPEndPoint::CanNotifyResult SIPEndPoint::CanNotify(const PString & eventPackage
     return CannotNotify;
   }
 
-#if P_EXPAT
+#if OPAL_SIP_PRESENCE
   if (SIPEventPackage(SIPSubscribe::Presence) == eventPackage) {
     PSafePtr<OpalPresentity> presentity = manager.GetPresentity(aor);
     if (presentity != NULL && presentity->GetAttributes().GetEnum(
@@ -1504,7 +1504,7 @@ SIPEndPoint::CanNotifyResult SIPEndPoint::CanNotify(const PString & eventPackage
     PTRACE(3, "SIP\tCannot notify \"" << eventPackage << "\" event, no presentity " << aor);
     return CannotNotify;
   }
-#endif // P_EXPAT
+#endif // OPAL_SIP_PRESENCE
 
   return CanNotify(eventPackage) ? CanNotifyImmediate : CannotNotify;
 }
@@ -1636,6 +1636,7 @@ bool SIPEndPoint::Publish(const PString & to, const PString & body, unsigned exp
 }
 
 
+#if OPAL_SIP_PRESENCE
 bool SIPEndPoint::PublishPresence(const SIPPresenceInfo & info, unsigned expire)
 {
   SIPSubscribe::Params params(SIPSubscribe::Presence);
@@ -1672,6 +1673,7 @@ void SIPEndPoint::OnPresenceInfoReceived(const PString & /*entity*/,
                                          const PString & /*note*/)
 {
 }
+#endif // OPAL_SIP_PRESENCE
 
 
 void SIPEndPoint::OnDialogInfoReceived(const SIPDialogNotification & PTRACE_PARAM(info))
@@ -1860,11 +1862,13 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, const SIPConnection * conn
   }
 
   if (!mime.Has("Contact") && pdu.GetStatusCode() != SIP_PDU::Information_Trying) {
+    OpalTransportAddress remoteAddress = pdu.GetURI().GetTransportAddress();
     SIPURL contact;
     if (transport == NULL)
       transport = pdu.GetTransport();
     if (transport != NULL) {
       OpalTransportAddress localAddress = transport->GetLocalAddress();
+      remoteAddress = transport->GetRemoteAddress();
 
       if (registrar != NULL) {
         contact = registrar->GetContacts().FindCompatible(localAddress PTRACE_PARAM(, "registered"));
@@ -1875,14 +1879,14 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, const SIPConnection * conn
       if (contact.IsEmpty()) {
         SIPURLList listenerAddresses;
         for (OpalListenerList::iterator it = listeners.begin(); it != listeners.end(); ++it)
-          listenerAddresses.push_back(SIPURL(user, it->GetLocalAddress(transport->GetRemoteAddress())));
+          listenerAddresses.push_back(SIPURL(user, it->GetLocalAddress(remoteAddress)));
         contact = listenerAddresses.FindCompatible(localAddress PTRACE_PARAM(, "listening"));
         PTRACE_IF(4, !contact.IsEmpty(), "SIP\tAdjusted Contact to " << contact << " from listeners.");
       }
     }
 
     if (contact.IsEmpty()) {
-      contact = SIPURL(user, listeners[0].GetLocalAddress());
+      contact = SIPURL(user, listeners[0].GetLocalAddress(remoteAddress));
       PTRACE(4, "SIP\tAdjusted Contact to " << contact << " from first listener.");
     }
 

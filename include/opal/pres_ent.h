@@ -34,13 +34,15 @@
 #include <ptlib.h>
 #include <opal_config.h>
 
+#if OPAL_HAS_PRESENCE
+
 #include <ptlib/pfactory.h>
 #include <ptlib/safecoll.h>
 #include <ptclib/url.h>
 #include <ptclib/guid.h>
 
 #ifdef P_VCARD
-#include <ptclib/vcard.h>
+  #include <ptclib/vcard.h>
 #endif
 
 #include <im/im.h>
@@ -54,64 +56,51 @@ class OpalPresentityCommand;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/**Presencu state information
+/**Presence state information.
+   While protocol independent, this is based on the basic model provided
+   by RFC 3863 and RFC 4480.
+
+   A presence change may be sent for the same presentity, but multiple
+   services. A service may be a physical device, e.g. laptop, desktop or
+   smart phone, or a particular piece of software. This is indicated by the
+   m_service field, which can be a completely arbitrary string. This field
+   is ignored and system generated when supplied in SetLocalPresence().
+
+   A particular service has a set of capabilities such as "audio", "Video",
+   "text", "type=text/plain" etc as returned in m_capabilities.
   */
 class OpalPresenceInfo : public PObject
 {
     PCLASSINFO_WITH_CLONE(OpalPresenceInfo, PObject);
   public:
-    /// Presence states.
-    enum State {
-      InternalError = -3,    // something bad happened
-      Forbidden     = -2,    // access to presence information was specifically forbidden
-      NoPresence    = -1,    // remove presence status - not the same as Unavailable or Away
+    /** Presence states. Basic states (from RFC 3863) plus system states not
+        included in the specification.
+      */
+    P_DECLARE_STREAMABLE_ENUM_EX(State,StateCount,
+      UnknownUser,-4,     ///< Presentity does not exist
+      InternalError,      ///< Something bad happened
+      Forbidden,          ///< Access to presence information was specifically forbidden
+      NoPresence,         ///< No presence status - not the same as Unavailable or Away
+      Unchanged,          ///< State has not changed from last time
+      Available,          ///< User has a presence and is available to be contacted
+      Unavailable         ///< User has a presence, but is cannot be contacted
+    );
 
-      // basic states (from RFC 3863)
-      Unchanged,
-      Available,
-      Unavailable,
+    State      m_state;        ///< New state for presentity
+    PStringSet m_activities;   ///< Activity (from RFC 4480)
+    PString    m_note;         ///< Additional information about state change
+    PTime      m_when;         ///< Time/date of state change
 
-      // extended states (from RFC 4480)
-      // if this is changed, also change the tables in sippres.cxx and handlers.cxx - look for RFC 4480
-      ExtendedBase    = 100,
-      UnknownExtended = ExtendedBase,
-      Appointment,
-      Away,
-      Breakfast,
-      Busy,
-      Dinner,
-      Holiday,
-      InTransit,
-      LookingForWork,
-      Lunch,
-      Meal,
-      Meeting,
-      OnThePhone,
-      Other,
-      Performance,
-      PermanentAbsence,
-      Playing,
-      Presentation,
-      Shopping,
-      Sleeping,
-      Spectator,
-      Steering,
-      Travel,
-      TV,
-      Vacation,
-      Working,
-      Worship
-    };
+    PURL       m_entity;       ///< The presentity whose state had changed, usually remote
+    PURL       m_target;       ///< The presentity that is being informed about the state change
+    PString    m_service;      ///< Device/system(s) for the presentity that is getting a state change.
+    PString    m_contact;      ///< Contact address for the service.
+    PStringSet m_capabilities; ///< Capabilities of this service, e.g. "audio".
 
-    State   m_state;    ///< New state for presentity
-    PString m_note;     ///< Additional information about state change
-    PURL    m_entity;   ///< The presentity whose state had changed
-    PURL    m_target;   ///< The presentity that is being informed about the state change
-    PTime   m_when;     ///< Time/date of state change
-    PString m_infoType; ///< MIME tyupe for m_infoData, e.g. application/pidf+xml
-    PString m_infoData; ///< Raw information as provided by underlying protocol, e.g. XML.
+    PString    m_infoType;     ///< MIME tyupe for m_infoData, e.g. application/pidf+xml
+    PString    m_infoData;     ///< Raw information as provided by underlying protocol, e.g. XML.
 
-    OpalPresenceInfo(State state = Unchanged) : m_state(state) { }
+    OpalPresenceInfo(State state = Unchanged);
 
     static PString AsString(State state);
     static State FromString(const PString & str);
@@ -265,14 +254,24 @@ class OpalPresentity : public PSafeObject
         mean the command succeeded, only that the underlying protocol is
         capabable of the action.
       */
-    virtual bool SetLocalPresence(
+    bool SetLocalPresence(
+      const OpalPresenceInfo & info   ///< Presence information to set
+    );
+
+    // For backward compatibility
+    bool SetLocalPresence(
       OpalPresenceInfo::State state,            ///< New state for our presentity
-      const PString & note = PString::Empty()   ///< Additional note attached to the state change
+      const PString & note = PString::Empty()  ///< Additional note attached to the state change
     );
 
     /** Get our presence state
     */
-    virtual bool GetLocalPresence(
+    bool GetLocalPresence(
+      OpalPresenceInfo & info   ///< Previous presence information
+    );
+
+    // For backward compatibility
+    bool GetLocalPresence(
       OpalPresenceInfo::State & state, 
       PString & note
     );
@@ -553,8 +552,7 @@ class OpalPresentity : public PSafeObject
     PAtomicBoolean m_open;
     PMutex m_notificationMutex;
     bool m_temporarilyUnavailable;
-    OpalPresenceInfo::State m_localState;      ///< our presentity state
-    PString m_localStateNote;                  ///< Additional note attached to the 
+    OpalPresenceInfo m_localInfo;
 };
 
 
@@ -732,9 +730,12 @@ class OpalSendMessageToCommand : public OpalPresentityCommand
 ///////////////////////////////////////////////////////////////////////////////
 
 // Include concrete classes here so the factories are initialised
-#if OPAL_SIP && OPAL_PTLIB_EXPAT
-PFACTORY_LOAD(SIP_Presentity);
+#if OPAL_SIP_PRESENCE
+  PFACTORY_LOAD(SIP_Presentity);
 #endif
+
+
+#endif // OPAL_HAS_PRESENCE
 
 
 #endif  // OPAL_IM_PRES_ENT_H

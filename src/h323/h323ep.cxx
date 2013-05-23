@@ -66,6 +66,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   , disableFastStart(false)
   , disableH245Tunneling(false)
   , disableH245inSetup(false)
+  , m_forceSymmetricTCS(false)
   , m_bH245Disabled(false)
   , canDisplayAmountString(false)
   , canEnforceDurationLimit(true)
@@ -423,7 +424,9 @@ bool H323EndPoint::InternalCreateGatekeeper(H323Transport * transport, const H32
     OpalTransportAddressArray interfaces = GetInterfaceAddresses();
     for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
       if (interfaces[i].IsCompatible(gkAddress)) {
-        transport = new H323TransportUDP(*this, interfaces[i]);
+        PIPSocket::Address ip;
+        if (interfaces[i].GetIpAddress(ip))
+          transport = new H323TransportUDP(*this, ip);
         break;
       }
     }

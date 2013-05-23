@@ -121,7 +121,7 @@
 #undef  OPAL_IAX2
 #undef	OPAL_SIP
 #if P_ASN
-#undef	OPAL_H323
+  #undef	OPAL_H323
 #endif
 #undef  OPAL_LID
 #undef  OPAL_CAPI
@@ -238,6 +238,16 @@
 
 #if !OPAL_FAX
   #define H323_DISABLE_T38 1
+#endif
+
+
+// Presence
+#if OPAL_PTLIB_EXPAT
+  #undef OPAL_HAS_PRESENCE
+
+  #if OPAL_HAS_PRESENCE && OPAL_SIP
+    #define OPAL_SIP_PRESENCE 1
+  #endif
 #endif
 
 

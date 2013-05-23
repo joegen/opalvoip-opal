@@ -50,6 +50,7 @@
 
 static PConstCaselessString const ComposingMimeType("application/im-iscomposing+xml");
 static PConstCaselessString const DispositionMimeType("message/imdn+xml");
+static char const ConversationIdSeparator = ' ';
 
 
 class OpalSIPIMMediaType : public OpalRTPAVPMediaType
@@ -264,7 +265,7 @@ static PFactory<OpalIMContext>::Worker<OpalSIPIMContext> static_OpalSIPContext("
 
 OpalSIPIMContext::OpalSIPIMContext()
 {
-  m_conversationId += ';' + SIPURL::GenerateTag();
+  m_conversationId += ConversationIdSeparator + SIPURL::GenerateTag();
   m_attributes.Set("acceptable-content-types", "text/plain\ntext/html\napplication/im-iscomposing+xml");
   m_rxCompositionIdleTimeout.SetNotifier(PCREATE_NOTIFIER(OnRxCompositionIdleTimer));
   m_txCompositionIdleTimeout.SetNotifier(PCREATE_NOTIFIER(OnTxCompositionIdleTimer));
@@ -330,10 +331,21 @@ void OpalSIPIMContext::OnMESSAGECompleted(SIPEndPoint & endpoint,
     return;
   }
 
-  PSafePtr<OpalSIPIMContext> context = PSafePtrCast<OpalIMContext,OpalSIPIMContext>(
-                                          imEP->FindContextByIdWithLock(params.m_id));
+  PSafePtr<OpalIMContext> imContext = imEP->FindContextByIdWithLock(params.m_id + ConversationIdSeparator + params.m_tag);
+  if (imContext == NULL) {
+    imContext = imEP->FindContextByIdWithLock(params.m_id);
+    if (imContext == NULL) {
+      imContext = imEP->FindContextByIdWithLock(params.m_tag);
+      if (imContext == NULL) {
+        PTRACE2(2, &endpoint, "SIPIM\tCannot find IM context for " << params.m_id << ',' << params.m_tag);
+        return;
+      }
+    }
+  }
+
+  PSafePtr<OpalSIPIMContext> context = PSafePtrCast<OpalIMContext,OpalSIPIMContext>(imContext);
   if (context == NULL) {
-    PTRACE2(2, &endpoint, "SIPIM\tCannot find IM context for \"" << params.m_id << '"');
+    PTRACE2(2, &endpoint, "SIPIM\tNot a SIP context for " << params.m_id << ',' << params.m_tag);
     return;
   }
 
@@ -379,16 +391,23 @@ void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
   OpalIMContext::MessageDisposition status;
   PString errorInfo;
   {
-    SIPURL to(mime.GetTo());
-    SIPURL from(mime.GetFrom());
-
     OpalIM message;
-    message.m_conversationId = mime.GetCallID() + ';' + to.GetTag();
-    message.m_to             = to;
-    message.m_from           = from;
-    message.m_toAddr         = request.GetTransport()->GetLastReceivedAddress();
-    message.m_fromAddr       = request.GetTransport()->GetRemoteAddress();
-    message.m_fromName       = from.GetDisplayName();
+
+    SIPURL to(mime.GetTo());
+    message.m_conversationId = mime.GetCallID() + ConversationIdSeparator + to.GetTag();
+
+    to.Sanitise(SIPURL::ExternalURI);
+    message.m_to = to;
+
+    SIPURL from(mime.GetFrom());
+    message.m_fromName = from.GetDisplayName();
+
+    from.Sanitise(SIPURL::ExternalURI);
+    message.m_from = from;
+
+    message.m_toAddr   = request.GetTransport()->GetLastReceivedAddress();
+    message.m_fromAddr = request.GetTransport()->GetRemoteAddress();
+
     message.m_bodies.SetAt(mime.GetContentType(), request.GetEntityBody());
     status = imEP->OnRawMessageReceived(message, connection, errorInfo);
   }
@@ -419,15 +438,18 @@ void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
 
 void OpalSIPIMContext::PopulateParams(SIPMessage::Params & params, const OpalIM & message)
 {
-  SIPURL from(message.m_from);
-  from.SetDisplayName(m_localName);
-  from.SetTag(message.m_conversationId.Mid(message.m_conversationId.Find(';')+1));
+  if (!message.m_conversationId.Split(ConversationIdSeparator, params.m_id, params.m_tag))
+    params.m_id = message.m_conversationId;
 
-  params.m_localAddress    = from.AsQuotedString();
-  params.m_addressOfRecord = params.m_localAddress;
-  params.m_remoteAddress   = message.m_to.AsString();
-  params.m_id              = message.m_conversationId;
-  params.m_messageId       = message.m_messageId;
+  SIPURL from(message.m_from);
+  params.m_addressOfRecord = from.AsString();
+
+  from.SetDisplayName(m_localName);
+  params.m_localAddress = from.AsQuotedString();
+
+  params.m_remoteAddress = message.m_to.AsString();
+  params.m_proxyAddress  = SIPURL(message.m_toAddr).AsString();
+  params.m_messageId     = message.m_messageId;
 
   if (message.m_bodies.Contains(PMIMEInfo::TextPlain())) {
     params.m_contentType = PMIMEInfo::TextPlain();
@@ -439,8 +461,8 @@ void OpalSIPIMContext::PopulateParams(SIPMessage::Params & params, const OpalIM 
   }
 
   if (params.m_contentType != ComposingMimeType) {
-      m_txCompositionIdleTimeout.Stop(true);
-      m_txCompositionState = CompositionIndicationIdle();
+    m_txCompositionIdleTimeout.Stop(true);
+    m_txCompositionState = CompositionIndicationIdle();
   }
 }
 
@@ -492,7 +514,7 @@ OpalIMContext::MessageDisposition OpalSIPIMContext::InternalSendInsideCall(OpalI
 }
 
 
-#if P_EXPAT
+#if OPAL_PTLIB_EXPAT
 
 OpalIMContext::MessageDisposition OpalSIPIMContext::InternalOnCompositionIndication(const OpalIM & message)
 {
@@ -591,7 +613,7 @@ OpalIMContext::MessageDisposition OpalSIPIMContext::InternalOnDisposition(const 
   return DeliveryOK;
 }
 
-#else // P_EXPAT
+#else // OPAL_PTLIB_EXPAT
 
 OpalIMContext::MessageDisposition OpalSIPIMContext::InternalOnCompositionIndication(const OpalIM &)
 {
@@ -603,7 +625,7 @@ OpalIMContext::MessageDisposition OpalSIPIMContext::InternalOnDisposition(const 
   return UnsupportedFeature;
 }
 
-#endif // P_EXPAT
+#endif // OPAL_PTLIB_EXPAT
 
 
 OpalIMContext::MessageDisposition OpalSIPIMContext::OnMessageReceived(const OpalIM & message)

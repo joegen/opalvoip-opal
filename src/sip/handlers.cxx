@@ -262,6 +262,8 @@ bool SIPHandler::ActivateState(SIPHandler::State newState)
 
 PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
 {
+  SendStatus(SIP_PDU::Information_Trying, newState);
+
   m_expireTimer.Stop(false); // Stop automatic retry
 
   SetState(newState);
@@ -293,10 +295,24 @@ void SIPHandler::SetExpire(int e)
     m_originalExpireTime = e;
 
   // retry before the expire time.
-  // if the expire time is more than 20 mins, retry 10mins before expiry
-  // if the expire time is less than 20 mins, retry after half of the expiry time
-  if (GetExpire() > 0 && GetState() < Unsubscribing)
-    m_expireTimer.SetInterval(0, (unsigned)(GetExpire() < 20*60 ? GetExpire()/2 : GetExpire()-10*60));
+  if (GetExpire() > 0 && GetState() < Unsubscribing) {
+    // Allow for max number of retries at max timeout, plus 10 seconds for good measure
+    // But don't make it any shorter than half the expiry time.
+    int deadband = GetEndPoint().GetRetryTimeoutMax().GetSeconds() * GetEndPoint().GetMaxRetries() + 10;
+    int timeout = GetExpire();
+    if (timeout*2 > deadband)
+      timeout -= deadband;
+    else {
+      // Short timeout, try for allowing just one retry, plus a couple of seconds
+      deadband = GetEndPoint().GetRetryTimeoutMax().GetSeconds() + 2;
+      if (timeout*2 > deadband)
+        timeout -= deadband;
+      else
+        timeout /= 2; // Really short, just use half the expire time
+    }
+    m_expireTimer.SetInterval(0, timeout);
+    PTRACE(4, "SIP\tExpiry timer running: " << m_expireTimer);
+  }
 }
 
 
@@ -365,7 +381,7 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
       if (responseClass == 2)
         OnReceivedOK(transaction, response);
       else
-        OnFailed(response);
+        OnFailed(response.GetStatusCode());
   }
 }
 
@@ -441,6 +457,9 @@ void SIPHandler::OnTransactionFailed(SIPTransaction & transaction)
   if (transaction.IsCanceled())
     return;
 
+  if (transaction.GetStatusCode() < 100 && GetInterface().IsEmpty())
+    return;
+
   OnFailed(transaction.GetStatusCode());
   RetryLater(m_offlineExpireTime);
 }
@@ -456,15 +475,11 @@ void SIPHandler::RetryLater(unsigned after)
 }
 
 
-void SIPHandler::OnFailed(const SIP_PDU & response)
-{
-  OnFailed(response.GetStatusCode());
-}
-
-
 void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
 {
   m_lastResponseStatus = code;
+
+  SendStatus(code, GetState());
 
   switch (code) {
     case SIP_PDU::Local_TransportError :
@@ -483,8 +498,15 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
       PTRACE(4, "SIP\tNot retrying " << GetMethod() << " due to error response " << code);
       m_currentExpireTime = 0; // OK, stop trying
       m_expireTimer.Stop(false);
+      if (GetState() != Unsubscribing)
+        SendStatus(SIP_PDU::Successful_OK, Unsubscribing);
       SetState(Unsubscribed); // Allow garbage collection thread to clean up
   }
+}
+
+
+void SIPHandler::SendStatus(SIP_PDU::StatusCodes, State)
+{
 }
 
 
@@ -758,16 +780,8 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 }
 
 
-void SIPRegisterHandler::OnFailed(SIP_PDU::StatusCodes r)
-{
-  SendStatus(r, GetState());
-  SIPHandler::OnFailed(r);
-}
-
-
 PBoolean SIPRegisterHandler::SendRequest(SIPHandler::State s)
 {
-  SendStatus(SIP_PDU::Information_Trying, s);
   m_sequenceNumber = GetEndPoint().GetNextCSeq();
   return SIPHandler::SendRequest(s);
 }
@@ -872,28 +886,18 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport & transpor
 }
 
 
-void SIPSubscribeHandler::OnFailed(const SIP_PDU & response)
+void SIPSubscribeHandler::OnFailed(SIP_PDU::StatusCodes responseCode)
 {
-  SIP_PDU::StatusCodes responseCode = response.GetStatusCode();
-
-  SendStatus(responseCode, GetState());
-
   if (GetState() != Unsubscribing && responseCode == SIP_PDU::Failure_TransactionDoesNotExist) {
-    // Resubscribe as previous subscription totally lost, but dialog processing
-    // may have altered the target so restore the original target address
+    // Resubscribe as previous subscription totally lost, reset the dialog and
+    // hopefully tht Call-ID not changing is not a problem.
     m_parameters.m_addressOfRecord = GetAddressOfRecord().AsString();
-    PString dummy;
-    GetEndPoint().Subscribe(m_parameters, dummy);
+    m_dialog.SetLocalTag(PString::Empty());     // If this is empty
+    m_dialog.SetLocalURI(GetAddressOfRecord()); // This will regenerate tag
+    m_dialog.SetRemoteTag(PString::Empty());
   }
 
   SIPHandler::OnFailed(responseCode);
-}
-
-
-PBoolean SIPSubscribeHandler::SendRequest(SIPHandler::State s)
-{
-  SendStatus(SIP_PDU::Information_Trying, s);
-  return SIPHandler::SendRequest(s);
 }
 
 
@@ -1095,8 +1099,8 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
   PMultiPartList parts;
   if (!m_parameters.m_eventList || !requestMIME.DecodeMultiPartList(parts, request.GetEntityBody())) {
     if (DispatchNOTIFY(request, *response))
-      return true;
-    return response->Send();
+      return response->Send();
+    return true;
   }
 
   // If GetMultiParts() returns true there as at least one part and that
@@ -1110,7 +1114,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
     return response->Send();
   }
 
-#if P_EXPAT
+#if OPAL_PTLIB_EXPAT
   PXML xml;
   if (!xml.Load(iter->m_textBody)) {
     PTRACE(2, "SIP\tNOTIFY received with illegal RLMI\n"
@@ -1152,7 +1156,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
       }
     }
 
-    if (DispatchNOTIFY(pdu, *response))
+    if (!DispatchNOTIFY(pdu, *response))
       return true;
   }
 #else
@@ -1161,7 +1165,7 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
     pdu.GetMIME().AddMIME(iter->m_mime);
     pdu.SetEntityBody(iter->m_textBody);
 
-    if (DispatchNOTIFY(pdu, *response))
+    if (!DispatchNOTIFY(pdu, *response))
       return true;
   }
 #endif
@@ -1288,6 +1292,8 @@ static SIPEventPackageFactory::Worker<SIPMwiEventPackageHandler> mwiEventPackage
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#if OPAL_SIP_PRESENCE
+
 static PConstCaselessString const SIPPresenceEventPackageContentType("application/pidf+xml");
 
 // This package is on for backward compatibility, presence should now use the
@@ -1326,10 +1332,11 @@ class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
 
 static SIPEventPackageFactory::Worker<SIPPresenceEventPackageHandler> presenceEventPackageHandler(SIPSubscribe::Presence);
 
+#endif // OPAL_SIP_PRESENCE
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if P_EXPAT
+#if OPAL_PTLIB_EXPAT
 
 static void ParseParticipant(PXMLElement * participantElement, SIPDialogNotification::Participant & participant)
 {
@@ -1369,7 +1376,7 @@ static void ParseParticipant(PXMLElement * participantElement, SIPDialogNotifica
   }
 }
 
-#endif // P_EXPAT
+#endif // OPAL_PTLIB_EXPAT
 
 
 class SIPDialogEventPackageHandler : public SIPEventPackageHandler
@@ -1389,7 +1396,7 @@ public:
   {
     PINDEX index = 0;
 
-#if P_EXPAT
+#if OPAL_PTLIB_EXPAT
     static PXML::ValidationInfo const DialogInfoValidation[] = {
       { PXML::SetDefaultNamespace,        "urn:ietf:params:xml:ns:dialog-info" },
       { PXML::ElementName,                "dialog-info", },
@@ -1448,7 +1455,7 @@ public:
 #else
     SIPDialogNotification info(notifyInfo.m_request.GetMIME().GetFrom());
     notifyInfo.SendResponse();
-#endif // P_EXPAT
+#endif // OPAL_PTLIB_EXPAT
 
     if (index == 0)
       notifyInfo.m_endpoint.OnDialogInfoReceived(info);
@@ -1502,7 +1509,7 @@ class SIPRegEventPackageHandler : public SIPEventPackageHandler
 
   virtual void OnReceivedNOTIFY(SIPSubscribe::NotifyCallbackInfo & notifyInfo)
   {
-#if P_EXPAT
+#if OPAL_PTLIB_EXPAT
     static PXML::ValidationInfo const RegInfoValidation[] = {
       { PXML::SetDefaultNamespace,        "urn:ietf:params:xml:ns:reginfo" },
       { PXML::ElementName,                "reginfo", },
@@ -1557,7 +1564,7 @@ class SIPRegEventPackageHandler : public SIPEventPackageHandler
 
     SIPRegNotification info(notifyInfo.m_request.GetMIME().GetFrom());
     notifyInfo.m_endpoint.OnRegInfoReceived(info);
-#endif // P_EXPAT
+#endif // OPAL_PTLIB_EXPAT
   }
 };
 
@@ -1867,12 +1874,93 @@ void SIPPublishHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & res
 
 ///////////////////////////////////////////////////////////////////////
 
-static PAtomicInteger DefaultTupleIdentifier(PRandom::Number());
+#if OPAL_SIP_PRESENCE
 
-SIPPresenceInfo::SIPPresenceInfo(State state)
-  : OpalPresenceInfo(state)
-  , m_tupleId(PString::Printf, "T%08X", ++DefaultTupleIdentifier)
+// defined in RFC 4480
+static const char * const RFC4480ActivitiesInit[] = {
+  "appointment",
+  "away",
+  "breakfast",
+  "busy",
+  "dinner",
+  "holiday",
+  "in-transit",
+  "looking-for-work",
+  "lunch",
+  "meal",
+  "meeting",
+  "on-the-phone",
+  "other",
+  "performance",
+  "permanent-absence",
+  "playing",
+  "presentation",
+  "shopping",
+  "sleeping",
+  "spectator",
+  "steering",
+  "travel",
+  "tv",
+  "vacation",
+  "working",
+  "worship"
+};
+
+static PStringSet const RFC4480Activities(PARRAYSIZE(RFC4480ActivitiesInit), RFC4480ActivitiesInit);
+
+
+// Cisco specific extensions
+static const char * const CiscoActivitiesInit[] = {
+  "available",
+  "away",
+  "dnd"
+};
+
+static PStringSet const CiscoActivities(PARRAYSIZE(CiscoActivitiesInit), CiscoActivitiesInit);
+
+
+// RFC 5196 extensions
+static const char * const RFC5196CapabilitiesInit[] = {
+  "audio",
+  "application",
+  "data",
+  "control",
+  "video",
+  "text",
+  "message",
+  "automata",
+  "type"
+};
+
+static PStringSet const RFC5196Capabilities(PARRAYSIZE(RFC5196CapabilitiesInit), RFC5196CapabilitiesInit);
+
+
+
+SIPPresenceInfo::SIPPresenceInfo(SIP_PDU::StatusCodes status, bool subscribing)
 {
+  if (status/100 == 2)
+    return;
+
+  m_note = SIP_PDU::GetStatusCodeDescription(status);
+
+  if (!subscribing) {
+    m_state = NoPresence;
+    return;
+  }
+
+  switch (status) {
+    case SIP_PDU::Failure_NotFound :
+      m_state = UnknownUser;
+      break;
+
+    case SIP_PDU::Failure_Forbidden :
+    case SIP_PDU::Failure_UnAuthorised :
+      m_state = Forbidden;
+      break;
+
+    default :
+      m_state = InternalError;
+  }
 }
 
 
@@ -1902,64 +1990,10 @@ void SIPPresenceInfo::PrintOn(ostream & strm) const
   }
 }
 
-// defined in RFC 4480
-static const char * const ExtendedSIPActivities[] = {
-      "appointment",
-      "away",
-      "breakfast",
-      "busy",
-      "dinner",
-      "holiday",
-      "in-transit",
-      "looking-for-work",
-      "lunch",
-      "meal",
-      "meeting",
-      "on-the-phone",
-      "other",
-      "performance",
-      "permanent-absence",
-      "playing",
-      "presentation",
-      "shopping",
-      "sleeping",
-      "spectator",
-      "steering",
-      "travel",
-      "tv",
-      "vacation",
-      "working",
-      "worship"
-};
-
-bool SIPPresenceInfo::AsSIPActivityString(State state, PString & str)
-{
-  if ((state >= Appointment) && (state <= Worship)) {
-    str = PString(ExtendedSIPActivities[state - Appointment]);
-    return true;
-  }
-
-  return false;
-}
-
-bool SIPPresenceInfo::AsSIPActivityString(PString & str) const
-{
-  return AsSIPActivityString(m_state, str);
-}
-
-OpalPresenceInfo::State SIPPresenceInfo::FromSIPActivityString(const PString & str)
-{
-  for (size_t i = 0; i < sizeof(ExtendedSIPActivities)/sizeof(ExtendedSIPActivities[0]);++i) {
-    if (str == ExtendedSIPActivities[i])
-      return (State)(Appointment + i);
-  }
-
-  return NoPresence;
-}
 
 PString SIPPresenceInfo::AsXML() const
 {
-  if (m_entity.IsEmpty() || m_tupleId.IsEmpty()) {
+  if (m_entity.IsEmpty() || m_service.IsEmpty()) {
     PTRACE(1, "SIP\tCannot encode Presence XML as no address or no id.");
     return PString::Empty();
   }
@@ -1970,18 +2004,52 @@ PString SIPPresenceInfo::AsXML() const
          "<presence xmlns=\"urn:ietf:params:xml:ns:pidf\" "
                   " xmlns:dm=\"urn:ietf:params:xml:ns:pidf:data-model\""
                   " xmlns:rpid=\"urn:ietf:params:xml:ns:pidf:rpid\""
-                  " entity=\"" << m_entity << "\">\r\n"
-         "  <tuple id=\"" << m_tupleId << "\">\r\n"
+                  " xmlns:sc=\"urn:ietf:params:xml:ns:pidf:caps\""
+                  " xmlns:ce=\"urn:cisco:params:xml:ns:pidf:rpid\""
+                  " entity=\"" << m_entity << "\">\r\n";
+  if (!m_personId.IsEmpty() && !m_activities.IsEmpty()) {
+    xml << "  <dm:person id=\"p" << m_personId << "\">\r\n"
+           "    <rpid:activities>\r\n";
+    for (PStringSet::const_iterator it = m_activities.begin(); it != m_activities.end(); ++it) {
+      if (RFC4480Activities.Contains(*it))
+        xml << "      <rpid:" << *it <<"/>\r\n";
+      else if (CiscoActivities.Contains(*it))
+        xml << "      <ce:" << *it <<" />\r\n";
+      else
+        xml << "      <rpid:other>" << *it << "</rpid:other>\r\n";
+    }
+
+    xml << "    </rpid:activities>\r\n"
+           "  </dm:person>\r\n";
+  }
+
+  xml << "  <tuple id=\"" << m_service << "\">\r\n"
          "    <status>\r\n";
   if (m_state != Unchanged)
     xml << "      <basic>" << (m_state != NoPresence ? "open" : "closed") << "</basic>\r\n";
-  xml << "    </status>\r\n"
-         "    <contact priority=\"1\">";
-  if (m_contact.IsEmpty())
-    xml << m_entity;
-  else
-    xml << m_contact;
-  xml << "</contact>\r\n";
+  xml << "    </status>\r\n";
+  if (m_state == Available) {
+    xml << "    <contact priority=\"1\">";
+    if (m_contact.IsEmpty())
+      xml << m_entity;
+    else
+      xml << m_contact;
+    xml << "</contact>\r\n";
+  }
+
+  if (!m_capabilities.IsEmpty()) {
+    xml << "    <sc:servcaps>\r\n";
+    for (PStringSet::const_iterator it = m_capabilities.begin(); it != m_capabilities.end(); ++it) {
+      PString name, value;
+      if (!it->Split('=', name, value)) {
+        name = *it;
+        value = "true";
+      }
+      if (RFC5196Capabilities.Contains(name))
+        xml << "      <sc:" << name << '>' << value << "</sc:" << name << ">\r\n";
+    }
+    xml << "    </sc:servcaps>\r\n";
+  }
 
   if (!m_note.IsEmpty()) {
     //xml << "    <note xml:lang=\"en\">" << PXML::EscapeSpecialChars(m_note) << "</note>\r\n";
@@ -1990,24 +2058,6 @@ PString SIPPresenceInfo::AsXML() const
 
   xml << "    <timestamp>" << PTime().AsString(PTime::RFC3339) << "</timestamp>\r\n"
          "  </tuple>\r\n";
-  if (!m_personId.IsEmpty() && (((m_state >= Appointment) && (m_state <= Worship)) || (m_activities.GetSize() > 0))) {
-    xml << "  <dm:person id=\"p" << m_personId << "\">\r\n"
-           "    <rpid:activities>\r\n";
-    bool doneState = false;
-    for (PINDEX i = 0; i < m_activities.GetSize(); ++i) {
-      State s = FromString(m_activities[i]);
-      if (s >= Appointment) {
-        if (s == m_state)
-          doneState = true;
-        xml << "      <rpid:" << ExtendedSIPActivities[s - Appointment] <<"/>\r\n";
-      }
-    }
-    if (!doneState)
-      xml << "      <rpid:" << ExtendedSIPActivities[m_state - Appointment] <<"/>\r\n";
-
-    xml << "    </rpid:activities>\r\n"
-           "  </dm:person>\r\n";
-  }
 
   xml << "</presence>\r\n";
 
@@ -2015,13 +2065,41 @@ PString SIPPresenceInfo::AsXML() const
 }
 
 
-#if P_EXPAT
 static void SetNoteFromElement(PXMLElement * element, PString & note)
 {
   PXMLElement * noteElement = element->GetElement("note");
   if (noteElement != NULL)
     note = noteElement->GetData();
 }
+
+
+static void ExtractPersonInfo(const PString & prefix, PXMLElement * element, SIPPresenceInfo & info)
+{
+  if (element->GetName() != prefix + "person")
+    return;
+
+  PXMLElement * activities = element->GetElement(prefix + "activities");
+  if (activities == NULL)
+    return;
+
+  for (PINDEX i = 0; i < activities->GetSize(); ++i) {
+    PXMLElement * activity = dynamic_cast<PXMLElement *>(activities->GetElement(i));
+    if (activity == NULL)
+      continue;
+
+    PCaselessString name(activity->GetName());
+    if (name.NumCompare(prefix) != PObject::EqualTo)
+      continue;
+
+    name.Delete(0, prefix.GetLength());
+    PCaselessString data = activity->GetData().Trim();
+    if (data.IsEmpty())
+      info.m_activities += name;
+    else
+      info.m_activities += name + '=' + data;
+  }
+}
+
 
 bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
                                   list<SIPPresenceInfo> & infoList)
@@ -2078,8 +2156,10 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
     return false;
   }
 
-  SIPPresenceInfo info;
-  info.m_tupleId.MakeEmpty();
+  SIPPresenceInfo info(Unavailable);
+  info.m_service.MakeEmpty();
+  info.m_infoType = SIPPresenceEventPackageContentType;
+  info.m_infoData = notifyInfo.m_request.GetEntityBody();
 
   PTime defaultTimestamp; // Start with "now"
 
@@ -2091,17 +2171,14 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
     if (element->GetName() == "urn:ietf:params:xml:ns:pidf|tuple") {
       PXMLElement * tupleElement = element;
 
-      if (!info.m_tupleId.IsEmpty()) {
+      if (!info.m_service.IsEmpty()) {
         infoList.push_back(info);
         defaultTimestamp = info.m_when - PTimeInterval(0, 1); // One second older
-        info = SIPPresenceInfo();
+        info = SIPPresenceInfo(Unavailable);
       }
 
       info.m_entity = entity;
-      info.m_tupleId = tupleElement->GetAttribute("id");
-
-      info.m_infoType = SIPPresenceEventPackageContentType;
-      info.m_infoData = tupleElement->AsString();
+      info.m_service = tupleElement->GetAttribute("id");
 
       SetNoteFromElement(rootElement, info.m_note);
       SetNoteFromElement(tupleElement, info.m_note);
@@ -2120,49 +2197,40 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
       if ((element = tupleElement->GetElement("contact")) != NULL)
         info.m_contact = element->GetData();
 
-      if ((element = tupleElement->GetElement("timestamp")) == NULL || !info.m_when.Parse(element->GetData()))
+      if ((element = tupleElement->GetElement("timestamp")) != NULL && !info.m_when.Parse(element->GetData()))
         info.m_when = defaultTimestamp;
-    }
-    else if (element->GetName() == "urn:ietf:params:xml:ns:pidf:data-model|person") {
-      static PConstCaselessString rpid("urn:ietf:params:xml:ns:pidf:rpid|");
-      PXMLElement * activities = element->GetElement(rpid + "activities");
-      if (activities == NULL)
-        continue;
 
-      for (PINDEX i = 0; i < activities->GetSize(); ++i) {
-        PXMLElement * activity = dynamic_cast<PXMLElement *>(activities->GetElement(i));
-        if (activity == NULL)
-          continue;
-
-        PCaselessString name(activity->GetName());
-        if (name.NumCompare(rpid) != PObject::EqualTo)
-          continue;
-
-        name.Delete(0, rpid.GetLength());
-        info.m_activities.AppendString(name);
-
-        State newState = SIPPresenceInfo::FromSIPActivityString(name);
-        if (newState != SIPPresenceInfo::NoPresence && info.m_state == Available)
-          info.m_state = newState;
+      if ((element = tupleElement->GetElement("urn:ietf:params:xml:ns:pidf:caps|servcaps")) != NULL ||
+          (element = tupleElement->GetElement("urn:ietf:params:xml:ns:pidf:servcaps|servcaps")) != NULL) {
+        for (PINDEX idx = 0; idx < element->GetSize(); ++idx) {
+          PXMLElement * cap = dynamic_cast<PXMLElement *>(element->GetElement(idx));
+          if (cap != NULL) {
+            PCaselessString name = cap->GetName();
+            name.Delete(0, name.Find('|')+1);
+            PCaselessString data = cap->GetData().Trim();
+            if (data == "true")
+              info.m_capabilities += name;
+            else if (!data.IsEmpty() && data != "false")
+              info.m_capabilities += name + '=' + data;
+          }
+        }
       }
+    }
+    else {
+      ExtractPersonInfo("urn:ietf:params:xml:ns:pidf:rpid|", element, info);
+      ExtractPersonInfo("urn:cisco:params:xml:ns:pidf:rpid|", element, info);
     }
   }
 
-  if (!info.m_tupleId.IsEmpty())
+  if (!info.m_service.IsEmpty())
     infoList.push_back(info);
 
   infoList.sort();
 
   return true;
 }
-#else // P_EXPAT
-bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo &,
-                                  list<SIPPresenceInfo> &)
-{
-  PTRACE2(1, NULL, "SIPPres\tCould not parse entity, no XML support!");
-  return false;
-}
-#endif // P_EXPAT
+#endif // OPAL_SIP_PRESENCE
+
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -2193,7 +2261,7 @@ SIPTransaction * SIPMessageHandler::CreateTransaction(OpalTransport & transport)
   SetExpire(m_originalExpireTime);
 
   SIPMessage * msg = new SIPMessage(*this, transport, m_parameters);
-  m_parameters.m_localAddress = msg->GetLocalAddress().AsString();
+  m_parameters.m_localAddress = msg->GetLocalAddress().AsQuotedString();
   return msg;
 }
 

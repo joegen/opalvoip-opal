@@ -10,10 +10,11 @@ package org.opalvoip.opal;
 
 public final class OpalPresenceStates {
   public final static OpalPresenceStates OpalPresenceAuthRequest = new OpalPresenceStates("OpalPresenceAuthRequest", OPALJNI.OpalPresenceAuthRequest_get());
-  public final static OpalPresenceStates OpalPresenceError = new OpalPresenceStates("OpalPresenceError", OPALJNI.OpalPresenceError_get());
-  public final static OpalPresenceStates OpalPresenceForbidden = new OpalPresenceStates("OpalPresenceForbidden", OPALJNI.OpalPresenceForbidden_get());
-  public final static OpalPresenceStates OpalPresenceNone = new OpalPresenceStates("OpalPresenceNone", OPALJNI.OpalPresenceNone_get());
-  public final static OpalPresenceStates OpalPresenceUnchanged = new OpalPresenceStates("OpalPresenceUnchanged", OPALJNI.OpalPresenceUnchanged_get());
+  public final static OpalPresenceStates OpalUnknownPresentity = new OpalPresenceStates("OpalUnknownPresentity", OPALJNI.OpalUnknownPresentity_get());
+  public final static OpalPresenceStates OpalPresenceError = new OpalPresenceStates("OpalPresenceError");
+  public final static OpalPresenceStates OpalPresenceForbidden = new OpalPresenceStates("OpalPresenceForbidden");
+  public final static OpalPresenceStates OpalPresenceNone = new OpalPresenceStates("OpalPresenceNone");
+  public final static OpalPresenceStates OpalPresenceUnchanged = new OpalPresenceStates("OpalPresenceUnchanged");
   public final static OpalPresenceStates OpalPresenceAvailable = new OpalPresenceStates("OpalPresenceAvailable");
   public final static OpalPresenceStates OpalPresenceUnavailable = new OpalPresenceStates("OpalPresenceUnavailable");
 
@@ -51,7 +52,7 @@ public final class OpalPresenceStates {
     swigNext = this.swigValue+1;
   }
 
-  private static OpalPresenceStates[] swigValues = { OpalPresenceAuthRequest, OpalPresenceError, OpalPresenceForbidden, OpalPresenceNone, OpalPresenceUnchanged, OpalPresenceAvailable, OpalPresenceUnavailable };
+  private static OpalPresenceStates[] swigValues = { OpalPresenceAuthRequest, OpalUnknownPresentity, OpalPresenceError, OpalPresenceForbidden, OpalPresenceNone, OpalPresenceUnchanged, OpalPresenceAvailable, OpalPresenceUnavailable };
   private static int swigNext = 0;
   private final int swigValue;
   private final String swigName;

@@ -33,14 +33,14 @@
 
 #include <ptlib.h>
 #include <opal_config.h>
-#include <sip/sipep.h>
-#include <ptlib/notifier_ext.h>
 
 
-#if P_EXPAT && OPAL_SIP
+#if OPAL_SIP_PRESENCE
 
 #include <opal/pres_ent.h>
 #include <ptclib/pxml.h>
+#include <sip/sipep.h>
+#include <ptlib/notifier_ext.h>
 
 
 class XCAPClient : public PHTTPClient
@@ -299,6 +299,6 @@ class SIP_Presentity : public OpalPresentityWithCommandThread, public PValidated
 };
 
 
-#endif // P_EXPAT && OPAL_SIP
+#endif // OPAL_SIP_PRESENCE
 
 #endif // OPAL_SIP_SIPPRES_H

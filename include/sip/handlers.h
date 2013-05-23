@@ -138,8 +138,9 @@ public:
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnTransactionFailed(SIPTransaction & transaction);
 
-  virtual void OnFailed(const SIP_PDU & response);
+//  virtual void OnFailed(const SIP_PDU & response);
   virtual void OnFailed(SIP_PDU::StatusCodes);
+  virtual void SendStatus(SIP_PDU::StatusCodes code, State state);
 
   bool ActivateState(SIPHandler::State state);
   virtual bool SendNotify(const PObject * /*body*/) { return false; }
@@ -196,8 +197,6 @@ public:
   virtual SIPTransaction * CreateTransaction(OpalTransport &);
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
 
-  virtual void OnFailed(SIP_PDU::StatusCodes r);
-
   void UpdateParameters(const SIPRegister::Params & params);
 
   const SIPRegister::Params & GetParams() const { return m_parameters; }
@@ -207,7 +206,7 @@ public:
 
 protected:
   virtual PBoolean SendRequest(SIPHandler::State state);
-  void SendStatus(SIP_PDU::StatusCodes code, State state);
+  virtual void SendStatus(SIP_PDU::StatusCodes code, State state);
   PString CreateRegisterContact(const OpalTransportAddress & address, int q);
 
   SIPRegister::Params  m_parameters;
@@ -229,7 +228,7 @@ public:
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
   virtual PBoolean OnReceivedNOTIFY(SIP_PDU & response);
-  virtual void OnFailed(const SIP_PDU & response);
+  virtual void OnFailed(SIP_PDU::StatusCodes);
   virtual SIPEventPackage GetEventPackage() const
     { return m_parameters.m_eventPackage; }
 
@@ -238,9 +237,8 @@ public:
   const SIPSubscribe::Params & GetParams() const { return m_parameters; }
 
 protected:
-  virtual PBoolean SendRequest(SIPHandler::State state);
   virtual void WriteTransaction(OpalTransport & transport, bool & succeeded);
-  void SendStatus(SIP_PDU::StatusCodes code, State state);
+  virtual void SendStatus(SIP_PDU::StatusCodes code, State state);
   bool DispatchNOTIFY(SIP_PDU & request, SIP_PDU & response);
 
   SIPSubscribe::Params     m_parameters;
@@ -424,25 +422,18 @@ class SIPHandlersList
 };
 
 
+#if OPAL_SIP_PRESENCE
+
 /** Information for SIP "presence" event package notification messages.
   */
 class SIPPresenceInfo : public OpalPresenceInfo
 {
   PCLASSINFO_WITH_CLONE(SIPPresenceInfo, OpalPresenceInfo)
+
 public:
-  SIPPresenceInfo(
-    State state = Unchanged
-  );
-
-  // basic presence defined by RFC 3863
-  PString m_tupleId;
-  PString m_contact;
-
-  // presence extensions defined by RFC 4480
-  PStringArray m_activities;  // list of activities, seperated by newline
-
   // presence agent
   PString m_presenceAgent;
+  PString m_personId;
 
   PString AsXML() const;
 
@@ -454,13 +445,19 @@ public:
   void PrintOn(ostream & strm) const;
   friend ostream & operator<<(ostream & strm, const SIPPresenceInfo & info) { info.PrintOn(strm); return strm; }
 
-  static State FromSIPActivityString(const PString & str);
-
-  static bool AsSIPActivityString(State state, PString & str);
-  bool AsSIPActivityString(PString & str) const;
-
-  PString m_personId;
+  // Constructor
+  SIPPresenceInfo(
+    State state = Unchanged
+  ) : OpalPresenceInfo(state) { }
+  SIPPresenceInfo(
+    SIP_PDU::StatusCodes status,
+    bool subscribing
+  );
+  SIPPresenceInfo(
+    const OpalPresenceInfo & info
+  ) : OpalPresenceInfo(info) { }
 };
+#endif // OPAL_SIP_PRESENCE
 
 
 /** Information for SIP "dialog" event package notification messages.

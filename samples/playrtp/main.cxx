@@ -172,8 +172,8 @@ void PlayRTP::Main()
   }
 
   if (args.HasOption('S') || args.HasOption('D') || args.HasOption('s') || args.HasOption('d')) {
-    pcap.SetFilterSrcIP(args.GetOptionString('S', PIPSocket::GetDefaultIpAny().AsString()));
-    pcap.SetFilterDstIP(args.GetOptionString('D', PIPSocket::GetDefaultIpAny().AsString()));
+    pcap.SetFilterSrcIP(PIPSocket::Address(args.GetOptionString('S', PIPSocket::GetDefaultIpAny().AsString())));
+    pcap.SetFilterDstIP(PIPSocket::Address(args.GetOptionString('D', PIPSocket::GetDefaultIpAny().AsString())));
     pcap.SetFilterSrcPort(PIPSocket::GetPortByService("udp", args.GetOptionString('s')));
     pcap.SetFilterDstPort(PIPSocket::GetPortByService("udp", args.GetOptionString('d', "5000")));
   }
