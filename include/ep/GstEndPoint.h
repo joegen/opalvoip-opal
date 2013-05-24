@@ -152,6 +152,26 @@ class GstEndPoint : public OpalLocalEndPoint
     static const PString & GetPipelineVideoSourceName();
     static const PString & GetPipelineVideoSinkName();
 #endif // OPAL_VIDEO
+
+    /// GStreamer codec partial pipelines
+    struct CodecPipelines {
+      PString m_encoder;      ///< Encoder pipeline element, e.g. "ffenc_g726 bitrate=32000"
+      PString m_packetiser;   ///< RTP packetisation element e.g. "rtph264pay config-interval=5"
+      PString m_decoder;      ///< Decoder pipeline element, e.g. "ffdec_h263"
+      PString m_depacketiser; ///< RTP depacketisation element e.g. "rtpgsmdepay"
+    };
+
+    /// Set the mapping between an OpalMediaFormat and the GStreamer pipeline text
+    void SetMapping(
+      const OpalMediaFormat & mediaFormat,  ///< Media format to map
+      const CodecPipelines & info           ///< GStreamer partial pipelines to map
+    );
+
+    /// Get the mapping between an OpalMediaFormat and the GStreamer pipeline text
+    bool GetMapping(
+      const OpalMediaFormat & mediaFormat,  ///< Media format to map
+      CodecPipelines & info                 ///< GStreamer partial pipelines to map
+    ) const;
   //@}
 
   protected:
@@ -163,15 +183,9 @@ class GstEndPoint : public OpalLocalEndPoint
 #endif // OPAL_VIDEO
 
     // Translation table
-    struct GstInfo {
-      PString m_encoder;
-      PString m_packetiser;
-      PString m_decoder;
-      PString m_depacketiser;
-    };
-    typedef map<OpalMediaFormat, GstInfo> GstInfoMap;
+    typedef map<OpalMediaFormat, CodecPipelines> CodecPipelineMap;
 
-    GstInfoMap          m_MediaFormatToGStreamer;
+    CodecPipelineMap    m_MediaFormatToGStreamer;
     OpalMediaFormatList m_mediaFormatsAvailable;
 };
 

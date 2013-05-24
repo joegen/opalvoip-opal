@@ -239,7 +239,7 @@ GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
   for (PINDEX i = 0; i < PARRAYSIZE(DefaultMediaFormatToGStreamer); ++i) {
     OpalMediaFormat mediaFormat(DefaultMediaFormatToGStreamer[i].m_mediaFormat);
     if (mediaFormat.IsValid()) {
-      GstInfo & info = m_MediaFormatToGStreamer[mediaFormat];
+      CodecPipelines & info = m_MediaFormatToGStreamer[mediaFormat];
       info.m_encoder      = DefaultMediaFormatToGStreamer[i].m_encoder;
       info.m_packetiser   = DefaultMediaFormatToGStreamer[i].m_packetiser;
       info.m_decoder      = DefaultMediaFormatToGStreamer[i].m_decoder;
@@ -263,7 +263,7 @@ GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
   for (PStringList::iterator enc = encoders.begin(); enc != encoders.end(); ++enc) {
     OpalMediaFormat mediaFormat = gstEncoderToMediaFormat(*enc);
     if (mediaFormat.IsValid()) {
-      GstInfoMap::iterator inf = m_MediaFormatToGStreamer.find(mediaFormat);
+      CodecPipelineMap::iterator inf = m_MediaFormatToGStreamer.find(mediaFormat);
       if (inf != m_MediaFormatToGStreamer.end()) {
         for (PStringList::iterator dec = decoders.begin(); dec != decoders.end(); ++dec) {
           if (inf->second.m_decoder.NumCompare(*dec)) {
@@ -496,7 +496,7 @@ bool GstEndPoint::BuildVideoSinkDevice(ostream & desc, const GstMediaStream & /*
 bool GstEndPoint::BuildEncoder(ostream & desc, const GstMediaStream & stream)
 {
   OpalMediaFormat mediaFormat = stream.GetMediaFormat();
-  GstInfoMap::iterator it = m_MediaFormatToGStreamer.find(mediaFormat);
+  CodecPipelineMap::iterator it = m_MediaFormatToGStreamer.find(mediaFormat);
   if (it == m_MediaFormatToGStreamer.end())
     return false;
 
@@ -512,7 +512,7 @@ bool GstEndPoint::BuildEncoder(ostream & desc, const GstMediaStream & stream)
 bool GstEndPoint::BuildDecoder(ostream & desc, const GstMediaStream & stream)
 {
   OpalMediaFormat mediaFormat = stream.GetMediaFormat();
-  GstInfoMap::iterator it = m_MediaFormatToGStreamer.find(mediaFormat);
+  CodecPipelineMap::iterator it = m_MediaFormatToGStreamer.find(mediaFormat);
   if (it == m_MediaFormatToGStreamer.end())
     return false;
 
@@ -521,6 +521,24 @@ bool GstEndPoint::BuildDecoder(ostream & desc, const GstMediaStream & stream)
     desc << it->second.m_depacketiser << " name=" << mediaType << "Depacketiser ! ";
   desc << it->second.m_decoder << " name=" << mediaType << "Decoder";
 
+  return true;
+}
+
+
+void GstEndPoint::SetMapping(const OpalMediaFormat & mediaFormat, const CodecPipelines & info)
+{
+  if (mediaFormat.IsValid())
+    m_MediaFormatToGStreamer[mediaFormat] = info;
+}
+
+
+bool GstEndPoint::GetMapping(const OpalMediaFormat & mediaFormat, CodecPipelines & info) const
+{
+  CodecPipelineMap::const_iterator it = m_MediaFormatToGStreamer.find(mediaFormat);
+  if (it == m_MediaFormatToGStreamer.end())
+    return false;
+
+  info = it->second;
   return true;
 }
 
