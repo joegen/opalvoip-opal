@@ -214,10 +214,11 @@ static PString GetDefaultDevice(const char * klass, const char * const * preferr
 {
   PStringArray available = PGstPluginFeature::Inspect(klass, false);
   for (size_t i = 0; i < count; ++i) {
-    if (available.GetValuesIndex(PConstString(preferred[i])) != P_MAX_INDEX) {
-      PTRACE(4, "Device set as preferred \"" << preferred[i] << "\", from possible:\n"
+    PConstString pref(preferred[i]);
+    if (available.GetValuesIndex(pref) != P_MAX_INDEX) {
+      PTRACE(4, "Device set as preferred \"" << pref << "\", from possible:\n"
              << setfill('\n') << PGstPluginFeature::Inspect(klass, true));
-      return preferred[i];
+      return pref;
     }
   }
 
