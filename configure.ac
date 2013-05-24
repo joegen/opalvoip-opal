@@ -95,23 +95,6 @@ dnl MSWIN_VERSION version,OPAL_VERSION=VERSION
 MY_VERSION_FILE([$VERSION_DIR/version.h], [OPAL])
 
 
-dnl ################################
-dnl Special options
-
-AC_RUN_IFELSE(
-   [AC_LANG_PROGRAM(
-      [#include <stdlib.h>],
-      [
-         unsigned int val = 0x00000FF0;
-         if (__builtin_clz(val) == 20)
-            return 0;
-         return 1;
-      ]
-   )],
-   [AC_DEFINE([GCC_HAS_CLZ], [1], [bit scan intrinsic])]
-)
-
-
 dnl ########################################################################
 dnl Check for PTLib
 
@@ -458,6 +441,32 @@ OPAL_SIMPLE_OPTION(presence,OPAL_HAS_PRESENCE, [whether to enable presence suppo
 dnl MSWIN_DISPLAY  script,Script language interface
 dnl MSWIN_DEFINE   script,OPAL_SCRIPT
 OPAL_SIMPLE_OPTION(script,OPAL_SCRIPT, [script language support])
+
+
+dnl ################################
+dnl Special options
+
+AC_MSG_CHECKING(bit scan intrinsic);
+if test "$cross_compiling" = "no"; then
+   AC_RUN_IFELSE(
+      [AC_LANG_PROGRAM(
+         [#include <stdlib.h>],
+         [
+            unsigned int val = 0x00000FF0;
+            if (__builtin_clz(val) == 20)
+               return 0;
+            return 1;
+         ]
+      )],
+      [
+         AC_MSG_RESULT(yes)
+         AC_DEFINE([GCC_HAS_CLZ], [1], [bit scan intrinsic])
+      ],
+      [AC_MSG_RESULT(no)]
+   )
+else
+   AC_MSG_RESULT([no (cross compiling)])
+fi
 
 
 dnl ########################################################################
