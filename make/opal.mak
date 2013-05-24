@@ -42,6 +42,13 @@ else ifndef OPALDIR
   OPAL_INCFLAGS := $(shell pkg-config opal --cflags-only-I)
   OPAL_LIBDIR := $(shell pkg-config opal --variable=libdir)
 else
+  ifeq (,$(target))
+    ifneq (,$(OS))
+      ifneq (,$(CPU))
+        target = $(OS)_$(CPU)
+      endif
+    endif
+  endif
   ifneq (,$(wildcard $(OPALDIR)/lib_$(target)/make/$(OPAL_CONFIG_MAK)))
     include $(OPALDIR)/lib_$(target)/make/$(OPAL_CONFIG_MAK)
   else
