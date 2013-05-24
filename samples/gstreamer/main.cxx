@@ -30,9 +30,7 @@
 #include "main.h"
 
 
-// Debug: -ttttodebugstream file:../callgen/ogm.wav sip:10.0.1.12
-//        -ttttodebugstream "repeat=10;file:../callgen/ogm.wav"
-//        -ttttodebugstream file:test.vxml
+// Debug: -tttttodebugstream --video-source videotestsrc -P G.711* -P H.263plus -D H.264* -D VP* -D RFC* -S "udp$10.0.1.11:25060" --map --decoder fake264dec --encoder fake264enc H.264-1 -- --map --decoder fake263dec --encoder fake263enc H.263 -- sip:10.0.1.11
 
 
 extern const char Manufacturer[] = "Vox Gratia";
@@ -50,6 +48,11 @@ PString MyManager::GetArgumentSpec() const
          "-video-source: Video source device in pipeline (autovideosrc)\n"
          "-video-sink:   Video sink device in pipeline (autovideosink)\n"
 #endif // OPAL_VIDEO
+         "-map.          Begin a mapping from Media Format to GStreamer pipeline\n"
+         "-encoder:      Set encoder for mapping.\n"
+         "-decoder:      Set decoder for mapping.\n"
+         "-packetiser:   Set packetiser for mapping\n"
+         "-depacketiser:  Set de-packetiser for mapping.\n"
          + OpalManagerConsole::GetArgumentSpec();
 }
 
@@ -60,7 +63,7 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
     return false;
 
   // Set up GStreamer
-  MyGstEndPoint * gst  = new MyGstEndPoint(*this);
+  GstEndPoint * gst  = new GstEndPoint(*this);
   gst->SetAudioSourceDevice(args.GetOptionString("audio-source", gst->GetAudioSourceDevice()));
   gst->SetAudioSinkDevice(args.GetOptionString("audio-sink", gst->GetAudioSinkDevice()));
 #if OPAL_VIDEO
@@ -69,6 +72,33 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
 #endif // OPAL_VIDEO
 
   cout << "GStreamer Supported Media Formats: " << setfill(',') << gst->GetMediaFormats() << setfill(' ') << endl;
+
+  while (args.HasOption("map")) {
+    if (args.GetCount() == 0) {
+      cerr << "No media format specified for mapping\n";
+      return false;
+    }
+    OpalMediaFormat mediaFormat(args[0]);
+    if (!mediaFormat.IsValid()) {
+      cerr << "No media format of name \"" << args[0] << '"' << endl;
+      return false;
+    }
+
+    GstEndPoint::CodecPipelines pipes;
+    gst->GetMapping(mediaFormat, pipes);
+
+    if (args.HasOption("encoder"))
+      pipes.m_encoder = args.GetOptionString("encoder");
+    if (args.HasOption("decoder"))
+      pipes.m_decoder = args.GetOptionString("decoder");
+    if (args.HasOption("packetiser"))
+      pipes.m_packetiser = args.GetOptionString("packetiser");
+    if (args.HasOption("depacketiser"))
+      pipes.m_depacketiser = args.GetOptionString("depacketiser");
+
+    if (!args.Parse())
+      break;
+  }
 
   if (args.GetCount() == 0)
     cout << "Awaiting incoming call ... " << flush;
@@ -85,8 +115,17 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
 
 void MyManager::Usage(ostream & strm, const PArgList & args)
 {
-  args.Usage(strm, "[ options ] [ url ]");
-
+  args.Usage(strm, "[ options ] [ mapping -- [ mapping -- ] ] [ url ]")
+    << "\n\n"
+       "The mapping sections allow for configuring the GStream pipeline segments for\n"
+       "Media Formats. IT always begins with --map and has four options to set the\n"
+       "encoder, decoder, packetiser, depacketiser respectively, followed by the\n"
+       "media format name. A \"--\" separates each mapping, and the mapping from the\n"
+       "final argument(s) being the URL(s) to call.\n"
+       "\n"
+       "Example:\n"
+       "  --video-source videotestsrc --map --encoder my264enc H.264-1 -- --map --decoder my263dec H.263 -- sip:10.0.1.11\n"
+       "\n";
 }
 
 
