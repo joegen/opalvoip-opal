@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A3E44BAF174F2FF1005DF2B6 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3E44BAD174F2FF1005DF2B6 /* AudioToolbox.framework */; };
+		A3E44BB2174F302F005DF2B6 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3E44BB1174F302F005DF2B6 /* CoreAudio.framework */; };
+		A3E44BB4174F303A005DF2B6 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3E44BB3174F303A005DF2B6 /* SystemConfiguration.framework */; };
+		A3E44BB6174F306D005DF2B6 /* libresolv.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = A3E44BB5174F306D005DF2B6 /* libresolv.dylib */; };
 		A3F5BCC7170D448600FB97F9 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3F5BCC6170D448600FB97F9 /* UIKit.framework */; };
 		A3F5BCC9170D448600FB97F9 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3F5BCC8170D448600FB97F9 /* Foundation.framework */; };
 		A3F5BCCB170D448600FB97F9 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3F5BCCA170D448600FB97F9 /* CoreGraphics.framework */; };
@@ -21,6 +25,11 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A3E44BAD174F2FF1005DF2B6 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		A3E44BAE174F2FF1005DF2B6 /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
+		A3E44BB1174F302F005DF2B6 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
+		A3E44BB3174F303A005DF2B6 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
+		A3E44BB5174F306D005DF2B6 /* libresolv.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libresolv.dylib; path = usr/lib/libresolv.dylib; sourceTree = SDKROOT; };
 		A3F5BCC3170D448600FB97F9 /* iOPAL.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iOPAL.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A3F5BCC6170D448600FB97F9 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		A3F5BCC8170D448600FB97F9 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -44,6 +53,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A3E44BB6174F306D005DF2B6 /* libresolv.dylib in Frameworks */,
+				A3E44BB4174F303A005DF2B6 /* SystemConfiguration.framework in Frameworks */,
+				A3E44BB2174F302F005DF2B6 /* CoreAudio.framework in Frameworks */,
+				A3E44BAF174F2FF1005DF2B6 /* AudioToolbox.framework in Frameworks */,
 				A3F5BCC7170D448600FB97F9 /* UIKit.framework in Frameworks */,
 				A3F5BCC9170D448600FB97F9 /* Foundation.framework in Frameworks */,
 				A3F5BCCB170D448600FB97F9 /* CoreGraphics.framework in Frameworks */,
@@ -56,6 +69,11 @@
 		A3F5BCBA170D448600FB97F9 = {
 			isa = PBXGroup;
 			children = (
+				A3E44BB5174F306D005DF2B6 /* libresolv.dylib */,
+				A3E44BB3174F303A005DF2B6 /* SystemConfiguration.framework */,
+				A3E44BB1174F302F005DF2B6 /* CoreAudio.framework */,
+				A3E44BAD174F2FF1005DF2B6 /* AudioToolbox.framework */,
+				A3E44BAE174F2FF1005DF2B6 /* AudioUnit.framework */,
 				A3F5BCCC170D448600FB97F9 /* src */,
 				A3F5BCC5170D448600FB97F9 /* Frameworks */,
 				A3F5BCC4170D448600FB97F9 /* Products */,
@@ -214,7 +232,7 @@
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -229,6 +247,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
 				ONLY_ACTIVE_ARCH = YES;
+				PROVISIONING_PROFILE = "";
 				SDKROOT = iphoneos;
 			};
 			name = Debug;
@@ -245,7 +264,7 @@
 				CLANG_WARN_ENUM_CONVERSION = YES;
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				COPY_PHASE_STRIP = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
@@ -253,6 +272,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 6.1;
 				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
+				PROVISIONING_PROFILE = "";
 				SDKROOT = iphoneos;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -261,16 +281,21 @@
 		A3F5BCE7170D448700FB97F9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LIBRARY = "libstdc++";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "src/iOPAL-Prefix.pch";
 				HEADER_SEARCH_PATHS = ../../include;
 				INFOPLIST_FILE = "src/iOPAL-Info.plist";
-				LIBRARY_SEARCH_PATHS = (
-					../../lib_iPhoneSimulator_x86,
-					"\"$(SRCROOT)/../../lib_iPhoneSimulator_x86\"",
+				LIBRARY_SEARCH_PATHS = "\"$(SRCROOT)/../../lib_iPhoneSimulator_x86\"";
+				"LIBRARY_SEARCH_PATHS[sdk=iphoneos*][arch=armv7]" = (
+					"\"$(SRCROOT)/../../lib_iPhoneOS_armv7\"",
+					"\"$(SRCROOT)/../../../ptlib/lib_iPhoneOS_armv7\"",
 				);
 				OTHER_LDFLAGS = "-lopal_d";
-				"PRELINK_LIBS[arch=*]" = "";
+				"OTHER_LDFLAGS[sdk=iphoneos*]" = (
+					"-lopal_d_s",
+					"-lpt_d_s",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -279,15 +304,21 @@
 		A3F5BCE8170D448700FB97F9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_CXX_LIBRARY = "libstdc++";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "src/iOPAL-Prefix.pch";
 				HEADER_SEARCH_PATHS = ../../include;
 				INFOPLIST_FILE = "src/iOPAL-Info.plist";
-				LIBRARY_SEARCH_PATHS = (
-					../../lib_iPhoneSimulator_x86,
-					"\"$(SRCROOT)/../../lib_iPhoneSimulator_x86\"",
+				LIBRARY_SEARCH_PATHS = "\"$(SRCROOT)/../../lib_iPhoneSimulator_x86\"";
+				"LIBRARY_SEARCH_PATHS[sdk=iphoneos*][arch=armv7s]" = (
+					"\"$(SRCROOT)/../../lib_iPhoneOS_armv7\"",
+					"\"$(SRCROOT)/../../../ptlib/lib_iPhoneOS_armv7\"",
 				);
 				OTHER_LDFLAGS = "-lopal";
+				"OTHER_LDFLAGS[sdk=iphoneos*]" = (
+					"-lopal_s",
+					"-lpt_s",
+				);
 				PRELINK_LIBS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
