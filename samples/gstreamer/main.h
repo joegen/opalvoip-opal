@@ -35,15 +35,6 @@
 #endif
 
 
-class MyGstEndPoint : public GstEndPoint
-{
-    PCLASSINFO(MyGstEndPoint, GstEndPoint)
-
-  public:
-    MyGstEndPoint(OpalManager & manager) : GstEndPoint(manager) { }
-};
-
-
 class MyManager : public OpalManagerConsole
 {
     PCLASSINFO(MyManager, OpalManagerConsole)
