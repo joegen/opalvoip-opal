@@ -5543,11 +5543,11 @@ static void TestResult(vector<int64_t> & times, size_t base)
   }
   variance /= times.size() - base - 1;
 
-  ostringstream text;
+  PStringStream text;
   text << "Test completed:\n" << fixed << setprecision(2)
   << "average=" << average << " ms, "
   "deviation=" << sqrt(variance) << " ms";
-  wxMessageBox(text.str(), OpenPhoneString, wxOK);
+  wxMessageBox(PwxString(text), OpenPhoneString, wxOK);
 }
 
 
