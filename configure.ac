@@ -116,7 +116,7 @@ dnl ########################################################################
 dnl Check for PTLib
 
 if test "x$PTLIBDIR" != "x" ; then
-   PKG_CONFIG_PATH=$PTLIBDIR/lib_$target:$PTLIBDIR
+   export PKG_CONFIG_PATH=$PTLIBDIR/lib_$target:$PTLIBDIR:$PKG_CONFIG_PATH
    AC_MSG_NOTICE(PTLIBDIR environment variable detected as $PTLIBDIR)
 fi
 
@@ -133,6 +133,8 @@ PKG_CHECK_MODULES(
 if test "x`pkg-config ptlib --variable=target`" != "x$target" ; then
    AC_MSG_ERROR([
       PTLib is not for the same target platform!
+      Local target=$target
+      PTLib target=`pkg-config ptlib --variable=target`
       PKG_CONFIG_PATH=$PKG_CONFIG_PATH
    ])
 fi
