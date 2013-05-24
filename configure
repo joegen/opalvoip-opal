@@ -5349,42 +5349,6 @@ $as_echo "$as_me: \"OPAL version is $version\"" >&6;}
 
 
 
-if test "$cross_compiling" = yes; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "cannot run test program while cross compiling
-See \`config.log' for more details" "$LINENO" 5; }
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <stdlib.h>
-int
-main ()
-{
-
-         unsigned int val = 0x00000FF0;
-         if (__builtin_clz(val) == 20)
-            return 0;
-         return 1;
-
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_run "$LINENO"; then :
-
-$as_echo "#define GCC_HAS_CLZ 1" >>confdefs.h
-
-
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
-  conftest.$ac_objext conftest.beam conftest.$ac_ext
-fi
-
-
-
-
 if test "x$PTLIBDIR" != "x" ; then
    export PKG_CONFIG_PATH=$PTLIBDIR/lib_$target:$PTLIBDIR:$PKG_CONFIG_PATH
    { $as_echo "$as_me:${as_lineno-$LINENO}: PTLIBDIR environment variable detected as $PTLIBDIR" >&5
@@ -9319,6 +9283,56 @@ fi
    enable_script="$enableval"
 
 
+
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking bit scan intrinsic" >&5
+$as_echo_n "checking bit scan intrinsic... " >&6; };
+if test "$cross_compiling" = "no"; then
+   if test "$cross_compiling" = yes; then :
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "cannot run test program while cross compiling
+See \`config.log' for more details" "$LINENO" 5; }
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <stdlib.h>
+int
+main ()
+{
+
+            unsigned int val = 0x00000FF0;
+            if (__builtin_clz(val) == 20)
+               return 0;
+            return 1;
+
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define GCC_HAS_CLZ 1" >>confdefs.h
+
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+else
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no (cross compiling)" >&5
+$as_echo "no (cross compiling)" >&6; }
+fi
 
 
 
