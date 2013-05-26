@@ -166,9 +166,9 @@ class OpalCapiEndPoint : public OpalEndPoint
     ControllerVector m_controllers;
     PMutex           m_controllerMutex;
 
-    struct IdToConnMap : public std::map<DWORD, PSafePtr<OpalCapiConnection> >
+    struct IdToConnMap : public std::map<unsigned, PSafePtr<OpalCapiConnection> >
     {
-      bool Forward(const OpalCapiMessage & message, DWORD id);
+      bool Forward(const OpalCapiMessage & message, unsigned id);
       PMutex m_mutex;
     };
 
