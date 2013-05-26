@@ -529,7 +529,7 @@ OpalCapiEndPoint::OpalCapiEndPoint(OpalManager & manager)
   PTRACE(4, "CAPI\tOpalCapiEndPoint created");
 
   OpalCapiFunctions::ApplID id = 0;
-  DWORD err = m_capi->REGISTER(MaxLineCount*MaxBlockCount*MaxBlockSize+1024,
+  OpalCapiFunctions::Result err = m_capi->REGISTER(MaxLineCount*MaxBlockCount*MaxBlockSize+1024,
                                MaxLineCount, MaxBlockCount, MaxBlockSize, &id);
   switch (err) {
     case CapiNoError :
@@ -633,11 +633,11 @@ PString OpalCapiEndPoint::GetDriverInfo() const
     return PString::Empty();
 
   OpalCapiProfile profile;
-  DWORD capiversion_min;
-  DWORD capiversion_maj;
-  DWORD manufacturerversion_min;
-  DWORD manufacturerversion_maj;
-  DWORD InstalledControllers;
+  OpalCapiFunctions::UInt capiversion_min;
+  OpalCapiFunctions::UInt capiversion_maj;
+  OpalCapiFunctions::UInt manufacturerversion_min;
+  OpalCapiFunctions::UInt manufacturerversion_maj;
+  OpalCapiFunctions::UInt installedControllers;
   char szBuffer[64] = "";
   PStringStream str;
 
@@ -648,11 +648,11 @@ PString OpalCapiEndPoint::GetDriverInfo() const
   str << "CAPI_version=" << capiversion_maj << '.' << capiversion_min << '(' << manufacturerversion_maj << '.' << manufacturerversion_min << ")\n";
 
   m_capi->GET_PROFILE(&profile, 0);
-  InstalledControllers = profile.m_NumControllers;
-  if (InstalledControllers > 30)
-    InstalledControllers = 1;
-  str << "ISDN_controllers=" << InstalledControllers << '\n';
-  for (DWORD controller = 1; controller <= InstalledControllers; ++controller) {
+  installedControllers = profile.m_NumControllers;
+  if (installedControllers > 30)
+    installedControllers = 1;
+  str << "ISDN_controllers=" << installedControllers << '\n';
+  for (OpalCapiFunctions::UInt controller = 1; controller <= installedControllers; ++controller) {
     m_capi->GET_PROFILE(&profile, controller);
     str << "Controller#_" << controller << "_NumB=" << profile.m_NumBChannels << '\n';
   }
@@ -794,7 +794,7 @@ void OpalCapiEndPoint::ProcessMessages(PThread &, P_INT_PTR)
 }
 
 
-bool OpalCapiEndPoint::IdToConnMap::Forward(const OpalCapiMessage & message, DWORD id)
+bool OpalCapiEndPoint::IdToConnMap::Forward(const OpalCapiMessage & message, unsigned id)
 {
   PSafePtr<OpalCapiConnection> connection;
 
@@ -890,7 +890,7 @@ bool OpalCapiEndPoint::PutMessage(OpalCapiMessage & message)
 {
   PTRACE(message.header.m_Command == CAPI_DATA_B3 ? 6 : 4, "CAPI\tSending message " << message);
   message.header.m_ApplId = (WORD)m_applicationId;
-  DWORD err = m_capi->PUT_MESSAGE(m_applicationId, &message);
+  OpalCapiFunctions::UInt err = m_capi->PUT_MESSAGE(m_applicationId, &message);
   PTRACE_IF(2, err != CapiNoError, "CAPI\tPUT_MESSAGE error 0x" << hex << err);
   return err == CapiNoError;
 }
