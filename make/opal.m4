@@ -107,7 +107,7 @@ AC_DEFUN([OPAL_SIMPLE_PLUGIN],[
          ]
       )
       if test "x$HAVE_$1" = "xyes" ; then
-         PLUGIN_SUBDIRS+=" $4"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $4"
       fi
    else
       HAVE_$1="no (missing directory $4)"
@@ -121,13 +121,13 @@ AC_DEFUN([OPAL_SYSTEM_PLUGIN],[
    if test -d "$4" ; then
       MY_MODULE_OPTION([$1],[$2],[$3],[$5],[$6],[$7],[$8],[$9],[$10],[$11],[$12],[$13],[$14],[$15])
       if test "x$$1[_SYSTEM]" = "xno" ; then
-         PLUGIN_SUBDIRS+=" $4"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $4"
          HAVE_$1="yes (internal)"
       else
          if test "x$usable" = "xyes" ; then
             AC_SUBST($1[_CFLAGS])
             AC_SUBST($1[_LIBS])
-            PLUGIN_SUBDIRS+=" $4"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $4"
 
             if test "x$$1[_SYSTEM]" = "xyes" ; then
                HAVE_$1="yes (system)"
