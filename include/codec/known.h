@@ -52,7 +52,7 @@
 
 #define OPAL_G711_ULAW_64K  "G.711-uLaw-64k"
 #define OPAL_G711_ALAW_64K  "G.711-ALaw-64k"
-#define OPAL_G722           "G.722"
+#define OPAL_G722           "G.722-64k"
 #define OPAL_G7221          OPAL_G7221_32K
 #define OPAL_G7221_24K      "G.722.1-24K"
 #define OPAL_G7221_32K      "G.722.1-32K"

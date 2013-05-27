@@ -133,29 +133,22 @@
             </Component>
             <Component Id='AVCODEC' Guid='*'>
               <File Id='AVCODEC_DLL'
-                    Name='avcodec-52.dll'
-                    Source='$(var.PluginDir)\avcodec-52.dll'
+                    Name='avcodec-54.dll'
+                    Source='$(var.PluginDir)\avcodec-54.dll'
                     DiskId='1'
                     KeyPath='yes' />
             </Component>
             <Component Id='AVUTIL' Guid='*'>
               <File Id='AVUTIL_DLL'
-                    Name='avutil-50.dll'
-                    Source='$(var.PluginDir)\avutil-50.dll'
-                    DiskId='1'
-                    KeyPath='yes' />
-            </Component>
-            <Component Id='AVCORE' Guid='*'>
-              <File Id='AVCORE_DLL'
-                    Name='avcore-0.dll'
-                    Source='$(var.PluginDir)\avcore-0.dll'
+                    Name='avutil-52.dll'
+                    Source='$(var.PluginDir)\avutil-52.dll'
                     DiskId='1'
                     KeyPath='yes' />
             </Component>
             <Component Id='x264' Guid='*'>
               <File Id='x264_DLL'
-                    Name='libx264-124.dll'
-                    Source='$(var.PluginDir)\libx264-124.dll'
+                    Name='libx264-132.dll'
+                    Source='$(var.PluginDir)\libx264-132.dll'
                     DiskId='1'
                     KeyPath='yes' />
             </Component>
@@ -311,7 +304,6 @@
       <ComponentRef Id='MPEG4' />
       <ComponentRef Id='AVCODEC' />
       <ComponentRef Id='AVUTIL' />
-      <ComponentRef Id='AVCORE' />
       <ComponentRef Id='x264' />
       <ComponentRef Id='x264_helper' />
       <ComponentRef Id='SpanDSPFax' />
