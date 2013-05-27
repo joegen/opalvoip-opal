@@ -5735,7 +5735,7 @@ else
 fi
 
       if test "x$HAVE_SILK" = "xyes" ; then
-         PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/audio/SILK"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/SILK"
       fi
    else
       HAVE_SILK="no (missing directory $PLUGIN_SRC_DIR/audio/SILK)"
@@ -5762,7 +5762,7 @@ else
 fi
 
       if test "x$HAVE_GSMAMR" = "xyes" ; then
-         PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/audio/gsm-amr"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/gsm-amr"
       fi
    else
       HAVE_GSMAMR="no (missing directory $PLUGIN_SRC_DIR/audio/gsm-amr)"
@@ -5789,7 +5789,7 @@ else
 fi
 
       if test "x$HAVE_G726" = "xyes" ; then
-         PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/audio/G726"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/G726"
       fi
    else
       HAVE_G726="no (missing directory $PLUGIN_SRC_DIR/audio/G726)"
@@ -5816,7 +5816,7 @@ else
 fi
 
       if test "x$HAVE_IMA_ADPCM" = "xyes" ; then
-         PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/audio/IMA_ADPCM"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/IMA_ADPCM"
       fi
    else
       HAVE_IMA_ADPCM="no (missing directory $PLUGIN_SRC_DIR/audio/IMA_ADPCM)"
@@ -5843,7 +5843,7 @@ else
 fi
 
       if test "x$HAVE_G722" = "xyes" ; then
-         PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/audio/G722"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/G722"
       fi
    else
       HAVE_G722="no (missing directory $PLUGIN_SRC_DIR/audio/G722)"
@@ -5870,7 +5870,7 @@ else
 fi
 
       if test "x$HAVE_G7221" = "xyes" ; then
-         PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/audio/G.722.1"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/G.722.1"
       fi
    else
       HAVE_G7221="no (missing directory $PLUGIN_SRC_DIR/audio/G.722.1)"
@@ -5897,7 +5897,7 @@ else
 fi
 
       if test "x$HAVE_G7222" = "xyes" ; then
-         PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/audio/G.722.2"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/G.722.2"
       fi
    else
       HAVE_G7222="no (missing directory $PLUGIN_SRC_DIR/audio/G.722.2)"
@@ -5924,7 +5924,7 @@ else
 fi
 
       if test "x$HAVE_LPC10" = "xyes" ; then
-         PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/audio/LPC_10"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/LPC_10"
       fi
    else
       HAVE_LPC10="no (missing directory $PLUGIN_SRC_DIR/audio/LPC_10)"
@@ -6172,13 +6172,13 @@ $as_echo "$as_me: Using internal source for GSM 06.10 audio codec" >&6;}
 
 
       if test "x$GSM_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/audio/GSM0610"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/GSM0610"
          HAVE_GSM="yes (internal)"
       else
          if test "x$usable" = "xyes" ; then
 
 
-            PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/audio/GSM0610"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/GSM0610"
 
             if test "x$GSM_SYSTEM" = "xyes" ; then
                HAVE_GSM="yes (system)"
@@ -6438,13 +6438,13 @@ $as_echo "$as_me: Using internal source for iLBC audio codec" >&6;}
 
 
       if test "x$ILBC_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/audio/iLBC"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/iLBC"
          HAVE_ILBC="yes (internal)"
       else
          if test "x$usable" = "xyes" ; then
 
 
-            PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/audio/iLBC"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/iLBC"
 
             if test "x$ILBC_SYSTEM" = "xyes" ; then
                HAVE_ILBC="yes (system)"
@@ -6701,13 +6701,13 @@ $as_echo "$as_me: Using internal source for Speex audio codec" >&6;}
 
 
       if test "x$SPEEX_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/audio/Speex"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/Speex"
          HAVE_SPEEX="yes (internal)"
       else
          if test "x$usable" = "xyes" ; then
 
 
-            PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/audio/Speex"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/Speex"
 
             if test "x$SPEEX_SYSTEM" = "xyes" ; then
                HAVE_SPEEX="yes (system)"
@@ -6940,13 +6940,13 @@ fi
 
 
       if test "x$SBC_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/audio/SBC/bluez_sbc"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/SBC/bluez_sbc"
          HAVE_SBC="yes (internal)"
       else
          if test "x$usable" = "xyes" ; then
 
 
-            PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/audio/SBC/bluez_sbc"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/SBC/bluez_sbc"
 
             if test "x$SBC_SYSTEM" = "xyes" ; then
                HAVE_SBC="yes (system)"
@@ -7166,13 +7166,13 @@ fi
 
 
       if test "x$CELT_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/audio/celt"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/celt"
          HAVE_CELT="yes (internal)"
       else
          if test "x$usable" = "xyes" ; then
 
 
-            PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/audio/celt"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/celt"
 
             if test "x$CELT_SYSTEM" = "xyes" ; then
                HAVE_CELT="yes (system)"
@@ -7211,7 +7211,7 @@ else
 fi
 
       if test "x$HAVE_H261" = "xyes" ; then
-         PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/video/H.261-vic"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/H.261-vic"
       fi
    else
       HAVE_H261="no (missing directory $PLUGIN_SRC_DIR/video/H.261-vic)"
@@ -7803,7 +7803,7 @@ else
 fi
 
       if test "x$HAVE_H263" = "xyes" ; then
-         PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/video/H.263-1998"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/H.263-1998"
       fi
    else
       HAVE_H263="no (missing directory $PLUGIN_SRC_DIR/video/H.263-1998)"
@@ -7830,7 +7830,7 @@ else
 fi
 
       if test "x$HAVE_MPEG4" = "xyes" ; then
-         PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/video/MPEG4-ffmpeg"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/MPEG4-ffmpeg"
       fi
    else
       HAVE_MPEG4="no (missing directory $PLUGIN_SRC_DIR/video/MPEG4-ffmpeg)"
@@ -8078,13 +8078,13 @@ fi
 
 
       if test "x$X264_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/video/H.264"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/H.264"
          HAVE_X264="yes (internal)"
       else
          if test "x$usable" = "xyes" ; then
 
 
-            PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/video/H.264"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/H.264"
 
             if test "x$X264_SYSTEM" = "xyes" ; then
                HAVE_X264="yes (system)"
@@ -8326,13 +8326,13 @@ fi
 
 
       if test "x$VP8_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/video/VP8-WebM"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/VP8-WebM"
          HAVE_VP8="yes (internal)"
       else
          if test "x$usable" = "xyes" ; then
 
 
-            PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/video/VP8-WebM"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/VP8-WebM"
 
             if test "x$VP8_SYSTEM" = "xyes" ; then
                HAVE_VP8="yes (system)"
@@ -8568,13 +8568,13 @@ fi
 
 
       if test "x$THEORA_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/video/THEORA"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/THEORA"
          HAVE_THEORA="yes (internal)"
       else
          if test "x$usable" = "xyes" ; then
 
 
-            PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/video/THEORA"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/THEORA"
 
             if test "x$THEORA_SYSTEM" = "xyes" ; then
                HAVE_THEORA="yes (system)"
@@ -8809,13 +8809,13 @@ fi
 
 
       if test "x$VPB_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/LID/VPB"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/LID/VPB"
          HAVE_VPB="yes (internal)"
       else
          if test "x$usable" = "xyes" ; then
 
 
-            PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/LID/VPB"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/LID/VPB"
 
             if test "x$VPB_SYSTEM" = "xyes" ; then
                HAVE_VPB="yes (system)"
@@ -9053,13 +9053,13 @@ fi
 
 
       if test "x$SPANDSP_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/fax/fax_spandsp"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/fax/fax_spandsp"
          HAVE_SPANDSP="yes (internal)"
       else
          if test "x$usable" = "xyes" ; then
 
 
-            PLUGIN_SUBDIRS+=" $PLUGIN_SRC_DIR/fax/fax_spandsp"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/fax/fax_spandsp"
 
             if test "x$SPANDSP_SYSTEM" = "xyes" ; then
                HAVE_SPANDSP="yes (system)"
