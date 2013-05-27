@@ -1264,15 +1264,18 @@ bool MyManager::Initialise(bool startMinimised)
   if (codecIndex > 0)
     ApplyMediaInfo();
   else {
+    PStringSet mediaFormatMask = GetMediaFormatMask();
     PStringArray mediaFormatOrder = GetMediaFormatOrder();
     for (PINDEX i = 0; i < mediaFormatOrder.GetSize(); i++) {
+      if (mediaFormatMask.Contains(mediaFormatOrder[i]))
+        continue;
       for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
         if (mm->mediaFormat == mediaFormatOrder[i])
           mm->preferenceOrder = codecIndex++;
       }
     }
     for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
-      if (mm->preferenceOrder < 0)
+      if (!mediaFormatMask.Contains(mm->mediaFormat.GetName()) && mm->preferenceOrder < 0)
         mm->preferenceOrder = codecIndex++;
     }
     m_mediaInfo.sort();
