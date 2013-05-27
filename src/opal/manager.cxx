@@ -87,7 +87,8 @@ static const char * const DefaultMediaFormatOrder[] = {
   OPAL_H264_MODE1,  // Packetisation mode 1
   OPAL_H264_MODE0,  // Packetisation mode 0
   OPAL_MPEG4,
-  OPAL_H263 "*",
+  OPAL_H263plus
+  OPAL_H263,
   OPAL_H261,
 #endif
 #if OPAL_HAS_SIPIM
@@ -102,6 +103,8 @@ static const char * const DefaultMediaFormatOrder[] = {
 };
 
 static const char * const DefaultMediaFormatMask[] = {
+  OPAL_iLBC"-13k3",
+  OPAL_iLBC"-15k2",
 #if OPAL_RFC4175
   OPAL_RFC4175_YCbCr420,
   OPAL_RFC4175_RGB,
