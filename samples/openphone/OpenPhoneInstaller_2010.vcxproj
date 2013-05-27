@@ -33,6 +33,9 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\plugins\audio\G.722.1\G.722.1_2010.vcxproj">
+      <Project>{3c127609-b3a6-47fd-9b94-8fd2cb2d6623}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\plugins\audio\G.722.2\G.722.2_2010.vcxproj">
       <Project>{b68ca250-5801-4f0c-87cd-bb9a73fa934a}</Project>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
@@ -41,6 +44,12 @@
     <ProjectReference Include="..\..\plugins\audio\G.722.2\G.722.2_2010.vcxproj">
       <Project>{b68ca250-5801-4f0c-87cd-bb9a73fa934a}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\plugins\audio\G722\G722_2010.vcxproj">
+      <Project>{b247d5f5-2052-4bbd-9a7d-1ad3749a3bc3}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\plugins\audio\G726\G726_2010.vcxproj">
+      <Project>{269da9ef-526d-46de-aa69-d39efbcb29c0}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\plugins\audio\gsm-amr\gsmamr_2010.vcxproj">
       <Project>{92e9fa1e-2925-42fd-8226-a07cbd237e18}</Project>
@@ -153,7 +162,9 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <None Include="version.wxs" />
+    <None Include="version.wxs">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="version.wxs.in" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
