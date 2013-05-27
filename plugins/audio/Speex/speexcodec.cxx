@@ -30,7 +30,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
+
+#ifndef _MSC_VER
+#include <stdint.h> // It's not required on MSVC
+#endif
 
 #ifndef PLUGIN_CODEC_DLL_EXPORTS
 #include "plugin-config.h"
