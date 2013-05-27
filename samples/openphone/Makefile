@@ -35,6 +35,15 @@ VERSION_FILE    := version.h
 .DEFAULT_GOAL := bundle
 
 WX_CONFIG := wx-config
+WXRC := wxrc
+ifeq (,$(shell which $(WX_CONFIG) 2>&1))
+  WX_CONFIG := wxgtk2u-2.8-config
+  WXRC := wxrc-gtk2u-2.8
+  ifeq (,$(shell which $(WX_CONFIG) 2>&1))
+    $(error Could not find wx-config)
+  endif
+endif
+
 ifneq (,$(DEBUG_BUILD))
   WX_CONFIG += --debug=$(DEBUG_BUILD)
 endif
@@ -50,7 +59,7 @@ endif
 
 
 openphone.cxx : openphone.xrc
-	wxrc openphone.xrc -c -o openphone.cxx
+	$(WXRC) openphone.xrc -c -o openphone.cxx
 
 
 ifeq ($(DEBUG_BUILD),yes)
