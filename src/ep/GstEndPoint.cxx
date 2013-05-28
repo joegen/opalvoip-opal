@@ -237,6 +237,8 @@ GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
   , m_videoSinkDevice(GetDefaultDevice("Sink/Video", PreferredVideoSinkDevice, PARRAYSIZE(PreferredVideoSinkDevice)))
 #endif // OPAL_VIDEO
 {
+  OpalMediaFormat::RegisterKnownMediaFormats(); // Make sure codecs are loaded
+
   for (PINDEX i = 0; i < PARRAYSIZE(DefaultMediaFormatToGStreamer); ++i) {
     OpalMediaFormat mediaFormat(DefaultMediaFormatToGStreamer[i].m_mediaFormat);
     if (mediaFormat.IsValid()) {
