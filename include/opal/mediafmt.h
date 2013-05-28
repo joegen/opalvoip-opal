@@ -1214,6 +1214,14 @@ class OpalMediaFormat : public PContainer
       OpalMediaFormatList & copy    ///<  List to receive the copy of the master list
     );
 
+    /**Register all "known" media formats.
+       If an application has some other mechanism of taking encoded media, the
+       codec plug ins may not be used. In which case media formats that OPAL
+       knows how to interpret, but not transcode, may be registered with this
+       function.
+      */
+    static void RegisterKnownMediaFormats();
+
     /**Set the options on the master format list entry.
        The media format must already be registered. Returns false if not.
       */
