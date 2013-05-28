@@ -84,17 +84,18 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
       return false;
     }
 
-    GstEndPoint::CodecPipelines pipes;
-    gst->GetMapping(mediaFormat, pipes);
+    GstEndPoint::CodecPipelines codec;
+    gst->GetMapping(mediaFormat, codec);
 
     if (args.HasOption("encoder"))
-      pipes.m_encoder = args.GetOptionString("encoder");
+      codec.m_encoder = args.GetOptionString("encoder");
     if (args.HasOption("decoder"))
-      pipes.m_decoder = args.GetOptionString("decoder");
+      codec.m_decoder = args.GetOptionString("decoder");
     if (args.HasOption("packetiser"))
-      pipes.m_packetiser = args.GetOptionString("packetiser");
+      codec.m_packetiser = args.GetOptionString("packetiser");
     if (args.HasOption("depacketiser"))
-      pipes.m_depacketiser = args.GetOptionString("depacketiser");
+      codec.m_depacketiser = args.GetOptionString("depacketiser");
+    gst->SetMapping(mediaFormat, codec);
 
     if (!args.Parse())
       break;
