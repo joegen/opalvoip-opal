@@ -106,22 +106,6 @@ static const char * const PreferredVideoSinkDevice[] = {
 #endif // OPAL_VIDEO
 
 
-static const PStringToString::Initialiser DefaultGstEncoderToMediaFormat[] = {
-  { "mulawenc",   OpalG711_ULAW_64K },
-  { "alawenc",    OpalG711_ALAW_64K },
-  { "ffenc_g726", OpalG726_40K      },
-  { "celtenc",    "CELT-32K"        },
-
-#if OPAL_VIDEO
-  { "ffenc_h261",  OpalH261         },
-  { "ffenc_h263",  OpalH263         },
-  { "ffenc_h263p", OpalH263plus     },
-  { "ffenc_mpeg4", OpalMPEG4        },
-  { "theoraenc",   "theora"         },
-#endif // OPAL_VIDEO
-};
-
-
 static struct GstInitInfo {
   const char * m_mediaFormat;
   const char * m_depacketiser;
@@ -132,6 +116,8 @@ static struct GstInitInfo {
   { OpalG711_ULAW_64K, "rtppcmudepay",  "mulawdec",    "rtppcmupay",         "mulawenc"   },
   { OpalG711_ALAW_64K, "rtppcmadepay",  "alawdec",     "rtppcmapay",         "alawenc"    },
   { OpalGSM0610,       "rtpgsmdepay",   "gsmdec",      "rtpgsmpay",          "gsmenc"     },
+  { OpalGSMAMR,        "amrnbdec",      "rtpamrdepay", "rtpamrpay",          "amrnbenc"   },
+  { OpalG7222,         "amrwbdec",      "rtpamrdepay", "rtpamrpay",          "amrwbenc"   },
   { OpalG726_40K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726"
                                                                              " bitrate=40000"
   },
@@ -141,8 +127,10 @@ static struct GstInitInfo {
   { OpalG726_24K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726"
                                                                              " bitrate=24000"
   },
+#if 0
   { "CELT-32K",        "rtpceltdepay",  "celtdec",     "rtpceltpay",         "celtenc"    },
   { "Speex",           "rtpspeexdepay", "speexdec",    "rtpspeexpay",        "speexenc"   },
+#endif
 #if OPAL_VIDEO
   { OpalH261,          "",              "ffdec_h261",  "",                   "ffenc_h261" },
   { OpalH263,          "rtph263depay",  "ffdec_h263",  "rtph263pay",         "ffenc_h263"
@@ -193,6 +181,7 @@ static struct GstInitInfo {
                                                                              " profile=0"
                                                                              " key-int-max=30"
   },
+#if 0
   { "theora",         "rtptheoradepay", "theoradec",   "rtptheorapay",       "theoraenc"
                                                                              " name=videoEncoder"
                                                                              " keyframe-freq=125"
@@ -201,6 +190,7 @@ static struct GstInitInfo {
                                                                              " drop-frames=false"
                                                                              " bitrate=2048"
   },
+#endif
   { OpalMPEG4,        "rtpmp4vdepay",   "ffdec_mpeg4", "rtpmp4vpay"
                                                        " send-config=true", "ffenc_mpeg4"
                                                                              " quantizer=0.8"
@@ -239,14 +229,16 @@ GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
 {
   OpalMediaFormat::RegisterKnownMediaFormats(); // Make sure codecs are loaded
 
+  PStringToString gstEncoderToMediaFormat;
   for (PINDEX i = 0; i < PARRAYSIZE(DefaultMediaFormatToGStreamer); ++i) {
     OpalMediaFormat mediaFormat(DefaultMediaFormatToGStreamer[i].m_mediaFormat);
-    if (mediaFormat.IsValid()) {
+    if (PAssert(mediaFormat.IsValid(), "Unknown media format")) {
       CodecPipelines & info = m_MediaFormatToGStreamer[mediaFormat];
       info.m_encoder      = DefaultMediaFormatToGStreamer[i].m_encoder;
       info.m_packetiser   = DefaultMediaFormatToGStreamer[i].m_packetiser;
       info.m_decoder      = DefaultMediaFormatToGStreamer[i].m_decoder;
       info.m_depacketiser = DefaultMediaFormatToGStreamer[i].m_depacketiser;
+      gstEncoderToMediaFormat.SetAt(info.m_encoder.Left(info.m_encoder.FindOneOf(" \t\r\n")), mediaFormat);
     }
   }
 
@@ -262,7 +254,6 @@ GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
   PTRACE(4, "Video decoder elements:\n" << setfill('\n') << PGstPluginFeature::Inspect("Codec/Decoder/Video", true));
 #endif // OPAL_VIDEO
 
-  PStringToString gstEncoderToMediaFormat(PARRAYSIZE(DefaultGstEncoderToMediaFormat), DefaultGstEncoderToMediaFormat, true);
   for (PStringList::iterator enc = encoders.begin(); enc != encoders.end(); ++enc) {
     OpalMediaFormat mediaFormat = gstEncoderToMediaFormat(*enc);
     if (mediaFormat.IsValid()) {
@@ -277,11 +268,14 @@ GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
       }
     }
   }
+
+  PTRACE(3, "Constructed GStream endpoint.");
 }
 
 
 GstEndPoint::~GstEndPoint()
 {
+  PTRACE(3, "Destroyed GStream endpoint.");
 }
 
 
@@ -530,8 +524,14 @@ bool GstEndPoint::BuildDecoder(ostream & desc, const GstMediaStream & stream)
 
 void GstEndPoint::SetMapping(const OpalMediaFormat & mediaFormat, const CodecPipelines & info)
 {
-  if (mediaFormat.IsValid())
+  if (mediaFormat.IsValid()) {
     m_MediaFormatToGStreamer[mediaFormat] = info;
+    PTRACE(4, "Added mapping from " << mediaFormat         << " -> "
+                       "encoder=\"" << info.m_encoder      << "\", "
+                       "decoder=\"" << info.m_decoder      << "\", "
+                    "packetiser=\"" << info.m_packetiser   << "\", "
+                  "depacketiser=\"" << info.m_depacketiser << '"');
+  }
 }
 
 
