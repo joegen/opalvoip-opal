@@ -108,19 +108,19 @@ public class AndOPAL extends Activity
             OpalMessagePtr message = (OpalMessagePtr)msg.obj;
             if (message.GetType() == OpalMessageType.OpalIndIncomingCall) {
                 OpalStatusIncomingCall call = message.GetIncomingCall();
-                m_callToken = call.getM_callToken();
+                m_callToken = call.getCallToken();
                 m_callButton.setEnabled(false);
                 m_answerButton.setEnabled(true);
                 m_hangUpButton.setEnabled(true);
-                OutputStatus("Incoming call from " + call.getM_remoteAddress());
+                OutputStatus("Incoming call from " + call.getRemoteAddress());
             }
             else if (message.GetType() == OpalMessageType.OpalIndCallCleared) {
                 OpalStatusCallCleared call = message.GetCallCleared();
-                m_callToken = call.getM_callToken();
+                m_callToken = call.getCallToken();
                 m_callButton.setEnabled(m_destination.getText().length() > 0);
                 m_answerButton.setEnabled(false);
                 m_hangUpButton.setEnabled(false);
-                String reason = call.getM_reason();
+                String reason = call.getReason();
                 OutputStatus("Cleared call: " + reason.substring(reason.indexOf(':')+1));
             }
             else if (message.GetType() == OpalMessageType.OpalIndAlerting)
@@ -129,11 +129,11 @@ public class AndOPAL extends Activity
                 OutputStatus("Established");
             else if (message.GetType() == OpalMessageType.OpalIndRegistration) {
                 OpalStatusRegistration reg = message.GetRegistrationStatus();
-                if (reg.getM_status() == OpalRegistrationStates.OpalRegisterFailed)
-                    OutputStatus("Register failed: " + reg.getM_error());
-                else if (reg.getM_status() == OpalRegistrationStates.OpalRegisterRemoved)
+                if (reg.getStatus() == OpalRegistrationStates.OpalRegisterFailed)
+                    OutputStatus("Register failed: " + reg.getError());
+                else if (reg.getStatus() == OpalRegistrationStates.OpalRegisterRemoved)
                     OutputStatus("Unregistered.");
-                else if (reg.getM_status() == OpalRegistrationStates.OpalRegisterSuccessful) {
+                else if (reg.getStatus() == OpalRegistrationStates.OpalRegisterSuccessful) {
                     m_loggedIn = true;
                     m_destination.setEnabled(true);
                     invalidateOptionsMenu();
@@ -164,7 +164,7 @@ public class AndOPAL extends Activity
 
         OpalMessagePtr message = new OpalMessagePtr(OpalMessageType.OpalCmdSetUpCall);
         OpalParamSetUpCall setup = message.GetCallSetUp();
-        setup.setM_partyB(dest);
+        setup.setPartyB(dest);
 
         OpalMessagePtr response = new OpalMessagePtr();
         if (!SendOpalCommand(message, response, "Call"))
@@ -173,7 +173,7 @@ public class AndOPAL extends Activity
         OutputStatus("Calling \"" + dest + '"');
 
         setup = response.GetCallSetUp();
-        m_callToken = setup.getM_callToken();
+        m_callToken = setup.getCallToken();
 
         m_callButton.setEnabled(false);
         m_hangUpButton.setEnabled(true);
@@ -184,7 +184,7 @@ public class AndOPAL extends Activity
     {
         OpalMessagePtr message = new OpalMessagePtr(OpalMessageType.OpalCmdAnswerCall);
         OpalParamAnswerCall answer = message.GetAnswerCall();
-        answer.setM_callToken(m_callToken);
+        answer.setCallToken(m_callToken);
 
         if (SendOpalCommand(message, "Answer")) {
             OutputStatus("Answering call");
@@ -197,7 +197,7 @@ public class AndOPAL extends Activity
     {
         OpalMessagePtr message = new OpalMessagePtr(OpalMessageType.OpalCmdClearCall);
         OpalParamCallCleared clear = message.GetClearCall();
-        clear.setM_callToken(m_callToken);
+        clear.setCallToken(m_callToken);
 
         if (SendOpalCommand(message, "Hang up")) {
             OutputStatus("Hanging up");
@@ -213,10 +213,10 @@ public class AndOPAL extends Activity
         // Set up general parameters
         OpalMessagePtr message = new OpalMessagePtr(OpalMessageType.OpalCmdSetGeneralParameters);
         OpalParamGeneral general = message.GetGeneralParams();
-        general.setM_audioRecordDevice("microphone");
-        general.setM_audioPlayerDevice("voice");
-        general.setM_natMethod(m_natMethod);
-        general.setM_natServer(m_natServer);
+        general.setAudioRecordDevice("microphone");
+        general.setAudioPlayerDevice("voice");
+        general.setNatMethod(m_natMethod);
+        general.setNatServer(m_natServer);
 
         if (!SendOpalCommand(message, "General set up"))
             return;
@@ -225,8 +225,8 @@ public class AndOPAL extends Activity
         message = new OpalMessagePtr(OpalMessageType.OpalCmdSetProtocolParameters);
         OpalParamProtocol proto = message.GetProtocolParams();
         // The following should come from GUI, but I am too lazy to add.
-        proto.setM_userName(m_userName);
-        proto.setM_displayName(m_displayName);
+        proto.setUserName(m_userName);
+        proto.setDisplayName(m_displayName);
 
         if (!SendOpalCommand(message, "Protocol set up"))
             return;
@@ -234,8 +234,8 @@ public class AndOPAL extends Activity
         // Set up sip specific parameters
         message = new OpalMessagePtr(OpalMessageType.OpalCmdSetProtocolParameters);
         proto = message.GetProtocolParams();
-        proto.setM_prefix("sip");
-        proto.setM_interfaceAddresses("*");
+        proto.setPrefix("sip");
+        proto.setInterfaceAddresses("*");
 
         if (!SendOpalCommand(message, "SIP set up"))
             return;
@@ -243,12 +243,12 @@ public class AndOPAL extends Activity
         // Register withn server
         message = new OpalMessagePtr(OpalMessageType.OpalCmdRegistration);
         OpalParamRegistration reg = message.GetRegistrationParams();
-        reg.setM_protocol("sip");
-        reg.setM_identifier(m_userName);
-        reg.setM_hostName(m_domain);
-        reg.setM_password(m_password);
-        reg.setM_timeToLive(300);
-        reg.setM_attributes("compatibility=ALG");
+        reg.setProtocol("sip");
+        reg.setIdentifier(m_userName);
+        reg.setHostName(m_domain);
+        reg.setPassword(m_password);
+        reg.setTimeToLive(300);
+        reg.setAttributes("compatibility=ALG");
 
         if (!SendOpalCommand(message, "Registration"))
             return;

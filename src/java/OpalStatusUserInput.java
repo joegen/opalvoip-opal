@@ -35,28 +35,28 @@ public class OpalStatusUserInput {
     }
   }
 
-  public void setM_callToken(String value) {
-    OPALJNI.OpalStatusUserInput_m_callToken_set(swigCPtr, this, value);
+  public void setCallToken(String value) {
+    OPALJNI.OpalStatusUserInput_callToken_set(swigCPtr, this, value);
   }
 
-  public String getM_callToken() {
-    return OPALJNI.OpalStatusUserInput_m_callToken_get(swigCPtr, this);
+  public String getCallToken() {
+    return OPALJNI.OpalStatusUserInput_callToken_get(swigCPtr, this);
   }
 
-  public void setM_userInput(String value) {
-    OPALJNI.OpalStatusUserInput_m_userInput_set(swigCPtr, this, value);
+  public void setUserInput(String value) {
+    OPALJNI.OpalStatusUserInput_userInput_set(swigCPtr, this, value);
   }
 
-  public String getM_userInput() {
-    return OPALJNI.OpalStatusUserInput_m_userInput_get(swigCPtr, this);
+  public String getUserInput() {
+    return OPALJNI.OpalStatusUserInput_userInput_get(swigCPtr, this);
   }
 
-  public void setM_duration(long value) {
-    OPALJNI.OpalStatusUserInput_m_duration_set(swigCPtr, this, value);
+  public void setDuration(long value) {
+    OPALJNI.OpalStatusUserInput_duration_set(swigCPtr, this, value);
   }
 
-  public long getM_duration() {
-    return OPALJNI.OpalStatusUserInput_m_duration_get(swigCPtr, this);
+  public long getDuration() {
+    return OPALJNI.OpalStatusUserInput_duration_get(swigCPtr, this);
   }
 
   public OpalStatusUserInput() {

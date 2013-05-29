@@ -35,20 +35,20 @@ public class OpalParamAnswerCall {
     }
   }
 
-  public void setM_callToken(String value) {
-    OPALJNI.OpalParamAnswerCall_m_callToken_set(swigCPtr, this, value);
+  public void setCallToken(String value) {
+    OPALJNI.OpalParamAnswerCall_callToken_set(swigCPtr, this, value);
   }
 
-  public String getM_callToken() {
-    return OPALJNI.OpalParamAnswerCall_m_callToken_get(swigCPtr, this);
+  public String getCallToken() {
+    return OPALJNI.OpalParamAnswerCall_callToken_get(swigCPtr, this);
   }
 
-  public void setM_overrides(OpalParamProtocol value) {
-    OPALJNI.OpalParamAnswerCall_m_overrides_set(swigCPtr, this, OpalParamProtocol.getCPtr(value), value);
+  public void setOverrides(OpalParamProtocol value) {
+    OPALJNI.OpalParamAnswerCall_overrides_set(swigCPtr, this, OpalParamProtocol.getCPtr(value), value);
   }
 
-  public OpalParamProtocol getM_overrides() {
-    long cPtr = OPALJNI.OpalParamAnswerCall_m_overrides_get(swigCPtr, this);
+  public OpalParamProtocol getOverrides() {
+    long cPtr = OPALJNI.OpalParamAnswerCall_overrides_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalParamProtocol(cPtr, false);
   }
 

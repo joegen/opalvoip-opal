@@ -35,28 +35,28 @@ public class OpalStatusMessageWaiting {
     }
   }
 
-  public void setM_party(String value) {
-    OPALJNI.OpalStatusMessageWaiting_m_party_set(swigCPtr, this, value);
+  public void setParty(String value) {
+    OPALJNI.OpalStatusMessageWaiting_party_set(swigCPtr, this, value);
   }
 
-  public String getM_party() {
-    return OPALJNI.OpalStatusMessageWaiting_m_party_get(swigCPtr, this);
+  public String getParty() {
+    return OPALJNI.OpalStatusMessageWaiting_party_get(swigCPtr, this);
   }
 
-  public void setM_type(String value) {
-    OPALJNI.OpalStatusMessageWaiting_m_type_set(swigCPtr, this, value);
+  public void setType(String value) {
+    OPALJNI.OpalStatusMessageWaiting_type_set(swigCPtr, this, value);
   }
 
-  public String getM_type() {
-    return OPALJNI.OpalStatusMessageWaiting_m_type_get(swigCPtr, this);
+  public String getType() {
+    return OPALJNI.OpalStatusMessageWaiting_type_get(swigCPtr, this);
   }
 
-  public void setM_extraInfo(String value) {
-    OPALJNI.OpalStatusMessageWaiting_m_extraInfo_set(swigCPtr, this, value);
+  public void setExtraInfo(String value) {
+    OPALJNI.OpalStatusMessageWaiting_extraInfo_set(swigCPtr, this, value);
   }
 
-  public String getM_extraInfo() {
-    return OPALJNI.OpalStatusMessageWaiting_m_extraInfo_get(swigCPtr, this);
+  public String getExtraInfo() {
+    return OPALJNI.OpalStatusMessageWaiting_extraInfo_get(swigCPtr, this);
   }
 
   public OpalStatusMessageWaiting() {

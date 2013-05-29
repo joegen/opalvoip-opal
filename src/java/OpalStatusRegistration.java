@@ -35,44 +35,44 @@ public class OpalStatusRegistration {
     }
   }
 
-  public void setM_protocol(String value) {
-    OPALJNI.OpalStatusRegistration_m_protocol_set(swigCPtr, this, value);
+  public void setProtocol(String value) {
+    OPALJNI.OpalStatusRegistration_protocol_set(swigCPtr, this, value);
   }
 
-  public String getM_protocol() {
-    return OPALJNI.OpalStatusRegistration_m_protocol_get(swigCPtr, this);
+  public String getProtocol() {
+    return OPALJNI.OpalStatusRegistration_protocol_get(swigCPtr, this);
   }
 
-  public void setM_serverName(String value) {
-    OPALJNI.OpalStatusRegistration_m_serverName_set(swigCPtr, this, value);
+  public void setServerName(String value) {
+    OPALJNI.OpalStatusRegistration_serverName_set(swigCPtr, this, value);
   }
 
-  public String getM_serverName() {
-    return OPALJNI.OpalStatusRegistration_m_serverName_get(swigCPtr, this);
+  public String getServerName() {
+    return OPALJNI.OpalStatusRegistration_serverName_get(swigCPtr, this);
   }
 
-  public void setM_error(String value) {
-    OPALJNI.OpalStatusRegistration_m_error_set(swigCPtr, this, value);
+  public void setError(String value) {
+    OPALJNI.OpalStatusRegistration_error_set(swigCPtr, this, value);
   }
 
-  public String getM_error() {
-    return OPALJNI.OpalStatusRegistration_m_error_get(swigCPtr, this);
+  public String getError() {
+    return OPALJNI.OpalStatusRegistration_error_get(swigCPtr, this);
   }
 
-  public void setM_status(OpalRegistrationStates value) {
-    OPALJNI.OpalStatusRegistration_m_status_set(swigCPtr, this, value.swigValue());
+  public void setStatus(OpalRegistrationStates value) {
+    OPALJNI.OpalStatusRegistration_status_set(swigCPtr, this, value.swigValue());
   }
 
-  public OpalRegistrationStates getM_status() {
-    return OpalRegistrationStates.swigToEnum(OPALJNI.OpalStatusRegistration_m_status_get(swigCPtr, this));
+  public OpalRegistrationStates getStatus() {
+    return OpalRegistrationStates.swigToEnum(OPALJNI.OpalStatusRegistration_status_get(swigCPtr, this));
   }
 
-  public void setM_product(OpalProductDescription value) {
-    OPALJNI.OpalStatusRegistration_m_product_set(swigCPtr, this, OpalProductDescription.getCPtr(value), value);
+  public void setProduct(OpalProductDescription value) {
+    OPALJNI.OpalStatusRegistration_product_set(swigCPtr, this, OpalProductDescription.getCPtr(value), value);
   }
 
-  public OpalProductDescription getM_product() {
-    long cPtr = OPALJNI.OpalStatusRegistration_m_product_get(swigCPtr, this);
+  public OpalProductDescription getProduct() {
+    long cPtr = OPALJNI.OpalStatusRegistration_product_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalProductDescription(cPtr, false);
   }
 
