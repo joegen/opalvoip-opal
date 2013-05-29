@@ -35,76 +35,76 @@ public class OpalParamRecording {
     }
   }
 
-  public void setM_callToken(String value) {
-    OPALJNI.OpalParamRecording_m_callToken_set(swigCPtr, this, value);
+  public void setCallToken(String value) {
+    OPALJNI.OpalParamRecording_callToken_set(swigCPtr, this, value);
   }
 
-  public String getM_callToken() {
-    return OPALJNI.OpalParamRecording_m_callToken_get(swigCPtr, this);
+  public String getCallToken() {
+    return OPALJNI.OpalParamRecording_callToken_get(swigCPtr, this);
   }
 
-  public void setM_file(String value) {
-    OPALJNI.OpalParamRecording_m_file_set(swigCPtr, this, value);
+  public void setFile(String value) {
+    OPALJNI.OpalParamRecording_file_set(swigCPtr, this, value);
   }
 
-  public String getM_file() {
-    return OPALJNI.OpalParamRecording_m_file_get(swigCPtr, this);
+  public String getFile() {
+    return OPALJNI.OpalParamRecording_file_get(swigCPtr, this);
   }
 
-  public void setM_channels(long value) {
-    OPALJNI.OpalParamRecording_m_channels_set(swigCPtr, this, value);
+  public void setChannels(long value) {
+    OPALJNI.OpalParamRecording_channels_set(swigCPtr, this, value);
   }
 
-  public long getM_channels() {
-    return OPALJNI.OpalParamRecording_m_channels_get(swigCPtr, this);
+  public long getChannels() {
+    return OPALJNI.OpalParamRecording_channels_get(swigCPtr, this);
   }
 
-  public void setM_audioFormat(String value) {
-    OPALJNI.OpalParamRecording_m_audioFormat_set(swigCPtr, this, value);
+  public void setAudioFormat(String value) {
+    OPALJNI.OpalParamRecording_audioFormat_set(swigCPtr, this, value);
   }
 
-  public String getM_audioFormat() {
-    return OPALJNI.OpalParamRecording_m_audioFormat_get(swigCPtr, this);
+  public String getAudioFormat() {
+    return OPALJNI.OpalParamRecording_audioFormat_get(swigCPtr, this);
   }
 
-  public void setM_videoFormat(String value) {
-    OPALJNI.OpalParamRecording_m_videoFormat_set(swigCPtr, this, value);
+  public void setVideoFormat(String value) {
+    OPALJNI.OpalParamRecording_videoFormat_set(swigCPtr, this, value);
   }
 
-  public String getM_videoFormat() {
-    return OPALJNI.OpalParamRecording_m_videoFormat_get(swigCPtr, this);
+  public String getVideoFormat() {
+    return OPALJNI.OpalParamRecording_videoFormat_get(swigCPtr, this);
   }
 
-  public void setM_videoWidth(long value) {
-    OPALJNI.OpalParamRecording_m_videoWidth_set(swigCPtr, this, value);
+  public void setVideoWidth(long value) {
+    OPALJNI.OpalParamRecording_videoWidth_set(swigCPtr, this, value);
   }
 
-  public long getM_videoWidth() {
-    return OPALJNI.OpalParamRecording_m_videoWidth_get(swigCPtr, this);
+  public long getVideoWidth() {
+    return OPALJNI.OpalParamRecording_videoWidth_get(swigCPtr, this);
   }
 
-  public void setM_videoHeight(long value) {
-    OPALJNI.OpalParamRecording_m_videoHeight_set(swigCPtr, this, value);
+  public void setVideoHeight(long value) {
+    OPALJNI.OpalParamRecording_videoHeight_set(swigCPtr, this, value);
   }
 
-  public long getM_videoHeight() {
-    return OPALJNI.OpalParamRecording_m_videoHeight_get(swigCPtr, this);
+  public long getVideoHeight() {
+    return OPALJNI.OpalParamRecording_videoHeight_get(swigCPtr, this);
   }
 
-  public void setM_videoRate(long value) {
-    OPALJNI.OpalParamRecording_m_videoRate_set(swigCPtr, this, value);
+  public void setVideoRate(long value) {
+    OPALJNI.OpalParamRecording_videoRate_set(swigCPtr, this, value);
   }
 
-  public long getM_videoRate() {
-    return OPALJNI.OpalParamRecording_m_videoRate_get(swigCPtr, this);
+  public long getVideoRate() {
+    return OPALJNI.OpalParamRecording_videoRate_get(swigCPtr, this);
   }
 
-  public void setM_videoMixing(OpalVideoRecordMixMode value) {
-    OPALJNI.OpalParamRecording_m_videoMixing_set(swigCPtr, this, value.swigValue());
+  public void setVideoMixing(OpalVideoRecordMixMode value) {
+    OPALJNI.OpalParamRecording_videoMixing_set(swigCPtr, this, value.swigValue());
   }
 
-  public OpalVideoRecordMixMode getM_videoMixing() {
-    return OpalVideoRecordMixMode.swigToEnum(OPALJNI.OpalParamRecording_m_videoMixing_get(swigCPtr, this));
+  public OpalVideoRecordMixMode getVideoMixing() {
+    return OpalVideoRecordMixMode.swigToEnum(OPALJNI.OpalParamRecording_videoMixing_get(swigCPtr, this));
   }
 
   public OpalParamRecording() {

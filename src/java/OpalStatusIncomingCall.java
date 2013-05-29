@@ -35,101 +35,101 @@ public class OpalStatusIncomingCall {
     }
   }
 
-  public void setM_callToken(String value) {
-    OPALJNI.OpalStatusIncomingCall_m_callToken_set(swigCPtr, this, value);
+  public void setCallToken(String value) {
+    OPALJNI.OpalStatusIncomingCall_callToken_set(swigCPtr, this, value);
   }
 
-  public String getM_callToken() {
-    return OPALJNI.OpalStatusIncomingCall_m_callToken_get(swigCPtr, this);
+  public String getCallToken() {
+    return OPALJNI.OpalStatusIncomingCall_callToken_get(swigCPtr, this);
   }
 
-  public void setM_localAddress(String value) {
-    OPALJNI.OpalStatusIncomingCall_m_localAddress_set(swigCPtr, this, value);
+  public void setLocalAddress(String value) {
+    OPALJNI.OpalStatusIncomingCall_localAddress_set(swigCPtr, this, value);
   }
 
-  public String getM_localAddress() {
-    return OPALJNI.OpalStatusIncomingCall_m_localAddress_get(swigCPtr, this);
+  public String getLocalAddress() {
+    return OPALJNI.OpalStatusIncomingCall_localAddress_get(swigCPtr, this);
   }
 
-  public void setM_remoteAddress(String value) {
-    OPALJNI.OpalStatusIncomingCall_m_remoteAddress_set(swigCPtr, this, value);
+  public void setRemoteAddress(String value) {
+    OPALJNI.OpalStatusIncomingCall_remoteAddress_set(swigCPtr, this, value);
   }
 
-  public String getM_remoteAddress() {
-    return OPALJNI.OpalStatusIncomingCall_m_remoteAddress_get(swigCPtr, this);
+  public String getRemoteAddress() {
+    return OPALJNI.OpalStatusIncomingCall_remoteAddress_get(swigCPtr, this);
   }
 
-  public void setM_remotePartyNumber(String value) {
-    OPALJNI.OpalStatusIncomingCall_m_remotePartyNumber_set(swigCPtr, this, value);
+  public void setRemotePartyNumber(String value) {
+    OPALJNI.OpalStatusIncomingCall_remotePartyNumber_set(swigCPtr, this, value);
   }
 
-  public String getM_remotePartyNumber() {
-    return OPALJNI.OpalStatusIncomingCall_m_remotePartyNumber_get(swigCPtr, this);
+  public String getRemotePartyNumber() {
+    return OPALJNI.OpalStatusIncomingCall_remotePartyNumber_get(swigCPtr, this);
   }
 
-  public void setM_remoteDisplayName(String value) {
-    OPALJNI.OpalStatusIncomingCall_m_remoteDisplayName_set(swigCPtr, this, value);
+  public void setRemoteDisplayName(String value) {
+    OPALJNI.OpalStatusIncomingCall_remoteDisplayName_set(swigCPtr, this, value);
   }
 
-  public String getM_remoteDisplayName() {
-    return OPALJNI.OpalStatusIncomingCall_m_remoteDisplayName_get(swigCPtr, this);
+  public String getRemoteDisplayName() {
+    return OPALJNI.OpalStatusIncomingCall_remoteDisplayName_get(swigCPtr, this);
   }
 
-  public void setM_calledAddress(String value) {
-    OPALJNI.OpalStatusIncomingCall_m_calledAddress_set(swigCPtr, this, value);
+  public void setCalledAddress(String value) {
+    OPALJNI.OpalStatusIncomingCall_calledAddress_set(swigCPtr, this, value);
   }
 
-  public String getM_calledAddress() {
-    return OPALJNI.OpalStatusIncomingCall_m_calledAddress_get(swigCPtr, this);
+  public String getCalledAddress() {
+    return OPALJNI.OpalStatusIncomingCall_calledAddress_get(swigCPtr, this);
   }
 
-  public void setM_calledPartyNumber(String value) {
-    OPALJNI.OpalStatusIncomingCall_m_calledPartyNumber_set(swigCPtr, this, value);
+  public void setCalledPartyNumber(String value) {
+    OPALJNI.OpalStatusIncomingCall_calledPartyNumber_set(swigCPtr, this, value);
   }
 
-  public String getM_calledPartyNumber() {
-    return OPALJNI.OpalStatusIncomingCall_m_calledPartyNumber_get(swigCPtr, this);
+  public String getCalledPartyNumber() {
+    return OPALJNI.OpalStatusIncomingCall_calledPartyNumber_get(swigCPtr, this);
   }
 
-  public void setM_product(OpalProductDescription value) {
-    OPALJNI.OpalStatusIncomingCall_m_product_set(swigCPtr, this, OpalProductDescription.getCPtr(value), value);
+  public void setProduct(OpalProductDescription value) {
+    OPALJNI.OpalStatusIncomingCall_product_set(swigCPtr, this, OpalProductDescription.getCPtr(value), value);
   }
 
-  public OpalProductDescription getM_product() {
-    long cPtr = OPALJNI.OpalStatusIncomingCall_m_product_get(swigCPtr, this);
+  public OpalProductDescription getProduct() {
+    long cPtr = OPALJNI.OpalStatusIncomingCall_product_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalProductDescription(cPtr, false);
   }
 
-  public void setM_alertingType(String value) {
-    OPALJNI.OpalStatusIncomingCall_m_alertingType_set(swigCPtr, this, value);
+  public void setAlertingType(String value) {
+    OPALJNI.OpalStatusIncomingCall_alertingType_set(swigCPtr, this, value);
   }
 
-  public String getM_alertingType() {
-    return OPALJNI.OpalStatusIncomingCall_m_alertingType_get(swigCPtr, this);
+  public String getAlertingType() {
+    return OPALJNI.OpalStatusIncomingCall_alertingType_get(swigCPtr, this);
   }
 
-  public void setM_protocolCallId(String value) {
-    OPALJNI.OpalStatusIncomingCall_m_protocolCallId_set(swigCPtr, this, value);
+  public void setProtocolCallId(String value) {
+    OPALJNI.OpalStatusIncomingCall_protocolCallId_set(swigCPtr, this, value);
   }
 
-  public String getM_protocolCallId() {
-    return OPALJNI.OpalStatusIncomingCall_m_protocolCallId_get(swigCPtr, this);
+  public String getProtocolCallId() {
+    return OPALJNI.OpalStatusIncomingCall_protocolCallId_get(swigCPtr, this);
   }
 
-  public void setM_referredByAddress(String value) {
-    OPALJNI.OpalStatusIncomingCall_m_referredByAddress_set(swigCPtr, this, value);
+  public void setReferredByAddress(String value) {
+    OPALJNI.OpalStatusIncomingCall_referredByAddress_set(swigCPtr, this, value);
   }
 
-  public String getM_referredByAddress() {
-    return OPALJNI.OpalStatusIncomingCall_m_referredByAddress_get(swigCPtr, this);
+  public String getReferredByAddress() {
+    return OPALJNI.OpalStatusIncomingCall_referredByAddress_get(swigCPtr, this);
   }
 
-  public void setM_redirectingNumber(String value) {
-    OPALJNI.OpalStatusIncomingCall_m_redirectingNumber_set(swigCPtr, this, value);
+  public void setRedirectingNumber(String value) {
+    OPALJNI.OpalStatusIncomingCall_redirectingNumber_set(swigCPtr, this, value);
   }
 
-  public String getM_redirectingNumber() {
-    return OPALJNI.OpalStatusIncomingCall_m_redirectingNumber_get(swigCPtr, this);
+  public String getRedirectingNumber() {
+    return OPALJNI.OpalStatusIncomingCall_redirectingNumber_get(swigCPtr, this);
   }
 
   public OpalStatusIncomingCall() {

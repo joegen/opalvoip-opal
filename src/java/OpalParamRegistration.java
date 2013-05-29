@@ -35,84 +35,84 @@ public class OpalParamRegistration {
     }
   }
 
-  public void setM_protocol(String value) {
-    OPALJNI.OpalParamRegistration_m_protocol_set(swigCPtr, this, value);
+  public void setProtocol(String value) {
+    OPALJNI.OpalParamRegistration_protocol_set(swigCPtr, this, value);
   }
 
-  public String getM_protocol() {
-    return OPALJNI.OpalParamRegistration_m_protocol_get(swigCPtr, this);
+  public String getProtocol() {
+    return OPALJNI.OpalParamRegistration_protocol_get(swigCPtr, this);
   }
 
-  public void setM_identifier(String value) {
-    OPALJNI.OpalParamRegistration_m_identifier_set(swigCPtr, this, value);
+  public void setIdentifier(String value) {
+    OPALJNI.OpalParamRegistration_identifier_set(swigCPtr, this, value);
   }
 
-  public String getM_identifier() {
-    return OPALJNI.OpalParamRegistration_m_identifier_get(swigCPtr, this);
+  public String getIdentifier() {
+    return OPALJNI.OpalParamRegistration_identifier_get(swigCPtr, this);
   }
 
-  public void setM_hostName(String value) {
-    OPALJNI.OpalParamRegistration_m_hostName_set(swigCPtr, this, value);
+  public void setHostName(String value) {
+    OPALJNI.OpalParamRegistration_hostName_set(swigCPtr, this, value);
   }
 
-  public String getM_hostName() {
-    return OPALJNI.OpalParamRegistration_m_hostName_get(swigCPtr, this);
+  public String getHostName() {
+    return OPALJNI.OpalParamRegistration_hostName_get(swigCPtr, this);
   }
 
-  public void setM_authUserName(String value) {
-    OPALJNI.OpalParamRegistration_m_authUserName_set(swigCPtr, this, value);
+  public void setAuthUserName(String value) {
+    OPALJNI.OpalParamRegistration_authUserName_set(swigCPtr, this, value);
   }
 
-  public String getM_authUserName() {
-    return OPALJNI.OpalParamRegistration_m_authUserName_get(swigCPtr, this);
+  public String getAuthUserName() {
+    return OPALJNI.OpalParamRegistration_authUserName_get(swigCPtr, this);
   }
 
-  public void setM_password(String value) {
-    OPALJNI.OpalParamRegistration_m_password_set(swigCPtr, this, value);
+  public void setPassword(String value) {
+    OPALJNI.OpalParamRegistration_password_set(swigCPtr, this, value);
   }
 
-  public String getM_password() {
-    return OPALJNI.OpalParamRegistration_m_password_get(swigCPtr, this);
+  public String getPassword() {
+    return OPALJNI.OpalParamRegistration_password_get(swigCPtr, this);
   }
 
-  public void setM_adminEntity(String value) {
-    OPALJNI.OpalParamRegistration_m_adminEntity_set(swigCPtr, this, value);
+  public void setAdminEntity(String value) {
+    OPALJNI.OpalParamRegistration_adminEntity_set(swigCPtr, this, value);
   }
 
-  public String getM_adminEntity() {
-    return OPALJNI.OpalParamRegistration_m_adminEntity_get(swigCPtr, this);
+  public String getAdminEntity() {
+    return OPALJNI.OpalParamRegistration_adminEntity_get(swigCPtr, this);
   }
 
-  public void setM_timeToLive(long value) {
-    OPALJNI.OpalParamRegistration_m_timeToLive_set(swigCPtr, this, value);
+  public void setTimeToLive(long value) {
+    OPALJNI.OpalParamRegistration_timeToLive_set(swigCPtr, this, value);
   }
 
-  public long getM_timeToLive() {
-    return OPALJNI.OpalParamRegistration_m_timeToLive_get(swigCPtr, this);
+  public long getTimeToLive() {
+    return OPALJNI.OpalParamRegistration_timeToLive_get(swigCPtr, this);
   }
 
-  public void setM_restoreTime(long value) {
-    OPALJNI.OpalParamRegistration_m_restoreTime_set(swigCPtr, this, value);
+  public void setRestoreTime(long value) {
+    OPALJNI.OpalParamRegistration_restoreTime_set(swigCPtr, this, value);
   }
 
-  public long getM_restoreTime() {
-    return OPALJNI.OpalParamRegistration_m_restoreTime_get(swigCPtr, this);
+  public long getRestoreTime() {
+    return OPALJNI.OpalParamRegistration_restoreTime_get(swigCPtr, this);
   }
 
-  public void setM_eventPackage(String value) {
-    OPALJNI.OpalParamRegistration_m_eventPackage_set(swigCPtr, this, value);
+  public void setEventPackage(String value) {
+    OPALJNI.OpalParamRegistration_eventPackage_set(swigCPtr, this, value);
   }
 
-  public String getM_eventPackage() {
-    return OPALJNI.OpalParamRegistration_m_eventPackage_get(swigCPtr, this);
+  public String getEventPackage() {
+    return OPALJNI.OpalParamRegistration_eventPackage_get(swigCPtr, this);
   }
 
-  public void setM_attributes(String value) {
-    OPALJNI.OpalParamRegistration_m_attributes_set(swigCPtr, this, value);
+  public void setAttributes(String value) {
+    OPALJNI.OpalParamRegistration_attributes_set(swigCPtr, this, value);
   }
 
-  public String getM_attributes() {
-    return OPALJNI.OpalParamRegistration_m_attributes_get(swigCPtr, this);
+  public String getAttributes() {
+    return OPALJNI.OpalParamRegistration_attributes_get(swigCPtr, this);
   }
 
   public OpalParamRegistration() {

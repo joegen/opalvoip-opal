@@ -35,52 +35,52 @@ public class OpalStatusMediaStream {
     }
   }
 
-  public void setM_callToken(String value) {
-    OPALJNI.OpalStatusMediaStream_m_callToken_set(swigCPtr, this, value);
+  public void setCallToken(String value) {
+    OPALJNI.OpalStatusMediaStream_callToken_set(swigCPtr, this, value);
   }
 
-  public String getM_callToken() {
-    return OPALJNI.OpalStatusMediaStream_m_callToken_get(swigCPtr, this);
+  public String getCallToken() {
+    return OPALJNI.OpalStatusMediaStream_callToken_get(swigCPtr, this);
   }
 
-  public void setM_identifier(String value) {
-    OPALJNI.OpalStatusMediaStream_m_identifier_set(swigCPtr, this, value);
+  public void setIdentifier(String value) {
+    OPALJNI.OpalStatusMediaStream_identifier_set(swigCPtr, this, value);
   }
 
-  public String getM_identifier() {
-    return OPALJNI.OpalStatusMediaStream_m_identifier_get(swigCPtr, this);
+  public String getIdentifier() {
+    return OPALJNI.OpalStatusMediaStream_identifier_get(swigCPtr, this);
   }
 
-  public void setM_type(String value) {
-    OPALJNI.OpalStatusMediaStream_m_type_set(swigCPtr, this, value);
+  public void setType(String value) {
+    OPALJNI.OpalStatusMediaStream_type_set(swigCPtr, this, value);
   }
 
-  public String getM_type() {
-    return OPALJNI.OpalStatusMediaStream_m_type_get(swigCPtr, this);
+  public String getType() {
+    return OPALJNI.OpalStatusMediaStream_type_get(swigCPtr, this);
   }
 
-  public void setM_format(String value) {
-    OPALJNI.OpalStatusMediaStream_m_format_set(swigCPtr, this, value);
+  public void setFormat(String value) {
+    OPALJNI.OpalStatusMediaStream_format_set(swigCPtr, this, value);
   }
 
-  public String getM_format() {
-    return OPALJNI.OpalStatusMediaStream_m_format_get(swigCPtr, this);
+  public String getFormat() {
+    return OPALJNI.OpalStatusMediaStream_format_get(swigCPtr, this);
   }
 
-  public void setM_state(OpalMediaStates value) {
-    OPALJNI.OpalStatusMediaStream_m_state_set(swigCPtr, this, value.swigValue());
+  public void setState(OpalMediaStates value) {
+    OPALJNI.OpalStatusMediaStream_state_set(swigCPtr, this, value.swigValue());
   }
 
-  public OpalMediaStates getM_state() {
-    return OpalMediaStates.swigToEnum(OPALJNI.OpalStatusMediaStream_m_state_get(swigCPtr, this));
+  public OpalMediaStates getState() {
+    return OpalMediaStates.swigToEnum(OPALJNI.OpalStatusMediaStream_state_get(swigCPtr, this));
   }
 
-  public void setM_volume(int value) {
-    OPALJNI.OpalStatusMediaStream_m_volume_set(swigCPtr, this, value);
+  public void setVolume(int value) {
+    OPALJNI.OpalStatusMediaStream_volume_set(swigCPtr, this, value);
   }
 
-  public int getM_volume() {
-    return OPALJNI.OpalStatusMediaStream_m_volume_get(swigCPtr, this);
+  public int getVolume() {
+    return OPALJNI.OpalStatusMediaStream_volume_get(swigCPtr, this);
   }
 
   public OpalStatusMediaStream() {

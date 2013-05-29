@@ -35,52 +35,52 @@ public class OpalProductDescription {
     }
   }
 
-  public void setM_vendor(String value) {
-    OPALJNI.OpalProductDescription_m_vendor_set(swigCPtr, this, value);
+  public void setVendor(String value) {
+    OPALJNI.OpalProductDescription_vendor_set(swigCPtr, this, value);
   }
 
-  public String getM_vendor() {
-    return OPALJNI.OpalProductDescription_m_vendor_get(swigCPtr, this);
+  public String getVendor() {
+    return OPALJNI.OpalProductDescription_vendor_get(swigCPtr, this);
   }
 
-  public void setM_name(String value) {
-    OPALJNI.OpalProductDescription_m_name_set(swigCPtr, this, value);
+  public void setName(String value) {
+    OPALJNI.OpalProductDescription_name_set(swigCPtr, this, value);
   }
 
-  public String getM_name() {
-    return OPALJNI.OpalProductDescription_m_name_get(swigCPtr, this);
+  public String getName() {
+    return OPALJNI.OpalProductDescription_name_get(swigCPtr, this);
   }
 
-  public void setM_version(String value) {
-    OPALJNI.OpalProductDescription_m_version_set(swigCPtr, this, value);
+  public void setVersion(String value) {
+    OPALJNI.OpalProductDescription_version_set(swigCPtr, this, value);
   }
 
-  public String getM_version() {
-    return OPALJNI.OpalProductDescription_m_version_get(swigCPtr, this);
+  public String getVersion() {
+    return OPALJNI.OpalProductDescription_version_get(swigCPtr, this);
   }
 
-  public void setM_t35CountryCode(long value) {
-    OPALJNI.OpalProductDescription_m_t35CountryCode_set(swigCPtr, this, value);
+  public void setT35CountryCode(long value) {
+    OPALJNI.OpalProductDescription_t35CountryCode_set(swigCPtr, this, value);
   }
 
-  public long getM_t35CountryCode() {
-    return OPALJNI.OpalProductDescription_m_t35CountryCode_get(swigCPtr, this);
+  public long getT35CountryCode() {
+    return OPALJNI.OpalProductDescription_t35CountryCode_get(swigCPtr, this);
   }
 
-  public void setM_t35Extension(long value) {
-    OPALJNI.OpalProductDescription_m_t35Extension_set(swigCPtr, this, value);
+  public void setT35Extension(long value) {
+    OPALJNI.OpalProductDescription_t35Extension_set(swigCPtr, this, value);
   }
 
-  public long getM_t35Extension() {
-    return OPALJNI.OpalProductDescription_m_t35Extension_get(swigCPtr, this);
+  public long getT35Extension() {
+    return OPALJNI.OpalProductDescription_t35Extension_get(swigCPtr, this);
   }
 
-  public void setM_manufacturerCode(long value) {
-    OPALJNI.OpalProductDescription_m_manufacturerCode_set(swigCPtr, this, value);
+  public void setManufacturerCode(long value) {
+    OPALJNI.OpalProductDescription_manufacturerCode_set(swigCPtr, this, value);
   }
 
-  public long getM_manufacturerCode() {
-    return OPALJNI.OpalProductDescription_m_manufacturerCode_get(swigCPtr, this);
+  public long getManufacturerCode() {
+    return OPALJNI.OpalProductDescription_manufacturerCode_get(swigCPtr, this);
   }
 
   public OpalProductDescription() {

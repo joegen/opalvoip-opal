@@ -35,36 +35,36 @@ public class OpalStatusTransferCall {
     }
   }
 
-  public void setM_callToken(String value) {
-    OPALJNI.OpalStatusTransferCall_m_callToken_set(swigCPtr, this, value);
+  public void setCallToken(String value) {
+    OPALJNI.OpalStatusTransferCall_callToken_set(swigCPtr, this, value);
   }
 
-  public String getM_callToken() {
-    return OPALJNI.OpalStatusTransferCall_m_callToken_get(swigCPtr, this);
+  public String getCallToken() {
+    return OPALJNI.OpalStatusTransferCall_callToken_get(swigCPtr, this);
   }
 
-  public void setM_protocolCallId(String value) {
-    OPALJNI.OpalStatusTransferCall_m_protocolCallId_set(swigCPtr, this, value);
+  public void setProtocolCallId(String value) {
+    OPALJNI.OpalStatusTransferCall_protocolCallId_set(swigCPtr, this, value);
   }
 
-  public String getM_protocolCallId() {
-    return OPALJNI.OpalStatusTransferCall_m_protocolCallId_get(swigCPtr, this);
+  public String getProtocolCallId() {
+    return OPALJNI.OpalStatusTransferCall_protocolCallId_get(swigCPtr, this);
   }
 
-  public void setM_result(String value) {
-    OPALJNI.OpalStatusTransferCall_m_result_set(swigCPtr, this, value);
+  public void setResult(String value) {
+    OPALJNI.OpalStatusTransferCall_result_set(swigCPtr, this, value);
   }
 
-  public String getM_result() {
-    return OPALJNI.OpalStatusTransferCall_m_result_get(swigCPtr, this);
+  public String getResult() {
+    return OPALJNI.OpalStatusTransferCall_result_get(swigCPtr, this);
   }
 
-  public void setM_info(String value) {
-    OPALJNI.OpalStatusTransferCall_m_info_set(swigCPtr, this, value);
+  public void setInfo(String value) {
+    OPALJNI.OpalStatusTransferCall_info_set(swigCPtr, this, value);
   }
 
-  public String getM_info() {
-    return OPALJNI.OpalStatusTransferCall_m_info_get(swigCPtr, this);
+  public String getInfo() {
+    return OPALJNI.OpalStatusTransferCall_info_get(swigCPtr, this);
   }
 
   public OpalStatusTransferCall() {

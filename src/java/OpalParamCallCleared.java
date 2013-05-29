@@ -35,20 +35,20 @@ public class OpalParamCallCleared {
     }
   }
 
-  public void setM_callToken(String value) {
-    OPALJNI.OpalParamCallCleared_m_callToken_set(swigCPtr, this, value);
+  public void setCallToken(String value) {
+    OPALJNI.OpalParamCallCleared_callToken_set(swigCPtr, this, value);
   }
 
-  public String getM_callToken() {
-    return OPALJNI.OpalParamCallCleared_m_callToken_get(swigCPtr, this);
+  public String getCallToken() {
+    return OPALJNI.OpalParamCallCleared_callToken_get(swigCPtr, this);
   }
 
-  public void setM_reason(OpalCallEndReason value) {
-    OPALJNI.OpalParamCallCleared_m_reason_set(swigCPtr, this, value.swigValue());
+  public void setReason(OpalCallEndReason value) {
+    OPALJNI.OpalParamCallCleared_reason_set(swigCPtr, this, value.swigValue());
   }
 
-  public OpalCallEndReason getM_reason() {
-    return OpalCallEndReason.swigToEnum(OPALJNI.OpalParamCallCleared_m_reason_get(swigCPtr, this));
+  public OpalCallEndReason getReason() {
+    return OpalCallEndReason.swigToEnum(OPALJNI.OpalParamCallCleared_reason_get(swigCPtr, this));
   }
 
   public OpalParamCallCleared() {

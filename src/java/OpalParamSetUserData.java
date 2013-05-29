@@ -35,20 +35,20 @@ public class OpalParamSetUserData {
     }
   }
 
-  public void setM_callToken(String value) {
-    OPALJNI.OpalParamSetUserData_m_callToken_set(swigCPtr, this, value);
+  public void setCallToken(String value) {
+    OPALJNI.OpalParamSetUserData_callToken_set(swigCPtr, this, value);
   }
 
-  public String getM_callToken() {
-    return OPALJNI.OpalParamSetUserData_m_callToken_get(swigCPtr, this);
+  public String getCallToken() {
+    return OPALJNI.OpalParamSetUserData_callToken_get(swigCPtr, this);
   }
 
-  public void setM_userData(SWIGTYPE_p_void value) {
-    OPALJNI.OpalParamSetUserData_m_userData_set(swigCPtr, this, SWIGTYPE_p_void.getCPtr(value));
+  public void setUserData(SWIGTYPE_p_void value) {
+    OPALJNI.OpalParamSetUserData_userData_set(swigCPtr, this, SWIGTYPE_p_void.getCPtr(value));
   }
 
-  public SWIGTYPE_p_void getM_userData() {
-    long cPtr = OPALJNI.OpalParamSetUserData_m_userData_get(swigCPtr, this);
+  public SWIGTYPE_p_void getUserData() {
+    long cPtr = OPALJNI.OpalParamSetUserData_userData_get(swigCPtr, this);
     return (cPtr == 0) ? null : new SWIGTYPE_p_void(cPtr, false);
   }
 

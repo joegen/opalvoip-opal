@@ -35,20 +35,20 @@ public class OpalMessage {
     }
   }
 
-  public void setM_type(OpalMessageType value) {
-    OPALJNI.OpalMessage_m_type_set(swigCPtr, value.swigValue());
+  public void setType(OpalMessageType value) {
+    OPALJNI.OpalMessage_type_set(swigCPtr, value.swigValue());
   }
 
-  public OpalMessageType getM_type() {
-    return OpalMessageType.swigToEnum(OPALJNI.OpalMessage_m_type_get(swigCPtr));
+  public OpalMessageType getType() {
+    return OpalMessageType.swigToEnum(OPALJNI.OpalMessage_type_get(swigCPtr));
   }
 
-  public void setM_param(OpalMessageParam value) {
-    OPALJNI.OpalMessage_m_param_set(swigCPtr, OpalMessageParam.getCPtr(value), value);
+  public void setParam(OpalMessageParam value) {
+    OPALJNI.OpalMessage_param_set(swigCPtr, OpalMessageParam.getCPtr(value), value);
   }
 
-  public OpalMessageParam getM_param() {
-    long cPtr = OPALJNI.OpalMessage_m_param_get(swigCPtr);
+  public OpalMessageParam getParam() {
+    long cPtr = OPALJNI.OpalMessage_param_get(swigCPtr);
     return (cPtr == 0) ? null : new OpalMessageParam(cPtr, false);
   }
 

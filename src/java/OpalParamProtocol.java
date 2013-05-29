@@ -35,61 +35,61 @@ public class OpalParamProtocol {
     }
   }
 
-  public void setM_prefix(String value) {
-    OPALJNI.OpalParamProtocol_m_prefix_set(swigCPtr, this, value);
+  public void setPrefix(String value) {
+    OPALJNI.OpalParamProtocol_prefix_set(swigCPtr, this, value);
   }
 
-  public String getM_prefix() {
-    return OPALJNI.OpalParamProtocol_m_prefix_get(swigCPtr, this);
+  public String getPrefix() {
+    return OPALJNI.OpalParamProtocol_prefix_get(swigCPtr, this);
   }
 
-  public void setM_userName(String value) {
-    OPALJNI.OpalParamProtocol_m_userName_set(swigCPtr, this, value);
+  public void setUserName(String value) {
+    OPALJNI.OpalParamProtocol_userName_set(swigCPtr, this, value);
   }
 
-  public String getM_userName() {
-    return OPALJNI.OpalParamProtocol_m_userName_get(swigCPtr, this);
+  public String getUserName() {
+    return OPALJNI.OpalParamProtocol_userName_get(swigCPtr, this);
   }
 
-  public void setM_displayName(String value) {
-    OPALJNI.OpalParamProtocol_m_displayName_set(swigCPtr, this, value);
+  public void setDisplayName(String value) {
+    OPALJNI.OpalParamProtocol_displayName_set(swigCPtr, this, value);
   }
 
-  public String getM_displayName() {
-    return OPALJNI.OpalParamProtocol_m_displayName_get(swigCPtr, this);
+  public String getDisplayName() {
+    return OPALJNI.OpalParamProtocol_displayName_get(swigCPtr, this);
   }
 
-  public void setM_product(OpalProductDescription value) {
-    OPALJNI.OpalParamProtocol_m_product_set(swigCPtr, this, OpalProductDescription.getCPtr(value), value);
+  public void setProduct(OpalProductDescription value) {
+    OPALJNI.OpalParamProtocol_product_set(swigCPtr, this, OpalProductDescription.getCPtr(value), value);
   }
 
-  public OpalProductDescription getM_product() {
-    long cPtr = OPALJNI.OpalParamProtocol_m_product_get(swigCPtr, this);
+  public OpalProductDescription getProduct() {
+    long cPtr = OPALJNI.OpalParamProtocol_product_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalProductDescription(cPtr, false);
   }
 
-  public void setM_interfaceAddresses(String value) {
-    OPALJNI.OpalParamProtocol_m_interfaceAddresses_set(swigCPtr, this, value);
+  public void setInterfaceAddresses(String value) {
+    OPALJNI.OpalParamProtocol_interfaceAddresses_set(swigCPtr, this, value);
   }
 
-  public String getM_interfaceAddresses() {
-    return OPALJNI.OpalParamProtocol_m_interfaceAddresses_get(swigCPtr, this);
+  public String getInterfaceAddresses() {
+    return OPALJNI.OpalParamProtocol_interfaceAddresses_get(swigCPtr, this);
   }
 
-  public void setM_userInputMode(OpalUserInputModes value) {
-    OPALJNI.OpalParamProtocol_m_userInputMode_set(swigCPtr, this, value.swigValue());
+  public void setUserInputMode(OpalUserInputModes value) {
+    OPALJNI.OpalParamProtocol_userInputMode_set(swigCPtr, this, value.swigValue());
   }
 
-  public OpalUserInputModes getM_userInputMode() {
-    return OpalUserInputModes.swigToEnum(OPALJNI.OpalParamProtocol_m_userInputMode_get(swigCPtr, this));
+  public OpalUserInputModes getUserInputMode() {
+    return OpalUserInputModes.swigToEnum(OPALJNI.OpalParamProtocol_userInputMode_get(swigCPtr, this));
   }
 
-  public void setM_defaultOptions(String value) {
-    OPALJNI.OpalParamProtocol_m_defaultOptions_set(swigCPtr, this, value);
+  public void setDefaultOptions(String value) {
+    OPALJNI.OpalParamProtocol_defaultOptions_set(swigCPtr, this, value);
   }
 
-  public String getM_defaultOptions() {
-    return OPALJNI.OpalParamProtocol_m_defaultOptions_get(swigCPtr, this);
+  public String getDefaultOptions() {
+    return OPALJNI.OpalParamProtocol_defaultOptions_get(swigCPtr, this);
   }
 
   public OpalParamProtocol() {

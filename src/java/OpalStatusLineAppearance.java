@@ -35,52 +35,52 @@ public class OpalStatusLineAppearance {
     }
   }
 
-  public void setM_line(String value) {
-    OPALJNI.OpalStatusLineAppearance_m_line_set(swigCPtr, this, value);
+  public void setLine(String value) {
+    OPALJNI.OpalStatusLineAppearance_line_set(swigCPtr, this, value);
   }
 
-  public String getM_line() {
-    return OPALJNI.OpalStatusLineAppearance_m_line_get(swigCPtr, this);
+  public String getLine() {
+    return OPALJNI.OpalStatusLineAppearance_line_get(swigCPtr, this);
   }
 
-  public void setM_state(OpalLineAppearanceStates value) {
-    OPALJNI.OpalStatusLineAppearance_m_state_set(swigCPtr, this, value.swigValue());
+  public void setState(OpalLineAppearanceStates value) {
+    OPALJNI.OpalStatusLineAppearance_state_set(swigCPtr, this, value.swigValue());
   }
 
-  public OpalLineAppearanceStates getM_state() {
-    return OpalLineAppearanceStates.swigToEnum(OPALJNI.OpalStatusLineAppearance_m_state_get(swigCPtr, this));
+  public OpalLineAppearanceStates getState() {
+    return OpalLineAppearanceStates.swigToEnum(OPALJNI.OpalStatusLineAppearance_state_get(swigCPtr, this));
   }
 
-  public void setM_appearance(int value) {
-    OPALJNI.OpalStatusLineAppearance_m_appearance_set(swigCPtr, this, value);
+  public void setAppearance(int value) {
+    OPALJNI.OpalStatusLineAppearance_appearance_set(swigCPtr, this, value);
   }
 
-  public int getM_appearance() {
-    return OPALJNI.OpalStatusLineAppearance_m_appearance_get(swigCPtr, this);
+  public int getAppearance() {
+    return OPALJNI.OpalStatusLineAppearance_appearance_get(swigCPtr, this);
   }
 
-  public void setM_callId(String value) {
-    OPALJNI.OpalStatusLineAppearance_m_callId_set(swigCPtr, this, value);
+  public void setCallId(String value) {
+    OPALJNI.OpalStatusLineAppearance_callId_set(swigCPtr, this, value);
   }
 
-  public String getM_callId() {
-    return OPALJNI.OpalStatusLineAppearance_m_callId_get(swigCPtr, this);
+  public String getCallId() {
+    return OPALJNI.OpalStatusLineAppearance_callId_get(swigCPtr, this);
   }
 
-  public void setM_partyA(String value) {
-    OPALJNI.OpalStatusLineAppearance_m_partyA_set(swigCPtr, this, value);
+  public void setPartyA(String value) {
+    OPALJNI.OpalStatusLineAppearance_partyA_set(swigCPtr, this, value);
   }
 
-  public String getM_partyA() {
-    return OPALJNI.OpalStatusLineAppearance_m_partyA_get(swigCPtr, this);
+  public String getPartyA() {
+    return OPALJNI.OpalStatusLineAppearance_partyA_get(swigCPtr, this);
   }
 
-  public void setM_partyB(String value) {
-    OPALJNI.OpalStatusLineAppearance_m_partyB_set(swigCPtr, this, value);
+  public void setPartyB(String value) {
+    OPALJNI.OpalStatusLineAppearance_partyB_set(swigCPtr, this, value);
   }
 
-  public String getM_partyB() {
-    return OPALJNI.OpalStatusLineAppearance_m_partyB_get(swigCPtr, this);
+  public String getPartyB() {
+    return OPALJNI.OpalStatusLineAppearance_partyB_get(swigCPtr, this);
   }
 
   public OpalStatusLineAppearance() {
