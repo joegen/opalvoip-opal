@@ -65,7 +65,6 @@
     </Link>
     <AntBuild>
       <AntDeploy>None</AntDeploy>
-      <AntLibraryName>lib$(TargetName)</AntLibraryName>
     </AntBuild>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">
