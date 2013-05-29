@@ -135,6 +135,7 @@ public class AndOPAL extends Activity
                     OutputStatus("Unregistered.");
                 else if (reg.getM_status() == OpalRegistrationStates.OpalRegisterSuccessful) {
                     m_loggedIn = true;
+                    m_destination.setEnabled(true);
                     invalidateOptionsMenu();
                     OutputStatus("Registered. Ready!");
                 }
@@ -247,6 +248,7 @@ public class AndOPAL extends Activity
         reg.setM_hostName(m_domain);
         reg.setM_password(m_password);
         reg.setM_timeToLive(300);
+        reg.setM_attributes("compatibility=ALG");
 
         if (!SendOpalCommand(message, "Registration"))
             return;
@@ -272,12 +274,13 @@ public class AndOPAL extends Activity
     public void onLogOut(MenuItem item)
     {
         m_loggedIn = false;
-        invalidateOptionsMenu();
-        OutputStatus("Shutting down ...");
-
+        m_destination.setEnabled(false);
         m_callButton.setEnabled(false);
         m_answerButton.setEnabled(false);
         m_hangUpButton.setEnabled(false);
+        invalidateOptionsMenu();
+
+        OutputStatus("Shutting down ...");
     }
 
 
