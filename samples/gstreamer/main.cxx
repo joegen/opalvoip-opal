@@ -30,7 +30,7 @@
 #include "main.h"
 
 
-// Debug: -tttttodebugstream --video-source videotestsrc -P G.711* -P H.263plus -D H.264* -D VP* -D RFC* -S "udp$10.0.1.11:25060" --map --decoder fake264dec --encoder fake264enc H.264-1 -- --map --decoder fake263dec --encoder fake263enc H.263 -- sip:10.0.1.11
+// Debug: -tttttodebugstream --video-source videotestsrc -P G.711* -P H.263plus -D H.264* -D VP* -D RFC* -S "udp$10.0.1.11:25060" --map --decoder dshowvdec_mpeg4 --encoder ffenc_msmpeg4 MPEG4 -- --map --decoder fake263dec --encoder fake263enc H.263 -- sip:10.0.1.11
 
 
 extern const char Manufacturer[] = "Vox Gratia";
@@ -71,8 +71,6 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
   gst->SetVideoSinkDevice(args.GetOptionString("video-sink", gst->GetVideoSinkDevice()));
 #endif // OPAL_VIDEO
 
-  cout << "GStreamer Supported Media Formats: " << setfill(',') << gst->GetMediaFormats() << setfill(' ') << endl;
-
   while (args.HasOption("map")) {
     if (args.GetCount() == 0) {
       cerr << "No media format specified for mapping\n";
@@ -100,6 +98,8 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
     if (!args.Parse())
       break;
   }
+
+  cout << "GStreamer Supported Media Formats: " << setfill(',') << gst->GetMediaFormats() << setfill(' ') << endl;
 
   if (args.GetCount() == 0)
     cout << "Awaiting incoming call ... " << flush;

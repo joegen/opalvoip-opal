@@ -161,8 +161,12 @@ class GstEndPoint : public OpalLocalEndPoint
       PString m_depacketiser; ///< RTP depacketisation element e.g. "rtpgsmdepay"
     };
 
-    /// Set the mapping between an OpalMediaFormat and the GStreamer pipeline text
-    void SetMapping(
+    /** Set the mapping between an OpalMediaFormat and the GStreamer pipeline text.
+
+        Returns: false if the pipeline elements are not available in the
+                 gstreamer run time.
+      */
+    bool SetMapping(
       const OpalMediaFormat & mediaFormat,  ///< Media format to map
       const CodecPipelines & info           ///< GStreamer partial pipelines to map
     );

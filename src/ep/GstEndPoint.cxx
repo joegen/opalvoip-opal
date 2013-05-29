@@ -218,6 +218,12 @@ static PString GetDefaultDevice(const char * klass, const char * const * preferr
 }
 
 
+static PString FirstWord(const PString & str)
+{
+  return str.Left(str.FindOneOf(" \t\r\n"));
+}
+
+
 GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
   : OpalLocalEndPoint(manager, prefix)
   , m_audioSourceDevice(GetDefaultDevice("Source/Audio", PreferredAudioSourceDevice, PARRAYSIZE(PreferredAudioSourceDevice)))
@@ -238,7 +244,7 @@ GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
       info.m_packetiser   = DefaultMediaFormatToGStreamer[i].m_packetiser;
       info.m_decoder      = DefaultMediaFormatToGStreamer[i].m_decoder;
       info.m_depacketiser = DefaultMediaFormatToGStreamer[i].m_depacketiser;
-      gstEncoderToMediaFormat.SetAt(info.m_encoder.Left(info.m_encoder.FindOneOf(" \t\r\n")), mediaFormat);
+      gstEncoderToMediaFormat.SetAt(FirstWord(info.m_encoder), mediaFormat);
     }
   }
 
@@ -522,16 +528,39 @@ bool GstEndPoint::BuildDecoder(ostream & desc, const GstMediaStream & stream)
 }
 
 
-void GstEndPoint::SetMapping(const OpalMediaFormat & mediaFormat, const CodecPipelines & info)
+bool GstEndPoint::SetMapping(const OpalMediaFormat & mediaFormat, const CodecPipelines & info)
 {
-  if (mediaFormat.IsValid()) {
-    m_MediaFormatToGStreamer[mediaFormat] = info;
-    PTRACE(4, "Added mapping from " << mediaFormat         << " -> "
-                       "encoder=\"" << info.m_encoder      << "\", "
-                       "decoder=\"" << info.m_decoder      << "\", "
-                    "packetiser=\"" << info.m_packetiser   << "\", "
-                  "depacketiser=\"" << info.m_depacketiser << '"');
+  if (!PAssert(mediaFormat.IsValid(), PInvalidParameter))
+    return false;
+
+  if (PGstPluginFeature::Inspect(FirstWord(info.m_encoder), PGstPluginFeature::ByName).IsEmpty()) {
+    PTRACE(2, "Could not find gstreamer encoder \"" << info.m_encoder << '"');
+    return false;
   }
+
+  if (PGstPluginFeature::Inspect(FirstWord(info.m_decoder), PGstPluginFeature::ByName).IsEmpty()) {
+    PTRACE(2, "Could not find gstreamer decoder \"" << info.m_decoder << '"');
+    return false;
+  }
+
+  if (PGstPluginFeature::Inspect(FirstWord(info.m_packetiser), PGstPluginFeature::ByName).IsEmpty()) {
+    PTRACE(2, "Could not find gstreamer packetiser \"" << info.m_packetiser << '"');
+    return false;
+  }
+
+  if (PGstPluginFeature::Inspect(FirstWord(info.m_depacketiser), PGstPluginFeature::ByName).IsEmpty()) {
+    PTRACE(2, "Could not find gstreamer depacketiser \"" << info.m_depacketiser << '"');
+    return false;
+  }
+
+  m_mediaFormatsAvailable += mediaFormat;
+  m_MediaFormatToGStreamer[mediaFormat] = info;
+  PTRACE(4, "Added mapping from " << mediaFormat         << " -> "
+                      "encoder=\"" << info.m_encoder      << "\", "
+                      "decoder=\"" << info.m_decoder      << "\", "
+                  "packetiser=\"" << info.m_packetiser   << "\", "
+                "depacketiser=\"" << info.m_depacketiser << '"');
+  return true;
 }
 
 
