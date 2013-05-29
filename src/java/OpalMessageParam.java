@@ -35,190 +35,190 @@ public class OpalMessageParam {
     }
   }
 
-  public void setM_commandError(String value) {
-    OPALJNI.OpalMessageParam_m_commandError_set(swigCPtr, this, value);
+  public void setCommandError(String value) {
+    OPALJNI.OpalMessageParam_commandError_set(swigCPtr, this, value);
   }
 
-  public String getM_commandError() {
-    return OPALJNI.OpalMessageParam_m_commandError_get(swigCPtr, this);
+  public String getCommandError() {
+    return OPALJNI.OpalMessageParam_commandError_get(swigCPtr, this);
   }
 
-  public void setM_general(OpalParamGeneral value) {
-    OPALJNI.OpalMessageParam_m_general_set(swigCPtr, this, OpalParamGeneral.getCPtr(value), value);
+  public void setGeneral(OpalParamGeneral value) {
+    OPALJNI.OpalMessageParam_general_set(swigCPtr, this, OpalParamGeneral.getCPtr(value), value);
   }
 
-  public OpalParamGeneral getM_general() {
-    long cPtr = OPALJNI.OpalMessageParam_m_general_get(swigCPtr, this);
+  public OpalParamGeneral getGeneral() {
+    long cPtr = OPALJNI.OpalMessageParam_general_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalParamGeneral(cPtr, false);
   }
 
-  public void setM_protocol(OpalParamProtocol value) {
-    OPALJNI.OpalMessageParam_m_protocol_set(swigCPtr, this, OpalParamProtocol.getCPtr(value), value);
+  public void setProtocol(OpalParamProtocol value) {
+    OPALJNI.OpalMessageParam_protocol_set(swigCPtr, this, OpalParamProtocol.getCPtr(value), value);
   }
 
-  public OpalParamProtocol getM_protocol() {
-    long cPtr = OPALJNI.OpalMessageParam_m_protocol_get(swigCPtr, this);
+  public OpalParamProtocol getProtocol() {
+    long cPtr = OPALJNI.OpalMessageParam_protocol_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalParamProtocol(cPtr, false);
   }
 
-  public void setM_registrationInfo(OpalParamRegistration value) {
-    OPALJNI.OpalMessageParam_m_registrationInfo_set(swigCPtr, this, OpalParamRegistration.getCPtr(value), value);
+  public void setRegistrationInfo(OpalParamRegistration value) {
+    OPALJNI.OpalMessageParam_registrationInfo_set(swigCPtr, this, OpalParamRegistration.getCPtr(value), value);
   }
 
-  public OpalParamRegistration getM_registrationInfo() {
-    long cPtr = OPALJNI.OpalMessageParam_m_registrationInfo_get(swigCPtr, this);
+  public OpalParamRegistration getRegistrationInfo() {
+    long cPtr = OPALJNI.OpalMessageParam_registrationInfo_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalParamRegistration(cPtr, false);
   }
 
-  public void setM_registrationStatus(OpalStatusRegistration value) {
-    OPALJNI.OpalMessageParam_m_registrationStatus_set(swigCPtr, this, OpalStatusRegistration.getCPtr(value), value);
+  public void setRegistrationStatus(OpalStatusRegistration value) {
+    OPALJNI.OpalMessageParam_registrationStatus_set(swigCPtr, this, OpalStatusRegistration.getCPtr(value), value);
   }
 
-  public OpalStatusRegistration getM_registrationStatus() {
-    long cPtr = OPALJNI.OpalMessageParam_m_registrationStatus_get(swigCPtr, this);
+  public OpalStatusRegistration getRegistrationStatus() {
+    long cPtr = OPALJNI.OpalMessageParam_registrationStatus_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalStatusRegistration(cPtr, false);
   }
 
-  public void setM_callSetUp(OpalParamSetUpCall value) {
-    OPALJNI.OpalMessageParam_m_callSetUp_set(swigCPtr, this, OpalParamSetUpCall.getCPtr(value), value);
+  public void setCallSetUp(OpalParamSetUpCall value) {
+    OPALJNI.OpalMessageParam_callSetUp_set(swigCPtr, this, OpalParamSetUpCall.getCPtr(value), value);
   }
 
-  public OpalParamSetUpCall getM_callSetUp() {
-    long cPtr = OPALJNI.OpalMessageParam_m_callSetUp_get(swigCPtr, this);
+  public OpalParamSetUpCall getCallSetUp() {
+    long cPtr = OPALJNI.OpalMessageParam_callSetUp_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalParamSetUpCall(cPtr, false);
   }
 
-  public void setM_callToken(String value) {
-    OPALJNI.OpalMessageParam_m_callToken_set(swigCPtr, this, value);
+  public void setCallToken(String value) {
+    OPALJNI.OpalMessageParam_callToken_set(swigCPtr, this, value);
   }
 
-  public String getM_callToken() {
-    return OPALJNI.OpalMessageParam_m_callToken_get(swigCPtr, this);
+  public String getCallToken() {
+    return OPALJNI.OpalMessageParam_callToken_get(swigCPtr, this);
   }
 
-  public void setM_incomingCall(OpalStatusIncomingCall value) {
-    OPALJNI.OpalMessageParam_m_incomingCall_set(swigCPtr, this, OpalStatusIncomingCall.getCPtr(value), value);
+  public void setIncomingCall(OpalStatusIncomingCall value) {
+    OPALJNI.OpalMessageParam_incomingCall_set(swigCPtr, this, OpalStatusIncomingCall.getCPtr(value), value);
   }
 
-  public OpalStatusIncomingCall getM_incomingCall() {
-    long cPtr = OPALJNI.OpalMessageParam_m_incomingCall_get(swigCPtr, this);
+  public OpalStatusIncomingCall getIncomingCall() {
+    long cPtr = OPALJNI.OpalMessageParam_incomingCall_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalStatusIncomingCall(cPtr, false);
   }
 
-  public void setM_answerCall(OpalParamAnswerCall value) {
-    OPALJNI.OpalMessageParam_m_answerCall_set(swigCPtr, this, OpalParamAnswerCall.getCPtr(value), value);
+  public void setAnswerCall(OpalParamAnswerCall value) {
+    OPALJNI.OpalMessageParam_answerCall_set(swigCPtr, this, OpalParamAnswerCall.getCPtr(value), value);
   }
 
-  public OpalParamAnswerCall getM_answerCall() {
-    long cPtr = OPALJNI.OpalMessageParam_m_answerCall_get(swigCPtr, this);
+  public OpalParamAnswerCall getAnswerCall() {
+    long cPtr = OPALJNI.OpalMessageParam_answerCall_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalParamAnswerCall(cPtr, false);
   }
 
-  public void setM_userInput(OpalStatusUserInput value) {
-    OPALJNI.OpalMessageParam_m_userInput_set(swigCPtr, this, OpalStatusUserInput.getCPtr(value), value);
+  public void setUserInput(OpalStatusUserInput value) {
+    OPALJNI.OpalMessageParam_userInput_set(swigCPtr, this, OpalStatusUserInput.getCPtr(value), value);
   }
 
-  public OpalStatusUserInput getM_userInput() {
-    long cPtr = OPALJNI.OpalMessageParam_m_userInput_get(swigCPtr, this);
+  public OpalStatusUserInput getUserInput() {
+    long cPtr = OPALJNI.OpalMessageParam_userInput_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalStatusUserInput(cPtr, false);
   }
 
-  public void setM_messageWaiting(OpalStatusMessageWaiting value) {
-    OPALJNI.OpalMessageParam_m_messageWaiting_set(swigCPtr, this, OpalStatusMessageWaiting.getCPtr(value), value);
+  public void setMessageWaiting(OpalStatusMessageWaiting value) {
+    OPALJNI.OpalMessageParam_messageWaiting_set(swigCPtr, this, OpalStatusMessageWaiting.getCPtr(value), value);
   }
 
-  public OpalStatusMessageWaiting getM_messageWaiting() {
-    long cPtr = OPALJNI.OpalMessageParam_m_messageWaiting_get(swigCPtr, this);
+  public OpalStatusMessageWaiting getMessageWaiting() {
+    long cPtr = OPALJNI.OpalMessageParam_messageWaiting_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalStatusMessageWaiting(cPtr, false);
   }
 
-  public void setM_lineAppearance(OpalStatusLineAppearance value) {
-    OPALJNI.OpalMessageParam_m_lineAppearance_set(swigCPtr, this, OpalStatusLineAppearance.getCPtr(value), value);
+  public void setLineAppearance(OpalStatusLineAppearance value) {
+    OPALJNI.OpalMessageParam_lineAppearance_set(swigCPtr, this, OpalStatusLineAppearance.getCPtr(value), value);
   }
 
-  public OpalStatusLineAppearance getM_lineAppearance() {
-    long cPtr = OPALJNI.OpalMessageParam_m_lineAppearance_get(swigCPtr, this);
+  public OpalStatusLineAppearance getLineAppearance() {
+    long cPtr = OPALJNI.OpalMessageParam_lineAppearance_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalStatusLineAppearance(cPtr, false);
   }
 
-  public void setM_callCleared(OpalStatusCallCleared value) {
-    OPALJNI.OpalMessageParam_m_callCleared_set(swigCPtr, this, OpalStatusCallCleared.getCPtr(value), value);
+  public void setCallCleared(OpalStatusCallCleared value) {
+    OPALJNI.OpalMessageParam_callCleared_set(swigCPtr, this, OpalStatusCallCleared.getCPtr(value), value);
   }
 
-  public OpalStatusCallCleared getM_callCleared() {
-    long cPtr = OPALJNI.OpalMessageParam_m_callCleared_get(swigCPtr, this);
+  public OpalStatusCallCleared getCallCleared() {
+    long cPtr = OPALJNI.OpalMessageParam_callCleared_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalStatusCallCleared(cPtr, false);
   }
 
-  public void setM_clearCall(OpalParamCallCleared value) {
-    OPALJNI.OpalMessageParam_m_clearCall_set(swigCPtr, this, OpalParamCallCleared.getCPtr(value), value);
+  public void setClearCall(OpalParamCallCleared value) {
+    OPALJNI.OpalMessageParam_clearCall_set(swigCPtr, this, OpalParamCallCleared.getCPtr(value), value);
   }
 
-  public OpalParamCallCleared getM_clearCall() {
-    long cPtr = OPALJNI.OpalMessageParam_m_clearCall_get(swigCPtr, this);
+  public OpalParamCallCleared getClearCall() {
+    long cPtr = OPALJNI.OpalMessageParam_clearCall_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalParamCallCleared(cPtr, false);
   }
 
-  public void setM_mediaStream(OpalStatusMediaStream value) {
-    OPALJNI.OpalMessageParam_m_mediaStream_set(swigCPtr, this, OpalStatusMediaStream.getCPtr(value), value);
+  public void setMediaStream(OpalStatusMediaStream value) {
+    OPALJNI.OpalMessageParam_mediaStream_set(swigCPtr, this, OpalStatusMediaStream.getCPtr(value), value);
   }
 
-  public OpalStatusMediaStream getM_mediaStream() {
-    long cPtr = OPALJNI.OpalMessageParam_m_mediaStream_get(swigCPtr, this);
+  public OpalStatusMediaStream getMediaStream() {
+    long cPtr = OPALJNI.OpalMessageParam_mediaStream_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalStatusMediaStream(cPtr, false);
   }
 
-  public void setM_setUserData(OpalParamSetUserData value) {
-    OPALJNI.OpalMessageParam_m_setUserData_set(swigCPtr, this, OpalParamSetUserData.getCPtr(value), value);
+  public void setSetUserData(OpalParamSetUserData value) {
+    OPALJNI.OpalMessageParam_setUserData_set(swigCPtr, this, OpalParamSetUserData.getCPtr(value), value);
   }
 
-  public OpalParamSetUserData getM_setUserData() {
-    long cPtr = OPALJNI.OpalMessageParam_m_setUserData_get(swigCPtr, this);
+  public OpalParamSetUserData getSetUserData() {
+    long cPtr = OPALJNI.OpalMessageParam_setUserData_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalParamSetUserData(cPtr, false);
   }
 
-  public void setM_recording(OpalParamRecording value) {
-    OPALJNI.OpalMessageParam_m_recording_set(swigCPtr, this, OpalParamRecording.getCPtr(value), value);
+  public void setRecording(OpalParamRecording value) {
+    OPALJNI.OpalMessageParam_recording_set(swigCPtr, this, OpalParamRecording.getCPtr(value), value);
   }
 
-  public OpalParamRecording getM_recording() {
-    long cPtr = OPALJNI.OpalMessageParam_m_recording_get(swigCPtr, this);
+  public OpalParamRecording getRecording() {
+    long cPtr = OPALJNI.OpalMessageParam_recording_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalParamRecording(cPtr, false);
   }
 
-  public void setM_transferStatus(OpalStatusTransferCall value) {
-    OPALJNI.OpalMessageParam_m_transferStatus_set(swigCPtr, this, OpalStatusTransferCall.getCPtr(value), value);
+  public void setTransferStatus(OpalStatusTransferCall value) {
+    OPALJNI.OpalMessageParam_transferStatus_set(swigCPtr, this, OpalStatusTransferCall.getCPtr(value), value);
   }
 
-  public OpalStatusTransferCall getM_transferStatus() {
-    long cPtr = OPALJNI.OpalMessageParam_m_transferStatus_get(swigCPtr, this);
+  public OpalStatusTransferCall getTransferStatus() {
+    long cPtr = OPALJNI.OpalMessageParam_transferStatus_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalStatusTransferCall(cPtr, false);
   }
 
-  public void setM_ivrStatus(OpalStatusIVR value) {
-    OPALJNI.OpalMessageParam_m_ivrStatus_set(swigCPtr, this, OpalStatusIVR.getCPtr(value), value);
+  public void setIvrStatus(OpalStatusIVR value) {
+    OPALJNI.OpalMessageParam_ivrStatus_set(swigCPtr, this, OpalStatusIVR.getCPtr(value), value);
   }
 
-  public OpalStatusIVR getM_ivrStatus() {
-    long cPtr = OPALJNI.OpalMessageParam_m_ivrStatus_get(swigCPtr, this);
+  public OpalStatusIVR getIvrStatus() {
+    long cPtr = OPALJNI.OpalMessageParam_ivrStatus_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalStatusIVR(cPtr, false);
   }
 
-  public void setM_presenceStatus(OpalPresenceStatus value) {
-    OPALJNI.OpalMessageParam_m_presenceStatus_set(swigCPtr, this, OpalPresenceStatus.getCPtr(value), value);
+  public void setPresenceStatus(OpalPresenceStatus value) {
+    OPALJNI.OpalMessageParam_presenceStatus_set(swigCPtr, this, OpalPresenceStatus.getCPtr(value), value);
   }
 
-  public OpalPresenceStatus getM_presenceStatus() {
-    long cPtr = OPALJNI.OpalMessageParam_m_presenceStatus_get(swigCPtr, this);
+  public OpalPresenceStatus getPresenceStatus() {
+    long cPtr = OPALJNI.OpalMessageParam_presenceStatus_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalPresenceStatus(cPtr, false);
   }
 
-  public void setM_instantMessage(OpalInstantMessage value) {
-    OPALJNI.OpalMessageParam_m_instantMessage_set(swigCPtr, this, OpalInstantMessage.getCPtr(value), value);
+  public void setInstantMessage(OpalInstantMessage value) {
+    OPALJNI.OpalMessageParam_instantMessage_set(swigCPtr, this, OpalInstantMessage.getCPtr(value), value);
   }
 
-  public OpalInstantMessage getM_instantMessage() {
-    long cPtr = OPALJNI.OpalMessageParam_m_instantMessage_get(swigCPtr, this);
+  public OpalInstantMessage getInstantMessage() {
+    long cPtr = OPALJNI.OpalMessageParam_instantMessage_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalInstantMessage(cPtr, false);
   }
 

@@ -35,52 +35,52 @@ public class OpalParamSetUpCall {
     }
   }
 
-  public void setM_partyA(String value) {
-    OPALJNI.OpalParamSetUpCall_m_partyA_set(swigCPtr, this, value);
+  public void setPartyA(String value) {
+    OPALJNI.OpalParamSetUpCall_partyA_set(swigCPtr, this, value);
   }
 
-  public String getM_partyA() {
-    return OPALJNI.OpalParamSetUpCall_m_partyA_get(swigCPtr, this);
+  public String getPartyA() {
+    return OPALJNI.OpalParamSetUpCall_partyA_get(swigCPtr, this);
   }
 
-  public void setM_partyB(String value) {
-    OPALJNI.OpalParamSetUpCall_m_partyB_set(swigCPtr, this, value);
+  public void setPartyB(String value) {
+    OPALJNI.OpalParamSetUpCall_partyB_set(swigCPtr, this, value);
   }
 
-  public String getM_partyB() {
-    return OPALJNI.OpalParamSetUpCall_m_partyB_get(swigCPtr, this);
+  public String getPartyB() {
+    return OPALJNI.OpalParamSetUpCall_partyB_get(swigCPtr, this);
   }
 
-  public void setM_callToken(String value) {
-    OPALJNI.OpalParamSetUpCall_m_callToken_set(swigCPtr, this, value);
+  public void setCallToken(String value) {
+    OPALJNI.OpalParamSetUpCall_callToken_set(swigCPtr, this, value);
   }
 
-  public String getM_callToken() {
-    return OPALJNI.OpalParamSetUpCall_m_callToken_get(swigCPtr, this);
+  public String getCallToken() {
+    return OPALJNI.OpalParamSetUpCall_callToken_get(swigCPtr, this);
   }
 
-  public void setM_alertingType(String value) {
-    OPALJNI.OpalParamSetUpCall_m_alertingType_set(swigCPtr, this, value);
+  public void setAlertingType(String value) {
+    OPALJNI.OpalParamSetUpCall_alertingType_set(swigCPtr, this, value);
   }
 
-  public String getM_alertingType() {
-    return OPALJNI.OpalParamSetUpCall_m_alertingType_get(swigCPtr, this);
+  public String getAlertingType() {
+    return OPALJNI.OpalParamSetUpCall_alertingType_get(swigCPtr, this);
   }
 
-  public void setM_protocolCallId(String value) {
-    OPALJNI.OpalParamSetUpCall_m_protocolCallId_set(swigCPtr, this, value);
+  public void setProtocolCallId(String value) {
+    OPALJNI.OpalParamSetUpCall_protocolCallId_set(swigCPtr, this, value);
   }
 
-  public String getM_protocolCallId() {
-    return OPALJNI.OpalParamSetUpCall_m_protocolCallId_get(swigCPtr, this);
+  public String getProtocolCallId() {
+    return OPALJNI.OpalParamSetUpCall_protocolCallId_get(swigCPtr, this);
   }
 
-  public void setM_overrides(OpalParamProtocol value) {
-    OPALJNI.OpalParamSetUpCall_m_overrides_set(swigCPtr, this, OpalParamProtocol.getCPtr(value), value);
+  public void setOverrides(OpalParamProtocol value) {
+    OPALJNI.OpalParamSetUpCall_overrides_set(swigCPtr, this, OpalParamProtocol.getCPtr(value), value);
   }
 
-  public OpalParamProtocol getM_overrides() {
-    long cPtr = OPALJNI.OpalParamSetUpCall_m_overrides_get(swigCPtr, this);
+  public OpalParamProtocol getOverrides() {
+    long cPtr = OPALJNI.OpalParamSetUpCall_overrides_get(swigCPtr, this);
     return (cPtr == 0) ? null : new OpalParamProtocol(cPtr, false);
   }
 

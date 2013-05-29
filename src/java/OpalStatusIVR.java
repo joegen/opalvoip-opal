@@ -35,20 +35,20 @@ public class OpalStatusIVR {
     }
   }
 
-  public void setM_callToken(String value) {
-    OPALJNI.OpalStatusIVR_m_callToken_set(swigCPtr, this, value);
+  public void setCallToken(String value) {
+    OPALJNI.OpalStatusIVR_callToken_set(swigCPtr, this, value);
   }
 
-  public String getM_callToken() {
-    return OPALJNI.OpalStatusIVR_m_callToken_get(swigCPtr, this);
+  public String getCallToken() {
+    return OPALJNI.OpalStatusIVR_callToken_get(swigCPtr, this);
   }
 
-  public void setM_variables(String value) {
-    OPALJNI.OpalStatusIVR_m_variables_set(swigCPtr, this, value);
+  public void setVariables(String value) {
+    OPALJNI.OpalStatusIVR_variables_set(swigCPtr, this, value);
   }
 
-  public String getM_variables() {
-    return OPALJNI.OpalStatusIVR_m_variables_get(swigCPtr, this);
+  public String getVariables() {
+    return OPALJNI.OpalStatusIVR_variables_get(swigCPtr, this);
   }
 
   public OpalStatusIVR() {

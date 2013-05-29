@@ -35,303 +35,303 @@ public class OpalParamGeneral {
     }
   }
 
-  public void setM_audioRecordDevice(String value) {
-    OPALJNI.OpalParamGeneral_m_audioRecordDevice_set(swigCPtr, this, value);
+  public void setAudioRecordDevice(String value) {
+    OPALJNI.OpalParamGeneral_audioRecordDevice_set(swigCPtr, this, value);
   }
 
-  public String getM_audioRecordDevice() {
-    return OPALJNI.OpalParamGeneral_m_audioRecordDevice_get(swigCPtr, this);
+  public String getAudioRecordDevice() {
+    return OPALJNI.OpalParamGeneral_audioRecordDevice_get(swigCPtr, this);
   }
 
-  public void setM_audioPlayerDevice(String value) {
-    OPALJNI.OpalParamGeneral_m_audioPlayerDevice_set(swigCPtr, this, value);
+  public void setAudioPlayerDevice(String value) {
+    OPALJNI.OpalParamGeneral_audioPlayerDevice_set(swigCPtr, this, value);
   }
 
-  public String getM_audioPlayerDevice() {
-    return OPALJNI.OpalParamGeneral_m_audioPlayerDevice_get(swigCPtr, this);
+  public String getAudioPlayerDevice() {
+    return OPALJNI.OpalParamGeneral_audioPlayerDevice_get(swigCPtr, this);
   }
 
-  public void setM_videoInputDevice(String value) {
-    OPALJNI.OpalParamGeneral_m_videoInputDevice_set(swigCPtr, this, value);
+  public void setVideoInputDevice(String value) {
+    OPALJNI.OpalParamGeneral_videoInputDevice_set(swigCPtr, this, value);
   }
 
-  public String getM_videoInputDevice() {
-    return OPALJNI.OpalParamGeneral_m_videoInputDevice_get(swigCPtr, this);
+  public String getVideoInputDevice() {
+    return OPALJNI.OpalParamGeneral_videoInputDevice_get(swigCPtr, this);
   }
 
-  public void setM_videoOutputDevice(String value) {
-    OPALJNI.OpalParamGeneral_m_videoOutputDevice_set(swigCPtr, this, value);
+  public void setVideoOutputDevice(String value) {
+    OPALJNI.OpalParamGeneral_videoOutputDevice_set(swigCPtr, this, value);
   }
 
-  public String getM_videoOutputDevice() {
-    return OPALJNI.OpalParamGeneral_m_videoOutputDevice_get(swigCPtr, this);
+  public String getVideoOutputDevice() {
+    return OPALJNI.OpalParamGeneral_videoOutputDevice_get(swigCPtr, this);
   }
 
-  public void setM_videoPreviewDevice(String value) {
-    OPALJNI.OpalParamGeneral_m_videoPreviewDevice_set(swigCPtr, this, value);
+  public void setVideoPreviewDevice(String value) {
+    OPALJNI.OpalParamGeneral_videoPreviewDevice_set(swigCPtr, this, value);
   }
 
-  public String getM_videoPreviewDevice() {
-    return OPALJNI.OpalParamGeneral_m_videoPreviewDevice_get(swigCPtr, this);
+  public String getVideoPreviewDevice() {
+    return OPALJNI.OpalParamGeneral_videoPreviewDevice_get(swigCPtr, this);
   }
 
-  public void setM_mediaOrder(String value) {
-    OPALJNI.OpalParamGeneral_m_mediaOrder_set(swigCPtr, this, value);
+  public void setMediaOrder(String value) {
+    OPALJNI.OpalParamGeneral_mediaOrder_set(swigCPtr, this, value);
   }
 
-  public String getM_mediaOrder() {
-    return OPALJNI.OpalParamGeneral_m_mediaOrder_get(swigCPtr, this);
+  public String getMediaOrder() {
+    return OPALJNI.OpalParamGeneral_mediaOrder_get(swigCPtr, this);
   }
 
-  public void setM_mediaMask(String value) {
-    OPALJNI.OpalParamGeneral_m_mediaMask_set(swigCPtr, this, value);
+  public void setMediaMask(String value) {
+    OPALJNI.OpalParamGeneral_mediaMask_set(swigCPtr, this, value);
   }
 
-  public String getM_mediaMask() {
-    return OPALJNI.OpalParamGeneral_m_mediaMask_get(swigCPtr, this);
+  public String getMediaMask() {
+    return OPALJNI.OpalParamGeneral_mediaMask_get(swigCPtr, this);
   }
 
-  public void setM_autoRxMedia(String value) {
-    OPALJNI.OpalParamGeneral_m_autoRxMedia_set(swigCPtr, this, value);
+  public void setAutoRxMedia(String value) {
+    OPALJNI.OpalParamGeneral_autoRxMedia_set(swigCPtr, this, value);
   }
 
-  public String getM_autoRxMedia() {
-    return OPALJNI.OpalParamGeneral_m_autoRxMedia_get(swigCPtr, this);
+  public String getAutoRxMedia() {
+    return OPALJNI.OpalParamGeneral_autoRxMedia_get(swigCPtr, this);
   }
 
-  public void setM_autoTxMedia(String value) {
-    OPALJNI.OpalParamGeneral_m_autoTxMedia_set(swigCPtr, this, value);
+  public void setAutoTxMedia(String value) {
+    OPALJNI.OpalParamGeneral_autoTxMedia_set(swigCPtr, this, value);
   }
 
-  public String getM_autoTxMedia() {
-    return OPALJNI.OpalParamGeneral_m_autoTxMedia_get(swigCPtr, this);
+  public String getAutoTxMedia() {
+    return OPALJNI.OpalParamGeneral_autoTxMedia_get(swigCPtr, this);
   }
 
-  public void setM_natMethod(String value) {
-    OPALJNI.OpalParamGeneral_m_natMethod_set(swigCPtr, this, value);
+  public void setNatMethod(String value) {
+    OPALJNI.OpalParamGeneral_natMethod_set(swigCPtr, this, value);
   }
 
-  public String getM_natMethod() {
-    return OPALJNI.OpalParamGeneral_m_natMethod_get(swigCPtr, this);
+  public String getNatMethod() {
+    return OPALJNI.OpalParamGeneral_natMethod_get(swigCPtr, this);
   }
 
-  public void setM_natServer(String value) {
-    OPALJNI.OpalParamGeneral_m_natServer_set(swigCPtr, this, value);
+  public void setNatServer(String value) {
+    OPALJNI.OpalParamGeneral_natServer_set(swigCPtr, this, value);
   }
 
-  public String getM_natServer() {
-    return OPALJNI.OpalParamGeneral_m_natServer_get(swigCPtr, this);
+  public String getNatServer() {
+    return OPALJNI.OpalParamGeneral_natServer_get(swigCPtr, this);
   }
 
-  public void setM_tcpPortBase(long value) {
-    OPALJNI.OpalParamGeneral_m_tcpPortBase_set(swigCPtr, this, value);
+  public void setTcpPortBase(long value) {
+    OPALJNI.OpalParamGeneral_tcpPortBase_set(swigCPtr, this, value);
   }
 
-  public long getM_tcpPortBase() {
-    return OPALJNI.OpalParamGeneral_m_tcpPortBase_get(swigCPtr, this);
+  public long getTcpPortBase() {
+    return OPALJNI.OpalParamGeneral_tcpPortBase_get(swigCPtr, this);
   }
 
-  public void setM_tcpPortMax(long value) {
-    OPALJNI.OpalParamGeneral_m_tcpPortMax_set(swigCPtr, this, value);
+  public void setTcpPortMax(long value) {
+    OPALJNI.OpalParamGeneral_tcpPortMax_set(swigCPtr, this, value);
   }
 
-  public long getM_tcpPortMax() {
-    return OPALJNI.OpalParamGeneral_m_tcpPortMax_get(swigCPtr, this);
+  public long getTcpPortMax() {
+    return OPALJNI.OpalParamGeneral_tcpPortMax_get(swigCPtr, this);
   }
 
-  public void setM_udpPortBase(long value) {
-    OPALJNI.OpalParamGeneral_m_udpPortBase_set(swigCPtr, this, value);
+  public void setUdpPortBase(long value) {
+    OPALJNI.OpalParamGeneral_udpPortBase_set(swigCPtr, this, value);
   }
 
-  public long getM_udpPortBase() {
-    return OPALJNI.OpalParamGeneral_m_udpPortBase_get(swigCPtr, this);
+  public long getUdpPortBase() {
+    return OPALJNI.OpalParamGeneral_udpPortBase_get(swigCPtr, this);
   }
 
-  public void setM_udpPortMax(long value) {
-    OPALJNI.OpalParamGeneral_m_udpPortMax_set(swigCPtr, this, value);
+  public void setUdpPortMax(long value) {
+    OPALJNI.OpalParamGeneral_udpPortMax_set(swigCPtr, this, value);
   }
 
-  public long getM_udpPortMax() {
-    return OPALJNI.OpalParamGeneral_m_udpPortMax_get(swigCPtr, this);
+  public long getUdpPortMax() {
+    return OPALJNI.OpalParamGeneral_udpPortMax_get(swigCPtr, this);
   }
 
-  public void setM_rtpPortBase(long value) {
-    OPALJNI.OpalParamGeneral_m_rtpPortBase_set(swigCPtr, this, value);
+  public void setRtpPortBase(long value) {
+    OPALJNI.OpalParamGeneral_rtpPortBase_set(swigCPtr, this, value);
   }
 
-  public long getM_rtpPortBase() {
-    return OPALJNI.OpalParamGeneral_m_rtpPortBase_get(swigCPtr, this);
+  public long getRtpPortBase() {
+    return OPALJNI.OpalParamGeneral_rtpPortBase_get(swigCPtr, this);
   }
 
-  public void setM_rtpPortMax(long value) {
-    OPALJNI.OpalParamGeneral_m_rtpPortMax_set(swigCPtr, this, value);
+  public void setRtpPortMax(long value) {
+    OPALJNI.OpalParamGeneral_rtpPortMax_set(swigCPtr, this, value);
   }
 
-  public long getM_rtpPortMax() {
-    return OPALJNI.OpalParamGeneral_m_rtpPortMax_get(swigCPtr, this);
+  public long getRtpPortMax() {
+    return OPALJNI.OpalParamGeneral_rtpPortMax_get(swigCPtr, this);
   }
 
-  public void setM_rtpTypeOfService(long value) {
-    OPALJNI.OpalParamGeneral_m_rtpTypeOfService_set(swigCPtr, this, value);
+  public void setRtpTypeOfService(long value) {
+    OPALJNI.OpalParamGeneral_rtpTypeOfService_set(swigCPtr, this, value);
   }
 
-  public long getM_rtpTypeOfService() {
-    return OPALJNI.OpalParamGeneral_m_rtpTypeOfService_get(swigCPtr, this);
+  public long getRtpTypeOfService() {
+    return OPALJNI.OpalParamGeneral_rtpTypeOfService_get(swigCPtr, this);
   }
 
-  public void setM_rtpMaxPayloadSize(long value) {
-    OPALJNI.OpalParamGeneral_m_rtpMaxPayloadSize_set(swigCPtr, this, value);
+  public void setRtpMaxPayloadSize(long value) {
+    OPALJNI.OpalParamGeneral_rtpMaxPayloadSize_set(swigCPtr, this, value);
   }
 
-  public long getM_rtpMaxPayloadSize() {
-    return OPALJNI.OpalParamGeneral_m_rtpMaxPayloadSize_get(swigCPtr, this);
+  public long getRtpMaxPayloadSize() {
+    return OPALJNI.OpalParamGeneral_rtpMaxPayloadSize_get(swigCPtr, this);
   }
 
-  public void setM_minAudioJitter(long value) {
-    OPALJNI.OpalParamGeneral_m_minAudioJitter_set(swigCPtr, this, value);
+  public void setMinAudioJitter(long value) {
+    OPALJNI.OpalParamGeneral_minAudioJitter_set(swigCPtr, this, value);
   }
 
-  public long getM_minAudioJitter() {
-    return OPALJNI.OpalParamGeneral_m_minAudioJitter_get(swigCPtr, this);
+  public long getMinAudioJitter() {
+    return OPALJNI.OpalParamGeneral_minAudioJitter_get(swigCPtr, this);
   }
 
-  public void setM_maxAudioJitter(long value) {
-    OPALJNI.OpalParamGeneral_m_maxAudioJitter_set(swigCPtr, this, value);
+  public void setMaxAudioJitter(long value) {
+    OPALJNI.OpalParamGeneral_maxAudioJitter_set(swigCPtr, this, value);
   }
 
-  public long getM_maxAudioJitter() {
-    return OPALJNI.OpalParamGeneral_m_maxAudioJitter_get(swigCPtr, this);
+  public long getMaxAudioJitter() {
+    return OPALJNI.OpalParamGeneral_maxAudioJitter_get(swigCPtr, this);
   }
 
-  public void setM_silenceDetectMode(OpalSilenceDetectMode value) {
-    OPALJNI.OpalParamGeneral_m_silenceDetectMode_set(swigCPtr, this, value.swigValue());
+  public void setSilenceDetectMode(OpalSilenceDetectMode value) {
+    OPALJNI.OpalParamGeneral_silenceDetectMode_set(swigCPtr, this, value.swigValue());
   }
 
-  public OpalSilenceDetectMode getM_silenceDetectMode() {
-    return OpalSilenceDetectMode.swigToEnum(OPALJNI.OpalParamGeneral_m_silenceDetectMode_get(swigCPtr, this));
+  public OpalSilenceDetectMode getSilenceDetectMode() {
+    return OpalSilenceDetectMode.swigToEnum(OPALJNI.OpalParamGeneral_silenceDetectMode_get(swigCPtr, this));
   }
 
-  public void setM_silenceThreshold(long value) {
-    OPALJNI.OpalParamGeneral_m_silenceThreshold_set(swigCPtr, this, value);
+  public void setSilenceThreshold(long value) {
+    OPALJNI.OpalParamGeneral_silenceThreshold_set(swigCPtr, this, value);
   }
 
-  public long getM_silenceThreshold() {
-    return OPALJNI.OpalParamGeneral_m_silenceThreshold_get(swigCPtr, this);
+  public long getSilenceThreshold() {
+    return OPALJNI.OpalParamGeneral_silenceThreshold_get(swigCPtr, this);
   }
 
-  public void setM_signalDeadband(long value) {
-    OPALJNI.OpalParamGeneral_m_signalDeadband_set(swigCPtr, this, value);
+  public void setSignalDeadband(long value) {
+    OPALJNI.OpalParamGeneral_signalDeadband_set(swigCPtr, this, value);
   }
 
-  public long getM_signalDeadband() {
-    return OPALJNI.OpalParamGeneral_m_signalDeadband_get(swigCPtr, this);
+  public long getSignalDeadband() {
+    return OPALJNI.OpalParamGeneral_signalDeadband_get(swigCPtr, this);
   }
 
-  public void setM_silenceDeadband(long value) {
-    OPALJNI.OpalParamGeneral_m_silenceDeadband_set(swigCPtr, this, value);
+  public void setSilenceDeadband(long value) {
+    OPALJNI.OpalParamGeneral_silenceDeadband_set(swigCPtr, this, value);
   }
 
-  public long getM_silenceDeadband() {
-    return OPALJNI.OpalParamGeneral_m_silenceDeadband_get(swigCPtr, this);
+  public long getSilenceDeadband() {
+    return OPALJNI.OpalParamGeneral_silenceDeadband_get(swigCPtr, this);
   }
 
-  public void setM_silenceAdaptPeriod(long value) {
-    OPALJNI.OpalParamGeneral_m_silenceAdaptPeriod_set(swigCPtr, this, value);
+  public void setSilenceAdaptPeriod(long value) {
+    OPALJNI.OpalParamGeneral_silenceAdaptPeriod_set(swigCPtr, this, value);
   }
 
-  public long getM_silenceAdaptPeriod() {
-    return OPALJNI.OpalParamGeneral_m_silenceAdaptPeriod_get(swigCPtr, this);
+  public long getSilenceAdaptPeriod() {
+    return OPALJNI.OpalParamGeneral_silenceAdaptPeriod_get(swigCPtr, this);
   }
 
-  public void setM_echoCancellation(OpalEchoCancelMode value) {
-    OPALJNI.OpalParamGeneral_m_echoCancellation_set(swigCPtr, this, value.swigValue());
+  public void setEchoCancellation(OpalEchoCancelMode value) {
+    OPALJNI.OpalParamGeneral_echoCancellation_set(swigCPtr, this, value.swigValue());
   }
 
-  public OpalEchoCancelMode getM_echoCancellation() {
-    return OpalEchoCancelMode.swigToEnum(OPALJNI.OpalParamGeneral_m_echoCancellation_get(swigCPtr, this));
+  public OpalEchoCancelMode getEchoCancellation() {
+    return OpalEchoCancelMode.swigToEnum(OPALJNI.OpalParamGeneral_echoCancellation_get(swigCPtr, this));
   }
 
-  public void setM_audioBuffers(long value) {
-    OPALJNI.OpalParamGeneral_m_audioBuffers_set(swigCPtr, this, value);
+  public void setAudioBuffers(long value) {
+    OPALJNI.OpalParamGeneral_audioBuffers_set(swigCPtr, this, value);
   }
 
-  public long getM_audioBuffers() {
-    return OPALJNI.OpalParamGeneral_m_audioBuffers_get(swigCPtr, this);
+  public long getAudioBuffers() {
+    return OPALJNI.OpalParamGeneral_audioBuffers_get(swigCPtr, this);
   }
 
-  public void setM_mediaReadData(SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int value) {
-    OPALJNI.OpalParamGeneral_m_mediaReadData_set(swigCPtr, this, SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int.getCPtr(value));
+  public void setMediaReadData(SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int value) {
+    OPALJNI.OpalParamGeneral_mediaReadData_set(swigCPtr, this, SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int.getCPtr(value));
   }
 
-  public SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int getM_mediaReadData() {
-    long cPtr = OPALJNI.OpalParamGeneral_m_mediaReadData_get(swigCPtr, this);
+  public SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int getMediaReadData() {
+    long cPtr = OPALJNI.OpalParamGeneral_mediaReadData_get(swigCPtr, this);
     return (cPtr == 0) ? null : new SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int(cPtr, false);
   }
 
-  public void setM_mediaWriteData(SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int value) {
-    OPALJNI.OpalParamGeneral_m_mediaWriteData_set(swigCPtr, this, SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int.getCPtr(value));
+  public void setMediaWriteData(SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int value) {
+    OPALJNI.OpalParamGeneral_mediaWriteData_set(swigCPtr, this, SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int.getCPtr(value));
   }
 
-  public SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int getM_mediaWriteData() {
-    long cPtr = OPALJNI.OpalParamGeneral_m_mediaWriteData_get(swigCPtr, this);
+  public SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int getMediaWriteData() {
+    long cPtr = OPALJNI.OpalParamGeneral_mediaWriteData_get(swigCPtr, this);
     return (cPtr == 0) ? null : new SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int(cPtr, false);
   }
 
-  public void setM_mediaDataHeader(OpalMediaDataType value) {
-    OPALJNI.OpalParamGeneral_m_mediaDataHeader_set(swigCPtr, this, value.swigValue());
+  public void setMediaDataHeader(OpalMediaDataType value) {
+    OPALJNI.OpalParamGeneral_mediaDataHeader_set(swigCPtr, this, value.swigValue());
   }
 
-  public OpalMediaDataType getM_mediaDataHeader() {
-    return OpalMediaDataType.swigToEnum(OPALJNI.OpalParamGeneral_m_mediaDataHeader_get(swigCPtr, this));
+  public OpalMediaDataType getMediaDataHeader() {
+    return OpalMediaDataType.swigToEnum(OPALJNI.OpalParamGeneral_mediaDataHeader_get(swigCPtr, this));
   }
 
-  public void setM_messageAvailable(SWIGTYPE_p_f_p_q_const__OpalMessage__int value) {
-    OPALJNI.OpalParamGeneral_m_messageAvailable_set(swigCPtr, this, SWIGTYPE_p_f_p_q_const__OpalMessage__int.getCPtr(value));
+  public void setMessageAvailable(SWIGTYPE_p_f_p_q_const__OpalMessage__int value) {
+    OPALJNI.OpalParamGeneral_messageAvailable_set(swigCPtr, this, SWIGTYPE_p_f_p_q_const__OpalMessage__int.getCPtr(value));
   }
 
-  public SWIGTYPE_p_f_p_q_const__OpalMessage__int getM_messageAvailable() {
-    long cPtr = OPALJNI.OpalParamGeneral_m_messageAvailable_get(swigCPtr, this);
+  public SWIGTYPE_p_f_p_q_const__OpalMessage__int getMessageAvailable() {
+    long cPtr = OPALJNI.OpalParamGeneral_messageAvailable_get(swigCPtr, this);
     return (cPtr == 0) ? null : new SWIGTYPE_p_f_p_q_const__OpalMessage__int(cPtr, false);
   }
 
-  public void setM_mediaOptions(String value) {
-    OPALJNI.OpalParamGeneral_m_mediaOptions_set(swigCPtr, this, value);
+  public void setMediaOptions(String value) {
+    OPALJNI.OpalParamGeneral_mediaOptions_set(swigCPtr, this, value);
   }
 
-  public String getM_mediaOptions() {
-    return OPALJNI.OpalParamGeneral_m_mediaOptions_get(swigCPtr, this);
+  public String getMediaOptions() {
+    return OPALJNI.OpalParamGeneral_mediaOptions_get(swigCPtr, this);
   }
 
-  public void setM_audioBufferTime(long value) {
-    OPALJNI.OpalParamGeneral_m_audioBufferTime_set(swigCPtr, this, value);
+  public void setAudioBufferTime(long value) {
+    OPALJNI.OpalParamGeneral_audioBufferTime_set(swigCPtr, this, value);
   }
 
-  public long getM_audioBufferTime() {
-    return OPALJNI.OpalParamGeneral_m_audioBufferTime_get(swigCPtr, this);
+  public long getAudioBufferTime() {
+    return OPALJNI.OpalParamGeneral_audioBufferTime_get(swigCPtr, this);
   }
 
-  public void setM_manualAlerting(long value) {
-    OPALJNI.OpalParamGeneral_m_manualAlerting_set(swigCPtr, this, value);
+  public void setManualAlerting(long value) {
+    OPALJNI.OpalParamGeneral_manualAlerting_set(swigCPtr, this, value);
   }
 
-  public long getM_manualAlerting() {
-    return OPALJNI.OpalParamGeneral_m_manualAlerting_get(swigCPtr, this);
+  public long getManualAlerting() {
+    return OPALJNI.OpalParamGeneral_manualAlerting_get(swigCPtr, this);
   }
 
-  public void setM_mediaTiming(OpalMediaTiming value) {
-    OPALJNI.OpalParamGeneral_m_mediaTiming_set(swigCPtr, this, value.swigValue());
+  public void setMediaTiming(OpalMediaTiming value) {
+    OPALJNI.OpalParamGeneral_mediaTiming_set(swigCPtr, this, value.swigValue());
   }
 
-  public OpalMediaTiming getM_mediaTiming() {
-    return OpalMediaTiming.swigToEnum(OPALJNI.OpalParamGeneral_m_mediaTiming_get(swigCPtr, this));
+  public OpalMediaTiming getMediaTiming() {
+    return OpalMediaTiming.swigToEnum(OPALJNI.OpalParamGeneral_mediaTiming_get(swigCPtr, this));
   }
 
-  public void setM_videoSourceTiming(OpalMediaTiming value) {
-    OPALJNI.OpalParamGeneral_m_videoSourceTiming_set(swigCPtr, this, value.swigValue());
+  public void setVideoSourceTiming(OpalMediaTiming value) {
+    OPALJNI.OpalParamGeneral_videoSourceTiming_set(swigCPtr, this, value.swigValue());
   }
 
-  public OpalMediaTiming getM_videoSourceTiming() {
-    return OpalMediaTiming.swigToEnum(OPALJNI.OpalParamGeneral_m_videoSourceTiming_get(swigCPtr, this));
+  public OpalMediaTiming getVideoSourceTiming() {
+    return OpalMediaTiming.swigToEnum(OPALJNI.OpalParamGeneral_videoSourceTiming_get(swigCPtr, this));
   }
 
   public OpalParamGeneral() {

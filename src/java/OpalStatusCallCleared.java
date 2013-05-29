@@ -35,20 +35,20 @@ public class OpalStatusCallCleared {
     }
   }
 
-  public void setM_callToken(String value) {
-    OPALJNI.OpalStatusCallCleared_m_callToken_set(swigCPtr, this, value);
+  public void setCallToken(String value) {
+    OPALJNI.OpalStatusCallCleared_callToken_set(swigCPtr, this, value);
   }
 
-  public String getM_callToken() {
-    return OPALJNI.OpalStatusCallCleared_m_callToken_get(swigCPtr, this);
+  public String getCallToken() {
+    return OPALJNI.OpalStatusCallCleared_callToken_get(swigCPtr, this);
   }
 
-  public void setM_reason(String value) {
-    OPALJNI.OpalStatusCallCleared_m_reason_set(swigCPtr, this, value);
+  public void setReason(String value) {
+    OPALJNI.OpalStatusCallCleared_reason_set(swigCPtr, this, value);
   }
 
-  public String getM_reason() {
-    return OPALJNI.OpalStatusCallCleared_m_reason_get(swigCPtr, this);
+  public String getReason() {
+    return OPALJNI.OpalStatusCallCleared_reason_get(swigCPtr, this);
   }
 
   public OpalStatusCallCleared() {
