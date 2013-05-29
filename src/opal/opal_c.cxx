@@ -1624,8 +1624,26 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
         regParams.m_password = command.m_param.m_registrationInfo.m_password;
         regParams.m_realm = command.m_param.m_registrationInfo.m_adminEntity;
         regParams.m_expire = command.m_param.m_registrationInfo.m_timeToLive;
+
         if (m_apiVersion >= 7 && command.m_param.m_registrationInfo.m_restoreTime > 0)
           regParams.m_restoreTime = command.m_param.m_registrationInfo.m_restoreTime;
+
+        if (m_apiVersion >= 28 &&  !IsNullString(command.m_param.m_registrationInfo.m_attributes)) {
+          PStringOptions attr(command.m_param.m_registrationInfo.m_attributes);
+          PCaselessString compatibility = attr("compatibility");
+          if (compatibility == "single" || compatibility == "CannotRegisterMultipleContacts")
+            regParams.m_compatibility = SIPRegister::e_CannotRegisterMultipleContacts;
+          else if (compatibility == "public" || compatibility == "CannotRegisterPrivateContacts")
+            regParams.m_compatibility = SIPRegister::e_CannotRegisterPrivateContacts;
+          else if (compatibility == "ALG" || compatibility == "HasApplicationLayerGateway")
+            regParams.m_compatibility = SIPRegister::e_HasApplicationLayerGateway;
+          else if (compatibility == "RFC5626")
+            regParams.m_compatibility = SIPRegister::e_RFC5626;
+
+          regParams.m_proxyAddress = attr("proxy");
+          regParams.m_interface = attr("interface");
+          regParams.m_instanceId = attr("instance-id");
+        }
 
         if (sip->Register(regParams, aor))
           SET_MESSAGE_STRING(response, m_param.m_registrationInfo.m_identifier, aor);
@@ -2429,6 +2447,13 @@ void OpalManager_C::OnMessageDisposition(const OpalIMContext::DispositionInfo & 
 
 void OpalManager_C::OnCompositionIndication(const OpalIMContext::CompositionInfo &)
 {
+}
+
+#else
+
+void OpalManager_C::HandleSendIM(const OpalMessage &, OpalMessageBuffer & response)
+{
+  response.SetError("Presence not supported by library.");
 }
 
 #endif // OPAL_HAS_IM
