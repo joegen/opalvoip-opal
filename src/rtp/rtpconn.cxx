@@ -575,4 +575,17 @@ bool OpalRTPConnection::GarbageCollection()
 }
 
 
+void OpalRTPConnection::SessionMap::MoveFrom(SessionMap & other)
+{
+  *this = other;
+  AllowDeleteObjects(); // We now own the objects, need to put this back on
+
+  // Remove from other without deleting them
+  bool del = other.deleteObjects;
+  other.DisallowDeleteObjects();
+  other.RemoveAll();
+  other.AllowDeleteObjects(del);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
