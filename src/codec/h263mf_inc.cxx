@@ -53,9 +53,12 @@ static const char H263EncodingName[] = "H263";
 static const char H263plusFormatName[] = OPAL_H263plus;
 static const char H263plusEncodingName[] = "H263-1998";
 
-#define H263_BITRATE 327600
+#define H263_BITRATE (16*1024*1024)
 
-#define MAX_H263_CUSTOM_SIZES 10
+#define TIMESTAMP_29_97_FPS 3003
+
+#define MAX_H263_CUSTOM_RESOLUTIONS 10
+#define H263_CUSTOM_RESOLUTION_BUFFER_SIZE (MAX_H263_CUSTOM_RESOLUTIONS*20)
 #define DEFAULT_CUSTOM_MPI "0,0,"STRINGIZE(PLUGINCODEC_MPI_DISABLED)
 
 static const char SQCIF_MPI[]  = PLUGINCODEC_SQCIF_MPI;
@@ -67,21 +70,20 @@ static const char CIF16_MPI[]  = PLUGINCODEC_CIF16_MPI;
 static const char RFC2190[] = "RFC2190";
 static const char RFC2429[] = "RFC2429,RFC2190"; // Plus lesser included charge
 
-static struct StdSizes {
+static struct StandardResolution {
   enum { 
     SQCIF, 
     QCIF, 
     CIF, 
     CIF4, 
     CIF16, 
-    NumStdSizes,
-    UnknownStdSize = NumStdSizes
+    Count
   };
 
-  int width;
-  int height;
+  unsigned width;
+  unsigned height;
   const char * optionName;
-} StandardVideoSizes[StdSizes::NumStdSizes] = {
+} StandardResolutions[StandardResolution::Count] = {
   { PLUGINCODEC_SQCIF_WIDTH, PLUGINCODEC_SQCIF_HEIGHT, PLUGINCODEC_SQCIF_MPI },
   {  PLUGINCODEC_QCIF_WIDTH,  PLUGINCODEC_QCIF_HEIGHT, PLUGINCODEC_QCIF_MPI  },
   {   PLUGINCODEC_CIF_WIDTH,   PLUGINCODEC_CIF_HEIGHT, PLUGINCODEC_CIF_MPI   },
@@ -90,38 +92,43 @@ static struct StdSizes {
 };
 
 
+typedef struct CustomResoluton {
+  unsigned width;
+  unsigned height;
+  unsigned mpi;
+} CustomResolutions[MAX_H263_CUSTOM_RESOLUTIONS];
+
 static bool GetCustomMPI(const char * str,
-                         unsigned width[MAX_H263_CUSTOM_SIZES],
-                         unsigned height[MAX_H263_CUSTOM_SIZES],
-                         unsigned mpi[MAX_H263_CUSTOM_SIZES],
+                         CustomResolutions res,
                          size_t & count)
 {
   count = 0;
   for (;;) {
-    width[count] = height[count] = mpi[count] = 0;
+    res[count].width = res[count].height = res[count].mpi = 0;
 
     char * end;
-    width[count] = strtoul(str, &end, 10);
+    res[count].width = strtoul(str, &end, 10);
     if (*end != ',')
       return false;
 
     str = end+1;
-    height[count] = strtoul(str, &end, 10);
+    res[count].height = strtoul(str, &end, 10);
     if (*end != ',')
       return false;
 
     str = end+1;
-    mpi[count] = strtoul(str, &end, 10);
-    if (mpi[count] == 0 || mpi[count] > PLUGINCODEC_MPI_DISABLED)
+    res[count].mpi = strtoul(str, &end, 10);
+    if (res[count].mpi == 0 || res[count].mpi > PLUGINCODEC_MPI_DISABLED)
       return false;
 
-    if (mpi[count] < PLUGINCODEC_MPI_DISABLED && (width[count] < 16 || height[count] < 16))
+    if (res[count].mpi == PLUGINCODEC_MPI_DISABLED)
+      return true;
+
+    if (res[count].width < 16 || res[count].height < 16)
       return false;
 
-    if (mpi[count] == 0 || mpi[count] > PLUGINCODEC_MPI_DISABLED)
-      return false;
     ++count;
-    if (count >= MAX_H263_CUSTOM_SIZES || *end != ';')
+    if (count >= MAX_H263_CUSTOM_RESOLUTIONS || *end != ';')
       return true;
 
     str = end+1;
@@ -131,32 +138,30 @@ static bool GetCustomMPI(const char * str,
 
 static int MergeCustomResolution(const char * dest, const char * src, char * result)
 {
-  unsigned resultWidth[MAX_H263_CUSTOM_SIZES];
-  unsigned resultHeight[MAX_H263_CUSTOM_SIZES];
-  unsigned resultMPI[MAX_H263_CUSTOM_SIZES];
   size_t resultCount = 0;
+  CustomResolutions resultRes;
 
   size_t srcCount;
-  unsigned srcWidth[MAX_H263_CUSTOM_SIZES], srcHeight[MAX_H263_CUSTOM_SIZES], srcMPI[MAX_H263_CUSTOM_SIZES];
+  CustomResolutions srcRes;
 
-  if (!GetCustomMPI(src, srcWidth, srcHeight, srcMPI, srcCount)) {
-    PTRACE(2, "IPP-H.263", "Invalid source custom MPI format \"" << src << '"');
+  if (!GetCustomMPI(src, srcRes, srcCount)) {
+    PTRACE(2, "H.263", "Invalid source custom MPI format \"" << src << '"');
     return false;
   }
 
   size_t dstCount;
-  unsigned dstWidth[MAX_H263_CUSTOM_SIZES], dstHeight[MAX_H263_CUSTOM_SIZES], dstMPI[MAX_H263_CUSTOM_SIZES];
-  if (!GetCustomMPI(dest, dstWidth, dstHeight, dstMPI, dstCount)) {
-    PTRACE(2, "IPP-H.263", "Invalid destination custom MPI format \"" << dest << '"');
+  CustomResolutions dstRes;
+  if (!GetCustomMPI(dest, dstRes, dstCount)) {
+    PTRACE(2, "H.263", "Invalid destination custom MPI format \"" << dest << '"');
     return false;
   }
 
   for (size_t s = 0; s < srcCount; ++s) {
     for (size_t d = 0; d < dstCount; ++d) {
-      if (srcWidth[s] == dstWidth[d] && srcHeight[s] == dstHeight[d]) {
-        resultWidth[resultCount] = srcWidth[s];
-        resultHeight[resultCount] = srcHeight[s];
-        resultMPI[resultCount] = std::max(srcMPI[s], dstMPI[d]);
+      if (srcRes[s].width == dstRes[d].width && srcRes[s].height == dstRes[d].height) {
+        resultRes[resultCount].width = srcRes[s].width;
+        resultRes[resultCount].height = srcRes[s].height;
+        resultRes[resultCount].mpi = std::max(srcRes[s].mpi, dstRes[d].mpi);
         ++resultCount;
       }
     }
@@ -167,145 +172,127 @@ static int MergeCustomResolution(const char * dest, const char * src, char * res
   else {
     size_t len = 0;
     for (size_t i = 0; i < resultCount; ++i)
-      len += sprintf(result+len, len == 0 ? "%u,%u,%u" : ";%u,%u,%u", resultWidth[i], resultHeight[i], resultMPI[i]);
+      len += sprintf(result+len, len == 0 ? "%u,%u,%u" : ";%u,%u,%u",
+                     resultRes[i].width, resultRes[i].height, resultRes[i].mpi);
   }
 
   return true;
 }
 
 
-static void FindBoundingBox(const PluginCodec_OptionMap & options, 
-                            int * mpi,
-                            int & minWidth,
-                            int & minHeight,
-                            int & maxWidth,
-                            int & maxHeight,
-                            int & frameTime,
-                            int & targetBitRate,
-                            int & maxBitRate)
+static void ClampResolution(unsigned width, unsigned height, unsigned mpi,
+                            unsigned & minWidth, unsigned & minHeight,
+                            unsigned & maxWidth, unsigned & maxHeight,
+                            unsigned & frameTime)
 {
-  // initialise the MPI values to disabled
-  int i;
-  for (i = 0; i < 5; i++)
-    mpi[i] = PLUGINCODEC_MPI_DISABLED;
+  if (mpi == PLUGINCODEC_MPI_DISABLED)
+    return;
 
-  // following values will be set while scanning for options
-  minWidth      = INT_MAX;
-  minHeight     = INT_MAX;
-  maxWidth      = 0;
-  maxHeight     = 0;
-  int rxMinWidth    = options.GetUnsigned(PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH,  PLUGINCODEC_QCIF_WIDTH);
-  int rxMinHeight   = options.GetUnsigned(PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT, PLUGINCODEC_QCIF_HEIGHT);
-  int rxMaxWidth    = options.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH,  PLUGINCODEC_QCIF_WIDTH);
-  int rxMaxHeight   = options.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT, PLUGINCODEC_QCIF_HEIGHT);
-  int frameRate     = 10;      // 10 fps
-  int origFrameTime = options.GetUnsigned(PLUGINCODEC_OPTION_FRAME_TIME, 900);     // 10 fps in video RTP timestamps
-  int maxBR         = options.GetUnsigned("MaxBR");
-  maxBitRate        = options.GetUnsigned(PLUGINCODEC_OPTION_MAX_BIT_RATE);
-  targetBitRate     = options.GetUnsigned(PLUGINCODEC_OPTION_TARGET_BIT_RATE);
+  if (minWidth > width)
+    minWidth = width;
 
+  if (minHeight > height)
+    minHeight = height;
+
+  if (maxWidth < width)
+    maxWidth = width;
+
+  if (maxHeight < height)
+    maxHeight = height;
+
+  unsigned thisTime = TIMESTAMP_29_97_FPS*mpi;
+  if (thisTime > frameTime)
+    frameTime = thisTime;
+}
+
+
+static bool ClampToNormalised(PluginCodec_OptionMap & original, PluginCodec_OptionMap & changed)
+{
   // extract the MPI values set in the custom options, and find the min/max of them
-  frameTime = 0;
+  unsigned minWidth  = INT_MAX;
+  unsigned minHeight = INT_MAX;
+  unsigned maxWidth  = 0;
+  unsigned maxHeight = 0;
+  unsigned frameTime = 0;
 
-  for (i = 0; i < 5; i++) {
-    mpi[i] = options.GetUnsigned(StandardVideoSizes[i].optionName, PLUGINCODEC_MPI_DISABLED);
-    if (mpi[i] != PLUGINCODEC_MPI_DISABLED) {
-      int thisTime = 3003*mpi[i];
-      if (minWidth > StandardVideoSizes[i].width)
-        minWidth = StandardVideoSizes[i].width;
-      if (minHeight > StandardVideoSizes[i].height)
-        minHeight = StandardVideoSizes[i].height;
-      if (maxWidth < StandardVideoSizes[i].width)
-        maxWidth = StandardVideoSizes[i].width;
-      if (maxHeight < StandardVideoSizes[i].height)
-        maxHeight = StandardVideoSizes[i].height;
-      if (thisTime > frameTime)
-        frameTime = thisTime;
+  for (int i = 0; i < StandardResolution::Count; i++)
+    ClampResolution(StandardResolutions[i].width,
+                    StandardResolutions[i].height,
+                    original.GetUnsigned(StandardResolutions[i].optionName, PLUGINCODEC_MPI_DISABLED),
+                    minWidth, minHeight, maxWidth, maxHeight, frameTime);
+
+  if (original.find(PLUGINCODEC_CUSTOM_MPI) != original.end()) {
+    size_t customCount;
+    CustomResolutions custom;
+    if (!GetCustomMPI(original[PLUGINCODEC_CUSTOM_MPI].c_str(), custom, customCount)) {
+      PTRACE(2, "H.263", "Invalid custom MPI format \"" << original[PLUGINCODEC_CUSTOM_MPI] << '"');
+      return false;
     }
+
+    for (size_t i = 0; i < customCount; ++i)
+      ClampResolution(custom[i].width, custom[i].height, custom[i].mpi,
+                      minWidth, minHeight, maxWidth, maxHeight, frameTime);
   }
 
   // if no MPIs specified, then the spec says to use QCIF
   if (frameTime == 0) {
-    int ft;
-    if (frameRate != 0) 
-      ft = 90000 / frameRate;
-    else 
-      ft = origFrameTime;
-    mpi[1] = (ft + 1502) / 3003;
-
-    minWidth  = PLUGINCODEC_QCIF_WIDTH;
-    maxWidth  = PLUGINCODEC_CIF16_WIDTH;
-    minHeight = PLUGINCODEC_QCIF_HEIGHT;
-    maxHeight = PLUGINCODEC_CIF16_HEIGHT;
+    minWidth  = maxWidth  = PLUGINCODEC_QCIF_WIDTH;
+    minHeight = maxHeight = PLUGINCODEC_QCIF_HEIGHT;
+    frameTime = TIMESTAMP_29_97_FPS;
   }
 
-  // find the smallest MPI size that is larger than the min frame size
-  for (i = 0; i < 5; i++) {
-    if (StandardVideoSizes[i].width >= rxMinWidth && StandardVideoSizes[i].height >= rxMinHeight) {
-      rxMinWidth = StandardVideoSizes[i].width;
-      rxMinHeight = StandardVideoSizes[i].height;
-      break;
-    }
-  }
-
-  // find the largest MPI size that is smaller than the max frame size
-  for (i = 4; i >= 0; i--) {
-    if (StandardVideoSizes[i].width <= rxMaxWidth && StandardVideoSizes[i].height <= rxMaxHeight) {
-      rxMaxWidth  = StandardVideoSizes[i].width;
-      rxMaxHeight = StandardVideoSizes[i].height;
-      break;
-    }
-  }
-
-  // the final min/max is the smallest bounding box that will enclose both the MPI information and the min/max information
-  minWidth  = std::max(rxMinWidth, minWidth);
-  maxWidth  = std::min(rxMaxWidth, maxWidth);
-  minHeight = std::max(rxMinHeight, minHeight);
-  maxHeight = std::min(rxMaxHeight, maxHeight);
-
-  // turn off any MPI that are outside the final bounding box
-  for (i = 0; i < 5; i++) {
-    if (StandardVideoSizes[i].width < minWidth || 
-        StandardVideoSizes[i].width > maxWidth ||
-        StandardVideoSizes[i].height < minHeight || 
-        StandardVideoSizes[i].height > maxHeight)
-     mpi[i] = PLUGINCODEC_MPI_DISABLED;
-  }
-
-  // find an appropriate max bit rate
-  if (maxBitRate == 0) {
-    if (maxBR != 0)
-      maxBitRate = maxBR * 100;
-    else if (targetBitRate != 0)
-      maxBitRate = targetBitRate;
-    else
-      maxBitRate = 327000;
-  }
-  else if (maxBR > 0)
-    maxBitRate = std::min(maxBR * 100, maxBitRate);
-
-  if (targetBitRate == 0)
-    targetBitRate = 327000;
-}
-
-
-static bool ClampSizes(PluginCodec_OptionMap & original, PluginCodec_OptionMap & changed)
-{
-  // find bounding box enclosing all MPI values
-  int mpi[5];
-  int minWidth, minHeight, maxHeight, maxWidth, frameTime, targetBitRate, maxBitRate;
-  FindBoundingBox(original, mpi, minWidth, minHeight, maxWidth, maxHeight, frameTime, targetBitRate, maxBitRate);
-
+  // Set min/max resolution and frame rate, derived from MPI
   changed.SetUnsigned(minWidth,  PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH);
   changed.SetUnsigned(minHeight, PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT);
   changed.SetUnsigned(maxWidth,  PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
   changed.SetUnsigned(maxHeight, PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
   changed.SetUnsigned(frameTime, PLUGINCODEC_OPTION_FRAME_TIME);
-  changed.SetUnsigned(maxBitRate, PLUGINCODEC_OPTION_MAX_BIT_RATE);
-  changed.SetUnsigned(targetBitRate, PLUGINCODEC_OPTION_TARGET_BIT_RATE);
+
+  // Set Max bit rate if provided
+  unsigned maxBR = original.GetUnsigned("MaxBR")*100;
+  if (maxBR != 0) {
+    changed.SetUnsigned(maxBR, PLUGINCODEC_OPTION_MAX_BIT_RATE);
+    PluginCodec_OptionMap::ClampMax(maxBR, original, changed, PLUGINCODEC_OPTION_TARGET_BIT_RATE);
+  }
+
+  return true;
+}
+
+
+static bool ClampToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionMap & changed)
+{
+  // following values will be set while scanning for options
+  unsigned minWidth  = original.GetUnsigned(PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH,  PLUGINCODEC_QCIF_WIDTH);
+  unsigned minHeight = original.GetUnsigned(PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT, PLUGINCODEC_QCIF_HEIGHT);
+  unsigned maxWidth  = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH,  PLUGINCODEC_QCIF_WIDTH);
+  unsigned maxHeight = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT, PLUGINCODEC_QCIF_HEIGHT);
+  unsigned frameTime = original.GetUnsigned(PLUGINCODEC_OPTION_FRAME_TIME, TIMESTAMP_29_97_FPS);
+
+  // turn off any MPI that are outside the final bounding box
+  bool noMPI = true;
+  for (int i = 0; i < StandardResolution::Count; i++) {
+    unsigned mpi = PLUGINCODEC_MPI_DISABLED;
+    if (StandardResolutions[i].width >= minWidth &&
+        StandardResolutions[i].width <= maxWidth &&
+        StandardResolutions[i].height >= minHeight &&
+        StandardResolutions[i].height <= maxHeight) {
+      mpi = (frameTime+TIMESTAMP_29_97_FPS-1)/TIMESTAMP_29_97_FPS;
+      noMPI = false;
+    }
+    changed.SetUnsigned(mpi, StandardResolutions[i].optionName);
+  }
+
+  if (noMPI) {
+    PTRACE(2, "H.263", "Resolution range ("
+           << minWidth << 'x' << minHeight << '-' << maxWidth << 'x' << maxHeight
+           << ") outside all possible fixed sizes.");
+    return false;
+  }
+
+  unsigned maxBitRate = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_BIT_RATE);
+  if (maxBitRate == 0)
+    maxBitRate = H263_BITRATE;
   changed.SetUnsigned((maxBitRate+50)/100, "MaxBR");
-  for (int i = 0; i < 5; i++)
-    changed.SetUnsigned(mpi[i], StandardVideoSizes[i].optionName);
 
   return true;
 }
