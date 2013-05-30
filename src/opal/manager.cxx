@@ -254,9 +254,9 @@ OpalManager::OpalManager()
   , m_noMediaTimeout(0, 0, 5)     // Minutes
   , m_signalingTimeout(0, 10)     // Seconds
 #if OPAL_PTLIB_SSL
-  , m_caFiles(".")
-  , m_certificateFile("opal_certificate.pem")
-  , m_privateKeyFile("opal_private_key.pem")
+  , m_caFiles(PProcess::Current().GetHomeDirectory() + "certificates")
+  , m_certificateFile(PProcess::Current().GetHomeDirectory() + "opal_certificate.pem")
+  , m_privateKeyFile(PProcess::Current().GetHomeDirectory() + "opal_private_key.pem")
   , m_autoCreateCertificate(true)
 #endif
 #if P_NAT
