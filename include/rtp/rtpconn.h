@@ -295,12 +295,7 @@ class OpalRTPConnection : public OpalConnection
     class SessionMap : public PSafeDictionary<PKey<unsigned>, OpalMediaSession>
     {
     public:
-      void MoveFrom(SessionMap & other)
-      {
-        *this = other;
-        other.DisallowDeleteObjects();
-        other.RemoveAll();
-      }
+      void MoveFrom(SessionMap & other);
     };
 
   protected:
