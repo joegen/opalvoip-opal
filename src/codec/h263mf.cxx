@@ -90,7 +90,7 @@ class OpalCustomSizeOption : public OpalMediaOptionString
 
     virtual bool Merge(const OpalMediaOption & option)
     {
-      char buffer[MAX_H263_CUSTOM_SIZES*20];
+      char buffer[H263_CUSTOM_RESOLUTION_BUFFER_SIZE];
       if (!MergeCustomResolution(m_value, option.AsString(), buffer))
         return false;
 
@@ -183,12 +183,12 @@ class OpalH263Format : public OpalVideoFormatInternal
 
     virtual bool ToNormalisedOptions()
     {
-      return AdjustByOptionMaps(PTRACE_PARAM("ToNormalised",) ClampSizes) && OpalVideoFormatInternal::ToNormalisedOptions();
+      return AdjustByOptionMaps(PTRACE_PARAM("ToNormalised",) ClampToNormalised) && OpalVideoFormatInternal::ToNormalisedOptions();
     }
 
     virtual bool ToCustomisedOptions()
     {
-      return AdjustByOptionMaps(PTRACE_PARAM("ToCustomised",) ClampSizes) && OpalVideoFormatInternal::ToCustomisedOptions();
+      return AdjustByOptionMaps(PTRACE_PARAM("ToCustomised",) ClampToCustomised) && OpalVideoFormatInternal::ToCustomisedOptions();
     }
 };
 

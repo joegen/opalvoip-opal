@@ -197,7 +197,7 @@ static struct PluginCodec_Option const mediaPacketizationPlus =
 
 static int MergeCustomH263(char ** result, const char * dest, const char * src)
 {
-  char buffer[MAX_H263_CUSTOM_SIZES*20];
+  char buffer[H263_CUSTOM_RESOLUTION_BUFFER_SIZE];
   if (!MergeCustomResolution(dest, src, buffer))
     return false;
 
@@ -315,13 +315,13 @@ public:
 
   virtual bool ToNormalised(OptionMap & original, OptionMap & changed)
   {
-    return ClampSizes(original, changed);
+    return ClampToNormalised(original, changed);
   }
 
 
   virtual bool ToCustomised(OptionMap & original, OptionMap & changed)
   {
-    return ClampSizes(original, changed);
+    return ClampToCustomised(original, changed);
   }
 }; 
 
