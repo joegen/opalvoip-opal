@@ -116,8 +116,8 @@ static struct GstInitInfo {
   { OpalG711_ULAW_64K, "rtppcmudepay",  "mulawdec",    "rtppcmupay",         "mulawenc"   },
   { OpalG711_ALAW_64K, "rtppcmadepay",  "alawdec",     "rtppcmapay",         "alawenc"    },
   { OpalGSM0610,       "rtpgsmdepay",   "gsmdec",      "rtpgsmpay",          "gsmenc"     },
-  { OpalGSMAMR,        "amrnbdec",      "rtpamrdepay", "rtpamrpay",          "amrnbenc"   },
-  { OpalG7222,         "amrwbdec",      "rtpamrdepay", "rtpamrpay",          "amrwbenc"   },
+  { OpalGSMAMR,        "rtpamrdepay",   "amrnbdec",    "rtpamrpay",          "amrnbenc"   },
+  { OpalG7222,         "rtpamrdepay",   "amrwbdec",    "rtpamrpay",          "amrwbenc"   },
   { OpalG726_40K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726"
                                                                              " bitrate=40000"
   },
@@ -169,7 +169,7 @@ static struct GstInitInfo {
                                                                              " me-subpel-quality=8"
                                                                              " qmin=2"
   },
-  { OpalH264,          "rtph264depay",  "ffdec_h264",  "rtph264pay"
+  { OpalH264_MODE0,    "rtph264depay",  "ffdec_h264",  "rtph264pay"
                                                        " config-interval=5", "x264enc"
                                                                              " byte-stream=true"
                                                                              " bframes=0"
