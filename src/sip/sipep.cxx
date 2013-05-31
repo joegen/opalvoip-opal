@@ -1119,11 +1119,11 @@ bool SIPEndPoint::Register(const SIPRegister::Params & newParams, PString & aor,
 
 bool SIPEndPoint::Register(const SIPRegister::Params & newParams, PString & aor, SIP_PDU::StatusCodes * reason)
 {
-  PTRACE(4, "SIP\tStart REGISTER\n" << newParams);
-
   SIPRegister::Params params(newParams);
-  params.Normalise(GetDefaultLocalPartyName(), GetRegistrarTimeToLive());
-  PTRACE(5, "SIP\tNormalised REGISTER\n" << params);
+  if (!params.Normalise(GetDefaultLocalPartyName(), GetRegistrarTimeToLive()))
+    return false;
+
+  PTRACE(4, "SIP\tStart REGISTER\n" << params);
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_REGISTER, PSafeReadWrite);
 
   // If there is already a request with this URL and method, 
@@ -1281,11 +1281,11 @@ bool SIPEndPoint::Subscribe(SIPSubscribe::PredefinedPackages eventPackage, unsig
 
 bool SIPEndPoint::Subscribe(const SIPSubscribe::Params & newParams, PString & token, bool tokenIsAOR)
 {
-  PTRACE(4, "SIP\tStart SUBSCRIBE\n" << newParams);
-
   SIPSubscribe::Params params(newParams);
-  params.Normalise(GetDefaultLocalPartyName(), GetNotifierTimeToLive());
-  PTRACE(5, "SIP\tNormalised SUBSCRIBE\n" << params);
+  if (!params.Normalise(PString::Empty(), GetNotifierTimeToLive()))
+    return false;
+
+  PTRACE(4, "SIP\tStart SUBSCRIBE\n" << params);
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_SUBSCRIBE, params.m_eventPackage, PSafeReadWrite);
 
   // If there is already a request with this URL and method, 
@@ -1532,10 +1532,10 @@ bool SIPEndPoint::Notify(const SIPURL & aor, const PString & eventPackage, const
 
 bool SIPEndPoint::SendMESSAGE(SIPMessage::Params & params)
 {
-  if (params.m_remoteAddress.IsEmpty()) {
-    PTRACE(2, "SIP\tCannot send MESSAGE to no-one.");
+  if (!params.Normalise(PString::Empty(), GetRegistrarTimeToLive()))
     return false;
-  }
+
+  PTRACE(4, "SIP\tStart MESSAGE\n" << params);
 
   // don't send empty MESSAGE because some clients barf (cough...X-Lite...cough)
   if (params.m_body.IsEmpty()) {
@@ -1582,8 +1582,10 @@ void SIPEndPoint::OnMESSAGECompleted(const SIPMessage::Params &, SIP_PDU::Status
 bool SIPEndPoint::SendOPTIONS(const SIPOptions::Params & newParams)
 {
   SIPOptions::Params params(newParams);
-  params.Normalise(GetDefaultLocalPartyName(), GetNotifierTimeToLive());
-  PTRACE(5, "SIP\tNormalised OPTIONS\n" << params);
+  if (!params.Normalise(GetDefaultLocalPartyName(), GetNotifierTimeToLive()))
+    return false;
+
+  PTRACE(4, "SIP\tStart OPTIONS\n" << params);
   new SIPOptions(*this, params);
   return true;
 }
@@ -1610,11 +1612,11 @@ PBoolean SIPEndPoint::Ping(const PURL & to)
 
 bool SIPEndPoint::Publish(const SIPSubscribe::Params & newParams, const PString & body, PString & aor)
 {
-  PTRACE(4, "SIP\tStart PUBLISH\n" << newParams);
-
   SIPSubscribe::Params params(newParams);
-  params.Normalise(GetDefaultLocalPartyName(), GetNotifierTimeToLive());
-  PTRACE(5, "SIP\tNormalised PUBLISH\n" << params);
+  if (!params.Normalise(GetDefaultLocalPartyName(), GetNotifierTimeToLive()))
+    return false;
+
+  PTRACE(4, "SIP\tStart PUBLISH\n" << params);
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(params.m_addressOfRecord, SIP_PDU::Method_PUBLISH, params.m_eventPackage, PSafeReadWrite);
   if (handler != NULL)
     handler->SetBody(params.m_expire != 0 ? body : PString::Empty());
