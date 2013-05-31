@@ -2239,8 +2239,6 @@ SIPMessageHandler::SIPMessageHandler(SIPEndPoint & endpoint, const SIPMessage::P
   , m_parameters(params)
   , m_messageSent(false)
 {
-  m_parameters.m_id = GetCallID();
-
   m_offlineExpireTime = 0; // No retries for offline, just give up
 
   SetState(Subscribed);

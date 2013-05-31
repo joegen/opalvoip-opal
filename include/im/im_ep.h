@@ -125,8 +125,8 @@ class OpalIMEndPoint : public OpalEndPoint
         Generally only used internally.
       */
     PSafePtr<OpalIMContext> FindContextByNamesWithLock(
-      const PString & local, 
-      const PString & remote, 
+      const PURL & local, 
+      const PURL & remote, 
       PSafetyMode mode = PSafeReadWrite
     );
 

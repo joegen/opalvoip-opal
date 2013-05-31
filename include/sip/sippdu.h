@@ -1516,7 +1516,6 @@ class SIPMessage : public SIPTransaction
 
       PCaselessString             m_contentType;
       PString                     m_id;
-      PString                     m_tag;
       PString                     m_body;
       PAtomicInteger::IntegerType m_messageId;
     };
