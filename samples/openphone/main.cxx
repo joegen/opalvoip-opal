@@ -6738,13 +6738,11 @@ void CallDialog::OnAddressChange(wxCommandEvent & WXUNUSED(event))
 
 void MyManager::OnConversation(OpalIMContext &, OpalIMContext::ConversationInfo info)
 {
-  PwxString id = info.m_context->GetID();
-
   if (info.m_opening)
-    m_imDialogMap[id] = new IMDialog(this, *info.m_context);
+    m_imDialogMap[info.m_conversationId] = new IMDialog(this, *info.m_context);
   else {
-    m_imDialogMap[id]->Destroy();
-    m_imDialogMap.erase(id);
+    m_imDialogMap[info.m_conversationId]->Destroy();
+    m_imDialogMap.erase(info.m_conversationId);
   }
 }
 

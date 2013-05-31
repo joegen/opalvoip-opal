@@ -95,13 +95,16 @@ void OpalIMContext::ResetLastUsed()
 }
 
 
-PString OpalIMContext::CreateKey(const PString & local, const PString & remote)
+PString OpalIMContext::CreateKey(const PURL & local, const PURL & remote)
 {
-  PString key;
+  PStringStream key;
+  key << local.GetScheme() << ' ';
   if (local < remote)
-    key = local + "|" + remote;
+    key << local.GetUserName()  << '@' << local.GetHostName() << ' '
+        << remote.GetUserName() << '@' << remote.GetHostName();
   else
-    key = remote + "|" + local;
+    key << remote.GetUserName() << '@' << remote.GetHostName() << ' '
+        << local.GetUserName()  << '@' << local.GetHostName();
   return key;
 }
 
@@ -429,18 +432,16 @@ PSafePtr<OpalIMContext> OpalIMEndPoint::InternalCreateContext(const PURL & local
     return NULL;
   }
 
-  m_contextsByConversationId.SetAt(context->GetID(), context);
+  PString id = context->GetID();
+
+  m_contextsByConversationId.SetAt(id, context);
 
   PWaitAndSignal m(m_contextsByNamesMutex);
-  m_contextsByNames.insert(ContextsByNames::value_type(context->m_key, context->GetID()));
+  m_contextsByNames.insert(ContextsByNames::value_type(context->m_key, id));
 
-  PTRACE(3, "OpalIM\tCreated IM context '" << context->GetID() << "' for scheme '" << scheme << "' from " << localURL << " to " << remoteURL);
+  PTRACE(3, "OpalIM\tCreated IM context '" << id << "' for scheme '" << scheme << "' from " << localURL << " to " << remoteURL);
 
-  OpalIMContext::ConversationInfo info;
-  info.m_context = context;
-  info.m_opening = true;
-  info.m_byRemote = byRemote;
-  OnConversation(info);
+  OnConversation(OpalIMContext::ConversationInfo(id, true, byRemote, context));
 
   return context;
 }
@@ -453,11 +454,7 @@ void OpalIMEndPoint::RemoveContext(OpalIMContext * context, bool byRemote)
   if (m_deleting || !m_contextsByConversationId.Contains(id))
     return;
 
-  OpalIMContext::ConversationInfo info;
-  info.m_context = context;
-  info.m_opening = false;
-  info.m_byRemote = byRemote;
-  OnConversation(info);
+  OnConversation(OpalIMContext::ConversationInfo(id, false, byRemote, context));
 
   // remove local/remote pair from multimap
   {
@@ -537,7 +534,7 @@ PSafePtr<OpalIMContext> OpalIMEndPoint::FindContextByIdWithLock(const PString & 
 }
 
 
-PSafePtr<OpalIMContext> OpalIMEndPoint::FindContextByNamesWithLock(const PString & local, const PString & remote, PSafetyMode mode) 
+PSafePtr<OpalIMContext> OpalIMEndPoint::FindContextByNamesWithLock(const PURL & local, const PURL & remote, PSafetyMode mode) 
 {
   PString id;
   {
@@ -624,10 +621,10 @@ OpalIMContext::MessageDisposition
       PTRACE(2, "OpalIM\tCannot create IM context for incoming message from '" << message.m_from);
       return OpalIMContext::DestinationUnknown;
     }
-
-    // set message conversation ID to the correct (new) value
-    message.m_conversationId = context->GetID();
   }
+
+  // set message conversation ID to the correct (new) value
+  message.m_conversationId = context->GetID();
 
   OpalIMContext::MessageDisposition status = context->OnMessageReceived(message);
 

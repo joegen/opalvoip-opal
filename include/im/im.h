@@ -124,9 +124,21 @@ class OpalIMContext : public PSafeObject
       */
     struct ConversationInfo
     {
-      PSafePtr<OpalIMContext> m_context;  ///< Context opening/closing
-      bool                    m_opening;  ///< Opening or closing conversation
-      bool                    m_byRemote; ///< Operation is initiated by remote user or local user
+      ConversationInfo(
+        const PString & id,
+        bool opening,
+        bool byRemote,
+        const PSafePtr<OpalIMContext> & context
+      ) : m_conversationId(id)
+        , m_opening(opening)
+        , m_byRemote(byRemote)
+        , m_context(context)
+      { }
+
+      PString                 m_conversationId; ///< Conversation ID
+      bool                    m_opening;        ///< Opening or closing conversation
+      bool                    m_byRemote;       ///< Operation is initiated by remote user or local user
+      PSafePtr<OpalIMContext> m_context;        ///< Context opening/closing
     };
 
     /**Open the context (conversation)
@@ -318,7 +330,7 @@ class OpalIMContext : public PSafeObject
     virtual PStringArray GetContentTypes() const;
 
     /// Calculate a key based on the from an to addresses
-    static PString CreateKey(const PString & from, const PString & to);
+    static PString CreateKey(const PURL & from, const PURL & to);
   //@}
 
 
