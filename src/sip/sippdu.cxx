@@ -3399,63 +3399,87 @@ SIPParameters::SIPParameters(const PString & aor, const PString & remote)
 }
 
 
-void SIPParameters::Normalise(const PString & defaultUser, const PTimeInterval & defaultExpire)
+bool SIPParameters::Normalise(const PString & defaultUser, const PTimeInterval & defaultExpire)
 {
   /* Try to be intelligent about what we got in the two fields target/remote,
      we have several scenarios depending on which is a partial or full URL.
    */
 
+  PTRACE(5, "SIP\tNormalising parameters:\n" << *this);
+
   SIPURL aor, server;
-  PString possibleProxy;
 
   if (m_addressOfRecord.IsEmpty()) {
-    if (m_remoteAddress.IsEmpty())
-      aor = server = defaultUser + '@' + PIPSocket::GetHostName();
-    else if (m_remoteAddress.Find('@') == P_MAX_INDEX)
-      aor = server = defaultUser + '@' + m_remoteAddress;
-    else
-      aor = server = m_remoteAddress;
-  }
-  else if (m_addressOfRecord.Find('@') == P_MAX_INDEX) {
-    if (m_remoteAddress.IsEmpty())
-      aor = server = defaultUser + '@' + m_addressOfRecord;
-    else if (m_remoteAddress.Find('@') == P_MAX_INDEX)
-      aor = server = m_addressOfRecord + '@' + m_remoteAddress;
-    else {
-      server = m_remoteAddress;
-      aor = m_addressOfRecord + '@' + server.GetHostName();
+    if (m_remoteAddress.IsEmpty()) {
+      PTRACE(2, "SIP\tParameters must have a remote address");
+      return false;
     }
+
+    if (!aor.Parse(m_remoteAddress)) {
+      PTRACE(2, "SIP\tParameters must have legal remote address");
+      return false;
+    }
+
+    if (aor.GetUserName().IsEmpty())
+      aor.SetUserName(defaultUser);
+    server = aor;
+  }
+  else if (m_remoteAddress.IsEmpty()) {
+    if (!aor.Parse(m_addressOfRecord)) {
+      PTRACE(2, "SIP\tParameters must have legal AoR");
+      return false;
+    }
+
+    if (aor.GetUserName().IsEmpty())
+      aor.SetUserName(defaultUser);
+    server = aor;
+  }
+  else if (aor.Parse(m_addressOfRecord, "")) {
+    if (!server.Parse(m_remoteAddress, aor.GetScheme())) {
+      PTRACE(2, "SIP\tParameters must have legal remote address");
+      return false;
+    }
+    if (server.GetUserName().IsEmpty())
+      server.SetUserName(aor.GetUserName());
   }
   else {
-    aor = m_addressOfRecord;
-    if (m_remoteAddress.IsEmpty())
-      server = aor;
-    else if (m_remoteAddress.Find('@') != P_MAX_INDEX)
-      server = m_remoteAddress; // For third party registrations
+    if (!server.Parse(m_remoteAddress)) {
+      PTRACE(2, "SIP\tParameters must have legal remote address");
+      return false;
+    }
+    if (server.GetUserName().IsEmpty()) {
+      server.SetUserName(m_addressOfRecord);
+      aor = server;
+    }
     else {
-      SIPURL remoteURL = m_remoteAddress;
-      server = aor;
-      if (aor.GetHostName() != remoteURL.GetHostName()) {
-        /* Note this sets the proxy field because the user has given a full AOR
-           with a domain for "user" and then specified a specific host name
-           which as far as we are concered is the host to talk to. Setting the
-           proxy will prevent SRV lookups or other things that might stop us
-           from going to that very specific host.
-         */
-        possibleProxy = m_remoteAddress;
-      }
+      aor = server;
+      aor.SetUserName(m_addressOfRecord);
     }
   }
 
-  if (m_proxyAddress.IsEmpty())
+  if (m_proxyAddress.IsEmpty()) {
+    PString possibleProxy;
+    if (aor.GetHostName() != server.GetHostName()) {
+      /* Note this sets the proxy field because the user has given a full AOR
+          with a domain for "user" and then specified a specific host name
+          which as far as we are concered is the host to talk to. Setting the
+          proxy will prevent SRV lookups or other things that might stop us
+          from going to that very specific host.
+        */
+      possibleProxy = m_remoteAddress;
+    }
     m_proxyAddress = server.GetParamVars()(OPAL_PROXY_PARAM, possibleProxy);
+  }
   if (!m_proxyAddress.IsEmpty())
     server.SetParamVar(OPAL_PROXY_PARAM, m_remoteAddress);
 
   if (!m_localAddress.IsEmpty()) {
     SIPURL local(m_localAddress);
-    m_localAddress = local.AsString();
-    aor.SetParamVar(OPAL_LOCAL_ID_PARAM, m_localAddress);
+    if (local.IsEmpty()) {
+      PTRACE(2, "SIP\tParameters must have legal local address");
+      return false;
+    }
+    aor.SetParamVar(OPAL_LOCAL_ID_PARAM, local.AsString());
   }
 
   if (!m_interface.IsEmpty())
@@ -3469,6 +3493,8 @@ void SIPParameters::Normalise(const PString & defaultUser, const PTimeInterval &
 
   if (m_expire == 0)
     m_expire = defaultExpire.GetSeconds();
+
+  return true;
 }
 
 
