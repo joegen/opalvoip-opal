@@ -1374,6 +1374,7 @@
     <ClInclude Include="..\..\include\h460\h46024b.h" />
     <ClInclude Include="..\..\include\h460\h460_std18.h" />
     <ClInclude Include="..\..\include\h460\h460_std23.h" />
+    <ClInclude Include="..\..\include\im\im_ep.h" />
     <ClInclude Include="..\..\include\opal\mediasession.h" />
     <ClInclude Include="..\..\include\asn\gcc.h" />
     <ClInclude Include="..\..\include\asn\h225.h" />
