@@ -121,6 +121,7 @@ class OpalMessageBuffer
     operator OpalMessage *() const   { return  (OpalMessage *)m_data; }
 
     void SetString(const char * * variable, const char * value);
+    void SetData(const char * * variable, const char * value, size_t len);
     void SetError(const char * errorText);
 
     OpalMessage * Detach();
@@ -132,6 +133,7 @@ class OpalMessageBuffer
 };
 
 #define SET_MESSAGE_STRING(msg, member, str) (msg).SetString(&(msg)->member, str)
+#define SET_MESSAGE_DATA(msg, member, data, len) (msg).SetData((const char **)&(msg)->member, data, len)
 
 
 #if OPAL_HAS_PCSS
@@ -428,9 +430,13 @@ OpalMessageBuffer::~OpalMessageBuffer()
 
 void OpalMessageBuffer::SetString(const char * * variable, const char * value)
 {
-  PAssert((char *)variable >= m_data && (char *)variable < m_data+m_size, PInvalidParameter);
+  SetData(variable, value, strlen(value)+1);
+}
 
-  size_t length = strlen(value)+1;
+
+void OpalMessageBuffer::SetData(const char * * variable, const char * value, size_t length)
+{
+  PAssert((char *)variable >= m_data && (char *)variable < m_data+m_size, PInvalidParameter);
 
   char * newData = (char *)realloc(m_data, m_size + length);
   if (PAssertNULL(newData) != m_data) {
@@ -447,7 +453,10 @@ void OpalMessageBuffer::SetString(const char * * variable, const char * value)
   }
 
   char * stringData = m_data + m_size;
-  memcpy(stringData, value, length);
+  if (value != NULL)
+    memcpy(stringData, value, length);
+  else
+    memset(stringData, 0, length);
   m_size += length;
 
   *variable = stringData;
@@ -2421,6 +2430,19 @@ void OpalManager_C::OnMessageReceived(const OpalIM & im)
   SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_from, im.m_from.AsString());
   SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_to,   im.m_to.AsString());
   SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_conversationId, im.m_conversationId);
+  SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_textBody, im.m_bodies(PMIMEInfo::TextPlain()));
+
+  PINDEX count = im.m_bodies.GetSize();
+  if (count > 0) {
+    message->m_param.m_instantMessage.m_bodyCount = count;
+    SET_MESSAGE_DATA(message, m_param.m_instantMessage.m_mimeType, NULL, count*sizeof(char *));
+    SET_MESSAGE_DATA(message, m_param.m_instantMessage.m_bodies, NULL, count*sizeof(char *));
+    for (PINDEX i = 0; i < count; ++i) {
+      SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_mimeType[i], im.m_bodies.GetKeyAt(i));
+      SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_bodies[i], im.m_bodies.GetDataAt(i));
+    }
+  }
+
   PTRACE(4, "OpalC API\tOnMessageReceived:"
             " from=\"" << message->m_param.m_instantMessage.m_from << "\""
             " to=\"" << message->m_param.m_instantMessage.m_to << "\""
