@@ -1226,6 +1226,9 @@
     <ClInclude Include="..\..\lib\Android\include\opal_config.h">
       <Filter>Header Files\OS\Android</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\im\im_ep.h">
+      <Filter>Header Files\IM</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\..\include\opal_config.h.in">
