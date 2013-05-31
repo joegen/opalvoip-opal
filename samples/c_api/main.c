@@ -775,7 +775,8 @@ int DoSendIM(const char * from, const char * to, int argc, const char ** argv)
 
 typedef enum
 {
-  OpShutdown,
+  OpFirst,
+  OpShutdown = OpFirst,
   OpListen,
   OpCall,
   OpMute,
@@ -819,7 +820,7 @@ static Operations GetOperation(const char * name)
 {
   Operations op;
 
-  for (op = OpListen; op < NumOperations; op++) {
+  for (op = OpFirst; op < NumOperations; op++) {
     if (strcmp(name, OperationNames[op]) == 0)
       break;
   }
@@ -831,7 +832,6 @@ static Operations GetOperation(const char * name)
 int main(int argc, char * argv[])
 {
   Operations operation;
-
   
   if (argc < 2 || (operation = GetOperation(argv[1])) == NumOperations || argc < RequiredArgsForOperation[operation]) {
     Operations op;
