@@ -1181,6 +1181,9 @@
     <ClInclude Include="..\rtp\libsrtp\crypto\include\config.h">
       <Filter>Source Files\RTP\libSRTP</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\im\im_ep.h">
+      <Filter>Header Files\IM</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\..\include\opal\buildopts.h.in">
