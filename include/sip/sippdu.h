@@ -826,7 +826,7 @@ struct SIPParameters
     const PString & remote = PString::Empty()
   );
 
-  void Normalise(
+  bool Normalise(
     const PString & defaultUser,
     const PTimeInterval & defaultExpire
   );

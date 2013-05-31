@@ -378,9 +378,9 @@ OpalMediaFormatList OpalIMEndPoint::GetMediaFormats() const
 PSafePtr<OpalIMContext> OpalIMEndPoint::CreateContext(OpalCall & call)
 {
   if (call.IsNetworkOriginated())
-    return InternalCreateContext(call.GetPartyB(), call.GetPartyA(), NULL, false, &call);
+    return InternalCreateContext(call.GetPartyB(), call.GetPartyA(), NULL, false, &call, NULL);
   else
-    return InternalCreateContext(call.GetPartyA(), call.GetPartyB(), NULL, false, &call);
+    return InternalCreateContext(call.GetPartyA(), call.GetPartyB(), NULL, false, &call, NULL);
 }
 
 
@@ -388,7 +388,8 @@ PSafePtr<OpalIMContext> OpalIMEndPoint::InternalCreateContext(const PURL & local
                                                               const PURL & remoteURL,
                                                               const char * overrideScheme,
                                                               bool byRemote,
-                                                              OpalCall * call)
+                                                              OpalCall * call,
+                                                              const char * conversationID)
 {
   PCaselessString scheme = overrideScheme;
   if (scheme.IsEmpty())
@@ -418,6 +419,8 @@ PSafePtr<OpalIMContext> OpalIMEndPoint::InternalCreateContext(const PURL & local
   context->m_call        = call;
   context->GetAttributes().Set("scheme", scheme);
   context->m_key = OpalIMContext::CreateKey(context->m_localURL, context->m_remoteURL);
+  if (conversationID != NULL && *conversationID != '\0')
+    context->m_conversationId = conversationID;
   context->ResetLastUsed();
 
   if (!context->Open(byRemote)) {
@@ -613,9 +616,9 @@ OpalIMContext::MessageDisposition
   if (context == NULL) {
     // create a context based on the connection
     if (connection != NULL)
-      context = InternalCreateContext(connection->GetLocalPartyURL(), connection->GetRemotePartyURL(), NULL, true, &connection->GetCall());
+      context = InternalCreateContext(connection->GetLocalPartyURL(), connection->GetRemotePartyURL(), NULL, true, &connection->GetCall(), message.m_conversationId);
     else
-      context = InternalCreateContext(message.m_to, message.m_from, NULL, true, NULL);
+      context = InternalCreateContext(message.m_to, message.m_from, NULL, true, NULL, message.m_conversationId);
 
     if (context == NULL) {
       PTRACE(2, "OpalIM\tCannot create IM context for incoming message from '" << message.m_from);

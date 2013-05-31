@@ -99,7 +99,7 @@ class OpalIMEndPoint : public OpalEndPoint
       const PURL & localURL,      ///< Local URL for conversation
       const PURL & remoteURL,     ///< Remote URL for conversation
       const char * scheme = NULL  ///< Scheme to use, default to remoteURL.GetScheme()
-    ) { return InternalCreateContext(localURL, remoteURL, scheme, false, NULL); }
+    ) { return InternalCreateContext(localURL, remoteURL, scheme, false, NULL, NULL); }
 
     /**Create a Instant Messaging context based on an existing call.
       */
@@ -193,7 +193,8 @@ class OpalIMEndPoint : public OpalEndPoint
       const PURL & remoteURL,
       const char * scheme,
       bool byRemote,
-      OpalCall * call
+      OpalCall * call,
+      const char * conversationID
     );
 
     OpalManager & m_manager;
