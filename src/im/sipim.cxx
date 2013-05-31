@@ -434,8 +434,6 @@ void OpalSIPIMContext::PopulateParams(SIPMessage::Params & params, const OpalIM 
     params.m_id = message.m_conversationId;
 
   SIPURL from(message.m_from);
-  params.m_addressOfRecord = from.AsString();
-
   from.SetDisplayName(m_localName);
   params.m_localAddress = from.AsQuotedString();
 
