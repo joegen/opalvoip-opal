@@ -386,6 +386,7 @@ void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
     OpalIM message;
 
     SIPURL to(mime.GetTo());
+    to.SetTag(); // If not present
     message.m_conversationId = mime.GetCallID() + ConversationIdSeparator + to.GetTag();
 
     to.Sanitise(SIPURL::ExternalURI);
