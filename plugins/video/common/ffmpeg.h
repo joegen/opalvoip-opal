@@ -43,8 +43,8 @@
 #ifndef __FFMPEG_H__
 #define __FFMPEG_H__ 1
 
-#include <codec/opalplugin.hpp>
 #include "platform.h"
+#include <codec/opalplugin.hpp>
 
 extern "C" {
   #include "libavcodec/avcodec.h"
