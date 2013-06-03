@@ -259,7 +259,7 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
     PTRACE_CONTEXT_ID_TO(primaryCodec);
     PTRACE(4, "Patch\tCreated primary codec " << sourceFormat << "->" << destinationFormat << " with ID " << id);
 
-    if (!stream->SetDataSize(primaryCodec->GetOptimalDataFrameSize(false), sourceFormat.GetFrameTime())) {
+    if (!stream->SetDataSize(primaryCodec->GetOptimalDataFrameSize(false), primaryCodec->GetInputFormat().GetFrameTime())) {
       PTRACE(1, "Patch\tSink stream " << *stream << " cannot support data size "
               << primaryCodec->GetOptimalDataFrameSize(false));
       return false;
@@ -268,7 +268,7 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
     primaryCodec->SetSessionID(patch.source.GetSessionID());
     primaryCodec->SetCommandNotifier(PCREATE_NOTIFIER_EXT(&patch, OpalMediaPatch, InternalOnMediaCommand1));
 
-    patch.source.SetDataSize(primaryCodec->GetOptimalDataFrameSize(true), destinationFormat.GetFrameTime());
+    patch.source.SetDataSize(primaryCodec->GetOptimalDataFrameSize(true), primaryCodec->GetOutputFormat().GetFrameTime());
     patch.source.InternalUpdateMediaFormat(primaryCodec->GetInputFormat());
     stream->InternalUpdateMediaFormat(primaryCodec->GetOutputFormat());
 
@@ -315,7 +315,7 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
   primaryCodec->SetCommandNotifier(PCREATE_NOTIFIER_EXT(&patch, OpalMediaPatch, InternalOnMediaCommand1));
   primaryCodec->UpdateMediaFormats(OpalMediaFormat(), secondaryCodec->GetInputFormat());
 
-  if (!stream->SetDataSize(secondaryCodec->GetOptimalDataFrameSize(false), sourceFormat.GetFrameTime())) {
+  if (!stream->SetDataSize(secondaryCodec->GetOptimalDataFrameSize(false), secondaryCodec->GetInputFormat().GetFrameTime())) {
     PTRACE(1, "Patch\tSink stream " << *stream << " cannot support data size "
             << secondaryCodec->GetOptimalDataFrameSize(false));
     return false;
@@ -325,7 +325,7 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
   secondaryCodec->SetCommandNotifier(PCREATE_NOTIFIER_EXT(&patch, OpalMediaPatch, InternalOnMediaCommand1));
   secondaryCodec->UpdateMediaFormats(primaryCodec->GetInputFormat(), OpalMediaFormat());
 
-  patch.source.SetDataSize(primaryCodec->GetOptimalDataFrameSize(true), destinationFormat.GetFrameTime());
+  patch.source.SetDataSize(primaryCodec->GetOptimalDataFrameSize(true), primaryCodec->GetOutputFormat().GetFrameTime());
   patch.source.InternalUpdateMediaFormat(primaryCodec->GetInputFormat());
   stream->InternalUpdateMediaFormat(secondaryCodec->GetOutputFormat());
 

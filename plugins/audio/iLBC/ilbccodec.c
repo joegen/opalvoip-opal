@@ -311,6 +311,36 @@ static int to_normalised_options(const struct PluginCodec_Definition * defn,
 }
 
 
+static int get_active_options(const struct PluginCodec_Definition * defn,
+                                                             void * context,
+                                                       const char * name, 
+                                                             void * parm, 
+                                                         unsigned * parmLen)
+{
+  char ** options;
+  char number[20];
+  struct iLBC_Dec_Inst_t_ * decoder = (struct iLBC_Dec_Inst_t_ *)context;
+
+  if (context == NULL || parm == NULL || parmLen == NULL || *parmLen != sizeof(const char **))
+    return 0;
+
+  options = (char **)calloc(5, sizeof(char *));
+  *(char ***)parm = options;
+  if (options == NULL)
+    return 0;
+
+  options[0] = strdup(PLUGINCODEC_OPTION_FRAME_TIME);
+  sprintf(number, "%u", decoder->mode == 20 ? BLOCKL_20MS : BLOCKL_30MS);
+  options[1] = strdup(number);
+
+  options[2] = strdup(PLUGINCODEC_OPTION_MAX_FRAME_SIZE);
+  sprintf(number, "%u", decoder->mode == 20 ? NO_OF_BYTES_20MS : NO_OF_BYTES_30MS);
+  options[3] = strdup(number);
+
+  return 1;
+}
+
+
 static int free_codec_options(const struct PluginCodec_Definition * defn,
                                                              void * context,
                                                        const char * name, 
@@ -342,6 +372,7 @@ static struct PluginCodec_ControlDefn h323AndSIPCoderControls[] = {
   { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    free_codec_options },
   { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     set_codec_options },
   { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
+  { PLUGINCODEC_CONTROL_GET_ACTIVE_OPTIONS,    get_active_options },
   { NULL }
 };
 
@@ -428,7 +459,7 @@ static struct PluginCodec_Definition iLBCCodecDefn[] =
     NULL,                               // user data
 
     8000,                               // samples per second
-    BITRATE_20MS,                       // raw bits per second (note we use highest value here)
+    BITRATE_30MS,                       // raw bits per second (note we use highest value here)
     30000,                              // nanoseconds per frame (note we use highest value here)
     BLOCKL_30MS,                        // samples per frame (note we use highest value here)
     NO_OF_BYTES_30MS,                   // bytes per frame (note we use highest value here)
@@ -464,7 +495,7 @@ static struct PluginCodec_Definition iLBCCodecDefn[] =
     NULL,                               // user data
 
     8000,                               // samples per second
-    BITRATE_20MS,                       // raw bits per second (note we use highest value here)
+    BITRATE_30MS,                       // raw bits per second (note we use highest value here)
     30000,                              // nanoseconds per frame (note we use highest value here)
     BLOCKL_30MS,                        // samples per frame (note we use highest value here)
     NO_OF_BYTES_30MS,                   // bytes per frame (note we use highest value here)
