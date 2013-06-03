@@ -1043,7 +1043,7 @@ bool SIPEndPoint::OnReceivedNOTIFY(SIP_PDU & request)
 bool SIPEndPoint::OnReceivedMESSAGE(SIP_PDU & request)
 {
   // handle a MESSAGE received outside the context of a call
-  PTRACE(3, "SIP\tReceived MESSAGE outside the context of a call");
+  PTRACE(4, "SIP\tReceived MESSAGE outside the context of a call");
 
   // if there is a callback, assume that the application knows what it is doing
   if (!m_onConnectionlessMessage.IsNULL()) {
