@@ -1580,6 +1580,14 @@ OpalMixerNode::MediaMixer::MediaMixer()
 }
 
 
+void OpalMixerNode::MediaMixer::CloseOne(const PSafePtr<OpalMixerMediaStream> & stream)
+{
+  stream->GetConnection().GetEndPoint().GetManager().QueueDecoupledEvent(
+                            new PSafeWorkNoArg<OpalMixerMediaStream, bool>(stream, &OpalMediaStream::Close));
+  m_outputStreams.Remove(stream);
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalMixerNode::AudioMixer::AudioMixer(const OpalMixerNodeInfo & info)
@@ -1651,7 +1659,7 @@ void OpalMixerNode::AudioMixer::PushOne(PSafePtr<OpalMixerMediaStream> & stream,
     if (cache.m_transcoder == NULL) {
       PTRACE(2, "MixerNode\tCould not create transcoder to "
              << mediaFormat << " for stream id " << stream->GetID());
-      stream->Close();
+      CloseOne(stream);
       return;
     }
   }
@@ -1679,7 +1687,7 @@ void OpalMixerNode::AudioMixer::PushOne(PSafePtr<OpalMixerMediaStream> & stream,
   else {
     PTRACE(2, "MixerNode\tCould not convert audio to "
            << mediaFormat << " for stream id " << stream->GetID());
-    stream->Close();
+    CloseOne(stream);
   }
 }
 
@@ -1786,7 +1794,7 @@ bool OpalMixerNode::VideoMixer::OnMixed(RTP_DataFrame * & output)
           if (transcoder == NULL) {
             PTRACE(2, "MixerNode\tCould not create transcoder to "
                    << mediaFormat << " for stream id " << stream->GetID());
-            stream->Close();
+            CloseOne(stream);
             continue;
           }
           PTRACE(3, "MixerNode\tCreated transcoder to "
@@ -1817,7 +1825,7 @@ bool OpalMixerNode::VideoMixer::OnMixed(RTP_DataFrame * & output)
         if (!transcoder->ConvertFrames(*rawRTP, cachedVideo[key])) {
           PTRACE(2, "MixerNode\tCould not convert video to "
                  << mediaFormat << " for stream id " << stream->GetID());
-          stream->Close();
+          CloseOne(stream);
           continue;
         }
       }

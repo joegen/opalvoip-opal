@@ -1198,6 +1198,7 @@ class OpalMixerNode : public PSafeObject
     struct MediaMixer
     {
       MediaMixer();
+      void CloseOne(const PSafePtr<OpalMixerMediaStream> & stream);
 
       PSafeList<OpalMixerMediaStream> m_outputStreams;
     };
