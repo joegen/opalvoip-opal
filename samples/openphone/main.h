@@ -1298,7 +1298,7 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     PDECLARE_ASYNC_ConversationNotifier(MyManager, OnConversation);
 
     // cannot use PDictionary as IMDialog is not descended from PObject
-    typedef std::map<wxString, IMDialog *> IMDialogMap;
+    typedef std::map<PString, IMDialog *> IMDialogMap;
     IMDialogMap m_imDialogMap;
 #endif
 
