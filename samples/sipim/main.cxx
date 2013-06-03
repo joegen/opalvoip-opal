@@ -205,7 +205,12 @@ void MyManager::CmdComp(PCLI::Arguments & args, P_INT_PTR)
 
 void MyManager::OnConversation(const OpalIMContext::ConversationInfo & info)
 {
-  cout << "\nNew conversation started, id " << info.m_context->GetID() << endl;
+  cout << '\n';
+  if (info.m_opening)
+    cout << "New conversation started";
+  else
+    cout << "Conversation ended";
+  cout << ", id " << info.m_conversationId << endl;
 }
 
 

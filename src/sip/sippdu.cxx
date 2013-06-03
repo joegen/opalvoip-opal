@@ -4056,8 +4056,7 @@ SIPMessage::SIPMessage(SIPTransactionOwner & owner,
     if (m_localAddress.IsEmpty())
       m_localAddress = GetEndPoint().GetDefaultLocalURL(*GetTransport());
   }
-  if (!params.m_tag.IsEmpty())
-    m_localAddress.SetTag(params.m_tag);
+  m_localAddress.SetTag();
 
   InitialiseHeaders(addr, addr, m_localAddress, params.m_id, GetEndPoint().GetNextCSeq());
 

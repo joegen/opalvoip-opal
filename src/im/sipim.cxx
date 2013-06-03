@@ -331,21 +331,16 @@ void OpalSIPIMContext::OnMESSAGECompleted(SIPEndPoint & endpoint,
     return;
   }
 
-  PSafePtr<OpalIMContext> imContext = imEP->FindContextByIdWithLock(params.m_id + ConversationIdSeparator + params.m_tag);
+  PString conversationId = params.m_id + ConversationIdSeparator + SIPURL(params.m_localAddress).GetTag();
+  PSafePtr<OpalIMContext> imContext = imEP->FindContextByIdWithLock(conversationId);
   if (imContext == NULL) {
-    imContext = imEP->FindContextByIdWithLock(params.m_id);
-    if (imContext == NULL) {
-      imContext = imEP->FindContextByIdWithLock(params.m_tag);
-      if (imContext == NULL) {
-        PTRACE2(2, &endpoint, "SIPIM\tCannot find IM context for " << params.m_id << ',' << params.m_tag);
-        return;
-      }
-    }
+    PTRACE2(2, &endpoint, "SIPIM\tCannot find IM context for " << conversationId);
+    return;
   }
 
   PSafePtr<OpalSIPIMContext> context = PSafePtrCast<OpalIMContext,OpalSIPIMContext>(imContext);
   if (context == NULL) {
-    PTRACE2(2, &endpoint, "SIPIM\tNot a SIP context for " << params.m_id << ',' << params.m_tag);
+    PTRACE2(2, &endpoint, "SIPIM\tNot a SIP context for " << conversationId);
     return;
   }
 
@@ -386,7 +381,7 @@ void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
     return;
   }
 
-  const SIPMIMEInfo & mime  = request.GetMIME();
+  SIPMIMEInfo & mime  = request.GetMIME();
 
   OpalIMContext::MessageDisposition status;
   PString errorInfo;
@@ -394,6 +389,7 @@ void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
     OpalIM message;
 
     SIPURL to(mime.GetTo());
+    to.SetTag(); // If not present
     message.m_conversationId = mime.GetCallID() + ConversationIdSeparator + to.GetTag();
 
     to.Sanitise(SIPURL::ExternalURI);
@@ -410,6 +406,9 @@ void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
 
     message.m_bodies.SetAt(mime.GetContentType(), request.GetEntityBody());
     status = imEP->OnRawMessageReceived(message, connection, errorInfo);
+
+    to.SetTag(message.m_conversationId.Mid(message.m_conversationId.Find(ConversationIdSeparator)+1));
+    mime.SetTo(to);
   }
 
   SIPResponse * response = new SIPResponse(endpoint, request, SIP_PDU::Failure_BadRequest);
@@ -438,11 +437,13 @@ void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
 
 void OpalSIPIMContext::PopulateParams(SIPMessage::Params & params, const OpalIM & message)
 {
-  if (!message.m_conversationId.Split(ConversationIdSeparator, params.m_id, params.m_tag))
+  PString tag;
+  if (!message.m_conversationId.Split(ConversationIdSeparator, params.m_id, tag))
     params.m_id = message.m_conversationId;
 
   SIPURL from(message.m_from);
   from.SetDisplayName(m_localName);
+  from.SetTag(tag);
   params.m_localAddress = from.AsQuotedString();
 
   params.m_remoteAddress = message.m_to.AsString();

@@ -787,6 +787,7 @@ static PBoolean BuildFastStartList(const H323Channel & channel,
 
 void H323Connection::OnEstablished()
 {
+  connectionState = EstablishedConnection; // Keep in sync
   endpoint.OnConnectionEstablished(*this, callToken);
   OpalRTPConnection::OnEstablished();
 }
