@@ -686,8 +686,14 @@ OpalPluginFramedAudioTranscoder::OpalPluginFramedAudioTranscoder(const PluginCod
 PBoolean OpalPluginFramedAudioTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
 {
   PWaitAndSignal mutex(updateMutex);
-  return OpalFramedTranscoder::UpdateMediaFormats(input, output) &&
-         UpdateOptions(isEncoder ? outputMediaFormat : inputMediaFormat);
+  if (!OpalFramedTranscoder::UpdateMediaFormats(input, output))
+    return false;
+
+  if (!UpdateOptions(isEncoder ? outputMediaFormat : inputMediaFormat))
+    return false;
+
+  CalculateSizes();
+  return true;
 }
 
 
