@@ -537,6 +537,23 @@ void OpalListener::PrintOn(ostream & strm) const
 }
 
 
+static void WaitForTransportThread(PThread * thread, const OpalEndPoint & endpoint)
+{
+  if (thread == NULL)
+    return;
+
+  if (PThread::Current() == thread) {
+    thread->SetAutoDelete();
+    return;
+  }
+
+  PTimeInterval timeout(0, 2); // Seconds of grace
+  timeout += endpoint.GetManager().GetSignalingTimeout();
+  PAssert(thread->WaitForTermination(timeout), "Transport/Listener thread did not terminate");
+  delete thread;
+}
+
+
 void OpalListener::CloseWait()
 {
   PTRACE(3, "Listen\tStopping listening thread on " << GetLocalAddress());
@@ -544,15 +561,7 @@ void OpalListener::CloseWait()
 
   PThread * exitingThread = thread;
   thread = NULL;
-
-  if (exitingThread != NULL) {
-    if (exitingThread == PThread::Current())
-      exitingThread->SetAutoDelete();
-    else {
-      PAssert(exitingThread->WaitForTermination(10000), "Listener thread did not terminate");
-      delete exitingThread;
-    }
-  }
+  WaitForTransportThread(exitingThread, endpoint);
 }
 
 
@@ -971,14 +980,7 @@ void OpalTransport::CloseWait()
 
   m_keepAliveTimer.Stop();
 
-  if (exitingThread != NULL) {
-    if (exitingThread == PThread::Current())
-      exitingThread->SetAutoDelete();
-    else {
-      PAssert(exitingThread->WaitForTermination(10000), "Transport thread did not terminate");
-      delete exitingThread;
-    }
-  }
+  WaitForTransportThread(exitingThread, endpoint);
 }
 
 
