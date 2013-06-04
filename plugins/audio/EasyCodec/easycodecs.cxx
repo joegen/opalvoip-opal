@@ -125,6 +125,8 @@ static void destroy_encoder(const struct PluginCodec_Definition * codec, void * 
   struct EasySession * session = (EasySession *)context;
 
   session->easy->release_enc(session->hEcoder);
+
+  delete session;
 }
 
 
@@ -178,17 +180,22 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
                                        unsigned * toLen,
                                    unsigned int * flag)
 {
-
   struct EasySession * session = (EasySession *)context;
 
-  if (*fromLen !=  codec->parm.audio.bytesPerFrame)
-    return 0;
+  // Allow special codec frames
+  if (*fromLen < codec->parm.audio.bytesPerFrame)
+  {
+    *toLen = codec->parm.audio.samplesPerFrame*2;
+    memset(to, 0, *toLen);
+    return 1;
+  }
 
-   session->easy->dec(session->hDcoder,(unsigned char *)from, (short *)to);
+  session->easy->dec(session->hDcoder,(unsigned char *)from, (short *)to);
 
   *toLen   = codec->parm.audio.samplesPerFrame*2;
   *fromLen = codec->parm.audio.bytesPerFrame;
 
+  // Transcoder will call this function again for big packets
   return 1; 
 }
 
@@ -198,6 +205,8 @@ static void destroy_decoder(const struct PluginCodec_Definition * codec, void * 
   struct EasySession * session = (EasySession *)context;
 
   session->easy->release_dec(session->hDcoder);
+
+  delete session;
 }
 
 
