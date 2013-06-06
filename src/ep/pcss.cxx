@@ -231,43 +231,32 @@ PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & 
                                                         const OpalMediaFormat & mediaFormat,
                                                                      PBoolean   isSource)
 {
-  PString deviceName;
-  PSoundChannel::Directions dir;
+  PSoundChannel::Params params;
   if (isSource) {
-    deviceName = connection.GetSoundChannelRecordDevice();
-    dir = PSoundChannel::Recorder;
+    params.m_device = connection.GetSoundChannelRecordDevice();
+    params.m_direction = PSoundChannel::Recorder;
   }
   else {
-    deviceName = connection.GetSoundChannelPlayDevice();
-    dir = PSoundChannel::Player;
+    params.m_device = connection.GetSoundChannelPlayDevice();
+    params.m_direction = PSoundChannel::Player;
   }
 
-  PSoundChannel * soundChannel = PSoundChannel::CreateChannelByName(deviceName, dir);
-  if (soundChannel == NULL) {
-    PTRACE(1, "PCSS\tCould not create sound channel \"" << deviceName
-           << "\" for " << (isSource ? "record" : "play") << "ing.");
+  params.m_channels = mediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption());
+  params.m_sampleRate = mediaFormat.GetClockRate();
+
+  PSoundChannel * soundChannel = PSoundChannel::CreateOpenedChannel(params);
+  if (soundChannel == NULL)
     return NULL;
-  }
+
   PTRACE_CONTEXT_ID_SET(*soundChannel, connection);
 
-  unsigned channels = mediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption());
-  unsigned clockRate = mediaFormat.GetClockRate();
+  PTRACE(3, "PCSS\tOpened "
+              << ((params.m_channels == 1) ? "mono" : ((params.m_channels == 2) ? "stereo" : "multi-channel")) 
+              << " sound channel \"" << params.m_device
+              << "\" for " << (isSource ? "record" : "play") << "ing at "
+              << params.m_sampleRate/1000 << '.' << (params.m_sampleRate%1000)/100 << " kHz.");
 
-  if (soundChannel->Open(deviceName, dir, channels, clockRate, 16)) {
-    PTRACE(3, "PCSS\tOpened " 
-               << ((channels == 1) ? "mono" : ((channels == 2) ? "stereo" : "multi-channel")) 
-               << " sound channel \"" << deviceName
-               << "\" for " << (isSource ? "record" : "play") << "ing at "
-               << clockRate/1000 << '.' << (clockRate%1000)/100 << " kHz.");
-    return soundChannel;
-  }
-
-  PTRACE(1, "PCSS\tCould not open sound channel \"" << deviceName
-         << "\" for " << (isSource ? "record" : "play")
-         << "ing: " << soundChannel->GetErrorText());
-
-  delete soundChannel;
-  return NULL;
+  return soundChannel;
 }
 
 

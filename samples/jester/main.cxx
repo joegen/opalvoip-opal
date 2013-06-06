@@ -180,7 +180,7 @@ void JesterProcess::Main()
   }
 
   PString audioDevice = args.GetOptionString('a', PSoundChannel::GetDefaultDevice(PSoundChannel::Player));
-  if (!m_player.Open(audioDevice, PSoundChannel::Player, 1, SAMPLES_PER_SECOND, 16)) {
+  if (!m_player.Open(audioDevice, PSoundChannel::Player, 1, SAMPLES_PER_SECOND)) {
     cerr << "Failed to open the sound device \"" << audioDevice 
          << "\", available devices:\n";
     PStringList namesPlay = PSoundChannel::GetDeviceNames(PSoundChannel::Player);
