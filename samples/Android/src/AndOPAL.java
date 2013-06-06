@@ -215,6 +215,7 @@ public class AndOPAL extends Activity
         OpalParamGeneral general = message.GetGeneralParams();
         general.setAudioRecordDevice("microphone");
         general.setAudioPlayerDevice("voice");
+        general.setAudioBufferTime(160); // Milliseconds
         general.setNatMethod(m_natMethod);
         general.setNatServer(m_natServer);
 
@@ -284,16 +285,18 @@ public class AndOPAL extends Activity
     }
 
 
-    public static native boolean TestAudio();
+    public static native String TestPlayer();
+    public static native String TestRecorder();
 
     public void onTestAudio(MenuItem item)
     {
-        OutputStatus("Testing audio ... ");
-
         (new Thread(new Runnable() {
             public void run()
             {
-                OutputStatus(TestAudio() ? "Audio test completed." : "Audio test error");
+                OutputStatus("Testing audio player ... ");
+                OutputStatus(TestPlayer());
+                OutputStatus("Testing audio recorder ... ");
+                OutputStatus(TestRecorder());
             }
         })).start();
     }
