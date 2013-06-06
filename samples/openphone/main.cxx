@@ -5555,7 +5555,7 @@ void OptionsDialog::TestPlayer(wxCommandEvent & /*event*/)
   params.m_bufferCount = (m_SoundBufferTime*params.m_sampleRate/1000*2+params.m_bufferSize-1)/params.m_bufferSize;
   SoundProgressDialog progress;
   PwxString result = PSoundChannel::TestPlayer(params, progress.GetNotifier());
-  if (result.StartsWith("Error"))
+  if (result.StartsWith(wxT("Error")))
     wxMessageBox(result, OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
   else
     wxMessageBox(result, OpenPhoneString, wxOK);
@@ -5569,7 +5569,7 @@ void OptionsDialog::TestRecorder(wxCommandEvent & /*event*/)
   playerPrams.m_bufferCount = 16;
   SoundProgressDialog progress;
   PwxString result = PSoundChannel::TestRecorder(recorderParams, playerPrams, progress.GetNotifier());
-  if (result.StartsWith("Error"))
+  if (result.StartsWith(wxT("Error")))
     wxMessageBox(result, OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
   else
     wxMessageBox(result, OpenPhoneString, wxOK);
