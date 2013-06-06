@@ -48,6 +48,9 @@ public class AndOPAL extends Activity
 
 
     // Parameters
+//    String m_traceOutput = "opal.log";
+    String m_traceOutput = "syslog";
+    String m_traceOptions = "-ttttt";
     String m_natMethod = "STUN";
     String m_natServer = "stun.ekiga.net";
     String m_userName = "opal_android";
@@ -346,12 +349,17 @@ public class AndOPAL extends Activity
 
         // Initialise OPAL library
         m_opal = new OpalContext();
-        if (m_opal.Initialise(OPALConstants.OPAL_PREFIX_ALL +
-                              " --config \"" + getFilesDir().getAbsolutePath() + '"' +
-                              " --plugin \"" + getApplicationInfo().nativeLibraryDir + '"' +
-//                              " -tttttosyslog"
-                              " -ttttto \"" +  getCacheDir().getAbsolutePath() + "/opal.log\""
-                              ) == 0)
+        String options = OPALConstants.OPAL_PREFIX_ALL +
+                         " --config \"" + getFilesDir().getAbsolutePath() + '"' +
+                         " --plugin \"" + getApplicationInfo().nativeLibraryDir + "\" " +
+                         m_traceOptions;
+        if (m_traceOutput != "") {
+          options += " --output \"";
+          if (m_traceOutput != "syslog")
+            options += getCacheDir().getAbsolutePath() + "/";
+          options += m_traceOutput + "\"";
+        }
+        if (m_opal.Initialise(options) == 0)
             OutputStatus("Could not initialise OPAL");
         else {
             (new Thread(new Runnable() {
