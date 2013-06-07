@@ -1339,8 +1339,15 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
     return;
   }
 
-  if (attr *= "rtcp-mux")
+  if (attr *= "rtcp-mux") {
     m_controlAddress = m_mediaAddress;
+    return;
+  }
+
+  if (attr *= "rtcp") {
+    m_controlAddress = ParseConnectAddress(value.Mid(value.Find(' ')+1), (WORD)value.AsUnsigned());
+    return;
+  }
 
   SDPMediaDescription::SetAttribute(attr, value);
 }
