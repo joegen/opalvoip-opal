@@ -717,8 +717,12 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
   }
 
   // Set single port  or disjoint RTCP port, must be done before Open()
-  if (!mediaDescription.GetControlAddress().IsEmpty())
+  if (!mediaDescription.GetControlAddress().IsEmpty()) {
+    PTRACE(3, "SIP\tSetting "
+           << (mediaDescription.GetControlAddress() == remoteMediaAddress ? "single" : "non-contiguous")
+           << " port mode on RTP session " << sessionId << " for media type " << mediaType);
     session->SetRemoteControlAddress(mediaDescription.GetControlAddress());
+  }
 
   if (!session->Open(transport->GetInterface())) {
     ReleaseMediaSession(sessionId);
@@ -825,8 +829,10 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
 
   if (m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX)) {
     OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(mediaSession);
-    if (rtpSession != NULL)
+    if (rtpSession != NULL) {
+      PTRACE(3, "SIP\tSetting single port mode for offerred RTP session " << sessionId << " for media type " << mediaType);
       rtpSession->SetSinglePort();
+    }
   }
 
   OpalTransportAddress sdpContactAddress = mediaSession->GetLocalMediaAddress();
