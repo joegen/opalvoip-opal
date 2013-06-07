@@ -1985,6 +1985,7 @@ bool OpalRTPSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress
         m_remoteDataPort = (WORD)(port - 1);
     }
     m_singlePort = m_remoteDataPort == m_remoteControlPort;
+    PTRACE_IF(3, m_singlePort, "RTP_UDP\tSession " << m_sessionId << ", single port mode");
   }
 
   if (m_localHasRestrictedNAT) {
