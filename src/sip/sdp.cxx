@@ -982,7 +982,7 @@ PCaselessString SDPRTPAVPMediaDescription::GetSDPTransportType() const
 
 bool SDPRTPAVPMediaDescription::Format::Initialise(const PString & portString)
 {
-  unsigned pt = portString.AsInteger();
+  int pt = portString.AsInteger();
   if (pt < 0 || pt > 127)
     return false;
 
