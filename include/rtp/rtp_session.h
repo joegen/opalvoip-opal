@@ -268,6 +268,11 @@ class OpalRTPSession : public OpalMediaSession
 
   /**@name Member variable access */
   //@{
+    /**Set flag for single port operation.
+       This must be done before Open() is called to take effect.
+      */
+    void SetSinglePort(bool v = true) { m_singlePort = v; }
+
     /**Get flag for is audio RTP.
       */
     bool IsAudio() const { return m_isAudio; }
@@ -544,25 +549,25 @@ class OpalRTPSession : public OpalMediaSession
     ReceiverReportArray BuildReceiverReportArray(const RTP_ControlFrame & frame, PINDEX offset);
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
     bool InsertReportPacket(RTP_ControlFrame & report);
-    virtual int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timer);
     virtual SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame);
     
     virtual bool InternalReadData(RTP_DataFrame & frame);
     virtual SendReceiveStatus ReadControlPDU();
-    virtual SendReceiveStatus ReadDataOrControlPDU(
+    virtual SendReceiveStatus ReadRawPDU(
       BYTE * framePtr,
-      PINDEX frameSize,
+      PINDEX & frameSize,
       bool fromDataChannel
     );
     virtual bool HandleUnreachable(PTRACE_PARAM(const char * channelName));
-    virtual bool WriteDataOrControlPDU(
+    virtual bool WriteRawPDU(
       const BYTE * framePtr,
       PINDEX frameSize,
       bool toDataChannel
     );
 
 
+    bool                m_singlePort;
     bool                m_isAudio;
     unsigned            m_timeUnits;
     PString             m_canonicalName;
@@ -690,6 +695,11 @@ class OpalRTPSession : public OpalMediaSession
   private:
     OpalRTPSession(const OpalRTPSession &);
     void operator=(const OpalRTPSession &) { }
+
+    P_REMOVE_VIRTUAL(int,WaitForPDU(PUDPSocket&,PUDPSocket&,const PTimeInterval&),0);
+    P_REMOVE_VIRTUAL(SendReceiveStatus,ReadDataOrControlPDU(BYTE *,PINDEX,bool),e_AbortTransport);
+    P_REMOVE_VIRTUAL(bool,WriteDataOrControlPDU(const BYTE *,PINDEX,bool),false);
+
 
   friend class RTP_JitterBuffer;
 };
