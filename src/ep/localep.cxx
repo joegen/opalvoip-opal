@@ -142,10 +142,13 @@ bool OpalLocalEndPoint::AcceptIncomingCall(const PString & token, OpalConnection
 bool OpalLocalEndPoint::RejectIncomingCall(const PString & token, const OpalConnection::CallEndReason & reason)
 {
   PSafePtr<OpalLocalConnection> connection = GetLocalConnectionWithLock(token, PSafeReadOnly);
-  if (connection == NULL)
+  if (connection == NULL) {
+    PTRACE(2, "LocalEP\tCould not find connection using token \"" << token << '"');
     return false;
+  }
 
-  connection->Release(reason);
+  PTRACE(3, "LocalEP\tRejecting incoming call with reason " << reason);
+  connection->Release(reason, true);
   return true;
 }
 
@@ -255,7 +258,7 @@ PBoolean OpalLocalConnection::OnIncomingConnection(unsigned int options, OpalCon
     return true;
 
   PTRACE(4, "LocalCon\tOnOutgoingSetUp returned false on " << *this);
-  Release(EndedByNoAccept);
+  Release(EndedByNoAccept, true);
   return false;
 }
 
@@ -271,7 +274,8 @@ PBoolean OpalLocalConnection::SetUpConnection()
     return true;
 
   if (!OnIncoming()) {
-    Release(EndedByLocalBusy);
+    PTRACE(4, "LocalCon\tOnIncoming returned false on " << *this);
+    Release(EndedByLocalBusy, true);
     return false;
   }
 
