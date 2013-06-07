@@ -600,7 +600,10 @@ bool SIPConnection::GetMediaTransportAddresses(const OpalMediaType & mediaType,
   if (md == NULL)
     return false;
 
-  transports.AppendAddress(md->GetTransportAddress());
+  transports.AppendAddress(md->GetMediaAddress());
+  if (!md->GetControlAddress().IsEmpty())
+    transports.AppendAddress(md->GetControlAddress());
+
   PTRACE(3, "SIP\tGetMediaTransport for " << mediaType << " found " << transports[0]);
   return true;
 }
@@ -622,7 +625,7 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
     return NULL;
   }
 
-  OpalTransportAddress remoteMediaAddress = mediaDescription.GetTransportAddress();
+  OpalTransportAddress remoteMediaAddress = mediaDescription.GetMediaAddress();
   if (remoteMediaAddress.IsEmpty()) {
     PTRACE(2, "SIP\tReceived media description with no address for " << mediaType);
     remoteChanged = true;
@@ -655,6 +658,10 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
       }
     }
   }
+
+  // Set single port  or disjoint RTCP port, must be done before Open()
+  if (!mediaDescription.GetControlAddress().IsEmpty())
+    session->SetRemoteAddress(mediaDescription.GetControlAddress(), false);
 
   if (!session->Open(GetInterface(), remoteMediaAddress, true)) {
     ReleaseMediaSession(sessionId);
@@ -761,6 +768,12 @@ bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
     return false;
   }
 
+  if (m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX)) {
+    OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(mediaSession);
+    if (rtpSession != NULL)
+      rtpSession->SetSinglePort();
+  }
+
   OpalTransportAddress remoteMediaAddress(m_dialog.GetRemoteTransportAddress(m_dnsEntry).GetHostName(), 0, OpalTransportAddress::UdpPrefix());
   if (!mediaSession->Open(GetInterface(), remoteMediaAddress, true)) {
     PTRACE(1, "SIP\tCould not open RTP session " << sessionId << " for media type " << mediaType);
@@ -773,6 +786,7 @@ bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
     return false;
   }
 
+  localMedia->SetAddresses(mediaSession->GetLocalAddress(true), mediaSession->GetLocalAddress(false));
   localMedia->SetOptionStrings(m_stringOptions);
 
   if (sdp.GetDefaultConnectAddress().IsEmpty())
@@ -1128,7 +1142,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
      OpenSourceMediaStreams will just return true if they are already open.
      We open tx (other party source) side first so we follow the remote
      endpoints preferences. */
-  if (!incomingMedia->GetTransportAddress().IsEmpty()) {
+  if (!incomingMedia->GetMediaAddress().IsEmpty()) {
     PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
     if (otherParty != NULL && sendStream == NULL) {
       if ((sendStream = GetMediaStream(sessionId, false)) == NULL) {
@@ -1212,7 +1226,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     // RFC3264 says we MUST have an entry, but it should have port zero
     if (empty) {
       localMedia->AddMediaFormat(m_answerFormatList.front());
-      localMedia->SetTransportAddress(OpalTransportAddress());
+      localMedia->SetAddresses(OpalTransportAddress(), OpalTransportAddress());
     }
     else {
       // We can do the media type but choose not to at this time
@@ -1228,7 +1242,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 #endif
   }
 
-  localMedia->SetTransportAddress(mediaSession->GetLocalAddress());
+  localMedia->SetAddresses(mediaSession->GetLocalAddress(true), mediaSession->GetLocalAddress(false));
 
   sdpOut.AddMediaDescription(localMedia);
 
@@ -1236,7 +1250,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
   ownerCall.ResetSwitchingT38();
 #endif
 
-  PTRACE(4, "SIP\tAnswered offer for media type " << mediaType << ' ' << localMedia->GetTransportAddress());
+  PTRACE(4, "SIP\tAnswered offer for media type " << mediaType << ' ' << localMedia->GetMediaAddress());
   return true;
 }
 

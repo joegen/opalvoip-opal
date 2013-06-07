@@ -112,6 +112,15 @@ class OpalSIPIMContext;
   */
 #define OPAL_OPT_EXTERNAL_SDP "External-SDP"
 
+/**Enable offer of RTP/RTCP "single port" mode.
+   While if offerred by the remote, we always honour the SDP a=rtcp-mux
+   attribute, we only offer it if this string option is set to true.
+
+   Defaults to false.
+  */
+#define OPAL_OPT_RTCP_MUX "RTCP-Mux"
+
+
 #define SIP_HEADER_PREFIX      "SIP-Header:"
 #define SIP_HEADER_REPLACES    SIP_HEADER_PREFIX"Replaces"
 #define SIP_HEADER_REFERRED_BY SIP_HEADER_PREFIX"Referred-By"

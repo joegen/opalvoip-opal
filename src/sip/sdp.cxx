@@ -578,25 +578,29 @@ void SDPCommonAttributes::OutputAttributes(ostream & strm) const
 //////////////////////////////////////////////////////////////////////////////
 
 SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & type)
-  : m_transportAddress(address)
+  : m_mediaAddress(address)
   , m_port(0)
   , m_portCount(1)
   , m_mediaType(type)
 {
   PIPSocket::Address ip;
-  m_transportAddress.GetIpAndPort(ip, m_port);
+  m_mediaAddress.GetIpAndPort(ip, m_port);
 }
 
 
-PBoolean SDPMediaDescription::SetTransportAddress(const OpalTransportAddress & newAddress)
+PBoolean SDPMediaDescription::SetAddresses(const OpalTransportAddress & newAddress,
+                                           const OpalTransportAddress & control)
 {
   PIPSocket::Address ip;
   WORD port = m_port;
   if (!newAddress.GetIpAndPort(ip, port))
     return false;
 
-  m_transportAddress = OpalTransportAddress(ip, port, OpalTransportAddress::UdpPrefix());
   m_port = port;
+
+  m_mediaAddress = OpalTransportAddress(ip, port, OpalTransportAddress::UdpPrefix());
+  m_controlAddress = control;
+
   return true;
 }
 
@@ -628,7 +632,7 @@ bool SDPMediaDescription::Decode(const PStringArray & tokens)
     case 0 :
       PTRACE(3, "SDP\tIgnoring media session " << m_mediaType << " with port=0");
       m_direction = Inactive;
-      m_transportAddress = PString::Empty();
+      m_mediaAddress = m_controlAddress = PString::Empty();
       break;
 
     case 65535 :
@@ -640,8 +644,8 @@ bool SDPMediaDescription::Decode(const PStringArray & tokens)
       PTRACE(4, "SDP\tMedia session port=" << m_port);
 
       PIPSocket::Address ip;
-      if (m_transportAddress.GetIpAddress(ip))
-        m_transportAddress = OpalTransportAddress(ip, m_port, OpalTransportAddress::UdpPrefix());
+      if (m_mediaAddress.GetIpAddress(ip))
+        m_mediaAddress = OpalTransportAddress(ip, m_port, OpalTransportAddress::UdpPrefix());
   }
 
   CreateSDPMediaFormats(tokens);
@@ -684,7 +688,7 @@ bool SDPMediaDescription::Decode(char key, const PString & value)
       
     case 'c' : // connection information - optional if included at session-level
       if (m_port != 0)
-        m_transportAddress = ParseConnectAddress(value, m_port);
+        m_mediaAddress = ParseConnectAddress(value, m_port);
       break;
 
     case 'a' : // zero or more media attribute lines
@@ -833,8 +837,8 @@ void SDPMediaDescription::Encode(const OpalTransportAddress & commonAddr, ostrea
     return;
 
   PIPSocket::Address commonIP, transportIP;
-  if (m_transportAddress.GetIpAddress(transportIP) && commonAddr.GetIpAddress(commonIP) && commonIP != transportIP)
-    strm << "c=" << GetConnectAddressString(m_transportAddress) << "\r\n";
+  if (m_mediaAddress.GetIpAddress(transportIP) && commonAddr.GetIpAddress(commonIP) && commonIP != transportIP)
+    strm << "c=" << GetConnectAddressString(m_mediaAddress) << "\r\n";
 
   strm << m_bandwidth;
   OutputAttributes(strm);
@@ -1249,6 +1253,15 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
 
   for (PList<SDPCryptoSuite>::const_iterator crypto = m_cryptoSuites.begin(); crypto != m_cryptoSuites.end(); ++crypto)
     strm << *crypto;
+
+  if (m_controlAddress == m_mediaAddress)
+    strm << "a=rtcp-mux\r\n";
+  else if (!m_controlAddress.IsEmpty()) {
+    PIPSocket::Address ip;
+    WORD port = 0;
+    if (m_controlAddress.GetIpAndPort(ip, port) && port != (m_port+1))
+      strm << "a=rtcp:" << port << ' ' << GetConnectAddressString(m_mediaAddress) << "\r\n";
+  }
 }
 
 
@@ -1325,6 +1338,9 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
     }
     return;
   }
+
+  if (attr *= "rtcp-mux")
+    m_controlAddress = m_mediaAddress;
 
   SDPMediaDescription::SetAttribute(attr, value);
 }
