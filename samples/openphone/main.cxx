@@ -5526,9 +5526,10 @@ void OptionsDialog::ChangedSoundRecorder(wxCommandEvent & /*event*/)
 class SoundProgressDialog
 {
   private:
+    bool               m_playerTest;
     wxProgressDialog * m_dialog;
   public:
-    SoundProgressDialog() : m_dialog(NULL) { }
+    SoundProgressDialog(bool playerTest) : m_playerTest(playerTest), m_dialog(NULL) { }
     ~SoundProgressDialog() { delete m_dialog; }
 
     PDECLARE_NOTIFIER(PSoundChannel, SoundProgressDialog, Progress);
@@ -5537,23 +5538,27 @@ class SoundProgressDialog
 
 void SoundProgressDialog::Progress(PSoundChannel & channel, P_INT_PTR count)
 {
-  if (m_dialog == NULL)
-    m_dialog = new wxProgressDialog(OpenPhoneString, 
-                                    channel.GetDirection() == PSoundChannel::Player
-                                            ? wxT("Testing player ...")
-                                            : wxT("Testing recorder ..."),
-                                    count);
-  else if (channel.IsOpen())
+  if (m_dialog != NULL && channel.IsOpen())
     m_dialog->Update(count);
-  else
-    m_dialog->SetRange(count);
+  else {
+    delete m_dialog;
+    const wxChar * msg;
+    if (m_playerTest)
+      msg = wxT("Testing player ...");
+    else if (channel.GetDirection() == PSoundChannel::Recorder)
+      msg = wxT("Testing recorder ...");
+    else
+      msg = wxT("Playing back test recording ...");
+
+    m_dialog = new wxProgressDialog(OpenPhoneString, msg, count);
+  }
 }
 
 void OptionsDialog::TestPlayer(wxCommandEvent & /*event*/)
 {
   PSoundChannel::Params params(PSoundChannel::Player, m_SoundPlayer);
   params.m_bufferCount = (m_SoundBufferTime*params.m_sampleRate/1000*2+params.m_bufferSize-1)/params.m_bufferSize;
-  SoundProgressDialog progress;
+  SoundProgressDialog progress(true);
   PwxString result = PSoundChannel::TestPlayer(params, progress.GetNotifier());
   if (result.StartsWith(wxT("Error")))
     wxMessageBox(result, OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
@@ -5567,7 +5572,7 @@ void OptionsDialog::TestRecorder(wxCommandEvent & /*event*/)
   PSoundChannel::Params recorderParams(PSoundChannel::Recorder, m_SoundRecorder);
   PSoundChannel::Params playerPrams(PSoundChannel::Player, m_SoundPlayer);
   playerPrams.m_bufferCount = 16;
-  SoundProgressDialog progress;
+  SoundProgressDialog progress(false);
   PwxString result = PSoundChannel::TestRecorder(recorderParams, playerPrams, progress.GetNotifier());
   if (result.StartsWith(wxT("Error")))
     wxMessageBox(result, OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
