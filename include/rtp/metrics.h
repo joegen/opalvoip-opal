@@ -48,8 +48,9 @@ class RTP_DataFrame;
 /**This is a class used to calculate voice quality metrics acording to the
    E-Model, proposed by ITU-T G.107 recomendation.	
   */
-class RTCP_XR_Metrics
+class RTCP_XR_Metrics : public PObject
 {
+    PCLASSINFO(RTCP_XR_Metrics, PObject);
   protected:
     RTCP_XR_Metrics(
       float    Ie,

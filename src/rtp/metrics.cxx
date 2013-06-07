@@ -125,7 +125,7 @@ RTCP_XR_Metrics * RTCP_XR_Metrics::Create(const RTP_DataFrame & frame)
       return new RTCP_XR_Metrics(20, 10, 5, 33, 13000);
 
     default:
-      PTRACE(3, "VoIP Metrics\tNo Ie and Bpl data for payload type " << frame.GetPayloadType() <<
+      PTRACE2(3, NULL, "VoIP Metrics\tNo Ie and Bpl data for payload type " << frame.GetPayloadType() <<
                 ", unable to calculate R Factor and MOS score.");
       return NULL;
   }
@@ -794,7 +794,7 @@ void OpalRTPSession::OnRxExtendedReport(DWORD PTRACE_PARAM(src), const ExtendedR
 {
 #if PTRACING
   if (PTrace::CanTrace(3)) {
-    ostream & strm = PTrace::Begin(2, __FILE__, __LINE__);
+    ostream & strm = PTrace::Begin(3, __FILE__, __LINE__, this);
     strm << "RTP\tSession " << m_sessionId << ", OnExtendedReport: ssrc=" << src << '\n';
     for (PINDEX i = 0; i < reports.GetSize(); i++)
       strm << "  XR: " << reports[i] << '\n';

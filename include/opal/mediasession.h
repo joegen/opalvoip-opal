@@ -139,6 +139,7 @@ class OpalMediaSession : public PObject
     virtual OpalTransportAddress GetLocalMediaAddress() const = 0;
     virtual OpalTransportAddress GetRemoteMediaAddress() const = 0;
     virtual bool SetRemoteMediaAddress(const OpalTransportAddress &);
+    virtual OpalTransportAddress GetLocalControlAddress() const;
     virtual OpalTransportAddress GetRemoteControlAddress() const;
     virtual bool SetRemoteControlAddress(const OpalTransportAddress &);
 

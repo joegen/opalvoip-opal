@@ -41,6 +41,7 @@
 #include <opal/buildopts.h>
 
 #include <rtp/rtp.h>
+#include <rtp/jitter.h>
 #include <opal/mediasession.h>
 #include <ptlib/sockets.h>
 #include <ptlib/safecoll.h>
@@ -50,22 +51,8 @@
 #include <list>
 
 
-class OpalJitterBuffer;
 class PNatMethod;
 class RTCP_XR_Metrics;
-
-
-///////////////////////////////////////////////////////////////////////////////
-// 
-// class to hold the QoS definitions for an RTP channel
-
-class RTP_QOS : public PObject
-{
-  PCLASSINFO(RTP_QOS,PObject);
-  public:
-    PQoS dataQoS;
-    PQoS ctrlQoS;
-};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -96,11 +83,13 @@ class OpalRTPSession : public OpalMediaSession
   /**@name Overrides from class OpalMediaSession */
   //@{
     virtual bool Open(const PString & localInterface);
+    virtual bool IsOpen() const;
     virtual bool Close();
     virtual bool Shutdown(bool reading);
     virtual OpalTransportAddress GetLocalMediaAddress() const;
     virtual OpalTransportAddress GetRemoteMediaAddress() const;
     virtual bool SetRemoteMediaAddress(const OpalTransportAddress & address);
+    virtual OpalTransportAddress GetLocalControlAddress() const;
     virtual OpalTransportAddress GetRemoteControlAddress() const;
     virtual bool SetRemoteControlAddress(const OpalTransportAddress & address);
 
@@ -143,11 +132,6 @@ class OpalRTPSession : public OpalMediaSession
     /**Get current time units of the jitter buffer.
      */
     unsigned GetJitterTimeUnits() const { return m_timeUnits; }
-
-#if P_QOS
-    /**Modifies the QOS specifications for this RTP session*/
-    virtual bool ModifyQOS(RTP_QOS *);
-#endif
 
     /**Read a data frame from the RTP channel.
        This function will conditionally read data from the jitter buffer or
@@ -291,15 +275,20 @@ class OpalRTPSession : public OpalMediaSession
 
   /**@name Member variable access */
   //@{
+    /**Set flag for single port operation.
+       This must be done before Open() is called to take effect.
+      */
+    void SetSinglePort(bool v = true) { m_singlePort = v; }
+
     /**Get flag for is audio RTP.
       */
-    bool IsAudio() const { return isAudio; }
+    bool IsAudio() const { return m_isAudio; }
 
     /**Set flag for RTP session is audio.
      */
     void SetAudio(
       bool aud    /// New audio indication flag
-    ) { isAudio = aud; }
+    ) { m_isAudio = aud; }
 
     /**Get the canonical name for the RTP session.
       */
@@ -401,35 +390,35 @@ class OpalRTPSession : public OpalMediaSession
 
     /**Get local address of session.
       */
-    virtual PIPSocket::Address GetLocalAddress() const { return localAddress; }
+    virtual PIPSocket::Address GetLocalAddress() const { return m_localAddress; }
 
     /**Get remote address of session.
       */
-    PIPSocket::Address GetRemoteAddress() const { return remoteAddress; }
+    PIPSocket::Address GetRemoteAddress() const { return m_remoteAddress; }
 
     /**Get local data port of session.
       */
-    virtual WORD GetLocalDataPort() const { return localDataPort; }
+    virtual WORD GetLocalDataPort() const { return m_localDataPort; }
 
     /**Get local control port of session.
       */
-    virtual WORD GetLocalControlPort() const { return localControlPort; }
+    virtual WORD GetLocalControlPort() const { return m_localControlPort; }
 
     /**Get remote data port of session.
       */
-    virtual WORD GetRemoteDataPort() const { return remoteDataPort; }
+    virtual WORD GetRemoteDataPort() const { return m_remoteDataPort; }
 
     /**Get remote control port of session.
       */
-    virtual WORD GetRemoteControlPort() const { return remoteControlPort; }
+    virtual WORD GetRemoteControlPort() const { return m_remoteControlPort; }
 
     /**Get data UDP socket of session.
       */
-    virtual PUDPSocket & GetDataSocket() { return *dataSocket; }
+    virtual PUDPSocket & GetDataSocket() { return *m_dataSocket; }
 
     /**Get control UDP socket of session.
       */
-    virtual PUDPSocket & GetControlSocket() { return *controlSocket; }
+    virtual PUDPSocket & GetControlSocket() { return *m_controlSocket; }
 
     /**Get total number of packets sent in session.
       */
@@ -535,7 +524,7 @@ class OpalRTPSession : public OpalMediaSession
     DWORD GetJitterTimeOnRemote() const { return jitterLevelOnRemote/GetJitterTimeUnits(); }
   //@}
 
-    virtual void SetCloseOnBYE(bool v)  { closeOnBye = v; }
+    virtual void SetCloseOnBYE(bool v)  { m_closeOnBye = v; }
 
     /**Send flow control (Temporary Maximum Media Stream Bit Rate) Request/Notification.
       */
@@ -575,38 +564,33 @@ class OpalRTPSession : public OpalMediaSession
     ReceiverReportArray BuildReceiverReportArray(const RTP_ControlFrame & frame, PINDEX offset);
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
     bool InsertReportPacket(RTP_ControlFrame & report);
-    virtual int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timer);
     virtual SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame);
     
     bool InternalSetRemoteAddress(PIPSocket::Address address, WORD port, bool isDataPort);
-    virtual void ApplyQOS(const PIPSocket::Address & addr);
     virtual bool InternalReadData(RTP_DataFrame & frame);
-    virtual SendReceiveStatus InternalReadData2(RTP_DataFrame & frame);
     virtual SendReceiveStatus ReadControlPDU();
-    virtual SendReceiveStatus ReadDataOrControlPDU(
+    virtual SendReceiveStatus ReadRawPDU(
       BYTE * framePtr,
-      PINDEX frameSize,
+      PINDEX & frameSize,
       bool fromDataChannel
     );
-
-    virtual bool WriteDataOrControlPDU(
+    virtual bool HandleUnreachable(PTRACE_PARAM(const char * channelName));
+    virtual bool WriteRawPDU(
       const BYTE * framePtr,
       PINDEX frameSize,
       bool toDataChannel
     );
 
 
-    bool                isAudio;
+    bool                m_singlePort;
+    bool                m_isAudio;
     unsigned            m_timeUnits;
-    PString             canonicalName;
-    PString             toolName;
+    PString             m_canonicalName;
+    PString             m_toolName;
     RTPExtensionHeaders m_extensionHeaders;
     PTimeInterval       m_maxNoReceiveTime;
     PTimeInterval       m_maxNoTransmitTime;
-
-    typedef PSafePtr<OpalJitterBuffer, PSafePtrMultiThreaded> JitterBufferPtr;
-    JitterBufferPtr m_jitterBuffer;
 
     DWORD         syncSourceOut;
     DWORD         syncSourceIn;
@@ -633,7 +617,6 @@ class OpalRTPSession : public OpalMediaSession
     std::list<RTP_DataFrame> m_outOfOrderPackets;
     void SaveOutOfOrderPacket(RTP_DataFrame & frame);
 
-    PMutex        dataMutex;
     DWORD         timeStampOffs;               // offset between incoming media timestamp and timeStampOut
     bool          oobTimeStampBaseEstablished; // true if timeStampOffs has been established by media
     DWORD         oobTimeStampOutBase;         // base timestamp value for oob data
@@ -693,36 +676,46 @@ class OpalRTPSession : public OpalMediaSession
     PTimer m_reportTimer;
     PDECLARE_NOTIFIER(PTimer, OpalRTPSession, SendReport);
 
-    bool closeOnBye;
-    bool byeSent;
+    PMutex m_dataMutex;
+    bool   m_closeOnBye;
+    bool   m_byeSent;
 
     list<FilterNotifier> m_filters;
 
-    PIPSocket::Address localAddress;
-    WORD               localDataPort;
-    WORD               localControlPort;
+    PIPSocket::Address m_localAddress;
+    WORD               m_localDataPort;
+    WORD               m_localControlPort;
 
-    PIPSocket::Address remoteAddress;
-    WORD               remoteDataPort;
-    WORD               remoteControlPort;
+    PIPSocket::Address m_remoteAddress;
+    WORD               m_remoteDataPort;
+    WORD               m_remoteControlPort;
 
-    PIPSocket::Address remoteTransmitAddress;
+    PIPSocket::Address m_remoteTransmitAddress;
 
-    PUDPSocket * dataSocket;
-    PUDPSocket * controlSocket;
+    PUDPSocket * m_dataSocket;
+    PUDPSocket * m_controlSocket;
 
-    bool shutdownRead;
-    bool shutdownWrite;
-    bool appliedQOS;
-    bool localHasNAT;
+    bool m_shutdownRead;
+    bool m_shutdownWrite;
+    bool m_remoteBehindNAT;
+    bool m_localHasRestrictedNAT;
     bool m_firstControl;
 
     DWORD        m_noTransmitErrors;
     PSimpleTimer m_noTransmitTimer;
 
+    // Make sure JB is last to make sure it is destroyed first.
+    typedef PSafePtr<OpalJitterBuffer, PSafePtrMultiThreaded> JitterBufferPtr;
+    JitterBufferPtr m_jitterBuffer;
+
   private:
     OpalRTPSession(const OpalRTPSession &);
     void operator=(const OpalRTPSession &) { }
+
+    P_REMOVE_VIRTUAL(int,WaitForPDU(PUDPSocket&,PUDPSocket&,const PTimeInterval&),0);
+    P_REMOVE_VIRTUAL(SendReceiveStatus,ReadDataOrControlPDU(BYTE *,PINDEX,bool),e_AbortTransport);
+    P_REMOVE_VIRTUAL(bool,WriteDataOrControlPDU(const BYTE *,PINDEX,bool),false);
+
 
   friend class RTP_JitterBuffer;
 };

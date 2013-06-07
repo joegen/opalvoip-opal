@@ -234,6 +234,9 @@ class RTP_ControlFrame : public PBYTEArray
 
   public:
     RTP_ControlFrame(PINDEX compoundSize = 2048);
+    RTP_ControlFrame(const BYTE * data, PINDEX size, bool dynamic = true);
+
+    bool IsValid() const;
 
     unsigned GetVersion() const { return (BYTE)theArray[compoundOffset]>>6; }
 
@@ -241,6 +244,7 @@ class RTP_ControlFrame : public PBYTEArray
     void     SetCount(unsigned count);
 
     enum PayloadTypes {
+      e_FirstValidPayloadType   = 192, // RFC5761
       e_IntraFrameRequest       = 192,
       e_SenderReport            = 200,
       e_ReceiverReport          = 201,
@@ -249,7 +253,8 @@ class RTP_ControlFrame : public PBYTEArray
       e_ApplDefined             = 204,
       e_TransportLayerFeedBack  = 205, // RFC4585
       e_PayloadSpecificFeedBack = 206,
-      e_ExtendedReport          = 207  // RFC3611
+      e_ExtendedReport          = 207, // RFC3611
+      e_LastValidPayloadType    = 223  // RFC5761
     };
 
     unsigned GetPayloadType() const { return (BYTE)theArray[compoundOffset+1]; }
@@ -266,7 +271,7 @@ class RTP_ControlFrame : public PBYTEArray
 
     PINDEX GetCompoundSize() const;
 
-    void Reset(PINDEX size);
+    bool SetPacketSize(PINDEX size);
 
 #pragma pack(1)
     struct ReceiverReport {

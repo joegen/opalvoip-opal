@@ -4795,10 +4795,6 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
     return NULL;
   }
 
-#if P_QOS
-  session->ModifyQOS(rtpqos);
-#endif
-
   session->Restart(dir == H323Channel::IsReceiver);
   return CreateRTPChannel(capability, dir, *session);
 }
