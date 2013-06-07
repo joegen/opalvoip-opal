@@ -133,6 +133,12 @@ bool OpalMediaSession::SetRemoteMediaAddress(const OpalTransportAddress &)
 }
 
 
+OpalTransportAddress OpalMediaSession::GetLocalControlAddress() const
+{
+  return OpalTransportAddress();
+}
+
+
 OpalTransportAddress OpalMediaSession::GetRemoteControlAddress() const
 {
   return OpalTransportAddress();
