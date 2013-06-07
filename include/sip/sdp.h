@@ -224,10 +224,12 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     virtual void SetAttribute(const PString & attr, const PString & value);
 
-    virtual Direction GetDirection() const { return m_transportAddress.IsEmpty() ? Inactive : m_direction; }
+    virtual Direction GetDirection() const { return m_mediaAddress.IsEmpty() ? Inactive : m_direction; }
 
-    virtual const OpalTransportAddress & GetTransportAddress() const { return m_transportAddress; }
-    virtual PBoolean SetTransportAddress(const OpalTransportAddress &t);
+    virtual bool SetAddresses(const OpalTransportAddress & media, const OpalTransportAddress & control);
+
+    const OpalTransportAddress & GetMediaAddress() const { return m_mediaAddress; }
+    const OpalTransportAddress & GetControlAddress() const { return m_controlAddress; }
 
     virtual WORD GetPort() const { return m_port; }
 
@@ -252,7 +254,8 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
   protected:
     virtual SDPMediaFormat * FindFormat(PString & str) const;
 
-    OpalTransportAddress m_transportAddress;
+    OpalTransportAddress m_mediaAddress;
+    OpalTransportAddress m_controlAddress;
     PCaselessString      m_transportType;
     PStringOptions       m_stringOptions;
     WORD                 m_port;
@@ -262,6 +265,8 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     SDPMediaFormatList   m_formats;
 
   P_REMOVE_VIRTUAL(SDPMediaFormat *,CreateSDPMediaFormat(const PString &),0);
+  P_REMOVE_VIRTUAL(OpalTransportAddress,GetTransportAddress(),OpalTransportAddress());
+  P_REMOVE_VIRTUAL(PBoolean,SetTransportAddress(const OpalTransportAddress &),false);
 };
 
 PARRAY(SDPMediaDescriptionArray, SDPMediaDescription);

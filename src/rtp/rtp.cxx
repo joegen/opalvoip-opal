@@ -536,16 +536,42 @@ ostream & operator<<(ostream & o, RTP_DataFrame::PayloadTypes t)
 
 RTP_ControlFrame::RTP_ControlFrame(PINDEX sz)
   : PBYTEArray(sz)
+  , compoundOffset(0)
+  , payloadSize(0)
 {
-  compoundOffset = 0;
-  payloadSize = 0;
 }
 
-void RTP_ControlFrame::Reset(PINDEX size)
+
+RTP_ControlFrame::RTP_ControlFrame(const BYTE * data, PINDEX size, bool dynamic)
+  : PBYTEArray(data, size, dynamic)
+  , compoundOffset(0)
+  , payloadSize(0)
 {
-  SetSize(size);
+}
+
+
+bool RTP_ControlFrame::IsValid() const
+{
+  PINDEX size = GetSize();
+  if (size < compoundOffset + 4)
+    return false;
+
+  if (size < compoundOffset + GetPayloadSize() + 4)
+    return false;
+
+  unsigned type = GetPayloadType();
+  return type >= e_FirstValidPayloadType && type <= e_LastValidPayloadType;
+}
+
+
+bool RTP_ControlFrame::SetPacketSize(PINDEX size)
+{
   compoundOffset = 0;
   payloadSize = 0;
+
+  SetSize(size);
+
+  return IsValid();
 }
 
 
