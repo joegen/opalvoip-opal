@@ -433,7 +433,7 @@ PBoolean OpalMediaStream::RequiresPatchThread() const
 
 bool OpalMediaStream::EnableJitterBuffer(bool enab) const
 {
-  if (!IsOpen() || IsSink())
+  if (!IsOpen())
     return false;
 
   OpalJitterBuffer::Init init;
@@ -875,7 +875,7 @@ PBoolean OpalRTPMediaStream::RequiresPatchThread() const
 
 bool OpalRTPMediaStream::InternalSetJitterBuffer(const OpalJitterBuffer::Init & init) const
 {
-  if (!RequiresPatchThread())
+  if (IsSink() || !RequiresPatchThread())
     return false;
 
   rtpSession.SetJitterBufferSize(init);
