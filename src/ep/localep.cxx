@@ -148,7 +148,7 @@ bool OpalLocalEndPoint::RejectIncomingCall(const PString & token, const OpalConn
   }
 
   PTRACE(3, "LocalEP\tRejecting incoming call with reason " << reason);
-  connection->Release(reason, true);
+  connection->Release(reason);
   return true;
 }
 
@@ -258,7 +258,7 @@ PBoolean OpalLocalConnection::OnIncomingConnection(unsigned int options, OpalCon
     return true;
 
   PTRACE(4, "LocalCon\tOnOutgoingSetUp returned false on " << *this);
-  Release(EndedByNoAccept, true);
+  Release(EndedByNoAccept);
   return false;
 }
 
@@ -275,7 +275,7 @@ PBoolean OpalLocalConnection::SetUpConnection()
 
   if (!OnIncoming()) {
     PTRACE(4, "LocalCon\tOnIncoming returned false on " << *this);
-    Release(EndedByLocalBusy, true);
+    Release(EndedByLocalBusy);
     return false;
   }
 
