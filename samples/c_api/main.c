@@ -848,13 +848,27 @@ int main(int argc, char * argv[])
 
   switch (operation) {
     case OpShutdown :
+      HandleMessages(5);
+
+      puts("Shutting down.\n");
       // Test shut down and re-initialisation
       ShutDownFunction(hOPAL);
 
+      puts("Reinitialising.\n");
       if (!InitialiseOPAL()) {
         fputs("Could not re-initialise OPAL\n", stderr);
         return 1;
       }
+
+      if (argc > 3) {
+        if (!DoCall(argv[2], argv[3]))
+          break;
+      }
+      else if (argc > 2) {
+        if (!DoCall(NULL, argv[2]))
+          break;
+      }
+      HandleMessages(15);
       break;
 
     case OpListen :
