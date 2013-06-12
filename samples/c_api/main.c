@@ -37,6 +37,7 @@
 
 
 #define LOCAL_MEDIA 0
+//#define STUN_SERVER "stun.voxgratia.org"
 
 
 #if defined(_WIN32)
@@ -197,8 +198,10 @@ int InitialiseOPAL()
   command.m_type = OpalCmdSetGeneralParameters;
   //command.m_param.m_general.m_audioRecordDevice = "Camera Microphone (2- Logitech";
   command.m_param.m_general.m_autoRxMedia = command.m_param.m_general.m_autoTxMedia = "audio";
+#ifdef STUN_SERVER
   command.m_param.m_general.m_natMethod = "STUN";
-  command.m_param.m_general.m_natServer = "stun.voxgratia.org";
+  command.m_param.m_general.m_natServer = STUN_SERVER;
+#endif
   command.m_param.m_general.m_mediaMask = "RFC4175*";
 
 #if LOCAL_MEDIA
@@ -626,7 +629,7 @@ int DoPlay(const char * to, const char * file)
 }
 
 
-int DoPresence(const char * local, int argc, const char ** argv)
+int DoPresence(const char * local, int argc, const char * const * argv)
 {
   // Example cmd line: presence fred@flintstone.com wilma@flintstone.com
   OpalMessage command;
@@ -690,7 +693,7 @@ int DoPresence(const char * local, int argc, const char ** argv)
 }
 
 
-int UndoPresence(const char * local, int argc, const char ** argv)
+int UndoPresence(const char * local, int argc, const char * const * argv)
 {
   OpalMessage command;
   OpalMessage * response;
@@ -743,7 +746,7 @@ int DoPresenceChange(const char * local, OpalPresenceStates state)
 }
 
 
-int DoSendIM(const char * from, const char * to, int argc, const char ** argv)
+int DoSendIM(const char * from, const char * to, int argc, const char * const * argv)
 {
   OpalMessage command;
   OpalMessage * response;
@@ -755,11 +758,15 @@ int DoSendIM(const char * from, const char * to, int argc, const char ** argv)
   command.m_param.m_instantMessage.m_from = from;
   command.m_param.m_instantMessage.m_to = to;
 
-  if (strncasecmp(argv[0], "host=", 5) != 0)
-    command.m_param.m_instantMessage.m_textBody = argv[0];
-  else {
-    command.m_param.m_instantMessage.m_host = &argv[0][5];
-    command.m_param.m_instantMessage.m_textBody = argv[1];
+  if (argc > 0) {
+    if (strncasecmp(argv[0], "host=", 5) != 0)
+      command.m_param.m_instantMessage.m_textBody = argv[0];
+    else {
+      command.m_param.m_instantMessage.m_host = &argv[0][5];
+      if (argc == 1)
+        return 0;
+      command.m_param.m_instantMessage.m_textBody = argv[1];
+    }
   }
 
   if ((response = MySendCommand(&command, "Could not change status of presentity")) == NULL)
@@ -829,7 +836,7 @@ static Operations GetOperation(const char * name)
 }
 
 
-int main(int argc, char * argv[])
+int main(int argc, const char * const * argv)
 {
   Operations operation;
   
