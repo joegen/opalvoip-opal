@@ -934,6 +934,8 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
   bool hasMIX = CheckProto(args, OPAL_PREFIX_MIXER, defUser, defUserPos);
 #endif
 
+  AddRouteEntry(".*\t[0-9]+=tel:<du>");
+
 #if OPAL_H323
   if (hasH323) {
     new H323EndPoint(*this);
@@ -1007,6 +1009,9 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
   if (CheckProto(args, OPAL_PREFIX_IM, defUser, defUserPos))
     new OpalIMEndPoint(*this);
 #endif
+
+  // Add synonym for tel URI to default protocol
+  AttachEndPoint(FindEndPoint(defProto), "tel");
 }
 
 
