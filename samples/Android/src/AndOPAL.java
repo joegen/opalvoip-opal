@@ -48,9 +48,9 @@ public class AndOPAL extends Activity
 
 
     // Parameters
-//    String m_traceOutput = "opal.log";
-    String m_traceOutput = "syslog";
-    String m_traceOptions = "-ttttt";
+    String m_traceOutput = "opal.log";
+//    String m_traceOutput = "syslog";
+    String m_traceOptions = "--trace-level 5 --trace-option +ar";
     String m_natMethod = "STUN";
     String m_natServer = "stun.ekiga.net";
     String m_userName = "opal_android";
