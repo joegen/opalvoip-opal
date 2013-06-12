@@ -803,6 +803,10 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
     /* URL default for H.323 is if no @ then is username, but that does
        not make sense when no GK, so we switch to being a host only */
     if (url.GetHostName().IsEmpty()) {
+      if (url.GetScheme() == "tel") {
+        PTRACE(2, "H323\tCannot use tel URI without phone-context or active gatekeeper");
+        return false;
+      }
       url.SetHostName(url.GetUserName());
       url.SetUserName(PString::Empty());
     }
