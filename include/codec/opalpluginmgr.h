@@ -500,15 +500,6 @@ class H323AudioPluginCapability : public H323AudioCapability,
     unsigned pluginSubType;
 };
 
-#define OPAL_DECLARE_EMPTY_AUDIO_CAPABILITY(fmt, type) \
-class fmt##_CapabilityRegisterer { \
-  public: \
-    fmt##_CapabilityRegisterer() \
-    { H323CapabilityFactory::Register(fmt, new H323AudioPluginCapability(fmt, fmt, type)); } \
-}; \
-
-#define OPAL_DEFINE_EMPTY_AUDIO_CAPABILITY(fmt) \
-static fmt##_CapabilityRegisterer fmt##_CapabilityRegisterer_instance; \
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -527,15 +518,6 @@ class H323PluginG7231Capability : public H323AudioPluginCapability
     virtual PBoolean OnReceivedPDU(const H245_AudioCapability & cap,  unsigned & packetSize);
 };
 
-#define OPAL_DECLARE_EMPTY_G7231_CAPABILITY(fmt, annex) \
-class fmt##_CapabilityRegisterer { \
-  public: \
-    fmt##_CapabilityRegisterer() \
-    { H323CapabilityFactory::Register(fmt, new H323PluginG7231Capability(fmt, annex)); } \
-}; \
-
-#define OPAL_DEFINE_EMPTY_G7231_CAPABILITY(fmt) \
-static fmt##_CapabilityRegisterer fmt##_CapabilityRegisterer_instance; \
 
 //////////////////////////////////////////////////////////////////////////////
 //
