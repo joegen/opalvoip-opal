@@ -654,26 +654,26 @@ static OpalMediaFormat GetRawPCM(const char * fmtName, unsigned sampleRate, unsi
     switch (sampleRate) {
       default :
       case 8000 :
-	return OpalPCM16S;
+        return OpalPCM16S;
       case 16000 :
-	return OpalPCM16S_16KHZ;
+        return OpalPCM16S_16KHZ;
       case 32000 :
-	return OpalPCM16S_32KHZ;
+        return OpalPCM16S_32KHZ;
       case 48000 :
-	return OpalPCM16S_48KHZ;
+        return OpalPCM16S_48KHZ;
     }
   }
   else
     switch (sampleRate) {
       default :
       case 8000 :
-	return OpalPCM16;
+        return OpalPCM16;
       case 16000 :
-	return OpalPCM16_16KHZ;
+        return OpalPCM16_16KHZ;
       case 32000 :
-	return OpalPCM16_32KHZ;
+        return OpalPCM16_32KHZ;
       case 48000 :
-	return OpalPCM16_48KHZ;
+        return OpalPCM16_48KHZ;
     }
 }
 
@@ -1429,11 +1429,6 @@ void OpalPluginCodecManager::OnShutdown()
   for (PList<OpalMediaFormat>::iterator it = mediaFormatsOnHeap.begin(); it != mediaFormatsOnHeap.end(); ++it)
     OpalMediaFormat::RemoveRegisteredMediaFormat(*it);
   mediaFormatsOnHeap.RemoveAll();
-
-#if OPAL_H323
-  // unregister the plugin capabilities
-  H323CapabilityFactory::UnregisterAll();
-#endif
 }
 
 void OpalPluginCodecManager::OnLoadPlugin(PDynaLink & dll, INT code)
@@ -2452,10 +2447,10 @@ PBoolean H323H263Capability::OnSendingPDU(H245_VideoCapability & cap) const
 
   h263.m_maxBitRate                        = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption(), 327600) + 50) / 100;
   h263.m_temporalSpatialTradeOffCapability = mediaFormat.GetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, false);
-  h263.m_unrestrictedVector	           = mediaFormat.GetOptionBoolean(h323_unrestrictedVector_tag, false);
-  h263.m_arithmeticCoding	           = mediaFormat.GetOptionBoolean(h323_arithmeticCoding_tag, false);
-  h263.m_advancedPrediction	           = mediaFormat.GetOptionBoolean(h323_advancedPrediction_tag, mediaFormat.GetOptionBoolean(H263_ANNEX_F));
-  h263.m_pbFrames	                   = mediaFormat.GetOptionBoolean(h323_pbFrames_tag, false);
+  h263.m_unrestrictedVector                = mediaFormat.GetOptionBoolean(h323_unrestrictedVector_tag, false);
+  h263.m_arithmeticCoding                  = mediaFormat.GetOptionBoolean(h323_arithmeticCoding_tag, false);
+  h263.m_advancedPrediction                = mediaFormat.GetOptionBoolean(h323_advancedPrediction_tag, mediaFormat.GetOptionBoolean(H263_ANNEX_F));
+  h263.m_pbFrames                          = mediaFormat.GetOptionBoolean(h323_pbFrames_tag, false);
   h263.m_errorCompensation                 = mediaFormat.GetOptionBoolean(h323_errorCompensation_tag, false);
 
   int hrdB = mediaFormat.GetOptionInteger(h323_hrdB_tag, -1);
@@ -2942,8 +2937,8 @@ enum {
 
 static H323CodecPluginCapabilityMapEntry H323CapabilityMaps[] = {
   { PluginCodec_H323Codec_nonStandard,              H245_AudioCapability::e_nonStandard,            &CreateNonStandardAudioCap },
-  { PluginCodec_H323AudioCodec_gsmFullRate,	        H245_AudioCapability::e_gsmFullRate,            &CreateGSMCap },
-  { PluginCodec_H323AudioCodec_gsmHalfRate,	        H245_AudioCapability::e_gsmHalfRate,            &CreateGSMCap },
+  { PluginCodec_H323AudioCodec_gsmFullRate,         H245_AudioCapability::e_gsmFullRate,            &CreateGSMCap },
+  { PluginCodec_H323AudioCodec_gsmHalfRate,         H245_AudioCapability::e_gsmHalfRate,            &CreateGSMCap },
   { PluginCodec_H323AudioCodec_gsmEnhancedFullRate, H245_AudioCapability::e_gsmEnhancedFullRate,    &CreateGSMCap },
   { PluginCodec_H323AudioCodec_g711Alaw_64k,        H245_AudioCapability::e_g711Alaw64k,            &CreateStandardAudioCap },
   { PluginCodec_H323AudioCodec_g711Alaw_56k,        H245_AudioCapability::e_g711Alaw56k,            &CreateStandardAudioCap },
@@ -3017,19 +3012,19 @@ void OpalPluginCodecManager::RegisterCapability(const PluginCodec_Definition * c
       if (!mediaFormat.IsTransportable())
         mediaFormat = codecDefn->sourceFormat;
 
-      H323Capability * cap = NULL;
-      if (H323CapabilityMaps[i].createFunc != NULL)
-        cap = (*H323CapabilityMaps[i].createFunc)(codecDefn, mediaFormat, H323CapabilityMaps[i].h323SubType);
-      else {
-        PTRACE(2, "OpalPlugin\tNo capability creation function for " << codecDefn->descr);
+      if (H323CapabilityMaps[i].createFunc != NULL) {
+        H323Capability * cap = (*H323CapabilityMaps[i].createFunc)(codecDefn, mediaFormat, H323CapabilityMaps[i].h323SubType);
+        // manually register the new singleton type, as we do not have a concrete type
+        if (cap != NULL) {
+          H323CapabilityFactory::Unregister(mediaFormat.GetName());
+          H323CapabilityFactory::Register(mediaFormat.GetName(), cap);
+        }
+        else {
+          PTRACE(2, "OpalPlugin\tNo H.323 capability created for " << codecDefn->descr);
+        }
       }
-
-      // manually register the new singleton type, as we do not have a concrete type
-      if (cap != NULL) {
-        H323CapabilityFactory::Register(mediaFormat.GetName(), cap);
-      }
       else {
-        PTRACE(2, "OpalPlugin\tNo capability created for " << codecDefn->descr);
+        PTRACE(2, "OpalPlugin\tNo H.323 capability creation function for " << codecDefn->descr);
       }
       break;
     }
