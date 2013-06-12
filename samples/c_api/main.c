@@ -59,6 +59,8 @@
   #define snprintf _snprintf
   #define strncasecmp strnicmp
 
+  #define TRACE_FILE "debugstream"
+
 #else // _WIN32
 
   #include <memory.h>
@@ -72,6 +74,8 @@
   #define GET_ERRNO errno
 
   void * hDLL;
+
+  #define TRACE_FILE "trace.txt"
 
 #endif // _WIN32
 
@@ -160,7 +164,7 @@ int InitialiseOPAL()
   OpalMessage * response;
   unsigned      version;
 
-  static const char OPALOptions[] = OPAL_PREFIX_ALL " TraceLevel=4 TraceFile=debugstream";
+  static const char OPALOptions[] = OPAL_PREFIX_ALL " TraceLevel=4 TraceFile=" TRACE_FILE " TraceAppend";
 
 
   if ((hDLL = OPEN_LIBRARY(OPAL_DLL)) == NULL) {
