@@ -2065,11 +2065,18 @@ PString SIPPresenceInfo::AsXML() const
 }
 
 
-static void SetNoteFromElement(PXMLElement * element, PString & note)
+static void SetNoteFromElement(PXMLElement * element, SIPPresenceInfo & info)
 {
   PXMLElement * noteElement = element->GetElement("note");
-  if (noteElement != NULL)
-    note = noteElement->GetData();
+  if (noteElement == NULL)
+    return;
+
+  if (info.m_note.IsEmpty())
+    info.m_note = noteElement->GetData();
+  else {
+    info.m_note += '\n';
+    info.m_note += noteElement->GetData();
+  }
 }
 
 
@@ -2077,6 +2084,8 @@ static void ExtractPersonInfo(const PString & prefix, PXMLElement * element, SIP
 {
   if (element->GetName() != prefix + "person")
     return;
+
+  SetNoteFromElement(element, info);
 
   PXMLElement * activities = element->GetElement(prefix + "activities");
   if (activities == NULL)
@@ -2097,6 +2106,7 @@ static void ExtractPersonInfo(const PString & prefix, PXMLElement * element, SIP
       info.m_activities += name;
     else
       info.m_activities += name + '=' + data;
+    SetNoteFromElement(element, info);
   }
 }
 
@@ -2180,11 +2190,11 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
       info.m_entity = entity;
       info.m_service = tupleElement->GetAttribute("id");
 
-      SetNoteFromElement(rootElement, info.m_note);
-      SetNoteFromElement(tupleElement, info.m_note);
+      SetNoteFromElement(rootElement, info);
+      SetNoteFromElement(tupleElement, info);
 
       if ((element = tupleElement->GetElement("status")) != NULL) {
-        SetNoteFromElement(element, info.m_note);
+        SetNoteFromElement(element, info);
         if ((element = element->GetElement("basic")) != NULL) {
           PCaselessString value = element->GetData();
           if (value == "open")
