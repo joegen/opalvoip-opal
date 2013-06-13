@@ -2333,17 +2333,16 @@ SIP_PDU::StatusCodes SIP_PDU::Parse(istream & stream, bool truncated)
 
 bool SIP_PDU::Send()
 {
+  if (PAssertNULL(m_transport) == NULL)
+    return false;
+
+  PSafeLockReadWrite mutex(*m_transport);
   return InternalSend(false) == Successful_OK;
 }
 
 
 SIP_PDU::StatusCodes SIP_PDU::InternalSend(bool canDoTCP)
 {
-  if (PAssertNULL(m_transport) == NULL)
-    return Local_TransportError;
-
-  PSafeLockReadWrite mutex(*m_transport);
-
   if (!m_transport->IsOpen()) {
     PTRACE(1, "SIP\tAttempt to write PDU to closed transport " << *m_transport);
     return Local_TransportError;
@@ -3070,6 +3069,8 @@ bool SIPTransaction::Start()
     return false;
   }
 
+  PSafeLockReadWrite mutex(*m_transport);
+
   // Remember this for when we are forking on UDP
   m_localInterface = m_transport->GetInterface();
 
@@ -3287,8 +3288,11 @@ void SIPTransaction::OnRetry()
 
   if (m_state == Cancelling)
     ResendCANCEL();
-  else
-    Send();
+  else if (PAssertNULL(m_transport)->LockReadWrite()) {
+    m_transport->SetInterface(m_localInterface);
+    InternalSend(false);
+    m_transport->UnlockReadWrite();
+  }
 }
 
 
