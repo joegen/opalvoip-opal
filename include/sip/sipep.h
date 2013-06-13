@@ -911,7 +911,7 @@ class SIPEndPoint : public OpalRTPEndPoint
      */
     void AdjustToRegistration(
       SIP_PDU & pdu,
-      const SIPConnection * connection = NULL,
+      SIPConnection * connection = NULL,
       const OpalTransport * transport = NULL
     );
 

@@ -332,6 +332,7 @@ static const wxChar * const IconStatusNames[NumIconStates] =
 
 
 static const char * const DefaultRoutes[] = {
+    ".*:[0-9]+ = tel:<du>",
 #if OPAL_IVR
     ".*:#  = ivr:", // A hash from anywhere goes to IVR
 #endif
@@ -1438,11 +1439,9 @@ bool MyManager::Initialise(bool startMinimised)
   config->Read(ForwardingAddressKey, &m_ForwardingAddress);
   config->Read(ForwardingTimeoutKey, &m_ForwardingTimeout);
 
-  if (config->Read(telURIKey, &str) && !str.empty()) {
-    OpalEndPoint * ep = FindEndPoint(str);
-    if (ep != NULL)
-      AttachEndPoint(ep, "tel");
-  }
+  OpalEndPoint * ep = FindEndPoint(PwxString(config->Read(telURIKey, wxT("sip"))));
+  if (ep != NULL)
+    AttachEndPoint(ep, "tel");
 
   config->SetPath(RoutingGroup);
   if (config->GetFirstEntry(entryName, entryIndex)) {
