@@ -176,7 +176,8 @@ class OpalLocalEndPoint : public OpalEndPoint
       */
     virtual bool AlertingIncomingCall(
       const PString & token, ///<  Token of connection to indicate alerting
-      OpalConnection::StringOptions * options = NULL  ///< Optional string optiosn to apply
+      OpalConnection::StringOptions * options = NULL,  ///< Optional string optiosn to apply
+      bool withMedia = false  ///< Indicate media should be started
     );
 
     /**Accept the incoming connection.
@@ -540,7 +541,9 @@ class OpalLocalConnection : public OpalConnection
 
     /**Indicate alerting for the incoming connection.
       */
-    virtual void AlertingIncoming();
+    virtual void AlertingIncoming(
+      bool withMedia = false  ///< Indicate media should be started
+    );
 
     /**Accept the incoming connection.
       */
