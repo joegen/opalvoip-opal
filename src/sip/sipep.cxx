@@ -1804,7 +1804,7 @@ SIPURL SIPEndPoint::GetDefaultLocalURL(const OpalTransport & transport)
 }
 
 
-void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, const SIPConnection * connection, const OpalTransport * transport)
+void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, SIPConnection * connection, const OpalTransport * transport)
 {
   bool isMethod;
   switch (pdu.GetMethod()) {
@@ -1846,11 +1846,23 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, const SIPConnection * conn
     handler = activeSIPHandlers.FindSIPHandlerByUrl("sip:"+user+'@'+domain, SIP_PDU::Method_REGISTER, PSafeReadOnly);
     PTRACE_IF(4, handler != NULL, "SIP\tFound registrar on aor sip:" << user << '@' << domain);
   }
-  else  if (domain.IsEmpty() || OpalIsE164(domain)) {
+  else if (domain.IsEmpty() || OpalIsE164(domain)) {
     // No context, just get first registration
     handler = activeSIPHandlers.GetFirstHandler();
     while (handler != NULL && handler->GetMethod() != SIP_PDU::Method_REGISTER)
       ++handler;
+    if (handler != NULL) {
+      PTRACE(4, "SIP\tUsing first registrar " << handler->GetAddressOfRecord() << " for tel URI");
+      if (connection != NULL)
+        connection->GetDialog().SetProxy(handler->GetAddressOfRecord(), false);
+    }
+    else {
+      PTRACE(2, "SIP\tNo registrars available for tel URI");
+      if (connection != NULL) {
+        connection->Release(OpalConnection::EndedByIllegalAddress);
+        return;
+      }
+    }
   }
 
   // If precise AOR not found, locate the name used for the domain.
