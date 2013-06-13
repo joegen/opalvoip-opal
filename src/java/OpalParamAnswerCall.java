@@ -52,6 +52,14 @@ public class OpalParamAnswerCall {
     return (cPtr == 0) ? null : new OpalParamProtocol(cPtr, false);
   }
 
+  public void setWithMedia(long value) {
+    OPALJNI.OpalParamAnswerCall_withMedia_set(swigCPtr, this, value);
+  }
+
+  public long getWithMedia() {
+    return OPALJNI.OpalParamAnswerCall_withMedia_get(swigCPtr, this);
+  }
+
   public OpalParamAnswerCall() {
     this(OPALJNI.new_OpalParamAnswerCall(), true);
   }

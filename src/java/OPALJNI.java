@@ -219,6 +219,8 @@ public class OPALJNI {
   public final static native String OpalParamAnswerCall_callToken_get(long jarg1, OpalParamAnswerCall jarg1_);
   public final static native void OpalParamAnswerCall_overrides_set(long jarg1, OpalParamAnswerCall jarg1_, long jarg2, OpalParamProtocol jarg2_);
   public final static native long OpalParamAnswerCall_overrides_get(long jarg1, OpalParamAnswerCall jarg1_);
+  public final static native void OpalParamAnswerCall_withMedia_set(long jarg1, OpalParamAnswerCall jarg1_, long jarg2);
+  public final static native long OpalParamAnswerCall_withMedia_get(long jarg1, OpalParamAnswerCall jarg1_);
   public final static native long new_OpalParamAnswerCall();
   public final static native void delete_OpalParamAnswerCall(long jarg1);
   public final static native void OpalStatusMediaStream_callToken_set(long jarg1, OpalStatusMediaStream jarg1_, String jarg2);

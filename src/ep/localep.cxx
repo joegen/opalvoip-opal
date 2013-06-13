@@ -107,7 +107,9 @@ bool OpalLocalEndPoint::OnIncomingCall(OpalLocalConnection & connection)
 }
 
 
-bool OpalLocalEndPoint::AlertingIncomingCall(const PString & token, OpalConnection::StringOptions * options)
+bool OpalLocalEndPoint::AlertingIncomingCall(const PString & token,
+                                             OpalConnection::StringOptions * options,
+                                             bool withMedia)
 {
   PSafePtr<OpalLocalConnection> connection = GetLocalConnectionWithLock(token, PSafeReadOnly);
   if (connection == NULL) {
@@ -118,7 +120,7 @@ bool OpalLocalEndPoint::AlertingIncomingCall(const PString & token, OpalConnecti
   if (options != NULL)
     connection->SetStringOptions(*options, false);
 
-  connection->AlertingIncoming();
+  connection->AlertingIncoming(withMedia);
   return true;
 }
 
@@ -355,11 +357,19 @@ bool OpalLocalConnection::OnIncoming()
 }
 
 
-void OpalLocalConnection::AlertingIncoming()
+void OpalLocalConnection::AlertingIncoming(bool withMedia)
 {
   if (LockReadWrite()) {
     if (GetPhase() < AlertingPhase) {
       SetPhase(AlertingPhase);
+
+      if (withMedia) {
+        PSafePtr<OpalConnection> conn = GetOtherPartyConnection();
+        if (conn != NULL)
+          conn->AutoStartMediaStreams();
+        AutoStartMediaStreams();
+      }
+
       OnAlerting();
     }
     UnlockReadWrite();
