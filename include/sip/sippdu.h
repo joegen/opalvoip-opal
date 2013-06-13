@@ -578,6 +578,7 @@ class SIP_PDU : public PSafeObject
       Failure_BadExtension                = 420,
       Failure_ExtensionRequired           = 421,
       Failure_IntervalTooBrief            = 423,
+      Failure_UnresolvableDestination     = 476,
       Failure_TemporarilyUnavailable      = 480,
       Failure_TransactionDoesNotExist     = 481,
       Failure_LoopDetected                = 482,
