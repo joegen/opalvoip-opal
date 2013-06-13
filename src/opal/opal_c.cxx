@@ -1790,17 +1790,19 @@ void OpalManager_C::HandleAlerting(const OpalMessage & command, OpalMessageBuffe
   if (m_apiVersion >= 26)
     SetOptionOverrides(false, options, command.m_param.m_answerCall.m_overrides);
 
+  bool withMedia = m_apiVersion >= 29 && command.m_param.m_answerCall.m_withMedia;
+
 #if OPAL_HAS_PCSS
-  if (m_pcssEP != NULL && m_pcssEP->AlertingIncomingCall(command.m_param.m_callToken, &options))
+  if (m_pcssEP != NULL && m_pcssEP->AlertingIncomingCall(command.m_param.m_callToken, &options, withMedia))
     return;
 #endif
 
 #if OPAL_IVR
-  if (m_ivrEP != NULL && m_ivrEP->AlertingIncomingCall(command.m_param.m_callToken, &options))
+  if (m_ivrEP != NULL && m_ivrEP->AlertingIncomingCall(command.m_param.m_callToken, &options, withMedia))
     return;
 #endif
 
-  if (m_localEP != NULL && m_localEP->AlertingIncomingCall(command.m_param.m_callToken, &options))
+  if (m_localEP != NULL && m_localEP->AlertingIncomingCall(command.m_param.m_callToken, &options, withMedia))
     return;
 
   response.SetError("No call found by the token provided.");
