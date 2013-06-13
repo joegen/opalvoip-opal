@@ -30,6 +30,10 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+
+#if OPAL_VIDEO
+
 #include <opal/mediafmt.h>
 #include <codec/opalpluginmgr.h>
 #include <codec/opalplugin.hpp>
@@ -114,6 +118,9 @@ const OpalVideoFormat & GetOpalH261()
 
   return format;
 }
+
+
+#endif // OPAL_VIDEO
 
 
 // End of File ///////////////////////////////////////////////////////////////
