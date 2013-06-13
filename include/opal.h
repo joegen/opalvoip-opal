@@ -1070,8 +1070,8 @@ typedef struct OpalParamAnswerCall {
   OpalParamProtocol m_overrides;  /**< Overrides for the default parameters for the protocol.
                                        For example, m_userName and m_displayName can be
                                        changed on a call by call basis. */
-  bool m_withMedia;               /**< When used with OpalCmdAlerting, this indicates that
-                                       early media is to be started. */
+  unsigned m_withMedia;           /**< When used with OpalCmdAlerting, if non-zero this
+                                       indicates that early media is to be started. */
 } OpalParamAnswerCall;
 
 /**Type code for media stream status/control.
