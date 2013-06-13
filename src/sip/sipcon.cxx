@@ -2094,6 +2094,9 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
       else if (rseq.AsUnsigned() <= m_prackSequenceNumber) {
         PTRACE(3, "SIP\tDuplicate response " << response.GetStatusCode() << ", already PRACK'ed");
       }
+      else if (transaction.IsCanceled()) {
+        PTRACE(3, "SIP\tNo PRACK on cancelled transaction");
+      }
       else {
         SIPTransaction * prack = new SIPPrack(*this, *transaction.GetTransport(), rseq & transaction.GetMIME().GetCSeq());
         prack->Start();
