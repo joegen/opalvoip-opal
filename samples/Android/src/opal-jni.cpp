@@ -34,22 +34,25 @@
 extern int opal_java_swig_wrapper_link;
 static int const * const force_java_swig_wrapper_link = &opal_java_swig_wrapper_link;
 
+const unsigned FrameTime = 20; // Milliseconds
 
 extern "C" {
 
-  jstring Java_org_opalvoip_opal_andsample_AndOPAL_TestPlayer(JNIEnv* env, jclass clazz)
+  jstring Java_org_opalvoip_opal_andsample_AndOPAL_TestPlayer(JNIEnv* env, jclass clazz, jint bufferTime)
   {
     PSoundChannel::Params playerParams(PSoundChannel::Player, "voice");
-    playerParams.m_bufferCount = 8;
+    playerParams.m_bufferSize = FrameTime*2*8; // 20ms
+    playerParams.m_bufferCount = (bufferTime+FrameTime-1)/FrameTime;
     PString result = PSoundChannel::TestPlayer(playerParams);
     return env->NewStringUTF(result);
   }
 
-  jstring Java_org_opalvoip_opal_andsample_AndOPAL_TestRecorder(JNIEnv* env, jclass clazz)
+  jstring Java_org_opalvoip_opal_andsample_AndOPAL_TestRecorder(JNIEnv* env, jclass clazz, jint bufferTime)
   {
     PSoundChannel::Params recorderParams(PSoundChannel::Recorder, "*");
     PSoundChannel::Params playerParams(PSoundChannel::Player, "voice");
-    playerParams.m_bufferCount = 8;
+    playerParams.m_bufferSize = recorderParams.m_bufferSize = FrameTime*2*8; // 20ms
+    playerParams.m_bufferCount = recorderParams.m_bufferCount = (bufferTime+FrameTime-1)/FrameTime;
     PString result = PSoundChannel::TestRecorder(recorderParams, playerParams);
     return env->NewStringUTF(result);
   }

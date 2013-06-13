@@ -33,6 +33,7 @@ import android.view.*;
 import android.widget.*;
 import android.text.TextWatcher;
 import android.text.Editable;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -51,6 +52,7 @@ public class AndOPAL extends Activity
     String m_traceOutput = "opal.log";
 //    String m_traceOutput = "syslog";
     String m_traceOptions = "--trace-level 5 --trace-option +ar";
+    int    m_audioBufferTime = Build.MANUFACTURER.equals("unknown") ? 250 : 120; // Milliseconds
     String m_natMethod = "STUN";
     String m_natServer = "stun.ekiga.net";
     String m_userName = "opal_android";
@@ -218,7 +220,7 @@ public class AndOPAL extends Activity
         OpalParamGeneral general = message.GetGeneralParams();
         general.setAudioRecordDevice("microphone");
         general.setAudioPlayerDevice("voice");
-        general.setAudioBufferTime(160); // Milliseconds
+        general.setAudioBufferTime(m_audioBufferTime);
         general.setNatMethod(m_natMethod);
         general.setNatServer(m_natServer);
 
@@ -288,8 +290,8 @@ public class AndOPAL extends Activity
     }
 
 
-    public static native String TestPlayer();
-    public static native String TestRecorder();
+    public static native String TestPlayer(int bufferTime);
+    public static native String TestRecorder(int bufferTime);
 
     public void onTestAudio(MenuItem item)
     {
@@ -297,9 +299,9 @@ public class AndOPAL extends Activity
             public void run()
             {
                 OutputStatus("Testing audio player ... ");
-                OutputStatus(TestPlayer());
+                OutputStatus(TestPlayer(m_audioBufferTime));
                 OutputStatus("Testing audio recorder ... ");
-                OutputStatus(TestRecorder());
+                OutputStatus(TestRecorder(m_audioBufferTime));
             }
         })).start();
     }
