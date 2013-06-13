@@ -319,8 +319,8 @@ typedef void (OPAL_EXPORT *OpalFreeMessageFunction)(OpalMessage * message);
 #define OPAL_PREFIX_MIXER "mcu"     ///< Mixer for conferencing
 #define OPAL_PREFIX_IM    "im"      ///< Interactive Voice Response supported string for OpalInitialise()
 
-#define OPAL_PREFIX_ALL OPAL_PREFIX_H323  " " \
-                        OPAL_PREFIX_SIP   " " \
+#define OPAL_PREFIX_ALL OPAL_PREFIX_SIP   " " \
+                        OPAL_PREFIX_H323  " " \
                         OPAL_PREFIX_IAX2  " " \
                         OPAL_PREFIX_PCSS  " " \
                         OPAL_PREFIX_LOCAL " " \
