@@ -4144,25 +4144,23 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
 }
 
 
-bool H323Connection::CloseMediaStream(OpalMediaStream & stream)
+void H323Connection::OnClosedMediaStream(const OpalMediaStream & stream)
 {
-  PSafeLockReadWrite mutex(*this);
-
   // For a channel, this gets called twice. The first time we send CLC to remote
   // The second time is after CLC Ack or a timeout occurs, then we call the ancestor
   // function to clean up the media stream.
   if (!IsReleased()) {
-    for (H245LogicalChannelDict::iterator it  = logicalChannels->GetChannels().begin();
-                                          it != logicalChannels->GetChannels().end(); ++it) {
+    H245LogicalChannelDict & channels = logicalChannels->GetChannels();
+    for (H245LogicalChannelDict::iterator it = channels.begin(); it != channels.end(); ++it) {
       H323Channel * channel = it->second.GetChannel();
       if (channel != NULL && channel->GetMediaStream() == &stream) {
         const H323ChannelNumber & number = channel->GetNumber();
-        if (!logicalChannels->Close(number, number.IsFromRemote()))
-          return false;
+        logicalChannels->Close(number, number.IsFromRemote());
       }
     }
   }
-  return OpalRTPConnection::CloseMediaStream(stream);
+
+  OpalRTPConnection::OnClosedMediaStream(stream);
 }
 
 

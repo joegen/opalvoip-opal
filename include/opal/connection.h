@@ -1066,15 +1066,9 @@ class OpalConnection : public PSafeObject
 
     /**Close of a media stream by session.
       */
-    virtual bool CloseMediaStream(
+    bool CloseMediaStream(
       unsigned sessionId,  ///<  Session ID to search for.
       bool source          ///<  Indicates the direction of stream.
-    );
-
-    /**Close of a specific media stream.
-      */
-    virtual bool CloseMediaStream(
-      OpalMediaStream & stream  ///< Stream to close
     );
 
     /**Remove the specified media stream from the list of streams for this channel.
@@ -2021,6 +2015,7 @@ class OpalConnection : public PSafeObject
     P_REMOVE_VIRTUAL(unsigned, GetBandwidthUsed() const, 0);
     P_REMOVE_VIRTUAL(PBoolean, SetBandwidthUsed(unsigned, unsigned), false);
     P_REMOVE_VIRTUAL_VOID(OnSwitchedFaxMediaStreams(bool));
+    P_REMOVE_VIRTUAL(bool, CloseMediaStream(OpalMediaStream &),false);
 };
 
 #endif // OPAL_OPAL_CONNECTION_H
