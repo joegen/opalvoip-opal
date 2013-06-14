@@ -1562,6 +1562,9 @@ PBoolean H323Gatekeeper::SendUnsolicitedIRR(H225_InfoRequestResponse & irr,
 static void AddInfoRequestResponseCall(H225_InfoRequestResponse & irr,
                                        const H323Connection & connection)
 {
+  if (connection.IsReleased() || connection.GetPhase() == OpalConnection::UninitialisedPhase)
+    return;
+
   irr.IncludeOptionalField(H225_InfoRequestResponse::e_perCallInfo);
 
   PINDEX sz = irr.m_perCallInfo.GetSize();
