@@ -3180,7 +3180,7 @@ void MyManager::OnStopVideo(wxCommandEvent & /*event*/)
   if (connection != NULL) {
     OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), true);
     if (stream != NULL)
-      connection->CloseMediaStream(*stream);
+      stream->Close();
   }
 }
 

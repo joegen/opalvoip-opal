@@ -411,8 +411,8 @@ void H323UnidirectionalChannel::InternalClose()
 
   // If we have source media stream close it
   if (m_mediaStream != NULL) {
-    connection.CloseMediaStream(*m_mediaStream);
-    connection.RemoveMediaStream(*m_mediaStream);
+    if (!m_mediaStream->Close())
+      connection.RemoveMediaStream(*m_mediaStream);
     m_mediaStream.SetNULL();
   }
 
