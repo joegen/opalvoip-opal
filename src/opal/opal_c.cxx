@@ -2025,7 +2025,7 @@ void OpalManager_C::HandleMediaStream(const OpalMessage & command, OpalMessageBu
       break;
 
     case OpalMediaStateClose :
-      connection->CloseMediaStream(*stream);
+      stream->Close();
       break;
 
     case OpalMediaStatePause :
