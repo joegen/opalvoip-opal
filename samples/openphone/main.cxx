@@ -5555,6 +5555,9 @@ void SoundProgressDialog::Progress(PSoundChannel & channel, P_INT_PTR count)
 
 void OptionsDialog::TestPlayer(wxCommandEvent & /*event*/)
 {
+  if (!wxDialog::TransferDataFromWindow())
+    return;
+
   PSoundChannel::Params params(PSoundChannel::Player, m_SoundPlayer);
   params.m_bufferCount = (m_SoundBufferTime*params.m_sampleRate/1000*2+params.m_bufferSize-1)/params.m_bufferSize;
   SoundProgressDialog progress(true);
@@ -5568,6 +5571,9 @@ void OptionsDialog::TestPlayer(wxCommandEvent & /*event*/)
 
 void OptionsDialog::TestRecorder(wxCommandEvent & /*event*/)
 {
+  if (!wxDialog::TransferDataFromWindow())
+    return;
+
   PSoundChannel::Params recorderParams(PSoundChannel::Recorder, m_SoundRecorder);
   PSoundChannel::Params playerPrams(PSoundChannel::Player, m_SoundPlayer);
   playerPrams.m_bufferCount = 16;
