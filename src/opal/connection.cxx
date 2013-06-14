@@ -804,13 +804,7 @@ OpalMediaStreamPtr OpalConnection::OpenMediaStream(const OpalMediaFormat & media
 bool OpalConnection::CloseMediaStream(unsigned sessionId, bool source)
 {
   OpalMediaStreamPtr stream = GetMediaStream(sessionId, source);
-  return stream != NULL && stream->IsOpen() && CloseMediaStream(*stream);
-}
-
-
-bool OpalConnection::CloseMediaStream(OpalMediaStream & stream)
-{
-  return stream.Close();
+  return stream != NULL && stream->Close();
 }
 
 
@@ -841,7 +835,7 @@ void OpalConnection::CloseMediaStreams()
     for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
       if (mediaStream->IsOpen()) {
         someOpen = true;
-        CloseMediaStream(*mediaStream);
+        mediaStream->Close();
       }
     }
   }
