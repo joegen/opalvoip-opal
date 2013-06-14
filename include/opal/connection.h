@@ -1791,7 +1791,7 @@ class OpalConnection : public PSafeObject
   protected:
     void OnConnectedInternal();
 
-    PDECLARE_NOTIFIER(PThread, OpalConnection, OnReleaseThreadMain);
+    void InternalOnReleased();
 
 #if OPAL_HAS_MIXER
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnRecordAudio);

@@ -429,11 +429,19 @@ void OpalConnection::SetCallEndReasonText(CallEndReasonCodes reasonCode, const P
 
 void OpalConnection::SetCallEndReason(CallEndReason reason)
 {
+  PWaitAndSignal mutex(m_phaseMutex);
+
   // Only set reason if not already set to something
   if (callEndReason == NumCallEndReasons) {
-    PTRACE(3, "OpalCon\tCall end reason for " << *this << " set to " << reason);
-    callEndReason = reason;
-    ownerCall.SetCallEndReason(reason);
+    if (ownerCall.GetCallEndReason() != OpalConnection::NumCallEndReasons) {
+      callEndReason = ownerCall.GetCallEndReason();
+      PTRACE(3, "OpalCon\tCall end reason for " << *this << " set to previous value " << callEndReason << ", not " << reason);
+    }
+    else {
+      PTRACE(3, "OpalCon\tCall end reason for " << *this << " set to " << reason);
+      callEndReason = reason;
+      ownerCall.SetCallEndReason(reason);
+    }
   }
 }
 
@@ -463,6 +471,13 @@ bool OpalConnection::TransferConnection(const PString & PTRACE_PARAM(remoteParty
 
 void OpalConnection::Release(CallEndReason reason, bool synchronous)
 {
+  /* Do a brief lock here to avoid a start up race condition where the
+     connection is released while it still being set up, gets really
+     confused when that happens. */
+  if (!LockReadOnly())
+    return;
+  UnlockReadOnly();
+
   {
     PWaitAndSignal mutex(m_phaseMutex);
     if (IsReleased()) {
@@ -473,44 +488,42 @@ void OpalConnection::Release(CallEndReason reason, bool synchronous)
     SetCallEndReason(reason);
   }
 
-  if (synchronous) {
-    if (!LockReadWrite()) {
-      PTRACE(2, "OpalCon\tAlready released " << *this);
-      return;
-    }
-
-    PTRACE(3, "OpalCon\tReleasing " << *this);
-
-    // Now set reason for the connection close
-
-    UnlockReadWrite();
-
-    OnReleased();
-    return;
-  }
-
-  PTRACE(3, "OpalCon\tReleasing asynchronously " << *this);
-
   // Add a reference for the thread we are about to start
   SafeReference();
-  PThread::Create(PCREATE_NOTIFIER(OnReleaseThreadMain), reason.AsInteger(),
-                  PThread::AutoDeleteThread,
-                  PThread::NormalPriority,
-                  "OnRelease");
+
+  if (synchronous) {
+    PTRACE(3, "OpalCon\tReleasing synchronously " << *this);
+    InternalOnReleased();
+  }
+  else {
+    PTRACE(3, "OpalCon\tReleasing asynchronously " << *this);
+    new PThreadObj<OpalConnection>(*this, &OpalConnection::InternalOnReleased, true, "OnRelease");
+  }
 }
 
 
-void OpalConnection::OnReleaseThreadMain(PThread & PTRACE_PARAM(thread), INT reason)
+void OpalConnection::InternalOnReleased()
 {
-  PTRACE_CONTEXT_ID_TO(thread);
+  PTRACE_CONTEXT_ID_TO(PThread::Current());
 
-  if (LockReadWrite()) {
-    // Now set reason for the connection close
-    SetCallEndReason(CallEndReason(reason));
-    UnlockReadWrite();
+  /* Do a brief lock here to avoid race conditions where an operation (e.g. a
+     SIP re-INVITE) was started before release, but has not yet finished. Once
+     that operation has finished, no new operations should happen as they will
+     check GetPhase() for connection released before proceeding.
+     
+     Note, call to UnlockReadOnly() is BEFORE the call to OnReleased(), it is
+     up to OnReleased() to manage it's locking regime. */
+  if (LockReadOnly()) {
+    UnlockReadOnly();
+
+    if (ownerCall.GetConnectionCount() == 2) {
+      PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+      if (other != NULL)
+        other->Release(callEndReason, true);
+    }
+
+    OnReleased();
   }
-
-  OnReleased();
 
   PTRACE(4, "OpalCon\tOnRelease thread completed for " << *this);
 
@@ -1758,6 +1771,10 @@ bool OpalConnection::ExecuteMediaCommand(const OpalMediaCommand & command,
                                          unsigned sessionID,
                                          const OpalMediaType & mediaType) const
 {
+  PSafeLockReadOnly safeLock(*this);
+  if (!safeLock.IsLocked())
+    return false;
+
   if (IsReleased())
     return false;
 
