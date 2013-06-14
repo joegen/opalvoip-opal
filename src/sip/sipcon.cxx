@@ -374,6 +374,9 @@ void SIPConnection::OnReleased()
 {
   PTRACE(3, "SIP\tOnReleased: " << *this);
 
+  if (!PAssert(LockReadWrite(),PLogicError))
+    return;
+
   if (m_referInProgress) {
     m_referInProgress = false;
 
@@ -382,6 +385,8 @@ void SIPConnection::OnReleased()
     info.SetAt("party", "B");
     OnTransferNotify(info, this);
   }
+
+  UnlockReadWrite();
 
   SIPDialogNotification::Events notifyDialogEvent = SIPDialogNotification::NoEvent;
   SIP_PDU::StatusCodes sipCode = SIP_PDU::IllegalStatusCode;
@@ -398,6 +403,9 @@ void SIPConnection::OnReleased()
       // Try find best match for return code
       sipCode = GetStatusCodeFromReason(callEndReason);
 
+      if (!PAssert(LockReadWrite(),PLogicError))
+        return;
+
       // EndedByCallForwarded is a special case because it needs extra paramater
       if (callEndReason != EndedByCallForwarded)
         SendInviteResponse(sipCode);
@@ -407,6 +415,8 @@ void SIPConnection::OnReleased()
         response.GetMIME().SetContact(m_forwardParty);
         originalInvite->SendResponse(*transport, response); 
       }
+
+      UnlockReadWrite();
 
       /* Wait for ACK from remote before destroying object. Note that we either
          get the ACK, or OnAckTimeout() fires and sets this flag anyway. We are
@@ -419,6 +429,9 @@ void SIPConnection::OnReleased()
       break;
 
     case ReleaseWithBYE :
+      if (!PAssert(LockReadWrite(),PLogicError))
+        return;
+
       // create BYE now & delete it later to prevent memory access errors
       bye = new SIPBye(*this);
       if (!bye->Start()) {
@@ -1976,6 +1989,9 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
     else if (rseq.AsUnsigned() <= m_prackSequenceNumber) {
       PTRACE(3, "SIP\tDuplicate response " << response.GetStatusCode() << ", already PRACK'ed");
     }
+    else if (transaction.IsCanceled()) {
+      PTRACE(3, "SIP\tNo PRACK on cancelled transaction");
+    }
     else {
       transport->SetInterface(transaction.GetInterface()); // Make sure same as response
       SIPTransaction * prack = new SIPPrack(*this, rseq & transaction.GetMIME().GetCSeq());
@@ -2092,7 +2108,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
             break;
 
           default :
-            if (transaction.GetMethod() == SIP_PDU::Method_REFER) {
+            if (m_referInProgress && transaction.GetMethod() == SIP_PDU::Method_REFER) {
               m_referInProgress = false;
 
               PStringToString info;
@@ -2992,7 +3008,7 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
      return;
 
     case SIP_PDU::Method_REFER :
-      if (!response.GetMIME().GetBoolean("Refer-Sub", true)) {
+      if (m_referInProgress && !response.GetMIME().GetBoolean("Refer-Sub", true)) {
         // Used RFC4488 to indicate we are NOT doing NOTIFYs, release now
         PTRACE(3, "SIP\tBlind transfer accepted, without NOTIFY so ending local call.");
         m_referInProgress = false;
