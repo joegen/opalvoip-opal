@@ -121,4 +121,22 @@ ifneq ($(OPAL_BUILDING_ITSELF),yes)
 endif
 
 
+###############################################################################
+#
+# Set up compiler flags and macros for debug/release versions
+#
+
+ifeq ($(DEBUG_BUILD),yes)
+  CPPFLAGS += $(DEBUG_CPPFLAGS)
+  CXXFLAGS += $(DEBUG_CFLAGS)
+  CFLAGS   += $(DEBUG_CFLAGS)
+  LDFLAGS  := $(DEBUG_CFLAGS) $(LDFLAGS)
+else
+  CPPFLAGS += $(OPT_CPPFLAGS)
+  CXXFLAGS += $(OPT_CFLAGS)
+  CFLAGS   += $(OPT_CFLAGS)
+  LDFLAGS  := $(OPT_CFLAGS) $(LDFLAGS)
+endif
+
+
 # End of file
