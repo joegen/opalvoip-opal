@@ -255,9 +255,9 @@ AC_DEFUN([MY_MODULE_OPTION],[
       fi
    fi
 
-   MY_IFELSE([usable], [$9], [$10])
-
    AC_SUBST($1[_USABLE], $usable)
+
+   MY_IFELSE([usable], [$9], [$10])
 ])
 
 
@@ -592,28 +592,31 @@ AC_MSG_NOTICE([using \"$target_os\" release \"$target_release\" on \"$target_cpu
 dnl add additional information for the debugger to ensure the user can indeed
 dnl debug coredumps and macros.
 
-AC_SUBST(DEBUG_FLAGS, "-D_DEBUG")
+AC_SUBST(DEBUG_CPPFLAGS, "-D_DEBUG")
 MY_COMPILE_IFELSE(
    [debug build -g3 -ggdb -O0],
    [-g3 -ggdb -O0],
    [],
    [],
-   [DEBUG_FLAGS="$DEBUG_FLAGS -g3 -ggdb -O0"],
-   [DEBUG_FLAGS="$DEBUG_FLAGS -g"]
+   [DEBUG_CFLAGS="$DEBUG_CFLAGS -g3 -ggdb -O0"],
+   [DEBUG_CFLAGS="$DEBUG_CFLAGS -g"]
 )
+AC_SUBST(DEBUG_CFLAGS)
 
-AC_SUBST(OPT_FLAGS, "-DNDEBUG")
+AC_SUBST(OPT_CPPFLAGS, "-DNDEBUG")
 MY_COMPILE_IFELSE(
    [optimised build -O3],
    [-O3],
    [],
    [],
-   [OPT_FLAGS="$OPT_FLAGS -O3"],
-   [OPT_FLAGS="$OPT_FLAGS -O2"]
+   [OPT_CFLAGS="$OPT_FLAGS -O3"],
+   [OPT_CFLAGS="$OPT_FLAGS -O2"]
 )
+AC_SUBST(OPT_CFLAGS)
 
 
 dnl Integer sizes, also defines HAVE_STDINT_H and HAVE_INTTYPES_H
+AC_CHECK_SIZEOF(int)
 AC_TYPE_INT8_T()
 AC_TYPE_INT16_T()
 AC_TYPE_INT32_T()
@@ -624,6 +627,8 @@ AC_TYPE_UINT16_T()
 AC_TYPE_UINT32_T()
 AC_TYPE_UINT64_T()
 AC_TYPE_UINTPTR_T()
+AC_TYPE_LONG_LONG_INT()
+AC_TYPE_LONG_DOUBLE()
 
 
 dnl End of file
