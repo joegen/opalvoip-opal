@@ -163,10 +163,8 @@ public class AndOPAL extends Activity
     }
 
 
-    public void onCallButton(View view)
+    public void MakeCall(String dest)
     {
-        String dest = m_destination.getText().toString();
-
         OpalMessagePtr message = new OpalMessagePtr(OpalMessageType.OpalCmdSetUpCall);
         OpalParamSetUpCall setup = message.GetCallSetUp();
         setup.setPartyB(dest);
@@ -182,6 +180,12 @@ public class AndOPAL extends Activity
 
         m_callButton.setEnabled(false);
         m_hangUpButton.setEnabled(true);
+    }
+
+
+    public void onCallButton(View view)
+    {
+        MakeCall(m_destination.getText().toString());
     }
 
 
@@ -274,6 +278,12 @@ public class AndOPAL extends Activity
                 OpalLogIn();
             }
         })).start();
+    }
+
+
+    public void onEchoTest(MenuItem item)
+    {
+        MakeCall("sip:500@ekiga.net");
     }
 
 
@@ -388,6 +398,7 @@ public class AndOPAL extends Activity
     {
         menu.findItem(R.id.testaudio).setEnabled(m_opal.IsInitialised());
         menu.findItem(R.id.login).setEnabled(!m_loggedIn);
+        menu.findItem(R.id.echoTest).setEnabled(m_loggedIn);
         menu.findItem(R.id.logout).setEnabled(m_loggedIn);
         return true;
     }

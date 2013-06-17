@@ -35,6 +35,11 @@ $Date$
          android:enabled="false"
          android:onClick="onLogIn"
          />
+   <item android:id="@+id/echoTest"
+         android:title="Echo test"
+         android:enabled="false"
+         android:onClick="onEchoTest"
+         />
    <item android:id="@+id/logout"
          android:title="Log Out"
          android:enabled="false"
