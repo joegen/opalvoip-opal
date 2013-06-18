@@ -425,7 +425,10 @@ void SIPConnection::OnReleased()
     }
   }
 
-  NotifyDialogState(SIPDialogNotification::Terminated, notifyDialogEvent, sipCode);
+  if (LockReadOnly()) {
+    NotifyDialogState(SIPDialogNotification::Terminated, notifyDialogEvent, sipCode);
+    UnlockReadOnly();
+  }
 
   if (bye != NULL) {
     bye->WaitForCompletion();
