@@ -515,9 +515,9 @@ PBoolean SIPEndPoint::GarbageCollection()
     for (PINDEX i = 0; i < keys.GetSize(); ++i) {
       const OpalTransportAddress & addr = keys[i];
       PSafePtr<OpalTransport> transport = m_transportsTable.FindWithLock(addr, PSafeReference);
-      if (transport != NULL && transport->GetSafeReferenceCount() <= (transport->IsRunning() ? 5U : 2U)) {
+      if (transport != NULL && transport->GetSafeReferenceCount() <= (transport->IsRunning() ? 6U : 3U)) {
         /* Delete when no extra references to object, allow for the one in
-           m_transportsTable, the one in local variable "transport" and if a
+           m_transportsTable, the two in local variable "transport" and if a
            background thread is running then there are three more there, the
            PThreadArg<> instance, the parameter to TransportThreadMain() and
            the SIP_PDU instence being read. */
