@@ -438,6 +438,8 @@ void SIPConnection::OnReleased()
         delete bye;
         bye.SetNULL();
       }
+
+      UnlockReadWrite();
       break;
 
     case ReleaseWithCANCEL :
