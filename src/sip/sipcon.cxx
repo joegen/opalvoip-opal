@@ -2284,6 +2284,10 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 {
   SIPTransactionOwner::OnReceivedResponse(transaction, response);
 
+  // One of forks got there too
+  if (response.GetStatusCode() == SIP_PDU::Failure_LoopDetected && !m_transactions.IsEmpty())
+    return;
+
   unsigned responseClass = response.GetStatusCode()/100;
 
   PSafeLockReadWrite lock(*this);

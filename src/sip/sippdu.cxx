@@ -2765,6 +2765,10 @@ void SIPTransactionOwner::FinaliseForking(SIPTransaction & transaction, SIP_PDU 
   if (!m_transactions.Remove(&transaction))
     return;
 
+  // If we are second (or later) arrival in fork, do no more
+  if (response.GetStatusCode() == SIP_PDU::Failure_LoopDetected)
+    return;
+
   OpalTransportPtr transport = transaction.GetTransport();
   if (PAssertNULL(transport) == NULL)
     return;
