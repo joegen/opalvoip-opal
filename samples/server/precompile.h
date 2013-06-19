@@ -48,6 +48,7 @@ typedef PHTTPServiceProcess MyProcessAncestor;
 #include <lids/capi_ep.h>
 #include <ep/ivr.h>
 #include <ep/opalmixer.h>
+#include <opal/patch.h>
 
 
 // End of File ///////////////////////////////////////////////////////////////
