@@ -625,7 +625,7 @@ bool OpalMediaPatch::EnableJitterBuffer(bool enab)
   }
 
   for (s = sinks.begin(); s != sinks.end(); ++s) {
-    if (s->stream->IsSynchronous() && source.EnableJitterBuffer(enab))
+    if (source.EnableJitterBuffer(enab && s->stream->IsSynchronous()))
       return false;
   }
 
@@ -731,6 +731,9 @@ bool OpalMediaPatch::SetBypassPatch(const OpalMediaPatchPtr & patch)
 
     m_bypassToPatch->m_bypassFromPatch.SetNULL();
     m_bypassToPatch->m_bypassEnded.Signal();
+
+    if (patch == NULL)
+      m_bypassToPatch->EnableJitterBuffer();
   }
 
   if (patch != NULL) {
@@ -746,9 +749,14 @@ bool OpalMediaPatch::SetBypassPatch(const OpalMediaPatchPtr & patch)
   OpalMediaFormat format = source.GetMediaFormat();
   if (format.IsTransportable() && format.GetMediaType() == OpalMediaType::Video())
     source.ExecuteCommand(OpalVideoUpdatePicture());
-  else
 #endif
+
+  if (patch == NULL)
     EnableJitterBuffer();
+  else {
+    EnableJitterBuffer(false);
+    patch->EnableJitterBuffer(false);
+  }
 
   return true;
 }
