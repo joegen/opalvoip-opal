@@ -58,7 +58,6 @@ class MyGatekeeperCall : public H323GatekeeperCall
 };
 
 
-
 class MyGatekeeperServer : public H323GatekeeperServer
 {
     PCLASSINFO(MyGatekeeperServer, H323GatekeeperServer);
@@ -169,6 +168,10 @@ class MyManager : public OpalManager
       const OpalConnection & connection,
       OpalMediaFormatList & mediaFormats
     ) const;
+    virtual void OnStartMediaPatch(
+      OpalConnection & connection,  ///< Connection patch is in
+      OpalMediaPatch & patch        ///< Media patch being started
+    );
 
 
     PString OnLoadCallStatus(const PString & htmlBlock);
@@ -202,6 +205,7 @@ class MyManager : public OpalManager
 #if OPAL_HAS_MIXER
     OpalMixerEndPoint * m_mcuEP;
 #endif
+    OpalLocalEndPoint * m_loopbackEP;
 #if OPAL_SCRIPT
     PString m_scriptLanguage;
     PString m_scriptText;
