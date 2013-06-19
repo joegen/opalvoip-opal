@@ -43,6 +43,7 @@
 #include <h323/gkclient.h>
 #include <lids/lidep.h>
 #include <lids/capi_ep.h>
+#include <rtp/srtp_session.h>
 #include <ptclib/pstun.h>
 
 
@@ -100,6 +101,7 @@ static bool SetRegistrationParams(SIPRegister::Params & params,
 
 OpalManagerConsole::OpalManagerConsole()
   : m_interrupted(false)
+  , m_verbose(false)
 {
 }
 
@@ -190,6 +192,8 @@ void OpalManagerConsole::Usage(ostream & strm, const PArgList & args)
 
 bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
 {
+  m_verbose = verbose;
+
   if (!args.IsParsed())
     args.Parse(GetArgumentSpec());
 
@@ -561,6 +565,9 @@ void OpalManagerConsole::Run()
 
 void OpalManagerConsole::EndRun(bool interrupt)
 {
+  if (m_verbose)
+    cout << "Exiting application." << endl;
+
   m_interrupted = interrupt;
   m_endRun.Signal();
 }
@@ -596,6 +603,127 @@ OpalCapiEndPoint * OpalManagerConsole::CreateCapiEndPoint()
   return new OpalCapiEndPoint(*this);
 }
 #endif // OPAL_LID
+
+
+void OpalManagerConsole::OnEstablishedCall(OpalCall & call)
+{
+  if (m_verbose)
+    cout << "In call with " << call.GetPartyB() << " using " << call.GetPartyA() << endl;
+
+  OpalManager::OnEstablishedCall(call);
+}
+
+
+void OpalManagerConsole::OnHold(OpalConnection & connection, bool fromRemote, bool onHold)
+{
+  OpalManager::OnHold(connection, fromRemote, onHold);
+
+  if (!m_verbose)
+    return;
+
+  cout << "Remote " << connection.GetRemotePartyName() << " has ";
+  if (fromRemote)
+    cout << (onHold ? "put you on" : "released you from");
+  else
+    cout << " been " << (onHold ? "put on" : "released from");
+  cout << " hold." << endl;
+}
+
+
+static void LogMediaStream(const char * stopStart, const OpalMediaStream & stream, const OpalConnection & connection)
+{
+  if (!connection.IsNetworkConnection())
+    return;
+
+  OpalMediaFormat mediaFormat = stream.GetMediaFormat();
+  cout << stopStart << (stream.IsSource() ? " receiving " : " sending ");
+
+#if OPAL_SRTP
+  const OpalRTPMediaStream * rtp = dynamic_cast<const OpalRTPMediaStream *>(&stream);
+  if (rtp != NULL && dynamic_cast<const OpalSRTPSession *>(&rtp->GetRtpSession()) != NULL)
+    cout << "secured ";
+#endif
+
+  cout << mediaFormat;
+
+  if (!stream.IsSource() && mediaFormat.GetMediaType() == OpalMediaType::Audio())
+    cout << " (" << mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption())*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits() << "ms)";
+
+  cout << (stream.IsSource() ? " from " : " to ")
+       << connection.GetPrefixName() << " endpoint"
+       << endl;
+}
+
+
+PBoolean OpalManagerConsole::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
+{
+  if (!OpalManager::OnOpenMediaStream(connection, stream))
+    return false;
+
+  if (m_verbose)
+    LogMediaStream("Started", stream, connection);
+  return true;
+}
+
+
+void OpalManagerConsole::OnClosedMediaStream(const OpalMediaStream & stream)
+{
+  OpalManager::OnClosedMediaStream(stream);
+
+  if (m_verbose)
+    LogMediaStream("Stopped", stream, stream.GetConnection());
+}
+
+
+void OpalManagerConsole::OnClearedCall(OpalCall & call)
+{
+  OpalManager::OnClearedCall(call);
+
+  if (!m_verbose)
+    return;
+
+  PString name = call.GetPartyB().IsEmpty() ? call.GetPartyA() : call.GetPartyB();
+
+  switch (call.GetCallEndReason()) {
+    case OpalConnection::EndedByRemoteUser :
+      cout << '"' << name << "\" has cleared the call";
+      break;
+    case OpalConnection::EndedByCallerAbort :
+      cout << '"' << name << "\" has stopped calling";
+      break;
+    case OpalConnection::EndedByRefusal :
+      cout << '"' << name << "\" did not accept your call";
+      break;
+    case OpalConnection::EndedByNoAnswer :
+      cout << '"' << name << "\" did not answer your call";
+      break;
+    case OpalConnection::EndedByNoAccept :
+      cout << "Did not accept incoming call from \"" << name << '"';
+      break;
+    case OpalConnection::EndedByNoUser :
+      cout << "Could find user \"" << name << '"';
+      break;
+    case OpalConnection::EndedByUnreachable :
+      cout << '"' << name << "\" could not be reached.";
+      break;
+    case OpalConnection::EndedByNoEndPoint :
+      cout << "No phone running for \"" << name << '"';
+      break;
+    case OpalConnection::EndedByHostOffline :
+      cout << '"' << name << "\" is not online.";
+      break;
+    case OpalConnection::EndedByConnectFail :
+      cout << "Transport error calling \"" << name << '"';
+      break;
+    default :
+      cout << call.GetCallEndReasonText() << " with \"" << name << '"';
+  }
+
+  PTime now;
+  cout << ", on " << now.AsString("w h:mma") << ", duration "
+            << setprecision(0) << setw(5) << (now - call.GetStartTime()) << "s."
+            << endl;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
