@@ -69,6 +69,12 @@ class OpalManagerConsole : public OpalManager
     virtual void Run();
     virtual void EndRun(bool interrupt = false);
 
+    void OnEstablishedCall(OpalCall & call);
+    void OnHold(OpalConnection & connection, bool fromRemote, bool onHold);
+    PBoolean OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
+    void OnClosedMediaStream(const OpalMediaStream & stream);
+    virtual void OnClearedCall(OpalCall & call);
+
   protected:
 #if OPAL_SIP
     SIPEndPoint * CreateSIPEndPoint();
@@ -85,6 +91,7 @@ class OpalManagerConsole : public OpalManager
 
     PSyncPoint m_endRun;
     bool       m_interrupted;
+    bool       m_verbose;
 };
 
 
