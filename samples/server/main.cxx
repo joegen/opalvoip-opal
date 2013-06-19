@@ -110,12 +110,15 @@ static const char RouteDestKey[]   = "Destination";
 
 #define CONFERENCE_NAME "conference"
 
+#define ROUTE_USERNAME(name, to) ".*:.*\t" name "|.*:" name "@.* = " to
+
 static const char * const DefaultRoutes[] = {
+  ROUTE_USERNAME("loopback", "loopback:"),
 #if OPAL_IVR
-  ".*:.*\t#|.*:#=ivr:",
+  ROUTE_USERNAME("#", "ivr:"),
 #endif
 #if OPAL_HAS_MIXER
-  ".*:.*\t.*"CONFERENCE_NAME".*=mcu:<du>",
+  ROUTE_USERNAME(CONFERENCE_NAME, "mcu:<du>"),
 #endif
 #if OPAL_LID
   "pots:\\+*[0-9]+ = tel:<dn>",
@@ -141,6 +144,8 @@ static const char * const DefaultRoutes[] = {
   "tel:.*=sip:<dn>"
 #endif
 };
+
+static char LoopbackPrefix[] = "loopback";
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -374,6 +379,7 @@ MyManager::MyManager()
 #if OPAL_HAS_MIXER
   , m_mcuEP(NULL)
 #endif
+  , m_loopbackEP(NULL)
 {
   // Make sure codecs are loaded
   GetOpalG722();
@@ -450,6 +456,9 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   }
 #endif
 
+  if (m_loopbackEP == NULL)
+    m_loopbackEP = new OpalLocalEndPoint(*this, LoopbackPrefix);
+
   // General parameters for all endpoint types
   m_mediaTransferMode = cfg.GetEnum(MediaTransferModeKey, m_mediaTransferMode);
   static const char * const MediaTransferModeValues[] = { "0", "1", "2" };
@@ -469,7 +478,11 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
   fieldArray = new PHTTPFieldArray(new PHTTPStringField(RemovedMediaKey, 25,
                                    "", "Codecs to be prevented from being used"), true);
-  SetMediaFormatMask(fieldArray->GetStrings(cfg));
+  formats = fieldArray->GetStrings(cfg);
+  if (formats.GetSize() > 0)
+    SetMediaFormatMask(formats);
+  else
+    fieldArray->SetStrings(cfg, GetMediaFormatMask());
   rsrc->Add(fieldArray);
 
   SetAudioJitterDelay(cfg.GetInteger(MinJitterKey, GetMinAudioJitterDelay()),
@@ -742,6 +755,21 @@ void MyManager::AdjustMediaFormats(bool local,
   }
 
   OpalManager::AdjustMediaFormats(local, connection, mediaFormats);
+}
+
+
+void MyManager::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
+{
+  PSafePtr<OpalConnection> other = connection.GetOtherPartyConnection();
+  if (other != NULL) {
+    // Detect if we have loopback endpoint, and start pas thro on the other connection
+    if (connection.GetPrefixName() == LoopbackPrefix)
+      SetMediaPassThrough(*other, *other, true, patch.GetSource().GetSessionID());
+    else if (other->GetPrefixName() == LoopbackPrefix)
+      SetMediaPassThrough(connection, connection, true, patch.GetSource().GetSessionID());
+  }
+
+  OpalManager::OnStartMediaPatch(connection, patch);
 }
 
 
