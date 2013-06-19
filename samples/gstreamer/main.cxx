@@ -102,9 +102,9 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
   cout << "GStreamer Supported Media Formats: " << setfill(',') << gst->GetMediaFormats() << setfill(' ') << endl;
 
   if (args.GetCount() == 0)
-    cout << "Awaiting incoming call ... " << flush;
+    cout << "Awaiting incoming call ... " << endl;
   else if (SetUpCall("gst:*", args[0]) != NULL)
-    cout << "Making call to " << args[0] << " ... " << flush;
+    cout << "Making call to " << args[0] << " ... " << endl;
   else {
     cerr << "Could not start call to \"" << args[0] << '"' << endl;
     return false;
