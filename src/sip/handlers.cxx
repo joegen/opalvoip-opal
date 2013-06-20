@@ -2073,7 +2073,7 @@ static void SetNoteFromElement(PXMLElement * element, SIPPresenceInfo & info)
 
   PString note = noteElement->GetData();
   if (info.m_note.Find(note) == P_MAX_INDEX) {
-    if (info.m_note.IsEmpty())
+    if (!info.m_note.IsEmpty())
       info.m_note += '\n';
     info.m_note += note;
   }
