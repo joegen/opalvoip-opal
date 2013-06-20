@@ -741,6 +741,18 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
     }
 
 
+    bool BadDecode(unsigned & flags, bool ok)
+    {
+      if (ok)
+        return false;
+
+      flags = PluginCodec_ReturnCoderRequestIFrame;
+      m_ignoreTillKeyFrame = true;
+      m_fullFrame.clear();
+      return true;
+    }
+
+
     virtual bool Transcode(const void * fromPtr,
                              unsigned & fromLen,
                                  void * toPtr,
@@ -749,15 +761,24 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
     {
       vpx_image_t * image;
 
+      bool lostPackets = (flags & PluginCodec_CoderPacketLoss) == 0;
+
       flags = m_intraFrame ? PluginCodec_ReturnCoderIFrame : 0;
 
       if ((image = vpx_codec_get_frame(&m_codec, &m_iterator)) == NULL) {
+        /* Unless error concealment implementedm decoder has a problems with
+           missing data in the frame and can gets it;s knickers thorougly
+           twisted, so just ignore everything till next I-Frame. */
+        if (BadDecode(flags,
+#ifdef VPX_CODEC_USE_ERROR_CONCEALMENT
+                             (m_flags & VPX_CODEC_USE_ERROR_CONCEALMENT) != 0 ||
+#endif
+                             lostPackets))
+          return true;
 
         PluginCodec_RTP srcRTP(fromPtr, fromLen);
-        if (!Unpacketise(srcRTP)) {
-          flags |= PluginCodec_ReturnCoderRequestIFrame;
+        if (BadDecode(flags, Unpacketise(srcRTP)))
           return true;
-        }
 
         if (!srcRTP.GetMarker() || m_fullFrame.empty())
           return true;
@@ -768,12 +789,10 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
             break;
 
           // Non fatal errors
-          case VPX_CODEC_UNSUP_BITSTREAM :
           case VPX_CODEC_UNSUP_FEATURE :
           case VPX_CODEC_CORRUPT_FRAME :
-            PTRACE(4, MY_CODEC_LOG, "Decoder reported non-fatal error: " << err);
-            flags |= PluginCodec_ReturnCoderRequestIFrame;
-            m_ignoreTillKeyFrame = true;
+            PTRACE(3, MY_CODEC_LOG, "Decoder reported non-fatal error: " << vpx_codec_err_to_string(err));
+            BadDecode(flags, false);
             return true;
 
           default :
@@ -788,21 +807,20 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
            anything that isn't an I-Frame. Luckily it appears that the low bit
            of the first byte is the I-Frame indicator.
         */
-        if ((m_fullFrame[0]&1) == 0) {
-          flags |= PluginCodec_ReturnCoderIFrame;
+        if ((m_fullFrame[0]&1) == 0)
           m_intraFrame = true;
-        }
 #else
         vpx_codec_stream_info_t info;
         info.sz = sizeof(info);
         if (IS_ERROR(vpx_codec_get_stream_info, (&m_codec, &info)))
           flags |= PluginCodec_ReturnCoderRequestIFrame;
 
-        if (info.is_kf) {
-          flags |= PluginCodec_ReturnCoderIFrame;
+        if (info.is_kf)
           m_intraFrame = true;
-        }
 #endif
+
+        if (m_intraFrame)
+          flags |= PluginCodec_ReturnCoderIFrame;
 
         m_fullFrame.clear();
 
@@ -820,7 +838,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
       OutputImage(image->planes, image->stride, image->d_w, image->d_h, dstRTP, flags);
       toLen = dstRTP.GetPacketSize();
 
-      if (flags&PluginCodec_ReturnCoderLastFrame)
+      if ((flags & PluginCodec_ReturnCoderLastFrame) != 0)
         m_intraFrame = false;
 
       return true;
@@ -857,8 +875,10 @@ class VP8DecoderRFC : public VP8Decoder
       if (rtp.GetPayloadSize() == 0)
         return true;
 
-      if (rtp.GetPayloadSize() < 3)
+      if (rtp.GetPayloadSize() < 3) {
+        PTRACE(3, MY_CODEC_LOG, "RTP packet far too small.");
         return false;
+      }
 
       size_t headerSize = 1;
       if ((rtp[0]&0x80) != 0) { // Check X bit
@@ -877,10 +897,22 @@ class VP8DecoderRFC : public VP8Decoder
           ++headerSize;         // Allow for T/K byte
       }
 
-      if ((rtp[0]&0x10) != 0 && !m_fullFrame.empty()) {
-        PTRACE(3, MY_CODEC_LOG, "Missing start to frame, ignoring till next key frame.");
-        m_ignoreTillKeyFrame = true;
+      if (rtp.GetPayloadSize() <= headerSize) {
+        PTRACE(3, MY_CODEC_LOG, "RTP packet too small.");
         return false;
+      }
+
+      if ((rtp[0]&0x10) != 0 && !m_fullFrame.empty()) { // Check S bit
+        PTRACE(3, MY_CODEC_LOG, "Missing start to frame, ignoring till next key frame.");
+        return false;
+      }
+
+      if (m_ignoreTillKeyFrame) {
+        // Key frame is S bit == 1, partID == 0 & P bit == 0
+        if ((rtp[0]&0x10) != 0x10 || (rtp[headerSize]&0x01) != 0)
+          return false;
+        m_ignoreTillKeyFrame =  false;
+        PTRACE(3, MY_CODEC_LOG, "Found next start of key frame.");
       }
 
       Accumulate(rtp.GetPayloadPtr()+headerSize, rtp.GetPayloadSize()-headerSize);
@@ -1015,9 +1047,13 @@ class VP8DecoderOM : public VP8Decoder
 
     virtual bool Unpacketise(const PluginCodec_RTP & rtp)
     {
-      size_t paylaodSize = rtp.GetPayloadSize();
-      if (paylaodSize < 2)
-        return paylaodSize == 0;
+      size_t payloadSize = rtp.GetPayloadSize();
+      if (payloadSize < 2) {
+        if (payloadSize == 0)
+          return true;
+        PTRACE(3, MY_CODEC_LOG, "RTP packet too small.");
+        return false;
+      }
 
       bool first = (rtp[0]&0x40) != 0;
       if (first)
@@ -1039,17 +1075,20 @@ class VP8DecoderOM : public VP8Decoder
       else {
         if (!first && m_fullFrame.empty()) {
           PTRACE(3, MY_CODEC_LOG, "Missing start to frame, ignoring till next key frame.");
-          m_ignoreTillKeyFrame = true;
           return false;
         }
       }
 
-      Accumulate(rtp.GetPayloadPtr()+headerSize, paylaodSize-headerSize);
+      Accumulate(rtp.GetPayloadPtr()+headerSize, payloadSize-headerSize);
 
       unsigned gid = rtp[0]&0x3f;
       bool expected = m_expectedGID == UINT_MAX || m_expectedGID == gid;
       m_expectedGID = gid;
-      return expected || first;
+      if (expected || first)
+        return true;
+
+      PTRACE(3, MY_CODEC_LOG, "Unexpected GID " << gid);
+      return false;
     }
 };
 
