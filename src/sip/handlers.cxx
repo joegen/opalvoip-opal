@@ -454,11 +454,15 @@ void SIPHandler::OnTransactionFailed(SIPTransaction & transaction)
 {
   SIPTransactionOwner::OnTransactionFailed(transaction);
 
-  if (transaction.IsCanceled())
+  if (transaction.IsCanceled()) {
+    PTRACE(4, "SIP", "Not reporting canceled forked.");
     return;
+  }
 
-  if (transaction.GetStatusCode() < 100 && GetInterface().IsEmpty())
+  if (!m_transactions.IsEmpty()) {
+    PTRACE(4, "SIP", "Not reporting failed forked transaction.");
     return;
+  }
 
   OnFailed(transaction.GetStatusCode());
   RetryLater(m_offlineExpireTime);
