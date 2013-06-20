@@ -58,8 +58,12 @@ endif
 
 # The -I option allows to build the simple application in the same time as opal
 # (as used by distribution packagers)
-CPPFLAGS += $(shell pkg-config $(PKG_FLAGS) --cflags opal)
-LDFLAGS  += $(shell pkg-config $(PKG_FLAGS) --libs opal)
+CPPFLAGS += $(shell pkg-config $(PKG_FLAGS) --variable cppflags opal) \
+            $(shell pkg-config $(PKG_FLAGS) --variable cppflags ptlib)
+CXXFLAGS += $(shell pkg-config $(PKG_FLAGS) --variable cxxflags opal) \
+            $(shell pkg-config $(PKG_FLAGS) --variable cxxflags ptlib)
+LDFLAGS  += $(shell pkg-config $(PKG_FLAGS) --cflags opal)
+LDFLAGS  := $(shell pkg-config $(PKG_FLAGS) --libs opal) $(LDFLAGS)
 
 
 # This part is we like to be tidy and put all the build products
@@ -70,7 +74,7 @@ vpath	%.o   $(OBJDIR)
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CXX) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+	$(CXX) -o $@ $(CXXFLAGS) -c $<
 
 $(OBJDIR)/%.dep : %.cxx 
 	@if [ ! -d $(OBJDIR) ] ; then mkdir -p $(OBJDIR) ; fi
