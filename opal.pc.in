@@ -1,3 +1,8 @@
+Name: opal
+Description: Open Phone Application Library
+Version: @OPAL_VERSION@
+Requires: ptlib
+
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
@@ -7,16 +12,13 @@ makedir=@makedir@
 target_cpu=@target_cpu@
 target_os=@target_os@
 target=@target@
-cxxflags=-I${includedir} @CPPFLAGS@ @CXXFLAGS@
 suffix=
 objdir=obj/@target@${suffix}
 
-Name: opal
-Description: Open Phone Application Library
-Version: @OPAL_VERSION@
-Requires: ptlib
-Libs: -L${libdir} -lopal${suffix} @LDFLAGS@
+cppflags=-I${includedir} @CPPFLAGS@
+cxxflags=-I${includedir} @CPPFLAGS@ @CXXFLAGS@
 Cflags: -I${includedir} @CPPFLAGS@ @CFLAGS@
+Libs: -L${libdir} -lopal${suffix} @LDFLAGS@
 
 #Optional OPAL features
 OPAL_H323=@OPAL_H323@
