@@ -137,40 +137,60 @@ PBoolean OpalEndPoint::GarbageCollection()
 }
 
 
-PBoolean OpalEndPoint::StartListeners(const PStringArray & listenerAddresses)
+bool OpalEndPoint::StartListeners(const PStringArray & listenerAddresses, bool add)
 {
-  PStringArray interfaces = listenerAddresses;
-  if (interfaces.IsEmpty()) {
+  OpalTransportAddressArray interfaces;
+  if (listenerAddresses.IsEmpty()) {
     interfaces = GetDefaultListeners();
     if (interfaces.IsEmpty())
       return false;
   }
-
-  PBoolean startedOne = false;
-
-  for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
-    if (interfaces[i].Find('$') != P_MAX_INDEX) {
-      if (StartListener(interfaces[i]))
-        startedOne = true;
-    }
-    else {
-      PStringArray transports = GetDefaultTransport().Tokenise(',');
-      for (PINDEX j = 0; j < transports.GetSize(); j++) {
-        PString transport = transports[j];
-        WORD port = GetDefaultSignalPort();
-        PINDEX colon = transport.Find(':');
-        if (colon != P_MAX_INDEX) {
-          port = (WORD)transport.Mid(colon+1).AsUnsigned();
-          transport.Delete(colon, P_MAX_INDEX);
+  else {
+    for (PINDEX i = 0; i < listenerAddresses.GetSize(); i++) {
+      if (listenerAddresses[i].Find('$') != P_MAX_INDEX)
+        interfaces.AppendAddress(listenerAddresses[i]);
+      else {
+        PStringArray transports = GetDefaultTransport().Tokenise(',');
+        for (PINDEX j = 0; j < transports.GetSize(); j++) {
+          PString transport = transports[j];
+          WORD port = GetDefaultSignalPort();
+          PINDEX colon = transport.Find(':');
+          if (colon != P_MAX_INDEX) {
+            port = (WORD)transport.Mid(colon+1).AsUnsigned();
+            transport.Delete(colon, P_MAX_INDEX);
+          }
+          interfaces.AppendAddress(OpalTransportAddress(interfaces[i], port, transport));
         }
-        OpalTransportAddress iface(interfaces[i], port, transport);
-        if (StartListener(iface))
-          startedOne = true;
       }
     }
   }
 
-  return startedOne;
+  bool atLeastOne = false;
+
+  // Stop listeners not in list
+  if (!add) {
+    for (OpalListenerList::iterator it = listeners.begin(); it != listeners.end(); ) {
+      bool removeListener = true;
+      for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
+        if (it->GetLocalAddress().IsEquivalent(interfaces[i])) {
+          interfaces.RemoveAt(i);
+          removeListener = false;
+          atLeastOne = true;
+          ++it;
+          break;
+        }
+      }
+      if (removeListener)
+        listeners.erase(it++);
+    }
+  }
+
+  for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
+    if (StartListener(interfaces[i]))
+      atLeastOne = true;
+  }
+
+  return atLeastOne;
 }
 
 
@@ -185,6 +205,14 @@ PBoolean OpalEndPoint::StartListener(const OpalTransportAddress & listenerAddres
     if (interfaces.IsEmpty())
       return false;
     iface = OpalTransportAddress(interfaces[0], GetDefaultSignalPort());
+  }
+
+  // Check for already listening
+  for (OpalListenerList::iterator it = listeners.begin(); it != listeners.end(); ++it) {
+    if (it->GetLocalAddress().IsEquivalent(iface)) {
+      PTRACE(4, "OpalEP\tAlready listening on " << iface);
+      return true;
+    }
   }
 
   listener = iface.CreateListener(*this, OpalTransportAddress::FullTSAP);
