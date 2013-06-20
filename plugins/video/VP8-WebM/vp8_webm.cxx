@@ -833,25 +833,27 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
     {
       vpx_image_t * image;
 
+      bool lostPackets = (flags & PluginCodec_CoderPacketLoss) == 0;
+
+      flags = m_intraFrame ? PluginCodec_ReturnCoderIFrame : 0;
+
       if ((image = vpx_codec_get_frame(&m_codec, &m_iterator)) == NULL) {
         /* Unless error concealment implementedm decoder has a problems with
            missing data in the frame and can gets it;s knickers thorougly
            twisted, so just ignore everything till next I-Frame. */
         if (BadDecode(flags,
 #ifdef VPX_CODEC_USE_ERROR_CONCEALMENT
-                           (m_flags & VPX_CODEC_USE_ERROR_CONCEALMENT) != 0 ||
+                             (m_flags & VPX_CODEC_USE_ERROR_CONCEALMENT) != 0 ||
 #endif
-                           (flags & PluginCodec_CoderPacketLoss) == 0))
+                             lostPackets))
           return true;
 
         PluginCodec_RTP srcRTP(fromPtr, fromLen);
         if (BadDecode(flags, Unpacketise(srcRTP)))
           return true;
 
-        if (!srcRTP.GetMarker() || m_fullFrame.empty()) {
-          flags = m_intraFrame ? PluginCodec_ReturnCoderIFrame : 0;
+        if (!srcRTP.GetMarker() || m_fullFrame.empty())
           return true;
-        }
 
         vpx_codec_err_t err = vpx_codec_decode(&m_codec, &m_fullFrame[0], m_fullFrame.size(), NULL, 0);
         switch (err) {
@@ -889,13 +891,14 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
           m_intraFrame = true;
 #endif
 
+        if (m_intraFrame)
+          flags |= PluginCodec_ReturnCoderIFrame;
+
         m_fullFrame.clear();
 
         m_iterator = NULL;
-        if ((image = vpx_codec_get_frame(&m_codec, &m_iterator)) == NULL) {
-          flags = m_intraFrame ? PluginCodec_ReturnCoderIFrame : 0;
+        if ((image = vpx_codec_get_frame(&m_codec, &m_iterator)) == NULL)
           return true;
-        }
       }
 
       if (image->fmt != VPX_IMG_FMT_I420) {
@@ -907,13 +910,8 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
       OutputImage(image->planes, image->stride, image->d_w, image->d_h, dstRTP, flags);
       toLen = dstRTP.GetPacketSize();
 
-
-      if (m_intraFrame) {
+      if ((flags & PluginCodec_ReturnCoderLastFrame) != 0)
         m_intraFrame = false;
-        flags = PluginCodec_ReturnCoderIFrame;
-      }
-      else
-        flags = 0;
 
       return true;
     }
