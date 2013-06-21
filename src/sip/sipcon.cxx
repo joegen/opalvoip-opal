@@ -1097,8 +1097,8 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
   }
 
   // construct a new media session list 
-  SDPMediaDescription * localMedia = mediaSession->CreateSDPMediaDescription();
-  if (localMedia == NULL) {
+  std::auto_ptr<SDPMediaDescription> localMedia(mediaSession->CreateSDPMediaDescription());
+  if (localMedia.get() == NULL) {
     if (replaceSession)
       delete mediaSession; // Still born so can delete, not used anywhere
     PTRACE(1, "SIP\tCould not create SDP media description for media type " << mediaType);
@@ -1261,15 +1261,15 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 
   if (mediaType == OpalMediaType::Audio()) {
     // Set format if we have an RTP payload type for RFC2833 and/or NSE
-    SetNxECapabilities(m_rfc2833Handler, m_localMediaFormats, m_answerFormatList, OpalRFC2833, localMedia);
+    SetNxECapabilities(m_rfc2833Handler, m_localMediaFormats, m_answerFormatList, OpalRFC2833, localMedia.get());
 #if OPAL_T38_CAPABILITY
-    SetNxECapabilities(m_ciscoNSEHandler, m_localMediaFormats, m_answerFormatList, OpalCiscoNSE, localMedia);
+    SetNxECapabilities(m_ciscoNSEHandler, m_localMediaFormats, m_answerFormatList, OpalCiscoNSE, localMedia.get());
 #endif
   }
 
   localMedia->SetAddresses(mediaSession->GetLocalAddress(true), mediaSession->GetLocalAddress(false));
 
-  sdpOut.AddMediaDescription(localMedia);
+  sdpOut.AddMediaDescription(localMedia.release());
 
 #if OPAL_T38_CAPABILITY
   ownerCall.ResetSwitchingT38();

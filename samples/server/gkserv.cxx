@@ -143,7 +143,7 @@ bool MyH323EndPoint::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
   fieldArray = new PHTTPFieldArray(new PHTTPStringField(H323ListenersKey, 0, "",
                "Local network interfaces to listen for H.323, blank means all", 1, 30), false);
-  if (!StartListeners(fieldArray->GetStrings(cfg))) {
+  if (!StartListeners(fieldArray->GetStrings(cfg), false)) {
     PSYSTEMLOG(Error, "Could not open any H.323 listeners!");
   }
   rsrc->Add(fieldArray);
