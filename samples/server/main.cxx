@@ -96,6 +96,12 @@ static const char IVRCacheKey[] = "TTS Cache Directory";
 static const char IVRRecordDirKey[] = "Record Message Directory";
 #endif
 
+#if OPAL_HAS_MIXER
+static const char ConfAudioOnlyKey[] = "Conference Audio Only";
+static const char ConfMediaPassThruKey[] = "Conference Media Pass Through";
+static const char ConfVideoResolutionKey[] = "Conference Video Resolution";
+#endif
+
 #if OPAL_SCRIPT
 static const char ScriptLanguageKey[] = "Language";
 static const char ScriptTextKey[] = "Script";
@@ -425,13 +431,8 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #endif
 
 #if OPAL_HAS_MIXER
-  if (m_mcuEP == NULL) {
+  if (m_mcuEP == NULL)
     m_mcuEP = new OpalMixerEndPoint(*this, "mcu");
-    OpalMixerNodeInfo adHoc;
-    adHoc.m_closeOnEmpty = true;
-    m_mcuEP->SetAdHocNodeInfo(adHoc);
-    m_mcuEP->AddNode(new OpalMixerNodeInfo(CONFERENCE_NAME));
-  }
 #endif
 
   if (m_loopbackEP == NULL)
@@ -519,7 +520,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
   fieldArray = new PHTTPFieldArray(new PHTTPStringField(SIPListenersKey, 25,
                                    "", "Local network interfaces to listen for SIP, blank means all"), false);
-  if (!m_sipEP->StartListeners(fieldArray->GetStrings(cfg))) {
+  if (!m_sipEP->StartListeners(fieldArray->GetStrings(cfg), false)) {
     PSYSTEMLOG(Error, "Could not open any SIP listeners!");
   }
   rsrc->Add(fieldArray);
@@ -646,6 +647,30 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     rsrc->Add(new PHTTPStringField(IVRRecordDirKey, 0, dir,
               "Interactive Voice Response directory to save recorded messages", 1, 50));
     m_ivrEP->SetRecordDirectory(dir);
+  }
+#endif
+
+#if OPAL_HAS_MIXER
+  {
+    OpalMixerNodeInfo adHoc;
+
+    adHoc.m_mediaPassThru = cfg.GetBoolean(ConfMediaPassThruKey, adHoc.m_mediaPassThru);
+    rsrc->Add(new PHTTPBooleanField(ConfMediaPassThruKey, adHoc.m_mediaPassThru,
+              "Conference media pass though optimisation"));
+
+#if OPAL_VIDEO
+    adHoc.m_audioOnly = cfg.GetBoolean(ConfAudioOnlyKey, adHoc.m_audioOnly);
+    rsrc->Add(new PHTTPBooleanField(ConfAudioOnlyKey, adHoc.m_audioOnly,
+              "Conference is audio only"));
+
+    PString resolution = cfg.GetString(ConfVideoResolutionKey, PVideoFrameInfo::AsString(adHoc.m_width, adHoc.m_height));
+    rsrc->Add(new PHTTPStringField(ConfVideoResolutionKey, 10, resolution,
+              "Conference video frame resolution"));
+    PVideoFrameInfo::ParseSize(resolution, adHoc.m_width, adHoc.m_height);
+#endif
+
+    adHoc.m_closeOnEmpty = true;
+    m_mcuEP->SetAdHocNodeInfo(adHoc);
   }
 #endif
 
