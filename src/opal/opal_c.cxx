@@ -1761,12 +1761,15 @@ void OpalManager_C::HandleSetUpCall(const OpalMessage & command, OpalMessageBuff
     PCaselessString partyB = command.m_param.m_callSetUp.m_partyB;
     if (partyB == "testplayer") {
       PSoundChannel::Params params(PSoundChannel::Player, m_pcssEP->GetSoundChannelPlayDevice());
+      params.SetBufferCountFromMS(m_pcssEP->GetSoundChannelBufferTime());
       response.SetError(PSoundChannel::TestPlayer(params));
       return;
     }
     else if (partyB == "testrecorder") {
       PSoundChannel::Params recordParams(PSoundChannel::Recorder, m_pcssEP->GetSoundChannelRecordDevice());
+      recordParams.SetBufferCountFromMS(m_pcssEP->GetSoundChannelBufferTime());
       PSoundChannel::Params playerParams(PSoundChannel::Player, m_pcssEP->GetSoundChannelPlayDevice());
+      playerParams.SetBufferCountFromMS(m_pcssEP->GetSoundChannelBufferTime());
       response.SetError(PSoundChannel::TestRecorder(recordParams, playerParams));
       return;
     }
