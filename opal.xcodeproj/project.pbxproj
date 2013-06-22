@@ -3131,7 +3131,7 @@
 /* Begin PBXLegacyTarget section */
 		A3275437177476FA00936064 /* OPAL iOS */ = {
 			isa = PBXLegacyTarget;
-			buildArgumentsString = "OS=$OS $(ACTION)";
+			buildArgumentsString = "$(ACTION)";
 			buildConfigurationList = A327543A177476FA00936064 /* Build configuration list for PBXLegacyTarget "OPAL iOS" */;
 			buildPhases = (
 			);
@@ -3146,7 +3146,7 @@
 		};
 		A3BAF2C117169255002A1229 /* OPAL */ = {
 			isa = PBXLegacyTarget;
-			buildArgumentsString = "OS=$OS $(ACTION)";
+			buildArgumentsString = "$(ACTION)";
 			buildConfigurationList = A3BAF2C417169255002A1229 /* Build configuration list for PBXLegacyTarget "OPAL" */;
 			buildPhases = (
 			);
@@ -3224,6 +3224,7 @@
 				PRODUCT_NAME = "OPAL copy";
 				PTLIBDIR = $SOURCE_ROOT/../ptlib;
 				SDKROOT = iphoneos;
+				STATIC_BUILD = yes;
 				VERBOSE = 1;
 			};
 			name = Debug;
@@ -3244,6 +3245,7 @@
 				PRODUCT_NAME = "OPAL copy";
 				PTLIBDIR = $SOURCE_ROOT/../ptlib;
 				SDKROOT = iphoneos;
+				STATIC_BUILD = yes;
 				VERBOSE = 1;
 			};
 			name = Release;
