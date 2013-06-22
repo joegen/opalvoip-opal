@@ -33,6 +33,9 @@
 /* celt */
 #undef HAVE_CELT
 
+/* Speex */
+#undef OPAL_SYSTEM_SPEEX
+
 /* Define to 1 if you have the <linux/telephony.h> header file. */
 #undef HAVE_LINUX_TELEPHONY_H
 

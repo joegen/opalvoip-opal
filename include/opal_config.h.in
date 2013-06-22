@@ -268,7 +268,6 @@
 
 // Use system Speex audio codec
 #undef	OPAL_SYSTEM_SPEEX
-#undef  OPAL_HAVE_SPEEX_SPEEX_H
 #undef  OPAL_SPEEX_FLOAT_NOISE
 
 
