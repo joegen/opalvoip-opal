@@ -1247,13 +1247,12 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 
   localMedia->SetTransportAddress(mediaSession->GetLocalAddress());
 
-  sdpOut.AddMediaDescription(localMedia.release());
-
 #if OPAL_T38_CAPABILITY
   ownerCall.ResetSwitchingT38();
 #endif
 
   PTRACE(4, "SIP\tAnswered offer for media type " << mediaType << ' ' << localMedia->GetTransportAddress());
+  sdpOut.AddMediaDescription(localMedia.release());
   return true;
 }
 
