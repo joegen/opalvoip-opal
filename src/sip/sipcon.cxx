@@ -1269,13 +1269,12 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 
   localMedia->SetAddresses(mediaSession->GetLocalAddress(true), mediaSession->GetLocalAddress(false));
 
-  sdpOut.AddMediaDescription(localMedia.release());
-
 #if OPAL_T38_CAPABILITY
   ownerCall.ResetSwitchingT38();
 #endif
 
   PTRACE(4, "SIP\tAnswered offer for media type " << mediaType << ' ' << localMedia->GetMediaAddress());
+  sdpOut.AddMediaDescription(localMedia.release());
   return true;
 }
 
