@@ -43,8 +43,7 @@ unsigned   opalVersion = OPAL_C_API_VERSION;
             " " OPAL_PREFIX_PCSS
             " --config \"%@/Documents\""
             " --plugin \"%@/Library\""
-            " --output \"%@/tmp/opal.log\""
-            " -ttttt", dir, dir, dir];
+            " -ttttt", dir, dir];
     if ((opalHandle = OpalInitialise(&opalVersion, [args UTF8String])) == 0)
       return NO;
     
