@@ -190,6 +190,7 @@ NSString * currentCallToken;
   OpalParamGeneral * param = OPALMSG_GENERAL_PARAM(msg);
   param->m_natMethod = "STUN";
   param->m_natServer = "stun.ekiga.net";
+  param->m_audioBufferTime = 100;
   if (![self sendOpalMessage:&msg])
     return;
   
