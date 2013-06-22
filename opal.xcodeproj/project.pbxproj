@@ -7,6 +7,13 @@
 	objects = {
 
 /* Begin PBXContainerItemProxy section */
+		A327543E1774773C00936064 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A32F20D7171C0B2A001A0EA0 /* ptlib.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = A32754331774659900936064;
+			remoteInfo = "PTLib iOS";
+		};
 		A32F20DB171C0B34001A0EA0 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = A32F20D7171C0B2A001A0EA0 /* ptlib.xcodeproj */;
@@ -3117,13 +3124,29 @@
 				A32F1EA4171931E3001A0EA0 /* src */,
 			);
 			sourceTree = "<group>";
+			usesTabs = 0;
 		};
 /* End PBXGroup section */
 
 /* Begin PBXLegacyTarget section */
+		A3275437177476FA00936064 /* OPAL iOS */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "OS=$OS $(ACTION)";
+			buildConfigurationList = A327543A177476FA00936064 /* Build configuration list for PBXLegacyTarget "OPAL iOS" */;
+			buildPhases = (
+			);
+			buildToolPath = /usr/bin/make;
+			buildWorkingDirectory = "";
+			dependencies = (
+				A327543F1774773C00936064 /* PBXTargetDependency */,
+			);
+			name = "OPAL iOS";
+			passBuildSettingsInEnvironment = 1;
+			productName = OPAL;
+		};
 		A3BAF2C117169255002A1229 /* OPAL */ = {
 			isa = PBXLegacyTarget;
-			buildArgumentsString = "DEBUG=$DEBUG $(ACTION)";
+			buildArgumentsString = "OS=$OS $(ACTION)";
 			buildConfigurationList = A3BAF2C417169255002A1229 /* Build configuration list for PBXLegacyTarget "OPAL" */;
 			buildPhases = (
 			);
@@ -3163,11 +3186,17 @@
 			projectRoot = "";
 			targets = (
 				A3BAF2C117169255002A1229 /* OPAL */,
+				A3275437177476FA00936064 /* OPAL iOS */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXTargetDependency section */
+		A327543F1774773C00936064 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = "PTLib iOS";
+			targetProxy = A327543E1774773C00936064 /* PBXContainerItemProxy */;
+		};
 		A32F20DC171C0B34001A0EA0 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = PTLib;
@@ -3176,6 +3205,49 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		A327543B177476FA00936064 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				DEBUGGING_SYMBOLS = YES;
+				DEBUG_BUILD = yes;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				HAS_SAMPLES = 0;
+				OPALDIR = $SOURCE_ROOT;
+				OS = "";
+				"OS[sdk=iphoneos*]" = iPhoneOS;
+				"OS[sdk=iphonesimulator*]" = iPhoneSimulator;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PATH = "$PATH:/opt/local/bin";
+				PRODUCT_NAME = "OPAL copy";
+				PTLIBDIR = $SOURCE_ROOT/../ptlib;
+				SDKROOT = iphoneos;
+				VERBOSE = 1;
+			};
+			name = Debug;
+		};
+		A327543C177476FA00936064 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = YES;
+				DEBUG_BUILD = no;
+				HAS_SAMPLES = 0;
+				OPALDIR = $SOURCE_ROOT;
+				OS = "";
+				"OS[sdk=iphoneos*]" = iPhoneOS;
+				"OS[sdk=iphonesimulator*]" = iPhoneSimulator;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PATH = "$PATH:/opt/local/bin";
+				PRODUCT_NAME = "OPAL copy";
+				PTLIBDIR = $SOURCE_ROOT/../ptlib;
+				SDKROOT = iphoneos;
+				VERBOSE = 1;
+			};
+			name = Release;
+		};
 		A3BAF2C217169255002A1229 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -3243,6 +3315,9 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				HAS_SAMPLES = 0;
 				OPALDIR = $SOURCE_ROOT;
+				OS = "";
+				"OS[sdk=iphoneos*]" = iPhoneOS;
+				"OS[sdk=iphonesimulator*]" = iPhoneSimulator;
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
 				PATH = "$PATH:/opt/local/bin";
@@ -3259,6 +3334,9 @@
 				DEBUG_BUILD = no;
 				HAS_SAMPLES = 0;
 				OPALDIR = $SOURCE_ROOT;
+				OS = "";
+				"OS[sdk=iphoneos*]" = iPhoneOS;
+				"OS[sdk=iphonesimulator*]" = iPhoneSimulator;
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
 				PATH = "$PATH:/opt/local/bin";
@@ -3271,6 +3349,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		A327543A177476FA00936064 /* Build configuration list for PBXLegacyTarget "OPAL iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A327543B177476FA00936064 /* Debug */,
+				A327543C177476FA00936064 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		A3BAF2C017169255002A1229 /* Build configuration list for PBXProject "opal" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
