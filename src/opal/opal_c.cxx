@@ -1755,6 +1755,23 @@ void OpalManager_C::HandleSetUpCall(const OpalMessage & command, OpalMessageBuff
     else
       partyA = "pots:*";
   }
+  
+#if OPAL_HAS_PCSS
+  if (m_pcssEP != NULL) {
+    PCaselessString partyB = command.m_param.m_callSetUp.m_partyB;
+    if (partyB == "testplayer") {
+      PSoundChannel::Params params(PSoundChannel::Player, m_pcssEP->GetSoundChannelPlayDevice());
+      response.SetError(PSoundChannel::TestPlayer(params));
+      return;
+    }
+    else if (partyB == "testrecorder") {
+      PSoundChannel::Params recordParams(PSoundChannel::Recorder, m_pcssEP->GetSoundChannelRecordDevice());
+      PSoundChannel::Params playerParams(PSoundChannel::Player, m_pcssEP->GetSoundChannelPlayDevice());
+      response.SetError(PSoundChannel::TestRecorder(recordParams, playerParams));
+      return;
+    }
+  }
+#endif
 
   OpalConnection::StringOptions options;
   if (!IsNullString(command.m_param.m_callSetUp.m_alertingType))
