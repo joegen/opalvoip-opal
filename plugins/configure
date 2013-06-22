@@ -7025,7 +7025,6 @@ int
 main ()
 {
 speex_encoder_init(&speex_wb_mode)
-
   ;
   return 0;
 }
@@ -7076,7 +7075,15 @@ $as_echo "$as_me: Using internal source for Speex audio codec" >&6;}
 
 
 
+   if test "x$usable" = "xyes"; then :
 
+      if test "$SPEEX_SYSTEM" = "yes"; then
+         $as_echo "#define OPAL_SYSTEM_SPEEX 1" >>confdefs.h
+
+      fi
+
+
+fi
 
 
       if test "x$SPEEX_SYSTEM" = "xno" ; then

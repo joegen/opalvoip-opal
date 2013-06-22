@@ -1290,7 +1290,6 @@ PREDEFINED             = DOCPLUSLUS \
                          OPAL_HAS_H224 \
                          OPAL_HAS_H281 \
                          OPAL_SYSTEM_SPEEX \
-                         OPAL_HAVE_SPEEX_SPEEX_H \
                          OPAL_SPEEX_FLOAT_NOISE \
                          HAS_LIBZRTP \
                          HAS_LIBSRTP \

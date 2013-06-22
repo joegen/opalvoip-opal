@@ -38,18 +38,13 @@
 #if OPAL_AEC
 
 extern "C" {
-#ifdef OPAL_SYSTEM_SPEEX
-#if OPAL_HAVE_SPEEX_SPEEX_H
-#include <speex/speex_echo.h>
-#include <speex/speex_preprocess.h>
-#else
-#include <speex_echo.h>
-#include <speex_preprocess.h>
-#endif
-#else
-#include "speex/libspeex/speex_echo.h"
-#include "speex/libspeex/speex_preprocess.h"
-#endif
+  #ifdef OPAL_SYSTEM_SPEEX
+    #include <speex/speex_echo.h>
+    #include <speex/speex_preprocess.h>
+  #else
+    #include "speex/libspeex/speex_echo.h"
+    #include "speex/libspeex/speex_preprocess.h"
+  #endif
 };
 
 #include <codec/echocancel.h>

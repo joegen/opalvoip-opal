@@ -108,7 +108,12 @@ OPAL_SYSTEM_PLUGIN(
    [],
    [-lspeex],
    [#include <speex/speex.h>],
-   [speex_encoder_init(&speex_wb_mode)]
+   [speex_encoder_init(&speex_wb_mode)],
+   [
+      if test "$SPEEX_SYSTEM" = "yes"; then
+         AC_DEFINE(OPAL_SYSTEM_SPEEX, [1])
+      fi
+   ]
 )
 
 OPAL_SYSTEM_PLUGIN(
