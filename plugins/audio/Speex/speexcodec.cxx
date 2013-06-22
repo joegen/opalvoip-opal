@@ -48,7 +48,11 @@
 #endif
 
 extern "C" {
-#include "libspeex/speex.h" 
+  #if OPAL_SYSTEM_SPEEX
+    #include <speex/speex.h>
+  #else
+    #include "libspeex/speex.h" 
+  #endif
 }
 
 #define NARROW_SAMPLES_PER_FRAME       160
