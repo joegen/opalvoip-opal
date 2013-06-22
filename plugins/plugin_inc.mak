@@ -24,14 +24,11 @@
 # $Date$
 #
 
-PLUGIN_CONFIG_MAK := plugin_config.mak
-ifneq (,$(OPAL_PLATFORM_DIR))
-  include $(OPAL_PLATFORM_DIR)/plugins/$(PLUGIN_CONFIG_MAK)
-else ifdef OPALDIR
-  include $(OPALDIR)/plugins/$(PLUGIN_CONFIG_MAK)
-else
-  include $(shell pkg-config opal --variable=makedir)/$(PLUGIN_CONFIG_MAK)
+ifeq (,$(OPAL_PLATFORM_DIR))
+  $(error Plugins can only be built from top level Makefile)
 endif
+
+include $(OPAL_PLATFORM_DIR)/plugins/plugin_config.mak
 
 
 ##############################################################################
@@ -47,11 +44,12 @@ ifneq (,$(BASENAME))
   PLUGIN_PATH = $(OBJDIR)/$(PLUGIN_NAME)
 endif
 
-CFLAGS += -fno-common -D__MACOSX__
-CXXFLAGS += -fno-common -D__MACOSX__
+CPPFLAGS := -I$(OPAL_PLATFORM_DIR)/plugins $(CPPFLAGS)
+CFLAGS   += -fno-common
+CXXFLAGS += -fno-common
 
 ifeq ($(DEBUG_BUILD),yes)
-  CFLAGS += -g
+  CFLAGS   += -g
   CXXFLAGS += -g
 endif
 
