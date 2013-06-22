@@ -11,6 +11,10 @@
 		A3E44BB2174F302F005DF2B6 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3E44BB1174F302F005DF2B6 /* CoreAudio.framework */; };
 		A3E44BB4174F303A005DF2B6 /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3E44BB3174F303A005DF2B6 /* SystemConfiguration.framework */; };
 		A3E44BB6174F306D005DF2B6 /* libresolv.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = A3E44BB5174F306D005DF2B6 /* libresolv.dylib */; };
+		A3E4BFD71775AF52004030CC /* libopal_d_s.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A3E4BFD61775AF52004030CC /* libopal_d_s.a */; };
+		A3E4BFDA1775B1B3004030CC /* libopal_s.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A3E4BFD91775B1B3004030CC /* libopal_s.a */; };
+		A3E4BFE51775C33E004030CC /* libpt_d_s.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A3E4BFE31775C33E004030CC /* libpt_d_s.a */; };
+		A3E4BFE61775C33E004030CC /* libpt_s.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A3E4BFE41775C33E004030CC /* libpt_s.a */; };
 		A3F5BCC7170D448600FB97F9 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3F5BCC6170D448600FB97F9 /* UIKit.framework */; };
 		A3F5BCC9170D448600FB97F9 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3F5BCC8170D448600FB97F9 /* Foundation.framework */; };
 		A3F5BCCB170D448600FB97F9 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A3F5BCCA170D448600FB97F9 /* CoreGraphics.framework */; };
@@ -41,6 +45,10 @@
 		A3E44BB1174F302F005DF2B6 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		A3E44BB3174F303A005DF2B6 /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 		A3E44BB5174F306D005DF2B6 /* libresolv.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libresolv.dylib; path = usr/lib/libresolv.dylib; sourceTree = SDKROOT; };
+		A3E4BFD61775AF52004030CC /* libopal_d_s.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libopal_d_s.a; path = ../../lib_iPhoneOS_armv7/libopal_d_s.a; sourceTree = "<group>"; };
+		A3E4BFD91775B1B3004030CC /* libopal_s.a */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.objfile"; name = libopal_s.a; path = ../../lib_iPhoneOS_armv7/libopal_s.a; sourceTree = "<group>"; };
+		A3E4BFE31775C33E004030CC /* libpt_d_s.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpt_d_s.a; path = ../../../ptlib/lib_iPhoneOS_armv7/libpt_d_s.a; sourceTree = "<group>"; };
+		A3E4BFE41775C33E004030CC /* libpt_s.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libpt_s.a; path = ../../../ptlib/lib_iPhoneOS_armv7/libpt_s.a; sourceTree = "<group>"; };
 		A3F5BCC3170D448600FB97F9 /* iOPAL.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iOPAL.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A3F5BCC6170D448600FB97F9 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		A3F5BCC8170D448600FB97F9 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -71,6 +79,10 @@
 				A3F5BCC7170D448600FB97F9 /* UIKit.framework in Frameworks */,
 				A3F5BCC9170D448600FB97F9 /* Foundation.framework in Frameworks */,
 				A3F5BCCB170D448600FB97F9 /* CoreGraphics.framework in Frameworks */,
+				A3E4BFD71775AF52004030CC /* libopal_d_s.a in Frameworks */,
+				A3E4BFDA1775B1B3004030CC /* libopal_s.a in Frameworks */,
+				A3E4BFE51775C33E004030CC /* libpt_d_s.a in Frameworks */,
+				A3E4BFE61775C33E004030CC /* libpt_s.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -88,7 +100,6 @@
 			isa = PBXGroup;
 			children = (
 				A3B75B78177312E100D7B34E /* opal.xcodeproj */,
-				A3E44BB5174F306D005DF2B6 /* libresolv.dylib */,
 				A3E44BB3174F303A005DF2B6 /* SystemConfiguration.framework */,
 				A3E44BB1174F302F005DF2B6 /* CoreAudio.framework */,
 				A3E44BAD174F2FF1005DF2B6 /* AudioToolbox.framework */,
@@ -110,6 +121,11 @@
 		A3F5BCC5170D448600FB97F9 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				A3E4BFE31775C33E004030CC /* libpt_d_s.a */,
+				A3E4BFE41775C33E004030CC /* libpt_s.a */,
+				A3E44BB5174F306D005DF2B6 /* libresolv.dylib */,
+				A3E4BFD91775B1B3004030CC /* libopal_s.a */,
+				A3E4BFD61775AF52004030CC /* libopal_d_s.a */,
 				A3F5BCC6170D448600FB97F9 /* UIKit.framework */,
 				A3F5BCC8170D448600FB97F9 /* Foundation.framework */,
 				A3F5BCCA170D448600FB97F9 /* CoreGraphics.framework */,
@@ -320,7 +336,10 @@
 				GCC_PREFIX_HEADER = "src/iOPAL-Prefix.pch";
 				HEADER_SEARCH_PATHS = ../../include;
 				INFOPLIST_FILE = "src/iOPAL-Info.plist";
-				LIBRARY_SEARCH_PATHS = "\"$(SRCROOT)/../../lib_iPhoneSimulator_x86\"";
+				LIBRARY_SEARCH_PATHS = (
+					"\"$(SRCROOT)/../../lib_iPhoneSimulator_x86\"",
+					"\"$(SRCROOT)/../../../ptlib/lib_iPhoneSimulator_x86\"",
+				);
 				"LIBRARY_SEARCH_PATHS[sdk=iphoneos*][arch=armv7]" = (
 					"\"$(SRCROOT)/../../lib_iPhoneOS_armv7\"",
 					"\"$(SRCROOT)/../../../ptlib/lib_iPhoneOS_armv7\"",
@@ -343,7 +362,10 @@
 				GCC_PREFIX_HEADER = "src/iOPAL-Prefix.pch";
 				HEADER_SEARCH_PATHS = ../../include;
 				INFOPLIST_FILE = "src/iOPAL-Info.plist";
-				LIBRARY_SEARCH_PATHS = "\"$(SRCROOT)/../../lib_iPhoneSimulator_x86\"";
+				LIBRARY_SEARCH_PATHS = (
+					"\"$(SRCROOT)/../../lib_iPhoneSimulator_x86\"",
+					"\"$(SRCROOT)/../../../ptlib/lib_iPhoneSimulator_x86\"",
+				);
 				"LIBRARY_SEARCH_PATHS[sdk=iphoneos*][arch=armv7s]" = (
 					"\"$(SRCROOT)/../../lib_iPhoneOS_armv7\"",
 					"\"$(SRCROOT)/../../../ptlib/lib_iPhoneOS_armv7\"",
