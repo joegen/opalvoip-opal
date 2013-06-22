@@ -24,7 +24,18 @@
 		A3F5BCE3170D448700FB97F9 /* iOpalViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A3F5BCE2170D448700FB97F9 /* iOpalViewController.m */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		A32754401774776B00936064 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A3B75B78177312E100D7B34E /* opal.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = A3275437177476FA00936064;
+			remoteInfo = "OPAL iOS";
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		A3B75B78177312E100D7B34E /* opal.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = opal.xcodeproj; path = ../../opal.xcodeproj; sourceTree = "<group>"; };
 		A3E44BAD174F2FF1005DF2B6 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		A3E44BAE174F2FF1005DF2B6 /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
 		A3E44BB1174F302F005DF2B6 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
@@ -66,9 +77,17 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A3B75B79177312E100D7B34E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		A3F5BCBA170D448600FB97F9 = {
 			isa = PBXGroup;
 			children = (
+				A3B75B78177312E100D7B34E /* opal.xcodeproj */,
 				A3E44BB5174F306D005DF2B6 /* libresolv.dylib */,
 				A3E44BB3174F303A005DF2B6 /* SystemConfiguration.framework */,
 				A3E44BB1174F302F005DF2B6 /* CoreAudio.framework */,
@@ -139,6 +158,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				A32754411774776B00936064 /* PBXTargetDependency */,
 			);
 			name = iOPAL;
 			productName = iOPAL;
@@ -165,6 +185,12 @@
 			mainGroup = A3F5BCBA170D448600FB97F9;
 			productRefGroup = A3F5BCC4170D448600FB97F9 /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = A3B75B79177312E100D7B34E /* Products */;
+					ProjectRef = A3B75B78177312E100D7B34E /* opal.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				A3F5BCC2170D448600FB97F9 /* iOPAL */,
@@ -199,6 +225,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A32754411774776B00936064 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = "OPAL iOS";
+			targetProxy = A32754401774776B00936064 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		A3F5BCCF170D448600FB97F9 /* InfoPlist.strings */ = {
