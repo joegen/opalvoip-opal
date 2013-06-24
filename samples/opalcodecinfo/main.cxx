@@ -136,7 +136,8 @@ PString DisplayLicenseInfo(const PluginCodec_information * info)
 
 void DisplayCodecDefn(const PluginCodec_Definition & defn)
 {
-  PBoolean isVideo = false;
+  bool notKnown = true;
+  bool isVideo = false;
 
   cout << "  Version:             " << defn.version << endl
        << DisplayLicenseInfo(defn.info)
@@ -152,43 +153,52 @@ void DisplayCodecDefn(const PluginCodec_Definition & defn)
     case PluginCodec_MediaTypeAudioStreamed:
       cout << "Streamed audio (" << ((defn.flags & PluginCodec_BitsPerSampleMask) >> PluginCodec_BitsPerSamplePos) << " bits per sample)";
       break;
+    case PluginCodec_MediaTypeKnown :
+      cout << "Known media format";
+      notKnown = false;
+      break;
     default:
       cout << "unknown type " << (defn.flags & PluginCodec_MediaTypeMask) << endl;
       break;
   }
-  cout << ", " << ((defn.flags & PluginCodec_InputTypeRTP) ? "RTP input" : "raw input");
-  cout << ", " << ((defn.flags & PluginCodec_OutputTypeRTP) ? "RTP output" : "raw output");
-  cout << ", " << ((defn.flags & PluginCodec_RTPTypeExplicit) ? "explicit" : "dynamic") << " RTP payload";
+
+  if (notKnown) {
+    cout << ", " << ((defn.flags & PluginCodec_InputTypeRTP) ? "RTP input" : "raw input");
+    cout << ", " << ((defn.flags & PluginCodec_OutputTypeRTP) ? "RTP output" : "raw output");
+    cout << ", " << ((defn.flags & PluginCodec_RTPTypeExplicit) ? "explicit" : "dynamic") << " RTP payload";
+  }
   cout << endl;
 
   cout << "  Description:         " << defn.descr << endl
        << "  Source format:       " << defn.sourceFormat << endl
        << "  Dest format:         " << defn.destFormat << endl
-       << "  Userdata:            " << (void *)defn.userData << endl
-       << "  Sample rate:         " << defn.sampleRate << endl
-       << "  Bits/sec:            " << defn.bitsPerSec << endl
-       << "  Frame time (us):     " << defn.usPerFrame << endl;
-  if (!isVideo) {
-    cout << "  Samples/frame:       " << defn.parm.audio.samplesPerFrame << endl
-         << "  Bytes/frame:         " << defn.parm.audio.bytesPerFrame << endl
-         << "  Frames/packet:       " << defn.parm.audio.recommendedFramesPerPacket << endl
-         << "  Frames/packet (max): " << defn.parm.audio.maxFramesPerPacket << endl;
-  }
-  else {
-    cout << "  Frame width (max):   " << defn.parm.video.maxFrameWidth << endl
-         << "  Frame height (max):  " << defn.parm.video.maxFrameHeight << endl
-         << "  Frame rate:          " << defn.parm.video.recommendedFrameRate << endl
-         << "  Frame rate (max):    " << defn.parm.video.maxFrameRate << endl;
-  }
-  cout << "  RTP payload:         ";
+       << "  Userdata:            " << (void *)defn.userData << endl;
+  if (notKnown) {
+    cout << "  Sample rate:         " << defn.sampleRate << endl
+         << "  Bits/sec:            " << defn.bitsPerSec << endl
+         << "  Frame time (us):     " << defn.usPerFrame << endl;
+    if (!isVideo) {
+      cout << "  Samples/frame:       " << defn.parm.audio.samplesPerFrame << endl
+           << "  Bytes/frame:         " << defn.parm.audio.bytesPerFrame << endl
+           << "  Frames/packet:       " << defn.parm.audio.recommendedFramesPerPacket << endl
+           << "  Frames/packet (max): " << defn.parm.audio.maxFramesPerPacket << endl;
+    }
+    else {
+      cout << "  Frame width (max):   " << defn.parm.video.maxFrameWidth << endl
+           << "  Frame height (max):  " << defn.parm.video.maxFrameHeight << endl
+           << "  Frame rate:          " << defn.parm.video.recommendedFrameRate << endl
+           << "  Frame rate (max):    " << defn.parm.video.maxFrameRate << endl;
+    }
+    cout << "  RTP payload:         ";
 
-  if (defn.flags & PluginCodec_RTPTypeExplicit)
-    cout << (int)defn.rtpPayload << endl;
-  else
-    cout << "(not used)";
+    if (defn.flags & PluginCodec_RTPTypeExplicit)
+      cout << (int)defn.rtpPayload << endl;
+    else
+      cout << "(not used)";
 
-  cout << endl
-       << "  SDP format:          " << DisplayableString(defn.sdpFormat) << endl;
+    cout << endl
+         << "  SDP format:          " << DisplayableString(defn.sdpFormat) << endl;
+  }
 
   cout << "  Create function:     " << (void *)defn.createCodec << endl
        << "  Destroy function:    " << (void *)defn.destroyCodec << endl

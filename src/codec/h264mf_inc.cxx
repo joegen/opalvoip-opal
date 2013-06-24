@@ -107,9 +107,9 @@ enum
 };
 
 
-static char const ProfileName[] = "Profile";
-static char const LevelName[] = "Level";
-static char const MaxNALUSizeName[] = "Max NALU Size";
+static char const ProfileName[] = PLUGINCODEC_OPTION_PROFILE;
+static char const LevelName[] = PLUGINCODEC_OPTION_LEVEL;
+static char const MaxNALUSizeName[] = PLUGINCODEC_OPTION_MAX_NALU_SIZE;
 
 static char const H241ProfilesName[] = "H.241 Profile Mask";
 static char const H241LevelName[] = "H.241 Level";
@@ -130,7 +130,7 @@ static char const MaxFS_FMTPName[] = "max-fs";
 static char const MaxBR_SDP_Name[] = "SIP/SDP Max BR";
 static char const MaxBR_FMTPName[] = "max-br";
 static char const MaxNALUSizeFMTPName[] = "max-rcmd-nalu-size";
-static const char PacketizationModeName[] = "Packetization Mode";
+static const char PacketizationModeName[] = PLUGINCODEC_OPTION_H264_PACKET_MODE;
 static const char PacketizationFMTPName[] = "packetization-mode";
 
 

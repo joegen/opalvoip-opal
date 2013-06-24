@@ -1130,30 +1130,56 @@ void OpalMediaFormat::GetAllRegisteredMediaFormats(OpalMediaFormatList & copy)
 }
 
 
-void OpalMediaFormat::RegisterKnownMediaFormats()
+bool OpalMediaFormat::RegisterKnownMediaFormats(const PString & name)
 {
-  GetOpalG722();
-  GetOpalG7221_24K();
-  GetOpalG7221_32K();
-  GetOpalG7222();
-  GetOpalG726_40K();
-  GetOpalG726_32K();
-  GetOpalG726_24K();
-  GetOpalG726_16K();
-  GetOpalG728();
-  GetOpalG729();
-  GetOpalG7231_6k3();
-  GetOpalGSM0610();
-  GetOpalGSMAMR();
-  GetOpaliLBC();
+  typedef OpalMediaFormat & (*MediaFormatFunction)();
+  static struct {
+    const char * m_name;
+    MediaFormatFunction m_function;
+    #define KNOWN(codec) { OPAL_##codec, (MediaFormatFunction)GetOpal##codec }
+  } const known[] = {
+    KNOWN(G722),
+    KNOWN(G7221_24K),
+    KNOWN(G7221_32K),
+    KNOWN(G7222),
+    KNOWN(G726_40K),
+    KNOWN(G726_32K),
+    KNOWN(G726_24K),
+    KNOWN(G726_16K),
+    KNOWN(G728),
+    KNOWN(G729),
+    KNOWN(G729A),
+    KNOWN(G729B),
+    KNOWN(G729AB),
+    KNOWN(G7231_6k3),
+    KNOWN(G7231_5k3),
+    KNOWN(G7231A_6k3),
+    KNOWN(G7231A_5k3),
+    KNOWN(G7231_Cisco_A),
+    KNOWN(G7231_Cisco_AR),
+    KNOWN(GSM0610),
+    KNOWN(GSMAMR),
+    KNOWN(iLBC),
 #if OPAL_VIDEO
-  GetOpalH261();
-  GetOpalH263();
-  GetOpalH263plus();
-  GetOpalH264_MODE0();
-  GetOpalH264_MODE1();
-  GetOpalMPEG4();
+    KNOWN(H261),
+    KNOWN(H263),
+    KNOWN(H263plus),
+    KNOWN(H264_MODE0),
+    KNOWN(H264_MODE1),
+    KNOWN(MPEG4),
 #endif
+  };
+
+  bool atLeastOne = false;
+
+  for (PINDEX i = 0; i < PARRAYSIZE(known); ++i) {
+    if (name.IsEmpty() || (name *= known[i].m_name)) {
+      (known[i].m_function)();
+      atLeastOne = true;
+    }
+  }
+
+  return atLeastOne;
 }
 
 

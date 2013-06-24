@@ -32,6 +32,7 @@
 #include <ptlib.h>
 #include <opal_config.h>
 
+#include <codec/opalplugin.h>
 #include <opal/mediafmt.h>
 #include <h323/h323caps.h>
 #include <asn/h245.h>
@@ -104,7 +105,7 @@ class OpalG729Format : public OpalAudioFormat
       // As per RFC3555
       bool isAnnexB = strchr(variant, 'B') != NULL;
       static const char * const yesno[] = { "no", "yes" };
-      OpalMediaOption * option = new OpalMediaOptionEnum("VAD", true, yesno, 2, OpalMediaOption::AndMerge, isAnnexB);
+      OpalMediaOption * option = new OpalMediaOptionEnum(PLUGINCODEC_OPTION_VOICE_ACTIVITY_DETECT, true, yesno, 2, OpalMediaOption::AndMerge, isAnnexB);
 #if OPAL_SIP
       option->SetFMTPName("annexb");
       option->SetFMTPDefault("yes");

@@ -1220,7 +1220,9 @@ class OpalMediaFormat : public PContainer
        knows how to interpret, but not transcode, may be registered with this
        function.
       */
-    static void RegisterKnownMediaFormats();
+    static bool RegisterKnownMediaFormats(
+      const PString & name = PString::Empty() ///< Name for known media format name to register
+    );
 
     /**Set the options on the master format list entry.
        The media format must already be registered. Returns false if not.
@@ -1505,6 +1507,8 @@ extern const OpalAudioFormat & GetOpalG7231_6k3();
 extern const OpalAudioFormat & GetOpalG7231_5k3();
 extern const OpalAudioFormat & GetOpalG7231A_6k3();
 extern const OpalAudioFormat & GetOpalG7231A_5k3();
+extern const OpalAudioFormat & GetOpalG7231_Cisco_A();
+extern const OpalAudioFormat & GetOpalG7231_Cisco_AR();
 extern const OpalAudioFormat & GetOpalGSM0610();
 extern const OpalAudioFormat & GetOpalGSMAMR();
 extern const OpalAudioFormat & GetOpaliLBC();
@@ -1563,6 +1567,8 @@ extern const OpalMediaFormat & GetOpalT38();
 #define OpalG7231_5k3      GetOpalG7231_5k3()
 #define OpalG7231A_6k3     GetOpalG7231A_6k3()
 #define OpalG7231A_5k3     GetOpalG7231A_5k3()
+#define OpalG7231_Cisco_A  GetOpalG7231_Cisco_A()
+#define OpalG7231_Cisco_AR GetOpalG7231_Cisco_AR()
 #define OpalGSM0610        GetOpalGSM0610()
 #define OpalGSMAMR         GetOpalGSMAMR()
 #define OpaliLBC           GetOpaliLBC()
