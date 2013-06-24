@@ -129,7 +129,7 @@ enum
 static struct PluginCodec_Option const Profile =
 {
   PluginCodec_EnumOption,             // Option type
-  "Profile",                          // User visible name
+  PLUGINCODEC_OPTION_PROFILE,         // User visible name
   false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   DefaultProfileStr,                  // Initial value
@@ -145,7 +145,7 @@ static struct PluginCodec_Option const Profile =
 static struct PluginCodec_Option const Level =
 {
   PluginCodec_EnumOption,             // Option type
-  "Level",                            // User visible name
+  PLUGINCODEC_OPTION_LEVEL,           // User visible name
   false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   DefaultLevelStr,                    // Initial value
@@ -285,7 +285,7 @@ static struct PluginCodec_Option const MediaPacketizations =
   "," OpalPluginCodec_Identifer_H264_Truncated
 };
 
-static const char NamePacketizationMode[] = "Packetization Mode";
+static const char NamePacketizationMode[] = PLUGINCODEC_OPTION_H264_PACKET_MODE;
 static struct PluginCodec_Option const PacketizationMode_0 =
 {
   PluginCodec_IntegerOption,          // Option type
@@ -569,8 +569,8 @@ class MyPluginMediaFormat : public PluginCodec_MediaFormat
       }
     }
 
-    Change(ProfileInfo[profileIndex].m_Name, original, changed, "Profile"); 
-    Change(LevelInfo[levelIndex].m_Name, original, changed, "Level");
+    Change(ProfileInfo[profileIndex].m_Name, original, changed, PLUGINCODEC_OPTION_PROFILE);
+    Change(LevelInfo[levelIndex].m_Name, original, changed, PLUGINCODEC_OPTION_LEVEL);
 
     unsigned maxFrameSizeInMB = std::max(LevelInfo[levelIndex].m_MaxFrameSize, String2Unsigned(original[NameMaxFS]));
     ClampOptions(LevelInfo[levelIndex],
@@ -586,7 +586,7 @@ class MyPluginMediaFormat : public PluginCodec_MediaFormat
   virtual bool ToCustomised(OptionMap & original, OptionMap & changed)
   {
     // Determine the profile
-    std::string str = original["Profile"];
+    std::string str = original[PLUGINCODEC_OPTION_PROFILE];
     if (str.empty())
       str = H264_PROFILE_STR_BASELINE;
 
@@ -599,7 +599,7 @@ class MyPluginMediaFormat : public PluginCodec_MediaFormat
     Change(ProfileInfo[profileIndex].m_H241, original, changed, NameH241Profile);
 
     // get the current level 
-    str = original["Level"];
+    str = original[PLUGINCODEC_OPTION_LEVEL];
     if (str.empty())
       str = H264_LEVEL_STR_1_3;
 

@@ -44,7 +44,7 @@ static const char G7222EncodingName[] = "AMR-WB";
 #define G7222_MAX_BIT_RATE         (G7222_MAX_BYTES_PER_FRAME*400)
 
 static const char G7222InitialModeName[]               = "Initial Mode";
-static const char G7222AlignmentOptionName[]           = "Octet Aligned";
+static const char G7222AlignmentOptionName[]           = PLUGINCODEC_OPTION_OCTET_ALIGNED;
 static const char G7222ModeSetOptionName[]             = "Mode Set";
 static const char G7222ModeChangePeriodOptionName[]    = "Mode Change Period";
 static const char G7222ModeChangeNeighbourOptionName[] = "Mode Change Neighbour";

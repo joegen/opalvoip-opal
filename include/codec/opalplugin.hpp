@@ -409,15 +409,16 @@ class PluginCodec_MediaFormat : public PluginCodec_Utilities
         const char * payloadName,
         const char * description,
         unsigned     maxBandwidth,
-        OptionsTable options)
-      : m_formatName(formatName)
+        OptionsTable options,
+        unsigned flags = PluginCodec_RTPTypeDynamic
+    ) : m_formatName(formatName)
       , m_payloadName(payloadName)
       , m_payloadType(0)
       , m_description(description)
       , m_maxBandwidth(maxBandwidth)
       , m_h323CapabilityType(PluginCodec_H323Codec_NoH323)
       , m_h323CapabilityData(NULL)
-      , m_flags(PluginCodec_RTPTypeDynamic)
+      , m_flags(flags)
       , m_options(options)
     {
     }
@@ -437,6 +438,10 @@ class PluginCodec_MediaFormat : public PluginCodec_Utilities
     __inline const void *  GetH323CapabilityData() const { return this->m_h323CapabilityData; }
     __inline unsigned      GetFlags() const { return this->m_flags; }
     __inline const void *  GetOptionsTable() const { return this->m_options; }
+
+    __inline void SetFlags(unsigned b, unsigned m = 0) { this->m_flags = (this->m_flags&~m) | b; }
+    __inline void SetPayloadType(unsigned p) { this->m_payloadType = p; this->m_flags |= PluginCodec_RTPTypeExplicit; }
+    __inline void SetH323Capability(unsigned type, const void * data = NULL) { this->m_h323CapabilityType = type; this->m_h323CapabilityData = data; }
 
 
     /// Determine if codec is valid for the specified protocol
@@ -524,8 +529,8 @@ class PluginCodec_AudioFormat : public PluginCodec_MediaFormat<NAME>
       const char * description,
       unsigned     samplesPerFrame,
       unsigned     bytesPerFrame,
-      unsigned     sampleRate,
-      OptionsTable options
+      unsigned     sampleRate = 8000,
+      OptionsTable options = NULL
     ) : Parent(formatName, payloadName, description, bytesPerFrame*8 * samplesPerFrame*1000000/sampleRate, options)
       , m_samplesPerFrame(samplesPerFrame)
       , m_bytesPerFrame(bytesPerFrame)
@@ -546,6 +551,12 @@ class PluginCodec_AudioFormat : public PluginCodec_MediaFormat<NAME>
     __inline unsigned GetFrameTime() const { return this->m_samplesPerFrame*1000000/this->m_sampleRate; }
     __inline unsigned GetRecommendedFramesPerPacket() const { return this->m_recommendedFramesPerPacket; }
     __inline unsigned GetMaxFramesPerPacket() const { return this->m_maxFramesPerPacket; }
+
+    __inline PluginCodec_AudioFormat & SetFlags(unsigned b, unsigned m = 0) { this->Parent::SetFlags(b,m); return *this; }
+    __inline PluginCodec_AudioFormat & SetPayloadType(unsigned p) { this->Parent::SetPayloadType(p); return *this; }
+    __inline PluginCodec_AudioFormat & SetH323Capability(unsigned type, const void * data = NULL) { this->Parent::SetH323Capability(type, data); return *this; }
+    __inline PluginCodec_AudioFormat & SetMaxFramesPerPacket(unsigned p) { this->m_maxFramesPerPacket = p; return *this; }
+    __inline PluginCodec_AudioFormat & SetChannels(unsigned n)    { this->m_flags |= PluginCodec_SetChannels(n); return *this; }
 };
 
 
@@ -565,7 +576,7 @@ class PluginCodec_VideoFormat : public PluginCodec_MediaFormat<NAME>
       const char * payloadName,
       const char * description,
       unsigned     maxBandwidth,
-      OptionsTable options
+      OptionsTable options = NULL
     ) : Parent(formatName, payloadName, description, maxBandwidth, options)
       , m_maxWidth(1920)
       , m_maxHeight(1200)
@@ -578,6 +589,11 @@ class PluginCodec_VideoFormat : public PluginCodec_MediaFormat<NAME>
 
     __inline unsigned GetMaxWidth() const { return this->m_maxWidth; }
     __inline unsigned GetMaxHeight() const { return this->m_maxHeight; }
+
+    __inline PluginCodec_VideoFormat & SetFlags(unsigned b, unsigned m = 0) { this->Parent::SetFlags(b,m); return *this; }
+    __inline PluginCodec_VideoFormat & SetPayloadType(unsigned p) { this->Parent::SetPayloadType(p); return *this; }
+    __inline PluginCodec_VideoFormat & SetH323Capability(unsigned type, const void * data = NULL) { this->Parent::SetH323Capability(type, data); return *this; }
+    __inline PluginCodec_VideoFormat & SetMaxResolution(unsigned w, unsigned h) { this->m_maxWidth = w; this->m_maxHeight = h; return *this; }
 };
 
 
@@ -590,7 +606,7 @@ class PluginCodec : public PluginCodec_Utilities
     PluginCodec(const PluginCodec_Definition * defn)
       : m_definition(defn)
       , m_optionsSame(false)
-      , m_maxBitRate(defn->bitsPerSec)
+      , m_maxBitRate(defn->bitsPerSec > 0 ? defn->bitsPerSec : 4*1024*1024)
       , m_frameTime((defn->sampleRate/1000*defn->usPerFrame)/1000) // Odd way of calculation to avoid 32 bit integer overflow
     {
       PTRACE(3, "Plugin", "Codec created: \"" << defn->descr
@@ -693,11 +709,19 @@ class PluginCodec : public PluginCodec_Utilities
     virtual bool SetOption(const char * optionName, const char * optionValue)
     {
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
-        return this->SetOptionUnsigned(this->m_maxBitRate, optionValue, 1, this->m_definition->bitsPerSec);
+        return this->SetOptionUnsigned(this->m_maxBitRate, optionValue, 1);
+
+      if (strcasecmp(optionName, PLUGINCODEC_OPTION_MAX_BIT_RATE) == 0) {
+        unsigned bitRate = this->m_maxBitRate;
+        if (!this->SetOptionUnsigned(bitRate, optionValue, 1))
+          return false;
+        if (m_maxBitRate > bitRate)
+          m_maxBitRate = bitRate;
+        return true;
+      }
 
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_FRAME_TIME) == 0)
-        return this->SetOptionUnsigned(this->m_frameTime, optionValue,
-                                       this->m_definition->sampleRate/1000, this->m_definition->sampleRate); // 1ms to 1 second
+        return this->SetOptionUnsigned(this->m_frameTime, optionValue, 1);
 
       return true;
     }
@@ -962,17 +986,25 @@ class PluginVideoCodec : public PluginCodec<NAME>
 {
     typedef PluginCodec<NAME> BaseClass;
 
+  protected:
+    unsigned m_maxWidth;
+    unsigned m_maxHeight;
+    unsigned m_width;
+    unsigned m_height;
+
   public:
     enum {
       DefaultWidth = 352, // CIF size
-      DefaultHeight = 288,
-      MaxWidth = DefaultWidth*8,
-      MaxHeight = DefaultHeight*8
+      DefaultHeight = 288
     };
 
 
     PluginVideoCodec(const PluginCodec_Definition * defn)
       : BaseClass(defn)
+      , m_maxWidth(DefaultWidth*8)
+      , m_maxHeight(DefaultHeight*8)
+      , m_width(DefaultWidth)
+      , m_height(DefaultHeight)
     {
     }
 
@@ -981,6 +1013,12 @@ class PluginVideoCodec : public PluginCodec<NAME>
     {
       return width*height*3/2; // YUV420P
     }
+
+
+    __inline unsigned GetMaxWidth() const { return m_maxWidth; }
+    __inline unsigned GetMaxHeight() const { return m_maxHeight; }
+    __inline unsigned GetWidth() const { return m_width; }
+    __inline unsigned GetHeight() const { return m_height; }
 };
 
 
@@ -992,8 +1030,6 @@ class PluginVideoEncoder : public PluginVideoCodec<NAME>
     typedef PluginVideoCodec<NAME> BaseClass;
 
   protected:
-    unsigned m_width;
-    unsigned m_height;
     unsigned m_maxRTPSize;
     unsigned m_tsto;
     unsigned m_keyFramePeriod;
@@ -1001,8 +1037,6 @@ class PluginVideoEncoder : public PluginVideoCodec<NAME>
   public:
     PluginVideoEncoder(const PluginCodec_Definition * defn)
       : BaseClass(defn)
-      , m_width(BaseClass::DefaultWidth)
-      , m_height(BaseClass::DefaultHeight)
       , m_maxRTPSize(PluginCodec_RTP_MaxPacketSize)
       , m_tsto(31)
       , m_keyFramePeriod(0) // Indicates auto/default
@@ -1013,10 +1047,10 @@ class PluginVideoEncoder : public PluginVideoCodec<NAME>
     virtual bool SetOption(const char * optionName, const char * optionValue)
     {
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
-        return this->SetOptionUnsigned(this->m_width, optionValue, 16, BaseClass::MaxWidth);
+        return this->SetOptionUnsigned(this->m_width, optionValue, 16, this->m_maxWidth);
 
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
-        return this->SetOptionUnsigned(this->m_height, optionValue, 16, BaseClass::MaxHeight);
+        return this->SetOptionUnsigned(this->m_height, optionValue, 16, this->m_maxHeight);
 
       if (strcasecmp(optionName, PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE) == 0)
         return this->SetOptionUnsigned(this->m_maxRTPSize, optionValue, 256, 8192);
@@ -1068,6 +1102,19 @@ class PluginVideoDecoder : public PluginVideoCodec<NAME>
       : BaseClass(defn)
       , m_outputSize(BaseClass::DefaultWidth*BaseClass::DefaultHeight*3/2 + sizeof(PluginCodec_Video_FrameHeader) + PluginCodec_RTP_MinHeaderSize)
     {
+    }
+
+
+    virtual bool SetOption(const char * optionName, const char * optionValue)
+    {
+      if (strcasecmp(optionName, PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH) == 0)
+        return this->SetOptionUnsigned(this->m_width, optionValue, 16, this->m_maxWidth);
+
+      if (strcasecmp(optionName, PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT) == 0)
+        return this->SetOptionUnsigned(this->m_height, optionValue, 16, this->m_maxHeight);
+
+      // Base class sets bit rate and frame time
+      return BaseClass::SetOption(optionName, optionValue);
     }
 
 
@@ -1143,6 +1190,37 @@ class PluginVideoDecoder : public PluginVideoCodec<NAME>
 
 
 /////////////////////////////////////////////////////////////////////////////
+
+/// Declare a "known by OPAL" codec using C++ support classes
+#define PLUGINCODEC_KNOWN_CODEC_CXX(MediaType,       /**< Media type (AUDIO or VIDEO) */ \
+                                    Name,            /**< Media format name */ \
+                                    Description,     /**< Description of codec */ \
+                                    EncoderClass,    /**< Encoder class name */ \
+                                    DecoderClass     /**< Decoder class name */ \
+                                    ) \
+             PLUGINCODEC_CODEC_PAIR(Name, \
+                                    NULL, \
+                                    Description, \
+                                    0, \
+                                    0, \
+                                    0, \
+                                    0, \
+                                    0, \
+                                    0, \
+                                    0, \
+                                    0, \
+                                    0, \
+                                    0, \
+                                    EncoderClass::Create_s<EncoderClass>, \
+                                    EncoderClass::Destroy_s, \
+                                    EncoderClass::Transcode_s, \
+                                    DecoderClass::Create_s<DecoderClass>, \
+                                    DecoderClass::Destroy_s, \
+                                    DecoderClass::Transcode_s, \
+                                    DecoderClass::GetControls(), /* Note doesn't matter if encoder or decoder */ \
+                                    PluginCodec_MediaTypeKnown, \
+                                    PLUGINCODEC_RAW_##MediaType, \
+                                    NULL)
 
 /// Declare an audio codec using C++ support classes
 #define PLUGINCODEC_AUDIO_CODEC_CXX(MediaFormat,     /**< PluginCodec_VideoFormat instance */ \

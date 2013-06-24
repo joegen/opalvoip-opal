@@ -92,7 +92,7 @@ class H323_GSM0610Capability : public H323AudioCapability
 
 const OpalAudioFormat & GetOpalGSM0610()
 {
-  static const OpalAudioFormat GSM0610(OPAL_GSM0610, RTP_DataFrame::GSM, "GSM",  33, 160, 7, 4, 7, 8000 );
+  static const OpalAudioFormat GSM0610(OPAL_GSM0610, RTP_DataFrame::GSM, "GSM",  33, 160, 7, 4, 7, 8000);
 
 #if OPAL_H323
   static H323CapabilityFactory::Worker<H323_GSM0610Capability> GSM0610_Factory(OPAL_GSM0610, true);

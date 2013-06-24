@@ -113,45 +113,45 @@ static struct GstInitInfo {
   const char * m_packetiser;
   const char * m_encoder;
 } const DefaultMediaFormatToGStreamer[] = {
-  { OpalG711_ULAW_64K, "rtppcmudepay",  "mulawdec",    "rtppcmupay",         "mulawenc"   },
-  { OpalG711_ALAW_64K, "rtppcmadepay",  "alawdec",     "rtppcmapay",         "alawenc"    },
-  { OpalGSM0610,       "rtpgsmdepay",   "gsmdec",      "rtpgsmpay",          "gsmenc"     },
-  { OpalGSMAMR,        "rtpamrdepay",   "amrnbdec",    "rtpamrpay",          "amrnbenc"   },
-  { OpalG7222,         "rtpamrdepay",   "amrwbdec",    "rtpamrpay",          "amrwbenc"   },
-  { OpalG726_40K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726"
-                                                                             " bitrate=40000"
+  { OPAL_G711_ULAW_64K, "rtppcmudepay",  "mulawdec",    "rtppcmupay",         "mulawenc"   },
+  { OPAL_G711_ALAW_64K, "rtppcmadepay",  "alawdec",     "rtppcmapay",         "alawenc"    },
+  { OPAL_GSM0610,       "rtpgsmdepay",   "gsmdec",      "rtpgsmpay",          "gsmenc"     },
+  { OPAL_GSMAMR,        "rtpamrdepay",   "amrnbdec",    "rtpamrpay",          "amrnbenc"   },
+  { OPAL_G7222,         "rtpamrdepay",   "amrwbdec",    "rtpamrpay",          "amrwbenc"   },
+  { OPAL_G726_40K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726"
+                                                                              " bitrate=40000"
   },
-  { OpalG726_32K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726"
-                                                                             " bitrate=32000"
+  { OPAL_G726_32K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726"
+                                                                              " bitrate=32000"
   },
-  { OpalG726_24K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726"
-                                                                             " bitrate=24000"
+  { OPAL_G726_24K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726"
+                                                                              " bitrate=24000"
   },
 #if 0
-  { "CELT-32K",        "rtpceltdepay",  "celtdec",     "rtpceltpay",         "celtenc"    },
-  { "Speex",           "rtpspeexdepay", "speexdec",    "rtpspeexpay",        "speexenc"   },
+  { "CELT-32K",         "rtpceltdepay",  "celtdec",     "rtpceltpay",         "celtenc"    },
+  { "Speex",            "rtpspeexdepay", "speexdec",    "rtpspeexpay",        "speexenc"   },
 #endif
 #if OPAL_VIDEO
-  { OpalH261,          "",              "ffdec_h261",  "",                   "ffenc_h261" },
-  { OpalH263,          "rtph263depay",  "ffdec_h263",  "rtph263pay",         "ffenc_h263"
-                                                                             " rtp-payload-size=1400"
-                                                                             " max-key-interval=125"
-                                                                             " me-method=5"
-                                                                             " max-bframes=0"
-                                                                             " gop-size=125"
-                                                                             " rc-buffer-size=65536000"
-                                                                             " rc-min-rate=0"
-                                                                             " rc-max-rate=1024000"
-                                                                             " rc-qsquish=0"
-                                                                             " rc-eq=1"
-                                                                             " max-qdiff=10"
-                                                                             " qcompress=0.5"
-                                                                             " i-quant-factor=-0.6"
-                                                                             " i-quant-offset=0.0"
-                                                                             " me-subpel-quality=8"
-                                                                             " qmin=2"
+  { OPAL_H261,          "",              "ffdec_h261",  "",                   "ffenc_h261" },
+  { OPAL_H263,          "rtph263depay",  "ffdec_h263",  "rtph263pay",         "ffenc_h263"
+                                                                              " rtp-payload-size=1400"
+                                                                              " max-key-interval=125"
+                                                                              " me-method=5"
+                                                                              " max-bframes=0"
+                                                                              " gop-size=125"
+                                                                              " rc-buffer-size=65536000"
+                                                                              " rc-min-rate=0"
+                                                                              " rc-max-rate=1024000"
+                                                                              " rc-qsquish=0"
+                                                                              " rc-eq=1"
+                                                                              " max-qdiff=10"
+                                                                              " qcompress=0.5"
+                                                                              " i-quant-factor=-0.6"
+                                                                              " i-quant-offset=0.0"
+                                                                              " me-subpel-quality=8"
+                                                                              " qmin=2"
   },
-  { OpalH263plus,      "rtph263pdepay", "ffdec_h263",  "rtph263ppay",        "ffenc_h263p"
+  { OPAL_H263plus,      "rtph263pdepay", "ffdec_h263",  "rtph263ppay",        "ffenc_h263p"
                                                                              " rtp-payload-size=200"
                                                                              " max-key-interval=125"
                                                                              " me-method=5"
@@ -169,17 +169,17 @@ static struct GstInitInfo {
                                                                              " me-subpel-quality=8"
                                                                              " qmin=2"
   },
-  { OpalH264_MODE0,    "rtph264depay",  "ffdec_h264",  "rtph264pay"
-                                                       " config-interval=5", "x264enc"
-                                                                             " byte-stream=true"
-                                                                             " bframes=0"
-                                                                             " b-adapt=0"
-                                                                             " bitrate=1024"
-                                                                             " tune=0x4"
-                                                                             " speed-preset=3"
-                                                                             " sliced-threads=false"
-                                                                             " profile=0"
-                                                                             " key-int-max=30"
+  { OPAL_H264_MODE0,    "rtph264depay",  "ffdec_h264",  "rtph264pay"
+                                                        " config-interval=5", "x264enc"
+                                                                              " byte-stream=true"
+                                                                              " bframes=0"
+                                                                              " b-adapt=0"
+                                                                              " bitrate=1024"
+                                                                              " tune=0x4"
+                                                                              " speed-preset=3"
+                                                                              " sliced-threads=false"
+                                                                              " profile=0"
+                                                                              " key-int-max=30"
   },
 #if 0
   { "theora",         "rtptheoradepay", "theoradec",   "rtptheorapay",       "theoraenc"
@@ -191,8 +191,8 @@ static struct GstInitInfo {
                                                                              " bitrate=2048"
   },
 #endif
-  { OpalMPEG4,        "rtpmp4vdepay",   "ffdec_mpeg4", "rtpmp4vpay"
-                                                       " send-config=true", "ffenc_mpeg4"
+  { OPAL_MPEG4,        "rtpmp4vdepay",   "ffdec_mpeg4", "rtpmp4vpay"
+                                                        " send-config=true", "ffenc_mpeg4"
                                                                              " quantizer=0.8"
                                                                              " quant-type=1"
   }

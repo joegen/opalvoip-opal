@@ -54,14 +54,14 @@ class OpalGSMAMRFormat : public OpalAudioFormatInternal
 {
   public:
     OpalGSMAMRFormat()
-      : OpalAudioFormatInternal(OPAL_GSMAMR, RTP_DataFrame::DynamicBase, "AMR",  33, 160, 1, 1, 1, 8000, 0)
+      : OpalAudioFormatInternal(OPAL_GSMAMR, RTP_DataFrame::DynamicBase, "AMR",  31, 160, 1, 1, 1, 8000, 0)
     {
       OpalMediaOption * option = new OpalMediaOptionInteger("Initial Mode", false, OpalMediaOption::MinMerge, 7);
       OPAL_SET_MEDIA_OPTION_FMTP(option, "mode", "0");
       OPAL_SET_MEDIA_OPTION_H245(option, H241_InitialMode);
       AddOption(option);
 
-      option = new OpalMediaOptionBoolean("VAD", false, OpalMediaOption::AndMerge, true);
+      option = new OpalMediaOptionBoolean(PLUGINCODEC_OPTION_VOICE_ACTIVITY_DETECT, false, OpalMediaOption::AndMerge, true);
       OPAL_SET_MEDIA_OPTION_H245(option, H241_VAD);
       AddOption(option);
 
