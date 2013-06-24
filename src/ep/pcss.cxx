@@ -388,7 +388,7 @@ bool OpalPCSSConnection::TransferConnection(const PString & remoteParty)
   // Now we be really sneaky and just change the sound devices in the OpalAudioMediaStream
   for (OpalMediaStreamPtr mediaStream = mediaStreams; mediaStream != NULL; ++mediaStream) {
     OpalRawMediaStream * rawStream = dynamic_cast<OpalRawMediaStream *>(&*mediaStream);
-    if (rawStream != NULL && ((samePlayer && mediaStream->IsSink()) || (sameRecorder && mediaStream->IsSource())))
+    if (rawStream != NULL && !(mediaStream->IsSource() ? sameRecorder : samePlayer))
       rawStream->SetChannel(CreateSoundChannel(rawStream->GetMediaFormat(), rawStream->IsSource()));
   }
   return true;
