@@ -32,6 +32,7 @@
 #include <ptlib.h>
 #include <opal_config.h>
 
+#include <codec/opalplugin.h>
 #include <opal/mediafmt.h>
 #include <h323/h323caps.h>
 #include <asn/h245.h>
@@ -67,7 +68,7 @@ class H323_G7231Capability : public H323AudioCapability
       pdu.SetTag(H245_AudioCapability::e_g7231);
       H245_AudioCapability_g7231 & g7231 = pdu;
       g7231.m_maxAl_sduAudioFrames = packetSize;
-      g7231.m_silenceSuppression = GetMediaFormat().GetOptionBoolean("VAD");
+      g7231.m_silenceSuppression = GetMediaFormat().GetOptionBoolean(PLUGINCODEC_OPTION_VOICE_ACTIVITY_DETECT);
       return true;
     }
 
@@ -78,12 +79,68 @@ class H323_G7231Capability : public H323AudioCapability
 
       const H245_AudioCapability_g7231 & g7231 = pdu;
       packetSize = g7231.m_maxAl_sduAudioFrames;
-      GetWritableMediaFormat().SetOptionBoolean("VAD", g7231.m_silenceSuppression);
+      GetWritableMediaFormat().SetOptionBoolean(PLUGINCODEC_OPTION_VOICE_ACTIVITY_DETECT, g7231.m_silenceSuppression);
       return true;
     }
 };
 
-#define CAPABILITY(type) static H323CapabilityFactory::Worker<H323_G7231Capability> type##_Factory(OPAL_##type, true)
+
+static const unsigned char CapabilityName_G7231ar[] = { 'G', '7', '2', '3', '1', 'a', 'r' };
+
+class H323_G7231_Cisco_A_Capability : public H323NonStandardAudioCapability
+{
+  public:
+    H323_G7231_Cisco_A_Capability()
+      : H323NonStandardAudioCapability(181,                                // T35 country code
+                                       0,                                  // T35 extension code
+                                       18,                                 // T35 manufacturer code
+                                       CapabilityName_G7231ar,             // data
+                                       sizeof(CapabilityName_G7231ar)-1)   // data length (less the 'r')
+    {
+    }
+
+    virtual PObject * Clone() const
+    {
+      return new H323_G7231_Cisco_A_Capability(*this);
+    }
+
+    virtual PString GetFormatName() const
+    {
+      return OpalG7231_6k3;
+    }
+};
+
+
+class H323_G7231_Cisco_AR_Capability : public H323NonStandardAudioCapability
+{
+  public:
+    H323_G7231_Cisco_AR_Capability()
+      : H323NonStandardAudioCapability(181,                                // T35 country code
+                                       0,                                  // T35 extension code
+                                       18,                                 // T35 manufacturer code
+                                       CapabilityName_G7231ar,             // data
+                                       sizeof(CapabilityName_G7231ar))     // data length
+    {
+    }
+
+    virtual PObject * Clone() const
+    {
+      return new H323_G7231_Cisco_AR_Capability(*this);
+    }
+
+    virtual PString GetFormatName() const
+    {
+      return OpalG7231_6k3;
+    }
+};
+
+
+typedef H323_G7231Capability H323_G7231_6k3_Capability;
+typedef H323_G7231Capability H323_G7231_5k3_Capability;
+typedef H323_G7231Capability H323_G7231A_6k3_Capability;
+typedef H323_G7231Capability H323_G7231A_5k3_Capability;
+
+#define CAPABILITY(type) static H323CapabilityFactory::Worker<H323_##type##_Capability> type##_Factory(OPAL_##type, true)
 
 #else
 #define CAPABILITY(t)
@@ -92,41 +149,46 @@ class H323_G7231Capability : public H323AudioCapability
 
 /////////////////////////////////////////////////////////////////////////////
 
-class OpalG723Format : public OpalAudioFormat
+class OpalG7231Format : public OpalAudioFormat
 {
   public:
-    OpalG723Format(const char * variant)
+    OpalG7231Format(const char * variant, unsigned rate, bool isAnnexA)
       : OpalAudioFormat(variant, RTP_DataFrame::G7231, "G723", 24, 240,  8,  3, 256,  8000)
     {
-      bool isAnnexA = strchr(variant, 'A') != NULL;
       static const char * const yesno[] = { "no", "yes" };
-      OpalMediaOption * option = new OpalMediaOptionEnum("VAD", true, yesno, 2, OpalMediaOption::AndMerge, isAnnexA);
+      OpalMediaOption * option = new OpalMediaOptionEnum(PLUGINCODEC_OPTION_VOICE_ACTIVITY_DETECT, true, yesno, 2, OpalMediaOption::AndMerge, isAnnexA);
 #if OPAL_SIP
       option->SetFMTPName("annexa");
       option->SetFMTPDefault("yes");
 #endif
       AddOption(option);
+
+      // Automatic calculation comes to 6400, but that includes the tiny, tiny header
+      // So need to back it down to the official bit rate.
+      SetOptionInteger(MaxBitRateOption(), rate); 
     }
 
 
     virtual PObject * Clone() const
     {
-      return new OpalG723Format(*this);
+      return new OpalG7231Format(*this);
     }
 };
 
-#define FORMAT(name) \
+#define FORMAT(name, rate, annex) \
   const OpalAudioFormat & GetOpal##name() \
   { \
-    static const OpalG723Format name##_Format(OPAL_##name); \
+    static const OpalG7231Format name##_Format(OPAL_##name, rate, annex); \
     CAPABILITY(name); \
     return name##_Format; \
   }
 
-FORMAT(G7231_6k3);
-FORMAT(G7231_5k3);
-FORMAT(G7231A_6k3);
-FORMAT(G7231A_5k3);
+FORMAT(G7231_6k3, 6300, false);
+FORMAT(G7231_5k3, 5300, false);
+FORMAT(G7231A_6k3, 6300, true);
+FORMAT(G7231A_5k3, 5300, true);
+FORMAT(G7231_Cisco_A, 6300, true);
+FORMAT(G7231_Cisco_AR, 5300, true);
 
 
 // End of File ///////////////////////////////////////////////////////////////

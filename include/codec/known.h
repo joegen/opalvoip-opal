@@ -72,6 +72,8 @@
 #define OPAL_G7231_5k3      "G.723.1(5.3k)"
 #define OPAL_G7231A_6k3     "G.723.1A(6.3k)"
 #define OPAL_G7231A_5k3     "G.723.1A(5.3k)"
+#define OPAL_G7231_Cisco_A  "G.723.1-Cisco-a"
+#define OPAL_G7231_Cisco_AR "G.723.1-Cisco-ar"
 #define OPAL_GSM0610        "GSM-06.10"
 #define OPAL_GSMAMR         "GSM-AMR"
 #define OPAL_iLBC           "iLBC"

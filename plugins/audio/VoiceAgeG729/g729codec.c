@@ -101,12 +101,10 @@ static const char ianaName[]   = { "G729" };
 #define IANACODE  18
 
 
-static const char VADStr[] = "VAD";
-
 static struct PluginCodec_Option const NoVADOption =
 {
   PluginCodec_EnumOption,     // PluginCodec_OptionTypes
-  VADStr,                     // Generic (human readable) option name
+  PLUGINCODEC_OPTION_VOICE_ACTIVITY_DETECT,                     // Generic (human readable) option name
   0,                          // Read Only flag
   PluginCodec_MinMerge,       // Merge mode
   "no",                       // Initial value
@@ -126,7 +124,7 @@ static struct PluginCodec_Option const * const NoVADOptionTable[] = {
 static struct PluginCodec_Option const VADOption =
 {
   PluginCodec_EnumOption,     // PluginCodec_OptionTypes
-  VADStr,                     // Generic (human readable) option name
+  PLUGINCODEC_OPTION_VOICE_ACTIVITY_DETECT, // Generic (human readable) option name
   0,                          // Read Only flag
   PluginCodec_MinMerge,       // Merge mode
   "yes",                      // Initial value
@@ -311,7 +309,7 @@ static int set_codec_options(const struct PluginCodec_Definition * defn,
     return 0;
 
   for (option = (const char * const *)parm; *option != NULL; option += 2) {
-    if (_stricmp(option[0], VADStr) == 0)
+    if (_stricmp(option[0], VADOption.m_name) == 0)
       vad = atoi(option[1]) != 0;
   }
 

@@ -270,11 +270,10 @@ static struct PluginCodec_Option const amrInitialMode =
   "7"                         // Maximum value
 };
 
-static const char VADStr[] = "VAD";
 static struct PluginCodec_Option const amrVAD =
 {
   PluginCodec_BoolOption,     // PluginCodec_OptionTypes
-  VADStr,                     // Generic (human readable) option name
+  PLUGINCODEC_OPTION_VOICE_ACTIVITY_DETECT,                     // Generic (human readable) option name
   0,                          // Read Only flag
   PluginCodec_AndMerge,       // Merge mode
   "1",                        // Initial value
@@ -334,7 +333,7 @@ static int set_codec_options(const struct PluginCodec_Definition * defn,
       if (amr->mode > AMR_BITRATE_1220)
         amr->mode = AMR_BITRATE_1220;
     }
-    else if (STRCMPI(option[0], VADStr) == 0)
+    else if (STRCMPI(option[0], amrVAD.m_name) == 0)
       amr->vad = atoi(option[1]) != 0;
   }
 
