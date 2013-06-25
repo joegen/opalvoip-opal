@@ -159,7 +159,7 @@ bool OpalEndPoint::StartListeners(const PStringArray & listenerAddresses, bool a
             port = (WORD)transport.Mid(colon+1).AsUnsigned();
             transport.Delete(colon, P_MAX_INDEX);
           }
-          interfaces.AppendAddress(OpalTransportAddress(interfaces[i], port, transport));
+          interfaces.AppendAddress(OpalTransportAddress(listenerAddresses[i], port, transport));
         }
       }
     }
