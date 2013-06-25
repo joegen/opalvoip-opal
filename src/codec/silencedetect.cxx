@@ -146,7 +146,10 @@ void OpalSilenceDetector::Params::FromString(const PString & str)
     case 2 :
       m_threshold = params[1].AsUnsigned();
     case 1 :
-      PStringStream(params[0]) >> m_mode;
+      {
+        PStringStream strm(params[0]);
+        strm >> m_mode;
+      }
     case 0 :
       break;
   }
