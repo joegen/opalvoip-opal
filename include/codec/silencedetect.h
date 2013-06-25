@@ -44,7 +44,7 @@ class OpalSilenceDetector : public PObject
 {
     PCLASSINFO(OpalSilenceDetector, PObject);
   public:
-    P_DECLARE_ENUM(Modes,
+    P_DECLARE_STREAMABLE_ENUM(Modes,
       NoSilenceDetection,
       FixedSilenceDetection,
       AdaptiveSilenceDetection
@@ -65,6 +65,9 @@ class OpalSilenceDetector : public PObject
           m_silenceDeadband(silenceDeadband),
           m_adaptivePeriod(adaptivePeriod)
         { }
+
+      PString AsString() const;
+      void FromString(const PString & str);
 
       Modes    m_mode;             /// Silence detection mode
       unsigned m_threshold;        /// Threshold value if FixedSilenceDetection
@@ -98,18 +101,24 @@ class OpalSilenceDetector : public PObject
       const int clockRate = 0 ///< Sampling clock rate for the preprocessor
     );
 
+    /**Get the current parameters in use.
+      */
+    void GetParameters(
+      Params & params
+    );
+
     /**Set the sampling clock rate for the preprocessor.
        Adusts the interpretation of time values.
        This may be called while audio is being transferred, but if in
        adaptive mode calling this will reset the filter.
      */
     void SetClockRate(
-      const int clockRate     ///< Sampling clock rate for the preprocessor
+      unsigned clockRate     ///< Sampling clock rate for the preprocessor
     );
 
     /**Get the current sampling clock rate.
       */
-    int GetClockRate() const { return clockRate; }
+    unsigned GetClockRate() const { return clockRate; }
 
     /**Get silence detection status
 
@@ -147,11 +156,11 @@ class OpalSilenceDetector : public PObject
 
     PNotifier receiveHandler;
 
-    Mode mode;
+    Mode     mode;
     unsigned signalDeadband;        // #samples of signal needed
     unsigned silenceDeadband;       // #samples of silence needed
     unsigned adaptivePeriod;        // #samples window for adaptive threshold
-    int clockRate;                  // audio sampling rate
+    unsigned clockRate;             // audio sampling rate
 
     unsigned lastTimestamp;         // Last timestamp received
     unsigned receivedTime;          // Signal/Silence duration received so far.
