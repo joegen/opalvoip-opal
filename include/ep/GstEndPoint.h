@@ -148,6 +148,8 @@ class GstEndPoint : public OpalLocalEndPoint
     void SetVideoSinkDevice  (const PString & dev) { m_videoSinkDevice = dev; }
     const PString & GetVideoSourceDevice() const { return m_videoSourceDevice; }
     const PString & GetVideoSinkDevice()   const { return m_videoSinkDevice; }
+    void SetVideoColourConverter(const PString & dev) { m_videoColourConverter = dev; }
+    const PString & GetVideoColourConverter()   const { return m_videoColourConverter; }
 
     static const PString & GetPipelineVideoSourceName();
     static const PString & GetPipelineVideoSinkName();
@@ -184,6 +186,7 @@ class GstEndPoint : public OpalLocalEndPoint
 #if OPAL_VIDEO
     PString m_videoSourceDevice;
     PString m_videoSinkDevice;
+    PString m_videoColourConverter;
 #endif // OPAL_VIDEO
 
     // Translation table
