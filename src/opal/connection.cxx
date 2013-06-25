@@ -1740,6 +1740,13 @@ void OpalConnection::OnApplyStringOptions()
     if (!str.IsEmpty())
       SetAlertingType(str);
 
+    if (silenceDetector != NULL && !(str = m_stringOptions(OPAL_OPT_SILENCE_DETECT_MODE)).IsEmpty()) {
+      OpalSilenceDetector::Params params;
+      silenceDetector->GetParameters(params);
+      params.FromString(str);
+      silenceDetector->SetParameters(params);
+    }
+
     UnlockReadWrite();
   }
 }
@@ -1941,6 +1948,26 @@ void OpalConnection::StringOptions::ExtractFromURL(PURL & url)
       url.SetParamVar(key, PString::Empty());
     }
   }
+}
+
+
+void OpalConnection::StringOptions::ExtractFromString(PString & str)
+{
+  PINDEX semicolon = str.Find(';');
+  if (semicolon == P_MAX_INDEX)
+    return;
+
+  PStringToString params;
+  PURL::SplitVars(str.Mid(semicolon), params, ';', '=');
+
+  for (PStringToString::iterator it = params.begin(); it != params.end(); ++it) {
+    PString key = it->first;
+    if (key.NumCompare(OPAL_URL_PARAM_PREFIX) == EqualTo)
+      key.Delete(0, 5);
+    SetAt(key, it->second);
+  }
+
+  str.Delete(semicolon, P_MAX_INDEX);
 }
 
 

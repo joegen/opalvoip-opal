@@ -737,6 +737,7 @@ MyManager::MyManager()
 #if PTRACING
   , m_enableTracing(false)
 #endif
+  , m_musicOnHoldFile("moh.wav")
 {
   // Give it an icon
   SetIcon(wxICON(AppIcon));
@@ -2642,12 +2643,12 @@ void MyManager::OnHold(OpalConnection & connection, bool fromRemote, bool onHold
   LogWindow << "Remote " << connection.GetRemotePartyName() << " has been "
             << (onHold ? "put on" : "released from") << " hold." << endl;
   if (onHold) {
-    if (!connection.GetCall().Transfer("pc:*|moh.wav*"))
+    if (!connection.GetCall().Transfer("pc:*|"+m_musicOnHoldFile+"*;"OPAL_URL_PARAM_PREFIX OPAL_OPT_SILENCE_DETECT_MODE"=No"))
       connection.GetCall().Transfer("pc:*|Null Audio");
     PostEvent(wxEvtOnHold, ID_ON_HOLD, connection.GetCall().GetToken());
   }
   else {
-    connection.GetCall().Transfer("pc:*");
+    connection.GetCall().Transfer("pc:*;"OPAL_URL_PARAM_PREFIX OPAL_OPT_SILENCE_DETECT_MODE"="+GetSilenceDetectParams().AsString());
     PostEvent(wxEvtEstablished, ID_ESTABLISHED, connection.GetCall().GetToken());
   }
 }

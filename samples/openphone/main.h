@@ -1282,6 +1282,7 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     };
     list<CallsOnHold>    m_callsOnHold;
     PwxString            m_switchHoldToken;
+    PFilePath            m_musicOnHoldFile;
 
     OpalRecordManager::Options m_recordingOptions;
     PwxString                  m_lastRecordFile;
