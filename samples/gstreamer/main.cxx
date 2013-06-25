@@ -47,6 +47,7 @@ PString MyManager::GetArgumentSpec() const
 #if OPAL_VIDEO
          "-video-source: Video source device in pipeline (autovideosrc)\n"
          "-video-sink:   Video sink device in pipeline (autovideosink)\n"
+         "-video-colour: Video colour space conversion pipeline (ffmpegcolorspace)\n"
 #endif // OPAL_VIDEO
          "-map.          Begin a mapping from Media Format to GStreamer pipeline\n"
          "-encoder:      Set encoder for mapping.\n"
@@ -69,6 +70,7 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
 #if OPAL_VIDEO
   gst->SetVideoSourceDevice(args.GetOptionString("video-source", gst->GetVideoSourceDevice()));
   gst->SetVideoSinkDevice(args.GetOptionString("video-sink", gst->GetVideoSinkDevice()));
+  gst->SetVideoColourConverter(args.GetOptionString("video-colour", gst->GetVideoColourConverter()));
 #endif // OPAL_VIDEO
 
   while (args.HasOption("map")) {
