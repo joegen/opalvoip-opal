@@ -231,6 +231,7 @@ GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
 #if OPAL_VIDEO
   , m_videoSourceDevice(GetDefaultDevice("Source/Video", PreferredVideoSourceDevice, PARRAYSIZE(PreferredVideoSourceDevice)))
   , m_videoSinkDevice(GetDefaultDevice("Sink/Video", PreferredVideoSinkDevice, PARRAYSIZE(PreferredVideoSinkDevice)))
+  , m_videoColourConverter("ffmpegcolorspace")
 #endif // OPAL_VIDEO
 {
   OpalMediaFormat::RegisterKnownMediaFormats(); // Make sure codecs are loaded
@@ -428,7 +429,7 @@ bool GstEndPoint::BuildVideoSourcePipeline(ostream & desc, const GstMediaStream 
 {
   const OpalMediaFormat & mediaFormat = stream.GetMediaFormat();
 
-  desc << " ! ffmpegcolorspace"
+  desc << " ! " << m_videoColourConverter <<
           " ! video/x-raw-yuv, "
              "format=(fourcc)I420, "
              "width=" << mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption()) << ", "
@@ -474,7 +475,7 @@ bool GstEndPoint::BuildVideoSinkPipeline(ostream & desc, const GstMediaStream & 
       return false;
   }
 
-  desc << " ! ffmpegcolorspace ! ";
+  desc << " ! " << m_videoColourConverter << " ! ";
 
   return true;
 }
