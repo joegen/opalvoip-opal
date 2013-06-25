@@ -95,6 +95,13 @@ class PURL;
 #define OPAL_OPT_ALERTING_TYPE        "Alerting-Type"         ///< String option to set the alerting type string for call
 #define OPAL_OPT_REMOVE_CODEC         "Remove-Codec"          ///< String option to remove codecs for this call
 
+/**OpalConnection::StringOption key to an enum indicating that silence
+   detection on the sound recording is to be executed.
+   Default false.
+  */
+#define OPAL_OPT_SILENCE_DETECT_MODE  "Silence-Detect"
+
+
 /**OpalConnection::StringOption key to a bit mask indicating the the video
    update picture request method.
 
@@ -497,6 +504,15 @@ class OpalConnection : public PSafeObject
           */
         void ExtractFromURL(
           PURL & url
+        );
+
+        /** Extract the parameters that start with "OPAL-XXX" from the ';'
+            separated string and insert into the string options dictionary.
+            Note everything is ignored up to the first ';', then everything
+            after, and including, the ';' is removed from the string.
+          */
+        void ExtractFromString(
+          PString & str
         );
     };
 

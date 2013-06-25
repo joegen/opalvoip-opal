@@ -187,22 +187,9 @@ PSafePtr<OpalConnection> OpalPCSSEndPoint::MakeConnection(OpalCall & call,
 {
   PString deviceNames = remoteParty;
   OpalConnection::StringOptions localStringOptions;
-
-  PINDEX semicolon = remoteParty.Find(';');
-  if (semicolon != P_MAX_INDEX) {
-    if (stringOptions == NULL)
-      stringOptions = &localStringOptions;
-
-    PStringToString params;
-    PURL::SplitVars(remoteParty.Mid(semicolon), params, ';', '=');
-    for (PStringToString::iterator it = params.begin(); it != params.end(); ++it) {
-      PString key = it->first;
-      if (key.NumCompare(OPAL_URL_PARAM_PREFIX) == EqualTo)
-        key.Delete(0, 5);
-      stringOptions->SetAt(key, it->second);
-    }
-    deviceNames.Delete(semicolon, P_MAX_INDEX);
-  }
+  if (stringOptions == NULL)
+    stringOptions = &localStringOptions;
+  stringOptions->ExtractFromString(deviceNames);
 
   PString playDevice = soundChannelPlayDevice;
   PString recordDevice = soundChannelRecordDevice;
@@ -368,10 +355,15 @@ OpalPCSSConnection::~OpalPCSSConnection()
 
 bool OpalPCSSConnection::TransferConnection(const PString & remoteParty)
 {
+  PString deviceNames = remoteParty;
+  m_stringOptions.ExtractFromString(deviceNames);
+
   PString playDevice = endpoint.GetSoundChannelPlayDevice();
   PString recordDevice = endpoint.GetSoundChannelRecordDevice();
-  if (!SetDeviceNames(remoteParty, playDevice, recordDevice, "transfer"))
+  if (!SetDeviceNames(deviceNames, playDevice, recordDevice, "transfer"))
     return false;
+
+  OnApplyStringOptions();
 
   bool samePlayer = playDevice *= soundChannelPlayDevice;
   bool sameRecorder = recordDevice *= soundChannelRecordDevice;
