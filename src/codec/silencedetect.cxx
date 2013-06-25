@@ -46,22 +46,6 @@ extern "C" {
 };
 
 
-ostream & operator<<(ostream & strm, OpalSilenceDetector::Mode mode)
-{
-  static const char * const names[OpalSilenceDetector::NumModes] = {
-      "NoSilenceDetection",
-      "FixedSilenceDetection",
-      "AdaptiveSilenceDetection"
-  };
-
-  if (mode >= 0 && mode < OpalSilenceDetector::NumModes && names[mode] != NULL)
-    strm << names[mode];
-  else
-    strm << "OpalSilenceDetector::Modes<" << mode << '>';
-  return strm;
-}
-
-
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalSilenceDetector::OpalSilenceDetector(const Params & theParam)
@@ -116,7 +100,7 @@ void OpalSilenceDetector::SetParameters(const Params & newParam, const int rate 
 }
 
 
-void OpalSilenceDetector::SetClockRate(const int rate)
+void OpalSilenceDetector::SetClockRate(unsigned rate)
 {
   PWaitAndSignal mutex(inUse);
   signalDeadband = signalDeadband * 1000 / clockRate * rate / 1000;
@@ -125,6 +109,47 @@ void OpalSilenceDetector::SetClockRate(const int rate)
   clockRate = rate;
   if (mode == AdaptiveSilenceDetection)
     AdaptiveReset();
+}
+
+
+void OpalSilenceDetector::GetParameters(Params & params)
+{
+  params.m_mode = mode;
+  params.m_threshold = levelThreshold*1000/clockRate;
+  params.m_signalDeadband = signalDeadband*1000/clockRate;
+  params.m_silenceDeadband = silenceDeadband*1000/clockRate;
+  params.m_adaptivePeriod = adaptivePeriod*1000/clockRate;
+}
+
+
+PString OpalSilenceDetector::Params::AsString() const
+{
+  return PSTRSTRM(m_mode << ','
+               << m_threshold << ','
+               << m_signalDeadband << ','
+               << m_silenceDeadband << ','
+               << m_adaptivePeriod);
+}
+
+
+void OpalSilenceDetector::Params::FromString(const PString & str)
+{
+  PStringArray params = str.Tokenise(',');
+  switch (params.GetSize()) {
+    default :
+    case 5 :
+      m_adaptivePeriod = params[4].AsUnsigned();
+    case 4 :
+      m_silenceDeadband = params[3].AsUnsigned();
+    case 3 :
+      m_signalDeadband = params[2].AsUnsigned();
+    case 2 :
+      m_threshold = params[1].AsUnsigned();
+    case 1 :
+      PStringStream(params[0]) >> m_mode;
+    case 0 :
+      break;
+  }
 }
 
 
