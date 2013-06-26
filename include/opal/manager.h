@@ -1848,6 +1848,16 @@ class OpalManager : public PObject
       const PTimeInterval & newInterval  ///<  New timeout for signaling
     ) { m_signalingTimeout = newInterval; }
 
+    /**Get the amount of time a transport can be idle before it is closed
+     */
+    const PTimeInterval & GetTransportIdleTime() const { return m_transportIdleTime; }
+
+    /**Set the amount of time a transport can be idle before it is closed
+     */
+    void SetTransportIdleTime(
+      const PTimeInterval & newInterval  ///<  New timeout for signaling
+    ) { m_transportIdleTime = newInterval; }
+
     /**Get the default ILS server to use for user lookup.
       */
     const PString & GetDefaultILSServer() const { return ilsServer; }
@@ -1942,6 +1952,7 @@ class OpalManager : public PObject
     bool          disableDetectInBandDTMF;
     PTimeInterval m_noMediaTimeout;
     PTimeInterval m_signalingTimeout;
+    PTimeInterval m_transportIdleTime;
     PString       ilsServer;
 
     OpalSilenceDetector::Params silenceDetectParams;
