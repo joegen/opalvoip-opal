@@ -982,7 +982,6 @@ class SIPTransactionOwner
     const SIPURL & GetRemoteURI() const { return m_dialog.GetRemoteURI(); }
     const SIPURL & GetProxy() const { return m_dialog.GetProxy(); }
     const PString & GetInterface() const { return m_dialog.GetInterface(); }
-    void ResetInterface() { m_dialog.SetInterface(PString::Empty()); }
     PINDEX GetDNSEntry() const { return m_dnsEntry; }
     SIPAuthentication * GetAuthenticator() const { return m_authentication; }
     SIPDialogContext & GetDialog() { return m_dialog; }
