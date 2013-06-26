@@ -253,6 +253,7 @@ OpalManager::OpalManager()
   , disableDetectInBandDTMF(false)
   , m_noMediaTimeout(0, 0, 5)     // Minutes
   , m_signalingTimeout(0, 10)     // Seconds
+  , m_transportIdleTime(0, 0, 1)  // Minute
 #if OPAL_PTLIB_SSL
   , m_caFiles(PProcess::Current().GetHomeDirectory() + "certificates")
   , m_certificateFile(PProcess::Current().GetHomeDirectory() + "opal_certificate.pem")

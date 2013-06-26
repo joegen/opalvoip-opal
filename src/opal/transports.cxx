@@ -921,6 +921,7 @@ OpalTransport::OpalTransport(OpalEndPoint & end, PChannel * channel)
   : endpoint(end)
   , m_channel(channel)
   , m_thread(NULL)
+  , m_idleTimer(endpoint.GetManager().GetTransportIdleTime())
 {
   m_keepAliveTimer.SetNotifier(PCREATE_NOTIFIER(KeepAlive));
 }
@@ -1078,6 +1079,7 @@ PBoolean OpalTransport::Write(const void * buf, PINDEX len)
   if (!IsOpen())
     return false;
 
+  m_idleTimer = endpoint.GetManager().GetTransportIdleTime();
   m_keepAliveTimer.Reset();
   return m_channel->Write(buf, len);
 }
