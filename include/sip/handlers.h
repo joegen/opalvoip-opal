@@ -142,7 +142,7 @@ public:
   virtual void OnFailed(SIP_PDU::StatusCodes);
   virtual void SendStatus(SIP_PDU::StatusCodes code, State state);
 
-  bool ActivateState(SIPHandler::State state);
+  bool ActivateState(SIPHandler::State state, bool resetInterface = false);
   virtual bool SendNotify(const PObject * /*body*/) { return false; }
 
   SIP_PDU::StatusCodes GetLastResponseStatus() const { return m_lastResponseStatus; }

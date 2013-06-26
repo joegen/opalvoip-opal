@@ -191,7 +191,7 @@ void SIPHandler::SetState(SIPHandler::State newState)
 }
 
 
-bool SIPHandler::ActivateState(SIPHandler::State newState)
+bool SIPHandler::ActivateState(SIPHandler::State newState, bool resetInterface)
 {
   PTRACE_CONTEXT_ID_PUSH_THREAD(this);
 
@@ -212,17 +212,18 @@ bool SIPHandler::ActivateState(SIPHandler::State newState)
   static const enum {
     e_Invalid,
     e_NoChange,
+    e_Change,
     e_Execute,
     e_Queue
   } StateChangeActions[NumStates][NumStates] =
   {
     /* old-state
            V      new-state-> Subscribed  Subscribing Unavailable Refreshing  Restoring   Unsubscribing Unsubscribed */
-    /* Subscribed        */ { e_NoChange, e_Execute,  e_Invalid,  e_Execute,  e_Execute,  e_Execute,    e_Invalid  },
-    /* Subscribing       */ { e_Invalid,  e_Queue,    e_Invalid,  e_NoChange, e_NoChange, e_Queue,      e_Invalid  },
+    /* Subscribed        */ { e_NoChange, e_Execute,  e_Change,   e_Execute,  e_Execute,  e_Execute,    e_Invalid  },
+    /* Subscribing       */ { e_Invalid,  e_Queue,    e_Change,   e_NoChange, e_NoChange, e_Queue,      e_Invalid  },
     /* Unavailable       */ { e_Invalid,  e_Execute,  e_NoChange, e_Execute,  e_Execute,  e_Execute,    e_Invalid  },
-    /* Refreshing        */ { e_Invalid,  e_Queue,    e_Invalid,  e_NoChange, e_NoChange, e_Queue,      e_Invalid  },
-    /* Restoring         */ { e_Invalid,  e_Queue,    e_Invalid,  e_NoChange, e_NoChange, e_Queue,      e_Invalid  },
+    /* Refreshing        */ { e_Invalid,  e_Queue,    e_Change,   e_NoChange, e_NoChange, e_Queue,      e_Invalid  },
+    /* Restoring         */ { e_Invalid,  e_Queue,    e_Change,   e_NoChange, e_NoChange, e_Queue,      e_Invalid  },
     /* Unsubscribing     */ { e_Invalid,  e_Invalid,  e_Invalid,  e_Invalid,  e_NoChange, e_NoChange,   e_Invalid  },
     /* Unsubscribed      */ { e_Invalid,  e_Invalid,  e_Invalid,  e_Invalid,  e_Invalid,  e_NoChange,   e_NoChange }
   };
@@ -230,6 +231,9 @@ bool SIPHandler::ActivateState(SIPHandler::State newState)
   PSafeLockReadWrite mutex(*this);
   if (!mutex.IsLocked())
     return true;
+
+  if (resetInterface)
+    m_dialog.SetInterface(PString::Empty());
 
   switch (StateChangeActions[GetState()][newState]) {
     case e_Invalid :
@@ -241,6 +245,10 @@ bool SIPHandler::ActivateState(SIPHandler::State newState)
     case e_NoChange :
       PTRACE(4, "SIP\tAlready in state " << GetState() << " for " << GetMethod()
              << " handler, target=" << GetAddressOfRecord() << ", id=" << GetCallID());
+      break;
+
+    case e_Change :
+      SetState(newState);
       break;
 
     case e_Execute :
