@@ -2013,10 +2013,8 @@ void SIPEndPoint::OnHighPriorityInterfaceChange(PInterfaceMonitor &, PInterfaceM
     // socket binding BEFORE the monitored sockets update their interfaces.
     if (PInterfaceMonitor::GetInstance().HasInterfaceFilter()) {
       for (PSafePtr<SIPHandler> handler = activeSIPHandlers.GetFirstHandler(PSafeReadOnly); handler != NULL; ++handler) {
-        if (handler->GetInterface() == entry.GetName()) {
-          handler->ResetInterface();
-          handler->SetState(SIPHandler::Unavailable);
-        }
+        if (handler->GetInterface() == entry.GetName())
+          handler->ActivateState(SIPHandler::Unavailable, true);
       }
     }
   }
@@ -2031,11 +2029,9 @@ void SIPEndPoint::OnLowPriorityInterfaceChange(PInterfaceMonitor &, PInterfaceMo
         handler->ActivateState(SIPHandler::Restoring);
     }
     else {
-      if (handler->GetInterface() == entry.GetName()) {
-        handler->ResetInterface();
-        if (handler->GetState() == SIPHandler::Subscribed)
-          handler->ActivateState(SIPHandler::Refreshing);
-      }
+      if (handler->GetInterface() == entry.GetName())
+        handler->ActivateState(handler->GetState() == SIPHandler::Subscribed
+                                  ? SIPHandler::Refreshing : SIPHandler::Restoring, true);
     }
   }
 }
