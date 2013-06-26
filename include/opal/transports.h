@@ -992,6 +992,8 @@ class OpalTransport : public PSafeObject
     PChannel * GetChannel() const { return m_channel; }
     void SetChannel(PChannel * chan) { m_channel = chan; }
 
+    bool IsIdle() const { return m_idleTimer.HasExpired(); }
+
   protected:
     PDECLARE_NOTIFIER(PTimer, OpalTransport, KeepAlive);
 
@@ -1000,6 +1002,7 @@ class OpalTransport : public PSafeObject
     PThread      * m_thread;      ///<  Thread handling the transport
     PTimer         m_keepAliveTimer;
     PBYTEArray     m_keepAliveData;
+    PSimpleTimer   m_idleTimer;
 };
 
 
