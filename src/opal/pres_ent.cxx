@@ -56,6 +56,16 @@ OpalPresenceInfo::OpalPresenceInfo(State state)
 }
 
 
+OpalPresenceInfo::OpalPresenceInfo(const PString & str)
+  : m_state(FromString(str))
+{
+  if (m_state == InternalError) {
+    m_state = Available;
+    m_activities += str;
+  }
+}
+
+
 PString OpalPresenceInfo::AsString() const
 {
   return AsString(m_state);
@@ -71,7 +81,8 @@ PString OpalPresenceInfo::AsString(State state)
 
 OpalPresenceInfo::State OpalPresenceInfo::FromString(const PString & stateString)
 {
-  if ((stateString *= "None") ||
+  if ( stateString.IsEmpty() ||
+      (stateString *= "None") ||
       (stateString *= "Offline") ||
       (stateString *= "Invisible"))
     return NoPresence;
