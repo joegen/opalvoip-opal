@@ -441,6 +441,10 @@ public:
     SIPSubscribe::NotifyCallbackInfo & notifyInfo,
     list<SIPPresenceInfo> & info
   );
+  static bool ParseXML(
+    const PXML & xml,
+    list<SIPPresenceInfo> & info
+  );
 
   void PrintOn(ostream & strm) const;
   friend ostream & operator<<(ostream & strm, const SIPPresenceInfo & info) { info.PrintOn(strm); return strm; }
