@@ -89,6 +89,13 @@ void OpalRTPConnection::OnReleased()
       rtp->SendBYE();
   }
 
+  if (m_rfc2833Handler != NULL)
+    m_rfc2833Handler->UseRTPSession(false, NULL);
+#if OPAL_T38_CAPABILITY
+  if (m_ciscoNSEHandler != NULL)
+    m_ciscoNSEHandler->UseRTPSession(false, NULL);
+#endif
+
   m_sessions.RemoveAll();
 }
 
@@ -340,19 +347,18 @@ void OpalRTPConnection::ReplaceMediaSession(unsigned sessionId, OpalMediaSession
     PTRACE(4, "RTPCon\tReplacing session " << sessionId << " media=" << remoteMedia << " ctrl=" << remoteCtrl);
   }
 
-  m_sessions.SetAt(sessionId, mediaSession);
-
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(mediaSession);
-  if (rtpSession == NULL || !rtpSession->IsAudio())
-    return;
-
-  if (m_rfc2833Handler != NULL)
-    m_rfc2833Handler->UseRTPSession(false, rtpSession);
+  if (rtpSession != NULL && rtpSession->IsAudio()) {
+    if (m_rfc2833Handler != NULL)
+      m_rfc2833Handler->UseRTPSession(false, rtpSession);
 
 #if OPAL_T38_CAPABILITY
-  if (m_ciscoNSEHandler != NULL)
-    m_ciscoNSEHandler->UseRTPSession(false, rtpSession);
+    if (m_ciscoNSEHandler != NULL)
+      m_ciscoNSEHandler->UseRTPSession(false, rtpSession);
 #endif
+  }
+
+  m_sessions.SetAt(sessionId, mediaSession);
 }
 
 

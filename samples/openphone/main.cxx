@@ -1178,8 +1178,7 @@ bool MyManager::Initialise(bool startMinimised)
   ////////////////////////////////////////
   // Presence fields
   config->SetPath(PresenceGroup);
-  int presIndex = 0;
-  for (;;) {
+  for (int presIndex = 0; ; ++presIndex) {
     wxString groupName;
     groupName.sprintf(wxT("%04u"), presIndex);
     if (!config->HasGroup(groupName))
@@ -1203,14 +1202,12 @@ bool MyManager::Initialise(bool startMinimised)
         if (presentity->GetAttributes().GetBoolean(PresenceActiveKey)) {
           LogWindow << (presentity->Open() ? "Establishing" : "Could not establish")
                     << " presence for identity " << aor << endl;
-          presentity->SetLocalPresence((OpalPresenceInfo::State)config->Read(LastPresenceStateKey,
-                                                               (long)OpalPresenceInfo::Available));
+          presentity->SetLocalPresence(OpalPresenceInfo(PwxString(config->Read(LastPresenceStateKey, wxT("Available")))));
         }
       }
     }
 
     config->SetPath(wxT(".."));
-    presIndex++;
   }
 
   ////////////////////////////////////////
@@ -3604,9 +3601,9 @@ void MyManager::OnPresenceChange(OpalPresentity &, std::auto_ptr<OpalPresenceInf
           break;
 
         default :
-          if (status.CmpNoCase(wxT("busy")) == 0)
+          if (info->m_activities.Contains("busy") || status.CmpNoCase(wxT("busy")) == 0)
             newIcon = Icon_Busy;
-          else if (status.CmpNoCase(wxT("away")) == 0)
+          else if (info->m_activities.Contains("away") || status.CmpNoCase(wxT("away")) == 0)
             newIcon = Icon_Away;
           else
             newIcon = Icon_Present;
@@ -6486,15 +6483,17 @@ PresenceDialog::PresenceDialog(MyManager * manager)
   wxChoice * addresses = FindWindowByNameAs<wxChoice>(this, wxT("PresenceAddress"));
   addresses->SetValidator(wxGenericValidator(&m_address));
   PStringList presences = manager->GetPresentities();
-  if (presences.IsEmpty()) {
+  for (PStringList::iterator i = presences.begin(); i != presences.end(); ++i) {
+    PSafePtr<OpalPresentity> presentity = manager->GetPresentity(*i);
+    if (presentity->GetAttributes().GetBoolean(PresenceActiveKey))
+      addresses->AppendString(PwxString(*i));
+  }
+  if (addresses->GetCount() > 0)
+    addresses->SetSelection(0);
+  else {
     addresses->Disable();
     states->Disable();
     FindWindow(wxID_OK)->Disable();
-  }
-  else {
-    for (PStringList::iterator i = presences.begin(); i != presences.end(); ++i)
-      addresses->AppendString(PwxString(*i));
-    addresses->SetSelection(0);
   }
 }
 
@@ -6510,19 +6509,12 @@ bool PresenceDialog::TransferDataFromWindow()
     return false;
   }
 
-  OpalPresenceInfo::State state = OpalPresenceInfo::FromString(m_status);
-  if (state != OpalPresenceInfo::InternalError)
-    presentity->SetLocalPresence(state);
-  else {
-    presentity->SetLocalPresence(OpalPresenceInfo::Available, m_status.p_str());
-    state = OpalPresenceInfo::Available;
-  }
+  presentity->SetLocalPresence(OpalPresenceInfo(m_status));
 
   wxConfigBase * config = wxConfig::Get();
   config->SetPath(PresenceGroup);
 
-  int presIndex = 0;
-  for (;;) {
+  for (int presIndex = 0; ; ++presIndex) {
     wxString groupName;
     groupName.sprintf(wxT("%04u"), presIndex);
     if (!config->HasGroup(groupName))
@@ -6531,10 +6523,12 @@ bool PresenceDialog::TransferDataFromWindow()
     config->SetPath(groupName);
     PwxString aor;
     if (config->Read(PresenceAORKey, &aor) && aor == presentity->GetAOR()) {
-      config->Write(LastPresenceStateKey, (int)state);
+      config->Write(LastPresenceStateKey, m_status);
       config->Flush();
       break;
     }
+
+    config->SetPath(wxT(".."));
   }
 
   return true;
