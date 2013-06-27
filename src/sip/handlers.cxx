@@ -1918,7 +1918,7 @@ static const char * const RFC4480ActivitiesInit[] = {
   "worship"
 };
 
-static PStringSet const RFC4480Activities(PARRAYSIZE(RFC4480ActivitiesInit), RFC4480ActivitiesInit);
+static PStringSet const RFC4480Activities(PARRAYSIZE(RFC4480ActivitiesInit), RFC4480ActivitiesInit, true);
 
 
 // Cisco specific extensions
@@ -1928,7 +1928,7 @@ static const char * const CiscoActivitiesInit[] = {
   "dnd"
 };
 
-static PStringSet const CiscoActivities(PARRAYSIZE(CiscoActivitiesInit), CiscoActivitiesInit);
+static PStringSet const CiscoActivities(PARRAYSIZE(CiscoActivitiesInit), CiscoActivitiesInit, true);
 
 
 // RFC 5196 extensions
@@ -1944,7 +1944,7 @@ static const char * const RFC5196CapabilitiesInit[] = {
   "type"
 };
 
-static PStringSet const RFC5196Capabilities(PARRAYSIZE(RFC5196CapabilitiesInit), RFC5196CapabilitiesInit);
+static PStringSet const RFC5196Capabilities(PARRAYSIZE(RFC5196CapabilitiesInit), RFC5196CapabilitiesInit, true);
 
 
 
@@ -2024,9 +2024,9 @@ PString SIPPresenceInfo::AsXML() const
            "    <rpid:activities>\r\n";
     for (PStringSet::const_iterator it = m_activities.begin(); it != m_activities.end(); ++it) {
       if (RFC4480Activities.Contains(*it))
-        xml << "      <rpid:" << *it <<"/>\r\n";
+        xml << "      <rpid:" << it->ToLower() <<"/>\r\n";
       else if (CiscoActivities.Contains(*it))
-        xml << "      <ce:" << *it <<" />\r\n";
+        xml << "      <ce:" << it->ToLower() <<" />\r\n";
       else
         xml << "      <rpid:other>" << *it << "</rpid:other>\r\n";
     }
@@ -2058,7 +2058,7 @@ PString SIPPresenceInfo::AsXML() const
         value = "true";
       }
       if (RFC5196Capabilities.Contains(name))
-        xml << "      <sc:" << name << '>' << value << "</sc:" << name << ">\r\n";
+        xml << "      <sc:" << name.ToLower() << '>' << value << "</sc:" << name << ">\r\n";
     }
     xml << "    </sc:servcaps>\r\n";
   }
@@ -2077,17 +2077,43 @@ PString SIPPresenceInfo::AsXML() const
 }
 
 
-static void SetNoteFromElement(PXMLElement * element, SIPPresenceInfo & info)
+static void SetNoteFromElement(PXMLElement * element, PString & notes)
 {
   PXMLElement * noteElement = element->GetElement("note");
   if (noteElement == NULL)
     return;
 
   PString note = noteElement->GetData();
-  if (info.m_note.Find(note) == P_MAX_INDEX) {
-    if (!info.m_note.IsEmpty())
-      info.m_note += '\n';
-    info.m_note += note;
+  if (notes.Find(note) == P_MAX_INDEX) {
+    if (!notes.IsEmpty())
+      notes += '\n';
+    notes += note;
+  }
+}
+
+
+static void AddActivities(PXMLElement * element, PStringSet & activitySet, PString & notes)
+{
+  PXMLElement * activities;
+  if ((activities = element->GetElement("urn:ietf:params:xml:ns:pidf:rpid|activities")) == NULL &&
+      (activities = element->GetElement("urn:ietf:params:xml:ns:pidf:status:rpid|activities")) == NULL &&
+      (activities = element->GetElement("urn:cisco:params:xml:ns:pidf:rpid|activities")) == NULL)
+    return;
+
+  for (PINDEX i = 0; i < activities->GetSize(); ++i) {
+    PXMLElement * activity = dynamic_cast<PXMLElement *>(activities->GetElement(i));
+    if (activity == NULL)
+      continue;
+
+    PCaselessString name(activity->GetName());
+    name.Delete(0, name.Find('|')+1);
+    PCaselessString data = activity->GetData().Trim();
+    if (data.IsEmpty())
+      activitySet += name;
+    else
+      activitySet += name + '=' + data;
+
+    SetNoteFromElement(activity, notes);
   }
 }
 
@@ -2153,6 +2179,8 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
   info.m_infoData = notifyInfo.m_request.GetEntityBody();
 
   PTime defaultTimestamp; // Start with "now"
+  PStringSet personActivities;
+  PString    personNote;
 
   for (PINDEX idx = 0; idx < rootElement->GetSize(); ++idx) {
     PXMLElement * element = dynamic_cast<PXMLElement *>(rootElement->GetElement(idx));
@@ -2165,17 +2193,21 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
       if (!info.m_service.IsEmpty()) {
         infoList.push_back(info);
         defaultTimestamp = info.m_when - PTimeInterval(0, 1); // One second older
-        info = SIPPresenceInfo(Unavailable);
       }
+
+      info = SIPPresenceInfo(Unavailable);
+      info.m_activities = personActivities;
+      info.m_activities.MakeUnique();
+      info.m_note = personNote;
 
       info.m_entity = entity;
       info.m_service = tupleElement->GetAttribute("id");
 
-      SetNoteFromElement(rootElement, info);
-      SetNoteFromElement(tupleElement, info);
+      SetNoteFromElement(rootElement, info.m_note);
+      SetNoteFromElement(tupleElement, info.m_note);
 
       if ((element = tupleElement->GetElement("status")) != NULL) {
-        SetNoteFromElement(element, info);
+        SetNoteFromElement(element, info.m_note);
         if ((element = element->GetElement("basic")) != NULL) {
           PCaselessString value = element->GetData();
           if (value == "open")
@@ -2206,32 +2238,16 @@ bool SIPPresenceInfo::ParseNotify(SIPSubscribe::NotifyCallbackInfo & notifyInfo,
           }
         }
       }
+
+      AddActivities(tupleElement, info.m_activities, info.m_note);
     }
     else if (element->GetName() == "urn:ietf:params:xml:ns:pidf:data-model|person" ||
              element->GetName() == "urn:cisco:params:xml:ns:pidf:rpid|person") {
-      SetNoteFromElement(element, info);
+      personActivities.RemoveAll();
+      personNote.MakeEmpty();
 
-      PXMLElement * activities = element->GetElement("urn:ietf:params:xml:ns:pidf:status:rpid|activities");
-      if (activities != NULL || (activities = element->GetElement("urn:cisco:params:xml:ns:pidf:rpid|activities")) != NULL) {
-        for (PINDEX i = 0; i < activities->GetSize(); ++i) {
-          PXMLElement * activity = dynamic_cast<PXMLElement *>(activities->GetElement(i));
-          if (activity == NULL)
-            continue;
-
-          PCaselessString name(activity->GetName());
-          if (name.NumCompare("urn:ietf:params:xml:ns:pidf:status:rpid|") != PObject::EqualTo &&
-              name.NumCompare("urn:cisco:params:xml:ns:pidf:rpid|") != PObject::EqualTo)
-            continue;
-
-          name.Delete(0, name.Find('|')+1);
-          PCaselessString data = activity->GetData().Trim();
-          if (data.IsEmpty())
-            info.m_activities += name;
-          else
-            info.m_activities += name + '=' + data;
-          SetNoteFromElement(activity, info);
-        }
-      }
+      SetNoteFromElement(element, personNote);
+      AddActivities(element, personActivities, personNote);
     }
   }
 
