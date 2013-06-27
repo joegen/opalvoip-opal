@@ -101,6 +101,7 @@ class OpalPresenceInfo : public PObject
     PString    m_infoData;     ///< Raw information as provided by underlying protocol, e.g. XML.
 
     OpalPresenceInfo(State state = Unchanged);
+    OpalPresenceInfo(const PString & str);
 
     static PString AsString(State state);
     static State FromString(const PString & str);
