@@ -3030,7 +3030,7 @@ void MyManager::OnStartRecording(wxCommandEvent & /*event*/)
     m_lastRecordFile = dlg.GetPath();
     if (!m_activeCall->StartRecording(m_lastRecordFile, m_recordingOptions))
       wxMessageBox(wxT("Cannot record to ")+m_lastRecordFile,
-                   wxT("OpenPhone Error"), wxCANCEL|wxICON_EXCLAMATION);
+                   wxT("OpenPhone Error"), wxOK|wxICON_EXCLAMATION);
   }
 }
 
@@ -3069,7 +3069,7 @@ void MyManager::OnSendAudioFile(wxCommandEvent & /*event*/)
                   "</vxml>";
     if (!m_activeCall->Transfer(ivrXML, connection))
       wxMessageBox(wxT("Cannot send ")+m_lastPlayFile,
-                   wxT("OpenPhone Error"), wxCANCEL|wxICON_EXCLAMATION);
+                   wxT("OpenPhone Error"), wxOK|wxICON_EXCLAMATION);
   }
 }
 
@@ -3110,7 +3110,7 @@ void MyManager::OnVideoDeviceChange(wxCommandEvent & theEvent)
   args.deviceName = deviceName.p_str();
   if (!local->ChangeVideoInputDevice(args))
     wxMessageBox(wxT("Cannot switch to video input device ")+deviceName,
-                  wxT("OpenPhone Error"), wxCANCEL|wxICON_EXCLAMATION);
+                  wxT("OpenPhone Error"), wxOK|wxICON_EXCLAMATION);
 }
 
 
@@ -4078,7 +4078,7 @@ public:
       return true;
 
     wxMessageBox(wxT("Illegal value \"") + size + wxT("\" for video size."),
-                 wxT("OpenPhone Error"), wxCANCEL|wxICON_EXCLAMATION);
+                 wxT("OpenPhone Error"), wxOK|wxICON_EXCLAMATION);
     return false;
   }
 };
@@ -4945,11 +4945,11 @@ bool OptionsDialog::TransferDataFromWindow()
   if (m_manager.pcssEP->SetSoundChannelPlayDevice(AudioDeviceNameFromScreen(m_SoundPlayer)))
     config->Write(SoundPlayerKey, PwxString(m_manager.pcssEP->GetSoundChannelPlayDevice()));
   else
-    wxMessageBox(wxT("Could not use sound player device."), wxT("OpenPhone Options"), wxCANCEL|wxICON_EXCLAMATION);
+    wxMessageBox(wxT("Could not use sound player device."), wxT("OpenPhone Options"), wxOK|wxICON_EXCLAMATION);
   if (m_manager.pcssEP->SetSoundChannelRecordDevice(AudioDeviceNameFromScreen(m_SoundRecorder)))
     config->Write(SoundRecorderKey, PwxString(m_manager.pcssEP->GetSoundChannelRecordDevice()));
   else
-    wxMessageBox(wxT("Could not use sound recorder device."), wxT("OpenPhone Options"), wxCANCEL|wxICON_EXCLAMATION);
+    wxMessageBox(wxT("Could not use sound recorder device."), wxT("OpenPhone Options"), wxOK|wxICON_EXCLAMATION);
   SAVE_FIELD(SoundBufferTime, m_manager.pcssEP->SetSoundChannelBufferTime);
 
 #if OPAL_AEC
@@ -5622,7 +5622,7 @@ void OptionsDialog::TestVideoCapture(wxCommandEvent & /*event*/)
 
   PVideoInputDevice * grabber = PVideoInputDevice::CreateOpenedDevice(grabberArgs);
   if (grabber == NULL) {
-    wxMessageBox(wxT("Could not open video capture."), wxT("OpenPhone Video Test"), wxCANCEL|wxICON_EXCLAMATION);
+    wxMessageBox(wxT("Could not open video capture."), wxT("OpenPhone Video Test"), wxOK|wxICON_EXCLAMATION);
     return;
   }
 
@@ -5646,7 +5646,7 @@ void OptionsDialog::TestVideoCapture(wxCommandEvent & /*event*/)
     m_TestVideoThread = new PThreadObj<OptionsDialog>(*this, &OptionsDialog::TestVideoThreadMain, false, "TestVideo");
   }
   else {
-    wxMessageBox(wxT("Could not start video capture."), wxT("OpenPhone Video Test"), wxCANCEL|wxICON_EXCLAMATION);
+    wxMessageBox(wxT("Could not start video capture."), wxT("OpenPhone Video Test"), wxOK|wxICON_EXCLAMATION);
     delete display;
     delete grabber;
   }
