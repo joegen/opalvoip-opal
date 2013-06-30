@@ -48,7 +48,9 @@ ifneq (,$(DEBUG_BUILD))
   WX_CONFIG += --debug=$(DEBUG_BUILD)
 endif
 
-CPPFLAGS += $(shell $(WX_CONFIG) --cxxflags)
+CPPFLAGS += $(shell $(WX_CONFIG) --cppflags)
+CXXFLAGS += $(shell $(WX_CONFIG) --cxxflags)
+CFLAGS   += $(shell $(WX_CONFIG) --cflags)
 LDFLAGS  += $(shell $(WX_CONFIG) --libs)
 
 ifdef OPALDIR
@@ -72,9 +74,11 @@ else # DEBUG_BUILD
   BUNDLE_DIR := ./$(PROG).app
   PROG_AND_LIBS =\
       $(TARGET) \
-      $(PTLIB_LIBDIR)/$(PTLIB_SHARED_FILE) \
+      $(PTLIB_SHARED_LIB_FILE) \
+      $(PTLIB_SHARED_LIB_LINK) \
       `find $(OPAL_LIBDIR) -name \*$(PTLIB_PLUGIN_SUFFIX).$(SHAREDLIBEXT)` \
-      $(OPAL_LIBDIR)/$(OPAL_SHARED_FILE) \
+      $(OPAL_SHARED_LIB_FILE) \
+      $(OPAL_SHARED_LIB_LINK) \
       `find $(PTLIB_LIBDIR) -name \*$(PTLIB_PLUGIN_SUFFIX).$(SHAREDLIBEXT)`
 
   bundle: $(BUNDLE_DIR)
@@ -84,7 +88,7 @@ else # DEBUG_BUILD
     $(BUNDLE_DIR): $(TARGET)
 	@-rm -f $@/*
 	@-mkdir -p $@
-	cp $(PROG_AND_LIBS) $@
+	cp -pR $(PROG_AND_LIBS) $@
 
   else # Darwin
 
@@ -101,14 +105,13 @@ else # DEBUG_BUILD
 	    mkdir $$dir; \
 	  fi \
 	done
-	cp Info.plist        $@/Contents/
-	cp version.plist     $@/Contents/
-	cp $(PROG).icns      $@/Contents/Resources/
+	cp Info.plist version.plist $@/Contents/
+	cp $(PROG).icns $@/Contents/Resources/
     ifneq ($(STRINGSFILE),)	
-	cp $(STRINGSFILE)    $@/Contents/Resources/English.lproj/
+	cp $(STRINGSFILE) $@/Contents/Resources/English.lproj/
     endif
-	echo -n 'APPL????' > $@/Contents/PkgInfo
-	cp $(PROG_AND_LIBS)  $@/Contents/MacOS
+	echo -n 'APPL????'    > $@/Contents/PkgInfo
+	cp -pR $(PROG_AND_LIBS) $@/Contents/MacOS
 
   endif # Darwin
 endif # DEBUG_BUILD
