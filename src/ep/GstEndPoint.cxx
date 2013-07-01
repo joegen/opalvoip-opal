@@ -366,12 +366,9 @@ bool GstEndPoint::BuildAudioSourcePipeline(ostream & desc, const GstMediaStream 
     desc << " ! ";
     if (!BuildEncoder(desc, stream))
       return false;
-    desc << " pt=" << (unsigned)mediaFormat.GetPayloadType();
   }
 
-//  desc << "volume name=volumeFilter ! ";
-
-  desc << " ! appsink name=" << GetPipelineAudioSinkName() << " async=true max-buffers=2 drop=true";
+  desc << " ! appsink name=" << GetPipelineAudioSinkName() << " sync=false async=true max-buffers=2 drop=true";
   return true;
 }
 
@@ -434,19 +431,15 @@ bool GstEndPoint::BuildVideoSourcePipeline(ostream & desc, const GstMediaStream 
              "format=(fourcc)I420, "
              "width=" << mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption()) << ", "
              "height=" << mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption()) << ", "
-             "framerate=(fraction)90000/" << mediaFormat.GetFrameTime()
-       << " ! ";
+             "framerate=(fraction)90000/" << mediaFormat.GetFrameTime();
 
   if (mediaFormat != OpalYUV420P) {
+    desc << " ! ";
     if (!BuildEncoder(desc, stream))
       return false;
-
-    desc << " mtu=" << mediaFormat.GetOptionInteger(OpalMediaFormat::MaxTxPacketSizeOption(), 1400) <<
-            " pt=" << (unsigned)mediaFormat.GetPayloadType()
-         << " ! ";
   }
 
-  desc << "appsink name=" << GetPipelineVideoSinkName() << " async=true";
+  desc << " ! appsink name=" << GetPipelineVideoSinkName() << " sync=false async=true drop=false";
   return true;
 }
 
@@ -497,6 +490,37 @@ bool GstEndPoint::BuildVideoSinkDevice(ostream & desc, const GstMediaStream & /*
 #endif // OPAL_VIDEO
 
 
+static void Substitute(PString & str, const char * name, const PString & value, bool required = false)
+{
+  PString sub(PString::Printf, OPAL_GST_PIPLINE_VAR_FMT, name);
+  if (str.Find(sub) != P_MAX_INDEX)
+    str.Replace(sub, value, true);
+  else if (required) {
+    str &= name;
+    str += '=';
+    str += value;
+  }
+}
+
+
+static PString SubstituteAll(const PString & original,
+                             const OpalMediaFormat & mediaFormat,
+                             const char * nameSuffix,
+                             bool packetiser = false)
+{
+  PString str = original;
+  Substitute(str, OPAL_GST_PIPLINE_VAR_NAME, mediaFormat.GetMediaType() + nameSuffix);
+  Substitute(str, OPAL_GST_PIPLINE_VAR_SAMPLE_RATE, mediaFormat.GetClockRate());
+  Substitute(str, OPAL_GST_PIPLINE_VAR_FRAME_RATE, psprintf("(fraction)90000/%u", mediaFormat.GetFrameTime()));
+  Substitute(str, OPAL_GST_PIPLINE_VAR_PT, (unsigned)mediaFormat.GetPayloadType(), packetiser);
+  if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
+    Substitute(str, OPAL_GST_PIPLINE_VAR_WIDTH, mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), 352));
+    Substitute(str, OPAL_GST_PIPLINE_VAR_HEIGHT, mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), 288));
+    Substitute(str, OPAL_GST_PIPLINE_VAR_MTU, mediaFormat.GetOptionInteger(OpalMediaFormat::MaxTxPacketSizeOption(), 1400), packetiser);
+  }
+  return str;
+}
+
 bool GstEndPoint::BuildEncoder(ostream & desc, const GstMediaStream & stream)
 {
   OpalMediaFormat mediaFormat = stream.GetMediaFormat();
@@ -504,10 +528,9 @@ bool GstEndPoint::BuildEncoder(ostream & desc, const GstMediaStream & stream)
   if (it == m_MediaFormatToGStreamer.end())
     return false;
 
-  OpalMediaType mediaType = mediaFormat.GetMediaType();
-  desc << it->second.m_encoder << " name=" << mediaType << "Encoder";
+  desc << SubstituteAll(it->second.m_encoder, mediaFormat, "Encoder");
   if (!it->second.m_packetiser.IsEmpty())
-    desc << " ! " << it->second.m_packetiser << " name=" << mediaType << "Packetiser";
+    desc << " ! queue max-size-buffers=1000 ! " << SubstituteAll(it->second.m_packetiser, mediaFormat, "Packetiser", true);
 
   return true;
 }
@@ -520,10 +543,9 @@ bool GstEndPoint::BuildDecoder(ostream & desc, const GstMediaStream & stream)
   if (it == m_MediaFormatToGStreamer.end())
     return false;
 
-  OpalMediaType mediaType = mediaFormat.GetMediaType();
   if (!it->second.m_depacketiser.IsEmpty())
-    desc << it->second.m_depacketiser << " name=" << mediaType << "Depacketiser ! ";
-  desc << it->second.m_decoder << " name=" << mediaType << "Decoder";
+    desc << SubstituteAll(it->second.m_depacketiser, mediaFormat, "Depacketiser") << " ! ";
+  desc << "queue max-size-buffers=1000 ! " << SubstituteAll(it->second.m_decoder, mediaFormat, "Decoder");
 
   return true;
 }
