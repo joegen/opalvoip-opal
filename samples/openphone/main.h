@@ -694,6 +694,7 @@ class OptionsDialog : public wxDialog
     void AdjustVideoControls(const PwxString & device);
     void ChangeVideoGrabDevice(wxCommandEvent & /*event*/);
     void TestVideoCapture(wxCommandEvent & /*event*/);
+    void OnTestVideoEnded(wxCommandEvent & /*event*/);
     void TestVideoThreadMain();
     void StopTestVideo();
 
