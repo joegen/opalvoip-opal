@@ -316,6 +316,7 @@ void OpalRFC2833Proto::SendAsyncFrame()
 
   if (m_transmitState == TransmitIdle) {
     m_asyncDurationTimer.Stop(false);
+    m_asyncTransmitTimer.Stop(false);
     return;
   }
 
