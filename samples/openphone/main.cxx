@@ -440,7 +440,8 @@ enum {
   ID_CLEARED,
   ID_STREAMS_CHANGED,
   ID_ASYNC_NOTIFICATION,
-  ID_SET_TRAY_TIP_TEXT
+  ID_SET_TRAY_TIP_TEXT,
+  ID_TEST_VIDEO_ENDED
 };
 
 DEFINE_EVENT_TYPE(wxEvtLogMessage)
@@ -451,6 +452,7 @@ DEFINE_EVENT_TYPE(wxEvtOnHold)
 DEFINE_EVENT_TYPE(wxEvtCleared)
 DEFINE_EVENT_TYPE(wxEvtAsyncNotification)
 DEFINE_EVENT_TYPE(wxEvtSetTrayTipText)
+DEFINE_EVENT_TYPE(wxEvtTestVideoEnded)
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1132,10 +1134,6 @@ bool MyManager::Initialise(bool startMinimised)
   config->Read(VideoFlipLocalKey, &videoArgs.flip);
   SetVideoInputDevice(videoArgs);
   m_SecondaryVideoGrabber = videoArgs;
-
-  m_primaryVideoGrabber = PVideoInputDevice::CreateOpenedDevice(videoArgs, true);
-  if (m_primaryVideoGrabber != NULL)
-    m_primaryVideoGrabber->Stop();
 
   config->Read(VideoGrabFrameSizeKey, &m_VideoGrabFrameSize,  wxT("CIF"));
   config->Read(VideoMinFrameSizeKey,  &m_VideoMinFrameSize, wxT("SQCIF"));
@@ -2334,14 +2332,17 @@ void MyManager::MakeCall(const PwxString & address, const PwxString & local, Opa
   if (m_activeCall != NULL)
     m_activeCall->Hold();
 
+  if (m_primaryVideoGrabber != NULL)
+    m_primaryVideoGrabber->Start();
+  else
+    m_primaryVideoGrabber = PVideoInputDevice::CreateOpenedDevice(GetVideoInputDevice(), true);
+
   m_activeCall = SetUpCall(from, address, NULL, 0, options);
   if (m_activeCall == NULL)
     LogWindow << "Could not call \"" << address << '"' << endl;
   else {
     LogWindow << "Calling \"" << address << '"' << endl;
     m_tabs->AddPage(new CallingPanel(*this, m_activeCall, m_tabs), wxT("Calling"), true);
-    if (m_primaryVideoGrabber != NULL)
-      m_primaryVideoGrabber->Start();
   }
 }
 
@@ -2429,6 +2430,9 @@ void MyManager::OnEvtRinging(wxCommandEvent & theEvent)
     else
       OnForwardingTimeout(m_ForwardingTimer, 0);
   }
+
+  if (m_primaryVideoGrabber == NULL)
+    m_primaryVideoGrabber = PVideoInputDevice::CreateOpenedDevice(GetVideoInputDevice(), true);
 
   if ((m_autoAnswer && m_activeCall == NULL) || connection->GetStringOptions().Contains("Auto-Answer")) {
 #if OPAL_FAX
@@ -2625,6 +2629,9 @@ void MyManager::OnEvtCleared(wxCommandEvent & theEvent)
     if (RemoveCallOnHold(token))
       return;
   }
+
+  delete m_primaryVideoGrabber;
+  m_primaryVideoGrabber = NULL;
 
   m_activeCall.SetNULL();
 }
@@ -4133,6 +4140,7 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   // Video fields
   EVT_COMBOBOX(XRCID("VideoGrabDevice"), OptionsDialog::ChangeVideoGrabDevice)
   EVT_BUTTON(XRCID("TestVideoCapture"), OptionsDialog::TestVideoCapture)
+  EVT_COMMAND(ID_TEST_VIDEO_ENDED, wxEvtTestVideoEnded, OptionsDialog::OnTestVideoEnded)
 
   ////////////////////////////////////////
   // Fax fields
@@ -4993,10 +5001,6 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(VideoGrabFrameSize, m_manager.m_VideoGrabFrameSize = );
   SAVE_FIELD(VideoFlipLocal, grabber.flip = );
   m_manager.SetVideoInputDevice(grabber);
-  delete m_manager.m_primaryVideoGrabber;
-  m_manager.m_primaryVideoGrabber = PVideoInputDevice::CreateOpenedDevice(grabber, false);
-  if (m_manager.m_primaryVideoGrabber != NULL)
-    m_manager.m_primaryVideoGrabber->Stop();
 
   SAVE_FIELD(VideoGrabPreview, m_manager.m_VideoGrabPreview = );
   SAVE_FIELD(VideoAutoTransmit, m_manager.SetAutoStartTransmitVideo);
@@ -5670,6 +5674,13 @@ void OptionsDialog::StopTestVideo()
 }
 
 
+void OptionsDialog::OnTestVideoEnded(wxCommandEvent & /*event*/)
+{
+  StopTestVideo();
+  m_TestVideoCapture->SetLabel(wxT("Test Video"));
+}
+
+
 void OptionsDialog::TestVideoCapture(wxCommandEvent & /*event*/)
 {
   if (m_TestVideoThread != NULL) {
@@ -5732,6 +5743,10 @@ void OptionsDialog::TestVideoThreadMain()
                                           m_TestVideoGrabber->GetFrameHeight(),
                                           frame))
     frameCount++;
+
+  wxCommandEvent theEvent(wxEvtTestVideoEnded, ID_TEST_VIDEO_ENDED);
+  theEvent.SetEventObject(this);
+  GetEventHandler()->AddPendingEvent(theEvent);
 }
 
 
