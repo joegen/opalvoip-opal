@@ -42,6 +42,16 @@
 class GstMediaStream;
 
 
+#define OPAL_GST_PIPLINE_VAR_FMT         "{%s}"
+#define OPAL_GST_PIPLINE_VAR_NAME        "name"
+#define OPAL_GST_PIPLINE_VAR_SAMPLE_RATE "sample-rate"
+#define OPAL_GST_PIPLINE_VAR_PT          "pt"
+#define OPAL_GST_PIPLINE_VAR_MTU         "mtu"
+#define OPAL_GST_PIPLINE_VAR_WIDTH       "width"
+#define OPAL_GST_PIPLINE_VAR_HEIGHT      "height"
+#define OPAL_GST_PIPLINE_VAR_FRAME_RATE  "frame-rate"
+
+
 /**Endpoint for performing OPAL media via gstreamer.
    This class exposes a gstreamer media stream which supports multiple encoded
    formats as well as raw audio and video. To use this end point, create an
@@ -117,6 +127,16 @@ class GstEndPoint : public OpalLocalEndPoint
        GetPipelineAudioSinkName(), GetPipelineVideoSourceName() and
        GetPipelineVideoSinkName().
 
+       If the BuildEncoder() and BuildDecoder() functions are used (default)
+       then strings with the format {XXX} are substituted for dynbamic values.
+       XXX may be:
+          name          Name of element
+          pt            Payload type number
+          mtu           Maximum transmission unit size
+          sample-rate   Audio sample rate
+          width         Video width
+          height        Video hight
+          frame-rate    Video frames/second
       */
     virtual bool BuildPipeline(
       ostream & description,
