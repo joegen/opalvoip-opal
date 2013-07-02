@@ -231,7 +231,7 @@ GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
 #if OPAL_VIDEO
   , m_videoSourceDevice(GetDefaultDevice("Source/Video", PreferredVideoSourceDevice, PARRAYSIZE(PreferredVideoSourceDevice)))
   , m_videoSinkDevice(GetDefaultDevice("Sink/Video", PreferredVideoSinkDevice, PARRAYSIZE(PreferredVideoSinkDevice)))
-  , m_videoColourConverter("ffmpegcolorspace")
+  , m_videoColourConverter("autoconvert")
 #endif // OPAL_VIDEO
 {
   OpalMediaFormat::RegisterKnownMediaFormats(); // Make sure codecs are loaded
@@ -267,7 +267,7 @@ GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
       CodecPipelineMap::iterator inf = m_MediaFormatToGStreamer.find(mediaFormat);
       if (inf != m_MediaFormatToGStreamer.end()) {
         for (PStringList::iterator dec = decoders.begin(); dec != decoders.end(); ++dec) {
-          if (inf->second.m_decoder.NumCompare(*dec)) {
+          if (inf->second.m_decoder.NumCompare(*dec) == EqualTo) {
             m_mediaFormatsAvailable += mediaFormat;
             break;
           }
@@ -276,7 +276,7 @@ GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
     }
   }
 
-  PTRACE(3, "Constructed GStream endpoint.");
+  PTRACE(3, "Constructed GStream endpoint: media formats=" << setfill(',') << m_mediaFormatsAvailable);
 }
 
 
@@ -509,7 +509,7 @@ static PString SubstituteAll(const PString & original,
                              bool packetiser = false)
 {
   PString str = original;
-  Substitute(str, OPAL_GST_PIPLINE_VAR_NAME, mediaFormat.GetMediaType() + nameSuffix);
+  Substitute(str, OPAL_GST_PIPLINE_VAR_NAME, mediaFormat.GetMediaType() + nameSuffix, true);
   Substitute(str, OPAL_GST_PIPLINE_VAR_SAMPLE_RATE, mediaFormat.GetClockRate());
   Substitute(str, OPAL_GST_PIPLINE_VAR_FRAME_RATE, psprintf("(fraction)90000/%u", mediaFormat.GetFrameTime()));
   Substitute(str, OPAL_GST_PIPLINE_VAR_PT, (unsigned)mediaFormat.GetPayloadType(), packetiser);
