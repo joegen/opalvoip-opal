@@ -50,15 +50,28 @@
 
 #define OPAL_RGB24   "RGB24"
 #define OPAL_RGB32   "RGB32"
+#define OPAL_BGR24   "BGR24"
+#define OPAL_BGR32   "BGR32"
 #define OPAL_YUV420P "YUV420P"
 
 extern const OpalVideoFormat & GetOpalRGB24();
 extern const OpalVideoFormat & GetOpalRGB32();
+extern const OpalVideoFormat & GetOpalBGR24();
+extern const OpalVideoFormat & GetOpalBGR32();
 extern const OpalVideoFormat & GetOpalYUV420P();
 
 #define OpalRGB24   GetOpalRGB24()
 #define OpalRGB32   GetOpalRGB32()
+#define OpalBGR24   GetOpalBGR24()
+#define OpalBGR32   GetOpalBGR32()
 #define OpalYUV420P GetOpalYUV420P()
+
+#define OPAL_REGISTER_RAW_VIDEO() \
+              GetOpalRGB24(); \
+              GetOpalRGB32(); \
+              GetOpalBGR24(); \
+              GetOpalBGR32(); \
+              GetOpalYUV420P()
 
 
 ///////////////////////////////////////////////////////////////////////////////
