@@ -539,6 +539,11 @@ PBoolean OpalMediaStream::RemoveFilter(const PNotifier & filter, const OpalMedia
 #if OPAL_STATISTICS
 void OpalMediaStream::GetStatistics(OpalMediaStatistics & statistics, bool fromPatch) const
 {
+  if (statistics.m_mediaFormat.IsEmpty() || mediaFormat.IsTransportable()) {
+    statistics.m_mediaType = mediaFormat.GetMediaType();
+    statistics.m_mediaFormat = mediaFormat.GetName();
+  }
+
   // We make referenced copy of pointer so can't be deleted out from under us
   OpalMediaPatchPtr mediaPatch = m_mediaPatch;
 

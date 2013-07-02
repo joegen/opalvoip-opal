@@ -92,6 +92,15 @@ class OpalManagerConsole : public OpalManager
     PSyncPoint m_endRun;
     bool       m_interrupted;
     bool       m_verbose;
+#if OPAL_STATISTICS
+    PTimeInterval m_statsPeriod;
+    PFilePath     m_statsFile;
+    typedef map<PString, OpalMediaStatistics> StatsMap;
+    StatsMap m_statistics;
+    virtual void OutputStatistics(ostream & strm);
+    virtual void OutputCallStatistics(ostream & strm, OpalCall & call);
+    virtual void OutputStreamStatistics(ostream & strm, const OpalMediaStream & stream);
+#endif
 };
 
 

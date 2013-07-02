@@ -177,6 +177,11 @@ PString OpalManagerConsole::GetArgumentSpec() const
          "-vid-qos:          Set Video RTP Quality of Service to n\n"
 
          "[Debug & General:]"
+#if OPAL_STATISTICS
+         "-statistics.       Output statistics periodically\n"
+         "-stat-time:        Time between statistics output\n"
+         "-stat-file:        File to output statistics too, default is stdout\n"
+#endif
          PTRACE_ARGLIST
          "V-version.         Display application version.\n"
          "h-help.            This help message.\n"
@@ -553,12 +558,35 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
     cout << "Media Formats: " << setfill(',') << formats << setfill(' ') << endl;
   }
 
+#if OPAL_STATISTICS
+  m_statsPeriod.SetInterval(0, args.GetOptionString("stat-time").AsUnsigned());
+  m_statsFile = args.GetOptionString("stat-file");
+  if (m_statsPeriod == 0 && args.HasOption("statistics"))
+    m_statsPeriod.SetInterval(0, 5);
+#endif
+
   return true;
 }
 
 
 void OpalManagerConsole::Run()
 {
+#if OPAL_STATISTICS
+  if (m_statsPeriod != 0) {
+    while (!m_endRun.Wait(m_statsPeriod)) {
+      if (m_statsFile.IsEmpty())
+        OutputStatistics(cout);
+      else {
+        PTextFile file(m_statsFile);
+        if (file.Open(PFile::WriteOnly, PFile::Create)) {
+          file.SetPosition(0, PFile::End);
+          OutputStatistics(file);
+        }
+      }
+    }
+    return;
+  }
+#endif
   m_endRun.Wait();
 }
 
@@ -726,6 +754,51 @@ void OpalManagerConsole::OnClearedCall(OpalCall & call)
 }
 
 
+#if OPAL_STATISTICS
+void OpalManagerConsole::OutputStatistics(ostream & strm)
+{
+  PArray<PString> calls = GetAllCalls();
+  for (PINDEX cIdx = 0; cIdx < calls.GetSize(); ++cIdx) {
+    PSafePtr<OpalCall> call = FindCallWithLock(calls[cIdx], PSafeReference);
+    if (call != NULL)
+      OutputCallStatistics(strm, *call);
+  }
+}
+
+
+void OpalManagerConsole::OutputCallStatistics(ostream & strm, OpalCall & call)
+{
+  strm << "Call " << call.GetToken() << " from " << call.GetPartyA() << " to " << call.GetPartyB() << "\n"
+          "  started at " << call.GetStartTime();
+  strm << '\n';
+
+  PSafePtr<OpalConnection> connection = call.GetConnection(0);
+  if (connection == NULL)
+    return;
+
+  if (!connection->IsNetworkConnection()) {
+    PSafePtr<OpalConnection> otherConnection = call.GetConnection(1);
+    if (otherConnection != NULL)
+      connection = otherConnection;
+  }
+
+  for (int direction = 0; direction < 2; ++direction) {
+    PSafePtr<OpalMediaStream> stream;
+    while ((stream = connection->GetMediaStream(OpalMediaType(), direction == 0, stream)) != NULL)
+      OutputStreamStatistics(strm, *stream);
+  }
+}
+
+
+void OpalManagerConsole::OutputStreamStatistics(ostream & strm, const OpalMediaStream & stream)
+{
+  PString id = stream.GetID();
+  strm << "    " << (stream.IsSource() ? "Receive" : "Transmit") << " stream " << id << " statistics:\n"
+       << setprecision(6) << m_statistics[id].Update(stream);
+}
+#endif
+
+    
 /////////////////////////////////////////////////////////////////////////////
 
 OpalManagerCLI::OpalManagerCLI()

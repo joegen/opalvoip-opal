@@ -48,9 +48,12 @@
 #if OPAL_STATISTICS
 
 OpalMediaStatistics::OpalMediaStatistics()
-  : m_startTime(0)
+  : m_lastUpdateTime(PTimer::Tick())
+  , m_startTime(0)
   , m_totalBytes(0)
+  , m_deltaBytes(0)
   , m_totalPackets(0)
+  , m_deltaPackets(0)
   , m_packetsLost(0)
   , m_packetsOutOfOrder(0)
   , m_packetsTooLate(0)
@@ -66,6 +69,7 @@ OpalMediaStatistics::OpalMediaStatistics()
 #if OPAL_VIDEO
     // Video
   , m_totalFrames(0)
+  , m_deltaFrames(0)
   , m_keyFrames(0)
   , m_quality(-1)
 #endif
@@ -104,6 +108,91 @@ ostream & operator<<(ostream & strm, OpalMediaStatistics::FaxCompression compres
 }
 #endif
 
+
+OpalMediaStatistics & OpalMediaStatistics::Update(const OpalMediaStream & stream)
+{
+  PTimeInterval now = PTimer::Tick();
+  m_updateInterval = now - m_lastUpdateTime;
+  m_lastUpdateTime = now;
+
+  uint64_t previousBytes = m_totalBytes;
+  unsigned previousPackets = m_totalPackets;
+#if OPAL_VIDEO
+  unsigned previousFrames = m_totalFrames;
+#endif
+
+  stream.GetStatistics(*this);
+
+  m_deltaBytes = m_totalBytes - previousBytes;
+  m_deltaPackets = m_totalPackets - previousPackets;
+#if OPAL_VIDEO
+  m_deltaFrames = m_totalFrames - previousFrames;
+#endif
+
+  return *this;
+}
+
+
+static ostream & AsRate(ostream & strm, int64_t things, const PTimeInterval & interval, const char * units)
+{
+  if (interval != 0)
+    strm << PString(PString::ScaleSI, things*1000.0/interval.GetMilliSeconds(), 3) << ' ' << units;
+  return strm;
+}
+
+
+void OpalMediaStatistics::PrintOn(ostream & strm) const
+{
+  std::streamsize indent = strm.precision()+20;
+
+  PTimeInterval totalDuration = (PTime() - m_startTime);
+
+  strm << setw(indent) <<          "Media Format" << " = " << m_mediaFormat << " (" << m_mediaType << ")\n"
+       << setw(indent) <<    "Session Start Time" << " = " << m_startTime << '\n'
+       << setw(indent) <<           "Total Bytes" << " = " << PString(PString::ScaleSI, m_totalBytes) << "B\n"
+       << setw(indent) <<      "Average bit rate" << " = "; AsRate(strm, m_totalBytes*8, totalDuration, "bps") << '\n'
+       << setw(indent) <<      "Current bit rate" << " = "; AsRate(strm, m_deltaBytes*8, m_updateInterval, "bps") << '\n'
+       << setw(indent) <<         "Total Packets" << " = " << m_totalPackets << '\n'
+       << setw(indent) <<   "Average packet rate" << " = "; AsRate(strm, m_totalPackets, totalDuration, "packets/second") << '\n'
+       << setw(indent) <<   "Current packet rate" << " = "; AsRate(strm, m_deltaPackets, m_updateInterval, "packets/second") << '\n'
+       << setw(indent) <<          "Packets Lost" << " = " << m_packetsLost << '\n'
+       << setw(indent) <<  "Packets out of order" << " = " << m_packetsOutOfOrder << '\n'
+       << setw(indent) <<      "Packets too late" << " = " << m_packetsTooLate << '\n'
+       << setw(indent) <<   "Minimum packet time" << " = " << m_minimumPacketTime << "ms\n"
+       << setw(indent) <<   "Average packet time" << " = " << m_averagePacketTime << "ms\n"
+       << setw(indent) <<   "Maximum packet time" << " = " << m_maximumPacketTime << "ms\n";
+
+  if (m_mediaType == OpalMediaType::Audio())
+    strm << setw(indent) <<     "Packet overruns" << " = " << m_packetOverruns << '\n'
+         << setw(indent) <<      "Average jitter" << " = " << m_averageJitter << "ms\n"
+         << setw(indent) <<      "Maximum jitter" << " = " << m_maximumJitter << "ms\n"
+         << setw(indent) << "Jitter buffer delay" << " = " << m_jitterBufferDelay << "ms\n";
+#if OPAL_VIDEO
+  else if (m_mediaType == OpalMediaType::Video()) {
+    strm << setw(indent) <<  "Total video frames" << " = " << m_totalFrames << '\n'
+         << setw(indent) <<  "Average Frame rate" << " = "; AsRate(strm, m_totalFrames, totalDuration, "fps") << '\n'
+         << setw(indent) <<  "Current Frame rate" << " = "; AsRate(strm, m_deltaFrames, m_updateInterval, "fps") << '\n'
+         << setw(indent) <<    "Total key frames" << " = " << m_keyFrames << '\n';
+    if (m_quality >= 0)
+      strm << setw(indent) <<           "Quality" << " = " << m_quality << '\n';
+  }
+#endif
+#if OPAL_FAX
+  else if (m_mediaType == OpalMediaType::Fax()) {
+    strm << setw(indent) <<          "Fax result" << " = " << m_fax.m_result << '\n'
+         << setw(indent) <<   "Selected Bit rate" << " = " << m_fax.m_bitRate << '\n'
+         << setw(indent) <<         "Compression" << " = " << m_fax.m_compression << '\n'
+         << setw(indent) <<   "Total image pages" << " = " << m_fax.m_totalPages << '\n'
+         << setw(indent) <<   "Total image bytes" << " = " << m_fax.m_imageSize << '\n'
+         << setw(indent) <<          "Resolution" << " = " << m_fax.m_resolutionX << 'x' << m_fax.m_resolutionY << '\n'
+         << setw(indent) <<     "Page dimensions" << " = " << m_fax.m_pageWidth << 'x' << m_fax.m_pageHeight << '\n'
+         << setw(indent) <<   "Bad rows received" << " = " << m_fax.m_badRows << " (longest run=" << m_fax.m_mostBadRows << ")\n"
+         << setw(indent) <<    "Error correction" << " = " << m_fax.m_errorCorrection << '\n'
+         << setw(indent) <<       "Error retries" << " = " << m_fax.m_errorCorrectionRetries << '\n';
+  }
+#endif
+  strm << '\n';
+}
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
