@@ -58,10 +58,21 @@ class OpalMediaStatistics : public PObject
   public:
     OpalMediaStatistics();
 
+    OpalMediaStatistics & Update(const OpalMediaStream & stream);
+    virtual void PrintOn(ostream & strm) const;
+
+    OpalMediaType m_mediaType;
+    PString       m_mediaFormat;
+
+    PTimeInterval m_updateInterval;
+    PTimeInterval m_lastUpdateTime;
+
     // General info (typicallly from RTP)
     PTime    m_startTime;
     PUInt64  m_totalBytes;
+    PUInt64  m_deltaBytes;
     unsigned m_totalPackets;
+    unsigned m_deltaPackets;
     unsigned m_packetsLost;
     unsigned m_packetsOutOfOrder;
     unsigned m_packetsTooLate;
@@ -78,6 +89,7 @@ class OpalMediaStatistics : public PObject
 #if OPAL_VIDEO
     // Video
     unsigned m_totalFrames;
+    unsigned m_deltaFrames;
     unsigned m_keyFrames;
     int      m_quality; // -1 is none, 0 is very good > 0 is progressively worse
 #endif
