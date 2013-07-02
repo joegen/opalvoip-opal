@@ -73,6 +73,32 @@ const OpalVideoFormat & GetOpalRGB32()
   return RGB32;
 }
 
+const OpalVideoFormat & GetOpalBGR24()
+{
+  static const OpalVideoFormat BGR24(
+    OPAL_BGR24,
+    RTP_DataFrame::MaxPayloadType,
+    NULL,
+    FRAME_WIDTH, FRAME_HEIGHT,
+    FRAME_RATE,
+    24*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE  // Bandwidth
+  );
+  return BGR24;
+}
+
+const OpalVideoFormat & GetOpalBGR32()
+{
+  static const OpalVideoFormat BGR32(
+    OPAL_BGR32,
+    RTP_DataFrame::MaxPayloadType,
+    NULL,
+    FRAME_WIDTH, FRAME_HEIGHT,
+    FRAME_RATE,
+    32*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE  // Bandwidth
+  );
+  return BGR32;
+}
+
 const OpalVideoFormat & GetOpalYUV420P()
 {
   static const OpalVideoFormat YUV420P(
