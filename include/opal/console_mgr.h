@@ -97,6 +97,7 @@ class OpalManagerConsole : public OpalManager
     PFilePath     m_statsFile;
     typedef map<PString, OpalMediaStatistics> StatsMap;
     StatsMap m_statistics;
+    PMutex   m_statsMutex;
     virtual bool OutputStatistics();
     virtual bool OutputStatistics(ostream & strm);
     virtual bool OutputCallStatistics(ostream & strm, OpalCall & call);

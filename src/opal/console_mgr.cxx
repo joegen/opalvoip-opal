@@ -703,9 +703,11 @@ void OpalManagerConsole::OnClosedMediaStream(const OpalMediaStream & stream)
     LogMediaStream("Stopped", stream, stream.GetConnection());
 
 #if OPAL_STATISTICS
+  m_statsMutex.Wait();
   StatsMap::iterator it = m_statistics.find(MakeStatisticsKey(stream));
   if (it != m_statistics.end())
     m_statistics.erase(it);
+  m_statsMutex.Signal();
 #endif
 }
 
@@ -829,8 +831,12 @@ bool OpalManagerConsole::OutputStreamStatistics(ostream & strm, const OpalMediaS
     return false;
 
   strm << "    " << (stream.IsSource() ? "Receive" : "Transmit") << " stream,"
-          " session " << stream.GetSessionID() << ", statistics:\n"
-       << setprecision(6) << m_statistics[MakeStatisticsKey(stream)].Update(stream);
+          " session " << stream.GetSessionID() << ", statistics:\n";
+
+  m_statsMutex.Wait();
+  strm << setprecision(6) << m_statistics[MakeStatisticsKey(stream)].Update(stream);
+  m_statsMutex.Signal();
+
   return true;
 }
 #endif
