@@ -65,12 +65,27 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
 
   // Set up GStreamer
   GstEndPoint * gst  = new GstEndPoint(*this);
-  gst->SetAudioSourceDevice(args.GetOptionString("audio-source", gst->GetAudioSourceDevice()));
-  gst->SetAudioSinkDevice(args.GetOptionString("audio-sink", gst->GetAudioSinkDevice()));
+  if (!gst->SetAudioSourceDevice(args.GetOptionString("audio-source", gst->GetAudioSourceDevice()))) {
+    cerr << "Could not set audio source.\n";
+    return false;
+  }
+  if (!gst->SetAudioSinkDevice(args.GetOptionString("audio-sink", gst->GetAudioSinkDevice()))) {
+    cerr << "Could not set audio sink.\n";
+    return false;
+  }
 #if OPAL_VIDEO
-  gst->SetVideoSourceDevice(args.GetOptionString("video-source", gst->GetVideoSourceDevice()));
-  gst->SetVideoSinkDevice(args.GetOptionString("video-sink", gst->GetVideoSinkDevice()));
-  gst->SetVideoColourConverter(args.GetOptionString("video-colour", gst->GetVideoColourConverter()));
+  if (!gst->SetVideoSourceDevice(args.GetOptionString("video-source", gst->GetVideoSourceDevice()))) {
+    cerr << "Could not set video source.\n";
+    return false;
+  }
+  if (!gst->SetVideoSinkDevice(args.GetOptionString("video-sink", gst->GetVideoSinkDevice()))) {
+    cerr << "Could not set video sink.\n";
+    return false;
+  }
+  if (!gst->SetVideoColourConverter(args.GetOptionString("video-colour", gst->GetVideoColourConverter()))) {
+    cerr << "Could not set video colour converter\n";
+    return false;
+  }
 #endif // OPAL_VIDEO
 
   while (args.HasOption("map")) {
@@ -85,7 +100,8 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
     }
 
     GstEndPoint::CodecPipelines codec;
-    gst->GetMapping(mediaFormat, codec);
+    if (gst->GetMapping(mediaFormat, codec))
+      cout << "Overriding existing media format mapping for \"" << mediaFormat << '"' << endl;
 
     if (args.HasOption("encoder"))
       codec.m_encoder = args.GetOptionString("encoder");
@@ -95,7 +111,10 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
       codec.m_packetiser = args.GetOptionString("packetiser");
     if (args.HasOption("depacketiser"))
       codec.m_depacketiser = args.GetOptionString("depacketiser");
-    gst->SetMapping(mediaFormat, codec);
+    if (!gst->SetMapping(mediaFormat, codec)) {
+      cerr << "Could not set media format mapping for \"" << mediaFormat << '"' << endl;
+      return false;
+    }
 
     if (!args.Parse())
       break;
