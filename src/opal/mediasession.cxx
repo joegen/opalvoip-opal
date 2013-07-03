@@ -112,7 +112,7 @@ ostream & operator<<(ostream & strm, OpalMediaStatistics::FaxCompression compres
 OpalMediaStatistics & OpalMediaStatistics::Update(const OpalMediaStream & stream)
 {
   PTimeInterval now = PTimer::Tick();
-  m_updateInterval = now - m_lastUpdateTime;
+  m_updateInterval = now > m_lastUpdateTime ? now - m_lastUpdateTime : 0;
   m_lastUpdateTime = now;
 
   uint64_t previousBytes = m_totalBytes;
@@ -123,20 +123,22 @@ OpalMediaStatistics & OpalMediaStatistics::Update(const OpalMediaStream & stream
 
   stream.GetStatistics(*this);
 
-  m_deltaBytes = m_totalBytes - previousBytes;
-  m_deltaPackets = m_totalPackets - previousPackets;
+  m_deltaBytes = m_totalBytes > previousBytes ? m_totalBytes - previousBytes : 0;
+  m_deltaPackets = m_totalPackets > previousPackets ? m_totalPackets - previousPackets : 0;
 #if OPAL_VIDEO
-  m_deltaFrames = m_totalFrames - previousFrames;
+  m_deltaFrames = m_totalFrames > previousFrames ? m_totalFrames - previousFrames : 0;
 #endif
 
   return *this;
 }
 
 
-static ostream & AsRate(ostream & strm, int64_t things, const PTimeInterval & interval, const char * units)
+static ostream & AsRate(ostream & strm, int64_t things, const PTimeInterval & interval, unsigned decimals, const char * units)
 {
   if (interval != 0)
-    strm << PString(PString::ScaleSI, things*1000.0/interval.GetMilliSeconds(), 3) << ' ' << units;
+    strm << PString(PString::ScaleSI, things*1000.0/interval.GetMilliSeconds(), decimals) << ' ' << units;
+  else
+    strm << "N/A";
   return strm;
 }
 
@@ -147,34 +149,37 @@ void OpalMediaStatistics::PrintOn(ostream & strm) const
 
   PTimeInterval totalDuration = (PTime() - m_startTime);
 
-  strm << setw(indent) <<          "Media Format" << " = " << m_mediaFormat << " (" << m_mediaType << ")\n"
-       << setw(indent) <<    "Session Start Time" << " = " << m_startTime << '\n'
-       << setw(indent) <<           "Total Bytes" << " = " << PString(PString::ScaleSI, m_totalBytes) << "B\n"
-       << setw(indent) <<      "Average bit rate" << " = "; AsRate(strm, m_totalBytes*8, totalDuration, "bps") << '\n'
-       << setw(indent) <<      "Current bit rate" << " = "; AsRate(strm, m_deltaBytes*8, m_updateInterval, "bps") << '\n'
-       << setw(indent) <<         "Total Packets" << " = " << m_totalPackets << '\n'
-       << setw(indent) <<   "Average packet rate" << " = "; AsRate(strm, m_totalPackets, totalDuration, "packets/second") << '\n'
-       << setw(indent) <<   "Current packet rate" << " = "; AsRate(strm, m_deltaPackets, m_updateInterval, "packets/second") << '\n'
-       << setw(indent) <<          "Packets Lost" << " = " << m_packetsLost << '\n'
-       << setw(indent) <<  "Packets out of order" << " = " << m_packetsOutOfOrder << '\n'
-       << setw(indent) <<      "Packets too late" << " = " << m_packetsTooLate << '\n'
-       << setw(indent) <<   "Minimum packet time" << " = " << m_minimumPacketTime << "ms\n"
-       << setw(indent) <<   "Average packet time" << " = " << m_averagePacketTime << "ms\n"
-       << setw(indent) <<   "Maximum packet time" << " = " << m_maximumPacketTime << "ms\n";
+  strm << setw(indent) <<            "Media format" << " = " << m_mediaFormat << " (" << m_mediaType << ")\n"
+       << setw(indent) <<      "Session start time" << " = " << m_startTime << '\n'
+       << setw(indent) <<        "Session duration" << " = " << totalDuration << " (" << m_updateInterval << ")\n"
+       << setw(indent) <<             "Total bytes" << " = " << PString(PString::ScaleSI, m_totalBytes) << "B\n"
+       << setw(indent) <<        "Average bit rate" << " = "; AsRate(strm, m_totalBytes*8, totalDuration, 2, "bps") << '\n'
+       << setw(indent) <<        "Current bit rate" << " = "; AsRate(strm, m_deltaBytes*8, m_updateInterval, 2, "bps") << '\n'
+       << setw(indent) <<           "Total packets" << " = " << m_totalPackets << '\n'
+       << setw(indent) <<     "Average packet rate" << " = "; AsRate(strm, m_totalPackets, totalDuration, 0, "packets/second") << '\n'
+       << setw(indent) <<     "Current packet rate" << " = "; AsRate(strm, m_deltaPackets, m_updateInterval, 0, "packets/second") << '\n'
+       << setw(indent) <<     "Minimum packet time" << " = " << m_minimumPacketTime << "ms\n"
+       << setw(indent) <<     "Average packet time" << " = " << m_averagePacketTime << "ms\n"
+       << setw(indent) <<     "Maximum packet time" << " = " << m_maximumPacketTime << "ms\n"
+       << setw(indent) <<            "Packets lost" << " = " << m_packetsLost << '\n'
+       << setw(indent) <<    "Packets out of order" << " = " << m_packetsOutOfOrder << '\n'
+       << setw(indent) <<        "Packets too late" << " = " << m_packetsTooLate << '\n';
 
   if (m_mediaType == OpalMediaType::Audio())
-    strm << setw(indent) <<     "Packet overruns" << " = " << m_packetOverruns << '\n'
-         << setw(indent) <<      "Average jitter" << " = " << m_averageJitter << "ms\n"
-         << setw(indent) <<      "Maximum jitter" << " = " << m_maximumJitter << "ms\n"
-         << setw(indent) << "Jitter buffer delay" << " = " << m_jitterBufferDelay << "ms\n";
+    strm << setw(indent) <<       "Packet overruns" << " = " << m_packetOverruns << '\n';
+    if (m_averageJitter > 0 || m_maximumJitter > 0)
+      strm << setw(indent) <<      "Average jitter" << " = " << m_averageJitter << "ms\n"
+           << setw(indent) <<      "Maximum jitter" << " = " << m_maximumJitter << "ms\n";
+    if (m_jitterBufferDelay > 0)
+      strm << setw(indent) << "Jitter buffer delay" << " = " << m_jitterBufferDelay << "ms\n";
 #if OPAL_VIDEO
   else if (m_mediaType == OpalMediaType::Video()) {
-    strm << setw(indent) <<  "Total video frames" << " = " << m_totalFrames << '\n'
-         << setw(indent) <<  "Average Frame rate" << " = "; AsRate(strm, m_totalFrames, totalDuration, "fps") << '\n'
-         << setw(indent) <<  "Current Frame rate" << " = "; AsRate(strm, m_deltaFrames, m_updateInterval, "fps") << '\n'
-         << setw(indent) <<    "Total key frames" << " = " << m_keyFrames << '\n';
+    strm << setw(indent) <<    "Total video frames" << " = " << m_totalFrames << '\n'
+         << setw(indent) <<    "Average Frame rate" << " = "; AsRate(strm, m_totalFrames, totalDuration, 1, "fps") << '\n'
+         << setw(indent) <<    "Current Frame rate" << " = "; AsRate(strm, m_deltaFrames, m_updateInterval, 1, "fps") << '\n'
+         << setw(indent) <<      "Total key frames" << " = " << m_keyFrames << '\n';
     if (m_quality >= 0)
-      strm << setw(indent) <<           "Quality" << " = " << m_quality << '\n';
+      strm << setw(indent) <<  "Video quality (QP)" << " = " << m_quality << '\n';
   }
 #endif
 #if OPAL_FAX
