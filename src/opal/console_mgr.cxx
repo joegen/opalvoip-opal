@@ -495,10 +495,12 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
   else {
     OpalCapiEndPoint * capi = CreateCapiEndPoint();
     unsigned controllers = capi->OpenControllers();
-    if (controllers == 0)
-      cerr << "Could not open CAPI controllers." << endl;
-    else if (verbose)
-      cout << "Found " << controllers << " CAPI controllers." << endl;
+    if (verbose) {
+      if (controllers == 0)
+        cout << "No CAPI controllers available." << endl;
+      else
+        cout << "Found " << controllers << " CAPI controllers." << endl;
+    }
 
     AddRouteEntry("isdn:.* = " + defaultRoute);
   }
@@ -573,17 +575,8 @@ void OpalManagerConsole::Run()
 {
 #if OPAL_STATISTICS
   if (m_statsPeriod != 0) {
-    while (!m_endRun.Wait(m_statsPeriod)) {
-      if (m_statsFile.IsEmpty())
-        OutputStatistics(cout);
-      else {
-        PTextFile file(m_statsFile);
-        if (file.Open(PFile::WriteOnly, PFile::Create)) {
-          file.SetPosition(0, PFile::End);
-          OutputStatistics(file);
-        }
-      }
-    }
+    while (!m_endRun.Wait(m_statsPeriod))
+      OutputStatistics();
     return;
   }
 #endif
@@ -694,12 +687,26 @@ PBoolean OpalManagerConsole::OnOpenMediaStream(OpalConnection & connection, Opal
 }
 
 
+#if OPAL_STATISTICS
+static PString MakeStatisticsKey(const OpalMediaStream & stream)
+{
+  return stream.GetID() + (stream.IsSource() ? "-Source" : "-Sink");
+}
+#endif
+
+
 void OpalManagerConsole::OnClosedMediaStream(const OpalMediaStream & stream)
 {
   OpalManager::OnClosedMediaStream(stream);
 
   if (m_verbose)
     LogMediaStream("Stopped", stream, stream.GetConnection());
+
+#if OPAL_STATISTICS
+  StatsMap::iterator it = m_statistics.find(MakeStatisticsKey(stream));
+  if (it != m_statistics.end())
+    m_statistics.erase(it);
+#endif
 }
 
 
@@ -755,26 +762,40 @@ void OpalManagerConsole::OnClearedCall(OpalCall & call)
 
 
 #if OPAL_STATISTICS
-void OpalManagerConsole::OutputStatistics(ostream & strm)
+bool OpalManagerConsole::OutputStatistics()
 {
-  PArray<PString> calls = GetAllCalls();
-  for (PINDEX cIdx = 0; cIdx < calls.GetSize(); ++cIdx) {
-    PSafePtr<OpalCall> call = FindCallWithLock(calls[cIdx], PSafeReference);
-    if (call != NULL)
-      OutputCallStatistics(strm, *call);
-  }
+  if (m_statsFile.IsEmpty())
+    return OutputStatistics(cout);
+
+  PTextFile file(m_statsFile);
+  if (!file.Open(PFile::WriteOnly, PFile::Create))
+    return false;
+
+  file.SetPosition(0, PFile::End);
+  return OutputStatistics(file);
 }
 
 
-void OpalManagerConsole::OutputCallStatistics(ostream & strm, OpalCall & call)
+bool OpalManagerConsole::OutputStatistics(ostream & strm)
 {
-  strm << "Call " << call.GetToken() << " from " << call.GetPartyA() << " to " << call.GetPartyB() << "\n"
-          "  started at " << call.GetStartTime();
-  strm << '\n';
+  bool ouputSomething = false;
 
+  PArray<PString> calls = GetAllCalls();
+  for (PINDEX cIdx = 0; cIdx < calls.GetSize(); ++cIdx) {
+    PSafePtr<OpalCall> call = FindCallWithLock(calls[cIdx], PSafeReference);
+    if (call != NULL && OutputCallStatistics(strm, *call))
+      ouputSomething = true;
+  }
+
+  return ouputSomething;
+}
+
+
+bool OpalManagerConsole::OutputCallStatistics(ostream & strm, OpalCall & call)
+{
   PSafePtr<OpalConnection> connection = call.GetConnection(0);
   if (connection == NULL)
-    return;
+    return false; // This really shold not happen
 
   if (!connection->IsNetworkConnection()) {
     PSafePtr<OpalConnection> otherConnection = call.GetConnection(1);
@@ -782,19 +803,35 @@ void OpalManagerConsole::OutputCallStatistics(ostream & strm, OpalCall & call)
       connection = otherConnection;
   }
 
+  strm << "Call " << call.GetToken() << " from " << call.GetPartyA() << " to " << call.GetPartyB() << "\n"
+          "  started at " << call.GetStartTime();
+  strm << '\n';
+
+  bool noStreams = true;
   for (int direction = 0; direction < 2; ++direction) {
     PSafePtr<OpalMediaStream> stream;
-    while ((stream = connection->GetMediaStream(OpalMediaType(), direction == 0, stream)) != NULL)
-      OutputStreamStatistics(strm, *stream);
+    while ((stream = connection->GetMediaStream(OpalMediaType(), direction == 0, stream)) != NULL) {
+      if (OutputStreamStatistics(strm, *stream))
+        noStreams = false;
+    }
   }
+
+  if (noStreams)
+    strm << "    No media streams open.\n";
+
+  return true;
 }
 
 
-void OpalManagerConsole::OutputStreamStatistics(ostream & strm, const OpalMediaStream & stream)
+bool OpalManagerConsole::OutputStreamStatistics(ostream & strm, const OpalMediaStream & stream)
 {
-  PString id = stream.GetID();
-  strm << "    " << (stream.IsSource() ? "Receive" : "Transmit") << " stream " << id << " statistics:\n"
-       << setprecision(6) << m_statistics[id].Update(stream);
+  if (!stream.IsOpen())
+    return false;
+
+  strm << "    " << (stream.IsSource() ? "Receive" : "Transmit") << " stream,"
+          " session " << stream.GetSessionID() << ", statistics:\n"
+       << setprecision(6) << m_statistics[MakeStatisticsKey(stream)].Update(stream);
+  return true;
 }
 #endif
 

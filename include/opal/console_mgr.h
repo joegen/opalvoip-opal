@@ -97,9 +97,10 @@ class OpalManagerConsole : public OpalManager
     PFilePath     m_statsFile;
     typedef map<PString, OpalMediaStatistics> StatsMap;
     StatsMap m_statistics;
-    virtual void OutputStatistics(ostream & strm);
-    virtual void OutputCallStatistics(ostream & strm, OpalCall & call);
-    virtual void OutputStreamStatistics(ostream & strm, const OpalMediaStream & stream);
+    virtual bool OutputStatistics();
+    virtual bool OutputStatistics(ostream & strm);
+    virtual bool OutputCallStatistics(ostream & strm, OpalCall & call);
+    virtual bool OutputStreamStatistics(ostream & strm, const OpalMediaStream & stream);
 #endif
 };
 
