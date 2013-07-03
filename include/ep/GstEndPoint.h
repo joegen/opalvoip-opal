@@ -50,6 +50,8 @@ class GstMediaStream;
 #define OPAL_GST_PIPLINE_VAR_WIDTH       "width"
 #define OPAL_GST_PIPLINE_VAR_HEIGHT      "height"
 #define OPAL_GST_PIPLINE_VAR_FRAME_RATE  "frame-rate"
+#define OPAL_GST_PIPLINE_VAR_BIT_RATE    "bit-rate"
+#define OPAL_GST_PIPLINE_VAR_BIT_RATE_K  "bit-rate-kbps"
 
 
 /**Endpoint for performing OPAL media via gstreamer.
@@ -151,8 +153,11 @@ class GstEndPoint : public OpalLocalEndPoint
     virtual bool BuildEncoder(ostream & desc, const GstMediaStream & stream);
     virtual bool BuildDecoder(ostream & desc, const GstMediaStream & stream);
 
-    void SetAudioSourceDevice(const PString & dev) { m_audioSourceDevice = dev; }
-    void SetAudioSinkDevice  (const PString & dev) { m_audioSinkDevice = dev; }
+    virtual bool BuildAppSource(ostream & desc, const PString & name);
+    virtual bool BuildAppSink(ostream & desc, const PString & name);
+
+    bool SetAudioSourceDevice(const PString & elementName);
+    bool SetAudioSinkDevice  (const PString & elementName);
     const PString & GetAudioSourceDevice() const { return m_audioSourceDevice; }
     const PString & GetAudioSinkDevice()   const { return m_audioSinkDevice; }
 
@@ -164,11 +169,11 @@ class GstEndPoint : public OpalLocalEndPoint
     virtual bool BuildVideoSinkPipeline(ostream & desc, const GstMediaStream & stream);
     virtual bool BuildVideoSourceDevice(ostream & desc, const GstMediaStream & stream);
     virtual bool BuildVideoSinkDevice(ostream & desc, const GstMediaStream & stream);
-    void SetVideoSourceDevice(const PString & dev) { m_videoSourceDevice = dev; }
-    void SetVideoSinkDevice  (const PString & dev) { m_videoSinkDevice = dev; }
+    bool SetVideoSourceDevice(const PString & elementName);
+    bool SetVideoSinkDevice  (const PString & elementName);
     const PString & GetVideoSourceDevice() const { return m_videoSourceDevice; }
     const PString & GetVideoSinkDevice()   const { return m_videoSinkDevice; }
-    void SetVideoColourConverter(const PString & dev) { m_videoColourConverter = dev; }
+    bool SetVideoColourConverter(const PString & elementName);
     const PString & GetVideoColourConverter()   const { return m_videoColourConverter; }
 
     static const PString & GetPipelineVideoSourceName();

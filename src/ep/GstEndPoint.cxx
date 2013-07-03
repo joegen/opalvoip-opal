@@ -54,7 +54,7 @@ const PString & GstEndPoint::GetPipelineVideoSinkName()   { static PConstString 
 
 static const char * const PreferredAudioSourceDevice[] = {
 #if _WIN32
-//  "wasapisrc",
+//  "wasapisrc", // Does not work, no idea why
   "directsoundsrc",
   "dshowaudiosrc",
 #else
@@ -63,13 +63,13 @@ static const char * const PreferredAudioSourceDevice[] = {
   "osssrc",
   "pulsesrc",
 #endif
-  "autoaudiosrc" // Note this is in desperation only, if used cannot set rad buffer size
+  "autoaudiosrc" // Note this is in desperation only, if used cannot set read buffer size
 };
 
 
 static const char * const PreferredAudioSinkDevice[] = {
 #if _WIN32
-//  "wasapisink", Deos not work, no idea why
+//  "wasapisink", // Does not work, no idea why
   "directsoundsink",
   "dshowaudiosink",
 #else
@@ -95,8 +95,8 @@ static const char * const PreferredVideoSourceDevice[] = {
 
 static const char * const PreferredVideoSinkDevice[] = {
 #if _WIN32
-  "dshowvideosink",
   "directdrawsink",
+  "dshowvideosink",
 #else
   "xvimagesink",
 #endif
@@ -134,14 +134,14 @@ static struct GstInitInfo {
 #if OPAL_VIDEO
   { OPAL_H261,          "",              "ffdec_h261",  "",                   "ffenc_h261" },
   { OPAL_H263,          "rtph263depay",  "ffdec_h263",  "rtph263pay",         "ffenc_h263"
-                                                                              " rtp-payload-size=1400"
+                                                                              " rtp-payload-size={"OPAL_GST_PIPLINE_VAR_MTU"}"
                                                                               " max-key-interval=125"
                                                                               " me-method=5"
                                                                               " max-bframes=0"
                                                                               " gop-size=125"
                                                                               " rc-buffer-size=65536000"
                                                                               " rc-min-rate=0"
-                                                                              " rc-max-rate=1024000"
+                                                                              " rc-max-rate={"OPAL_GST_PIPLINE_VAR_BIT_RATE"}"
                                                                               " rc-qsquish=0"
                                                                               " rc-eq=1"
                                                                               " max-qdiff=10"
@@ -152,14 +152,14 @@ static struct GstInitInfo {
                                                                               " qmin=2"
   },
   { OPAL_H263plus,      "rtph263pdepay", "ffdec_h263",  "rtph263ppay",        "ffenc_h263p"
-                                                                             " rtp-payload-size=200"
+                                                                             " rtp-payload-size={"OPAL_GST_PIPLINE_VAR_MTU"}"
                                                                              " max-key-interval=125"
                                                                              " me-method=5"
                                                                              " max-bframes=0"
                                                                              " gop-size=125"
                                                                              " rc-buffer-size=65536000"
                                                                              " rc-min-rate=0"
-                                                                             " rc-max-rate=1024000"
+                                                                             " rc-max-rate={"OPAL_GST_PIPLINE_VAR_BIT_RATE"}"
                                                                              " rc-qsquish=0"
                                                                              " rc-eq=1"
                                                                              " max-qdiff=10"
@@ -174,7 +174,7 @@ static struct GstInitInfo {
                                                                               " byte-stream=true"
                                                                               " bframes=0"
                                                                               " b-adapt=0"
-                                                                              " bitrate=1024"
+                                                                              " bitrate={"OPAL_GST_PIPLINE_VAR_BIT_RATE_K"}"
                                                                               " tune=0x4"
                                                                               " speed-preset=3"
                                                                               " sliced-threads=false"
@@ -347,6 +347,13 @@ bool GstEndPoint::BuildPipeline(ostream & description, const GstMediaStream & st
 }
 
 
+bool GstEndPoint::BuildAppSink(ostream & desc, const PString & name)
+{
+  desc << " ! appsink name=" << name << " sync=true async=false max-buffers=10 drop=false";
+  return true;
+}
+
+
 bool GstEndPoint::BuildAudioSourcePipeline(ostream & desc, const GstMediaStream & stream)
 {
   const OpalMediaFormat & mediaFormat = stream.GetMediaFormat();
@@ -368,7 +375,13 @@ bool GstEndPoint::BuildAudioSourcePipeline(ostream & desc, const GstMediaStream 
       return false;
   }
 
-  desc << " ! appsink name=" << GetPipelineAudioSinkName() << " sync=false async=true max-buffers=2 drop=true";
+  return BuildAppSink(desc, GetPipelineAudioSinkName());
+}
+
+
+bool GstEndPoint::BuildAppSource(ostream & desc, const PString & name)
+{
+  desc << "appsrc stream-type=0 is-live=true name=" << name << " ! ";
   return true;
 }
 
@@ -377,7 +390,8 @@ bool GstEndPoint::BuildAudioSinkPipeline(ostream & desc, const GstMediaStream & 
 {
   const OpalMediaFormat & mediaFormat = stream.GetMediaFormat();
 
-  desc << "appsrc name=" << GetPipelineAudioSourceName() << " ! ";
+  if (!BuildAppSource(desc, GetPipelineAudioSourceName()))
+    return false;
 
   if (mediaFormat == OpalPCM16)
     desc << "audio/x-raw-int, "
@@ -420,6 +434,34 @@ bool GstEndPoint::BuildAudioSinkDevice(ostream & desc, const GstMediaStream & /*
 }
 
 
+static bool SetValidElementName(PString & device, const PString & elementName PTRACE_PARAM(, const char * which))
+{
+  if (!PAssert(!elementName.IsEmpty(), PInvalidParameter))
+    return false;
+
+  if (PGstPluginFeature::Inspect(FirstWord(elementName), PGstPluginFeature::ByName).IsEmpty()) {
+    PTRACE(2, "Could not find gstreamer " << which << " \"" << elementName << '"');
+    return false;
+  }
+
+  PTRACE(4, "Set " << which << " to \"" << elementName << '"');
+  device = elementName;
+  return true;
+}
+
+
+bool GstEndPoint::SetAudioSourceDevice(const PString & elementName)
+{
+  return SetValidElementName(m_audioSourceDevice, elementName PTRACE_PARAM(, "audio source"));
+}
+
+
+bool GstEndPoint::SetAudioSinkDevice(const PString & elementName)
+{
+  return SetValidElementName(m_audioSinkDevice, elementName PTRACE_PARAM(, "audio sink"));
+}
+
+
 #if OPAL_VIDEO
 
 bool GstEndPoint::BuildVideoSourcePipeline(ostream & desc, const GstMediaStream & stream)
@@ -439,8 +481,7 @@ bool GstEndPoint::BuildVideoSourcePipeline(ostream & desc, const GstMediaStream 
       return false;
   }
 
-  desc << " ! appsink name=" << GetPipelineVideoSinkName() << " sync=false async=true drop=false";
-  return true;
+  return BuildAppSink(desc, GetPipelineVideoSinkName());
 }
 
 
@@ -448,8 +489,8 @@ bool GstEndPoint::BuildVideoSinkPipeline(ostream & desc, const GstMediaStream & 
 {
   const OpalMediaFormat & mediaFormat = stream.GetMediaFormat();
 
-  desc << "appsrc name=" << GetPipelineVideoSourceName()
-       << " ! ";
+  if (!BuildAppSource(desc, GetPipelineVideoSourceName()))
+    return false;
 
   if (mediaFormat == OpalYUV420P)
     desc << "video/x-raw-yuv, "
@@ -487,6 +528,24 @@ bool GstEndPoint::BuildVideoSinkDevice(ostream & desc, const GstMediaStream & /*
   return true;
 }
 
+bool GstEndPoint::SetVideoSourceDevice(const PString & elementName)
+{
+  return SetValidElementName(m_videoSourceDevice, elementName PTRACE_PARAM(, "video source"));
+}
+
+
+bool GstEndPoint::SetVideoSinkDevice(const PString & elementName)
+{
+  return SetValidElementName(m_videoSinkDevice, elementName PTRACE_PARAM(, "video sink"));
+}
+
+
+bool GstEndPoint::SetVideoColourConverter(const PString & elementName)
+{
+  return SetValidElementName(m_videoColourConverter, elementName PTRACE_PARAM(, "colour converter"));
+}
+
+
 #endif // OPAL_VIDEO
 
 
@@ -513,6 +572,10 @@ static PString SubstituteAll(const PString & original,
   Substitute(str, OPAL_GST_PIPLINE_VAR_SAMPLE_RATE, mediaFormat.GetClockRate());
   Substitute(str, OPAL_GST_PIPLINE_VAR_FRAME_RATE, psprintf("(fraction)90000/%u", mediaFormat.GetFrameTime()));
   Substitute(str, OPAL_GST_PIPLINE_VAR_PT, (unsigned)mediaFormat.GetPayloadType(), packetiser);
+
+  unsigned bitrate = mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption(), mediaFormat.GetMaxBandwidth());
+  Substitute(str, OPAL_GST_PIPLINE_VAR_BIT_RATE, bitrate);
+  Substitute(str, OPAL_GST_PIPLINE_VAR_BIT_RATE_K, (bitrate+1023)/1024);
   if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
     Substitute(str, OPAL_GST_PIPLINE_VAR_WIDTH, mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), 352));
     Substitute(str, OPAL_GST_PIPLINE_VAR_HEIGHT, mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), 288));
@@ -725,16 +788,24 @@ PBoolean GstMediaStream::Open()
       PTRACE(2, "Could not find " << name << " in pipeline for " << *this);
       return false;
     }
-    m_pipeSource.SetType(PGstAppSrc::Stream);
   }
 
-  if (!m_pipeline.SetState(PGstElement::Playing)) {
-    PTRACE(2, "Failed to start gstreamer pipeline for " << *this);
-    m_pipeline.SetNULL();
-    return false;
+  PTRACE(4, "Playing pipeline for " << *this);
+  switch (m_pipeline.SetState(PGstElement::Playing, 100)) {
+    case PGstElement::Success :
+      PTRACE(3, "Opened gstreamer pipeline for " << *this);
+      break;
+
+    case PGstElement::Changing :
+      PTRACE(3, "Open pending on gstreamer pipeline for " << *this);
+      break;
+
+    default :
+      PTRACE(2, "Failed to start gstreamer pipeline for " << *this);
+      m_pipeline.SetNULL();
+      return false;
   }
 
-  PTRACE(4, "Opened gstreamer pipeline for " << *this);
   return OpalMediaStream::Open();
 }
 
@@ -781,10 +852,27 @@ PBoolean GstMediaStream::ReadPacket(RTP_DataFrame & packet)
   if (!IsOpen() || IsSink() || !m_pipeSink.IsValid())
     return false;
 
+  PGstElement::States state;
+  switch (m_pipeSink.GetState(state)) {
+    case PGstElement::Failed :
+      PTRACE(2, "Pipeline sink did not start for " << *this);
+      return false;
+
+    case PGstElement::Success :
+      if (state == PGstElement::Playing)
+        break;
+
+      // Do default case
+    default :
+      PTRACE(5, "Pipeline not ready yet for pulling, state=" << state);
+      packet.SetPayloadSize(0);
+      return true;
+  }
+
   PINDEX size = m_connection.GetEndPoint().GetManager().GetMaxRtpPacketSize();
   if (m_pipeSink.Pull(packet.GetPointer(size), size)) {
     packet.SetPacketSize(size);
-    PTRACE(5, "Pulled " << size << " bytes");
+    PTRACE(5, "Pulled " << size << " bytes, marker=" << packet.GetMarker());
     return true;
   }
 
@@ -798,8 +886,14 @@ PBoolean GstMediaStream::WritePacket(RTP_DataFrame & packet)
   if (!IsOpen() || IsSource() || !m_pipeSource.IsValid())
     return false;
 
+  PGstElement::States state;
+  if (m_pipeSource.GetState(state) == PGstElement::Failed || state == PGstElement::Null) {
+    PTRACE(2, "Pipeline source has stopped for " << *this);
+    return false;
+  }
+
   PINDEX size = packet.GetHeaderSize() + packet.GetPayloadSize();
-  PTRACE(5, "Pushing " << size << " bytes");
+  PTRACE(5, "Pushing " << size << " bytes, state=" << state);
   if (m_pipeSource.Push(packet.GetPointer(), size))
     return true;
 
