@@ -564,8 +564,11 @@ bool VideoThread::Initialise(PArgList & args)
   }
   cout << "Grabber channel set to " << m_grabber->GetChannel() << endl;
 
-  
-  if (!m_grabber->SetColourFormatConverter(rawFormat) ) {
+  if (rawFormat != mediaFormat && m_grabber->SetColourFormat(mediaFormat)) {
+    delete m_encoder;
+    m_encoder = NULL;
+  }
+  else if (!m_grabber->SetColourFormatConverter(rawFormat)) {
     cerr << "Video grabber device could not be set to colour format " << rawFormat << endl;
     return false;
   }
@@ -653,7 +656,11 @@ bool VideoThread::Initialise(PArgList & args)
 
   // Configure formats/sizes/speeds
 
-  if (!m_display->SetColourFormatConverter(rawFormat)) {
+  if (rawFormat != mediaFormat && m_display->SetColourFormat(mediaFormat)) {
+    delete m_decoder;
+    m_decoder = NULL;
+  }
+  else if (!m_display->SetColourFormatConverter(rawFormat)) {
     cerr << "Video display device could not be set to colour format " << rawFormat << endl;
     return false;
   }
@@ -1070,14 +1077,10 @@ void TranscoderThread::Main()
       //
       //  push audio/video frames through NULL decoder
       //
-      if (m_encoder == NULL) {
+      if (m_decoder == NULL) {
         totalEncodedByteCount += encodedPayloadSize;
-        RTP_DataFrameList outFrames;
-        outFrames = encFrames;
-        if (outFrames.GetSize() != 1)
-          cerr << "NULL decoder returned != 1 output frame for input frame " << totalInputFrameCount-1 << endl;
-        else {
-          bool state = Write(outFrames[0]);
+        for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
+          bool state = Write(encFrames[i]);
           if (oldOutState != state) {
             oldOutState = state;
             cerr << "Output write " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount << endl;
@@ -1299,6 +1302,9 @@ bool VideoThread::Read(RTP_DataFrame & data)
 
 bool VideoThread::Write(const RTP_DataFrame & data)
 {
+  if (m_display->GetColourFormat() != "YUV420P")
+    return m_display->SetFrameData(0, 0, 0, 0, data.GetPayloadPtr(), data.GetMarker());
+
   const OpalVideoTranscoder::FrameHeader * frame = (const OpalVideoTranscoder::FrameHeader *)data.GetPayloadPtr();
   m_display->SetFrameSize(frame->width, frame->height);
   return m_display->SetFrameData(frame->x, frame->y,
