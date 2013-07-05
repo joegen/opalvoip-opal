@@ -927,6 +927,11 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
 
   } while ((flags & PluginCodec_ReturnCoderLastFrame) == 0);
 
+  if (dstList.IsEmpty()) {
+    PTRACE(4, "OpalPlugin\tEncoder skipping video frame at " << m_totalFrames);
+    return true;
+  }
+
   m_totalFrames++;
   if (m_lastFrameWasIFrame)
     m_keyFrames++;
@@ -940,15 +945,11 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
     PTRACE(4, "OpalPlugin\tEncoder sending I-Frame at frame " << m_totalFrames);
   else if (m_consecutiveIntraFrames < 10)
     PTRACE(4, "OpalPlugin\tEncoder sending consecutive I-Frame at frame " << m_totalFrames);
-  else if (m_consecutiveIntraFrames == 10) {
+  else if (m_consecutiveIntraFrames == 10)
     PTRACE(3, "OpalPlugin\tEncoder has sent too many consecutive I-Frames - assuming codec cannot do P-Frames");
-  }
 
- 
-  if (dstList.IsEmpty())
-    PTRACE(4, "OpalPlugin\tEncoder skipping video frame at " << m_totalFrames);
-  else if (PTrace::CanTrace(5)) {
-    ostream & trace = PTrace::Begin(5, __FILE__, __LINE__);
+  if (PTrace::CanTrace(6)) {
+    ostream & trace = PTRACE_BEGIN(5);
     trace << "OpalPlugin\tEncoded video frame " << m_totalFrames
           << " into " << dstList.GetSize() << " packets: ";
     for (RTP_DataFrameList::iterator it = dstList.begin(); it != dstList.end(); ++it) {
@@ -958,6 +959,8 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
     }
     trace << " (ts=" << src.GetTimestamp() << ')' << PTrace::End;
   }
+  else
+    PTRACE(5, "OpalPlugin\tEncoded video frame " << m_totalFrames << " into " << dstList.GetSize() << " packets.");
 #endif
 
   if (m_lastFrameWasIFrame)
