@@ -340,16 +340,16 @@
 					"\"$(SRCROOT)/../../lib_iPhoneSimulator_x86\"",
 					"\"$(SRCROOT)/../../../ptlib/lib_iPhoneSimulator_x86\"",
 				);
-				"LIBRARY_SEARCH_PATHS[sdk=iphoneos*][arch=armv7]" = (
+				"LIBRARY_SEARCH_PATHS[sdk=iphoneos*]" = (
 					"\"$(SRCROOT)/../../lib_iPhoneOS_armv7\"",
 					"\"$(SRCROOT)/../../../ptlib/lib_iPhoneOS_armv7\"",
 				);
-				OTHER_LDFLAGS = "-lopal_d";
-				"OTHER_LDFLAGS[sdk=iphoneos*]" = (
+				OTHER_LDFLAGS = (
 					"-lopal_d_s",
 					"-lpt_d_s",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				VALID_ARCHS = armv7;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -366,17 +366,17 @@
 					"\"$(SRCROOT)/../../lib_iPhoneSimulator_x86\"",
 					"\"$(SRCROOT)/../../../ptlib/lib_iPhoneSimulator_x86\"",
 				);
-				"LIBRARY_SEARCH_PATHS[sdk=iphoneos*][arch=armv7s]" = (
+				"LIBRARY_SEARCH_PATHS[sdk=iphoneos*]" = (
 					"\"$(SRCROOT)/../../lib_iPhoneOS_armv7\"",
 					"\"$(SRCROOT)/../../../ptlib/lib_iPhoneOS_armv7\"",
 				);
-				OTHER_LDFLAGS = "-lopal";
-				"OTHER_LDFLAGS[sdk=iphoneos*]" = (
+				OTHER_LDFLAGS = (
 					"-lopal_s",
 					"-lpt_s",
 				);
 				PRELINK_LIBS = "";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				VALID_ARCHS = armv7;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;
