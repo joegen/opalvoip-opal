@@ -72,14 +72,17 @@ ifeq ($(DEBUG_BUILD),yes)
 else # DEBUG_BUILD
 
   BUNDLE_DIR := ./$(PROG).app
-  PROG_AND_LIBS =\
+  PROG_AND_LIBS :=\
       $(TARGET) \
       $(PTLIB_SHARED_LIB_FILE) \
       $(PTLIB_SHARED_LIB_LINK) \
       `find $(OPAL_LIBDIR) -name \*$(PTLIB_PLUGIN_SUFFIX).$(SHAREDLIBEXT)` \
       $(OPAL_SHARED_LIB_FILE) \
-      $(OPAL_SHARED_LIB_LINK) \
-      `find $(PTLIB_LIBDIR) -name \*$(PTLIB_PLUGIN_SUFFIX).$(SHAREDLIBEXT)`
+      $(OPAL_SHARED_LIB_LINK)
+
+  ifneq ($(OPAL_LIBDIR),$(PTLIB_LIBDIR))
+    PROG_AND_LIBS += `find $(PTLIB_LIBDIR) -name \*$(PTLIB_PLUGIN_SUFFIX).$(SHAREDLIBEXT)`
+  endif
 
   bundle: $(BUNDLE_DIR)
 
