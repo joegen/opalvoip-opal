@@ -21,16 +21,12 @@
 
 #include "rfc2190.h"
 
-#include <codec/opalplugin.hpp>
-
 #include <iostream>
 #include <string.h>
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
 #endif
 
-
-#include <codec/opalplugin.hpp>
 
 const unsigned char PSC[3]      = { 0x00, 0x00, 0x80 };
 const unsigned char PSC_Mask[3] = { 0xff, 0xff, 0xfc };
