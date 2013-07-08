@@ -549,21 +549,37 @@ PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, PBoole
 {
   PSafeLockReadOnly mutex(*this);
 
-  if (fromSink) {
-    OpalMediaPatch * patch = m_bypassToPatch;
-    if (patch == NULL)
-      patch = this;
-    PTRACE(5, "Patch\tExecute command \"" << command << "\" "
-           << (m_bypassToPatch != NULL ? "bypassed" : "on") << ' ' << *this);
-    return patch->source.ExecuteCommand(command);
-  }
+  OpalMediaPatch * patch = this;
 
   bool atLeastOne = false;
 
-  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
-    if (s->ExecuteCommand(command))
-      atLeastOne = true;
+  if (fromSink) {
+    if (m_bypassFromPatch != NULL)
+      patch = m_bypassFromPatch;
+    atLeastOne = patch->source.ExecuteCommand(command);
   }
+  else {
+    if (m_bypassToPatch != m_bypassToPatch)
+      patch = m_bypassToPatch;
+
+    for (PList<Sink>::iterator s = patch->sinks.begin(); s != patch->sinks.end(); ++s) {
+      if (s->ExecuteCommand(command))
+        atLeastOne = true;
+    }
+  }
+
+#if PTRACING
+  if (PTrace::CanTrace(5)) {
+    ostream & trace = PTrace::Begin(5, __FILE__, __LINE__, this);
+    trace << "Patch\tExecute" << (atLeastOne ? "d" : "fail for ")
+          << " command \"" << command << '"';
+    if (patch != this)
+      trace << " bypassing " << *this << " to " << *patch;
+    else
+      trace << " on " << *this;
+    trace << PTrace::End;
+  }
+#endif
 
   return atLeastOne;
 }

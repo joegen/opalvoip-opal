@@ -827,6 +827,7 @@ OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const PluginCodec_Definitio
   , m_lastSequenceNumber(UINT_MAX)
   , m_lastDecodedTimestamp(UINT_MAX)
   , m_lastMarkerTimestamp(UINT_MAX)
+  , m_consecutiveMarkers(0)
   , m_badMarkers(false)
 #if PTRACING
   , m_consecutiveIntraFrames(0)
@@ -1003,9 +1004,11 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
   if (!m_badMarkers) {
     if (src.GetMarker()) {
       // Got two consecutive packets with markers and same timestamp, wrong!
-      if (m_lastMarkerTimestamp != newTimestamp || m_lastDecodedTimestamp != newTimestamp)
+      if (m_lastMarkerTimestamp != newTimestamp || m_lastDecodedTimestamp != newTimestamp) {
         m_lastMarkerTimestamp = newTimestamp;
-      else {
+        m_consecutiveMarkers = 0;
+      }
+      else if (++m_consecutiveMarkers >= 3) {
         PTRACE(2, "OpalPlugin\tContinuous RTP marker bits seen, ignoring from now on: sn=" << src.GetSequenceNumber());
         m_badMarkers = true;
       }
@@ -1029,6 +1032,8 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
       marker.SetMarker(true);
       if (!DecodeFrame(marker, dstList))
         return false;
+      // As we are doing this packets SN twice, reset our out of sequence packet detection
+      m_lastSequenceNumber = src.GetSequenceNumber()-1;
       if (m_bufferRTP == NULL) {
         m_bufferRTP = new RTP_DataFrame((PINDEX)0, outputDataSize);
         lastFrameWasIFrame = false;
