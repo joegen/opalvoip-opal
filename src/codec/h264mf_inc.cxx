@@ -373,7 +373,7 @@ static bool MyToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionM
   unsigned maxHeight = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
   unsigned maxFrameSizeInMB = PluginCodec_Utilities::GetMacroBlocks(maxWidth, maxHeight);
   if (maxFrameSizeInMB > 0) {
-    while (levelIndex > 0 && maxFrameSizeInMB < LevelInfo[levelIndex].m_MaxFrameSize)
+    while (levelIndex > 0 && maxFrameSizeInMB <= LevelInfo[levelIndex-1].m_MaxFrameSize)
       --levelIndex;
   }
   PTRACE(5, MY_CODEC_LOG, "Max resolution " << maxWidth << 'x' << maxHeight << " selected index " << levelIndex);
