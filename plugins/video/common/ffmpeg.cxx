@@ -137,7 +137,7 @@ FFMPEGCodec::~FFMPEGCodec()
 
 bool FFMPEGCodec::InitContext()
 {
-#if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52, 25, 0)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(53, 0, 0)
   m_context = avcodec_alloc_context2(m_codec->type);
 #else
   m_context = avcodec_alloc_context3(m_codec);
@@ -242,7 +242,7 @@ bool FFMPEGCodec::OpenCodec()
     return false;
   }
 
-#if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52, 25, 0)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(53, 0, 0)
   int result = avcodec_open(m_context, m_codec);
 #else
   AVDictionary * options = NULL;
@@ -531,7 +531,7 @@ bool FFMPEGCodec::DecodeVideoFrame(const uint8_t * frame, size_t length, unsigne
 
   m_picture->pict_type = AV_PICTURE_TYPE_NONE;
   int gotPicture = 0;
-#if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52, 25, 0)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(52, 25, 0)
   int bytesDecoded = avcodec_decode_video(m_context, m_picture, &gotPicture, frame, length);
 #else
   m_packet.data = (uint8_t *)frame;

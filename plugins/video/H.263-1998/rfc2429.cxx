@@ -22,8 +22,6 @@
 
 #include "rfc2429.h"
 
-#include <codec/opalplugin.hpp>
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
