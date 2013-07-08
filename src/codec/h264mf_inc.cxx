@@ -53,7 +53,7 @@ static const char H264EncodingName[] = "H264";
 #define DefaultProfileStr          H264_PROFILE_STR_BASELINE
 #define DefaultProfileInt          H264_PROFILE_INT_BASELINE
 #define DefaultProfileH241         64
-#define DefaultLevelStr            H264_LEVEL_STR_3_1
+#define DefaultLevelStr            H264_LEVEL_STR_4
 #define DefaultLevelInt            31
 #define DefaultLevelH241           71
 #define DefaultSDPProfileAndLevel  "42801f"
@@ -373,7 +373,7 @@ static bool MyToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionM
   unsigned maxHeight = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
   unsigned maxFrameSizeInMB = PluginCodec_Utilities::GetMacroBlocks(maxWidth, maxHeight);
   if (maxFrameSizeInMB > 0) {
-    while (levelIndex > 0 && maxFrameSizeInMB < LevelInfo[levelIndex].m_MaxFrameSize)
+    while (levelIndex > 0 && maxFrameSizeInMB <= LevelInfo[levelIndex-1].m_MaxFrameSize)
       --levelIndex;
   }
   PTRACE(5, MY_CODEC_LOG, "Max resolution " << maxWidth << 'x' << maxHeight << " selected index " << levelIndex);
