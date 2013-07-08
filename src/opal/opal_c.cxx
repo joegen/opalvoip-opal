@@ -91,7 +91,14 @@ ostream & operator<<(ostream & strm, OpalMessageType type)
     "IndOnHold",
     "IndOffHold",
     "IndTransferCall",
-    "IndCompletedIVR"
+    "IndCompletedIVR",
+    "OpalCmdAuthorisePresence",
+    "OpalCmdSubscribePresence",
+    "OpalCmdSetLocalPresence",
+    "OpalIndPresenceChange",
+    "OpalCmdSendIM",
+    "OpalIndReceiveIM",
+    "OpalIndSentIM"
   };
   if (type >= 0 && type < PARRAYSIZE(Types))
     strm << Types[type];
