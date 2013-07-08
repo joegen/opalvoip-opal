@@ -43,9 +43,9 @@
 #include <ptlib/videoio.h>
 #include <ptlib/vconvert.h>
 
-#define FRAME_WIDTH  PVideoDevice::CIF16Width
-#define FRAME_HEIGHT PVideoDevice::CIF16Height
-#define FRAME_RATE   30 // NTSC
+#define FRAME_WIDTH  PVideoDevice::MaxWidth
+#define FRAME_HEIGHT PVideoDevice::MaxHeight
+#define FRAME_RATE   50U
 
 const OpalVideoFormat & GetOpalRGB24()
 {
@@ -55,7 +55,7 @@ const OpalVideoFormat & GetOpalRGB24()
     NULL,
     FRAME_WIDTH, FRAME_HEIGHT,
     FRAME_RATE,
-    24*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE  // Bandwidth
+    24U*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE  // Bandwidth
   );
   return RGB24;
 }
@@ -68,7 +68,7 @@ const OpalVideoFormat & GetOpalRGB32()
     NULL,
     FRAME_WIDTH, FRAME_HEIGHT,
     FRAME_RATE,
-    32*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE  // Bandwidth
+    32U*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE  // Bandwidth
   );
   return RGB32;
 }
@@ -107,7 +107,7 @@ const OpalVideoFormat & GetOpalYUV420P()
     NULL,
     FRAME_WIDTH, FRAME_HEIGHT,
     FRAME_RATE,
-    12*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE  // Bandwidth
+    12U*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE  // Bandwidth
   );
   return YUV420P;
 }
