@@ -54,7 +54,7 @@ class TranscoderThread : public PThread
       delete m_decoder;
     }
 
-    int InitialiseCodec(PArgList & args, const OpalMediaFormat & rawFormat);
+    int InitialiseCodec(PArgList & args, const OpalMediaType & mediaType, OpalMediaFormat & mediaFormat, OpalMediaFormat & rawFormat);
 
     virtual void Main();
 
@@ -167,9 +167,7 @@ class VideoThread : public TranscoderThread
     PSemaphore           m_frameWait;
     unsigned             m_frameRate;
 
-    void SaveSNRFrame(const RTP_DataFrame * src)
-    { m_snrSourceFrames.push(src); }
-
+    void SaveSNRFrame(const RTP_DataFrame & src);
     void CalcSNR(const RTP_DataFrame & src);
     void CalcSNR(const RTP_DataFrame & src, const RTP_DataFrame & dst);
     void ReportSNR();
