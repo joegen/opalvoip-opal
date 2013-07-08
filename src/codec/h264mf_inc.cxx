@@ -53,7 +53,7 @@ static const char H264EncodingName[] = "H264";
 #define DefaultProfileStr          H264_PROFILE_STR_BASELINE
 #define DefaultProfileInt          H264_PROFILE_INT_BASELINE
 #define DefaultProfileH241         64
-#define DefaultLevelStr            H264_LEVEL_STR_3_1
+#define DefaultLevelStr            H264_LEVEL_STR_4
 #define DefaultLevelInt            31
 #define DefaultLevelH241           71
 #define DefaultSDPProfileAndLevel  "42801f"
