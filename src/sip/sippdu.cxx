@@ -59,7 +59,7 @@ static PConstString const TransactionPrefix("z9hG4bK");
 
 ////////////////////////////////////////////////////////////////////////////
 
-static const char * const MethodNames[SIP_PDU::NumMethods] = {
+static const char * const MethodNames[SIP_PDU::NumMethods+1] = {
   "INVITE",
   "ACK",
   "OPTIONS",
@@ -73,13 +73,14 @@ static const char * const MethodNames[SIP_PDU::NumMethods] = {
   "INFO",
   "PING",
   "PUBLISH",
-  "PRACK"
+  "PRACK",
+  "Response"
 };
 
 #if PTRACING
 ostream & operator<<(ostream & strm, SIP_PDU::Methods method)
 {
-  if (method < SIP_PDU::NumMethods)
+  if (method <= SIP_PDU::NumMethods)
     strm << MethodNames[method];
   else
     strm << "SIP_PDU_Method<" << (unsigned)method << '>';
@@ -1801,12 +1802,12 @@ void SIPNTLMAuthentication::ConstructType1Message(PBYTEArray & buffer) const
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-SIP_PDU::SIP_PDU(Methods meth, const OpalTransportPtr & transport)
+SIP_PDU::SIP_PDU(Methods meth, const OpalTransportPtr & transport, const PString & transactionID)
   : m_method(meth)
   , m_statusCode(IllegalStatusCode)
   , m_versionMajor(SIP_VER_MAJOR)
   , m_versionMinor(SIP_VER_MINOR)
-  , m_transactionID(TransactionPrefix + OpalGloballyUniqueID().AsString())
+  , m_transactionID(transactionID.IsEmpty() ? TransactionPrefix + OpalGloballyUniqueID().AsString() : transactionID)
   , m_SDP(NULL)
   , m_transport(transport)
 {
@@ -1820,7 +1821,6 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request,
   : m_method(NumMethods)
   , m_statusCode(code)
   , m_SDP(sdp != NULL ? new SDPSessionDescription(*sdp) : NULL)
-  , m_transport(request.GetTransport())
 {
   PTRACE_CONTEXT_ID_TO(m_mime);
   InitialiseHeaders(request);
@@ -1954,6 +1954,8 @@ void SIP_PDU::InitialiseHeaders(SIPConnection & connection, unsigned cseq)
 
 void SIP_PDU::InitialiseHeaders(const SIP_PDU & request)
 {
+  m_transport = request.GetTransport();
+
   m_versionMajor = request.GetVersionMajor();
   m_versionMinor = request.GetVersionMinor();
   m_viaAddress = request.m_viaAddress;
@@ -2967,8 +2969,12 @@ PObject::Comparison SIPTransactionBase::Compare(const PObject & other) const
 
 ////////////////////////////////////////////////////////////////////////////////////
 
-SIPTransaction::SIPTransaction(Methods method, SIPTransactionOwner * owner, OpalTransport * transport, bool deleteOwner)
-  : SIPTransactionBase(method)
+SIPTransaction::SIPTransaction(Methods method,
+                               SIPTransactionOwner * owner,
+                               OpalTransport * transport,
+                               bool deleteOwner,
+                               const PString & transactionID)
+  : SIPTransactionBase(method, transport, transactionID)
   , m_owner(PAssertNULL(owner))
   , m_deleteOwner(deleteOwner)
   , m_retryTimeoutMin(GetEndPoint().GetRetryTimeoutMin())
@@ -2983,9 +2989,7 @@ SIPTransaction::SIPTransaction(Methods method, SIPTransactionOwner * owner, Opal
 
   PAssert(m_owner->m_object.SafeReference(), "Transaction created on owner pending deletion.");
 
-  if (transport != NULL)
-    m_transport = transport;
-  else {
+  if (m_transport == NULL) {
     SIP_PDU::StatusCodes reason;
     m_transport = GetEndPoint().GetTransport(*m_owner, reason);
   }
@@ -3560,7 +3564,10 @@ class SIPTransactionOwnerDummy : public PSafeObject, public SIPTransactionOwner
 
 
 SIPResponse::SIPResponse(SIPEndPoint & endpoint, const SIP_PDU & request, StatusCodes code)
-  : SIPTransaction(NumMethods, new SIPTransactionOwnerDummy(endpoint, request.GetURI()), request.GetTransport(), true)
+  : SIPTransaction(NumMethods,
+                   new SIPTransactionOwnerDummy(endpoint, request.GetURI()), request.GetTransport(),
+                   true,
+                   request.GetTransactionID())
 {
   m_statusCode = code;
   InitialiseHeaders(request);
@@ -3573,22 +3580,17 @@ SIPTransaction * SIPResponse::CreateDuplicate() const
 }
 
 
-bool SIPResponse::Resend(SIP_PDU & command)
+bool SIPResponse::Send()
 {
   if (m_state == NotStarted) {
-    InitialiseHeaders(command);
-
     GetEndPoint().AddTransaction(this);
-
     m_state = Completed;
   }
 
   m_completionTimer = GetEndPoint().GetPduCleanUpTimeout();
   PTRACE(4, "SIP\tResponse transaction timer set " << m_completionTimer);
 
-  // Do not use internal m_transport as is dummy
-  m_transport = command.GetTransport();
-  return Send();
+  return SIPTransaction::Send();
 }
 
 
