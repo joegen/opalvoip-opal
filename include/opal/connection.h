@@ -1245,6 +1245,9 @@ class OpalConnection : public PSafeObject
     virtual PNatMethod * GetNatMethod(
       const PIPSocket::Address & remoteAddress = PIPSocket::GetDefaultIpAny()
     ) const;
+
+    virtual PBoolean RemoteIsNAT() const
+    { return false; }
 #endif
 
     /**Get transports for the media session on the connection.
