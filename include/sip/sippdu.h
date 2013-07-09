@@ -613,7 +613,8 @@ class SIP_PDU : public PSafeObject
 
     SIP_PDU(
       Methods method = SIP_PDU::NumMethods,
-      const OpalTransportPtr & transport = NULL
+      const OpalTransportPtr & transport = NULL,
+      const PString & transactionID = PString::Empty()
     );
 
     /** Construct a Response message
@@ -673,7 +674,7 @@ class SIP_PDU : public PSafeObject
 
     /**Write the PDU to the transport.
       */
-    bool Send();
+    virtual bool Send();
 
     /**Write PDU as a response to a request.
     */
@@ -1007,8 +1008,10 @@ class SIPTransactionBase : public SIP_PDU
     PCLASSINFO(SIPTransactionBase, SIP_PDU);
   protected:
     SIPTransactionBase(
-      Methods method
-    ) : SIP_PDU(method) { }
+      Methods method,
+      const OpalTransportPtr & transport,
+      const PString & transactionID
+    ) : SIP_PDU(method, transport, transactionID) { }
 
   public:
     SIPTransactionBase(
@@ -1041,7 +1044,8 @@ class SIPTransaction : public SIPTransactionBase
       Methods method,
       SIPTransactionOwner * owner,
       OpalTransport * transport,
-      bool deleteOwner = false
+      bool deleteOwner = false,
+      const PString & transactionID = PString::Empty()
     );
   public:
     ~SIPTransaction();
@@ -1136,7 +1140,7 @@ class SIPResponse : public SIPTransaction
 
     virtual SIPTransaction * CreateDuplicate() const;
 
-    bool Resend(SIP_PDU & command);
+    virtual bool Send();
 };
 
 
