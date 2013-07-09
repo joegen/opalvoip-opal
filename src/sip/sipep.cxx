@@ -750,8 +750,8 @@ bool SIPEndPoint::OnReceivedConnectionlessPDU(SIP_PDU * pdu)
     PSafePtr<SIPResponse> transaction = PSafePtrCast<SIPTransaction, SIPResponse>(GetTransaction(id, PSafeReadOnly));
     if (transaction != NULL) {
       PTRACE(4, "SIP\tRetransmitting previous response for transaction id=" << id);
-      transaction->Resend(*pdu);
-      return false;
+      transaction->InitialiseHeaders(*pdu);
+      return transaction->Send();
     }
   }
 
