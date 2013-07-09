@@ -182,7 +182,7 @@ OpalRTPSession::OpalRTPSession(OpalConnection & conn, unsigned sessionId, const 
   , m_controlSocket(NULL)
   , m_shutdownRead(false)
   , m_shutdownWrite(false)
-  , m_remoteBehindNAT(false)
+  , m_remoteBehindNAT(conn.RemoteIsNAT())
   , m_localHasRestrictedNAT(false)
   , m_noTransmitErrors(0)
 {
