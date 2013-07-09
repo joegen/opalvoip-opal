@@ -559,7 +559,7 @@ PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, PBoole
     atLeastOne = patch->source.ExecuteCommand(command);
   }
   else {
-    if (m_bypassToPatch != m_bypassToPatch)
+    if (m_bypassToPatch != NULL)
       patch = m_bypassToPatch;
 
     for (PList<Sink>::iterator s = patch->sinks.begin(); s != patch->sinks.end(); ++s) {
