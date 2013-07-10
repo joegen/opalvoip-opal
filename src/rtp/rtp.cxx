@@ -692,7 +692,7 @@ void RTP_ControlFrame::ReceiverReport::SetLostPackets(unsigned packets)
 unsigned RTP_ControlFrame::FbTMMB::GetBitRate() const
 {
   DWORD br = bitRateAndOverhead;
-  return ((br >> 9)&0x1ffff)*(1 << (br >> 28));
+  return ((br >> 9)&0x1ffff)*(1 << (br >> 26));
 }
 
 
