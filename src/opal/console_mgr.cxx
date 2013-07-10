@@ -113,7 +113,11 @@ PString OpalManagerConsole::GetArgumentSpec() const
          "p-password:        Set password for authentication.\n"
          "D-disable:         Disable use of specified media formats (codecs).\n"
          "P-prefer:          Set preference order for media formats (codecs).\n"
-         "O-option:          Set options for media formatm argument is of form fmt:opt=val.\n"
+         "O-option:          Set options for media format, argument is of form fmt:opt=val.\n"
+#if OPAL_VIDEO
+         "-video-size:       Set preferred transmit video size, of form 800x600\n"
+         "-max-video-size:   Set maximum received video size, of form 800x600\n"
+#endif
          "-inband-detect.    Disable detection of in-band tones.\n"
          "-inband-send.      Disable transmission of in-band tones.\n"
          "-tel:              Protocol to use for tel: URI, e.g. sip\n"
@@ -518,6 +522,29 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
     if (verbose)
       cout << "tel URI mapped to: " << ep->GetPrefixName() << '\n';
   }
+
+#if OPAL_VIDEO
+  if (args.HasOption("video-size") || args.HasOption("max-video-size")) {
+    unsigned prefWidth = 0, prefHeight = 0, maxWidth = 0, maxHeight = 0;
+    if (!PVideoFrameInfo::ParseSize(args.GetOptionString("video-size", "cif"), prefWidth, prefHeight) ||
+        !PVideoFrameInfo::ParseSize(args.GetOptionString("max-video-size", "HD1080"), maxWidth, maxHeight)) {
+      cerr << "Invalid video size parameter." << endl;
+      return false;
+    }
+
+    OpalMediaFormatList formats = OpalMediaFormat::GetAllRegisteredMediaFormats();
+    for (OpalMediaFormatList::iterator it = formats.begin(); it != formats.end(); ++it) {
+      if (it->GetMediaType() == OpalMediaType::Video()) {
+        OpalMediaFormat format = *it;
+        format.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), prefWidth);
+        format.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), prefHeight);
+        format.SetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption(), maxWidth);
+        format.SetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(), maxHeight);
+        OpalMediaFormat::SetRegisteredMediaFormat(format);
+      }
+    }
+  }
+#endif
 
   if (args.HasOption("option")) {
     PStringArray options = args.GetOptionString("option").Lines();
