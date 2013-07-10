@@ -593,7 +593,9 @@ bool GstEndPoint::BuildEncoder(ostream & desc, const GstMediaStream & stream)
 
   desc << SubstituteAll(it->second.m_encoder, mediaFormat, "Encoder");
   if (!it->second.m_packetiser.IsEmpty())
-    desc << " ! queue max-size-buffers=1000 ! " << SubstituteAll(it->second.m_packetiser, mediaFormat, "Packetiser", true);
+    desc << " ! queue max-size-buffers=1000 ! "
+         << SubstituteAll(it->second.m_packetiser, mediaFormat, "Packetiser", true)
+         << " ! queue max-size-buffers=1000";
 
   return true;
 }
@@ -608,7 +610,9 @@ bool GstEndPoint::BuildDecoder(ostream & desc, const GstMediaStream & stream)
 
   if (!it->second.m_depacketiser.IsEmpty())
     desc << SubstituteAll(it->second.m_depacketiser, mediaFormat, "Depacketiser") << " ! ";
-  desc << "queue max-size-buffers=1000 ! " << SubstituteAll(it->second.m_decoder, mediaFormat, "Decoder");
+  desc << "queue max-size-buffers=1000 ! "
+       << SubstituteAll(it->second.m_decoder, mediaFormat, "Decoder")
+       << " ! queue max-size-buffers=1000";
 
   return true;
 }
