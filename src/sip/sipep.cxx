@@ -87,6 +87,8 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr, unsigned maxThreads)
   , m_shuttingDown(false)
   , m_defaultAppearanceCode(-1)
   , m_threadPool(maxThreads, "SIP Pool")
+  , m_onHighPriorityInterfaceChange(PCREATE_InterfaceNotifier(OnHighPriorityInterfaceChange))
+  , m_onLowPriorityInterfaceChange(PCREATE_InterfaceNotifier(OnLowPriorityInterfaceChange))
   , m_disableTrying(true)
 {
   m_allowedEvents += SIPEventPackage(SIPSubscribe::Dialog);
@@ -104,8 +106,8 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr, unsigned maxThreads)
   manager.AttachEndPoint(this, "sips");
 #endif
 
-  PInterfaceMonitor::GetInstance().AddNotifier(PCREATE_InterfaceNotifier(OnHighPriorityInterfaceChange), 80);
-  PInterfaceMonitor::GetInstance().AddNotifier(PCREATE_InterfaceNotifier(OnLowPriorityInterfaceChange), 30);
+  PInterfaceMonitor::GetInstance().AddNotifier(m_onHighPriorityInterfaceChange, 80);
+  PInterfaceMonitor::GetInstance().AddNotifier(m_onLowPriorityInterfaceChange, 30);
 
   PTRACE(4, "SIP\tCreated endpoint.");
 }
@@ -113,8 +115,8 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr, unsigned maxThreads)
 
 SIPEndPoint::~SIPEndPoint()
 {
-  PInterfaceMonitor::GetInstance().RemoveNotifier(PCREATE_InterfaceNotifier(OnHighPriorityInterfaceChange));
-  PInterfaceMonitor::GetInstance().RemoveNotifier(PCREATE_InterfaceNotifier(OnLowPriorityInterfaceChange));
+  PInterfaceMonitor::GetInstance().RemoveNotifier(m_onHighPriorityInterfaceChange);
+  PInterfaceMonitor::GetInstance().RemoveNotifier(m_onLowPriorityInterfaceChange);
 }
 
 
