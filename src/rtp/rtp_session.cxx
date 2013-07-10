@@ -1428,7 +1428,7 @@ void OpalRTPSession::SendFlowControl(unsigned maxBitRate, unsigned overhead, boo
     mantissa >>= 1;
     ++exponent;
   }
-  tmmb->bitRateAndOverhead = overhead | (mantissa << 9) | (exponent << 28);
+  tmmb->bitRateAndOverhead = overhead | (mantissa << 9) | (exponent << 26);
 
   // Send it
   request.EndPacket();
