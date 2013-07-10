@@ -1036,6 +1036,8 @@ class SIPEndPoint : public OpalRTPEndPoint
     // Network interface checking
     PDECLARE_InterfaceNotifier(SIPEndPoint, OnHighPriorityInterfaceChange);
     PDECLARE_InterfaceNotifier(SIPEndPoint, OnLowPriorityInterfaceChange);
+    PInterfaceMonitor::Notifier m_onHighPriorityInterfaceChange;
+    PInterfaceMonitor::Notifier m_onLowPriorityInterfaceChange;
 
     bool m_disableTrying;
 
