@@ -60,6 +60,8 @@ PString MyManager::GetArgumentSpec() const
 
 bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
 {
+  OpalMediaFormat::RegisterKnownMediaFormats(); // Make sure codecs are loaded before Initialise()
+
   if (!OpalManagerConsole::Initialise(args, verbose, "gst:"))
     return false;
 
