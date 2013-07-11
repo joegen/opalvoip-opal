@@ -1549,7 +1549,7 @@ class OpalManager : public PObject
      */
     WORD GetUDPPortMax() const { return udpPorts.max; }
 
-    /**Set the TCP port number base and max for H.245 channels.
+    /**Set the UDP port number base and max for RAS channels.
      */
     void SetUDPPorts(unsigned udpBase, unsigned udpMax);
 
