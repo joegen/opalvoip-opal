@@ -88,6 +88,7 @@ SIPHandler::SIPHandler(SIP_PDU::Methods method,
                        const PString & callID)
   : m_endpoint(&ep)
   , authentication(NULL)
+  , m_authenticateErrors(0)
   , m_username(params.m_authID)
   , m_password(params.m_password)
   , m_realm(params.m_realm)
@@ -441,7 +442,7 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
     case SIP_PDU::Failure_UnAuthorised :
     case SIP_PDU::Failure_ProxyAuthenticationRequired :
       OnReceivedAuthenticationRequired(transaction, response);
-      break;
+      return;
 
     case SIP_PDU::Failure_IntervalTooBrief :
       OnReceivedIntervalTooBrief(transaction, response);
@@ -457,6 +458,8 @@ void SIPHandler::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & resp
       else
         OnFailed(response);
   }
+
+  m_authenticateErrors = 0;
 }
 
 
@@ -524,7 +527,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
   newAuth->SetPassword(password);
 
   // check to see if this is a follow-on from the last authentication scheme used
-  if (GetState() == Subscribing && authentication != NULL && *newAuth == *authentication) {
+  if (m_authenticateErrors > 1 && authentication != NULL && *newAuth == *authentication) {
     delete newAuth;
     PTRACE(1, "SIP\tAuthentication already performed using current credentials, not trying again.");
     OnFailed(SIP_PDU::Failure_UnAuthorised);
@@ -536,6 +539,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
   // switch authentication schemes
   delete authentication;
   authentication = newAuth;
+  ++m_authenticateErrors;
   m_username = username;
   m_password = password;
 
