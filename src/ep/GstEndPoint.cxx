@@ -595,11 +595,11 @@ bool GstEndPoint::BuildEncoder(ostream & desc, const GstMediaStream & stream)
   if (it == m_MediaFormatToGStreamer.end())
     return false;
 
-  desc << SubstituteAll(it->second.m_encoder, mediaFormat, "Encoder");
+  desc << "queue max-size-buffers=1000 ! "
+       << SubstituteAll(it->second.m_encoder, mediaFormat, "Encoder")
+       << " ! queue max-size-buffers=1000";
   if (!it->second.m_packetiser.IsEmpty())
-    desc << " ! queue max-size-buffers=1000 ! "
-         << SubstituteAll(it->second.m_packetiser, mediaFormat, "Packetiser", true)
-         << " ! queue max-size-buffers=1000";
+    desc << " ! " << SubstituteAll(it->second.m_packetiser, mediaFormat, "Packetiser", true);
 
   return true;
 }
