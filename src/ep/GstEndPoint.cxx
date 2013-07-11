@@ -436,10 +436,7 @@ bool GstEndPoint::BuildAudioSinkDevice(ostream & desc, const GstMediaStream & /*
 
 static bool SetValidElementName(PString & device, const PString & elementName PTRACE_PARAM(, const char * which))
 {
-  if (!PAssert(!elementName.IsEmpty(), PInvalidParameter))
-    return false;
-
-  if (PGstPluginFeature::Inspect(FirstWord(elementName), PGstPluginFeature::ByName).IsEmpty()) {
+  if (!elementName.IsEmpty() && PGstPluginFeature::Inspect(FirstWord(elementName), PGstPluginFeature::ByName).IsEmpty()) {
     PTRACE(2, "Could not find gstreamer " << which << " \"" << elementName << '"');
     return false;
   }
@@ -452,13 +449,15 @@ static bool SetValidElementName(PString & device, const PString & elementName PT
 
 bool GstEndPoint::SetAudioSourceDevice(const PString & elementName)
 {
-  return SetValidElementName(m_audioSourceDevice, elementName PTRACE_PARAM(, "audio source"));
+  return PAssert(!elementName.IsEmpty(), PInvalidParameter) &&
+         SetValidElementName(m_audioSourceDevice, elementName PTRACE_PARAM(, "audio source"));
 }
 
 
 bool GstEndPoint::SetAudioSinkDevice(const PString & elementName)
 {
-  return SetValidElementName(m_audioSinkDevice, elementName PTRACE_PARAM(, "audio sink"));
+  return PAssert(!elementName.IsEmpty(), PInvalidParameter) &&
+         SetValidElementName(m_audioSinkDevice, elementName PTRACE_PARAM(, "audio sink"));
 }
 
 
@@ -468,8 +467,9 @@ bool GstEndPoint::BuildVideoSourcePipeline(ostream & desc, const GstMediaStream 
 {
   const OpalMediaFormat & mediaFormat = stream.GetMediaFormat();
 
-  desc << " ! " << m_videoColourConverter <<
-          " ! video/x-raw-yuv, "
+  if (!m_videoColourConverter.IsEmpty())
+    desc << " ! " << m_videoColourConverter;
+  desc << " ! video/x-raw-yuv, "
              "format=(fourcc)I420, "
              "width=" << mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption()) << ", "
              "height=" << mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption()) << ", "
@@ -509,7 +509,9 @@ bool GstEndPoint::BuildVideoSinkPipeline(ostream & desc, const GstMediaStream & 
       return false;
   }
 
-  desc << " ! " << m_videoColourConverter << " ! ";
+  if (!m_videoColourConverter.IsEmpty())
+    desc << " ! " << m_videoColourConverter;
+  desc << " ! ";
 
   return true;
 }
@@ -530,13 +532,15 @@ bool GstEndPoint::BuildVideoSinkDevice(ostream & desc, const GstMediaStream & /*
 
 bool GstEndPoint::SetVideoSourceDevice(const PString & elementName)
 {
-  return SetValidElementName(m_videoSourceDevice, elementName PTRACE_PARAM(, "video source"));
+  return PAssert(!elementName.IsEmpty(), PInvalidParameter) &&
+         SetValidElementName(m_videoSourceDevice, elementName PTRACE_PARAM(, "video source"));
 }
 
 
 bool GstEndPoint::SetVideoSinkDevice(const PString & elementName)
 {
-  return SetValidElementName(m_videoSinkDevice, elementName PTRACE_PARAM(, "video sink"));
+  return PAssert(!elementName.IsEmpty(), PInvalidParameter) &&
+         SetValidElementName(m_videoSinkDevice, elementName PTRACE_PARAM(, "video sink"));
 }
 
 
