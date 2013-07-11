@@ -808,7 +808,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
       if (IS_ERROR(vpx_codec_dec_init, (&m_codec, m_iface, NULL, m_flags)))
         return false;
 
-      PTRACE(4, MY_CODEC_LOG, "Decoder opened: " << vpx_codec_version_str() << ", revision $Revision$");
+      PTRACE(4, MY_CODEC_LOG, "Decoder opened: flags=" << m_flags << ", version=" << vpx_codec_version_str() << ", $Revision$");
       return true;
     }
 
@@ -821,6 +821,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
       flags = PluginCodec_ReturnCoderRequestIFrame;
       m_ignoreTillKeyFrame = true;
       m_fullFrame.clear();
+      PTRACE(4, MY_CODEC_LOG, "Not decoding due to packet loss, awaiting key frame.");
       return true;
     }
 
@@ -833,7 +834,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
     {
       vpx_image_t * image;
 
-      bool lostPackets = (flags & PluginCodec_CoderPacketLoss) == 0;
+      bool noLostPackets = (flags & PluginCodec_CoderPacketLoss) == 0;
 
       flags = m_intraFrame ? PluginCodec_ReturnCoderIFrame : 0;
 
@@ -845,7 +846,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
 #ifdef VPX_CODEC_USE_ERROR_CONCEALMENT
                              (m_flags & VPX_CODEC_USE_ERROR_CONCEALMENT) != 0 ||
 #endif
-                             lostPackets))
+                             noLostPackets))
           return true;
 
         PluginCodec_RTP srcRTP(fromPtr, fromLen);
