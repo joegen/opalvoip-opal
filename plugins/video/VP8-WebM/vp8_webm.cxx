@@ -45,6 +45,15 @@
 #include "vpx/vp8dx.h"
 
 
+/* Error concelment (handling missing data) does not appear to work. Or we are
+   not using it right. Either way disable it or we eventually get a Error 5 in
+   vpx_codec_decode - Bitstream not supported by this decoder.
+ */
+#ifdef VPX_CODEC_USE_ERROR_CONCEALMENT
+#undef VPX_CODEC_USE_ERROR_CONCEALMENT
+#endif
+
+
 #define INCLUDE_OM_CUSTOM_PACKETIZATION 1
 
 #define MY_CODEC_LOG "VP8"
