@@ -824,10 +824,11 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
 
 #endif // OPAL_PTLIB_DNS_RESOLVER
 
-  address = url.GetHostName();
-  if (!address && url.GetPort() != 0)
-    address.sprintf(":%u", url.GetPort());
-
+  address = OpalTransportAddress(url.GetHostName(), url.GetPort(),
+#if OPAL_PTLIB_SSL
+                                 url.GetScheme() == "h323s" ? OpalTransportAddress::TlsPrefix() :
+#endif
+                                 OpalTransportAddress::TcpPrefix());
   alias = url.GetUserName();
   if (alias.IsEmpty() && address.IsEmpty()) {
     PTRACE(1, "H323\tAttempt to use invalid URL \"" << remoteParty << '"');
