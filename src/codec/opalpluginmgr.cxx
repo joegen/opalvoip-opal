@@ -2663,13 +2663,12 @@ static bool OnReceivedCustomMPI(const H245_H263VideoCapability & h263,
 }
 
 
-PBoolean H323H263Capability::IsMatch(const PASN_Choice & subTypePDU, const PString & mediaPacketization) const
+PBoolean H323H263Capability::IsMatch(const PASN_Object & subTypePDU, const PString & mediaPacketization) const
 {
   if (subTypePDU.GetTag() != GetSubType())
     return false;
 
-  H245_VideoCapability & video    = (H245_VideoCapability &)subTypePDU;
-  H245_H263VideoCapability & h263 = (H245_H263VideoCapability &)video;
+  const H245_H263VideoCapability & h263 = dynamic_cast<const H245_VideoCapability &>(subTypePDU);
 
   PString mp = mediaPacketization;
   if (mp.IsEmpty())

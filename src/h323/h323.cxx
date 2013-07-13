@@ -3817,6 +3817,23 @@ void H323Connection::OnSetLocalCapabilities()
   }
 #endif
 
+#if OPAL_PTLIB_SSL && !H323_DISABLE_H235_SRTP
+  if (GetControlChannel().GetLocalAddress().GetProtoPrefix() == OpalTransportAddress::TlsPrefix()) {
+    for (PINDEX i = 0; i < localCapabilities.GetSize(); ++i) {
+      switch (localCapabilities[i].GetMainType()) {
+        case H323Capability::e_Audio :
+        case H323Capability::e_Video :
+          localCapabilities.Add(new H323H235SecurityCapability(localCapabilities[i].GetCapabilityNumber(),
+                                                               endpoint.GetMediaCryptoSuites()));
+          break;
+
+        default :
+          break;
+      }
+    }
+  }
+#endif
+
   OpalMediaFormatList::const_iterator rfc2833 = formats.FindFormat(OpalRFC2833);
   H323_UserInputCapability::AddAllCapabilities(localCapabilities, 0, P_MAX_INDEX, rfc2833 != formats.end());
 
@@ -3973,6 +3990,27 @@ OpalMediaFormatList H323Connection::GetMediaFormats() const
 }
 
 
+PStringArray H323Connection::GetMediaCryptoSuites() const
+{
+  PStringArray cryptoSuites = OpalConnection::GetMediaCryptoSuites();
+
+#if !H323_DISABLE_H235_SRTP
+  H323H235SecurityCapability * cap = dynamic_cast<H323H235SecurityCapability *>(remoteCapabilities.FindCapability(H323Capability::e_H235Security));
+  if (cap != NULL) {
+    PStringArray remoteCryptoSuites = cap->GetCryptoSuites();
+    for (PINDEX i = 0; i < cryptoSuites.GetSize();) {
+      if (remoteCryptoSuites.GetValuesIndex(cryptoSuites[i]) != P_MAX_INDEX)
+        ++i;
+      else
+        cryptoSuites.RemoveAt(i++);
+    }
+  }
+#endif
+
+  return cryptoSuites;
+}
+
+
 unsigned H323Connection::GetNextSessionID(const OpalMediaType & mediaType, bool isSource)
 {
   if (GetMediaStream(mediaType, isSource) == NULL) {
@@ -4100,6 +4138,16 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
         PTRACE(2, "H323\tOpenMediaStream could not find capability for " << name);
         return NULL;
       }
+
+#if !H323_DISABLE_H235_SRTP
+      for (PINDEX i = 0; i < remoteCapabilities.GetSize(); ++i) {
+        const H323H235SecurityCapability * h235 = dynamic_cast<const H323H235SecurityCapability *>(&remoteCapabilities[i]);
+        if (h235 != NULL && h235->GetMediaCapabilityNumber() == capability->GetCapabilityNumber()) {
+          capability->SetCryptoSuite(h235->GetCryptoSuites()[0]);
+          break;
+        }
+      }
+#endif
 
       capability->UpdateMediaFormat(mediaFormat);
 
@@ -4805,7 +4853,15 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
       return NULL;
   }
 
-  OpalMediaSession * session = UseMediaSession(sessionID, mediaType);
+  PCaselessString sessionType = mediaType->GetMediaSessionType();
+
+#if !H323_DISABLE_H235_SRTP
+  OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(capability.GetCryptoSuite());
+  if (cryptoSuite != NULL)
+    cryptoSuite->ChangeSessionType(sessionType);
+#endif
+
+  OpalMediaSession * session = UseMediaSession(sessionID, mediaType, sessionType);
   if (PAssertNULL(session) == NULL)
     return NULL;
 
@@ -4829,6 +4885,13 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
     ReleaseMediaSession(sessionID);
     return NULL;
   }
+
+#if !H323_DISABLE_H235_SRTP
+  if (dir == H323Channel::IsTransmitter) {
+    session->OfferCryptoSuite(capability.GetCryptoSuite());
+    session->ApplyCryptoKey(session->GetOfferedCryptoKeys(), false);
+  }
+#endif
 
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
   if (rtpSession != NULL)
@@ -4860,7 +4923,7 @@ PBoolean H323Connection::OnCreateLogicalChannel(const H323Capability & capabilit
 
   // Check if in set at all
   if (dir != H323Channel::IsReceiver) {
-    H323Capability * remoteCapability = localCapabilities.FindCapability(capability);
+    H323Capability * remoteCapability = remoteCapabilities.FindCapability(capability);
     if (remoteCapability == NULL || !localCapabilities.IsAllowed(*remoteCapability)) {
       PTRACE(2, "H323\tOnCreateLogicalChannel - transmit capability " << capability << " not allowed.");
       return false;

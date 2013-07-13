@@ -152,6 +152,12 @@ class OpalMediaCryptoKeyInfo : public PObject {
     virtual bool FromString(const PString & str) = 0;
     virtual PString ToString() const = 0;
 
+    virtual bool SetCipherKey(const PBYTEArray & key) = 0;
+    virtual bool SetAuthSalt(const PBYTEArray & key) = 0;
+
+    virtual PBYTEArray GetCipherKey() const = 0;
+    virtual PBYTEArray GetAuthSalt() const = 0;
+
     const OpalMediaCryptoSuite & GetCryptoSuite() const { return m_cryptoSuite; }
 
     void SetTag(const PString & tag) { m_tag = tag; }
@@ -182,6 +188,9 @@ class OpalMediaCryptoSuite : public PObject
     virtual bool ChangeSessionType(PCaselessString & mediaSession) const = 0;
 
     virtual const char * GetDescription() const = 0;
+#if !H323_DISABLE_H235_SRTP
+    virtual const char * GetOID() const = 0;
+#endif
 
     virtual OpalMediaCryptoKeyInfo * CreateKeyInfo() const = 0;
 };

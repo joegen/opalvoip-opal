@@ -1014,6 +1014,12 @@ class OpalConnection : public PSafeObject
       OpalMediaFormatList & mediaFormats      ///<  Media formats to use
     ) const;
 
+    /**Get media security methods in priority order.
+       Returns an array of names for security methods,
+       e.g. { "Clear", "AES_CM_128_HMAC_SHA1_80", "AES_CM_128_HMAC_SHA1_32" }.
+      */
+    virtual PStringArray GetMediaCryptoSuites() const;
+
     /**Get next available session ID for the media type.
 
        Default behaviour returns zero indicating that this connection type

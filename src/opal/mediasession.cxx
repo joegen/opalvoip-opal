@@ -210,6 +210,9 @@ class OpalMediaClearText : public OpalMediaCryptoSuite
   virtual bool Supports(const PCaselessString &) const { return true; }
   virtual bool ChangeSessionType(PCaselessString & /*mediaSession*/) const { return true; }
   virtual const char * GetDescription() const { return OpalMediaCryptoSuite::ClearText(); }
+#if !H323_DISABLE_H235_SRTP
+  virtual const char * GetOID() const { return NULL; }
+#endif
 
   struct KeyInfo : public OpalMediaCryptoKeyInfo
   {
@@ -219,6 +222,10 @@ class OpalMediaClearText : public OpalMediaCryptoSuite
     virtual void Randomise() { }
     virtual bool FromString(const PString &) { return true; }
     virtual PString ToString() const { return PString::Empty(); }
+    virtual PBYTEArray GetCipherKey() const { return PBYTEArray(); }
+    virtual PBYTEArray GetAuthSalt() const { return PBYTEArray(); }
+    virtual bool SetCipherKey(const PBYTEArray &) { return true; }
+    virtual bool SetAuthSalt(const PBYTEArray &) { return true; }
   };
 
   virtual OpalMediaCryptoKeyInfo * CreateKeyInfo() const { return new KeyInfo(*this); }
