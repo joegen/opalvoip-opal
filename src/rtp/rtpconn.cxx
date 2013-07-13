@@ -145,7 +145,7 @@ vector<bool> OpalRTPConnection::CreateAllMediaSessions(CreateMediaSessionsSecuri
     allMediaTypes.insert(allMediaTypes.begin(), OpalMediaType::Audio());
   }
 
-  const PStringArray cryptoSuites = endpoint.GetMediaCryptoSuites();
+  const PStringArray cryptoSuites = GetMediaCryptoSuites();
 
   vector<bool> openedMediaSessions(allMediaTypes.size()*cryptoSuites.GetSize()+1);
 

@@ -265,6 +265,9 @@ class OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_80 : public OpalSRTPCryptoSuite
   public:
     virtual const PCaselessString & GetFactoryName() const { return AES_CM_128_HMAC_SHA1_80; }
     virtual const char * GetDescription() const { return "SRTP: AES-128 & SHA1-80"; }
+#if !H323_DISABLE_H235_SRTP
+    virtual const char * GetOID() const { return "0.0.8.235.0.4.91"; }
+#endif
     virtual PINDEX GetCipherKeyBits() const { return 128; }
     virtual PINDEX GetAuthSaltBits() const { return 112; }
 
@@ -282,6 +285,9 @@ class OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_32 : public OpalSRTPCryptoSuite
   public:
     virtual const PCaselessString & GetFactoryName() const { return AES_CM_128_HMAC_SHA1_32; }
     virtual const char * GetDescription() const { return "SRTP: AES-128 & SHA1-32"; }
+#if !H323_DISABLE_H235_SRTP
+    virtual const char * GetOID() const { return "0.0.8.235.0.4.92"; }
+#endif
     virtual PINDEX GetCipherKeyBits() const { return 128; }
     virtual PINDEX GetAuthSaltBits() const { return 32; }
 
@@ -296,7 +302,7 @@ PFACTORY_CREATE(OpalMediaCryptoSuiteFactory, OpalSRTPCryptoSuite_AES_CM_128_HMAC
 
 bool OpalSRTPCryptoSuite::Supports(const PCaselessString & proto) const
 {
-  return proto *= "sip"; 
+  return proto == "sip" || proto == "h323";
 }
 
 

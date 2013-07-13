@@ -49,6 +49,7 @@
 #include <t38/h323t38.h>
 #include <codec/opalplugin.h>
 #include <codec/rfc2833.h>
+#include <asn/h235_srtp.h>
 
 #include <algorithm>
 
@@ -89,6 +90,64 @@ ostream & operator<<(ostream & o , H323Capability::CapabilityDirection d)
   return o << names[d];
 }
 #endif
+
+
+#if H323_DISABLE_H235_SRTP
+
+template <unsigned dt, unsigned mt, class DATA_TYPE, class CAP_TYPE>
+bool H323GetMediaCapability(DATA_TYPE & dataType, CAP_TYPE * & cap)
+{
+  if (dataType.GetTag() != dt)
+    return false;
+
+  cap = &(CAP_TYPE &)dataType;
+  return true;
+}
+
+template <unsigned dt, unsigned mt, class DATA_TYPE, class CAP_TYPE>
+void H323SetMediaCapability(const H323Capability &, DATA_TYPE & dataType, CAP_TYPE * & cap)
+{
+  dataType.SetTag(mt);
+  cap = &(CAP_TYPE &)dataType;
+}
+
+#else // H323_DISABLE_H235_SRTP
+
+template <unsigned dt, unsigned mt, class DATA_TYPE, class CAP_TYPE>
+bool H323GetMediaCapability(DATA_TYPE & dataType, CAP_TYPE * & cap)
+{
+  switch (dataType.GetTag()) {
+    case dt :
+      cap = &(CAP_TYPE &)dataType;
+      return true;
+
+    case H245_DataType::e_h235Media :
+      const H245_H235Media & h235 = dataType;
+      if (h235.m_mediaType.GetTag() == mt) {
+        cap = &(CAP_TYPE &)h235.m_mediaType;
+        return true;
+      }
+  }
+
+  return false;
+}
+
+
+template <unsigned dt, unsigned mt, class DATA_TYPE, class CAP_TYPE>
+void H323SetMediaCapability(const H323Capability & rtCap, DATA_TYPE & dataType, CAP_TYPE * & cap)
+{
+  if (rtCap.GetCryptoSuite().IsEmpty()) {
+    dataType.SetTag(dt);
+    cap = &(CAP_TYPE &)dataType;
+  }
+  else {
+    dataType.SetTag(H245_DataType::e_h235Media);
+    H245_H235Media & h235 = dataType;
+    h235.m_mediaType.SetTag(mt);
+    cap = &(CAP_TYPE &)h235.m_mediaType;
+  }
+}
+#endif // H323_DISABLE_H235_SRTP
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -164,7 +223,7 @@ unsigned H323Capability::GetRxFramesInPacket() const
 }
 
 
-PBoolean H323Capability::IsMatch(const PASN_Choice & subTypePDU, const PString & mediaPacketization) const
+PBoolean H323Capability::IsMatch(const PASN_Object & subTypePDU, const PString & mediaPacketization) const
 {
   if (subTypePDU.GetTag() != GetSubType())
     return false;
@@ -180,10 +239,33 @@ PBoolean H323Capability::IsMatch(const PASN_Choice & subTypePDU, const PString &
 }
 
 
-PBoolean H323Capability::OnSendingPDU(H245_DataType & /*pdu*/) const
+H323Channel * H323Capability::CreateChannel(H323Connection &,
+                                            H323Channel::Directions,
+                                            unsigned,
+                                            const H245_H2250LogicalChannelParameters *) const
 {
+  PAssertAlways(PUnimplementedFunction);
+  return NULL;
+}
+
+
+PBoolean H323Capability::OnSendingPDU(H245_DataType & pdu) const
+{
+  if (!m_cryptoSuite.IsEmpty()) {
+    H245_H235Media & h235 = pdu;
+    H323H235SecurityCapability temp(GetCapabilityNumber(), m_cryptoSuite);
+    temp.OnSendingPDU(h235.m_encryptionAuthenticationAndIntegrity);
+  }
+
   GetWritableMediaFormat().SetOptionString(OpalMediaFormat::ProtocolOption(), PLUGINCODEC_OPTION_PROTOCOL_H323);
   return m_mediaFormat.ToCustomisedOptions();
+}
+
+
+PBoolean H323Capability::OnSendingPDU(H245_ModeElement &) const
+{
+  PAssertAlways(PUnimplementedFunction);
+  return false;
 }
 
 
@@ -224,8 +306,14 @@ PBoolean H323Capability::OnReceivedPDU(const H245_Capability & cap)
 }
 
 
-PBoolean H323Capability::OnReceivedPDU(const H245_DataType & /*pdu*/, PBoolean /*receiver*/)
+PBoolean H323Capability::OnReceivedPDU(const H245_DataType & pdu, PBoolean /*receiver*/)
 {
+  if (pdu.GetTag() == H245_DataType::e_h235Media) {
+    const H245_H235Media & h235 = pdu;
+    H323H235SecurityCapability temp(GetCapabilityNumber());
+    temp.OnReceivedPDU(h235.m_encryptionAuthenticationAndIntegrity);
+  }
+
   GetWritableMediaFormat().SetOptionString(OpalMediaFormat::ProtocolOption(), PLUGINCODEC_OPTION_PROTOCOL_H323);
   return m_mediaFormat.ToNormalisedOptions();
 }
@@ -779,9 +867,9 @@ PBoolean H323AudioCapability::OnSendingPDU(H245_Capability & cap) const
 
 PBoolean H323AudioCapability::OnSendingPDU(H245_DataType & dataType) const
 {
-  dataType.SetTag(H245_DataType::e_audioData);
-  return H323Capability::OnSendingPDU(dataType) &&
-         OnSendingPDU((H245_AudioCapability &)dataType, GetTxFramesInPacket(), e_OLC);
+  H245_AudioCapability * cap;
+  H323SetMediaCapability<H245_DataType::e_audioData, H245_H235Media_mediaType::e_audioData>(*this, dataType, cap);
+  return H323RealTimeCapability::OnSendingPDU(dataType) && OnSendingPDU(*cap, GetTxFramesInPacket(), e_OLC);
 }
 
 
@@ -876,12 +964,13 @@ PBoolean H323AudioCapability::OnReceivedPDU(const H245_Capability & cap)
 
 PBoolean H323AudioCapability::OnReceivedPDU(const H245_DataType & dataType, PBoolean receiver)
 {
-  if (dataType.GetTag() != H245_DataType::e_audioData)
+  const H245_AudioCapability * cap;
+  if (!H323GetMediaCapability<H245_DataType::e_audioData, H245_H235Media_mediaType::e_audioData>(dataType, cap))
     return false;
 
   unsigned xFramesInPacket = receiver ? GetRxFramesInPacket() : GetTxFramesInPacket();
   unsigned packetSize = xFramesInPacket;
-  if (!OnReceivedPDU((const H245_AudioCapability &)dataType, packetSize, e_OLC))
+  if (!OnReceivedPDU(*cap, packetSize, e_OLC))
     return false;
 
   // Clamp our transmit size to maximum allowed
@@ -896,7 +985,7 @@ PBoolean H323AudioCapability::OnReceivedPDU(const H245_DataType & dataType, PBoo
            << xFramesInPacket << " as remote allows " << packetSize);
   }
 
-  return H323Capability::OnReceivedPDU(dataType, receiver);
+  return H323RealTimeCapability::OnReceivedPDU(dataType, receiver);
 }
 
 
@@ -974,12 +1063,12 @@ PBoolean H323GenericAudioCapability::OnReceivedPDU(const H245_AudioCapability & 
   return true;
 }
 
-PBoolean H323GenericAudioCapability::IsMatch(const PASN_Choice & subTypePDU, const PString & mediaPacketization) const
+PBoolean H323GenericAudioCapability::IsMatch(const PASN_Object & subTypePDU, const PString & mediaPacketization) const
 {
   if (!H323Capability::IsMatch(subTypePDU, mediaPacketization))
     return false;
 
-  const H245_GenericCapability & genericCap = (const H245_GenericCapability &)subTypePDU.GetObject();
+  const H245_GenericCapability & genericCap = (const H245_GenericCapability &)dynamic_cast<const H245_AudioCapability &>(subTypePDU);
   if (!H323GenericCapabilityInfo::IsMatch(GetMediaFormat(), genericCap))
     return false;
 
@@ -1068,10 +1157,10 @@ PBoolean H323NonStandardAudioCapability::OnReceivedPDU(const H245_AudioCapabilit
 }
 
 
-PBoolean H323NonStandardAudioCapability::IsMatch(const PASN_Choice & subTypePDU, const PString & mediaPacketization) const
+PBoolean H323NonStandardAudioCapability::IsMatch(const PASN_Object & subTypePDU, const PString & mediaPacketization) const
 {
   return H323Capability::IsMatch(subTypePDU, mediaPacketization) &&
-         H323NonStandardCapabilityInfo::IsMatch((const H245_NonStandardParameter &)subTypePDU.GetObject());
+         H323NonStandardCapabilityInfo::IsMatch((const H245_NonStandardParameter &)dynamic_cast<const H245_AudioCapability &>(subTypePDU));
 }
 
 
@@ -1095,9 +1184,9 @@ PBoolean H323VideoCapability::OnSendingPDU(H245_Capability & cap) const
 
 PBoolean H323VideoCapability::OnSendingPDU(H245_DataType & dataType) const
 {
-  dataType.SetTag(H245_DataType::e_videoData);
-  return H323Capability::OnSendingPDU(dataType) &&
-         OnSendingPDU((H245_VideoCapability &)dataType, e_OLC);
+  H245_VideoCapability * cap;
+  H323SetMediaCapability<H245_DataType::e_videoData, H245_H235Media_mediaType::e_videoData>(*this, dataType, cap);
+  return H323RealTimeCapability::OnSendingPDU(dataType) && OnSendingPDU(*cap, e_OLC);
 }
 
 
@@ -1150,13 +1239,10 @@ PBoolean H323VideoCapability::OnReceivedPDU(const H245_Capability & cap)
 
 PBoolean H323VideoCapability::OnReceivedPDU(const H245_DataType & dataType, PBoolean receiver)
 {
-  if (dataType.GetTag() != H245_DataType::e_videoData) {
-    PTRACE(5, "H323\tdataType.GetTag() " << dataType.GetTag() << " != H245_DataType::e_videoData");
-    return false;
-  }
-
-  return OnReceivedPDU((const H245_VideoCapability &)dataType, e_OLC) &&
-         H323Capability::OnReceivedPDU(dataType, receiver);
+  const H245_VideoCapability * cap;
+  return H323GetMediaCapability<H245_DataType::e_videoData, H245_H235Media_mediaType::e_videoData>(dataType, cap) &&
+         OnReceivedPDU(*cap, e_OLC) &&
+         H323RealTimeCapability::OnReceivedPDU(dataType, receiver);
 }
 
 
@@ -1253,10 +1339,10 @@ PBoolean H323NonStandardVideoCapability::OnReceivedPDU(const H245_VideoCapabilit
 }
 
 
-PBoolean H323NonStandardVideoCapability::IsMatch(const PASN_Choice & subTypePDU, const PString & mediaPacketization) const
+PBoolean H323NonStandardVideoCapability::IsMatch(const PASN_Object & subTypePDU, const PString & mediaPacketization) const
 {
   return H323Capability::IsMatch(subTypePDU, mediaPacketization) &&
-         H323NonStandardCapabilityInfo::IsMatch((const H245_NonStandardParameter &)subTypePDU.GetObject());
+         H323NonStandardCapabilityInfo::IsMatch((const H245_NonStandardParameter &)dynamic_cast<const H245_VideoCapability &>(subTypePDU));
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1302,10 +1388,10 @@ PBoolean H323GenericVideoCapability::OnReceivedPDU(const H245_VideoCapability & 
   return OnReceivedGenericPDU(GetWritableMediaFormat(), pdu, type);
 }
 
-PBoolean H323GenericVideoCapability::IsMatch(const PASN_Choice & subTypePDU, const PString & mediaPacketization) const
+PBoolean H323GenericVideoCapability::IsMatch(const PASN_Object & subTypePDU, const PString & mediaPacketization) const
 {
   return H323Capability::IsMatch(subTypePDU, mediaPacketization) &&
-         H323GenericCapabilityInfo::IsMatch(GetMediaFormat(), (const H245_GenericCapability &)subTypePDU.GetObject());
+         H323GenericCapabilityInfo::IsMatch(GetMediaFormat(), (const H245_GenericCapability &)dynamic_cast<const H245_VideoCapability &>(subTypePDU));
 }
 
 
@@ -1435,12 +1521,12 @@ PBoolean H323ExtendedVideoCapability::OnReceivedPDU(const H245_VideoCapability &
 }
 
 
-PBoolean H323ExtendedVideoCapability::IsMatch(const PASN_Choice & subTypePDU, const PString & mediaPacketization) const
+PBoolean H323ExtendedVideoCapability::IsMatch(const PASN_Object & subTypePDU, const PString & mediaPacketization) const
 {
   if (!H323Capability::IsMatch(subTypePDU, mediaPacketization))
     return false;
 
-  const H245_ExtendedVideoCapability & extcap = (const H245_ExtendedVideoCapability &)subTypePDU.GetObject();
+  const H245_ExtendedVideoCapability & extcap = (const H245_ExtendedVideoCapability &)dynamic_cast<const H245_VideoCapability &>(subTypePDU);
   if (!extcap.HasOptionalField(H245_ExtendedVideoCapability::e_videoCapabilityExtension))
     return false;
 
@@ -1480,13 +1566,6 @@ PBoolean H323GenericControlCapability::OnSendingPDU(H245_Capability & pdu) const
 }
 
 
-PBoolean H323GenericControlCapability::OnSendingPDU(H245_ModeElement &) const
-{
-  PTRACE(1, "H323\tCannot create GenericControlCapability mode");
-  return false; // Can't be in mode request.
-}
-
-
 PBoolean H323GenericControlCapability::OnReceivedPDU(const H245_Capability & pdu)
 {
   if (pdu.GetTag() != H245_Capability::e_genericControlCapability)
@@ -1495,19 +1574,9 @@ PBoolean H323GenericControlCapability::OnReceivedPDU(const H245_Capability & pdu
 }
 
 
-PBoolean H323GenericControlCapability::IsMatch(const PASN_Choice & subTypePDU, const PString &) const
+PBoolean H323GenericControlCapability::IsMatch(const PASN_Object & subTypePDU, const PString &) const
 {
-  return H323GenericCapabilityInfo::IsMatch(GetMediaFormat(), (const H245_GenericCapability &)subTypePDU.GetObject());
-}
-
-
-H323Channel * H323GenericControlCapability::CreateChannel(H323Connection &,
-                                                          H323Channel::Directions,
-                                                          unsigned,
-                                                          const H245_H2250LogicalChannelParameters *) const
-{
-  PTRACE(1, "H323\tCannot create GenericControlCapability channel");
-  return NULL;
+  return H323GenericCapabilityInfo::IsMatch(GetMediaFormat(), dynamic_cast<const H245_GenericCapability &>(subTypePDU));
 }
 
 
@@ -1625,6 +1694,145 @@ PString H323H239ControlCapability::GetFormatName() const
 #endif  // OPAL_H239
 
 #endif // OPAL_VIDEO
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+#if !H323_DISABLE_H235_SRTP
+
+H323H235SecurityCapability::H323H235SecurityCapability(unsigned mediaCapabilityNumber, const PStringArray & cryptoSuites)
+  : H323GenericCapabilityInfo("0.0.8.235.0.4.90")
+  , m_mediaCapabilityNumber(mediaCapabilityNumber)
+  , m_cryptoSuites(cryptoSuites)
+{
+}
+
+
+H323Capability::MainTypes H323H235SecurityCapability::GetMainType() const
+{
+  return e_H235Security;
+}
+
+
+unsigned H323H235SecurityCapability::GetSubType()  const
+{
+  return 0;
+}
+
+
+PObject * H323H235SecurityCapability::Clone() const
+{
+  return new H323H235SecurityCapability(*this);
+}
+
+
+PString H323H235SecurityCapability::GetFormatName() const
+{
+  static const OpalMediaFormat name("H.235-Security", "H.235-Security", RTP_DataFrame::MaxPayloadType, NULL, false, 0, 0, 0, 0);
+  return name;
+}
+
+
+PBoolean H323H235SecurityCapability::OnSendingPDU(H245_Capability & pdu) const
+{
+  pdu.SetTag(H245_Capability::e_h235SecurityCapability);
+  H245_H235SecurityCapability & cap = pdu;
+  cap.m_mediaCapability = m_mediaCapabilityNumber;
+  return OnSendingPDU(cap.m_encryptionAuthenticationAndIntegrity);
+}
+
+
+bool H323H235SecurityCapability::OnSendingPDU(H245_EncryptionAuthenticationAndIntegrity & cap) const
+{
+  if (!OnSendingGenericPDU(cap.m_genericH235SecurityCapability, GetMediaFormat(), e_OLC))
+    return false;
+
+  H235_SRTP_SrtpCryptoCapability srtpCap;
+  for (PINDEX i = 0; i < m_cryptoSuites.GetSize(); ++i) {
+    OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(m_cryptoSuites[i]); // Singleton, no need to destroy
+    if (cryptoSuite != NULL && cryptoSuite->GetOID() != NULL) {
+      PINDEX pos = srtpCap.GetSize();
+      srtpCap.SetSize(pos+1);
+      H235_SRTP_SrtpCryptoInfo & info = srtpCap[pos];
+
+      info.IncludeOptionalField(H235_SRTP_SrtpCryptoInfo::e_cryptoSuite);
+      info.m_cryptoSuite = cryptoSuite->GetOID();
+
+      info.IncludeOptionalField(H235_SRTP_SrtpCryptoInfo::e_sessionParams);
+      info.m_sessionParams.IncludeOptionalField(H235_SRTP_SrtpSessionParameters::e_unencryptedSrtp); // Default value is FALSE
+      info.m_sessionParams.IncludeOptionalField(H235_SRTP_SrtpSessionParameters::e_unencryptedSrtcp); // Default value is FALSE
+      info.m_sessionParams.IncludeOptionalField(H235_SRTP_SrtpSessionParameters::e_unauthenticatedSrtp); // Default value is FALSE
+    }
+  }
+  if (srtpCap.GetSize() == 0) {
+    PTRACE(1, "H323\tNo suitable Crypto-Suites to put into capability");
+    return false;
+  }
+
+  cap.IncludeOptionalField(H245_EncryptionAuthenticationAndIntegrity::e_genericH235SecurityCapability);
+  cap.m_genericH235SecurityCapability.IncludeOptionalField(H245_GenericCapability::e_nonCollapsingRaw);
+  cap.m_genericH235SecurityCapability.m_nonCollapsingRaw.EncodeSubType(srtpCap);
+  return true;
+}
+
+
+PBoolean H323H235SecurityCapability::OnReceivedPDU(const H245_Capability & pdu)
+{
+  if (pdu.GetTag() != H245_Capability::e_h235SecurityCapability)
+    return false;
+
+  const H245_H235SecurityCapability & cap = pdu;
+  m_mediaCapabilityNumber = cap.m_mediaCapability;
+  return OnReceivedPDU(cap.m_encryptionAuthenticationAndIntegrity);
+}
+
+
+bool H323H235SecurityCapability::OnReceivedPDU(const H245_EncryptionAuthenticationAndIntegrity & cap)
+{
+  if (!OnReceivedGenericPDU(GetWritableMediaFormat(), cap.m_genericH235SecurityCapability, e_TCS))
+    return false;
+
+  if (cap.m_genericH235SecurityCapability.m_nonCollapsingRaw.GetSize() == 0) {
+    PTRACE(1, "H323\tMissing SrtpCryptoCapability");
+    return false;
+  }
+
+  H235_SRTP_SrtpCryptoCapability srtpCap;
+  if (!cap.m_genericH235SecurityCapability.m_nonCollapsingRaw.DecodeSubType(srtpCap)) {
+    PTRACE(1, "H323\tCould not decode SrtpCryptoCapability");
+    return false;
+  }
+
+  if (srtpCap.GetSize() == 0) {
+    PTRACE(1, "H323\tEmpty SrtpCryptoCapability");
+    return false;
+  }
+
+  m_cryptoSuites.RemoveAll();
+
+  OpalMediaCryptoSuiteFactory::KeyList_T all = OpalMediaCryptoSuiteFactory::GetKeyList();
+  for (PINDEX i = 0; i < srtpCap.GetSize(); ++i) {
+    const H235_SRTP_SrtpCryptoInfo & info = srtpCap[i];
+    PString oid = info.m_cryptoSuite.AsString();
+    for  (OpalMediaCryptoSuiteFactory::KeyList_T::iterator it = all.begin(); it != all.end(); ++it) {
+      OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(*it);
+      if (oid == cryptoSuite->GetOID()) {
+        PTRACE(4, "H323\tFound Crypto-Suite for " << cryptoSuite->GetDescription());
+        m_cryptoSuites.AppendString(*it);
+      }
+    }
+  }
+
+  return true;
+}
+
+
+PBoolean H323H235SecurityCapability::IsMatch(const PASN_Object & subTypePDU, const PString &) const
+{
+  return H323GenericCapabilityInfo::IsMatch(GetMediaFormat(), dynamic_cast<const H245_GenericCapability &>(subTypePDU));
+}
+#endif // H323_DISABLE_H235_SRTP
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1796,10 +2004,10 @@ PBoolean H323NonStandardDataCapability::OnReceivedPDU(const H245_DataApplication
 }
 
 
-PBoolean H323NonStandardDataCapability::IsMatch(const PASN_Choice & subTypePDU, const PString & mediaPacketization) const
+PBoolean H323NonStandardDataCapability::IsMatch(const PASN_Object & subTypePDU, const PString & mediaPacketization) const
 {
   return H323Capability::IsMatch(subTypePDU, mediaPacketization) &&
-         H323NonStandardCapabilityInfo::IsMatch((const H245_NonStandardParameter &)subTypePDU.GetObject());
+         H323NonStandardCapabilityInfo::IsMatch((const H245_NonStandardParameter &)dynamic_cast<const H245_DataApplicationCapability_application & >(subTypePDU));
 }
 
 
@@ -1922,16 +2130,6 @@ PString H323_UserInputCapability::GetFormatName() const
 }
 
 
-H323Channel * H323_UserInputCapability::CreateChannel(H323Connection &,
-                                                      H323Channel::Directions,
-                                                      unsigned,
-                                                      const H245_H2250LogicalChannelParameters *) const
-{
-  PTRACE(1, "H323\tCannot create UserInputCapability channel");
-  return NULL;
-}
-
-
 PBoolean H323_UserInputCapability::OnSendingPDU(H245_Capability & pdu) const
 {
   if (subType == SignalToneRFC2833) {
@@ -1957,13 +2155,6 @@ PBoolean H323_UserInputCapability::OnSendingPDU(H245_Capability & pdu) const
 PBoolean H323_UserInputCapability::OnSendingPDU(H245_DataType &) const
 {
   PTRACE(1, "H323\tCannot have UserInputCapability in DataType");
-  return false;
-}
-
-
-PBoolean H323_UserInputCapability::OnSendingPDU(H245_ModeElement &) const
-{
-  PTRACE(1, "H323\tCannot have UserInputCapability in ModeElement");
   return false;
 }
 
@@ -2128,6 +2319,9 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
 #if OPAL_H239
     allCapabilities.Add(new H323H239VideoCapability(OpalMediaFormat()));
     allCapabilities.Add(new H323H239ControlCapability());
+#endif
+#if !H323_DISABLE_H235_SRTP
+    allCapabilities.Add(new H323H235SecurityCapability(1)); // Just a template for cloning
 #endif
     allCapabilities.m_mediaPacketizations = m_mediaPacketizations;
     PTRACE(4, "H323\tParsing remote capabilities");
@@ -2563,10 +2757,20 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
 
         case H245_Capability::e_genericControlCapability :
           if (capability.GetMainType() == H323Capability::e_GenericControl) {
-            if (capability.IsMatch(cap, mediaPacketization))
+            if (capability.IsMatch((const H245_GenericCapability &)cap, mediaPacketization))
               return &capability;
           }
           break;
+
+#if !H323_DISABLE_H235_SRTP
+        case H245_Capability::e_h235SecurityCapability :
+          if (capability.GetMainType() == H323Capability::e_H235Security) {
+            const H245_H235SecurityCapability & h235 = cap;
+            if (capability.IsMatch(h235.m_encryptionAuthenticationAndIntegrity.m_genericH235SecurityCapability,
+                                   mediaPacketization))
+              return &capability;
+          }
+#endif
       }
     }
   }
@@ -2610,46 +2814,36 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
 }
 
 
+template <class CAP_TYPE>
+H323Capability * H323FindMediaCapability(const H323Capabilities & caps,
+                                         H323Capability::MainTypes mainType,
+                                         const CAP_TYPE & cap,
+                                         const PString & mediaPacketization)
+{
+  for (PINDEX i = 0; i < caps.GetSize(); i++) {
+    H323Capability & capability = caps[i];
+    if (capability.GetMainType() == mainType && capability.IsMatch(cap, mediaPacketization))
+      return &capability;
+  }
+  return NULL;
+}
+
+
+H323Capability * H323CheckExactCapability(const H245_DataType & dataType, H323Capability * capability)
+{
+  if (capability != NULL) {
+    std::auto_ptr<H323Capability> compare(capability->CloneAs<H323Capability>());
+    if (compare->OnReceivedPDU(dataType, false) && *compare == *capability)
+      return capability;
+  }
+
+  return NULL;
+}
+
+
 H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType, const PString & mediaPacketization) const
 {
-  for (PINDEX i = 0; i < table.GetSize(); i++) {
-    H323Capability & capability = table[i];
-    bool checkExact;
-    switch (dataType.GetTag()) {
-      case H245_DataType::e_audioData :
-        checkExact = capability.GetMainType() == H323Capability::e_Audio &&
-                     capability.IsMatch((const H245_AudioCapability &)dataType, mediaPacketization);
-        break;
-
-      case H245_DataType::e_videoData :
-        checkExact = capability.GetMainType() == H323Capability::e_Video &&
-                     capability.IsMatch((const H245_VideoCapability &)dataType, mediaPacketization);
-        break;
-
-      case H245_DataType::e_data :
-        checkExact = capability.GetMainType() == H323Capability::e_Data &&
-                     capability.IsMatch(((const H245_DataApplicationCapability &)dataType).m_application, mediaPacketization);
-        break;
-
-      default :
-        checkExact = false;
-    }
-
-    if (checkExact) {
-      H323Capability * compare = (H323Capability *)capability.Clone();
-      if (compare->OnReceivedPDU(dataType, false)) {
-        if (*compare == capability) {
-          delete compare;
-          return &capability;
-        }
-        PTRACE(3, "H323\tCapability compare failed");
-      }
-      else {
-        PTRACE(3, "H323\tOnReceived failed");
-      }
-      delete compare;
-    }
-  }
+  H323Capability * capability = NULL;
 
   /* Hate special cases ... but this is ... expedient.
      Due to an ambiguity in the TCS syntax, you cannot easily distinguish
@@ -2664,6 +2858,53 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
     if (capability != NULL)
       return capability;
   }
+
+  switch (dataType.GetTag()) {
+    case H245_DataType::e_audioData :
+      capability = H323CheckExactCapability(dataType, H323FindMediaCapability<H245_AudioCapability>(*this, H323Capability::e_Audio, dataType, mediaPacketization));
+      break;
+
+    case H245_DataType::e_videoData :
+      capability = H323CheckExactCapability(dataType, H323FindMediaCapability<H245_VideoCapability>(*this, H323Capability::e_Video, dataType, mediaPacketization));
+      break;
+
+    case H245_DataType::e_data :
+      capability = H323CheckExactCapability(dataType, H323FindMediaCapability<>(*this, H323Capability::e_Data, ((const H245_DataApplicationCapability &)dataType).m_application, mediaPacketization));
+      break;
+
+#if !H323_DISABLE_H235_SRTP
+    case H245_DataType::e_h235Media :
+      const H245_H235Media & h235 = (const H245_H235Media &)dataType;
+      capability = H323CheckExactCapability(dataType, H323FindMediaCapability<>(*this, H323Capability::e_H235Security, h235.m_encryptionAuthenticationAndIntegrity.m_genericH235SecurityCapability, mediaPacketization));
+      if (capability != NULL) {
+        PString cryptoSuite = dynamic_cast<H323H235SecurityCapability *>(capability)->GetCryptoSuites()[0];
+        switch (h235.m_mediaType.GetTag()) {
+          case H245_H235Media_mediaType::e_audioData :
+            capability = H323FindMediaCapability<H245_AudioCapability>(*this, H323Capability::e_Audio, h235.m_mediaType, mediaPacketization);
+            break;
+
+          case H245_H235Media_mediaType::e_videoData :
+            capability = H323FindMediaCapability<H245_VideoCapability>(*this, H323Capability::e_Video, h235.m_mediaType, mediaPacketization);
+            break;
+
+          case H245_H235Media_mediaType::e_data :
+            capability = H323FindMediaCapability<>(*this, H323Capability::e_Data, ((const H245_DataApplicationCapability &)h235.m_mediaType).m_application, mediaPacketization);
+            break;
+
+          default :
+            capability = NULL;
+        }
+        if (capability != NULL) {
+          capability->SetCryptoSuite(cryptoSuite);
+          capability = H323CheckExactCapability(dataType, capability);
+        }
+      }
+      break;
+#endif
+  }
+
+  if (capability != NULL)
+    return capability;
 
 #if PTRACING
   if (PTrace::CanTrace(4)) {
@@ -2802,7 +3043,7 @@ void H323Capabilities::BuildPDU(const H323Connection & connection,
       if (capability.OnSendingPDU(entry.m_capability))
         mediaPacketizations.Union(capability.GetMediaFormat().GetMediaPacketizationSet());
       else
-        pdu.m_capabilityTable.SetSize(count);
+        pdu.m_capabilityTable.SetSize(--count);
     }
   }
 
@@ -2845,7 +3086,7 @@ PBoolean H323Capabilities::Merge(const H323Capabilities & newCaps)
   PINDEX i;
   for (i = 0; i < newCaps.GetSize(); i++) {
     // Only add if not already in
-    if (!FindCapability(newCaps[i]))
+    if (!FindCapability(newCaps[i].GetCapabilityNumber()))
       Copy(newCaps[i]);
   }
 
