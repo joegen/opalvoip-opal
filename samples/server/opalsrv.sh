@@ -1,10 +1,13 @@
 #!/bin/sh
 
-NAME=opalsrv
-DIR=$HOME/.opalsrv
-ARGS="--pid-file $DIR/${NAME}.pid --ini-file $DIR/${NAME}.ini --log-file $DIR/${NAME}.log"
+SRC_DIR=`dirname $0`
+SRC_DIR=`cd $SRC_DIR ; pwd`
 
-PROG=`ls ./obj*[^d]/$NAME | head -1`
+NAME=opalsrv
+INFO_DIR=$HOME/.opalsrv
+ARGS="--pid-file $INFO_DIR/${NAME}.pid --ini-file $INFO_DIR/${NAME}.ini --log-file $INFO_DIR/${NAME}.log"
+
+PROG=`ls $SRC_DIR/obj*[^d]/$NAME | head -1`
 if [ ! -x $PROG ]; then
   echo "No executable found"
   exit 1
@@ -24,12 +27,12 @@ case $1 in
   ;;
 
   debug )
-    PROG=`ls ./obj*d/$NAME`
+    PROG=`ls $SRC_DIR/obj*d/$NAME`
     COMMAND="gdb -tui --args $PROG --execute $ARGS --execute"
   ;;
 
   log )
-    less $DIR/${NAME}.log
+    less $INFO_DIR/${NAME}.log
     exit 0
   ;;
 
@@ -39,8 +42,8 @@ case $1 in
   ;;
 esac
 
-if [ ! -d $DIR ]; then
-  mkdir $DIR || exit $?
+if [ ! -d $INFO_DIR ]; then
+  mkdir $INFO_DIR || exit $?
 fi
 
 if [ -n "$OPALDIR" -a -z "$PTLIBPLUGINDIR" ]; then
