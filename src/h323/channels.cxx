@@ -53,6 +53,7 @@
 #include <h323/h323rtp.h>
 #include <h323/transaddr.h>
 #include <h323/h323pdu.h>
+#include <asn/h235_srtp.h>
 
 
 #define new PNEW
@@ -468,6 +469,22 @@ PBoolean H323_RealTimeChannel::OnSendingPDU(H245_OpenLogicalChannel & open) cons
 
   open.m_forwardLogicalChannelNumber = (unsigned)number;
 
+#if !H323_DISABLE_H235_SRTP
+  OpalMediaSession * session = connection.GetMediaSession(GetSessionID());
+  if (session != NULL) {
+    OpalMediaCryptoKeyList & keys = session->GetOfferedCryptoKeys();
+    if (!keys.IsEmpty()) {
+      H235_SRTP_SrtpKeys h235;
+      h235.SetSize(1);
+      h235[0].m_masterKey.SetValue(keys[0].GetCipherKey());
+      h235[0].m_masterSalt.SetValue(keys[0].GetAuthSalt());
+
+      open.IncludeOptionalField(H245_OpenLogicalChannel::e_encryptionSync);
+      open.m_encryptionSync.m_h235Key.EncodeSubType(h235);
+    }
+  }
+#endif
+
   if (open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters)) {
     open.m_reverseLogicalChannelParameters.IncludeOptionalField(
             H245_OpenLogicalChannel_reverseLogicalChannelParameters::e_multiplexParameters);
@@ -556,6 +573,35 @@ PBoolean H323_RealTimeChannel::OnReceivedPDU(const H245_OpenLogicalChannel & ope
     errorCode = H245_OpenLogicalChannelReject_cause::e_dataTypeNotSupported;
     return false;
   }
+
+#if !H323_DISABLE_H235_SRTP
+  if (open.HasOptionalField(H245_OpenLogicalChannel::e_encryptionSync)) {
+    OpalMediaSession * session = connection.GetMediaSession(GetSessionID());
+    if (session != NULL) {
+      OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(capability->GetCryptoSuite());
+      if (cryptoSuite != NULL) {
+        H235_SRTP_SrtpKeys h235;
+        if (!open.m_encryptionSync.m_h235Key.DecodeSubType(h235) || h235.GetSize() == 0) {
+          PTRACE(1, "H323\tCould not decode SrtpKeys, or no keys present");
+          return false;
+        }
+
+        OpalMediaCryptoKeyList keys;
+        for (PINDEX i = 0; i < h235.GetSize(); ++i) {
+          H235_SRTP_SrtpKeyParameters & param = h235[i];
+          OpalMediaCryptoKeyInfo * keyInfo = cryptoSuite->CreateKeyInfo();
+          if (keyInfo != NULL) {
+            keyInfo->SetCipherKey(param.m_masterKey.GetValue());
+            keyInfo->SetAuthSalt(param.m_masterSalt.GetValue());
+            keys.Append(keyInfo);
+          }
+        }
+
+        session->ApplyCryptoKey(keys, true);
+      }
+    }
+  }
+#endif
 
   if (reverse) {
     if (open.m_reverseLogicalChannelParameters.m_multiplexParameters.GetTag() ==

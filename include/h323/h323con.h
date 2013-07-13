@@ -292,6 +292,12 @@ class H323Connection : public OpalRTPConnection
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
 
+    /**Get media security methods in priority order.
+       Returns an array of names for security methods,
+       e.g. { "Clear", "AES_CM_128_HMAC_SHA1_80", "AES_CM_128_HMAC_SHA1_32" }.
+      */
+    virtual PStringArray GetMediaCryptoSuites() const;
+
     /**Get next available session ID for the media type.
       */
     virtual unsigned GetNextSessionID(

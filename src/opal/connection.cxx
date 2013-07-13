@@ -669,6 +669,12 @@ void OpalConnection::AdjustMediaFormats(bool   local,
 }
 
 
+PStringArray OpalConnection::GetMediaCryptoSuites() const
+{
+  return endpoint.GetMediaCryptoSuites();
+}
+
+
 unsigned OpalConnection::GetNextSessionID(const OpalMediaType & /*mediaType*/, bool /*isSource*/)
 {
   return 0;

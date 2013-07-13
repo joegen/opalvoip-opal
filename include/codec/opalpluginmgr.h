@@ -696,7 +696,7 @@ class H323H263Capability : public H323VideoCapability
       const H245_VideoCapability & pdu  /// PDU to get information from
     );
     virtual PBoolean IsMatch(
-      const PASN_Choice & subTypePDU,     ///<  sub-type PDU of H323Capability
+      const PASN_Object & subTypePDU,     ///<  sub-type PDU of H323Capability
       const PString & mediaPacketization  ///< Media packetization used
     ) const;
 
