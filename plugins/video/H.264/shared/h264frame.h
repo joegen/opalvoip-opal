@@ -94,10 +94,9 @@ private:
   bool EncapsulateSTAP  (PluginCodec_RTP & frame, unsigned int & flags);
   bool EncapsulateFU    (PluginCodec_RTP & frame, unsigned int & flags);
 
-  bool DeencapsulateFU   (const PluginCodec_RTP & frame);
-  bool DeencapsulateSTAP (const PluginCodec_RTP & frame);
-  bool AddDataToEncodedFrame (uint8_t *data, uint32_t dataLen, uint8_t header, bool addHeader);
-  bool IsStartCode (const uint8_t *positionInFrame);
+  bool DeencapsulateFU(const uint8_t *payloadPtr, uint32_t payloadSize);
+  bool DeencapsulateSTAP(const uint8_t *payloadPtr, uint32_t payloadSize);
+  bool AddDataToEncodedFrame(const uint8_t *payloadPtr, uint32_t payloadSize, uint8_t header, bool addHeader);
   void SetSPS(const uint8_t * payload);
 
     // general stuff
