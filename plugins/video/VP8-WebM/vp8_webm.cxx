@@ -871,6 +871,11 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
             break;
 
           // Non fatal errors
+          case VPX_CODEC_UNSUP_BITSTREAM :
+            vpx_codec_destroy(&m_codec);
+            if (IS_ERROR(vpx_codec_dec_init, (&m_codec, m_iface, NULL, m_flags)))
+              return false;
+
           case VPX_CODEC_UNSUP_FEATURE :
           case VPX_CODEC_CORRUPT_FRAME :
             PTRACE(3, MY_CODEC_LOG, "Decoder reported non-fatal error: " << vpx_codec_err_to_string(err));
