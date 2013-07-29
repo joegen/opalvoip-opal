@@ -479,7 +479,7 @@ bool GstEndPoint::BuildVideoSourcePipeline(ostream & desc, const GstMediaStream 
   const OpalMediaFormat & mediaFormat = stream.GetMediaFormat();
 
   if (!m_videoSourceColourConverter.IsEmpty())
-    desc << " ! " << m_videoSinkColourConverter;
+    desc << " ! " << m_videoSourceColourConverter;
 
   desc << " ! ";
   OutputVideoFormatPipeline(desc, mediaFormat);
