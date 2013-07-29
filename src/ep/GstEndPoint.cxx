@@ -470,7 +470,7 @@ static void OutputVideoFormatPipeline(ostream & desc, const OpalMediaFormat & me
           "format=(fourcc)I420, "
           "width=" << mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption()) << ", "
           "height=" << mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption()) << ", "
-          "framerate=(fraction)9000/" << mediaFormat.GetFrameTime();
+          "framerate=(fraction)90000/" << mediaFormat.GetFrameTime();
 }
 
 
