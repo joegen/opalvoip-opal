@@ -250,24 +250,38 @@ bool H264Frame::EncapsulateFU(PluginCodec_RTP & frame, unsigned int & flags)
 
 bool H264Frame::AddPacket(const PluginCodec_RTP & frame, unsigned & flags)
 {
-  uint8_t curNALType = *(frame.GetPayloadPtr()) & 0x1f;
+  const uint8_t * payloadPtr = frame.GetPayloadPtr();
+  size_t payloadSize = frame.GetPayloadSize();
+
+  // Some clients stupidly send the start code in the RTP packet
+  static uint8_t const StartCode[4] = { 0, 0, 0, 1 };
+  if (payloadSize > 4 && memcmp(payloadPtr, StartCode, 4) == 0) {
+    payloadPtr += 4;
+    payloadSize -= 4;
+  }
+  else if (payloadSize > 3 && memcmp(payloadPtr, &StartCode[1], 3) == 0) {
+    payloadPtr += 3;
+    payloadSize -= 3;
+  }
+
+  uint8_t curNALType = *payloadPtr & 0x1f;
 
   if (curNALType >= H264_NAL_TYPE_NON_IDR_SLICE && curNALType <= H264_NAL_TYPE_FILLER_DATA) {
     // regular NAL - put in buffer, adding the header.
-    PTRACE(6, GetName(), "Deencapsulating a regular NAL unit NAL of " << frame.GetPayloadSize() - 1 << " bytes (type " << (int) curNALType << ")");
-    return AddDataToEncodedFrame(frame.GetPayloadPtr() + 1, frame.GetPayloadSize() - 1, *(frame.GetPayloadPtr()), true);
+    PTRACE(6, GetName(), "Deencapsulating a regular NAL unit NAL of " << payloadSize - 1 << " bytes (type " << (int) curNALType << ")");
+    return AddDataToEncodedFrame(payloadPtr + 1, payloadSize - 1, *payloadPtr, true);
   }
 
   if (curNALType == 24) 
   {
     // stap-A (single time aggregation packet )
-    if (DeencapsulateSTAP(frame))
+    if (DeencapsulateSTAP(payloadPtr, payloadSize))
       return true;
   } 
   else if (curNALType == 28) 
   {
     // Fragmentation Units
-    if (DeencapsulateFU(frame))
+    if (DeencapsulateFU(payloadPtr, payloadSize))
       return true;
   }
   else
@@ -298,10 +312,10 @@ bool H264Frame::IsIntraFrame() const
 }
 
 
-bool H264Frame::DeencapsulateSTAP(const PluginCodec_RTP & frame)
+bool H264Frame::DeencapsulateSTAP(const uint8_t *payloadPtr, uint32_t payloadSize)
 {
-  uint8_t* curSTAP = frame.GetPayloadPtr() + 1;
-  uint32_t curSTAPLen = frame.GetPayloadSize() - 1; 
+  const uint8_t* curSTAP = payloadPtr + 1;
+  uint32_t curSTAPLen = payloadSize - 1; 
 
   PTRACE(6, GetName(), "Deencapsulating a STAP of " << curSTAPLen << " bytes");
   while (curSTAPLen > 0)
@@ -331,15 +345,15 @@ bool H264Frame::DeencapsulateSTAP(const PluginCodec_RTP & frame)
 }
 
 
-bool H264Frame::DeencapsulateFU(const PluginCodec_RTP & frame)
+bool H264Frame::DeencapsulateFU(const uint8_t *payloadPtr, uint32_t payloadSize)
 {
-  uint8_t* curFUPtr = frame.GetPayloadPtr();
-  uint32_t curFULen = frame.GetPayloadSize(); 
+  const uint8_t* curFUPtr = payloadPtr;
+  uint32_t curFULen = payloadSize; 
   uint8_t header;
 
   if ((curFUPtr[1] & 0x80) && !(curFUPtr[1] & 0x40))
   {
-    PTRACE(6, GetName(), "Deencapsulating a FU of " << frame.GetPayloadSize() - 1 << " bytes (Startbit, !Endbit)");
+    PTRACE(6, GetName(), "Deencapsulating a FU of " << payloadSize - 1 << " bytes (Startbit, !Endbit)");
     if (m_currentFU) {
       m_currentFU=1;
     }
@@ -353,7 +367,7 @@ bool H264Frame::DeencapsulateFU(const PluginCodec_RTP & frame)
   } 
   else if (!(curFUPtr[1] & 0x80) && !(curFUPtr[1] & 0x40))
   {
-    PTRACE(6, GetName(), "Deencapsulating a FU of " << frame.GetPayloadSize() - 1 << " bytes (!Startbit, !Endbit)");
+    PTRACE(6, GetName(), "Deencapsulating a FU of " << payloadSize - 1 << " bytes (!Startbit, !Endbit)");
     if (m_currentFU)
     {
       m_currentFU++;
@@ -369,7 +383,7 @@ bool H264Frame::DeencapsulateFU(const PluginCodec_RTP & frame)
   } 
   else if (!(curFUPtr[1] & 0x80) && (curFUPtr[1] & 0x40))
   {
-    PTRACE(6, GetName(), "Deencapsulating a FU of " << frame.GetPayloadSize() - 1 << " bytes (!Startbit, Endbit)");
+    PTRACE(6, GetName(), "Deencapsulating a FU of " << payloadSize - 1 << " bytes (!Startbit, Endbit)");
     if (m_currentFU) {
       m_currentFU=0;
       if (!AddDataToEncodedFrame( curFUPtr + 2, curFULen - 2, 0, false))
@@ -384,7 +398,7 @@ bool H264Frame::DeencapsulateFU(const PluginCodec_RTP & frame)
   } 
   else if ((curFUPtr[1] & 0x80) && (curFUPtr[1] & 0x40))
   {
-    PTRACE(6, GetName(), "Deencapsulating a FU of " << frame.GetPayloadSize() - 1 << " bytes (Startbit, Endbit)");
+    PTRACE(6, GetName(), "Deencapsulating a FU of " << payloadSize - 1 << " bytes (Startbit, Endbit)");
     PTRACE(2, GetName(), "Received a FU with both Starbit and Endbit set - This MUST NOT happen!");
     m_currentFU=0;
     return false;
@@ -411,38 +425,28 @@ void H264Frame::SetSPS(const uint8_t * payload)
 }
 
 
-bool H264Frame::AddDataToEncodedFrame(uint8_t *data, uint32_t dataLen, uint8_t header, bool addHeader)
+bool H264Frame::AddDataToEncodedFrame(const uint8_t *data, uint32_t payloadSize, uint8_t header, bool addHeader)
 {
   if (addHeader) 
   {
-    PTRACE(6, GetName(), "Adding a NAL unit of " << dataLen << " bytes to buffer (type " << (int)(header & 0x1f) << ")"); 
-    if (((header & 0x1f) == H264_NAL_TYPE_SEQ_PARAM) && (dataLen >= 3))
+    PTRACE(6, GetName(), "Adding a NAL unit of " << payloadSize << " bytes to buffer (type " << (int)(header & 0x1f) << ")"); 
+    if (((header & 0x1f) == H264_NAL_TYPE_SEQ_PARAM) && (payloadSize >= 3))
       SetSPS(data);
 
     // add 00 00 01 [headerbyte] header
     static uint8_t const marker[] = { 0, 0, 0, 1 };
     if (!Append(marker, sizeof(marker)) ||
-        !AddNALU(header & 0x1f, dataLen + 1, NULL) ||
+        !AddNALU(header & 0x1f, payloadSize + 1, NULL) ||
         !Append(&header, 1))
       return false;
   }
   else {
-    PTRACE(6, GetName(), "Adding a NAL unit of " << dataLen << " bytes to buffer");
-    m_NALs[m_numberOfNALsInFrame - 1].length += dataLen;
+    PTRACE(6, GetName(), "Adding a NAL unit of " << payloadSize << " bytes to buffer");
+    m_NALs[m_numberOfNALsInFrame - 1].length += payloadSize;
   }
 
   PTRACE(6, GetName(), "Reserved memory for  " << m_NALs.size() <<" NALs, Inframe/current: "<< m_numberOfNALsInFrame <<" Offset: "
     << m_NALs[m_numberOfNALsInFrame-1].offset << " Length: "<< m_NALs[m_numberOfNALsInFrame-1].length << " Type: "<< (int)(m_NALs[m_numberOfNALsInFrame-1].type));
 
-  return Append(data, dataLen);
-}
-
-
-bool H264Frame::IsStartCode (const uint8_t *positionInFrame)
-{
-  return positionInFrame[0] == 0 &&
-         positionInFrame[1] == 0 &&
-        (positionInFrame[2] == 1 ||
-        (positionInFrame[2] == 0 &&
-         positionInFrame[3] == 1));
+  return Append(data, payloadSize);
 }

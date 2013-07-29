@@ -414,7 +414,7 @@ class OpalManager : public PObject
     virtual OpalCall * CreateCall(
       void * userData            ///<  user data passed to SetUpCall
     );
-    OpalCall * InternalCreateCall();
+    OpalCall * InternalCreateCall(void * userData = NULL);
 
     /**Destroy a call object.
        This gets called from background thread that garbage collects all calls
