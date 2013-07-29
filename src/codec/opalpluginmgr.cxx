@@ -1420,7 +1420,10 @@ OpalPluginCodecManager::OpalPluginCodecManager(PPluginManager * _pluginMgr)
       }
     }
   }
+}
 
+void OpalPluginCodecManager::OnStartup()
+{
   // cause the plugin manager to load all dynamic plugins
   pluginMgr->AddNotifier(PCREATE_NOTIFIER(OnLoadModule), true);
 }
@@ -1436,7 +1439,7 @@ void OpalPluginCodecManager::OnShutdown()
   mediaFormatsOnHeap.RemoveAll();
 }
 
-void OpalPluginCodecManager::OnLoadPlugin(PDynaLink & dll, INT code)
+void OpalPluginCodecManager::OnLoadPlugin(PDynaLink & dll, P_INT_PTR code)
 {
   PluginCodec_GetCodecFunction getCodecs;
   {
