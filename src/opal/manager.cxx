@@ -525,7 +525,7 @@ PSafePtr<OpalCall> OpalManager::SetUpCall(const PString & partyA,
 {
   PTRACE(3, "OpalMan\tSet up call from " << partyA << " to " << partyB);
 
-  OpalCall * call = CreateCall(userData);
+  OpalCall * call = InternalCreateCall(userData);
   if (call == NULL)
     return NULL;
 
@@ -654,14 +654,14 @@ void OpalManager::OnClearedCall(OpalCall & PTRACE_PARAM(call))
 }
 
 
-OpalCall * OpalManager::InternalCreateCall()
+OpalCall * OpalManager::InternalCreateCall(void * userData)
 {
   if (m_clearingAllCallsCount != 0) {
     PTRACE(2, "OpalMan\tCreate call not performed as currently clearing all calls.");
     return NULL;
   }
 
-  return CreateCall(NULL);
+  return CreateCall(userData);
 }
 
 
