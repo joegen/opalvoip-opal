@@ -231,7 +231,8 @@ GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
 #if OPAL_VIDEO
   , m_videoSourceDevice(GetDefaultDevice("Source/Video", PreferredVideoSourceDevice, PARRAYSIZE(PreferredVideoSourceDevice)))
   , m_videoSinkDevice(GetDefaultDevice("Sink/Video", PreferredVideoSinkDevice, PARRAYSIZE(PreferredVideoSinkDevice)))
-  , m_videoColourConverter("autoconvert")
+  , m_videoSourceColourConverter("autoconvert")
+  , m_videoSinkColourConverter("autoconvert")
 #endif // OPAL_VIDEO
 {
   OpalMediaFormat::RegisterKnownMediaFormats(); // Make sure codecs are loaded
@@ -463,17 +464,25 @@ bool GstEndPoint::SetAudioSinkDevice(const PString & elementName)
 
 #if OPAL_VIDEO
 
+static void OutputVideoFormatPipeline(ostream & desc, const OpalMediaFormat & mediaFormat)
+{
+  desc << "video/x-raw-yuv, "
+          "format=(fourcc)I420, "
+          "width=" << mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption()) << ", "
+          "height=" << mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption()) << ", "
+          "framerate=(fraction)9000/" << mediaFormat.GetFrameTime();
+}
+
+
 bool GstEndPoint::BuildVideoSourcePipeline(ostream & desc, const GstMediaStream & stream)
 {
   const OpalMediaFormat & mediaFormat = stream.GetMediaFormat();
 
-  if (!m_videoColourConverter.IsEmpty())
-    desc << " ! " << m_videoColourConverter;
-  desc << " ! video/x-raw-yuv, "
-             "format=(fourcc)I420, "
-             "width=" << mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption()) << ", "
-             "height=" << mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption()) << ", "
-             "framerate=(fraction)90000/" << mediaFormat.GetFrameTime();
+  if (!m_videoSourceColourConverter.IsEmpty())
+    desc << " ! " << m_videoSinkColourConverter;
+
+  desc << " ! ";
+  OutputVideoFormatPipeline(desc, mediaFormat);
 
   if (mediaFormat != OpalYUV420P) {
     desc << " ! ";
@@ -493,11 +502,7 @@ bool GstEndPoint::BuildVideoSinkPipeline(ostream & desc, const GstMediaStream & 
     return false;
 
   if (mediaFormat == OpalYUV420P)
-    desc << "video/x-raw-yuv, "
-            "format=(fourcc)I420, "
-            "width=" << mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption()) << ", "
-            "height=" << mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption()) << ", "
-            "framerate=(fraction)9000/" << mediaFormat.GetFrameTime();
+    OutputVideoFormatPipeline(desc, mediaFormat);
   else {
     desc << "application/x-rtp, "
             "media=video, "
@@ -509,8 +514,8 @@ bool GstEndPoint::BuildVideoSinkPipeline(ostream & desc, const GstMediaStream & 
       return false;
   }
 
-  if (!m_videoColourConverter.IsEmpty())
-    desc << " ! " << m_videoColourConverter;
+  if (!m_videoSinkColourConverter.IsEmpty())
+    desc << " ! " << m_videoSinkColourConverter;
   desc << " ! ";
 
   return true;
@@ -544,9 +549,15 @@ bool GstEndPoint::SetVideoSinkDevice(const PString & elementName)
 }
 
 
-bool GstEndPoint::SetVideoColourConverter(const PString & elementName)
+bool GstEndPoint::SetVideoSourceColourConverter(const PString & elementName)
 {
-  return SetValidElementName(m_videoColourConverter, elementName PTRACE_PARAM(, "colour converter"));
+  return SetValidElementName(m_videoSourceColourConverter, elementName PTRACE_PARAM(, "source colour converter"));
+}
+
+
+bool GstEndPoint::SetVideoSinkColourConverter(const PString & elementName)
+{
+  return SetValidElementName(m_videoSinkColourConverter, elementName PTRACE_PARAM(, "sink colour converter"));
 }
 
 

@@ -42,17 +42,18 @@ PCREATE_PROCESS(MyApp);
 PString MyManager::GetArgumentSpec() const
 {
   return "[GStreamer options]"
-         "-audio-source: Audio source device in pipeline (autoaudiosrc)\n"
-         "-audio-sink:   Audio sink device in pipeline (autoaudiosink)\n"
+         "-audio-source:  Audio source device in pipeline (autoaudiosrc)\n"
+         "-audio-sink:    Audio sink device in pipeline (autoaudiosink)\n"
 #if OPAL_VIDEO
-         "-video-source: Video source device in pipeline (autovideosrc)\n"
-         "-video-sink:   Video sink device in pipeline (autovideosink)\n"
-         "-video-colour: Video colour space conversion pipeline (autoconvert)\n"
+         "-video-source:  Video source device in pipeline (autovideosrc)\n"
+         "-video-sink:    Video sink device in pipeline (autovideosink)\n"
+         "-source-colour: Video colour space conversion pipeline for video source (autoconvert)\n"
+         "-sink-colour:   Video colour space conversion pipeline for video sink (autoconvert)\n"
 #endif // OPAL_VIDEO
-         "-map.          Begin a mapping from Media Format to GStreamer pipeline\n"
-         "-encoder:      Set encoder for mapping.\n"
-         "-decoder:      Set decoder for mapping.\n"
-         "-packetiser:   Set packetiser for mapping\n"
+         "-map.           Begin a mapping from Media Format to GStreamer pipeline\n"
+         "-encoder:       Set encoder for mapping.\n"
+         "-decoder:       Set decoder for mapping.\n"
+         "-packetiser:    Set packetiser for mapping\n"
          "-depacketiser:  Set de-packetiser for mapping.\n"
          + OpalManagerConsole::GetArgumentSpec();
 }
@@ -84,8 +85,12 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
     cerr << "Could not set video sink.\n";
     return false;
   }
-  if (!gst->SetVideoColourConverter(args.GetOptionString("video-colour", gst->GetVideoColourConverter()))) {
-    cerr << "Could not set video colour converter\n";
+  if (!gst->SetVideoSourceColourConverter(args.GetOptionString("source-colour", gst->GetVideoSourceColourConverter()))) {
+    cerr << "Could not set video source colour converter\n";
+    return false;
+  }
+  if (!gst->SetVideoSinkColourConverter(args.GetOptionString("sink-colour", gst->GetVideoSinkColourConverter()))) {
+    cerr << "Could not set video sink colour converter\n";
     return false;
   }
 #endif // OPAL_VIDEO
