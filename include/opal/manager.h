@@ -1994,6 +1994,7 @@ class OpalManager : public PObject
     PNatStrategy     * m_natMethods;
     PNatMethod       * m_natMethod;
     PDECLARE_InterfaceNotifier(OpalManager, OnInterfaceChange);
+    PInterfaceMonitor::Notifier m_onInterfaceChange;
 #endif
 
     RouteTable m_routeTable;
