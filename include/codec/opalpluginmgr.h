@@ -125,8 +125,9 @@ class OpalPluginCodecManager : public PPluginModuleManager
                              PluginCodec_GetAPIVersionFunction getApiVerFn,
                              PluginCodec_GetCodecFunction getCodecFn);
 
-    void OnLoadPlugin(PDynaLink & dll, INT code);
+    void OnLoadPlugin(PDynaLink & dll, P_INT_PTR code);
 
+    virtual void OnStartup();
     virtual void OnShutdown();
 
 #if OPAL_H323
