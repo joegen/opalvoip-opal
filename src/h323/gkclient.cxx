@@ -1201,7 +1201,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
     }
   }
 
-  connection.SetBandwidthAvailable(OpalBandwidth::RxTx, info.allocatedBandwidth);
+  connection.SetBandwidthAllocated(OpalBandwidth::RxTx, info.allocatedBandwidth);
   connection.SetUUIEsRequested(info.uuiesRequested);
 
   return true;
@@ -1452,7 +1452,7 @@ PBoolean H323Gatekeeper::BandwidthRequest(H323Connection & connection, OpalBandw
   if (!MakeRequestWithReregister(request, H225_BandRejectReason::e_notBound))
     return false;
 
-  connection.SetBandwidthAvailable(OpalBandwidth::RxTx, allocatedBandwidth);
+  connection.SetBandwidthAllocated(OpalBandwidth::RxTx, allocatedBandwidth);
   return true;
 }
 
@@ -1480,7 +1480,7 @@ PBoolean H323Gatekeeper::OnReceiveBandwidthRequest(const H225_BandwidthRequest &
   H323RasPDU response(authenticators);
   if (connection == NULL)
     response.BuildBandwidthReject(brq.m_requestSeqNum, H225_BandRejectReason::e_invalidConferenceID);
-  else if (connection->SetBandwidthAvailable(OpalBandwidth::RxTx, OpalBandwidth(brq.m_bandWidth)))
+  else if (connection->SetBandwidthAllocated(OpalBandwidth::RxTx, OpalBandwidth(brq.m_bandWidth)))
     response.BuildBandwidthConfirm(brq.m_requestSeqNum, brq.m_bandWidth);
   else
     response.BuildBandwidthReject(brq.m_requestSeqNum, H225_BandRejectReason::e_invalidPermission);

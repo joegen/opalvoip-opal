@@ -1275,18 +1275,10 @@ OpalBandwidth OpalConnection::GetBandwidthAvailable(OpalBandwidth::Direction dir
 }
 
 
-bool OpalConnection::SetBandwidthAvailable(OpalBandwidth::Direction dir, OpalBandwidth newBandwidth)
+bool OpalConnection::SetBandwidthAvailable(OpalBandwidth::Direction dir, OpalBandwidth available)
 {
-  OpalBandwidth used = GetBandwidthUsed(dir);
-  if (used > newBandwidth) {
-    PTRACE(2, "OpalCon\tCannot set " << dir << " bandwidth to " << newBandwidth
-           << ", currently using " << used << " on connection " << *this);
-    return false;
-  }
+  PTRACE(3, "OpalCon\tSetting " << dir << " bandwidth available to " << available << " on connection " << *this);
 
-  PTRACE(3, "OpalCon\tSetting " << dir << " bandwidth to " << newBandwidth << " on connection " << *this);
-
-  OpalBandwidth available = newBandwidth - used;
   switch (dir) {
     case OpalBandwidth::Rx :
       m_rxBandwidthAvailable = available;
@@ -1304,6 +1296,18 @@ bool OpalConnection::SetBandwidthAvailable(OpalBandwidth::Direction dir, OpalBan
   }
 
   return true;
+}
+
+
+bool OpalConnection::SetBandwidthAllocated(OpalBandwidth::Direction dir, OpalBandwidth newBandwidth)
+{
+  OpalBandwidth used = GetBandwidthUsed(dir);
+  if (used <= newBandwidth)
+    return SetBandwidthAvailable(dir, newBandwidth - used);
+
+  PTRACE(2, "OpalCon\tCannot set " << dir << " bandwidth to " << newBandwidth
+          << ", currently using " << used << " on connection " << *this);
+  return false;
 }
 
 
@@ -1342,14 +1346,17 @@ bool OpalConnection::SetBandwidthUsed(OpalBandwidth::Direction dir,
 {
   PTRACE_IF(3, releasedBandwidth > 0, "OpalCon\tReleasing " << dir << " bandwidth of " << releasedBandwidth);
 
-  OpalBandwidth bandwidthAvailable = GetBandwidthAvailable(dir);
-
-  bandwidthAvailable += releasedBandwidth;
+  OpalBandwidth bandwidthAvailable = GetBandwidthAvailable(dir) + releasedBandwidth;
+  if (requiredBandwidth > bandwidthAvailable) {
+    PTRACE(2, "OpalCon\tInsufficient " << dir << " bandwidth request of "
+            << requiredBandwidth << ", available: " << bandwidthAvailable);
+    return false;
+  }
 
   PTRACE_IF(3, requiredBandwidth > 0, "OpalCon\tRequesting " << dir << " bandwidth of "
             << requiredBandwidth << ", available: " << bandwidthAvailable);
 
-  return SetBandwidthAvailable(dir, OpalBandwidth(bandwidthAvailable - requiredBandwidth));
+  return SetBandwidthAvailable(dir, bandwidthAvailable - requiredBandwidth);
 }
 
 

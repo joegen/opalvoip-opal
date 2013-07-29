@@ -1632,7 +1632,7 @@ bool SDPVideoMediaDescription::PreEncode()
       */
     OpalBandwidth bw = mediaFormat.GetMaxBandwidth();
     m_bandwidth.SetMax(SDPSessionDescription::TransportIndependentBandwidthType(), bw);
-    m_bandwidth.SetMax(SDPSessionDescription::ApplicationSpecificBandwidthType(), (bw+999)/1000);
+    m_bandwidth.SetMax(SDPSessionDescription::ApplicationSpecificBandwidthType(),  bw.kbps());
 
     if (m_contentRole == OpalVideoFormat::eNoRole)
       m_contentRole = format->GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole);
