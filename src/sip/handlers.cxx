@@ -306,14 +306,15 @@ void SIPHandler::SetExpire(int e)
   if (GetExpire() > 0 && GetState() < Unsubscribing) {
     // Allow for max number of retries at max timeout, plus 10 seconds for good measure
     // But don't make it any shorter than half the expiry time.
-    int deadband = GetEndPoint().GetRetryTimeoutMax().GetSeconds() * GetEndPoint().GetMaxRetries() + 10;
+    int retryTimeout = GetEndPoint().GetRetryTimeoutMax().GetSeconds();
+    int deadband = retryTimeout * GetEndPoint().GetMaxRetries() + 10;
     int timeout = GetExpire();
-    if (timeout*2 > deadband)
+    if (timeout > deadband*2)
       timeout -= deadband;
     else {
       // Short timeout, try for allowing just one retry, plus a couple of seconds
-      deadband = GetEndPoint().GetRetryTimeoutMax().GetSeconds() + 2;
-      if (timeout*2 > deadband)
+      deadband = retryTimeout + 2;
+      if (timeout > deadband*2)
         timeout -= deadband;
       else
         timeout /= 2; // Really short, just use half the expire time
