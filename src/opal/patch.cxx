@@ -547,26 +547,29 @@ bool OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 
 PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, PBoolean fromSink)
 {
-  PSafeLockReadOnly mutex(*this);
-
-  OpalMediaPatch * patch = this;
-
   bool atLeastOne = false;
 
-  if (fromSink) {
-    if (m_bypassFromPatch != NULL)
-      patch = m_bypassFromPatch;
-    atLeastOne = patch->source.ExecuteCommand(command);
-  }
-  else {
-    if (m_bypassToPatch != NULL)
-      patch = m_bypassToPatch;
+  if (!LockReadOnly())
+    return false;
 
+  OpalMediaPatch * bypassPatch = fromSink ? m_bypassFromPatch : m_bypassToPatch;
+  PSafePtr<OpalMediaPatch> patch = bypassPatch != NULL ? bypassPatch : this;
+
+  UnlockReadOnly();
+
+  if (!patch.SetSafetyMode(PSafeReadOnly))
+    return false;
+
+  if (fromSink)
+    atLeastOne = patch->source.ExecuteCommand(command);
+  else {
     for (PList<Sink>::iterator s = patch->sinks.begin(); s != patch->sinks.end(); ++s) {
       if (s->ExecuteCommand(command))
         atLeastOne = true;
     }
   }
+
+  patch.SetSafetyMode(PSafeReference);
 
 #if PTRACING
   if (PTrace::CanTrace(5)) {
