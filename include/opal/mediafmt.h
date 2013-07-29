@@ -76,11 +76,11 @@ class OpalBandwidth {
     __inline OpalBandwidth & operator=(int_type bps) { m_bps = bps; return *this; }
     __inline operator int_type() const { return m_bps; }
 
-    __inline OpalBandwidth & operator+=(const OpalBandwidth & bw) { m_bps += bw.m_bps; return *this; }
-    __inline OpalBandwidth & operator-=(const OpalBandwidth & bw) { m_bps += bw.m_bps; return *this; }
-    __inline OpalBandwidth & operator&=(const OpalBandwidth & bw) { m_bps &= bw.m_bps; return *this; }
-    __inline OpalBandwidth & operator+=(int_type bps) { m_bps += bps; return *this; }
-    __inline OpalBandwidth & operator-=(int_type bps) { m_bps += bps; return *this; }
+    __inline OpalBandwidth   operator+ (const OpalBandwidth & bw) const { return OpalBandwidth(m_bps + bw.m_bps); }
+    __inline OpalBandwidth   operator- (const OpalBandwidth & bw) const { return OpalBandwidth(m_bps - bw.m_bps); }
+    __inline OpalBandwidth & operator+=(const OpalBandwidth & bw)       { m_bps += bw.m_bps; return *this; }
+    __inline OpalBandwidth & operator-=(const OpalBandwidth & bw)       { m_bps += bw.m_bps; return *this; }
+    __inline OpalBandwidth & operator&=(const OpalBandwidth & bw)       { if (m_bps > bw.m_bps) m_bps = bw.m_bps; return *this; }
 
     friend std::ostream & operator<<(std::ostream & strm, const OpalBandwidth & bw);
     friend std::istream & operator>>(std::istream & strm, OpalBandwidth & bw);
@@ -89,7 +89,9 @@ class OpalBandwidth {
     OpalBandwidth(const H225_BandWidth & bw);
     OpalBandwidth & operator=(const H225_BandWidth & bw);
     void SetH225(H225_BandWidth & bw) const;
+    unsigned AsH225() const { return (m_bps+99)/100; }
 #endif
+    unsigned kbps() const { return (m_bps+999)/1000; }
 
     static OpalBandwidth Max() { return OpalBandwidth(UINT_MAX); }
 
