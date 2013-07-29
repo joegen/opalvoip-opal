@@ -1401,9 +1401,16 @@ class OpalConnection : public PSafeObject
     ) const;
 
     /**Set the available rx and/or tx bandwidth in bits/sec.
-       @return false if more bandwidth is in use at the moment than the requested total.
       */
     virtual bool SetBandwidthAvailable(
+      OpalBandwidth::Direction dir,     ///< Bandwidth direction
+      OpalBandwidth availableBandwidth  ///< New bandwidth limit
+    );
+
+    /**Set the total rx and/or tx bandwidth in bits/sec.
+       @return false if more bandwidth is currently in use than the requested total.
+      */
+    virtual bool SetBandwidthAllocated(
       OpalBandwidth::Direction dir,  ///< Bandwidth direction
       OpalBandwidth newBandwidth     ///< New bandwidth limit
     );
