@@ -263,6 +263,7 @@ OpalManager::OpalManager()
 #if P_NAT
   , m_natMethods(new PNatStrategy)
   , m_natMethod(NULL)
+  , m_onInterfaceChange(PCREATE_InterfaceNotifier(OnInterfaceChange))
 #endif
   , P_DISABLE_MSVC_WARNINGS(4355, activeCalls(*this))
   , m_garbageCollector(NULL)
@@ -306,7 +307,7 @@ OpalManager::OpalManager()
 #endif
 
 #if P_NAT
-  PInterfaceMonitor::GetInstance().AddNotifier(PCREATE_InterfaceNotifier(OnInterfaceChange));
+  PInterfaceMonitor::GetInstance().AddNotifier(m_onInterfaceChange);
 #endif
 
   PTRACE(4, "OpalMan\tCreated manager.");
@@ -332,7 +333,7 @@ OpalManager::~OpalManager()
   GarbageCollection();
 
 #if P_NAT
-  PInterfaceMonitor::GetInstance().RemoveNotifier(PCREATE_InterfaceNotifier(OnInterfaceChange));
+  PInterfaceMonitor::GetInstance().RemoveNotifier(m_onInterfaceChange);
   delete m_natMethod;
   delete m_natMethods;
 #endif
