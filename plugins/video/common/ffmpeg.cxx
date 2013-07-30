@@ -539,6 +539,11 @@ bool FFMPEGCodec::DecodeVideoFrame(const uint8_t * frame, size_t length, unsigne
   int bytesDecoded = avcodec_decode_video2(m_context, m_picture, &gotPicture, &m_packet);
 #endif
 
+  if (bytesDecoded < 0) {
+    PTRACE(1, m_prefix, "Decoder failed!");
+    return false;
+  }
+
   int errorsAfter = m_errorCount;
 #ifdef FFMPEG_HAS_DECODE_ERROR_COUNT
   errorsAfter += m_context->decode_error_count
