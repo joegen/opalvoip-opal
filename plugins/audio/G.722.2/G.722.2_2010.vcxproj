@@ -53,7 +53,6 @@
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <StringPooling>false</StringPooling>
       <MinimalRebuild>false</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -65,7 +64,6 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SubSystem>NotSet</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
@@ -74,9 +72,7 @@
     </Link>
     <PostBuildEvent>
       <Message>Copying codec and debug information to plug in directory</Message>
-      <Command>if not exist c:\ptlib_plugins exit
-copy $(TargetPath) c:\ptlib_plugins
-copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins
+      <Command>if exist c:\ptlib_plugins xcopy /y/f "$(TargetDir)$(TargetName).*d*" c:\ptlib_plugins
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -88,7 +84,6 @@ copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins
       <AdditionalIncludeDirectories>..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
-      <MinimalRebuild>false</MinimalRebuild>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>
@@ -100,13 +95,10 @@ copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins
     </ClCompile>
     <Link>
       <OutputFile>$(OutDir)$(TargetName).dll</OutputFile>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
-      <SubSystem>NotSet</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
-      <DataExecutionPrevention>
-      </DataExecutionPrevention>
       <ImportLibrary>$(IntDir)$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
@@ -114,13 +106,7 @@ copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins
   <ItemGroup>
     <ClCompile Include="G7222Codec.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </PrecompiledHeader>
-      <ProgramDataBaseFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">../../../include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </PrecompiledHeader>
-      <ProgramDataBaseFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <ClCompile Include="AMR-WB\dec_acelp.c" />
     <ClCompile Include="AMR-WB\dec_dtx.c" />
