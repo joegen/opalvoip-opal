@@ -56,7 +56,7 @@
 #include <im/im_ep.h>
 #include <ptlib/wxstring.h>
 #include <ptlib/notifier_ext.h>
-
+#include <ptclib/pssl.h>
 
 #include <list>
 
@@ -1300,6 +1300,20 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     typedef std::map<PString, IMDialog *> IMDialogMap;
     IMDialogMap m_imDialogMap;
 #endif
+
+#if OPAL_PTLIB_SSL
+    virtual bool ApplySSLCredentials(
+      const OpalEndPoint & ep,  ///< Endpoint transport is based on.
+      PSSLContext & context,    ///< Context on which to set certificates
+      bool create               ///< Create self signed cert/key if required
+    ) const;
+
+    PDECLARE_SSLPasswordNotifier(MyManager, OnSSLPassword);
+    void OnEvtGetSSLPassword(wxCommandEvent & /*event*/);
+
+    PSyncPoint m_gotSSLPassword;
+    PwxString m_SSLPassword;
+#endif // OPAL_PTLIB_SSL
 
     DECLARE_EVENT_TABLE()
 
