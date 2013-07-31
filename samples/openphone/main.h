@@ -951,8 +951,7 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     MyPCSSEndPoint & GetPCSSEP() { return *pcssEP; }
 
     void PostEvent(
-      const wxEventType & type,
-      unsigned id,
+      const wxCommandEvent & cmdEvent,
       const PString & str = PString::Empty(),
       const void * data = NULL
     );
