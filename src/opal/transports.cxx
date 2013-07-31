@@ -1663,7 +1663,11 @@ PBoolean OpalTransportTLS::Connect()
     return false;
 
   PSSLContext * context = new PSSLContext();
-  endpoint.ApplySSLCredentials(*context, false);
+  if (!endpoint.ApplySSLCredentials(*context, false)) {
+    delete context;
+    return false;
+  }
+
   PSSLChannel * sslChannel = new PSSLChannel(context, true);
 
   bool ok = sslChannel->Connect(m_channel);

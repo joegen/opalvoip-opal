@@ -454,6 +454,7 @@ DEFINE_USER_COMMAND(wxEvtCleared);
 DEFINE_USER_COMMAND(wxEvtAsyncNotification);
 DEFINE_USER_COMMAND(wxEvtSetTrayTipText);
 DEFINE_USER_COMMAND(wxEvtTestVideoEnded);
+DEFINE_USER_COMMAND(wxEvtGetSSLPassword);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -696,6 +697,7 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_USER_COMMAND(wxEvtStreamsChanged,     MyManager::OnStreamsChanged)
   EVT_USER_COMMAND(wxEvtAsyncNotification,  MyManager::OnEvtAsyncNotification)
   EVT_USER_COMMAND(wxEvtSetTrayTipText,     MyManager::OnSetTrayTipText)
+  EVT_USER_COMMAND(wxEvtGetSSLPassword,     MyManager::OnEvtGetSSLPassword)
   
 END_EVENT_TABLE()
 
@@ -2636,6 +2638,41 @@ void MyManager::OnEvtCleared(wxCommandEvent & theEvent)
 
   m_activeCall.SetNULL();
 }
+
+
+#if OPAL_PTLIB_SSL
+bool MyManager::ApplySSLCredentials(const OpalEndPoint & ep, PSSLContext & context, bool create) const
+{
+  context.SetPasswordNotifier(PCREATE_NOTIFIER_EXT(const_cast<MyManager *>(this), MyManager, OnSSLPassword));
+  return OpalManager::ApplySSLCredentials(ep, context, create);
+}
+
+
+void MyManager::OnSSLPassword(PString & password, bool)
+{
+  if (PThread::Current() != &PProcess::Current())
+    PostEvent(wxEvtGetSSLPassword);
+  else {
+    wxCommandEvent dummy;
+    OnEvtGetSSLPassword(dummy);
+  }
+
+  m_gotSSLPassword.Wait();
+  password = m_SSLPassword.p_str();
+}
+
+
+void MyManager::OnEvtGetSSLPassword(wxCommandEvent & /*event*/)
+{
+  m_SSLPassword.erase();
+
+  wxPasswordEntryDialog dlg(this, wxT("Enter certificate private key password"), wxT("Open Phone"));
+  if (dlg.ShowModal() == wxID_OK)
+    m_SSLPassword = dlg.GetValue();
+
+  m_gotSSLPassword.Signal();
+}
+#endif // OPAL_PTLIB_SSL
 
 
 void MyManager::OnHold(OpalConnection & connection, bool fromRemote, bool onHold)
