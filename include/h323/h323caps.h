@@ -492,7 +492,8 @@ class H323GenericCapabilityInfo
   public:
     H323GenericCapabilityInfo(
       const PString & id,     ///< generic codec identifier
-      unsigned maxBitRate = 0   ///< maxBitRate parameter for the GenericCapability
+      unsigned maxBitRate,    ///< maxBitRate parameter for the GenericCapability
+      bool fixedBitRate
     );
 
     virtual ~H323GenericCapabilityInfo() { }
@@ -520,6 +521,7 @@ class H323GenericCapabilityInfo
 
     PString  m_identifier;
     unsigned m_maxBitRate;
+    bool     m_fixedBitRate;
 };
 
 /**This class describes the interface to a codec that has channels based on
@@ -947,9 +949,6 @@ class H323GenericAudioCapability : public H323AudioCapability,
       const PString & mediaPacketization  ///< Media packetization used
     ) const;
   //@}
-
-  protected:
-    bool m_fixedBitRate;
 };
 
 

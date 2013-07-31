@@ -432,27 +432,32 @@ enum {
   ID_VIDEO_CODEC_MENU_BASE,
   ID_VIDEO_CODEC_MENU_TOP = ID_VIDEO_CODEC_MENU_BASE+99,
   ID_SPEEDDIAL_MENU_BASE,
-  ID_SPEEDDIAL_MENU_TOP = ID_SPEEDDIAL_MENU_BASE+999,
-  ID_LOG_MESSAGE,
-  ID_RINGING,
-  ID_ESTABLISHED,
-  ID_ON_HOLD,
-  ID_CLEARED,
-  ID_STREAMS_CHANGED,
-  ID_ASYNC_NOTIFICATION,
-  ID_SET_TRAY_TIP_TEXT,
-  ID_TEST_VIDEO_ENDED
+  ID_SPEEDDIAL_MENU_TOP = ID_SPEEDDIAL_MENU_BASE+999
 };
 
-DEFINE_EVENT_TYPE(wxEvtLogMessage)
-DEFINE_EVENT_TYPE(wxEvtStreamsChanged)
-DEFINE_EVENT_TYPE(wxEvtRinging)
-DEFINE_EVENT_TYPE(wxEvtEstablished)
-DEFINE_EVENT_TYPE(wxEvtOnHold)
-DEFINE_EVENT_TYPE(wxEvtCleared)
-DEFINE_EVENT_TYPE(wxEvtAsyncNotification)
-DEFINE_EVENT_TYPE(wxEvtSetTrayTipText)
-DEFINE_EVENT_TYPE(wxEvtTestVideoEnded)
+
+class UserCommandEvent : public wxCommandEvent
+{
+public:
+  UserCommandEvent(const wxChar * name)
+    : wxCommandEvent(wxNewEventType(), wxXmlResource::GetXRCID(name))
+  { }
+
+  const wxEventType & GetEventTypeRef() const { return m_eventType; }
+};
+
+#define EVT_USER_COMMAND(name, fn) EVT_COMMAND((name).GetId(), (name).GetEventTypeRef(), fn)
+#define DEFINE_USER_COMMAND(name) static UserCommandEvent const name(wxT(#name))
+DEFINE_USER_COMMAND(wxEvtLogMessage);
+DEFINE_USER_COMMAND(wxEvtStreamsChanged);
+DEFINE_USER_COMMAND(wxEvtRinging);
+DEFINE_USER_COMMAND(wxEvtEstablished);
+DEFINE_USER_COMMAND(wxEvtOnHold);
+DEFINE_USER_COMMAND(wxEvtCleared);
+DEFINE_USER_COMMAND(wxEvtAsyncNotification);
+DEFINE_USER_COMMAND(wxEvtSetTrayTipText);
+DEFINE_USER_COMMAND(wxEvtTestVideoEnded);
+DEFINE_USER_COMMAND(wxEvtGetSSLPassword);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -530,7 +535,7 @@ class TextCtrlChannel : public PChannel
       if (TextCtrlChannelFrame == NULL)
         return false;
 
-      wxCommandEvent theEvent(wxEvtLogMessage, ID_LOG_MESSAGE);
+      wxCommandEvent theEvent(wxEvtLogMessage);
       theEvent.SetEventObject(TextCtrlChannelFrame);
       PwxString str(wxString::FromUTF8((const char *)buf, (size_t)len-1));
       theEvent.SetString(str);
@@ -687,14 +692,15 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_LIST_ITEM_RIGHT_CLICK(SpeedDialsID,   MyManager::OnSpeedDialRightClick) 
   EVT_LIST_END_LABEL_EDIT(SpeedDialsID,     MyManager::OnSpeedDialEndEdit)
 
-  EVT_COMMAND(ID_LOG_MESSAGE,         wxEvtLogMessage,         MyManager::OnLogMessage)
-  EVT_COMMAND(ID_RINGING,             wxEvtRinging,            MyManager::OnEvtRinging)
-  EVT_COMMAND(ID_ESTABLISHED,         wxEvtEstablished,        MyManager::OnEvtEstablished)
-  EVT_COMMAND(ID_ON_HOLD,             wxEvtOnHold,             MyManager::OnEvtOnHold)
-  EVT_COMMAND(ID_CLEARED,             wxEvtCleared,            MyManager::OnEvtCleared)
-  EVT_COMMAND(ID_STREAMS_CHANGED,     wxEvtStreamsChanged,     MyManager::OnStreamsChanged)
-  EVT_COMMAND(ID_ASYNC_NOTIFICATION,  wxEvtAsyncNotification,  MyManager::OnEvtAsyncNotification)
-  EVT_COMMAND(ID_SET_TRAY_TIP_TEXT,   wxEvtSetTrayTipText,     MyManager::OnSetTrayTipText)
+  EVT_USER_COMMAND(wxEvtLogMessage,         MyManager::OnLogMessage)
+  EVT_USER_COMMAND(wxEvtRinging,            MyManager::OnEvtRinging)
+  EVT_USER_COMMAND(wxEvtEstablished,        MyManager::OnEvtEstablished)
+  EVT_USER_COMMAND(wxEvtOnHold,             MyManager::OnEvtOnHold)
+  EVT_USER_COMMAND(wxEvtCleared,            MyManager::OnEvtCleared)
+  EVT_USER_COMMAND(wxEvtStreamsChanged,     MyManager::OnStreamsChanged)
+  EVT_USER_COMMAND(wxEvtAsyncNotification,  MyManager::OnEvtAsyncNotification)
+  EVT_USER_COMMAND(wxEvtSetTrayTipText,     MyManager::OnSetTrayTipText)
+  EVT_USER_COMMAND(wxEvtGetSSLPassword,     MyManager::OnEvtGetSSLPassword)
   
 END_EVENT_TABLE()
 
@@ -791,9 +797,9 @@ MyManager::~MyManager()
 }
 
 
-void MyManager::PostEvent(const wxEventType & type, unsigned id, const PString & str, const void * data)
+void MyManager::PostEvent(const wxCommandEvent & cmdEvent, const PString & str, const void * data)
 {
-  wxCommandEvent theEvent(type, id);
+  wxCommandEvent theEvent(cmdEvent);
   theEvent.SetEventObject(this);
   theEvent.SetString(PwxString(str));
   theEvent.SetClientData((void *)data);
@@ -803,7 +809,7 @@ void MyManager::PostEvent(const wxEventType & type, unsigned id, const PString &
 
 void MyManager::AsyncNotifierSignal()
 {
-  PostEvent(wxEvtAsyncNotification, ID_ASYNC_NOTIFICATION);
+  PostEvent(wxEvtAsyncNotification);
 }
 
 
@@ -2488,7 +2494,7 @@ PBoolean MyManager::OnIncomingConnection(OpalConnection & connection, unsigned o
 
   if (usingHandset) {
     m_activeCall = &connection.GetCall();
-    PostEvent(wxEvtRinging, ID_RINGING, m_activeCall->GetToken());
+    PostEvent(wxEvtRinging, m_activeCall->GetToken());
   }
 
   return true;
@@ -2500,7 +2506,7 @@ void MyManager::OnEstablishedCall(OpalCall & call)
   m_activeCall = &call;
 
   LogWindow << "Established call from " << call.GetPartyA() << " to " << call.GetPartyB() << endl;
-  PostEvent(wxEvtEstablished, ID_ESTABLISHED, call.GetToken());
+  PostEvent(wxEvtEstablished, call.GetToken());
 
 #if OPAL_FAX
   if (m_currentAnswerMode == AnswerFax)
@@ -2596,7 +2602,7 @@ void MyManager::OnClearedCall(OpalCall & call)
             << setprecision(0) << setw(5) << (now - call.GetStartTime())
             << "s." << endl;
 
-  PostEvent(wxEvtCleared, ID_CLEARED, call.GetToken());
+  PostEvent(wxEvtCleared, call.GetToken());
 
 #if OPAL_SIP
   wxConfigBase * config = wxConfig::Get();
@@ -2637,6 +2643,41 @@ void MyManager::OnEvtCleared(wxCommandEvent & theEvent)
 }
 
 
+#if OPAL_PTLIB_SSL
+bool MyManager::ApplySSLCredentials(const OpalEndPoint & ep, PSSLContext & context, bool create) const
+{
+  context.SetPasswordNotifier(PCREATE_NOTIFIER_EXT(const_cast<MyManager *>(this), MyManager, OnSSLPassword));
+  return OpalManager::ApplySSLCredentials(ep, context, create);
+}
+
+
+void MyManager::OnSSLPassword(PString & password, bool)
+{
+  if (PThread::Current() != &PProcess::Current())
+    PostEvent(wxEvtGetSSLPassword);
+  else {
+    wxCommandEvent dummy;
+    OnEvtGetSSLPassword(dummy);
+  }
+
+  m_gotSSLPassword.Wait();
+  password = m_SSLPassword.p_str();
+}
+
+
+void MyManager::OnEvtGetSSLPassword(wxCommandEvent & /*event*/)
+{
+  m_SSLPassword.erase();
+
+  wxPasswordEntryDialog dlg(this, wxT("Enter certificate private key password"), wxT("Open Phone"));
+  if (dlg.ShowModal() == wxID_OK)
+    m_SSLPassword = dlg.GetValue();
+
+  m_gotSSLPassword.Signal();
+}
+#endif // OPAL_PTLIB_SSL
+
+
 void MyManager::OnHold(OpalConnection & connection, bool fromRemote, bool onHold)
 {
   OpalManager::OnHold(connection, fromRemote, onHold);
@@ -2652,11 +2693,11 @@ void MyManager::OnHold(OpalConnection & connection, bool fromRemote, bool onHold
   if (onHold) {
     if (!connection.GetCall().Transfer("pc:*|"+m_musicOnHoldFile+"*;"OPAL_URL_PARAM_PREFIX OPAL_OPT_SILENCE_DETECT_MODE"=No"))
       connection.GetCall().Transfer("pc:*|Null Audio");
-    PostEvent(wxEvtOnHold, ID_ON_HOLD, connection.GetCall().GetToken());
+    PostEvent(wxEvtOnHold, connection.GetCall().GetToken());
   }
   else {
     connection.GetCall().Transfer("pc:*;"OPAL_URL_PARAM_PREFIX OPAL_OPT_SILENCE_DETECT_MODE"="+GetSilenceDetectParams().AsString());
-    PostEvent(wxEvtEstablished, ID_ESTABLISHED, connection.GetCall().GetToken());
+    PostEvent(wxEvtEstablished, connection.GetCall().GetToken());
   }
 }
 
@@ -2738,7 +2779,7 @@ PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStre
 
   LogMediaStream("Started", stream, connection);
 
-  PostEvent(wxEvtStreamsChanged, ID_STREAMS_CHANGED, connection.GetCall().GetToken());
+  PostEvent(wxEvtStreamsChanged, connection.GetCall().GetToken());
   return true;
 }
 
@@ -2749,7 +2790,7 @@ void MyManager::OnClosedMediaStream(const OpalMediaStream & stream)
 
   LogMediaStream("Stopped", stream, stream.GetConnection());
 
-  PostEvent(wxEvtStreamsChanged, ID_STREAMS_CHANGED);
+  PostEvent(wxEvtStreamsChanged);
 
   if (PIsDescendant(&stream, OpalVideoMediaStream)) {
     PVideoOutputDevice * device = ((const OpalVideoMediaStream &)stream).GetVideoOutputDevice();
@@ -3775,7 +3816,7 @@ void MyManager::OnSetTrayTipText(wxCommandEvent & theEvent)
 void MyManager::SetTrayTipText(const PwxString & tip)
 {
   if (PThread::Current() != &PProcess::Current())
-    PostEvent(wxEvtSetTrayTipText, ID_SET_TRAY_TIP_TEXT, tip);
+    PostEvent(wxEvtSetTrayTipText, tip);
   else if (m_taskBarIcon->IsIconInstalled()) {
     PwxString text;
     text << PProcess::Current().GetName() << " - " << tip;
@@ -4140,7 +4181,7 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   // Video fields
   EVT_COMBOBOX(XRCID("VideoGrabDevice"), OptionsDialog::ChangeVideoGrabDevice)
   EVT_BUTTON(XRCID("TestVideoCapture"), OptionsDialog::TestVideoCapture)
-  EVT_COMMAND(ID_TEST_VIDEO_ENDED, wxEvtTestVideoEnded, OptionsDialog::OnTestVideoEnded)
+  EVT_USER_COMMAND(wxEvtTestVideoEnded, OptionsDialog::OnTestVideoEnded)
 
   ////////////////////////////////////////
   // Fax fields
@@ -5744,7 +5785,7 @@ void OptionsDialog::TestVideoThreadMain()
                                           frame))
     frameCount++;
 
-  wxCommandEvent theEvent(wxEvtTestVideoEnded, ID_TEST_VIDEO_ENDED);
+  wxCommandEvent theEvent(wxEvtTestVideoEnded);
   theEvent.SetEventObject(this);
   GetEventHandler()->AddPendingEvent(theEvent);
 }
@@ -6830,7 +6871,7 @@ BEGIN_EVENT_TABLE(IMDialog, wxDialog)
   EVT_TEXT_ENTER(XRCID("EnteredText"), IMDialog::OnTextEnter)
   EVT_TEXT(XRCID("EnteredText"), IMDialog::OnText)
   EVT_CLOSE(IMDialog::OnCloseWindow)
-  EVT_COMMAND(ID_ASYNC_NOTIFICATION,  wxEvtAsyncNotification,  IMDialog::OnEvtAsyncNotification)
+  EVT_USER_COMMAND(wxEvtAsyncNotification,  IMDialog::OnEvtAsyncNotification)
 END_EVENT_TABLE()
 
 IMDialog::IMDialog(MyManager * manager, OpalIMContext & context)
@@ -6877,7 +6918,7 @@ void IMDialog::OnCloseWindow(wxCloseEvent & WXUNUSED(event))
 
 void IMDialog::AsyncNotifierSignal()
 {
-  wxCommandEvent theEvent(wxEvtAsyncNotification, ID_ASYNC_NOTIFICATION);
+  wxCommandEvent theEvent(wxEvtAsyncNotification);
   theEvent.SetEventObject(this);
   GetEventHandler()->AddPendingEvent(theEvent);
 }
@@ -7886,7 +7927,7 @@ MyPCSSEndPoint::MyPCSSEndPoint(MyManager & manager)
 
 PBoolean MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
 {
-  m_manager.PostEvent(wxEvtRinging, ID_RINGING, connection.GetCall().GetToken());
+  m_manager.PostEvent(wxEvtRinging, connection.GetCall().GetToken());
   return true;
 }
 
