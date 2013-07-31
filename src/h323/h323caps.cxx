@@ -598,9 +598,10 @@ PObject::Comparison H323NonStandardCapabilityInfo::CompareData(const PBYTEArray 
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323GenericCapabilityInfo::H323GenericCapabilityInfo(const PString & standardId, unsigned bitRate)
+H323GenericCapabilityInfo::H323GenericCapabilityInfo(const PString & standardId, unsigned bitRate, bool fixed)
   : m_identifier(standardId)
   , m_maxBitRate(bitRate)
+  , m_fixedBitRate(fixed)
 {
 }
 
@@ -792,7 +793,7 @@ PBoolean H323GenericCapabilityInfo::OnReceivedGenericPDU(OpalMediaFormat & media
   if (H323GetCapabilityIdentifier(pdu.m_capabilityIdentifier) != m_identifier)
     return false;
 
-  if (pdu.HasOptionalField(H245_GenericCapability::e_maxBitRate)) {
+  if (!m_fixedBitRate && pdu.HasOptionalField(H245_GenericCapability::e_maxBitRate)) {
     m_maxBitRate = pdu.m_maxBitRate;
     mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), m_maxBitRate*100);
   }
@@ -1015,8 +1016,7 @@ PBoolean H323AudioCapability::OnReceivedPDU(const H245_AudioCapability & pdu,
 
 H323GenericAudioCapability::H323GenericAudioCapability(const PString &standardId, unsigned fixedBitRate)
   : H323AudioCapability()
-  , H323GenericCapabilityInfo(standardId, fixedBitRate)
-  , m_fixedBitRate(fixedBitRate != 0)
+  , H323GenericCapabilityInfo(standardId, fixedBitRate, fixedBitRate != 0)
 {
 }
 
@@ -1349,7 +1349,7 @@ PBoolean H323NonStandardVideoCapability::IsMatch(const PASN_Object & subTypePDU,
 
 H323GenericVideoCapability::H323GenericVideoCapability(const PString &standardId, PINDEX maxBitRate)
   : H323VideoCapability(),
-    H323GenericCapabilityInfo(standardId, maxBitRate)
+    H323GenericCapabilityInfo(standardId, maxBitRate, false)
 {
 }
 
@@ -1542,7 +1542,7 @@ PBoolean H323ExtendedVideoCapability::IsMatch(const PASN_Object & subTypePDU, co
 /////////////////////////////////////////////////////////////////////////////
 
 H323GenericControlCapability::H323GenericControlCapability(const PString & identifier)
-  : H323GenericCapabilityInfo(identifier)
+  : H323GenericCapabilityInfo(identifier, 0, false)
 {
 }
 
