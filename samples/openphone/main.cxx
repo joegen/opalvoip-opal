@@ -432,17 +432,28 @@ enum {
   ID_SPEEDDIAL_MENU_TOP = ID_SPEEDDIAL_MENU_BASE+999
 };
 
-#define EVT_USER(name, fn) EVT_COMMAND((name).GetId(), (name).GetEventType(), fn)
-#define DEFINE_USER_EVENT(name) static wxCommandEvent const name(wxNewEventType(), XRCID(#name))
-DEFINE_USER_EVENT(wxEvtLogMessage);
-DEFINE_USER_EVENT(wxEvtStreamsChanged);
-DEFINE_USER_EVENT(wxEvtRinging);
-DEFINE_USER_EVENT(wxEvtEstablished);
-DEFINE_USER_EVENT(wxEvtOnHold);
-DEFINE_USER_EVENT(wxEvtCleared);
-DEFINE_USER_EVENT(wxEvtAsyncNotification);
-DEFINE_USER_EVENT(wxEvtSetTrayTipText);
-DEFINE_USER_EVENT(wxEvtTestVideoEnded);
+
+class UserCommandEvent : public wxCommandEvent
+{
+public:
+  UserCommandEvent(const wxChar * name)
+    : wxCommandEvent(wxNewEventType(), wxXmlResource::GetXRCID(name))
+  { }
+
+  const wxEventType & GetEventTypeRef() const { return m_eventType; }
+};
+
+#define EVT_USER_COMMAND(name, fn) EVT_COMMAND((name).GetId(), (name).GetEventTypeRef(), fn)
+#define DEFINE_USER_COMMAND(name) static UserCommandEvent const name(wxT(#name))
+DEFINE_USER_COMMAND(wxEvtLogMessage);
+DEFINE_USER_COMMAND(wxEvtStreamsChanged);
+DEFINE_USER_COMMAND(wxEvtRinging);
+DEFINE_USER_COMMAND(wxEvtEstablished);
+DEFINE_USER_COMMAND(wxEvtOnHold);
+DEFINE_USER_COMMAND(wxEvtCleared);
+DEFINE_USER_COMMAND(wxEvtAsyncNotification);
+DEFINE_USER_COMMAND(wxEvtSetTrayTipText);
+DEFINE_USER_COMMAND(wxEvtTestVideoEnded);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -677,14 +688,14 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_LIST_ITEM_RIGHT_CLICK(SpeedDialsID,   MyManager::OnSpeedDialRightClick) 
   EVT_LIST_END_LABEL_EDIT(SpeedDialsID,     MyManager::OnSpeedDialEndEdit)
 
-  EVT_USER(wxEvtLogMessage,         MyManager::OnLogMessage)
-  EVT_USER(wxEvtRinging,            MyManager::OnEvtRinging)
-  EVT_USER(wxEvtEstablished,        MyManager::OnEvtEstablished)
-  EVT_USER(wxEvtOnHold,             MyManager::OnEvtOnHold)
-  EVT_USER(wxEvtCleared,            MyManager::OnEvtCleared)
-  EVT_USER(wxEvtStreamsChanged,     MyManager::OnStreamsChanged)
-  EVT_USER(wxEvtAsyncNotification,  MyManager::OnEvtAsyncNotification)
-  EVT_USER(wxEvtSetTrayTipText,     MyManager::OnSetTrayTipText)
+  EVT_USER_COMMAND(wxEvtLogMessage,         MyManager::OnLogMessage)
+  EVT_USER_COMMAND(wxEvtRinging,            MyManager::OnEvtRinging)
+  EVT_USER_COMMAND(wxEvtEstablished,        MyManager::OnEvtEstablished)
+  EVT_USER_COMMAND(wxEvtOnHold,             MyManager::OnEvtOnHold)
+  EVT_USER_COMMAND(wxEvtCleared,            MyManager::OnEvtCleared)
+  EVT_USER_COMMAND(wxEvtStreamsChanged,     MyManager::OnStreamsChanged)
+  EVT_USER_COMMAND(wxEvtAsyncNotification,  MyManager::OnEvtAsyncNotification)
+  EVT_USER_COMMAND(wxEvtSetTrayTipText,     MyManager::OnSetTrayTipText)
   
 END_EVENT_TABLE()
 
@@ -4128,7 +4139,7 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   // Video fields
   EVT_COMBOBOX(XRCID("VideoGrabDevice"), OptionsDialog::ChangeVideoGrabDevice)
   EVT_BUTTON(XRCID("TestVideoCapture"), OptionsDialog::TestVideoCapture)
-  EVT_USER(wxEvtTestVideoEnded, OptionsDialog::OnTestVideoEnded)
+  EVT_USER_COMMAND(wxEvtTestVideoEnded, OptionsDialog::OnTestVideoEnded)
 
   ////////////////////////////////////////
   // Fax fields
@@ -6754,7 +6765,7 @@ BEGIN_EVENT_TABLE(IMDialog, wxDialog)
   EVT_TEXT_ENTER(XRCID("EnteredText"), IMDialog::OnTextEnter)
   EVT_TEXT(XRCID("EnteredText"), IMDialog::OnText)
   EVT_CLOSE(IMDialog::OnCloseWindow)
-  EVT_USER(wxEvtAsyncNotification,  IMDialog::OnEvtAsyncNotification)
+  EVT_USER_COMMAND(wxEvtAsyncNotification,  IMDialog::OnEvtAsyncNotification)
 END_EVENT_TABLE()
 
 IMDialog::IMDialog(MyManager * manager, OpalIMContext & context)
