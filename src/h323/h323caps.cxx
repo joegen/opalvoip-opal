@@ -1701,7 +1701,7 @@ PString H323H239ControlCapability::GetFormatName() const
 #if !H323_DISABLE_H235_SRTP
 
 H323H235SecurityCapability::H323H235SecurityCapability(unsigned mediaCapabilityNumber, const PStringArray & cryptoSuites)
-  : H323GenericCapabilityInfo("0.0.8.235.0.4.90")
+  : H323GenericCapabilityInfo("0.0.8.235.0.4.90", 0, false)
   , m_mediaCapabilityNumber(mediaCapabilityNumber)
   , m_cryptoSuites(cryptoSuites)
 {
