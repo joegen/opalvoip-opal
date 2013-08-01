@@ -50,141 +50,40 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-#define AUDIO_FORMAT(name, rtpPayloadType, encodingName, frameSize, frameTime, rxFrames, txFrames, maxFrames, clock) \
+#define AUDIO_FORMAT(name, rtpPayloadType, encodingName, frameSize, frameTime, rxFrames, txFrames, maxFrames, clock, chan) \
   const OpalAudioFormat & GetOpal##name() \
   { \
     static const OpalAudioFormat name(OPAL_##name, RTP_DataFrame::rtpPayloadType, \
-                                    encodingName, frameSize, frameTime, rxFrames, txFrames, maxFrames, clock); \
+                                      encodingName, frameSize, frameTime, rxFrames, txFrames, maxFrames, clock, 0, chan); \
     return name; \
   }
 //           name            rtpPayloadType  encodingName frameSize frameTime rxFrames txFrames maxFrames clock
-AUDIO_FORMAT(PCM16,          MaxPayloadType, "",          16,        8,       240,      0,      256,       8000);
-AUDIO_FORMAT(PCM16_16KHZ,    MaxPayloadType, "",          32,       16,       240,      0,      256,      16000);
-AUDIO_FORMAT(PCM16_32KHZ,    MaxPayloadType, "",          64,       32,       240,      0,      256,      32000);
-AUDIO_FORMAT(PCM16_48KHZ,    MaxPayloadType, "",          96,       48,       240,      0,      256,      48000);
-AUDIO_FORMAT(L16_MONO_8KHZ,  L16_Mono,       "L16",       16,        8,       240,     30,      256,       8000);
-AUDIO_FORMAT(L16_MONO_16KHZ, L16_Mono,       "L16",       32,       16,       240,     30,      256,      16000);
-AUDIO_FORMAT(L16_MONO_32KHZ, L16_Mono,       "L16",       64,       32,       240,     30,      256,      32000);
-AUDIO_FORMAT(L16_MONO_48KHZ, L16_Mono,       "L16",       96,       48,       240,     30,      256,      48000);
-AUDIO_FORMAT(G711_ULAW_64K,  PCMU,           "PCMU",       8,        8,       240,     20,      256,       8000);
-AUDIO_FORMAT(G711_ALAW_64K,  PCMA,           "PCMA",       8,        8,       240,     20,      256,       8000);
+AUDIO_FORMAT(PCM16,          MaxPayloadType, "",          16,        8,       240,      0,      256,       8000, 1);
+AUDIO_FORMAT(PCM16_12KHZ,    MaxPayloadType, "",          24,       12,       240,      0,      256,      12000, 1);
+AUDIO_FORMAT(PCM16_16KHZ,    MaxPayloadType, "",          32,       16,       240,      0,      256,      16000, 1);
+AUDIO_FORMAT(PCM16_24KHZ,    MaxPayloadType, "",          48,       24,       240,      0,      256,      24000, 1);
+AUDIO_FORMAT(PCM16_32KHZ,    MaxPayloadType, "",          64,       32,       240,      0,      256,      32000, 1);
+AUDIO_FORMAT(PCM16_48KHZ,    MaxPayloadType, "",          96,       48,       240,      0,      256,      48000, 1);
 
+AUDIO_FORMAT(PCM16S,         MaxPayloadType, "",          32,        8,       240,      0,      256,       8000, 2);
+AUDIO_FORMAT(PCM16S_12KHZ,   MaxPayloadType, "",          48,       12,       240,      0,      256,      12000, 2);
+AUDIO_FORMAT(PCM16S_16KHZ,   MaxPayloadType, "",          64,       16,       240,      0,      256,      16000, 2);
+AUDIO_FORMAT(PCM16S_24KHZ,   MaxPayloadType, "",          96,       24,       240,      0,      256,      24000, 2);
+AUDIO_FORMAT(PCM16S_32KHZ,   MaxPayloadType, "",         128,       32,       240,      0,      256,      32000, 2);
+AUDIO_FORMAT(PCM16S_48KHZ,   MaxPayloadType, "",         192,       48,       240,      0,      256,      48000, 2);
 
-class OpalStereoAudioFormat : public OpalAudioFormat
-{
-public:
-  OpalStereoAudioFormat(const char * fullName,
-                        RTP_DataFrame::PayloadTypes rtpPayloadType,
-                        const char * encodingName,
-                        PINDEX   frameSize,
-                        unsigned frameTime,
-                        unsigned rxFrames,
-                        unsigned txFrames,
-                        unsigned maxFrames,
-                        unsigned clockRate)
-    : OpalAudioFormat(fullName, rtpPayloadType, encodingName, frameSize, frameTime, rxFrames, txFrames, maxFrames, clockRate)
-  {
-    SetOptionInteger(OpalAudioFormat::ChannelsOption(), 2);
-  }
-};
+AUDIO_FORMAT(L16_MONO_8KHZ,  L16_Mono,       "L16",       16,        8,       240,     30,      256,       8000, 1);
+AUDIO_FORMAT(L16_MONO_16KHZ, L16_Mono,       "L16",       32,       16,       240,     30,      256,      16000, 1);
+AUDIO_FORMAT(L16_MONO_32KHZ, L16_Mono,       "L16",       64,       32,       240,     30,      256,      32000, 1);
+AUDIO_FORMAT(L16_MONO_48KHZ, L16_Mono,       "L16",       96,       48,       240,     30,      256,      48000, 1);
 
-const OpalAudioFormat & GetOpalPCM16S()
-{
-  static OpalStereoAudioFormat stereo8k(OPAL_PCM16S,        		// name of the media format
-					RTP_DataFrame::MaxPayloadType,	// RTP payload code
-					"",				// encoding name
-					64,				// frame size in bytes
-					16,				// frame time (1 ms in clock units)
-					240,				// recommended rx frames/packet
-					0,				// recommended tx frames/packet
-					256,				// max tx frame size
-					8000);				// clock rate
-  return stereo8k;
-};
+AUDIO_FORMAT(L16_STEREO_8KHZ,  L16_Stereo,   "L16",       32,        8,       240,     30,      256,       8000, 2);
+AUDIO_FORMAT(L16_STEREO_16KHZ, L16_Stereo,   "L16",       64,       16,       240,     30,      256,      16000, 2);
+AUDIO_FORMAT(L16_STEREO_32KHZ, L16_Stereo,   "L16",      128,       32,       240,     30,      256,      32000, 2);
+AUDIO_FORMAT(L16_STEREO_48KHZ, L16_Stereo,   "L16",      192,       48,       240,     30,      256,      48000, 2);
 
-const OpalAudioFormat & GetOpalPCM16S_16KHZ()
-{
-  static OpalStereoAudioFormat stereo16k(OPAL_PCM16S_16KHZ,		// name of the media format
-					RTP_DataFrame::MaxPayloadType,	// RTP payload code
-					"",				// encoding name
-					64,				// frame size in bytes
-					16,				// frame time (1 ms in clock units)
-					240,				// recommended rx frames/packet
-					0,				// recommended tx frames/packet
-					256,				// max tx frame size
-					16000);				// clock rate
-  return stereo16k;
-};
-
-const OpalAudioFormat & GetOpalL16_STEREO_16KHZ()
-{
-  static OpalStereoAudioFormat stereo16k(OPAL_L16_STEREO_16KHZ,         // name of the media format
-					RTP_DataFrame::L16_Stereo,      // RTP payload code
-					"L16S",                         // encoding name
-					64,                             // frame size in bytes
-					16,                             // frame time (1 ms in clock units)
-					240,                            // recommended rx frames/packet
-					30,                             // recommended tx frames/packet
-					256,                            // max tx frame size
-					16000);                         // clock rate
-  return stereo16k;
-};
-
-const OpalAudioFormat & GetOpalPCM16S_32KHZ()
-{
-  static OpalStereoAudioFormat stereo32k(OPAL_PCM16S_32KHZ,		// name of the media format
-					RTP_DataFrame::MaxPayloadType,	// RTP payload code
-					"",				// encoding name
-					128,				// frame size in bytes
-					32,				// frame time (1 ms in clock units)
-					240,				// recommended rx frames/packet
-					0,				// recommended tx frames/packet
-					256,				// max tx frame size
-					32000);				// clock rate
-  return stereo32k;
-};
-
-const OpalAudioFormat & GetOpalL16_STEREO_32KHZ()
-{
-  static OpalStereoAudioFormat stereo32k(OPAL_L16_STEREO_32KHZ,         // name of the media format
-					RTP_DataFrame::L16_Stereo,      // RTP payload code
-					"L16S",                         // encoding name
-					128,                            // frame size in bytes
-					32,                             // frame time (1 ms in clock units)
-					240,                            // recommended rx frames/packet
-					30,                             // recommended tx frames/packet
-					256,                            // max tx frame size
-					32000);                         // clock rate
-  return stereo32k;
-};
-
-const OpalAudioFormat & GetOpalPCM16S_48KHZ()
-{
-  static OpalStereoAudioFormat stereo48k(OPAL_PCM16S_48KHZ,		// name of the media format
-					RTP_DataFrame::MaxPayloadType,	// RTP payload code
-					"",				// encoding name
-					192,				// frame size in bytes
-					48,				// frame time (1 ms in clock units)
-					240,				// recommended rx frames/packet
-					0,				// recommended tx frames/packet
-					256,				// max tx frame size
-					48000);				// clock rate
-  return stereo48k;
-};
-
-const OpalAudioFormat & GetOpalL16_STEREO_48KHZ()
-{
-  static OpalStereoAudioFormat stereo48k(OPAL_L16_STEREO_48KHZ,         // name of the media format
-					RTP_DataFrame::L16_Stereo,      // RTP payload code
-					"L16S",                         // encoding name
-					192,                            // frame size in bytes
-					48,                             // frame time (1 ms in clock units)
-					240,                            // recommended rx frames/packet
-					30,                             // recommended tx frames/packet
-					256,                            // max tx frame size
-					48000);                         // clock rate
-  return stereo48k;
-};
+AUDIO_FORMAT(G711_ULAW_64K,  PCMU,           "PCMU",       8,        8,       240,     20,      256,       8000, 1);
+AUDIO_FORMAT(G711_ALAW_64K,  PCMA,           "PCMA",       8,        8,       240,     20,      256,       8000, 1);
 
 
 static OpalMediaFormatList & GetMediaFormatsList()
@@ -1236,7 +1135,6 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
   codecVersionTime = ts != 0 ? ts : PTime().GetTimeInSeconds();
   rtpPayloadType   = pt;
   rtpEncodingName  = en;
-  m_channels       = 1;    // this is the default - it's up to descendant classes to change it
 
   if (nj)
     AddOption(new OpalMediaOptionBoolean(OpalMediaFormat::NeedsJitterOption(), true, OpalMediaOption::OrMerge, true));
@@ -1756,7 +1654,8 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
                                  unsigned txFrames,
                                  unsigned maxFrames,
                                  unsigned clockRate,
-                                 time_t timeStamp)
+                                 time_t timeStamp,
+                                 unsigned channels)
 {
   Construct(new OpalAudioFormatInternal(fullName,
                                         rtpPayloadType,
@@ -1767,7 +1666,8 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
                                         txFrames,
                                         maxFrames,
                                         clockRate,
-                                        timeStamp));
+                                        timeStamp,
+                                        channels));
 }
 
 
@@ -1780,7 +1680,8 @@ OpalAudioFormatInternal::OpalAudioFormatInternal(const char * fullName,
                                                  unsigned txFrames,
                                                  unsigned maxFrames,
                                                  unsigned clockRate,
-                                                 time_t timeStamp)
+                                                 time_t timeStamp,
+                                                 unsigned channels)
   : OpalMediaFormatInternal(fullName,
                             "audio",
                             rtpPayloadType,
@@ -1798,7 +1699,7 @@ OpalAudioFormatInternal::OpalAudioFormatInternal(const char * fullName,
     AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::TxFramesPerPacketOption(), false, OpalMediaOption::AlwaysMerge, txFrames, 1, maxFrames));
 
   AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::MaxFramesPerPacketOption(), true,  OpalMediaOption::NoMerge,  maxFrames));
-  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::ChannelsOption(),           false, OpalMediaOption::NoMerge,  m_channels, 1, 5));
+  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::ChannelsOption(),           false, OpalMediaOption::NoMerge,  channels, 1, 5));
 }
 
 

@@ -484,8 +484,10 @@ void OpalFramedTranscoder::CalculateSizes()
 {
   unsigned framesPerPacket = outputMediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(),
                               inputMediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1));
-  unsigned channels = outputMediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption(),
-                       inputMediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption(), 1));
+  // Use num channels from raw side, the network side is sometimes not actually what is used, e.g. Opus.
+  unsigned channels = inputMediaFormat.IsTransportable()
+                          ? outputMediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption(), 1)
+                          :  inputMediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption(), 1);
   unsigned inFrameSize = inputMediaFormat.GetFrameSize();
   unsigned outFrameSize = outputMediaFormat.GetFrameSize();
   unsigned inFrameTime = inputMediaFormat.GetFrameTime();

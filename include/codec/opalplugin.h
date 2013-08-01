@@ -312,6 +312,8 @@ struct PluginCodec_Option {
 #define PLUGINCODEC_OPTION_NEEDS_JITTER               "Needs Jitter"
 #define PLUGINCODEC_OPTION_CLOCK_RATE                 "Clock Rate"
 #define PLUGINCODEC_OPTION_CHANNELS                   "Channels"
+#define PLUGINCODEC_OPTION_RTP_CLOCK_RATE             "RTP Clock Rate"
+#define PLUGINCODEC_OPTION_RTP_CHANNELS               "RTP Channels"
 #define PLUGINCODEC_OPTION_FRAME_TIME                 "Frame Time"
 #define PLUGINCODEC_OPTION_MAX_FRAME_SIZE             "Max Frame Size"
 #define PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE         "Max Tx Packet Size"   /* Really max PAYLOAD size */

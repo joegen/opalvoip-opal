@@ -467,7 +467,7 @@ static RTP_DataFrame::PayloadTypes GetPluginPayloadType(const PluginCodec_Defini
 OpalPluginAudioFormatInternal::OpalPluginAudioFormatInternal(const PluginCodec_Definition * codecDefn,
                                                              const char * fmtName,
                                                              const char * rtpEncodingName, /// rtp encoding name
-                                                             unsigned frameTime,           /// Time for frame in RTP units (if applicable)
+                                                             unsigned /*frameTime*/,           /// Time for frame in RTP units (if applicable)
                                                              unsigned /*timeUnits*/,       /// RTP units for frameTime (if applicable)
                                                              time_t timeStamp              /// timestamp (for versioning)
                                                             )
@@ -475,12 +475,13 @@ OpalPluginAudioFormatInternal::OpalPluginAudioFormatInternal(const PluginCodec_D
                             GetPluginPayloadType(codecDefn),
                             rtpEncodingName,
                             codecDefn->parm.audio.bytesPerFrame,
-                            frameTime,
+                            codecDefn->parm.audio.samplesPerFrame,
                             codecDefn->parm.audio.maxFramesPerPacket,
                             codecDefn->parm.audio.recommendedFramesPerPacket,
                             codecDefn->parm.audio.maxFramesPerPacket,
                             codecDefn->sampleRate,
-                            timeStamp)
+                            timeStamp,
+                            OpalPluginCodecHandler::GetChannelCount(codecDefn))
   , OpalPluginMediaFormatInternal(codecDefn)
 {
   PopulateOptions(*this);
@@ -488,8 +489,6 @@ OpalPluginAudioFormatInternal::OpalPluginAudioFormatInternal(const PluginCodec_D
   // Override calculated value if we have an explicit bit rate
   if (codecDefn->bitsPerSec > 0)
     SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), codecDefn->bitsPerSec);
-
-  m_channels = OpalPluginCodecHandler::GetChannelCount(codecDefn);
 }
 
 
@@ -645,8 +644,12 @@ static OpalMediaFormat GetRawPCM(unsigned sampleRate, unsigned channels)
         case 0 :
         case 8000 :
           return OpalPCM16S;
+        case 12000 :
+          return OpalPCM16S_12KHZ;
         case 16000 :
           return OpalPCM16S_16KHZ;
+        case 24000 :
+          return OpalPCM16S_24KHZ;
         case 32000 :
           return OpalPCM16S_32KHZ;
         case 48000 :
@@ -660,8 +663,12 @@ static OpalMediaFormat GetRawPCM(unsigned sampleRate, unsigned channels)
         case 0 :
         case 8000 :
           return OpalPCM16;
+        case 12000 :
+          return OpalPCM16_12KHZ;
         case 16000 :
           return OpalPCM16_16KHZ;
+        case 24000 :
+          return OpalPCM16_24KHZ;
         case 32000 :
           return OpalPCM16_32KHZ;
         case 48000 :
@@ -1684,10 +1691,15 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, const Plug
 
   // Make sure raw codecs are instantiated
   GetOpalPCM16();
+  GetOpalPCM16_12KHZ();
   GetOpalPCM16_16KHZ();
+  GetOpalPCM16_24KHZ();
   GetOpalPCM16_32KHZ();
   GetOpalPCM16_48KHZ();
+  GetOpalPCM16S();
+  GetOpalPCM16S_12KHZ();
   GetOpalPCM16S_16KHZ();
+  GetOpalPCM16S_24KHZ();
   GetOpalPCM16S_32KHZ();
   GetOpalPCM16S_48KHZ();
 #if OPAL_VIDEO
@@ -1720,12 +1732,6 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, const Plug
     else
 #endif // OPAL_FAX
     if (mediaType == OpalMediaType::Audio()) {
-      if (src.GetClockRate() != dst.GetClockRate()) {
-        if (isEncoder)
-          src = GetRawPCM(dst.GetClockRate(), dst.GetOptionInteger(OpalAudioFormat::ChannelsOption(), 1));
-        else
-          dst = GetRawPCM(src.GetClockRate(), src.GetOptionInteger(OpalAudioFormat::ChannelsOption(), 1));
-      }
       handler->RegisterAudioTranscoder(src, dst, codecDefn, isEncoder);
 #ifdef P_WAVFILE
       OpalWAVFile::AddMediaFormat(isEncoder ? dst : src);
