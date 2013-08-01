@@ -149,12 +149,12 @@ OPAL_SYSTEM_PLUGIN(
    [OPUS],
    [opus],
    [Opus Interactive Audio Codec],
-   [$PLUGIN_SRC_DIR/audio/opus],
+   [$PLUGIN_SRC_DIR/audio/Opus],
    [opus local-source],
    [],
    [-lopus],
    [#include <opus.h>],
-   [opus_get_version()]
+   [opus_get_version_string()]
 )
 
 dnl ########################################################################
@@ -386,6 +386,7 @@ echo "                        IMA_ADPCM :  ${HAVE_IMA_ADPCM}"
 echo "                              SBC :  ${HAVE_SBC}"
 echo "                             CELT :  ${HAVE_CELT}"
 echo "                             SILK :  ${HAVE_SILK}"
+echo "                             Opus :  ${HAVE_OPUS}"
 
 echo ""
 
