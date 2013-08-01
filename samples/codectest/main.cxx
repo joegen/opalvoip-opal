@@ -313,26 +313,18 @@ int TranscoderThread::InitialiseCodec(PArgList & args,
         rawFormat = mediaFormat;
       }
       else {
-        if (mediaType == OpalMediaType::Audio()) {
-          if (mediaFormat.GetPayloadType() == RTP_DataFrame::G722)
-            rawFormat = OpalPCM16_16KHZ;
-          else {
-            PString str = OPAL_PCM16;
-            if (mediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption(), 1) == 2)
-              str += 'S';
-            if (mediaFormat.GetClockRate() != 8000)
-              str += '-' + PString(PString::Unsigned, mediaFormat.GetTimeUnits()) + "KHZ";
-            rawFormat = str;
-          }
-
-          if (args.HasOption('F')) {
-            unsigned fpp = args.GetOptionString('F').AsUnsigned();
-            if (fpp > 0)
-              mediaFormat.SetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), fpp);
-          }
+        OpalMediaFormatList rawFormats = OpalTranscoder::GetDestinationFormats(mediaFormat);
+        if (rawFormats.IsEmpty()) {
+          cout << "No transcoders for format name \"" << mediaFormat << '"' << endl;
+          return 0;
         }
-        else
-          rawFormat = OpalYUV420P;
+        rawFormat = rawFormats[0];
+
+        if (args.HasOption('F') && mediaType == OpalMediaType::Audio()) {
+          unsigned fpp = args.GetOptionString('F').AsUnsigned();
+          if (fpp > 0)
+            mediaFormat.SetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), fpp);
+        }
 
         PStringArray options = args.GetOptionString('O').Lines();
         for (PINDEX opt = 0; opt < options.GetSize(); ++opt) {
