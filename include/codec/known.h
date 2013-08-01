@@ -34,8 +34,14 @@
 
 #define OPAL_PCM16          "PCM-16"
 #define OPAL_PCM16S         "PCM-16S"
+#define OPAL_PCM16_8KHZ     OPAL_PCM16
+#define OPAL_PCM16S_8KHZ    OPAL_PCM16S
+#define OPAL_PCM16_12KHZ    "PCM-16-12kHz"
+#define OPAL_PCM16S_12KHZ   "PCM-16S-12kHz"
 #define OPAL_PCM16_16KHZ    "PCM-16-16kHz"
 #define OPAL_PCM16S_16KHZ   "PCM-16S-16kHz"
+#define OPAL_PCM16_24KHZ    "PCM-16-24kHz"
+#define OPAL_PCM16S_24KHZ   "PCM-16S-24kHz"
 #define OPAL_PCM16_32KHZ    "PCM-16-32kHz"
 #define OPAL_PCM16S_32KHZ   "PCM-16S-32kHz"
 #define OPAL_PCM16_48KHZ    "PCM-16-48kHz"

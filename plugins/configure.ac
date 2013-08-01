@@ -145,6 +145,18 @@ OPAL_SYSTEM_PLUGIN(
 )
 
 
+OPAL_SYSTEM_PLUGIN(
+   [OPUS],
+   [opus],
+   [Opus Interactive Audio Codec],
+   [$PLUGIN_SRC_DIR/audio/opus],
+   [opus local-source],
+   [],
+   [-lopus],
+   [#include <opus.h>],
+   [opus_get_version()]
+)
+
 dnl ########################################################################
 dnl Video Codecs
 dnl ########################################################################

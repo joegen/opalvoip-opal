@@ -768,7 +768,6 @@ class OpalMediaFormatInternal : public PObject
     PSortedList<OpalMediaOption> options;
     time_t                       codecVersionTime;
     bool                         forceIsTransportable;
-    int                          m_channels;
 
   friend bool operator==(const char * other, const OpalMediaFormat & fmt);
   friend bool operator!=(const char * other, const OpalMediaFormat & fmt);
@@ -1342,7 +1341,8 @@ class OpalAudioFormatInternal : public OpalMediaFormatInternal
       unsigned txFrames,
       unsigned maxFrames,
       unsigned clockRate,
-      time_t timeStamp = 0
+      time_t timeStamp = 0,
+      unsigned channels = 1
     );
     virtual PObject * Clone() const;
     virtual bool Merge(const OpalMediaFormatInternal & mediaFormat);
@@ -1365,7 +1365,8 @@ class OpalAudioFormat : public OpalMediaFormat
       unsigned txFrames,        ///<  Desired number of frames per packet we transmit
       unsigned maxFrames = 256, ///<  Maximum possible frames per packet
       unsigned clockRate = 8000, ///<  Clock Rate 
-      time_t timeStamp = 0       ///<  timestamp (for versioning)
+      time_t timeStamp = 0,     ///<  timestamp (for versioning)
+      unsigned channels = 1     ///<  Stereo/mono
     );
 
     static const PString & RxFramesPerPacketOption();
@@ -1475,8 +1476,12 @@ class OpalVideoFormat : public OpalMediaFormat
 
 extern const OpalAudioFormat & GetOpalPCM16();
 extern const OpalAudioFormat & GetOpalPCM16S();
+extern const OpalAudioFormat & GetOpalPCM16_12KHZ();
+extern const OpalAudioFormat & GetOpalPCM16S_12KHZ();
 extern const OpalAudioFormat & GetOpalPCM16_16KHZ();
 extern const OpalAudioFormat & GetOpalPCM16S_16KHZ();
+extern const OpalAudioFormat & GetOpalPCM16_24KHZ();
+extern const OpalAudioFormat & GetOpalPCM16S_24KHZ();
 extern const OpalAudioFormat & GetOpalPCM16_32KHZ();
 extern const OpalAudioFormat & GetOpalPCM16S_32KHZ();
 extern const OpalAudioFormat & GetOpalPCM16_48KHZ();
@@ -1534,8 +1539,12 @@ extern const OpalMediaFormat & GetOpalT38();
 
 #define OpalPCM16          GetOpalPCM16()
 #define OpalPCM16S         GetOpalPCM16S()
+#define OpalPCM16_12KHZ    GetOpalPCM16_12KHZ()
+#define OpalPCM16S_12KHZ   GetOpalPCM16S_12KHZ()
 #define OpalPCM16_16KHZ    GetOpalPCM16_16KHZ()
 #define OpalPCM16S_16KHZ   GetOpalPCM16S_16KHZ()
+#define OpalPCM16_24KHZ    GetOpalPCM16_24KHZ()
+#define OpalPCM16S_24KHZ   GetOpalPCM16S_24KHZ()
 #define OpalPCM16_32KHZ    GetOpalPCM16_32KHZ()
 #define OpalPCM16S_32KHZ   GetOpalPCM16S_32KHZ()
 #define OpalPCM16_48KHZ    GetOpalPCM16_48KHZ()

@@ -393,6 +393,7 @@ class PluginCodec_MediaFormat : public PluginCodec_Utilities
     typedef PluginCodec_OptionMap OptionMap;
 
   protected:
+    const char * m_rawFormat;
     const char * m_formatName;
     const char * m_payloadName;
     unsigned     m_payloadType;
@@ -405,13 +406,15 @@ class PluginCodec_MediaFormat : public PluginCodec_Utilities
 
   protected:
     PluginCodec_MediaFormat(
+        const char * rawFormat,
         const char * formatName,
         const char * payloadName,
         const char * description,
         unsigned     maxBandwidth,
         OptionsTable options,
         unsigned flags = PluginCodec_RTPTypeDynamic
-    ) : m_formatName(formatName)
+    ) : m_rawFormat(rawFormat)
+      , m_formatName(formatName)
       , m_payloadName(payloadName)
       , m_payloadType(0)
       , m_description(description)
@@ -429,6 +432,7 @@ class PluginCodec_MediaFormat : public PluginCodec_Utilities
     }
 
 
+    __inline const char *  GetRawFormat() const    { return this->m_rawFormat; }
     __inline const char *  GetFormatName() const   { return this->m_formatName; }
     __inline const char *  GetPayloadName() const  { return this->m_payloadName; }
     __inline unsigned char GetPayloadType() const  { return (unsigned char)this->m_payloadType; }
@@ -531,7 +535,7 @@ class PluginCodec_AudioFormat : public PluginCodec_MediaFormat<NAME>
       unsigned     bytesPerFrame,
       unsigned     sampleRate = 8000,
       OptionsTable options = NULL
-    ) : Parent(formatName, payloadName, description, bytesPerFrame*8 * samplesPerFrame*1000000/sampleRate, options)
+    ) : Parent(PLUGINCODEC_RAW_AUDIO, formatName, payloadName, description, bytesPerFrame*8 * samplesPerFrame*1000000/sampleRate, options)
       , m_samplesPerFrame(samplesPerFrame)
       , m_bytesPerFrame(bytesPerFrame)
       , m_sampleRate(sampleRate)
@@ -577,7 +581,7 @@ class PluginCodec_VideoFormat : public PluginCodec_MediaFormat<NAME>
       const char * description,
       unsigned     maxBandwidth,
       OptionsTable options = NULL
-    ) : Parent(formatName, payloadName, description, maxBandwidth, options)
+    ) : Parent(PLUGINCODEC_RAW_VIDEO, formatName, payloadName, description, maxBandwidth, options)
       , m_maxWidth(1920)
       , m_maxHeight(1200)
     {
@@ -1248,7 +1252,7 @@ class PluginVideoDecoder : public PluginVideoCodec<NAME>
                                     DecoderClass::Transcode_s, \
                                     DecoderClass::GetControls(), /* Note doesn't matter if encoder or decoder */ \
                                     MediaFormat.GetFlags(), \
-                                    PLUGINCODEC_RAW_AUDIO, \
+                                    MediaFormat.GetRawFormat(), \
                                     &MediaFormat)
 
 /// Declare a video codec using C++ support classes
@@ -1276,7 +1280,7 @@ class PluginVideoDecoder : public PluginVideoCodec<NAME>
                                     DecoderClass::Transcode_s, \
                                     DecoderClass::GetControls(), /* Note doesn't matter if encoder or decoder */ \
                                     MediaFormat.GetFlags(), \
-                                    PLUGINCODEC_RAW_VIDEO, \
+                                    MediaFormat.GetRawFormat(), \
                                     &MediaFormat)
 
 
