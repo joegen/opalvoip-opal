@@ -2428,6 +2428,8 @@ void SIPHandlersList::Append(SIPHandler * newHandler)
   PSafePtr<SIPHandler> handler = PSafePtrCast<SIPHandlerBase, SIPHandler>(m_handlersList.FindWithLock(*newHandler, PSafeReference));
   if (handler == NULL)
     handler = PSafePtrCast<SIPHandlerBase, SIPHandler>(m_handlersList.Append(newHandler));
+  else if (handler != newHandler)
+    delete newHandler;
 
   // add entry to url and package map
   PString key = MakeUrlKey(handler->GetAddressOfRecord(), handler->GetMethod(), handler->GetEventPackage());
