@@ -37,11 +37,22 @@ target_os        := @target_os@
 target           := @target@
 
 # The install directories
-prefix           := @prefix@
-exec_prefix      := @exec_prefix@
-libdir           := @libdir@
-includedir       := @includedir@
-datarootdir      := @datarootdir@
+ifndef prefix
+  prefix := @prefix@
+endif
+ifndef exec_prefix
+  exec_prefix := @exec_prefix@
+endif
+ifndef libdir
+  libdir := @libdir@
+endif
+ifndef includedir
+  includedir := @includedir@
+endif
+ifndef datarootdir
+  datarootdir := @datarootdir@
+endif
+
 OPAL_PLUGIN_DIR  := @OPAL_PLUGIN_DIR@
 
 # Tool names detected by configure
