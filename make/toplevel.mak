@@ -489,6 +489,8 @@ install uninstall:
 
 else # OPALDIR
 
+INCSUBDIRS:=asn codec ep h323 h460 iax2 im lids opal rtp sip t120 t38
+
 install:
 	for dir in $(DESTDIR)$(libdir) \
 	           $(DESTDIR)$(libdir)/pkgconfig \
@@ -515,7 +517,7 @@ install:
 	fi
 	$(INSTALL) -m 644 make/*.mak $(DESTDIR)$(datarootdir)/opal/make
 	$(INSTALL) -m 644 include/*.h $(DESTDIR)$(includedir)
-	for dir in asn codec ep h323 h460 iax2 im lids opal rtp sip t120 t38; \
+	for dir in $(INCSUBDIRS); \
 	do \
 	   $(MKDIR_P) $(DESTDIR)$(includedir)/$$dir ; \
 	   chmod 755 $(DESTDIR)$(includedir)/$$dir ; \
@@ -527,7 +529,8 @@ ifeq ($(OPAL_PLUGINS),yes)
 endif
 
 uninstall:
-	rm -rf $(DESTDIR)$(includedir) \
+	rm -rf $(foreach dir,$(INCSUBDIRS),$(DESTDIR)$(includedir)/$(dir)) \
+               $(foreach file,$(wildcard include/*.h),$(DESTDIR)$(includedir)/$(notdir $(file))) \
                $(DESTDIR)$(datarootdir)/opal \
 	       $(DESTDIR)$(libdir)/$(notdir $(OPAL_OPT_SHARED_LINK)) \
                $(DESTDIR)$(libdir)/$(notdir $(OPAL_OPT_SHARED_FILE)) \
