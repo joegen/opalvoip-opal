@@ -121,8 +121,12 @@ AC_DEFUN([OPAL_SYSTEM_PLUGIN],[
    if test -d "$4" ; then
       MY_MODULE_OPTION([$1],[$2],[$3],[$5],[$6],[$7],[$8],[$9],[$10],[$11],[$12],[$13],[$14],[$15])
       if test "x$$1[_SYSTEM]" = "xno" ; then
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $4"
-         HAVE_$1="yes (internal)"
+         if test "x$usable" = "xyes" ; then
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $4"
+            HAVE_$1="yes (internal)"
+         else
+            HAVE_$1="no (internal library incompatible with build environment)"
+         fi
       else
          if test "x$usable" = "xyes" ; then
             AC_SUBST($1[_CFLAGS])
