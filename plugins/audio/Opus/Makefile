@@ -27,16 +27,26 @@
 BASENAME := opus
 
 SRCDIR   := $(CURDIR)
-SOURCES  := $(CURDIR)/OpusCodec.cpp
+SOURCES  := $(SRCDIR)/OpusCodec.cpp
 
 PLUGIN_CPPFLAGS = $(OPUS_CFLAGS)
 PLUGIN_LIBS     = $(OPUS_LIBS)
 
 PLUGIN_SYSTEM  = $(OPUS_SYSTEM)
 
-#SUBDIRS := ./opus
+LIBOPUS_DIR := $(SRCDIR)/opus
+LIBOPUS_LIB := $(LIBOPUS_DIR)/.libs/libopus.a
+
+LOCAL_CPPFLAGS := -I$(LIBOPUS_DIR)/include
+LOCAL_LIBS := $(LIBOPUS_LIB)
+
 
 INSTALL_DIR = $(AUD_PLUGIN_DIR)
 include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
+
+$(PLUGIN_PATH): $(LIBOPUS_LIB)
+
+$(LIBOPUS_LIB):
+	$(MAKE) -C $(LIBOPUS_DIR)
 
 ###########################################
