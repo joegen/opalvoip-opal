@@ -419,9 +419,13 @@ bool OpalPluginMediaFormatInternal::AdjustOptions(OpalMediaFormatInternal & fmt,
     for (char ** option = output; *option != NULL; option += 2) {
       PString oldValue;
       if (fmt.GetOptionValue(option[0], oldValue) && oldValue != option[1]) {
-        PTRACE(3, "OpalPlugin\t" << control.GetName() << " changed option "
+#if PTRACING
+        bool ok =
+#endif
+                 fmt.SetOptionValue(option[0], option[1]);
+        PTRACE(ok ? 3 : 2, "OpalPlugin\t" << control.GetName() << ' '
+               << (ok ? "changed" : "could not change") << " option "
                "\"" << option[0] << "\" from \"" << oldValue << "\" to \"" << option[1] << '"');
-        fmt.SetOptionValue(option[0], option[1]);
       }
     }
     freeOptionsControl.Call(output, sizeof(output));
