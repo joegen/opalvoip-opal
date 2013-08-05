@@ -626,6 +626,12 @@ void OpalMediaPatch::Main()
   PThread::Times lastThreadTimes;
   PTimeInterval lastTick;
 
+  static PTimeInterval const StartupDelay(PConfig(PConfig::Environment).GetInteger("OPAL_MEDIA_START_DELAY"));
+  if (StartupDelay > 0 && !sinks.IsEmpty() && dynamic_cast<OpalRTPMediaStream *>(&*sinks.front().stream) != NULL) {
+    PTRACE(3, "Patch\tDelaying start up for " << StartupDelay << " seconds on " << *this);
+    PThread::Sleep(StartupDelay);
+  }
+
   /* Note the RTP frame is outside loop so that a) it is more efficient
      for memory usage, the buffer is only ever increased and not allocated
      on the heap ever time, and b) the timestamp value embedded into the
