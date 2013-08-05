@@ -668,12 +668,14 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU(ID_MenuRxVideoControl,   MyManager::OnRxVideoControl)
   EVT_MENU(ID_MenuPresentationRole, MyManager::OnMenuPresentationRole)
   EVT_MENU(ID_MenuDefVidWinPos,     MyManager::OnDefVidWinPos)
+#if OPAL_HAS_PRESENCE
   EVT_MENU(ID_MenuPresence,         MyManager::OnMyPresence)
 #if OPAL_HAS_IM
   EVT_MENU(ID_MenuStartIM,          MyManager::OnStartIM)
   EVT_MENU(ID_MenuInCallMessage,    MyManager::OnInCallIM)
   EVT_MENU(ID_SendIMSpeedDial,      MyManager::OnSendIMSpeedDial)
 #endif // OPAL_HAS_IM
+#endif // OPAL_HAS_PRESENCE
 
   EVT_MENU_RANGE(ID_RETRIEVE_MENU_BASE,     ID_RETRIEVE_MENU_TOP,     MyManager::OnRetrieve)
   EVT_MENU_RANGE(ID_TRANSFER_MENU_BASE,     ID_TRANSFER_MENU_TOP,     MyManager::OnTransfer)
@@ -887,8 +889,10 @@ bool MyManager::Initialise(bool startMinimised)
       config->SetPath(info.m_Name);
       if (config->Read(SpeedDialAddressKey, &info.m_Address) && !info.m_Address.empty()) {
         config->Read(SpeedDialNumberKey, &info.m_Number);
+#if OPAL_HAS_PRESENCE
         if (!config->Read(SpeedDialPresentityKey, &info.m_Presentity))
           config->Read(SpeedDialStateURLKey, &info.m_Presentity);
+#endif // OPAL_HAS_PRESENCE
         config->Read(SpeedDialDescriptionKey, &info.m_Description);
         m_speedDialInfo.insert(info);
       }
@@ -1176,6 +1180,7 @@ bool MyManager::Initialise(bool startMinimised)
     m_defaultAnswerMode = (FaxAnswerModes)value1;
 #endif
 
+#if OPAL_HAS_PRESENCE
   ////////////////////////////////////////
   // Presence fields
   config->SetPath(PresenceGroup);
@@ -1210,6 +1215,7 @@ bool MyManager::Initialise(bool startMinimised)
 
     config->SetPath(wxT(".."));
   }
+#endif // OPAL_HAS_PRESENCE
 
   ////////////////////////////////////////
   // Codec fields
@@ -1416,12 +1422,14 @@ bool MyManager::Initialise(bool startMinimised)
 
   StartRegistrations();
 
+#if OPAL_HAS_PRESENCE
   int count = m_speedDials->GetItemCount();
   for (int i = 0; i < count; i++) {
     SpeedDialInfo * info = (SpeedDialInfo *)m_speedDials->GetItemData(i);
     if (info != NULL && MonitorPresence(info->m_Presentity, info->m_Address, true) && m_speedDialDetail)
       m_speedDials->SetItem(i, e_StatusColumn, IconStatusNames[Icon_Unknown]);
   }
+#endif // OPAL_HAS_PRESENCE
 #endif // OPAL_SIP
 
 
@@ -1733,11 +1741,14 @@ bool MyManager::CanDoFax() const
 }
 
 
+#if OPAL_HAS_PRESENCE && OPAL_HAS_IM
 bool MyManager::CanDoIM() const
 {
   SpeedDialInfo * info = GetSelectedSpeedDial();
   return info != NULL && !info->m_Presentity.IsEmpty();
+  return false;
 }
+#endif // OPAL_HAS_PRESENCE && OPAL_HAS_IM
 
 
 void MyManager::OnAdjustMenus(wxMenuEvent & WXUNUSED(event))
@@ -1852,6 +1863,10 @@ void MyManager::OnAdjustMenus(wxMenuEvent & WXUNUSED(event))
 
   menubar->Enable(ID_SubMenuRetrieve, !m_callsOnHold.empty());
   menubar->Enable(ID_SubMenuConference, !m_callsOnHold.empty());
+
+#if !OPAL_HAS_PRESENCE
+  menubar->Enable(ID_MenuPresence, false);
+#endif // OPAL_HAS_PRESENCE
 }
 
 
@@ -1940,6 +1955,7 @@ void MyManager::OnSendFax(wxCommandEvent & /*event*/)
 }
 
                                   
+#if OPAL_HAS_PRESENCE
 void MyManager::OnMyPresence(wxCommandEvent & /*event*/)
 {
   PresenceDialog dlg(this);
@@ -1977,6 +1993,7 @@ void MyManager::OnSendIMSpeedDial(wxCommandEvent & /*event*/)
   }
 }
 #endif // OPAL_HAS_IM
+#endif // OPAL_HAS_PRESENCE
 
 
 void MyManager::OnSendFaxSpeedDial(wxCommandEvent & /*event*/)
@@ -2087,7 +2104,9 @@ void MyManager::OnCopySpeedDial(wxCommandEvent & WXUNUSED(event))
                  << info->m_Number << '\t'
                  << info->m_Address << '\t'
                  << info->m_Description << '\t'
+#if OPAL_HAS_PRESENCE
                  << info->m_Presentity
+#endif
                  << "\r\n";
     }
   }
@@ -2122,7 +2141,9 @@ void MyManager::OnPasteSpeedDial(wxCommandEvent & WXUNUSED(event))
             info.m_Number = tabbedText.GetNextToken();
             info.m_Address = tabbedText.GetNextToken();
             info.m_Description = tabbedText.GetNextToken();
+#if OPAL_HAS_PRESENCE
             info.m_Presentity = tabbedText.GetNextToken();
+#endif
 
             UpdateSpeedDial(INT_MAX, info, true);
           }
@@ -2196,7 +2217,11 @@ void MyManager::OnSpeedDialRightClick(wxListEvent & event)
 
   menu->Enable(ID_CallSpeedDialHandset, HasHandset());
   menu->Enable(ID_SendFaxSpeedDial,     CanDoFax());
+#if OPAL_HAS_PRESENCE && OPAL_HAS_IM
   menu->Enable(ID_SendIMSpeedDial,      CanDoIM());
+#else
+  menu->Enable(ID_SendIMSpeedDial, false);
+#endif
   PopupMenu(menu, event.GetPoint());
   delete menu;
 }
@@ -2243,6 +2268,7 @@ void MyManager::EditSpeedDial(int index)
   if (dlg.ShowModal() == wxID_CANCEL)
     return;
 
+#if OPAL_HAS_PRESENCE
   if (info->m_Presentity != dlg.m_Presentity) {
     if (!info->m_Presentity.empty())
       MonitorPresence(info->m_Presentity, dlg.m_Address, false);
@@ -2250,6 +2276,7 @@ void MyManager::EditSpeedDial(int index)
     if (!dlg.m_Presentity.empty())
       MonitorPresence(dlg.m_Presentity, dlg.m_Address, true);
   }
+#endif // OPAL_HAS_PRESENCE
 
   UpdateSpeedDial(index, dlg, true);
 }
@@ -2278,7 +2305,9 @@ bool MyManager::UpdateSpeedDial(int index, const SpeedDialInfo & newInfo, bool s
     config->SetPath(newInfo.m_Name);
     config->Write(SpeedDialNumberKey, newInfo.m_Number);
     config->Write(SpeedDialAddressKey, newInfo.m_Address);
+#if OPAL_HAS_PRESENCE
     config->Write(SpeedDialPresentityKey, newInfo.m_Presentity);
+#endif
     config->Write(SpeedDialDescriptionKey, newInfo.m_Description);
     config->Flush();
   }
@@ -2289,7 +2318,9 @@ bool MyManager::UpdateSpeedDial(int index, const SpeedDialInfo & newInfo, bool s
     m_speedDials->SetItem(index, e_NumberColumn, newInfo.m_Number);
     m_speedDials->SetItem(index, e_StatusColumn, IconStatusNames[Icon_Unknown]);
     m_speedDials->SetItem(index, e_AddressColumn, newInfo.m_Address);
+#if OPAL_HAS_PRESENCE
     m_speedDials->SetItem(index, e_PresentityColumn, newInfo.m_Presentity);
+#endif
     m_speedDials->SetItem(index, e_DescriptionColumn, newInfo.m_Description);
   }
 
@@ -3579,6 +3610,7 @@ void MyManager::ReplaceRegistrations(const RegistrationList & newRegistrations)
 #endif // OPAL_SIP
 
 
+#if OPAL_HAS_PRESENCE
 bool MyManager::MonitorPresence(const PString & aor, const PString & uri, bool start)
 {
   if (aor.IsEmpty() || uri.IsEmpty())
@@ -3669,6 +3701,7 @@ void MyManager::OnPresenceChange(OpalPresentity &, std::auto_ptr<OpalPresenceInf
     }
   }
 }
+#endif // OPAL_HAS_PRESENCE
 
 
 bool MyManager::AdjustVideoFormats()
@@ -4182,6 +4215,7 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   // Fax fields
   EVT_BUTTON(XRCID("FaxBrowseReceiveDirectory"), OptionsDialog::BrowseFaxDirectory)
 
+#if OPAL_HAS_PRESENCE
   ////////////////////////////////////////
   // Presence fields
   EVT_BUTTON(XRCID("AddPresentity"), OptionsDialog::AddPresentity)
@@ -4190,6 +4224,7 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_LIST_ITEM_DESELECTED(XRCID("Presentities"), OptionsDialog::DeselectedPresentity)
   EVT_LIST_END_LABEL_EDIT(XRCID("Presentities"), OptionsDialog::EditedPresentity)
   EVT_GRID_CMD_CELL_CHANGE(XRCID("PresentityAttributes"), OptionsDialog::ChangedPresentityAttribute)
+#endif // OPAL_HAS_PRESENCE
 
   ////////////////////////////////////////
   // Codec fields
@@ -4583,6 +4618,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   ////////////////////////////////////////
   // Presence fields
 
+#if OPAL_HAS_PRESENCE
   m_Presentities = FindWindowByNameAs<wxListCtrl>(this, wxT("Presentities"));
   m_Presentities->InsertColumn(0, _T("Address"));
   PStringArray presentities = m_manager.GetPresentities();
@@ -4604,6 +4640,9 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_PresentityAttributes->SetColLabelSize(wxGRID_AUTOSIZE);
   m_PresentityAttributes->AutoSizeColLabelSize(0);
   m_PresentityAttributes->SetRowLabelAlignment(wxALIGN_LEFT, wxALIGN_TOP);
+#else
+  RemoveNotebookPage(this, wxT("Presence"));
+#endif // OPAL_HAS_PRESENCE
 
   ////////////////////////////////////////
   // Codec fields
@@ -4833,8 +4872,10 @@ OptionsDialog::~OptionsDialog()
   StopTestVideo();
 
   long i;
+#if OPAL_HAS_PRESENCE
   for (i = 0; i < m_Presentities->GetItemCount(); ++i)
     delete (OpalPresentity *)m_Presentities->GetItemData(i);
+#endif
   for (i = 0; i < m_Registrations->GetItemCount(); ++i)
     delete (RegistrationInfo *)m_Registrations->GetItemData(i);
 }
@@ -5056,6 +5097,7 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(FaxAutoAnswerMode, m_manager.m_defaultAnswerMode = (MyManager::FaxAnswerModes));
 #endif
 
+#if OPAL_HAS_PRESENCE
   ////////////////////////////////////////
   // Presence fields
   PStringList activePresentities = m_manager.GetPresentities();
@@ -5098,6 +5140,7 @@ bool OptionsDialog::TransferDataFromWindow()
   }
   for (PStringList::iterator it = activePresentities.begin(); it != activePresentities.end(); ++it)
     m_manager.RemovePresentity(*it);
+#endif // OPAL_HAS_PRESENCE
 
   ////////////////////////////////////////
   // Codec fields
@@ -5738,6 +5781,8 @@ void OptionsDialog::BrowseFaxDirectory(wxCommandEvent & /*event*/)
 ////////////////////////////////////////
 // Presence fields
 
+#if OPAL_HAS_PRESENCE
+
 static const wxChar NewPresenceStr[] = wxT("<new presence>");
 
 void OptionsDialog::AddPresentity(wxCommandEvent & /*event*/)
@@ -5867,6 +5912,8 @@ void OptionsDialog::ChangedPresentityAttribute(wxGridEvent & evt)
   else if (presentity->GetAttributes().Has(name))
     presentity->GetAttributes().RemoveAt(name);
 }
+
+#endif // OPAL_HAS_PRESENCE
 
 
 ////////////////////////////////////////
@@ -6456,6 +6503,8 @@ void OptionsDialog::BrowseTraceFile(wxCommandEvent & /*event*/)
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#if OPAL_HAS_PRESENCE
+
 BEGIN_EVENT_TABLE(PresenceDialog, wxDialog)
 END_EVENT_TABLE()
 
@@ -6520,6 +6569,8 @@ bool PresenceDialog::TransferDataFromWindow()
 
   return true;
 }
+
+#endif // OPAL_HAS_PRESENCE
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -6991,11 +7042,13 @@ CallIMDialog::CallIMDialog(MyManager * manager)
     } while (config->GetNextEntry(entryName, entryIndex));
   }
 
+#if OPAL_HAS_PRESENCE
   PStringList presentities = manager->GetPresentities();
   wxChoice * choice = FindWindowByNameAs<wxChoice>(this, wxT("Presentity"));
   for (PStringList::iterator it = presentities.begin(); it != presentities.end(); ++it)
     choice->Append(PwxString(*it));
   choice->SetValidator(wxGenericValidator(&m_Presentity));
+#endif // OPAL_HAS_PRESENCE
 }
 
 
@@ -7821,12 +7874,17 @@ SpeedDialDialog::SpeedDialDialog(MyManager * manager, const SpeedDialInfo & info
   m_addressCtrl = FindWindowByNameAs<wxTextCtrl>(this, wxT("SpeedDialAddress"));
   m_addressCtrl->SetValidator(wxGenericValidator(&m_Address));
 
+#if OPAL_HAS_PRESENCE
   wxChoice * choice = FindWindowByNameAs<wxChoice>(this, wxT("SpeedDialStateURL"));
   choice->SetValidator(wxGenericValidator(&m_Presentity));
   choice->Append(wxString());
+
   PStringList presentities = manager->GetPresentities();
   for (PStringList::iterator it = presentities.begin(); it != presentities.end(); ++it)
     choice->Append(PwxString(*it));
+#else
+  FindWindowByName(wxT("SpeedDialStateURL"))->Hide();
+#endif // OPAL_HAS_PRESENCE
 
   FindWindowByName(wxT("SpeedDialDescription"))->SetValidator(wxGenericValidator(&m_Description));
 
