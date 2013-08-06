@@ -399,13 +399,13 @@ bool AudioThread::Initialise(PArgList & args)
 
   cout << "Audio media format set to " << mediaFormat << endl;
 
+  unsigned channels = rawFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption());
+  unsigned sampleRate = rawFormat.GetClockRate();
+
   // Audio recorder
   PString driverName = args.GetOptionString("record-driver");
   PString deviceName = args.GetOptionString("record-device");
-  m_recorder = PSoundChannel::CreateOpenedChannel(driverName, deviceName,
-                                                  PSoundChannel::Recorder,
-                                                  rawFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption()),
-                                                  rawFormat.GetClockRate());
+  m_recorder = PSoundChannel::CreateOpenedChannel(driverName, deviceName, PSoundChannel::Recorder, channels, sampleRate);
   if (m_recorder == NULL) {
     cerr << "Cannot use ";
     if (driverName.IsEmpty() && deviceName.IsEmpty())
@@ -441,10 +441,7 @@ bool AudioThread::Initialise(PArgList & args)
   // Audio player
   driverName = args.GetOptionString("play-driver");
   deviceName = args.GetOptionString("play-device");
-  m_player = PSoundChannel::CreateOpenedChannel(driverName, deviceName,
-                                                PSoundChannel::Player,
-                                                rawFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption()),
-                                                rawFormat.GetClockRate());
+  m_player = PSoundChannel::CreateOpenedChannel(driverName, deviceName, PSoundChannel::Player, channels, sampleRate);
   if (m_player == NULL) {
     cerr << "Cannot use ";
     if (driverName.IsEmpty() && deviceName.IsEmpty())
