@@ -1282,6 +1282,13 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 OpalTransportAddress SIPConnection::GetDefaultSDPConnectAddress(WORD port) const
 {
   PIPSocket::Address localIP(GetInterface());
+
+  if (m_lastReceivedINVITE != NULL) {
+    OpalTransportPtr transport = m_lastReceivedINVITE->GetTransport();
+    if (transport != NULL)
+      transport->GetLocalAddress().GetIpAddress(localIP);
+  }
+
   if (localIP.IsValid())
     return OpalTransportAddress(localIP, port, m_dialog.GetRequestURI().GetTransportProto());
 
