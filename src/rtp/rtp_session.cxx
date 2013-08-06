@@ -1718,15 +1718,15 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
         }
         else if (natMethod->GetSocketPairAsync(m_connection.GetToken(), m_dataSocket, m_controlSocket, bindingAddress, natInfo)) {
           PTRACE(4, "RTP\tSession " << m_sessionId << ", " << natMethod->GetName() << " created STUN RTP/RTCP socket pair.");
-          m_dataSocket->GetLocalAddress(bindingAddress, m_localDataPort);
-          m_controlSocket->GetLocalAddress(bindingAddress, m_localControlPort);
+          m_dataSocket->GetLocalAddress(m_localAddress, m_localDataPort);
+          m_controlSocket->GetLocalAddress(m_localAddress, m_localControlPort);
         }
         else {
           PTRACE(2, "RTP\tSession " << m_sessionId << ", " << natMethod->GetName()
                   << " could not create STUN RTP/RTCP socket pair; trying to create individual sockets.");
           if (natMethod->CreateSocket(m_dataSocket, bindingAddress) && natMethod->CreateSocket(m_controlSocket, bindingAddress)) {
-            m_dataSocket->GetLocalAddress(bindingAddress, m_localDataPort);
-            m_controlSocket->GetLocalAddress(bindingAddress, m_localControlPort);
+            m_dataSocket->GetLocalAddress(m_localAddress, m_localDataPort);
+            m_controlSocket->GetLocalAddress(m_localAddress, m_localControlPort);
           }
           else {
             delete m_dataSocket;
@@ -1746,7 +1746,7 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
             talk to the real RTP destination. All we can so is bind to the
             local interface the NAT is on and hope the NAT router is doing
             something sneaky like symmetric port forwarding. */
-        natMethod->GetInterfaceAddress(bindingAddress);
+        natMethod->GetInterfaceAddress(m_localAddress);
         break;
     }
   }
@@ -1811,7 +1811,6 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
   if (m_canonicalName.Find('@') == P_MAX_INDEX)
     m_canonicalName += '@' + GetLocalHostName();
 
-  m_dataSocket->GetLocalAddress(m_localAddress);
   manager.TranslateIPAddress(m_localAddress, m_remoteAddress);
 
   PTRACE(3, "RTP_UDP\tSession " << m_sessionId << " opened: "

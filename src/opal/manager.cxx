@@ -2267,9 +2267,9 @@ bool OpalManager::Message(OpalIM & message)
 }
 
 
+#if OPAL_HAS_PRESENCE
 void OpalManager::OnMessageReceived(const OpalIM & message)
 {
-#if OPAL_HAS_PRESENCE
   // find a presentity to give the message to
   for (PSafePtr<OpalPresentity> presentity(m_presentities, PSafeReference); presentity != NULL; ++presentity) {
     if (message.m_to == presentity->GetAOR()) {
@@ -2277,8 +2277,12 @@ void OpalManager::OnMessageReceived(const OpalIM & message)
       break;
     }
   }
-#endif // OPAL_HAS_PRESENCE
 }
+#else
+void OpalManager::OnMessageReceived(const OpalIM &)
+{
+}
+#endif // OPAL_HAS_PRESENCE
 
 
 void OpalManager::OnMessageDisposition(const OpalIMContext::DispositionInfo & )

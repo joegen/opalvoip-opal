@@ -153,6 +153,7 @@ class MyFaxEndPoint : public OpalFaxEndPoint
 #endif // OPAL_FAX
 
 
+#if OPAL_HAS_PRESENCE
 class PresenceDialog : public wxDialog
 {
   public:
@@ -167,6 +168,7 @@ class PresenceDialog : public wxDialog
 
     DECLARE_EVENT_TABLE()
 };
+#endif // OPAL_HAS_PRESENCE
 
 
 class AudioDevicesDialog : public wxDialog
@@ -476,7 +478,9 @@ struct SpeedDialInfo
   PwxString m_Name;
   PwxString m_Number;
   PwxString m_Address;
+#if OPAL_HAS_PRESENCE
   PwxString m_Presentity;
+#endif
   PwxString m_Description;
 
   bool operator<(const SpeedDialInfo & info) const { return m_Name < info.m_Name; }
@@ -715,6 +719,7 @@ class OptionsDialog : public wxDialog
     int       m_VideoRecordingMode;
     PwxString m_VideoRecordingSize;
 
+#if OPAL_HAS_PRESENCE
     ////////////////////////////////////////
     // Presence fields
     wxListCtrl * m_Presentities;
@@ -728,6 +733,7 @@ class OptionsDialog : public wxDialog
     void EditedPresentity(wxListEvent & /*event*/);
     bool FillPresentityAttributes(OpalPresentity * presentity);
     void ChangedPresentityAttribute(wxGridEvent & /*event*/);
+#endif // OPAL_HAS_PRESENCE
 
     ////////////////////////////////////////
     // Codec fields
@@ -1086,12 +1092,14 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     void OnSpeedDialRightClick(wxListEvent & /*event*/);
     void OnSpeedDialEndEdit(wxListEvent & /*event*/);
 
+#if OPAL_HAS_PRESENCE
     void OnMyPresence(wxCommandEvent & /*event*/);
 #if OPAL_HAS_IM
     void OnStartIM(wxCommandEvent & /*event*/);
     void OnInCallIM(wxCommandEvent & /*event*/);
     void OnSendIMSpeedDial(wxCommandEvent & /*event*/);
 #endif // OPAL_HAS_IM
+#endif // OPAL_HAS_PRESENCE
 
     void OnEvtRinging(wxCommandEvent & /*event*/ theEvent);
     void OnEvtEstablished(wxCommandEvent & /*event*/ theEvent);
@@ -1100,7 +1108,9 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     void OnSetTrayTipText(wxCommandEvent & /*event*/);
 
     bool CanDoFax() const;
+#if OPAL_HAS_PRESENCE && OPAL_HAS_IM
     bool CanDoIM() const;
+#endif
 
     enum SpeedDialViews {
       e_ViewLarge,
@@ -1290,9 +1300,11 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     PwxString                  m_lastRecordFile;
     PwxString                  m_lastPlayFile;
 
+#if OPAL_HAS_PRESENCE
     // Presence
     bool MonitorPresence(const PString & presentity, const PString & uri, bool start);
     PDECLARE_ASYNC_PresenceChangeNotifier(MyManager, OnPresenceChange);
+#endif
 
 #if OPAL_HAS_IM
     // Instant messaging
