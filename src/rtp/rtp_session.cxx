@@ -609,7 +609,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
            << " ts=" << frameTimestamp
            << " src=" << frame.GetSyncSource()
            << " ccnt=" << frame.GetContribSrcCount()
-           << ' ' << GetRemoteAddress());
+           << " rem=" << GetRemoteAddress()
+           << " local=" << GetLocalAddress());
   }
 
   else {
@@ -1708,7 +1709,7 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
 
         if (m_singlePort) {
           if (natMethod->CreateSocket(m_dataSocket, bindingAddress))
-            m_dataSocket->GetLocalAddress(bindingAddress, m_localDataPort);
+            m_dataSocket->GetLocalAddress(m_localAddress, m_localDataPort);
           else {
             delete m_dataSocket;
             m_dataSocket = NULL;
