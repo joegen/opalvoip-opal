@@ -954,21 +954,23 @@ bool OpalTransport::SetInterface(const PString &)
 
 PBoolean OpalTransport::Close()
 {
-  PTRACE(4, "Opal\tTransport Close");
+  if (!IsOpen())
+    return true;
 
   /* Do not use PIndirectChannel::Close() as this deletes the sub-channel
      member field crashing the background thread. Just close the base
      sub-channel so breaks the threads I/O block.
    */
-  if (IsOpen())
-    return m_channel->Close();
-
-  return true;
+  PTRACE(4, "Opal\tTransport Close");
+  return m_channel->Close();
 }
 
 
 void OpalTransport::CloseWait()
 {
+  if (!IsOpen())
+    return;
+
   PTRACE(3, "Opal\tTransport clean up on termination");
 
   Close();

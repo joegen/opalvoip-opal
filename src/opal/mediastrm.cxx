@@ -1021,8 +1021,11 @@ PBoolean OpalRawMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDE
     PTRACE(6, "Media\tPlaying silence " << length << " bytes");
   }
 
-  if (!m_channel->Write(buffer, length))
+  if (!m_channel->Write(buffer, length)) {
+    PTRACE_IF(2, m_channel->GetErrorCode(PChannel::LastWriteError) != PChannel::NotOpen,
+              "Media\tChannel write error: " << m_channel->GetErrorText(PChannel::LastWriteError));
     return false;
+  }
 
   written = m_channel->GetLastWriteCount();
   CollectAverage(buffer, written);
