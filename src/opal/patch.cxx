@@ -452,8 +452,6 @@ OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s)
   , primaryCodec(NULL)
   , secondaryCodec(NULL)
   , writeSuccessful(true)
-  , m_lastPayloadType(RTP_DataFrame::IllegalPayloadType)
-  , m_consecutivePayloadTypeMismatches(0)
 #if OPAL_VIDEO
   , rateController(NULL)
 #endif
@@ -865,47 +863,6 @@ bool OpalMediaPatch::Sink::ExecuteCommand(const OpalMediaCommand & command)
 }
 
 
-bool OpalMediaPatch::Sink::CannotTranscodeFrame(OpalTranscoder & codec, RTP_DataFrame & frame)
-{
-  RTP_DataFrame::PayloadTypes pt = frame.GetPayloadType();
-
-  if (!codec.AcceptEmptyPayload() && frame.GetPayloadSize() == 0) {
-    frame.SetPayloadType(codec.GetPayloadType(false));
-    return true;
-  }
-
-  if (!codec.AcceptComfortNoise()) {
-    if (pt == RTP_DataFrame::CN || pt == RTP_DataFrame::Cisco_CN) {
-      PTRACE(4, "Patch\tRemoving comfort noise frame with payload type " << pt);
-      frame.SetPayloadSize(0);   // remove the payload because the transcoder has indicated it won't understand it
-      frame.SetPayloadType(codec.GetPayloadType(true));
-      return true;
-    }
-  }
-
-  if ((pt != codec.GetPayloadType(true)) && !codec.AcceptOtherPayloads()) {
-    if (pt != m_lastPayloadType) {
-      m_consecutivePayloadTypeMismatches = 0;
-      m_lastPayloadType = pt;
-    }
-    else if (++m_consecutivePayloadTypeMismatches > 10) {
-      PTRACE(2, "Patch\tConsecutive mismatched payload type, was expecting " 
-             << codec.GetPayloadType(true) << ", now using " << pt);
-      OpalMediaFormat fmt = codec.GetInputFormat();
-      fmt.SetPayloadType(pt);
-      codec.UpdateMediaFormats(fmt, OpalMediaFormat());
-      return false;
-    }
-    PTRACE(4, "Patch\tRemoving frame with mismatched payload type " << pt << " - should be " << codec.GetPayloadType(true));
-    frame.SetPayloadSize(0);   // remove the payload because the transcoder has indicated it won't understand it
-    frame.SetPayloadType(codec.GetPayloadType(true)); // Reset pt so if get silence frames from jitter buffer, they don't cause errors
-    return true;
-  }
-
-  return false;
-}
-
-
 #if OPAL_VIDEO
 void OpalMediaPatch::Sink::SetRateControlParameters(const OpalMediaFormat & mediaFormat)
 {
@@ -977,9 +934,6 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
   if (primaryCodec == NULL)
     return (writeSuccessful = stream->WritePacket(sourceFrame));
 
-  if (CannotTranscodeFrame(*primaryCodec, sourceFrame))
-    return (writeSuccessful = stream->WritePacket(sourceFrame));
-
   if (!primaryCodec->ConvertFrames(sourceFrame, intermediateFrames)) {
     PTRACE(1, "Patch\tMedia conversion (primary) failed");
     return false;
@@ -1015,12 +969,6 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
       if (primaryCodec == NULL)
         return true;
       primaryCodec->CopyTimestamp(sourceFrame, *interFrame, false);
-      continue;
-    }
-
-    if (CannotTranscodeFrame(*secondaryCodec, *interFrame)) {
-      if (!stream->WritePacket(*interFrame))
-        return (writeSuccessful = false);
       continue;
     }
 

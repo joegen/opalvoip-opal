@@ -268,10 +268,6 @@ class OpalMediaPatch : public PSafeObject
         RTP_DataFrameList  finalFrames;
         bool               writeSuccessful;
 
-        RTP_DataFrame::PayloadTypes m_lastPayloadType;
-        unsigned                    m_consecutivePayloadTypeMismatches;
-        bool CannotTranscodeFrame(OpalTranscoder & codec, RTP_DataFrame & frame);
-
 #if OPAL_VIDEO
         void SetRateControlParameters(const OpalMediaFormat & mediaFormat);
         bool RateControlExceeded(bool & forceIFrame);
