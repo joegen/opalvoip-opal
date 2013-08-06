@@ -40,6 +40,7 @@
 
 
 #define new PNEW
+#define PTraceModule() "Transcoder"
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -83,6 +84,8 @@ OpalTranscoder::OpalTranscoder(const OpalMediaFormat & inputMediaFormat,
   , acceptOtherPayloads(false)
   , m_inClockRate(inputMediaFormat.GetClockRate())
   , m_outClockRate(outputMediaFormat.GetClockRate())
+  , m_lastPayloadType(RTP_DataFrame::IllegalPayloadType)
+  , m_consecutivePayloadTypeMismatches(0)
 {
 }
 
@@ -124,7 +127,7 @@ void OpalTranscoder::NotifyCommand(const OpalMediaCommand & command) const
   if (commandNotifier != PNotifier())
     commandNotifier(const_cast<OpalMediaCommand &>(command), m_sessionID);
   else
-    PTRACE(4, "Opal\tNo command notifier available for transcoder " << this);
+    PTRACE(4, "No command notifier available for transcoder " << this);
 }
 
 
@@ -172,25 +175,47 @@ PBoolean OpalTranscoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
       output.RemoveTail();
   }
 
-  output.front().CopyHeader(input);
+  RTP_DataFrame & outframe = output.front();
+  outframe.SetPayloadSize(0);
+  outframe.CopyHeader(input);
 
   // set the output timestamp and marker bit
-  CopyTimestamp(output.front(), input, true);
+  CopyTimestamp(outframe, input, true);
 
   // set the output payload type directly from the output media format
   // and the input payload directly from the input media format
-  output.front().SetPayloadType(GetPayloadType(false));
+  outframe.SetPayloadType(GetPayloadType(false));
 
-  // do not transcode if no match
-  RTP_DataFrame::PayloadTypes packetPayloadType = input.GetPayloadType();
-  RTP_DataFrame::PayloadTypes formatPayloadType = inputMediaFormat.GetPayloadType();
-  if (formatPayloadType != RTP_DataFrame::MaxPayloadType && packetPayloadType != formatPayloadType && input.GetPayloadSize() > 0) {
-    PTRACE(2, "Opal\tExpected payload type " << formatPayloadType << ", but received " << packetPayloadType << ". Ignoring packet");
-    output.RemoveAll();
+  // Check for if we handle empty payload packets, if not just return empty payload packet
+  if (!AcceptEmptyPayload() && input.GetPayloadSize() == 0)
+    return true;
+
+  RTP_DataFrame::PayloadTypes pt = input.GetPayloadType();
+
+  // Check for if we can handle comfort noise, if not just return empty payload packet
+  if (!AcceptComfortNoise() && (pt == RTP_DataFrame::CN || pt == RTP_DataFrame::Cisco_CN)) {
+    PTRACE(5, "Removing comfort noise frame with payload type " << pt);
     return true;
   }
 
-  return Convert(input, output.front());
+  // Check if we can handle different payload types
+  if (AcceptOtherPayloads() || pt == GetPayloadType(true))
+    return Convert(input, outframe);
+
+  // If not see if we get a lot of consecutive ones
+  if (pt != m_lastPayloadType) {
+    m_consecutivePayloadTypeMismatches = 0;
+    m_lastPayloadType = pt;
+  }
+  else if (++m_consecutivePayloadTypeMismatches > 10) {
+    // OK, we give in, you are really sending this payload type. Hopefully the actual codec is right!
+    PTRACE(2, "Consecutive mismatched payload type, expected "  << GetPayloadType(true) << ", now using " << pt);
+    inputMediaFormat.SetPayloadType(pt);
+    return Convert(input, outframe);
+  }
+
+  PTRACE(4, "Removing frame with mismatched payload type " << pt << " - should be " << GetPayloadType(true));
+  return true;
 }
 
 
@@ -201,7 +226,7 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
 {
   OpalTranscoder * transcoder = OpalTranscoderFactory::CreateInstance(OpalTranscoderKey(srcFormat, destFormat));
   if (transcoder == NULL) {
-    PTRACE2(2, NULL, "Opal\tCould not create transcoder instance from " << srcFormat << " to " << destFormat);
+    PTRACE2(2, NULL, "Could not create transcoder instance from " << srcFormat << " to " << destFormat);
     return NULL;
   }
 
@@ -218,7 +243,7 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
   if (transcoder->UpdateMediaFormats(srcFormat, destFormat))
     return transcoder;
 
-  PTRACE2(2, transcoder, "Opal\tError creating transcoder instance from " << srcFormat << " to " << destFormat);
+  PTRACE2(2, transcoder, "Error creating transcoder instance from " << srcFormat << " to " << destFormat);
   delete transcoder;
   return NULL;
 }
@@ -291,11 +316,11 @@ static bool MergeFormats(const OpalMediaFormatList & masterFormats,
   OpalMediaFormatList::const_iterator masterFormat = masterFormats.FindFormat(srcCapability);
   if (masterFormat == masterFormats.end()) {
     srcFormat = srcCapability;
-    PTRACE(5, "Opal\tInitial source format from capabilities:\n" << setw(-1) << srcFormat);
+    PTRACE(5, "Initial source format from capabilities:\n" << setw(-1) << srcFormat);
   }
   else {
     srcFormat = *masterFormat;
-    PTRACE(5, "Opal\tInitial source format from master:\n" << setw(-1) << srcFormat
+    PTRACE(5, "Initial source format from master:\n" << setw(-1) << srcFormat
                             << "Merging with capability\n" << setw(-1) << srcCapability);
     if (!srcFormat.Update(srcCapability)) // This includes the PayloadType, a normal Merge does not.
       return false;
@@ -304,11 +329,11 @@ static bool MergeFormats(const OpalMediaFormatList & masterFormats,
   masterFormat = masterFormats.FindFormat(dstCapability);
   if (masterFormat == masterFormats.end()) {
     dstFormat = dstCapability;
-    PTRACE(5, "Opal\tInitial destination format from capabilities:\n" << setw(-1) << dstFormat);
+    PTRACE(5, "Initial destination format from capabilities:\n" << setw(-1) << dstFormat);
   }
   else {
     dstFormat = *masterFormat;
-    PTRACE(5, "Opal\tInitial destination format from master:\n" << setw(-1) << dstFormat
+    PTRACE(5, "Initial destination format from master:\n" << setw(-1) << dstFormat
                                  << "Merging with capability\n" << setw(-1) << dstCapability);
 
     if (!dstFormat.Update(dstCapability)) // This includes the PayloadType, a normal Merge does not.
@@ -490,20 +515,15 @@ void OpalFramedTranscoder::CalculateSizes()
                           :  inputMediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption(), 1);
   unsigned inFrameSize = inputMediaFormat.GetFrameSize();
   unsigned outFrameSize = outputMediaFormat.GetFrameSize();
-  unsigned inFrameTime = inputMediaFormat.GetFrameTime();
-  unsigned outFrameTime = outputMediaFormat.GetFrameTime();
+  unsigned inFrameTime = inputMediaFormat.GetFrameTime()*1000000/m_inClockRate;   // microseconds
+  unsigned outFrameTime = outputMediaFormat.GetFrameTime()*1000000/m_outClockRate; // microseconds
   unsigned leastCommonMultiple = inFrameTime*outFrameTime/GreatestCommonDivisor(inFrameTime, outFrameTime);
   inputBytesPerFrame = leastCommonMultiple/inFrameTime*inFrameSize*framesPerPacket*channels;
   outputBytesPerFrame = leastCommonMultiple/outFrameTime*outFrameSize*framesPerPacket*channels;
 
-  PINDEX inMaxTimePerFrame  = inputMediaFormat.GetOptionInteger(OpalAudioFormat::MaxFramesPerPacketOption()) * 
-                              inputMediaFormat.GetOptionInteger(OpalAudioFormat::FrameTimeOption());
-  PINDEX outMaxTimePerFrame = outputMediaFormat.GetOptionInteger(OpalAudioFormat::MaxFramesPerPacketOption()) * 
-                              outputMediaFormat.GetOptionInteger(OpalAudioFormat::FrameTimeOption());
-
-  PINDEX maxPacketTime = PMAX(inMaxTimePerFrame, outMaxTimePerFrame);
-
-  maxOutputDataSize = outputBytesPerFrame * (maxPacketTime / outputMediaFormat.GetOptionInteger(OpalAudioFormat::FrameTimeOption()));
+  unsigned inMaxTimePerFrame  = inFrameTime*inputMediaFormat.GetOptionInteger(OpalAudioFormat::MaxFramesPerPacketOption(), 1);
+  unsigned outMaxTimePerFrame = outFrameTime*outputMediaFormat.GetOptionInteger(OpalAudioFormat::MaxFramesPerPacketOption(), 1);
+  maxOutputDataSize = outputBytesPerFrame*std::max(inMaxTimePerFrame, outMaxTimePerFrame)/outFrameTime;
 }
 
 

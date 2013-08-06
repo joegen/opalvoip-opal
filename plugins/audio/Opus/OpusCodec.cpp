@@ -162,7 +162,7 @@ class OpusPluginMediaFormat : public PluginCodec_AudioFormat<MY_CODEC>
 
     OpusPluginMediaFormat(const char * formatName, const char * rawFormat, unsigned actualSampleRate, unsigned actualChannels)
       : PluginCodec_AudioFormat<MY_CODEC>(formatName, "OPUS", MyDescription,
-                                           actualSampleRate/50,
+                                           960,
                                            640*actualChannels*actualSampleRate/48000,
                                            48000, MyOptions)
       , m_actualSampleRate(actualSampleRate)
