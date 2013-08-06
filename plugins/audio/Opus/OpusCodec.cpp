@@ -81,9 +81,8 @@ static struct PluginCodec_Option const UseInBandFEC =
   "Use In-Band FEC",
   false,
   PluginCodec_AndMerge,
-  "1",
-  "useinbandfec",
-  "",
+  "0",
+  "useinbandfec"
 };
 
 static struct PluginCodec_Option const UseDTX =
@@ -93,13 +92,64 @@ static struct PluginCodec_Option const UseDTX =
   false,
   PluginCodec_AndMerge,
   "0",
-  "usedtx",
+  "usedtx"
+};
+
+static struct PluginCodec_Option const MaxPlaybackRate =
+{
+  PluginCodec_IntegerOption,
+  "Max Playback Rate",
+  true,
+  PluginCodec_NoMerge,
+  "48000",
+  "maxplaybackrate",
+  "",
+  0,
+  "6000",
+  "510000"
+};
+
+static struct PluginCodec_Option const MaxCaptureRate =
+{
+  PluginCodec_IntegerOption,
+  "Max Capture Rate",
+  true,
+  PluginCodec_NoMerge,
+  "48000",
+  "sprop-maxcapturerate",
+  "",
+  0,
+  "6000",
+  "510000"
+};
+
+static struct PluginCodec_Option const PlaybackStereo =
+{
+  PluginCodec_BoolOption,
+  "Playback Stereo",
+  true,
+  PluginCodec_NoMerge,
   "0",
+  "stereo"
+};
+
+static struct PluginCodec_Option const CaptureStereo =
+{
+  PluginCodec_BoolOption,
+  "Capture Stereo",
+  true,
+  PluginCodec_NoMerge,
+  "0",
+  "sprop-stereo"
 };
 
 static struct PluginCodec_Option const * const MyOptions[] = {
   &UseInBandFEC,
   &UseDTX,
+  &MaxPlaybackRate,
+  &MaxCaptureRate,
+  &PlaybackStereo,
+  &CaptureStereo,
   NULL
 };
 
@@ -119,9 +169,18 @@ class OpusPluginMediaFormat : public PluginCodec_AudioFormat<MY_CODEC>
       , m_actualChannels(actualChannels)
     {
       m_rawFormat = rawFormat;
-      m_recommendedFramesPerPacket = 2; // 40ms
+      m_recommendedFramesPerPacket = 1; // 20ms
       m_maxFramesPerPacket = 6; // 120ms
       m_flags |= PluginCodec_SetChannels(2) | PluginCodec_RTPTypeShared;
+    }
+
+
+    virtual bool ToCustomised(OptionMap &, OptionMap & changed)
+    {
+      Unsigned2String(m_actualSampleRate, changed[MaxPlaybackRate.m_name]);
+      changed[MaxCaptureRate.m_name] = changed[MaxPlaybackRate.m_name];
+      changed[PlaybackStereo.m_name] = changed[CaptureStereo.m_name] = m_actualChannels == 1 ? "0" : "1";
+      return true;
     }
 };
 
@@ -147,13 +206,16 @@ DEF_MEDIA_FORMAT(48,S);
 class OpusPluginCodec : public PluginCodec<MY_CODEC>
 {
   protected:
-    const OpusPluginMediaFormat * m_mediaFormat;
+    unsigned m_sampleRate;
+    unsigned m_channels;
 
   public:
     OpusPluginCodec(const PluginCodec_Definition * defn)
       : PluginCodec<MY_CODEC>(defn)
-      , m_mediaFormat(reinterpret_cast<const OpusPluginMediaFormat *>(m_definition->userData))
     {
+      const OpusPluginMediaFormat *mediaFormat = reinterpret_cast<const OpusPluginMediaFormat *>(m_definition->userData);
+      m_sampleRate = mediaFormat->m_actualSampleRate;
+      m_channels = mediaFormat->m_actualChannels;
     }
 };
 
@@ -176,7 +238,7 @@ class OpusPluginEncoder : public OpusPluginCodec
       , m_useDTX(false)
       , m_bitRate(12000)
     {
-      PTRACE(4, MY_CODEC_LOG, "Encoder created, version " << opus_get_version_string());
+      PTRACE(4, MY_CODEC_LOG, "Encoder created: $Revision$, libopus version " << opus_get_version_string());
     }
 
 
@@ -190,10 +252,7 @@ class OpusPluginEncoder : public OpusPluginCodec
     virtual bool Construct()
     {
       int error;
-      if ((m_encoder = opus_encoder_create(m_mediaFormat->m_actualSampleRate,
-                                           m_mediaFormat->m_actualChannels,
-                                           OPUS_APPLICATION_VOIP,
-                                           &error)) != NULL)
+      if ((m_encoder = opus_encoder_create(m_sampleRate, m_channels, OPUS_APPLICATION_VOIP, &error)) != NULL)
         return true;
 
       PTRACE(1, MY_CODEC_LOG, "Encoder create error " << error << ' ' << opus_strerror(error));
@@ -236,7 +295,7 @@ class OpusPluginEncoder : public OpusPluginCodec
                              unsigned & flags)
     {
       opus_int32 result = opus_encode(m_encoder,
-                                      (const opus_int16 *)fromPtr, fromLen/2,
+                                      (const opus_int16 *)fromPtr, fromLen/m_channels/2,
                                       (unsigned char *)toPtr, toLen);
       if (result < 0) {
         PTRACE(1, MY_CODEC_LOG, "Encoder error " << result << ' ' << opus_strerror(result));
@@ -244,7 +303,7 @@ class OpusPluginEncoder : public OpusPluginCodec
       }
 
       toLen = result;
-      fromLen = opus_packet_get_nb_samples((const unsigned char *)toPtr, toLen, m_mediaFormat->m_actualSampleRate)*2;
+      fromLen = opus_packet_get_nb_samples((const unsigned char *)toPtr, toLen, m_sampleRate)*m_channels*2;
       return true;
     }
 };
@@ -262,7 +321,7 @@ class OpusPluginDecoder : public OpusPluginCodec
       : OpusPluginCodec(defn)
       , m_decoder(NULL)
     {
-      PTRACE(4, MY_CODEC_LOG, "Decoder created, version " << opus_get_version_string());
+      PTRACE(4, MY_CODEC_LOG, "Decoder created: $Revision$, libopus, version " << opus_get_version_string());
     }
 
 
@@ -276,9 +335,7 @@ class OpusPluginDecoder : public OpusPluginCodec
     virtual bool Construct()
     {
       int error;
-      if ((m_decoder = opus_decoder_create(m_mediaFormat->m_actualSampleRate,
-                                           m_mediaFormat->m_actualChannels,
-                                           &error)) != NULL)
+      if ((m_decoder = opus_decoder_create(m_sampleRate, m_channels, &error)) != NULL)
         return true;
 
       PTRACE(1, MY_CODEC_LOG, "Decoder create error " << error << ' ' << opus_strerror(error));
@@ -298,7 +355,7 @@ class OpusPluginDecoder : public OpusPluginCodec
         return false;
       }
 
-      if (samples*2 > (int)toLen) {
+      if (samples*m_channels*2 > (int)toLen) {
         PTRACE(1, MY_CODEC_LOG, "Provided sample buffer too small, " << toLen << " bytes");
         return false;
       }
@@ -311,7 +368,7 @@ class OpusPluginDecoder : public OpusPluginCodec
         return false;
       }
 
-      toLen = result*2;
+      toLen = result*m_channels*2;
       return true;
     }
 };
