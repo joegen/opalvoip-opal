@@ -1759,6 +1759,8 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
       }
       m_localControlPort = (WORD)(m_localDataPort + 1);
     }
+
+    m_localAddress = bindingAddress;
   }
 
   PTRACE_CONTEXT_ID_TO(m_dataSocket);
