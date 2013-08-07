@@ -754,7 +754,8 @@ bool SIPEndPoint::OnReceivedConnectionlessPDU(SIP_PDU * pdu)
     if (transaction != NULL) {
       PTRACE(4, "SIP\tRetransmitting previous response for transaction id=" << id);
       transaction->InitialiseHeaders(*pdu);
-      return transaction->Send();
+      transaction->Send();
+      return false;
     }
   }
 
