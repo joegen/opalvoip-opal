@@ -76,6 +76,7 @@ OpalIMContext::OpalIMContext()
   , m_weStartedCall(false)
   , m_currentOutgoingMessage(NULL)
 { 
+  PTRACE_CONTEXT_ID_NEW();
   m_conversationId = OpalGloballyUniqueID().AsString();
   PTRACE(5, "OpalIM\tContext '" << m_conversationId << "' created");
 }
@@ -608,6 +609,7 @@ OpalIMContext::MessageDisposition
                                                PString & errorInfo)
 {
   PSafePtr<OpalIMContext> context = FindContextForMessageWithLock(message, connection);
+  PTRACE_CONTEXT_ID_PUSH_THREAD(context);
 
   // if context found, add message to it
   if (context == NULL) {
