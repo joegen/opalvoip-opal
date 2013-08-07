@@ -641,6 +641,18 @@ bool SIPEndPoint::OnReceivedPDU(SIP_PDU * pdu)
     return false;
   }
 
+  // Check if we have already received this request (have a transaction in play)
+  {
+    PString id = pdu->GetTransactionID();
+    PSafePtr<SIPResponse> transaction = PSafePtrCast<SIPTransaction, SIPResponse>(GetTransaction(id, PSafeReadOnly));
+    if (transaction != NULL) {
+      PTRACE(4, "SIP\tRetransmitting previous response for transaction id=" << id);
+      transaction->InitialiseHeaders(*pdu);
+      transaction->Send();
+      return false;
+    }
+  }
+
   const SIPMIMEInfo & mime = pdu->GetMIME();
 
   /* Get tokens to determine the connection to operate on, not as easy as it
@@ -736,18 +748,6 @@ bool SIPEndPoint::OnReceivedPDU(SIP_PDU * pdu)
   if (hasToConnection || hasFromConnection) {
     new SIP_PDU_Work(*this, hasToConnection ? toToken : fromToken, pdu);
     return true;
-  }
-
-  // Check if we have already received this non-connection request (have a transaction)
-  {
-    PString id = pdu->GetTransactionID();
-    PSafePtr<SIPResponse> transaction = PSafePtrCast<SIPTransaction, SIPResponse>(GetTransaction(id, PSafeReadOnly));
-    if (transaction != NULL) {
-      PTRACE(4, "SIP\tRetransmitting previous response for transaction id=" << id);
-      transaction->InitialiseHeaders(*pdu);
-      transaction->Send();
-      return false;
-    }
   }
 
   PSafePtr<SIPHandler> handler = FindHandlerByPDU(*pdu, PSafeReference);
