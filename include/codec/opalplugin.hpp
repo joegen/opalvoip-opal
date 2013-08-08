@@ -79,9 +79,11 @@
   #define PLUGINCODEC_CONTROL_LOG_FUNCTION_INC
 #endif
 
-#if defined(PTRACE2)
-  #undef  PTRACE
-  #define PTRACE(level, section, expr) PTRACE2(level, PTraceObjectInstance(), section << '\t' << expr)
+#if defined(PTRACE)
+  #if defined(PTRACE2)
+    #undef  PTRACE
+    #define PTRACE(level, section, expr) PTRACE2(level, PTraceObjectInstance(), section << '\t' << expr)
+  #endif
 #else
   #if PLUGINCODEC_TRACING
     #include <sstream>
