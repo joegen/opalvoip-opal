@@ -12005,6 +12005,7 @@ echo "                        IMA_ADPCM :  ${HAVE_IMA_ADPCM}"
 echo "                              SBC :  ${HAVE_SBC}"
 echo "                             CELT :  ${HAVE_CELT}"
 echo "                             SILK :  ${HAVE_SILK}"
+echo "                             Opus :  ${HAVE_OPUS}"
 
 echo ""
 
