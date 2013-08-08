@@ -27,7 +27,7 @@
  */
 
 #ifndef PLUGIN_CODEC_DLL_EXPORTS
-#include "plugin_config.h"
+#include "plugin-config.h"
 #endif
 
 #include <codec/opalplugin.hpp>
