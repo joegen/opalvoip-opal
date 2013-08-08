@@ -90,6 +90,7 @@ class OpalPluginCodecHandler : public PObject
                                                                   unsigned frameTime,
                                                                   unsigned timeUnits,
                                                                     time_t timeStamp);
+    virtual void RegisterAudioTranscoder(const PString & src, const PString & dst, const PluginCodec_Definition * codec, bool isEnc);
 
 #if OPAL_VIDEO
     virtual OpalMediaFormatInternal * OnCreateVideoFormat(OpalPluginCodecManager & mgr,
@@ -97,10 +98,10 @@ class OpalPluginCodecHandler : public PObject
                                                               const char * fmtName,
                                                               const char * rtpEncodingName,
                                                                     time_t timeStamp);
-    virtual void RegisterVideoTranscoder(const PString & src, const PString & dst, const PluginCodec_Definition * codec, bool v);
+    virtual void RegisterVideoTranscoder(const PString & src, const PString & dst, const PluginCodec_Definition * codec, bool isEnc);
 #endif
 
-#if OPAL_T38_CAPABILITY
+#if OPAL_FAX
     virtual OpalMediaFormatInternal * OnCreateFaxFormat(OpalPluginCodecManager & mgr,
                                           const PluginCodec_Definition * codecDefn,
                                                             const char * fmtName,
@@ -108,6 +109,7 @@ class OpalPluginCodecHandler : public PObject
                                                                 unsigned frameTime,
                                                                 unsigned timeUnits,
                                                                   time_t timeStamp);
+    virtual void RegisterFaxTranscoder(const PString & src, const PString & dst, const PluginCodec_Definition * codec, bool isEnc);
 #endif
 };
 
@@ -127,6 +129,7 @@ class OpalPluginCodecManager : public PPluginModuleManager
 
     void OnLoadPlugin(PDynaLink & dll, INT code);
 
+    virtual void OnStartup();
     virtual void OnShutdown();
 
 #if OPAL_H323
@@ -145,7 +148,13 @@ class OpalPluginCodecManager : public PPluginModuleManager
     void RegisterCodecPlugins  (unsigned int count, const PluginCodec_Definition * codecList, OpalPluginCodecHandler * handler);
     void UnregisterCodecPlugins(unsigned int count, const PluginCodec_Definition * codecList, OpalPluginCodecHandler * handler);
 
-    bool AddMediaFormat(OpalPluginCodecHandler * handler, const PTime & timeNow, const PluginCodec_Definition * codecDefn, const char * fmtName);
+    bool AddMediaFormat(
+      OpalPluginCodecHandler * handler,
+      const PTime & timeNow,
+      const PluginCodec_Definition * codecDefn,
+      const char * fmtName,
+      OpalMediaFormat & mediaFormat
+    );
 #if OPAL_H323
     void RegisterCapability(const PluginCodec_Definition * codecDefn);
 #endif
@@ -239,6 +248,7 @@ class OpalPluginTranscoder
     OpalPluginControl getActiveOptionsControl;
     OpalPluginControl freeOptionsControl;
     OpalPluginControl getOutputDataSizeControl;
+    OpalPluginControl getCodecStatistics;
 };
 
 
@@ -268,7 +278,7 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder, public Opal
 {
   PCLASSINFO(OpalPluginFramedAudioTranscoder, OpalFramedTranscoder);
   public:
-    OpalPluginFramedAudioTranscoder(const PluginCodec_Definition * codecDefn, bool isEncoder);
+    OpalPluginFramedAudioTranscoder(const OpalTranscoderKey & key, const PluginCodec_Definition * codecDefn, bool isEncoder);
     bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
     PBoolean ExecuteCommand(const OpalMediaCommand & command);
     PBoolean ConvertFrame(const BYTE * input, PINDEX & consumed, BYTE * output, PINDEX & created);
@@ -283,7 +293,7 @@ class OpalPluginStreamedAudioTranscoder : public OpalStreamedTranscoder, public 
 {
   PCLASSINFO(OpalPluginStreamedAudioTranscoder, OpalStreamedTranscoder);
   public:
-    OpalPluginStreamedAudioTranscoder(const PluginCodec_Definition * codec, bool isEncoder);
+    OpalPluginStreamedAudioTranscoder(const OpalTranscoderKey & key, const PluginCodec_Definition * codec, bool isEncoder);
     bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
     PBoolean ExecuteCommand(const OpalMediaCommand & command);
     virtual bool AcceptComfortNoise() const { return comfortNoise; }
@@ -317,8 +327,12 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
 {
   PCLASSINFO(OpalPluginVideoTranscoder, OpalVideoTranscoder);
   public:
-    OpalPluginVideoTranscoder(const PluginCodec_Definition * codec, bool isEncoder);
+    OpalPluginVideoTranscoder(const OpalTranscoderKey & key, const PluginCodec_Definition * codec, bool isEncoder);
     ~OpalPluginVideoTranscoder();
+
+#if OPAL_STATISTICS
+    virtual void GetStatistics(OpalMediaStatistics & statistics) const;
+#endif
 
     PBoolean ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
     bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
@@ -347,7 +361,7 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_T38_CAPABILITY
+#if OPAL_FAX
 
 class OpalPluginFaxFormatInternal : public OpalMediaFormatInternal, public OpalPluginMediaFormatInternal
 {
@@ -364,7 +378,7 @@ class OpalPluginFaxFormatInternal : public OpalMediaFormatInternal, public OpalP
     virtual bool IsValidForProtocol(const PString & protocol) const;
 };
 
-#endif // OPAL_T38_CAPABILITY
+#endif // OPAL_FAX
 
 
 //////////////////////////////////////////////////////
@@ -438,15 +452,23 @@ class OpalPluginTranscoderFactory : public OpalTranscoderFactory
     {
       public:
         Worker(const OpalTranscoderKey & key, const PluginCodec_Definition * codec, bool enc)
-          : OpalTranscoderFactory::WorkerBase(), codecDefn(codec), isEncoder(enc)
-        { OpalTranscoderFactory::Register(key, this); }
+          : OpalTranscoderFactory::WorkerBase()
+          , m_key(key)
+          , m_codecDefn(codec)
+          , m_isEncoder(enc)
+        {
+          OpalTranscoderFactory::Register(key, this);
+        }
 
       protected:
         virtual OpalTranscoder * Create(const OpalTranscoderKey &) const
-        { return new TranscoderClass(codecDefn, isEncoder); }
+        {
+          return new TranscoderClass(m_key, m_codecDefn, m_isEncoder);
+        }
 
-        const PluginCodec_Definition * codecDefn;
-        bool isEncoder;
+        OpalTranscoderKey              m_key;
+        const PluginCodec_Definition * m_codecDefn;
+        bool                           m_isEncoder;
     };
 };
 
