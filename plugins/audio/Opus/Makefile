@@ -44,9 +44,14 @@ LOCAL_LIBS := $(LIBOPUS_LIB)
 INSTALL_DIR = $(AUD_PLUGIN_DIR)
 include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
 
-$(PLUGIN_PATH): $(LIBOPUS_LIB)
 
-$(LIBOPUS_LIB):
+ifeq ($(OPUS_SYSTEM),no)
+
+  $(PLUGIN_PATH): $(LIBOPUS_LIB)
+
+  $(LIBOPUS_LIB):
 	$(MAKE) -C $(LIBOPUS_DIR)
+endif
+
 
 ###########################################
