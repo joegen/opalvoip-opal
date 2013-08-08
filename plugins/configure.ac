@@ -254,6 +254,9 @@ if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
            #include <inttypes.h>
          #endif
          #include <x264.h>
+         #if X264_BUILD < 102
+         #error x264 header too old
+         #endif
       ],
       [
          x264_param_t param;

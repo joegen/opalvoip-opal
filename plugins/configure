@@ -8695,6 +8695,9 @@ $as_echo_n "checking for VideoLan x264 H.264 video codec usability... " >&6; }
            #include <inttypes.h>
          #endif
          #include <x264.h>
+         #if X264_BUILD < 102
+         #error x264 header too old
+         #endif
 
 int
 main ()
