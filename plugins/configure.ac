@@ -395,6 +395,22 @@ if test "x${HAVE_SILK}" = "xyes" ; then
 fi
 
 
+dnl #########
+
+if test -d audio/Opus ; then
+  AC_ARG_ENABLE([opus],
+                [AC_HELP_STRING([--disable-opus],[Disable Opus codec])],
+                [HAVE_OPUS=$enableval],
+                [HAVE_OPUS=yes])
+else
+  HAVE_OPUS=no
+fi
+if test "x${HAVE_OPUS}" = "xyes" ; then
+  AC_CONFIG_FILES(audio/Opus/Makefile)
+  SUBDIRS+=" audio/Opus"
+fi
+
+
 dnl ########################################################################
 dnl Video Codecs
 dnl ########################################################################
@@ -783,6 +799,7 @@ echo "                        IMA_ADPCM :  ${HAVE_IMA_ADPCM}"
 echo "                              SBC :  ${HAVE_SBC}"
 echo "                             CELT :  ${HAVE_CELT}"
 echo "                             SILK :  ${HAVE_SILK}"
+echo "                             Opus :  ${HAVE_OPUS}"
 
 echo ""
 
