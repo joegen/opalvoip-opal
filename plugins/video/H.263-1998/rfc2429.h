@@ -23,7 +23,7 @@
 #ifndef __H263PFrame_H__
 #define __H263PFrame_H__ 1
 
-#include "h263-1998.h"
+#include "../common/ffmpeg.h"
 
 #include <vector>
 
@@ -34,23 +34,23 @@ class PluginCodec_RTP;
 typedef struct data_t
 {
   uint8_t* ptr;
-  uint32_t pos;
-  uint32_t len;
+  size_t pos;
+  size_t len;
 } data_t;
 
 typedef struct header_data_t
 {
   uint8_t  buf[255];
-  uint32_t len;
-  uint32_t pebits;
+  size_t len;
+  unsigned pebits;
 } header_data_t;
 
 class Bitstream
 {
 public:
   Bitstream ();
-  void SetBytes (uint8_t* data, uint32_t dataLen, uint8_t sbits, uint8_t ebits);
-  void GetBytes (uint8_t** data, uint32_t * dataLen);
+  void SetBytes (uint8_t* data, size_t dataLen, uint8_t sbits, uint8_t ebits);
+  void GetBytes (uint8_t** data, size_t * dataLen);
   uint32_t GetBits (uint32_t numBits);
   uint32_t PeekBits (uint32_t numBits);
   void PutBits(uint32_t posBits, uint32_t numBits, uint32_t value);
@@ -62,39 +62,29 @@ private:
   uint8_t m_ebits;
 };
 
-class RFC2429Frame : public Packetizer, public Depacketizer
+
+class RFC2429Frame : public FFMPEGCodec::EncodedFrame
 {
 public:
   RFC2429Frame();
-  ~RFC2429Frame();
 
-  virtual bool Reset(unsigned width, unsigned height);
+  virtual const char * GetName() const { return "RFC2429"; }
+
+  virtual bool Reset(size_t len = 0);
+
   virtual bool GetPacket(PluginCodec_RTP & frame, unsigned int & flags);
-  virtual BYTE * GetBuffer();
-  virtual size_t GetMaxSize();
-  virtual bool SetLength(size_t len);
+  virtual bool AddPacket(const PluginCodec_RTP & frame, unsigned int & flags);
 
-  virtual void NewFrame();
-  virtual bool AddPacket(const PluginCodec_RTP & frame);
-  virtual bool IsValid();
-  virtual bool IsIntraFrame();
-  virtual size_t GetLength() { return m_encodedFrame.len; }
-
-  void SetMaxPayloadSize (uint16_t maxPayloadSize) 
-  {
-    m_maxPayloadSize = maxPayloadSize;
-  }
+  virtual bool IsIntraFrame() const;
 
 private:
-  uint32_t parseHeader(uint8_t* headerPtr, uint32_t headerMaxLen);
+  size_t ParseHeader(uint8_t* headerPtr, size_t headerMaxLen);
 
-  uint16_t m_maxPayloadSize;
-  uint16_t m_minPayloadSize;
-  uint32_t m_maxFrameSize;
+  size_t   m_packetizationOffset;
+  size_t   m_minPayloadSize;
   bool     m_customClock;
-  data_t   m_encodedFrame;
   header_data_t m_picHeader;
-  std::vector<uint32_t> m_startCodes;
+  std::vector<size_t> m_startCodes;
 };
 
 #endif /* __H263PFrame_H__ */

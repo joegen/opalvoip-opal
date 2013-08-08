@@ -44,45 +44,110 @@
 #define __FFMPEG_H__ 1
 
 #include "platform.h"
+#include <codec/opalplugin.hpp>
 
 extern "C" {
-  #include LIBAVCODEC_HEADER
+  #include "libavcodec/avcodec.h"
+  #include "libavutil/mem.h"
 };
 
 #ifndef LIBAVCODEC_VERSION_INT
-#error Libavcodec include is not correct
+  #error Libavcodec include is not correct
 #endif
-
 
 // Compile time version checking
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(51,11,0)
-#error Libavcodec LIBAVCODEC_VERSION_INT too old.
+  #error Libavcodec LIBAVCODEC_VERSION_INT too old.
+#endif
+
+// AVPacket was declared in avformat.h before April 2009
+#if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52, 25, 0)
+  #include "libavformat/avformat.h"
 #endif
 
 
-#ifdef LIBAVCODEC_STACKALIGN_HACK
-/*
-* Some combination of gcc 3.3.5, glibc 2.3.5 and PWLib 1.11.3 is throwing
-* off stack alignment for ffmpeg when it is dynamically loaded by PWLib.
-* Wrapping all ffmpeg calls in this macro should ensure the stack is aligned
-* when it reaches ffmpeg. ffmpeg still needs to be compiled with a more
-* recent gcc (we used 4.1.1) to ensure it preserves stack boundaries
-* internally.
-*
-* This macro comes from FFTW 3.1.2, kernel/ifft.h. See:
-*     http://www.fftw.org/fftw3_doc/Stack-alignment-on-x86.html
-* Used with permission.
-*/
-#define WITH_ALIGNED_STACK(what)                               \
-{                                                              \
-    (void)__builtin_alloca(16);                                \
-     __asm__ __volatile__ ("andl $-16, %esp");                 \
-							       \
-    what						       \
-}
-#else
-#define WITH_ALIGNED_STACK(what) what
-#endif
+/////////////////////////////////////////////////////////////////
+
+class FFMPEGCodec
+{
+  public:
+    class EncodedFrame
+    {
+      protected:
+        size_t    m_length;
+        size_t    m_maxSize;
+        uint8_t * m_buffer;
+        size_t    m_maxPayloadSize;
+
+      public:
+        EncodedFrame();
+        virtual ~EncodedFrame();
+
+        virtual const char * GetName() const { return ""; }
+
+        uint8_t * GetBuffer() const { return m_buffer; }
+        size_t GetMaxSize() const { return m_maxSize; }
+        size_t GetLength() const { return m_length; }
+        void SetMaxPayloadSize(size_t size) { m_maxPayloadSize = size; }
+
+        virtual bool SetResolution(unsigned width, unsigned height);
+        virtual bool SetMaxSize(size_t newSize);
+        virtual bool Reset(size_t len = 0);
+
+        virtual bool GetPacket(PluginCodec_RTP & rtp, unsigned & flags) = 0;
+        virtual bool AddPacket(const PluginCodec_RTP & rtp, unsigned & flags) = 0;
+
+        virtual bool IsIntraFrame() const = 0;
+
+        virtual void RTPCallBack(void * data, int size, int mbCount);
+
+      protected:
+        virtual bool Append(const uint8_t * data, size_t len);
+    };
+
+  protected:
+    const char     * m_prefix;
+    AVCodec        * m_codec;
+    AVCodecContext * m_context;
+    AVFrame        * m_picture;
+    AVPacket         m_packet;
+    uint8_t        * m_alignedInputYUV;
+    size_t           m_alignedInputSize;
+    EncodedFrame   * m_fullFrame;
+    int              m_errorCount;
+
+  public:
+    FFMPEGCodec(const char * prefix, EncodedFrame * fullFrame);
+    ~FFMPEGCodec();
+
+    virtual bool InitEncoder(CodecID codecId);
+    virtual bool InitDecoder(CodecID codecId);
+
+    bool SetResolution(unsigned width, unsigned height);
+    void SetEncoderOptions(
+      unsigned frameTime,
+      unsigned maxBitRate,
+      unsigned maxRTPSize,
+      unsigned tsto,
+      unsigned keyFramePeriod
+    );
+
+    virtual bool OpenCodec();
+    virtual void CloseCodec();
+
+    virtual bool EncodeVideoPacket(const PluginCodec_RTP & in, PluginCodec_RTP & out, unsigned & flags);
+    virtual bool DecodeVideoPacket(const PluginCodec_RTP & in, unsigned & flags);
+
+    virtual int EncodeVideoFrame(uint8_t * frame, size_t length, unsigned & flags);
+    virtual bool DecodeVideoFrame(const uint8_t * frame, size_t length, unsigned & flags);
+
+    EncodedFrame * GetEncodedFrame() const { return m_fullFrame; }
+
+    virtual void ErrorCallback(unsigned level, const char * msg);
+
+  protected:
+    bool InitContext();
+};
 
 
 #endif // __FFMPEG_H__

@@ -42,7 +42,7 @@
   #define _CRT_NONSTDC_NO_DEPRECATE 1
   #define _CRT_SECURE_NO_WARNINGS 1
 
-  #include "inttypes.h"
+  #include "stdint.h"
 
   #include <windows.h>
   #undef min
@@ -57,21 +57,24 @@
   #define snprintf  _snprintf
   #define vsnprintf _vsnprintf
 
-  #define LIBAVCODEC_HEADER "libavcodec\avcodec.h"
-
   #pragma warning(disable:4101 4244 4996)
   #pragma pack(16)
 #elif defined(_WIN32)
-  #define LIBAVCODEC_HEADER "libavcodec/avcodec.h"
   #include "stdint.h"
 #else
   #include "plugin-config.h"
-  #include <stdint.h>
+
+  #if defined HAVE_STDINT_H
+    #include <stdint.h>
+  #elif defined HAVE_INTTYPES_H
+    #include <inttypes.h>
+  #endif
+
   #include <semaphore.h>
   #include <dlfcn.h>
 
   #define STRCMPI  strcasecmp
-  typedef unsigned char BYTE;
+  typedef uint8_t BYTE;
 
 #endif
 

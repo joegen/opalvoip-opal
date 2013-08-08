@@ -22,42 +22,46 @@
 #ifndef _RFC2190_H_
 #define _RFC2190_H_
 
-#include "h263-1998.h"
+#include "../common/ffmpeg.h"
 
-#include <vector>
 #include <list>
 
 
 class PluginCodec_RTP;
 
 
-class RFC2190Packetizer : public Packetizer
+class RFC2190EncodedFrame : public FFMPEGCodec::EncodedFrame
+{
+  public:
+    RFC2190EncodedFrame();
+    virtual const char * GetName() const { return "RFC2190"; }
+    virtual bool IsIntraFrame() const;
+  protected:
+    bool m_isIFrame;
+};
+
+
+class RFC2190Packetizer : public RFC2190EncodedFrame
 {
   public:
     RFC2190Packetizer();
-    ~RFC2190Packetizer();
 
-    bool Reset(unsigned width, unsigned height);
-    bool GetPacket(PluginCodec_RTP & outputFrame, unsigned int & flags);
-    unsigned char * GetBuffer() { return m_buffer; }
-    size_t GetMaxSize() { return m_bufferSize; }
-    bool SetLength(size_t len);
+    virtual bool Reset(size_t len = 0);
+    virtual bool SetResolution(unsigned width, unsigned height);
 
-    void RTPCallBack(void * data, int size, int mbCount);
+    virtual bool GetPacket(PluginCodec_RTP & rtp, unsigned & flags);
+    virtual bool AddPacket(const PluginCodec_RTP & rtp, unsigned & flags);
+
+    virtual void RTPCallBack(void * data, int size, int mbCount);
 
   private:
-    unsigned char * m_buffer;
-    size_t m_bufferSize;
-    size_t m_bufferLen;
-
     unsigned int TR;
-    unsigned int frameSize;
-    int iFrame;
+    size_t m_frameSize;
     int annexD, annexE, annexF, annexG, pQuant, cpm;
     int macroblocksPerGOB;
 
     struct fragment {
-      unsigned length;
+      size_t length;
       unsigned mbNum;
     };
 
@@ -67,28 +71,25 @@ class RFC2190Packetizer : public Packetizer
     unsigned char * fragPtr;
 
     unsigned m_currentMB;
-    unsigned m_currentBytes;
+    size_t m_currentBytes;
 };
 
-class RFC2190Depacketizer : public Depacketizer
+
+class RFC2190Depacketizer : public RFC2190EncodedFrame
 {
   public:
     RFC2190Depacketizer();
 
-    virtual void NewFrame();
-    virtual bool AddPacket(const PluginCodec_RTP & packet);
-    virtual bool IsValid();
-    virtual bool IsIntraFrame();
-    virtual BYTE * GetBuffer() { return &m_packet[0]; }
-    virtual size_t GetLength() { return m_packet.size(); }
+    virtual void Reset();
+    virtual bool GetPacket(PluginCodec_RTP & rtp, unsigned & flags);
+    virtual bool AddPacket(const PluginCodec_RTP & rtp, unsigned & flags);
 
   protected:
-    std::vector<BYTE> m_packet;
-    unsigned m_lastSequence;
+    bool LostSync(unsigned & flags);
+
     bool     m_first;
     bool     m_skipUntilEndOfFrame;
     unsigned m_lastEbit;
-    bool     m_isIFrame;
 };
 
 #endif // _RFC2190_H_
