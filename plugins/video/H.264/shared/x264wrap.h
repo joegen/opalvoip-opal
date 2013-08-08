@@ -32,7 +32,8 @@
 #ifndef OPAL_H264ENC_H
 #define OPAL_H264ENC_H 1
 
-#include "../common/platform.h"
+#include "../../common/platform.h"
+#include <string>
 
 
 #if X264_LICENSED || GPL_HELPER_APP
@@ -66,6 +67,8 @@ extern "C" {
 #define SET_MAX_KEY_FRAME_PERIOD  11
 #define SET_TSTO                  12
 #define SET_PROFILE_LEVEL         13
+#define SET_MAX_NALU_SIZE         14
+#define SET_RATE_CONTROL_PERIOD   15
 
 
 class H264Encoder
@@ -81,7 +84,9 @@ class H264Encoder
     bool SetFrameHeight(unsigned height);
     bool SetFrameRate(unsigned rate);
     bool SetTargetBitrate(unsigned rate);
+    bool SetRateControlPeriod(unsigned period);
     bool SetMaxRTPPayloadSize(unsigned size);
+    bool SetMaxNALUSize(unsigned size);
     bool SetTSTO(unsigned tsto);
     bool SetMaxKeyFramePeriod(unsigned period);
 
@@ -116,7 +121,13 @@ class H264Encoder
     bool m_loaded;
 
   #if WIN32
+    HANDLE m_hStandardError;
+    std::string m_errorOutput;
+    void CheckStandardError();
+
     HANDLE m_hNamedPipe;
+    HANDLE m_hEvent;
+    bool CheckCompleted(OVERLAPPED & overlapped, LPDWORD bytes = NULL);
   #else // WIN32
     char  m_dlName[100];
     char  m_ulName[100];

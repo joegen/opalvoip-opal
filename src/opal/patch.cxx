@@ -725,7 +725,7 @@ bool OpalMediaPatch::SetBypassPatch(const OpalMediaPatchPtr & patch)
     if (!PAssert(m_bypassToPatch->m_bypassFromPatch == this, PLogicError))
       return false;
 
-    m_bypassToPatch->m_bypassFromPatch = NULL;
+    m_bypassToPatch->m_bypassFromPatch.SetNULL();
     m_bypassToPatch->m_bypassEnded.Signal();
   }
 

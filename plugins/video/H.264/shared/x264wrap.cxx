@@ -34,6 +34,13 @@
 #include <codec/opalplugin.hpp>
 #include <stdio.h>
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#if defined(X264_LICENSED)
+  #pragma message("x264 licensed version")
+#endif
 
 #if defined(X264_LICENSED) || defined(GPL_HELPER_APP)
 
@@ -41,7 +48,7 @@
   static char const HelperTraceName[] = "x264-help";
 
   static void logCallbackX264(void * /*priv*/, int level, const char *fmt, va_list arg) {
-    int severity = 4;
+    unsigned severity = 4;
     switch (level) {
       case X264_LOG_NONE:    severity = 1; break;
       case X264_LOG_ERROR:   severity = 2; break;
@@ -64,19 +71,61 @@
 
 
 H264Encoder::H264Encoder()
+  : m_codec(NULL)
 {
   // Default
   x264_param_default_preset(&m_context, "veryfast", "fastdecode,zerolatency");
 
-  m_context.b_annexb = false;  // Do not do markers, we are RTP so don't need them
+  SetProfileLevel(66, 30, 0xc0);
 
-  // ABR with bit rate tolerance = 1 is CBR...
-  m_context.rc.i_rc_method = X264_RC_ABR;
-  m_context.rc.f_rate_tolerance = 1;
+  // default size, will likely get reset later
+  m_context.i_width = 352;
+  m_context.i_height = 288;
 
   // No aspect ratio correction
   m_context.vui.i_sar_width = 0;
   m_context.vui.i_sar_height = 0;
+
+  // default frame rate, will likely get reset later
+  m_context.i_fps_num = 15000;
+  m_context.i_fps_den = 1000;
+
+  // frames between key frames
+  m_context.i_keyint_max = 132;
+
+  // Auto detect number of CPUs
+  m_context.i_threads = 0;
+
+  // Do not do markers, we are RTP so don't need them
+  m_context.b_annexb = false;
+
+  /* As Jason said it keeps us from one frame encoding latency,
+     allowing to achieve zero frame latency on single core encoding. */
+  m_context.b_vfr_input = 0;
+
+  /* Compatibility with some Polycom and Tandberg codecs since those
+     two can't decode frames with long vectors going beyound this limit */
+  m_context.analyse.i_mv_range = 128;
+
+  // At least Polycom HDX 4000 is incompatible unless have this
+  m_context.i_frame_reference = 1;
+
+  /* Judging by Jason proud posts it's a kickass uber feature for
+     Telepresence, allow you to stay away from big periodic I-Frames.
+     Encoder always keep a wave of I-type macro blocks which refresh
+     picture and keeps more stable frame sizes on output. And if
+     picture is broken full I-frame introduced thanks to
+     videoFastUpdatePicture PDU. Probably */
+  m_context.b_intra_refresh = 1;
+
+  // Always good to put some noise reduction and this filter must be very fast.
+  m_context.analyse.i_noise_reduction = 1000;
+
+  // ABR with bit rate tolerance = 1 is CBR...
+  m_context.rc.i_rc_method = X264_RC_ABR;
+  m_context.rc.f_rate_tolerance = 1;
+  // 768kbps and 1 second rate control period
+  m_context.rc.i_vbv_buffer_size = m_context.rc.i_vbv_max_bitrate = m_context.rc.i_bitrate = 768;
 
 #if PLUGINCODEC_TRACING
   // Enable logging
@@ -84,20 +133,6 @@ H264Encoder::H264Encoder()
   m_context.i_log_level = X264_LOG_DEBUG;
   m_context.p_log_private = NULL;
 #endif
-
-  // Auto detect number of CPUs
-  m_context.i_threads = 0;  
-
-  SetProfileLevel(66, 30, 0xc0);
-  m_context.i_width = 352;
-  m_context.i_height = 288;
-  m_context.i_fps_num = 15000;
-  m_context.i_fps_den = 1000;
-  m_context.rc.i_vbv_max_bitrate = m_context.rc.i_bitrate = 768000;
-  m_context.rc.i_qp_min = 10;
-  m_context.rc.i_qp_max = 51;
-  m_context.rc.i_qp_step = 4;	    
-  m_context.i_keyint_max = 132;
 }
 
 
@@ -132,64 +167,17 @@ bool H264Encoder::SetProfileLevel(unsigned profile, unsigned level, unsigned /*c
     case 77 : // Main
       profileIndex = 1;
       break;
-    case 88 : // High
+    case 88 : // Extended
       profileIndex = 2;
+      break;
+
+    case 100 : // High
+      profileIndex = 3;
       break;
   }
   x264_param_apply_profile(&m_context, x264_profile_names[profileIndex]);
 
   m_context.i_level_idc = level;
-
-  switch (level) {
-    case 9 :
-    case 10 :
-      m_context.rc.i_vbv_buffer_size = 152064;
-      break;
-
-    case 11 :
-      m_context.rc.i_vbv_buffer_size = 345600;
-      break;
-
-    case 12 :
-    case 13 :
-    case 20 :
-      m_context.rc.i_vbv_buffer_size = 912384;
-      break;
-
-    case 21 :
-      m_context.rc.i_vbv_buffer_size = 1824768;
-      break;
-
-    case 22 :
-    case 30 :
-      m_context.rc.i_vbv_buffer_size = 3110400;
-      break;
-
-    case 31 :
-      m_context.rc.i_vbv_buffer_size = 6912000;
-      break;
-
-    case 32 :
-      m_context.rc.i_vbv_buffer_size = 7864320;
-      break;
-
-    case 40 :
-    case 41 :
-      m_context.rc.i_vbv_buffer_size = 12582912;
-      break;
-
-    case 42 :
-      m_context.rc.i_vbv_buffer_size = 13369344;
-      break;
-
-    case 50 :
-      m_context.rc.i_vbv_buffer_size = 42393600;
-      break;
-
-    case 51 :
-      m_context.rc.i_vbv_buffer_size = 70778880;
-  };
-
   return true;
 }
 
@@ -229,15 +217,36 @@ bool H264Encoder::SetFrameRate(unsigned rate)
 
 bool H264Encoder::SetTargetBitrate(unsigned rate)
 {
+  unsigned period = m_context.rc.i_vbv_buffer_size*1000/m_context.rc.i_bitrate;
+
+  /* That's how CBR should looks like. Much more stable bitrate output
+     but quality degrade on dynamic scenes.  Other case it's ABR. */
   m_context.rc.i_vbv_max_bitrate = m_context.rc.i_bitrate = rate;
+
+  return SetRateControlPeriod(period);
+}
+
+
+bool H264Encoder::SetRateControlPeriod(unsigned period)
+{
+  // This averages the instantaneous bandwidth over a period, this effectively
+  // controls the "tightness" of rate control.
+  m_context.rc.i_vbv_buffer_size = m_context.rc.i_bitrate*period/1000;
+
   return true;
 }
 
 
 bool H264Encoder::SetMaxRTPPayloadSize(unsigned size)
 {
-  m_context.i_slice_max_size = size;
   m_encapsulation.SetMaxPayloadSize(size);
+  return true;
+}
+
+
+bool H264Encoder::SetMaxNALUSize(unsigned size)
+{
+  m_context.i_slice_max_size = size;
   return true;
 }
 
@@ -348,7 +357,8 @@ bool H264Encoder::EncodeFrames(const unsigned char * src, unsigned & srcLen,
       }
     }
 
-    m_encapsulation.BeginNewFrame(numberOfNALUs);
+    m_encapsulation.Reset();
+    m_encapsulation.Allocate(numberOfNALUs);
     m_encapsulation.SetTimestamp(srcRTP.GetTimestamp());
     for (int i = 0; i < numberOfNALUs; i++)
       m_encapsulation.AddNALU(NALUs[i].i_type, NALUs[i].i_payload-4, NALUs[i].p_payload+4);
@@ -356,7 +366,7 @@ bool H264Encoder::EncodeFrames(const unsigned char * src, unsigned & srcLen,
 
   // create RTP frame from destination buffer
   PluginCodec_RTP dstRTP(dst, dstLen);
-  m_encapsulation.GetRTPFrame(dstRTP, flags);
+  m_encapsulation.GetPacket(dstRTP, flags);
   dstLen = dstRTP.GetPacketSize();
   return 1;
 }
@@ -370,9 +380,26 @@ bool H264Encoder::EncodeFrames(const unsigned char * src, unsigned & srcLen,
 
 #if WIN32
 
+#ifdef __MINGW32__
+static const char DefaultPluginDirs[] = "plugins";
+#else
 static const char DefaultPluginDirs[] = "." DIR_TOKENISER "C:\\PTLib_Plugins";
+#endif
 
 #include <io.h>
+
+
+class Overlapped : public OVERLAPPED
+{
+  public:
+    Overlapped(HANDLE hEvent)
+    {
+      memset(this, 0, sizeof(OVERLAPPED));
+      this->hEvent = hEvent;
+      ::ResetEvent(hEvent);
+    }
+};
+
 
 static bool IsExecutable(const char * path)
 {
@@ -382,7 +409,9 @@ static bool IsExecutable(const char * path)
 
 H264Encoder::H264Encoder()
   : m_loaded(false)
+  , m_hStandardError(NULL)
   , m_hNamedPipe(NULL)
+  , m_hEvent(NULL)
   , m_startNewFrame(true)
 {
 }
@@ -390,19 +419,35 @@ H264Encoder::H264Encoder()
 
 H264Encoder::~H264Encoder()
 {
-  if (!DisconnectNamedPipe(m_hNamedPipe))
-    PTRACE(1, PipeTraceName, "Failure on disconnecting Pipe (" << GetLastError() << ')');
-  if (!CloseHandle(m_hNamedPipe))
-    PTRACE(1, PipeTraceName, "Failure on closing Handle (" << GetLastError() << ')');
+  if (m_hStandardError != NULL && !CloseHandle(m_hStandardError))
+    PTRACE(1, PipeTraceName, "Failure on closing stderr handle (" << GetLastError() << ')');
+
+  if (m_hNamedPipe != NULL) {
+    if (!DisconnectNamedPipe(m_hNamedPipe))
+      PTRACE(1, PipeTraceName, "Failure on disconnecting pipe (" << GetLastError() << ')');
+    if (!CloseHandle(m_hNamedPipe))
+      PTRACE(1, PipeTraceName, "Failure on closing pipe handle (" << GetLastError() << ')');
+  }
+
+  if (m_hEvent != NULL && !CloseHandle(m_hEvent))
+    PTRACE(1, PipeTraceName, "Failure on closing event handle (" << GetLastError() << ')');
 }
 
 
 bool H264Encoder::OpenPipeAndExecute(void * instance, const char * executablePath)
 {
+  if ((m_hEvent = CreateEvent(NULL, TRUE, FALSE, NULL)) == NULL) {
+    PTRACE(1, PipeTraceName, "Failure on creating event (" << GetLastError() << ')');
+    return false;
+  }
+
   char pipeName[_MAX_PATH];
   _snprintf(pipeName, sizeof(pipeName), "\\\\.\\pipe\\x264-%d-%p", GetCurrentProcessId(), instance);
   if ((m_hNamedPipe = CreateNamedPipe(pipeName,
-                                      PIPE_ACCESS_DUPLEX, // FILE_FLAG_FIRST_PIPE_INSTANCE (not supported by minGW lib)
+#ifdef _MSC_VER
+                                      FILE_FLAG_FIRST_PIPE_INSTANCE // (not supported by minGW lib)
+#endif
+                                      |PIPE_ACCESS_DUPLEX|FILE_FLAG_OVERLAPPED,
                                       PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, // deny via network ACE
                                       1,    // Max instances
                                       4096, // Output buffer
@@ -416,9 +461,20 @@ bool H264Encoder::OpenPipeAndExecute(void * instance, const char * executablePat
   char command[1024];
   _snprintf(command, sizeof(command), "%s %s", executablePath, pipeName);
 
+  SECURITY_ATTRIBUTES security;
+  security.nLength = sizeof(security);
+  security.lpSecurityDescriptor = NULL;
+  security.bInheritHandle = TRUE;
+
   STARTUPINFO si;
   memset(&si, 0, sizeof(si));
   si.cb = sizeof(si);
+  si.dwFlags = STARTF_USESTDHANDLES;
+  si.hStdInput = INVALID_HANDLE_VALUE;
+  si.hStdOutput = INVALID_HANDLE_VALUE;
+  CreatePipe(&m_hStandardError, &si.hStdError, &security, 1);
+  SetHandleInformation(m_hStandardError, HANDLE_FLAG_INHERIT, 0);
+  si.hStdOutput = si.hStdError;
 
   PROCESS_INFORMATION pi;
   memset(&pi, 0, sizeof(pi));
@@ -428,7 +484,7 @@ bool H264Encoder::OpenPipeAndExecute(void * instance, const char * executablePat
                      command,     // Command line
                      NULL,        // Process handle not inheritable
                      NULL,        // Thread handle not inheritable
-                     FALSE,       // Set handle inheritance to FALSE
+                     TRUE,        // Set handle inheritance to FALSE
                      CREATE_NO_WINDOW, // Creation flags
                      NULL,        // Use parent's environment block
                      NULL,        // Use parent's starting directory 
@@ -439,21 +495,71 @@ bool H264Encoder::OpenPipeAndExecute(void * instance, const char * executablePat
       return false;
   }
 
+  CloseHandle(si.hStdError);
+
   PTRACE(4, PipeTraceName, "Successfully created child process " << pi.dwProcessId << " using " << command);
 
-  if (!ConnectNamedPipe(m_hNamedPipe, NULL) && GetLastError() != ERROR_PIPE_CONNECTED) {
-    PTRACE(1, PipeTraceName, "Could not establish communication with child process (" << GetLastError() << ')');
+  CheckStandardError();
+
+  Overlapped overlapped(m_hEvent);
+  if (ConnectNamedPipe(m_hNamedPipe, &overlapped) ||
+      GetLastError() == ERROR_PIPE_CONNECTED ||
+      CheckCompleted(overlapped))
+    return true;
+
+  DWORD tick = GetTickCount();
+  while ((GetTickCount() -  tick) < 2000)
+    CheckStandardError();
+
+  PTRACE(1, PipeTraceName, "Could not establish communication with child process (" << GetLastError() << ')');
+  return false;
+}
+
+
+void H264Encoder::CheckStandardError()
+{
+  DWORD available;
+  while (PeekNamedPipe(m_hStandardError, NULL, 0, NULL, &available, NULL) && available > 0) {
+    char * str = (char *)alloca(available+1);
+    if (!ReadFile(m_hStandardError, str, available, &available, NULL))
+      return;
+
+    str[available] = '\0';
+    m_errorOutput += str;
+    std::string::size_type pos;
+    while ((pos = m_errorOutput.find("\r\n")) != std::string::npos) {
+      PTRACE(1, "x264-help", m_errorOutput.substr(0, pos));
+      m_errorOutput.erase(0, pos+2);
+    }
+  }
+}
+
+
+bool H264Encoder::CheckCompleted(OVERLAPPED & overlapped, LPDWORD bytes)
+{
+  DWORD dummy;
+
+  if (GetLastError() != ERROR_IO_PENDING)
     return false;
+
+  for (int retry = 0; retry < 50; ++retry) {
+    if (WaitForSingleObject(overlapped.hEvent, 100) == WAIT_OBJECT_0)
+      return GetOverlappedResult(m_hNamedPipe, &overlapped, bytes != NULL ? bytes : &dummy, FALSE) != FALSE;
+    CheckStandardError();
   }
 
-  return true;
+  CancelIo(m_hNamedPipe);
+  SetLastError(ERROR_TIMEOUT);
+  return false;
 }
 
 
 bool H264Encoder::ReadPipe(void * ptr, size_t len)
 {
+  Overlapped overlapped(m_hEvent);
   DWORD bytesRead;
-  if (ReadFile(m_hNamedPipe, ptr, len, &bytesRead, NULL) && bytesRead == len)
+  if ((ReadFile(m_hNamedPipe, ptr, len, &bytesRead, &overlapped) ||
+       CheckCompleted(overlapped, &bytesRead)) && bytesRead == len)
     return true;
 
   PTRACE(1, PipeTraceName, "Failure on read (" << GetLastError() << ')');
@@ -463,8 +569,10 @@ bool H264Encoder::ReadPipe(void * ptr, size_t len)
 
 bool H264Encoder::WritePipe(const void * ptr, size_t len)
 {
+  Overlapped overlapped(m_hEvent);
   DWORD bytesWritten;
-  if (WriteFile(m_hNamedPipe, ptr, len, &bytesWritten, NULL) && bytesWritten == len)
+  if ((WriteFile(m_hNamedPipe, ptr, len, &bytesWritten, &overlapped) ||
+       CheckCompleted(overlapped, &bytesWritten)) && bytesWritten == len)
     return true;
 
   PTRACE(1, PipeTraceName, "Failure on write (" << GetLastError() << ')');
@@ -482,9 +590,6 @@ bool H264Encoder::WritePipe(const void * ptr, size_t len)
 
 
 static const char DefaultPluginDirs[] = "." DIR_TOKENISER
-#ifdef LIB_DIR
-                                        LIB_DIR DIR_TOKENISER
-#endif
                                         "/usr/lib" DIR_TOKENISER "/usr/local/lib";
 
 
@@ -630,12 +735,6 @@ bool H264Encoder::Load(void * instance)
     if (IsExecutable(executablePath))
       break;
 
-#ifdef VC_PLUGIN_DIR
-    snprintf(executablePath, sizeof(executablePath), "%s/%s/%s", token, VC_PLUGIN_DIR, ExecutableName);
-    if (IsExecutable(executablePath))
-      break;
-#endif
-
     token = strtok(NULL, DIR_TOKENISER);
   }
   free(tempDirs);
@@ -654,7 +753,7 @@ bool H264Encoder::Load(void * instance)
     return false;
   }
 
-  PTRACE(4, PipeTraceName, "Successfully established communication with GPL process");
+  PTRACE(4, PipeTraceName, "Successfully established communication with GPL process version " << msg);
   m_loaded = true;
   return true;
 }
@@ -711,9 +810,21 @@ bool H264Encoder::SetTargetBitrate(unsigned rate)
 }
 
 
+bool H264Encoder::SetRateControlPeriod(unsigned period)
+{
+  return WriteValue(SET_RATE_CONTROL_PERIOD, period);
+}
+
+
 bool H264Encoder::SetMaxRTPPayloadSize(unsigned size)
 {
   return WriteValue(SET_MAX_PAYLOAD_SIZE, size);
+}
+
+
+bool H264Encoder::SetMaxNALUSize(unsigned size)
+{
+  return WriteValue(SET_MAX_NALU_SIZE, size);
 }
 
 
