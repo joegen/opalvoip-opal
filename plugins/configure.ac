@@ -407,6 +407,7 @@ else
 fi
 if test "x${HAVE_OPUS}" = "xyes" ; then
   AC_CONFIG_FILES(audio/Opus/Makefile)
+  AC_CONFIG_SUBDIRS(./audio/Opus/opus)
   SUBDIRS+=" audio/Opus"
 fi
 
