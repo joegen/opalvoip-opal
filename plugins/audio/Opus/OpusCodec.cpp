@@ -33,7 +33,7 @@
 #include <codec/known.h>
 
 #ifndef PLUGIN_CODEC_DLL_EXPORTS
-#include "plugin_config.h"
+#include "plugin-config.h"
 #endif
 
 #include "opus.h"
