@@ -1749,7 +1749,6 @@ bool MyManager::CanDoIM() const
 {
   SpeedDialInfo * info = GetSelectedSpeedDial();
   return info != NULL && !info->m_Presentity.IsEmpty();
-  return false;
 }
 #endif // OPAL_HAS_PRESENCE && OPAL_HAS_IM
 

@@ -799,8 +799,6 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     PString               m_alertInfo;
     PoolTimer             m_sessionTimer;
 
-    std::map<SIP_PDU::Methods, unsigned> m_lastRxCSeq;
-
     PRACKMode      m_prackMode;
     bool           m_prackEnabled;
     unsigned       m_prackSequenceNumber;
