@@ -358,6 +358,9 @@ class OpalTranscoder : public OpalMediaFormatPair
     bool     acceptOtherPayloads;
     unsigned m_inClockRate;
     unsigned m_outClockRate;
+
+    RTP_DataFrame::PayloadTypes m_lastPayloadType;
+    unsigned                    m_consecutivePayloadTypeMismatches;
 };
 
 

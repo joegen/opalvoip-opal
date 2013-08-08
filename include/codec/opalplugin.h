@@ -61,7 +61,7 @@ extern "C" {
 #pragma warning(disable:4201)
 #endif
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #  ifdef PLUGIN_CODEC_DLL_EXPORTS
 #    define PLUGIN_CODEC_DLL_API __declspec(dllexport)
 #  else
@@ -89,8 +89,9 @@ extern "C" {
 #define  PLUGIN_CODEC_VERSION_FAX       4    // added fax
 #define  PLUGIN_CODEC_VERSION_OPTIONS   5    // added options handling
 #define  PLUGIN_CODEC_VERSION_INTERSECT 6    // added media option intersection merge functionality
+#define  PLUGIN_CODEC_VERSION_H245_DEF_GEN_PARAM 7 // added suppression of H.245 generic parameters via default
 
-#define  PLUGIN_CODEC_VERSION PLUGIN_CODEC_VERSION_INTERSECT // Always latest version
+#define  PLUGIN_CODEC_VERSION PLUGIN_CODEC_VERSION_H245_DEF_GEN_PARAM // Always latest version
 
 #define PLUGIN_CODEC_API_VER_FN       PWLibPlugin_GetAPIVersion
 #define PLUGIN_CODEC_API_VER_FN_STR   "PWLibPlugin_GetAPIVersion"
@@ -120,7 +121,7 @@ enum {
 
 struct PluginCodec_information {
   // start of version 1 fields
-  time_t timestamp;                     // codec creation time and date - obtain with command: date -u "+%c = %s"
+  time_t timestamp_deprecated;
 
   const char * sourceAuthor;            // source code author
   const char * sourceVersion;           // source code version
@@ -140,6 +141,7 @@ struct PluginCodec_information {
   unsigned short codecLicenseCode;      // codec license code
   // end of version 1 fields
 
+  const char * timestamp;               // String form of timestamp for plug in, generally as provided by __TIMESTAMP__
 };
 
 enum PluginCodec_Flags {
@@ -148,6 +150,7 @@ enum PluginCodec_Flags {
   PluginCodec_MediaTypeVideo         = 0x0001,
   PluginCodec_MediaTypeAudioStreamed = 0x0002,
   PluginCodec_MediaTypeFax           = 0x0003,
+  PluginCodec_MediaTypeKnown         = 0x000f, // Indicates use OPAL known media format
 
   PluginCodec_InputTypeMask          = 0x0010,
   PluginCodec_InputTypeRaw           = 0x0000, // Note video is always RTP
@@ -157,7 +160,7 @@ enum PluginCodec_Flags {
   PluginCodec_OutputTypeRaw          = 0x0000, // Note video is always RTP
   PluginCodec_OutputTypeRTP          = 0x0020,
 
-  PluginCodec_RTPTypeMask            = 0x0040,
+  PluginCodec_RTPTypeMask            = 0x0040, // Payload type number
   PluginCodec_RTPTypeDynamic         = 0x0000,
   PluginCodec_RTPTypeExplicit        = 0x0040,
 
@@ -176,19 +179,19 @@ enum PluginCodec_Flags {
   PluginCodec_MediaExtensionMask     = 0x0400,
   PluginCodec_MediaTypeExtVideo      = 0x0400,
 
-  PluginCodec_ComfortNoiseMask       = 0x0800,  // Audio only
+  PluginCodec_ComfortNoiseMask       = 0x0800,  // PluginCodec_MediaTypeAudio only
   PluginCodec_ComfortNoise           = 0x0800,
 
-  PluginCodec_ErrorConcealmentMask   = 0x0800,  // Video only
+  PluginCodec_ErrorConcealmentMask   = 0x0800,  // PluginCodec_MediaTypeVideo only
   PluginCodec_ErrorConcealment       = 0x0800,
 
-  PluginCodec_EmptyPayloadMask       = 0x1000,
+  PluginCodec_EmptyPayloadMask       = 0x1000,  // PluginCodec_MediaTypeAudio/PluginCodec_MediaTypeVideo only
   PluginCodec_EmptyPayload           = 0x1000,
 
-  PluginCodec_OtherPayloadMask       = 0x2000,
+  PluginCodec_OtherPayloadMask       = 0x2000,  // PluginCodec_MediaTypeAudio only
   PluginCodec_OtherPayload           = 0x2000,
 
-  PluginCodec_BitsPerSamplePos       = 12,
+  PluginCodec_BitsPerSamplePos       = 12,      // PluginCodec_MediaTypeAudioStreamed only
   PluginCodec_BitsPerSampleMask      = 0xf000,
 
   PluginCodec_ChannelsPos            = 16,
@@ -281,6 +284,8 @@ enum PluginCodec_OptionMerge {
 #define PluginCodec_H245_OLC           0x02000000
 #define PluginCodec_H245_ReqMode       0x01000000
 #define PluginCodec_H245_OrdinalMask   0x0000ffff
+#define PluginCodec_H245_PositionMask  0x00ff0000
+#define PluginCodec_H245_PositionShift 16
 
 typedef int (*PluginCodec_MergeFunction)(char ** result, const char * dest, const char * src);
 typedef void (*PluginCodec_FreeFunction)(char * string);
@@ -299,6 +304,7 @@ struct PluginCodec_Option {
   const char *                 m_maximum;
   PluginCodec_MergeFunction    m_mergeFunction; // Used if m_merge==PluginCodec_CustomMerge
   PluginCodec_FreeFunction     m_freeFunction;
+  const char *                 m_H245Default;
 };
 
 
@@ -306,11 +312,14 @@ struct PluginCodec_Option {
 #define PLUGINCODEC_OPTION_NEEDS_JITTER               "Needs Jitter"
 #define PLUGINCODEC_OPTION_CLOCK_RATE                 "Clock Rate"
 #define PLUGINCODEC_OPTION_CHANNELS                   "Channels"
+#define PLUGINCODEC_OPTION_RTP_CLOCK_RATE             "RTP Clock Rate"
+#define PLUGINCODEC_OPTION_RTP_CHANNELS               "RTP Channels"
 #define PLUGINCODEC_OPTION_FRAME_TIME                 "Frame Time"
 #define PLUGINCODEC_OPTION_MAX_FRAME_SIZE             "Max Frame Size"
-#define PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE         "Max Tx Packet Size"
+#define PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE         "Max Tx Packet Size"   /* Really max PAYLOAD size */
 #define PLUGINCODEC_OPTION_MAX_BIT_RATE               "Max Bit Rate"
 #define PLUGINCODEC_OPTION_TARGET_BIT_RATE            "Target Bit Rate"
+#define PLUGINCODEC_OPTION_RATE_CONTROL_PERIOD        "Rate Control Period"
 #define PLUGINCODEC_OPTION_RX_FRAMES_PER_PACKET       "Rx Frames Per Packet"
 #define PLUGINCODEC_OPTION_TX_FRAMES_PER_PACKET       "Tx Frames Per Packet"
 #define PLUGINCODEC_OPTION_FRAME_WIDTH                "Frame Width"
@@ -321,7 +330,11 @@ struct PluginCodec_Option {
 #define PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT        "Max Rx Frame Height"
 #define PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF "Temporal Spatial Trade Off"
 #define PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD        "Tx Key Frame Period"
+#define PLUGINCODEC_OPTION_VOICE_ACTIVITY_DETECT      "VAD"
 
+#define PLUGINCODEC_OPTION_PROTOCOL      "Protocol"
+#define PLUGINCODEC_OPTION_PROTOCOL_H323 "H.323"
+#define PLUGINCODEC_OPTION_PROTOCOL_SIP  "SIP"
 
 
 // Full definition of the codec
@@ -393,6 +406,35 @@ typedef unsigned (* PluginCodec_GetAPIVersionFunction)();
 
 #define PLUGINCODEC_RAW_AUDIO "L16"
 #define PLUGINCODEC_RAW_VIDEO "YUV420P"
+#define PLUGINCODEC_VIDEO_CLOCK 90000
+#define PLUGINCODEC_MAX_FRAME_RATE 30
+
+#define PLUGINCODEC_CIF_WIDTH     352
+#define PLUGINCODEC_CIF_HEIGHT    288
+
+#define PLUGINCODEC_CIF4_WIDTH   (PLUGINCODEC_CIF_WIDTH*2)
+#define PLUGINCODEC_CIF4_HEIGHT  (PLUGINCODEC_CIF_HEIGHT*2)
+
+#define PLUGINCODEC_CIF16_WIDTH  (PLUGINCODEC_CIF_WIDTH*4)
+#define PLUGINCODEC_CIF16_HEIGHT (PLUGINCODEC_CIF_HEIGHT*4)
+
+#define PLUGINCODEC_QCIF_WIDTH   (PLUGINCODEC_CIF_WIDTH/2)
+#define PLUGINCODEC_QCIF_HEIGHT  (PLUGINCODEC_CIF_HEIGHT/2)
+
+#define PLUGINCODEC_QCIF4_WIDTH  (PLUGINCODEC_CIF4_WIDTH/2)
+#define PLUGINCODEC_QCIF4_HEIGHT (PLUGINCODEC_CIF4_HEIGHT/2)
+
+#define PLUGINCODEC_SQCIF_WIDTH   128
+#define PLUGINCODEC_SQCIF_HEIGHT   96
+
+
+#ifndef __TIMESTAMP__
+#define __TIMESTAMP__ "0"
+#endif
+
+#define PLUGINCODEC_LICENSE(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,p15) \
+  static struct PluginCodec_information MyLicenseInfo = { 0,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,p15,__TIMESTAMP__ }
+
 
 /// Declare a pair of plug in definition entries for a codec
 #define PLUGINCODEC_CODEC_PAIR(MediaFormat,    /**< Media Format */ \
@@ -413,15 +455,16 @@ typedef unsigned (* PluginCodec_GetAPIVersionFunction)();
                                DecodeMedia,    /**< Decode media function */ \
                                ControlsTable,  /**< Codec controls tables */ \
                                Flags,          /**< Flags */ \
-                               RawFormat       /**< Raw format */ \
+                               RawFormat,      /**< Raw format */ \
+                               UserData        /**< User Data */ \
                                ) \
   { \
-    PLUGIN_CODEC_VERSION, &MyLicenseInfo, Flags, Description, RawFormat, MediaFormat, NULL, \
+    PLUGIN_CODEC_VERSION, &MyLicenseInfo, Flags, Description, RawFormat, MediaFormat, UserData, \
     SampleRate, BitsPerSecond, FrameTime, {{ p1,p2,p3,p4 }}, PayloadType, PayloadName, \
     CreateEncoder, DestroyEncoder, EncodeMedia, ControlsTable, H323type, H323data \
   }, \
   { \
-    PLUGIN_CODEC_VERSION, &MyLicenseInfo, Flags, Description, MediaFormat, RawFormat, NULL, \
+    PLUGIN_CODEC_VERSION, &MyLicenseInfo, Flags, Description, MediaFormat, RawFormat, UserData, \
     SampleRate, BitsPerSecond, FrameTime, {{ p1,p2,p3,p4 }}, PayloadType, PayloadName, \
     CreateDecoder, DestroyDecoder, DecodeMedia, ControlsTable, H323type, H323data \
   }
@@ -431,9 +474,7 @@ typedef unsigned (* PluginCodec_GetAPIVersionFunction)();
                                 Description,     /**< Description text */ \
                                 SampleRate,      /**< Sample rate */ \
                                 BitsPerSecond,   /**< Maximum bits per second */ \
-                                FrameTime,       /**< Microseconds per audio frame */ \
                                 SamplesPerFrame, /**< Samples per audio frame */ \
-                                BytesPerFrame,   /**< Samples per audio frame */ \
                                 RecFramesPerPacket, /**< Recommended frames per packet */ \
                                 MaxFramesPerPacket, /**< Maximum frames per packet */ \
                                 RtpFlags,         /**< Extra flags typically if RTP payload type is fixed */ \
@@ -453,9 +494,9 @@ typedef unsigned (* PluginCodec_GetAPIVersionFunction)();
                                 Description, \
                                 SampleRate, \
                                 BitsPerSecond, \
-                                FrameTime, \
+                                (SamplesPerFrame)*1000000/(SampleRate), \
                                 SamplesPerFrame, \
-                                BytesPerFrame, \
+                                (BitsPerSecond)*(SampleRate)/(SamplesPerFrame)/8, \
                                 RecFramesPerPacket, \
                                 MaxFramesPerPacket, \
                                 PayloadType, \
@@ -472,16 +513,15 @@ typedef unsigned (* PluginCodec_GetAPIVersionFunction)();
                                 PluginCodec_InputTypeRaw |   /* raw input data */ \
                                 PluginCodec_OutputTypeRaw |  /* raw output data */ \
                                 (RtpFlags), \
-                                PLUGINCODEC_RAW_AUDIO)
+                                PLUGINCODEC_RAW_AUDIO, \
+                                NULL)
 
 #define PLUGINCODEC_ONE_AUDIO_CODEC(MediaFormat,     /**< Media Format */ \
                                     PayloadName,     /**< IANA RTP payload code */ \
                                     Description,     /**< Description text */ \
                                     SampleRate,      /**< Sample rate */ \
                                     BitsPerSecond,   /**< Maximum bits per second */ \
-                                    FrameTime,       /**< Microseconds per audio frame */ \
                                     SamplesPerFrame, /**< Samples per audio frame */ \
-                                    BytesPerFrame,   /**< Samples per audio frame */ \
                                     RecFramesPerPacket, /**< Recommended frames per packet */ \
                                     MaxFramesPerPacket, /**< Maximum frames per packet */ \
                                     RtpFlags,         /**< Extra flags typically if RTP payload type is fixed */ \
@@ -495,9 +535,7 @@ typedef unsigned (* PluginCodec_GetAPIVersionFunction)();
                                     Description, \
                                     SampleRate, \
                                     BitsPerSecond, \
-                                    FrameTime, \
                                     SamplesPerFrame, \
-                                    BytesPerFrame, \
                                     RecFramesPerPacket, \
                                     MaxFramesPerPacket, \
                                     RtpFlags, \
@@ -537,12 +575,12 @@ typedef unsigned (* PluginCodec_GetAPIVersionFunction)();
                                 Description, \
                                 SampleRate, \
                                 BitsPerSecond, \
-                                90000, \
+                                PLUGINCODEC_VIDEO_CLOCK, \
                                 BitsPerSecond, \
-                                100000, \
+                                1000000/PLUGINCODEC_MAX_FRAME_RATE, \
                                 MaxWidth, \
                                 MaxHeight, \
-                                0,30, \
+                                0,PLUGINCODEC_MAX_FRAME_RATE, \
                                 PayloadType, \
                                 H323type, \
                                 H323data, \
@@ -554,10 +592,11 @@ typedef unsigned (* PluginCodec_GetAPIVersionFunction)();
                                 DecodeVideo, \
                                 ControlsTable, \
                                 PluginCodec_MediaTypeVideo | /* video codec */ \
-                                PluginCodec_InputTypeRRP |   /* RTP input data */ \
-                                PluginCodec_OutputTypeRRP |  /* RTP output data */ \
+                                PluginCodec_InputTypeRTP |   /* RTP input data */ \
+                                PluginCodec_OutputTypeRTP |  /* RTP output data */ \
                                 (RtpFlags), \
-                                PLUGINCODEC_RAW_VIDEO)
+                                PLUGINCODEC_RAW_VIDEO, \
+                                NULL)
 
 #define PLUGINCODEC_ONE_VIDEO_CODEC(MediaFormat,     /**< Media Format */ \
                                     PayloadName,     /**< IANA RTP payload code */ \
@@ -748,6 +787,8 @@ enum {
 // Audio Capabilities
 // AMR (as defined in H.245v13 Annex I)
 #define OpalPluginCodec_Identifer_AMR             "0.0.8.245.1.1.1"
+#define PLUGINCODEC_OPTION_OCTET_ALIGNED          "Octet Aligned"
+
 
 // AMR-NB\WB  (as defined in H.245v13 Annex R)
 #define OpalPluginCodec_Identifer_AMR_NB          "0.0.8.245.1.1.9"
@@ -766,14 +807,22 @@ enum {
 
 // Video Capabilities
 
+#define PLUGINCODEC_OPTION_PROFILE                    "Profile"
+#define PLUGINCODEC_OPTION_SIMPLE_PROFILE             "Simple"
+#define PLUGINCODEC_OPTION_LEVEL                      "Level"
+
 // H264 (as defined in H.241)
 #define OpalPluginCodec_Identifer_H264_Aligned        "0.0.8.241.0.0.0.0"
 #define OpalPluginCodec_Identifer_H264_NonInterleaved "0.0.8.241.0.0.0.1"
 #define OpalPluginCodec_Identifer_H264_Interleaved    "0.0.8.241.0.0.0.2"
 #define OpalPluginCodec_Identifer_H264_Generic        "0.0.8.241.0.0.1"
+#define PLUGINCODEC_OPTION_MAX_NALU_SIZE              "Max NALU Size"
+#define PLUGINCODEC_OPTION_H264_PACKET_MODE           "Packetization Mode"
 
 // ISO/IEC 14496-2 MPEG4 part 2 (as defined in H.245v13 Annex E)
-#define OpalPluginCodec_Identifer_MPEG4           "0.0.8.245.1.0.0"
+#define OpalPluginCodec_Identifer_MPEG4               "0.0.8.245.1.0.0"
+#define PLUGINCODEC_OPTION_MPEG4_ADV_SIMPLE_PROFILE   "Advanced Simple"
+#define PLUGINCODEC_OPTION_MPEG4_DECODER_CONFIG       "DCI"
 
 
 /////////////////

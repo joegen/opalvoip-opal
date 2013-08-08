@@ -77,6 +77,7 @@ class OpalMediaStatistics : public PObject
     // Video
     unsigned m_totalFrames;
     unsigned m_keyFrames;
+    int      m_quality; // -1 is none, 0 is very good > 0 is progressively worse
 
     // Fax
 #if OPAL_FAX

@@ -603,7 +603,7 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
      If the packet subsequently DOES arrive, it will get picked up by the
      too late section above. */
   if (requiredTimestamp < oldestFrame->first) {
-    if (oldestFrame->first - requiredTimestamp > 8000) {
+    if (oldestFrame->first - requiredTimestamp > m_timeUnits*1000) {
       PTRACE(3, "Jitter\tToo far in ahead" COMMON_TRACE_INFO);
       Reset();
     }

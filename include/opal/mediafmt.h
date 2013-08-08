@@ -129,13 +129,25 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
       const OpalMediaFormatList & formats    ///<  Formats to remove
     );
 
-    /**Get a format iterator in the list matching the payload type.
+    /**Get a format iterator in the list matching the payload type, etc.
+       If the \p clockRate is 0 then it takes no part in the search.
+
+       The \p rtpEncodingName, if not NULL or empty string, is searched for
+       first and only if not found is the payload type used. This is because
+       it is possible (though discouraged) for someone to override a standard
+       payload type, e.g. GSM, with another encoding name.
+
+       If the \p protocol is NULL or empty string, then it takes no part in the
+       search.
+
+       The search begins at the \t start iterator, if this is end() or simply
+       const_iterator() then the search is started at the begining.
 
        Returns end() if not in list.
       */
     const_iterator FindFormat(
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
-      const unsigned clockRate,                   ///<  clock rate
+      const unsigned clockRate = 0,               ///<  clock rate
       const char * rtpEncodingName = NULL,        ///<  RTP payload type name
       const char * protocol = NULL,               ///<  protocol to be valid for (if NULL, then all)
       const_iterator start = const_iterator()     ///<  location to start search
@@ -183,6 +195,10 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
       const OpalMediaType & type,
       bool mustBeTransportable = true
     ) const;
+
+    /**Get list of all media types in format list.
+      */
+    OpalMediaTypeList GetMediaTypes() const;
 
     /**Reorder the formats in the list.
        The order variable is an array of names and the list is reordered
@@ -631,7 +647,7 @@ class OpalMediaFormatInternal : public PObject
       const OpalMediaType & mediaType,
       RTP_DataFrame::PayloadTypes rtpPayloadType,
       const char * encodingName,
-      PBoolean     needsJitter,
+      bool     needsJitter,
       unsigned bandwidth,
       PINDEX   frameSize,
       unsigned frameTime,
@@ -683,7 +699,6 @@ class OpalMediaFormatInternal : public PObject
     PSortedList<OpalMediaOption> options;
     time_t                       codecVersionTime;
     bool                         forceIsTransportable;
-    int                          m_channels;
 
   friend bool operator==(const char * other, const OpalMediaFormat & fmt);
   friend bool operator!=(const char * other, const OpalMediaFormat & fmt);
@@ -907,26 +922,30 @@ class OpalMediaFormat : public PContainer
     /**Determine if the media format requires a jitter buffer. As a rule an
        audio codec needs a jitter buffer and all others do not.
       */
-    bool NeedsJitterBuffer() const { PWaitAndSignal m(m_mutex); return m_info != NULL && m_info->GetOptionBoolean(NeedsJitterOption(), false); }
+    bool NeedsJitterBuffer() const { return GetOptionBoolean(NeedsJitterOption()); }
     static const PString & NeedsJitterOption();
 
-    /**Get the average bandwidth used in bits/second.
+    /**Get the maximum bandwidth used in bits/second.
       */
-    unsigned GetBandwidth() const { PWaitAndSignal m(m_mutex); return m_info == NULL ? 0 : m_info->GetOptionInteger(MaxBitRateOption(), 0); }
+    unsigned GetBandwidth() const { return GetOptionInteger(MaxBitRateOption()); }
     static const PString & MaxBitRateOption();
+
+    /**Get the used bandwidth used in bits/second.
+      */
+    unsigned GetUsedBandwidth() const { return GetOptionInteger(TargetBitRateOption(), GetOptionInteger(MaxBitRateOption())); }
     static const PString & TargetBitRateOption();
 
     /**Get the maximum frame size in bytes. If this returns zero then the
        media format has no intrinsic maximum frame size, eg a video format
        would return zero but G.723.1 would return 24.
       */
-    PINDEX GetFrameSize() const { PWaitAndSignal m(m_mutex); return m_info == NULL ? 0 : m_info->GetOptionInteger(MaxFrameSizeOption(), 0); }
+    PINDEX GetFrameSize() const { return GetOptionInteger(MaxFrameSizeOption()); }
     static const PString & MaxFrameSizeOption();
 
     /**Get the frame time in RTP timestamp units. If this returns zero then
        the media format is not real time and has no intrinsic timing eg T.120
       */
-    unsigned GetFrameTime() const { PWaitAndSignal m(m_mutex); return m_info == NULL ? 0 : m_info->GetOptionInteger(FrameTimeOption(), 0); }
+    unsigned GetFrameTime() const { return GetOptionInteger(FrameTimeOption()); }
     static const PString & FrameTimeOption();
 
     /**Get the number of RTP timestamp units per millisecond.
@@ -940,7 +959,7 @@ class OpalMediaFormat : public PContainer
 
     /**Get the clock rate in Hz for this format.
       */
-    unsigned GetClockRate() const { PWaitAndSignal m(m_mutex); return m_info == NULL ? 0 : m_info->GetOptionInteger(ClockRateOption(), 1000); }
+    unsigned GetClockRate() const { return GetOptionInteger(ClockRateOption(), AudioClockRate); }
     static const PString & ClockRateOption();
 
     /**Get the name of the OpalMediaOption indicating the protocol the format is being used on.
@@ -1240,7 +1259,8 @@ class OpalAudioFormatInternal : public OpalMediaFormatInternal
       unsigned txFrames,
       unsigned maxFrames,
       unsigned clockRate,
-      time_t timeStamp
+      time_t timeStamp = 0,
+      unsigned channels = 1
     );
     virtual PObject * Clone() const;
     virtual bool Merge(const OpalMediaFormatInternal & mediaFormat);
@@ -1263,7 +1283,8 @@ class OpalAudioFormat : public OpalMediaFormat
       unsigned txFrames,        ///<  Desired number of frames per packet we transmit
       unsigned maxFrames = 256, ///<  Maximum possible frames per packet
       unsigned clockRate = 8000, ///<  Clock Rate 
-      time_t timeStamp = 0       ///<  timestamp (for versioning)
+      time_t timeStamp = 0,     ///<  timestamp (for versioning)
+      unsigned channels = 1     ///<  Stereo/mono
     );
 
     static const PString & RxFramesPerPacketOption();
@@ -1284,7 +1305,7 @@ class OpalVideoFormatInternal : public OpalMediaFormatInternal
       unsigned maxFrameHeight,
       unsigned maxFrameRate,
       unsigned maxBitRate,
-      time_t timeStamp
+      time_t timeStamp = 0
     );
     virtual PObject * Clone() const;
     virtual bool Merge(const OpalMediaFormatInternal & mediaFormat);
@@ -1368,60 +1389,18 @@ class OpalVideoFormat : public OpalMediaFormat
 };
 #endif
 
-// List of known media formats
 
-#define OPAL_PCM16          "PCM-16"
-#define OPAL_PCM16S         "PCM-16S"
-#define OPAL_PCM16_16KHZ    "PCM-16-16kHz"
-#define OPAL_PCM16S_16KHZ   "PCM-16S-16kHz"
-#define OPAL_PCM16_32KHZ    "PCM-16-32kHz"
-#define OPAL_PCM16S_32KHZ   "PCM-16S-32kHz"
-#define OPAL_PCM16_48KHZ    "PCM-16-48kHz"
-#define OPAL_PCM16S_48KHZ   "PCM-16S-48kHz"
-#define OPAL_L16_MONO_8KHZ  "Linear-16-Mono-8kHz"
-#define OPAL_L16_STEREO_8KHZ "Linear-16-Stereo-8kHz"
-#define OPAL_L16_MONO_16KHZ "Linear-16-Mono-16kHz"
-#define OPAL_L16_STEREO_16KHZ "Linear-16-Stereo-16kHz"
-#define OPAL_L16_MONO_32KHZ "Linear-16-Mono-32kHz"
-#define OPAL_L16_STEREO_32KHZ "Linear-16-Stereo-32kHz"
-#define OPAL_L16_MONO_48KHZ "Linear-16-Mono-48kHz"
-#define OPAL_L16_STEREO_48KHZ "Linear-16-Stereo-48kHz"
-#define OPAL_G711_ULAW_64K  "G.711-uLaw-64k"
-#define OPAL_G711_ALAW_64K  "G.711-ALaw-64k"
-#define OPAL_G722           "G.722"
-#define OPAL_G7221          "G.722.1"
-#define OPAL_G7222          "G.722.2"
-#define OPAL_G726_40K       "G.726-40K"
-#define OPAL_G726_32K       "G.726-32K"
-#define OPAL_G726_24K       "G.726-24K"
-#define OPAL_G726_16K       "G.726-16K"
-#define OPAL_G728           "G.728"
-#define OPAL_G729           "G.729"
-#define OPAL_G729A          "G.729A"
-#define OPAL_G729B          "G.729B"
-#define OPAL_G729AB         "G.729A/B"
-#define OPAL_G7231          "G.723.1"
-#define OPAL_G7231_6k3      OPAL_G7231
-#define OPAL_G7231_5k3      "G.723.1(5.3k)"
-#define OPAL_G7231A_6k3     "G.723.1A(6.3k)"
-#define OPAL_G7231A_5k3     "G.723.1A(5.3k)"
-#define OPAL_GSM0610        "GSM-06.10"
-#define OPAL_GSMAMR         "GSM-AMR"
-#define OPAL_iLBC           "iLBC"
-#define OPAL_H261           "H.261"
-#define OPAL_H263           "H.263"
-#define OPAL_H264           "H.264"
-#define OPAL_H264_MODE0     "H.264-0"
-#define OPAL_H264_MODE1     "H.264-1"
-#define OPAL_MPEG4          "MPEG4"
-#define OPAL_RFC2833        "UserInput/RFC2833"
-#define OPAL_CISCONSE       "NamedSignalEvent"
-#define OPAL_T38            "T.38"
+#include <codec/known.h>
+
 
 extern const OpalAudioFormat & GetOpalPCM16();
 extern const OpalAudioFormat & GetOpalPCM16S();
+extern const OpalAudioFormat & GetOpalPCM16_12KHZ();
+extern const OpalAudioFormat & GetOpalPCM16S_12KHZ();
 extern const OpalAudioFormat & GetOpalPCM16_16KHZ();
 extern const OpalAudioFormat & GetOpalPCM16S_16KHZ();
+extern const OpalAudioFormat & GetOpalPCM16_24KHZ();
+extern const OpalAudioFormat & GetOpalPCM16S_24KHZ();
 extern const OpalAudioFormat & GetOpalPCM16_32KHZ();
 extern const OpalAudioFormat & GetOpalPCM16S_32KHZ();
 extern const OpalAudioFormat & GetOpalPCM16_48KHZ();
@@ -1468,8 +1447,12 @@ extern const OpalMediaFormat & GetOpalT38();
 
 #define OpalPCM16          GetOpalPCM16()
 #define OpalPCM16S         GetOpalPCM16S()
+#define OpalPCM16_12KHZ    GetOpalPCM16_12KHZ()
+#define OpalPCM16S_12KHZ   GetOpalPCM16S_12KHZ()
 #define OpalPCM16_16KHZ    GetOpalPCM16_16KHZ()
 #define OpalPCM16S_16KHZ   GetOpalPCM16S_16KHZ()
+#define OpalPCM16_24KHZ    GetOpalPCM16_24KHZ()
+#define OpalPCM16S_24KHZ   GetOpalPCM16S_24KHZ()
 #define OpalPCM16_32KHZ    GetOpalPCM16_32KHZ()
 #define OpalPCM16S_32KHZ   GetOpalPCM16S_32KHZ()
 #define OpalPCM16_48KHZ    GetOpalPCM16_48KHZ()
