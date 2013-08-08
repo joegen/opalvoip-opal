@@ -43,6 +43,10 @@
 #include <stdio.h>
 #include <iomanip>
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(53, 0, 0)
+  #define AV_PICTURE_TYPE_NONE 0
+  #define AV_PICTURE_TYPE_I FF_I_TYPE
+#endif
 
 #if PLUGINCODEC_TRACING
 static void logCallbackFFMPEG(void * avcl, int severity, const char* fmt , va_list arg)
@@ -526,7 +530,7 @@ bool FFMPEGCodec::DecodeVideoFrame(const uint8_t * frame, size_t length, unsigne
 
   int errorsBefore = m_errorCount;
 #ifdef FFMPEG_HAS_DECODE_ERROR_COUNT
-  errorsBefore += m_context->decode_error_count
+  errorsBefore += m_context->decode_error_count;
 #endif
 
   m_picture->pict_type = AV_PICTURE_TYPE_NONE;
@@ -546,7 +550,7 @@ bool FFMPEGCodec::DecodeVideoFrame(const uint8_t * frame, size_t length, unsigne
 
   int errorsAfter = m_errorCount;
 #ifdef FFMPEG_HAS_DECODE_ERROR_COUNT
-  errorsAfter += m_context->decode_error_count
+  errorsAfter += m_context->decode_error_count;
 #endif
 
   // if error occurred, tell the other end to send another I-frame and hopefully we can resync
