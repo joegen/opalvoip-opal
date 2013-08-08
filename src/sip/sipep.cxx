@@ -634,6 +634,24 @@ bool SIPEndPoint::OnReceivedPDU(SIP_PDU * pdu)
   if (PAssertNULL(pdu) == NULL)
     return false;
 
+  // Prevent any new INVITE/SUBSCRIBE etc etc while we are on the way out.
+  if (m_shuttingDown && pdu->GetMethod() != SIP_PDU::NumMethods) {
+    pdu->SendResponse(SIP_PDU::Failure_ServiceUnavailable);
+    return false;
+  }
+
+  // Check if we have already received this request (have a transaction in play)
+  {
+    PString id = pdu->GetTransactionID();
+    PSafePtr<SIPResponse> transaction = PSafePtrCast<SIPTransaction, SIPResponse>(GetTransaction(id, PSafeReadOnly));
+    if (transaction != NULL) {
+      PTRACE(4, "SIP\tRetransmitting previous response for transaction id=" << id);
+      transaction->InitialiseHeaders(*pdu);
+      transaction->Send();
+      return false;
+    }
+  }
+
   const SIPMIMEInfo & mime = pdu->GetMIME();
 
   /* Get tokens to determine the connection to operate on, not as easy as it
@@ -645,24 +663,40 @@ bool SIPEndPoint::OnReceivedPDU(SIP_PDU * pdu)
   bool hasFromConnection = HasConnection(fromToken);
   bool hasToConnection = HasConnection(toToken);
 
-  PString token;
-
   switch (pdu->GetMethod()) {
     case SIP_PDU::Method_CANCEL :
-      m_receivedConnectionMutex.Wait();
-      token = m_receivedConnectionTokens(mime.GetCallID());
-      m_receivedConnectionMutex.Signal();
-      if (!token.IsEmpty()) {
-        new SIP_PDU_Work(*this, token, pdu);
-        return true;
+      {
+        m_receivedConnectionMutex.Wait();
+        PString token = m_receivedConnectionTokens(mime.GetCallID());
+        m_receivedConnectionMutex.Signal();
+        if (!token.IsEmpty()) {
+          new SIP_PDU_Work(*this, token, pdu);
+          return true;
+        }
       }
-      break;
+      // Do next case
+
+    case SIP_PDU::NumMethods :  // Response
+      {
+        PString id = pdu->GetTransactionID();
+        PSafePtr<SIPTransaction> transaction = GetTransaction(id, PSafeReadOnly);
+        if (transaction != NULL) {
+          SIPConnection * connection = transaction->GetConnection();
+          new SIP_PDU_Work(*this, connection != NULL ? connection->GetToken() : id, pdu);
+          return true;
+        }
+
+        PTRACE(2, "SIP\tReceived response for unmatched transaction, id=" << id);
+        if (pdu->GetMethod() == SIP_PDU::Method_CANCEL)
+          pdu->SendResponse(SIP_PDU::Failure_TransactionDoesNotExist);
+        return false;
+      }
 
     case SIP_PDU::Method_INVITE :
       if (toToken.IsEmpty()) {
         PWaitAndSignal mutex(m_receivedConnectionMutex);
 
-        token = m_receivedConnectionTokens(mime.GetCallID());
+        PString token = m_receivedConnectionTokens(mime.GetCallID());
         if (!token.IsEmpty()) {
           PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(token, PSafeReference);
           if (connection != NULL) {
@@ -686,23 +720,22 @@ bool SIPEndPoint::OnReceivedPDU(SIP_PDU * pdu)
             }
           }
         }
-
-        pdu->SendResponse(SIP_PDU::Information_Trying);
-        return OnReceivedConnectionlessPDU(pdu);
       }
-
-      if (!hasToConnection) {
+      else if (!hasToConnection) {
         // Has to tag but doesn't correspond to anything, odd.
         pdu->SendResponse(SIP_PDU::Failure_TransactionDoesNotExist);
         return false;
       }
+
       pdu->SendResponse(SIP_PDU::Information_Trying);
-      break;
+      return OnReceivedINVITE(pdu);
 
+    case SIP_PDU::Method_BYE :
     case SIP_PDU::Method_ACK :
-      break;
-
-    case SIP_PDU::NumMethods :  // unknown method
+      if (!hasToConnection && !hasFromConnection) {
+        pdu->SendResponse(SIP_PDU::Failure_TransactionDoesNotExist);
+        return false;
+      }
       break;
 
     default :   // any known method other than INVITE, CANCEL and ACK
@@ -711,98 +744,14 @@ bool SIPEndPoint::OnReceivedPDU(SIP_PDU * pdu)
       break;
   }
 
-  if (hasToConnection)
-    token = toToken;
-  else if (hasFromConnection)
-    token = fromToken;
-  else
-    return OnReceivedConnectionlessPDU(pdu);
+  if (hasToConnection || hasFromConnection) {
+    new SIP_PDU_Work(*this, hasToConnection ? toToken : fromToken, pdu);
+    return true;
+  }
 
-  new SIP_PDU_Work(*this, token, pdu);
+  PSafePtr<SIPHandler> handler = FindHandlerByPDU(*pdu, PSafeReference);
+  new SIP_PDU_Work(*this, handler != NULL ? handler->GetCallID() : pdu->GetTransactionID(), pdu);
   return true;
-}
-
-
-bool SIPEndPoint::OnReceivedConnectionlessPDU(SIP_PDU * pdu)
-{
-  if (pdu->GetMethod() == SIP_PDU::NumMethods || pdu->GetMethod() == SIP_PDU::Method_CANCEL) {
-    PString id = pdu->GetTransactionID();
-    PSafePtr<SIPTransaction> transaction = GetTransaction(id, PSafeReadOnly);
-    if (transaction != NULL) {
-      SIPConnection * connection = transaction->GetConnection();
-      new SIP_PDU_Work(*this, connection != NULL ? connection->GetToken() : id, pdu);
-      return true;
-    }
-
-    PTRACE(2, "SIP\tReceived response for unmatched transaction, id=" << id);
-    if (pdu->GetMethod() == SIP_PDU::Method_CANCEL)
-      pdu->SendResponse(SIP_PDU::Failure_TransactionDoesNotExist);
-    return false;
-  }
-
-  // Prevent any new INVITE/SUBSCRIBE etc etc while we are on the way out.
-  if (m_shuttingDown) {
-    pdu->SendResponse(SIP_PDU::Failure_ServiceUnavailable);
-    return false;
-  }
-
-  // Check if we have already received this command (have a transaction)
-  {
-    PString id = pdu->GetTransactionID();
-    PSafePtr<SIPResponse> transaction = PSafePtrCast<SIPTransaction, SIPResponse>(GetTransaction(id, PSafeReadOnly));
-    if (transaction != NULL) {
-      PTRACE(4, "SIP\tRetransmitting previous response for transaction id=" << id);
-      transaction->InitialiseHeaders(*pdu);
-      return transaction->Send();
-    }
-  }
-
-  switch (pdu->GetMethod()) {
-    case SIP_PDU::Method_INVITE :
-      return OnReceivedINVITE(pdu);
-
-    case SIP_PDU::Method_REGISTER :
-      if (OnReceivedREGISTER(*pdu))
-        return false;
-      break;
-
-    case SIP_PDU::Method_SUBSCRIBE :
-      if (OnReceivedSUBSCRIBE(*pdu, NULL))
-        return false;
-      break;
-
-    case SIP_PDU::Method_NOTIFY :
-       if (OnReceivedNOTIFY(*pdu))
-         return false;
-       break;
-
-    case SIP_PDU::Method_MESSAGE :
-      if (OnReceivedMESSAGE(*pdu))
-        return false;
-      break;
-   
-    case SIP_PDU::Method_OPTIONS :
-      if (OnReceivedOPTIONS(*pdu))
-        return false;
-      break;
-
-    case SIP_PDU::Method_BYE :
-      // If we receive a BYE outside of the context of a connection, tell them.
-      pdu->SendResponse(SIP_PDU::Failure_TransactionDoesNotExist);
-      return false;
-
-      // If we receive an ACK outside of the context of a connection, ignore it.
-    case SIP_PDU::Method_ACK :
-      return false;
-
-    default :
-      break;
-  }
-
-  SIP_PDU response(*pdu, SIP_PDU::Failure_MethodNotAllowed);
-  response.SetAllow(GetAllowedMethods()); // Required by spec
-  response.Send();
-  return false;
 }
 
 
@@ -998,7 +947,6 @@ bool SIPEndPoint::OnReceivedINVITE(SIP_PDU * request)
 
   // Get the connection to handle the rest of the INVITE in the thread pool
   new SIP_PDU_Work(*this, token, request);
-
   return true;
 }
 
@@ -1032,6 +980,7 @@ bool SIPEndPoint::OnReceivedNOTIFY(SIP_PDU & request)
     return true;
   }
 
+  PTRACE_CONTEXT_ID_PUSH_THREAD(handler);
   PTRACE(3, "SIP\tFound a SUBSCRIBE corresponding to the NOTIFY " << eventPackage);
   return handler->OnReceivedNOTIFY(request);
 }
@@ -1988,16 +1937,58 @@ void SIP_PDU_Work::Work()
     else {
       PTRACE(2, "SIP\tCannot find transaction " << transactionID << " for response PDU \"" << *m_pdu << '"');
     }
+    return;
   }
-  else {
-    PSafePtr<SIPConnection> connection = m_endpoint.GetSIPConnectionWithLock(m_token, PSafeReadWrite);
+
+  PSafePtr<SIPConnection> connection = m_endpoint.GetSIPConnectionWithLock(m_token, PSafeReadWrite);
+  if (connection != NULL) {
     PTRACE_CONTEXT_ID_PUSH_THREAD(connection);
-    if (connection != NULL) {
-      PTRACE(3, "SIP\tHandling PDU \"" << *m_pdu << "\" for token=" << m_token);
-      connection->OnReceivedPDU(*m_pdu);
-      PTRACE(4, "SIP\tHandled PDU \"" << *m_pdu << '"');
-    }
+    PTRACE(3, "SIP\tHandling connection PDU \"" << *m_pdu << "\" for token=" << m_token);
+    connection->OnReceivedPDU(*m_pdu);
+    PTRACE(4, "SIP\tHandled connection PDU \"" << *m_pdu << '"');
+    return;
   }
+
+  PTRACE(3, "SIP\tHandling non-connection PDU \"" << *m_pdu << "\" for token=" << m_token);
+
+  bool sendResponse = true;
+  switch (m_pdu->GetMethod()) {
+    case SIP_PDU::Method_REGISTER :
+      if (m_endpoint.OnReceivedREGISTER(*m_pdu))
+        sendResponse = false;
+      break;
+
+    case SIP_PDU::Method_SUBSCRIBE :
+      if (m_endpoint.OnReceivedSUBSCRIBE(*m_pdu, NULL))
+        sendResponse = false;
+      break;
+
+    case SIP_PDU::Method_NOTIFY :
+       if (m_endpoint.OnReceivedNOTIFY(*m_pdu))
+        sendResponse = false;
+       break;
+
+    case SIP_PDU::Method_MESSAGE :
+      if (m_endpoint.OnReceivedMESSAGE(*m_pdu))
+        sendResponse = false;
+      break;
+   
+    case SIP_PDU::Method_OPTIONS :
+      if (m_endpoint.OnReceivedOPTIONS(*m_pdu))
+        sendResponse = false;
+      break;
+
+    default :
+      break;
+  }
+
+  if (sendResponse) {
+    SIP_PDU response(*m_pdu, SIP_PDU::Failure_MethodNotAllowed);
+    response.SetAllow(m_endpoint.GetAllowedMethods()); // Required by spec
+    response.Send();
+  }
+
+  PTRACE(3, "SIP\tHandled non-connection PDU \"" << *m_pdu << "\" for token=" << m_token);
 }
 
 

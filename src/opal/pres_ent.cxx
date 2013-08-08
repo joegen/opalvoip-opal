@@ -567,7 +567,7 @@ void OpalPresentityWithCommandThread::StartThread(bool startQueue)
   // start handler thread
   m_threadRunning = true;
   m_queueRunning  = startQueue;
-  m_thread = new PThreadObj<OpalPresentityWithCommandThread>(*this, &OpalPresentityWithCommandThread::ThreadMain);
+  m_thread = new PThreadObj<OpalPresentityWithCommandThread>(*this, &OpalPresentityWithCommandThread::ThreadMain, false, "Presence");
 }
 
 void OpalPresentityWithCommandThread::StartQueue(bool startQueue)

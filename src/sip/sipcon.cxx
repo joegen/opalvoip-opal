@@ -1963,14 +1963,6 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
   if (m_remoteAddress.IsEmpty())
     m_remoteAddress = pdu.GetTransport()->GetRemoteAddress();
 
-  // Prevent retries from getting through to processing
-  unsigned sequenceNumber = pdu.GetMIME().GetCSeqIndex();
-  if (m_lastRxCSeq.find(method) != m_lastRxCSeq.end() && sequenceNumber <= m_lastRxCSeq[method]) {
-    PTRACE(3, "SIP\tIgnoring duplicate PDU " << pdu);
-    return;
-  }
-  m_lastRxCSeq[method] = sequenceNumber;
-
   m_allowedMethods |= pdu.GetMIME().GetAllowBitMask();
 
   switch (method) {
@@ -2013,6 +2005,9 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
     default :
       // Shouldn't have got this!
       PTRACE(2, "SIP\tUnhandled PDU " << pdu);
+      SIP_PDU response(pdu, SIP_PDU::Failure_MethodNotAllowed);
+      response.SetAllow(m_endpoint.GetAllowedMethods()); // Required by spec
+      response.Send();
       break;
   }
 }
@@ -2882,15 +2877,14 @@ void SIPConnection::OnReceivedACK(SIP_PDU & ack)
 
 void SIPConnection::OnReceivedOPTIONS(SIP_PDU & request)
 {
-  if (request.GetMIME().GetAccept().Find("application/sdp") == P_MAX_INDEX)
-    request.SendResponse(SIP_PDU::Failure_UnsupportedMediaType);
-  else {
+  SIPTransaction * response = new SIPResponse(m_endpoint, request, SIP_PDU::Failure_UnsupportedMediaType);
+  if (request.GetMIME().GetAccept().Find("application/sdp") != P_MAX_INDEX) {
     SDPSessionDescription sdp(m_sdpSessionId, m_sdpVersion, OpalTransportAddress());
-    SIP_PDU response(request, SIP_PDU::Successful_OK);
-    response.SetAllow(GetAllowedMethods());
-    response.SetEntityBody(sdp.Encode());
-    response.Send();
+    response->SetStatusCode(SIP_PDU::Successful_OK);
+    response->SetAllow(GetAllowedMethods());
+    response->SetEntityBody(sdp.Encode());
   }
+  response->Send();
 }
 
 
@@ -2910,12 +2904,14 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
      Use Subscription State = terminated to Release this dialog.
   */
 
+  SIPTransaction * response = new SIPResponse(m_endpoint, request, SIP_PDU::Successful_OK);
+
   const SIPMIMEInfo & mime = request.GetMIME();
 
   SIPSubscribe::EventPackage package(mime.GetEvent());
   if (m_allowedEvents.Contains(package)) {
     PTRACE(2, "SIP\tReceived Notify for allowed event " << package);
-    request.SendResponse(SIP_PDU::Successful_OK);
+    response->Send();
     OnAllowedEventNotify(package);
     return;
   }
@@ -2924,19 +2920,22 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
   // do it later if we ever support multiple simultaneous REFERs
   if (package.Find("refer") == P_MAX_INDEX) {
     PTRACE(2, "SIP\tNOTIFY in a connection only supported for REFER requests");
-    request.SendResponse(SIP_PDU::Failure_BadEvent);
+    response->SetStatusCode(SIP_PDU::Failure_BadEvent);
+    response->Send();
     return;
   }
 
   if (!m_referInProgress) {
     PTRACE(2, "SIP\tNOTIFY for REFER we never sent.");
-    request.SendResponse(SIP_PDU::Failure_TransactionDoesNotExist);
+    response->SetStatusCode(SIP_PDU::Failure_TransactionDoesNotExist);
+    response->Send();
     return;
   }
 
   if (mime.GetContentType() != "message/sipfrag") {
     PTRACE(2, "SIP\tNOTIFY for REFER has incorrect Content-Type");
-    request.SendResponse(SIP_PDU::Failure_BadRequest);
+    response->SetStatusCode(SIP_PDU::Failure_BadRequest);
+    response->Send();
     return;
   }
 
@@ -2944,11 +2943,12 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
   unsigned code = body.Mid(body.Find(' ')).AsUnsigned();
   if (body.NumCompare("SIP/") != EqualTo || code < 100) {
     PTRACE(2, "SIP\tNOTIFY for REFER has incorrect body");
-    request.SendResponse(SIP_PDU::Failure_BadRequest);
+    response->SetStatusCode(SIP_PDU::Failure_BadRequest);
+    response->Send();
     return;
   }
 
-  request.SendResponse(SIP_PDU::Successful_OK);
+  response->Send();
 
   PStringToString info;
   PCaselessString state = mime.GetSubscriptionState(info);
@@ -2972,28 +2972,28 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
 
 void SIPConnection::OnReceivedREFER(SIP_PDU & request)
 {
+  SIPTransaction * response = new SIPResponse(m_endpoint, request, SIP_PDU::Successful_OK);
+
   const SIPMIMEInfo & requestMIME = request.GetMIME();
 
   SIPURL referTo = requestMIME.GetReferTo();
   if (referTo.IsEmpty()) {
-    SIP_PDU response(request, SIP_PDU::Failure_BadRequest);
-    response.SetInfo("Missing refer-to header");
-    response.Send();
+    response->SetStatusCode(SIP_PDU::Failure_BadRequest);
+    response->SetInfo("Missing refer-to header");
+    response->Send();
     return;
   }    
-
-  SIP_PDU response(request, SIP_PDU::Successful_OK);
 
   // Comply to RFC4488
   bool referSub = true;
   static PConstCaselessString const ReferSubHeader("Refer-Sub");
   if (requestMIME.Contains(ReferSubHeader)) {
     referSub = requestMIME.GetBoolean(ReferSubHeader, true);
-    response.GetMIME().SetBoolean(ReferSubHeader, referSub);
+    response->GetMIME().SetBoolean(ReferSubHeader, referSub);
   }
 
   if (referSub) {
-    response.SetStatusCode(SIP_PDU::Successful_Accepted);
+    response->SetStatusCode(SIP_PDU::Successful_Accepted);
     referTo.SetParamVar(OPAL_URL_PARAM_PREFIX OPAL_SIP_REFERRED_CONNECTION, GetToken());
   }
 
@@ -3006,20 +3006,20 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
       if (method == "INVITE") {
         // Don't actually transfer, get conf to do INVITE to add participant
         if (!InviteConferenceParticipant(state.m_internalURI, referTo.AsString()))
-          response.SetStatusCode(SIP_PDU::Failure_NotFound);
+          response->SetStatusCode(SIP_PDU::Failure_NotFound);
       }
       else if (method == "BYE") {
       }
       else
-        response.SetStatusCode(SIP_PDU::Failure_NotImplemented);
+        response->SetStatusCode(SIP_PDU::Failure_NotImplemented);
 
-      response.Send();
+      response->Send();
       return;
     }
   }
 
   // send response before attempting the transfer
-  if (!response.Send())
+  if (!response->Send())
     return;
 
   m_redirectingParty = requestMIME.GetReferredBy();
@@ -3053,7 +3053,9 @@ bool SIPConnection::InviteConferenceParticipant(const PString & conf, const PStr
 void SIPConnection::OnReceivedBYE(SIP_PDU & request)
 {
   PTRACE(3, "SIP\tBYE received for call " << request.GetMIME().GetCallID());
-  request.SendResponse(SIP_PDU::Successful_OK);
+
+  SIPTransaction * response = new SIPResponse(m_endpoint, request, SIP_PDU::Successful_OK);
+  response->Send();
   
   if (IsReleased()) {
     PTRACE(2, "SIP\tAlready released " << *this);
@@ -3082,9 +3084,9 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
 
   PTRACE(3, "SIP\tCancel received for " << *this);
 
-  SIP_PDU response(request, SIP_PDU::Successful_OK);
-  response.GetMIME().SetTo(m_dialog.GetLocalURI());
-  response.Send();
+  SIPTransaction * response = new SIPResponse(m_endpoint, request, SIP_PDU::Successful_OK);
+  response->GetMIME().SetTo(m_dialog.GetLocalURI());
+  response->Send();
 
   if (IsOriginating())
     return;

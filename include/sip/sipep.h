@@ -244,14 +244,9 @@ class SIPEndPoint : public OpalRTPEndPoint
     );
 
     /**Handle an incoming SIP PDU that has been full decoded
+       @return true if ownership of \p pdu is taken, false will delete it.
       */
     virtual bool OnReceivedPDU(
-      SIP_PDU * pdu
-    );
-
-    /**Handle an incoming SIP PDU not assigned to any connection
-      */
-    virtual bool OnReceivedConnectionlessPDU(
       SIP_PDU * pdu
     );
 
@@ -263,24 +258,28 @@ class SIPEndPoint : public OpalRTPEndPoint
     );
 
     /**Handle an incoming INVITE request.
+       @return true if ownership of \p pdu is taken, false will delete it.
       */
     virtual bool OnReceivedINVITE(
       SIP_PDU * pdu
     );
 
     /**Handle an incoming NOTIFY PDU.
+       @return true if handled and response sent.
       */
     virtual bool OnReceivedNOTIFY(
       SIP_PDU & request
     );
 
     /**Handle an incoming REGISTER PDU.
+       @return true if handled and response sent.
       */
     virtual bool OnReceivedREGISTER(
       SIP_PDU & request
     );
 
     /**Handle an incoming SUBSCRIBE PDU.
+       @return true if handled and response sent.
       */
     virtual bool OnReceivedSUBSCRIBE(
       SIP_PDU & request,
@@ -288,12 +287,14 @@ class SIPEndPoint : public OpalRTPEndPoint
     );
 
     /**Handle an incoming MESSAGE PDU.
+       @return true if handled and response sent.
       */
     virtual bool OnReceivedMESSAGE(
       SIP_PDU & request
     );
 
     /**Handle an incoming OPTIONS PDU.
+       @return true if handled and response sent.
       */
     virtual bool OnReceivedOPTIONS(
       SIP_PDU & request
@@ -1048,6 +1049,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     P_REMOVE_VIRTUAL(SIPConnection *,CreateConnection(OpalCall &, const PString &, void *, const SIPURL &, OpalTransport *, SIP_PDU *, unsigned, OpalConnection::StringOptions *), NULL);
     P_REMOVE_VIRTUAL(PBoolean, OnReceivedPDU(OpalTransport &, SIP_PDU *), false);
     P_REMOVE_VIRTUAL(bool, OnReceivedConnectionlessPDU(OpalTransport &,  SIP_PDU *), false);
+    P_REMOVE_VIRTUAL(bool, OnReceivedConnectionlessPDU(SIP_PDU *), false);
     P_REMOVE_VIRTUAL(PBoolean, OnReceivedINVITE(OpalTransport &, SIP_PDU *), false);
     P_REMOVE_VIRTUAL(PBoolean, OnReceivedNOTIFY(OpalTransport &, SIP_PDU &), false);
     P_REMOVE_VIRTUAL(PBoolean, OnReceivedREGISTER(OpalTransport &, SIP_PDU &), false);
