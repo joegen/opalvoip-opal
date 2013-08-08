@@ -1449,7 +1449,7 @@ OpalPluginCodecManager::OpalPluginCodecManager(PPluginManager * _pluginMgr)
   : PPluginModuleManager(PLUGIN_CODEC_GET_CODEC_FN_STR, _pluginMgr)
 {
 #ifdef OPAL_PLUGIN_DIR
-   pluginMgr->AddDirectory(OPAL_PLUGIN_DIR); // Add default OPAL plug in directory so PPluginManager loads these too
+//   pluginMgr->AddDirectory(OPAL_PLUGIN_DIR); // Add default OPAL plug in directory so PPluginManager loads these too
 #endif // OPAL_PLUGIN_DIR
 
   // instantiate all of the static codecs
