@@ -22,7 +22,7 @@
              Compressed='yes' />
 
     <Media Id='1' Cabinet='OpenPhone.cab' EmbedCab='yes' DiskPrompt='CD-ROM #1' />
-    <Property Id='DiskPrompt' Value="Open Phone 3.10 Installation [1]" />
+    <Property Id='DiskPrompt' Value="Open Phone $(var.OPAL_VERSION) Installation [1]" />
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
      
     <UIRef Id="WixUI_InstallDir" />
@@ -289,7 +289,7 @@
 
     <Feature Id='Codecs'
              Title="OPAL Codec Plug-ins"
-             Level='2'>
+             Level='1'>
       <ComponentRef Id='G.722' />
       <ComponentRef Id='G.722.1' />
       <ComponentRef Id='G.722.2' />
