@@ -169,7 +169,7 @@ static struct GstInitInfo {
                                                                              " me-subpel-quality=8"
                                                                              " qmin=2"
   },
-  { OPAL_H264_MODE0,    "rtph264depay",  "ffdec_h264",  "rtph264pay"
+  { OPAL_H264_MODE1,    "rtph264depay",  "ffdec_h264",  "rtph264pay"
                                                         " config-interval=5", "x264enc"
                                                                               " byte-stream=true"
                                                                               " bframes=0"
