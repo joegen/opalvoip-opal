@@ -358,10 +358,16 @@ PBoolean H323UnidirectionalChannel::SetInitialBandwidth()
 {
   OpalBandwidth bandwidth;
   if (GetDirection() == IsTransmitter) {
-    bandwidth = capability->GetMediaFormat().GetOptionInteger(OpalMediaFormat::TargetBitRateOption());
+    OpalMediaFormat mediaFormat = capability->GetMediaFormat();
+    bandwidth = mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption());
     OpalBandwidth available = connection.GetBandwidthAvailable(OpalBandwidth::Tx);
-    if (bandwidth > available)
+    if (bandwidth > available) {
+      PTRACE(3, "LogChan", "Adjusting " << GetNumber() << ' ' << capability->GetMediaFormat()
+             << " target bandwidth from " << bandwidth << " to " << available);
       bandwidth = available;
+      mediaFormat.SetOptionInteger(OpalMediaFormat::TargetBitRateOption(), bandwidth);
+      capability->UpdateMediaFormat(mediaFormat);
+    }
   }
   if (bandwidth == 0)
     bandwidth = capability->GetMediaFormat().GetOptionInteger(OpalMediaFormat::MaxBitRateOption());
