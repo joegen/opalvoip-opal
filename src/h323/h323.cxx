@@ -4860,7 +4860,7 @@ PBoolean H323Connection::OnCreateLogicalChannel(const H323Capability & capabilit
 
   // Check if in set at all
   if (dir != H323Channel::IsReceiver) {
-    H323Capability * remoteCapability = localCapabilities.FindCapability(capability);
+    H323Capability * remoteCapability = remoteCapabilities.FindCapability(capability);
     if (remoteCapability == NULL || !localCapabilities.IsAllowed(*remoteCapability)) {
       PTRACE(2, "H323\tOnCreateLogicalChannel - transmit capability " << capability << " not allowed.");
       return false;
