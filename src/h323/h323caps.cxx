@@ -348,7 +348,7 @@ bool H323Capability::PostTCS(const H323Capabilities &)
 {
   return true;
 }
-#endif
+#endif // OPAL_H235_6 || OPAL_H235_8
 
 
 PBoolean H323Capability::OnReceivedPDU(const H245_Capability & cap)
@@ -390,11 +390,13 @@ PBoolean H323Capability::OnReceivedPDU(const H245_Capability & cap)
 
 PBoolean H323Capability::OnReceivedPDU(const H245_DataType & pdu, PBoolean /*receiver*/)
 {
+#if OPAL_H235_6 || OPAL_H235_8
   if (pdu.GetTag() == H245_DataType::e_h235Media && m_cryptoCapability != NULL) {
     const H245_H235Media & h235 = pdu;
     if (!m_cryptoCapability->OnReceivedPDU(h235.m_encryptionAuthenticationAndIntegrity))
       return false;
   }
+#endif // OPAL_H235_6 || OPAL_H235_8
 
   GetWritableMediaFormat().SetOptionString(OpalMediaFormat::ProtocolOption(), PLUGINCODEC_OPTION_PROTOCOL_H323);
   return m_mediaFormat.ToNormalisedOptions();
