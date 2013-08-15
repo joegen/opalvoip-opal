@@ -261,6 +261,26 @@ PObject * H235_KeyMaterial::Clone() const
 
 
 //
+// KeyMaterialExt
+//
+
+H235_KeyMaterialExt::H235_KeyMaterialExt(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_BitString(tag, tagClass)
+{
+  SetConstraints(PASN_Object::FixedConstraint, 2049, 65536);
+}
+
+
+PObject * H235_KeyMaterialExt::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H235_KeyMaterialExt::Class()), PInvalidCast);
+#endif
+  return new H235_KeyMaterialExt(*this);
+}
+
+
+//
 // NonStandardParameter
 //
 
@@ -433,6 +453,105 @@ PObject * H235_DHset::Clone() const
   PAssert(IsClass(H235_DHset::Class()), PInvalidCast);
 #endif
   return new H235_DHset(*this);
+}
+
+
+//
+// DHsetExt
+//
+
+H235_DHsetExt::H235_DHsetExt(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Sequence(tag, tagClass, 2, true, 0)
+{
+  m_halfkey.SetConstraints(PASN_Object::FixedConstraint, 2049, 65536);
+  m_modSize.SetConstraints(PASN_Object::FixedConstraint, 2049, 65536);
+  m_generator.SetConstraints(PASN_Object::FixedConstraint, 2049, 65536);
+}
+
+
+#ifndef PASN_NOPRINTON
+void H235_DHsetExt::PrintOn(ostream & strm) const
+{
+  std::streamsize indent = strm.precision() + 2;
+  strm << "{\n";
+  strm << setw(indent+10) << "halfkey = " << setprecision(indent) << m_halfkey << '\n';
+  if (HasOptionalField(e_modSize))
+    strm << setw(indent+10) << "modSize = " << setprecision(indent) << m_modSize << '\n';
+  if (HasOptionalField(e_generator))
+    strm << setw(indent+12) << "generator = " << setprecision(indent) << m_generator << '\n';
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
+}
+#endif
+
+
+PObject::Comparison H235_DHsetExt::Compare(const PObject & obj) const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(&obj, H235_DHsetExt), PInvalidCast);
+#endif
+  const H235_DHsetExt & other = (const H235_DHsetExt &)obj;
+
+  Comparison result;
+
+  if ((result = m_halfkey.Compare(other.m_halfkey)) != EqualTo)
+    return result;
+  if ((result = m_modSize.Compare(other.m_modSize)) != EqualTo)
+    return result;
+  if ((result = m_generator.Compare(other.m_generator)) != EqualTo)
+    return result;
+
+  return PASN_Sequence::Compare(other);
+}
+
+
+PINDEX H235_DHsetExt::GetDataLength() const
+{
+  PINDEX length = 0;
+  length += m_halfkey.GetObjectLength();
+  if (HasOptionalField(e_modSize))
+    length += m_modSize.GetObjectLength();
+  if (HasOptionalField(e_generator))
+    length += m_generator.GetObjectLength();
+  return length;
+}
+
+
+PBoolean H235_DHsetExt::Decode(PASN_Stream & strm)
+{
+  if (!PreambleDecode(strm))
+    return false;
+
+  if (!m_halfkey.Decode(strm))
+    return false;
+  if (HasOptionalField(e_modSize) && !m_modSize.Decode(strm))
+    return false;
+  if (HasOptionalField(e_generator) && !m_generator.Decode(strm))
+    return false;
+
+  return UnknownExtensionsDecode(strm);
+}
+
+
+void H235_DHsetExt::Encode(PASN_Stream & strm) const
+{
+  PreambleEncode(strm);
+
+  m_halfkey.Encode(strm);
+  if (HasOptionalField(e_modSize))
+    m_modSize.Encode(strm);
+  if (HasOptionalField(e_generator))
+    m_generator.Encode(strm);
+
+  UnknownExtensionsEncode(strm);
+}
+
+
+PObject * H235_DHsetExt::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H235_DHsetExt::Class()), PInvalidCast);
+#endif
+  return new H235_DHsetExt(*this);
 }
 
 
@@ -2172,7 +2291,7 @@ const static PASN_Names Names_H235_H235Key[]={
 H235_H235Key::H235_H235Key(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 3, true
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H235_H235Key,4
+    ,(const PASN_Names *)Names_H235_H235Key,5
 #endif
 )
 {
@@ -2267,6 +2386,28 @@ H235_H235Key::operator const H235_V3KeySyncMaterial &() const
 }
 
 
+#if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
+H235_H235Key::operator H235_KeyMaterialExt &() const
+#else
+H235_H235Key::operator H235_KeyMaterialExt &()
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H235_KeyMaterialExt), PInvalidCast);
+#endif
+  return *(H235_KeyMaterialExt *)choice;
+}
+
+
+H235_H235Key::operator const H235_KeyMaterialExt &() const
+#endif
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(PAssertNULL(choice), H235_KeyMaterialExt), PInvalidCast);
+#endif
+  return *(H235_KeyMaterialExt *)choice;
+}
+
+
 PBoolean H235_H235Key::CreateObject()
 {
   switch (tag) {
@@ -2303,7 +2444,7 @@ PObject * H235_H235Key::Clone() const
 //
 
 H235_ClearToken::H235_ClearToken(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 8, true, 4)
+  : PASN_Sequence(tag, tagClass, 8, true, 5)
 {
 }
 
@@ -2338,6 +2479,8 @@ void H235_ClearToken::PrintOn(ostream & strm) const
     strm << setw(indent+10) << "h235Key = " << setprecision(indent) << m_h235Key << '\n';
   if (HasOptionalField(e_profileInfo))
     strm << setw(indent+14) << "profileInfo = " << setprecision(indent) << m_profileInfo << '\n';
+  if (HasOptionalField(e_dhkeyext))
+    strm << setw(indent+11) << "dhkeyext = " << setprecision(indent) << m_dhkeyext << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -2430,6 +2573,8 @@ PBoolean H235_ClearToken::Decode(PASN_Stream & strm)
     return false;
   if (!KnownExtensionDecode(strm, e_profileInfo, m_profileInfo))
     return false;
+  if (!KnownExtensionDecode(strm, e_dhkeyext, m_dhkeyext))
+    return false;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2460,6 +2605,7 @@ void H235_ClearToken::Encode(PASN_Stream & strm) const
   KnownExtensionEncode(strm, e_sendersID, m_sendersID);
   KnownExtensionEncode(strm, e_h235Key, m_h235Key);
   KnownExtensionEncode(strm, e_profileInfo, m_profileInfo);
+  KnownExtensionEncode(strm, e_dhkeyext, m_dhkeyext);
 
   UnknownExtensionsEncode(strm);
 }
