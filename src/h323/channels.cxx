@@ -308,6 +308,18 @@ PBoolean H323Channel::SetBandwidthUsed(OpalBandwidth bandwidth)
 }
 
 
+OpalMediaFormat H323Channel::GetMediaFormat() const
+{
+  return capability->GetMediaFormat();
+}
+
+
+bool H323Channel::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
+{
+  return capability->UpdateMediaFormat(mediaFormat);
+}
+
+
 bool H323Channel::PreOpen()
 {
   return Open();
@@ -339,7 +351,6 @@ H323UnidirectionalChannel::H323UnidirectionalChannel(H323Connection & conn,
                                                      Directions direction)
   : H323Channel(conn, cap)
   , receiver(direction == IsReceiver)
-  , m_mediaFormat(capability->GetMediaFormat())
 {
 }
 
@@ -358,7 +369,7 @@ PBoolean H323UnidirectionalChannel::SetInitialBandwidth()
 {
   OpalBandwidth bandwidth;
   if (GetDirection() == IsTransmitter) {
-    OpalMediaFormat mediaFormat = capability->GetMediaFormat();
+    OpalMediaFormat mediaFormat = GetMediaFormat();
     bandwidth = mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption());
     OpalBandwidth available = connection.GetBandwidthAvailable(OpalBandwidth::Tx);
     if (bandwidth > available) {
@@ -366,7 +377,7 @@ PBoolean H323UnidirectionalChannel::SetInitialBandwidth()
              << " target bandwidth from " << bandwidth << " to " << available);
       bandwidth = available;
       mediaFormat.SetOptionInteger(OpalMediaFormat::TargetBitRateOption(), bandwidth);
-      capability->UpdateMediaFormat(mediaFormat);
+      UpdateMediaFormat(mediaFormat);
     }
   }
   if (bandwidth == 0)
@@ -380,13 +391,13 @@ bool H323UnidirectionalChannel::PreOpen()
   if (m_mediaStream != NULL)
     return true;
 
-  m_mediaStream = connection.CreateMediaStream(m_mediaFormat, GetSessionID(), receiver);
+  m_mediaStream = connection.CreateMediaStream(GetMediaFormat(), GetSessionID(), receiver);
 
   OpalCall & call = connection.GetCall();
-  OpalMediaType mediaType = m_mediaFormat.GetMediaType();
+  OpalMediaType mediaType = GetMediaFormat().GetMediaType();
 
   if (GetDirection() == IsReceiver) {
-    if (!call.OpenSourceMediaStreams(connection, mediaType, GetSessionID(), m_mediaFormat)) {
+    if (!call.OpenSourceMediaStreams(connection, mediaType, GetSessionID(), GetMediaFormat())) {
       PTRACE(1, "LogChan\tReceive OpenSourceMediaStreams failed");
       return false;
     }
@@ -397,14 +408,13 @@ bool H323UnidirectionalChannel::PreOpen()
       PTRACE(1, "LogChan\tTransmit failed, no other connection");
       return false;
     }
-    if (!call.OpenSourceMediaStreams(*otherConnection, mediaType, GetSessionID(), m_mediaFormat)) {
+    if (!call.OpenSourceMediaStreams(*otherConnection, mediaType, GetSessionID(), GetMediaFormat())) {
       PTRACE(1, "LogChan\tTransmit OpenSourceMediaStreams failed");
       return false;
     }
   }
 
-  m_mediaFormat = m_mediaStream->GetMediaFormat();
-  capability->UpdateMediaFormat(m_mediaFormat);
+  capability->UpdateMediaFormat(m_mediaStream->GetMediaFormat());
   return true;
 }
 
@@ -430,6 +440,13 @@ void H323UnidirectionalChannel::InternalClose()
 }
 
 
+bool H323UnidirectionalChannel::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
+{
+  return H323Channel::UpdateMediaFormat(mediaFormat) &&
+          (m_mediaStream == NULL || m_mediaStream->UpdateMediaFormat(mediaFormat));
+}
+
+
 OpalMediaStreamPtr H323UnidirectionalChannel::GetMediaStream() const
 {
   return m_mediaStream;
@@ -439,7 +456,7 @@ OpalMediaStreamPtr H323UnidirectionalChannel::GetMediaStream() const
 void H323UnidirectionalChannel::SetMediaStream(OpalMediaStreamPtr mediaStream)
 {
   m_mediaStream = mediaStream;
-  m_mediaFormat = m_mediaStream->GetMediaFormat();
+  capability->UpdateMediaFormat(m_mediaStream->GetMediaFormat());
 }
 
 
@@ -644,9 +661,9 @@ PBoolean H323_RealTimeChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAc
   }
 
   if (param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_dynamicRTPPayloadType)) {
-    m_mediaFormat.SetPayloadType((RTP_DataFrame::PayloadTypes)param.m_dynamicRTPPayloadType.GetValue());
-    if (m_mediaStream != NULL)
-      m_mediaStream->UpdateMediaFormat(m_mediaFormat);
+    OpalMediaFormat mediaFormat = GetMediaFormat();
+    mediaFormat.SetPayloadType((RTP_DataFrame::PayloadTypes)param.m_dynamicRTPPayloadType.GetValue());
+    UpdateMediaFormat(mediaFormat);
   }
 
   return SetSessionID(sessionID);

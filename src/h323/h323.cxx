@@ -4121,24 +4121,25 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
 
     PTRACE(3, "H323\tOpenMediaStream using channel " << channel->GetNumber() << " for session " << sessionID);
   }
-
-  if (stream->Open()) {
+  else if (stream->Open()) {
+    // Update the media format, but not the payload type.
     OpalMediaFormat adjustedMediaFormat = mediaFormat;
     adjustedMediaFormat.SetPayloadType(stream->GetMediaFormat().GetPayloadType());
     stream->UpdateMediaFormat(adjustedMediaFormat);
+  }
 
+  if (stream->Open()) {
     if (OnOpenMediaStream(*stream)) {
       mediaStreams.Append(stream);
       return stream;
     }
 
     PTRACE(2, "H323\tOnOpenMediaStream failed for " << mediaFormat << ", session " << sessionID);
+    stream->Close();
   }
   else {
     PTRACE(2, "H323\tMedia stream open failed for " << mediaFormat << ", session " << sessionID);
   }
-
-  stream->Close();
 
   return NULL;
 }
