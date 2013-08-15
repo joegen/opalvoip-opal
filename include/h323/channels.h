@@ -315,6 +315,12 @@ class H323Channel : public PObject
     /**Get the capability that created this channel.
       */
     const H323Capability & GetCapability() const { return *capability; }
+
+    /// Get the media format (from capability)
+    OpalMediaFormat GetMediaFormat() const;
+
+    /// Update media format options
+    virtual bool UpdateMediaFormat(const OpalMediaFormat & mediaFormat);
   //@}
 
   protected:
@@ -391,12 +397,13 @@ class H323UnidirectionalChannel : public H323Channel
     /**Open the channel.
       */
     virtual PBoolean Open();
+
+    /// Update media format options
+    virtual bool UpdateMediaFormat(const OpalMediaFormat & mediaFormat);
   //@}
 
   /**@name Member variable access */
   //@{
-    OpalMediaFormat GetMediaFormat() const { return m_mediaFormat; }
-
     /**Get the media stream associated with this logical channel.
        The default behaviour returns m_mediaStream.
       */
@@ -413,7 +420,6 @@ class H323UnidirectionalChannel : public H323Channel
     virtual void InternalClose();
 
     bool               receiver;
-    OpalMediaFormat    m_mediaFormat;
     OpalMediaStreamPtr m_mediaStream;
 };
 
