@@ -186,7 +186,11 @@ ifeq ($(OPAL_H323),yes)
   ASN_CXX_FILES += $(ASN_SRCDIR)/h225_1.cxx $(ASN_SRCDIR)/h225_2.cxx
 
   ASN_H_FILES   += $(ASN_INCDIR)/h235.h $(ASN_SRCDIR)/h235_t.cxx
-  ASN_CXX_FILES += $(ASN_SRCDIR)/h235.cxx $(ASN_SRCDIR)/h235_srtp.cxx
+  ASN_CXX_FILES += $(ASN_SRCDIR)/h235.cxx
+
+  ifeq ($(OPAL_H235_8), yes)
+    ASN_CXX_FILES += $(ASN_SRCDIR)/h235_srtp.cxx
+  endif
 
   ASN_H_FILES   += $(ASN_INCDIR)/h245.h
   ASN_CXX_FILES += $(ASN_SRCDIR)/h245_1.cxx $(ASN_SRCDIR)/h245_2.cxx $(ASN_SRCDIR)/h245_3.cxx
@@ -257,6 +261,11 @@ ifeq ($(OPAL_H323),yes)
   ifeq ($(OPAL_HAS_H224), yes)
     VPATH_CXX += $(OPAL_SRCDIR)/h224
     SOURCES += $(OPAL_SRCDIR)/h224/h323h224.cxx
+  endif
+
+  ifeq ($(OPAL_H235_6), yes)
+    SOURCES += $(OPAL_SRCDIR)/h323/h235dh.cxx \
+               $(OPAL_SRCDIR)/h323/h235_session.cxx 
   endif
 
 endif # OPAL_H323
