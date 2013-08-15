@@ -44,6 +44,7 @@
 
 #include <opal/mediafmt.h>
 #include <h323/channels.h>
+#include <opal/mediasession.h>
 
 
 /* The following classes have forward references to avoid including the VERY
@@ -71,8 +72,9 @@ class H323Capabilities;
 class H245_CapabilityIdentifier;
 class H245_GenericCapability;
 class H245_GenericParameter;
+class H245_EncryptionSync;
 class H245_EncryptionAuthenticationAndIntegrity;
-
+class H235SecurityCapability;
 
 #if OPAL_H239
   const OpalMediaFormat & GetH239VideoMediaFormat();
@@ -104,6 +106,12 @@ class H323Capability : public PObject
     /**Create a new capability specification.
      */
     H323Capability();
+    H323Capability(const H323Capability & other);
+    H323Capability & operator=(const H323Capability & other);
+
+    /**Destroy capability.
+     */
+    ~H323Capability();
   //@}
 
   /**@name Overrides from class PObject */
@@ -342,9 +350,32 @@ class H323Capability : public PObject
     /// Set the payload type for the capaibility
     void SetPayloadType(RTP_DataFrame::PayloadTypes pt) { GetWritableMediaFormat().SetPayloadType(pt); }
 
-#if !H323_DISABLE_H235_SRTP
-    const PString & GetCryptoSuite() const { return m_cryptoSuite; }
-    void SetCryptoSuite(const PString & cryptoSuite) { m_cryptoSuite = cryptoSuite; }
+#if OPAL_H235_6 || OPAL_H235_8
+    /// Get the crypto suite used for this capability
+    const OpalMediaCryptoSuite * GetCryptoSuite() const;
+
+    /// Set the crypto suite used for this capability
+    void SetCryptoSuite(const OpalMediaCryptoSuite & cryptoSuite);
+
+    /// On sending security key information
+    virtual bool OnSendingCryptoPDU(
+      H245_EncryptionSync & encryptionSync,
+      const H323Connection & connection,
+      unsigned sessionID
+    );
+
+    /// On received security key information
+    virtual bool OnReceivedCryptoPDU(
+      const H245_EncryptionSync & encryptionSync,
+      const H323Connection & connection,
+      unsigned sessionID,
+      bool rx
+    );
+
+    /// Do some post processing after decoding TCS
+    virtual bool PostTCS(
+      const H323Capabilities & capabilities
+    );
 #endif
   //@}
 
@@ -361,8 +392,8 @@ class H323Capability : public PObject
 
     mutable OpalMediaFormat m_mediaFormat;
 
-#if !H323_DISABLE_H235_SRTP
-    PString m_cryptoSuite;
+#if OPAL_H235_6 || OPAL_H235_8
+    H235SecurityCapability * m_cryptoCapability;
 #endif
 
   private:
@@ -1600,29 +1631,21 @@ class H323H239ControlCapability : public H323GenericControlCapability
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if !H323_DISABLE_H235_SRTP
+#if OPAL_H235_6 || OPAL_H235_8
 
-class H323H235SecurityCapability : public H323Capability,
-                                   public H323GenericCapabilityInfo
+class H235SecurityCapability : public H323Capability
 {
-  PCLASSINFO(H323H235SecurityCapability, H323Capability);
+  PCLASSINFO(H235SecurityCapability, H323Capability);
 
   public:
   /**@name Construction */
   //@{
     /**Create a new Extended Video capability.
       */
-    H323H235SecurityCapability(
-      unsigned mediaCapabilityNumber,
-      const PStringArray & cryptoSuites = PStringArray()
+    H235SecurityCapability(
+      const OpalMediaFormat & mediaFormat,
+      unsigned mediaCapabilityNumber
     );
-  //@}
-
-  /**@name Overrides from class PObject */
-  //@{
-    /**Create a copy of the object.
-      */
-    virtual PObject * Clone() const;
   //@}
 
   /**@name Overrides from class H323Capability */
@@ -1638,10 +1661,6 @@ class H323H235SecurityCapability : public H323Capability,
        main type of the capability.
      */
     virtual unsigned  GetSubType()  const;
-
-    /**Get the name of the media data format this class represents.
-     */
-    virtual PString GetFormatName() const;
 
     /**This function is called whenever and outgoing TerminalCapabilitySet
        PDU is being constructed for the control channel. It allows the
@@ -1670,27 +1689,159 @@ class H323H235SecurityCapability : public H323Capability,
       const H245_Capability & pdu ///<  PDU to get information from
     );
 
+    /// Do some post processing after decoding TCS
+    virtual bool PostTCS(
+      const H323Capabilities & capabilities
+    );
+  //@}
+
+    virtual bool OnSendingPDU(H245_EncryptionAuthenticationAndIntegrity & pdu) const = 0;
+    virtual bool OnReceivedPDU(const H245_EncryptionAuthenticationAndIntegrity & pdu) = 0;
+
+    unsigned GetMediaCapabilityNumber() const { return m_mediaCapabilityNumber; }
+    const OpalMediaCryptoSuite::List & GetCryptoSuites() const { return m_cryptoSuites; }
+    void SetCryptoSuites(const OpalMediaCryptoSuite::List & cryptoSuites) { m_cryptoSuites = cryptoSuites; }
+
+    static void AddAllCapabilities(
+      H323Capabilities & capabilities,
+      const PStringArray & cryptoSuites,
+      const char * prefix
+    );
+
+  protected:
+    unsigned                   m_mediaCapabilityNumber;
+    OpalMediaCryptoSuite::List m_cryptoSuites;
+};
+
+#endif // OPAL_H235_6 || OPAL_H235_8
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_H235_6
+
+class H235SecurityAlgorithmCapability : public H235SecurityCapability
+{
+  PCLASSINFO(H235SecurityAlgorithmCapability, H235SecurityCapability);
+
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new Extended Video capability.
+      */
+    H235SecurityAlgorithmCapability(
+      const OpalMediaFormat & mediaFormat,
+      unsigned mediaCapabilityNumber
+    );
+  //@}
+
+  /**@name Overrides from class PObject */
+  //@{
+    /**Create a copy of the object.
+      */
+    virtual PObject * Clone() const;
+  //@}
+
+  /**@name Overrides from class H323Capability */
+  //@{
+    /**Get the name of the media data format this class represents.
+     */
+    virtual PString GetFormatName() const;
+
     /**Compare the PDU part of the capability.
       */
     virtual PBoolean IsMatch(
       const PASN_Object & subTypePDU,     ///<  sub-type PDU of H323Capability
       const PString & mediaPacketization  ///< Media packetization used
     ) const;
+
+    /// OnSendingPDU for security
+    virtual bool OnSendingCryptoPDU(
+      H245_EncryptionSync & encryptionSync,
+      const H323Connection & connection,
+      unsigned sessionID
+    );
+
+    /// On received security key information
+    virtual bool OnReceivedCryptoPDU(
+      const H245_EncryptionSync & encryptionSync,
+      const H323Connection & connection,
+      unsigned sessionID,
+      bool rx
+    );
   //@}
 
-    bool OnSendingPDU(H245_EncryptionAuthenticationAndIntegrity & pdu) const;
-    bool OnReceivedPDU(const H245_EncryptionAuthenticationAndIntegrity & pdu);
-
-    unsigned GetMediaCapabilityNumber() const { return m_mediaCapabilityNumber; }
-    const PStringArray & GetCryptoSuites() const { return m_cryptoSuites; }
-
-  protected:
-    unsigned     m_mediaCapabilityNumber;
-    PStringArray m_cryptoSuites;
+    virtual bool OnSendingPDU(H245_EncryptionAuthenticationAndIntegrity & pdu) const;
+    virtual bool OnReceivedPDU(const H245_EncryptionAuthenticationAndIntegrity & pdu);
 };
 
-#endif // H323_DISABLE_H235_SRTP
+#endif // OPAL_H235_6
 
+
+///////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_H235_8
+
+class H235SecurityGenericCapability : public H235SecurityCapability,
+                                      public H323GenericCapabilityInfo
+{
+  PCLASSINFO(H235SecurityGenericCapability, H235SecurityCapability);
+
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new Extended Video capability.
+      */
+    H235SecurityGenericCapability(
+      const OpalMediaFormat & mediaFormat,
+      unsigned mediaCapabilityNumber
+    );
+  //@}
+
+  /**@name Overrides from class PObject */
+  //@{
+    /**Create a copy of the object.
+      */
+    virtual PObject * Clone() const;
+  //@}
+
+  /**@name Overrides from class H323Capability */
+  //@{
+    /**Get the name of the media data format this class represents.
+     */
+    virtual PString GetFormatName() const;
+
+    /**Compare the PDU part of the capability.
+      */
+    virtual PBoolean IsMatch(
+      const PASN_Object & subTypePDU,     ///<  sub-type PDU of H323Capability
+      const PString & mediaPacketization  ///< Media packetization used
+    ) const;
+
+    /// OnSendingPDU for security
+    virtual bool OnSendingCryptoPDU(
+      H245_EncryptionSync & encryptionSync,
+      const H323Connection & connection,
+      unsigned sessionID
+    );
+
+    /// On received security key information
+    virtual bool OnReceivedCryptoPDU(
+      const H245_EncryptionSync & encryptionSync,
+      const H323Connection & connection,
+      unsigned sessionID,
+      bool rx
+    );
+  //@}
+
+    virtual bool OnSendingPDU(H245_EncryptionAuthenticationAndIntegrity & pdu) const;
+    virtual bool OnReceivedPDU(const H245_EncryptionAuthenticationAndIntegrity & pdu);
+};
+
+#endif // OPAL_H235_8
+
+
+///////////////////////////////////////////////////////////////////////////////
 
 /**This class describes the interface to a data channel used to transfer data
    via the logical channels opened and managed by the H323 control channel.
@@ -2259,7 +2410,8 @@ class H323Capabilities : public PObject
     PINDEX SetCapability(
       PINDEX descriptorNum, ///<  The member of the capabilityDescriptor to add
       PINDEX simultaneous,  ///<  The member of the SimultaneousCapabilitySet to add
-      H323Capability * cap  ///<  New capability specification
+      H323Capability * cap, ///<  New capability specification
+      H323Capability * before = NULL ///< Capability to insert before
     );
 
     /**Add matching capability to media format.
@@ -2488,6 +2640,8 @@ class H323Capabilities : public PObject
     OpalMediaFormatList GetMediaFormats() const;
 
     const PStringSet & GetMediaPacketizations() const { return m_mediaPacketizations; }
+
+    const H323CapabilitiesSet & GetSet() const { return set; }
   //@}
 
   protected:    

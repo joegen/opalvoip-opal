@@ -2770,7 +2770,7 @@ static void LogMediaStream(const char * stopStart, const OpalMediaStream & strea
 
 #if OPAL_SRTP
   const OpalRTPMediaStream * rtp = dynamic_cast<const OpalRTPMediaStream *>(&stream);
-  if (rtp != NULL && dynamic_cast<const OpalSRTPSession *>(&rtp->GetRtpSession()) != NULL)
+  if (rtp != NULL && rtp->GetRtpSession().IsCryptoSecured(stream.IsSource()) != NULL)
     LogWindow << "secured ";
 #endif
 

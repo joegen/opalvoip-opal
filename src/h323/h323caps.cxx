@@ -92,26 +92,7 @@ ostream & operator<<(ostream & o , H323Capability::CapabilityDirection d)
 #endif
 
 
-#if H323_DISABLE_H235_SRTP
-
-template <unsigned dt, unsigned mt, class DATA_TYPE, class CAP_TYPE>
-bool H323GetMediaCapability(DATA_TYPE & dataType, CAP_TYPE * & cap)
-{
-  if (dataType.GetTag() != dt)
-    return false;
-
-  cap = &(CAP_TYPE &)dataType;
-  return true;
-}
-
-template <unsigned dt, unsigned mt, class DATA_TYPE, class CAP_TYPE>
-void H323SetMediaCapability(const H323Capability &, DATA_TYPE & dataType, CAP_TYPE * & cap)
-{
-  dataType.SetTag(mt);
-  cap = &(CAP_TYPE &)dataType;
-}
-
-#else // H323_DISABLE_H235_SRTP
+#if OPAL_H235_6 || OPAL_H235_8
 
 template <unsigned dt, unsigned mt, class DATA_TYPE, class CAP_TYPE>
 bool H323GetMediaCapability(DATA_TYPE & dataType, CAP_TYPE * & cap)
@@ -136,7 +117,7 @@ bool H323GetMediaCapability(DATA_TYPE & dataType, CAP_TYPE * & cap)
 template <unsigned dt, unsigned mt, class DATA_TYPE, class CAP_TYPE>
 void H323SetMediaCapability(const H323Capability & rtCap, DATA_TYPE & dataType, CAP_TYPE * & cap)
 {
-  if (rtCap.GetCryptoSuite().IsEmpty()) {
+  if (rtCap.GetCryptoSuite() == NULL) {
     dataType.SetTag(dt);
     cap = &(CAP_TYPE &)dataType;
   }
@@ -147,15 +128,71 @@ void H323SetMediaCapability(const H323Capability & rtCap, DATA_TYPE & dataType, 
     cap = &(CAP_TYPE &)h235.m_mediaType;
   }
 }
-#endif // H323_DISABLE_H235_SRTP
+
+#else // OPAL_H235_6 || OPAL_H235_8
+
+template <unsigned dt, unsigned mt, class DATA_TYPE, class CAP_TYPE>
+bool H323GetMediaCapability(DATA_TYPE & dataType, CAP_TYPE * & cap)
+{
+  if (dataType.GetTag() != dt)
+    return false;
+
+  cap = &(CAP_TYPE &)dataType;
+  return true;
+}
+
+template <unsigned dt, unsigned mt, class DATA_TYPE, class CAP_TYPE>
+void H323SetMediaCapability(const H323Capability &, DATA_TYPE & dataType, CAP_TYPE * & cap)
+{
+  dataType.SetTag(mt);
+  cap = &(CAP_TYPE &)dataType;
+}
+
+#endif // OPAL_H235_6 || OPAL_H235_8
 
 
 /////////////////////////////////////////////////////////////////////////////
 
 H323Capability::H323Capability()
+  : assignedCapabilityNumber(0) // Unassigned
+  , capabilityDirection(e_Unknown)
+#if OPAL_H235_6 || OPAL_H235_8
+  , m_cryptoCapability(NULL)
+#endif
 {
-  assignedCapabilityNumber = 0; // Unassigned
-  capabilityDirection = e_Unknown;
+}
+
+
+H323Capability::H323Capability(const H323Capability & other)
+  : PObject(other)
+  , assignedCapabilityNumber(other.assignedCapabilityNumber)
+  , capabilityDirection(other.capabilityDirection)
+  , m_mediaFormat(other.m_mediaFormat)
+#if OPAL_H235_6 || OPAL_H235_8
+  , m_cryptoCapability(other.m_cryptoCapability != NULL ? other.m_cryptoCapability->CloneAs<H235SecurityCapability>() : NULL)
+#endif
+{
+}
+
+
+H323Capability & H323Capability::operator=(const H323Capability & other)
+{
+  assignedCapabilityNumber = other.assignedCapabilityNumber;
+  capabilityDirection = other.capabilityDirection;
+  m_mediaFormat = other.m_mediaFormat;
+#if OPAL_H235_6 || OPAL_H235_8
+  delete m_cryptoCapability;
+  m_cryptoCapability = other.m_cryptoCapability != NULL ? other.m_cryptoCapability->CloneAs<H235SecurityCapability>() : NULL;
+#endif
+  return *this;
+}
+
+
+H323Capability::~H323Capability()
+{
+#if OPAL_H235_6 || OPAL_H235_8
+  delete m_cryptoCapability;
+#endif
 }
 
 
@@ -251,11 +288,13 @@ H323Channel * H323Capability::CreateChannel(H323Connection &,
 
 PBoolean H323Capability::OnSendingPDU(H245_DataType & pdu) const
 {
-  if (!m_cryptoSuite.IsEmpty()) {
+#if OPAL_H235_6 || OPAL_H235_8
+  if (m_cryptoCapability != NULL) {
     H245_H235Media & h235 = pdu;
-    H323H235SecurityCapability temp(GetCapabilityNumber(), m_cryptoSuite);
-    temp.OnSendingPDU(h235.m_encryptionAuthenticationAndIntegrity);
+    if (!m_cryptoCapability->OnSendingPDU(h235.m_encryptionAuthenticationAndIntegrity))
+      return false;
   }
+#endif
 
   GetWritableMediaFormat().SetOptionString(OpalMediaFormat::ProtocolOption(), PLUGINCODEC_OPTION_PROTOCOL_H323);
   return m_mediaFormat.ToCustomisedOptions();
@@ -267,6 +306,49 @@ PBoolean H323Capability::OnSendingPDU(H245_ModeElement &) const
   PAssertAlways(PUnimplementedFunction);
   return false;
 }
+
+
+#if OPAL_H235_6 || OPAL_H235_8
+const OpalMediaCryptoSuite * H323Capability::GetCryptoSuite() const
+{
+  return m_cryptoCapability != NULL ? &m_cryptoCapability->GetCryptoSuites().front() : NULL;
+}
+
+
+void H323Capability::SetCryptoSuite(const OpalMediaCryptoSuite & cryptoSuite)
+{
+  delete m_cryptoCapability;
+  m_cryptoCapability = cryptoSuite.CreateCapability(GetMediaFormat(), GetCapabilityNumber());
+  PAssertNULL(m_cryptoCapability);
+
+  OpalMediaCryptoSuite::List cryptoSuites;
+  cryptoSuites.Append(const_cast<OpalMediaCryptoSuite *>(&cryptoSuite));
+  m_cryptoCapability->SetCryptoSuites(cryptoSuites);
+}
+
+
+bool H323Capability::OnSendingCryptoPDU(H245_EncryptionSync & encryptionSync,
+                                        const H323Connection & connection,
+                                        unsigned sessionID)
+{
+  return m_cryptoCapability != NULL && m_cryptoCapability->OnSendingCryptoPDU(encryptionSync, connection, sessionID);
+}
+
+
+bool H323Capability::OnReceivedCryptoPDU(const H245_EncryptionSync & encryptionSync,
+                                         const H323Connection & connection,
+                                         unsigned sessionID,
+                                         bool rx)
+{
+  return m_cryptoCapability != NULL && m_cryptoCapability->OnReceivedCryptoPDU(encryptionSync, connection, sessionID, rx);
+}
+
+
+bool H323Capability::PostTCS(const H323Capabilities &)
+{
+  return true;
+}
+#endif
 
 
 PBoolean H323Capability::OnReceivedPDU(const H245_Capability & cap)
@@ -308,10 +390,10 @@ PBoolean H323Capability::OnReceivedPDU(const H245_Capability & cap)
 
 PBoolean H323Capability::OnReceivedPDU(const H245_DataType & pdu, PBoolean /*receiver*/)
 {
-  if (pdu.GetTag() == H245_DataType::e_h235Media) {
+  if (pdu.GetTag() == H245_DataType::e_h235Media && m_cryptoCapability != NULL) {
     const H245_H235Media & h235 = pdu;
-    H323H235SecurityCapability temp(GetCapabilityNumber());
-    temp.OnReceivedPDU(h235.m_encryptionAuthenticationAndIntegrity);
+    if (!m_cryptoCapability->OnReceivedPDU(h235.m_encryptionAuthenticationAndIntegrity))
+      return false;
   }
 
   GetWritableMediaFormat().SetOptionString(OpalMediaFormat::ProtocolOption(), PLUGINCODEC_OPTION_PROTOCOL_H323);
@@ -1638,9 +1720,7 @@ PObject * H323H239VideoCapability::Clone() const
 
 PString H323H239VideoCapability::GetFormatName() const
 {
-  PStringStream name;
-  name << m_mediaFormat << '+' << GetH239VideoMediaFormat();
-  return name;
+  return PSTRSTRM(m_mediaFormat << '+' << GetH239VideoMediaFormat());
 }
 
 
@@ -1693,42 +1773,30 @@ PString H323H239ControlCapability::GetFormatName() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if !H323_DISABLE_H235_SRTP
+#if OPAL_H235_6 || OPAL_H235_8
 
-H323H235SecurityCapability::H323H235SecurityCapability(unsigned mediaCapabilityNumber, const PStringArray & cryptoSuites)
-  : H323GenericCapabilityInfo("0.0.8.235.0.4.90", 0, false)
-  , m_mediaCapabilityNumber(mediaCapabilityNumber)
-  , m_cryptoSuites(cryptoSuites)
+OPAL_INSTANTIATE_SIMPLE_MEDIATYPE(OpalH235MediaType, "H.235");
+
+H235SecurityCapability::H235SecurityCapability(const OpalMediaFormat & mediaFormat, unsigned mediaCapabilityNumber)
+  : m_mediaCapabilityNumber(mediaCapabilityNumber)
 {
+  m_mediaFormat = mediaFormat;
 }
 
 
-H323Capability::MainTypes H323H235SecurityCapability::GetMainType() const
+H323Capability::MainTypes H235SecurityCapability::GetMainType() const
 {
   return e_H235Security;
 }
 
 
-unsigned H323H235SecurityCapability::GetSubType()  const
+unsigned H235SecurityCapability::GetSubType()  const
 {
   return 0;
 }
 
 
-PObject * H323H235SecurityCapability::Clone() const
-{
-  return new H323H235SecurityCapability(*this);
-}
-
-
-PString H323H235SecurityCapability::GetFormatName() const
-{
-  static const OpalMediaFormat name("H.235-Security", "H.235-Security", RTP_DataFrame::MaxPayloadType, NULL, false, 0, 0, 0, 0);
-  return name;
-}
-
-
-PBoolean H323H235SecurityCapability::OnSendingPDU(H245_Capability & pdu) const
+PBoolean H235SecurityCapability::OnSendingPDU(H245_Capability & pdu) const
 {
   pdu.SetTag(H245_Capability::e_h235SecurityCapability);
   H245_H235SecurityCapability & cap = pdu;
@@ -1737,21 +1805,395 @@ PBoolean H323H235SecurityCapability::OnSendingPDU(H245_Capability & pdu) const
 }
 
 
-bool H323H235SecurityCapability::OnSendingPDU(H245_EncryptionAuthenticationAndIntegrity & cap) const
+PBoolean H235SecurityCapability::OnReceivedPDU(const H245_Capability & pdu)
+{
+  if (pdu.GetTag() != H245_Capability::e_h235SecurityCapability)
+    return false;
+
+  const H245_H235SecurityCapability & cap = pdu;
+  m_mediaCapabilityNumber = cap.m_mediaCapability;
+  return OnReceivedPDU(cap.m_encryptionAuthenticationAndIntegrity);
+}
+
+
+bool H235SecurityCapability::PostTCS(const H323Capabilities & capabilities)
+{
+  H323Capability * cap = capabilities.FindCapability(m_mediaCapabilityNumber);
+  if (cap == NULL)
+    return false;
+
+  m_mediaFormat = cap->GetMediaFormat();
+  return true;
+}
+
+
+void H235SecurityCapability::AddAllCapabilities(H323Capabilities & capabilities,
+                                                const PStringArray & cryptoSuiteNames,
+                                                const char * prefix)
+{
+  OpalMediaCryptoSuite::List cryptoSuites = OpalMediaCryptoSuite::FindAll(cryptoSuiteNames, prefix);
+  if (cryptoSuites.IsEmpty())
+    return;
+
+  const H323CapabilitiesSet & set = capabilities.GetSet();
+  PINDEX outerSize = set.GetSize();
+  for (PINDEX outer = 0; outer < outerSize; outer++) {
+    PINDEX middleSize = set[outer].GetSize();
+    for (PINDEX middle = 0; middle < middleSize; middle++) {
+      PINDEX innerSize = set[outer][middle].GetSize();
+      for (PINDEX inner = 0; inner < innerSize; inner++) {
+        H323Capability & capability = set[outer][middle][inner];
+        switch (capability.GetMainType()) {
+          default :
+            break;
+
+          case H323Capability::e_Audio :
+          case H323Capability::e_Video :
+            H235SecurityCapability * cap = cryptoSuites.front().CreateCapability(capability.GetMediaFormat(),
+                                                                                 capability.GetCapabilityNumber());
+            cap->SetCryptoSuites(cryptoSuites);
+            capabilities.SetCapability(outer, middle, cap);
+        }
+      }
+    }
+  }
+}
+
+#endif // OPAL_H235_6 || OPAL_H235_8
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_H235_6
+
+H235SecurityAlgorithmCapability::H235SecurityAlgorithmCapability(const OpalMediaFormat & mediaFormat, unsigned mediaCapabilityNumber)
+  : H235SecurityCapability(mediaFormat, mediaCapabilityNumber)
+{
+}
+
+
+PObject * H235SecurityAlgorithmCapability::Clone() const
+{
+  return new H235SecurityAlgorithmCapability(*this);
+}
+
+
+PString H235SecurityAlgorithmCapability::GetFormatName() const
+{
+  static OpalMediaFormat h2356("H.235.6", OpalH235MediaType::Name(), RTP_DataFrame::MaxPayloadType, NULL, false, 0, 0, 0, 0);
+  return PSTRSTRM(m_mediaFormat << '+' << h2356);
+}
+
+
+static bool OpenCipher(PSSLCipherContext & cipher, const OpalMediaCryptoSuite & cryptoSuite, const H323Connection & connection)
+{
+  if (!cipher.SetAlgorithm(cryptoSuite.GetOID()))
+    return false;
+
+  PINDEX keyLen = cryptoSuite.GetCipherKeyBytes();
+  PBYTEArray dhMasterkey = connection.GetDiffieHellman().FindMasterKey(cryptoSuite);
+  if (!cipher.SetKey(dhMasterkey.GetPointer() + dhMasterkey.GetSize() - keyLen, keyLen))
+    return false;
+
+  PINDEX ivLen = cipher.GetIVLength();
+  BYTE * ivPtr = (BYTE *)alloca(ivLen);
+  memset(ivPtr, 0, ivLen);
+  return cipher.SetIV(ivPtr, ivLen) && cipher.SetPadding(PSSLCipherContext::NoPadding);
+}
+
+
+bool H235SecurityAlgorithmCapability::OnSendingCryptoPDU(H245_EncryptionSync & encryptionSync,
+                                                         const H323Connection & connection,
+                                                         unsigned sessionID)
+{
+  if (!connection.IsH245Master()) {
+    PTRACE(4, "H323\tNot adding H.235 encryption key as we are not master");
+    return false;
+  }
+
+  OpalMediaSession * session = connection.GetMediaSession(sessionID);
+  if (session == NULL)
+    return false;
+
+  OpalMediaCryptoKeyList & keys = session->GetOfferedCryptoKeys();
+  if (keys.IsEmpty())
+    return false;
+
+  PString endpointID;
+  if (connection.GetEndPoint().GetGatekeeper() != NULL)
+    endpointID = connection.GetEndPoint().GetGatekeeper()->GetEndpointIdentifier();
+
+  const OpalMediaCryptoSuite & cryptoSuite = keys.front().GetCryptoSuite();
+
+  PSSLCipherContext enc(true);
+  if (!OpenCipher(enc, cryptoSuite, connection))
+    return false;
+
+  H235_H235Key h235key;
+
+  if (connection.GetDiffieHellman().IsVersion3()) {
+    h235key.SetTag(H235_H235Key::e_secureSharedSecret);
+    H235_V3KeySyncMaterial & v3data = h235key;
+
+    if (!endpointID.IsEmpty()) {
+      v3data.IncludeOptionalField(H235_V3KeySyncMaterial::e_generalID);
+      v3data.m_generalID = endpointID;
+    }
+
+    v3data.IncludeOptionalField(H235_V3KeySyncMaterial::e_algorithmOID);
+    v3data.m_algorithmOID = cryptoSuite.GetOID();
+
+    v3data.IncludeOptionalField(H235_V3KeySyncMaterial::e_encryptedSessionKey);
+    if (!enc.Process(keys.front().GetCipherKey(), v3data.m_encryptedSessionKey.GetWritableValue()))
+      return false;
+  }
+  else {
+    h235key.SetTag(H235_H235Key::e_sharedSecret);
+    H235_ENCRYPTED<H235_EncodedKeySyncMaterial> & eksm = h235key;
+    eksm.m_algorithmOID = cryptoSuite.GetOID();
+
+    H235_KeySyncMaterial ksm;
+    ksm.m_generalID = endpointID;
+    ksm.m_keyMaterial.SetData(keys.front().GetCipherKey());
+    eksm.m_clearData.EncodeSubType(ksm);
+
+    if (!enc.Process(eksm.m_clearData.GetValue(), eksm.m_encryptedData.GetWritableValue()))
+      return false;
+  }
+
+  encryptionSync.m_h235Key.EncodeSubType(h235key);
+  return true;
+}
+
+
+bool H235SecurityAlgorithmCapability::OnReceivedCryptoPDU(const H245_EncryptionSync & encryptionSync,
+                                                          const H323Connection & connection,
+                                                          unsigned sessionID,
+                                                          bool rx)
+{
+  OpalMediaSession * session = connection.GetMediaSession(sessionID);
+  if (session == NULL)
+    return false;
+
+  H235_H235Key h235key;
+  if (!encryptionSync.m_h235Key.DecodeSubType(h235key)) {
+    PTRACE(1, "H323\tCould not decode H.235 encryption key");
+    return false;
+  }
+  PTRACE(4, "H323", "Decoded H.235 encryption key:\n  " << setprecision(2) << h235key);
+
+  OpalMediaCryptoSuite * cryptoSuite;
+  PBYTEArray sessionKey;
+
+  switch (h235key.GetTag()) {
+    case H235_H235Key::e_sharedSecret :
+    {
+      const H235_ENCRYPTED<H235_EncodedKeySyncMaterial> & eksm = h235key;
+
+      if ((cryptoSuite = OpalMediaCryptoSuite::FindByOID(eksm.m_algorithmOID.AsString())) == NULL) {
+        PTRACE(1, "H323\tH.235 encryption key uses unknown algorithm");
+        return false;
+      }
+
+      PSSLCipherContext dec(false);
+      if (!OpenCipher(dec, *cryptoSuite, connection))
+        return false;
+      if (!dec.Process(eksm.m_encryptedData.GetValue(), const_cast<H235_EncodedKeySyncMaterial &>(eksm.m_clearData).GetWritableValue()))
+        return false;
+
+      H235_KeySyncMaterial ksm;
+      if (!eksm.m_clearData.DecodeSubType(ksm)) {
+        PTRACE(1, "H323\tCould not decode H.235 KeySyncMaterial");
+        return false;
+      }
+      PTRACE(4, "H323", "Decoded H.235 KeySyncMaterial:\n  " << setprecision(2) << ksm);
+
+      sessionKey = ksm.m_keyMaterial.GetData();
+      break;
+    }
+
+    case H235_H235Key::e_secureSharedSecret :
+    {
+      const H235_V3KeySyncMaterial & v3data = h235key;
+
+      if (!v3data.HasOptionalField(H235_V3KeySyncMaterial::e_algorithmOID)) {
+        PTRACE(1, "H323\tH.235 encryption key has no algorithm");
+        return false;
+      }
+
+      if ((cryptoSuite = OpalMediaCryptoSuite::FindByOID(v3data.m_algorithmOID.AsString())) == NULL) {
+        PTRACE(1, "H323\tH.235 encryption key uses unknown algorithm");
+        return false;
+      }
+
+      if (!v3data.HasOptionalField(H235_V3KeySyncMaterial::e_encryptedSessionKey)) {
+        PTRACE(1, "H323\tH.235 encryption key has no session data");
+        return false;
+      }
+
+      PSSLCipherContext dec(false);
+      if (!OpenCipher(dec, *cryptoSuite, connection))
+        return false;
+
+      if (!dec.Process(v3data.m_encryptedSessionKey.GetValue(), sessionKey))
+        return false;
+
+      break;
+    }
+
+    default :
+      PTRACE(1, "H323\tH.235 encryption key format not supported");
+      return false;
+  }
+
+  if (sessionKey.GetSize()*8 < cryptoSuite->GetCipherKeyBits()) {
+    PTRACE(2, "H323\tH.235 media session key not expected length");
+    return false;
+  }
+
+  PTRACE(4, "H323", "Decoded H.235 media session key: " << hex << fixed << setfill('0') << sessionKey);
+
+  OpalMediaCryptoKeyList keys;
+  keys.Append(cryptoSuite->CreateKeyInfo());
+  keys.back().SetCipherKey(sessionKey);
+  return session->ApplyCryptoKey(keys, rx);
+}
+
+
+bool H235SecurityAlgorithmCapability::OnSendingPDU(H245_EncryptionAuthenticationAndIntegrity & cap) const
+{
+  cap.IncludeOptionalField(H245_EncryptionAuthenticationAndIntegrity::e_encryptionCapability);
+  cap.m_encryptionCapability.SetSize(m_cryptoSuites.GetSize());
+
+  for (PINDEX i = 0; i < m_cryptoSuites.GetSize(); ++i) {
+    cap.m_encryptionCapability[i].SetTag(H245_MediaEncryptionAlgorithm::e_algorithm);
+    (PASN_ObjectId &)cap.m_encryptionCapability[i] = m_cryptoSuites[i].GetOID();
+  }
+
+  return true;
+}
+
+
+bool H235SecurityAlgorithmCapability::OnReceivedPDU(const H245_EncryptionAuthenticationAndIntegrity & cap)
+{
+  if (!cap.HasOptionalField(H245_EncryptionAuthenticationAndIntegrity::e_encryptionCapability))
+    return false;
+
+  m_cryptoSuites.RemoveAll();
+
+  for (PINDEX i = 0; i < cap.m_encryptionCapability.GetSize(); ++i) {
+    OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuite::FindByOID(((const PASN_ObjectId &)cap.m_encryptionCapability[i]).AsString());
+    if (cryptoSuite != NULL) {
+      PTRACE(4, "H323\tFound Crypto-Suite for " << cryptoSuite->GetDescription());
+      m_cryptoSuites.Append(cryptoSuite);
+    }
+  }
+
+  return true;
+}
+
+
+PBoolean H235SecurityAlgorithmCapability::IsMatch(const PASN_Object & subTypePDU, const PString &) const
+{
+  const H245_EncryptionAuthenticationAndIntegrity & cap = dynamic_cast<const H245_EncryptionAuthenticationAndIntegrity &>(subTypePDU);
+  return cap.HasOptionalField(H245_EncryptionAuthenticationAndIntegrity::e_encryptionCapability) &&
+         cap.m_encryptionCapability.GetSize() > 0;
+}
+#endif // OPAL_H235_6
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_H235_8
+
+H235SecurityGenericCapability::H235SecurityGenericCapability(const OpalMediaFormat & mediaFormat, unsigned mediaCapabilityNumber)
+  : H235SecurityCapability(mediaFormat, mediaCapabilityNumber)
+  , H323GenericCapabilityInfo("0.0.8.235.0.4.90", 0, false)
+{
+}
+
+
+PObject * H235SecurityGenericCapability::Clone() const
+{
+  return new H235SecurityGenericCapability(*this);
+}
+
+
+PString H235SecurityGenericCapability::GetFormatName() const
+{
+  static OpalMediaFormat h2358("H.235.8", OpalH235MediaType::Name(), RTP_DataFrame::MaxPayloadType, NULL, false, 0, 0, 0, 0);
+  return PSTRSTRM(m_mediaFormat << '+' << h2358);
+}
+
+
+bool H235SecurityGenericCapability::OnSendingCryptoPDU(H245_EncryptionSync & encryptionSync,
+                                                       const H323Connection & connection,
+                                                       unsigned sessionID)
+{
+  OpalMediaSession * session = connection.GetMediaSession(sessionID);
+  if (session == NULL)
+    return false;
+
+  OpalMediaCryptoKeyList & keys = session->GetOfferedCryptoKeys();
+  if (keys.IsEmpty())
+    return false;
+
+  H235_SRTP_SrtpKeys h235;
+  h235.SetSize(1);
+  h235[0].m_masterKey.SetValue(keys[0].GetCipherKey());
+  h235[0].m_masterSalt.SetValue(keys[0].GetAuthSalt());
+
+  encryptionSync.m_h235Key.EncodeSubType(h235);
+  return true;
+}
+
+
+bool H235SecurityGenericCapability::OnReceivedCryptoPDU(const H245_EncryptionSync & encryptionSync,
+                                                        const H323Connection & connection,
+                                                        unsigned sessionID,
+                                                        bool rx)
+{
+  OpalMediaSession * session = connection.GetMediaSession(sessionID);
+  if (session == NULL)
+    return false;
+
+  H235_SRTP_SrtpKeys h235;
+  if (!encryptionSync.m_h235Key.DecodeSubType(h235) || h235.GetSize() == 0) {
+    PTRACE(1, "H323\tCould not decode SrtpKeys, or no keys present");
+    return false;
+  }
+  PTRACE(4, "H323", "Decoded H.235 SRTP keys:\n  " << setprecision(2) << h235);
+
+  OpalMediaCryptoKeyList keys;
+  for (PINDEX i = 0; i < h235.GetSize(); ++i) {
+    H235_SRTP_SrtpKeyParameters & param = h235[i];
+    OpalMediaCryptoKeyInfo * keyInfo = m_cryptoSuites.front().CreateKeyInfo();
+    if (keyInfo != NULL) {
+      keyInfo->SetCipherKey(param.m_masterKey.GetValue());
+      keyInfo->SetAuthSalt(param.m_masterSalt.GetValue());
+      keys.Append(keyInfo);
+    }
+  }
+
+  return session->ApplyCryptoKey(keys, rx);
+}
+
+
+bool H235SecurityGenericCapability::OnSendingPDU(H245_EncryptionAuthenticationAndIntegrity & cap) const
 {
   if (!OnSendingGenericPDU(cap.m_genericH235SecurityCapability, GetMediaFormat(), e_OLC))
     return false;
 
   H235_SRTP_SrtpCryptoCapability srtpCap;
   for (PINDEX i = 0; i < m_cryptoSuites.GetSize(); ++i) {
-    OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(m_cryptoSuites[i]); // Singleton, no need to destroy
-    if (cryptoSuite != NULL && cryptoSuite->GetOID() != NULL) {
+    const OpalMediaCryptoSuite & cryptoSuite = m_cryptoSuites[i]; // Singleton, no need to destroy
+    if (cryptoSuite.GetOID() != NULL) {
       PINDEX pos = srtpCap.GetSize();
       srtpCap.SetSize(pos+1);
       H235_SRTP_SrtpCryptoInfo & info = srtpCap[pos];
 
       info.IncludeOptionalField(H235_SRTP_SrtpCryptoInfo::e_cryptoSuite);
-      info.m_cryptoSuite = cryptoSuite->GetOID();
+      info.m_cryptoSuite = cryptoSuite.GetOID();
 
       info.IncludeOptionalField(H235_SRTP_SrtpCryptoInfo::e_sessionParams);
       info.m_sessionParams.IncludeOptionalField(H235_SRTP_SrtpSessionParameters::e_unencryptedSrtp); // Default value is FALSE
@@ -1771,18 +2213,7 @@ bool H323H235SecurityCapability::OnSendingPDU(H245_EncryptionAuthenticationAndIn
 }
 
 
-PBoolean H323H235SecurityCapability::OnReceivedPDU(const H245_Capability & pdu)
-{
-  if (pdu.GetTag() != H245_Capability::e_h235SecurityCapability)
-    return false;
-
-  const H245_H235SecurityCapability & cap = pdu;
-  m_mediaCapabilityNumber = cap.m_mediaCapability;
-  return OnReceivedPDU(cap.m_encryptionAuthenticationAndIntegrity);
-}
-
-
-bool H323H235SecurityCapability::OnReceivedPDU(const H245_EncryptionAuthenticationAndIntegrity & cap)
+bool H235SecurityGenericCapability::OnReceivedPDU(const H245_EncryptionAuthenticationAndIntegrity & cap)
 {
   if (!OnReceivedGenericPDU(GetWritableMediaFormat(), cap.m_genericH235SecurityCapability, e_TCS))
     return false;
@@ -1797,6 +2228,7 @@ bool H323H235SecurityCapability::OnReceivedPDU(const H245_EncryptionAuthenticati
     PTRACE(1, "H323\tCould not decode SrtpCryptoCapability");
     return false;
   }
+  PTRACE(4, "H323", "Decoded H.235 SRTP capability:\n  " << setprecision(2) << srtpCap);
 
   if (srtpCap.GetSize() == 0) {
     PTRACE(1, "H323\tEmpty SrtpCryptoCapability");
@@ -1805,16 +2237,12 @@ bool H323H235SecurityCapability::OnReceivedPDU(const H245_EncryptionAuthenticati
 
   m_cryptoSuites.RemoveAll();
 
-  OpalMediaCryptoSuiteFactory::KeyList_T all = OpalMediaCryptoSuiteFactory::GetKeyList();
   for (PINDEX i = 0; i < srtpCap.GetSize(); ++i) {
     const H235_SRTP_SrtpCryptoInfo & info = srtpCap[i];
-    PString oid = info.m_cryptoSuite.AsString();
-    for  (OpalMediaCryptoSuiteFactory::KeyList_T::iterator it = all.begin(); it != all.end(); ++it) {
-      OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(*it);
-      if (oid == cryptoSuite->GetOID()) {
-        PTRACE(4, "H323\tFound Crypto-Suite for " << cryptoSuite->GetDescription());
-        m_cryptoSuites.AppendString(*it);
-      }
+    OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuite::FindByOID(info.m_cryptoSuite.AsString());
+    if (cryptoSuite != NULL) {
+      PTRACE(4, "H323\tFound Crypto-Suite for " << cryptoSuite->GetDescription());
+      m_cryptoSuites.Append(cryptoSuite);
     }
   }
 
@@ -1822,11 +2250,12 @@ bool H323H235SecurityCapability::OnReceivedPDU(const H245_EncryptionAuthenticati
 }
 
 
-PBoolean H323H235SecurityCapability::IsMatch(const PASN_Object & subTypePDU, const PString &) const
+PBoolean H235SecurityGenericCapability::IsMatch(const PASN_Object & subTypePDU, const PString &) const
 {
-  return H323GenericCapabilityInfo::IsMatch(GetMediaFormat(), dynamic_cast<const H245_GenericCapability &>(subTypePDU));
+  return H323GenericCapabilityInfo::IsMatch(GetMediaFormat(),
+            dynamic_cast<const H245_EncryptionAuthenticationAndIntegrity &>(subTypePDU).m_genericH235SecurityCapability);
 }
-#endif // H323_DISABLE_H235_SRTP
+#endif // OPAL_H235_8
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2315,8 +2744,11 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
     allCapabilities.Add(new H323H239VideoCapability(OpalMediaFormat()));
     allCapabilities.Add(new H323H239ControlCapability());
 #endif
-#if !H323_DISABLE_H235_SRTP
-    allCapabilities.Add(new H323H235SecurityCapability(1)); // Just a template for cloning
+#if OPAL_H235_6
+    allCapabilities.Add(new H235SecurityAlgorithmCapability(OpalMediaFormat(), 1)); // Just a template for cloning
+#endif
+#if OPAL_H235_8
+    allCapabilities.Add(new H235SecurityGenericCapability(OpalMediaFormat(), 1)); // Just a template for cloning
 #endif
     allCapabilities.m_mediaPacketizations = m_mediaPacketizations;
     PTRACE(4, "H323\tParsing remote capabilities");
@@ -2331,18 +2763,28 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
           else {
             copy->SetCapabilityNumber(pdu.m_capabilityTable[i].m_capabilityTableEntryNumber);
             table.Append(copy);
-
-            if (!m_mediaPacketizations.IsEmpty()) { // also update the mediaPacketizations option
-              OpalMediaFormat & mediaFormat = copy->GetWritableMediaFormat();
-              PStringSet intersection;
-              if (PStringSet::Intersection(m_mediaPacketizations, mediaFormat.GetMediaPacketizationSet(), &intersection))
-                mediaFormat.SetMediaPacketizations(intersection);
-            }
           }
         }
       }
     }
   }
+
+#if OPAL_H235_6 || OPAL_H235_8
+  for (PINDEX i = 0; i < table.GetSize(); ) {
+    if (!table[i].PostTCS(*this))
+      table.RemoveAt(i);
+    else {
+      if (!m_mediaPacketizations.IsEmpty()) { // also update the mediaPacketizations option
+        OpalMediaFormat & mediaFormat = table[i].GetWritableMediaFormat();
+        PStringSet intersection;
+        if (PStringSet::Intersection(m_mediaPacketizations, mediaFormat.GetMediaPacketizationSet(), &intersection))
+          mediaFormat.SetMediaPacketizations(intersection);
+      }
+
+      ++i;
+    }
+  }
+#endif
 
   PINDEX outerSize = pdu.m_capabilityDescriptors.GetSize();
   set.SetSize(outerSize);
@@ -2418,7 +2860,8 @@ void H323Capabilities::PrintOn(ostream & strm) const
 
 PINDEX H323Capabilities::SetCapability(PINDEX descriptorNum,
                                        PINDEX simultaneousNum,
-                                       H323Capability * capability)
+                                       H323Capability * capability,
+                                       H323Capability * before)
 {
   // Make sure capability has been added to table.
   Add(capability);
@@ -2437,7 +2880,10 @@ PINDEX H323Capabilities::SetCapability(PINDEX descriptorNum,
   set[descriptorNum].SetMinSize(simultaneousNum+1);
 
   // Now we can put the new entry in.
-  set[descriptorNum][simultaneousNum].Append(capability);
+  if (before != NULL)
+    set[descriptorNum][simultaneousNum].Insert(*before, capability);
+  else
+    set[descriptorNum][simultaneousNum].Append(capability);
   return newDescriptor ? descriptorNum : simultaneousNum;
 }
 
@@ -2757,12 +3203,11 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
           }
           break;
 
-#if !H323_DISABLE_H235_SRTP
+#if OPAL_H235_6 || OPAL_H235_8
         case H245_Capability::e_h235SecurityCapability :
           if (capability.GetMainType() == H323Capability::e_H235Security) {
             const H245_H235SecurityCapability & h235 = cap;
-            if (capability.IsMatch(h235.m_encryptionAuthenticationAndIntegrity.m_genericH235SecurityCapability,
-                                   mediaPacketization))
+            if (capability.IsMatch(h235.m_encryptionAuthenticationAndIntegrity, mediaPacketization))
               return &capability;
           }
 #endif
@@ -2867,12 +3312,12 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
       capability = H323CheckExactCapability(dataType, H323FindMediaCapability<>(*this, H323Capability::e_Data, ((const H245_DataApplicationCapability &)dataType).m_application, mediaPacketization));
       break;
 
-#if !H323_DISABLE_H235_SRTP
+#if OPAL_H235_6 || OPAL_H235_8
     case H245_DataType::e_h235Media :
       const H245_H235Media & h235 = (const H245_H235Media &)dataType;
-      capability = H323CheckExactCapability(dataType, H323FindMediaCapability<>(*this, H323Capability::e_H235Security, h235.m_encryptionAuthenticationAndIntegrity.m_genericH235SecurityCapability, mediaPacketization));
+      capability = H323CheckExactCapability(dataType, H323FindMediaCapability<>(*this, H323Capability::e_H235Security, h235.m_encryptionAuthenticationAndIntegrity, mediaPacketization));
       if (capability != NULL) {
-        PString cryptoSuite = dynamic_cast<H323H235SecurityCapability *>(capability)->GetCryptoSuites()[0];
+        const OpalMediaCryptoSuite & cryptoSuite = dynamic_cast<H235SecurityCapability *>(capability)->GetCryptoSuites().front();
         switch (h235.m_mediaType.GetTag()) {
           case H245_H235Media_mediaType::e_audioData :
             capability = H323FindMediaCapability<H245_AudioCapability>(*this, H323Capability::e_Audio, h235.m_mediaType, mediaPacketization);
