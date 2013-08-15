@@ -346,14 +346,9 @@ OpalMediaFormat H323Capability::GetMediaFormat() const
 }
 
 
-bool H323Capability::UpdateMediaFormat(const OpalMediaFormat &format)
+bool H323Capability::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 {
-  OpalMediaFormat & mediaFormat = GetWritableMediaFormat();
-  if (mediaFormat != format)
-    return false;
-
-  mediaFormat = format;
-  return true;
+  return GetWritableMediaFormat().Update(mediaFormat);
 }
 
 

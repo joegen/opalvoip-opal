@@ -117,7 +117,7 @@ PBoolean H323_RTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameters & para
 
   if (GetDirection() != H323Channel::IsReceiver) {
     // Set flag for we are going to stop sending audio on silence
-    if (m_mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
+    if (GetMediaFormat().GetMediaType() == OpalMediaType::Audio()) {
       param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_silenceSuppression);
       param.m_silenceSuppression = (connection.GetEndPoint().GetManager().GetSilenceDetectParams().m_mode != OpalSilenceDetector::NoSilenceDetection);
     }
@@ -132,7 +132,7 @@ PBoolean H323_RTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameters & para
 
   // Set the media packetization field if have an option to describe it.
   param.m_mediaPacketization.SetTag(H245_H2250LogicalChannelParameters_mediaPacketization::e_rtpPayloadType);
-  if (H323SetRTPPacketization(param.m_mediaPacketization, m_mediaFormat, rtpPayloadType))
+  if (H323SetRTPPacketization(param.m_mediaPacketization, GetMediaFormat(), rtpPayloadType))
     param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization);
 
   return H323_RealTimeChannel::OnSendingPDU(param);
@@ -207,8 +207,10 @@ PBoolean H323_RTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelParameters
     }
   }
 
+  OpalMediaFormat mediaFormat = GetMediaFormat();
+
   // Override default payload type if indicated by remote
-  RTP_DataFrame::PayloadTypes rtpPayloadType = m_mediaFormat.GetPayloadType();
+  RTP_DataFrame::PayloadTypes rtpPayloadType = mediaFormat.GetPayloadType();
   if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_dynamicRTPPayloadType))
     rtpPayloadType = (RTP_DataFrame::PayloadTypes)param.m_dynamicRTPPayloadType.GetValue();
 
@@ -219,13 +221,12 @@ PBoolean H323_RTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelParameters
     mediaPacketization = H323GetRTPPacketization(param.m_mediaPacketization);
 
   // Hack for H.263 compatibility, default to RFC2190 if not told otherwise
-  if (mediaPacketization.IsEmpty() && m_mediaFormat == OPAL_H263)
+  if (mediaPacketization.IsEmpty() && mediaFormat == OPAL_H263)
     mediaPacketization = "RFC2190";
 
-  m_mediaFormat.SetPayloadType(rtpPayloadType);
-  m_mediaFormat.SetMediaPacketizations(mediaPacketization);
-  if (m_mediaStream != NULL)
-    m_mediaStream->UpdateMediaFormat(m_mediaFormat);
+  mediaFormat.SetPayloadType(rtpPayloadType);
+  mediaFormat.SetMediaPacketizations(mediaPacketization);
+  UpdateMediaFormat(mediaFormat);
 
   return H323_RealTimeChannel::OnReceivedPDU(param, errorCode);
 }
