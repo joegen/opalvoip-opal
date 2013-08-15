@@ -571,7 +571,7 @@ class H235_EncodedKeySyncMaterial : public PASN_OctetString
   public:
     H235_EncodedKeySyncMaterial(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
 
-    PBoolean DecodeSubType(H235_KeySyncMaterial & obj) { return PASN_OctetString::DecodeSubType(obj); }
+    PBoolean DecodeSubType(H235_KeySyncMaterial & obj) const { return PASN_OctetString::DecodeSubType(obj); }
     void EncodeSubType(const H235_KeySyncMaterial & obj) { PASN_OctetString::EncodeSubType(obj); } 
 
     PObject * Clone() const;
@@ -777,6 +777,7 @@ class H235_ENCRYPTED : public PASN_Sequence
     PASN_ObjectId m_algorithmOID;
     H235_Params m_paramS;
     PASN_OctetString m_encryptedData;
+    ToBeEncrypted m_clearData;  // Note this is not actually encoded
 
     PINDEX GetDataLength() const;
     PBoolean Decode(PASN_Stream & strm);

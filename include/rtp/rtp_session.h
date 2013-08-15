@@ -182,6 +182,7 @@ class OpalRTPSession : public OpalMediaSession
     };
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame);
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
+    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
 

@@ -683,6 +683,13 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendControl(RTP_ControlFrame
 }
 
 
+OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize)
+{
+  // Check received PDU is big enough
+  return frame.SetPacketSize(pduSize) ? OnReceiveData(frame) : e_IgnorePacket;
+}
+
+
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & frame)
 {
   // Check that the PDU is the right version
@@ -2156,11 +2163,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataPDU(RTP_DataFrame & fr
   if (control.IsValid())
     return OnReceiveControl(control);
 
-  // Check received PDU is big enough
-  if (frame.SetPacketSize(pduSize))
-    return OnReceiveData(frame);
-
-  return e_IgnorePacket;
+  return OnReceiveData(frame, pduSize);
 }
 
 
@@ -2235,7 +2238,7 @@ bool OpalRTPSession::WriteData(RTP_DataFrame & frame)
       return false;
   }
 
-  return WriteRawPDU(frame.GetPointer(), frame.GetHeaderSize()+frame.GetPayloadSize(), true);
+  return WriteRawPDU(frame, frame.GetPacketSize(), true);
 }
 
 

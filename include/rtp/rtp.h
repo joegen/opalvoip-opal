@@ -116,7 +116,7 @@ class RTP_DataFrame : public PBYTEArray
     void SetPadding(bool v)  { if (v) theArray[0] |= 0x20; else theArray[0] &= 0xdf; }
     BYTE * GetPaddingPtr() const { return (BYTE *)(theArray+m_headerSize+m_payloadSize); }
 
-    PINDEX GetPaddingSize() const { return m_paddingSize; }
+    PINDEX GetPaddingSize() const { return m_paddingSize > 0 ? m_paddingSize-1 : 0; }
     bool   SetPaddingSize(PINDEX sz);
 
     PayloadTypes GetPayloadType() const { return (PayloadTypes)(theArray[1]&0x7f); }
@@ -138,6 +138,7 @@ class RTP_DataFrame : public PBYTEArray
     PINDEX GetHeaderSize() const { return m_headerSize; }
 
     void CopyHeader(const RTP_DataFrame & other);
+    void Copy(const RTP_DataFrame & other);
 
     /**Get header extension.
        If idx < 0 then gets RFC 3550 format extension type.
@@ -194,6 +195,9 @@ class RTP_DataFrame : public PBYTEArray
     // sub-section sizes: header payload and padding.
     bool SetPacketSize(PINDEX sz);
 
+    // Get the packet size including headers, padding etc.
+    PINDEX GetPacketSize() const;
+
     /**Get absolute (wall clock) time of packet, if known.
       */
     PTime GetAbsoluteTime() const { return m_absoluteTime; }
@@ -212,6 +216,8 @@ class RTP_DataFrame : public PBYTEArray
     void SetDiscontinuity(unsigned lost) { m_discontinuity = lost; }
 
   protected:
+    bool AdjustHeaderSize(PINDEX newSize);
+
     PINDEX   m_headerSize;
     PINDEX   m_payloadSize;
     PINDEX   m_paddingSize;

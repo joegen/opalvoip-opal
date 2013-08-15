@@ -46,6 +46,7 @@
 #include <opal/guid.h>
 #include <opal_config.h>
 #include <h323/h323caps.h>
+#include <h323/h235dh.h>
 #include <ptclib/dtmf.h>
 
 
@@ -2018,6 +2019,12 @@ class H323Connection : public OpalRTPConnection
     OpalMediaFormatList GetRemoteH239Formats() const;
 #endif
 
+#if OPAL_H235_6
+    /// Get the Diffie-Hellman handler
+    const H235DiffieHellman & GetDiffieHellman() const { return m_dh; }
+          H235DiffieHellman & GetDiffieHellman()       { return m_dh; }
+#endif
+
     virtual PBoolean OnSendFeatureSet(unsigned, H225_FeatureSet &) const;
     
     virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet &) const;
@@ -2280,6 +2287,10 @@ class H323Connection : public OpalRTPConnection
     PMutex NATSocketMutex;
     std::map<unsigned, NAT_Sockets> m_NATSockets;
 #endif // OPAL_H460_NAT
+
+#if OPAL_H235_6
+    H235DiffieHellman m_dh;
+#endif
 
   private:
     P_REMOVE_VIRTUAL_VOID(CleanUpOnCallEnd());

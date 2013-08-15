@@ -46,6 +46,7 @@ class OpalMediaStream;
 class OpalMediaFormat;
 class OpalMediaFormatList;
 class OpalMediaCryptoSuite;
+class H235SecurityCapability;
 
 
 #if OPAL_STATISTICS
@@ -168,7 +169,10 @@ class OpalMediaCryptoKeyInfo : public PObject {
     PString m_tag;
 };
 
-typedef PList<OpalMediaCryptoKeyInfo> OpalMediaCryptoKeyList;
+struct OpalMediaCryptoKeyList : PList<OpalMediaCryptoKeyInfo>
+{
+  void Select(iterator & it);
+};
 
 
 /** Class for desribing the crytpographic mechanism used by an OpalMediaSession.
@@ -188,11 +192,26 @@ class OpalMediaCryptoSuite : public PObject
     virtual bool ChangeSessionType(PCaselessString & mediaSession) const = 0;
 
     virtual const char * GetDescription() const = 0;
-#if !H323_DISABLE_H235_SRTP
+#if OPAL_H235_6 || OPAL_H235_8
+    virtual H235SecurityCapability * CreateCapability(const OpalMediaFormat & mediaFormat, unsigned capabilityNumber) const = 0;
     virtual const char * GetOID() const = 0;
+    static OpalMediaCryptoSuite * FindByOID(const PString & oid);
 #endif
 
+    PINDEX GetCipherKeyBytes() const { return (GetCipherKeyBits()+7)/8; }
+    virtual PINDEX GetCipherKeyBits() const = 0;
+    virtual PINDEX GetAuthSaltBits() const = 0;
+
     virtual OpalMediaCryptoKeyInfo * CreateKeyInfo() const = 0;
+
+    struct List : PList<OpalMediaCryptoSuite>
+    {
+      List() { DisallowDeleteObjects(); }
+    };
+    static List FindAll(
+      const PStringArray & cryptoSuiteNames,
+      const char * prefix = NULL
+    );
 };
 
 typedef PFactory<OpalMediaCryptoSuite, PCaselessString> OpalMediaCryptoSuiteFactory;
@@ -265,6 +284,7 @@ class OpalMediaSession : public PSafeObject
       bool rx
     );
 
+    virtual bool IsCryptoSecured(bool rx) const;
 
     unsigned GetSessionID() const { return m_sessionId; }
     const OpalMediaType & GetMediaType() const { return m_mediaType; }

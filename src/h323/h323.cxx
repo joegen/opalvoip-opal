@@ -983,6 +983,10 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
     callIdentifier = setup.m_callIdentifier.m_guid;
   conferenceIdentifier = setup.m_conferenceID;
   SetRemoteApplication(setup.m_sourceInfo);
+#if OPAL_H235_6
+  if (setup.HasOptionalField(H225_Setup_UUIE::e_tokens))
+    m_dh.FromTokens(setup.m_tokens);
+#endif
 
   // Determine the remote parties name/number/address as best we can
   SetRemotePartyInfo(*setupPDU);
@@ -1336,6 +1340,11 @@ PBoolean H323Connection::OnReceivedCallProceeding(const H323SignalPDU & pdu)
   SetRemoteVersions(call.m_protocolIdentifier);
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(call.m_destinationInfo);
+#if OPAL_H235_6
+  if (call.HasOptionalField(H225_CallProceeding_UUIE::e_tokens))
+    m_dh.FromTokens(call.m_tokens);
+#endif
+
   
 #if OPAL_H460
   ReceiveFeatureSet<H225_CallProceeding_UUIE>(this, H460_MessageType::e_callProceeding, call);
@@ -1367,6 +1376,10 @@ PBoolean H323Connection::OnReceivedProgress(const H323SignalPDU & pdu)
   SetRemoteVersions(progress.m_protocolIdentifier);
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(progress.m_destinationInfo);
+#if OPAL_H235_6
+  if (progress.HasOptionalField(H225_Progress_UUIE::e_tokens))
+    m_dh.FromTokens(progress.m_tokens);
+#endif
 
   // Check for fastStart data and start fast
   if (progress.HasOptionalField(H225_Progress_UUIE::e_fastStart))
@@ -1395,7 +1408,11 @@ PBoolean H323Connection::OnReceivedAlerting(const H323SignalPDU & pdu)
   SetRemoteVersions(alert.m_protocolIdentifier);
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(alert.m_destinationInfo);
-  
+#if OPAL_H235_6
+  if (alert.HasOptionalField(H225_Alerting_UUIE::e_tokens))
+    m_dh.FromTokens(alert.m_tokens);
+#endif
+
 #if OPAL_H460
   ReceiveFeatureSet<H225_Alerting_UUIE>(this, H460_MessageType::e_alerting, alert);
 #endif
@@ -1434,7 +1451,11 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   SetRemoteVersions(connect.m_protocolIdentifier);
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(connect.m_destinationInfo);
-  
+#if OPAL_H235_6
+  if (connect.HasOptionalField(H225_Connect_UUIE::e_tokens))
+    m_dh.FromTokens(connect.m_tokens);
+#endif
+
 #if OPAL_H460
   ReceiveFeatureSet<H225_Connect_UUIE>(this, H460_MessageType::e_connect, connect);
 #endif
@@ -1537,6 +1558,10 @@ PBoolean H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
 #endif
 
   SetRemoteVersions(fac.m_protocolIdentifier);
+#if OPAL_H235_6
+  if (fac.HasOptionalField(H225_Facility_UUIE::e_tokens))
+    m_dh.FromTokens(fac.m_tokens);
+#endif
 
   // Check for fastStart data and start fast
   if (fac.HasOptionalField(H225_Facility_UUIE::e_fastStart))
@@ -1625,6 +1650,10 @@ PBoolean H323Connection::OnReceivedSignalNotify(const H323SignalPDU & pdu)
   if (pdu.m_h323_uu_pdu.m_h323_message_body.GetTag() == H225_H323_UU_PDU_h323_message_body::e_notify) {
     const H225_Notify_UUIE & notify = pdu.m_h323_uu_pdu.m_h323_message_body;
     SetRemoteVersions(notify.m_protocolIdentifier);
+#if OPAL_H235_6
+    if (notify.HasOptionalField(H225_Notify_UUIE::e_tokens))
+      m_dh.FromTokens(notify.m_tokens);
+#endif
   }
   return true;
 }
@@ -1635,6 +1664,10 @@ PBoolean H323Connection::OnReceivedSignalStatus(const H323SignalPDU & pdu)
   if (pdu.m_h323_uu_pdu.m_h323_message_body.GetTag() == H225_H323_UU_PDU_h323_message_body::e_status) {
     const H225_Status_UUIE & status = pdu.m_h323_uu_pdu.m_h323_message_body;
     SetRemoteVersions(status.m_protocolIdentifier);
+#if OPAL_H235_6
+    if (status.HasOptionalField(H225_Status_UUIE::e_tokens))
+      m_dh.FromTokens(status.m_tokens);
+#endif
   }
   return true;
 }
@@ -1645,6 +1678,10 @@ PBoolean H323Connection::OnReceivedStatusEnquiry(const H323SignalPDU & pdu)
   if (pdu.m_h323_uu_pdu.m_h323_message_body.GetTag() == H225_H323_UU_PDU_h323_message_body::e_statusInquiry) {
     const H225_StatusInquiry_UUIE & status = pdu.m_h323_uu_pdu.m_h323_message_body;
     SetRemoteVersions(status.m_protocolIdentifier);
+#if OPAL_H235_6
+    if (status.HasOptionalField(H225_StatusInquiry_UUIE::e_tokens))
+      m_dh.FromTokens(status.m_tokens);
+#endif
   }
 
   H323SignalPDU reply;
@@ -2018,8 +2055,15 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
 
   SetBearerCapabilities(setupPDU);
 
-  if (!OnSendSignalSetup(setupPDU))
-    return EndedByNoAccept;
+#if OPAL_H235_6
+  {
+    OpalMediaCryptoSuite::List cryptoSuites = OpalMediaCryptoSuite::FindAll(endpoint.GetMediaCryptoSuites(), "H.235");
+    for (OpalMediaCryptoSuite::List::iterator it = cryptoSuites.begin(); it != cryptoSuites.end(); ++it)
+      m_dh.AddForAlgorithm(*it);
+    if (m_dh.ToTokens(setup.m_tokens))
+      setup.IncludeOptionalField(H225_Setup_UUIE::e_tokens);
+  }
+#endif
 
   // Do this again (was done when PDU was constructed) in case
   // OnSendSignalSetup() changed something.
@@ -2051,6 +2095,9 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
       set_lastPDUWasH245inSETUP = true;
     }
   }
+
+  if (!OnSendSignalSetup(setupPDU))
+    return EndedByNoAccept;
 
   // Send the initial PDU
   if (!WriteSignalPDU(setupPDU))
@@ -3817,22 +3864,15 @@ void H323Connection::OnSetLocalCapabilities()
   }
 #endif
 
-#if OPAL_PTLIB_SSL && !H323_DISABLE_H235_SRTP
-  if (GetControlChannel().GetLocalAddress().GetProtoPrefix() == OpalTransportAddress::TlsPrefix()) {
-    for (PINDEX i = 0; i < localCapabilities.GetSize(); ++i) {
-      switch (localCapabilities[i].GetMainType()) {
-        case H323Capability::e_Audio :
-        case H323Capability::e_Video :
-          localCapabilities.Add(new H323H235SecurityCapability(localCapabilities[i].GetCapabilityNumber(),
-                                                               endpoint.GetMediaCryptoSuites()));
-          break;
+#if OPAL_H235_6
+  if (!GetDiffieHellman().IsEmpty())
+    H235SecurityCapability::AddAllCapabilities(localCapabilities, endpoint.GetMediaCryptoSuites(), "H.235");
+#endif // OPAL_H235_6
 
-        default :
-          break;
-      }
-    }
-  }
-#endif
+#if OPAL_H235_8
+  if (GetControlChannel().GetLocalAddress().GetProtoPrefix() == OpalTransportAddress::TlsPrefix())
+    H235SecurityCapability::AddAllCapabilities(localCapabilities, endpoint.GetMediaCryptoSuites(), "SRTP");
+#endif // OPAL_H235_8
 
   OpalMediaFormatList::const_iterator rfc2833 = formats.FindFormat(OpalRFC2833);
   H323_UserInputCapability::AddAllCapabilities(localCapabilities, 0, P_MAX_INDEX, rfc2833 != formats.end());
@@ -3994,10 +4034,10 @@ PStringArray H323Connection::GetMediaCryptoSuites() const
 {
   PStringArray cryptoSuites = OpalConnection::GetMediaCryptoSuites();
 
-#if !H323_DISABLE_H235_SRTP
-  H323H235SecurityCapability * cap = dynamic_cast<H323H235SecurityCapability *>(remoteCapabilities.FindCapability(H323Capability::e_H235Security));
+#if OPAL_H235_6 || OPAL_H235_8
+  H235SecurityCapability * cap = dynamic_cast<H235SecurityCapability *>(remoteCapabilities.FindCapability(H323Capability::e_H235Security));
   if (cap != NULL) {
-    PStringArray remoteCryptoSuites = cap->GetCryptoSuites();
+    OpalMediaCryptoSuite::List remoteCryptoSuites = cap->GetCryptoSuites();
     for (PINDEX i = 0; i < cryptoSuites.GetSize();) {
       if (remoteCryptoSuites.GetValuesIndex(cryptoSuites[i]) != P_MAX_INDEX)
         ++i;
@@ -4005,7 +4045,7 @@ PStringArray H323Connection::GetMediaCryptoSuites() const
         cryptoSuites.RemoveAt(i++);
     }
   }
-#endif
+#endif // OPAL_H235_6 || OPAL_H235_8
 
   return cryptoSuites;
 }
@@ -4103,92 +4143,76 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
         iterChan->GetCapability().GetMediaFormat() == mediaFormat) {
       PTRACE(4, "H323\tOpenMediaStream fast opened for session " << sessionID);
       stream = CreateMediaStream(mediaFormat, sessionID, isSource);
-      if (stream != NULL) {
+      if (stream != NULL && stream->Open() && OnOpenMediaStream(*stream)) {
+        mediaStreams.Append(stream);
         iterChan->SetMediaStream(stream);
         logicalChannels->Add(*iterChan);
-        break;
+        return stream;
       }
     }
   }
 
-  if (stream == NULL) {
-    H323Channel * channel = FindChannel(sessionID, isSource);
-    if (channel == NULL) {
-      // Logical channel not open, if receiver that is an error
-      if (isSource) {
-        PTRACE(2, "H323\tNo receive logical channel for session " << sessionID);
-        return NULL;
-      }
-
-      if (!masterSlaveDeterminationProcedure->IsDetermined() ||
-          !capabilityExchangeProcedure->HasSentCapabilities() ||
-          !capabilityExchangeProcedure->HasReceivedCapabilities()) {
-        PTRACE(2, "H323\tOpenMediaStream cannot (H.245 unavailable) open logical channel for " << mediaFormat);
-        return NULL;
-      }
-
-      // If transmitter, send OpenLogicalChannel using the capability associated with the media format
-      PString name = mediaFormat.GetName();
-#if OPAL_H239
-      if (sessionID > 2 && mediaFormat.GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole) != OpalVideoFormat::eNoRole)
-        name += '+' + GetH239VideoMediaFormat().GetName();
-#endif
-      H323Capability * capability = remoteCapabilities.FindCapability(name);
-      if (capability == NULL) {
-        PTRACE(2, "H323\tOpenMediaStream could not find capability for " << name);
-        return NULL;
-      }
-
-#if !H323_DISABLE_H235_SRTP
-      for (PINDEX i = 0; i < remoteCapabilities.GetSize(); ++i) {
-        const H323H235SecurityCapability * h235 = dynamic_cast<const H323H235SecurityCapability *>(&remoteCapabilities[i]);
-        if (h235 != NULL && h235->GetMediaCapabilityNumber() == capability->GetCapabilityNumber()) {
-          capability->SetCryptoSuite(h235->GetCryptoSuites()[0]);
-          break;
-        }
-      }
-#endif
-
-      capability->UpdateMediaFormat(mediaFormat);
-
-      if (!OpenLogicalChannel(*capability, sessionID, H323Channel::IsTransmitter)) {
-        PTRACE(2, "H323\tOpenMediaStream could not open logical channel for " << mediaFormat);
-        return NULL;
-      }
-      channel = FindChannel(sessionID, isSource);
-      if (PAssertNULL(channel) == NULL)
-        return NULL;
-    }
-
-    stream = channel->GetMediaStream();
-    if (stream == NULL) {
-      PTRACE(2, "H323\tCould not open stream for logical channel " << channel->GetNumber());
-      channel->Close();
+  H323Channel * channel = FindChannel(sessionID, isSource);
+  if (channel == NULL) {
+    // Logical channel not open, if receiver that is an error
+    if (isSource) {
+      PTRACE(2, "H323\tNo receive logical channel for session " << sessionID);
       return NULL;
     }
 
-    PTRACE(3, "H323\tOpenMediaStream using channel " << channel->GetNumber() << " for session " << sessionID);
-  }
-  else if (stream->Open()) {
-    // Update the media format, but not the payload type.
-    OpalMediaFormat adjustedMediaFormat = mediaFormat;
-    adjustedMediaFormat.SetPayloadType(stream->GetMediaFormat().GetPayloadType());
-    stream->UpdateMediaFormat(adjustedMediaFormat);
-  }
-
-  if (stream->Open()) {
-    if (OnOpenMediaStream(*stream)) {
-      mediaStreams.Append(stream);
-      return stream;
+    if (!masterSlaveDeterminationProcedure->IsDetermined() ||
+        !capabilityExchangeProcedure->HasSentCapabilities() ||
+        !capabilityExchangeProcedure->HasReceivedCapabilities()) {
+      PTRACE(2, "H323\tOpenMediaStream cannot (H.245 unavailable) open logical channel for " << mediaFormat);
+      return NULL;
     }
 
-    PTRACE(2, "H323\tOnOpenMediaStream failed for " << mediaFormat << ", session " << sessionID);
-    stream->Close();
-  }
-  else {
-    PTRACE(2, "H323\tMedia stream open failed for " << mediaFormat << ", session " << sessionID);
+    // If transmitter, send OpenLogicalChannel using the capability associated with the media format
+    PString name = mediaFormat.GetName();
+#if OPAL_H239
+    if (sessionID > 2 && mediaFormat.GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole) != OpalVideoFormat::eNoRole)
+      name += '+' + GetH239VideoMediaFormat().GetName();
+#endif
+    H323Capability * capability = remoteCapabilities.FindCapability(name);
+    if (capability == NULL) {
+      PTRACE(2, "H323\tOpenMediaStream could not find capability for " << name);
+      return NULL;
+    }
+
+#if OPAL_H235_6 || OPAL_H235_8
+    OpalMediaFormat adjustedMediaFormat = mediaFormat;
+    for (PINDEX i = 0; i < remoteCapabilities.GetSize(); ++i) {
+      const H235SecurityCapability * h235 = dynamic_cast<const H235SecurityCapability *>(&remoteCapabilities[i]);
+      if (h235 != NULL && h235->GetMediaCapabilityNumber() == capability->GetCapabilityNumber()) {
+        capability->SetCryptoSuite(h235->GetCryptoSuites().front());
+        if (adjustedMediaFormat.GetPayloadType() < RTP_DataFrame::DynamicBase)
+          adjustedMediaFormat.SetPayloadType((RTP_DataFrame::PayloadTypes)125);
+        break;
+      }
+    }
+    capability->UpdateMediaFormat(adjustedMediaFormat);
+#else
+    capability->UpdateMediaFormat(mediaFormat);
+#endif // OPAL_H235_6 || OPAL_H235_8
+
+    if (!OpenLogicalChannel(*capability, sessionID, H323Channel::IsTransmitter)) {
+      PTRACE(2, "H323\tOpenMediaStream could not open logical channel for " << mediaFormat);
+      return NULL;
+    }
+    channel = FindChannel(sessionID, isSource);
+    if (PAssertNULL(channel) == NULL)
+      return NULL;
   }
 
+  stream = channel->GetMediaStream();
+  if (stream != NULL && stream->Open()) {
+    PTRACE(3, "H323\tOpenMediaStream using channel " << channel->GetNumber() << " for session " << sessionID);
+    mediaStreams.Append(stream);
+    return stream;
+  }
+
+  PTRACE(2, "H323\tCould not open stream for logical channel " << channel->GetNumber());
+  channel->Close();
   return NULL;
 }
 
@@ -4856,11 +4880,11 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
 
   PCaselessString sessionType = mediaType->GetMediaSessionType();
 
-#if !H323_DISABLE_H235_SRTP
-  OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(capability.GetCryptoSuite());
+#if OPAL_H235_6 || OPAL_H235_8
+  const OpalMediaCryptoSuite * cryptoSuite = capability.GetCryptoSuite();
   if (cryptoSuite != NULL)
     cryptoSuite->ChangeSessionType(sessionType);
-#endif
+#endif // OPAL_H235_6 || OPAL_H235_8
 
   OpalMediaSession * session = UseMediaSession(sessionID, mediaType, sessionType);
   if (PAssertNULL(session) == NULL)
@@ -4886,13 +4910,6 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
     ReleaseMediaSession(sessionID);
     return NULL;
   }
-
-#if !H323_DISABLE_H235_SRTP
-  if (dir == H323Channel::IsTransmitter) {
-    session->OfferCryptoSuite(capability.GetCryptoSuite());
-    session->ApplyCryptoKey(session->GetOfferedCryptoKeys(), false);
-  }
-#endif
 
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
   if (rtpSession != NULL)
