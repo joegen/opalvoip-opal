@@ -115,21 +115,21 @@ bool RTP_DataFrame::SetPacketSize(PINDEX sz)
      the indicating padding size is not larger than the payload itself. Not
      100% accurate, but you do whatever you can.
    */
-  PINDEX pos = sz;
-  do {
-    if (pos-- <= m_headerSize) {
-      PTRACE(2, "RTP\tInvalid RTP packet, padding indicated but not enough data, "
-                "size=" << sz << ", header=" << m_headerSize);
-      m_payloadSize = m_paddingSize = 0;
-      return false;
-    }
+  m_paddingSize = theArray[sz-1] & 0xff;
+  if (m_headerSize + m_paddingSize > sz) {
+    PTRACE(2, "RTP\tInvalid RTP packet, padding indicated but not enough data, "
+              "size=" << sz << ", pad=" << m_paddingSize << ", header=" << m_headerSize);
+    m_paddingSize = 0;
+  }
 
-    m_paddingSize = theArray[pos] & 0xff;
-  } while (m_paddingSize > (pos-m_headerSize));
-
-  m_payloadSize = pos - m_headerSize - 1;
-
+  m_payloadSize = sz - m_headerSize - m_paddingSize;
   return true;
+}
+
+
+PINDEX RTP_DataFrame::GetPacketSize() const
+{
+  return m_headerSize + m_payloadSize + m_paddingSize;
 }
 
 
@@ -158,18 +158,33 @@ DWORD RTP_DataFrame::GetContribSource(PINDEX idx) const
 }
 
 
+bool RTP_DataFrame::AdjustHeaderSize(PINDEX newHeaderSize)
+{
+  if (m_headerSize == newHeaderSize)
+    return true;
+
+  PINDEX oldHeaderSize = m_headerSize;
+  m_headerSize = newHeaderSize;
+
+  PINDEX packetSize = GetPacketSize(); // New packet size
+  if (!SetMinSize(packetSize))
+    return false;
+
+  if (packetSize > m_headerSize)
+    memmove(theArray+m_headerSize, theArray+oldHeaderSize, packetSize-m_headerSize);
+  return true;
+}
+
+
 void RTP_DataFrame::SetContribSource(PINDEX idx, DWORD src)
 {
   PAssert(idx <= 15, PInvalidParameter);
 
   if (idx >= GetContribSrcCount()) {
-    BYTE * oldPayload = GetPayloadPtr();
     theArray[0] &= 0xf0;
     theArray[0] |= idx+1;
-    m_headerSize += 4;
-    PINDEX sz = m_payloadSize + m_paddingSize;
-    SetMinSize(m_headerSize+sz);
-    memmove(GetPayloadPtr(), oldPayload, sz);
+    if (!AdjustHeaderSize(m_headerSize + 4))
+      return;
   }
 
   ((PUInt32b *)&theArray[MinHeaderSize])[idx] = src;
@@ -178,13 +193,20 @@ void RTP_DataFrame::SetContribSource(PINDEX idx, DWORD src)
 
 void RTP_DataFrame::CopyHeader(const RTP_DataFrame & other)
 {
-  if (m_headerSize != other.m_headerSize) {
-    if (SetMinSize(other.m_headerSize+m_payloadSize+m_paddingSize) && m_payloadSize > 0)
-      memmove(theArray+other.m_headerSize, theArray+m_headerSize, m_payloadSize);
-  }
+  if (AdjustHeaderSize(other.m_headerSize))
+    memcpy(theArray, other.theArray, m_headerSize);
+}
 
-  m_headerSize = other.m_headerSize;
-  memcpy(theArray, other.theArray, m_headerSize);
+
+void RTP_DataFrame::Copy(const RTP_DataFrame & other)
+{
+  PINDEX size = other.GetPacketSize();
+  if (SetMinSize(size)) {
+    memcpy(theArray, other.theArray, size);
+    m_headerSize = other.m_headerSize;
+    m_payloadSize = other.m_payloadSize;
+    m_paddingSize = other.m_paddingSize;
+  }
 }
 
 
@@ -219,13 +241,8 @@ PINDEX RTP_DataFrame::GetExtensionSizeDWORDs() const
 bool RTP_DataFrame::SetExtensionSizeDWORDs(PINDEX sz)
 {
   PINDEX extHdrOffset = MinHeaderSize + 4*GetContribSrcCount();
-  PINDEX oldHeaderSize = m_headerSize;
-  m_headerSize = extHdrOffset + (sz+1)*4;
-  if (!SetMinSize(m_headerSize+m_payloadSize+m_paddingSize))
+  if (!AdjustHeaderSize(extHdrOffset + (sz+1)*4))
     return false;
-
-  if (m_headerSize != oldHeaderSize && m_payloadSize > 0)
-    memmove(&theArray[m_headerSize], &theArray[oldHeaderSize], m_payloadSize);
 
   theArray[0] |= 0x10;
   *(PUInt16b *)&theArray[extHdrOffset + 2] = (WORD)sz;
@@ -437,14 +454,30 @@ bool RTP_DataFrame::SetHeaderExtension(unsigned id, PINDEX length, const BYTE * 
 bool RTP_DataFrame::SetPayloadSize(PINDEX sz)
 {
   m_payloadSize = sz;
-  return SetMinSize(m_headerSize+m_payloadSize+m_paddingSize);
+  return SetMinSize(GetPacketSize());
 }
 
 
-bool RTP_DataFrame::SetPaddingSize(PINDEX sz)
+bool RTP_DataFrame::SetPaddingSize(PINDEX paddingSize)
 {
-  m_paddingSize = sz;
-  return SetMinSize(m_headerSize+m_payloadSize+m_paddingSize);
+  if (paddingSize == 0) {
+    SetPadding(false);
+    m_paddingSize = 0;
+    return true;
+  }
+
+  if (!PAssert(paddingSize < 255, PInvalidParameter))
+    return false;
+
+  SetPadding(true);
+  m_paddingSize = paddingSize+1;
+
+  PINDEX packetSize = GetPacketSize();
+  if (!SetMinSize(packetSize))
+    return false;
+
+  theArray[packetSize-1] = (BYTE)m_paddingSize;
+  return true;
 }
 
 

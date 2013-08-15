@@ -328,6 +328,7 @@
     <Lib />
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\h323\h235dh.cxx" />
     <ClCompile Include="..\codec\h261mf.cxx" />
     <ClCompile Include="..\codec\h263mf.cxx" />
     <ClCompile Include="..\codec\h264mf.cxx" />
@@ -352,6 +353,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\rtp\h235_session.cxx" />
     <ClCompile Include="..\rtp\libsrtp\crypto\ae_xfm\xfm.c">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -1365,6 +1367,8 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\h323\h235dh.h" />
+    <ClInclude Include="..\..\include\rtp\h235_session.h" />
     <ClInclude Include="..\..\include\ep\GstEndPoint.h" />
     <ClInclude Include="..\..\include\h460\h46018_h225.h" />
     <ClInclude Include="..\..\include\h460\h46024b.h" />

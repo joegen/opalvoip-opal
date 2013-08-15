@@ -681,6 +681,12 @@
     <ClCompile Include="..\java\java_msvc_wrapper.cxx">
       <Filter>Source Files\SWIG</Filter>
     </ClCompile>
+    <ClCompile Include="..\rtp\h235_session.cxx">
+      <Filter>Source Files\RTP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\h323\h235dh.cxx">
+      <Filter>Source Files\H.323</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\codec\echocancel.h">
@@ -1228,6 +1234,12 @@
     </ClInclude>
     <ClInclude Include="..\..\include\im\im_ep.h">
       <Filter>Header Files\IM</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\rtp\h235_session.h">
+      <Filter>Header Files\RTP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\h323\h235dh.h">
+      <Filter>Header Files\H.323</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

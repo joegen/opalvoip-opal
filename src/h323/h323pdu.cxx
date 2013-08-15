@@ -766,6 +766,11 @@ H225_CallProceeding_UUIE &
   SendFeatureSet<H225_CallProceeding_UUIE>(&connection, H460_MessageType::e_callProceeding, m_h323_uu_pdu, proceeding);
 #endif
 
+#if OPAL_H235_6
+  if (connection.GetDiffieHellman().ToTokens(proceeding.m_tokens))
+    proceeding.IncludeOptionalField(H225_CallProceeding_UUIE::e_tokens);
+#endif
+
   return proceeding;
 }
 
@@ -789,6 +794,11 @@ H225_Connect_UUIE & H323SignalPDU::BuildConnect(const H323Connection & connectio
   
 #if OPAL_H460
   SendFeatureSet<H225_Connect_UUIE>(&connection, H460_MessageType::e_connect, m_h323_uu_pdu, connect);
+#endif
+
+#if OPAL_H235_6
+  if (connection.GetDiffieHellman().ToTokens(connect.m_tokens))
+    connect.IncludeOptionalField(H225_Connect_UUIE::e_tokens);
 #endif
 
   return connect;
@@ -830,6 +840,11 @@ H225_Alerting_UUIE & H323SignalPDU::BuildAlerting(const H323Connection & connect
   
 #if OPAL_H460
   SendFeatureSet<H225_Alerting_UUIE>(&connection, H460_MessageType::e_alerting, m_h323_uu_pdu, alerting);
+#endif
+
+#if OPAL_H235_6
+  if (connection.GetDiffieHellman().ToTokens(alerting.m_tokens))
+    alerting.IncludeOptionalField(H225_Alerting_UUIE::e_tokens);
 #endif
 
   return alerting;
@@ -1027,6 +1042,11 @@ H225_Facility_UUIE * H323SignalPDU::BuildFacility(const H323Connection & connect
     SendFeatureSet<H225_Facility_UUIE>(&connection, H460_MessageType::e_facility, m_h323_uu_pdu, fac);
 #endif
 
+#if OPAL_H235_6
+  if (connection.GetDiffieHellman().ToTokens(fac.m_tokens))
+    fac.IncludeOptionalField(H225_Facility_UUIE::e_tokens);
+#endif
+
   return &fac;
 }
 
@@ -1043,6 +1063,11 @@ H225_Progress_UUIE & H323SignalPDU::BuildProgress(const H323Connection & connect
   progress.m_callIdentifier.m_guid = connection.GetCallIdentifier();
   connection.GetEndPoint().SetEndpointTypeInfo(progress.m_destinationInfo);
 
+#if OPAL_H235_6
+  if (connection.GetDiffieHellman().ToTokens(progress.m_tokens))
+    progress.IncludeOptionalField(H225_Progress_UUIE::e_tokens);
+#endif
+
   return progress;
 }
 
@@ -1057,6 +1082,11 @@ H225_Status_UUIE & H323SignalPDU::BuildStatus(const H323Connection & connection)
   SetH225Version(connection, status.m_protocolIdentifier);
   status.m_callIdentifier.m_guid = connection.GetCallIdentifier();
 
+#if OPAL_H235_6
+  if (connection.GetDiffieHellman().ToTokens(status.m_tokens))
+    status.IncludeOptionalField(H225_Status_UUIE::e_tokens);
+#endif
+
   return status;
 }
 
@@ -1069,6 +1099,11 @@ H225_StatusInquiry_UUIE & H323SignalPDU::BuildStatusInquiry(const H323Connection
 
   SetH225Version(connection, inquiry.m_protocolIdentifier);
   inquiry.m_callIdentifier.m_guid = connection.GetCallIdentifier();
+
+#if OPAL_H235_6
+  if (connection.GetDiffieHellman().ToTokens(inquiry.m_tokens))
+    inquiry.IncludeOptionalField(H225_StatusInquiry_UUIE::e_tokens);
+#endif
 
   return inquiry;
 }
@@ -1097,6 +1132,11 @@ H225_Notify_UUIE & H323SignalPDU::BuildNotify(const H323Connection & connection)
 
   SetH225Version(connection, notify.m_protocolIdentifier);
   notify.m_callIdentifier.m_guid = connection.GetCallIdentifier();
+
+#if OPAL_H235_6
+  if (connection.GetDiffieHellman().ToTokens(notify.m_tokens))
+    notify.IncludeOptionalField(H225_Notify_UUIE::e_tokens);
+#endif
 
   return notify;
 }

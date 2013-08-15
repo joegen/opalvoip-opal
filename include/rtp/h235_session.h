@@ -1,11 +1,11 @@
 /*
- * srtp_session.h
+ * h235_session.h
  *
- * SRTP protocol session handler
+ * H.235 encrypted RTP protocol session handler
  *
  * OPAL Library
  *
- * Copyright (C) 2012 Vox Lucida Pty. Ltd.
+ * Copyright (C) 2013 Vox Lucida Pty. Ltd.
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -28,8 +28,8 @@
  * $Date$
  */
 
-#ifndef OPAL_RTP_SRTP_SESSION_H
-#define OPAL_RTP_SRTP_SESSION_H
+#ifndef OPAL_RTP_H235_SESSION_H
+#define OPAL_RTP_H235_SESSION_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -41,31 +41,29 @@
 
 #include <opal_config.h>
 
+#if OPAL_H235_6
+
 #include <rtp/rtp.h>
 #include <rtp/rtpconn.h>
+#include <ptclib/pssl.h>
 
-#if OPAL_SRTP
 
-class OpalSRTPCryptoSuite;
+class H2356_CryptoSuite;
 
 
 ////////////////////////////////////////////////////////////////////
 //
-//  this class holds the parameters required for an SRTP session
+//  this class holds the parameters required for an AES session
 //
 //  Crypto modes are identified by key strings that are contained in PFactory<OpalSRTPParms>
 //  The following strings should be implemented:
 //
-//     AES_CM_128_HMAC_SHA1_80,
-//     AES_CM_128_HMAC_SHA1_32,
-//     AES_CM_128_NULL_AUTH,   
-//     NULL_CIPHER_HMAC_SHA1_80
-//     STRONGHOLD
+//     AES_128, AES_192, AES_256
 //
 
-struct OpalSRTPKeyInfo : public OpalMediaCryptoKeyInfo {
+struct H2356_KeyInfo : public OpalMediaCryptoKeyInfo {
   public:
-    OpalSRTPKeyInfo(const OpalSRTPCryptoSuite & cryptoSuite);
+    H2356_KeyInfo(const H2356_CryptoSuite & cryptoSuite);
 
     PObject * Clone() const;
 
@@ -77,76 +75,71 @@ struct OpalSRTPKeyInfo : public OpalMediaCryptoKeyInfo {
     virtual bool SetAuthSalt(const PBYTEArray & key);
     virtual PBYTEArray GetCipherKey() const;
     virtual PBYTEArray GetAuthSalt() const;
+    virtual PINDEX GetAuthSaltBits() const { return 0; }
 
-    const OpalSRTPCryptoSuite & GetCryptoSuite() const { return m_cryptoSuite; }
+    const H2356_CryptoSuite & GetCryptoSuite() const { return m_cryptoSuite; }
 
   protected:
-    const OpalSRTPCryptoSuite & m_cryptoSuite;
+    const H2356_CryptoSuite & m_cryptoSuite;
     PBYTEArray m_key;
-    PBYTEArray m_salt;
 };
 
 
-class OpalSRTPCryptoSuite : public OpalMediaCryptoSuite
+class H2356_CryptoSuite : public OpalMediaCryptoSuite
 {
-    PCLASSINFO(OpalSRTPCryptoSuite, OpalMediaCryptoSuite);
+    PCLASSINFO(H2356_CryptoSuite, OpalMediaCryptoSuite);
   protected:
-    OpalSRTPCryptoSuite() { }
+    H2356_CryptoSuite() { }
 
   public:
-#if OPAL_H235_6 || OPAL_H235_8
     virtual H235SecurityCapability * CreateCapability(const OpalMediaFormat & mediaFormat, unsigned capabilityNumber) const;
-#endif
     virtual bool Supports(const PCaselessString & proto) const;
     virtual bool ChangeSessionType(PCaselessString & mediaSession) const;
 
     virtual OpalMediaCryptoKeyInfo * CreateKeyInfo() const;
 
-    virtual void SetCryptoPolicy(struct crypto_policy_t & policy) const = 0;
+    virtual PINDEX GetCipherKeyBits() const = 0;
+    virtual PINDEX GetAuthSaltBits() const { return 0; }
 };
 
-class OpalLibSRTP
-{
-  protected:
-    OpalLibSRTP();
-    ~OpalLibSRTP();
-
-    bool ProtectRTP(RTP_DataFrame & frame);
-    bool ProtectRTCP(RTP_ControlFrame & frame);
-    bool UnprotectRTP(RTP_DataFrame & frame);
-    bool UnprotectRTCP(RTP_ControlFrame & frame);
-
-    struct Context;
-    Context * m_rx;
-    Context * m_tx;
-};
-
-
-/** This class implements SRTP using libSRTP
+/** This class implements AES using OpenSSL
   */
-class OpalSRTPSession : public OpalRTPSession, OpalLibSRTP
+class H2356_Session : public OpalRTPSession
 {
-  PCLASSINFO(OpalSRTPSession, OpalRTPSession);
+  PCLASSINFO(H2356_Session, OpalRTPSession);
   public:
-    static const PCaselessString & RTP_SAVP();
-    static const PCaselessString & RTP_SAVPF();
+    static const PCaselessString & SessionType();
 
-    OpalSRTPSession(const Init & init);
-    ~OpalSRTPSession();
+    H2356_Session(const Init & init);
+    ~H2356_Session();
 
-    virtual const PCaselessString & GetSessionType() const { return RTP_SAVP(); }
+    virtual const PCaselessString & GetSessionType() const;
     virtual bool Close();
     virtual OpalMediaCryptoKeyList & GetOfferedCryptoKeys();
     virtual bool ApplyCryptoKey(OpalMediaCryptoKeyList & keys, bool rx);
     virtual bool IsCryptoSecured(bool rx) const;
 
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame);
-    virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
-    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
-    virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
+    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize);
+
+  protected:
+    struct Context {
+      Context(bool encrypt) : m_keyInfo(NULL), m_cipher(encrypt) { }
+      ~Context() { delete m_keyInfo; }
+
+      bool Open(H2356_KeyInfo & info);
+      bool PreProcess(RTP_DataFrame & frame);
+      bool Encrypt(RTP_DataFrame & frame);
+      bool Decrypt(RTP_DataFrame & frame);
+
+      H2356_KeyInfo   * m_keyInfo;
+      PSSLCipherContext m_cipher;
+      RTP_DataFrame     m_buffer;
+      PBYTEArray        m_iv;
+    } m_rx, m_tx;
 };
 
 
-#endif // OPAL_SRTP
+#endif // OPAL_H235_6
 
-#endif // OPAL_RTP_SRTP_SESSION_H
+#endif // OPAL_RTP_H235_SESSION_H

@@ -38,6 +38,7 @@
 
 #include <opal/mediasession.h>
 #include <opal/connection.h>
+#include <h323/h323caps.h>
 
 
 #define new PNEW
@@ -204,15 +205,58 @@ void OpalMediaStatistics::PrintOn(ostream & strm) const
 
 const PCaselessString & OpalMediaCryptoSuite::ClearText() { static const PConstCaselessString s("Clear"); return s; }
 
+#if OPAL_H235_6 || OPAL_H235_8
+OpalMediaCryptoSuite * OpalMediaCryptoSuite::FindByOID(const PString & oid)
+{
+  OpalMediaCryptoSuiteFactory::KeyList_T all = OpalMediaCryptoSuiteFactory::GetKeyList();
+  for  (OpalMediaCryptoSuiteFactory::KeyList_T::iterator it = all.begin(); it != all.end(); ++it) {
+    OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(*it);
+    if (oid == cryptoSuite->GetOID())
+      return cryptoSuite;
+  }
+
+  return NULL;
+}
+#endif // OPAL_H235_6 || OPAL_H235_8
+
+
+void OpalMediaCryptoKeyList::Select(iterator & it)
+{
+  OpalMediaCryptoKeyInfo * keyInfo = &*it;
+  DisallowDeleteObjects();
+  erase(it);
+  AllowDeleteObjects();
+  RemoveAll();
+  Append(keyInfo);
+}
+
+
+OpalMediaCryptoSuite::List OpalMediaCryptoSuite::FindAll(const PStringArray & cryptoSuiteNames, const char * prefix)
+{
+  List list;
+
+  for (PINDEX i = 0; i < cryptoSuiteNames.GetSize(); ++i) {
+    OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(cryptoSuiteNames[i]);
+    if (cryptoSuite != NULL && (prefix == NULL || strncmp(cryptoSuite->GetDescription(), prefix, strlen(prefix)) == 0))
+      list.Append(cryptoSuite);
+  }
+
+  return list;
+}
+
+
 class OpalMediaClearText : public OpalMediaCryptoSuite
 {
   virtual const PCaselessString & GetFactoryName() const { return ClearText(); }
   virtual bool Supports(const PCaselessString &) const { return true; }
   virtual bool ChangeSessionType(PCaselessString & /*mediaSession*/) const { return true; }
   virtual const char * GetDescription() const { return OpalMediaCryptoSuite::ClearText(); }
-#if !H323_DISABLE_H235_SRTP
-  virtual const char * GetOID() const { return NULL; }
+#if OPAL_H235_6 || OPAL_H235_8
+  virtual H235SecurityCapability * CreateCapability(const OpalMediaFormat & mediaFormat, unsigned capabilityNumber) const { return new H235SecurityAlgorithmCapability(mediaFormat, capabilityNumber); }
+  virtual const char * GetOID() const { return "0.0.8.235.0.3.26"; }
 #endif
+  virtual PINDEX GetCipherKeyBits() const { return 0; }
+  virtual PINDEX GetAuthSaltBits() const { return 0; }
 
   struct KeyInfo : public OpalMediaCryptoKeyInfo
   {
@@ -340,6 +384,12 @@ OpalMediaCryptoKeyList & OpalMediaSession::GetOfferedCryptoKeys()
 
 
 bool OpalMediaSession::ApplyCryptoKey(OpalMediaCryptoKeyList &, bool)
+{
+  return false;
+}
+
+
+bool OpalMediaSession::IsCryptoSecured(bool) const
 {
   return false;
 }

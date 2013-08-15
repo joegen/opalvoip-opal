@@ -492,21 +492,12 @@ PBoolean H323_RealTimeChannel::OnSendingPDU(H245_OpenLogicalChannel & open) cons
 
   open.m_forwardLogicalChannelNumber = (unsigned)number;
 
-#if !H323_DISABLE_H235_SRTP
-  OpalMediaSession * session = connection.GetMediaSession(GetSessionID());
-  if (session != NULL) {
-    OpalMediaCryptoKeyList & keys = session->GetOfferedCryptoKeys();
-    if (!keys.IsEmpty()) {
-      H235_SRTP_SrtpKeys h235;
-      h235.SetSize(1);
-      h235[0].m_masterKey.SetValue(keys[0].GetCipherKey());
-      h235[0].m_masterSalt.SetValue(keys[0].GetAuthSalt());
-
-      open.IncludeOptionalField(H245_OpenLogicalChannel::e_encryptionSync);
-      open.m_encryptionSync.m_h235Key.EncodeSubType(h235);
-    }
+#if OPAL_H235_6 || OPAL_H235_8
+  if (capability->OnSendingCryptoPDU(open.m_encryptionSync, connection, GetSessionID())) {
+    open.IncludeOptionalField(H245_OpenLogicalChannel::e_encryptionSync);
+    open.m_encryptionSync.m_synchFlag = GetDynamicRTPPayloadType();
   }
-#endif
+#endif // OPAL_H235_6 || OPAL_H235_8
 
   if (open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters)) {
     open.m_reverseLogicalChannelParameters.IncludeOptionalField(
@@ -573,6 +564,13 @@ void H323_RealTimeChannel::OnSendOpenAck(const H245_OpenLogicalChannel & open,
   unsigned sessionID = openparam.m_sessionID;
   param.m_sessionID = sessionID;
 
+#if OPAL_H235_6 || OPAL_H235_8
+  if (capability->OnSendingCryptoPDU(ack.m_encryptionSync, connection, GetSessionID())) {
+    ack.IncludeOptionalField(H245_OpenLogicalChannelAck::e_encryptionSync);
+    ack.m_encryptionSync.m_synchFlag = GetDynamicRTPPayloadType();
+  }
+#endif // OPAL_H235_6 || OPAL_H235_8
+
   OnSendOpenAck(param);
 
   PTRACE(3, "H323RTP\tSending open logical channel ACK: sessionID=" << sessionID);
@@ -597,34 +595,10 @@ PBoolean H323_RealTimeChannel::OnReceivedPDU(const H245_OpenLogicalChannel & ope
     return false;
   }
 
-#if !H323_DISABLE_H235_SRTP
-  if (open.HasOptionalField(H245_OpenLogicalChannel::e_encryptionSync)) {
-    OpalMediaSession * session = connection.GetMediaSession(GetSessionID());
-    if (session != NULL) {
-      OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(capability->GetCryptoSuite());
-      if (cryptoSuite != NULL) {
-        H235_SRTP_SrtpKeys h235;
-        if (!open.m_encryptionSync.m_h235Key.DecodeSubType(h235) || h235.GetSize() == 0) {
-          PTRACE(1, "H323\tCould not decode SrtpKeys, or no keys present");
-          return false;
-        }
-
-        OpalMediaCryptoKeyList keys;
-        for (PINDEX i = 0; i < h235.GetSize(); ++i) {
-          H235_SRTP_SrtpKeyParameters & param = h235[i];
-          OpalMediaCryptoKeyInfo * keyInfo = cryptoSuite->CreateKeyInfo();
-          if (keyInfo != NULL) {
-            keyInfo->SetCipherKey(param.m_masterKey.GetValue());
-            keyInfo->SetAuthSalt(param.m_masterSalt.GetValue());
-            keys.Append(keyInfo);
-          }
-        }
-
-        session->ApplyCryptoKey(keys, true);
-      }
-    }
-  }
-#endif
+#if OPAL_H235_6 || OPAL_H235_8
+  if (open.HasOptionalField(H245_OpenLogicalChannel::e_encryptionSync))
+    capability->OnReceivedCryptoPDU(open.m_encryptionSync, connection, GetSessionID(), true);
+#endif // OPAL_H235_6 || OPAL_H235_8
 
   if (reverse) {
     if (open.m_reverseLogicalChannelParameters.m_multiplexParameters.GetTag() ==
@@ -684,6 +658,11 @@ PBoolean H323_RealTimeChannel::OnReceivedAckPDU(const H245_OpenLogicalChannelAck
 
   if (ack.HasOptionalField(H245_OpenLogicalChannel::e_genericInformation))
     OnReceivedAckAltPDU(ack.m_genericInformation);
+
+#if OPAL_H235_6 || OPAL_H235_8
+  if (ack.HasOptionalField(H245_OpenLogicalChannel::e_encryptionSync))
+    capability->OnReceivedCryptoPDU(ack.m_encryptionSync, connection, GetSessionID(), false);
+#endif // OPAL_H235_6 || OPAL_H235_8
 
   return OnReceivedAckPDU(ack.m_forwardMultiplexAckParameters);
 }

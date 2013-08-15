@@ -322,6 +322,8 @@ bool H264Frame::DeencapsulateSTAP(const uint8_t *payloadPtr, uint32_t payloadSiz
   {
     // first, theres a 2 byte length field
     uint32_t len = (curSTAP[0] << 8) | curSTAP[1];
+    if (len > payloadSize)
+      return false;
     curSTAP += 2;
     // then the header, followed by the body.  We'll add the header
     // in the AddDataToEncodedFrame - that's why the nal body is dptr + 1

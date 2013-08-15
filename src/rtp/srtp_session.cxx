@@ -1,11 +1,11 @@
 /*
- * srtp.cxx
+ * srtp_session.cxx
  *
- * SRTP protocol handler
+ * SRTP protocol session handler
  *
  * OPAL Library
  *
- * Copyright (C) 2006 Post Increment
+ * Copyright (C) 2012 Vox Lucida Pty. Ltd.
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -19,10 +19,7 @@
  *
  * The Original Code is OPAL Library.
  *
- * The Initial Developer of the Original Code is Post Increment
- *     Portions of this code were written with the assistance of funding from
- *     US Joint Forces Command Joint Concept Development & Experimentation (J9)
- *     http://www.jfcom.mil/about/abt_j9.htm
+ * The Initial Developer of the Original Code is Vox Lucida
  *
  * Contributor(s): ______________________________________.
  *
@@ -42,13 +39,8 @@
 #if OPAL_SRTP
 
 #include <rtp/srtp_session.h>
+#include <h323/h323caps.h>
 #include <ptclib/cypher.h>
-
-
-class PNatMethod;
-
-
-// default key = 2687012454
 
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -261,11 +253,11 @@ static PConstCaselessString AES_CM_128_HMAC_SHA1_80("AES_CM_128_HMAC_SHA1_80");
 
 class OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_80 : public OpalSRTPCryptoSuite
 {
-    PCLASSINFO(OpalSRTPCryptoSuite, OpalMediaCryptoSuite);
+    PCLASSINFO(OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_80, OpalSRTPCryptoSuite);
   public:
     virtual const PCaselessString & GetFactoryName() const { return AES_CM_128_HMAC_SHA1_80; }
     virtual const char * GetDescription() const { return "SRTP: AES-128 & SHA1-80"; }
-#if !H323_DISABLE_H235_SRTP
+#if OPAL_H235_6 || OPAL_H235_8
     virtual const char * GetOID() const { return "0.0.8.235.0.4.91"; }
 #endif
     virtual PINDEX GetCipherKeyBits() const { return 128; }
@@ -281,11 +273,11 @@ static PConstCaselessString AES_CM_128_HMAC_SHA1_32("AES_CM_128_HMAC_SHA1_32");
 
 class OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_32 : public OpalSRTPCryptoSuite
 {
-    PCLASSINFO(OpalSRTPCryptoSuite, OpalMediaCryptoSuite);
+    PCLASSINFO(OpalSRTPCryptoSuite_AES_CM_128_HMAC_SHA1_32, OpalSRTPCryptoSuite);
   public:
     virtual const PCaselessString & GetFactoryName() const { return AES_CM_128_HMAC_SHA1_32; }
     virtual const char * GetDescription() const { return "SRTP: AES-128 & SHA1-32"; }
-#if !H323_DISABLE_H235_SRTP
+#if OPAL_H235_6 || OPAL_H235_8
     virtual const char * GetOID() const { return "0.0.8.235.0.4.92"; }
 #endif
     virtual PINDEX GetCipherKeyBits() const { return 128; }
@@ -299,6 +291,13 @@ PFACTORY_CREATE(OpalMediaCryptoSuiteFactory, OpalSRTPCryptoSuite_AES_CM_128_HMAC
 
 
 ///////////////////////////////////////////////////////
+
+#if OPAL_H235_6 || OPAL_H235_8
+H235SecurityCapability * OpalSRTPCryptoSuite::CreateCapability(const OpalMediaFormat & mediaFormat, unsigned capabilityNumber) const
+{
+  return new H235SecurityGenericCapability(mediaFormat, capabilityNumber);
+}
+#endif
 
 bool OpalSRTPCryptoSuite::Supports(const PCaselessString & proto) const
 {
@@ -420,6 +419,17 @@ bool OpalSRTPKeyInfo::SetAuthSalt(const PBYTEArray & salt)
 }
 
 
+PBYTEArray OpalSRTPKeyInfo::GetCipherKey() const
+{
+  return m_key;
+}
+
+
+PBYTEArray OpalSRTPKeyInfo::GetAuthSalt() const
+{
+  return m_salt;
+}
+
 
 ///////////////////////////////////////////////////////
 
@@ -478,11 +488,7 @@ bool OpalLibSRTP::Context::Open(DWORD ssrc, OpalMediaCryptoKeyList & keys)
 
     if (CHECK_ERROR(srtp_add_stream,(m_ctx, &policy))) {
       m_policies[ssrc] = policy;
-      keys.DisallowDeleteObjects();
-      keys.erase(it);
-      keys.AllowDeleteObjects();
-      keys.RemoveAll();
-      keys.Append(keyInfo);
+      keys.Select(it);
       m_keyInfo = new OpalSRTPKeyInfo(*keyInfo);
       return true;
     }
@@ -671,6 +677,12 @@ bool OpalSRTPSession::ApplyCryptoKey(OpalMediaCryptoKeyList & keys, bool rx)
 {
   return rx ? m_rx->Open(GetSyncSourceIn(), keys)
             : m_tx->Open(GetSyncSourceOut(), keys);
+}
+
+
+bool OpalSRTPSession::IsCryptoSecured(bool rx) const
+{
+  return (rx ? m_rx : m_tx)->m_keyInfo != NULL;
 }
 
 
