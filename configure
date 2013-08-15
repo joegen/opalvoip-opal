@@ -638,6 +638,8 @@ OPAL_IVR
 OPAL_LID
 OPAL_T120DATA
 OPAL_H501
+OPAL_H235_8
+OPAL_H235_6
 OPAL_H239
 OPAL_H460_NAT
 OPAL_H460
@@ -839,6 +841,8 @@ enable_h450
 enable_h460
 enable_h460nat
 enable_h239
+enable_h2356
+enable_h2358
 enable_h501
 enable_t120
 enable_lid
@@ -1531,6 +1535,8 @@ Optional Features:
   --disable-h460          disable H.460
   --disable-h460nat       disable H.460.24
   --disable-h239          disable H.239
+  --disable-h2356         disable H.235.6
+  --disable-h2358         disable H.235.8
   --disable-h501          disable H.501
   --disable-t120          disable T.120
   --disable-lid           disable LID support
@@ -5689,6 +5695,8 @@ OPAL_H450=yes
 OPAL_H460=yes
 OPAL_H460_NAT=yes
 OPAL_H239=yes
+OPAL_H235_6=yes
+OPAL_H235_8=yes
 OPAL_H501=yes
 OPAL_T120DATA=no
 OPAL_LID=yes
@@ -8875,6 +8883,152 @@ fi
 
 
    enable_h239="$enableval"
+
+
+
+
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking H.235.6" >&5
+$as_echo_n "checking H.235.6... " >&6; }
+
+   # Check whether --enable-h2356 was given.
+if test "${enable_h2356+set}" = set; then :
+  enableval=$enable_h2356;
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+$as_echo "disabled by user" >&6; }
+         fi
+
+else
+
+         enableval=$OPAL_H235_6
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+$as_echo "disabled by default" >&6; }
+         fi
+
+
+fi
+
+
+
+
+      if    test "x${enableval}" = "xyes" && \
+            test "x$OPAL_H323" != "x1" && \
+            test "x$OPAL_H323" != "xyes"; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&5
+$as_echo "disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&6; }
+         enableval=no
+      fi
+
+
+
+
+
+
+
+
+
+
+
+
+   if test "x${enableval}" = "xyes"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+   fi
+
+
+   if test "x$enableval" = "xyes"; then :
+
+         OPAL_H235_6=yes
+
+
+$as_echo "#define OPAL_H235_6 1" >>confdefs.h
+
+
+else
+  OPAL_H235_6=no
+fi
+
+
+   enable_h2356="$enableval"
+
+
+
+
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking H.235.8" >&5
+$as_echo_n "checking H.235.8... " >&6; }
+
+   # Check whether --enable-h2358 was given.
+if test "${enable_h2358+set}" = set; then :
+  enableval=$enable_h2358;
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+$as_echo "disabled by user" >&6; }
+         fi
+
+else
+
+         enableval=$OPAL_H235_8
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+$as_echo "disabled by default" >&6; }
+         fi
+
+
+fi
+
+
+
+
+      if    test "x${enableval}" = "xyes" && \
+            test "x$OPAL_H323" != "x1" && \
+            test "x$OPAL_H323" != "xyes"; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&5
+$as_echo "disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&6; }
+         enableval=no
+      fi
+
+
+
+
+      if    test "x${enableval}" = "xyes" && \
+            test "x$OPAL_PTLIB_SSL" != "x1" && \
+            test "x$OPAL_PTLIB_SSL" != "xyes"; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_PTLIB_SSL=$OPAL_PTLIB_SSL" >&5
+$as_echo "disabled due to disabled dependency OPAL_PTLIB_SSL=$OPAL_PTLIB_SSL" >&6; }
+         enableval=no
+      fi
+
+
+
+
+
+
+
+
+
+   if test "x${enableval}" = "xyes"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+   fi
+
+
+   if test "x$enableval" = "xyes"; then :
+
+         OPAL_H235_8=yes
+
+
+$as_echo "#define OPAL_H235_8 1" >>confdefs.h
+
+
+else
+  OPAL_H235_8=no
+fi
+
+
+   enable_h2358="$enableval"
 
 
 
