@@ -217,10 +217,20 @@ bool H235DiffieHellman::ToTokens(H225_ArrayOf_ClearToken & tokens) const
     tokens.SetSize(last+1);
     H235_ClearToken & token = tokens[last];
     token.m_tokenOID = it->first;
-    token.IncludeOptionalField(H235_ClearToken::e_dhkey);
-    token.m_dhkey.m_halfkey.SetData(it->second.GetHalfKey());
-    token.m_dhkey.m_modSize.SetData(it->second.GetModulus());
-    token.m_dhkey.m_generator.SetData(it->second.GetGenerator());
+    if (it->second.GetNumBits() > 2048) {
+      token.IncludeOptionalField(H235_ClearToken::e_dhkeyext);
+      token.m_dhkeyext.m_halfkey.SetData(it->second.GetHalfKey());
+      token.m_dhkeyext.IncludeOptionalField(H235_DHsetExt::e_modSize);
+      token.m_dhkeyext.m_modSize.SetData(it->second.GetModulus());
+      token.m_dhkeyext.IncludeOptionalField(H235_DHsetExt::e_generator);
+      token.m_dhkeyext.m_generator.SetData(it->second.GetGenerator());
+    }
+    else {
+      token.IncludeOptionalField(H235_ClearToken::e_dhkey);
+      token.m_dhkey.m_halfkey.SetData(it->second.GetHalfKey());
+      token.m_dhkey.m_modSize.SetData(it->second.GetModulus());
+      token.m_dhkey.m_generator.SetData(it->second.GetGenerator());
+    }
   }
 
   if (m_version3) {
@@ -238,35 +248,49 @@ bool H235DiffieHellman::FromTokens(const H225_ArrayOf_ClearToken & tokens)
 
   for (PINDEX i = 0; i < tokens.GetSize(); ++i) {
     H235_ClearToken & token = tokens[i];
-    if (token.HasOptionalField(H235_ClearToken::e_dhkey)) {
-      PString oid = token.m_tokenOID.AsString();
-      if (oid == H235Version3)
-        m_version3 = true;
-      else {
-        for (PINDEX group = 0; group < PARRAYSIZE(DHGroup); ++group) {
-          if (oid == DHGroup[group].m_dhOID) {
-            if (m_local) {
-              PSSLDiffieHellman * dh = GetAt(oid);
-              if (dh != NULL) {
-                PTRACE_IF(3, dh->GetModulus() != token.m_dhkey.m_modSize.GetData(),
-                          "Reply Diffie-Hellman group has different modulus to offer");
-                if (dh->ComputeSessionKey(token.m_dhkey.m_halfkey.GetData())) {
-                  PTRACE(4, "Computed key for Diffie-Hellman group " << oid
-                         << "\n" << hex << fixed << setfill('0') << setprecision(4) << dh->GetSessionKey());
-                }
-              }
-              else {
-                PTRACE(3, "Did not offer Diffie-Hellman group " << oid);
+    PString oid = token.m_tokenOID.AsString();
+    if (oid == H235Version3)
+      m_version3 = true;
+    else {
+      for (PINDEX group = 0; group < PARRAYSIZE(DHGroup); ++group) {
+        if (oid == DHGroup[group].m_dhOID) {
+          PBYTEArray halfKey, modSize, generator;
+          if (token.HasOptionalField(H235_ClearToken::e_dhkeyext)) {
+            halfKey = token.m_dhkeyext.m_halfkey.GetData();
+            if (token.m_dhkeyext.HasOptionalField(H235_DHsetExt::e_modSize))
+              modSize = token.m_dhkeyext.m_modSize.GetData();
+            if (token.m_dhkeyext.HasOptionalField(H235_DHsetExt::e_generator))
+              generator = token.m_dhkeyext.m_generator.GetData();
+          }
+          else if (token.HasOptionalField(H235_ClearToken::e_dhkey)) {
+            halfKey = token.m_dhkey.m_halfkey.GetData();
+            modSize = token.m_dhkey.m_modSize.GetData();
+            generator = token.m_dhkey.m_generator.GetData();
+          }
+          else {
+            PTRACE(3, "No Diffie-Hellman key information in token");
+            continue;
+          }
+
+          if (m_local) {
+            PSSLDiffieHellman * dh = GetAt(oid);
+            if (dh != NULL) {
+              PTRACE_IF(3, !modSize.IsEmpty() && dh->GetModulus() != modSize,
+                        "Reply Diffie-Hellman group has different modulus to offer");
+              if (dh->ComputeSessionKey(halfKey)) {
+                PTRACE(4, "Computed key for Diffie-Hellman group " << oid
+                        << "\n" << hex << fixed << setfill('0') << setprecision(4) << dh->GetSessionKey());
               }
             }
             else {
-              PTRACE(4, "Adding Diffie-Hellman group " << oid);
-              SetAt(oid, new PSSLDiffieHellman(token.m_dhkey.m_modSize.GetData(),
-                                               token.m_dhkey.m_generator.GetData(),
-                                               token.m_dhkey.m_halfkey.GetData()));
+              PTRACE(3, "Did not offer Diffie-Hellman group " << oid);
             }
-            break;
           }
+          else {
+            PTRACE(4, "Adding Diffie-Hellman group " << oid);
+            SetAt(oid, new PSSLDiffieHellman(modSize, generator, halfKey));
+          }
+          break;
         }
       }
     }
