@@ -500,7 +500,11 @@ OPAL_DETERMINE_PLUGIN_DIR()
 dnl ########################################################################
 dnl Output files
 
-AC_CONFIG_FILES(opal.pc opal.spec opal_cfg.dxy make/opal_config.mak samples/openphone/version.wxs)
+AC_CONFIG_FILES(opal.pc)
+AC_CONFIG_FILES(opal.spec)
+AC_CONFIG_FILES(opal_cfg.dxy)
+AC_CONFIG_FILES(make/opal_config.mak)
+AC_CONFIG_FILES(samples/openphone/version.wxs)
 AC_CONFIG_HEADERS(${ac_top_build_prefix}include/opal_config.h:include/opal_config.h.in)
 
 
