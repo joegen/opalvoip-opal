@@ -733,6 +733,18 @@ H225_Setup_UUIE & H323SignalPDU::BuildSetup(const H323Connection & connection,
   SendSetupFeatureSet(&connection, setup);
 #endif
 
+#if OPAL_PTLIB_SSL
+  if (connection.GetSignallingChannel()->GetProtoPrefix() == OpalTransportAddress::TlsPrefix()) {
+    setup.IncludeOptionalField(H225_Setup_UUIE::e_h245SecurityCapability);
+    setup.m_h245SecurityCapability.SetSize(1);
+    setup.m_h245SecurityCapability[0].SetTag(H225_H245Security::e_tls);
+    H225_SecurityCapabilities & secCap = setup.m_h245SecurityCapability[0];
+    secCap.m_encryption.SetTag(H225_SecurityServiceMode::e_default);
+    secCap.m_authenticaton.SetTag(H225_SecurityServiceMode::e_default);
+    secCap.m_integrity.SetTag(H225_SecurityServiceMode::e_default);
+  }
+#endif
+
   return setup;
 }
 
@@ -800,23 +812,6 @@ H225_Connect_UUIE & H323SignalPDU::BuildConnect(const H323Connection & connectio
   if (connection.GetDiffieHellman().ToTokens(connect.m_tokens))
     connect.IncludeOptionalField(H225_Connect_UUIE::e_tokens);
 #endif
-
-  return connect;
-}
-
-
-H225_Connect_UUIE & H323SignalPDU::BuildConnect(const H323Connection & connection,
-                                                const PIPSocket::Address & h245Address,
-                                                WORD port)
-{
-  H225_Connect_UUIE & connect = BuildConnect(connection);
-
-  // indicate we are including the optional H245 address in the PDU
-  connect.IncludeOptionalField(H225_Connect_UUIE::e_h245Address);
-
-  // convert IP address into the correct H245 type
-  H323TransportAddress transAddr(h245Address, port);
-  transAddr.SetPDU(connect.m_h245Address);
 
   return connect;
 }
