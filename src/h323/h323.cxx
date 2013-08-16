@@ -1185,9 +1185,10 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
   }
 
   // Check that it has the H.245 channel connection info
-  if (setup.HasOptionalField(H225_Setup_UUIE::e_h245Address) && (!setupPDU->m_h323_uu_pdu.m_h245Tunneling || endpoint.IsH245TunnelingDisabled()))
-    if (!CreateOutgoingControlChannel(setup.m_h245Address))
-      return false;
+  if (!CreateOutgoingControlChannel(setup,
+                                    setup.m_h245Address, H225_Setup_UUIE::e_h245Address,
+                                    setup.m_h245SecurityCapability[0], H225_Setup_UUIE::e_h245SecurityCapability))
+    return false;
 
   // Build the reply with the channels we are actually using
   connectPDU = new H323SignalPDU;
@@ -1346,8 +1347,10 @@ PBoolean H323Connection::OnReceivedCallProceeding(const H323SignalPDU & pdu)
     HandleFastStartAcknowledge(call.m_fastStart);
 
   // Check that it has the H.245 channel connection info
-  if (call.HasOptionalField(H225_CallProceeding_UUIE::e_h245Address) && (!pdu.m_h323_uu_pdu.m_h245Tunneling || endpoint.IsH245TunnelingDisabled()))
-    CreateOutgoingControlChannel(call.m_h245Address);
+  if (!CreateOutgoingControlChannel(call,
+                                    call.m_h245Address, H225_CallProceeding_UUIE::e_h245Address,
+                                    call.m_h245SecurityMode, H225_CallProceeding_UUIE::e_h245SecurityMode))
+    return false;
 
   if (GetPhase() < ProceedingPhase) {
     SetPhase(ProceedingPhase);
@@ -1373,10 +1376,9 @@ PBoolean H323Connection::OnReceivedProgress(const H323SignalPDU & pdu)
     HandleFastStartAcknowledge(progress.m_fastStart);
 
   // Check that it has the H.245 channel connection info
-  if (progress.HasOptionalField(H225_Progress_UUIE::e_h245Address) && (!pdu.m_h323_uu_pdu.m_h245Tunneling || endpoint.IsH245TunnelingDisabled()))
-    return CreateOutgoingControlChannel(progress.m_h245Address);
-
-  return true;
+  return CreateOutgoingControlChannel(progress,
+                                      progress.m_h245Address, H225_Progress_UUIE::e_h245Address,
+                                      progress.m_h245SecurityMode, H225_Progress_UUIE::e_h245SecurityMode);
 }
 
 
@@ -1405,9 +1407,10 @@ PBoolean H323Connection::OnReceivedAlerting(const H323SignalPDU & pdu)
     HandleFastStartAcknowledge(alert.m_fastStart);
 
   // Check that it has the H.245 channel connection info
-  if (alert.HasOptionalField(H225_Alerting_UUIE::e_h245Address) && (!pdu.m_h323_uu_pdu.m_h245Tunneling || endpoint.IsH245TunnelingDisabled()))
-    if (!CreateOutgoingControlChannel(alert.m_h245Address))
-      return false;
+  if (!CreateOutgoingControlChannel(alert,
+                                    alert.m_h245Address, H225_Alerting_UUIE::e_h245Address,
+                                    alert.m_h245SecurityMode, H225_Alerting_UUIE::e_h245SecurityMode))
+    return false;
 
   return OnAlerting(pdu, remotePartyName);
 }
@@ -1465,12 +1468,11 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
     HandleFastStartAcknowledge(connect.m_fastStart);
 
   // Check that it has the H.245 channel connection info
-  if (connect.HasOptionalField(H225_Connect_UUIE::e_h245Address) && (!pdu.m_h323_uu_pdu.m_h245Tunneling || endpoint.IsH245TunnelingDisabled())) {
-    if (!endpoint.IsH245Disabled() && (!CreateOutgoingControlChannel(connect.m_h245Address))) {
-      if (m_fastStartState != FastStartAcknowledged)
-        return false;
-    }
-  }
+  if (!CreateOutgoingControlChannel(connect,
+                                    connect.m_h245Address, H225_Connect_UUIE::e_h245Address,
+                                    connect.m_h245SecurityMode, H225_Connect_UUIE::e_h245SecurityMode) &&
+      m_fastStartState != FastStartAcknowledged)
+    return false;
 
   // If didn't get fast start channels accepted by remote then clear our
   // proposed channels
@@ -1511,12 +1513,12 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
 
   H323SignalPDU want245PDU;
   H225_Facility_UUIE * fac = want245PDU.BuildFacility(*this, false);
-  fac->m_reason.SetTag(H225_FacilityReason::e_startH245);
-  fac->IncludeOptionalField(H225_Facility_UUIE::e_h245Address);
-
-  if (!CreateIncomingControlChannel(fac->m_h245Address))
+  if (!CreateIncomingControlChannel(*fac,
+                                    fac->m_h245Address, H225_Facility_UUIE::e_h245Address,
+                                    fac->m_h245SecurityMode, H225_Facility_UUIE::e_h245SecurityMode))
     return false;
 
+  fac->m_reason.SetTag(H225_FacilityReason::e_startH245);
   return WriteSignalPDU(want245PDU);
 }
 
@@ -1568,7 +1570,9 @@ PBoolean H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
       }
     }
 
-    return CreateOutgoingControlChannel(fac.m_h245Address);
+    return CreateOutgoingControlChannel(fac,
+                                        fac.m_h245Address, H225_Facility_UUIE::e_h245Address,
+                                        fac.m_h245SecurityMode, H225_Facility_UUIE::e_h245SecurityMode);
   }
 
   if (fac.m_reason.GetTag() != H225_FacilityReason::e_callForwarded && 
@@ -2162,9 +2166,10 @@ PBoolean H323Connection::SetAlerting(const PString & calleeName, PBoolean withMe
           if (!StartControlNegotiations())
             return false;
         } else if (m_controlChannel == NULL) {
-          if (!CreateIncomingControlChannel(alerting.m_h245Address))
+          if (!CreateIncomingControlChannel(alerting,
+                                            alerting.m_h245Address, H225_Alerting_UUIE::e_h245Address,
+                                            alerting.m_h245SecurityMode, H225_Alerting_UUIE::e_h245SecurityMode))
             return false;
-          alerting.IncludeOptionalField(H225_Alerting_UUIE::e_h245Address);
         }
       }
     }
@@ -2253,9 +2258,10 @@ PBoolean H323Connection::SetConnected()
       }
     }
     else if (m_controlChannel == NULL) { // Start separate H.245 channel if not tunneling.
-      if (!CreateIncomingControlChannel(connect.m_h245Address))
+      if (!CreateIncomingControlChannel(connect,
+                                        connect.m_h245Address, H225_Connect_UUIE::e_h245Address,
+                                        connect.m_h245SecurityMode, H225_Connect_UUIE::e_h245SecurityMode))
         return false;
-      connect.IncludeOptionalField(H225_Connect_UUIE::e_h245Address);
     }
   }
 
@@ -2313,9 +2319,10 @@ PBoolean H323Connection::SetProgressed()
       }
     }
     else if (!m_controlChannel) { // Start separate H.245 channel if not tunneling.
-      if (!CreateIncomingControlChannel(progress.m_h245Address))
+      if (!CreateIncomingControlChannel(progress,
+                                        progress.m_h245Address, H225_Progress_UUIE::e_h245Address,
+                                        progress.m_h245SecurityMode, H225_Progress_UUIE::e_h245SecurityMode))
         return false;
-      progress.IncludeOptionalField(H225_Connect_UUIE::e_h245Address);
     }
   }
   
@@ -2511,8 +2518,27 @@ PBoolean H323Connection::OnUnknownSignalPDU(const H323SignalPDU & PTRACE_PARAM(p
 }
 
 
-PBoolean H323Connection::CreateOutgoingControlChannel(const H225_TransportAddress & h245Address)
+PBoolean H323Connection::CreateOutgoingControlChannel(const PASN_Sequence & enclosingPDU,
+                                                      const H225_TransportAddress & h245Address,
+                                                      unsigned h245AddressField,
+#if OPAL_PTLIB_SSL
+                                                      const H225_H245Security & h245Security,
+                                                      unsigned h245SecurityField
+#else
+                                                      const H225_H245Security &,
+                                                      unsigned
+#endif
+                                                      )
 {
+  if (endpoint.IsH245Disabled())
+    return true;
+
+  if (h245Tunneling && !endpoint.IsH245TunnelingDisabled())
+    return true;
+
+  if (!enclosingPDU.HasOptionalField(h245AddressField))
+    return true;
+
   PTRACE(3, "H225\tCreateOutgoingControlChannel h245Address = " << h245Address);
   if (endpoint.IsH245Disabled()){
     PTRACE(2, "H225\tCreateOutgoingControlChannel h245 is disabled, do nothing");
@@ -2523,9 +2549,28 @@ PBoolean H323Connection::CreateOutgoingControlChannel(const H225_TransportAddres
   if (m_controlChannel != NULL)
     return true;
 
+  OpalTransportAddress signallingAddress = m_signallingChannel->GetLocalAddress();
+#if OPAL_PTLIB_SSL
+  if (enclosingPDU.HasOptionalField(h245SecurityField)) {
+    if (h245Security.GetTag() != H225_H245Security::e_tls) {
+      PTRACE(2, "H225\tUnsupported H.245 security mode");
+      return false;
+    }
+
+    const H225_SecurityCapabilities & secCap = h245Security;
+    if (secCap.m_encryption.GetTag() != H225_SecurityServiceMode::e_default ||
+        secCap.m_authenticaton.GetTag() != H225_SecurityServiceMode::e_default ||
+        secCap.m_integrity.GetTag() != H225_SecurityServiceMode::e_default) {
+      PTRACE(2, "H225\tUnsupported H.245 security capabilities");
+      return false;
+    }
+
+    signallingAddress.Splice(OpalTransportAddress::TlsPrefix(), 0, signallingAddress.Find('$'));
+  }
+#endif
+
   // Check that it is an IP address, all we support at the moment
-  m_controlChannel = m_signallingChannel->GetLocalAddress().CreateTransport(
-                                  endpoint, OpalTransportAddress::HostOnly);
+  m_controlChannel = signallingAddress.CreateTransport(endpoint, OpalTransportAddress::HostOnly);
   if (m_controlChannel == NULL) {
     PTRACE(1, "H225\tConnect of H245 failed: Unsupported transport");
     return false;
@@ -2563,7 +2608,17 @@ void H323Connection::NewOutgoingControlChannel(PThread &, P_INT_PTR)
 }
 
 
-PBoolean H323Connection::CreateIncomingControlChannel(H225_TransportAddress & h245Address)
+PBoolean H323Connection::CreateIncomingControlChannel(PASN_Sequence & enclosingPDU,
+                                                      H225_TransportAddress & h245Address,
+                                                      unsigned h245AddressField,
+#if OPAL_PTLIB_SSL
+                                                      H225_H245Security & h245Security,
+                                                      unsigned h245SecurityField
+#else
+                                                      H225_H245Security &,
+                                                      unsigned
+#endif
+                                                      )
 {
   PAssert(m_controlChannel == NULL, PLogicError);
 
@@ -2589,7 +2644,22 @@ PBoolean H323Connection::CreateIncomingControlChannel(H225_TransportAddress & h2
   H323TransportAddress listeningAddress = controlListener->GetLocalAddress(m_signallingChannel->GetRemoteAddress());
 
   // assign address into the PDU
-  return listeningAddress.SetPDU(h245Address);
+  if (!listeningAddress.SetPDU(h245Address))
+    return false;
+
+  enclosingPDU.IncludeOptionalField(h245AddressField);
+
+#if OPAL_PTLIB_SSL
+  if (listeningAddress.GetProtoPrefix() == OpalTransportAddress::TlsPrefix()) {
+    enclosingPDU.IncludeOptionalField(h245SecurityField);
+    h245Security.SetTag(H225_H245Security::e_tls);
+    H225_SecurityCapabilities & secCap = h245Security;
+    secCap.m_encryption.SetTag(H225_SecurityServiceMode::e_default);
+    secCap.m_authenticaton.SetTag(H225_SecurityServiceMode::e_default);
+    secCap.m_integrity.SetTag(H225_SecurityServiceMode::e_default);
+  }
+#endif
+  return true;
 }
 
 
