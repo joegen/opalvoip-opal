@@ -4497,7 +4497,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Setting SVN revision include file."
-						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
+						CommandLine="$(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
 						AdditionalDependencies="$(InputDir).svn\wc.db"
 						Outputs="$(InputDir)revision.h"
 					/>
@@ -4508,7 +4508,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Setting SVN revision include file."
-						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
+						CommandLine="$(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
 						AdditionalDependencies="$(InputDir).svn\wc.db"
 						Outputs="$(InputDir)revision.h"
 					/>
@@ -4519,7 +4519,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Setting SVN revision include file."
-						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
+						CommandLine="$(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
 						AdditionalDependencies="$(InputDir).svn\wc.db"
 						Outputs="$(InputDir)revision.h"
 					/>
@@ -4530,7 +4530,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Setting SVN revision include file."
-						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
+						CommandLine="$(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
 						AdditionalDependencies="$(InputDir).svn\wc.db"
 						Outputs="$(InputDir)revision.h"
 					/>
@@ -4541,7 +4541,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Setting SVN revision include file."
-						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
+						CommandLine="$(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
 						AdditionalDependencies="$(InputDir).svn\wc.db"
 						Outputs="$(InputDir)revision.h"
 					/>
@@ -4552,7 +4552,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Setting SVN revision include file."
-						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
+						CommandLine="$(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
 						AdditionalDependencies="$(InputDir).svn\wc.db"
 						Outputs="$(InputDir)revision.h"
 					/>
@@ -4563,7 +4563,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Setting SVN revision include file."
-						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
+						CommandLine="$(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
 						AdditionalDependencies="$(InputDir).svn\wc.db"
 						Outputs="$(InputDir)revision.h"
 					/>
@@ -4574,7 +4574,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Setting SVN revision include file."
-						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
+						CommandLine="$(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
 						AdditionalDependencies="$(InputDir).svn\wc.db"
 						Outputs="$(InputDir)revision.h"
 					/>
@@ -4585,7 +4585,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Setting SVN revision include file."
-						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;"
+						CommandLine="$(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
 						AdditionalDependencies="$(InputDir).svn\wc.db"
 						Outputs="$(InputDir)revision.h"
 					/>
@@ -4596,7 +4596,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Setting SVN revision include file."
-						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+						CommandLine="$(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
 						AdditionalDependencies="$(InputDir).svn\wc.db"
 						Outputs="$(InputDir)revision.h"
 					/>
@@ -4607,7 +4607,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Setting SVN revision include file."
-						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+						CommandLine="$(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
 						AdditionalDependencies="$(InputDir).svn\wc.db"
 						Outputs="$(InputDir)revision.h"
 					/>
@@ -4618,7 +4618,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Setting SVN revision include file."
-						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+						CommandLine="$(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
 						AdditionalDependencies="$(InputDir).svn\wc.db"
 						Outputs="$(InputDir)revision.h"
 					/>
@@ -4629,7 +4629,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Setting SVN revision include file."
-						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+						CommandLine="$(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
 						AdditionalDependencies="$(InputDir).svn\wc.db"
 						Outputs="$(InputDir)revision.h"
 					/>
@@ -4640,7 +4640,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Setting SVN revision include file."
-						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+						CommandLine="$(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
 						AdditionalDependencies="$(InputDir).svn\wc.db"
 						Outputs="$(InputDir)revision.h"
 					/>
@@ -4651,7 +4651,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Setting SVN revision include file."
-						CommandLine="del $(InputDir)revision.h&#x0D;&#x0A;SubWCRev $(ProjectDir)..\.. $(InputPath) $(InputDir)revision.h&#x0D;&#x0A;if errorlevel 1 $(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
+						CommandLine="$(ProjectDir)..\..\svn_getrev $(InputPath) $(InputDir)revision.h"
 						AdditionalDependencies="$(InputDir).svn\wc.db"
 						Outputs="$(InputDir)revision.h"
 					/>
