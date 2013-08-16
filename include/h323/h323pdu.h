@@ -97,14 +97,6 @@ class H323SignalPDU : public H225_H323_UserInformation
       const H323Connection & connection    ///<  Connection PDU is generated for
     );
 
-    /**Build a CONNECT message with H.245 address.
-      */
-    H225_Connect_UUIE & BuildConnect(
-      const H323Connection & connection,    ///<  Connection PDU is generated for
-      const PIPSocket::Address & h245Address, ///<  H.245 IP address
-      WORD port                               ///<  H.245 TCP port
-    );
-
     /**Build an ALERTING message.
       */
     H225_Alerting_UUIE & BuildAlerting(
