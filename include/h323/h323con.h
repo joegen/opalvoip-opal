@@ -56,6 +56,7 @@
  */
 class PPER_Stream;
 class PASN_OctetString;
+class PASN_Sequence;
 
 class H225_EndpointType;
 class H225_TransportAddress;
@@ -67,6 +68,7 @@ class H225_AdmissionReject;
 class H225_InfoRequestResponse;
 class H225_DisengageRequest;
 class H225_FeatureSet;
+class H225_H245Security;
 
 class H245_TerminalCapabilitySet;
 class H245_TerminalCapabilitySetReject;
@@ -991,7 +993,11 @@ class H323Connection : public OpalRTPConnection
        channel.
      */
     virtual PBoolean CreateOutgoingControlChannel(
-      const H225_TransportAddress & h245Address   ///<  H245 address
+      const PASN_Sequence & enclosingPDU,         ///< Enclosing PDU, e.g. H225_Connect_UUIE
+      const H225_TransportAddress & h245Address,  ///< H245 address
+      unsigned h245AddressField,                  ///< Optional field code for address
+      const H225_H245Security & h245Security,     ///< Optional Security mode for H.245 channel
+      unsigned h245SecurityField            ///< Optional field code for address
     );
 
     /**Start a separate control channel.
@@ -1007,7 +1013,11 @@ class H323Connection : public OpalRTPConnection
        channel.
       */
     virtual PBoolean CreateIncomingControlChannel(
-      H225_TransportAddress & h245Address  ///<  PDU transport address to set
+      PASN_Sequence & enclosingPDU,         ///< Enclosing PDU, e.g. H225_Connect_UUIE
+      H225_TransportAddress & h245Address,  ///< PDU transport address to set
+      unsigned h245AddressField,            ///< Optional field code for address
+      H225_H245Security & h245Security,     ///< Optional Security mode for H.245 channel
+      unsigned h245SecurityField            ///< Optional field code for address
     );
 
     /**Write a PDU to the control channel.
