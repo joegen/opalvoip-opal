@@ -1,4 +1,5 @@
 <?xml version='1.0'?>
+<?define ProductName = "Open Phone" ?>
 <?define LuaDir = "$(env.ProgramFiles)\lua\5.1" ?>
 <?define SaslDir = "C:\Tools" ?>
 <?define LDAPDir = "C:\Tools" ?>
@@ -9,20 +10,22 @@
 <?include version.wxs ?>
 
 <Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
-  <Product Name='Open Phone'
+  <Product Name='$(var.ProductName)'
            Language='1033'
            Version='$(var.OPAL_VERSION)'
            Manufacturer='Vox Lucida Pty. Ltd.'
            Id='*'
            UpgradeCode='56E04FF6-6AEB-4917-B8FC-6C0C1F5831F1'>
-    <Package Description='Open Phone'
+    <Package Description='$(var.ProductName)'
              Comments='VoIP client for OPAL Version $(var.OPAL_VERSION)'
              Manufacturer='Vox Lucida Pty. Ltd.'
              InstallerVersion='300'
              Compressed='yes' />
 
+    <MajorUpgrade AllowSameVersionUpgrades='yes' DowngradeErrorMessage='A newer version of $(var.ProductName) is already installed.' />
+
     <Media Id='1' Cabinet='OpenPhone.cab' EmbedCab='yes' DiskPrompt='CD-ROM #1' />
-    <Property Id='DiskPrompt' Value="Open Phone $(var.OPAL_VERSION) Installation [1]" />
+    <Property Id='DiskPrompt' Value="$(var.ProductName) $(var.OPAL_VERSION) Installation [1]" />
     <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
      
     <UIRef Id="WixUI_InstallDir" />
@@ -31,7 +34,7 @@
     <Directory Id='TARGETDIR' Name='SourceDir'>
       <Directory Id='ProgramFilesFolder' Name='PFiles'>
         <Directory Id='VoxLucida' Name='Vox Lucida'>
-          <Directory Id='INSTALLDIR' Name='Open Phone'>
+          <Directory Id='INSTALLDIR' Name='$(var.ProductName)'>
             <Component Id='MainExecutable' Guid='*'>
               <File Id='OpenPhoneEXE'
                   Name='OpenPhone.exe'
@@ -278,7 +281,7 @@
     <Icon Id="OpenPhone.ico" SourceFile=".\OpenPhone.ico" />
 
     <Feature Id='Complete'
-             Title='Open Phone'
+             Title='$(var.ProductName)'
              Description='Full install'
              Display='expand'
              ConfigurableDirectory='INSTALLDIR'
