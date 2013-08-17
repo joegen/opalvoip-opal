@@ -2102,7 +2102,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr,
 
   switch (socket.GetErrorCode(PChannel::LastReadError)) {
     case PChannel::Unavailable :
-      return HandleUnreachable(PTRACE_PARAM(channelName)) ? e_IgnorePacket : e_AbortTransport;
+      HandleUnreachable(PTRACE_PARAM(channelName));
+      return e_IgnorePacket;
 
     case PChannel::BufferTooSmall :
       PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", " << channelName
