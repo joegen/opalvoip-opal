@@ -31,7 +31,7 @@
 #include <ptlib.h>
 
 #ifdef __GNUC__
-#pragma implementation "aes_session.h"
+#pragma implementation "h235_session.h"
 #endif
 
 #include <opal_config.h>
