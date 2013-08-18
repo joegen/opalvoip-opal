@@ -188,7 +188,7 @@ ifeq ($(OPAL_H323),yes)
   ASN_H_FILES   += $(ASN_INCDIR)/h235.h $(ASN_SRCDIR)/h235_t.cxx
   ASN_CXX_FILES += $(ASN_SRCDIR)/h235.cxx
 
-  ifeq ($(OPAL_H235_8), yes)
+  ifeq ($(OPAL_SRTP)$(OPAL_H235_8), yesyes)
     ASN_CXX_FILES += $(ASN_SRCDIR)/h235_srtp.cxx
   endif
 
