@@ -1191,7 +1191,9 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
   // Check that it has the H.245 channel connection info
   if (!CreateOutgoingControlChannel(setup,
                                     setup.m_h245Address, H225_Setup_UUIE::e_h245Address,
-                                    setup.m_h245SecurityCapability[0], H225_Setup_UUIE::e_h245SecurityCapability))
+                                    setup.m_h245SecurityCapability.GetSize() > 0 ? setup.m_h245SecurityCapability[0]
+                                                                                 : H225_H245Security(),
+                                    H225_Setup_UUIE::e_h245SecurityCapability))
     return false;
 
   // Build the reply with the channels we are actually using
