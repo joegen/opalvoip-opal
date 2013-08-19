@@ -159,9 +159,23 @@
 "$(WIX)\bin\light" -nologo -sice:ICE03 -sice:ICE82 -ext WixUIExtension -out "$(OutDir)OpenPhone.msi" "$(IntDir)%(Filename).wixobj"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)OpenPhone.msi;%(Outputs)</Outputs>
       <SubType>Designer</SubType>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RootDir)%(Directory)version.wxs;%(RootDir)%(Directory)config.wxs</AdditionalInputs>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\SVN-Trunk-2010\opal\samples\openphone\config.wxs">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Copying default installer configuration</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(FullPath)</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(FullPath).in</AdditionalInputs>
+      <FileType>Document</FileType>
+    </ClInclude>
+    <CustomBuild Include="..\..\..\SVN-Trunk-2010\opal\samples\openphone\config.wxs.in">
+      <FileType>Document</FileType>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Copying default installer configuration</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy "%(FullPath)" "%(RootDir)%(Directory)%(Filename)" &gt; nul</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RootDir)%(Directory)%(Filename)</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(FullPath)</AdditionalInputs>
+    </CustomBuild>
     <None Include="version.wxs">
       <SubType>Designer</SubType>
     </None>
