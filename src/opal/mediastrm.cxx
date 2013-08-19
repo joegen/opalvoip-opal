@@ -413,7 +413,8 @@ PBoolean OpalMediaStream::SetDataSize(PINDEX dataSize, PINDEX /*frameTime*/)
   if (dataSize <= 0)
     return false;
 
-  PTRACE_IF(4, defaultDataSize != dataSize, "Media\tSet data size from " << defaultDataSize << " to " << dataSize);
+  PTRACE_IF(4, defaultDataSize != dataSize, "Media\tSet data size from "
+            << defaultDataSize << " to " << dataSize << " on " << *this);
   defaultDataSize = dataSize;
   return true;
 }
@@ -1333,6 +1334,7 @@ bool OpalVideoMediaStream::InternalAdjustDevices()
       return false;
   }
 
+  PTRACE(4, "Media\tAdjusted video devices to " << video << " on " << *this);
   return true;
 }
 
