@@ -727,6 +727,9 @@ bool SIPEndPoint::OnReceivedPDU(SIP_PDU * pdu)
         return false;
       }
 
+      if (hasToConnection || hasFromConnection)
+        break;
+
       pdu->SendResponse(SIP_PDU::Information_Trying);
       return OnReceivedINVITE(pdu);
 
