@@ -1,0 +1,11 @@
+<Include>
+  <?define LuaDir = "$(env.ProgramFiles)\lua\5.1" ?>
+  <?define JPEGDir = "C:\Tools" ?>
+  <?define SaslDir = "C:\Tools" ?>
+  <?define LDAPDir = "C:\Tools" ?>
+  <?define SSLDir = "C:\Tools" ?>
+  <?define OPALDir = "..\.." ?>
+  <?define PTLibDir = "..\..\..\ptlib" ?>
+  <?define PluginDir = "C:\PTLib_Plugins" ?>
+  <?define IntelPluginDir = "" ?>
+</Include>
