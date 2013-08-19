@@ -1,6 +1,7 @@
 <?xml version='1.0'?>
 <?define ProductName = "Open Phone" ?>
 <?define LuaDir = "$(env.ProgramFiles)\lua\5.1" ?>
+<?define JPEGDir = "C:\Tools" ?>
 <?define SaslDir = "C:\Tools" ?>
 <?define LDAPDir = "C:\Tools" ?>
 <?define SSLDir = "C:\Tools" ?>
@@ -232,6 +233,13 @@
                     DiskId='1'
                     KeyPath='yes' />
             </Component>
+            <Component Id='JPEG' Guid='*'>
+              <File Id='JPEG_DLL'
+                    Name='JPEG62.DLL'
+                    Source='$(var.JPEGDir)\JPEG62.DLL'
+                    DiskId='1'
+                    KeyPath='yes' />
+            </Component>
             <Component Id='SASL' Guid='*'>
               <File Id='SASL_DLL'
                     Name='LIBSASL.DLL'
@@ -335,6 +343,7 @@
              Level='1'>
       <ComponentRef Id='PTLib' />
       <ComponentRef Id='Lua' />
+      <ComponentRef Id='JPEG' />
       <ComponentRef Id='SASL' />
       <ComponentRef Id='OpenLDAP' />
       <ComponentRef Id='OpenSSL1' />
