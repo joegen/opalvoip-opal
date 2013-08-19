@@ -156,7 +156,7 @@
       <FileType>Document</FileType>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compiling WiX ...</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(WIX)\bin\candle" -nologo -dMSVCRT_VER=90 -out "$(IntDir)%(Filename).wixobj" "%(FullPath)"
-"$(WIX)\bin\light" -nologo -sice:ICE03 -sice:ICE82 -ext WixUIExtension -out "$(OutDir)OpenPhone.msi" "$(IntDir)%(Filename).wixobj"</Command>
+"$(WIX)\bin\light" -nologo -sice:ICE03 -sice:ICE60 -sice:ICE61 -sice:ICE82 -ext WixUIExtension -out "$(OutDir)OpenPhone.msi" "$(IntDir)%(Filename).wixobj"</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)OpenPhone.msi;%(Outputs)</Outputs>
       <SubType>Designer</SubType>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RootDir)%(Directory)version.wxs;%(RootDir)%(Directory)config.wxs</AdditionalInputs>
@@ -168,6 +168,7 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(FullPath)</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(FullPath).in</AdditionalInputs>
       <FileType>Document</FileType>
+      <SubType>Designer</SubType>
     </ClInclude>
     <CustomBuild Include="..\..\..\SVN-Trunk-2010\opal\samples\openphone\config.wxs.in">
       <FileType>Document</FileType>
