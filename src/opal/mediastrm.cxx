@@ -830,6 +830,7 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
      mechanisms available. Net result, no video. It won't hurt to send another
      Intra-Frame, so we do. Thus, interoperability is improved! */
   if (m_forceIntraFrameFlag && m_forceIntraFrameTimer.HasExpired()) {
+    PTRACE(3, "Media\tForcing I-Frame after start up in case remote does not ask");
     ExecuteCommand(OpalVideoUpdatePicture());
     m_forceIntraFrameFlag = false;
   }
