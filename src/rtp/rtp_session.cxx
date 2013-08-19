@@ -607,7 +607,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
            << " x=" << frame.GetExtension()
            << " seq=" << frame.GetSequenceNumber()
            << " ts=" << frameTimestamp
-           << " src=" << frame.GetSyncSource()
+           << " src=0x" << hex << frame.GetSyncSource() << dec
            << " ccnt=" << frame.GetContribSrcCount()
            << " rem=" << GetRemoteAddress()
            << " local=" << GetLocalAddress());
@@ -728,8 +728,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
            << " x=" << frame.GetExtension()
            << " seq=" << frame.GetSequenceNumber()
            << " ts=" << frame.GetTimestamp()
-           << " src=" << hex << frame.GetSyncSource()
-           << " ccnt=" << frame.GetContribSrcCount() << dec);
+           << " src=0x" << hex << frame.GetSyncSource() << dec
+           << " ccnt=" << frame.GetContribSrcCount());
 
 #if OPAL_RTCP_XR
     delete m_metrics; // Should be NULL, but just in case ...
