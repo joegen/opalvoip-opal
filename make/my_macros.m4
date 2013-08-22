@@ -384,10 +384,20 @@ AC_SUBST(ARFLAGS, "rc")
 dnl Find some tools
 AC_PROG_LN_S()
 AC_PROG_RANLIB()
-AC_PROG_INSTALL()
-dnl AC_PROG_MKDIR_P()
+dnl AC_PROG_MKDIR_P()  -- Doesn't work!
 AC_SUBST(MKDIR_P, "mkdir -p")
 AC_PATH_PROG(SVN, svn)
+
+AC_PROG_INSTALL()
+AC_MSG_CHECKING([install support for -C])
+touch /tmp/ptlib_install_test1
+if $INSTALL -C /tmp/ptlib_install_test1 /tmp/ptlib_install_test2 2> /dev/null ; then
+   AC_MSG_RESULT(yes)
+   INSTALL="$INSTALL -C"
+else
+   AC_MSG_RESULT(no)
+fi
+rm /tmp/ptlib_install_test?
 
 AC_CHECK_TOOL(AR, ar)
 if test -z "$AR" ; then
