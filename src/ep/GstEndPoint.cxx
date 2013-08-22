@@ -224,6 +224,49 @@ static PString FirstWord(const PString & str)
 }
 
 
+static void Substitute(PString & str, const char * name, const PString & value, bool required = false)
+{
+  PString sub(PString::Printf, OPAL_GST_PIPLINE_VAR_FMT, name);
+  if (str.Find(sub) != P_MAX_INDEX)
+    str.Replace(sub, value, true);
+  else if (required) {
+    str &= name;
+    str += '=';
+    str += value;
+  }
+}
+
+
+static PString SubstituteAll(const PString & original,
+                             const OpalMediaFormat & mediaFormat,
+                             const char * nameSuffix,
+                             bool packetiser = false)
+{
+  PString str = original;
+  
+  Substitute(str, OPAL_GST_PIPLINE_VAR_NAME, mediaFormat.GetMediaType() + nameSuffix, true);
+  Substitute(str, OPAL_GST_PIPLINE_VAR_SAMPLE_RATE, mediaFormat.GetClockRate());
+  Substitute(str, OPAL_GST_PIPLINE_VAR_PT, (unsigned)mediaFormat.GetPayloadType(), packetiser);
+  
+  unsigned bitrate = mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption(), mediaFormat.GetMaxBandwidth());
+  Substitute(str, OPAL_GST_PIPLINE_VAR_BIT_RATE, bitrate);
+  Substitute(str, OPAL_GST_PIPLINE_VAR_BIT_RATE_K, (bitrate+1023)/1024);
+  if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
+    Substitute(str, OPAL_GST_BLOCK_SIZE, std::max(mediaFormat.GetFrameTime()*2, 320U));
+  }
+  else if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
+    Substitute(str, OPAL_GST_PIPLINE_VAR_WIDTH, mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), 352));
+    Substitute(str, OPAL_GST_PIPLINE_VAR_HEIGHT, mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), 288));
+    Substitute(str, OPAL_GST_PIPLINE_VAR_FRAME_RATE, psprintf("(fraction)90000/%u", mediaFormat.GetFrameTime()));
+    Substitute(str, OPAL_GST_PIPLINE_VAR_MTU, mediaFormat.GetOptionInteger(OpalMediaFormat::MaxTxPacketSizeOption(), 1400), packetiser);
+  }
+  
+  return str;
+}
+
+
+//////////////////////////////////////////////////////////
+
 GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
   : OpalLocalEndPoint(manager, prefix)
   , m_audioSourceDevice(GetDefaultDevice("Source/Audio", PreferredAudioSourceDevice, PARRAYSIZE(PreferredAudioSourceDevice)))
@@ -421,16 +464,14 @@ bool GstEndPoint::BuildAudioSinkPipeline(ostream & desc, const GstMediaStream & 
 
 bool GstEndPoint::BuildAudioSourceDevice(ostream & desc, const GstMediaStream & stream)
 {
-  desc << m_audioSourceDevice << " blocksize="
-       << std::max(stream.GetMediaFormat().GetFrameTime()*2, 320U)
-       << " name=audioSourceDevice";
+  desc << SubstituteAll(m_audioSourceDevice, stream.GetMediaFormat(), "SourceDevice");
   return true;
 }
 
 
-bool GstEndPoint::BuildAudioSinkDevice(ostream & desc, const GstMediaStream & /*stream*/)
+bool GstEndPoint::BuildAudioSinkDevice(ostream & desc, const GstMediaStream & stream)
 {
-  desc << m_audioSinkDevice << " name=audioSinkDevice";
+  desc << SubstituteAll(m_audioSinkDevice, stream.GetMediaFormat(), "SinkDevice");
   return true;
 }
 
@@ -522,16 +563,16 @@ bool GstEndPoint::BuildVideoSinkPipeline(ostream & desc, const GstMediaStream & 
 }
 
 
-bool GstEndPoint::BuildVideoSourceDevice(ostream & desc, const GstMediaStream & /*stream*/)
+bool GstEndPoint::BuildVideoSourceDevice(ostream & desc, const GstMediaStream & stream)
 {
-  desc << m_videoSourceDevice << " name=videoSourceDevice";
+  desc << SubstituteAll(m_videoSourceDevice, stream.GetMediaFormat(), "SourceDevice");
   return true;
 }
 
 
-bool GstEndPoint::BuildVideoSinkDevice(ostream & desc, const GstMediaStream & /*stream*/)
+bool GstEndPoint::BuildVideoSinkDevice(ostream & desc, const GstMediaStream & stream)
 {
-  desc << m_videoSinkDevice << " name=videoSinkDevice";
+  desc << SubstituteAll(m_videoSinkDevice, stream.GetMediaFormat(), "SinkDevice");
   return true;
 }
 
@@ -563,41 +604,6 @@ bool GstEndPoint::SetVideoSinkColourConverter(const PString & elementName)
 
 #endif // OPAL_VIDEO
 
-
-static void Substitute(PString & str, const char * name, const PString & value, bool required = false)
-{
-  PString sub(PString::Printf, OPAL_GST_PIPLINE_VAR_FMT, name);
-  if (str.Find(sub) != P_MAX_INDEX)
-    str.Replace(sub, value, true);
-  else if (required) {
-    str &= name;
-    str += '=';
-    str += value;
-  }
-}
-
-
-static PString SubstituteAll(const PString & original,
-                             const OpalMediaFormat & mediaFormat,
-                             const char * nameSuffix,
-                             bool packetiser = false)
-{
-  PString str = original;
-  Substitute(str, OPAL_GST_PIPLINE_VAR_NAME, mediaFormat.GetMediaType() + nameSuffix, true);
-  Substitute(str, OPAL_GST_PIPLINE_VAR_SAMPLE_RATE, mediaFormat.GetClockRate());
-  Substitute(str, OPAL_GST_PIPLINE_VAR_FRAME_RATE, psprintf("(fraction)90000/%u", mediaFormat.GetFrameTime()));
-  Substitute(str, OPAL_GST_PIPLINE_VAR_PT, (unsigned)mediaFormat.GetPayloadType(), packetiser);
-
-  unsigned bitrate = mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption(), mediaFormat.GetMaxBandwidth());
-  Substitute(str, OPAL_GST_PIPLINE_VAR_BIT_RATE, bitrate);
-  Substitute(str, OPAL_GST_PIPLINE_VAR_BIT_RATE_K, (bitrate+1023)/1024);
-  if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
-    Substitute(str, OPAL_GST_PIPLINE_VAR_WIDTH, mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), 352));
-    Substitute(str, OPAL_GST_PIPLINE_VAR_HEIGHT, mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), 288));
-    Substitute(str, OPAL_GST_PIPLINE_VAR_MTU, mediaFormat.GetOptionInteger(OpalMediaFormat::MaxTxPacketSizeOption(), 1400), packetiser);
-  }
-  return str;
-}
 
 bool GstEndPoint::BuildEncoder(ostream & desc, const GstMediaStream & stream)
 {

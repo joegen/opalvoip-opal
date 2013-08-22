@@ -52,6 +52,7 @@ class GstMediaStream;
 #define OPAL_GST_PIPLINE_VAR_FRAME_RATE  "frame-rate"
 #define OPAL_GST_PIPLINE_VAR_BIT_RATE    "bit-rate"
 #define OPAL_GST_PIPLINE_VAR_BIT_RATE_K  "bit-rate-kbps"
+#define OPAL_GST_BLOCK_SIZE              "blocksize"
 
 
 /**Endpoint for performing OPAL media via gstreamer.
