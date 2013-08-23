@@ -3947,7 +3947,7 @@
                                                                 <option>1</option>
                                                                 <flag>wxLEFT|wxRIGHT|wxBOTTOM|wxEXPAND</flag>
                                                                 <border>4</border>
-                                                                <object class="wxCheckList" name="H323MediaCryptoSuites" subclass="wxCheckListBox">
+                                                                <object class="wxCheckListBox" name="H323MediaCryptoSuites" subclass="wxCheckListBox">
                                                                     <style>wxLB_SINGLE|wxLB_NEEDED_SB</style>
                                                                     <selection>0</selection>
                                                                     <content>
@@ -4353,7 +4353,7 @@
                                                                 <option>1</option>
                                                                 <flag>wxLEFT|wxRIGHT|wxBOTTOM|wxEXPAND</flag>
                                                                 <border>4</border>
-                                                                <object class="wxCheckList" name="SIPMediaCryptoSuites" subclass="wxCheckListBox">
+                                                                <object class="wxCheckListBox" name="SIPMediaCryptoSuites" subclass="wxCheckListBox">
                                                                     <style>wxLB_SINGLE|wxLB_NEEDED_SB</style>
                                                                     <selection>0</selection>
                                                                     <content>
