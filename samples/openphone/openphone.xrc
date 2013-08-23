@@ -862,7 +862,7 @@
         </object>
     </object>
     <object class="wxDialog" name="IMDialog" subclass="IMDialog">
-        <style>wxCAPTION|wxRESIZE_BORDER|wxCLOSE_BOX|wxMAXIMIZE_BOX|wxMINIMIZE_BOX|wxTHICK_FRAME</style>
+        <style>wxCAPTION|wxRESIZE_BORDER|wxCLOSE_BOX|wxMAXIMIZE_BOX|wxMINIMIZE_BOX</style>
         <size>350, 200d</size>
         <title>IMDialog</title>
         <object class="wxBoxSizer">
@@ -2094,7 +2094,7 @@
     </object>
     <object class="wxDialog" name="OptionsDialog" subclass="OptionsDialog">
         <centered>1</centered>
-        <style>wxCAPTION|wxRESIZE_BORDER|wxSYSTEM_MENU|wxTHICK_FRAME</style>
+        <style>wxCAPTION|wxRESIZE_BORDER|wxSYSTEM_MENU</style>
         <size>500, 300d</size>
         <title>Options</title>
         <object class="wxBoxSizer">
@@ -3947,7 +3947,7 @@
                                                                 <option>1</option>
                                                                 <flag>wxLEFT|wxRIGHT|wxBOTTOM|wxEXPAND</flag>
                                                                 <border>4</border>
-                                                                <object class="wxListBox" name="H323MediaCryptoSuites" subclass="wxCheckListBox">
+                                                                <object class="wxCheckList" name="H323MediaCryptoSuites" subclass="wxCheckListBox">
                                                                     <style>wxLB_SINGLE|wxLB_NEEDED_SB</style>
                                                                     <selection>0</selection>
                                                                     <content>
@@ -4353,7 +4353,7 @@
                                                                 <option>1</option>
                                                                 <flag>wxLEFT|wxRIGHT|wxBOTTOM|wxEXPAND</flag>
                                                                 <border>4</border>
-                                                                <object class="wxListBox" name="SIPMediaCryptoSuites" subclass="wxCheckListBox">
+                                                                <object class="wxCheckList" name="SIPMediaCryptoSuites" subclass="wxCheckListBox">
                                                                     <style>wxLB_SINGLE|wxLB_NEEDED_SB</style>
                                                                     <selection>0</selection>
                                                                     <content>
