@@ -23,9 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision: 28055 $
- * $Author: rjongbloed $
- * $Date: 2012-07-18 18:02:09 +1000 (Wed, 18 Jul 2012) $
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <codec/opalplugin.hpp>
