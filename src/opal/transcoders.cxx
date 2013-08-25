@@ -91,8 +91,20 @@ bool OpalTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const Opa
 {
   PWaitAndSignal mutex(updateMutex);
 
-  bool ok = inputMediaFormat.Update(input);
-  ok = outputMediaFormat.Update(output) && ok; // Avoid McCarthy boolean
+  bool ok = true;
+  if (input.IsValid()) {
+    if (input == inputMediaFormat)
+      ok = inputMediaFormat.Update(input);
+    else
+      ok = inputMediaFormat.Merge(input);
+  }
+
+  if (output.IsValid()) {
+    if (input == inputMediaFormat)
+      ok = outputMediaFormat.Update(output) && ok; // Avoid McCarthy boolean
+    else
+      ok = outputMediaFormat.Merge(output) && ok; // Avoid McCarthy boolean
+  }
 
   m_inClockRate = inputMediaFormat.GetClockRate();
   m_outClockRate = outputMediaFormat.GetClockRate();
