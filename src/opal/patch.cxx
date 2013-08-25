@@ -838,15 +838,13 @@ bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat
 
   if (primaryCodec == NULL)
     ok = stream->InternalUpdateMediaFormat(mediaFormat);
-  else if (secondaryCodec != NULL && secondaryCodec->GetOutputFormat() == mediaFormat)
-    ok = secondaryCodec->UpdateMediaFormats(OpalMediaFormat(), mediaFormat) &&
-         stream->InternalUpdateMediaFormat(secondaryCodec->GetOutputFormat());
-  else if (primaryCodec->GetOutputFormat() == mediaFormat)
-    ok = primaryCodec->UpdateMediaFormats(OpalMediaFormat(), mediaFormat) &&
+  else if (secondaryCodec == NULL)
+    ok = primaryCodec->UpdateMediaFormats(mediaFormat, mediaFormat) &&
          stream->InternalUpdateMediaFormat(primaryCodec->GetOutputFormat());
   else
-    ok = primaryCodec->UpdateMediaFormats(mediaFormat, OpalMediaFormat()) &&
-         stream->InternalUpdateMediaFormat(primaryCodec->GetInputFormat());
+    ok = primaryCodec->UpdateMediaFormats(mediaFormat, mediaFormat) &&
+         secondaryCodec->UpdateMediaFormats(primaryCodec->GetOutputFormat(), primaryCodec->GetOutputFormat()) &&
+         stream->InternalUpdateMediaFormat(secondaryCodec->GetOutputFormat());
 
 #if OPAL_VIDEO
     SetRateControlParameters(stream->GetMediaFormat());
