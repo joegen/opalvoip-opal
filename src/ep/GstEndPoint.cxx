@@ -393,7 +393,7 @@ bool GstEndPoint::BuildPipeline(ostream & description, const GstMediaStream & st
 
 bool GstEndPoint::BuildAppSink(ostream & desc, const PString & name)
 {
-  desc << " ! appsink name=" << name << " sync=true async=false max-buffers=10 drop=false";
+  desc << " ! appsink name=" << name << " sync=false max-buffers=10 drop=false";
   return true;
 }
 
@@ -425,7 +425,7 @@ bool GstEndPoint::BuildAudioSourcePipeline(ostream & desc, const GstMediaStream 
 
 bool GstEndPoint::BuildAppSource(ostream & desc, const PString & name)
 {
-  desc << "appsrc stream-type=0 is-live=true name=" << name << " ! ";
+  desc << "appsrc stream-type=0 is-live=false name=" << name << " ! ";
   return true;
 }
 
