@@ -100,7 +100,7 @@ bool OpalTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const Opa
   }
 
   if (output.IsValid()) {
-    if (input == inputMediaFormat)
+    if (output == outputMediaFormat)
       ok = outputMediaFormat.Update(output) && ok; // Avoid McCarthy boolean
     else
       ok = outputMediaFormat.Merge(output) && ok; // Avoid McCarthy boolean
