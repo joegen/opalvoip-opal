@@ -5784,23 +5784,26 @@ void OptionsDialog::TestVideoCapture(wxCommandEvent & /*event*/)
   grabberArgs.rate = m_VideoGrabFrameRate;
   PVideoFrameInfo::ParseSize(m_VideoGrabFrameSize, grabberArgs.width, grabberArgs.height);
   grabberArgs.flip = m_VideoFlipLocal;
+  
+  wxRect winRect(m_manager.GetRect());
+  
+  PVideoDevice::OpenArgs displayArgs;
+  displayArgs.deviceName = psprintf(VIDEO_WINDOW_DEVICE" TITLE=\"Video Test\" X=%i Y=%i",
+              m_manager.m_localVideoFrameX != INT_MAX ? m_manager.m_localVideoFrameX : winRect.GetLeft(),
+              m_manager.m_localVideoFrameY != INT_MAX ? m_manager.m_localVideoFrameY : winRect.GetTop());
+  displayArgs.width = grabberArgs.width;
+  displayArgs.height = grabberArgs.height;
+  
+  PVideoOutputDevice * display = PVideoOutputDevice::CreateOpenedDevice(displayArgs, true);
+  if (display == NULL) {
+    wxMessageBox(wxT("Could not open video display."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
+    return;
+  }
 
   PVideoInputDevice * grabber = PVideoInputDevice::CreateOpenedDevice(grabberArgs);
   if (grabber == NULL) {
     wxMessageBox(wxT("Could not open video capture."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
-    return;
-  }
-
-  wxRect box(GetRect().GetBottomLeft(), wxSize(grabberArgs.width, grabberArgs.height));
-
-  PVideoDevice::OpenArgs displayArgs;
-  displayArgs.deviceName = psprintf(VIDEO_WINDOW_DEVICE" TITLE=\"Video Test\" X=%i Y=%i", box.GetLeft(), box.GetTop());
-  displayArgs.width = grabberArgs.width;
-  displayArgs.height = grabberArgs.height;
-
-  PVideoOutputDevice * display = PVideoOutputDevice::CreateOpenedDevice(displayArgs, true);
-  if (PAssertNULL(display) == NULL) {
-    delete grabber;
+    delete display;
     return;
   }
 
@@ -6830,6 +6833,7 @@ void RegistrationDialog::Changed(wxCommandEvent & /*event*/)
 BEGIN_EVENT_TABLE(CallDialog, wxDialog)
   EVT_BUTTON(wxID_OK, CallDialog::OnOK)
   EVT_TEXT(XRCID("Address"), CallDialog::OnAddressChange)
+  EVT_COMBOBOX(XRCID("Address"), CallDialog::OnAddressChange)
 END_EVENT_TABLE()
 
 CallDialog::CallDialog(MyManager * manager, bool hideHandset, bool hideFax)
@@ -7455,8 +7459,10 @@ void InCallPanel::MicrophoneVolume(wxScrollEvent & scrollEvent)
 void InCallPanel::SetVolume(bool isMicrophone, int value, bool muted)
 {
   PSafePtr<OpalConnection> connection = m_manager.GetConnection(true, PSafeReadOnly);
-  if (connection != NULL)
+  if (connection != NULL) {
     connection->SetAudioVolume(isMicrophone, muted ? 0 : value);
+    connection->SetAudioMute(isMicrophone, muted);
+  }
 }
 
 
