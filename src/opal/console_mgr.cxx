@@ -118,8 +118,8 @@ PString OpalManagerConsole::GetArgumentSpec() const
          "-video-size:       Set preferred transmit video size, of form 800x600\n"
          "-max-video-size:   Set maximum received video size, of form 800x600\n"
 #endif
-         "-inband-detect.    Disable detection of in-band tones.\n"
-         "-inband-send.      Disable transmission of in-band tones.\n"
+         "-silence-detect:   Set silence detect mode (none,fixed,adaptive)\n"
+         "-no-inband-detect. Disable detection of in-band tones.\n"
          "-tel:              Protocol to use for tel: URI, e.g. sip\n"
 
 #if OPAL_SIP
@@ -226,6 +226,20 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
       cout << " (with password)";
     cout << '\n';
   }
+
+  if (args.HasOption("silence-detect")) {
+    OpalSilenceDetector::Params params = GetSilenceDetectParams();
+    PCaselessString arg = args.GetOptionString("silence-detect");
+    if (arg.NumCompare("adaptive") == EqualTo)
+      params.m_mode = OpalSilenceDetector::AdaptiveSilenceDetection;
+    else if (arg.NumCompare("fixed") == EqualTo)
+      params.m_mode = OpalSilenceDetector::FixedSilenceDetection;
+    else
+      params.m_mode = OpalSilenceDetector::NoSilenceDetection;
+    SetSilenceDetectParams(params);
+  }
+
+  DisableDetectInBandDTMF(args.HasOption("no-inband-detect"));
 
   if (args.HasOption("portbase")) {
     unsigned portbase = args.GetOptionString("portbase").AsUnsigned();
