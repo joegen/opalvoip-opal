@@ -118,7 +118,8 @@ PString OpalManagerConsole::GetArgumentSpec() const
          "-video-size:       Set preferred transmit video size, of form 800x600\n"
          "-max-video-size:   Set maximum received video size, of form 800x600\n"
 #endif
-         "-silence-detect:   Set silence detect mode (none,fixed,adaptive)\n"
+         "-jitter:           Set audio jitter buffer size (min[,max] default 50,250)\n"
+         "-silence-detect:   Set audio silence detect mode (none,fixed,adaptive)\n"
          "-no-inband-detect. Disable detection of in-band tones.\n"
          "-tel:              Protocol to use for tel: URI, e.g. sip\n"
 
@@ -225,6 +226,26 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
     if (args.HasOption("password"))
       cout << " (with password)";
     cout << '\n';
+  }
+
+  if (args.HasOption("jitter")) {
+    PStringArray params = args.GetOptionString("jitter").Tokenise("-,:",true);
+    unsigned minJitter, maxJitter;
+    switch (params.GetSize()) {
+      case 1 :
+        minJitter = maxJitter = params[0].AsUnsigned();
+        break;
+        
+      case 2 :
+        minJitter = params[0].AsUnsigned();
+        maxJitter = params[1].AsUnsigned();
+        break;
+        
+      default :
+        cerr << "Invalid jitter specification\n";
+        return false;
+    }
+    SetAudioJitterDelay(minJitter, maxJitter);
   }
 
   if (args.HasOption("silence-detect")) {
