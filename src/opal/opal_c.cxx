@@ -49,6 +49,7 @@
 #include <ep/ivr.h>
 #include <ep/opalmixer.h>
 #include <im/im_ep.h>
+#include <ep/GstEndPoint.h>
 
 #include <queue>
 
@@ -185,6 +186,23 @@ class OpalLocalEndPoint_C : public OpalLocalEndPoint
 };
 
 
+#if OPAL_GSTREAMER
+
+class OpalGstEndPoint_C : public GstEndPoint
+{
+public:
+  OpalGstEndPoint_C(OpalManager_C & manager);
+  
+  virtual bool OnOutgoingCall(const OpalLocalConnection &);
+  virtual bool OnIncomingCall(OpalLocalConnection & connection);
+  
+private:
+  OpalManager_C & m_manager;
+};
+
+#endif // OPAL_GSTREAMER
+
+
 #if OPAL_IVR
 
 class OpalIVREndPoint_C : public OpalIVREndPoint
@@ -294,6 +312,9 @@ class OpalManager_C : public OpalManager
     OpalLocalEndPoint_C * m_localEP;
 #if OPAL_HAS_PCSS
     OpalPCSSEndPoint_C  * m_pcssEP;
+#endif
+#if OPAL_GSTREAMER
+    OpalGstEndPoint_C   * m_gstEP;
 #endif
 #if OPAL_IVR
     OpalIVREndPoint_C   * m_ivrEP;
@@ -709,6 +730,35 @@ PBoolean OpalPCSSEndPoint_C::OnShowOutgoing(const OpalPCSSConnection & connectio
 
 ///////////////////////////////////////
 
+#if OPAL_GSTREAMER
+
+OpalGstEndPoint_C::OpalGstEndPoint_C(OpalManager_C & manager)
+: GstEndPoint(manager, OPAL_PREFIX_GST)
+, m_manager(manager)
+{
+}
+
+
+bool OpalGstEndPoint_C::OnOutgoingCall(const OpalLocalConnection & connection)
+{
+  OpalMessageBuffer message(OpalIndAlerting);
+  SetOutgoingCallInfo(message, connection);
+  m_manager.PostMessage(message);
+  return true;
+}
+
+
+bool OpalGstEndPoint_C::OnIncomingCall(OpalLocalConnection & connection)
+{
+  m_manager.SendIncomingCallInfo(connection);
+  return true;
+}
+
+#endif
+
+
+///////////////////////////////////////
+
 #if OPAL_IVR
 
 OpalIVREndPoint_C::OpalIVREndPoint_C(OpalManager_C & manager)
@@ -894,6 +944,9 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
 #if OPAL_HAS_PCSS
   , m_pcssEP(NULL)
 #endif
+#if OPAL_GSTREAMER
+  , m_gstEP(NULL)
+#endif
 #if OPAL_IVR
   , m_ivrEP(NULL)
 #endif
@@ -930,8 +983,15 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
   bool hasT38 = CheckProto(args, OPAL_PREFIX_T38, defUser, defUserPos);
 #endif
 
+#if OPAL_HAS_PCSS
   bool hasPC = CheckProto(args, OPAL_PREFIX_PCSS":*", defUser, defUserPos);
+#endif
+  
   bool hasLocal = CheckProto(args, OPAL_PREFIX_LOCAL":<du>", defUser, defUserPos);
+
+#if OPAL_GSTREAMER
+  bool hasGStreamer = CheckProto(args, OPAL_PREFIX_GST":*", defUser, defUserPos);
+#endif
 
 #if OPAL_IVR
   bool hasIVR = CheckProto(args, OPAL_PREFIX_IVR, defUser, defUserPos);
@@ -986,18 +1046,25 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
   }
 #endif
 
+  if (hasLocal) {
+    m_localEP = new OpalLocalEndPoint_C(*this);
+    AddRouteEntry(OPAL_PREFIX_LOCAL":.*=" + defProto + ":<da>");
+  }
+
 #if OPAL_HAS_PCSS
   if (hasPC) {
     m_pcssEP = new OpalPCSSEndPoint_C(*this);
     AddRouteEntry(OPAL_PREFIX_PCSS":.*=" + defProto + ":<da>");
   }
 #endif
-
-  if (hasLocal) {
-    m_localEP = new OpalLocalEndPoint_C(*this);
-    AddRouteEntry(OPAL_PREFIX_LOCAL":.*=" + defProto + ":<da>");
+  
+#if OPAL_GSTREAMER
+  if (hasGStreamer) {
+    m_gstEP = new OpalGstEndPoint_C(*this);
+    AddRouteEntry(OPAL_PREFIX_GST":.*=" + defProto + ":<da>");
   }
-
+#endif
+  
 #if OPAL_IVR
   if (hasIVR) {
     m_ivrEP = new OpalIVREndPoint_C(*this);
