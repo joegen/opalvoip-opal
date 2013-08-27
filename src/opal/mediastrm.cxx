@@ -960,8 +960,11 @@ PBoolean OpalRawMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & lengt
 
   unsigned consecutiveZeroReads = 0;
   while (size > 0) {
-    if (!m_channel->Read(buffer, size))
+    if (!m_channel->Read(buffer, size)) {
+      PTRACE_IF(2, m_channel->GetErrorCode(PChannel::LastReadError) != PChannel::NotOpen,
+                "Media\tRaw channel read error: " << m_channel->GetErrorText(PChannel::LastReadError));
       return false;
+    }
 
     PINDEX lastReadCount = m_channel->GetLastReadCount();
     if (lastReadCount != 0)
