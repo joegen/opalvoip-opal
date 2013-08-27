@@ -398,20 +398,24 @@ bool GstEndPoint::BuildAppSink(ostream & desc, const PString & name)
 }
 
 
+static void OutputAudioFormatPipeline(ostream & desc, const OpalMediaFormat & mediaFormat)
+{
+  desc << "audio/x-raw-int, "
+          "depth=16, "
+          "width=16, "
+          "channels=" << mediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption(), 1) << ", "
+          "rate=" << mediaFormat.GetClockRate() << ", "
+          "signed=true, "
+          "endianness=1234";
+}
+
+
 bool GstEndPoint::BuildAudioSourcePipeline(ostream & desc, const GstMediaStream & stream)
 {
   const OpalMediaFormat & mediaFormat = stream.GetMediaFormat();
 
-  desc << " ! "
-          "audioconvert"
-          " ! "
-          "audioresample"
-          " ! "
-          "audio/x-raw-int, "
-          "depth=16, "
-          "width=16, "
-          "channels=" << mediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption(), 1) << ", "
-          "rate=" << mediaFormat.GetClockRate();
+  desc << " ! ";
+  OutputAudioFormatPipeline(desc, mediaFormat);
 
   if (mediaFormat != OpalPCM16) {
     desc << " ! ";
@@ -438,13 +442,7 @@ bool GstEndPoint::BuildAudioSinkPipeline(ostream & desc, const GstMediaStream & 
     return false;
 
   if (mediaFormat == OpalPCM16)
-    desc << "audio/x-raw-int, "
-            "depth=16, "
-            "width=16, "
-            "channels=" << mediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption(), 1) << ", "
-            "rate=" << mediaFormat.GetClockRate() << ", "
-            "signed=true, "
-            "endianness=1234";
+    OutputAudioFormatPipeline(desc, mediaFormat);
   else {
     desc << "application/x-rtp, "
             "media=audio, "
