@@ -5756,26 +5756,35 @@ void OptionsDialog::StopTestVideo()
 
   delete m_TestVideoGrabber;
   m_TestVideoGrabber = NULL;
+
+  m_TestVideoCapture->SetLabel(wxT("Test Video"));
 }
 
 
-void OptionsDialog::OnTestVideoEnded(wxCommandEvent & /*event*/)
+void OptionsDialog::OnTestVideoEnded(wxCommandEvent & theEvent)
 {
   StopTestVideo();
-  m_TestVideoCapture->SetLabel(wxT("Test Video"));
+  if (theEvent.GetId())
+    wxMessageBox(theEvent.GetString(), OpenPhoneString, wxOK);
+  else
+    wxMessageBox(theEvent.GetString(), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
 }
 
 
 void OptionsDialog::TestVideoCapture(wxCommandEvent & /*event*/)
 {
-  if (m_TestVideoThread != NULL) {
+  if (m_TestVideoThread != NULL)
     StopTestVideo();
-    m_TestVideoCapture->SetLabel(wxT("Test Video"));
-    return;
+  else if (wxDialog::TransferDataFromWindow()) {
+    m_TestVideoCapture->SetLabel(wxT("Stop Video"));
+    m_TestVideoThread = new PThreadObj<OptionsDialog>(*this, &OptionsDialog::TestVideoThreadMain, false, "TestVideo");
   }
+}
 
-  if (!wxDialog::TransferDataFromWindow())
-    return;
+
+void OptionsDialog::TestVideoThreadMain()
+{
+  wxCommandEvent theEvent(wxEvtTestVideoEnded);
 
   PVideoDevice::OpenArgs grabberArgs;
   grabberArgs.deviceName = m_VideoGrabDevice.mb_str(wxConvUTF8);
@@ -5789,50 +5798,33 @@ void OptionsDialog::TestVideoCapture(wxCommandEvent & /*event*/)
   
   PVideoDevice::OpenArgs displayArgs;
   displayArgs.deviceName = psprintf(VIDEO_WINDOW_DEVICE" TITLE=\"Video Test\" X=%i Y=%i",
-              m_manager.m_localVideoFrameX != INT_MAX ? m_manager.m_localVideoFrameX : winRect.GetLeft(),
-              m_manager.m_localVideoFrameY != INT_MAX ? m_manager.m_localVideoFrameY : winRect.GetTop());
+                                    m_manager.m_localVideoFrameX != INT_MAX ? m_manager.m_localVideoFrameX : winRect.GetLeft(),
+                                    m_manager.m_localVideoFrameY != INT_MAX ? m_manager.m_localVideoFrameY : winRect.GetTop());
   displayArgs.width = grabberArgs.width;
   displayArgs.height = grabberArgs.height;
   
-  PVideoOutputDevice * display = PVideoOutputDevice::CreateOpenedDevice(displayArgs, true);
-  if (display == NULL) {
-    wxMessageBox(wxT("Could not open video display."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
-    return;
-  }
-
-  PVideoInputDevice * grabber = PVideoInputDevice::CreateOpenedDevice(grabberArgs);
-  if (grabber == NULL) {
-    wxMessageBox(wxT("Could not open video capture."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
-    delete display;
-    return;
-  }
-
-  if (grabber->Start()) {
-    m_TestVideoCapture->SetLabel(wxT("Stop Video"));
-    m_TestVideoGrabber = grabber;
-    m_TestVideoDisplay = display;
-    m_TestVideoThread = new PThreadObj<OptionsDialog>(*this, &OptionsDialog::TestVideoThreadMain, false, "TestVideo");
-  }
+  if ((m_TestVideoDisplay = PVideoOutputDevice::CreateOpenedDevice(displayArgs, true)) == NULL)
+    theEvent.SetString(wxT("Could not open video display."));
+  else if ((m_TestVideoGrabber = PVideoInputDevice::CreateOpenedDevice(grabberArgs)) == NULL)
+    theEvent.SetString(wxT("Could not open video capture."));
+  else if (!m_TestVideoGrabber->Start())
+    theEvent.SetString(wxT("Could not start video capture."));
   else {
-    wxMessageBox(wxT("Could not start video capture."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
-    delete display;
-    delete grabber;
+    PSimpleTimer timer;
+    PBYTEArray frame;
+    unsigned frameCount = 0;
+    while (m_TestVideoGrabber->GetFrame(frame) &&
+           m_TestVideoDisplay->SetFrameData(0, 0,
+                                            m_TestVideoGrabber->GetFrameWidth(),
+                                            m_TestVideoGrabber->GetFrameHeight(),
+                                            frame))
+      frameCount++;
+    wxString text;
+    text << "Grabbed " << frameCount << " frames at " << (frameCount*1000.0/timer.GetElapsed().GetMilliSeconds()) << " fps.";
+    theEvent.SetString(text);
+    theEvent.SetId(1);
   }
-}
 
-
-void OptionsDialog::TestVideoThreadMain()
-{
-  PBYTEArray frame;
-  unsigned frameCount = 0;
-  while (m_TestVideoGrabber->GetFrame(frame) &&
-         m_TestVideoDisplay->SetFrameData(0, 0,
-                                          m_TestVideoGrabber->GetFrameWidth(),
-                                          m_TestVideoGrabber->GetFrameHeight(),
-                                          frame))
-    frameCount++;
-
-  wxCommandEvent theEvent(wxEvtTestVideoEnded);
   theEvent.SetEventObject(this);
   GetEventHandler()->AddPendingEvent(theEvent);
 }
