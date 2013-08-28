@@ -269,7 +269,7 @@ typedef OpalMessage * (OPAL_EXPORT *OpalGetMessageFunction)(OpalHandle opal, uns
         else
           printf("OPAL error: %s\n", response->m_param.m_commandError);
 
-        FreeMessageFunction(response);
+        OpalFreeMessage(response);
       }
       </code>
   */
