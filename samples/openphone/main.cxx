@@ -5819,9 +5819,9 @@ void OptionsDialog::TestVideoThreadMain()
                                             m_TestVideoGrabber->GetFrameHeight(),
                                             frame))
       frameCount++;
-    wxString text;
+    PStringStream text;
     text << "Grabbed " << frameCount << " frames at " << (frameCount*1000.0/timer.GetElapsed().GetMilliSeconds()) << " fps.";
-    theEvent.SetString(text);
+    theEvent.SetString(PwxString(text));
     theEvent.SetId(1);
   }
 
