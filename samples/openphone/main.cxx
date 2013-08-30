@@ -699,7 +699,9 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_USER_COMMAND(wxEvtStreamsChanged,     MyManager::OnStreamsChanged)
   EVT_USER_COMMAND(wxEvtAsyncNotification,  MyManager::OnEvtAsyncNotification)
   EVT_USER_COMMAND(wxEvtSetTrayTipText,     MyManager::OnSetTrayTipText)
+#if P_SSL
   EVT_USER_COMMAND(wxEvtGetSSLPassword,     MyManager::OnEvtGetSSLPassword)
+#endif
   
 END_EVENT_TABLE()
 
