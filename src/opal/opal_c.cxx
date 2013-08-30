@@ -1808,7 +1808,7 @@ void OpalManager_C::HandleAlerting(const OpalMessage & command, OpalMessageBuffe
 
 void OpalManager_C::HandleAnswerCall(const OpalMessage & command, OpalMessageBuffer & response)
 {
-  if (IsNullString(command.m_param.m_callToken)) {
+  if (IsNullString(command.m_param.m_answerCall.m_callToken)) {
     response.SetError("No call token provided.");
     return;
   }
@@ -1818,16 +1818,16 @@ void OpalManager_C::HandleAnswerCall(const OpalMessage & command, OpalMessageBuf
     SetOptionOverrides(false, options, command.m_param.m_answerCall.m_overrides);
 
 #if OPAL_HAS_PCSS
-  if (m_pcssEP != NULL && m_pcssEP->AcceptIncomingCall(command.m_param.m_callToken, &options))
+  if (m_pcssEP != NULL && m_pcssEP->AcceptIncomingCall(command.m_param.m_answerCall.m_callToken, &options))
     return;
 #endif
 
 #if OPAL_IVR
-  if (m_ivrEP != NULL && m_ivrEP->AcceptIncomingCall(command.m_param.m_callToken, &options))
+  if (m_ivrEP != NULL && m_ivrEP->AcceptIncomingCall(command.m_param.m_answerCall.m_callToken, &options))
     return;
 #endif
 
-  if (m_localEP != NULL && m_localEP->AcceptIncomingCall(command.m_param.m_callToken, &options))
+  if (m_localEP != NULL && m_localEP->AcceptIncomingCall(command.m_param.m_answerCall.m_callToken, &options))
     return;
 
   response.SetError("No call found by the token provided.");
