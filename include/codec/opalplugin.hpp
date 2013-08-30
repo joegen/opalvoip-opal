@@ -1079,9 +1079,9 @@ class PluginVideoDecoder : public PluginVideoCodec<NAME>
 
     virtual bool CanOutputImage(unsigned width, unsigned height, PluginCodec_RTP & rtp, unsigned & flags)
     {
-      size_t newSize = this->GetRawFrameSize(width, height) + sizeof(PluginCodec_Video_FrameHeader) + rtp.GetHeaderSize();
-      if (newSize > rtp.GetMaxSize() || !rtp.SetPayloadSize(newSize)) {
-        m_outputSize = newSize;
+      size_t newSize = this->GetRawFrameSize(width, height) + sizeof(PluginCodec_Video_FrameHeader);
+      if (!rtp.SetPayloadSize(newSize)) {
+        m_outputSize = newSize + rtp.GetHeaderSize();
         flags |= PluginCodec_ReturnCoderBufferTooSmall;
         return false;
       }
