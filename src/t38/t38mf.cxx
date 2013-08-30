@@ -66,21 +66,21 @@ const OpalMediaFormat & GetOpalT38()
                           0,
                           0)
       {
-        static const char * const RateMan[] = { "localTCF", "transferredTCF" };
-        AddOption(new OpalMediaOptionEnum("T38FaxRateManagement", false, RateMan, PARRAYSIZE(RateMan), OpalMediaOption::EqualMerge, 1));
-        AddOption(new OpalMediaOptionInteger("T38FaxVersion", false, OpalMediaOption::MinMerge, 0, 0, 1));
-        AddOption(new OpalMediaOptionInteger("T38MaxBitRate", false, OpalMediaOption::NoMerge, 14400, 1200, 14400));
-        AddOption(new OpalMediaOptionInteger("T38FaxMaxBuffer", false, OpalMediaOption::NoMerge, 2000, 10, 65535));
-        AddOption(new OpalMediaOptionInteger("T38FaxMaxDatagram", false, OpalMediaOption::NoMerge, 528, 10, 65535));
-        static const char * const UdpEC[] = { "t38UDPFEC", "t38UDPRedundancy" };
-        AddOption(new OpalMediaOptionEnum("T38FaxUdpEC", false, UdpEC, PARRAYSIZE(UdpEC), OpalMediaOption::AlwaysMerge, 1));
-        AddOption(new OpalMediaOptionBoolean("T38FaxFillBitRemoval", false, OpalMediaOption::NoMerge, false));
-        AddOption(new OpalMediaOptionBoolean("T38FaxTranscodingMMR", false, OpalMediaOption::NoMerge, false));
-        AddOption(new OpalMediaOptionBoolean("T38FaxTranscodingJBIG", false, OpalMediaOption::NoMerge, false));
-        AddOption(new OpalMediaOptionBoolean("Use-ECM", false, OpalMediaOption::NoMerge, true));
-        AddOption(new OpalMediaOptionString("Station-Identifier", false, "-"));
-        AddOption(new OpalMediaOptionString("Header-Info", false));
-        AddOption(new OpalMediaOptionBoolean("UDPTL-Raw-Mode", false, OpalMediaOption::NoMerge, false));
+        static const char * const RateMan[] = { OPAL_T38localTCF, OPAL_T38transferredTCF };
+        AddOption(new OpalMediaOptionEnum(OPAL_T38FaxRateManagement, false, RateMan, PARRAYSIZE(RateMan), OpalMediaOption::EqualMerge, 1));
+        AddOption(new OpalMediaOptionInteger(OPAL_T38FaxVersion, false, OpalMediaOption::MinMerge, 0, 0, 1));
+        AddOption(new OpalMediaOptionInteger(OPAL_T38MaxBitRate, false, OpalMediaOption::NoMerge, 14400, 1200, 14400));
+        AddOption(new OpalMediaOptionInteger(OPAL_T38FaxMaxBuffer, false, OpalMediaOption::NoMerge, 2000, 10, 65535));
+        AddOption(new OpalMediaOptionInteger(OPAL_T38FaxMaxDatagram, false, OpalMediaOption::NoMerge, 528, 10, 65535));
+        static const char * const UdpEC[] = { OPAL_T38UDPFEC, OPAL_T38UDPRedundancy };
+        AddOption(new OpalMediaOptionEnum(OPAL_T38FaxUdpEC, false, UdpEC, PARRAYSIZE(UdpEC), OpalMediaOption::AlwaysMerge, 1));
+        AddOption(new OpalMediaOptionBoolean(OPAL_T38FaxFillBitRemoval, false, OpalMediaOption::NoMerge, false));
+        AddOption(new OpalMediaOptionBoolean(OPAL_T38FaxTranscodingMMR, false, OpalMediaOption::NoMerge, false));
+        AddOption(new OpalMediaOptionBoolean(OPAL_T38FaxTranscodingJBIG, false, OpalMediaOption::NoMerge, false));
+        AddOption(new OpalMediaOptionBoolean(OPAL_T38UseECM, false, OpalMediaOption::NoMerge, true));
+        AddOption(new OpalMediaOptionString(OPAL_FaxStationIdentifier, false, "-"));
+        AddOption(new OpalMediaOptionString(OPAL_FaxHeaderInfo, false));
+        AddOption(new OpalMediaOptionBoolean(OPAL_UDPTLRawMode, false, OpalMediaOption::NoMerge, false));
       }
   } const T38;
   return T38;
