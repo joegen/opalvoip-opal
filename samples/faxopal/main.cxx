@@ -80,18 +80,18 @@ void MyManager::Usage(ostream & strm, const PArgList & args)
   args.Usage(strm,
              "[ options ] filename [ remote-url ... ]") << "\n"
             "Specific T.38 format options (using -O/--option):\n";
-  PrintOption(strm, "Station-Identifier",    "string");
-  PrintOption(strm, "Header-Info",           "string");
-  PrintOption(strm, "Use-ECM",               "bool");
-  PrintOption(strm, "T38FaxVersion",         "integer");
-  PrintOption(strm, "T38FaxRateManagement",  "localTCF or transferredTCF");
-  PrintOption(strm, "T38MaxBitRate",         "integer");
-  PrintOption(strm, "T38FaxMaxBuffer",       "integer");
-  PrintOption(strm, "T38FaxMaxDatagram",     "integer");
-  PrintOption(strm, "T38FaxUdpEC",           "t38UDPFEC or t38UDPRedundancy");
-  PrintOption(strm, "T38FaxFillBitRemoval",  "bool");
-  PrintOption(strm, "T38FaxTranscodingMMR",  "bool");
-  PrintOption(strm, "T38FaxTranscodingJBIG", "bool");
+  PrintOption(strm, OPAL_FaxStationIdentifier,  "string");
+  PrintOption(strm, OPAL_FaxHeaderInfo,         "string");
+  PrintOption(strm, OPAL_T38UseECM,             "bool");
+  PrintOption(strm, OPAL_T38FaxVersion,         "integer");
+  PrintOption(strm, OPAL_T38FaxRateManagement,  OPAL_T38localTCF" or "OPAL_T38transferredTCF);
+  PrintOption(strm, OPAL_T38MaxBitRate,         "integer");
+  PrintOption(strm, OPAL_T38FaxMaxBuffer,       "integer");
+  PrintOption(strm, OPAL_T38FaxMaxDatagram,     "integer");
+  PrintOption(strm, OPAL_T38FaxUdpEC,           OPAL_T38UDPFEC" or "OPAL_T38UDPRedundancy);
+  PrintOption(strm, OPAL_T38FaxFillBitRemoval,  "bool");
+  PrintOption(strm, OPAL_T38FaxTranscodingMMR,  "bool");
+  PrintOption(strm, OPAL_T38FaxTranscodingJBIG, "bool");
   strm << "\n"
           "e.g. " << args.GetCommandName() << " --option 'T.38:Header-Info=My custom header line' send_fax.tif sip:fred@bloggs.com\n"
           "\n"
