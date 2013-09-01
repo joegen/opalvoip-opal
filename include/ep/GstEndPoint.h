@@ -359,6 +359,10 @@ class GstMediaStream : public OpalMediaStream
       */
     virtual void InternalClose();
 
+    bool StartPlaying(
+      PGstElement::States & state
+    );
+
     // Member variables.
     GstConnection & m_connection;
     PGstPipeline    m_pipeline;
