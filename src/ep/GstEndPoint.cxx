@@ -39,6 +39,7 @@
 
 #define PTraceModule() "OpalGst"
 
+#define USE_GSTREAMER_JITTER_BUFFER 0
 
 #define APP_SOURCE_SUFFIX "AppSource"
 #define APP_SINK_SUFFIX   "AppSink"
@@ -449,7 +450,11 @@ bool GstEndPoint::BuildAudioSinkPipeline(ostream & desc, const GstMediaStream & 
             "payload=" << (unsigned)mediaFormat.GetPayloadType() << ", "
             "clock-rate=" << mediaFormat.GetClockRate() << ", "
             "encoding-name=" << mediaFormat.GetEncodingName() <<
-            " ! ";
+#if USE_GSTREAMER_JITTER_BUFFER
+            " ! "
+            "gstrtpjitterbuffer drop-on-latency=true latency=" << stream.GetConnection().GetMaxAudioJitterDelay() <<
+#endif
+           " ! ";
     if (!BuildDecoder(desc, stream))
       return false;
   }
@@ -813,22 +818,6 @@ PBoolean GstMediaStream::Open()
     }
   }
 
-  PTRACE(4, "Playing pipeline for " << *this);
-  switch (m_pipeline.SetState(PGstElement::Playing, 100)) {
-    case PGstElement::Success :
-      PTRACE(3, "Opened gstreamer pipeline for " << *this);
-      break;
-
-    case PGstElement::Changing :
-      PTRACE(3, "Open pending on gstreamer pipeline for " << *this);
-      break;
-
-    default :
-      PTRACE(2, "Failed to start gstreamer pipeline for " << *this);
-      m_pipeline.SetNULL();
-      return false;
-  }
-
   return OpalMediaStream::Open();
 }
 
@@ -876,20 +865,14 @@ PBoolean GstMediaStream::ReadPacket(RTP_DataFrame & packet)
     return false;
 
   PGstElement::States state;
-  switch (m_pipeSink.GetState(state)) {
-    case PGstElement::Failed :
-      PTRACE(2, "Pipeline sink did not start for " << *this);
-      return false;
+  if (!StartPlaying(state))
+    return false;
 
-    case PGstElement::Success :
-      if (state == PGstElement::Playing)
-        break;
-
-      // Do default case
-    default :
-      PTRACE(5, "Pipeline not ready yet for pulling, state=" << state);
-      packet.SetPayloadSize(0);
-      return true;
+  if (state != PGstElement::Playing) {
+    PTRACE(5, "Pipeline not ready yet for pulling, state=" << state);
+    packet.SetPayloadSize(0);
+    PThread::Sleep(10);
+    return true;
   }
 
   PINDEX size = m_connection.GetEndPoint().GetManager().GetMaxRtpPacketSize();
@@ -911,10 +894,8 @@ PBoolean GstMediaStream::WritePacket(RTP_DataFrame & packet)
     return false;
 
   PGstElement::States state;
-  if (m_pipeSource.GetState(state) == PGstElement::Failed || state == PGstElement::Null) {
-    PTRACE(2, "Pipeline source has stopped for " << *this);
+  if (!StartPlaying(state))
     return false;
-  }
 
   PINDEX size = packet.GetHeaderSize() + packet.GetPayloadSize();
   PTRACE(5, "Pushing " << size << " bytes, state=" << state << ", "
@@ -927,6 +908,26 @@ PBoolean GstMediaStream::WritePacket(RTP_DataFrame & packet)
 }
 
 
+bool GstMediaStream::StartPlaying(PGstElement::States & state)
+{
+  if (m_pipeline.GetState(state) == PGstElement::Failed) {
+    PTRACE(2, "Pipeline has stopped for " << *this);
+    return false;
+  }
+
+  if (state != PGstElement::Null)
+    return true;
+
+  if (m_pipeline.SetState(PGstElement::Playing) == PGstElement::Failed) {
+    PTRACE(2, "Pipeline could not be started on " << *this);
+    return false;
+  }
+
+  PTRACE(3, "Starting pipeline for " << *this);
+  return true;
+}
+
+ 
 #else // OPAL_GSTREAMER
 
   #ifdef _MSC_VER
