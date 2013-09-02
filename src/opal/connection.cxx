@@ -1793,10 +1793,6 @@ void OpalConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 
 bool OpalConnection::OnMediaFailed(unsigned sessionId, bool source)
 {
-  GetEndPoint().GetManager().QueueDecoupledEvent(
-          new PSafeWorkArg2<OpalConnection, unsigned, bool, bool>(
-                  this, sessionId, source, &OpalConnection::CloseMediaStream));
-
   size_t index = sessionId*2 + source;
   if (index < m_mediaSessionFailed.size())
     m_mediaSessionFailed[index] = true;

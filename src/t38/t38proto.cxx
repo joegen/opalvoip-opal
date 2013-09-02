@@ -498,13 +498,11 @@ bool OpalFaxSession::WriteUDPTL()
     return false;
   }
 
-  PTRACE(5, "UDPTL\tEncoded transmitted UDPTL data :\n  " << setprecision(2) << *m_sentPacket);
-
   PPER_Stream rawData;
   m_sentPacket->Encode(rawData);
   rawData.CompleteEncoding();
 
-  PTRACE(4, "UDPTL\tSending UDPTL of size " << rawData.GetSize());
+  PTRACE(5, "UDPTL\tEncoded transmitted UDPTL data, size=" << rawData.GetSize() << " :\n  " << setprecision(2) << *m_sentPacket);
 
   return m_dataSocket->Write(rawData.GetPointer(), rawData.GetSize());
 }
@@ -536,7 +534,7 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
     }
 
     frame.SetPayloadSize(m_dataSocket->GetLastReadCount());
-    PTRACE(4, "UDPTL\tRead raw UDPTL of size " << frame.GetPayloadSize());
+    PTRACE(5, "UDPTL\tRead raw UDPTL of size " << frame.GetPayloadSize());
     return true;
   }
 

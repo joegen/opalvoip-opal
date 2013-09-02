@@ -1396,31 +1396,32 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
   OpalMediaType mediaType = mediaFormat.GetMediaType();
 
   PString sessionType;
-  SDPSessionDescription * sdp = NULL;
 
-  if (m_lastReceivedINVITE != NULL)
-    sdp = m_lastReceivedINVITE->GetSDP();
-  else if (m_delayedAckInviteResponse != NULL)
-    sdp = m_delayedAckInviteResponse->GetSDP();
+  if (!ownerCall.IsSwitchingT38()) {
+    SDPSessionDescription * sdp = NULL;
 
-  if (sdp != NULL) {
-    {
+    if (m_lastReceivedINVITE != NULL)
+      sdp = m_lastReceivedINVITE->GetSDP();
+    else if (m_delayedAckInviteResponse != NULL)
+      sdp = m_delayedAckInviteResponse->GetSDP();
+
+    if (sdp != NULL) {
       SDPMediaDescription * mediaDescription = sdp->GetMediaDescriptionByIndex(sessionID);
-      if (mediaDescription != NULL && mediaDescription->GetMediaType() == mediaType
+      if (mediaDescription != NULL && mediaDescription->GetMediaType() == mediaType) {
 #if OPAL_SRTP
-              && (CanDoSRTP() || mediaDescription->GetCryptoKeys().IsEmpty())
+        if (CanDoSRTP() || mediaDescription->GetCryptoKeys().IsEmpty())
 #endif
-      )
-        sessionType = mediaDescription->GetSDPTransportType();
-    }
+          sessionType = mediaDescription->GetSDPTransportType();
+      }
 
-    if (sessionType.IsEmpty())
-      sessionID = sdp->GetMediaDescriptions().GetSize()+1;
+      if (sessionType.IsEmpty())
+        sessionID = sdp->GetMediaDescriptions().GetSize()+1;
+    }
   }
 
   OpalMediaSession * mediaSession = UseMediaSession(sessionID, mediaType, sessionType);
   if (mediaSession == NULL) {
-    PTRACE(1, "SIP\tUnable to create media stream for session " << sessionID);
+    PTRACE(1, "SIP\tUnable to create " << mediaType << " stream for session " << sessionID);
     return NULL;
   }
 
