@@ -37,7 +37,7 @@
 
 #include <opal_config.h>
 
-#if OPAL_FAX
+#if OPAL_T38_CAPABILITY
 
 #include <opal/mediafmt.h>
 #include <opal/mediastrm.h>
@@ -79,6 +79,8 @@ class PASN_OctetString;
 #define OPAL_FaxHeaderInfo          "Header-Info"
 #define OPAL_UDPTLRawMode           "UDPTL-Raw-Mode"
 
+
+#if OPAL_FAX
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -370,5 +372,6 @@ class OpalFaxMediaStream : public OpalMediaStream
 };
 
 #endif // OPAL_FAX
+#endif // OPAL_T38_CAPABILITY
 
 #endif // OPAL_T38_T38PROTO_H
