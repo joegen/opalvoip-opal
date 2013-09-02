@@ -1919,8 +1919,8 @@ bool OpalRTPSession::Shutdown(bool reading)
     m_shutdownWrite = true;
   }
 
-  // If shutting down both, no reporting any more
-  if (m_shutdownRead && m_shutdownWrite)
+  // If shutting down write, no reporting any more
+  if (m_shutdownWrite)
     m_reportTimer.Stop(false);
 
   return true;
@@ -1940,10 +1940,9 @@ void OpalRTPSession::Restart(bool reading)
     if (!m_shutdownWrite)
       return;
     m_shutdownWrite = false;
+    m_noTransmitErrors = 0;
+    m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
   }
-
-  m_noTransmitErrors = 0;
-  m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
 
   PTRACE(3, "RTP_UDP\tSession " << m_sessionId << " reopened for " << (reading ? "reading" : "writing"));
 }
@@ -2102,7 +2101,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr,
 
   switch (socket.GetErrorCode(PChannel::LastReadError)) {
     case PChannel::Unavailable :
-      HandleUnreachable(PTRACE_PARAM(channelName));
+      if (!HandleUnreachable(PTRACE_PARAM(channelName)))
+        Shutdown(false); // Terminate transmission
       return e_IgnorePacket;
 
     case PChannel::BufferTooSmall :
