@@ -236,7 +236,7 @@ OpalMediaSession * OpalRTPConnection::UseMediaSession(unsigned sessionId,
 {
   SessionMap::iterator it = m_sessions.find(sessionId);
   if (it != m_sessions.end()) {
-    PTRACE(4, "RTPCon\tFound existing " << mediaType << " session " << sessionId);
+    PTRACE(4, "RTPCon\tFound existing " << it->second->GetMediaType() << " session " << sessionId);
     return it->second;
   }
 
