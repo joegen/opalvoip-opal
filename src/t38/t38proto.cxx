@@ -887,15 +887,6 @@ OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & m
 }
 
 
-void OpalFaxConnection::OnStartMediaPatch(OpalMediaPatch & patch)
-{
-  if (m_switchTime != 0)
-    patch.SetPaused(true);
-
-  OpalLocalConnection::OnStartMediaPatch(patch);
-}
-
-
 void OpalFaxConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 {
   OpalLocalConnection::OnClosedMediaStream(stream);
