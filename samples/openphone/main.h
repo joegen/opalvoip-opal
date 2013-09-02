@@ -582,18 +582,23 @@ class OptionsDialog : public wxDialog
 
     ////////////////////////////////////////
     // General fields
-    PwxString m_Username;
-    PwxString m_DisplayName;
-    PwxString m_RingSoundDeviceName;
-    PwxString m_RingSoundFileName;
-    bool      m_AutoAnswer;
-    PwxString m_VendorName;
-    PwxString m_ProductName;
-    PwxString m_ProductVersion;
-    bool      m_HideMinimised;
+    PwxString    m_Username;
+    PwxString    m_DisplayName;
+    PwxString    m_RingSoundDeviceName;
+    PwxString    m_RingSoundFileName;
+    bool         m_AutoAnswer;
+    bool         m_OverrideProductInfo;
+    PwxString    m_VendorName;
+    PwxString    m_ProductName;
+    PwxString    m_ProductVersion;
+    wxTextCtrl * m_VendorNameCtrl;
+    wxTextCtrl * m_ProductNameCtrl;
+    wxTextCtrl * m_ProductVersionCtrl;
+    bool         m_HideMinimised;
 
     void BrowseSoundFile(wxCommandEvent & /*event*/);
     void PlaySoundFile(wxCommandEvent & /*event*/);
+    void OnOverrideProductInfo(wxCommandEvent & /*event*/);
 
     ////////////////////////////////////////
     // Networking fields
@@ -617,9 +622,9 @@ class OptionsDialog : public wxDialog
     wxRadioButton * m_NATRouterRadio;
     wxRadioButton * m_STUNServerRadio;
     PwxString       m_NATRouter;
-    wxTextCtrl    * m_NATRouterWnd;
+    wxTextCtrl    * m_NATRouterCtrl;
     PwxString       m_STUNServer;
-    wxTextCtrl    * m_STUNServerWnd;
+    wxTextCtrl    * m_STUNServerCtrl;
     wxListBox     * m_LocalInterfaces;
     wxChoice      * m_InterfaceProtocol;
     wxComboBox    * m_InterfaceAddress;
@@ -685,8 +690,8 @@ class OptionsDialog : public wxDialog
     int       m_VideoGrabBitRate;
     int       m_VideoMaxBitRate;
 
-    wxComboBox * m_videoGrabDeviceCombo;
-    wxChoice   * m_videoSourceChoice;
+    wxComboBox * m_VideoGrabDeviceCtrl;
+    wxChoice   * m_VideoGrabSourceCtrl;
 
     wxButton           * m_TestVideoCapture;
     PThread            * m_TestVideoThread;
@@ -1217,6 +1222,9 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     bool      m_autoAnswer;
     PwxString m_LastDialed;
     PwxString m_LastReceived;
+
+    bool            m_OverrideProductInfo;
+    OpalProductInfo m_overriddenProductInfo;
 
     PwxString m_ForwardingAddress;
     int       m_ForwardingTimeout;
