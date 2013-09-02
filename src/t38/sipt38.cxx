@@ -65,6 +65,20 @@ Either, or both, can be used in a call
 
 #include <t38/t38proto.h>
 
+static const char * const T38OptionsInit[] = {
+  OPAL_T38FaxRateManagement,
+  OPAL_T38FaxVersion,
+  OPAL_T38MaxBitRate,
+  OPAL_T38FaxMaxBuffer,
+  OPAL_T38FaxMaxDatagram,
+  OPAL_T38FaxUdpEC,
+  OPAL_T38FaxFillBitRemoval,
+  OPAL_T38FaxTranscodingMMR,
+  OPAL_T38FaxTranscodingJBIG
+};
+
+static PStringSet const T38Options(PARRAYSIZE(T38OptionsInit), T38OptionsInit);
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -90,16 +104,14 @@ SDPMediaDescription * OpalFaxMediaType::CreateSDPMediaDescription(const OpalTran
 SDPFaxMediaDescription::SDPFaxMediaDescription(const OpalTransportAddress & address)
   : SDPMediaDescription(address, OpalMediaType::Fax())
 {
-  t38Attributes.SetAt("T38FaxRateManagement", "transferredTCF");
-  t38Attributes.SetAt("T38FaxVersion",        "0");
-  //t38Attributes.SetAt("T38MaxBitRate",        "9600");
-  //t38Attributes.SetAt("T38FaxMaxBuffer",      "200");
 }
+
 
 PCaselessString SDPFaxMediaDescription::GetSDPTransportType() const
 { 
   return OpalFaxMediaType::GetSDPTransportType();
 }
+
 
 PString SDPFaxMediaDescription::GetSDPMediaType() const 
 { 
@@ -146,6 +158,7 @@ void SDPFaxMediaDescription::OutputAttributes(ostream & strm) const
     strm << "a=" << it->first << ":" << it->second << "\r\n";
 }
 
+
 void SDPFaxMediaDescription::SetAttribute(const PString & attr, const PString & value)
 {
   if (attr.Left(3) *= OpalT38.GetEncodingName()) {
@@ -156,16 +169,14 @@ void SDPFaxMediaDescription::SetAttribute(const PString & attr, const PString & 
   return SDPMediaDescription::SetAttribute(attr, value);
 }
 
+
 void SDPFaxMediaDescription::ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*/, const OpalMediaFormat & mediaFormat)
 {
   if (mediaFormat.GetMediaType() == OpalMediaType::Fax()) {
     for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); ++i) {
       const OpalMediaOption & option = mediaFormat.GetOption(i);
-      if (option.GetName().Left(3) *= OpalT38.GetEncodingName()) {
-        PString value = option.AsString();
-        if (value != option.GetFMTPDefault())
-          t38Attributes.SetAt(option.GetName(), option.AsString());
-      }
+      if (T38Options.Contains(option.GetName()))
+        t38Attributes.SetAt(option.GetName(), option.AsString());
     }
   }
 }
