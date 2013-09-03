@@ -277,15 +277,8 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State newState)
   SetState(newState);
 
   SIP_PDU::StatusCodes reason = StartTransaction(PCREATE_NOTIFIER(WriteTransaction));
-  if (reason == SIP_PDU::Successful_OK)
-    return true;
-
-  OnFailed(reason);
-
-  if (newState == Unsubscribing)
-    SetState(Unsubscribed); // Transport level error, probably never going to get the unsubscribe through
-  else
-    RetryLater(m_offlineExpireTime);
+  if (reason != SIP_PDU::Successful_OK)
+    OnFailed(reason);
   return true;
 }
 
@@ -407,6 +400,7 @@ void SIPHandler::OnReceivedIntervalTooBrief(SIPTransaction & /*transaction*/, SI
 void SIPHandler::OnReceivedTemporarilyUnavailable(SIPTransaction & /*transaction*/, SIP_PDU & response)
 {
   OnFailed(SIP_PDU::Failure_TemporarilyUnavailable);
+  SetState(Unavailable);
   RetryLater(response.GetMIME().GetInteger("Retry-After", m_offlineExpireTime));
 }
 
@@ -418,8 +412,6 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
   SIP_PDU::StatusCodes status = HandleAuthentication(response);
   if (status != SIP_PDU::Successful_OK) {
     OnFailed(status);
-    if (GetState() != Unsubscribing && !transaction.IsCanceled())
-      RetryLater(m_offlineExpireTime);
     return;
   }
 
@@ -474,7 +466,6 @@ void SIPHandler::OnTransactionFailed(SIPTransaction & transaction)
   }
 
   OnFailed(transaction.GetStatusCode());
-  RetryLater(m_offlineExpireTime);
 }
 
 
@@ -495,14 +486,17 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
   SendStatus(code, GetState());
 
   switch (code) {
+    case SIP_PDU::Failure_TemporarilyUnavailable:
+      break;
+
     case SIP_PDU::Local_TransportError :
     case SIP_PDU::Local_Timeout :
     case SIP_PDU::Failure_RequestTimeout :
-    case SIP_PDU::Failure_TemporarilyUnavailable:
     case SIP_PDU::Failure_ServiceUnavailable:
     case SIP_PDU::Failure_ServerTimeout:
       if (GetState() != Unsubscribing) {
         SetState(Unavailable);
+        RetryLater(m_offlineExpireTime);
         break;
       }
       // Do next case to finalise Unsubscribe even though there was an error
