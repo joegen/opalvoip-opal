@@ -405,7 +405,7 @@ void SIPHandler::OnReceivedTemporarilyUnavailable(SIPTransaction & /*transaction
 }
 
 
-void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response)
+void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction &, SIP_PDU & response)
 {
   // If either username or password blank, try and fine values from other
   // handlers which might be logged into the realm, or the proxy, if one.
