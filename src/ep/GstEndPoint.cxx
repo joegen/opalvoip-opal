@@ -918,12 +918,13 @@ bool GstMediaStream::StartPlaying(PGstElement::States & state)
   if (state != PGstElement::Null)
     return true;
 
+  PTRACE(3, "Starting pipeline for " << *this);
   if (m_pipeline.SetState(PGstElement::Playing) == PGstElement::Failed) {
     PTRACE(2, "Pipeline could not be started on " << *this);
     return false;
   }
 
-  PTRACE(3, "Starting pipeline for " << *this);
+  m_pipeline.GetState(state);
   return true;
 }
 
