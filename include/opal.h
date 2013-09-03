@@ -601,14 +601,31 @@ typedef enum OpalMediaTiming {
    "!A\n!B" will result in keeping <i>both</i> A and B formats.
   */
 typedef struct OpalParamGeneral {
-  const char * m_audioRecordDevice;   /**< Audio recording device name */
-  const char * m_audioPlayerDevice;   /**< Audio playback device name */
-  const char * m_videoInputDevice;    /**< Video input (e.g. camera) device name */
-  const char * m_videoOutputDevice;   /**< Video output (e.g. window) device name */
-  const char * m_videoPreviewDevice;  /**< Video preview (e.g. window) device name */
-  const char * m_mediaOrder;          /**< List of media format names to set the preference order for media.
-                                           This list of names (e.g. "G.723.1") is separated by the '\n'
-                                           character. */
+  const char * m_audioRecordDevice;   /**< Audio recording device name. Note, if OPAL_PREFIX_PCSS is
+                                           used, then this is the operating system device name. If
+                                           OPAL_PREFIX_GST is used then this is the gstreamer element
+                                           for the audio source. */
+  const char * m_audioPlayerDevice;   /**< Audio playback device name. Note, if OPAL_PREFIX_PCSS is
+                                           used, then this is the operating system device name. If
+                                           OPAL_PREFIX_GST is used then this is the gstreamer element
+                                           for the audio sink. */
+  const char * m_videoInputDevice;    /**< Video input (e.g. camera) device name. Note, if
+                                           OPAL_PREFIX_PCSS is used, then this is the operating system
+                                           device name for the camera, or other pseudo-device. If
+                                           OPAL_PREFIX_GST is used then this is the gstreamer element
+                                           for the video source. */
+  const char * m_videoOutputDevice;   /**< Video output (e.g. window) device name. Note, if
+                                           OPAL_PREFIX_PCSS is used, then this is the operating system
+                                           dependent name for a window, or other pseudo-device. If
+                                           OPAL_PREFIX_GST is used then this is the gstreamer element
+                                           for the video sink. */
+  const char * m_videoPreviewDevice;  /**< Video preview (e.g. window) device name. Note, if
+                                           OPAL_PREFIX_PCSS is used, then this is the operating system
+                                           dependent name for a window. If OPAL_PREFIX_GST is used then
+                                           this is ignored. */
+  const char * m_mediaOrder;          /**< List of media format names to set the preference order for
+                                           media. This list of names (e.g. "G.723.1") is separated by
+                                           the '\n' character. */
   const char * m_mediaMask;           /**< List of media format names to set media to be excluded.
                                            This list of names (e.g. "G.723.1") is separated by the '\n'
                                            character. */
@@ -782,8 +799,16 @@ typedef struct OpalParamProtocol {
                                            then all listeners are stopped. If a "*" then listeners
                                            are started for all interfaces in the system.
 
-                                           If the prefix is "ivr", then this is the default VXML script
-                                           or URL to execute on incoming calls.*/
+                                           If the prefix is OPAL_PREFIX_IVR, then this is the default
+                                           VXML script or URL to execute on incoming calls.
+
+                                           If the prefix is OPAL_PREFIX_GST, then this is a '\n' separated
+                                           list of mappings for media formats to GStreamer elements. Each
+                                           mapping consists of five fields separated by the '\t' chacracter.
+                                           The fields are media format, encoder, decoder, RTP packetiser
+                                           and RTP depacketiser. e.g.
+                                           "G.722.2\trtpamrdepay\tamrwbdec\trtpamrpay\tamrwbenc"
+                                         */
   OpalUserInputModes m_userInputMode; /**< The mode for user input transmission. Note this only applies if an
                                            explicit protocol is indicated in m_prefix. See OpalUserInputModes
                                            for more information. */
