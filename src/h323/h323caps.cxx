@@ -2018,14 +2018,19 @@ bool H235SecurityAlgorithmCapability::OnReceivedCryptoPDU(const H245_EncryptionS
     {
       const H235_V3KeySyncMaterial & v3data = h235key;
 
-      if (!v3data.HasOptionalField(H235_V3KeySyncMaterial::e_algorithmOID)) {
-        PTRACE(1, "H323\tH.235 encryption key has no algorithm");
-        return false;
+      if (v3data.HasOptionalField(H235_V3KeySyncMaterial::e_algorithmOID)) {
+        if ((cryptoSuite = OpalMediaCryptoSuite::FindByOID(v3data.m_algorithmOID.AsString())) == NULL) {
+          PTRACE(1, "H323\tH.235 encryption key uses unknown algorithm");
+          return false;
+        }
       }
-
-      if ((cryptoSuite = OpalMediaCryptoSuite::FindByOID(v3data.m_algorithmOID.AsString())) == NULL) {
-        PTRACE(1, "H323\tH.235 encryption key uses unknown algorithm");
-        return false;
+      else {
+        if (m_cryptoSuites.IsEmpty()) {
+          PTRACE(1, "H323\tH.235 encryption key has no algorithm, aborting");
+          return false;
+        }
+        cryptoSuite = &m_cryptoSuites.front();
+        PTRACE(3, "H323\tH.235 encryption key has no algorithm, using offer: " << cryptoSuite->GetDescription());
       }
 
       if (!v3data.HasOptionalField(H235_V3KeySyncMaterial::e_encryptedSessionKey)) {
