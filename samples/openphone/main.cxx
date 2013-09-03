@@ -742,6 +742,7 @@ MyManager::MyManager()
   , m_mcuEP(NULL)
 #endif
   , m_autoAnswer(false)
+  , m_OverrideProductInfo(false)
   , m_ForwardingTimeout(30)
   , m_VideoGrabPreview(true)
   , m_localVideoFrameX(INT_MIN)
@@ -1003,7 +1004,7 @@ bool MyManager::Initialise(bool startMinimised)
   config->Read(LastDialedKey, &m_LastDialed);
 
 
-  m_OverrideProductInfo = config->ReadBool(OverrideProductInfoKey, false);
+  config->Read(OverrideProductInfoKey, &m_OverrideProductInfo);
   m_overriddenProductInfo = GetProductInfo();
   if (config->Read(VendorNameKey, &str))
     m_overriddenProductInfo.vendor = str.p_str();
