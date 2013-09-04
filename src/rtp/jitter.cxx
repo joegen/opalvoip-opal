@@ -308,6 +308,17 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
   PWaitAndSignal mutex(m_bufferMutex);
 
   DWORD timestamp = frame.GetTimestamp();
+  unsigned currentSequenceNum = frame.GetSequenceNumber();
+  DWORD newSyncSource = frame.GetSyncSource();
+
+  // Check for remote switching media senders, they shouldn't do this but do anyway
+  if (newSyncSource != m_lastSyncSource) {
+    PTRACE_IF(4, m_lastSyncSource != 0, "Jitter\tBuffer reset due to SSRC change from 0x"
+              << hex << m_lastSyncSource << " to 0x" << newSyncSource << " at sn=" << dec << currentSequenceNum);
+    Reset();
+    m_lastSyncSource = newSyncSource;
+  }
+
 
   /*Deal with naughty systems that send continuous marker bits, thus we
     cannot use it to determine start of talk burst, and the need to refill
@@ -334,14 +345,6 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
   }
 
 
-  // Check for remote switching media senders, they shouldn't do this but do anyway
-  if (frame.GetSyncSource() != m_lastSyncSource) {
-    PTRACE_IF(4, m_lastSyncSource != 0, "Jitter\tBuffer reset due to SSRC change.");
-    Reset();
-    m_lastSyncSource = frame.GetSyncSource();
-  }
-
-
   /*Calculate the time between packets. While not actually dictated by any
     standards, this is invariably a constant. We just need to allow for if we
     are unlucky at the start and get a missing packet, in which case we are
@@ -353,7 +356,6 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
   }
 
   // Only do the following calculations if no packets missing
-  unsigned currentSequenceNum = frame.GetSequenceNumber();
   if (m_lastSequenceNum != UINT_MAX && m_lastSequenceNum+1 == currentSequenceNum) {
     int delta = timestamp - m_lastTimestamp;
     m_lastTimestamp = timestamp;
