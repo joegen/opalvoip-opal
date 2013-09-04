@@ -118,6 +118,8 @@ void OpalPCAPFile::PrintOn(ostream & strm) const
 
 bool OpalPCAPFile::Frame::Read(PChannel & channel, PINDEX)
 {
+  PreRead();
+
   RecordHeader recordHeader;
   if (!channel.Read(&recordHeader, sizeof(recordHeader))) {
     PTRACE(1, "PCAPFile\tTruncated file \"" << channel.GetName() << '"');
