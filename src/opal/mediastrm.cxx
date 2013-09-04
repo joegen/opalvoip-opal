@@ -915,7 +915,7 @@ OpalRawMediaStream::OpalRawMediaStream(OpalConnection & conn,
   : OpalMediaStream(conn, mediaFormat, sessionID, isSource)
   , m_channel(chan)
   , m_autoDelete(autoDelete)
-  , m_silence(160) // At least 10ms
+  , m_silence(10*sizeof(short)*mediaFormat.GetTimeUnits()) // At least 10ms
   , m_averageSignalSum(0)
   , m_averageSignalSamples(0)
 {
