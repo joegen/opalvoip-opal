@@ -2161,10 +2161,14 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataPDU(RTP_DataFrame & fr
 
   // Check for single port operation, incoming RTCP on RTP
   RTP_ControlFrame control(frame, pduSize, false);
-  if (control.IsValid())
-    return OnReceiveControl(control);
+  unsigned type = control.GetPayloadType();
+  if (type < RTP_ControlFrame::e_FirstValidPayloadType || type > RTP_ControlFrame::e_LastValidPayloadType)
+    return OnReceiveData(frame, pduSize);
 
-  return OnReceiveData(frame, pduSize);
+  return OnReceiveControl(control);
+  if (status == e_ProcessPacket)
+    status = e_IgnorePacket;
+  return status;
 }
 
 
