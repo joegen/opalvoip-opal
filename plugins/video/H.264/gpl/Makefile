@@ -24,9 +24,11 @@
 # $Date$
 
 BASENAME_win32 := x264plugin_helper.exe
-BASENAME := h264_video_pwplugin_helper
+BASENAME       := h264_video_pwplugin_helper
+PLUGIN_NAME    := $(BASENAME)
+
 SRCDIR   := $(CURDIR)
-SOURCES  := h264_helper.cxx
+SOURCES  := $(SRCDIR)/h264_helper.cxx
 
 PLUGIN_CPPFLAGS = $(X264_CFLAGS) -I.. -DGPL_HELPER_APP -DPLUGINCODEC_TRACING
 PLUGIN_LIBS     = $(X264_LIBS)
