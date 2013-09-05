@@ -2146,8 +2146,12 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataPDU(RTP_DataFrame & fr
 
   // Check for single port operation, incoming RTCP on RTP
   RTP_ControlFrame control(frame, pduSize, false);
-  if (control.IsValid())
-    return OnReceiveControl(control);
+  unsigned type = control.GetPayloadType();
+  if (type >= RTP_ControlFrame::e_FirstValidPayloadType && type <= RTP_ControlFrame::e_LastValidPayloadType) {
+    if ((status = OnReceiveControl(control)) == e_ProcessPacket)
+      status = e_IgnorePacket;
+    return status;
+  }
 
   // Check received PDU is big enough
   if (frame.SetPacketSize(pduSize))
