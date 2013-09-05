@@ -19,12 +19,16 @@
  *
  */
 
-#include "plugin-config.h"
+#include "../../common/platform.h"
 
 #include <iostream>
 #include <fstream>
 #include <stdlib.h> 
 #include <sys/stat.h>
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 
 #ifndef PLUGINCODEC_TRACING
@@ -33,14 +37,21 @@
 
 #if PLUGINCODEC_TRACING
   unsigned TraceLevel = 1;
+  #define PTRACE_CHECK(level) (level <= TraceLevel)
   #define PTRACE(level,module,args) if (level > TraceLevel) ; else std::cerr << module << '\t' << args << std::endl
 #else
+  #define PTRACE_CHECK(level)
   #define PTRACE(level,module,args)
 #endif
 
 
 #include "../shared/x264wrap.cxx"
 #include "../shared/h264frame.cxx"
+#include "../../common/ffmpeg.cxx"
+#include "../../common/dyna.cxx"
+
+
+static const char Version[] = "$Revision$";
 
 
 #ifdef WIN32
@@ -128,7 +139,10 @@ void ReadPipe(void * data, unsigned bytes)
   if (read(downLink, data, bytes) == bytes)
     return;
 
+  if (errno != 0) {
   PTRACE(1, HelperTraceName, "Error reading down link: " << strerror(errno));
+  }
+
   exit(1);
 }
 
@@ -198,6 +212,7 @@ int main(int argc, char *argv[])
 
     switch (msg) {
       case H264ENCODERCONTEXT_CREATE:
+          msg = atoi(&Version[11]);
           WritePipe(&msg, sizeof(msg)); 
         break;
       case H264ENCODERCONTEXT_DELETE:
@@ -209,7 +224,12 @@ int main(int argc, char *argv[])
         break;
       case SET_TARGET_BITRATE:
           ReadPipe(&val, sizeof(val));
-          x264.SetTargetBitrate (val);
+          x264.SetTargetBitrate(val);
+          WritePipe(&msg, sizeof(msg)); 
+        break;
+      case SET_RATE_CONTROL_PERIOD:
+          ReadPipe(&val, sizeof(val));
+          x264.SetRateControlPeriod(val);
           WritePipe(&msg, sizeof(msg)); 
         break;
       case SET_FRAME_RATE:
@@ -263,8 +283,13 @@ int main(int argc, char *argv[])
         break;
       case SET_MAX_PAYLOAD_SIZE:
           ReadPipe(&val, sizeof(val));
-          x264.SetMaxRTPPayloadSize (val);
+          x264.SetMaxRTPPayloadSize(val);
           rtpSize = val+100; // Allow for standard 12 byte RTP header and a LOT of header extensions
+          WritePipe(&msg, sizeof(msg)); 
+        break;
+      case SET_MAX_NALU_SIZE:
+          ReadPipe(&val, sizeof(val));
+          x264.SetMaxNALUSize(val);
           WritePipe(&msg, sizeof(msg)); 
         break;
       default:
