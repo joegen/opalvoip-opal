@@ -1474,6 +1474,8 @@ class OpalVideoFormat : public OpalMediaFormat
 #include <codec/known.h>
 
 
+extern const OpalAudioFormat & GetOpalPCM16(unsigned clockRate, unsigned channels = 1);
+
 extern const OpalAudioFormat & GetOpalPCM16();
 extern const OpalAudioFormat & GetOpalPCM16S();
 extern const OpalAudioFormat & GetOpalPCM16_12KHZ();
