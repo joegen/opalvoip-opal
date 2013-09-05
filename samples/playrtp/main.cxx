@@ -410,7 +410,7 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
 
       OpalMediaFormat dstFmt;
       if (srcFmt.GetMediaType() == OpalMediaType::Audio()) {
-        dstFmt = OpalPCM16;
+        dstFmt = GetOpalPCM16(srcFmt.GetClockRate(), srcFmt.GetOptionInteger(OpalAudioFormat::ChannelsOption()));
         m_noDelay = true; // Will be paced by output device.
         isAudio = true;
         unsigned frame = srcFmt.GetFrameTime();
@@ -497,8 +497,7 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
     m_vfu = false;
     RTP_DataFrameList output;
     if (!m_transcoder->ConvertFrames(rtp, output)) {
-      cout << "Error decoding file \"" << pcap.GetFilePath() << '"' << endl;
-      return;
+      cout << "Transcoder error decoding file \"" << pcap.GetFilePath() << '"' << endl;
     }
 
     if (output.GetSize() == 0) {

@@ -86,6 +86,25 @@ AUDIO_FORMAT(G711_ULAW_64K,  PCMU,           "PCMU",       8,        8,       24
 AUDIO_FORMAT(G711_ALAW_64K,  PCMA,           "PCMA",       8,        8,       240,     20,      256,       8000, 1);
 
 
+const OpalAudioFormat & GetOpalPCM16(unsigned clockRate, unsigned channels)
+{
+  switch (clockRate) {
+    default :
+      return channels == 2 ? GetOpalPCM16S()       : GetOpalPCM16();
+    case 12000 :
+      return channels == 2 ? GetOpalPCM16S_12KHZ() : GetOpalPCM16_12KHZ();
+    case 16000 :
+      return channels == 2 ? GetOpalPCM16S_16KHZ() : GetOpalPCM16_16KHZ();
+    case 24000 :
+      return channels == 2 ? GetOpalPCM16S_24KHZ() : GetOpalPCM16_24KHZ();
+    case 32000 :
+      return channels == 2 ? GetOpalPCM16S_32KHZ() : GetOpalPCM16_32KHZ();
+    case 48000 :
+      return channels == 2 ? GetOpalPCM16S_48KHZ() : GetOpalPCM16_48KHZ();
+  }
+}
+
+
 static OpalMediaFormatList & GetMediaFormatsList()
 {
   static class OpalMediaFormatListMaster : public OpalMediaFormatList

@@ -640,50 +640,6 @@ bool OpalPluginTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 // Plugin framed audio codec classes
 //
 
-static OpalMediaFormat GetRawPCM(unsigned sampleRate, unsigned channels)
-{
-  switch (channels) {
-    case 2 :
-      switch (sampleRate) {
-        case 0 :
-        case 8000 :
-          return OpalPCM16S;
-        case 12000 :
-          return OpalPCM16S_12KHZ;
-        case 16000 :
-          return OpalPCM16S_16KHZ;
-        case 24000 :
-          return OpalPCM16S_24KHZ;
-        case 32000 :
-          return OpalPCM16S_32KHZ;
-        case 48000 :
-          return OpalPCM16S_48KHZ;
-      }
-      break;
-
-    case 0 :
-    case 1 :
-      switch (sampleRate) {
-        case 0 :
-        case 8000 :
-          return OpalPCM16;
-        case 12000 :
-          return OpalPCM16_12KHZ;
-        case 16000 :
-          return OpalPCM16_16KHZ;
-        case 24000 :
-          return OpalPCM16_24KHZ;
-        case 32000 :
-          return OpalPCM16_32KHZ;
-        case 48000 :
-          return OpalPCM16_48KHZ;
-      }
-  }
-
-  return OpalMediaFormat();
-}
-
-
 OpalPluginFramedAudioTranscoder::OpalPluginFramedAudioTranscoder(const OpalTranscoderKey & key,
                                                                  const PluginCodec_Definition * codecDefn,
                                                                  bool isEncoder)
@@ -1567,7 +1523,7 @@ bool OpalPluginCodecManager::AddMediaFormat(OpalPluginCodecHandler * handler,
 {
   // Create (if needed) the media format
   if (strcasecmp(fmtName, "L16") == 0 || strcasecmp(fmtName, "L16S") == 0) {
-    mediaFormat = GetRawPCM(codecDefn->sampleRate, OpalPluginCodecHandler::GetChannelCount(codecDefn));
+    mediaFormat = GetOpalPCM16(codecDefn->sampleRate, OpalPluginCodecHandler::GetChannelCount(codecDefn));
     if (mediaFormat.IsValid())
       return true;
 
@@ -1661,7 +1617,6 @@ bool OpalPluginCodecManager::AddMediaFormat(OpalPluginCodecHandler * handler,
   // and clock rate and use that RTP code rather than creating a new one. That prevents codecs (like Speex) from 
   // consuming dozens of dynamic RTP types
   int channels = OpalPluginCodecHandler::GetChannelCount(codecDefn);
-  newMediaFormat->SetOptionInteger(OpalAudioFormat::ChannelsOption(), channels);
   if ((codecDefn->flags & PluginCodec_RTPTypeShared) != 0 && (codecDefn->sdpFormat != NULL)) {
     OpalMediaFormatList list = OpalMediaFormat::GetAllRegisteredMediaFormats();
     for (OpalMediaFormatList::iterator iterFmt = list.begin(); iterFmt != list.end(); ++iterFmt) {
