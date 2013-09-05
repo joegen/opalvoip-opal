@@ -38,9 +38,12 @@ ifneq (,$(BASENAME_$(target_os)))
 endif
 
 ifneq (,$(BASENAME))
-  OBJDIR      = $(abspath $(PLUGIN_SRC_DIR)/../lib_$(target)/plugins/$(BASENAME))
-  SONAME      = $(BASENAME)_ptplugin
-  PLUGIN_NAME = $(SONAME).$(SHAREDLIBEXT)
+  ifeq (,$(PLUGIN_NAME))
+    SONAME      = $(BASENAME)_ptplugin
+    PLUGIN_NAME = $(SONAME).$(SHAREDLIBEXT)
+    LDFLAGS    := $(SHARED_LDFLAGS:INSERT_SONAME=$(SONAME)) $(LDFLAGS)
+  endif
+  OBJDIR = $(abspath $(PLUGIN_SRC_DIR)/../lib_$(target)/plugins/$(BASENAME))
   PLUGIN_PATH = $(OBJDIR)/$(PLUGIN_NAME)
 endif
 
@@ -112,7 +115,7 @@ ifneq (,$(PLUGIN_PATH))
 
   $(PLUGIN_PATH): $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(patsubst %.cpp,%.o,$(patsubst %.c,%.o,$(notdir $(SOURCES))))))
 	@if [ ! -d $(dir $@) ] ; then $(MKDIR_P) $(dir $@) ; fi
-	$(Q_LD)$(CXX) $(SHARED_LDFLAGS:INSERT_SONAME=$(SONAME)) -o $@ $^ $(strip $(LDFLAGS))
+	$(Q_LD)$(CXX) -o $@ $^ $(strip $(LDFLAGS))
 
   install ::
 	mkdir -p $(DESTDIR)$(libdir)/$(INSTALL_DIR)
