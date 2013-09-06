@@ -2165,7 +2165,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataPDU(RTP_DataFrame & fr
   if (type < RTP_ControlFrame::e_FirstValidPayloadType || type > RTP_ControlFrame::e_LastValidPayloadType)
     return OnReceiveData(frame, pduSize);
 
-  return OnReceiveControl(control);
+  status = OnReceiveControl(control);
   if (status == e_ProcessPacket)
     status = e_IgnorePacket;
   return status;
