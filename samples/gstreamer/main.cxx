@@ -108,7 +108,7 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
 
     GstEndPoint::CodecPipelines codec;
     if (gst->GetMapping(mediaFormat, codec))
-      cout << "Overriding existing media format mapping for \"" << mediaFormat << '"' << endl;
+      *m_output << "Overriding existing media format mapping for \"" << mediaFormat << '"' << endl;
 
     if (args.HasOption("encoder"))
       codec.m_encoder = args.GetOptionString("encoder");
@@ -127,12 +127,12 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
       break;
   }
 
-  cout << "GStreamer Supported Media Formats: " << setfill(',') << gst->GetMediaFormats() << setfill(' ') << endl;
+  *m_output << "GStreamer Supported Media Formats: " << setfill(',') << gst->GetMediaFormats() << setfill(' ') << endl;
 
   if (args.GetCount() == 0)
-    cout << "Awaiting incoming call ... " << endl;
+    *m_output << "Awaiting incoming call ... " << endl;
   else if (SetUpCall("gst:*", args[0]) != NULL)
-    cout << "Making call to " << args[0] << " ... " << endl;
+    *m_output << "Making call to " << args[0] << " ... " << endl;
   else {
     cerr << "Could not start call to \"" << args[0] << '"' << endl;
     return false;
