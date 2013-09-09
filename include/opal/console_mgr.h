@@ -89,9 +89,12 @@ class OpalManagerConsole : public OpalManager
     OpalCapiEndPoint * CreateCapiEndPoint();
 #endif
 
+    bool PreInitialise(PArgList & args, bool verbose);
+
     PSyncPoint m_endRun;
     bool       m_interrupted;
     bool       m_verbose;
+    ostream  * m_output;
 #if OPAL_STATISTICS
     PTimeInterval m_statsPeriod;
     PFilePath     m_statsFile;
@@ -130,11 +133,13 @@ class OpalManagerCLI : public OpalManagerConsole
     virtual void EndRun(bool interrupt);
 
   protected:
-    PCLI * CreatePCLI(
+    PCLI * CreateCLIStandard();
 #if P_TELNET
-      WORD port /// Port to listen for telnet sessions, zero disables.
+    PCLITelnet * CreateCLITelnet(WORD port);
 #endif
-    );
+#if P_CURSES
+    PCLICurses * CreateCLICurses();
+#endif
 
 #if OPAL_SIP
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdRegister);
