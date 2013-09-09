@@ -844,8 +844,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
       }
 
       PluginCodec_RTP dstRTP(toPtr, toLen);
-      OutputImage(image->planes, image->stride, image->d_w, image->d_h, dstRTP, flags);
-      toLen = dstRTP.GetPacketSize();
+      toLen = OutputImage(image->planes, image->stride, image->d_w, image->d_h, dstRTP, flags);
 
       if ((flags & PluginCodec_ReturnCoderLastFrame) != 0)
         m_intraFrame = false;
