@@ -434,10 +434,8 @@ void SIPConnection::OnReleased()
 
       // create BYE now & delete it later to prevent memory access errors
       bye = new SIPBye(*this);
-      if (!bye->Start()) {
-        delete bye;
+      if (!bye->Start())
         bye.SetNULL();
-      }
 
       UnlockReadWrite();
       break;
