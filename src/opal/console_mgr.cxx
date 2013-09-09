@@ -102,6 +102,7 @@ static bool SetRegistrationParams(SIPRegister::Params & params,
 OpalManagerConsole::OpalManagerConsole()
   : m_interrupted(false)
   , m_verbose(false)
+  , m_output(&cout)
 {
 }
 
@@ -200,7 +201,7 @@ void OpalManagerConsole::Usage(ostream & strm, const PArgList & args)
 }
 
 
-bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
+bool OpalManagerConsole::PreInitialise(PArgList & args, bool verbose)
 {
   m_verbose = verbose;
 
@@ -217,15 +218,24 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
     return false;
   }
 
+  return true;
+}
+
+
+bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
+{
+  if (!PreInitialise(args, verbose))
+    return false;
+
   PTRACE_INITIALISE(args);
 
   if (args.HasOption("user"))
     SetDefaultUserName(args.GetOptionString("user"));
   if (verbose) {
-    cout << "Default user name: " << GetDefaultUserName();
+    *m_output << "Default user name: " << GetDefaultUserName();
     if (args.HasOption("password"))
-      cout << " (with password)";
-    cout << '\n';
+      *m_output << " (with password)";
+    *m_output << '\n';
   }
 
   if (args.HasOption("jitter")) {
@@ -309,14 +319,14 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
   }
 
   if (verbose)
-    cout << "TCP ports: " << GetTCPPortBase() << '-' << GetTCPPortMax() << "\n"
-            "UDP ports: " << GetUDPPortBase() << '-' << GetUDPPortMax() << "\n"
-            "RTP ports: " << GetRtpIpPortBase() << '-' << GetRtpIpPortMax() << "\n"
-            "Audio QoS: " << GetMediaQoS(OpalMediaType::Audio()) << "\n"
+    *m_output << "TCP ports: " << GetTCPPortBase() << '-' << GetTCPPortMax() << "\n"
+                 "UDP ports: " << GetUDPPortBase() << '-' << GetUDPPortMax() << "\n"
+                 "RTP ports: " << GetRtpIpPortBase() << '-' << GetRtpIpPortMax() << "\n"
+                 "Audio QoS: " << GetMediaQoS(OpalMediaType::Audio()) << "\n"
 #if OPAL_VIDEO
-            "Video QoS: " << GetMediaQoS(OpalMediaType::Video()) << "\n"
+                 "Video QoS: " << GetMediaQoS(OpalMediaType::Video()) << "\n"
 #endif
-            "RTP payload size: " << GetMaxRtpPayloadSize() << '\n';
+                 "RTP payload size: " << GetMaxRtpPayloadSize() << '\n';
 
 #if P_NAT
   PString natMethod, natServer;
@@ -345,20 +355,20 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
 
   if (!natMethod.IsEmpty()) {
     if (verbose)
-      cout << natMethod << " server: " << flush;
+      *m_output << natMethod << " server: " << flush;
     SetNATServer(natMethod, natServer);
     if (verbose) {
       PNatMethod * natMethod = GetNatMethod();
       if (natMethod == NULL)
-        cout << "Unavailable";
+        *m_output << "Unavailable";
       else {
         PNatMethod::NatTypes natType = natMethod->GetNatType();
-        cout << '"' << natMethod->GetServer() << "\" replies " << natType;
+        *m_output << '"' << natMethod->GetServer() << "\" replies " << natType;
         PIPSocket::Address externalAddress;
         if (natType != PNatMethod::BlockedNat && natMethod->GetExternalAddress(externalAddress))
-          cout << " with external address " << externalAddress;
+          *m_output << " with external address " << externalAddress;
       }
-      cout << endl;
+      *m_output << '\n';
     }
   }
 #endif // P_NAT
@@ -366,8 +376,8 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
   if (verbose) {
     PIPSocket::InterfaceTable interfaceTable;
     if (PIPSocket::GetInterfaceTable(interfaceTable))
-      cout << "Detected " << interfaceTable.GetSize() << " network interfaces:\n"
-           << setfill('\n') << interfaceTable << setfill(' ');
+      *m_output << "Detected " << interfaceTable.GetSize() << " network interfaces:\n"
+                << setfill('\n') << interfaceTable << setfill(' ');
   }
 
   PCaselessString interfaces;
@@ -376,7 +386,7 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
   // Set up SIP
   if (args.HasOption("no-sip") || (interfaces = args.GetOptionString("sip")) == "x") {
     if (verbose)
-      cout << "SIP disabled" << endl;
+      *m_output << "SIP disabled\n";
   }
   else {
     SIPEndPoint * sip  = CreateSIPEndPoint();
@@ -385,7 +395,7 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
       return false;
     }
     if (verbose)
-      cout << "SIP listening on: " << setfill(',') << sip->GetListeners() << setfill(' ') << '\n';
+      *m_output << "SIP listening on: " << setfill(',') << sip->GetListeners() << setfill(' ') << '\n';
 
     if (args.HasOption("sip-ui")) {
       PCaselessString str = args.GetOptionString("sip-ui");
@@ -404,13 +414,13 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
     }
 
     if (verbose)
-      cout << "SIP options: "
+      *m_output << "SIP options: "
            << sip->GetSendUserInputMode() << '\n';
 
     if (args.HasOption("proxy")) {
       sip->SetProxy(args.GetOptionString("proxy"), args.GetOptionString("user"), args.GetOptionString("password"));
       if (verbose)
-        cout << "SIP proxy: " << sip->GetProxy() << '\n';
+        *m_output << "SIP proxy: " << sip->GetProxy() << '\n';
     }
 
     if (args.HasOption("register")) {
@@ -427,7 +437,7 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
       }
 
       if (verbose)
-        cout << "SIP registrar: " << flush;
+        *m_output << "SIP registrar: " << flush;
       PString aor;
       SIP_PDU::StatusCodes status;
       if (!sip->Register(params, aor, &status)) {
@@ -436,7 +446,7 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
         return false;
       }
       if (verbose)
-        cout << aor << '\n';
+        *m_output << aor << endl;
     }
 
     AddRouteEntry("sip.*:.* = " + defaultRoute);
@@ -448,7 +458,7 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
   // Set up H.323
   if (args.HasOption("no-h323") || (interfaces = args.GetOptionString("h323")) == "x") {
     if (verbose)
-      cout << "H.323 disabled" << endl;
+      *m_output << "H.323 disabled\n";
   }
   else {
     H323EndPoint * h323 = CreateH323EndPoint();
@@ -457,7 +467,7 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
       return false;
     }
     if (verbose)
-      cout << "H.323 listening on: " << setfill(',') << h323->GetListeners() << setfill(' ') << '\n';
+      *m_output << "H.323 listening on: " << setfill(',') << h323->GetListeners() << setfill(' ') << '\n';
 
     h323->DisableFastStart(args.HasOption("no-fast"));
     h323->DisableH245Tunneling(args.HasOption("no-tunnel"));
@@ -479,20 +489,20 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
     }
 
     if (verbose)
-      cout << "H.323 options: "
-           << (h323->IsFastStartDisabled() ? "Slow" : "Fast") << " connect, "
-           << (h323->IsH245TunnelingDisabled() ? "Separate" : "Tunnelled") << " H.245, "
-           << h323->GetSendUserInputMode() << '\n';
+      *m_output << "H.323 options: "
+                << (h323->IsFastStartDisabled() ? "Slow" : "Fast") << " connect, "
+                << (h323->IsH245TunnelingDisabled() ? "Separate" : "Tunnelled") << " H.245, "
+                << h323->GetSendUserInputMode() << '\n';
 
     if (args.HasOption("gk-host") || args.HasOption("gk-id")) {
       if (verbose)
-        cout << "H.323 Gatekeeper: " << flush;
+        *m_output << "H.323 Gatekeeper: " << flush;
       if (!h323->UseGatekeeper(args.GetOptionString("gk-host"), args.GetOptionString("gk-id"))) {
         cerr << "\nCould not complete gatekeeper registration" << endl;
         return false;
       }
       if (verbose)
-        cout << *h323->GetGatekeeper() << flush;
+        *m_output << *h323->GetGatekeeper() << flush;
     }
 
     AddRouteEntry("h323.*:.* = " + defaultRoute);
@@ -503,7 +513,7 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
   // If we have LIDs speficied in command line, load them
   if (args.HasOption("no-lid") || !args.HasOption("lines")) {
     if (verbose)
-      cout << "Line Interface Devices disabled" << endl;
+      *m_output << "Line Interface Devices disabled\n";
   }
   else {
     OpalLineEndPoint * lines = CreateLineEndPoint();
@@ -512,14 +522,14 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
       return false;
     }
     if (verbose)
-      cout << "Line Interface listening on: " << setfill(',') << lines->GetLines() << setfill(' ') << endl;
+      *m_output << "Line Interface listening on: " << setfill(',') << lines->GetLines() << setfill(' ') << '\n';
 
     PString country = args.GetOptionString("country");
     if (!country.IsEmpty()) {
       if (!lines->SetCountryCodeName(country))
         cerr << "Could not set LID to country name \"" << country << '"' << endl;
       else if (verbose)
-        cout << "LID to country: " << lines->GetLine("*")->GetDevice().GetCountryCodeName() << endl;
+        *m_output << "LID to country: " << lines->GetLine("*")->GetDevice().GetCountryCodeName() << '\n';
     }
 
     AddRouteEntry("pstn:.* = " + defaultRoute);
@@ -529,16 +539,16 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
 #if OPAL_CAPI
   if (args.HasOption("no-capi")) {
     if (verbose)
-      cout << "ISDN CAPI disabled" << endl;
+      *m_output << "ISDN CAPI disabled\n";
   }
   else {
     OpalCapiEndPoint * capi = CreateCapiEndPoint();
     unsigned controllers = capi->OpenControllers();
     if (verbose) {
       if (controllers == 0)
-        cout << "No CAPI controllers available." << endl;
+        *m_output << "No CAPI controllers available.\n";
       else
-        cout << "Found " << controllers << " CAPI controllers." << endl;
+        *m_output << "Found " << controllers << " CAPI controllers.\n";
     }
 
     AddRouteEntry("isdn:.* = " + defaultRoute);
@@ -555,7 +565,7 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
 
     AttachEndPoint(ep, "tel");
     if (verbose)
-      cout << "tel URI mapped to: " << ep->GetPrefixName() << '\n';
+      *m_output << "tel URI mapped to: " << ep->GetPrefixName() << '\n';
   }
 
 #if OPAL_VIDEO
@@ -619,7 +629,7 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
     OpalMediaFormatList formats = OpalMediaFormat::GetAllRegisteredMediaFormats();
     formats.Remove(GetMediaFormatMask());
     formats.Reorder(GetMediaFormatOrder());
-    cout << "Media Formats: " << setfill(',') << formats << setfill(' ') << endl;
+    *m_output << "Media Formats: " << setfill(',') << formats << setfill(' ') << '\n';
   }
 
 #if OPAL_STATISTICS
@@ -628,6 +638,9 @@ bool OpalManagerConsole::Initialise(PArgList & args, bool verbose, const PString
   if (m_statsPeriod == 0 && args.HasOption("statistics"))
     m_statsPeriod.SetInterval(0, 5);
 #endif
+
+  if (m_verbose)
+    m_output->flush();
 
   return true;
 }
@@ -649,7 +662,7 @@ void OpalManagerConsole::Run()
 void OpalManagerConsole::EndRun(bool interrupt)
 {
   if (m_verbose)
-    cout << "Exiting application." << endl;
+    *m_output << "Exiting application." << endl;
 
   m_interrupted = interrupt;
   m_endRun.Signal();
@@ -691,7 +704,7 @@ OpalCapiEndPoint * OpalManagerConsole::CreateCapiEndPoint()
 void OpalManagerConsole::OnEstablishedCall(OpalCall & call)
 {
   if (m_verbose)
-    cout << "In call with " << call.GetPartyB() << " using " << call.GetPartyA() << endl;
+    *m_output << "In call with " << call.GetPartyB() << " using " << call.GetPartyA() << endl;
 
   OpalManager::OnEstablishedCall(call);
 }
@@ -704,37 +717,37 @@ void OpalManagerConsole::OnHold(OpalConnection & connection, bool fromRemote, bo
   if (!m_verbose)
     return;
 
-  cout << "Remote " << connection.GetRemotePartyName() << " has ";
+  *m_output << "Remote " << connection.GetRemotePartyName() << " has ";
   if (fromRemote)
-    cout << (onHold ? "put you on" : "released you from");
+    *m_output << (onHold ? "put you on" : "released you from");
   else
-    cout << " been " << (onHold ? "put on" : "released from");
-  cout << " hold." << endl;
+    *m_output << " been " << (onHold ? "put on" : "released from");
+  *m_output << " hold." << endl;
 }
 
 
-static void LogMediaStream(const char * stopStart, const OpalMediaStream & stream, const OpalConnection & connection)
+static void LogMediaStream(ostream & out, const char * stopStart, const OpalMediaStream & stream, const OpalConnection & connection)
 {
   if (!connection.IsNetworkConnection())
     return;
 
   OpalMediaFormat mediaFormat = stream.GetMediaFormat();
-  cout << stopStart << (stream.IsSource() ? " receiving " : " sending ");
+  out << stopStart << (stream.IsSource() ? " receiving " : " sending ");
 
 #if OPAL_SRTP
   const OpalRTPMediaStream * rtp = dynamic_cast<const OpalRTPMediaStream *>(&stream);
   if (rtp != NULL && dynamic_cast<const OpalSRTPSession *>(&rtp->GetRtpSession()) != NULL)
-    cout << "secured ";
+    out << "secured ";
 #endif
 
-  cout << mediaFormat;
+  out << mediaFormat;
 
   if (!stream.IsSource() && mediaFormat.GetMediaType() == OpalMediaType::Audio())
-    cout << " (" << mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption())*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits() << "ms)";
+    out << " (" << mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption())*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits() << "ms)";
 
-  cout << (stream.IsSource() ? " from " : " to ")
-       << connection.GetPrefixName() << " endpoint"
-       << endl;
+  out << (stream.IsSource() ? " from " : " to ")
+      << connection.GetPrefixName() << " endpoint"
+      << endl;
 }
 
 
@@ -744,7 +757,7 @@ PBoolean OpalManagerConsole::OnOpenMediaStream(OpalConnection & connection, Opal
     return false;
 
   if (m_verbose)
-    LogMediaStream("Started", stream, connection);
+    LogMediaStream(*m_output, "Started", stream, connection);
   return true;
 }
 
@@ -762,7 +775,7 @@ void OpalManagerConsole::OnClosedMediaStream(const OpalMediaStream & stream)
   OpalManager::OnClosedMediaStream(stream);
 
   if (m_verbose)
-    LogMediaStream("Stopped", stream, stream.GetConnection());
+    LogMediaStream(*m_output, "Stopped", stream, stream.GetConnection());
 
 #if OPAL_STATISTICS
   m_statsMutex.Wait();
@@ -785,41 +798,41 @@ void OpalManagerConsole::OnClearedCall(OpalCall & call)
 
   switch (call.GetCallEndReason()) {
     case OpalConnection::EndedByRemoteUser :
-      cout << '"' << name << "\" has cleared the call";
+      *m_output << '"' << name << "\" has cleared the call";
       break;
     case OpalConnection::EndedByCallerAbort :
-      cout << '"' << name << "\" has stopped calling";
+      *m_output << '"' << name << "\" has stopped calling";
       break;
     case OpalConnection::EndedByRefusal :
-      cout << '"' << name << "\" did not accept your call";
+      *m_output << '"' << name << "\" did not accept your call";
       break;
     case OpalConnection::EndedByNoAnswer :
-      cout << '"' << name << "\" did not answer your call";
+      *m_output << '"' << name << "\" did not answer your call";
       break;
     case OpalConnection::EndedByNoAccept :
-      cout << "Did not accept incoming call from \"" << name << '"';
+      *m_output << "Did not accept incoming call from \"" << name << '"';
       break;
     case OpalConnection::EndedByNoUser :
-      cout << "Could find user \"" << name << '"';
+      *m_output << "Could find user \"" << name << '"';
       break;
     case OpalConnection::EndedByUnreachable :
-      cout << '"' << name << "\" could not be reached.";
+      *m_output << '"' << name << "\" could not be reached.";
       break;
     case OpalConnection::EndedByNoEndPoint :
-      cout << "No phone running for \"" << name << '"';
+      *m_output << "No phone running for \"" << name << '"';
       break;
     case OpalConnection::EndedByHostOffline :
-      cout << '"' << name << "\" is not online.";
+      *m_output << '"' << name << "\" is not online.";
       break;
     case OpalConnection::EndedByConnectFail :
-      cout << "Transport error calling \"" << name << '"';
+      *m_output << "Transport error calling \"" << name << '"';
       break;
     default :
-      cout << call.GetCallEndReasonText() << " with \"" << name << '"';
+      *m_output << call.GetCallEndReasonText() << " with \"" << name << '"';
   }
 
   PTime now;
-  cout << ", on " << now.AsString("w h:mma") << ", duration "
+  *m_output << ", on " << now.AsString("w h:mma") << ", duration "
             << setprecision(0) << setw(5) << (now - call.GetStartTime()) << "s."
             << endl;
 }
@@ -829,7 +842,7 @@ void OpalManagerConsole::OnClearedCall(OpalCall & call)
 bool OpalManagerConsole::OutputStatistics()
 {
   if (m_statsFile.IsEmpty())
-    return OutputStatistics(cout);
+    return OutputStatistics(*m_output);
 
   PTextFile file(m_statsFile);
   if (!file.Open(PFile::WriteOnly, PFile::Create))
@@ -923,33 +936,43 @@ PString OpalManagerCLI::GetArgumentSpec() const
   PString spec = OpalManagerConsole::GetArgumentSpec();
   // Insert just before the version option
   spec.Splice("F-script-file: Execute script file in CLI\n"
-              "-cli: Enable telnet command line sessions on port.\n",
-              spec.Find("V-version"));
+#if P_TELNET
+              "-cli: Enable telnet command line sessions on port.\n"
+#endif
+#if P_CURSES
+              "-tui. Enable text user interface.\n"
+#endif
+              , spec.Find("V-version"));
   return spec;
 }
 
 
 bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
 {
-  if (!OpalManagerConsole::Initialise(args, verbose, defaultRoute))
+  if (!PreInitialise(args, verbose))
     return false;
 
   if (m_cli == NULL) {
-    unsigned port = 0;
+#if P_TELNET
     if (args.HasOption("cli")) {
-      port = args.GetOptionString("cli").AsUnsigned();
+      unsigned port = args.GetOptionString("cli").AsUnsigned();
       if (port == 0 || port > 65535) {
         cerr << "Illegal CLI port " << port << endl;
         return false;
       }
+      m_cli = CreateCLITelnet((WORD)port);
     }
+#endif // P_TELNET
 
-#if P_TELNET
-    m_cli = CreatePCLI((WORD)port);
-#else
-    m_cli = CreatePCLI();
-#endif
-    if (m_cli == NULL)
+#if P_CURSES
+    if (m_cli == NULL && args.HasOption("tui")) {
+      PCLICurses * cli = CreateCLICurses();
+      m_output = &cli->GetWindow(0);
+      m_cli = cli;
+    }
+#endif // P_CURSES
+
+    if (m_cli == NULL && (m_cli = CreateCLIStandard()) == NULL)
       return false;
   }
 
@@ -984,7 +1007,8 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
                     "Quit command line interpreter, note quitting from console also shuts down application.");
   m_cli->SetCommand("shutdown", PCREATE_NOTIFIER(CmdShutDown),
                     "Shut down the application");
-  return true;
+
+  return OpalManagerConsole::Initialise(args, verbose, defaultRoute);
 }
 
 
@@ -1022,23 +1046,29 @@ void OpalManagerCLI::EndRun(bool interrupt)
 }
 
 
-#if P_TELNET
-PCLI * OpalManagerCLI::CreatePCLI(WORD port)
+PCLI * OpalManagerCLI::CreateCLIStandard()
 {
-  if (port == 0)
-    return new PCLIStandard;
+  return new PCLIStandard;
+}
 
-  PCLI * cli = new PCLITelnet(port);
+
+#if P_TELNET
+PCLITelnet * OpalManagerCLI::CreateCLITelnet(WORD port)
+{
+  PCLITelnet * cli = new PCLITelnet(port);
   cli->StartContext(new PConsoleChannel(PConsoleChannel::StandardInput),
                     new PConsoleChannel(PConsoleChannel::StandardOutput));
   return cli;
 }
-#else
-PCLI * OpalManagerCLI::CreatePCLI()
+#endif // P_TELNET
+
+
+#if P_CURSES
+PCLICurses * OpalManagerCLI::CreateCLICurses()
 {
-  return new PCLIStandard;
+  return new PCLICurses();
 }
-#endif
+#endif // P_CURSES
 
 
 #if OPAL_SIP

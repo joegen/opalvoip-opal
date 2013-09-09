@@ -235,11 +235,11 @@ void MyManager::CmdList(PCLI::Arguments &, P_INT_PTR)
     OpalPresenceInfo::State state;
     PString note;
     presentity.GetLocalPresence(state, note);
-    cout << key << " "
-         << presentity.GetAOR() << " "
-         << OpalPresenceInfo::AsString(state) << " "
-         << note
-         << endl;
+    *m_output << key << " "
+              << presentity.GetAOR() << " "
+              << OpalPresenceInfo::AsString(state) << " "
+              << note
+              << endl;
   }
 }
 
@@ -387,20 +387,20 @@ void MyManager::CmdQuit(PCLI::Arguments & args, P_INT_PTR)
 
 void MyManager::AuthorisationRequest(OpalPresentity & presentity, OpalPresentity::AuthorisationRequest request)
 {
-  cout << request.m_presentity << " requesting access to presence for " << presentity.GetAOR() << endl;
+  *m_output << request.m_presentity << " requesting access to presence for " << presentity.GetAOR() << endl;
   if (!request.m_note.IsEmpty())
-    cout << "  \"" << request.m_note << '"' << endl;
+    *m_output << "  \"" << request.m_note << '"' << endl;
 }
 
 
 void MyManager::PresenceChange(OpalPresentity & presentity, std::auto_ptr<OpalPresenceInfo> info)
 {
-  cout << "Presentity " << presentity.GetAOR();
+  *m_output << "Presentity " << presentity.GetAOR();
   if (info->m_entity != info->m_target)
-    cout << " received presence change from " << info->m_entity;
+    *m_output << " received presence change from " << info->m_entity;
   else
-    cout << " changed locally";
-  cout << " to " << info->AsString() << endl;
+    *m_output << " changed locally";
+  *m_output << " to " << info->AsString() << endl;
 }
 
 
