@@ -76,14 +76,6 @@
                               DiskId='1'
                               KeyPath='yes' />
                      </Component>
-                     <Component Id='H.264'
-                                Guid='*'>
-                        <File Id='H.264_DLL'
-                              Name='h264_x264_ptplugin.dll'
-                              Source='$(var.OPALDir)\bin\plugins\Release\h264_x264_ptplugin.dll'
-                              DiskId='1'
-                              KeyPath='yes' />
-                     </Component>
                      <Component Id='MPEG4'
                                 Guid='*'>
                         <File Id='MPEG4_DLL'
@@ -100,20 +92,39 @@
                               DiskId='1'
                               KeyPath='yes' />
                      </Component>
-                     <Component Id='x264_helper'
-                                Guid='*'>
-                        <File Id='x264_EXE'
-                              Name='x264plugin_helper.exe'
-                              Source='$(var.OPALDir)\bin\plugins\Release\x264plugin_helper.exe'
-                              DiskId='1'
-                              KeyPath='yes' />
-                     </Component>
+                     <?if $(var.LicensedX264) = "yes" ?>
+                        <Component Id='H.264'
+                                   Guid='*'>
+                           <File Id='H.264_DLL'
+                                 Name='h264_x264_ptplugin.dll'
+                                 Source='$(var.OPALDir)\bin\plugins\Release (licensed)\h264_x264_ptplugin.dll'
+                                 DiskId='1'
+                                 KeyPath='yes' />
+                        </Component>
+                     <?else ?>
+                        <Component Id='H.264'
+                                   Guid='*'>
+                           <File Id='H.264_DLL'
+                                 Name='h264_x264_ptplugin.dll'
+                                 Source='$(var.OPALDir)\bin\plugins\Release\h264_x264_ptplugin.dll'
+                                 DiskId='1'
+                                 KeyPath='yes' />
+                        </Component>
+                        <Component Id='x264_helper'
+                                   Guid='*'>
+                           <File Id='x264_EXE'
+                                 Name='x264plugin_helper.exe'
+                                 Source='$(var.OPALDir)\bin\plugins\Release\x264plugin_helper.exe'
+                                 DiskId='1'
+                                 KeyPath='yes' />
+                        </Component>
+                     <?endif ?>
                   <?else ?>
                      <Component Id='IntelSpeech'
                                 Guid='*'>
                         <File Id='INTEL_SPEECH_DLL'
                               Name='intel_speech_ptplugin.dll'
-                              Source='$(var.IntelPluginDir)\Release\intel_speech_ptplugin.dll'
+                              Source='$(var.IntelPluginDir)\intel_speech_ptplugin.dll'
                               DiskId='1'
                               KeyPath='yes' />
                      </Component>
@@ -121,7 +132,7 @@
                                 Guid='*'>
                         <File Id='INTEL_AV_DLL'
                               Name='intel_av_ptplugin.dll'
-                              Source='$(var.IntelPluginDir)\Release\intel_av_ptplugin.dll'
+                              Source='$(var.IntelPluginDir)\intel_av_ptplugin.dll'
                               DiskId='1'
                               KeyPath='yes' />
                      </Component>
@@ -370,7 +381,9 @@
             <ComponentRef Id='H.264' />
             <ComponentRef Id='MPEG4' />
             <ComponentRef Id='x264' />
-            <ComponentRef Id='x264_helper' />
+            <?if $(var.LicensedX264) != "yes" ?>
+               <ComponentRef Id='x264_helper' />
+            <?endif ?>
          <?else ?>
             <ComponentRef Id='IntelSpeech' />
             <ComponentRef Id='IntelAudioVisual' />
