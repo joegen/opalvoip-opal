@@ -2730,13 +2730,33 @@ void MyManager::OnHold(OpalConnection & connection, bool fromRemote, bool onHold
 
   LogWindow << "Remote " << connection.GetRemotePartyName() << " has been "
             << (onHold ? "put on" : "released from") << " hold." << endl;
+
+  PSafePtr<OpalPCSSConnection> local = connection.GetOtherPartyConnectionAs<OpalPCSSConnection>();
+  if (local == NULL)
+    return;
+
   if (onHold) {
-    if (!connection.GetCall().Transfer("pc:*|"+m_musicOnHoldFile+"*;"OPAL_URL_PARAM_PREFIX OPAL_OPT_SILENCE_DETECT_MODE"=No"))
-      connection.GetCall().Transfer("pc:*|Null Audio");
+    if (!local->TransferConnection("pc:*|"+m_musicOnHoldFile+"*;"OPAL_URL_PARAM_PREFIX OPAL_OPT_SILENCE_DETECT_MODE"=No"))
+      local->TransferConnection("pc:*|"P_NULL_AUDIO_DEVICE);
+
+    PVideoDevice::OpenArgs args = GetVideoInputDevice();
+    args.deviceName = P_FAKE_VIDEO_TEXT;
+    local->ChangeVideoInputDevice(args);
+
     PostEvent(wxEvtOnHold, connection.GetCall().GetToken());
   }
   else {
-    connection.GetCall().Transfer("pc:*;"OPAL_URL_PARAM_PREFIX OPAL_OPT_SILENCE_DETECT_MODE"="+GetSilenceDetectParams().AsString());
+    local->TransferConnection("pc:*;"OPAL_URL_PARAM_PREFIX OPAL_OPT_SILENCE_DETECT_MODE"="+GetSilenceDetectParams().AsString());
+
+    if (m_primaryVideoGrabber == NULL)
+      local->ChangeVideoInputDevice(GetVideoInputDevice());
+    else {
+      PSafePtr<OpalVideoMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalVideoMediaStream>(
+                                                  local->GetMediaStream(OpalMediaType::Video(), true));
+      if (stream != NULL)
+        stream->SetVideoInputDevice(m_primaryVideoGrabber, false);
+    }
+
     PostEvent(wxEvtEstablished, connection.GetCall().GetToken());
   }
 }
