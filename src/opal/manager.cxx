@@ -288,7 +288,8 @@ OpalManager::OpalManager()
   PStringArray devices = PVideoInputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
   PINDEX i;
   for (i = 0; i < devices.GetSize(); ++i) {
-    if ((devices[i] *= "*.yuv") || (devices[i] *= "fake")) 
+    PCaselessString dev = devices[i];
+    if (dev[0] = '*' || dev.NumCompare(P_FAKE_VIDEO_PREFIX) == EqualTo)
       continue;
     videoInputDevice.deviceName = devices[i];
     break;
@@ -297,7 +298,8 @@ OpalManager::OpalManager()
 
   devices = PVideoOutputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
   for (i = 0; i < devices.GetSize(); ++i) {
-    if ((devices[i] *= "*.yuv") || (devices[i] *= "null"))
+    PCaselessString dev = devices[i];
+    if (dev[0] == '*' || dev == P_NULL_VIDEO_DEVICE)
       continue;
     videoOutputDevice.deviceName = devices[i];
     videoPreviewDevice = videoOutputDevice;
