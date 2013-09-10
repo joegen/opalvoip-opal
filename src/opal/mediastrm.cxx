@@ -1289,6 +1289,11 @@ void OpalVideoMediaStream::SetVideoInputDevice(PVideoInputDevice * device, bool 
   m_autoDeleteInput = autoDelete;
 
   InternalAdjustDevices();
+
+  if (!m_inputDevice->Start()) {
+    PTRACE(1, "Media\tCould not start video grabber");
+  }
+  m_lastGrabTime = PTimer::Tick();
 }
 
 
