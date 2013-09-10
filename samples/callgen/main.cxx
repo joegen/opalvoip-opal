@@ -119,8 +119,8 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
   }
 
   OpalPCSSEndPoint * pcss = new MyPCSSEndPoint(*this);
-  pcss->SetSoundChannelRecordDevice("Null Audio");
-  pcss->SetSoundChannelPlayDevice("Null Audio");
+  pcss->SetSoundChannelRecordDevice(P_NULL_AUDIO_DEVICE);
+  pcss->SetSoundChannelPlayDevice(P_NULL_AUDIO_DEVICE);
 
 #if P_WAVFILE
   if (!args.HasOption('W'))
@@ -141,8 +141,8 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
 #endif // P_WAVFILE
 
 #if OPAL_VIDEO
-  videoInputDevice.deviceName = "Fake/NTSCTest";
-  videoOutputDevice.deviceName = "NULL";
+  videoInputDevice.deviceName = P_FAKE_VIDEO_NTSC;
+  videoOutputDevice.deviceName = P_NULL_VIDEO_DEVICE;
   videoPreviewDevice.deviceName.MakeEmpty();  // Don't want any preview for video, there could be ... lots
 
   if (!args.HasOption('Y'))
