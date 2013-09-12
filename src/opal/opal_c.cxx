@@ -1280,7 +1280,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
 
     PStringArray enabledMediaTypes = autoXxMedia.Tokenise(" \t\n", false);
     for (PINDEX i = 0; i < enabledMediaTypes.GetSize(); ++i) {
-      OpalMediaTypeDefinition * definition = OpalMediaType::GetDefinition(enabledMediaTypes[0]);
+      OpalMediaTypeDefinition * definition = OpalMediaType::GetDefinition(enabledMediaTypes[i]);
       if (definition != NULL)
         definition->SetAutoStart(autoStart, true);
     }
