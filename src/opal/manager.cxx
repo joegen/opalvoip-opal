@@ -289,7 +289,7 @@ OpalManager::OpalManager()
   PINDEX i;
   for (i = 0; i < devices.GetSize(); ++i) {
     PCaselessString dev = devices[i];
-    if (dev[0] = '*' || dev.NumCompare(P_FAKE_VIDEO_PREFIX) == EqualTo)
+    if (dev[0] == '*' || dev.NumCompare(P_FAKE_VIDEO_PREFIX) == EqualTo)
       continue;
     videoInputDevice.deviceName = devices[i];
     break;
