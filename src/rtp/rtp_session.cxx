@@ -1524,43 +1524,57 @@ void OpalRTPSession::AddFilter(const FilterNotifier & filter)
 
 /////////////////////////////////////////////////////////////////////////////
 
+#if PTRACING
+#define SetMinBufferSize(sock, bufType, newSize) SetMinBufferSizeFn(sock, bufType, newSize, #bufType)
+static void SetMinBufferSizeFn(PUDPSocket & sock, int bufType, int newSize, const char * bufTypeName)
+#else
 static void SetMinBufferSize(PUDPSocket & sock, int bufType, int newSize)
+#endif
 {
   int originalSize = 0;
   if (!sock.GetOption(bufType, originalSize)) {
-    PTRACE(1, "RTP_UDP\tGetOption(" << sock.GetHandle() << ',' << bufType << ") failed: " << sock.GetErrorText());
+    PTRACE(1, "RTP_UDP\tGetOption(" << sock.GetHandle() << ',' << bufTypeName << ")"
+              " failed: " << sock.GetErrorText());
     return;
   }
 
   // Already big enough
-  if (originalSize >= newSize)
+  if (originalSize >= newSize) {
+    PTRACE(4, "RTP_UDP\tSetOption(" << sock.GetHandle() << ',' << bufTypeName << ',' << newSize << ")"
+              " unecessary, already " << originalSize);
     return;
+  }
 
   for (; newSize >= 1024; newSize -= newSize/10) {
     // Set to new size
     if (!sock.SetOption(bufType, newSize)) {
-      PTRACE(1, "RTP_UDP\tSetOption(" << sock.GetHandle() << ',' << bufType << ',' << newSize << ") failed: " << sock.GetErrorText());
+      PTRACE(1, "RTP_UDP\tSetOption(" << sock.GetHandle() << ',' << bufTypeName << ',' << newSize << ")"
+                " failed: " << sock.GetErrorText());
       continue;
     }
 
     // As some stacks lie about setting the buffer size, we double check.
     int adjustedSize;
     if (!sock.GetOption(bufType, adjustedSize)) {
-      PTRACE(1, "RTP_UDP\tGetOption(" << sock.GetHandle() << ',' << bufType << ") failed: " << sock.GetErrorText());
+      PTRACE(1, "RTP_UDP\tGetOption(" << sock.GetHandle() << ',' << bufTypeName << ")"
+                " failed: " << sock.GetErrorText());
       return;
     }
 
     if (adjustedSize >= newSize) {
-      PTRACE(4, "RTP_UDP\tSetOption(" << sock.GetHandle() << ',' << bufType << ',' << newSize << ") succeeded.");
+      PTRACE(4, "RTP_UDP\tSetOption(" << sock.GetHandle() << ',' << bufTypeName << ',' << newSize << ")"
+                " succeeded, actually " << adjustedSize);
       return;
     }
 
     if (adjustedSize > originalSize) {
-      PTRACE(4, "RTP_UDP\tSetOption(" << sock.GetHandle() << ',' << bufType << ',' << newSize << ") clamped to maximum " << adjustedSize);
+      PTRACE(4, "RTP_UDP\tSetOption(" << sock.GetHandle() << ',' << bufTypeName << ',' << newSize << ")"
+                " clamped to maximum " << adjustedSize);
       return;
     }
 
-    PTRACE(2, "RTP_UDP\tSetOption(" << sock.GetHandle() << ',' << bufType << ',' << newSize << ") failed, even though it said it succeeded!");
+    PTRACE(2, "RTP_UDP\tSetOption(" << sock.GetHandle() << ',' << bufTypeName << ',' << newSize << ")"
+              " failed, even though it said it succeeded!");
   }
 }
 
@@ -1810,8 +1824,8 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
 
 #ifndef __BEOS__
   // Increase internal buffer size on media UDP sockets
-  SetMinBufferSize(*m_dataSocket,    SO_RCVBUF, m_isAudio ? RTP_AUDIO_RX_BUFFER_SIZE : RTP_VIDEO_RX_BUFFER_SIZE);
-  SetMinBufferSize(*m_dataSocket,    SO_SNDBUF, RTP_DATA_TX_BUFFER_SIZE);
+  SetMinBufferSize(*m_dataSocket, SO_RCVBUF, m_isAudio ? RTP_AUDIO_RX_BUFFER_SIZE : RTP_VIDEO_RX_BUFFER_SIZE);
+  SetMinBufferSize(*m_dataSocket, SO_SNDBUF, RTP_DATA_TX_BUFFER_SIZE);
   if (m_controlSocket != NULL) {
     SetMinBufferSize(*m_controlSocket, SO_RCVBUF, RTP_CTRL_BUFFER_SIZE);
     SetMinBufferSize(*m_controlSocket, SO_SNDBUF, RTP_CTRL_BUFFER_SIZE);
