@@ -1716,7 +1716,6 @@ bool SIPEndPoint::GetAuthentication(const PString & realm, PString & authId, PSt
   // really just after password, but username MAY change too.
   authId = handler->GetAuthID();
   password = handler->GetPassword();
-  PTRACE (3, "SIP\tUsing auth info for realm \"" << realm << '"');
   return true;
 }
 
