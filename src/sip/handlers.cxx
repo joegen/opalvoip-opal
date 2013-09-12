@@ -2539,33 +2539,36 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm(const PString & 
 {
   // look for a match to realm without users
   for (PSafePtr<SIPHandler> handler(m_handlersList, PSafeReference); handler != NULL; ++handler) {
-    if (handler->GetRealm() == authRealm && handler.SetSafetyMode(mode)) {
-      PTRACE(4, "SIP\tLocated existing credentials for realm \"" << authRealm << '"');
+    if (  handler->GetRealm() == authRealm &&
+          handler.SetSafetyMode(PSafeReadOnly) &&
+         !handler->GetAuthID().IsEmpty() &&
+         !handler->GetPassword().IsEmpty() &&
+          handler.SetSafetyMode(mode)) {
+      PTRACE(3, "SIP\tLocated existing credentials for realm \"" << authRealm << "\" "
+             << handler->GetMethod() << " of aor=" << handler->GetAddressOfRecord() << ", id=" << handler->GetCallID());
       return handler;
     }
   }
 
+  PTRACE(4, "SIP\tNo existing credentials for realm \"" << authRealm << '"');
   return NULL;
 }
 
 
 PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByAuthRealm(const PString & authRealm, const PString & userName, PSafetyMode mode)
 {
-  PSafePtr<SIPHandler> ptr;
+  PSafePtr<SIPHandler> handler;
 
   // look for a match to exact user name and realm
-  if ((ptr = FindBy(m_byAuthIdAndRealm, userName + '\n' + authRealm, mode)) != NULL) {
-    PTRACE(4, "SIP\tLocated existing credentials for ID \"" << userName << "\" at realm \"" << authRealm << '"');
-    return ptr;
+  if ((handler = FindBy(m_byAuthIdAndRealm, userName + '\n' + authRealm, mode)) == NULL &&
+      (handler = FindBy(m_byAorUserAndRealm, userName + '\n' + authRealm, mode)) == NULL) {
+    PTRACE(5, "SIP\tNo existing credentials for ID \"" << userName << "\" at realm \"" << authRealm << '"');
+    return NULL;
   }
 
-  // look for a match to exact user name and realm
-  if ((ptr = FindBy(m_byAorUserAndRealm, userName + '\n' + authRealm, mode)) != NULL) {
-    PTRACE(4, "SIP\tLocated existing credentials for ID \"" << userName << "\" at realm \"" << authRealm << '"');
-    return ptr;
-  }
-
-  return NULL;
+  PTRACE(4, "SIP\tLocated existing credentials for ID \"" << userName << "\" at realm \"" << authRealm << "\" "
+         << handler->GetMethod() << " of aor=" << handler->GetAddressOfRecord() << ", id=" << handler->GetCallID());
+  return handler;
 }
 
 

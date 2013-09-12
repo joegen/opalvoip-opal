@@ -2934,8 +2934,13 @@ SIP_PDU::StatusCodes SIPTransactionOwner::HandleAuthentication(const SIP_PDU & r
     }
   }
 
-  if (authId.IsEmpty() || password.IsEmpty()) {
-    PTRACE(2, "SIP\tAuthentication not possible yet, no credentials available.");
+  if (authId.IsEmpty()) {
+    PTRACE(2, "SIP\tAuthentication not possible yet, no ID/username available.");
+    return SIP_PDU::Failure_UnAuthorised;
+  }
+
+  if (password.IsEmpty()) {
+    PTRACE(2, "SIP\tAuthentication not possible yet, no password available.");
     return SIP_PDU::Failure_UnAuthorised;
   }
 
