@@ -136,7 +136,7 @@ const int      AverageFrameTimeDeadband = 16;
       {
         strm << "Input samples: " << inPos << " Output samples: " << outPos << "\n"
                 "Dir\tRTPTime\tInDiff\tOutDiff\tInMode\tOutMode\t"
-                "InDepth\tOutDep\tInTick\tInDelay\tOutTick\tOutDel\tIODelay\tTotalDelay\n";
+                "InDepth\tOuDepth\tInTick\tInDelta\tOutTick\tODelta\tIODelay\n";
         std::vector<Info>::size_type ix = 1;
         std::vector<Info>::size_type ox = 1;
         while (ix < inPos || ox < outPos) {
@@ -189,8 +189,7 @@ const int      AverageFrameTimeDeadband = 16;
                  << (in[ix].tick - in[ix-1].tick) << '\t'
                  << (out[ox].tick - out[0].tick) << '\t'
                  << (out[ox].tick - out[ox-1].tick) << '\t'
-                 << (out[ox].tick - in[ix].tick) << '\t'
-                 << ((out[ox].tick - in[1].tick) - PTimeInterval((in[ix].time-in[1].time)/8))
+                 << (out[ox].tick - in[ix].tick)
                  << '\n';
             ox++;
             ix++;
@@ -250,6 +249,7 @@ void OpalJitterBuffer::PrintOn(ostream & strm) const
 {
   strm << "this=" << (void *)this
        << " packets=" << m_frames.size()
+       <<   " rate=" << m_timeUnits << "kHz"
        << " delay=" << (m_minJitterDelay/m_timeUnits) << '-'
                     << (m_currentJitterDelay/m_timeUnits) << '-'
                     << (m_maxJitterDelay/m_timeUnits) << "ms";
@@ -286,7 +286,6 @@ void OpalJitterBuffer::Reset()
   m_bufferFilledTime  = 0;
   m_bufferLowTime     = 0;
   m_bufferEmptiedTime = 0;
-  m_timestampDelta    = 0;
 
   m_consecutiveLatePackets = 0;
 
@@ -348,17 +347,11 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
   /*Calculate the time between packets. While not actually dictated by any
     standards, this is invariably a constant. We just need to allow for if we
     are unlucky at the start and get a missing packet, in which case we are
-    twice as big (or more) as we should be. The smallest distance between
-    consecutive packets will be the frame time interval. */
-  if (m_lastTimestamp == UINT_MAX) {
-    m_lastTimestamp = timestamp;
-    return true;
-  }
-
-  // Only do the following calculations if no packets missing
-  if (m_lastSequenceNum != UINT_MAX && m_lastSequenceNum+1 == currentSequenceNum) {
+    twice as big (or more) as we should be. Se we make sure we do not have
+    a missing packet by inspecting sequence numbers, and also check two
+    consecutive intervals (three packets) for the same timestamp delay. */
+  if (m_lastTimestamp != UINT_MAX && m_lastSequenceNum != UINT_MAX && m_lastSequenceNum+1 == currentSequenceNum) {
     int delta = timestamp - m_lastTimestamp;
-    m_lastTimestamp = timestamp;
 
     /* Check for naughty systems that have discontinuous timestamps, that is
        time has gone backwards or it has been 10 minutes since last packet.
@@ -381,23 +374,19 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
     }
   }
   m_lastSequenceNum = currentSequenceNum;
-
-  // Things don't work till we have a frame time, so don't queue anything
-  if (m_incomingFrameTime == 0) {
-    PTRACE(EVERY_PACKET_TRACE_LEVEL, "Jitter\tNeed frame time : ts=" << timestamp);
-    return true;
-  }
+  m_lastTimestamp = timestamp;
 
 
-  if (!m_frames.empty()) {
-    FrameMap::iterator oldestFrame;
-    while ((oldestFrame = m_frames.begin()) != m_frames.end() &&
-                           (timestamp - oldestFrame->second.GetTimestamp()) > (m_maxJitterDelay + m_incomingFrameTime)) {
-      PTRACE(4, "Jitter\tBuffer overflow : ts=" << oldestFrame->second.GetTimestamp() << ", size=" << m_frames.size());
-      m_frames.erase(oldestFrame);
+  // Fail safe for infinite queueing, for example, if other thread is not taking stuff out
+  FrameMap::iterator oldestFrame = m_frames.begin();
+  if (oldestFrame != m_frames.end()) {
+    DWORD delta = timestamp - oldestFrame->second.GetTimestamp();
+    if (delta > m_maxJitterDelay*2) {
+      ANALYSE(In, timestamp, "Overflow");
+      PTRACE(4, "Jitter\tBuffer overflow : ts=" << timestamp << ", delta=" << delta << ", size=" << m_frames.size());
+      return true;
     }
   }
-
 
   // Add to buffer
   pair<FrameMap::iterator,bool> result = m_frames.insert(FrameMap::value_type(timestamp, frame));
