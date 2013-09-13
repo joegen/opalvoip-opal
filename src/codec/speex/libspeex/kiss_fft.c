@@ -91,7 +91,7 @@ static void kf_bfly4(
     tw3 = tw2 = tw1 = st->twiddles;
 
     if (!st->inverse) {
-       int i;
+       size_t i;
        kiss_fft_cpx *x=Fout;
        for (i=0;i<4*m;i++)
        {

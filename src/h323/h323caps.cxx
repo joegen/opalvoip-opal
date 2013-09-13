@@ -1120,7 +1120,7 @@ PBoolean H323VideoCapability::OnSendingPDU(H245_VideoCapability & pdu, CommandTy
 }
 
 
-PBoolean H323VideoCapability::OnSendingPDU(H245_VideoMode & pdu) const
+PBoolean H323VideoCapability::OnSendingPDU(H245_VideoMode &) const
 {
   return false;
 }

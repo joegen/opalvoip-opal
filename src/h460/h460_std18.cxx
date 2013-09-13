@@ -48,11 +48,7 @@
 #include <h460/h460_std18.h>
 #include <h460/h46018_h225.h>
 
-#if _WIN32
 #pragma message("H.460.18/.19 Enabled. See Tandberg Patent License. http://www.tandberg.com/collateral/tandberg-ITU-license.pdf")
-#else
-#warning("H.460.18/.19 Enabled. See Tandberg Patent License. http://www.tandberg.com/collateral/tandberg-ITU-license.pdf")
-#endif
 
 
 ///////////////////////////////////////////////////////
