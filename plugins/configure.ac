@@ -92,11 +92,17 @@ OPAL_SYSTEM_PLUGIN(
    [ilbc local-source],
    [],
    [-lilbc],
-   [#include <iLBC/iLBC_encode.h>],
+   [#include <iLBC_encode.h>],
    [
       struct iLBC_Enc_Inst_t_ * context;
       initEncode(context, 30);
+   ],
+   [
+      if test "$ILBC_SYSTEM" = "yes"; then
+         AC_DEFINE(OPAL_SYSTEM_ILBC, [1])
+      fi
    ]
+
 )
 
 OPAL_SYSTEM_PLUGIN(

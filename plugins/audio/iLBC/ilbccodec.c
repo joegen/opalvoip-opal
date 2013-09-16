@@ -37,9 +37,23 @@
 
 #include <codec/opalplugin.h>
 
-#include "iLBC/iLBC_encode.h" 
-#include "iLBC/iLBC_decode.h" 
-#include "iLBC/iLBC_define.h" 
+#ifdef OPAL_SYSTEM_ILBC
+  #include <iLBC_encode.h>
+  #include <iLBC_decode.h>
+  #include <iLBC_define.h>
+#else
+  #include "./iLBC/iLBC_encode.h"
+  #include "./iLBC/iLBC_decode.h"
+  #include "./iLBC/iLBC_define.h"
+#endif
+
+
+#ifndef NO_OF_BYTES_20MS
+  #define NO_OF_BYTES_20MS 38
+#endif
+#ifndef NO_OF_BYTES_30MS
+  #define NO_OF_BYTES_30MS 50
+#endif
 
 #define	BITRATE_30MS	NO_OF_BYTES_30MS*8*8000/BLOCKL_30MS
 #define	BITRATE_20MS	NO_OF_BYTES_20MS*8*8000/BLOCKL_20MS
@@ -83,8 +97,10 @@ static int codec_encoder(const struct PluginCodec_Definition * codec,
                                        unsigned * toLen,
                                    unsigned int * flag)
 {
-  float block[BLOCKL_MAX];
   int i;
+#ifndef OPAL_SYSTEM_ILBC
+  float block[BLOCKL_MAX];
+#endif
 
   struct iLBC_Enc_Inst_t_ * encoder = (struct iLBC_Enc_Inst_t_ *)context;
   const short * sampleBuffer = (const short *)from;
@@ -92,12 +108,16 @@ static int codec_encoder(const struct PluginCodec_Definition * codec,
   if (*fromLen < encoder->blockl*2U)
     return 0;
 
+#ifdef OPAL_SYSTEM_ILBC
+  iLBC_encode(to, (short *)from, encoder);
+#else
   /* convert signal to float */
   for (i = 0; i < encoder->blockl; i++)
     block[i] = (float)sampleBuffer[i];
 
   /* do the actual encoding */
-  iLBC_encode(to, block, encoder);
+  iLBC_encode((unsigned char *)to, block, encoder);
+#endif
 
   // set output lengths
   *toLen = encoder->no_of_bytes;
@@ -116,10 +136,12 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
                                    unsigned int * flag)
 {
   int i;
+#ifndef OPAL_SYSTEM_ILBC
   float block[BLOCKL_MAX];
+  short * sampleBuffer = (short *)to;
+#endif
 
   struct iLBC_Dec_Inst_t_ * decoder = (struct iLBC_Dec_Inst_t_ *)context;
-  short * sampleBuffer = (short *)to;
 
   // If packet not have integral number of frames for this mode
   if ((*fromLen % decoder->no_of_bytes) != 0) {
@@ -130,20 +152,24 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
   }
 
   /* do actual decoding of block */ 
+#ifdef OPAL_SYSTEM_ILBC
+  iLBC_decode((short *)to, (WebRtc_UWord16 *)from, decoder, 1);
+#else
   iLBC_decode(block, (unsigned char *)from, decoder, 1);
-
-  if (*toLen < decoder->blockl*2U)
-    return 0;
 
   /* convert to short */     
   for (i = 0; i < decoder->blockl; i++) {
     float tmp = block[i];
-    if (tmp < MIN_SAMPLE)
-      tmp = MIN_SAMPLE;
-    else if (tmp > MAX_SAMPLE)
-      tmp = MAX_SAMPLE;
+    if (tmp < -32767)
+      tmp = -32767;
+    else if (tmp > 32767)
+      tmp = 32767;
     sampleBuffer[i] = (short)tmp;
   }
+#endif
+
+  if (*toLen < decoder->blockl*2U)
+    return 0;
 
   // set output lengths
   *toLen = decoder->blockl*2;

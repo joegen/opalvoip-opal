@@ -33,6 +33,9 @@
 /* celt */
 #undef HAVE_CELT
 
+/* iLBC variants */
+#undef OPAL_SYSTEM_ILBC
+
 /* Speex */
 #undef OPAL_SYSTEM_SPEEX
 
