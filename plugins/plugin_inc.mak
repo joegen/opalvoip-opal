@@ -41,7 +41,8 @@ ifneq (,$(BASENAME))
   ifeq (,$(PLUGIN_NAME))
     SONAME      = $(BASENAME)_ptplugin
     PLUGIN_NAME = $(SONAME).$(SHAREDLIBEXT)
-    LDFLAGS    := $(SHARED_LDFLAGS:INSERT_SONAME=$(SONAME)) $(LDFLAGS)
+    CPPFLAGS   += $(SHARED_CPPFLAGS)
+    LDFLAGS    := $(SHARED_LDFLAGS) $(LDFLAGS)
   endif
   OBJDIR = $(abspath $(PLUGIN_SRC_DIR)/../lib_$(target)/plugins/$(BASENAME))
   PLUGIN_PATH = $(OBJDIR)/$(PLUGIN_NAME)
