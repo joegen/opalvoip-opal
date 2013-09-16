@@ -6845,14 +6845,13 @@ fi
 $as_echo_n "checking for iLBC audio codec usability... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include <iLBC/iLBC_encode.h>
+#include <iLBC_encode.h>
 int
 main ()
 {
 
       struct iLBC_Enc_Inst_t_ * context;
       initEncode(context, 30);
-
 
   ;
   return 0;
@@ -6904,7 +6903,16 @@ $as_echo "$as_me: Using internal source for iLBC audio codec" >&6;}
 
 
 
+   if test "x$usable" = "xyes"; then :
 
+      if test "$ILBC_SYSTEM" = "yes"; then
+         $as_echo "#define OPAL_SYSTEM_ILBC 1" >>confdefs.h
+
+      fi
+
+
+
+fi
 
 
       if test "x$ILBC_SYSTEM" = "xno" ; then
