@@ -503,7 +503,7 @@ case "$target_os" in
       target_os=solaris
       target_release=`uname -r | sed "s/5\.//g"`
       CPPFLAGS="$CPPFLAGS -D__inline=inline -DSOLARIS"
-      SHARED_LDFLAGS="-Bdynamic -G -h INSERT_SONAME"
+      SHARED_LDFLAGS='-Bdynamic -G -h $(LIB_SONAME)'
    ;;
 
    beos* )
@@ -605,11 +605,9 @@ if test "${enable_force32}" = "yes" ; then
    if test "$target_os" = "Darwin"; then
       CPPFLAGS="$CPPFLAGS -arch i386"
       LDFLAGS="$LDFLAGS -arch i386"
-      SHARED_LDFLAGS="$SHARED_LDFLAGS -arch i386"
    else
       CPPFLAGS="$CPPFLAGS -m32"
       LDFLAGS="$LDFLAGS -m32"
-      SHARED_LDFLAGS="$SHARED_LDFLAGS -m32"
    fi
 
    AC_MSG_NOTICE(Forcing 32 bit x86 compile)
