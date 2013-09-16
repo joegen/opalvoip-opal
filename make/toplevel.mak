@@ -152,7 +152,7 @@ ifeq ($(OPAL_HAS_MIXER), yes)
   SOURCES += $(OPAL_SRCDIR)/opal/recording.cxx \
              $(OPAL_SRCDIR)/ep/opalmixer.cxx
   ifeq ($(target_os),mingw)
-    LDFLAGS += -lvfw32
+    LIBS := -lvfw32 $(LIBS)
   endif
 endif
 
@@ -245,7 +245,7 @@ ifeq ($(OPAL_H323),yes)
 
   ifeq ($(OPAL_PTLIB_SSL), yes)
     SOURCES += $(OPAL_SRCDIR)/h235auth1.cxx
-    LDFLAGS += -lcrypto
+    lIBS := -lcrypto $(LIBS)
   endif
 
   ifeq ($(OPAL_T120DATA), yes)
@@ -335,7 +335,7 @@ ifeq ($(OPAL_SRTP), yes)
   ifeq ($(SRTP_SYSTEM),no)
     SRTP_DIR := $(OPAL_TOP_LEVEL_DIR)/src/rtp/libsrtp
     CPPFLAGS += -I$(SRTP_DIR)/include -I$(SRTP_DIR)/crypto/include
-    LDFLAGS  += -L$(SRTP_DIR) -lsrtp
+    LIBS     := -L$(SRTP_DIR) -lsrtp $(LIBS)
     
     internal_build :: $(SRTP_DIR)/libsrtp.a
     
