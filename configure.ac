@@ -214,7 +214,7 @@ MY_MODULE_OPTION(
       MY_LINK_IFELSE(
          [for Speex noise reduction],
          [$SPEEXDSP_CFLAGS],
-         [$SPEEXDSP_LDFLAGS],
+         [$SPEEXDSP_LIBS],
          [
             #include <speex/speex.h>
             #include <speex/speex_preprocess.h>
