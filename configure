@@ -810,20 +810,27 @@ enable_option_checking
 enable_ios
 enable_force32
 enable_srtp
-enable_localsrtp
+enable_test_srtp
+enable_local_srtp
 with_srtp_dir
 enable_zrtp
+enable_test_zrtp
 with_zrtp_dir
 enable_speexdsp
-enable_localspeexdsp
+enable_test_speexdsp
+enable_local_speexdsp
 with_speexdsp_dir
 enable_capi
+enable_test_capi
 with_capi_dir
 enable_dahdi
+enable_test_dahdi
 with_dahdi_dir
 enable_java
+enable_test_java
 with_java_dir
 enable_ruby
+enable_test_ruby
 with_ruby_dir
 enable_video
 enable_sip
@@ -1510,14 +1517,21 @@ Optional Features:
                           enable iOS support
   --enable-force32        Force 32-bit x86 build
   --disable-srtp          disable SRTP protocol support
-  --enable-localsrtp      force use internal source for SRTP protocol support
+  --disable-test-srtp     disable compile/link test for SRTP protocol support
+  --enable-local-srtp     force use internal source for SRTP protocol support
   --disable-zrtp          disable ZRTP protocol support
+  --disable-test-zrtp     disable compile/link test for ZRTP protocol support
   --disable-speexdsp      disable Speex DSP support
-  --enable-localspeexdsp  force use internal source for Speex DSP support
+  --disable-test-speexdsp disable compile/link test for Speex DSP support
+  --enable-local-speexdsp force use internal source for Speex DSP support
   --disable-capi          disable CAPI ISDN support
+  --disable-test-capi     disable compile/link test for CAPI ISDN support
   --disable-dahdi         disable DAHDI E1 support
+  --disable-test-dahdi    disable compile/link test for DAHDI E1 support
   --disable-java          disable Java JNI support
+  --disable-test-java     disable compile/link test for Java JNI support
   --disable-ruby          disable Ruby support
+  --disable-test-ruby     disable compile/link test for Ruby support
   --disable-video         disable video support
   --disable-sip           disable SIP protocol support
   --disable-h323          disable H.323 protocol support
@@ -5295,7 +5309,7 @@ case "$target_os" in
       AR="libtool"
       ARFLAGS="-static -o"
       RANLIB=
-      LDFLAGS="${LDFLAGS} -framework AudioToolbox -framework CoreAudio -framework SystemConfiguration -framework Foundation -lobjc"
+      LIBS="-framework AudioToolbox -framework CoreAudio -framework SystemConfiguration -framework Foundation -lobjc $LIBS"
    ;;
 
    cygwin* | mingw* )
@@ -5323,7 +5337,8 @@ case "$target_os" in
       CC="${IOS_DEVROOT}/usr/bin/gcc"
       LD="$CXX"
       CPPFLAGS="${CPPFLAGS} -arch $target_cpu -isysroot ${IOS_SDKROOT} -miphoneos-version-min=$MIN_IOS_VER"
-      LDFLAGS="-arch $target_cpu -isysroot ${IOS_SDKROOT} -L${IOS_SDKROOT}/usr/lib $LDFLAGS"
+      LDFLAGS="-arch $target_cpu -isysroot ${IOS_SDKROOT} $LDFLAGS"
+      LIBS="-L${IOS_SDKROOT}/usr/lib $LIBS"
    ;;
 
    darwin* )
@@ -5336,7 +5351,7 @@ case "$target_os" in
       fi
 
       CPPFLAGS="${CPPFLAGS} -mmacosx-version-min=$MIN_MACOSX_VER"
-      LDFLAGS="-framework QTKit -framework CoreVideo -framework AudioUnit $LDFLAGS"
+      LIBS="-framework QTKit -framework CoreVideo -framework AudioUnit $LIBS"
    ;;
 
    linux* | Linux* | uclibc* )
@@ -5460,7 +5475,7 @@ fi
    beos* )
       target_os=beos
       CPPFLAGS="$CPPFLAGS D__BEOS__ -DBE_THREADS -Wno-multichar -Wno-format"
-      LDFLAGS="-lstdc++.r4 -lbe -lmedia -lgame -lroot -lsocket -lbind -ldl"
+      LIBS="-lstdc++.r4 -lbe -lmedia -lgame -lroot -lsocket -lbind -ldl $LIBS"
       SHARED_LDFLAGS="-shared -nostdlib -nostart"
    ;;
 
@@ -5471,7 +5486,7 @@ fi
    mingw* )
       target_os=mingw
       CPPFLAGS="$CPPFLAGS -mms-bitfields"
-      LDFLAGS="-lwinmm -lwsock32 -lws2_32 -lsnmpapi -lmpr -lcomdlg32 -lgdi32 -lavicap32 -liphlpapi -lole32 -lquartz"
+      LIBS="-lwinmm -lwsock32 -lws2_32 -lsnmpapi -lmpr -lcomdlg32 -lgdi32 -lavicap32 -liphlpapi -lole32 -lquartz $LIBS"
    ;;
 
    * )
@@ -6156,12 +6171,17 @@ fi
 
    enable_srtp="$enableval"
 
+   # Check whether --enable-test-srtp was given.
+if test "${enable_test_srtp+set}" = set; then :
+  enableval=$enable_test_srtp; test_srtp=$enableval
+fi
+
 
    if test "x$usable" = "xyes" ; then
 
-         # Check whether --enable-localsrtp was given.
-if test "${enable_localsrtp+set}" = set; then :
-  enableval=$enable_localsrtp;
+         # Check whether --enable-local-srtp was given.
+if test "${enable_local_srtp+set}" = set; then :
+  enableval=$enable_local_srtp;
                if test "x$enableval" = "xyes" ; then
                   SRTP_SYSTEM="no"
                   { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for SRTP protocol support" >&5
@@ -6268,13 +6288,12 @@ fi
 
 fi
 
-
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = "xyes" && test "x$test_srtp" != "xno" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
-   oldLDFLAGS="$LDFLAGS"
+   oldLIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $SRTP_CFLAGS"
-   LDFLAGS="$SRTP_LIBS $LDFLAGS"
+   LIBS="$SRTP_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SRTP protocol support usability" >&5
 $as_echo_n "checking for SRTP protocol support usability... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -6302,21 +6321,25 @@ rm -f core conftest.err conftest.$ac_objext \
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
    CPPFLAGS="$oldCPPFLAGS"
-   LDFLAGS="$oldLDFLAGS"
+   LIBS="$oldLIBS"
 
    if test "x$usable" = "xyes"; then :
-
-
-   LDFLAGS="$SRTP_LIBS $LDFLAGS"
-   CPPFLAGS="$CPPFLAGS $SRTP_CFLAGS"
-
-
-
 
 else
   usable=no
 
 fi
+
+
+         fi
+
+         if test "x$usable" = "xyes" ; then
+
+
+   LIBS="$SRTP_LIBS $LIBS"
+   CPPFLAGS="$CPPFLAGS $SRTP_CFLAGS"
+
+
 
 
          fi
@@ -6424,6 +6447,11 @@ fi
 
    enable_zrtp="$enableval"
 
+   # Check whether --enable-test-zrtp was given.
+if test "${enable_test_zrtp+set}" = set; then :
+  enableval=$enable_test_zrtp; test_zrtp=$enableval
+fi
+
 
    if test "x$usable" = "xyes" ; then
 
@@ -6520,13 +6548,12 @@ fi
 
 fi
 
-
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = "xyes" && test "x$test_zrtp" != "xno" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
-   oldLDFLAGS="$LDFLAGS"
+   oldLIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $ZRTP_CFLAGS"
-   LDFLAGS="$ZRTP_LIBS $LDFLAGS"
+   LIBS="$ZRTP_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ZRTP protocol support usability" >&5
 $as_echo_n "checking for ZRTP protocol support usability... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -6552,21 +6579,25 @@ rm -f core conftest.err conftest.$ac_objext \
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
    CPPFLAGS="$oldCPPFLAGS"
-   LDFLAGS="$oldLDFLAGS"
+   LIBS="$oldLIBS"
 
    if test "x$usable" = "xyes"; then :
-
-
-   LDFLAGS="$ZRTP_LIBS $LDFLAGS"
-   CPPFLAGS="$CPPFLAGS $ZRTP_CFLAGS"
-
-
-
 
 else
   usable=no
 
 fi
+
+
+         fi
+
+         if test "x$usable" = "xyes" ; then
+
+
+   LIBS="$ZRTP_LIBS $LIBS"
+   CPPFLAGS="$CPPFLAGS $ZRTP_CFLAGS"
+
+
 
 
          fi
@@ -6648,12 +6679,17 @@ fi
 
    enable_speexdsp="$enableval"
 
+   # Check whether --enable-test-speexdsp was given.
+if test "${enable_test_speexdsp+set}" = set; then :
+  enableval=$enable_test_speexdsp; test_speexdsp=$enableval
+fi
+
 
    if test "x$usable" = "xyes" ; then
 
-         # Check whether --enable-localspeexdsp was given.
-if test "${enable_localspeexdsp+set}" = set; then :
-  enableval=$enable_localspeexdsp;
+         # Check whether --enable-local-speexdsp was given.
+if test "${enable_local_speexdsp+set}" = set; then :
+  enableval=$enable_local_speexdsp;
                if test "x$enableval" = "xyes" ; then
                   SPEEXDSP_SYSTEM="no"
                   { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for Speex DSP support" >&5
@@ -6760,13 +6796,12 @@ fi
 
 fi
 
-
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = "xyes" && test "x$test_speexdsp" != "xno" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
-   oldLDFLAGS="$LDFLAGS"
+   oldLIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $SPEEXDSP_CFLAGS"
-   LDFLAGS="$SPEEXDSP_LIBS $LDFLAGS"
+   LIBS="$SPEEXDSP_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Speex DSP support usability" >&5
 $as_echo_n "checking for Speex DSP support usability... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -6791,21 +6826,25 @@ rm -f core conftest.err conftest.$ac_objext \
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
    CPPFLAGS="$oldCPPFLAGS"
-   LDFLAGS="$oldLDFLAGS"
+   LIBS="$oldLIBS"
 
    if test "x$usable" = "xyes"; then :
-
-
-   LDFLAGS="$SPEEXDSP_LIBS $LDFLAGS"
-   CPPFLAGS="$CPPFLAGS $SPEEXDSP_CFLAGS"
-
-
-
 
 else
   usable=no
 
 fi
+
+
+         fi
+
+         if test "x$usable" = "xyes" ; then
+
+
+   LIBS="$SPEEXDSP_LIBS $LIBS"
+   CPPFLAGS="$CPPFLAGS $SPEEXDSP_CFLAGS"
+
+
 
 
          fi
@@ -6836,9 +6875,9 @@ $as_echo "#define OPAL_SYSTEM_SPEEX 1" >>confdefs.h
 
 
    oldCPPFLAGS="$CPPFLAGS"
-   oldLDFLAGS="$LDFLAGS"
+   oldLIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $SPEEXDSP_CFLAGS"
-   LDFLAGS="$SPEEXDSP_LDFLAGS $LDFLAGS"
+   LIBS="$SPEEXDSP_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Speex noise reduction" >&5
 $as_echo_n "checking for Speex noise reduction... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -6871,7 +6910,7 @@ rm -f core conftest.err conftest.$ac_objext \
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
    CPPFLAGS="$oldCPPFLAGS"
-   LDFLAGS="$oldLDFLAGS"
+   LIBS="$oldLIBS"
 
    if test "x$usable" = "xyes"; then :
   $as_echo "#define OPAL_SPEEX_FLOAT_NOISE 1" >>confdefs.h
@@ -6945,6 +6984,11 @@ fi
 
 
    enable_capi="$enableval"
+
+   # Check whether --enable-test-capi was given.
+if test "${enable_test_capi+set}" = set; then :
+  enableval=$enable_test_capi; test_capi=$enableval
+fi
 
 
    if test "x$usable" = "xyes" ; then
@@ -7042,13 +7086,12 @@ fi
 
 fi
 
-
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = "xyes" && test "x$test_capi" != "xno" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
-   oldLDFLAGS="$LDFLAGS"
+   oldLIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $CAPI_CFLAGS"
-   LDFLAGS="$CAPI_LIBS $LDFLAGS"
+   LIBS="$CAPI_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CAPI ISDN support usability" >&5
 $as_echo_n "checking for CAPI ISDN support usability... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -7074,21 +7117,25 @@ rm -f core conftest.err conftest.$ac_objext \
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
    CPPFLAGS="$oldCPPFLAGS"
-   LDFLAGS="$oldLDFLAGS"
+   LIBS="$oldLIBS"
 
    if test "x$usable" = "xyes"; then :
-
-
-   LDFLAGS="$CAPI_LIBS $LDFLAGS"
-   CPPFLAGS="$CPPFLAGS $CAPI_CFLAGS"
-
-
-
 
 else
   usable=no
 
 fi
+
+
+         fi
+
+         if test "x$usable" = "xyes" ; then
+
+
+   LIBS="$CAPI_LIBS $LIBS"
+   CPPFLAGS="$CPPFLAGS $CAPI_CFLAGS"
+
+
 
 
          fi
@@ -7170,6 +7217,11 @@ fi
 
 
    enable_dahdi="$enableval"
+
+   # Check whether --enable-test-dahdi was given.
+if test "${enable_test_dahdi+set}" = set; then :
+  enableval=$enable_test_dahdi; test_dahdi=$enableval
+fi
 
 
    if test "x$usable" = "xyes" ; then
@@ -7267,13 +7319,12 @@ fi
 
 fi
 
-
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = "xyes" && test "x$test_dahdi" != "xno" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
-   oldLDFLAGS="$LDFLAGS"
+   oldLIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $DAHDI_CFLAGS"
-   LDFLAGS="$DAHDI_LIBS $LDFLAGS"
+   LIBS="$DAHDI_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DAHDI E1 support usability" >&5
 $as_echo_n "checking for DAHDI E1 support usability... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -7299,21 +7350,25 @@ rm -f core conftest.err conftest.$ac_objext \
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
    CPPFLAGS="$oldCPPFLAGS"
-   LDFLAGS="$oldLDFLAGS"
+   LIBS="$oldLIBS"
 
    if test "x$usable" = "xyes"; then :
-
-
-   LDFLAGS="$DAHDI_LIBS $LDFLAGS"
-   CPPFLAGS="$CPPFLAGS $DAHDI_CFLAGS"
-
-
-
 
 else
   usable=no
 
 fi
+
+
+         fi
+
+         if test "x$usable" = "xyes" ; then
+
+
+   LIBS="$DAHDI_LIBS $LIBS"
+   CPPFLAGS="$CPPFLAGS $DAHDI_CFLAGS"
+
+
 
 
          fi
@@ -7438,6 +7493,11 @@ fi
 
    enable_java="$enableval"
 
+   # Check whether --enable-test-java was given.
+if test "${enable_test_java+set}" = set; then :
+  enableval=$enable_test_java; test_java=$enableval
+fi
+
 
    if test "x$usable" = "xyes" ; then
 
@@ -7534,13 +7594,12 @@ fi
 
 fi
 
-
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = "xyes" && test "x$test_java" != "xno" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
-   oldLDFLAGS="$LDFLAGS"
+   oldLIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $JAVA_CFLAGS"
-   LDFLAGS="$JAVA_LIBS $LDFLAGS"
+   LIBS="$JAVA_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Java JNI support usability" >&5
 $as_echo_n "checking for Java JNI support usability... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -7566,21 +7625,25 @@ rm -f core conftest.err conftest.$ac_objext \
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
    CPPFLAGS="$oldCPPFLAGS"
-   LDFLAGS="$oldLDFLAGS"
+   LIBS="$oldLIBS"
 
    if test "x$usable" = "xyes"; then :
-
-
-   LDFLAGS="$JAVA_LIBS $LDFLAGS"
-   CPPFLAGS="$CPPFLAGS $JAVA_CFLAGS"
-
-
-
 
 else
   usable=no
 
 fi
+
+
+         fi
+
+         if test "x$usable" = "xyes" ; then
+
+
+   LIBS="$JAVA_LIBS $LIBS"
+   CPPFLAGS="$CPPFLAGS $JAVA_CFLAGS"
+
+
 
 
          fi
@@ -7662,6 +7725,11 @@ fi
 
 
    enable_ruby="$enableval"
+
+   # Check whether --enable-test-ruby was given.
+if test "${enable_test_ruby+set}" = set; then :
+  enableval=$enable_test_ruby; test_ruby=$enableval
+fi
 
 
    if test "x$usable" = "xyes" ; then
@@ -7759,13 +7827,12 @@ fi
 
 fi
 
-
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = "xyes" && test "x$test_ruby" != "xno" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
-   oldLDFLAGS="$LDFLAGS"
+   oldLIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $RUBY_CFLAGS"
-   LDFLAGS="$RUBY_LIBS $LDFLAGS"
+   LIBS="$RUBY_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Ruby support usability" >&5
 $as_echo_n "checking for Ruby support usability... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -7791,21 +7858,25 @@ rm -f core conftest.err conftest.$ac_objext \
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
    CPPFLAGS="$oldCPPFLAGS"
-   LDFLAGS="$oldLDFLAGS"
+   LIBS="$oldLIBS"
 
    if test "x$usable" = "xyes"; then :
-
-
-   LDFLAGS="$RUBY_LIBS $LDFLAGS"
-   CPPFLAGS="$CPPFLAGS $RUBY_CFLAGS"
-
-
-
 
 else
   usable=no
 
 fi
+
+
+         fi
+
+         if test "x$usable" = "xyes" ; then
+
+
+   LIBS="$RUBY_LIBS $LIBS"
+   CPPFLAGS="$CPPFLAGS $RUBY_CFLAGS"
+
+
 
 
          fi

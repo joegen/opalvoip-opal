@@ -91,19 +91,19 @@ AC_DEFUN([MY_COMPILE_IFELSE],[
 
 
 dnl MY_LINK_IFELSE
-dnl As AC_LINK_IFELSE but saves and restores CPPFLAGS & LDFLAGS if fails
+dnl As AC_LINK_IFELSE but saves and restores CPPFLAGS & LIBS if fails
 dnl $1 checking message
 dnl $2 CPPFLAGS
-dnl $3 LIBS/LDFLAGS
+dnl $3 LIBS
 dnl $4 program headers
 dnl $5 program main
 dnl $6 success code
 dnl $7 failure code
 AC_DEFUN([MY_LINK_IFELSE],[
    oldCPPFLAGS="$CPPFLAGS"
-   oldLDFLAGS="$LDFLAGS"
+   oldLIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $2"
-   LDFLAGS="$3 $LDFLAGS"
+   LIBS="$3 $LIBS"
    AC_MSG_CHECKING($1)
    AC_LINK_IFELSE(
       [AC_LANG_PROGRAM([[$4]],[[$5]])],
@@ -112,7 +112,7 @@ AC_DEFUN([MY_LINK_IFELSE],[
    )
    AC_MSG_RESULT($usable)
    CPPFLAGS="$oldCPPFLAGS"
-   LDFLAGS="$oldLDFLAGS"
+   LIBS="$oldLIBS"
    MY_IFELSE([usable], [$6], [$7])
 ])
 
@@ -137,7 +137,7 @@ AC_DEFUN([MY_PKG_CHECK_MODULE],[
          [$4],
          [
             CPPFLAGS="$CPPFLAGS $$1[_CFLAGS]"
-            LDFLAGS="$$1[_LIBS] $LDFLAGS"
+            LIBS="$$1[_LIBS] $LIBS"
          ]
       )],
       [usable=no]
@@ -147,13 +147,13 @@ AC_DEFUN([MY_PKG_CHECK_MODULE],[
 
 
 dnl MY_ADD_FLAGS
-dnl Add to CPPFLAGS, CFLAGS, CXXFLAGS & LDFLAGS new flags
-dnl $1 new LDFLAGS (prepended)
+dnl Add to CPPFLAGS, CFLAGS, CXXFLAGS & LIBS new flags
+dnl $1 new LIBS (prepended)
 dnl $2 new CPPFLAGS
 dnl $3 new CFLAGS
 dnl $4 new CXXFLAGS
 AC_DEFUN([MY_ADD_FLAGS],[
-   m4_ifnblank([$1], [LDFLAGS="$1 $LDFLAGS"])
+   m4_ifnblank([$1], [LIBS="$1 $LIBS"])
    m4_ifnblank([$2], [CPPFLAGS="$CPPFLAGS $2"])
    m4_ifnblank([$3], [CFLAGS="$CPPFLAGS $3"])
    m4_ifnblank([$4], [CXXFLAGS="$CPPFLAGS $4"])
@@ -161,7 +161,7 @@ AC_DEFUN([MY_ADD_FLAGS],[
 
 
 dnl MY_ADD_MODULE_FLAGS
-dnl Add to CPPFLAGS, & LDFLAGS new flags from xxx_CFLAGS, xxx_LIBS
+dnl Add to CPPFLAGS, & LIBS new flags from xxx_CFLAGS, xxx_LIBS
 dnl $1 module name
 AC_DEFUN([MY_ADD_MODULE_FLAGS],[
    MY_ADD_FLAGS($$1[_LIBS], $$1[_CFLAGS])
@@ -188,12 +188,13 @@ AC_DEFUN([MY_MODULE_OPTION],[
    AC_SUBST($1[_SYSTEM], "yes")
 
    MY_ARG_ENABLE([$2], [$3], [${DEFAULT_$1:-yes}], [usable=yes], [usable=no], [$11], [$12], [$13], [$14])
+   AC_ARG_ENABLE([test-$2], [AC_HELP_STRING([--disable-test-$2],[disable compile/link test for $3])], [test_$2=$enableval])
 
    if test "x$usable" = "xyes" ; then
       m4_bmatch([$4], [.*local-source.*], [
          AC_ARG_ENABLE(
-            [local$2],
-            [AC_HELP_STRING([--enable-local$2],[force use internal source for $3])],
+            [local-$2],
+            [AC_HELP_STRING([--enable-local-$2],[force use internal source for $3])],
             [
                if test "x$enableval" = "xyes" ; then
                   $1[_SYSTEM]="no"
@@ -231,17 +232,20 @@ AC_DEFUN([MY_MODULE_OPTION],[
                [usable=no]
             )]
          )
-
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = "xyes" && test "x$test_$2" != "xno" ; then
             MY_LINK_IFELSE(
                [for $3 usability],
                [$$1[_CFLAGS]],
                [$$1[_LIBS]],
                [$7],
                [$8],
-               [MY_ADD_MODULE_FLAGS([$1])],
+               [],
                [usable=no]
             )
+         fi
+
+         if test "x$usable" = "xyes" ; then
+            MY_ADD_MODULE_FLAGS([$1])
          fi
 
          m4_bmatch([$4], [.*local-source.*], [
@@ -262,7 +266,7 @@ AC_DEFUN([MY_MODULE_OPTION],[
 
 
 dnl MY_CHECK_DLFCN
-dnl Check for dlopen function and make sure library set in LDFLAGS
+dnl Check for dlopen function and make sure library set in LIBS
 dnl $1 action if found
 dnl $2 action of not found
 AC_DEFUN([MY_CHECK_DLFCN],[
@@ -429,7 +433,7 @@ case "$target_os" in
       AR="libtool"
       ARFLAGS="-static -o"
       RANLIB=
-      LDFLAGS="${LDFLAGS} -framework AudioToolbox -framework CoreAudio -framework SystemConfiguration -framework Foundation -lobjc"
+      LIBS="-framework AudioToolbox -framework CoreAudio -framework SystemConfiguration -framework Foundation -lobjc $LIBS"
    ;;
 
    cygwin* | mingw* )
@@ -458,7 +462,8 @@ case "$target_os" in
       CC="${IOS_DEVROOT}/usr/bin/gcc"
       LD="$CXX"
       CPPFLAGS="${CPPFLAGS} -arch $target_cpu -isysroot ${IOS_SDKROOT} -miphoneos-version-min=$MIN_IOS_VER"
-      LDFLAGS="-arch $target_cpu -isysroot ${IOS_SDKROOT} -L${IOS_SDKROOT}/usr/lib $LDFLAGS"
+      LDFLAGS="-arch $target_cpu -isysroot ${IOS_SDKROOT} $LDFLAGS"
+      LIBS="-L${IOS_SDKROOT}/usr/lib $LIBS"
    ;;
 
    darwin* )
@@ -471,7 +476,7 @@ case "$target_os" in
       fi
 
       CPPFLAGS="${CPPFLAGS} -mmacosx-version-min=$MIN_MACOSX_VER"
-      LDFLAGS="-framework QTKit -framework CoreVideo -framework AudioUnit $LDFLAGS"
+      LIBS="-framework QTKit -framework CoreVideo -framework AudioUnit $LIBS"
    ;;
 
    linux* | Linux* | uclibc* )
@@ -504,7 +509,7 @@ case "$target_os" in
    beos* )
       target_os=beos
       CPPFLAGS="$CPPFLAGS D__BEOS__ -DBE_THREADS -Wno-multichar -Wno-format"
-      LDFLAGS="-lstdc++.r4 -lbe -lmedia -lgame -lroot -lsocket -lbind -ldl"
+      LIBS="-lstdc++.r4 -lbe -lmedia -lgame -lroot -lsocket -lbind -ldl $LIBS"
       SHARED_LDFLAGS="-shared -nostdlib -nostart"
    ;;
 
@@ -515,7 +520,7 @@ case "$target_os" in
    mingw* )
       target_os=mingw
       CPPFLAGS="$CPPFLAGS -mms-bitfields"
-      LDFLAGS="-lwinmm -lwsock32 -lws2_32 -lsnmpapi -lmpr -lcomdlg32 -lgdi32 -lavicap32 -liphlpapi -lole32 -lquartz"
+      LIBS="-lwinmm -lwsock32 -lws2_32 -lsnmpapi -lmpr -lcomdlg32 -lgdi32 -lavicap32 -liphlpapi -lole32 -lquartz $LIBS"
    ;;
 
    * )

@@ -59,17 +59,17 @@ endif
 ifeq ($(PLUGIN_SYSTEM),no)
   SOURCES  += $(LOCAL_SOURCES)
   CPPFLAGS += $(LOCAL_CPPFLAGS)
-  LDFLAGS  := $(LOCAL_LIBS) $(LDFLAGS)
+  LIBS     := $(LOCAL_LIBS) $(LIBS)
 else
   CPPFLAGS += $(PLUGIN_CPPFLAGS)
-  LDFLAGS  := $(PLUGIN_LIBS) $(LDFLAGS)
+  LIBS     := $(PLUGIN_LIBS) $(LIBS)
 endif
 
 
 ##############################################################################
 
 ifneq (,$(SUBDIRS))
-  export CC CXX LD AR RANLIB CPPFLAGS CFLAGS CXXFLAGS LDFLAGS ARFLAGS target target_os target_cpu
+  export CC CXX LD AR RANLIB CPPFLAGS CFLAGS CXXFLAGS LDFLAGS LIBS ARFLAGS target target_os target_cpu
   all install uninstall clean ::
 	$(Q)set -e; $(foreach dir,$(SUBDIRS), \
           if test -d $(dir) ; then \
@@ -115,7 +115,7 @@ ifneq (,$(PLUGIN_PATH))
 
   $(PLUGIN_PATH): $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(patsubst %.cpp,%.o,$(patsubst %.c,%.o,$(notdir $(SOURCES))))))
 	@if [ ! -d $(dir $@) ] ; then $(MKDIR_P) $(dir $@) ; fi
-	$(Q_LD)$(CXX) -o $@ $^ $(strip $(LDFLAGS))
+	$(Q_LD)$(CXX) -o $@ $(strip $(LDFLAGS) $^ $(LIBS))
 
   install ::
 	mkdir -p $(DESTDIR)$(libdir)/$(INSTALL_DIR)
