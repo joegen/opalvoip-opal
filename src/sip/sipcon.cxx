@@ -2098,6 +2098,7 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
       if (invitation != &transaction)
         invitation->Cancel();
     }
+    m_forkedInvitations.RemoveAll();
 
     // And end connect mode on the transport
     m_dialog.SetInterface(transaction.GetInterface());
