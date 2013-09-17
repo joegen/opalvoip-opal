@@ -992,7 +992,10 @@ class OpalTransport : public PSafeObject
     PChannel * GetChannel() const { return m_channel; }
     void SetChannel(PChannel * chan) { m_channel = chan; }
 
-    bool IsIdle() const { return m_idleTimer.HasExpired(); }
+    bool IsIdle() const { return m_referenceCount == 0 && m_idleTimer.HasExpired(); }
+
+    void Reference()   { ++m_referenceCount; }
+    void Dereference() { --m_referenceCount; }
 
   protected:
     PDECLARE_NOTIFIER(PTimer, OpalTransport, KeepAlive);
@@ -1003,6 +1006,7 @@ class OpalTransport : public PSafeObject
     PTimer         m_keepAliveTimer;
     PBYTEArray     m_keepAliveData;
     PSimpleTimer   m_idleTimer;
+    PAtomicInteger m_referenceCount;
 };
 
 
