@@ -1809,9 +1809,9 @@ SIP_PDU::SIP_PDU(Methods meth, const OpalTransportPtr & transport, const PString
   , m_versionMinor(SIP_VER_MINOR)
   , m_transactionID(transactionID.IsEmpty() ? TransactionPrefix + OpalGloballyUniqueID().AsString() : transactionID)
   , m_SDP(NULL)
-  , m_transport(transport)
 {
   PTRACE_CONTEXT_ID_TO(m_mime);
+  SetTransport(transport);
 }
 
 
@@ -1839,9 +1839,9 @@ SIP_PDU::SIP_PDU(const SIP_PDU & pdu)
   , m_entityBody(pdu.m_entityBody)
   , m_transactionID(pdu.m_transactionID)
   , m_SDP(pdu.m_SDP != NULL ? new SDPSessionDescription(*pdu.m_SDP) : NULL)
-  , m_transport(pdu.m_transport)
 {
   PTRACE_CONTEXT_ID_TO(m_mime);
+  SetTransport(pdu.GetTransport());
 }
 
 
@@ -1857,7 +1857,7 @@ SIP_PDU & SIP_PDU::operator=(const SIP_PDU & pdu)
   m_mime = pdu.m_mime;
   m_entityBody = pdu.m_entityBody;
   m_transactionID = pdu.m_transactionID;
-  m_transport = pdu.m_transport;
+  SetTransport(pdu.GetTransport());
 
   delete m_SDP;
   m_SDP = pdu.m_SDP != NULL ? new SDPSessionDescription(*pdu.m_SDP) : NULL;
@@ -1869,6 +1869,24 @@ SIP_PDU & SIP_PDU::operator=(const SIP_PDU & pdu)
 SIP_PDU::~SIP_PDU()
 {
   delete m_SDP;
+  SetTransport(NULL);
+}
+
+
+void SIP_PDU::SetTransport(const OpalTransportPtr & transport)
+{
+  if (m_transport != NULL) {
+    PTRACE(5, "SIP\tDereferenced transport 0x" << m_transport << " from 0x" << this << ' ' << *this);
+    m_transport->Dereference();
+  }
+
+  // THis is the one and only place we bypass the const-ness
+  const_cast<OpalTransportPtr &>(m_transport) = transport;
+
+  if (m_transport != NULL) {
+    PTRACE(5, "SIP\tReferenced transport 0x" << m_transport << " from 0x" << this << ' ' << *this);
+    m_transport->Reference();
+  }
 }
 
 
@@ -1954,7 +1972,7 @@ void SIP_PDU::InitialiseHeaders(SIPConnection & connection, unsigned cseq)
 
 void SIP_PDU::InitialiseHeaders(const SIP_PDU & request)
 {
-  m_transport = request.GetTransport();
+  SetTransport(request.GetTransport());
 
   m_versionMajor = request.GetVersionMajor();
   m_versionMinor = request.GetVersionMinor();
@@ -2068,13 +2086,23 @@ bool SIP_PDU::SendResponse(StatusCodes code)
 
 void SIP_PDU::PrintOn(ostream & strm) const
 {
-  strm << m_mime.GetCSeq() << ' ';
-  if (m_method != NumMethods)
-    strm << m_uri;
- else if (m_statusCode != IllegalStatusCode)
-    strm << '<' << (unsigned)m_statusCode << '>';
-  else
-    strm << "<<Uninitialised>>";
+  if (m_method != NumMethods) {
+    if (m_mime.GetCSeq().IsEmpty())
+      strm << m_method;
+    else
+      strm << m_mime.GetCSeq();
+    if (!m_uri.IsEmpty())
+      strm << ' ' << m_uri;
+  }
+  else {
+    if (m_statusCode != IllegalStatusCode)
+      strm << m_mime.GetCSeq() << " <" << (unsigned)m_statusCode << '>';
+    else
+      strm << "<<Uninitialised>>";
+  }
+
+  if (!m_transactionID.IsEmpty())
+    strm << ' ' << m_transactionID;
 }
 
 
@@ -2730,7 +2758,7 @@ SIPTransactionOwner::~SIPTransactionOwner()
 }
 
 
-SIP_PDU::StatusCodes SIPTransactionOwner::SwitchTransportProto(const char * proto, OpalTransportPtr * transport)
+SIP_PDU::StatusCodes SIPTransactionOwner::SwitchTransportProto(const char * proto, SIP_PDU * pdu)
 {
   SIPURL newTransportAddress(m_dialog.GetRequestURI());
   newTransportAddress.SetParamVar("transport", proto);
@@ -2745,8 +2773,8 @@ SIP_PDU::StatusCodes SIPTransactionOwner::SwitchTransportProto(const char * prot
 
   PTRACE_CONTEXT_ID_SET(*newTransport, m_object);
 
-  if (transport != NULL)
-    *transport = newTransport;
+  if (pdu != NULL)
+    pdu->SetTransport(newTransport);
 
   return SIP_PDU::Successful_OK;
 }
@@ -2890,7 +2918,7 @@ SIP_PDU::StatusCodes SIPTransactionOwner::StartTransaction(const OpalTransport::
     if (succeeded)
       reason = SIP_PDU::Successful_OK;
 
-    m_forkMutex.Signal();
+  m_forkMutex.Signal();
   }
 
   return reason;
@@ -2996,7 +3024,7 @@ SIPTransaction::SIPTransaction(Methods method,
 
   if (m_transport == NULL) {
     SIP_PDU::StatusCodes reason;
-    m_transport = GetEndPoint().GetTransport(*m_owner, reason);
+    SetTransport(GetEndPoint().GetTransport(*m_owner, reason));
   }
 
   SIPConnection * conn = GetConnection();
@@ -3104,9 +3132,9 @@ bool SIPTransaction::Start()
 
       case Failure_MessageTooLarge : // Can only occur if UDP && canDoTCP
         // switch to TCP as per RFC3261 18.1.1
-        if (m_owner->SwitchTransportProto("tcp", &m_transport) != Successful_OK) {
+        if (m_owner->SwitchTransportProto("tcp", this) != Successful_OK) {
           // Could not connect using TCP, go back to UDP and send it regardless of size
-          if (m_owner->SwitchTransportProto("udp", &m_transport) != Successful_OK)
+          if (m_owner->SwitchTransportProto("udp", this) != Successful_OK)
             return false; // Huh? We where able to a moment ago!
         }
 
