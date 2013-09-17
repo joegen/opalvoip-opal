@@ -497,6 +497,10 @@ typedef enum OpalEchoCancelMode {
     is called with the size parameter equal to zero. It is up to the
     application what it does in that circumstance.
 
+    if \p format is "YUV420P" then \p data will point to four 32 bit integers
+    being the x, y, width and height of the image, following by the YUV planar
+    pixel data.
+
     Note that this function will be called in the context of different threads
     so the user must take care of any mutex and synchonisation issues.
 

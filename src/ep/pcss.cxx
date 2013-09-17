@@ -62,6 +62,7 @@ OpalPCSSEndPoint::OpalPCSSEndPoint(OpalManager & mgr, const char * prefix)
   , m_soundChannelPlayDevice(PSoundChannel::GetDefaultDevice(PSoundChannel::Player))
   , m_soundChannelRecordDevice(PSoundChannel::GetDefaultDevice(PSoundChannel::Recorder))
   , m_soundChannelOnHoldDevice(P_NULL_AUDIO_DEVICE)
+  , m_soundChannelBuffers(2)
 #ifdef _WIN32
   // Windows MultMedia stuff seems to need greater depth due to enormous
   // latencies in its operation
@@ -70,7 +71,6 @@ OpalPCSSEndPoint::OpalPCSSEndPoint(OpalManager & mgr, const char * prefix)
   // Should only need double buffering for Unix platforms
   , m_soundChannelBufferTime(40)
 #endif
-  , m_soundChannelBuffers(2)
 #if OPAL_VIDEO
   , m_videoOnHoldDevice(P_FAKE_VIDEO_TEXT)
 #endif
@@ -355,9 +355,11 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
   , m_soundChannelPlayDevice(playDevice)
   , m_soundChannelRecordDevice(recordDevice)
   , m_soundChannelOnHoldDevice(ep.GetSoundChannelOnHoldDevice())
-  , m_videoOnHoldDevice(ep.GetVideoOnHoldDevice())
   , m_soundChannelBuffers(ep.GetSoundChannelBufferDepth())
   , m_soundChannelBufferTime(ep.GetSoundChannelBufferTime())
+#if OPAL_VIDEO
+  , m_videoOnHoldDevice(ep.GetVideoOnHoldDevice())
+#endif
 {
   silenceDetector = new OpalPCM16SilenceDetector(endpoint.GetManager().GetSilenceDetectParams());
   PTRACE_CONTEXT_ID_TO(silenceDetector);
