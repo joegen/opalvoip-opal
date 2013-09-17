@@ -335,10 +335,12 @@ class OpalCall : public PSafeObject
     bool Retrieve();
 
     /**Indicate if call is in hold.
-       This function determines if the remote user of the network connection
-       in the call is currently on hold.
+       This function determines if the local or remote user of the network
+       connection in the call is currently on hold.
       */
-    bool IsOnHold() const;
+    bool IsOnHold(
+      bool fromRemote = false
+    ) const;
 
     /**Transfer connection.
        There are several scenarios for this function.
@@ -632,6 +634,7 @@ class OpalCall : public PSafeObject
     PTime   m_establishedTime;
     bool    m_isEstablished;
     bool    m_isClearing;
+    bool    m_handlingHold;
     PAtomicBoolean m_isCleared;
 
     OpalConnection::CallEndReason callEndReason;

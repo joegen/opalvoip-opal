@@ -269,7 +269,7 @@ static PString SubstituteAll(const PString & original,
 //////////////////////////////////////////////////////////
 
 GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
-  : OpalLocalEndPoint(manager, prefix)
+  : OpalLocalEndPoint(manager, prefix, false)
   , m_audioSourceDevice(GetDefaultDevice("Source/Audio", PreferredAudioSourceDevice, PARRAYSIZE(PreferredAudioSourceDevice)))
   , m_audioSinkDevice(GetDefaultDevice("Sink/Audio", PreferredAudioSinkDevice, PARRAYSIZE(PreferredAudioSinkDevice)))
 #if OPAL_VIDEO

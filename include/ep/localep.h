@@ -43,6 +43,9 @@
 class OpalLocalConnection;
 
 
+#define OPAL_LOCAL_PREFIX "lcoal"
+
+
 /** Local EndPoint.
     This class represents an endpoint on the local machine that can receive
     media via virtual functions.
@@ -56,8 +59,9 @@ class OpalLocalEndPoint : public OpalEndPoint
     /**Create a new endpoint.
      */
     OpalLocalEndPoint(
-      OpalManager & manager,        ///<  Manager of all endpoints.
-      const char * prefix = "local" ///<  Prefix for URL style address strings
+      OpalManager & manager,         ///<  Manager of all endpoints.
+      const char * prefix = OPAL_LOCAL_PREFIX, ///<  Prefix for URL style address strings
+      bool useCallbacks = true       ///<  Indicate all media is directed to the callback virtual functions
     );
 
     /**Destroy endpoint.
@@ -208,6 +212,25 @@ class OpalLocalEndPoint : public OpalEndPoint
       const PString & indication    ///< User input received
     );
 
+
+    /// Enumeration for usage of media callback direction in CallbackMap
+    P_DECLARE_BITWISE_ENUM(CallbackUsage, 2, (NoCallbacks, UseSourceCallback, UseSinkCallback));
+
+    /// Map for indicating if a media type is to use callback virtual functions.
+    typedef map<OpalMediaType, CallbackUsage> CallbackMap;
+
+    /// Indicate media type and direction is to use virtual callback functions.
+    bool UseCallback(
+      const OpalMediaFormat & mediaFormat,  ///< Media format to check
+      bool isSource                         ///< Direction of media stream
+    ) const;
+
+    /// Set callback usage for media type
+    bool SetCallbackUsage(
+      const OpalMediaType & mediaType,
+      CallbackUsage usage
+    );
+
     /**Call back to get media data for transmission.
        If false is returned then OnReadMediaData() is called.
 
@@ -278,6 +301,28 @@ class OpalLocalEndPoint : public OpalEndPoint
       PINDEX length,                          ///<  Amount of data available to write
       PINDEX & written                        ///<  Amount of data written
     );
+
+#if OPAL_VIDEO
+    /**Create an PVideoInputDevice for a source media stream.
+      */
+    virtual bool CreateVideoInputDevice(
+      const OpalConnection & connection,    ///<  Connection needing created video device
+      const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
+      PVideoInputDevice * & device,         ///<  Created device
+      bool & autoDelete                     ///<  Flag for auto delete device
+    );
+
+    /**Create an PVideoOutputDevice for a sink media stream or the preview
+       display for a source media stream.
+      */
+    virtual bool CreateVideoOutputDevice(
+      const OpalConnection & connection,    ///<  Connection needing created video device
+      const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
+      bool preview,                         ///<  Flag indicating is a preview output
+      PVideoOutputDevice * & device,        ///<  Created device
+      bool & autoDelete                     ///<  Flag for auto delete device
+    );
+#endif
 
     /**Indicate the synchronous mode for I/O.
        This indicates that the OnReadMediaXXX and OnWriteMediaXXX functions
@@ -355,6 +400,8 @@ class OpalLocalEndPoint : public OpalEndPoint
   protected:
     bool m_deferredAlerting;
     bool m_deferredAnswer;
+
+    CallbackMap m_useCallback;
 
     Synchronicity m_defaultAudioSynchronicity;
     Synchronicity m_defaultVideoSourceSynchronicity;
@@ -548,6 +595,42 @@ class OpalLocalConnection : public OpalConnection
     /**Accept the incoming connection.
       */
     virtual void AcceptIncoming();
+
+#if OPAL_VIDEO
+    /**Create an PVideoInputDevice for a source media stream.
+      */
+    virtual bool CreateVideoInputDevice(
+      const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
+      PVideoInputDevice * & device,         ///<  Created device
+      bool & autoDelete                     ///<  Flag for auto delete device
+    );
+
+    /**Create an PVideoOutputDevice for a sink media stream or the preview
+       display for a source media stream.
+      */
+    virtual bool CreateVideoOutputDevice(
+      const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
+      bool preview,                         ///<  Flag indicating is a preview output
+      PVideoOutputDevice * & device,        ///<  Created device
+      bool & autoDelete                     ///<  Flag for auto delete device
+    );
+
+    /**Change a PVideoInputDevice for a source media stream.
+      */
+    virtual bool ChangeVideoInputDevice(
+      const PVideoDevice::OpenArgs & device,  ///< Device to change to
+      unsigned sessionID = 0                  ///< Session for media stream, 0 indicates first video stream
+    );
+
+    /**Create an PVideoOutputDevice for a sink media stream or the preview
+       display for a source media stream.
+      */
+    virtual bool ChangeVideoOutputDevice(
+      const PVideoDevice::OpenArgs & device,  ///< Device to change to
+      unsigned sessionID = 0,                 ///< Session for media stream, 0 indicates first video stream
+      bool preview = false                    ///< Flag indicating is a preview output device
+    );
+#endif // OPAL_VIDEO
   //@}
 
   /**@name Member variable access */
@@ -563,8 +646,8 @@ class OpalLocalConnection : public OpalConnection
     friend class PSafeWorkNoArg<OpalLocalConnection>;
     void InternalAcceptIncoming();
 
-    OpalLocalEndPoint & endpoint;
-    void * m_userData;
+    OpalLocalEndPoint & m_endpoint;
+    void              * m_userData;
 };
 
 

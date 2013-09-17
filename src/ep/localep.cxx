@@ -45,7 +45,7 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalLocalEndPoint::OpalLocalEndPoint(OpalManager & mgr, const char * prefix)
+OpalLocalEndPoint::OpalLocalEndPoint(OpalManager & mgr, const char * prefix, bool useCallbacks)
   : OpalEndPoint(mgr, prefix, CanTerminateCall)
   , m_deferredAlerting(false)
   , m_deferredAnswer(false)
@@ -53,6 +53,12 @@ OpalLocalEndPoint::OpalLocalEndPoint(OpalManager & mgr, const char * prefix)
   , m_defaultVideoSourceSynchronicity(e_Synchronous)
 {
   PTRACE(3, "LocalEP\tCreated endpoint.");
+
+  if (useCallbacks) {
+    OpalMediaTypeList mediaTypes = OpalMediaType::GetList();
+    for (OpalMediaTypeList::iterator it = mediaTypes.begin(); it != mediaTypes.end(); ++it)
+      m_useCallback[*it] = UseSourceCallback|UseSinkCallback;
+  }
 }
 
 
@@ -161,6 +167,23 @@ bool OpalLocalEndPoint::OnUserInput(const OpalLocalConnection &, const PString &
 }
 
 
+bool OpalLocalEndPoint::UseCallback(const OpalMediaFormat & mediaFormat, bool isSource) const
+{
+  OpalLocalEndPoint::CallbackMap::const_iterator it = m_useCallback.find(mediaFormat.GetMediaType());
+  return it != m_useCallback.end() && (it->second & (isSource ? UseSourceCallback : UseSinkCallback));
+}
+
+
+bool OpalLocalEndPoint::SetCallbackUsage(const OpalMediaType & mediaType, CallbackUsage usage)
+{
+  if (mediaType.empty())
+    return false;
+
+  m_useCallback[mediaType] |= usage;
+  return true;
+}
+
+
 bool OpalLocalEndPoint::OnReadMediaFrame(const OpalLocalConnection & /*connection*/,
                                          const OpalMediaStream & /*mediaStream*/,
                                          RTP_DataFrame & /*frame*/)
@@ -200,6 +223,29 @@ bool OpalLocalEndPoint::OnWriteMediaData(const OpalLocalConnection & /*connectio
 }
 
 
+#if OPAL_VIDEO
+
+bool OpalLocalEndPoint::CreateVideoInputDevice(const OpalConnection & connection,
+                                               const OpalMediaFormat & mediaFormat,
+                                               PVideoInputDevice * & device,
+                                               bool & autoDelete)
+{
+  return manager.CreateVideoInputDevice(connection, mediaFormat, device, autoDelete);
+}
+
+
+bool OpalLocalEndPoint::CreateVideoOutputDevice(const OpalConnection & connection,
+                                                const OpalMediaFormat & mediaFormat,
+                                                bool preview,
+                                                PVideoOutputDevice * & device,
+                                                bool & autoDelete)
+{
+  return manager.CreateVideoOutputDevice(connection, mediaFormat, preview, device, autoDelete);
+}
+
+#endif // OPAL_VIDEO
+
+
 OpalLocalEndPoint::Synchronicity
 OpalLocalEndPoint::GetSynchronicity(const OpalMediaFormat & mediaFormat,
                                     bool isSource) const
@@ -223,7 +269,7 @@ OpalLocalConnection::OpalLocalConnection(OpalCall & call,
                     OpalConnection::StringOptions * stringOptions,
                                                char tokenPrefix)
   : OpalConnection(call, ep, ep.GetManager().GetNextToken(tokenPrefix), options, stringOptions)
-  , endpoint(ep)
+  , m_endpoint(ep)
   , m_userData(userData)
 {
 #if OPAL_PTLIB_DTMF
@@ -281,7 +327,7 @@ PBoolean OpalLocalConnection::SetUpConnection()
     return false;
   }
 
-  if (!endpoint.IsDeferredAlerting())
+  if (!m_endpoint.IsDeferredAlerting())
     AlertingIncoming();
 
   return true;
@@ -293,7 +339,7 @@ PBoolean OpalLocalConnection::SetAlerting(const PString & calleeName, PBoolean)
   PTRACE(3, "LocalCon\tSetAlerting(" << calleeName << ')');
   SetPhase(AlertingPhase);
   remotePartyName = calleeName;
-  return endpoint.OnOutgoingCall(*this);
+  return m_endpoint.OnOutgoingCall(*this);
 }
 
 
@@ -311,8 +357,41 @@ OpalMediaStream * OpalLocalConnection::CreateMediaStream(const OpalMediaFormat &
                                                          unsigned sessionID,
                                                          PBoolean isSource)
 {
-  return new OpalLocalMediaStream(*this, mediaFormat, sessionID, isSource,
-                                  endpoint.GetSynchronicity(mediaFormat, isSource));
+  if (m_endpoint.UseCallback(mediaFormat, isSource))
+    return new OpalLocalMediaStream(*this, mediaFormat, sessionID, isSource,
+                                    m_endpoint.GetSynchronicity(mediaFormat, isSource));
+
+  if (mediaFormat.GetMediaType() != OpalMediaType::Video())
+    return OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource);
+
+  if (isSource) {
+    PVideoInputDevice * videoDevice;
+    PBoolean autoDeleteGrabber;
+    if (CreateVideoInputDevice(mediaFormat, videoDevice, autoDeleteGrabber)) {
+      PTRACE(4, "OpalCon\tCreated capture device \"" << videoDevice->GetDeviceName() << '"');
+
+      PVideoOutputDevice * previewDevice;
+      PBoolean autoDeletePreview;
+      if (CreateVideoOutputDevice(mediaFormat, true, previewDevice, autoDeletePreview))
+        PTRACE(4, "OpalCon\tCreated preview device \"" << previewDevice->GetDeviceName() << '"');
+      else
+        previewDevice = NULL;
+
+      return new OpalVideoMediaStream(*this, mediaFormat, sessionID, videoDevice, previewDevice, autoDeleteGrabber, autoDeletePreview);
+    }
+    PTRACE(2, "OpalCon\tCould not create video input device");
+  }
+  else {
+    PVideoOutputDevice * videoDevice;
+    PBoolean autoDelete;
+    if (CreateVideoOutputDevice(mediaFormat, false, videoDevice, autoDelete)) {
+      PTRACE(4, "OpalCon\tCreated display device \"" << videoDevice->GetDeviceName() << '"');
+      return new OpalVideoMediaStream(*this, mediaFormat, sessionID, NULL, videoDevice, false, autoDelete);
+    }
+    PTRACE(2, "OpalCon\tCould not create video output device");
+  }
+  
+  return NULL;
 }
 
 
@@ -335,25 +414,25 @@ OpalMediaStreamPtr OpalLocalConnection::OpenMediaStream(const OpalMediaFormat & 
 bool OpalLocalConnection::SendUserInputString(const PString & value)
 {
   PTRACE(3, "LocalCon\tSendUserInputString(" << value << ')');
-  return endpoint.OnUserInput(*this, value);
+  return m_endpoint.OnUserInput(*this, value);
 }
 
 
 bool OpalLocalConnection::OnOutgoingSetUp()
 {
-  return endpoint.OnOutgoingSetUp(*this);
+  return m_endpoint.OnOutgoingSetUp(*this);
 }
 
 
 bool OpalLocalConnection::OnOutgoing()
 {
-  return endpoint.OnOutgoingCall(*this);
+  return m_endpoint.OnOutgoingCall(*this);
 }
 
 
 bool OpalLocalConnection::OnIncoming()
 {
-  return endpoint.OnIncomingCall(*this);
+  return m_endpoint.OnIncomingCall(*this);
 }
 
 
@@ -395,6 +474,64 @@ void OpalLocalConnection::InternalAcceptIncoming()
     UnlockReadWrite();
   }
 }
+
+
+#if OPAL_VIDEO
+
+bool OpalLocalConnection::CreateVideoInputDevice(const OpalMediaFormat & mediaFormat,
+                                                 PVideoInputDevice * & device,
+                                                 bool & autoDelete)
+{
+  return m_endpoint.CreateVideoInputDevice(*this, mediaFormat, device, autoDelete);
+}
+
+
+bool OpalLocalConnection::CreateVideoOutputDevice(const OpalMediaFormat & mediaFormat,
+                                                  bool preview,
+                                                  PVideoOutputDevice * & device,
+                                                  bool & autoDelete)
+{
+  return m_endpoint.CreateVideoOutputDevice(*this, mediaFormat, preview, device, autoDelete);
+}
+
+
+bool OpalLocalConnection::ChangeVideoInputDevice(const PVideoDevice::OpenArgs & deviceArgs, unsigned sessionID)
+{
+  PSafePtr<OpalVideoMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalVideoMediaStream>(
+                      sessionID != 0 ? GetMediaStream(sessionID, true) : GetMediaStream(OpalMediaType::Video(), true));
+  if (stream == NULL)
+    return false;
+
+  PVideoInputDevice * newDevice;
+  bool autoDelete;
+  if (!m_endpoint.GetManager().CreateVideoInputDevice(*this, deviceArgs, newDevice, autoDelete)) {
+    PTRACE(2, "OpalCon\tCould not open video device \"" << deviceArgs.deviceName << '"');
+    return false;
+  }
+
+  stream->SetVideoInputDevice(newDevice, autoDelete);
+  return true;
+}
+
+
+bool OpalLocalConnection::ChangeVideoOutputDevice(const PVideoDevice::OpenArgs & deviceArgs, unsigned sessionID, bool preview)
+{
+  PSafePtr<OpalVideoMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalVideoMediaStream>(
+                      sessionID != 0 ? GetMediaStream(sessionID, true) : GetMediaStream(OpalMediaType::Video(), preview));
+  if (stream == NULL)
+    return false;
+
+  PVideoOutputDevice * newDevice = PVideoOutputDevice::CreateOpenedDevice(deviceArgs, false);
+  if (newDevice == NULL) {
+    PTRACE(2, "OpalCon\tCould not open video device \"" << deviceArgs.deviceName << '"');
+    return false;
+  }
+
+  stream->SetVideoOutputDevice(newDevice);
+  return true;
+}
+
+#endif // OPAL_VIDEO
 
 
 /////////////////////////////////////////////////////////////////////////////

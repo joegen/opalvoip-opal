@@ -3589,7 +3589,7 @@ bool H323Connection::Hold(bool fromRemote, bool placeOnHold)
 }
 
 
-PBoolean H323Connection::IsOnHold(bool fromRemote) 
+PBoolean H323Connection::IsOnHold(bool fromRemote) const
 {
 #if OPAL_H450
   // Yes this looks around the wrong way, it isn't!

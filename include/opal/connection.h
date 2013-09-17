@@ -65,7 +65,9 @@ class OpalRFC2833Info;
 class PURL;
 
 
-#define OPAL_URL_PARAM_PREFIX "OPAL-"
+#define OPAL_URL_PARAM_PREFIX           "OPAL-"
+#define OPAL_MAKE_URL_PARAM(opt)        ";" OPAL_URL_PARAM_PREFIX opt
+#define OPAL_MAKE_URL_PARAM2(opt, val)  OPAL_MAKE_URL_PARAM(opt) "=" val
 
 #define OPAL_OPT_AUTO_START           "AutoStart"             ///< String option for auto-started media types
 #define OPAL_OPT_CALL_IDENTIFIER      "Call-Identifier"       ///< String option to override generated call identifier
@@ -685,7 +687,7 @@ class OpalConnection : public PSafeObject
      */
     virtual bool IsOnHold(
       bool fromRemote  ///< Flag for if remote has us on hold, or we have them
-    );
+    ) const;
 
     /**Call back indicating result of last hold/retrieve operation.
        This also indicates if the local connection has been put on hold by the
@@ -1299,40 +1301,6 @@ class OpalConnection : public PSafeObject
     ) const;
 
 #if OPAL_VIDEO
-    /**Create an PVideoInputDevice for a source media stream.
-      */
-    virtual PBoolean CreateVideoInputDevice(
-      const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
-      PVideoInputDevice * & device,         ///<  Created device
-      PBoolean & autoDelete                     ///<  Flag for auto delete device
-    );
-
-    /**Create an PVideoOutputDevice for a sink media stream or the preview
-       display for a source media stream.
-      */
-    virtual PBoolean CreateVideoOutputDevice(
-      const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
-      PBoolean preview,                         ///<  Flag indicating is a preview output
-      PVideoOutputDevice * & device,        ///<  Created device
-      PBoolean & autoDelete                     ///<  Flag for auto delete device
-    );
-
-    /**Change a PVideoInputDevice for a source media stream.
-      */
-    virtual bool ChangeVideoInputDevice(
-      const PVideoDevice::OpenArgs & device,  ///< Device to change to
-      unsigned sessionID = 0                  ///< Session for media stream, 0 indicates first video stream
-    );
-
-    /**Create an PVideoOutputDevice for a sink media stream or the preview
-       display for a source media stream.
-      */
-    virtual bool ChangeVideoOutputDevice(
-      const PVideoDevice::OpenArgs & device,  ///< Device to change to
-      unsigned sessionID = 0,                 ///< Session for media stream, 0 indicates first video stream
-      bool preview = false                    ///< Flag indicating is a preview output device
-    );
-
     /** Send a Video Update Picture request to media stream.
         If \p force is set then a "force Intra frame" is sent, otherwise a
         "picture loss" is sent. The underlying protocol may or may not make a
@@ -1352,7 +1320,7 @@ class OpalConnection : public PSafeObject
       const OpalMediaSession & session,   ///<  Session with statistics
       bool force                          ///<  Force Intra frame, or just indicate picture loss
     );
-#endif
+#endif // OPAL_VIDEO
 
     /**Set the volume (gain) for the audio media channel.
        The volume range is 0 == muted, 100 == LOUDEST.

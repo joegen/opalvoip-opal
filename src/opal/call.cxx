@@ -57,6 +57,7 @@ OpalCall::OpalCall(OpalManager & mgr)
   , m_establishedTime(0)
   , m_isEstablished(false)
   , m_isClearing(false)
+  , m_handlingHold(false)
   , callEndReason(OpalConnection::NumCallEndReasons)
 #if OPAL_HAS_MIXER
   , m_recordManager(NULL)
@@ -382,11 +383,11 @@ bool OpalCall::Retrieve()
 }
 
 
-bool OpalCall::IsOnHold() const
+bool OpalCall::IsOnHold(bool fromRemote) const
 {
   PSafePtr<OpalConnection> connection;
   while (EnumerateConnections(connection, PSafeReadOnly)) {
-    if (connection->IsNetworkConnection() && connection->IsOnHold(false))
+    if (connection->IsNetworkConnection() && connection->IsOnHold(fromRemote))
       return true;
   }
 
@@ -827,10 +828,17 @@ void OpalCall::OnReleased(OpalConnection & connection)
 }
 
 
-void OpalCall::OnHold(OpalConnection & /*connection*/,
-                      bool /*fromRemote*/, 
-                      bool /*onHold*/)
+void OpalCall::OnHold(OpalConnection & connection, bool fromRemote, bool onHold)
 {
+  if (m_handlingHold)
+    manager.OnHold(connection, fromRemote, onHold);
+  else {
+    m_handlingHold = true;
+    PSafePtr<OpalConnection> otherConnection;
+    while (EnumerateConnections(otherConnection, PSafeReadWrite, &connection))
+      otherConnection->OnHold(fromRemote, onHold);
+    m_handlingHold = false;
+  }
 }
 
 #if OPAL_HAS_MIXER

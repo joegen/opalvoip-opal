@@ -52,7 +52,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 OpalIVREndPoint::OpalIVREndPoint(OpalManager & mgr, const char * prefix)
-  : OpalLocalEndPoint(mgr, prefix)
+  : OpalLocalEndPoint(mgr, prefix, false)
 {
   SetDefaultVXML("<?xml version=\"1.0\"?>\n"
                 "<vxml version=\"1.0\">\n"
@@ -387,7 +387,7 @@ OpalMediaStream * OpalIVRConnection::CreateMediaStream(const OpalMediaFormat & m
                                                        PBoolean isSource)
 {
   return mediaFormat.GetMediaType() != OpalMediaType::Audio()
-            ? OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource)
+            ? OpalLocalConnection::CreateMediaStream(mediaFormat, sessionID, isSource)
             : new OpalIVRMediaStream(*this, mediaFormat, sessionID, isSource, m_vxmlSession);
 }
 

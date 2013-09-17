@@ -647,7 +647,7 @@ class H323Connection : public OpalRTPConnection
      */
     virtual bool IsOnHold(
       bool fromRemote  ///< Flag for if remote has us on hold, or we have them
-    );
+    ) const;
 
 #if OPAL_H450
 

@@ -745,7 +745,7 @@ void OpalVideoMixer::VideoStream::InsertVideoFrame(unsigned x, unsigned y, unsig
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalMixerEndPoint::OpalMixerEndPoint(OpalManager & manager, const char * prefix)
-  : OpalLocalEndPoint(manager, prefix)
+  : OpalLocalEndPoint(manager, prefix, false)
   , OpalMixerNodeManager(manager)
   , m_adHocNodeInfo(NULL)
   , m_factoryNodeInfo(NULL)

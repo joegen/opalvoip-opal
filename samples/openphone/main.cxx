@@ -94,13 +94,13 @@
 #include "busy16.xpm"
 #include "busy48.xpm"
 
-#define VIDEO_WINDOW_DRIVER "SDL"
-#define VIDEO_WINDOW_DEVICE "SDL"
+#define VIDEO_WINDOW_DRIVER P_SDL_VIDEO_DRIVER
+#define VIDEO_WINDOW_DEVICE P_SDL_VIDEO_PREFIX
 
 #else
 
-#define VIDEO_WINDOW_DRIVER "Window"
-#define VIDEO_WINDOW_DEVICE "MSWIN STYLE=0x80C80000"  // WS_POPUP|WS_BORDER|WS_SYSMENU|WS_CAPTION
+#define VIDEO_WINDOW_DRIVER P_MSWIN_VIDEO_DRIVER
+#define VIDEO_WINDOW_DEVICE P_MSWIN_VIDEO_PREFIX" STYLE=0x80C80000"  // WS_POPUP|WS_BORDER|WS_SYSMENU|WS_CAPTION
 
 #endif
 
@@ -188,6 +188,7 @@ DEF_FIELD(SilenceThreshold);
 DEF_FIELD(SignalDeadband);
 DEF_FIELD(SilenceDeadband);
 DEF_FIELD(DisableDetectInBandDTMF);
+DEF_FIELD(MusicOnHold);
 
 static const wxChar VideoGroup[] = wxT("/Video");
 DEF_FIELD(VideoGrabDevice);
@@ -208,6 +209,7 @@ DEF_FIELD(LocalVideoFrameX);
 DEF_FIELD(LocalVideoFrameY);
 DEF_FIELD(RemoteVideoFrameX);
 DEF_FIELD(RemoteVideoFrameY);
+DEF_FIELD(VideoOnHold);
 
 static const wxChar FaxGroup[] = wxT("/Fax");
 DEF_FIELD(FaxStationIdentifier);
@@ -758,7 +760,6 @@ MyManager::MyManager()
 #if PTRACING
   , m_enableTracing(false)
 #endif
-  , m_musicOnHoldFile("moh.wav")
 {
   // Give it an icon
   SetIcon(wxICON(AppIcon));
@@ -1107,6 +1108,10 @@ bool MyManager::Initialise(bool startMinimised)
     pcssEP->SetSoundChannelRecordDevice(str);
   if (config->Read(SoundBufferTimeKey, &value1))
     pcssEP->SetSoundChannelBufferTime(value1);
+  if (config->Read(MusicOnHoldKey, &str))
+    pcssEP->SetSoundChannelOnHoldDevice(str);
+  if (config->Read(VideoOnHoldKey, &str))
+    pcssEP->SetVideoOnHoldDevice(str);
 
 #if OPAL_AEC
   OpalEchoCanceler::Params aecParams = GetEchoCancelParams();
@@ -1803,8 +1808,8 @@ void MyManager::OnAdjustMenus(wxMenuEvent & WXUNUSED(event))
 
   wxString deviceName;
   menubar->Enable(ID_SubMenuSound, m_activeCall != NULL);
-  PSafePtr<OpalPCSSConnection> pcss = PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnection(true, PSafeReadOnly));
-  if (pcss != NULL)
+  PSafePtr<OpalPCSSConnection> pcss;
+  if (GetLocalConnection(pcss, PSafeReadOnly))
     deviceName = AudioDeviceNameToScreen(pcss->GetSoundChannelPlayDevice());
   for (id = ID_AUDIO_DEVICE_MENU_BASE; id <= ID_AUDIO_DEVICE_MENU_TOP; id++) {
     wxMenuItem * item = menubar->FindItem(id);
@@ -1817,7 +1822,7 @@ void MyManager::OnAdjustMenus(wxMenuEvent & WXUNUSED(event))
   bool hasRxVideo = false;
   wxString audioFormat, videoFormat;
 
-  PSafePtr<OpalConnection> connection = GetConnection(false, PSafeReadOnly);
+  PSafePtr<OpalConnection> connection = GetNetworkConnection(PSafeReadOnly);
   if (connection != NULL) {
     // Get ID of open audio to check the menu item
     OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Audio(), true);
@@ -2731,34 +2736,7 @@ void MyManager::OnHold(OpalConnection & connection, bool fromRemote, bool onHold
   LogWindow << "Remote " << connection.GetRemotePartyName() << " has been "
             << (onHold ? "put on" : "released from") << " hold." << endl;
 
-  PSafePtr<OpalPCSSConnection> local = connection.GetOtherPartyConnectionAs<OpalPCSSConnection>();
-  if (local == NULL)
-    return;
-
-  if (onHold) {
-    if (!local->TransferConnection("pc:*|"+m_musicOnHoldFile+"*;"OPAL_URL_PARAM_PREFIX OPAL_OPT_SILENCE_DETECT_MODE"=No"))
-      local->TransferConnection("pc:*|"P_NULL_AUDIO_DEVICE);
-
-    PVideoDevice::OpenArgs args = GetVideoInputDevice();
-    args.deviceName = P_FAKE_VIDEO_TEXT;
-    local->ChangeVideoInputDevice(args);
-
-    PostEvent(wxEvtOnHold, connection.GetCall().GetToken());
-  }
-  else {
-    local->TransferConnection("pc:*;"OPAL_URL_PARAM_PREFIX OPAL_OPT_SILENCE_DETECT_MODE"="+GetSilenceDetectParams().AsString());
-
-    if (m_primaryVideoGrabber == NULL)
-      local->ChangeVideoInputDevice(GetVideoInputDevice());
-    else {
-      PSafePtr<OpalVideoMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalVideoMediaStream>(
-                                                  local->GetMediaStream(OpalMediaType::Video(), true));
-      if (stream != NULL)
-        stream->SetVideoInputDevice(m_primaryVideoGrabber, false);
-    }
-
-    PostEvent(wxEvtEstablished, connection.GetCall().GetToken());
-  }
+  PostEvent(onHold ? wxEvtOnHold : wxEvtEstablished, connection.GetCall().GetToken());
 }
 
 
@@ -2890,13 +2868,13 @@ PSafePtr<OpalCall> MyManager::GetCall(PSafetyMode mode)
 }
 
 
-PSafePtr<OpalConnection> MyManager::GetConnection(bool user, PSafetyMode mode)
+PSafePtr<OpalConnection> MyManager::GetNetworkConnection(PSafetyMode mode)
 {
   if (m_activeCall == NULL)
     return NULL;
 
   PSafePtr<OpalConnection> connection = m_activeCall->GetConnection(0, PSafeReference);
-  while (connection != NULL && connection->IsNetworkConnection() == user)
+  while (connection != NULL && !connection->IsNetworkConnection())
     ++connection;
 
   return connection.SetSafetyMode(mode) ? connection : NULL;
@@ -3009,8 +2987,8 @@ void MyManager::OnHoldChanged(const PString & token, bool onHold)
 
 void MyManager::SendUserInput(char tone)
 {
-  PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadWrite);
-  if (connection != NULL)
+  PSafePtr<OpalLocalConnection> connection;
+  if (GetLocalConnection(connection, PSafeReadWrite))
     connection->OnUserInputTone(tone, 100);
 }
 
@@ -3093,13 +3071,16 @@ void MyManager::OnConference(wxCommandEvent & theEvent)
 void MyManager::AddToConference(OpalCall & call)
 {
   if (m_activeCall != NULL) {
-    PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReference);
+    PSafePtr<OpalLocalConnection> connection;
+    if (!GetLocalConnection(connection, PSafeReference))
+      return;
+
     m_activeCall->Transfer(CONFERENCE_URI, connection);
     LogWindow << "Added \"" << connection->GetRemotePartyName() << "\" to conference." << endl;
 
-    PString pc = "pc:*;" OPAL_URL_PARAM_PREFIX OPAL_OPT_CONF_OWNER "=yes";
+    PString pc = "pc:*" OPAL_MAKE_URL_PARAM2(OPAL_OPT_CONF_OWNER, "yes");
     if (connection->GetMediaStream(OpalMediaType::Video(), true) == NULL)
-      pc += ";" OPAL_URL_PARAM_PREFIX OPAL_OPT_AUTO_START "=video:no";
+      pc += OPAL_MAKE_URL_PARAM2(OPAL_OPT_AUTO_START, "video:no");
     SetUpCall(pc, CONFERENCE_URI);
     m_activeCall.SetNULL();
   }
@@ -3116,7 +3097,7 @@ void MyManager::OnTransfer(wxCommandEvent & theEvent)
   if (PAssert(m_activeCall != NULL, PLogicError)) {
     for (list<CallsOnHold>::iterator it = m_callsOnHold.begin(); it != m_callsOnHold.end(); ++it) {
       if (theEvent.GetId() == it->m_transferMenuId) {
-        m_activeCall->Transfer(it->m_call->GetToken(), GetConnection(false, PSafeReference));
+        m_activeCall->Transfer(it->m_call->GetToken(), GetNetworkConnection(PSafeReference));
         return;
       }
     }
@@ -3124,7 +3105,7 @@ void MyManager::OnTransfer(wxCommandEvent & theEvent)
     CallDialog dlg(this, true, true);
     dlg.SetTitle(wxT("Transfer Call"));
     if (dlg.ShowModal() == wxID_OK)
-      m_activeCall->Transfer(dlg.m_Address, GetConnection(false, PSafeReference));
+      m_activeCall->Transfer(dlg.m_Address, GetNetworkConnection(PSafeReference));
   }
 }
 
@@ -3155,8 +3136,8 @@ void MyManager::OnStopRecording(wxCommandEvent & /*event*/)
 
 void MyManager::OnSendAudioFile(wxCommandEvent & /*event*/)
 {
-  PSafePtr<OpalPCSSConnection> connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnection(true, PSafeReference));
-  if (connection == NULL)
+  PSafePtr<OpalPCSSConnection> connection;
+  if (!GetLocalConnection(connection, PSafeReference))
     return;
 
   wxFileDialog dlg(this,
@@ -3187,8 +3168,8 @@ void MyManager::OnSendAudioFile(wxCommandEvent & /*event*/)
 
 void MyManager::OnAudioDevicePair(wxCommandEvent & /*theEvent*/)
 {
-  PSafePtr<OpalPCSSConnection> connection = PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnection(true, PSafeReference));
-  if (connection != NULL) {
+  PSafePtr<OpalPCSSConnection> connection;
+  if (GetLocalConnection(connection, PSafeReference)) {
     AudioDevicesDialog dlg(this, *connection);
     if (dlg.ShowModal() == wxID_OK)
       m_activeCall->Transfer(dlg.GetTransferAddress(), connection);
@@ -3216,12 +3197,14 @@ void MyManager::OnVideoDeviceChange(wxCommandEvent & theEvent)
       return;
   }
 
-  PSafePtr<OpalConnection> local = GetConnection(true, PSafeReadWrite);
-  PVideoDevice::OpenArgs args = GetVideoInputDevice();
-  args.deviceName = deviceName.p_str();
-  if (!local->ChangeVideoInputDevice(args))
-    wxMessageBox(wxT("Cannot switch to video input device ")+deviceName,
-                  OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
+  PSafePtr<OpalLocalConnection> local;
+  if (GetLocalConnection(local, PSafeReadWrite)) {
+    PVideoDevice::OpenArgs args = GetVideoInputDevice();
+    args.deviceName = deviceName.p_str();
+    if (!local->ChangeVideoInputDevice(args))
+      wxMessageBox(wxT("Cannot switch to video input device ")+deviceName,
+                    OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
+  }
 }
 
 
@@ -3229,8 +3212,8 @@ void MyManager::OnNewCodec(wxCommandEvent & theEvent)
 {
   OpalMediaFormat mediaFormat(PwxString(GetMenuBar()->FindItem(theEvent.GetId())->GetItemLabelText()).p_str());
   if (mediaFormat.IsValid()) {
-    PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadWrite);
-    if (connection != NULL) {
+    PSafePtr<OpalConnection> connection;
+    if (GetLocalConnection(connection, PSafeReadWrite)) {
       OpalMediaStreamPtr stream = connection->GetMediaStream(mediaFormat.GetMediaType(), true);
       if (!connection->GetCall().OpenSourceMediaStreams(*connection,
                                                         mediaFormat.GetMediaType(),
@@ -3244,8 +3227,8 @@ void MyManager::OnNewCodec(wxCommandEvent & theEvent)
 
 void MyManager::OnStartVideo(wxCommandEvent & /*event*/)
 {
-  PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadWrite);
-  if (connection == NULL)
+  PSafePtr<OpalConnection> connection;
+  if (!GetLocalConnection(connection, PSafeReadWrite))
     return;
 
   OpalVideoFormat::ContentRole contentRole = OpalVideoFormat::eNoRole;
@@ -3285,8 +3268,8 @@ void MyManager::OnStartVideo(wxCommandEvent & /*event*/)
 
 void MyManager::OnStopVideo(wxCommandEvent & /*event*/)
 {
-  PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadWrite);
-  if (connection != NULL) {
+  PSafePtr<OpalConnection> connection;
+  if (GetLocalConnection(connection, PSafeReadWrite)) {
     OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), true);
     if (stream != NULL)
       stream->Close();
@@ -3296,8 +3279,8 @@ void MyManager::OnStopVideo(wxCommandEvent & /*event*/)
 
 void MyManager::OnSendVFU(wxCommandEvent & /*event*/)
 {
-  PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadOnly);
-  if (connection != NULL) {
+  PSafePtr<OpalConnection> connection;
+  if (GetLocalConnection(connection, PSafeReadOnly)) {
     OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), false);
     if (stream != NULL)
       stream->ExecuteCommand(OpalVideoUpdatePicture());
@@ -3307,8 +3290,8 @@ void MyManager::OnSendVFU(wxCommandEvent & /*event*/)
 
 void MyManager::OnSendIntra(wxCommandEvent & /*event*/)
 {
-  PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadOnly);
-  if (connection != NULL) {
+  PSafePtr<OpalConnection> connection;
+  if (GetLocalConnection(connection, PSafeReadOnly)) {
     OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), true);
     if (stream != NULL)
       stream->ExecuteCommand(OpalVideoUpdatePicture());
@@ -3332,7 +3315,7 @@ void MyManager::OnRxVideoControl(wxCommandEvent & /*event*/)
 
 void MyManager::OnMenuPresentationRole(wxCommandEvent & /*event*/)
 {
-  PSafePtr<OpalConnection> conn = GetConnection(false, PSafeReadOnly);
+  PSafePtr<OpalConnection> conn = GetNetworkConnection(PSafeReadOnly);
   if (conn != NULL && !conn->RequestPresentationRole(conn->HasPresentationRole()))
     LogWindow << "Remote does not support presentation role request" << endl;
 }
@@ -3357,8 +3340,8 @@ bool MyManager::OnChangedPresentationRole(OpalConnection & connection,
 
 void MyManager::OnDefVidWinPos(wxCommandEvent & /*event*/)
 {
-  PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReadOnly);
-  if (connection == NULL)
+  PSafePtr<OpalConnection> connection;
+  if (!GetLocalConnection(connection, PSafeReadOnly))
     return;
 
   PVideoOutputDevice * preview = NULL;
@@ -3461,14 +3444,8 @@ PBoolean MyManager::CreateVideoInputDevice(const OpalConnection & connection,
                                            PVideoInputDevice * & device,
                                            PBoolean & autoDelete)
 {
-  if (!m_SecondaryVideoOpening) {
-    if (m_primaryVideoGrabber == NULL)
-      return OpalManager::CreateVideoInputDevice(connection, mediaFormat, device, autoDelete);
-
-    device = m_primaryVideoGrabber;
-    autoDelete = false;
-    return true;
-  }
+  if (!m_SecondaryVideoOpening)
+    return OpalManager::CreateVideoInputDevice(connection, mediaFormat, device, autoDelete);
 
   mediaFormat.AdjustVideoArgs(m_SecondaryVideoGrabber);
 
@@ -3479,6 +3456,20 @@ PBoolean MyManager::CreateVideoInputDevice(const OpalConnection & connection,
   m_SecondaryVideoOpening = false;
 
   return device != NULL;
+}
+
+
+bool MyManager::CreateVideoInputDevice(const OpalConnection & connection,
+                                       const PVideoDevice::OpenArgs & args,
+                                       PVideoInputDevice * & device,
+                                       PBoolean & autoDelete)
+{
+  if (m_primaryVideoGrabber == NULL || m_primaryVideoGrabber->GetDeviceName() != args.deviceName)
+    return OpalManager::CreateVideoInputDevice(connection, args, device, autoDelete);
+
+  device = m_primaryVideoGrabber;
+  autoDelete = false;
+  return true;
 }
 
 
@@ -4242,12 +4233,14 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_COMBOBOX(wxXmlResource::GetXRCID(LineInterfaceDeviceKey), OptionsDialog::SelectedLID)
   EVT_BUTTON(XRCID("TestPlayer"), OptionsDialog::TestPlayer)
   EVT_BUTTON(XRCID("TestRecorder"), OptionsDialog::TestRecorder)
+  EVT_COMBOBOX(XRCID("MusicOnHold"), OptionsDialog::ChangedMusicOnHold)
 
   ////////////////////////////////////////
   // Video fields
   EVT_COMBOBOX(XRCID("VideoGrabDevice"), OptionsDialog::ChangeVideoGrabDevice)
   EVT_BUTTON(XRCID("TestVideoCapture"), OptionsDialog::TestVideoCapture)
   EVT_USER_COMMAND(wxEvtTestVideoEnded, OptionsDialog::OnTestVideoEnded)
+  EVT_COMBOBOX(XRCID("VideoOnHold"), OptionsDialog::ChangedVideoOnHold)
 
   ////////////////////////////////////////
   // Fax fields
@@ -4527,6 +4520,11 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   FillAudioDeviceComboBox(m_soundRecorderCombo, PSoundChannel::Recorder);
   m_SoundRecorder = AudioDeviceNameToScreen(m_manager.pcssEP->GetSoundChannelRecordDevice());
 
+  // Fill sound on-hold combo box with available devices and set selection
+  FindWindowByNameAs(m_musicOnHoldCombo, this, MusicOnHoldKey)->SetValidator(wxGenericValidator(&m_MusicOnHold));
+  FillAudioDeviceComboBox(m_musicOnHoldCombo, PSoundChannel::Recorder);
+  m_MusicOnHold = AudioDeviceNameToScreen(m_manager.pcssEP->GetSoundChannelOnHoldDevice());
+
   // Fill line interface combo box with available devices and set selection
   FindWindowByNameAs(m_selectedAEC, this, AECKey);
   FindWindowByNameAs(m_selectedCountry, this, CountryKey);
@@ -4589,6 +4587,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(VideoFlipRemote, m_manager.GetVideoOutputDevice().flip != false);
   INIT_FIELD(VideoGrabBitRate, m_manager.m_VideoTargetBitRate);
   INIT_FIELD(VideoMaxBitRate, m_manager.m_VideoMaxBitRate);
+  INIT_FIELD(VideoOnHold, m_manager.pcssEP->GetVideoOnHoldDevice());
 
   PStringArray knownSizes = PVideoFrameInfo::GetSizeNames();
   m_VideoGrabFrameSize = m_manager.m_VideoGrabFrameSize;
@@ -4611,7 +4610,11 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   for (i = 0; i < devices.GetSize(); i++)
     m_VideoGrabDeviceCtrl->Append(PwxString(devices[i]));
 
-  AdjustVideoControls(m_VideoGrabDevice);
+  FindWindowByNameAs(m_VideoOnHoldDeviceCtrl, this, wxT("VideoOnHold"));
+  for (i = 0; i < devices.GetSize(); i++)
+    m_VideoOnHoldDeviceCtrl->Append(PwxString(devices[i]));
+
+  AdjustVideoControls();
 
   FindWindowByNameAs(m_TestVideoCapture, this, wxT("TestVideoCapture"));
 
@@ -5058,14 +5061,22 @@ bool OptionsDialog::TransferDataFromWindow()
   ////////////////////////////////////////
   // Sound fields
   config->SetPath(AudioGroup);
+
   if (m_manager.pcssEP->SetSoundChannelPlayDevice(AudioDeviceNameFromScreen(m_SoundPlayer)))
     config->Write(SoundPlayerKey, PwxString(m_manager.pcssEP->GetSoundChannelPlayDevice()));
   else
     wxMessageBox(wxT("Could not use sound player device."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
+
   if (m_manager.pcssEP->SetSoundChannelRecordDevice(AudioDeviceNameFromScreen(m_SoundRecorder)))
     config->Write(SoundRecorderKey, PwxString(m_manager.pcssEP->GetSoundChannelRecordDevice()));
   else
     wxMessageBox(wxT("Could not use sound recorder device."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
+
+  if (m_manager.pcssEP->SetSoundChannelOnHoldDevice(AudioDeviceNameFromScreen(m_MusicOnHold)))
+    config->Write(MusicOnHoldKey, PwxString(m_manager.pcssEP->GetSoundChannelOnHoldDevice()));
+  else
+    wxMessageBox(wxT("Could not use sound recorder device."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
+
   SAVE_FIELD(SoundBufferTime, m_manager.pcssEP->SetSoundChannelBufferTime);
 
 #if OPAL_AEC
@@ -5113,6 +5124,7 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(VideoMaxFrameSize, m_manager.m_VideoMaxFrameSize = );
   SAVE_FIELD(VideoGrabBitRate, m_manager.m_VideoTargetBitRate = );
   SAVE_FIELD(VideoMaxBitRate, m_manager.m_VideoMaxBitRate = );
+  SAVE_FIELD(VideoOnHold, m_manager.pcssEP->SetVideoOnHoldDevice);
 
   ////////////////////////////////////////
   // Fax fields
@@ -5401,6 +5413,33 @@ bool OptionsDialog::TransferDataFromWindow()
 }
 
 
+static void SetComboValue(wxComboBox * combo, const wxString & value)
+{
+  // For some bizarre reason combo->SetValue() just does not work for Windows
+  int idx = combo->FindString(value);
+  if (idx < 0)
+    idx = combo->Append(value);
+  combo->SetSelection(idx);
+}
+
+
+static bool SelectFileDevice(wxComboBox * combo, wxString & device, const wxChar * prompt, bool save)
+{
+  PwxString wildcard = combo->GetValue();
+  if (wildcard[0] != '*')
+    return false;
+
+  wxString selectedFile = wxFileSelector(prompt, wxEmptyString, wxEmptyString, wildcard.Mid(1), wildcard,
+                              save ? (wxFD_SAVE|wxFD_OVERWRITE_PROMPT) : (wxFD_OPEN|wxFD_FILE_MUST_EXIST));
+  if (selectedFile.empty())
+    return false;
+
+  device = selectedFile;
+  SetComboValue(combo, device);
+  return true;
+}
+
+
 ////////////////////////////////////////
 // General fields
 
@@ -5593,50 +5632,21 @@ void OptionsDialog::RemoveInterface(wxCommandEvent & /*event*/)
 ////////////////////////////////////////
 // Audio fields
 
-static void SetComboValue(wxComboBox * combo, const wxString & value)
-{
-  // For some bizarre reason combo->SetValue() just does not work for Windows
-  int idx = combo->FindString(value);
-  if (idx < 0)
-    idx = combo->Append(value);
-  combo->SetSelection(idx);
-}
-
 void OptionsDialog::ChangedSoundPlayer(wxCommandEvent & /*event*/)
 {
-  PwxString device = m_soundPlayerCombo->GetValue();
-  if (device[0] != '*')
-    return;
-
- device = wxFileSelector(wxT("Select Sound File"),
-                          wxEmptyString,
-                          wxEmptyString,
-                          device.Mid(1),
-                          device,
-                          wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
-  if (!device.empty())
-    m_SoundPlayer = device;
-
-  SetComboValue(m_soundPlayerCombo, m_SoundPlayer);
+  SelectFileDevice(m_soundPlayerCombo, m_SoundPlayer, wxT("Select Sound File to Save"), true);
 }
 
 
 void OptionsDialog::ChangedSoundRecorder(wxCommandEvent & /*event*/)
 {
-  PwxString device = m_soundRecorderCombo->GetValue();
-  if (device[0] != '*')
-    return;
+  SelectFileDevice(m_soundRecorderCombo, m_SoundRecorder, wxT("Select Sound File to Send"), false);
+}
 
- device = wxFileSelector(wxT("Select Sound File"),
-                          wxEmptyString,
-                          wxEmptyString,
-                          device.Mid(1),
-                          device,
-                          wxFD_OPEN|wxFD_FILE_MUST_EXIST);
-  if (!device.empty())
-    m_SoundRecorder = device;
 
-  SetComboValue(m_soundRecorderCombo, m_SoundRecorder);
+void OptionsDialog::ChangedMusicOnHold(wxCommandEvent & /*event*/)
+{
+  SelectFileDevice(m_musicOnHoldCombo, m_MusicOnHold, wxT("Select Sound File for Hold"), false);
 }
 
 
@@ -5733,25 +5743,10 @@ void OptionsDialog::SelectedLID(wxCommandEvent & /*event*/)
 ////////////////////////////////////////
 // Video fields
 
-void OptionsDialog::AdjustVideoControls(const PwxString & newDevice)
+void OptionsDialog::AdjustVideoControls()
 {
-  PwxString device = newDevice;
-  if (newDevice[0] == '*') {
-    device = wxFileSelector(wxT("Select Video File"),
-                            wxEmptyString,
-                            wxEmptyString,
-                            device.Mid(1),
-                            device,
-                            wxFD_OPEN|wxFD_FILE_MUST_EXIST);
-    if (device.empty())
-      device = m_VideoGrabDevice;
-    else
-      m_VideoGrabDevice = device;
-    SetComboValue(m_VideoGrabDeviceCtrl, device);
-  }
-
   unsigned numChannels = 1;
-  PVideoInputDevice * grabber = PVideoInputDevice::CreateDeviceByName(device);
+  PVideoInputDevice * grabber = PVideoInputDevice::CreateDeviceByName(m_VideoGrabDevice);
   if (grabber != NULL) {
     numChannels = grabber->GetNumChannels()+1;
     delete grabber;
@@ -5766,7 +5761,8 @@ void OptionsDialog::AdjustVideoControls(const PwxString & newDevice)
 
 void OptionsDialog::ChangeVideoGrabDevice(wxCommandEvent & /*event*/)
 {
-  AdjustVideoControls(m_VideoGrabDeviceCtrl->GetValue());
+  SelectFileDevice(m_VideoGrabDeviceCtrl, m_VideoGrabDevice, wxT("Select Video File for Sending"), false);
+  AdjustVideoControls();
 }
 
 
@@ -5858,6 +5854,12 @@ void OptionsDialog::TestVideoThreadMain()
 
   theEvent.SetEventObject(this);
   GetEventHandler()->AddPendingEvent(theEvent);
+}
+
+
+void OptionsDialog::ChangedVideoOnHold(wxCommandEvent & /*event*/)
+{
+  SelectFileDevice(m_VideoOnHoldDeviceCtrl, m_VideoOnHold, wxT("Select Video File for Hold"), false);
 }
 
 
@@ -6756,7 +6758,7 @@ bool VideoControlDialog::TransferDataFromWindow()
 
 OpalMediaStreamPtr VideoControlDialog::GetStream() const
 {
-  PSafePtr<OpalConnection> connection = m_manager.GetConnection(false, PSafeReadOnly);
+  PSafePtr<OpalConnection> connection = m_manager.GetNetworkConnection(PSafeReadOnly);
   return connection != NULL ? connection->GetMediaStream(OpalMediaType::Video(), m_remote) : NULL;
 }
 
@@ -7350,8 +7352,8 @@ void InCallPanel::OnStreamsChanged()
   UpdateStatistics();
 
 #if OPAL_FAX
-  PSafePtr<OpalConnection> connection = m_manager.GetConnection(true, PSafeReadOnly);
-  if (connection != NULL && connection->GetMediaStream(OpalMediaType::Fax(), true) != NULL) {
+  PSafePtr<OpalConnection> connection;
+  if (m_manager.GetLocalConnection(connection, PSafeReadOnly) && connection->GetMediaStream(OpalMediaType::Fax(), true) != NULL) {
     wxNotebook * book;
     FindWindowByNameAs(book, this, wxT("Statistics"))->SetSelection(RxFax);
   }
@@ -7474,8 +7476,8 @@ void InCallPanel::MicrophoneVolume(wxScrollEvent & scrollEvent)
 
 void InCallPanel::SetVolume(bool isMicrophone, int value, bool muted)
 {
-  PSafePtr<OpalConnection> connection = m_manager.GetConnection(true, PSafeReadOnly);
-  if (connection != NULL) {
+  PSafePtr<OpalConnection> connection;
+  if (m_manager.GetLocalConnection(connection, PSafeReadOnly)) {
     connection->SetAudioVolume(isMicrophone, muted ? 0 : value);
     connection->SetAudioMute(isMicrophone, muted);
   }
@@ -7506,8 +7508,8 @@ void InCallPanel::OnUpdateVU(wxTimerEvent & WXUNUSED(event))
 
     int micLevel = -1;
     int spkLevel = -1;
-    PSafePtr<OpalConnection> connection = m_manager.GetConnection(true, PSafeReadOnly);
-    if (connection != NULL) {
+    PSafePtr<OpalConnection> connection;
+    if (m_manager.GetLocalConnection(connection, PSafeReadOnly)) {
       spkLevel = connection->GetAudioSignalLevel(false);
       micLevel = connection->GetAudioSignalLevel(true);
 
@@ -7526,7 +7528,7 @@ void InCallPanel::OnUpdateVU(wxTimerEvent & WXUNUSED(event))
 
 void InCallPanel::UpdateStatistics()
 {
-  PSafePtr<OpalConnection> connection = m_manager.GetConnection(false, PSafeReadOnly);
+  PSafePtr<OpalConnection> connection = m_manager.GetNetworkConnection(PSafeReadOnly);
   if (connection == NULL)
     return;
 
@@ -7534,12 +7536,10 @@ void InCallPanel::UpdateStatistics()
   for (i = 0; i < RxFax; i++)
     m_pages[i].UpdateSession(connection);
 
-  connection = m_manager.GetConnection(true, PSafeReadOnly);
-  if (connection == NULL)
-    return;
-
-  for (; i < NumPages; i++)
-    m_pages[i].UpdateSession(connection);
+  if (m_manager.GetLocalConnection(connection, PSafeReadOnly)) {
+    for (; i < NumPages; i++)
+      m_pages[i].UpdateSession(connection);
+  }
 }
 
 

@@ -47,6 +47,8 @@
 
 class OpalPCSSConnection;
 
+#define OPAL_PCSS_PREFIX "pc"
+
 
 /** PC Sound System endpoint.
  */
@@ -60,7 +62,7 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
      */
     OpalPCSSEndPoint(
       OpalManager & manager,  ///<  Manager of all endpoints.
-      const char * prefix = "pc" ///<  Prefix for URL style address strings
+      const char * prefix = OPAL_PCSS_PREFIX ///<  Prefix for URL style address strings
     );
 
     /**Destroy endpoint.
@@ -243,7 +245,7 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
        This defaults to the value of the PSoundChannel::GetDefaultDevice()
        function.
      */
-    const PString & GetSoundChannelPlayDevice() const { return soundChannelPlayDevice; }
+    const PString & GetSoundChannelPlayDevice() const { return m_soundChannelPlayDevice; }
 
     /**Set the name for the sound channel to be used for input.
        If the name is not suitable for use with the PSoundChannel class then
@@ -258,13 +260,38 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
        This defaults to the value of the PSoundChannel::GetDefaultDevice()
        function.
      */
-    const PString & GetSoundChannelRecordDevice() const { return soundChannelRecordDevice; }
+    const PString & GetSoundChannelRecordDevice() const { return m_soundChannelRecordDevice; }
+
+    /**Set the name for the sound channel to be used for input when on hold.
+       If the name is not suitable for use with the PSoundChannel class then
+       the function will return false and not change the device.
+
+       This defaults to the "Null Audio".
+     */
+    virtual PBoolean SetSoundChannelOnHoldDevice(const PString & name);
+
+    /**Get the name for the sound channel to be used for input when on hold.
+       This defaults to the "Null Audio".
+     */
+    const PString & GetSoundChannelOnHoldDevice() const { return m_soundChannelOnHoldDevice; }
+
+#if OPAL_VIDEO
+    /**Set the name for the video device to be used for input when on hold.
+       This defaults to the "Null Video Out".
+     */
+    virtual PBoolean SetVideoOnHoldDevice(const PString & name);
+
+    /**Get the name for the video device to be used for input when on hold.
+       This defaults to the "Null Video Out".
+     */
+    const PString & GetVideoOnHoldDevice() const { return m_videoOnHoldDevice; }
+#endif
 
     /**Get default the sound channel buffer depth.
        Note the largest of the depth in frames and the depth in milliseconds
        as returned by GetSoundBufferTime() is used.
       */
-    unsigned GetSoundChannelBufferDepth() const { return soundChannelBuffers; }
+    unsigned GetSoundChannelBufferDepth() const { return m_soundChannelBuffers; }
 
     /**Set the default sound channel buffer depth.
        Note the largest of the depth in frames and the depth in milliseconds
@@ -290,10 +317,14 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
   //@}
 
   protected:
-    PString  soundChannelPlayDevice;
-    PString  soundChannelRecordDevice;
-    unsigned soundChannelBuffers;
+    PString  m_soundChannelPlayDevice;
+    PString  m_soundChannelRecordDevice;
+    PString  m_soundChannelOnHoldDevice;
+    unsigned m_soundChannelBuffers;
     unsigned m_soundChannelBufferTime;
+#if OPAL_VIDEO
+    PString  m_videoOnHoldDevice;
+#endif
 
   private:
     P_REMOVE_VIRTUAL(OpalPCSSConnection *, CreateConnection(OpalCall &, const PString &, const PString &, void *), 0)
@@ -334,6 +365,15 @@ class OpalPCSSConnection : public OpalLocalConnection
      */
     virtual bool TransferConnection(
       const PString & remoteParty   ///<  Remote party to transfer the existing call to
+    );
+
+    /**Call back indicating result of last hold/retrieve operation.
+       This also indicates if the local connection has been put on hold by the
+       remote connection.
+     */
+    virtual void OnHold(
+      bool fromRemote,               ///<  Indicates remote has held local connection
+      bool onHold                    ///<  Indicates have just been held/retrieved.
     );
 
     /**Open a new media stream.
@@ -410,19 +450,31 @@ class OpalPCSSConnection : public OpalLocalConnection
        This defaults to the value of the PSoundChannel::GetDefaultDevice()
        function.
      */
-    const PString & GetSoundChannelPlayDevice() const { return soundChannelPlayDevice; }
+    const PString & GetSoundChannelPlayDevice() const { return m_soundChannelPlayDevice; }
 
     /**Get the name for the sound channel to be used for input.
        This defaults to the value of the PSoundChannel::GetDefaultDevice()
        function.
      */
-    const PString & GetSoundChannelRecordDevice() const { return soundChannelRecordDevice; }
+    const PString & GetSoundChannelRecordDevice() const { return m_soundChannelRecordDevice; }
+
+    /**Get the name for the sound channel to be used for input when on hold.
+       This defaults to the "Null Audio".
+     */
+    const PString & GetSoundChannelOnHoldDevice() const { return m_soundChannelOnHoldDevice; }
+
+#if OPAL_VIDEO
+    /**Get the name for the video device to be used for input when on hold.
+       This defaults to the "Null Video Out".
+     */
+    const PString & GetVideoOnHoldDevice() const { return m_videoOnHoldDevice; }
+#endif
 
     /**Get default the sound channel buffer depth.
        Note the largest of the depth in frames and the depth in milliseconds
        as returned by GetSoundBufferTime() is used.
       */
-    unsigned GetSoundChannelBufferDepth() const { return soundChannelBuffers; }
+    unsigned GetSoundChannelBufferDepth() const { return m_soundChannelBuffers; }
 
     /**Get default the sound channel buffer time in milliseconds.
        Note the largest of the depth in frames and the depth in milliseconds
@@ -433,11 +485,15 @@ class OpalPCSSConnection : public OpalLocalConnection
 
 
   protected:
-    OpalPCSSEndPoint & endpoint;
-    PString            soundChannelPlayDevice;
-    PString            soundChannelRecordDevice;
-    unsigned           soundChannelBuffers;
+    OpalPCSSEndPoint & m_endpoint;
+    PString            m_soundChannelPlayDevice;
+    PString            m_soundChannelRecordDevice;
+    PString            m_soundChannelOnHoldDevice;
+    unsigned           m_soundChannelBuffers;
     unsigned           m_soundChannelBufferTime;
+#if OPAL_VIDEO
+    PString            m_videoOnHoldDevice;
+#endif
 };
 
 #else

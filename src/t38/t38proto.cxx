@@ -625,7 +625,7 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
 /////////////////////////////////////////////////////////////////////////////
 
 OpalFaxEndPoint::OpalFaxEndPoint(OpalManager & mgr, const char * g711Prefix, const char * t38Prefix)
-  : OpalLocalEndPoint(mgr, g711Prefix)
+  : OpalLocalEndPoint(mgr, g711Prefix, false)
   , m_t38Prefix(t38Prefix)
   , m_defaultDirectory(".")
 {
