@@ -2904,22 +2904,33 @@ SIP_PDU::StatusCodes SIPTransactionOwner::StartTransaction(const OpalTransport::
 
   reason = SIP_PDU::Local_TransportError;
 
-  if (GetInterface().IsEmpty()) {
+  PString interfaceAddress = GetInterface();
+  if (interfaceAddress.IsEmpty()) {
+    PIPSocket::Address remoteIP;
+    if (transport->GetRemoteAddress().GetIpAddress(remoteIP)) {
+      PIPSocket::Address interfaceIP = PIPSocket::GetRouteInterfaceAddress(remoteIP);
+      if (interfaceIP.IsValid() && !interfaceIP.IsAny())
+        interfaceAddress = interfaceIP.AsString();
+    }
+  }
+
+  m_forkMutex.Wait();
+
+  if (interfaceAddress.IsEmpty()) {
     // Restoring or first time, try every interface
     if (transport->WriteConnect(function))
       reason = SIP_PDU::Successful_OK;
   }
   else {
-    m_forkMutex.Wait();
-
     // We contacted the server on an interface last time, assume it still works!
+    transport->SetInterface(interfaceAddress);
     bool succeeded = false;
     function(*transport, succeeded);
     if (succeeded)
       reason = SIP_PDU::Successful_OK;
+  }
 
   m_forkMutex.Signal();
-  }
 
   return reason;
 }
