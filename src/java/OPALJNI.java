@@ -108,6 +108,8 @@ public class OPALJNI {
   public final static native int OpalParamGeneral_mediaTiming_get(long jarg1, OpalParamGeneral jarg1_);
   public final static native void OpalParamGeneral_videoSourceTiming_set(long jarg1, OpalParamGeneral jarg1_, int jarg2);
   public final static native int OpalParamGeneral_videoSourceTiming_get(long jarg1, OpalParamGeneral jarg1_);
+  public final static native void OpalParamGeneral_pcssMediaOverride_set(long jarg1, OpalParamGeneral jarg1_, String jarg2);
+  public final static native String OpalParamGeneral_pcssMediaOverride_get(long jarg1, OpalParamGeneral jarg1_);
   public final static native long new_OpalParamGeneral();
   public final static native void delete_OpalParamGeneral(long jarg1);
   public final static native void OpalProductDescription_vendor_set(long jarg1, OpalProductDescription jarg1_, String jarg2);

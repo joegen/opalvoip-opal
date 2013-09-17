@@ -341,7 +341,7 @@ class IAX2Connection : public OpalConnection
      */
     virtual bool IsOnHold(
       bool fromRemote  ///< Flag for if remote has us on hold, or we have them
-    );
+    ) const;
   
   /**Signal that the remote side has put the connection on hold*/
   void RemoteHoldConnection();

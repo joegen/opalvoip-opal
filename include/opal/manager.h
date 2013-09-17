@@ -1084,7 +1084,26 @@ class OpalManager : public PObject
       PVideoOutputDevice * & device,        ///<  Created device
       PBoolean & autoDelete                     ///<  Flag for auto delete device
     );
-#endif
+
+    /**Create a PVideoInputDevice for a source media stream.
+      */
+    virtual bool CreateVideoInputDevice(
+      const OpalConnection & connection,    ///<  Connection needing created video device
+      const PVideoDevice::OpenArgs & args,  ///< Device to change to
+      PVideoInputDevice * & device,         ///<  Created device
+      PBoolean & autoDelete                     ///<  Flag for auto delete device
+    );
+
+    /**Create an PVideoOutputDevice for a sink media stream or the preview
+       display for a source media stream.
+      */
+    virtual bool CreateVideoOutputDevice(
+      const OpalConnection & connection,    ///<  Connection needing created video device
+      const PVideoDevice::OpenArgs & args,  ///< Device to change to
+      PVideoOutputDevice * & device,        ///<  Created device
+      PBoolean & autoDelete                     ///<  Flag for auto delete device
+    );
+#endif // OPAL_VIDEO
 
     /**Create a OpalMediaPatch instance.
        This function allows an application to have the system create descendant

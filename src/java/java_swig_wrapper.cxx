@@ -313,7 +313,7 @@ SWIGEXPORT jint JNICALL Java_org_opalvoip_opal_OPALJNI_OPAL_1C_1API_1VERSION_1ge
   
   (void)jenv;
   (void)jcls;
-  result = (int)(29);
+  result = (int)(30);
   jresult = (jint)result; 
   return jresult;
 }
@@ -1723,6 +1723,46 @@ SWIGEXPORT jint JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamGeneral_1videoSo
   arg1 = *(OpalParamGeneral **)&jarg1; 
   result = (OpalMediaTiming) ((arg1)->m_videoSourceTiming);
   jresult = (jint)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamGeneral_1pcssMediaOverride_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2) {
+  OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamGeneral **)&jarg1; 
+  arg2 = 0;
+  if (jarg2) {
+    arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
+    if (!arg2) return ;
+  }
+  {
+    if (arg2) {
+      arg1->m_pcssMediaOverride = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->m_pcssMediaOverride, (const char *)arg2);
+    } else {
+      arg1->m_pcssMediaOverride = 0;
+    }
+  }
+  if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
+}
+
+
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_opal_OPALJNI_OpalParamGeneral_1pcssMediaOverride_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jstring jresult = 0 ;
+  OpalParamGeneral *arg1 = (OpalParamGeneral *) 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(OpalParamGeneral **)&jarg1; 
+  result = (char *) ((arg1)->m_pcssMediaOverride);
+  if (result) jresult = jenv->NewStringUTF((const char *)result);
   return jresult;
 }
 

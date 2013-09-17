@@ -148,38 +148,62 @@ class OpalMessageBuffer
 #define SET_MESSAGE_DATA(msg, member, data, len) (msg).SetData((const char **)&(msg)->member, data, len)
 
 
+struct OpalMediaDataCallbacks
+{
+  bool OnReadMediaFrame(const OpalLocalConnection &, const OpalMediaStream & mediaStream, RTP_DataFrame &);
+  bool OnWriteMediaFrame(const OpalLocalConnection &, const OpalMediaStream &, RTP_DataFrame & frame);
+  bool OnReadMediaData(const OpalLocalConnection &, const OpalMediaStream &, void *, PINDEX, PINDEX &);
+  bool OnWriteMediaData(const OpalLocalConnection &, const OpalMediaStream &, const void *, PINDEX, PINDEX &);
+
+  OpalMediaDataFunction m_mediaReadData;
+  OpalMediaDataFunction m_mediaWriteData;
+  OpalMediaDataType     m_mediaDataHeader;
+
+  OpalMediaDataCallbacks()
+    : m_mediaReadData(NULL)
+    , m_mediaWriteData(NULL)
+    , m_mediaDataHeader(OpalMediaDataPayloadOnly)
+  {
+  }
+};
+
+
 #if OPAL_HAS_PCSS
 
-class OpalPCSSEndPoint_C : public OpalPCSSEndPoint
+class OpalPCSSEndPoint_C : public OpalPCSSEndPoint, public OpalMediaDataCallbacks
 {
+    PCLASSINFO(OpalPCSSEndPoint_C, OpalPCSSEndPoint);
   public:
     OpalPCSSEndPoint_C(OpalManager_C & manager);
 
     virtual PBoolean OnShowIncoming(const OpalPCSSConnection &);
     virtual PBoolean OnShowOutgoing(const OpalPCSSConnection &);
 
-  private:
+    virtual bool OnReadMediaFrame(const OpalLocalConnection &, const OpalMediaStream & mediaStream, RTP_DataFrame &);
+    virtual bool OnWriteMediaFrame(const OpalLocalConnection &, const OpalMediaStream &, RTP_DataFrame & frame);
+    virtual bool OnReadMediaData(const OpalLocalConnection &, const OpalMediaStream &, void *, PINDEX, PINDEX &);
+    virtual bool OnWriteMediaData(const OpalLocalConnection &, const OpalMediaStream &, const void *, PINDEX, PINDEX &);
+
+  protected:
     OpalManager_C & m_manager;
 };
 
 #endif // OPAL_HAS_PCSS
 
 
-class OpalLocalEndPoint_C : public OpalLocalEndPoint
+class OpalLocalEndPoint_C : public OpalLocalEndPoint, public OpalMediaDataCallbacks
 {
+    PCLASSINFO(OpalLocalEndPoint_C, OpalLocalEndPoint);
   public:
     OpalLocalEndPoint_C(OpalManager_C & manager);
 
     virtual bool OnOutgoingCall(const OpalLocalConnection &);
     virtual bool OnIncomingCall(OpalLocalConnection &);
+
     virtual bool OnReadMediaFrame(const OpalLocalConnection &, const OpalMediaStream & mediaStream, RTP_DataFrame &);
     virtual bool OnWriteMediaFrame(const OpalLocalConnection &, const OpalMediaStream &, RTP_DataFrame & frame);
     virtual bool OnReadMediaData(const OpalLocalConnection &, const OpalMediaStream &, void *, PINDEX, PINDEX &);
     virtual bool OnWriteMediaData(const OpalLocalConnection &, const OpalMediaStream &, const void *, PINDEX, PINDEX &);
-
-    OpalMediaDataFunction m_mediaReadData;
-    OpalMediaDataFunction m_mediaWriteData;
-    OpalMediaDataType     m_mediaDataHeader;
 
   private:
     OpalManager_C & m_manager;
@@ -190,14 +214,15 @@ class OpalLocalEndPoint_C : public OpalLocalEndPoint
 
 class OpalGstEndPoint_C : public GstEndPoint
 {
-public:
-  OpalGstEndPoint_C(OpalManager_C & manager);
+    PCLASSINFO(OpalGstEndPoint_C, GstEndPoint);
+  public:
+    OpalGstEndPoint_C(OpalManager_C & manager);
 
-  virtual bool OnOutgoingCall(const OpalLocalConnection &);
-  virtual bool OnIncomingCall(OpalLocalConnection & connection);
+    virtual bool OnOutgoingCall(const OpalLocalConnection &);
+    virtual bool OnIncomingCall(OpalLocalConnection & connection);
 
-private:
-  OpalManager_C & m_manager;
+  private:
+    OpalManager_C & m_manager;
 };
 
 #endif // OPAL_GSTREAMER
@@ -207,6 +232,7 @@ private:
 
 class OpalIVREndPoint_C : public OpalIVREndPoint
 {
+    PCLASSINFO(OpalIVREndPoint_C, OpalIVREndPoint);
   public:
     OpalIVREndPoint_C(OpalManager_C & manager);
 
@@ -224,6 +250,7 @@ class OpalIVREndPoint_C : public OpalIVREndPoint
 #if OPAL_SIP
 class SIPEndPoint_C : public SIPEndPoint
 {
+    PCLASSINFO(SIPEndPoint_C, SIPEndPoint);
   public:
     SIPEndPoint_C(OpalManager_C & manager);
 
@@ -249,6 +276,7 @@ class SIPEndPoint_C : public SIPEndPoint
 
 class OpalManager_C : public OpalManager
 {
+    PCLASSINFO(OpalManager_C, OpalManager);
   public:
     OpalManager_C(
       unsigned version,
@@ -514,9 +542,6 @@ PString BuildProductName(const OpalProductInfo & info)
 
 OpalLocalEndPoint_C::OpalLocalEndPoint_C(OpalManager_C & mgr)
   : OpalLocalEndPoint(mgr)
-  , m_mediaReadData(NULL)
-  , m_mediaWriteData(NULL)
-  , m_mediaDataHeader(OpalMediaDataPayloadOnly)
   , m_manager(mgr)
 {
 }
@@ -544,58 +569,6 @@ bool OpalLocalEndPoint_C::OnOutgoingCall(const OpalLocalConnection & connection)
 }
 
 
-void OpalManager_C::SendIncomingCallInfo(const OpalConnection & connection)
-{
-  OpalMessageBuffer message(OpalIndIncomingCall);
-
-  PSafePtr<OpalConnection> network = connection.GetOtherPartyConnection();
-  PAssert(network != NULL, PLogicError); // Should not happen!
-
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_callToken, connection.GetCall().GetToken());
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_localAddress, network->GetLocalPartyURL());
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteAddress, network->GetRemotePartyURL());
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remotePartyNumber, network->GetRemotePartyNumber());
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteDisplayName, network->GetRemotePartyName());
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_calledAddress, network->GetCalledPartyURL());
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_calledPartyNumber, network->GetCalledPartyNumber());
-
-  if (m_apiVersion >= 22) {
-    PString redirect = network->GetRedirectingParty();
-    SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_referredByAddress, redirect);
-    if (!OpalIsE164(redirect)) {
-      redirect = PURL(redirect).GetUserName();
-      if (!OpalIsE164(redirect))
-        redirect.MakeEmpty();
-    }
-    SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_redirectingNumber, redirect);
-  }
-
-  const OpalProductInfo & info = network->GetRemoteProductInfo();
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_product.m_vendor,  info.vendor);
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_product.m_name,    BuildProductName(info));
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_product.m_version, info.version);
-
-  message->m_param.m_incomingCall.m_product.m_t35CountryCode   = info.t35CountryCode;
-  message->m_param.m_incomingCall.m_product.m_t35Extension     = info.t35Extension;
-  message->m_param.m_incomingCall.m_product.m_manufacturerCode = info.manufacturerCode;
-
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_alertingType,   network->GetAlertingType());
-  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_protocolCallId, connection.GetIdentifier());
-
-  PTRACE(4, "OpalIndIncomingCall: token=\""  << message->m_param.m_incomingCall.m_callToken << "\"\n"
-            "  Local  - URL=\"" << message->m_param.m_incomingCall.m_localAddress << "\"\n"
-            "  Remote - URL=\"" << message->m_param.m_incomingCall.m_remoteAddress << "\""
-                    " E.164=\"" << message->m_param.m_incomingCall.m_remotePartyNumber << "\""
-                  " Display=\"" << message->m_param.m_incomingCall.m_remoteDisplayName << "\"\n"
-            "  Dest.  - URL=\"" << message->m_param.m_incomingCall.m_calledAddress << "\""
-                    " E.164=\"" << message->m_param.m_incomingCall.m_calledPartyNumber << "\"\n"
-            "  AlertingType=\"" << message->m_param.m_incomingCall.m_alertingType << "\"\n"
-            "        CallID=\"" << message->m_param.m_incomingCall.m_protocolCallId << '"');
-
-  PostMessage(message);
-}
-
-
 bool OpalLocalEndPoint_C::OnIncomingCall(OpalLocalConnection & connection)
 {
   m_manager.SendIncomingCallInfo(connection);
@@ -606,6 +579,42 @@ bool OpalLocalEndPoint_C::OnIncomingCall(OpalLocalConnection & connection)
 bool OpalLocalEndPoint_C::OnReadMediaFrame(const OpalLocalConnection & connection,
                                            const OpalMediaStream & mediaStream,
                                            RTP_DataFrame & frame)
+{
+  return OpalMediaDataCallbacks::OnReadMediaFrame(connection, mediaStream, frame);
+}
+
+
+bool OpalLocalEndPoint_C::OnWriteMediaFrame(const OpalLocalConnection & connection,
+                                            const OpalMediaStream & mediaStream,
+                                            RTP_DataFrame & frame)
+{
+  return OpalMediaDataCallbacks::OnWriteMediaFrame(connection, mediaStream, frame);
+}
+
+
+bool OpalLocalEndPoint_C::OnReadMediaData(const OpalLocalConnection & connection,
+                                          const OpalMediaStream & mediaStream,
+                                          void * data,
+                                          PINDEX size,
+                                          PINDEX & length)
+{
+  return OpalMediaDataCallbacks::OnReadMediaData(connection, mediaStream, data, size, length);
+}
+
+
+bool OpalLocalEndPoint_C::OnWriteMediaData(const OpalLocalConnection & connection,
+                                           const OpalMediaStream & mediaStream,
+                                           const void * data,
+                                           PINDEX length,
+                                           PINDEX & written)
+{
+  return OpalMediaDataCallbacks::OnWriteMediaData(connection, mediaStream, data, length, written);
+}
+
+
+bool OpalMediaDataCallbacks::OnReadMediaFrame(const OpalLocalConnection & connection,
+                                              const OpalMediaStream & mediaStream,
+                                              RTP_DataFrame & frame)
 {
   if (m_mediaDataHeader != OpalMediaDataWithHeader)
     return false;
@@ -627,8 +636,8 @@ bool OpalLocalEndPoint_C::OnReadMediaFrame(const OpalLocalConnection & connectio
 }
 
 
-bool OpalLocalEndPoint_C::OnWriteMediaFrame(const OpalLocalConnection & connection,
-                                            const OpalMediaStream & mediaStream,
+bool OpalMediaDataCallbacks::OnWriteMediaFrame(const OpalLocalConnection & connection,
+                                               const OpalMediaStream & mediaStream,
                                             RTP_DataFrame & frame)
 {
   if (m_mediaDataHeader != OpalMediaDataWithHeader)
@@ -647,7 +656,7 @@ bool OpalLocalEndPoint_C::OnWriteMediaFrame(const OpalLocalConnection & connecti
 }
 
 
-bool OpalLocalEndPoint_C::OnReadMediaData(const OpalLocalConnection & connection,
+bool OpalMediaDataCallbacks::OnReadMediaData(const OpalLocalConnection & connection,
                                           const OpalMediaStream & mediaStream,
                                           void * data,
                                           PINDEX size,
@@ -673,7 +682,7 @@ bool OpalLocalEndPoint_C::OnReadMediaData(const OpalLocalConnection & connection
 }
 
 
-bool OpalLocalEndPoint_C::OnWriteMediaData(const OpalLocalConnection & connection,
+bool OpalMediaDataCallbacks::OnWriteMediaData(const OpalLocalConnection & connection,
                                            const OpalMediaStream & mediaStream,
                                            const void * data,
                                            PINDEX length,
@@ -723,6 +732,42 @@ PBoolean OpalPCSSEndPoint_C::OnShowOutgoing(const OpalPCSSConnection & connectio
   SetOutgoingCallInfo(message, connection);
   m_manager.PostMessage(message);
   return true;
+}
+
+
+bool OpalPCSSEndPoint_C::OnReadMediaFrame(const OpalLocalConnection & connection,
+                                          const OpalMediaStream & mediaStream,
+                                          RTP_DataFrame & frame)
+{
+  return OpalMediaDataCallbacks::OnReadMediaFrame(connection, mediaStream, frame);
+}
+
+
+bool OpalPCSSEndPoint_C::OnWriteMediaFrame(const OpalLocalConnection & connection,
+                                           const OpalMediaStream & mediaStream,
+                                           RTP_DataFrame & frame)
+{
+  return OpalMediaDataCallbacks::OnWriteMediaFrame(connection, mediaStream, frame);
+}
+
+
+bool OpalPCSSEndPoint_C::OnReadMediaData(const OpalLocalConnection & connection,
+                                         const OpalMediaStream & mediaStream,
+                                         void * data,
+                                         PINDEX size,
+                                         PINDEX & length)
+{
+  return OpalMediaDataCallbacks::OnReadMediaData(connection, mediaStream, data, size, length);
+}
+
+
+bool OpalPCSSEndPoint_C::OnWriteMediaData(const OpalLocalConnection & connection,
+                                          const OpalMediaStream & mediaStream,
+                                          const void * data,
+                                          PINDEX length,
+                                          PINDEX & written)
+{
+  return OpalMediaDataCallbacks::OnWriteMediaData(connection, mediaStream, data, length, written);
 }
 
 #endif // OPAL_HAS_PCSS
@@ -1156,6 +1201,58 @@ OpalMessage * OpalManager_C::SendMessage(const OpalMessage * message)
 }
 
 
+void OpalManager_C::SendIncomingCallInfo(const OpalConnection & connection)
+{
+  OpalMessageBuffer message(OpalIndIncomingCall);
+
+  PSafePtr<OpalConnection> network = connection.GetOtherPartyConnection();
+  PAssert(network != NULL, PLogicError); // Should not happen!
+
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_callToken, connection.GetCall().GetToken());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_localAddress, network->GetLocalPartyURL());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteAddress, network->GetRemotePartyURL());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remotePartyNumber, network->GetRemotePartyNumber());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_remoteDisplayName, network->GetRemotePartyName());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_calledAddress, network->GetCalledPartyURL());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_calledPartyNumber, network->GetCalledPartyNumber());
+
+  if (m_apiVersion >= 22) {
+    PString redirect = network->GetRedirectingParty();
+    SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_referredByAddress, redirect);
+    if (!OpalIsE164(redirect)) {
+      redirect = PURL(redirect).GetUserName();
+      if (!OpalIsE164(redirect))
+        redirect.MakeEmpty();
+    }
+    SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_redirectingNumber, redirect);
+  }
+
+  const OpalProductInfo & info = network->GetRemoteProductInfo();
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_product.m_vendor,  info.vendor);
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_product.m_name,    BuildProductName(info));
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_product.m_version, info.version);
+
+  message->m_param.m_incomingCall.m_product.m_t35CountryCode   = info.t35CountryCode;
+  message->m_param.m_incomingCall.m_product.m_t35Extension     = info.t35Extension;
+  message->m_param.m_incomingCall.m_product.m_manufacturerCode = info.manufacturerCode;
+
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_alertingType,   network->GetAlertingType());
+  SET_MESSAGE_STRING(message, m_param.m_incomingCall.m_protocolCallId, connection.GetIdentifier());
+
+  PTRACE(4, "OpalIndIncomingCall: token=\""  << message->m_param.m_incomingCall.m_callToken << "\"\n"
+            "  Local  - URL=\"" << message->m_param.m_incomingCall.m_localAddress << "\"\n"
+            "  Remote - URL=\"" << message->m_param.m_incomingCall.m_remoteAddress << "\""
+                    " E.164=\"" << message->m_param.m_incomingCall.m_remotePartyNumber << "\""
+                  " Display=\"" << message->m_param.m_incomingCall.m_remoteDisplayName << "\"\n"
+            "  Dest.  - URL=\"" << message->m_param.m_incomingCall.m_calledAddress << "\""
+                    " E.164=\"" << message->m_param.m_incomingCall.m_calledPartyNumber << "\"\n"
+            "  AlertingType=\"" << message->m_param.m_incomingCall.m_alertingType << "\"\n"
+            "        CallID=\"" << message->m_param.m_incomingCall.m_protocolCallId << '"');
+
+  PostMessage(message);
+}
+
+
 void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuffer & response)
 {
 #if OPAL_GSTREAMER
@@ -1522,6 +1619,25 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
       m_ivrEP->SetDeferredAlerting(m_manualAlerting);
 #endif
   }
+
+  if (m_apiVersion < 30)
+    return;
+
+#if OPAL_HAS_PCSS
+  if (m_pcssEP != NULL && !IsNullString(command.m_param.m_general.m_pcssMediaOverride)) {
+    PStringArray overrides = PString(command.m_param.m_general.m_pcssMediaOverride).Tokenise(" \t\r\n", false);
+    for (PINDEX i = 0; i < overrides.GetSize(); ++i) {
+      PCaselessString str = overrides[i];
+      bool ok = false;
+      if (str.NumCompare("rx-") == EqualTo)
+        ok = m_pcssEP->SetCallbackUsage(str.Mid(3), OpalLocalEndPoint::UseSinkCallback);
+      else if (str.NumCompare("tx-") == EqualTo)
+        ok = m_pcssEP->SetCallbackUsage(str.Mid(3), OpalLocalEndPoint::UseSourceCallback);
+      if (!ok)
+        response.SetError("Invalid PCSS media override.");
+    }
+  }
+#endif 
 }
 
 

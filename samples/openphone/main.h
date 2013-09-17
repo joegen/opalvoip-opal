@@ -662,9 +662,11 @@ class OptionsDialog : public wxDialog
     int       m_SignalDeadband;
     int       m_SilenceDeadband;
     bool      m_DisableDetectInBandDTMF;
+    PwxString m_MusicOnHold;
 
     wxComboBox * m_soundPlayerCombo;
     wxComboBox * m_soundRecorderCombo;
+    wxComboBox * m_musicOnHoldCombo;
     wxComboBox * m_selectedLID;
     wxChoice   * m_selectedAEC;
     wxComboBox * m_selectedCountry;
@@ -674,6 +676,7 @@ class OptionsDialog : public wxDialog
     void TestPlayer(wxCommandEvent & /*event*/);
     void TestRecorder(wxCommandEvent & /*event*/);
     void SelectedLID(wxCommandEvent & /*event*/);
+    void ChangedMusicOnHold(wxCommandEvent & /*event*/);
 
     ////////////////////////////////////////
     // Video fields
@@ -691,8 +694,10 @@ class OptionsDialog : public wxDialog
     PwxString m_VideoMaxFrameSize;
     int       m_VideoGrabBitRate;
     int       m_VideoMaxBitRate;
+    PwxString m_VideoOnHold;
 
     wxComboBox * m_VideoGrabDeviceCtrl;
+    wxComboBox * m_VideoOnHoldDeviceCtrl;
     wxChoice   * m_VideoGrabSourceCtrl;
 
     wxButton           * m_TestVideoCapture;
@@ -700,12 +705,13 @@ class OptionsDialog : public wxDialog
     PVideoInputDevice  * m_TestVideoGrabber;
     PVideoOutputDevice * m_TestVideoDisplay;
 
-    void AdjustVideoControls(const PwxString & device);
+    void AdjustVideoControls();
     void ChangeVideoGrabDevice(wxCommandEvent & /*event*/);
     void TestVideoCapture(wxCommandEvent & /*event*/);
     void OnTestVideoEnded(wxCommandEvent & /*event*/);
     void TestVideoThreadMain();
     void StopTestVideo();
+    void ChangedVideoOnHold(wxCommandEvent & /*event*/);
 
     ////////////////////////////////////////
     // Fax fields
@@ -946,7 +952,12 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     void SendUserInput(char tone);
 
     PSafePtr<OpalCall>       GetCall(PSafetyMode mode);
-    PSafePtr<OpalConnection> GetConnection(bool user, PSafetyMode mode);
+    PSafePtr<OpalConnection> GetNetworkConnection(PSafetyMode mode);
+
+    template<class T> bool GetLocalConnection(PSafePtr<T> & ptr, PSafetyMode mode)
+    {
+      return m_activeCall != NULL && (ptr = m_activeCall->GetConnectionAs<T>(0, mode)) != NULL;
+    }
 
     bool HasHandset() const;
 
@@ -1032,6 +1043,12 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     virtual PBoolean CreateVideoInputDevice(
       const OpalConnection & connection,    ///<  Connection needing created video device
       const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
+      PVideoInputDevice * & device,         ///<  Created device
+      PBoolean & autoDelete                     ///<  Flag for auto delete device
+    );
+    virtual bool CreateVideoInputDevice(
+      const OpalConnection & connection,    ///<  Connection needing created video device
+      const PVideoDevice::OpenArgs & args,  ///< Device to change to
       PVideoInputDevice * & device,         ///<  Created device
       PBoolean & autoDelete                     ///<  Flag for auto delete device
     );
@@ -1302,7 +1319,6 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     };
     list<CallsOnHold>    m_callsOnHold;
     PwxString            m_switchHoldToken;
-    PFilePath            m_musicOnHoldFile;
 
     OpalRecordManager::Options m_recordingOptions;
     PwxString                  m_lastRecordFile;
