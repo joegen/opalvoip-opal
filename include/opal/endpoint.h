@@ -675,28 +675,6 @@ class OpalEndPoint : public PObject
       const PIPSocket::Address & remoteAddress = PIPSocket::GetDefaultIpAny()
     ) const;
 #endif
-
-#if OPAL_VIDEO
-    /**Create an PVideoInputDevice for a source media stream.
-      */
-    virtual PBoolean CreateVideoInputDevice(
-      const OpalConnection & connection,    ///<  Connection needing created video device
-      const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
-      PVideoInputDevice * & device,         ///<  Created device
-      PBoolean & autoDelete                     ///<  Flag for auto delete device
-    );
-
-    /**Create an PVideoOutputDevice for a sink media stream or the preview
-       display for a source media stream.
-      */
-    virtual PBoolean CreateVideoOutputDevice(
-      const OpalConnection & connection,    ///<  Connection needing created video device
-      const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
-      PBoolean preview,                         ///<  Flag indicating is a preview output
-      PVideoOutputDevice * & device,        ///<  Created device
-      PBoolean & autoDelete                     ///<  Flag for auto delete device
-    );
-#endif
   //@}
 
   /**@name User indications */

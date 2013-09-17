@@ -575,7 +575,7 @@ void OpalEndPoint::OnReleased(OpalConnection & connection)
 
 void OpalEndPoint::OnHold(OpalConnection & connection, bool fromRemote, bool onHold)
 {
-  manager.OnHold(connection, fromRemote, onHold);
+  connection.GetCall().OnHold(connection, fromRemote, onHold);
 }
 
 
@@ -706,27 +706,7 @@ PNatMethod * OpalEndPoint::GetNatMethod(const PIPSocket::Address & remoteAddress
 {
   return manager.GetNatMethod(remoteAddress);
 }
-#endif
-
-
-#if OPAL_VIDEO
-PBoolean OpalEndPoint::CreateVideoInputDevice(const OpalConnection & connection,
-                                          const OpalMediaFormat & mediaFormat,
-                                          PVideoInputDevice * & device,
-                                          PBoolean & autoDelete)
-{
-  return manager.CreateVideoInputDevice(connection, mediaFormat, device, autoDelete);
-}
-
-PBoolean OpalEndPoint::CreateVideoOutputDevice(const OpalConnection & connection,
-                                           const OpalMediaFormat & mediaFormat,
-                                           PBoolean preview,
-                                           PVideoOutputDevice * & device,
-                                           PBoolean & autoDelete)
-{
-  return manager.CreateVideoOutputDevice(connection, mediaFormat, preview, device, autoDelete);
-}
-#endif
+#endif // P_NAT
 
 
 void OpalEndPoint::OnUserInputString(OpalConnection & connection,

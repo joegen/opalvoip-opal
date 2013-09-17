@@ -381,7 +381,7 @@ unsigned int IAX2Connection::ChooseCodec()
   return 0;
 }
 
-PBoolean IAX2Connection::IsOnHold(bool fromRemote)
+PBoolean IAX2Connection::IsOnHold(bool fromRemote) const
 {
   return fromRemote ? remote_hold : local_hold;
 }

@@ -1863,7 +1863,7 @@ bool SIPConnection::Hold(bool fromRemote, bool placeOnHold)
 }
 
 
-PBoolean SIPConnection::IsOnHold(bool fromRemote)
+PBoolean SIPConnection::IsOnHold(bool fromRemote) const
 {
   return fromRemote ? m_holdFromRemote : (m_holdToRemote >= eHoldOn);
 }

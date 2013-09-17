@@ -334,6 +334,14 @@ public class OpalParamGeneral {
     return OpalMediaTiming.swigToEnum(OPALJNI.OpalParamGeneral_videoSourceTiming_get(swigCPtr, this));
   }
 
+  public void setPcssMediaOverride(String value) {
+    OPALJNI.OpalParamGeneral_pcssMediaOverride_set(swigCPtr, this, value);
+  }
+
+  public String getPcssMediaOverride() {
+    return OPALJNI.OpalParamGeneral_pcssMediaOverride_get(swigCPtr, this);
+  }
+
   public OpalParamGeneral() {
     this(OPALJNI.new_OpalParamGeneral(), true);
   }

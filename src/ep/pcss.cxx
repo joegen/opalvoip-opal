@@ -58,24 +58,27 @@
 /////////////////////////////////////////////////////////////////////////////
 
 OpalPCSSEndPoint::OpalPCSSEndPoint(OpalManager & mgr, const char * prefix)
-  : OpalLocalEndPoint(mgr, prefix),
-    soundChannelPlayDevice(PSoundChannel::GetDefaultDevice(PSoundChannel::Player)),
-    soundChannelRecordDevice(PSoundChannel::GetDefaultDevice(PSoundChannel::Recorder))
-{
+  : OpalLocalEndPoint(mgr, prefix, false)
+  , m_soundChannelPlayDevice(PSoundChannel::GetDefaultDevice(PSoundChannel::Player))
+  , m_soundChannelRecordDevice(PSoundChannel::GetDefaultDevice(PSoundChannel::Recorder))
+  , m_soundChannelOnHoldDevice(P_NULL_AUDIO_DEVICE)
 #ifdef _WIN32
   // Windows MultMedia stuff seems to need greater depth due to enormous
   // latencies in its operation
-  m_soundChannelBufferTime = 120;
+  , m_soundChannelBufferTime(120)
 #else
   // Should only need double buffering for Unix platforms
-  m_soundChannelBufferTime = 40;
+  , m_soundChannelBufferTime(40)
 #endif
-  soundChannelBuffers = 2;
-
+  , m_soundChannelBuffers(2)
+#if OPAL_VIDEO
+  , m_videoOnHoldDevice(P_FAKE_VIDEO_TEXT)
+#endif
+{
   PTRACE(3, "PCSS\tCreated PC sound system endpoint.\n" << setfill('\n')
-         << "Player=" << soundChannelPlayDevice << ", available devices:\n"
+         << "Player=" << m_soundChannelPlayDevice << ", available devices:\n"
          << PSoundChannel::GetDeviceNames(PSoundChannel::Player)
-         << "Recorders=" << soundChannelRecordDevice << ", available devices:\n"
+         << "Recorders=" << m_soundChannelRecordDevice << ", available devices:\n"
          << PSoundChannel::GetDeviceNames(PSoundChannel::Recorder));
 }
 
@@ -141,7 +144,10 @@ static bool SetDeviceName(const PString & name,
 }
 
 
-static bool SetDeviceNames(const PString & remoteParty, PString & playResult, PString & recordResult, const char * PTRACE_PARAM(operation))
+static bool SetDeviceNames(const PString & remoteParty,
+                           PString & playResult,
+                           PString & recordResult
+                           PTRACE_PARAM(, const char * operation))
 {
   PINDEX prefixLength = remoteParty.Find(':');
   if (prefixLength == P_MAX_INDEX)
@@ -192,9 +198,9 @@ PSafePtr<OpalConnection> OpalPCSSEndPoint::MakeConnection(OpalCall & call,
     stringOptions = &localStringOptions;
   stringOptions->ExtractFromString(deviceNames);
 
-  PString playDevice = soundChannelPlayDevice;
-  PString recordDevice = soundChannelRecordDevice;
-  if (!SetDeviceNames(deviceNames, playDevice, recordDevice, "call")) {
+  PString playDevice = m_soundChannelPlayDevice;
+  PString recordDevice = m_soundChannelRecordDevice;
+  if (!SetDeviceNames(deviceNames, playDevice, recordDevice PTRACE_PARAM(, "call"))) {
     call.Clear(OpalConnection::EndedByLocalBusy);
     return NULL;
   }
@@ -220,7 +226,10 @@ PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & 
 {
   PSoundChannel::Params params;
   if (isSource) {
-    params.m_device = connection.GetSoundChannelRecordDevice();
+    if (connection.GetCall().IsOnHold())
+      params.m_device = connection.GetSoundChannelOnHoldDevice();
+    else
+      params.m_device = connection.GetSoundChannelRecordDevice();
     params.m_direction = PSoundChannel::Recorder;
   }
   else {
@@ -285,20 +294,26 @@ PBoolean OpalPCSSEndPoint::OnShowUserInput(const OpalPCSSConnection &, const PSt
 
 PBoolean OpalPCSSEndPoint::SetSoundChannelPlayDevice(const PString & name)
 {
-  return SetDeviceName(name, PSoundChannel::Player, soundChannelPlayDevice);
+  return SetDeviceName(name, PSoundChannel::Player, m_soundChannelPlayDevice);
 }
 
 
 PBoolean OpalPCSSEndPoint::SetSoundChannelRecordDevice(const PString & name)
 {
-  return SetDeviceName(name, PSoundChannel::Recorder, soundChannelRecordDevice);
+  return SetDeviceName(name, PSoundChannel::Recorder, m_soundChannelRecordDevice);
+}
+
+
+PBoolean OpalPCSSEndPoint::SetSoundChannelOnHoldDevice(const PString & name)
+{
+  return SetDeviceName(name, PSoundChannel::Recorder, m_soundChannelOnHoldDevice);
 }
 
 
 void OpalPCSSEndPoint::SetSoundChannelBufferDepth(unsigned depth)
 {
   PAssert(depth > 1, PInvalidParameter);
-  soundChannelBuffers = depth;
+  m_soundChannelBuffers = depth;
 }
 
 
@@ -306,6 +321,24 @@ void OpalPCSSEndPoint::SetSoundChannelBufferTime(unsigned depth)
 {
   PAssert(depth >= 20, PInvalidParameter);
   m_soundChannelBufferTime = depth;
+}
+
+
+PBoolean OpalPCSSEndPoint::SetVideoOnHoldDevice(const PString & name)
+{
+  PVideoDevice::OpenArgs oldArgs = manager.GetVideoInputDevice();
+
+  PVideoDevice::OpenArgs testArgs = oldArgs;
+  testArgs.deviceName = name;
+  bool ok = manager.SetVideoInputDevice(testArgs);
+
+  manager.SetVideoInputDevice(oldArgs);
+
+  if (!ok)
+    return false;
+
+  m_videoOnHoldDevice = name;
+  return true;
 }
 
 
@@ -318,10 +351,12 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
                                        unsigned options,
                           OpalConnection::StringOptions * stringOptions)
   : OpalLocalConnection(call, ep, NULL, options, stringOptions, 'P')
-  , endpoint(ep)
-  , soundChannelPlayDevice(playDevice)
-  , soundChannelRecordDevice(recordDevice)
-  , soundChannelBuffers(ep.GetSoundChannelBufferDepth())
+  , m_endpoint(ep)
+  , m_soundChannelPlayDevice(playDevice)
+  , m_soundChannelRecordDevice(recordDevice)
+  , m_soundChannelOnHoldDevice(ep.GetSoundChannelOnHoldDevice())
+  , m_videoOnHoldDevice(ep.GetVideoOnHoldDevice())
+  , m_soundChannelBuffers(ep.GetSoundChannelBufferDepth())
   , m_soundChannelBufferTime(ep.GetSoundChannelBufferTime())
 {
   silenceDetector = new OpalPCM16SilenceDetector(endpoint.GetManager().GetSilenceDetectParams());
@@ -348,24 +383,20 @@ bool OpalPCSSConnection::TransferConnection(const PString & remoteParty)
   PString deviceNames = remoteParty;
   m_stringOptions.ExtractFromString(deviceNames);
 
-  PString playDevice = endpoint.GetSoundChannelPlayDevice();
-  PString recordDevice = endpoint.GetSoundChannelRecordDevice();
-  if (!SetDeviceNames(deviceNames, playDevice, recordDevice, "transfer"))
+  PString playDevice = m_endpoint.GetSoundChannelPlayDevice();
+  PString recordDevice = m_endpoint.GetSoundChannelRecordDevice();
+  if (!SetDeviceNames(deviceNames, playDevice, recordDevice PTRACE_PARAM(, "transfer")))
     return false;
 
   OnApplyStringOptions();
 
-  bool samePlayer = playDevice *= soundChannelPlayDevice;
-  bool sameRecorder = recordDevice *= soundChannelRecordDevice;
-  if (samePlayer && sameRecorder) {
-    PTRACE(2, "PCSS\tTransfer to same sound devices, ignoring.");
-    return true;
-  }
+  bool samePlayer = playDevice *= m_soundChannelPlayDevice;
+  bool sameRecorder = recordDevice *= m_soundChannelRecordDevice;
 
-  soundChannelPlayDevice = playDevice;
-  soundChannelRecordDevice = recordDevice;
+  PTRACE(3, "PCSS\tTransfer to sound devices: " "play=\"" << playDevice << "\", " "record=\"" << recordDevice << '"');
 
-  PTRACE(3, "PCSS\tTransfer to sound devices: play=\"" << playDevice << "\", record=\"" << recordDevice << '"');
+  m_soundChannelPlayDevice = playDevice;
+  m_soundChannelRecordDevice = recordDevice;
 
   // Now we be really sneaky and just change the sound devices in the OpalAudioMediaStream
   for (OpalMediaStreamPtr mediaStream = mediaStreams; mediaStream != NULL; ++mediaStream) {
@@ -373,7 +404,31 @@ bool OpalPCSSConnection::TransferConnection(const PString & remoteParty)
     if (rawStream != NULL && !(mediaStream->IsSource() ? sameRecorder : samePlayer))
       rawStream->SetChannel(CreateSoundChannel(rawStream->GetMediaFormat(), rawStream->IsSource()));
   }
+
   return true;
+}
+
+
+void OpalPCSSConnection::OnHold(bool fromRemote, bool onHold)
+{
+  if (!fromRemote) {
+    OpalMediaStreamPtr mediaStream = GetMediaStream(OpalMediaType::Audio(), true);
+    if (mediaStream != NULL) {
+      OpalRawMediaStream * rawStream = dynamic_cast<OpalRawMediaStream *>(&*mediaStream);
+      if (rawStream != NULL)
+        rawStream->SetChannel(CreateSoundChannel(rawStream->GetMediaFormat(), rawStream->IsSource()));
+    }
+
+#if OPAL_VIDEO
+    PVideoDevice::OpenArgs args = m_endpoint.GetManager().GetVideoInputDevice();
+    if (onHold)
+      args.deviceName = m_videoOnHoldDevice;
+    if (!args.deviceName.IsEmpty())
+      ChangeVideoInputDevice(args);
+#endif // OPAL_VIDEO
+  }
+
+  OpalLocalConnection::OnHold(fromRemote, onHold);
 }
 
 
@@ -381,15 +436,15 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & 
                                                         unsigned sessionID,
                                                         PBoolean isSource)
 {
-  if (mediaFormat.GetMediaType() != OpalMediaType::Audio())
-    return OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource); // Skip over OpalLocalConnection
+  if (mediaFormat.GetMediaType() != OpalMediaType::Audio() || m_endpoint.UseCallback(mediaFormat, isSource))
+    return OpalLocalConnection::CreateMediaStream(mediaFormat, sessionID, isSource);
 
   PSoundChannel * soundChannel = CreateSoundChannel(mediaFormat, isSource);
   if (soundChannel == NULL)
     return NULL;
 
   PTRACE_CONTEXT_ID_TO(soundChannel);
-  return new OpalAudioMediaStream(*this, mediaFormat, sessionID, isSource, soundChannelBuffers, m_soundChannelBufferTime, soundChannel);
+  return new OpalAudioMediaStream(*this, mediaFormat, sessionID, isSource, m_soundChannelBuffers, m_soundChannelBufferTime, soundChannel);
 }
 
 
@@ -460,7 +515,7 @@ unsigned OpalPCSSConnection::GetAudioSignalLevel(PBoolean source)
 
 PSoundChannel * OpalPCSSConnection::CreateSoundChannel(const OpalMediaFormat & mediaFormat, PBoolean isSource)
 {
-  return endpoint.CreateSoundChannel(*this, mediaFormat, isSource);
+  return m_endpoint.CreateSoundChannel(*this, mediaFormat, isSource);
 }
 
 

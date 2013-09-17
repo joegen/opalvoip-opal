@@ -80,7 +80,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 /// Current API version
-#define OPAL_C_API_VERSION 29
+#define OPAL_C_API_VERSION 30
 
 
 ///////////////////////////////////////
@@ -475,8 +475,20 @@ typedef enum OpalEchoCancelMode {
 
 
 /** Function for reading/writing media data.
-    Returns size of data actually read or written, or -1 if there is an error
-    and the media stream should be shut down.
+    The m_mediaReadData and m_mediaWriteData memebers of OpalParamGeneral are
+    the mechanism by which an application can be sent the raw media for a
+    call.
+    
+    This requires the inclusion of the OPAL_PREFIX_LOCAL ("local") or
+    OPAL_PREFIX_PCSS ("pc") in the OpalInitialise() call. If the latter is
+    used the m_pcssMediaOverride in OpalParamGeneral must also be set for the
+    specific media you wish th callback to apply to. For the local endpoint
+    all media is sent to the callback.
+
+    Note that incoming calls are sent to the local endpoints in order they are
+    specified in OpalInitialise, so make sure OPAL_PREFIX_LOCAL is the first,
+    or only entry, in the list to OpalInitialise() for it to be selected as
+    the default is for OPAL_PREFIX_PCSS to be used.
 
     The "write" function, which is taking data from a remote and providing it
     to the "C" application for writing, should not be assumed to have a one to
@@ -487,6 +499,9 @@ typedef enum OpalEchoCancelMode {
 
     Note that this function will be called in the context of different threads
     so the user must take care of any mutex and synchonisation issues.
+
+    Returns size of data actually read or written, or -1 if there is an error
+    and the media stream should be shut down.
  */
 typedef int (*OpalMediaDataFunction)(
   const char * token,   /**< Call token for media data as returned by OpalIndIncomingCall.
@@ -529,6 +544,8 @@ typedef int (*OpalMessageAvailableFunction)(
 
    This controls if the whole RTP data frame or just the paylaod part
    is passed to the read/write function.
+
+   Default is OpalMediaDataPayloadOnly.
   */
 typedef enum OpalMediaDataType {
   OpalMediaDataNoChange,      /**< No change to the media data type. */
@@ -720,6 +737,16 @@ typedef struct OpalParamGeneral {
   OpalMediaTiming m_videoSourceTiming;/**< Indicate that the video read callback function
                                            handles the real time aspects of the media flow.
                                            This can override the m_mediaTiming. */
+  const char * m_pcssMediaOverride;   /**< When the OPAL_PREFIX_PCSS is in use, this provides a mask of
+                                           which media streams (e.g audio/video rx/tx) is overridden from
+                                           the internal devices. For example, redirecting only received
+                                           video to the application, and audio and camera grabbing is
+                                           handled as normal. The string is a space separated list of
+                                           values being the direction, dash and the media type, e.g.
+                                           "rx-video rx-audio tx-audio". When present, the same behaviour
+                                           as for OPAL_PREFIX_LOCAL is executed for that media stream and
+                                           m_mediaReadData/m_mediaWriteData is called. See
+                                           OpalMediaDataFunction for more information. */
 } OpalParamGeneral;
 
 

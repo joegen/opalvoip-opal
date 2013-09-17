@@ -902,7 +902,6 @@ void OpalManager::OnHold(OpalConnection & connection, bool fromRemote, bool onHo
   PTRACE(3, "OpalMan\t" << (onHold ? "On" : "Off") << " Hold "
          << (fromRemote ? "from remote" : "request succeeded") << " on " << connection);
   connection.GetEndPoint().OnHold(connection);
-  connection.GetCall().OnHold(connection, fromRemote, onHold);
 }
 
 
@@ -1124,7 +1123,7 @@ void OpalManager::OnClosedMediaStream(const OpalMediaStream & PTRACE_PARAM(chann
 
 #if OPAL_VIDEO
 
-PBoolean OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection*/,
+PBoolean OpalManager::CreateVideoInputDevice(const OpalConnection & connection,
                                          const OpalMediaFormat & mediaFormat,
                                          PVideoInputDevice * & device,
                                          PBoolean & autoDelete)
@@ -1132,7 +1131,14 @@ PBoolean OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection
   // Make copy so we can adjust the size
   PVideoDevice::OpenArgs args = videoInputDevice;
   mediaFormat.AdjustVideoArgs(args);
+  return CreateVideoInputDevice(connection, args, device, autoDelete);
+}
 
+PBoolean OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection*/,
+                                         const PVideoDevice::OpenArgs & args,
+                                         PVideoInputDevice * & device,
+                                         PBoolean & autoDelete)
+{
   autoDelete = true;
   device = PVideoInputDevice::CreateOpenedDevice(args, false);
   PTRACE_IF(4, device == NULL, "OpalMan\tCould not open video input device \"" << args.deviceName << '"');
@@ -1162,6 +1168,15 @@ PBoolean OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
     args.deviceName.Splice(preview ? LocalPreview : connection.GetRemotePartyName(), start, args.deviceName.Find('"', start)-start);
   }
 
+  return CreateVideoOutputDevice(connection, args, device, autoDelete);
+}
+
+
+bool OpalManager::CreateVideoOutputDevice(const OpalConnection & /*connection*/,
+                                          const PVideoDevice::OpenArgs & args,
+                                          PVideoOutputDevice * & device,
+                                          PBoolean & autoDelete)
+{
   autoDelete = true;
   device = PVideoOutputDevice::CreateOpenedDevice(args, false);
   PTRACE_IF(4, device == NULL, "OpalMan\tCould not open video output device \"" << args.deviceName << '"');

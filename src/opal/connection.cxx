@@ -327,7 +327,7 @@ bool OpalConnection::Hold(bool /*fromRemote*/, bool /*placeOnHold*/)
 }
 
 
-PBoolean OpalConnection::IsOnHold(bool /*fromRemote*/)
+PBoolean OpalConnection::IsOnHold(bool /*fromRemote*/) const
 {
   return false;
 }
@@ -862,44 +862,11 @@ void OpalConnection::OnPauseMediaStream(OpalMediaStream & /*strm*/, bool /*pause
 }
 
 
-#if OPAL_VIDEO
-OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
-                                                    unsigned sessionID,
-                                                    PBoolean isSource)
-{
-  if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
-    if (isSource) {
-      PVideoInputDevice * videoDevice;
-      PBoolean autoDeleteGrabber;
-      if (CreateVideoInputDevice(mediaFormat, videoDevice, autoDeleteGrabber)) {
-        PTRACE(4, "OpalCon\tCreated capture device \"" << videoDevice->GetDeviceName() << '"');
-
-        PVideoOutputDevice * previewDevice;
-        PBoolean autoDeletePreview;
-        if (CreateVideoOutputDevice(mediaFormat, true, previewDevice, autoDeletePreview))
-          PTRACE(4, "OpalCon\tCreated preview device \"" << previewDevice->GetDeviceName() << '"');
-        else
-          previewDevice = NULL;
-
-        return new OpalVideoMediaStream(*this, mediaFormat, sessionID, videoDevice, previewDevice, autoDeleteGrabber, autoDeletePreview);
-      }
-      PTRACE(2, "OpalCon\tCould not create video input device");
-    }
-    else {
-      PVideoOutputDevice * videoDevice;
-      PBoolean autoDelete;
-      if (CreateVideoOutputDevice(mediaFormat, false, videoDevice, autoDelete)) {
-        PTRACE(4, "OpalCon\tCreated display device \"" << videoDevice->GetDeviceName() << '"');
-        return new OpalVideoMediaStream(*this, mediaFormat, sessionID, NULL, videoDevice, false, autoDelete);
-      }
-      PTRACE(2, "OpalCon\tCould not create video output device");
-    }
-  }
-
 #if OPAL_HAS_RFC4103
+OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource)
+{
   if (mediaFormat.GetMediaType() == OpalT140.GetMediaType())
     return new OpalT140MediaStream(*this, mediaFormat, sessionID, isSource);
-#endif
 
   return NULL;
 }
@@ -908,7 +875,7 @@ OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat &, uns
 {
   return NULL;
 }
-#endif
+#endif // OPAL_HAS_RFC4103
 
 
 PBoolean OpalConnection::OnOpenMediaStream(OpalMediaStream & stream)
@@ -1060,6 +1027,7 @@ void OpalConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patc
 
 
 #if OPAL_HAS_MIXER
+
 void OpalConnection::EnableRecording()
 {
   OpalMediaStreamPtr stream = GetMediaStream(OpalMediaType::Audio(), true);
@@ -1084,7 +1052,7 @@ void OpalConnection::DisableRecording()
   stream = GetMediaStream(OpalMediaType::Video(), true);
   if (stream != NULL)
     OnStopRecording(stream->GetPatch());
-#endif
+#endif // OPAL_VIDEO
 }
 
 
@@ -1103,9 +1071,9 @@ void OpalConnection::OnRecordVideo(RTP_DataFrame & frame, P_INT_PTR param)
   ownerCall.OnRecordVideo(MakeRecordingKey(*patch), frame);
 }
 
-#endif
+#endif // OPAL_VIDEO
 
-#endif
+#endif // OPAL_HAS_MIXER
 
 
 OpalMediaStreamPtr OpalConnection::GetMediaStream(const PString & streamID, bool source) const
@@ -1166,59 +1134,6 @@ bool OpalConnection::GetMediaTransportAddresses(const OpalMediaType & PTRACE_PAR
 
 
 #if OPAL_VIDEO
-
-PBoolean OpalConnection::CreateVideoInputDevice(const OpalMediaFormat & mediaFormat,
-                                            PVideoInputDevice * & device,
-                                            PBoolean & autoDelete)
-{
-  return endpoint.CreateVideoInputDevice(*this, mediaFormat, device, autoDelete);
-}
-
-
-PBoolean OpalConnection::CreateVideoOutputDevice(const OpalMediaFormat & mediaFormat,
-                                             PBoolean preview,
-                                             PVideoOutputDevice * & device,
-                                             PBoolean & autoDelete)
-{
-  return endpoint.CreateVideoOutputDevice(*this, mediaFormat, preview, device, autoDelete);
-}
-
-
-bool OpalConnection::ChangeVideoInputDevice(const PVideoDevice::OpenArgs & deviceArgs, unsigned sessionID)
-{
-  PSafePtr<OpalVideoMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalVideoMediaStream>(
-                      sessionID != 0 ? GetMediaStream(sessionID, true) : GetMediaStream(OpalMediaType::Video(), true));
-  if (stream == NULL)
-    return false;
-
-  PVideoInputDevice * newDevice = PVideoInputDevice::CreateOpenedDevice(deviceArgs, false);
-  if (newDevice == NULL) {
-    PTRACE(2, "OpalCon\tCould not open video device \"" << deviceArgs.deviceName << '"');
-    return false;
-  }
-
-  stream->SetVideoInputDevice(newDevice);
-  return true;
-}
-
-
-bool OpalConnection::ChangeVideoOutputDevice(const PVideoDevice::OpenArgs & deviceArgs, unsigned sessionID, bool preview)
-{
-  PSafePtr<OpalVideoMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalVideoMediaStream>(
-                      sessionID != 0 ? GetMediaStream(sessionID, true) : GetMediaStream(OpalMediaType::Video(), preview));
-  if (stream == NULL)
-    return false;
-
-  PVideoOutputDevice * newDevice = PVideoOutputDevice::CreateOpenedDevice(deviceArgs, false);
-  if (newDevice == NULL) {
-    PTRACE(2, "OpalCon\tCould not open video device \"" << deviceArgs.deviceName << '"');
-    return false;
-  }
-
-  stream->SetVideoOutputDevice(newDevice);
-  return true;
-}
-
 
 bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, bool force) const
 {

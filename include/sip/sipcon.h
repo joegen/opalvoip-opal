@@ -305,7 +305,7 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
      */
     virtual bool IsOnHold(
       bool fromRemote  ///< Flag for if remote has us on hold, or we have them
-    );
+    ) const;
 
     /**Indicate to remote endpoint an alert is in progress.
        If this is an incoming connection and the AnswerCallResponse is in a
