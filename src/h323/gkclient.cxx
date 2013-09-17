@@ -2052,7 +2052,7 @@ void H323Gatekeeper::OnHighPriorityInterfaceChange(PInterfaceMonitor & monitor, 
 }
 
 
-void H323Gatekeeper::OnLowPriorityInterfaceChange(PInterfaceMonitor & monitor, PInterfaceMonitor::InterfaceChange entry)
+void H323Gatekeeper::OnLowPriorityInterfaceChange(PInterfaceMonitor & monitor, PInterfaceMonitor::InterfaceChange)
 {
   // sanity check
   if (transport == NULL)
