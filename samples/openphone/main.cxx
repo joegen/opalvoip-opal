@@ -3887,9 +3887,9 @@ void MyManager::SetTrayTipText(const PwxString & tip)
 }
 
 
+#ifdef __WXMSW__
 void MyManager::SetBalloonText(const PwxString & text)
 {
-#ifdef __WXMSW__
 #if wxUSE_TASKBARICON_BALLOONS
   if (m_taskBarIcon->IsIconInstalled())
     m_taskBarIcon->ShowBalloon(PwxString(PProcess::Current().GetName()), text);
@@ -3910,6 +3910,9 @@ void MyManager::SetBalloonText(const PwxString & text)
   wxStrncpy(notify.szInfo, text, WXSIZEOF(notify.szInfo));
   Shell_NotifyIcon(NIM_MODIFY, &notify);
 #endif
+#else
+void MyManager::SetBalloonText(const PwxString &)
+{
 #endif
 }
 
@@ -6868,10 +6871,11 @@ CallDialog::CallDialog(MyManager * manager, bool hideHandset, bool hideFax)
   else
     useHandset->Enable(m_UseHandset);
 
-  wxRadioBox * faxMode;
-  FindWindowByNameAs(faxMode, this, wxT("FaxMode"))->SetValidator(wxGenericValidator(&m_FaxMode));
+  wxRadioBox * faxMode = FindWindowByNameAs(faxMode, this, wxT("FaxMode"));
   if (hideFax)
     faxMode->Hide();
+  else
+    faxMode->SetValidator(wxGenericValidator(&m_FaxMode));
 
   FindWindowByNameAs(m_AddressCtrl, this, wxT("Address"))->SetValidator(wxGenericValidator(&m_Address));
 
@@ -7620,6 +7624,8 @@ void StatisticsField::Update(const OpalConnection & connection, const OpalMediaS
 
 #ifdef _MSC_VER
 #pragma warning(disable:4100)
+#else
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 #endif
 
 STATISTICS_FIELD_BEG(RxAudio, Bandwidth)

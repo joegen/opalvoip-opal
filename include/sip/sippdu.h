@@ -710,6 +710,7 @@ class SIP_PDU : public PSafeObject
 
     const PString & GetExternalTransportAddress() const { return m_externalTransportAddress; }
     OpalTransportPtr GetTransport()  const    { return m_transport; }
+    void SetTransport(const OpalTransportPtr & transport);
 
   protected:
     void CalculateVia();
@@ -727,9 +728,9 @@ class SIP_PDU : public PSafeObject
 
     SDPSessionDescription * m_SDP;
 
-    OpalTransportPtr     m_transport;
-    OpalTransportAddress m_viaAddress;
-    OpalTransportAddress m_externalTransportAddress;
+    const OpalTransportPtr m_transport;
+    OpalTransportAddress   m_viaAddress;
+    OpalTransportAddress   m_externalTransportAddress;
 };
 
 
@@ -973,7 +974,7 @@ class SIPTransactionOwner
       const OpalTransport::WriteConnectCallback & function
     );
 
-    SIP_PDU::StatusCodes SwitchTransportProto(const char * proto, OpalTransportPtr * transport);
+    SIP_PDU::StatusCodes SwitchTransportProto(const char * proto, SIP_PDU * pdu);
 
     SIP_PDU::StatusCodes HandleAuthentication(const SIP_PDU & response);
 
