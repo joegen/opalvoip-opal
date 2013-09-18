@@ -357,26 +357,30 @@ static bool MyToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionM
   if (str.empty())
     str = H264_LEVEL_STR_1_3;
 
-  size_t levelIndex = sizeof(LevelInfo)/sizeof(LevelInfo[0]);
-  while (--levelIndex > 0) {
-    if (str == LevelInfo[levelIndex].m_Name)
-      break;
-  }
+  size_t levelIndex = sizeof(LevelInfo)/sizeof(LevelInfo[0])-1;
+  while (levelIndex > 0 && str != LevelInfo[levelIndex].m_Name)
+    --levelIndex;
   PTRACE(5, MY_CODEC_LOG, "Level \"" << str << "\" selected index " << levelIndex);
 
   /* While we have selected the desired level, we may need to adjust it
       further due to resolution restrictions. This is due to the fact that
-      we have no other mechnism to prevent the remote from sending, say
+      we have no other mechnism to prevent the remote from sending, say,
       CIF when we only support QCIF.
     */
   unsigned maxWidth = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
   unsigned maxHeight = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
-  unsigned maxFrameSizeInMB = PluginCodec_Utilities::GetMacroBlocks(maxWidth, maxHeight);
-  if (maxFrameSizeInMB > 0) {
-    while (levelIndex > 0 && maxFrameSizeInMB <= LevelInfo[levelIndex-1].m_MaxFrameSize)
+  unsigned frameTime = original.GetUnsigned(PLUGINCODEC_OPTION_FRAME_TIME);
+  unsigned maxMacroBlocks = PluginCodec_Utilities::GetMacroBlocks(maxWidth, maxHeight);
+  unsigned macroBlocksPerSecond = maxMacroBlocks*PLUGINCODEC_VIDEO_CLOCK/frameTime;
+  if (maxMacroBlocks > 0) {
+    while (levelIndex > 0 &&
+            (LevelInfo[levelIndex].m_MaxFrameSize > maxMacroBlocks ||
+             LevelInfo[levelIndex].m_MaxMBPS > macroBlocksPerSecond))
       --levelIndex;
+    PTRACE(5, MY_CODEC_LOG, "Max resolution " << maxWidth << 'x' << maxHeight
+           << " and frame rate " << frameTime << " (" << (PLUGINCODEC_VIDEO_CLOCK/frameTime) << "fps)"
+              " selected index " << levelIndex);
   }
-  PTRACE(5, MY_CODEC_LOG, "Max resolution " << maxWidth << 'x' << maxHeight << " selected index " << levelIndex);
 
   // set the new level
   PluginCodec_Utilities::Change(LevelInfo[levelIndex].m_H241, original, changed, H241LevelName);
@@ -390,12 +394,12 @@ static bool MyToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionM
   PluginCodec_Utilities::Change(sdpProfLevel, original, changed, SDPProfileAndLevelName);
 
   // Clamp other variables (width/height etc) according to the adjusted profile/level
-  ClampSizes(maxWidth, maxHeight, maxFrameSizeInMB, original, changed);
+  ClampSizes(maxWidth, maxHeight, maxMacroBlocks, original, changed);
 
   // Do this afer the clamping, maxFrameSizeInMB may change
-  if (maxFrameSizeInMB > LevelInfo[levelIndex].m_MaxFrameSize) {
-    PluginCodec_Utilities::ClampMax(maxFrameSizeInMB, original, changed, MaxFS_SDP_Name, true);
-    PluginCodec_Utilities::ClampMax((maxFrameSizeInMB+255)/256, original, changed, MaxFS_H241_Name, true);
+  if (maxMacroBlocks > LevelInfo[levelIndex].m_MaxFrameSize) {
+    PluginCodec_Utilities::ClampMax(maxMacroBlocks, original, changed, MaxFS_SDP_Name, true);
+    PluginCodec_Utilities::ClampMax((maxMacroBlocks+255)/256, original, changed, MaxFS_H241_Name, true);
   }
   else {
     PluginCodec_Utilities::Change(0U, original, changed, MaxFS_SDP_Name);
@@ -414,10 +418,9 @@ static bool MyToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionM
   }
 
   // Set exception to frame rate if necessary
-  unsigned mbps = maxFrameSizeInMB*PLUGINCODEC_VIDEO_CLOCK/original.GetUnsigned(PLUGINCODEC_OPTION_FRAME_TIME);
-  if (mbps > LevelInfo[levelIndex].m_MaxMBPS) {
-    PluginCodec_Utilities::ClampMax(mbps, original, changed, MaxMBPS_SDP_Name, true);
-    PluginCodec_Utilities::ClampMax((mbps+499)/500, original, changed, MaxMBPS_H241_Name, true);
+  if (macroBlocksPerSecond > LevelInfo[levelIndex].m_MaxMBPS) {
+    PluginCodec_Utilities::ClampMax(macroBlocksPerSecond, original, changed, MaxMBPS_SDP_Name, true);
+    PluginCodec_Utilities::ClampMax((macroBlocksPerSecond+499)/500, original, changed, MaxMBPS_H241_Name, true);
   }
   else {
     PluginCodec_Utilities::Change(0U, original, changed, MaxMBPS_SDP_Name);
