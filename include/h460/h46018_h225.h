@@ -42,11 +42,13 @@
  */
 
 #ifndef OPAL_H46018_H225
-#define OPAL_H46018_NAT
+#define OPAL_H46018_H225
 
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
+
+#include <opal_config.h>
 
 #if OPAL_H460_NAT
 

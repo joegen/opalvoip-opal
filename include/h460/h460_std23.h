@@ -36,12 +36,14 @@
 * $Date$
 */
 
-#ifndef H_H460_Featurestd23
-#define H_H460_Featurestd23
+#ifndef OPAL_H460_STD23_H
+#define OPAL_H460_STD23_H
 
 
 #include <h460/h4601.h>
-#include <ptlib/plugin.h>
+
+#if OPAL_H460
+
 #include <ptclib/pstun.h>
 
 #if _MSC_VER
@@ -251,4 +253,6 @@ PPLUGIN_STATIC_LOAD(Std24, H460_Feature);
 #endif
 
 
-#endif // H_H460_Featurestd23
+#endif // OPAL_H460
+
+#endif // OPAL_H460_STD23_H
