@@ -38,13 +38,12 @@
  * $Date$
  */
 
-#ifndef H_H460_FeatureStd18
-#define H_H460_FeatureStd18
+#ifndef OPAL_H460_STD18_H
+#define OPAL_H460_STD18_H
 
 #include <h460/h4601.h>
 
-// Must call the following
-#include <ptlib/plugin.h>
+#if OPAL_H460
 
 #if _MSC_VER
 #pragma once
@@ -159,4 +158,6 @@ class H460_FeatureStd19 : public H460_FeatureStd
 #endif
 
 
-#endif // H_H460_FeatureStd18
+#endif // OPAL_H460
+
+#endif // OPAL_H460_STD18_H

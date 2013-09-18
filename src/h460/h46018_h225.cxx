@@ -43,11 +43,11 @@
 
 #include <ptlib.h>
 
-#if OPAL_H460_NAT
-
 #define P_FORCE_STATIC_PLUGIN 1
 
 #include <h460/h46018_h225.h>
+
+#if OPAL_H460_NAT
 
 #include <h323/h323ep.h>
 #include <h323/h323pdu.h>
