@@ -1119,24 +1119,18 @@ class H460_FeatureSet : public PObject
 template <class className> class H460PluginServiceDescriptor : public PDevicePluginServiceDescriptor
 {
   public:
-    virtual PObject *   CreateInstance(int /*userData*/) const { return new className; }
-    virtual PStringArray GetDeviceNames(int /*userData*/) const { return className::GetFeatureFriendlyName(); }
-    virtual bool  ValidateDeviceName(const PString & deviceName, int userData) const 
-	{ 
-	     PStringList devices = className::GetFeatureName(); 
-		 if ((deviceName == devices[0]) &&
-			 (className::GetPurpose() >= userData) && 
-			 (className::GetPurpose() < userData*2)) {
-
-		        return TRUE; 
-		 } else
-			    return FALSE;
-	} 
+    virtual PObject *   CreateInstance(P_INT_PTR /*userData*/) const { return new className; }
+    virtual PStringArray GetDeviceNames(P_INT_PTR /*userData*/) const { return className::GetFeatureFriendlyName(); }
+    virtual bool  ValidateDeviceName(const PString & deviceName, P_INT_PTR userData) const 
+    { 
+      PStringList devices = className::GetFeatureName(); 
+      return deviceName == devices[0] && className::GetPurpose() >= userData && className::GetPurpose() < userData*2;
+    }
 };
 
 #define H460_FEATURE(name)    \
-static H460PluginServiceDescriptor<H460_Feature##name> H460_Feature##name##_descriptor; \
-PCREATE_PLUGIN_STATIC(name, H460_Feature, &H460_Feature##name##_descriptor); \
+  static H460PluginServiceDescriptor<H460_Feature##name> H460_Feature##name##_descriptor; \
+  PCREATE_PLUGIN(name, H460_Feature, &H460_Feature##name##_descriptor); \
 
 
 #ifdef _MSC_VER
