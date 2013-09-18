@@ -41,15 +41,17 @@
 * $Date$
 */
 
-#include "ptlib.h"
-#include <opal_config.h>
+#include <ptlib.h>
 
 #if OPAL_H460_NAT
+
+#define P_FORCE_STATIC_PLUGIN 1
+
+#include <h460/h46018_h225.h>
 
 #include <h323/h323ep.h>
 #include <h323/h323pdu.h>
 #include <h323/gkclient.h>
-#include <h460/h46018_h225.h>
 #include <h460/h46018.h>
 #include <ptclib/random.h>
 #include <ptclib/cypher.h>

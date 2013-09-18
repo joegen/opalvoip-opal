@@ -37,9 +37,10 @@
 */
 
 #include <ptlib.h>
-#include <opal_config.h>
 
 #if OPAL_H46O_NAT
+
+#define P_FORCE_STATIC_PLUGIN 1
 
 #include <h460/h460_std23.h>
 #include <h323.h>
