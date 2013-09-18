@@ -2028,11 +2028,13 @@ OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(RTP_DataFram
   // Note we do two separate loops as it is possible (though discouraged) for
   // someone to override a standard payload type with another encoding name, so
   // have to search all formats by name before trying by number.
-  for (; format != end(); ++format) {
-    if (format->GetPayloadType() == pt &&
-        (clockRate == 0    || clockRate == format->GetClockRate()) && // if have clock rate, clock rate must match
-        (protocol  == NULL || format->IsValidForProtocol(protocol))) // if protocol is specified, must be valid for the protocol
-      return format;
+  if (pt < RTP_DataFrame::LastKnownPayloadType) {
+    for (; format != end(); ++format) {
+      if (format->GetPayloadType() == pt &&
+          (clockRate == 0    || clockRate == format->GetClockRate()) && // if have clock rate, clock rate must match
+          (protocol  == NULL || format->IsValidForProtocol(protocol))) // if protocol is specified, must be valid for the protocol
+        return format;
+    }
   }
 
   return end();
