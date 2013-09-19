@@ -64,7 +64,7 @@ class MY_CODEC { };
 
 PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
 
-static const char MyDescription[] = "H.263 (FFMPEG)";
+static const char MyDescription[] = "ITU-T H.263 - Video Codec (FFMPEG)";
 
 PLUGINCODEC_LICENSE(
   "Matthias Schneider, Craig Southeren"                         // source code author

@@ -270,6 +270,9 @@ void OpalPluginMediaFormatInternal::SetOldStyleOption(OpalMediaFormatInternal & 
 
 void OpalPluginMediaFormatInternal::PopulateOptions(OpalMediaFormatInternal & format)
 {
+  if (codecDef->descr != NULL && *codecDef->descr != '\0')
+    format.SetOptionString(OpalMediaFormat::DescriptionOption(), codecDef->descr);
+
   void ** rawOptions = NULL;
   unsigned int optionsLen = sizeof(rawOptions);
   getOptionsControl.Call(&rawOptions, &optionsLen, (void *)(const char *)format.GetName());

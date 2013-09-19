@@ -179,8 +179,10 @@ const OpalMediaFormat & GetOpalSIPIM()
                           1440, 
                           512, 
                           0, 
-                          1000)     // as defined in RFC 4103 - good as anything else
+                          1000)
       { 
+        SetOptionString(OpalMediaFormat::DescriptionOption(), "RFC 3428 (SIP) Instant Messaging");
+
         OpalMediaOptionString * option = new OpalMediaOptionString("URL", false, "");
         option->SetMerge(OpalMediaOption::NoMerge);
         AddOption(option);

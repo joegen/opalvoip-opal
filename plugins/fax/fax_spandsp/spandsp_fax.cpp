@@ -1780,7 +1780,7 @@ static PluginCodec_Definition faxCodecDefn[] = {
     PluginCodec_OutputTypeRTP |         // RTP output data
     PluginCodec_RTPTypeExplicit,        // explicit RTP type
 
-    "PCM to T.38 Codec",                // text decription
+    "SpanDSP - PCM to T.38 Codec",      // text decription
     L16Format,                          // source format
     T38Format,                          // destination format
 
@@ -1816,7 +1816,7 @@ static PluginCodec_Definition faxCodecDefn[] = {
     PluginCodec_OutputTypeRaw |         // raw output data
     PluginCodec_RTPTypeExplicit,        // explicit RTP type
 
-    "T.38 to PCM Codec",                // text decription
+    "SpanDSP - T.38 to PCM Codec",      // text decription
     T38Format,                          // source format
     L16Format,                          // destination format
 
@@ -1851,7 +1851,7 @@ static PluginCodec_Definition faxCodecDefn[] = {
     PluginCodec_OutputTypeRTP |         // RTP output data
     PluginCodec_RTPTypeDynamic,         // dynamic RTP type
 
-    "TIFF to T.38 Codec",               // text decription
+    "SpanDSP - TIFF to T.38 Codec",     // text decription
     TIFFFormat,                         // source format
     T38Format,                          // destination format
 
@@ -1886,7 +1886,7 @@ static PluginCodec_Definition faxCodecDefn[] = {
     PluginCodec_OutputTypeRaw |         // raw output data
     PluginCodec_RTPTypeDynamic,         // dynamic RTP type
 
-    "T.38 to TIFF Codec",               // text decription
+    "SpanDSP - T.38 to TIFF Codec",     // text decription
     T38Format,                          // source format
     TIFFFormat,                         // destination format
 
@@ -1921,7 +1921,7 @@ static PluginCodec_Definition faxCodecDefn[] = {
     PluginCodec_OutputTypeRaw |         // raw output data
     PluginCodec_RTPTypeDynamic,         // dynamic RTP type
 
-    "PCM to TIFF Codec",                // text decription
+    "SpanDSP - PCM to TIFF Codec",      // text decription
     L16Format,                          // source format
     TIFFFormat,                         // destination format
 
@@ -1956,7 +1956,7 @@ static PluginCodec_Definition faxCodecDefn[] = {
     PluginCodec_OutputTypeRaw |         // raw output data
     PluginCodec_RTPTypeDynamic,         // dynamic RTP type
 
-    "TIFF to PCM Codec",                // text decription
+    "SpanDSP - TIFF to PCM Codec",      // text decription
     TIFFFormat,                         // source format
     L16Format,                          // destination format
 

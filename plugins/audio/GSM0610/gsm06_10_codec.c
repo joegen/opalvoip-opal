@@ -241,6 +241,8 @@ static struct PluginCodec_information licenseInfo = {
 
 /////////////////////////////////////////////////////////////////////////////
 
+static const char desc[] = "GSM 06.10 - 13kbps Audio Codec";
+
 static const char L16Desc[]  = { "L16" };
 
 static const char gsm0610[]  = { "GSM-06.10" };
@@ -360,7 +362,7 @@ static struct PluginCodec_Definition gsmCodecDefn[4] =
     PluginCodec_OutputTypeRaw |         // raw output data
     PluginCodec_RTPTypeExplicit,        // specified RTP type
 
-    gsm0610,                            // text decription
+    desc,                               // text decription
     L16Desc,                            // source format
     gsm0610,                            // destination format
 
@@ -395,7 +397,7 @@ static struct PluginCodec_Definition gsmCodecDefn[4] =
     PluginCodec_OutputTypeRaw |         // raw output data
     PluginCodec_RTPTypeExplicit,        // dynamic RTP type
 
-    gsm0610,                            // text decription
+    desc,                               // text decription
     gsm0610,                            // source format
     L16Desc,                            // destination format
 
@@ -433,7 +435,7 @@ static struct PluginCodec_Definition gsmCodecDefn[4] =
     PluginCodec_OutputTypeRaw |         // raw output data
     PluginCodec_RTPTypeDynamic,         // specified RTP type
 
-    msGSM,                              // text decription
+    desc,                               // text decription
     L16Desc,                            // source format
     msGSM,                              // destination format
 
@@ -468,7 +470,7 @@ static struct PluginCodec_Definition gsmCodecDefn[4] =
     PluginCodec_OutputTypeRaw |         // raw output data
     PluginCodec_RTPTypeDynamic,         // dynamic RTP type
 
-    msGSM,                              // text decription
+    desc,                               // text decription
     msGSM,                              // source format
     L16Desc,                            // destination format
 

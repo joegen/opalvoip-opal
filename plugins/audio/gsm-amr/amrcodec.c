@@ -379,6 +379,8 @@ static const struct PluginCodec_H323GenericCodecData amrcap =
   122                             // Must always be this regardless of "Max Bit Rate" option
 };
 
+static const char desc[] = "GSM - Adaptive Multi Rate Codec";
+
 static struct PluginCodec_Definition amrCodecDefn[] = {
   {
     // encoder
@@ -390,7 +392,7 @@ static struct PluginCodec_Definition amrCodecDefn[] = {
     PluginCodec_OutputTypeRaw |             // raw output data
     PluginCodec_RTPTypeDynamic,             // dynamic RTP type
     
-    "GSM-AMR",                              // text decription
+    desc,                                   // text decription
     "L16",                                  // source format
     "GSM-AMR",                              // destination format
     
@@ -426,7 +428,7 @@ static struct PluginCodec_Definition amrCodecDefn[] = {
     PluginCodec_RTPTypeDynamic |            // dynamic RTP type
     PluginCodec_DecodeSilence,              // Can accept missing (empty) frames and generate silence
 
-    "GSM-AMR",                              // text decription
+    desc,                                   // text decription
     "GSM-AMR",                              // source format
     "L16",                                  // destination format
 

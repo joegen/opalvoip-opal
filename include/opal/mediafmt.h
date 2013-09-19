@@ -961,6 +961,11 @@ class OpalMediaFormat : public PContainer
       */
     PString GetName() const { PWaitAndSignal m(m_mutex); return m_info == NULL ? "" : m_info->formatName; }
 
+    /**Get the description string for the media format.
+      */
+    PString GetDescription() const { return GetOptionString(DescriptionOption()); }
+    static const PString & DescriptionOption();
+
     /**Return true if media format info is valid. This may be used if the
        single string constructor is used to check that it matched something
        in the registered media formats database.

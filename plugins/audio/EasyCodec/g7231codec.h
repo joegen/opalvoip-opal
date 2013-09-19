@@ -37,7 +37,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 //#define Ecodec EasyG7231
-static const char		EasyG7231_63_Desc[] = { "Easy G7231-6.3" };	// text decription  
+static const char		EasyG7231_63_Desc[] = { "Easy G.723.1 6.3kbps" };	// text decription  
 static const char		EasyG7231_63_L16Desc[]= { "L16" };			// source format 
 static const char		EasyG7231_63_MediaFmt[] = { "G.7231-6.3k[e]" };	// destination format  
 static unsigned int		EasyG7231_63_SamplePerSec = 8000;          // samples per second  

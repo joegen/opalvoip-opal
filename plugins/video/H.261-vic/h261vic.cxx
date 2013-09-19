@@ -478,6 +478,7 @@ static struct PluginCodec_information licenseInfo = {
   PluginCodec_License_BSD                                        // codec license code
 };
 
+static const char desc[]         = "ITU-T H.261 - Video Codec (Vic)";
 static const char YUV420PDesc[]  = { "YUV420P" };
 static const char h261Desc[]     = { "H.261" };
 static const char sdpH261[]      = { "h261" };
@@ -901,7 +902,7 @@ static struct PluginCodec_Definition h261CodecDefn[] =
     PluginCodec_MediaTypeVideo |        // audio codec
     PluginCodec_RTPTypeExplicit,        // specified RTP type
 
-    h261Desc,                           // text decription
+    desc,                               // text decription
     YUV420PDesc,                        // source format
     h261Desc,                           // destination format
 
@@ -937,7 +938,7 @@ static struct PluginCodec_Definition h261CodecDefn[] =
     PluginCodec_MediaTypeVideo |        // audio codec
     PluginCodec_RTPTypeExplicit,        // specified RTP type
 
-    h261Desc,                           // text decription
+    desc,                               // text decription
     h261Desc,                           // source format
     YUV420PDesc,                        // destination format
 

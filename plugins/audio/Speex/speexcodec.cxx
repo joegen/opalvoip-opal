@@ -377,6 +377,8 @@ static struct PluginCodec_information licenseInfo = {
   PluginCodec_License_BSD                                      // codec license code
 };
 
+static const char desc[] = "Xiph Speex CELP Audio Codec";
+
 static const char L16Desc[]  = { "L16" };
 
 static const char sdpSpeex[]  = { "Speex" };
@@ -466,7 +468,7 @@ CREATE_IETFSPEEX_CAP_DATA(desc, suffix, ordinal, 8000) \
   PluginCodec_RTPTypeShared |         /* share RTP code */ \
   PluginCodec_RTPTypeDynamic |        /* dynamic RTP type */ \
   PluginCodec_DecodeSilence,          /* can encode silence frames */ \
-  prefix##suffix,                     /* text decription */ \
+  desc,                               /* text decription */ \
   L16Desc,                            /* source format */ \
   prefix##suffix,                     /* destination format */ \
   (void *)ordinal,                    /* user data */ \
@@ -498,7 +500,7 @@ CREATE_IETFSPEEX_CAP_DATA(desc, suffix, ordinal, 8000) \
   PluginCodec_RTPTypeShared |         /* share RTP code */ \
   PluginCodec_RTPTypeDynamic |        /* dynamic RTP type */ \
   PluginCodec_DecodeSilence,          /* can encode silence frames */ \
-  prefix##suffix,                     /* text decription */ \
+  desc,                               /* text decription */ \
   prefix##suffix,                     /* source format */ \
   L16Desc,                            /* destination format */ \
   (void *)ordinal,                    /* user data */ \
@@ -554,7 +556,7 @@ CREATE_IETFSPEEX_CAP_DATA(desc, suffix, ordinal, 16000)
   PluginCodec_RTPTypeShared |         /* share RTP code */ \
   PluginCodec_RTPTypeDynamic |        /* dynamic RTP type */ \
   PluginCodec_DecodeSilence,          /* can encode silence frames */ \
-  prefix##suffix,                     /* text decription */ \
+  desc,                               /* text decription */ \
   L16Desc,                            /* source format */ \
   prefix##suffix,                     /* destination format */ \
   (void *)ordinal,                    /* user data */ \
@@ -586,7 +588,7 @@ CREATE_IETFSPEEX_CAP_DATA(desc, suffix, ordinal, 16000)
   PluginCodec_RTPTypeShared |         /* share RTP code */ \
   PluginCodec_RTPTypeDynamic |        /* dynamic RTP type */ \
   PluginCodec_DecodeSilence,          /* can encode silence frames */ \
-  prefix##suffix,                     /* text decription */ \
+  desc,                               /* text decription */ \
   prefix##suffix,                     /* source format */ \
   L16Desc,                            /* destination format */ \
   (void *)ordinal,                    /* user data */ \
@@ -638,7 +640,7 @@ static struct PluginCodec_H323NonStandardCodecData speexW##suffix##Cap = \
   PluginCodec_RTPTypeShared |         /* share RTP code */ \
   PluginCodec_RTPTypeDynamic |        /* dynamic RTP type */ \
   PluginCodec_DecodeSilence,          /* can encode silence frames */ \
-  speexW##suffix,                     /* text decription */ \
+  desc,                               /* text decription */ \
   L16Desc,                            /* source format */ \
   speexW##suffix,                     /* destination format */ \
   (void *)ordinal,                    /* user data */ \
@@ -669,7 +671,7 @@ static struct PluginCodec_H323NonStandardCodecData speexW##suffix##Cap = \
   PluginCodec_OutputTypeRaw |         /* raw output data */ \
   PluginCodec_RTPTypeShared |         /* share RTP code */ \
   PluginCodec_RTPTypeDynamic,         /* dynamic RTP type */ \
-  speexW##suffix,                     /* text decription */ \
+  desc,                               /* text decription */ \
   speexW##suffix,                     /* source format */ \
   L16Desc,                            /* destination format */ \
   (void *)ordinal,                    /* user data */ \
@@ -707,7 +709,7 @@ CREATE_NARROW_SPEEXW_CAP_DATA(Narrow-8k,    Narrow8k,    3)
   PluginCodec_RTPTypeShared |         /* share RTP code */ \
   PluginCodec_RTPTypeDynamic |        /* dynamic RTP type */ \
   PluginCodec_DecodeSilence,          /* can encode silence frames */ \
-  name,                               /* text decription */ \
+  desc,                               /* text decription */ \
   L16Desc,                            /* source format */ \
   name,                               /* destination format */ \
   (void *)ordinal,                    /* user data */ \
