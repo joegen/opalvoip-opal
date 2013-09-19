@@ -190,7 +190,7 @@ static struct PluginCodec_Option const PictureID =
   "Picture ID Size",                  // User visible name
   false,                              // User Read/Only flag
   PluginCodec_AlwaysMerge,            // Merge mode
-  "Word",                             // Initial value
+  "None",                             // Initial value
   NULL,                               // FMTP option name
   NULL,                               // FMTP default value
   0,                                  // H.245 generic capability code and bit mask
