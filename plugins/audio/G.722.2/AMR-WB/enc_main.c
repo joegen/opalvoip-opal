@@ -315,6 +315,8 @@ Word16 E_MAIN_encode(Word16 * mode, Word16 speech16k[], Word16 prms[],
    /* Other */
    Coder_State *st;                    /* Coder states                           */
 
+   Float64 mult_cache;
+
    st = (Coder_State *)spe_state;
    codec_mode = *mode;
 
@@ -347,10 +349,10 @@ Word16 E_MAIN_encode(Word16 * mode, Word16 speech16k[], Word16 prms[],
    }
 
    Q_new = -st->mem_q;
-
+   mult_cache = pow(2, Q_new);
    for(i = 0; i < (PIT_MAX + L_INTERPOL); i++)
    {
-      f_old_exc[i] = (Float32)(st->mem_exc[i] * pow(2, Q_new));
+      f_old_exc[i] = (Float32)(st->mem_exc[i] * mult_cache);
    }
 
    /*
@@ -1061,9 +1063,10 @@ Word16 E_MAIN_encode(Word16 * mode, Word16 speech16k[], Word16 prms[],
        * - update target vector for codebook search
        * - scaling of cn[] to limit dynamic at 12 bits
        */
+      mult_cache = gain_pit * pow(2, Q_new);
       for (i = 0; i < L_SUBFR; i ++)
       {
-         cn[i] = (Float32)(cn[i] - gain_pit * exc[i_subfr + i] * pow(2, Q_new));
+         cn[i] = (Float32)(cn[i] - exc[i_subfr + i] * mult_cache);
       }
 
       /*
@@ -1272,10 +1275,11 @@ Word16 E_MAIN_encode(Word16 * mode, Word16 speech16k[], Word16 prms[],
       if (*mode == MODE_24k)
       {
          Q_new = -st->mem_q;
+         mult_cache = pow(2, Q_new) * (s_gain_pit / 16384.0F);
 
          for (i = 0; i < L_SUBFR; i++)
          {
-            f_exc2[i_subfr + i] = (Float32)(exc[i_subfr + i] * pow(2, Q_new) * (s_gain_pit / 16384.0F));
+            f_exc2[i_subfr + i] = (Float32)(exc[i_subfr + i] * mult_cache);
          }
       }
 
@@ -1319,10 +1323,11 @@ Word16 E_MAIN_encode(Word16 * mode, Word16 speech16k[], Word16 prms[],
       st->mem_subfr_q[0] = s_tmp;
 
       Q_new = -st->mem_q;
+      mult_cache = pow(2, Q_new);
 
       for (i = 0; i < L_SUBFR; i++)
       {
-         f_exc[i + i_subfr] = (Float32)(exc[i + i_subfr] * pow(2, Q_new));
+         f_exc[i + i_subfr] = (Float32)(exc[i + i_subfr] * mult_cache);
       }
 
       E_UTIL_synthesis(p_Aq, &f_exc[i_subfr], synth, L_SUBFR, st->mem_syn, 1);
