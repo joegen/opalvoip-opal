@@ -642,16 +642,16 @@ bool OpalMediaPatch::EnableJitterBuffer(bool enab)
   for (s = sinks.begin(); s != sinks.end(); ++s) {
     if (s->stream->EnableJitterBuffer(enab)) {
       source.EnableJitterBuffer(false);
-      return false;
+      return true;
     }
   }
 
   for (s = sinks.begin(); s != sinks.end(); ++s) {
     if (source.EnableJitterBuffer(enab && s->stream->IsSynchronous()))
-      return false;
+      return true;
   }
 
-  return true;
+  return false;
 }
 
 

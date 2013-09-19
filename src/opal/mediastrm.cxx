@@ -774,8 +774,12 @@ bool OpalRTPMediaStream::SetPaused(bool pause, bool fromPatch)
   if (!pause)
     rtpSession.Restart(IsSource());
 
-  if (IsSource())
-    EnableJitterBuffer(!pause);
+  if (IsSource()) {
+    // We make referenced copy of pointer so can't be deleted out from under us
+    OpalMediaPatchPtr mediaPatch = m_mediaPatch;
+    if (mediaPatch != NULL)
+      mediaPatch->EnableJitterBuffer(!pause);
+  }
 
   return true;
 }
@@ -876,11 +880,7 @@ PBoolean OpalRTPMediaStream::RequiresPatchThread() const
 
 bool OpalRTPMediaStream::InternalSetJitterBuffer(const OpalJitterBuffer::Init & init) const
 {
-  if (IsSink() || !RequiresPatchThread())
-    return false;
-
-  rtpSession.SetJitterBufferSize(init);
-  return true;
+  return IsSource() && RequiresPatchThread() && rtpSession.SetJitterBufferSize(init);
 }
 
 

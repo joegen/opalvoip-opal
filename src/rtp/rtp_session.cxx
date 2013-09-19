@@ -417,12 +417,12 @@ void OpalRTPSession::SetExtensionHeader(const RTPExtensionHeaders & ext)
 }
 
 
-void OpalRTPSession::SetJitterBufferSize(const OpalJitterBuffer::Init & init)
+bool OpalRTPSession::SetJitterBufferSize(const OpalJitterBuffer::Init & init)
 {
   PWaitAndSignal mutex(m_dataMutex);
 
   if (!IsOpen())
-    return;
+    return false;
 
   if (init.m_timeUnits > 0)
     m_timeUnits = init.m_timeUnits;
@@ -433,18 +433,21 @@ void OpalRTPSession::SetJitterBufferSize(const OpalJitterBuffer::Init & init)
     m_dataMutex.Signal();
     m_jitterBuffer.SetNULL();
     m_dataMutex.Wait();
+    return false;
   }
+
+  resequenceOutOfOrderPackets = false;
+
+  if (m_jitterBuffer != NULL)
+    m_jitterBuffer->SetDelay(init);
   else {
-    resequenceOutOfOrderPackets = false;
-    if (m_jitterBuffer != NULL)
-      m_jitterBuffer->SetDelay(init);
-    else {
-      FlushData();
-      m_jitterBuffer = new RTP_JitterBuffer(*this, init);
-      PTRACE(4, "RTP\tCreated RTP jitter buffer " << *m_jitterBuffer);
-      m_jitterBuffer->Start();
-    }
+    FlushData();
+    m_jitterBuffer = new RTP_JitterBuffer(*this, init);
+    PTRACE(4, "RTP\tCreated RTP jitter buffer " << *m_jitterBuffer);
+    m_jitterBuffer->Start();
   }
+
+  return true;
 }
 
 

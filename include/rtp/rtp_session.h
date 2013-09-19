@@ -110,7 +110,7 @@ class OpalRTPSession : public OpalMediaSession
        If either jitter delay parameter is zero, it destroys the jitter buffer
        attached to this RTP session.
       */
-    void SetJitterBufferSize(
+    bool SetJitterBufferSize(
       const OpalJitterBuffer::Init & init   ///< Initialisation information
     );
 
