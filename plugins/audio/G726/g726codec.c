@@ -113,6 +113,8 @@ static struct PluginCodec_information licenseInfo = {
 
 /////////////////////////////////////////////////////////////////////////////
 
+static const char desc[] = "ITU-T G.726 - ADPCM Codec";
+
 static const char L16Desc[]  = { "L16" };
 
 static const char sdpG726_16[]  = { "G726-16" };
@@ -185,7 +187,7 @@ static struct PluginCodec_Definition g726CodecDefn[] =
     PluginCodec_OutputTypeRaw |           // raw output data
     PluginCodec_RTPTypeDynamic,           // dynamic RTP type
 
-    g726_40,                              // text decription
+    desc,                                 // text decription
     L16Desc,                              // source format
     g726_40,                              // destination format
 
@@ -225,7 +227,7 @@ static struct PluginCodec_Definition g726CodecDefn[] =
     PluginCodec_OutputTypeRaw |           // raw output data
     PluginCodec_RTPTypeDynamic,           // dynamic RTP type
 
-    g726_40,                              // text decription
+    desc,                                 // text decription
     g726_40,                              // source format
     L16Desc,                              // destination format
 
@@ -267,7 +269,7 @@ static struct PluginCodec_Definition g726CodecDefn[] =
     PluginCodec_OutputTypeRaw |           // raw output data
     PluginCodec_RTPTypeDynamic,           // dynamic RTP type
 
-    g726_32,                              // text decription
+    desc,                                 // text decription
     L16Desc,                              // source format
     g726_32,                              // destination format
 
@@ -303,7 +305,7 @@ static struct PluginCodec_Definition g726CodecDefn[] =
     PluginCodec_OutputTypeRaw |           // raw output data
     PluginCodec_RTPTypeDynamic,           // dynamic RTP type
 
-    g726_32,                              // text decription
+    desc,                                 // text decription
     g726_32,                              // source format
     L16Desc,                              // destination format
 
@@ -341,7 +343,7 @@ static struct PluginCodec_Definition g726CodecDefn[] =
     PluginCodec_OutputTypeRaw |           // raw output data
     PluginCodec_RTPTypeDynamic,           // dynamic RTP type
 
-    g726_24,                              // text decription
+    desc,                                 // text decription
     L16Desc,                              // source format
     g726_24,                              // destination format
 
@@ -377,7 +379,7 @@ static struct PluginCodec_Definition g726CodecDefn[] =
     PluginCodec_OutputTypeRaw |           // raw output data
     PluginCodec_RTPTypeDynamic,           // dynamic RTP type
 
-    g726_24,                              // text decription
+    desc,                                 // text decription
     g726_24,                              // source format
     L16Desc,                              // destination format
 
@@ -415,7 +417,7 @@ static struct PluginCodec_Definition g726CodecDefn[] =
     PluginCodec_OutputTypeRaw |           // raw output data
     PluginCodec_RTPTypeDynamic,           // dynamic RTP type
 
-    g726_16,                              // text decription
+    desc,                                 // text decription
     L16Desc,                              // source format
     g726_16,                              // destination format
 
@@ -451,7 +453,7 @@ static struct PluginCodec_Definition g726CodecDefn[] =
     PluginCodec_OutputTypeRaw |           // raw output data
     PluginCodec_RTPTypeDynamic,           // dynamic RTP type
 
-    g726_16,                              // text decription
+    desc,                                 // text decription
     g726_16,                              // source format
     L16Desc,                              // destination format
 

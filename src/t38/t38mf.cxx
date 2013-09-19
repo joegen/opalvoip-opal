@@ -66,6 +66,8 @@ const OpalMediaFormat & GetOpalT38()
                           0,
                           0)
       {
+        SetOptionString(OpalMediaFormat::DescriptionOption(), "ITU-T T.38 Group 3 facsimile");
+
         static const char * const RateMan[] = { OPAL_T38localTCF, OPAL_T38transferredTCF };
         AddOption(new OpalMediaOptionEnum(OPAL_T38FaxRateManagement, false, RateMan, PARRAYSIZE(RateMan), OpalMediaOption::EqualMerge, 1));
         AddOption(new OpalMediaOptionInteger(OPAL_T38FaxVersion, false, OpalMediaOption::MinMerge, 0, 0, 1));

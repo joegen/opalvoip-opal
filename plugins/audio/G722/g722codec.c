@@ -52,6 +52,7 @@
 #define MAX_FRAMES_PER_PACKET   90    // 90 milliseconds, which means RTP packets smaller than 1500 bytes typical LAN maximum
 #define PREF_FRAMES_PER_PACKET  20    // 20 milliseconds
 
+static const char desc[] = "ITU-T G.722 - 64kbps Wideband Audio Codec";
 static const char L16Desc[]  = "PCM-16-16kHz"; // Cannot use "L16" as usual, force 16kHz PCM
 static const char g722[]     = "G.722-64k";
 static const char sdpG722[]  = "G722";
@@ -165,7 +166,7 @@ static struct PluginCodec_Definition g722CodecDefn[] =
     PluginCodec_OutputTypeRaw |           // raw output data
     PluginCodec_RTPTypeDynamic,           // specified RTP type
 
-    g722_16,                              // text decription
+    desc,                                 // text decription
     L16Desc,                              // source format
     g722_16,                              // destination format
 
@@ -200,7 +201,7 @@ static struct PluginCodec_Definition g722CodecDefn[] =
     PluginCodec_OutputTypeRaw |           // raw output data
     PluginCodec_RTPTypeDynamic,           // specified RTP type
 
-    g722_16,                              // text decription
+    desc,                                 // text decription
     g722_16,                              // source format
     L16Desc,                              // destination format
 
@@ -237,7 +238,7 @@ static struct PluginCodec_Definition g722CodecDefn[] =
     PluginCodec_OutputTypeRaw |           // raw output data
     PluginCodec_RTPTypeExplicit,          // specified RTP type
 
-    g722,                                 // text decription
+    desc,                                 // text decription
     L16Desc,                              // source format
     g722,                                 // destination format
 
@@ -273,7 +274,7 @@ static struct PluginCodec_Definition g722CodecDefn[] =
     PluginCodec_EmptyPayload |            // Can accept and empty payload
     PluginCodec_RTPTypeExplicit,          // specified RTP type
 
-    g722,                                 // text decription
+    desc,                                 // text decription
     g722,                                 // source format
     L16Desc,                              // destination format
 

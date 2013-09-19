@@ -102,7 +102,7 @@ class MY_CODEC { };
 
 PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
 
-static const char MyDescription[] = "FFMPEG MPEG4 part 2 Video Codec";     // Human readable description of codec
+static const char MyDescription[] = "MPEG4 part 2 Video Codec (FFMPEG)";     // Human readable description of codec
 
 PLUGINCODEC_LICENSE(
   "Craig Southeren, Guilhem Tardy, Derek Smithies, "

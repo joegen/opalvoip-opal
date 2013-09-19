@@ -720,6 +720,7 @@ void OpalMediaOptionOctets::SetValue(const BYTE * data, PINDEX length)
 
 /////////////////////////////////////////////////////////////////////////////
 
+const PString & OpalMediaFormat::DescriptionOption()   { static const PConstString s("Description");                      return s; }
 const PString & OpalMediaFormat::NeedsJitterOption()   { static const PConstString s(PLUGINCODEC_OPTION_NEEDS_JITTER);    return s; }
 const PString & OpalMediaFormat::MaxFrameSizeOption()  { static const PConstString s(PLUGINCODEC_OPTION_MAX_FRAME_SIZE);  return s; }
 const PString & OpalMediaFormat::FrameTimeOption()     { static const PConstString s(PLUGINCODEC_OPTION_FRAME_TIME);      return s; }
@@ -1154,6 +1155,8 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
   codecVersionTime = ts != 0 ? ts : PTime().GetTimeInSeconds();
   rtpPayloadType   = pt;
   rtpEncodingName  = en;
+
+  AddOption(new OpalMediaOptionString(OpalMediaFormat::DescriptionOption(), true, fullName));
 
   if (nj)
     AddOption(new OpalMediaOptionBoolean(OpalMediaFormat::NeedsJitterOption(), true, OpalMediaOption::OrMerge, true));

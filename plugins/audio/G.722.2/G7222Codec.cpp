@@ -59,7 +59,7 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-static const char G7222Description[]  = "G.722.2 (AMR-WB, Wideband Adaptive Multirate Codec)";
+static const char G7222Description[]  = "ITU-T G.722.2 (AMR-WB) - Wideband Adaptive Multirate Codec";
 
 PLUGINCODEC_LICENSE(
   "Ted Szoczei, Nimajin Software Consulting",                  // source code author

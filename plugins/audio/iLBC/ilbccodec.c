@@ -427,6 +427,8 @@ static struct PluginCodec_information licenseInfo = {
   PluginCodec_License_Freeware                                // codec license code
 };
 
+static const char desc[] = "iLBC - Internet Low Bitrate Audio Codec";
+
 static const char L16Desc[]  = { "L16" };
 
 static const char iLBC13k3[] = { "iLBC-13k3" };
@@ -478,7 +480,7 @@ static struct PluginCodec_Definition iLBCCodecDefn[] =
     PluginCodec_RTPTypeShared |         // share RTP code 
     PluginCodec_RTPTypeDynamic,         // dynamic RTP type
 
-    sdpILBC,                            // text decription
+    desc,                               // text decription
     L16Desc,                            // source format
     sdpILBC,                            // destination format
 
@@ -514,7 +516,7 @@ static struct PluginCodec_Definition iLBCCodecDefn[] =
     PluginCodec_RTPTypeShared |         // share RTP code 
     PluginCodec_RTPTypeDynamic,         // dynamic RTP type
 
-    sdpILBC,                            // text decription
+    desc,                               // text decription
     sdpILBC,                            // source format
     L16Desc,                            // destination format
 
@@ -550,7 +552,7 @@ static struct PluginCodec_Definition iLBCCodecDefn[] =
     PluginCodec_RTPTypeShared |         // share RTP code 
     PluginCodec_RTPTypeDynamic,         // dynamic RTP type
 
-    iLBC13k3,                           // text decription
+    desc,                               // text decription
     L16Desc,                            // source format
     iLBC13k3,                           // destination format
 
@@ -586,7 +588,7 @@ static struct PluginCodec_Definition iLBCCodecDefn[] =
     PluginCodec_RTPTypeShared |         // share RTP code 
     PluginCodec_RTPTypeDynamic,         // dynamic RTP type
 
-    iLBC13k3,                           // text decription
+    desc,                               // text decription
     iLBC13k3,                           // source format
     L16Desc,                            // destination format
 
@@ -622,7 +624,7 @@ static struct PluginCodec_Definition iLBCCodecDefn[] =
     PluginCodec_RTPTypeShared |         // share RTP code 
     PluginCodec_RTPTypeDynamic,         // dynamic RTP type
 
-    iLBC15k2,                           // text decription
+    desc,                               // text decription
     L16Desc,                            // source format
     iLBC15k2,                           // destination format
 
@@ -658,7 +660,7 @@ static struct PluginCodec_Definition iLBCCodecDefn[] =
     PluginCodec_RTPTypeShared |         // share RTP code 
     PluginCodec_RTPTypeDynamic,         // dynamic RTP type
 
-    iLBC15k2,                           // text decription
+    desc,                               // text decription
     iLBC15k2,                           // source format
     L16Desc,                            // destination format
 

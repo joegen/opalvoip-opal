@@ -46,7 +46,7 @@ class MY_CODEC { };
 PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
 
 
-static const char MyDescription[] = "SILK Audio Codec";     // Human readable description of codec
+static const char MyDescription[] = "SILK Audio Codec (Skype reference)";     // Human readable description of codec
 static const char MyPayloadName[] = "SILK";                 // RTP payload name (IANA approved)
 
 PLUGINCODEC_LICENSE(

@@ -752,7 +752,7 @@ class OptionsDialog : public wxDialog
     wxButton     * m_RemoveCodec;
     wxButton     * m_MoveUpCodec;
     wxButton     * m_MoveDownCodec;
-    wxListBox    * m_allCodecs;
+    wxListCtrl   * m_allCodecs;
     wxListBox    * m_selectedCodecs;
     wxListCtrl   * m_codecOptions;
     wxTextCtrl   * m_codecOptionValue;

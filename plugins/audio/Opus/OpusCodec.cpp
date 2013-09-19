@@ -47,7 +47,7 @@ class MY_CODEC { };
 PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
 
 
-static const char MyDescription[] = "Opus Audio Codec";     // Human readable description of codec
+static const char MyDescription[] = "Opus Audio Codec (RFC6716 reference)";     // Human readable description of codec
 
 PLUGINCODEC_LICENSE(
   "Robert Jongbloed, Vox Lucida Pty.Ltd.",                      // source code author

@@ -59,7 +59,7 @@ class MY_CODEC { };
 
 PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
 
-static const char MyDescription[] = "x264 Video Codec";     // Human readable description of codec
+static const char MyDescription[] = "ITU-T H.264 - Video Codec (x264 & FFMPEG)";     // Human readable description of codec
 
 PLUGINCODEC_LICENSE(
   "Matthias Schneider\n"
