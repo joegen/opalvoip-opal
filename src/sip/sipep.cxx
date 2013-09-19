@@ -641,7 +641,8 @@ bool SIPEndPoint::OnReceivedPDU(SIP_PDU * pdu)
   }
 
   // Check if we have already received this request (have a transaction in play)
-  {
+  // But not ACK as that is really part of the INVITE transaction
+  if (pdu->GetMethod() != SIP_PDU::Method_ACK) {
     PString id = pdu->GetTransactionID();
     PSafePtr<SIPResponse> transaction = PSafePtrCast<SIPTransaction, SIPResponse>(GetTransaction(id, PSafeReadOnly));
     if (transaction != NULL) {
@@ -1928,27 +1929,30 @@ void SIP_PDU_Work::Work()
     return;
 
   // Check if we have already have a transaction in play
-  PString transactionID = m_pdu->GetTransactionID();
-  PSafePtr<SIPTransaction> transaction = m_endpoint.GetTransaction(transactionID, PSafeReference);
-  if (transaction != NULL) {
-    PTRACE_CONTEXT_ID_PUSH_THREAD(*transaction);
+  // But not ACK as that is really part of the INVITE transaction
+  if (m_pdu->GetMethod() != SIP_PDU::Method_ACK) {
+    PString transactionID = m_pdu->GetTransactionID();
+    PSafePtr<SIPTransaction> transaction = m_endpoint.GetTransaction(transactionID, PSafeReference);
+    if (transaction != NULL) {
+      PTRACE_CONTEXT_ID_PUSH_THREAD(*transaction);
+
+      if (m_pdu->GetMethod() == SIP_PDU::NumMethods) {
+        PTRACE(3, "SIP\tHandling PDU \"" << *m_pdu << "\" for transaction=" << transactionID);
+        transaction->OnReceivedResponse(*m_pdu);
+        PTRACE(4, "SIP\tHandled PDU \"" << *m_pdu << '"');
+      }
+      else {
+        PTRACE(4, "SIP\tRetransmitting previous response for transaction id=" << transactionID);
+        transaction->InitialiseHeaders(*m_pdu);
+        transaction->Send();
+      }
+      return;
+    }
 
     if (m_pdu->GetMethod() == SIP_PDU::NumMethods) {
-      PTRACE(3, "SIP\tHandling PDU \"" << *m_pdu << "\" for transaction=" << transactionID);
-      transaction->OnReceivedResponse(*m_pdu);
-      PTRACE(4, "SIP\tHandled PDU \"" << *m_pdu << '"');
+      PTRACE(2, "SIP\tCannot find transaction " << transactionID << " for response PDU \"" << *m_pdu << '"');
+      return;
     }
-    else {
-      PTRACE(4, "SIP\tRetransmitting previous response for transaction id=" << transactionID);
-      transaction->InitialiseHeaders(*m_pdu);
-      transaction->Send();
-    }
-    return;
-  }
-
-  if (m_pdu->GetMethod() == SIP_PDU::NumMethods) {
-    PTRACE(2, "SIP\tCannot find transaction " << transactionID << " for response PDU \"" << *m_pdu << '"');
-    return;
   }
 
   PSafePtr<SIPConnection> connection = m_endpoint.GetSIPConnectionWithLock(m_token, PSafeReadWrite);
