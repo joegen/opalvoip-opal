@@ -360,21 +360,22 @@ bool OpalAudioMixer::SetJitterBufferSize(const Key_T & key, const OpalJitterBuff
     return false;
 
   OpalJitterBuffer * & jitter = audioStream->m_jitter;
-  if (jitter != NULL) {
-    if (init.m_maxJitterDelay > 0)
-      jitter->SetDelay(init);
-    else {
+
+  if (init.m_maxJitterDelay == 0) {
+    if (jitter != NULL) {
       PTRACE(4, "AudioMix\tJitter buffer disabled");
       delete jitter;
       jitter = NULL;
     }
+    return false;
   }
+
+  if (jitter != NULL)
+    jitter->SetDelay(init);
   else {
-    if (init.m_maxJitterDelay > 0) {
-      PTRACE(4, "AudioMix\tJitter buffer enabled");
-      jitter = new OpalJitterBuffer(init);
-      PTRACE_CONTEXT_ID_SET(*jitter, audioStream);
-    }
+    PTRACE(4, "AudioMix\tJitter buffer enabled");
+    jitter = new OpalJitterBuffer(init);
+    PTRACE_CONTEXT_ID_SET(*jitter, audioStream);
   }
 
   return true;

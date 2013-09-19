@@ -321,8 +321,8 @@ class OpalMediaStream : public PSafeObject
     virtual PBoolean RequiresPatchThread() const; // For backward compatibility
 
     /**Enable jitter buffer for the media stream.
-       Returns true if a jitter buffer is enabled/disabled. Returns false if
-       no jitter buffer exists for the media stream.
+       Returns true if a jitter buffer is enabled. Returns false if the jitter
+       buffer is disabled or no jitter buffer can be used on the media stream.
 
        The default behaviour does nothing and returns false.
       */
