@@ -48,7 +48,7 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-static const char G7221Description[] = "ITU-T G.722.1 - 7/14kHz Audio Coder";
+static const char G7221Description[] = "ITU-T G.722.1 - 7/14kHz Audio Codec";
 
 PLUGINCODEC_LICENSE(
   "Ted Szoczei, Nimajin Software Consulting",                  // source code author

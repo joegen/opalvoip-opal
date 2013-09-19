@@ -372,6 +372,8 @@ static struct PluginCodec_information licenseInfo = {
 
 /////////////////////////////////////////////////////////////////////////////
 
+static const char desc[] = "Microsoft IMA ADPCM Audio Codec"; 
+
 static const char L16Desc[]  = { "L16" };
 
 static const char imaADPCM[] = "MS-IMA-ADPCM";
@@ -427,7 +429,7 @@ static struct PluginCodec_Definition imaADPCMCodecDefn[] =
     PluginCodec_OutputTypeRaw |           // raw output data
     PluginCodec_RTPTypeExplicit,          // specified RTP type
 
-    imaADPCM,                             // text decription
+    desc,                                 // text decription
     L16Desc,                              // source format
     imaADPCM,                             // destination format
 
@@ -462,7 +464,7 @@ static struct PluginCodec_Definition imaADPCMCodecDefn[] =
     PluginCodec_OutputTypeRaw |           // raw output data
     PluginCodec_RTPTypeDynamic,           // dynamic RTP type
 
-    imaADPCM,                             // text decription
+    desc,                                 // text decription
     imaADPCM,                             // source format
     L16Desc,                              // destination format
 

@@ -114,8 +114,10 @@ const OpalMediaFormat & GetOpalMSRP()
                           1440, 
                           512, 
                           0, 
-                          1000)            // as defined in RFC 4103 - good as anything else   
+                          1000)
       { 
+        SetOptionString(OpalMediaFormat::DescriptionOption(), "RFC 4975 (MSRP) Instant Message Relay");
+
         PFactory<OpalMSRPEncoding>::KeyList_T types = PFactory<OpalMSRPEncoding>::GetKeyList();
         PFactory<OpalMSRPEncoding>::KeyList_T::iterator r;
 

@@ -128,6 +128,7 @@ const OpalMediaFormat & GetOpalT140()
                           0, 
                           1000)    // as defined in RFC 4103
       { 
+        SetOptionString(OpalMediaFormat::DescriptionOption(), "ITU-T T.140 (RFC 4103) Instant Messaging");
       } 
   } const f; 
   return f; 

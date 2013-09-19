@@ -4200,6 +4200,14 @@ void MyManager::OnOptions(wxCommandEvent & /*event*/)
   dlg.ShowModal();
 }
 
+DEF_XRCID(AllCodecs);
+DEF_XRCID(SelectedCodecs);
+DEF_XRCID(CodecOptionsList);
+DEF_XRCID(CodecOptionValue);
+DEF_XRCID(AddCodec);
+DEF_XRCID(RemoveCodec);
+DEF_XRCID(MoveUpCodec);
+  DEF_XRCID(MoveDownCodec);
 
 BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   ////////////////////////////////////////
@@ -4259,15 +4267,15 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
 
   ////////////////////////////////////////
   // Codec fields
-  EVT_BUTTON(XRCID("AddCodec"), OptionsDialog::AddCodec)
-  EVT_BUTTON(XRCID("RemoveCodec"), OptionsDialog::RemoveCodec)
-  EVT_BUTTON(XRCID("MoveUpCodec"), OptionsDialog::MoveUpCodec)
-  EVT_BUTTON(XRCID("MoveDownCodec"), OptionsDialog::MoveDownCodec)
-  EVT_LISTBOX(XRCID("AllCodecs"), OptionsDialog::SelectedCodecToAdd)
-  EVT_LISTBOX(XRCID("SelectedCodecs"), OptionsDialog::SelectedCodec)
-  EVT_LIST_ITEM_SELECTED(XRCID("CodecOptionsList"), OptionsDialog::SelectedCodecOption)
-  EVT_LIST_ITEM_DESELECTED(XRCID("CodecOptionsList"), OptionsDialog::DeselectedCodecOption)
-  EVT_TEXT(XRCID("CodecOptionValue"), OptionsDialog::ChangedCodecOptionValue)
+  EVT_LISTBOX(ID_AllCodecs, OptionsDialog::SelectedCodecToAdd)
+  EVT_LISTBOX(ID_SelectedCodecs, OptionsDialog::SelectedCodec)
+  EVT_BUTTON(ID_AddCodec, OptionsDialog::AddCodec)
+  EVT_BUTTON(ID_RemoveCodec, OptionsDialog::RemoveCodec)
+  EVT_BUTTON(ID_MoveUpCodec, OptionsDialog::MoveUpCodec)
+  EVT_BUTTON(ID_MoveDownCodec, OptionsDialog::MoveDownCodec)
+  EVT_LIST_ITEM_SELECTED(ID_CodecOptionsList, OptionsDialog::SelectedCodecOption)
+  EVT_LIST_ITEM_DESELECTED(ID_CodecOptionsList, OptionsDialog::DeselectedCodecOption)
+  EVT_TEXT(ID_CodecOptionValue, OptionsDialog::ChangedCodecOptionValue)
 
   ////////////////////////////////////////
   // H.323 fields
@@ -4367,6 +4375,16 @@ static void InitSecurityFields(OpalEndPoint * ep, wxCheckListBox * listbox, bool
   listbox->Enable(securedSignaling && allMethods.GetSize() > 1);
 }
 #endif // OPAL_PTLIB_SSL
+
+
+static int wxCALLBACK MediaFormatSort(wxIntPtr item1, wxIntPtr item2, wxIntPtr)
+{
+  MyMedia * media1 = (MyMedia *)item1;
+  MyMedia * media2 = (MyMedia *)item2;
+  PCaselessString name1 = media1->mediaFormat.GetMediaType().c_str() + media1->mediaFormat.GetName();
+  PCaselessString name2 = media2->mediaFormat.GetMediaType().c_str() + media2->mediaFormat.GetName();
+  return name1.Compare(name2);
+}
 
 
 OptionsDialog::OptionsDialog(MyManager * manager)
@@ -4678,30 +4696,37 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   ////////////////////////////////////////
   // Codec fields
-  FindWindowByNameAs(m_AddCodec, this, wxT("AddCodec"))->Disable();
-  FindWindowByNameAs(m_RemoveCodec, this, wxT("RemoveCodec"))->Disable();
-  FindWindowByNameAs(m_MoveUpCodec, this, wxT("MoveUpCodec"))->Disable();
-  FindWindowByNameAs(m_MoveDownCodec, this, wxT("MoveDownCodec"))->Disable();
+  FindWindowByNameAs(m_AddCodec, this, ID_AddCodec)->Disable();
+  FindWindowByNameAs(m_RemoveCodec, this, ID_RemoveCodec)->Disable();
+  FindWindowByNameAs(m_MoveUpCodec, this, ID_MoveUpCodec)->Disable();
+  FindWindowByNameAs(m_MoveDownCodec, this, ID_MoveDownCodec)->Disable();
 
-  FindWindowByNameAs(m_allCodecs, this, wxT("AllCodecs"));
-  FindWindowByNameAs(m_selectedCodecs, this, wxT("SelectedCodecs"));
+  FindWindowByNameAs(m_allCodecs, this, ID_AllCodecs);
+  m_allCodecs->InsertColumn(0, wxT("Name"), wxLIST_FORMAT_LEFT);
+  m_allCodecs->InsertColumn(1, wxT("Description"), wxLIST_FORMAT_LEFT);
+  FindWindowByNameAs(m_selectedCodecs, this, ID_SelectedCodecs);
   for (MyMediaList::iterator mm = m_manager.m_mediaInfo.begin(); mm != m_manager.m_mediaInfo.end(); ++mm) {
     PwxString details;
     details << mm->mediaFormat.GetMediaType().c_str() << ": " << mm->mediaFormat.GetName();
     if (mm->validProtocols != NULL)
       details << mm->validProtocols;
-    m_allCodecs->Append(details, &*mm);
+    long index = m_allCodecs->InsertItem(INT_MAX, details);
+    m_allCodecs->SetItemPtrData(index, (wxUIntPtr)&*mm);
+    m_allCodecs->SetItem(index, 1, PwxString(mm->mediaFormat.GetDescription()));
 
     PwxString str(mm->mediaFormat);
     if (mm->preferenceOrder >= 0 && m_selectedCodecs->FindString(str) < 0)
       m_selectedCodecs->Append(str, &*mm);
   }
+  m_allCodecs->SortItems(MediaFormatSort, 0);
+  m_allCodecs->SetColumnWidth(0, wxLIST_AUTOSIZE);
+  m_allCodecs->SetColumnWidth(1, wxLIST_AUTOSIZE);
 
-  FindWindowByNameAs(m_codecOptions, this, wxT("CodecOptionsList"));
+  FindWindowByNameAs(m_codecOptions, this, ID_CodecOptionsList);
   int columnWidth = (m_codecOptions->GetClientSize().GetWidth()-30)/2;
   m_codecOptions->InsertColumn(0, wxT("Option"), wxLIST_FORMAT_LEFT, columnWidth);
   m_codecOptions->InsertColumn(1, wxT("Value"), wxLIST_FORMAT_LEFT, columnWidth);
-  FindWindowByNameAs(m_codecOptionValue, this, wxT("CodecOptionValue"))->Disable();
+  FindWindowByNameAs(m_codecOptionValue, this, ID_CodecOptionValue)->Disable();
   FindWindowByNameAs(m_CodecOptionValueLabel, this, wxT("CodecOptionValueLabel"))->Disable();
   FindWindowByNameAs(m_CodecOptionValueError, this, wxT("CodecOptionValueError"))->Show(false);
 
@@ -6024,24 +6049,20 @@ void OptionsDialog::AddCodec(wxCommandEvent & /*event*/)
   if (m_selectedCodecs->GetSelections(destinationSelections) > 0)
     insertionPoint = destinationSelections[0];
 
-  wxArrayInt sourceSelections;
-  m_allCodecs->GetSelections(sourceSelections);
-  for (size_t i = 0; i < sourceSelections.GetCount(); i++) {
-    int sourceSelection = sourceSelections[i];
-    wxString value = m_allCodecs->GetString(sourceSelection);
-    void * data = m_allCodecs->GetClientData(sourceSelection);
-    value.Remove(0, value.Find(':')+2);
-    value.Replace(SIPonly, wxEmptyString);
-    value.Replace(H323only, wxEmptyString);
-    if (m_selectedCodecs->FindString(value) < 0) {
+  int pos = -1;
+  while ((pos = m_allCodecs->GetNextItem(pos, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED)) >= 0) {
+    MyMedia * media = (MyMedia *)m_allCodecs->GetItemData(pos);
+
+    PwxString name = media->mediaFormat.GetName();
+    if (m_selectedCodecs->FindString(name) < 0) {
       if (insertionPoint < 0)
-        m_selectedCodecs->Append(value, data);
+        m_selectedCodecs->Append(name, media);
       else {
-        m_selectedCodecs->InsertItems(1, &value, insertionPoint);
-        m_selectedCodecs->SetClientData(insertionPoint, data);
+        m_selectedCodecs->InsertItems(1, &name, insertionPoint);
+        m_selectedCodecs->SetClientData(insertionPoint, media);
       }
     }
-    m_allCodecs->Deselect(sourceSelections[i]);
+    m_allCodecs->SetItemState(pos, 0, wxLIST_STATE_SELECTED);
   }
 
   m_AddCodec->Enable(false);
@@ -6094,8 +6115,7 @@ void OptionsDialog::MoveDownCodec(wxCommandEvent & /*event*/)
 
 void OptionsDialog::SelectedCodecToAdd(wxCommandEvent & /*event*/)
 {
-  wxArrayInt selections;
-  m_AddCodec->Enable(m_allCodecs->GetSelections(selections) > 0);
+  m_AddCodec->Enable(m_allCodecs->GetSelectedItemCount() > 0);
 }
 
 
