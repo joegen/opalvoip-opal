@@ -38,6 +38,13 @@
  *                 Matthias Schneider (ma30002000@yahoo.de)
  */
 #include "dyna.h"
+#include <cstdio>
+#include <cstdarg>
+
+extern "C" {
+#include <libavcodec/avcodec.h>
+#include <libavutil/mem.h>
+}
 
 bool DynaLink::Open(const char *name)
 {
@@ -228,101 +235,15 @@ FFMPEGLibrary::~FFMPEGLibrary()
   m_libAvutil.Close();
 }
 
-#define CHECK_AVUTIL(name, func) \
-      (seperateLibAvutil ? \
-        m_libAvutil.GetFunction(name,  (DynaLink::Function &)func) : \
-        m_libAvcodec.GetFunction(name, (DynaLink::Function &)func) \
-       ) \
-
-
 bool FFMPEGLibrary::Load()
 {
   WaitAndSignal m(processLock);
   if (IsLoaded())
     return true;
 
-  bool seperateLibAvutil = false;
-
-#ifdef LIBAVCODEC_LIB_NAME
-  if (m_libAvcodec.Open(LIBAVCODEC_LIB_NAME))
-    seperateLibAvutil = true;
-  else
-#endif
-  if (m_libAvcodec.Open("libavcodec"))
-    seperateLibAvutil = false;
-  else if (m_libAvcodec.Open("avcodec-" AV_STRINGIFY(LIBAVCODEC_VERSION_MAJOR)))
-    seperateLibAvutil = true;
-  else {
-    PTRACE(1, m_codecString, "Failed to load FFMPEG libavcodec library");
-    return false;
-  }
-
-  if (seperateLibAvutil &&
-        !(
-#ifdef LIBAVUTIL_LIB_NAME
-          m_libAvutil.Open(LIBAVUTIL_LIB_NAME) ||
-#endif
-          m_libAvutil.Open("libavutil") ||
-          m_libAvutil.Open("avutil-" AV_STRINGIFY(LIBAVUTIL_VERSION_MAJOR))
-        ) ) {
-    PTRACE(1, m_codecString, "Failed to load FFMPEG libavutil library");
-    return false;
-  }
-
-  strcpy(m_libAvcodec.m_codecString, m_codecString);
-  strcpy(m_libAvutil.m_codecString,  m_codecString);
-
-  if (!m_libAvcodec.GetFunction("avcodec_init", (DynaLink::Function &)Favcodec_init))
-    return false;
-
-  if (!m_libAvcodec.GetFunction("av_init_packet", (DynaLink::Function &)Fav_init_packet))
-    return false;
-
-  if (!m_libAvcodec.GetFunction("avcodec_register_all", (DynaLink::Function &)Favcodec_register_all))
-    return false;
-
-  if (!m_libAvcodec.GetFunction("avcodec_find_encoder", (DynaLink::Function &)Favcodec_find_encoder))
-    return false;
-
-  if (!m_libAvcodec.GetFunction("avcodec_find_decoder", (DynaLink::Function &)Favcodec_find_decoder))
-    return false;
-
-  if (!m_libAvcodec.GetFunction("avcodec_alloc_context", (DynaLink::Function &)Favcodec_alloc_context))
-    return false;
-
-  if (!m_libAvcodec.GetFunction("avcodec_alloc_frame", (DynaLink::Function &)Favcodec_alloc_frame))
-    return false;
-
-  if (!m_libAvcodec.GetFunction("avcodec_open", (DynaLink::Function &)Favcodec_open))
-    return false;
-
-  if (!m_libAvcodec.GetFunction("avcodec_close", (DynaLink::Function &)Favcodec_close))
-    return false;
-
-  if (!m_libAvcodec.GetFunction("avcodec_encode_video", (DynaLink::Function &)Favcodec_encode_video))
-    return false;
-
-  if (!m_libAvcodec.GetFunction("avcodec_decode_video2", (DynaLink::Function &)Favcodec_decode_video))
-    return false;
-
-  if (!m_libAvcodec.GetFunction("avcodec_set_dimensions", (DynaLink::Function &)Favcodec_set_dimensions))
-    return false;
-
-  if (!CHECK_AVUTIL("av_free", Favcodec_free))
-    return false;
-
-  if(!m_libAvcodec.GetFunction("avcodec_version", (DynaLink::Function &)Favcodec_version))
-    return false;
-
-  if (!CHECK_AVUTIL("av_log_set_level", FAv_log_set_level))
-    return false;
-
-  if (!CHECK_AVUTIL("av_log_set_callback", FAv_log_set_callback))
-    return false;
-
   // must be called before using avcodec lib
 
-  unsigned libVer = Favcodec_version();
+  unsigned libVer = avcodec_version();
   if (libVer != LIBAVCODEC_VERSION_INT) {
     PTRACE(2, m_codecString, "Warning: compiled against libavcodec headers from version "
            << LIBAVCODEC_VERSION_MAJOR << '.' << LIBAVCODEC_VERSION_MINOR << '.' << LIBAVCODEC_VERSION_MICRO
@@ -334,8 +255,7 @@ bool FFMPEGLibrary::Load()
            << (libVer >> 16) << ((libVer>>8) & 0xff) << (libVer & 0xff));
   }
 
-  Favcodec_init();
-  Favcodec_register_all ();
+  avcodec_register_all();
 
 #if PLUGINCODEC_TRACING
   AvLogSetLevel(AV_LOG_DEBUG);
@@ -350,49 +270,49 @@ bool FFMPEGLibrary::Load()
 
 AVCodec *FFMPEGLibrary::AvcodecFindEncoder(enum CodecID id)
 {
-  return Favcodec_find_encoder(id);
+  return avcodec_find_encoder(id);
 }
 
 AVCodec *FFMPEGLibrary::AvcodecFindDecoder(enum CodecID id)
 {
   WaitAndSignal m(processLock);
 
-  return Favcodec_find_decoder(id);
+  return avcodec_find_decoder(id);
 }
 
-AVCodecContext *FFMPEGLibrary::AvcodecAllocContext(void)
+AVCodecContext *FFMPEGLibrary::AvcodecAllocContext(AVCodec *codec)
 {
   WaitAndSignal m(processLock);
 
-  return Favcodec_alloc_context();
+  return avcodec_alloc_context3(codec);
 }
 
 AVFrame *FFMPEGLibrary::AvcodecAllocFrame(void)
 {
   WaitAndSignal m(processLock);
 
-  return Favcodec_alloc_frame();
+  return avcodec_alloc_frame();
 }
 
 int FFMPEGLibrary::AvcodecOpen(AVCodecContext *ctx, AVCodec *codec)
 {
   WaitAndSignal m(processLock);
 
-  return Favcodec_open(ctx, codec);
+  return avcodec_open2(ctx, codec, NULL);
 }
 
 int FFMPEGLibrary::AvcodecClose(AVCodecContext *ctx)
 {
   WaitAndSignal m(processLock);
 
-  return Favcodec_close(ctx);
+  return avcodec_close(ctx);
 }
 
 int FFMPEGLibrary::AvcodecEncodeVideo(AVCodecContext *ctx, BYTE *buf, int buf_size, const AVFrame *pict)
 {
   int res;
 
-  res = Favcodec_encode_video(ctx, buf, buf_size, pict);
+  res = avcodec_encode_video(ctx, buf, buf_size, pict);
 
   PTRACE(6, m_codecString, "DYNA\tEncoded into " << res << " bytes, max " << buf_size);
   return res;
@@ -401,35 +321,35 @@ int FFMPEGLibrary::AvcodecEncodeVideo(AVCodecContext *ctx, BYTE *buf, int buf_si
 int FFMPEGLibrary::AvcodecDecodeVideo(AVCodecContext *ctx, AVFrame *pict, int *got_picture_ptr, BYTE *buf, int buf_size)
 {
   AVPacket avpkt;
-  Fav_init_packet(&avpkt);
+  av_init_packet(&avpkt);
   avpkt.data = buf;
   avpkt.size = buf_size;
 
-  return Favcodec_decode_video(ctx, pict, got_picture_ptr, &avpkt);
+  return avcodec_decode_video2(ctx, pict, got_picture_ptr, &avpkt);
 }
 
 void FFMPEGLibrary::AvcodecFree(void * ptr)
 {
   WaitAndSignal m(processLock);
 
-  Favcodec_free(ptr);
+  av_free(ptr);
 }
 
 void FFMPEGLibrary::AvSetDimensions(AVCodecContext *s, int width, int height)
 {
   WaitAndSignal m(processLock);
 
-  Favcodec_set_dimensions(s, width, height);
+  avcodec_set_dimensions(s, width, height);
 }
 
 void FFMPEGLibrary::AvLogSetLevel(int level)
 {
-  FAv_log_set_level(level);
+  av_log_set_level(level);
 }
 
 void FFMPEGLibrary::AvLogSetCallback(void (*callback)(void*, int, const char*, va_list))
 {
-  FAv_log_set_callback(callback);
+  av_log_set_callback(callback);
 }
 
 bool FFMPEGLibrary::IsLoaded()

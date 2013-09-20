@@ -589,17 +589,14 @@ void MPEG4EncoderContext::SetStaticEncodingParams(){
     m_avpicture->quality = m_videoQMin;
 
 #ifdef USE_ORIG
-    m_avcontext->flags |= CODEC_FLAG_PART;   // data partitioning
     m_avcontext->flags |= CODEC_FLAG_4MV;    // 4 motion vectors
 #else
     m_avcontext->max_b_frames=0; /*don't use b frames*/
     m_avcontext->flags|=CODEC_FLAG_AC_PRED;
-    m_avcontext->flags|=CODEC_FLAG_H263P_UMV;
     /*c->flags|=CODEC_FLAG_QPEL;*/ /*don't enable this one: this forces profile_level to advanced simple profile */
     m_avcontext->flags|=CODEC_FLAG_4MV;
     m_avcontext->flags|=CODEC_FLAG_GMC;
     m_avcontext->flags|=CODEC_FLAG_LOOP_FILTER;
-    m_avcontext->flags|=CODEC_FLAG_H263P_SLICE_STRUCT;
 #endif
     m_avcontext->opaque = this;              // for use in RTP callback
 }
@@ -691,7 +688,12 @@ void MPEG4EncoderContext::ResizeEncodingFrame(bool restartCodec) {
 
 bool MPEG4EncoderContext::OpenCodec()
 {
-  m_avcontext = FFMPEGLibraryInstance.AvcodecAllocContext();
+  if((m_avcodec = FFMPEGLibraryInstance.AvcodecFindEncoder(CODEC_ID_MPEG4)) == NULL){
+    PTRACE(1, "MPEG4", "Encoder not found");
+    return false;
+  }
+
+  m_avcontext = FFMPEGLibraryInstance.AvcodecAllocContext(m_avcodec);
   if (m_avcontext == NULL) {
     PTRACE(1, "MPEG4", "Encoder failed to allocate context for encoder");
     return false;
@@ -700,11 +702,6 @@ bool MPEG4EncoderContext::OpenCodec()
   m_avpicture = FFMPEGLibraryInstance.AvcodecAllocFrame();
   if (m_avpicture == NULL) {
     PTRACE(1, "MPEG4", "Encoder failed to allocate frame for encoder");
-    return false;
-  }
-
-  if((m_avcodec = FFMPEGLibraryInstance.AvcodecFindEncoder(CODEC_ID_MPEG4)) == NULL){
-    PTRACE(1, "MPEG4", "Encoder not found");
     return false;
   }
 
@@ -804,7 +801,7 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
         // Should the next frame be an I-Frame?
         if ((flags & PluginCodec_CoderForceIFrame) || (m_frameNum == 0))
         {
-            m_avpicture->pict_type = FF_I_TYPE;
+            m_avpicture->pict_type = AV_PICTURE_TYPE_I;
         }
         else // No IFrame requested, let avcodec decide what to do
         {
@@ -1325,7 +1322,6 @@ void MPEG4DecoderContext::SetFrameHeight(int height) {
 
 void MPEG4DecoderContext::SetStaticDecodingParams() {
     m_avcontext->flags |= CODEC_FLAG_4MV; 
-    m_avcontext->flags |= CODEC_FLAG_PART;
     m_avcontext->workaround_bugs = 0; // no workaround for buggy implementations
 }
 
@@ -1399,7 +1395,7 @@ bool MPEG4DecoderContext::OpenCodec()
         return false;
     }
         
-    m_avcontext = FFMPEGLibraryInstance.AvcodecAllocContext();
+    m_avcontext = FFMPEGLibraryInstance.AvcodecAllocContext(m_avcodec);
     if (m_avcontext == NULL) {
         PTRACE(1, "MPEG4", "Decoder failed to allocate context");
         return false;
