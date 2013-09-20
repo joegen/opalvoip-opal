@@ -43,7 +43,7 @@
 class OpalLocalConnection;
 
 
-#define OPAL_LOCAL_PREFIX "lcoal"
+#define OPAL_LOCAL_PREFIX "local"
 
 
 /** Local EndPoint.
