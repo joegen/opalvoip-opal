@@ -4267,7 +4267,8 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
 
   ////////////////////////////////////////
   // Codec fields
-  EVT_LISTBOX(ID_AllCodecs, OptionsDialog::SelectedCodecToAdd)
+  EVT_LIST_ITEM_SELECTED(ID_AllCodecs, OptionsDialog::SelectedCodecToAdd)
+  EVT_LIST_ITEM_DESELECTED(ID_AllCodecs, OptionsDialog::SelectedCodecToAdd)
   EVT_LISTBOX(ID_SelectedCodecs, OptionsDialog::SelectedCodec)
   EVT_BUTTON(ID_AddCodec, OptionsDialog::AddCodec)
   EVT_BUTTON(ID_RemoveCodec, OptionsDialog::RemoveCodec)
@@ -6113,7 +6114,7 @@ void OptionsDialog::MoveDownCodec(wxCommandEvent & /*event*/)
 }
 
 
-void OptionsDialog::SelectedCodecToAdd(wxCommandEvent & /*event*/)
+void OptionsDialog::SelectedCodecToAdd(wxListEvent & /*event*/)
 {
   m_AddCodec->Enable(m_allCodecs->GetSelectedItemCount() > 0);
 }
