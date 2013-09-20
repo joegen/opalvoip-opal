@@ -763,7 +763,7 @@ class OptionsDialog : public wxDialog
     void RemoveCodec(wxCommandEvent & /*event*/);
     void MoveUpCodec(wxCommandEvent & /*event*/);
     void MoveDownCodec(wxCommandEvent & /*event*/);
-    void SelectedCodecToAdd(wxCommandEvent & /*event*/);
+    void SelectedCodecToAdd(wxListEvent & /*event*/);
     void SelectedCodec(wxCommandEvent & /*event*/);
     void SelectedCodecOption(wxListEvent & /*event*/);
     void DeselectedCodecOption(wxListEvent & /*event*/);
