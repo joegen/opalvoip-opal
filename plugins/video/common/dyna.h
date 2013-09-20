@@ -95,7 +95,7 @@ class FFMPEGLibrary
 
     AVCodec *AvcodecFindEncoder(enum CodecID id);
     AVCodec *AvcodecFindDecoder(enum CodecID id);
-    AVCodecContext *AvcodecAllocContext(void);
+    AVCodecContext *AvcodecAllocContext(AVCodec*);
     AVFrame *AvcodecAllocFrame(void);
     int AvcodecOpen(AVCodecContext *ctx, AVCodec *codec);
     int AvcodecClose(AVCodecContext *ctx);
@@ -119,26 +119,6 @@ class FFMPEGLibrary
 
     CodecID m_codec;
     char m_codecString[32];
-
-    void (*Favcodec_init)(void);
-    void (*Fav_init_packet)(AVPacket *pkt);
-
-    void (*Favcodec_register_all)(void);
-    AVCodec *(*Favcodec_find_encoder)(enum CodecID id);
-    AVCodec *(*Favcodec_find_decoder)(enum CodecID id);
-    AVCodecContext *(*Favcodec_alloc_context)(void);
-    AVFrame *(*Favcodec_alloc_frame)(void);
-    int (*Favcodec_open)(AVCodecContext *ctx, AVCodec *codec);
-    int (*Favcodec_close)(AVCodecContext *ctx);
-    int (*Favcodec_encode_video)(AVCodecContext *ctx, BYTE *buf, int buf_size, const AVFrame *pict);
-    int (*Favcodec_decode_video)(AVCodecContext *ctx, AVFrame *pict, int *got_picture_ptr, AVPacket *avpkt);
-    unsigned (*Favcodec_version)(void);
-    void (*Favcodec_set_dimensions)(AVCodecContext *ctx, int width, int height);
-
-    void (*Favcodec_free)(void *);
-
-    void (*FAv_log_set_level)(int level);
-    void (*FAv_log_set_callback)(void (*callback)(void*, int, const char*, va_list));
 
     bool m_isLoadedOK;
 };

@@ -216,7 +216,7 @@ bool H263_Base_EncoderContext::Init(CodecID codecId)
     return false;
   }
 
-  m_context = FFMPEGLibraryInstance.AvcodecAllocContext();
+  m_context = FFMPEGLibraryInstance.AvcodecAllocContext(m_codec);
   if (m_context == NULL) {
     PTRACE(1, m_prefix, "Failed to allocate context for encoder");
     return false;
@@ -312,6 +312,7 @@ void H263_Base_EncoderContext::SetOption(const char * option, const char * value
     return;
   }
 
+#ifdef CODEC_FLAG_H263P_UMV
   if (STRCMPI(option, H263_ANNEX_D) == 0) {
     // Annex D: Unrestructed Motion Vectors
     // Level 2+ 
@@ -322,6 +323,7 @@ void H263_Base_EncoderContext::SetOption(const char * option, const char * value
       m_context->flags &= ~CODEC_FLAG_H263P_UMV; 
     return;
   }
+#endif
 
 #if 0 // DO NOT ENABLE THIS FLAG. FFMPEG IS NOT THREAD_SAFE WHEN THIS FLAG IS SET
   if (STRCMPI(option, H263_ANNEX_F) == 0) {
@@ -356,6 +358,7 @@ void H263_Base_EncoderContext::SetOption(const char * option, const char * value
     return;
   }
 
+#ifdef CODEC_FLAG_H263P_SLICE_STRUCT
   if (STRCMPI(option, H263_ANNEX_K) == 0) {
     // Annex K: Slice Structure
     // does not work with eyeBeam
@@ -365,7 +368,9 @@ void H263_Base_EncoderContext::SetOption(const char * option, const char * value
       m_context->flags &= ~CODEC_FLAG_H263P_SLICE_STRUCT; 
     return;
   }
+#endif
 
+#ifdef CODEC_FLAG_H263P_AIV
   if (STRCMPI(option, H263_ANNEX_S) == 0) {
     // Annex S: Alternative INTER VLC mode
     // does not work with eyeBeam
@@ -375,6 +380,7 @@ void H263_Base_EncoderContext::SetOption(const char * option, const char * value
       m_context->flags &= ~CODEC_FLAG_H263P_AIV; 
     return;
   }
+#endif
 
   if (STRCMPI(option, PLUGINCODEC_MEDIA_PACKETIZATION) == 0 ||
       STRCMPI(option, PLUGINCODEC_MEDIA_PACKETIZATIONS) == 0) {
@@ -450,15 +456,6 @@ bool H263_Base_EncoderContext::OpenCodec()
   PTRACE(5, m_prefix, "qmax set to " << m_context->qmax);
   PTRACE(5, m_prefix, "payload size set to " << m_context->rtp_payload_size);
 
-  #define CODEC_TRACER_FLAG(tracer, flag) \
-    PTRACE(4, m_prefix, #flag " is " << ((m_context->flags & flag) ? "enabled" : "disabled"));
-  CODEC_TRACER_FLAG(tracer, CODEC_FLAG_H263P_UMV);
-  CODEC_TRACER_FLAG(tracer, CODEC_FLAG_OBMC);
-  CODEC_TRACER_FLAG(tracer, CODEC_FLAG_AC_PRED);
-  CODEC_TRACER_FLAG(tracer, CODEC_FLAG_H263P_SLICE_STRUCT)
-  CODEC_TRACER_FLAG(tracer, CODEC_FLAG_LOOP_FILTER);
-  CODEC_TRACER_FLAG(tracer, CODEC_FLAG_H263P_AIV);
-
   return FFMPEGLibraryInstance.AvcodecOpen(m_context, m_codec) == 0;
 }
 
@@ -521,7 +518,7 @@ bool H263_Base_EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
 
     // Need to copy to local buffer to guarantee 16 byte alignment
     memcpy(m_inputFrame->data[0], OPAL_VIDEO_FRAME_DATA_PTR(header), header->width*header->height*3/2);
-    m_inputFrame->pict_type = (flags & PluginCodec_CoderForceIFrame) ? FF_I_TYPE : AV_PICTURE_TYPE_NONE;
+    m_inputFrame->pict_type = (flags & PluginCodec_CoderForceIFrame) ? AV_PICTURE_TYPE_I : AV_PICTURE_TYPE_NONE;
 
     /*
     m_inputFrame->pts = (int64_t)srcRTP.GetTimestamp()*m_context->time_base.den/m_context->time_base.num/VIDEO_CLOCKRATE;
@@ -603,13 +600,19 @@ bool H263_RFC2190_EncoderContext::Init()
   m_context->rtp_callback = &H263_RFC2190_EncoderContext::RTPCallBack;
   m_context->opaque = this; // used to separate out packets from different encode threads
 
+#ifdef CODEC_FLAG_H263P_UMV
   m_context->flags &= ~CODEC_FLAG_H263P_UMV;
+#endif
   m_context->flags &= ~CODEC_FLAG_4MV;
 #if LIBAVCODEC_RTP_MODE
   m_context->flags &= ~CODEC_FLAG_H263P_AIC;
 #endif
+#ifdef CODEC_FLAG_H263P_AIV
   m_context->flags &= ~CODEC_FLAG_H263P_AIV;
+#endif
+#ifdef CODEC_FLAG_H263P_SLICE_STRUCT
   m_context->flags &= ~CODEC_FLAG_H263P_SLICE_STRUCT;
+#endif
 
   return true;
 }
@@ -658,7 +661,7 @@ H263_Base_DecoderContext::H263_Base_DecoderContext(const char * prefix, Depacket
     return;
   }
 
-  m_context = FFMPEGLibraryInstance.AvcodecAllocContext();
+  m_context = FFMPEGLibraryInstance.AvcodecAllocContext(m_codec);
   if (m_context == NULL) {
     PTRACE(1, m_prefix, "Failed to allocate context for decoder");
     return;
