@@ -163,7 +163,7 @@ static struct PluginCodec_H323NonStandardCodecData lpc10Cap =
   EQUIVALENCE_COUNTRY_CODE, 
   EQUIVALENCE_EXTENSION_CODE, 
   EQUIVALENCE_MANUFACTURER_CODE,
-  lpc10CapStr, sizeof(lpc10CapStr)-1,
+  (const unsigned char *)lpc10CapStr, sizeof(lpc10CapStr)-1,
   NULL
 };
 

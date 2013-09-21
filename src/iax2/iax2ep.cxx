@@ -35,8 +35,9 @@
 
 #if OPAL_IAX2
 
-#pragma message("IAX2 support enabled")
-
+#ifndef __clang__
+  #pragma message("IAX2 support enabled")
+#endif
 
 #ifdef P_USE_PRAGMA
 #pragma implementation "iax2ep.h"

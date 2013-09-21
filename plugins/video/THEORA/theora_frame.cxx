@@ -154,8 +154,9 @@ void theoraFrame::assembleRTPFrame(PluginCodec_RTP & frame, data_t & frameData, 
   frameData.pos += len;
   if (frameData.pos == frameData.len) 
     frameData.pos = 0; 
-  if (frameData.pos > frameData.len) 
+  if (frameData.pos > frameData.len) {
     PTRACE(1, "THEORA", "Encap\tPANIC: " << frameData.pos << "<" << frameData.len );
+  }
   frame.SetTimestamp(_timestamp);
   frame.SetPayloadSize(len + 6);
 }

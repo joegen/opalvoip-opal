@@ -101,7 +101,7 @@ OpalMediaStatistics::Fax::Fax()
 ostream & operator<<(ostream & strm, OpalMediaStatistics::FaxCompression compression)
 {
   static const char * const Names[] = { "N/A", "T.4 1d", "T.4 2d", "T.6" };
-  if (compression >= 0 && compression < PARRAYSIZE(Names))
+  if (compression >= 0 && (PINDEX)compression < PARRAYSIZE(Names))
     strm << Names[compression];
   else
     strm << (unsigned)compression;

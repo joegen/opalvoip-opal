@@ -311,8 +311,9 @@ class MPEG4_EncodedFrame : public FFMPEGCodec::EncodedFrame
       unsigned i = 0;
       while ((i+4)<= m_length) {
         if ((m_buffer[i] == 0) && (m_buffer[i+1] == 0) && (m_buffer[i+2] == 1)) {
-          if (m_buffer[i+3] == 0xb0)
+          if (m_buffer[i+3] == 0xb0) {
             PTRACE(4, MY_CODEC_LOG, "Found visual_object_sequence_start_code, Profile/Level is " << (unsigned) m_buffer[i+4]);
+          }
           if (m_buffer[i+3] == 0xb6) {
             unsigned vop_coding_type = (unsigned) ((m_buffer[i+4] & 0xC0) >> 6);
             PTRACE(4, MY_CODEC_LOG, "Found vop_start_code, is vop_coding_type is " << vop_coding_type );

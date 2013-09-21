@@ -43,6 +43,10 @@
 
 #include <codec/opalplugin.h>
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #include "../../../src/codec/g7221mf_inc.cxx"
 
 

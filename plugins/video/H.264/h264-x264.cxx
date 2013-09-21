@@ -640,8 +640,9 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
           return true;
         }
 
-        if (*optionValue != '\0' && strstr(optionValue, OpalPluginCodec_Identifer_H264_Aligned) == NULL)
+        if (*optionValue != '\0' && strstr(optionValue, OpalPluginCodec_Identifer_H264_Aligned) == NULL) {
           PTRACE(2, MY_CODEC_LOG, "Unknown packetisation mode: \"" << optionValue << '"');
+        }
 
         m_packetisationModeH323 = 0;
         m_optionsSame = false;

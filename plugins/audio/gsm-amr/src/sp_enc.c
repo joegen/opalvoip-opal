@@ -10364,7 +10364,7 @@ static void cod_amr( cod_amrState *st, enum Mode mode, Float32 new_speech[],
       vad_flag = vad( st->vadSt, st->new_speech );
 #endif
       /* force VAD on   */
-      if ( *used_mode < 0 )
+      if ( (int)*used_mode < 0 )
          vad_flag = 1;
       *used_mode = mode;
 
