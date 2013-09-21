@@ -1046,6 +1046,9 @@ class VP8DecoderOM : public VP8Decoder
           case LandscapeDown :
             planeInfo[p].CopyLandscapeDown();
             break;
+
+          default :
+            return 0;
         }
       }
 

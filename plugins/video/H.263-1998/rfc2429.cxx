@@ -446,8 +446,9 @@ size_t RFC2429Frame::ParseHeader(uint8_t* headerPtr, size_t headerMaxLen)
 
     if ((PTCODE==3) || (PTCODE==4) || (PTCODE==5)) {
       PTRACE(6, GetName(), "Header\tELNUM: " << headerBits.GetBits(4));
-      if (UFEP==1)
+      if (UFEP==1) {
         PTRACE(6, GetName(), "Header\tRLNUM: " << headerBits.GetBits(4));
+      }
     }
 
     if (RPS) {
@@ -473,9 +474,10 @@ size_t RFC2429Frame::ParseHeader(uint8_t* headerPtr, size_t headerMaxLen)
     }
   }	
 
-  if (PB)
+  if (PB) {
     PTRACE(6, GetName(), "Header\tTRB: " << headerBits.GetBits (3)                     // TRB
                     << " DBQUANT: " << headerBits.GetBits (2));                   // DQUANT
+  }
 
   while (headerBits.GetBits (1)) {                                                // PEI bit
     PTRACE(6, GetName(), "Header\tPSUPP: " << headerBits.GetBits (8));                 // PSPARE bits 

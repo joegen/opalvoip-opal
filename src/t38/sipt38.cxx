@@ -124,7 +124,7 @@ bool SDPFaxMediaDescription::Format::Initialise(const PString & portString)
   const OpalMediaFormat mediaFormat(RTP_DataFrame::DynamicBase, 0, portString, "sip");
   if (mediaFormat.IsEmpty()) {
     PTRACE(2, "SDPFax\tCould not find media format for " << portString);
-    return NULL;
+    return false;
   }
 
   PTRACE(3, "SDPFax\tUsing RTP payload " << mediaFormat.GetPayloadType() << " for " << portString);

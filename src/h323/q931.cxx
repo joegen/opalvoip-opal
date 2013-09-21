@@ -368,7 +368,7 @@ PBoolean Q931::Encode(PBYTEArray & data) const
   if (fromDestination)
     data[2] |= 0x80;
   data[3] = (BYTE)callReference;
-  PAssert(messageType < 256, PInvalidParameter);
+  PAssert((PINDEX)messageType < 256, PInvalidParameter);
   data[4] = (BYTE)messageType;
 
   // The following assures disciminators are in ascending value order

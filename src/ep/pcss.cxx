@@ -40,8 +40,9 @@
 
 #if OPAL_HAS_PCSS
 
-#pragma message("PC Sound System support enabled")
-
+#ifndef __clang__
+  #pragma message("PC Sound System support enabled")
+#endif
 
 #if OPAL_VIDEO
 #include <ptlib/videoio.h>

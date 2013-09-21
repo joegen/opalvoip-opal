@@ -780,7 +780,7 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
   }
 
   // Remember (possibly new) NAT address
-  m_externalAddress == externalAddress;
+  m_externalAddress = externalAddress;
 
   SendRequest(Refreshing);
   SendStatus(SIP_PDU::Information_Trying, previousState);

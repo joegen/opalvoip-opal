@@ -383,15 +383,15 @@ bool RTP_DataFrame::SetHeaderExtension(unsigned id, PINDEX length, const BYTE * 
 
   switch (type) {
     case RFC3550 :
-      if (PAssert(type < 65536, PInvalidParameter) && PAssert(length < 65535, PInvalidParameter))
+      if (PAssert((PINDEX)type < 65536, PInvalidParameter) && PAssert(length < 65535, PInvalidParameter))
         break;
       return false;
     case RFC5285_OneByte :
-      if (PAssert(type < 15, PInvalidParameter) && PAssert(length > 0 && length <= 16, PInvalidParameter))
+      if (PAssert((PINDEX)type < 15, PInvalidParameter) && PAssert(length > 0 && length <= 16, PInvalidParameter))
         break;
       return false;
     case RFC5285_TwoByte :
-      if (PAssert(type < 256, PInvalidParameter) && PAssert(length <= 256, PInvalidParameter))
+      if (PAssert((PINDEX)type < 256, PInvalidParameter) && PAssert(length <= 256, PInvalidParameter))
         break;
       return false;
   }

@@ -63,7 +63,7 @@ SOURCES  := $(CURDIR)/lpc_10_codec.c \
             $(SRCDIR)/voicin.c \
             $(SRCDIR)/vparms.c \
 
-CPPFLAGS += -I$(CURDIR)
+CPPFLAGS += -I$(CURDIR) -Wno-comment
 
 INSTALL_DIR = $(AUD_PLUGIN_DIR)
 include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
