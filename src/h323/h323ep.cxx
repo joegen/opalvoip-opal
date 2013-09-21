@@ -36,8 +36,9 @@
 #include <opal_config.h>
 #if OPAL_H323
 
-#pragma message("H.323 support enabled")
-
+#ifndef __clang__
+  #pragma message("H.323 support enabled")
+#endif
 
 #ifdef __GNUC__
 #pragma implementation "h323ep.h"

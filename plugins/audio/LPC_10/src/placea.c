@@ -170,7 +170,7 @@ extern int placea_(integer *ipitch, integer *voibuf, integer *obound, integer *a
     allv = allv && voibuf[(*af << 1) + 1] == 1;
     allv = allv && voibuf[(*af << 1) + 2] == 1;
     winv = voibuf[(*af << 1) + 1] == 1 || voibuf[(*af << 1) + 2] == 1;
-    if (allv || winv && *obound == 0) {
+    if (allv || (winv && *obound == 0)) {
 /* APHASE:  Phase synchronous window placement. */
 /* Get minimum lower index of the window. */
 	i__ = (lrange + *ipitch - 1 - awin[((*af - 1) << 1) + 1]) / *ipitch;

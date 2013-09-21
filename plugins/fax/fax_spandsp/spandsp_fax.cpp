@@ -859,8 +859,9 @@ class FaxTIFF : public FaxSpanDSP
         if (m_tiffFileName.empty())
           m_tiffFileName = value;
 #if LOGGING
-        else if (*value != '\0' && m_tiffFileName != value)
+        else if (*value != '\0' && m_tiffFileName != value) {
           PTRACE(2, m_tag << " Cannot change filename in mid stream from \"" << m_tiffFileName << "\" to \"" << value << '"');
+        }
 #endif
         return true;
       }
@@ -889,7 +890,7 @@ class FaxTIFF : public FaxSpanDSP
       InitLogging(t30_get_logging_state(t30state), m_tag);
 
       if (m_tiffFileName.empty()) {
-        PTRACE(1, m_tag << " No TIFF file to " << m_receiving ? "receive" : "transmit");
+        PTRACE(1, m_tag << " No TIFF file to " << (m_receiving ? "receive" : "transmit"));
         return false;
       }
 

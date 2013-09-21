@@ -46,7 +46,9 @@
 
 #if OPAL_IVR
 
-#pragma message("IVR support (via VXML/Expat) enabled")
+#ifndef __clang__
+  #pragma message("IVR support (via VXML/Expat) enabled")
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////

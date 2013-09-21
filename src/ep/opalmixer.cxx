@@ -36,7 +36,9 @@
 
 #if OPAL_HAS_MIXER
 
-#pragma message("Mixer (MCU) support enabled")
+#ifndef __clang__
+  #pragma message("Mixer (MCU) support enabled")
+#endif
 
 #include <opal/patch.h>
 #include <rtp/rtp.h>
