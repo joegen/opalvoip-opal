@@ -450,20 +450,16 @@ case "$target_os" in
          AC_MSG_ERROR([Unable to determine iOS release number])
       fi
 
-      MIN_IOS_VER="5.0"
+      MIN_IOS_VER="6.0"
       if test $target_release \< $MIN_IOS_VER ; then
          AC_MSG_ERROR([Requires iOS release $MIN_IOS_VER, has $target_release])
       fi
 
       IOS_DEVROOT="`xcode-select -print-path`/Platforms/${target_os}.platform/Developer"
       IOS_SDKROOT=${IOS_DEVROOT}/SDKs/${target_os}${target_release}.sdk
-
-      CXX="${IOS_DEVROOT}/usr/bin/g++"
-      CC="${IOS_DEVROOT}/usr/bin/gcc"
-      LD="$CXX"
-      CPPFLAGS="${CPPFLAGS} -arch $target_cpu -isysroot ${IOS_SDKROOT} -miphoneos-version-min=$MIN_IOS_VER"
-      LDFLAGS="-arch $target_cpu -isysroot ${IOS_SDKROOT} $LDFLAGS"
-      LIBS="-L${IOS_SDKROOT}/usr/lib $LIBS"
+      IOS_FLAGS="-arch $target_cpu -miphoneos-version-min=$MIN_IOS_VER -isysroot ${IOS_SDKROOT}"
+      CPPFLAGS="${CPPFLAGS} ${IOS_FLAGS}"
+      LDFLAGS="${IOS_FLAGS} -L${IOS_SDKROOT}/usr/lib $LDFLAGS"
    ;;
 
    darwin* )
