@@ -38,7 +38,7 @@
 #include <unistd.h>
 #endif
 
-#if defined(X264_LICENSED) and !defined(__clang__)
+#if defined(X264_LICENSED)
   #pragma message("x264 licensed version")
 #endif
 

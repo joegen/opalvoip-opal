@@ -33,9 +33,7 @@
 
 #if OPAL_SIP
 
-#ifndef __clang__
-  #pragma message("SIP support enabled")
-#endif
+#pragma message("SIP support enabled")
 
 #ifdef __GNUC__
 #pragma implementation "sipep.h"
