@@ -38,9 +38,7 @@
 
 #if OPAL_LID
 
-#ifndef __clang__
-  #pragma message("Line Interface Device support enabled")
-#endif
+#pragma message("Line Interface Device support enabled")
 
 #include <opal/manager.h>
 #include <opal/call.h>
