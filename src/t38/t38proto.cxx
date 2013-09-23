@@ -38,9 +38,7 @@
 
 #if OPAL_FAX
 
-#ifndef __clang__
-  #pragma message("T.38 Fax (spandsp) support enabled")
-#endif
+#pragma message("T.38 Fax (spandsp) support enabled")
 
 #include <asn/t38.h>
 #include <opal/patch.h>
