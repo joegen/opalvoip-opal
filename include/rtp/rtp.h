@@ -48,184 +48,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Real Time Protocol - IETF RFC1889 and RFC1890
 
-/**An RTP data frame encapsulation.
-  */
-class RTP_DataFrame : public PBYTEArray
-{
-  PCLASSINFO(RTP_DataFrame, PBYTEArray);
-
-  public:
-    RTP_DataFrame(PINDEX payloadSize = 0, PINDEX bufferSize = 0);
-    RTP_DataFrame(const BYTE * data, PINDEX len, bool dynamic = true);
-
-    enum {
-      ProtocolVersion = 2,
-      MinHeaderSize = 12,
-      // Max safe MTU size (576 bytes as per RFC879) minus IP, UDP an RTP headers
-      MaxMtuPayloadSize = (576-20-16-12)
-    };
-
-    enum PayloadTypes {
-      PCMU,         // G.711 u-Law
-      FS1016,       // Federal Standard 1016 CELP
-      G721,         // ADPCM - Subsumed by G.726
-      G726 = G721,
-      GSM,          // GSM 06.10
-      G7231,        // G.723.1 at 6.3kbps or 5.3 kbps
-      DVI4_8k,      // DVI4 at 8kHz sample rate
-      DVI4_16k,     // DVI4 at 16kHz sample rate
-      LPC,          // LPC-10 Linear Predictive CELP
-      PCMA,         // G.711 A-Law
-      G722,         // G.722
-      L16_Stereo,   // 16 bit linear PCM
-      L16_Mono,     // 16 bit linear PCM
-      G723,         // G.723
-      CN,           // Confort Noise
-      MPA,          // MPEG1 or MPEG2 audio
-      G728,         // G.728 16kbps CELP
-      DVI4_11k,     // DVI4 at 11kHz sample rate
-      DVI4_22k,     // DVI4 at 22kHz sample rate
-      G729,         // G.729 8kbps
-      Cisco_CN,     // Cisco systems comfort noise (unofficial)
-
-      CelB = 25,    // Sun Systems Cell-B video
-      JPEG,         // Motion JPEG
-      H261 = 31,    // H.261
-      MPV,          // MPEG1 or MPEG2 video
-      MP2T,         // MPEG2 transport system
-      H263,         // H.263
-
-      T38 = 38,     // T.38 (internal)
-
-      LastKnownPayloadType,
-
-      DynamicBase = 96,
-      MaxPayloadType = 127,
-      IllegalPayloadType
-    };
-
-    unsigned GetVersion() const { return (theArray[0]>>6)&3; }
-
-    bool GetExtension() const   { return (theArray[0]&0x10) != 0; }
-    void SetExtension(bool ext);
-
-    bool GetMarker() const { return (theArray[1]&0x80) != 0; }
-    void SetMarker(bool m);
-
-    bool GetPadding() const { return (theArray[0]&0x20) != 0; }
-    void SetPadding(bool v)  { if (v) theArray[0] |= 0x20; else theArray[0] &= 0xdf; }
-    BYTE * GetPaddingPtr() const { return (BYTE *)(theArray+m_headerSize+m_payloadSize); }
-
-    PINDEX GetPaddingSize() const { return m_paddingSize; }
-    bool   SetPaddingSize(PINDEX sz);
-
-    PayloadTypes GetPayloadType() const { return (PayloadTypes)(theArray[1]&0x7f); }
-    void         SetPayloadType(PayloadTypes t);
-
-    WORD GetSequenceNumber() const { return *(PUInt16b *)&theArray[2]; }
-    void SetSequenceNumber(WORD n) { *(PUInt16b *)&theArray[2] = n; }
-
-    DWORD GetTimestamp() const  { return *(PUInt32b *)&theArray[4]; }
-    void  SetTimestamp(DWORD t) { *(PUInt32b *)&theArray[4] = t; }
-
-    DWORD GetSyncSource() const  { return *(PUInt32b *)&theArray[8]; }
-    void  SetSyncSource(DWORD s) { *(PUInt32b *)&theArray[8] = s; }
-
-    PINDEX GetContribSrcCount() const { return theArray[0]&0xf; }
-    DWORD  GetContribSource(PINDEX idx) const;
-    void   SetContribSource(PINDEX idx, DWORD src);
-
-    PINDEX GetHeaderSize() const { return m_headerSize; }
-
-    void CopyHeader(const RTP_DataFrame & other);
-
-    /**Get header extension.
-       If idx < 0 then gets RFC 3550 format extension type.
-       If idx >= 0 then get RFC 5285 format extension type for the idx'th extension.
-
-       @returns NULL if no extension
-      */
-    BYTE * GetHeaderExtension(
-      unsigned & id,      ///< Identifier for extension
-      PINDEX & length,    ///< Length of extension in bytes
-      int idx = -1        ///< Index of extension
-    ) const;
-
-    /// Extension header types
-    enum HeaderExtensionType {
-      RFC3550,
-      RFC5285_OneByte,
-      RFC5285_TwoByte
-    };
-
-    /**Get header extension by specified id.
-       @returns NULL if no extension of that id and type is present.
-      */
-    BYTE * GetHeaderExtension(
-      HeaderExtensionType type, ///< Type of extension to get
-      unsigned id,              ///< Identifier for extension
-      PINDEX & length           ///< Length of extension in bytes
-    ) const;
-
-    /**Set header extension.
-       Note when RFC 5285 formats are used, the extension is appened to ones
-       already present.
-
-       @returns true if extension legal.
-      */
-    bool SetHeaderExtension(
-      unsigned id,        ///< Identifier for extension
-      PINDEX length,      ///< Length of extension in bytes
-      const BYTE * data,  ///< Data to put into extension
-      HeaderExtensionType type ///< RFC standard used
-    );
-
-    PINDEX GetExtensionSizeDWORDs() const;      // get the number of 32 bit words in the extension (excluding the header).
-    bool   SetExtensionSizeDWORDs(PINDEX sz);   // set the number of 32 bit words in the extension (excluding the header)
-
-    PINDEX GetPayloadSize() const { return m_payloadSize; }
-    bool   SetPayloadSize(PINDEX sz);
-    BYTE * GetPayloadPtr()     const { return (BYTE *)(theArray+m_headerSize); }
-
-    virtual PObject * Clone() const { return new RTP_DataFrame(*this); }
-    virtual void PrintOn(ostream & strm) const;
-
-    // Note this sets the whole packet length, and calculates the various
-    // sub-section sizes: header payload and padding.
-    bool SetPacketSize(PINDEX sz);
-
-    /**Get absolute (wall clock) time of packet, if known.
-      */
-    PTime GetAbsoluteTime() const { return m_absoluteTime; }
-
-    /**Set absolute (wall clock) time of packet.
-      */
-    void SetAbsoluteTime() { m_absoluteTime.SetCurrentTime(); }
-    void SetAbsoluteTime(const PTime & t) { m_absoluteTime = t; }
-
-    /** Get sequence number discontinuity.
-        If non-zero this indicates the number of packets detected as missing
-        before this packet.
-      */
-    unsigned GetDiscontinuity() const { return m_discontinuity; }
-
-    void SetDiscontinuity(unsigned lost) { m_discontinuity = lost; }
-
-  protected:
-    PINDEX   m_headerSize;
-    PINDEX   m_payloadSize;
-    PINDEX   m_paddingSize;
-    PTime    m_absoluteTime;
-    unsigned m_discontinuity;
-
-#if PTRACING
-    friend ostream & operator<<(ostream & o, PayloadTypes t);
-#endif
-};
-
-PLIST(RTP_DataFrameList, RTP_DataFrame);
-
-
 /**An RTP control frame encapsulation.
   */
 class RTP_ControlFrame : public PBYTEArray
@@ -241,6 +63,7 @@ class RTP_ControlFrame : public PBYTEArray
     void     SetCount(unsigned count);
 
     enum PayloadTypes {
+      e_FirstValidPayloadType   = 192, // RFC5761
       e_IntraFrameRequest       = 192,
       e_SenderReport            = 200,
       e_ReceiverReport          = 201,
@@ -249,7 +72,8 @@ class RTP_ControlFrame : public PBYTEArray
       e_ApplDefined             = 204,
       e_TransportLayerFeedBack  = 205, // RFC4585
       e_PayloadSpecificFeedBack = 206,
-      e_ExtendedReport          = 207  // RFC3611
+      e_ExtendedReport          = 207, // RFC3611
+      e_LastValidPayloadType    = 223  // RFC5761
     };
 
     unsigned GetPayloadType() const { return (BYTE)theArray[compoundOffset+1]; }
@@ -414,6 +238,187 @@ class RTP_ControlFrame : public PBYTEArray
     PINDEX compoundOffset;
     PINDEX payloadSize;
 };
+
+
+/**An RTP data frame encapsulation.
+  */
+class RTP_DataFrame : public PBYTEArray
+{
+  PCLASSINFO(RTP_DataFrame, PBYTEArray);
+
+  public:
+    RTP_DataFrame(PINDEX payloadSize = 0, PINDEX bufferSize = 0);
+    RTP_DataFrame(const BYTE * data, PINDEX len, bool dynamic = true);
+
+    enum {
+      ProtocolVersion = 2,
+      MinHeaderSize = 12,
+      // Max safe MTU size (576 bytes as per RFC879) minus IP, UDP an RTP headers
+      MaxMtuPayloadSize = (576-20-16-12)
+    };
+
+    enum PayloadTypes {
+      PCMU,         // G.711 u-Law
+      FS1016,       // Federal Standard 1016 CELP
+      G721,         // ADPCM - Subsumed by G.726
+      G726 = G721,
+      GSM,          // GSM 06.10
+      G7231,        // G.723.1 at 6.3kbps or 5.3 kbps
+      DVI4_8k,      // DVI4 at 8kHz sample rate
+      DVI4_16k,     // DVI4 at 16kHz sample rate
+      LPC,          // LPC-10 Linear Predictive CELP
+      PCMA,         // G.711 A-Law
+      G722,         // G.722
+      L16_Stereo,   // 16 bit linear PCM
+      L16_Mono,     // 16 bit linear PCM
+      G723,         // G.723
+      CN,           // Confort Noise
+      MPA,          // MPEG1 or MPEG2 audio
+      G728,         // G.728 16kbps CELP
+      DVI4_11k,     // DVI4 at 11kHz sample rate
+      DVI4_22k,     // DVI4 at 22kHz sample rate
+      G729,         // G.729 8kbps
+      Cisco_CN,     // Cisco systems comfort noise (unofficial)
+
+      CelB = 25,    // Sun Systems Cell-B video
+      JPEG,         // Motion JPEG
+      H261 = 31,    // H.261
+      MPV,          // MPEG1 or MPEG2 video
+      MP2T,         // MPEG2 transport system
+      H263,         // H.263
+
+      T38 = 38,     // T.38 (internal)
+
+      LastKnownPayloadType,
+
+      StartConflictRTCP = RTP_ControlFrame::e_FirstValidPayloadType&0x7f,
+      EndConflictRTCP = RTP_ControlFrame::e_LastValidPayloadType&0x7f,
+
+      DynamicBase = 96,
+      MaxPayloadType = 127,
+      IllegalPayloadType
+    };
+
+    unsigned GetVersion() const { return (theArray[0]>>6)&3; }
+
+    bool GetExtension() const   { return (theArray[0]&0x10) != 0; }
+    void SetExtension(bool ext);
+
+    bool GetMarker() const { return (theArray[1]&0x80) != 0; }
+    void SetMarker(bool m);
+
+    bool GetPadding() const { return (theArray[0]&0x20) != 0; }
+    void SetPadding(bool v)  { if (v) theArray[0] |= 0x20; else theArray[0] &= 0xdf; }
+    BYTE * GetPaddingPtr() const { return (BYTE *)(theArray+m_headerSize+m_payloadSize); }
+
+    PINDEX GetPaddingSize() const { return m_paddingSize; }
+    bool   SetPaddingSize(PINDEX sz);
+
+    PayloadTypes GetPayloadType() const { return (PayloadTypes)(theArray[1]&0x7f); }
+    void         SetPayloadType(PayloadTypes t);
+
+    WORD GetSequenceNumber() const { return *(PUInt16b *)&theArray[2]; }
+    void SetSequenceNumber(WORD n) { *(PUInt16b *)&theArray[2] = n; }
+
+    DWORD GetTimestamp() const  { return *(PUInt32b *)&theArray[4]; }
+    void  SetTimestamp(DWORD t) { *(PUInt32b *)&theArray[4] = t; }
+
+    DWORD GetSyncSource() const  { return *(PUInt32b *)&theArray[8]; }
+    void  SetSyncSource(DWORD s) { *(PUInt32b *)&theArray[8] = s; }
+
+    PINDEX GetContribSrcCount() const { return theArray[0]&0xf; }
+    DWORD  GetContribSource(PINDEX idx) const;
+    void   SetContribSource(PINDEX idx, DWORD src);
+
+    PINDEX GetHeaderSize() const { return m_headerSize; }
+
+    void CopyHeader(const RTP_DataFrame & other);
+
+    /**Get header extension.
+       If idx < 0 then gets RFC 3550 format extension type.
+       If idx >= 0 then get RFC 5285 format extension type for the idx'th extension.
+
+       @returns NULL if no extension
+      */
+    BYTE * GetHeaderExtension(
+      unsigned & id,      ///< Identifier for extension
+      PINDEX & length,    ///< Length of extension in bytes
+      int idx = -1        ///< Index of extension
+    ) const;
+
+    /// Extension header types
+    enum HeaderExtensionType {
+      RFC3550,
+      RFC5285_OneByte,
+      RFC5285_TwoByte
+    };
+
+    /**Get header extension by specified id.
+       @returns NULL if no extension of that id and type is present.
+      */
+    BYTE * GetHeaderExtension(
+      HeaderExtensionType type, ///< Type of extension to get
+      unsigned id,              ///< Identifier for extension
+      PINDEX & length           ///< Length of extension in bytes
+    ) const;
+
+    /**Set header extension.
+       Note when RFC 5285 formats are used, the extension is appened to ones
+       already present.
+
+       @returns true if extension legal.
+      */
+    bool SetHeaderExtension(
+      unsigned id,        ///< Identifier for extension
+      PINDEX length,      ///< Length of extension in bytes
+      const BYTE * data,  ///< Data to put into extension
+      HeaderExtensionType type ///< RFC standard used
+    );
+
+    PINDEX GetExtensionSizeDWORDs() const;      // get the number of 32 bit words in the extension (excluding the header).
+    bool   SetExtensionSizeDWORDs(PINDEX sz);   // set the number of 32 bit words in the extension (excluding the header)
+
+    PINDEX GetPayloadSize() const { return m_payloadSize; }
+    bool   SetPayloadSize(PINDEX sz);
+    BYTE * GetPayloadPtr()     const { return (BYTE *)(theArray+m_headerSize); }
+
+    virtual PObject * Clone() const { return new RTP_DataFrame(*this); }
+    virtual void PrintOn(ostream & strm) const;
+
+    // Note this sets the whole packet length, and calculates the various
+    // sub-section sizes: header payload and padding.
+    bool SetPacketSize(PINDEX sz);
+
+    /**Get absolute (wall clock) time of packet, if known.
+      */
+    PTime GetAbsoluteTime() const { return m_absoluteTime; }
+
+    /**Set absolute (wall clock) time of packet.
+      */
+    void SetAbsoluteTime() { m_absoluteTime.SetCurrentTime(); }
+    void SetAbsoluteTime(const PTime & t) { m_absoluteTime = t; }
+
+    /** Get sequence number discontinuity.
+        If non-zero this indicates the number of packets detected as missing
+        before this packet.
+      */
+    unsigned GetDiscontinuity() const { return m_discontinuity; }
+
+    void SetDiscontinuity(unsigned lost) { m_discontinuity = lost; }
+
+  protected:
+    PINDEX   m_headerSize;
+    PINDEX   m_payloadSize;
+    PINDEX   m_paddingSize;
+    PTime    m_absoluteTime;
+    unsigned m_discontinuity;
+
+#if PTRACING
+    friend ostream & operator<<(ostream & o, PayloadTypes t);
+#endif
+};
+
+PLIST(RTP_DataFrameList, RTP_DataFrame);
 
 
 ///////////////////////////////////////////////////////////////////////////////

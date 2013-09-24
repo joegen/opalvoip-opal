@@ -1219,6 +1219,8 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
   // Search for conflicting RTP Payload Type, collecting in use payload types along the way
   bool inUse[RTP_DataFrame::MaxPayloadType];
   memset(inUse, 0, sizeof(inUse));
+  for (int i = RTP_DataFrame::StartConflictRTCP; i <= RTP_DataFrame::EndConflictRTCP; ++i)
+    inUse[i] = true;
 
   OpalMediaFormat * match = NULL;
   for (OpalMediaFormatList::iterator format = registeredFormats.begin(); format != registeredFormats.end(); ++format) {
