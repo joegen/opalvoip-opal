@@ -3902,15 +3902,19 @@ void H323Connection::OnSetLocalCapabilities()
 #endif
   };
 
-  PINDEX simultaneous = P_MAX_INDEX;
+  OpalBandwidth availableBandwidth = GetBandwidthAvailable(OpalBandwidth::Rx);
 
+  PINDEX simultaneous = P_MAX_INDEX;
   for (PINDEX m = 0; m < PARRAYSIZE(mediaList); m++) {
     if (m > 1)                    // First two (Audio/Fax) are in same simultaneous set
       simultaneous = P_MAX_INDEX; // After that each is in it's own simultaneous set in TCS
 
     for (OpalMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
-      if (format->GetMediaType() == mediaList[m] && format->IsTransportable())
+      if (format->GetMediaType() == mediaList[m] && format->IsTransportable()) {
+        if (format->GetMaxBandwidth() > availableBandwidth)
+          format->SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), availableBandwidth);
         simultaneous = localCapabilities.AddMediaFormat(0, simultaneous, *format, symmetric);
+      }
     }
   }
 

@@ -699,7 +699,14 @@ PBoolean H323GenericCapabilityInfo::OnSendingGenericPDU(H245_GenericCapability &
 {
   H323SetCapabilityIdentifier(m_identifier, pdu.m_capabilityIdentifier);
 
-  unsigned bitRate = m_maxBitRate != 0 ? m_maxBitRate : mediaFormat.GetMaxBandwidth().AsH225();
+  unsigned bitRate;
+  if (m_fixedBitRate)
+    bitRate = m_maxBitRate;
+  else if (type == H323Capability::e_TCS)
+    bitRate = mediaFormat.GetMaxBandwidth().AsH225();
+  else
+    bitRate = mediaFormat.GetUsedBandwidth().AsH225();
+
   if (bitRate != 0) {
     pdu.IncludeOptionalField(H245_GenericCapability::e_maxBitRate);
     pdu.m_maxBitRate = bitRate;
