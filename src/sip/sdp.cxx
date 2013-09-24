@@ -555,7 +555,7 @@ void SDPCommonAttributes::OutputAttributes(ostream & strm) const
 
 SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & type)
   : m_mediaAddress(address)
-  , m_port(0)
+  , m_port(65535)
   , m_portCount(1)
   , m_mediaType(type)
 {

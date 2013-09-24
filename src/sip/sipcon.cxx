@@ -965,8 +965,10 @@ bool SIPConnection::OnSendAnswerSDP(SDPSessionDescription & sdpOut)
   /* If we had SDP but no media could not be decoded from it, then we should return
      Not Acceptable Here error and not do an offer. Only offer if there was no body
      at all or there was a valid SDP with no m lines. */
-  if (sdp == NULL && !originalInvite->GetEntityBody().IsEmpty())
+  if (sdp == NULL && !originalInvite->GetEntityBody().IsEmpty()) {
+    PTRACE(3, "SIP\tMissing or undecodable SDP");
     return false;
+  }
 
   if (sdp == NULL || sdp->GetMediaDescriptions().IsEmpty()) {
     if (m_holdFromRemote) {
@@ -1054,6 +1056,9 @@ bool SIPConnection::OnSendAnswerSDP(SDPSessionDescription & sdpOut)
 
     // In case some new streams got created.
     ownerCall.StartMediaStreams();
+  }
+  else {
+    PTRACE(3, "SIP\tNo valid streams");
   }
 
   return sdpOK;
