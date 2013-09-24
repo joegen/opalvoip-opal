@@ -463,10 +463,22 @@ bool OpalPluginMediaFormatInternal::IsValidForProtocol(const PString & _protocol
 
 static RTP_DataFrame::PayloadTypes GetPluginPayloadType(const PluginCodec_Definition * codecDefn)
 {
-  if ((codecDefn->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic)
+  if ((codecDefn->flags & PluginCodec_RTPTypeExplicit) != 0)
+    return (RTP_DataFrame::PayloadTypes)codecDefn->rtpPayload;
+
+  if ((codecDefn->flags & PluginCodec_RTPTypeShared) == 0)
     return RTP_DataFrame::DynamicBase;
 
-  return (RTP_DataFrame::PayloadTypes)codecDefn->rtpPayload;
+  // if the codec has been flagged to use a shared RTP payload type, then find a codec with the same SDP name
+  // and clock rate and use that RTP code rather than creating a new one. That prevents codecs (like Speex) from 
+  // consuming dozens of dynamic RTP types
+  OpalMediaFormatList list = OpalMediaFormat::GetAllRegisteredMediaFormats();
+  OpalMediaFormatList::const_iterator it = list.FindFormat(RTP_DataFrame::MaxPayloadType, codecDefn->sampleRate, codecDefn->sdpFormat);
+  if (it != list.end())
+    return it->GetPayloadType();  // Use previous value
+
+  // First one of this encoding name, allocate as normal
+  return RTP_DataFrame::DynamicBase;
 }
 
 
@@ -1640,37 +1652,7 @@ bool OpalPluginCodecManager::AddMediaFormat(OpalPluginCodecHandler * handler,
     return false;
   }
 
-  OpalMediaFormat * mediaFormat = new OpalPluginMediaFormat(mediaFormatInternal);
-
-  // Remember format so we can deallocate it on shut down
-  mediaFormatsOnHeap.Append(mediaFormat);
-
-  // if the codec has been flagged to use a shared RTP payload type, then find a codec with the same SDP name
-  // and clock rate and use that RTP code rather than creating a new one. That prevents codecs (like Speex) from 
-  // consuming dozens of dynamic RTP types
-  int channels = OpalPluginCodecHandler::GetChannelCount(codecDefn);
-  mediaFormat->SetOptionInteger(OpalAudioFormat::ChannelsOption(), channels);
-  if ((codecDefn->flags & PluginCodec_RTPTypeShared) != 0 && (codecDefn->sdpFormat != NULL)) {
-    OpalMediaFormatList list = OpalMediaFormat::GetAllRegisteredMediaFormats();
-    for (OpalMediaFormatList::iterator iterFmt = list.begin(); iterFmt != list.end(); ++iterFmt) {
-      OpalPluginMediaFormat * opalFmt = dynamic_cast<OpalPluginMediaFormat *>(&*iterFmt);
-      if (opalFmt != NULL) {
-        OpalPluginMediaFormatInternal * fmt = opalFmt->GetInfo();
-        if (fmt != NULL) {
-          int fmtChannels = OpalPluginCodecHandler::GetChannelCount(fmt->codecDef);
-          if (fmt->codecDef->sdpFormat != NULL &&
-              codecDefn->sampleRate == fmt->codecDef->sampleRate &&
-              channels == fmtChannels &&
-              strcasecmp(codecDefn->sdpFormat, fmt->codecDef->sdpFormat) == 0) {
-            mediaFormat->SetPayloadType(opalFmt->GetPayloadType());
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  OpalMediaFormat::SetRegisteredMediaFormat(*mediaFormat);
+  mediaFormatsOnHeap.Append(new OpalMediaFormat(mediaFormatInternal));  // Remember format so we can deallocate it on shut down
   return true;
 }
 

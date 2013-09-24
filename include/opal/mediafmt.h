@@ -762,7 +762,7 @@ class OpalMediaFormatInternal : public PObject
 
     PCaselessString              formatName;
     RTP_DataFrame::PayloadTypes  rtpPayloadType;
-    PString                      rtpEncodingName;
+    PCaselessString              rtpEncodingName;
     OpalMediaType                mediaType;
     PMutex                       media_format_mutex;
     PSortedList<OpalMediaOption> options;
