@@ -2083,7 +2083,15 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   if (reInvite)
     return statusCode >= 200;
 
-  bool collapseForks = statusCode >= 200;
+  bool collapseForks;
+  if (statusCode < 200)
+    collapseForks = false;
+  else {
+    collapseForks = true;
+    // If response was 2xx we need to release with a BYE from now on.
+    // If response was an error, then we need no nothing, it is already dead
+    releaseMethod = statusCode < 300 ? ReleaseWithBYE : ReleaseWithNothing;
+  }
 
   responseMIME.GetProductInfo(remoteProductInfo);
 
@@ -3250,7 +3258,6 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
   }
 
   PTRACE(3, "SIP\tReceived INVITE OK response for " << transaction.GetMethod());
-  releaseMethod = ReleaseWithBYE;
   m_sessionTimer = 10000;
 
   NotifyDialogState(SIPDialogNotification::Confirmed);
