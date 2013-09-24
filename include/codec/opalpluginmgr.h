@@ -213,18 +213,6 @@ class OpalPluginMediaFormatInternal
 };
 
 
-class OpalPluginMediaFormat : public OpalMediaFormat
-{
-  public:
-    OpalPluginMediaFormat(OpalMediaFormatInternal * info)
-      : OpalMediaFormat(info)
-    {
-    }
-
-    OpalPluginMediaFormatInternal * GetInfo() const { return dynamic_cast<OpalPluginMediaFormatInternal *>(m_info); }
-};
-
-
 class OpalPluginTranscoder
 {
   public:

@@ -1189,23 +1189,30 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
-  // Search for conflicting RTP Payload Type, collecting in use payload types along the way
-  bool inUse[RTP_DataFrame::MaxPayloadType];
+  OpalMediaFormat * conflictingFormat = NULL;
+
+  // Build a table of all the unused payload types
+  bool inUse[RTP_DataFrame::IllegalPayloadType+1];
   memset(inUse, 0, sizeof(inUse));
+
+  // Do not use the "forbidden zone"
   for (int i = RTP_DataFrame::StartConflictRTCP; i <= RTP_DataFrame::EndConflictRTCP; ++i)
     inUse[i] = true;
 
-  OpalMediaFormat * match = NULL;
+  // Search for conflicting RTP Payload Type, collecting in use payload types along the way
   for (OpalMediaFormatList::iterator format = registeredFormats.begin(); format != registeredFormats.end(); ++format) {
-    RTP_DataFrame::PayloadTypes thisPayloadType = format->GetPayloadType();
-    if (thisPayloadType == rtpPayloadType)
-      match = &*format;
-    if (thisPayloadType < RTP_DataFrame::MaxPayloadType)
-      inUse[thisPayloadType] = true;
-  }
+    inUse[format->GetPayloadType()] = true;
 
-  if (match == NULL)
-    return; // No conflict
+    // A conflict is when we are after an explicit payload type, we have found one already using it
+    if (rtpPayloadType  >  RTP_DataFrame::DynamicBase && rtpPayloadType  == format->GetPayloadType()) {
+      // If it is a shared payload types, which happens when encoding name is the same, then allow it
+      if (rtpEncodingName == format->GetEncodingName())
+        return;
+
+      // Have a conflicting media format, move it later when we know where to
+      conflictingFormat = &*format;
+    }
+  }
 
   // Determine next unused payload type, if all the dynamic ones are allocated then
   // we start downward toward the well known values.
@@ -1217,7 +1224,12 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
       nextUnused = RTP_DataFrame::DynamicBase-1;
   }
 
-  match->SetPayloadType((RTP_DataFrame::PayloadTypes)nextUnused);
+  // If we had a conflict we change the older one, as it is assumed that the
+  // application really wanted that value and internal OPAL ones can move
+  if (conflictingFormat != NULL)
+    conflictingFormat->SetPayloadType((RTP_DataFrame::PayloadTypes)nextUnused);
+  else
+    rtpPayloadType = (RTP_DataFrame::PayloadTypes)nextUnused;
 }
 
 
