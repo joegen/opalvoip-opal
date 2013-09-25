@@ -41,178 +41,155 @@
 
 class OpalH224Handler;
 
-/** This class implements a storage for which cameras are
-    available at both the local or remote side
- */
-class H281VideoSource : public PObject
-{
-  PCLASSINFO(H281VideoSource, PObject);
-
-public:
-	
-  H281VideoSource();
-  ~H281VideoSource();
-	
-  PBoolean IsEnabled() const { return isEnabled; }
-  void SetEnabled(PBoolean flag) { isEnabled = flag; }
-	
-  BYTE GetVideoSourceNumber() const { return (firstOctet >> 4) & 0x0f; }
-  void SetVideoSourceNumber(BYTE number);
-	
-  PBoolean CanMotionVideo() const { return (firstOctet >> 2) & 0x01; }
-  void SetCanMotionVideo(PBoolean flag);
-
-  PBoolean CanNormalResolutionStillImage() const { return (firstOctet >> 1) & 0x01; }
-  void SetCanNormalResolutionStillImage(PBoolean flag);
-
-  PBoolean CanDoubleResolutionStillImage() const { return (firstOctet & 0x01); }
-  void SetCanDoubleResolutionStillImage(PBoolean flag);
-
-  PBoolean CanPan() const { return (secondOctet >> 7) & 0x01; }
-  void SetCanPan(PBoolean flag);
-	
-  PBoolean CanTilt() const { return (secondOctet >> 6) & 0x01; }
-  void SetCanTilt(PBoolean flag);
-	
-  PBoolean CanZoom() const { return (secondOctet >> 5) & 0x01; }
-  void SetCanZoom(PBoolean flag);
-	
-  PBoolean CanFocus() const { return (secondOctet >> 4) & 0x01; }
-  void SetCanFocus(PBoolean flag);
-	
-  void Encode(BYTE *data) const;
-  PBoolean Decode(const BYTE *data);
-	
-protected:
-	
-  PBoolean isEnabled;
-  BYTE firstOctet;
-  BYTE secondOctet;
-	
-};
-
 /** This class implements a default H.281 handler
  */
-class OpalH281Handler : public OpalH224Client
+class OpalH281Client : public OpalH224Client
 {
-  PCLASSINFO(OpalH281Handler, PObject);
-	
-public:
-	
-  OpalH281Handler();
-  ~OpalH281Handler();
-	
-  enum VideoSource {
-    CurrentVideoSource      = 0x00,
-    MainCamera              = 0x01,
-    AuxiliaryCamera         = 0x02,
-    DocumentCamera          = 0x03,
-    AuxiliaryDocumentCamera = 0x04,
-    VideoPlaybackSource     = 0x05
-  };
-  
-  /**Overriding default OpalH224Client methods */
-  virtual BYTE GetClientID() const { return OpalH224Client::H281ClientID; }
-  virtual PBoolean HasExtraCapabilities() const { return true; }
-  
-  /**Process incoming frames. Overrides from OpalH224Client */
-  virtual void OnReceivedExtraCapabilities(const BYTE *capabilities, PINDEX size);
-  virtual void OnReceivedMessage(const H224_Frame & message);
-	
-  BYTE GetLocalNumberOfPresets() const { return localNumberOfPresets; }
-  void SetLocalNumberOfPresets(BYTE presets) { localNumberOfPresets = presets; }
-	
-  BYTE GetRemoteNumberOfPresets() const { return remoteNumberOfPresets; }
-	
-  H281VideoSource & GetLocalVideoSource(VideoSource source);
-  H281VideoSource & GetRemoteVideoSource(VideoSource source);
-	
-  /** Causes the H.281 handler to start the desired action
-      The action will continue until StopAction() is called.
-   */
-  void StartAction(H281_Frame::PanDirection panDirection,
-                   H281_Frame::TiltDirection tiltDirection,
-                   H281_Frame::ZoomDirection zoomDireciton,
-                   H281_Frame::FocusDirection focusDirection);
-  
-  /** Stops any action currently ongoing
-   */
-  void StopAction();
+    PCLASSINFO(OpalH281Client, OpalH224Client);
+  public:
+    OpalH281Client();
+    ~OpalH281Client();
 
-  /** Tells the remote side to select the desired video source using the
-	  mode specified. Does nothing if either video source or mode aren't
-	  available
-	*/
-  void SelectVideoSource(BYTE videoSourceNumber, H281_Frame::VideoMode videoMode);
-  
-  /** Tells the remote side to store the current camera settings as a preset
-	  with the preset number given
-   */
-  void StoreAsPreset(BYTE presetNumber);
-  
-  /** Tells the remote side to activate the given preset
-   */
-  void ActivatePreset(BYTE presetNumber);
-	
-  /** Causes the H.281 handler to send its capabilities.
-	  Capabilities include the number of available cameras, (default one)
-	  the camera abilities (default none) and the number of presets that
-      can be stored (default zero)
-   */
-  void SendExtraCapabilities() const;
-	
-  /*
-   * methods that subclasses can override.
-   * The default handler does not implement FECC on the local side.
-   * Thus, the default behaviour is to do nothing.
-   */
-	
-  /** Called each time a remote endpoint sends its capability list
-   */
-  virtual void OnRemoteCapabilitiesUpdated();
-	
-  /** Indicates to start the action specified
-   */
-  virtual void OnStartAction(H281_Frame::PanDirection panDirection,
-                             H281_Frame::TiltDirection tiltDirection,
-                             H281_Frame::ZoomDirection zoomDirection,
-                             H281_Frame::FocusDirection focusDirection);
-	
-  /** Indicates to stop the action stared with OnStartAction()
-   */
-  virtual void OnStopAction();
-	
-  /** Indicates to select the desired video source
-   */
-  virtual void OnSelectVideoSource(BYTE videoSourceNumber, H281_Frame::VideoMode videoMode);
-	
-  /** Indicates to store the current camera settings as a preset
-   */
-  virtual void OnStoreAsPreset(BYTE presetNumber);
+    P_DECLARE_ENUM(VideoSources,
+      CurrentVideoSource,
+      MainCamera,
+      AuxiliaryCamera,
+      DocumentCamera,
+      AuxiliaryDocumentCamera,
+      VideoPlaybackSource
+    );
 
-  /** Indicates to activate the given preset number
-   */
-  virtual void OnActivatePreset(BYTE presetNumber);
-	
-protected:
-		
-  PDECLARE_NOTIFIER(PTimer, OpalH281Handler, ContinueAction);
-  PDECLARE_NOTIFIER(PTimer, OpalH281Handler, StopActionLocally);
-	
-  BYTE localNumberOfPresets;
-  BYTE remoteNumberOfPresets;
-  H281VideoSource localVideoSources[6];
-  H281VideoSource remoteVideoSources[6];
-	
-  H281_Frame transmitFrame;
-  PTimer transmitTimer;
+    /**Overriding default OpalH224Client methods */
+    virtual BYTE GetClientID() const { return OpalH224Client::H281ClientID; }
+    virtual bool HasExtraCapabilities() const { return true; }
 
-  H281_Frame::PanDirection requestedPanDirection;
-  H281_Frame::TiltDirection requestedTiltDirection;
-  H281_Frame::ZoomDirection requestedZoomDirection;
-  H281_Frame::FocusDirection requestedFocusDirection;
-  PTimer receiveTimer;
+    /**Process incoming frames. Overrides from OpalH224Client */
+    virtual void OnReceivedExtraCapabilities(const BYTE *capabilities, PINDEX size);
+    virtual void OnReceivedMessage(const H224_Frame & message);
+
+    // Presets
+    unsigned GetLocalNumberOfPresets() const { return m_localNumberOfPresets; }
+    void SetLocalNumberOfPresets(unsigned presets) { m_localNumberOfPresets = presets; }
+
+    unsigned GetRemoteNumberOfPresets() const { return m_remoteNumberOfPresets; }
+
+    /** Causes the H.281 handler to start the desired action
+        The action will continue until StopAction() is called.
+     */
+    bool Action(PVideoControlInfo::Types type, int direction);
+
+    /** Tells the remote side to select the desired video source using the
+      mode specified. Does nothing if either video source or mode aren't
+      available
+    */
+    bool SelectVideoSource(
+      VideoSources source,
+      H281_Frame::VideoMode mode = H281_Frame::MotionVideo
+    );
+
+    /** Tells the remote side to store the current camera settings as a preset
+      with the preset number given
+     */
+    void StoreAsPreset(BYTE presetNumber);
+
+    /** Tells the remote side to activate the given preset
+     */
+    void ActivatePreset(BYTE presetNumber);
+
+    /** Causes the H.281 handler to send its capabilities.
+      Capabilities include the number of available cameras, (default one)
+      the camera abilities (default none) and the number of presets that
+        can be stored (default zero)
+     */
+    void SendExtraCapabilities() const;
+
+    /*
+     * methods that subclasses can override.
+     * The default handler does not implement FECC on the local side.
+     * Thus, the default behaviour is to do nothing.
+     */
+
+    /** Called each time a remote endpoint sends its capability list
+     */
+    virtual void OnRemoteCapabilitiesChanged();
+
+    /** Indicates to start the action specified
+     */
+    virtual void OnStartAction(int directions[PVideoControlInfo::NumTypes]) = 0;
+
+    /** Indicates to stop the action stared with OnStartAction()
+     */
+    virtual void OnStopAction() = 0;
+
+    /** Indicates to select the desired video source
+     */
+    virtual void OnSelectVideoSource(VideoSources source, H281_Frame::VideoMode videoMode);
+
+    /** Indicates to store the current camera settings as a preset
+     */
+    virtual void OnStoreAsPreset(BYTE presetNumber);
+
+    /** Indicates to activate the given preset number
+     */
+    virtual void OnActivatePreset(BYTE presetNumber);
+
+    void SetCapabilityChangedNotifier(const PNotifier & notifier) { m_capabilityChanged = notifier; }
+
+  protected:
+    PDECLARE_NOTIFIER(PTimer, OpalH281Client, ContinueAction);
+    PDECLARE_NOTIFIER(PTimer, OpalH281Client, StopActionLocally);
+    void SendStopAction();
+
+    PMutex m_mutex;
+
+    PNotifier    m_capabilityChanged;
+
+    VideoSources m_localSource;
+    uint16_t     m_localCapability[NumVideoSources];
+    unsigned     m_localNumberOfPresets;
+    PTimer       m_receiveTimer;
+
+    VideoSources m_remoteSource;
+    uint16_t     m_remoteCapability[NumVideoSources];
+    unsigned     m_remoteNumberOfPresets;
+    H281_Frame   m_transmitFrame;
+    PTimer       m_continueTimer;
 };
+
+
+/** This class implements a H.281 handler for PVideoInputDevice
+ */
+class OpalFarEndCameraControl : public OpalH281Client
+{
+    PCLASSINFO(OpalFarEndCameraControl, OpalH281Client);
+  public:
+    OpalFarEndCameraControl();
+
+    /// Attach an active video input device to be controlled
+    void Attach(
+      PVideoInputDevice * device,
+      VideoSources source = MainCamera
+    );
+    void Detach(
+      PVideoInputDevice * device
+    );
+    bool SelectVideoDevice(
+      PVideoInputDevice * device,
+      H281_Frame::VideoMode mode = H281_Frame::MotionVideo
+    );
+
+    virtual void OnStartAction(int directions[PVideoControlInfo::NumTypes]);
+    virtual void OnStopAction();
+
+  protected:
+    PDECLARE_NOTIFIER(PTimer, OpalFarEndCameraControl, StepCamera);
+
+    PTimeInterval       m_stepRate;
+    PVideoInputDevice * m_videoInputDevices[NumVideoSources];
+    int                 m_step[PVideoControlInfo::NumTypes];
+    PTimer              m_stepTimer;
+};
+
 
 #endif // OPAL_H224_H281HANDLER_H
 

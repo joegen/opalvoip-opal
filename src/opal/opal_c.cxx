@@ -834,7 +834,7 @@ void OpalIVREndPoint_C::OnEndDialog(OpalIVRConnection & connection)
   PTRACE(4, "OnEndDialog for " << connection);
 
   // Do not call ancestor and start a long pause, as do not want it to hang up
-  connection.TransferConnection("<vxml><form><break time=\"3600s\"/></form></vxml>"); 
+  connection.TransferConnection("<vxml><form><break time=\"3600s\"/></form></vxml>");
 
   // Send message to app, which may (or may not) start a new IVR script
   OpalMessageBuffer message(OpalIndCompletedIVR);
@@ -849,7 +849,7 @@ void OpalIVREndPoint_C::OnEndDialog(OpalIVRConnection & connection)
 
 #endif
 
-    
+
 ///////////////////////////////////////
 
 #if OPAL_SIP
@@ -1031,7 +1031,7 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
 #if OPAL_HAS_PCSS
   bool hasPC = CheckProto(args, OPAL_PREFIX_PCSS":*", defUser, defUserPos);
 #endif
-  
+
   bool hasLocal = CheckProto(args, OPAL_PREFIX_LOCAL":<du>", defUser, defUserPos);
 
 #if OPAL_GSTREAMER
@@ -1102,14 +1102,14 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
     AddRouteEntry(OPAL_PREFIX_PCSS":.*=" + defProto + ":<da>");
   }
 #endif
-  
+
 #if OPAL_GSTREAMER
   if (hasGStreamer) {
     m_gstEP = new OpalGstEndPoint_C(*this);
     AddRouteEntry(OPAL_PREFIX_GST":.*=" + defProto + ":<da>");
   }
 #endif
-  
+
 #if OPAL_IVR
   if (hasIVR) {
     m_ivrEP = new OpalIVREndPoint_C(*this);
@@ -1637,7 +1637,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
         response.SetError("Invalid PCSS media override.");
     }
   }
-#endif 
+#endif
 }
 
 
@@ -2016,7 +2016,7 @@ void OpalManager_C::HandleSetUpCall(const OpalMessage & command, OpalMessageBuff
     else
       partyA = "pots:*";
   }
-  
+
 #if OPAL_HAS_PCSS
   if (m_pcssEP != NULL) {
     PCaselessString partyB = command.m_param.m_callSetUp.m_partyB;

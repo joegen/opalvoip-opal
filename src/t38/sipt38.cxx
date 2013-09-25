@@ -82,19 +82,20 @@ static PStringSet const T38Options(PARRAYSIZE(T38OptionsInit), T38OptionsInit);
 
 /////////////////////////////////////////////////////////////////////////////
 
-const PCaselessString & OpalFaxMediaType::GetSDPMediaType() { static PConstCaselessString const s("image"); return s; }
-const PString & OpalFaxMediaType::GetSDPTransportType() { return OpalFaxMediaType::UDPTL(); }
-
-bool OpalFaxMediaType::MatchesSDP(const PCaselessString & sdpMediaType,
-                                  const PCaselessString & sdpTransport,
-                                  const PStringArray & /*sdpLines*/,
-                                  PINDEX /*index*/)
+PString OpalFaxMediaDefinition::GetSDPMediaType() const
 {
-  return sdpMediaType == GetSDPMediaType() && sdpTransport == OpalFaxMediaType::UDPTL();
+  static PConstCaselessString const s("image");
+  return s;
 }
 
 
-SDPMediaDescription * OpalFaxMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress) const
+PString OpalFaxMediaDefinition::GetSDPTransportType() const
+{
+  return OpalFaxMediaDefinition::UDPTL();
+}
+
+
+SDPMediaDescription * OpalFaxMediaDefinition::CreateSDPMediaDescription(const OpalTransportAddress & localAddress) const
 {
   return new SDPFaxMediaDescription(localAddress);
 }
@@ -104,18 +105,6 @@ SDPMediaDescription * OpalFaxMediaType::CreateSDPMediaDescription(const OpalTran
 SDPFaxMediaDescription::SDPFaxMediaDescription(const OpalTransportAddress & address)
   : SDPMediaDescription(address, OpalMediaType::Fax())
 {
-}
-
-
-PCaselessString SDPFaxMediaDescription::GetSDPTransportType() const
-{ 
-  return OpalFaxMediaType::GetSDPTransportType();
-}
-
-
-PString SDPFaxMediaDescription::GetSDPMediaType() const 
-{ 
-  return OpalFaxMediaType::GetSDPMediaType(); 
 }
 
 

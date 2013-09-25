@@ -50,6 +50,7 @@
 #include <codec/opalplugin.h>
 #include <codec/rfc2833.h>
 #include <asn/h235_srtp.h>
+#include <h224/h323h224.h>
 
 #include <algorithm>
 
@@ -63,13 +64,18 @@ H323_REGISTER_CAPABILITY(cls, capName) \
 
 
 #ifndef NO_H323_AUDIO_CODECS
-DEFINE_G711_CAPABILITY(H323_G711ALaw64Capability, H323_G711Capability::ALaw, OPAL_G711_ALAW_64K)
-DEFINE_G711_CAPABILITY(H323_G711uLaw64Capability, H323_G711Capability::muLaw, OPAL_G711_ULAW_64K)
+  DEFINE_G711_CAPABILITY(H323_G711ALaw64Capability, H323_G711Capability::ALaw, OPAL_G711_ALAW_64K)
+  DEFINE_G711_CAPABILITY(H323_G711uLaw64Capability, H323_G711Capability::muLaw, OPAL_G711_ULAW_64K)
 #endif
 
 
 #if OPAL_T38_CAPABILITY
-H323_REGISTER_CAPABILITY(H323_T38Capability, OPAL_T38);
+  H323_REGISTER_CAPABILITY(H323_T38Capability, OPAL_T38);
+#endif
+
+#if OPAL_HAS_H281
+  H323_REGISTER_CAPABILITY(H323_FECC_RTP_Capability, OPAL_FECC_RTP);
+  H323_REGISTER_CAPABILITY(H323_FECC_HDLC_Capability, OPAL_FECC_HDLC);
 #endif
 
 
@@ -738,7 +744,7 @@ PBoolean H323GenericCapabilityInfo::OnSendingGenericPDU(H245_GenericCapability &
       reorderedOptions.push_back(&option);
   }
 
-  std::sort(reorderedOptions.begin(), reorderedOptions.end(), OpalMediaOptionSortByPosition()); 
+  std::sort(reorderedOptions.begin(), reorderedOptions.end(), OpalMediaOptionSortByPosition());
 
   for (std::vector<OpalMediaOption const *>::iterator it = reorderedOptions.begin(); it != reorderedOptions.end(); ++it) {
     const OpalMediaOption & option = **it;
@@ -1433,7 +1439,7 @@ PBoolean H323NonStandardVideoCapability::IsMatch(const PASN_Object & subTypePDU,
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323GenericVideoCapability::H323GenericVideoCapability(const PString &standardId, PINDEX maxBitRate)
+H323GenericVideoCapability::H323GenericVideoCapability(const PString &standardId, unsigned maxBitRate)
   : H323VideoCapability(),
     H323GenericCapabilityInfo(standardId, maxBitRate, false)
 {
@@ -1672,9 +1678,9 @@ OPAL_INSTANTIATE_SIMPLE_MEDIATYPE(OpalH239MediaType, "H.239");
 
 const OpalMediaFormat & GetH239VideoMediaFormat()
 {
-  static class H239VideoMediaFormat : public OpalMediaFormat { 
-    public: 
-      H239VideoMediaFormat() 
+  static class H239VideoMediaFormat : public OpalMediaFormat {
+    public:
+      H239VideoMediaFormat()
         : OpalMediaFormat("H.239-Video", OpalH239MediaType::Name(), RTP_DataFrame::MaxPayloadType, NULL, false, 0, 0, 0, 0)
       {
         OpalMediaOption * option = new OpalMediaOptionUnsigned(OpalVideoFormat::ContentRoleMaskOption(),
@@ -1690,7 +1696,7 @@ const OpalMediaFormat & GetH239VideoMediaFormat()
         option->SetH245Generic(genericInfo);
 
         AddOption(option);
-      } 
+      }
   } format;
 
   return format;
@@ -2275,7 +2281,7 @@ PBoolean H235SecurityGenericCapability::IsMatch(const PASN_Object & subTypePDU, 
 /////////////////////////////////////////////////////////////////////////////
 
 H323DataCapability::H323DataCapability(unsigned rate)
-  : maxBitRate(rate)
+  : m_maxBitRate(rate)
 {
 }
 
@@ -2297,7 +2303,7 @@ PBoolean H323DataCapability::OnSendingPDU(H245_Capability & cap) const
   cap.SetTag(capabilityDirection == e_Receive ? H245_Capability::e_receiveDataApplicationCapability
                                               : H245_Capability::e_receiveAndTransmitDataApplicationCapability);
   H245_DataApplicationCapability & app = cap;
-  app.m_maxBitRate = maxBitRate;
+  app.m_maxBitRate = m_maxBitRate;
   return OnSendingPDU(app, e_TCS);
 }
 
@@ -2306,9 +2312,8 @@ PBoolean H323DataCapability::OnSendingPDU(H245_DataType & dataType) const
 {
   dataType.SetTag(H245_DataType::e_data);
   H245_DataApplicationCapability & app = dataType;
-  app.m_maxBitRate = maxBitRate;
-  return H323Capability::OnSendingPDU(dataType) &&
-         OnSendingPDU(app, e_OLC);
+  app.m_maxBitRate = m_maxBitRate;
+  return H323Capability::OnSendingPDU(dataType) && OnSendingPDU(app, e_OLC);
 }
 
 
@@ -2328,7 +2333,7 @@ PBoolean H323DataCapability::OnSendingPDU(H245_ModeElement & mode) const
 {
   mode.m_type.SetTag(H245_ModeElementType::e_dataMode);
   H245_DataMode & type = mode.m_type;
-  type.m_bitRate = maxBitRate;
+  type.m_bitRate = m_maxBitRate;
   return OnSendingPDU(type);
 }
 
@@ -2340,7 +2345,7 @@ PBoolean H323DataCapability::OnReceivedPDU(const H245_Capability & cap)
     return false;
 
   const H245_DataApplicationCapability & app = cap;
-  maxBitRate = app.m_maxBitRate;
+  m_maxBitRate = app.m_maxBitRate;
 
   return OnReceivedPDU(app, e_TCS) && H323Capability::OnReceivedPDU(cap);
 }
@@ -2352,7 +2357,7 @@ PBoolean H323DataCapability::OnReceivedPDU(const H245_DataType & dataType, PBool
     return false;
 
   const H245_DataApplicationCapability & app = dataType;
-  maxBitRate = app.m_maxBitRate;
+  m_maxBitRate = app.m_maxBitRate;
   return OnReceivedPDU(app, e_OLC) && H323Capability::OnReceivedPDU(dataType, receiver);
 }
 
@@ -2446,6 +2451,61 @@ PBoolean H323NonStandardDataCapability::IsMatch(const PASN_Object & subTypePDU, 
 {
   return H323Capability::IsMatch(subTypePDU, mediaPacketization) &&
          H323NonStandardCapabilityInfo::IsMatch((const H245_NonStandardParameter &)dynamic_cast<const H245_DataApplicationCapability_application & >(subTypePDU));
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+H323GenericDataCapability::H323GenericDataCapability(const PString & standardId, unsigned maxBitRate)
+  : H323DataCapability(maxBitRate)
+  , H323GenericCapabilityInfo(standardId, maxBitRate, false)
+{
+}
+
+
+PObject::Comparison H323GenericDataCapability::Compare(const PObject & obj) const
+{
+  Comparison result = H323DataCapability::Compare(obj);
+  if (result != EqualTo)
+    return result;
+
+  return CompareInfo(dynamic_cast<const H323GenericDataCapability &>(obj));
+}
+
+
+unsigned H323GenericDataCapability::GetSubType() const
+{
+  return H245_DataApplicationCapability_application::e_genericDataCapability;
+}
+
+
+PBoolean H323GenericDataCapability::OnSendingPDU(H245_DataApplicationCapability & pdu, CommandType type) const
+{
+  pdu.m_application.SetTag(H245_DataApplicationCapability_application::e_genericDataCapability);
+  return OnSendingGenericPDU(pdu.m_application, GetMediaFormat(), type);
+}
+
+
+PBoolean H323GenericDataCapability::OnSendingPDU(H245_DataMode & pdu) const
+{
+  return OnSendingGenericPDU(pdu.m_application, GetMediaFormat(), e_ReqMode);
+}
+
+
+PBoolean H323GenericDataCapability::OnReceivedPDU(const H245_DataApplicationCapability & pdu, CommandType type)
+{
+  if (pdu.m_application.GetTag() != H245_DataApplicationCapability_application::e_genericDataCapability)
+    return false;
+
+  return OnReceivedGenericPDU(GetWritableMediaFormat(), pdu.m_application, type);
+}
+
+
+PBoolean H323GenericDataCapability::IsMatch(const PASN_Object & subTypePDU, const PString & mediaPacketization) const
+{
+  return H323Capability::IsMatch(subTypePDU, mediaPacketization) &&
+         H323GenericCapabilityInfo::IsMatch(GetMediaFormat(),
+                (const H245_GenericCapability &)dynamic_cast<const H245_DataApplicationCapability_application & >(subTypePDU));
 }
 
 
@@ -2943,7 +3003,7 @@ PINDEX H323Capabilities::AddMediaFormat(PINDEX descriptorNum,
     return reply;
   }
 
-  capability->SetCapabilityDirection(direction); 
+  capability->SetCapabilityDirection(direction);
   capability->GetWritableMediaFormat() = mediaFormat;
   m_mediaPacketizations.Union(mediaFormat.GetMediaPacketizationSet());
 
@@ -3756,7 +3816,7 @@ void H245_AudioCapability::PrintOn(ostream & strm) const
             PINDEX i;
             if (data.GetSize() >= 21) {
               for (i = 0; msNonStandardCodec[i].name != NULL; i++) {
-                if ((data[20] == msNonStandardCodec[i].sig[0]) && 
+                if ((data[20] == msNonStandardCodec[i].sig[0]) &&
                     (data[21] == msNonStandardCodec[i].sig[1])) {
                   name = msNonStandardCodec[i].name;
                   break;

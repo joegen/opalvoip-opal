@@ -52,7 +52,6 @@
 #include <rtp/rtp.h>
 #include <t120/t120proto.h>
 #include <t38/t38proto.h>
-#include <im/rfc4103.h>
 #include <ptclib/url.h>
 
 
@@ -441,7 +440,7 @@ void OpalConnection::InternalOnReleased()
      SIP re-INVITE) was started before release, but has not yet finished. Once
      that operation has finished, no new operations should happen as they will
      check GetPhase() for connection released before proceeding.
-     
+
      Note, call to UnlockReadOnly() is BEFORE the call to OnReleased(), it is
      up to OnReleased() to manage it's locking regime. */
   if (LockReadOnly()) {
@@ -564,7 +563,7 @@ void OpalConnection::AnsweringCall(AnswerCallResponse response)
       SetAlerting(GetLocalPartyName(), false);
       break;
 
-    case AnswerCallNow: 
+    case AnswerCallNow:
       PTRACE(3, "OpalCon\tApplication has answered incoming call");
       GetOtherPartyConnection()->OnConnectedInternal();
       break;
@@ -862,20 +861,10 @@ void OpalConnection::OnPauseMediaStream(OpalMediaStream & /*strm*/, bool /*pause
 }
 
 
-#if OPAL_HAS_RFC4103
-OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource)
-{
-  if (mediaFormat.GetMediaType() == OpalT140.GetMediaType())
-    return new OpalT140MediaStream(*this, mediaFormat, sessionID, isSource);
-
-  return NULL;
-}
-#else
 OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat &, unsigned, PBoolean)
 {
   return NULL;
 }
-#endif // OPAL_HAS_RFC4103
 
 
 PBoolean OpalConnection::OnOpenMediaStream(OpalMediaStream & stream)
@@ -1403,7 +1392,7 @@ void OpalConnection::OnDetectInBandDTMF(RTP_DataFrame & frame, P_INT_PTR)
   // This allows us to access the 16 bit PCM audio (at 8Khz sample rate)
   // before the audio is passed on to the sound card (or other output device)
 
-  // Pass the 16 bit PCM audio through the DTMF decoder   
+  // Pass the 16 bit PCM audio through the DTMF decoder
   PString tones = m_dtmfDecoder.Decode((const short *)frame.GetPayloadPtr(),
                                        frame.GetPayloadSize()/sizeof(short),
                                        m_dtmfScaleMultiplier,
@@ -1574,8 +1563,8 @@ PString OpalConnection::GetIdentifier() const
 
 
 PINDEX OpalConnection::GetMaxRtpPayloadSize() const
-{ 
-  return endpoint.GetManager().GetMaxRtpPayloadSize(); 
+{
+  return endpoint.GetManager().GetMaxRtpPayloadSize();
 }
 
 
@@ -1798,7 +1787,7 @@ void OpalConnection::AutoStartMap::Initialise(const OpalConnection::StringOption
     // see if media type is known, and if it is, enable it
     OpalMediaTypeDefinition * def = mediaType.GetDefinition();
     if (def != NULL) {
-      if (colon == P_MAX_INDEX) 
+      if (colon == P_MAX_INDEX)
         SetAutoStart(mediaType, OpalMediaType::ReceiveTransmit);
       else {
         PStringArray tokens = line.Mid(colon+1).Tokenise(";", FALSE);
@@ -1834,13 +1823,13 @@ void OpalConnection::AutoStartMap::SetAutoStart(const OpalMediaType & mediaType,
   // deconflict session ID
   unsigned sessionID = mediaType->GetDefaultSessionId();
   if (size() == 0) {
-    if (sessionID == 0) 
+    if (sessionID == 0)
       sessionID = 1;
   }
   else {
     iterator r = begin();
     while (r != end()) {
-      if (r->second.preferredSessionId != sessionID) 
+      if (r->second.preferredSessionId != sessionID)
         ++r;
       else {
         ++sessionID;

@@ -5,9 +5,9 @@
  *
  * Open Phone Abstraction Library (OPAL)
  * Formally known as the Open H323 project.
- *    
+ *
  * Copyright (c) 2007 Vox Lucida
- *   
+ *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -43,7 +43,7 @@
 #include <wx/clipbrd.h>
 #include <wx/accel.h>
 #include <wx/filesys.h>
-#include <wx/gdicmn.h>     //Required for icons on linux. 
+#include <wx/gdicmn.h>     //Required for icons on linux.
 #include <wx/image.h>
 #include <wx/imaglist.h>
 #include <wx/listctrl.h>
@@ -698,7 +698,7 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_SPLITTER_SASH_POS_CHANGED(SplitterID, MyManager::OnSashPositioned)
   EVT_LIST_ITEM_ACTIVATED(SpeedDialsID,     MyManager::OnSpeedDialActivated)
   EVT_LIST_COL_END_DRAG(SpeedDialsID,       MyManager::OnSpeedDialColumnResize)
-  EVT_LIST_ITEM_RIGHT_CLICK(SpeedDialsID,   MyManager::OnSpeedDialRightClick) 
+  EVT_LIST_ITEM_RIGHT_CLICK(SpeedDialsID,   MyManager::OnSpeedDialRightClick)
   EVT_LIST_END_LABEL_EDIT(SpeedDialsID,     MyManager::OnSpeedDialEndEdit)
 
   EVT_USER_COMMAND(wxEvtLogMessage,         MyManager::OnLogMessage)
@@ -712,7 +712,7 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
 #if OPAL_PTLIB_SSL
   EVT_USER_COMMAND(wxEvtGetSSLPassword,     MyManager::OnEvtGetSSLPassword)
 #endif
-  
+
 END_EVENT_TABLE()
 
 
@@ -1534,7 +1534,7 @@ void MyManager::SetNATHandling()
     case 1 :
       SetNATServer("Fixed", m_NATRouter);
       break;
-      
+
     case 2 :
       if (!m_STUNServer.IsEmpty()) {
         LogWindow << "STUN server \"" << m_STUNServer << "\" being contacted ..." << endl;
@@ -1646,20 +1646,20 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
       wxT("Presence Id"),
       wxT("Description")
     };
-    
+
     for (int i = 0; i < e_NumColumns; i++) {
       m_speedDials->InsertColumn(i, titles[i]);
       wxString key;
       key.sprintf(ColumnWidthKey, i);
       if (config->Read(key, &width) && width > 0)
         m_speedDials->SetColumnWidth(i, width);
-    }    
+    }
   }
   else {
     m_speedDials->SetImageList(m_imageListNormal, wxIMAGE_LIST_NORMAL);
     m_speedDials->SetImageList(m_imageListSmall, wxIMAGE_LIST_SMALL);
   }
-  
+
   // Now either replace the tab or set it for the first time
   if (m_tabs->GetPageCount() == 0)
     m_tabs->AddPage(m_speedDials, SpeedDialTabTitle);
@@ -1673,7 +1673,7 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
     m_speedDials->SetItemData(index, (intptr_t)&*it);
     UpdateSpeedDial(index, *it, false);
   }
-  
+
   m_speedDials->Show();
 }
 
@@ -1711,7 +1711,7 @@ void MyManager::OnClose(wxCloseEvent & /*event*/)
       }
     }
   }
-  
+
   potsEP = NULL;
   m_activeCall.SetNULL();
   m_callsOnHold.clear();
@@ -1948,7 +1948,7 @@ void MyManager::OnCallSpeedDialAudio(wxCommandEvent & /*event*/)
 
 
 void MyManager::OnCallSpeedDialHandset(wxCommandEvent & /*event*/)
-{  
+{
   SpeedDialInfo * info = GetSelectedSpeedDial();
   if (info != NULL)
     MakeCall(info->m_Address, "pots:*");
@@ -1971,7 +1971,7 @@ void MyManager::OnSendFax(wxCommandEvent & /*event*/)
   }
 }
 
-                                  
+
 #if OPAL_HAS_PRESENCE
 void MyManager::OnMyPresence(wxCommandEvent & /*event*/)
 {
@@ -5626,7 +5626,7 @@ void OptionsDialog::AddInterface(wxCommandEvent & /*event*/)
   int proto = m_InterfaceProtocol->GetSelection();
   PwxString iface = InterfacePrefixes[proto];
   iface += m_InterfaceAddress->GetValue();
-  if (proto > 0) 
+  if (proto > 0)
     iface += wxT(":") + m_InterfacePort->GetValue();
   m_LocalInterfaces->Append(iface);
 }
@@ -5748,7 +5748,7 @@ void OptionsDialog::SelectedLID(wxCommandEvent & /*event*/)
 
   if (enabled) {
     PwxString devName = m_selectedLID->GetValue();
-    OpalLineInterfaceDevice * lidToDelete = NULL; 
+    OpalLineInterfaceDevice * lidToDelete = NULL;
     const OpalLineInterfaceDevice * lid = m_manager.potsEP->GetDeviceByName(devName);
     if (lid == NULL)
       lid = lidToDelete = OpalLineInterfaceDevice::CreateAndOpen(devName);
@@ -5846,16 +5846,16 @@ void OptionsDialog::TestVideoThreadMain()
   grabberArgs.rate = m_VideoGrabFrameRate;
   PVideoFrameInfo::ParseSize(m_VideoGrabFrameSize, grabberArgs.width, grabberArgs.height);
   grabberArgs.flip = m_VideoFlipLocal;
-  
+
   wxRect winRect(m_manager.GetRect());
-  
+
   PVideoDevice::OpenArgs displayArgs;
   displayArgs.deviceName = psprintf(VIDEO_WINDOW_DEVICE" TITLE=\"Video Test\" X=%i Y=%i",
                                     m_manager.m_localVideoFrameX != INT_MAX ? m_manager.m_localVideoFrameX : winRect.GetLeft(),
                                     m_manager.m_localVideoFrameY != INT_MAX ? m_manager.m_localVideoFrameY : winRect.GetTop());
   displayArgs.width = grabberArgs.width;
   displayArgs.height = grabberArgs.height;
-  
+
   if ((m_TestVideoDisplay = PVideoOutputDevice::CreateOpenedDevice(displayArgs, true)) == NULL)
     theEvent.SetString(wxT("Could not open video display."));
   else if ((m_TestVideoGrabber = PVideoInputDevice::CreateOpenedDevice(grabberArgs)) == NULL)
@@ -6974,7 +6974,7 @@ END_EVENT_TABLE()
 
 IMDialog::IMDialog(MyManager * manager, OpalIMContext & context)
   : m_manager(*manager)
-  , m_context(context) 
+  , m_context(context)
 {
   wxXmlResource::Get()->LoadDialog(this, manager, wxT("IMDialog"));
 
@@ -7302,22 +7302,41 @@ BEGIN_EVENT_TABLE(InCallPanel, CallPanelBase)
   EVT_TIMER(VU_UPDATE_TIMER_ID, InCallPanel::OnUpdateVU)
 END_EVENT_TABLE()
 
+#define SET_CTRL_VAR(name) FindWindowByNameAs(m_##name, this, wxT(#name));
 
 InCallPanel::InCallPanel(MyManager & manager, const PSafePtr<OpalCall> & call, wxWindow * parent)
   : CallPanelBase(manager, call, parent, wxT("InCallPanel"))
   , m_vuTimer(this, VU_UPDATE_TIMER_ID)
   , m_updateStatistics(0)
 {
-  FindWindowByNameAs(m_Hold, this, wxT("Hold"));
-  FindWindowByNameAs(m_Conference, this, wxT("Conference"));
-  FindWindowByNameAs(m_SpeakerHandset, this, wxT("SpeakerHandset"));
-  FindWindowByNameAs(m_SpeakerMute, this, wxT("SpeakerMute"));
-  FindWindowByNameAs(m_MicrophoneMute, this, wxT("MicrophoneMute"));
-  FindWindowByNameAs(m_SpeakerVolume, this, wxT("SpeakerVolume"));
-  FindWindowByNameAs(m_MicrophoneVolume, this, wxT("MicrophoneVolume"));
-  FindWindowByNameAs(m_vuSpeaker, this, wxT("SpeakerGauge"));
-  FindWindowByNameAs(m_vuMicrophone, this, wxT("MicrophoneGauge"));
-  FindWindowByNameAs(m_callTime, this, wxT("CallTime"));
+  SET_CTRL_VAR(Hold);
+  SET_CTRL_VAR(Conference);
+  SET_CTRL_VAR(SpeakerHandset);
+  SET_CTRL_VAR(SpeakerMute);
+  SET_CTRL_VAR(MicrophoneMute);
+  SET_CTRL_VAR(SpeakerVolume);
+  SET_CTRL_VAR(MicrophoneVolume);
+  SET_CTRL_VAR(SpeakerGauge);
+  SET_CTRL_VAR(MicrophoneGauge);
+  SET_CTRL_VAR(CallTime);
+
+#if OPAL_HAS_H281
+  for (PVideoControlInfo::Types type = PVideoControlInfo::BeginTypes; type < PVideoControlInfo::EndTypes; ++type) {
+    for (unsigned dir = 0; dir < 2; ++dir) {
+      static const wxChar * const feccNames[PVideoControlInfo::NumTypes][2] = {
+        { wxT("PanLeft"),  wxT("PanRight")  },
+        { wxT("TiltDown"), wxT("TiltUp")  },
+        { wxT("ZoomWide"), wxT("ZoomTight") },
+        { wxT("FocusIn"),  wxT("FocusOut")  },
+      };
+      wxButton * btn = FindWindowByNameAs(m_fecc[type][dir], this, feccNames[type][dir]);
+      btn->Connect(wxEVT_LEFT_DOWN, wxMouseEventHandler(InCallPanel::OnMouseFECC), NULL, this);
+      btn->Connect(wxEVT_LEFT_UP, wxMouseEventHandler(InCallPanel::OnMouseFECC), NULL, this);
+      btn->Connect(wxEVT_ENTER_WINDOW, wxMouseEventHandler(InCallPanel::OnMouseFECC), NULL, this);
+      btn->Connect(wxEVT_LEAVE_WINDOW, wxMouseEventHandler(InCallPanel::OnMouseFECC), NULL, this);
+    }
+  }
+#endif // OPAL_HAS_H281
 
   OnHoldChanged(false);
 
@@ -7333,7 +7352,43 @@ InCallPanel::InCallPanel(MyManager & manager, const PSafePtr<OpalCall> & call, w
 #endif
 
   m_FirstTime = true;
+
+  PSafePtr<OpalLocalConnection> connection = call->GetConnectionAs<OpalLocalConnection>();
+  if (connection != NULL)
+    connection->SetFarEndCameraCapabilityChangedNotifier(PCREATE_NOTIFIER(OnChangedFECC));
 }
+
+
+#if OPAL_HAS_H281
+void InCallPanel::OnMouseFECC(wxMouseEvent & theEvent)
+{
+  theEvent.Skip();  // Still process the event normally
+
+  bool start = theEvent.LeftDown() ||  (theEvent.Entering() && theEvent.LeftIsDown());
+  if (!start && !theEvent.LeftUp() && !(theEvent.Leaving()  && theEvent.LeftIsDown()))
+    return;
+
+  PSafePtr<OpalLocalConnection> connection;
+  if (m_manager.GetLocalConnection(connection, PSafeReadOnly)) {
+    for (PVideoControlInfo::Types type = PVideoControlInfo::BeginTypes; type < PVideoControlInfo::EndTypes; ++type) {
+      for (unsigned dir = 0; dir < 2; ++dir) {
+        if (theEvent.GetEventObject() == m_fecc[type][dir]) {
+          connection->FarEndCameraControl(type, start ? dir*2-1 : 0);
+          return;
+        }
+      }
+    }
+  }
+
+  PAssertAlways(PLogicError);
+}
+
+
+void InCallPanel::OnChangedFECC(OpalH281Client &, P_INT_PTR)
+{
+  OnStreamsChanged();
+}
+#endif // OPAL_HAS_H281
 
 
 bool InCallPanel::Show(bool show)
@@ -7361,6 +7416,8 @@ bool InCallPanel::Show(bool show)
     SetVolume(true, value, mute);
   }
 
+  OnStreamsChanged();
+
   return wxPanel::Show(show);
 }
 
@@ -7372,11 +7429,31 @@ void InCallPanel::OnStreamsChanged()
 
   UpdateStatistics();
 
+#if OPAL_FAX || OPAL_HAS_H281
+  PSafePtr<OpalLocalConnection> connection;
+  if (!m_manager.GetLocalConnection(connection, PSafeReadOnly))
+    return;
+#endif
+
 #if OPAL_FAX
-  PSafePtr<OpalConnection> connection;
-  if (m_manager.GetLocalConnection(connection, PSafeReadOnly) && connection->GetMediaStream(OpalMediaType::Fax(), true) != NULL) {
+  if (connection->GetMediaStream(OpalMediaType::Fax(), true) != NULL) {
     wxNotebook * book;
     FindWindowByNameAs(book, this, wxT("Statistics"))->SetSelection(RxFax);
+  }
+#endif
+
+#if OPAL_HAS_H281
+  if (connection->GetMediaStream(OpalH224MediaType(), true) != NULL) {
+    PTRACE(4, "OpenPhone\tDetected H.224 channel, enabling FECC");
+    for (PVideoControlInfo::Types type = PVideoControlInfo::BeginTypes; type < PVideoControlInfo::EndTypes; ++type) {
+      if (connection->FarEndCameraControl(type, 0)) {
+        for (unsigned dir = 0; dir < 2; ++dir)
+          m_fecc[type][dir]->Enable();
+      }
+    }
+  }
+  else {
+    PTRACE(4, "OpenPhone\tNo H.224 channel available");
   }
 #endif
 }
@@ -7537,12 +7614,12 @@ void InCallPanel::OnUpdateVU(wxTimerEvent & WXUNUSED(event))
       if (m_updateStatistics % 3 == 0) {
         PTime established = connection->GetPhaseTime(OpalConnection::EstablishedPhase);
         if (established.IsValid())
-          m_callTime->SetLabel(PwxString((PTime() - established).AsString(0, PTimeInterval::NormalFormat, 5)));
+          m_CallTime->SetLabel(PwxString((PTime() - established).AsString(0, PTimeInterval::NormalFormat, 5)));
       }
     }
 
-    SetGauge(m_vuSpeaker, spkLevel);
-    SetGauge(m_vuMicrophone, micLevel);
+    SetGauge(m_SpeakerGauge, spkLevel);
+    SetGauge(m_MicrophoneGauge, micLevel);
   }
 }
 

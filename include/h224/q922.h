@@ -41,78 +41,78 @@
 class Q922_Frame : public PBYTEArray
 {
   PCLASSINFO(Q922_Frame, PBYTEArray);
-	
+
 public:
-	
+
   Q922_Frame(PINDEX informationFieldSize = 260);
   ~Q922_Frame();
-	
+
   BYTE GetHighOrderAddressOctet() const { return theArray[0]; }
   BYTE GetLowOrderAddressOctet() const { return theArray[1]; }
   void SetHighOrderAddressOctet(BYTE octet) { theArray[0] = octet; }
   void SetLowOrderAddressOctet(BYTE octet) { theArray[1] = octet; }
-	
+
   BYTE GetControlFieldOctet() const { return theArray[2]; }
   void SetControlFieldOctet(BYTE octet) { theArray[2] = octet; }
-	
+
   BYTE *GetInformationFieldPtr() const { return (BYTE *)(theArray + Q922_HEADER_SIZE); }
-	
-  PINDEX GetInformationFieldSize() const { return informationFieldSize; }
+
+  PINDEX GetInformationFieldSize() const { return m_informationFieldSize; }
   void SetInformationFieldSize(PINDEX size);
-  
+
   /**Decodes a Q.922 frame from a given buffer, encoded as descibed in
      H.323 Annex Q. Returns the success of this operation
     **/
-  PBoolean DecodeAnnexQ(const BYTE *buffer, PINDEX size);
-  
+  bool DecodeAnnexQ(const BYTE *buffer, PINDEX size);
+
   /**Returns the size if encoded as described in H.323 Annex Q
     */
   PINDEX GetAnnexQEncodedSize() const;
-  
+
   /** Encodes this Q.922 frame into the given buffer.
     * On return, size contains the number of octets occupied in the buffer
     */
-  PBoolean EncodeAnnexQ(BYTE *buffer, PINDEX & size) const;
-  
+  bool EncodeAnnexQ(BYTE *buffer, PINDEX & size) const;
+
   /**Decodes a Q.922 frame from a given buffer.
      Returns the success of this operation
     */
-  PBoolean DecodeHDLC(const BYTE *data, PINDEX size);
-	
+  bool DecodeHDLC(const BYTE *data, PINDEX size);
+
   /** Returns an estimate of the encoded size.
-	 The receiver will use at most the size when encoding. Returns zero if encoding will fail.
+   The receiver will use at most the size when encoding. Returns zero if encoding will fail.
    */
   PINDEX GetHDLCEncodedSize() const;
-  
-  /** Encodes this Q.922 frame into the given buffer.
-	  On return, size contains the number of octets occupied in the buffer.
-	*/
-  PBoolean EncodeHDLC(BYTE *buffer, PINDEX & size) const;
 
   /** Encodes this Q.922 frame into the given buffer.
-	  On return, size contains the number of octets occupied in the buffer.
-	  Use bitPosition to determine at which bit the Q.922 FLAG sequence should begin.
-	  On return, bitPosition contains the bit at which the encoded stream ends.
-	  bitPosition shall be in the range 0-7, whereas 7 means that the FLAG sequence
-	  is encoded at byte boundaries
-	*/
-  PBoolean EncodeHDLC(BYTE *buffer, PINDEX & size, BYTE & bitPosition) const;
-	
+    On return, size contains the number of octets occupied in the buffer.
+  */
+  bool EncodeHDLC(BYTE *buffer, PINDEX & size) const;
+
+  /** Encodes this Q.922 frame into the given buffer.
+    On return, size contains the number of octets occupied in the buffer.
+    Use bitPosition to determine at which bit the Q.922 FLAG sequence should begin.
+    On return, bitPosition contains the bit at which the encoded stream ends.
+    bitPosition shall be in the range 0-7, whereas 7 means that the FLAG sequence
+    is encoded at byte boundaries
+  */
+  bool EncodeHDLC(BYTE *buffer, PINDEX & size, PINDEX & bitPosition) const;
+
 protected:
-	
-  PINDEX informationFieldSize;
-	
+
+  PINDEX m_informationFieldSize;
+
 private:
 
   // for HDLC mode
-  inline PBoolean FindFlagEnd(const BYTE *buffer, PINDEX bufferSize, PINDEX & octetIndex, BYTE & bitIndex);
-  inline BYTE DecodeOctet(const BYTE *buffer, BYTE *destination, PINDEX & octetIndex, BYTE & bitIndex, BYTE & onesCounter);
-  inline BYTE DecodeBit(const BYTE *buffer, PINDEX & octetIndex, BYTE & bitIndex);
-	
-  inline void EncodeOctet(BYTE octet, BYTE *buffer, PINDEX & octetIndex, BYTE & bitIndex, BYTE & onesCounter) const;
-  inline void EncodeOctetNoEscape(BYTE octet, BYTE *buffer, PINDEX & octetIndex, BYTE & bitIndex) const;
-  inline void EncodeBit(BYTE bit, BYTE *buffer, PINDEX & octetIndex, BYTE & bitIndex) const;
-	
+  inline bool FindFlagEnd(const BYTE *buffer, PINDEX bufferSize, PINDEX & octetIndex, PINDEX & bitIndex);
+  inline BYTE DecodeOctet(const BYTE *buffer, BYTE *destination, PINDEX & octetIndex, PINDEX & bitIndex, PINDEX & onesCounter);
+  inline BYTE DecodeBit(const BYTE *buffer, PINDEX & octetIndex, PINDEX & bitIndex);
+
+  inline void EncodeOctet(BYTE octet, BYTE *buffer, PINDEX & octetIndex, PINDEX & bitIndex, PINDEX & onesCounter) const;
+  inline void EncodeOctetNoEscape(BYTE octet, BYTE *buffer, PINDEX & octetIndex, PINDEX & bitIndex) const;
+  inline void EncodeBit(BYTE bit, BYTE *buffer, PINDEX & octetIndex, PINDEX & bitIndex) const;
+
   inline WORD CalculateFCS(const BYTE*data, PINDEX length) const;
 };
 

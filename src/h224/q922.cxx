@@ -80,63 +80,70 @@ static WORD fcstable[256] = {
   0x6b46, 0x7acf, 0x4854, 0x59dd, 0x2d62, 0x3ceb, 0x0e70, 0x1ff9,
   0xf78f, 0xe606, 0xd49d, 0xc514, 0xb1ab, 0xa022, 0x92b9, 0x8330,
   0x7bc7, 0x6a4e, 0x58d5, 0x495c, 0x3de3, 0x2c6a, 0x1ef1, 0x0f78
-};	
+};
+
 
 Q922_Frame::Q922_Frame(PINDEX size)
-: PBYTEArray(Q922_HEADER_SIZE + size)
+  : PBYTEArray(Q922_HEADER_SIZE + size)
+  , m_informationFieldSize(size)
 {
-  informationFieldSize = size;
 }
+
 
 Q922_Frame::~Q922_Frame()
 {
 }
 
+
 void Q922_Frame::SetInformationFieldSize(PINDEX size)
 {
-  informationFieldSize = size;
-  SetMinSize(Q922_HEADER_SIZE+informationFieldSize);
+  m_informationFieldSize = size;
+  SetMinSize(Q922_HEADER_SIZE+m_informationFieldSize);
 }
 
-PBoolean Q922_Frame::DecodeAnnexQ(const BYTE *data, PINDEX size)
+
+bool Q922_Frame::DecodeAnnexQ(const BYTE *data, PINDEX size)
 {
   // Q922-frames must not exceed an information field size of 260 octets
   if (size >= 260+Q922_HEADER_SIZE || size <= Q922_HEADER_SIZE)
     return false;
-  
+
   SetMinSize(size);
   memcpy(theArray, data, size);
-  
+
   SetInformationFieldSize(size - Q922_HEADER_SIZE);
-  
+
   return true;
 }
+
 
 PINDEX Q922_Frame::GetAnnexQEncodedSize() const
 {
   // Without the FCS
-  return Q922_HEADER_SIZE + informationFieldSize;
+  return Q922_HEADER_SIZE + m_informationFieldSize;
 }
 
-PBoolean Q922_Frame::EncodeAnnexQ(BYTE *data, PINDEX & size) const
+
+bool Q922_Frame::EncodeAnnexQ(BYTE *data, PINDEX & size) const
 {
   size = GetAnnexQEncodedSize();
   memcpy(data, theArray, size);
   return true;
 }
 
-PBoolean Q922_Frame::DecodeHDLC(const BYTE *data, PINDEX size)
-{	
+
+bool Q922_Frame::DecodeHDLC(const BYTE *data, PINDEX size)
+{
   SetMinSize(size);
-  
+
   // a valid frame must contain at least 2xFLAG, 3 octets Q922 header,
   // 2 octets FCS and at least 1 octet information
   if (size < 2+3+2+1)
     return false;
 
   PINDEX octetIndex = 0;
-  BYTE bitIndex = 7;
-  BYTE onesCounter = 0;
+  PINDEX bitIndex = 7;
+  PINDEX onesCounter = 0;
 
   if (!FindFlagEnd(data, size, octetIndex, bitIndex))
     return false;
@@ -196,38 +203,41 @@ PBoolean Q922_Frame::DecodeHDLC(const BYTE *data, PINDEX size)
   return false;
 }
 
+
 PINDEX Q922_Frame::GetHDLCEncodedSize() const
 {
-  if (informationFieldSize == 0) {
+  if (m_informationFieldSize == 0) {
     return 0; // cannot encode
   }
-	
+
   // dataSize is High Order Address, Low Order Address, Control, Information and
   // Frame Check Sequence (FCS, 2 Bytes)
-  PINDEX dataSize = Q922_HEADER_SIZE + informationFieldSize + Q922_FCS_SIZE;
-	
+  PINDEX dataSize = Q922_HEADER_SIZE + m_informationFieldSize + Q922_FCS_SIZE;
+
   // Due to possible need for bit insertion, the size may grow.
   // For simplicity, we assume twice the data size, which will certainly be enough.
   // So, encoded size is 3*FLAG + 2*dataSize + 3*FLAG;
   return 3+2*dataSize+3;
 }
 
-PBoolean Q922_Frame::EncodeHDLC(BYTE *buffer, PINDEX & size) const
+
+bool Q922_Frame::EncodeHDLC(BYTE *buffer, PINDEX & size) const
 {
-  BYTE bitIndex = 7;
+  PINDEX bitIndex = 7;
   return EncodeHDLC(buffer, size, bitIndex);
 }
 
-PBoolean Q922_Frame::EncodeHDLC(BYTE *buffer, PINDEX & size, BYTE & theBitIndex) const
+
+bool Q922_Frame::EncodeHDLC(BYTE *buffer, PINDEX & size, PINDEX & theBitIndex) const
 {
-  if (informationFieldSize == 0)	{
+  if (m_informationFieldSize == 0)  {
     return false;
   }
-	
+
   PINDEX octetIndex = 0;
-  BYTE bitIndex = theBitIndex;
-  BYTE onesCounter = 0;
-	
+  PINDEX bitIndex = theBitIndex;
+  PINDEX onesCounter = 0;
+
   // storing three FLAG sequencs.
   // since the FLAG sequences may be not byte-aligned, the first FLAG sequence is encoded
   // into a dummy buffer and extracted from there
@@ -240,48 +250,50 @@ PBoolean Q922_Frame::EncodeHDLC(BYTE *buffer, PINDEX & size, BYTE & theBitIndex)
   octetIndex = 1;
   EncodeOctetNoEscape(Q922_FLAG, buffer, octetIndex, bitIndex);
   EncodeOctetNoEscape(Q922_FLAG, buffer, octetIndex, bitIndex);
-	
+
   // calculating the FCS
   PINDEX dataSize = GetInformationFieldSize() + Q922_HEADER_SIZE;
   WORD fcs = CalculateFCS((const BYTE *)theArray, dataSize);
-	
+
   // Encoding the data byte-by-byte
-  PINDEX count = Q922_HEADER_SIZE + informationFieldSize;
+  PINDEX count = Q922_HEADER_SIZE + m_informationFieldSize;
   for (PINDEX i = 0; i < count; i++) {
     EncodeOctet(theArray[i], buffer, octetIndex, bitIndex, onesCounter);
   }
-	
+
   // Encoding the FCS
   EncodeOctet((BYTE)fcs, buffer, octetIndex, bitIndex, onesCounter);
   EncodeOctet((BYTE)(fcs >> 8), buffer, octetIndex, bitIndex, onesCounter);
-	
+
   // Appending three FLAG sequences to the buffer
   // the buffer is not necessary byte aligned!
   EncodeOctetNoEscape(Q922_FLAG, buffer, octetIndex, bitIndex);
   EncodeOctetNoEscape(Q922_FLAG, buffer, octetIndex, bitIndex);
   EncodeOctetNoEscape(Q922_FLAG, buffer, octetIndex, bitIndex);
-	
+
   // determining correct number of octets
   if (bitIndex == 7) {
     octetIndex--;
   }
-	
+
   size = octetIndex;
   theBitIndex = bitIndex;
-	
+
   return true;
 }
 
-PBoolean Q922_Frame::FindFlagEnd(const BYTE *buffer, 
-                                 PINDEX bufferSize, 
-                                 PINDEX & octetIndex, BYTE & bitIndex)
+
+bool Q922_Frame::FindFlagEnd(const BYTE *buffer,
+                             PINDEX bufferSize,
+                             PINDEX & octetIndex,
+                             PINDEX & bitIndex)
 {
   BYTE positionsCorrect = 0;
-	
+
   while (octetIndex < bufferSize) {
-		
+
     BYTE bit = DecodeBit(buffer, octetIndex, bitIndex);
-		
+
     switch (positionsCorrect) {
       case 0:
         if (bit == 0) {
@@ -311,31 +323,31 @@ PBoolean Q922_Frame::FindFlagEnd(const BYTE *buffer,
       default:
         return false;
     }
-		
+
     if (positionsCorrect == 0xff) {
       break;
     }
   }
-	
+
   if (positionsCorrect != 0xff) {
     return false;
   }
-	
+
   // First FLAG sequence found, bit index determined.
   // now check for additinal FLAG sequences
   BYTE octet = Q922_FLAG;
-	
+
   while (octet == Q922_FLAG && octetIndex < bufferSize) {
-    
+
     PINDEX startOctetIndex = octetIndex;
-    BYTE startBitIndex = bitIndex;
-		
-    BYTE positionsCorrect = 0;
-		
+    PINDEX startBitIndex = bitIndex;
+
+    PINDEX positionsCorrect = 0;
+
     for (unsigned i = 0; i < 8; i++) {
-	
-      BYTE bit = DecodeBit(buffer, octetIndex, bitIndex);
-			
+
+      PINDEX bit = DecodeBit(buffer, octetIndex, bitIndex);
+
       switch (positionsCorrect) {
         case 0:
           if (bit == 1) {
@@ -365,7 +377,7 @@ PBoolean Q922_Frame::FindFlagEnd(const BYTE *buffer,
         default:
           return false;
       }
-			
+
       if (positionsCorrect == 0xf0) {
         octetIndex = startOctetIndex;
         bitIndex = startBitIndex;
@@ -373,92 +385,95 @@ PBoolean Q922_Frame::FindFlagEnd(const BYTE *buffer,
       }
     }
   }
-	
+
   return false;
 }
 
-BYTE Q922_Frame::DecodeOctet(const BYTE *buffer, 
-                             BYTE *destination, 
+
+BYTE Q922_Frame::DecodeOctet(const BYTE *buffer,
+                             BYTE *destination,
                              PINDEX & octetIndex,
-                             BYTE & bitIndex, 
-                             BYTE & onesCounter)
+                             PINDEX & bitIndex,
+                             PINDEX & onesCounter)
 {
   // decoded byte is copied to destination.
   // returns Q922_OK if decoding succesful,
   // returns Q922_FLAG if ending FLAG detected,
   // returns Q922_ERROR if there was an error
-	
+
   BYTE decodedByte = 0x00;
-	
+
   for (PINDEX i = 0; i < 8; i++) {
-	  
-	BYTE bit = DecodeBit(buffer, octetIndex, bitIndex);
-		
-	if (bit) {
+
+  BYTE bit = DecodeBit(buffer, octetIndex, bitIndex);
+
+  if (bit) {
       onesCounter++;
-			
+
       if (onesCounter == 6) {
-		  
+
         // Either FLAG or ERROR
         bit = DecodeBit(buffer, octetIndex, bitIndex);
-				
+
         if (i == 6 && !bit)  { // FLAG is byte aligned AND has only 6 consecutive ones
           return Q922_FLAG;
         } else {
           return Q922_ERROR;
         }
       }
-	  
+
     } else {
       if (onesCounter == 5) {
         // discard bit, read again
         bit = DecodeBit(buffer, octetIndex, bitIndex);
       }
-			
+
       onesCounter = 0;
     }
-		
+
     decodedByte |= (bit << i);
   }
-	
+
   *destination = decodedByte;
   return Q922_OK;
 }
 
+
 BYTE Q922_Frame::DecodeBit(const BYTE *buffer,
-                           PINDEX & octetIndex, 
-                           BYTE & bitIndex)
+                           PINDEX & octetIndex,
+                           PINDEX & bitIndex)
 {
   BYTE bit = (buffer[octetIndex] >> bitIndex) & 0x01;
-	
+
   if (bitIndex == 0) {
     octetIndex++;
     bitIndex = 8;
   }
   bitIndex--;
-	
+
   return bit;
 }
 
+
 void Q922_Frame::EncodeOctet(BYTE octet, BYTE *buffer,
                              PINDEX & octetIndex,
-                             BYTE & bitIndex, 
-                             BYTE & onesCounter) const
+                             PINDEX & bitIndex,
+                             PINDEX & onesCounter) const
 {
   // data is sent out with LSB first, so we need
   // to reverse the bit direction.
   // In addition, it is required to insert a zero
   // bit after 5 consecutive ones to avoid FLAG emulation
-	
+
   for (PINDEX i = 0; i < 8; i++) {
     // reading one bit from the octet and write it to the buffer
     BYTE bit = (BYTE)((octet >> i) & 0x01);
-		
+
     EncodeBit(bit, buffer, octetIndex, bitIndex);
-		
+
     if (bit) {
       onesCounter++;
-			
+
       if (onesCounter == 5) {
         // insert a zero bit
         EncodeBit(0, buffer, octetIndex, bitIndex);
@@ -470,33 +485,35 @@ void Q922_Frame::EncodeOctet(BYTE octet, BYTE *buffer,
   }
 }
 
-void Q922_Frame::EncodeOctetNoEscape(BYTE octet, 
-                                     BYTE *buffer, 
-                                     PINDEX & octetIndex, 
-                                     BYTE & bitIndex) const
+
+void Q922_Frame::EncodeOctetNoEscape(BYTE octet,
+                                     BYTE *buffer,
+                                     PINDEX & octetIndex,
+                                     PINDEX & bitIndex) const
 {
   // data is sent out with LSB first, so we need
   // to reverse the bit direction.
-	
+
   for (PINDEX i = 0; i < 8; i++) {
     // reating one bit from the octet and write it to the buffer
     BYTE bit = (BYTE)((octet >> i) & 0x01);
-		
+
     EncodeBit(bit, buffer, octetIndex, bitIndex);
   }
 }
 
-void Q922_Frame::EncodeBit(BYTE bit, 
-                           BYTE *buffer, 
-                           PINDEX & octetIndex, 
-                           BYTE & bitIndex) const
+
+void Q922_Frame::EncodeBit(BYTE bit,
+                           BYTE *buffer,
+                           PINDEX & octetIndex,
+                           PINDEX & bitIndex) const
 {
   if (bitIndex == 7) {
     buffer[octetIndex] = 0;
   }
-	
+
   buffer[octetIndex] |= ((bit & 0x01) << bitIndex);
-	
+
   // adjusting bit/byte index
   if (bitIndex == 0) {
     octetIndex++;
@@ -506,19 +523,21 @@ void Q922_Frame::EncodeBit(BYTE bit,
   bitIndex--;
 }
 
+
 WORD Q922_Frame::CalculateFCS(const BYTE *data, PINDEX length) const
 {
   // initial value of FCS is all ones.
   WORD fcs = 0xffff;
-	
+
   while (length--) {
     fcs = (fcs >> 8) ^ fcstable[(fcs ^ *data++) & 0xff];
   }
-	
+
   // take one's complement
   fcs = ~fcs;
-	
+
   return fcs;
 }
+
 
 #endif // OPAL_HAS_H224
