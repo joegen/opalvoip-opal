@@ -780,8 +780,10 @@ static bool SetNxECapabilities(OpalRFC2833Proto * handler,
     // Set the receive handler to what we are sending to remote in our SDP
     handler->SetRxMediaFormat(adjustedFormat);
     SDPMediaFormat * fmt = localMedia->CreateSDPMediaFormat();
-    fmt->Initialise(adjustedFormat);
-    localMedia->AddSDPMediaFormat(fmt);
+    if (fmt != NULL) {
+      fmt->Initialise(adjustedFormat);
+      localMedia->AddSDPMediaFormat(fmt);
+    }
   }
 
   return true;
@@ -1033,11 +1035,13 @@ bool SIPConnection::OnSendAnswerSDP(SDPSessionDescription & sdpOut)
         }
         if (PAssert(outgoingMedia != NULL, "SDP Media description clone failed")) {
           SDPMediaFormat * fmt = outgoingMedia->CreateSDPMediaFormat();
-          if (incomingMedia->GetSDPMediaFormats().IsEmpty())
-            fmt->Initialise(OpalG711_ULAW_64K);
-          else
-            fmt->Initialise(incomingMedia->GetSDPMediaFormats().front().GetMediaFormat());
-          outgoingMedia->AddSDPMediaFormat(fmt);
+          if (fmt != NULL) {
+            if (incomingMedia->GetSDPMediaFormats().IsEmpty())
+              fmt->Initialise(OpalG711_ULAW_64K);
+            else
+              fmt->Initialise(incomingMedia->GetSDPMediaFormats().front().GetMediaFormat());
+            outgoingMedia->AddSDPMediaFormat(fmt);
+          }
           sdpOut.AddMediaDescription(outgoingMedia);
         }
       }
