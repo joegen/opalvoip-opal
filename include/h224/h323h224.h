@@ -1,7 +1,7 @@
 /*
  * h323h224.h
  *
- * H.323 H.224 logical channel establishment implementation for the 
+ * H.323 H.224 logical channel establishment implementation for the
  * OpenH323 Project.
  *
  * Copyright (c) 2006 Network for Educational Technology, ETH Zurich.
@@ -39,36 +39,33 @@
 #include <h323/h323caps.h>
 
 #include <h224/h224.h>
-#include <h224/h224handler.h>
+#include <h224/h281.h>
 
 
 /** This class describes the H.224 capability, using the H.323 Annex Q mode
 */
-class H323_H224_AnnexQCapability : public H323DataCapability
+class H323_H224_AnnexQCapability : public H323GenericDataCapability
 {
-  PCLASSINFO(H323_H224_AnnexQCapability, H323DataCapability);
-  
+  PCLASSINFO_WITH_CLONE(H323_H224_AnnexQCapability, H323GenericDataCapability);
 public:
-  
-  H323_H224_AnnexQCapability();
-  ~H323_H224_AnnexQCapability();
-  
-  Comparison Compare(const PObject & obj) const;
-	
-  virtual PObject * Clone() const;
-	
-  virtual unsigned GetSubType() const;
-	
+  H323_H224_AnnexQCapability(const OpalMediaFormat & mediaFormat);
+
   virtual PString GetFormatName() const;
-  
+
   virtual H323Channel * CreateChannel(H323Connection & connection,
                                       H323Channel::Directions direction,
                                       unsigned int sessionID,
                                       const H245_H2250LogicalChannelParameters * params) const;
-	
-  virtual PBoolean OnSendingPDU(H245_DataApplicationCapability & pdu) const;
-  virtual PBoolean OnSendingPDU(H245_DataMode & pdu) const;
-  virtual PBoolean OnReceivedPDU(const H245_DataApplicationCapability & pdu);
+};
+
+class H323_FECC_RTP_Capability : public H323_H224_AnnexQCapability
+{
+  PCLASSINFO_WITH_CLONE(H323_FECC_RTP_Capability, H323_H224_AnnexQCapability);
+public:
+  H323_FECC_RTP_Capability()
+    : H323_H224_AnnexQCapability(GetOpalFECC_RTP())
+  {
+  }
 };
 
 
@@ -76,35 +73,34 @@ public:
  */
 class H323_H224_HDLCTunnelingCapability : public H323DataCapability
 {
-  PCLASSINFO(H323_H224_HDLCTunnelingCapability, H323DataCapability);
-	
+  PCLASSINFO_WITH_CLONE(H323_H224_HDLCTunnelingCapability, H323DataCapability);
 public:
-	
-  H323_H224_HDLCTunnelingCapability();
-  ~H323_H224_HDLCTunnelingCapability();
-	
-  Comparison Compare(const PObject & obj) const;
-	
-  virtual PObject * Clone() const;
-	
+  H323_H224_HDLCTunnelingCapability(const OpalMediaFormat & mediaFormat);
+
   virtual unsigned GetSubType() const;
-	
+
   virtual PString GetFormatName() const;
-  
+
   virtual H323Channel * CreateChannel(H323Connection & connection,
                                       H323Channel::Directions direction,
                                       unsigned int sessionID,
                                       const H245_H2250LogicalChannelParameters * params) const;
-	
+
   virtual PBoolean OnSendingPDU(H245_DataApplicationCapability & pdu) const;
   virtual PBoolean OnSendingPDU(H245_DataMode & pdu) const;
   virtual PBoolean OnReceivedPDU(const H245_DataApplicationCapability & pdu);
-	
+
 };
 
-#define OPAL_REGISTER_H224_CAPABILITY() \
-  H323_REGISTER_CAPABILITY(H323_H224_AnnexQCapability, GetOpalH224_H323AnnexQ().GetName()); \
-  H323_REGISTER_CAPABILITY(H323_H224_HDLCTunnelingCapability, GetOpalH224_HDLCTunneling().GetName()); \
+class H323_FECC_HDLC_Capability : public H323_H224_HDLCTunnelingCapability
+{
+  PCLASSINFO_WITH_CLONE(H323_FECC_HDLC_Capability, H323_H224_HDLCTunnelingCapability);
+public:
+  H323_FECC_HDLC_Capability()
+    : H323_H224_HDLCTunnelingCapability(GetOpalFECC_HDLC())
+  {
+  }
+};
 
 
 #endif // OPAL_H323

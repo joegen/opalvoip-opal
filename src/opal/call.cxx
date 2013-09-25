@@ -511,7 +511,7 @@ void OpalCall::AdjustMediaFormats(bool local, const OpalConnection & connection,
 
 PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, 
                                      const OpalMediaType & mediaType,
-                                                  unsigned sessionID, 
+                                                  unsigned requestedSessionID, 
                                    const OpalMediaFormat & preselectedFormat,
 #if OPAL_VIDEO
                               OpalVideoFormat::ContentRole contentRole,
@@ -524,10 +524,19 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
   if (m_isClearing || !lock.IsLocked())
     return false;
 
+  unsigned sessionID = requestedSessionID > 0 ? requestedSessionID : connection.GetNextSessionID(mediaType, true);
+
 #if PTRACING
   PStringStream traceText;
   if (PTrace::CanTrace(2)) {
-    traceText << " for " << mediaType << " session " << sessionID;
+    traceText << " for ";
+    if (sessionID == 0)
+      traceText << "unallocated ";
+    else if (requestedSessionID == 0)
+      traceText << "allocated ";
+    traceText << mediaType << " session";
+    if (sessionID != 0)
+      traceText << ' ' << sessionID;
     if (preselectedFormat.IsValid())
       traceText << " (" << preselectedFormat << ')';
     traceText << " on " << connection;
@@ -563,9 +572,6 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
       return true;
     }
   }
-
-  if (sessionID == 0)
-    sessionID = connection.GetNextSessionID(mediaType, true);
 
   PTRACE(3, "Call\tOpenSourceMediaStreams " << (sourceStream != NULL ? "replace" : "open") << traceText);
   sourceStream.SetNULL();

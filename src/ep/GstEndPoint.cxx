@@ -41,6 +41,7 @@
 
 #define USE_GSTREAMER_JITTER_BUFFER 0
 
+
 #define APP_SOURCE_SUFFIX "AppSource"
 #define APP_SINK_SUFFIX   "AppSink"
 
@@ -135,14 +136,14 @@ static struct GstInitInfo {
 #if OPAL_VIDEO
   { OPAL_H261,          "",              "ffdec_h261",  "",                   "ffenc_h261" },
   { OPAL_H263,          "rtph263depay",  "ffdec_h263",  "rtph263pay",         "ffenc_h263"
-                                                                              " rtp-payload-size={"OPAL_GST_PIPELINE_VAR_MTU"}"
+                                                                              " rtp-payload-size={"OPAL_GST_MTU"}"
                                                                               " max-key-interval=125"
                                                                               " me-method=5"
                                                                               " max-bframes=0"
                                                                               " gop-size=125"
                                                                               " rc-buffer-size=65536000"
                                                                               " rc-min-rate=0"
-                                                                              " rc-max-rate={"OPAL_GST_PIPELINE_VAR_BIT_RATE"}"
+                                                                              " rc-max-rate={"OPAL_GST_BIT_RATE"}"
                                                                               " rc-qsquish=0"
                                                                               " rc-eq=1"
                                                                               " max-qdiff=10"
@@ -153,14 +154,14 @@ static struct GstInitInfo {
                                                                               " qmin=2"
   },
   { OPAL_H263plus,      "rtph263pdepay", "ffdec_h263",  "rtph263ppay",        "ffenc_h263p"
-                                                                             " rtp-payload-size={"OPAL_GST_PIPELINE_VAR_MTU"}"
+                                                                             " rtp-payload-size={"OPAL_GST_MTU"}"
                                                                              " max-key-interval=125"
                                                                              " me-method=5"
                                                                              " max-bframes=0"
                                                                              " gop-size=125"
                                                                              " rc-buffer-size=65536000"
                                                                              " rc-min-rate=0"
-                                                                             " rc-max-rate={"OPAL_GST_PIPELINE_VAR_BIT_RATE"}"
+                                                                             " rc-max-rate={"OPAL_GST_BIT_RATE"}"
                                                                              " rc-qsquish=0"
                                                                              " rc-eq=1"
                                                                              " max-qdiff=10"
@@ -175,7 +176,7 @@ static struct GstInitInfo {
                                                                               " byte-stream=true"
                                                                               " bframes=0"
                                                                               " b-adapt=0"
-                                                                              " bitrate={"OPAL_GST_PIPELINE_VAR_BIT_RATE_K"}"
+                                                                              " bitrate={"OPAL_GST_BIT_RATE_K"}"
                                                                               " tune=0x4"
                                                                               " speed-preset=3"
                                                                               " sliced-threads=false"
@@ -227,7 +228,7 @@ static PString FirstWord(const PString & str)
 
 static void Substitute(PString & str, const char * name, const PString & value, bool required = false)
 {
-  PString sub(PString::Printf, OPAL_GST_PIPELINE_VAR_FMT, name);
+  PString sub(PString::Printf, OPAL_GST_STRINTF_FMT, name);
   if (str.Find(sub) != P_MAX_INDEX)
     str.Replace(sub, value, true);
   else if (required) {
@@ -245,21 +246,21 @@ static PString SubstituteAll(const PString & original,
 {
   PString str = original;
   
-  Substitute(str, OPAL_GST_PIPELINE_VAR_NAME, mediaFormat.GetMediaType() + nameSuffix, true);
-  Substitute(str, OPAL_GST_PIPELINE_VAR_SAMPLE_RATE, mediaFormat.GetClockRate());
-  Substitute(str, OPAL_GST_PIPELINE_VAR_PT, (unsigned)mediaFormat.GetPayloadType(), packetiser);
+  Substitute(str, OPAL_GST_NAME, mediaFormat.GetMediaType() + nameSuffix, true);
+  Substitute(str, OPAL_GST_SAMPLE_RATE, mediaFormat.GetClockRate());
+  Substitute(str, OPAL_GST_PT, (unsigned)mediaFormat.GetPayloadType(), packetiser);
   
   unsigned bitrate = mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption(), mediaFormat.GetMaxBandwidth());
-  Substitute(str, OPAL_GST_PIPELINE_VAR_BIT_RATE, bitrate);
-  Substitute(str, OPAL_GST_PIPELINE_VAR_BIT_RATE_K, (bitrate+1023)/1024);
+  Substitute(str, OPAL_GST_BIT_RATE, bitrate);
+  Substitute(str, OPAL_GST_BIT_RATE_K, (bitrate+1023)/1024);
   if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
-    Substitute(str, OPAL_GST_PIPELINE_BLOCK_SIZE, std::max(mediaFormat.GetFrameTime()*2, 320U));
+    Substitute(str, OPAL_GST_BLOCK_SIZE, std::max(mediaFormat.GetFrameTime()*2, 320U));
   }
   else if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
-    Substitute(str, OPAL_GST_PIPELINE_VAR_WIDTH, mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), 352));
-    Substitute(str, OPAL_GST_PIPELINE_VAR_HEIGHT, mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), 288));
-    Substitute(str, OPAL_GST_PIPELINE_VAR_FRAME_RATE, psprintf("(fraction)90000/%u", mediaFormat.GetFrameTime()));
-    Substitute(str, OPAL_GST_PIPELINE_VAR_MTU, mediaFormat.GetOptionInteger(OpalMediaFormat::MaxTxPacketSizeOption(), 1400), packetiser);
+    Substitute(str, OPAL_GST_WIDTH, mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), 352));
+    Substitute(str, OPAL_GST_HEIGHT, mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), 288));
+    Substitute(str, OPAL_GST_FRAME_RATE, psprintf("(fraction)90000/%u", mediaFormat.GetFrameTime()));
+    Substitute(str, OPAL_GST_MTU, mediaFormat.GetOptionInteger(OpalMediaFormat::MaxTxPacketSizeOption(), 1400), packetiser);
   }
   
   return str;
@@ -270,6 +271,7 @@ static PString SubstituteAll(const PString & original,
 
 GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
   : OpalLocalEndPoint(manager, prefix, false)
+  , m_rtpbinElement("gstrtpbin")
   , m_audioSourceDevice(GetDefaultDevice("Source/Audio", PreferredAudioSourceDevice, PARRAYSIZE(PreferredAudioSourceDevice)))
   , m_audioSinkDevice(GetDefaultDevice("Sink/Audio", PreferredAudioSinkDevice, PARRAYSIZE(PreferredAudioSinkDevice)))
 #if OPAL_VIDEO

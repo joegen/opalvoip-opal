@@ -86,7 +86,6 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
     OpalMediaTypeDefinition * operator->() const { return GetDefinition(); }
     OpalMediaTypeDefinition * GetDefinition() const;
     static OpalMediaTypeDefinition * GetDefinition(const OpalMediaType & key);
-    static OpalMediaTypeDefinition * GetDefinition(unsigned sessionId);
 
     /** Get a list of all media types.
         This also assures that Audio() and Video() are the first two elements.
@@ -127,13 +126,16 @@ class OpalMediaTypeDefinition
     OpalMediaTypeDefinition(
       const char * mediaType,          ///< name of the media type (audio, video etc)
       const char * mediaSession,       ///< name of media session class (via factory)
-      unsigned requiredSessionId = 0,  ///< Session ID to use, asserts if already in use
+      unsigned defaultSessionId = 0,   ///< Session ID to use
       OpalMediaType::AutoStartMode autoStart = OpalMediaType::DontOffer   ///< Default value for auto-start transmit & receive
     );
 
     // Needed to avoid gcc warning about classes with virtual functions and 
     //  without a virtual destructor
     virtual ~OpalMediaTypeDefinition();
+
+    // Get the media type instance
+    const OpalMediaType & GetMediaType() const { return m_mediaType; }
 
     /** Get flags for media type can auto-start on call initiation.
       */
@@ -153,6 +155,9 @@ class OpalMediaTypeDefinition
     const PString & GetMediaSessionType() const { return m_mediaSessionType; }
 
 #if OPAL_SIP
+    virtual PString GetSDPMediaType() const;
+    virtual PString GetSDPTransportType() const;
+
     ///  Determine of this media type is valid for SDP m= section
     virtual bool MatchesSDP(
       const PCaselessString & sdpMediaType,
@@ -189,6 +194,10 @@ class OpalMediaTypeDefinition
 #define OPAL_INSTANTIATE_MEDIATYPE(cls) \
   OPAL_INSTANTIATE_MEDIATYPE2(cls, cls::Name())
 
+#define OPAL_MEDIATYPE(clsBase) \
+  OPAL_INSTANTIATE_MEDIATYPE2(clsBase##Definition, clsBase##Definition::Name()); \
+  const OpalMediaType & clsBase##Type() { static OpalMediaType t(clsBase##Definition::Name()); return t; }
+
 
 template <const char * Type, unsigned SessionId = 0>
 class SimpleMediaType : public OpalMediaTypeDefinition
@@ -212,11 +221,12 @@ class SimpleMediaType : public OpalMediaTypeDefinition
 //  common ancestor for audio and video OpalMediaTypeDefinitions
 //
 
-class OpalRTPAVPMediaType : public OpalMediaTypeDefinition {
+class OpalRTPAVPMediaDefinition : public OpalMediaTypeDefinition
+{
   public:
-    OpalRTPAVPMediaType(
+    OpalRTPAVPMediaDefinition(
       const char * mediaType, 
-      unsigned     requiredSessionId = 0,
+      unsigned     defaultSessionId = 0,
       OpalMediaType::AutoStartMode autoStart = OpalMediaType::DontOffer
     );
 
@@ -226,11 +236,12 @@ class OpalRTPAVPMediaType : public OpalMediaTypeDefinition {
 };
 
 
-class OpalAudioMediaType : public OpalRTPAVPMediaType {
+class OpalAudioMediaDefinition : public OpalRTPAVPMediaDefinition
+{
   public:
     static const char * Name();
 
-    OpalAudioMediaType();
+    OpalAudioMediaDefinition();
 
 #if OPAL_SIP
     SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress &) const;
@@ -240,11 +251,12 @@ class OpalAudioMediaType : public OpalRTPAVPMediaType {
 
 #if OPAL_VIDEO
 
-class OpalVideoMediaType : public OpalRTPAVPMediaType {
+class OpalVideoMediaDefinition : public OpalRTPAVPMediaDefinition
+{
   public:
     static const char * Name();
 
-    OpalVideoMediaType();
+    OpalVideoMediaDefinition();
 
 #if OPAL_SIP
     SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress &) const;
@@ -256,24 +268,17 @@ class OpalVideoMediaType : public OpalRTPAVPMediaType {
 
 #if OPAL_T38_CAPABILITY
 
-class OpalFaxMediaType : public OpalMediaTypeDefinition 
+class OpalFaxMediaDefinition : public OpalMediaTypeDefinition 
 {
   public:
     static const char * Name();
     static const PCaselessString & UDPTL();
 
-    OpalFaxMediaType();
+    OpalFaxMediaDefinition();
 
 #if OPAL_SIP
-    static const PCaselessString & GetSDPMediaType();
-    static const PString & GetSDPTransportType();
-
-    virtual bool MatchesSDP(
-      const PCaselessString & sdpMediaType,
-      const PCaselessString & sdpTransport,
-      const PStringArray & sdpLines,
-      PINDEX index
-    );
+    virtual PString GetSDPMediaType() const;
+    virtual PString GetSDPTransportType() const;
 
     SDPMediaDescription * CreateSDPMediaDescription(
       const OpalTransportAddress & localAddress

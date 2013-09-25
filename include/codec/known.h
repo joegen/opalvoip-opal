@@ -96,6 +96,8 @@
 #define OPAL_RFC2833        "UserInput/RFC2833"
 #define OPAL_CISCONSE       "NamedSignalEvent"
 #define OPAL_T38            "T.38"
+#define OPAL_FECC_RTP       "FECC-RTP"
+#define OPAL_FECC_HDLC      "FECC-HDLC"
 
 
 #ifndef OPAL_PLUGIN_COMPILE

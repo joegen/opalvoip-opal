@@ -40,7 +40,10 @@
 
 #include <opal/endpoint.h>
 
+
 class OpalLocalConnection;
+class OpalH224Handler;
+class OpalFarEndCameraControl;
 
 
 #define OPAL_LOCAL_PREFIX "local"
@@ -283,7 +286,7 @@ class OpalLocalEndPoint : public OpalEndPoint
        should output silence for a time. The \p written value should still
        contain the bytes of silence emitted, even though it ewill be larger
        that \p length.
-       
+
        Also, it is expected that this function be real time. That is if 320
        bytes of PCM-16 are written, this function should take 20ms to execute.
        If not then the jitter buffer will not operate correctly and audio will
@@ -461,7 +464,7 @@ class OpalLocalConnection : public OpalConnection
 
        The default behaviour calls the base class then OnOutgoingSetUp().
 
-       Note that the most explicit version of this override is made pure, so as to force 
+       Note that the most explicit version of this override is made pure, so as to force
        descendant classes to implement it. This will only affect code that implements new
        descendants of OpalConnection - code that uses existing descendants will be unaffected
      */
@@ -544,6 +547,14 @@ class OpalLocalConnection : public OpalConnection
       const OpalMediaFormat & mediaFormat, ///<  Media format to open
       unsigned sessionID,                  ///<  Session to start stream on
       bool isSource                        ///< Stream is a source/sink
+    );
+
+    /**Call back for closed a media stream.
+
+       The default behaviour calls the OpalEndPoint function of the same name.
+      */
+    virtual void OnClosedMediaStream(
+      const OpalMediaStream & stream     ///<  Media stream being closed
     );
 
     /**Send a user input indication to the remote endpoint.
@@ -631,6 +642,28 @@ class OpalLocalConnection : public OpalConnection
       bool preview = false                    ///< Flag indicating is a preview output device
     );
 #endif // OPAL_VIDEO
+
+#if OPAL_HAS_H281
+    /**Start/Stop Far End Camera Control on remote system.
+       If \p direction is negative then starts panning left, tilting down,
+       zoom out or focus out.
+
+       If \p direction is positive then starts panning right, tilting up, zoom
+       in or focus in.
+
+       If \p direction is zero then the operation is stopped. This can also be
+       used to determine if the remote is capabile of the operation.
+
+       @returns false if the operation cannot be performed.
+      */
+    bool FarEndCameraControl(
+      PVideoControlInfo::Types what,    ///< What to control, pan, tilt, zoom or focus
+      int direction                     ///< Direction to move
+    );
+
+    /// Set a callback for when the far end camera control capabilities change.
+    void SetFarEndCameraCapabilityChangedNotifier(const PNotifier & notifier);
+#endif // OPAL_HAS_H281
   //@}
 
   /**@name Member variable access */
@@ -648,6 +681,13 @@ class OpalLocalConnection : public OpalConnection
 
     OpalLocalEndPoint & m_endpoint;
     void              * m_userData;
+
+#if OPAL_HAS_H224
+    OpalH224Handler * m_h224Handler;
+#endif
+#if OPAL_HAS_H281
+    OpalFarEndCameraControl * m_farEndCameraControl;
+#endif
 };
 
 

@@ -674,7 +674,7 @@ PBoolean H323_RealTimeChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAc
   if (param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID))
     sessionID = param.m_sessionID;
 
-  if (connection.IsH245Master() || sessionID <= H323Capability::DefaultDataSessionID) {
+  if (connection.IsH245Master() || sessionID < H323Capability::DefaultDataSessionID) {
     PTRACE_IF(2, sessionID != 0 && sessionID != GetSessionID(),
               "LogChan\tAck contains invalid session ID " << param.m_sessionID << ", ignoring");
     return true;

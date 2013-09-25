@@ -54,6 +54,7 @@
 #include <sip/sip.h>
 #include <t38/t38proto.h>
 #include <im/im_ep.h>
+#include <h224/h224.h>
 #include <ptlib/wxstring.h>
 #include <ptlib/notifier_ext.h>
 #include <ptclib/pssl.h>
@@ -68,6 +69,7 @@ class OpalCapiEndPoint;
 class OpalIVREndPoint;
 class OpalMixerEndPoint;
 class OpalFaxEndPoint;
+class OpalH281Client;
 
 class wxSplitterWindow;
 class wxSplitterEvent;
@@ -448,6 +450,11 @@ class InCallPanel : public CallPanelBase
     void OnUserInputFlash(wxCommandEvent & /*event*/);
     void OnUpdateVU(wxTimerEvent & /*event*/);
 
+#if OPAL_HAS_H281
+    void OnMouseFECC(wxMouseEvent & /*event*/);
+    PDECLARE_NOTIFIER(OpalH281Client, InCallPanel, OnChangedFECC);
+#endif
+
     void SpeakerVolume(wxScrollEvent & /*event*/);
     void MicrophoneVolume(wxScrollEvent & /*event*/);
     void SetVolume(bool microphone, int value, bool muted);
@@ -460,10 +467,15 @@ class InCallPanel : public CallPanelBase
     wxCheckBox   * m_MicrophoneMute;
     wxSlider     * m_SpeakerVolume;
     wxSlider     * m_MicrophoneVolume;
-    wxGauge      * m_vuSpeaker;
-    wxGauge      * m_vuMicrophone;
+    wxGauge      * m_SpeakerGauge;
+    wxGauge      * m_MicrophoneGauge;
     wxTimer        m_vuTimer;
-    wxStaticText * m_callTime;
+    wxStaticText * m_CallTime;
+
+#if OPAL_HAS_H281
+    wxButton     * m_fecc[PVideoControlInfo::NumTypes][2];
+#endif
+
     unsigned       m_updateStatistics;
     bool           m_FirstTime;
 
