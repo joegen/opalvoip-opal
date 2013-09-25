@@ -30,11 +30,9 @@
 #pragma interface
 #endif
 
-#ifndef _PTLIB_H
-#include <ptlib.h>
-#endif
-
 #include <opal_config.h>
+
+#if OPAL_HAS_H224
 
 #include <opal/connection.h>
 #include <opal/transports.h>
@@ -47,12 +45,12 @@ class OpalH224Handler;
 class OpalH224Client : public PObject
 {
   PCLASSINFO(OpalH224Client, PObject);
-  
+
 public:
 
   OpalH224Client();
   ~OpalH224Client();
-  
+
   enum {
     CMEClientID         = 0x00,
     H281ClientID        = 0x01,
@@ -92,7 +90,7 @@ public:
   /**Return whether this client has extra capabilities.
      Default returns FALSE.
     */
-  virtual PBoolean HasExtraCapabilities() const { return false; }
+  virtual bool HasExtraCapabilities() const { return false; }
 
   /**Called if the CME client received an Extra Capabilities PDU for this client.
      Default does nothing.
@@ -112,22 +110,23 @@ public:
   virtual Comparison Compare(const PObject & obj);
 
   /**Connection to the H.224 protocol handler */
-  void SetH224Handler(OpalH224Handler * handler) { h224Handler = handler; }
+  void SetH224Handler(OpalH224Handler * handler) { m_h224Handler = handler; }
 
   /**Called by the H.224 handler to indicate if the remote party has such a client or not */
-  void SetRemoteClientAvailable(PBoolean remoteClientAvailable, PBoolean remoteClientHasExtraCapabilities);
+  void SetRemoteClientAvailable(bool remoteClientAvailable, bool remoteClientHasExtraCapabilities);
 
-  PBoolean GetRemoteClientAvailable() const { return remoteClientAvailable; }
-  PBoolean GetRemoteClientHasExtraCapabilities() const { return remoteClientHasExtraCapabilities; }
+  bool GetRemoteClientAvailable() const { return m_remoteClientAvailable; }
+  bool GetRemoteClientHasExtraCapabilities() const { return m_remoteClientHasExtraCapabilities; }
 
 protected:
 
-  PBoolean remoteClientAvailable;
-  PBoolean remoteClientHasExtraCapabilities;
-  OpalH224Handler * h224Handler;
+  bool              m_remoteClientAvailable;
+  bool              m_remoteClientHasExtraCapabilities;
+  OpalH224Handler * m_h224Handler;
 };
 
 PSORTED_LIST(OpalH224ClientList, OpalH224Client);
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -136,83 +135,75 @@ class OpalH224MediaStream;
 class OpalH224Handler : public PObject
 {
   PCLASSINFO(OpalH224Handler, PObject);
-	
+
 public:
-	
+
   OpalH224Handler();
   ~OpalH224Handler();
-  
+
   enum {
     Broadcast = 0x0000,
-    
+
     CMEClientListCode        = 0x01,
     CMEExtraCapabilitiesCode = 0x02,
     CMEMessage               = 0x00,
     CMECommand               = 0xff,
-    
+
     CountryCodeEscape   = 0xff,
   };
-  
+
   /**Adds / removes the client from the client list */
-  PBoolean AddClient(OpalH224Client & client);
-  PBoolean RemoveClient(OpalH224Client & client);
-  
+  bool AddClient(OpalH224Client & client);
+  bool RemoveClient(OpalH224Client & client);
+
   /**Sets the transmit / receive media format*/
   void SetTransmitMediaFormat(const OpalMediaFormat & mediaFormat);
   void SetReceiveMediaFormat(const OpalMediaFormat & mediaFormat);
-  
+
   /**Sets / unsets the transmit H224 media stream*/
   void SetTransmitMediaStream(OpalH224MediaStream * transmitMediaStream);
-	
+
   virtual void StartTransmit();
   virtual void StopTransmit();
-  
+
   /**Sends the complete client list with all clients registered */
-  PBoolean SendClientList();
-  
+  bool SendClientList();
+
   /**Sends the extra capabilities for all clients that indicate to have extra capabilities. */
-  PBoolean SendExtraCapabilities();
-  
+  bool SendExtraCapabilities();
+
   /**Requests the remote side to send it's client list */
-  PBoolean SendClientListCommand();
-  
+  bool SendClientListCommand();
+
   /**Request the remote side to send the extra capabilities for the given client */
-  PBoolean SendExtraCapabilitiesCommand(const OpalH224Client & client);
+  bool SendExtraCapabilitiesCommand(const OpalH224Client & client);
 
   /**Callback for H.224 clients to send their extra capabilities */
-  PBoolean SendExtraCapabilitiesMessage(const OpalH224Client & client, BYTE *data, PINDEX length);
+  bool SendExtraCapabilitiesMessage(const OpalH224Client & client, BYTE *data, PINDEX length);
 
   /**Callback for H.224 clients to send a client frame */
-  PBoolean TransmitClientFrame(const OpalH224Client & client, H224_Frame & frame);
-	
-  PBoolean HandleFrame(const RTP_DataFrame & rtpFrame);
-  virtual PBoolean OnReceivedFrame(H224_Frame & frame);
-  virtual PBoolean OnReceivedCMEMessage(H224_Frame & frame);
-  virtual PBoolean OnReceivedClientList(H224_Frame & frame);
-  virtual PBoolean OnReceivedClientListCommand();
-  virtual PBoolean OnReceivedExtraCapabilities(H224_Frame & frame);
-  virtual PBoolean OnReceivedExtraCapabilitiesCommand();
-  
-  PMutex & GetTransmitMutex() { return transmitMutex; }
-	
-protected:
+  bool TransmitClientFrame(const OpalH224Client & client, H224_Frame & frame);
 
-  PMutex transmitMutex;
-  PBoolean canTransmit;
-  RTP_DataFrame transmitFrame;
-  BYTE transmitBitIndex;
-  PTime *transmitStartTime;
-  OpalH224MediaStream * transmitMediaStream;
-  
-  H224_Frame receiveFrame;
-  
-  OpalH224ClientList clients;
-	
-private:
+  bool HandleFrame(const RTP_DataFrame & rtpFrame);
+  virtual bool OnReceivedFrame(H224_Frame & frame);
+  virtual bool OnReceivedCMEMessage(H224_Frame & frame);
+  virtual bool OnReceivedClientList(H224_Frame & frame);
+  virtual bool OnReceivedClientListCommand();
+  virtual bool OnReceivedExtraCapabilities(H224_Frame & frame);
+  virtual bool OnReceivedExtraCapabilitiesCommand();
+
+protected:
   void TransmitFrame(H224_Frame & frame);
-	
-  PBoolean transmitHDLCTunneling;
-  PBoolean receiveHDLCTunneling;
+
+  PMutex                m_transmitMutex;
+  bool                  m_canTransmit;
+  bool                  m_transmitHDLCTunneling;
+  bool                  m_receiveHDLCTunneling;
+  PINDEX                m_transmitBitIndex;
+  PTime                 m_transmitStartTime;
+  OpalH224MediaStream * m_transmitMediaStream;
+
+  OpalH224ClientList    m_clients;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -220,26 +211,28 @@ private:
 class OpalH224MediaStream : public OpalMediaStream
 {
     PCLASSINFO(OpalH224MediaStream, OpalMediaStream);
-    
+
   public:
     OpalH224MediaStream(OpalConnection & connection,
                         OpalH224Handler & h224Handler,
                         const OpalMediaFormat & mediaFormat,
                         unsigned sessionID,
-                        PBoolean isSource);
+                        bool isSource);
     ~OpalH224MediaStream();
-    
+
     virtual void OnStartMediaPatch();
     virtual PBoolean ReadPacket(RTP_DataFrame & packet);
     virtual PBoolean WritePacket(RTP_DataFrame & packet);
     virtual PBoolean IsSynchronous() const { return false; }
     virtual PBoolean RequiresPatchThread() const { return IsSink(); }
-    
+
   private:
     virtual void InternalClose();
 
-    OpalH224Handler & h224Handler;
+    OpalH224Handler & m_h224Handler;
 };
 
-#endif // OPAL_H224_H224HANDLER_H
 
+#endif // OPAL_HAS_H224
+
+#endif // OPAL_H224_H224HANDLER_H

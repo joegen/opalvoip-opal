@@ -57,7 +57,7 @@ PLUGINCODEC_LICENSE(
   "Copyright (C) 2010 by Vox Lucida Pt.Ltd., All Rights Reserved", // source code copyright
   "MPL 1.0",                                                    // source code license
   PluginCodec_License_MPL,                                      // source code license
-  
+
   MyDescription,                                                // codec description
   "Xiph",                                                       // codec author
   "1.0.3",                                                      // codec version
@@ -361,7 +361,7 @@ class OpusPluginDecoder : public OpusPluginCodec
       }
 
       int result = opus_decode(m_decoder,
-		               (const unsigned char *)fromPtr, fromLen,
+                   (const unsigned char *)fromPtr, fromLen,
                                (opus_int16 *)toPtr, samples, 0);
       if (result < 0) {
         PTRACE(1, MY_CODEC_LOG, "Decoder error " << result << ' ' << opus_strerror(result));

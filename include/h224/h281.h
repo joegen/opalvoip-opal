@@ -30,99 +30,81 @@
 #pragma interface
 #endif
 
-#ifndef _PTLIB_H
-#include <ptlib.h>
-#endif
+#include <opal_config.h>
+
+#if OPAL_HAS_H281
 
 #include <h224/h224.h>
 
 class H281_Frame : public H224_Frame
 {
   PCLASSINFO(H281_Frame, H224_Frame);
-	
+
 public:
-	
+
   enum RequestType {
     IllegalRequest      = 0x00,
     StartAction         = 0x01,
     ContinueAction      = 0x02,
     StopAction          = 0x03,
-    SelectVideoSource	  = 0x04,
+    SelectVideoSource   = 0x04,
     VideoSourceSwitched = 0x05,
     StoreAsPreset       = 0x07,
     ActivatePreset      = 0x08
   };
-	
-  enum PanDirection {
-    NoPan       = 0x00,
-    IllegalPan  = 0x40,
-    PanLeft     = 0x80,
-    PanRight    = 0xc0,
+
+  enum CapabilityBits {
+    CanPan   = 0x80,
+    CanTilt  = 0x40,
+    CanZoom  = 0x20,
+    CanFocus = 0x10,
+    CanMotionVideo = 0x400,
+    CanNormalResolutionStillImage = 0x200,
+    CanDoubleResolutionStillImage = 0x100
   };
-	
-  enum TiltDirection {
-    NoTilt      = 0x00,
-    IllegalTilt = 0x10,
-    TiltDown    = 0x20,
-    TiltUp      = 0x30,
-  };
-	
-  enum ZoomDirection {
-    NoZoom      = 0x00,
-    IllegalZoom = 0x04,
-    ZoomOut     = 0x08,
-    ZoomIn      = 0x0c
-  };
-	
-  enum FocusDirection {
-    NoFocus       = 0x00,
-    IllegalFocus  = 0x01,
-    FocusOut      = 0x02,
-    FocusIn       = 0x03
-  };
-	
-  enum VideoMode {	
+
+  enum VideoMode {
     MotionVideo                 = 0x00,
     IllegalVideoMode            = 0x01,
     NormalResolutionStillImage  = 0x02,
     DoubleResolutionStillImage  = 0x03
   };
-	
+
   H281_Frame();
   ~H281_Frame();
-	
+
   RequestType GetRequestType() const { return (RequestType)(GetClientDataPtr())[0]; }
   void SetRequestType(RequestType requestType);
-	
-  // The following methods are only valid when
-  // request type is either StartAction, ContinueAction or StopAction	
-  PanDirection GetPanDirection() const;
-  void SetPanDirection(PanDirection direction);
-	
-  TiltDirection GetTiltDirection() const;
-  void SetTiltDirection(TiltDirection direction);
 
-  ZoomDirection GetZoomDirection() const;
-  void SetZoomDirection(ZoomDirection direction);
-	
-  FocusDirection GetFocusDirection() const;
-  void SetFocusDirection(FocusDirection direction);
-	
+  // The following methods are only valid when
+  // request type is either StartAction, ContinueAction or StopAction
+  int GetDirection(PVideoControlInfo::Types type) const;
+  void SetDirection(PVideoControlInfo::Types type, int direction);
+
   // Only valid when RequestType is StartAction
   BYTE GetTimeout() const;
   void SetTimeout(BYTE timeout);
-	
+
   // Only valid when RequestType is SelectVideoSource or VideoSourceSwitched
   BYTE GetVideoSourceNumber() const;
   void SetVideoSourceNumber(BYTE videoSourceNumber);
-	
+
   VideoMode GetVideoMode() const;
   void SetVideoMode(VideoMode videoMode);
-	
+
   // Only valid when RequestType is StoreAsPreset or ActivatePreset
   BYTE GetPresetNumber() const;
   void SetPresetNumber(BYTE presetNumber);
 };
 
-#endif // OPAL_H224_H281_H
 
+extern const OpalMediaFormat & GetOpalFECC_RTP();
+extern const OpalMediaFormat & GetOpalFECC_HDLC();
+
+#define OpalFECC_RTP  GetOpalFECC_RTP()
+#define OpalFECC_HDLC GetOpalFECC_HDLC()
+
+
+#endif // OPAL_HAS_H281
+
+#endif // OPAL_H224_H281_H

@@ -42,17 +42,19 @@
 class GstMediaStream;
 
 
-#define OPAL_GST_PIPELINE_VAR_FMT         "{%s}"
-#define OPAL_GST_PIPELINE_VAR_NAME        "name"
-#define OPAL_GST_PIPELINE_VAR_SAMPLE_RATE "sample-rate"
-#define OPAL_GST_PIPELINE_VAR_PT          "pt"
-#define OPAL_GST_PIPELINE_VAR_MTU         "mtu"
-#define OPAL_GST_PIPELINE_VAR_WIDTH       "width"
-#define OPAL_GST_PIPELINE_VAR_HEIGHT      "height"
-#define OPAL_GST_PIPELINE_VAR_FRAME_RATE  "frame-rate"
-#define OPAL_GST_PIPELINE_VAR_BIT_RATE    "bit-rate"
-#define OPAL_GST_PIPELINE_VAR_BIT_RATE_K  "bit-rate-kbps"
-#define OPAL_GST_PIPELINE_BLOCK_SIZE      "blocksize"
+#define OPAL_GST_STRINTF_FMT "{%s}"
+#define OPAL_GST_NAME        "name"
+#define OPAL_GST_SAMPLE_RATE "sample-rate"
+#define OPAL_GST_PT          "pt"
+#define OPAL_GST_MTU         "mtu"
+#define OPAL_GST_WIDTH       "width"
+#define OPAL_GST_HEIGHT      "height"
+#define OPAL_GST_FRAME_RATE  "frame-rate"
+#define OPAL_GST_BIT_RATE    "bit-rate"
+#define OPAL_GST_BIT_RATE_K  "bit-rate-kbps"
+#define OPAL_GST_BLOCK_SIZE  "blocksize"
+#define OPAL_GST_REMOTE_IP   "remote-ip"
+#define OPAL_GST_REMOTE_PPRT "remote-port"
 
 
 /**Endpoint for performing OPAL media via gstreamer.
@@ -209,6 +211,7 @@ class GstEndPoint : public OpalLocalEndPoint
   //@}
 
   protected:
+    PString m_rtpbinElement;
     PString m_audioSourceDevice;
     PString m_audioSinkDevice;
 #if OPAL_VIDEO

@@ -49,8 +49,8 @@
 #include <codec/opalpluginmgr.h>
 #include <im/im_ep.h>
 
-#if OPAL_HAS_H224
-#include <h224/h224.h>
+#if OPAL_HAS_H281
+  #include <h224/h281.h>
 #endif
 
 #include <ptclib/random.h>
@@ -970,9 +970,9 @@ OpalMediaFormatList OpalManager::GetCommonMediaFormats(bool transportable, bool 
   formats += OpalT140;
 #endif
 
-#if OPAL_HAS_H224
-  formats += OpalH224AnnexQ;
-  formats += OpalH224Tunnelled;
+#if OPAL_HAS_H281
+  formats += OpalFECC_RTP;
+  formats += OpalFECC_HDLC;
 #endif
 
   return formats;

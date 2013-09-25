@@ -89,28 +89,28 @@ static void ReceiveSetupFeatureSet(const H323Connection * connection, const H225
 {
   H225_FeatureSet fs;
   PBoolean hasFeaturePDU = false;
-  
+
   if(pdu.HasOptionalField(H225_Setup_UUIE::e_neededFeatures)) {
     fs.IncludeOptionalField(H225_FeatureSet::e_neededFeatures);
     H225_ArrayOf_FeatureDescriptor & fsn = fs.m_neededFeatures;
     fsn = pdu.m_neededFeatures;
     hasFeaturePDU = true;
   }
-  
+
   if(pdu.HasOptionalField(H225_Setup_UUIE::e_desiredFeatures)) {
     fs.IncludeOptionalField(H225_FeatureSet::e_desiredFeatures);
     H225_ArrayOf_FeatureDescriptor & fsn = fs.m_desiredFeatures;
     fsn = pdu.m_desiredFeatures;
     hasFeaturePDU = true;
   }
-  
+
   if(pdu.HasOptionalField(H225_Setup_UUIE::e_supportedFeatures)) {
     fs.IncludeOptionalField(H225_FeatureSet::e_supportedFeatures);
     H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
     fsn = pdu.m_supportedFeatures;
     hasFeaturePDU = true;
   }
-  
+
   if (hasFeaturePDU) {
       connection->OnReceiveFeatureSet(H460_MessageType::e_setup, fs);
   }
@@ -293,7 +293,7 @@ H323Connection::H323Connection(OpalCall & call,
 
   m_H46019CallReceiver = false;
   m_H46019enabled = false;
-  m_h245Connect = false; 
+  m_h245Connect = false;
 
   // NOTE additional 46024a stuff not yet copied in
 #endif
@@ -713,7 +713,7 @@ void H323Connection::HandleTunnelPDU(H323SignalPDU * txPDU)
 
   // if a response to a SETUP PDU containing TCS/MSD was ignored, then shutdown negotiations
   PINDEX i;
-  if (lastPDUWasH245inSETUP && 
+  if (lastPDUWasH245inSETUP &&
       (h245TunnelRxPDU->m_h323_uu_pdu.m_h245Control.GetSize() == 0) &&
       (h245TunnelRxPDU->GetQ931().GetMessageType() != Q931::CallProceedingMsg)) {
     PTRACE(4, "H225\tH.245 in SETUP ignored - resetting H.245 negotiations");
@@ -827,7 +827,7 @@ void H323Connection::OnReceivedACF(const H225_AdmissionConfirm & acf)
       fs.IncludeOptionalField(H225_FeatureSet::e_supportedFeatures);
       H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
       fsn.SetSize(data.GetSize());
-      for (PINDEX i=0; i < data.GetSize(); i++) 
+      for (PINDEX i=0; i < data.GetSize(); i++)
         fsn[i] = (H225_FeatureDescriptor &)data[i];
 
       OnReceiveFeatureSet(H460_MessageType::e_admissionConfirm, fs);
@@ -848,7 +848,7 @@ void H323Connection::OnReceivedARJ(const H225_AdmissionReject & arj)
       fs.IncludeOptionalField(H225_FeatureSet::e_supportedFeatures);
       H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
       fsn.SetSize(data.GetSize());
-      for (PINDEX i=0; i < data.GetSize(); i++) 
+      for (PINDEX i=0; i < data.GetSize(); i++)
         fsn[i] = (H225_FeatureDescriptor &)data[i];
 
       OnReceiveFeatureSet(H460_MessageType::e_admissionReject, fs);
@@ -930,7 +930,7 @@ void H323Connection::SetRemoteVersions(const H225_ProtocolIdentifier & protocolI
       h245version = 7;  // H.323 version 4
       break;
     case 5 :
-      h245version = 9;  // H.323 version 5 
+      h245version = 9;  // H.323 version 5
       break;
     default:
       h245version = 13; // H.323 version 6
@@ -1019,7 +1019,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
     if (m_signallingChannel->GetLocalAddress().IsEquivalent(localDestinationAddress))
       localDestinationAddress = '*';
   }
-  
+
   // Make sure we clamp our bandwidth to whatever they said
   Q931::InformationTransferCapability bearerCap;
   unsigned transferRate;
@@ -1055,7 +1055,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
     }
 
     /** Here is a spot where we should wait in case of Call Intrusion
-    for CIPL from other endpoints 
+    for CIPL from other endpoints
     if (isCallIntrusion) return true;
     */
 
@@ -1348,7 +1348,7 @@ PBoolean H323Connection::OnReceivedCallProceeding(const H323SignalPDU & pdu)
     m_dh.FromTokens(call.m_tokens);
 #endif
 
-  
+
 #if OPAL_H460
   ReceiveFeatureSet<H225_CallProceeding_UUIE>(this, H460_MessageType::e_callProceeding, call);
 #endif
@@ -1519,13 +1519,13 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   if (endpoint.IsH245Disabled()){
     PTRACE(3, "H245\tOnReceivedSignalConnect: h245 is disabled, do not start negotiation");
     return true;
-  }  
+  }
   // If we have a H.245 channel available, bring it up. We either have media
   // and this is just so user indications work, or we don't have media and
   // desperately need it!
   if (h245Tunneling)
     return StartControlNegotiations();
-  
+
   // Already started
   if (m_controlChannel != NULL)
     return true;
@@ -1554,7 +1554,7 @@ PBoolean H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
   if (pdu.m_h323_uu_pdu.m_h323_message_body.GetTag() != H225_H323_UU_PDU_h323_message_body::e_facility)
     return false;
   const H225_Facility_UUIE & fac = pdu.m_h323_uu_pdu.m_h323_message_body;
-  
+
 #if OPAL_H460
   // Do not process H.245 Control PDU's
   if (!pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_h245Control))
@@ -1602,7 +1602,7 @@ PBoolean H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
                                         fac.m_h245SecurityMode, H225_Facility_UUIE::e_h245SecurityMode);
   }
 
-  if (fac.m_reason.GetTag() != H225_FacilityReason::e_callForwarded && 
+  if (fac.m_reason.GetTag() != H225_FacilityReason::e_callForwarded &&
       fac.m_reason.GetTag() != H225_FacilityReason::e_routeCallToGatekeeper)
     return true;
 
@@ -1612,7 +1612,7 @@ PBoolean H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
     addrURL.SetUserName(H323GetAliasAddressString(fac.m_alternativeAliasAddress[0]));
 
   if (fac.HasOptionalField(H225_Facility_UUIE::e_alternativeAddress)) {
-    // Handle routeCallToGatekeeper and send correct destCallSignalAddress 
+    // Handle routeCallToGatekeeper and send correct destCallSignalAddress
     // in the H.225 setup message
     if (fac.m_reason.GetTag() == H225_FacilityReason::e_routeCallToGatekeeper)
       addrURL.SetUserName(addrURL.GetUserName()+'@'+addrURL.GetHostName());
@@ -1701,7 +1701,7 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
   endSessionReceived.Signal();
 
   CallEndReason reason(EndedByRefusal, pdu.GetQ931().GetCause());
-  
+
   const H225_ReleaseComplete_UUIE & rc = pdu.m_h323_uu_pdu.m_h323_message_body;
 
   switch (connectionState) {
@@ -1716,7 +1716,7 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
     default :
       if (callEndReason == EndedByRefusal)
         callEndReason = NumCallEndReasons;
-      
+
       // Are we involved in a transfer with a non H.450.2 compatible transferred-to endpoint?
 #if OPAL_H450
       if (h4502handler->GetState() == H4502Handler::e_ctAwaitSetupResponse &&
@@ -1726,7 +1726,7 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
         h4502handler->OnReceivedSetupReturnError(H4501_GeneralErrorList::e_notAvailable);
       }
 #endif
-          
+
 #if OPAL_H460
       ReceiveFeatureSet<H225_ReleaseComplete_UUIE>(this, H460_MessageType::e_releaseComplete, rc);
 #endif
@@ -1956,7 +1956,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
     }
   }
 
-  // Update the field e_destinationAddress in the SETUP PDU to reflect the new 
+  // Update the field e_destinationAddress in the SETUP PDU to reflect the new
   // alias received in the ACF (m_destinationInfo).
   if (newAliasAddresses.GetSize() > 0) {
     setup.IncludeOptionalField(H225_Setup_UUIE::e_destinationAddress);
@@ -2169,7 +2169,7 @@ void H323Connection::DetermineRTPNAT(const PIPSocket::Address & localAddr,
                                      const PIPSocket::Address & signalAddr)
 {
 #if OPAL_H460
-    if (m_H46019enabled) 
+    if (m_H46019enabled)
       return;
 #endif
   OpalRTPConnection::DetermineRTPNAT(localAddr, peerAddr, signalAddr);
@@ -2235,10 +2235,10 @@ PBoolean H323Connection::SetAlerting(const PString & calleeName, PBoolean withMe
     PTRACE(3, "H323CON\tSetAlerting Alerting not sent");
     return true;
   }
-  
+
   // send Q931 Alerting PDU
   PTRACE(3, "H323CON\tSetAlerting sending Alerting PDU");
-  
+
   PBoolean bOk = WriteSignalPDU(*alertingPDU);
   if (!endpoint.OnSentAlerting(*this)){
     /* let the application to know that the alerting has been sent */
@@ -2262,19 +2262,19 @@ PBoolean H323Connection::SetConnected()
   if (connectPDU == NULL){
     PTRACE(1, "H323CON\tSetConnected connectPDU is null" << *this);
     return false;
-  }  
+  }
 
   if (!endpoint.OnSendConnect(*this, *connectPDU)){
     /* let the application to avoid sending the connect, mainly for testing other endpoints*/
     PTRACE(2, "H323CON\tSetConnected connect not sent");
     return true;
-  }  
+  }
   // Assure capabilities are set to other connections media list (if not already)
   OnSetLocalCapabilities();
 
   // Must be after OnSetLocalCapabilities
   SetBearerCapabilities(*connectPDU);
-  
+
   H225_Connect_UUIE & connect = connectPDU->m_h323_uu_pdu.m_h323_message_body;
 
   // Now ask the application to select which channels to start
@@ -2296,7 +2296,7 @@ PBoolean H323Connection::SetConnected()
   if (!endpoint.IsH245Disabled()){
     if (h245Tunneling) {
       HandleTunnelPDU(connectPDU);
-  
+
       // If no channels selected (or never provided) do traditional H245 start
       if (m_fastStartState == FastStartDisabled) {
         h245TunnelTxPDU = connectPDU; // Piggy back H245 on this reply
@@ -2338,7 +2338,7 @@ PBoolean H323Connection::SetProgressed()
   if (progressPDU == NULL){
     PTRACE(1, "H323\tSetProgressed progressPDU is null" << *this);
     return false;
-  }  
+  }
 
   // Assure capabilities are set to other connections media list (if not already)
   OnSetLocalCapabilities();
@@ -2357,7 +2357,7 @@ PBoolean H323Connection::SetProgressed()
   if (!endpoint.IsH245Disabled()){
     if (h245Tunneling) {
       HandleTunnelPDU(progressPDU);
-  
+
       // If no channels selected (or never provided) do traditional H245 start
       if (m_fastStartState == FastStartDisabled) {
         h245TunnelTxPDU = progressPDU; // Piggy back H245 on this reply
@@ -2374,7 +2374,7 @@ PBoolean H323Connection::SetProgressed()
         return false;
     }
   }
-  
+
   if (!WriteSignalPDU(*progressPDU)) // Send H323 Progress PDU
     return false;
 
@@ -2675,7 +2675,7 @@ PBoolean H323Connection::CreateIncomingControlChannel(PASN_Sequence & enclosingP
     PTRACE(2, "H225\tCreateIncomingControlChannel: do not create channel because h245 is disabled");
     return false;
   }
-  
+
   if (controlListener == NULL) {
     controlListener = m_signallingChannel->GetLocalAddress().CreateListener(endpoint, OpalTransportAddress::HostOnly);
     if (controlListener == NULL)
@@ -2780,7 +2780,7 @@ PBoolean H323Connection::StartControlNegotiations()
 {
   PTRACE(3, "H245\tStarted control channel");
 
- 
+
   if (endpoint.IsH245Disabled()){
     PTRACE(2, "H245\tStartControlNegotiations h245 is disabled, do not start negotiation");
     return false;
@@ -2815,23 +2815,23 @@ PBoolean H323Connection::OnStartHandleControlChannel()
     // according to H.460.18 cl.11 we have to send a generic Indication on the opening of a
     // H.245 control channel. Details are specified in H.460.18 cl.16
     // This must be the first PDU otherwise gatekeeper/proxy will close the channel.
-    
+
     if (endpoint.H46018IsEnabled() && !m_h245Connect) {
       H323ControlPDU pdu;
       H245_GenericMessage & cap = pdu.Build(H245_IndicationMessage::e_genericIndication);
-      
+
       H245_CapabilityIdentifier & id = cap.m_messageIdentifier;
       id.SetTag(H245_CapabilityIdentifier::e_standard);
       PASN_ObjectId & gid = id;
       gid.SetValue(H46018OID);
-      
+
       cap.IncludeOptionalField(H245_GenericMessage::e_subMessageIdentifier);
       PASN_Integer & sub = cap.m_subMessageIdentifier;
       sub = 1;
-      
+
       cap.IncludeOptionalField(H245_GenericMessage::e_messageContent);
       H245_ArrayOf_GenericParameter & msg = cap.m_messageContent;
-      
+
       // callIdentifer
       H245_GenericParameter call;
       H245_ParameterIdentifier & idx = call.m_parameterIdentifier;
@@ -2844,7 +2844,7 @@ PBoolean H323Connection::OnStartHandleControlChannel()
       raw.SetValue(callIdentifier);
       msg.SetSize(1);
       msg[0] = call;
-      
+
       // Is receiver
       if (m_H46019CallReceiver) {
         H245_GenericParameter answer;
@@ -2857,14 +2857,14 @@ PBoolean H323Connection::OnStartHandleControlChannel()
         msg.SetSize(2);
         msg[1] = answer;
       }
-      
+
       PTRACE(4,"H46018\tSending H.245 Control PDU " << pdu);
       if (!WriteControlPDU(pdu))
         return false;
-      
+
       m_h245Connect = true;
-    }    
-  }  
+    }
+  }
 #endif
 
   return StartHandleControlChannel();
@@ -2939,10 +2939,10 @@ void H323Connection::EndHandleControlChannel()
 
 void H323Connection::HandleControlChannel()
 {
-  
+
   // If have started separate H.245 channel then don't tunnel any more
   h245Tunneling = FALSE;
-  
+
   if (!OnStartHandleControlChannel())
     return;
 
@@ -3357,7 +3357,7 @@ bool H323Connection::OnH239Message(unsigned subMessage, const H245_ArrayOf_Gener
       return OnH239PresentationRelease(H323GetGenericParameterInteger(params, 42),
                                        H323GetGenericParameterInteger(params, 44));
 
-    case 6 : // presentationTokenIndicateOwner GenericIndication 
+    case 6 : // presentationTokenIndicateOwner GenericIndication
       return OnH239PresentationIndication(H323GetGenericParameterInteger(params, 42),
                                           H323GetGenericParameterInteger(params, 44));
   }
@@ -3418,7 +3418,7 @@ bool H323Connection::OnH239PresentationRequest(unsigned logicalChannel, unsigned
 
   H323ControlPDU pdu;
   H245_ArrayOf_GenericParameter & params = pdu.BuildGenericResponse(H239MessageOID, 4).m_messageContent;
-  //Viji    08/05/2009 Fix the order of the generic parameters as per 
+  //Viji    08/05/2009 Fix the order of the generic parameters as per
   //Table 13/H.239  - presentationTokenResponse syntax in the H.239 ITU spec
   H323AddGenericParameterBoolean(params, ack ? 126 : 127, true); // Acknowledge/Reject
   H323AddGenericParameterInteger(params, 44, terminalLabel, H245_ParameterValue::e_unsignedMin);
@@ -3630,7 +3630,7 @@ bool H323Connection::TransferConnection(const PString & remoteParty)
 bool H323Connection::TransferCall(const PString & remoteParty,
                                   const PString & callIdentity)
 {
-  // According to H.450.4, if prior to consultation the primary call has been put on hold, the 
+  // According to H.450.4, if prior to consultation the primary call has been put on hold, the
   // transferring endpoint shall first retrieve the call before Call Transfer is invoked.
   if (!callIdentity.IsEmpty() && h4504handler->GetState() == H4504Handler::e_ch_NE_Held)
     h4504handler->RetrieveCall();
@@ -3898,7 +3898,7 @@ void H323Connection::OnSetLocalCapabilities()
     , OpalMediaType::Video()
 #endif
 #if OPAL_HAS_H224
-    , OpalH224MediaType::MediaType()
+    , OpalH224MediaType()
 #endif
   };
 
@@ -4032,7 +4032,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
     startT120 = false;
   }
 #endif
-  
+
   // Check if we have just been connected, or have come out of a transmitter side
   // paused, and have not already got an audio transmitter running via fast connect
   if (connectionState == HasExecutedSignalConnect && FindChannel(H323Capability::DefaultAudioSessionID, false) == NULL)
@@ -4090,7 +4090,7 @@ OpalMediaFormatList H323Connection::GetMediaFormats() const
        to OUR order. This avoids a masterSlaveConflict (assuming other end is
        working correctly) and some unecessaary open logical channel round
        trips.
-       
+
        Techniically, we should be a bit more sophisticated in determining
        symmtery requirement, but 99.9% of the time of the first, if the entry
        is symmetric, they all are. */
@@ -4129,17 +4129,22 @@ PStringArray H323Connection::GetMediaCryptoSuites() const
 
 unsigned H323Connection::GetNextSessionID(const OpalMediaType & mediaType, bool isSource)
 {
-  if (GetMediaStream(mediaType, isSource) == NULL) {
+  unsigned sessionID;
+
+  if (GetMediaStream(mediaType, isSource) != NULL)
+    sessionID = H323Capability::MasterAllocatedBaseSessionID; // Allocate new session
+  else {
     OpalMediaStreamPtr mediaStream = GetMediaStream(mediaType, !isSource);
-    return mediaStream != NULL ? mediaStream->GetSessionID() : mediaType->GetDefaultSessionId();
+    if (mediaStream != NULL)
+      return mediaStream->GetSessionID(); // Must use same session ID as other direction.
+
+    sessionID = mediaType->GetDefaultSessionId(); // Use default session
+    if (sessionID == 0)
+      sessionID = H323Capability::MasterAllocatedBaseSessionID; // No default, allocate new session
   }
 
-  unsigned sessionID = 1000000;
-  if (IsH245Master()) {
-    sessionID = 4;
-    while (OpalMediaType::GetDefinition(sessionID) == NULL)
-      ++sessionID;
-  }
+  if (!IsH245Master())
+    return H323Capability::DeferredSessionID;
 
   while (GetMediaStream(sessionID, true) != NULL || GetMediaStream(sessionID, false) != NULL)
     ++sessionID;
@@ -4400,7 +4405,7 @@ void H323Connection::OnSelectLogicalChannels()
   OpalMediaType::AutoStartMode autoStartFax = GetAutoStart(OpalMediaType::Fax());
 #endif
 #if OPAL_HAS_H224
-  OpalMediaType::AutoStartMode autoStartH224 = GetAutoStart(GetOpalH224_H323AnnexQ().GetMediaType());
+  OpalMediaType::AutoStartMode autoStartH224 = GetAutoStart(OpalH224MediaType());
 #endif
 
   // Select the first codec that uses the "standard" audio session.
@@ -4423,7 +4428,7 @@ void H323Connection::OnSelectLogicalChannels()
 #endif
 #if OPAL_HAS_H224
       if ((autoStartH224&OpalMediaType::Transmit) != 0)
-        SelectDefaultLogicalChannel(OpalH224MediaType::MediaType(), H323Capability::DefaultH224SessionID);
+        SelectDefaultLogicalChannel(OpalH224MediaType(), 0);
       else {
         PTRACE(4, "H245\tOnSelectLogicalChannels, H.224 camera control not auto-started");
       }
@@ -4446,7 +4451,7 @@ void H323Connection::OnSelectLogicalChannels()
 #endif
 #if OPAL_HAS_H224
       if (autoStartH224 != OpalMediaType::DontOffer)
-        SelectFastStartChannels(H323Capability::DefaultH224SessionID,
+        SelectFastStartChannels(GetNextSessionID(OpalH224MediaType(), true),
                                 (autoStartH224&OpalMediaType::Transmit) != 0,
                                 (autoStartH224&OpalMediaType::Receive) != 0);
 #endif
@@ -4469,9 +4474,9 @@ void H323Connection::OnSelectLogicalChannels()
 #endif
 #if OPAL_HAS_H224
       if ((autoStartH224&OpalMediaType::Transmit) != 0)
-        OpenFastStartChannel(H323Capability::DefaultH224SessionID, H323Channel::IsTransmitter);
+        OpenFastStartChannel(GetNextSessionID(OpalH224MediaType(), false), H323Channel::IsTransmitter);
       if ((autoStartH224&OpalMediaType::Receive) != 0)
-        OpenFastStartChannel(H323Capability::DefaultH224SessionID, H323Channel::IsReceiver);
+        OpenFastStartChannel(GetNextSessionID(OpalH224MediaType(), true), H323Channel::IsReceiver);
 #endif
       break;
   }
@@ -4480,7 +4485,7 @@ void H323Connection::OnSelectLogicalChannels()
 
 void H323Connection::SelectDefaultLogicalChannel(const OpalMediaType & mediaType, unsigned sessionID)
 {
-  if (FindChannel(sessionID, false))
+  if (sessionID > 0 && FindChannel(sessionID, false))
     return;
 
   PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
@@ -4819,7 +4824,7 @@ PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingCh
     OpalMediaStreamPtr stream = conflictingChannel.GetMediaStream();
     if (stream != NULL) {
       OpalMediaPatchPtr patch = stream->GetPatch();
-      if (patch != NULL) 
+      if (patch != NULL)
         patch->GetSource().Close();
     }
 
@@ -5625,20 +5630,20 @@ void H323Connection::MonitorCallStatus()
 
 #if OPAL_H460_NAT
 
-void H323Connection::H46019SetCallReceiver() 
-{ 
+void H323Connection::H46019SetCallReceiver()
+{
     PTRACE(4,"H46019\tCall is receiver.");
-    m_H46019CallReceiver = true; 
+    m_H46019CallReceiver = true;
 }
 
 
-void H323Connection::H46019Enabled() 
-{ 
-    m_H46019enabled = true; 
+void H323Connection::H46019Enabled()
+{
+    m_H46019enabled = true;
 }
 
 
-PUDPSocket * H323Connection::GetNatSocket(unsigned session, PBoolean rtp) 
+PUDPSocket * H323Connection::GetNatSocket(unsigned session, PBoolean rtp)
 {
     std::map<unsigned,NAT_Sockets>::const_iterator sockets_iter = m_NATSockets.find(session);
     if (sockets_iter != m_NATSockets.end()) {
@@ -5703,7 +5708,7 @@ H323Connection::SessionInformation::SessionInformation(const OpalGloballyUniqueI
 #if OPAL_H460
   // Some random number bases on the session id (for H.460.24A)
   int rand = PRandom::Number((session *100),((session+1)*100)-1);
-  m_CUI = PString(rand); 
+  m_CUI = PString(rand);
   PTRACE(4,"H46024A\tGenerated CUI s: " << session << " value: " << m_CUI);
 #else
   m_CUI = PString();

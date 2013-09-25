@@ -204,10 +204,10 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     virtual bool PostDecode(const OpalMediaFormatList & mediaFormats);
 
     // return the string used within SDP to identify this media type
-    virtual PString GetSDPMediaType() const = 0;
+    virtual PString GetSDPMediaType() const { return m_mediaType->GetSDPMediaType(); }
 
     // return the string used within SDP to identify the transport used by this media
-    virtual PCaselessString GetSDPTransportType() const = 0;
+    virtual PCaselessString GetSDPTransportType() const { return m_mediaType->GetSDPTransportType(); }
 
     virtual const SDPMediaFormatList & GetSDPMediaFormats() const
       { return m_formats; }
@@ -382,7 +382,6 @@ class SDPAudioMediaDescription : public SDPRTPAVPMediaDescription
     PCLASSINFO(SDPAudioMediaDescription, SDPRTPAVPMediaDescription);
   public:
     SDPAudioMediaDescription(const OpalTransportAddress & address);
-    virtual PString GetSDPMediaType() const;
     virtual void OutputAttributes(ostream & str) const;
     virtual void SetAttribute(const PString & attr, const PString & value);
     virtual bool PostDecode(const OpalMediaFormatList & mediaFormats);
@@ -405,7 +404,6 @@ class SDPVideoMediaDescription : public SDPRTPAVPMediaDescription
     PCLASSINFO(SDPVideoMediaDescription, SDPRTPAVPMediaDescription);
   public:
     SDPVideoMediaDescription(const OpalTransportAddress & address);
-    virtual PString GetSDPMediaType() const;
     virtual SDPMediaFormat * CreateSDPMediaFormat();
     virtual bool PreEncode();
     virtual void OutputAttributes(ostream & str) const;
@@ -465,6 +463,8 @@ class SDPApplicationMediaDescription : public SDPMediaDescription
     virtual PCaselessString GetSDPTransportType() const;
     virtual SDPMediaFormat * CreateSDPMediaFormat();
     virtual PString GetSDPMediaType() const;
+
+    static const PCaselessString & TypeName();
 
   protected:
     class Format : public SDPMediaFormat

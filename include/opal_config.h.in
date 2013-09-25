@@ -228,8 +228,10 @@
 
 
 // Far end camera control
-#undef  OPAL_HAS_H224
-#undef  OPAL_HAS_H281
+#undef OPAL_HAS_H224
+#if OPAL_VIDEO && OPAL_HAS_H224
+  #undef OPAL_HAS_H281
+#endif
 
 
 // Use system Speex audio codec

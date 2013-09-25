@@ -58,26 +58,19 @@ const PCaselessString & OpalMSRPMediaSession::TCP_MSRP() { static const PConstCa
 
 static OpalMediaSessionFactory::Worker<OpalMSRPMediaSession> tcp_msrp_session(OpalMSRPMediaSession::TCP_MSRP());
 
-class OpalMSRPMediaType : public OpalMediaTypeDefinition 
+class OpalMSRPMediaDefinition : public OpalMediaTypeDefinition 
 {
   public:
     static const char * Name() { return OPAL_IM_MEDIA_TYPE_PREFIX"msrp"; }
 
-    OpalMSRPMediaType()
+    OpalMSRPMediaDefinition()
       : OpalMediaTypeDefinition(Name(), OpalMSRPMediaSession::TCP_MSRP())
     {
     }
 
 #if OPAL_SIP
-    static const PCaselessString & GetSDPMediaType();
-    static const PCaselessString & GetSDPTransportType();
-
-    virtual bool MatchesSDP(
-      const PCaselessString & sdpMediaType,
-      const PCaselessString & sdpTransport,
-      const PStringArray & sdpLines,
-      PINDEX index
-    );
+    virtual PString GetSDPMediaType() const { static PConstCaselessString const s("message"); return s; }
+    virtual PString GetSDPTransportType() const { return OpalMSRPMediaSession::TCP_MSRP(); }
 
     virtual SDPMediaDescription * CreateSDPMediaDescription(
       const OpalTransportAddress & localAddress
@@ -85,7 +78,7 @@ class OpalMSRPMediaType : public OpalMediaTypeDefinition
 #endif // OPAL_SIP
 };
 
-OPAL_INSTANTIATE_MEDIATYPE(OpalMSRPMediaType);
+OPAL_MEDIATYPE(OpalMSRPMedia);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -107,7 +100,7 @@ const OpalMediaFormat & GetOpalMSRP()
     public: 
       IMMSRPMediaFormat() 
         : OpalMediaFormat(OPAL_MSRP, 
-                          OpalMSRPMediaType::Name(),
+                          OpalMSRPMediaType(),
                           RTP_DataFrame::MaxPayloadType, 
                           "+", 
                           false,  
@@ -162,16 +155,6 @@ class SDPMSRPMediaDescription : public SDPMediaDescription
     SDPMSRPMediaDescription(const OpalTransportAddress & address);
     SDPMSRPMediaDescription(const OpalTransportAddress & address, const PString & url);
 
-    PCaselessString GetSDPTransportType() const
-    {
-      return OpalMSRPMediaType::GetSDPTransportType();
-    }
-
-    virtual PString GetSDPMediaType() const 
-    {
-      return OpalMSRPMediaType::GetSDPMediaType();
-    }
-
     virtual void CreateSDPMediaFormats(const PStringArray &);
     virtual void OutputAttributes(ostream & strm) const;
     virtual void SetAttribute(const PString & attr, const PString & value);
@@ -201,21 +184,8 @@ class SDPMSRPMediaDescription : public SDPMediaDescription
     PString types;
 };
 
-////////////////////////////////////////////////////////////////////////////////////////////
 
-const PCaselessString & OpalMSRPMediaType::GetSDPMediaType()     { static PConstCaselessString const s("message"); return s; }
-const PCaselessString & OpalMSRPMediaType::GetSDPTransportType() { static PConstCaselessString const s("tcp/msrp"); return s; }
-
-bool OpalMSRPMediaType::MatchesSDP(const PCaselessString & sdpMediaType,
-                                   const PCaselessString & sdpTransport,
-                                   const PStringArray & /*sdpLines*/,
-                                   PINDEX /*index*/)
-{
-  return sdpMediaType == GetSDPMediaType() && sdpTransport == GetSDPTransportType();
-}
-
-
-SDPMediaDescription * OpalMSRPMediaType::CreateSDPMediaDescription(const OpalTransportAddress & localAddress) const
+SDPMediaDescription * OpalMSRPMediaDefinition::CreateSDPMediaDescription(const OpalTransportAddress & localAddress) const
 {
   return new SDPMSRPMediaDescription(localAddress, PURL());
 }
@@ -229,14 +199,14 @@ SDPMediaDescription * OpalMSRPMediaSession::CreateSDPMediaDescription()
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 SDPMSRPMediaDescription::SDPMSRPMediaDescription(const OpalTransportAddress & address)
-  : SDPMediaDescription(address, OpalMSRPMediaType::Name())
+  : SDPMediaDescription(address, OpalMSRPMediaType())
 {
   SetDirection(SDPMediaDescription::SendRecv);
 }
 
 
 SDPMSRPMediaDescription::SDPMSRPMediaDescription(const OpalTransportAddress & address, const PString & _path)
-  : SDPMediaDescription(address, OpalMSRPMediaType::Name())
+  : SDPMediaDescription(address, OpalMSRPMediaType())
   , path(_path)
 {
   SetDirection(SDPMediaDescription::SendRecv);
@@ -275,7 +245,7 @@ void SDPMSRPMediaDescription::SetAttribute(const PString & attr, const PString &
 
 void SDPMSRPMediaDescription::ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*/, const OpalMediaFormat & mediaFormat)
 {
-  if (mediaFormat.GetMediaType() == OpalMSRPMediaType::Name()) 
+  if (mediaFormat.GetMediaType() == OpalMSRPMediaType()) 
     types = mediaFormat.GetOptionString("Accept Types").Trim();
 }
 
@@ -294,7 +264,7 @@ OpalMediaFormatList SDPMSRPMediaDescription::GetMediaFormats() const
 
 void SDPMSRPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
 {
-  if (!mediaFormat.IsTransportable() || !mediaFormat.IsValidForProtocol("sip") || mediaFormat.GetMediaType() != OpalMSRPMediaType::Name()) {
+  if (!mediaFormat.IsTransportable() || !mediaFormat.IsValidForProtocol("sip") || mediaFormat.GetMediaType() != OpalMSRPMediaType()) {
     PTRACE(4, "MSRP\tSDP not including " << mediaFormat << " as it is not a valid MSRP format");
     return;
   }

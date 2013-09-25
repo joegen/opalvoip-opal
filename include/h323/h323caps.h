@@ -168,7 +168,8 @@ class H323Capability : public PObject
       DefaultAudioSessionID = 1,
       DefaultVideoSessionID = 2,
       DefaultDataSessionID  = 3,
-      DefaultH224SessionID  = 4
+      MasterAllocatedBaseSessionID,
+      DeferredSessionID = 1000000
     };
 
     /**Get the default RTP session.
@@ -267,7 +268,7 @@ class H323Capability : public PObject
 
        If the function returns false then the received PDU codec description
        is not supported, so will be ignored.
-       
+
          The default behaviour sets the capabilityDirection member variable
          from the PDU and then returns true. Note that this means it is very
          important to call the ancestor function when overriding.
@@ -319,7 +320,7 @@ class H323Capability : public PObject
     };
 
     /**Get the direction for this capability.
-      */ 
+      */
     CapabilityDirection GetCapabilityDirection() const { return capabilityDirection; }
 
     /**Set the direction for this capability.
@@ -728,7 +729,7 @@ class H323AudioCapability : public H323RealTimeCapability
 
        If the function returns false then the received PDU codec description
        is not supported, so will be ignored.
-       
+
        The default behaviour calls the OnReceivedPDU() that takes a
        H245_AudioCapability and clamps the txFramesInPacket.
      */
@@ -740,7 +741,7 @@ class H323AudioCapability : public H323RealTimeCapability
        PDU has been used to construct the control channel. It allows the
        capability to set from the PDU fields, information in members specific
        to the class.
-       
+
        The default behaviour calls the OnReceivedPDU() that takes a
        H245_AudioCapability and clamps the txFramesInPacket or
        rxFramesInPacket.
@@ -1282,8 +1283,8 @@ class H323GenericVideoCapability : public H323VideoCapability,
     /**Create a new set of information about a non-standard codec.
       */
     H323GenericVideoCapability(
-      const PString & capabilityId,    ///< generic codec identifier (OID)
-      PINDEX maxBitRate = 0           ///< maxBitRate parameter for the GenericCapability
+      const PString & capabilityId,    ///< generic codec identifier
+      unsigned fixedBitRate = 0        ///< Max bit rate for video
     );
   //@}
 
@@ -1403,7 +1404,7 @@ class H323ExtendedVideoCapability : public H323GenericVideoCapability
      */
     virtual unsigned GetSubType() const;
   //@}
-    
+
   /**@name Protocol manipulation */
   //@{
     /**This function is called whenever and outgoing TerminalCapabilitySet
@@ -1680,7 +1681,7 @@ class H235SecurityCapability : public H323Capability
 
        If the function returns false then the received PDU codec description
        is not supported, so will be ignored.
-       
+
          The default behaviour sets the capabilityDirection member variable
          from the PDU and then returns true. Note that this means it is very
          important to call the ancestor function when overriding.
@@ -1859,7 +1860,7 @@ class H323DataCapability : public H323Capability
     /**Create a new data capability.
       */
     H323DataCapability(
-      unsigned maxBitRate = 0  ///<  Maximum bit rate for data in 100's b/s
+      unsigned maxBitRate  ///<  Maximum bit rate for data in 100's b/s
     );
   //@}
 
@@ -1990,7 +1991,7 @@ class H323DataCapability : public H323Capability
   //@}
 
   protected:
-    unsigned maxBitRate;
+    unsigned m_maxBitRate;
 };
 
 
@@ -2103,6 +2104,97 @@ class H323NonStandardDataCapability : public H323DataCapability,
 
     /**Compare the nonStandardData part of the capability, if applicable.
       */
+    virtual PBoolean IsMatch(
+      const PASN_Object & subTypePDU,     ///<  sub-type PDU of H323Capability
+      const PString & mediaPacketization  ///< Media packetization used
+    ) const;
+  //@}
+};
+
+
+/**This class describes the interface to a generic audio codec used to
+   transfer data via the logical channels opened and managed by the H323
+   control channel.
+
+   An application may create a descendent off this class and override
+   functions as required for descibing the codec.
+ */
+class H323GenericDataCapability : public H323DataCapability,
+                                  public H323GenericCapabilityInfo
+{
+  PCLASSINFO(H323GenericDataCapability, H323DataCapability);
+
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new set of information about a non-standard codec.
+      */
+    H323GenericDataCapability(
+      const PString & capabilityId,    ///< generic codec identifier
+      unsigned fixedBitRate            ///< Fixed bit rate for audio
+    );
+  //@}
+
+  /**@name Overrides from class PObject */
+  //@{
+    /**Compare two capability instances. This compares the main and sub-types
+       of the capability.
+     */
+    Comparison Compare(const PObject & obj) const;
+  //@}
+
+  /**@name Identification functions */
+  //@{
+    /**Get the sub-type of the capability. This is a code dependent on the
+       main type of the capability.
+
+       This returns H245_AudioCapability::e_genericCapability.
+     */
+    virtual unsigned GetSubType() const;
+  //@}
+
+  /**@name Protocol manipulation */
+  //@{
+    /**This function is called whenever and outgoing TerminalCapabilitySet
+       or OpenLogicalChannel PDU is being constructed for the control channel.
+       It allows the capability to set the PDU fields from information in
+       members specific to the class.
+
+       The default behaviour calls H323NonStandardCapabilityinfo::OnSendingPDU()
+       to handle the PDU.
+     */
+    virtual PBoolean OnSendingPDU(
+      H245_DataApplicationCapability & pdu, ///<  PDU to set information on
+      CommandType type                      ///<  Type of PDU to send in
+    ) const;
+
+    /**This function is called whenever and outgoing RequestMode
+       PDU is being constructed for the control channel. It allows the
+       capability to set the PDU fields from information in members specific
+       to the class.
+
+       The default behaviour calls H323NonStandardCapabilityinfo::OnSendingPDU()
+       to handle the PDU.
+     */
+    virtual PBoolean OnSendingPDU(
+      H245_DataMode & pdu  ///<  PDU to set information on
+    ) const;
+
+    /**This function is called whenever and incoming TerminalCapabilitySet
+       or OpenLogicalChannel PDU has been used to construct the control
+       channel. It allows the capability to set from the PDU fields,
+       information in members specific to the class.
+
+       The default behaviour calls H323NonStandardCapabilityinfo::OnReceivedPDU()
+       to handle the provided PDU.
+     */
+    virtual PBoolean OnReceivedPDU(
+      const H245_DataApplicationCapability & pdu, ///<  PDU to set information on
+      CommandType type                            ///<  Type of PDU to send in
+    );
+
+    /**Compare the generic part of the capability, if applicable.
+     */
     virtual PBoolean IsMatch(
       const PASN_Object & subTypePDU,     ///<  sub-type PDU of H323Capability
       const PString & mediaPacketization  ///< Media packetization used
@@ -2644,7 +2736,7 @@ class H323Capabilities : public PObject
     const H323CapabilitiesSet & GetSet() const { return set; }
   //@}
 
-  protected:    
+  protected:
     H323CapabilitiesList table;
     H323CapabilitiesSet  set;
     PStringSet           m_mediaPacketizations;

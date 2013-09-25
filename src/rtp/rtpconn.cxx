@@ -290,24 +290,27 @@ bool OpalRTPConnection::GetMediaTransportAddresses(const OpalMediaType & mediaTy
 
 bool OpalRTPConnection::ChangeSessionID(unsigned fromSessionID, unsigned toSessionID)
 {
-  if (m_sessions.find(toSessionID) != m_sessions.end()) {
-    PTRACE(2, "RTPCon\tAttempt to renumber session " << fromSessionID << " to existing session ID " << toSessionID);
-    return false;
-  }
-
-  SessionMap::iterator it = m_sessions.find(fromSessionID);
-  if (it == m_sessions.end()) {
+  SessionMap::iterator from = m_sessions.find(fromSessionID);
+  if (from == m_sessions.end()) {
     PTRACE(2, "RTPCon\tAttempt to renumber unknown session " << fromSessionID << " to session ID " << toSessionID);
     return false;
   }
 
-  PTRACE(3, "RTPCon\tChanging session ID " << fromSessionID << " to " << toSessionID);
+  SessionMap::iterator to = m_sessions.find(toSessionID);
+  if (to != m_sessions.end()) {
+    PTRACE(2, "RTPCon\tAttempt to renumber session " << fromSessionID << " to existing session ID " << toSessionID);
 
-  PSafePtr<OpalMediaSession> session = it->second;
-  m_sessions.DisallowDeleteObjects();
-  m_sessions.erase(it);
-  m_sessions.AllowDeleteObjects();
-  m_sessions.SetAt(toSessionID, session);
+    m_sessions.erase(from);
+  }
+  else {
+    PTRACE(3, "RTPCon\tChanging session ID " << fromSessionID << " to " << toSessionID);
+
+    PSafePtr<OpalMediaSession> session = from->second;
+    m_sessions.DisallowDeleteObjects();
+    m_sessions.erase(from);
+    m_sessions.AllowDeleteObjects();
+    m_sessions.SetAt(toSessionID, session);
+  }
 
   for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
     if (stream->GetSessionID() == fromSessionID) {

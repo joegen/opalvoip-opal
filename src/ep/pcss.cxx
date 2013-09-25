@@ -246,7 +246,7 @@ PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & 
   PTRACE_CONTEXT_ID_SET(*soundChannel, connection);
 
   PTRACE(3, "PCSS\tOpened "
-              << ((params.m_channels == 1) ? "mono" : ((params.m_channels == 2) ? "stereo" : "multi-channel")) 
+              << ((params.m_channels == 1) ? "mono" : ((params.m_channels == 2) ? "stereo" : "multi-channel"))
               << " sound channel \"" << params.m_device
               << "\" for " << (isSource ? "record" : "play") << "ing at "
               << params.m_sampleRate/1000 << '.' << (params.m_sampleRate%1000)/100 << " kHz.");
