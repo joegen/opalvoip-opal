@@ -2106,7 +2106,6 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
       if (invitation != &transaction)
         invitation->Cancel();
     }
-    m_forkedInvitations.RemoveAll();
 
     // And end connect mode on the transport
     m_dialog.SetInterface(transaction.GetInterface());
@@ -2134,6 +2133,10 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
 
     return false; // Don't send ACK for 1xx
   }
+
+  // If got here collapseForks was true and all the other INVITE transactions are
+  // removed. This gets rid of the last one that returned the terminal response.
+  m_forkedInvitations.RemoveAll();
 
   // Check for if we did an empty INVITE offer
   if (sdp == NULL || transaction.GetSDP() != NULL)
