@@ -75,19 +75,6 @@ class OpalIAX2MediaStream : public OpalMediaStream
  public:
   /**@name Overrides of OpalMediaStream class */
   //@{
-    /**Open the media stream.
- 
- 
-      */
-    virtual PBoolean Open();
- 
-    /**Start the media stream.
-       
-    The default behaviour calls Resume() on the associated
-    OpalMediaPatch thread if it was suspended.
-    */
-    virtual PBoolean Start();
-
     /**
        Goes to the IAX2Connection class, and removes a packet from the connection. The connection class turned the media 
        packet into a RTP_DataFrame class, and jitter buffered it.

@@ -613,9 +613,6 @@ bool OpalMediaPatch::SetPaused(bool pause)
       atLeastOne = true;
   }
 
-  if (!pause)
-    Start();
-
   return atLeastOne;
 }
 

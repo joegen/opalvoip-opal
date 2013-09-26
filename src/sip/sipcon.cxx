@@ -994,8 +994,9 @@ bool SIPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPS
       stream->Close();
   }
 
-  // In case some new streams got created.
-  ownerCall.StartMediaStreams();
+  // In case some new streams got created in a re-INVITE.
+  if (IsEstablished())
+    StartMediaStreams();
 
   return true;
 }
@@ -2207,7 +2208,7 @@ void SIPConnection::SendDelayedACK(bool force)
       Release(EndedByCapabilityExchange);
     else {
       if (!m_lastSentAck->Send())
-        Release(EndedByCapabilityExchange);
+        Release(EndedByTransportFail);
       else
         StartMediaStreams();
     }
@@ -2799,7 +2800,7 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 
   // send the 200 OK response
   if (SendInviteOK())
-    ownerCall.StartMediaStreams();
+    StartMediaStreams();
   else
     SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
 
@@ -2851,9 +2852,10 @@ void SIPConnection::OnReceivedACK(SIP_PDU & ack)
   while (!m_responsePackets.empty())
     m_responsePackets.pop();
 
-  ack.DecodeSDP(GetLocalMediaFormats());
-
-  OnReceivedAnswerSDP(ack, NULL);
+  if (ack.DecodeSDP(GetLocalMediaFormats()) && !OnReceivedAnswerSDP(ack, NULL)) {
+    Release(EndedByCapabilityExchange);
+    return;
+  }
 
   m_handlingINVITE = false;
 
@@ -3128,26 +3130,20 @@ void SIPConnection::OnStartTransaction(SIPTransaction & transaction)
 void SIPConnection::OnReceivedRinging(SIPTransaction & transaction, SIP_PDU & response)
 {
   PTRACE(3, "SIP\tReceived Ringing response");
-
-  OnReceivedAnswerSDP(response, &transaction);
-
-  response.GetMIME().GetAlertInfo(m_alertInfo, m_appearanceCode);
-
-  if (GetPhase() < AlertingPhase) {
-    SetPhase(AlertingPhase);
-    OnAlerting();
-    NotifyDialogState(SIPDialogNotification::Early);
-  }
-
-  PTRACE_IF(4, response.GetSDP() != NULL,
-            "SIP\tStarting receive media to annunciate remote alerting tone");
-  ownerCall.StartMediaStreams();
+  OnReceivedAlertingResponse(transaction, response);
 }
 
 
 void SIPConnection::OnReceivedSessionProgress(SIPTransaction & transaction, SIP_PDU & response)
 {
   PTRACE(3, "SIP\tReceived Session Progress response");
+  OnReceivedAlertingResponse(transaction, response);
+}
+
+
+void SIPConnection::OnReceivedAlertingResponse(SIPTransaction & transaction, SIP_PDU & response)
+{
+  response.GetMIME().GetAlertInfo(m_alertInfo, m_appearanceCode);
 
   OnReceivedAnswerSDP(response, &transaction);
 
@@ -3156,9 +3152,6 @@ void SIPConnection::OnReceivedSessionProgress(SIPTransaction & transaction, SIP_
     OnAlerting();
     NotifyDialogState(SIPDialogNotification::Early);
   }
-
-  PTRACE(4, "SIP\tStarting receive media to annunciate remote progress tones");
-  ownerCall.StartMediaStreams();
 }
 
 
@@ -3243,7 +3236,10 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 
   NotifyDialogState(SIPDialogNotification::Confirmed);
 
-  OnReceivedAnswerSDP(response, &transaction);
+  if (!OnReceivedAnswerSDP(response, &transaction) && !IsEstablished()) {
+    Release(EndedByCapabilityExchange);
+    return;
+  }
 
   switch (m_holdToRemote) {
     case eHoldInProgress :
@@ -3264,17 +3260,17 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 }
 
 
-void SIPConnection::OnReceivedAnswerSDP(SIP_PDU & response, SIPTransaction * transaction)
+bool SIPConnection::OnReceivedAnswerSDP(SIP_PDU & response, SIPTransaction * transaction)
 {
   if (transaction != NULL && transaction->GetSDP() == NULL) {
     PTRACE(4, "SIP", "No offer made, processing remote offer in delayed ACK");
-    return;
+    return false;
   }
 
   SDPSessionDescription * sdp = response.GetSDP();
   if (sdp == NULL) {
     PTRACE(5, "SIP", "Response has no SDP");
-    return;
+    return false;
   }
 
   m_answerFormatList = sdp->GetMediaFormats();
@@ -3323,12 +3319,10 @@ void SIPConnection::OnReceivedAnswerSDP(SIP_PDU & response, SIPTransaction * tra
     SendReINVITE(PTRACE_PARAM("resolve multiple codecs in answer"));
   }
 
-  if (GetPhase() == EstablishedPhase)
-    ownerCall.StartMediaStreams(); // re-INVITE
-  else {
-    if (!ok)
-      Release(EndedByCapabilityExchange);
-  }
+  if (ok)
+    StartMediaStreams();
+
+  return ok;
 }
 
 

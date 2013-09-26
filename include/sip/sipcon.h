@@ -683,6 +683,10 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     void OnInviteResponseTimeout();
     void OnInviteCollision();
 
+    void OnReceivedAlertingResponse(
+      SIPTransaction & transaction,
+      SIP_PDU & response
+    );
     virtual bool OnSendOfferSDP(
       SDPSessionDescription & sdpOut,
       bool offerCurrentOnly
@@ -706,7 +710,7 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
       SDPSessionDescription & sdpOut
     );
 
-    virtual void OnReceivedAnswerSDP(
+    virtual bool OnReceivedAnswerSDP(
       SIP_PDU & response,
       SIPTransaction * transaction
     );
