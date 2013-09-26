@@ -1961,12 +1961,11 @@ class OpalConnection : public PSafeObject
         AutoStartMap();
         void Initialise(const OpalConnection::StringOptions & stringOptions);
         OpalMediaType::AutoStartMode GetAutoStart(const OpalMediaType & mediaType) const;
-        void SetAutoStart(const OpalMediaType & mediaType, OpalMediaType::AutoStartMode autoStart);
 
       protected:
-        bool m_initialised;
-        PMutex m_mutex;
+        void SetAutoStart(const PString & mediaType, OpalMediaType::AutoStartMode autoStart);
 
+        PMutex m_mutex;
     };
     AutoStartMap m_autoStartInfo;
 
