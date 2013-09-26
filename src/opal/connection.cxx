@@ -614,7 +614,7 @@ void OpalConnection::OnConnected()
 void OpalConnection::OnEstablished()
 {
   PTRACE(3, "OpalCon\tOnEstablished " << *this);
-  ownerCall.StartMediaStreams();
+  StartMediaStreams();
   endpoint.OnEstablished(*this);
 }
 
@@ -697,7 +697,9 @@ void OpalConnection::AutoStartMediaStreams(bool transfer)
 #endif
                                        transfer);
   }
-  StartMediaStreams();
+
+  if (GetPhase() >= ConnectedPhase)
+    StartMediaStreams();
 }
 
 

@@ -441,10 +441,6 @@ class OpalCall : public PSafeObject
       OpalMediaFormat & dstFormat             ///<  Selected destination format to be used
     ) const;
 
-    /**Start the media streams on the connections.
-     */
-    virtual void StartMediaStreams();
-
     /**Close the media streams on the connections.
      */
     virtual void CloseMediaStreams();
