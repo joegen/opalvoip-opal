@@ -76,24 +76,6 @@ OpalIAX2MediaStream::~OpalIAX2MediaStream()
   PTRACE(6, "Media\tDestroy OpalIAX2MediaStream");
 }
  
-PBoolean OpalIAX2MediaStream::Open()
-{
-  if (IsOpen())
-    return true;
-
-  PBoolean res = OpalMediaStream::Open();
-  PTRACE(3, "Media\t" << *this << " is now open");
- 
-  return res;
-}
- 
-PBoolean OpalIAX2MediaStream::Start()
-{
-  PTRACE(2, "Media\t" << *this << " Run ::Start");
-
-  return OpalMediaStream::Start();
-}
-  
  
 PBoolean OpalIAX2MediaStream::ReadPacket(RTP_DataFrame & packet)
 {
@@ -118,6 +100,8 @@ PBoolean OpalIAX2MediaStream::IsSynchronous() const
 {
   return IsSource();
 }
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 // This routine takes data from the source (eg mic) and sends the data to the remote host.

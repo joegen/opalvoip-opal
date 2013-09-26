@@ -441,7 +441,7 @@ bool OpalCall::Transfer(const PString & newAddress, OpalConnection * connection)
   if (newConnection->SetUpConnection() && newConnection->OnSetUpConnection()) {
     connectionToKeep->AutoStartMediaStreams(true);
     connection->Release(OpalConnection::EndedByCallForwarded, true);
-    StartMediaStreams(); // Just in case ...
+    connectionToKeep->StartMediaStreams(); // Just in case ...
     return true;
   }
 
@@ -756,14 +756,6 @@ bool OpalCall::SelectMediaFormats(const OpalMediaType & mediaType,
             "  source formats=" << setfill(',') << srcFormats << "\n"
             "   sink  formats=" << dstFormats << setfill(' '));
   return false;
-}
-
-
-void OpalCall::StartMediaStreams()
-{
-  PSafePtr<OpalConnection> connection;
-  while (EnumerateConnections(connection, PSafeReadWrite))
-    connection->StartMediaStreams();
 }
 
 
