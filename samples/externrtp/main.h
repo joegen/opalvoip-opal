@@ -70,6 +70,7 @@ class MyLocalConnection : public OpalLocalConnection
     ) : OpalLocalConnection(call, endpoint, userData, options, stringOptions, 'X') { }
 
     virtual bool GetMediaTransportAddresses(
+      OpalConnection & otherConnection,
       const OpalMediaType & mediaType,
       OpalTransportAddressArray & transports
     ) const;

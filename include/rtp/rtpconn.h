@@ -121,6 +121,7 @@ class OpalRTPConnection : public OpalConnection
                on to a remote system for direct access.
      */
     virtual bool GetMediaTransportAddresses(
+      OpalConnection & otherConnection,      ///< Other half of call needing media transport addresses
       const OpalMediaType & mediaType,       ///< Media type for session to return information
       OpalTransportAddressArray & transports ///<  Information on media session
     ) const;
@@ -302,7 +303,8 @@ class OpalRTPConnection : public OpalConnection
     virtual bool GarbageCollection();
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineRFC2833);
 
-    void CheckForMediaBypass(OpalMediaSession & session);
+    virtual bool NoMediaBypass(const OpalConnection & otherConnection, const OpalMediaType & mediaType) const;
+
 
     SessionMap m_sessions;
     bool m_remoteBehindNAT;

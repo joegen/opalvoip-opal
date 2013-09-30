@@ -605,11 +605,15 @@ PBoolean SIPConnection::SetConnected()
 }
 
 
-bool SIPConnection::GetMediaTransportAddresses(const OpalMediaType & mediaType,
-                                         OpalTransportAddressArray & transports) const
+bool SIPConnection::GetMediaTransportAddresses(OpalConnection & otherConnection,
+                                          const OpalMediaType & mediaType,
+                                    OpalTransportAddressArray & transports) const
 {
+  if (NoMediaBypass(otherConnection, mediaType))
+    return false;
+
   if (m_lastReceivedINVITE == NULL)
-    return OpalRTPConnection::GetMediaTransportAddresses(mediaType, transports);
+    return OpalRTPConnection::GetMediaTransportAddresses(otherConnection, mediaType, transports);
 
   SDPSessionDescription * sdp = m_lastReceivedINVITE->GetSDP();
   if (sdp == NULL)
@@ -651,7 +655,7 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
   }
 
   // Create the OpalMediaSession if required
-  OpalMediaSession * session = UseMediaSession(sessionId, mediaType, mediaDescription.GetSDPTransportType());
+  OpalMediaSession * session = UseMediaSession(sessionId, mediaType, mediaDescription.GetSessionType());
   if (session == NULL)
     return NULL;
 
@@ -983,9 +987,7 @@ bool SIPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPS
       // Create, if not already, a new session as a "place holder" in the SDP sessions
       OpalMediaSession * mediaSession = NULL;
       if (!mediaType.empty())
-        mediaSession = UseMediaSession(sessionId, mediaType, incomingMedia->GetSDPTransportType());
-      if (mediaSession == NULL)
-        mediaSession = UseMediaSession(sessionId, mediaType, SDPDummySession::SessionType());
+        mediaSession = UseMediaSession(sessionId, mediaType, incomingMedia->GetSessionType());
 
       if (!PAssert(mediaSession != NULL, PLogicError))
         return false;
@@ -1412,7 +1414,7 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
 #if OPAL_SRTP
         if (CanDoSRTP() || mediaDescription->GetCryptoKeys().IsEmpty())
 #endif
-          sessionType = mediaDescription->GetSDPTransportType();
+          sessionType = mediaDescription->GetSessionType();
       }
 
       if (sessionType.IsEmpty())

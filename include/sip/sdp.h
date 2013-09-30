@@ -204,13 +204,15 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     virtual bool PostDecode(const OpalMediaFormatList & mediaFormats);
 
     // return the string used within SDP to identify this media type
-    virtual PString GetSDPMediaType() const { return m_mediaType->GetSDPMediaType(); }
+    virtual PString GetSDPMediaType() const;
 
     // return the string used within SDP to identify the transport used by this media
-    virtual PCaselessString GetSDPTransportType() const { return m_mediaType->GetSDPTransportType(); }
+    virtual PCaselessString GetSDPTransportType() const;
 
-    virtual const SDPMediaFormatList & GetSDPMediaFormats() const
-      { return m_formats; }
+    // return the string used in factory to create session
+    virtual PCaselessString GetSessionType() const;
+
+    virtual const SDPMediaFormatList & GetSDPMediaFormats() const;
 
     virtual OpalMediaFormatList GetMediaFormats() const;
 
@@ -279,24 +281,10 @@ class SDPDummyMediaDescription : public SDPMediaDescription
     SDPDummyMediaDescription(const OpalTransportAddress & address, const PStringArray & tokens);
     virtual PString GetSDPMediaType() const;
     virtual PCaselessString GetSDPTransportType() const;
+    virtual PCaselessString GetSessionType() const;
     virtual SDPMediaFormat * CreateSDPMediaFormat();
     virtual PString GetSDPPortList() const;
     virtual void Copy(SDPMediaDescription & mediaDescription);
-
-  private:
-    PStringArray m_tokens;
-};
-
-
-class SDPDummySession : public OpalMediaSession
-{
-    PCLASSINFO(SDPDummySession, OpalMediaSession)
-  public:
-    SDPDummySession(const Init & init);
-    static const PCaselessString & SessionType();
-    virtual const PCaselessString & GetSessionType() const;
-    virtual SDPMediaDescription * CreateSDPMediaDescription();
-    virtual OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource);
 
   private:
     PStringArray m_tokens;
