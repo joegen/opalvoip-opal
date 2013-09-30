@@ -2580,25 +2580,30 @@ void MyManager::OnEvtEstablished(wxCommandEvent & theEvent)
     // Retrieve call from hold
     RemoveCallOnHold(token);
     m_activeCall = FindCallWithLock(token, PSafeReference);
+    return;
   }
-  else {
-    bool createInCallPanel = true;
-    for (size_t i = 0; i < m_tabs->GetPageCount(); ++i) {
-      CallPanelBase * panel = dynamic_cast<CallPanelBase *>(m_tabs->GetPage(i));
-      if (panel != NULL && panel->GetToken() == token) {
-        if (dynamic_cast<InCallPanel *>(panel) != NULL)
-          createInCallPanel = false;
-        else
-          m_tabs->DeletePage(i--);
-      }
-    }
-    if (createInCallPanel) {
-      PwxString title = m_activeCall->IsNetworkOriginated() ? m_activeCall->GetPartyA() : m_activeCall->GetPartyB();
-      m_tabs->AddPage(new InCallPanel(*this, m_activeCall, m_tabs), title, true);
-    }
-    else
+
+  size_t tabIndex = 0;
+  for (tabIndex = 0; tabIndex < m_tabs->GetPageCount(); ++tabIndex) {
+    CallPanelBase * panel = dynamic_cast<CallPanelBase *>(m_tabs->GetPage(tabIndex));
+    if (panel != NULL && panel->GetToken() == token) {
+      if (dynamic_cast<InCallPanel *>(panel) == NULL)
+        break;
+
       RemoveCallOnHold(token);
+      return;
+    }
   }
+
+  // Because this can take some time, construct it before we delete the previous
+  // page to avoid ugly scenes on the screen
+  InCallPanel * inCallPanel = new InCallPanel(*this, m_activeCall, m_tabs);
+
+  if (tabIndex < m_tabs->GetPageCount())
+    m_tabs->DeletePage(tabIndex);
+
+  PwxString title = m_activeCall->IsNetworkOriginated() ? m_activeCall->GetPartyA() : m_activeCall->GetPartyB();
+  m_tabs->AddPage(inCallPanel, title, true);
 }
 
 
