@@ -575,8 +575,6 @@ typedef unsigned (* PluginCodec_GetAPIVersionFunction)();
                                 Description, \
                                 SampleRate, \
                                 BitsPerSecond, \
-                                PLUGINCODEC_VIDEO_CLOCK, \
-                                BitsPerSecond, \
                                 1000000/PLUGINCODEC_MAX_FRAME_RATE, \
                                 MaxWidth, \
                                 MaxHeight, \
