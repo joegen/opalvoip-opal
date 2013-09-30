@@ -2160,7 +2160,6 @@ class H323Connection : public OpalRTPConnection
     void SetRemoteVersions(const H225_ProtocolIdentifier & id);
     void SetBearerCapabilities(H323SignalPDU & pdu) const;
     void MonitorCallStatus();
-    PDECLARE_NOTIFIER(PThread, H323Connection, StartOutgoing);
     PDECLARE_NOTIFIER(PThread, H323Connection, NewOutgoingControlChannel);
     PDECLARE_AcceptHandlerNotifier(H323Connection, NewIncomingControlChannel);
 

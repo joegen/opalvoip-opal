@@ -519,6 +519,17 @@ PBoolean OpalManager::SetUpCall(const PString & partyA,
 }
 
 
+static void AsynchCallSetUp(PSafePtr<OpalConnection> connection)
+{
+  if (connection->SetUpConnection())
+    return;
+
+  PTRACE(2, "OpalMan\tCould not set up connection on " << *connection);
+  if (connection->GetCallEndReason() == OpalConnection::NumCallEndReasons)
+    connection->Release(OpalConnection::EndedByTemporaryFailure);
+}
+
+
 PSafePtr<OpalCall> OpalManager::SetUpCall(const PString & partyA,
                                           const PString & partyB,
                                                    void * userData,
@@ -540,12 +551,13 @@ PSafePtr<OpalCall> OpalManager::SetUpCall(const PString & partyA,
   // B-Party then SetUpConnection() gets called in the context of the A-party
   // thread.
   PSafePtr<OpalConnection> connection = MakeConnection(*call, partyA, userData, options, stringOptions);
-  if (connection != NULL && connection->SetUpConnection()) {
-    PTRACE(4, "OpalMan\tSetUpCall succeeded, call=" << *call);
+  if (connection != NULL) {
+    PTRACE(4, "OpalMan\tSetUpCall started, call=" << *call);
+    new PThread1Arg< PSafePtr<OpalConnection> >(connection, AsynchCallSetUp, true, "SetUpCall");
     return call;
   }
 
-  PTRACE_IF(2, connection == NULL, "OpalMan\tCould not create connection for \"" << partyA << '"');
+  PTRACE(2, "OpalMan\tCould not create connection for \"" << partyA << '"');
 
   OpalConnection::CallEndReason endReason = call->GetCallEndReason();
   if (endReason == OpalConnection::NumCallEndReasons)

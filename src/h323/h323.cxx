@@ -495,6 +495,9 @@ PBoolean H323Connection::WriteSignalPDU(H323SignalPDU & pdu)
 
 void H323Connection::HandleSignallingChannel()
 {
+  if (!SafeReference())
+    return;
+
   PAssert(m_signallingChannel != NULL, PLogicError);
 
   PTRACE(3, "H225\tReading PDUs: callRef=" << callReference);
@@ -540,6 +543,7 @@ void H323Connection::HandleSignallingChannel()
   if (m_controlChannel == NULL)
     endSessionReceived.Signal();
 
+  SafeDereference();
   PTRACE(3, "H225\tSignal channel closed.");
 }
 
@@ -1830,18 +1834,6 @@ PBoolean H323Connection::SetUpConnection()
 
   OnApplyStringOptions();
 
-  m_signallingChannel->AttachThread(PThread::Create(PCREATE_NOTIFIER(StartOutgoing), "H225 Caller"));
-  return true;
-}
-
-
-void H323Connection::StartOutgoing(PThread &, P_INT_PTR)
-{
-  PTRACE(3, "H225\tStarted call thread");
-
-  if (!SafeReference())
-    return;
-
   PString alias;
   if (remotePartyName != m_remoteConnectAddress)
     alias = remotePartyName;
@@ -1849,12 +1841,13 @@ void H323Connection::StartOutgoing(PThread &, P_INT_PTR)
   CallEndReason reason = SendSignalSetup(alias, m_remoteConnectAddress);
 
   // Check if had an error, clear call if so
-  if (reason != NumCallEndReasons)
+  if (reason != NumCallEndReasons) {
     Release(reason);
-  else
-    HandleSignallingChannel();
+    return false;
+  }
 
-  SafeDereference();
+  m_signallingChannel->AttachThread(new PThreadObj<H323Connection>(*this, &H323Connection::HandleSignallingChannel, false, "H225 Caller"));
+  return true;
 }
 
 
