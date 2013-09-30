@@ -92,8 +92,6 @@ class OpalRTPSession : public OpalMediaSession
     virtual void AttachTransport(Transport & transport);
     virtual Transport DetachTransport();
 
-    virtual void SetExternalTransport(const OpalTransportAddressArray & transports);
-
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, 
       unsigned sessionID, 

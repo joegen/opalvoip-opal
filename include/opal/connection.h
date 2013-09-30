@@ -1296,6 +1296,7 @@ class OpalConnection : public PSafeObject
                on to a remote system for direct access.
      */
     virtual bool GetMediaTransportAddresses(
+      OpalConnection & otherConnection,      ///< Other half of call needing media transport addresses
       const OpalMediaType & mediaType,       ///< Media type for session to return information
       OpalTransportAddressArray & transports ///<  Information on media session
     ) const;
@@ -2012,6 +2013,8 @@ class OpalConnection : public PSafeObject
     P_REMOVE_VIRTUAL(PBoolean, SetBandwidthUsed(unsigned, unsigned), false);
     P_REMOVE_VIRTUAL_VOID(OnSwitchedFaxMediaStreams(bool));
     P_REMOVE_VIRTUAL(bool, CloseMediaStream(OpalMediaStream &),false);
+    P_REMOVE_VIRTUAL(bool,GetMediaTransportAddresses(const OpalMediaType&,OpalTransportAddressArray&) const,false);
+
 };
 
 #endif // OPAL_OPAL_CONNECTION_H

@@ -1116,8 +1116,9 @@ PNatMethod * OpalConnection::GetNatMethod (const PIPSocket::Address & remoteAddr
 #endif
 
 
-bool OpalConnection::GetMediaTransportAddresses(const OpalMediaType & PTRACE_PARAM(mediaType),
-                                          OpalTransportAddressArray &) const
+bool OpalConnection::GetMediaTransportAddresses(OpalConnection &,
+                                           const OpalMediaType & PTRACE_PARAM(mediaType),
+                                      OpalTransportAddressArray &) const
 {
   PTRACE(4, "OpalCon\tGetMediaTransportAddresses for " << mediaType << " not allowed.");
   return false;

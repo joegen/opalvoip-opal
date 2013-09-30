@@ -259,9 +259,6 @@ class OpalMediaSession : public PSafeObject
     virtual void AttachTransport(Transport & transport);
     virtual Transport DetachTransport();
 
-    bool IsExternalTransport() const { return m_isExternalTransport; }
-    virtual void SetExternalTransport(const OpalTransportAddressArray & transports);
-
 #if OPAL_SIP
     virtual SDPMediaDescription * CreateSDPMediaDescription();
 #endif
@@ -293,7 +290,6 @@ class OpalMediaSession : public PSafeObject
     OpalConnection & m_connection;
     unsigned         m_sessionId;  // unique session ID
     OpalMediaType    m_mediaType;  // media type for session
-    bool             m_isExternalTransport;
 
     OpalMediaCryptoKeyList m_offeredCryptokeys;
 
@@ -307,6 +303,34 @@ class OpalMediaSession : public PSafeObject
     P_REMOVE_VIRTUAL(bool, SetRemoteMediaAddress(const OpalTransportAddress &), false);
     P_REMOVE_VIRTUAL(OpalTransportAddress, GetRemoteControlAddress() const, 0);
     P_REMOVE_VIRTUAL(bool, SetRemoteControlAddress(const OpalTransportAddress &), false);
+};
+
+
+/**Dummy session.
+   This is a place holder for the local and remote address in use for a
+   session, but there is no actual implementation that does anything. It
+   is used for cases such as unknown media types in SDP or external "bypassed"
+   media sessions where data is sent driectly between two remote endpoints and
+   not throught the local machine at all.
+  */
+class OpalDummySession : public OpalMediaSession
+{
+    PCLASSINFO(OpalDummySession, OpalMediaSession)
+  public:
+    OpalDummySession(const Init & init, const OpalTransportAddressArray & transports = OpalTransportAddressArray());
+    static const PCaselessString & SessionType();
+    virtual const PCaselessString & GetSessionType() const;
+    virtual OpalTransportAddress GetLocalAddress(bool isMediaAddress = true) const;
+    virtual OpalTransportAddress GetRemoteAddress(bool isMediaAddress = true) const;
+    virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress = true);
+#if OPAL_SIP
+    virtual SDPMediaDescription * CreateSDPMediaDescription();
+#endif
+    virtual OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource);
+
+  private:
+    OpalTransportAddress m_localTransportAddress[2];
+    OpalTransportAddress m_remoteTransportAddress[2];
 };
 
 

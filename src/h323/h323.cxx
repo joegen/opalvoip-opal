@@ -4351,9 +4351,13 @@ bool H323Connection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCom
 }
 
 
-bool H323Connection::GetMediaTransportAddresses(const OpalMediaType & mediaType,
-                                          OpalTransportAddressArray & transports) const
+bool H323Connection::GetMediaTransportAddresses(OpalConnection & otherConnection,
+                                           const OpalMediaType & mediaType,
+                                     OpalTransportAddressArray & transports) const
 {
+  if (NoMediaBypass(otherConnection, mediaType))
+    return false;
+
   // If have fast connect, use addresses from them as don't have sessions yet
   for (H323LogicalChannelList::const_iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel) {
     if (channel->GetCapability().GetMediaFormat().GetMediaType() == mediaType) {
@@ -4368,7 +4372,7 @@ bool H323Connection::GetMediaTransportAddresses(const OpalMediaType & mediaType,
     }
   }
 
-  return OpalRTPConnection::GetMediaTransportAddresses(mediaType, transports);
+  return OpalRTPConnection::GetMediaTransportAddresses(otherConnection, mediaType, transports);
 }
 
 

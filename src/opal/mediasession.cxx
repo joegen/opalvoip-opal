@@ -39,6 +39,7 @@
 #include <opal/mediasession.h>
 #include <opal/connection.h>
 #include <h323/h323caps.h>
+#include <sip/sdp.h>
 
 
 #define new PNEW
@@ -284,7 +285,6 @@ OpalMediaSession::OpalMediaSession(const Init & init)
   : m_connection(init.m_connection)
   , m_sessionId(init.m_sessionId)
   , m_mediaType(init.m_mediaType)
-  , m_isExternalTransport(false)
 {
   PTRACE_CONTEXT_ID_FROM(init.m_connection);
   PTRACE(5, "Media\tSession " << m_sessionId << " for " << m_mediaType << " created.");
@@ -342,13 +342,6 @@ OpalMediaSession::Transport OpalMediaSession::DetachTransport()
 }
 
 
-void OpalMediaSession::SetExternalTransport(const OpalTransportAddressArray & PTRACE_PARAM(transports))
-{
-  PTRACE(3, "Media\tSetting external transport to " << setfill(',') << transports);
-  m_isExternalTransport = true;
-}
-
-
 #if OPAL_SIP
 SDPMediaDescription * OpalMediaSession::CreateSDPMediaDescription()
 {
@@ -392,6 +385,68 @@ bool OpalMediaSession::ApplyCryptoKey(OpalMediaCryptoKeyList &, bool)
 bool OpalMediaSession::IsCryptoSecured(bool) const
 {
   return false;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+static OpalMediaSessionFactory::Worker<OpalDummySession> dummy_session(OpalDummySession::SessionType());
+
+OpalDummySession::OpalDummySession(const Init & init, const OpalTransportAddressArray & transports)
+  : OpalMediaSession(init)
+{
+  switch (transports.GetSize()) {
+    case 2 :
+      m_localTransportAddress[false] = transports[1]; // Control
+    case 1 :
+      m_localTransportAddress[true] = transports[0]; // Media
+  }
+}
+
+
+const PCaselessString & OpalDummySession::SessionType()
+{
+  static PConstCaselessString const s("Dummy-Media-Session");
+  return s;
+}
+
+
+const PCaselessString & OpalDummySession::GetSessionType() const
+{
+  return m_mediaType->GetMediaSessionType();
+}
+
+
+OpalTransportAddress OpalDummySession::GetLocalAddress(bool isMediaAddress) const
+{
+  return m_localTransportAddress[isMediaAddress];
+}
+
+
+OpalTransportAddress OpalDummySession::GetRemoteAddress(bool isMediaAddress) const
+{
+  return m_remoteTransportAddress[isMediaAddress];
+}
+
+
+bool OpalDummySession::SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress)
+{
+  m_remoteTransportAddress[isMediaAddress] = remoteAddress;
+  return true;
+}
+
+
+#if OPAL_SIP
+SDPMediaDescription * OpalDummySession::CreateSDPMediaDescription()
+{
+  return new SDPDummyMediaDescription(GetLocalAddress(), PStringArray());
+}
+#endif
+
+
+OpalMediaStream * OpalDummySession::CreateMediaStream(const OpalMediaFormat &, unsigned, bool)
+{
+  return NULL;
 }
 
 

@@ -152,7 +152,7 @@ class OpalMediaTypeDefinition
 
     /** Return the default session type (factory name) for this media type.
       */
-    const PString & GetMediaSessionType() const { return m_mediaSessionType; }
+    const PCaselessString & GetMediaSessionType() const { return m_mediaSessionType; }
 
 #if OPAL_SIP
     virtual PString GetSDPMediaType() const;
@@ -173,9 +173,9 @@ class OpalMediaTypeDefinition
 #endif // OPAL_SIP
 
   protected:
-    OpalMediaType m_mediaType;
-    PString       m_mediaSessionType;
-    unsigned      m_defaultSessionId;
+    OpalMediaType   m_mediaType;
+    PCaselessString m_mediaSessionType;
+    unsigned        m_defaultSessionId;
     OpalMediaType::AutoStartMode m_autoStart;
 
   private:
