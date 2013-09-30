@@ -344,7 +344,7 @@ static bool MyToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionM
 {
   if ((original.GetUnsigned(SDPForcedName)  != 0 && original[PLUGINCODEC_OPTION_PROTOCOL] == PLUGINCODEC_OPTION_PROTOCOL_SIP) ||
       (original.GetUnsigned(H241ForcedName) != 0 && original[PLUGINCODEC_OPTION_PROTOCOL] == PLUGINCODEC_OPTION_PROTOCOL_H323)) {
-    PTRACE(5, MY_CODEC_LOG, "Forcing " << original[PLUGINCODEC_OPTION_PROTOCOL] << " parameters, not customising");
+    PTRACE(4, MY_CODEC_LOG, "Forcing " << original[PLUGINCODEC_OPTION_PROTOCOL] << " parameters, not customising");
     return true;
   }
 
@@ -369,7 +369,6 @@ static bool MyToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionM
   size_t levelIndex = sizeof(LevelInfo)/sizeof(LevelInfo[0])-1;
   while (levelIndex > 0 && str != LevelInfo[levelIndex].m_Name)
     --levelIndex;
-  PTRACE(5, MY_CODEC_LOG, "Level \"" << str << "\" selected index " << levelIndex);
 
   /* While we have selected the desired level, we may need to adjust it
       further due to resolution restrictions. This is due to the fact that
@@ -386,9 +385,12 @@ static bool MyToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionM
             (LevelInfo[levelIndex].m_MaxFrameSize > maxMacroBlocks ||
              LevelInfo[levelIndex].m_MaxMBPS > macroBlocksPerSecond))
       --levelIndex;
-    PTRACE(5, MY_CODEC_LOG, "Max resolution " << maxWidth << 'x' << maxHeight
+    PTRACE(4, MY_CODEC_LOG, "Max resolution " << maxWidth << 'x' << maxHeight
            << " and frame rate " << frameTime << " (" << (PLUGINCODEC_VIDEO_CLOCK/frameTime) << "fps)"
               " selected index " << levelIndex);
+  }
+  else {
+    PTRACE(4, MY_CODEC_LOG, "Level \"" << str << "\" selected index " << levelIndex);
   }
 
   // set the new level
