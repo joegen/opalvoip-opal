@@ -117,6 +117,7 @@ static char const MaxMBPS_H241_Name[] = "H.241 Max MBPS";
 static char const MaxSMBPS_H241_Name[] = "H.241 Max SMBPS";
 static char const MaxFS_H241_Name[] = "H.241 Max FS";
 static char const MaxBR_H241_Name[] = "H.241 Max BR";
+static char const H241ForcedName[] = "H.241 Forced";
 
 static char const SDPProfileAndLevelName[] = "SIP/SDP Profile & Level";
 static char const SDPProfileAndLevelFMTPName[] = "profile-level-id";
@@ -129,6 +130,8 @@ static char const MaxFS_SDP_Name[] = "SIP/SDP Max FS";
 static char const MaxFS_FMTPName[] = "max-fs";
 static char const MaxBR_SDP_Name[] = "SIP/SDP Max BR";
 static char const MaxBR_FMTPName[] = "max-br";
+static char const SDPForcedName[] = "SDP Forced";
+
 static char const MaxNALUSizeFMTPName[] = "max-rcmd-nalu-size";
 static const char PacketizationModeName[] = PLUGINCODEC_OPTION_H264_PACKET_MODE;
 static const char PacketizationFMTPName[] = "packetization-mode";
@@ -339,6 +342,12 @@ static bool MyToNormalised(PluginCodec_OptionMap & original, PluginCodec_OptionM
 
 static bool MyToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionMap & changed)
 {
+  if ((original.GetUnsigned(SDPForcedName)  != 0 && original[PLUGINCODEC_OPTION_PROTOCOL] == PLUGINCODEC_OPTION_PROTOCOL_SIP) ||
+      (original.GetUnsigned(H241ForcedName) != 0 && original[PLUGINCODEC_OPTION_PROTOCOL] == PLUGINCODEC_OPTION_PROTOCOL_H323)) {
+    PTRACE(5, MY_CODEC_LOG, "Forcing " << original[PLUGINCODEC_OPTION_PROTOCOL] << " parameters, not customising");
+    return true;
+  }
+
   // Determine the profile
   std::string str = original[ProfileName];
   if (str.empty())
