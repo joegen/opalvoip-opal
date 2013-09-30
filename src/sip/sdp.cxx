@@ -866,6 +866,30 @@ void SDPMediaDescription::Encode(const OpalTransportAddress & commonAddr, ostrea
 }
 
 
+PString SDPMediaDescription::GetSDPMediaType() const
+{
+  return m_mediaType->GetSDPMediaType();
+}
+
+
+PCaselessString SDPMediaDescription::GetSDPTransportType() const
+{
+  return m_mediaType->GetSDPTransportType();
+}
+
+
+PCaselessString SDPMediaDescription::GetSessionType() const
+{
+  return GetSDPTransportType();
+}
+
+
+const SDPMediaFormatList & SDPMediaDescription::GetSDPMediaFormats() const
+{
+  return m_formats;
+}
+
+
 OpalMediaFormatList SDPMediaDescription::GetMediaFormats() const
 {
   OpalMediaFormatList list;
@@ -999,6 +1023,12 @@ PCaselessString SDPDummyMediaDescription::GetSDPTransportType() const
 }
 
 
+PCaselessString SDPDummyMediaDescription::GetSessionType() const
+{
+  return OpalDummySession::SessionType();
+}
+
+
 SDPMediaFormat * SDPDummyMediaDescription::CreateSDPMediaFormat()
 {
   return NULL;
@@ -1020,41 +1050,6 @@ void SDPDummyMediaDescription::Copy(SDPMediaDescription & from)
   m_tokens[3] = from.GetSDPPortList();
 
   m_port = 0;
-}
-
-
-//////////////////////////////////////////////////////////////////////////////
-
-static OpalMediaSessionFactory::Worker<SDPDummySession> dummy_session(SDPDummySession::SessionType());
-
-SDPDummySession::SDPDummySession(const Init & init)
-  : OpalMediaSession(init)
-{
-}
-
-
-const PCaselessString & SDPDummySession::SessionType()
-{
-  static PConstCaselessString const s("dummy");
-  return s;
-}
-
-
-const PCaselessString & SDPDummySession::GetSessionType() const
-{
-  return SessionType();
-}
-
-
-SDPMediaDescription * SDPDummySession::CreateSDPMediaDescription()
-{
-  return new SDPDummyMediaDescription(GetLocalAddress(), m_tokens);
-}
-
-
-OpalMediaStream * SDPDummySession::CreateMediaStream(const OpalMediaFormat &, unsigned, bool)
-{
-  return NULL;
 }
 
 

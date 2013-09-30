@@ -53,6 +53,8 @@
 #define new PNEW
 
 
+///////////////////////////////////////////////////////////////////////////////
+
 OpalRTPConnection::OpalRTPConnection(OpalCall & call,
                              OpalRTPEndPoint  & ep,
                                 const PString & token,
@@ -201,8 +203,6 @@ vector<bool> OpalRTPConnection::CreateAllMediaSessions(CreateMediaSessionsSecuri
 
       session->OfferCryptoSuite(cryptoSuiteName);
 
-      CheckForMediaBypass(*session);
-
       openedMediaSessions[session->GetSessionID()] = true;
     }
   }
@@ -252,27 +252,41 @@ OpalMediaSession * OpalRTPConnection::CreateMediaSession(unsigned sessionId,
                                                          const OpalMediaType & mediaType,
                                                          const PString & sessionType)
 {
+  OpalMediaSession::Init init(*this, sessionId, mediaType, m_remoteBehindNAT);
+
+  {
+    OpalTransportAddressArray transports;
+    PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
+    if (otherConnection != NULL && otherConnection->GetMediaTransportAddresses(*otherConnection, mediaType, transports)) {
+      // Make sure we do not include any transcoded format combinations
+      m_localMediaFormats.Remove(PString('@')+mediaType);
+      m_localMediaFormats += otherConnection->GetMediaFormats();
+      return new OpalDummySession(init, transports);
+    }
+  }
+
   PString actualSessionType = sessionType;
   if (actualSessionType.IsEmpty())
     actualSessionType = mediaType->GetMediaSessionType();
 
-  OpalMediaSession * session = OpalMediaSessionFactory::CreateInstance(actualSessionType,
-                                     OpalMediaSession::Init(*this, sessionId, mediaType, m_remoteBehindNAT));
+  OpalMediaSession * session = OpalMediaSessionFactory::CreateInstance(actualSessionType, init);
   if (session == NULL) {
     PTRACE(1, "RTPCon\tCannot create session for " << actualSessionType);
     return NULL;
   }
 
   PTRACE(4, "RTPCon\tCreated " << mediaType << " session " << sessionId << " using " << actualSessionType);
-  CheckForMediaBypass(*session);
-
   return session;
 }
 
 
-bool OpalRTPConnection::GetMediaTransportAddresses(const OpalMediaType & mediaType,
-                                             OpalTransportAddressArray & transports) const
+bool OpalRTPConnection::GetMediaTransportAddresses(OpalConnection & otherConnection,
+                                              const OpalMediaType & mediaType,
+                                        OpalTransportAddressArray & transports) const
 {
+  if (NoMediaBypass(otherConnection, mediaType))
+    return false;
+
   for (SessionMap::const_iterator session = m_sessions.begin(); session != m_sessions.end(); ++session) {
     if (session->second->GetMediaType() == mediaType) {
       OpalTransportAddress address = session->second->GetRemoteAddress();
@@ -284,7 +298,17 @@ bool OpalRTPConnection::GetMediaTransportAddresses(const OpalMediaType & mediaTy
     }
   }
 
-  return OpalConnection::GetMediaTransportAddresses(mediaType, transports);
+  return OpalConnection::GetMediaTransportAddresses(otherConnection, mediaType, transports);
+}
+
+
+bool OpalRTPConnection::NoMediaBypass(const OpalConnection & otherConnection, const OpalMediaType & mediaType) const
+{
+  if (endpoint.GetManager().GetMediaTransferMode(*this, otherConnection, mediaType) == OpalManager::MediaTransferBypass)
+    return false;
+
+  PTRACE(4, "OpalCon\tGetMediaTransportAddresses for " << mediaType << " not using MediaTransferBypass.");
+  return true;
 }
 
 
@@ -501,30 +525,6 @@ OpalMediaStream * OpalRTPConnection::CreateMediaStream(const OpalMediaFormat & m
 
   PTRACE(1, "RTPCon\tUnable to create media stream for session " << sessionID);
   return NULL;
-}
-
-
-void OpalRTPConnection::CheckForMediaBypass(OpalMediaSession & session)
-{
-  if (session.IsExternalTransport())
-    return;
-
-  PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
-  if (otherConnection == NULL)
-    return;
-
-  const OpalMediaType & mediaType = session.GetMediaType();
-  if (endpoint.GetManager().GetMediaTransferMode(*this, *otherConnection, mediaType) != OpalManager::MediaTransferBypass)
-    return;
-
-  OpalTransportAddressArray transports;
-  if (!otherConnection->GetMediaTransportAddresses(mediaType, transports))
-    return;
-
-  // Make sure we do not include any transcoded format combinations
-  m_localMediaFormats.Remove(PString('@')+mediaType);
-  m_localMediaFormats += otherConnection->GetMediaFormats();
-  session.SetExternalTransport(transports);
 }
 
 

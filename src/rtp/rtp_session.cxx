@@ -1652,34 +1652,9 @@ OpalMediaStream * OpalRTPSession::CreateMediaStream(const OpalMediaFormat & medi
 }
 
 
-void OpalRTPSession::SetExternalTransport(const OpalTransportAddressArray & transports)
-{
-  if (transports.IsEmpty())
-    return;
-
-  PWaitAndSignal mutex(m_dataMutex);
-
-  delete m_dataSocket;
-  delete m_controlSocket;
-  m_dataSocket = NULL;
-  m_controlSocket = NULL;
-
-  transports[0].GetIpAndPort(m_localAddress, m_localDataPort);
-  if (transports.GetSize() > 1)
-    transports[1].GetIpAndPort(m_localAddress, m_localControlPort);
-  else
-    m_localControlPort = (WORD)(m_localDataPort+1);
-
-  OpalMediaSession::SetExternalTransport(transports);
-}
-
-
 bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool mediaAddress)
 {
   PWaitAndSignal mutex(m_dataMutex);
-
-  if (IsExternalTransport())
-    return true;
 
   if (m_dataSocket != NULL)
     return true;
@@ -1854,10 +1829,6 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
 
 bool OpalRTPSession::IsOpen() const
 {
-  if (m_isExternalTransport)
-    return m_localAddress.IsValid() && m_localDataPort != 0 &&
-           m_remoteAddress.IsValid() && m_remoteDataPort != 0;;
-
   return m_dataSocket != NULL && m_dataSocket->IsOpen() &&
          (m_controlSocket == NULL || m_controlSocket->IsOpen());
 }
@@ -2309,34 +2280,6 @@ bool OpalRTPSession::WriteRawPDU(const BYTE * framePtr, PINDEX frameSize, bool t
 
   return true;
 }
-
-
-/////////////////////////////////////////////////////////////////////////////
-
-#if 0
-SecureRTP_UDP::SecureRTP_UDP(OpalConnection & conn, unsigned sessionId, const OpalMediaType & mediaType)
-  : OpalRTPSession(conn, sessionId, mediaType)
-{
-  securityParms = NULL;
-}
-
-SecureRTP_UDP::~SecureRTP_UDP()
-{
-  delete securityParms;
-}
-
-void SecureRTP_UDP::SetSecurityMode(OpalSecurityMode * newParms)
-{ 
-  if (securityParms != NULL)
-    delete securityParms;
-  securityParms = newParms; 
-}
-  
-OpalSecurityMode * SecureRTP_UDP::GetSecurityParms() const
-{ 
-  return securityParms; 
-}
-#endif
 
 
 /////////////////////////////////////////////////////////////////////////////

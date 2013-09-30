@@ -111,10 +111,11 @@ OpalLocalConnection * MyLocalEndPoint::CreateConnection(OpalCall & call,
 }
 
 
-bool MyLocalConnection::GetMediaTransportAddresses(const OpalMediaType & mediaType,
-                                                   OpalTransportAddressArray & transports) const
+bool MyLocalConnection::GetMediaTransportAddresses(OpalConnection & connection,
+                                              const OpalMediaType & mediaType,
+                                        OpalTransportAddressArray & transports) const
 {
-  cout << mediaType << ::flush;
+  cout << connection.GetToken() << ' ' << mediaType << ::flush;
   while (cin.good()) {
     OpalTransportAddress address;
     cin >> address;

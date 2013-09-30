@@ -879,8 +879,7 @@ PBoolean OpalRTPMediaStream::IsSynchronous() const
 
 PBoolean OpalRTPMediaStream::RequiresPatchThread() const
 {
-  OpalRTPEndPoint & rtpEP = dynamic_cast<OpalRTPEndPoint &>(connection.GetEndPoint());
-  return !( rtpSession.IsExternalTransport() || rtpEP.CheckForLocalRTP(*this) );
+  return !dynamic_cast<OpalRTPEndPoint &>(connection.GetEndPoint()).CheckForLocalRTP(*this);
 }
 
 

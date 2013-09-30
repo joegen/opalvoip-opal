@@ -379,6 +379,7 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
                on to a remote system for direct access.
      */
     virtual bool GetMediaTransportAddresses(
+      OpalConnection & otherConnection,      ///< Other half of call needing media transport addresses
       const OpalMediaType & mediaType,       ///< Media type for session to return information
       OpalTransportAddressArray & transports ///<  Information on media session
     ) const;
