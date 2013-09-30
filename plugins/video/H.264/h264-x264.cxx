@@ -152,7 +152,7 @@ static struct PluginCodec_Option const HiH241Profiles =
 {
   PluginCodec_IntegerOption,          // Option type
   H241ProfilesName,                   // User visible name
-  true,                               // User Read/Only flag
+  false,                              // User Read/Only flag
   PluginCodec_EqualMerge,             // Merge mode
   STRINGIZE(8),                       // Initial value
   NULL,                               // FMTP option name
@@ -166,7 +166,7 @@ static struct PluginCodec_Option const H241Profiles =
 {
   PluginCodec_IntegerOption,          // Option type
   H241ProfilesName,                   // User visible name
-  true,                               // User Read/Only flag
+  false,                              // User Read/Only flag
   PluginCodec_EqualMerge,             // Merge mode
   STRINGIZE(DefaultProfileH241),      // Initial value
   NULL,                               // FMTP option name
@@ -180,7 +180,7 @@ static struct PluginCodec_Option const H241Level =
 {
   PluginCodec_IntegerOption,          // Option type
   H241LevelName,                      // User visible name
-  true,                               // User Read/Only flag
+  false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   STRINGIZE(DefaultLevelH241),        // Initial value
   NULL,                               // FMTP option name
@@ -194,7 +194,7 @@ static struct PluginCodec_Option const SDPProfileAndLevel =
 {
   PluginCodec_OctetsOption,           // Option type
   SDPProfileAndLevelName,             // User visible name
-  true,                               // User Read/Only flag
+  false,                              // User Read/Only flag
   PluginCodec_NoMerge,                // Merge mode
   DefaultSDPProfileAndLevel,          // Initial value
   SDPProfileAndLevelFMTPName,         // FMTP option name
@@ -205,7 +205,7 @@ static struct PluginCodec_Option const MaxMBPS_SDP =
 {
   PluginCodec_IntegerOption,          // Option type
   MaxMBPS_SDP_Name,                   // User visible name
-  true,                               // User Read/Only flag
+  false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   "0",                                // Initial value
   MaxMBPS_FMTPName,                   // FMTP option name
@@ -219,7 +219,7 @@ static struct PluginCodec_Option const MaxMBPS_H241 =
 {
   PluginCodec_IntegerOption,          // Option type
   MaxMBPS_H241_Name,                  // User visible name
-  true,                               // User Read/Only flag
+  false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   "0",                                // Initial value
   NULL,                               // FMTP option name
@@ -239,7 +239,7 @@ static struct PluginCodec_Option const MaxSMBPS_SDP =
 {
   PluginCodec_IntegerOption,          // Option type
   MaxSMBPS_SDP_Name,                  // User visible name
-  true,                               // User Read/Only flag
+  false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   "0",                                // Initial value
   MaxSMBPS_FMTPName,                  // FMTP option name
@@ -253,7 +253,7 @@ static struct PluginCodec_Option const MaxSMBPS_H241 =
 {
   PluginCodec_IntegerOption,          // Option type
   MaxSMBPS_H241_Name,                 // User visible name
-  true,                               // User Read/Only flag
+  false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   "0",                                // Initial value
   NULL,                               // FMTP option name
@@ -273,7 +273,7 @@ static struct PluginCodec_Option const MaxFS_SDP =
 {
   PluginCodec_IntegerOption,          // Option type
   MaxFS_SDP_Name,                     // User visible name
-  true,                               // User Read/Only flag
+  false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   "0",                                // Initial value
   MaxFS_FMTPName,                     // FMTP option name
@@ -287,7 +287,7 @@ static struct PluginCodec_Option const MaxFS_H241 =
 {
   PluginCodec_IntegerOption,          // Option type
   MaxFS_H241_Name,                    // User visible name
-  true,                               // User Read/Only flag
+  false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   "0",                                // Initial value
   NULL,                               // FMTP option name
@@ -307,7 +307,7 @@ static struct PluginCodec_Option const MaxBR_SDP =
 {
   PluginCodec_IntegerOption,          // Option type
   MaxBR_SDP_Name,                     // User visible name
-  true,                               // User Read/Only flag
+  false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   "0",                                // Initial value
   MaxBR_FMTPName,                     // FMTP option name
@@ -321,7 +321,7 @@ static struct PluginCodec_Option const MaxBR_H241 =
 {
   PluginCodec_IntegerOption,          // Option type
   MaxBR_H241_Name,                    // User visible name
-  true,                               // User Read/Only flag
+  false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
   "0",                                // Initial value
   NULL,                               // FMTP option name
@@ -335,6 +335,22 @@ static struct PluginCodec_Option const MaxBR_H241 =
   NULL,
   "0"                                 // H.245 default value
 #endif
+};
+
+static struct PluginCodec_Option const H241Forced =
+{
+  PluginCodec_BoolOption,             // Option type
+  H241ForcedName,                     // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_NoMerge                 // Merge mode
+};
+
+static struct PluginCodec_Option const SDPForced =
+{
+  PluginCodec_BoolOption,             // Option type
+  SDPForcedName,                      // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_NoMerge                 // Merge mode
 };
 
 static struct PluginCodec_Option const MaxNaluSize =
@@ -441,6 +457,8 @@ static struct PluginCodec_Option const * const MyOptionTable_High[] = {
   &MaxFS_SDP,
   &MaxBR_H241,
   &MaxBR_SDP,
+  &H241Forced,
+  &SDPForced,
   &MaxNaluSize,
   &TemporalSpatialTradeOff,
   &SendAccessUnitDelimiters,
@@ -463,6 +481,8 @@ static struct PluginCodec_Option const * const MyOptionTable_0[] = {
   &MaxFS_SDP,
   &MaxBR_H241,
   &MaxBR_SDP,
+  &H241Forced,
+  &SDPForced,
   &MaxNaluSize,
   &TemporalSpatialTradeOff,
   &SendAccessUnitDelimiters,
@@ -485,6 +505,8 @@ static struct PluginCodec_Option const * const MyOptionTable_1[] = {
   &MaxFS_SDP,
   &MaxBR_H241,
   &MaxBR_SDP,
+  &H241Forced,
+  &SDPForced,
   &MaxNaluSize,
   &TemporalSpatialTradeOff,
   &SendAccessUnitDelimiters,
