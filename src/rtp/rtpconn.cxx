@@ -257,7 +257,7 @@ OpalMediaSession * OpalRTPConnection::CreateMediaSession(unsigned sessionId,
   {
     OpalTransportAddressArray transports;
     PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
-    if (otherConnection != NULL && otherConnection->GetMediaTransportAddresses(*otherConnection, mediaType, transports)) {
+    if (otherConnection != NULL && otherConnection->GetMediaTransportAddresses(*this, mediaType, transports)) {
       // Make sure we do not include any transcoded format combinations
       m_localMediaFormats.Remove(PString('@')+mediaType);
       m_localMediaFormats += otherConnection->GetMediaFormats();
