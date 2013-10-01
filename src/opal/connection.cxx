@@ -156,7 +156,6 @@ OpalConnection::OpalConnection(OpalCall & call,
 #if OPAL_STATISTICS
   , m_VideoUpdateRequestsSent(0)
 #endif
-  , m_mediaSessionFailed(32)
 {
   PTRACE_CONTEXT_ID_FROM(call);
 
@@ -784,10 +783,7 @@ OpalMediaStreamPtr OpalConnection::OpenMediaStream(const OpalMediaFormat & media
     }
     mediaStreams.Append(stream);
 
-    size_t index = sessionID*2 + isSource;
-    if (m_mediaSessionFailed.size() <= index)
-      m_mediaSessionFailed.resize(index+1);
-    m_mediaSessionFailed[index] = false;
+    m_mediaSessionFailed.erase(sessionID*2 + isSource);
   }
 
   if (stream->Open()) {
@@ -1700,9 +1696,7 @@ void OpalConnection::OnStopMediaPatch(OpalMediaPatch & patch)
 
 bool OpalConnection::OnMediaFailed(unsigned sessionId, bool source)
 {
-  size_t index = sessionId*2 + source;
-  if (index < m_mediaSessionFailed.size())
-    m_mediaSessionFailed[index] = true;
+  m_mediaSessionFailed.insert(sessionId*2 + source);
   return GetEndPoint().GetManager().OnMediaFailed(*this, sessionId, source);
 }
 
@@ -1710,8 +1704,7 @@ bool OpalConnection::OnMediaFailed(unsigned sessionId, bool source)
 bool OpalConnection::AllMediaFailed() const
 {
   for (OpalMediaStreamPtr mediaStream = mediaStreams; mediaStream != NULL; ++mediaStream) {
-    size_t index = mediaStream->GetSessionID()*2 + mediaStream->IsSource();
-    if (index >= m_mediaSessionFailed.size() || !m_mediaSessionFailed[index])
+    if (m_mediaSessionFailed.find(mediaStream->GetSessionID()*2 + mediaStream->IsSource()) == m_mediaSessionFailed.end())
       return false;
   }
 
