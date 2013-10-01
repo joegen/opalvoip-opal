@@ -144,7 +144,7 @@ class Q931 : public PObject
       TransferUnrestrictedDigital = 8,
       TransferRestrictedDigital = 9,
       Transfer3_1kHzAudio = 16,
-      TrasnferUnrestrictedDigitalWithTones = 17,
+      TransferUnrestrictedDigitalWithTones = 17,
       TransferVideo = 24
     };
 

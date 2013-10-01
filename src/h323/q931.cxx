@@ -595,6 +595,14 @@ void Q931::SetBearerCapabilities(const PString & str)
         capability = TransferSpeech;
       else if (caps[0] *= "digital")
         capability = TransferUnrestrictedDigital;
+      else if (caps[0] *= "audio")
+        capability = Transfer3_1kHzAudio;
+      else if (caps[0] *= "video")
+        capability = TransferVideo;
+      else if (caps[0] *= "digital-tones")
+        capability = TransferUnrestrictedDigitalWithTones;
+      else if (caps[0] *= "restricted")
+        capability = TransferRestrictedDigital;
       else
         capability = (Q931::InformationTransferCapability)caps[0].AsUnsigned();
     case 0 :
