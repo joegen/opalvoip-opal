@@ -769,15 +769,8 @@ PBoolean H245NegLogicalChannel::HandleReject(const H245_OpenLogicalChannelReject
 PBoolean H245NegLogicalChannel::HandleClose(const H245_CloseLogicalChannel & /*pdu*/)
 {
   PTRACE(3, "H245\tReceived close channel: " << channelNumber << ", state=" << state);
-
-  //if (pdu.m_source.GetTag() == H245_CloseLogicalChannel_source::e_user)
-
-  H323ControlPDU reply;
-  reply.BuildCloseLogicalChannelAck(channelNumber);
-
   Release();
-
-  return connection.WriteControlPDU(reply);
+  return true;
 }
 
 
@@ -1027,11 +1020,18 @@ PBoolean H245NegLogicalChannels::HandleReject(const H245_OpenLogicalChannelRejec
 PBoolean H245NegLogicalChannels::HandleClose(const H245_CloseLogicalChannel & pdu)
 {
   H245NegLogicalChannel * chan = FindNegLogicalChannel(pdu.m_forwardLogicalChannelNumber, true);
-  if (chan != NULL)
-    return chan->HandleClose(pdu);
+  if (chan != NULL) {
+    if (!chan->HandleClose(pdu))
+      return false;
+  }
+  else {
+    if (!connection.OnControlProtocolError(H323Connection::e_LogicalChannel, "Close unknown"))
+      return false;
+  }
 
-  return connection.OnControlProtocolError(H323Connection::e_LogicalChannel,
-                                           "Close unknown");
+  H323ControlPDU reply;
+  reply.BuildCloseLogicalChannelAck(pdu.m_forwardLogicalChannelNumber);
+  return connection.WriteControlPDU(reply);
 }
 
 
@@ -1052,8 +1052,12 @@ PBoolean H245NegLogicalChannels::HandleRequestClose(const H245_RequestChannelClo
   if (chan != NULL)
     return chan->HandleRequestClose(pdu);
 
-  return connection.OnControlProtocolError(H323Connection::e_LogicalChannel,
-                                           "Request Close unknown");
+  if (!connection.OnControlProtocolError(H323Connection::e_LogicalChannel, "Request Close unknown"))
+    return false;
+
+  H323ControlPDU reply;
+  reply.BuildRequestChannelCloseReject(pdu.m_forwardLogicalChannelNumber);
+  return connection.WriteControlPDU(reply);
 }
 
 
