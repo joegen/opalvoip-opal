@@ -966,7 +966,7 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     PSafePtr<OpalCall>       GetCall(PSafetyMode mode);
     PSafePtr<OpalConnection> GetNetworkConnection(PSafetyMode mode);
 
-    template<class T> bool GetLocalConnection(PSafePtr<T> & ptr, PSafetyMode mode)
+    template<class T> bool GetConnection(PSafePtr<T> & ptr, PSafetyMode mode)
     {
       return m_activeCall != NULL && (ptr = m_activeCall->GetConnectionAs<T>(0, mode)) != NULL;
     }
