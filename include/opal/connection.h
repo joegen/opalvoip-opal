@@ -1988,7 +1988,7 @@ class OpalConnection : public PSafeObject
     };
     ZeroTime m_phaseTime[NumPhases];
 
-    std::vector<bool> m_mediaSessionFailed;
+    std::set<unsigned> m_mediaSessionFailed;
 
 
   private:

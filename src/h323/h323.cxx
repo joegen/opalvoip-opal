@@ -4137,7 +4137,7 @@ unsigned H323Connection::GetNextSessionID(const OpalMediaType & mediaType, bool 
   }
 
   if (!IsH245Master())
-    return H323Capability::DeferredSessionID;
+    sessionID = H323Capability::DeferredSessionID;
 
   while (GetMediaStream(sessionID, true) != NULL || GetMediaStream(sessionID, false) != NULL)
     ++sessionID;
