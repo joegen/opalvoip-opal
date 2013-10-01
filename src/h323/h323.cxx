@@ -358,7 +358,10 @@ void H323Connection::OnReleased()
     // Send an H.245 end session to the remote endpoint.
     H323ControlPDU pdu;
     pdu.BuildEndSessionCommand(H245_EndSessionCommand::e_disconnect);
-    WriteControlPDU(pdu);
+    if (!WriteControlPDU(pdu)) {
+      PTRACE(2, "H225\tCould not send endSession");
+    }
+    endSessionSent = true;
   }
 
   if (sendingReleaseComplete) {
@@ -540,8 +543,10 @@ void H323Connection::HandleSignallingChannel()
   // If we are the only link to the far end then indicate that we have
   // received endSession even if we hadn't, because we are now never going
   // to get one so there is no point in having CleanUpOnCallEnd wait.
-  if (m_controlChannel == NULL)
+  if (m_controlChannel == NULL) {
+    PTRACE(3, "H225\tChannel closed without H.245 channel, releasing H.245 endSession wait");
     endSessionReceived.Signal();
+  }
 
   SafeDereference();
   PTRACE(3, "H225\tSignal channel closed.");
@@ -569,8 +574,10 @@ PBoolean H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
           break;
       }
     }
-    if (q931.GetMessageType() == Q931::ReleaseCompleteMsg)
+    if (q931.GetMessageType() == Q931::ReleaseCompleteMsg) {
+      PTRACE(4, "H225\tReleasing H.245 endSession wait as received Release Complete");
       endSessionReceived.Signal();
+    }
     return false;
   }
 
@@ -2866,37 +2873,36 @@ PBoolean H323Connection::OnStartHandleControlChannel()
 
 PBoolean H323Connection::HandleReceivedControlPDU(PBoolean readStatus, PPER_Stream & strm)
 {
-  PBoolean ok = FALSE;
-
   if (readStatus) {
     // Lock while checking for shutting down.
-    if (LockReadWrite()) {
-      // Process the received PDU
-      PTRACE(4, "H245\tReceived TPKT: " << strm);
-      ok = HandleControlData(strm);
-      UnlockReadWrite(); // Unlock connection
-    }
-    else
-      ok = InternalEndSessionCheck(strm);
-  }
-  else if (m_controlChannel->GetErrorCode() == PChannel::Timeout) {
-    ok = TRUE;
-  }
-  else {
-      PTRACE(1, "H245\tRead error: " << m_controlChannel->GetErrorText(PChannel::LastReadError)
-          << " endSessionSent=" << endSessionSent);
-    // If the connection is already shutting down then don't overwrite the
-    // call end reason.  This could happen if the remote end point misbehaves
-    // and simply closes the H.245 TCP connection rather than sending an
-    // endSession.
-    if(endSessionSent == FALSE)
-      ClearCall(EndedByTransportFail);
-    else
-      PTRACE(1, "H245\tendSession already sent assuming H245 connection closed by remote side");
-    ok = FALSE;
+    if (!LockReadWrite())
+      return InternalEndSessionCheck(strm);
+
+    // Process the received PDU
+    PTRACE(4, "H245\tReceived TPKT: " << strm);
+    bool ok = HandleControlData(strm);
+    UnlockReadWrite(); // Unlock connection
+    return ok;
   }
 
-  return ok;
+
+  if (m_controlChannel->GetErrorCode() == PChannel::Timeout) {
+    PTRACE(4, "H245\tRead timeout");
+    return true;
+  }
+
+  PTRACE_IF(1, m_controlChannel->GetErrorCode() != PChannel::NotOpen,
+            "H245\tRead error: " << m_controlChannel->GetErrorText(PChannel::LastReadError));
+
+  // If the connection is already shutting down then don't overwrite the
+  // call end reason.  This could happen if the remote end point misbehaves
+  // and simply closes the H.245 TCP connection rather than sending an
+  // endSession.
+  PTRACE(4, "H245\tChannel closed: endSessionNeeded=" << endSessionNeeded << " endSessionSent=" << endSessionSent);
+  if (endSessionNeeded && !endSessionSent)
+    Release(EndedByTransportFail);
+
+  return false;
 }
 
 
@@ -2925,8 +2931,10 @@ void H323Connection::EndHandleControlChannel()
   // endSession command then indicate that we have received endSession even
   // if we hadn't, because we are now never going to get one so there is no
   // point in having CleanUpOnCallEnd wait.
-  if (m_signallingChannel == NULL || endSessionSent == TRUE)
+  if (m_signallingChannel == NULL) {
+    PTRACE(3, "H245\tChannel closed without H.225 channel, releasing H.245 endSession wait");
     endSessionReceived.Signal();
+  }
 }
 
 
