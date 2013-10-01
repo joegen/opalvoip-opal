@@ -1809,7 +1809,7 @@ void MyManager::OnAdjustMenus(wxMenuEvent & WXUNUSED(event))
   wxString deviceName;
   menubar->Enable(ID_SubMenuSound, m_activeCall != NULL);
   PSafePtr<OpalPCSSConnection> pcss;
-  if (GetLocalConnection(pcss, PSafeReadOnly))
+  if (GetConnection(pcss, PSafeReadOnly))
     deviceName = AudioDeviceNameToScreen(pcss->GetSoundChannelPlayDevice());
   for (id = ID_AUDIO_DEVICE_MENU_BASE; id <= ID_AUDIO_DEVICE_MENU_TOP; id++) {
     wxMenuItem * item = menubar->FindItem(id);
@@ -2993,7 +2993,7 @@ void MyManager::OnHoldChanged(const PString & token, bool onHold)
 void MyManager::SendUserInput(char tone)
 {
   PSafePtr<OpalLocalConnection> connection;
-  if (GetLocalConnection(connection, PSafeReadWrite))
+  if (GetConnection(connection, PSafeReadWrite))
     connection->OnUserInputTone(tone, 100);
 }
 
@@ -3077,7 +3077,7 @@ void MyManager::AddToConference(OpalCall & call)
 {
   if (m_activeCall != NULL) {
     PSafePtr<OpalLocalConnection> connection;
-    if (!GetLocalConnection(connection, PSafeReference))
+    if (!GetConnection(connection, PSafeReference))
       return;
 
     m_activeCall->Transfer(CONFERENCE_URI, connection);
@@ -3142,7 +3142,7 @@ void MyManager::OnStopRecording(wxCommandEvent & /*event*/)
 void MyManager::OnSendAudioFile(wxCommandEvent & /*event*/)
 {
   PSafePtr<OpalPCSSConnection> connection;
-  if (!GetLocalConnection(connection, PSafeReference))
+  if (!GetConnection(connection, PSafeReference))
     return;
 
   wxFileDialog dlg(this,
@@ -3174,7 +3174,7 @@ void MyManager::OnSendAudioFile(wxCommandEvent & /*event*/)
 void MyManager::OnAudioDevicePair(wxCommandEvent & /*theEvent*/)
 {
   PSafePtr<OpalPCSSConnection> connection;
-  if (GetLocalConnection(connection, PSafeReference)) {
+  if (GetConnection(connection, PSafeReference)) {
     AudioDevicesDialog dlg(this, *connection);
     if (dlg.ShowModal() == wxID_OK)
       m_activeCall->Transfer(dlg.GetTransferAddress(), connection);
@@ -3203,7 +3203,7 @@ void MyManager::OnVideoDeviceChange(wxCommandEvent & theEvent)
   }
 
   PSafePtr<OpalLocalConnection> local;
-  if (GetLocalConnection(local, PSafeReadWrite)) {
+  if (GetConnection(local, PSafeReadWrite)) {
     PVideoDevice::OpenArgs args = GetVideoInputDevice();
     args.deviceName = deviceName.p_str();
     if (!local->ChangeVideoInputDevice(args))
@@ -3217,8 +3217,8 @@ void MyManager::OnNewCodec(wxCommandEvent & theEvent)
 {
   OpalMediaFormat mediaFormat(PwxString(GetMenuBar()->FindItem(theEvent.GetId())->GetItemLabelText()).p_str());
   if (mediaFormat.IsValid()) {
-    PSafePtr<OpalConnection> connection;
-    if (GetLocalConnection(connection, PSafeReadWrite)) {
+    PSafePtr<OpalLocalConnection> connection;
+    if (GetConnection(connection, PSafeReadWrite)) {
       OpalMediaStreamPtr stream = connection->GetMediaStream(mediaFormat.GetMediaType(), true);
       if (!connection->GetCall().OpenSourceMediaStreams(*connection,
                                                         mediaFormat.GetMediaType(),
@@ -3232,8 +3232,8 @@ void MyManager::OnNewCodec(wxCommandEvent & theEvent)
 
 void MyManager::OnStartVideo(wxCommandEvent & /*event*/)
 {
-  PSafePtr<OpalConnection> connection;
-  if (!GetLocalConnection(connection, PSafeReadWrite))
+  PSafePtr<OpalLocalConnection> connection;
+  if (!GetConnection(connection, PSafeReadWrite))
     return;
 
   OpalVideoFormat::ContentRole contentRole = OpalVideoFormat::eNoRole;
@@ -3273,8 +3273,8 @@ void MyManager::OnStartVideo(wxCommandEvent & /*event*/)
 
 void MyManager::OnStopVideo(wxCommandEvent & /*event*/)
 {
-  PSafePtr<OpalConnection> connection;
-  if (GetLocalConnection(connection, PSafeReadWrite)) {
+  PSafePtr<OpalLocalConnection> connection;
+  if (GetConnection(connection, PSafeReadWrite)) {
     OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), true);
     if (stream != NULL)
       stream->Close();
@@ -3284,8 +3284,8 @@ void MyManager::OnStopVideo(wxCommandEvent & /*event*/)
 
 void MyManager::OnSendVFU(wxCommandEvent & /*event*/)
 {
-  PSafePtr<OpalConnection> connection;
-  if (GetLocalConnection(connection, PSafeReadOnly)) {
+  PSafePtr<OpalLocalConnection> connection;
+  if (GetConnection(connection, PSafeReadOnly)) {
     OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), false);
     if (stream != NULL)
       stream->ExecuteCommand(OpalVideoUpdatePicture());
@@ -3295,8 +3295,8 @@ void MyManager::OnSendVFU(wxCommandEvent & /*event*/)
 
 void MyManager::OnSendIntra(wxCommandEvent & /*event*/)
 {
-  PSafePtr<OpalConnection> connection;
-  if (GetLocalConnection(connection, PSafeReadOnly)) {
+  PSafePtr<OpalLocalConnection> connection;
+  if (GetConnection(connection, PSafeReadOnly)) {
     OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), true);
     if (stream != NULL)
       stream->ExecuteCommand(OpalVideoUpdatePicture());
@@ -3345,8 +3345,8 @@ bool MyManager::OnChangedPresentationRole(OpalConnection & connection,
 
 void MyManager::OnDefVidWinPos(wxCommandEvent & /*event*/)
 {
-  PSafePtr<OpalConnection> connection;
-  if (!GetLocalConnection(connection, PSafeReadOnly))
+  PSafePtr<OpalLocalConnection> connection;
+  if (!GetConnection(connection, PSafeReadOnly))
     return;
 
   PVideoOutputDevice * preview = NULL;
@@ -7374,7 +7374,7 @@ void InCallPanel::OnMouseFECC(wxMouseEvent & theEvent)
     return;
 
   PSafePtr<OpalLocalConnection> connection;
-  if (m_manager.GetLocalConnection(connection, PSafeReadOnly)) {
+  if (m_manager.GetConnection(connection, PSafeReadOnly)) {
     for (PVideoControlInfo::Types type = PVideoControlInfo::BeginTypes; type < PVideoControlInfo::EndTypes; ++type) {
       for (unsigned dir = 0; dir < 2; ++dir) {
         if (theEvent.GetEventObject() == m_fecc[type][dir]) {
@@ -7436,7 +7436,7 @@ void InCallPanel::OnStreamsChanged()
 
 #if OPAL_FAX || OPAL_HAS_H281
   PSafePtr<OpalLocalConnection> connection;
-  if (!m_manager.GetLocalConnection(connection, PSafeReadOnly))
+  if (!m_manager.GetConnection(connection, PSafeReadOnly))
     return;
 #endif
 
@@ -7579,8 +7579,8 @@ void InCallPanel::MicrophoneVolume(wxScrollEvent & scrollEvent)
 
 void InCallPanel::SetVolume(bool isMicrophone, int value, bool muted)
 {
-  PSafePtr<OpalConnection> connection;
-  if (m_manager.GetLocalConnection(connection, PSafeReadOnly)) {
+  PSafePtr<OpalLocalConnection> connection;
+  if (m_manager.GetConnection(connection, PSafeReadOnly)) {
     connection->SetAudioVolume(isMicrophone, muted ? 0 : value);
     connection->SetAudioMute(isMicrophone, muted);
   }
@@ -7611,8 +7611,8 @@ void InCallPanel::OnUpdateVU(wxTimerEvent & WXUNUSED(event))
 
     int micLevel = -1;
     int spkLevel = -1;
-    PSafePtr<OpalConnection> connection;
-    if (m_manager.GetLocalConnection(connection, PSafeReadOnly)) {
+    PSafePtr<OpalLocalConnection> connection;
+    if (m_manager.GetConnection(connection, PSafeReadOnly)) {
       spkLevel = connection->GetAudioSignalLevel(false);
       micLevel = connection->GetAudioSignalLevel(true);
 
@@ -7631,17 +7631,18 @@ void InCallPanel::OnUpdateVU(wxTimerEvent & WXUNUSED(event))
 
 void InCallPanel::UpdateStatistics()
 {
-  PSafePtr<OpalConnection> connection = m_manager.GetNetworkConnection(PSafeReadOnly);
-  if (connection == NULL)
+  PSafePtr<OpalConnection> network = m_manager.GetNetworkConnection(PSafeReadOnly);
+  if (network == NULL)
     return;
 
   PINDEX i;
   for (i = 0; i < RxFax; i++)
-    m_pages[i].UpdateSession(connection);
+    m_pages[i].UpdateSession(network);
 
-  if (m_manager.GetLocalConnection(connection, PSafeReadOnly)) {
+  PSafePtr<OpalLocalConnection> local;
+  if (m_manager.GetConnection(local, PSafeReadOnly)) {
     for (; i < NumPages; i++)
-      m_pages[i].UpdateSession(connection);
+      m_pages[i].UpdateSession(local);
   }
 }
 
