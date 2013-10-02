@@ -515,37 +515,37 @@ PBoolean H245NegLogicalChannel::Open(const H323Capability & capability,
     return false;
   }
 
+  state = e_AwaitingEstablishment;
+
   PTRACE(3, "H245\tOpening channel: " << channelNumber);
 
   if (channel != NULL) {
     channel->Close();
     delete channel;
-    channel = NULL;
-  }
-
-  state = e_AwaitingEstablishment;
-
-  H323ControlPDU pdu;
-  H245_OpenLogicalChannel & open = pdu.BuildOpenLogicalChannel(channelNumber);
-
-  if (!capability.OnSendingPDU(open.m_forwardLogicalChannelParameters.m_dataType)) {
-    PTRACE(1, "H245\tOpening channel: " << channelNumber
-           << ", capability.OnSendingPDU() failed");
-    return false;
   }
 
   channel = capability.CreateChannel(connection, H323Channel::IsTransmitter, sessionID, NULL);
   if (channel == NULL) {
-    PTRACE(1, "H245\tOpening channel: " << channelNumber
-           << ", capability.CreateChannel() failed");
+    PTRACE(1, "H245\tOpen channel: " << channelNumber << ", capability.CreateChannel() failed");
     return false;
   }
 
   channel->SetNumber(channelNumber);
 
+  if (!channel->PreOpen()) {
+    PTRACE(2, "H245\tOpen channel: " << channelNumber << ", pre-open failed");
+    return false;
+  }
+
+  if (!channel->SetInitialBandwidth()) {
+    PTRACE(2, "H245\tOpen channel: " << channelNumber << ", Insufficient bandwidth");
+    return false;
+  }
+
+  H323ControlPDU pdu;
+  H245_OpenLogicalChannel & open = pdu.BuildOpenLogicalChannel(channelNumber);
   if (!channel->OnSendingPDU(open)) {
-    PTRACE(1, "H245\tOpening channel: " << channelNumber
-           << ", channel->OnSendingPDU() failed");
+    PTRACE(1, "H245\tOpen channel: " << channelNumber << ", channel->OnSendingPDU() failed");
     return false;
   }
 
@@ -558,14 +558,6 @@ PBoolean H245NegLogicalChannel::Open(const H323Capability & capability,
       open.m_forwardLogicalChannelParameters.IncludeOptionalField(H245_OpenLogicalChannel_forwardLogicalChannelParameters::e_replacementFor);
       open.m_forwardLogicalChannelParameters.m_replacementFor = replacementFor;
     }
-  }
-
-  if (!channel->PreOpen())
-    return false;
-
-  if (!channel->SetInitialBandwidth()) {
-    PTRACE(2, "H245\tOpening channel: " << channelNumber << ", Insufficient bandwidth");
-    return false;
   }
 
   replyTimer = endpoint.GetLogicalChannelTimeout();
