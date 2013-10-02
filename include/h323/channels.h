@@ -220,7 +220,7 @@ class H323Channel : public PObject
      */
     virtual PBoolean OnSendingPDU(
       H245_OpenLogicalChannel & openPDU  ///<  Open PDU to send. 
-    ) const = 0;
+    ) const;
 
     /**This is called when request to create a channel is received from a
        remote machine and is about to be acknowledged.
