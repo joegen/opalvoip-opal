@@ -42,6 +42,8 @@ PCREATE_PROCESS(MyApp);
 PString MyManager::GetArgumentSpec() const
 {
   return "[GStreamer options]"
+         "-rtp-element:   Set RTP bin element (gstrtpbin)\n"
+         "-jb-element:    Set jitter buffer element (gstrtpjitterbuffer)\n"
          "-audio-source:  Audio source device in pipeline (autoaudiosrc)\n"
          "-audio-sink:    Audio sink device in pipeline (autoaudiosink)\n"
 #if OPAL_VIDEO
@@ -68,6 +70,14 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
 
   // Set up GStreamer
   GstEndPoint * gst  = new GstEndPoint(*this);
+  if (!gst->SetRTPPipeline(args.GetOptionString("rtp-element", gst->GetRTPPipeline()))) {
+    cerr << "Could not set RTP element.\n";
+    return false;
+  }
+  if (!gst->SetJitterBufferPipeline(args.GetOptionString("jb-element", gst->GetJitterBufferPipeline()))) {
+    cerr << "Could not set jitter buffer element.\n";
+    return false;
+  }
   if (!gst->SetAudioSourceDevice(args.GetOptionString("audio-source", gst->GetAudioSourceDevice()))) {
     cerr << "Could not set audio source.\n";
     return false;
