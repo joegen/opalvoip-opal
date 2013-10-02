@@ -1400,7 +1400,10 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
 
   PString sessionType;
 
-  if (!ownerCall.IsSwitchingT38()) {
+#if  OPAL_T38_CAPABILITY
+  if (!ownerCall.IsSwitchingT38())
+#endif // OPAL_T38_CAPABILITY
+  {
     SDPSessionDescription * sdp = NULL;
 
     if (m_lastReceivedINVITE != NULL)
