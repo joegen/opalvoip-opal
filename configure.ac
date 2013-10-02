@@ -334,7 +334,7 @@ OPAL_SIMPLE_OPTION(iax2,OPAL_IAX2, [IAX2 protocol support])
 
 dnl MSWIN_DISPLAY  h224,H.224 support
 dnl MSWIN_DEFINE   h224,OPAL_HAS_H224
-OPAL_SIMPLE_OPTION(h224,OPAL_HAS_H224, [H.224 protocol support], [OPAL_H323])
+OPAL_SIMPLE_OPTION(h224,OPAL_HAS_H224, [H.224 protocol support])
 
 dnl MSWIN_DISPLAY  h281,H.281 (Far End Camera Control) support
 dnl MSWIN_DEFINE   h281,OPAL_HAS_H281
