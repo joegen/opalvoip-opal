@@ -36,6 +36,8 @@
 
 #include <opal_config.h>
 
+#if OPAL_HAS_H281
+
 #include <h224/h224handler.h>
 #include <h224/h281.h>
 
@@ -191,5 +193,6 @@ class OpalFarEndCameraControl : public OpalH281Client
 };
 
 
-#endif // OPAL_H224_H281HANDLER_H
+#endif // OPAL_HAS_H281
 
+#endif // OPAL_H224_H281HANDLER_H
