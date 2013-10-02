@@ -433,9 +433,11 @@ void SIPConnection::OnReleased()
         return;
 
       // create BYE now & delete it later to prevent memory access errors
-      bye = new SIPBye(*this);
-      if (!bye->Start())
-        bye.SetNULL();
+      if (transport != NULL) {
+        bye = new SIPBye(*this);
+        if (!bye->Start())
+          bye.SetNULL();
+      }
 
       UnlockReadWrite();
       break;
@@ -512,6 +514,9 @@ void SIPConnection::OnReleased()
 
 bool SIPConnection::TransferConnection(const PString & remoteParty)
 {
+  if (transport == NULL)
+    return false;
+
   // There is still an ongoing REFER transaction 
   if (m_referInProgress) {
     PTRACE(2, "SIP\tTransfer already in progress for " << *this);
@@ -3578,6 +3583,9 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
 
 bool SIPConnection::SendOPTIONS(const SIPOptions::Params & params, SIP_PDU * reply)
 {
+  if (transport == NULL)
+    return false;
+
   if ((m_allowedMethods&(1<<SIP_PDU::Method_OPTIONS)) == 0) {
     PTRACE(2, "SIP\tRemote does not allow OPTIONS message.");
     return false;
@@ -3595,6 +3603,9 @@ bool SIPConnection::SendOPTIONS(const SIPOptions::Params & params, SIP_PDU * rep
 
 bool SIPConnection::SendINFO(const SIPInfo::Params & params, SIP_PDU * reply)
 {
+  if (transport == NULL)
+    return false;
+
   if ((m_allowedMethods&(1<<SIP_PDU::Method_INFO)) == 0) {
     PTRACE(2, "SIP\tRemote does not allow INFO message.");
     return false;
