@@ -227,6 +227,12 @@ PBoolean H323Channel::OnReceivedAckPDU(const H245_OpenLogicalChannelAck & /*pdu*
 }
 
 
+PBoolean H323Channel::OnSendingPDU(H245_OpenLogicalChannel & open) const
+{
+  return capability->OnSendingPDU(open.m_forwardLogicalChannelParameters.m_dataType);
+}
+
+
 void H323Channel::OnSendOpenAck(const H245_OpenLogicalChannel & /*pdu*/,
                                 H245_OpenLogicalChannelAck & /* pdu*/) const
 {
@@ -489,6 +495,9 @@ H323_RealTimeChannel::H323_RealTimeChannel(H323Connection & connection,
 PBoolean H323_RealTimeChannel::OnSendingPDU(H245_OpenLogicalChannel & open) const
 {
   PTRACE(3, "H323RTP\tOnSendingPDU");
+
+  if (!H323Channel::OnSendingPDU(open))
+    return false;
 
   open.m_forwardLogicalChannelNumber = (unsigned)number;
 
@@ -753,6 +762,9 @@ unsigned H323DataChannel::GetSessionID() const
 PBoolean H323DataChannel::OnSendingPDU(H245_OpenLogicalChannel & open) const
 {
   PTRACE(3, "LogChan\tOnSendingPDU for channel: " << number);
+
+  if (!H323Channel::OnSendingPDU(open))
+    return false;
 
   open.m_forwardLogicalChannelNumber = (unsigned)number;
 
