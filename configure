@@ -8183,14 +8183,6 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_H323" != "x1" && \
-            test "x$OPAL_H323" != "xyes"; then
-         { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&5
-$as_echo "disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&6; }
-         enableval=no
-      fi
-
 
 
 
