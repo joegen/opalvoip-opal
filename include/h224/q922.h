@@ -36,6 +36,8 @@
 
 #include <opal_config.h>
 
+#if OPAL_HAS_H224
+
 #define Q922_HEADER_SIZE 3
 
 class Q922_Frame : public PBYTEArray
@@ -116,5 +118,7 @@ private:
   inline WORD CalculateFCS(const BYTE*data, PINDEX length) const;
 };
 
-#endif // OPAL_H224_Q922_H
 
+#endif // OPAL_HAS_H224
+
+#endif // OPAL_H224_Q922_H
