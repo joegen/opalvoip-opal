@@ -53,6 +53,7 @@ class GstMediaStream;
 #define OPAL_GST_BIT_RATE    "bit-rate"
 #define OPAL_GST_BIT_RATE_K  "bit-rate-kbps"
 #define OPAL_GST_BLOCK_SIZE  "blocksize"
+#define OPAL_GST_LATENCY     "latency"
 #define OPAL_GST_REMOTE_IP   "remote-ip"
 #define OPAL_GST_REMOTE_PPRT "remote-port"
 
@@ -145,39 +146,54 @@ class GstEndPoint : public OpalLocalEndPoint
       */
     virtual bool BuildPipeline(
       ostream & description,
-      const GstMediaStream & stream
+      const GstMediaStream * audioStream
+#if OPAL_VIDEO
+      , const GstMediaStream * videoStream
+#endif
     );
 
-    virtual bool BuildAudioSourcePipeline(ostream & desc, const GstMediaStream & stream);
-    virtual bool BuildAudioSinkPipeline(ostream & desc, const GstMediaStream & stream);
-    virtual bool BuildAudioSourceDevice(ostream & desc, const GstMediaStream & stream);
-    virtual bool BuildAudioSinkDevice(ostream & desc, const GstMediaStream & stream);
-
-    virtual bool BuildEncoder(ostream & desc, const GstMediaStream & stream);
-    virtual bool BuildDecoder(ostream & desc, const GstMediaStream & stream);
-
-    virtual bool BuildAppSource(ostream & desc, const PString & name);
-    virtual bool BuildAppSink(ostream & desc, const PString & name);
+    virtual bool BuildAudioSourcePipeline(ostream & desc, const GstMediaStream & stream, int rtpIndex);
+    virtual bool BuildAudioSinkPipeline(ostream & desc, const GstMediaStream & stream, int rtpIndex);
 
     bool SetAudioSourceDevice(const PString & elementName);
-    bool SetAudioSinkDevice  (const PString & elementName);
+    virtual bool BuildAudioSourceDevice(ostream & desc, const GstMediaStream & stream);
     const PString & GetAudioSourceDevice() const { return m_audioSourceDevice; }
-    const PString & GetAudioSinkDevice()   const { return m_audioSinkDevice; }
+
+    bool SetAudioSinkDevice(const PString & elementName);
+    const PString & GetAudioSinkDevice() const { return m_audioSinkDevice; }
+    virtual bool BuildAudioSinkDevice(ostream & desc, const GstMediaStream & stream);
+
+    bool SetJitterBufferPipeline(const PString & elementName);
+    const PString & GetJitterBufferPipeline()   const { return m_jitterBuffer; }
+    static const PString & GetPipelineJitterBufferName();
+    virtual bool BuildJitterBufferPipeline(ostream & desc, const GstMediaStream & stream);
+
+    bool SetRTPPipeline(const PString & elementName);
+    const PString & GetRTPPipeline()   const { return m_rtpbin; }
+    static const PString & GetPipelineRTPName();
+    virtual bool BuildRTPPipeline(ostream & desc, const GstMediaStream & stream, unsigned index);
 
     static const PString & GetPipelineAudioSourceName();
+    virtual bool BuildAppSource(ostream & desc, const PString & name);
+
     static const PString & GetPipelineAudioSinkName();
+    virtual bool BuildAppSink(ostream & desc, const PString & name, int rtpIndex);
 
 #if OPAL_VIDEO
-    virtual bool BuildVideoSourcePipeline(ostream & desc, const GstMediaStream & stream);
-    virtual bool BuildVideoSinkPipeline(ostream & desc, const GstMediaStream & stream);
-    virtual bool BuildVideoSourceDevice(ostream & desc, const GstMediaStream & stream);
-    virtual bool BuildVideoSinkDevice(ostream & desc, const GstMediaStream & stream);
+    virtual bool BuildVideoSourcePipeline(ostream & desc, const GstMediaStream & stream, int rtpIndex);
+    virtual bool BuildVideoSinkPipeline(ostream & desc, const GstMediaStream & stream, int rtpIndex);
+
     bool SetVideoSourceDevice(const PString & elementName);
-    bool SetVideoSinkDevice  (const PString & elementName);
     const PString & GetVideoSourceDevice() const { return m_videoSourceDevice; }
-    const PString & GetVideoSinkDevice()   const { return m_videoSinkDevice; }
+    virtual bool BuildVideoSourceDevice(ostream & desc, const GstMediaStream & stream);
+
+    bool SetVideoSinkDevice(const PString & elementName);
+    const PString & GetVideoSinkDevice() const { return m_videoSinkDevice; }
+    virtual bool BuildVideoSinkDevice(ostream & desc, const GstMediaStream & stream);
+
     bool SetVideoSourceColourConverter(const PString & elementName);
     const PString & GetVideoSourceColourConverter()   const { return m_videoSourceColourConverter; }
+
     bool SetVideoSinkColourConverter(const PString & elementName);
     const PString & GetVideoSinkColourConverter()   const { return m_videoSinkColourConverter; }
 
@@ -208,12 +224,16 @@ class GstEndPoint : public OpalLocalEndPoint
       const OpalMediaFormat & mediaFormat,  ///< Media format to map
       CodecPipelines & info                 ///< GStreamer partial pipelines to map
     ) const;
+
+    virtual bool BuildEncoder(ostream & desc, const GstMediaStream & stream);
+    virtual bool BuildDecoder(ostream & desc, const GstMediaStream & stream);
   //@}
 
   protected:
-    PString m_rtpbinElement;
+    PString m_rtpbin;
     PString m_audioSourceDevice;
     PString m_audioSinkDevice;
+    PString m_jitterBuffer;
 #if OPAL_VIDEO
     PString m_videoSourceDevice;
     PString m_videoSinkDevice;
@@ -352,6 +372,18 @@ class GstMediaStream : public OpalMediaStream
        take 30 milliseconds to complete.
       */
     virtual PBoolean IsSynchronous() const;
+
+    /**Indicate if the media stream requires a OpalMediaPatch thread (active patch).
+       This is called on the source/sink stream and is passed the sink/source
+       stream that the patch will initially be using. The function could
+       conditionally require the patch thread to execute a thread reading and
+       writing data, or prevent  it from doing so as it can do so in hardware
+       in some way.
+
+       The default behaviour returns true if a sink stream. If source stream
+       then threading is from the mixer class.
+      */
+    virtual PBoolean RequiresPatchThread() const;
   //@}
 
   protected:

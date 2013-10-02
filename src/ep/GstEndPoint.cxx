@@ -34,23 +34,24 @@
 
 #include <ep/GstEndPoint.h>
 #include <codec/vidcodec.h>
+#include <rtp/rtpconn.h>
+
 
 #if OPAL_GSTREAMER
 
 #define PTraceModule() "OpalGst"
 
-#define USE_GSTREAMER_JITTER_BUFFER 0
-
-
 #define APP_SOURCE_SUFFIX "AppSource"
 #define APP_SINK_SUFFIX   "AppSink"
 
 // Note the start of these constanst must be same as OpalMediaType::Audio() & OpalMediaType::Video()
-const PString & GstEndPoint::GetPipelineAudioSourceName() { static PConstString const s("audio" APP_SOURCE_SUFFIX); return s; }
-const PString & GstEndPoint::GetPipelineAudioSinkName()   { static PConstString const s("audio" APP_SINK_SUFFIX  ); return s; }
+const PString & GstEndPoint::GetPipelineRTPName()          { static PConstString const s("rtpbin");                  return s; }
+const PString & GstEndPoint::GetPipelineAudioSourceName()  { static PConstString const s("audio" APP_SOURCE_SUFFIX); return s; }
+const PString & GstEndPoint::GetPipelineAudioSinkName()    { static PConstString const s("audio" APP_SINK_SUFFIX  ); return s; }
+const PString & GstEndPoint::GetPipelineJitterBufferName() { static PConstString const s("jitterBuffer");            return s; }
 #if OPAL_VIDEO
-const PString & GstEndPoint::GetPipelineVideoSourceName() { static PConstString const s("video" APP_SOURCE_SUFFIX); return s; }
-const PString & GstEndPoint::GetPipelineVideoSinkName()   { static PConstString const s("video" APP_SINK_SUFFIX  ); return s; }
+const PString & GstEndPoint::GetPipelineVideoSourceName()  { static PConstString const s("video" APP_SOURCE_SUFFIX); return s; }
+const PString & GstEndPoint::GetPipelineVideoSinkName()    { static PConstString const s("video" APP_SINK_SUFFIX  ); return s; }
 #endif // OPAL_VIDEO
 
 
@@ -239,13 +240,23 @@ static void Substitute(PString & str, const char * name, const PString & value, 
 }
 
 
+static PString SubstituteName(const PString & original, const char * name)
+{
+  PString str = original;
+  Substitute(str, OPAL_GST_NAME, name, true);
+  return str;
+}
+
+
 static PString SubstituteAll(const PString & original,
-                             const OpalMediaFormat & mediaFormat,
+                             const GstMediaStream & stream,
                              const char * nameSuffix,
                              bool packetiser = false)
 {
   PString str = original;
-  
+
+  OpalMediaFormat mediaFormat = stream.GetMediaFormat();
+
   Substitute(str, OPAL_GST_NAME, mediaFormat.GetMediaType() + nameSuffix, true);
   Substitute(str, OPAL_GST_SAMPLE_RATE, mediaFormat.GetClockRate());
   Substitute(str, OPAL_GST_PT, (unsigned)mediaFormat.GetPayloadType(), packetiser);
@@ -255,6 +266,7 @@ static PString SubstituteAll(const PString & original,
   Substitute(str, OPAL_GST_BIT_RATE_K, (bitrate+1023)/1024);
   if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
     Substitute(str, OPAL_GST_BLOCK_SIZE, std::max(mediaFormat.GetFrameTime()*2, 320U));
+    Substitute(str, OPAL_GST_LATENCY, stream.GetConnection().GetMaxAudioJitterDelay());
   }
   else if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
     Substitute(str, OPAL_GST_WIDTH, mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), 352));
@@ -271,9 +283,10 @@ static PString SubstituteAll(const PString & original,
 
 GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
   : OpalLocalEndPoint(manager, prefix, false)
-  , m_rtpbinElement("gstrtpbin")
+  , m_rtpbin("gstrtpbin")
   , m_audioSourceDevice(GetDefaultDevice("Source/Audio", PreferredAudioSourceDevice, PARRAYSIZE(PreferredAudioSourceDevice)))
   , m_audioSinkDevice(GetDefaultDevice("Sink/Audio", PreferredAudioSinkDevice, PARRAYSIZE(PreferredAudioSinkDevice)))
+  , m_jitterBuffer("gstrtpjitterbuffer drop-on-latency=true latency={"OPAL_GST_LATENCY"}")
 #if OPAL_VIDEO
   , m_videoSourceDevice(GetDefaultDevice("Source/Video", PreferredVideoSourceDevice, PARRAYSIZE(PreferredVideoSourceDevice)))
   , m_videoSinkDevice(GetDefaultDevice("Sink/Video", PreferredVideoSinkDevice, PARRAYSIZE(PreferredVideoSinkDevice)))
@@ -348,60 +361,164 @@ OpalLocalConnection * GstEndPoint::CreateConnection(OpalCall & call,
 }
 
 
-bool GstEndPoint::BuildPipeline(ostream & description, const GstMediaStream & stream)
-{
 #if OPAL_VIDEO
+bool GstEndPoint::BuildPipeline(ostream & description,
+                                const GstMediaStream * audioStream,
+                                const GstMediaStream * videoStream)
+{
+  if (!PAssert(audioStream != NULL || videoStream != NULL, PInvalidParameter))
+    return false;
 
-  bool isAudio;
-  {
-    OpalMediaType mediaType = stream.GetMediaFormat().GetMediaType();
-    if (mediaType == OpalMediaType::Audio())
-      isAudio = true;
-    else if (mediaType == OpalMediaType::Video())
-      isAudio = false;
+  int rtpIndex = 0;
+
+  if (audioStream != NULL) {
+    if (!BuildRTPPipeline(description, *audioStream, 0))
+      rtpIndex = -2;
+
+    if (audioStream->IsSource()) {
+      if (!BuildAudioSourcePipeline(description, *audioStream, rtpIndex))
+        return false;
+    }
     else {
-      PTRACE(2, "Media type \"" << mediaType << "\" is not supported.");
-      return false;
+      if (!BuildAudioSinkPipeline(description, *audioStream, rtpIndex))
+        return false;
+    }
+
+    ++rtpIndex;
+  }
+
+  if (videoStream != NULL) {
+    if (!BuildRTPPipeline(description, *videoStream, rtpIndex))
+      rtpIndex = -1;
+
+    if (videoStream->IsSource()) {
+      if (!BuildVideoSourcePipeline(description, *videoStream, rtpIndex))
+        return false;
+    }
+    else {
+      if (!BuildVideoSinkPipeline(description, *videoStream, rtpIndex))
+        return false;
     }
   }
 
-  if (stream.IsSource()) {
-    if (isAudio)
-      return BuildAudioSourceDevice(description, stream) && BuildAudioSourcePipeline(description, stream);
-    else
-      return BuildVideoSourceDevice(description, stream) && BuildVideoSourcePipeline(description, stream);
-  }
-  else {
-    if (isAudio)
-      return BuildAudioSinkPipeline(description, stream) && BuildAudioSinkDevice(description, stream);
-    else
-      return BuildVideoSinkPipeline(description, stream) && BuildVideoSinkDevice(description, stream);
-  }
-
+  return true;
+}
 #else //OPAL_VIDEO
-
-  if (stream.GetMediaFormat().GetMediaType() != OpalMediaType::Audio()) {
-    PTRACE(2, "Media type \"" << mediaType << "\" is not supported.");
+bool GstEndPoint::BuildPipeline(ostream & description, const GstMediaStream * audioStream)
+{
+  if (!PAssert(audioStream == NULL, PInvalidParameter))
     return false;
-  }
+
+  int rtpIndex = BuildRTPElement(description, *audioStream, 0) ? 0 : -1;
 
   if (stream.IsSource())
-    return BuildAudioSourceDevice(description, stream) && BuildAudioSourcePipeline(description, stream);
+    return BuildAudioSourcePipeline(description, *audioStream, rtpIndex);
   else
-    return BuildAudioSinkPipeline(description, stream) && BuildAudioSinkDevice(description, stream);
-
+    return BuildAudioSinkPipeline(description, *audioStream, rtpIndex);
+}
 #endif //OPAL_VIDEO
+
+
+static void OutputRTPCaps(ostream & description, const OpalMediaFormat & mediaFormat)
+{
+  description << "application/x-rtp, "
+                 "media=" << mediaFormat.GetMediaType() << ", "
+                 "payload=" << (unsigned)mediaFormat.GetPayloadType() << ", "
+                 "clock-rate=" << mediaFormat.GetClockRate() << ", "
+                 "encoding-name=" << mediaFormat.GetEncodingName();
 }
 
 
-bool GstEndPoint::BuildAppSink(ostream & desc, const PString & name)
+bool GstEndPoint::BuildRTPPipeline(ostream & description, const GstMediaStream & stream, unsigned index)
 {
-  desc << " ! appsink name=" << name << " sync=false max-buffers=10 drop=false";
+  if (m_rtpbin.IsEmpty())
+    return false;
+
+  OpalRTPConnection * rtpConnection = stream.GetConnection().GetOtherPartyConnectionAs<OpalRTPConnection>();
+  if (rtpConnection == NULL)
+    return false;
+
+  OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(rtpConnection->GetMediaSession(stream.GetSessionID()));
+  if (session == NULL)
+    return false;
+
+  PIPSocket::Address host;
+  if (!session->GetRemoteAddress().GetIpAddress(host))
+    return false;
+
+  P_INT_PTR rtpHandle = session->GetDataSocket().GetHandle();
+  P_INT_PTR rtcpHandle = session->GetLocalDataPort() == session->GetLocalControlPort()
+                            ? session->GetDataSocket().GetHandle() : session->GetControlSocket().GetHandle();
+
+  if (index == 0)
+    description << SubstituteName(m_rtpbin, GstEndPoint::GetPipelineRTPName()) << ' ';
+
+  OpalMediaFormat mediaFormat = stream.GetMediaFormat();
+  OpalMediaType mediaType = mediaFormat.GetMediaType();
+
+  if (stream.IsSource())
+    description << GstEndPoint::GetPipelineRTPName() << ".send_rtp_src_" << index
+                << " ! "
+                   "udpsink name=" << mediaType << "TxRTP "
+                           "sockfd=" << rtpHandle << " "
+                           "closefd=false "
+                           "host=" << host << " "
+                           "port=" << session->GetRemoteDataPort() << ' '
+                << GstEndPoint::GetPipelineRTPName() << ".send_rtcp_src_" << index
+                << " ! "
+                   "udpsink name=" << mediaType << "TxRTCP "
+                           "sync=false "
+                           "async=false "
+                           "sockfd=" << rtcpHandle << " "
+                           "closefd=false "
+                           "host=" << host << " "
+                           "port=" << session->GetRemoteControlPort() << " "
+                   "udpsrc name=" << mediaType << "RxRTCP "
+                           "sockfd=" << rtcpHandle << " "
+                           "closefd=false"
+                   " ! "
+                   "rtpbin.recv_rtcp_sink_" << index;
+  else {
+    description << "udpsrc name=" << mediaType << "RxRTP "
+                          "sockfd=" << rtpHandle << " "
+                          "closefd=false "
+                          "caps=\"";
+    OutputRTPCaps(description, mediaFormat);
+    description << "\" ! "
+                << GstEndPoint::GetPipelineRTPName() << ".recv_rtp_sink_" << index << " "
+                   "udpsrc name=" << mediaType << "RxRTCP "
+                          "sockfd=" << rtcpHandle << " "
+                          "closefd=false"
+                   " ! "
+                << GstEndPoint::GetPipelineRTPName() << ".recv_rtcp_sink_" << index << ' '
+                << GstEndPoint::GetPipelineRTPName() << ".send_rtcp_src_" << index
+                << " ! "
+                   "udpsink name=" << mediaType << "TxRTCP "
+                           "sync=false "
+                           "async=false "
+                           "sockfd=" << rtcpHandle << " "
+                           "closefd=false "
+                           "host=" << host << " "
+                           "port=" << session->GetRemoteControlPort();
+  }
+
+  description << ' ' << GstEndPoint::GetPipelineRTPName() + ". ! ";
   return true;
 }
 
 
-static void OutputAudioFormatPipeline(ostream & desc, const OpalMediaFormat & mediaFormat)
+bool GstEndPoint::BuildAppSink(ostream & description, const PString & name, int rtpIndex)
+{
+  description << " ! ";
+  if (rtpIndex < 0)
+    description << "appsink name=" << name << " sync=false max-buffers=10 drop=false";
+  else
+    description << GstEndPoint::GetPipelineRTPName() << ".send_rtp_sink_" << rtpIndex;
+  return true;
+}
+
+
+static void OutputRawAudioCaps(ostream & desc, const OpalMediaFormat & mediaFormat)
 {
   desc << "audio/x-raw-int, "
           "depth=16, "
@@ -413,70 +530,79 @@ static void OutputAudioFormatPipeline(ostream & desc, const OpalMediaFormat & me
 }
 
 
-bool GstEndPoint::BuildAudioSourcePipeline(ostream & desc, const GstMediaStream & stream)
+bool GstEndPoint::BuildAudioSourcePipeline(ostream & description, const GstMediaStream & stream, int rtpIndex)
 {
-  const OpalMediaFormat & mediaFormat = stream.GetMediaFormat();
-
-  desc << " ! ";
-  OutputAudioFormatPipeline(desc, mediaFormat);
-
-  if (mediaFormat != OpalPCM16) {
-    desc << " ! ";
-    if (!BuildEncoder(desc, stream))
-      return false;
-  }
-
-  return BuildAppSink(desc, GetPipelineAudioSinkName());
-}
-
-
-bool GstEndPoint::BuildAppSource(ostream & desc, const PString & name)
-{
-  desc << "appsrc stream-type=0 is-live=false name=" << name << " ! ";
-  return true;
-}
-
-
-bool GstEndPoint::BuildAudioSinkPipeline(ostream & desc, const GstMediaStream & stream)
-{
-  const OpalMediaFormat & mediaFormat = stream.GetMediaFormat();
-
-  if (!BuildAppSource(desc, GetPipelineAudioSourceName()))
+  if (!BuildAudioSourceDevice(description, stream))
     return false;
 
-  if (mediaFormat == OpalPCM16)
-    OutputAudioFormatPipeline(desc, mediaFormat);
-  else {
-    desc << "application/x-rtp, "
-            "media=audio, "
-            "payload=" << (unsigned)mediaFormat.GetPayloadType() << ", "
-            "clock-rate=" << mediaFormat.GetClockRate() << ", "
-            "encoding-name=" << mediaFormat.GetEncodingName() <<
-#if USE_GSTREAMER_JITTER_BUFFER
-            " ! "
-            "gstrtpjitterbuffer drop-on-latency=true latency=" << stream.GetConnection().GetMaxAudioJitterDelay() <<
-#endif
-           " ! ";
-    if (!BuildDecoder(desc, stream))
+  OpalMediaFormat mediaFormat = stream.GetMediaFormat();
+
+  description << " ! ";
+  OutputRawAudioCaps(description, mediaFormat);
+
+  if (mediaFormat != OpalPCM16) {
+    description << " ! ";
+    if (!BuildEncoder(description, stream))
       return false;
   }
 
-  desc << " ! ";
+  return BuildAppSink(description, GetPipelineAudioSinkName(), rtpIndex);
+}
 
+
+bool GstEndPoint::BuildAppSource(ostream & description, const PString & name)
+{
+  description << "appsrc stream-type=0 is-live=false name=" << name << " ! ";
   return true;
 }
 
 
-bool GstEndPoint::BuildAudioSourceDevice(ostream & desc, const GstMediaStream & stream)
+bool GstEndPoint::BuildJitterBufferPipeline(ostream & description, const GstMediaStream & stream)
 {
-  desc << SubstituteAll(m_audioSourceDevice, stream.GetMediaFormat(), "SourceDevice");
+  if (!m_jitterBuffer.IsEmpty())
+    description << SubstituteAll(m_jitterBuffer, stream, "JitterBuffer") << " ! ";
   return true;
 }
 
 
-bool GstEndPoint::BuildAudioSinkDevice(ostream & desc, const GstMediaStream & stream)
+bool GstEndPoint::BuildAudioSinkPipeline(ostream & description, const GstMediaStream & stream, int rtpIndex)
 {
-  desc << SubstituteAll(m_audioSinkDevice, stream.GetMediaFormat(), "SinkDevice");
+  if (rtpIndex < 0) {
+    if (!BuildAppSource(description, GetPipelineAudioSourceName()))
+      return false;
+
+    OpalMediaFormat mediaFormat = stream.GetMediaFormat();
+    if (mediaFormat == OpalPCM16) {
+      OutputRawAudioCaps(description, mediaFormat);
+      description << " ! ";
+      return BuildAudioSinkDevice(description, stream);
+    }
+
+    OutputRTPCaps(description, mediaFormat);
+    description << " ! ";
+  }
+
+  if (!BuildJitterBufferPipeline(description, stream))
+    return false;
+
+  if (!BuildDecoder(description, stream))
+    return false;
+
+  description << " ! ";
+  return BuildAudioSinkDevice(description, stream);
+}
+
+
+bool GstEndPoint::BuildAudioSourceDevice(ostream & description, const GstMediaStream & stream)
+{
+  description << SubstituteAll(m_audioSourceDevice, stream, "SourceDevice");
+  return true;
+}
+
+
+bool GstEndPoint::BuildAudioSinkDevice(ostream & description, const GstMediaStream & stream)
+{
+  description << SubstituteAll(m_audioSinkDevice, stream, "SinkDevice");
   return true;
 }
 
@@ -490,6 +616,26 @@ static bool SetValidElementName(PString & device, const PString & elementName PT
 
   PTRACE(4, "Set " << which << " to \"" << elementName << '"');
   device = elementName;
+  return true;
+}
+
+
+bool GstEndPoint::SetJitterBufferPipeline(const PString & elementName)
+{
+  if (!elementName.IsEmpty())
+    return SetValidElementName(m_jitterBuffer, elementName PTRACE_PARAM(, "jitter buffer"));
+
+  m_jitterBuffer.MakeEmpty();
+  return true;
+}
+
+
+bool GstEndPoint::SetRTPPipeline(const PString & elementName)
+{
+  if (!elementName.IsEmpty())
+    return SetValidElementName(m_rtpbin, elementName PTRACE_PARAM(, "RTP"));
+
+  m_rtpbin.MakeEmpty();
   return true;
 }
 
@@ -510,7 +656,7 @@ bool GstEndPoint::SetAudioSinkDevice(const PString & elementName)
 
 #if OPAL_VIDEO
 
-static void OutputVideoFormatPipeline(ostream & desc, const OpalMediaFormat & mediaFormat)
+static void OutputRawVideoCaps(ostream & desc, const OpalMediaFormat & mediaFormat)
 {
   desc << "video/x-raw-yuv, "
           "format=(fourcc)I420, "
@@ -520,64 +666,69 @@ static void OutputVideoFormatPipeline(ostream & desc, const OpalMediaFormat & me
 }
 
 
-bool GstEndPoint::BuildVideoSourcePipeline(ostream & desc, const GstMediaStream & stream)
+bool GstEndPoint::BuildVideoSourcePipeline(ostream & description, const GstMediaStream & stream, int rtpIndex)
 {
-  const OpalMediaFormat & mediaFormat = stream.GetMediaFormat();
+  if (!BuildVideoSourceDevice(description, stream))
+    return false;
 
   if (!m_videoSourceColourConverter.IsEmpty())
-    desc << " ! " << m_videoSourceColourConverter;
+    description << " ! " << SubstituteName(m_videoSourceColourConverter, "videoSourceConverter");
 
-  desc << " ! ";
-  OutputVideoFormatPipeline(desc, mediaFormat);
+  OpalMediaFormat mediaFormat = stream.GetMediaFormat();
+
+  description << " ! ";
+  OutputRawVideoCaps(description, mediaFormat);
 
   if (mediaFormat != OpalYUV420P) {
-    desc << " ! ";
-    if (!BuildEncoder(desc, stream))
+    description << " ! ";
+    if (!BuildEncoder(description, stream))
       return false;
   }
 
-  return BuildAppSink(desc, GetPipelineVideoSinkName());
+  return BuildAppSink(description, GetPipelineVideoSinkName(), rtpIndex);
 }
 
 
-bool GstEndPoint::BuildVideoSinkPipeline(ostream & desc, const GstMediaStream & stream)
+bool GstEndPoint::BuildVideoSinkPipeline(ostream & description, const GstMediaStream & stream, int rtpIndex)
 {
-  const OpalMediaFormat & mediaFormat = stream.GetMediaFormat();
+  if (rtpIndex < 0) {
+    if (!BuildAppSource(description, GetPipelineVideoSourceName()))
+      return false;
 
-  if (!BuildAppSource(desc, GetPipelineVideoSourceName()))
-    return false;
+    OpalMediaFormat mediaFormat = stream.GetMediaFormat();
+    if (mediaFormat == OpalYUV420P)
+      OutputRawVideoCaps(description, mediaFormat);
+    else {
+      OutputRTPCaps(description, mediaFormat);
 
-  if (mediaFormat == OpalYUV420P)
-    OutputVideoFormatPipeline(desc, mediaFormat);
+      description << " ! ";
+      if (!BuildDecoder(description, stream))
+        return false;
+    }
+  }
   else {
-    desc << "application/x-rtp, "
-            "media=video, "
-            "payload=" << (unsigned)mediaFormat.GetPayloadType() << ", "
-            "clock-rate=" << mediaFormat.GetClockRate() << ", "
-            "encoding-name=" << mediaFormat.GetEncodingName()
-         << " ! ";
-    if (!BuildDecoder(desc, stream))
+    if (!BuildDecoder(description, stream))
       return false;
   }
 
   if (!m_videoSinkColourConverter.IsEmpty())
-    desc << " ! " << m_videoSinkColourConverter;
-  desc << " ! ";
+    description << " ! " << SubstituteName(m_videoSinkColourConverter, "videoSinkConverter");
 
+  description << " ! ";
+  return BuildVideoSinkDevice(description, stream);
+}
+
+
+bool GstEndPoint::BuildVideoSourceDevice(ostream & description, const GstMediaStream & stream)
+{
+  description << SubstituteAll(m_videoSourceDevice, stream, "SourceDevice");
   return true;
 }
 
 
-bool GstEndPoint::BuildVideoSourceDevice(ostream & desc, const GstMediaStream & stream)
+bool GstEndPoint::BuildVideoSinkDevice(ostream & description, const GstMediaStream & stream)
 {
-  desc << SubstituteAll(m_videoSourceDevice, stream.GetMediaFormat(), "SourceDevice");
-  return true;
-}
-
-
-bool GstEndPoint::BuildVideoSinkDevice(ostream & desc, const GstMediaStream & stream)
-{
-  desc << SubstituteAll(m_videoSinkDevice, stream.GetMediaFormat(), "SinkDevice");
+  description << SubstituteAll(m_videoSinkDevice, stream, "SinkDevice");
   return true;
 }
 
@@ -612,16 +763,13 @@ bool GstEndPoint::SetVideoSinkColourConverter(const PString & elementName)
 
 bool GstEndPoint::BuildEncoder(ostream & desc, const GstMediaStream & stream)
 {
-  OpalMediaFormat mediaFormat = stream.GetMediaFormat();
-  CodecPipelineMap::iterator it = m_MediaFormatToGStreamer.find(mediaFormat);
+  CodecPipelineMap::iterator it = m_MediaFormatToGStreamer.find(stream.GetMediaFormat());
   if (it == m_MediaFormatToGStreamer.end())
     return false;
 
-  desc << "queue max-size-buffers=1000 ! "
-       << SubstituteAll(it->second.m_encoder, mediaFormat, "Encoder")
-       << " ! queue max-size-buffers=1000";
+  desc << SubstituteAll(it->second.m_encoder, stream, "Encoder");
   if (!it->second.m_packetiser.IsEmpty())
-    desc << " ! " << SubstituteAll(it->second.m_packetiser, mediaFormat, "Packetiser", true);
+    desc << " ! " << SubstituteAll(it->second.m_packetiser, stream, "Packetiser", true);
 
   return true;
 }
@@ -629,16 +777,13 @@ bool GstEndPoint::BuildEncoder(ostream & desc, const GstMediaStream & stream)
 
 bool GstEndPoint::BuildDecoder(ostream & desc, const GstMediaStream & stream)
 {
-  OpalMediaFormat mediaFormat = stream.GetMediaFormat();
-  CodecPipelineMap::iterator it = m_MediaFormatToGStreamer.find(mediaFormat);
+  CodecPipelineMap::iterator it = m_MediaFormatToGStreamer.find(stream.GetMediaFormat());
   if (it == m_MediaFormatToGStreamer.end())
     return false;
 
   if (!it->second.m_depacketiser.IsEmpty())
-    desc << SubstituteAll(it->second.m_depacketiser, mediaFormat, "Depacketiser") << " ! ";
-  desc << "queue max-size-buffers=1000 ! "
-       << SubstituteAll(it->second.m_decoder, mediaFormat, "Decoder")
-       << " ! queue max-size-buffers=1000";
+    desc << SubstituteAll(it->second.m_depacketiser, stream, "Depacketiser") << " ! ";
+  desc << SubstituteAll(it->second.m_decoder, stream, "Decoder");
 
   return true;
 }
@@ -707,9 +852,6 @@ GstConnection::GstConnection(OpalCall & call,
 
 void GstConnection::OnReleased()
 {
-  //we want to release the main window in case the user is using it for other purposes.
-  //stream_engine->EndVideoOutput();
-
   OpalLocalConnection::OnReleased();
 }
 
@@ -725,36 +867,43 @@ OpalMediaStream* GstConnection::CreateMediaStream(const OpalMediaFormat & mediaF
 bool GstConnection::OpenPipeline(PGstPipeline & pipeline, const GstMediaStream & stream)
 {
   PStringStream description;
-  if (!m_endpoint.BuildPipeline(description, stream))
+
+  bool isSource = stream.IsSource();
+  OpalMediaType mediaType = stream.GetMediaFormat().GetMediaType();
+
+#if OPAL_VIDEO
+  bool isAudio = mediaType == OpalMediaType::Audio();
+
+  if (!isAudio && mediaType != OpalMediaType::Video()) {
+    PTRACE(2, "Media type \"" << mediaType << "\" is not supported.");
     return false;
+  }
+
+  const GstMediaStream * audioStream = NULL;
+  const GstMediaStream * videoStream = NULL;
+  OpalMediaStreamPtr otherStream ;//= GetMediaStream(isAudio ? OpalMediaType::Video() : OpalMediaType::Audio(), isSource);
+  if (otherStream == NULL)
+    (isAudio ? audioStream : videoStream) = &stream;
+  else {
+    audioStream = isAudio ? &stream : dynamic_cast<const GstMediaStream *>(&*otherStream);
+    videoStream = isAudio ? dynamic_cast<const GstMediaStream *>(&*otherStream) : &stream;
+  }
+  if (!m_endpoint.BuildPipeline(description, audioStream, videoStream))
+    return false;
+#else
+  if (mediaType != OpalMediaType::Audio()) {
+    PTRACE(2, "Media type \"" << mediaType << "\" is not supported.");
+    return false;
+  }
+
+  if (!m_endpoint.BuildPipeline(description, &stream))
+    return false;
+#endif
 
   if (pipeline.IsValid()) {
     PTRACE(4, "Reconfiguring gstreamer pipeline for " << stream);
     if (!pipeline.SetState(PGstPipeline::Null, 1000)) {
       PTRACE(2, "Could not stop gstreamer pipeline for " << stream);
-    }
-  }
-
-  bool isSource = stream.IsSource();
-  bool isAudio = stream.GetMediaFormat().GetMediaType() == OpalMediaType::Audio();
-
-  OpalMediaStreamPtr otherStream = GetMediaStream(isAudio ? OpalMediaType::Video() : OpalMediaType::Audio(), isSource);
-  if (otherStream != NULL) {
-    const GstMediaStream & audioStream = isAudio ? stream : dynamic_cast<const GstMediaStream &>(*otherStream);
-    const GstMediaStream & videoStream = isAudio ? dynamic_cast<const GstMediaStream &>(*otherStream) : stream;
-    PStringStream audioDevice, videoDevice;
-    if (isSource) {
-      m_endpoint.BuildAudioSourceDevice(audioDevice, audioStream);
-      m_endpoint.BuildVideoSourceDevice(videoDevice, videoStream);
-    }
-    else {
-      m_endpoint.BuildAudioSinkDevice(audioDevice, audioStream);
-      m_endpoint.BuildVideoSinkDevice(videoDevice, videoStream);
-    }
-    if (audioDevice == videoDevice) {
-      // Parallel pipelines
-      PTRACE(2, "Common audio/video source not yet supported");
-      return false;
     }
   }
 
@@ -803,20 +952,28 @@ PBoolean GstMediaStream::Open()
   if (!m_connection.OpenPipeline(m_pipeline, *this))
     return false;
 
-  // Our source, their sink, and vice versa
-  PString name = mediaFormat.GetMediaType();
-  if (IsSource()) {
-    name += APP_SINK_SUFFIX;
-    if (!m_pipeline.GetByName(name, m_pipeSink)) {
-      PTRACE(2, "Could not find " << name << " in pipeline for " << *this);
+  PGstBin rtpbin;
+  if (m_pipeline.GetByName(GstEndPoint::GetPipelineRTPName(), rtpbin)) {
+    PGstElement::States state;
+    if (!StartPlaying(state))
       return false;
-    }
   }
   else {
-    name += APP_SOURCE_SUFFIX;
-    if (!m_pipeline.GetByName(name, m_pipeSource)) {
-      PTRACE(2, "Could not find " << name << " in pipeline for " << *this);
-      return false;
+    // Our source, their sink, and vice versa
+    PString name = mediaFormat.GetMediaType();
+    if (IsSource()) {
+      name += APP_SINK_SUFFIX;
+      if (!m_pipeline.GetByName(name, m_pipeSink)) {
+        PTRACE(2, "Could not find " << name << " in pipeline for " << *this);
+        return false;
+      }
+    }
+    else {
+      name += APP_SOURCE_SUFFIX;
+      if (!m_pipeline.GetByName(name, m_pipeSource)) {
+        PTRACE(2, "Could not find " << name << " in pipeline for " << *this);
+        return false;
+      }
     }
   }
 
@@ -858,6 +1015,12 @@ PBoolean GstMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameTime)
 PBoolean GstMediaStream::IsSynchronous() const
 {
   return IsSource();
+}
+
+
+PBoolean GstMediaStream::RequiresPatchThread() const
+{
+  return m_pipeSink.IsValid() || m_pipeSource.IsValid();
 }
 
 
