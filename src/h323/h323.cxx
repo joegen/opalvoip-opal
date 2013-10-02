@@ -498,9 +498,6 @@ PBoolean H323Connection::WriteSignalPDU(H323SignalPDU & pdu)
 
 void H323Connection::HandleSignallingChannel()
 {
-  if (!SafeReference())
-    return;
-
   PAssert(m_signallingChannel != NULL, PLogicError);
 
   PTRACE(3, "H225\tReading PDUs: callRef=" << callReference);
@@ -548,7 +545,6 @@ void H323Connection::HandleSignallingChannel()
     endSessionReceived.Signal();
   }
 
-  SafeDereference();
   PTRACE(3, "H225\tSignal channel closed.");
 }
 
@@ -1798,6 +1794,12 @@ PString H323Connection::GetPrefixName() const
 }
 
 
+static void StartHandleSignallingChannel(PSafePtr<H323Connection> h323)
+{
+  h323->HandleSignallingChannel();
+}
+
+
 PBoolean H323Connection::SetUpConnection()
 {
   InternalSetAsOriginating();
@@ -1816,7 +1818,7 @@ PBoolean H323Connection::SetUpConnection()
     return false;
   }
 
-  m_signallingChannel->AttachThread(new PThreadObj<H323Connection>(*this, &H323Connection::HandleSignallingChannel, false, "H225 Caller"));
+  m_signallingChannel->AttachThread(new PThread1Arg< PSafePtr<H323Connection> >(this, &StartHandleSignallingChannel, false, "H225 Caller"));
   return true;
 }
 
