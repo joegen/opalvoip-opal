@@ -521,6 +521,9 @@ PBoolean OpalManager::SetUpCall(const PString & partyA,
 
 static void AsynchCallSetUp(PSafePtr<OpalConnection> connection)
 {
+  if (!connection.SetSafetyMode(PSafeReadWrite))
+    return;
+
   if (connection->SetUpConnection())
     return;
 
