@@ -72,8 +72,13 @@
 #endif
 
 
+#if _DEBUG
+const PTimeInterval MonitorCallStartTime(0, 0, 10);
+const PTimeInterval MonitorCallStatusTime(0, 0, 10); // Minutes
+#else
 const PTimeInterval MonitorCallStartTime(0, 10); // Seconds
-const PTimeInterval MonitorCallStatusTime(0, 30); // Seconds
+const PTimeInterval MonitorCallStatusTime(0, 0, 1); // Minutes
+#endif
 
 #if OPAL_H239
   static PConstString const H239MessageOID("0.0.8.239.2");
@@ -523,9 +528,10 @@ void H323Connection::HandleSignallingChannel()
           ClearCall(EndedByNoAnswer);
           break;
         case HasExecutedSignalConnect :
-          // Have had minimum MonitorCallStatusTime delay since CONNECT but
+          // Have had minimum MonitorCallStartTime delay since CONNECT but
           // still no media to move it to EstablishedConnection state. Must
           // thus not have any common codecs to use!
+          PTRACE(1, "H225\tTook too long to start media");
           ClearCall(EndedByCapabilityExchange);
           break;
         default :
