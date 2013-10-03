@@ -1846,6 +1846,11 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
   if (!lock.IsLocked())
     return;
 
+  if (transport == NULL) {
+    PTRACE(1, "SIP\tNo transport, ignoring PDU " << pdu);
+    return;
+  }
+
   // Prevent retries from getting through to processing
   unsigned sequenceNumber = pdu.GetMIME().GetCSeqIndex();
   if (m_lastRxCSeq.find(method) != m_lastRxCSeq.end() && sequenceNumber <= m_lastRxCSeq[method]) {
