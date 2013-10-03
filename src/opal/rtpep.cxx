@@ -38,6 +38,44 @@
 #include <opal/rtpconn.h>
 
 
+const char RTP_FEC_Name[] = "rtp-fec"; // RFC 5109
+
+class OpalFECMMediaType : public OpalMediaTypeDefinition 
+{
+  public:
+    OpalFECMMediaType()
+      : OpalMediaTypeDefinition(RTP_FEC_Name, "")
+    {
+    }
+};
+
+OPAL_INSTANTIATE_MEDIATYPE2(rtpfec, RTP_FEC_Name, OpalFECMMediaType);
+
+
+const OpalMediaType & OpalGetFECMediaType()
+{
+  static OpalMediaType rtpfec(RTP_FEC_Name);
+  return rtpfec;
+}
+
+
+const OpalMediaFormat & OpalGetRED()
+{
+  static OpalMediaFormat format("RTP-RED", RTP_FEC_Name, RTP_DataFrame::DynamicBase, "red", false, 0, 0, 0, 8000);
+  return format;
+}
+
+
+const OpalMediaFormat & OpalGetULPFEC()
+{
+  static OpalMediaFormat format("RTP-ULPFEC", RTP_FEC_Name, RTP_DataFrame::DynamicBase, "ulpfec", false, 0, 0, 0, 8000);
+  return format;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+
 OpalRTPEndPoint::OpalRTPEndPoint(OpalManager & manager,     ///<  Manager of all endpoints.
                        const PCaselessString & prefix,      ///<  Prefix for URL style address strings
                                       unsigned attributes)  ///<  Bit mask of attributes endpoint has

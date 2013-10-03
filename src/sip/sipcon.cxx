@@ -929,6 +929,11 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
 #endif
   }
 
+  if (GetAutoStart(OpalGetFECMediaType())&OpalMediaType::Transmit) {
+    localMedia->AddMediaFormat(OpalGetRED());
+    localMedia->AddMediaFormat(OpalGetULPFEC());
+  }
+
   sdp.AddMediaDescription(localMedia);
 
   return true;
@@ -1253,6 +1258,11 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 #if OPAL_T38_CAPABILITY
     SetNxECapabilities(ciscoNSEHandler, m_localMediaFormats, m_answerFormatList, OpalCiscoNSE, localMedia);
 #endif
+  }
+
+  if (GetAutoStart(OpalGetFECMediaType())&OpalMediaType::Receive) {
+    localMedia->AddMediaFormat(OpalGetRED());
+    localMedia->AddMediaFormat(OpalGetULPFEC());
   }
 
   localMedia->SetAddresses(mediaSession->GetLocalMediaAddress(), mediaSession->GetLocalControlAddress());
