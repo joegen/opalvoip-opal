@@ -1012,6 +1012,8 @@ bool MyManager::Initialise()
   if (config->Read(VideoAutoReceiveKey, &onoff))
     SetAutoStartReceiveVideo(onoff);
 
+  //OpalGetFECMediaType().GetDefinition()->SetAutoStart(OpalMediaType::TransmitReceive);
+
   videoArgs = GetVideoPreviewDevice();
   videoArgs.driverName = VIDEO_WINDOW_DRIVER;
   SetVideoPreviewDevice(videoArgs);

@@ -37,6 +37,10 @@
 
 #include <opal/endpoint.h>
 
+const OpalMediaType & OpalGetFECMediaType();
+const OpalMediaFormat & OpalGetRED();
+const OpalMediaFormat & OpalGetULPFEC();
+
 
 /**Base class for endpoint types that use RTP for media transport.
    Currently used by H323EndPoint and SIPEndPoint
