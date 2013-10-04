@@ -224,7 +224,7 @@ SIPConnection::SIPConnection(OpalCall & call,
                              OpalConnection::StringOptions * stringOptions)
   : OpalRTPConnection(call, ep, token, options, stringOptions)
   , endpoint(ep)
-  , transport(newTransport)
+  , m_transport(newTransport)
   , deleteTransport(newTransport == NULL || !newTransport->IsReliable())
   , m_allowedMethods((1<<SIP_PDU::Method_INVITE)|
                      (1<<SIP_PDU::Method_ACK   )|
@@ -346,6 +346,15 @@ bool SIPConnection::GarbageCollection()
 }
 
 
+OpalTransport & SIPConnection::GetTransport() const
+{
+  if (m_transport == NULL)
+    PAssert(const_cast<SIPConnection*>(this)->SetTransport(m_dialog.GetRemoteTransportAddress()), "Could not re-create transport");
+
+  return *m_transport;
+}
+
+
 bool SIPConnection::SetTransport(const SIPURL & destination)
 {
   PTRACE(4, "SIP\tSetting new transport for destination \"" << destination << '"');
@@ -358,15 +367,15 @@ bool SIPConnection::SetTransport(const SIPURL & destination)
     PTRACE_CONTEXT_ID_TO(newTransport);
   }
 
-  if (deleteTransport && transport != NULL) {
-    transport->CloseWait();
-    delete transport;
+  if (deleteTransport && m_transport != NULL) {
+    GetTransport().CloseWait();
+    delete m_transport;
   }
 
-  transport = newTransport;
+  m_transport = newTransport;
   deleteTransport = true;
 
-  return transport != NULL;
+  return m_transport != NULL;
 }
 
 
@@ -413,7 +422,7 @@ void SIPConnection::OnReleased()
         SIP_PDU response(*originalInvite, sipCode);
         AdjustInviteResponse(response);
         response.GetMIME().SetContact(m_forwardParty);
-        originalInvite->SendResponse(*transport, response); 
+        originalInvite->SendResponse(GetTransport(), response); 
       }
 
       UnlockReadWrite();
@@ -433,11 +442,9 @@ void SIPConnection::OnReleased()
         return;
 
       // create BYE now & delete it later to prevent memory access errors
-      if (transport != NULL) {
-        bye = new SIPBye(*this);
-        if (!bye->Start())
-          bye.SetNULL();
-      }
+      bye = new SIPBye(*this);
+      if (!bye->Start())
+        bye.SetNULL();
 
       UnlockReadWrite();
       break;
@@ -514,9 +521,6 @@ void SIPConnection::OnReleased()
 
 bool SIPConnection::TransferConnection(const PString & remoteParty)
 {
-  if (transport == NULL)
-    return false;
-
   // There is still an ongoing REFER transaction 
   if (m_referInProgress) {
     PTRACE(2, "SIP\tTransfer already in progress for " << *this);
@@ -624,7 +628,7 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
 
 PBoolean SIPConnection::SetConnected()
 {
-  if (transport == NULL) {
+  if (m_transport == NULL) {
     Release(EndedByTransportFail);
     return PFalse;
   }
@@ -742,7 +746,7 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
     session->SetRemoteControlAddress(mediaDescription.GetControlAddress());
   }
 
-  if (!session->Open(transport->GetInterface())) {
+  if (!session->Open(GetTransport().GetInterface())) {
     ReleaseMediaSession(sessionId);
     return NULL;
   }
@@ -842,7 +846,7 @@ bool SIPConnection::OnSendOfferSDPSession(const OpalMediaType & mediaType,
     return false;
   }
 
-  if (!mediaSession->Open(transport->GetInterface())) {
+  if (!mediaSession->Open(GetTransport().GetInterface())) {
     PTRACE(1, "SIP\tCould not open RTP session " << sessionId << " for media type " << mediaType);
     return false;
   }
@@ -1276,19 +1280,19 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 OpalTransportAddress SIPConnection::GetDefaultSDPConnectAddress(WORD port) const
 {
   PIPSocket::Address localIP;
-  if (!transport->GetLocalAddress().GetIpAddress(localIP)) {
+  if (!GetTransport().GetLocalAddress().GetIpAddress(localIP)) {
     PTRACE(1, "SIP\tNot using IP transport");
     return OpalTransportAddress();
   }
 
   PIPSocket::Address remoteIP;
-  if (!transport->GetRemoteAddress().GetIpAddress(remoteIP)) {
+  if (!GetTransport().GetRemoteAddress().GetIpAddress(remoteIP)) {
     PTRACE(1, "SIP\tNot using IP transport");
     return OpalTransportAddress();
   }
 
   endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
-  return OpalTransportAddress(localIP, port, transport->GetProtoPrefix());
+  return OpalTransportAddress(localIP, port, GetTransport().GetProtoPrefix());
 }
 
 
@@ -1482,7 +1486,7 @@ bool SIPConnection::WriteINVITE()
 {
   SIPURL myAddress = m_stringOptions(OPAL_OPT_CALLING_PARTY_URL);
   if (myAddress.IsEmpty())
-    myAddress = endpoint.GetDefaultLocalURL(*transport);
+    myAddress = endpoint.GetDefaultLocalURL(GetTransport());
 
   PString transportProtocol = m_dialog.GetRequestURI().GetParamVars()("transport");
   if (!transportProtocol.IsEmpty())
@@ -1553,7 +1557,7 @@ bool SIPConnection::WriteINVITE()
     return PTrue;
   }
 
-  PTRACE(2, "SIP\tDid not start INVITE transaction on " << transport);
+  PTRACE(2, "SIP\tDid not start INVITE transaction on " << GetTransport());
   return PFalse;
 }
 
@@ -1667,12 +1671,12 @@ PBoolean SIPConnection::SetUpConnection()
     m_allowedEvents += SIPSubscribe::EventPackage(SIPSubscribe::Conference);
 
   bool ok;
-  if (!transport->GetInterface().IsEmpty())
+  if (!GetTransport().GetInterface().IsEmpty())
     ok = WriteINVITE();
   else {
-    PWaitAndSignal mutex(transport->GetWriteMutex());
+    PWaitAndSignal mutex(GetTransport().GetWriteMutex());
     m_dialog.SetForking(true);
-    ok = transport->WriteConnect(WriteINVITE, this);
+    ok = GetTransport().WriteConnect(WriteINVITE, this);
     m_dialog.SetForking(false);
   }
 
@@ -1684,7 +1688,7 @@ PBoolean SIPConnection::SetUpConnection()
     return true;
   }
 
-  PTRACE(1, "SIP\tCould not write to " << transportAddress << " - " << transport->GetErrorText());
+  PTRACE(1, "SIP\tCould not write to " << transportAddress << " - " << GetTransport().GetErrorText());
   Release(EndedByTransportFail);
   return false;
 }
@@ -1728,9 +1732,6 @@ PString SIPConnection::GetCallInfo() const
 
 bool SIPConnection::Hold(bool fromRemote, bool placeOnHold)
 {
-  if (transport == NULL)
-    return false;
-
 #if PTRACING
   const char * holdStr = placeOnHold ? "on" : "off";
 #endif
@@ -1856,11 +1857,6 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
   if (!lock.IsLocked())
     return;
 
-  if (transport == NULL) {
-    PTRACE(1, "SIP\tNo transport, ignoring PDU " << pdu);
-    return;
-  }
-
   // Prevent retries from getting through to processing
   unsigned sequenceNumber = pdu.GetMIME().GetCSeqIndex();
   if (m_lastRxCSeq.find(method) != m_lastRxCSeq.end() && sequenceNumber <= m_lastRxCSeq[method]) {
@@ -1938,7 +1934,7 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
 
   // If we are in a dialog, then m_dialog needs to be updated in the 2xx/1xx
   // response for a target refresh request
-  m_dialog.Update(*transport, response);
+  m_dialog.Update(GetTransport(), response);
   response.DecodeSDP(GetLocalMediaFormats());
 
   const SIPMIMEInfo & responseMIME = response.GetMIME();
@@ -2005,7 +2001,7 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
     }
 
     // And end connect mode on the transport
-    transport->SetInterface(transaction.GetInterface());
+    GetTransport().SetInterface(transaction.GetInterface());
     m_contactAddress = transaction.GetMIME().GetContact();
   }
 
@@ -2022,7 +2018,7 @@ void SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
       PTRACE(3, "SIP\tNo PRACK on cancelled transaction");
     }
     else {
-      transport->SetInterface(transaction.GetInterface()); // Make sure same as response
+      GetTransport().SetInterface(transaction.GetInterface()); // Make sure same as response
       SIPTransaction * prack = new SIPPrack(*this, rseq & transaction.GetMIME().GetCSeq());
       prack->Start();
     }
@@ -2235,7 +2231,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
     case SIP_PDU::Failure_MessageTooLarge :
     {
-      SIPURL newTransportAddress(transport->GetRemoteAddress());
+      SIPURL newTransportAddress(GetTransport().GetRemoteAddress());
       newTransportAddress.SetParamVar("transport", "tcp");
       if (!SetTransport(newTransportAddress))
         break;
@@ -2411,7 +2407,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   // update the dialog context
   m_dialog.SetLocalTag(GetToken());
-  m_dialog.Update(*transport, request);
+  m_dialog.Update(GetTransport(), request);
   UpdateRemoteAddresses();
 
   // We received a Re-INVITE for a current connection
@@ -2460,8 +2456,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   // get the local and peer transport addresses
   PIPSocket::Address peerAddr, localAddr;
-  transport->GetRemoteAddress().GetIpAddress(peerAddr);
-  transport->GetLocalAddress().GetIpAddress(localAddr);
+  GetTransport().GetRemoteAddress().GetIpAddress(peerAddr);
+  GetTransport().GetLocalAddress().GetIpAddress(localAddr);
 
   // allow the application to determine if RTP NAT is enabled or not
   remoteIsNAT = IsRTPNATEnabled(localAddr, peerAddr, sigAddr, PTrue);
@@ -2473,7 +2469,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       if (prackRequired) {
         SIP_PDU response(request, SIP_PDU::Failure_BadExtension);
         response.GetMIME().SetUnsupported("100rel");
-        request.SendResponse(*transport, response);
+        request.SendResponse(GetTransport(), response);
         return;
       }
       // Ignore, if just supported
@@ -2488,7 +2484,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       if (!m_prackEnabled) {
         SIP_PDU response(request, SIP_PDU::Failure_ExtensionRequired);
         response.GetMIME().SetRequire("100rel");
-        request.SendResponse(*transport, response);
+        request.SendResponse(GetTransport(), response);
         return;
       }
   }
@@ -2583,7 +2579,7 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 {
   if (m_handlingINVITE || GetPhase() < ConnectedPhase) {
     PTRACE(2, "SIP\tRe-INVITE from " << request.GetURI() << " received while INVITE in progress on " << *this);
-    request.SendResponse(*transport, SIP_PDU::Failure_RequestPending);
+    request.SendResponse(GetTransport(), SIP_PDU::Failure_RequestPending);
     return;
   }
 
@@ -2664,13 +2660,13 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
 void SIPConnection::OnReceivedOPTIONS(SIP_PDU & request)
 {
   if (request.GetMIME().GetAccept().Find("application/sdp") == P_MAX_INDEX)
-    request.SendResponse(*transport, SIP_PDU::Failure_UnsupportedMediaType);
+    request.SendResponse(GetTransport(), SIP_PDU::Failure_UnsupportedMediaType);
   else {
-    SDPSessionDescription sdp(m_sdpSessionId, m_sdpVersion, transport->GetLocalAddress());
+    SDPSessionDescription sdp(m_sdpSessionId, m_sdpVersion, GetTransport().GetLocalAddress());
     SIP_PDU response(request, SIP_PDU::Successful_OK);
     response.SetAllow(GetAllowedMethods());
     response.SetEntityBody(sdp.Encode());
-    request.SendResponse(*transport, response, &endpoint);
+    request.SendResponse(GetTransport(), response, &endpoint);
   }
 }
 
@@ -2696,7 +2692,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
   SIPSubscribe::EventPackage package(mime.GetEvent());
   if (m_allowedEvents.Contains(package)) {
     PTRACE(2, "SIP\tReceived Notify for allowed event " << package);
-    request.SendResponse(*transport, SIP_PDU::Successful_OK);
+    request.SendResponse(GetTransport(), SIP_PDU::Successful_OK);
     OnAllowedEventNotify(package);
     return;
   }
@@ -2705,19 +2701,19 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
   // do it later if we ever support multiple simultaneous REFERs
   if (package.Find("refer") == P_MAX_INDEX) {
     PTRACE(2, "SIP\tNOTIFY in a connection only supported for REFER requests");
-    request.SendResponse(*transport, SIP_PDU::Failure_BadEvent);
+    request.SendResponse(GetTransport(), SIP_PDU::Failure_BadEvent);
     return;
   }
 
   if (!m_referInProgress) {
     PTRACE(2, "SIP\tNOTIFY for REFER we never sent.");
-    request.SendResponse(*transport, SIP_PDU::Failure_TransactionDoesNotExist);
+    request.SendResponse(GetTransport(), SIP_PDU::Failure_TransactionDoesNotExist);
     return;
   }
 
   if (mime.GetContentType() != "message/sipfrag") {
     PTRACE(2, "SIP\tNOTIFY for REFER has incorrect Content-Type");
-    request.SendResponse(*transport, SIP_PDU::Failure_BadRequest);
+    request.SendResponse(GetTransport(), SIP_PDU::Failure_BadRequest);
     return;
   }
 
@@ -2725,11 +2721,11 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
   unsigned code = body.Mid(body.Find(' ')).AsUnsigned();
   if (body.NumCompare("SIP/") != EqualTo || code < 100) {
     PTRACE(2, "SIP\tNOTIFY for REFER has incorrect body");
-    request.SendResponse(*transport, SIP_PDU::Failure_BadRequest);
+    request.SendResponse(GetTransport(), SIP_PDU::Failure_BadRequest);
     return;
   }
 
-  request.SendResponse(*transport, SIP_PDU::Successful_OK);
+  request.SendResponse(GetTransport(), SIP_PDU::Successful_OK);
 
   PStringToString info;
   PCaselessString state = mime.GetSubscriptionState(info);
@@ -2759,7 +2755,7 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
   if (referTo.IsEmpty()) {
     SIP_PDU response(request, SIP_PDU::Failure_BadRequest);
     response.SetInfo("Missing refer-to header");
-    request.SendResponse(*transport, response);
+    request.SendResponse(GetTransport(), response);
     return;
   }    
 
@@ -2793,13 +2789,13 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
       else
         response.SetStatusCode(SIP_PDU::Failure_NotImplemented);
 
-      request.SendResponse(*transport, response);
+      request.SendResponse(GetTransport(), response);
       return;
     }
   }
 
   // send response before attempting the transfer
-  if (!request.SendResponse(*transport, response))
+  if (!request.SendResponse(GetTransport(), response))
     return;
 
   m_redirectingParty = requestMIME.GetReferredBy();
@@ -2833,7 +2829,7 @@ bool SIPConnection::InviteConferenceParticipant(const PString & conf, const PStr
 void SIPConnection::OnReceivedBYE(SIP_PDU & request)
 {
   PTRACE(3, "SIP\tBYE received for call " << request.GetMIME().GetCallID());
-  request.SendResponse(*transport, SIP_PDU::Successful_OK);
+  request.SendResponse(GetTransport(), SIP_PDU::Successful_OK);
   
   if (IsReleased()) {
     PTRACE(2, "SIP\tAlready released " << *this);
@@ -2841,7 +2837,7 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
   }
   releaseMethod = ReleaseWithNothing;
 
-  m_dialog.Update(*transport, request);
+  m_dialog.Update(GetTransport(), request);
   UpdateRemoteAddresses();
   request.GetMIME().GetProductInfo(remoteProductInfo);
 
@@ -2856,7 +2852,7 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
 
   if (originalInvite == NULL || originalInvite->GetTransactionID() != request.GetTransactionID()) {
     PTRACE(2, "SIP\tUnattached " << request << " received for " << *this);
-    request.SendResponse(*transport, SIP_PDU::Failure_TransactionDoesNotExist);
+    request.SendResponse(GetTransport(), SIP_PDU::Failure_TransactionDoesNotExist);
     return;
   }
 
@@ -2864,7 +2860,7 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
 
   SIP_PDU response(request, SIP_PDU::Successful_OK);
   response.GetMIME().SetTo(m_dialog.GetLocalURI().AsQuotedString());
-  request.SendResponse(*transport, response);
+  request.SendResponse(GetTransport(), response);
   
   if (!IsOriginating())
     Release(EndedByCallerAbort);
@@ -2995,7 +2991,7 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   m_authentication = newAuth;
   m_authenticatedCseq = cseq;
 
-  transport->SetInterface(transaction.GetInterface());
+  GetTransport().SetInterface(transaction.GetInterface());
 
   SIPTransaction * newTransaction = transaction.CreateDuplicate();
   if (newTransaction == NULL) {
@@ -3254,7 +3250,7 @@ bool SIPConnection::SendInviteOK()
   AdjustInviteResponse(response);
 
   response.SetEntityBody(externalSDP);
-  return originalInvite->SendResponse(*transport, response); 
+  return originalInvite->SendResponse(GetTransport(), response); 
 }
 
 
@@ -3270,7 +3266,7 @@ PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code,
   if (sdp != NULL)
     response.GetSDP()->SetSessionName(response.GetMIME().GetUserAgent());
 
-  return originalInvite->SendResponse(*transport, response); 
+  return originalInvite->SendResponse(GetTransport(), response); 
 }
 
 
@@ -3280,23 +3276,12 @@ void SIPConnection::AdjustInviteResponse(SIP_PDU & response)
   mime.SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
   response.SetAllow(GetAllowedMethods());
 
-  endpoint.AdjustToRegistration(response, *transport, this);
+  endpoint.AdjustToRegistration(response, GetTransport(), this);
 
   if (!m_ciscoRemotePartyID.IsEmpty()) {
     SIPURL party(mime.GetContact());
     party.GetFieldParameters().RemoveAll();
     mime.Set(RemotePartyID, party.AsQuotedString());
-  }
-
-  // this can be used to promote any incoming calls to TCP. Not quite there yet, but it *almost* works
-  bool promoteToTCP = false;    // disable code for now
-  if (promoteToTCP && (transport == NULL || strcmp(transport->GetProtoPrefix(), "tcp$") != 0)) {
-    // see if endpoint contains a TCP listener we can use
-    OpalTransportAddress newAddr;
-    if (endpoint.FindListenerForProtocol(OpalTransportAddress::TcpPrefix(), newAddr)) {
-      response.GetMIME().SetContact(SIPURL(PString::Empty(), newAddr, 0).AsQuotedString());
-      PTRACE(3, "SIP\tPromoting connection to TCP");
-    }
   }
 
   // AdjustToRegistration already did a check for GetConferenceState, this is quicker ...
@@ -3352,7 +3337,7 @@ void SIPConnection::OnInviteResponseRetry(PTimer &, INT)
       timeout = endpoint.GetRetryTimeoutMax();
     m_responseRetryTimer = timeout;
 
-    originalInvite->SendResponse(*transport, m_responsePackets.front()); // Not really a resonse but the function will work  }
+    originalInvite->SendResponse(GetTransport(), m_responsePackets.front()); // Not really a resonse but the function will work  }
   }
 }
 
@@ -3388,7 +3373,7 @@ void SIPConnection::OnReceivedPRACK(SIP_PDU & request)
 {
   PStringArray rack = request.GetMIME().GetString("RAck").Tokenise(" \r\n\t", false);
   if (rack.GetSize() != 3) {
-    request.SendResponse(*transport, SIP_PDU::Failure_BadRequest);
+    request.SendResponse(GetTransport(), SIP_PDU::Failure_BadRequest);
     return;
   }
 
@@ -3397,14 +3382,14 @@ void SIPConnection::OnReceivedPRACK(SIP_PDU & request)
       !(rack[2] *= "INVITE") ||
       m_responsePackets.empty() ||
       m_responsePackets.front().GetMIME().GetString("RSeq").AsUnsigned() != rack[0].AsUnsigned()) {
-    request.SendResponse(*transport, SIP_PDU::Failure_TransactionDoesNotExist);
+    request.SendResponse(GetTransport(), SIP_PDU::Failure_TransactionDoesNotExist);
     return;
   }
 
   m_responseFailTimer.Stop(false); // Asynchronous stop to avoid deadlock
   m_responseRetryTimer.Stop(false);
 
-  request.SendResponse(*transport, SIP_PDU::Successful_OK);
+  request.SendResponse(GetTransport(), SIP_PDU::Successful_OK);
 
   // Got PRACK for our response, pop it off and send next, if on
   m_responsePackets.pop();
@@ -3413,7 +3398,7 @@ void SIPConnection::OnReceivedPRACK(SIP_PDU & request)
     m_responseRetryCount = 0;
     m_responseRetryTimer = endpoint.GetRetryTimeoutMin();
     m_responseFailTimer = endpoint.GetAckTimeout();
-    originalInvite->SendResponse(*transport, m_responsePackets.front());
+    originalInvite->SendResponse(GetTransport(), m_responsePackets.front());
   }
 
   request.DecodeSDP(GetLocalMediaFormats());
@@ -3470,7 +3455,7 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
   else 
     status = SIP_PDU::Failure_UnsupportedMediaType;
 
-  request.SendResponse(*transport, status);
+  request.SendResponse(GetTransport(), status);
 
   if (status == SIP_PDU::Successful_OK) {
 #if OPAL_PTLIB_DTMF
@@ -3488,7 +3473,7 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & request)
 void SIPConnection::OnReceivedPING(SIP_PDU & request)
 {
   PTRACE(3, "SIP\tReceived PING");
-  request.SendResponse(*transport, SIP_PDU::Successful_OK);
+  request.SendResponse(GetTransport(), SIP_PDU::Successful_OK);
 }
 
 
@@ -3497,9 +3482,9 @@ void SIPConnection::OnReceivedMESSAGE(SIP_PDU & pdu)
   PTRACE(3, "SIP\tReceived MESSAGE in the context of a call");
 
 #if OPAL_HAS_IM
-  OpalSIPIMContext::OnReceivedMESSAGE(endpoint, this, *transport, pdu);
+  OpalSIPIMContext::OnReceivedMESSAGE(endpoint, this, GetTransport(), pdu);
 #else
-  pdu.SendResponse(*transport, SIP_PDU::Failure_BadRequest);
+  pdu.SendResponse(GetTransport(), SIP_PDU::Failure_BadRequest);
 #endif
 }
 
@@ -3511,11 +3496,11 @@ void SIPConnection::OnReceivedSUBSCRIBE(SIP_PDU & request)
   PTRACE(3, "SIP\tReceived SUBSCRIBE for " << eventPackage);
 
   if (m_allowedEvents.Contains(eventPackage))
-    endpoint.OnReceivedSUBSCRIBE(*transport, request, &m_dialog);
+    endpoint.OnReceivedSUBSCRIBE(GetTransport(), request, &m_dialog);
   else {
     SIP_PDU response(request, SIP_PDU::Failure_BadEvent);
     response.GetMIME().SetAllowEvents(m_allowedEvents); // Required by spec
-    request.SendResponse(*transport, response);
+    request.SendResponse(GetTransport(), response);
   }
 }
 
@@ -3598,9 +3583,6 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
 
 bool SIPConnection::SendOPTIONS(const SIPOptions::Params & params, SIP_PDU * reply)
 {
-  if (transport == NULL)
-    return false;
-
   if ((m_allowedMethods&(1<<SIP_PDU::Method_OPTIONS)) == 0) {
     PTRACE(2, "SIP\tRemote does not allow OPTIONS message.");
     return false;
@@ -3618,9 +3600,6 @@ bool SIPConnection::SendOPTIONS(const SIPOptions::Params & params, SIP_PDU * rep
 
 bool SIPConnection::SendINFO(const SIPInfo::Params & params, SIP_PDU * reply)
 {
-  if (transport == NULL)
-    return false;
-
   if ((m_allowedMethods&(1<<SIP_PDU::Method_INFO)) == 0) {
     PTRACE(2, "SIP\tRemote does not allow INFO message.");
     return false;
@@ -3673,7 +3652,7 @@ bool SIPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaComm
 PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & request)
 {
   // Must always send OK, even if not OK
-  request.SendResponse(*transport, SIP_PDU::Successful_OK);
+  request.SendResponse(GetTransport(), SIP_PDU::Successful_OK);
 
   // Ignore empty body
   PCaselessString body = request.GetEntityBody();
@@ -3744,7 +3723,7 @@ unsigned SIPConnection::GetAllowedMethods() const
 
 void SIPConnection::OnSessionTimeout(PTimer &, INT)
 {
-  //SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);  
+  //SIPTransaction * invite = new SIPInvite(*this, GetTransport(), rtpSessions);  
   //invite->Start();  
   //sessionTimer = 10000;
 }
