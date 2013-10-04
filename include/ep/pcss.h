@@ -185,13 +185,13 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
        Note this function should not block or it will impede the operation of
        the stack.
 
-       The default implementation is pure.
+       The default implementation calls OpalPCSSEndPoint::OnIncomingCall().
 
        @return false is returned the call is aborted with status of EndedByLocalBusy.
       */
     virtual PBoolean OnShowIncoming(
       const OpalPCSSConnection & connection ///<  Connection having event
-    ) = 0;
+    );
 
     /**Accept the incoming connection.
        Returns false if the connection token does not correspond to a valid
@@ -217,7 +217,7 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
       */
     virtual PBoolean OnShowOutgoing(
       const OpalPCSSConnection & connection ///<  Connection having event
-    ) = 0;
+    );
 
     /**Call back to indicate that the remote user has indicated something.
        If false is returned the call is aborted.
@@ -279,12 +279,12 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
     /**Set the name for the video device to be used for input when on hold.
        This defaults to the "Null Video Out".
      */
-    virtual PBoolean SetVideoOnHoldDevice(const PString & name);
+    virtual bool SetVideoOnHoldDevice(const PVideoDevice::OpenArgs & args);
 
     /**Get the name for the video device to be used for input when on hold.
        This defaults to the "Null Video Out".
      */
-    const PString & GetVideoOnHoldDevice() const { return m_videoOnHoldDevice; }
+    const PVideoDevice::OpenArgs & GetVideoOnHoldDevice() const { return m_videoOnHoldDevice; }
 #endif
 
     /**Get default the sound channel buffer depth.
@@ -323,7 +323,7 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
     unsigned m_soundChannelBuffers;
     unsigned m_soundChannelBufferTime;
 #if OPAL_VIDEO
-    PString  m_videoOnHoldDevice;
+    PVideoDevice::OpenArgs m_videoOnHoldDevice;
 #endif
 
   private:
@@ -467,7 +467,7 @@ class OpalPCSSConnection : public OpalLocalConnection
     /**Get the name for the video device to be used for input when on hold.
        This defaults to the "Null Video Out".
      */
-    const PString & GetVideoOnHoldDevice() const { return m_videoOnHoldDevice; }
+    const PVideoDevice::OpenArgs & GetVideoOnHoldDevice() const { return m_videoOnHoldDevice; }
 #endif
 
     /**Get default the sound channel buffer depth.
@@ -492,7 +492,7 @@ class OpalPCSSConnection : public OpalLocalConnection
     unsigned           m_soundChannelBuffers;
     unsigned           m_soundChannelBufferTime;
 #if OPAL_VIDEO
-    PString            m_videoOnHoldDevice;
+    PVideoDevice::OpenArgs m_videoOnHoldDevice;
 #endif
 };
 

@@ -195,7 +195,7 @@ class OpalManager : public PObject
       */
     OpalEndPoint * FindEndPoint(
       const PString & prefix  ///< Prefix string for endpoint URL
-    );
+    ) const;
 
     /**Find an endpoint instance that is using the specified prefix.
       */
@@ -326,6 +326,32 @@ class OpalManager : public PObject
       const PString & token,  ///<  Token to identify connection
       PSafetyMode mode = PSafeReadWrite ///< Lock mode
     ) const { return activeCalls.FindWithLock(token, mode); }
+
+    /**A call back function whenever a call is being terminated locally.
+       An application may use this function to auto-answer an incoming call
+       from the a network. Or indicate to a user interface that an incoming
+       call has to be answered asynchronously.
+
+       This called from the OpalLocalEndPoint::OnIncomingCall() function.
+
+       The default behaviour does nothing and returns true.
+
+       @!return fals to refuse the call.
+      */
+    virtual bool OnLocalIncomingCall(
+      OpalCall & call   ///<  Call that was completed
+    );
+
+    /**A call back function whenever a call is being initated locally.
+       An application may use this function to indicate that a call is in progress.
+
+       This called from the OpalLocalEndPoint::OnOutgoingCall() function.
+
+       The default behaviour does nothing and returns true.
+      */
+    virtual bool OnLocalOutgoingCall(
+      OpalCall & call   ///<  Call that was completed
+    );
 
     /**A call back function whenever a call is completed.
        In telephony terminology a completed call is one where there is an

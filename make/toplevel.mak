@@ -51,7 +51,7 @@ ifeq ($(OPAL_SAMPLES),yes)
              $(OPAL_TOP_LEVEL_DIR)/samples/server
 
   ifeq ($(OPAL_HAS_PCSS),yes)
-    SUBDIRS += $(OPAL_TOP_LEVEL_DIR)/samples/simple
+    SUBDIRS += $(OPAL_TOP_LEVEL_DIR)/samples/console
     ifneq (,$(shell which wx-config))
       #SUBDIRS += $(OPAL_TOP_LEVEL_DIR)/samples/openphone
     endif
@@ -63,16 +63,16 @@ ifeq ($(OPAL_SAMPLES),yes)
     SUBDIRS += $(OPAL_TOP_LEVEL_DIR)/samples/callgen
   endif
   ifeq ($(OPAL_PTLIB_CLI)$(OPAL_PTLIB_EXPAT)$(OPAL_SIP), yesyesyes)
-    SUBDIRS += $(OPAL_TOP_LEVEL_DIR)/samples/testpresent
+    SUBDIRS += $(OPAL_TOP_LEVEL_DIR)/samples/test/presence
   endif
   ifeq ($(OPAL_PTLIB_CLI)$(OPAL_FAX), yesyes)
-    SUBDIRS += $(OPAL_TOP_LEVEL_DIR)/samples/faxopal
+    SUBDIRS += $(OPAL_TOP_LEVEL_DIR)/samples/fax
   endif
   ifeq ($(OPAL_PTLIB_CLI)$(OPAL_IVR),yesyes)
-    SUBDIRS += $(OPAL_TOP_LEVEL_DIR)/samples/ivropal
+    SUBDIRS += $(OPAL_TOP_LEVEL_DIR)/samples/ivr
   endif
   ifeq ($(OPAL_PTLIB_CLI)$(OPAL_IVR)$(OPAL_HAS_MIXER),yesyesyes)
-    SUBDIRS += $(OPAL_TOP_LEVEL_DIR)/samples/opalmcu
+    SUBDIRS += $(OPAL_TOP_LEVEL_DIR)/samples/mcu
   endif
   ifeq ($(OPAL_GSTREAMER),yes)
     SUBDIRS += $(OPAL_TOP_LEVEL_DIR)/samples/gstreamer

@@ -70,15 +70,16 @@ OpalPCSSEndPoint::OpalPCSSEndPoint(OpalManager & mgr, const char * prefix)
   // Should only need double buffering for Unix platforms
   , m_soundChannelBufferTime(40)
 #endif
-#if OPAL_VIDEO
-  , m_videoOnHoldDevice(P_FAKE_VIDEO_TEXT)
-#endif
 {
   PTRACE(3, "PCSS\tCreated PC sound system endpoint.\n" << setfill('\n')
          << "Player=" << m_soundChannelPlayDevice << ", available devices:\n"
          << PSoundChannel::GetDeviceNames(PSoundChannel::Player)
          << "Recorders=" << m_soundChannelRecordDevice << ", available devices:\n"
          << PSoundChannel::GetDeviceNames(PSoundChannel::Recorder));
+
+#if OPAL_VIDEO
+  m_videoOnHoldDevice.deviceName = P_FAKE_VIDEO_TEXT;
+#endif
 }
 
 
@@ -92,6 +93,9 @@ static bool SetDeviceName(const PString & name,
                           PSoundChannel::Directions dir,
                           PString & result)
 {
+  if (name.IsEmpty() || name == "\t")
+    return true;
+
   // First see if the channel can be created from the name alone, this
   // picks up *.wav style names.
   PSoundChannel * channel = PSoundChannel::CreateChannelByName(name, dir);
@@ -273,6 +277,18 @@ bool OpalPCSSEndPoint::OnUserInput(const OpalLocalConnection & connection, const
 }
 
 
+PBoolean OpalPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
+{
+  return OpalPCSSEndPoint::OnOutgoingCall(connection);
+}
+
+
+PBoolean OpalPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
+{
+  return OpalPCSSEndPoint::OnIncomingCall(const_cast<OpalPCSSConnection &>(connection));
+}
+
+
 PBoolean OpalPCSSEndPoint::AcceptIncomingConnection(const PString & token)
 {
   return AcceptIncomingCall(token);
@@ -323,21 +339,9 @@ void OpalPCSSEndPoint::SetSoundChannelBufferTime(unsigned depth)
 }
 
 
-PBoolean OpalPCSSEndPoint::SetVideoOnHoldDevice(const PString & name)
+PBoolean OpalPCSSEndPoint::SetVideoOnHoldDevice(const PVideoDevice::OpenArgs & args)
 {
-  PVideoDevice::OpenArgs oldArgs = manager.GetVideoInputDevice();
-
-  PVideoDevice::OpenArgs testArgs = oldArgs;
-  testArgs.deviceName = name;
-  bool ok = manager.SetVideoInputDevice(testArgs);
-
-  manager.SetVideoInputDevice(oldArgs);
-
-  if (!ok)
-    return false;
-
-  m_videoOnHoldDevice = name;
-  return true;
+  return args.Validate<PVideoInputDevice>(m_videoOnHoldDevice);
 }
 
 
@@ -421,9 +425,7 @@ void OpalPCSSConnection::OnHold(bool fromRemote, bool onHold)
     }
 
 #if OPAL_VIDEO
-    PVideoDevice::OpenArgs args = m_endpoint.GetManager().GetVideoInputDevice();
-    if (onHold)
-      args.deviceName = m_videoOnHoldDevice;
+    PVideoDevice::OpenArgs args = onHold ? m_videoOnHoldDevice : m_endpoint.GetManager().GetVideoInputDevice();
     if (!args.deviceName.IsEmpty())
       ChangeVideoInputDevice(args);
 #endif // OPAL_VIDEO

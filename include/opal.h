@@ -313,6 +313,7 @@ typedef void (OPAL_EXPORT *OpalFreeMessageFunction)(OpalMessage * message);
 #define OPAL_PREFIX_LOCAL "local"   ///< Local endpoint supported string for OpalInitialise()
 #define OPAL_PREFIX_POTS  "pots"    ///< Plain Old Telephone System supported string for OpalInitialise()
 #define OPAL_PREFIX_PSTN  "pstn"    ///< Public Switched Network supported string for OpalInitialise()
+#define OPAL_PREFIX_CAPI  "isdn"    ///< ISDN (via CAPI) string for OpalInitialise()
 #define OPAL_PREFIX_FAX   "fax"     ///< G.711 fax supported string for OpalInitialise()
 #define OPAL_PREFIX_T38   "t38"     ///< G.711 fax supported string for OpalInitialise()
 #define OPAL_PREFIX_IVR   "ivr"     ///< Interactive Voice Response supported string for OpalInitialise()

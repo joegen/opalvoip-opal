@@ -76,6 +76,8 @@ class OpalBandwidth {
     __inline OpalBandwidth & operator=(int_type bps) { m_bps = bps; return *this; }
     __inline operator int_type() const { return m_bps; }
 
+    OpalBandwidth(const PString & str);
+
     __inline OpalBandwidth   operator+ (const OpalBandwidth & bw) const { return OpalBandwidth(m_bps + bw.m_bps); }
     __inline OpalBandwidth   operator- (const OpalBandwidth & bw) const { return OpalBandwidth(m_bps - bw.m_bps); }
     __inline OpalBandwidth & operator+=(const OpalBandwidth & bw)       { m_bps += bw.m_bps; return *this; }
