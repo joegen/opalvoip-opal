@@ -115,12 +115,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL DLL", "..\src\win32\op
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "opalcodecinfo", "..\samples\opalcodecinfo\opalcodecinfo_2010.vcxproj", "{7FF55F1C-87EB-4087-8814-FD494BE49170}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Codec Test", "..\samples\codectest\codectest_2010.vcxproj", "{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}"
 	ProjectSection(WebsiteProperties) = preProject
 		Debug.AspNetCompiler.Debug = "True"
@@ -291,12 +285,6 @@ Global
 		{B2830E08-B1F1-492F-8849-F3D8461E450F}.Release|Win32.Build.0 = Release|Win32
 		{B2830E08-B1F1-492F-8849-F3D8461E450F}.Release|x64.ActiveCfg = Release|x64
 		{B2830E08-B1F1-492F-8849-F3D8461E450F}.Release|x64.Build.0 = Release|x64
-		{7FF55F1C-87EB-4087-8814-FD494BE49170}.Debug|Win32.ActiveCfg = Debug|Win32
-		{7FF55F1C-87EB-4087-8814-FD494BE49170}.Debug|x64.ActiveCfg = Debug|x64
-		{7FF55F1C-87EB-4087-8814-FD494BE49170}.Debug|x64.Build.0 = Debug|x64
-		{7FF55F1C-87EB-4087-8814-FD494BE49170}.Release|Win32.ActiveCfg = Release|Win32
-		{7FF55F1C-87EB-4087-8814-FD494BE49170}.Release|x64.ActiveCfg = Release|x64
-		{7FF55F1C-87EB-4087-8814-FD494BE49170}.Release|x64.Build.0 = Release|x64
 		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Debug|Win32.ActiveCfg = Debug|Win32
 		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Debug|Win32.Build.0 = Debug|Win32
 		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Debug|x64.ActiveCfg = Debug|x64

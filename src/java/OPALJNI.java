@@ -27,6 +27,7 @@ public class OPALJNI {
   public final static native String OPAL_PREFIX_LOCAL_get();
   public final static native String OPAL_PREFIX_POTS_get();
   public final static native String OPAL_PREFIX_PSTN_get();
+  public final static native String OPAL_PREFIX_CAPI_get();
   public final static native String OPAL_PREFIX_FAX_get();
   public final static native String OPAL_PREFIX_T38_get();
   public final static native String OPAL_PREFIX_IVR_get();

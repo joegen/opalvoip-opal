@@ -37,7 +37,7 @@
 #include <rtp/rtp.h>
 
 #include "main.h"
-#include "../../version.h"
+#include "../../../version.h"
 
 
 #define new PNEW

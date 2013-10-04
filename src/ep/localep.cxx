@@ -102,9 +102,9 @@ bool OpalLocalEndPoint::OnOutgoingSetUp(const OpalLocalConnection & /*connection
 }
 
 
-bool OpalLocalEndPoint::OnOutgoingCall(const OpalLocalConnection & /*connection*/)
+bool OpalLocalEndPoint::OnOutgoingCall(const OpalLocalConnection & connection)
 {
-  return true;
+  return manager.OnLocalOutgoingCall(connection.GetCall());
 }
 
 
@@ -112,7 +112,7 @@ bool OpalLocalEndPoint::OnIncomingCall(OpalLocalConnection & connection)
 {
   if (!m_deferredAnswer)
     connection.AcceptIncoming();
-  return true;
+  return manager.OnLocalIncomingCall(connection.GetCall());
 }
 
 

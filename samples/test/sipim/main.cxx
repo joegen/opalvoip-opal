@@ -205,33 +205,33 @@ void MyManager::CmdComp(PCLI::Arguments & args, P_INT_PTR)
 
 void MyManager::OnConversation(const OpalIMContext::ConversationInfo & info)
 {
-  *m_output << '\n';
+  m_output << '\n';
   if (info.m_opening)
-    *m_output << "New conversation started";
+    m_output << "New conversation started";
   else
-    *m_output << "Conversation ended";
-  *m_output << ", id " << info.m_conversationId << endl;
+    m_output << "Conversation ended";
+  m_output << ", id " << info.m_conversationId << endl;
 }
 
 
 void MyManager::OnMessageReceived(const OpalIM & message)
 {
-  *m_output << "\nIM From " << message.m_from << " to " << message.m_to;
+  m_output << "\nIM From " << message.m_from << " to " << message.m_to;
   for (PStringToString::const_iterator it = message.m_bodies.begin(); it != message.m_bodies.end(); ++it)
-    *m_output << "\nReceived " << it->first << '\n' << it->second;
-  *m_output << endl;
+    m_output << "\nReceived " << it->first << '\n' << it->second;
+  m_output << endl;
 }
 
 
 void MyManager::OnMessageDisposition(const OpalIMContext::DispositionInfo & info)
 {
-  *m_output << "\nIM #" << info.m_messageId << ' ' << info.m_disposition << endl;
+  m_output << "\nIM #" << info.m_messageId << ' ' << info.m_disposition << endl;
 }
 
 
 void MyManager::OnCompositionIndication(const OpalIMContext::CompositionInfo & info)
 {
-  *m_output << "\nRemote is " << info.m_state << endl;
+  m_output << "\nRemote is " << info.m_state << endl;
 }
 
 

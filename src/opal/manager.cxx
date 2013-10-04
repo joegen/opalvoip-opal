@@ -493,10 +493,10 @@ void OpalManager::DetachEndPoint(const PString & prefix)
 }
 
 
-OpalEndPoint * OpalManager::FindEndPoint(const PString & prefix)
+OpalEndPoint * OpalManager::FindEndPoint(const PString & prefix) const
 {
   PReadWaitAndSignal mutex(endpointsMutex);
-  std::map<PString, OpalEndPoint *>::iterator it = endpointMap.find(prefix);
+  std::map<PString, OpalEndPoint *>::const_iterator it = endpointMap.find(prefix);
   return it != endpointMap.end() ? it->second : NULL;
 }
 
@@ -568,6 +568,18 @@ PSafePtr<OpalCall> OpalManager::SetUpCall(const PString & partyA,
   call->Clear(endReason);
 
   return NULL;
+}
+
+
+bool OpalManager::OnLocalIncomingCall(OpalCall &)
+{
+  return true;
+}
+
+
+bool OpalManager::OnLocalOutgoingCall(OpalCall &)
+{
+  return true;
 }
 
 
@@ -2065,50 +2077,21 @@ void OpalManager::SetMediaFormatMask(const PStringArray & mask)
 
 
 #if OPAL_VIDEO
-template<class PVideoXxxDevice>
-static PBoolean SetVideoDevice(const PVideoDevice::OpenArgs & args, PVideoDevice::OpenArgs & member)
-{
-  // Check that the input device is legal
-  PVideoXxxDevice * pDevice = PVideoXxxDevice::CreateDeviceByName(args.deviceName, args.driverName, args.pluginMgr);
-  if (pDevice != NULL) {
-    delete pDevice;
-    member = args;
-    return true;
-  }
-
-  if (args.deviceName[0] != '#')
-    return false;
-
-  // Selected device by ordinal
-  PStringArray devices = PVideoXxxDevice::GetDriversDeviceNames(args.driverName, args.pluginMgr);
-  if (devices.IsEmpty())
-    return false;
-
-  PINDEX id = args.deviceName.Mid(1).AsUnsigned();
-  if (id <= 0 || id > devices.GetSize())
-    return false;
-
-  member = args;
-  member.deviceName = devices[id-1];
-  return true;
-}
-
-
 PBoolean OpalManager::SetVideoInputDevice(const PVideoDevice::OpenArgs & args)
 {
-  return SetVideoDevice<PVideoInputDevice>(args, videoInputDevice);
+  return args.Validate<PVideoInputDevice>(videoInputDevice);
 }
 
 
 PBoolean OpalManager::SetVideoPreviewDevice(const PVideoDevice::OpenArgs & args)
 {
-  return SetVideoDevice<PVideoOutputDevice>(args, videoPreviewDevice);
+  return args.Validate<PVideoOutputDevice>(videoPreviewDevice);
 }
 
 
 PBoolean OpalManager::SetVideoOutputDevice(const PVideoDevice::OpenArgs & args)
 {
-  return SetVideoDevice<PVideoOutputDevice>(args, videoOutputDevice);
+  return args.Validate<PVideoOutputDevice>(videoOutputDevice);
 }
 
 #endif // OPAL_VIDEO
