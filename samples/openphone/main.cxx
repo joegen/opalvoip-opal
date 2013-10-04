@@ -1110,8 +1110,6 @@ bool MyManager::Initialise(bool startMinimised)
     pcssEP->SetSoundChannelBufferTime(value1);
   if (config->Read(MusicOnHoldKey, &str))
     pcssEP->SetSoundChannelOnHoldDevice(str);
-  if (config->Read(VideoOnHoldKey, &str))
-    pcssEP->SetVideoOnHoldDevice(str);
 
 #if OPAL_AEC
   OpalEchoCanceler::Params aecParams = GetEchoCancelParams();
@@ -1180,6 +1178,11 @@ bool MyManager::Initialise(bool startMinimised)
   videoArgs.driverName = VIDEO_WINDOW_DRIVER;
   config->Read(VideoFlipRemoteKey, &videoArgs.flip);
   SetVideoOutputDevice(videoArgs);
+
+  videoArgs = pcssEP->GetVideoOnHoldDevice();
+  if (config->Read(VideoOnHoldKey, &str))
+    videoArgs.deviceName = str.p_str();
+  pcssEP->SetVideoOnHoldDevice(videoArgs);
 
   config->Read(LocalVideoFrameXKey, &m_localVideoFrameX);
   config->Read(LocalVideoFrameYKey, &m_localVideoFrameY);
@@ -4611,7 +4614,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(VideoFlipRemote, m_manager.GetVideoOutputDevice().flip != false);
   INIT_FIELD(VideoGrabBitRate, m_manager.m_VideoTargetBitRate);
   INIT_FIELD(VideoMaxBitRate, m_manager.m_VideoMaxBitRate);
-  INIT_FIELD(VideoOnHold, m_manager.pcssEP->GetVideoOnHoldDevice());
+  INIT_FIELD(VideoOnHold, m_manager.pcssEP->GetVideoOnHoldDevice().deviceName);
 
   PStringArray knownSizes = PVideoFrameInfo::GetSizeNames();
   m_VideoGrabFrameSize = m_manager.m_VideoGrabFrameSize;
@@ -5137,15 +5140,15 @@ bool OptionsDialog::TransferDataFromWindow()
   ////////////////////////////////////////
   // Video fields
   config->SetPath(VideoGroup);
-  PVideoDevice::OpenArgs grabber = m_manager.GetVideoInputDevice();
-  SAVE_FIELD_STR(VideoGrabDevice, grabber.deviceName = );
-  SAVE_FIELD(VideoGrabFormat, grabber.videoFormat = (PVideoDevice::VideoFormat));
+  PVideoDevice::OpenArgs videoDevice = m_manager.GetVideoInputDevice();
+  SAVE_FIELD_STR(VideoGrabDevice, videoDevice.deviceName = );
+  SAVE_FIELD(VideoGrabFormat, videoDevice.videoFormat = (PVideoDevice::VideoFormat));
   --m_VideoGrabSource;
-  SAVE_FIELD(VideoGrabSource, grabber.channelNumber = );
-  SAVE_FIELD(VideoGrabFrameRate, grabber.rate = );
+  SAVE_FIELD(VideoGrabSource, videoDevice.channelNumber = );
+  SAVE_FIELD(VideoGrabFrameRate, videoDevice.rate = );
   SAVE_FIELD(VideoGrabFrameSize, m_manager.m_VideoGrabFrameSize = );
-  SAVE_FIELD(VideoFlipLocal, grabber.flip = );
-  m_manager.SetVideoInputDevice(grabber);
+  SAVE_FIELD(VideoFlipLocal, videoDevice.flip = );
+  m_manager.SetVideoInputDevice(videoDevice);
 
   SAVE_FIELD(VideoGrabPreview, m_manager.m_VideoGrabPreview = );
   SAVE_FIELD(VideoAutoTransmit, m_manager.SetAutoStartTransmitVideo);
@@ -5155,7 +5158,9 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(VideoMaxFrameSize, m_manager.m_VideoMaxFrameSize = );
   SAVE_FIELD(VideoGrabBitRate, m_manager.m_VideoTargetBitRate = );
   SAVE_FIELD(VideoMaxBitRate, m_manager.m_VideoMaxBitRate = );
-  SAVE_FIELD(VideoOnHold, m_manager.pcssEP->SetVideoOnHoldDevice);
+  videoDevice = m_manager.pcssEP->GetVideoOnHoldDevice();
+  SAVE_FIELD_STR(VideoOnHold, videoDevice.deviceName = );
+  m_manager.pcssEP->SetVideoOnHoldDevice(videoDevice);
 
   ////////////////////////////////////////
   // Fax fields

@@ -35,15 +35,41 @@
 #pragma interface
 #endif
 
+#include <opal.h>
 #include <opal/manager.h>
 #include <ptclib/cli.h>
-
-#if P_CLI
 
 class SIPEndPoint;
 class H323EndPoint;
 class OpalLineEndPoint;
 class OpalCapiEndPoint;
+
+class OpalPCSSEndPoint;
+class OpalIVREndPoint;
+class OpalMixerEndPoint;
+
+#define OPAL_CONSOLE_PREFIXES OPAL_PREFIX_SIP   " " \
+                              OPAL_PREFIX_H323  " " \
+                              OPAL_PREFIX_PSTN  " " \
+                              OPAL_PREFIX_CAPI  " "
+
+
+/**This class allows for each end point class, e.g. SIPEndPoint, to add it's
+   set of parameters/commands to to the console application.
+  */
+struct OpalConsoleEndPoint
+{
+  virtual void GetArgumentSpec(ostream & strm) const = 0;
+  enum InitResult {
+    InitFailed,
+    InitDisabled,
+    InitSuccess
+  };
+  virtual InitResult Initialise(PArgList & args, ostream & output, bool verbose) = 0;
+#if P_CLI
+  virtual void AddCommands(PCLI & cli) = 0;
+#endif
+};
 
 
 /**OPAL manager class for console applications.
@@ -51,12 +77,14 @@ class OpalCapiEndPoint;
    a standard set of command line arguments for configuring many system
    parameters. Used by the sample applications such as faxopal, ovropal etc.
   */
-class OpalManagerConsole : public OpalManager
+class OpalConsoleManager : public OpalManager
 {
-    PCLASSINFO(OpalManagerConsole, OpalManager);
+    PCLASSINFO(OpalConsoleManager, OpalManager);
 
   public:
-    OpalManagerConsole();
+    OpalConsoleManager(
+      const char * endpointPrefixes = OPAL_CONSOLE_PREFIXES
+    );
 
     virtual PString GetArgumentSpec() const;
     virtual void Usage(ostream & strm, const PArgList & args);
@@ -76,25 +104,39 @@ class OpalManagerConsole : public OpalManager
     virtual void OnClearedCall(OpalCall & call);
 
   protected:
+    OpalConsoleEndPoint * GetConsoleEndPoint(const PString & prefix);
+
 #if OPAL_SIP
-    SIPEndPoint * CreateSIPEndPoint();
+    virtual SIPEndPoint * CreateSIPEndPoint();
 #endif
 #if OPAL_H323
-    H323EndPoint * CreateH323EndPoint();
+    virtual H323EndPoint * CreateH323EndPoint();
 #endif
 #if OPAL_LID
-    OpalLineEndPoint * CreateLineEndPoint();
+    virtual OpalLineEndPoint * CreateLineEndPoint();
 #endif
 #if OPAL_CAPI
-    OpalCapiEndPoint * CreateCapiEndPoint();
+    virtual OpalCapiEndPoint * CreateCapiEndPoint();
+#endif
+
+#if OPAL_HAS_PCSS
+    virtual OpalPCSSEndPoint * CreatePCSSEndPoint();
+#endif
+#if OPAL_IVR
+    virtual OpalIVREndPoint * CreateIVREndPoint();
+#endif
+#if OPAL_HAS_MIXER
+    virtual OpalMixerEndPoint * CreateMixerEndPoint();
 #endif
 
     bool PreInitialise(PArgList & args, bool verbose);
 
+    PStringArray m_endpointPrefixes;
+
     PSyncPoint m_endRun;
     bool       m_interrupted;
     bool       m_verbose;
-    ostream  * m_output;
+    ostream  & m_output;
 #if OPAL_STATISTICS
     PTimeInterval m_statsPeriod;
     PFilePath     m_statsFile;
@@ -108,6 +150,9 @@ class OpalManagerConsole : public OpalManager
 #endif
 };
 
+typedef class OpalConsoleManager OpalManagerConsole;
+
+#if P_CLI
 
 /**OPAL manager class for applications with command line interpreter.
    An OpalManager derived class for use in a console application, providing
@@ -115,12 +160,14 @@ class OpalManagerConsole : public OpalManager
    parameters,  and a standard command line interpreter for control of many
    functions. Used by the sample applications such as faxopal, ovropal etc.
   */
-class OpalManagerCLI : public OpalManagerConsole
+class OpalManagerCLI : public OpalConsoleManager
 {
-    PCLASSINFO(OpalManagerCLI, OpalManagerConsole);
+    PCLASSINFO(OpalManagerCLI, OpalConsoleManager);
 
   public:
-    OpalManagerCLI();
+    OpalManagerCLI(
+      const char * endpointPrefixes = OPAL_CONSOLE_PREFIXES
+    );
     ~OpalManagerCLI();
 
     virtual PString GetArgumentSpec() const;
@@ -141,10 +188,6 @@ class OpalManagerCLI : public OpalManagerConsole
     PCLICurses * CreateCLICurses();
 #endif
 
-#if OPAL_SIP
-    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdRegister);
-#endif
-
 #if P_NAT
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdNat);
 #endif
@@ -162,10 +205,12 @@ class OpalManagerCLI : public OpalManagerConsole
     PCLI * m_cli;
 };
 
+#endif // P_CLI
+
 
 /**Create a process for OpalConsoleManager based applications.
   */
-template <class Manager,                   ///< Class of OpalManagerConsole derived class
+template <class Manager,                   ///< Class of OpalConsoleManager derived class
           const char Manuf[],              ///< Name of manufacturer
           const char Name[],               ///< Name of product
           WORD MajorVersion = OPAL_MAJOR,  ///< Major version number of the product
@@ -211,8 +256,6 @@ class OpalConsoleProcess : public PProcess
     Manager * m_manager;
 };
 
-
-#endif // P_CLI
 
 #endif // OPAL_OPAL_CONSOLE_MGR_H
 

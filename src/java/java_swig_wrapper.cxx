@@ -463,6 +463,18 @@ SWIGEXPORT jstring JNICALL Java_org_opalvoip_opal_OPALJNI_OPAL_1PREFIX_1PSTN_1ge
 }
 
 
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_opal_OPALJNI_OPAL_1PREFIX_1CAPI_1get(JNIEnv *jenv, jclass jcls) {
+  jstring jresult = 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  result = (char *)("isdn");
+  if (result) jresult = jenv->NewStringUTF((const char *)result);
+  return jresult;
+}
+
+
 SWIGEXPORT jstring JNICALL Java_org_opalvoip_opal_OPALJNI_OPAL_1PREFIX_1FAX_1get(JNIEnv *jenv, jclass jcls) {
   jstring jresult = 0 ;
   char *result = 0 ;
