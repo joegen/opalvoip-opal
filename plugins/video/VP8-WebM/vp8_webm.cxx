@@ -722,7 +722,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
       , m_flags(0)
       , m_iterator(NULL)
       , m_intraFrame(false)
-      , m_ignoreTillKeyFrame(false)
+      , m_ignoreTillKeyFrame(true)
     {
       memset(&m_codec, 0, sizeof(m_codec));
       m_fullFrame.reserve(10000);
