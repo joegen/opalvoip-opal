@@ -286,7 +286,7 @@ GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
   , m_rtpbin("gstrtpbin")
   , m_audioSourceDevice(GetDefaultDevice("Source/Audio", PreferredAudioSourceDevice, PARRAYSIZE(PreferredAudioSourceDevice)))
   , m_audioSinkDevice(GetDefaultDevice("Sink/Audio", PreferredAudioSinkDevice, PARRAYSIZE(PreferredAudioSinkDevice)))
-  , m_jitterBuffer("gstrtpjitterbuffer drop-on-latency=true latency={"OPAL_GST_LATENCY"}")
+  , m_jitterBuffer("gstrtpjitterbuffer latency={"OPAL_GST_LATENCY"}")
 #if OPAL_VIDEO
   , m_videoSourceDevice(GetDefaultDevice("Source/Video", PreferredVideoSourceDevice, PARRAYSIZE(PreferredVideoSourceDevice)))
   , m_videoSinkDevice(GetDefaultDevice("Sink/Video", PreferredVideoSinkDevice, PARRAYSIZE(PreferredVideoSinkDevice)))
