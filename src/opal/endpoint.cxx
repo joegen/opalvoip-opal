@@ -457,8 +457,8 @@ void OpalEndPoint::NewIncomingConnection(OpalListener & /*listener*/, const Opal
 
 PSafePtr<OpalConnection> OpalEndPoint::GetConnectionWithLock(const PString & token, PSafetyMode mode) const
 {
-  if (token.IsEmpty())
-    return NULL;
+  if (token.IsEmpty() || token == "*")
+    return PSafePtr<OpalConnection>(connectionsActive, mode);
 
   PSafePtr<OpalConnection> connection = connectionsActive.FindWithLock(token, mode);
   if (connection != NULL)

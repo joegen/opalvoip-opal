@@ -76,11 +76,11 @@ bool MyManager::Initialise(PArgList & args, bool verbose)
 
 bool MyManager::OnLocalIncomingCall(OpalCall & call)
 {
-  m_output << "\nCall at " << PTime().AsString("w h:mma")
+  Output() << "\nCall at " << PTime().AsString("w h:mma")
             << " from " << call.GetPartyA();
 
   if (m_activeCall != NULL) {
-    m_output << " refused as busy." << endl;
+    Output() << " refused as busy." << endl;
     return false;
   }
 
@@ -89,7 +89,7 @@ bool MyManager::OnLocalIncomingCall(OpalCall & call)
   if (m_autoAnswer)
     m_pcss->AcceptIncomingConnection(call.GetToken());
   else
-    m_output << ", answer? " << endl;
+    Output() << ", answer? " << endl;
 
   return true;
 }
@@ -97,7 +97,7 @@ bool MyManager::OnLocalIncomingCall(OpalCall & call)
 
 bool MyManager::OnLocalOutgoingCall(OpalCall & call)
 {
-  m_output << "\nMaking call at " << PTime().AsString("w h:mma")
+  Output() << "\nMaking call at " << PTime().AsString("w h:mma")
             << " from " << call.GetPartyA() << " to " << call.GetPartyB() << endl;
   return true;
 }
@@ -129,7 +129,7 @@ void MyManager::CmdCall(PCLI::Arguments & args, P_INT_PTR)
     args.WriteError() << "Already in call." << endl;
   else {
     if (args.GetCount() == 1)
-      m_activeCall = SetUpCall(OPAL_PREFIX_PCSS":", args[0]);
+      m_activeCall = SetUpCall(OPAL_PREFIX_PCSS":*", args[0]);
     else
       m_activeCall = SetUpCall(args[0], args[1]);
     if (m_activeCall == NULL)
