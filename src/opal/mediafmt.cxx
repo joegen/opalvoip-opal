@@ -149,24 +149,9 @@ static void Clamp(OpalMediaFormatInternal & fmt1, const OpalMediaFormatInternal 
 /////////////////////////////////////////////////////////////////////////////
 
 OpalBandwidth::OpalBandwidth(const PString & str)
+  : m_bps(0)
 {
-  if (str.IsEmpty()) {
-    m_bps = 0;
-    return;
-  }
-
-  m_bps = str.AsUnsigned();
-  switch (tolower(str[str.GetLength()-1])) {
-    case 'k' :
-      m_bps *= 1000;
-      break;
-    case 'm' :
-      m_bps *= 1000000;
-      break;
-    case 'g' :
-      m_bps *= 1000000000;
-      break;
-  }
+  PStringStream(str) >> *this;
 }
 
 
@@ -193,16 +178,16 @@ std::istream & operator>>(std::istream & strm, OpalBandwidth & bw)
 {
   strm >> bw.m_bps;
   if (strm.good()) {
-    switch (strm.peek()) {
+    switch (tolower(strm.peek())) {
       case 'k' :
         bw.m_bps *= 1000;
         strm.ignore(1);
         break;
-      case 'M' :
+      case 'm' :
         bw.m_bps *= 1000000;
         strm.ignore(1);
         break;
-      case 'G' :
+      case 'g' :
         bw.m_bps *= 1000000000;
         strm.ignore(1);
         break;
