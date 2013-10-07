@@ -151,7 +151,8 @@ static void Clamp(OpalMediaFormatInternal & fmt1, const OpalMediaFormatInternal 
 OpalBandwidth::OpalBandwidth(const PString & str)
   : m_bps(0)
 {
-  PStringStream(str) >> *this;
+  PStringStream strm(str);
+  strm >> *this;
 }
 
 
