@@ -65,7 +65,7 @@ struct OpalConsoleEndPoint
     InitDisabled,
     InitSuccess
   };
-  virtual InitResult Initialise(PArgList & args, ostream & output, bool verbose) = 0;
+  virtual bool Initialise(PArgList & args, ostream & output, bool verbose, const PString & defaultRoute) = 0;
 #if P_CLI
   virtual void AddCommands(PCLI & cli) = 0;
 #endif
@@ -103,6 +103,8 @@ class OpalConsoleManager : public OpalManager
     void OnClosedMediaStream(const OpalMediaStream & stream);
     virtual void OnClearedCall(OpalCall & call);
 
+    __inline ostream & Output() const { return *m_outputStream; }
+
   protected:
     OpalConsoleEndPoint * GetConsoleEndPoint(const PString & prefix);
 
@@ -136,7 +138,8 @@ class OpalConsoleManager : public OpalManager
     PSyncPoint m_endRun;
     bool       m_interrupted;
     bool       m_verbose;
-    ostream  & m_output;
+    ostream  * m_outputStream;
+
 #if OPAL_STATISTICS
     PTimeInterval m_statsPeriod;
     PFilePath     m_statsFile;
@@ -194,6 +197,10 @@ class OpalManagerCLI : public OpalConsoleManager
 
 #if PTRACING
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdTrace);
+#endif
+
+#if OPAL_STATISTICS
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdStatistics);
 #endif
 
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdListCodecs);
