@@ -279,7 +279,7 @@ bool OpalPCSSEndPoint::OnUserInput(const OpalLocalConnection & connection, const
 
 PBoolean OpalPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
 {
-  return OpalPCSSEndPoint::OnOutgoingCall(connection);
+  return OpalLocalEndPoint::OnOutgoingCall(connection);
 }
 
 
