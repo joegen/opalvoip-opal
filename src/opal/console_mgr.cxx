@@ -750,13 +750,13 @@ PString OpalConsoleManager::GetArgumentSpec() const
          "P-prefer:          Set preference order for media formats (codecs).\n"
          "O-option:          Set options for media format, argument is of form fmt:opt=val.\n"
 #if OPAL_VIDEO
-         "-max-video-size:   Set maximum received video size, of form 800x600 or \"CIF\" etc\n"
-         "-video-size:       Set preferred transmit video size, of form 800x600 or \"CIF\" etc\n"
-         "-video-rate:       Set preferred transmit video frame rate, in fps\n"
-         "-video-bitrate:    Set target transmit video bit rate, in bps, suffix 'k' or 'M' may be used.\n"
+         "-max-video-size:   Set maximum received video size, of form 800x600 or \"CIF\" etc (default CIF)\n"
+         "-video-size:       Set preferred transmit video size, of form 800x600 or \"CIF\" etc (default HD1080)\n"
+         "-video-rate:       Set preferred transmit video frame rate, in fps (default 30)\n"
+         "-video-bitrate:    Set target transmit video bit rate, in bps, suffix 'k' or 'M' may be used (default 1Mbps)\n"
 #endif
          "-jitter:           Set audio jitter buffer size (min[,max] default 50,250)\n"
-         "-silence-detect:   Set audio silence detect mode (none,fixed,adaptive)\n"
+         "-silence-detect:   Set audio silence detect mode (\"none\", \"fixed\" or default \"adaptive\")\n"
          "-no-inband-detect. Disable detection of in-band tones.\n"
          "-tel:              Protocol to use for tel: URI, e.g. sip\n";
 
@@ -1007,24 +1007,39 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
   }
 
 #if OPAL_VIDEO
-  if (args.HasOption("max-video-size") || args.HasOption("video-size") || args.HasOption("video-rate") || args.HasOption("video-bitrate")) {
-    unsigned prefWidth = 0, prefHeight = 0, maxWidth = 0, maxHeight = 0;
-    if (!PVideoFrameInfo::ParseSize(args.GetOptionString("video-size", "cif"), prefWidth, prefHeight) ||
-        !PVideoFrameInfo::ParseSize(args.GetOptionString("max-video-size", "HD1080"), maxWidth, maxHeight)) {
+  {
+    unsigned prefWidth = 0, prefHeight = 0;
+    if (!PVideoFrameInfo::ParseSize(args.GetOptionString("video-size", "cif"), prefWidth, prefHeight)) {
       cerr << "Invalid video size parameter." << endl;
       return false;
     }
-    double rate = args.GetOptionString("video-rate").AsReal();
+    if (verbose)
+      Output() << "Preferred video size: " << PVideoFrameInfo::AsString(prefWidth, prefHeight) << '\n';
+
+    unsigned maxWidth = 0, maxHeight = 0;
+    if (!PVideoFrameInfo::ParseSize(args.GetOptionString("max-video-size", "HD1080"), maxWidth, maxHeight)) {
+      cerr << "Invalid maximum video size parameter." << endl;
+      return false;
+    }
+    if (verbose)
+      Output() << "Maximum video size: " << PVideoFrameInfo::AsString(maxWidth, maxHeight) << '\n';
+
+    double rate = args.GetOptionString("video-rate", "30").AsReal();
     if (rate < 1 || rate > 60) {
       cerr << "Invalid video frame rate parameter." << endl;
       return false;
     }
+    if (verbose)
+      Output() << "Video frame rate: " << rate << " fps\n";
+
     unsigned frameTime = (unsigned)(OpalMediaFormat::VideoClockRate/rate);
-    OpalBandwidth bitrate(args.GetOptionString("video-bitrate"));
+    OpalBandwidth bitrate(args.GetOptionString("video-bitrate", "1Mbps"));
     if (bitrate < 10000) {
       cerr << "Invalid video bit rate parameter." << endl;
       return false;
     }
+    if (verbose)
+      Output() << "Video target bit rate: " << bitrate << '\n';
 
     OpalMediaFormatList formats = OpalMediaFormat::GetAllRegisteredMediaFormats();
     for (OpalMediaFormatList::iterator it = formats.begin(); it != formats.end(); ++it) {
@@ -1068,6 +1083,8 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
                 " in media format \"" << subexpressions[1] << '"' << endl;
         return false;
       }
+      if (verbose)
+        Output() << "Set " << format << " option " << subexpressions[2] << " to " << subexpressions[3] << '\n';
       OpalMediaFormat::SetRegisteredMediaFormat(format);
     }
   }
