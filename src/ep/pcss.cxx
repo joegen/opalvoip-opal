@@ -339,10 +339,12 @@ void OpalPCSSEndPoint::SetSoundChannelBufferTime(unsigned depth)
 }
 
 
+#if OPAL_VIDEO
 PBoolean OpalPCSSEndPoint::SetVideoOnHoldDevice(const PVideoDevice::OpenArgs & args)
 {
   return args.Validate<PVideoInputDevice>(m_videoOnHoldDevice);
 }
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
