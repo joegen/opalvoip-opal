@@ -1541,13 +1541,17 @@ bool SIPConnection::StartPendingReINVITE()
 {
   while (!m_pendingInvitations.IsEmpty()) {
     PSafePtr<SIPTransaction> reInvite = m_pendingInvitations.GetAt(0, PSafeReadWrite);
-    if (reInvite->IsInProgress())
-      break;
+    // reInvite can be NULL because SIPEndPoint::GarbageCollection()
+    // can mark transactions as removed
+    if (reInvite != NULL) {
+      if (reInvite->IsInProgress())
+        break;
 
-    if (!reInvite->IsCompleted()) {
-      if (reInvite->Start()) {
-        m_handlingINVITE = true;
-        return true;
+      if (!reInvite->IsCompleted()) {
+        if (reInvite->Start()) {
+          m_handlingINVITE = true;
+          return true;
+        }
       }
     }
 
