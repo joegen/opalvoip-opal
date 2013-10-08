@@ -342,7 +342,7 @@ static struct PluginCodec_Option const H241Forced =
   PluginCodec_BoolOption,             // Option type
   H241ForcedName,                     // User visible name
   false,                              // User Read/Only flag
-  PluginCodec_NoMerge                 // Merge mode
+  PluginCodec_AlwaysMerge             // Merge mode
 };
 
 static struct PluginCodec_Option const SDPForced =
@@ -350,7 +350,7 @@ static struct PluginCodec_Option const SDPForced =
   PluginCodec_BoolOption,             // Option type
   SDPForcedName,                      // User visible name
   false,                              // User Read/Only flag
-  PluginCodec_NoMerge                 // Merge mode
+  PluginCodec_AlwaysMerge             // Merge mode
 };
 
 static struct PluginCodec_Option const MaxNaluSize =
