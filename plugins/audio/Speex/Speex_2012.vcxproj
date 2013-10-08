@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>Speex Audio Codec</ProjectName>
+    <ProjectName>Audio - Speex</ProjectName>
     <ProjectGuid>{02AFB070-A9D5-4FB7-A041-311722C9F8D4}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

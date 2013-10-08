@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>WinXP USB HID Trainer</ProjectName>
+    <ProjectName>LID - WinXP USB HID Trainer</ProjectName>
     <ProjectGuid>{0AAD09A3-A2DF-4549-A685-04905F610992}</ProjectGuid>
     <RootNamespace>WinXP USB HID Trainer</RootNamespace>
     <Keyword>Win32Proj</Keyword>

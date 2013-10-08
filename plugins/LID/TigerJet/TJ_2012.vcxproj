@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>TigerJet LID</ProjectName>
+    <ProjectName>LID - TigerJet</ProjectName>
     <ProjectGuid>{9A4E2793-1D97-4B0C-BCFD-130136990E35}</ProjectGuid>
     <RootNamespace>TigerJet LID</RootNamespace>
   </PropertyGroup>

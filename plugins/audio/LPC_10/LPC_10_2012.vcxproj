@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>LPC-10 Audio Codec</ProjectName>
+    <ProjectName>Audio - LPC-10</ProjectName>
     <ProjectGuid>{9481B85A-4166-4607-ADC4-0C19D2753EB7}</ProjectGuid>
     <RootNamespace>LPC_10</RootNamespace>
   </PropertyGroup>

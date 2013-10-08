@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>G.726 Audio Codec</ProjectName>
+    <ProjectName>Audio - G.726</ProjectName>
     <ProjectGuid>{269DA9EF-526D-46DE-AA69-D39EFBCB29C0}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
