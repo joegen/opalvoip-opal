@@ -179,7 +179,7 @@ static void StaticRTPCallBack(AVCodecContext * ctx, void * data, int size, int n
   static_cast<FFMPEGCodec *>(ctx->opaque)->GetEncodedFrame()->RTPCallBack(data, size, numMB);
 }
 
-bool FFMPEGCodec::InitEncoder(CodecID codecId)
+bool FFMPEGCodec::InitEncoder(AVCodecID codecId)
 {
   PTRACE(5, m_prefix, "Opening encoder");
 
@@ -214,7 +214,7 @@ bool FFMPEGCodec::InitEncoder(CodecID codecId)
 }
 
 
-bool FFMPEGCodec::InitDecoder(CodecID codecId)
+bool FFMPEGCodec::InitDecoder(AVCodecID codecId)
 {
   if ((m_codec = avcodec_find_decoder(codecId)) == NULL) {
     PTRACE(1, m_prefix, "Codec not found for decoder");
