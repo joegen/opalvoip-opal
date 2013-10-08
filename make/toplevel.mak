@@ -498,7 +498,7 @@ install uninstall:
 
 else # OPALDIR
 
-INCSUBDIRS:=asn codec ep h323 h460 iax2 im lids opal rtp sip t120 t38
+INCSUBDIRS:=asn codec ep h323 h460 h224 iax2 im lids opal rtp sip t120 t38
 
 install:
 	for dir in $(DESTDIR)$(libdir) \
