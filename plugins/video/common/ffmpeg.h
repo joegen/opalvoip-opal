@@ -120,8 +120,8 @@ class FFMPEGCodec
     FFMPEGCodec(const char * prefix, EncodedFrame * fullFrame);
     ~FFMPEGCodec();
 
-    virtual bool InitEncoder(CodecID codecId);
-    virtual bool InitDecoder(CodecID codecId);
+    virtual bool InitEncoder(AVCodecID codecId);
+    virtual bool InitDecoder(AVCodecID codecId);
 
     bool SetResolution(unsigned width, unsigned height);
     void SetEncoderOptions(
