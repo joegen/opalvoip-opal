@@ -63,6 +63,7 @@
 OpalMediaStream::OpalMediaStream(OpalConnection & conn, const OpalMediaFormat & fmt, unsigned _sessionID, PBoolean isSourceStream)
   : connection(conn)
   , sessionID(_sessionID)
+  , m_sequenceNumber(0)
   , identifier(conn.GetCall().GetToken() + psprintf("_%u", sessionID))
   , mediaFormat(fmt)
   , m_paused(false)
@@ -280,6 +281,7 @@ PBoolean OpalMediaStream::ReadPacket(RTP_DataFrame & packet)
     return false;
 
   unsigned oldTimestamp = timestamp;
+  unsigned oldSeqNumber = m_sequenceNumber;
 
   if (defaultDataSize > (packet.GetSize() - RTP_DataFrame::MinHeaderSize)) {
     stringstream str;
@@ -296,10 +298,14 @@ PBoolean OpalMediaStream::ReadPacket(RTP_DataFrame & packet)
   if (oldTimestamp == timestamp)
     IncrementTimestamp(lastReadCount);
 
+  if (oldSeqNumber == m_sequenceNumber)
+    m_sequenceNumber++;
+
   packet.SetPayloadType(m_payloadType);
   packet.SetPayloadSize(lastReadCount);
   packet.SetTimestamp(oldTimestamp); // Beginning of frame
   packet.SetMarker(marker);
+  packet.SetSequenceNumber(oldSeqNumber);
   marker = false;
 
   return true;
