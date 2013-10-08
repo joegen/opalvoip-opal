@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="G.722">
+      <UniqueIdentifier>{a38d9a09-0a7c-468f-a1ed-b41565fcd53f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="g722codec.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VoIPCodecs\bitstream.c">
+      <Filter>G.722</Filter>
+    </ClCompile>
+    <ClCompile Include="VoIPCodecs\g722_decode.c">
+      <Filter>G.722</Filter>
+    </ClCompile>
+    <ClCompile Include="VoIPCodecs\g722_encode.c">
+      <Filter>G.722</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
