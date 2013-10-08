@@ -550,7 +550,7 @@ PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, PBoole
 #if PTRACING
   if (PTrace::CanTrace(5)) {
     ostream & trace = PTrace::Begin(5, __FILE__, __LINE__, this);
-    trace << "Patch\tExecute" << (atLeastOne ? "d" : "fail for ")
+    trace << "Patch\t" << (atLeastOne ? "Locally executed" : "No local execute of")
           << " command \"" << command << '"';
     if (patch != this)
       trace << " bypassing " << *this << " to " << *patch;
