@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>iLBC Audio Codec</ProjectName>
+    <ProjectName>Audio - iLBC</ProjectName>
     <ProjectGuid>{F1C13640-A056-4280-B1C6-6582E5890B89}</ProjectGuid>
     <RootNamespace>iLBC Audio Codec</RootNamespace>
   </PropertyGroup>

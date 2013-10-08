@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>GSM-AMR Audio Codec</ProjectName>
+    <ProjectName>Audio - GSM-AMR</ProjectName>
     <ProjectGuid>{92E9FA1E-2925-42FD-8226-A07CBD237E18}</ProjectGuid>
     <RootNamespace>gsmamr</RootNamespace>
   </PropertyGroup>
