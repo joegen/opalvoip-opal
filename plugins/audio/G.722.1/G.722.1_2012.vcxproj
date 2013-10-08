@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>G.722.1 Audio Codec</ProjectName>
+    <ProjectName>Audio - G.722.1</ProjectName>
     <ProjectGuid>{3C127609-B3A6-47FD-9B94-8FD2CB2D6623}</ProjectGuid>
     <RootNamespace>CodecG7221</RootNamespace>
     <Keyword>Win32Proj</Keyword>

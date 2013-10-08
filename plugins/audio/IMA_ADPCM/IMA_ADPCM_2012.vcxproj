@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>IMA ADPCM Audio Codec</ProjectName>
+    <ProjectName>Audio - IMA ADPCM</ProjectName>
     <ProjectGuid>{25F0AA82-0186-45AD-92C3-EE1F9282A038}</ProjectGuid>
     <RootNamespace>IMA_ADPCM</RootNamespace>
   </PropertyGroup>

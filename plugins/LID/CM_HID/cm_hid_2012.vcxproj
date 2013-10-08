@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>CM HID USB LID</ProjectName>
+    <ProjectName>LID - CM HID USB</ProjectName>
     <ProjectGuid>{3FCBA070-C605-4EE5-B078-E2461F792B36}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

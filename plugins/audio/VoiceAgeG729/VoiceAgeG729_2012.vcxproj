@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>Voice Age G.729 Audio Codec</ProjectName>
+    <ProjectName>Audio - G.729 (Voice Age)</ProjectName>
     <ProjectGuid>{3F038BF6-B7B9-4941-AF57-8D539FC05781}</ProjectGuid>
     <RootNamespace>VoiceAgeG729</RootNamespace>
   </PropertyGroup>
