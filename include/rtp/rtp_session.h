@@ -132,10 +132,6 @@ class OpalRTPSession : public OpalMediaSession
       RTP_DataFrame & frame   ///<  Frame read from the RTP session
     );
 
-    /**Flush incoming data.
-      */
-    virtual void FlushData();
-
     /**Write a data frame from the RTP channel.
       */
     virtual bool WriteData(
