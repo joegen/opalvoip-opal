@@ -7531,7 +7531,7 @@ double StatisticsField::CalculateFrameRate(DWORD frames)
 
   double value;
   if (m_lastFrameTick != 0)
-    value = (frames - m_lastFrames) / (double)(tick - m_lastFrameTick).GetSeconds(); // Ends up as frames/second
+    value = 1000.0 * (frames - m_lastFrames) / (double)(tick - m_lastFrameTick).GetMilliSeconds(); // Ends up as frames/second
   else
     value = 0;
 
