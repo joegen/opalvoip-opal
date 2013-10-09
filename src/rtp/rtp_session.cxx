@@ -66,29 +66,29 @@ const unsigned SecondsFrom1900to1970 = (70*365+17)*24*60*60U;
   */
 class RTP_JitterBuffer : public OpalJitterBufferThread
 {
-   PCLASSINFO(RTP_JitterBuffer, OpalJitterBufferThread);
-public:
-   RTP_JitterBuffer(
-     OpalRTPSession & session, ///<  Associated RTP session for data to be read from
-      const Init & init  ///< Initialisation information
-   ) : OpalJitterBufferThread(init)
-     , m_session(session)
-   {
+    PCLASSINFO(RTP_JitterBuffer, OpalJitterBufferThread);
+  public:
+    RTP_JitterBuffer(OpalRTPSession & session, const Init & init)
+      : OpalJitterBufferThread(init)
+      , m_session(session)
+    {
       PTRACE_CONTEXT_ID_FROM(session);
-   }
+    }
 
-   ~RTP_JitterBuffer()
-   {
-     PTRACE(4, "Jitter\tDestroying jitter buffer " << *this);
 
-     m_running = false;
-     bool reopen = m_session.Shutdown(true);
+    ~RTP_JitterBuffer()
+    {
+      PTRACE(4, "Jitter\tDestroying jitter buffer " << *this);
 
-     WaitForThreadTermination();
+      m_running = false;
+      bool reopen = m_session.Shutdown(true);
 
-     if (reopen)
-       m_session.Restart(true);
-   }
+      WaitForThreadTermination();
+
+      if (reopen)
+        m_session.Restart(true);
+    }
+
 
     virtual PBoolean OnReadPacket(RTP_DataFrame & frame)
     {
@@ -442,7 +442,6 @@ bool OpalRTPSession::SetJitterBufferSize(const OpalJitterBuffer::Init & init)
   if (m_jitterBuffer != NULL)
     m_jitterBuffer->SetDelay(init);
   else {
-    FlushData();
     m_jitterBuffer = new RTP_JitterBuffer(*this, init);
     PTRACE(4, "RTP\tCreated RTP jitter buffer " << *m_jitterBuffer);
     m_jitterBuffer->Start();
@@ -487,26 +486,6 @@ bool OpalRTPSession::ReadData(RTP_DataFrame & frame)
          "RTP\tSession " << m_sessionId << ", SSRC=0x" << hex << syncSourceIn << dec << ", resequenced "
          << (m_outOfOrderPackets.empty() ? "last" : "next") << " out of order packet " << sequenceNumber);
   return true;
-}
-
-
-void OpalRTPSession::FlushData()
-{
-  if (!IsOpen())
-    return;
-
-  PTimeInterval oldTimeout = m_dataSocket->GetReadTimeout();  
-  m_dataSocket->SetReadTimeout(0);
-
-  PINDEX count = 0;
-  BYTE buffer[2000];
-  while (m_dataSocket->Read(buffer, sizeof(buffer)))
-    ++count;
-
-  m_dataSocket->SetReadTimeout(oldTimeout);
-
-  PTRACE_IF(3, count > 0, "RTP\tSession " << m_sessionId << ", flushed "
-            << count << " RTP data packets before activating jitter buffer");
 }
 
 
@@ -1944,6 +1923,8 @@ PString OpalRTPSession::GetLocalHostName()
 
 bool OpalRTPSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress)
 {
+  PWaitAndSignal m(m_dataMutex);
+
   if (m_remoteBehindNAT) {
     PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", ignoring remote socket info as remote is behind NAT");
     return true;
@@ -2213,6 +2194,8 @@ bool OpalRTPSession::WriteOOBData(RTP_DataFrame & frame, bool rewriteTimeStamp)
 
 bool OpalRTPSession::WriteData(RTP_DataFrame & frame)
 {
+  PWaitAndSignal m(m_dataMutex);
+
   if (!IsOpen() || m_shutdownWrite) {
     PTRACE(3, "RTP_UDP\tSession " << m_sessionId << ", write shutdown.");
     return false;
@@ -2237,6 +2220,8 @@ bool OpalRTPSession::WriteData(RTP_DataFrame & frame)
 
 bool OpalRTPSession::WriteControl(RTP_ControlFrame & frame)
 {
+  PWaitAndSignal m(m_dataMutex);
+
   // Trying to send a PDU before we are set up!
   if (!m_remoteAddress.IsValid() || m_remoteControlPort == 0)
     return true;

@@ -432,6 +432,7 @@ class OpalMediaStream : public PSafeObject
 
     OpalConnection & connection;
     unsigned         sessionID;
+    unsigned         m_sequenceNumber;
     PString          identifier;
     OpalMediaFormat  mediaFormat;
     bool             m_paused;
