@@ -490,6 +490,7 @@ void OpalLocalConnection::AlertingIncoming(bool withMedia)
         if (conn != NULL)
           conn->AutoStartMediaStreams();
         AutoStartMediaStreams();
+        StartMediaStreams();
       }
 
       OnAlerting();
