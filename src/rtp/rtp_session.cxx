@@ -1895,6 +1895,8 @@ PString OpalRTPSession::GetLocalHostName()
 
 bool OpalRTPSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress)
 {
+  PWaitAndSignal m(m_dataMutex);
+
   if (m_remoteBehindNAT) {
     PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", ignoring remote socket info as remote is behind NAT");
     return true;
@@ -2156,6 +2158,8 @@ bool OpalRTPSession::WriteOOBData(RTP_DataFrame & frame, bool rewriteTimeStamp)
 
 bool OpalRTPSession::WriteData(RTP_DataFrame & frame)
 {
+  PWaitAndSignal m(m_dataMutex);
+
   if (!IsOpen() || m_shutdownWrite) {
     PTRACE(3, "RTP_UDP\tSession " << m_sessionId << ", write shutdown.");
     return false;
@@ -2180,6 +2184,8 @@ bool OpalRTPSession::WriteData(RTP_DataFrame & frame)
 
 bool OpalRTPSession::WriteControl(RTP_ControlFrame & frame)
 {
+  PWaitAndSignal m(m_dataMutex);
+
   // Trying to send a PDU before we are set up!
   if (!m_remoteAddress.IsValid() || m_remoteControlPort == 0 || m_controlSocket == NULL)
     return true;
