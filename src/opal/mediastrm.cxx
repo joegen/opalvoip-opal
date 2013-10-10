@@ -281,7 +281,7 @@ PBoolean OpalMediaStream::ReadPacket(RTP_DataFrame & packet)
     return false;
 
   unsigned oldTimestamp = timestamp;
-  unsigned oldSeqNumber = m_sequenceNumber;
+  WORD oldSeqNumber = m_sequenceNumber;
 
   if (defaultDataSize > (packet.GetSize() - RTP_DataFrame::MinHeaderSize)) {
     stringstream str;
