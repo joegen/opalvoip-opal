@@ -207,8 +207,10 @@ DEF_FIELD(VideoMinFrameSize);
 DEF_FIELD(VideoMaxFrameSize);
 DEF_FIELD(LocalVideoFrameX);
 DEF_FIELD(LocalVideoFrameY);
+DEF_FIELD(LocalVideoFrameSize);
 DEF_FIELD(RemoteVideoFrameX);
 DEF_FIELD(RemoteVideoFrameY);
+DEF_FIELD(RemoteVideoFrameSize);
 DEF_FIELD(VideoOnHold);
 
 static const wxChar FaxGroup[] = wxT("/Fax");
@@ -749,8 +751,10 @@ MyManager::MyManager()
   , m_VideoGrabPreview(true)
   , m_localVideoFrameX(INT_MIN)
   , m_localVideoFrameY(INT_MIN)
+  , m_localVideoFrameSize(0)
   , m_remoteVideoFrameX(INT_MIN)
   , m_remoteVideoFrameY(INT_MIN)
+  , m_remoteVideoFrameSize(0)
   , m_primaryVideoGrabber(NULL)
   , m_SecondaryVideoGrabPreview(false)
   , m_SecondaryVideoOpening(false)
@@ -1186,8 +1190,10 @@ bool MyManager::Initialise(bool startMinimised)
 
   config->Read(LocalVideoFrameXKey, &m_localVideoFrameX);
   config->Read(LocalVideoFrameYKey, &m_localVideoFrameY);
+  config->Read(LocalVideoFrameSizeKey, &m_localVideoFrameSize);
   config->Read(RemoteVideoFrameXKey, &m_remoteVideoFrameX);
   config->Read(RemoteVideoFrameYKey, &m_remoteVideoFrameY);
+  config->Read(RemoteVideoFrameSizeKey, &m_remoteVideoFrameSize);
 
   ////////////////////////////////////////
   // Fax fields
@@ -2850,12 +2856,14 @@ void MyManager::OnClosedMediaStream(const OpalMediaStream & stream)
           if (x != m_localVideoFrameX || y != m_localVideoFrameY) {
             config->Write(LocalVideoFrameXKey, m_localVideoFrameX = x);
             config->Write(LocalVideoFrameYKey, m_localVideoFrameY = y);
+            config->Write(LocalVideoFrameSizeKey, m_localVideoFrameSize = device->GetChannel());
           }
         }
         else {
           if (x != m_remoteVideoFrameX || y != m_remoteVideoFrameY) {
             config->Write(RemoteVideoFrameXKey, m_remoteVideoFrameX = x);
             config->Write(RemoteVideoFrameYKey, m_remoteVideoFrameY = y);
+            config->Write(RemoteVideoFrameSizeKey, m_remoteVideoFrameSize = device->GetChannel());
           }
         }
 
@@ -3513,12 +3521,14 @@ PBoolean MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
     title = "Preview";
     x = m_localVideoFrameX;
     y = m_localVideoFrameY;
+    videoArgs.channelNumber = m_localVideoFrameSize;
   }
   else {
     videoArgs = GetVideoOutputDevice();
     title = connection.GetRemotePartyName();
     x = m_remoteVideoFrameX;
     y = m_remoteVideoFrameY;
+    videoArgs.channelNumber = m_remoteVideoFrameSize;
   }
 
   if (openChannelCount > 0)
