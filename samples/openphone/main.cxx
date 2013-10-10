@@ -5711,10 +5711,7 @@ class SoundProgressDialog
 
 void SoundProgressDialog::Progress(PSoundChannel & channel, P_INT_PTR count)
 {
-  if (m_dialog != NULL && channel.IsOpen())
-    m_dialog->Update(count);
-  else {
-    delete m_dialog;
+  if (m_dialog != NULL && channel.IsOpen()) {
     const wxChar * msg;
     if (m_playerTest)
       msg = wxT("Testing player ...");
@@ -5723,7 +5720,11 @@ void SoundProgressDialog::Progress(PSoundChannel & channel, P_INT_PTR count)
     else
       msg = wxT("Playing back test recording ...");
 
-    m_dialog = new wxProgressDialog(OpenPhoneString, msg, count);
+    m_dialog->Update(count, msg);
+  }
+  else {
+    delete m_dialog;
+    m_dialog = new wxProgressDialog(OpenPhoneString, wxEmptyString, count);
   }
 }
 
