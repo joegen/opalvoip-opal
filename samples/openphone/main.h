@@ -1265,8 +1265,10 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     bool m_VideoGrabPreview;
     int  m_localVideoFrameX;
     int  m_localVideoFrameY;
+    int  m_localVideoFrameSize;
     int  m_remoteVideoFrameX;
     int  m_remoteVideoFrameY;
+    int  m_remoteVideoFrameSize;
 
     PVideoInputDevice * m_primaryVideoGrabber;
 
