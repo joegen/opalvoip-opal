@@ -53,7 +53,7 @@ class H235DiffieHellman : public PDictionary<PString, PSSLDiffieHellman>
     typedef PDictionary<PString, PSSLDiffieHellman> BaseClass;
     PCLASSINFO(H235DiffieHellman, BaseClass);
   public:
-    H235DiffieHellman() : m_local(false), m_version3(true) { }
+    H235DiffieHellman() : m_version3(true) { }
 
     virtual bool AddForAlgorithm(const OpalMediaCryptoSuite & cryptoSuite);
     virtual PBYTEArray FindMasterKey(const OpalMediaCryptoSuite & cryptoSuite) const;
@@ -64,7 +64,6 @@ class H235DiffieHellman : public PDictionary<PString, PSSLDiffieHellman>
     bool IsVersion3() const { return m_version3; }
 
   protected:
-    bool m_local;
     bool m_version3;
 };
 
