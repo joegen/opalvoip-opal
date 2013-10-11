@@ -333,20 +333,21 @@ void H323Capability::SetCryptoSuite(const OpalMediaCryptoSuite & cryptoSuite)
 }
 
 
-bool H323Capability::OnSendingCryptoPDU(H245_EncryptionSync & encryptionSync,
-                                        const H323Connection & connection,
-                                        unsigned sessionID)
+bool H323Capability::OnSendingPDU(H245_EncryptionSync & encryptionSync,
+                                  const H323Connection & connection,
+                                  unsigned sessionID,
+                                  bool rx)
 {
-  return m_cryptoCapability != NULL && m_cryptoCapability->OnSendingCryptoPDU(encryptionSync, connection, sessionID);
+  return m_cryptoCapability != NULL && m_cryptoCapability->OnSendingPDU(encryptionSync, connection, sessionID, rx);
 }
 
 
-bool H323Capability::OnReceivedCryptoPDU(const H245_EncryptionSync & encryptionSync,
-                                         const H323Connection & connection,
-                                         unsigned sessionID,
-                                         bool rx)
+bool H323Capability::OnReceivedPDU(const H245_EncryptionSync & encryptionSync,
+                                   const H323Connection & connection,
+                                   unsigned sessionID,
+                                   bool rx)
 {
-  return m_cryptoCapability != NULL && m_cryptoCapability->OnReceivedCryptoPDU(encryptionSync, connection, sessionID, rx);
+  return m_cryptoCapability != NULL && m_cryptoCapability->OnReceivedPDU(encryptionSync, connection, sessionID, rx);
 }
 
 
@@ -1831,6 +1832,52 @@ PBoolean H235SecurityCapability::OnReceivedPDU(const H245_Capability & pdu)
 }
 
 
+bool H235SecurityCapability::OnSendingPDU(H245_EncryptionSync & encryptionSync,
+                                          const H323Connection & connection,
+                                          unsigned sessionID,
+                                          bool rx)
+{
+  OpalMediaSession * session = connection.GetMediaSession(sessionID);
+  if (session == NULL) {
+    PTRACE(3, "H323\tNot adding H.235 encryption key as no media session for id=" << sessionID);
+    return false;
+  }
+
+  for (OpalMediaCryptoSuite::List::iterator it = m_cryptoSuites.begin(); it != m_cryptoSuites.end(); ++it)
+    session->OfferCryptoSuite(it->GetFactoryName());
+
+  OpalMediaCryptoKeyList & keys = session->GetOfferedCryptoKeys();
+  if (keys.IsEmpty()) {
+    PTRACE(3, "H323\tNot adding H.235 encryption key as no keys offered in session id=" << sessionID);
+    return false;
+  }
+
+  if (!OnSendingPDU(encryptionSync, connection, keys))
+    return false;
+
+  return session->ApplyCryptoKey(keys, rx);
+}
+
+
+bool H235SecurityCapability::OnReceivedPDU(const H245_EncryptionSync & encryptionSync,
+                                           const H323Connection & connection,
+                                           unsigned sessionID,
+                                           bool rx)
+{
+  OpalMediaSession * session = connection.GetMediaSession(sessionID);
+  if (session == NULL) {
+    PTRACE(3, "H323\tNot adding H.235 encryption key as no media session for id=" << sessionID);
+    return false;
+  }
+
+  OpalMediaCryptoKeyList keys;
+  if (!OnReceivedPDU(encryptionSync, connection, keys))
+    return false;
+
+  return session->ApplyCryptoKey(keys, rx);
+}
+
+
 bool H235SecurityCapability::PostTCS(const H323Capabilities & capabilities)
 {
   H323Capability * cap = capabilities.FindCapability(m_mediaCapabilityNumber);
@@ -1902,11 +1949,18 @@ PString H235SecurityAlgorithmCapability::GetFormatName() const
 
 static bool OpenCipher(PSSLCipherContext & cipher, const OpalMediaCryptoSuite & cryptoSuite, const H323Connection & connection)
 {
-  if (!cipher.SetAlgorithm(cryptoSuite.GetOID()))
+  if (!cipher.SetAlgorithm(cryptoSuite.GetOID())) {
+    PTRACE(2, "H323\tCould not set SSL cipher algorithm for " << cryptoSuite);
     return false;
+  }
+
+  PBYTEArray dhMasterkey = connection.GetDiffieHellman().FindMasterKey(cryptoSuite);
+  if (dhMasterkey.IsEmpty()) {
+    PTRACE(2, "H323\tNo Diffie-Hellman key for " << cryptoSuite);
+    return false;
+  }
 
   PINDEX keyLen = cryptoSuite.GetCipherKeyBytes();
-  PBYTEArray dhMasterkey = connection.GetDiffieHellman().FindMasterKey(cryptoSuite);
   if (!cipher.SetKey(dhMasterkey.GetPointer() + dhMasterkey.GetSize() - keyLen, keyLen))
     return false;
 
@@ -1917,22 +1971,14 @@ static bool OpenCipher(PSSLCipherContext & cipher, const OpalMediaCryptoSuite & 
 }
 
 
-bool H235SecurityAlgorithmCapability::OnSendingCryptoPDU(H245_EncryptionSync & encryptionSync,
-                                                         const H323Connection & connection,
-                                                         unsigned sessionID)
+bool H235SecurityAlgorithmCapability::OnSendingPDU(H245_EncryptionSync & encryptionSync,
+                                                   const H323Connection & connection,
+                                                   const OpalMediaCryptoKeyList & keys)
 {
   if (!connection.IsH245Master()) {
-    PTRACE(4, "H323\tNot adding H.235 encryption key as we are not master");
+    PTRACE(3, "H323\tNot adding H.235 encryption key as we are not master");
     return false;
   }
-
-  OpalMediaSession * session = connection.GetMediaSession(sessionID);
-  if (session == NULL)
-    return false;
-
-  OpalMediaCryptoKeyList & keys = session->GetOfferedCryptoKeys();
-  if (keys.IsEmpty())
-    return false;
 
   PString endpointID;
   if (connection.GetEndPoint().GetGatekeeper() != NULL)
@@ -1959,8 +2005,10 @@ bool H235SecurityAlgorithmCapability::OnSendingCryptoPDU(H245_EncryptionSync & e
     v3data.m_algorithmOID = cryptoSuite.GetOID();
 
     v3data.IncludeOptionalField(H235_V3KeySyncMaterial::e_encryptedSessionKey);
-    if (!enc.Process(keys.front().GetCipherKey(), v3data.m_encryptedSessionKey.GetWritableValue()))
+    if (!enc.Process(keys.front().GetCipherKey(), v3data.m_encryptedSessionKey.GetWritableValue())) {
+      PTRACE(3, "H323\tNot adding H.235 encryption key as encryption failed.");
       return false;
+    }
   }
   else {
     h235key.SetTag(H235_H235Key::e_sharedSecret);
@@ -1972,8 +2020,10 @@ bool H235SecurityAlgorithmCapability::OnSendingCryptoPDU(H245_EncryptionSync & e
     ksm.m_keyMaterial.SetData(keys.front().GetCipherKey());
     eksm.m_clearData.EncodeSubType(ksm);
 
-    if (!enc.Process(eksm.m_clearData.GetValue(), eksm.m_encryptedData.GetWritableValue()))
+    if (!enc.Process(eksm.m_clearData.GetValue(), eksm.m_encryptedData.GetWritableValue())) {
+      PTRACE(3, "H323\tNot adding H.235 encryption key as encryption failed.");
       return false;
+    }
   }
 
   encryptionSync.m_h235Key.EncodeSubType(h235key);
@@ -1981,15 +2031,10 @@ bool H235SecurityAlgorithmCapability::OnSendingCryptoPDU(H245_EncryptionSync & e
 }
 
 
-bool H235SecurityAlgorithmCapability::OnReceivedCryptoPDU(const H245_EncryptionSync & encryptionSync,
-                                                          const H323Connection & connection,
-                                                          unsigned sessionID,
-                                                          bool rx)
+bool H235SecurityAlgorithmCapability::OnReceivedPDU(const H245_EncryptionSync & encryptionSync,
+                                                    const H323Connection & connection,
+                                                    OpalMediaCryptoKeyList & keys)
 {
-  OpalMediaSession * session = connection.GetMediaSession(sessionID);
-  if (session == NULL)
-    return false;
-
   H235_H235Key h235key;
   if (!encryptionSync.m_h235Key.DecodeSubType(h235key)) {
     PTRACE(1, "H323\tCould not decode H.235 encryption key");
@@ -2013,8 +2058,11 @@ bool H235SecurityAlgorithmCapability::OnReceivedCryptoPDU(const H245_EncryptionS
       PSSLCipherContext dec(false);
       if (!OpenCipher(dec, *cryptoSuite, connection))
         return false;
-      if (!dec.Process(eksm.m_encryptedData.GetValue(), const_cast<H235_EncodedKeySyncMaterial &>(eksm.m_clearData).GetWritableValue()))
+
+      if (!dec.Process(eksm.m_encryptedData.GetValue(), const_cast<H235_EncodedKeySyncMaterial &>(eksm.m_clearData).GetWritableValue())) {
+        PTRACE(3, "H323\tH.235 encryption key decryption failed.");
         return false;
+      }
 
       H235_KeySyncMaterial ksm;
       if (!eksm.m_clearData.DecodeSubType(ksm)) {
@@ -2055,8 +2103,10 @@ bool H235SecurityAlgorithmCapability::OnReceivedCryptoPDU(const H245_EncryptionS
       if (!OpenCipher(dec, *cryptoSuite, connection))
         return false;
 
-      if (!dec.Process(v3data.m_encryptedSessionKey.GetValue(), sessionKey))
+      if (!dec.Process(v3data.m_encryptedSessionKey.GetValue(), sessionKey)) {
+        PTRACE(3, "H323\tH.235 encryption key decryption failed.");
         return false;
+      }
 
       break;
     }
@@ -2073,10 +2123,9 @@ bool H235SecurityAlgorithmCapability::OnReceivedCryptoPDU(const H245_EncryptionS
 
   PTRACE(4, "H323", "Decoded H.235 media session key: " << hex << fixed << setfill('0') << sessionKey);
 
-  OpalMediaCryptoKeyList keys;
   keys.Append(cryptoSuite->CreateKeyInfo());
   keys.back().SetCipherKey(sessionKey);
-  return session->ApplyCryptoKey(keys, rx);
+  return true;
 }
 
 
@@ -2146,18 +2195,10 @@ PString H235SecurityGenericCapability::GetFormatName() const
 }
 
 
-bool H235SecurityGenericCapability::OnSendingCryptoPDU(H245_EncryptionSync & encryptionSync,
-                                                       const H323Connection & connection,
-                                                       unsigned sessionID)
+bool H235SecurityGenericCapability::OnSendingPDU(H245_EncryptionSync & encryptionSync,
+                                                 const H323Connection &,
+                                                 const OpalMediaCryptoKeyList & keys)
 {
-  OpalMediaSession * session = connection.GetMediaSession(sessionID);
-  if (session == NULL)
-    return false;
-
-  OpalMediaCryptoKeyList & keys = session->GetOfferedCryptoKeys();
-  if (keys.IsEmpty())
-    return false;
-
   H235_SRTP_SrtpKeys h235;
   h235.SetSize(1);
   h235[0].m_masterKey.SetValue(keys[0].GetCipherKey());
@@ -2168,15 +2209,10 @@ bool H235SecurityGenericCapability::OnSendingCryptoPDU(H245_EncryptionSync & enc
 }
 
 
-bool H235SecurityGenericCapability::OnReceivedCryptoPDU(const H245_EncryptionSync & encryptionSync,
-                                                        const H323Connection & connection,
-                                                        unsigned sessionID,
-                                                        bool rx)
+bool H235SecurityGenericCapability::OnReceivedPDU(const H245_EncryptionSync & encryptionSync,
+                                                  const H323Connection &,
+                                                  OpalMediaCryptoKeyList & keys)
 {
-  OpalMediaSession * session = connection.GetMediaSession(sessionID);
-  if (session == NULL)
-    return false;
-
   H235_SRTP_SrtpKeys h235;
   if (!encryptionSync.m_h235Key.DecodeSubType(h235) || h235.GetSize() == 0) {
     PTRACE(1, "H323\tCould not decode SrtpKeys, or no keys present");
@@ -2184,7 +2220,6 @@ bool H235SecurityGenericCapability::OnReceivedCryptoPDU(const H245_EncryptionSyn
   }
   PTRACE(4, "H323", "Decoded H.235 SRTP keys:\n  " << setprecision(2) << h235);
 
-  OpalMediaCryptoKeyList keys;
   for (PINDEX i = 0; i < h235.GetSize(); ++i) {
     H235_SRTP_SrtpKeyParameters & param = h235[i];
     OpalMediaCryptoKeyInfo * keyInfo = m_cryptoSuites.front().CreateKeyInfo();
@@ -2195,7 +2230,7 @@ bool H235SecurityGenericCapability::OnReceivedCryptoPDU(const H245_EncryptionSyn
     }
   }
 
-  return session->ApplyCryptoKey(keys, rx);
+  return true;
 }
 
 

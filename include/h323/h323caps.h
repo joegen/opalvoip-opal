@@ -359,14 +359,15 @@ class H323Capability : public PObject
     void SetCryptoSuite(const OpalMediaCryptoSuite & cryptoSuite);
 
     /// On sending security key information
-    virtual bool OnSendingCryptoPDU(
+    virtual bool OnSendingPDU(
       H245_EncryptionSync & encryptionSync,
       const H323Connection & connection,
-      unsigned sessionID
+      unsigned sessionID,
+      bool rx
     );
 
     /// On received security key information
-    virtual bool OnReceivedCryptoPDU(
+    virtual bool OnReceivedPDU(
       const H245_EncryptionSync & encryptionSync,
       const H323Connection & connection,
       unsigned sessionID,
@@ -1690,6 +1691,22 @@ class H235SecurityCapability : public H323Capability
       const H245_Capability & pdu ///<  PDU to get information from
     );
 
+    /// OnSendingPDU for security
+    virtual bool OnSendingPDU(
+      H245_EncryptionSync & encryptionSync,
+      const H323Connection & connection,
+      unsigned sessionID,
+      bool rx
+    );
+
+    /// On received security key information
+    virtual bool OnReceivedPDU(
+      const H245_EncryptionSync & encryptionSync,
+      const H323Connection & connection,
+      unsigned sessionID,
+      bool rx
+    );
+
     /// Do some post processing after decoding TCS
     virtual bool PostTCS(
       const H323Capabilities & capabilities
@@ -1698,6 +1715,9 @@ class H235SecurityCapability : public H323Capability
 
     virtual bool OnSendingPDU(H245_EncryptionAuthenticationAndIntegrity & pdu) const = 0;
     virtual bool OnReceivedPDU(const H245_EncryptionAuthenticationAndIntegrity & pdu) = 0;
+
+    virtual bool OnSendingPDU(H245_EncryptionSync & encryptionSync, const H323Connection & connection, const OpalMediaCryptoKeyList & keys) = 0;
+    virtual bool OnReceivedPDU(const H245_EncryptionSync & encryptionSync, const H323Connection & connection, OpalMediaCryptoKeyList & keys) = 0;
 
     unsigned GetMediaCapabilityNumber() const { return m_mediaCapabilityNumber; }
     const OpalMediaCryptoSuite::List & GetCryptoSuites() const { return m_cryptoSuites; }
@@ -1755,25 +1775,13 @@ class H235SecurityAlgorithmCapability : public H235SecurityCapability
       const PASN_Object & subTypePDU,     ///<  sub-type PDU of H323Capability
       const PString & mediaPacketization  ///< Media packetization used
     ) const;
-
-    /// OnSendingPDU for security
-    virtual bool OnSendingCryptoPDU(
-      H245_EncryptionSync & encryptionSync,
-      const H323Connection & connection,
-      unsigned sessionID
-    );
-
-    /// On received security key information
-    virtual bool OnReceivedCryptoPDU(
-      const H245_EncryptionSync & encryptionSync,
-      const H323Connection & connection,
-      unsigned sessionID,
-      bool rx
-    );
   //@}
 
     virtual bool OnSendingPDU(H245_EncryptionAuthenticationAndIntegrity & pdu) const;
     virtual bool OnReceivedPDU(const H245_EncryptionAuthenticationAndIntegrity & pdu);
+
+    virtual bool OnSendingPDU(H245_EncryptionSync & encryptionSync, const H323Connection & connection, const OpalMediaCryptoKeyList & keys);
+    virtual bool OnReceivedPDU(const H245_EncryptionSync & encryptionSync, const H323Connection & connection, OpalMediaCryptoKeyList & keys);
 };
 
 #endif // OPAL_H235_6
@@ -1818,25 +1826,13 @@ class H235SecurityGenericCapability : public H235SecurityCapability,
       const PASN_Object & subTypePDU,     ///<  sub-type PDU of H323Capability
       const PString & mediaPacketization  ///< Media packetization used
     ) const;
-
-    /// OnSendingPDU for security
-    virtual bool OnSendingCryptoPDU(
-      H245_EncryptionSync & encryptionSync,
-      const H323Connection & connection,
-      unsigned sessionID
-    );
-
-    /// On received security key information
-    virtual bool OnReceivedCryptoPDU(
-      const H245_EncryptionSync & encryptionSync,
-      const H323Connection & connection,
-      unsigned sessionID,
-      bool rx
-    );
   //@}
 
     virtual bool OnSendingPDU(H245_EncryptionAuthenticationAndIntegrity & pdu) const;
     virtual bool OnReceivedPDU(const H245_EncryptionAuthenticationAndIntegrity & pdu);
+
+    virtual bool OnSendingPDU(H245_EncryptionSync & encryptionSync, const H323Connection & connection, const OpalMediaCryptoKeyList & keys);
+    virtual bool OnReceivedPDU(const H245_EncryptionSync & encryptionSync, const H323Connection & connection, OpalMediaCryptoKeyList & keys);
 };
 
 #endif // OPAL_H235_8
