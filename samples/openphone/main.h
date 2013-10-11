@@ -790,6 +790,7 @@ class OptionsDialog : public wxDialog
     PwxString    m_GatekeeperLogin;
     PwxString    m_GatekeeperPassword;
 
+    wxString     m_H323TerminalType;
     int          m_DTMFSendMode;
     int          m_CallIntrusionProtectionLevel;
     bool         m_DisableFastStart;
