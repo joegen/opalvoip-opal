@@ -1099,6 +1099,7 @@ OpalH224MediaStream::OpalH224MediaStream(OpalConnection & connection,
                                          bool isSource)
   : OpalMediaStream(connection, mediaFormat, sessionID, isSource)
   , m_h224Handler(handler)
+  , m_consecutiveErrors(0)
 {
   if (isSource == true) {
     m_h224Handler.SetTransmitMediaFormat(mediaFormat);
@@ -1139,7 +1140,16 @@ PBoolean OpalH224MediaStream::ReadPacket(RTP_DataFrame & /*packet*/)
 
 PBoolean OpalH224MediaStream::WritePacket(RTP_DataFrame & packet)
 {
-  return m_h224Handler.HandleFrame(packet);
+  if (m_h224Handler.HandleFrame(packet)) {
+    m_consecutiveErrors = 0;
+    return true;
+  }
+
+  if (++m_consecutiveErrors < 10)
+    return true;
+
+  PTRACE(2, "Too many consecutive decode errors, shutting down channel");
+  return false;
 }
 
 
