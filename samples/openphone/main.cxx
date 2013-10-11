@@ -233,6 +233,7 @@ DEF_FIELD(GatekeeperIdentifier);
 DEF_FIELD(GatekeeperTTL);
 DEF_FIELD(GatekeeperLogin);
 DEF_FIELD(GatekeeperPassword);
+DEF_FIELD(H323TerminalType);
 DEF_FIELD(DTMFSendMode);
 DEF_FIELD(CallIntrusionProtectionLevel);
 DEF_FIELD(DisableFastStart);
@@ -1344,6 +1345,8 @@ bool MyManager::Initialise(bool startMinimised)
 
   config->SetPath(H323Group);
 
+  if (config->Read(H323TerminalTypeKey, &value1) && value1 > 0 && value1 < 256)
+    h323EP->SetTerminalType((H323EndPoint::TerminalTypes)value1);
   if (config->Read(DTMFSendModeKey, &value1) && value1 >= 0 && value1 < H323Connection::NumSendUserInputModes)
     h323EP->SetSendUserInputMode((H323Connection::SendUserInputModes)value1);
 #if OPAL_450
@@ -4211,6 +4214,37 @@ public:
 
 ///////////////////////////////////////////////////////////////////////////////
 
+class wxTerminalTypeValidator: public wxGenericValidator
+{
+public:
+  wxTerminalTypeValidator(wxString* val)
+    : wxGenericValidator(val)
+  {
+  }
+
+  virtual wxObject *Clone() const
+  {
+    return new wxTerminalTypeValidator(*this);
+  }
+
+  virtual bool Validate(wxWindow *)
+  {
+    wxComboBox *control = (wxComboBox *) m_validatorWindow;
+
+    unsigned long terminalType;
+    control->GetValue().ToULong(&terminalType);
+    if (terminalType > 0 && terminalType < 256)
+      return true;
+
+    wxMessageBox(wxT("Illegal value \"") + control->GetValue() + wxT("\" for H.323 terminal type."),
+                 OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
+    return false;
+  }
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+
 void MyManager::OnOptions(wxCommandEvent & /*event*/)
 {
   PTRACE(4, "OpenPhone\tOpening options dialog");
@@ -4760,6 +4794,16 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   for (i = 1; i < aliases.GetSize(); i++)
     m_Aliases->Append(PwxString(aliases[i]));
 
+  FindWindowByNameAs(combo, this, wxT("H323TerminalType"))->SetValidator(wxTerminalTypeValidator(&m_H323TerminalType));
+  m_H323TerminalType << m_manager.h323EP->GetTerminalType() << ' ';
+  for (i = 0; i < (PINDEX)combo->GetCount(); ++i) {
+    wxString entry = combo->GetString(i);
+    if (entry.StartsWith(m_H323TerminalType)) {
+      m_H323TerminalType = entry;
+      break;
+    }
+  }
+
   INIT_FIELD(DTMFSendMode, m_manager.h323EP->GetSendUserInputMode());
   if (m_DTMFSendMode >= OpalConnection::SendUserInputAsProtocolDefault)
     m_DTMFSendMode = OpalConnection::SendUserInputAsString;
@@ -5277,6 +5321,8 @@ bool OptionsDialog::TransferDataFromWindow()
   }
 
   config->SetPath(H323Group);
+  m_manager.h323EP->SetTerminalType((H323EndPoint::TerminalTypes)atoi(m_H323TerminalType.c_str()));
+  config->Write(H323TerminalTypeKey, (int)m_manager.h323EP->GetTerminalType());
   m_manager.h323EP->SetSendUserInputMode((H323Connection::SendUserInputModes)m_DTMFSendMode);
   config->Write(DTMFSendModeKey, m_DTMFSendMode);
 #if OPAL_450
