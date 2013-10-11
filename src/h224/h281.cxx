@@ -298,17 +298,17 @@ OpalH281Client::~OpalH281Client()
 }
 
 
-bool OpalH281Client::Action(PVideoControlInfo::Types type, int direction)
+bool OpalH281Client::Action(PVideoControlInfo::Types actionType, int direction)
 {
   SendStopAction();
 
-  m_transmitFrame.SetDirection(type, direction);
+  m_transmitFrame.SetRequestType(H281_Frame::StartAction);
+  m_transmitFrame.SetDirection(actionType, direction);
 
   for (PVideoControlInfo::Types type = PVideoControlInfo::BeginTypes; type < PVideoControlInfo::EndTypes; ++type) {
     if (m_transmitFrame.GetDirection(type) != 0) {
       PTRACE(3, "Starting action for " << type << ", dir=" << direction);
 
-      m_transmitFrame.SetRequestType(H281_Frame::StartAction);
       m_transmitFrame.SetTimeout(0); //800msec
 
       m_h224Handler->TransmitClientFrame(*this, m_transmitFrame);
@@ -319,6 +319,7 @@ bool OpalH281Client::Action(PVideoControlInfo::Types type, int direction)
     }
   }
 
+  m_transmitFrame.SetRequestType(H281_Frame::IllegalRequest);
   return true;
 }
 
@@ -537,7 +538,10 @@ void OpalH281Client::ContinueAction(PTimer &, P_INT_PTR)
 
   PTRACE(4, "Continue action");
   m_transmitFrame.SetRequestType(H281_Frame::ContinueAction);
+
   m_h224Handler->TransmitClientFrame(*this, m_transmitFrame);
+
+  m_transmitFrame.SetRequestType(H281_Frame::IllegalRequest);
 }
 
 

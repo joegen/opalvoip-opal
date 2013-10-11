@@ -230,6 +230,7 @@ class OpalH224MediaStream : public OpalMediaStream
     virtual void InternalClose();
 
     OpalH224Handler & m_h224Handler;
+    unsigned          m_consecutiveErrors;
 };
 
 
