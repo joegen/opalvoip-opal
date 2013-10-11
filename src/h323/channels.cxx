@@ -502,7 +502,7 @@ PBoolean H323_RealTimeChannel::OnSendingPDU(H245_OpenLogicalChannel & open) cons
   open.m_forwardLogicalChannelNumber = (unsigned)number;
 
 #if OPAL_H235_6 || OPAL_H235_8
-  if (capability->OnSendingCryptoPDU(open.m_encryptionSync, connection, GetSessionID())) {
+  if (capability->OnSendingPDU(open.m_encryptionSync, connection, GetSessionID(), false)) {
     open.IncludeOptionalField(H245_OpenLogicalChannel::e_encryptionSync);
     open.m_encryptionSync.m_synchFlag = GetDynamicRTPPayloadType();
   }
@@ -574,7 +574,7 @@ void H323_RealTimeChannel::OnSendOpenAck(const H245_OpenLogicalChannel & open,
   param.m_sessionID = sessionID;
 
 #if OPAL_H235_6 || OPAL_H235_8
-  if (capability->OnSendingCryptoPDU(ack.m_encryptionSync, connection, GetSessionID())) {
+  if (capability->OnSendingPDU(ack.m_encryptionSync, connection, GetSessionID(), true)) {
     ack.IncludeOptionalField(H245_OpenLogicalChannelAck::e_encryptionSync);
     ack.m_encryptionSync.m_synchFlag = GetDynamicRTPPayloadType();
   }
@@ -606,7 +606,7 @@ PBoolean H323_RealTimeChannel::OnReceivedPDU(const H245_OpenLogicalChannel & ope
 
 #if OPAL_H235_6 || OPAL_H235_8
   if (open.HasOptionalField(H245_OpenLogicalChannel::e_encryptionSync))
-    capability->OnReceivedCryptoPDU(open.m_encryptionSync, connection, GetSessionID(), true);
+    capability->OnReceivedPDU(open.m_encryptionSync, connection, GetSessionID(), true);
 #endif // OPAL_H235_6 || OPAL_H235_8
 
   if (reverse) {
@@ -670,7 +670,7 @@ PBoolean H323_RealTimeChannel::OnReceivedAckPDU(const H245_OpenLogicalChannelAck
 
 #if OPAL_H235_6 || OPAL_H235_8
   if (ack.HasOptionalField(H245_OpenLogicalChannel::e_encryptionSync))
-    capability->OnReceivedCryptoPDU(ack.m_encryptionSync, connection, GetSessionID(), false);
+    capability->OnReceivedPDU(ack.m_encryptionSync, connection, GetSessionID(), false);
 #endif // OPAL_H235_6 || OPAL_H235_8
 
   return OnReceivedAckPDU(ack.m_forwardMultiplexAckParameters);
