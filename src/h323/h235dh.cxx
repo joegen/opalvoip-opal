@@ -164,8 +164,6 @@ static const DHInfo * FindDH(const char * oid)
 
 bool H235DiffieHellman::AddForAlgorithm(const OpalMediaCryptoSuite & cryptoSuite)
 {
-  m_local = true;
-
   // Find DH group (H.235.6 section 11, table 6)
   const DHInfo * group = FindDH(cryptoSuite.GetOID());
   if (group == NULL)
@@ -198,8 +196,10 @@ PBYTEArray H235DiffieHellman::FindMasterKey(const OpalMediaCryptoSuite & cryptoS
   const DHInfo * group = FindDH(cryptoSuite.GetOID());
   if (group != NULL) {
     PSSLDiffieHellman * dh = GetAt(group->m_dhOID);
-    if (dh != NULL)
+    if (dh != NULL) {
+      PTRACE(4, "Using  Diffie-Hellman group " << group->m_dhOID << " for " << cryptoSuite.GetDescription());
       return dh->GetSessionKey();
+    }
 
     PTRACE(2, "No Diffie-Hellman group exchanged for " << cryptoSuite.GetDescription());
   }
@@ -211,6 +211,12 @@ bool H235DiffieHellman::ToTokens(H225_ArrayOf_ClearToken & tokens) const
 {
   if (IsEmpty())
     return false;
+
+  if (m_version3) {
+    PINDEX last = tokens.GetSize();
+    tokens.SetSize(last+1);
+    tokens[last].m_tokenOID = H235Version3; // Indicate version 3 support.
+  }
 
   for (const_iterator it = begin(); it != end(); ++it) {
     PINDEX last = tokens.GetSize();
@@ -233,11 +239,6 @@ bool H235DiffieHellman::ToTokens(H225_ArrayOf_ClearToken & tokens) const
     }
   }
 
-  if (m_version3) {
-    PINDEX last = tokens.GetSize();
-    tokens.SetSize(last+1);
-    tokens[last].m_tokenOID = H235Version3; // Indicate version 3 support.
-  }
   return true;
 }
 
@@ -272,24 +273,23 @@ bool H235DiffieHellman::FromTokens(const H225_ArrayOf_ClearToken & tokens)
             continue;
           }
 
-          if (m_local) {
-            PSSLDiffieHellman * dh = GetAt(oid);
-            if (dh != NULL) {
-              PTRACE_IF(3, !modSize.IsEmpty() && dh->GetModulus() != modSize,
-                        "Reply Diffie-Hellman group has different modulus to offer");
-              if (dh->ComputeSessionKey(halfKey)) {
-                PTRACE(4, "Computed key for Diffie-Hellman group " << oid
-                        << "\n" << hex << fixed << setfill('0') << setprecision(4) << dh->GetSessionKey());
-              }
-            }
-            else {
-              PTRACE(3, "Did not offer Diffie-Hellman group " << oid);
-            }
+          PSSLDiffieHellman * dh;
+          if ((dh = GetAt(oid)) == NULL) {
+            PTRACE(4, "Adding Diffie-Hellman group " << oid);
+            dh = new PSSLDiffieHellman(modSize, generator);
+            SetAt(oid, dh);
           }
           else {
-            PTRACE(4, "Adding Diffie-Hellman group " << oid);
-            SetAt(oid, new PSSLDiffieHellman(modSize, generator, halfKey));
+            PTRACE(4, "Found offerred Diffie-Hellman group " << oid);
+            PTRACE_IF(3, !modSize.IsEmpty() && dh->GetModulus() != modSize,
+                        "Reply Diffie-Hellman group has different modulus to offer");
           }
+
+          if (dh->ComputeSessionKey(halfKey)) {
+            PTRACE(4, "Computed key for Diffie-Hellman group " << oid
+                    << "\n" << hex << fixed << setfill('0') << setprecision(4) << dh->GetSessionKey());
+          }
+
           break;
         }
       }
@@ -297,13 +297,11 @@ bool H235DiffieHellman::FromTokens(const H225_ArrayOf_ClearToken & tokens)
   }
 
   // Only keep replies
-  if (m_local) {
-    for (iterator it = begin(); it != end(); ++it) {
-      if (it->second.GetSessionKey().IsEmpty()) {
-        PTRACE(4, "Dropping Diffie-Hellman group " << it->first);
-        erase(it);
-        it = begin();
-      }
+  for (iterator it = begin(); it != end(); ++it) {
+    if (it->second.GetSessionKey().IsEmpty()) {
+      PTRACE(4, "Dropping Diffie-Hellman group " << it->first);
+      erase(it);
+      it = begin();
     }
   }
 
