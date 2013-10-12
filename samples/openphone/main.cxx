@@ -5321,7 +5321,9 @@ bool OptionsDialog::TransferDataFromWindow()
   }
 
   config->SetPath(H323Group);
-  m_manager.h323EP->SetTerminalType((H323EndPoint::TerminalTypes)atoi(m_H323TerminalType.c_str()));
+  long terminalType;
+  m_H323TerminalType.ToLong(&terminalType);
+  m_manager.h323EP->SetTerminalType((H323EndPoint::TerminalTypes)terminalType);
   config->Write(H323TerminalTypeKey, (int)m_manager.h323EP->GetTerminalType());
   m_manager.h323EP->SetSendUserInputMode((H323Connection::SendUserInputModes)m_DTMFSendMode);
   config->Write(DTMFSendModeKey, m_DTMFSendMode);
