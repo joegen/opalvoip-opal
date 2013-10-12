@@ -595,6 +595,9 @@ void OpalFarEndCameraControl::Attach(PVideoInputDevice * device, VideoSources so
             case PVideoControlInfo::Focus :
               m_localCapability[source] |= H281_Frame::CanFocus;
               break;
+            default :
+              PAssertAlways("Illegal FECC type");
+              break;
           }
         }
       }
