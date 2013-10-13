@@ -554,6 +554,8 @@ public:
             "-play-device:    Audio player device.\n"
             "-moh-driver:     Audio player driver for music on hold.\n"
             "-moh-device:     Audio player device for music on hold.\n"
+            "-aor-driver:     Audio player driver for when ringing.\n"
+            "-aor-device:     Audio player device for when ringing.\n"
             "-audio-buffer:   Audio buffer time in ms (default 120)\n"
 #if OPAL_VIDEO
             "-display-driver: Video display driver to use.\n"
@@ -566,6 +568,8 @@ public:
             "-preview-device: Video preview device to use.\n"
             "-voh-driver:     Video source driver for music on hold.\n"
             "-voh-device:     Video source device for music on hold.\n"
+            "-vor-driver:     Video source driver for when ringing.\n"
+            "-vor-device:     Video source device for when ringing.\n"
 #endif // OPAL_VIDEO
             ;
   }
@@ -593,6 +597,13 @@ public:
     }
     if (verbose)
       output << "Music on Hold: " << GetSoundChannelOnHoldDevice() << '\n';
+
+    if (!SetSoundChannelOnRingDevice(args.GetOptionString("aor-driver") + '\t' + args.GetOptionString("aor-device"))) {
+      cerr << "Illegal sound player driver/device for ring\n";
+      return false;
+    }
+    if (verbose)
+      output << "Audio on Ring: " << GetSoundChannelOnRingDevice() << '\n';
 
     if (args.HasOption("audio-buffer"))
       SetSoundChannelBufferTime(args.GetOptionString("audio-buffer").AsUnsigned());
@@ -649,6 +660,16 @@ public:
     }
     if (verbose)
       output << "Video on Hold: " << GetVideoOnHoldDevice().deviceName << '\n';
+
+    video = GetVideoOnRingDevice();
+    video.driverName = args.GetOptionString("vor-driver");
+    video.deviceName = args.GetOptionString("vor-device");
+    if ((!video.driverName.IsEmpty() || !video.deviceName.IsEmpty()) && !SetVideoOnRingDevice(video)) {
+      cerr << "Illegal video source driver/device for ring" << endl;
+      return false;
+    }
+    if (verbose)
+      output << "Video on Ring: " << GetVideoOnRingDevice().deviceName << '\n';
 #endif // OPAL_VIDEO
 
     return true;

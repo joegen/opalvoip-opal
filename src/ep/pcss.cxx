@@ -78,7 +78,7 @@ OpalPCSSEndPoint::OpalPCSSEndPoint(OpalManager & mgr, const char * prefix)
          << PSoundChannel::GetDeviceNames(PSoundChannel::Recorder));
 
 #if OPAL_VIDEO
-  m_videoOnHoldDevice.deviceName = P_FAKE_VIDEO_TEXT;
+  m_videoOnRingDevice.deviceName = m_videoOnHoldDevice.deviceName = P_FAKE_VIDEO_TEXT;
 #endif
 }
 
@@ -231,6 +231,8 @@ PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & 
   if (isSource) {
     if (connection.GetCall().IsOnHold())
       params.m_device = connection.GetSoundChannelOnHoldDevice();
+    else if (connection.GetPhase() < OpalConnection::AlertingPhase && !connection.GetSoundChannelOnRingDevice().IsEmpty())
+      params.m_device = connection.GetSoundChannelOnRingDevice();
     else
       params.m_device = connection.GetSoundChannelRecordDevice();
     params.m_direction = PSoundChannel::Recorder;
@@ -319,9 +321,19 @@ PBoolean OpalPCSSEndPoint::SetSoundChannelRecordDevice(const PString & name)
 }
 
 
-PBoolean OpalPCSSEndPoint::SetSoundChannelOnHoldDevice(const PString & name)
+bool OpalPCSSEndPoint::SetSoundChannelOnHoldDevice(const PString & name)
 {
   return SetDeviceName(name, PSoundChannel::Recorder, m_soundChannelOnHoldDevice);
+}
+
+
+bool OpalPCSSEndPoint::SetSoundChannelOnRingDevice(const PString & name)
+{
+  if (!name.IsEmpty())
+    return SetDeviceName(name, PSoundChannel::Recorder, m_soundChannelOnRingDevice);
+
+  m_soundChannelOnRingDevice.MakeEmpty();
+  return true;
 }
 
 
@@ -340,11 +352,37 @@ void OpalPCSSEndPoint::SetSoundChannelBufferTime(unsigned depth)
 
 
 #if OPAL_VIDEO
-PBoolean OpalPCSSEndPoint::SetVideoOnHoldDevice(const PVideoDevice::OpenArgs & args)
+bool OpalPCSSEndPoint::CreateVideoInputDevice(const OpalConnection & connection,
+                                              const OpalMediaFormat & mediaFormat,
+                                              PVideoInputDevice * & device,
+                                              bool & autoDelete)
+{
+  if (connection.GetPhase() < OpalConnection::AlertingPhase) {
+    const OpalPCSSConnection * pcss = dynamic_cast<const OpalPCSSConnection *>(&connection);
+    if (pcss != NULL && !pcss->GetSoundChannelOnRingDevice().IsEmpty()) {
+      PVideoDevice::OpenArgs args = pcss->GetVideoOnRingDevice();
+      if (args.deviceName != P_FAKE_VIDEO_TEXT) {
+        mediaFormat.AdjustVideoArgs(args);
+        return manager.CreateVideoInputDevice(connection, args, device, autoDelete);
+      }
+    }
+  }
+
+  return OpalLocalEndPoint::CreateVideoInputDevice(connection, mediaFormat, device, autoDelete);
+}
+
+
+bool OpalPCSSEndPoint::SetVideoOnHoldDevice(const PVideoDevice::OpenArgs & args)
 {
   return args.Validate<PVideoInputDevice>(m_videoOnHoldDevice);
 }
-#endif
+
+
+bool OpalPCSSEndPoint::SetVideoOnRingDevice(const PVideoDevice::OpenArgs & args)
+{
+  return args.Validate<PVideoInputDevice>(m_videoOnRingDevice);
+}
+#endif // OPAL_VIDEO
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -360,10 +398,12 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
   , m_soundChannelPlayDevice(playDevice)
   , m_soundChannelRecordDevice(recordDevice)
   , m_soundChannelOnHoldDevice(ep.GetSoundChannelOnHoldDevice())
+  , m_soundChannelOnRingDevice(ep.GetSoundChannelOnRingDevice())
   , m_soundChannelBuffers(ep.GetSoundChannelBufferDepth())
   , m_soundChannelBufferTime(ep.GetSoundChannelBufferTime())
 #if OPAL_VIDEO
   , m_videoOnHoldDevice(ep.GetVideoOnHoldDevice())
+  , m_videoOnRingDevice(ep.GetVideoOnRingDevice())
 #endif
 {
   silenceDetector = new OpalPCM16SilenceDetector(endpoint.GetManager().GetSilenceDetectParams());
@@ -521,6 +561,12 @@ unsigned OpalPCSSConnection::GetAudioSignalLevel(PBoolean source)
 PSoundChannel * OpalPCSSConnection::CreateSoundChannel(const OpalMediaFormat & mediaFormat, PBoolean isSource)
 {
   return m_endpoint.CreateSoundChannel(*this, mediaFormat, isSource);
+}
+
+
+void OpalPCSSConnection::AlertingIncoming(bool withMedia)
+{
+  OpalLocalConnection::AlertingIncoming(withMedia || !m_soundChannelOnRingDevice.IsEmpty());
 }
 
 
