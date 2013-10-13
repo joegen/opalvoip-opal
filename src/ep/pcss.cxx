@@ -285,7 +285,7 @@ PBoolean OpalPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
 
 PBoolean OpalPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
 {
-  return OpalPCSSEndPoint::OnIncomingCall(const_cast<OpalPCSSConnection &>(connection));
+  return OpalLocalEndPoint::OnIncomingCall(const_cast<OpalPCSSConnection &>(connection));
 }
 
 
