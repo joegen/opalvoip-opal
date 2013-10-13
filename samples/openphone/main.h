@@ -675,10 +675,12 @@ class OptionsDialog : public wxDialog
     int       m_SilenceDeadband;
     bool      m_DisableDetectInBandDTMF;
     PwxString m_MusicOnHold;
+    PwxString m_AudioOnRing;
 
     wxComboBox * m_soundPlayerCombo;
     wxComboBox * m_soundRecorderCombo;
     wxComboBox * m_musicOnHoldCombo;
+    wxComboBox * m_audioOnRingCombo;
     wxComboBox * m_selectedLID;
     wxChoice   * m_selectedAEC;
     wxComboBox * m_selectedCountry;
@@ -689,6 +691,7 @@ class OptionsDialog : public wxDialog
     void TestRecorder(wxCommandEvent & /*event*/);
     void SelectedLID(wxCommandEvent & /*event*/);
     void ChangedMusicOnHold(wxCommandEvent & /*event*/);
+    void ChangedAudioOnRing(wxCommandEvent & /*event*/);
 
     ////////////////////////////////////////
     // Video fields
@@ -707,9 +710,11 @@ class OptionsDialog : public wxDialog
     int       m_VideoGrabBitRate;
     int       m_VideoMaxBitRate;
     PwxString m_VideoOnHold;
+    PwxString m_VideoOnRing;
 
     wxComboBox * m_VideoGrabDeviceCtrl;
     wxComboBox * m_VideoOnHoldDeviceCtrl;
+    wxComboBox * m_VideoOnRingDeviceCtrl;
     wxChoice   * m_VideoGrabSourceCtrl;
 
     wxButton           * m_TestVideoCapture;
@@ -724,6 +729,7 @@ class OptionsDialog : public wxDialog
     void TestVideoThreadMain();
     void StopTestVideo();
     void ChangedVideoOnHold(wxCommandEvent & /*event*/);
+    void ChangedVideoOnRing(wxCommandEvent & /*event*/);
 
     ////////////////////////////////////////
     // Fax fields

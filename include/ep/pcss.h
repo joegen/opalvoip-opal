@@ -143,6 +143,17 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
       const OpalLocalConnection & connection, ///<  Connection having event
       const PString & indication              ///<  Received user input indications
     );
+
+#if OPAL_VIDEO
+    /**Create an PVideoInputDevice for a source media stream.
+      */
+    virtual bool CreateVideoInputDevice(
+      const OpalConnection & connection,    ///<  Connection needing created video device
+      const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
+      PVideoInputDevice * & device,         ///<  Created device
+      bool & autoDelete                     ///<  Flag for auto delete device
+    );
+#endif
   //@}
 
   /**@name Customisation call backs */
@@ -268,12 +279,23 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
 
        This defaults to the "Null Audio".
      */
-    virtual PBoolean SetSoundChannelOnHoldDevice(const PString & name);
+    virtual bool SetSoundChannelOnHoldDevice(const PString & name);
 
     /**Get the name for the sound channel to be used for input when on hold.
        This defaults to the "Null Audio".
      */
     const PString & GetSoundChannelOnHoldDevice() const { return m_soundChannelOnHoldDevice; }
+
+    /**Set the name for the sound channel to be used for input when ringing.
+
+       This defaults to an empty string which does not send video on ringing.
+     */
+    virtual bool SetSoundChannelOnRingDevice(const PString & name);
+
+    /**Get the name for the sound channel to be used for input when on hold.
+       This defaults to an empty string which does not send video on ringing.
+     */
+    const PString & GetSoundChannelOnRingDevice() const { return m_soundChannelOnRingDevice; }
 
 #if OPAL_VIDEO
     /**Set the name for the video device to be used for input when on hold.
@@ -285,6 +307,16 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
        This defaults to the "Null Video Out".
      */
     const PVideoDevice::OpenArgs & GetVideoOnHoldDevice() const { return m_videoOnHoldDevice; }
+
+    /**Set the name for the video device to be used for input when ringing.
+       This defaults to an empty string which does not send video on ringing.
+     */
+    virtual bool SetVideoOnRingDevice(const PVideoDevice::OpenArgs & args);
+
+    /**Get the name for the video device to be used for input when ringing.
+       This defaults to an empty string which does not send video on ringing.
+     */
+    const PVideoDevice::OpenArgs & GetVideoOnRingDevice() const { return m_videoOnRingDevice; }
 #endif
 
     /**Get default the sound channel buffer depth.
@@ -320,10 +352,12 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
     PString  m_soundChannelPlayDevice;
     PString  m_soundChannelRecordDevice;
     PString  m_soundChannelOnHoldDevice;
+    PString  m_soundChannelOnRingDevice;
     unsigned m_soundChannelBuffers;
     unsigned m_soundChannelBufferTime;
 #if OPAL_VIDEO
     PVideoDevice::OpenArgs m_videoOnHoldDevice;
+    PVideoDevice::OpenArgs m_videoOnRingDevice;
 #endif
 
   private:
@@ -432,6 +466,14 @@ class OpalPCSSConnection : public OpalLocalConnection
     virtual unsigned GetAudioSignalLevel(
       PBoolean source                   ///< true for source (microphone), false for sink (speaker)
     );
+
+    /**Indicate alerting for the incoming connection.
+       If GetSoundChannelOnRingDevice() is non-empty, then the \p withMedia
+       is overridden to true.
+      */
+    virtual void AlertingIncoming(
+      bool withMedia = false  ///< Indicate media should be started
+    );
   //@}
 
   /**@name New operations */
@@ -463,11 +505,21 @@ class OpalPCSSConnection : public OpalLocalConnection
      */
     const PString & GetSoundChannelOnHoldDevice() const { return m_soundChannelOnHoldDevice; }
 
+    /**Get the name for the sound channel to be used for input when on hold.
+       This defaults to an empty string which does not send video on ringing.
+     */
+    const PString & GetSoundChannelOnRingDevice() const { return m_soundChannelOnRingDevice; }
+
 #if OPAL_VIDEO
     /**Get the name for the video device to be used for input when on hold.
        This defaults to the "Null Video Out".
      */
     const PVideoDevice::OpenArgs & GetVideoOnHoldDevice() const { return m_videoOnHoldDevice; }
+
+    /**Get the name for the video device to be used for input when ringing.
+       This defaults to an empty string which does not send video on ringing.
+     */
+    const PVideoDevice::OpenArgs & GetVideoOnRingDevice() const { return m_videoOnRingDevice; }
 #endif
 
     /**Get default the sound channel buffer depth.
@@ -489,10 +541,12 @@ class OpalPCSSConnection : public OpalLocalConnection
     PString            m_soundChannelPlayDevice;
     PString            m_soundChannelRecordDevice;
     PString            m_soundChannelOnHoldDevice;
+    PString            m_soundChannelOnRingDevice;
     unsigned           m_soundChannelBuffers;
     unsigned           m_soundChannelBufferTime;
 #if OPAL_VIDEO
     PVideoDevice::OpenArgs m_videoOnHoldDevice;
+    PVideoDevice::OpenArgs m_videoOnRingDevice;
 #endif
 };
 
