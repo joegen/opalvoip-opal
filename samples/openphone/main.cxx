@@ -189,6 +189,7 @@ DEF_FIELD(SignalDeadband);
 DEF_FIELD(SilenceDeadband);
 DEF_FIELD(DisableDetectInBandDTMF);
 DEF_FIELD(MusicOnHold);
+DEF_FIELD(AudioOnRing);
 
 static const wxChar VideoGroup[] = wxT("/Video");
 DEF_FIELD(VideoGrabDevice);
@@ -212,6 +213,7 @@ DEF_FIELD(RemoteVideoFrameX);
 DEF_FIELD(RemoteVideoFrameY);
 DEF_FIELD(RemoteVideoFrameSize);
 DEF_FIELD(VideoOnHold);
+DEF_FIELD(VideoOnRing);
 
 static const wxChar FaxGroup[] = wxT("/Fax");
 DEF_FIELD(FaxStationIdentifier);
@@ -1115,6 +1117,8 @@ bool MyManager::Initialise(bool startMinimised)
     pcssEP->SetSoundChannelBufferTime(value1);
   if (config->Read(MusicOnHoldKey, &str))
     pcssEP->SetSoundChannelOnHoldDevice(str);
+  if (config->Read(AudioOnRingKey, &str))
+    pcssEP->SetSoundChannelOnRingDevice(str);
 
 #if OPAL_AEC
   OpalEchoCanceler::Params aecParams = GetEchoCancelParams();
@@ -1188,6 +1192,11 @@ bool MyManager::Initialise(bool startMinimised)
   if (config->Read(VideoOnHoldKey, &str))
     videoArgs.deviceName = str.p_str();
   pcssEP->SetVideoOnHoldDevice(videoArgs);
+
+  videoArgs = pcssEP->GetVideoOnRingDevice();
+  if (config->Read(VideoOnRingKey, &str))
+    videoArgs.deviceName = str.p_str();
+  pcssEP->SetVideoOnRingDevice(videoArgs);
 
   config->Read(LocalVideoFrameXKey, &m_localVideoFrameX);
   config->Read(LocalVideoFrameYKey, &m_localVideoFrameY);
@@ -4294,6 +4303,7 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_BUTTON(XRCID("TestPlayer"), OptionsDialog::TestPlayer)
   EVT_BUTTON(XRCID("TestRecorder"), OptionsDialog::TestRecorder)
   EVT_COMBOBOX(XRCID("MusicOnHold"), OptionsDialog::ChangedMusicOnHold)
+  EVT_COMBOBOX(XRCID("AudioOnRing"), OptionsDialog::ChangedAudioOnRing)
 
   ////////////////////////////////////////
   // Video fields
@@ -4301,6 +4311,7 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_BUTTON(XRCID("TestVideoCapture"), OptionsDialog::TestVideoCapture)
   EVT_USER_COMMAND(wxEvtTestVideoEnded, OptionsDialog::OnTestVideoEnded)
   EVT_COMBOBOX(XRCID("VideoOnHold"), OptionsDialog::ChangedVideoOnHold)
+  EVT_COMBOBOX(XRCID("VideoOnRing"), OptionsDialog::ChangedVideoOnRing)
 
   ////////////////////////////////////////
   // Fax fields
@@ -4596,6 +4607,11 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   FillAudioDeviceComboBox(m_musicOnHoldCombo, PSoundChannel::Recorder);
   m_MusicOnHold = AudioDeviceNameToScreen(m_manager.pcssEP->GetSoundChannelOnHoldDevice());
 
+  // Fill sound on-ring combo box with available devices and set selection
+  FindWindowByNameAs(m_audioOnRingCombo, this, AudioOnRingKey)->SetValidator(wxGenericValidator(&m_AudioOnRing));
+  FillAudioDeviceComboBox(m_audioOnRingCombo, PSoundChannel::Recorder);
+  m_AudioOnRing = AudioDeviceNameToScreen(m_manager.pcssEP->GetSoundChannelOnRingDevice());
+
   // Fill line interface combo box with available devices and set selection
   FindWindowByNameAs(m_selectedAEC, this, AECKey);
   FindWindowByNameAs(m_selectedCountry, this, CountryKey);
@@ -4659,6 +4675,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(VideoGrabBitRate, m_manager.m_VideoTargetBitRate);
   INIT_FIELD(VideoMaxBitRate, m_manager.m_VideoMaxBitRate);
   INIT_FIELD(VideoOnHold, m_manager.pcssEP->GetVideoOnHoldDevice().deviceName);
+  INIT_FIELD(VideoOnRing, m_manager.pcssEP->GetVideoOnRingDevice().deviceName);
 
   PStringArray knownSizes = PVideoFrameInfo::GetSizeNames();
   m_VideoGrabFrameSize = m_manager.m_VideoGrabFrameSize;
@@ -4684,6 +4701,10 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   FindWindowByNameAs(m_VideoOnHoldDeviceCtrl, this, wxT("VideoOnHold"));
   for (i = 0; i < devices.GetSize(); i++)
     m_VideoOnHoldDeviceCtrl->Append(PwxString(devices[i]));
+
+  FindWindowByNameAs(m_VideoOnRingDeviceCtrl, this, wxT("VideoOnRing"));
+  for (i = 0; i < devices.GetSize(); i++)
+    m_VideoOnRingDeviceCtrl->Append(PwxString(devices[i]));
 
   AdjustVideoControls();
 
@@ -5165,6 +5186,11 @@ bool OptionsDialog::TransferDataFromWindow()
   else
     wxMessageBox(wxT("Could not use sound recorder device."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
 
+  if (m_manager.pcssEP->SetSoundChannelOnRingDevice(AudioDeviceNameFromScreen(m_AudioOnRing)))
+    config->Write(AudioOnRingKey, PwxString(m_manager.pcssEP->GetSoundChannelOnRingDevice()));
+  else
+    wxMessageBox(wxT("Could not use sound recorder device."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
+
   SAVE_FIELD(SoundBufferTime, m_manager.pcssEP->SetSoundChannelBufferTime);
 
 #if OPAL_AEC
@@ -5212,9 +5238,14 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(VideoMaxFrameSize, m_manager.m_VideoMaxFrameSize = );
   SAVE_FIELD(VideoGrabBitRate, m_manager.m_VideoTargetBitRate = );
   SAVE_FIELD(VideoMaxBitRate, m_manager.m_VideoMaxBitRate = );
+
   videoDevice = m_manager.pcssEP->GetVideoOnHoldDevice();
   SAVE_FIELD_STR(VideoOnHold, videoDevice.deviceName = );
   m_manager.pcssEP->SetVideoOnHoldDevice(videoDevice);
+
+  videoDevice = m_manager.pcssEP->GetVideoOnRingDevice();
+  SAVE_FIELD_STR(VideoOnRing, videoDevice.deviceName = );
+  m_manager.pcssEP->SetVideoOnRingDevice(videoDevice);
 
   ////////////////////////////////////////
   // Fax fields
@@ -5744,6 +5775,12 @@ void OptionsDialog::ChangedMusicOnHold(wxCommandEvent & /*event*/)
 }
 
 
+void OptionsDialog::ChangedAudioOnRing(wxCommandEvent & /*event*/)
+{
+  SelectFileDevice(m_audioOnRingCombo, m_AudioOnRing, wxT("Select Sound File for Hold"), false);
+}
+
+
 class SoundProgressDialog
 {
   private:
@@ -5955,6 +5992,12 @@ void OptionsDialog::TestVideoThreadMain()
 void OptionsDialog::ChangedVideoOnHold(wxCommandEvent & /*event*/)
 {
   SelectFileDevice(m_VideoOnHoldDeviceCtrl, m_VideoOnHold, wxT("Select Video File for Hold"), false);
+}
+
+
+void OptionsDialog::ChangedVideoOnRing(wxCommandEvent & /*event*/)
+{
+  SelectFileDevice(m_VideoOnRingDeviceCtrl, m_VideoOnRing, wxT("Select Video File for Ring"), false);
 }
 
 
