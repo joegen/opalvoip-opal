@@ -438,6 +438,9 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
 
   PWaitAndSignal mutex(m_bufferMutex);
 
+  // Make sure the input side to jitter buffer has been started
+  Start();
+
   // Now we get the timestamp the caller wants
   DWORD playOutTimestamp = frame.GetTimestamp();
   DWORD requiredTimestamp = CalculateRequiredTimestamp(playOutTimestamp);
