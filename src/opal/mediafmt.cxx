@@ -1864,7 +1864,7 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
   };
   AddOption(new OpalMediaOptionEnum(OpalVideoFormat::ContentRoleOption(), false,
                                     RoleEnumerations, PARRAYSIZE(RoleEnumerations),
-                                    OpalMediaOption::NoMerge));
+                                    OpalMediaOption::AlwaysMerge));
 
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::ContentRoleMaskOption(),
                                         false, OpalMediaOption::IntersectionMerge,
