@@ -361,17 +361,16 @@ void OpalLocalConnection::AlertingIncoming(bool withMedia)
 {
   if (LockReadWrite()) {
     if (GetPhase() < AlertingPhase) {
-      SetPhase(AlertingPhase);
+      PTRACE(3, "LocalCon\tAlertingIncoming " << (withMedia ? "with" : "sans") << " media");
 
-      if (withMedia) {
-        PSafePtr<OpalConnection> conn = GetOtherPartyConnection();
-        if (conn != NULL)
-          conn->AutoStartMediaStreams();
+      if (withMedia)
         AutoStartMediaStreams();
-        StartMediaStreams();
-      }
 
+      SetPhase(AlertingPhase);
       OnAlerting();
+
+      if (withMedia)
+        StartMediaStreams();
     }
     UnlockReadWrite();
   }
