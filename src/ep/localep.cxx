@@ -501,6 +501,7 @@ void OpalLocalConnection::AlertingIncoming(bool withMedia)
 
 void OpalLocalConnection::AcceptIncoming()
 {
+  PTRACE(3, "LocalEP\tAccepting incoming call " << *this);
   GetEndPoint().GetManager().QueueDecoupledEvent(
         new PSafeWorkNoArg<OpalLocalConnection>(this, &OpalLocalConnection::InternalAcceptIncoming));
 }
@@ -508,6 +509,7 @@ void OpalLocalConnection::AcceptIncoming()
 
 void OpalLocalConnection::InternalAcceptIncoming()
 {
+  PTRACE(4, "LocalEP\tAccepting (internal) incoming call " << *this);
   PThread::Sleep(100);
 
   if (LockReadWrite()) {
@@ -558,6 +560,7 @@ bool OpalLocalConnection::ChangeVideoInputDevice(const PVideoDevice::OpenArgs & 
     return false;
   }
 
+  PTRACE_CONTEXT_ID_TO(newDevice);
   stream->SetVideoInputDevice(newDevice, autoDelete);
 #if OPAL_HAS_H281
   m_farEndCameraControl->Attach(newDevice);
@@ -579,6 +582,7 @@ bool OpalLocalConnection::ChangeVideoOutputDevice(const PVideoDevice::OpenArgs &
     return false;
   }
 
+  PTRACE_CONTEXT_ID_TO(newDevice);
   stream->SetVideoOutputDevice(newDevice);
   return true;
 }
