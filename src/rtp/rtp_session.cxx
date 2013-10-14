@@ -444,7 +444,6 @@ bool OpalRTPSession::SetJitterBufferSize(const OpalJitterBuffer::Init & init)
   else {
     m_jitterBuffer = new RTP_JitterBuffer(*this, init);
     PTRACE(4, "RTP\tCreated RTP jitter buffer " << *m_jitterBuffer);
-    m_jitterBuffer->Start();
   }
 
   return true;
