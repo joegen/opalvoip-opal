@@ -1638,11 +1638,11 @@ OpalMediaStream * OpalRTPSession::CreateMediaStream(const OpalMediaFormat & medi
 
 bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool mediaAddress)
 {
+  if (IsOpen())
+    return true;
+
   PWaitAndSignal mutex1(m_readMutex);
   PWaitAndSignal mutex2(m_dataMutex);
-
-  if (m_dataSocket != NULL)
-    return true;
 
   if (!OpalMediaSession::Open(localInterface, remoteAddress, mediaAddress))
     return false;
