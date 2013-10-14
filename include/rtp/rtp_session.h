@@ -652,6 +652,7 @@ class OpalRTPSession : public OpalMediaSession
     PDECLARE_NOTIFIER(PTimer, OpalRTPSession, SendReport);
 
     PMutex m_dataMutex;
+    PMutex m_readMutex;
     bool   m_closeOnBye;
     bool   m_byeSent;
 
