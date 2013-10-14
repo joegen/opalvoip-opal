@@ -1637,14 +1637,11 @@ void OpalRTPSession::SetExternalTransport(const OpalTransportAddressArray & tran
 
 bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool mediaAddress)
 {
+  if (IsOpen())
+    return true;
+
   PWaitAndSignal mutex1(m_readMutex);
   PWaitAndSignal mutex2(m_dataMutex);
-
-  if (IsExternalTransport())
-    return true;
-
-  if (m_dataSocket != NULL && m_controlSocket != NULL)
-    return true;
 
   if (!OpalMediaSession::Open(localInterface, remoteAddress, mediaAddress))
     return false;
