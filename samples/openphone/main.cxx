@@ -7348,12 +7348,16 @@ void AnswerPanel::SetPartyNames(const PwxString & calling, const PwxString & cal
 
 void AnswerPanel::OnAnswer(wxCommandEvent & /*event*/)
 {
+  FindWindowByName(wxT("AnswerCall"))->Disable();
+  FindWindowByName(wxT("RejectCall"))->Disable();
   m_manager.AnswerCall();
 }
 
 
 void AnswerPanel::OnReject(wxCommandEvent & /*event*/)
 {
+  FindWindowByName(wxT("AnswerCall"))->Disable();
+  FindWindowByName(wxT("RejectCall"))->Disable();
   m_manager.RejectCall();
 }
 
@@ -7380,6 +7384,7 @@ CallingPanel::CallingPanel(MyManager & manager, const PSafePtr<OpalCall> & call,
 
 void CallingPanel::OnHangUp(wxCommandEvent & /*event*/)
 {
+  FindWindowByName(wxT("HangUpCall"))->Disable();
   m_manager.HangUpCall();
 }
 
