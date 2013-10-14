@@ -177,6 +177,15 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
       const OpalMediaFormat & mediaFormat,   ///<  Media format for the connection
       PBoolean isSource                          ///<  Direction for channel
     );
+
+    /**Create an PSoundChannel based media stream.
+      */
+    virtual PSoundChannel * CreateSoundChannel(
+      const OpalPCSSConnection & connection, ///<  Connection needing created sound channel
+      const OpalMediaFormat & mediaFormat,   ///<  Media format for the connection
+      const PString & device,                ///<  Name of audio device to create
+      bool isSource                          ///<  Direction for channel
+    );
   //@}
 
   /**@name User Interface operations */
@@ -474,6 +483,10 @@ class OpalPCSSConnection : public OpalLocalConnection
     virtual void AlertingIncoming(
       bool withMedia = false  ///< Indicate media should be started
     );
+
+    /**Accept the incoming connection.
+      */
+    virtual void AcceptIncoming();
   //@}
 
   /**@name New operations */
@@ -483,6 +496,14 @@ class OpalPCSSConnection : public OpalLocalConnection
     virtual PSoundChannel * CreateSoundChannel(
       const OpalMediaFormat & mediaFormat, ///<  Media format for the connection
       PBoolean isSource                        ///<  Direction for channel
+    );
+
+    /**Change a PVideoInputDevice for a source media stream.
+      */
+    virtual bool ChangeSoundChannel(
+      const PString & device,   ///< Device to change to
+      bool isSource,            ///< Change source (recorder) or sink (player)
+      unsigned sessionID = 0    ///< Session for media stream, 0 indicates first audio stream
     );
   //@}
 

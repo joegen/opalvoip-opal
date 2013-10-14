@@ -681,7 +681,9 @@ unsigned OpalConnection::GetNextSessionID(const OpalMediaType & /*mediaType*/, b
 
 void OpalConnection::AutoStartMediaStreams(bool transfer)
 {
-  PTRACE(4, "OpalCon\tAutoStartMediaStreams(" << (transfer ? "transfer": "normal") << ") on " << *this);
+  PTRACE(4, "OpalCon\tAutoStartMediaStreams("
+         << (transfer ? "transfer": (GetPhase() < AlertingPhase ? "alerting" : "normal"))
+         << ") on " << *this);
   OpalMediaTypeList mediaTypes = OpalMediaType::GetList();
   for (OpalMediaTypeList::iterator iter = mediaTypes.begin(); iter != mediaTypes.end(); ++iter) {
     OpalMediaType mediaType = *iter;
