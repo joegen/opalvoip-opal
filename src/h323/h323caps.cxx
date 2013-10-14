@@ -150,7 +150,7 @@ bool H323GetMediaCapability(DATA_TYPE & dataType, CAP_TYPE * & cap)
 template <unsigned dt, unsigned mt, class DATA_TYPE, class CAP_TYPE>
 void H323SetMediaCapability(const H323Capability &, DATA_TYPE & dataType, CAP_TYPE * & cap)
 {
-  dataType.SetTag(mt);
+  dataType.SetTag(dt);
   cap = &(CAP_TYPE &)dataType;
 }
 
