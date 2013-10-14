@@ -320,6 +320,9 @@ OpalMediaSession::Transport OpalRTPSession::DetachTransport()
   // Stop jitter buffer before detaching
   m_jitterBuffer.SetNULL();
 
+  m_readMutex.Wait();
+  m_dataMutex.Wait();
+
   if (m_dataSocket != NULL) {
     temp.Append(m_dataSocket);
     m_dataSocket = NULL;
@@ -329,6 +332,9 @@ OpalMediaSession::Transport OpalRTPSession::DetachTransport()
     temp.Append(m_controlSocket);
     m_controlSocket = NULL;
   }
+
+  m_dataMutex.Signal();
+  m_readMutex.Signal();
 
   PTRACE_IF(2, temp.IsEmpty(), "RTP\tDetaching transport from closed session.");
   return temp;
@@ -1632,7 +1638,8 @@ OpalMediaStream * OpalRTPSession::CreateMediaStream(const OpalMediaFormat & medi
 
 bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool mediaAddress)
 {
-  PWaitAndSignal mutex(m_dataMutex);
+  PWaitAndSignal mutex1(m_readMutex);
+  PWaitAndSignal mutex2(m_dataMutex);
 
   if (m_dataSocket != NULL)
     return true;
@@ -1827,13 +1834,17 @@ bool OpalRTPSession::Close()
   // over them and exits the reading thread.
   SetJitterBufferSize(OpalJitterBuffer::Init());
 
-  PWaitAndSignal mutex(m_dataMutex);
+  m_readMutex.Wait();
+  m_dataMutex.Wait();
 
   delete m_dataSocket;
   m_dataSocket = NULL;
 
   delete m_controlSocket;
   m_controlSocket = NULL;
+
+  m_dataMutex.Signal();
+  m_readMutex.Signal();
 
   m_localAddress = PIPSocket::GetInvalidAddress();
   m_localDataPort = m_localControlPort = 0;
@@ -1980,6 +1991,8 @@ bool OpalRTPSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress
 
 bool OpalRTPSession::InternalReadData(RTP_DataFrame & frame)
 {
+  PWaitAndSignal mutex(m_readMutex);
+
   SendReceiveStatus receiveStatus = e_IgnorePacket;
   while (receiveStatus == e_IgnorePacket) {
     if (m_shutdownRead || PAssertNULL(m_dataSocket) == NULL)
