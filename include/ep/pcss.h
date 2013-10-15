@@ -307,6 +307,30 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
     const PString & GetSoundChannelOnRingDevice() const { return m_soundChannelOnRingDevice; }
 
 #if OPAL_VIDEO
+    /**Set the name for the video device to be used for sent video.
+     */
+    virtual bool SetVideoGrabberDevice(const PVideoDevice::OpenArgs & args) { return GetManager().SetVideoInputDevice(args); }
+
+    /**Get the name for the video device to be used for sent video.
+     */
+    const PVideoDevice::OpenArgs & GetVideoGrabberDevice() const { return GetManager().GetVideoInputDevice(); }
+
+    /**Set the name for the video device to be used for displaying sent video.
+     */
+    virtual bool SetVideoPreviewDevice(const PVideoDevice::OpenArgs & args) { return GetManager().SetVideoPreviewDevice(args); }
+
+    /**Get the name for the video device to be used for displaying sent video.
+     */
+    const PVideoDevice::OpenArgs & GetVideoPreviewDevice() const { return GetManager().GetVideoPreviewDevice(); }
+
+    /**Set the name for the video device to be used for displaying received video.
+     */
+    virtual bool SetVideoDisplayDevice(const PVideoDevice::OpenArgs & args) { return GetManager().SetVideoOutputDevice(args); }
+
+    /**Get the name for the video device to be used for displaying received video.
+     */
+    const PVideoDevice::OpenArgs & GetVideoDisplayDevice() const { return GetManager().GetVideoOutputDevice(); }
+
     /**Set the name for the video device to be used for input when on hold.
        This defaults to the "Null Video Out".
      */
