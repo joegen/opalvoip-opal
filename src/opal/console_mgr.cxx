@@ -62,23 +62,128 @@ static void PrintVersion(ostream & strm)
 }
 
 
+#if OPAL_SIP || OPAL_H323
+class OpalRTPConsoleEndPoint : public OpalConsoleEndPoint
+{
+protected:
+  OpalRTPEndPoint & m_endpoint;
+
+public:
+  OpalRTPConsoleEndPoint(OpalRTPEndPoint * endpoint)
+    : m_endpoint(*endpoint)
+  {
+  }
+
+  bool SetUIMode(const PCaselessString & str)
+  {
+    if (str == "inband")
+      m_endpoint.SetSendUserInputMode(OpalConnection::SendUserInputInBand);
+    else if (str == "rfc2833")
+      m_endpoint.SetSendUserInputMode(OpalConnection::SendUserInputAsRFC2833);
+    else if (str == "signal" || str == "info-tone" || str == "h245-signal")
+      m_endpoint.SetSendUserInputMode(OpalConnection::SendUserInputAsTone);
+    else if (str == "string" || str == "info-string" || str == "h245-string")
+      m_endpoint.SetSendUserInputMode(OpalConnection::SendUserInputAsString);
+    else
+      return false;
+
+    return true;
+  }
+
+
+#if P_CLI
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdInterfaces)
+  {
+    if (from.GetCount() < 1)
+      from.WriteUsage();
+    else {
+      PStringArray interfaces(from.GetCount());
+      for (PINDEX i = 0; i < from.GetCount(); ++i)
+        interfaces[i] = from[i];
+
+      if (m_endpoint.StartListeners(interfaces))
+        from.GetContext() << "Listening on: " << setfill(',') << m_endpoint.GetListeners() << setfill(' ') << endl;
+      else
+        from.WriteError("Could not start .");
+    }
+  }
+
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdBandwidth)
+  {
+    if (from.GetCount() < 1)
+      from.WriteUsage();
+    else {
+      OpalBandwidth bandwidth(from[0]);
+      if (bandwidth == 0)
+        from.WriteError("Illegal bandwidth parameter");
+      else {
+        if (!from.HasOption("rx") && !from.HasOption("tx"))
+          m_endpoint.SetInitialBandwidth(OpalBandwidth::RxTx, bandwidth);
+        else {
+          if (from.HasOption("rx"))
+            m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, bandwidth);
+          if (from.HasOption("tx"))
+            m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, bandwidth);
+        }
+      }
+    }
+  }
+
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdUserInput)
+  {
+    if (from.GetCount() < 1)
+      from.WriteUsage();
+    else if (!SetUIMode(from[0]))
+      from.WriteError("Unknown user indication mode");
+  }
+
+  void AddCommands(PCLI & cli)
+  {
+    cli.SetCommand(m_endpoint.GetPrefixName() & "interfaces", PCREATE_NOTIFIER(CmdInterfaces),
+                   "Set listener interfaces");
+    cli.SetCommand(m_endpoint.GetPrefixName() & "bandwidth", PCREATE_NOTIFIER(CmdBandwidth),
+                   "Set bandwidth to use for calls",
+                   "[ <dir> ] <bps>",
+                   "-rx. Receive bandwidth\n"
+                   "-tx. Transmit bandwidth");
+    cli.SetCommand(m_endpoint.GetPrefixName() & "ui", PCREATE_NOTIFIER(CmdUserInput),
+                   "Set user input mode",
+                   "\"inband\" | \"rfc2833\" | \"signal\" | \"string\"");
+  }
+#endif //P_CLI
+};
+#endif // OPAL_SIP || OPAL_H323
+
 #if OPAL_SIP
-class SIPConsoleEndPoint : public SIPEndPoint, public OpalConsoleEndPoint
+class SIPConsoleEndPoint : public SIPEndPoint, public OpalRTPConsoleEndPoint
 {
   PCLASSINFO(SIPConsoleEndPoint, SIPEndPoint)
 public:
   SIPConsoleEndPoint(OpalConsoleManager & manager)
     : SIPEndPoint(manager)
+    , P_DISABLE_MSVC_WARNINGS(4355, OpalRTPConsoleEndPoint(this))
   {
   }
 
 
-  bool SetRegistrationParams(SIPRegister::Params & params,
-                             PString & error,
-                             const PArgList & args, 
-                             const char * mode,
-                             const char * ttl)
+  bool DoRegistration(ostream & output,
+                      bool verbose,
+                      const PString & aor,
+                      const PString & pwd,
+                      const PArgList & args, 
+                      const char * authId,
+                      const char * realm,
+                      const char * proxy,
+                      const char * mode,
+                      const char * ttl)
   {
+    SIPRegister::Params params;
+    params.m_addressOfRecord  = aor;
+    params.m_password         = pwd;
+    params.m_authID           = args.GetOptionString(authId);
+    params.m_realm            = args.GetOptionString(realm);
+    params.m_proxyAddress     = args.GetOptionString(proxy);
+
     if (args.HasOption(mode)) {
       PCaselessString str = args.GetOptionString("register-mode");
       if (str == "normal")
@@ -92,16 +197,30 @@ public:
       else if (str == "RFC5626")
         params.m_compatibility = SIPRegister::e_RFC5626;
       else {
-        error = "Unknown SIP registration mode " + str;
+        output << "Unknown SIP registration mode \"" << str << '"' << endl;
         return false;
       }
     }
 
     params.m_expire = args.GetOptionString(ttl, "300").AsUnsigned();
     if (params.m_expire < 30) {
-      error = "SIP registrar Time To Live must be more than 30 seconds";
+      output << "SIP registrar Time To Live must be more than 30 seconds\n";
       return false;
     }
+
+    if (verbose)
+      output << "SIP registrar: " << flush;
+
+    PString finalAoR;
+    SIP_PDU::StatusCodes status;
+    if (!Register(params, finalAoR, &status)) {
+      output << "\nSIP registration to " << params.m_addressOfRecord
+             << " failed (" << status << ')' << endl;
+      return false;
+    }
+
+    if (verbose)
+      output << finalAoR << endl;
 
     return true;
   }
@@ -114,6 +233,7 @@ public:
             "S-sip:             SIP listens on interface, defaults to udp$*:5060.\n"
             "r-register:        SIP registration to server.\n"
             "-register-auth-id: SIP registration authorisation id, default is username.\n"
+            "-register-realm:   SIP registration authorisation realm, default is any.\n"
             "-register-proxy:   SIP registration proxy, default is none.\n"
             "-register-ttl:     SIP registration Time To Live, default 300 seconds.\n"
             "-register-mode:    SIP registration mode (normal, single, public, ALG, RFC5626).\n"
@@ -122,23 +242,6 @@ public:
             "-sip-rx-bandwidth: Set receive bandwidth to be used for call\n"
             "-sip-tx-bandwidth: Set transmit bandwidth to be used for call\n"
             "-sip-ui:           SIP User Indication mode (inband,rfc2833,info-tone,info-string)\n";
-  }
-
-
-  bool SetUIMode(const PCaselessString & str)
-  {
-    if (str == "inband")
-      SetSendUserInputMode(OpalConnection::SendUserInputInBand);
-    else if (str == "rfc2833")
-      SetSendUserInputMode(OpalConnection::SendUserInputAsRFC2833);
-    else if (str == "info-tone")
-      SetSendUserInputMode(OpalConnection::SendUserInputAsTone);
-    else if (str == "info-string")
-      SetSendUserInputMode(OpalConnection::SendUserInputAsString);
-    else
-      return false;
-
-    return true;
   }
 
 
@@ -153,7 +256,7 @@ public:
     }
 
     if (!StartListeners(interfaces.Lines())) {
-      cerr << "Could not start SIP listeners." << endl;
+      output << "Could not start SIP listeners." << endl;
       return false;
     }
 
@@ -168,7 +271,7 @@ public:
       SetInitialBandwidth(OpalBandwidth::Rx, args.GetOptionString("sip-tx-bandwidth"));
 
     if (args.HasOption("sip-ui") && !SetUIMode(args.GetOptionString("sip-ui"))) {
-      cerr << "Unknown SIP user indication mode\n";
+      output << "Unknown SIP user indication mode\n";
       return false;
     }
 
@@ -183,29 +286,16 @@ public:
     }
 
     if (args.HasOption("register")) {
-      SIPRegister::Params params;
-      params.m_addressOfRecord = args.GetOptionString("register");
-      params.m_authID = args.GetOptionString("register-auth-id");
-      params.m_registrarAddress = args.GetOptionString("register-proxy");
-      params.m_password = args.GetOptionString("password");
-
-      PString error;
-      if (!SetRegistrationParams(params, error, args, "register-mode", "register-ttl")) {
-        cerr << error << endl;
+      if (!DoRegistration(output, verbose,
+                          args.GetOptionString("register"),
+                          args.GetOptionString("password"),
+                          args,
+                          "register-auth-id",
+                          "register-realm",
+                          "register-proxy",
+                          "register-mode",
+                          "register-ttl"))
         return false;
-      }
-
-      if (verbose)
-        output << "SIP registrar: " << flush;
-      PString aor;
-      SIP_PDU::StatusCodes status;
-      if (!Register(params, aor, &status)) {
-        cerr << "\nSIP registration to " << params.m_addressOfRecord
-             << " failed (" << status << ')' << endl;
-        return false;
-      }
-      if (verbose)
-        output << aor << endl;
     }
 
     manager.AddRouteEntry(OPAL_PREFIX_SIP":.* = " + defaultRoute);
@@ -214,41 +304,29 @@ public:
 
 
 #if P_CLI
-  PDECLARE_NOTIFIER(PCLI::Arguments, SIPConsoleEndPoint, CmdRegister)
-  {
-    SIPRegister::Params params;
-
-    params.m_addressOfRecord  = from[0];
-    params.m_password         = from[1];
-    params.m_authID           = from.GetOptionString('a');
-    params.m_realm            = from.GetOptionString('r');
-    params.m_proxyAddress     = from.GetOptionString('p');
-
-    PString error;
-    if (!SetRegistrationParams(params, error, from, "mode", "ttl")) {
-      from.WriteError(error);
-      return;
-    }
-
-    from.GetContext() << "Registering with " << params.m_addressOfRecord << " ..." << flush;
-
-    PString aor;
-    if (Register(params, aor, false))
-      from.GetContext() << "succeeded" << endl;
-    else
-      from.GetContext() << "failed" << endl;
-  }
-
-  PDECLARE_NOTIFIER(PCLI::Arguments, SIPConsoleEndPoint, CmdUserInput)
+  PDECLARE_NOTIFIER(PCLI::Arguments, SIPConsoleEndPoint, CmdProxy)
   {
     if (from.GetCount() < 1)
-      from.Usage();
-    else if (!SetUIMode(from[0]))
-      from.WriteError("Unknown SIP user indication mode");
+      from.WriteUsage();
+    else {
+      SetProxy(from[0], from.GetOptionString("user"), from.GetOptionString("password"));
+      from.GetContext() << "SIP proxy: " << GetProxy() << endl;
+    }
+  }
+
+  PDECLARE_NOTIFIER(PCLI::Arguments, SIPConsoleEndPoint, CmdRegister)
+  {
+    DoRegistration(from.GetContext(), true, from[0], from[1], from, "auth-id", "realm", "proxy", "mode", "ttl");
   }
 
   virtual void AddCommands(PCLI & cli)
   {
+    OpalRTPConsoleEndPoint::AddCommands(cli);
+    cli.SetCommand("sip proxy", PCREATE_NOTIFIER(CmdProxy),
+                   "Set listener interfaces",
+                   "[ options ] <uri>",
+                   "-u-user: Username for proxy\n"
+                   "-p-password: Password for proxy");
     cli.SetCommand("sip register", PCREATE_NOTIFIER(CmdRegister),
                    "Register with SIP registrar",
                    "[ options ] <address> [ <password> ]",
@@ -257,9 +335,6 @@ public:
                    "p-proxy: Set proxy for registration\n"
                    "m-mode: Set registration mode (normal, single, public)\n"
                    "t-ttl: Set Time To Live for registration\n");
-    cli.SetCommand("sip ui", PCREATE_NOTIFIER(CmdUserInput),
-                   "Set SIP user input mode",
-                   "\"inband\" | \"rfc2833\" | \"info-tone\" | \"info-string\"");
   }
 #endif // P_CLI
 };
@@ -267,12 +342,13 @@ public:
 
 
 #if OPAL_H323
-class H323ConsoleEndPoint : public H323EndPoint, public OpalConsoleEndPoint
+class H323ConsoleEndPoint : public H323EndPoint, public OpalRTPConsoleEndPoint
 {
   PCLASSINFO(H323ConsoleEndPoint, H323EndPoint)
 public:
   H323ConsoleEndPoint(OpalConsoleManager & manager)
     : H323EndPoint(manager)
+    , P_DISABLE_MSVC_WARNINGS(4355, OpalRTPConsoleEndPoint(this))
   {
   }
 
@@ -293,22 +369,6 @@ public:
   }
 
 
-  bool SetUIMode(const PCaselessString & str)
-  {
-    if (str == "inband")
-      SetSendUserInputMode(OpalConnection::SendUserInputInBand);
-    else if (str == "rfc2833")
-      SetSendUserInputMode(OpalConnection::SendUserInputAsRFC2833);
-    else if (str == "h245-signal")
-      SetSendUserInputMode(OpalConnection::SendUserInputAsTone);
-    else if (str == "h245-string")
-      SetSendUserInputMode(OpalConnection::SendUserInputAsString);
-    else
-      return false;
-
-    return true;
-  }
-
   virtual bool Initialise(PArgList & args, ostream & output, bool verbose, const PString & defaultRoute)
   {
     // Set up H.323
@@ -320,7 +380,7 @@ public:
     }
 
     if (!StartListeners(interfaces.Lines())) {
-      cerr << "Could not start H.323 listeners." << endl;
+      output << "Could not start H.323 listeners." << endl;
       return false;
     }
 
@@ -338,7 +398,7 @@ public:
       SetInitialBandwidth(OpalBandwidth::Rx, args.GetOptionString("h323-tx-bandwidth"));
 
     if (args.HasOption("h323-ui") && !SetUIMode(args.GetOptionString("h323-ui"))) {
-      cerr << "Unknown H.323 user indication mode\n";
+      output << "Unknown H.323 user indication mode\n";
       return false;
     }
 
@@ -352,7 +412,7 @@ public:
       if (verbose)
         output << "H.323 Gatekeeper: " << flush;
       if (!UseGatekeeper(args.GetOptionString("gk-host"), args.GetOptionString("gk-id"))) {
-        cerr << "\nCould not complete gatekeeper registration" << endl;
+        output << "\nCould not complete gatekeeper registration" << endl;
         return false;
       }
       if (verbose)
@@ -374,7 +434,7 @@ public:
     else if (from[0] *= "off")
       DisableFastStart(true);
     else
-      from.Usage();
+      from.WriteUsage();
   }
 
   PDECLARE_NOTIFIER(PCLI::Arguments, H323ConsoleEndPoint, CmdTunnel)
@@ -386,28 +446,44 @@ public:
     else if (from[0] *= "off")
       DisableH245Tunneling(true);
     else
-      from.Usage();
+      from.WriteUsage();
   }
 
-  PDECLARE_NOTIFIER(PCLI::Arguments, H323ConsoleEndPoint, CmdUserInput)
+  PDECLARE_NOTIFIER(PCLI::Arguments, H323ConsoleEndPoint, CmdGatekeeper)
   {
-    if (from.GetCount() < 1)
-      from.Usage();
-    else if (!SetUIMode(from[0]))
-      from.WriteError("Unknown SIP user indication mode.");
+    if (from.GetCount() < 1) {
+      if (GetGatekeeper() != NULL)
+        from.GetContext() << "Gatekeeper: " << *GetGatekeeper() << endl;
+      else
+        from.GetContext() << "No gatekeeper active." << endl;
+    }
+    else if (from[0] *= "off")
+      RemoveGatekeeper();
+    else if (from[0] *= "on") {
+      from.GetContext() << "H.323 Gatekeeper: " << flush;
+      if (UseGatekeeper(from.GetOptionString("host"), from.GetOptionString("identifier")))
+        from.GetContext()<< *GetGatekeeper() << endl;
+      else
+        from.GetContext() << "unavailable" << endl;
+    }
+    else
+      from.WriteUsage();
   }
 
   virtual void AddCommands(PCLI & cli)
   {
+    OpalRTPConsoleEndPoint::AddCommands(cli);
     cli.SetCommand("h323 fast", PCREATE_NOTIFIER(CmdFast),
                    "Set fast connect mode",
                    "[ \"on\" / \"off\" ]");
     cli.SetCommand("h323 tunnel", PCREATE_NOTIFIER(CmdTunnel),
                    "Set H.245 tunneling mode",
                    "[ \"on\" / \"off\" ]");
-    cli.SetCommand("h323 ui", PCREATE_NOTIFIER(CmdUserInput),
-                   "Set H.323 user input mode",
-                   "\"inband\" | \"rfc2833\" | \"h245-signal\" | \"h245-string\"");
+    cli.SetCommand("h323 gatekeeper", PCREATE_NOTIFIER(CmdGatekeeper),
+                   "Set gatekeeper",
+                   "[ options ] [ \"on\" / \"off\" ]",
+                   "h-host: Host name or IP address of gatekeeper\n"
+                   "i-identifier: Identifier for gatekeeper");
   }
 #endif // P_CLI
 };
@@ -449,7 +525,7 @@ public:
     }
 
     if (!AddDeviceNames(args.GetOptionString("lines").Lines())) {
-      cerr << "Could not start Line Interface Device(s)" << endl;
+      output << "Could not start Line Interface Device(s)" << endl;
       return false;
     }
     if (verbose)
@@ -458,7 +534,7 @@ public:
     PString country = args.GetOptionString("country");
     if (!country.IsEmpty()) {
       if (!SetCountryCodeName(country))
-        cerr << "Could not set LID to country name \"" << country << '"' << endl;
+        output << "Could not set LID to country name \"" << country << '"' << endl;
       else if (verbose)
         output << "LID to country: " << GetLine("*")->GetDevice().GetCountryCodeName() << '\n';
     }
@@ -536,6 +612,101 @@ public:
 
 
 #if OPAL_HAS_PCSS
+
+static struct {
+  PSoundChannel::Directions m_dir;
+  const char * m_name;
+  const char * m_description;
+  const PString & (OpalPCSSEndPoint:: *m_get)() const;
+  PBoolean (OpalPCSSEndPoint:: *m_set)(const PString &);
+
+  bool Initialise(OpalPCSSEndPoint & ep, ostream & output, bool verbose, const PArgList & args, bool fromCLI)
+  {
+    PString prefix;
+    if (!fromCLI) {
+      prefix += m_name;
+      prefix += '-';
+    }
+
+    PString driver = args.GetOptionString(prefix + "driver");
+    if (!driver.IsEmpty())
+      driver += '\t';
+
+    PString device = prefix.IsEmpty() ? args[0] : args.GetOptionString(prefix + "device");
+    if (!fromCLI && device.IsEmpty())
+      device = '*';
+
+    if ((!driver.IsEmpty() || !device.IsEmpty()) && !(ep.*m_set)(driver + device)) {
+      output << "Illegal audio " << m_description << " driver/device, select one of:";
+      PStringArray available = PSoundChannel::GetDeviceNames(m_dir);
+      for (PINDEX i = 0; i < available.GetSize(); ++i)
+        output << "\n   " << available[i];
+      output << endl;
+      return false;
+    }
+
+    if (verbose)
+      output << "Audio " << m_description << ": " << (ep.*m_get)() << endl;
+
+    return true;
+  }
+} AudioDeviceVariables[] = {
+  { PSoundChannel::Recorder, "record", "recorder", &OpalPCSSEndPoint::GetSoundChannelRecordDevice, &OpalPCSSEndPoint::SetSoundChannelRecordDevice },
+  { PSoundChannel::Player,   "play",   "player",   &OpalPCSSEndPoint::GetSoundChannelPlayDevice,   &OpalPCSSEndPoint::SetSoundChannelPlayDevice   },
+  { PSoundChannel::Recorder, "moh",    "on hold",  &OpalPCSSEndPoint::GetSoundChannelOnHoldDevice, &OpalPCSSEndPoint::SetSoundChannelOnHoldDevice },
+  { PSoundChannel::Recorder, "aor",    "on ring",  &OpalPCSSEndPoint::GetSoundChannelOnRingDevice, &OpalPCSSEndPoint::SetSoundChannelOnRingDevice }
+};
+
+#if OPAL_VIDEO
+static struct {
+  const char * m_name;
+  const char * m_description;
+  const PVideoDevice::OpenArgs & (OpalPCSSEndPoint:: *m_get)() const;
+  PBoolean (OpalPCSSEndPoint:: *m_set)(const PVideoDevice::OpenArgs &);
+  PStringArray (*m_list)(const PString &, PPluginManager *);
+
+  bool Initialise(OpalPCSSEndPoint & ep, ostream & output, bool verbose, const PArgList & args, bool fromCLI)
+  {
+    PString prefix;
+    if (!fromCLI) {
+      prefix += m_name;
+      prefix += '-';
+    }
+
+    PVideoDevice::OpenArgs video = (ep.*m_get)();
+    video.driverName = args.GetOptionString(prefix+"driver");
+    video.deviceName = fromCLI ? args[0] : args.GetOptionString(prefix+"device");
+    video.channelNumber = args.GetOptionString(prefix+"channel").AsUnsigned();
+
+    PString fmt = args.GetOptionString(prefix+"format");
+    if (!fmt.IsEmpty() && (video.videoFormat = PVideoDevice::VideoFormatFromString(fmt, false)) == PVideoDevice::NumVideoFormat) {
+      output << "Illegal video " << m_description << " format \"" << fmt << '"' << endl;
+      return false;
+    }
+
+    if ((!video.driverName.IsEmpty() || !video.deviceName.IsEmpty()) && !(ep.*m_set)(video)) {
+      output << "Illegal video " << m_description << " driver/device, select one of:";
+      PStringArray available = m_list("*", NULL);
+      for (PINDEX i = 0; i < available.GetSize(); ++i)
+        output << "\n   " << available[i];
+      output << endl;
+      return false;
+    }
+
+    if (verbose)
+      output << "Video " << m_description << ": " << (ep.*m_get)().deviceName << endl;
+
+    return true;
+  }
+} VideoDeviceVariables[] = {
+  { "grabber", "input grabber",  &OpalPCSSEndPoint::GetVideoGrabberDevice, &OpalPCSSEndPoint::SetVideoGrabberDevice, &PVideoInputDevice::GetDriversDeviceNames  },
+  { "preview", "input preview",  &OpalPCSSEndPoint::GetVideoPreviewDevice, &OpalPCSSEndPoint::SetVideoPreviewDevice, &PVideoOutputDevice::GetDriversDeviceNames },
+  { "display", "output display", &OpalPCSSEndPoint::GetVideoDisplayDevice, &OpalPCSSEndPoint::SetVideoDisplayDevice, &PVideoOutputDevice::GetDriversDeviceNames },
+  { "voh",     "on hold",        &OpalPCSSEndPoint::GetVideoOnHoldDevice,  &OpalPCSSEndPoint::SetVideoOnHoldDevice,  &PVideoInputDevice::GetDriversDeviceNames  },
+  { "vor",     "on ring",        &OpalPCSSEndPoint::GetVideoOnRingDevice,  &OpalPCSSEndPoint::SetVideoOnRingDevice,  &PVideoInputDevice::GetDriversDeviceNames  }
+};
+#endif // OPAL_VIDEO
+
 class OpalConsolePCSSEndPoint : public OpalPCSSEndPoint, public OpalConsoleEndPoint
 {
   PCLASSINFO(OpalConsolePCSSEndPoint, OpalPCSSEndPoint)
@@ -547,129 +718,45 @@ public:
 
   virtual void GetArgumentSpec(ostream & strm) const
   {
-    strm << "[PC options:]"
-            "-record-driver:  Audio recorder driver.\n"
-            "-record-device:  Audio recorder device.\n"
-            "-play-driver:    Audio player driver.\n"
-            "-play-device:    Audio player device.\n"
-            "-moh-driver:     Audio player driver for music on hold.\n"
-            "-moh-device:     Audio player device for music on hold.\n"
-            "-aor-driver:     Audio player driver for when ringing.\n"
-            "-aor-device:     Audio player device for when ringing.\n"
-            "-audio-buffer:   Audio buffer time in ms (default 120)\n"
+    strm << "[PC options:]";
+    for (PINDEX i = 0; i < PARRAYSIZE(AudioDeviceVariables); ++i) {
+      const char * name = AudioDeviceVariables[i].m_name;
+      const char * desc = AudioDeviceVariables[i].m_description;
+      strm << '-' << name << "-driver: Audio " << desc << " driver.\n"
+              "-" << name << "-device: Audio " << desc << " device.\n";
+    }
+    strm << "-audio-buffer:   Audio buffer time in ms (default 120)\n";
+
 #if OPAL_VIDEO
-            "-display-driver: Video display driver to use.\n"
-            "-display-device: Video display device to use.\n"
-            "-grab-driver:    Video grabber driver.\n"
-            "-grab-device:    Video grabber device.\n"
-            "-grab-format:    Video grabber format (\"pal\"/\"ntsc\")\n"
-            "-grab-channel:   Video grabber channel.\n"
-            "-preview-driver: Video preview driver to use.\n"
-            "-preview-device: Video preview device to use.\n"
-            "-voh-driver:     Video source driver for music on hold.\n"
-            "-voh-device:     Video source device for music on hold.\n"
-            "-vor-driver:     Video source driver for when ringing.\n"
-            "-vor-device:     Video source device for when ringing.\n"
+    for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i) {
+      const char * name = VideoDeviceVariables[i].m_name;
+      const char * desc = VideoDeviceVariables[i].m_description;
+      strm << '-' << name << "-driver:  Video " << desc << " driver.\n"
+              "-" << name << "-device:  Video " << desc << " device.\n"
+              "-" << name << "-format:  Video " << desc << " format (\"pal\"/\"ntsc\")\n"
+              "-" << name << "-channel: Video " << desc << " channel number.\n";
+    }
 #endif // OPAL_VIDEO
-            ;
   }
 
 
   virtual bool Initialise(PArgList & args, ostream & output, bool verbose, const PString &)
   {
-    if (!SetSoundChannelRecordDevice(args.GetOptionString("record-driver") + '\t' + args.GetOptionString("record-device"))) {
-      cerr << "Illegal sound recorder driver/device\n";
-      return false;
+    for (PINDEX i = 0; i < PARRAYSIZE(AudioDeviceVariables); ++i) {
+      if (!AudioDeviceVariables[i].Initialise(*this, output, verbose, args, false))
+        return false;
     }
-    if (verbose)
-      output << "Sound recorder: " << GetSoundChannelRecordDevice() << '\n';
-
-    if (!SetSoundChannelPlayDevice(args.GetOptionString("play-driver") + '\t' + args.GetOptionString("play-device"))) {
-      cerr << "Illegal sound player driver/device\n";
-      return false;
-    }
-    if (verbose)
-      output << "Sound player: " << GetSoundChannelPlayDevice() << '\n';
-
-    if (!SetSoundChannelOnHoldDevice(args.GetOptionString("moh-driver") + '\t' + args.GetOptionString("moh-device"))) {
-      cerr << "Illegal sound player driver/device for hold\n";
-      return false;
-    }
-    if (verbose)
-      output << "Music on Hold: " << GetSoundChannelOnHoldDevice() << '\n';
-
-    if (!SetSoundChannelOnRingDevice(args.GetOptionString("aor-driver") + '\t' + args.GetOptionString("aor-device"))) {
-      cerr << "Illegal sound player driver/device for ring\n";
-      return false;
-    }
-    if (verbose)
-      output << "Audio on Ring: " << GetSoundChannelOnRingDevice() << '\n';
 
     if (args.HasOption("audio-buffer"))
       SetSoundChannelBufferTime(args.GetOptionString("audio-buffer").AsUnsigned());
     if (verbose)
-      output << "Audio buffers: " << GetSoundChannelBufferTime() << "ms\n";
+      output << "Audio buffer time: " << GetSoundChannelBufferTime() << "ms\n";
 
 #if OPAL_VIDEO
-    PVideoDevice::OpenArgs video = manager.GetVideoOutputDevice();
-    video.driverName = args.GetOptionString("display-driver");
-    video.deviceName = args.GetOptionString("display-device");
-    if ((!video.driverName.IsEmpty() || !video.deviceName.IsEmpty()) && !manager.SetVideoOutputDevice(video)) {
-      cerr << "Illegal video display driver/device\n";
-      return false;
+    for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i) {
+      if (!VideoDeviceVariables[i].Initialise(*this, output, verbose, args, false))
+        return false;
     }
-    if (verbose)
-      output << "Display: " << manager.GetVideoOutputDevice().deviceName << '\n';
-
-    video = manager.GetVideoInputDevice();
-    video.driverName = args.GetOptionString("grab-driver");
-    video.deviceName = args.GetOptionString("grab-device");
-    PCaselessString fmt = args.GetOptionString("grab-format");
-    if (fmt == "pal")
-      video.videoFormat = PVideoDevice::PAL;
-    else if (fmt == "ntsc")
-      video.videoFormat = PVideoDevice::NTSC;
-    else if (fmt == "secam")
-      video.videoFormat = PVideoDevice::SECAM;
-    else if (fmt == "auto")
-      video.videoFormat = PVideoDevice::Auto;
-    video.channelNumber = args.GetOptionString("grab-channel").AsUnsigned();
-    if ((!video.driverName.IsEmpty() || !video.deviceName.IsEmpty()) && !manager.SetVideoInputDevice(video)) {
-      cerr << "Illegal video grabber driver/device\n";
-      return false;
-    }
-    if (verbose)
-      output << "Grabber: " << manager.GetVideoInputDevice().deviceName << '\n';
-
-    video = manager.GetVideoPreviewDevice();
-    video.driverName = args.GetOptionString("preview-driver");
-    video.deviceName = args.GetOptionString("preview-device");
-    if ((!video.driverName.IsEmpty() || !video.deviceName.IsEmpty()) && !manager.SetVideoPreviewDevice(video)) {
-      cerr << "Illegal video preview driver/device\n";
-      return false;
-    }
-    if (verbose)
-      output << "Preview: " << manager.GetVideoPreviewDevice().deviceName << '\n';
-
-    video = GetVideoOnHoldDevice();
-    video.driverName = args.GetOptionString("voh-driver");
-    video.deviceName = args.GetOptionString("voh-device");
-    if ((!video.driverName.IsEmpty() || !video.deviceName.IsEmpty()) && !SetVideoOnHoldDevice(video)) {
-      cerr << "Illegal video source driver/device for hold" << endl;
-      return false;
-    }
-    if (verbose)
-      output << "Video on Hold: " << GetVideoOnHoldDevice().deviceName << '\n';
-
-    video = GetVideoOnRingDevice();
-    video.driverName = args.GetOptionString("vor-driver");
-    video.deviceName = args.GetOptionString("vor-device");
-    if ((!video.driverName.IsEmpty() || !video.deviceName.IsEmpty()) && !SetVideoOnRingDevice(video)) {
-      cerr << "Illegal video source driver/device for ring" << endl;
-      return false;
-    }
-    if (verbose)
-      output << "Video on Ring: " << GetVideoOnRingDevice().deviceName << '\n';
 #endif // OPAL_VIDEO
 
     return true;
@@ -700,12 +787,55 @@ public:
     }
   }
 
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdAudioDevice)
+  {
+    for (PINDEX i = 0; i < PARRAYSIZE(AudioDeviceVariables); ++i) {
+      if (from.GetCommandName().Find(AudioDeviceVariables[i].m_name) != P_MAX_INDEX)
+        AudioDeviceVariables[i].Initialise(*this, from.GetContext(), true, from, true);
+    }
+  }
+
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdAudioBuffers)
+  {
+    if (from.GetCount() > 0)
+      SetSoundChannelBufferTime(from[0].AsUnsigned());
+    from.GetContext() << "Audio buffer time: " << GetSoundChannelBufferTime() << "ms" << endl;
+  }
+
+#if OPAL_VIDEO
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdVideoDevice)
+  {
+    for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i) {
+      if (from.GetCommandName().Find(VideoDeviceVariables[i].m_name) != P_MAX_INDEX)
+        VideoDeviceVariables[i].Initialise(*this, from.GetContext(), true, from, true);
+    }
+  }
+#endif // OPAL_VIDEO
+
   virtual void AddCommands(PCLI & cli)
   {
-    cli.SetCommand("pc microphone volume", PCREATE_NOTIFIER(CmdVolume),
+    for (PINDEX i = 0; i < PARRAYSIZE(AudioDeviceVariables); ++i)
+      cli.SetCommand(GetPrefixName() & AudioDeviceVariables[i].m_name, PCREATE_NOTIFIER(CmdAudioDevice),
+                     PSTRSTRM("Audio " << AudioDeviceVariables[i].m_description << " device."),
+                     "[ option ] <name>", "D-driver:  Optional driver name.");
+
+    cli.SetCommand(GetPrefixName() & "buffers", PCREATE_NOTIFIER(CmdAudioBuffers),
+                   "Audio buffer time in ms (default 120)\n");
+
+#if OPAL_VIDEO
+    for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i)
+      cli.SetCommand(GetPrefixName() & VideoDeviceVariables[i].m_name, PCREATE_NOTIFIER(CmdVideoDevice),
+                     PSTRSTRM("Video " << VideoDeviceVariables[i].m_description << " device."),
+                     "[ options ] <name>",
+                     "-driver:  Driver name.\n"
+                     "-format:  Format (\"pal\"/\"ntsc\")\n"
+                     "-channel: Channel number.\n");
+#endif // OPAL_VIDEO
+
+    cli.SetCommand(GetPrefixName() & "microphone volume", PCREATE_NOTIFIER(CmdVolume),
                    "Set volume for microphone",
                    "[ <percent> ]", "c-call: Call token");
-    cli.SetCommand("pc speaker volume", PCREATE_NOTIFIER(CmdVolume),
+    cli.SetCommand(GetPrefixName() & "speaker volume", PCREATE_NOTIFIER(CmdVolume),
                    "Set volume for speaker",
                    "[ <percent> ]", "c-call: Call token");
   }
@@ -837,12 +967,12 @@ bool OpalConsoleManager::PreInitialise(PArgList & args, bool verbose)
     args.Parse(GetArgumentSpec());
 
   if (!args.IsParsed() || args.HasOption("help")) {
-    Usage(cerr, args);
+    Usage(Output(), args);
     return false;
   }
 
   if (args.HasOption("version")) {
-    PrintVersion(cerr);
+    PrintVersion(Output());
     return false;
   }
 
@@ -880,7 +1010,7 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
         break;
         
       default :
-        cerr << "Invalid jitter specification\n";
+        Output() << "Invalid jitter specification\n";
         return false;
     }
     SetAudioJitterDelay(minJitter, maxJitter);
@@ -923,7 +1053,7 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
   if (args.HasOption("rtp-tos")) {
     unsigned tos = args.GetOptionString("rtp-tos").AsUnsigned();
     if (tos > 255) {
-      cerr << "IP Type Of Service bits must be 0 to 255.\n";
+      Output() << "IP Type Of Service bits must be 0 to 255.\n";
       return false;
     }
     SetMediaTypeOfService(tos);
@@ -940,7 +1070,7 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
   if (args.HasOption("rtp-size")) {
     unsigned size = args.GetOptionString("rtp-size").AsUnsigned();
     if (size < 32 || size > 65500) {
-      cerr << "RTP maximum payload size 32 to 65500.\n";
+      Output() << "RTP maximum payload size 32 to 65500.\n";
       return false;
     }
     SetMaxRtpPayloadSize(size);
@@ -1018,7 +1148,7 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
   if (!telProto.IsEmpty()) {
     OpalEndPoint * ep = FindEndPoint(telProto);
     if (ep == NULL) {
-      cerr << "The \"tel\" URI cannot be mapped to protocol \"" << telProto << '"' << endl;
+      Output() << "The \"tel\" URI cannot be mapped to protocol \"" << telProto << '"' << endl;
       return false;
     }
 
@@ -1031,7 +1161,7 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
   {
     unsigned prefWidth = 0, prefHeight = 0;
     if (!PVideoFrameInfo::ParseSize(args.GetOptionString("video-size", "cif"), prefWidth, prefHeight)) {
-      cerr << "Invalid video size parameter." << endl;
+      Output() << "Invalid video size parameter." << endl;
       return false;
     }
     if (verbose)
@@ -1039,7 +1169,7 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
 
     unsigned maxWidth = 0, maxHeight = 0;
     if (!PVideoFrameInfo::ParseSize(args.GetOptionString("max-video-size", "HD1080"), maxWidth, maxHeight)) {
-      cerr << "Invalid maximum video size parameter." << endl;
+      Output() << "Invalid maximum video size parameter." << endl;
       return false;
     }
     if (verbose)
@@ -1047,7 +1177,7 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
 
     double rate = args.GetOptionString("video-rate", "30").AsReal();
     if (rate < 1 || rate > 60) {
-      cerr << "Invalid video frame rate parameter." << endl;
+      Output() << "Invalid video frame rate parameter." << endl;
       return false;
     }
     if (verbose)
@@ -1056,7 +1186,7 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
     unsigned frameTime = (unsigned)(OpalMediaFormat::VideoClockRate/rate);
     OpalBandwidth bitrate(args.GetOptionString("video-bitrate", "1Mbps"));
     if (bitrate < 10000) {
-      cerr << "Invalid video bit rate parameter." << endl;
+      Output() << "Invalid video bit rate parameter." << endl;
       return false;
     }
     if (verbose)
@@ -1084,24 +1214,24 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
       PRegularExpression parse("\\([A-Za-z].*\\):\\([A-Za-z].*\\)=\\(.*\\)");
       PStringArray subexpressions(4);
       if (!parse.Execute(options[i], subexpressions)) {
-        cerr << "Invalid media format option \"" << options[i] << '"' << endl;
+        Output() << "Invalid media format option \"" << options[i] << '"' << endl;
         return false;
       }
 
       OpalMediaFormat format(subexpressions[1]);
       if (!format.IsValid()) {
-        cerr << "Unknown media format \"" << subexpressions[1] << '"' << endl;
+        Output() << "Unknown media format \"" << subexpressions[1] << '"' << endl;
         return false;
       }
       if (!format.HasOption(subexpressions[2])) {
-        cerr << "Unknown option name \"" << subexpressions[2] << "\""
-                " in media format \"" << subexpressions[1] << '"' << endl;
+        Output() << "Unknown option name \"" << subexpressions[2] << "\""
+                    " in media format \"" << subexpressions[1] << '"' << endl;
         return false;
       }
       if (!format.SetOptionValue(subexpressions[2], subexpressions[3])) {
-        cerr << "Ilegal value \"" << subexpressions[3] << "\""
-                " for option name \"" << subexpressions[2] << "\""
-                " in media format \"" << subexpressions[1] << '"' << endl;
+        Output() << "Ilegal value \"" << subexpressions[3] << "\""
+                    " for option name \"" << subexpressions[2] << "\""
+                    " in media format \"" << subexpressions[1] << '"' << endl;
         return false;
       }
       if (verbose)
@@ -1511,7 +1641,7 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
     if (args.HasOption("cli")) {
       unsigned port = args.GetOptionString("cli").AsUnsigned();
       if (port == 0 || port > 65535) {
-        cerr << "Illegal CLI port " << port << endl;
+        Output() << "Illegal CLI port " << port << endl;
         return false;
       }
       m_cli = CreateCLITelnet((WORD)port);
@@ -1589,7 +1719,7 @@ void OpalManagerCLI::Run()
         m_cli->Run(&scriptFile, new PNullChannel, false, true);
     }
     else
-      cerr << "error: cannot open script file \"" << filename << '"' << endl;
+      Output() << "error: cannot open script file \"" << filename << '"' << endl;
   }
 
   if (m_cli != NULL)

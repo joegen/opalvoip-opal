@@ -134,6 +134,8 @@ void MyManager::CmdCall(PCLI::Arguments & args, P_INT_PTR)
       m_activeCall = SetUpCall(args[0], args[1]);
     if (m_activeCall == NULL)
       args.WriteError() << "Could not start call." << endl;
+    else
+      args.GetContext() << "Started call from " << m_activeCall->GetPartyA() << " to " << m_activeCall->GetPartyB() << endl;
   }
 }
 
@@ -146,6 +148,8 @@ void MyManager::CmdAnswer(PCLI::Arguments & args, P_INT_PTR)
     args.WriteError() << "Call already answered." << endl;
   else if (!m_pcss->AcceptIncomingCall(m_activeCall->GetToken()))
     args.WriteError() << "Call has disappeared." << endl;
+  else
+    args.GetContext() << "Answered call from " << m_activeCall->GetPartyA() << endl;
 }
 
 
@@ -160,6 +164,7 @@ void MyManager::CmdHold(PCLI::Arguments & args, P_INT_PTR)
   else if (!m_activeCall->Hold())
     args.WriteError() << "Call has disappeared." << endl;
   else {
+    args.GetContext() << "Holding call with " << m_activeCall->GetRemoteParty() << endl;
     m_heldCall = m_activeCall;
     m_activeCall.SetNULL();
   }
@@ -180,6 +185,7 @@ void MyManager::CmdRetrieve(PCLI::Arguments & args, P_INT_PTR)
   else if (!m_heldCall->Retrieve())
     args.WriteError() << "Call has disappeared." << endl;
   else {
+    args.GetContext() << "Retrieving call with " << m_heldCall->GetRemoteParty() << endl;
     m_activeCall = m_heldCall;
     m_heldCall.SetNULL();
   }
@@ -196,6 +202,8 @@ void MyManager::CmdTransfer(PCLI::Arguments & args, P_INT_PTR)
     args.WriteError() << "Call not yet answered." << endl;
   else if (!m_activeCall->Transfer(args[0]))
     args.WriteError() << "Transfer failed." << endl;
+  else
+    args.GetContext() << "Transfering call with " << m_activeCall->GetRemoteParty() << " to " << args[0] << endl;
 }
 
 
@@ -203,8 +211,10 @@ void MyManager::CmdHangUp(PCLI::Arguments & args, P_INT_PTR)
 {
   if (m_activeCall == NULL)
     args.WriteError() << "No active call." << endl;
-  else 
+  else {
+    args.GetContext() << "Hanging up call with " << m_activeCall->GetRemoteParty() << endl;
     m_activeCall->Clear();
+  }
 }
 
 

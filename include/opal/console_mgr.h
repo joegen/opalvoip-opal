@@ -57,8 +57,10 @@ class OpalMixerEndPoint;
 /**This class allows for each end point class, e.g. SIPEndPoint, to add it's
    set of parameters/commands to to the console application.
   */
-struct OpalConsoleEndPoint
+class OpalConsoleEndPoint
 {
+public:
+  virtual ~OpalConsoleEndPoint() { }
   virtual void GetArgumentSpec(ostream & strm) const = 0;
   enum InitResult {
     InitFailed,
