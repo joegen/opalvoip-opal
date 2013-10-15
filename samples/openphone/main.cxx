@@ -1155,8 +1155,8 @@ bool MyManager::Initialise(bool startMinimised)
   PVideoDevice::OpenArgs videoArgs = GetVideoInputDevice();
   if (config->Read(VideoGrabDeviceKey, &str))
     videoArgs.deviceName = str.p_str();
-  if (config->Read(VideoGrabFormatKey, &value1) && value1 >= 0 && value1 < PVideoDevice::NumVideoFormats)
-    videoArgs.videoFormat = (PVideoDevice::VideoFormat)value1;
+  if (config->Read(VideoGrabFormatKey, &value1))
+    videoArgs.videoFormat = PVideoDevice::VideoFormatFromInt(value1);
   if (config->Read(VideoGrabSourceKey, &value1))
     videoArgs.channelNumber = value1;
   if (config->Read(VideoGrabFrameRateKey, &value1))
