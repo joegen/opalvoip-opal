@@ -1587,7 +1587,7 @@ void SDPVideoMediaDescription::SetAttribute(const PString & attr, const PString 
     return;
   }
 
-  // As per http://tools.ietf.org/html/draft-ietf-mmusic-image-attributes-11
+  // As per RFC 6263
   if (attr *= "imageattr") {
     PString params = value;
     Format * format = dynamic_cast<Format *>(FindFormat(params));
@@ -1903,7 +1903,7 @@ void SDPVideoMediaDescription::Format::ParseImageAttr(const PString & params)
     }
   }
 
-  // Allow response SDP to include imageattr
+  // Allow response SDP to include imageattr from RFC 6263
   PTRACE(4, "SDP\tparsed imageattr:"
              " minRx=" << m_minRxWidth << 'x' << m_minRxHeight
           << " maxRx=" << m_maxRxWidth << 'x' << m_maxRxHeight

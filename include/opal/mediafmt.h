@@ -1472,6 +1472,7 @@ class OpalVideoFormat : public OpalMediaFormat
     static const PString & RTCPFeedbackOption();
 
 #if OPAL_SIP
+    /// Boolean media opion to include imageattr from RFC 6263
     static const PString & UseImageAttributeInSDP();
 #endif
 };
