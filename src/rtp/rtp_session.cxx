@@ -1641,9 +1641,6 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
   if (IsOpen())
     return true;
 
-  if (IsExternalTransport())
-    return true;
-
   PWaitAndSignal mutex1(m_readMutex);
   PWaitAndSignal mutex2(m_dataMutex);
 
