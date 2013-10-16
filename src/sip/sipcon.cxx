@@ -3267,6 +3267,8 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 
   NotifyDialogState(SIPDialogNotification::Confirmed);
 
+  OnConnectedInternal();
+
   if (!OnReceivedAnswerSDP(response, &transaction) && !IsEstablished()) {
     Release(EndedByCapabilityExchange);
     return;
@@ -3286,8 +3288,6 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
     default :
       break;
   }
-
-  OnConnectedInternal();
 }
 
 
