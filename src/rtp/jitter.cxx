@@ -297,6 +297,13 @@ void OpalJitterBuffer::Reset()
 }
 
 
+static __inline bool ApproximatelyEqual(DWORD a, DWORD b)
+{
+  int delta = a - b;
+  return delta >= -2 && delta <= 2;
+}
+
+
 PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInterval & PTRACE_PARAM(tick))
 {
   if (frame.GetSize() < RTP_DataFrame::MinHeaderSize) {
@@ -362,13 +369,16 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
       Reset();
     }
     else {
-      if (m_lastFrameTime[0] == m_lastFrameTime[1] && m_lastFrameTime[0] == delta && m_incomingFrameTime != (DWORD)delta) {
+      if (!ApproximatelyEqual(m_incomingFrameTime, delta) &&
+           ApproximatelyEqual(m_lastFrameTime[0], delta) &&
+           ApproximatelyEqual(m_lastFrameTime[0], m_lastFrameTime[1])) {
         m_incomingFrameTime = delta;
         AdjustCurrentJitterDelay(0);
         PTRACE(4, "Jitter\tFrame time set  : ts=" << timestamp << ", size=" << m_frames.size() << ","
                   " time=" << delta << " (" << (delta/m_timeUnits) << "ms),"
                   " delay=" << m_currentJitterDelay << " (" << (m_currentJitterDelay/m_timeUnits) << "ms)");
       }
+      PTRACE(5, "Jitter\tWait frame time : ts=" << timestamp << ", delta=" << delta);
       m_lastFrameTime[0] = m_lastFrameTime[1];
       m_lastFrameTime[1] = delta;
     }
