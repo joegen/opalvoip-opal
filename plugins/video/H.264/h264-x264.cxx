@@ -694,7 +694,8 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       m_encoder.SetTargetBitrate(m_maxBitRate/1000);
       m_encoder.SetRateControlPeriod(m_rateControlPeriod);
       m_encoder.SetTSTO(m_tsto);
-      m_encoder.SetMaxKeyFramePeriod(m_keyFramePeriod != 0 ? m_keyFramePeriod : 10*PLUGINCODEC_VIDEO_CLOCK/m_frameTime); // Every 10 seconds
+      unsigned keyFramePeriod = m_keyFramePeriod != 0 ? m_keyFramePeriod : 10*PLUGINCODEC_VIDEO_CLOCK/m_frameTime; // Every 10 seconds
+      m_encoder.SetMaxKeyFramePeriod(keyFramePeriod);
 
       unsigned mode = m_isH323 ? m_packetisationModeH323 : m_packetisationModeSDP;
       if (mode == 0) {
@@ -710,16 +711,17 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       m_encoder.ApplyOptions();
 
       PTRACE(3, MY_CODEC_LOG, "Applied options: "
-                              "prof=" << m_profile << " "
-                              "lev=" << m_level << " "
+                              "profile=" << m_profile << " "
+                              "level=" << m_level << " "
                               "res=" << m_width << 'x' << m_height << " "
                               "fps=" << (PLUGINCODEC_VIDEO_CLOCK/m_frameTime) << " "
                               "bps=" << m_maxBitRate << " "
-                              "period=" << m_rateControlPeriod << " "
+                              "key frames=" << keyFramePeriod << " "
+                              "rc period=" << m_rateControlPeriod << " "
                               "RTP=" << m_maxRTPSize << " "
                               "NALU=" << m_maxNALUSize << " "
                               "TSTO=" << m_tsto << " "
-                              "Mode=" << mode);
+                              "pack mode=" << mode);
       return true;
     }
 
