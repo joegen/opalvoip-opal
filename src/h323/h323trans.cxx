@@ -571,17 +571,17 @@ PBoolean H323Transactor::Request::Poll(H323Transactor & rasChannel, unsigned num
         case ConfirmReceived :
           return true;
 
-        case RejectReceived :
-        case TryAlternate :
-          return false;
-
         case BadCryptoTokens :
           PTRACE(1, "Trans\tResponse to seqnum=" << requestPDU.GetSequenceNumber()
                  << " had invalid crypto tokens.");
           return false;
 
-        default : // RequestInProgress
+        case RequestInProgress :
           responseResult = AwaitingResponse; // Keep waiting
+          break;
+
+        default :
+          return false;
       }
 
       PTRACE_IF(3, responseResult == AwaitingResponse,
@@ -615,33 +615,6 @@ void H323Transactor::Request::CheckResponse(unsigned reqTag, const PASN_Choice *
          << " rejected: " << reason->GetTagName());
   responseResult = RejectReceived;
   rejectReason = reason->GetTag();
-
-  switch(reqTag) {
-    case H225_RasMessage::e_admissionRequest:
-      if (rejectReason == H225_AdmissionRejectReason::e_callerNotRegistered)
-        responseResult = TryAlternate;
-      break;
-
-    case H225_RasMessage::e_gatekeeperRequest:
-      if (rejectReason == H225_GatekeeperRejectReason::e_resourceUnavailable)
-        responseResult = TryAlternate;
-      break;
-
-    case H225_RasMessage::e_disengageRequest:
-      if (rejectReason == H225_DisengageRejectReason::e_notRegistered)
-        responseResult = TryAlternate;
-      break;
-
-    case H225_RasMessage::e_registrationRequest:
-      if (rejectReason == H225_RegistrationRejectReason::e_resourceUnavailable)
-        responseResult = TryAlternate;
-      break;
-
-    case H225_RasMessage::e_infoRequestResponse:
-      if (rejectReason == H225_InfoRequestNakReason::e_notRegistered)
-        responseResult = TryAlternate;
-      break;
-  }
 }
 
 
