@@ -2345,10 +2345,10 @@ PBoolean H323DataCapability::OnSendingPDU(H245_Capability & cap) const
 
 PBoolean H323DataCapability::OnSendingPDU(H245_DataType & dataType) const
 {
-  dataType.SetTag(H245_DataType::e_data);
-  H245_DataApplicationCapability & app = dataType;
-  app.m_maxBitRate = m_maxBitRate;
-  return H323Capability::OnSendingPDU(dataType) && OnSendingPDU(app, e_OLC);
+  H245_DataApplicationCapability * cap;
+  H323SetMediaCapability<H245_DataType::e_data, H245_H235Media_mediaType::e_data>(*this, dataType, cap);
+  cap->m_maxBitRate = m_maxBitRate;
+  return H323Capability::OnSendingPDU(dataType) && OnSendingPDU(*cap, e_OLC);
 }
 
 
@@ -2388,12 +2388,15 @@ PBoolean H323DataCapability::OnReceivedPDU(const H245_Capability & cap)
 
 PBoolean H323DataCapability::OnReceivedPDU(const H245_DataType & dataType, PBoolean receiver)
 {
+  const H245_DataApplicationCapability * cap;
+  if (!H323GetMediaCapability<H245_DataType::e_data, H245_H235Media_mediaType::e_data>(dataType, cap))
+    return false;
+
   if (dataType.GetTag() != H245_DataType::e_data)
     return false;
 
-  const H245_DataApplicationCapability & app = dataType;
-  m_maxBitRate = app.m_maxBitRate;
-  return OnReceivedPDU(app, e_OLC) && H323Capability::OnReceivedPDU(dataType, receiver);
+  m_maxBitRate = cap->m_maxBitRate;
+  return OnReceivedPDU(*cap, e_OLC) && H323Capability::OnReceivedPDU(dataType, receiver);
 }
 
 
