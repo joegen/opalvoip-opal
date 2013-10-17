@@ -366,6 +366,10 @@ bool H2356_Session::Context::Encrypt(RTP_DataFrame & frame)
   // Can't do cipher stealing .. yet ...  maybe never
   m_cipher.SetPadding(frame.GetPadding() ? PSSLCipherContext::PadPKCS : PSSLCipherContext::NoPadding);
 
+  // Make sure we have enough memory space for an extra data block in case implementation is naughty
+  frame.SetMinSize(len + m_cipher.GetBlockSize());
+
+  // Do it encryption
   bool ok = m_cipher.Process(m_buffer.GetPayloadPtr(), m_buffer.GetPayloadSize(), frame.GetPayloadPtr(), len);
   frame.SetPayloadSize(len);
 
