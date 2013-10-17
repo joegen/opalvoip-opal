@@ -1275,13 +1275,19 @@ class H323EndPoint : public OpalRTPEndPoint
 
     /**Get flag to indicate whether to send GRQ on gatekeeper registration
      */
-    PBoolean GetSendGRQ() const
-    { return sendGRQ; }
+    bool GetSendGRQ() const { return m_sendGRQ; }
 
     /**Sent flag to indicate whether to send GRQ on gatekeeper registration
      */
-    void SetSendGRQ(PBoolean v) 
-    { sendGRQ = v; }
+    void SetSendGRQ(bool v) { m_sendGRQ = v; }
+
+    /**Get flag to indicate whether to only use one signal address in gatekeeper registration
+     */
+    bool GetOneSignalAddressInRRQ() const { return m_oneSignalAddressInRRQ; }
+
+    /**Sent flag to indicate whether to only use one signal address in gatekeeper registration
+     */
+    void SetOneSignalAddressInRRQ(bool v) { m_oneSignalAddressInRRQ = v; }
 
     /**Get the default timeout for Call Transfer Timer CT-T1.
      */
@@ -1417,7 +1423,8 @@ class H323EndPoint : public OpalRTPEndPoint
     PTimeInterval registrationTimeToLive;
 
     PString       gkAccessTokenOID;
-    PBoolean          sendGRQ;
+    bool          m_sendGRQ;
+    bool          m_oneSignalAddressInRRQ;
 
     /* Protect against absence of a response to the ctIdentify reqest
        (Transferring Endpoint - Call Transfer with a secondary Call) */

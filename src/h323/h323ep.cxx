@@ -92,7 +92,8 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   , rasRequestTimeout(0, 3)                // Seconds
   , rasRequestRetries(2)
   , registrationTimeToLive(0, 0, 10)       // Minutes
-  , sendGRQ(true)
+  , m_sendGRQ(true)
+  , m_oneSignalAddressInRRQ(true)
   , callTransferT1(0,10)                   // Seconds
   , callTransferT2(0,10)                   // Seconds
   , callTransferT3(0,10)                   // Seconds
@@ -377,10 +378,12 @@ static H323TransportAddress GetGatekeeperAddress(const PString & address)
   PIPSocketAddressAndPort addrPort(address, H225_RAS::DefaultRasUdpPort);
 
 #if OPAL_PTLIB_DNS_RESOLVER
-  if (!addrPort.IsValid()) {
+  if (!PIPSocket::Address(address).IsValid()) {
     PIPSocketAddressAndPortVector addresses;
-    if (PDNS::LookupSRV(address, "_h323rs._udp", addrPort.GetPort(), addresses) && !addresses.empty())
+    if (PDNS::LookupSRV(address, "_h323rs._udp", addrPort.GetPort(), addresses) && !addresses.empty()) {
       addrPort = addresses[0];
+      PTRACE(4, "H323\tUsing DNS SRV record for gatekeeper at " << addrPort);
+    }
   }
 #endif //OPAL_PTLIB_DNS_RESOLVER
 

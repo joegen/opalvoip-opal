@@ -105,6 +105,7 @@ class H323Gatekeeper : public H225_RAS
     PBoolean OnReceiveBandwidthConfirm(const H225_BandwidthConfirm & bcf);
     PBoolean OnReceiveBandwidthRequest(const H225_BandwidthRequest & brq);
     PBoolean OnReceiveInfoRequest(const H225_InfoRequest & irq);
+    PBoolean OnReceiveInfoRequestResponse(const H225_InfoRequestResponse & irr);
     PBoolean OnReceiveServiceControlIndication(const H225_ServiceControlIndication &);
     void OnSendGatekeeperRequest(H225_GatekeeperRequest & grq);
     void OnSendAdmissionRequest(H225_AdmissionRequest & arq);
@@ -254,6 +255,7 @@ class H323Gatekeeper : public H225_RAS
       DuplicateAlias,
       SecurityDenied,
       TransportError,
+      TryingAlternate,
       NumRegistrationFailReasons,
       GatekeeperRejectReasonMask = 0x4000,
       RegistrationRejectReasonMask = 0x8000,
@@ -325,7 +327,7 @@ class H323Gatekeeper : public H225_RAS
 
     void SetAlternates(
       const H225_ArrayOf_AlternateGK & alts,
-      PBoolean permanent
+      bool permanent
     );
 
     virtual PBoolean MakeRequest(
@@ -358,7 +360,7 @@ class H323Gatekeeper : public H225_RAS
       public:
         AlternateInfo(H225_AlternateGK & alt);
         ~AlternateInfo();
-        Comparison Compare(const PObject & obj);
+        Comparison Compare(const PObject & obj) const;
         void PrintOn(ostream & strm) const;
 
         H323TransportAddress rasAddress;
@@ -367,7 +369,6 @@ class H323Gatekeeper : public H225_RAS
         enum {
           NoRegistrationNeeded,
           NeedToRegister,
-          Register,
           IsRegistered,
           RegistrationFailed
         } registrationState;
@@ -377,8 +378,10 @@ class H323Gatekeeper : public H225_RAS
         AlternateInfo(const AlternateInfo &other): PObject(other) { }
         AlternateInfo & operator=(const AlternateInfo &) { return *this; }
     };
-    PSortedList<AlternateInfo> alternates;
-    bool               alternatePermanent;
+    typedef PSortedList<AlternateInfo> AlternateList;
+    AlternateList m_alternates;
+    bool          m_alternateTemporary;
+
     PSemaphore         requestMutex;
     H235Authenticators authenticators;
 
