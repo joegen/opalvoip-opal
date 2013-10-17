@@ -1876,6 +1876,9 @@ void OpalManagerCLI::CmdQuit(PCLI::Arguments & args, P_INT_PTR)
 
 void OpalManagerCLI::CmdShutDown(PCLI::Arguments & args, P_INT_PTR)
 {
+#if _WIN32
+  PProcess::Current().SetWaitOnExitConsoleWindow(false);
+#endif
   args.GetContext().GetCLI().Stop();
 }
 
