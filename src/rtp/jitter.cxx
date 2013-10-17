@@ -44,11 +44,10 @@
 #include <rtp/metrics.h>
 
 
-const unsigned JitterRoundingGuardBits = 4;
-const unsigned AverageFrameTimePackets = 8;
-const int      AverageFrameTimeDeadband = 16;
+const unsigned AverageFrameTimePackets = 4;
+const unsigned MaxConsecutiveOverflows = 10;
 
-#define EVERY_PACKET_TRACE_LEVEL 6
+#define EVERY_PACKET_TRACE_LEVEL 5
 #define ANALYSER_TRACE_LEVEL     5
 
 
@@ -222,6 +221,7 @@ OpalJitterBuffer::OpalJitterBuffer(const Init & init)
   , m_consecutiveMarkerBits(0)
   , m_maxConsecutiveMarkerBits(10)
   , m_consecutiveLatePackets(0)
+  , m_consecutiveOverflows(0)
   , m_lastSyncSource(0)
 #ifdef NO_ANALYSER
   , m_analyser(NULL)
@@ -277,30 +277,23 @@ void OpalJitterBuffer::Reset()
 {
   m_bufferMutex.Wait();
 
-  m_incomingFrameTime = 0;
-  m_lastFrameTime[0]  = UINT_MAX;
-  m_lastFrameTime[1]  = UINT_MAX;
-  m_lastSequenceNum   = UINT_MAX;
   m_frameTimeCount    = 0;
+  m_frameTimeSum      = 0;
+  m_incomingFrameTime = 0;
+  m_lastSequenceNum   = UINT_MAX;
   m_lastTimestamp     = UINT_MAX;
   m_bufferFilledTime  = 0;
   m_bufferLowTime     = 0;
   m_bufferEmptiedTime = 0;
 
   m_consecutiveLatePackets = 0;
+  m_consecutiveOverflows   = 0;
 
   m_synchronisationState = e_SynchronisationStart;
 
   m_frames.clear();
 
   m_bufferMutex.Signal();
-}
-
-
-static __inline bool ApproximatelyEqual(DWORD a, DWORD b)
-{
-  int delta = a - b;
-  return delta >= -2 && delta <= 2;
 }
 
 
@@ -355,48 +348,67 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
     standards, this is invariably a constant. We just need to allow for if we
     are unlucky at the start and get a missing packet, in which case we are
     twice as big (or more) as we should be. Se we make sure we do not have
-    a missing packet by inspecting sequence numbers, and also check two
-    consecutive intervals (three packets) for the same timestamp delay. */
-  if (m_lastTimestamp != UINT_MAX && m_lastSequenceNum != UINT_MAX && m_lastSequenceNum+1 == currentSequenceNum) {
-    int delta = timestamp - m_lastTimestamp;
-
-    /* Check for naughty systems that have discontinuous timestamps, that is
-       time has gone backwards or it has been 10 minutes since last packet.
-       Neither likely! */
-    if (delta < 0 || delta > 10*60*1000*(int)m_timeUnits) {
+    a missing packet by inspecting sequence numbers. */
+  if (m_lastSequenceNum != UINT_MAX) {
+    if (timestamp < m_lastTimestamp) {
       PTRACE(3, "Jitter\tTimestamps abruptly changed from "
               << m_lastTimestamp << " to " << timestamp << ", resynching");
       Reset();
     }
-    else {
-      if (!ApproximatelyEqual(m_incomingFrameTime, delta) &&
-           ApproximatelyEqual(m_lastFrameTime[0], delta) &&
-           ApproximatelyEqual(m_lastFrameTime[0], m_lastFrameTime[1])) {
-        m_incomingFrameTime = delta;
-        AdjustCurrentJitterDelay(0);
-        PTRACE(4, "Jitter\tFrame time set  : ts=" << timestamp << ", size=" << m_frames.size() << ","
-                  " time=" << delta << " (" << (delta/m_timeUnits) << "ms),"
-                  " delay=" << m_currentJitterDelay << " (" << (m_currentJitterDelay/m_timeUnits) << "ms)");
+    else if (m_lastSequenceNum+1 == currentSequenceNum) {
+      DWORD delta = timestamp - m_lastTimestamp;
+      PTRACE_IF(5, m_incomingFrameTime == 0,
+                "Jitter\tWait frame time : ts=" << timestamp << ","
+                " delta=" << delta << " (" << (delta/m_timeUnits) << "ms),"
+                  " sn=" << currentSequenceNum);
+
+      /* Average the deltas. Most systems are "normalised" and the timestamp
+          goes up by a constant on consecutive packets. Not not all. */
+      m_frameTimeSum += delta;
+      if (++m_frameTimeCount > AverageFrameTimePackets) {
+        int newFrameTime = (int)(m_frameTimeSum/m_frameTimeCount);
+        m_frameTimeSum = 0;
+        m_frameTimeCount = 0;
+
+        // If new average changed by more than millisecond, start using it.
+        if (std::abs(newFrameTime - (int)m_incomingFrameTime) > (int)m_timeUnits) {
+          m_incomingFrameTime = newFrameTime;
+          AdjustCurrentJitterDelay(0);
+          PTRACE(4, "Jitter\tFrame time set  : ts=" << timestamp << ", size=" << m_frames.size() << ","
+                    " time=" << newFrameTime << " (" << (newFrameTime/m_timeUnits) << "ms),"
+                    " delay=" << m_currentJitterDelay << " (" << (m_currentJitterDelay/m_timeUnits) << "ms)");
+        }
       }
-      PTRACE(5, "Jitter\tWait frame time : ts=" << timestamp << ", delta=" << delta);
-      m_lastFrameTime[0] = m_lastFrameTime[1];
-      m_lastFrameTime[1] = delta;
+    }
+    else {
+      PTRACE(5, "Jitter\tLost packet(s), resetting frame time average, sn=" << currentSequenceNum);
+      m_frameTimeSum = 0;
+      m_frameTimeCount = 0;
     }
   }
   m_lastSequenceNum = currentSequenceNum;
   m_lastTimestamp = timestamp;
 
 
-  // Fail safe for infinite queueing, for example, if other thread is not taking stuff out
+  /* Fail safe for infinite queueing, for example, if other thread is not
+     taking stuff out.  Also checks for abrupt changes in timestamp values, can
+     happen when remote is swapping media sources */
   FrameMap::iterator oldestFrame = m_frames.begin();
   if (oldestFrame != m_frames.end()) {
     DWORD delta = timestamp - oldestFrame->second.GetTimestamp();
-    if (delta > m_maxJitterDelay*2) {
+    if (delta < m_maxJitterDelay*2)
+      m_consecutiveOverflows = 0;
+    else {
       ANALYSE(In, timestamp, "Overflow");
       PTRACE(4, "Jitter\tBuffer overflow : ts=" << timestamp << ", delta=" << delta << ", size=" << m_frames.size());
+      if (++m_consecutiveOverflows > (m_incomingFrameTime == 0 ? AverageFrameTimePackets : MaxConsecutiveOverflows)) {
+        PTRACE(3, "Jitter\tConsecutive overlow packets, resynching");
+        Reset();
+      }
       return true;
     }
   }
+
 
   // Add to buffer
   pair<FrameMap::iterator,bool> result = m_frames.insert(FrameMap::value_type(timestamp, frame));
