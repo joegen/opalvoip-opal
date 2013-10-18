@@ -150,7 +150,7 @@
             </Component>
             <Component Id='x264' Guid='*'>
               <File Id='x264_DLL'
-                    Name='libx264-132.dll'
+                    Name='libx264-138.dll'
                     Source='$(var.PluginDir)\libx264-138.dll'
                     DiskId='1'
                     KeyPath='yes' />
