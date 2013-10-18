@@ -1917,9 +1917,10 @@ void MyManager::OnMenuQuit(wxCommandEvent & WXUNUSED(event))
 void MyManager::OnMenuAbout(wxCommandEvent & WXUNUSED(event))
 {
   PwxString text;
+  PTime compiled(__DATE__);
   text  << PRODUCT_NAME_TEXT " Version " << PProcess::Current().GetVersion() << "\n"
            "\n"
-           "Copyright (c) 2007-2008 " COPYRIGHT_HOLDER ", All rights reserved.\n"
+           "Copyright (c) 2007-" << compiled.GetYear() << " " COPYRIGHT_HOLDER ", All rights reserved.\n"
            "\n"
            "This application may be used for any purpose so long as it is not sold "
            "or distributed for profit on it's own, or it's ownership by " COPYRIGHT_HOLDER
