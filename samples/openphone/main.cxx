@@ -2397,17 +2397,18 @@ void MyManager::MakeCall(const PwxString & address, const PwxString & local, Opa
 }
 
 
-void MyManager::AnswerCall()
+bool MyManager::AnswerCall()
 {
   if (PAssert(!m_incomingToken.IsEmpty(), PLogicError)) {
     StopRingSound();
 
-    PSafePtr<OpalCall> call = FindCallWithLock(m_incomingToken, PSafeReference);
-    if (call != NULL && pcssEP->AcceptIncomingConnection(m_incomingToken))
-      m_tabs->AddPage(new CallingPanel(*this, call, m_tabs), wxT("Answering"), true);
-
+    PString token = m_incomingToken.p_str();
     m_incomingToken.clear();
+
+    return pcssEP->AcceptIncomingConnection(token);
   }
+
+  return false;
 }
 
 
@@ -7165,8 +7166,10 @@ void AnswerPanel::SetPartyNames(const PwxString & calling, const PwxString & cal
 void AnswerPanel::OnAnswer(wxCommandEvent & /*event*/)
 {
   FindWindowByName(wxT("AnswerCall"))->Disable();
-  FindWindowByName(wxT("RejectCall"))->Disable();
-  m_manager.AnswerCall();
+  if (m_manager.AnswerCall())
+    FindWindowByName(wxT("RejectCall"))->SetLabel(wxT("Hang Up"));
+  else
+    FindWindowByName(wxT("RejectCall"))->Disable();
 }
 
 
