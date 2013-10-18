@@ -91,7 +91,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CM HID USB LID", "..\..\plu
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinXP USB HID LID", "..\..\plugins\LID\WinXP_HID\winxp_hid_2010.vcxproj", "{8A03DDCA-6AA4-4271-86D7-D4F4AC010EE8}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "H.264 (x264) Helper", "..\..\plugins\video\H.264\gpl\x264plugin_helper.vcxproj", "{81ED2F51-CEF3-40DE-929E-124861D194A4}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "H.264 (x264) Helper", "..\..\plugins\video\H.264\gpl\x264plugin_helper_2010.vcxproj", "{81ED2F51-CEF3-40DE-929E-124861D194A4}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "G.722 Audio Codec", "..\..\plugins\audio\G722\G722_2010.vcxproj", "{B247D5F5-2052-4BBD-9A7D-1AD3749A3BC3}"
 EndProject

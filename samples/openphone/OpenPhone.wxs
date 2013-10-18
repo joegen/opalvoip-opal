@@ -1,9 +1,9 @@
 <?xml version='1.0'?>
 <?define ProductName = "Open Phone" ?>
 <?define LuaDir = "$(env.ProgramFiles)\lua\5.1" ?>
-<?define SaslDir = "C:\Tools" ?>
-<?define LDAPDir = "C:\Tools" ?>
-<?define SSLDir = "C:\Tools" ?>
+<?define SaslDir = "C:\Tools\bin" ?>
+<?define LDAPDir = "C:\Tools\bin" ?>
+<?define SSLDir = "C:\Windows\system32" ?>
 <?define OPALDir = "..\.." ?>
 <?define PTLibDir = "..\..\..\ptlib" ?>
 <?define PluginDir = "C:\PTLib_Plugins" ?>
@@ -151,7 +151,7 @@
             <Component Id='x264' Guid='*'>
               <File Id='x264_DLL'
                     Name='libx264-132.dll'
-                    Source='$(var.PluginDir)\libx264-132.dll'
+                    Source='$(var.PluginDir)\libx264-138.dll'
                     DiskId='1'
                     KeyPath='yes' />
             </Component>
