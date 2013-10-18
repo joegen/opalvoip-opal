@@ -938,7 +938,7 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     bool HasSpeedDialNumber(const wxString & number, const wxString & ignore) const;
 
     void MakeCall(const PwxString & address, const PwxString & local = wxEmptyString, OpalConnection::StringOptions * options = NULL);
-    void AnswerCall();
+    bool AnswerCall();
     void RejectCall();
     void HangUpCall();
     void SendUserInput(char tone);
