@@ -65,27 +65,6 @@ static PTimeInterval AdjustTimeout(unsigned seconds)
 }
 
 
-///////////////////////////////////////////////////////////////////////////////
-
-OpalBandwidth::OpalBandwidth(const H225_BandWidth & bw)
-  : m_bps(bw.GetValue()*100)
-{
-}
-
-
-OpalBandwidth & OpalBandwidth::operator=(const H225_BandWidth & bw)
-{
-  m_bps = bw.GetValue()*100;
-  return *this;
-}
-
-
-void OpalBandwidth::SetH225(H225_BandWidth & bw) const
-{
-  bw = (m_bps+99)/100;
-}
-
-
 /////////////////////////////////////////////////////////////////////////////
 
 H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)

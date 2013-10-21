@@ -706,18 +706,15 @@ PBoolean H323GenericCapabilityInfo::OnSendingGenericPDU(H245_GenericCapability &
 {
   H323SetCapabilityIdentifier(m_identifier, pdu.m_capabilityIdentifier);
 
-  unsigned bitRate;
   if (m_fixedBitRate)
-    bitRate = m_maxBitRate;
+    m_maxBitRate.SetH245(pdu.m_maxBitRate);
   else if (type == H323Capability::e_TCS)
-    bitRate = mediaFormat.GetMaxBandwidth().AsH225();
+    mediaFormat.GetMaxBandwidth().SetH245(pdu.m_maxBitRate);
   else
-    bitRate = mediaFormat.GetUsedBandwidth().AsH225();
+    mediaFormat.GetUsedBandwidth().SetH245(pdu.m_maxBitRate);
 
-  if (bitRate != 0) {
+  if (pdu.m_maxBitRate != 0)
     pdu.IncludeOptionalField(H245_GenericCapability::e_maxBitRate);
-    pdu.m_maxBitRate = bitRate;
-  }
 
   std::vector<OpalMediaOption const *> reorderedOptions;
   for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
@@ -887,8 +884,8 @@ PBoolean H323GenericCapabilityInfo::OnReceivedGenericPDU(OpalMediaFormat & media
     return false;
 
   if (!m_fixedBitRate && pdu.HasOptionalField(H245_GenericCapability::e_maxBitRate)) {
-    m_maxBitRate = pdu.m_maxBitRate;
-    mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), m_maxBitRate*100);
+    m_maxBitRate.FromH245(pdu.m_maxBitRate);
+    mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), m_maxBitRate);
   }
 
   H323GenericCapabilityInfo_OnReceivedGenericPDU(mediaFormat, pdu, type);
@@ -1635,7 +1632,7 @@ PBoolean H323ExtendedVideoCapability::IsMatch(const PASN_Object & subTypePDU, co
 /////////////////////////////////////////////////////////////////////////////
 
 H323GenericControlCapability::H323GenericControlCapability(const PString & identifier)
-  : H323GenericCapabilityInfo(identifier, 0, false)
+  : H323GenericCapabilityInfo(identifier, 0, true)
 {
 }
 
@@ -1905,16 +1902,11 @@ void H235SecurityCapability::AddAllCapabilities(H323Capabilities & capabilities,
       PINDEX innerSize = set[outer][middle].GetSize();
       for (PINDEX inner = 0; inner < innerSize; inner++) {
         H323Capability & capability = set[outer][middle][inner];
-        switch (capability.GetMainType()) {
-          default :
-            break;
-
-          case H323Capability::e_Audio :
-          case H323Capability::e_Video :
-            H235SecurityCapability * cap = cryptoSuites.front().CreateCapability(capability.GetMediaFormat(),
-                                                                                 capability.GetCapabilityNumber());
-            cap->SetCryptoSuites(cryptoSuites);
-            capabilities.SetCapability(outer, middle, cap);
+        OpalMediaFormat mediaFormat = capability.GetMediaFormat();
+        if (mediaFormat.GetMediaType()->GetMediaSessionType().Find("RTP") != P_MAX_INDEX) {
+          H235SecurityCapability * cap = cryptoSuites.front().CreateCapability(mediaFormat, capability.GetCapabilityNumber());
+          cap->SetCryptoSuites(cryptoSuites);
+          capabilities.SetCapability(outer, middle, cap);
         }
       }
     }
@@ -2177,7 +2169,7 @@ PBoolean H235SecurityAlgorithmCapability::IsMatch(const PASN_Object & subTypePDU
 
 H235SecurityGenericCapability::H235SecurityGenericCapability(const OpalMediaFormat & mediaFormat, unsigned mediaCapabilityNumber)
   : H235SecurityCapability(mediaFormat, mediaCapabilityNumber)
-  , H323GenericCapabilityInfo("0.0.8.235.0.4.90", 0, false)
+  , H323GenericCapabilityInfo("0.0.8.235.0.4.90", 0, true)
 {
 }
 
@@ -2338,7 +2330,7 @@ PBoolean H323DataCapability::OnSendingPDU(H245_Capability & cap) const
   cap.SetTag(capabilityDirection == e_Receive ? H245_Capability::e_receiveDataApplicationCapability
                                               : H245_Capability::e_receiveAndTransmitDataApplicationCapability);
   H245_DataApplicationCapability & app = cap;
-  app.m_maxBitRate = m_maxBitRate;
+  m_maxBitRate.SetH245(app.m_maxBitRate);
   return OnSendingPDU(app, e_TCS);
 }
 
@@ -2347,7 +2339,7 @@ PBoolean H323DataCapability::OnSendingPDU(H245_DataType & dataType) const
 {
   H245_DataApplicationCapability * cap;
   H323SetMediaCapability<H245_DataType::e_data, H245_H235Media_mediaType::e_data>(*this, dataType, cap);
-  cap->m_maxBitRate = m_maxBitRate;
+  m_maxBitRate.SetH245(cap->m_maxBitRate);
   return H323Capability::OnSendingPDU(dataType) && OnSendingPDU(*cap, e_OLC);
 }
 
@@ -2368,7 +2360,7 @@ PBoolean H323DataCapability::OnSendingPDU(H245_ModeElement & mode) const
 {
   mode.m_type.SetTag(H245_ModeElementType::e_dataMode);
   H245_DataMode & type = mode.m_type;
-  type.m_bitRate = m_maxBitRate;
+  m_maxBitRate.SetH245(type.m_bitRate);
   return OnSendingPDU(type);
 }
 
@@ -2380,7 +2372,7 @@ PBoolean H323DataCapability::OnReceivedPDU(const H245_Capability & cap)
     return false;
 
   const H245_DataApplicationCapability & app = cap;
-  m_maxBitRate = app.m_maxBitRate;
+  m_maxBitRate.FromH245(app.m_maxBitRate);
 
   return OnReceivedPDU(app, e_TCS) && H323Capability::OnReceivedPDU(cap);
 }
@@ -2392,10 +2384,7 @@ PBoolean H323DataCapability::OnReceivedPDU(const H245_DataType & dataType, PBool
   if (!H323GetMediaCapability<H245_DataType::e_data, H245_H235Media_mediaType::e_data>(dataType, cap))
     return false;
 
-  if (dataType.GetTag() != H245_DataType::e_data)
-    return false;
-
-  m_maxBitRate = cap->m_maxBitRate;
+  m_maxBitRate.FromH245(cap->m_maxBitRate);
   return OnReceivedPDU(*cap, e_OLC) && H323Capability::OnReceivedPDU(dataType, receiver);
 }
 
@@ -2496,7 +2485,7 @@ PBoolean H323NonStandardDataCapability::IsMatch(const PASN_Object & subTypePDU, 
 
 H323GenericDataCapability::H323GenericDataCapability(const PString & standardId, unsigned maxBitRate)
   : H323DataCapability(maxBitRate)
-  , H323GenericCapabilityInfo(standardId, maxBitRate, false)
+  , H323GenericCapabilityInfo(standardId, 0, true)
 {
 }
 

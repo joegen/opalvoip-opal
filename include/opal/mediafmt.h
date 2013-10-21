@@ -52,6 +52,7 @@
 class PluginCodec_OptionMap;
 class OpalMediaFormat;
 class H225_BandWidth;
+class PASN_Integer;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -91,7 +92,8 @@ class OpalBandwidth {
     OpalBandwidth(const H225_BandWidth & bw);
     OpalBandwidth & operator=(const H225_BandWidth & bw);
     void SetH225(H225_BandWidth & bw) const;
-    unsigned AsH225() const { return (m_bps+99)/100; }
+    void SetH245(PASN_Integer & bitRate) const;
+    void FromH245(const PASN_Integer & bitRate);
 #endif
     unsigned kbps() const { return (m_bps+999)/1000; }
 
