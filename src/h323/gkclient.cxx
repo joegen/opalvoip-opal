@@ -92,7 +92,7 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   : H225_RAS(ep, trans)
   , discoveryComplete(false)
   , m_registrationFailReason(UnregisteredLocally)
-  , alternatePermanent(false)
+  , m_alternateTemporary(false)
   , requestMutex(1, 1)
   , authenticators(ep.CreateAuthenticators())
   , pregrantMakeCall(RequireARQ)
@@ -161,13 +161,14 @@ PString H323Gatekeeper::GetRegistrationFailReasonString(RegistrationFailReasons 
 {
   static const char * const ReasonStrings[] = {
     "Successfull",
-    "UnregisteredLocally",
-    "UnregisteredByGatekeeper",
-    "GatekeeperLostRegistration",
-    "InvalidListener",
-    "DuplicateAlias",
-    "SecurityDenied",
-    "TransportError"
+    "Unregistered locally",
+    "Unregistered by gatekeeper",
+    "Gatekeeper lost registration",
+    "Invalid listener",
+    "Duplicate alias",
+    "Security denied",
+    "Transport error",
+    "Trying alternate gatekeeper"
   };
 
   if (reason < PARRAYSIZE(ReasonStrings))
@@ -292,24 +293,36 @@ bool H323Gatekeeper::StartGatekeeper(const H323TransportAddress & initialAddress
 bool H323Gatekeeper::DiscoverGatekeeper()
 {
   discoveryComplete = false;
+
+  for (;;) {
+    H323RasPDU pdu;
+    Request request(SetupGatekeeperRequest(pdu), pdu);
   
-  H323RasPDU pdu;
-  Request request(SetupGatekeeperRequest(pdu), pdu);
+    H323TransportAddress address = transport->GetRemoteAddress();
+    request.responseInfo = &address;
   
-  H323TransportAddress address = transport->GetRemoteAddress();
-  request.responseInfo = &address;
+    requestsMutex.Wait();
+    requests.SetAt(request.sequenceNumber, &request);
+    requestsMutex.Signal();
   
-  requestsMutex.Wait();
-  requests.SetAt(request.sequenceNumber, &request);
-  requestsMutex.Signal();
+    request.Poll(*this, endpoint.GetGatekeeperRequestRetries(), endpoint.GetGatekeeperRequestTimeout());
   
-  request.Poll(*this, endpoint.GetGatekeeperRequestRetries(), endpoint.GetGatekeeperRequestTimeout());
-  
-  requestsMutex.Wait();
-  requests.SetAt(request.sequenceNumber, NULL);
-  requestsMutex.Signal();
-  
-  return discoveryComplete;
+    requestsMutex.Wait();
+    requests.SetAt(request.sequenceNumber, NULL);
+    requestsMutex.Signal();
+
+    if (request.responseResult != Request::TryAlternate)
+      return discoveryComplete;
+
+    for (AlternateList::iterator it = m_alternates.begin(); ; ++it) {
+      if (it == m_alternates.end())
+        return discoveryComplete;
+      if (it->registrationState != AlternateInfo::RegistrationFailed) {
+        transport->ConnectTo(it->rasAddress);
+        break;
+      }
+    }
+  }
 }
 
 
@@ -420,25 +433,22 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperReject(const H225_GatekeeperReject &
   if (!H225_RAS::OnReceiveGatekeeperReject(grj))
     return false;
 
-  if (grj.HasOptionalField(H225_GatekeeperReject::e_altGKInfo)) {
-    SetAlternates(grj.m_altGKInfo.m_alternateGatekeeper,
-                  grj.m_altGKInfo.m_altGKisPermanent);
+  if (grj.HasOptionalField(H225_GatekeeperReject::e_altGKInfo))
+    SetAlternates(grj.m_altGKInfo.m_alternateGatekeeper, grj.m_altGKInfo.m_altGKisPermanent);
 
-    if (lastRequest->responseInfo != NULL) {
-      H323TransportAddress & gkAddress = *(H323TransportAddress *)lastRequest->responseInfo;
-      gkAddress = alternates[0].rasAddress;
-    }
-  }
-
-  unsigned reason = grj.m_rejectReason.GetTag();
-  switch (reason) {
+  switch (lastRequest->rejectReason) {
     case H225_GatekeeperRejectReason::e_securityDenial :
     case H225_GatekeeperRejectReason::e_securityError :
       SetRegistrationFailReason(SecurityDenied);
       break;
 
+    case H225_GatekeeperRejectReason::e_resourceUnavailable :
+      lastRequest->responseResult = Request::TryAlternate;
+      SetRegistrationFailReason(TryingAlternate);
+      break;
+
     default :
-      SetRegistrationFailReason(reason, GatekeeperRejectReasonMask);
+      SetRegistrationFailReason(lastRequest->rejectReason, GatekeeperRejectReasonMask);
   }
 
   return true;
@@ -470,6 +480,8 @@ bool H323Gatekeeper::SetListenerAddresses(H225_ArrayOf_TransportAddress & pdu)
       // Put new listener into array
       pdu.SetSize(lastPos+1);
       pdu[lastPos] = pduAddr;
+      if (endpoint.GetOneSignalAddressInRRQ())
+        return true;
     }
   }
 
@@ -521,7 +533,7 @@ PBoolean H323Gatekeeper::RegistrationRequest(PBoolean autoReg, PBoolean didGkDis
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_terminalAliasPattern);
     rrq.m_terminalAliasPattern.Append(new H225_AddressPattern);
     H225_AddressPattern &addressPattern = rrq.m_terminalAliasPattern[0];
-    
+
     for( PINDEX i = 0; i < aliasNamePatterns.GetSize(); i++){
       PStringArray nameRange = aliasNamePatterns[i].Tokenise('-', FALSE);
       if (nameRange.GetSize() == 2 &&
@@ -748,17 +760,23 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationReject(const H225_RegistrationReje
     return false;
 
   if (rrj.HasOptionalField(H225_RegistrationReject::e_altGKInfo))
-    SetAlternates(rrj.m_altGKInfo.m_alternateGatekeeper,
-                  rrj.m_altGKInfo.m_altGKisPermanent);
+    SetAlternates(rrj.m_altGKInfo.m_alternateGatekeeper, rrj.m_altGKInfo.m_altGKisPermanent);
 
   // Update registration fail reason from last request fail reason
   switch(lastRequest->rejectReason) {
     case H225_RegistrationRejectReason::e_duplicateAlias :
       SetRegistrationFailReason(DuplicateAlias);
       break;
+
     case H225_RegistrationRejectReason::e_securityDenial :
       SetRegistrationFailReason(SecurityDenied);
       break;
+
+    case H225_RegistrationRejectReason::e_resourceUnavailable :
+      lastRequest->responseResult = Request::TryAlternate;
+      SetRegistrationFailReason(TryingAlternate);
+      break;
+
     default:
       SetRegistrationFailReason(lastRequest->rejectReason, RegistrationRejectReasonMask);
       break;
@@ -817,7 +835,6 @@ PBoolean H323Gatekeeper::UnregistrationRequest(int reason)
   if (PAssertNULL(transport) == NULL)
     return false;
 
-  PINDEX i;
   H323RasPDU pdu;
   H225_UnregistrationRequest & urq = pdu.BuildUnregistrationRequest(GetNextSequenceNumber());
 
@@ -847,10 +864,9 @@ PBoolean H323Gatekeeper::UnregistrationRequest(int reason)
 
   PBoolean requestResult = MakeRequest(request);
 
-  for (i = 0; i < alternates.GetSize(); i++) {
-    AlternateInfo & altgk = alternates[i];
-    if (altgk.registrationState == AlternateInfo::IsRegistered) {
-      Connect(altgk.rasAddress,altgk.gatekeeperIdentifier);
+  for (AlternateList::iterator it = m_alternates.begin(); it != m_alternates.end(); ++it) {
+    if (it->registrationState == AlternateInfo::IsRegistered) {
+      Connect(it->rasAddress, it->gatekeeperIdentifier);
       UnregistrationRequest(reason);
     }
   }
@@ -1336,6 +1352,9 @@ PBoolean H323Gatekeeper::OnReceiveAdmissionReject(const H225_AdmissionReject & a
     OnServiceControlSessions(arj.m_serviceControl,
               &((AdmissionRequestResponseInfo *)lastRequest->responseInfo)->connection);
 
+  if (lastRequest->rejectReason == H225_AdmissionRejectReason::e_callerNotRegistered)
+    lastRequest->responseResult = Request::TryAlternate;
+
   return true;
 }
 
@@ -1403,6 +1422,9 @@ PBoolean H323Gatekeeper::OnReceiveDisengageRequest(const H225_DisengageRequest &
 {
   if (!H225_RAS::OnReceiveDisengageRequest(drq))
     return false;
+
+  if (lastRequest->rejectReason == H225_DisengageRejectReason::e_notRegistered)
+    lastRequest->responseResult = Request::TryAlternate;
 
   OpalGloballyUniqueID id = NULL;
   if (drq.HasOptionalField(H225_DisengageRequest::e_callIdentifier))
@@ -1736,6 +1758,18 @@ PBoolean H323Gatekeeper::OnReceiveInfoRequest(const H225_InfoRequest & irq)
 }
 
 
+PBoolean H323Gatekeeper::OnReceiveInfoRequestResponse(const H225_InfoRequestResponse & irr)
+{
+  if (!H225_RAS::OnReceiveInfoRequestResponse(irr))
+    return false;
+
+  if (lastRequest->rejectReason == H225_InfoRequestNakReason::e_notRegistered)
+    lastRequest->responseResult = Request::TryAlternate;
+
+  return true;
+}
+
+
 PBoolean H323Gatekeeper::OnReceiveServiceControlIndication(const H225_ServiceControlIndication & sci)
 {
   if (!H225_RAS::OnReceiveServiceControlIndication(sci))
@@ -1841,32 +1875,40 @@ void H323Gatekeeper::TickleMonitor(PTimer &, P_INT_PTR)
 }
 
 
-void H323Gatekeeper::SetAlternates(const H225_ArrayOf_AlternateGK & alts, PBoolean permanent)
+void H323Gatekeeper::SetAlternates(const H225_ArrayOf_AlternateGK & alts, bool permanent)
 {
-  PINDEX i;
-
-  if (!alternatePermanent)  {
+  if (m_alternateTemporary)  {
     // don't want to replace alternates gatekeepers if this is an alternate and it's not permanent
-    for (i = 0; i < alternates.GetSize(); i++) {
-      if (transport->GetRemoteAddress().IsEquivalent(alternates[i].rasAddress) &&
-          gatekeeperIdentifier == alternates[i].gatekeeperIdentifier)
+    for (AlternateList::iterator it = m_alternates.begin(); it != m_alternates.end(); ++it) {
+      if (transport->GetRemoteAddress().IsEquivalent(it->rasAddress) && gatekeeperIdentifier == it->gatekeeperIdentifier)
         return;
     }
   }
 
-  alternates.RemoveAll();
-  for (i = 0; i < alts.GetSize(); i++) {
-    AlternateInfo * alt = new AlternateInfo(alts[i]);
-    if (alt->rasAddress.IsEmpty())
-      delete alt;
-    else
-      alternates.Append(alt);
-  }
-  
-  alternatePermanent = permanent;
+  AlternateList alternates;
+  for (PINDEX i = 0; i < alts.GetSize(); i++)
+    alternates.Append(new AlternateInfo(alts[i]));
 
-  PTRACE(3, "RAS\tSet alternate gatekeepers:\n"
-         << setfill('\n') << alternates << setfill(' '));
+  AlternateList::iterator it = m_alternates.begin();
+  while (it != m_alternates.end()) {
+    AlternateList::iterator that = alternates.find(*it);
+    if (that == alternates.end()) {
+      PTRACE(3, "RAS\tRemoving alternate gatekeeper: " << *it);
+      m_alternates.erase(it++);
+    }
+    else {
+      alternates.erase(that);
+      ++it;
+    }
+  }
+
+  alternates.DisallowDeleteObjects();
+  for (AlternateList::iterator it = alternates.begin(); it != alternates.end(); ++it) {
+    PTRACE(3, "RAS\tAdding alternate gatekeeper: " << *it);
+    m_alternates.Append(&*it);
+  }
+
+  m_alternateTemporary = !permanent;
 }
 
 
@@ -1936,12 +1978,10 @@ PBoolean H323Gatekeeper::MakeRequest(Request & request)
   H323TransportAddress tempAddr = transport->GetRemoteAddress();
   PString tempIdentifier = gatekeeperIdentifier;
   
-  PINDEX alt = 0;
+  AlternateList::iterator alt = m_alternates.begin();
   for (;;) {
     if (H225_RAS::MakeRequest(request)) {
-      if (!alternatePermanent &&
-            (transport->GetRemoteAddress() != tempAddr ||
-             gatekeeperIdentifier != tempIdentifier))
+      if (m_alternateTemporary && (transport->GetRemoteAddress() != tempAddr || gatekeeperIdentifier != tempIdentifier))
         Connect(tempAddr, tempIdentifier);
       requestMutex.Signal();
       return true;
@@ -1955,26 +1995,17 @@ PBoolean H323Gatekeeper::MakeRequest(Request & request)
     }
     
     AlternateInfo * altInfo;
-    PIPSocket::Address localAddress;
-    WORD localPort;
     do {
-      if (alt >= alternates.GetSize()) {
-        if (!alternatePermanent && alt > 0) 
-          Connect(tempAddr,tempIdentifier);
+      if (alt == m_alternates.end()) {
+        if (m_alternateTemporary) 
+          Connect(tempAddr, tempIdentifier);
         requestMutex.Signal();
         return false;
       }
       
-      altInfo = &alternates[alt++];
-      transport->GetLocalAddress().GetIpAndPort(localAddress,localPort);
-      transport->CleanUpOnTermination();
-      delete transport;
-
-      transport = CreateTransport(localAddress,localPort);
-      transport->SetRemoteAddress (altInfo->rasAddress);
-      transport->Connect();
+      altInfo = &*alt++;
+      transport->ConnectTo(altInfo->rasAddress);
       gatekeeperIdentifier = altInfo->gatekeeperIdentifier;
-      StartChannel();
     } while (altInfo->registrationState == AlternateInfo::RegistrationFailed);
     
     if (altInfo->registrationState == AlternateInfo::NeedToRegister) {
@@ -1990,9 +2021,9 @@ PBoolean H323Gatekeeper::MakeRequest(Request & request)
           altInfo->registrationState = AlternateInfo::IsRegistered;
           // The wanted registration is done, we can return
           if (request.requestPDU.GetChoice().GetTag() == H225_RasMessage::e_registrationRequest) {
-        if (!alternatePermanent)
-          Connect(tempAddr,tempIdentifier);
-        return true;
+            if (m_alternateTemporary)
+              Connect(tempAddr,tempIdentifier);
+            return true;
           }
         }
         requestMutex.Wait();
@@ -2114,15 +2145,18 @@ H323Gatekeeper::AlternateInfo::~AlternateInfo ()
 }
 
 
-PObject::Comparison H323Gatekeeper::AlternateInfo::Compare(const PObject & obj)
+PObject::Comparison H323Gatekeeper::AlternateInfo::Compare(const PObject & obj) const
 {
-  PAssert(PIsDescendant(&obj, H323Gatekeeper), PInvalidCast);
-  unsigned otherPriority = ((const AlternateInfo & )obj).priority;
-  if (priority < otherPriority)
+  const AlternateInfo * other = dynamic_cast<const AlternateInfo *>(&obj);
+  if (!PAssert(other != NULL, PInvalidCast))
     return LessThan;
-  if (priority > otherPriority)
+
+  if (priority < other->priority)
+    return LessThan;
+  if (priority > other->priority)
     return GreaterThan;
-  return EqualTo;
+
+  return rasAddress.Compare(other->rasAddress);
 }
 
 
