@@ -128,6 +128,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   SetCompatibility(H323Connection::e_BadMasterSlaveConflict,  "NetMeeting");
   AddCompatibility(H323Connection::e_BadMasterSlaveConflict,  "HDX 9004");
   SetCompatibility(H323Connection::e_NoUserInputCapability,   "AltiServ-ITG");
+  AddCompatibility(H323Connection::e_H224MustBeSession3,      "HDX");
 
   PTRACE(4, "H323\tCreated endpoint.");
 }

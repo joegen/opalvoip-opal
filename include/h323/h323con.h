@@ -2138,6 +2138,7 @@ class H323Connection : public OpalRTPConnection
       e_NoMultipleTunnelledH245, ///< Cannot have more than one tunnelled H.245 message
       e_BadMasterSlaveConflict,  ///< Endpoint does not repropose on OLC master/slave conflict refect
       e_NoUserInputCapability,   ///< Endpoint ignores TCS if has User Input Capability
+      e_H224MustBeSession3,      ///< H.224 channel must be session number 3, do not use H.245 negotiation
       NumCompatibilityIssues
     };
 
