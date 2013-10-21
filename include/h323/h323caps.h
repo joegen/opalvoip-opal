@@ -552,9 +552,9 @@ class H323GenericCapabilityInfo
     ) const;
 
 
-    PString  m_identifier;
-    unsigned m_maxBitRate;
-    bool     m_fixedBitRate;
+    PString       m_identifier;
+    OpalBandwidth m_maxBitRate;
+    bool          m_fixedBitRate;
 };
 
 /**This class describes the interface to a codec that has channels based on
@@ -1987,7 +1987,7 @@ class H323DataCapability : public H323Capability
   //@}
 
   protected:
-    unsigned m_maxBitRate;
+    OpalBandwidth m_maxBitRate;
 };
 
 

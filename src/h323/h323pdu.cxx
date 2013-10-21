@@ -2345,6 +2345,39 @@ H225_ServiceControlResponse & H323RasPDU::BuildServiceControlResponse(unsigned s
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+
+OpalBandwidth::OpalBandwidth(const H225_BandWidth & bw)
+  : m_bps(bw.GetValue()*100)
+{
+}
+
+
+OpalBandwidth & OpalBandwidth::operator=(const H225_BandWidth & bw)
+{
+  m_bps = bw.GetValue()*100;
+  return *this;
+}
+
+
+void OpalBandwidth::SetH225(H225_BandWidth & bw) const
+{
+  bw.SetValue((m_bps+99)/100);
+}
+
+
+void OpalBandwidth::SetH245(PASN_Integer & bitRate) const
+{
+  bitRate.SetValue((m_bps+99)/100);
+}
+
+
+void OpalBandwidth::FromH245(const PASN_Integer & bitRate)
+{
+  m_bps = bitRate.GetValue()*100;
+}
+
+
 #endif // OPAL_H323
 
 /////////////////////////////////////////////////////////////////////////////
