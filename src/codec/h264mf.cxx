@@ -96,19 +96,19 @@ class OpalH264Format : public OpalVideoFormatInternal
       option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_LEVEL));
       AddOption(option);
 
-      option = new OpalMediaOptionUnsigned(MaxMBPS_H241_Name, true, OpalMediaOption::MinMerge, 0, 0, 1966);
+      option = new OpalMediaOptionUnsigned(MaxMBPS_H241_Name, true, OpalMediaOption::MinMerge, MAX_MBPS_H241, 0, 1966);
       option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_CustomMaxMBPS, "0"));
       AddOption(option);
 
-      option = new OpalMediaOptionUnsigned(MaxSMBPS_H241_Name, true, OpalMediaOption::MinMerge, 0, 0, 1966);
+      option = new OpalMediaOptionUnsigned(MaxSMBPS_H241_Name, true, OpalMediaOption::MinMerge, MAX_MBPS_H241, 0, 1966);
       option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_CustomMaxSMBPS, "0"));
       AddOption(option);
 
-      option = new OpalMediaOptionUnsigned(MaxFS_H241_Name, true, OpalMediaOption::MinMerge, 0, 0, 144);
+      option = new OpalMediaOptionUnsigned(MaxFS_H241_Name, true, OpalMediaOption::MinMerge, MAX_FS_H241, 0, 144);
       option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_CustomMaxFS, "0"));
       AddOption(option);
 
-      option = new OpalMediaOptionUnsigned(MaxBR_H241_Name, true, OpalMediaOption::MinMerge, 0, 0, 9600);
+      option = new OpalMediaOptionUnsigned(MaxBR_H241_Name, true, OpalMediaOption::MinMerge, MAX_BR_H241, 0, 9600);
       option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_CustomMaxBRandCPB, "0"));
       AddOption(option);
 
@@ -131,19 +131,19 @@ class OpalH264Format : public OpalVideoFormatInternal
       option->FromString(DefaultSDPProfileAndLevel);
       AddOption(option);
 
-      option = new OpalMediaOptionUnsigned(MaxMBPS_SDP_Name, true, OpalMediaOption::MinMerge, 0, 0, 983040);
+      option = new OpalMediaOptionUnsigned(MaxMBPS_SDP_Name, true, OpalMediaOption::MinMerge, MAX_MBPS_SDP, 0, 983040);
       option->SetFMTP(MaxMBPS_FMTPName, "0");
       AddOption(option);
 
-      option = new OpalMediaOptionUnsigned(MaxSMBPS_SDP_Name, true, OpalMediaOption::MinMerge, 0, 0, 983040);
+      option = new OpalMediaOptionUnsigned(MaxSMBPS_SDP_Name, true, OpalMediaOption::MinMerge, MAX_MBPS_SDP, 0, 983040);
       option->SetFMTP(MaxSMBPS_FMTPName, "0");
       AddOption(option);
 
-      option = new OpalMediaOptionUnsigned(MaxFS_SDP_Name, true, OpalMediaOption::MinMerge, 0, 0, 36864);
+      option = new OpalMediaOptionUnsigned(MaxFS_SDP_Name, true, OpalMediaOption::MinMerge, MAX_FS_SDP, 0, 36864);
       option->SetFMTP(MaxFS_FMTPName, "0");
       AddOption(option);
 
-      option = new OpalMediaOptionUnsigned(MaxBR_SDP_Name, true, OpalMediaOption::MinMerge, 0, 0, 240000);
+      option = new OpalMediaOptionUnsigned(MaxBR_SDP_Name, true, OpalMediaOption::MinMerge, MAX_BR_SDP, 0, 240000);
       option->SetFMTP(MaxBR_FMTPName, "0");
       AddOption(option);
 
