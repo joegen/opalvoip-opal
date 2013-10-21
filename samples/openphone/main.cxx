@@ -1157,7 +1157,7 @@ bool MyManager::Initialise(bool startMinimised)
     videoArgs.deviceName = str.p_str();
   if (config->Read(VideoGrabFormatKey, &value1))
     videoArgs.videoFormat = PVideoDevice::VideoFormatFromInt(value1);
-  if (config->Read(VideoGrabSourceKey, &value1))
+  if (config->Read(VideoGrabSourceKey, &value1) && value1 >= -1)
     videoArgs.channelNumber = value1;
   if (config->Read(VideoGrabFrameRateKey, &value1))
     videoArgs.rate = value1;
@@ -5879,17 +5879,21 @@ void OptionsDialog::SelectedLID(wxCommandEvent & /*event*/)
 
 void OptionsDialog::AdjustVideoControls()
 {
-  unsigned numChannels = 1;
+  PStringArray channelNames;
   PVideoInputDevice * grabber = PVideoInputDevice::CreateDeviceByName(m_VideoGrabDevice);
   if (grabber != NULL) {
-    numChannels = grabber->GetNumChannels()+1;
+    channelNames = grabber->GetChannelNames();
     delete grabber;
   }
 
-  while (m_VideoGrabSourceCtrl->GetCount() > numChannels)
-    m_VideoGrabSourceCtrl->Delete(m_VideoGrabSourceCtrl->GetCount()-1);
-  while (m_VideoGrabSourceCtrl->GetCount() < numChannels)
-    m_VideoGrabSourceCtrl->Append(wxString((wxChar)(m_VideoGrabSourceCtrl->GetCount()+'A'-1)));
+  int selection = m_VideoGrabSourceCtrl->GetSelection();
+  m_VideoGrabSourceCtrl->Clear();
+  m_VideoGrabSourceCtrl->Append(wxT("Default"));
+  for (PINDEX i = 0; i < channelNames.GetSize(); ++i)
+    m_VideoGrabSourceCtrl->Append(PwxString(channelNames[i]));
+  m_VideoGrabSourceCtrl->SetSelection(selection);
+  if (m_VideoGrabSourceCtrl->GetSelection() < 0)
+    m_VideoGrabSourceCtrl->SetSelection(0);
 }
 
 
