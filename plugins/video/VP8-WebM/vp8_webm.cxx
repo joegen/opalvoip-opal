@@ -103,18 +103,20 @@ static struct PluginCodec_Option const MaxFR =
   "30"                                // Maximum value
 };
 
+#define MAX_FS 65536
+
 static struct PluginCodec_Option const MaxFS =
 {
   PluginCodec_IntegerOption,          // Option type
   "max-fs",                           // User visible name
   false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
-  "0",                                // Initial value
+  STRINGIZE(MAX_FS),                  // Initial value
   "max-fs",                           // FMTP option name
   "0",                                // FMTP default value
   0,                                  // H.245 generic capability code and bit mask
   "48",                               // Minimum value
-  "65535"                             // Maximum value
+  STRINGIZE(MAX_FS)                   // Maximum value
 };
 
 #if INCLUDE_OM_CUSTOM_PACKETIZATION
@@ -274,7 +276,7 @@ class VP8FormatRFC : public VP8Format
     {
       OptionMap::iterator it = original.find(MaxFS.m_name);
       if (it != original.end() && !it->second.empty()) {
-        unsigned maxFrameSize = String2Unsigned(it->second);
+        unsigned maxFrameSize = String2Unsigned(it->second)%MAX_FS;
         ClampResolution(m_maxWidth, m_maxHeight, maxFrameSize);
         Change(maxFrameSize,  original, changed, MaxFS.m_name);
         ClampMax(m_maxWidth,  original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
