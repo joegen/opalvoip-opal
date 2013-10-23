@@ -87,10 +87,7 @@ OpalPresenceInfo::State OpalPresenceInfo::FromString(const PString & stateString
       (stateString *= "Invisible"))
     return NoPresence;
 
-  State state = InternalError;
-  PStringStream strm(stateString);
-  strm >> state;
-  return strm.fail() ? InternalError : state;
+  return stateString.As<State>(InternalError);
 }
 
 
