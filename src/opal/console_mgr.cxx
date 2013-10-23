@@ -92,49 +92,49 @@ public:
 
 
 #if P_CLI
-  PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdInterfaces)
+  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, OpalRTPConsoleEndPoint, CmdInterfaces, P_INT_PTR, )
   {
-    if (from.GetCount() < 1)
-      from.WriteUsage();
+    if (args.GetCount() < 1)
+      args.WriteUsage();
     else {
-      PStringArray interfaces(from.GetCount());
-      for (PINDEX i = 0; i < from.GetCount(); ++i)
-        interfaces[i] = from[i];
+      PStringArray interfaces(args.GetCount());
+      for (PINDEX i = 0; i < args.GetCount(); ++i)
+        interfaces[i] = args[i];
 
       if (m_endpoint.StartListeners(interfaces))
-        from.GetContext() << "Listening on: " << setfill(',') << m_endpoint.GetListeners() << setfill(' ') << endl;
+        args.GetContext() << "Listening on: " << setfill(',') << m_endpoint.GetListeners() << setfill(' ') << endl;
       else
-        from.WriteError("Could not start .");
+        args.WriteError("Could not start .");
     }
   }
 
-  PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdBandwidth)
+  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, OpalRTPConsoleEndPoint, CmdBandwidth, P_INT_PTR, )
   {
-    if (from.GetCount() < 1)
-      from.WriteUsage();
+    if (args.GetCount() < 1)
+      args.WriteUsage();
     else {
-      OpalBandwidth bandwidth(from[0]);
+      OpalBandwidth bandwidth(args[0]);
       if (bandwidth == 0)
-        from.WriteError("Illegal bandwidth parameter");
+        args.WriteError("Illegal bandwidth parameter");
       else {
-        if (!from.HasOption("rx") && !from.HasOption("tx"))
+        if (!args.HasOption("rx") && !args.HasOption("tx"))
           m_endpoint.SetInitialBandwidth(OpalBandwidth::RxTx, bandwidth);
         else {
-          if (from.HasOption("rx"))
+          if (args.HasOption("rx"))
             m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, bandwidth);
-          if (from.HasOption("tx"))
+          if (args.HasOption("tx"))
             m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, bandwidth);
         }
       }
     }
   }
 
-  PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdUserInput)
+  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, OpalRTPConsoleEndPoint, CmdUserInput, P_INT_PTR, )
   {
-    if (from.GetCount() < 1)
-      from.WriteUsage();
-    else if (!SetUIMode(from[0]))
-      from.WriteError("Unknown user indication mode");
+    if (args.GetCount() < 1)
+      args.WriteUsage();
+    else if (!SetUIMode(args[0]))
+      args.WriteError("Unknown user indication mode");
   }
 
   void AddCommands(PCLI & cli)
@@ -304,19 +304,19 @@ public:
 
 
 #if P_CLI
-  PDECLARE_NOTIFIER(PCLI::Arguments, SIPConsoleEndPoint, CmdProxy)
+  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, SIPConsoleEndPoint, CmdProxy, P_INT_PTR, )
   {
-    if (from.GetCount() < 1)
-      from.WriteUsage();
+    if (args.GetCount() < 1)
+      args.WriteUsage();
     else {
-      SetProxy(from[0], from.GetOptionString("user"), from.GetOptionString("password"));
-      from.GetContext() << "SIP proxy: " << GetProxy() << endl;
+      SetProxy(args[0], args.GetOptionString("user"), args.GetOptionString("password"));
+      args.GetContext() << "SIP proxy: " << GetProxy() << endl;
     }
   }
 
-  PDECLARE_NOTIFIER(PCLI::Arguments, SIPConsoleEndPoint, CmdRegister)
+  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, SIPConsoleEndPoint, CmdRegister, P_INT_PTR, )
   {
-    DoRegistration(from.GetContext(), true, from[0], from[1], from, "auth-id", "realm", "proxy", "mode", "ttl");
+    DoRegistration(args.GetContext(), true, args[0], args[1], args, "auth-id", "realm", "proxy", "mode", "ttl");
   }
 
   virtual void AddCommands(PCLI & cli)
@@ -425,49 +425,49 @@ public:
 
 
 #if P_CLI
-  PDECLARE_NOTIFIER(PCLI::Arguments, H323ConsoleEndPoint, CmdFast)
+  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, H323ConsoleEndPoint, CmdFast, P_INT_PTR, )
   {
-    if (from.GetCount() < 1)
-      from.GetContext() << "Fast connect: " << (IsFastStartDisabled() ? "OFF" : "ON") << endl;
-    else if (from[0] *= "on")
+    if (args.GetCount() < 1)
+      args.GetContext() << "Fast connect: " << (IsFastStartDisabled() ? "OFF" : "ON") << endl;
+    else if (args[0] *= "on")
       DisableFastStart(false);
-    else if (from[0] *= "off")
+    else if (args[0] *= "off")
       DisableFastStart(true);
     else
-      from.WriteUsage();
+      args.WriteUsage();
   }
 
-  PDECLARE_NOTIFIER(PCLI::Arguments, H323ConsoleEndPoint, CmdTunnel)
+  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, H323ConsoleEndPoint, CmdTunnel, P_INT_PTR, )
   {
-    if (from.GetCount() < 1)
-      from.GetContext() << "H.245 tunneling: " << (IsH245TunnelingDisabled() ? "OFF" : "ON") << endl;
-    else if (from[0] *= "on")
+    if (args.GetCount() < 1)
+      args.GetContext() << "H.245 tunneling: " << (IsH245TunnelingDisabled() ? "OFF" : "ON") << endl;
+    else if (args[0] *= "on")
       DisableH245Tunneling(false);
-    else if (from[0] *= "off")
+    else if (args[0] *= "off")
       DisableH245Tunneling(true);
     else
-      from.WriteUsage();
+      args.WriteUsage();
   }
 
-  PDECLARE_NOTIFIER(PCLI::Arguments, H323ConsoleEndPoint, CmdGatekeeper)
+  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, H323ConsoleEndPoint, CmdGatekeeper, P_INT_PTR, )
   {
-    if (from.GetCount() < 1) {
+    if (args.GetCount() < 1) {
       if (GetGatekeeper() != NULL)
-        from.GetContext() << "Gatekeeper: " << *GetGatekeeper() << endl;
+        args.GetContext() << "Gatekeeper: " << *GetGatekeeper() << endl;
       else
-        from.GetContext() << "No gatekeeper active." << endl;
+        args.GetContext() << "No gatekeeper active." << endl;
     }
-    else if (from[0] *= "off")
+    else if (args[0] *= "off")
       RemoveGatekeeper();
-    else if (from[0] *= "on") {
-      from.GetContext() << "H.323 Gatekeeper: " << flush;
-      if (UseGatekeeper(from.GetOptionString("host"), from.GetOptionString("identifier")))
-        from.GetContext()<< *GetGatekeeper() << endl;
+    else if (args[0] *= "on") {
+      args.GetContext() << "H.323 Gatekeeper: " << flush;
+      if (UseGatekeeper(args.GetOptionString("host"), args.GetOptionString("identifier")))
+        args.GetContext()<< *GetGatekeeper() << endl;
       else
-        from.GetContext() << "unavailable" << endl;
+        args.GetContext() << "unavailable" << endl;
     }
     else
-      from.WriteUsage();
+      args.WriteUsage();
   }
 
   virtual void AddCommands(PCLI & cli)
@@ -545,12 +545,12 @@ public:
 
 
 #if P_CLI
-  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsoleLineEndPoint, CmdCountry)
+  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, OpalConsoleLineEndPoint, CmdCountry, P_INT_PTR, )
   {
-    if (from.GetCount() < 1)
-      from.Usage();
-    else if (!SetCountryCodeName(from[0]))
-      from.WriteError() << "Could not set LID to country name \"" << from[0] << '"' << endl;
+    if (args.GetCount() < 1)
+      args.Usage();
+    else if (!SetCountryCodeName(args[0]))
+      args.WriteError() << "Could not set LID to country name \"" << args[0] << '"' << endl;
   }
 
   virtual void AddCommands(PCLI & cli)
@@ -603,7 +603,7 @@ public:
 
 
 #if P_CLI
-  virtual void AddCommands(PCLI & cli)
+  virtual void AddCommands(PCLI &)
   {
   }
 #endif // P_CLI
@@ -764,50 +764,50 @@ public:
 
 
 #if P_CLI
-  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdVolume)
+  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, OpalConsolePCSSEndPoint, CmdVolume, P_INT_PTR, )
   {
-    PSafePtr<OpalConnection> connection = GetConnectionWithLock(from.GetOptionString('c', "*"), PSafeReadOnly);
+    PSafePtr<OpalConnection> connection = GetConnectionWithLock(args.GetOptionString('c', "*"), PSafeReadOnly);
     if (connection == NULL) {
-      from.WriteError("No call in progress.");
+      args.WriteError("No call in progress.");
       return;
     }
 
-    bool mike = from.GetCommandName().Find("speaker") == P_MAX_INDEX;
+    bool mike = args.GetCommandName().Find("speaker") == P_MAX_INDEX;
 
-    if (from.GetCount() == 0) {
+    if (args.GetCount() == 0) {
       unsigned percent;
       if (connection->GetAudioVolume(mike, percent))
-        from.GetContext() << percent << '%' << endl;
+        args.GetContext() << percent << '%' << endl;
       else
-        from.WriteError("Could not get volume.");
+        args.WriteError("Could not get volume.");
     }
     else {
-      if (!connection->SetAudioVolume(mike, from[0].AsUnsigned()))
-        from.WriteError("Could not set volume.");
+      if (!connection->SetAudioVolume(mike, args[0].AsUnsigned()))
+        args.WriteError("Could not set volume.");
     }
   }
 
-  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdAudioDevice)
+  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, OpalConsolePCSSEndPoint, CmdAudioDevice, P_INT_PTR, )
   {
     for (PINDEX i = 0; i < PARRAYSIZE(AudioDeviceVariables); ++i) {
-      if (from.GetCommandName().Find(AudioDeviceVariables[i].m_name) != P_MAX_INDEX)
-        AudioDeviceVariables[i].Initialise(*this, from.GetContext(), true, from, true);
+      if (args.GetCommandName().Find(AudioDeviceVariables[i].m_name) != P_MAX_INDEX)
+        AudioDeviceVariables[i].Initialise(*this, args.GetContext(), true, args, true);
     }
   }
 
-  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdAudioBuffers)
+  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, OpalConsolePCSSEndPoint, CmdAudioBuffers, P_INT_PTR, )
   {
-    if (from.GetCount() > 0)
-      SetSoundChannelBufferTime(from[0].AsUnsigned());
-    from.GetContext() << "Audio buffer time: " << GetSoundChannelBufferTime() << "ms" << endl;
+    if (args.GetCount() > 0)
+      SetSoundChannelBufferTime(args[0].AsUnsigned());
+    args.GetContext() << "Audio buffer time: " << GetSoundChannelBufferTime() << "ms" << endl;
   }
 
 #if OPAL_VIDEO
-  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdVideoDevice)
+  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, OpalConsolePCSSEndPoint, CmdVideoDevice, P_INT_PTR, )
   {
     for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i) {
-      if (from.GetCommandName().Find(VideoDeviceVariables[i].m_name) != P_MAX_INDEX)
-        VideoDeviceVariables[i].Initialise(*this, from.GetContext(), true, from, true);
+      if (args.GetCommandName().Find(VideoDeviceVariables[i].m_name) != P_MAX_INDEX)
+        VideoDeviceVariables[i].Initialise(*this, args.GetContext(), true, args, true);
     }
   }
 #endif // OPAL_VIDEO
@@ -861,7 +861,7 @@ public:
   }
 
 
-  virtual bool Initialise(PArgList & args, ostream & output, bool verbose, const PString &)
+  virtual bool Initialise(PArgList & args, ostream &, bool, const PString &)
   {
     PString vxml = args.GetOptionString("ivr-script");
     if (!vxml.IsEmpty())
@@ -872,7 +872,7 @@ public:
 
 
 #if P_CLI
-  virtual void AddCommands(PCLI & cli)
+  virtual void AddCommands(PCLI &)
   {
   }
 #endif // P_CLI
@@ -1776,10 +1776,10 @@ void OpalManagerCLI::CmdNat(PCLI::Arguments & args, P_INT_PTR)
 
   PCLI::Context & out = args.GetContext();
   out << m_natMethod->GetName() << " server \"" << m_natMethod->GetServer() << " replies " << m_natMethod->GetNatType();
-  PIPSocket::Address externalAddress;
+    PIPSocket::Address externalAddress;
   if (m_natMethod->GetExternalAddress(externalAddress))
-    out << " with address " << externalAddress;
-  out.flush();
+      out << " with address " << externalAddress;
+  out << endl;
 }
 #endif
 
