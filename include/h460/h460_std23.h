@@ -42,7 +42,7 @@
 
 #include <h460/h4601.h>
 
-#if OPAL_H460
+#if OPAL_H460_NAT
 
 #include <ptclib/pstun.h>
 
@@ -52,10 +52,9 @@
 
 class H323EndPoint;
 class H460_FeatureStd23;
-class PNatMethod_H46024  : public PSTUNClient, public PThread
+class PNatMethod_H46024  : public PSTUNClient
 {
     PCLASSINFO(PNatMethod_H46024, PNatMethod);
-
   public:
     PNatMethod_H46024();
 
@@ -168,12 +167,6 @@ class H460_FeatureStd23 : public H460_FeatureStd
 };
 
 
-// Need to declare for Factory Loader
-#if !defined(_WIN32_WCE)
-PPLUGIN_STATIC_LOAD(Std23, H460_Feature);
-#endif
-
-
 ////////////////////////////////////////////////////////
 
 class H323EndPoint;
@@ -247,12 +240,7 @@ class H460_FeatureStd24 : public H460_FeatureStd
 
 inline ostream & operator<<(ostream & strm, H460_FeatureStd24::NatInstruct method) { return strm << H460_FeatureStd24::GetNATStrategyString(method); }
 
-// Need to declare for Factory Loader
-#if !defined(_WIN32_WCE)
-PPLUGIN_STATIC_LOAD(Std24, H460_Feature);
-#endif
 
-
-#endif // OPAL_H460
+#endif // OPAL_H460_NAT
 
 #endif // OPAL_H460_STD23_H

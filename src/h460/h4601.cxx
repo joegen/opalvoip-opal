@@ -831,35 +831,14 @@ void H460_Feature::AttachConnection(H323Connection * _con)
 
 /////////////////////////////////////////////////////////////////////
 
-static const char H460FeaturePluginBaseClass[] = "H460_Feature";
-
-template <> H460_Feature * PDevicePluginFactory<H460_Feature>::Worker::Create(const PDefaultPFactoryKey & type) const
-{
-  return H460_Feature::CreateFeature(type);
-}
-
 PStringList H460_Feature::GetFeatureNames(PPluginManager * pluginMgr)
 {
-  if (pluginMgr == NULL)
-    pluginMgr = &PPluginManager::GetPluginManager();
-
-  return pluginMgr->GetPluginsProviding(H460FeaturePluginBaseClass);
+  return PPluginManager::GetPluginsProviding(pluginMgr, PPlugin_H460_Feature::ServiceType(), true);
 }
 
-PStringList H460_Feature::GetFeatureFriendlyNames(const PString & feature, PPluginManager * pluginMgr)
+H460_Feature * H460_Feature::CreateFeature(const PString & feature, int pduType, PPluginManager * pluginMgr)
 {
-  if (pluginMgr == NULL)
-    pluginMgr = &PPluginManager::GetPluginManager();
-
-  return pluginMgr->GetPluginsDeviceNames(feature, H460FeaturePluginBaseClass);
-}
-
-H460_Feature * H460_Feature::CreateFeature(const PString & featurename, int pduType, PPluginManager * pluginMgr)
-{
-  if (pluginMgr == NULL)
-    pluginMgr = &PPluginManager::GetPluginManager();
-
-  return (H460_Feature *)pluginMgr->CreatePluginsDeviceByName(featurename, H460FeaturePluginBaseClass,pduType);
+  return PPluginManager::CreatePluginAs<H460_Feature>(pluginMgr, feature, PPlugin_H460_Feature::ServiceType(), pduType);
 }
 
 
