@@ -38,12 +38,13 @@
 
 #include <ptlib.h>
 
-#if OPAL_H46O_NAT
-
 #define P_FORCE_STATIC_PLUGIN 1
 
 #include <h460/h460_std23.h>
-#include <h323.h>
+
+#if OPAL_H460_NAT
+
+#include <h323/h323ep.h>
 #include <ptclib/random.h>
 #include <ptclib/pdns.h>
 #include <h460/h460_std18.h>
@@ -90,7 +91,6 @@ static PConstCaselessString H46024Name("H46024");
 
 
 PNatMethod_H46024::PNatMethod_H46024()
-  : PThread(1000, NoAutoDeleteThread, LowPriority ,"H.460.24")
 {
   natType = PSTUNClient::UnknownNat;
   isAvailable = false;
@@ -119,11 +119,9 @@ PString PNatMethod_H46024::GetName() const
 
 void PNatMethod_H46024::Start(const PString & server,H460_FeatureStd23 * _feat)
 {
-  feat = _feat;
-  H323EndPoint * ep = feat->GetEndPoint();
-  Initialise(server,ep->GetRtpIpPortBase(), ep->GetRtpIpPortMax(), ep->GetRtpIpPortBase(), ep->GetRtpIpPortMax());
-
-  Resume();
+//  feat = _feat;
+//  H323EndPoint * ep = feat->GetEndPoint();
+//  Initialise(server,ep->GetRtpIpPortBase(), ep->GetRtpIpPortMax(), ep->GetRtpIpPortBase(), ep->GetRtpIpPortMax());
 }
 
 
@@ -211,7 +209,7 @@ PBoolean PNatMethod_H46024::CreateSocketPair(PUDPSocket * & socket1,
 
 //////////////////////////////////////////////////////////////////////
 
-H460_FEATURE(Std23);
+H460_FEATURE(Std23, "H.460.23");
 
 H460_FeatureStd23::H460_FeatureStd23()
   : H460_FeatureStd(23)
@@ -245,7 +243,7 @@ void H460_FeatureStd23::AttachEndPoint(H323EndPoint * _ep)
 PBoolean H460_FeatureStd23::OnSendGatekeeperRequest(H225_FeatureDescriptor & pdu) 
 { 
   // Ignore if already manually using STUN
-  isavailable = (EP->GetSTUN() == NULL);    
+  isavailable = (EP->GetNatMethod() == NULL);    
   if (!isavailable)
     return FALSE;
 
@@ -259,7 +257,7 @@ PBoolean H460_FeatureStd23::OnSendRegistrationRequest(H225_FeatureDescriptor & p
 { 
   // Ignore if already manually using STUN
   if (isavailable) 
-    isavailable = (EP->GetSTUN() == NULL);
+    isavailable = (EP->GetNatMethod() == NULL);
 
   if (!isavailable)
     return FALSE;
@@ -371,7 +369,7 @@ void H460_FeatureStd23::OnNATTypeDetection(PSTUNClient::NatTypes type, const PIP
   }
 
   natNotify = true;
-  EP->ForceGatekeeperReRegistration();
+//  EP->ForceGatekeeperReRegistration();
 }
 
 
@@ -431,10 +429,10 @@ void H460_FeatureStd23::DelayedReRegistration()
 }
 
 
-void H460_FeatureStd23::RegMethod(PThread &, INT)
+void H460_FeatureStd23::RegMethod(PThread &, P_INT_PTR)
 {
   PProcess::Sleep(1000);
-  EP->ForceGatekeeperReRegistration();  // We have an ALG so notify the gatekeeper   
+//  EP->ForceGatekeeperReRegistration();  // We have an ALG so notify the gatekeeper   
 }
 
 
@@ -476,7 +474,7 @@ bool H460_FeatureStd23::UseAlternate()
 
 ///////////////////////////////////////////////////////////////////
 
-H460_FEATURE(Std24);
+H460_FEATURE(Std24, "H.460.24");
 
 H460_FeatureStd24::H460_FeatureStd24()
   : H460_FeatureStd(24)
@@ -623,7 +621,7 @@ void H460_FeatureStd24::HandleNATInstruction(NatInstruct _config)
   switch (_config) {
   case H460_FeatureStd24::e_localMaster:
     PTRACE(4,"Std24\tLocal NAT Support: H.460.24 ENABLED");
-    CON->SetRemoteNAT();
+//    CON->SetRemoteNAT();
     SetNATMethods(e_enable);
     break;
 
@@ -645,7 +643,7 @@ void H460_FeatureStd24::HandleNATInstruction(NatInstruct _config)
 #ifdef OPAL_H460
   case H460_FeatureStd24::e_natAnnexA:
     PTRACE(4,"Std24\tSame NAT: H.460.24 AnnexA ENABLED");
-    CON->H46024AEnabled();
+//    CON->H46024AEnabled();
     SetNATMethods(e_AnnexA);
     break;
 #endif
@@ -653,20 +651,20 @@ void H460_FeatureStd24::HandleNATInstruction(NatInstruct _config)
 #ifdef OPAL_H460
   case H460_FeatureStd24::e_natAnnexB:
     PTRACE(4,"Std24\tSame NAT: H.460.24 AnnexA ENABLED");
-    CON->H46024BEnabled();
+//    CON->H46024BEnabled();
     SetNATMethods(e_AnnexB);
     break;
 #endif
 
   case H460_FeatureStd24::e_natFailure:
     PTRACE(4,"Std24\tCall Failure Detected");
-    EP->FeatureCallBack(GetFeatureName()[0],1,"Call Failure");
+//    EP->FeatureCallBack(GetFeatureName()[0],1,"Call Failure");
     break;
   case H460_FeatureStd24::e_noassist:
     PTRACE(4,"Std24\tNAT Call direct");
   default:
     PTRACE(4,"Std24\tNo Assist: H.460.24 DISABLED.");
-    CON->DisableNATSupport();
+//    CON->DisableNATSupport();
     SetNATMethods(e_default);
     break;
   }
@@ -748,8 +746,4 @@ PString H460_FeatureStd24::GetNATStrategyString(NatInstruct method)
 }
 
 
-#ifdef _MSC_VER
-#pragma warning(default : 4239)
-#endif
-
-#endif // OPAL_H46O_NAT
+#endif // OPAL_H460_NAT

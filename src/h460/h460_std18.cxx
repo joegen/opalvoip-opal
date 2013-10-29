@@ -40,13 +40,14 @@
 
 #include <ptlib.h>
 
-#if OPAL_H460_NAT
-
 #define P_FORCE_STATIC_PLUGIN 1
+
+#include <h460/h460_std18.h>
+
+#if OPAL_H460_NAT
 
 #include <h323/h323ep.h>
 #include <h323/h323pdu.h>
-#include <h460/h460_std18.h>
 #include <h460/h46018_h225.h>
 
 #pragma message("H.460.18/.19 Enabled. See Tandberg Patent License. http://www.tandberg.com/collateral/tandberg-ITU-license.pdf")
@@ -56,7 +57,7 @@
 // H.460.18
 //
 // Must Declare for Factory Loader.
-H460_FEATURE(Std18);
+H460_FEATURE(Std18, "H.460.18");
 
 H460_FeatureStd18::H460_FeatureStd18()
   : H460_FeatureStd(18)
@@ -161,7 +162,7 @@ void H460_FeatureStd18::OnReceiveServiceControlIndication(const H225_FeatureDesc
 // H.460.19
 //
 // Must Declare for Factory Loader.
-H460_FEATURE(Std19);
+H460_FEATURE(Std19, "H.460.19");
 
 H460_FeatureStd19::H460_FeatureStd19()
   : H460_FeatureStd(19)
