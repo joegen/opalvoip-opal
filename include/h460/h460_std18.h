@@ -43,7 +43,7 @@
 
 #include <h460/h4601.h>
 
-#if OPAL_H460
+#if OPAL_H460_NAT
 
 #if _MSC_VER
 #pragma once
@@ -89,12 +89,6 @@ class H460_FeatureStd18 : public H460_FeatureStd
     H46018Handler * handler;
     PBoolean isEnabled;
 };
-
-
-// Need to declare for Factory Loader
-#ifndef _WIN32_WCE
-  PPLUGIN_STATIC_LOAD(Std18, H460_Feature);
-#endif
 
 
 /////////////////////////////////////////////////////////////////
@@ -152,12 +146,6 @@ class H460_FeatureStd19 : public H460_FeatureStd
 };
  
 
-// Need to declare for Factory Loader
-#ifndef _WIN32_WCE
-  PPLUGIN_STATIC_LOAD(Std19, H460_Feature);
-#endif
-
-
-#endif // OPAL_H460
+#endif // OPAL_H460_NAT
 
 #endif // OPAL_H460_STD18_H

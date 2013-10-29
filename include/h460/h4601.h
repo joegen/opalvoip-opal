@@ -720,7 +720,7 @@ class H460_Feature : public H460<H225_FeatureDescriptor>
 
 	/** Get Feature Friendly Names
 	*/
-	static PStringList GetFeatureFriendlyNames(const PString & feature, PPluginManager * pluginMgr = NULL);
+  static PStringArray GetFeatureFriendlyNames(PPluginManager * pluginMgr = NULL);
 
 	/** Create instance of a feature 
 	*/
@@ -1116,21 +1116,25 @@ class H460_FeatureSet : public PObject
 
 /////////////////////////////////////////////////////////////////////
 
-template <class className> class H460PluginServiceDescriptor : public PDevicePluginServiceDescriptor
-{
-  public:
-    virtual PObject *   CreateInstance(P_INT_PTR /*userData*/) const { return new className; }
-    virtual PStringArray GetDeviceNames(P_INT_PTR /*userData*/) const { return className::GetFeatureFriendlyName(); }
-    virtual bool  ValidateDeviceName(const PString & deviceName, P_INT_PTR userData) const 
-    { 
-      PStringList devices = className::GetFeatureName(); 
-      return deviceName == devices[0] && className::GetPurpose() >= userData && className::GetPurpose() < userData*2;
-    }
-};
+PCREATE_PLUGIN_SERVICE(H460_Feature);
 
-#define H460_FEATURE(name)    \
-  static H460PluginServiceDescriptor<H460_Feature##name> H460_Feature##name##_descriptor; \
-  PCREATE_PLUGIN(name, H460_Feature, &H460_Feature##name##_descriptor); \
+#define H460_FEATURE(name, friendlyName) \
+    PCREATE_PLUGIN(name, H460_Feature, H460_Feature##name, PPlugin_H460_Feature, \
+      virtual const char * GetFriendlyName() const { return friendlyName; } \
+      virtual bool ValidateServiceName(const PString & name, P_INT_PTR userData) const \
+      { \
+        return PPlugin_H460_Feature::ValidateServiceName(name, userData) && \
+               H460_Feature##name::GetPurpose() >= userData && H460_Feature##name::GetPurpose() < userData*2; \
+      } \
+    )
+
+
+#if OPAL_H460_NAT
+  PPLUGIN_STATIC_LOAD(Std18, H460_Feature);
+  PPLUGIN_STATIC_LOAD(Std19, H460_Feature);
+  PPLUGIN_STATIC_LOAD(Std23, H460_Feature);
+  PPLUGIN_STATIC_LOAD(Std24, H460_Feature);
+#endif
 
 
 #ifdef _MSC_VER
