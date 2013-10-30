@@ -2646,6 +2646,10 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   SIPMIMEInfo & mime = m_lastReceivedINVITE->GetMIME();
 
+  m_ciscoRemotePartyID = SIPURL(mime, RemotePartyID);
+  PTRACE_IF(4, !m_ciscoRemotePartyID.IsEmpty(),
+            "SIP\tOld style Remote-Party-ID set to \"" << m_ciscoRemotePartyID << '"');
+
   // update the dialog context
   m_dialog.SetLocalTag(GetToken());
   m_dialog.Update(request);
@@ -2667,10 +2671,6 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   // Fill in all the various connection info, note our to/from is their from/to
   mime.GetProductInfo(remoteProductInfo);
-
-  m_ciscoRemotePartyID = SIPURL(mime, RemotePartyID);
-  PTRACE_IF(4, !m_ciscoRemotePartyID.IsEmpty(),
-            "SIP\tOld style Remote-Party-ID set to \"" << m_ciscoRemotePartyID << '"');
 
   m_contactAddress = request.GetURI();
 
