@@ -2194,85 +2194,71 @@ bool SIPPresenceInfo::ParseXML(const PXML & xml, list<SIPPresenceInfo> & infoLis
     return false;
   }
 
-  SIPPresenceInfo info(Unavailable);
-
   PTime defaultTimestamp; // Start with "now"
   PStringSet personActivities;
   PString    personNote;
+  PXMLElement * element;
 
-  for (PINDEX idx = 0; idx < rootElement->GetSize(); ++idx) {
-    PXMLElement * element = dynamic_cast<PXMLElement *>(rootElement->GetElement(idx));
-    if (element == NULL)
-      continue;
-
-    if (element->GetName() == "urn:ietf:params:xml:ns:pidf|tuple") {
-      PXMLElement * tupleElement = element;
-
-      if (!info.m_service.IsEmpty()) {
-        infoList.push_back(info);
-        defaultTimestamp = info.m_when - PTimeInterval(0, 1); // One second older
-      }
-
-      info = SIPPresenceInfo(Unavailable);
-      info.m_infoType = SIPPresenceEventPackageContentType;
-      info.m_infoData = xml.AsString();
-      info.m_activities = personActivities;
-      info.m_activities.MakeUnique();
-      info.m_note = personNote;
-
-      info.m_entity = entity;
-      info.m_service = tupleElement->GetAttribute("id");
-
-      SetNoteFromElement(rootElement, info.m_note);
-      SetNoteFromElement(tupleElement, info.m_note);
-
-      if ((element = tupleElement->GetElement("status")) != NULL) {
-        SetNoteFromElement(element, info.m_note);
-        if ((element = element->GetElement("basic")) != NULL) {
-          PCaselessString value = element->GetData();
-          if (value == "open")
-            info.m_state = Available;
-          else if (value == "closed")
-            info.m_state = NoPresence;
-        }
-      }
-
-      if ((element = tupleElement->GetElement("contact")) != NULL)
-        info.m_contact = element->GetData();
-
-      if ((element = tupleElement->GetElement("timestamp")) != NULL && !info.m_when.Parse(element->GetData()))
-        info.m_when = defaultTimestamp;
-
-      if ((element = tupleElement->GetElement("urn:ietf:params:xml:ns:pidf:caps|servcaps")) != NULL ||
-          (element = tupleElement->GetElement("urn:ietf:params:xml:ns:pidf:servcaps|servcaps")) != NULL) {
-        for (PINDEX idx = 0; idx < element->GetSize(); ++idx) {
-          PXMLElement * cap = dynamic_cast<PXMLElement *>(element->GetElement(idx));
-          if (cap != NULL) {
-            PCaselessString name = cap->GetName();
-            name.Delete(0, name.Find('|')+1);
-            PCaselessString data = cap->GetData().Trim();
-            if (data == "true")
-              info.m_capabilities += name;
-            else if (!data.IsEmpty() && data != "false")
-              info.m_capabilities += name + '=' + data;
-          }
-        }
-      }
-
-      AddActivities(tupleElement, info.m_activities, info.m_note, TupleActivityPrefix);
-    }
-    else if (element->GetName() == "urn:ietf:params:xml:ns:pidf:data-model|person" ||
-             element->GetName() == "urn:cisco:params:xml:ns:pidf:rpid|person") {
-      personActivities.RemoveAll();
-      personNote.MakeEmpty();
-
-      SetNoteFromElement(element, personNote);
-      AddActivities(element, personActivities, personNote, "");
-    }
+  // RFC4479/3.2 states there can be one and only one <person> component.
+  if ((element = rootElement->GetElement("urn:ietf:params:xml:ns:pidf:data-model|person")) != NULL ||
+      (element = rootElement->GetElement("urn:cisco:params:xml:ns:pidf:rpid|person")) != NULL) {
+    SetNoteFromElement(element, personNote);
+    AddActivities(element, personActivities, personNote, "");
   }
 
-  if (!info.m_service.IsEmpty())
+  // Now process all the <tuple> components.
+  PXMLElement * tupleElement;
+  for (PINDEX idx = 0; (tupleElement = rootElement->GetElement("urn:ietf:params:xml:ns:pidf|tuple", idx)) != NULL; ++idx) {
+    SIPPresenceInfo info(Unavailable);
+    info.m_infoType = SIPPresenceEventPackageContentType;
+    info.m_infoData = xml.AsString();
+    info.m_activities = personActivities;
+    info.m_activities.MakeUnique();
+    info.m_note = personNote;
+    info.m_entity = entity;
+    info.m_service = tupleElement->GetAttribute("id");
+
+    SetNoteFromElement(rootElement, info.m_note);
+    SetNoteFromElement(tupleElement, info.m_note);
+
+    if ((element = tupleElement->GetElement("status")) != NULL) {
+      SetNoteFromElement(element, info.m_note);
+      if ((element = element->GetElement("basic")) != NULL) {
+        PCaselessString value = element->GetData();
+        if (value == "open")
+          info.m_state = Available;
+        else if (value == "closed")
+          info.m_state = NoPresence;
+      }
+    }
+
+    if ((element = tupleElement->GetElement("contact")) != NULL)
+      info.m_contact = element->GetData();
+
+    if ((element = tupleElement->GetElement("timestamp")) != NULL && !info.m_when.Parse(element->GetData()))
+      info.m_when = defaultTimestamp;
+
+    if ((element = tupleElement->GetElement("urn:ietf:params:xml:ns:pidf:caps|servcaps")) != NULL ||
+        (element = tupleElement->GetElement("urn:ietf:params:xml:ns:pidf:servcaps|servcaps")) != NULL) {
+      for (PINDEX idx = 0; idx < element->GetSize(); ++idx) {
+        PXMLElement * cap = dynamic_cast<PXMLElement *>(element->GetElement(idx));
+        if (cap != NULL) {
+          PCaselessString name = cap->GetName();
+          name.Delete(0, name.Find('|')+1);
+          PCaselessString data = cap->GetData().Trim();
+          if (data == "true")
+            info.m_capabilities += name;
+          else if (!data.IsEmpty() && data != "false")
+            info.m_capabilities += name + '=' + data;
+        }
+      }
+    }
+
+    AddActivities(tupleElement, info.m_activities, info.m_note, TupleActivityPrefix);
+
     infoList.push_back(info);
+    defaultTimestamp = info.m_when - PTimeInterval(0, 1); // One second older
+  }
 
   infoList.sort();
 
