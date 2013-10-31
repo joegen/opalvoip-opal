@@ -1418,13 +1418,22 @@ PBoolean H323Gatekeeper::DisengageRequest(const H323Connection & connection, uns
 }
 
 
-PBoolean H323Gatekeeper::OnReceiveDisengageRequest(const H225_DisengageRequest & drq)
+PBoolean H323Gatekeeper::OnReceiveDisengageReject(const H323RasPDU &, const H225_DisengageReject & drj)
 {
-  if (!H225_RAS::OnReceiveDisengageRequest(drq))
+  if (!H225_RAS::OnReceiveDisengageReject(drj))
     return false;
 
   if (lastRequest->rejectReason == H225_DisengageRejectReason::e_notRegistered)
     lastRequest->responseResult = Request::TryAlternate;
+
+  return true;
+}
+
+
+PBoolean H323Gatekeeper::OnReceiveDisengageRequest(const H225_DisengageRequest & drq)
+{
+  if (!H225_RAS::OnReceiveDisengageRequest(drq))
+    return false;
 
   OpalGloballyUniqueID id = NULL;
   if (drq.HasOptionalField(H225_DisengageRequest::e_callIdentifier))
