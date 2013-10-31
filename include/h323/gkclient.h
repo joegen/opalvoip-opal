@@ -102,6 +102,7 @@ class H323Gatekeeper : public H225_RAS
     PBoolean OnReceiveAdmissionConfirm(const H225_AdmissionConfirm & acf);
     PBoolean OnReceiveAdmissionReject(const H225_AdmissionReject & arj);
     PBoolean OnReceiveDisengageRequest(const H225_DisengageRequest & drq);
+    PBoolean OnReceiveDisengageReject(const H323RasPDU &, const H225_DisengageReject &);
     PBoolean OnReceiveBandwidthConfirm(const H225_BandwidthConfirm & bcf);
     PBoolean OnReceiveBandwidthRequest(const H225_BandwidthRequest & brq);
     PBoolean OnReceiveInfoRequest(const H225_InfoRequest & irq);
