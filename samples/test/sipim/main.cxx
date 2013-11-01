@@ -65,7 +65,7 @@ void MyManager::Usage(ostream & strm, const PArgList & args)
 bool MyManager::Initialise(PArgList & args, bool verbose)
 {
   if (!args.Parse(GetArgumentSpec()) && !args.HasOption('l')) {
-    Usage(cerr, args);
+    Usage(LockedOutput(), args);
     return false;
   }
 
@@ -205,33 +205,39 @@ void MyManager::CmdComp(PCLI::Arguments & args, P_INT_PTR)
 
 void MyManager::OnConversation(const OpalIMContext::ConversationInfo & info)
 {
-  Output() << '\n';
+  LockedStream lockedOutput(*this);
+  ostream & output = lockedOutput;
+
+  output << '\n';
   if (info.m_opening)
-    Output() << "New conversation started";
+    output << "New conversation started";
   else
-    Output() << "Conversation ended";
-  Output() << ", id " << info.m_conversationId << endl;
+    output << "Conversation ended";
+  output << ", id " << info.m_conversationId << endl;
 }
 
 
 void MyManager::OnMessageReceived(const OpalIM & message)
 {
-  Output() << "\nIM From " << message.m_from << " to " << message.m_to;
+  LockedStream lockedOutput(*this);
+  ostream & output = lockedOutput;
+
+  output << "\nIM From " << message.m_from << " to " << message.m_to;
   for (PStringToString::const_iterator it = message.m_bodies.begin(); it != message.m_bodies.end(); ++it)
-    Output() << "\nReceived " << it->first << '\n' << it->second;
-  Output() << endl;
+    output << "\nReceived " << it->first << '\n' << it->second;
+  output << endl;
 }
 
 
 void MyManager::OnMessageDisposition(const OpalIMContext::DispositionInfo & info)
 {
-  Output() << "\nIM #" << info.m_messageId << ' ' << info.m_disposition << endl;
+  *LockedOutput() << "\nIM #" << info.m_messageId << ' ' << info.m_disposition << endl;
 }
 
 
 void MyManager::OnCompositionIndication(const OpalIMContext::CompositionInfo & info)
 {
-  Output() << "\nRemote is " << info.m_state << endl;
+  *LockedOutput() << "\nRemote is " << info.m_state << endl;
 }
 
 

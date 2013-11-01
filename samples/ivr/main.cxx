@@ -56,16 +56,16 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
     break;
 
     case 1 :
-      cout << "Awaiting incoming call, using VXML \"" << args[0] << "\" ... " << flush;
+      *LockedOutput() << "Awaiting incoming call, using VXML \"" << args[0] << "\" ... " << flush;
       return true;
 
     case 2 :
       PString token;
       if (SetUpCall("ivr:", args[1], token)) {
-        cout << "Playing " << args[0] << " to " << args[1] << " ... " << flush;
+        *LockedOutput() << "Playing " << args[0] << " to " << args[1] << " ... " << flush;
         return true;
       }
-      cerr << "Could not start call to \"" << args[1] << '"' << endl;
+      *LockedOutput() << "Could not start call to \"" << args[1] << '"' << endl;
   }
 
   return false;
@@ -116,7 +116,7 @@ void MyManager::OnClearedCall(OpalCall & call)
 
 void MyIVREndPoint::OnEndDialog(OpalIVRConnection & connection)
 {
-  cout << "\nFinal variables:\n" << connection.GetVXMLSession().GetVariables() << endl;
+  *dynamic_cast<MyManager &>(GetManager()).LockedOutput() << "\nFinal variables:\n" << connection.GetVXMLSession().GetVariables() << endl;
 
   // Do default action which is to clear the call.
   OpalIVREndPoint::OnEndDialog(connection);

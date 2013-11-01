@@ -94,6 +94,7 @@ class OpalConsoleManager : public OpalManager
     OpalConsoleManager(
       const char * endpointPrefixes = OPAL_CONSOLE_PREFIXES
     );
+    ~OpalConsoleManager();
 
     virtual PString GetArgumentSpec() const;
     virtual void Usage(ostream & strm, const PArgList & args);
@@ -112,7 +113,21 @@ class OpalConsoleManager : public OpalManager
     void OnClosedMediaStream(const OpalMediaStream & stream);
     virtual void OnClearedCall(OpalCall & call);
 
-    __inline ostream & Output() const { return *m_outputStream; }
+    class LockedStream : PWaitAndSignal {
+      protected:
+        ostream & m_stream;
+      public:
+        LockedStream(const OpalConsoleManager & mgr)
+          : PWaitAndSignal(mgr.m_outputMutex)
+          , m_stream(*mgr.m_outputStream)
+        {
+        }
+
+        ostream & operator *() const { return m_stream; }
+        operator  ostream & () const { return m_stream; }
+    };
+    friend class LockedStream;
+    __inline LockedStream LockedOutput() const { return *this; }
 
   protected:
     OpalConsoleEndPoint * GetConsoleEndPoint(const PString & prefix);
@@ -148,6 +163,7 @@ class OpalConsoleManager : public OpalManager
     bool       m_interrupted;
     bool       m_verbose;
     ostream  * m_outputStream;
+    PMutex     m_outputMutex;
 
 #if OPAL_STATISTICS
     PTimeInterval m_statsPeriod;
