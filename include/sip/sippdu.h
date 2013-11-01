@@ -1329,6 +1329,7 @@ class SIPSubscribe : public SIPTransaction
       SIP_PDU::StatusCodes  m_reason;            ///< Reason for status change
       OpalProductInfo       m_productInfo;       ///< Server product info from registrar if available.
       void                * m_userData;          ///< User data corresponding to this registration
+      friend ostream & operator<<(ostream & strm, const SubscriptionStatus & status);
     };
 
     struct NotifyCallbackInfo {
