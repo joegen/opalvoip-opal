@@ -55,7 +55,6 @@ class MyManager : public OpalManagerCLI
     PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdTransfer);
     PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdHangUp);
 
-    OpalPCSSEndPoint * m_pcss;
     bool               m_autoAnswer;
     PSafePtr<OpalCall> m_activeCall;
     PSafePtr<OpalCall> m_heldCall;
