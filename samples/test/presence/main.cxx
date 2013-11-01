@@ -182,7 +182,7 @@ void MyManager::AddPresentityCmd(PArgList & args)
 {
   PSafePtr<OpalPresentity> presentity = AddPresentity(args[0]);
   if (presentity == NULL) {
-    cerr << "error: cannot create presentity for \"" << args[0] << '"' << endl;
+    *LockedOutput() << "error: cannot create presentity for \"" << args[0] << '"' << endl;
     return;
   }
 
@@ -210,7 +210,7 @@ void MyManager::AddPresentityCmd(PArgList & args)
     m_presentities.SetAt(PCaselessString(presentity->GetAOR().AsString()), presentity);
   }
   else {
-    cerr << "error: cannot open presentity \"" << args[0] << '"' << endl;
+    *LockedOutput() << "error: cannot open presentity \"" << args[0] << '"' << endl;
     RemovePresentity(args[0]);
   }
 }
@@ -227,7 +227,7 @@ void MyManager::CmdCreate(PCLI::Arguments & args, P_INT_PTR)
 }
 
 
-void MyManager::CmdList(PCLI::Arguments &, P_INT_PTR)
+void MyManager::CmdList(PCLI::Arguments & args, P_INT_PTR)
 {
   for (PDictionary<PString, OpalPresentity>::iterator it = m_presentities.end(); it != m_presentities.end(); ++it) {
     PString key = it->first;
@@ -235,11 +235,11 @@ void MyManager::CmdList(PCLI::Arguments &, P_INT_PTR)
     OpalPresenceInfo::State state;
     PString note;
     presentity.GetLocalPresence(state, note);
-    Output() << key << " "
-             << presentity.GetAOR() << " "
-             << OpalPresenceInfo::AsString(state) << " "
-             << note
-             << endl;
+    args.GetContext() << key << " "
+                      << presentity.GetAOR() << " "
+                      << OpalPresenceInfo::AsString(state) << " "
+                      << note
+                      << endl;
   }
 }
 
@@ -387,20 +387,26 @@ void MyManager::CmdQuit(PCLI::Arguments & args, P_INT_PTR)
 
 void MyManager::AuthorisationRequest(OpalPresentity & presentity, OpalPresentity::AuthorisationRequest request)
 {
-  Output() << request.m_presentity << " requesting access to presence for " << presentity.GetAOR() << endl;
+  LockedStream lockedOutput(*this);
+  ostream & output = lockedOutput;
+
+  output << request.m_presentity << " requesting access to presence for " << presentity.GetAOR() << endl;
   if (!request.m_note.IsEmpty())
-    Output() << "  \"" << request.m_note << '"' << endl;
+    output << "  \"" << request.m_note << '"' << endl;
 }
 
 
 void MyManager::PresenceChange(OpalPresentity & presentity, std::auto_ptr<OpalPresenceInfo> info)
 {
-  Output() << "Presentity " << presentity.GetAOR();
+  LockedStream lockedOutput(*this);
+  ostream & output = lockedOutput;
+
+  output << "Presentity " << presentity.GetAOR();
   if (info->m_entity != info->m_target)
-    Output() << " received presence change from " << info->m_entity;
+    output << " received presence change from " << info->m_entity;
   else
-    Output() << " changed locally";
-  Output() << " to " << info->AsString() << endl;
+    output << " changed locally";
+  output << " to " << info->AsString() << endl;
 }
 
 

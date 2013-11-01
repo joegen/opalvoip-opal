@@ -46,7 +46,7 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
 
 
   if (args.HasOption('l')) {
-    cout << "Awaiting incoming call ... " << flush;
+    *LockedOutput() << "Awaiting incoming call ... " << flush;
     return true;
   }
 
@@ -74,8 +74,8 @@ PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStre
 {
   OpalRTPMediaStream * rtpStream = dynamic_cast<OpalRTPMediaStream *>(&stream);
   if (rtpStream != NULL)
-    cout << "Remote RTP media:   " << rtpStream->GetRtpSession().GetRemoteAddress(true) << "\n"
-            "Remote RTP control: " << rtpStream->GetRtpSession().GetRemoteAddress(false) << endl;
+    *LockedOutput() << "Remote RTP media:   " << rtpStream->GetRtpSession().GetRemoteAddress(true) << "\n"
+                       "Remote RTP control: " << rtpStream->GetRtpSession().GetRemoteAddress(false) << endl;
 
   return OpalManager::OnOpenMediaStream(connection, stream);
 }
@@ -115,7 +115,7 @@ bool MyLocalConnection::GetMediaTransportAddresses(OpalConnection & connection,
                                               const OpalMediaType & mediaType,
                                         OpalTransportAddressArray & transports) const
 {
-  cout << connection.GetToken() << ' ' << mediaType << ::flush;
+  dynamic_cast<MyManager &>(GetEndPoint().GetManager()).LockedOutput() << connection.GetToken() << ' ' << mediaType << ::flush;
   while (cin.good()) {
     OpalTransportAddress address;
     cin >> address;
