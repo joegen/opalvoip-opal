@@ -524,10 +524,7 @@ OpalTransportAddress SIPURL::GetTransportAddress(PINDEX entry) const
     // Do the SRV lookup, if fails, then we actually return TRUE so outer loops
     // can use the original host name value.
     PIPSocketAddressAndPortVector addrs;
-    if (!PDNS::LookupSRV(GetHostName(), "_sip._" + proto, GetPort(), addrs)) {
-      PTRACE(4, "SIP\tNo SRV record found.");
-    }
-    else {
+    if (PDNS::LookupSRV(GetHostName(), "_sip._" + proto, GetPort(), addrs)) {
       // Got the SRV list, return FALSE if outer loop has got to the end of it
       if (entry >= (PINDEX)addrs.size()) {
         PTRACE(4, "SIP\tRan out of SRV records at entry " << entry);
