@@ -158,10 +158,10 @@ void MyManager::CmdAnswer(PCLI::Arguments & args, P_INT_PTR)
   else {
     PSafePtr<OpalLocalConnection> connection = m_activeCall->GetConnectionAs<OpalLocalConnection>();
     if (connection == NULL)
-    args.WriteError() << "Call has disappeared." << endl;
+      args.WriteError() << "Call has disappeared." << endl;
     else {
       connection->AcceptIncoming();
-    args.GetContext() << "Answered call from " << m_activeCall->GetPartyA() << endl;
+      args.GetContext() << "Answered call from " << m_activeCall->GetPartyA() << endl;
     }
   }
 }
