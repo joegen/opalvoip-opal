@@ -665,7 +665,7 @@ class OpalEndPoint : public PObject
 #if P_NAT
     /** Get all NAT Methods
       */
-    PNatStrategy & GetNatMethods() const;
+    PNatMethods & GetNatMethods() const { return manager.GetNatMethods(); }
 
     /**Return the NAT method to use.
        Returns NULL if address is a local address as per IsLocalAddress().
@@ -673,7 +673,8 @@ class OpalEndPoint : public PObject
        Note, the pointer is NOT to be deleted by the user.
       */
     virtual PNatMethod * GetNatMethod(
-      const PIPSocket::Address & remoteAddress = PIPSocket::GetDefaultIpAny()
+      const OpalTransportAddress & remoteAddress,
+      const OpalTransportAddress & localAddress
     ) const;
 #endif
   //@}
@@ -922,6 +923,7 @@ class OpalEndPoint : public PObject
     P_REMOVE_VIRTUAL_VOID(OnMessageReceived(const PURL&,const PString&,const PURL&,const PString&,const PString&,const PString&));
     P_REMOVE_VIRTUAL(OpalMediaSession *, CreateMediaSession(OpalConnection &, unsigned, const OpalMediaType &), NULL);
     P_REMOVE_VIRTUAL(PBoolean, NewIncomingConnection(OpalTransport *), false);
+    P_REMOVE_VIRTUAL(PNatMethod *, GetNatMethod(const PIPSocket::Address &) const,NULL);
 };
 
 

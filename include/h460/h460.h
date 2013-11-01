@@ -1,5 +1,6 @@
-// H460.h:
 /*
+ * h460.h
+ *
  * Virteos H.460 Implementation for the h323plus Library.
  *
  * Virteos is a Trade Mark of ISVO (Asia) Pte Ltd.
@@ -32,8 +33,8 @@
  *
  * The Initial Developer of the Original Code is ISVO (Asia) Pte Ltd.
  *
- *
  * Contributor(s): Many thanks to Simon Horne.
+ *                 Robert Jongbloed (robertj@voxlucida.com.au).
  *
  * $Revision$
  * $Author$
@@ -51,39 +52,48 @@
 
 #if OPAL_H460
 
+#include <h323/q931.h>
 
 class H460_MessageType
 {
   public:
-    enum {
-      e_gatekeeperRequest           = 0xf0,
-      e_gatekeeperConfirm           = 0xf1,
-      e_gatekeeperReject            = 0xf2,
-      e_registrationRequest         = 0xf3,
-      e_registrationConfirm         = 0xf4, 
-      e_registrationReject          = 0xf5,
-      e_admissionRequest            = 0xf6,
-      e_admissionConfirm            = 0xf7,
-      e_admissionReject             = 0xf8,
-      e_locationRequest             = 0xf9,
-      e_locationConfirm             = 0xfa,
-      e_locationReject              = 0xfb,
-      e_nonStandardMessage          = 0xfc,
-      e_serviceControlIndication    = 0xfd,
-      e_serviceControlResponse      = 0xfe,
-      e_unregistrationRequest       = 0xe0,
-      e_inforequest                 = 0xe1,
-      e_inforequestresponse         = 0xe2,
-      e_disengagerequest            = 0xe3,
-      e_disengageconfirm            = 0xe4,
-      e_setup			            = 0x05,   // Match Q931 message id
-      e_callProceeding	            = 0x02,   // Match Q931 message id
-      e_connect	                    = 0x07,   // Match Q931 message id
-      e_alerting                    = 0x01,   // Match Q931 message id
-      e_facility                    = 0x62,   // Match Q931 message id
-      e_releaseComplete	            = 0x5a,   // Match Q931 message id
-      e_unallocated                 = 0xff
-    };
+    enum Code {
+      e_gatekeeperRequest,
+      e_gatekeeperConfirm,
+      e_gatekeeperReject,
+      e_registrationRequest,
+      e_registrationConfirm,
+      e_registrationReject,
+      e_admissionRequest,
+      e_admissionConfirm,
+      e_admissionReject,
+      e_locationRequest,
+      e_locationConfirm,
+      e_locationReject,
+      e_nonStandardMessage,
+      e_serviceControlIndication,
+      e_serviceControlResponse,
+      e_unregistrationRequest,
+      e_inforequest,
+      e_inforequestresponse,
+      e_disengagerequest,
+      e_disengageconfirm,
+      e_setup                       = 0x100|Q931::SetupMsg,
+      e_callProceeding	            = 0x100|Q931::CallProceedingMsg,
+      e_connect	                    = 0x100|Q931::ConnectMsg,
+      e_alerting                    = 0x100|Q931::AlertingMsg,
+      e_facility                    = 0x100|Q931::FacilityMsg,
+      e_releaseComplete	            = 0x100|Q931::ReleaseCompleteMsg
+    } m_code;
+
+    H460_MessageType(Code code) : m_code(code) { }
+    H460_MessageType(Q931::MsgTypes code) : m_code((Code)(0x100|code)) { }
+
+    operator Code() const { return m_code; }
+
+#if PTRACING
+    friend ostream & operator<<(ostream & strm, H460_MessageType pduType);
+#endif
 };
 
 #endif // OPAL_H460

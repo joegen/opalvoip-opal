@@ -45,10 +45,7 @@
 #include <opal/mediafmt.h>
 #include <h323/h225ras.h>
 #include <h323/h235auth.h>
-
-#if OPAL_H460
-class H460_FeatureSet;
-#endif
+#include <h460/h460.h>
 
 class H323Connection;
 class H225_ArrayOf_AliasAddress;
@@ -57,6 +54,7 @@ class H225_AlternateGK;
 class H225_ArrayOf_AlternateGK;
 class H225_ArrayOf_ServiceControlSession;
 class H225_FeatureSet;
+class H460_FeatureSet;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -110,8 +108,10 @@ class H323Gatekeeper : public H225_RAS
     PBoolean OnReceiveServiceControlIndication(const H225_ServiceControlIndication &);
     void OnSendGatekeeperRequest(H225_GatekeeperRequest & grq);
     void OnSendAdmissionRequest(H225_AdmissionRequest & arq);
-    PBoolean OnSendFeatureSet(unsigned, H225_FeatureSet & features) const;
-    void OnReceiveFeatureSet(unsigned, const H225_FeatureSet & features) const;
+#if OPAL_H460
+    PBoolean OnSendFeatureSet(H460_MessageType pduType, H225_FeatureSet & features) const;
+    void OnReceiveFeatureSet(H460_MessageType pduType, const H225_FeatureSet & features) const;
+#endif
   //@}
 
   /**@name Protocol operations */
@@ -300,7 +300,7 @@ class H323Gatekeeper : public H225_RAS
   //@}
 
 #if OPAL_H460
-    H460_FeatureSet & GetFeatures();
+    H460_FeatureSet * GetFeatures() { return m_features; }
 #endif
 
   protected:
@@ -407,7 +407,7 @@ class H323Gatekeeper : public H225_RAS
     PDictionary<POrdinalKey, H323ServiceControlSession> serviceControlSessions;
 	
 #if OPAL_H460
-    H460_FeatureSet * features;
+    H460_FeatureSet * m_features;
 #endif
 	
 };

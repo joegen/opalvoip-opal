@@ -1,42 +1,42 @@
-/* H460_std18.cxx
-*
-* h323plus library
-*
-* Copyright (c) 2008 ISVO (Asia) Pte. Ltd.
-*
-* The contents of this file are subject to the Mozilla Public License
-* Version 1.1 (the "License"); you may not use this file except in
-* compliance with the License. You may obtain a copy of the License at
-* http://www.mozilla.org/MPL/
-*
-* Alternatively, the contents of this file may be used under the terms
-* of the General Public License (the  "GNU License"), in which case the
-* provisions of GNU License are applicable instead of those
-* above. If you wish to allow use of your version of this file only
-* under the terms of the GNU License and not to allow others to use
-* your version of this file under the MPL, indicate your decision by
-* deleting the provisions above and replace them with the notice and
-* other provisions required by the GNU License. If you do not delete
-* the provisions above, a recipient may use your version of this file
-* under either the MPL or the GNU License."
-*
-* Software distributed under the License is distributed on an "AS IS"
-* basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
-* the License for the specific language governing rights and limitations
-* under the License.
-*
-*
-* The Initial Developer of the Original Code is ISVO (Asia) Pte. Ltd.
-*
-* Portions of this code were written with the assisance of funding from
-* triple-IT. http://www.triple-it.nl.
-*
-* Contributor(s): ______________________________________.
-*
-* $Revision$
-* $Author$
-* $Date$
-*/
+/*
+ * h460_std18.cxx
+ *
+ * Copyright (c) 2008 ISVO (Asia) Pte. Ltd.
+ *
+ * The contents of this file are subject to the Mozilla Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Alternatively, the contents of this file may be used under the terms
+ * of the General Public License (the  "GNU License"), in which case the
+ * provisions of GNU License are applicable instead of those
+ * above. If you wish to allow use of your version of this file only
+ * under the terms of the GNU License and not to allow others to use
+ * your version of this file under the MPL, indicate your decision by
+ * deleting the provisions above and replace them with the notice and
+ * other provisions required by the GNU License. If you do not delete
+ * the provisions above, a recipient may use your version of this file
+ * under either the MPL or the GNU License."
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+ * the License for the specific language governing rights and limitations
+ * under the License.
+ *
+ *
+ * The Initial Developer of the Original Code is ISVO (Asia) Pte. Ltd.
+ *
+ * Portions of this code were written with the assisance of funding from
+ * triple-IT. http://www.triple-it.nl.
+ *
+ * Contributor(s): Many thanks to Simon Horne.
+ *                 Robert Jongbloed (robertj@voxlucida.com.au).
+ *
+ * $Revision$
+ * $Author$
+ * $Date$
+ */
 
 #include <ptlib.h>
 
@@ -48,7 +48,7 @@
 
 #include <h323/h323ep.h>
 #include <h323/h323pdu.h>
-#include <h460/h46018_h225.h>
+#include <h460/h46018.h>
 
 #pragma message("H.460.18/.19 Enabled. See Tandberg Patent License. http://www.tandberg.com/collateral/tandberg-ITU-license.pdf")
 
@@ -60,248 +60,159 @@
 H460_FEATURE(Std18, "H.460.18");
 
 H460_FeatureStd18::H460_FeatureStd18()
-  : H460_FeatureStd(18)
+  : H460_Feature(18)
 {
   PTRACE(6,"Std18\tInstance Created");
-
-  EP = NULL;
-  handler = NULL;
-  isEnabled = FALSE;
-  FeatureCategory = FeatureSupported;
 }
 
 
-H460_FeatureStd18::~H460_FeatureStd18()
+bool H460_FeatureStd18::Initialise(H323EndPoint & ep, H323Connection * con)
 {
-  if (handler != NULL)
-    delete handler;
-}
-
-
-void H460_FeatureStd18::AttachEndPoint(H323EndPoint * _ep)
-{
-  EP =_ep; 
-  handler = NULL;
-
-  isEnabled = EP->H46018IsEnabled();
-
-  if (isEnabled) {
-    PTRACE(6,"Std18\tEnabling and Initialising H.460.18 Handler");
-    handler = new H46018Handler(_ep);
-  }
-}
-
-
-PBoolean H460_FeatureStd18::OnSendGatekeeperRequest(H225_FeatureDescriptor & pdu) 
-{ 
-  if (!isEnabled)
+  if (!H460_Feature::Initialise(ep, con))
     return false;
 
-  // Ignore if already manually using STUN
-  PNatStrategy & natMethods = EP->GetNatMethods();
-  const PNatList & list = natMethods.GetNATList();
-  if (list.GetSize() > 0) {
-    for (PINDEX i=0; i < list.GetSize(); i++) {  
-      if (list[i].GetName() == "STUN" && list[i].IsAvailable(PIPSocket::GetDefaultIpAny())) {
-        return false;
-      }
+  if (con == NULL)
+    return true;
+
+  // We only enable IF the gatekeeper supports H.460.23
+  H323Gatekeeper * gk = m_endpoint->GetGatekeeper();
+  if (gk != NULL) {
+    H460_FeatureSet * features = gk->GetFeatures();
+    if (features != NULL) {
+      H460_Feature * feature = features->GetFeature(18);
+      if (feature != NULL && feature->IsNegotiated())
+        return true;
     }
   }
 
-  H460_FeatureStd feat = H460_FeatureStd(18); 
-  pdu = feat;
-  return TRUE; 
+  PTRACE(4,"Std18\tDisabled as H.460.18 not available in gatekeeper");
+  return false;
 }
 
 
-void H460_FeatureStd18::OnReceiveGatekeeperConfirm(const H225_FeatureDescriptor & /*pdu*/) 
+bool H460_FeatureStd18::IsNegotiated() const
 {
-  isEnabled = true;
+  return m_connection != NULL && H460_Feature::IsNegotiated();
 }
 
 
-PBoolean H460_FeatureStd18::OnSendRegistrationRequest(H225_FeatureDescriptor & pdu) 
+void H460_FeatureStd18::OnReceiveServiceControlIndication(const H460_FeatureDescriptor & pdu) 
 {
-  if (!isEnabled)
-    return FALSE;
-
-  H460_FeatureStd feat = H460_FeatureStd(18); 
-  pdu = feat;
-  return TRUE; 
-}
-
-
-void H460_FeatureStd18::OnReceiveRegistrationConfirm(const H225_FeatureDescriptor & /*pdu*/) 
-{
-  isEnabled = true;
-  handler->Enable();
-  EP->H46018Received();
-}
-
-
-void H460_FeatureStd18::OnReceiveServiceControlIndication(const H225_FeatureDescriptor & pdu) 
-{
-  if (handler == NULL)
-    return;
-
-  H460_FeatureStd & feat = (H460_FeatureStd &)pdu;
-
-  if (!feat.Contains(H460_FeatureID(1))) {
+  if (!pdu.HasParameter(1)) {
     PTRACE(4,"Std18\tERROR: Received SCI without Call Indication!");
     return;
   }
 
-  PTRACE(4,"Std18\tSCI: Processing Incoming call request.");
-  PASN_OctetString raw = feat.Value(H460_FeatureID(1));
-  handler->CreateH225Transport(raw);
+  const PASN_OctetString & raw = pdu.GetParameter(1);
 
-}
-
-
-///////////////////////////////////////////////////////
-// H.460.19
-//
-// Must Declare for Factory Loader.
-H460_FEATURE(Std19, "H.460.19");
-
-H460_FeatureStd19::H460_FeatureStd19()
-  : H460_FeatureStd(19)
-{
-  PTRACE(6,"Std19\tInstance Created");
-
-  EP = NULL;
-  CON = NULL;
-  isEnabled = false;
-  isAvailable = true;
-  remoteSupport = false;
-  FeatureCategory = FeatureSupported;
-
-  // add multiplex parameter too
-  H225_EnumeratedParameter p;
-  p.m_id.SetTag(H225_GenericIdentifier::e_standard);
-  (PASN_Integer&) p.m_id = 1;
-  int i = m_parameters.GetSize();
-  m_parameters.SetSize( i + 1);
-  m_parameters[i] = p;
-  IncludeOptionalField(H225_FeatureDescriptor::e_parameters);
-}
-
-
-H460_FeatureStd19::~H460_FeatureStd19()
-{
-}
-
-
-void H460_FeatureStd19::AttachEndPoint(H323EndPoint * _ep)
-{
-  PTRACE(6,"Std19\tEndPoint Attached");
-  EP = _ep; 
-  // We only enable IF the gatekeeper supports H.460.18
-  H460_FeatureSet * gkfeat = EP->GetGatekeeperFeatures();
-  if (gkfeat && gkfeat->HasFeature(18)) {
-    isEnabled = true;
-  } else {
-    PTRACE(4,"Std19\tH.460.19 disabled as GK does not support H.460.18");
-    isEnabled = false;
-  }
-}
-
-
-void H460_FeatureStd19::AttachConnection(H323Connection * _con)
-{
-  CON = _con;
-}
-
-
-PBoolean H460_FeatureStd19::OnSendSetup_UUIE(H225_FeatureDescriptor & pdu) 
-{ 
-  if (!isEnabled || !isAvailable)
-    return FALSE;
-
-  CON->H46019Enabled();
-  H460_FeatureStd feat = H460_FeatureStd19(); 
-  pdu = feat;
-  return TRUE; 
-}
-
-
-void H460_FeatureStd19::OnReceiveSetup_UUIE(const H225_FeatureDescriptor & /*pdu*/) 
-{
-  if (isEnabled && isAvailable) {
-    remoteSupport = TRUE;
-    CON->H46019Enabled();
-    CON->H46019SetCallReceiver();
-  }
-}
-
-
-PBoolean H460_FeatureStd19::OnSendCallProceeding_UUIE(H225_FeatureDescriptor & pdu) 
-{ 
-  if (!isEnabled || !isAvailable || !remoteSupport)
-    return FALSE;
-
-  H460_FeatureStd feat = H460_FeatureStd19(); 
-  pdu = feat;
-  return TRUE; 
-}
-
-
-void H460_FeatureStd19::OnReceiveCallProceeding_UUIE(const H225_FeatureDescriptor & /*pdu*/) 
-{
-  if (isEnabled && isAvailable) {
-    remoteSupport = TRUE;
-    CON->H46019Enabled();
-  }
-}
-
-
-PBoolean H460_FeatureStd19::OnSendFacility_UUIE(H225_FeatureDescriptor & /*pdu*/)
-{
-  return FALSE; 
-}
-
-
-PBoolean H460_FeatureStd19::OnSendAlerting_UUIE(H225_FeatureDescriptor & pdu)
-{
-  if (!isEnabled || !isAvailable || !remoteSupport) {
-    return FALSE;
+  H46018_IncomingCallIndication callinfo;
+  if (!raw.DecodeSubType(callinfo)) {
+    PTRACE(2,"H46018\tUnable to decode incoming call Indication."); 
+    return;
   }
 
-  H460_FeatureStd feat = H460_FeatureStd19(); 
-  pdu = feat;
-  return TRUE; 
+  PTRACE(4, "H46018\tSCI: Processing Incoming call request\n  " << callinfo);
 
-}
-void H460_FeatureStd19::OnReceiveAlerting_UUIE(const H225_FeatureDescriptor & /*pdu*/) 
-{ 
-  if (!remoteSupport) {
-    remoteSupport = TRUE;
-    CON->H46019Enabled();
-  } 
-}
-
-PBoolean H460_FeatureStd19::OnSendCallConnect_UUIE(H225_FeatureDescriptor & pdu)
-{
-  if (!isEnabled || !isAvailable || !remoteSupport) {
-    return FALSE;
+  OpalGloballyUniqueID callId(callinfo.m_callID.m_guid);
+  if (callId.IsEmpty()) {
+    PTRACE(3, "H46018\tTCP Connect Abort: No Call identifier");
+    return;
   }
 
-  H460_FeatureStd feat = H460_FeatureStd19(); 
-  pdu = feat;
-  return TRUE; 
-
-}
-void H460_FeatureStd19::OnReceiveCallConnect_UUIE(const H225_FeatureDescriptor & /*pdu*/) 
-{
-  if (!remoteSupport) {
-    remoteSupport = TRUE;
-    CON->H46019Enabled();
+  // Fix for Tandberg boxes that send duplicate SCI messages.
+  if (callId == m_lastCallIdentifer) {
+    PTRACE(2,"H46018\tDuplicate Call Identifer " << m_lastCallIdentifer << " Ignoring request!"); 
+    return;
   }
+
+  m_lastCallIdentifer = callId;
+
+  // We throw the socket creation onto another thread as with UMTS networks it may take several 
+  // seconds to actually create the connection and we don't want to wait before signalling back
+  // to the gatekeeper. This also speeds up connection time which is also nice :) - SH
+  new PThreadObj2Arg<H460_FeatureStd18, H323TransportAddress, OpalGloballyUniqueID>(*this,
+            callinfo.m_callSignallingAddress, callId, &H460_FeatureStd18::ConnectThreadMain, true, "H.460.18");
 }
 
-void H460_FeatureStd19::SetAvailable(bool avail)
+
+bool H460_FeatureStd18::OnStartControlChannel()
 {
-  isAvailable = avail;
+  if (!IsNegotiated())
+    return false;
+
+  // according to H.460.18 cl.11 we have to send a generic Indication on the opening of a
+  // H.245 control channel. Details are specified in H.460.18 cl.16
+  // This must be the first PDU otherwise gatekeeper/proxy will close the channel.
+
+  H323ControlPDU pdu;
+  H245_GenericMessage & cap = pdu.Build(H245_IndicationMessage::e_genericIndication);
+
+  H245_CapabilityIdentifier & id = cap.m_messageIdentifier;
+  id.SetTag(H245_CapabilityIdentifier::e_standard);
+  PASN_ObjectId & gid = id;
+  gid.SetValue("0.0.8.460.18.0.1");
+
+  cap.IncludeOptionalField(H245_GenericMessage::e_subMessageIdentifier);
+  ((PASN_Integer &)cap.m_subMessageIdentifier).SetValue(1);
+
+  cap.IncludeOptionalField(H245_GenericMessage::e_messageContent);
+  H245_ArrayOf_GenericParameter & msg = cap.m_messageContent;
+
+  // callIdentifer
+  H245_GenericParameter call;
+  H245_ParameterIdentifier & idx = call.m_parameterIdentifier;
+  idx.SetTag(H245_ParameterIdentifier::e_standard);
+  PASN_Integer & m = idx;
+  m =1;
+  H245_ParameterValue & conx = call.m_parameterValue;
+  conx.SetTag(H245_ParameterValue::e_octetString);
+  PASN_OctetString & raw = conx;
+  raw.SetValue(m_connection->GetCallIdentifier());
+  msg.SetSize(1);
+  msg[0] = call;
+
+  // Is receiver
+  if (!m_connection->IsOriginating()) {
+    H245_GenericParameter answer;
+    H245_ParameterIdentifier & an = answer.m_parameterIdentifier;
+    an.SetTag(H245_ParameterIdentifier::e_standard);
+    PASN_Integer & n = an;
+    n = 2;
+    H245_ParameterValue & aw = answer.m_parameterValue;
+    aw.SetTag(H245_ParameterValue::e_logical);
+    msg.SetSize(2);
+    msg[1] = answer;
+  }
+
+  PTRACE(4,"H46018\tSending H.245 Control PDU " << pdu);
+  return m_connection->WriteControlPDU(pdu);
+}
+
+
+void H460_FeatureStd18::ConnectThreadMain(H323TransportAddress address, OpalGloballyUniqueID callId)
+{
+  PTRACE(3, "H46018\tConnecting " << callId << " to server at " << address);
+
+  H323Gatekeeper * gk = m_endpoint->GetGatekeeper();
+  if (!PAssert(gk != NULL, PLogicError))
+    return;
+
+  OpalTransportPtr transport(gk->GetTransport().GetLocalAddress().CreateTransport(*m_endpoint, OpalTransportAddress::Streamed));
+  if (!transport->ConnectTo(address)) {
+    PTRACE(3, "H46018\tFailed to TCP Connect to " << address);
+    return;
+  }
+
+  H323SignalPDU pdu;
+  pdu.BuildFacility(callId);
+  pdu.m_h323_uu_pdu.m_h245Tunneling = !m_endpoint->IsH245TunnelingDisabled();
+  if (!pdu.Write(*transport)) {
+    PTRACE(3, "H46018\tError Writing PDU.");
+    return;
+  }
+
+  PTRACE(4, "H46018\tEstablished call for " << callId << ", awaiting SETUP.");
+  m_endpoint->InternalNewIncomingConnection(transport);
 }
 
 

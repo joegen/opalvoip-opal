@@ -1,11 +1,7 @@
 /*
- * h46018_h225.h
+ * h460_std19.h
  *
- * H.460.18 H225 NAT Traversal class.
- *
- * h323plus library
- *
- * Copyright (c) 2008 ISVO (Asia) Pte. Ltd.
+ * Copyright (c) 2009 ISVO (Asia) Pte Ltd. All Rights Reserved.
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
@@ -28,215 +24,79 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
+ * The Original Code is derived from and used in conjunction with the 
+ * H323Plus Project (www.h323plus.org/)
  *
- * The Initial Developer of the Original Code is ISVO (Asia) Pte. Ltd.
+ * The Initial Developer of the Original Code is ISVO (Asia) Pte Ltd.
  *
- * Portions of this code were written with the assisance of funding from
- * triple-IT. http://www.triple-it.nl.
- *
- * Contributor(s): ______________________________________.
+ * Contributor(s): Many thanks to Simon Horne.
+ *                 Robert Jongbloed (robertj@voxlucida.com.au).
  *
  * $Revision$
  * $Author$
  * $Date$
  */
 
-#ifndef OPAL_H46018_H225
-#define OPAL_H46018_H225
+#ifndef OPAL_H460_STD19_H
+#define OPAL_H460_STD19_H
 
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
-
-#include <opal_config.h>
+#include <h460/h4601.h>
 
 #if OPAL_H460_NAT
 
-#include <h323/h323pdu.h>
+#include <rtp/rtp.h>
 
 
-class H46018SignalPDU  : public H323SignalPDU
+#if _MSC_VER
+#pragma once
+#endif
+
+class H460_FeatureStd19 : public H460_Feature
 {
+    PCLASSINFO(H460_FeatureStd19, H460_Feature);
   public:
-  /**@name Construction */
-  //@{
-    /** Default Contructor
-        This creates a H.225.0 SignalPDU to notify
-        the server that the opened TCP socket is for
-        the call with the callidentifier specified
-    */
-    H46018SignalPDU(const OpalGloballyUniqueID & callIdentifier);
-  //@}
-};
+    H460_FeatureStd19();
 
+    // Universal Declarations Every H460 Feature should have the following
+    static Purpose GetPluginPurpose()      { return ForConnection; };
+    virtual Purpose GetPurpose() const     { return GetPluginPurpose(); };
 
-class H323EndPoint;
-class H46018Handler;
+    virtual bool Initialise(H323EndPoint & ep, H323Connection * con);
 
-class H46018Transport  : public OpalTransportTCP
-{
-    PCLASSINFO(H46018Transport, OpalTransportTCP);
+    // H.225.0 Messages
+    virtual bool OnSendSetup_UUIE         (H460_FeatureDescriptor & /*pdu*/) { return !m_disabledByH46024; }
+    virtual bool OnSendCallProceeding_UUIE(H460_FeatureDescriptor & /*pdu*/) { return !m_disabledByH46024; }
+    virtual bool OnSendAlerting_UUIE      (H460_FeatureDescriptor & /*pdu*/) { return !m_disabledByH46024; }
+    virtual bool OnSendCallConnect_UUIE   (H460_FeatureDescriptor & /*pdu*/) { return !m_disabledByH46024; }
 
-  public:
-    enum PDUType {
-      e_raw,
-    };
+    virtual bool OnSendingOLCGenericInformation(unsigned sessionID, H245_ArrayOf_GenericParameter & param, bool isAck);
+    virtual void OnReceiveOLCGenericInformation(unsigned sessionID, const H245_ArrayOf_GenericParameter & param);
 
-    /**@name Construction */
-      //@{
-    /**Create a new transport channel.
-    */
-    H46018Transport(
-      H323EndPoint & endpoint        /// H323 End Point object
-    );
-
-    ~H46018Transport();
-    //@}
-
-    /**@name Functions */
-    //@{
-    /**Write a protocol data unit from the transport.
-        This will write using the transports mechanism for PDU boundaries, for
-        example UDP is a single Write() call, while for TCP there is a TPKT
-        header that indicates the size of the PDU.
-    */
-    virtual PBoolean WritePDU(
-      const PBYTEArray & pdu  /// PDU to write
-    );
-
-    /**Read a protocol data unit from the transport.
-        This will read using the transports mechanism for PDU boundaries, for
-        example UDP is a single Read() call, while for TCP there is a TPKT
-        header that indicates the size of the PDU.
-    */
-    virtual PBoolean ReadPDU(
-      PBYTEArray & pdu  /// PDU to Read
-    );
-    //@}
-
-    /**@name NAT Functions */
-    //@{
-    /**HandleH46018SignallingChannelPDU
-        Handle the H46018 Signalling channel
-      */
-    PBoolean HandleH46018SignallingChannelPDU();
-
-    /**HandleH46018SignallingSocket
-        Handle the H46018 Signalling socket
-      */
-    PBoolean HandleH46018SignallingSocket(H323SignalPDU & pdu);
-
-    /**InitialPDU
-        Send the initialising PDU for the call with the specified callidentifer
-      */
-    PBoolean InitialPDU(const OpalGloballyUniqueID & callIdentifier);
-
-    /**isCall
-       Do we have a call connected?
-      */
-    PBoolean isCall() { return isConnected; };
-
-    /**ConnectionLost
-       Set the connection as being lost
-      */
-    void ConnectionLost(PBoolean established);
-
-    /**IsConnectionLost
-       Is the connection lost?
-      */
-    PBoolean IsConnectionLost();
-    //@}
-
-    // Overrides
-    /**Connect to the remote party.
-    */
-    virtual PBoolean Connect(const OpalGloballyUniqueID & callIdentifier);
-
-    /**Close the channel.(Don't do anything)
-    */
-    virtual PBoolean Close();
-
-    virtual PBoolean IsListening() const;
-
-    virtual PBoolean IsOpen () const;
-
-    PBoolean CloseTransport() { return closeTransport; };
+    // H.460.24 Override
+    void DisableByH46024() { m_disabledByH46024 = true; }
 
   protected:
-     PMutex connectionsMutex;
-     PMutex WriteMutex;
-     PMutex IntMutex;
-     PTimeInterval ReadTimeOut;
-     PSyncPoint ReadMutex;
-
-     H46018Handler * Feature;
-
-     PBoolean   isConnected;
-     PBoolean   remoteShutDown;
-     PBoolean   closeTransport;
+    PNatMethod * m_natMethod;
+    bool         m_disabledByH46024;
 };
+ 
 
+///////////////////////////////////////////////////////////////////////////////
 
-class H323EndPoint;
-class PNatMethod_H46019;
-
-class H46018Handler : public PObject  
+class PNatMethod_H46019 : public PNatMethod
 {
-    PCLASSINFO(H46018Handler, PObject);
-
+    PCLASSINFO(PNatMethod_H46019, PNatMethod);
   public:
-    H46018Handler(H323EndPoint * ep);
-    ~H46018Handler();
-
-    void Enable();
-    PBoolean IsEnabled();
-
-    H323EndPoint * GetEndPoint();
-
-    PBoolean CreateH225Transport(const PASN_OctetString & information);
-
-    void H46024ADirect(bool reply, const PString & token);
-        
-  protected:    
-    H323EndPoint * EP;
-    PNatMethod_H46019 * nat;
-    PString lastCallIdentifer;
-
-    PMutex m_h46024aMutex;
-    bool   m_h46024a;
-
-  private:
-    H323TransportAddress m_address;
-    OpalGloballyUniqueID m_callId;
-    PThread * SocketCreateThread;
-    PDECLARE_NOTIFIER(PThread, H46018Handler, SocketThread);
-    PBoolean m_h46018inOperation;
-};
-
-
-class PNatMethod_H46019  : public PNatMethod
-{
-    PCLASSINFO(PNatMethod_H46019,PNatMethod);
-
-  public:
-    /**@name Construction */
-    //@{
-    /** Default Contructor
-    */
-    PNatMethod_H46019();
-
-    /** Deconstructor
-    */
-    ~PNatMethod_H46019();
-    //@}
+    enum { DefaultPriority = 50 };
+    PNatMethod_H46019(unsigned priority = DefaultPriority);
 
     /**@name Overrides from PNatMethod */
     //@{
-    /**  GetMethodName
+    /**  GetName
         Get the NAT method name 
     */
-    static PString GetNatMethodName();
-    virtual PString GetName() const;
+    virtual PCaselessString GetName() const;
+    static const char * MethodName();
 
     /**Get the current server address name.
       */
@@ -262,57 +122,18 @@ class PNatMethod_H46019  : public PNatMethod
     */
     virtual bool IsAvailable(const PIPSocket::Address & address);
 
-    /* Set Available
-        This will enable the natMethod to be enabled when opening the
-        sockets
-    */
-    void SetAvailable();
-
-    /** Activate
-        Active/DeActivate the method on a call by call basis
-     */
-    virtual void Activate(bool act)  { active = act; }
-
     /**  OpenSocket
         Create a single UDP Socket 
     */
     PBoolean OpenSocket(PUDPSocket & socket, PortInfo & portInfo, const PIPSocket::Address & binding) const;
     //@}
 
-    /**@name General Functions */
-    //@{
-    /**  AttachEndpoint
-        Attach endpoint reference
-    */
-    void AttachHandler(H46018Handler * _handler);
-
   protected:
-    virtual NatTypes InternalGetNatType(bool forced, const PTimeInterval & maxAge);
-
-#if OPAL_H460_NAT
-    /**@name General Functions */
-    //@{
-    /**  SetConnectionSockets
-        This function sets the socket references in the 
-        H323Connection to allow the implementer to add
-        keep-alive info to the sockets
-    */
-    void SetConnectionSockets(
-      PUDPSocket * data,            ///< Data socket
-      PUDPSocket * control,                        ///< control socket 
-      H323Connection::SessionInformation * info    ///< session Information
-    );
-#endif
-    
-    PBoolean available;                    ///< Whether this NAT Method is available for call
-    PBoolean active;                    ///< Whether the method is active for call
-    H46018Handler * handler;            ///< handler
+    NatTypes InternalGetNatType(bool, const PTimeInterval &);
 };
 
-#ifndef _WIN32_WCE
-       PPLUGIN_STATIC_LOAD(H46019,PNatMethod);
-#endif
 
+///////////////////////////////////////////////////////////////////////////////
 
 class H46019UDPSocket : public PUDPSocket
 {
@@ -324,9 +145,9 @@ class H46019UDPSocket : public PUDPSocket
         ready for H323plus to Call.
     */
     H46019UDPSocket(
-      H46018Handler & _handler,
-      H323Connection::SessionInformation * info,
-      bool _rtpSocket
+      H323Connection & connection,
+      unsigned sessionID,
+      bool rtp
     );
 
     /** Deconstructor to reallocate Socket and remove any exiting
@@ -439,7 +260,6 @@ class H46019UDPSocket : public PUDPSocket
     //@}
 
   protected:
-
     // H.460.19 Keepalives
     void InitialiseKeepAlive();    ///< Start the keepalive
     void SendRTPPing(const PIPSocket::Address & ip, const WORD & port);
@@ -478,10 +298,8 @@ class H46019UDPSocket : public PUDPSocket
     );
 
   private:
-    H46018Handler & m_Handler;
-    unsigned m_Session;             ///< Current Session ie 1-Audio 2-video
-    PString m_Token;                ///< Current Connection Token
-    OpalGloballyUniqueID m_CallId;  ///< CallIdentifier
+    H323Connection & m_connection;
+    unsigned m_sessionID;             ///< Current Session ie 1-Audio 2-video
     PString m_CUI;                  ///< Local CUI (for H.460.24 Annex A)
 
     // H.460.19 Keepalives
@@ -505,14 +323,15 @@ class H46019UDPSocket : public PUDPSocket
     PDECLARE_NOTIFIER(PTimer, H46019UDPSocket, Probe);  ///< Thread to probe for direct connection
     PTimer m_Probe;                                     ///< Probe Timer
     PINDEX m_probes;                                    ///< Probe count
-    DWORD SSRC;                                         ///< Random number
+    DWORD m_SSRC;                                         ///< Random number
     PIPSocket::Address m_altAddr;  WORD m_altPort;      ///< supplied remote Address (as supplied in Generic Information)
     // H46024 Annex B support
     PBoolean    m_h46024b;
 
-    bool rtpSocket;
+    bool m_rtpSocket;
 };
+
 
 #endif // OPAL_H460_NAT
 
-#endif // OPAL_H46018_H225
+#endif // OPAL_H460_STD19_H

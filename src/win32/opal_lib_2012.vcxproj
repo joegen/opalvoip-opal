@@ -1073,7 +1073,7 @@
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">Level3</WarningLevel>
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Level3</WarningLevel>
     </ClCompile>
-    <ClCompile Include="..\h460\h46018_h225.cxx" />
+    <ClCompile Include="..\h460\h460_std19.cxx" />
     <ClCompile Include="..\h460\h46024b.cxx" />
     <ClCompile Include="..\h460\h460_std18.cxx" />
     <ClCompile Include="..\h460\h460_std23.cxx" />
@@ -1385,7 +1385,7 @@
     <ClInclude Include="..\..\include\h323\h235dh.h" />
     <ClInclude Include="..\..\include\rtp\h235_session.h" />
     <ClInclude Include="..\..\include\ep\GstEndPoint.h" />
-    <ClInclude Include="..\..\include\h460\h46018_h225.h" />
+    <ClInclude Include="..\..\include\h460\h460_std19.h" />
     <ClInclude Include="..\..\include\h460\h46024b.h" />
     <ClInclude Include="..\..\include\h460\h460_std18.h" />
     <ClInclude Include="..\..\include\h460\h460_std23.h" />

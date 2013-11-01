@@ -1145,12 +1145,12 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
 #if P_NAT
   PString natMethod, natServer;
   if (args.HasOption("translate")) {
-    natMethod = PNatMethod_Fixed::GetNatMethodName();
+    natMethod = PNatMethod_Fixed::MethodName();
     natServer = args.GetOptionString("translate");
   }
 #if P_STUN
   else if (args.HasOption("stun")) {
-    natMethod = PSTUNClient::GetNatMethodName();
+    natMethod = PSTUNClient::MethodName();
     natServer = args.GetOptionString("stun");
   }
 #endif
@@ -1160,9 +1160,9 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
   }
   else if (args.HasOption("nat-server")) {
 #if P_STUN
-    natMethod = PSTUNClient::GetNatMethodName();
+    natMethod = PSTUNClient::MethodName();
 #else
-    natMethod = PNatMethod_Fixed::GetNatMethodName();
+    natMethod = PNatMethod_Fixed::MethodName();
 #endif
     natServer = args.GetOptionString("nat-server");
   }
@@ -1172,14 +1172,14 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
       output << natMethod << " server: " << flush;
     SetNATServer(natMethod, natServer);
     if (verbose) {
-      PNatMethod * natMethod = GetNatMethod();
-      if (natMethod == NULL)
+      PNatMethod * nat = GetNatMethods().GetMethodByName(natMethod);
+      if (nat == NULL)
         output << "Unavailable";
       else {
-        PNatMethod::NatTypes natType = natMethod->GetNatType();
-        output << '"' << natMethod->GetServer() << "\" replies " << natType;
+        PNatMethod::NatTypes natType = nat->GetNatType();
+        output << '"' << nat->GetServer() << "\" replies " << natType;
         PIPSocket::Address externalAddress;
-        if (natType != PNatMethod::BlockedNat && natMethod->GetExternalAddress(externalAddress))
+        if (natType != PNatMethod::BlockedNat && nat->GetExternalAddress(externalAddress))
           output << " with external address " << externalAddress;
       }
       output << '\n';
@@ -1725,8 +1725,10 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
   m_cli->SetPrompt(args.GetCommandName());
 
 #if P_NAT
-  m_cli->SetCommand("nat address", PCREATE_NOTIFIER(CmdNat),
-                    "Set NAT method and address",
+  m_cli->SetCommand("nat list", PCREATE_NOTIFIER(CmdNatList),
+                    "List NAT methods and server addresses");
+  m_cli->SetCommand("nat server", PCREATE_NOTIFIER(CmdNatAddress),
+                    "Set NAT server address for method, \"off\" deactivates method",
                     "<method> <address>");
 #endif
 
@@ -1826,23 +1828,68 @@ PCLICurses * OpalManagerCLI::CreateCLICurses()
 
 
 #if P_NAT
-void OpalManagerCLI::CmdNat(PCLI::Arguments & args, P_INT_PTR)
+void OpalManagerCLI::CmdNatList(PCLI::Arguments & args, P_INT_PTR)
+{
+  PCLI::Context & out = args.GetContext();
+  out << std::left
+      << setw(12) << "Name" << ' '
+      << setw(8) << "State" << ' '
+      << setw(20) << "Type" << ' '
+      << setw(20) << "Server" << ' '
+      <<             "External\n";
+
+  for (PNatMethods::iterator it = GetNatMethods().begin(); it != GetNatMethods().end(); ++it) {
+    out << setw(12) << it->GetName() << ' '
+        << setw(8) << (it->IsAvailable() ? "Active" : "N/A")
+        << setw(20);
+
+    PNatMethod::NatTypes type = it->GetNatType();
+    if (type != PNatMethod::UnknownNat)
+      out << it->GetNatType();
+    else
+      out << "";
+
+    out << ' ' << setw(20) << it->GetServer();
+
+    PIPSocket::Address externalAddress;
+    if (it->GetExternalAddress(externalAddress))
+      out << ' ' << externalAddress;
+
+    out << '\n';
+  }
+  out << endl;
+}
+
+
+void OpalManagerCLI::CmdNatAddress(PCLI::Arguments & args, P_INT_PTR)
 {
   if (args.GetCount() < 2) {
     args.WriteUsage();
     return;
   }
 
-  if (!SetNATServer(args[0], args[1])) {
-    args.WriteError("STUN server offline or unsuitable NAT type");
+  PNatMethod * natMethod = GetNatMethods().GetMethodByName(args[0]);
+  if (natMethod == NULL) {
+    args.WriteError() << "Invalid NAT method \"" << args[0] << '"';
+    return;
+  }
+
+  if (args[1] *= "off") {
+    args.GetContext() << natMethod->GetName() << " deactivated.";
+    natMethod->Activate(false);
+    return;
+  }
+
+  if (natMethod->SetServer(args[1])) {
+    args.WriteError() << natMethod->GetName() << " server address invalid \"" << args[1] << '"';
     return;
   }
 
   PCLI::Context & out = args.GetContext();
-  out << m_natMethod->GetName() << " server \"" << m_natMethod->GetServer() << " replies " << m_natMethod->GetNatType();
-    PIPSocket::Address externalAddress;
-  if (m_natMethod->GetExternalAddress(externalAddress))
-      out << " with address " << externalAddress;
+  out << natMethod->GetName() << " server \"" << natMethod->GetServer() << " replies " << natMethod->GetNatType();
+  PIPSocket::Address externalAddress;
+  if (natMethod->GetExternalAddress(externalAddress))
+    out << " with address " << externalAddress;
   out << endl;
 }
 #endif

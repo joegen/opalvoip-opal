@@ -261,8 +261,7 @@ OpalManager::OpalManager()
   , m_autoCreateCertificate(true)
 #endif
 #if P_NAT
-  , m_natMethods(new PNatStrategy)
-  , m_natMethod(NULL)
+  , m_natMethods(new PNatMethods(true))
   , m_onInterfaceChange(PCREATE_InterfaceNotifier(OnInterfaceChange))
 #endif
   , P_DISABLE_MSVC_WARNINGS(4355, activeCalls(*this))
@@ -336,7 +335,6 @@ OpalManager::~OpalManager()
 
 #if P_NAT
   PInterfaceMonitor::GetInstance().RemoveNotifier(m_onInterfaceChange);
-  delete m_natMethod;
   delete m_natMethods;
 #endif
 
@@ -1727,8 +1725,12 @@ bool OpalManager::ApplySSLCredentials(const OpalEndPoint & /*ep*/,
 
 PBoolean OpalManager::IsLocalAddress(const PIPSocket::Address & ip) const
 {
+#if P_NAT
+  return m_natMethods->IsLocalAddress(ip);
+#else
   /* Check if the remote address is a private IP, broadcast, or us */
   return ip.IsAny() || ip.IsBroadcast() || ip.IsRFC1918() || PIPSocket::IsLocalHost(ip);
+#endif
 }
 
 
@@ -1822,12 +1824,9 @@ PBoolean OpalManager::TranslateIPAddress(PIPSocket::Address & localAddress,
     return false; // Does not need to be translated
 
 #if P_NAT
-  PIPSocket::Address stunInterface;
-  if (m_natMethod != NULL &&
-      m_natMethod->GetNatType() != PNatMethod::BlockedNat &&
-      m_natMethod->GetInterfaceAddress(stunInterface) &&
-      stunInterface == localAddress)
-    return m_natMethod->GetExternalAddress(localAddress); // Translate it!
+  PNatMethod * natMethod = m_natMethods->GetMethod(localAddress);
+  if (natMethod != NULL)
+    return natMethod->GetExternalAddress(localAddress); // Translate it!
 #endif
 
   return false; // Have nothing to translate it to
@@ -1836,47 +1835,31 @@ PBoolean OpalManager::TranslateIPAddress(PIPSocket::Address & localAddress,
 
 #if P_NAT
 
-PNatMethod * OpalManager::GetNatMethod(const PIPSocket::Address & remoteAddress) const
+PNatMethod * OpalManager::GetNatMethod(const OpalTransportAddress & remoteAddress, const OpalTransportAddress & localAddress) const
 {
-  if (!remoteAddress.IsAny() && IsLocalAddress(remoteAddress))
-    return NULL;
-
-  if (m_natMethod != NULL)
-    return m_natMethod;
-
-  PNatList & list = m_natMethods->GetNATList();
-  for (PNatList::iterator i = list.begin(); i != list.end(); ++i) {
-    PTRACE(5, "OPAL\tNAT Method " << i->GetName() << " Ready: " << (i->IsAvailable(remoteAddress) ? "Yes" : "No"));
-    if (i->IsAvailable(remoteAddress))
-      return &*i;
-  }
-
+  PIPSocket::Address remoteIP, localIP;
+  if (remoteAddress.GetIpAddress(remoteIP) &&
+       localAddress.GetIpAddress(localIP) &&
+       (remoteIP.IsAny() || !IsLocalAddress(remoteIP)))
+    return m_natMethods->GetMethod(localIP);
   return NULL;
 }
 
-bool OpalManager::SetNATServer(const PString & natType, const PString & server)
+
+bool OpalManager::SetNATServer(const PString & method, const PString & server)
 {
-  if (m_natMethod != NULL) {
-    PInterfaceMonitor::GetInstance().OnRemoveNatMethod(m_natMethod);
-    delete m_natMethod;
-    m_natMethod = NULL;
-  }
-
-  m_natMethod = PNatMethod::Create(natType);
-  if (m_natMethod == NULL)
+  PNatMethod * natMethod = m_natMethods->GetMethodByName(method);
+  if (natMethod == NULL)
     return false;
 
-  m_natMethod->SetPortRanges(GetUDPPortBase(), GetUDPPortMax(), GetRtpIpPortBase(), GetRtpIpPortMax());
-  if (!m_natMethod->SetServer(server) || !m_natMethod->Open(PIPSocket::GetDefaultIpAny())) {
-    delete m_natMethod;
-    m_natMethod = NULL;
+  natMethod->SetPortRanges(GetUDPPortBase(), GetUDPPortMax(), GetRtpIpPortBase(), GetRtpIpPortMax());
+  if (!natMethod->SetServer(server) || !natMethod->Open(PIPSocket::GetDefaultIpAny()))
     return false;
-  }
 
-  PNatMethod::NatTypes type = m_natMethod->GetNatType();
+  PNatMethod::NatTypes type = natMethod->GetNatType();
   PIPSocket::Address stunExternalAddress;
   if (type != PNatMethod::BlockedNat)
-    m_natMethod->GetExternalAddress(stunExternalAddress);
+    natMethod->GetExternalAddress(stunExternalAddress);
 
   PTRACE(3, "OPAL\tNAT \"" << server << "\" replies " << type << ", external IP " << stunExternalAddress);
 
@@ -1884,30 +1867,11 @@ bool OpalManager::SetNATServer(const PString & natType, const PString & server)
 }
 
 
-PString OpalManager::GetTranslationHost() const
-{
-  PNatMethod_Fixed * nat = dynamic_cast<PNatMethod_Fixed *>(m_natMethod);
-  return nat == NULL ? PString::Empty() : nat->GetServer();
+PString OpalManager::GetNATServer(const PString & method) const 
+{ 
+  PNatMethod * natMethod = m_natMethods->GetMethodByName(method);
+  return natMethod == NULL ? PString::Empty() : natMethod->GetServer();
 }
-
-
-bool OpalManager::SetTranslationHost(const PString & host)
-{
-  return SetNATServer(PNatMethod_Fixed::GetNatMethodName(), host);
-}
-
-
-void OpalManager::SetTranslationAddress(const PIPSocket::Address & address)
-{
-  SetNATServer(PNatMethod_Fixed::GetNatMethodName(), address.AsString());
-}
-
-
-bool OpalManager::HasTranslationAddress() const
-{
-  return dynamic_cast<PNatMethod_Fixed *>(m_natMethod) != NULL;
-}
-
 #endif  // P_NAT
 
 
@@ -1976,8 +1940,7 @@ void OpalManager::SetUDPPorts(unsigned udpBase, unsigned udpMax)
   udpPorts.Set(udpBase, udpMax, 99, 0);
 
 #if P_NAT
-  if (m_natMethod != NULL)
-    m_natMethod->SetPortRanges(GetUDPPortBase(), GetUDPPortMax(), GetRtpIpPortBase(), GetRtpIpPortMax());
+  m_natMethods->SetPortRanges(GetUDPPortBase(), GetUDPPortMax(), GetRtpIpPortBase(), GetRtpIpPortMax());
 #endif
 }
 
@@ -1993,8 +1956,7 @@ void OpalManager::SetRtpIpPorts(unsigned rtpIpBase, unsigned rtpIpMax)
   rtpIpPorts.Set((rtpIpBase+1)&0xfffe, rtpIpMax&0xfffe, 199, 5000);
 
 #if P_NAT
-  if (m_natMethod != NULL)
-    m_natMethod->SetPortRanges(GetUDPPortBase(), GetUDPPortMax(), GetRtpIpPortBase(), GetRtpIpPortMax());
+  m_natMethods->SetPortRanges(GetUDPPortBase(), GetUDPPortMax(), GetRtpIpPortBase(), GetRtpIpPortMax());
 #endif
 }
 
@@ -2337,9 +2299,9 @@ bool OpalManager::RunScript(const PString & script, const char * language)
 #if P_NAT
 void OpalManager::OnInterfaceChange(PInterfaceMonitor &, PInterfaceMonitor::InterfaceChange entry)
 {
-  PNatMethod * nat = GetNatMethod();
-  if (nat != NULL) {
-      PIPSocket::Address addr;
+  PIPSocket::Address addr;
+
+  for (PNatMethods::iterator nat = m_natMethods->begin(); nat != m_natMethods->end(); ++nat) {
     if (entry.m_added) {
       if (!nat->GetInterfaceAddress(addr) || entry.GetAddress() != addr)
         nat->Open(entry.GetAddress());

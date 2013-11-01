@@ -607,15 +607,9 @@ PStringArray OpalEndPoint::GetAllMediaCryptoSuites() const
 
 
 #if P_NAT
-PNatStrategy & OpalEndPoint::GetNatMethods() const
+PNatMethod * OpalEndPoint::GetNatMethod(const OpalTransportAddress & remoteAddress, const OpalTransportAddress & localAddress) const
 {
-  return manager.GetNatMethods();
-}
-
-
-PNatMethod * OpalEndPoint::GetNatMethod(const PIPSocket::Address & remoteAddress) const
-{
-  return manager.GetNatMethod(remoteAddress);
+  return manager.GetNatMethod(remoteAddress, localAddress);
 }
 #endif // P_NAT
 

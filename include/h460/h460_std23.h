@@ -1,50 +1,50 @@
-/* H460_std23.h
-*
-* Copyright (c) 2009 ISVO (Asia) Pte Ltd. All Rights Reserved.
-*
-* The contents of this file are subject to the Mozilla Public License
-* Version 1.1 (the "License"); you may not use this file except in
-* compliance with the License. You may obtain a copy of the License at
-* http://www.mozilla.org/MPL/
-*
-* Alternatively, the contents of this file may be used under the terms
-* of the General Public License (the  "GNU License"), in which case the
-* provisions of GNU License are applicable instead of those
-* above. If you wish to allow use of your version of this file only
-* under the terms of the GNU License and not to allow others to use
-* your version of this file under the MPL, indicate your decision by
-* deleting the provisions above and replace them with the notice and
-* other provisions required by the GNU License. If you do not delete
-* the provisions above, a recipient may use your version of this file
-* under either the MPL or the GNU License."
-*
-* Software distributed under the License is distributed on an "AS IS"
-* basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
-* the License for the specific language governing rights and limitations
-* under the License.
-*
-* The Original Code is derived from and used in conjunction with the 
-* H323Plus Project (www.h323plus.org/)
-*
-* The Initial Developer of the Original Code is ISVO (Asia) Pte Ltd.
-*
-*
-* Contributor(s): ______________________________________.
-*
-* $Revision$
-* $Author$
-* $Date$
-*/
+/*
+ * h460_std23.h
+ *
+ * Copyright (c) 2009 ISVO (Asia) Pte Ltd. All Rights Reserved.
+ *
+ * The contents of this file are subject to the Mozilla Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Alternatively, the contents of this file may be used under the terms
+ * of the General Public License (the  "GNU License"), in which case the
+ * provisions of GNU License are applicable instead of those
+ * above. If you wish to allow use of your version of this file only
+ * under the terms of the GNU License and not to allow others to use
+ * your version of this file under the MPL, indicate your decision by
+ * deleting the provisions above and replace them with the notice and
+ * other provisions required by the GNU License. If you do not delete
+ * the provisions above, a recipient may use your version of this file
+ * under either the MPL or the GNU License."
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+ * the License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is derived from and used in conjunction with the 
+ * H323Plus Project (www.h323plus.org/)
+ *
+ * The Initial Developer of the Original Code is ISVO (Asia) Pte Ltd.
+ *
+ * Contributor(s): Many thanks to Simon Horne.
+ *                 Robert Jongbloed (robertj@voxlucida.com.au).
+ *
+ * $Revision$
+ * $Author$
+ * $Date$
+ */
 
 #ifndef OPAL_H460_STD23_H
 #define OPAL_H460_STD23_H
 
-
-#include <h460/h4601.h>
+#include <opal_config.h>
 
 #if OPAL_H460_NAT
 
-#include <ptclib/pstun.h>
+#include <h460/h4601.h>
 
 #if _MSC_VER
 #pragma once
@@ -52,144 +52,81 @@
 
 class H323EndPoint;
 class H460_FeatureStd23;
-class PNatMethod_H46024  : public PSTUNClient
+
+
+class PNatMethod_H46024  : public PNatMethod
 {
     PCLASSINFO(PNatMethod_H46024, PNatMethod);
   public:
-    PNatMethod_H46024();
+    enum { DefaultPriority = 40 };
+    PNatMethod_H46024(unsigned priority = DefaultPriority);
 
-    ~PNatMethod_H46024();
+    static const char * MethodName();
+    virtual PCaselessString GetName() const;
 
-    static PString GetNatMethodName();
-    virtual PString GetName() const;
-
-    // Start the Nat Method testing
-    void Start(const PString & server,H460_FeatureStd23 * _feat);
-
-    // Main thread testing
-    void Main();
-
-    // Whether the NAT method is Available
-    virtual bool IsAvailable(
-      const PIPSocket::Address & binding = PIPSocket::GetDefaultIpAny()  ///< Interface to see if NAT is available on
-    );
-
-    // Create the socket pair
-    virtual PBoolean CreateSocketPair(
-      PUDPSocket * & socket1,
-      PUDPSocket * & socket2,
-      const PIPSocket::Address & binding = PIPSocket::GetDefaultIpAny()
-    );
-
-    // Whether the NAT Method is available
-    void SetAvailable();
-
-    // Whether the NAT method is activated for this call
-    virtual void Activate(bool act);
-
-    // Reportable NAT Type
-    PSTUNClient::NatTypes GetNATType();
+    virtual PString GetServer() const;
+    virtual bool IsAvailable(const PIPSocket::Address & binding);
 
   protected:
-    // Do a NAT test
-    PSTUNClient::NatTypes NATTest();
+    virtual NatTypes InternalGetNatType(bool forced, const PTimeInterval & maxAge);
 
-  private:
-    bool                    isActive;
-    bool                    isAvailable;
-    PSTUNClient::NatTypes    natType;
-    H460_FeatureStd23 *        feat;
+    H323EndPoint     * m_endpoint;
+    NatTypes           m_natType;
+    PIPSocket::Address m_externalIP;
+
+  friend class H460_FeatureStd23;
 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class H460_FeatureStd23 : public H460_FeatureStd 
+class H460_FeatureStd23 : public H460_Feature
 {
-    PCLASSINFO(H460_FeatureStd23, H460_FeatureStd);
+    PCLASSINFO(H460_FeatureStd23, H460_Feature);
 
   public:
-
     H460_FeatureStd23();
-    virtual ~H460_FeatureStd23();
 
     // Universal Declarations Every H460 Feature should have the following
-    virtual void AttachEndPoint(H323EndPoint * _ep);
+    static Purpose GetPluginPurpose()      { return ForGatekeeper; };
+    virtual Purpose GetPurpose() const     { return GetPluginPurpose(); };
 
-    static PStringArray GetFeatureName()         { return PStringArray("Std23"); };
-    static PStringArray GetFeatureFriendlyName() { return PStringArray("P2Pnat Detect-H.460.23"); };
-    static int GetPurpose()                     { return FeatureRas; };
-    static PStringArray GetIdentifier()          { return PStringArray("23"); };
+    virtual bool Initialise(H323EndPoint & ep, H323Connection * con);
 
-    virtual PBoolean CommonFeature() { return isEnabled; }
-
-    // Messages
-    // GK -> EP
-    virtual PBoolean OnSendGatekeeperRequest(H225_FeatureDescriptor & pdu);
-    virtual void OnReceiveGatekeeperConfirm(const H225_FeatureDescriptor & pdu);
-
-    virtual PBoolean OnSendRegistrationRequest(H225_FeatureDescriptor & pdu);
-    virtual void OnReceiveRegistrationConfirm(const H225_FeatureDescriptor & pdu);
-
-    H323EndPoint * GetEndPoint() const { return (H323EndPoint *)EP; }
-
-    // Reporting the NAT Type
-    void OnNATTypeDetection(PSTUNClient::NatTypes type, const PIPSocket::Address & ExtIP);
-
-    bool IsAvailable();
-
-    bool AlternateNATMethod();
-    bool UseAlternate();
+    // H.225.0 Messages
+    virtual bool OnSendGatekeeperRequest(H460_FeatureDescriptor & pdu);
+    virtual bool OnSendRegistrationRequest(H460_FeatureDescriptor & pdu);
+    virtual void OnReceiveRegistrationConfirm(const H460_FeatureDescriptor & pdu);
 
   #ifdef H323_UPnP
     void InitialiseUPnP();
+    bool UsePnP();
   #endif
 
   protected:
     bool DetectALG(const PIPSocket::Address & detectAddress);
-    void StartSTUNTest(const PString & server);
 
     void DelayedReRegistration();
 
-  private:
-    H323EndPoint *         EP;
-    PSTUNClient::NatTypes  natType;
-    PIPSocket::Address     externalIP;
-    PBoolean               natNotify;
-    PBoolean               alg;
-    PBoolean               isavailable;
-    PBoolean               isEnabled; 
-    int                    useAlternate;
-
-    // Delayed Reregistration
-    PThread  *  RegThread;
-    PDECLARE_NOTIFIER(PThread, H460_FeatureStd23, RegMethod);
+    PNatMethod_H46024 * m_natMethod;
+    bool                m_alg;
 };
 
 
 ////////////////////////////////////////////////////////
 
-class H323EndPoint;
-class H323Connection;
-
-class H460_FeatureStd24 : public H460_FeatureStd 
+class H460_FeatureStd24 : public H460_Feature
 {
-    PCLASSINFO(H460_FeatureStd24, H460_FeatureStd);
+    PCLASSINFO(H460_FeatureStd24, H460_Feature);
 
   public:
     H460_FeatureStd24();
-    virtual ~H460_FeatureStd24();
 
     // Universal Declarations Every H460 Feature should have the following
-    virtual void AttachEndPoint(H323EndPoint * _ep);
-    virtual void AttachConnection(H323Connection * _ep);
+    static Purpose GetPluginPurpose()  { return ForConnection; };
+    virtual Purpose GetPurpose() const { return GetPluginPurpose(); };
 
-    static PStringArray GetFeatureName() { return PStringArray("Std24"); };
-    static PStringArray GetFeatureFriendlyName() { return PStringArray("P2Pnat Media-H.460.24"); };
-    static int GetPurpose()    { return FeatureSignal; };
-    static PStringArray GetIdentifier() { return PStringArray("24"); };
-
-    virtual PBoolean CommonFeature() { return isEnabled; }
+    virtual bool IsNegotiated() const;
 
     enum NatInstruct {
       e_unknown,
@@ -215,25 +152,20 @@ class H460_FeatureStd24 : public H460_FeatureStd
     };
 
     // Messages
-    virtual PBoolean OnSendAdmissionRequest(H225_FeatureDescriptor & pdu);
-    virtual void OnReceiveAdmissionConfirm(const H225_FeatureDescriptor & pdu);
-    virtual void OnReceiveAdmissionReject(const H225_FeatureDescriptor & pdu);
+    virtual PBoolean OnSendAdmissionRequest(H460_FeatureDescriptor & pdu);
+    virtual void OnReceiveAdmissionConfirm(const H460_FeatureDescriptor & pdu);
+    virtual void OnReceiveAdmissionReject(const H460_FeatureDescriptor & pdu);
 
-    virtual PBoolean OnSendSetup_UUIE(H225_FeatureDescriptor & pdu);
-    virtual void OnReceiveSetup_UUIE(const H225_FeatureDescriptor & pdu);
+    virtual PBoolean OnSendSetup_UUIE(H460_FeatureDescriptor & pdu);
+    virtual void OnReceiveSetup_UUIE(const H460_FeatureDescriptor & pdu);
 
   protected:
     void HandleNATInstruction(NatInstruct natconfig);
     void SetNATMethods(H46024NAT state);
-    void SetH46019State(bool state);
 
-  private:
-    H323EndPoint * EP;
-    H323Connection * CON;
     NatInstruct natconfig;
     PMutex h460mute;
     int nattype;
-    bool isEnabled;
     bool useAlternate;
 };
 

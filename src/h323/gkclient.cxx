@@ -46,10 +46,8 @@
 #include <h323/h323con.h>
 #include <h323/h323pdu.h>
 #include <h323/h323rtp.h>
-
-#if OPAL_H460
 #include <h460/h4601.h>
-#endif
+
 
 #define new PNEW
 
@@ -82,7 +80,7 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   , willRespondToIRR(false)
   , monitorStop(false)
 #if OPAL_H460
-  , features(ep.GetFeatureSet())
+  , m_features(ep.InternalCreateFeatureSet(H460_Feature::ForGatekeeper, NULL))
 #endif
 {
   timeToLive.SetNotifier(PCREATE_NOTIFIER(TickleMonitor));
@@ -90,11 +88,6 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
 
   monitor = PThread::Create(PCREATE_NOTIFIER(MonitorMain), "GkMonitor");
   
-#if OPAL_H460
-  features->AttachEndPoint(&ep);
-  features->LoadFeatureSet(H460_Feature::FeatureRas);
-#endif
-
   PInterfaceMonitor::GetInstance().AddNotifier(PCREATE_InterfaceNotifier(OnHighPriorityInterfaceChange), 80);
   PInterfaceMonitor::GetInstance().AddNotifier(PCREATE_InterfaceNotifier(OnLowPriorityInterfaceChange), 40);
 }
@@ -116,7 +109,7 @@ H323Gatekeeper::~H323Gatekeeper()
   StopChannel();
 
 #if OPAL_H460
-  delete features;
+  delete m_features;
 #endif
 }
 
@@ -534,6 +527,10 @@ PBoolean H323Gatekeeper::RegistrationRequest(PBoolean autoReg, PBoolean didGkDis
   }
 
   PTimeInterval ttl = endpoint.GetGatekeeperTimeToLive();
+#if OPAL_H460_NAT
+  if (m_features != NULL && m_features->HasFeature(18) && ttl > endpoint.GetManager().GetTransportIdleTime())
+    ttl = endpoint.GetManager().GetTransportIdleTime();
+#endif
   if (ttl > 0) {
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_timeToLive);
     rrq.m_timeToLive = (int)ttl.GetSeconds();
@@ -818,10 +815,12 @@ PBoolean H323Gatekeeper::UnregistrationRequest(int reason)
 
   Request request(urq.m_requestSeqNum, pdu);
 
-  PBoolean requestResult = MakeRequest(request);
+  bool requestResult = MakeRequest(request);
 
-  for (AlternateList::iterator it = m_alternates.begin(); it != m_alternates.end(); ++it) {
-    if (it->registrationState == AlternateInfo::IsRegistered) {
+  AlternateList alternates = m_alternates;
+  m_alternates = AlternateList(); // Do not use RemoveAll(), this just detaches the reference
+  for (AlternateList::iterator it = alternates.begin(); it != alternates.end(); ++it) {
+    if (it->registrationState == AlternateInfo::IsRegistered && it->gatekeeperIdentifier != GetIdentifier()) {
       Connect(it->rasAddress, it->gatekeeperIdentifier);
       UnregistrationRequest(reason);
     }
@@ -2073,24 +2072,19 @@ void H323Gatekeeper::OnLowPriorityInterfaceChange(PInterfaceMonitor & monitor, P
 }
 
 
-PBoolean H323Gatekeeper::OnSendFeatureSet(unsigned pduType, H225_FeatureSet & message) const
-{
 #if OPAL_H460
-  return features->SendFeature(pduType, message);
-#else
-  return endpoint.OnSendFeatureSet(pduType, message);
-#endif
+PBoolean H323Gatekeeper::OnSendFeatureSet(H460_MessageType pduType, H225_FeatureSet & message) const
+{
+  return m_features != NULL && m_features->OnSendPDU(pduType, message);
 }
 
 
-void H323Gatekeeper::OnReceiveFeatureSet(unsigned pduType, const H225_FeatureSet & message) const
+void H323Gatekeeper::OnReceiveFeatureSet(H460_MessageType pduType, const H225_FeatureSet & message) const
 {
-#if OPAL_H460
-  features->ReceiveFeature(pduType, message);
-#else
-  endpoint.OnReceiveFeatureSet(pduType, message);
-#endif
+  if (m_features != NULL)
+    m_features->OnReceivePDU(pduType, message);
 }
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2135,15 +2129,6 @@ void H323Gatekeeper::AlternateInfo::PrintOn(ostream & strm) const
   if (priority > 0)
     strm << ";priority=" << priority;
 }
-
-#if OPAL_H460
-
-H460_FeatureSet & H323Gatekeeper::GetFeatures()
-{
-  return *features;
-}
-
-#endif // OPAL_H460
 
 
 #endif // OPAL_H323

@@ -109,7 +109,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   , nextH450CallIdentity(0)
 #endif
 #if OPAL_H460
-  , disableH460(false)
+  , m_features(NULL)
 #endif
 {
   localAliasNames.AppendString(defaultLocalPartyName);
@@ -117,12 +117,6 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   secondaryConnectionsActive.DisallowDeleteObjects();
 
   manager.AttachEndPoint(this, "h323s");
-
-#if OPAL_H460
-  // We must set time to live to 30 to ensure pinhole open
-  registrationTimeToLive = PTimeInterval(0, 30);  
-  m_h46018enabled = true;
-#endif
 
   SetCompatibility(H323Connection::e_NoMultipleTunnelledH245, "Cisco IOS");
   SetCompatibility(H323Connection::e_BadMasterSlaveConflict,  "NetMeeting");
@@ -242,7 +236,7 @@ bool H323EndPoint::SetGatewaySupportedProtocol(H225_ArrayOf_SupportedProtocols &
   H225_H323Caps & caps = protocols[count];
 
   caps.IncludeOptionalField(H225_H323Caps::e_supportedPrefixes);
-  H225_ArrayOf_SupportedPrefix & supportedPrefixes = caps.m_supportedPrefixes;	
+  H225_ArrayOf_SupportedPrefix & supportedPrefixes = caps.m_supportedPrefixes;  
   supportedPrefixes.SetSize(prefixes.GetSize());
 
   for (PINDEX i = 0; i < prefixes.GetSize(); i++)
@@ -376,19 +370,15 @@ PBoolean H323EndPoint::UseGatekeeper(const PString & address,
 
 static H323TransportAddress GetGatekeeperAddress(const PString & address)
 {
-  PIPSocketAddressAndPort addrPort(address, H225_RAS::DefaultRasUdpPort);
-
 #if OPAL_PTLIB_DNS_RESOLVER
-  if (!PIPSocket::Address(address).IsValid()) {
-    PIPSocketAddressAndPortVector addresses;
-    if (PDNS::LookupSRV(address, "_h323rs._udp", addrPort.GetPort(), addresses) && !addresses.empty()) {
-      addrPort = addresses[0];
-      PTRACE(4, "H323\tUsing DNS SRV record for gatekeeper at " << addrPort);
-    }
+  PIPSocketAddressAndPortVector addresses;
+  if (PDNS::LookupSRV(address, "_h323rs._udp", H225_RAS::DefaultRasUdpPort, addresses)) {
+    PTRACE(4, "H323\tUsing DNS SRV record for gatekeeper at " << addresses[0]);
+    return OpalTransportAddress(addresses[0], OpalTransportAddress::UdpPrefix());
   }
 #endif //OPAL_PTLIB_DNS_RESOLVER
 
-  return H323TransportAddress(addrPort.AsString(), H225_RAS::DefaultRasUdpPort, OpalTransportAddress::UdpPrefix());
+  return H323TransportAddress(address, H225_RAS::DefaultRasUdpPort, OpalTransportAddress::UdpPrefix());
 }
 
 PBoolean H323EndPoint::SetGatekeeper(const PString & address, H323Transport * transport)
@@ -556,11 +546,16 @@ PSafePtr<OpalConnection> H323EndPoint::MakeConnection(OpalCall & call,
 
 void H323EndPoint::NewIncomingConnection(OpalListener &, const OpalTransportPtr & transport)
 {
-  if (transport == NULL)
-    return;
+  if (transport != NULL)
+    InternalNewIncomingConnection(transport);
+}
 
+
+void H323EndPoint::InternalNewIncomingConnection(const OpalTransportPtr & transport)
+{
   PTRACE(3, "H225\tAwaiting first PDU");
   transport->SetReadTimeout(15000); // Await 15 seconds after connect for first byte
+
   H323SignalPDU pdu;
   if (!pdu.Read(*transport)) {
     PTRACE(1, "H225\tFailed to get initial Q.931 PDU, connection not started.");
@@ -829,13 +824,11 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
     }
 
     // If it is a valid IP address then can't be a domain so do not try SRV record lookup
-    if (!PIPSocket::Address(url.GetHostName()).IsValid() && !url.GetPortSupplied()) {
-      PIPSocketAddressAndPortVector addresses;
-      if (PDNS::LookupSRV(url.GetHostName(), "_h323cs._tcp", url.GetPort(), addresses) && !addresses.empty()) {
-        // Only use first entry
-        url.SetHostName(addresses[0].GetAddress().AsString());
-        url.SetPort(addresses[0].GetPort());
-      }
+    PIPSocketAddressAndPortVector addresses;
+    if (PDNS::LookupSRV(url.GetHostName(), "_h323cs._tcp", url.GetPort(), addresses) && !addresses.empty()) {
+      // Only use first entry
+      url.SetHostName(addresses[0].GetAddress().AsString());
+      url.SetPort(addresses[0].GetPort());
     }
   }
 
@@ -888,7 +881,7 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
       }
 
       // Get the IP address
-      address = H323TransportAddress(person.sipAddress);
+      address = OpalTransportAddress(person.sipAddress);
 
       // Get the port if provided
       for (PINDEX i = 0; i < person.sport.GetSize(); i++) {
@@ -1173,8 +1166,8 @@ void H323EndPoint::OnClosedLogicalChannel(H323Connection & /*connection*/,
 
 
 void H323EndPoint::OnGatekeeperNATDetect(PIPSocket::Address /* publicAddr*/,
-					 PString & /*gkIdentifier*/,
-					 H323TransportAddress & /*gkRouteAddress*/)
+           PString & /*gkIdentifier*/,
+           H323TransportAddress & /*gkRouteAddress*/)
 {
 }
 
@@ -1345,67 +1338,47 @@ void H323EndPoint::TranslateTCPAddress(PIPSocket::Address & localAddr,
 }
 
 
-PBoolean H323EndPoint::OnSendFeatureSet(unsigned id, H225_FeatureSet & featureSet)
-{
 #if OPAL_H460
-  return features.SendFeature(id, featureSet);
-#else
-  return false;
-#endif
-}
-
-#if OPAL_H460
-H460_FeatureSet * H323EndPoint::GetGatekeeperFeatures()
+H460_FeatureSet * H323EndPoint::CreateFeatureSet(H460_Feature::Purpose purpose, H323Connection *)
 {
-	if (gatekeeper != NULL) {
-		return &gatekeeper->GetFeatures();
-	}
-
-	return NULL;
-}
-
-void H323EndPoint::H46018Enable(PBoolean enable) 
-{ 
-   m_h46018enabled = enable;
-   if (enable) {
-       // Must set reregistrations at between 15 and 45 sec
-       // otherwise the Pinhole in NAT will close
-       registrationTimeToLive = PTimeInterval(0, 30);  
-   } else {
-       // Set timer to whatever gk allocates...
-       registrationTimeToLive = PTimeInterval();       
-   }
+  return new H460_FeatureSet(*this, purpose);
 }
 
 
-PBoolean H323EndPoint::H46018IsEnabled() 
-{ 
-	return m_h46018enabled; 
-}
-#endif
-
-
-void H323EndPoint::OnReceiveFeatureSet(unsigned id, const H225_FeatureSet & featureSet)
+H460_FeatureSet * H323EndPoint::InternalCreateFeatureSet(H460_Feature::Purpose purpose, H323Connection * connection)
 {
-#if OPAL_H460
-  features.ReceiveFeature(id, featureSet);
-#endif
+  if (m_features == NULL) {
+    m_features = CreateFeatureSet(H460_Feature::ForEndpoint, NULL);
+    if (m_features != NULL)
+      m_features->LoadFeatureSet();
+  }
+
+  H460_FeatureSet * features = CreateFeatureSet(purpose, connection);
+  if (features != NULL)
+    features->LoadFeatureSet(connection);
+  return features;
 }
 
 
-void H323EndPoint::LoadBaseFeatureSet()
+PBoolean H323EndPoint::OnSendFeatureSet(H460_MessageType pduType, H225_FeatureSet & featureSet)
 {
-#if OPAL_H460
-  features.AttachEndPoint(this);
-  features.LoadFeatureSet(H460_Feature::FeatureBase);
-#endif
+  return m_features != NULL && m_features->OnSendPDU(pduType, featureSet);
 }
 
 
-bool H323EndPoint::OnFeatureInstance(int /*instType*/, const PString & /*identifer*/)
+void H323EndPoint::OnReceiveFeatureSet(H460_MessageType pduType, const H225_FeatureSet & featureSet)
+{
+  if (m_features != NULL)
+    m_features->OnReceivePDU(pduType, featureSet);
+}
+
+
+bool H323EndPoint::OnLoadFeature(H460_Feature::Purpose /*purpose*/, const PString & /*identifer*/)
 {
   return true;
 }
+
+#endif // OPAL_H460
 
 
 PString H323EndPoint::GetCompatibility(H323Connection::CompatibilityIssues issue) const

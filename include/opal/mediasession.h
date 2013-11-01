@@ -283,6 +283,8 @@ class OpalMediaSession : public PSafeObject
 
     virtual bool IsCryptoSecured(bool rx) const;
 
+    OpalConnection & GetConnection() const { return m_connection; }
+
     unsigned GetSessionID() const { return m_sessionId; }
     const OpalMediaType & GetMediaType() const { return m_mediaType; }
 
