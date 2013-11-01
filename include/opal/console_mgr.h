@@ -48,6 +48,9 @@ class OpalPCSSEndPoint;
 class OpalIVREndPoint;
 class OpalMixerEndPoint;
 
+class OpalConsoleManager;
+
+
 #define OPAL_CONSOLE_PREFIXES OPAL_PREFIX_SIP   " " \
                               OPAL_PREFIX_H323  " " \
                               OPAL_PREFIX_PSTN  " " \
@@ -59,6 +62,10 @@ class OpalMixerEndPoint;
   */
 class OpalConsoleEndPoint
 {
+protected:
+  OpalConsoleManager & m_console;
+  OpalConsoleEndPoint(OpalConsoleManager & console) : m_console(console) { }
+
 public:
   virtual ~OpalConsoleEndPoint() { }
   virtual void GetArgumentSpec(ostream & strm) const = 0;
@@ -67,7 +74,7 @@ public:
     InitDisabled,
     InitSuccess
   };
-  virtual bool Initialise(PArgList & args, ostream & output, bool verbose, const PString & defaultRoute) = 0;
+  virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute) = 0;
 #if P_CLI
   virtual void AddCommands(PCLI & cli) = 0;
 #endif

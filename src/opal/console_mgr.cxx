@@ -68,12 +68,13 @@ class OpalRTPConsoleEndPoint : public OpalConsoleEndPoint
 protected:
   OpalRTPEndPoint & m_endpoint;
 
-public:
-  OpalRTPConsoleEndPoint(OpalRTPEndPoint * endpoint)
-    : m_endpoint(*endpoint)
+  OpalRTPConsoleEndPoint(OpalConsoleManager & console, OpalRTPEndPoint * endpoint)
+    : OpalConsoleEndPoint(console)
+    , m_endpoint(*endpoint)
   {
   }
 
+public:
   bool SetUIMode(const PCaselessString & str)
   {
     if (str == "inband")
@@ -161,8 +162,20 @@ class SIPConsoleEndPoint : public SIPEndPoint, public OpalRTPConsoleEndPoint
 public:
   SIPConsoleEndPoint(OpalConsoleManager & manager)
     : SIPEndPoint(manager)
-    , P_DISABLE_MSVC_WARNINGS(4355, OpalRTPConsoleEndPoint(this))
+    , P_DISABLE_MSVC_WARNINGS(4355, OpalRTPConsoleEndPoint(manager, this))
   {
+  }
+
+
+  virtual void OnRegistrationStatus(const RegistrationStatus & status)
+  {
+    SIPEndPoint::OnRegistrationStatus(status);
+
+    unsigned reasonClass = status.m_reason/100;
+    if (reasonClass == 1 || (status.m_reRegistering && reasonClass == 2))
+      return;
+
+    m_console.Output() << status << endl;
   }
 
 
@@ -245,8 +258,10 @@ public:
   }
 
 
-  virtual bool Initialise(PArgList & args, ostream & output, bool verbose, const PString & defaultRoute)
+  virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
   {
+    ostream & output = m_console.Output();
+
     // Set up SIP
     PCaselessString interfaces;
     if (args.HasOption("no-sip") || (interfaces = args.GetOptionString("sip")) == "x") {
@@ -348,10 +363,15 @@ class H323ConsoleEndPoint : public H323EndPoint, public OpalRTPConsoleEndPoint
 public:
   H323ConsoleEndPoint(OpalConsoleManager & manager)
     : H323EndPoint(manager)
-    , P_DISABLE_MSVC_WARNINGS(4355, OpalRTPConsoleEndPoint(this))
+    , P_DISABLE_MSVC_WARNINGS(4355, OpalRTPConsoleEndPoint(manager, this))
   {
   }
 
+
+  virtual void OnGatekeeperStatus(H323Gatekeeper::RegistrationFailReasons status)
+  {
+    m_console.Output() << "\nH.323 registration: " << status << endl;
+  }
 
   virtual void GetArgumentSpec(ostream & strm) const
   {
@@ -360,6 +380,7 @@ public:
             "H-h323:            H.323 listens on interface, defaults to tcp$*:1720.\n"
             "g-gk-host:         H.323 gatekeeper host.\n"
             "G-gk-id:           H.323 gatekeeper identifier.\n"
+            "-gk-password:      H.323 gatekeeper password (if different from --password).\n"
             "-no-fast.          H.323 fast connect disabled.\n"
             "-no-tunnel.        H.323 tunnel for H.245 disabled.\n"
             "-h323-bandwidth:    Set total bandwidth (both directions) to be used for call\n"
@@ -369,8 +390,17 @@ public:
   }
 
 
-  virtual bool Initialise(PArgList & args, ostream & output, bool verbose, const PString & defaultRoute)
+  bool UseGatekeeperFromArgs(const PArgList & args, const char * host, const char * ident, const char * pass)
   {
+    SetGatekeeperPassword(args.GetOptionString(pass, args.GetOptionString("password")));
+    return UseGatekeeper(args.GetOptionString(host), args.GetOptionString(ident));
+  }
+
+
+  virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
+  {
+    ostream & output = m_console.Output();
+
     // Set up H.323
     PCaselessString interfaces;
     if (args.HasOption("no-h323") || (interfaces = args.GetOptionString("h323")) == "x") {
@@ -411,7 +441,7 @@ public:
     if (args.HasOption("gk-host") || args.HasOption("gk-id")) {
       if (verbose)
         output << "H.323 Gatekeeper: " << flush;
-      if (!UseGatekeeper(args.GetOptionString("gk-host"), args.GetOptionString("gk-id"))) {
+      if (!UseGatekeeperFromArgs(args, "gk-host", "gk-id", "gk-password")) {
         output << "\nCould not complete gatekeeper registration" << endl;
         return false;
       }
@@ -461,7 +491,7 @@ public:
       RemoveGatekeeper();
     else if (args[0] *= "on") {
       args.GetContext() << "H.323 Gatekeeper: " << flush;
-      if (UseGatekeeper(args.GetOptionString("host"), args.GetOptionString("identifier")))
+      if (UseGatekeeperFromArgs(args, "host", "identifier", "password"))
         args.GetContext()<< *GetGatekeeper() << endl;
       else
         args.GetContext() << "unavailable" << endl;
@@ -483,7 +513,8 @@ public:
                    "Set gatekeeper",
                    "[ options ] [ \"on\" / \"off\" ]",
                    "h-host: Host name or IP address of gatekeeper\n"
-                   "i-identifier: Identifier for gatekeeper");
+                   "i-identifier: Identifier for gatekeeper\n"
+                   "p-password: Password for H.235.1 authentication");
   }
 #endif // P_CLI
 };
@@ -497,6 +528,7 @@ class OpalConsoleLineEndPoint : public OpalLineEndPoint, public OpalConsoleEndPo
 public:
   OpalConsoleLineEndPoint(OpalConsoleManager & manager)
     : OpalLineEndPoint(manager)
+    , OpalConsoleEndPoint(manager)
   {
   }
 
@@ -510,8 +542,10 @@ public:
   }
 
 
-  virtual bool Initialise(PArgList & args, ostream & output, bool verbose, const PString & defaultRoute)
+  virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
   {
+    ostream & output = m_console.Output();
+
     // If we have LIDs speficied in command line, load them
     if (args.HasOption("no-lid")) {
       if (verbose)
@@ -571,6 +605,7 @@ class OpalConsoleCapiEndPoint : public OpalCapiEndPoint, public OpalConsoleEndPo
 public:
   OpalConsoleCapiEndPoint(OpalConsoleManager & manager)
     : OpalCapiEndPoint(manager)
+    , OpalConsoleEndPoint(manager)
   {
   }
 
@@ -581,8 +616,10 @@ public:
   }
 
 
-  virtual bool Initialise(PArgList & args, ostream & output, bool verbose, const PString & defaultRoute)
+  virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
   {
+    ostream & output = m_console.Output();
+
     if (args.HasOption("no-capi")) {
       if (verbose)
         output << "CAPI ISDN disabled.\n";
@@ -632,8 +669,8 @@ static struct {
     if (!driver.IsEmpty())
       driver += '\t';
 
-    PString device = prefix.IsEmpty() ? args[0] : args.GetOptionString(prefix + "device");
-    if (!fromCLI && device.IsEmpty())
+    PString device = fromCLI ? args[0] : args.GetOptionString(prefix + "device");
+    if (device.IsEmpty() && !driver.IsEmpty())
       device = '*';
 
     if ((!driver.IsEmpty() || !device.IsEmpty()) && !(ep.*m_set)(driver + device)) {
@@ -713,6 +750,7 @@ class OpalConsolePCSSEndPoint : public OpalPCSSEndPoint, public OpalConsoleEndPo
 public:
   OpalConsolePCSSEndPoint(OpalConsoleManager & manager)
     : OpalPCSSEndPoint(manager)
+    , OpalConsoleEndPoint(manager)
   {
   }
 
@@ -740,8 +778,10 @@ public:
   }
 
 
-  virtual bool Initialise(PArgList & args, ostream & output, bool verbose, const PString &)
+  virtual bool Initialise(PArgList & args, bool verbose, const PString &)
   {
+    ostream & output = m_console.Output();
+
     for (PINDEX i = 0; i < PARRAYSIZE(AudioDeviceVariables); ++i) {
       if (!AudioDeviceVariables[i].Initialise(*this, output, verbose, args, false))
         return false;
@@ -851,6 +891,7 @@ class OpalConsoleIVREndPoint : public OpalIVREndPoint, public OpalConsoleEndPoin
 public:
   OpalConsoleIVREndPoint(OpalConsoleManager & manager)
     : OpalIVREndPoint(manager)
+    , OpalConsoleEndPoint(manager)
   {
   }
 
@@ -861,7 +902,7 @@ public:
   }
 
 
-  virtual bool Initialise(PArgList & args, ostream &, bool, const PString &)
+  virtual bool Initialise(PArgList & args, bool, const PString &)
   {
     PString vxml = args.GetOptionString("ivr-script");
     if (!vxml.IsEmpty())
@@ -1140,7 +1181,7 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
 
   for (PINDEX i = 0; i < m_endpointPrefixes.GetSize(); ++i) {
     OpalConsoleEndPoint * ep = GetConsoleEndPoint(m_endpointPrefixes[i]);
-    if (ep != NULL && !ep->Initialise(args, Output(), verbose, defaultRoute))
+    if (ep != NULL && !ep->Initialise(args, verbose, defaultRoute))
       return false;
   }
 
@@ -1611,6 +1652,7 @@ OpalManagerCLI::OpalManagerCLI(  const char * endpointPrefixes)
 
 OpalManagerCLI::~OpalManagerCLI()
 {
+  m_outputStream = &cout;
   delete m_cli;
 }
 
@@ -1729,8 +1771,10 @@ void OpalManagerCLI::Run()
 
 void OpalManagerCLI::EndRun(bool interrupt)
 {
-  if (m_cli != NULL)
+  if (m_cli != NULL) {
+    m_outputStream = &cout;
     m_cli->Stop();
+  }
 
   OpalConsoleManager::EndRun(interrupt);
 }

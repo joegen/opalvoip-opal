@@ -8287,37 +8287,6 @@ MySIPEndPoint::MySIPEndPoint(MyManager & manager)
 }
 
 
-static void OutputStatus(ostream & strm, SIP_PDU::StatusCodes reason)
-{
-  switch (reason) {
-    case SIP_PDU::Successful_OK :
-      strm << " successful";
-      break;
-
-    case SIP_PDU::Failure_RequestTimeout :
-      strm << " proxy";
-    case SIP_PDU::Local_Timeout :
-      strm << " time out";
-      break;
-
-    case SIP_PDU::Failure_UnAuthorised :
-      strm << " has invalid credentials";
-      break;
-
-    case SIP_PDU::Local_NotAuthenticated :
-      strm << " has invalid certificates";
-      break;
-
-    case SIP_PDU::Local_NoCompatibleListener :
-      strm << " has no compatible listener";
-      break;
-
-    default :
-      strm << " failed (" << reason << ')';
-  }
-}
-
-
 void MySIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
 {
   SIPEndPoint::OnRegistrationStatus(status);
@@ -8326,23 +8295,10 @@ void MySIPEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
   if (reasonClass == 1 || (status.m_reRegistering && reasonClass == 2))
     return;
 
-  SIPURL aor = status.m_addressofRecord;
-  aor.Sanitise(SIPURL::ExternalURI);
-
-  PStringStream reasonStr;
-  OutputStatus(reasonStr, status.m_reason);
-
-  LogWindow << "SIP ";
-  if (!status.m_wasRegistering)
-    LogWindow << "un";
-  LogWindow << "registration of " << aor << reasonStr << '.' << endl;;
-
-  PString tipText = status.m_wasRegistering ? "Register" : "Unregister";
-  if (status.m_reason == SIP_PDU::Successful_OK)
-    tipText += "ed";
-  else
-    tipText += reasonStr;
-  m_manager.SetTrayTipText(tipText);
+  PStringStream str;
+  str << status << endl;
+  LogWindow << str << endl;
+  m_manager.SetTrayTipText(str);
 
   if (!status.m_wasRegistering)
     m_manager.StartRegistrations();
@@ -8357,15 +8313,7 @@ void MySIPEndPoint::OnSubscriptionStatus(const SubscriptionStatus & status)
   if (reasonClass == 1 || (status.m_reSubscribing && reasonClass == 2))
     return;
 
-  SIPURL uri = status.m_addressofRecord;
-  uri.Sanitise(SIPURL::ExternalURI);
-
-  LogWindow << "SIP ";
-  if (!status.m_wasSubscribing)
-    LogWindow << "un";
-  LogWindow << "subscription of " << uri << " to " << status.m_handler->GetEventPackage() << " events";
-  OutputStatus(LogWindow, status.m_reason);
-  LogWindow << '.' << endl;
+  LogWindow << status << endl;
 
   if (!status.m_wasSubscribing)
     m_manager.StartRegistrations();
