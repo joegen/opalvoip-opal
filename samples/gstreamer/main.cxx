@@ -68,57 +68,60 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
   if (!OpalManagerConsole::Initialise(args, verbose, "gst:"))
     return false;
 
+  LockedStream lockedOutput(*this);
+  ostream & output = lockedOutput;
+
   // Set up GStreamer
   GstEndPoint * gst  = new GstEndPoint(*this);
   if (!gst->SetRTPPipeline(args.GetOptionString("rtp-element", gst->GetRTPPipeline()))) {
-    cerr << "Could not set RTP element.\n";
+    output << "Could not set RTP element.\n";
     return false;
   }
   if (!gst->SetJitterBufferPipeline(args.GetOptionString("jb-element", gst->GetJitterBufferPipeline()))) {
-    cerr << "Could not set jitter buffer element.\n";
+    output << "Could not set jitter buffer element.\n";
     return false;
   }
   if (!gst->SetAudioSourceDevice(args.GetOptionString("audio-source", gst->GetAudioSourceDevice()))) {
-    cerr << "Could not set audio source.\n";
+    output << "Could not set audio source.\n";
     return false;
   }
   if (!gst->SetAudioSinkDevice(args.GetOptionString("audio-sink", gst->GetAudioSinkDevice()))) {
-    cerr << "Could not set audio sink.\n";
+    output << "Could not set audio sink.\n";
     return false;
   }
 #if OPAL_VIDEO
   if (!gst->SetVideoSourceDevice(args.GetOptionString("video-source", gst->GetVideoSourceDevice()))) {
-    cerr << "Could not set video source.\n";
+    output << "Could not set video source.\n";
     return false;
   }
   if (!gst->SetVideoSinkDevice(args.GetOptionString("video-sink", gst->GetVideoSinkDevice()))) {
-    cerr << "Could not set video sink.\n";
+    output << "Could not set video sink.\n";
     return false;
   }
   if (!gst->SetVideoSourceColourConverter(args.GetOptionString("source-colour", gst->GetVideoSourceColourConverter()))) {
-    cerr << "Could not set video source colour converter\n";
+    output << "Could not set video source colour converter\n";
     return false;
   }
   if (!gst->SetVideoSinkColourConverter(args.GetOptionString("sink-colour", gst->GetVideoSinkColourConverter()))) {
-    cerr << "Could not set video sink colour converter\n";
+    output << "Could not set video sink colour converter\n";
     return false;
   }
 #endif // OPAL_VIDEO
 
   while (args.HasOption("map")) {
     if (args.GetCount() == 0) {
-      cerr << "No media format specified for mapping\n";
+      output << "No media format specified for mapping\n";
       return false;
     }
     OpalMediaFormat mediaFormat(args[0]);
     if (!mediaFormat.IsValid()) {
-      cerr << "No media format of name \"" << args[0] << '"' << endl;
+      output << "No media format of name \"" << args[0] << '"' << endl;
       return false;
     }
 
     GstEndPoint::CodecPipelines codec;
     if (gst->GetMapping(mediaFormat, codec))
-      Output() << "Overriding existing media format mapping for \"" << mediaFormat << '"' << endl;
+      output << "Overriding existing media format mapping for \"" << mediaFormat << '"' << endl;
 
     if (args.HasOption("encoder"))
       codec.m_encoder = args.GetOptionString("encoder");
@@ -129,7 +132,7 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
     if (args.HasOption("depacketiser"))
       codec.m_depacketiser = args.GetOptionString("depacketiser");
     if (!gst->SetMapping(mediaFormat, codec)) {
-      cerr << "Could not set media format mapping for \"" << mediaFormat << '"' << endl;
+      output << "Could not set media format mapping for \"" << mediaFormat << '"' << endl;
       return false;
     }
 
@@ -137,14 +140,14 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
       break;
   }
 
-  Output() << "GStreamer Supported Media Formats: " << setfill(',') << gst->GetMediaFormats() << setfill(' ') << endl;
+  output << "GStreamer Supported Media Formats: " << setfill(',') << gst->GetMediaFormats() << setfill(' ') << endl;
 
   if (args.GetCount() == 0)
-    Output() << "Awaiting incoming call ... " << endl;
+    output << "Awaiting incoming call ... " << endl;
   else if (SetUpCall("gst:*", args[0]) != NULL)
-    Output() << "Making call to " << args[0] << " ... " << endl;
+    output << "Making call to " << args[0] << " ... " << endl;
   else {
-    cerr << "Could not start call to \"" << args[0] << '"' << endl;
+    output << "Could not start call to \"" << args[0] << '"' << endl;
     return false;
   }
 

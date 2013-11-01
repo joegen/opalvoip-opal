@@ -81,11 +81,14 @@ bool MyManager::Initialise(PArgList & args, bool verbose)
   // Set up conference mixer
   m_mixer = new MyMixerEndPoint(*this);
 
+  LockedStream lockedOutput(*this);
+  ostream & output = lockedOutput;
+
   if (args.HasOption('a')) {
     PFilePath path = args.GetOptionString('a');
     ivr->SetDefaultVXML(path);
     AddRouteEntry(".*:.* = ivr:<da>");
-    Output() << "Using attendant IVR " << path << endl;
+    output << "Using attendant IVR " << path << endl;
   }
 
   MyMixerNodeInfo info;
@@ -97,19 +100,19 @@ bool MyManager::Initialise(PArgList & args, bool verbose)
   info.m_audioOnly = args.HasOption('V');
   if (args.HasOption('s'))
     PVideoFrameInfo::ParseSize(args.GetOptionString('s'), info.m_width, info.m_height);
-  Output() << "Video mixer resolution: " << info.m_width << 'x' << info.m_height << endl;
+  output << "Video mixer resolution: " << info.m_width << 'x' << info.m_height << endl;
 #endif
 
   if (args.HasOption('n')) {
     info.m_name = args.GetOptionString('n');
     m_mixer->SetAdHocNodeInfo(info);
-    Output() << "Ad-hoc conferences enabled with default name: " << info.m_name << endl;
+    output << "Ad-hoc conferences enabled with default name: " << info.m_name << endl;
   }
 
   if (args.HasOption('f')) {
     info.m_name = args.GetOptionString('f');
     m_mixer->SetFactoryNodeInfo(info);
-    Output() << "Factory conferences enabled with name: " << info.m_name << endl;
+    output << "Factory conferences enabled with name: " << info.m_name << endl;
   }
 
 

@@ -101,14 +101,17 @@ void MyManager::Usage(ostream & strm, const PArgList & args)
 
 bool MyManager::Initialise(PArgList & args, bool, const PString &)
 {
+  LockedStream lockedOutput(*this);
+  ostream & output = lockedOutput;
+
   if (!args.Parse(GetArgumentSpec())) {
-    Usage(cerr, args);
+    Usage(output, args);
     return false;
   }
 
   MyFaxEndPoint * faxEP  = new MyFaxEndPoint(*this);
   if (!faxEP->IsAvailable()) {
-    cerr << "No fax codecs, SpanDSP plug-in probably not installed." << endl;
+    output << "No fax codecs, SpanDSP plug-in probably not installed." << endl;
     return false;
   }
 
@@ -119,22 +122,22 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
 
   bool quiet = args.HasOption('q');
   if (quiet)
-    cout.rdbuf(NULL);
+    output.rdbuf(NULL);
 
   if (!OpalManagerConsole::Initialise(args, !quiet, prefix + ":" + args[0] + ";receive"))
     return false;
 
-  cout << "Fax Mode: ";
+  output << "Fax Mode: ";
   if (args.HasOption('A')) {
     OpalMediaType::Fax()->SetAutoStart(OpalMediaType::ReceiveTransmit);
     OpalMediaType::Audio()->SetAutoStart(OpalMediaType::DontOffer);
-    cout << "Offer T.38 only";
+    output << "Offer T.38 only";
   }
   else if (args.HasOption('a'))
-    cout << "Audio Only";
+    output << "Audio Only";
   else
-    cout << "Switch to T.38";
-  cout << '\n';
+    output << "Switch to T.38";
+  output << '\n';
 
   if (args.HasOption('d'))
     faxEP->SetDefaultDirectory(args.GetOptionString('d'));
@@ -143,33 +146,33 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
 
   if (args.HasOption("station-id")) {
     PString str = args.GetOptionString("station-id");
-    cout << "Station Identifier: " << str << '\n';
+    output << "Station Identifier: " << str << '\n';
     stringOptions.SetAt(OPAL_OPT_STATION_ID, str);
   }
 
   if (args.HasOption("header-info")) {
     PString str = args.GetOptionString("header-info");
-    cout << "Transmit Header Info: " << str << '\n';
+    output << "Transmit Header Info: " << str << '\n';
     stringOptions.SetAt(OPAL_OPT_HEADER_INFO, str);
   }
 
   if (args.HasOption('F')) {
     stringOptions.SetBoolean(OPAL_NO_G111_FAX, true);
-    cout << "Disabled fallback to audio (G.711) mode on T.38 switch failure\n";
+    output << "Disabled fallback to audio (G.711) mode on T.38 switch failure\n";
   }
 
   if (args.HasOption('e')) {
     stringOptions.SetBoolean(OPAL_SWITCH_ON_CED, true);
-    cout << "Enabled switch to T.38 on receipt of CED\n";
+    output << "Enabled switch to T.38 on receipt of CED\n";
   }
 
   if (args.HasOption('X')) {
     unsigned seconds = args.GetOptionString('X').AsUnsigned();
     stringOptions.SetInteger(OPAL_T38_SWITCH_TIME, seconds);
-    cout << "Switch to T.38 after " << seconds << " seconds\n";
+    output << "Switch to T.38 after " << seconds << " seconds\n";
   }
   else
-    cout << "No T.38 switch timeout set\n";
+    output << "No T.38 switch timeout set\n";
 
   SetDefaultConnectionOptions(stringOptions);
 
@@ -177,11 +180,11 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
 
   // Wait for call to come in and finish (default one year)
   m_competionTimeout = PTimeInterval(args.GetOptionString('T', "365:0:0:0"));
-  cout << "Completion timeout is " << m_competionTimeout.AsString(0, PTimeInterval::IncludeDays) << '\n';
+  output << "Completion timeout is " << m_competionTimeout.AsString(0, PTimeInterval::IncludeDays) << '\n';
 
   PString tiff = args[0];
   if (args.GetCount() == 1) {
-    cout << "Receive directory: " << faxEP->GetDefaultDirectory() << "\n"
+    output << "Receive directory: " << faxEP->GetDefaultDirectory() << "\n"
             "\n"
             "Awaiting incoming fax, saving as " << tiff << " ..." << endl;
     return true;
@@ -189,16 +192,16 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
 
   bool atLeastOne = false;
 
-  cout << '\n';
+  output << '\n';
   for (PINDEX arg = 1; arg < args.GetCount(); ++arg) {
     PString destination = args[arg];
     if (SetUpCall(prefix + ":" + tiff, destination) != NULL)
       atLeastOne = true;
     else
-      cerr << "Could not start call to \"" << destination << '"' << endl;
-    cout << "Sending " << tiff << " to " << destination << endl;
+      output << "Could not start call to \"" << destination << '"' << endl;
+    output << "Sending " << tiff << " to " << destination << endl;
   }
-  cout << "Awaiting transmission ..." << endl;
+  output << "Awaiting transmission ..." << endl;
 
   return atLeastOne;
 }
@@ -212,7 +215,7 @@ void MyManager::Run()
 
   while (!m_endRun.Wait(1000)) {
     if (m_competionTimeout.HasExpired()) {
-      cout << " no call";
+      *LockedOutput() << " no call";
       break;
     }
 
@@ -232,13 +235,16 @@ void MyManager::Run()
 
               bool printTime = true;
 
+              LockedStream lockedOutput(*this);
+              ostream & output = lockedOutput;
+
 #define SHOW_STAT(message, member) \
               if (lastStatistics.m_fax.member != statistics.m_fax.member) { \
                 if (printTime) { \
-                  cout << PTime().AsString("yyyy-MM-dd hh:mm:ss.uuu\n"); \
+                  output << PTime().AsString("yyyy-MM-dd hh:mm:ss.uuu\n"); \
                   printTime = false; \
                 } \
-                cout << "  " << message << ": " << statistics.m_fax.member << endl; \
+                output << "  " << message << ": " << statistics.m_fax.member << endl; \
               }
 
               SHOW_STAT("Phase", m_phase);
@@ -259,7 +265,7 @@ void MyManager::Run()
 #endif // OPAL_STATISTICS
   }
 
-  cout << "\nCompleted." << endl;
+  *LockedOutput() << "\nCompleted." << endl;
 }
 
 
@@ -271,7 +277,7 @@ void MyManager::OnClearedCall(OpalCall & call)
       break;
 
     default :
-      cerr << "Call error: " << OpalConnection::GetCallEndReasonText(call.GetCallEndReason());
+      *LockedOutput() << "Call error: " << OpalConnection::GetCallEndReasonText(call.GetCallEndReason());
   }
 
   if (GetCallCount() == 1)
@@ -282,36 +288,39 @@ void MyManager::OnClearedCall(OpalCall & call)
 void MyFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool failed)
 {
 #if OPAL_STATISTICS
+  OpalConsoleManager::LockedStream lockedOutput(dynamic_cast<MyManager &>(manager));
+  ostream & output = lockedOutput;
+
   OpalMediaStatistics stats;
   connection.GetStatistics(stats);
   switch (stats.m_fax.m_result) {
     case -2 :
-      cerr << "Failed to establish T.30\n";
+      output << "Failed to establish T.30\n";
       break;
     case 0 :
-      cout << "Success, "
-           << (connection.IsReceive() ? stats.m_fax.m_rxPages : stats.m_fax.m_txPages)
-           << " of " << stats.m_fax.m_totalPages << " pages\n";
+      output << "Success, "
+             << (connection.IsReceive() ? stats.m_fax.m_rxPages : stats.m_fax.m_txPages)
+             << " of " << stats.m_fax.m_totalPages << " pages\n";
       PProcess::Current().SetTerminationValue(0); // Indicate success
       break;
     case 41 :
-      cerr << "Failed to open TIFF file\n";
+      output << "Failed to open TIFF file\n";
       break;
     case 42 :
     case 43 :
     case 44 :
     case 45 :
     case 46 :
-      cerr << "Illegal TIFF file\n";
+      output << "Illegal TIFF file\n";
       break;
     default :
-      cerr << "T.30 error " << stats.m_fax.m_result;
+      output << "T.30 error " << stats.m_fax.m_result;
       if (!stats.m_fax.m_errorText.IsEmpty())
-        cerr << " (" << stats.m_fax.m_errorText << ')';
-      cerr << '\n';
+        output << " (" << stats.m_fax.m_errorText << ')';
+      output << '\n';
   }
 #else
-  cerr << (failed ? "Success\n" : "Failed\n");
+  LockedOutput() << (failed ? "Success\n" : "Failed\n");
 #endif // OPAL_STATISTICS
 
   OpalFaxEndPoint::OnFaxCompleted(connection, failed);

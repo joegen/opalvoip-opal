@@ -76,11 +76,14 @@ bool MyManager::Initialise(PArgList & args, bool verbose)
 
 bool MyManager::OnLocalIncomingCall(OpalCall & call)
 {
-  Output() << "\nCall at " << PTime().AsString("w h:mma")
-            << " from " << call.GetPartyA();
+  LockedStream lockedOutput(*this);
+  ostream & output = lockedOutput;
+
+  output << "\nIncoming call at " << PTime().AsString("w h:mma")
+         << " from " << call.GetPartyA();
 
   if (m_activeCall != NULL) {
-    Output() << " refused as busy." << endl;
+    output << " refused as busy." << endl;
     return false;
   }
 
@@ -89,7 +92,7 @@ bool MyManager::OnLocalIncomingCall(OpalCall & call)
   if (m_autoAnswer)
     m_pcss->AcceptIncomingConnection(call.GetToken());
   else
-    Output() << ", answer? " << endl;
+    output << ", answer? " << endl;
 
   return true;
 }
@@ -97,8 +100,9 @@ bool MyManager::OnLocalIncomingCall(OpalCall & call)
 
 bool MyManager::OnLocalOutgoingCall(OpalCall & call)
 {
-  Output() << "\nMaking call at " << PTime().AsString("w h:mma")
-            << " from " << call.GetPartyA() << " to " << call.GetPartyB() << endl;
+  *LockedOutput() << "\nCall at " << PTime().AsString("w h:mma")
+                  << " from " << call.GetPartyA() << " to " << call.GetPartyB()
+                  << " ringing." << endl;
   return true;
 }
 
