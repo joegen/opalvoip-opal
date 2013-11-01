@@ -5003,7 +5003,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
   }
 #endif // OPAL_T38_CAPABILITY
 
-  if (!session->Open(transport.GetLocalAddress(false).GetHostName(), remoteControlAddress, false)) {
+  if (!session->Open(transport.GetInterface(), remoteControlAddress, false)) {
     ReleaseMediaSession(sessionID);
     return NULL;
   }

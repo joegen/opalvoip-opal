@@ -142,12 +142,6 @@ class H323Transactor : public PObject
       const H323TransportAddress & iface ///<  Local interface for transport
     );
 
-    /**Return the list of addresses used for this peer element
-      */
-    H323TransportAddressArray GetInterfaceAddresses(
-      bool excludeLocalHost = true       ///<  Flag to exclude 127.0.0.1
-    );
-
     /**Start the channel processing transactions
       */
     virtual PBoolean StartChannel();

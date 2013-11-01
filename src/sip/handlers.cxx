@@ -603,44 +603,41 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & transport
       if (GetState() == Refreshing && !m_contactAddresses.empty())
         params.m_contactAddress = m_contactAddresses.ToString();
       else {
-        bool allowNAT, singleContact;
+        bool singleContact;
         PString localAddress;
         switch (params.m_compatibility) {
           default :
           case SIPRegister::e_FullyCompliant :
-            allowNAT = true;
             singleContact = false;
             localAddress = PIPSocket::Address::GetAny().AsString();
             break;
 
           case SIPRegister::e_CannotRegisterMultipleContacts :
-            allowNAT = true;
             singleContact = true;
+            localAddress = transport.GetLocalAddress();
             break;
 
           case SIPRegister::e_CannotRegisterPrivateContacts :
-            allowNAT = true;
             singleContact = false;
+            localAddress = transport.GetLocalAddress();
             break;
 
           case SIPRegister::e_HasApplicationLayerGateway :
-            allowNAT = false;
             singleContact = false;
+            localAddress = transport.GetInterface();
             break;
 
           case SIPRegister::e_RFC5626 :
-            allowNAT = false;
             singleContact = true;
+            localAddress = transport.GetInterface();
             break;
         }
 
         // Want interface and protocol, wildcard the port
-        OpalTransportAddress localInterface(localAddress.IsEmpty() ? transport.GetLocalAddress(allowNAT).GetHostName() : localAddress,
-                                            65535,
-                                            singleContact ? transport.GetProtoPrefix() : OpalTransportAddress::IpPrefix());
+        OpalTransportAddress localInterface(localAddress, 65535, singleContact ? transport.GetProtoPrefix() : OpalTransportAddress::IpPrefix());
 
         unsigned qvalue = 1000;
-        OpalTransportAddressArray listenerInterfaces = GetEndPoint().GetInterfaceAddresses(true, &transport);
+        OpalTransportAddressArray listenerInterfaces = GetEndPoint().GetInterfaceAddresses(&transport);
         for (PINDEX i = 0; i < listenerInterfaces.GetSize(); ++i) {
           OpalTransportAddress listenerInterface = listenerInterfaces[i];
 
@@ -663,7 +660,7 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & transport
         }
         if (params.m_contactAddress.IsEmpty()) {
           if (listenerInterfaces.IsEmpty())
-            params.m_contactAddress = CreateRegisterContact(transport.GetLocalAddress(allowNAT), -1);
+            params.m_contactAddress = CreateRegisterContact(localAddress, -1);
           else
             params.m_contactAddress = CreateRegisterContact(listenerInterfaces[0], -1);
         }
