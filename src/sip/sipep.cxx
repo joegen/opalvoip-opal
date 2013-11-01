@@ -1149,6 +1149,67 @@ bool SIPEndPoint::UnregisterAll()
 }
 
 
+static void OutputStatus1(ostream & strm, const SIPURL & aor, bool was, const char * op)
+{
+  SIPURL sanitisedAOR = aor;
+  sanitisedAOR.Sanitise(SIPURL::ExternalURI);
+
+  strm << "SIP ";
+  if (!was)
+    strm << "un";
+  strm << op << " of " << sanitisedAOR;
+}
+
+
+static void OutputStatus2(ostream & strm, SIP_PDU::StatusCodes reason)
+{
+  switch (reason) {
+    case SIP_PDU::Successful_OK :
+      strm << " successful";
+      break;
+
+    case SIP_PDU::Failure_RequestTimeout :
+      strm << " proxy";
+    case SIP_PDU::Local_Timeout :
+      strm << " time out";
+      break;
+
+    case SIP_PDU::Failure_UnAuthorised :
+      strm << " has invalid credentials";
+      break;
+
+    case SIP_PDU::Local_NotAuthenticated :
+      strm << " has invalid certificates";
+      break;
+
+    case SIP_PDU::Local_NoCompatibleListener :
+      strm << " has no compatible listener";
+      break;
+
+    default :
+      strm << " failed (" << reason << ')';
+  }
+  strm << '.';
+}
+
+
+ostream & operator<<(ostream & strm, const SIPEndPoint::RegistrationStatus & status)
+{
+  OutputStatus1(strm, status.m_addressofRecord, status.m_wasRegistering, "registration");
+  OutputStatus2(strm, status.m_reason);
+  return strm;
+}
+
+
+ostream & operator<<(ostream & strm, const SIPSubscribe::SubscriptionStatus & status)
+{
+  OutputStatus1(strm, status.m_addressofRecord, status.m_wasSubscribing, "subscription");
+  strm << " to " << status.m_handler->GetEventPackage() << " events";
+  OutputStatus2(strm, status.m_reason);
+  return strm;
+}
+
+
 bool SIPEndPoint::GetRegistrationStatus(const PString & token, RegistrationStatus & status)
 {
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(token, PSafeReference);
