@@ -1497,7 +1497,7 @@ class OpalManager : public PObject
 #if P_NAT
     /** Get all NAT Methods
       */
-    PNatStrategy & GetNatMethods() const { return *m_natMethods; }
+    PNatMethods & GetNatMethods() const { return *m_natMethods; }
 
     /**Return the NAT method to use.
        Returns NULL if address is a local address as per IsLocalAddress().
@@ -1505,7 +1505,8 @@ class OpalManager : public PObject
        Note, the pointer is NOT to be deleted by the user.
       */
     virtual PNatMethod * GetNatMethod(
-      const PIPSocket::Address & remoteAddress = PIPSocket::GetDefaultIpAny()
+      const OpalTransportAddress & remoteAddress,
+      const OpalTransportAddress & localAddress
     ) const;
 
     /**Set the NAT method to use.
@@ -1515,59 +1516,11 @@ class OpalManager : public PObject
       const PString & server
     );
 
-    /**Get the current host name and optional port for the STUN server.
+    /**Get the current host name and optional port for the NAT server.
       */
-    PString GetNATServer() const 
-    { 
-      return (m_natMethod == NULL) ? PString::Empty() : m_natMethod->GetServer();
-    }
-
-    /**Get the translation host to use for TranslateIPAddress().
-      */
-    P_DEPRECATED PString GetTranslationHost() const;
-
-    /**Set the translation host to use for TranslateIPAddress().
-      */
-    P_DEPRECATED bool SetTranslationHost(
-      const PString & host
-    );
-
-    /**Get the translation address to use for TranslateIPAddress().
-      */
-    P_DEPRECATED PIPSocket::Address GetTranslationAddress() const;
-
-    /**Set the translation address to use for TranslateIPAddress().
-      */
-    P_DEPRECATED void SetTranslationAddress(
-      const PIPSocket::Address & address
-    );
-
-    /**Test if the translation address to use for TranslateIPAddress() is usable.
-      */
-    P_DEPRECATED bool HasTranslationAddress() const;
-
-#ifdef P_STUN
-    /**Set the STUN server address, is of the form host[:port]
-       Note that if the STUN server is found then the translationAddress
-       is automatically set to the router address as determined by STUN.
-      */
-    P_DEPRECATED PSTUNClient::NatTypes SetSTUNServer(
-      const PString & server
-    ) {
-      return SetNATServer(PSTUNClient::GetNatMethodName(), server) ? m_natMethod->GetNatType() : PSTUNClient::UnknownNat;
-    }
-
-    /**Get the current host name and optional port for the STUN server.
-      */
-    P_DEPRECATED PString GetSTUNServer() const 
-    { 
-      return (dynamic_cast<PSTUNClient *>(m_natMethod) == NULL) ? PString::Empty() : m_natMethod->GetServer(); 
-    }
-
-    /**Return the STUN client instance in use.
-      */
-    P_DEPRECATED PSTUNClient * GetSTUNClient() const { return dynamic_cast<PSTUNClient *>(m_natMethod); }
-#endif // P_STUN
+    PString GetNATServer(
+      const PString & method = PString::Empty()
+    ) const;
 #endif // P_NAT
 
     /**Get the TCP port number base for H.245 channels
@@ -2036,8 +1989,7 @@ class OpalManager : public PObject
 #endif
 
 #if P_NAT
-    PNatStrategy     * m_natMethods;
-    PNatMethod       * m_natMethod;
+    PNatMethods * m_natMethods;
     PDECLARE_InterfaceNotifier(OpalManager, OnInterfaceChange);
     PInterfaceMonitor::Notifier m_onInterfaceChange;
 #endif
@@ -2092,6 +2044,7 @@ class OpalManager : public PObject
     P_REMOVE_VIRTUAL_VOID(OnMessageReceived(const PURL&,const PString&,const PURL&,const PString&,const PString&,const PString&));
     P_REMOVE_VIRTUAL_VOID(OnRTPStatistics(const OpalConnection &, const OpalRTPSession &));
     P_REMOVE_VIRTUAL(PBoolean, IsMediaBypassPossible(const OpalConnection &,const OpalConnection &,unsigned) const, false);
+    P_REMOVE_VIRTUAL(PNatMethod *, GetNatMethod(const PIPSocket::Address &) const,NULL);
 };
 
 

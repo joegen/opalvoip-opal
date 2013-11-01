@@ -1553,7 +1553,7 @@ void MyManager::SetNATHandling()
 {
   switch (m_NATHandling) {
     case 1 :
-      SetNATServer("Fixed", m_NATRouter);
+      SetNATServer(PNatMethod_Fixed::MethodName(), m_NATRouter);
       break;
 
     case 2 :
@@ -1562,12 +1562,13 @@ void MyManager::SetNATHandling()
         GetEventHandler()->ProcessPendingEvents();
         Update();
 
-        if (!SetNATServer(PSTUNClient::GetNatMethodName(), m_STUNServer))
+        if (!SetNATServer(PSTUNClient::MethodName(), m_STUNServer))
           LogWindow << "STUN server offline or unsuitable NAT type";
         else {
-          LogWindow << "STUN server \"" << m_natMethod->GetServer() << " replies " << m_natMethod->GetNatType();
+          PNatMethod * stun = GetNatMethods().GetMethodByName(PSTUNClient::MethodName());
+          LogWindow << "STUN server \"" << stun->GetServer() << " replies " << stun->GetNatType();
           PIPSocket::Address externalAddress;
-          if (m_natMethod->GetExternalAddress(externalAddress))
+          if (stun->GetExternalAddress(externalAddress))
             LogWindow << " with address " << externalAddress;
         }
         LogWindow << endl;

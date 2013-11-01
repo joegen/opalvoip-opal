@@ -51,10 +51,7 @@
 #include <h323/h235auth.h>
 #include <h323/gkclient.h>
 #include <asn/h225.h>
-
-#if OPAL_H460
 #include <h460/h4601.h>
-#endif
 
 
 class H225_EndpointType;
@@ -425,6 +422,10 @@ class H323EndPoint : public OpalRTPEndPoint
     virtual void NewIncomingConnection(
       OpalListener & listener,            ///<  Listner that created transport
       const OpalTransportPtr & transport  ///<  Transport connection came in on
+    );
+
+    void InternalNewIncomingConnection(
+      const OpalTransportPtr & transport   ///< Transport connection came in on
     );
 
     /**Create a connection that uses the specified call.
@@ -1061,68 +1062,46 @@ class H323EndPoint : public OpalRTPEndPoint
     ) { m_defaultH239Control = on; }
 #endif
 
-    /**Called when an outgoing PDU requires a feature set
-     */
-    virtual PBoolean OnSendFeatureSet(unsigned, H225_FeatureSet &);
-
-    /**Called when an incoming PDU contains a feature set
-     */
-    virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet &);
-    
-    /**Load the Base FeatureSet usually called when you initialise the endpoint prior to 
-       registering with a gatekeeper.
-      */
-    virtual void LoadBaseFeatureSet();
-
-    /**Callback when creating Feature Instance. This can be used to disable features on
-       a case by case basis by returning FALSE
-       Default returns TRUE
-      */
-    virtual bool OnFeatureInstance(
-      int instType,
-      const PString & identifer
-    );
-
 #if OPAL_H460
     /** Is the FeatureSet disabled
       */
-    bool FeatureSetDisabled() const { return disableH460; }
+    bool H460Disabled() const { return m_disableH460; }
 
     /** Disable all FeatureSets. Use this for pre H323v4 interoperability
       */
-    void FeatureSetDisable() { disableH460 = true; }
+    void DisableH460(bool disable = true) { m_disableH460 = disable; }
+
+    H460_FeatureSet * GetFeatures() const { return m_features; }
 
     /** Get the Endpoint FeatureSet
         This creates a new instance of the featureSet
       */
-    H460_FeatureSet * GetFeatureSet() { return features.DeriveNewFeatureSet(); };
+    virtual H460_FeatureSet * CreateFeatureSet(
+      H460_Feature::Purpose purpose,
+      H323Connection * connection
+    );
+    virtual H460_FeatureSet * InternalCreateFeatureSet(
+      H460_Feature::Purpose purpose,
+      H323Connection * connection
+    );
 
-    virtual void NATMethodCallBack(
-      const PString & /*NatID*/,    ///< Method Identifier
-      PINDEX /*msgID*/,             ///< Message Identifer
-      const PString & /*message*/   ///< Message
-    ) { }
+    /**Called when an outgoing PDU requires a feature set
+     */
+    virtual PBoolean OnSendFeatureSet(H460_MessageType pduType, H225_FeatureSet &);
 
-    /** Disable H.460.18 Feature. (By Default it is enabled)
-      */    
-    void H46018Enable(PBoolean enable);
-
-    /** Query whether we are using H.460.18
+    /**Called when an incoming PDU contains a feature set
+     */
+    virtual void OnReceiveFeatureSet(H460_MessageType pduType, const H225_FeatureSet &);
+    
+    /**Callback when creating Feature Instance. This can be used to disable features on
+       a case by case basis by returning FALSE
+       Default returns TRUE
       */
-    PBoolean H46018IsEnabled();
-
-    /** Signal that H.460.18 has been received. ie. We are behind a NAT/FW
-      */
-    void H46018Received() {};
-
-    /** Whether H.460.18 is in Operation for this call
-      */
-    PBoolean H46018InOperation();
-
-    /**Get the complete list of Gatekeeper features
-      */
-    H460_FeatureSet *GetGatekeeperFeatures();
-#endif
+    virtual bool OnLoadFeature(
+      H460_Feature::Purpose purpose,
+      const PString & identifer
+    );
+#endif // OPAL_H460
 
     /**Determine if the address is "local", ie does not need STUN
      */
@@ -1460,9 +1439,8 @@ class H323EndPoint : public OpalRTPEndPoint
 #endif
 
 #if OPAL_H460
-    bool            disableH460;
-    H460_FeatureSet features;
-    bool m_h46018enabled;
+    bool              m_disableH460;
+    H460_FeatureSet * m_features;
 #endif
 
     typedef map<H323Connection::CompatibilityIssues, PRegularExpression> CompatibilityEndpoints;
@@ -1476,12 +1454,6 @@ class H323EndPoint : public OpalRTPEndPoint
     P_REMOVE_VIRTUAL_VOID(OnGatekeeperReject());
     P_REMOVE_VIRTUAL_VOID(OnRegistrationConfirm());
     P_REMOVE_VIRTUAL_VOID(OnRegistrationReject());
-
-#if OPAL_H460
-  // This is because there h323plus had
-  // a public way of adding a connection
-  friend class H46018Transport;
-#endif
 };
 
 #endif // OPAL_H323

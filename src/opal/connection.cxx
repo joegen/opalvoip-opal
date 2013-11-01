@@ -1107,9 +1107,9 @@ OpalMediaStreamPtr OpalConnection::GetMediaStream(const OpalMediaType & mediaTyp
 
 
 #if P_NAT
-PNatMethod * OpalConnection::GetNatMethod (const PIPSocket::Address & remoteAddress) const
+PNatMethod * OpalConnection::GetNatMethod(const OpalTransportAddress & remoteAddress, const OpalTransportAddress & localAddress) const
 {
-  return endpoint.GetNatMethod(remoteAddress);
+  return endpoint.GetNatMethod(remoteAddress, localAddress);
 }
 #endif
 

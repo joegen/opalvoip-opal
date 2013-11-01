@@ -47,6 +47,7 @@
 #include <opal_config.h>
 #include <h323/h323caps.h>
 #include <h323/h235dh.h>
+#include <h460/h460.h>
 #include <ptclib/dtmf.h>
 
 
@@ -115,9 +116,7 @@ class H45011Handler;
 
 class OpalCall;
 
-#if OPAL_H460
 class H460_FeatureSet;
-#endif
 
 
 /**OpalConnection::StringOption key to an . Default true.
@@ -2036,10 +2035,6 @@ class H323Connection : public OpalRTPConnection
           H235DiffieHellman & GetDiffieHellman()       { return m_dh; }
 #endif
 
-    virtual PBoolean OnSendFeatureSet(unsigned, H225_FeatureSet &) const;
-    
-    virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet &) const;
-
 #if OPAL_H450
     /**
      * get the H4507 handler
@@ -2051,77 +2046,30 @@ class H323Connection : public OpalRTPConnection
 #if OPAL_H460
     /** Get the connection FeatureSet
      */
-    virtual H460_FeatureSet * GetFeatureSet();
+    H460_FeatureSet * GetFeatureSet() const { return m_features; }
 
-    /** Call to set the direction of call establishment
-      */
-    void H46019SetCallReceiver();
-
-    /** Enable H46019 for this call
-      */
-    void H46019Enabled();
+    virtual bool OnSendFeatureSet(H460_MessageType pduType, H225_FeatureSet &) const;
+    virtual void OnReceiveFeatureSet(H460_MessageType pduType, const H225_FeatureSet &) const;
+#endif
 
     /**Received OLC Generic Information. This is used to supply alternate RTP
           destination information in the generic information field in the OLC for the
           purpose of probing for an alternate route to the remote party.
     */
-    virtual PBoolean OnReceiveOLCGenericInformation(
+    virtual void OnReceiveOLCGenericInformation(
       unsigned sessionID,
-      const H245_ArrayOf_GenericInformation & alternate
+      const H245_ArrayOf_GenericInformation & info
     ) const;
 
     /**Send Generic Information in the OLC. This is used to include generic
           information in the openlogicalchannel
     */
-   virtual PBoolean OnSendingOLCGenericInformation(
-     const unsigned & sessionID,              ///< Session Information
-     H245_ArrayOf_GenericInformation & gen,   ///< Generic OLC/OLCack message
-     PBoolean isAck
+   virtual bool OnSendingOLCGenericInformation(
+     unsigned sessionID,                      ///< Session Information
+     H245_ArrayOf_GenericInformation & info,  ///< Generic OLC/OLCack message
+     bool isAck
    ) const;
-#endif
     
-#if OPAL_H460_NAT
-    virtual PUDPSocket * GetNatSocket(unsigned session, PBoolean rtp);
-
-    /** Set RTP NAT information callback
-      */
-    virtual void SetRTPNAT(unsigned sessionid, PUDPSocket * _rtp, PUDPSocket * _rtcp);
-
-
-    /**Session Information 
-       This contains session information which is passed to the socket handler
-       when creating RTP socket pairs.
-      */
-    class SessionInformation : public PObject
-    {
-      public:
-        SessionInformation(const OpalGloballyUniqueID & id, const PString & token, unsigned session);
-
-        const PString & GetCallToken();
-
-        unsigned GetSessionID() const;
-
-        const OpalGloballyUniqueID & GetCallIdentifer();
-
-        const PString & GetCUI();
-
-      protected:
-        OpalGloballyUniqueID m_callID;
-        PString              m_callToken;
-        unsigned             m_sessionID;
-        PString              m_CUI;
-    };
-
-    SessionInformation * BuildSessionInformation(unsigned sessionID) const;
-
-    struct NAT_Sockets 
-    {
-        PUDPSocket * rtp;
-        PUDPSocket * rtcp;
-    };
-#endif // OPAL_H460_NAT
-
-
     /** Callback for media commands.
         Calls the SendIntraFrameRequest on the rtp session
 
@@ -2275,29 +2223,12 @@ class H323Connection : public OpalRTPConnection
 #endif
 
 #if OPAL_H460
-    bool disableH460;
-    H460_FeatureSet * features;
-
-    bool m_H46019CallReceiver;
-    bool m_H46019enabled;
-    bool m_h245Connect;
-
-    bool m_H46024Aenabled;
-    bool m_H46024Ainitator;
-    PINDEX m_H46024Astate;
-
-    bool m_H46024Benabled;
-    PINDEX m_H46024Bstate;
+    H460_FeatureSet * m_features;
 #endif
 
 #if OPAL_VIDEO
     PSimpleTimer m_h245FastUpdatePictureTimer;
 #endif
-
-#if OPAL_H460_NAT
-    PMutex NATSocketMutex;
-    std::map<unsigned, NAT_Sockets> m_NATSockets;
-#endif // OPAL_H460_NAT
 
 #if OPAL_H235_6
     H235DiffieHellman m_dh;

@@ -47,12 +47,9 @@
 #include <h323/h323pdu.h>
 #include <h323/h235auth.h>
 #include <asn/h248.h>
-
+#include <h460/h460.h>
 #include <ptclib/random.h>
 
-#if OPAL_H460
-#include <h460/h460.h>
-#endif
 
 #define new PNEW
 
@@ -382,65 +379,70 @@ PBoolean H225_RAS::OnReceiveRequestInProgress(const H225_RequestInProgress & /*r
 }
 
 
+#if OPAL_H460
+/// For some completely silly reason the ITU decided to send/receive H460 Messages in two places,
+/// for some messages it is included in the messsage body FeatureSet (to Advertise it) and others 
+/// in the genericData field (as actual information). Even though a Feature is generic data. It is beyond
+/// me to determine Why it is so. Anyway if a message is to be carried in the genericData field it is given
+/// the default category of supported.
+
+static void AppendFeatureDescriptors(H225_ArrayOf_GenericData & data, const H225_ArrayOf_FeatureDescriptor & fsn)
+{
+  PINDEX lastPos = data.GetSize();
+  data.SetSize(lastPos+fsn.GetSize());
+  for (PINDEX i = 0; i < fsn.GetSize(); ++i)
+    data[lastPos+i] = fsn[i];
+}
+
 template <typename PDUType>
-static void SendGenericData(const H225_RAS * ras, unsigned code, PDUType & pdu)
+static void SendGenericData(const H225_RAS * ras, H460_MessageType pduType, PDUType & pdu)
 {
   H225_FeatureSet fs;
-  if (!ras->OnSendFeatureSet(code,fs))
-    return;
-
-  if (fs.HasOptionalField(H225_FeatureSet::e_supportedFeatures)) {
-    pdu.IncludeOptionalField(PDUType::e_genericData);
-
-    H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
-    H225_ArrayOf_GenericData & data = pdu.m_genericData;
-
-    for (PINDEX i=0; i < fsn.GetSize(); i++) {
-      PINDEX lastPos = data.GetSize();
-      data.SetSize(lastPos+1);
-      data[lastPos] = fsn[i];
-    }
+  if (ras->OnSendFeatureSet(pduType, fs)) {
+    AppendFeatureDescriptors(pdu.m_genericData, fs.m_neededFeatures);
+    AppendFeatureDescriptors(pdu.m_genericData, fs.m_desiredFeatures);
+    AppendFeatureDescriptors(pdu.m_genericData, fs.m_supportedFeatures);
+    if (pdu.m_genericData.GetSize() > 0)
+      pdu.IncludeOptionalField(PDUType::e_genericData);
   }
 }
 
 
 template <typename PDUType>
-static void SendFeatureSet(const H225_RAS * ras, unsigned code, PDUType & pdu)
+static void SendFeatureSet(const H225_RAS * ras, H460_MessageType pduType, PDUType & pdu)
 {
-  H225_FeatureSet fs;
-  if (!ras->OnSendFeatureSet(code,fs))
+  if (ras->OnSendFeatureSet(pduType, pdu.m_featureSet))
+    pdu.IncludeOptionalField(PDUType::e_featureSet);
+}
+
+
+template <typename PDUType>
+static void ReceiveGenericData(const H225_RAS * ras, H460_MessageType pduType, const PDUType & pdu)
+{
+  if (!pdu.HasOptionalField(PDUType::e_genericData))
     return;
 
-  switch (code) {
-#if OPAL_H460
-    case H460_MessageType::e_gatekeeperRequest:
-    case H460_MessageType::e_gatekeeperConfirm:
-    case H460_MessageType::e_gatekeeperReject:
-    case H460_MessageType::e_registrationRequest:
-    case H460_MessageType::e_registrationConfirm: 
-    case H460_MessageType::e_registrationReject:
-    case H460_MessageType::e_setup:                    
-    case H460_MessageType::e_callProceeding:
-      pdu.IncludeOptionalField(PDUType::e_featureSet);
-      pdu.m_featureSet = fs;
-      break;
-#endif
-    default:
-      if (fs.HasOptionalField(H225_FeatureSet::e_supportedFeatures)) {
-        pdu.IncludeOptionalField(PDUType::e_genericData);
+  H225_FeatureSet fs;
+  fs.IncludeOptionalField(H225_FeatureSet::e_supportedFeatures);
 
-        H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
-        H225_ArrayOf_GenericData & data = pdu.m_genericData;
+  const H225_ArrayOf_GenericData & data = pdu.m_genericData;
+  H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
+  fsn.SetSize(data.GetSize());
 
-        for (PINDEX i=0; i < fsn.GetSize(); i++) {
-          PINDEX lastPos = data.GetSize();
-          data.SetSize(lastPos+1);
-          data[lastPos] = fsn[i];
-        }
-      }
-      break;
-   }
+  for (PINDEX i = 0; i < data.GetSize(); ++i)
+    fsn[i] = (const H225_FeatureDescriptor &)data[i];
+
+  ras->OnReceiveFeatureSet(pduType, fs);
 }
+
+
+template <typename PDUType>
+static void ReceiveFeatureSet(const H225_RAS * ras, H460_MessageType pduType, const PDUType & pdu)
+{
+  if (pdu.HasOptionalField(PDUType::e_featureSet))
+    ras->OnReceiveFeatureSet(pduType, pdu.m_featureSet);
+}
+#endif // OPAL_H460
 
 
 void H225_RAS::OnSendGatekeeperRequest(H323RasPDU &, H225_GatekeeperRequest & grq)
@@ -458,7 +460,7 @@ void H225_RAS::OnSendGatekeeperRequest(H323RasPDU &, H225_GatekeeperRequest & gr
 void H225_RAS::OnSendGatekeeperRequest(H225_GatekeeperRequest & grq)
 {
 #if OPAL_H460
-  SendFeatureSet<H225_GatekeeperRequest>(this, H460_MessageType::e_gatekeeperRequest, grq);
+  SendFeatureSet(this, H460_MessageType::e_gatekeeperRequest, grq);
 #endif
 }
 
@@ -471,7 +473,7 @@ void H225_RAS::OnSendGatekeeperConfirm(H323RasPDU &, H225_GatekeeperConfirm & gc
   }
 
 #if OPAL_H460
-  SendFeatureSet<H225_GatekeeperConfirm>(this, H460_MessageType::e_gatekeeperConfirm, gcf);
+  SendFeatureSet(this, H460_MessageType::e_gatekeeperConfirm, gcf);
 #endif
 
   OnSendGatekeeperConfirm(gcf);
@@ -491,7 +493,7 @@ void H225_RAS::OnSendGatekeeperReject(H323RasPDU &, H225_GatekeeperReject & grj)
   }
     
 #if OPAL_H460
-  SendFeatureSet<H225_GatekeeperReject>(this, H460_MessageType::e_gatekeeperReject, grj);
+  SendFeatureSet(this, H460_MessageType::e_gatekeeperReject, grj);
 #endif
 
   OnSendGatekeeperReject(grj);
@@ -503,45 +505,10 @@ void H225_RAS::OnSendGatekeeperReject(H225_GatekeeperReject & /*grj*/)
 }
 
 
-template <typename PDUType>
-static void ProcessFeatureSet(const H225_RAS * ras, unsigned code, const PDUType & pdu)
-{
-  if (pdu.HasOptionalField(PDUType::e_genericData)) {
-    H225_FeatureSet fs;
-    fs.IncludeOptionalField(H225_FeatureSet::e_supportedFeatures);
-    H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
-    const H225_ArrayOf_GenericData & data = pdu.m_genericData;
-    for (PINDEX i=0; i < data.GetSize(); i++) {
-      PINDEX lastPos = fsn.GetSize();
-      fsn.SetSize(lastPos+1);
-      fsn[lastPos] = (H225_FeatureDescriptor &)data[i];
-    }
-    ras->OnReceiveFeatureSet(code, fs);
-  }
-}
-
-
-template <typename PDUType>
-static void ReceiveGenericData(const H225_RAS * ras, unsigned code, const PDUType & pdu)
-{
-  ProcessFeatureSet<PDUType>(ras,code,pdu);
-}
-
-
-template <typename PDUType>
-static void ReceiveFeatureSet(const H225_RAS * ras, unsigned code, const PDUType & pdu)
-{
-  if (pdu.HasOptionalField(PDUType::e_featureSet))
-    ras->OnReceiveFeatureSet(code, pdu.m_featureSet);
-
-  ProcessFeatureSet<PDUType>(ras,code,pdu);
-}
-
-
 PBoolean H225_RAS::OnReceiveGatekeeperRequest(const H323RasPDU &, const H225_GatekeeperRequest & grq)
 {
 #if OPAL_H460
-  ReceiveFeatureSet<H225_GatekeeperRequest>(this, H460_MessageType::e_gatekeeperRequest, grq);
+  ReceiveFeatureSet(this, H460_MessageType::e_gatekeeperRequest, grq);
 #endif
 
   return OnReceiveGatekeeperRequest(grq);
@@ -574,7 +541,7 @@ PBoolean H225_RAS::OnReceiveGatekeeperConfirm(const H323RasPDU &, const H225_Gat
 
 #if OPAL_H460
   if (gcf.HasOptionalField(H225_GatekeeperConfirm::e_featureSet))
-    ReceiveFeatureSet<H225_GatekeeperConfirm>(this, H460_MessageType::e_gatekeeperConfirm, gcf);
+    ReceiveFeatureSet(this, H460_MessageType::e_gatekeeperConfirm, gcf);
   else
     DisableFeatureSet();
 #endif
@@ -595,7 +562,7 @@ PBoolean H225_RAS::OnReceiveGatekeeperReject(const H323RasPDU &, const H225_Gate
     return false;
     
 #if OPAL_H460
-  ReceiveFeatureSet<H225_GatekeeperReject>(this, H460_MessageType::e_gatekeeperReject, grj);
+  ReceiveFeatureSet(this, H460_MessageType::e_gatekeeperReject, grj);
 #endif
 
   return OnReceiveGatekeeperReject(grj);
@@ -613,7 +580,7 @@ void H225_RAS::OnSendRegistrationRequest(H323RasPDU & pdu, H225_RegistrationRequ
   OnSendRegistrationRequest(rrq);
     
 #if OPAL_H460
-  SendFeatureSet<H225_RegistrationRequest>(this, H460_MessageType::e_registrationRequest, rrq);
+  SendFeatureSet(this, H460_MessageType::e_registrationRequest, rrq);
 #endif
     
   pdu.Prepare(rrq.m_tokens, H225_RegistrationRequest::e_tokens,
@@ -636,7 +603,7 @@ void H225_RAS::OnSendRegistrationConfirm(H323RasPDU & pdu, H225_RegistrationConf
   OnSendRegistrationConfirm(rcf);
 
 #if OPAL_H460
-  SendFeatureSet<H225_RegistrationConfirm>(this, H460_MessageType::e_registrationConfirm, rcf);
+  SendFeatureSet(this, H460_MessageType::e_registrationConfirm, rcf);
 #endif
 
   pdu.Prepare(rcf.m_tokens, H225_RegistrationConfirm::e_tokens,
@@ -659,7 +626,7 @@ void H225_RAS::OnSendRegistrationReject(H323RasPDU & pdu, H225_RegistrationRejec
   OnSendRegistrationReject(rrj);
     
 #if OPAL_H460
-  SendFeatureSet<H225_RegistrationReject>(this, H460_MessageType::e_registrationReject, rrj);
+  SendFeatureSet(this, H460_MessageType::e_registrationReject, rrj);
 #endif
 
   pdu.Prepare(rrj.m_tokens, H225_RegistrationReject::e_tokens,
@@ -675,7 +642,7 @@ void H225_RAS::OnSendRegistrationReject(H225_RegistrationReject & /*rrj*/)
 PBoolean H225_RAS::OnReceiveRegistrationRequest(const H323RasPDU &, const H225_RegistrationRequest & rrq)
 {
 #if OPAL_H460
-  ReceiveFeatureSet<H225_RegistrationRequest>(this, H460_MessageType::e_registrationRequest, rrq);
+  ReceiveFeatureSet(this, H460_MessageType::e_registrationRequest, rrq);
 #endif
     
   return OnReceiveRegistrationRequest(rrq);
@@ -711,7 +678,7 @@ PBoolean H225_RAS::OnReceiveRegistrationConfirm(const H323RasPDU & pdu, const H2
 
 #if OPAL_H460
   if (rcf.HasOptionalField(H225_RegistrationConfirm::e_featureSet))
-    ReceiveFeatureSet<H225_RegistrationConfirm>(this, H460_MessageType::e_registrationConfirm, rcf);
+    ReceiveFeatureSet(this, H460_MessageType::e_registrationConfirm, rcf);
   else
     DisableFeatureSet();
 #endif
@@ -737,7 +704,7 @@ PBoolean H225_RAS::OnReceiveRegistrationReject(const H323RasPDU & pdu, const H22
     return false;
   
 #if OPAL_H460
-  ReceiveFeatureSet<H225_RegistrationReject>(this, H460_MessageType::e_registrationReject, rrj);
+  ReceiveFeatureSet(this, H460_MessageType::e_registrationReject, rrj);
 #endif
 
   return OnReceiveRegistrationReject(rrj);
@@ -797,7 +764,7 @@ PBoolean H225_RAS::OnReceiveUnregistrationRequest(const H323RasPDU & pdu, const 
     return false;
 
 #if OPAL_H460
-  ProcessFeatureSet<H225_UnregistrationRequest>(this, H460_MessageType::e_unregistrationRequest, urq);
+  ReceiveGenericData(this, H460_MessageType::e_unregistrationRequest, urq);
 #endif
 
   return OnReceiveUnregistrationRequest(urq);
@@ -855,7 +822,7 @@ void H225_RAS::OnSendAdmissionRequest(H323RasPDU & pdu, H225_AdmissionRequest & 
   OnSendAdmissionRequest(arq);
     
 #if OPAL_H460
-  SendFeatureSet<H225_AdmissionRequest>(this, H460_MessageType::e_admissionRequest, arq);
+  SendGenericData(this, H460_MessageType::e_admissionRequest, arq);
 #endif
     
   pdu.Prepare(arq.m_tokens, H225_AdmissionRequest::e_tokens,
@@ -873,7 +840,7 @@ void H225_RAS::OnSendAdmissionConfirm(H323RasPDU & pdu, H225_AdmissionConfirm & 
   OnSendAdmissionConfirm(acf);
     
 #if OPAL_H460
-  SendFeatureSet<H225_AdmissionConfirm>(this, H460_MessageType::e_admissionConfirm, acf);
+  SendGenericData(this, H460_MessageType::e_admissionConfirm, acf);
 #endif
     
   pdu.Prepare(acf.m_tokens, H225_AdmissionConfirm::e_tokens,
@@ -891,7 +858,7 @@ void H225_RAS::OnSendAdmissionReject(H323RasPDU & pdu, H225_AdmissionReject & ar
   OnSendAdmissionReject(arj);
     
 #if OPAL_H460
-    SendFeatureSet<H225_AdmissionReject>(this, H460_MessageType::e_admissionReject, arj);
+    SendGenericData(this, H460_MessageType::e_admissionReject, arj);
 #endif
     
   pdu.Prepare(arj.m_tokens, H225_AdmissionReject::e_tokens,
@@ -912,7 +879,7 @@ PBoolean H225_RAS::OnReceiveAdmissionRequest(const H323RasPDU & pdu, const H225_
     return false;
     
 #if OPAL_H460
-  ReceiveFeatureSet<H225_AdmissionRequest>(this, H460_MessageType::e_admissionRequest, arq);
+  ReceiveGenericData(this, H460_MessageType::e_admissionRequest, arq);
 #endif
 
   return OnReceiveAdmissionRequest(arq);
@@ -936,7 +903,7 @@ PBoolean H225_RAS::OnReceiveAdmissionConfirm(const H323RasPDU & pdu, const H225_
     return false;
   
 #if OPAL_H460
-  ReceiveFeatureSet<H225_AdmissionConfirm>(this, H460_MessageType::e_admissionConfirm, acf);
+  ReceiveGenericData(this, H460_MessageType::e_admissionConfirm, acf);
 #endif
 
   return OnReceiveAdmissionConfirm(acf);
@@ -960,7 +927,7 @@ PBoolean H225_RAS::OnReceiveAdmissionReject(const H323RasPDU & pdu, const H225_A
     return false;
   
 #if OPAL_H460
-  ReceiveFeatureSet<H225_AdmissionReject>(this, H460_MessageType::e_admissionReject, arj);
+  ReceiveGenericData(this, H460_MessageType::e_admissionReject, arj);
 #endif
 
   return OnReceiveAdmissionReject(arj);
@@ -1076,7 +1043,7 @@ void H225_RAS::OnSendDisengageRequest(H323RasPDU & pdu, H225_DisengageRequest & 
               drq.m_cryptoTokens, H225_DisengageRequest::e_cryptoTokens);
 
 #if OPAL_H460
-  SendGenericData<H225_DisengageRequest>(this, H460_MessageType::e_disengagerequest, drq);
+  SendGenericData(this, H460_MessageType::e_disengagerequest, drq);
 #endif
 }
 
@@ -1094,7 +1061,7 @@ PBoolean H225_RAS::OnReceiveDisengageRequest(const H323RasPDU & pdu, const H225_
     return false;
 
 #if OPAL_H460
-  ReceiveGenericData<H225_DisengageRequest>(this, H460_MessageType::e_disengagerequest, drq);
+  ReceiveGenericData(this, H460_MessageType::e_disengagerequest, drq);
 #endif
 
   return OnReceiveDisengageRequest(drq);
@@ -1114,7 +1081,7 @@ void H225_RAS::OnSendDisengageConfirm(H323RasPDU & pdu, H225_DisengageConfirm & 
               dcf.m_cryptoTokens, H225_DisengageConfirm::e_cryptoTokens);
 
 #if OPAL_H460
-  SendGenericData<H225_DisengageConfirm>(this, H460_MessageType::e_disengageconfirm, dcf);
+  SendGenericData(this, H460_MessageType::e_disengageconfirm, dcf);
 #endif
 }
 
@@ -1135,7 +1102,7 @@ PBoolean H225_RAS::OnReceiveDisengageConfirm(const H323RasPDU & pdu, const H225_
     return false;
 
 #if OPAL_H460
-  ReceiveGenericData<H225_DisengageConfirm>(this, H460_MessageType::e_disengageconfirm, dcf);
+  ReceiveGenericData(this, H460_MessageType::e_disengageconfirm, dcf);
 #endif
 
   return OnReceiveDisengageConfirm(dcf);
@@ -1186,7 +1153,7 @@ void H225_RAS::OnSendLocationRequest(H323RasPDU & pdu, H225_LocationRequest & lr
   OnSendLocationRequest(lrq);
     
 #if OPAL_H460
-  SendFeatureSet<H225_LocationRequest>(this, H460_MessageType::e_locationRequest, lrq);
+  SendGenericData(this, H460_MessageType::e_locationRequest, lrq);
 #endif
     
   pdu.Prepare(lrq.m_tokens, H225_LocationRequest::e_tokens,
@@ -1207,7 +1174,7 @@ PBoolean H225_RAS::OnReceiveLocationRequest(const H323RasPDU & pdu, const H225_L
     return false;
     
 #if OPAL_H460
-  ReceiveFeatureSet<H225_LocationRequest>(this, H460_MessageType::e_locationRequest, lrq);
+  ReceiveGenericData(this, H460_MessageType::e_locationRequest, lrq);
 #endif
 
   return OnReceiveLocationRequest(lrq);
@@ -1225,7 +1192,7 @@ void H225_RAS::OnSendLocationConfirm(H323RasPDU & pdu, H225_LocationConfirm & lc
   OnSendLocationConfirm(lcf);
     
 #if OPAL_H460
-  SendFeatureSet<H225_LocationConfirm>(this, H460_MessageType::e_locationConfirm, lcf);
+  SendGenericData(this, H460_MessageType::e_locationConfirm, lcf);
 #endif
     
   pdu.Prepare(lcf.m_tokens, H225_LocationRequest::e_tokens,
@@ -1249,7 +1216,7 @@ PBoolean H225_RAS::OnReceiveLocationConfirm(const H323RasPDU &, const H225_Locat
   }
   
 #if OPAL_H460
-  ReceiveFeatureSet<H225_LocationConfirm>(this, H460_MessageType::e_locationConfirm, lcf);
+  ReceiveGenericData(this, H460_MessageType::e_locationConfirm, lcf);
 #endif
 
   return OnReceiveLocationConfirm(lcf);
@@ -1267,7 +1234,7 @@ void H225_RAS::OnSendLocationReject(H323RasPDU & pdu, H225_LocationReject & lrj)
   OnSendLocationReject(lrj);
     
 #if OPAL_H460
-  SendFeatureSet<H225_LocationReject>(this, H460_MessageType::e_locationReject, lrj);
+  SendGenericData(this, H460_MessageType::e_locationReject, lrj);
 #endif
     
   pdu.Prepare(lrj.m_tokens, H225_LocationReject::e_tokens,
@@ -1291,7 +1258,7 @@ PBoolean H225_RAS::OnReceiveLocationReject(const H323RasPDU & pdu, const H225_Lo
     return false;
   
 #if OPAL_H460
-  ReceiveFeatureSet<H225_LocationReject>(this, H460_MessageType::e_locationReject, lrj);
+  ReceiveGenericData(this, H460_MessageType::e_locationReject, lrj);
 #endif
 
   return OnReceiveLocationReject(lrj);
@@ -1311,7 +1278,7 @@ void H225_RAS::OnSendInfoRequest(H323RasPDU & pdu, H225_InfoRequest & irq)
               irq.m_cryptoTokens, H225_InfoRequest::e_cryptoTokens);
 
 #if OPAL_H460
-  SendGenericData<H225_InfoRequest>(this, H460_MessageType::e_inforequest, irq);
+  SendGenericData(this, H460_MessageType::e_inforequest, irq);
 #endif
 }
 
@@ -1329,7 +1296,7 @@ PBoolean H225_RAS::OnReceiveInfoRequest(const H323RasPDU & pdu, const H225_InfoR
     return false;
 
 #if OPAL_H460
-  ReceiveGenericData<H225_InfoRequest>(this, H460_MessageType::e_inforequest, irq);
+  ReceiveGenericData(this, H460_MessageType::e_inforequest, irq);
 #endif
 
   return OnReceiveInfoRequest(irq);
@@ -1349,7 +1316,7 @@ void H225_RAS::OnSendInfoRequestResponse(H323RasPDU & pdu, H225_InfoRequestRespo
               irr.m_cryptoTokens, H225_InfoRequestResponse::e_cryptoTokens);
 
 #if OPAL_H460
-  SendGenericData<H225_InfoRequestResponse>(this, H460_MessageType::e_inforequestresponse, irr);
+  SendGenericData(this, H460_MessageType::e_inforequestresponse, irr);
 #endif
 }
 
@@ -1370,7 +1337,7 @@ PBoolean H225_RAS::OnReceiveInfoRequestResponse(const H323RasPDU & pdu, const H2
     return false;
 
 #if OPAL_H460
-  ReceiveGenericData<H225_InfoRequestResponse>(this, H460_MessageType::e_inforequestresponse, irr);
+  ReceiveGenericData(this, H460_MessageType::e_inforequestresponse, irr);
 #endif
 
   return OnReceiveInfoRequestResponse(irr);
@@ -1388,7 +1355,7 @@ void H225_RAS::OnSendNonStandardMessage(H323RasPDU & pdu, H225_NonStandardMessag
   OnSendNonStandardMessage(nsm);
     
 #if OPAL_H460
-  SendFeatureSet<H225_NonStandardMessage>(this, H460_MessageType::e_nonStandardMessage, nsm);
+  SendGenericData(this, H460_MessageType::e_nonStandardMessage, nsm);
 #endif
     
   pdu.Prepare(nsm.m_tokens, H225_InfoRequestResponse::e_tokens,
@@ -1409,7 +1376,7 @@ PBoolean H225_RAS::OnReceiveNonStandardMessage(const H323RasPDU & pdu, const H22
     return false;
     
 #if OPAL_H460
-  ReceiveFeatureSet<H225_NonStandardMessage>(this, H460_MessageType::e_nonStandardMessage, nsm);
+  ReceiveGenericData(this, H460_MessageType::e_nonStandardMessage, nsm);
 #endif
 
   return OnReceiveNonStandardMessage(nsm);
@@ -1533,7 +1500,7 @@ void H225_RAS::OnSendServiceControlIndication(H323RasPDU & pdu, H225_ServiceCont
   OnSendServiceControlIndication(sci);
     
 #if OPAL_H460
-  SendFeatureSet<H225_ServiceControlIndication>(this, H460_MessageType::e_serviceControlIndication, sci);
+  SendGenericData(this, H460_MessageType::e_serviceControlIndication, sci);
 #endif
     
   pdu.Prepare(sci.m_tokens, H225_ServiceControlIndication::e_tokens,
@@ -1554,7 +1521,7 @@ PBoolean H225_RAS::OnReceiveServiceControlIndication(const H323RasPDU & pdu, con
     return false;
     
 #if OPAL_H460
-  ReceiveFeatureSet<H225_ServiceControlIndication>(this, H460_MessageType::e_serviceControlIndication, sci);
+  ReceiveGenericData(this, H460_MessageType::e_serviceControlIndication, sci);
 #endif
 
   return OnReceiveServiceControlIndication(sci);
@@ -1572,7 +1539,7 @@ void H225_RAS::OnSendServiceControlResponse(H323RasPDU & pdu, H225_ServiceContro
   OnSendServiceControlResponse(scr);
     
 #if OPAL_H460
-  SendFeatureSet<H225_ServiceControlResponse>(this, H460_MessageType::e_serviceControlResponse, scr);
+  SendGenericData(this, H460_MessageType::e_serviceControlResponse, scr);
 #endif
     
   pdu.Prepare(scr.m_tokens, H225_ResourcesAvailableConfirm::e_tokens,
@@ -1596,7 +1563,7 @@ PBoolean H225_RAS::OnReceiveServiceControlResponse(const H323RasPDU & pdu, const
     return false;
   
 #if OPAL_H460
-  ReceiveFeatureSet<H225_ServiceControlResponse>(this, H460_MessageType::e_serviceControlResponse, scr);
+  ReceiveGenericData(this, H460_MessageType::e_serviceControlResponse, scr);
 #endif
 
   return OnReceiveServiceControlResponse(scr);

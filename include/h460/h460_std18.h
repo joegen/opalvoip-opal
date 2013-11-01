@@ -1,6 +1,5 @@
-/* H460_std18.h
- *
- * h323plus library
+/*
+ * h460_std18.h
  *
  * Copyright (c) 2008 ISVO (Asia) Pte. Ltd.
  *
@@ -31,7 +30,8 @@
  * Portions of this code were written with the assisance of funding from
  * triple-IT. http://www.triple-it.nl.
  *
- * Contributor(s): ______________________________________.
+ * Contributor(s): Many thanks to Simon Horne.
+ *                 Robert Jongbloed (robertj@voxlucida.com.au).
  *
  * $Revision$
  * $Author$
@@ -49,102 +49,42 @@
 #pragma once
 #endif 
 
+
+class H323SignalPDU;
+
+
 /////////////////////////////////////////////////////////////////
 
-class MyH323EndPoint;
-class MyH323Connection;
-class H46018Handler;
-
-class H460_FeatureStd18 : public H460_FeatureStd 
+class H460_FeatureStd18 : public H460_Feature
 {
-    PCLASSINFO(H460_FeatureStd18, H460_FeatureStd);
+    PCLASSINFO(H460_FeatureStd18, H460_Feature);
 
   public:
     H460_FeatureStd18();
-    virtual ~H460_FeatureStd18();
 
     // Universal Declarations Every H460 Feature should have the following
-    virtual void AttachEndPoint(H323EndPoint * _ep);
+    static Purpose GetPluginPurpose()      { return ForGatekeeper|ForConnection; };
+    virtual Purpose GetPurpose() const     { return GetPluginPurpose(); };
 
-    static PStringArray GetFeatureName()         { return PStringArray("Std18"); };
-    static PStringArray GetFeatureFriendlyName() { return PStringArray("NatTraversal-H.460.18"); };
-    static int GetPurpose()                      { return FeatureRas; };
-    static PStringArray GetIdentifier()          { return PStringArray("18"); };
+    virtual bool Initialise(H323EndPoint & ep, H323Connection * con);
+    virtual bool IsNegotiated() const;
 
-    virtual PBoolean CommonFeature() { return isEnabled; }
+    // H.225.0 Messages
+    virtual bool OnSendGatekeeperRequest          (H460_FeatureDescriptor & /*pdu*/) { return true; }
+    virtual bool OnSendRegistrationRequest        (H460_FeatureDescriptor & /*pdu*/) { return true; }
+    virtual bool OnSendSetup_UUIE                 (H460_FeatureDescriptor & /*pdu*/) { return true; }
 
-    /////////////////////
-    // H.460.18 Messages
-    virtual PBoolean OnSendGatekeeperRequest(H225_FeatureDescriptor & pdu);
-    virtual void OnReceiveGatekeeperConfirm(const H225_FeatureDescriptor & pdu);
+    virtual void OnReceiveServiceControlIndication(const H460_FeatureDescriptor & pdu);
 
-    virtual PBoolean OnSendRegistrationRequest(H225_FeatureDescriptor & pdu);
-    virtual void OnReceiveRegistrationConfirm(const H225_FeatureDescriptor & pdu);
+    // Custom functions
+    bool OnStartControlChannel();
 
-    virtual void OnReceiveServiceControlIndication(const H225_FeatureDescriptor & pdu);
+  protected:
+    void ConnectThreadMain(H323TransportAddress address, OpalGloballyUniqueID callId);
 
-  private:
-    H323EndPoint * EP;
-
-    H46018Handler * handler;
-    PBoolean isEnabled;
+    OpalGloballyUniqueID m_lastCallIdentifer;
 };
 
-
-/////////////////////////////////////////////////////////////////
-
-class MyH323EndPoint;
-class MyH323Connection;
-
-class H460_FeatureStd19 : public H460_FeatureStd 
-{
-    PCLASSINFO(H460_FeatureStd19,H460_FeatureStd);
-
-  public:
-    H460_FeatureStd19();
-    virtual ~H460_FeatureStd19();
-
-    // Universal Declarations Every H460 Feature should have the following
-    virtual void AttachEndPoint(H323EndPoint * _ep);
-    virtual void AttachConnection(H323Connection * _con);
-
-    static PStringArray GetFeatureName()         { return PStringArray("Std19"); };
-    static PStringArray GetFeatureFriendlyName() { return PStringArray("NatTraversal-H.460.19"); };
-    static int GetPurpose()                      { return FeatureSignal; };
-    static PStringArray GetIdentifier()          { return PStringArray("19"); };
-
-    virtual PBoolean CommonFeature() { return remoteSupport; }
-
-    /////////////////////
-    // H.460.19 Messages
-    virtual PBoolean OnSendSetup_UUIE(H225_FeatureDescriptor & pdu);
-    virtual void OnReceiveSetup_UUIE(const H225_FeatureDescriptor & pdu);
-
-    virtual PBoolean OnSendCallProceeding_UUIE(H225_FeatureDescriptor & pdu);
-    virtual void OnReceiveCallProceeding_UUIE(const H225_FeatureDescriptor & pdu);
-
-    virtual PBoolean OnSendFacility_UUIE(H225_FeatureDescriptor & pdu);
-    //virtual void OnReceiveFacility_UUIE(const H225_FeatureDescriptor & pdu) {};
-
-    virtual PBoolean OnSendAlerting_UUIE(H225_FeatureDescriptor & pdu);
-    virtual void OnReceiveAlerting_UUIE(const H225_FeatureDescriptor & pdu);
-
-    virtual PBoolean OnSendCallConnect_UUIE(H225_FeatureDescriptor & pdu);
-    virtual void OnReceiveCallConnect_UUIE(const H225_FeatureDescriptor & pdu);
-
-    ////////////////////
-    // H.460.24 Override
-    void SetAvailable(bool avail);
-
-  private:
-    H323EndPoint * EP;
-    H323Connection * CON;
-
-    PBoolean isEnabled;
-    PBoolean isAvailable;
-    PBoolean remoteSupport;
-};
- 
 
 #endif // OPAL_H460_NAT
 
