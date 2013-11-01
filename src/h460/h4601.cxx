@@ -467,7 +467,7 @@ H460_FeatureParameter::operator PURL() const
 { 	     
   const H225_AliasAddress & content = m_content;
   if (content.GetTag() == H225_AliasAddress::e_url_ID)
-    return PURL((PASN_IA5String &)content);
+    return PURL((const PASN_IA5String &)content);
 
   return PURL(); 
 }
