@@ -614,12 +614,12 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & transport
 
           case SIPRegister::e_CannotRegisterMultipleContacts :
             singleContact = true;
-            localAddress = transport.GetLocalAddress();
+            localAddress = transport.GetLocalAddress().GetHostName();
             break;
 
           case SIPRegister::e_CannotRegisterPrivateContacts :
             singleContact = false;
-            localAddress = transport.GetLocalAddress();
+            localAddress = transport.GetLocalAddress().GetHostName();
             break;
 
           case SIPRegister::e_HasApplicationLayerGateway :
