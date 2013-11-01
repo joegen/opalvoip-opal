@@ -40,7 +40,6 @@ PCREATE_PROCESS(MyApp);
 
 MyManager::MyManager()
   : OpalManagerCLI(OPAL_CONSOLE_PREFIXES OPAL_PREFIX_PCSS)
-  , m_pcss(NULL)
   , m_autoAnswer(false)
 {
 }
@@ -58,7 +57,7 @@ PString MyManager::GetArgumentSpec() const
 
 bool MyManager::Initialise(PArgList & args, bool verbose)
 {
-  if (!OpalManagerCLI::Initialise(args, verbose, OPAL_PREFIX_PCSS":<du>"))
+  if (!OpalManagerCLI::Initialise(args, verbose, OPAL_PREFIX_PCSS":"))
     return false;
 
   m_cli->SetPrompt("OPAL> ");
@@ -89,11 +88,17 @@ bool MyManager::OnLocalIncomingCall(OpalCall & call)
 
   m_activeCall = &call;
 
-  if (m_autoAnswer)
-    m_pcss->AcceptIncomingConnection(call.GetToken());
+  if (m_autoAnswer) {
+    output << ", auto-answered.";
+    PSafePtr<OpalLocalConnection> connection = call.GetConnectionAs<OpalLocalConnection>();
+    if (connection == NULL)
+      return false;
+    connection->AcceptIncoming();
+  }
   else
-    output << ", answer? " << endl;
+    output << ", answer? ";
 
+  output << endl;
   return true;
 }
 
@@ -150,10 +155,15 @@ void MyManager::CmdAnswer(PCLI::Arguments & args, P_INT_PTR)
     args.WriteError() << "No call to answer." << endl;
   else if (m_activeCall->IsEstablished())
     args.WriteError() << "Call already answered." << endl;
-  else if (!m_pcss->AcceptIncomingCall(m_activeCall->GetToken()))
+  else {
+    PSafePtr<OpalLocalConnection> connection = m_activeCall->GetConnectionAs<OpalLocalConnection>();
+    if (connection == NULL)
     args.WriteError() << "Call has disappeared." << endl;
-  else
+    else {
+      connection->AcceptIncoming();
     args.GetContext() << "Answered call from " << m_activeCall->GetPartyA() << endl;
+    }
+  }
 }
 
 
