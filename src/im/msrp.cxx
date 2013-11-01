@@ -591,34 +591,18 @@ void OpalMSRPManager::ListenerThread()
 
 PSafePtr<OpalMSRPManager::Connection> OpalMSRPManager::OpenConnection(const PURL & localURL, const PURL & remoteURL)
 {
-  // get hostname of remote 
-  PIPSocket::Address ip(remoteURL.GetHostName());
-  WORD port = remoteURL.GetPort();
-  if (!ip.IsValid()) {
-    if (remoteURL.GetPortSupplied()) {
-      if (!PIPSocket::GetHostAddress(remoteURL.GetHostName(), ip)) {
-        PTRACE(2, "MSRP\tUnable to resolve MSRP URL '" << remoteURL << "' with explicit port");
-        return NULL;
-      }
-    }
-    else {
-#if P_DNS_RESOLVER
-      PIPSocketAddressAndPortVector addresses;
-      if (PDNS::LookupSRV(remoteURL.GetHostName(), "_im._msrp", remoteURL.GetPort(), addresses) && !addresses.empty()) {
-        ip   = addresses[0].GetAddress(); // Only use first entry
-        port = addresses[0].GetPort();
-      } 
-      else if (!PIPSocket::GetHostAddress(remoteURL.GetHostName(), ip)) {
-        PTRACE(2, "MSRP\tUnable to resolve MSRP URL hostname '" << remoteURL << "' ");
-        return NULL;
-      }
-#else
-      return NULL;
-#endif // P_DNS_RESOLVER
-    }
-  }
+  PIPSocket::AddressAndPort ap;
 
-  PString connectionKey(ip.AsString() + ":" + PString(PString::Unsigned, port));
+  // get hostname of remote 
+#if P_DNS_RESOLVER
+  PIPSocketAddressAndPortVector addresses;
+  if (PDNS::LookupSRV(remoteURL.GetHostName(), "_im._msrp", remoteURL.GetPort(), addresses) && !addresses.empty())
+    ap = addresses[0];
+  else
+#endif // P_DNS_RESOLVER
+    ap.Parse(remoteURL.GetHostPort());
+
+  PString connectionKey(ap.AsString());
 
   PSafePtr<Connection> connectionPtr = NULL;
 
@@ -628,7 +612,7 @@ PSafePtr<OpalMSRPManager::Connection> OpalMSRPManager::OpenConnection(const PURL
     PWaitAndSignal m(m_connectionInfoMapAddMutex);
     ConnectionInfoMapType::iterator r = m_connectionInfoMap.find(connectionKey);
     if (r != m_connectionInfoMap.end()) {
-      PTRACE(2, "MSRP\tReusing existing connection to " << ip << ":" << port);
+      PTRACE(2, "MSRP\tReusing existing connection to " << ap);
       connectionPtr = r->second;
       connectionPtr.SetSafetyMode(PSafeReadWrite);
       ++connectionPtr->m_refCount;
@@ -644,15 +628,15 @@ PSafePtr<OpalMSRPManager::Connection> OpalMSRPManager::OpenConnection(const PURL
   // create a connection to the remote
   // if cannot, remove it from connection map
   connectionPtr->m_protocol->SetReadTimeout(2000);
-  if (!connectionPtr->m_protocol->Connect(ip, port)) {
-    PTRACE(2, "MSRP\tUnable to make new connection to " << ip << ":" << port);
+  if (!connectionPtr->m_protocol->Connect(ap.GetAddress(), ap.GetPort())) {
+    PTRACE(2, "MSRP\tUnable to make new connection to " << ap);
     PWaitAndSignal m(m_connectionInfoMapAddMutex);
     m_connectionInfoMap.erase(connectionKey);
     connectionPtr.SetNULL();
     return NULL;
   }
 
-  PTRACE(2, "MSRP\tConnection established to to " << ip << ":" << port);
+  PTRACE(2, "MSRP\tConnection established to to " << ap);
 
 
   PString uid;
