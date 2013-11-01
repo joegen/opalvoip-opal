@@ -102,7 +102,7 @@ void MyManager::Usage(ostream & strm, const PArgList & args)
 }
 
 
-bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
+bool MyManager::Initialise(PArgList & args, bool, const PString &)
 {
   args.Parse(GetArgumentSpec());
 
