@@ -202,40 +202,17 @@ PBoolean H323Gatekeeper::DiscoverByNameAndAddress(const PString & identifier,
 
 void H323RasPDU::WriteGRQ(H323Transport & transport, bool & succeeded)
 {
-  OpalEndPoint & endpoint = transport.GetEndPoint();
-
-  H323TransportAddress address = transport.GetLocalAddress();
-
-  // Get interface we are about to send PDU out on
-  PIPSocket::Address localAddress;
-  WORD localPort;
-  if (!address.GetIpAndPort(localAddress, localPort))
-    return;
+  H323TransportAddress localAddress = transport.GetLocalAddress();
 
   // Check if interface is used by signalling channel listeners
-  OpalTransportAddressArray interfaces = endpoint.GetInterfaceAddresses(true, &transport);
-  bool notInterface = true;
-  for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
-    PIPSocket::Address ifAddress;
-    if (interfaces[i].GetIpAddress(ifAddress) && ifAddress == localAddress) {
-      notInterface = false;
-      break;
-    }
-  }
-  if (notInterface) {
+  if (transport.GetEndPoint().GetInterfaceAddresses(&transport).IsEmpty()) {
     PTRACE(3, "RAS\tNot sending GRQ on " << localAddress << " as no signalling chanel is listening there.");
     return;
   }
 
-  // We also have to use the translated address if one is specified
-  PIPSocket::Address remoteAddress;
-  if (transport.GetRemoteAddress().GetIpAddress(remoteAddress) &&
-      endpoint.GetManager().TranslateIPAddress(localAddress, remoteAddress))
-    address = H323TransportAddress(localAddress, localPort);
-
   // Adjust out outgoing local address in PDU
   H225_GatekeeperRequest & grq = *this;
-  address.SetPDU(grq.m_rasAddress);
+  localAddress.SetPDU(grq.m_rasAddress);
   succeeded = Write(transport);
 }
 
@@ -436,7 +413,7 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperReject(const H225_GatekeeperReject &
 
 bool H323Gatekeeper::SetListenerAddresses(H225_ArrayOf_TransportAddress & pdu)
 {
-  H323TransportAddressArray listeners = endpoint.GetInterfaceAddresses(true, transport);
+  H323TransportAddressArray listeners = endpoint.GetInterfaceAddresses(transport);
   if (listeners.IsEmpty())
     return false;
 

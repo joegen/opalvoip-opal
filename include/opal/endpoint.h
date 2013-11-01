@@ -203,10 +203,11 @@ class OpalEndPoint : public PObject
       OpalListener * listener ///<  Transport dependent listener.
     );
 
-    /**Return a list of the transport addresses for all listeners on this endpoint
+    /**Return the transport addresses for all listeners on this endpoint.
+       If \p associatedTransport is provided then only listeners that are
+       using the same interface as that trasnprt are returned.
       */
     OpalTransportAddressArray GetInterfaceAddresses(
-      PBoolean excludeLocalHost = true,       ///<  Flag to exclude 127.0.0.1
       const OpalTransport * associatedTransport = NULL
                           ///<  Associated transport for precedence and translation
     ) const;

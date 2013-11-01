@@ -816,9 +816,7 @@ class OpalTransport : public PSafeObject
 
     /**Get the transport dependent name of the local endpoint.
       */
-    virtual OpalTransportAddress GetLocalAddress(
-      bool allowNAT = true   ///< Allow translation if remote needs NAT
-    ) const = 0;
+    virtual OpalTransportAddress GetLocalAddress() const = 0;
 
     /**Set local address to connect from.
        Note that this may not work for all transport types or may work only
@@ -1031,9 +1029,7 @@ class OpalTransportIP : public OpalTransport
   //@{
     /**Get the transport dependent name of the local endpoint.
       */
-    virtual OpalTransportAddress GetLocalAddress(
-      bool allowNAT = true   ///< Allow translation if remote needs NAT
-    ) const;
+    virtual OpalTransportAddress GetLocalAddress() const;
 
     /**Set local address to connect from.
        Note that this may not work for all transport types or may work only
@@ -1217,9 +1213,7 @@ class OpalTransportUDP : public OpalTransportIP
 
     /**Get the transport dependent name of the local endpoint.
       */
-    virtual OpalTransportAddress GetLocalAddress(
-      bool allowNAT = true   ///< Allow translation if remote needs NAT
-    ) const;
+    virtual OpalTransportAddress GetLocalAddress() const;
 
     /**Set local address to connect from.
        Note that this may not work for all transport types or may work only
