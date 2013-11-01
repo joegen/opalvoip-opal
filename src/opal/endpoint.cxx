@@ -319,133 +319,44 @@ PBoolean OpalEndPoint::RemoveListener(OpalListener * listener)
 
 
 static void AddTransportAddress(OpalTransportAddressArray & interfaceAddresses,
-                                const PIPSocket::Address & natInterfaceIP,
-                                const PIPSocket::Address & natExternalIP,
-                                const PIPSocket::Address & ip,
-                                WORD port,
-                                const PString & proto)
+                                const OpalTransportAddress & listenerAddress)
 {
-  if (ip != natExternalIP && (natInterfaceIP.IsAny() || ip == natInterfaceIP))
-    AddTransportAddress(interfaceAddresses, natInterfaceIP, natExternalIP, natExternalIP, port, proto);
-
-  OpalTransportAddress addr(ip, port, proto);
-  if (interfaceAddresses.GetValuesIndex(addr) == P_MAX_INDEX)
-    interfaceAddresses.Append(new OpalTransportAddress(addr));
+  if (interfaceAddresses.GetValuesIndex(listenerAddress) == P_MAX_INDEX)
+    interfaceAddresses.Append(new OpalTransportAddress(listenerAddress));
 }
 
 
 static void AddTransportAddresses(OpalTransportAddressArray & interfaceAddresses,
-                                  bool excludeLocalHost,
-                                  const PIPSocket::Address & natInterfaceIP,
-                                  const PIPSocket::Address & natExternalIP,
-                                  const OpalTransportAddress & preferredAddress,
-                                  const OpalTransportAddress & localAddress,
-                                  bool includeProto)
+                                  const OpalListenerList & listeners,
+                                  const OpalTransportAddress & remoteAddress,
+                                  const OpalTransportAddress & interfaceAddress)
 {
-  PCaselessString proto = localAddress.GetProtoPrefix();
-  if (includeProto && proto != preferredAddress.GetProto(true))
-    return;
-
-  if (!preferredAddress.IsEmpty() && !preferredAddress.IsEquivalent(localAddress, true))
-    return;
-
-  PIPSocket::Address localIP;
-  WORD port = 0;
-  if (!localAddress.GetIpAndPort(localIP, port))
-    return;
-
-  PIPSocket::InterfaceTable interfaces;
-  if (!localIP.IsAny() || !PIPSocket::GetInterfaceTable(interfaces)) {
-    AddTransportAddress(interfaceAddresses, natInterfaceIP, natExternalIP, localIP, port, proto);
-    return;
-  }
-
-
-  PIPSocket::Address preferredIP;
-  if (preferredAddress.GetIpAddress(preferredIP) && !preferredIP.IsAny()) {
-    for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
-      PIPSocket::Address ip = interfaces[i].GetAddress();
-      if (ip == preferredIP)
-        AddTransportAddress(interfaceAddresses, natInterfaceIP, natExternalIP, ip, port, proto);
-    }
-  }
-
-  for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
-    PIPSocket::Address ip = interfaces[i].GetAddress();
-    if (ip.GetVersion() == localIP.GetVersion() && !(excludeLocalHost && ip.IsLoopback()))
-      AddTransportAddress(interfaceAddresses, natInterfaceIP, natExternalIP, ip, port, proto);
+  for (OpalListenerList::const_iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
+    if (listener->GetLocalAddress().IsEquivalent(interfaceAddress, true))
+      AddTransportAddress(interfaceAddresses, listener->GetLocalAddress(remoteAddress));
   }
 }
 
 
-OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(PBoolean excludeLocalHost,
-                                                              const OpalTransport * associatedTransport) const
+OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(const OpalTransport * associatedTransport) const
 {
   OpalTransportAddressArray interfaceAddresses;
 
-  OpalTransportAddress associatedLocalAddress, associatedRemoteAddress, associatedWildcard;
-  PIPSocket::Address natInterfaceIP = PIPSocket::GetInvalidAddress();
-  PIPSocket::Address natExternalIP = PIPSocket::GetInvalidAddress();
-  if (associatedTransport != NULL) {
-    associatedLocalAddress = associatedTransport->GetLocalAddress();
-    associatedRemoteAddress = associatedTransport->GetRemoteAddress();
-
-    PIPSocket::Address remoteIP;
-    associatedRemoteAddress.GetIpAddress(remoteIP);
-
-    associatedWildcard = OpalTransportAddress(PIPSocket::Address::GetAny(remoteIP.GetVersion()), 0,
-                                              associatedLocalAddress.GetProtoPrefix());
-
-#if P_NAT
-    PNatMethod * natMethod = manager.GetNatMethod(remoteIP);
-    if (natMethod != NULL) {
-      natMethod->GetInterfaceAddress(natInterfaceIP);
-      natMethod->GetExternalAddress(natExternalIP);
-    }
-#endif
+  if (associatedTransport == NULL) {
+    for (OpalListenerList::const_iterator listener = listeners.begin(); listener != listeners.end(); ++listener)
+      AddTransportAddress(interfaceAddresses, listener->GetLocalAddress());
+    PTRACE(4, "OpalMan\tListener interfaces: no associated transport\n    " << setfill(',') << interfaceAddresses);
+    return interfaceAddresses;
   }
 
-  OpalListenerList::const_iterator listener;
+  OpalTransportAddress remoteAddress = associatedTransport->GetRemoteAddress();
+  PIPSocket::Address associatedInterfaceIP(associatedTransport->GetInterface());
+  AddTransportAddresses(interfaceAddresses, listeners, remoteAddress,
+                        OpalTransportAddress(associatedInterfaceIP, 65535, remoteAddress.GetProtoPrefix()));
+  AddTransportAddresses(interfaceAddresses, listeners, remoteAddress,
+                        OpalTransportAddress(associatedInterfaceIP, 65535, OpalTransportAddress::IpPrefix()));
 
-  if (!associatedLocalAddress.IsEmpty()) {
-    for (listener = listeners.begin(); listener != listeners.end(); ++listener)
-      AddTransportAddresses(interfaceAddresses,
-                            excludeLocalHost,
-                            natInterfaceIP,
-                            natExternalIP,
-                            associatedLocalAddress,
-                            listener->GetLocalAddress(associatedRemoteAddress),
-                            true);
-    for (listener = listeners.begin(); listener != listeners.end(); ++listener)
-      AddTransportAddresses(interfaceAddresses,
-                            excludeLocalHost,
-                            natInterfaceIP,
-                            natExternalIP,
-                            associatedWildcard,
-                            listener->GetLocalAddress(associatedRemoteAddress),
-                            true);
-    for (listener = listeners.begin(); listener != listeners.end(); ++listener)
-      AddTransportAddresses(interfaceAddresses,
-                            excludeLocalHost,
-                            natInterfaceIP,
-                            natExternalIP,
-                            associatedLocalAddress,
-                            listener->GetLocalAddress(associatedRemoteAddress),
-                            false);
-  }
-
-  for (listener = listeners.begin(); listener != listeners.end(); ++listener)
-    AddTransportAddresses(interfaceAddresses,
-                          excludeLocalHost,
-                          natInterfaceIP,
-                          natExternalIP,
-                          OpalTransportAddress(),
-                          listener->GetLocalAddress(),
-                          false);
-
-  PTRACE(4, "OpalMan\tListener interfaces: associated transport="
-         << (associatedTransport != NULL ? (const char *)associatedLocalAddress : "None")
-         << "\n    " << setfill(',') << interfaceAddresses);
+  PTRACE(4, "OpalMan\tListener interfaces: associated transport " << *associatedTransport << "\n    " << setfill(',') << interfaceAddresses);
   return interfaceAddresses;
 }
 

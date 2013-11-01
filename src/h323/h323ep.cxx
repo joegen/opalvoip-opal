@@ -424,19 +424,33 @@ bool H323EndPoint::InternalCreateGatekeeper(H323Transport * transport, const H32
   RemoveGatekeeper(H225_UnregRequestReason::e_reregistrationRequired);
 
   if (transport == NULL) {
-    OpalTransportAddressArray interfaces = GetInterfaceAddresses();
-    for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
-      if (interfaces[i].IsCompatible(gkAddress)) {
-        PIPSocket::Address ip;
-        if (interfaces[i].GetIpAddress(ip))
-          transport = new H323TransportUDP(*this, ip);
-        break;
+    PIPSocket::Address interfaceIP(PIPSocket::GetInvalidAddress());
+
+    // See if the system can tell us which interface would be used
+    PIPSocket::Address remoteIP;
+    if (gkAddress.GetIpAddress(remoteIP) && !remoteIP.IsAny())
+      interfaceIP = PIPSocket::GetRouteInterfaceAddress(remoteIP);
+
+    if (!interfaceIP.IsValid()) {
+      OpalTransportAddressArray interfaces = GetInterfaceAddresses();
+      for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
+        if (interfaces[i].IsCompatible(gkAddress)) {
+          if (interfaceIP.IsValid())
+            interfaces[i].GetIpAddress(interfaceIP);
+          else {
+            // More than one so do gk on all interfaces
+            interfaceIP = PIPSocket::GetDefaultIpAny();
+            break;
+          }
+        }
+      }
+      if (!interfaceIP.IsValid()) {
+        PTRACE(2, "H323\tCannot find a compatible listener for \"" << gkAddress << '"');
+        return false;
       }
     }
-    if (transport == NULL) {
-      PTRACE(2, "H323\tCannot find a compatible listener for \"" << gkAddress << '"');
-      return false;
-    }
+
+    transport = new OpalTransportUDP(*this, interfaceIP);
   }
 
   gatekeeper = CreateGatekeeper(transport);

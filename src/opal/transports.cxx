@@ -1096,7 +1096,7 @@ OpalTransportIP::OpalTransportIP(OpalEndPoint & end,
 }
 
 
-OpalTransportAddress OpalTransportIP::GetLocalAddress(bool /*allowNAT*/) const
+OpalTransportAddress OpalTransportIP::GetLocalAddress() const
 {
   return OpalTransportAddress(localAddress, localPort, GetProtoPrefix());
 }
@@ -1452,17 +1452,16 @@ bool OpalTransportUDP::SetInterface(const PString & iface)
 }
 
 
-OpalTransportAddress OpalTransportUDP::GetLocalAddress(bool allowNAT) const
+OpalTransportAddress OpalTransportUDP::GetLocalAddress() const
 {
   PMonitoredSocketChannel * socket = dynamic_cast<PMonitoredSocketChannel *>(m_channel);
   if (socket != NULL) {
     OpalTransportUDP * thisWritable = const_cast<OpalTransportUDP *>(this);
-    if (!socket->GetLocal(thisWritable->localAddress, thisWritable->localPort,
-                          allowNAT && !manager.IsLocalAddress(remoteAddress)))
+    if (!socket->GetLocal(thisWritable->localAddress, thisWritable->localPort, !manager.IsLocalAddress(remoteAddress)))
       return OpalTransportAddress();
   }
 
-  return OpalTransportIP::GetLocalAddress(allowNAT);
+  return OpalTransportIP::GetLocalAddress();
 }
 
 

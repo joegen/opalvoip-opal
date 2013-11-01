@@ -222,15 +222,6 @@ PBoolean H323Transactor::SetTransport(const H323TransportAddress & iface)
 }
 
 
-H323TransportAddressArray H323Transactor::GetInterfaceAddresses(bool excludeLocalHost)
-{
-  if (transport == NULL)
-    return H323TransportAddressArray();
-  else
-    return endpoint.GetInterfaceAddresses(excludeLocalHost, transport);
-}
-
-
 PBoolean H323Transactor::StartChannel()
 {
   if (transport == NULL)
@@ -312,10 +303,7 @@ PBoolean H323Transactor::SetUpCallSignalAddresses(H225_ArrayOf_TransportAddress 
   if (PAssertNULL(transport) == NULL)
     return false;
 
-  H323SetTransportAddresses(*transport,
-                            endpoint.GetInterfaceAddresses(false, transport),
-                            addresses);
-
+  H323SetTransportAddresses(*transport, endpoint.GetInterfaceAddresses(transport), addresses);
   return addresses.GetSize() > 0;
 }
 

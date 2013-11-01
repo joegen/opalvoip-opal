@@ -1723,7 +1723,7 @@ SIPURL SIPEndPoint::GetDefaultLocalURL(const OpalTransport & transport)
 {
   OpalTransportAddress localAddress;
 
-  OpalTransportAddressArray interfaces = GetInterfaceAddresses(true, &transport);
+  OpalTransportAddressArray interfaces = GetInterfaceAddresses(&transport);
   if (!interfaces.IsEmpty())
     localAddress = interfaces[0];
   else {

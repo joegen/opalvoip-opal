@@ -482,7 +482,7 @@ H323PeerElement::Error H323PeerElement::ServiceRequestByAddr(const H323Transport
 
   // build the service request
   H501PDU pdu;
-  H323TransportAddressArray interfaces = GetInterfaceAddresses();
+  H323TransportAddressArray interfaces = endpoint.GetInterfaceAddresses(transport);
   H501_ServiceRequest & body = pdu.BuildServiceRequest(GetNextSequenceNumber(), interfaces);
 
   // include the element indentifier
@@ -1113,7 +1113,7 @@ H323PeerElement::Error H323PeerElement::SendUpdateDescriptor(H501PDU & pdu,
   H501_DescriptorUpdate & body = pdu.m_body;
 
   // put in sender address
-  H323TransportAddressArray addrs = GetInterfaceAddresses();
+  H323TransportAddressArray addrs = endpoint.GetInterfaceAddresses(transport);
   PAssert(addrs.GetSize() > 0, "No interface addresses");
   H323SetAliasAddress(addrs[0], body.m_sender, H225_AliasAddress::e_transportID);
 
