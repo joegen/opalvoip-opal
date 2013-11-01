@@ -101,6 +101,13 @@ OpalTransportAddress::OpalTransportAddress(const PIPSocket::Address & addr, WORD
 }
 
 
+OpalTransportAddress::OpalTransportAddress(const PIPSocket::AddressAndPort & addr, const char * proto)
+  : PCaselessString(addr.IsValid() ? addr.AsString() : PString('*'))
+{
+  SetInternalTransport(addr.GetPort(), proto);
+}
+
+
 PString OpalTransportAddress::GetHostName(bool includeService) const
 {
   if (m_transport == NULL)
@@ -643,7 +650,7 @@ OpalTransportAddress OpalListenerIP::GetLocalAddress(const OpalTransportAddress 
   if (remoteAddress.GetIpAddress(remoteIP)) {
 #if P_NAT
     OpalManager & manager = endpoint.GetManager();
-    PNatMethod * natMethod = manager.GetNatMethod(remoteIP);
+    PNatMethod * natMethod = manager.GetNatMethod(remoteAddress, localAddress);
     if (natMethod != NULL) {
       if (!localIP.IsValid() || localIP.IsAny())
         natMethod->GetInterfaceAddress(localIP);
@@ -791,7 +798,7 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
   : OpalListenerIP(endpoint, binding, port, exclusive),
     listenerBundle(PMonitoredSockets::Create(binding.AsString(),
                                              !exclusive
-                                             P_NAT_PARAM(endpoint.GetManager().GetNatMethod())))
+                                             P_NAT_PARAM(endpoint.GetManager().GetNatMethod("*", binding))))
 {
 }
 
@@ -802,7 +809,7 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
   : OpalListenerIP(endpoint, binding, option)
   , listenerBundle(PMonitoredSockets::Create(binding.GetHostName(),
                                              !exclusiveListener
-                                             P_NAT_PARAM(endpoint.GetManager().GetNatMethod())))
+                                             P_NAT_PARAM(endpoint.GetNatMethod("udp$*", binding))))
   , m_bufferSize(32768)
 {
   if (binding.GetHostName() == "*")
@@ -1348,7 +1355,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
 {
   PMonitoredSockets * sockets = PMonitoredSockets::Create(binding.AsString(),
                                                           reuseAddr
-                                                          P_NAT_PARAM(manager.GetNatMethod()));
+                                                          P_NAT_PARAM(manager.GetNatMethod(PIPSocket::GetDefaultIpAny(), binding)));
   if (preOpen)
     sockets->Open(localPort);
   m_channel = new PMonitoredSocketChannel(sockets, false);

@@ -59,17 +59,12 @@
 #include <codec/vidcodec.h>
 #endif
 
-#if OPAL_HAS_H224
 #include <h224/h224.h>
-#endif
-
-#if OPAL_H460
 #include <h460/h460.h>
 #include <h460/h4601.h>
 #include <ptclib/random.h>
-#include "h460/h46018_h225.h"
-#include "h460/h46019.h"
-#endif
+#include "h460/h460_std18.h"
+#include "h460/h460_std19.h"
 
 
 #if _DEBUG
@@ -88,77 +83,6 @@ const PTimeInterval MonitorCallStatusTime(0, 0, 1); // Minutes
 
 
 /////////////////////////////////////////////////////////////////////////////
-
-#if OPAL_H460
-static void ReceiveSetupFeatureSet(const H323Connection * connection, const H225_Setup_UUIE & pdu)
-{
-  H225_FeatureSet fs;
-  PBoolean hasFeaturePDU = false;
-
-  if(pdu.HasOptionalField(H225_Setup_UUIE::e_neededFeatures)) {
-    fs.IncludeOptionalField(H225_FeatureSet::e_neededFeatures);
-    H225_ArrayOf_FeatureDescriptor & fsn = fs.m_neededFeatures;
-    fsn = pdu.m_neededFeatures;
-    hasFeaturePDU = true;
-  }
-
-  if(pdu.HasOptionalField(H225_Setup_UUIE::e_desiredFeatures)) {
-    fs.IncludeOptionalField(H225_FeatureSet::e_desiredFeatures);
-    H225_ArrayOf_FeatureDescriptor & fsn = fs.m_desiredFeatures;
-    fsn = pdu.m_desiredFeatures;
-    hasFeaturePDU = true;
-  }
-
-  if(pdu.HasOptionalField(H225_Setup_UUIE::e_supportedFeatures)) {
-    fs.IncludeOptionalField(H225_FeatureSet::e_supportedFeatures);
-    H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
-    fsn = pdu.m_supportedFeatures;
-    hasFeaturePDU = true;
-  }
-
-  if (hasFeaturePDU) {
-      connection->OnReceiveFeatureSet(H460_MessageType::e_setup, fs);
-  }
-}
-
-
-template <typename PDUType>
-static void ReceiveFeatureData(const H323Connection * connection, unsigned code, const PDUType & pdu)
-{
-  if (pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_genericData)) {
-    H225_FeatureSet fs;
-    fs.IncludeOptionalField(H225_FeatureSet::e_supportedFeatures);
-    H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
-    const H225_ArrayOf_GenericData & data = pdu.m_h323_uu_pdu.m_genericData;
-    for (PINDEX i=0; i < data.GetSize(); i++) {
-      PINDEX lastPos = fsn.GetSize();
-      fsn.SetSize(lastPos+1);
-      fsn[lastPos] = (H225_FeatureDescriptor &)data[i];
-    }
-    connection->OnReceiveFeatureSet(code, fs);
-  }
-}
-
-
-template <typename PDUType>
-static void ReceiveFeatureSet(const H323Connection * connection, unsigned code, const PDUType & pdu)
-{
-    if (pdu.HasOptionalField(PDUType::e_featureSet))
-      connection->OnReceiveFeatureSet(code, pdu.m_featureSet);
-}
-#endif
-
-
-#if OPAL_H460
-const char * H46018OID = "0.0.8.460.18.0.1";
-const char * H46019OID = "0.0.8.460.19.0.1";
-const unsigned defH46019payload = 127;
-const unsigned defH46019TTL = 20;
-
-const char * H46024AOID = "0.0.8.460.24.1";
-const char * H46024BOID = "0.0.8.460.24.2";
-#endif
-
 
 H323Connection::H323Connection(OpalCall & call,
                                H323EndPoint & ep,
@@ -213,7 +137,7 @@ H323Connection::H323Connection(OpalCall & call,
   , m_h239TokenOwned(false)
 #endif
 #if OPAL_H460
-  , features(ep.GetFeatureSet())
+  , P_DISABLE_MSVC_WARNINGS(4355, m_features(ep.InternalCreateFeatureSet(H460_Feature::ForConnection, this)))
 #endif
 {
   PTRACE_CONTEXT_ID_TO(localCapabilities);
@@ -290,18 +214,6 @@ H323Connection::H323Connection(OpalCall & call,
   h4507handler = new H4507Handler(*this, *h450dispatcher);
   h45011handler = new H45011Handler(*this, *h450dispatcher);
 #endif
-
-
-#if OPAL_H460
-  disableH460 = ep.FeatureSetDisabled();
-  features->LoadFeatureSet(H460_Feature::FeatureSignal, this);
-
-  m_H46019CallReceiver = false;
-  m_H46019enabled = false;
-  m_h245Connect = false;
-
-  // NOTE additional 46024a stuff not yet copied in
-#endif
 }
 
 
@@ -320,7 +232,7 @@ H323Connection::~H323Connection()
   delete connectPDU;
   delete progressPDU;
 #if OPAL_H460
-  delete features;
+  delete m_features;
 #endif
   delete controlListener;
 
@@ -603,8 +515,19 @@ PBoolean H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
 #endif
 
 #if OPAL_H460
-   ReceiveFeatureData<H323SignalPDU>(this, q931.GetMessageType(), pdu);
-#endif
+  if (pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_genericData)) {
+    H225_FeatureSet fs;
+    fs.IncludeOptionalField(H225_FeatureSet::e_supportedFeatures);
+    H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
+    const H225_ArrayOf_GenericData & data = pdu.m_h323_uu_pdu.m_genericData;
+    for (PINDEX i = 0; i < data.GetSize(); i++) {
+      PINDEX lastPos = fsn.GetSize();
+      fsn.SetSize(lastPos+1);
+      fsn[lastPos] = (H225_FeatureDescriptor &)data[i];
+    }
+    OnReceiveFeatureSet(q931.GetMessageType(), fs);
+  }
+#endif // OPAL_H460
 
   // Add special code to detect if call is from a Cisco and remoteApplication needs setting
   if (remoteProductInfo.name.IsEmpty() && pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_nonStandardControl)) {
@@ -798,12 +721,14 @@ static PBoolean BuildFastStartList(const H323Channel & channel,
   return true;
 }
 
+
 void H323Connection::OnEstablished()
 {
   connectionState = EstablishedConnection; // Keep in sync
   endpoint.OnConnectionEstablished(*this, callToken);
   OpalRTPConnection::OnEstablished();
 }
+
 
 void H323Connection::OnSendARQ(H225_AdmissionRequest & arq)
 {
@@ -823,7 +748,7 @@ void H323Connection::OnSendARQ(H225_AdmissionRequest & arq)
       }
     }
   }
-#endif
+#endif // OPAL_H460
 
   endpoint.OnSendARQ(*this, arq);
 }
@@ -846,7 +771,7 @@ void H323Connection::OnReceivedACF(const H225_AdmissionConfirm & acf)
       OnReceiveFeatureSet(H460_MessageType::e_admissionConfirm, fs);
     }
   }
-#endif
+#endif // OPAL_H460
 }
 
 
@@ -867,7 +792,7 @@ void H323Connection::OnReceivedARJ(const H225_AdmissionReject & arj)
       OnReceiveFeatureSet(H460_MessageType::e_admissionReject, fs);
     }
   }
-#endif
+#endif // OPAL_H460
 }
 
 
@@ -889,7 +814,7 @@ void H323Connection::OnSendIRR(H225_InfoRequestResponse & irr) const
       }
     }
   }
-#endif
+#endif // OPAL_H460
 }
 
 
@@ -911,7 +836,7 @@ void H323Connection::OnSendDRQ(H225_DisengageRequest & drq) const
       }
     }
   }
-#endif
+#endif // OPAL_H460
 }
 
 
@@ -1045,8 +970,33 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
   }
 
 #if OPAL_H460
-  ReceiveSetupFeatureSet(this, setup);
-#endif
+  H225_FeatureSet fs;
+  bool hasFeaturePDU = false;
+
+  if (setup.HasOptionalField(H225_Setup_UUIE::e_neededFeatures)) {
+    fs.IncludeOptionalField(H225_FeatureSet::e_neededFeatures);
+    H225_ArrayOf_FeatureDescriptor & fsn = fs.m_neededFeatures;
+    fsn = setup.m_neededFeatures;
+    hasFeaturePDU = true;
+  }
+
+  if (setup.HasOptionalField(H225_Setup_UUIE::e_desiredFeatures)) {
+    fs.IncludeOptionalField(H225_FeatureSet::e_desiredFeatures);
+    H225_ArrayOf_FeatureDescriptor & fsn = fs.m_desiredFeatures;
+    fsn = setup.m_desiredFeatures;
+    hasFeaturePDU = true;
+  }
+
+  if (setup.HasOptionalField(H225_Setup_UUIE::e_supportedFeatures)) {
+    fs.IncludeOptionalField(H225_FeatureSet::e_supportedFeatures);
+    H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
+    fsn = setup.m_supportedFeatures;
+    hasFeaturePDU = true;
+  }
+
+  if (hasFeaturePDU)
+    OnReceiveFeatureSet(H460_MessageType::e_setup, fs);
+#endif // OPAL_H460
 
   // Send back a H323 Call Proceeding PDU in case OnIncomingCall() takes a while
   PTRACE(3, "H225\tSending call proceeding PDU");
@@ -1363,7 +1313,8 @@ PBoolean H323Connection::OnReceivedCallProceeding(const H323SignalPDU & pdu)
 
 
 #if OPAL_H460
-  ReceiveFeatureSet<H225_CallProceeding_UUIE>(this, H460_MessageType::e_callProceeding, call);
+  if (pdu.HasOptionalField(H225_CallProceeding_UUIE::e_featureSet))
+    OnReceiveFeatureSet(H460_MessageType::e_callProceeding, call.m_featureSet);
 #endif
 
   // Check for fastStart data and start fast
@@ -1431,7 +1382,8 @@ PBoolean H323Connection::OnReceivedAlerting(const H323SignalPDU & pdu)
 #endif
 
 #if OPAL_H460
-  ReceiveFeatureSet<H225_Alerting_UUIE>(this, H460_MessageType::e_alerting, alert);
+  if (pdu.HasOptionalField(H225_Alerting_UUIE::e_featureSet))
+    OnReceiveFeatureSet(H460_MessageType::e_alerting, alert.m_featureSet);
 #endif
 
   // Check for fastStart data and start fast
@@ -1475,7 +1427,8 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
 #endif
 
 #if OPAL_H460
-  ReceiveFeatureSet<H225_Connect_UUIE>(this, H460_MessageType::e_connect, connect);
+  if (pdu.HasOptionalField(H225_Connect_UUIE::e_featureSet))
+    OnReceiveFeatureSet(H460_MessageType::e_connect, connect.m_featureSet);
 #endif
 
   if (!OnOutgoingCall(pdu)) {
@@ -1570,11 +1523,13 @@ PBoolean H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
 
 #if OPAL_H460
   // Do not process H.245 Control PDU's
-  if (!pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_h245Control))
-    ReceiveFeatureSet<H225_Facility_UUIE>(this, H460_MessageType::e_facility, fac);
+  if (!pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_h245Control) &&
+       pdu.HasOptionalField(H225_Facility_UUIE::e_featureSet))
+    OnReceiveFeatureSet(H460_MessageType::e_facility, fac.m_featureSet);
 #endif
 
   SetRemoteVersions(fac.m_protocolIdentifier);
+
 #if OPAL_H235_6
   if (fac.HasOptionalField(H225_Facility_UUIE::e_tokens))
     m_dh.FromTokens(fac.m_tokens);
@@ -1741,7 +1696,8 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
 #endif
 
 #if OPAL_H460
-      ReceiveFeatureSet<H225_ReleaseComplete_UUIE>(this, H460_MessageType::e_releaseComplete, rc);
+      if (rc.HasOptionalField(H225_ReleaseComplete_UUIE::e_featureSet))
+        OnReceiveFeatureSet(H460_MessageType::e_releaseComplete, rc.m_featureSet);
 #endif
 
       if (pdu.m_h323_uu_pdu.m_h323_message_body.GetTag() == H225_H323_UU_PDU_h323_message_body::e_releaseComplete) {
@@ -1998,7 +1954,30 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   }
 
 #if OPAL_H460
-  setupPDU.InsertH460Setup(*this, setup);
+  {
+    /* When sending the H460 message in the Setup PDU you have to ensure the
+       ARQ is received first then add the Fields to the Setup PDU */
+    H225_FeatureSet fs;
+    if (OnSendFeatureSet(H460_MessageType::e_setup, fs)) {
+      if (fs.HasOptionalField(H225_FeatureSet::e_neededFeatures)) {
+        setup.IncludeOptionalField(H225_Setup_UUIE::e_neededFeatures);
+        H225_ArrayOf_FeatureDescriptor & fsn = setup.m_neededFeatures;
+        fsn = fs.m_neededFeatures;
+      }
+  
+      if (fs.HasOptionalField(H225_FeatureSet::e_desiredFeatures)) {
+        setup.IncludeOptionalField(H225_Setup_UUIE::e_desiredFeatures);
+        H225_ArrayOf_FeatureDescriptor & fsn = setup.m_desiredFeatures;
+        fsn = fs.m_desiredFeatures;
+      }
+  
+      if (fs.HasOptionalField(H225_FeatureSet::e_supportedFeatures)) {
+        setup.IncludeOptionalField(H225_Setup_UUIE::e_supportedFeatures);
+        H225_ArrayOf_FeatureDescriptor & fsn = setup.m_supportedFeatures;
+        fsn = fs.m_supportedFeatures;
+      }
+    }
+  }
 #endif
 
   // Do the transport connect
@@ -2177,9 +2156,15 @@ void H323Connection::DetermineRTPNAT(const PIPSocket::Address & localAddr,
                                      const PIPSocket::Address & signalAddr)
 {
 #if OPAL_H460
-    if (m_H46019enabled)
+  if (m_features != NULL) {
+    H460_Feature * feature = m_features->GetFeature(19);
+    if (feature != NULL && feature->IsNegotiated()) {
+      m_remoteBehindNAT = true;
       return;
+    }
+  }
 #endif
+
   OpalRTPConnection::DetermineRTPNAT(localAddr, peerAddr, signalAddr);
 }
 
@@ -2818,61 +2803,10 @@ PBoolean H323Connection::OnStartHandleControlChannel()
 
   PTRACE(2, "H46018\tStarted control channel");
 
-#ifdef OPAL_H460
-  if (m_H46019enabled) {
-    // according to H.460.18 cl.11 we have to send a generic Indication on the opening of a
-    // H.245 control channel. Details are specified in H.460.18 cl.16
-    // This must be the first PDU otherwise gatekeeper/proxy will close the channel.
-
-    if (endpoint.H46018IsEnabled() && !m_h245Connect) {
-      H323ControlPDU pdu;
-      H245_GenericMessage & cap = pdu.Build(H245_IndicationMessage::e_genericIndication);
-
-      H245_CapabilityIdentifier & id = cap.m_messageIdentifier;
-      id.SetTag(H245_CapabilityIdentifier::e_standard);
-      PASN_ObjectId & gid = id;
-      gid.SetValue(H46018OID);
-
-      cap.IncludeOptionalField(H245_GenericMessage::e_subMessageIdentifier);
-      PASN_Integer & sub = cap.m_subMessageIdentifier;
-      sub = 1;
-
-      cap.IncludeOptionalField(H245_GenericMessage::e_messageContent);
-      H245_ArrayOf_GenericParameter & msg = cap.m_messageContent;
-
-      // callIdentifer
-      H245_GenericParameter call;
-      H245_ParameterIdentifier & idx = call.m_parameterIdentifier;
-      idx.SetTag(H245_ParameterIdentifier::e_standard);
-      PASN_Integer & m = idx;
-      m =1;
-      H245_ParameterValue & conx = call.m_parameterValue;
-      conx.SetTag(H245_ParameterValue::e_octetString);
-      PASN_OctetString & raw = conx;
-      raw.SetValue(callIdentifier);
-      msg.SetSize(1);
-      msg[0] = call;
-
-      // Is receiver
-      if (m_H46019CallReceiver) {
-        H245_GenericParameter answer;
-        H245_ParameterIdentifier & an = answer.m_parameterIdentifier;
-        an.SetTag(H245_ParameterIdentifier::e_standard);
-        PASN_Integer & n = an;
-        n = 2;
-        H245_ParameterValue & aw = answer.m_parameterValue;
-        aw.SetTag(H245_ParameterValue::e_logical);
-        msg.SetSize(2);
-        msg[1] = answer;
-      }
-
-      PTRACE(4,"H46018\tSending H.245 Control PDU " << pdu);
-      if (!WriteControlPDU(pdu))
-        return false;
-
-      m_h245Connect = true;
-    }
-  }
+#if OPAL_H460
+  H460_FeatureStd18 * feature = m_features != NULL ? m_features->GetFeatureAs<H460_FeatureStd18>(18) : NULL;
+  if (feature != NULL && !feature->OnStartControlChannel())
+    return false;
 #endif
 
   return StartHandleControlChannel();
@@ -4601,20 +4535,15 @@ PBoolean H323Connection::OnOpenLogicalChannel(const H245_OpenLogicalChannel & op
   m_fastStartState = FastStartDisabled;
   if (!m_fastStartChannels.IsEmpty()) {
     m_fastStartChannels.RemoveAll();
-#if OPAL_H460_NAT
-    m_NATSockets.clear();
-#endif // OPAL_H460_NAT
     PTRACE(3, "H245\tReceived early start OLC, aborting fast start");
   }
 
-#if OPAL_H460
   if (openPDU.HasOptionalField(H245_OpenLogicalChannel::e_genericInformation)) {
     OnReceiveOLCGenericInformation(sessionID,openPDU.m_genericInformation);
 
-    if (OnSendingOLCGenericInformation(sessionID,ackPDU.m_genericInformation,true))
+    if (OnSendingOLCGenericInformation(sessionID, ackPDU.m_genericInformation, true))
       ackPDU.IncludeOptionalField(H245_OpenLogicalChannelAck::e_genericInformation);
   }
-#endif
 
   // Detect symmetry issues
   H323Capability * capability = remoteCapabilities.FindCapability(channel.GetCapability());
@@ -4645,163 +4574,58 @@ PBoolean H323Connection::OnOpenLogicalChannel(const H245_OpenLogicalChannel & op
 }
 
 
-#if OPAL_H460
 
-PBoolean H323Connection::OnReceiveOLCGenericInformation(unsigned sessionID,
-                          const H245_ArrayOf_GenericInformation & alternate) const
+void H323Connection::OnReceiveOLCGenericInformation(unsigned sessionID, const H245_ArrayOf_GenericInformation & infos) const
 {
-  PBoolean success = false;
-
-#if OPAL_H460_NAT
-  PTRACE(4,"Handling Generic OLC Session " << sessionID );
-  for (PINDEX i = 0; i < alternate.GetSize(); i++) {
-    const H245_GenericInformation & info = alternate[i];
-    const H245_CapabilityIdentifier & id = info.m_messageIdentifier;
-    if (id.GetTag() != H245_CapabilityIdentifier::e_standard)
-      break;
-
-    const PASN_ObjectId & oid = id;
-    const H245_ArrayOf_GenericParameter & msg = info.m_messageContent;
-    if (m_H46019enabled && (oid.AsString() == H46019OID)) {
-      H245_GenericParameter & val = msg[0];
-      if (val.m_parameterValue.GetTag() != H245_ParameterValue::e_octetString)
-        break;
-
-      PASN_OctetString & raw = val.m_parameterValue;
-      PPER_Stream pdu(raw);
-      H46019_TraversalParameters params;
-      if (!params.Decode(pdu)) {
-        PTRACE(2,"H46019\tError decoding Traversal Parameters!");
-        break;
+  PTRACE(4,"Handling Generic OLC Session " << sessionID);
+#if OPAL_H460
+  if (m_features != NULL) {
+    for (PINDEX i = 0; i < infos.GetSize(); i++) {
+      const H245_GenericInformation & info = infos[i];
+      if (info.m_messageIdentifier.GetTag() == H245_CapabilityIdentifier::e_standard) {
+        PString oid = ((const PASN_ObjectId &)info.m_messageIdentifier).AsString();
+        for (H460_FeatureSet::iterator it = m_features->begin(); it != m_features->end(); ++it) {
+          if (it->second->IsNegotiated() && it->first.GetOID() == oid) {
+            it->second->OnReceiveOLCGenericInformation(sessionID, info.m_messageContent);
+            break;
+          }
+        }
       }
-
-      PTRACE(4,"H46019\tTraversal Parameters:\n" << params);
-
-      H323TransportAddress RTPaddress;
-      H323TransportAddress RTCPaddress;
-      if (params.HasOptionalField(H46019_TraversalParameters::e_keepAliveChannel)) {
-        H245_TransportAddress & k = params.m_keepAliveChannel;
-        RTPaddress = H323TransportAddress(k);
-        PIPSocket::Address add; WORD port;
-        RTPaddress.GetIpAndPort(add,port);
-        RTCPaddress = H323TransportAddress(add,port+1);  // Compute the RTCP Address
-      }
-
-      unsigned payload = 0;
-      if (params.HasOptionalField(H46019_TraversalParameters::e_keepAlivePayloadType)) {
-        PASN_Integer & p = params.m_keepAlivePayloadType;
-        payload = p;
-      }
-
-      unsigned ttl = 0;
-      if (params.HasOptionalField(H46019_TraversalParameters::e_keepAliveInterval)) {
-        H225_TimeToLive & a = params.m_keepAliveInterval;
-        ttl = a;
-      }
-
-      unsigned muxId = 0;
-      if (params.HasOptionalField(H46019_TraversalParameters::e_multiplexID)) {
-        muxId = params.m_multiplexID;
-      }
-
-      std::map<unsigned,NAT_Sockets>::const_iterator sockets_iter = m_NATSockets.find(sessionID);
-      if (sockets_iter != m_NATSockets.end()) {
-        NAT_Sockets sockets = sockets_iter->second;
-        //PTRACE ( 5, "H460\tFound Sockets in m_NATSockets: " << (int)sockets.rtp << " " << (int)sockets.rtcp);
-        ((H46019UDPSocket *)sockets.rtp)->Activate(RTPaddress,payload,ttl, muxId);
-        ((H46019UDPSocket *)sockets.rtcp)->Activate(RTCPaddress,payload,ttl, muxId);
-      }
-
-      success = true;
     }
   }
-#endif // OPAL_H460_NAT
-
-  return success;
+#endif // OPAL_H460
 }
 
 
-PBoolean H323Connection::OnSendingOLCGenericInformation(const unsigned & sessionID,
-                              H245_ArrayOf_GenericInformation & generic, PBoolean isAck) const
+bool H323Connection::OnSendingOLCGenericInformation(unsigned sessionID,
+                                                    H245_ArrayOf_GenericInformation & info,
+                                                    bool isAck) const
 {
   PTRACE(4,"Set Generic " << (isAck ? "OLCack" : "OLC") << " Session " << sessionID );
-#if OPAL_H460_NAT
-  if (m_H46019enabled) {
-    unsigned payload=0; unsigned ttl=0;
-    std::map<unsigned,NAT_Sockets>::const_iterator sockets_iter = m_NATSockets.find(sessionID);
-    if (sockets_iter != m_NATSockets.end()) {
-      NAT_Sockets sockets = sockets_iter->second;
-      //PTRACE ( 5, "H460\tFound Sockets in m_NATSockets: " << (int)sockets.rtp << " " << (int)sockets.rtcp);
-      H46019UDPSocket * rtp = ((H46019UDPSocket *)sockets.rtp);
-      H46019UDPSocket * rtcp = ((H46019UDPSocket *)sockets.rtcp);
-      if (rtp->GetPingPayload() == 0)
-        rtp->SetPingPayLoad(defH46019payload);
-      payload = rtp->GetPingPayload();
 
-      if (rtp->GetTTL() == 0)
-        rtp->SetTTL(ttl);
-      ttl = rtp->GetTTL();
+#if OPAL_H460
+  if (m_features != NULL) {
+    for (H460_FeatureSet::iterator it = m_features->begin(); it != m_features->end(); ++it) {
+      if (it->second->IsNegotiated()) {
+        H245_ArrayOf_GenericParameter content;
+        if (it->second->OnSendingOLCGenericInformation(sessionID, content, isAck)) {
+          PINDEX lastPos = info.GetSize();
+          info.SetSize(lastPos+1);
 
-      if (isAck) {
-        rtp->Activate();  // Start the RTP Channel if not already started
-        rtcp->Activate();  // Start the RTCP Channel if not already started
+          info[lastPos].IncludeOptionalField(H245_GenericMessage::e_messageContent);
+          info[lastPos].m_messageContent = content;
+
+          H245_CapabilityIdentifier & id = info[lastPos].m_messageIdentifier;
+          id.SetTag(H245_CapabilityIdentifier::e_standard);
+          ((PASN_ObjectId &)id).SetValue(it->first.GetOID());
+        }
       }
-
-    } else {
-      PTRACE(4,"H46019\tERROR NAT Socket not found for " << sessionID << " ABORTING!" );
-      return false;
     }
-
-    H245_GenericInformation info;
-    H245_CapabilityIdentifier & id = info.m_messageIdentifier;
-    id.SetTag(H245_CapabilityIdentifier::e_standard);
-    PASN_ObjectId & oid = id;
-    oid.SetValue(H46019OID);
-
-    bool h46019msg = false;
-    H46019_TraversalParameters params;
-    if (/*!isAck ||*/ payload > 0) {
-      params.IncludeOptionalField(H46019_TraversalParameters::e_keepAlivePayloadType);
-      PASN_Integer & p = params.m_keepAlivePayloadType;
-      p = payload;
-      h46019msg = true;
-    }
-    if (/*isAck &&*/ ttl > 0) {
-      params.IncludeOptionalField(H46019_TraversalParameters::e_keepAliveInterval);
-      H225_TimeToLive & a = params.m_keepAliveInterval;
-      a = ttl;
-      h46019msg = true;
-    }
-
-    if (h46019msg) {
-      PTRACE(5,"H46019\tTraversal Parameters:\n" << params);
-      info.IncludeOptionalField(H245_GenericMessage::e_messageContent);
-      H245_ArrayOf_GenericParameter & msg = info.m_messageContent;
-      H245_GenericParameter genericParameter;
-      H245_ParameterIdentifier & idm = genericParameter.m_parameterIdentifier;
-      idm.SetTag(H245_ParameterIdentifier::e_standard);
-      PASN_Integer & idx = idm;
-      idx = 1;
-      genericParameter.m_parameterValue.SetTag(H245_ParameterValue::e_octetString);
-      H245_ParameterValue & octetValue = genericParameter.m_parameterValue;
-      PASN_OctetString & raw = octetValue;
-      raw.EncodeSubType(params);
-      msg.SetSize(1);
-      msg[0] = genericParameter;
-    }
-    PINDEX sz = generic.GetSize();
-    generic.SetSize(sz+1);
-    generic[sz] = info;
-
-    if (generic.GetSize() > 0)
-      return true;
   }
-#endif // OPAL_H460_NAT
-
-  return false;
-}
-
 #endif // OPAL_H460
+
+  return info.GetSize() > 0;
+}
 
 
 PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingChannel)
@@ -5644,125 +5468,19 @@ void H323Connection::MonitorCallStatus()
 }
 
 
-#if OPAL_H460_NAT
-
-void H323Connection::H46019SetCallReceiver()
-{
-    PTRACE(4,"H46019\tCall is receiver.");
-    m_H46019CallReceiver = true;
-}
-
-
-void H323Connection::H46019Enabled()
-{
-    m_H46019enabled = true;
-}
-
-
-PUDPSocket * H323Connection::GetNatSocket(unsigned session, PBoolean rtp)
-{
-    std::map<unsigned,NAT_Sockets>::const_iterator sockets_iter = m_NATSockets.find(session);
-    if (sockets_iter != m_NATSockets.end()) {
-        NAT_Sockets sockets = sockets_iter->second;
-        //PTRACE ( 5, "H323\tFound Sockets in m_NATSockets: " << (int)sockets.rtp << " " << (int)sockets.rtcp);
-        if (rtp)
-            return sockets.rtp;
-        else
-            return sockets.rtcp;
-    }
-    return NULL;
-}
-
-
-void H323Connection::SetRTPNAT(unsigned sessionid, PUDPSocket * _rtp, PUDPSocket * _rtcp)
-{
-    PWaitAndSignal m(NATSocketMutex);
-
-    //PTRACE(4,"H323\tRTP NAT Connection Callback! Session: " << sessionid << " sockets: " << (int)_rtp << " " << (int)_rtcp);
-
-    NAT_Sockets sockets;
-     sockets.rtp = _rtp;
-     sockets.rtcp = _rtcp;
-
-    m_NATSockets.insert(pair<unsigned, NAT_Sockets>(sessionid, sockets));
-}
-#endif // OPAL_H460_NAT
-
-
-PBoolean H323Connection::OnSendFeatureSet(unsigned code, H225_FeatureSet & featureSet) const
-{
 #if OPAL_H460
-  return features->SendFeature(code, featureSet);
-#else
-  return endpoint.OnSendFeatureSet(code, featureSet);
-#endif
-}
-
-
-void H323Connection::OnReceiveFeatureSet(unsigned code, const H225_FeatureSet & featureSet) const
+bool H323Connection::OnSendFeatureSet(H460_MessageType pduType, H225_FeatureSet & featureSet) const
 {
-#if OPAL_H460
-  features->ReceiveFeature(code, featureSet);
-#else
-  endpoint.OnReceiveFeatureSet(code, featureSet);
-#endif
+  return m_features != NULL && m_features->OnSendPDU(pduType, featureSet);
 }
 
 
-#if OPAL_H460
-H460_FeatureSet * H323Connection::GetFeatureSet()
+void H323Connection::OnReceiveFeatureSet(H460_MessageType pduType, const H225_FeatureSet & featureSet) const
 {
-  return features;
+  if (m_features != NULL)
+    m_features->OnReceivePDU(pduType, featureSet);
 }
-#endif
-
-
-#if OPAL_H460_NAT
-H323Connection::SessionInformation::SessionInformation(const OpalGloballyUniqueID & id, const PString & token, unsigned session)
-  : m_callID(id), m_callToken(token), m_sessionID(session)
-{
-#if OPAL_H460
-  // Some random number bases on the session id (for H.460.24A)
-  int rand = PRandom::Number((session *100),((session+1)*100)-1);
-  m_CUI = PString(rand);
-  PTRACE(4,"H46024A\tGenerated CUI s: " << session << " value: " << m_CUI);
-#else
-  m_CUI = PString();
-#endif
-}
-
-
-const PString & H323Connection::SessionInformation::GetCallToken()
-{
-  return m_callToken;
-}
-
-
-unsigned H323Connection::SessionInformation::GetSessionID() const
-{
-  return m_sessionID;
-}
-
-
-H323Connection::SessionInformation * H323Connection::BuildSessionInformation(unsigned sessionID) const
-{
-  return new SessionInformation(GetCallIdentifier(),GetCallToken(),sessionID);
-}
-
-
-const OpalGloballyUniqueID & H323Connection::SessionInformation::GetCallIdentifer()
-{
-  return m_callID;
-}
-
-
-const PString & H323Connection::SessionInformation::GetCUI()
-{
-  return m_CUI;
-}
-
-
-#endif // OPAL_H460_NAT
+#endif // OPAL_H460
 
 
 bool H323Connection::HasCompatibilityIssue(CompatibilityIssues issue) const

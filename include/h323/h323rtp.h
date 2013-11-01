@@ -156,7 +156,7 @@ class H323_RTPChannel : public H323_RealTimeChannel
 
     /**Alternate RTP port information for Same NAT
       */
-    virtual PBoolean OnReceivedAckAltPDU(
+    virtual void OnReceivedAckAltPDU(
       const H245_ArrayOf_GenericInformation & alternate  ///< Alternate RTP ports
     );
   //@}

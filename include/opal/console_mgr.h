@@ -217,7 +217,8 @@ class OpalManagerCLI : public OpalConsoleManager
 #endif
 
 #if P_NAT
-    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdNat);
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdNatList);
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdNatAddress);
 #endif
 
 #if PTRACING

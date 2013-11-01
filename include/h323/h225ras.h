@@ -46,6 +46,7 @@
 #include <h323/h235auth.h>
 #include <h323/h323trans.h>
 #include <h323/svcctrl.h>
+#include <h460/h460.h>
 
 
 class PASN_Sequence;
@@ -287,8 +288,10 @@ class H225_RAS : public H323Transactor
     virtual PBoolean OnReceiveRequestInProgress(const H323RasPDU &, const H225_RequestInProgress &);
     virtual PBoolean OnReceiveRequestInProgress(const H225_RequestInProgress &);
     
-    virtual PBoolean OnSendFeatureSet(unsigned, H225_FeatureSet &) const { return false; }
-    virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet &) const {}
+#if OPAL_H460
+    virtual PBoolean OnSendFeatureSet(H460_MessageType, H225_FeatureSet &) const { return false; }
+    virtual void OnReceiveFeatureSet(H460_MessageType, const H225_FeatureSet &) const {}
+#endif
 
     virtual void DisableFeatureSet() const {}
 

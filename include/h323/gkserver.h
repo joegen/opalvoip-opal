@@ -1070,8 +1070,10 @@ class H323GatekeeperListener : public H225_RAS
     virtual PBoolean OnReceiveLocationRequest(const H323RasPDU &, const H225_LocationRequest &);
     virtual PBoolean OnReceiveInfoRequestResponse(const H323RasPDU &, const H225_InfoRequestResponse &);
     virtual PBoolean OnReceiveResourcesAvailableConfirm(const H225_ResourcesAvailableConfirm &);
-    virtual PBoolean OnSendFeatureSet(unsigned, H225_FeatureSet & features) const;
-    virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet & features) const;
+#if OPAL_H460
+    virtual PBoolean OnSendFeatureSet(H460_MessageType pduType, H225_FeatureSet & features) const;
+    virtual void OnReceiveFeatureSet(H460_MessageType pduType, const H225_FeatureSet & features) const;
+#endif
   //@}
 
   /**@name Member access */
@@ -1647,8 +1649,10 @@ class H323GatekeeperServer : public H323TransactionServer
     virtual PBoolean AllowDuplicateAlias(const H225_ArrayOf_AliasAddress & /*aliases*/)
     { return canHaveDuplicateAlias; }
 
-    virtual PBoolean OnSendFeatureSet(unsigned, H225_FeatureSet & features) const;
-    virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet & features) const;
+#if OPAL_H460
+    virtual PBoolean OnSendFeatureSet(H460_MessageType pduType, H225_FeatureSet & features) const;
+    virtual void OnReceiveFeatureSet(H460_MessageType pduType, const H225_FeatureSet & features) const;
+#endif
 
   protected:
 

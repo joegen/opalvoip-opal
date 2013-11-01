@@ -1384,7 +1384,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   }
 
 #if P_NAT
-  PNatMethod * nat = GetNatMethod();
+  PNatMethod * nat = GetNatMethods().GetMethodByName(PString::Empty());
   if (nat != NULL) {
     SET_MESSAGE_STRING(response, m_param.m_general.m_natMethod, nat->GetName());
     SET_MESSAGE_STRING(response, m_param.m_general.m_natServer, nat->GetServer());
@@ -1396,7 +1396,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
       if (PIPSocket::GetHostAddress(command.m_param.m_general.m_natMethod, ip))
         SetNATServer("STUN", command.m_param.m_general.m_natMethod);
     }
-    if ((nat = GetNatMethod()) == NULL) {
+    if ((nat = GetNatMethods().GetMethodByName(PString::Empty())) == NULL) {
       response.SetError("Could not set NAT router method.");
       return;
     }

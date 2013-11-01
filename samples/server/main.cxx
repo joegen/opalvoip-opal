@@ -497,7 +497,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
 #if P_NAT
   {
-    PString method = cfg.GetString(NATMethodKey, PSTUNClient::GetNatMethodName());
+    PString method = cfg.GetString(NATMethodKey, PSTUNClient::MethodName());
     PString server = cfg.GetString(NATServerKey, cfg.GetString(STUNServerKey, GetNATServer()));
     SetNATServer(method, server);
     rsrc->Add(new PHTTPStringField(NATMethodKey, 25, method,
@@ -883,7 +883,7 @@ void RegistrationStatusPage::CreateContent(PHTML & html) const
 }
 
 
-bool RegistrationStatusPage::OnPostControl(const PStringToString & data, PHTML & msg)
+bool RegistrationStatusPage::OnPostControl(const PStringToString &, PHTML &)
 {
   return false;
 }

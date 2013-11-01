@@ -2605,15 +2605,19 @@ PBoolean H323GatekeeperListener::OnReceiveResourcesAvailableConfirm(const H225_R
   return true;
 }
 
-PBoolean H323GatekeeperListener::OnSendFeatureSet(unsigned pduType, H225_FeatureSet & set) const
+
+#if OPAL_H460
+PBoolean H323GatekeeperListener::OnSendFeatureSet(H460_MessageType pduType, H225_FeatureSet & set) const
 {
   return gatekeeper.OnSendFeatureSet(pduType, set);
 }
 
-void H323GatekeeperListener::OnReceiveFeatureSet(unsigned pduType, const H225_FeatureSet & set) const
+void H323GatekeeperListener::OnReceiveFeatureSet(H460_MessageType pduType, const H225_FeatureSet & set) const
 {
   gatekeeper.OnReceiveFeatureSet(pduType, set);
 }
+#endif
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -3599,14 +3603,17 @@ void H323GatekeeperServer::MonitorMain(PThread &, P_INT_PTR)
   }
 }
 
-PBoolean H323GatekeeperServer::OnSendFeatureSet(unsigned, H225_FeatureSet &) const
+
+#if OPAL_H460
+PBoolean H323GatekeeperServer::OnSendFeatureSet(H460_MessageType, H225_FeatureSet &) const
 {
   return false;
 }
 
-void H323GatekeeperServer::OnReceiveFeatureSet(unsigned, const H225_FeatureSet &) const
+void H323GatekeeperServer::OnReceiveFeatureSet(H460_MessageType, const H225_FeatureSet &) const
 {
 }
+#endif
 
 
 #endif // OPAL_H323

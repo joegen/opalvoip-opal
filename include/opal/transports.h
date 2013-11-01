@@ -177,8 +177,12 @@ class OpalTransportAddress : public PCaselessString
     );
     OpalTransportAddress(
       const PIPSocket::Address & ip,  ///<  IP address for transport
-      WORD port,                      ///<  Default port number
+      WORD port = 0,                  ///<  Default port number
       const char * proto = NULL       ///<  Default is "tcp"
+    );
+    OpalTransportAddress(
+      const PIPSocket::AddressAndPort & ap,  ///<  IP address and port for transport
+      const char * proto = NULL              ///<  Default is "tcp"
     );
 
     /// Clone function

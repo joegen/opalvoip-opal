@@ -259,13 +259,9 @@ PBoolean H323_RTPChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAckPara
 }
 
 
-PBoolean H323_RTPChannel::OnReceivedAckAltPDU(const H245_ArrayOf_GenericInformation & alternate)
+void H323_RTPChannel::OnReceivedAckAltPDU(const H245_ArrayOf_GenericInformation & alternate)
 { 
-#if OPAL_H460
-  return connection.OnReceiveOLCGenericInformation(GetSessionID(), alternate);
-#else
-  return false;
-#endif
+  connection.OnReceiveOLCGenericInformation(GetSessionID(), alternate);
 }
 
 

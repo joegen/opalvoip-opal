@@ -1282,7 +1282,8 @@ class OpalConnection : public PSafeObject
 #if P_NAT
     // Get Nat Method in use
     virtual PNatMethod * GetNatMethod(
-      const PIPSocket::Address & remoteAddress = PIPSocket::GetDefaultIpAny()
+      const OpalTransportAddress & remoteAddress,
+      const OpalTransportAddress & localAddress
     ) const;
 #endif
 
@@ -2014,7 +2015,7 @@ class OpalConnection : public PSafeObject
     P_REMOVE_VIRTUAL_VOID(OnSwitchedFaxMediaStreams(bool));
     P_REMOVE_VIRTUAL(bool, CloseMediaStream(OpalMediaStream &),false);
     P_REMOVE_VIRTUAL(bool,GetMediaTransportAddresses(const OpalMediaType&,OpalTransportAddressArray&) const,false);
-
+    P_REMOVE_VIRTUAL(PNatMethod *, GetNatMethod(const PIPSocket::Address &) const,NULL);
 };
 
 #endif // OPAL_OPAL_CONNECTION_H
