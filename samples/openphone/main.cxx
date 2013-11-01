@@ -5906,12 +5906,13 @@ void OptionsDialog::ChangeVideoGrabDevice(wxCommandEvent & /*event*/)
 
 void OptionsDialog::StopTestVideo()
 {
-  if (m_TestVideoThread == NULL)
-    return;
+  if (m_TestVideoGrabber != NULL)
+    m_TestVideoGrabber->Close();
+  if (m_TestVideoDisplay != NULL)
+    m_TestVideoDisplay->Close();
 
-  m_TestVideoGrabber->Close();
-  m_TestVideoDisplay->Close();
-  m_TestVideoThread->WaitForTermination();
+  if (m_TestVideoThread != NULL)
+    m_TestVideoThread->WaitForTermination();
 
   delete m_TestVideoThread;
   m_TestVideoThread = NULL;
