@@ -1840,6 +1840,10 @@ void OpalManager_C::HandleTransferCall(const OpalMessage & command, OpalMessageB
   }
 
   PSafePtr<OpalConnection> connection = call->GetConnection(0, PSafeReadOnly);
+  if (connection == NULL) {
+    response.SetError("Call disappeared during transfer from " + search);
+    return;
+  }
   while (connection->GetLocalPartyURL().NumCompare(search) != EqualTo) {
     if (++connection == NULL) {
       response.SetError("Call does not have suitable connection to transfer from " + search);
