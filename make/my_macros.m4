@@ -188,13 +188,12 @@ AC_DEFUN([MY_MODULE_OPTION],[
    AC_SUBST($1[_SYSTEM], "yes")
 
    MY_ARG_ENABLE([$2], [$3], [${DEFAULT_$1:-yes}], [usable=yes], [usable=no], [$11], [$12], [$13], [$14])
-   AC_ARG_ENABLE([test-$2], [AC_HELP_STRING([--disable-test-$2],[disable compile/link test for $3])], [test_$2=$enableval])
 
    if test "x$usable" = "xyes" ; then
       m4_bmatch([$4], [.*local-source.*], [
          AC_ARG_ENABLE(
-            [local-$2],
-            [AC_HELP_STRING([--enable-local-$2],[force use internal source for $3])],
+            [local$2],
+            [AC_HELP_STRING([--enable-local$2],[force use internal source for $3])],
             [
                if test "x$enableval" = "xyes" ; then
                   $1[_SYSTEM]="no"
@@ -232,20 +231,17 @@ AC_DEFUN([MY_MODULE_OPTION],[
                [usable=no]
             )]
          )
-         if test "x$usable" = "xyes" && test "x$test_$2" != "xno" ; then
+
+         if test "x$usable" = "xyes" ; then
             MY_LINK_IFELSE(
                [for $3 usability],
                [$$1[_CFLAGS]],
                [$$1[_LIBS]],
                [$7],
                [$8],
-               [],
+               [MY_ADD_MODULE_FLAGS([$1])],
                [usable=no]
             )
-         fi
-
-         if test "x$usable" = "xyes" ; then
-            MY_ADD_MODULE_FLAGS([$1])
          fi
 
          m4_bmatch([$4], [.*local-source.*], [
@@ -433,6 +429,8 @@ case "$target_os" in
       AR="libtool"
       ARFLAGS="-static -o"
       RANLIB=
+      CPPFLAGS="${CPPFLAGS} -stdlib=libstdc++"
+      LDFLAGS="${LDFLAGS} -stdlib=libstdc++"
       LIBS="-framework AudioToolbox -framework CoreAudio -framework SystemConfiguration -framework Foundation -lobjc $LIBS"
    ;;
 

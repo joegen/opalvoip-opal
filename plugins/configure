@@ -790,50 +790,37 @@ enable_g_722_1
 enable_g_722_2
 enable_lpc10
 enable_gsm
-enable_test_gsm
-enable_local_gsm
+enable_localgsm
 with_gsm_dir
 enable_iLBC
-enable_test_iLBC
-enable_local_iLBC
+enable_localiLBC
 with_iLBC_dir
 enable_speex
-enable_test_speex
-enable_local_speex
+enable_localspeex
 with_speex_dir
 enable_sbc
-enable_test_sbc
 with_sbc_dir
 enable_celt
-enable_test_celt
 enable_opus
-enable_test_opus
-enable_local_opus
+enable_localopus
 with_opus_dir
 enable_h_261
 enable_libavcodec
-enable_test_libavcodec
 with_libavcodec_dir
 enable_libavutil
-enable_test_libavutil
 with_libavutil_dir
 enable_h_263
 enable_mpeg4
 enable_x264
-enable_test_x264
 with_x264_dir
 enable_x264_licensed
 enable_VP8
-enable_test_VP8
 with_VP8_dir
 enable_theora
-enable_test_theora
 with_theora_dir
 enable_vpb
-enable_test_vpb
 with_vpb_dir
 enable_spandsp
-enable_test_spandsp
 with_spandsp_dir
 '
       ac_precious_vars='build_alias
@@ -1503,48 +1490,27 @@ Optional Features:
   --disable-g.722.2       disable G.722.2 wideband audio codec
   --disable-lpc10         disable LPC-10 very low bandwidth audio codec
   --disable-gsm           disable GSM 06.10 audio codec
-  --disable-test-gsm      disable compile/link test for GSM 06.10 audio codec
-  --enable-local-gsm      force use internal source for GSM 06.10 audio codec
+  --enable-localgsm       force use internal source for GSM 06.10 audio codec
   --disable-iLBC          disable iLBC audio codec
-  --disable-test-iLBC     disable compile/link test for iLBC audio codec
-  --enable-local-iLBC     force use internal source for iLBC audio codec
+  --enable-localiLBC      force use internal source for iLBC audio codec
   --disable-speex         disable Speex audio codec
-  --disable-test-speex    disable compile/link test for Speex audio codec
-  --enable-local-speex    force use internal source for Speex audio codec
+  --enable-localspeex     force use internal source for Speex audio codec
   --disable-sbc           disable Bluetooth SBC audio codec
-  --disable-test-sbc      disable compile/link test for Bluetooth SBC audio
-                          codec
   --disable-celt          disable CELT audio codec
-  --disable-test-celt     disable compile/link test for CELT audio codec
   --disable-opus          disable Opus Interactive Audio Codec
-  --disable-test-opus     disable compile/link test for Opus Interactive Audio
-                          Codec
-  --enable-local-opus     force use internal source for Opus Interactive Audio
+  --enable-localopus      force use internal source for Opus Interactive Audio
                           Codec
   --disable-h.261         disable H.261 video codec
   --disable-libavcodec    disable FFMPEG libavcodec library
-  --disable-test-libavcodec
-                          disable compile/link test for FFMPEG libavcodec
-                          library
   --disable-libavutil     disable FFMPEG libavutil library
-  --disable-test-libavutil
-                          disable compile/link test for FFMPEG libavutil
-                          library
   --disable-h.263         disable H.263/H.263+ video codec
   --disable-mpeg4         disable MPEG4 part 2 video codec
   --disable-x264          disable VideoLan x264 H.264 video codec
-  --disable-test-x264     disable compile/link test for VideoLan x264 H.264
-                          video codec
   --enable-x264-licensed  enable commercially licensed x264
   --disable-VP8           disable VP8 (WebM) video codec
-  --disable-test-VP8      disable compile/link test for VP8 (WebM) video codec
   --disable-theora        disable Theora video codec
-  --disable-test-theora   disable compile/link test for Theora video codec
   --disable-vpb           disable Voicetronics VPB telephony card
-  --disable-test-vpb      disable compile/link test for Voicetronics VPB
-                          telephony card
   --disable-spandsp       disable SpanDSP based fax
-  --disable-test-spandsp  disable compile/link test for SpanDSP based fax
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -5309,6 +5275,8 @@ case "$target_os" in
       AR="libtool"
       ARFLAGS="-static -o"
       RANLIB=
+      CPPFLAGS="${CPPFLAGS} -stdlib=libstdc++"
+      LDFLAGS="${LDFLAGS} -stdlib=libstdc++"
       LIBS="-framework AudioToolbox -framework CoreAudio -framework SystemConfiguration -framework Foundation -lobjc $LIBS"
    ;;
 
@@ -6484,17 +6452,12 @@ fi
 
    enable_gsm="$enableval"
 
-   # Check whether --enable-test-gsm was given.
-if test "${enable_test_gsm+set}" = set; then :
-  enableval=$enable_test_gsm; test_gsm=$enableval
-fi
-
 
    if test "x$usable" = "xyes" ; then
 
-         # Check whether --enable-local-gsm was given.
-if test "${enable_local_gsm+set}" = set; then :
-  enableval=$enable_local_gsm;
+         # Check whether --enable-localgsm was given.
+if test "${enable_localgsm+set}" = set; then :
+  enableval=$enable_localgsm;
                if test "x$enableval" = "xyes" ; then
                   GSM_SYSTEM="no"
                   { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for GSM 06.10 audio codec" >&5
@@ -6601,7 +6564,8 @@ fi
 
 fi
 
-         if test "x$usable" = "xyes" && test "x$test_gsm" != "xno" ; then
+
+         if test "x$usable" = "xyes" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
    oldLIBS="$LIBS"
@@ -6636,21 +6600,17 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-else
-  usable=no
-
-fi
-
-
-         fi
-
-         if test "x$usable" = "xyes" ; then
-
 
    LIBS="$GSM_LIBS $LIBS"
    CPPFLAGS="$CPPFLAGS $GSM_CFLAGS"
 
 
+
+
+else
+  usable=no
+
+fi
 
 
          fi
@@ -6759,17 +6719,12 @@ fi
 
    enable_iLBC="$enableval"
 
-   # Check whether --enable-test-iLBC was given.
-if test "${enable_test_iLBC+set}" = set; then :
-  enableval=$enable_test_iLBC; test_iLBC=$enableval
-fi
-
 
    if test "x$usable" = "xyes" ; then
 
-         # Check whether --enable-local-iLBC was given.
-if test "${enable_local_iLBC+set}" = set; then :
-  enableval=$enable_local_iLBC;
+         # Check whether --enable-localiLBC was given.
+if test "${enable_localiLBC+set}" = set; then :
+  enableval=$enable_localiLBC;
                if test "x$enableval" = "xyes" ; then
                   ILBC_SYSTEM="no"
                   { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for iLBC audio codec" >&5
@@ -6876,7 +6831,8 @@ fi
 
 fi
 
-         if test "x$usable" = "xyes" && test "x$test_iLBC" != "xno" ; then
+
+         if test "x$usable" = "xyes" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
    oldLIBS="$LIBS"
@@ -6913,21 +6869,17 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-else
-  usable=no
-
-fi
-
-
-         fi
-
-         if test "x$usable" = "xyes" ; then
-
 
    LIBS="$ILBC_LIBS $LIBS"
    CPPFLAGS="$CPPFLAGS $ILBC_CFLAGS"
 
 
+
+
+else
+  usable=no
+
+fi
 
 
          fi
@@ -7045,17 +6997,12 @@ fi
 
    enable_speex="$enableval"
 
-   # Check whether --enable-test-speex was given.
-if test "${enable_test_speex+set}" = set; then :
-  enableval=$enable_test_speex; test_speex=$enableval
-fi
-
 
    if test "x$usable" = "xyes" ; then
 
-         # Check whether --enable-local-speex was given.
-if test "${enable_local_speex+set}" = set; then :
-  enableval=$enable_local_speex;
+         # Check whether --enable-localspeex was given.
+if test "${enable_localspeex+set}" = set; then :
+  enableval=$enable_localspeex;
                if test "x$enableval" = "xyes" ; then
                   SPEEX_SYSTEM="no"
                   { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for Speex audio codec" >&5
@@ -7162,7 +7109,8 @@ fi
 
 fi
 
-         if test "x$usable" = "xyes" && test "x$test_speex" != "xno" ; then
+
+         if test "x$usable" = "xyes" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
    oldLIBS="$LIBS"
@@ -7196,21 +7144,17 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-else
-  usable=no
-
-fi
-
-
-         fi
-
-         if test "x$usable" = "xyes" ; then
-
 
    LIBS="$SPEEX_LIBS $LIBS"
    CPPFLAGS="$CPPFLAGS $SPEEX_CFLAGS"
 
 
+
+
+else
+  usable=no
+
+fi
 
 
          fi
@@ -7327,11 +7271,6 @@ fi
 
    enable_sbc="$enableval"
 
-   # Check whether --enable-test-sbc was given.
-if test "${enable_test_sbc+set}" = set; then :
-  enableval=$enable_test_sbc; test_sbc=$enableval
-fi
-
 
    if test "x$usable" = "xyes" ; then
 
@@ -7428,7 +7367,8 @@ fi
 
 fi
 
-         if test "x$usable" = "xyes" && test "x$test_sbc" != "xno" ; then
+
+         if test "x$usable" = "xyes" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
    oldLIBS="$LIBS"
@@ -7463,21 +7403,17 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-else
-  usable=no
-
-fi
-
-
-         fi
-
-         if test "x$usable" = "xyes" ; then
-
 
    LIBS="$SBC_LIBS $LIBS"
    CPPFLAGS="$CPPFLAGS $SBC_CFLAGS"
 
 
+
+
+else
+  usable=no
+
+fi
 
 
          fi
@@ -7578,11 +7514,6 @@ fi
 
    enable_celt="$enableval"
 
-   # Check whether --enable-test-celt was given.
-if test "${enable_test_celt+set}" = set; then :
-  enableval=$enable_test_celt; test_celt=$enableval
-fi
-
 
    if test "x$usable" = "xyes" ; then
 
@@ -7661,7 +7592,8 @@ $as_echo "yes" >&6; }
 
 fi
 
-         if test "x$usable" = "xyes" && test "x$test_celt" != "xno" ; then
+
+         if test "x$usable" = "xyes" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
    oldLIBS="$LIBS"
@@ -7695,21 +7627,17 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-else
-  usable=no
-
-fi
-
-
-         fi
-
-         if test "x$usable" = "xyes" ; then
-
 
    LIBS="$CELT_LIBS $LIBS"
    CPPFLAGS="$CPPFLAGS $CELT_CFLAGS"
 
 
+
+
+else
+  usable=no
+
+fi
 
 
          fi
@@ -7819,17 +7747,12 @@ fi
 
    enable_opus="$enableval"
 
-   # Check whether --enable-test-opus was given.
-if test "${enable_test_opus+set}" = set; then :
-  enableval=$enable_test_opus; test_opus=$enableval
-fi
-
 
    if test "x$usable" = "xyes" ; then
 
-         # Check whether --enable-local-opus was given.
-if test "${enable_local_opus+set}" = set; then :
-  enableval=$enable_local_opus;
+         # Check whether --enable-localopus was given.
+if test "${enable_localopus+set}" = set; then :
+  enableval=$enable_localopus;
                if test "x$enableval" = "xyes" ; then
                   OPUS_SYSTEM="no"
                   { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for Opus Interactive Audio Codec" >&5
@@ -7936,7 +7859,8 @@ fi
 
 fi
 
-         if test "x$usable" = "xyes" && test "x$test_opus" != "xno" ; then
+
+         if test "x$usable" = "xyes" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
    oldLIBS="$LIBS"
@@ -7970,21 +7894,17 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-else
-  usable=no
-
-fi
-
-
-         fi
-
-         if test "x$usable" = "xyes" ; then
-
 
    LIBS="$OPUS_LIBS $LIBS"
    CPPFLAGS="$CPPFLAGS $OPUS_CFLAGS"
 
 
+
+
+else
+  usable=no
+
+fi
 
 
          fi
@@ -8134,11 +8054,6 @@ fi
 
    enable_libavcodec="$enableval"
 
-   # Check whether --enable-test-libavcodec was given.
-if test "${enable_test_libavcodec+set}" = set; then :
-  enableval=$enable_test_libavcodec; test_libavcodec=$enableval
-fi
-
 
    if test "x$usable" = "xyes" ; then
 
@@ -8235,7 +8150,8 @@ fi
 
 fi
 
-         if test "x$usable" = "xyes" && test "x$test_libavcodec" != "xno" ; then
+
+         if test "x$usable" = "xyes" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
    oldLIBS="$LIBS"
@@ -8269,21 +8185,17 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-else
-  usable=no
-
-fi
-
-
-         fi
-
-         if test "x$usable" = "xyes" ; then
-
 
    LIBS="$LIBAVCODEC_LIBS $LIBS"
    CPPFLAGS="$CPPFLAGS $LIBAVCODEC_CFLAGS"
 
 
+
+
+else
+  usable=no
+
+fi
 
 
          fi
@@ -8352,11 +8264,6 @@ fi
 
 
    enable_libavutil="$enableval"
-
-   # Check whether --enable-test-libavutil was given.
-if test "${enable_test_libavutil+set}" = set; then :
-  enableval=$enable_test_libavutil; test_libavutil=$enableval
-fi
 
 
    if test "x$usable" = "xyes" ; then
@@ -8454,7 +8361,8 @@ fi
 
 fi
 
-         if test "x$usable" = "xyes" && test "x$test_libavutil" != "xno" ; then
+
+         if test "x$usable" = "xyes" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
    oldLIBS="$LIBS"
@@ -8488,21 +8396,17 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-else
-  usable=no
-
-fi
-
-
-         fi
-
-         if test "x$usable" = "xyes" ; then
-
 
    LIBS="$LIBAVUITL_LIBS $LIBS"
    CPPFLAGS="$CPPFLAGS $LIBAVUITL_CFLAGS"
 
 
+
+
+else
+  usable=no
+
+fi
 
 
          fi
@@ -8771,11 +8675,6 @@ fi
 
    enable_x264="$enableval"
 
-   # Check whether --enable-test-x264 was given.
-if test "${enable_test_x264+set}" = set; then :
-  enableval=$enable_test_x264; test_x264=$enableval
-fi
-
 
    if test "x$usable" = "xyes" ; then
 
@@ -8872,7 +8771,8 @@ fi
 
 fi
 
-         if test "x$usable" = "xyes" && test "x$test_x264" != "xno" ; then
+
+         if test "x$usable" = "xyes" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
    oldLIBS="$LIBS"
@@ -8919,21 +8819,17 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-else
-  usable=no
-
-fi
-
-
-         fi
-
-         if test "x$usable" = "xyes" ; then
-
 
    LIBS="$X264_LIBS $LIBS"
    CPPFLAGS="$CPPFLAGS $X264_CFLAGS"
 
 
+
+
+else
+  usable=no
+
+fi
 
 
          fi
@@ -9055,11 +8951,6 @@ fi
 
    enable_VP8="$enableval"
 
-   # Check whether --enable-test-VP8 was given.
-if test "${enable_test_VP8+set}" = set; then :
-  enableval=$enable_test_VP8; test_VP8=$enableval
-fi
-
 
    if test "x$usable" = "xyes" ; then
 
@@ -9156,7 +9047,8 @@ fi
 
 fi
 
-         if test "x$usable" = "xyes" && test "x$test_VP8" != "xno" ; then
+
+         if test "x$usable" = "xyes" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
    oldLIBS="$LIBS"
@@ -9194,21 +9086,17 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-else
-  usable=no
-
-fi
-
-
-         fi
-
-         if test "x$usable" = "xyes" ; then
-
 
    LIBS="$VP8_LIBS $LIBS"
    CPPFLAGS="$CPPFLAGS $VP8_CFLAGS"
 
 
+
+
+else
+  usable=no
+
+fi
 
 
          fi
@@ -9309,11 +9197,6 @@ fi
 
    enable_theora="$enableval"
 
-   # Check whether --enable-test-theora was given.
-if test "${enable_test_theora+set}" = set; then :
-  enableval=$enable_test_theora; test_theora=$enableval
-fi
-
 
    if test "x$usable" = "xyes" ; then
 
@@ -9410,7 +9293,8 @@ fi
 
 fi
 
-         if test "x$usable" = "xyes" && test "x$test_theora" != "xno" ; then
+
+         if test "x$usable" = "xyes" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
    oldLIBS="$LIBS"
@@ -9448,21 +9332,17 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-else
-  usable=no
-
-fi
-
-
-         fi
-
-         if test "x$usable" = "xyes" ; then
-
 
    LIBS="$THEORA_LIBS $LIBS"
    CPPFLAGS="$CPPFLAGS $THEORA_CFLAGS"
 
 
+
+
+else
+  usable=no
+
+fi
 
 
          fi
@@ -9565,11 +9445,6 @@ fi
 
    enable_vpb="$enableval"
 
-   # Check whether --enable-test-vpb was given.
-if test "${enable_test_vpb+set}" = set; then :
-  enableval=$enable_test_vpb; test_vpb=$enableval
-fi
-
 
    if test "x$usable" = "xyes" ; then
 
@@ -9666,7 +9541,8 @@ fi
 
 fi
 
-         if test "x$usable" = "xyes" && test "x$test_vpb" != "xno" ; then
+
+         if test "x$usable" = "xyes" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
    oldLIBS="$LIBS"
@@ -9701,21 +9577,17 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-else
-  usable=no
-
-fi
-
-
-         fi
-
-         if test "x$usable" = "xyes" ; then
-
 
    LIBS="$VPB_LIBS $LIBS"
    CPPFLAGS="$CPPFLAGS $VPB_CFLAGS"
 
 
+
+
+else
+  usable=no
+
+fi
 
 
          fi
@@ -9818,11 +9690,6 @@ fi
 
    enable_spandsp="$enableval"
 
-   # Check whether --enable-test-spandsp was given.
-if test "${enable_test_spandsp+set}" = set; then :
-  enableval=$enable_test_spandsp; test_spandsp=$enableval
-fi
-
 
    if test "x$usable" = "xyes" ; then
 
@@ -9919,7 +9786,8 @@ fi
 
 fi
 
-         if test "x$usable" = "xyes" && test "x$test_spandsp" != "xno" ; then
+
+         if test "x$usable" = "xyes" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
    oldLIBS="$LIBS"
@@ -9957,21 +9825,17 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-else
-  usable=no
-
-fi
-
-
-         fi
-
-         if test "x$usable" = "xyes" ; then
-
 
    LIBS="$SPANDSP_LIBS $LIBS"
    CPPFLAGS="$CPPFLAGS $SPANDSP_CFLAGS"
 
 
+
+
+else
+  usable=no
+
+fi
 
 
          fi

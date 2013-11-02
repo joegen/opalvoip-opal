@@ -37,7 +37,7 @@ cflags-from-includes   = $(addprefix -I,$(1))
 ldflags-from-ldlibdirs = $(addprefix -L,$(1))
 ldlibs-from-libs       = $(addprefix -l,$(1))
 
-CFLAGS	+= -Wall -enable-threads -O3 -fPIC
+CFLAGS	+= -Wall -O3 -fPIC
 
 CFLAGS  += $(call cflags-from-defines,$(CDEFINES))
 CFLAGS  += $(call cflags-from-defines,$(ADDED_DEFINES))
@@ -91,7 +91,7 @@ LDLIBDIRS = ./
 # Rules
 default: lib # all
 
-all: $(TARGET) encoder decoder signalcompare
+all: $(TARGET) #encoder decoder signalcompare
 
 lib: $(TARGET)
 
