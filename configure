@@ -810,27 +810,20 @@ enable_option_checking
 enable_ios
 enable_force32
 enable_srtp
-enable_test_srtp
-enable_local_srtp
+enable_localsrtp
 with_srtp_dir
 enable_zrtp
-enable_test_zrtp
 with_zrtp_dir
 enable_speexdsp
-enable_test_speexdsp
-enable_local_speexdsp
+enable_localspeexdsp
 with_speexdsp_dir
 enable_capi
-enable_test_capi
 with_capi_dir
 enable_dahdi
-enable_test_dahdi
 with_dahdi_dir
 enable_java
-enable_test_java
 with_java_dir
 enable_ruby
-enable_test_ruby
 with_ruby_dir
 enable_video
 enable_sip
@@ -1517,21 +1510,14 @@ Optional Features:
                           enable iOS support
   --enable-force32        Force 32-bit x86 build
   --disable-srtp          disable SRTP protocol support
-  --disable-test-srtp     disable compile/link test for SRTP protocol support
-  --enable-local-srtp     force use internal source for SRTP protocol support
+  --enable-localsrtp      force use internal source for SRTP protocol support
   --disable-zrtp          disable ZRTP protocol support
-  --disable-test-zrtp     disable compile/link test for ZRTP protocol support
   --disable-speexdsp      disable Speex DSP support
-  --disable-test-speexdsp disable compile/link test for Speex DSP support
-  --enable-local-speexdsp force use internal source for Speex DSP support
+  --enable-localspeexdsp  force use internal source for Speex DSP support
   --disable-capi          disable CAPI ISDN support
-  --disable-test-capi     disable compile/link test for CAPI ISDN support
   --disable-dahdi         disable DAHDI E1 support
-  --disable-test-dahdi    disable compile/link test for DAHDI E1 support
   --disable-java          disable Java JNI support
-  --disable-test-java     disable compile/link test for Java JNI support
   --disable-ruby          disable Ruby support
-  --disable-test-ruby     disable compile/link test for Ruby support
   --disable-video         disable video support
   --disable-sip           disable SIP protocol support
   --disable-h323          disable H.323 protocol support
@@ -5309,6 +5295,8 @@ case "$target_os" in
       AR="libtool"
       ARFLAGS="-static -o"
       RANLIB=
+      CPPFLAGS="${CPPFLAGS} -stdlib=libstdc++"
+      LDFLAGS="${LDFLAGS} -stdlib=libstdc++"
       LIBS="-framework AudioToolbox -framework CoreAudio -framework SystemConfiguration -framework Foundation -lobjc $LIBS"
    ;;
 
@@ -6165,17 +6153,12 @@ fi
 
    enable_srtp="$enableval"
 
-   # Check whether --enable-test-srtp was given.
-if test "${enable_test_srtp+set}" = set; then :
-  enableval=$enable_test_srtp; test_srtp=$enableval
-fi
-
 
    if test "x$usable" = "xyes" ; then
 
-         # Check whether --enable-local-srtp was given.
-if test "${enable_local_srtp+set}" = set; then :
-  enableval=$enable_local_srtp;
+         # Check whether --enable-localsrtp was given.
+if test "${enable_localsrtp+set}" = set; then :
+  enableval=$enable_localsrtp;
                if test "x$enableval" = "xyes" ; then
                   SRTP_SYSTEM="no"
                   { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for SRTP protocol support" >&5
@@ -6282,7 +6265,8 @@ fi
 
 fi
 
-         if test "x$usable" = "xyes" && test "x$test_srtp" != "xno" ; then
+
+         if test "x$usable" = "xyes" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
    oldLIBS="$LIBS"
@@ -6319,21 +6303,17 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-else
-  usable=no
-
-fi
-
-
-         fi
-
-         if test "x$usable" = "xyes" ; then
-
 
    LIBS="$SRTP_LIBS $LIBS"
    CPPFLAGS="$CPPFLAGS $SRTP_CFLAGS"
 
 
+
+
+else
+  usable=no
+
+fi
 
 
          fi
@@ -6441,11 +6421,6 @@ fi
 
    enable_zrtp="$enableval"
 
-   # Check whether --enable-test-zrtp was given.
-if test "${enable_test_zrtp+set}" = set; then :
-  enableval=$enable_test_zrtp; test_zrtp=$enableval
-fi
-
 
    if test "x$usable" = "xyes" ; then
 
@@ -6542,7 +6517,8 @@ fi
 
 fi
 
-         if test "x$usable" = "xyes" && test "x$test_zrtp" != "xno" ; then
+
+         if test "x$usable" = "xyes" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
    oldLIBS="$LIBS"
@@ -6577,21 +6553,17 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-else
-  usable=no
-
-fi
-
-
-         fi
-
-         if test "x$usable" = "xyes" ; then
-
 
    LIBS="$ZRTP_LIBS $LIBS"
    CPPFLAGS="$CPPFLAGS $ZRTP_CFLAGS"
 
 
+
+
+else
+  usable=no
+
+fi
 
 
          fi
@@ -6673,17 +6645,12 @@ fi
 
    enable_speexdsp="$enableval"
 
-   # Check whether --enable-test-speexdsp was given.
-if test "${enable_test_speexdsp+set}" = set; then :
-  enableval=$enable_test_speexdsp; test_speexdsp=$enableval
-fi
-
 
    if test "x$usable" = "xyes" ; then
 
-         # Check whether --enable-local-speexdsp was given.
-if test "${enable_local_speexdsp+set}" = set; then :
-  enableval=$enable_local_speexdsp;
+         # Check whether --enable-localspeexdsp was given.
+if test "${enable_localspeexdsp+set}" = set; then :
+  enableval=$enable_localspeexdsp;
                if test "x$enableval" = "xyes" ; then
                   SPEEXDSP_SYSTEM="no"
                   { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for Speex DSP support" >&5
@@ -6790,7 +6757,8 @@ fi
 
 fi
 
-         if test "x$usable" = "xyes" && test "x$test_speexdsp" != "xno" ; then
+
+         if test "x$usable" = "xyes" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
    oldLIBS="$LIBS"
@@ -6824,21 +6792,17 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-else
-  usable=no
-
-fi
-
-
-         fi
-
-         if test "x$usable" = "xyes" ; then
-
 
    LIBS="$SPEEXDSP_LIBS $LIBS"
    CPPFLAGS="$CPPFLAGS $SPEEXDSP_CFLAGS"
 
 
+
+
+else
+  usable=no
+
+fi
 
 
          fi
@@ -6979,11 +6943,6 @@ fi
 
    enable_capi="$enableval"
 
-   # Check whether --enable-test-capi was given.
-if test "${enable_test_capi+set}" = set; then :
-  enableval=$enable_test_capi; test_capi=$enableval
-fi
-
 
    if test "x$usable" = "xyes" ; then
 
@@ -7080,7 +7039,8 @@ fi
 
 fi
 
-         if test "x$usable" = "xyes" && test "x$test_capi" != "xno" ; then
+
+         if test "x$usable" = "xyes" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
    oldLIBS="$LIBS"
@@ -7115,21 +7075,17 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-else
-  usable=no
-
-fi
-
-
-         fi
-
-         if test "x$usable" = "xyes" ; then
-
 
    LIBS="$CAPI_LIBS $LIBS"
    CPPFLAGS="$CPPFLAGS $CAPI_CFLAGS"
 
 
+
+
+else
+  usable=no
+
+fi
 
 
          fi
@@ -7211,11 +7167,6 @@ fi
 
 
    enable_dahdi="$enableval"
-
-   # Check whether --enable-test-dahdi was given.
-if test "${enable_test_dahdi+set}" = set; then :
-  enableval=$enable_test_dahdi; test_dahdi=$enableval
-fi
 
 
    if test "x$usable" = "xyes" ; then
@@ -7313,7 +7264,8 @@ fi
 
 fi
 
-         if test "x$usable" = "xyes" && test "x$test_dahdi" != "xno" ; then
+
+         if test "x$usable" = "xyes" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
    oldLIBS="$LIBS"
@@ -7348,21 +7300,17 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-else
-  usable=no
-
-fi
-
-
-         fi
-
-         if test "x$usable" = "xyes" ; then
-
 
    LIBS="$DAHDI_LIBS $LIBS"
    CPPFLAGS="$CPPFLAGS $DAHDI_CFLAGS"
 
 
+
+
+else
+  usable=no
+
+fi
 
 
          fi
@@ -7487,11 +7435,6 @@ fi
 
    enable_java="$enableval"
 
-   # Check whether --enable-test-java was given.
-if test "${enable_test_java+set}" = set; then :
-  enableval=$enable_test_java; test_java=$enableval
-fi
-
 
    if test "x$usable" = "xyes" ; then
 
@@ -7588,7 +7531,8 @@ fi
 
 fi
 
-         if test "x$usable" = "xyes" && test "x$test_java" != "xno" ; then
+
+         if test "x$usable" = "xyes" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
    oldLIBS="$LIBS"
@@ -7623,21 +7567,17 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-else
-  usable=no
-
-fi
-
-
-         fi
-
-         if test "x$usable" = "xyes" ; then
-
 
    LIBS="$JAVA_LIBS $LIBS"
    CPPFLAGS="$CPPFLAGS $JAVA_CFLAGS"
 
 
+
+
+else
+  usable=no
+
+fi
 
 
          fi
@@ -7719,11 +7659,6 @@ fi
 
 
    enable_ruby="$enableval"
-
-   # Check whether --enable-test-ruby was given.
-if test "${enable_test_ruby+set}" = set; then :
-  enableval=$enable_test_ruby; test_ruby=$enableval
-fi
 
 
    if test "x$usable" = "xyes" ; then
@@ -7821,7 +7756,8 @@ fi
 
 fi
 
-         if test "x$usable" = "xyes" && test "x$test_ruby" != "xno" ; then
+
+         if test "x$usable" = "xyes" ; then
 
    oldCPPFLAGS="$CPPFLAGS"
    oldLIBS="$LIBS"
@@ -7856,21 +7792,17 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-else
-  usable=no
-
-fi
-
-
-         fi
-
-         if test "x$usable" = "xyes" ; then
-
 
    LIBS="$RUBY_LIBS $LIBS"
    CPPFLAGS="$CPPFLAGS $RUBY_CFLAGS"
 
 
+
+
+else
+  usable=no
+
+fi
 
 
          fi
