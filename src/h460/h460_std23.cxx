@@ -487,13 +487,13 @@ void H460_FeatureStd24::HandleNATInstruction(NatInstruct _config)
     m_connection->FeatureCallBack(GetPluginName(),1,"Call Failure");
     break;
   case H460_FeatureStd24::e_noassist:
-    PTRACE(4,"Std24\tNAT Call direct");
-  default:
     PTRACE(4,"Std24\tNo Assist: H.460.24 DISABLED.");
     m_connection->DisableNATSupport();
     SetNATMethods(e_default);
     break;
 #endif
+  default:
+    break;
   }
 }
 

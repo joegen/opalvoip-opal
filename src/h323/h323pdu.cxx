@@ -608,9 +608,9 @@ static void SendFeatureSet(const H323Connection & connection, H460_MessageType p
   if (!connection.OnSendFeatureSet(pduType, fs))
     return;
 
-  if (pduType == Q931::CallProceedingMsg ||
-      pduType == Q931::AlertingMsg ||
-      pduType == Q931::ConnectMsg) {
+  if (pduType == H460_MessageType::e_callProceeding ||
+      pduType == H460_MessageType::e_alerting ||
+      pduType == H460_MessageType::e_connect) {
     pdu.IncludeOptionalField(PDUType::e_featureSet);
     pdu.m_featureSet = fs;
     return;
