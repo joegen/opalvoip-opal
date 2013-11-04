@@ -1102,6 +1102,9 @@ bool OpalMediaFormat::RegisterKnownMediaFormats(const PString & name)
   for (PINDEX i = 0; i < PARRAYSIZE(known); ++i) {
     if (name.IsEmpty() || (name *= known[i].m_name)) {
       (known[i].m_function)();
+      PTRACE(5, NULL, "MediaFormat",
+             "Known media " << known[i].m_name << " registered as:\n"
+             << setw(-1) << OpalMediaFormat(known[i].m_name));
       atLeastOne = true;
     }
   }

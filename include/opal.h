@@ -108,12 +108,12 @@ typedef struct OpalMessage OpalMessage;
         <table border=0>
         <tr><td>-t or --trace         <td>Enable trace log. Multiple instances
                                           increase the trace level.
-        <tr><td>-l or --level X       <td>Enable trace log and set level to X.
+        <tr><td>-l or --trace-level X <td>Enable trace log and set level to X.
         <tr><td>-o or --output "name" <td>Set the filename for trace log output.
-        <tr><td>-a or --append        <td>Append to the trace log file.
+        <tr><td>-l or --trace-option X <td>Enable trace log option X e.g. +append.
         <tr><td>-c or --config "dir"  <td>Configuration file or directory.
         <tr><td>-p or --plugin "dir"  <td>Plugin module directory.
-        <tr><td>-m or --maaufacturer "str" <td>Manufacturer name for application.
+        <tr><td>-m or --manaufacturer "str" <td>Manufacturer name for application.
         <tr><td>-n or --name "str"    <td>Product name for application.
         <tr><td>-M or --major X       <td>Major version number.
         <tr><td>-N or --minor X       <td>Minor version number.
@@ -839,7 +839,13 @@ typedef struct OpalParamProtocol {
                                            mapping consists of five fields separated by the '\t' chacracter.
                                            The fields are media format, encoder, decoder, RTP packetiser
                                            and RTP depacketiser. e.g.
-                                           "G.722.2\trtpamrdepay\tamrwbdec\trtpamrpay\tamrwbenc"
+                                              "G.722.2\tamrwbenc\tamrwbdec\trtpamrpay\trtpamrdepay"
+                                           The last two may be omitted and a default is used. Note, omission
+                                           is not the same as an empty string. In addition, there are two
+                                           special lines:
+                                              "SourceColourConverter\tautoconvert\n"
+                                              "SinkColourConverter\tautoconvert\n"
+                                           may also be present.
                                          */
   OpalUserInputModes m_userInputMode; /**< The mode for user input transmission. Note this only applies if an
                                            explicit protocol is indicated in m_prefix. See OpalUserInputModes
