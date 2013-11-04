@@ -1746,8 +1746,34 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
     PStringArray lines = PConstString(command.m_param.m_protocol.m_interfaceAddresses).Lines();
     for (PINDEX line = 0; line < lines.GetSize(); ++line) {
       PStringArray fields = lines[line].Tokenise('\t');
-      if (fields.GetSize() != 5) {
-        response.SetError("Invalid format in gstreamer mapping");
+#if OPAL_VIDEO
+      if (fields[0] *= "SourceColourConverter") {
+        if (fields.GetSize() < 1) {
+          response.SetError("Not enough fields in gstreamer source colour converter");
+          return;
+        }
+        if (!m_gstEP->SetVideoSourceColourConverter(fields[1])) {
+          response.SetError("Could not set pipeline elements for source colour converter");
+          return;
+        }
+        continue;
+      }
+
+      if (fields[0] *= "SinkColourConverter") {
+        if (fields.GetSize() < 1) {
+          response.SetError("Not enough fields in gstreamer sink colour converter");
+          return;
+        }
+        if (!m_gstEP->SetVideoSinkColourConverter(fields[1])) {
+          response.SetError("Could not set pipeline elements for sink colour converter");
+          return;
+        }
+        continue;
+      }
+#endif // OPAL_VIDEO
+
+      if (fields.GetSize() < 3) {
+        response.SetError("Not enough fields in gstreamer mapping");
         return;
       }
 
@@ -1758,10 +1784,17 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
       }
 
       GstEndPoint::CodecPipelines codecPipeline;
+      if (!m_gstEP->GetMapping(mediaFormat, codecPipeline)) {
+        response.SetError(PSTRSTRM("Could not get pipeline elements for media format " << mediaFormat));
+        return;
+      }
+
       codecPipeline.m_encoder = fields[1];
       codecPipeline.m_decoder = fields[2];
-      codecPipeline.m_packetiser = fields[3];
-      codecPipeline.m_depacketiser = fields[4];
+      if (fields.GetSize() > 3)
+        codecPipeline.m_packetiser = fields[3];
+      if (fields.GetSize() > 4)
+        codecPipeline.m_depacketiser = fields[4];
       if (!m_gstEP->SetMapping(mediaFormat, codecPipeline)) {
         response.SetError(PSTRSTRM("Could not set pipeline elements for media format " << mediaFormat));
         return;
@@ -2083,6 +2116,11 @@ void OpalManager_C::HandleAlerting(const OpalMessage & command, OpalMessageBuffe
     return;
 #endif
 
+#if OPAL_GSTREAMER
+  if (m_gstEP != NULL && m_gstEP->AlertingIncomingCall(command.m_param.m_callToken, &options, withMedia))
+    return;
+#endif
+
   if (m_localEP != NULL && m_localEP->AlertingIncomingCall(command.m_param.m_callToken, &options, withMedia))
     return;
 
@@ -2108,6 +2146,11 @@ void OpalManager_C::HandleAnswerCall(const OpalMessage & command, OpalMessageBuf
 
 #if OPAL_IVR
   if (m_ivrEP != NULL && m_ivrEP->AcceptIncomingCall(command.m_param.m_answerCall.m_callToken, &options))
+    return;
+#endif
+
+#if OPAL_GSTREAMER
+  if (m_gstEP != NULL && m_gstEP->AcceptIncomingCall(command.m_param.m_answerCall.m_callToken, &options))
     return;
 #endif
 
