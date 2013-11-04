@@ -59,6 +59,18 @@ class OpalManager_C;
 
 #define PTraceModule() "Opal C"
 
+static const char * const LocalPrefixes[] = {
+  OPAL_PREFIX_PCSS,
+  OPAL_PREFIX_GST,
+  OPAL_PREFIX_POTS,
+  OPAL_PREFIX_FAX,
+  OPAL_PREFIX_T38,
+  OPAL_PREFIX_IVR,
+  OPAL_PREFIX_MIXER,
+  OPAL_PREFIX_IM,
+  OPAL_PREFIX_LOCAL
+};
+
 
 ostream & operator<<(ostream & strm, OpalMessageType type)
 {
@@ -336,20 +348,6 @@ class OpalManager_C : public OpalManager
     void OnIndMediaStream(const OpalMediaStream & stream, OpalMediaStates state);
 
     bool FindCall(const char * token, OpalMessageBuffer & response, PSafePtr<OpalCall> & call);
-
-    OpalLocalEndPoint_C * m_localEP;
-#if OPAL_HAS_PCSS
-    OpalPCSSEndPoint_C  * m_pcssEP;
-#endif
-#if OPAL_GSTREAMER
-    OpalGstEndPoint_C   * m_gstEP;
-#endif
-#if OPAL_IVR
-    OpalIVREndPoint_C   * m_ivrEP;
-#endif
-#if OPAL_HAS_MIXER
-    OpalMixerEndPoint   * m_mcuEP;
-#endif
 
     unsigned                  m_apiVersion;
     bool                      m_manualAlerting;
@@ -985,20 +983,7 @@ static bool CheckProto(const PArgList & args, const char * proto, PString & defN
 
 
 OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
-  : m_localEP(NULL)
-#if OPAL_HAS_PCSS
-  , m_pcssEP(NULL)
-#endif
-#if OPAL_GSTREAMER
-  , m_gstEP(NULL)
-#endif
-#if OPAL_IVR
-  , m_ivrEP(NULL)
-#endif
-#if OPAL_HAS_MIXER
-  , m_mcuEP(NULL)
-#endif
-  , m_apiVersion(version)
+  : m_apiVersion(version)
   , m_manualAlerting(false)
   , m_messagesAvailable(0, INT_MAX)
   , m_shuttingDown(false)
@@ -1092,34 +1077,34 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
 #endif
 
   if (hasLocal) {
-    m_localEP = new OpalLocalEndPoint_C(*this);
+    new OpalLocalEndPoint_C(*this);
     AddRouteEntry(OPAL_PREFIX_LOCAL":.*=" + defProto + ":<da>");
   }
 
 #if OPAL_HAS_PCSS
   if (hasPC) {
-    m_pcssEP = new OpalPCSSEndPoint_C(*this);
+    new OpalPCSSEndPoint_C(*this);
     AddRouteEntry(OPAL_PREFIX_PCSS":.*=" + defProto + ":<da>");
   }
 #endif
 
 #if OPAL_GSTREAMER
   if (hasGStreamer) {
-    m_gstEP = new OpalGstEndPoint_C(*this);
+    new OpalGstEndPoint_C(*this);
     AddRouteEntry(OPAL_PREFIX_GST":.*=" + defProto + ":<da>");
   }
 #endif
 
 #if OPAL_IVR
   if (hasIVR) {
-    m_ivrEP = new OpalIVREndPoint_C(*this);
+    new OpalIVREndPoint_C(*this);
     AddRouteEntry(OPAL_PREFIX_IVR":.*=" + defProto + ":<da>");
   }
 #endif
 
 #if OPAL_HAS_MIXER
   if (hasMIX) {
-    m_mcuEP = new OpalMixerEndPoint(*this, "mcu");
+    new OpalMixerEndPoint(*this, "mcu");
     AddRouteEntry("mcu:.*=" + defProto + ":<da>");
   }
 #endif
@@ -1255,57 +1240,16 @@ void OpalManager_C::SendIncomingCallInfo(const OpalConnection & connection)
 
 void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuffer & response)
 {
-#if OPAL_GSTREAMER
-  if (m_gstEP != NULL) {
-    SET_MESSAGE_STRING(response, m_param.m_general.m_audioRecordDevice, m_gstEP->GetAudioSourceDevice());
-    if (!IsNullString(command.m_param.m_general.m_audioRecordDevice)) {
-      if (!m_gstEP->SetAudioSourceDevice(command.m_param.m_general.m_audioRecordDevice)) {
-        response.SetError("Could not set GStreamer audio source.");
-        return;
-      }
-    }
-
-    SET_MESSAGE_STRING(response, m_param.m_general.m_audioPlayerDevice, m_gstEP->GetAudioSinkDevice());
-    if (!IsNullString(command.m_param.m_general.m_audioPlayerDevice)) {
-      if (!m_gstEP->SetAudioSinkDevice(command.m_param.m_general.m_audioPlayerDevice)) {
-        response.SetError("Could not set GStreamer audio sink.");
-        return;
-      }
-    }
-
-#if OPAL_VIDEO
-    SET_MESSAGE_STRING(response, m_param.m_general.m_videoInputDevice, m_gstEP->GetVideoSourceDevice());
-    if (!IsNullString(command.m_param.m_general.m_videoInputDevice)) {
-      if (!m_gstEP->SetVideoSourceDevice(command.m_param.m_general.m_videoInputDevice)) {
-        response.SetError("Could not set GStreamer video source.");
-        return;
-      }
-    }
-
-    SET_MESSAGE_STRING(response, m_param.m_general.m_videoOutputDevice, m_gstEP->GetVideoSinkDevice());
-    if (!IsNullString(command.m_param.m_general.m_videoOutputDevice)) {
-      if (!m_gstEP->SetVideoSinkDevice(command.m_param.m_general.m_videoOutputDevice)) {
-        response.SetError("Could not set GStreamer video sink.");
-        return;
-      }
-    }
-#endif // OPAL_VIDEO
-  }
-  else
-#endif // OPAL_GSTREAMER
-
-  {
 #if OPAL_HAS_PCSS
-    if (m_pcssEP != NULL) {
-      SET_MESSAGE_STRING(response, m_param.m_general.m_audioRecordDevice, m_pcssEP->GetSoundChannelRecordDevice());
-      if (!IsNullString(command.m_param.m_general.m_audioRecordDevice))
-        m_pcssEP->SetSoundChannelRecordDevice(command.m_param.m_general.m_audioRecordDevice);
+  OpalPCSSEndPoint_C * pcssEP = FindEndPointAs<OpalPCSSEndPoint_C>(OPAL_PREFIX_PCSS);
+  if (pcssEP != NULL) {
+    SET_MESSAGE_STRING(response, m_param.m_general.m_audioRecordDevice, pcssEP->GetSoundChannelRecordDevice());
+    if (!IsNullString(command.m_param.m_general.m_audioRecordDevice))
+      pcssEP->SetSoundChannelRecordDevice(command.m_param.m_general.m_audioRecordDevice);
 
-      SET_MESSAGE_STRING(response, m_param.m_general.m_audioPlayerDevice, m_pcssEP->GetSoundChannelPlayDevice());
-      if (!IsNullString(command.m_param.m_general.m_audioPlayerDevice))
-        m_pcssEP->SetSoundChannelPlayDevice(command.m_param.m_general.m_audioPlayerDevice);
-    }
-#endif // OPAL_HAS_PCSS
+    SET_MESSAGE_STRING(response, m_param.m_general.m_audioPlayerDevice, pcssEP->GetSoundChannelPlayDevice());
+    if (!IsNullString(command.m_param.m_general.m_audioPlayerDevice))
+      pcssEP->SetSoundChannelPlayDevice(command.m_param.m_general.m_audioPlayerDevice);
 
 #if OPAL_VIDEO
     PVideoDevice::OpenArgs video = GetVideoInputDevice();
@@ -1329,6 +1273,48 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
       SetVideoPreviewDevice(video);
     }
 #endif // OPAL_VIDEO
+  }
+  else
+#endif // OPAL_HAS_PCSS
+  {
+#if OPAL_GSTREAMER
+    OpalGstEndPoint_C * gstEP = FindEndPointAs<OpalGstEndPoint_C>(OPAL_PREFIX_GST);
+    if (gstEP != NULL) {
+      SET_MESSAGE_STRING(response, m_param.m_general.m_audioRecordDevice, gstEP->GetAudioSourceDevice());
+      if (!IsNullString(command.m_param.m_general.m_audioRecordDevice)) {
+        if (!gstEP->SetAudioSourceDevice(command.m_param.m_general.m_audioRecordDevice)) {
+          response.SetError("Could not set GStreamer audio source.");
+          return;
+        }
+      }
+
+      SET_MESSAGE_STRING(response, m_param.m_general.m_audioPlayerDevice, gstEP->GetAudioSinkDevice());
+      if (!IsNullString(command.m_param.m_general.m_audioPlayerDevice)) {
+        if (!gstEP->SetAudioSinkDevice(command.m_param.m_general.m_audioPlayerDevice)) {
+          response.SetError("Could not set GStreamer audio sink.");
+          return;
+        }
+      }
+
+#if OPAL_VIDEO
+      SET_MESSAGE_STRING(response, m_param.m_general.m_videoInputDevice, gstEP->GetVideoSourceDevice());
+      if (!IsNullString(command.m_param.m_general.m_videoInputDevice)) {
+        if (!gstEP->SetVideoSourceDevice(command.m_param.m_general.m_videoInputDevice)) {
+          response.SetError("Could not set GStreamer video source.");
+          return;
+        }
+      }
+
+      SET_MESSAGE_STRING(response, m_param.m_general.m_videoOutputDevice, gstEP->GetVideoSinkDevice());
+      if (!IsNullString(command.m_param.m_general.m_videoOutputDevice)) {
+        if (!gstEP->SetVideoSinkDevice(command.m_param.m_general.m_videoOutputDevice)) {
+          response.SetError("Could not set GStreamer video sink.");
+          return;
+        }
+      }
+#endif // OPAL_VIDEO
+    }
+#endif // OPAL_GSTREAMER
   }
 
   PStringStream strm;
@@ -1481,37 +1467,38 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     return;
 
 #if OPAL_HAS_PCSS
-  if (m_pcssEP != NULL) {
-    response->m_param.m_general.m_audioBuffers = m_pcssEP->GetSoundChannelBufferDepth();
+  if (pcssEP != NULL) {
+    response->m_param.m_general.m_audioBuffers = pcssEP->GetSoundChannelBufferDepth();
     if (command.m_param.m_general.m_audioBuffers != 0)
-      m_pcssEP->SetSoundChannelBufferDepth(command.m_param.m_general.m_audioBuffers);
+      pcssEP->SetSoundChannelBufferDepth(command.m_param.m_general.m_audioBuffers);
   }
 #endif
 
   if (m_apiVersion < 5)
     return;
 
-  if (m_localEP != NULL) {
-    response->m_param.m_general.m_mediaReadData = m_localEP->m_mediaReadData;
+  OpalLocalEndPoint_C * localEP = FindEndPointAs<OpalLocalEndPoint_C>(OPAL_PREFIX_LOCAL);
+  if (localEP != NULL) {
+    response->m_param.m_general.m_mediaReadData = localEP->m_mediaReadData;
     if (command.m_param.m_general.m_mediaReadData != NULL)
-      m_localEP->m_mediaReadData = command.m_param.m_general.m_mediaReadData;
+      localEP->m_mediaReadData = command.m_param.m_general.m_mediaReadData;
 
-    response->m_param.m_general.m_mediaWriteData = m_localEP->m_mediaWriteData;
+    response->m_param.m_general.m_mediaWriteData = localEP->m_mediaWriteData;
     if (command.m_param.m_general.m_mediaWriteData != NULL)
-      m_localEP->m_mediaWriteData = command.m_param.m_general.m_mediaWriteData;
+      localEP->m_mediaWriteData = command.m_param.m_general.m_mediaWriteData;
 
-    response->m_param.m_general.m_mediaDataHeader = m_localEP->m_mediaDataHeader;
+    response->m_param.m_general.m_mediaDataHeader = localEP->m_mediaDataHeader;
     if (command.m_param.m_general.m_mediaDataHeader != 0)
-      m_localEP->m_mediaDataHeader = command.m_param.m_general.m_mediaDataHeader;
+      localEP->m_mediaDataHeader = command.m_param.m_general.m_mediaDataHeader;
 
     if (m_apiVersion >= 20) {
-      response->m_param.m_general.m_mediaTiming = (OpalMediaTiming)(m_localEP->GetDefaultAudioSynchronicity()+1);
+      response->m_param.m_general.m_mediaTiming = (OpalMediaTiming)(localEP->GetDefaultAudioSynchronicity()+1);
       if (command.m_param.m_general.m_mediaTiming != 0)
-        m_localEP->SetDefaultAudioSynchronicity((OpalLocalEndPoint::Synchronicity)(command.m_param.m_general.m_mediaTiming-1));
+        localEP->SetDefaultAudioSynchronicity((OpalLocalEndPoint::Synchronicity)(command.m_param.m_general.m_mediaTiming-1));
       if (m_apiVersion >= 27) {
-        response->m_param.m_general.m_videoSourceTiming = (OpalMediaTiming)(m_localEP->GetDefaultVideoSourceSynchronicity()+1);
+        response->m_param.m_general.m_videoSourceTiming = (OpalMediaTiming)(localEP->GetDefaultVideoSourceSynchronicity()+1);
         if (command.m_param.m_general.m_mediaTiming != 0)
-          m_localEP->SetDefaultVideoSourceSynchronicity((OpalLocalEndPoint::Synchronicity)(command.m_param.m_general.m_videoSourceTiming-1));
+          localEP->SetDefaultVideoSourceSynchronicity((OpalLocalEndPoint::Synchronicity)(command.m_param.m_general.m_videoSourceTiming-1));
       }
     }
   }
@@ -1595,10 +1582,10 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     return;
 
 #if OPAL_HAS_PCSS
-  if (m_pcssEP != NULL) {
-    response->m_param.m_general.m_audioBufferTime = m_pcssEP->GetSoundChannelBufferTime();
+  if (pcssEP != NULL) {
+    response->m_param.m_general.m_audioBufferTime = pcssEP->GetSoundChannelBufferTime();
     if (command.m_param.m_general.m_audioBufferTime != 0)
-      m_pcssEP->SetSoundChannelBufferTime(command.m_param.m_general.m_audioBufferTime);
+      pcssEP->SetSoundChannelBufferTime(command.m_param.m_general.m_audioBufferTime);
   }
 #endif
 
@@ -1608,31 +1595,26 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   response->m_param.m_general.m_manualAlerting = m_manualAlerting ? 2 : 1;
   if (command.m_param.m_general.m_manualAlerting != 0) {
     m_manualAlerting = command.m_param.m_general.m_manualAlerting != 1;
-    if (m_localEP)
-      m_localEP->SetDeferredAlerting(m_manualAlerting);
-#if OPAL_HAS_PCSS
-    if (m_pcssEP != NULL)
-      m_pcssEP->SetDeferredAlerting(m_manualAlerting);
-#endif
-#if OPAL_IVR
-    if (m_ivrEP != NULL)
-      m_ivrEP->SetDeferredAlerting(m_manualAlerting);
-#endif
+    for (PINDEX i = 0; i < PARRAYSIZE(LocalPrefixes); ++i) {
+      OpalLocalEndPoint * ep = FindEndPointAs<OpalLocalEndPoint>(LocalPrefixes[i]);
+      if (ep != NULL)
+        ep->SetDeferredAlerting(m_manualAlerting);
+    }
   }
 
   if (m_apiVersion < 30)
     return;
 
 #if OPAL_HAS_PCSS
-  if (m_pcssEP != NULL && !IsNullString(command.m_param.m_general.m_pcssMediaOverride)) {
+  if (pcssEP != NULL && !IsNullString(command.m_param.m_general.m_pcssMediaOverride)) {
     PStringArray overrides = PString(command.m_param.m_general.m_pcssMediaOverride).Tokenise(" \t\r\n", false);
     for (PINDEX i = 0; i < overrides.GetSize(); ++i) {
       PCaselessString str = overrides[i];
       bool ok = false;
       if (str.NumCompare("rx-") == EqualTo)
-        ok = m_pcssEP->SetCallbackUsage(str.Mid(3), OpalLocalEndPoint::UseSinkCallback);
+        ok = pcssEP->SetCallbackUsage(str.Mid(3), OpalLocalEndPoint::UseSinkCallback);
       else if (str.NumCompare("tx-") == EqualTo)
-        ok = m_pcssEP->SetCallbackUsage(str.Mid(3), OpalLocalEndPoint::UseSourceCallback);
+        ok = pcssEP->SetCallbackUsage(str.Mid(3), OpalLocalEndPoint::UseSourceCallback);
       if (!ok)
         response.SetError("Invalid PCSS media override.");
     }
@@ -1742,7 +1724,8 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
   ep->SetProductInfo(product);
 
 #if OPAL_GSTREAMER
-  if (m_gstEP == ep) {
+  OpalGstEndPoint_C * gstEP = dynamic_cast<OpalGstEndPoint_C *>(ep);
+  if (gstEP != NULL) {
     PStringArray lines = PConstString(command.m_param.m_protocol.m_interfaceAddresses).Lines();
     for (PINDEX line = 0; line < lines.GetSize(); ++line) {
       PStringArray fields = lines[line].Tokenise('\t');
@@ -1752,7 +1735,7 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
           response.SetError("Not enough fields in gstreamer source colour converter");
           return;
         }
-        if (!m_gstEP->SetVideoSourceColourConverter(fields[1])) {
+        if (!gstEP->SetVideoSourceColourConverter(fields[1])) {
           response.SetError("Could not set pipeline elements for source colour converter");
           return;
         }
@@ -1764,7 +1747,7 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
           response.SetError("Not enough fields in gstreamer sink colour converter");
           return;
         }
-        if (!m_gstEP->SetVideoSinkColourConverter(fields[1])) {
+        if (!gstEP->SetVideoSinkColourConverter(fields[1])) {
           response.SetError("Could not set pipeline elements for sink colour converter");
           return;
         }
@@ -1784,7 +1767,7 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
       }
 
       GstEndPoint::CodecPipelines codecPipeline;
-      if (!m_gstEP->GetMapping(mediaFormat, codecPipeline)) {
+      if (!gstEP->GetMapping(mediaFormat, codecPipeline)) {
         response.SetError(PSTRSTRM("Could not get pipeline elements for media format " << mediaFormat));
         return;
       }
@@ -1795,7 +1778,7 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
         codecPipeline.m_packetiser = fields[3];
       if (fields.GetSize() > 4)
         codecPipeline.m_depacketiser = fields[4];
-      if (!m_gstEP->SetMapping(mediaFormat, codecPipeline)) {
+      if (!gstEP->SetMapping(mediaFormat, codecPipeline)) {
         response.SetError(PSTRSTRM("Could not set pipeline elements for media format " << mediaFormat));
         return;
       }
@@ -1805,8 +1788,8 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
 #endif //OPAL_GSTREAMER
 
 #if OPAL_IVR
-  if (m_ivrEP == ep)
-    m_ivrEP->SetDefaultVXML(command.m_param.m_protocol.m_interfaceAddresses);
+  if (dynamic_cast<OpalIVREndPoint_C *>(ep) != NULL)
+    dynamic_cast<OpalIVREndPoint_C *>(ep)->SetDefaultVXML(command.m_param.m_protocol.m_interfaceAddresses);
   else
 #endif // OPAL_IVR
 
@@ -2033,42 +2016,38 @@ void OpalManager_C::HandleSetUpCall(const OpalMessage & command, OpalMessageBuff
     return;
   }
 
+#if OPAL_HAS_PCSS
+  {
+    OpalPCSSEndPoint_C * pcssEP = FindEndPointAs<OpalPCSSEndPoint_C>(OPAL_PREFIX_PCSS);
+    if (pcssEP != NULL) {
+      PCaselessString partyB = command.m_param.m_callSetUp.m_partyB;
+      if (partyB == "testplayer") {
+        PSoundChannel::Params params(PSoundChannel::Player, pcssEP->GetSoundChannelPlayDevice());
+        params.SetBufferCountFromMS(pcssEP->GetSoundChannelBufferTime());
+        response.SetError(PSoundChannel::TestPlayer(params));
+        return;
+      }
+      else if (partyB == "testrecorder") {
+        PSoundChannel::Params recordParams(PSoundChannel::Recorder, pcssEP->GetSoundChannelRecordDevice());
+        recordParams.SetBufferCountFromMS(pcssEP->GetSoundChannelBufferTime());
+        PSoundChannel::Params playerParams(PSoundChannel::Player, pcssEP->GetSoundChannelPlayDevice());
+        playerParams.SetBufferCountFromMS(pcssEP->GetSoundChannelBufferTime());
+        response.SetError(PSoundChannel::TestRecorder(recordParams, playerParams));
+        return;
+      }
+    }
+  }
+#endif
+
   PString partyA = command.m_param.m_callSetUp.m_partyA;
   if (partyA.IsEmpty()) {
-#if OPAL_HAS_PCSS
-    if (m_pcssEP != NULL)
-      partyA = "pc:*";
-    else
-#endif
-    if (m_localEP != NULL)
-      partyA = "local:*";
-#if OPAL_IVR
-    else if (m_ivrEP != NULL)
-      partyA = "ivr:*";
-#endif
-    else
-      partyA = "pots:*";
-  }
-
-#if OPAL_HAS_PCSS
-  if (m_pcssEP != NULL) {
-    PCaselessString partyB = command.m_param.m_callSetUp.m_partyB;
-    if (partyB == "testplayer") {
-      PSoundChannel::Params params(PSoundChannel::Player, m_pcssEP->GetSoundChannelPlayDevice());
-      params.SetBufferCountFromMS(m_pcssEP->GetSoundChannelBufferTime());
-      response.SetError(PSoundChannel::TestPlayer(params));
-      return;
+    for (PINDEX i = 0; i < PARRAYSIZE(LocalPrefixes); ++i) {
+      OpalLocalEndPoint * ep = FindEndPointAs<OpalLocalEndPoint>(LocalPrefixes[i]);
+      if (ep != NULL)
+        partyA = LocalPrefixes[i];
     }
-    else if (partyB == "testrecorder") {
-      PSoundChannel::Params recordParams(PSoundChannel::Recorder, m_pcssEP->GetSoundChannelRecordDevice());
-      recordParams.SetBufferCountFromMS(m_pcssEP->GetSoundChannelBufferTime());
-      PSoundChannel::Params playerParams(PSoundChannel::Player, m_pcssEP->GetSoundChannelPlayDevice());
-      playerParams.SetBufferCountFromMS(m_pcssEP->GetSoundChannelBufferTime());
-      response.SetError(PSoundChannel::TestRecorder(recordParams, playerParams));
-      return;
-    }
+    partyA += ':';
   }
-#endif
 
   OpalConnection::StringOptions options;
   if (!IsNullString(command.m_param.m_callSetUp.m_alertingType))
@@ -2106,23 +2085,11 @@ void OpalManager_C::HandleAlerting(const OpalMessage & command, OpalMessageBuffe
 
   bool withMedia = m_apiVersion >= 29 && command.m_param.m_answerCall.m_withMedia;
 
-#if OPAL_HAS_PCSS
-  if (m_pcssEP != NULL && m_pcssEP->AlertingIncomingCall(command.m_param.m_callToken, &options, withMedia))
-    return;
-#endif
-
-#if OPAL_IVR
-  if (m_ivrEP != NULL && m_ivrEP->AlertingIncomingCall(command.m_param.m_callToken, &options, withMedia))
-    return;
-#endif
-
-#if OPAL_GSTREAMER
-  if (m_gstEP != NULL && m_gstEP->AlertingIncomingCall(command.m_param.m_callToken, &options, withMedia))
-    return;
-#endif
-
-  if (m_localEP != NULL && m_localEP->AlertingIncomingCall(command.m_param.m_callToken, &options, withMedia))
-    return;
+  for (PINDEX i = 0; i < PARRAYSIZE(LocalPrefixes); ++i) {
+    OpalLocalEndPoint * ep = FindEndPointAs<OpalLocalEndPoint>(LocalPrefixes[i]);
+    if (ep != NULL && ep->AlertingIncomingCall(command.m_param.m_callToken, &options, withMedia))
+      return;
+  }
 
   response.SetError("No call found by the token provided.");
 }
@@ -2139,23 +2106,11 @@ void OpalManager_C::HandleAnswerCall(const OpalMessage & command, OpalMessageBuf
   if (m_apiVersion >= 26)
     SetOptionOverrides(false, options, command.m_param.m_answerCall.m_overrides);
 
-#if OPAL_HAS_PCSS
-  if (m_pcssEP != NULL && m_pcssEP->AcceptIncomingCall(command.m_param.m_answerCall.m_callToken, &options))
-    return;
-#endif
-
-#if OPAL_IVR
-  if (m_ivrEP != NULL && m_ivrEP->AcceptIncomingCall(command.m_param.m_answerCall.m_callToken, &options))
-    return;
-#endif
-
-#if OPAL_GSTREAMER
-  if (m_gstEP != NULL && m_gstEP->AcceptIncomingCall(command.m_param.m_answerCall.m_callToken, &options))
-    return;
-#endif
-
-  if (m_localEP != NULL && m_localEP->AcceptIncomingCall(command.m_param.m_answerCall.m_callToken, &options))
-    return;
+  for (PINDEX i = 0; i < PARRAYSIZE(LocalPrefixes); ++i) {
+    OpalLocalEndPoint * ep = FindEndPointAs<OpalLocalEndPoint>(LocalPrefixes[i]);
+    if (ep != NULL && ep->AcceptIncomingCall(command.m_param.m_callToken, &options))
+      return;
+  }
 
   response.SetError("No call found by the token provided.");
 }
@@ -2400,7 +2355,7 @@ void OpalManager_C::HandleStartRecording(const OpalMessage & command, OpalMessag
     options.m_videoHeight = command.m_param.m_recording.m_videoHeight;
     options.m_videoRate   = command.m_param.m_recording.m_videoRate;
     options.m_videoMixing = (OpalRecordManager::VideoMode)command.m_param.m_recording.m_videoMixing;
-#endif
+#endif // OPAL_VIDEO
   }
 
   if (!call->StartRecording(command.m_param.m_recording.m_file, options))
