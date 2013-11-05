@@ -699,7 +699,7 @@ PCREATE_PLUGIN_SERVICE(H460_Feature);
       virtual bool ValidateServiceName(const PString & name, P_INT_PTR userData) const \
       { \
         return PPlugin_H460_Feature::ValidateServiceName(name, userData) && \
-               H460_Feature##name::GetPluginPurpose() & H460_Feature::Purpose(userData); \
+               (H460_Feature##name::GetPluginPurpose() & H460_Feature::Purpose::FromBits((unsigned)userData)); \
       } \
     )
 
