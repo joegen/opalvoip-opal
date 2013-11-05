@@ -4210,7 +4210,10 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
     OpalMediaFormat adjustedMediaFormat = mediaFormat;
     for (PINDEX i = 0; i < remoteCapabilities.GetSize(); ++i) {
       const H235SecurityCapability * h235 = dynamic_cast<const H235SecurityCapability *>(&remoteCapabilities[i]);
-      if (h235 != NULL && h235->GetMediaCapabilityNumber() == capability->GetCapabilityNumber()) {
+      if (  h235 != NULL &&
+            h235->GetMediaCapabilityNumber() == capability->GetCapabilityNumber() &&
+           !h235->GetCryptoSuites().IsEmpty())
+      {
         capability->SetCryptoSuite(h235->GetCryptoSuites().front());
         if (adjustedMediaFormat.GetPayloadType() < RTP_DataFrame::DynamicBase)
           adjustedMediaFormat.SetPayloadType((RTP_DataFrame::PayloadTypes)125);
