@@ -74,7 +74,7 @@ protected:
   {
   }
 
-public:
+
   bool SetUIMode(const PCaselessString & str)
   {
     if (str == "inband")
@@ -87,6 +87,44 @@ public:
       m_endpoint.SetSendUserInputMode(OpalConnection::SendUserInputAsString);
     else
       return false;
+
+    return true;
+  }
+
+
+  void GetArgumentSpec(ostream & strm) const
+  {
+    strm << '-' << m_endpoint.GetPrefixName() << "-crypto:       Set crypto suites in priority order.\n"
+            "-" << m_endpoint.GetPrefixName() << "-bandwidth:    Set total bandwidth (both directions) to be used for SIP call\n"
+            "-" << m_endpoint.GetPrefixName() << "-rx-bandwidth: Set receive bandwidth to be used for SIP call\n"
+            "-" << m_endpoint.GetPrefixName() << "-tx-bandwidth: Set transmit bandwidth to be used for SIP call\n"
+            "-" << m_endpoint.GetPrefixName() << "-ui:           SIP User Indication mode (inband,rfc2833,signal,string)\n";
+  }
+
+
+  bool Initialise(PArgList & args, bool verbose)
+  {
+    OpalConsoleManager::LockedStream lockedOutput(m_console);
+    ostream & output = lockedOutput;
+
+    if (args.HasOption(m_endpoint.GetPrefixName()+"-crypto"))
+      m_endpoint.SetMediaCryptoSuites(args.GetOptionString(m_endpoint.GetPrefixName()+"-crypto").Lines());
+    if (verbose)
+      output << m_endpoint.GetPrefixName().ToUpper() << " crypto suites: "
+             << setfill(',') << m_endpoint.GetMediaCryptoSuites() << setfill(' ') << '\n';
+
+
+    if (args.HasOption(m_endpoint.GetPrefixName()+"-bandwidth"))
+      m_endpoint.SetInitialBandwidth(OpalBandwidth::RxTx, args.GetOptionString(m_endpoint.GetPrefixName()+"-bandwidth"));
+    if (args.HasOption(m_endpoint.GetPrefixName()+"-rx-bandwidth"))
+      m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, args.GetOptionString(m_endpoint.GetPrefixName()+"-rx-bandwidth"));
+    if (args.HasOption(m_endpoint.GetPrefixName()+"-tx-bandwidth"))
+      m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, args.GetOptionString(m_endpoint.GetPrefixName()+"-tx-bandwidth"));
+
+    if (args.HasOption(m_endpoint.GetPrefixName()+"-ui") && !SetUIMode(args.GetOptionString(m_endpoint.GetPrefixName()+"-ui"))) {
+      output << "Unknown user indication mode for " << m_endpoint.GetPrefixName() << endl;
+      return false;
+    }
 
     return true;
   }
@@ -107,6 +145,19 @@ public:
       else
         args.WriteError("Could not start .");
     }
+  }
+
+  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, OpalRTPConsoleEndPoint, CmdCryptoSuites, P_INT_PTR, )
+  {
+    if (args.HasOption("list")) {
+      args.GetContext() << "All crypto suites: " << setfill(',') << m_endpoint.GetAllMediaCryptoSuites() << setfill (' ') << endl;
+      return;
+    }
+
+    if (args.GetCount() > 0)
+      m_endpoint.SetMediaCryptoSuites(args.GetParameters());
+
+    args.GetContext() << "Current crypto suites: " << setfill(',') << m_endpoint.GetMediaCryptoSuites() << setfill (' ') << endl;
   }
 
   PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, OpalRTPConsoleEndPoint, CmdBandwidth, P_INT_PTR, )
@@ -142,6 +193,10 @@ public:
   {
     cli.SetCommand(m_endpoint.GetPrefixName() & "interfaces", PCREATE_NOTIFIER(CmdInterfaces),
                    "Set listener interfaces");
+    cli.SetCommand(m_endpoint.GetPrefixName() & "crypto", PCREATE_NOTIFIER(CmdCryptoSuites),
+                   "Set crypto suites in priority order",
+                   " --list | [ <suite> ... ]",
+                   "l-list. List all possible crypto suite names");
     cli.SetCommand(m_endpoint.GetPrefixName() & "bandwidth", PCREATE_NOTIFIER(CmdBandwidth),
                    "Set bandwidth to use for calls",
                    "[ <dir> ] <bps>",
@@ -243,23 +298,23 @@ public:
   {
     strm << "[SIP options:]"
             "-no-sip.           Disable SIP\n"
-            "S-sip:             SIP listens on interface, defaults to udp$*:5060.\n"
-            "r-register:        SIP registration to server.\n"
+            "S-sip:             SIP listens on interface, defaults to udp$*:5060.\n";
+    OpalRTPConsoleEndPoint::GetArgumentSpec(strm);
+    strm << "r-register:        SIP registration to server.\n"
             "-register-auth-id: SIP registration authorisation id, default is username.\n"
             "-register-realm:   SIP registration authorisation realm, default is any.\n"
             "-register-proxy:   SIP registration proxy, default is none.\n"
             "-register-ttl:     SIP registration Time To Live, default 300 seconds.\n"
             "-register-mode:    SIP registration mode (normal, single, public, ALG, RFC5626).\n"
-            "-proxy:            SIP outbound proxy.\n"
-            "-sip-bandwidth:    Set total bandwidth (both directions) to be used for call\n"
-            "-sip-rx-bandwidth: Set receive bandwidth to be used for call\n"
-            "-sip-tx-bandwidth: Set transmit bandwidth to be used for call\n"
-            "-sip-ui:           SIP User Indication mode (inband,rfc2833,info-tone,info-string)\n";
+            "-proxy:            SIP outbound proxy.\n";
   }
 
 
   virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
   {
+    if (!OpalRTPConsoleEndPoint::Initialise(args, verbose))
+      return false;
+
     OpalConsoleManager::LockedStream lockedOutput(m_console);
     ostream & output = lockedOutput;
 
@@ -279,17 +334,6 @@ public:
     if (verbose)
       output << "SIP listening on: " << setfill(',') << GetListeners() << setfill(' ') << '\n';
 
-    if (args.HasOption("sip-bandwidth"))
-      SetInitialBandwidth(OpalBandwidth::RxTx, args.GetOptionString("sip-bandwidth"));
-    if (args.HasOption("sip-rx-bandwidth"))
-      SetInitialBandwidth(OpalBandwidth::Rx, args.GetOptionString("sip-rx-bandwidth"));
-    if (args.HasOption("sip-tx-bandwidth"))
-      SetInitialBandwidth(OpalBandwidth::Rx, args.GetOptionString("sip-tx-bandwidth"));
-
-    if (args.HasOption("sip-ui") && !SetUIMode(args.GetOptionString("sip-ui"))) {
-      output << "Unknown SIP user indication mode\n";
-      return false;
-    }
 
     if (verbose)
       output << "SIP options: "
@@ -377,17 +421,14 @@ public:
   virtual void GetArgumentSpec(ostream & strm) const
   {
     strm << "[H.323 options:]"
-            "-no-h323.          Disable H.323\n"
-            "H-h323:            H.323 listens on interface, defaults to tcp$*:1720.\n"
-            "g-gk-host:         H.323 gatekeeper host.\n"
-            "G-gk-id:           H.323 gatekeeper identifier.\n"
-            "-gk-password:      H.323 gatekeeper password (if different from --password).\n"
-            "-no-fast.          H.323 fast connect disabled.\n"
-            "-no-tunnel.        H.323 tunnel for H.245 disabled.\n"
-            "-h323-bandwidth:    Set total bandwidth (both directions) to be used for call\n"
-            "-h323-rx-bandwidth: Set receive bandwidth to be used for call\n"
-            "-h323-tx-bandwidth: Set transmit bandwidth to be used for call\n"
-            "-h323-ui:          H.323 User Indication mode (inband,rfc2833,h245-signal,h245-string)\n";
+            "-no-h323.           Disable H.323\n"
+            "H-h323:             H.323 listens on interface, defaults to tcp$*:1720.\n";
+    OpalRTPConsoleEndPoint::GetArgumentSpec(strm);
+    strm << "g-gk-host:          H.323 gatekeeper host.\n"
+            "G-gk-id:            H.323 gatekeeper identifier.\n"
+            "-gk-password:       H.323 gatekeeper password (if different from --password).\n"
+            "-no-fast.           H.323 fast connect disabled.\n"
+            "-no-tunnel.         H.323 tunnel for H.245 disabled.\n";
   }
 
 
@@ -400,6 +441,9 @@ public:
 
   virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
   {
+    if (!OpalRTPConsoleEndPoint::Initialise(args, verbose))
+      return false;
+
     OpalConsoleManager::LockedStream lockedOutput(m_console);
     ostream & output = lockedOutput;
 
@@ -419,26 +463,16 @@ public:
     if (verbose)
       output << "H.323 listening on: " << setfill(',') << GetListeners() << setfill(' ') << '\n';
 
+
     DisableFastStart(args.HasOption("no-fast"));
     DisableH245Tunneling(args.HasOption("no-tunnel"));
-
-    if (args.HasOption("h323-bandwidth"))
-      SetInitialBandwidth(OpalBandwidth::RxTx, args.GetOptionString("h323-bandwidth"));
-    if (args.HasOption("h323-rx-bandwidth"))
-      SetInitialBandwidth(OpalBandwidth::Rx, args.GetOptionString("h323-rx-bandwidth"));
-    if (args.HasOption("h323-tx-bandwidth"))
-      SetInitialBandwidth(OpalBandwidth::Rx, args.GetOptionString("h323-tx-bandwidth"));
-
-    if (args.HasOption("h323-ui") && !SetUIMode(args.GetOptionString("h323-ui"))) {
-      output << "Unknown H.323 user indication mode\n";
-      return false;
-    }
 
     if (verbose)
       output << "H.323 options: "
              << (IsFastStartDisabled() ? "Slow" : "Fast") << " connect, "
              << (IsH245TunnelingDisabled() ? "Separate" : "Tunnelled") << " H.245, "
              << GetSendUserInputMode() << '\n';
+
 
     if (args.HasOption("gk-host") || args.HasOption("gk-id")) {
       if (verbose)
