@@ -342,5 +342,8 @@ typedef PParamFactory<OpalMediaSession, const OpalMediaSession::Init &, PCaseles
   PFACTORY_LOAD(OpalSRTPSession);
 #endif
 
+#if OPAL_H235_6
+  PFACTORY_LOAD(H2356_Session);
+#endif
 
 #endif // OPAL_OPAL_MEDIASESSION_H
