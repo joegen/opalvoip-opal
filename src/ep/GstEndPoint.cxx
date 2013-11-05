@@ -983,9 +983,13 @@ PBoolean GstMediaStream::Open()
 
 void GstMediaStream::InternalClose()
 {
-  PTRACE(4, "Stopping gstreamer pipeline.");
-  m_pipeline.SetState(PGstPipeline::Null);
-  m_pipeline.SetNULL();
+  if (m_pipeline.IsValid()) {
+    PTRACE(3, "Stopping gstreamer pipeline for " << *this);
+    m_pipeline.SetState(PGstPipeline::Null);
+    PTRACE(4, "Stopped gstreamer pipeline for " << *this);
+    m_pipeline.SetNULL();
+    PTRACE(4, "Destroyed gstreamer pipeline for " << *this);
+  }
 }
 
 
