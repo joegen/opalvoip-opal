@@ -944,6 +944,12 @@ GstMediaStream::GstMediaStream(GstConnection & conn,
 }
 
 
+GstMediaStream::~GstMediaStream()
+{
+  PTRACE(4, "Destroying gstreamer pipeline for " << *this);
+}
+
+
 PBoolean GstMediaStream::Open()
 {
   if (IsOpen())
@@ -987,8 +993,6 @@ void GstMediaStream::InternalClose()
     PTRACE(3, "Stopping gstreamer pipeline for " << *this);
     m_pipeline.SetState(PGstPipeline::Null);
     PTRACE(4, "Stopped gstreamer pipeline for " << *this);
-    m_pipeline.SetNULL();
-    PTRACE(4, "Destroyed gstreamer pipeline for " << *this);
   }
 }
 

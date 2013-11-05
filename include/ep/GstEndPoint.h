@@ -327,6 +327,7 @@ class GstMediaStream : public OpalMediaStream
       unsigned sessionID,                  ///<  Session number for stream
       bool isSource                        ///<  Is a source stream
     );
+    ~GstMediaStream();
   //@}
 
   /**@name Overrides of OpalMediaStream class */
@@ -401,8 +402,8 @@ class GstMediaStream : public OpalMediaStream
     // Member variables.
     GstConnection & m_connection;
     PGstPipeline    m_pipeline;
-    PGstAppSrc      m_pipeSource;
-    PGstAppSink     m_pipeSink;
+    PGstAppSrc      m_pipeSource; // Must be after m_pipeline so is destroyed before it
+    PGstAppSink     m_pipeSink;   // Ditto
 
   friend bool GstConnection::OpenPipeline(PGstPipeline & pipeline, const GstMediaStream & stream);
 };
