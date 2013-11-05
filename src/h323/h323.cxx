@@ -3308,7 +3308,7 @@ bool H323Connection::OnH239Message(unsigned subMessage, const H245_ArrayOf_Gener
 }
 
 
-bool H323Connection::OnH239FlowControlRequest(unsigned logicalChannel, unsigned bitRate)
+bool H323Connection::OnH239FlowControlRequest(unsigned logicalChannel, unsigned PTRACE_PARAM(bitRate))
 {
   PTRACE(3, "H239\tOnH239FlowControlRequest(" << logicalChannel << ',' << bitRate << ") - sending acknowledge");
 
