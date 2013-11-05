@@ -1969,7 +1969,7 @@ void SIPConnection::UpdateRemoteAddresses()
   remotePartyName = remote.GetDisplayName();
   if (remotePartyName.IsEmpty())
     remotePartyName = remotePartyNumber.IsEmpty() ? remote.GetUserName() : remote.AsString();
-  m_remotePartyURL = remote.AsString();
+  remotePartyURL = remote.AsString();
 
   // If no local name, then use what the remote thinks we are
   if (localPartyName.IsEmpty())
