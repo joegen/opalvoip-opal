@@ -3267,16 +3267,20 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 
   NotifyDialogState(SIPDialogNotification::Confirmed);
 
-  // Don't use OnConnectedInternal() as need to process SDp between setting connected
-  // state locally and other half of call processing SetConnected()
-  SetPhase(ConnectedPhase);
+  if (GetPhase() >= ConnectedPhase)
+    OnReceivedAnswerSDP(response, &transaction);  // Re-INVITE
+  else {
+    // Don't use OnConnectedInternal() as need to process SDp between setting connected
+    // state locally and other half of call processing SetConnected()
+    SetPhase(ConnectedPhase);
 
-  if (!OnReceivedAnswerSDP(response, &transaction) && !IsEstablished()) {
-    Release(EndedByCapabilityExchange);
-    return;
+    if (!OnReceivedAnswerSDP(response, &transaction)) {
+      Release(EndedByCapabilityExchange);
+      return;
+    }
+
+    OnConnected();
   }
-
-  OnConnected();
 
   switch (m_holdToRemote) {
     case eHoldInProgress :
