@@ -197,7 +197,13 @@ void H460_FeatureStd18::ConnectThreadMain(H323TransportAddress address, OpalGlob
   if (!PAssert(gk != NULL, PLogicError))
     return;
 
-  OpalTransportPtr transport(gk->GetTransport().GetLocalAddress().CreateTransport(*m_endpoint, OpalTransportAddress::Streamed));
+  OpalTransportAddress localAddress(gk->GetTransport().GetInterface(), 0, address.GetProtoPrefix());
+  OpalTransportPtr transport(localAddress.CreateTransport(*m_endpoint, OpalTransportAddress::Streamed));
+  if (transport == NULL) {
+    PTRACE(3, "H46018\tFailed to create TCP connection on " << localAddress);
+    return;
+  }
+
   if (!transport->ConnectTo(address)) {
     PTRACE(3, "H46018\tFailed to TCP Connect to " << address);
     return;
