@@ -56,7 +56,7 @@ else
   endif
   OPAL_INCFLAGS := -I$(OPALDIR)/include
   OPAL_LIBDIR = $(OPALDIR)/lib_$(target)
-  LIBDIRS += $(OPALDIR)  # Submodules built with make lib
+  LIBDIRS := $(OPALDIR) $(LIBDIRS)  # Submodules built with make lib
 endif
 
 include $(PTLIB_MAKE_DIR)/pre.mak
