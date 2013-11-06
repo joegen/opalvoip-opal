@@ -102,13 +102,11 @@ protected:
   }
 
 
-  bool Initialise(PArgList & args, bool verbose)
+  bool Initialise(PArgList & args, ostream & output, bool verbose)
   {
-    OpalConsoleManager::LockedStream lockedOutput(m_console);
-    ostream & output = lockedOutput;
-
     if (args.HasOption(m_endpoint.GetPrefixName()+"-crypto"))
       m_endpoint.SetMediaCryptoSuites(args.GetOptionString(m_endpoint.GetPrefixName()+"-crypto").Lines());
+
     if (verbose)
       output << m_endpoint.GetPrefixName().ToUpper() << " crypto suites: "
              << setfill(',') << m_endpoint.GetMediaCryptoSuites() << setfill(' ') << '\n';
@@ -121,10 +119,24 @@ protected:
     if (args.HasOption(m_endpoint.GetPrefixName()+"-tx-bandwidth"))
       m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, args.GetOptionString(m_endpoint.GetPrefixName()+"-tx-bandwidth"));
 
+
     if (args.HasOption(m_endpoint.GetPrefixName()+"-ui") && !SetUIMode(args.GetOptionString(m_endpoint.GetPrefixName()+"-ui"))) {
       output << "Unknown user indication mode for " << m_endpoint.GetPrefixName() << endl;
       return false;
     }
+
+    if (verbose)
+      output << m_endpoint.GetPrefixName() << "user input mode: " << m_endpoint.GetSendUserInputMode() << '\n';
+
+
+    PCaselessString interfaces = args.GetOptionString("sip");
+    if (!m_endpoint.StartListeners(interfaces.Lines())) {
+      output << "Could not start listeners for " << m_endpoint.GetPrefixName() << endl;
+      return false;
+    }
+
+    if (verbose)
+      output << m_endpoint.GetPrefixName() << " listening on: " << setfill(',') << m_endpoint.GetListeners() << setfill(' ') << '\n';
 
     return true;
   }
@@ -312,32 +324,18 @@ public:
 
   virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
   {
-    if (!OpalRTPConsoleEndPoint::Initialise(args, verbose))
-      return false;
-
     OpalConsoleManager::LockedStream lockedOutput(m_console);
     ostream & output = lockedOutput;
 
     // Set up SIP
-    PCaselessString interfaces;
-    if (args.HasOption("no-sip") || (interfaces = args.GetOptionString("sip")) == "x") {
+    if (args.HasOption("no-sip")) {
       if (verbose)
         output << "SIP protocol disabled.\n";
       return true;
     }
 
-    if (!StartListeners(interfaces.Lines())) {
-      output << "Could not start SIP listeners." << endl;
+    if (!OpalRTPConsoleEndPoint::Initialise(args, output, verbose))
       return false;
-    }
-
-    if (verbose)
-      output << "SIP listening on: " << setfill(',') << GetListeners() << setfill(' ') << '\n';
-
-
-    if (verbose)
-      output << "SIP options: "
-             << GetSendUserInputMode() << '\n';
 
     if (args.HasOption("proxy")) {
       SetProxy(args.GetOptionString("proxy"), args.GetOptionString("user"), args.GetOptionString("password"));
@@ -441,28 +439,18 @@ public:
 
   virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
   {
-    if (!OpalRTPConsoleEndPoint::Initialise(args, verbose))
-      return false;
-
     OpalConsoleManager::LockedStream lockedOutput(m_console);
     ostream & output = lockedOutput;
 
     // Set up H.323
-    PCaselessString interfaces;
-    if (args.HasOption("no-h323") || (interfaces = args.GetOptionString("h323")) == "x") {
+    if (args.HasOption("no-h323")) {
       if (verbose)
         output << "H.323 protocol disabled.\n";
       return true;
     }
 
-    if (!StartListeners(interfaces.Lines())) {
-      output << "Could not start H.323 listeners." << endl;
+    if (!OpalRTPConsoleEndPoint::Initialise(args, output, verbose))
       return false;
-    }
-
-    if (verbose)
-      output << "H.323 listening on: " << setfill(',') << GetListeners() << setfill(' ') << '\n';
-
 
     DisableFastStart(args.HasOption("no-fast"));
     DisableH245Tunneling(args.HasOption("no-tunnel"));
@@ -470,8 +458,7 @@ public:
     if (verbose)
       output << "H.323 options: "
              << (IsFastStartDisabled() ? "Slow" : "Fast") << " connect, "
-             << (IsH245TunnelingDisabled() ? "Separate" : "Tunnelled") << " H.245, "
-             << GetSendUserInputMode() << '\n';
+             << (IsH245TunnelingDisabled() ? "Separate" : "Tunnelled") << " H.245\n";
 
 
     if (args.HasOption("gk-host") || args.HasOption("gk-id")) {
