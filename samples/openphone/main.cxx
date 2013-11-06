@@ -2535,7 +2535,7 @@ void MyManager::OnEvtRinging(wxCommandEvent & theEvent)
 }
 
 
-void MyManager::OnRingSoundAgain(PTimer &, INT)
+void MyManager::OnRingSoundAgain(PTimer &, P_INT_PTR)
 {
   PTRACE(4, "OpenPhone\tReplaying ring file \"" << m_RingSoundFileName << '"');
   m_RingSoundChannel.PlayFile(m_RingSoundFileName, false);
@@ -3560,7 +3560,7 @@ PBoolean MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
 }
 
 
-void MyManager::OnForwardingTimeout(PTimer &, INT)
+void MyManager::OnForwardingTimeout(PTimer &, P_INT_PTR)
 {
   if (m_incomingToken.IsEmpty())
     return;
