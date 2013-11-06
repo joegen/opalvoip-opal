@@ -5350,7 +5350,7 @@ bool OptionsDialog::TransferDataFromWindow()
     PwxString alias = m_Aliases->GetString(i);
     m_manager.h323EP->AddAliasName(alias);
     wxString key;
-    key.sprintf(wxT("%u"), i+1);
+    key.sprintf(wxT("%u"), (unsigned)i+1);
     config->Write(key, alias);
   }
 
