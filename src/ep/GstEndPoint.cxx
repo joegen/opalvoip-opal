@@ -431,20 +431,28 @@ static void OutputRTPCaps(ostream & description, const OpalMediaFormat & mediaFo
 
 bool GstEndPoint::BuildRTPPipeline(ostream & description, const GstMediaStream & stream, unsigned index)
 {
-  if (m_rtpbin.IsEmpty())
+  if (m_rtpbin.IsEmpty()) {
+    PTRACE(4, "Disabled rtpbin.");
     return false;
+  }
 
   OpalRTPConnection * rtpConnection = stream.GetConnection().GetOtherPartyConnectionAs<OpalRTPConnection>();
-  if (rtpConnection == NULL)
+  if (rtpConnection == NULL) {
+    PTRACE(4, "No connection for rtpbin.");
     return false;
+  }
 
   OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(rtpConnection->GetMediaSession(stream.GetSessionID()));
-  if (session == NULL)
+  if (session == NULL) {
+    PTRACE(4, "No session for rtpbin.");
     return false;
+  }
 
   PIPSocket::Address host;
-  if (!session->GetRemoteAddress().GetIpAddress(host))
+  if (!session->GetRemoteAddress().GetIpAddress(host)) {
+    PTRACE(4, "No remote address for rtpbin.");
     return false;
+  }
 
   P_INT_PTR rtpHandle = session->GetDataSocket().GetHandle();
   P_INT_PTR rtcpHandle = session->GetLocalDataPort() == session->GetLocalControlPort()
