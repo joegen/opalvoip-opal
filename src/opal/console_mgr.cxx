@@ -1,5 +1,5 @@
 /*
- * console_mgs.cxx
+ * console_mgr.cxx
  *
  * An OpalManager derived class for use in a console application, providing
  * a standard set of command line arguments for configuring many system
@@ -59,6 +59,15 @@ static void PrintVersion(ostream & strm)
           "  with PTLib v" << PProcess::GetLibVersion() << "\n"
           "  and  OPAL  v" << OpalGetVersion()
         << endl;
+}
+
+
+void OpalConsoleEndPoint::AddRoutesFor(const OpalEndPoint * endpoint, const PString & defaultRoute)
+{
+  PStringList prefixes = m_console.GetPrefixNames(endpoint);
+
+  for (PINDEX i = 0; i < prefixes.GetSize(); ++i)
+    m_console.AddRouteEntry(prefixes[i] + ":.* = " + defaultRoute);
 }
 
 
@@ -356,7 +365,7 @@ public:
         return false;
     }
 
-    manager.AddRouteEntry(OPAL_PREFIX_SIP":.* = " + defaultRoute);
+    AddRoutesFor(this, defaultRoute);
     return true;
   }
 
@@ -472,7 +481,7 @@ public:
         output << *GetGatekeeper() << flush;
     }
 
-    manager.AddRouteEntry(OPAL_PREFIX_H323":.* = " + defaultRoute);
+    AddRoutesFor(this, defaultRoute);
     return true;
   }
 
@@ -597,7 +606,7 @@ public:
         output << "LID to country: " << GetLine("*")->GetDevice().GetCountryCodeName() << '\n';
     }
 
-    manager.AddRouteEntry(OPAL_PREFIX_PSTN":.* = " + defaultRoute);
+    AddRoutesFor(this, defaultRoute);
     return true;
   }
 
@@ -659,7 +668,7 @@ public:
         output << "Found " << controllers << " CAPI controllers.\n";
     }
 
-    manager.AddRouteEntry(OPAL_PREFIX_CAPI":.* = " + defaultRoute);
+    AddRoutesFor(this, defaultRoute);
     return true;
   }
 
@@ -974,22 +983,33 @@ PString OpalConsoleManager::GetArgumentSpec() const
          "D-disable:         Disable use of specified media formats (codecs).\n"
          "P-prefer:          Set preference order for media formats (codecs).\n"
          "O-option:          Set options for media format, argument is of form fmt:opt=val.\n"
+         "-tel:              Protocol to use for tel: URI, e.g. sip\n"
+         "[Audio options:]"
+         "-jitter:           Set audio jitter buffer size (min[,max] default 50,250)\n"
+         "-silence-detect:   Set audio silence detect mode (\"none\", \"fixed\" or default \"adaptive\")\n"
+         "-no-inband-detect. Disable detection of in-band tones.\n";
+
 #if OPAL_VIDEO
+  str << "[Video options:]"
          "-max-video-size:   Set maximum received video size, of form 800x600 or \"CIF\" etc (default CIF)\n"
          "-video-size:       Set preferred transmit video size, of form 800x600 or \"CIF\" etc (default HD1080)\n"
          "-video-rate:       Set preferred transmit video frame rate, in fps (default 30)\n"
-         "-video-bitrate:    Set target transmit video bit rate, in bps, suffix 'k' or 'M' may be used (default 1Mbps)\n"
+         "-video-bitrate:    Set target transmit video bit rate, in bps, suffix 'k' or 'M' may be used (default 1Mbps)\n";
 #endif
-         "-jitter:           Set audio jitter buffer size (min[,max] default 50,250)\n"
-         "-silence-detect:   Set audio silence detect mode (\"none\", \"fixed\" or default \"adaptive\")\n"
-         "-no-inband-detect. Disable detection of in-band tones.\n"
-         "-tel:              Protocol to use for tel: URI, e.g. sip\n";
 
   for (PINDEX i = 0; i < m_endpointPrefixes.GetSize(); ++i) {
     OpalConsoleEndPoint * ep = const_cast<OpalConsoleManager *>(this)->GetConsoleEndPoint(m_endpointPrefixes[i]);
     if (ep != NULL)
       ep->GetArgumentSpec(str);
   }
+
+#if OPAL_PTLIB_SSL
+  str << "[SSL options:]"
+         "-ssl-ca:           Set SSL certificate authority directory/file.\n"
+         "-ssl-cert:         Set SSL certificate for local client.\n"
+         "-ssl-key:          Set SSL private key lor local certificate.\n"
+         "-ssl-no-create.    Do not auto-create SSL certificate/private key if do not exist.\n";
+#endif
 
   str << "[IP options:]"
 #if P_NAT
@@ -1106,6 +1126,18 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
   }
 
   DisableDetectInBandDTMF(args.HasOption("no-inband-detect"));
+
+#if OPAL_PTLIB_SSL
+  m_caFiles = args.GetOptionString("ssl-ca", m_caFiles);
+  m_certificateFile = args.GetOptionString("ssl-cert", m_certificateFile);
+  m_privateKeyFile = args.GetOptionString("ssl-key", m_privateKeyFile);
+  m_autoCreateCertificate = !args.HasOption("ssl-no-create");
+  if (verbose)
+    output << "SSL certificate authority: " << m_caFiles << "\n"
+              "SSL certificate: " << m_certificateFile << "\n"
+              "SSL private key: " << m_privateKeyFile << "\n"
+              "SSL auto-create certificate/key: " << (m_autoCreateCertificate ? "Yes" : "No") << '\n';
+#endif
 
   if (args.HasOption("portbase")) {
     unsigned portbase = args.GetOptionString("portbase").AsUnsigned();

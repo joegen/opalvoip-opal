@@ -66,6 +66,8 @@ protected:
   OpalConsoleManager & m_console;
   OpalConsoleEndPoint(OpalConsoleManager & console) : m_console(console) { }
 
+  void AddRoutesFor(const OpalEndPoint * endpoint, const PString & defaultRoute);
+
 public:
   virtual ~OpalConsoleEndPoint() { }
   virtual void GetArgumentSpec(ostream & strm) const = 0;
