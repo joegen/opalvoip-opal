@@ -1817,7 +1817,7 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request,
                  const SDPSessionDescription * sdp)
   : m_method(NumMethods)
   , m_statusCode(code)
-  , m_SDP(sdp != NULL ? new SDPSessionDescription(*sdp) : NULL)
+  , m_SDP(sdp != NULL ? sdp->CloneAs<SDPSessionDescription>() : NULL)
 {
   PTRACE_CONTEXT_ID_TO(m_mime);
   InitialiseHeaders(request);
@@ -1835,7 +1835,7 @@ SIP_PDU::SIP_PDU(const SIP_PDU & pdu)
   , m_mime(pdu.m_mime)
   , m_entityBody(pdu.m_entityBody)
   , m_transactionID(pdu.m_transactionID)
-  , m_SDP(pdu.m_SDP != NULL ? new SDPSessionDescription(*pdu.m_SDP) : NULL)
+  , m_SDP(pdu.m_SDP != NULL ? pdu.m_SDP->CloneAs<SDPSessionDescription>() : NULL)
 {
   PTRACE_CONTEXT_ID_TO(m_mime);
   SetTransport(pdu.GetTransport());
@@ -1857,7 +1857,7 @@ SIP_PDU & SIP_PDU::operator=(const SIP_PDU & pdu)
   SetTransport(pdu.GetTransport());
 
   delete m_SDP;
-  m_SDP = pdu.m_SDP != NULL ? new SDPSessionDescription(*pdu.m_SDP) : NULL;
+  m_SDP = pdu.m_SDP != NULL ? pdu.m_SDP->CloneAs<SDPSessionDescription>() : NULL;
 
   return *this;
 }
@@ -2476,7 +2476,7 @@ void SIP_PDU::Build(PString & pduStr, PINDEX & pduLen)
 }
 
 
-bool SIP_PDU::DecodeSDP(const OpalMediaFormatList & localList)
+bool SIP_PDU::DecodeSDP(SIPEndPoint & endpoint, const OpalMediaFormatList & localList)
 {
   if (m_SDP != NULL)
     return true;
@@ -2487,7 +2487,7 @@ bool SIP_PDU::DecodeSDP(const OpalMediaFormatList & localList)
   if (m_mime.GetContentType() != "application/sdp")
     return false;
 
-  m_SDP = new SDPSessionDescription(0, 0, OpalTransportAddress());
+  m_SDP = endpoint.CreateSDP(0, 0, OpalTransportAddress());
   PTRACE_CONTEXT_ID_TO(m_SDP);
   if (m_SDP->Decode(m_entityBody, localList.IsEmpty() ? OpalMediaFormat::GetAllRegisteredMediaFormats() : localList))
     return true;

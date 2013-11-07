@@ -706,7 +706,7 @@ class SIP_PDU : public PSafeObject
           SIPMIMEInfo & GetMIME()            { return m_mime; }
     SDPSessionDescription * GetSDP()         { return m_SDP; }
     void SetSDP(SDPSessionDescription * sdp);
-    bool DecodeSDP(const OpalMediaFormatList & masterList);
+    bool DecodeSDP(SIPEndPoint & endpoint, const OpalMediaFormatList & masterList);
 
     const PString & GetExternalTransportAddress() const { return m_externalTransportAddress; }
     OpalTransportPtr GetTransport()  const    { return m_transport; }
