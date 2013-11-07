@@ -44,6 +44,7 @@
 #include <sip/sipep.h>
 
 #include <ptclib/enum.h>
+#include <sip/sdp.h>
 #include <sip/sippres.h>
 #include <im/sipim.h>
 
@@ -547,6 +548,12 @@ PBoolean SIPEndPoint::IsAcceptedAddress(const SIPURL & /*toAddr*/)
 SIPConnection * SIPEndPoint::CreateConnection(const SIPConnection::Init & init)
 {
   return new SIPConnection(init);
+}
+
+
+SDPSessionDescription * SIPEndPoint::CreateSDP(time_t sessionId, unsigned version, const OpalTransportAddress & address)
+{
+  return new SDPSessionDescription(sessionId, version, address);
 }
 
 

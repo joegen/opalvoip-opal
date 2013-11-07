@@ -1314,7 +1314,7 @@ bool SIPConnection::SetRemoteMediaFormats(SIP_PDU * pdu)
      everything we know about, but there is no point in assuming it can do any
      more than we can, really.
      */
-  if (pdu == NULL || !pdu->DecodeSDP(GetLocalMediaFormats())) {
+  if (pdu == NULL || !pdu->DecodeSDP(m_endpoint, GetLocalMediaFormats())) {
     m_remoteFormatList = GetLocalMediaFormats();
     m_remoteFormatList.MakeUnique();
 #if OPAL_FAX
@@ -1704,7 +1704,7 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
       newInterface = request.GetTransport()->GetLocalAddress(false);
     m_dialog.SetInterface(newInterface);
 
-    SDPSessionDescription * sdp = new SDPSessionDescription(m_sdpSessionId, m_sdpVersion, OpalTransportAddress());
+    SDPSessionDescription * sdp = m_endpoint.CreateSDP(m_sdpSessionId, m_sdpVersion, OpalTransportAddress());
     if (OnSendOfferSDP(*sdp, m_needReINVITE)) {
       if (m_needReINVITE)
         request.m_sessions = m_sessions;
@@ -2032,7 +2032,7 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   // If we are in a dialog, then m_dialog needs to be updated in the 2xx/1xx
   // response for a target refresh request
   m_dialog.Update(response);
-  response.DecodeSDP(GetLocalMediaFormats());
+  response.DecodeSDP(m_endpoint, GetLocalMediaFormats());
 
   const SIPMIMEInfo & responseMIME = response.GetMIME();
 
@@ -2203,11 +2203,11 @@ void SIPConnection::SendDelayedACK(bool force)
     // ACK constructed following 13.2.2.4 or 17.1.1.3
     m_lastSentAck = new SIPAck(*transaction, *m_delayedAckInviteResponse);
 
-    SDPSessionDescription * sdp = new SDPSessionDescription(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
+    SDPSessionDescription * sdp = m_endpoint.CreateSDP(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
     sdp->SetSessionName(m_delayedAckInviteResponse->GetMIME().GetUserAgent());
     m_lastSentAck->SetSDP(sdp);
 
-    m_delayedAckInviteResponse->DecodeSDP(GetLocalMediaFormats());
+    m_delayedAckInviteResponse->DecodeSDP(m_endpoint, GetLocalMediaFormats());
     if (!OnSendAnswerSDP(*m_delayedAckInviteResponse->GetSDP(), *sdp))
       Release(EndedByCapabilityExchange);
     else {
@@ -2630,7 +2630,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   // We received a Re-INVITE for a current connection
   if (isReinvite) { 
-    m_lastReceivedINVITE->DecodeSDP(GetLocalMediaFormats());
+    m_lastReceivedINVITE->DecodeSDP(m_endpoint, GetLocalMediaFormats());
     OnReceivedReINVITE(request);
     return;
   }
@@ -2856,7 +2856,7 @@ void SIPConnection::OnReceivedACK(SIP_PDU & ack)
   while (!m_responsePackets.empty())
     m_responsePackets.pop();
 
-  if (ack.DecodeSDP(GetLocalMediaFormats()) && !OnReceivedAnswerSDP(ack, NULL)) {
+  if (ack.DecodeSDP(m_endpoint, GetLocalMediaFormats()) && !OnReceivedAnswerSDP(ack, NULL)) {
     Release(EndedByCapabilityExchange);
     return;
   }
@@ -3643,7 +3643,7 @@ void SIPConnection::OnReceivedPRACK(SIP_PDU & request)
     m_responsePackets.front().Send();
   }
 
-  request.DecodeSDP(GetLocalMediaFormats());
+  request.DecodeSDP(m_endpoint, GetLocalMediaFormats());
 
   OnReceivedAnswerSDP(request, NULL);
 }

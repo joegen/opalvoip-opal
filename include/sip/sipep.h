@@ -191,7 +191,16 @@ class SIPEndPoint : public OpalRTPEndPoint
       const SIPConnection::Init & init     ///< Initialisation parameters
 
     );
-    
+
+    /**Create a SDP instance for the SIP packet.
+       The default implementation is to create a SDPSessionDescription.
+      */
+    virtual SDPSessionDescription * CreateSDP(
+      time_t sessionId,
+      unsigned version,
+      const OpalTransportAddress & address
+    );
+
     /**Setup a connection transfer a connection for the SIP endpoint.
       */
     virtual PBoolean SetupTransfer(
