@@ -967,15 +967,34 @@ bool SIPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPS
   }
 
   size_t sessionCount = sdpOffer.GetMediaDescriptions().GetSize();
-
-  vector<bool> goodSession(sessionCount+1);
-  bool gotNothing = true;
+  vector<SDPMediaDescription *> sdpMediaDescriptions(sessionCount+1);
   size_t sessionId;
 
+#if OPAL_SRTP
   for (sessionId = 1; sessionId <= sessionCount; ++sessionId) {
-    if (OnSendAnswerSDPSession(sdpOffer, sessionId, sdpOut)) {
+    SDPMediaDescription * incomingMedia = sdpOffer.GetMediaDescriptionByIndex(sessionId);
+    if (PAssert(incomingMedia != NULL, PLogicError) && incomingMedia->HasCryptoKeys())
+      sdpMediaDescriptions[sessionId] = OnSendAnswerSDPSession(incomingMedia, sessionId, sdpOffer.GetDirection(sessionId));
+  }
+  for (sessionId = 1; sessionId <= sessionCount; ++sessionId) {
+    SDPMediaDescription * incomingMedia = sdpOffer.GetMediaDescriptionByIndex(sessionId);
+    if (PAssert(incomingMedia != NULL, PLogicError) && !incomingMedia->HasCryptoKeys())
+      sdpMediaDescriptions[sessionId] = OnSendAnswerSDPSession(incomingMedia, sessionId, sdpOffer.GetDirection(sessionId));
+  }
+#else
+  for (sessionId = 1; sessionId <= sessionCount; ++sessionId) {
+    SDPMediaDescription * incomingMedia = sdpOffer.GetMediaDescriptionByIndex(sessionId);
+    if (PAssert(incomingMedia != NULL, "SDP Media description list changed"))
+      sdpMediaDescriptions[sessionId] = OnSendAnswerSDPSession(incomingMedia, sessionId, sdpOffer.GetDirection(sessionId));
+  }
+#endif // OPAL_SRTP
+
+  // Fill in refusal for media sessions we didn't like
+  bool gotNothing = true;
+  for (sessionId = 1; sessionId <= sessionCount; ++sessionId) {
+    if (sdpMediaDescriptions[sessionId] != NULL) {
+      sdpOut.AddMediaDescription(sdpMediaDescriptions[sessionId]);
       gotNothing = false;
-      goodSession[sessionId] = true;
     }
     else {
       SDPMediaDescription * incomingMedia = sdpOffer.GetMediaDescriptionByIndex(sessionId);
@@ -1014,7 +1033,7 @@ bool SIPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPS
       anyway so we need to deal. */
   for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
     unsigned session = stream->GetSessionID();
-    if (session > sessionCount || !goodSession[session])
+    if (session > sessionCount || sdpMediaDescriptions[session] == NULL)
       stream->Close();
   }
 
@@ -1026,30 +1045,26 @@ bool SIPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPS
 }
 
 
-bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
-                                                              unsigned   sessionId,
-                                                 SDPSessionDescription & sdpOut)
+SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription * incomingMedia,
+                                                                       unsigned   sessionId,
+                                                 SDPMediaDescription::Direction   otherSidesDir)
 {
-  SDPMediaDescription * incomingMedia = sdpIn.GetMediaDescriptionByIndex(sessionId);
-  if (!PAssert(incomingMedia != NULL, "SDP Media description list changed"))
-    return false;
-
   OpalMediaType mediaType = incomingMedia->GetMediaType();
 
   // See if any media formats of this session id, so don't create unused RTP session
   if (!m_answerFormatList.HasType(mediaType)) {
     PTRACE(3, "SIP\tNo media formats of type " << mediaType << ", not adding SDP");
-    return false;
+    return NULL;
   }
 
   if (!PAssert(mediaType.GetDefinition() != NULL, PString("Unusable media type \"") + mediaType + '"'))
-    return false;
+    return NULL;
 
 #if OPAL_SRTP
   OpalMediaCryptoKeyList keys = incomingMedia->GetCryptoKeys();
   if (!keys.IsEmpty() && !CanDoSRTP()) {
     PTRACE(2, "SIP\tNo secure signaling, cannot use crypto for " << mediaType << " session " << sessionId);
-    return false;
+    return NULL;
   }
 
   // See if we already have a secure version of the media session
@@ -1059,7 +1074,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
         it->second->GetSessionType() == OpalSRTPSession::RTP_SAVP() &&
         it->second->IsOpen()) {
       PTRACE(3, "SIP\tNot creating " << mediaType << " media session, already secure.");
-      return false;
+      return NULL;
     }
   }
 #endif // OPAL_SRTP
@@ -1069,7 +1084,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
   bool remoteChanged = false;
   OpalMediaSession * mediaSession = SetUpMediaSession(sessionId, mediaType, *incomingMedia, localAddress, remoteChanged);
   if (mediaSession == NULL)
-    return false;
+    return NULL;
 
   // For fax for example, we have to switch the media session according to mediaType
   bool replaceSession = mediaSession->GetMediaType() != mediaType;
@@ -1079,20 +1094,20 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     if (mediaType == OpalMediaType::Fax()) {
       if (!OnSwitchingFaxMediaStreams(true)) {
         PTRACE(2, "SIP\tSwitch to T.38 refused for " << *this);
-        return false;
+        return NULL;
       }
     }
     else if (mediaSession->GetMediaType() == OpalMediaType::Fax()) {
       if (!OnSwitchingFaxMediaStreams(false)) {
         PTRACE(2, "SIP\tSwitch from T.38 refused for " << *this);
-        return false;
+        return NULL;
       }
     }
 #endif // OPAL_T38_CAPABILITY
     mediaSession = CreateMediaSession(sessionId, mediaType, incomingMedia->GetSDPTransportType());
     if (mediaSession == NULL) {
       PTRACE(2, "SIP\tCould not create session for " << mediaType);
-      return false;
+      return NULL;
     }
 
     // Set flag to force media stream close
@@ -1105,7 +1120,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     if (replaceSession)
       delete mediaSession; // Still born so can delete, not used anywhere
     PTRACE(1, "SIP\tCould not create SDP media description for media type " << mediaType);
-    return false;
+    return NULL;
   }
 
 #if OPAL_SRTP
@@ -1113,7 +1128,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     // Set rx key from the other side SDP, which it's tx key
     if (!mediaSession->ApplyCryptoKey(keys, true)) {
       PTRACE(2, "SIP\tIncompatible crypto suite(s) for " << mediaType << " session " << sessionId);
-      return false;
+      return NULL;
     }
 
     localMedia->SetOptionStrings(m_stringOptions);
@@ -1121,7 +1136,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     // Use symmetric keys, generate a cloneof the remotes tx key for out yx key
     OpalMediaCryptoKeyInfo * txKey = keys.front().CloneAs<OpalMediaCryptoKeyInfo>();
     if (PAssertNULL(txKey) == NULL)
-      return false;
+      return NULL;
 
     // But with a different value
     txKey->Randomise();
@@ -1130,14 +1145,13 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     keys.Append(txKey);
     if (!mediaSession->ApplyCryptoKey(keys, false)) {
       PTRACE(2, "SIP\tUnexpected error with crypto suite(s) for " << mediaType << " session " << sessionId);
-      return false;
+      return NULL;
     }
 
     localMedia->SetCryptoKeys(keys);
   }
 #endif // OPAL_SRTP
 
-  SDPMediaDescription::Direction otherSidesDir = sdpIn.GetDirection(sessionId);
   PTRACE(4, "SIP\tAnswering offer for media type " << mediaType << ", direction=" << otherSidesDir);
 
   if (GetPhase() < ConnectedPhase) {
@@ -1180,10 +1194,10 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
               , incomingMedia->GetContentRole()
 #endif
            ))
-          return false;
+          return NULL;
 
         if ((sendStream = GetMediaStream(sessionId, false)) == NULL)
-          return false;
+          return NULL;
       }
 
       if ((otherSidesDir&SDPMediaDescription::RecvOnly) != 0)
@@ -1204,10 +1218,10 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
               , incomingMedia->GetContentRole()
 #endif
            ))
-          return false;
+          return NULL;
 
         if ((recvStream = GetMediaStream(sessionId, true)) == NULL)
-          return false;
+          return NULL;
       }
 
       if ((otherSidesDir&SDPMediaDescription::SendOnly) != 0)
@@ -1277,8 +1291,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 #endif
 
   PTRACE(4, "SIP\tAnswered offer for media type " << mediaType << ' ' << localMedia->GetMediaAddress());
-  sdpOut.AddMediaDescription(localMedia.release());
-  return true;
+  return localMedia.release();
 }
 
 

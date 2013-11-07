@@ -750,6 +750,8 @@ bool SDPMediaDescription::PostDecode(const OpalMediaFormatList & mediaFormats)
 }
 
 
+#if OPAL_SRTP
+
 void SDPMediaDescription::SetCryptoKeys(OpalMediaCryptoKeyList &)
 {
   // Do nothing
@@ -760,6 +762,14 @@ OpalMediaCryptoKeyList SDPMediaDescription::GetCryptoKeys() const
 {
   return OpalMediaCryptoKeyList();
 }
+
+
+bool SDPMediaDescription::HasCryptoKeys() const
+{
+  return false;
+}
+
+#endif // OPAL_SRTP
 
 
 void SDPMediaDescription::SetAttribute(const PString & attr, const PString & value)
@@ -1055,6 +1065,8 @@ void SDPDummyMediaDescription::Copy(SDPMediaDescription & from)
 
 //////////////////////////////////////////////////////////////////////////////
 
+#if OPAL_SRTP
+
 SDPCryptoSuite::SDPCryptoSuite(unsigned tag)
   : m_tag(tag)
 {
@@ -1196,6 +1208,8 @@ void SDPCryptoSuite::PrintOn(ostream & strm) const
   strm << "\r\n";
 }
 
+#endif // OPAL_SRTP
+
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -1267,8 +1281,10 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
   for (SDPMediaFormatList::const_iterator format = m_formats.begin(); format != m_formats.end(); ++format)
     strm << *format;
 
+#if OPAL_SRTP
   for (PList<SDPCryptoSuite>::const_iterator crypto = m_cryptoSuites.begin(); crypto != m_cryptoSuites.end(); ++crypto)
     strm << *crypto;
+#endif
 
   if (m_controlAddress == m_mediaAddress)
     strm << "a=rtcp-mux\r\n";
@@ -1280,6 +1296,8 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
   }
 }
 
+
+#if OPAL_SRTP
 
 void SDPRTPAVPMediaDescription::SetCryptoKeys(OpalMediaCryptoKeyList & cryptoKeys)
 {
@@ -1313,6 +1331,14 @@ OpalMediaCryptoKeyList SDPRTPAVPMediaDescription::GetCryptoKeys() const
 }
 
 
+bool SDPRTPAVPMediaDescription::HasCryptoKeys() const
+{
+  return !m_cryptoSuites.IsEmpty();
+}
+
+#endif // OPAL_SRTP
+
+
 void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString & value)
 {
   /* NOTE: must make sure anything passed through to a SDPFormat isntance does
@@ -1339,14 +1365,13 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
     return;
   }
 
+#if OPAL_SRTP
   if (attr *= "crypto") {
     SDPCryptoSuite * cryptoSuite = new SDPCryptoSuite(0);
     if (cryptoSuite->Decode(value)) {
       m_cryptoSuites.Append(cryptoSuite);
-#if OPAL_SRTP
       if (m_transportType == OpalRTPSession::RTP_AVP())
         m_transportType = OpalSRTPSession::RTP_SAVP();
-#endif
     }
     else {
       delete cryptoSuite;
@@ -1354,6 +1379,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
     }
     return;
   }
+#endif // OPAL_SRTP
 
   if (attr *= "rtcp-mux") {
     m_controlAddress = m_mediaAddress;
