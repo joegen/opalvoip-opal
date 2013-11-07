@@ -43,6 +43,7 @@
 #include <rtp/rtpconn.h>
 #include <sip/sippdu.h>
 #include <sip/handlers.h>
+#include <sip/sdp.h>
 
 
 class OpalSIPIMContext;
@@ -714,10 +715,10 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
       const SDPSessionDescription & sdpOffer,
       SDPSessionDescription & sdpAnswer
     );
-    virtual bool OnSendAnswerSDPSession(
-      const SDPSessionDescription & sdpIn,
-      unsigned sessionIndex,
-      SDPSessionDescription & sdpOut
+    virtual SDPMediaDescription * OnSendAnswerSDPSession(
+      SDPMediaDescription * incomingMedia,
+      unsigned sessionId,
+      SDPMediaDescription::Direction otherSidesDir
     );
 
     virtual bool OnReceivedAnswerSDP(

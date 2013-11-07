@@ -221,8 +221,11 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     virtual void AddMediaFormat(const OpalMediaFormat & mediaFormat);
     virtual void AddMediaFormats(const OpalMediaFormatList & mediaFormats, const OpalMediaType & mediaType);
 
+#if OPAL_SRTP
     virtual void SetCryptoKeys(OpalMediaCryptoKeyList & cryptoKeys);
     virtual OpalMediaCryptoKeyList GetCryptoKeys() const;
+    virtual bool HasCryptoKeys() const;
+#endif
 
     virtual void SetAttribute(const PString & attr, const PString & value);
 
@@ -291,6 +294,7 @@ class SDPDummyMediaDescription : public SDPMediaDescription
 };
 
 
+#if OPAL_SRTP
 class SDPCryptoSuite : public PObject
 {
     PCLASSINFO(SDPCryptoSuite, PObject)
@@ -326,6 +330,8 @@ class SDPCryptoSuite : public PObject
     list<KeyParam> m_keyParams;
     PStringOptions m_sessionParams;
 };
+#endif // OPAL_SRTP
+
 
 /////////////////////////////////////////////////////////
 //
@@ -342,8 +348,11 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual SDPMediaFormat * CreateSDPMediaFormat();
     virtual PString GetSDPPortList() const;
     virtual void OutputAttributes(ostream & str) const;
+#if OPAL_SRTP
     virtual void SetCryptoKeys(OpalMediaCryptoKeyList & cryptoKeys);
     virtual OpalMediaCryptoKeyList GetCryptoKeys() const;
+    virtual bool HasCryptoKeys() const;
+#endif
     virtual void SetAttribute(const PString & attr, const PString & value);
 
     void EnableFeedback() { m_enableFeedback = true; }
@@ -356,8 +365,11 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
         bool Initialise(const PString & portString);
     };
 
-    bool                  m_enableFeedback;
+    bool m_enableFeedback;
+
+#if OPAL_SRTP
     PList<SDPCryptoSuite> m_cryptoSuites;
+#endif
 };
 
 /////////////////////////////////////////////////////////
