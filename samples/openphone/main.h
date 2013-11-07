@@ -37,6 +37,14 @@
 #endif
 
 
+#if defined(OPAL_WX_DEBUG_HACK)
+  // This hack is so can compile debug version of OpenPhone/OPAL/PTLib with
+  // the release only version of wxWidgets found in most distributions.
+  #define NDEBUG
+  #include <wx/defs.h>
+  #undef NDEBUG
+#endif
+
 #include <wx/wx.h>
 #include <wx/taskbar.h>
 #include <wx/dataobj.h>

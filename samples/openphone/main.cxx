@@ -4819,7 +4819,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
     m_Aliases->Append(PwxString(aliases[i]));
 
   FindWindowByNameAs(combo, this, wxT("H323TerminalType"))->SetValidator(wxTerminalTypeValidator(&m_H323TerminalType));
-  m_H323TerminalType << m_manager.h323EP->GetTerminalType() << ' ';
+  m_H323TerminalType << m_manager.h323EP->GetTerminalType() << wxChar(' ');
   for (i = 0; i < (PINDEX)combo->GetCount(); ++i) {
     wxString entry = combo->GetString(i);
     if (entry.StartsWith(m_H323TerminalType)) {
@@ -5187,12 +5187,12 @@ bool OptionsDialog::TransferDataFromWindow()
   if (m_manager.pcssEP->SetSoundChannelOnHoldDevice(AudioDeviceNameFromScreen(m_MusicOnHold)))
     config->Write(MusicOnHoldKey, PwxString(m_manager.pcssEP->GetSoundChannelOnHoldDevice()));
   else
-    wxMessageBox(wxT("Could not use sound recorder device."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
+    wxMessageBox(wxT("Could not use sound recorder device for hold."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
 
   if (m_manager.pcssEP->SetSoundChannelOnRingDevice(AudioDeviceNameFromScreen(m_AudioOnRing)))
     config->Write(AudioOnRingKey, PwxString(m_manager.pcssEP->GetSoundChannelOnRingDevice()));
   else
-    wxMessageBox(wxT("Could not use sound recorder device."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
+    wxMessageBox(wxT("Could not use sound recorder device for ring."), OpenPhoneErrorString, wxOK|wxICON_EXCLAMATION);
 
   SAVE_FIELD(SoundBufferTime, m_manager.pcssEP->SetSoundChannelBufferTime);
 
