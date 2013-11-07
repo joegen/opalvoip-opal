@@ -80,6 +80,8 @@ OpalPCSSEndPoint::OpalPCSSEndPoint(OpalManager & mgr, const char * prefix)
 #if OPAL_VIDEO
   m_videoOnRingDevice.deviceName = m_videoOnHoldDevice.deviceName = P_FAKE_VIDEO_TEXT;
 #endif
+
+  SetDeferredAnswer(true);
 }
 
 
