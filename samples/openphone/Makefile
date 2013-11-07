@@ -45,7 +45,11 @@ ifeq (,$(shell which $(WX_CONFIG) 2>&1))
 endif
 
 ifneq (,$(DEBUG_BUILD))
-  WX_CONFIG += --debug=$(DEBUG_BUILD)
+  ifneq (,$(shell wx-config --list | grep debug))
+    WX_CONFIG += --debug=$(DEBUG_BUILD)
+  else
+    CPPFLAGS += -DOPAL_WX_DEBUG_HACK
+  endif
 endif
 
 CPPFLAGS += $(shell $(WX_CONFIG) --cppflags)
