@@ -438,7 +438,7 @@ class SDPApplicationMediaDescription : public SDPMediaDescription
 
 class SDPSessionDescription : public PObject, public SDPCommonAttributes
 {
-  PCLASSINFO(SDPSessionDescription, PObject);
+    PCLASSINFO_WITH_CLONE(SDPSessionDescription, PObject);
   public:
     SDPSessionDescription(
       time_t sessionId,
