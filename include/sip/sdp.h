@@ -467,7 +467,7 @@ class SDPApplicationMediaDescription : public SDPMediaDescription
 
 class SDPSessionDescription : public PObject, public SDPCommonAttributes
 {
-  PCLASSINFO(SDPSessionDescription, PObject);
+    PCLASSINFO_WITH_CLONE(SDPSessionDescription, PObject);
   public:
     SDPSessionDescription(
       time_t sessionId,
@@ -475,9 +475,9 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
       const OpalTransportAddress & address
     );
 
-    void PrintOn(ostream & strm) const;
-    PString Encode() const;
-    bool Decode(const PString & str, const OpalMediaFormatList & mediaFormats);
+    virtual void PrintOn(ostream & strm) const;
+    virtual PString Encode() const;
+    virtual bool Decode(const PString & str, const OpalMediaFormatList & mediaFormats);
 
     void SetSessionName(const PString & v);
     PString GetSessionName() const { return sessionName; }
