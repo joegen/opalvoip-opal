@@ -1474,7 +1474,13 @@ class OpalVideoFormat : public OpalMediaFormat
     static const PString & RTCPFeedbackOption();
 
 #if OPAL_SIP
-    /// Boolean media option to include imageattr from RFC 6236
+    /// Enum for media option to include imageattr from RFC 6236
+    P_DECLARE_STREAMABLE_ENUM(ImageAttributeInSDP,
+      ImageAttrSuppressed,
+      ImageAddrOffered,
+      ImageAttrAnswerRequired
+    );
+    /// ImageAttributeInSDP enum media option to include imageattr from RFC 6236
     static const PString & UseImageAttributeInSDP();
 #endif
 };

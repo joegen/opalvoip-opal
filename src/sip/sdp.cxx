@@ -1734,7 +1734,7 @@ void SDPVideoMediaDescription::Format::PrintOn(ostream & strm) const
   if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb)
     strm << "a=rtcp-fb:" << (int)m_payloadType << ' ' << m_rtcp_fb << "\r\n";
 
-  if (m_mediaFormat.GetOptionBoolean(OpalVideoFormat::UseImageAttributeInSDP()))
+  if (m_mediaFormat.GetOptionEnum(OpalVideoFormat::UseImageAttributeInSDP(), OpalVideoFormat::ImageAttrSuppressed) != OpalVideoFormat::ImageAttrSuppressed)
     strm << "a=imageattr:" << (int)m_payloadType
          << " recv [x=[" << m_mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption())
          << ":16:" << m_mediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption())
@@ -1775,20 +1775,23 @@ void SDPVideoMediaDescription::Format::SetMediaFormatOptions(OpalMediaFormat & m
   if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb && !m_parent.GetOptionStrings().GetBoolean(OPAL_OPT_FORCE_RTCP_FB))
     mediaFormat.SetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), m_rtcp_fb);
 
-  if ((
-        AdjustResolution(mediaFormat, OpalVideoFormat::FrameWidthOption(),  m_minTxWidth,  true) &&
-        AdjustResolution(mediaFormat, OpalVideoFormat::FrameHeightOption(), m_minTxHeight, true) &&
-        AdjustResolution(mediaFormat, OpalVideoFormat::FrameWidthOption(),  m_maxTxWidth,  false) &&
-        AdjustResolution(mediaFormat, OpalVideoFormat::FrameHeightOption(), m_maxTxHeight, false)
-      ) ||
-      (
-        AdjustResolution(mediaFormat, OpalVideoFormat::MinRxFrameWidthOption(),  m_minRxWidth,  true) &&
-        AdjustResolution(mediaFormat, OpalVideoFormat::MinRxFrameHeightOption(), m_minRxHeight, true) &&
-        AdjustResolution(mediaFormat, OpalVideoFormat::MaxRxFrameWidthOption(),  m_maxRxWidth,  false) &&
-        AdjustResolution(mediaFormat, OpalVideoFormat::MaxRxFrameHeightOption(), m_maxRxHeight, false)
-      )) {
-    mediaFormat.SetOptionBoolean(OpalVideoFormat::UseImageAttributeInSDP(), true);
-    PTRACE(4, "SDP\tEnabled imageattr in reply");
+  if (mediaFormat.GetOptionEnum(OpalVideoFormat::UseImageAttributeInSDP(), OpalVideoFormat::ImageAttrSuppressed) != OpalVideoFormat::ImageAttrSuppressed) {
+    bool ok = (
+                AdjustResolution(mediaFormat, OpalVideoFormat::FrameWidthOption(),  m_minTxWidth,  true) &&
+                AdjustResolution(mediaFormat, OpalVideoFormat::FrameHeightOption(), m_minTxHeight, true) &&
+                AdjustResolution(mediaFormat, OpalVideoFormat::FrameWidthOption(),  m_maxTxWidth,  false) &&
+                AdjustResolution(mediaFormat, OpalVideoFormat::FrameHeightOption(), m_maxTxHeight, false)
+              )
+              ||
+              (
+                AdjustResolution(mediaFormat, OpalVideoFormat::MinRxFrameWidthOption(),  m_minRxWidth,  true) &&
+                AdjustResolution(mediaFormat, OpalVideoFormat::MinRxFrameHeightOption(), m_minRxHeight, true) &&
+                AdjustResolution(mediaFormat, OpalVideoFormat::MaxRxFrameWidthOption(),  m_maxRxWidth,  false) &&
+                AdjustResolution(mediaFormat, OpalVideoFormat::MaxRxFrameHeightOption(), m_maxRxHeight, false)
+              );
+    mediaFormat.SetOptionEnum(OpalVideoFormat::UseImageAttributeInSDP(), ok ? OpalVideoFormat::ImageAttrAnswerRequired
+                                                                            : OpalVideoFormat::ImageAttrSuppressed);
+    PTRACE(4, "SDP\t" << (ok ? "Enabled" : "Disabled") << " imageattr in reply for " << mediaFormat);
   }
 }
 
