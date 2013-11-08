@@ -37,7 +37,7 @@
 #endif
 
 
-#if defined(OPAL_WX_DEBUG_HACK)
+#if !defined(NDEBUG) && defined(OPAL_WX_DEBUG_HACK)
   // This hack is so can compile debug version of OpenPhone/OPAL/PTLib with
   // the release only version of wxWidgets found in most distributions.
   #define NDEBUG
