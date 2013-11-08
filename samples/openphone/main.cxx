@@ -1347,8 +1347,10 @@ bool MyManager::Initialise(bool startMinimised)
   if (config->GetFirstEntry(entryName, entryIndex)) {
     do {
       PwxString alias;
-      if (config->Read(entryName, &alias) && !alias.empty())
+      if (config->Read(entryName, &alias) && !alias.empty()) {
+        h323EP->m_configuredAliasNames.AppendString(alias);
         h323EP->AddAliasName(alias);
+      }
     } while (config->GetNextEntry(entryName, entryIndex));
   }
 
@@ -4814,9 +4816,8 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   FindWindowByNameAs(m_RemoveAlias, this, wxT("RemoveAlias"))->Disable();
   FindWindowByNameAs(m_NewAlias, this, wxT("NewAlias"));
   FindWindowByNameAs(m_Aliases, this, wxT("Aliases"));
-  PStringList aliases = m_manager.h323EP->GetAliasNames();
-  for (i = 1; i < aliases.GetSize(); i++)
-    m_Aliases->Append(PwxString(aliases[i]));
+  for (i = 0; i < m_manager.h323EP->m_configuredAliasNames.GetSize(); i++)
+    m_Aliases->Append(PwxString(m_manager.h323EP->m_configuredAliasNames[i]));
 
   FindWindowByNameAs(combo, this, wxT("H323TerminalType"))->SetValidator(wxTerminalTypeValidator(&m_H323TerminalType));
   m_H323TerminalType << m_manager.h323EP->GetTerminalType() << wxChar(' ');
@@ -5345,9 +5346,10 @@ bool OptionsDialog::TransferDataFromWindow()
   config->DeleteGroup(H323AliasesGroup);
   config->SetPath(H323AliasesGroup);
   m_manager.h323EP->SetLocalUserName(m_Username);
-  PStringList aliases = m_manager.h323EP->GetAliasNames();
+  m_manager.h323EP->m_configuredAliasNames.RemoveAll();
   for (size_t i = 0; i < m_Aliases->GetCount(); i++) {
     PwxString alias = m_Aliases->GetString(i);
+    m_manager.h323EP->m_configuredAliasNames.AppendString(alias);
     m_manager.h323EP->AddAliasName(alias);
     wxString key;
     key.sprintf(wxT("%u"), (unsigned)i+1);
