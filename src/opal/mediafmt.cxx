@@ -1847,7 +1847,9 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
   AddOption(new OpalMediaOptionEnum    (OpalVideoFormat::RTCPFeedbackOption(),             false, OpalVideoFormat::RTCPFeedback::Names(), P_MAX_INDEX,
                                      OpalMediaOption::IntersectionMerge, OpalVideoFormat::e_PLI|OpalVideoFormat::e_FIR|OpalVideoFormat::e_TMMBR|OpalVideoFormat::e_TSTR));
 #if OPAL_SIP
-  AddOption(new OpalMediaOptionBoolean (OpalVideoFormat::UseImageAttributeInSDP(),         false, OpalMediaOption::AlwaysMerge));
+  AddOption(new OpalMediaOptionEnum    (OpalVideoFormat::UseImageAttributeInSDP(),         false,
+                                            OpalVideoFormat::PEnumNames_ImageAttributeInSDP::Names(), OpalVideoFormat::NumImageAttributeInSDP,
+                                            OpalMediaOption::AlwaysMerge, OpalVideoFormat::ImageAddrOffered));
 #endif
 
   static const char * const RoleEnumerations[OpalVideoFormat::EndContentRole] = {
