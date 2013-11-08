@@ -692,26 +692,32 @@ bool SIPURLList::FromString(const PString & str, SIPURL::UsageContext context, b
   for (PINDEX i = 0; i < lines.GetSize(); i++) {
     PString line = lines[i];
 
-    PINDEX previousPos = (PINDEX)-1;
-    PINDEX comma = previousPos;
-    do {
-      PINDEX pos = line.FindOneOf(",\"<", previousPos+1);
-      if (pos != P_MAX_INDEX && line[pos] != ',') {
-        if (line[pos] == '<')
-          previousPos = line.Find('>', pos);
-        else {
-          PINDEX lastQuote = pos;
-          do { 
-            lastQuote = line.Find('"', lastQuote+1);
-          } while (lastQuote != P_MAX_INDEX && line[lastQuote-1] == '\\');
-          previousPos = lastQuote;
-        }
-        if (previousPos != P_MAX_INDEX)
+    bool inQuote = false;
+    PINDEX startURI = 0;
+    
+    for (PINDEX pos = 0; pos < line.GetLength(); ++pos) {
+      switch (line[pos]) {
+        case '"' :
+          if (inQuote) {
+            if (line[pos-1] != '\\')
+              inQuote = false;
+          }
+          else
+            inQuote = true;
           continue;
-        pos = previousPos;
+
+        case ',' :
+          if (inQuote)
+            continue;
+          break;
+
+        default :
+          if (pos < line.GetLength()-1)
+            continue;
+          ++pos;
       }
 
-      SIPURL uri = line(comma+1, pos-1);
+      SIPURL uri = line(startURI, pos-1);
       uri.Sanitise(context);
 
       if (context == SIPURL::RegContactURI) {
@@ -726,8 +732,8 @@ bool SIPURLList::FromString(const PString & str, SIPURL::UsageContext context, b
       else
         push_back(uri);
 
-      comma = previousPos = pos;
-    } while (comma != P_MAX_INDEX);
+      startURI = pos + 1;
+    }
   }
 
   return !empty();
@@ -1606,8 +1612,7 @@ PString SIPMIMEInfo::GetCallInfo() const
 
 static bool LocateFieldParameter(const PString & fieldValue, const PString & paramName, PINDEX & start, PINDEX & val, PINDEX & end)
 {
-  PINDEX semicolon = (PINDEX)-1;
-  while ((semicolon = fieldValue.Find(';', semicolon+1)) != P_MAX_INDEX) {
+  for (PINDEX semicolon = 0; (semicolon = fieldValue.Find(';', semicolon)) != P_MAX_INDEX; ++semicolon) {
     start = semicolon+1;
     val = fieldValue.FindSpan("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-.!%*_+`'~", semicolon+1);
     if (val == P_MAX_INDEX) {
