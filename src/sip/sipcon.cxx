@@ -876,7 +876,9 @@ bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
 #endif
   }
 
+#if OPAL_SRTP
   localMedia->SetCryptoKeys(mediaSession->GetOfferedCryptoKeys());
+#endif
 
   sdp.AddMediaDescription(localMedia);
 
