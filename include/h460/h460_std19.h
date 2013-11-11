@@ -95,7 +95,7 @@ class PNatMethod_H46019 : public PNatMethod
     /**  GetName
         Get the NAT method name 
     */
-    virtual PCaselessString GetName() const;
+    virtual PCaselessString GetMethodName() const;
     static const char * MethodName();
 
     /**Get the current server address name.
@@ -129,7 +129,7 @@ class PNatMethod_H46019 : public PNatMethod
     //@}
 
   protected:
-    NatTypes InternalGetNatType(bool, const PTimeInterval &);
+    void InternalUpdate();
 };
 
 
