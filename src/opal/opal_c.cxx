@@ -1370,28 +1370,48 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   }
 
 #if P_NAT
-  PNatMethod * nat = GetNatMethods().GetMethodByName(PString::Empty());
-  if (nat != NULL) {
-    SET_MESSAGE_STRING(response, m_param.m_general.m_natMethod, nat->GetName());
-    SET_MESSAGE_STRING(response, m_param.m_general.m_natServer, nat->GetServer());
+  {
+    PStringStream natMethods;
+    PStringStream natServers;
+    for (PNatMethods::iterator it = GetNatMethods().begin(); it != GetNatMethods().end(); ++it) {
+      if (it->IsActive()) {
+        natMethods << it->GetMethodName() << '\n';
+        natServers << it->GetServer() << '\n';
+      }
+      it->Activate(false);
+    }
+    SET_MESSAGE_STRING(response, m_param.m_general.m_natMethod, natMethods);
+    SET_MESSAGE_STRING(response, m_param.m_general.m_natServer, natServers);
   }
 
-  if (!IsNullString(command.m_param.m_general.m_natMethod)) {
-    if (!SetNATServer(command.m_param.m_general.m_natMethod, command.m_param.m_general.m_natServer)) {
-      PIPSocket::Address ip;
-      if (PIPSocket::GetHostAddress(command.m_param.m_general.m_natMethod, ip))
-        SetNATServer("STUN", command.m_param.m_general.m_natMethod);
-    }
-    if ((nat = GetNatMethods().GetMethodByName(PString::Empty())) == NULL) {
-      response.SetError("Could not set NAT router method.");
-      return;
-    }
-    else if (nat->GetNatType() == PNatMethod::BlockedNat) {
-      response.SetError(nat->GetName() + " indicates Blocked NAT.");
+  if (IsNullString(command.m_param.m_general.m_natMethod)) {
+    if (!SetNATServer(PSTUNClient::MethodName(), command.m_param.m_general.m_natMethod)) {
+      response.SetError("Error setting STUN server.");
       return;
     }
   }
-
+  else {
+    PIPSocket::Address ip;
+    if (PIPSocket::GetHostAddress(command.m_param.m_general.m_natMethod, ip))
+      SetNATServer(PNatMethod_Fixed::MethodName(), ip.AsString());
+    else {
+      PStringStream error;
+      PStringArray natMethods = PString(command.m_param.m_general.m_natMethod).Lines();
+      PStringArray natServers = PString(command.m_param.m_general.m_natServer).Lines();
+      for (PINDEX methodIndex = 0; methodIndex < natMethods.GetSize(); ++methodIndex) {
+        if (!SetNATServer(natMethods[methodIndex], natServers[methodIndex])) {
+          error << "Error setting NAT method " << natMethods[methodIndex];
+          if (!natServers[methodIndex].IsEmpty())
+            error << " to server \"" << natServers[methodIndex] << '"';
+          error << '\n';
+        }
+      }
+      if (!error.IsEmpty()) {
+        response.SetError(error);
+        return;
+      }
+    }
+  }
 #endif // P_NAT
 
   response->m_param.m_general.m_tcpPortBase = GetTCPPortBase();

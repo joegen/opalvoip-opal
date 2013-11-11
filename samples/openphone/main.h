@@ -640,27 +640,30 @@ class OptionsDialog : public wxDialog
     int             m_UDPPortMax;
     int             m_RTPPortBase;
     int             m_RTPPortMax;
-    wxRadioButton * m_NoNATUsedRadio;
-    wxRadioButton * m_NATRouterRadio;
-    wxRadioButton * m_STUNServerRadio;
-    PwxString       m_NATRouter;
-    wxTextCtrl    * m_NATRouterCtrl;
-    PwxString       m_STUNServer;
-    wxTextCtrl    * m_STUNServerCtrl;
     wxListBox     * m_LocalInterfaces;
     wxChoice      * m_InterfaceProtocol;
     wxComboBox    * m_InterfaceAddress;
     wxTextCtrl    * m_InterfacePort;
     wxButton      * m_AddInterface;
     wxButton      * m_RemoveInterface;
-    void BandwidthClass(wxCommandEvent & /*event*/);
+    wxListBox     * m_NatMethods;
+    int             m_NatMethodSelected;
 
+    struct NatWrapper : wxClientData
+    {
+      PwxString m_method;
+      bool      m_active;
+      PwxString m_server;
+      int       m_priority;
+    } m_NatInfo;
+
+    void BandwidthClass(wxCommandEvent & /*event*/);
 #if OPAL_PTLIB_SSL
     void FindCertificateAuthority(wxCommandEvent & /*event*/);
     void FindLocalCertificate(wxCommandEvent & /*event*/);
     void FindPrivateKey(wxCommandEvent & /*event*/);
 #endif
-    void NATHandling(wxCommandEvent & /*event*/);
+    void NATMethodSelect(wxCommandEvent & /*event*/);
     void SelectedLocalInterface(wxCommandEvent & /*event*/);
     void ChangedInterfaceInfo(wxCommandEvent & /*event*/);
     void AddInterface(wxCommandEvent & /*event*/);
@@ -1218,10 +1221,7 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     OpalLineEndPoint * potsEP;
     void StartLID();
 
-    int       m_NATHandling;
-    PwxString m_NATRouter;
-    PwxString m_STUNServer;
-    void SetNATHandling();
+    void SetNAT(const PwxString & method, bool active, const PwxString & server, int priority);
 
     vector<PwxString> m_LocalInterfaces;
     void StartAllListeners();

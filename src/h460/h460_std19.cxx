@@ -247,7 +247,7 @@ const char * PNatMethod_H46019::MethodName()
 }
 
 
-PCaselessString PNatMethod_H46019::GetName() const
+PCaselessString PNatMethod_H46019::GetMethodName() const
 {
   return MethodName();
 }
@@ -259,9 +259,9 @@ PString PNatMethod_H46019::GetServer() const
 }
 
 
-PNatMethod::NatTypes PNatMethod_H46019::InternalGetNatType(bool, const PTimeInterval &)
+void PNatMethod_H46019::InternalUpdate()
 {
-  return PortRestrictedNat; // Assume worst possible NAT type that can do media at all
+  m_natType = PortRestrictedNat; // Assume worst possible NAT type that can do media at all
 }
 
 

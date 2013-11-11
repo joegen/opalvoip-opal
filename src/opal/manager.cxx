@@ -1846,24 +1846,21 @@ PNatMethod * OpalManager::GetNatMethod(const OpalTransportAddress & remoteAddres
 }
 
 
-bool OpalManager::SetNATServer(const PString & method, const PString & server)
+bool OpalManager::SetNATServer(const PString & method, const PString & server, bool activate, unsigned priority)
 {
   PNatMethod * natMethod = m_natMethods->GetMethodByName(method);
   if (natMethod == NULL)
     return false;
 
+  natMethod->Activate(activate);
+  m_natMethods->SetMethodPriority(method, priority);
+
   natMethod->SetPortRanges(GetUDPPortBase(), GetUDPPortMax(), GetRtpIpPortBase(), GetRtpIpPortMax());
   if (!natMethod->SetServer(server) || !natMethod->Open(PIPSocket::GetDefaultIpAny()))
     return false;
 
-  PNatMethod::NatTypes type = natMethod->GetNatType();
-  PIPSocket::Address stunExternalAddress;
-  if (type != PNatMethod::BlockedNat)
-    natMethod->GetExternalAddress(stunExternalAddress);
-
-  PTRACE(3, "OPAL\tNAT \"" << server << "\" replies " << type << ", external IP " << stunExternalAddress);
-
-  return type;
+  PTRACE(3, "OPAL\tNAT " << *natMethod);
+  return true;
 }
 
 
