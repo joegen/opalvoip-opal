@@ -1892,7 +1892,7 @@ void OpalManagerCLI::CmdNatList(PCLI::Arguments & args, P_INT_PTR)
       <<             "External\n";
 
   for (PNatMethods::iterator it = GetNatMethods().begin(); it != GetNatMethods().end(); ++it) {
-    out << setw(12) << it->GetName() << ' '
+    out << setw(12) << it->GetMethodName() << ' '
         << setw(8) << (it->IsAvailable() ? "Active" : "N/A")
         << setw(20);
 
@@ -1928,18 +1928,18 @@ void OpalManagerCLI::CmdNatAddress(PCLI::Arguments & args, P_INT_PTR)
   }
 
   if (args[1] *= "off") {
-    args.GetContext() << natMethod->GetName() << " deactivated.";
+    args.GetContext() << natMethod->GetMethodName() << " deactivated.";
     natMethod->Activate(false);
     return;
   }
 
   if (natMethod->SetServer(args[1])) {
-    args.WriteError() << natMethod->GetName() << " server address invalid \"" << args[1] << '"';
+    args.WriteError() << natMethod->GetMethodName() << " server address invalid \"" << args[1] << '"';
     return;
   }
 
   PCLI::Context & out = args.GetContext();
-  out << natMethod->GetName() << " server \"" << natMethod->GetServer() << " replies " << natMethod->GetNatType();
+  out << natMethod->GetMethodName() << " server \"" << natMethod->GetServer() << " replies " << natMethod->GetNatType();
   PIPSocket::Address externalAddress;
   if (natMethod->GetExternalAddress(externalAddress))
     out << " with address " << externalAddress;

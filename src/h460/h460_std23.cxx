@@ -91,7 +91,6 @@ PCREATE_NAT_PLUGIN(H46024);
 PNatMethod_H46024::PNatMethod_H46024(unsigned priority)
   : PNatMethod(priority)
   , m_endpoint(NULL)
-  , m_externalIP(PIPSocket::GetInvalidAddress())
 {
   // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   // Default to inactive until we get it all working
@@ -105,7 +104,7 @@ const char * PNatMethod_H46024::MethodName()
 }
 
 
-PCaselessString PNatMethod_H46024::GetName() const
+PCaselessString PNatMethod_H46024::GetMethodName() const
 {
   return MethodName();
 }
@@ -129,9 +128,8 @@ bool PNatMethod_H46024::IsAvailable(const PIPSocket::Address & binding)
 }
 
 
-PNatMethod::NatTypes PNatMethod_H46024::InternalGetNatType(bool, const PTimeInterval &)
+void PNatMethod_H46024::InternalUpdate()
 {
-  return m_natType;
 }
 
 
@@ -514,16 +512,16 @@ void H460_FeatureStd24::SetNATMethods(H46024NAT state)
     case H460_FeatureStd24::e_AnnexA:   // To do Annex A Implementation.
     case H460_FeatureStd24::e_AnnexB:   // To do Annex B Implementation.
     case H460_FeatureStd24::e_default:
-      if (natlist[i].GetName() == "H46024")
+      if (natlist[i].GetMethodName() == "H46024")
         natlist[i].Activate(false);
       else
         natlist[i].Activate(true);
 
       break;
     case H460_FeatureStd24::e_enable:
-      if (natlist[i].GetName() == "H46024" && !useAlternate)
+      if (natlist[i].GetMethodName() == "H46024" && !useAlternate)
         natlist[i].Activate(true);
-      else if (natlist[i].GetName() == "UPnP" && useAlternate)
+      else if (natlist[i].GetMethodName() == "UPnP" && useAlternate)
         natlist[i].Activate(true);
       else
         natlist[i].Activate(false);

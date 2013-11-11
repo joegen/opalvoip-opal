@@ -62,18 +62,15 @@ class PNatMethod_H46024  : public PNatMethod
     PNatMethod_H46024(unsigned priority = DefaultPriority);
 
     static const char * MethodName();
-    virtual PCaselessString GetName() const;
+    virtual PCaselessString GetMethodName() const;
 
     virtual PString GetServer() const;
     virtual bool IsAvailable(const PIPSocket::Address & binding);
 
   protected:
-    virtual NatTypes InternalGetNatType(bool forced, const PTimeInterval & maxAge);
+    virtual void InternalUpdate();
 
     H323EndPoint     * m_endpoint;
-    NatTypes           m_natType;
-    PIPSocket::Address m_externalIP;
-
   friend class H460_FeatureStd23;
 };
 

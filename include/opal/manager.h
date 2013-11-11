@@ -1513,7 +1513,9 @@ class OpalManager : public PObject
       */
     bool SetNATServer(
       const PString & method,
-      const PString & server
+      const PString & server,
+      bool active = true,
+      unsigned priority = 0 // Zero is no change
     );
 
     /**Get the current host name and optional port for the NAT server.

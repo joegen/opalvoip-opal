@@ -167,6 +167,13 @@ DEF_FIELD(UDPPortBase);
 DEF_FIELD(UDPPortMax);
 DEF_FIELD(RTPPortBase);
 DEF_FIELD(RTPPortMax);
+
+static const wxChar NatMethodsGroup[] = wxT("/Networking/NAT Methods");
+
+DEF_FIELD(NATActive);
+DEF_FIELD(NATServer);
+DEF_FIELD(NATPriority);
+
 DEF_FIELD(NATHandling);
 DEF_FIELD(NATRouter);
 DEF_FIELD(STUNServer);
@@ -1086,12 +1093,41 @@ bool MyManager::Initialise(bool startMinimised)
     SetUDPPorts(value1, value2);
   if (config->Read(RTPPortBaseKey, &value1) && config->Read(RTPPortMaxKey, &value2))
     SetRtpIpPorts(value1, value2);
-  config->Read(NATRouterKey, &m_NATRouter);
-  config->Read(STUNServerKey, &m_STUNServer);
-  if (!config->Read(NATHandlingKey, &m_NATHandling))
-    m_NATHandling = m_STUNServer.IsEmpty() ? (m_NATRouter.IsEmpty() ? 0 : 1) : 2;
 
-  SetNATHandling();
+  if (config->Read(NATRouterKey, &str)) {
+    config->DeleteEntry(NATRouterKey);
+    config->SetPath(NatMethodsGroup);
+    config->SetPath(PNatMethod_Fixed::MethodName());
+    config->Write(NATServerKey, str);
+    config->SetPath(NetworkingGroup);
+  }
+
+  if (config->Read(STUNServerKey, &str)) {
+    config->DeleteEntry(STUNServerKey);
+    config->SetPath(NatMethodsGroup);
+    config->SetPath(PSTUNClient::MethodName());
+    config->Write(NATServerKey, str);
+    config->SetPath(NetworkingGroup);
+  }
+
+  if (config->Read(NATHandlingKey, &value1) && value1 > 0) {
+    config->DeleteEntry(NATHandlingKey);
+    config->SetPath(NatMethodsGroup);
+    config->SetPath(value1 == 2 ? PSTUNClient::MethodName() : PNatMethod_Fixed::MethodName());
+    config->Write(NATActiveKey, true);
+    config->SetPath(NetworkingGroup);
+  }
+
+  for (PNatMethods::iterator it = GetNatMethods().begin(); it != GetNatMethods().end(); ++it) {
+    PwxString method(it->GetMethodName());
+    config->SetPath(NatMethodsGroup);
+    config->SetPath(method);
+    SetNAT(method,
+           config->ReadBool(NATActiveKey, it->IsActive()),
+           config->Read(NATServerKey),
+           config->ReadLong(NATPriorityKey, it->GetPriority()));
+  }
+
 
   config->SetPath(LocalInterfacesGroup);
   wxString entryName;
@@ -1551,35 +1587,18 @@ void MyManager::StartLID()
 }
 
 
-void MyManager::SetNATHandling()
+void MyManager::SetNAT(const PwxString & method, bool active, const PwxString & server, int priority)
 {
-  switch (m_NATHandling) {
-    case 1 :
-      SetNATServer(PNatMethod_Fixed::MethodName(), m_NATRouter);
-      break;
-
-    case 2 :
-      if (!m_STUNServer.IsEmpty()) {
-        LogWindow << "STUN server \"" << m_STUNServer << "\" being contacted ..." << endl;
-        GetEventHandler()->ProcessPendingEvents();
-        Update();
-
-        if (!SetNATServer(PSTUNClient::MethodName(), m_STUNServer))
-          LogWindow << "STUN server offline or unsuitable NAT type";
-        else {
-          PNatMethod * stun = GetNatMethods().GetMethodByName(PSTUNClient::MethodName());
-          LogWindow << "STUN server \"" << stun->GetServer() << " replies " << stun->GetNatType();
-          PIPSocket::Address externalAddress;
-          if (stun->GetExternalAddress(externalAddress))
-            LogWindow << " with address " << externalAddress;
-        }
-        LogWindow << endl;
-      }
-      break;
-
-    default :
-      SetNATServer(PString::Empty(), PString::Empty());
+  if (!server.empty()) {
+    LogWindow << method << " server \"" << server << "\" being contacted ..." << endl;
+    GetEventHandler()->ProcessPendingEvents();
+    Update();
   }
+
+  if (SetNATServer(method, server, active, priority))
+    LogWindow << *GetNatMethods().GetMethodByName(method) << endl;
+  else if (!server.empty())
+    LogWindow << method << " server at " << server << " offline." << endl;
 }
 
 
@@ -4285,9 +4304,7 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   ////////////////////////////////////////
   // Networking fields
   EVT_CHOICE(XRCID("BandwidthClass"), OptionsDialog::BandwidthClass)
-  EVT_RADIOBUTTON(XRCID("NoNATUsed"), OptionsDialog::NATHandling)
-  EVT_RADIOBUTTON(XRCID("UseNATRouter"), OptionsDialog::NATHandling)
-  EVT_RADIOBUTTON(XRCID("UseSTUNServer"), OptionsDialog::NATHandling)
+  EVT_LISTBOX(XRCID("NatMethods"), OptionsDialog::NATMethodSelect)
 #if OPAL_PTLIB_SSL
   EVT_BUTTON(XRCID("FindCertificateAuthority"), OptionsDialog::FindCertificateAuthority)
   EVT_BUTTON(XRCID("FindLocalCertificate"), OptionsDialog::FindLocalCertificate)
@@ -4542,25 +4559,20 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(RTPPortBase, m_manager.GetRtpIpPortBase());
   INIT_FIELD(RTPPortMax, m_manager.GetRtpIpPortMax());
 
-  FindWindowByNameAs(m_NoNATUsedRadio, this, wxT("NoNATUsed"));
-  FindWindowByNameAs(m_NATRouterRadio, this, wxT("UseNATRouter"));
-  FindWindowByNameAs(m_STUNServerRadio, this, wxT("UseSTUNServer"));
-  INIT_FIELD_CTRL(NATRouter, m_manager.m_NATRouter);
-  INIT_FIELD_CTRL(STUNServer, m_manager.m_STUNServer);
-  switch (m_manager.m_NATHandling) {
-    case 2 :
-      m_STUNServerRadio->SetValue(true);
-      m_NATRouterCtrl->Disable();
-      break;
-    case 1 :
-      m_NATRouterRadio->SetValue(true);
-      m_STUNServerCtrl->Disable();
-      break;
-    default :
-      m_NoNATUsedRadio->SetValue(true);
-      m_NATRouterCtrl->Disable();
-      m_STUNServerCtrl->Disable();
+  m_NatMethodSelected= -1;
+  FindWindowByNameAs(m_NatMethods, this, wxT("NatMethods"));
+  for (PNatMethods::iterator it = m_manager.GetNatMethods().begin(); it != m_manager.GetNatMethods().end(); ++it) {
+    int pos = m_NatMethods->Append(PwxString(it->GetFriendlyName()));
+    NatWrapper * wrap = new NatWrapper;
+    wrap->m_method = it->GetMethodName();
+    wrap->m_active = it->IsActive();
+    wrap->m_server = it->GetServer();
+    wrap->m_priority = it->GetPriority();
+    m_NatMethods->SetClientObject(pos, wrap);
   }
+  FindWindow(wxT("NatActive"))->SetValidator(wxGenericValidator(&m_NatInfo.m_active));
+  FindWindow(wxT("NatServer"))->SetValidator(wxGenericValidator(&m_NatInfo.m_server));
+  FindWindow(wxT("NatPriority"))->SetValidator(wxGenericValidator(&m_NatInfo.m_priority));
 
   FindWindowByNameAs(m_AddInterface, this, wxT("AddInterface"))->Disable();
   FindWindowByNameAs(m_RemoveInterface, this, wxT("RemoveInterface"))->Disable();
@@ -5140,15 +5152,15 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD2(TCPPortBase, TCPPortMax, m_manager.SetTCPPorts);
   SAVE_FIELD2(UDPPortBase, UDPPortMax, m_manager.SetUDPPorts);
   SAVE_FIELD2(RTPPortBase, RTPPortMax, m_manager.SetRtpIpPorts);
-  int natHandling = m_STUNServerRadio->GetValue() ? 2 : m_NATRouterRadio->GetValue() ? 1 : 0;
-  if (m_manager.m_NATHandling != natHandling ||
-      m_manager.m_NATRouter != m_NATRouter ||
-      m_manager.m_STUNServer != m_STUNServer) {
-    m_manager.m_NATHandling = natHandling;
-    config->Write(NATHandlingKey, m_manager.m_NATHandling);
-    SAVE_FIELD(NATRouter, m_manager.m_NATRouter = );
-    SAVE_FIELD(STUNServer, m_manager.m_STUNServer = );
-    m_manager.SetNATHandling();
+
+  for (size_t i = 0; i < m_NatMethods->GetCount(); i++) {
+    NatWrapper & wrap = dynamic_cast<NatWrapper &>(*m_NatMethods->GetClientObject(m_NatMethodSelected));
+    config->SetPath(NatMethodsGroup);
+    config->SetPath(wrap.m_method);
+    config->Write(NATActiveKey, wrap.m_active);
+    config->Write(NATServerKey, wrap.m_server);
+    config->Write(NATPriorityKey, wrap.m_priority);
+    m_manager.SetNAT(wrap.m_method, wrap.m_active, wrap.m_server, wrap.m_priority);
   }
 
   config->DeleteGroup(LocalInterfacesGroup);
@@ -5674,19 +5686,18 @@ void OptionsDialog::FindPrivateKey(wxCommandEvent &)
 #endif // OPAL_PTLIB_SSL
 
 
-void OptionsDialog::NATHandling(wxCommandEvent &)
+void OptionsDialog::NATMethodSelect(wxCommandEvent &)
 {
-  if (m_STUNServerRadio->GetValue()) {
-    m_STUNServerCtrl->Enable();
-    m_NATRouterCtrl->Disable();
+  if (m_NatMethodSelected >= 0) {
+    wxDialog::TransferDataFromWindow();
+    dynamic_cast<NatWrapper &>(*m_NatMethods->GetClientObject(m_NatMethodSelected)) = m_NatInfo;
   }
-  else if (m_NATRouterRadio->GetValue()) {
-    m_STUNServerCtrl->Disable();
-    m_NATRouterCtrl->Enable();
-  }
-  else {
-    m_STUNServerCtrl->Disable();
-    m_NATRouterCtrl->Disable();
+
+  m_NatMethodSelected = m_NatMethods->GetSelection();
+
+  if (m_NatMethodSelected >= 0) {
+    m_NatInfo = dynamic_cast<NatWrapper &>(*m_NatMethods->GetClientObject(m_NatMethodSelected));
+    TransferDataToWindow();
   }
 }
 
