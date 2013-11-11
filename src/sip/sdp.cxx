@@ -1465,10 +1465,10 @@ void SDPVideoMediaDescription::Format::SetMediaFormatOptions(OpalMediaFormat & m
     mediaFormat.SetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), m_rtcp_fb);
 
   if ((
-        AdjustResolution(mediaFormat, OpalVideoFormat::FrameWidthOption(),  m_minTxWidth,  true) &&
-        AdjustResolution(mediaFormat, OpalVideoFormat::FrameHeightOption(), m_minTxHeight, true) &&
-        AdjustResolution(mediaFormat, OpalVideoFormat::FrameWidthOption(),  m_maxTxWidth,  false) &&
-        AdjustResolution(mediaFormat, OpalVideoFormat::FrameHeightOption(), m_maxTxHeight, false)
+        AdjustResolution(mediaFormat, OpalVideoFormat::FrameWidthOption(),  m_minTxWidth,  false) &&
+        AdjustResolution(mediaFormat, OpalVideoFormat::FrameHeightOption(), m_minTxHeight, false) &&
+        AdjustResolution(mediaFormat, OpalVideoFormat::FrameWidthOption(),  m_maxTxWidth,  true) &&
+        AdjustResolution(mediaFormat, OpalVideoFormat::FrameHeightOption(), m_maxTxHeight, true)
       ) ||
       (
         AdjustResolution(mediaFormat, OpalVideoFormat::MinRxFrameWidthOption(),  m_minRxWidth,  true) &&
