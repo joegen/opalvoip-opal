@@ -983,19 +983,22 @@ bool OpalMediaFormat::Update(const OpalMediaFormat & mediaFormat)
     return true;
 
   PWaitAndSignal m(m_mutex);
-  MakeUnique();
 
-  if (*this != mediaFormat)
-    return Merge(mediaFormat);
-
-  if (!IsValid() || !Merge(mediaFormat))
-    *this = mediaFormat; //Must have different EqualMerge options, just copy it
-  else if (GetPayloadType() != mediaFormat.GetPayloadType()) {
-    PTRACE(4, "MediaFormat\tChanging payload type from " << GetPayloadType()
-           << " to " << mediaFormat.GetPayloadType() << " in " << *this);
-    SetPayloadType(mediaFormat.GetPayloadType());
+  if (!IsValid()) {
+    *this = mediaFormat;
+    return true;
   }
 
+  if (*this != mediaFormat) {
+    MakeUnique();
+    return m_info->OpalMediaFormatInternal::Merge(*mediaFormat.m_info);
+  }
+
+  PTRACE_IF(4, GetPayloadType() != mediaFormat.GetPayloadType(),
+            "MediaFormat\tChanging payload type from " << GetPayloadType()
+            << " to " << mediaFormat.GetPayloadType() << " in " << *this);
+
+  *this = mediaFormat;
   return true;
 }
 
