@@ -207,12 +207,12 @@ static struct PluginCodec_Option const MaxMBPS_SDP =
   MaxMBPS_SDP_Name,                   // User visible name
   true,                               // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
-  "0",                                // Initial value
+  STRINGIZE(MAX_MBPS_SDP),            // Initial value
   MaxMBPS_FMTPName,                   // FMTP option name
-  "0",                                // FMTP default value
+  STRINGIZE(MAX_MBPS_SDP),            // FMTP default value
   0,                                  // H.245 generic capability code and bit mask
   "0",                                // Minimum value
-  "983040"                            // Maximum value
+  STRINGIZE(MAX_MBPS_SDP)             // Maximum value
 };
 
 static struct PluginCodec_Option const MaxMBPS_H241 =
@@ -221,12 +221,12 @@ static struct PluginCodec_Option const MaxMBPS_H241 =
   MaxMBPS_H241_Name,                  // User visible name
   true,                               // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
-  "0",                                // Initial value
+  STRINGIZE(MAX_MBPS_H241),           // Initial value
   NULL,                               // FMTP option name
   NULL,                               // FMTP default value
   H241_CustomMaxMBPS,                 // H.245 generic capability code and bit mask
   "0",                                // Minimum value
-  "1966"                              // Maximum value
+  STRINGIZE(MAX_MBPS_H241)            // Maximum value
 #ifdef PLUGIN_CODEC_VERSION_H245_DEF_GEN_PARAM
   ,
   NULL,
@@ -241,12 +241,12 @@ static struct PluginCodec_Option const MaxSMBPS_SDP =
   MaxSMBPS_SDP_Name,                  // User visible name
   true,                               // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
-  "0",                                // Initial value
+  STRINGIZE(MAX_MBPS_SDP),            // Initial value
   MaxSMBPS_FMTPName,                  // FMTP option name
-  "0",                                // FMTP default value
+  STRINGIZE(MAX_MBPS_SDP),            // FMTP default value
   0,                                  // H.245 generic capability code and bit mask
   "0",                                // Minimum value
-  "983040"                            // Maximum value
+ STRINGIZE(MAX_MBPS_SDP)              // Maximum value
 };
 
 static struct PluginCodec_Option const MaxSMBPS_H241 =
@@ -255,12 +255,12 @@ static struct PluginCodec_Option const MaxSMBPS_H241 =
   MaxSMBPS_H241_Name,                 // User visible name
   true,                               // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
-  "0",                                // Initial value
+  STRINGIZE(MAX_MBPS_H241),           // Initial value
   NULL,                               // FMTP option name
   NULL,                               // FMTP default value
   H241_CustomMaxSMBPS,                // H.245 generic capability code and bit mask
   "0",                                // Minimum value
-  "1966"                              // Maximum value
+  STRINGIZE(MAX_MBPS_H241)            // Maximum value
 #ifdef PLUGIN_CODEC_VERSION_H245_DEF_GEN_PARAM
   ,
   NULL,
@@ -275,12 +275,12 @@ static struct PluginCodec_Option const MaxFS_SDP =
   MaxFS_SDP_Name,                     // User visible name
   true,                               // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
-  "0",                                // Initial value
+  STRINGIZE(MAX_FS_SDP),              // Initial value
   MaxFS_FMTPName,                     // FMTP option name
-  "0",                                // FMTP default value
+  STRINGIZE(MAX_FS_SDP),              // FMTP default value
   0,                                  // H.245 generic capability code and bit mask
   "0",                                // Minimum value
-  "36864"                             // Maximum value
+  STRINGIZE(MAX_FS_SDP)               // Maximum value
 };
 
 static struct PluginCodec_Option const MaxFS_H241 =
@@ -289,12 +289,12 @@ static struct PluginCodec_Option const MaxFS_H241 =
   MaxFS_H241_Name,                    // User visible name
   true,                               // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
-  "0",                                // Initial value
+  STRINGIZE(MAX_FS_H241),             // Initial value
   NULL,                               // FMTP option name
   NULL,                               // FMTP default value
   H241_CustomMaxFS,                   // H.245 generic capability code and bit mask
   "0",                                // Minimum value
-  "144"                               // Maximum value
+  STRINGIZE(MAX_FS_H241)              // Maximum value
 #ifdef PLUGIN_CODEC_VERSION_H245_DEF_GEN_PARAM
   ,
   NULL,
@@ -309,12 +309,12 @@ static struct PluginCodec_Option const MaxBR_SDP =
   MaxBR_SDP_Name,                     // User visible name
   true,                               // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
-  "0",                                // Initial value
+  STRINGIZE(MAX_BR_SDP),              // Initial value
   MaxBR_FMTPName,                     // FMTP option name
-  "0",                                // FMTP default value
+  STRINGIZE(MAX_BR_SDP),              // FMTP default value
   0,                                  // H.245 generic capability code and bit mask
   "0",                                // Minimum value
-  "240000"                            // Maximum value
+  STRINGIZE(MAX_BR_SDP)               // Maximum value
 };
 
 static struct PluginCodec_Option const MaxBR_H241 =
@@ -323,12 +323,12 @@ static struct PluginCodec_Option const MaxBR_H241 =
   MaxBR_H241_Name,                    // User visible name
   true,                               // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
-  "0",                                // Initial value
+  STRINGIZE(MAX_BR_H241),             // Initial value
   NULL,                               // FMTP option name
   NULL,                               // FMTP default value
   H241_CustomMaxBRandCPB,             // H.245 generic capability code and bit mask
   "0",                                // Minimum value
-  "9600"                              // Maximum value
+  STRINGIZE(MAX_BR_H241)              // Maximum value
 #ifdef PLUGIN_CODEC_VERSION_H245_DEF_GEN_PARAM
   ,
   NULL,
@@ -549,7 +549,8 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
     unsigned m_profile;
     unsigned m_level;
     unsigned m_constraints;
-    unsigned m_maxMBPS;
+    unsigned m_sdpMBPS;
+    unsigned m_h241MBPS;
     unsigned m_maxNALUSize;
     unsigned m_packetisationModeSDP;
     unsigned m_packetisationModeH323;
@@ -564,7 +565,8 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       , m_profile(DefaultProfileInt)
       , m_level(DefaultLevelInt)
       , m_constraints(0)
-      , m_maxMBPS(0)
+      , m_sdpMBPS(MAX_MBPS_SDP)
+      , m_h241MBPS(MAX_MBPS_H241)
       , m_maxNALUSize(H241_MAX_NALU_SIZE)
       , m_packetisationModeSDP(1)
       , m_packetisationModeH323(1)
@@ -598,8 +600,11 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       if (strcasecmp(optionName, MaxNaluSize.m_name) == 0)
         return SetOptionUnsigned(m_maxNALUSize, optionValue, 256, 8192);
 
+      if (strcasecmp(optionName, MaxMBPS_H241.m_name) == 0)
+        return SetOptionUnsigned(m_h241MBPS, optionValue, 0);
+
       if (strcasecmp(optionName, MaxMBPS_SDP.m_name) == 0)
-        return SetOptionUnsigned(m_maxMBPS, optionValue, 0);
+        return SetOptionUnsigned(m_sdpMBPS, optionValue, 0);
 
       if (strcasecmp(optionName, Profile.m_name) == 0) {
         for (size_t i = 0; i < sizeof(ProfileInfo)/sizeof(ProfileInfo[0]); ++i) {
@@ -677,20 +682,27 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
           break;
       }
 
-      unsigned minFrameTime = PLUGINCODEC_VIDEO_CLOCK*GetMacroBlocks(m_width, m_height)/std::max(LevelInfo[levelIndex].m_MaxMBPS, m_maxMBPS);
-      if (m_frameTime < minFrameTime) {
-        PTRACE(3, MY_CODEC_LOG, "Selected resolution " << m_width << 'x' << m_height
-               << " lowering frame rate from " << (PLUGINCODEC_VIDEO_CLOCK/m_frameTime) << " to " << (PLUGINCODEC_VIDEO_CLOCK/minFrameTime));
+      unsigned h241MBPS = (m_h241MBPS%MAX_MBPS_H241)*500;
+      unsigned sdpMBPS = m_sdpMBPS%MAX_MBPS_SDP;
+
+      unsigned minFrameTime = PLUGINCODEC_VIDEO_CLOCK*GetMacroBlocks(m_width, m_height) /
+                        std::max(LevelInfo[levelIndex].m_MaxMBPS, std::max(h241MBPS, sdpMBPS));
+
+      PTRACE(3, MY_CODEC_LOG, "For level " << LevelInfo[levelIndex].m_Name << ", "
+                              "H.241 MBPS=" << h241MBPS << ", "
+                              "SDP MBPS=" << h241MBPS << ", "
+                              " and " << m_width << 'x' << m_height
+               << ", max frame rate is " << (PLUGINCODEC_VIDEO_CLOCK/minFrameTime) << ", "
+               << (m_frameTime < minFrameTime ? "lowered" : "unchanged") << " from "
+               << (PLUGINCODEC_VIDEO_CLOCK/m_frameTime));
+
+      if (m_frameTime < minFrameTime)
         m_frameTime = minFrameTime;
-      }
-      else
-        PTRACE(4, MY_CODEC_LOG, "Selected resolution " << m_width << 'x' << m_height
-               << " unchanged frame rate " << (PLUGINCODEC_VIDEO_CLOCK/m_frameTime) << " <= " << (PLUGINCODEC_VIDEO_CLOCK/minFrameTime));
 
       m_encoder.SetProfileLevel(m_profile, m_level, m_constraints);
       m_encoder.SetFrameWidth(m_width);
       m_encoder.SetFrameHeight(m_height);
-      m_encoder.SetFrameRate(PLUGINCODEC_VIDEO_CLOCK/m_frameTime);
+      m_encoder.SetFrameRate(PLUGINCODEC_VIDEO_CLOCK/m_frameTime);      
       m_encoder.SetTargetBitrate(m_maxBitRate/1000);
       m_encoder.SetRateControlPeriod(m_rateControlPeriod);
       m_encoder.SetTSTO(m_tsto);
