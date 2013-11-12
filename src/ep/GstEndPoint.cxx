@@ -860,6 +860,12 @@ GstConnection::GstConnection(OpalCall & call,
 
 void GstConnection::OnReleased()
 {
+  // This is a work around for the Freescale version of vfl_sink which crashes
+  // unless it is closed before the other GStreamer modules
+  OpalMediaStreamPtr vidRx = GetMediaStream(OpalMediaType::Video(), false);
+  if (vidRx != NULL)
+    vidRx->Close();
+
   OpalLocalConnection::OnReleased();
 }
 
@@ -1001,6 +1007,7 @@ void GstMediaStream::InternalClose()
     PTRACE(3, "Stopping gstreamer pipeline for " << *this);
     m_pipeline.SetState(PGstPipeline::Null);
     PTRACE(4, "Stopped gstreamer pipeline for " << *this);
+    m_pipeline.SetNULL();
   }
 }
 
