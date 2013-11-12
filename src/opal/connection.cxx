@@ -733,7 +733,7 @@ void OpalConnection::OnSwitchedFaxMediaStreams(bool toT38, bool success)
 bool OpalConnection::OnSwitchingFaxMediaStreams(bool toT38)
 {
   PTRACE(3, "OpalCon\tRemote switch of media streams to " << (toT38 ? "T.38" : "audio") << " on " << *this);
-  return !toT38;
+  return true;
 }
 #endif
 
