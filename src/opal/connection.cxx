@@ -748,7 +748,7 @@ bool OpalConnection::OnSwitchingFaxMediaStreams(bool toT38)
       return other->OnSwitchingFaxMediaStreams(toT38);
   }
 
-  return !toT38;
+  return true;
 }
 #endif // OPAL_T38_CAPABILITY
 
