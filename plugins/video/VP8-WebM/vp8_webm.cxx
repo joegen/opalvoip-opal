@@ -55,6 +55,7 @@
 
 
 #define INCLUDE_OM_CUSTOM_PACKETIZATION 1
+#define IGNORE_X_MX_MAX_SIZE 1
 
 #define MY_CODEC_LOG "VP8"
 class VP8_CODEC { };
@@ -338,10 +339,12 @@ class VP8FormatOM : public VP8Format
           PTRACE(1, MY_CODEC_LOG, "Invalid " << MaxFrameSizeOM.m_name << ", was \"" << it->second << '"');
           return false;
         }
+#if !IGNORE_X_MX_MAX_SIZE
         ClampMax(maxWidth,  original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
         ClampMax(maxHeight, original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
         ClampMax(maxWidth,  original, changed, PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH);
         ClampMax(maxHeight, original, changed, PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT);
+#endif
       }
       return true;
     }
