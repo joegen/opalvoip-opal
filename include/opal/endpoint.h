@@ -661,22 +661,6 @@ class OpalEndPoint : public PObject
        Note this will always return "Clear" as the first entry.
       */
     virtual PStringArray GetAllMediaCryptoSuites() const;
-
-#if P_NAT
-    /** Get all NAT Methods
-      */
-    PNatMethods & GetNatMethods() const { return manager.GetNatMethods(); }
-
-    /**Return the NAT method to use.
-       Returns NULL if address is a local address as per IsLocalAddress().
-       Always returns the NAT method if address is zero.
-       Note, the pointer is NOT to be deleted by the user.
-      */
-    virtual PNatMethod * GetNatMethod(
-      const OpalTransportAddress & remoteAddress,
-      const OpalTransportAddress & localAddress
-    ) const;
-#endif
   //@}
 
   /**@name User indications */

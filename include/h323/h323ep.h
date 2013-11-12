@@ -1116,54 +1116,6 @@ class H323EndPoint : public OpalRTPEndPoint
       const PIPSocket::Address & remoteAddr
     );
 
-    /**Get the TCP port number base for H.245 channels
-     */
-    WORD GetTCPPortBase() const { return manager.GetTCPPortBase(); }
-
-    /**Get the TCP port number base for H.245 channels.
-     */
-    WORD GetTCPPortMax() const { return manager.GetTCPPortMax(); }
-
-    /**Set the TCP port number base and max for H.245 channels.
-     */
-    void SetTCPPorts(unsigned tcpBase, unsigned tcpMax) { manager.SetTCPPorts(tcpBase, tcpMax); }
-
-    /**Get the next TCP port number for H.245 channels
-     */
-    WORD GetNextTCPPort() { return manager.GetNextTCPPort(); }
-
-    /**Get the UDP port number base for RAS channels
-     */
-    WORD GetUDPPortBase() const { return manager.GetUDPPortBase(); }
-
-    /**Get the UDP port number base for RAS channels.
-     */
-    WORD GetUDPPortMax() const { return manager.GetUDPPortMax(); }
-
-    /**Set the TCP port number base and max for H.245 channels.
-     */
-    void SetUDPPorts(unsigned udpBase, unsigned udpMax) { manager.SetUDPPorts(udpBase, udpMax); }
-
-    /**Get the next UDP port number for RAS channels
-     */
-    WORD GetNextUDPPort() { return manager.GetNextUDPPort(); }
-
-    /**Get the UDP port number base for RTP channels.
-     */
-    WORD GetRtpIpPortBase() const { return manager.GetRtpIpPortBase(); }
-
-    /**Get the max UDP port number for RTP channels.
-     */
-    WORD GetRtpIpPortMax() const { return manager.GetRtpIpPortMax(); }
-
-    /**Set the UDP port number base and max for RTP channels.
-     */
-    void SetRtpIpPorts(unsigned udpBase, unsigned udpMax) { manager.SetRtpIpPorts(udpBase, udpMax); }
-
-    /**Get the UDP port number pair for RTP channels.
-     */
-    WORD GetRtpIpPortPair() { return manager.GetRtpIpPortPair(); }
-
     /**Get the default timeout for calling another endpoint.
      */
     const PTimeInterval & GetSignallingChannelCallTimeout() const { return signallingChannelCallTimeout; }

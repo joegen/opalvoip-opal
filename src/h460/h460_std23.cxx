@@ -122,9 +122,15 @@ PString PNatMethod_H46024::GetServer() const
 }
 
 
-bool PNatMethod_H46024::IsAvailable(const PIPSocket::Address & binding)
+bool PNatMethod_H46024::IsAvailable(const PIPSocket::Address & binding, PObject * context)
 {
-  return PNatMethod::IsAvailable(binding);
+  return PNatMethod::IsAvailable(binding) && dynamic_cast<OpalRTPSession *>(context) != NULL;
+}
+
+
+PNATUDPSocket * PNatMethod_H46024::InternalCreateSocket(Component component, PObject *)
+{
+  return new PNATUDPSocket(component);
 }
 
 
@@ -155,19 +161,11 @@ bool H460_FeatureStd23::Initialise(H323EndPoint & ep, H323Connection * con)
   if (!H460_Feature::Initialise(ep, con))
     return false;
 
-  m_natMethod = dynamic_cast<PNatMethod_H46024 *>(ep.GetNatMethods().GetMethodByName(PNatMethod_H46024::MethodName()));
-  if (m_natMethod == NULL) {
-    PTRACE(1, "Std23\tDisabled H.460.23 - no NAT method");
+  m_natMethod = dynamic_cast<PNatMethod_H46024 *>(GetNatMethod(PNatMethod_H46024::MethodName()));
+  if (m_natMethod == NULL)
     return false;
-  }
 
   m_natMethod->m_endpoint = &ep;
-
-  if (!m_natMethod->IsAvailable(PIPSocket::GetDefaultIpAny())) {
-    PTRACE(3, "Std23\tDisabled H.460.23 - NAT method deactivated");
-    return false;
-  }
-
   PTRACE(4, "Std23\tEnabled H.460.23");
   return true;
 }
@@ -339,19 +337,7 @@ H460_FeatureStd24::H460_FeatureStd24()
 
 bool H460_FeatureStd24::IsNegotiated() const
 {
-  // We only enable IF the gatekeeper supports H.460.23
-  H323Gatekeeper * gk = m_endpoint->GetGatekeeper();
-  if (gk != NULL) {
-    H460_FeatureSet * features = gk->GetFeatures();
-    if (features != NULL) {
-      H460_Feature * feature = features->GetFeature(23);
-      if (feature != NULL && feature->IsNegotiated())
-        return true;
-    }
-  }
-
-  PTRACE(4,"Std24\tDisabled as H.460.23 is not available in gatekeeper");
-  return false;
+  return IsFeatureNegotiatedOnGk(23); // Must have 23 before 24 can be used
 }
 
 
@@ -506,31 +492,24 @@ void H460_FeatureStd24::SetNATMethods(H46024NAT state)
     PTRACE(4, "Std24\tH.460.19 disabled by H.460.24 option.");
   }
 
-  PNatList & natlist = m_endpoint->GetNatMethods().GetNATList();
-  for (PINDEX i=0; i< natlist.GetSize(); i++) {
+  PNatMethod * natMethod = m_endpoint->GetManager().GetNatMethods().GetMethodByName("H46024");
+  if (natMethod != NULL) {
     switch (state) {
-    case H460_FeatureStd24::e_AnnexA:   // To do Annex A Implementation.
-    case H460_FeatureStd24::e_AnnexB:   // To do Annex B Implementation.
-    case H460_FeatureStd24::e_default:
-      if (natlist[i].GetMethodName() == "H46024")
-        natlist[i].Activate(false);
-      else
-        natlist[i].Activate(true);
+      case H460_FeatureStd24::e_AnnexA:   // To do Annex A Implementation.
+      case H460_FeatureStd24::e_AnnexB:   // To do Annex B Implementation.
+      case H460_FeatureStd24::e_default:
+        natMethod->Activate(true);
+        break;
 
-      break;
-    case H460_FeatureStd24::e_enable:
-      if (natlist[i].GetMethodName() == "H46024" && !useAlternate)
-        natlist[i].Activate(true);
-      else if (natlist[i].GetMethodName() == "UPnP" && useAlternate)
-        natlist[i].Activate(true);
-      else
-        natlist[i].Activate(false);
-      break;
-    case H460_FeatureStd24::e_disable:
-      natlist[i].Activate(false);
-      break;
-    default:
-      break;
+      case H460_FeatureStd24::e_enable:
+        natMethod->Activate(!useAlternate);
+        break;
+
+      case H460_FeatureStd24::e_disable:
+        natMethod->Activate(false);
+        break;
+      default:
+        break;
     }
   }
 }

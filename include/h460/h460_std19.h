@@ -46,10 +46,14 @@
 
 #include <rtp/rtp.h>
 
-
 #if _MSC_VER
 #pragma once
 #endif
+
+
+class OpalRTPSession;
+class H46019_TraversalParameters;
+
 
 class H460_FeatureStd19 : public H460_Feature
 {
@@ -68,6 +72,7 @@ class H460_FeatureStd19 : public H460_Feature
     virtual bool OnSendCallProceeding_UUIE(H460_FeatureDescriptor & /*pdu*/) { return !m_disabledByH46024; }
     virtual bool OnSendAlerting_UUIE      (H460_FeatureDescriptor & /*pdu*/) { return !m_disabledByH46024; }
     virtual bool OnSendCallConnect_UUIE   (H460_FeatureDescriptor & /*pdu*/) { return !m_disabledByH46024; }
+    virtual bool OnSendFacility_UUIE      (H460_FeatureDescriptor & /*pdu*/) { return !m_disabledByH46024; }
 
     virtual bool OnSendingOLCGenericInformation(unsigned sessionID, H245_ArrayOf_GenericParameter & param, bool isAck);
     virtual void OnReceiveOLCGenericInformation(unsigned sessionID, const H245_ArrayOf_GenericParameter & param);
@@ -87,7 +92,7 @@ class PNatMethod_H46019 : public PNatMethod
 {
     PCLASSINFO(PNatMethod_H46019, PNatMethod);
   public:
-    enum { DefaultPriority = 50 };
+    enum { DefaultPriority = 20 };
     PNatMethod_H46019(unsigned priority = DefaultPriority);
 
     /**@name Overrides from PNatMethod */
@@ -102,16 +107,6 @@ class PNatMethod_H46019 : public PNatMethod
       */
     virtual PString GetServer() const;
 
-    /**  CreateSocketPair
-        Create the UDP Socket pair
-    */
-    virtual PBoolean CreateSocketPair(
-      PUDPSocket * & socket1,            ///< Created DataSocket
-      PUDPSocket * & socket2,            ///< Created ControlSocket
-      const PIPSocket::Address & binding,  
-      void * userData
-    );
-
     /**  isAvailable.
         Returns whether the Nat Method is ready and available in
         assisting in NAT Traversal. The principal is function is
@@ -120,24 +115,20 @@ class PNatMethod_H46019 : public PNatMethod
         The Order of adding to the PNstStrategy determines which method
         is used
     */
-    virtual bool IsAvailable(const PIPSocket::Address & address);
-
-    /**  OpenSocket
-        Create a single UDP Socket 
-    */
-    PBoolean OpenSocket(PUDPSocket & socket, PortInfo & portInfo, const PIPSocket::Address & binding) const;
+    virtual bool IsAvailable(const PIPSocket::Address & address, PObject * userData);
     //@}
 
   protected:
-    void InternalUpdate();
+    virtual PNATUDPSocket * InternalCreateSocket(Component component, PObject * context);
+    virtual void InternalUpdate();
 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class H46019UDPSocket : public PUDPSocket
+class H46019UDPSocket : public PNATUDPSocket
 {
-    PCLASSINFO(H46019UDPSocket, PUDPSocket);
+    PCLASSINFO(H46019UDPSocket, PNATUDPSocket);
   public:
     /**@name Construction/Deconstructor */
     //@{
@@ -145,78 +136,76 @@ class H46019UDPSocket : public PUDPSocket
         ready for H323plus to Call.
     */
     H46019UDPSocket(
-      H323Connection & connection,
-      unsigned sessionID,
-      bool rtp
+      PNatMethod::Component component,
+      OpalRTPSession & session
     );
 
-    /** Deconstructor to reallocate Socket and remove any exiting
-        allocated NAT ports, 
-    */
     ~H46019UDPSocket();
     //@}
 
-    PBoolean GetLocalAddress(Address & addr, WORD & port);
-
     /**@name Functions */
     //@{
-
-    /** Allocate (FastStart) keep-alive mechanism but don't Activate
-    */
-    void Allocate(
-      const H323TransportAddress & keepalive, 
-      unsigned _payload, 
-      unsigned _ttl,
-      unsigned _muxId
-    );
-
     /** Activate (FastStart) keep-alive mechanism.
     */
     void Activate();
 
     /** Activate keep-alive mechanism.
     */
-    void Activate(const H323TransportAddress & keepalive,    ///< KeepAlive Address
-      unsigned _payload,            ///< RTP Payload type    
-      unsigned _ttl,                ///< Time interval for keepalive.
-      unsigned _muxId
+    void Activate(
+      const H46019_TraversalParameters & params
     );
 
     /** Get the Ping Payload
       */
-    unsigned GetPingPayload();
+    RTP_DataFrame::PayloadTypes GetPingPayload() const { return m_keepAlivePayloadType; }
 
     /** Set the Ping Payload
       */
-    void SetPingPayLoad(unsigned val);
+    void SetPingPayLoad(RTP_DataFrame::PayloadTypes val) { m_keepAlivePayloadType = val; }
 
     /** Get Ping TTL
       */
-    unsigned GetTTL();
+    unsigned GetTTL() const { return m_keepAliveTTL.GetSeconds(); }
 
     /** Set Ping TTL
       */
-    void SetTTL(unsigned val);
+    void SetTTL(unsigned val) { m_keepAliveTTL.SetInterval(0, val); }
 
-     /**Read a datagram from a remote computer
-       @return true if any bytes were sucessfully read.
-       */
-    virtual PBoolean ReadFrom(
-      void * buf,     ///< Data to be written as URGENT TCP data.
-      PINDEX len,     ///< Number of bytes pointed to by #buf#.
-      Address & addr, ///< Address from which the datagram was received.
-      WORD & port     ///< Port from which the datagram was received.
-    );
+  protected:
+    bool InternalWriteTo(const Slice * slices, size_t sliceCount, const PIPSocketAddressAndPort & ipAndPort);
 
-    /**Write a datagram to a remote computer.
-       @return true if all the bytes were sucessfully written.
-     */
-    virtual PBoolean WriteTo(
-      const void * buf,     ///< Data to be written as URGENT TCP data.
-      PINDEX len,           ///< Number of bytes pointed to by #buf#.
-      const Address & addr, ///< Address to which the datagram is sent.
-      WORD port             ///< Port to which the datagram is sent.
-    );
+#if H46019_SERVER_SUPPORT
+    bool InternalReadFrom(Slice * slices, size_t sliceCount, PIPSocketAddressAndPort & ipAndPort);
+#endif
+
+  // Memeber variables
+    H323Connection & m_connection;
+
+    unsigned m_sessionID;             ///< Current Session ie 1-Audio 2-video
+
+    // H.460.19 keep alives
+    PIPSocketAddressAndPort     m_keepAliveAddress;     ///< KeepAlive Address
+    RTP_DataFrame::PayloadTypes m_keepAlivePayloadType; ///< KeepAlive RTP payload
+    PTimeInterval               m_keepAliveTTL;         ///< KeepAlive TTL
+    WORD                        m_keepAliveSequence;    ///< KeepAlive sequence number
+
+    PDECLARE_NOTIFIER(PTimer, H46019UDPSocket, Ping);   ///< Timer to notify to poll for External IP
+    PTimer m_keepAliveTimer;                            ///< Polling Timer
+    void SendPing(const PIPSocketAddressAndPort & ipAndPort);
+    bool SendPacket(const PBYTEArray & data, const PIPSocketAddressAndPort & ipAndPort);
+
+    // H.460.19 multiplex transmit
+    bool     m_multiplexedTransmit;
+    PUInt32b m_multiplexID;
+
+#if H46024_ANNEX_A_SUPPORT
+    // H46024 Annex A support
+    struct probe_packet {
+        PUInt16b    Length;   // Length
+        PUInt32b    SSRC;     // Time Stamp
+        BYTE        name[4];  // Name is limited to 32 (4 Bytes)
+        BYTE        cui[20];  // SHA-1 is always 160 (20 Bytes)
+    };
 
     enum  probe_state {
         e_notRequired,        ///< Polling has not started
@@ -229,13 +218,6 @@ class H46019UDPSocket : public PUDPSocket
         e_direct              ///< we are going direct to detected address
     };
 
-    struct probe_packet {
-        PUInt16b    Length;   // Length
-        PUInt32b    SSRC;     // Time Stamp
-        BYTE        name[4];  // Name is limited to 32 (4 Bytes)
-        BYTE        cui[20];  // SHA-1 is always 160 (20 Bytes)
-    };
-
     /** Set Alternate Direct Address
       */
     virtual void SetAlternateAddresses(const H323TransportAddress & address, const PString & cui);
@@ -244,12 +226,6 @@ class H46019UDPSocket : public PUDPSocket
       */
     virtual void GetAlternateAddresses(H323TransportAddress & address, PString & cui);
 
-    /** Callback to check if the address received is a permitted alternate
-      */
-    virtual PBoolean IsAlternateAddress(
-        const Address & address,    ///< Detected IP Address.
-        WORD port                    ///< Detected Port.
-        );
     /** Start sending media/control to alternate address
       */
     void H46024Adirect(bool starter);
@@ -257,78 +233,27 @@ class H46019UDPSocket : public PUDPSocket
     /** Start Probing to alternate address
       */
     void H46024Bdirect(const H323TransportAddress & address);
-    //@}
-
-  protected:
-    // H.460.19 Keepalives
-    void InitialiseKeepAlive();    ///< Start the keepalive
-    void SendRTPPing(const PIPSocket::Address & ip, const WORD & port);
-    void SendRTCPPing();
-    PBoolean SendRTCPFrame(RTP_ControlFrame & report, const PIPSocket::Address & ip, WORD port);
-    PMutex PingMutex;
-
-    // H46024 Annex A support
     PBoolean ReceivedProbePacket(const RTP_ControlFrame & frame, bool & probe, bool & success);
     void BuildProbe(RTP_ControlFrame & report, bool reply);
     void StartProbe();
-    void ProbeReceived(bool probe, const PIPSocket::Address & addr, WORD & port);
-    void SetProbeState(probe_state newstate);
-    int GetProbeState() const;
-    probe_state m_state;
-    PMutex probeMutex;
-
-    /**Write a datagram to a remote computer.
-       @return true if all the bytes were sucessfully written.
-     */
-    virtual PBoolean Internal_WriteTo(
-      const Slice * slices, ///< Data to be written as array of slices.
-      size_t nSlices,       ///< Number of #slices#.
-      const Address & addr, ///< Address to which the datagram is sent.
-      WORD port             ///< Port to which the datagram is sent.
-    );
-  
-    /**Write a datagram to a remote computer.
-   @return true if all the bytes were sucessfully written.
-     */
-    virtual PBoolean Internal_WriteTo(
-      const void * buf,     ///< Data to be written.
-      PINDEX len,           ///< Number of bytes pointed to by #buf#.
-      const Address & addr, ///< Address to which the datagram is sent.
-      WORD port             ///< Port to which the datagram is sent.
-    );
-
-  private:
-    H323Connection & m_connection;
-    unsigned m_sessionID;             ///< Current Session ie 1-Audio 2-video
-    PString m_CUI;                  ///< Local CUI (for H.460.24 Annex A)
-
-    // H.460.19 Keepalives
-    PIPSocket::Address keepip;      ///< KeepAlive Address
-    WORD keepport;                  ///< KeepAlive Port
-    unsigned keeppayload;           ///< KeepAlive RTP payload
-    unsigned keepTTL;               ///< KeepAlive TTL
-    PUInt32b muxId;                 ///< MuxId 
-    WORD keepseqno;                 ///< KeepAlive sequence number
-    PTime * keepStartTime;          ///< KeepAlive start time for TimeStamp.
-
-    PDECLARE_NOTIFIER(PTimer, H46019UDPSocket, Ping);   ///< Timer to notify to poll for External IP
-    PTimer    Keep;                                     ///< Polling Timer
+    void ProbeReceived(bool probe, const PIPSocketAddressAndPort & ipAndPort);
 
     // H46024 Annex A support
-    PString m_CUIrem;                                   ///< Remote CUI
-    PIPSocket::Address m_locAddr;  WORD m_locPort;      ///< local Address (address used when starting socket)
-    PIPSocket::Address m_remAddr;  WORD m_remPort;      ///< Remote Address (address used when starting socket)
-    PIPSocket::Address m_detAddr;  WORD m_detPort;      ///< detected remote Address (as detected from actual packets)
-    PIPSocket::Address m_pendAddr;  WORD m_pendPort;    ///< detected pending RTCP Probe Address (as detected from actual packets)
+    PString  m_localCUI;                                ///< Local CUI (for H.460.24 Annex A)
+    PString m_remoteCUI;                                ///< Remote CUI
+    probe_state m_state;
+    PMutex probeMutex;
+    PIPSocketAddressAndPort m_detectedAddress;          ///< detected remote Address (as detected from actual packets)
+    PIPSocketAddressAndPort m_pendingAddress;           ///< detected pending RTCP Probe Address (as detected from actual packets)
     PDECLARE_NOTIFIER(PTimer, H46019UDPSocket, Probe);  ///< Thread to probe for direct connection
     PTimer m_Probe;                                     ///< Probe Timer
     PINDEX m_probes;                                    ///< Probe count
     DWORD m_SSRC;                                         ///< Random number
     PIPSocket::Address m_altAddr;  WORD m_altPort;      ///< supplied remote Address (as supplied in Generic Information)
-    // H46024 Annex B support
-    PBoolean    m_h46024b;
 
-    bool m_rtpSocket;
+    // H46024 Annex B support
+    bool m_h46024b;
+#endif
 };
 
 

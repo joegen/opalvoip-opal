@@ -58,16 +58,17 @@ class PNatMethod_H46024  : public PNatMethod
 {
     PCLASSINFO(PNatMethod_H46024, PNatMethod);
   public:
-    enum { DefaultPriority = 40 };
+    enum { DefaultPriority = 10 };
     PNatMethod_H46024(unsigned priority = DefaultPriority);
 
     static const char * MethodName();
     virtual PCaselessString GetMethodName() const;
 
     virtual PString GetServer() const;
-    virtual bool IsAvailable(const PIPSocket::Address & binding);
+    virtual bool IsAvailable(const PIPSocket::Address & binding, PObject * context);
 
   protected:
+    virtual PNATUDPSocket * InternalCreateSocket(Component component, PObject * context);
     virtual void InternalUpdate();
 
     H323EndPoint     * m_endpoint;

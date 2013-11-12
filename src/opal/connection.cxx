@@ -1106,14 +1106,6 @@ OpalMediaStreamPtr OpalConnection::GetMediaStream(const OpalMediaType & mediaTyp
 }
 
 
-#if P_NAT
-PNatMethod * OpalConnection::GetNatMethod(const OpalTransportAddress & remoteAddress, const OpalTransportAddress & localAddress) const
-{
-  return endpoint.GetNatMethod(remoteAddress, localAddress);
-}
-#endif
-
-
 bool OpalConnection::GetMediaTransportAddresses(OpalConnection &,
                                            const OpalMediaType & PTRACE_PARAM(mediaType),
                                       OpalTransportAddressArray &) const

@@ -1499,16 +1499,6 @@ class OpalManager : public PObject
       */
     PNatMethods & GetNatMethods() const { return *m_natMethods; }
 
-    /**Return the NAT method to use.
-       Returns NULL if address is a local address as per IsLocalAddress().
-       Always returns the NAT method if address is zero.
-       Note, the pointer is NOT to be deleted by the user.
-      */
-    virtual PNatMethod * GetNatMethod(
-      const OpalTransportAddress & remoteAddress,
-      const OpalTransportAddress & localAddress
-    ) const;
-
     /**Set the NAT method to use.
       */
     bool SetNATServer(
@@ -1525,53 +1515,57 @@ class OpalManager : public PObject
     ) const;
 #endif // P_NAT
 
-    /**Get the TCP port number base for H.245 channels
+    /**Get the TCP port number base.
      */
-    WORD GetTCPPortBase() const { return tcpPorts.base; }
+    WORD GetTCPPortBase() const { return m_tcpPorts.GetBase(); }
 
-    /**Get the TCP port number base for H.245 channels.
+    /**Get the TCP port number maximum.
      */
-    WORD GetTCPPortMax() const { return tcpPorts.max; }
+    WORD GetTCPPortMax() const { return m_tcpPorts.GetMax(); }
 
-    /**Set the TCP port number base and max for H.245 channels.
+    /**Set the TCP port number base and max.
      */
     void SetTCPPorts(unsigned tcpBase, unsigned tcpMax);
 
-    /**Get the next TCP port number for H.245 channels
+    /**Get the TCP port range to use.
      */
-    WORD GetNextTCPPort();
+    PIPSocket::PortRange & GetTCPPortRange() { return m_tcpPorts; }
+    const PIPSocket::PortRange & GetTCPPortRange() const { return m_tcpPorts; }
 
-    /**Get the UDP port number base for RAS channels
+    /**Get the UDP port number base.
      */
-    WORD GetUDPPortBase() const { return udpPorts.base; }
+    WORD GetUDPPortBase() const { return m_udpPorts.GetBase(); }
 
-    /**Get the UDP port number base for RAS channels.
+    /**Get the UDP port number maximum.
      */
-    WORD GetUDPPortMax() const { return udpPorts.max; }
+    WORD GetUDPPortMax() const { return m_udpPorts.GetMax(); }
+
 
     /**Set the UDP port number base and max for RAS channels.
      */
     void SetUDPPorts(unsigned udpBase, unsigned udpMax);
 
-    /**Get the next UDP port number for RAS channels
+    /**Get the UDP port range to use.
      */
-    WORD GetNextUDPPort();
+    PIPSocket::PortRange & GetUDPPortRange() { return m_udpPorts; }
+    const PIPSocket::PortRange & GetUDPPortRange() const { return m_udpPorts; }
 
     /**Get the UDP port number base for RTP channels.
      */
-    WORD GetRtpIpPortBase() const { return rtpIpPorts.base; }
+    WORD GetRtpIpPortBase() const { return m_rtpIpPorts.GetBase(); }
 
     /**Get the max UDP port number for RTP channels.
      */
-    WORD GetRtpIpPortMax() const { return rtpIpPorts.max; }
+    WORD GetRtpIpPortMax() const { return m_rtpIpPorts.GetMax(); }
 
     /**Set the UDP port number base and max for RTP channels.
      */
     void SetRtpIpPorts(unsigned udpBase, unsigned udpMax);
 
-    /**Get the UDP port number pair for RTP channels.
+    /**Get the UDP port range for RTP channels.
      */
-    WORD GetRtpIpPortPair();
+    PIPSocket::PortRange & GetRtpIpPortRange() { return m_rtpIpPorts; }
+    const PIPSocket::PortRange & GetRtpIpPortRange() const { return m_rtpIpPorts; }
 
     /**Get the IP Type Of Service byte for media (eg RTP) channels.
      */
@@ -1966,22 +1960,7 @@ class OpalManager : public PObject
     PVideoDevice::OpenArgs videoOutputDevice;
 #endif
 
-    struct PortInfo {
-      void Set(
-        unsigned base,
-        unsigned max,
-        unsigned range,
-        unsigned dflt
-      );
-      WORD GetNext(
-        unsigned increment
-      );
-
-      PMutex mutex;
-      WORD   base;
-      WORD   max;
-      WORD   current;
-    } tcpPorts, udpPorts, rtpIpPorts;
+    PIPSocket::PortRange m_tcpPorts, m_udpPorts, m_rtpIpPorts;
     
 #if OPAL_PTLIB_SSL
     PString   m_caFiles;
