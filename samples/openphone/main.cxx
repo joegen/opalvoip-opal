@@ -1097,7 +1097,7 @@ bool MyManager::Initialise(bool startMinimised)
   if (config->Read(NATRouterKey, &str)) {
     config->DeleteEntry(NATRouterKey);
     config->SetPath(NatMethodsGroup);
-    config->SetPath(PNatMethod_Fixed::MethodName());
+    config->SetPath(PwxString(PNatMethod_Fixed::MethodName()));
     config->Write(NATServerKey, str);
     config->SetPath(NetworkingGroup);
   }
@@ -1105,7 +1105,7 @@ bool MyManager::Initialise(bool startMinimised)
   if (config->Read(STUNServerKey, &str)) {
     config->DeleteEntry(STUNServerKey);
     config->SetPath(NatMethodsGroup);
-    config->SetPath(PSTUNClient::MethodName());
+    config->SetPath(PwxString(PSTUNClient::MethodName()));
     config->Write(NATServerKey, str);
     config->SetPath(NetworkingGroup);
   }
@@ -1113,7 +1113,7 @@ bool MyManager::Initialise(bool startMinimised)
   if (config->Read(NATHandlingKey, &value1) && value1 > 0) {
     config->DeleteEntry(NATHandlingKey);
     config->SetPath(NatMethodsGroup);
-    config->SetPath(value1 == 2 ? PSTUNClient::MethodName() : PNatMethod_Fixed::MethodName());
+    config->SetPath(PwxString(value1 == 2 ? PSTUNClient::MethodName() : PNatMethod_Fixed::MethodName()));
     config->Write(NATActiveKey, true);
     config->SetPath(NetworkingGroup);
   }
@@ -1122,10 +1122,9 @@ bool MyManager::Initialise(bool startMinimised)
     PwxString method(it->GetMethodName());
     config->SetPath(NatMethodsGroup);
     config->SetPath(method);
-    SetNAT(method,
-           config->ReadBool(NATActiveKey, it->IsActive()),
-           config->Read(NATServerKey),
-           config->ReadLong(NATPriorityKey, it->GetPriority()));
+    config->Read(NATActiveKey, &onoff, it->IsActive());
+    config->Read(NATPriorityKey, &value1, it->GetPriority());
+    SetNAT(method, onoff, config->Read(NATServerKey), value1);
   }
 
 
