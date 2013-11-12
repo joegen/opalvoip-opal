@@ -185,7 +185,7 @@ class OpalJitterBuffer : public PSafeObject
     DWORD    m_consecutiveOverflows;
 
     unsigned m_frameTimeCount;
-    uint64_t m_frameTimeSum;
+    PUInt64  m_frameTimeSum;
     DWORD    m_incomingFrameTime;
     DWORD    m_lastSequenceNum;
     DWORD    m_lastTimestamp;
