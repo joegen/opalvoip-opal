@@ -254,6 +254,7 @@ OpalManager::OpalManager()
   , m_noMediaTimeout(0, 0, 5)     // Minutes
   , m_signalingTimeout(0, 10)     // Seconds
   , m_transportIdleTime(0, 0, 1)  // Minute
+  , m_rtpIpPorts(5000, 5999)
 #if OPAL_PTLIB_SSL
   , m_caFiles(PProcess::Current().GetHomeDirectory() + "certificates")
   , m_certificateFile(PProcess::Current().GetHomeDirectory() + "opal_certificate.pem")
@@ -272,13 +273,6 @@ OpalManager::OpalManager()
   , m_script(NULL)
 #endif
 {
-  rtpIpPorts.current = rtpIpPorts.base = 5000;
-  rtpIpPorts.max = 5999;
-
-  // use dynamic port allocation by default
-  tcpPorts.current = tcpPorts.base = tcpPorts.max = 0;
-  udpPorts.current = udpPorts.base = udpPorts.max = 0;
-
   m_mediaQoS[OpalMediaType::Audio()].m_type = PIPSocket::VoiceQoS;
 
 #if OPAL_VIDEO
@@ -1835,17 +1829,6 @@ PBoolean OpalManager::TranslateIPAddress(PIPSocket::Address & localAddress,
 
 #if P_NAT
 
-PNatMethod * OpalManager::GetNatMethod(const OpalTransportAddress & remoteAddress, const OpalTransportAddress & localAddress) const
-{
-  PIPSocket::Address remoteIP, localIP;
-  if (remoteAddress.GetIpAddress(remoteIP) &&
-       localAddress.GetIpAddress(localIP) &&
-       (remoteIP.IsAny() || !IsLocalAddress(remoteIP)))
-    return m_natMethods->GetMethod(localIP);
-  return NULL;
-}
-
-
 bool OpalManager::SetNATServer(const PString & method, const PString & server, bool activate, unsigned priority)
 {
   PNatMethod * natMethod = m_natMethods->GetMethodByName(method);
@@ -1855,7 +1838,8 @@ bool OpalManager::SetNATServer(const PString & method, const PString & server, b
   natMethod->Activate(activate);
   m_natMethods->SetMethodPriority(method, priority);
 
-  natMethod->SetPortRanges(GetUDPPortBase(), GetUDPPortMax(), GetRtpIpPortBase(), GetRtpIpPortMax());
+  natMethod->SetPortRanges(GetUDPPortRange().GetBase(), GetUDPPortRange().GetMax(),
+                           GetRtpIpPortRange().GetBase(), GetRtpIpPortRange().GetMax());
   if (!natMethod->SetServer(server) || !natMethod->Open(PIPSocket::GetDefaultIpAny()))
     return false;
 
@@ -1872,95 +1856,31 @@ PString OpalManager::GetNATServer(const PString & method) const
 #endif  // P_NAT
 
 
-void OpalManager::PortInfo::Set(unsigned newBase,
-                                unsigned newMax,
-                                unsigned range,
-                                unsigned dflt)
-{
-  if (newBase == 0) {
-    newBase = dflt;
-    newMax = dflt;
-    if (dflt > 0)
-      newMax += range;
-  }
-  else {
-    if (newBase < 1024)
-      newBase = 1024;
-    else if (newBase > 65500)
-      newBase = 65500;
-
-    if (newMax <= newBase)
-      newMax = newBase + range;
-    if (newMax > 65535)
-      newMax = 65535;
-  }
-
-  mutex.Wait();
-
-  current = base = (WORD)newBase;
-  max = (WORD)newMax;
-
-  mutex.Signal();
-}
-
-
-WORD OpalManager::PortInfo::GetNext(unsigned increment)
-{
-  PWaitAndSignal m(mutex);
-
-  if (current < base || current >= (max-increment))
-    current = base;
-
-  if (current == 0)
-    return 0;
-
-  WORD p = current;
-  current = (WORD)(current + increment);
-  return p;
-}
-
-
 void OpalManager::SetTCPPorts(unsigned tcpBase, unsigned tcpMax)
 {
-  tcpPorts.Set(tcpBase, tcpMax, 49, 0);
-}
-
-
-WORD OpalManager::GetNextTCPPort()
-{
-  return tcpPorts.GetNext(1);
+  m_tcpPorts.Set(tcpBase, tcpMax, 49, 0);
 }
 
 
 void OpalManager::SetUDPPorts(unsigned udpBase, unsigned udpMax)
 {
-  udpPorts.Set(udpBase, udpMax, 99, 0);
+  m_udpPorts.Set(udpBase, udpMax, 99, 0);
 
 #if P_NAT
-  m_natMethods->SetPortRanges(GetUDPPortBase(), GetUDPPortMax(), GetRtpIpPortBase(), GetRtpIpPortMax());
+  GetNatMethods().SetPortRanges(GetUDPPortRange().GetBase(), GetUDPPortRange().GetMax(),
+                                GetRtpIpPortRange().GetBase(), GetRtpIpPortRange().GetMax());
 #endif
-}
-
-
-WORD OpalManager::GetNextUDPPort()
-{
-  return udpPorts.GetNext(1);
 }
 
 
 void OpalManager::SetRtpIpPorts(unsigned rtpIpBase, unsigned rtpIpMax)
 {
-  rtpIpPorts.Set((rtpIpBase+1)&0xfffe, rtpIpMax&0xfffe, 199, 5000);
+  m_rtpIpPorts.Set((rtpIpBase+1)&0xfffe, rtpIpMax&0xfffe, 199, 5000);
 
 #if P_NAT
-  m_natMethods->SetPortRanges(GetUDPPortBase(), GetUDPPortMax(), GetRtpIpPortBase(), GetRtpIpPortMax());
+  GetNatMethods().SetPortRanges(GetUDPPortRange().GetBase(), GetUDPPortRange().GetMax(),
+                                GetRtpIpPortRange().GetBase(), GetRtpIpPortRange().GetMax());
 #endif
-}
-
-
-WORD OpalManager::GetRtpIpPortPair()
-{
-  return rtpIpPorts.GetNext(2);
 }
 
 

@@ -606,14 +606,6 @@ PStringArray OpalEndPoint::GetAllMediaCryptoSuites() const
 }
 
 
-#if P_NAT
-PNatMethod * OpalEndPoint::GetNatMethod(const OpalTransportAddress & remoteAddress, const OpalTransportAddress & localAddress) const
-{
-  return manager.GetNatMethod(remoteAddress, localAddress);
-}
-#endif // P_NAT
-
-
 void OpalEndPoint::OnUserInputString(OpalConnection & connection,
                                      const PString & value)
 {

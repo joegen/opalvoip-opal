@@ -1313,7 +1313,7 @@ PBoolean H323Connection::OnReceivedCallProceeding(const H323SignalPDU & pdu)
 
 
 #if OPAL_H460
-  if (pdu.HasOptionalField(H225_CallProceeding_UUIE::e_featureSet))
+  if (call.HasOptionalField(H225_CallProceeding_UUIE::e_featureSet))
     OnReceiveFeatureSet(H460_MessageType::e_callProceeding, call.m_featureSet);
 #endif
 
@@ -1382,7 +1382,7 @@ PBoolean H323Connection::OnReceivedAlerting(const H323SignalPDU & pdu)
 #endif
 
 #if OPAL_H460
-  if (pdu.HasOptionalField(H225_Alerting_UUIE::e_featureSet))
+  if (alert.HasOptionalField(H225_Alerting_UUIE::e_featureSet))
     OnReceiveFeatureSet(H460_MessageType::e_alerting, alert.m_featureSet);
 #endif
 
@@ -1427,7 +1427,7 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
 #endif
 
 #if OPAL_H460
-  if (pdu.HasOptionalField(H225_Connect_UUIE::e_featureSet))
+  if (connect.HasOptionalField(H225_Connect_UUIE::e_featureSet))
     OnReceiveFeatureSet(H460_MessageType::e_connect, connect.m_featureSet);
 #endif
 
@@ -1524,7 +1524,7 @@ PBoolean H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
 #if OPAL_H460
   // Do not process H.245 Control PDU's
   if (!pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_h245Control) &&
-       pdu.HasOptionalField(H225_Facility_UUIE::e_featureSet))
+       fac.HasOptionalField(H225_Facility_UUIE::e_featureSet))
     OnReceiveFeatureSet(H460_MessageType::e_facility, fac.m_featureSet);
 #endif
 

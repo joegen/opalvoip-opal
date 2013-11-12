@@ -55,6 +55,7 @@
 #include "h460/h4601.h"
 
 #include <ptlib/pluginmgr.h>
+#include <opal/manager.h>
 #include <h323/h323ep.h>
 
 
@@ -786,6 +787,50 @@ PStringList H460_Feature::GetFeatureNames(PPluginManager * pluginMgr)
 H460_Feature * H460_Feature::CreateFeature(const PString & featurename, H460_Feature::Purpose purpose, PPluginManager * pluginMgr)
 {
   return PPluginManager::CreatePluginAs<H460_Feature>(pluginMgr, featurename, PPlugin_H460_Feature::ServiceType(), purpose.AsBits());
+}
+
+
+bool H460_Feature::IsFeatureNegotiatedOnGk(unsigned stdID) const
+{
+  if (m_endpoint != NULL) {
+    H323Gatekeeper * gk = m_endpoint->GetGatekeeper();
+    if (gk != NULL) {
+      H460_FeatureSet * features = gk->GetFeatures();
+      if (features != NULL) {
+        H460_Feature * feature = features->GetFeature(stdID);
+        if (feature != NULL && feature->IsNegotiated())
+          return true;
+      }
+    }
+  }
+
+  PTRACE(4, "H.460\tFeature " << stdID << " not available in gatekeeper");
+  return false;
+}
+
+
+PNatMethod * H460_Feature::GetNatMethod(const char * methodName) const
+{
+  if (m_endpoint == NULL)
+    return NULL;
+
+  PNatMethod * natMethod = m_endpoint->GetManager().GetNatMethods().GetMethodByName(methodName);
+  if (natMethod == NULL) {
+    PTRACE(1, "Std19\tDisabled as no NAT method");
+    return NULL;
+  }
+
+  PIPSocket::Address localInterface(PIPSocket::GetDefaultIpAny());
+  H323Gatekeeper * gk = m_endpoint->GetGatekeeper();
+  if (gk != NULL)
+    localInterface = gk->GetTransport().GetInterface();
+
+  if (!natMethod->IsAvailable(localInterface, m_connection)) {
+    PTRACE(3, "Std19\tDisabled as NAT method deactivated");
+    return NULL;
+  }
+
+  return natMethod;
 }
 
 
