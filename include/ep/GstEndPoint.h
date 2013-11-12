@@ -406,6 +406,7 @@ class GstMediaStream : public OpalMediaStream
     PGstAppSink     m_pipeSink;   // Ditto
 
   friend bool GstConnection::OpenPipeline(PGstPipeline & pipeline, const GstMediaStream & stream);
+  friend void GstConnection::OnReleased();
 };
 
 
