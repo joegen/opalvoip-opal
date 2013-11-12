@@ -43,8 +43,8 @@
 #include <ptlib/videoio.h>
 #include <ptlib/vconvert.h>
 
-#define FRAME_WIDTH  PVideoDevice::CIF16Width
-#define FRAME_HEIGHT PVideoDevice::CIF16Height
+#define FRAME_WIDTH  PVideoDevice::MaxWidth
+#define FRAME_HEIGHT PVideoDevice::MaxHeight
 #define FRAME_RATE   30 // NTSC
 
 const OpalVideoFormat & GetOpalRGB24()
