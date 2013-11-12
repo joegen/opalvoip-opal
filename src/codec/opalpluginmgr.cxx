@@ -328,10 +328,9 @@ void OpalPluginMediaFormatInternal::PopulateOptions(OpalMediaFormatInternal & fo
         }
 
         newOption->SetMerge((OpalMediaOption::MergeType)option->m_merge);
-        if (option->m_value != NULL && *option->m_value != '\0' && !newOption->FromString(option->m_value)) {
-          PTRACE(2, "OpalPlugin\tError converting default value \"" << option->m_value << "\""
-                    " in option \"" << option->m_name << "\" in format \"" << format << '"');
-        }
+        PAssert(option->m_value == NULL || *option->m_value == '\0' || newOption->FromString(option->m_value),
+                PSTRSTRM("OpalPlugin\tError converting default value \"" << option->m_value << "\""
+                         " in option \"" << option->m_name << "\" of format \"" << format << '"'));
 
         OPAL_SET_MEDIA_OPTION_FMTP(newOption, option->m_FMTPName, option->m_FMTPDefault);
         OPAL_SET_MEDIA_OPTION_H245(newOption, option->m_H245Generic,
