@@ -72,21 +72,10 @@ bool H460_FeatureStd18::Initialise(H323EndPoint & ep, H323Connection * con)
     return false;
 
   if (con == NULL)
-    return true;
+    return true; // If gatekeeper, we allow that always
 
-  // We only enable IF the gatekeeper supports H.460.23
-  H323Gatekeeper * gk = m_endpoint->GetGatekeeper();
-  if (gk != NULL) {
-    H460_FeatureSet * features = gk->GetFeatures();
-    if (features != NULL) {
-      H460_Feature * feature = features->GetFeature(18);
-      if (feature != NULL && feature->IsNegotiated())
-        return true;
-    }
-  }
-
-  PTRACE(4,"Std18\tDisabled as H.460.18 not available in gatekeeper");
-  return false;
+  // We only enable on connection IF the gatekeeper supports H.460.18
+  return IsFeatureNegotiatedOnGk(18);
 }
 
 

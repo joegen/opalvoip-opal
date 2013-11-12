@@ -1279,14 +1279,6 @@ class OpalConnection : public PSafeObject
       const OpalMediaType & mediaType = OpalMediaType() ///< Media type to search for in open streams
     ) const;
 
-#if P_NAT
-    // Get Nat Method in use
-    virtual PNatMethod * GetNatMethod(
-      const OpalTransportAddress & remoteAddress,
-      const OpalTransportAddress & localAddress
-    ) const;
-#endif
-
     /**Get transports for the media session on the connection.
        This is primarily used by the media bypass feature controlled by the
        OpalManager::GetMediaTransferMode() function. It allows one side of the

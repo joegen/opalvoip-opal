@@ -611,6 +611,9 @@ class H460_Feature : public PObject
     const H460_FeatureDescriptor & GetDescriptor() const { return m_descriptor; }
 
   protected:
+    bool IsFeatureNegotiatedOnGk(unsigned stdID) const;
+    PNatMethod * GetNatMethod(const char * methodName) const;
+
     Category               m_category;
     H323EndPoint         * m_endpoint;
     H323Connection       * m_connection;

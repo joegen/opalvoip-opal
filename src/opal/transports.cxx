@@ -647,20 +647,8 @@ OpalTransportAddress OpalListenerIP::GetLocalAddress(const OpalTransportAddress 
   PIPSocket::Address localIP = localAddress;
 
   PIPSocket::Address remoteIP;
-  if (remoteAddress.GetIpAddress(remoteIP)) {
-#if P_NAT
-    OpalManager & manager = endpoint.GetManager();
-    PNatMethod * natMethod = manager.GetNatMethod(remoteAddress, localAddress);
-    if (natMethod != NULL) {
-      if (!localIP.IsValid() || localIP.IsAny())
-        natMethod->GetInterfaceAddress(localIP);
-      manager.TranslateIPAddress(localIP, remoteIP);
-    }
-#endif // P_NAT
-
-    if (!localIP.IsValid() || localIP.IsAny())
-      localIP = PIPSocket::GetRouteInterfaceAddress(remoteIP);
-  }
+  if (remoteAddress.GetIpAddress(remoteIP) && (!localIP.IsValid() || localIP.IsAny()))
+    localIP = PIPSocket::GetRouteInterfaceAddress(remoteIP);
 
   return OpalTransportAddress(localIP, listenerPort, GetProtoPrefix());
 }
@@ -713,21 +701,15 @@ PBoolean OpalListenerTCP::Open(const AcceptHandler & theAcceptHandler, ThreadMod
 {
   if (listenerPort == 0) {
     OpalManager & manager = endpoint.GetManager();
-    listenerPort = manager.GetNextTCPPort();
-    WORD firstPort = listenerPort;
-    while (!listener.Listen(localAddress, 1, listenerPort)) {
-      listenerPort = manager.GetNextTCPPort();
-      if (listenerPort == firstPort) {
-        PTRACE(1, "Listen\tOpen on " << localAddress << " failed: " << listener.GetErrorText());
-        break;
-      }
+    if (manager.GetTCPPortRange().Listen(listener, localAddress, 1)) {
+      listenerPort = listener.GetPort();
+      return OpalListenerIP::Open(theAcceptHandler, mode);
     }
-    listenerPort = listener.GetPort();
-    return OpalListenerIP::Open(theAcceptHandler, mode);
   }
-
-  if (listener.Listen(localAddress, 10, listenerPort, exclusiveListener ? PSocket::AddressIsExclusive : PSocket::CanReuseAddress))
-    return OpalListenerIP::Open(theAcceptHandler, mode);
+  else {
+    if (listener.Listen(localAddress, 10, listenerPort, exclusiveListener ? PSocket::AddressIsExclusive : PSocket::CanReuseAddress))
+      return OpalListenerIP::Open(theAcceptHandler, mode);
+  }
 
   PTRACE(1, "Listen\tOpen (" << (exclusiveListener ? "EXCLUSIVE" : "REUSEADDR") << ") on "
          << localAddress.AsString(true) << ':' << listener.GetPort()
@@ -798,7 +780,7 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
   : OpalListenerIP(endpoint, binding, port, exclusive),
     listenerBundle(PMonitoredSockets::Create(binding.AsString(),
                                              !exclusive
-                                             P_NAT_PARAM(endpoint.GetManager().GetNatMethod("*", binding))))
+                                             P_NAT_PARAM(&endpoint.GetManager().GetNatMethods())))
 {
 }
 
@@ -809,7 +791,7 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
   : OpalListenerIP(endpoint, binding, option)
   , listenerBundle(PMonitoredSockets::Create(binding.GetHostName(),
                                              !exclusiveListener
-                                             P_NAT_PARAM(endpoint.GetNatMethod("udp$*", binding))))
+                                             P_NAT_PARAM(&endpoint.GetManager().GetNatMethods())))
   , m_bufferSize(32768)
 {
   if (binding.GetHostName() == "*")
@@ -1198,30 +1180,13 @@ PBoolean OpalTransportTCP::Connect()
   OpalManager & manager = endpoint.GetManager();
   socket->SetReadTimeout(manager.GetSignalingTimeout());
 
-  localPort = manager.GetNextTCPPort();
-  WORD firstPort = localPort;
-  for (;;) {
-    PTRACE(4, "OpalTCP\tConnecting to "
-           << remoteAddress.AsString(true) << ':' << remotePort
-           << " (local port=" << localPort << ')');
-    if (socket->Connect(localAddress, localPort, remoteAddress))
-      break;
-
-    int errnum = socket->GetErrorNumber();
-    if (localPort == 0 || (errnum != EADDRINUSE && errnum != EADDRNOTAVAIL)) {
-      PTRACE(1, "OpalTCP\tCould not connect to "
-                << remoteAddress.AsString(true) << ':' << remotePort
-                << " (local port=" << localPort << ") - "
-                << socket->GetErrorText() << '(' << errnum << ')');
-      return false;
-    }
-
-    localPort = manager.GetNextTCPPort();
-    if (localPort == firstPort) {
-      PTRACE(1, "OpalTCP\tCould not bind to any port in range " <<
-                manager.GetTCPPortBase() << " to " << manager.GetTCPPortMax());
-      return false;
-    }
+  PTRACE(4, "OpalTCP\tConnecting to " << remoteAddress.AsString(true) << ':' << remotePort);
+  if (!manager.GetTCPPortRange().Connect(*socket, remoteAddress, localAddress)) {
+    PTRACE(1, "OpalTCP\tCould not connect to "
+              << remoteAddress.AsString(true) << ':' << remotePort
+              << " (range=" << manager.GetTCPPortRange() << ") - "
+              << socket->GetErrorText() << '(' << socket->GetErrorNumber() << ')');
+    return false;
   }
 
   return OnConnectedSocket(socket);
@@ -1355,7 +1320,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
 {
   PMonitoredSockets * sockets = PMonitoredSockets::Create(binding.AsString(),
                                                           reuseAddr
-                                                          P_NAT_PARAM(manager.GetNatMethod(PIPSocket::GetDefaultIpAny(), binding)));
+                                                          P_NAT_PARAM(&manager.GetNatMethods()));
   if (preOpen)
     sockets->Open(localPort);
   m_channel = new PMonitoredSocketChannel(sockets, false);
@@ -1419,19 +1384,12 @@ PBoolean OpalTransportUDP::Connect()
   if (bundle->IsOpen())
     return true;
 
-  OpalManager & manager = endpoint.GetManager();
-
-  localPort = manager.GetNextUDPPort();
-  WORD firstPort = localPort;
-  while (!bundle->Open(localPort)) {
-    localPort = manager.GetNextUDPPort();
-    if (localPort == firstPort) {
-      PTRACE(1, "OpalUDP\tCould not bind to any port in range " <<
-	      manager.GetUDPPortBase() << " to " << manager.GetUDPPortMax());
-      return false;
-    }
+  if (!bundle->Open(localPort)) {
+    PTRACE(1, "OpalUDP\tCould not bind to any port in range " << endpoint.GetManager().GetUDPPortRange());
+    return false;
   }
 
+  localPort = bundle->GetPort();
   return true;
 }
 

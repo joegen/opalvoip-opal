@@ -1662,7 +1662,7 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
   OpalManager & manager = m_connection.GetEndPoint().GetManager();
 
 #if P_NAT
-  PNatMethod * natMethod = m_connection.GetNatMethod(m_remoteAddress, bindingAddress);
+  PNatMethod * natMethod = manager.GetNatMethods().GetMethod(bindingAddress, this);
   if (natMethod != NULL) {
     PTRACE(4, "RTP\tNAT Method " << natMethod->GetMethodName() << " selected for call.");
 
@@ -1697,7 +1697,8 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
         else {
           PTRACE(2, "RTP\tSession " << m_sessionId << ", " << natMethod->GetMethodName()
                   << " could not create STUN RTP/RTCP socket pair; trying to create individual sockets.");
-          if (natMethod->CreateSocket(m_dataSocket, bindingAddress) && natMethod->CreateSocket(m_controlSocket, bindingAddress)) {
+          if (natMethod->CreateSocket(m_dataSocket, bindingAddress, 0, this) &&
+              natMethod->CreateSocket(m_controlSocket, bindingAddress, 0, this)) {
             m_dataSocket->GetLocalAddress(m_localAddress, m_localDataPort);
             m_controlSocket->GetLocalAddress(m_localAddress, m_localControlPort);
           }
@@ -1726,33 +1727,19 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
 #endif
 
   if (m_dataSocket == NULL) {
-    WORD firstPort = manager.GetRtpIpPortPair();
     m_dataSocket = new PUDPSocket();
     if (m_singlePort) {
-      m_localControlPort = m_localDataPort = firstPort;
       // If media and control address the same, then we are only using one port.
-      while (!m_dataSocket->Listen(bindingAddress, 1, m_localDataPort)) {
-        m_dataSocket->Close();
-        m_localControlPort = m_localDataPort = manager.GetRtpIpPortPair();
-        if (m_localDataPort == firstPort)
-          break;
-      }
+      if (manager.GetRtpIpPortRange().Listen(*m_dataSocket, bindingAddress))
+        m_localControlPort = m_localDataPort = m_dataSocket->GetPort();
     }
     else {
-      m_localDataPort    = firstPort;
-      m_localControlPort = (WORD)(firstPort + 1);
-
       m_controlSocket = new PUDPSocket();
-      while (!   m_dataSocket->Listen(bindingAddress, 1, m_localDataPort) ||
-             !m_controlSocket->Listen(bindingAddress, 1, m_localControlPort)) {
-        m_dataSocket->Close();
-        m_controlSocket->Close();
 
-        m_localDataPort = manager.GetRtpIpPortPair();
-        if (m_localDataPort == firstPort)
-          break;
-
-        m_localControlPort = (WORD)(m_localDataPort + 1);
+      PIPSocket * sockets[2] = { m_dataSocket, m_controlSocket };
+      if (manager.GetRtpIpPortRange().Listen(sockets, 2, bindingAddress)) {
+        m_localDataPort = m_dataSocket->GetPort();
+        m_localControlPort = m_controlSocket->GetPort();
       }
     }
 

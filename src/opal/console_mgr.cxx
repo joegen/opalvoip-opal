@@ -1186,14 +1186,14 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
   }
 
   if (verbose)
-    output << "TCP ports: " << GetTCPPortBase() << '-' << GetTCPPortMax() << "\n"
-                "UDP ports: " << GetUDPPortBase() << '-' << GetUDPPortMax() << "\n"
-                "RTP ports: " << GetRtpIpPortBase() << '-' << GetRtpIpPortMax() << "\n"
-                "Audio QoS: " << GetMediaQoS(OpalMediaType::Audio()) << "\n"
+    output << "TCP ports: " << GetTCPPortRange() << "\n"
+              "UDP ports: " << GetUDPPortRange() << "\n"
+              "RTP ports: " << GetRtpIpPortRange() << "\n"
+              "Audio QoS: " << GetMediaQoS(OpalMediaType::Audio()) << "\n"
 #if OPAL_VIDEO
-                "Video QoS: " << GetMediaQoS(OpalMediaType::Video()) << "\n"
+              "Video QoS: " << GetMediaQoS(OpalMediaType::Video()) << "\n"
 #endif
-                "RTP payload size: " << GetMaxRtpPayloadSize() << '\n';
+              "RTP payload size: " << GetMaxRtpPayloadSize() << '\n';
 
 #if P_NAT
   PString natMethod, natServer;
