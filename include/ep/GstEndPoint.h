@@ -290,8 +290,6 @@ class GstConnection : public OpalLocalConnection
       unsigned sessionID,
       PBoolean isSource
     );
-
-    virtual void OnReleased();
   //@}
 
   /**@name Customisation call backs for building GStreamer pipeline */
@@ -308,6 +306,9 @@ class GstConnection : public OpalLocalConnection
 
   protected:
     GstEndPoint & m_endpoint;
+#if OPAL_VIDEO
+    PGstPipeline  m_freescaleVideoPipeline[2];
+#endif
 };
 
 
@@ -404,9 +405,6 @@ class GstMediaStream : public OpalMediaStream
     PGstPipeline    m_pipeline;
     PGstAppSrc      m_pipeSource; // Must be after m_pipeline so is destroyed before it
     PGstAppSink     m_pipeSink;   // Ditto
-
-  friend bool GstConnection::OpenPipeline(PGstPipeline & pipeline, const GstMediaStream & stream);
-  friend void GstConnection::OnReleased();
 };
 
 

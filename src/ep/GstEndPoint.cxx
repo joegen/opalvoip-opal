@@ -858,21 +858,6 @@ GstConnection::GstConnection(OpalCall & call,
 }
 
 
-void GstConnection::OnReleased()
-{
-  OpalLocalConnection::OnReleased();
-
-  // This is a work around for the Freescale version of vfl_sink which crashes
-  // unless it is unreferenced/disposed before the other GStreamer modules
-  OpalMediaStreamPtr vidRx = GetMediaStream(OpalMediaType::Video(), false);
-  if (vidRx != NULL) {
-    GstMediaStream * vidRxGst = dynamic_cast<GstMediaStream *>(&*vidRx);
-    if (vidRxGst != NULL)
-      vidRxGst->m_pipeline.SetNULL();
-  }
-}
-
-
 OpalMediaStream* GstConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
                                                   unsigned sessionID,
                                                   PBoolean isSource)
@@ -930,6 +915,14 @@ bool GstConnection::OpenPipeline(PGstPipeline & pipeline, const GstMediaStream &
   }
 
   pipeline.SetName(isSource ? "SourcePipeline" : "SinkPipeline");
+
+#if OPAL_VIDEO
+  /* This is a work around for the Freescale version of vfl_sink which crashes
+     unless it is unreferenced/disposed of before the other GStreamer video
+     module. The blow bakes another reference and assures via their
+     destruction order that this occurs. */
+  m_freescaleVideoPipeline[!isSource] = pipeline;
+#endif
 
 #if PTRACING
   if (PTrace::CanTrace(5)) {
