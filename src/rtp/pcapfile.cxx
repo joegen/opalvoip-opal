@@ -488,29 +488,28 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTPMap & discoveredRTPMap)
 }
 
 
-void OpalPCAPFile::SetFilters(const DiscoveredRTPInfo & info, int dir)
+bool OpalPCAPFile::SetFilters(const DiscoveredRTPInfo & info, int dir, const PString & format)
 {
-  SetPayloadMap(info.m_payload[dir], info.m_format[dir]);
+  if (!SetPayloadMap(info.m_payload[dir], format.IsEmpty() ? info.m_format[dir] : format))
+    return false;
+
   m_filterSrcIP = info.m_addr[dir].GetAddress();
   m_filterDstIP = info.m_addr[1 - dir].GetAddress();
   m_filterSrcPort = info.m_addr[dir].GetPort();
   m_filterDstPort = info.m_addr[1 - dir].GetPort();
+  return true;
 }
 
 
-bool OpalPCAPFile::SetFilters(const DiscoveredRTPMap & discoveredRTPMap, size_t index)
+bool OpalPCAPFile::SetFilters(const DiscoveredRTPMap & discoveredRTPMap, size_t index, const PString & format)
 {
   for (DiscoveredRTPMap::const_iterator iter = discoveredRTPMap.begin();
                                         iter != discoveredRTPMap.end(); ++iter) {
     const OpalPCAPFile::DiscoveredRTPInfo & info = iter->second;
-    if (info.m_index[0] == index) {
-      SetFilters(info, 0);
-      return true;
-    }
-    if (info.m_index[1] == index) {
-      SetFilters(info, 1);
-      return true;
-    }
+    if (info.m_index[0] == index)
+      return SetFilters(info, 0, format);
+    if (info.m_index[1] == index)
+      return SetFilters(info, 1, format);
   }
 
   return false;
