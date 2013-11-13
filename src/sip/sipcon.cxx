@@ -1092,6 +1092,12 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     return false;
 
   OpalMediaType mediaType = incomingMedia->GetMediaType();
+  if (mediaType.empty()) {
+    PTRACE(3, "SIP\tUnknown media type for SDP " << incomingMedia->GetSDPMediaType()
+           << ' ' << incomingMedia->GetSDPTransportType() << ", not adding SDP");
+    return false;
+  }
+
   OpalMediaTypeDefinition * mediaDef = mediaType.GetDefinition();
   if (!PAssert(mediaDef != NULL, PString("Unusable media type \"") + mediaType + '"'))
     return false;
