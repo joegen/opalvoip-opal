@@ -89,7 +89,7 @@ OPAL_IAX2=yes
 OPAL_VIDEO=yes
 OPAL_T38_CAPABILITY=yes
 OPAL_FAX=yes
-OPAL_HAS_H224=yes
+OPAL_HAS_H224=no
 OPAL_HAS_H281=yes
 OPAL_H450=yes
 OPAL_H460=yes
@@ -508,6 +508,7 @@ dnl MSWIN_DEFINE   iax2,OPAL_IAX2
 OPAL_SIMPLE_OPTION(iax2,OPAL_IAX2, [whether to enable IAX2 protocol support])
 
 dnl MSWIN_DISPLAY  h224,H.224 support
+dnl MSWIN_DEFAULT  h224,Disabled
 dnl MSWIN_DEFINE   h224,OPAL_HAS_H224
 OPAL_SIMPLE_OPTION(h224,OPAL_HAS_H224, [whether to enable H.224 protocol support], [OPAL_H323])
 
