@@ -1843,7 +1843,7 @@ void MyManager::OnAdjustMenus(wxMenuEvent & WXUNUSED(event))
 
   bool hasFormat = false;
   if (wxTheClipboard->Open()) {
-    hasFormat = wxTheClipboard->IsSupported(m_ClipboardFormat);
+    hasFormat = wxTheClipboard->IsSupported(m_ClipboardFormat) || wxTheClipboard->IsSupported(wxDF_TEXT);
     wxTheClipboard->Close();
   }
   menubar->Enable(ID_MenuPaste, hasFormat);
@@ -2187,30 +2187,38 @@ void MyManager::OnCopySpeedDial(wxCommandEvent & WXUNUSED(event))
 
 void MyManager::OnPasteSpeedDial(wxCommandEvent & WXUNUSED(event))
 {
-  if (wxTheClipboard->Open()) {
-    if (wxTheClipboard->IsSupported(m_ClipboardFormat)) {
-      wxTextDataObject myFormatData;
-      myFormatData.SetFormat(m_ClipboardFormat);
-      if (wxTheClipboard->GetData(myFormatData)) {
-        wxStringTokenizer tabbedLines(myFormatData.GetText(), wxT("\r\n"));
-        while (tabbedLines.HasMoreTokens()) {
-          wxStringTokenizer tabbedText(tabbedLines.GetNextToken(), wxT("\t"), wxTOKEN_RET_EMPTY_ALL);
-          if (tabbedText.CountTokens() >= 5) {
-            SpeedDialInfo info;
-            info.m_Name = MakeUniqueSpeedDialName(m_speedDials, tabbedText.GetNextToken());
-            info.m_Number = tabbedText.GetNextToken();
-            info.m_Address = tabbedText.GetNextToken();
-            info.m_Description = tabbedText.GetNextToken();
-#if OPAL_HAS_PRESENCE
-            info.m_Presentity = tabbedText.GetNextToken();
-#endif
+  wxString data;
 
-            UpdateSpeedDial(INT_MAX, info, true);
-          }
-        }
-      }
+  if (wxTheClipboard->Open()) {
+    wxTextDataObject myFormatData;
+    myFormatData.SetFormat(m_ClipboardFormat);
+    if (wxTheClipboard->GetData(myFormatData))
+      data = myFormatData.GetText();
+    else {
+      wxTextDataObject textData;
+      if (wxTheClipboard->GetData(textData))
+        data = textData.GetText();
     }
     wxTheClipboard->Close();
+  }
+
+  if (!data.empty()) {
+    wxStringTokenizer tabbedLines(data, wxT("\r\n"));
+    while (tabbedLines.HasMoreTokens()) {
+      wxStringTokenizer tabbedText(tabbedLines.GetNextToken(), wxT("\t"), wxTOKEN_RET_EMPTY_ALL);
+      if (tabbedText.CountTokens() >= 5) {
+        SpeedDialInfo info;
+        info.m_Name = MakeUniqueSpeedDialName(m_speedDials, tabbedText.GetNextToken());
+        info.m_Number = tabbedText.GetNextToken();
+        info.m_Address = tabbedText.GetNextToken();
+        info.m_Description = tabbedText.GetNextToken();
+#if OPAL_HAS_PRESENCE
+        info.m_Presentity = tabbedText.GetNextToken();
+#endif
+
+        UpdateSpeedDial(INT_MAX, info, true);
+      }
+    }
   }
 }
 
