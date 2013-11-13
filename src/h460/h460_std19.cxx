@@ -58,7 +58,7 @@
 
 #define PTraceModule() "H46019"
 
-PCREATE_NAT_PLUGIN(H46019);
+PCREATE_NAT_PLUGIN(H46019, "H.460.19");
 
 #ifdef ANDROID
 extern void android_sha1( void*, const PString &);

@@ -86,7 +86,7 @@ static const H460_FeatureID SupAnnexB_ID     (9);  // bool if endpoint supports 
 
 //////////////////////////////////////////////////////////////////////
 
-PCREATE_NAT_PLUGIN(H46024);
+PCREATE_NAT_PLUGIN(H46024, "H.460.24");
 
 PNatMethod_H46024::PNatMethod_H46024(unsigned priority)
   : PNatMethod(priority)
