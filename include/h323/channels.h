@@ -560,12 +560,6 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
       const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     );
 
-    /**Alternate RTP port information for Same NAT
-      */
-    virtual void OnReceivedAckAltPDU(
-      const H245_ArrayOf_GenericInformation & alternate  ///< Alternate RTP ports
-    ) = 0;
-
     RTP_DataFrame::PayloadTypes GetDynamicRTPPayloadType() const;
   //@}
 };

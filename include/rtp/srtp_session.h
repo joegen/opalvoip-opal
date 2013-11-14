@@ -140,7 +140,7 @@ class OpalSRTPSession : public OpalRTPSession, OpalLibSRTP
     virtual bool ApplyCryptoKey(OpalMediaCryptoKeyList & keys, bool rx);
     virtual bool IsCryptoSecured(bool rx) const;
 
-    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame);
+    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, bool rewriteHeader);
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);

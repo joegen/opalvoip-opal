@@ -259,12 +259,6 @@ PBoolean H323_RTPChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAckPara
 }
 
 
-void H323_RTPChannel::OnReceivedAckAltPDU(const H245_ArrayOf_GenericInformation & alternate)
-{ 
-  connection.OnReceiveOLCGenericInformation(GetSessionID(), alternate);
-}
-
-
 bool H323_RTPChannel::ExtractTransport(const H245_TransportAddress & pdu,
                                     bool isDataPort,
                                     unsigned & errorCode)
