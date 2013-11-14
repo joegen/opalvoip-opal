@@ -666,7 +666,7 @@ PBoolean H323_RealTimeChannel::OnReceivedAckPDU(const H245_OpenLogicalChannelAck
   }
 
   if (ack.HasOptionalField(H245_OpenLogicalChannel::e_genericInformation))
-    OnReceivedAckAltPDU(ack.m_genericInformation);
+    connection.OnReceiveOLCGenericInformation(GetSessionID(), ack.m_genericInformation, true);
 
 #if OPAL_H235_6 || OPAL_H235_8
   if (ack.HasOptionalField(H245_OpenLogicalChannel::e_encryptionSync))

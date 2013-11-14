@@ -4542,7 +4542,7 @@ PBoolean H323Connection::OnOpenLogicalChannel(const H245_OpenLogicalChannel & op
   }
 
   if (openPDU.HasOptionalField(H245_OpenLogicalChannel::e_genericInformation)) {
-    OnReceiveOLCGenericInformation(sessionID,openPDU.m_genericInformation);
+    OnReceiveOLCGenericInformation(sessionID,openPDU.m_genericInformation, false);
 
     if (OnSendingOLCGenericInformation(sessionID, ackPDU.m_genericInformation, true))
       ackPDU.IncludeOptionalField(H245_OpenLogicalChannelAck::e_genericInformation);
@@ -4578,7 +4578,7 @@ PBoolean H323Connection::OnOpenLogicalChannel(const H245_OpenLogicalChannel & op
 
 
 
-void H323Connection::OnReceiveOLCGenericInformation(unsigned sessionID, const H245_ArrayOf_GenericInformation & infos) const
+void H323Connection::OnReceiveOLCGenericInformation(unsigned sessionID, const H245_ArrayOf_GenericInformation & infos, bool isAck) const
 {
   PTRACE(4,"Handling Generic OLC Session " << sessionID);
 #if OPAL_H460
@@ -4589,7 +4589,7 @@ void H323Connection::OnReceiveOLCGenericInformation(unsigned sessionID, const H2
         PString oid = ((const PASN_ObjectId &)info.m_messageIdentifier).AsString();
         for (H460_FeatureSet::iterator it = m_features->begin(); it != m_features->end(); ++it) {
           if (it->second->IsNegotiated() && it->first.GetOID() == oid) {
-            it->second->OnReceiveOLCGenericInformation(sessionID, info.m_messageContent);
+            it->second->OnReceiveOLCGenericInformation(sessionID, info.m_messageContent, isAck);
             break;
           }
         }

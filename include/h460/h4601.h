@@ -604,7 +604,7 @@ class H460_Feature : public PObject
     virtual void OnReceivedUnAllocatedPDU(const H460_FeatureDescriptor & /*pdu*/) { }
 
     virtual bool OnSendingOLCGenericInformation(unsigned /*sessionID*/, H245_ArrayOf_GenericParameter & /*param*/, bool /*ack*/) { return false; }
-    virtual void OnReceiveOLCGenericInformation(unsigned /*sessionID */, const H245_ArrayOf_GenericParameter & /*param*/) { }
+    virtual void OnReceiveOLCGenericInformation(unsigned /*sessionID */, const H245_ArrayOf_GenericParameter & /*param*/, bool /*isAck*/) { }
   //@}
 
     H323EndPoint * GetEndPoint() const { return m_endpoint; }

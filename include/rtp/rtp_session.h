@@ -135,21 +135,22 @@ class OpalRTPSession : public OpalMediaSession
     /**Write a data frame from the RTP channel.
       */
     virtual bool WriteData(
-      RTP_DataFrame & frame   ///<  Frame to write to the RTP session
+      RTP_DataFrame & frame,                          ///<  Frame to write to the RTP session
+      const PIPSocketAddressAndPort * remote = NULL,  ///< Alternate address to transmit data frame
+      bool rewriteHeader = true                       /**< Indicate header fields like sequence
+                                                           numbers are to be rewritten according to
+                                                           session status */
     );
 
-    /** Write data frame to the RTP channel outside the normal stream of media
-      * Used for RFC2833 packets
+    /**Send a report to remote.
       */
-    virtual bool WriteOOBData(
-      RTP_DataFrame & frame,
-      bool rewriteTimeStamp = true
-    );
+    void SendReport(bool force);
 
     /**Write a control frame from the RTP channel.
       */
     virtual bool WriteControl(
-      RTP_ControlFrame & frame    ///<  Frame to write to the RTP session
+      RTP_ControlFrame & frame,                      ///<  Frame to write to the RTP session
+      const PIPSocketAddressAndPort * remote = NULL  ///< Alternate address to transmit control frame
     );
 
    /**Restarts an existing session in the given direction.
@@ -174,7 +175,7 @@ class OpalRTPSession : public OpalMediaSession
       e_IgnorePacket,
       e_AbortTransport
     };
-    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame);
+    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, bool rewriteHeader);
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
@@ -530,6 +531,8 @@ class OpalRTPSession : public OpalMediaSession
 
     void SetNextSentSequenceNumber(WORD num) { lastSentSequenceNumber = (WORD)(num-1); }
 
+    DWORD GetLastSentTimestamp() const { return lastSentTimestamp; }
+    const PTimeInterval & GetLastSentPacketTime() const { return lastSentPacketTime; }
     DWORD GetSyncSourceIn() const { return syncSourceIn; }
 
     typedef PNotifierTemplate<SendReceiveStatus &> FilterNotifier;
@@ -558,7 +561,8 @@ class OpalRTPSession : public OpalMediaSession
     virtual bool WriteRawPDU(
       const BYTE * framePtr,
       PINDEX frameSize,
-      bool toDataChannel
+      bool toDataChannel,
+      const PIPSocketAddressAndPort * remote = NULL
     );
 
 
@@ -576,7 +580,6 @@ class OpalRTPSession : public OpalMediaSession
     DWORD         lastSentTimestamp;
     bool          allowAnySyncSource;
     bool          allowOneSyncSourceChange;
-    bool          allowRemoteTransmitAddressChange;
     bool          allowSequenceChange;
     unsigned      txStatisticsInterval;
     unsigned      rxStatisticsInterval;
@@ -595,11 +598,6 @@ class OpalRTPSession : public OpalMediaSession
 
     std::list<RTP_DataFrame> m_outOfOrderPackets;
     void SaveOutOfOrderPacket(RTP_DataFrame & frame);
-
-    DWORD         timeStampOffs;               // offset between incoming media timestamp and timeStampOut
-    bool          oobTimeStampBaseEstablished; // true if timeStampOffs has been established by media
-    DWORD         oobTimeStampOutBase;         // base timestamp value for oob data
-    PTimeInterval oobTimeStampBase;            // base time for oob timestamp
 
     // Statistics
     PTime firstPacketSent;
@@ -653,7 +651,7 @@ class OpalRTPSession : public OpalMediaSession
 
     PMutex m_reportMutex;
     PTimer m_reportTimer;
-    PDECLARE_NOTIFIER(PTimer, OpalRTPSession, SendReport);
+    PDECLARE_NOTIFIER(PTimer, OpalRTPSession, TimedSendReport);
 
     PMutex m_dataMutex;
     PMutex m_readMutex;
@@ -670,7 +668,6 @@ class OpalRTPSession : public OpalMediaSession
     WORD               m_remoteDataPort;
     WORD               m_remoteControlPort;
 
-    PIPSocket::Address m_remoteTransmitAddress;
 
     PUDPSocket * m_dataSocket;
     PUDPSocket * m_controlSocket;
@@ -695,6 +692,7 @@ class OpalRTPSession : public OpalMediaSession
     P_REMOVE_VIRTUAL(int,WaitForPDU(PUDPSocket&,PUDPSocket&,const PTimeInterval&),0);
     P_REMOVE_VIRTUAL(SendReceiveStatus,ReadDataOrControlPDU(BYTE *,PINDEX,bool),e_AbortTransport);
     P_REMOVE_VIRTUAL(bool,WriteDataOrControlPDU(const BYTE *,PINDEX,bool),false);
+    P_REMOVE_VIRTUAL(SendReceiveStatus,OnSendData(RTP_DataFrame &),e_AbortTransport);
 
 
   friend class RTP_JitterBuffer;
