@@ -686,9 +686,9 @@ bool OpalSRTPSession::IsCryptoSecured(bool rx) const
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & frame, bool rewriteHeader)
 {
-  SendReceiveStatus status = OpalRTPSession::OnSendData(frame);
+  SendReceiveStatus status = OpalRTPSession::OnSendData(frame, rewriteHeader);
   if (status != e_ProcessPacket)
     return status;
 

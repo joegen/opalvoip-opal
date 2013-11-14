@@ -66,6 +66,9 @@ class H323Gatekeeper;
 class H323SignalPDU;
 class H323ServiceControlSession;
 
+class H46019Server;
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 /**This class manages the H323 endpoint.
@@ -1101,7 +1104,12 @@ class H323EndPoint : public OpalRTPEndPoint
       H460_Feature::Purpose purpose,
       const PString & identifer
     );
+
 #endif // OPAL_H460
+
+#if OPAL_H460_NAT
+    H46019Server * GetH46019Server() const { return m_H46019Server; }
+#endif
 
     /**Determine if the address is "local", ie does not need STUN
      */
@@ -1393,6 +1401,9 @@ class H323EndPoint : public OpalRTPEndPoint
 #if OPAL_H460
     bool              m_disableH460;
     H460_FeatureSet * m_features;
+#endif
+#if OPAL_H460_NAT
+    H46019Server * m_H46019Server;
 #endif
 
     typedef map<H323Connection::CompatibilityIssues, PRegularExpression> CompatibilityEndpoints;

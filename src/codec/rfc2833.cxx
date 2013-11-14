@@ -376,20 +376,21 @@ void OpalRFC2833Proto::SendAsyncFrame()
   payload[2] = (BYTE)(m_transmitDuration >> 8);
   payload[3] = (BYTE) m_transmitDuration;
 
-  if (!m_rewriteTransmitTimestamp)
-    frame.SetTimestamp(m_transmitTimestamp);
+  // Calculate the timestamp to sue for all the RFC2833 packets.
+  if (m_rewriteTransmitTimestamp) {
+    m_rewriteTransmitTimestamp = false;
+    m_transmitTimestamp = (DWORD)(m_rtpSession->GetLastSentTimestamp() +
+          (PTimer::Tick() - m_rtpSession->GetLastSentPacketTime()).GetMilliSeconds() * m_rtpSession->GetJitterTimeUnits());
+  } 
 
-  if (!m_rtpSession->WriteOOBData(frame, m_rewriteTransmitTimestamp)) {
+  frame.SetTimestamp(m_transmitTimestamp);
+
+  if (!m_rtpSession->WriteData(frame)) {
     PTRACE(3, "RFC2833\tRTP session transmission stopped for " << m_baseMediaFormat);
     // Abort further transmission
     m_transmitState = TransmitIdle;
     m_asyncDurationTimer.Stop(false);
   }
-
-  if (m_rewriteTransmitTimestamp) {
-    m_transmitTimestamp        = frame.GetTimestamp();
-    m_rewriteTransmitTimestamp = false;
-  } 
 
   PTRACE(frame.GetMarker() ? 3 : 4,
          "RFC2833\tSent " << ((payload[1] & 0x80) ? "end" : "tone") << ": "

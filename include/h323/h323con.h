@@ -2058,7 +2058,8 @@ class H323Connection : public OpalRTPConnection
     */
     virtual void OnReceiveOLCGenericInformation(
       unsigned sessionID,
-      const H245_ArrayOf_GenericInformation & info
+      const H245_ArrayOf_GenericInformation & info,
+      bool isAck
     ) const;
 
     /**Send Generic Information in the OLC. This is used to include generic

@@ -68,23 +68,70 @@ class H460_FeatureStd19 : public H460_Feature
     virtual bool Initialise(H323EndPoint & ep, H323Connection * con);
 
     // H.225.0 Messages
-    virtual bool OnSendSetup_UUIE         (H460_FeatureDescriptor & /*pdu*/) { return !m_disabledByH46024; }
-    virtual bool OnSendCallProceeding_UUIE(H460_FeatureDescriptor & /*pdu*/) { return !m_disabledByH46024; }
-    virtual bool OnSendAlerting_UUIE      (H460_FeatureDescriptor & /*pdu*/) { return !m_disabledByH46024; }
-    virtual bool OnSendCallConnect_UUIE   (H460_FeatureDescriptor & /*pdu*/) { return !m_disabledByH46024; }
-    virtual bool OnSendFacility_UUIE      (H460_FeatureDescriptor & /*pdu*/) { return !m_disabledByH46024; }
+    virtual bool OnSendPDU(H460_MessageType pduType, H460_FeatureDescriptor & pdu);
+    virtual void OnReceivePDU(H460_MessageType pduType, const H460_FeatureDescriptor & pdu);
 
     virtual bool OnSendingOLCGenericInformation(unsigned sessionID, H245_ArrayOf_GenericParameter & param, bool isAck);
-    virtual void OnReceiveOLCGenericInformation(unsigned sessionID, const H245_ArrayOf_GenericParameter & param);
+    virtual void OnReceiveOLCGenericInformation(unsigned sessionID, const H245_ArrayOf_GenericParameter & param, bool isAck);
 
-    // H.460.24 Override
+    // Member access
     void DisableByH46024() { m_disabledByH46024 = true; }
+
+    bool IsRemoteServer() const { return m_remoteIsServer; }
 
   protected:
     PNatMethod * m_natMethod;
     bool         m_disabledByH46024;
+    bool         m_remoteIsServer;
 };
  
+
+///////////////////////////////////////////////////////////////////////////////
+
+class H46019Server : public PObject
+{
+    PCLASSINFO(H46019Server, PObject)
+  public:
+    H46019Server(H323EndPoint & ep);
+    H46019Server(
+      H323EndPoint & ep,
+      const PIPSocket::Address & localInterface
+    );
+    ~H46019Server();
+
+    unsigned GetKeepAliveTTL() const { return m_keepAliveTTL; }
+    void SetKeepAliveTTL(unsigned val) { m_keepAliveTTL = val; }
+
+    H323TransportAddress GetKeepAliveAddress() const;
+    H323TransportAddress GetMuxRTPAddress() const;
+    H323TransportAddress GetMuxRTCPAddress() const;
+
+    unsigned CreateMultiplexID(
+      const PIPSocketAddressAndPort & rtp,
+      const PIPSocketAddressAndPort & rtcp
+    );
+
+  protected:
+    H323EndPoint & m_endpoint;
+    unsigned       m_keepAliveTTL;         ///< KeepAlive TTL
+
+    PUDPSocket * m_keepAliveSocket;
+    PUDPSocket * m_rtpSocket;
+    PUDPSocket * m_rtcpSocket;
+
+    struct SocketPair {
+      SocketPair(const PIPSocketAddressAndPort & rtp, const PIPSocketAddressAndPort & rtcp) : m_rtp(rtp), m_rtcp(rtcp) { }
+      PIPSocketAddressAndPort m_rtp;
+      PIPSocketAddressAndPort m_rtcp;
+    };
+    typedef map<uint32_t, SocketPair> MuxMap;
+    MuxMap m_multiplexedSockets;
+
+    PThread * m_multiplexThread;
+    void MultiplexThread();
+    bool Multiplex(bool rtcp);
+};
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -145,43 +192,25 @@ class H46019UDPSocket : public PNATUDPSocket
 
     /**@name Functions */
     //@{
-    /** Activate (FastStart) keep-alive mechanism.
-    */
-    void Activate();
-
     /** Activate keep-alive mechanism.
     */
-    void Activate(
-      const H46019_TraversalParameters & params
+    void ActivateKeepAliveRTP(
+      const H323TransportAddress & address,
+      unsigned ttl
     );
 
-    /** Get the Ping Payload
-      */
-    RTP_DataFrame::PayloadTypes GetPingPayload() const { return m_keepAlivePayloadType; }
+    void ActivateKeepAliveRTCP(unsigned ttl);
 
-    /** Set the Ping Payload
-      */
-    void SetPingPayLoad(RTP_DataFrame::PayloadTypes val) { m_keepAlivePayloadType = val; }
+    void SetMultiplexID(unsigned multiplexID) { m_multiplexedTransmit = true; m_multiplexID = multiplexID; }
 
-    /** Get Ping TTL
-      */
-    unsigned GetTTL() const { return m_keepAliveTTL.GetSeconds(); }
-
-    /** Set Ping TTL
-      */
-    void SetTTL(unsigned val) { m_keepAliveTTL.SetInterval(0, val); }
+    RTP_DataFrame::PayloadTypes GetKeepAlivePayloadType() const { return m_keepAlivePayloadType; }
+    void SetKeepAlivePayloadType(RTP_DataFrame::PayloadTypes type) { m_keepAlivePayloadType = type; }
 
   protected:
     bool InternalWriteTo(const Slice * slices, size_t sliceCount, const PIPSocketAddressAndPort & ipAndPort);
 
-#if H46019_SERVER_SUPPORT
-    bool InternalReadFrom(Slice * slices, size_t sliceCount, PIPSocketAddressAndPort & ipAndPort);
-#endif
-
   // Memeber variables
-    H323Connection & m_connection;
-
-    unsigned m_sessionID;             ///< Current Session ie 1-Audio 2-video
+    OpalRTPSession & m_session;
 
     // H.460.19 keep alives
     PIPSocketAddressAndPort     m_keepAliveAddress;     ///< KeepAlive Address
@@ -189,10 +218,9 @@ class H46019UDPSocket : public PNATUDPSocket
     PTimeInterval               m_keepAliveTTL;         ///< KeepAlive TTL
     WORD                        m_keepAliveSequence;    ///< KeepAlive sequence number
 
-    PDECLARE_NOTIFIER(PTimer, H46019UDPSocket, Ping);   ///< Timer to notify to poll for External IP
-    PTimer m_keepAliveTimer;                            ///< Polling Timer
-    void SendPing(const PIPSocketAddressAndPort & ipAndPort);
-    bool SendPacket(const PBYTEArray & data, const PIPSocketAddressAndPort & ipAndPort);
+    PDECLARE_NOTIFIER(PTimer, H46019UDPSocket, KeepAliveTimeout);
+    PTimer m_keepAliveTimer;
+    void SendKeepAliveRTP(const PIPSocketAddressAndPort & ipAndPort);
 
     // H.460.19 multiplex transmit
     bool     m_multiplexedTransmit;
@@ -237,6 +265,8 @@ class H46019UDPSocket : public PNATUDPSocket
     void BuildProbe(RTP_ControlFrame & report, bool reply);
     void StartProbe();
     void ProbeReceived(bool probe, const PIPSocketAddressAndPort & ipAndPort);
+
+    bool InternalReadFrom(Slice * slices, size_t sliceCount, PIPSocketAddressAndPort & ipAndPort);
 
     // H46024 Annex A support
     PString  m_localCUI;                                ///< Local CUI (for H.460.24 Annex A)

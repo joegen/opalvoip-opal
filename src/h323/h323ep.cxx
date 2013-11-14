@@ -111,6 +111,9 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
 #if OPAL_H460
   , m_features(NULL)
 #endif
+#if OPAL_H460_NAT
+  , m_H46019Server(NULL)
+#endif
 {
   localAliasNames.AppendString(defaultLocalPartyName);
 
