@@ -5164,7 +5164,7 @@ bool OptionsDialog::TransferDataFromWindow()
     dynamic_cast<NatWrapper &>(*m_NatMethods->GetClientObject(m_NatMethodSelected)) = m_NatInfo;
 
   for (size_t i = 0; i < m_NatMethods->GetCount(); i++) {
-    NatWrapper & wrap = dynamic_cast<NatWrapper &>(*m_NatMethods->GetClientObject(m_NatMethodSelected));
+    NatWrapper & wrap = dynamic_cast<NatWrapper &>(*m_NatMethods->GetClientObject(i));
     config->SetPath(NatMethodsGroup);
     config->SetPath(wrap.m_method);
     config->Write(NATActiveKey, wrap.m_active);
