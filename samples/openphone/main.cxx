@@ -5160,6 +5160,9 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD2(UDPPortBase, UDPPortMax, m_manager.SetUDPPorts);
   SAVE_FIELD2(RTPPortBase, RTPPortMax, m_manager.SetRtpIpPorts);
 
+  if (m_NatMethodSelected >= 0)
+    dynamic_cast<NatWrapper &>(*m_NatMethods->GetClientObject(m_NatMethodSelected)) = m_NatInfo;
+
   for (size_t i = 0; i < m_NatMethods->GetCount(); i++) {
     NatWrapper & wrap = dynamic_cast<NatWrapper &>(*m_NatMethods->GetClientObject(m_NatMethodSelected));
     config->SetPath(NatMethodsGroup);
