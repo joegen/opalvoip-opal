@@ -1384,22 +1384,25 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     SET_MESSAGE_STRING(response, m_param.m_general.m_natServer, natServers);
   }
 
-  if (IsNullString(command.m_param.m_general.m_natMethod)) {
-    if (!SetNATServer(PSTUNClient::MethodName(), command.m_param.m_general.m_natMethod)) {
+  // Note: in this case there is a difference between NULL and "".
+  if (command.m_param.m_general.m_natMethod == NULL) {
+    if (command.m_param.m_general.m_natServer != NULL &&
+        !SetNATServer(PSTUNClient::MethodName(), command.m_param.m_general.m_natServer)) {
       response.SetError("Error setting STUN server.");
       return;
     }
   }
   else {
     PIPSocket::Address ip;
-    if (PIPSocket::GetHostAddress(command.m_param.m_general.m_natMethod, ip))
-      SetNATServer(PNatMethod_Fixed::MethodName(), ip.AsString());
+    if (GetNatMethods().GetMethodByName(command.m_param.m_general.m_natMethod) == NULL &&
+        PIPSocket::GetHostAddress(command.m_param.m_general.m_natMethod, ip))
+      SetNATServer(PNatMethod_Fixed::MethodName(), ip.AsString()); // Backward compatibility with earlier API
     else {
       PStringStream error;
       PStringArray natMethods = PString(command.m_param.m_general.m_natMethod).Lines();
       PStringArray natServers = PString(command.m_param.m_general.m_natServer).Lines();
       for (PINDEX methodIndex = 0; methodIndex < natMethods.GetSize(); ++methodIndex) {
-        if (!SetNATServer(natMethods[methodIndex], natServers[methodIndex])) {
+        if (!SetNATServer(natMethods[methodIndex], natServers[methodIndex], true, (methodIndex+1)*10)) {
           error << "Error setting NAT method " << natMethods[methodIndex];
           if (!natServers[methodIndex].IsEmpty())
             error << " to server \"" << natServers[methodIndex] << '"';
