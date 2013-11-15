@@ -1030,6 +1030,19 @@ PBoolean GstMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameTime)
 }
 
 
+bool GstMediaStream::SetPaused(bool pause, bool fromPatch)
+{
+  if (!OpalMediaStream::SetPaused(pause, fromPatch))
+    return false;
+
+  if (m_pipeline.SetState(pause ? PGstElement::Paused : PGstElement::Playing) == PGstElement::Failed) {
+    PTRACE(2, "Pipeline could not be " << (pause ? "Paused" : "Resumed") << " on " << *this);
+  }
+
+  return true;
+}
+
+
 PBoolean GstMediaStream::IsSynchronous() const
 {
   return IsSource();

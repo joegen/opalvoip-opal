@@ -367,6 +367,15 @@ class GstMediaStream : public OpalMediaStream
       PINDEX frameTime  ///< Individual frame time (if applicable)
     );
 
+    /**Set the paused state for stream.
+       This will stop reading/writing data from the stream.
+       Returns true if the pause state was changed
+      */
+    virtual bool SetPaused(
+      bool pause,             ///< Indicate that the stream should be paused
+      bool fromPatch = false  ///<  Is being called from OpalMediaPatch
+    );
+
     /**Indicate if the media stream is synchronous.
        If this returns true then the media stream will block of the amount of
        time it takes to annunciate the data. For example if the media stream
