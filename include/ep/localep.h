@@ -122,18 +122,6 @@ class OpalLocalEndPoint : public OpalEndPoint
       unsigned int options = 0,  ///<  options to pass to conneciton
       OpalConnection::StringOptions * stringOptions  = NULL ///< Options to pass to connection
     );
-
-    /**A call back function whenever a connection is "held" or "retrieved".
-       This indicates that a connection to an endpoint was held, or
-       retrieved, either locally or by the remote endpoint.
-
-       The default behaviour calls the OpalManager function of the same name.
-      */
-    virtual void OnHold(
-      OpalConnection & connection,   ///<  Connection that was held/retrieved
-      bool fromRemote,               ///<  Indicates remote has held local connection
-      bool onHold                    ///<  Indicates have just been held/retrieved.
-    );
   //@}
 
   /**@name Customisation call backs */
@@ -543,6 +531,18 @@ class OpalLocalConnection : public OpalConnection
        and is an indication that we have accepted the incoming call.
       */
     virtual PBoolean SetConnected();
+    
+    /**Put the current connection on hold, suspending all media streams.
+       The \p fromRemote parameter indicates if we a putting the remote on
+       hold (false) or it is a request for the remote to put us on hold (true).
+
+       The /p placeOnHold parameter indicates of teh command/request is for
+       going on hold or retrieving from hold.
+     */
+    virtual bool Hold(
+      bool fromRemote,  ///< Flag for if remote has us on hold, or we have them
+      bool placeOnHold  ///< Flag for setting on or off hold
+    );
 
     /**Open a new media stream.
        This will create a media stream of an appropriate subclass as required
