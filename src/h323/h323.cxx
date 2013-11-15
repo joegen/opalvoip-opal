@@ -3500,18 +3500,8 @@ H323Channel * H323Connection::FindChannel(unsigned rtpSessionId, PBoolean fromRe
 }
 
 
-bool H323Connection::Hold(bool fromRemote, bool placeOnHold)
+bool H323Connection::HoldRemote(bool placeOnHold)
 {
-  if (fromRemote) {
-#if OPAL_H450
-    if (h4504handler->HoldCall(false))
-      return true;
-#endif
-
-    PTRACE(2, "H323\tCannot place/retrieve call from remote hold");
-    return false;
-  }
-
 #if OPAL_H450
   if (placeOnHold) {
     if (h4504handler->GetState() != H4504Handler::e_ch_NE_Held && !h4504handler->HoldCall(true))
