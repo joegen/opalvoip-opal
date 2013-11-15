@@ -3318,11 +3318,13 @@ bool SIPConnection::OnReceivedAnswerSDP(SIP_PDU & response, SIPTransaction * tra
   m_answerFormatList = sdp->GetMediaFormats();
   AdjustMediaFormats(false, NULL, m_answerFormatList);
 
-  bool holdFromRemote = sdp->IsHold();
-  if (m_holdFromRemote != holdFromRemote) {
-    PTRACE(3, "SIP\tRemote " << (holdFromRemote ? "" : "retrieve from ") << "hold detected");
-    m_holdFromRemote = holdFromRemote;
-    OnHold(true, holdFromRemote);
+  if (transaction == NULL || transaction->GetSDP()->HasActiveSend()) {
+    bool holdFromRemote = sdp->IsHold();
+    if (m_holdFromRemote != holdFromRemote) {
+      PTRACE(3, "SIP\tRemote " << (holdFromRemote ? "" : "retrieve from ") << "hold detected");
+      m_holdFromRemote = holdFromRemote;
+      OnHold(true, holdFromRemote);
+    }
   }
 
   unsigned sessionCount = sdp->GetMediaDescriptions().GetSize();

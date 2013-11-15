@@ -505,6 +505,7 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
     
     virtual SDPMediaDescription::Direction GetDirection(unsigned) const;
     bool IsHold() const;
+    bool HasActiveSend() const;
 
     const OpalTransportAddress & GetDefaultConnectAddress() const { return defaultConnectAddress; }
     void SetDefaultConnectAddress(
