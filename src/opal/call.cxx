@@ -347,35 +347,21 @@ PSafePtr<OpalConnection> OpalCall::GetOtherPartyConnection(const OpalConnection 
 }
 
 
-bool OpalCall::Hold()
+bool OpalCall::Hold(bool placeOnHold)
 {
   PTRACE_CONTEXT_ID_PUSH_THREAD(this);
 
-  PTRACE(3, "Call\tSetting to On Hold");
+  PTRACE(3, "Call\t" << (placeOnHold ? "Setting to" : "Retrieving from") << " On Hold");
 
   bool ok = false;
 
   PSafePtr<OpalConnection> connection;
   while (EnumerateConnections(connection, PSafeReadWrite)) {
-    if (connection->IsNetworkConnection() && connection->Hold(false, true))
-      ok = true;
+    if (!connection->IsNetworkConnection())
+      connection->Hold(false, placeOnHold);
   }
-
-  return ok;
-}
-
-
-bool OpalCall::Retrieve()
-{
-  PTRACE_CONTEXT_ID_PUSH_THREAD(this);
-
-  PTRACE(3, "Call\tRetrieve from On Hold");
-
-  bool ok = false;
-
-  PSafePtr<OpalConnection> connection;
   while (EnumerateConnections(connection, PSafeReadWrite)) {
-    if (connection->IsNetworkConnection() && connection->Hold(false, false))
+    if (connection->IsNetworkConnection() && connection->Hold(false, placeOnHold))
       ok = true;
   }
 

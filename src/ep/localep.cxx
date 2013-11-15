@@ -88,18 +88,6 @@ PSafePtr<OpalConnection> OpalLocalEndPoint::MakeConnection(OpalCall & call,
 }
 
 
-void OpalLocalEndPoint::OnHold(OpalConnection & connection, bool fromRemote, bool onHold)
-{
-  if (!fromRemote && m_pauseTransmitMediaOnHold) {
-    OpalMediaStreamPtr stream;
-    while ((stream = connection.GetMediaStream(OpalMediaType(), true, stream)) != NULL)
-      stream->SetPaused(onHold);
-  }
-
-  OpalEndPoint::OnHold(connection, fromRemote, onHold);
-}
-
-
 OpalLocalConnection * OpalLocalEndPoint::CreateConnection(OpalCall & call,
                                                               void * userData,
                                                             unsigned options,
@@ -383,6 +371,19 @@ PBoolean OpalLocalConnection::SetConnected()
 
   return OpalConnection::SetConnected();
 }
+
+
+bool OpalLocalConnection::Hold(bool fromRemote, bool placeOnHold)
+{
+  if (!fromRemote && m_endpoint.WillPauseTransmitMediaOnHold()) {
+    OpalMediaStreamPtr stream;
+    while ((stream = GetMediaStream(OpalMediaType(), true, stream)) != NULL)
+      stream->SetPaused(placeOnHold);
+  }
+
+  return OpalConnection::Hold(fromRemote, placeOnHold);
+}
+
 
 OpalMediaStream * OpalLocalConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
                                                          unsigned sessionID,
