@@ -358,10 +358,10 @@ bool OpalCall::Hold(bool placeOnHold)
   PSafePtr<OpalConnection> connection;
   while (EnumerateConnections(connection, PSafeReadWrite)) {
     if (!connection->IsNetworkConnection())
-      connection->Hold(false, placeOnHold);
+      connection->HoldRemote(placeOnHold);
   }
   while (EnumerateConnections(connection, PSafeReadWrite)) {
-    if (connection->IsNetworkConnection() && connection->Hold(false, placeOnHold))
+    if (connection->IsNetworkConnection() && connection->HoldRemote(placeOnHold))
       ok = true;
   }
 

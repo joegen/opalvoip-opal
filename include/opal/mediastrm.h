@@ -380,10 +380,9 @@ class OpalMediaStream : public PSafeObject
        This will stop reading/writing data from the stream.
        Returns true if the pause state was changed
       */
-    virtual bool SetPaused(
-      bool pause,             ///< Indicate that the stream should be paused
-      bool fromPatch = false  ///<  Is being called from OpalMediaPatch
-    );
+    bool SetPaused(
+      bool pause  ///< Indicate that the stream should be paused
+    ) { return InternalSetPaused(pause, true, false); }
     
     /**Set the patch thread that is using this stream.
       */
@@ -415,6 +414,7 @@ class OpalMediaStream : public PSafeObject
   //@}
 
     virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat);
+    virtual bool InternalSetPaused(bool pause, bool fromUser, bool fromPatch);
 
   protected:
     void IncrementTimestamp(PINDEX size);
@@ -538,15 +538,6 @@ class OpalNullMediaStream : public OpalMediaStream, public OpalMediaStreamPacing
       PINDEX & written     ///<  Length of data actually written
     );
 	
-    /**Set the paused state for stream.
-       This will stop reading/writing data from the stream.
-       Returns true if the pause state was changed
-      */
-    virtual bool SetPaused(
-      bool pause,             ///< Indicate that the stream should be paused
-      bool fromPatch = false  ///<  Is being called from OpalMediaPatch
-    );
-
     /**Indicate if the media stream requires a OpalMediaPatch thread (active patch).
        The default behaviour returns the value of m_isSynchronous.
       */
@@ -561,6 +552,7 @@ class OpalNullMediaStream : public OpalMediaStream, public OpalMediaStreamPacing
   protected:
     virtual void InternalClose() { }
     virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & newMediaFormat);
+    virtual bool InternalSetPaused(bool pause, bool fromUser, bool fromPatch);
 
     bool m_isSynchronous;
     bool m_requiresPatchThread;
@@ -603,14 +595,6 @@ class OpalRTPMediaStream : public OpalMediaStream
     /**Returns true if the media stream is open.
       */
     virtual bool IsOpen() const;
-
-    /**Set the paused state for stream.
-       This will stop reading/writing data from the stream.
-      */
-    virtual bool SetPaused(
-      bool pause,             ///< Indicate that the stream should be paused
-      bool fromPatch = false  ///<  Is being called from OpalMediaPatch
-    );
 
     /**Read an RTP frame of data from the source media stream.
        The new behaviour simply calls OpalRTPSession::ReadData().
@@ -666,6 +650,7 @@ class OpalRTPMediaStream : public OpalMediaStream
   protected:
     virtual void InternalClose();
     virtual bool InternalSetJitterBuffer(const OpalJitterBuffer::Init & init) const;
+    virtual bool InternalSetPaused(bool pause, bool fromUser, bool fromPatch);
 
     OpalRTPSession & rtpSession;
 #if OPAL_VIDEO

@@ -190,8 +190,9 @@ class OpalMediaPatch : public PSafeObject
 
     /**Set streams to paused.
       */
-    virtual bool SetPaused(
-      bool pause    ///< Indicate that the stream should be paused
+    virtual bool InternalSetPaused(
+      bool pause,    ///< Indicate that the stream should be paused
+      bool fromUser  ///< Pause is from user, not internal logic
     );
 
     /**Push a frame out to all the sink streams, transcoding as necessary.
