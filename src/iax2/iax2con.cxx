@@ -386,17 +386,11 @@ PBoolean IAX2Connection::IsOnHold(bool fromRemote) const
   return fromRemote ? remote_hold : local_hold;
 }
 
-bool IAX2Connection::Hold(bool fromRemote, bool placeOnHold)
+bool IAX2Connection::HoldRemote(bool placeOnHold)
 {
-  if (IsOnHold(fromRemote))
-    return true;
-
-  if (fromRemote)
-    return false;
-
   local_hold = placeOnHold;
   PauseMediaStreams(placeOnHold);
-  OnHold(fromRemote, placeOnHold);
+  OnHold(false, placeOnHold);
 
   if (placeOnHold)
     iax2Processor.SendHold();

@@ -319,7 +319,7 @@ PBoolean OpalConnection::OnSetUpConnection()
 }
 
 
-bool OpalConnection::Hold(bool /*fromRemote*/, bool /*placeOnHold*/)
+bool OpalConnection::HoldRemote(bool /*placeOnHold*/)
 {
   return false;
 }

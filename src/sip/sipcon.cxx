@@ -904,7 +904,7 @@ static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
     OpalMediaFormatList::const_iterator fmt = answerFormats.FindFormat(stream->GetMediaFormat());
     if (fmt != answerFormats.end() && stream->UpdateMediaFormat(*fmt)) {
       PTRACE2(4, &*stream, "SIP\tINVITE change needs to " << (paused ? "pause" : "resume") << " stream " << *stream);
-      stream->SetPaused(paused);
+      stream->InternalSetPaused(paused, false, false);
       return !paused;
     }
     PTRACE(4, "SIP\tRe-INVITE (format change) needs to close stream " << *stream);
@@ -1209,7 +1209,7 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
 
     if (sendStream != NULL) {
       sendStream->UpdateMediaFormat(*m_answerFormatList.FindFormat(sendStream->GetMediaFormat()));
-      sendStream->SetPaused((otherSidesDir&SDPMediaDescription::RecvOnly) == 0);
+      sendStream->InternalSetPaused((otherSidesDir&SDPMediaDescription::RecvOnly) == 0, false, false);
     }
 
     if (recvStream == NULL) {
@@ -1239,7 +1239,7 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
         adjustedMediaFormat.SetPayloadType(sendStream->GetMediaFormat().GetPayloadType());
 
       recvStream->UpdateMediaFormat(adjustedMediaFormat);
-      recvStream->SetPaused((otherSidesDir&SDPMediaDescription::SendOnly) == 0);
+      recvStream->InternalSetPaused((otherSidesDir&SDPMediaDescription::SendOnly) == 0, false, false);
     }
   }
 
@@ -1838,23 +1838,11 @@ PString SIPConnection::GetCallInfo() const
 }
 
 
-bool SIPConnection::Hold(bool fromRemote, bool placeOnHold)
+bool SIPConnection::HoldRemote(bool placeOnHold)
 {
 #if PTRACING
   const char * holdStr = placeOnHold ? "on" : "off";
 #endif
-
-  if (fromRemote) {
-    if (m_holdFromRemote == placeOnHold) {
-      PTRACE(4, "SIP\tHold " << holdStr << " request ignored as already set on " << *this);
-      return true;
-    }
-    m_holdFromRemote = placeOnHold;
-    if (SendReINVITE(PTRACE_PARAM(placeOnHold ? "break remote hold" : "request remote hold")))
-      return true;
-    m_holdFromRemote = !placeOnHold;
-    return false;
-  }
 
   switch (m_holdToRemote) {
     case eHoldOff :
@@ -3464,7 +3452,7 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
 #endif
                                          ) && (recvStream = GetMediaStream(sessionId, true)) != NULL) {
       recvStream->UpdateMediaFormat(*m_localMediaFormats.FindFormat(recvStream->GetMediaFormat()));
-      recvStream->SetPaused(recvDisabled);
+      recvStream->InternalSetPaused(recvDisabled, false, false);
     }
     else if (!recvDisabled)
       SendReINVITE(PTRACE_PARAM("close after rx open fail"));
@@ -3479,7 +3467,7 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
                                            , mediaDescription->GetContentRole()
 #endif
                                            ) && (sendStream = GetMediaStream(sessionId, false)) != NULL)
-        sendStream->SetPaused(sendDisabled);
+        sendStream->InternalSetPaused(sendDisabled, false, false);
       else if (!sendDisabled)
         SendReINVITE(PTRACE_PARAM("close after tx open fail"));
     }

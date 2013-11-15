@@ -461,14 +461,14 @@ bool OpalMediaStream::InternalSetJitterBuffer(const OpalJitterBuffer::Init &) co
 }
 
 
-bool OpalMediaStream::SetPaused(bool pause, bool fromPatch)
+bool OpalMediaStream::InternalSetPaused(bool pause, bool fromUser, bool fromPatch)
 {
   // We make referenced copy of pointer so can't be deleted out from under us
   OpalMediaPatchPtr mediaPatch = m_mediaPatch;
 
   // If we are source, then update the sink side, and vice versa
   if (!fromPatch && mediaPatch != NULL)
-    return mediaPatch->SetPaused(pause);
+    return mediaPatch->InternalSetPaused(pause, fromUser);
 
   PSafeLockReadWrite mutex(*this);
   if (!mutex.IsLocked())
@@ -480,7 +480,8 @@ bool OpalMediaStream::SetPaused(bool pause, bool fromPatch)
   PTRACE(3, "Media\t" << (pause ? "Paused" : "Resumed") << " stream " << *this);
   m_paused = pause;
 
-  connection.OnPauseMediaStream(*this, pause);
+  if (fromUser)
+    connection.OnPauseMediaStream(*this, pause);
   return true;
 }
 
@@ -685,9 +686,9 @@ PBoolean OpalNullMediaStream::WriteData(const BYTE * /*buffer*/, PINDEX length, 
 }
 
 
-bool OpalNullMediaStream::SetPaused(bool pause, bool fromPatch)
+bool OpalNullMediaStream::InternalSetPaused(bool pause, bool fromUser, bool fromPatch)
 {
-  if (!OpalMediaStream::SetPaused(pause, fromPatch))
+  if (!OpalMediaStream::InternalSetPaused(pause, fromUser, fromPatch))
     return false;
 
   // If coming out of pause, restart pacing delay
@@ -775,9 +776,9 @@ void OpalRTPMediaStream::InternalClose()
 }
 
 
-bool OpalRTPMediaStream::SetPaused(bool pause, bool fromPatch)
+bool OpalRTPMediaStream::InternalSetPaused(bool pause, bool fromUser, bool fromPatch)
 {
-  if (!OpalMediaStream::SetPaused(pause, fromPatch))
+  if (!OpalMediaStream::InternalSetPaused(pause, fromUser, fromPatch))
     return false;
 
   // If coming out of pause, reopen the RTP session, even though it is probably

@@ -608,14 +608,14 @@ void OpalMediaPatch::InternalOnMediaCommand2(OpalMediaCommand * command)
 }
 
 
-bool OpalMediaPatch::SetPaused(bool pause)
+bool OpalMediaPatch::InternalSetPaused(bool pause, bool fromUser)
 {
   PSafeLockReadOnly mutex(*this);
 
-  bool atLeastOne = source.SetPaused(pause, true);
+  bool atLeastOne = source.InternalSetPaused(pause, fromUser, true);
 
   for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
-    if (s->stream->SetPaused(pause, true))
+    if (s->stream->InternalSetPaused(pause, fromUser, true))
       atLeastOne = true;
   }
 
