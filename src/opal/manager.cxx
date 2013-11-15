@@ -539,13 +539,13 @@ PSafePtr<OpalCall> OpalManager::SetUpCall(const PString & partyA,
 
   PTRACE_CONTEXT_ID_PUSH_THREAD(call);
 
-  call->SetPartyB(partyB);
+  call->SetPartyB(partyB.Trim());
 
   // If we are the A-party then need to initiate a call now in this thread and
   // go through the routing engine via OnIncomingConnection. If we were the
   // B-Party then SetUpConnection() gets called in the context of the A-party
   // thread.
-  PSafePtr<OpalConnection> connection = MakeConnection(*call, partyA, userData, options, stringOptions);
+  PSafePtr<OpalConnection> connection = MakeConnection(*call, partyA.Trim(), userData, options, stringOptions);
   if (connection != NULL) {
     PTRACE(4, "OpalMan\tSetUpCall started, call=" << *call);
     new PThread1Arg< PSafePtr<OpalConnection> >(connection, AsynchCallSetUp, true, "SetUpCall");
