@@ -52,6 +52,7 @@ OpalLocalEndPoint::OpalLocalEndPoint(OpalManager & mgr, const char * prefix, boo
   : OpalEndPoint(mgr, prefix, CanTerminateCall)
   , m_deferredAlerting(false)
   , m_deferredAnswer(false)
+  , m_pauseTransmitMediaOnHold(true)
   , m_defaultAudioSynchronicity(e_Synchronous)
   , m_defaultVideoSourceSynchronicity(e_Synchronous)
 {
@@ -84,6 +85,18 @@ PSafePtr<OpalConnection> OpalLocalEndPoint::MakeConnection(OpalCall & call,
                                       OpalConnection::StringOptions * stringOptions)
 {
   return AddConnection(CreateConnection(call, userData, options, stringOptions));
+}
+
+
+void OpalLocalEndPoint::OnHold(OpalConnection & connection, bool fromRemote, bool onHold)
+{
+  if (!fromRemote && m_pauseTransmitMediaOnHold) {
+    OpalMediaStreamPtr stream;
+    while ((stream = connection.GetMediaStream(OpalMediaType(), true, stream)) != NULL)
+      stream->SetPaused(onHold);
+  }
+
+  OpalEndPoint::OnHold(connection, fromRemote, onHold);
 }
 
 
