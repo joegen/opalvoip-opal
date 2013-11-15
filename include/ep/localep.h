@@ -122,6 +122,18 @@ class OpalLocalEndPoint : public OpalEndPoint
       unsigned int options = 0,  ///<  options to pass to conneciton
       OpalConnection::StringOptions * stringOptions  = NULL ///< Options to pass to connection
     );
+
+    /**A call back function whenever a connection is "held" or "retrieved".
+       This indicates that a connection to an endpoint was held, or
+       retrieved, either locally or by the remote endpoint.
+
+       The default behaviour calls the OpalManager function of the same name.
+      */
+    virtual void OnHold(
+      OpalConnection & connection,   ///<  Connection that was held/retrieved
+      bool fromRemote,               ///<  Indicates remote has held local connection
+      bool onHold                    ///<  Indicates have just been held/retrieved.
+    );
   //@}
 
   /**@name Customisation call backs */
@@ -398,11 +410,22 @@ class OpalLocalEndPoint : public OpalEndPoint
     /**Indicate AcceptIncomingCall() execution is be deferred or immediate on OnIncomingCall().
       */
     void SetDeferredAnswer(bool defer) { m_deferredAnswer = defer; }
+
+    /**Indicate when we put remote on hold, our media is also paused.
+       If system will send music on hold or similar, then this should be set to false.
+      */
+    bool WillPauseTransmitMediaOnHold() const { return m_pauseTransmitMediaOnHold; }
+
+    /**Indicate when we put remote on hold, our media is also paused.
+       If system will send music on hold or similar, then this should be set to false.
+      */
+    void SetPauseTransmitMediaOnHold(bool pause) { m_pauseTransmitMediaOnHold = pause; }
   //@}
 
   protected:
     bool m_deferredAlerting;
     bool m_deferredAnswer;
+    bool m_pauseTransmitMediaOnHold;
 
     CallbackMap m_useCallback;
 

@@ -82,6 +82,7 @@ OpalPCSSEndPoint::OpalPCSSEndPoint(OpalManager & mgr, const char * prefix)
 #endif
 
   SetDeferredAnswer(true);
+  SetPauseTransmitMediaOnHold(false);
 }
 
 
