@@ -2221,6 +2221,23 @@ bool SDPSessionDescription::IsHold() const
 }
 
 
+bool SDPSessionDescription::HasActiveSend() const
+{
+  if (defaultConnectAddress.IsEmpty()) // Old style "hold"
+    return false;
+
+  if (GetBandwidth(SDPSessionDescription::ApplicationSpecificBandwidthType()) == 0)
+    return false;
+
+  for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
+    if ((mediaDescriptions[i].GetDirection() & SDPMediaDescription::SendOnly) != 0)
+      return true;
+  }
+
+  return false;
+}
+
+
 void SDPSessionDescription::SetDefaultConnectAddress(const OpalTransportAddress & address)
 {
    defaultConnectAddress = address;
