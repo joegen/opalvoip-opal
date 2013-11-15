@@ -326,13 +326,13 @@ class OpalCall : public PSafeObject
        This function places the remote user of the network connection in the
        call on hold.
       */
-    bool Hold();
+    bool Hold(bool hold = true);
 
     /**Retrieve call from hold.
        This function retrieves the remote user of the network connection in
        the call from hold.
       */
-    bool Retrieve();
+    bool Retrieve() { return Hold(false); }
 
     /**Indicate if call is in hold.
        This function determines if the local or remote user of the network
