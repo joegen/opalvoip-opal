@@ -203,8 +203,7 @@ class H46019UDPSocket : public PNATUDPSocket
 
     void SetMultiplexID(unsigned multiplexID) { m_multiplexedTransmit = true; m_multiplexID = multiplexID; }
 
-    RTP_DataFrame::PayloadTypes GetKeepAlivePayloadType() const { return m_keepAlivePayloadType; }
-    void SetKeepAlivePayloadType(RTP_DataFrame::PayloadTypes type) { m_keepAlivePayloadType = type; }
+    RTP_DataFrame::PayloadTypes FindKeepAlivePayloadType(H323Connection & connection);
 
   protected:
     bool InternalWriteTo(const Slice * slices, size_t sliceCount, const PIPSocketAddressAndPort & ipAndPort);
