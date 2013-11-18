@@ -196,15 +196,8 @@ void SIPEndPoint::NewIncomingConnection(OpalListener &, const OpalTransportPtr &
     return;
   }
 
-  PTRACE(2, "SIP\tListening thread started.");
-
   AddTransport(transport);
-
-  do {
-    HandlePDU(transport);
-  } while (transport->IsGood());
-
-  PTRACE(2, "SIP\tListening thread finished.");
+  TransportThreadMain(transport);
 }
 
 
@@ -238,15 +231,16 @@ void SIPEndPoint::AddTransport(const OpalTransportPtr & transport)
 
 void SIPEndPoint::TransportThreadMain(OpalTransportPtr transport)
 {
-  PTRACE(4, "SIP\tRead thread started.");
+  PTRACE(4, "SIP\tTransport read thread started.");
 
+  transport->SetReadTimeout(GetManager().GetTransportIdleTime()+10000);
   do {
     HandlePDU(transport);
   } while (transport->IsGood());
 
   transport->Close();
 
-  PTRACE(4, "SIP\tRead thread finished.");
+  PTRACE(4, "SIP\tTransport read thread finished.");
 }
 
 
