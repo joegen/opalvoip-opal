@@ -36,6 +36,8 @@
 
 #include <opal/buildopts.h>
 
+#if OPAL_HAS_H224
+
 #include <opal/mediatype.h>
 #include <opal/mediafmt.h>
 #include <h224/q922.h>
@@ -172,5 +174,7 @@ private:
   PINDEX GetHeaderSize() const;
 };
 
-#endif // OPAL_H224_H224_H
 
+#endif // OPAL_HAS_H224
+
+#endif // OPAL_H224_H224_H
