@@ -543,34 +543,41 @@ static wxFrame * TextCtrlChannelFrame;
 class TextCtrlChannel : public PChannel
 {
     PCLASSINFO(TextCtrlChannel, PChannel)
+  private:
+    static wxFrame * sm_frame;
+
   public:
     TextCtrlChannel()
       { }
+
+    static void SetFrame(wxFrame * frame)
+    {
+      sm_frame = frame;
+    }
 
     virtual PBoolean Write(
       const void * buf, /// Pointer to a block of memory to write.
       PINDEX len        /// Number of bytes to write.
     ) {
-      if (TextCtrlChannelFrame == NULL)
+      if (sm_frame == NULL)
         return false;
 
-      wxCommandEvent theEvent(wxEvtLogMessage);
-      theEvent.SetEventObject(TextCtrlChannelFrame);
+      wxCommandEvent * theEvent = new wxCommandEvent(wxEvtLogMessage);
+      theEvent->SetEventObject(sm_frame);
       PwxString str(wxString::FromUTF8((const char *)buf, (size_t)len-1));
-      theEvent.SetString(str);
-      TextCtrlChannelFrame->GetEventHandler()->AddPendingEvent(theEvent);
+      theEvent->SetString(str);
+      sm_frame->GetEventHandler()->QueueEvent(theEvent);
       PTRACE(3, "OpenPhone\t" << str);
       return true;
     }
 
-    static TextCtrlChannel & Instance()
-    {
-      static PThreadLocalStorage<TextCtrlChannel> instance;
-      return *instance;
-    }
+    static PThreadLocalStorage<TextCtrlChannel> sm_instances;
 };
 
-#define LogWindow TextCtrlChannel::Instance()
+wxFrame * TextCtrlChannel::sm_frame;
+PThreadLocalStorage<TextCtrlChannel> TextCtrlChannel::sm_instances;
+
+#define LogWindow *TextCtrlChannel::sm_instances
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -797,13 +804,13 @@ MyManager::MyManager()
   m_RingSoundTimer.SetNotifier(PCREATE_NOTIFIER(OnRingSoundAgain));
   m_ForwardingTimer.SetNotifier(PCREATE_NOTIFIER(OnForwardingTimeout));
 
-  TextCtrlChannelFrame = this;
+  TextCtrlChannel::SetFrame(this);
 }
 
 
 MyManager::~MyManager()
 {
-  TextCtrlChannelFrame = NULL;
+  TextCtrlChannel::SetFrame(NULL);
 
   ShutDownEndpoints();
 
@@ -1590,7 +1597,7 @@ void MyManager::SetNAT(const PwxString & method, bool active, const PwxString & 
 {
   if (!server.empty()) {
     LogWindow << method << " server \"" << server << "\" being contacted ..." << endl;
-    GetEventHandler()->ProcessPendingEvents();
+    wxGetApp().ProcessPendingEvents();
     Update();
   }
 
