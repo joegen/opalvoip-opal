@@ -127,18 +127,8 @@ bool H460_FeatureStd19::OnSendingOLCGenericInformation(unsigned sessionID, H245_
       return false;
     }
 
-    RTP_DataFrame::PayloadTypes payloadType = rtp->GetKeepAlivePayloadType();
-    if (payloadType == RTP_DataFrame::IllegalPayloadType) {
-      OpalMediaFormatList mediaFormats = m_connection->GetLocalMediaFormats();
-      payloadType = RTP_DataFrame::MaxPayloadType;
-      do{
-        payloadType = (RTP_DataFrame::PayloadTypes)(payloadType-1);
-      } while (mediaFormats.FindFormat(payloadType) != mediaFormats.end());
-      rtp->SetKeepAlivePayloadType(payloadType);
-    }
-
     traversal.IncludeOptionalField(H46019_TraversalParameters::e_keepAlivePayloadType);
-    ((PASN_Integer &)traversal.m_keepAlivePayloadType).SetValue(payloadType);
+    ((PASN_Integer &)traversal.m_keepAlivePayloadType).SetValue(rtp->FindKeepAlivePayloadType(*m_connection));
   }
   else {
     if (server->GetKeepAliveAddress().SetPDU(traversal.m_keepAliveChannel)) {
@@ -232,6 +222,7 @@ void H460_FeatureStd19::OnReceiveOLCGenericInformation(unsigned sessionID, const
     if (traversal.HasOptionalField(H46019_TraversalParameters::e_keepAliveInterval))
       ttl = traversal.m_keepAliveInterval;
 
+    rtp->FindKeepAlivePayloadType(*m_connection);
     rtp->ActivateKeepAliveRTP(keepAliveAddress, ttl);
     rtcp->ActivateKeepAliveRTCP(ttl);
   }
@@ -476,6 +467,20 @@ H46019UDPSocket::~H46019UDPSocket()
 #if H46024_ANNEX_A_SUPPORT
   m_Probe.Stop();
 #endif
+}
+
+
+RTP_DataFrame::PayloadTypes H46019UDPSocket::FindKeepAlivePayloadType(H323Connection & connection)
+{
+  if (m_keepAlivePayloadType == RTP_DataFrame::IllegalPayloadType) {
+    OpalMediaFormatList mediaFormats = connection.GetLocalMediaFormats();
+    m_keepAlivePayloadType = RTP_DataFrame::MaxPayloadType;
+    do {
+      m_keepAlivePayloadType = (RTP_DataFrame::PayloadTypes)(m_keepAlivePayloadType-1);
+    } while (mediaFormats.FindFormat(m_keepAlivePayloadType) != mediaFormats.end());
+  }
+
+  return m_keepAlivePayloadType;
 }
 
 
