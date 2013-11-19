@@ -1885,7 +1885,7 @@ void OpalConnection::AutoStartMap::Initialise(const OpalConnection::StringOption
       break; // No point in doing others.
     }
     else {
-      PTRACE(2, NULL, "OpalCon", "Illegal AutoStart mode \"" << mode << '"');
+      PTRACE(2, "OpalCon", "Illegal AutoStart mode \"" << mode << '"');
     }
   }
 }
@@ -1895,7 +1895,7 @@ void OpalConnection::AutoStartMap::SetAutoStart(const PString & mediaTypeName, O
 {
   OpalMediaType mediaType(mediaTypeName);
   if (mediaType.empty()) {
-    PTRACE(2, NULL, "OpalCon", "Illegal/unknown AutoStart media type \"" << mediaTypeName << '"');
+    PTRACE(2, "OpalCon", "Illegal/unknown AutoStart media type \"" << mediaTypeName << '"');
     return;
   }
 
