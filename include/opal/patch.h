@@ -183,9 +183,8 @@ class OpalMediaPatch : public PSafeObject
 
        @returns true if command is handled.
       */
-    virtual PBoolean ExecuteCommand(
-      const OpalMediaCommand & command,   ///<  Command to execute.
-      PBoolean fromSink                       ///<  Flag for source or sink
+    virtual bool ExecuteCommand(
+      const OpalMediaCommand & command   ///<  Command to execute.
     );
 
     /**Set streams to paused.

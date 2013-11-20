@@ -168,18 +168,19 @@ bool OpalMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & newMedia
 }
 
 
-PBoolean OpalMediaStream::ExecuteCommand(const OpalMediaCommand & command)
+bool OpalMediaStream::ExecuteCommand(const OpalMediaCommand & command) const
 {
   // We make referenced copy of pointer so can't be deleted out from under us
   OpalMediaPatchPtr mediaPatch = m_mediaPatch;
 
-  if (mediaPatch == NULL)
-    return false;
+  return mediaPatch != NULL && mediaPatch->ExecuteCommand(command);
 
+}
+
+
+bool OpalMediaStream::InternalExecuteCommand(const OpalMediaCommand & command)
+{
   PTRACE(4, "Media\tExecute command \"" << command << "\" on " << *this << " for " << connection);
-
-  if (mediaPatch->ExecuteCommand(command, IsSink()))
-    return true;
 
   if (IsSink())
     return false;
@@ -1393,14 +1394,14 @@ void OpalVideoMediaStream::InternalClose()
 }
 
 
-PBoolean OpalVideoMediaStream::ExecuteCommand(const OpalMediaCommand & command)
+bool OpalVideoMediaStream::InternalExecuteCommand(const OpalMediaCommand & command)
 {
-  if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
+  if (IsSource() && PIsDescendant(&command, OpalVideoUpdatePicture)) {
     PTRACE_IF(3, !m_needKeyFrame, "Media\tKey frame forced in video stream");
     m_needKeyFrame = true; // Reset when I-Frame is sent
   }
 
-  return OpalMediaStream::ExecuteCommand(command);
+  return OpalMediaStream::InternalExecuteCommand(command);
 }
 
 

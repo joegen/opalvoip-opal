@@ -898,9 +898,7 @@ void OpalFaxConnection::OnClosedMediaStream(const OpalMediaStream & stream)
     bothClosed = other == NULL || !other->IsOpen();
 
     PTRACE(4, "FAX\tTerminating fax in closed media stream id=" << stream.GetID());
-    OpalMediaPatchPtr patch = stream.GetPatch();
-    if (patch != NULL)
-      patch->ExecuteCommand(OpalFaxTerminate(), false);
+    stream.ExecuteCommand(OpalFaxTerminate());
 
     if (m_finalStatistics.m_fax.m_result < 0) {
       stream.GetStatistics(m_finalStatistics);

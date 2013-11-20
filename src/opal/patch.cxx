@@ -537,6 +537,11 @@ bool OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 {
   PSafeLockReadOnly mutex(*this);
 
+  if (m_bypassFromPatch != NULL || m_bypassToPatch != NULL) {
+    PTRACE(3, "Patch\tCould not update media format for bypassed patch " << *this);
+    return false;
+  }
+
   bool atLeastOne = source.InternalUpdateMediaFormat(mediaFormat);
 
   for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
@@ -551,39 +556,50 @@ bool OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 }
 
 
-PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, PBoolean fromSink)
+PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command)
 {
   bool atLeastOne = false;
 
   if (!LockReadOnly())
     return false;
 
-  OpalMediaPatch * bypassPatch = fromSink ? m_bypassFromPatch : m_bypassToPatch;
-  PSafePtr<OpalMediaPatch> patch = bypassPatch != NULL ? bypassPatch : this;
+  PSafePtr<OpalMediaPatch> fromPatch;
+  if (m_bypassFromPatch != NULL) // Don't use tradic ?: as GNU doesn't like it
+    fromPatch = m_bypassFromPatch;
+  else
+    fromPatch = this;
+
+  PSafePtr<OpalMediaPatch> toPatch;
+  if (m_bypassToPatch != NULL) // Don't use tradic ?: as GNU doesn't like it
+    toPatch = m_bypassToPatch;
+  else
+    toPatch = this;
 
   UnlockReadOnly();
 
-  if (!patch.SetSafetyMode(PSafeReadOnly))
-    return false;
 
-  if (fromSink)
-    atLeastOne = patch->source.ExecuteCommand(command);
-  else {
-    for (PList<Sink>::iterator s = patch->sinks.begin(); s != patch->sinks.end(); ++s) {
+  if (fromPatch.SetSafetyMode(PSafeReadOnly)) {
+    atLeastOne = fromPatch->source.InternalExecuteCommand(command);
+    fromPatch.SetSafetyMode(PSafeReference);
+  }
+
+  if (toPatch.SetSafetyMode(PSafeReadOnly)) {
+    for (PList<Sink>::iterator s = toPatch->sinks.begin(); s != toPatch->sinks.end(); ++s) {
       if (s->ExecuteCommand(command))
         atLeastOne = true;
     }
+    toPatch.SetSafetyMode(PSafeReference);
   }
-
-  patch.SetSafetyMode(PSafeReference);
 
 #if PTRACING
   if (PTrace::CanTrace(5)) {
     ostream & trace = PTrace::Begin(5, __FILE__, __LINE__, this);
     trace << "Patch\tExecute" << (atLeastOne ? "d" : "fail for ")
           << " command \"" << command << '"';
-    if (patch != this)
-      trace << " bypassing " << *this << " to " << *patch;
+    if (fromPatch != this)
+      trace << " bypassing " << *fromPatch << " to " << *this;
+    else if (toPatch != this)
+      trace << " bypassing " << *this << " to " << *toPatch;
     else
       trace << " on " << *this;
     trace << PTrace::End;
@@ -857,7 +873,7 @@ bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat
 
 bool OpalMediaPatch::Sink::ExecuteCommand(const OpalMediaCommand & command)
 {
-  PBoolean atLeastOne = false;
+  bool atLeastOne = stream->InternalExecuteCommand(command);
 
   if (secondaryCodec != NULL)
     atLeastOne = secondaryCodec->ExecuteCommand(command) || atLeastOne;

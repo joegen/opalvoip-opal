@@ -189,9 +189,9 @@ class OpalMediaStream : public PSafeObject
 
        @returns true if command is handled.
       */
-    virtual PBoolean ExecuteCommand(
+    bool ExecuteCommand(
       const OpalMediaCommand & command    ///<  Command to execute.
-    );
+    ) const;
 
     /**Open the media stream using the media format.
 
@@ -422,6 +422,7 @@ class OpalMediaStream : public PSafeObject
     OpalMediaPatchPtr InternalSetPatchPart1(OpalMediaPatch * newPatch);
     void InternalSetPatchPart2(const OpalMediaPatchPtr & oldPatch);
     virtual bool InternalSetJitterBuffer(const OpalJitterBuffer::Init & init) const;
+    virtual bool InternalExecuteCommand(const OpalMediaCommand & command);
 
     /**Close any internal components of the stream.
        This should be used in preference to overriding the Close() function as
@@ -902,17 +903,6 @@ class OpalVideoMediaStream : public OpalMediaStream
       */
     virtual PBoolean Open();
 
-    /**Execute the command specified to the transcoder. The commands are
-       highly context sensitive, for example OpalVideoUpdatePicture would only
-       apply to a video transcoder.
-
-       The default behaviour checks for video fast update and then
-       passes the command on to the OpalMediaPatch.
-      */
-    virtual PBoolean ExecuteCommand(
-      const OpalMediaCommand & command    ///<  Command to execute.
-    );
-
     /**Read raw media data from the source media stream.
        The default behaviour simply calls ReadPacket() on the data portion of the
        RTP_DataFrame and sets the frames timestamp and marker from the internal
@@ -980,6 +970,7 @@ class OpalVideoMediaStream : public OpalMediaStream
   protected:
     virtual void InternalClose();
     virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & newMediaFormat);
+    virtual bool InternalExecuteCommand(const OpalMediaCommand & command);
     bool InternalAdjustDevices();
 
     PVideoInputDevice  * m_inputDevice;
