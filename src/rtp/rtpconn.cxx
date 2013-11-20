@@ -428,6 +428,8 @@ void OpalRTPConnection::DetermineRTPNAT(const PIPSocket::Address & localAddr,
 
 bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
 {
+  PTRACE(5, "RTPCon\tOnMediaCommand \"" << command << '"');
+
   unsigned sessionID = stream.GetSessionID();
   OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(GetMediaSession(sessionID));
   if (session == NULL)
@@ -491,6 +493,7 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
 
       return true;
     }
+    PTRACE(5, "RTPCon\tRTCP Intra-Frame Request disabled in string options");
   }
 #endif // OPAL_VIDEO
 

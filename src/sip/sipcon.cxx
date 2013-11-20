@@ -3957,10 +3957,14 @@ bool SIPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaComm
 {
   bool done = OpalRTPConnection::OnMediaCommand(stream, command);
 
+  PTRACE(5, "SIP\tOnMediaCommand \"" << command << '"');
+
 #if OPAL_VIDEO
-  if (PIsDescendant(&command, OpalVideoUpdatePicture) &&
-        (m_stringOptions.GetInteger(OPAL_OPT_VIDUP_METHODS, OPAL_OPT_VIDUP_METHOD_DEFAULT)&OPAL_OPT_VIDUP_METHOD_OOB) != 0) {
-    if (m_infoPictureFastUpdateTimer.IsRunning()) {
+  if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
+    if ((m_stringOptions.GetInteger(OPAL_OPT_VIDUP_METHODS, OPAL_OPT_VIDUP_METHOD_DEFAULT)&OPAL_OPT_VIDUP_METHOD_OOB) == 0) {
+      PTRACE(5, "RTPCon\tINFO picture_fast_update disabled in string options");
+    }
+    else if (m_infoPictureFastUpdateTimer.IsRunning()) {
       PTRACE(4, "SIP\tRecent INFO picture_fast_update was sent, not sending another");
     }
     else {
@@ -3974,9 +3978,10 @@ bool SIPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaComm
                                "</to_encoder>"
                               "</vc_primitive>"
                              "</media_control>");
-      SendINFO(params);
-      m_infoPictureFastUpdateTimer.SetInterval(0, 3);
-      done = true;
+      if (SendINFO(params)) {
+        m_infoPictureFastUpdateTimer.SetInterval(0, 3);
+        done = true;
+      }
     }
   }
 #endif
