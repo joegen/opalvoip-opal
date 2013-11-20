@@ -533,9 +533,17 @@ PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command)
 {
   PSafeLockReadOnly mutex(*this);
 
-  bool atLeastOne = (m_bypassFromPatch != NULL ? m_bypassFromPatch : this)->source.ExecuteCommand(command);
+  OpalMediaPatch * patch;
+  if (m_bypassFromPatch != NULL) // Don't use tradic ?: as GNU doesn't like it
+    patch = m_bypassFromPatch;
+  else
+    patch = this;
+  bool atLeastOne = patch->source.ExecuteCommand(command);
 
-  OpalMediaPatch * patch = m_bypassToPatch != NULL ? m_bypassToPatch : this;
+  if (m_bypassToPatch != NULL) // Don't use tradic ?: as GNU doesn't like it
+    patch = m_bypassToPatch;
+  else
+    patch = this;
   for (PList<Sink>::iterator s = patch->sinks.begin(); s != patch->sinks.end(); ++s) {
     if (s->ExecuteCommand(command))
       atLeastOne = true;
