@@ -538,7 +538,7 @@ PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command)
     patch = m_bypassFromPatch;
   else
     patch = this;
-  bool atLeastOne = patch->source.ExecuteCommand(command);
+  bool atLeastOne = patch->source.InternalExecuteCommand(command);
 
   if (m_bypassToPatch != NULL) // Don't use tradic ?: as GNU doesn't like it
     patch = m_bypassToPatch;
