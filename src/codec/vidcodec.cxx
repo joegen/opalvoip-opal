@@ -68,7 +68,7 @@ const OpalVideoFormat & GetOpalRGB32()
     NULL,
     FRAME_WIDTH, FRAME_HEIGHT,
     FRAME_RATE,
-    32*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE  // Bandwidth
+    32U*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE  // Bandwidth
   );
   return RGB32;
 }
