@@ -510,6 +510,11 @@ bool OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 {
   PSafeLockReadWrite mutex(*this);
 
+  if (m_bypassFromPatch != NULL || m_bypassToPatch != NULL) {
+    PTRACE(3, "Patch\tCould not update media format for bypased patch " << *this);
+    return false;
+  }
+
   bool atLeastOne = source.InternalUpdateMediaFormat(mediaFormat);
 
   for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
@@ -524,27 +529,16 @@ bool OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 }
 
 
-PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, PBoolean fromSink)
+PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command)
 {
   PSafeLockReadOnly mutex(*this);
 
-  OpalMediaPatch * patch = this;
+  bool atLeastOne = (m_bypassFromPatch != NULL ? m_bypassFromPatch : this)->source.ExecuteCommand(command);
 
-  bool atLeastOne = false;
-
-  if (fromSink) {
-    if (m_bypassFromPatch != NULL)
-      patch = m_bypassFromPatch;
-    atLeastOne = patch->source.ExecuteCommand(command);
-  }
-  else {
-    if (m_bypassToPatch != NULL)
-      patch = m_bypassToPatch;
-
-    for (PList<Sink>::iterator s = patch->sinks.begin(); s != patch->sinks.end(); ++s) {
-      if (s->ExecuteCommand(command))
-        atLeastOne = true;
-    }
+  OpalMediaPatch * patch = m_bypassToPatch != NULL ? m_bypassToPatch : this;
+  for (PList<Sink>::iterator s = patch->sinks.begin(); s != patch->sinks.end(); ++s) {
+    if (s->ExecuteCommand(command))
+      atLeastOne = true;
   }
 
 #if PTRACING
@@ -552,8 +546,10 @@ PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, PBoole
     ostream & trace = PTrace::Begin(5, __FILE__, __LINE__, this);
     trace << "Patch\t" << (atLeastOne ? "Locally executed" : "No local execute of")
           << " command \"" << command << '"';
-    if (patch != this)
-      trace << " bypassing " << *this << " to " << *patch;
+    if (m_bypassFromPatch != NULL)
+      trace << " bypassing " << *m_bypassFromPatch << " to " << *this;
+    else if (m_bypassToPatch != NULL)
+      trace << " bypassing " << *this << " to " << *m_bypassToPatch;
     else
       trace << " on " << *this;
     trace << PTrace::End;
@@ -820,7 +816,7 @@ bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat
 
 bool OpalMediaPatch::Sink::ExecuteCommand(const OpalMediaCommand & command)
 {
-  PBoolean atLeastOne = PFalse;
+  bool atLeastOne = stream->InternalExecuteCommand(command);
 
   if (secondaryCodec != NULL)
     atLeastOne = secondaryCodec->ExecuteCommand(command) || atLeastOne;

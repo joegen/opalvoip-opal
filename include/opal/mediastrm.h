@@ -188,7 +188,7 @@ class OpalMediaStream : public PSafeObject
 
        @returns true if command is handled.
       */
-    virtual PBoolean ExecuteCommand(
+    bool ExecuteCommand(
       const OpalMediaCommand & command    ///<  Command to execute.
     );
 
@@ -417,6 +417,7 @@ class OpalMediaStream : public PSafeObject
     void IncrementTimestamp(PINDEX size);
     bool InternalWriteData(const BYTE * data, PINDEX length, PINDEX & written);
     virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat);
+    virtual bool InternalExecuteCommand(const OpalMediaCommand & command);
 
     /**Close any internal components of the stream.
        This should be used in preference to overriding the Close() function as
@@ -915,17 +916,6 @@ class OpalVideoMediaStream : public OpalMediaStream
       */
     virtual PBoolean Open();
 
-    /**Execute the command specified to the transcoder. The commands are
-       highly context sensitive, for example OpalVideoUpdatePicture would only
-       apply to a video transcoder.
-
-       The default behaviour checks for video fast update and then
-       passes the command on to the OpalMediaPatch.
-      */
-    virtual PBoolean ExecuteCommand(
-      const OpalMediaCommand & command    ///<  Command to execute.
-    );
-
     /**Read raw media data from the source media stream.
        The default behaviour simply calls ReadPacket() on the data portion of the
        RTP_DataFrame and sets the frames timestamp and marker from the internal
@@ -979,6 +969,7 @@ class OpalVideoMediaStream : public OpalMediaStream
   protected:
     virtual void InternalClose();
     virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & newMediaFormat);
+    virtual bool InternalExecuteCommand(const OpalMediaCommand & command);
 
     PVideoInputDevice  * m_inputDevice;
     PVideoOutputDevice * m_outputDevice;
