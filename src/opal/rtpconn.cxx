@@ -362,11 +362,6 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
     unsigned mask = m_stringOptions.GetInteger(OPAL_OPT_VIDUP_METHODS, OPAL_OPT_VIDUP_METHOD_DEFAULT);
     if ((mask&(OPAL_OPT_VIDUP_METHOD_RTCP|OPAL_OPT_VIDUP_METHOD_PLI|OPAL_OPT_VIDUP_METHOD_FIR)) != 0) {
-      if (m_rtcpIntraFrameRequestTimer.IsRunning()) {
-        PTRACE(4, "RTPCon\tRecent RTCP Intra-Frame Request was sent, not sending another");
-        return true;
-      }
-
       bool has_AVPF_PLI = (rtcp_fb & OpalVideoFormat::e_PLI) || (mask & OPAL_OPT_VIDUP_METHOD_PLI);
       bool has_AVPF_FIR = (rtcp_fb & OpalVideoFormat::e_FIR) || (mask & OPAL_OPT_VIDUP_METHOD_FIR);
 
@@ -378,8 +373,6 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
         session->SendIntraFrameRequest(false, false); // Unusual, but possible, use RFC5104 FIR
       else
         session->SendIntraFrameRequest(true, false);  // Fall back to RFC2032
-
-      m_rtcpIntraFrameRequestTimer.SetInterval(0, 1);
 
 #if OPAL_STATISTICS
       m_VideoUpdateRequestsSent++;
