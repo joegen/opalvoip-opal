@@ -304,10 +304,6 @@ class OpalRTPConnection : public OpalConnection
 
     PBoolean remoteIsNAT;
     PBoolean useRTPAggregation;
-
-#if OPAL_VIDEO
-    PSimpleTimer m_rtcpIntraFrameRequestTimer;
-#endif
 };
 
 
