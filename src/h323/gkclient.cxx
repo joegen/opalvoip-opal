@@ -46,7 +46,7 @@
 #include <h323/h323con.h>
 #include <h323/h323pdu.h>
 #include <h323/h323rtp.h>
-#include <h460/h460_Std18.h>
+#include <h460/h460_std18.h>
 
 
 #define new PNEW
