@@ -52,6 +52,10 @@
 
 #pragma message("H.460.18/.19 Enabled. See Tandberg Patent License. http://www.tandberg.com/collateral/tandberg-ITU-license.pdf")
 
+const H460_FeatureID & H460_FeatureStd18::ID() { static const H460_FeatureID id(18); return id; }
+
+static const H460_FeatureID IncomingCallIndication_ID(1);
+
 
 ///////////////////////////////////////////////////////
 // H.460.18
@@ -60,7 +64,7 @@
 H460_FEATURE(Std18, "H.460.18");
 
 H460_FeatureStd18::H460_FeatureStd18()
-  : H460_Feature(18)
+: H460_Feature(ID())
 {
   PTRACE(6,"Std18\tInstance Created");
 }
@@ -75,7 +79,7 @@ bool H460_FeatureStd18::Initialise(H323EndPoint & ep, H323Connection * con)
     return true; // If gatekeeper, we allow that always
 
   // We only enable on connection IF the gatekeeper supports H.460.18
-  return IsFeatureNegotiatedOnGk(18);
+  return IsFeatureNegotiatedOnGk(ID());
 }
 
 
@@ -92,7 +96,7 @@ void H460_FeatureStd18::OnReceiveServiceControlIndication(const H460_FeatureDesc
     return;
   }
 
-  const PASN_OctetString & raw = pdu.GetParameter(1);
+  const PASN_OctetString & raw = pdu.GetParameter(IncomingCallIndication_ID);
 
   H46018_IncomingCallIndication callinfo;
   if (!raw.DecodeSubType(callinfo)) {

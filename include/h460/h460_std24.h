@@ -1,5 +1,5 @@
 /*
- * h460_std23.h
+ * h460_std24.h
  *
  * Copyright (c) 2009 ISVO (Asia) Pte Ltd. All Rights Reserved.
  *
@@ -37,48 +37,87 @@
  * $Date$
  */
 
-#ifndef OPAL_H460_STD23_H
-#define OPAL_H460_STD23_H
+#ifndef OPAL_H460_STD24_H
+#define OPAL_H460_STD24_H
 
 #include <opal_config.h>
 
 #if OPAL_H460_NAT
 
 #include <h460/h4601.h>
+#include <ptclib/pstun.h>
+
 
 #if _MSC_VER
 #pragma once
 #endif
 
 
-class PNatMethod_H46024;
+class PSTUNClient;
 
 
-class H460_FeatureStd23 : public H460_Feature
+class PNatMethod_H46024 : public PSTUNClient
 {
-    PCLASSINFO_WITH_CLONE(H460_FeatureStd23, H460_Feature);
+  PCLASSINFO(PNatMethod_H46024, PSTUNClient);
   public:
-    H460_FeatureStd23();
+    enum
+    {
+      DefaultPriority = 10
+    };
+    PNatMethod_H46024(unsigned priority = DefaultPriority);
+
+    static const char * MethodName();
+    virtual PCaselessString GetMethodName() const;
+
+    virtual bool IsAvailable(const PIPSocket::Address & binding, PObject * context);
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+class H460_FeatureStd24 : public H460_Feature
+{
+    PCLASSINFO_WITH_CLONE(H460_FeatureStd24, H460_Feature);
+  public:
+    H460_FeatureStd24();
 
     static const H460_FeatureID & ID();
     virtual bool Initialise(H323EndPoint & ep, H323Connection * con);
 
-    // H.225.0 Messages
-    virtual bool OnSendGatekeeperRequest(H460_FeatureDescriptor & pdu);
-    virtual bool OnSendRegistrationRequest(H460_FeatureDescriptor & pdu, bool lightweight);
-    virtual void OnReceiveRegistrationConfirm(const H460_FeatureDescriptor & pdu);
+    /// Values as per H.460.24 Table 9
+    enum MediaStrategyIndicator
+    {
+      e_Unknown,
+      e_NoAssist,
+      e_LocalMediaMaster,
+      e_RemoteMediaMaster,
+      e_LocalProxy,
+      e_RemoteProxy,
+      e_FullProxy,
+      e_ProbeSameNAT,      // Annex A
+      e_ProbeExternalNAT,  // Annex B
+      e_MediaFailure = 100
+    };
 
-  #ifdef H323_UPnP
-    void InitialiseUPnP();
-    bool UsePnP();
-  #endif
+    // Messages
+    virtual bool OnSendAdmissionRequest(H460_FeatureDescriptor & pdu);
+    virtual void OnReceiveAdmissionConfirm(const H460_FeatureDescriptor & pdu);
+    virtual void OnReceiveAdmissionReject(const H460_FeatureDescriptor & pdu);
+
+    virtual bool OnSendSetup_UUIE(H460_FeatureDescriptor & pdu);
+    virtual void OnReceiveSetup_UUIE(const H460_FeatureDescriptor & pdu);
+
+    MediaStrategyIndicator GetStrategy() const { return m_strategy; }
+    bool IsDisabledH46019() const;
 
   protected:
-    PNatMethod_H46024 * m_natMethod;
-    bool                m_applicationLevelGateway;
+    void HandleStrategy(const H460_FeatureDescriptor & pdu);
+
+    PNatMethod_H46024    * m_natMethod;
+    MediaStrategyIndicator m_strategy;
 };
 
 
 #endif // OPAL_H460_NAT
 
-#endif // OPAL_H460_STD23_H
+#endif // OPAL_H460_STD24_H

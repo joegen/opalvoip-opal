@@ -570,6 +570,9 @@
     <ClCompile Include="..\h460\h460_std23.cxx">
       <Filter>Source Files\H.460</Filter>
     </ClCompile>
+    <ClCompile Include="..\h460\h460_std24.cxx">
+      <Filter>Source Files\H.460</Filter>
+    </ClCompile>
     <ClCompile Include="..\opal\transcoders.cxx">
       <Filter>Source Files\Codec</Filter>
     </ClCompile>
@@ -1098,6 +1101,9 @@
       <Filter>Header Files\H.460</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\h460\h460_std23.h">
+      <Filter>Header Files\H.460</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\h460\h460_std24.h">
       <Filter>Header Files\H.460</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\h460\h460_std18.h">

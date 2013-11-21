@@ -46,7 +46,7 @@
 #include <h323/h323con.h>
 #include <h323/h323pdu.h>
 #include <h323/h323rtp.h>
-#include <h460/h4601.h>
+#include <h460/h460_Std18.h>
 
 
 #define new PNEW
@@ -80,7 +80,7 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   , willRespondToIRR(false)
   , monitorStop(false)
 #if OPAL_H460
-  , m_features(ep.InternalCreateFeatureSet(H460_Feature::ForGatekeeper, NULL))
+  , m_features(ep.InternalCreateFeatureSet(NULL))
 #endif
 {
   timeToLive.SetNotifier(PCREATE_NOTIFIER(TickleMonitor));
@@ -438,7 +438,7 @@ bool H323Gatekeeper::SetListenerAddresses(H225_ArrayOf_TransportAddress & pdu)
 }
 
 
-PBoolean H323Gatekeeper::RegistrationRequest(PBoolean autoReg, PBoolean didGkDiscovery)
+bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool lightweight)
 {
   if (PAssertNULL(transport) == NULL)
     return false;
@@ -466,56 +466,6 @@ PBoolean H323Gatekeeper::RegistrationRequest(PBoolean autoReg, PBoolean didGkDis
   
   rasAddress.SetPDU(rrq.m_rasAddress[0]);
 
-  if (!SetListenerAddresses(rrq.m_callSignalAddress)) {
-    PTRACE(1, "RAS\tCannot register with Gatekeeper without a H323Listener!");
-    return false;
-  }
-
-  endpoint.SetEndpointTypeInfo(rrq.m_terminalType);
-  endpoint.SetVendorIdentifierInfo(rrq.m_endpointVendor);
-
-  rrq.IncludeOptionalField(H225_RegistrationRequest::e_terminalAlias);
-  H323SetAliasAddresses(endpoint.GetAliasNames(), rrq.m_terminalAlias);
-
-  PStringArray aliasNamePatterns = endpoint.GetAliasNamePatterns();
-  if(aliasNamePatterns.GetSize() > 0) { //set patterns,
-    rrq.IncludeOptionalField(H225_RegistrationRequest::e_terminalAliasPattern);
-    rrq.m_terminalAliasPattern.Append(new H225_AddressPattern);
-    H225_AddressPattern &addressPattern = rrq.m_terminalAliasPattern[0];
-
-    for( PINDEX i = 0; i < aliasNamePatterns.GetSize(); i++){
-      PStringArray nameRange = aliasNamePatterns[i].Tokenise('-', FALSE);
-      if (nameRange.GetSize() == 2 &&
-          nameRange[0].FindSpan("1234567890*#") == P_MAX_INDEX &&
-          nameRange[1].FindSpan("1234567890*#") == P_MAX_INDEX) {
-        addressPattern.SetTag(H225_AddressPattern::e_range);
-        H225_AddressPattern_range &addressPattern_range = addressPattern;
-
-        addressPattern_range.m_startOfRange.SetTag(H225_PartyNumber::e_e164Number);
-        H225_PublicPartyNumber &start= addressPattern_range.m_startOfRange;
-        start.m_publicNumberDigits = nameRange[0];
-        start.m_publicTypeOfNumber.SetTag(H225_PublicTypeOfNumber::e_unknown ); 
-
-        addressPattern_range.m_endOfRange.SetTag(H225_PartyNumber::e_e164Number);
-        H225_PublicPartyNumber &end= addressPattern_range.m_endOfRange;
-        end.m_publicNumberDigits = nameRange[1];
-        end.m_publicTypeOfNumber.SetTag(H225_PublicTypeOfNumber::e_unknown ); 
-      }
-      else { //a wildcard
-        addressPattern.SetTag(H225_AddressPattern::e_wildcard);
-        H225_AliasAddress &aliasAddress = addressPattern;
-        H323SetAliasAddress(aliasNamePatterns[i], aliasAddress, H225_AliasAddress::e_dialedDigits);
-      }
-    }
-  }
-
-  rrq.m_willSupplyUUIEs = true;
-  rrq.IncludeOptionalField(H225_RegistrationRequest::e_usageReportingCapability);
-  rrq.m_usageReportingCapability.IncludeOptionalField(H225_RasUsageInfoTypes::e_startTime);
-  rrq.m_usageReportingCapability.IncludeOptionalField(H225_RasUsageInfoTypes::e_endTime);
-  rrq.m_usageReportingCapability.IncludeOptionalField(H225_RasUsageInfoTypes::e_terminationCause);
-  rrq.IncludeOptionalField(H225_RegistrationRequest::e_supportsAltGK);
-
   if (!gatekeeperIdentifier) {
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_gatekeeperIdentifier);
     rrq.m_gatekeeperIdentifier = gatekeeperIdentifier;
@@ -528,7 +478,7 @@ PBoolean H323Gatekeeper::RegistrationRequest(PBoolean autoReg, PBoolean didGkDis
 
   PTimeInterval ttl = endpoint.GetGatekeeperTimeToLive();
 #if OPAL_H460_NAT
-  if (m_features != NULL && m_features->HasFeature(18) && ttl > endpoint.GetManager().GetTransportIdleTime())
+  if (m_features != NULL && m_features->HasFeature(H460_FeatureStd18::ID()) && ttl > endpoint.GetManager().GetTransportIdleTime())
     ttl = endpoint.GetManager().GetTransportIdleTime();
 #endif
   if (ttl > 0) {
@@ -536,21 +486,75 @@ PBoolean H323Gatekeeper::RegistrationRequest(PBoolean autoReg, PBoolean didGkDis
     rrq.m_timeToLive = (int)ttl.GetSeconds();
   }
 
-  if (endpoint.CanDisplayAmountString()) {
-    rrq.IncludeOptionalField(H225_RegistrationRequest::e_callCreditCapability);
-    rrq.m_callCreditCapability.IncludeOptionalField(H225_CallCreditCapability::e_canDisplayAmountString);
-    rrq.m_callCreditCapability.m_canDisplayAmountString = true;
-  }
+  if (!IsRegistered())
+    lightweight = false;
 
-  if (endpoint.CanEnforceDurationLimit()) {
-    rrq.IncludeOptionalField(H225_RegistrationRequest::e_callCreditCapability);
-    rrq.m_callCreditCapability.IncludeOptionalField(H225_CallCreditCapability::e_canEnforceDurationLimit);
-    rrq.m_callCreditCapability.m_canEnforceDurationLimit = true;
-  }
-
-  if (IsRegistered()) { // send lightweight RRQ
+  if (lightweight) { // send lightweight RRQ
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_keepAlive);
     rrq.m_keepAlive = true;
+  }
+  else {
+    if (!SetListenerAddresses(rrq.m_callSignalAddress)) {
+      PTRACE(1, "RAS\tCannot register with Gatekeeper without a H323Listener!");
+      return false;
+    }
+
+    endpoint.SetEndpointTypeInfo(rrq.m_terminalType);
+    endpoint.SetVendorIdentifierInfo(rrq.m_endpointVendor);
+
+    rrq.IncludeOptionalField(H225_RegistrationRequest::e_terminalAlias);
+    H323SetAliasAddresses(endpoint.GetAliasNames(), rrq.m_terminalAlias);
+
+    PStringArray aliasNamePatterns = endpoint.GetAliasNamePatterns();
+    if(aliasNamePatterns.GetSize() > 0) { //set patterns,
+      rrq.IncludeOptionalField(H225_RegistrationRequest::e_terminalAliasPattern);
+      rrq.m_terminalAliasPattern.Append(new H225_AddressPattern);
+      H225_AddressPattern &addressPattern = rrq.m_terminalAliasPattern[0];
+
+      for( PINDEX i = 0; i < aliasNamePatterns.GetSize(); i++){
+        PStringArray nameRange = aliasNamePatterns[i].Tokenise('-', FALSE);
+        if (nameRange.GetSize() == 2 &&
+            nameRange[0].FindSpan("1234567890*#") == P_MAX_INDEX &&
+            nameRange[1].FindSpan("1234567890*#") == P_MAX_INDEX) {
+          addressPattern.SetTag(H225_AddressPattern::e_range);
+          H225_AddressPattern_range &addressPattern_range = addressPattern;
+
+          addressPattern_range.m_startOfRange.SetTag(H225_PartyNumber::e_e164Number);
+          H225_PublicPartyNumber &start= addressPattern_range.m_startOfRange;
+          start.m_publicNumberDigits = nameRange[0];
+          start.m_publicTypeOfNumber.SetTag(H225_PublicTypeOfNumber::e_unknown ); 
+
+          addressPattern_range.m_endOfRange.SetTag(H225_PartyNumber::e_e164Number);
+          H225_PublicPartyNumber &end= addressPattern_range.m_endOfRange;
+          end.m_publicNumberDigits = nameRange[1];
+          end.m_publicTypeOfNumber.SetTag(H225_PublicTypeOfNumber::e_unknown ); 
+        }
+        else { //a wildcard
+          addressPattern.SetTag(H225_AddressPattern::e_wildcard);
+          H225_AliasAddress &aliasAddress = addressPattern;
+          H323SetAliasAddress(aliasNamePatterns[i], aliasAddress, H225_AliasAddress::e_dialedDigits);
+        }
+      }
+    }
+
+    rrq.m_willSupplyUUIEs = true;
+    rrq.IncludeOptionalField(H225_RegistrationRequest::e_usageReportingCapability);
+    rrq.m_usageReportingCapability.IncludeOptionalField(H225_RasUsageInfoTypes::e_startTime);
+    rrq.m_usageReportingCapability.IncludeOptionalField(H225_RasUsageInfoTypes::e_endTime);
+    rrq.m_usageReportingCapability.IncludeOptionalField(H225_RasUsageInfoTypes::e_terminationCause);
+    rrq.IncludeOptionalField(H225_RegistrationRequest::e_supportsAltGK);
+
+    if (endpoint.CanDisplayAmountString()) {
+      rrq.IncludeOptionalField(H225_RegistrationRequest::e_callCreditCapability);
+      rrq.m_callCreditCapability.IncludeOptionalField(H225_CallCreditCapability::e_canDisplayAmountString);
+      rrq.m_callCreditCapability.m_canDisplayAmountString = true;
+    }
+
+    if (endpoint.CanEnforceDurationLimit()) {
+      rrq.IncludeOptionalField(H225_RegistrationRequest::e_callCreditCapability);
+      rrq.m_callCreditCapability.IncludeOptionalField(H225_CallCreditCapability::e_canEnforceDurationLimit);
+      rrq.m_callCreditCapability.m_canEnforceDurationLimit = true;
+    }
   }
 
   Request request(rrq.m_requestSeqNum, pdu);

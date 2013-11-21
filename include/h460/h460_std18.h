@@ -57,22 +57,18 @@ class H323SignalPDU;
 
 class H460_FeatureStd18 : public H460_Feature
 {
-    PCLASSINFO(H460_FeatureStd18, H460_Feature);
-
+    PCLASSINFO_WITH_CLONE(H460_FeatureStd18, H460_Feature);
   public:
     H460_FeatureStd18();
 
-    // Universal Declarations Every H460 Feature should have the following
-    static Purpose GetPluginPurpose()      { return ForGatekeeper|ForConnection; };
-    virtual Purpose GetPurpose() const     { return GetPluginPurpose(); };
-
+    static const H460_FeatureID & ID();
     virtual bool Initialise(H323EndPoint & ep, H323Connection * con);
     virtual bool IsNegotiated() const;
 
     // H.225.0 Messages
-    virtual bool OnSendGatekeeperRequest          (H460_FeatureDescriptor & /*pdu*/) { return true; }
-    virtual bool OnSendRegistrationRequest        (H460_FeatureDescriptor & /*pdu*/) { return true; }
-    virtual bool OnSendSetup_UUIE                 (H460_FeatureDescriptor & /*pdu*/) { return true; }
+    virtual bool OnSendGatekeeperRequest  (H460_FeatureDescriptor & /*pdu*/                  ) { return true; }
+    virtual bool OnSendRegistrationRequest(H460_FeatureDescriptor & /*pdu*/, bool lightweight) { return !lightweight; }
+    virtual bool OnSendSetup_UUIE         (H460_FeatureDescriptor & /*pdu*/                  ) { return true; }
 
     virtual void OnReceiveServiceControlIndication(const H460_FeatureDescriptor & pdu);
 

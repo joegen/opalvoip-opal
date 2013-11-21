@@ -137,7 +137,7 @@ H323Connection::H323Connection(OpalCall & call,
   , m_h239TokenOwned(false)
 #endif
 #if OPAL_H460
-  , P_DISABLE_MSVC_WARNINGS(4355, m_features(ep.InternalCreateFeatureSet(H460_Feature::ForConnection, this)))
+  , P_DISABLE_MSVC_WARNINGS(4355, m_features(ep.InternalCreateFeatureSet(this)))
 #endif
 {
   PTRACE_CONTEXT_ID_TO(localCapabilities);
@@ -517,14 +517,7 @@ PBoolean H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
 #if OPAL_H460
   if (pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_genericData)) {
     H225_FeatureSet fs;
-    fs.IncludeOptionalField(H225_FeatureSet::e_supportedFeatures);
-    H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
-    const H225_ArrayOf_GenericData & data = pdu.m_h323_uu_pdu.m_genericData;
-    for (PINDEX i = 0; i < data.GetSize(); i++) {
-      PINDEX lastPos = fsn.GetSize();
-      fsn.SetSize(lastPos+1);
-      fsn[lastPos] = (H225_FeatureDescriptor &)data[i];
-    }
+    H460_FeatureSet::Copy(fs, pdu.m_h323_uu_pdu.m_genericData);
     OnReceiveFeatureSet(q931.GetMessageType(), fs);
   }
 #endif // OPAL_H460
@@ -734,20 +727,8 @@ void H323Connection::OnSendARQ(H225_AdmissionRequest & arq)
 {
 #if OPAL_H460
   H225_FeatureSet fs;
-  if (OnSendFeatureSet(H460_MessageType::e_admissionRequest, fs)) {
-    if (fs.HasOptionalField(H225_FeatureSet::e_supportedFeatures)) {
-      arq.IncludeOptionalField(H225_AdmissionRequest::e_genericData);
-
-      H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
-      H225_ArrayOf_GenericData & data = arq.m_genericData;
-
-      for (PINDEX i=0; i < fsn.GetSize(); i++) {
-        PINDEX lastPos = data.GetSize();
-        data.SetSize(lastPos+1);
-        data[lastPos] = fsn[i];
-      }
-    }
-  }
+  if (OnSendFeatureSet(H460_MessageType::e_admissionRequest, fs) && H460_FeatureSet::Copy(arq.m_genericData, fs))
+    arq.IncludeOptionalField(H225_AdmissionRequest::e_genericData);
 #endif // OPAL_H460
 
   endpoint.OnSendARQ(*this, arq);
@@ -758,18 +739,9 @@ void H323Connection::OnReceivedACF(const H225_AdmissionConfirm & acf)
 {
 #if OPAL_H460
   if (acf.HasOptionalField(H225_AdmissionConfirm::e_genericData)) {
-    const H225_ArrayOf_GenericData & data = acf.m_genericData;
-
-    if (data.GetSize() > 0) {
-      H225_FeatureSet fs;
-      fs.IncludeOptionalField(H225_FeatureSet::e_supportedFeatures);
-      H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
-      fsn.SetSize(data.GetSize());
-      for (PINDEX i=0; i < data.GetSize(); i++)
-        fsn[i] = (H225_FeatureDescriptor &)data[i];
-
+    H225_FeatureSet fs;
+    if (H460_FeatureSet::Copy(fs, acf.m_genericData))
       OnReceiveFeatureSet(H460_MessageType::e_admissionConfirm, fs);
-    }
   }
 #endif // OPAL_H460
 }
@@ -779,18 +751,9 @@ void H323Connection::OnReceivedARJ(const H225_AdmissionReject & arj)
 {
 #if OPAL_H460
   if (arj.HasOptionalField(H225_AdmissionReject::e_genericData)) {
-    const H225_ArrayOf_GenericData & data = arj.m_genericData;
-
-    if (data.GetSize() > 0) {
-      H225_FeatureSet fs;
-      fs.IncludeOptionalField(H225_FeatureSet::e_supportedFeatures);
-      H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
-      fsn.SetSize(data.GetSize());
-      for (PINDEX i=0; i < data.GetSize(); i++)
-        fsn[i] = (H225_FeatureDescriptor &)data[i];
-
+    H225_FeatureSet fs;
+    if (H460_FeatureSet::Copy(fs, arj.m_genericData))
       OnReceiveFeatureSet(H460_MessageType::e_admissionReject, fs);
-    }
   }
 #endif // OPAL_H460
 }
@@ -800,20 +763,8 @@ void H323Connection::OnSendIRR(H225_InfoRequestResponse & irr) const
 {
 #if OPAL_H460
   H225_FeatureSet fs;
-  if (OnSendFeatureSet(H460_MessageType::e_inforequestresponse, fs)) {
-    if (fs.HasOptionalField(H225_FeatureSet::e_supportedFeatures)) {
-      irr.IncludeOptionalField(H225_InfoRequestResponse::e_genericData);
-
-      H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
-      H225_ArrayOf_GenericData & data = irr.m_genericData;
-
-      for (PINDEX i=0; i < fsn.GetSize(); i++) {
-        PINDEX lastPos = data.GetSize();
-        data.SetSize(lastPos+1);
-        data[lastPos] = fsn[i];
-      }
-    }
-  }
+  if (OnSendFeatureSet(H460_MessageType::e_inforequestresponse, fs) && H460_FeatureSet::Copy(irr.m_genericData, fs))
+    irr.IncludeOptionalField(H225_InfoRequestResponse::e_genericData);
 #endif // OPAL_H460
 }
 
@@ -822,20 +773,8 @@ void H323Connection::OnSendDRQ(H225_DisengageRequest & drq) const
 {
 #if OPAL_H460
   H225_FeatureSet fs;
-  if (OnSendFeatureSet(H460_MessageType::e_disengagerequest, fs)) {
-    if (fs.HasOptionalField(H225_FeatureSet::e_supportedFeatures)) {
-      drq.IncludeOptionalField(H225_DisengageRequest::e_genericData);
-
-      H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
-      H225_ArrayOf_GenericData & data = drq.m_genericData;
-
-      for (PINDEX i=0; i < fsn.GetSize(); i++) {
-        PINDEX lastPos = data.GetSize();
-        data.SetSize(lastPos+1);
-        data[lastPos] = fsn[i];
-      }
-    }
-  }
+  if (OnSendFeatureSet(H460_MessageType::e_disengagerequest, fs) && H460_FeatureSet::Copy(drq.m_genericData, fs))
+    drq.IncludeOptionalField(H225_DisengageRequest::e_genericData);
 #endif // OPAL_H460
 }
 
@@ -2157,7 +2096,7 @@ void H323Connection::DetermineRTPNAT(const PIPSocket::Address & localAddr,
 {
 #if OPAL_H460
   if (m_features != NULL) {
-    H460_Feature * feature = m_features->GetFeature(19);
+    H460_Feature * feature = m_features->GetFeature(H460_FeatureStd19::ID());
     if (feature != NULL && feature->IsNegotiated()) {
       m_remoteBehindNAT = true;
       return;
@@ -2804,7 +2743,7 @@ PBoolean H323Connection::OnStartHandleControlChannel()
   PTRACE(2, "H46018\tStarted control channel");
 
 #if OPAL_H460
-  H460_FeatureStd18 * feature = m_features != NULL ? m_features->GetFeatureAs<H460_FeatureStd18>(18) : NULL;
+  H460_FeatureStd18 * feature = m_features != NULL ? m_features->GetFeatureAs<H460_FeatureStd18>(H460_FeatureStd18::ID()) : NULL;
   if (feature != NULL && !feature->OnStartControlChannel())
     return false;
 #endif

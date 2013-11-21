@@ -1342,21 +1342,21 @@ void H323EndPoint::TranslateTCPAddress(PIPSocket::Address & localAddr,
 
 
 #if OPAL_H460
-H460_FeatureSet * H323EndPoint::CreateFeatureSet(H460_Feature::Purpose purpose, H323Connection *)
+H460_FeatureSet * H323EndPoint::CreateFeatureSet(H323Connection *)
 {
-  return new H460_FeatureSet(*this, purpose);
+  return new H460_FeatureSet(*this);
 }
 
 
-H460_FeatureSet * H323EndPoint::InternalCreateFeatureSet(H460_Feature::Purpose purpose, H323Connection * connection)
+H460_FeatureSet * H323EndPoint::InternalCreateFeatureSet(H323Connection * connection)
 {
   if (m_features == NULL) {
-    m_features = CreateFeatureSet(H460_Feature::ForEndpoint, NULL);
+    m_features = CreateFeatureSet(NULL);
     if (m_features != NULL)
       m_features->LoadFeatureSet();
   }
 
-  H460_FeatureSet * features = CreateFeatureSet(purpose, connection);
+  H460_FeatureSet * features = CreateFeatureSet(connection);
   if (features != NULL)
     features->LoadFeatureSet(connection);
   return features;
@@ -1376,7 +1376,7 @@ void H323EndPoint::OnReceiveFeatureSet(H460_MessageType pduType, const H225_Feat
 }
 
 
-bool H323EndPoint::OnLoadFeature(H460_Feature::Purpose /*purpose*/, const PString & /*identifer*/)
+bool H323EndPoint::OnLoadFeature(H460_Feature & /*feature*/)
 {
   return true;
 }

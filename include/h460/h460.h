@@ -62,6 +62,7 @@ class H460_MessageType
       e_gatekeeperConfirm,
       e_gatekeeperReject,
       e_registrationRequest,
+      e_lightweightRegistrationRequest,
       e_registrationConfirm,
       e_registrationReject,
       e_admissionRequest,
