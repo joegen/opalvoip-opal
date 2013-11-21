@@ -894,7 +894,7 @@ H460_Feature * H460_Feature::FromContext(PObject * context, const H460_FeatureID
       OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(context);
       if (session == NULL) {
         PTRACE(4, context, "Not available without OpalRTPSession as context");
-        return false;
+        return NULL;
       }
 
       connection = dynamic_cast<H323Connection *>(&session->GetConnection());
@@ -902,7 +902,7 @@ H460_Feature * H460_Feature::FromContext(PObject * context, const H460_FeatureID
 
     if (connection == NULL) {
       PTRACE(4, context, "Not available without H323Connection");
-      return false;
+      return NULL;
     }
 
     featureSet = connection->GetFeatureSet();
@@ -910,13 +910,13 @@ H460_Feature * H460_Feature::FromContext(PObject * context, const H460_FeatureID
 
   if (featureSet == NULL) {
     PTRACE(4, context, "Not available without feature set");
-    return false;
+    return NULL;
   }
 
   H460_Feature * feature = featureSet->GetFeature(id);
   if (feature == NULL) {
     PTRACE(4, context, "Not available without feature in set");
-    return false;
+    return NULL;
   }
 
   return feature;
