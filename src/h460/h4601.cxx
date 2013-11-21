@@ -59,6 +59,9 @@
 #include <h323/h323ep.h>
 
 
+#define PTraceModule() "H460"
+
+
 #if PTRACING
 ostream & operator<<(ostream & strm, H460_MessageType pduType)
 {
@@ -512,22 +515,25 @@ H460_FeatureDescriptor::H460_FeatureDescriptor(const H225_FeatureDescriptor & de
 }
 
 
-H460_FeatureParameter & H460_FeatureDescriptor::AddParameter(const H460_FeatureID & id)
+H460_FeatureParameter & H460_FeatureDescriptor::AddParameter(const H460_FeatureID & id, const H460_FeatureContent & content, bool unique)
 {
-  return AddParameter(new H460_FeatureParameter(id));
+  return AddParameter(new H460_FeatureParameter(id, content), unique);
 }
 
 
-H460_FeatureParameter & H460_FeatureDescriptor::AddParameter(const H460_FeatureID & id, const H460_FeatureContent & content)
-{
-  return AddParameter(new H460_FeatureParameter(id, content));
-}
-
-
-H460_FeatureParameter & H460_FeatureDescriptor::AddParameter(H460_FeatureParameter * param)
+H460_FeatureParameter & H460_FeatureDescriptor::AddParameter(H460_FeatureParameter * param, bool unique)
 {
   // Ths odd code is because m_parameter hsa a lower constraint so always has at least one entry
   if (HasOptionalField(e_parameters)) {
+    if (unique) {
+      PINDEX index = GetParameterIndex(param->GetID());
+      if (index != P_MAX_INDEX) {
+        m_parameters[index] = *param;
+        delete param;
+        return GetParameterAt(index);
+      }
+    }
+
     m_parameters.Append(param);
     return *param;
   }
@@ -547,6 +553,14 @@ H460_FeatureParameter & H460_FeatureDescriptor::GetParameter(const H460_FeatureI
 
   static H460_FeatureParameter empty;
   return empty;
+}
+
+
+bool H460_FeatureDescriptor::GetBooleanParameter(const H460_FeatureID & id) const
+{
+  // Missing is always false
+  PINDEX index = GetParameterIndex(id);
+  return index != P_MAX_INDEX && GetParameterAt(index);
 }
 
 
@@ -583,7 +597,7 @@ void H460_FeatureDescriptor::RemoveParameter(const H460_FeatureID & id)
 
 void H460_FeatureDescriptor::ReplaceParameter(const H460_FeatureID & id, const H460_FeatureContent & content)
 {
-  PTRACE(6, "H460\tReplace ID: " << id  << " content " << content);
+  PTRACE(6, "Replace ID: " << id  << " content " << content);
 
   PINDEX index = GetParameterIndex(id); 
   if (index != P_MAX_INDEX)
@@ -618,13 +632,18 @@ bool H460_Feature::Initialise(H323EndPoint & ep, H323Connection * con)
 {
   m_endpoint = &ep;
   m_connection = con;
-  return true;
+
+  if (ep.OnLoadFeature(*this))
+    return true;
+
+  PTRACE(4, "Feature " << *this << " disabled due to endpoint policy.");
+  return false;
 }
 
 
 bool H460_Feature::OnSendPDU(H460_MessageType pduType, H460_FeatureDescriptor & pdu)
 {
-  PTRACE(6,"H460\tEncoding " << pduType << " PDU for " << TraceFeatureID(GetID()));
+  PTRACE(6,"Encoding " << pduType << " PDU for " << TraceFeatureID(GetID()));
   pdu = m_descriptor;
 
   switch (pduType) {
@@ -635,7 +654,9 @@ bool H460_Feature::OnSendPDU(H460_MessageType pduType, H460_FeatureDescriptor & 
   case H460_MessageType::e_gatekeeperReject:
     return OnSendGatekeeperReject(pdu);
   case H460_MessageType::e_registrationRequest:
-    return OnSendRegistrationRequest(pdu);
+    return OnSendRegistrationRequest(pdu, false);
+  case H460_MessageType::e_lightweightRegistrationRequest:
+    return OnSendRegistrationRequest(pdu, true);
   case H460_MessageType::e_registrationConfirm:
     return OnSendRegistrationConfirm(pdu);
   case H460_MessageType::e_registrationReject:
@@ -688,7 +709,7 @@ bool H460_Feature::OnSendPDU(H460_MessageType pduType, H460_FeatureDescriptor & 
 
 void H460_Feature::OnReceivePDU(H460_MessageType pduType, const H460_FeatureDescriptor & pdu)
 {
-  PTRACE(6,"H460\tDecoding " << pduType << " PDU for " << TraceFeatureID(GetID()));
+  PTRACE(6,"Decoding " << pduType << " PDU for " << TraceFeatureID(GetID()));
   m_supportedByRemote = true;
 
   switch (pduType) {
@@ -784,48 +805,69 @@ PStringList H460_Feature::GetFeatureNames(PPluginManager * pluginMgr)
 }
 
 
-H460_Feature * H460_Feature::CreateFeature(const PString & featurename, H460_Feature::Purpose purpose, PPluginManager * pluginMgr)
+H460_Feature * H460_Feature::CreateFeature(const PString & featurename, PPluginManager * pluginMgr)
 {
-  return PPluginManager::CreatePluginAs<H460_Feature>(pluginMgr, featurename, PPlugin_H460_Feature::ServiceType(), purpose.AsBits());
+  return PPluginManager::CreatePluginAs<H460_Feature>(pluginMgr, featurename, PPlugin_H460_Feature::ServiceType());
 }
 
 
-bool H460_Feature::IsFeatureNegotiatedOnGk(unsigned stdID) const
+H460_Feature * H460_Feature::GetFeatureOnGk(const H460_FeatureID & id) const
 {
-  if (m_endpoint != NULL) {
-    H323Gatekeeper * gk = m_endpoint->GetGatekeeper();
-    if (gk != NULL) {
-      H460_FeatureSet * features = gk->GetFeatures();
-      if (features != NULL) {
-        H460_Feature * feature = features->GetFeature(stdID);
-        if (feature != NULL && feature->IsNegotiated())
-          return true;
-      }
-    }
+  if (m_endpoint == NULL) {
+    PTRACE(4, "Feature " << id << " not present as no endpoint");
+    return NULL;
   }
 
-  PTRACE(4, "H.460\tFeature " << stdID << " not available in gatekeeper");
+  H323Gatekeeper * gk = m_endpoint->GetGatekeeper();
+  if (gk == NULL) {
+    PTRACE(4, "Feature " << id << " not present as no gatekeeper");
+    return NULL;
+  }
+
+  H460_FeatureSet * features = gk->GetFeatures();
+  if (features == NULL) {
+    PTRACE(4, "Feature " << id << " not present as no features");
+    return NULL;
+  }
+
+  H460_Feature * feature = features->GetFeature(id);
+  if (feature == NULL) {
+    PTRACE(4, "Feature " << id << " not present in gatekeeper");
+    return NULL;
+  }
+
+  return feature;
+}
+
+
+bool H460_Feature::IsFeatureNegotiatedOnGk(const H460_FeatureID & id) const
+{
+  H460_Feature * feature = GetFeatureOnGk(id);
+  if (feature == NULL)
+    return false;
+
+  if (feature->IsNegotiated())
+    return true;
+
+  PTRACE(4, "Feature " << id << " not available in gatekeeper");
   return false;
 }
 
 
 PNatMethod * H460_Feature::GetNatMethod(const char * methodName) const
 {
-  if (m_endpoint == NULL)
-    return NULL;
-
-  PNatMethod * natMethod = m_endpoint->GetManager().GetNatMethods().GetMethodByName(methodName);
-  if (natMethod == NULL) {
-    PTRACE(1, "Std19\tDisabled as no NAT method");
+  if (m_endpoint == NULL) {
+    PTRACE(2, "No NAT method as no endpoint yet");
     return NULL;
   }
 
-  PIPSocket::Address localInterface(PIPSocket::GetDefaultIpAny());
-  H323Gatekeeper * gk = m_endpoint->GetGatekeeper();
-  if (gk != NULL)
-    localInterface = gk->GetTransport().GetInterface();
+  PNatMethod * natMethod = m_endpoint->GetManager().GetNatMethods().GetMethodByName(methodName);
+  if (natMethod == NULL) {
+    PTRACE(2, "Disabled as no NAT method");
+    return NULL;
+  }
 
-  if (!natMethod->IsAvailable(localInterface, m_connection)) {
+  if (!natMethod->IsActive()) {
     PTRACE(3, "Std19\tDisabled as NAT method deactivated");
     return NULL;
   }
@@ -834,11 +876,57 @@ PNatMethod * H460_Feature::GetNatMethod(const char * methodName) const
 }
 
 
+H460_Feature * H460_Feature::FromContext(PObject * context, const H460_FeatureID & id)
+{
+  if (context == NULL) {
+    PTRACE(5, context, "Not available without context");
+    return NULL;
+  }
+
+  H460_FeatureSet * featureSet;
+
+  H323EndPoint * endpoint = dynamic_cast<H323EndPoint *>(context);
+  if (endpoint != NULL)
+    featureSet = endpoint->GetFeatures();
+  else {
+    H323Connection * connection = dynamic_cast<H323Connection *>(context);
+    if (connection == NULL) {
+      OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(context);
+      if (session == NULL) {
+        PTRACE(4, context, "Not available without OpalRTPSession as context");
+        return false;
+      }
+
+      connection = dynamic_cast<H323Connection *>(&session->GetConnection());
+    }
+
+    if (connection == NULL) {
+      PTRACE(4, context, "Not available without H323Connection");
+      return false;
+    }
+
+    featureSet = connection->GetFeatureSet();
+  }
+
+  if (featureSet == NULL) {
+    PTRACE(4, context, "Not available without feature set");
+    return false;
+  }
+
+  H460_Feature * feature = featureSet->GetFeature(id);
+  if (feature == NULL) {
+    PTRACE(4, context, "Not available without feature in set");
+    return false;
+  }
+
+  return feature;
+}
+
+
 /////////////////////////////////////////////////////////////////////
 
-H460_FeatureSet::H460_FeatureSet(H323EndPoint & ep, H460_Feature::Purpose purpose)
+H460_FeatureSet::H460_FeatureSet(H323EndPoint & ep)
   : m_endpoint(ep)
-  , m_purpose(purpose)
 {
 }
 
@@ -854,32 +942,23 @@ void H460_FeatureSet::LoadFeatureSet(H323Connection * con)
 {
   H460_FeatureSet * baseSet = m_endpoint.GetFeatures();
 
-  PStringList features = H460_Feature::GetFeatureNames();
-  for (PINDEX i = 0; i < features.GetSize(); i++) {
-    if (!m_endpoint.OnLoadFeature(m_purpose, features[i])) {
-      PTRACE(4,"H460\tFeature " << features[i] << " disabled due to policy.");
-      continue;
-    }
+  PStringList featureNames = H460_Feature::GetFeatureNames();
+  for (PINDEX i = 0; i < featureNames.GetSize(); i++) {
+    H460_Feature * feature = H460_Feature::CreateFeature(featureNames[i]);
+    PAssertNULL(feature);
 
-    H460_Feature * feature = NULL;
-    if (baseSet != NULL && (feature = baseSet->GetFeature(features[i])) != NULL && (feature->GetPurpose() & m_purpose))
-      feature = feature->CloneAs<H460_Feature>();
-    else if ((feature = H460_Feature::CreateFeature(features[i], m_purpose)) == NULL) {
-      PTRACE(4,"H460\tFeature " << features[i] << " disabled due to purpose.");
-      continue;
+    // If have a base set, then make copy of it rather than from factory
+    if (baseSet != NULL) {
+      iterator it = baseSet->find(feature->GetID());
+      if (it != baseSet->end()) {
+        delete feature;
+        feature = it->second->CloneAs<H460_Feature>();
+      }
     }
 
     if (feature->Initialise(m_endpoint, con))
       AddFeature(feature);
-    else
-      delete feature;
   }
-}
-
-
-bool H460_FeatureSet::LoadFeature(const PString & featid)
-{
-  return AddFeature(H460_Feature::CreateFeature(featid, m_purpose));
 }
 
 
@@ -888,7 +967,7 @@ bool H460_FeatureSet::AddFeature(H460_Feature * feat)
   if (feat == NULL)
     return false;
 
-  PTRACE(4, "H460\tLoaded feature " << TraceFeatureID(feat->GetID()));
+  PTRACE(4, "Loaded feature " << TraceFeatureID(feat->GetID()));
   if (insert(value_type(feat->GetID(), feat)).second)
     return true;
 
@@ -897,16 +976,16 @@ bool H460_FeatureSet::AddFeature(H460_Feature * feat)
 }
 
 
-void H460_FeatureSet::RemoveFeature(H460_FeatureID id)
+void H460_FeatureSet::RemoveFeature(const H460_FeatureID & id)
 {
-  PTRACE(4, "H460\tRemoved " << TraceFeatureID(id));
+  PTRACE(4, "Removed " << TraceFeatureID(id));
   erase(id);
 }
 
 
 void H460_FeatureSet::OnReceivePDU(H460_MessageType pduType, const H225_FeatureSet & pdu)
 {
-  PTRACE(5, "H460\tOnReceivePDU FeatureSet " << pduType << " PDU");
+  PTRACE(5, "OnReceivePDU FeatureSet " << pduType << " PDU");
 
   if (pdu.HasOptionalField(H225_FeatureSet::e_neededFeatures))
     OnReceivePDU(pduType, pdu.m_neededFeatures);
@@ -934,7 +1013,7 @@ void H460_FeatureSet::OnReceivePDU(H460_MessageType pduType, const H225_ArrayOf_
 
 bool H460_FeatureSet::OnSendPDU(H460_MessageType pduType, H225_FeatureSet & pdu)
 {
-  PTRACE(6,"H460\tCreate FeatureSet " << pduType << " PDU");
+  PTRACE(6,"Create FeatureSet " << pduType << " PDU");
 
   bool builtPDU = false;
 
@@ -964,8 +1043,7 @@ bool H460_FeatureSet::OnSendPDU(H460_MessageType pduType, H225_FeatureSet & pdu)
       }
 
       if (afd != NULL) {
-        PTRACE(5, "H460\tLoading Feature " << TraceFeatureID(it->first) << " as " 
-               << it->second->GetCategory() << " feature to " << pduType << " PDU\n" << descriptor);
+        PTRACE(5, "Loading Feature " << TraceFeatureID(it->first) << " as " << it->second->GetCategory() << " feature to " << pduType);
         PINDEX lastPos = afd->GetSize();
         afd->SetSize(lastPos+1);
         (*afd)[lastPos] = descriptor;
@@ -988,6 +1066,49 @@ H460_Feature * H460_FeatureSet::GetFeature(const H460_FeatureID & id)
 {
   iterator it = find(id);
   return it != end() ? it->second : NULL;
+}
+
+
+bool H460_FeatureSet::Copy(H225_FeatureSet & fs, const H225_ArrayOf_GenericData & gd)
+{
+  PINDEX size = gd.GetSize();
+  if (size == 0) {
+    fs.RemoveOptionalField(H225_FeatureSet::e_supportedFeatures);
+    return false;
+  }
+
+  fs.IncludeOptionalField(H225_FeatureSet::e_supportedFeatures);
+  fs.m_supportedFeatures.SetSize(size);
+  for (PINDEX i = 0; i < size; ++i)
+    static_cast<H225_GenericData &>(fs.m_supportedFeatures[i]) = gd[i];
+  return true;
+}
+
+
+static void AppendFeatureDescriptors(H225_ArrayOf_GenericData & gd, const H225_ArrayOf_FeatureDescriptor & fd)
+{
+  PINDEX size = fd.GetSize();
+  PINDEX lastPos = gd.GetSize();
+  gd.SetSize(lastPos + size);
+  for (PINDEX i = 0; i < size; ++i)
+    gd[lastPos + i] = fd[i];
+}
+
+
+bool H460_FeatureSet::Copy(H225_ArrayOf_GenericData & gd, const H225_FeatureSet & fs)
+{
+  gd.SetSize(0);
+
+  if (fs.HasOptionalField(H225_FeatureSet::e_neededFeatures))
+    AppendFeatureDescriptors(gd, fs.m_neededFeatures);
+
+  if (fs.HasOptionalField(H225_FeatureSet::e_desiredFeatures))
+    AppendFeatureDescriptors(gd, fs.m_desiredFeatures);
+
+  if (fs.HasOptionalField(H225_FeatureSet::e_supportedFeatures))
+    AppendFeatureDescriptors(gd, fs.m_supportedFeatures);
+
+  return gd.GetSize() > 0;
 }
 
 

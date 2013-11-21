@@ -298,19 +298,15 @@ class H460_FeatureDescriptor : public H225_FeatureDescriptor
     */
     H460_FeatureParameter & AddParameter(
       const H460_FeatureID & id,
-      const H460_FeatureContent & content
-    );
-
-    /** Add Parameter without contents 
-    */
-    H460_FeatureParameter & AddParameter(
-      const H460_FeatureID & id
+      const H460_FeatureContent & content = H460_FeatureContent(),
+      bool unique = true
     );
 
     /** Add Parameter from H460_FeatureParameter
     */
     H460_FeatureParameter & AddParameter(
-      H460_FeatureParameter * param
+      H460_FeatureParameter * param,
+      bool unique = true
     );
 
     /** Delete Parameter
@@ -337,6 +333,10 @@ class H460_FeatureDescriptor : public H225_FeatureDescriptor
     /** Get Parameter with FeatureID
     */
     H460_FeatureParameter & GetParameter(const H460_FeatureID & id) const;
+
+    /** Get boolean Parameter with FeatureID
+    */
+    bool GetBooleanParameter(const H460_FeatureID & id) const;
 
     /** Has Feature with FeatureID
     */
@@ -391,12 +391,6 @@ class H460_Feature : public PObject
     );
     Category GetCategory() const { return m_category; }
     void SetCategory(Category cat) { m_category = cat; }
-
-    /// Purpose (sub-system) in which feature is used
-    P_DECLARE_BITWISE_ENUM(Purpose, 3,
-      (NoPurpose, ForEndpoint, ForGatekeeper, ForConnection)
-    );
-    virtual Purpose GetPurpose() const { return ForEndpoint; };
   //@}
 
   /**@name Operators */
@@ -425,20 +419,16 @@ class H460_Feature : public PObject
     */
     virtual H460_FeatureParameter & AddParameter(
       const H460_FeatureID & id,
-      const H460_FeatureContent & content
-    ) { return m_descriptor.AddParameter(id, content); }
-
-    /** Add Parameter without contents 
-    */
-    virtual H460_FeatureParameter & AddParameter(
-      const H460_FeatureID & id
-    ) { return m_descriptor.AddParameter(id); }
+      const H460_FeatureContent & content = H460_FeatureContent(),
+      bool unique = true
+    ) { return m_descriptor.AddParameter(id, content, unique); }
 
     /** Add Parameter from H460_FeatureParameter
     */
     virtual H460_FeatureParameter & AddParameter(
-      H460_FeatureParameter * param
-    ) { return m_descriptor.AddParameter(param); }
+      H460_FeatureParameter * param,
+      bool unique = true
+    ) { return m_descriptor.AddParameter(param, unique); }
 
     /** Delete Parameter 
     */
@@ -504,7 +494,6 @@ class H460_Feature : public PObject
     */
     static H460_Feature * CreateFeature(
       const PString & featurename,        ///< Feature Name Expression
-      Purpose purpose,                    ///< Feature purpose
       PPluginManager * pluginMgr = NULL   ///< Plugin Manager
     );
   //@}
@@ -527,7 +516,7 @@ class H460_Feature : public PObject
     virtual void OnReceiveGatekeeperConfirm(const H460_FeatureDescriptor & /*pdu*/) { }
     virtual void OnReceiveGatekeeperReject(const H460_FeatureDescriptor & /*pdu*/) { }
 
-    virtual bool OnSendRegistrationRequest(H460_FeatureDescriptor & /*pdu*/) { return false; }
+    virtual bool OnSendRegistrationRequest(H460_FeatureDescriptor & /*pdu*/, bool /*lightweight*/) { return false; }
     virtual bool OnSendRegistrationConfirm(H460_FeatureDescriptor & /*pdu*/) { return false; }
     virtual bool OnSendRegistrationReject(H460_FeatureDescriptor & /*pdu*/) { return false; }
 
@@ -610,9 +599,23 @@ class H460_Feature : public PObject
     H323EndPoint * GetEndPoint() const { return m_endpoint; }
     const H460_FeatureDescriptor & GetDescriptor() const { return m_descriptor; }
 
+    static H460_Feature * FromContext(PObject * context, const H460_FeatureID & id);
+    template <class FEAT> static bool FromContext(PObject * context, FEAT * & feature)
+    {
+      feature = dynamic_cast<FEAT *>(FromContext(context, FEAT::ID()));
+      return feature != NULL;
+    }
+
   protected:
-    bool IsFeatureNegotiatedOnGk(unsigned stdID) const;
+    H460_Feature * GetFeatureOnGk(const H460_FeatureID & id) const;
+    template <class T> T * GetFeatureOnGkAs(const H460_FeatureID & id) { return dynamic_cast<T *>(GetFeatureOnGk(id)); }
+    bool IsFeatureNegotiatedOnGk(const H460_FeatureID & id) const;
     PNatMethod * GetNatMethod(const char * methodName) const;
+    template <class METH> bool GetNatMethod(const char * methodName, METH * & natMethod) const
+    {
+      natMethod = dynamic_cast<METH *>(GetNatMethod(methodName));
+      return natMethod != NULL;
+    }
 
     Category               m_category;
     H323EndPoint         * m_endpoint;
@@ -631,8 +634,7 @@ class H460_FeatureSet : public PObject, public map<H460_FeatureID, H460_Feature 
     /** Build a new featureSet from a base featureset
     */
     H460_FeatureSet(
-      H323EndPoint & ep,
-      H460_Feature::Purpose purpose
+      H323EndPoint & ep
     );
     ~H460_FeatureSet();
 
@@ -643,17 +645,13 @@ class H460_FeatureSet : public PObject, public map<H460_FeatureID, H460_Feature 
       H323Connection * con = NULL
     );
 
-    /** Load Feature from id.
-    */
-    virtual bool LoadFeature(const PString & featid);
-
     /** Add a Feature to the Feature Set
     */
     bool AddFeature(H460_Feature * feat);
 
     /** Remove a Feature from the Feature Set
     */
-    void RemoveFeature(H460_FeatureID id);
+    void RemoveFeature(const H460_FeatureID & id);
 
     /** Get Feature with id
     */
@@ -684,11 +682,13 @@ class H460_FeatureSet : public PObject, public map<H460_FeatureID, H460_Feature 
     */
     H323EndPoint & GetEndPoint() { return m_endpoint; }
 
+    static bool Copy(H225_FeatureSet & fs, const H225_ArrayOf_GenericData & gd);
+    static bool Copy(H225_ArrayOf_GenericData & gd, const H225_FeatureSet & fs);
+
   protected:
     void OnReceivePDU(H460_MessageType pduType, const H225_ArrayOf_FeatureDescriptor & descriptors);
 
-    H323EndPoint        & m_endpoint;
-    H460_Feature::Purpose m_purpose;
+    H323EndPoint & m_endpoint;
 };
 
 
@@ -699,11 +699,6 @@ PCREATE_PLUGIN_SERVICE(H460_Feature);
 #define H460_FEATURE(name, friendlyName) \
     PCREATE_PLUGIN(name, H460_Feature, H460_Feature##name, PPlugin_H460_Feature, \
       virtual const char * GetFriendlyName() const { return friendlyName; } \
-      virtual bool ValidateServiceName(const PString & name, P_INT_PTR userData) const \
-      { \
-        return PPlugin_H460_Feature::ValidateServiceName(name, userData) && \
-               (H460_Feature##name::GetPluginPurpose() & H460_Feature::Purpose::FromBits((unsigned)userData)); \
-      } \
     )
 
 
