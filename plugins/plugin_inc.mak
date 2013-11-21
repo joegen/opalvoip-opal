@@ -119,11 +119,11 @@ ifneq (,$(PLUGIN_PATH))
 	$(Q_LD)$(CXX) -o $@ $(strip $(LDFLAGS) $^ $(LIBS))
 
   install ::
-	mkdir -p $(DESTDIR)$(libdir)/$(INSTALL_DIR)
-	$(INSTALL) $(PLUGIN_PATH) $(DESTDIR)$(libdir)/$(INSTALL_DIR)
+	mkdir -p $(DESTDIR)$(INSTALL_DIR)
+	$(INSTALL) $(PLUGIN_PATH) $(DESTDIR)$(INSTALL_DIR)
 
   uninstall ::
-	rm -f $(DESTDIR)$(libdir)/$(INSTALL_DIR)/$(PLUGIN_NAME)
+	rm -f $(DESTDIR)$(INSTALL_DIR)/$(PLUGIN_NAME)
 
 endif
 
