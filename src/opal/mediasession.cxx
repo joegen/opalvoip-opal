@@ -66,6 +66,8 @@ OpalMediaStatistics::OpalMediaStatistics()
     // Video
   , m_totalFrames(0)
   , m_keyFrames(0)
+  , m_updateRequests(0)
+  , m_quality(-1)
 {
 }
 
