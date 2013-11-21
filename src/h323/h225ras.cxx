@@ -386,25 +386,12 @@ PBoolean H225_RAS::OnReceiveRequestInProgress(const H225_RequestInProgress & /*r
 /// me to determine Why it is so. Anyway if a message is to be carried in the genericData field it is given
 /// the default category of supported.
 
-static void AppendFeatureDescriptors(H225_ArrayOf_GenericData & data, const H225_ArrayOf_FeatureDescriptor & fsn)
-{
-  PINDEX lastPos = data.GetSize();
-  data.SetSize(lastPos+fsn.GetSize());
-  for (PINDEX i = 0; i < fsn.GetSize(); ++i)
-    data[lastPos+i] = fsn[i];
-}
-
 template <typename PDUType>
 static void SendGenericData(const H225_RAS * ras, H460_MessageType pduType, PDUType & pdu)
 {
   H225_FeatureSet fs;
-  if (ras->OnSendFeatureSet(pduType, fs)) {
-    AppendFeatureDescriptors(pdu.m_genericData, fs.m_neededFeatures);
-    AppendFeatureDescriptors(pdu.m_genericData, fs.m_desiredFeatures);
-    AppendFeatureDescriptors(pdu.m_genericData, fs.m_supportedFeatures);
-    if (pdu.m_genericData.GetSize() > 0)
-      pdu.IncludeOptionalField(PDUType::e_genericData);
-  }
+  if (ras->OnSendFeatureSet(pduType, fs) && H460_FeatureSet::Copy(pdu.m_genericData, fs))
+    pdu.IncludeOptionalField(PDUType::e_genericData);
 }
 
 
@@ -423,16 +410,8 @@ static void ReceiveGenericData(const H225_RAS * ras, H460_MessageType pduType, c
     return;
 
   H225_FeatureSet fs;
-  fs.IncludeOptionalField(H225_FeatureSet::e_supportedFeatures);
-
-  const H225_ArrayOf_GenericData & data = pdu.m_genericData;
-  H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
-  fsn.SetSize(data.GetSize());
-
-  for (PINDEX i = 0; i < data.GetSize(); ++i)
-    fsn[i] = (const H225_FeatureDescriptor &)data[i];
-
-  ras->OnReceiveFeatureSet(pduType, fs);
+  if (H460_FeatureSet::Copy(fs, pdu.m_genericData))
+    ras->OnReceiveFeatureSet(pduType, fs);
 }
 
 
@@ -580,7 +559,10 @@ void H225_RAS::OnSendRegistrationRequest(H323RasPDU & pdu, H225_RegistrationRequ
   OnSendRegistrationRequest(rrq);
     
 #if OPAL_H460
-  SendFeatureSet(this, H460_MessageType::e_registrationRequest, rrq);
+  SendFeatureSet(this,
+                 rrq.m_keepAlive.GetValue() ? H460_MessageType::e_lightweightRegistrationRequest
+                                            : H460_MessageType::e_registrationRequest,
+                 rrq);
 #endif
     
   pdu.Prepare(rrq.m_tokens, H225_RegistrationRequest::e_tokens,

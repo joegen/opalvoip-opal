@@ -240,7 +240,8 @@ ifeq ($(OPAL_H323),yes)
                $(OPAL_SRCDIR)/h460/h46024b.cxx \
                $(OPAL_SRCDIR)/h460/h460_std18.cxx \
                $(OPAL_SRCDIR)/h460/h460_std19.cxx \
-               $(OPAL_SRCDIR)/h460/h460_std23.cxx
+               $(OPAL_SRCDIR)/h460/h460_std23.cxx \
+               $(OPAL_SRCDIR)/h460/h460_std24.cxx
   endif
 
   ifeq ($(OPAL_PTLIB_SSL), yes)

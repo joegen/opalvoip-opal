@@ -616,19 +616,8 @@ static void SendFeatureSet(const H323Connection & connection, H460_MessageType p
     return;
   }
 
-  if (!fs.HasOptionalField(H225_FeatureSet::e_supportedFeatures))
-    return;
-
-  msg.IncludeOptionalField(H225_H323_UU_PDU::e_genericData);
-
-  H225_ArrayOf_FeatureDescriptor & fsn = fs.m_supportedFeatures;
-  H225_ArrayOf_GenericData & data = msg.m_genericData;
-
-  for (PINDEX i=0; i < fsn.GetSize(); i++) {
-    PINDEX lastPos = data.GetSize();
-    data.SetSize(lastPos+1);
-    data[lastPos] = fsn[i];
-  }
+  if (H460_FeatureSet::Copy(msg.m_genericData, fs))
+    msg.IncludeOptionalField(H225_H323_UU_PDU::e_genericData);
 }
 #endif // OPAL_H460
 

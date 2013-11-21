@@ -1080,11 +1080,9 @@ class H323EndPoint : public OpalRTPEndPoint
         This creates a new instance of the featureSet
       */
     virtual H460_FeatureSet * CreateFeatureSet(
-      H460_Feature::Purpose purpose,
       H323Connection * connection
     );
     virtual H460_FeatureSet * InternalCreateFeatureSet(
-      H460_Feature::Purpose purpose,
       H323Connection * connection
     );
 
@@ -1101,8 +1099,7 @@ class H323EndPoint : public OpalRTPEndPoint
        Default returns TRUE
       */
     virtual bool OnLoadFeature(
-      H460_Feature::Purpose purpose,
-      const PString & identifer
+      H460_Feature & feature
     );
 
 #endif // OPAL_H460

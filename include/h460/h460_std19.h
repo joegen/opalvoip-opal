@@ -57,14 +57,11 @@ class H46019_TraversalParameters;
 
 class H460_FeatureStd19 : public H460_Feature
 {
-    PCLASSINFO(H460_FeatureStd19, H460_Feature);
+    PCLASSINFO_WITH_CLONE(H460_FeatureStd19, H460_Feature);
   public:
     H460_FeatureStd19();
 
-    // Universal Declarations Every H460 Feature should have the following
-    static Purpose GetPluginPurpose()      { return ForConnection; };
-    virtual Purpose GetPurpose() const     { return GetPluginPurpose(); };
-
+    static const H460_FeatureID & ID();
     virtual bool Initialise(H323EndPoint & ep, H323Connection * con);
 
     // H.225.0 Messages
@@ -75,13 +72,12 @@ class H460_FeatureStd19 : public H460_Feature
     virtual void OnReceiveOLCGenericInformation(unsigned sessionID, const H245_ArrayOf_GenericParameter & param, bool isAck);
 
     // Member access
-    void DisableByH46024() { m_disabledByH46024 = true; }
-
     bool IsRemoteServer() const { return m_remoteIsServer; }
 
   protected:
     PNatMethod * m_natMethod;
     bool         m_disabledByH46024;
+    bool         m_remoteSupportsMux;
     bool         m_remoteIsServer;
 };
  

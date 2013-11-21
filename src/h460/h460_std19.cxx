@@ -49,16 +49,20 @@
 #if OPAL_H460_NAT
 
 #include <h323/h323ep.h>
-#include <h323/h323pdu.h>
-#include <h323/gkclient.h>
 #include <h460/h46019.h>
+#include <h460/h460_std24.h>
 #include <ptclib/random.h>
-#include <ptclib/cypher.h>
 
 
 #define PTraceModule() "H46019"
 
 PCREATE_NAT_PLUGIN(H46019, "H.460.19");
+
+const H460_FeatureID & H460_FeatureStd19::ID() { static const H460_FeatureID id(19); return id; }
+
+// H.460.19 parameters
+static const H460_FeatureID supportTransmitMultiplexedMedia_ID(1);
+static const H460_FeatureID mediaTraversalServer_ID(2);
 
 
 ///////////////////////////////////////////////////////
@@ -68,14 +72,14 @@ PCREATE_NAT_PLUGIN(H46019, "H.460.19");
 H460_FEATURE(Std19, "H.460.19");
 
 H460_FeatureStd19::H460_FeatureStd19()
-  : H460_Feature(19)
+  : H460_Feature(ID())
   , m_natMethod(NULL)
-  , m_disabledByH46024(false)
+  , m_remoteSupportsMux(false)
   , m_remoteIsServer(false)
 {
   PTRACE(6, "Instance Created");
 
-  AddParameter(1);  // add compulsory parameter: we can transmit multiplexed data
+  AddParameter(supportTransmitMultiplexedMedia_ID);  // add compulsory parameter: we can transmit multiplexed data
 }
 
 
@@ -85,24 +89,35 @@ bool H460_FeatureStd19::Initialise(H323EndPoint & ep, H323Connection * con)
     return false;
 
   if (m_endpoint->GetH46019Server() != NULL)
-    AddParameter(2);
+    AddParameter(mediaTraversalServer_ID);
 
-  m_natMethod = GetNatMethod(PNatMethod_H46019::MethodName());
-  return m_natMethod != NULL;
+  return GetNatMethod(PNatMethod_H46019::MethodName(), m_natMethod);
 }
 
 
 bool H460_FeatureStd19::OnSendPDU(H460_MessageType pduType, H460_FeatureDescriptor & pdu)
 {
+  if (m_connection == NULL)
+    return false;
+
   H460_Feature::OnSendPDU(pduType, pdu);
-  return !m_disabledByH46024;
+
+  // Check for H.460.24 override
+  H460_FeatureStd24 * feat24 = GetFeatureOnGkAs<H460_FeatureStd24>(H460_FeatureStd24::ID());
+  if (feat24 != NULL && feat24->IsDisabledH46019()) {
+    PTRACE(4, "Disabled via H.460.24.");
+    return false;
+  }
+
+  return true;
 }
 
 
 void H460_FeatureStd19::OnReceivePDU(H460_MessageType pduType, const H460_FeatureDescriptor & pdu)
 {
   H460_Feature::OnReceivePDU(pduType, pdu);
-  m_remoteIsServer = pdu.HasParameter(2);
+  m_remoteSupportsMux = pdu.HasParameter(supportTransmitMultiplexedMedia_ID);
+  m_remoteIsServer = pdu.HasParameter(mediaTraversalServer_ID);
 }
 
 
@@ -110,6 +125,15 @@ bool H460_FeatureStd19::OnSendingOLCGenericInformation(unsigned sessionID, H245_
 {
   if (!PAssert(m_connection != NULL, PLogicError))
     return false;
+
+  // Check for H.460.24 override
+  {
+    H460_FeatureStd24 * feat24 = GetFeatureOnGkAs<H460_FeatureStd24>(H460_FeatureStd24::ID());
+    if (feat24 != NULL && feat24->IsDisabledH46019()) {
+      PTRACE(4, "Disabled via H.460.24.");
+      return false;
+    }
+  }
 
   OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(m_connection->GetMediaSession(sessionID));
   if (session == NULL) {
@@ -137,16 +161,18 @@ bool H460_FeatureStd19::OnSendingOLCGenericInformation(unsigned sessionID, H245_
       ((H225_TimeToLive &)traversal.m_keepAliveInterval).SetValue(server->GetKeepAliveTTL());
     }
 
-    if (server->GetMuxRTPAddress().SetPDU(traversal.m_multiplexedMediaChannel))
-      traversal.IncludeOptionalField(H46019_TraversalParameters::e_multiplexedMediaChannel);
+    if (m_remoteSupportsMux) {
+      if (server->GetMuxRTPAddress().SetPDU(traversal.m_multiplexedMediaChannel))
+        traversal.IncludeOptionalField(H46019_TraversalParameters::e_multiplexedMediaChannel);
 
-    if (server->GetMuxRTCPAddress().SetPDU(traversal.m_multiplexedMediaControlChannel))
-      traversal.IncludeOptionalField(H46019_TraversalParameters::e_multiplexedMediaControlChannel);
+      if (server->GetMuxRTCPAddress().SetPDU(traversal.m_multiplexedMediaControlChannel))
+        traversal.IncludeOptionalField(H46019_TraversalParameters::e_multiplexedMediaControlChannel);
 
-    if (traversal.HasOptionalField(H46019_TraversalParameters::e_multiplexedMediaChannel) ||
-        traversal.HasOptionalField(H46019_TraversalParameters::e_multiplexedMediaControlChannel)) {
-      traversal.IncludeOptionalField(H46019_TraversalParameters::e_multiplexID);
-      traversal.m_multiplexID = server->CreateMultiplexID(session->GetLocalAddress(true), session->GetLocalAddress(false));
+      if (traversal.HasOptionalField(H46019_TraversalParameters::e_multiplexedMediaChannel) ||
+          traversal.HasOptionalField(H46019_TraversalParameters::e_multiplexedMediaControlChannel)) {
+        traversal.IncludeOptionalField(H46019_TraversalParameters::e_multiplexID);
+        traversal.m_multiplexID = server->CreateMultiplexID(session->GetLocalAddress(true), session->GetLocalAddress(false));
+      }
     }
 
     if (!traversal.HasOptionalField(H46019_TraversalParameters::e_keepAliveChannel) &&
@@ -399,39 +425,13 @@ PNATUDPSocket * PNatMethod_H46019::InternalCreateSocket(Component component, POb
 
 bool PNatMethod_H46019::IsAvailable(const PIPSocket::Address & binding, PObject * context)
 {
-  if (context == NULL) {
-    PTRACE(5, "Not available without context");
+  H460_FeatureStd19 * feature;
+  if (!H460_Feature::FromContext(context, feature))
     return false;
-  }
 
-  if (dynamic_cast<H323Connection *>(context) == NULL) {
-    OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(context);
-    if (session == NULL) {
-      PTRACE(4, "Not available without OpalRTPSession as context");
-      return false;
-    }
-
-    H323Connection * connection = dynamic_cast<H323Connection *>(&session->GetConnection());
-    if (connection == NULL) {
-      PTRACE(4, "Not available without H323Connection");
-      return false;
-    }
-
-    if (connection->GetFeatureSet() == NULL) {
-      PTRACE(4, "Not available without feature set in connection");
-      return false;
-    }
-
-    H460_FeatureStd19 * feature = connection->GetFeatureSet()->GetFeatureAs<H460_FeatureStd19>(19);
-    if (feature == NULL) {
-      PTRACE(4, "Not available without feature in connection");
-      return false;
-    }
-
-    if (!feature->IsRemoteServer()) {
-      PTRACE(4, "Not available if remote is not a server");
-      return false;
-    }
+  if (!feature->IsRemoteServer()) {
+    PTRACE(4, "Not available if remote is not a server");
+    return false;
   }
 
   return PNatMethod::IsAvailable(binding, context);
