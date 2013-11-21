@@ -242,6 +242,7 @@ OpalConnection::OpalConnection(OpalCall & call,
 #endif
 #if OPAL_STATISTICS
   , m_VideoUpdateRequestsSent(0)
+  , m_VideoUpdateRequestsReceived(0)
 #endif
 #if OPAL_FAX
   , m_faxMediaStreamsSwitchState(e_NotSwitchingFaxMediaStreams)
@@ -1230,6 +1231,8 @@ PBoolean OpalConnection::CreateVideoOutputDevice(const OpalMediaFormat & mediaFo
 
 bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, bool force) const
 {
+  ++const_cast<OpalConnection *>(this)->m_VideoUpdateRequestsReceived;
+
   if (!ExecuteMediaCommand(force ? OpalVideoUpdatePicture() : OpalVideoPictureLoss(), sessionID, OpalMediaType::Video()))
     return false;
 

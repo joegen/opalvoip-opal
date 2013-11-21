@@ -509,6 +509,8 @@ void OpalMediaStream::GetStatistics(OpalMediaStatistics & statistics, bool fromP
 
   if (mediaPatch != NULL && !fromPatch)
     mediaPatch->GetStatistics(statistics, IsSink());
+
+  statistics.m_updateRequests = IsSource() ? connection.GetVideoUpdateRequestsSent() : connection.GetVideoUpdateRequestsReceived();
 }
 #endif
 
