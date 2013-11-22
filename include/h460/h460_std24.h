@@ -45,6 +45,7 @@
 #if OPAL_H460_NAT
 
 #include <h460/h4601.h>
+#include <rtp/rtp_session.h>
 #include <ptclib/pstun.h>
 
 
@@ -117,6 +118,44 @@ class H460_FeatureStd24 : public H460_Feature
     MediaStrategyIndicator m_strategy;
 };
 
+///////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_H460_24A
+
+class H460_FeatureStd24AnnexA : public H460_Feature
+{
+    PCLASSINFO_WITH_CLONE(H460_FeatureStd24AnnexA, H460_Feature);
+  public:
+    H460_FeatureStd24AnnexA();
+    ~H460_FeatureStd24AnnexA();
+
+    static const H460_FeatureID & ID();
+
+    virtual bool OnSendingOLCGenericInformation(unsigned sessionID, H245_ArrayOf_GenericParameter & param, bool isAck);
+    virtual void OnReceiveOLCGenericInformation(unsigned sessionID, const H245_ArrayOf_GenericParameter & param, bool isAck);
+
+  protected:
+    bool InitProbe(unsigned sessionID);
+    void StartProbe();
+    void SendProbe();
+
+    PMutex                  m_mutex;
+    OpalRTPSession        * m_session;
+    PString                 m_localCUI;
+    PIPSocketAddressAndPort m_directMediaAddress;
+    PIPSocketAddressAndPort m_directControlAddress;
+    PTimer                  m_probeTimer;
+    PSimpleTimer            m_probeTimeout;
+    PBYTEArray              m_localSHA1;
+    PBYTEArray              m_remoteSHA1;
+
+    RTP_ControlFrame::ApplDefinedInfo m_probeInfo;
+    OpalRTPSession::ApplDefinedNotifier m_probeNotifier;
+    PDECLARE_NOTIFIER(PTimer, H460_FeatureStd24AnnexA, ProbeTimeout);
+    PDECLARE_NOTIFIER2(OpalRTPSession, H460_FeatureStd24AnnexA, ProbeResponse, const RTP_ControlFrame::ApplDefinedInfo &);
+};
+
+#endif // OPAL_H460_24A
 
 #endif // OPAL_H460_NAT
 

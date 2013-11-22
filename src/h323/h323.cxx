@@ -2743,9 +2743,11 @@ PBoolean H323Connection::OnStartHandleControlChannel()
   PTRACE(2, "H46018\tStarted control channel");
 
 #if OPAL_H460
-  H460_FeatureStd18 * feature = m_features != NULL ? m_features->GetFeatureAs<H460_FeatureStd18>(H460_FeatureStd18::ID()) : NULL;
-  if (feature != NULL && !feature->OnStartControlChannel())
-    return false;
+  if (m_features != NULL) {
+    H460_FeatureStd18 * feature;
+    if (m_features->GetFeature(feature) && !feature->OnStartControlChannel())
+      return false;
+  }
 #endif
 
   return StartHandleControlChannel();

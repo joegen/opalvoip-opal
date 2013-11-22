@@ -220,65 +220,6 @@ class H46019UDPSocket : public PNATUDPSocket
     // H.460.19 multiplex transmit
     bool     m_multiplexedTransmit;
     PUInt32b m_multiplexID;
-
-#if H46024_ANNEX_A_SUPPORT
-    // H46024 Annex A support
-    struct probe_packet {
-        PUInt16b    Length;   // Length
-        PUInt32b    SSRC;     // Time Stamp
-        BYTE        name[4];  // Name is limited to 32 (4 Bytes)
-        BYTE        cui[20];  // SHA-1 is always 160 (20 Bytes)
-    };
-
-    enum  probe_state {
-        e_notRequired,        ///< Polling has not started
-        e_initialising,       ///< We are initialising (local set but remote not)
-        e_idle,               ///< Idle (waiting for first packet from remote)
-        e_probing,            ///< Probing for direct route
-        e_verify_receiver,    ///< verified receive connectivity    
-        e_verify_sender,      ///< verified send connectivity
-        e_wait,               ///< we are waiting for direct media (to set address)
-        e_direct              ///< we are going direct to detected address
-    };
-
-    /** Set Alternate Direct Address
-      */
-    virtual void SetAlternateAddresses(const H323TransportAddress & address, const PString & cui);
-
-     /** Set Alternate Direct Address
-      */
-    virtual void GetAlternateAddresses(H323TransportAddress & address, PString & cui);
-
-    /** Start sending media/control to alternate address
-      */
-    void H46024Adirect(bool starter);
-
-    /** Start Probing to alternate address
-      */
-    void H46024Bdirect(const H323TransportAddress & address);
-    PBoolean ReceivedProbePacket(const RTP_ControlFrame & frame, bool & probe, bool & success);
-    void BuildProbe(RTP_ControlFrame & report, bool reply);
-    void StartProbe();
-    void ProbeReceived(bool probe, const PIPSocketAddressAndPort & ipAndPort);
-
-    bool InternalReadFrom(Slice * slices, size_t sliceCount, PIPSocketAddressAndPort & ipAndPort);
-
-    // H46024 Annex A support
-    PString  m_localCUI;                                ///< Local CUI (for H.460.24 Annex A)
-    PString m_remoteCUI;                                ///< Remote CUI
-    probe_state m_state;
-    PMutex probeMutex;
-    PIPSocketAddressAndPort m_detectedAddress;          ///< detected remote Address (as detected from actual packets)
-    PIPSocketAddressAndPort m_pendingAddress;           ///< detected pending RTCP Probe Address (as detected from actual packets)
-    PDECLARE_NOTIFIER(PTimer, H46019UDPSocket, Probe);  ///< Thread to probe for direct connection
-    PTimer m_Probe;                                     ///< Probe Timer
-    PINDEX m_probes;                                    ///< Probe count
-    DWORD m_SSRC;                                         ///< Random number
-    PIPSocket::Address m_altAddr;  WORD m_altPort;      ///< supplied remote Address (as supplied in Generic Information)
-
-    // H46024 Annex B support
-    bool m_h46024b;
-#endif
 };
 
 

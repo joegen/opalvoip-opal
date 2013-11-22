@@ -608,9 +608,17 @@ class H460_Feature : public PObject
 
   protected:
     H460_Feature * GetFeatureOnGk(const H460_FeatureID & id) const;
-    template <class T> T * GetFeatureOnGkAs(const H460_FeatureID & id) { return dynamic_cast<T *>(GetFeatureOnGk(id)); }
+
+    template <class FEAT> bool GetFeatureOnGk(FEAT * & feature, const H460_FeatureID & id = FEAT::ID())
+    {
+      feature = dynamic_cast<FEAT *>(GetFeatureOnGk(id));
+      return feature != NULL;
+    }
+
     bool IsFeatureNegotiatedOnGk(const H460_FeatureID & id) const;
+
     PNatMethod * GetNatMethod(const char * methodName) const;
+
     template <class METH> bool GetNatMethod(const char * methodName, METH * & natMethod) const
     {
       natMethod = dynamic_cast<METH *>(GetNatMethod(methodName));
@@ -656,7 +664,11 @@ class H460_FeatureSet : public PObject, public map<H460_FeatureID, H460_Feature 
     /** Get Feature with id
     */
     H460_Feature * GetFeature(const H460_FeatureID & id);
-    template <class T> T * GetFeatureAs(const H460_FeatureID & id) { return dynamic_cast<T *>(GetFeature(id)); }
+    template <class FEAT> bool GetFeature(FEAT * & feature, const H460_FeatureID & id = FEAT::ID())
+    {
+      feature = dynamic_cast<FEAT *>(GetFeature(id));
+      return feature != NULL;
+    }
 
     /** Determine if the FeatureSet has a particular FeatureID.
     */
