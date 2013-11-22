@@ -144,7 +144,6 @@ OpalRTPSession::OpalRTPSession(OpalConnection & conn, unsigned sessionId, const 
   , lastSentTimestamp(0)  // should be calculated, but we'll settle for initialising it)
   , allowAnySyncSource(true)
   , allowOneSyncSourceChange(false)
-  , allowRemoteTransmitAddressChange(false)
   , allowSequenceChange(false)
   , txStatisticsInterval(100)
   , rxStatisticsInterval(100)
@@ -157,9 +156,6 @@ OpalRTPSession::OpalRTPSession(OpalConnection & conn, unsigned sessionId, const 
   , resequenceOutOfOrderPackets(true)
   , consecutiveOutOfOrderPackets(0)
   , outOfOrderWaitTime(GetDefaultOutOfOrderWaitTime())
-  , timeStampOffs(0)
-  , oobTimeStampBaseEstablished(false)
-  , oobTimeStampOutBase(0)
   , firstPacketSent(0)
   , firstPacketReceived(0)
   , senderReportsReceived(0)
@@ -177,7 +173,6 @@ OpalRTPSession::OpalRTPSession(OpalConnection & conn, unsigned sessionId, const 
   , m_remoteAddress(PIPSocket::GetInvalidAddress())
   , m_remoteDataPort(0)
   , m_remoteControlPort(0)
-  , m_remoteTransmitAddress(PIPSocket::GetInvalidAddress())
   , m_dataSocket(NULL)
   , m_controlSocket(NULL)
   , m_shutdownRead(false)
@@ -189,7 +184,7 @@ OpalRTPSession::OpalRTPSession(OpalConnection & conn, unsigned sessionId, const 
   ClearStatistics();
 
   PTRACE_CONTEXT_ID_TO(m_reportTimer);
-  m_reportTimer.SetNotifier(PCREATE_NOTIFIER(SendReport));
+  m_reportTimer.SetNotifier(PCREATE_NOTIFIER(TimedSendReport));
 }
 
 
@@ -572,80 +567,58 @@ void OpalRTPSession::AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiv
 } 
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & frame, bool rewriteHeader)
 {
   PWaitAndSignal mutex(m_dataMutex);
 
-  PTimeInterval tick = PTimer::Tick();  // Timestamp set now
+  if (rewriteHeader) {
+    PTimeInterval tick = PTimer::Tick();  // Timestamp set now
 
-  frame.SetSequenceNumber(++lastSentSequenceNumber);
-  frame.SetSyncSource(syncSourceOut);
+    frame.SetSequenceNumber(++lastSentSequenceNumber);
+    frame.SetSyncSource(syncSourceOut);
 
-  DWORD frameTimestamp = frame.GetTimestamp();
+    // special handling for first packet
+    if (!firstPacketSent.IsValid()) {
+      firstPacketSent.SetCurrentTime();
 
-  // special handling for first packet
-  if (packetsSent == 0) {
-
-    // establish timestamp offset
-    if (oobTimeStampBaseEstablished)  {
-      timeStampOffs = oobTimeStampOutBase - frameTimestamp + ((PTimer::Tick() - oobTimeStampBase).GetInterval() * m_timeUnits);
-      frameTimestamp += timeStampOffs;
+      // display stuff
+      PTRACE(3, "RTP\tSession " << m_sessionId << ", first sent data:"
+                " ver=" << frame.GetVersion()
+             << " pt=" << frame.GetPayloadType()
+             << " psz=" << frame.GetPayloadSize()
+             << " m=" << frame.GetMarker()
+             << " x=" << frame.GetExtension()
+             << " seq=" << frame.GetSequenceNumber()
+             << " ts=" << frame.GetTimestamp()
+             << " src=0x" << hex << frame.GetSyncSource() << dec
+             << " ccnt=" << frame.GetContribSrcCount()
+             << " rem=" << GetRemoteAddress()
+             << " local=" << GetLocalAddress());
     }
+
     else {
-      oobTimeStampBaseEstablished = true;
-      timeStampOffs               = 0;
-      oobTimeStampOutBase         = frameTimestamp;
-      oobTimeStampBase            = PTimer::Tick();
+      /* For audio we do not do statistics on start of talk burst as that
+         could be a substantial time and is not useful, so we only calculate
+         when the marker bit os off.
+
+         For video we measure jitter between whole video frames which is
+         indicated by the marker bit being on.
+      */
+      if (m_isAudio  != frame.GetMarker()) {
+        DWORD diff = (tick - lastSentPacketTime).GetInterval();
+
+        averageSendTimeAccum += diff;
+        if (diff > maximumSendTimeAccum)
+          maximumSendTimeAccum = diff;
+        if (diff < minimumSendTimeAccum)
+          minimumSendTimeAccum = diff;
+        txStatisticsCount++;
+      }
     }
 
-    firstPacketSent.SetCurrentTime();
-
-    // display stuff
-    PTRACE(3, "RTP\tSession " << m_sessionId << ", first sent data:"
-              " ver=" << frame.GetVersion()
-           << " pt=" << frame.GetPayloadType()
-           << " psz=" << frame.GetPayloadSize()
-           << " m=" << frame.GetMarker()
-           << " x=" << frame.GetExtension()
-           << " seq=" << frame.GetSequenceNumber()
-           << " ts=" << frameTimestamp
-           << " src=" << frame.GetSyncSource()
-           << " ccnt=" << frame.GetContribSrcCount()
-           << ' ' << GetRemoteAddress());
+    lastSentTimestamp = frame.GetTimestamp();
+    lastSentPacketTime = tick;
   }
-
-  else {
-    // set timestamp
-    frameTimestamp += timeStampOffs;
-
-    // reset OOB timestamp every marker bit
-    if (frame.GetMarker()) {
-      oobTimeStampOutBase = frameTimestamp;
-      oobTimeStampBase    = PTimer::Tick();
-    }
-
-    /* For audio we do not do statistics on start of talk burst as that
-       could be a substantial time and is not useful, so we only calculate
-       when the marker bit os off.
-
-       For video we measure jitter between whole video frames which is
-       indicated by the marker bit being on.
-    */
-    if (m_isAudio  != frame.GetMarker()) {
-      DWORD diff = (tick - lastSentPacketTime).GetInterval();
-
-      averageSendTimeAccum += diff;
-      if (diff > maximumSendTimeAccum)
-        maximumSendTimeAccum = diff;
-      if (diff < minimumSendTimeAccum)
-        minimumSendTimeAccum = diff;
-      txStatisticsCount++;
-    }
-  }
-
-  frame.SetTimestamp(frameTimestamp);
-  lastSentTimestamp = frameTimestamp;
-  lastSentPacketTime = tick;
 
   octetsSent += frame.GetPayloadSize();
   packetsSent++;
@@ -681,6 +654,13 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendControl(RTP_ControlFrame
 {
   frame.SetSize(frame.GetCompoundSize());
   return e_ProcessPacket;
+}
+
+
+OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize)
+{
+  // Check received PDU is big enough
+  return frame.SetPacketSize(pduSize) ? OnReceiveData(frame) : e_IgnorePacket;
 }
 
 
@@ -722,8 +702,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
            << " x=" << frame.GetExtension()
            << " seq=" << frame.GetSequenceNumber()
            << " ts=" << frame.GetTimestamp()
-           << " src=" << hex << frame.GetSyncSource()
-           << " ccnt=" << frame.GetContribSrcCount() << dec);
+           << " src=0x" << hex << frame.GetSyncSource() << dec
+           << " ccnt=" << frame.GetContribSrcCount());
 
 #if OPAL_RTCP_XR
     delete m_metrics; // Should be NULL, but just in case ...
@@ -1013,12 +993,18 @@ bool OpalRTPSession::InsertReportPacket(RTP_ControlFrame & report)
 }
 
 
-void OpalRTPSession::SendReport(PTimer&, INT)
+void OpalRTPSession::TimedSendReport(PTimer&, INT)
+{
+  SendReport(false);
+}
+
+
+void OpalRTPSession::SendReport(bool force)
 {
   PWaitAndSignal mutex(m_reportMutex);
 
   // Have not got anything yet, do nothing
-  if (packetsSent == 0 && packetsReceived == 0)
+  if (!force && (packetsSent == 0 && packetsReceived == 0))
     return;
 
   RTP_ControlFrame report;
@@ -1965,18 +1951,17 @@ bool OpalRTPSession::InternalSetRemoteAddress(PIPSocket::Address address, WORD p
   m_remoteAddress = address;
   
   allowOneSyncSourceChange = true;
-  allowRemoteTransmitAddressChange = true;
   allowSequenceChange = packetsReceived != 0;
 
   if (port != 0) {
     if (isDataPort) {
       m_remoteDataPort = port;
-      if ((port&1) == 0 && (m_remoteControlPort == 0 || allowRemoteTransmitAddressChange))
+      if ((port&1) == 0 && m_remoteControlPort == 0)
         m_remoteControlPort = (WORD)(port + 1);
     }
     else {
       m_remoteControlPort = port;
-      if ((port&1) == 1 && (m_remoteDataPort == 0 || allowRemoteTransmitAddressChange))
+      if ((port&1) == 1 && m_remoteDataPort == 0)
         m_remoteDataPort = (WORD)(port - 1);
     }
     m_singlePort = m_remoteDataPort == m_remoteControlPort;
@@ -2067,19 +2052,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr,
         m_remoteControlPort = port;
     }
 
-    if (!m_remoteTransmitAddress.IsValid())
-      m_remoteTransmitAddress = addr;
-    else if (allowRemoteTransmitAddressChange && m_remoteAddress == addr) {
-      m_remoteTransmitAddress = addr;
-      allowRemoteTransmitAddressChange = false;
-    }
-    else if (m_remoteTransmitAddress != addr && !allowRemoteTransmitAddressChange) {
-      PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", "
-             << channelName << " PDU from incorrect host, "
-                " is " << addr << " should be " << m_remoteTransmitAddress);
-      return e_IgnorePacket;
-    }
-
     m_noTransmitErrors = 0;
     frameSize = socket.GetLastReadCount();
 
@@ -2088,7 +2060,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr,
 
   switch (socket.GetErrorCode(PChannel::LastReadError)) {
     case PChannel::Unavailable :
-      return HandleUnreachable(PTRACE_PARAM(channelName)) ? e_IgnorePacket : e_AbortTransport;
+      if (!HandleUnreachable(PTRACE_PARAM(channelName)))
+        Shutdown(false); // Terminate transmission
+      return e_IgnorePacket;
 
     case PChannel::BufferTooSmall :
       PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", " << channelName
@@ -2147,17 +2121,13 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataPDU(RTP_DataFrame & fr
   // Check for single port operation, incoming RTCP on RTP
   RTP_ControlFrame control(frame, pduSize, false);
   unsigned type = control.GetPayloadType();
-  if (type >= RTP_ControlFrame::e_FirstValidPayloadType && type <= RTP_ControlFrame::e_LastValidPayloadType) {
-    if ((status = OnReceiveControl(control)) == e_ProcessPacket)
-      status = e_IgnorePacket;
-    return status;
-  }
+  if (type < RTP_ControlFrame::e_FirstValidPayloadType || type > RTP_ControlFrame::e_LastValidPayloadType)
+    return OnReceiveData(frame, pduSize);
 
-  // Check received PDU is big enough
-  if (frame.SetPacketSize(pduSize))
-    return OnReceiveData(frame);
-
-  return e_IgnorePacket;
+  status = OnReceiveControl(control);
+  if (status == e_ProcessPacket)
+    status = e_IgnorePacket;
+  return status;
 }
 
 
@@ -2188,42 +2158,18 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadControlPDU()
 }
 
 
-bool OpalRTPSession::WriteOOBData(RTP_DataFrame & frame, bool rewriteTimeStamp)
+bool OpalRTPSession::WriteData(RTP_DataFrame & frame,
+                               const PIPSocketAddressAndPort * remote,
+                               bool rewriteHeader)
 {
   PWaitAndSignal m(m_dataMutex);
 
-  // set timestamp offset if not already set
-  // otherwise offset timestamp
-  if (!oobTimeStampBaseEstablished) {
-    oobTimeStampBaseEstablished = true;
-    oobTimeStampBase            = PTimer::Tick();
-    if (rewriteTimeStamp)
-      oobTimeStampOutBase = PRandom::Number();
-    else
-      oobTimeStampOutBase = frame.GetTimestamp();
-  }
-
-  // set new timestamp
-  if (rewriteTimeStamp) 
-    frame.SetTimestamp(oobTimeStampOutBase + ((PTimer::Tick() - oobTimeStampBase).GetInterval() * 8));
-
-  // write the data
-  return WriteData(frame);
-}
-
-
-bool OpalRTPSession::WriteData(RTP_DataFrame & frame)
-{
   if (!IsOpen() || m_shutdownWrite) {
     PTRACE(3, "RTP_UDP\tSession " << m_sessionId << ", write shutdown.");
     return false;
   }
 
-  // Trying to send a PDU before we are set up!
-  if (!m_remoteAddress.IsValid() || m_remoteDataPort == 0)
-    return true;
-
-  switch (OnSendData(frame)) {
+  switch (OnSendData(frame, rewriteHeader)) {
     case e_ProcessPacket :
       break;
     case e_IgnorePacket :
@@ -2232,15 +2178,13 @@ bool OpalRTPSession::WriteData(RTP_DataFrame & frame)
       return false;
   }
 
-  return WriteRawPDU(frame.GetPointer(), frame.GetHeaderSize()+frame.GetPayloadSize(), true);
+  return WriteRawPDU(frame, frame.GetHeaderSize()+frame.GetPayloadSize(), true, remote);
 }
 
 
-bool OpalRTPSession::WriteControl(RTP_ControlFrame & frame)
+bool OpalRTPSession::WriteControl(RTP_ControlFrame & frame, const PIPSocketAddressAndPort * remote)
 {
-  // Trying to send a PDU before we are set up!
-  if (!m_remoteAddress.IsValid() || m_remoteControlPort == 0)
-    return true;
+  PWaitAndSignal m(m_dataMutex);
 
   switch (OnSendControl(frame)) {
     case e_ProcessPacket :
@@ -2252,16 +2196,26 @@ bool OpalRTPSession::WriteControl(RTP_ControlFrame & frame)
       return false;
   }
 
-  return WriteRawPDU(frame.GetPointer(), frame.GetSize(), m_controlSocket == NULL);
+  return WriteRawPDU(frame.GetPointer(), frame.GetSize(), m_controlSocket == NULL, remote);
 }
 
 
-bool OpalRTPSession::WriteRawPDU(const BYTE * framePtr, PINDEX frameSize, bool toDataChannel)
+bool OpalRTPSession::WriteRawPDU(const BYTE * framePtr, PINDEX frameSize, bool toDataChannel, const PIPSocketAddressAndPort * remote)
 {
   PUDPSocket & socket = *(toDataChannel ? m_dataSocket : m_controlSocket);
-  WORD port = toDataChannel ? m_remoteDataPort : m_remoteControlPort;
 
-  while (!socket.WriteTo(framePtr, frameSize, m_remoteAddress, port)) {
+  PIPSocketAddressAndPort remoteAddressAndPort;
+  if (remote == NULL) {
+    remoteAddressAndPort.SetAddress(m_remoteAddress, toDataChannel ? m_remoteDataPort : m_remoteControlPort);
+
+    // Trying to send a PDU before we are set up!
+    if (!remoteAddressAndPort.IsValid())
+      return true;
+
+    remote = &remoteAddressAndPort;
+  }
+
+  while (!socket.WriteTo(framePtr, frameSize, *remote)) {
     switch (socket.GetErrorCode(PChannel::LastWriteError)) {
       case PChannel::Unavailable :
         if (HandleUnreachable(PTRACE_PARAM(toDataChannel ? "Data" : "Control")))
@@ -2281,34 +2235,6 @@ bool OpalRTPSession::WriteRawPDU(const BYTE * framePtr, PINDEX frameSize, bool t
 
   return true;
 }
-
-
-/////////////////////////////////////////////////////////////////////////////
-
-#if 0
-SecureRTP_UDP::SecureRTP_UDP(OpalConnection & conn, unsigned sessionId, const OpalMediaType & mediaType)
-  : OpalRTPSession(conn, sessionId, mediaType)
-{
-  securityParms = NULL;
-}
-
-SecureRTP_UDP::~SecureRTP_UDP()
-{
-  delete securityParms;
-}
-
-void SecureRTP_UDP::SetSecurityMode(OpalSecurityMode * newParms)
-{ 
-  if (securityParms != NULL)
-    delete securityParms;
-  securityParms = newParms; 
-}
-  
-OpalSecurityMode * SecureRTP_UDP::GetSecurityParms() const
-{ 
-  return securityParms; 
-}
-#endif
 
 
 /////////////////////////////////////////////////////////////////////////////

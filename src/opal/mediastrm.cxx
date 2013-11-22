@@ -762,7 +762,7 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
     return true;
 
   packet.SetPayloadType(m_payloadType);
-  return rtpSession.WriteData(packet);
+  return rtpSession.WriteData(packet, NULL, dynamic_cast<OpalRTPMediaStream *>(&m_mediaPatch->GetSource()) == NULL);
 }
 
 
