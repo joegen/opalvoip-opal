@@ -552,14 +552,22 @@ unsigned H323GetGenericParameterInteger(const H245_ArrayOf_GenericParameter & pa
 }
 
 
-H245_ParameterValue * H323AddGenericParameter(H245_ArrayOf_GenericParameter & params, unsigned ordinal)
+bool H323GetGenericParameterObject(const H245_ArrayOf_GenericParameter & params, unsigned ordinal, PASN_Object & object)
+{
+  const H245_ParameterValue * param = H323GetGenericParameter(params, ordinal);
+  return param != NULL && param->GetTag() == H245_ParameterValue::e_octetString && ((const PASN_OctetString *)param)->DecodeSubType(object);
+}
+
+
+H245_ParameterValue & H323AddGenericParameter(H245_ArrayOf_GenericParameter & params, unsigned ordinal, H245_ParameterValue::Choices tag)
 {
   PINDEX size = params.GetSize();
   params.SetSize(size+1);
   H245_GenericParameter & param = params[size];
   param.m_parameterIdentifier.SetTag(H245_ParameterIdentifier::e_standard);
   (PASN_Integer &)param.m_parameterIdentifier = ordinal;
-  return &param.m_parameterValue;
+  param.m_parameterValue.SetTag(tag);
+  return param.m_parameterValue;
 }
 
 
@@ -567,7 +575,7 @@ void H323AddGenericParameterBoolean(H245_ArrayOf_GenericParameter & params, unsi
 {
   // Do not include a logical at all if it is false
   if (value)
-    H323AddGenericParameter(params, ordinal)->SetTag(H245_ParameterValue::e_logical);
+    H323AddGenericParameter(params, ordinal, H245_ParameterValue::e_logical);
 }
 
 
@@ -576,25 +584,25 @@ void H323AddGenericParameterInteger(H245_ArrayOf_GenericParameter & params,
                                     unsigned value,
                                     H245_ParameterValue::Choices subType)
 {
-  H245_ParameterValue * param = H323AddGenericParameter(params, ordinal);
-  param->SetTag(subType);
-  (PASN_Integer &)*param = value;
+  H323AddGenericParameterAs<PASN_Integer>(params, ordinal, subType) = value;
 }
 
 
 void H323AddGenericParameterString(H245_ArrayOf_GenericParameter & params, unsigned ordinal, const PString & value)
 {
-  H245_ParameterValue * param = H323AddGenericParameter(params, ordinal);
-  param->SetTag(H245_ParameterValue::e_octetString);
-  (PASN_OctetString &)*param = value;
+  H323AddGenericParameterAs<PASN_OctetString>(params, ordinal, H245_ParameterValue::e_octetString) = value;
 }
 
 
 void H323AddGenericParameterOctets(H245_ArrayOf_GenericParameter & params, unsigned ordinal, const PBYTEArray & value)
 {
-  H245_ParameterValue * param = H323AddGenericParameter(params, ordinal);
-  param->SetTag(H245_ParameterValue::e_octetString);
-  (PASN_OctetString &)*param = value;
+  H323AddGenericParameterAs<PASN_OctetString>(params, ordinal, H245_ParameterValue::e_octetString) = value;
+}
+
+
+void H323AddGenericParameterObject(H245_ArrayOf_GenericParameter & params, unsigned ordinal, const PASN_Object & object)
+{
+  H323AddGenericParameterAs<PASN_OctetString>(params, ordinal, H245_ParameterValue::e_octetString).EncodeSubType(object);
 }
 
 

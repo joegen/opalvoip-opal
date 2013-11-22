@@ -235,6 +235,18 @@ class RTP_ControlFrame : public PBYTEArray
       unsigned GetOverhead() const { return bitRateAndOverhead & 0x1ff; }
     };
 
+    struct ApplDefinedInfo {
+      char         m_type[5];
+      unsigned     m_subType;
+      DWORD        m_SSRC;
+      const BYTE * m_data;
+      PINDEX       m_size;
+
+      ApplDefinedInfo(const char * type, unsigned subType = 0, DWORD ssrc = 0, const BYTE * data = NULL, PINDEX size = 0);
+      ApplDefinedInfo(const RTP_ControlFrame & frame);
+    };
+    void SetApplDefined(const ApplDefinedInfo & info);
+
 #pragma pack()
 
   protected:

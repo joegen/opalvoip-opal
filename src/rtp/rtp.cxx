@@ -740,6 +740,47 @@ void RTP_ControlFrame::AddSourceDescriptionItem(unsigned type, const PString & d
 }
 
 
+RTP_ControlFrame::ApplDefinedInfo::ApplDefinedInfo(const char * type,
+                                                   unsigned subType,
+                                                   DWORD ssrc,
+                                                   const BYTE * data,
+                                                   PINDEX size)
+  : m_subType(subType)
+  , m_SSRC(ssrc)
+  , m_data(data)
+  , m_size(size)
+{
+  memset(m_type, 0, sizeof(m_type));
+  strncmp(m_type, type, sizeof(m_type)-1);
+}
+
+
+RTP_ControlFrame::ApplDefinedInfo::ApplDefinedInfo(const RTP_ControlFrame & frame)
+{
+  const BYTE * payload = frame.GetPayloadPtr();
+  memcpy(m_type, payload + 4, 4);
+  m_type[4] = '\0';
+  m_subType = frame.GetCount();
+  m_SSRC = *(const PUInt32b *)payload;
+  m_data = payload + 8;
+  m_size = frame.GetPayloadSize() - 8;
+}
+
+
+void RTP_ControlFrame::SetApplDefined(const ApplDefinedInfo & info)
+{
+  StartNewPacket();
+  SetPayloadType(e_ApplDefined);
+  SetPayloadSize(info.m_size + 8);
+  BYTE * payload = GetPayloadPtr();
+  memcpy(payload + 4, info.m_type, 4);
+  SetCount(info.m_subType);
+  *(PUInt32b *)payload = info.m_SSRC;
+  memcpy(payload + 8, info.m_data, info.m_size);
+  EndPacket();
+}
+
+
 void RTP_ControlFrame::ReceiverReport::SetLostPackets(unsigned packets)
 {
   lost[0] = (BYTE)(packets >> 16);

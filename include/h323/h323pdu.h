@@ -522,10 +522,21 @@ unsigned H323GetGenericParameterInteger(
   unsigned defValue = 0,
   H245_ParameterValue::Choices subType = H245_ParameterValue::e_unsignedMin
 );
-H245_ParameterValue * H323AddGenericParameter(
-  H245_ArrayOf_GenericParameter & params,
-  unsigned ordinal
+bool H323GetGenericParameterObject(
+  const H245_ArrayOf_GenericParameter & params,
+  unsigned ordinal,
+  PASN_Object & object
 );
+H245_ParameterValue & H323AddGenericParameter(
+  H245_ArrayOf_GenericParameter & params,
+  unsigned ordinal,
+  H245_ParameterValue::Choices tag
+);
+template <class CLS> CLS & H323AddGenericParameterAs(
+  H245_ArrayOf_GenericParameter & params,
+  unsigned ordinal,
+  H245_ParameterValue::Choices tag
+) { return (CLS &)H323AddGenericParameter(params, ordinal, tag); }
 void H323AddGenericParameterBoolean(
   H245_ArrayOf_GenericParameter & params,
   unsigned ordinal,
@@ -546,6 +557,11 @@ void H323AddGenericParameterOctets(
   H245_ArrayOf_GenericParameter & params,
   unsigned ordinal,
   const PBYTEArray & value
+);
+void H323AddGenericParameterObject(
+  H245_ArrayOf_GenericParameter & params,
+  unsigned ordinal,
+  const PASN_Object & object
 );
 
 #if PTRACING
