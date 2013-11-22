@@ -1177,11 +1177,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
         break;
 
       case RTP_ControlFrame::e_ApplDefined :
-        if (size >= 4) {
-          PString str((const char *)(payload+4), 4);
-          OnRxApplDefined(str, frame.GetCount(), *(const PUInt32b *)payload,
-          payload+8, frame.GetPayloadSize()-8);
-        }
+        if (size >= 8)
+          OnRxApplDefined(RTP_ControlFrame::ApplDefinedInfo(frame));
         else {
           PTRACE(2, "RTP\tSession " << m_sessionId << ", ApplDefined packet truncated");
         }
@@ -1319,12 +1316,11 @@ void OpalRTPSession::OnRxGoodbye(const PDWORDArray & PTRACE_PARAM(src), const PS
 }
 
 
-void OpalRTPSession::OnRxApplDefined(const PString & PTRACE_PARAM(type),
-          unsigned PTRACE_PARAM(subtype), DWORD PTRACE_PARAM(src),
-          const BYTE * /*data*/, PINDEX PTRACE_PARAM(size))
+void OpalRTPSession::OnRxApplDefined(const RTP_ControlFrame::ApplDefinedInfo & info)
 {
   PTRACE(3, "RTP\tSession " << m_sessionId << ", OnApplDefined: \""
-         << type << "\"-" << subtype << " " << src << " [" << size << ']');
+         << info.m_type << "\"-" << info.m_subType << " " << info.m_SSRC << " [" << info.m_size << ']');
+  m_applDefinedNotifiers(*this, info);
 }
 
 

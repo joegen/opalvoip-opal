@@ -45,6 +45,7 @@
 #include <opal/mediasession.h>
 #include <ptlib/sockets.h>
 #include <ptlib/safecoll.h>
+#include <ptlib/notifier_ext.h>
 #include <ptclib/pnat.h>
 #include <ptclib/url.h>
 
@@ -229,8 +230,20 @@ class OpalRTPSession : public OpalMediaSession
     virtual void OnRxGoodbye(const PDWORDArray & sources,
                              const PString & reason);
 
-    virtual void OnRxApplDefined(const PString & type, unsigned subtype, DWORD src,
-                                 const BYTE * data, PINDEX size);
+    typedef PNotifierListTemplate<const RTP_ControlFrame::ApplDefinedInfo &> ApplDefinedNotifierList;
+    typedef PNotifierTemplate<const RTP_ControlFrame::ApplDefinedInfo &> ApplDefinedNotifier;
+
+    virtual void OnRxApplDefined(const RTP_ControlFrame::ApplDefinedInfo & info);
+
+    void AddApplDefinedNotifier(const ApplDefinedNotifier & notifier)
+    {
+      m_applDefinedNotifiers.Add(notifier);
+    }
+
+    void RemoveApplDefinedNotifier(const ApplDefinedNotifier & notifier)
+    {
+      m_applDefinedNotifiers.Remove(notifier);
+    }
 
 #if OPAL_RTCP_XR
     class ExtendedReport : public PObject  {
@@ -684,6 +697,8 @@ class OpalRTPSession : public OpalMediaSession
     // Make sure JB is last to make sure it is destroyed first.
     typedef PSafePtr<OpalJitterBuffer, PSafePtrMultiThreaded> JitterBufferPtr;
     JitterBufferPtr m_jitterBuffer;
+
+    ApplDefinedNotifierList m_applDefinedNotifiers;
 
   private:
     OpalRTPSession(const OpalRTPSession &);

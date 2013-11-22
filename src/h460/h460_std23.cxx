@@ -55,7 +55,7 @@
 #include "h460/upnpcp.h"
 #endif
 
-#pragma message("H.460.23/.24 Enabled. Contact consulting@h323plus.org for licensing terms.")
+#pragma message("H.460.23 Enabled. Contact consulting@h323plus.org for licensing terms.")
 
 #define PTraceModule() "H46023"
 
@@ -94,9 +94,10 @@ bool H460_FeatureStd23::Initialise(H323EndPoint & ep, H323Connection * con)
   }
 
   AddParameter(RemoteNAT_ID, ep.GetH46019Server() != NULL);
-  AddParameter(SameNATProbe_ID, false);
+#if OPAL_H460_24A
+  AddParameter(SameNATProbe_ID, true);
+#endif
 
-  PTRACE(4, "Enabled H.460.23");
   return true;
 }
 
