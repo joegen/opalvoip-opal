@@ -466,7 +466,8 @@ CPPFLAGS += $(SHARED_CPPFLAGS) -DOPAL_PLUGIN_DIR="\"$(OPAL_PLUGIN_DIR)\""
 internal_build ::
 	@echo OPAL build: OS=$(target_os), CPU=$(target_cpu), DEBUG_BUILD=$(DEBUG_BUILD)
 
-include $(PTLIB_MAKE_DIR)/ptlib.mak
+include $(PTLIB_MAKE_DIR)/pre.mak
+include $(PTLIB_MAKE_DIR)/post.mak
 
 
 ###############################################################################
