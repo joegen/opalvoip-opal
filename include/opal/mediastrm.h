@@ -415,6 +415,7 @@ class OpalMediaStream : public PSafeObject
 
     virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat);
     virtual bool InternalSetPaused(bool pause, bool fromUser, bool fromPatch);
+    virtual bool InternalExecuteCommand(const OpalMediaCommand & command);
 
   protected:
     void IncrementTimestamp(PINDEX size);
@@ -422,7 +423,6 @@ class OpalMediaStream : public PSafeObject
     OpalMediaPatchPtr InternalSetPatchPart1(OpalMediaPatch * newPatch);
     void InternalSetPatchPart2(const OpalMediaPatchPtr & oldPatch);
     virtual bool InternalSetJitterBuffer(const OpalJitterBuffer::Init & init) const;
-    virtual bool InternalExecuteCommand(const OpalMediaCommand & command);
 
     /**Close any internal components of the stream.
        This should be used in preference to overriding the Close() function as
