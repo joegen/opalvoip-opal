@@ -130,7 +130,7 @@ bool H460_FeatureStd19::OnSendingOLCGenericInformation(unsigned sessionID, H245_
   // Check for H.460.24 override
   {
     H460_FeatureStd24 * feat24;
-    if (GetFeatureOnGk(feat24) != NULL && feat24->IsDisabledH46019()) {
+    if (GetFeatureOnGk(feat24) && feat24->IsDisabledH46019()) {
       PTRACE(4, "Disabled via H.460.24.");
       return false;
     }
