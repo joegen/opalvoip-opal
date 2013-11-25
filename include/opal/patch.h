@@ -223,6 +223,8 @@ class OpalMediaPatch : public PSafeObject
       const OpalMediaPatchPtr & patch
     );
 
+    bool IsBypassed() const { return m_bypassToPatch != NULL || m_bypassFromPatch != NULL; }
+
     /**Get the transcoder used within a sink stream
       */
     virtual OpalTranscoder * GetAndLockSinkTranscoder(PINDEX i = 0) const;
