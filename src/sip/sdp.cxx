@@ -286,7 +286,7 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
 
 #if OPAL_VIDEO
   // Save the RTCP feedback (RFC4585) capability.
-  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb && !m_parent.GetOptionStrings().GetBoolean(OPAL_OPT_FORCE_RTCP_FB))
+  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb || !m_parent.GetOptionStrings().GetBoolean(OPAL_OPT_FORCE_RTCP_FB))
     mediaFormat.SetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), m_rtcp_fb);
 #endif
 
@@ -1241,25 +1241,26 @@ bool SDPRTPAVPMediaDescription::PreEncode()
   if (formats.IsEmpty())
     return true;
 
-  bool allSame = true;
+  m_rtcp_fb = OpalVideoFormat::e_NoRTCPFb;
 
   if (m_enableFeedback || m_stringOptions.GetInteger(OPAL_OPT_OFFER_RTCP_FB, 1) == 1) {
-    SDPMediaFormatList::iterator format = formats.begin();
-    m_rtcp_fb = format->GetRTCP_FB();
-    for (++format; format != formats.end(); ++format) {
-      if (m_rtcp_fb != format->GetRTCP_FB()) {
-        allSame = false;
+    bool first = true;
+    for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
+      if (first) {
+        first = false;
+        m_rtcp_fb = format->GetRTCP_FB();
+      }
+      else if (m_rtcp_fb != format->GetRTCP_FB()) {
+        m_rtcp_fb = OpalVideoFormat::e_NoRTCPFb;
         break;
       }
     }
   }
 
-  if (allSame) {
+  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb) {
     for (SDPMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format)
-      format->SetRTCP_FB(PString::Empty());
+      format->SetRTCP_FB(OpalVideoFormat::e_NoRTCPFb);
   }
-  else
-    m_rtcp_fb = OpalVideoFormat::e_NoRTCPFb;
 #endif
 
   return true;
@@ -1350,13 +1351,13 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
       PString params = value.Mid(1).Trim();
       SDPMediaFormatList::iterator format;
       for (format = formats.begin(); format != formats.end(); ++format)
-        format->SetRTCP_FB(params);
+        format->AddRTCP_FB(params);
     }
     else {
       PString params = value;
       SDPMediaFormat * format = FindFormat(params);
       if (format != NULL)
-        format->SetRTCP_FB(params);
+        format->AddRTCP_FB(params);
     }
     return;
   }
