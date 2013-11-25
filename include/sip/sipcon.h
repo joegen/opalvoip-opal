@@ -198,6 +198,13 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
       */
     virtual OpalTransportAddress GetRemoteAddress() const { return m_remoteAddress; }
 
+    /** Get the remote identity.
+        Under some circumstances the "identity" of the remote party, may be
+        different from the name, number or URL for that user. For example, this
+        would be the P-Asserted-Identity field in SIP.
+      */
+    virtual PString GetRemoteIdentity() const;
+
     /**Get the destination address of an incoming connection.
        This will, for example, collect a phone number from a POTS line, or
        get the fields from the H.225 SETUP pdu in a H.323 connection.
@@ -775,6 +782,7 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     bool                  m_holdFromRemote;
     PString               m_forwardParty;
     OpalTransportAddress  m_remoteAddress;
+    PString               m_remoteIdentity;
     SIPURL                m_contactAddress;
     SIPURL                m_ciscoRemotePartyID;
 
