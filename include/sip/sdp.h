@@ -117,7 +117,8 @@ class SDPMediaFormat : public PObject
     void SetParameters(const PString & v) { parameters = v; }
 
 #if OPAL_VIDEO
-    void SetRTCP_FB(const PString & v) { m_rtcp_fb.FromString(v); }
+    void AddRTCP_FB(const PString & str) { m_rtcp_fb.FromString(str, false); }
+    void SetRTCP_FB(const OpalVideoFormat::RTCPFeedback & v) { m_rtcp_fb = v; }
     OpalVideoFormat::RTCPFeedback GetRTCP_FB() const { return m_rtcp_fb; }
 #endif
 
