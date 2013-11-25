@@ -839,8 +839,16 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
 
     PSafeLockReadOnly guard(*bypassToPatch);
     for (PList<Sink>::iterator s = bypassToPatch->sinks.begin(); s != bypassToPatch->sinks.end(); ++s) {
-      if (s->stream->WritePacket(frame))
+      if (s->stream->WritePacket(frame)) {
+        PTRACE(6, "Patch\tBypassed packet "
+               << " M="  << frame.GetMarker()
+               << " PT=" << frame.GetPayloadType()
+               << " SN=" << frame.GetSequenceNumber()
+               << " TS=" << frame.GetTimestamp()
+               << " SSRC=0x" << hex << frame.GetSyncSource() << dec
+               << " P-SZ=" << frame.GetPayloadSize());
         written = true;
+      }
     }
   }
 
