@@ -1709,8 +1709,9 @@ class OpalConnection : public PSafeObject
       */
     const PString & GetRemotePartyNumber() const { return remotePartyNumber; }
 
-    // Deprecated - backward compatibility only
-    P_DEPRECATED PString GetRemotePartyAddress() const { return GetRemotePartyURL(); }
+    /** Get the remote transport address
+      */
+    virtual OpalTransportAddress GetRemoteAddress() const { return OpalTransportAddress(); }
 
     /**Get the remote party address as URL.
        This will return the "best guess" at an address to use in a
@@ -1720,15 +1721,15 @@ class OpalConnection : public PSafeObject
       */
     virtual PString GetRemotePartyURL() const;
 
-    /**Get the redirecting party.
-       This is the party that caused an incoming call to arrive at this endpoint.
+    /** Get the remote identity.
+        Under some circumstances the "identity" of the remote party, may be
+        different from the name, number or URL for that user. For example, this
+        would be the P-Asserted-Identity field in SIP.
       */
-    const PString & GetRedirectingParty() const { return m_redirectingParty; }
+    virtual PString GetRemoteIdentity() const { return GetRemotePartyURL(); }
 
-    /**Set the redirecting party.
-       This is the party that caused an incoming call to arrive at this endpoint.
-      */
-    void SetRedirectingParty(const PString & party) { m_redirectingParty = party; }
+    // Deprecated - backward compatibility only
+    P_DEPRECATED PString GetRemotePartyAddress() const { return GetRemotePartyURL(); }
 
     // Deprecated - backward compatibility only
     P_DEPRECATED const PString GetRemotePartyCallbackURL() const { return GetRemotePartyURL(); }
@@ -1742,9 +1743,15 @@ class OpalConnection : public PSafeObject
       */
     const OpalProductInfo & GetRemoteProductInfo() const { return remoteProductInfo; }
 
-    /** Get the remote transport address
+    /**Get the redirecting party.
+       This is the party that caused an incoming call to arrive at this endpoint.
       */
-    virtual OpalTransportAddress GetRemoteAddress() const { return OpalTransportAddress(); }
+    const PString & GetRedirectingParty() const { return m_redirectingParty; }
+
+    /**Set the redirecting party.
+       This is the party that caused an incoming call to arrive at this endpoint.
+      */
+    void SetRedirectingParty(const PString & party) { m_redirectingParty = party; }
 
     /**Get the called alias name (for incoming calls). This is useful for gateway
        applications where the destination name may not be the same as the local name.
