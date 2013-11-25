@@ -1847,7 +1847,7 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
   AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxTxPacketSizeOption(),          true,  OpalMediaOption::AlwaysMerge, PluginCodec_RTP_MaxPayloadSize, 100    ));
   AddOption(new OpalMediaOptionString  (OpalVideoFormat::RateControllerOption(),           false                                                                       ));
   AddOption(new OpalMediaOptionBoolean (OpalVideoFormat::FreezeUntilIntraFrameOption(),    false, OpalMediaOption::NoMerge,     false                                  ));
-  AddOption(new OpalMediaOptionEnum    (OpalVideoFormat::RTCPFeedbackOption(),             false, OpalVideoFormat::RTCPFeedback::Names(), P_MAX_INDEX,
+  AddOption(new OpalMediaOptionEnum    (OpalVideoFormat::RTCPFeedbackOption(),             false, OpalVideoFormat::RTCPFeedback().Names(), P_MAX_INDEX,
                                      OpalMediaOption::IntersectionMerge, OpalVideoFormat::e_PLI|OpalVideoFormat::e_FIR|OpalVideoFormat::e_TMMBR|OpalVideoFormat::e_TSTR));
 #if OPAL_SIP
   AddOption(new OpalMediaOptionEnum    (OpalVideoFormat::UseImageAttributeInSDP(),         false,

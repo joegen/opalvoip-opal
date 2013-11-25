@@ -1601,14 +1601,14 @@ void SDPVideoMediaDescription::SetAttribute(const PString & attr, const PString 
       for (format = m_formats.begin(); format != m_formats.end(); ++format) {
         Format * vidFmt = dynamic_cast<Format *>(&*format);
         if (PAssertNULL(vidFmt) != NULL)
-          vidFmt->SetRTCP_FB(params);
+          vidFmt->AddRTCP_FB(params);
       }
     }
     else {
       PString params = value;
       Format * format = dynamic_cast<Format *>(FindFormat(params));
       if (format != NULL)
-        format->SetRTCP_FB(params);
+        format->AddRTCP_FB(params);
     }
     return;
   }
@@ -1680,7 +1680,7 @@ bool SDPVideoMediaDescription::PreEncode()
       m_contentRole = format->GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole);
   }
 
-  bool allSame = true;
+  m_rtcp_fb = OpalVideoFormat::e_NoRTCPFb;
 
   if (m_enableFeedback || m_stringOptions.GetInteger(OPAL_OPT_OFFER_RTCP_FB, 1) == 1) {
     bool first = true;
@@ -1693,21 +1693,19 @@ bool SDPVideoMediaDescription::PreEncode()
         m_rtcp_fb = vidFmt->GetRTCP_FB();
       }
       else if (m_rtcp_fb != vidFmt->GetRTCP_FB()) {
-        allSame = false;
+        m_rtcp_fb = OpalVideoFormat::e_NoRTCPFb;
         break;
       }
     }
   }
 
-  if (allSame) {
+  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb) {
     for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
       Format * vidFmt = dynamic_cast<Format *>(&*format);
       if (PAssertNULL(vidFmt) != NULL)
-        vidFmt->SetRTCP_FB(PString::Empty());
+        vidFmt->SetRTCP_FB(OpalVideoFormat::e_NoRTCPFb);
     }
   }
-  else
-    m_rtcp_fb = OpalVideoFormat::e_NoRTCPFb;
 
   return true;
 }
@@ -1772,7 +1770,7 @@ void SDPVideoMediaDescription::Format::SetMediaFormatOptions(OpalMediaFormat & m
   SDPMediaFormat::SetMediaFormatOptions(mediaFormat);
 
   // Save the RTCP feedback (RFC4585) capability.
-  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb && !m_parent.GetOptionStrings().GetBoolean(OPAL_OPT_FORCE_RTCP_FB))
+  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb || !m_parent.GetOptionStrings().GetBoolean(OPAL_OPT_FORCE_RTCP_FB))
     mediaFormat.SetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), m_rtcp_fb);
 
   if (mediaFormat.GetOptionEnum(OpalVideoFormat::UseImageAttributeInSDP(), OpalVideoFormat::ImageAttrSuppressed) != OpalVideoFormat::ImageAttrSuppressed) {
