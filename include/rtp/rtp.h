@@ -476,6 +476,25 @@ class RTPExtensionHeaderInfo : public PObject
 typedef std::set<RTPExtensionHeaderInfo> RTPExtensionHeaders;
 
 
+#if PTRACING
+class RTP_TRACE_SRC
+{
+  public:
+    RTP_TRACE_SRC(DWORD src)
+      : m_src(src)
+    {
+    }
+
+    friend std::ostream & operator<<(std::ostream & strm, const RTP_TRACE_SRC & src)
+    {
+      return strm << src.m_src << " (0x" << std::hex << src.m_src << std::dec << ')';
+    }
+
+  protected:
+    DWORD m_src;
+};
+#endif // PTRACING
+
 #endif // OPAL_RTP_RTP_H
 
 /////////////////////////////////////////////////////////////////////////////

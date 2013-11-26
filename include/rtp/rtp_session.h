@@ -559,7 +559,7 @@ class OpalRTPSession : public OpalMediaSession
   protected:
     ReceiverReportArray BuildReceiverReportArray(const RTP_ControlFrame & frame, PINDEX offset);
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
-    bool InsertReportPacket(RTP_ControlFrame & report);
+    bool InitialiseControlFrame(RTP_ControlFrame & report);
     virtual SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame);
     
