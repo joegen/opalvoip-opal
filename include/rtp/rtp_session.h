@@ -616,6 +616,8 @@ class OpalRTPSession : public OpalMediaSession
     unsigned      consecutiveOutOfOrderPackets;
     PTimeInterval outOfOrderWaitTime;
     PTimeInterval outOfOrderPacketTime;
+    BYTE          m_lastFIRSequenceNumber;
+    BYTE          m_lastTSTOSequenceNumber;
 
     std::list<RTP_DataFrame> m_outOfOrderPackets;
     void SaveOutOfOrderPacket(RTP_DataFrame & frame);
