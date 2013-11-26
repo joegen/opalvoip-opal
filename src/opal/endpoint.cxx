@@ -345,7 +345,8 @@ OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(const OpalTranspor
   if (associatedTransport == NULL) {
     for (OpalListenerList::const_iterator listener = listeners.begin(); listener != listeners.end(); ++listener)
       AddTransportAddress(interfaceAddresses, listener->GetLocalAddress());
-    PTRACE(4, "OpalMan\tListener interfaces: no associated transport\n    " << setfill(',') << interfaceAddresses);
+    PTRACE_IF(4, !interfaceAddresses.IsEmpty(),
+              "OpalMan\tListener interfaces: no associated transport\n    " << setfill(',') << interfaceAddresses);
     return interfaceAddresses;
   }
 
@@ -356,7 +357,9 @@ OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(const OpalTranspor
   AddTransportAddresses(interfaceAddresses, listeners, remoteAddress,
                         OpalTransportAddress(associatedInterfaceIP, 65535, OpalTransportAddress::IpPrefix()));
 
-  PTRACE(4, "OpalMan\tListener interfaces: associated transport " << *associatedTransport << "\n    " << setfill(',') << interfaceAddresses);
+  PTRACE_IF(4, !interfaceAddresses.IsEmpty(),
+            "OpalMan\tListener interfaces: associated transport " << *associatedTransport
+            << "\n    " << setfill(',') << interfaceAddresses);
   return interfaceAddresses;
 }
 

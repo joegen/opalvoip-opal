@@ -2659,7 +2659,7 @@ void OpalManager_C::HandleAuthorisePresence(const OpalMessage & command, OpalMes
   else if (!presentity->SetPresenceAuthorisation(command.m_param.m_presenceStatus.m_target, auth))
     response.SetError("Could not set presence authorisation.");
 #else
-  response.SetError("Presence not supported by library.");
+  response.SetError(PSTRSTRM("Presence for " << command.m_param.m_presenceStatus.m_entity << " not supported by library."));
 #endif // OPAL_HAS_PRESENCE
 }
 
@@ -2677,7 +2677,7 @@ void OpalManager_C::HandleSubscribePresence(const OpalMessage & command, OpalMes
                                             command.m_param.m_presenceStatus.m_note))
     response.SetError("Could not subscribe for presence status.");
 #else
-  response.SetError("Presence not supported by library.");
+  response.SetError(PSTRSTRM("Presence for " << command.m_param.m_presenceStatus.m_entity << " not supported by library."));
 #endif // OPAL_HAS_PRESENCE
 }
 
@@ -2707,7 +2707,7 @@ void OpalManager_C::HandleSetLocalPresence(const OpalMessage & command, OpalMess
     }
   }
 #else
-  response.SetError("Presence not supported by library.");
+  response.SetError(PSTRSTRM("Presence for " << command.m_param.m_presenceStatus.m_entity << " not supported by library."));
 #endif // OPAL_HAS_PRESENCE
 }
 
