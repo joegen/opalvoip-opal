@@ -743,7 +743,7 @@ void RTCP_XR_Metrics::InsertExtendedReportPacket(unsigned PTRACE_PARAM(sessionID
   report.EndPacket();
   
   PTRACE(3, "RTP\tSession " << sessionID << ", SentExtendedReport:"
-            " ssrc=" << xr.ssrc
+            " ssrc=" << RTP_TRACE_SRC(xr.ssrc)
          << " loss_rate=" << (PUInt32b) xr.loss_rate
          << " discard_rate=" << (PUInt32b) xr.discard_rate
          << " burst_density=" << (PUInt32b) xr.burst_density
@@ -795,7 +795,7 @@ void OpalRTPSession::OnRxExtendedReport(DWORD PTRACE_PARAM(src), const ExtendedR
 #if PTRACING
   if (PTrace::CanTrace(3)) {
     ostream & strm = PTrace::Begin(3, __FILE__, __LINE__, this);
-    strm << "RTP\tSession " << m_sessionId << ", OnExtendedReport: ssrc=" << src << '\n';
+    strm << "RTP\tSession " << m_sessionId << ", OnExtendedReport: ssrc=" << RTP_TRACE_SRC(src) << '\n';
     for (PINDEX i = 0; i < reports.GetSize(); i++)
       strm << "  XR: " << reports[i] << '\n';
     strm << PTrace::End;
@@ -806,7 +806,7 @@ void OpalRTPSession::OnRxExtendedReport(DWORD PTRACE_PARAM(src), const ExtendedR
 
 void OpalRTPSession::ExtendedReport::PrintOn(ostream & strm) const
 {
-  strm << "ssrc=" << sourceIdentifier
+  strm << "ssrc=" << RTP_TRACE_SRC(sourceIdentifier)
        << " loss_rate=" << lossRate
        << " discard_rate=" << discardRate
        << " burst_density=" << burstDensity
