@@ -243,7 +243,7 @@ PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & 
 }
 
 
-PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & connection,
+PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & PTRACE_PARAM(connection),
                                                         const OpalMediaFormat & mediaFormat,
                                                                 const PString & device,
                                                                          bool   isSource)
