@@ -399,7 +399,9 @@ class RTP_DataFrame : public PBYTEArray
     BYTE * GetPayloadPtr()     const { return (BYTE *)(theArray+m_headerSize); }
 
     virtual PObject * Clone() const { return new RTP_DataFrame(*this); }
+#if PTRACING
     virtual void PrintOn(ostream & strm) const;
+#endif
 
     // Note this sets the whole packet length, and calculates the various
     // sub-section sizes: header payload and padding.

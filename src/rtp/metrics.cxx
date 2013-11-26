@@ -804,6 +804,7 @@ void OpalRTPSession::OnRxExtendedReport(DWORD PTRACE_PARAM(src), const ExtendedR
 }
 
 
+#if PTRACING
 void OpalRTPSession::ExtendedReport::PrintOn(ostream & strm) const
 {
   strm << "ssrc=" << RTP_TRACE_SRC(sourceIdentifier)
@@ -819,5 +820,7 @@ void OpalRTPSession::ExtendedReport::PrintOn(ostream & strm) const
        << " jb_maximum=" << jbMaximum
        << " jb_absolute=" << jbAbsolute;
 }
+#endif // PTRACING
+
 
 #endif // OPAL_RTCP_XR
