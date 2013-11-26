@@ -214,13 +214,13 @@ class RTP_ControlFrame : public PBYTEArray
     struct FbFIR {
       FbFCI    fci;
       PUInt32b requestSSRC;
-      BYTE     sequenceNUmber;
+      BYTE     sequenceNumber;
     };
 
     struct FbTSTO {
       FbFCI    fci;
       PUInt32b requestSSRC;
-      BYTE     sequenceNUmber;
+      BYTE     sequenceNumber;
       BYTE     reserver[2];
       BYTE     tradeOff;
     };
