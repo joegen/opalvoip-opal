@@ -637,8 +637,8 @@ bool RTP_ControlFrame::StartNewPacket()
 void RTP_ControlFrame::EndPacket()
 {
   // all packets must align to DWORD boundaries
-  while (((4 + payloadSize) & 3) != 0) {
-    theArray[compoundOffset + 4 + payloadSize - 1] = 0;
+  while ((payloadSize & 3) != 0) {
+    theArray[compoundOffset + 4 + payloadSize] = 0;
     ++payloadSize;
   }
 
