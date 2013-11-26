@@ -1802,6 +1802,18 @@ PBoolean SIPConnection::SetUpConnection()
 }
 
 
+PString SIPConnection::GetRemoteIdentity() const
+{
+  if (!m_remoteIdentity.IsEmpty())
+    return m_remoteIdentity;
+
+  if (!m_ciscoRemotePartyID.IsEmpty())
+    return m_ciscoRemotePartyID;
+
+  return m_remotePartyURL;
+}
+
+
 PString SIPConnection::GetDestinationAddress()
 {
   return m_lastReceivedINVITE != NULL ? m_lastReceivedINVITE->GetURI().AsString() : OpalConnection::GetDestinationAddress();
@@ -2065,6 +2077,8 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   response.DecodeSDP(m_endpoint, GetLocalMediaFormats());
 
   const SIPMIMEInfo & responseMIME = response.GetMIME();
+
+  m_remoteIdentity = responseMIME.GetPAssertedIdentity();
 
   {
     SIPURL newRemotePartyID(responseMIME, RemotePartyID);
@@ -2649,6 +2663,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   SIPMIMEInfo & mime = m_lastReceivedINVITE->GetMIME();
 
+  m_remoteIdentity = mime.GetPAssertedIdentity();
   m_ciscoRemotePartyID = SIPURL(mime, RemotePartyID);
   PTRACE_IF(4, !m_ciscoRemotePartyID.IsEmpty(),
             "SIP\tOld style Remote-Party-ID set to \"" << m_ciscoRemotePartyID << '"');
