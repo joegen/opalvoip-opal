@@ -442,9 +442,10 @@ OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(PBoolean excludeLo
                           listener->GetLocalAddress(),
                           false);
 
-  PTRACE(4, "OpalMan\tListener interfaces: associated transport="
-         << (associatedTransport != NULL ? (const char *)associatedLocalAddress : "None")
-         << "\n    " << setfill(',') << interfaceAddresses);
+  PTRACE_IF(4, !interfaceAddresses.IsEmpty(),
+            "OpalMan\tListener interfaces: associated transport="
+            << (associatedTransport != NULL ? (const char *)associatedLocalAddress : "None")
+            << "\n    " << setfill(',') << interfaceAddresses);
   return interfaceAddresses;
 }
 
