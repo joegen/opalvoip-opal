@@ -4296,13 +4296,6 @@ void H323Connection::OnSelectLogicalChannels()
   switch (m_fastStartState) {
     default : //FastStartDisabled :
       SelectDefaultLogicalChannel(OpalMediaType::Audio(), H323Capability::DefaultAudioSessionID);
-#if OPAL_VIDEO
-      if ((autoStartVideo&OpalMediaType::Transmit) != 0)
-        SelectDefaultLogicalChannel(OpalMediaType::Video(), H323Capability::DefaultVideoSessionID);
-      else {
-        PTRACE(4, "H245\tOnSelectLogicalChannels, video not auto-started");
-      }
-#endif
 #if OPAL_T38_CAPABILITY
       if ((autoStartFax&OpalMediaType::Transmit) != 0)
         SelectDefaultLogicalChannel(OpalMediaType::Fax(), H323Capability::DefaultDataSessionID);
@@ -4317,16 +4310,18 @@ void H323Connection::OnSelectLogicalChannels()
         PTRACE(4, "H245\tOnSelectLogicalChannels, H.224 camera control not auto-started");
       }
 #endif
+#if OPAL_VIDEO
+      // Start video last so gets remaining bandwidth and not steal from other channels
+      if ((autoStartVideo&OpalMediaType::Transmit) != 0)
+        SelectDefaultLogicalChannel(OpalMediaType::Video(), H323Capability::DefaultVideoSessionID);
+      else {
+        PTRACE(4, "H245\tOnSelectLogicalChannels, video not auto-started");
+      }
+#endif
       break;
 
     case FastStartInitiate :
       SelectFastStartChannels(H323Capability::DefaultAudioSessionID, true, true);
-#if OPAL_VIDEO
-      if (autoStartVideo != OpalMediaType::DontOffer)
-        SelectFastStartChannels(H323Capability::DefaultVideoSessionID,
-                                (autoStartVideo&OpalMediaType::Transmit) != 0,
-                                (autoStartVideo&OpalMediaType::Receive) != 0);
-#endif
 #if OPAL_T38_CAPABILITY
       if (autoStartFax != OpalMediaType::DontOffer)
         SelectFastStartChannels(H323Capability::DefaultDataSessionID,
@@ -4339,17 +4334,18 @@ void H323Connection::OnSelectLogicalChannels()
                                 (autoStartH224&OpalMediaType::Transmit) != 0,
                                 (autoStartH224&OpalMediaType::Receive) != 0);
 #endif
+#if OPAL_VIDEO
+      // Start video last so gets remaining bandwidth and not steal from other channels
+      if (autoStartVideo != OpalMediaType::DontOffer)
+        SelectFastStartChannels(H323Capability::DefaultVideoSessionID,
+        (autoStartVideo&OpalMediaType::Transmit) != 0,
+        (autoStartVideo&OpalMediaType::Receive) != 0);
+#endif
       break;
 
     case FastStartResponse :
       OpenFastStartChannel(H323Capability::DefaultAudioSessionID, H323Channel::IsTransmitter);
       OpenFastStartChannel(H323Capability::DefaultAudioSessionID, H323Channel::IsReceiver);
-#if OPAL_VIDEO
-      if ((autoStartVideo&OpalMediaType::Transmit) != 0)
-        OpenFastStartChannel(H323Capability::DefaultVideoSessionID, H323Channel::IsTransmitter);
-      if ((autoStartVideo&OpalMediaType::Receive) != 0)
-        OpenFastStartChannel(H323Capability::DefaultVideoSessionID, H323Channel::IsReceiver);
-#endif
 #if OPAL_T38_CAPABILITY
       if ((autoStartFax&OpalMediaType::Transmit) != 0)
         OpenFastStartChannel(H323Capability::DefaultDataSessionID, H323Channel::IsTransmitter);
@@ -4361,6 +4357,13 @@ void H323Connection::OnSelectLogicalChannels()
         OpenFastStartChannel(GetNextSessionID(OpalH224MediaType(), false), H323Channel::IsTransmitter);
       if ((autoStartH224&OpalMediaType::Receive) != 0)
         OpenFastStartChannel(GetNextSessionID(OpalH224MediaType(), true), H323Channel::IsReceiver);
+#endif
+#if OPAL_VIDEO
+      // Start video last so gets remaining bandwidth and not steal from other channels
+      if ((autoStartVideo&OpalMediaType::Transmit) != 0)
+        OpenFastStartChannel(H323Capability::DefaultVideoSessionID, H323Channel::IsTransmitter);
+      if ((autoStartVideo&OpalMediaType::Receive) != 0)
+        OpenFastStartChannel(H323Capability::DefaultVideoSessionID, H323Channel::IsReceiver);
 #endif
       break;
   }
