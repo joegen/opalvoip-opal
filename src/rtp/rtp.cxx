@@ -481,6 +481,7 @@ bool RTP_DataFrame::SetPaddingSize(PINDEX paddingSize)
 }
 
 
+#if PTRACING
 void RTP_DataFrame::PrintOn(ostream & strm) const
 {
   int csrcCount = GetContribSrcCount();
@@ -519,7 +520,6 @@ void RTP_DataFrame::PrintOn(ostream & strm) const
 }
 
 
-#if PTRACING
 static const char * const PayloadTypesNames[RTP_DataFrame::LastKnownPayloadType] = {
   "PCMU",
   "FS1016",
@@ -562,7 +562,7 @@ ostream & operator<<(ostream & o, RTP_DataFrame::PayloadTypes t)
   return o;
 }
 
-#endif
+#endif // PTRACING
 
 
 /////////////////////////////////////////////////////////////////////////////

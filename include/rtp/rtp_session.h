@@ -185,7 +185,9 @@ class OpalRTPSession : public OpalMediaSession
     class ReceiverReport : public PObject  {
         PCLASSINFO(ReceiverReport, PObject);
       public:
+#if PTRACING
         void PrintOn(ostream &) const;
+#endif
 
         DWORD sourceIdentifier;
         DWORD fractionLost;         /* fraction lost since last SR/RR */
@@ -200,7 +202,9 @@ class OpalRTPSession : public OpalMediaSession
     class SenderReport : public PObject  {
         PCLASSINFO(SenderReport, PObject);
       public:
+#if PTRACING
         void PrintOn(ostream &) const;
+#endif
 
         DWORD sourceIdentifier;
         PTime realTimestamp;
@@ -219,7 +223,9 @@ class OpalRTPSession : public OpalMediaSession
         PCLASSINFO(SourceDescription, PObject);
       public:
         SourceDescription(DWORD src) { sourceIdentifier = src; }
+#if PTRACING
         void PrintOn(ostream &) const;
+#endif
 
         DWORD            sourceIdentifier;
         POrdinalToString items;
@@ -249,7 +255,9 @@ class OpalRTPSession : public OpalMediaSession
     class ExtendedReport : public PObject  {
         PCLASSINFO(ExtendedReport, PObject);
       public:
+#if PTRACING
         void PrintOn(ostream &) const;
+#endif
 
         DWORD sourceIdentifier;
         DWORD lossRate;            /* fraction of RTP data packets lost */ 
