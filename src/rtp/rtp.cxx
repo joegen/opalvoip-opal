@@ -448,6 +448,7 @@ bool RTP_DataFrame::SetPaddingSize(PINDEX sz)
 }
 
 
+#if PTRACING
 void RTP_DataFrame::PrintOn(ostream & strm) const
 {
   int csrcCount = GetContribSrcCount();
@@ -486,7 +487,6 @@ void RTP_DataFrame::PrintOn(ostream & strm) const
 }
 
 
-#if PTRACING
 static const char * const PayloadTypesNames[RTP_DataFrame::LastKnownPayloadType] = {
   "PCMU",
   "FS1016",
@@ -529,7 +529,7 @@ ostream & operator<<(ostream & o, RTP_DataFrame::PayloadTypes t)
   return o;
 }
 
-#endif
+#endif // PTRACING
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -663,8 +663,8 @@ bool RTP_ControlFrame::StartNewPacket()
 void RTP_ControlFrame::EndPacket()
 {
   // all packets must align to DWORD boundaries
-  while (((4 + payloadSize) & 3) != 0) {
-    theArray[compoundOffset + 4 + payloadSize - 1] = 0;
+  while ((payloadSize & 3) != 0) {
+    theArray[compoundOffset + 4 + payloadSize] = 0;
     ++payloadSize;
   }
 
