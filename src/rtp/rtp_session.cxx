@@ -157,6 +157,8 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , resequenceOutOfOrderPackets(true)
   , consecutiveOutOfOrderPackets(0)
   , outOfOrderWaitTime(GetDefaultOutOfOrderWaitTime())
+  , m_lastFIRSequenceNumber(0)
+  , m_lastTSTOSequenceNumber(0)
   , firstPacketSent(0)
   , firstPacketReceived(0)
   , senderReportsReceived(0)
@@ -1401,6 +1403,7 @@ void OpalRTPSession::SendFlowControl(unsigned maxBitRate, unsigned overhead, boo
   request.SetFbType(notify ? RTP_ControlFrame::e_TMMBN : RTP_ControlFrame::e_TMMBR, sizeof(RTP_ControlFrame::FbTMMB));
 
   RTP_ControlFrame::FbTMMB * tmmb = (RTP_ControlFrame::FbTMMB *)request.GetPayloadPtr();
+  tmmb->fci.senderSSRC = syncSourceOut;
   tmmb->requestSSRC = syncSourceIn;
 
   if (overhead == 0)
@@ -1425,7 +1428,8 @@ void OpalRTPSession::SendFlowControl(unsigned maxBitRate, unsigned overhead, boo
 void OpalRTPSession::SendIntraFrameRequest(bool rfc2032, bool pictureLoss)
 {
   PTRACE(3, "RTP\tSession " << m_sessionId << ", SendIntraFrameRequest using "
-         << (rfc2032 ? "RFC2032" : (pictureLoss ? "RFC4585 PLI" : "RFC5104 FIR")));
+         << (rfc2032 ? "RFC2032" : (pictureLoss ? "RFC4585 PLI" : "RFC5104 FIR"))
+         << " for SSRC=" << RTP_TRACE_SRC(syncSourceIn));
 
   // Create packet
   RTP_ControlFrame request;
@@ -1440,19 +1444,22 @@ void OpalRTPSession::SendIntraFrameRequest(bool rfc2032, bool pictureLoss)
     // Insert SSRC
     request.SetCount(1);
     BYTE * payload = request.GetPayloadPtr();
-    *(PUInt32b *)payload = syncSourceOut;
+    *(PUInt32b *)payload = syncSourceIn;
   }
   else {
     request.SetPayloadType(RTP_ControlFrame::e_PayloadSpecificFeedBack);
-    if (pictureLoss)
+    if (pictureLoss) {
       request.SetFbType(RTP_ControlFrame::e_PictureLossIndication, sizeof(RTP_ControlFrame::FbFCI));
+      RTP_ControlFrame::FbFCI * fci = (RTP_ControlFrame::FbFCI *)request.GetPayloadPtr();
+      fci->senderSSRC = syncSourceOut;
+    }
     else {
       request.SetFbType(RTP_ControlFrame::e_FullIntraRequest, sizeof(RTP_ControlFrame::FbFIR));
       RTP_ControlFrame::FbFIR * fir = (RTP_ControlFrame::FbFIR *)request.GetPayloadPtr();
+      fir->fci.senderSSRC = syncSourceOut;
       fir->requestSSRC = syncSourceIn;
+      fir->sequenceNumber = m_lastFIRSequenceNumber++;
     }
-    RTP_ControlFrame::FbFCI * fci = (RTP_ControlFrame::FbFCI *)request.GetPayloadPtr();
-    fci->senderSSRC = syncSourceOut;
   }
 
   // Send it
@@ -1473,7 +1480,9 @@ void OpalRTPSession::SendTemporalSpatialTradeOff(unsigned tradeOff)
   request.SetPayloadType(RTP_ControlFrame::e_PayloadSpecificFeedBack);
   request.SetFbType(RTP_ControlFrame::e_TemporalSpatialTradeOffRequest, sizeof(RTP_ControlFrame::FbTSTO));
   RTP_ControlFrame::FbTSTO * tsto = (RTP_ControlFrame::FbTSTO *)request.GetPayloadPtr();
+  tsto->fci.senderSSRC = syncSourceOut;
   tsto->requestSSRC = syncSourceIn;
+  tsto->sequenceNumber = m_lastTSTOSequenceNumber++;
   tsto->tradeOff = (BYTE)tradeOff;
 
   // Send it
