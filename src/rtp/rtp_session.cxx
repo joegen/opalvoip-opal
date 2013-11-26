@@ -575,7 +575,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
              << " x=" << frame.GetExtension()
              << " seq=" << frame.GetSequenceNumber()
              << " ts=" << frame.GetTimestamp()
-             << " src=0x" << hex << frame.GetSyncSource() << dec
+             << " src=" << RTP_TRACE_SRC(frame.GetSyncSource())
              << " ccnt=" << frame.GetContribSrcCount()
              << " rem=" << GetRemoteAddress()
              << " local=" << GetLocalAddress());
@@ -687,7 +687,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
            << " x=" << frame.GetExtension()
            << " seq=" << frame.GetSequenceNumber()
            << " ts=" << frame.GetTimestamp()
-           << " src=0x" << hex << frame.GetSyncSource() << dec
+           << " src=" << RTP_TRACE_SRC(frame.GetSyncSource())
            << " ccnt=" << frame.GetContribSrcCount());
 
 #if OPAL_RTCP_XR
@@ -1331,6 +1331,7 @@ void OpalRTPSession::OnRxApplDefined(const RTP_ControlFrame::ApplDefinedInfo & i
 }
 
 
+#if PTRACING
 void OpalRTPSession::ReceiverReport::PrintOn(ostream & strm) const
 {
   strm << "SSRC=" << RTP_TRACE_SRC(sourceIdentifier)
@@ -1370,6 +1371,7 @@ void OpalRTPSession::SourceDescription::PrintOn(ostream & strm) const
     strm << " data=\"" << it->second << '"';
   }
 }
+#endif // PTRACING
 
 
 DWORD OpalRTPSession::GetPacketsTooLate() const
