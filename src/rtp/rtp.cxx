@@ -491,14 +491,14 @@ void RTP_DataFrame::PrintOn(ostream & strm) const
        << " PT=" << GetPayloadType()
        << " SN=" << GetSequenceNumber()
        << " TS=" << GetTimestamp()
-       << " SSRC=" << hex << GetSyncSource() << dec
+       << " SSRC=" << RTP_TRACE_SRC(GetSyncSource())
        << " CSRS-sz=" << csrcCount
        << " hdr-sz=" << GetHeaderSize()
        << " pl-sz=" << GetPayloadSize()
        << '\n';
 
   for (int csrc = 0; csrc < csrcCount; csrc++)
-    strm << "  CSRC[" << csrc << "]=" << GetContribSource(csrc) << '\n';
+    strm << "  CSRC[" << csrc << "]=" << RTP_TRACE_SRC(GetContribSource(csrc)) << '\n';
 
   if (GetExtension()) {
     for (int idx = -1; ; ++idx) {

@@ -845,7 +845,7 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
                << " PT=" << frame.GetPayloadType()
                << " SN=" << frame.GetSequenceNumber()
                << " TS=" << frame.GetTimestamp()
-               << " SSRC=0x" << hex << frame.GetSyncSource() << dec
+               << " SSRC=" << RTP_TRACE_SRC(frame.GetSyncSource())
                << " P-SZ=" << frame.GetPayloadSize());
         written = true;
       }
