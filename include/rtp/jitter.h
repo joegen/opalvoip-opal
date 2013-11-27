@@ -114,8 +114,8 @@ class OpalJitterBuffer : public PSafeObject
     /**Write data frame from the RTP channel.
       */
     virtual PBoolean WriteData(
-      const RTP_DataFrame & frame,   ///< Frame to feed into jitter buffer
-      const PTimeInterval & tick = 0 ///< Real time tick for packet arrival
+      const RTP_DataFrame & frame,        ///< Frame to feed into jitter buffer
+      PTimeInterval tick = PTimer::Tick() ///< Real time tick for packet arrival
     );
 
     /**Read a data frame from the jitter buffer.
@@ -123,8 +123,8 @@ class OpalJitterBuffer : public PSafeObject
        with zero payload size is returned.
       */
     virtual PBoolean ReadData(
-      RTP_DataFrame & frame,  ///<  Frame to extract from jitter buffer
-      const PTimeInterval & tick = 0 ///< Real time tick for packet removal
+      RTP_DataFrame & frame,              ///<  Frame to extract from jitter buffer
+      PTimeInterval tick = PTimer::Tick() ///< Real time tick for packet removal
     );
 
     /**Get current delay for jitter buffer.
@@ -205,6 +205,11 @@ class OpalJitterBuffer : public PSafeObject
     typedef std::map<DWORD, RTP_DataFrame> FrameMap;
     FrameMap m_frames;
     PMutex   m_bufferMutex;
+
+#if PTRACING
+    PTimeInterval m_lastInsertTick;
+    PTimeInterval m_lastRemoveTick;
+#endif
 
     RTP_JitterBufferAnalyser * m_analyser;
 };
