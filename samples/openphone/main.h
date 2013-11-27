@@ -1279,14 +1279,22 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     PTimer    m_ForwardingTimer;
     PDECLARE_NOTIFIER(PTimer, MyManager, OnForwardingTimeout);
 
-    bool m_VideoGrabPreview;
-    int  m_localVideoFrameX;
-    int  m_localVideoFrameY;
-    int  m_localVideoFrameSize;
-    int  m_remoteVideoFrameX;
-    int  m_remoteVideoFrameY;
-    int  m_remoteVideoFrameSize;
+    struct VideoWindowInfo
+    {
+      int x, y, size;
 
+      VideoWindowInfo() : x(wxDefaultCoord), y(wxDefaultCoord), size(0)
+      {
+      }
+      VideoWindowInfo(const PVideoOutputDevice * device);
+
+      bool operator==(const VideoWindowInfo & info) const;
+      bool ReadConfig(wxConfigBase * config, const wxString & keyBase);
+      void WriteConfig(wxConfigBase * config, const wxString & keyBase);
+    };
+    VideoWindowInfo m_videoWindowInfo[2][OpalVideoFormat::NumContentRole];
+
+    bool                m_VideoGrabPreview;
     PVideoInputDevice * m_primaryVideoGrabber;
 
     PVideoDevice::OpenArgs m_SecondaryVideoGrabber;
