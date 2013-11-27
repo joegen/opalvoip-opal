@@ -213,14 +213,13 @@ DEF_FIELD(VideoAutoReceive);
 DEF_FIELD(VideoFlipRemote);
 DEF_FIELD(VideoMinFrameSize);
 DEF_FIELD(VideoMaxFrameSize);
-DEF_FIELD(LocalVideoFrameX);
-DEF_FIELD(LocalVideoFrameY);
-DEF_FIELD(LocalVideoFrameSize);
-DEF_FIELD(RemoteVideoFrameX);
-DEF_FIELD(RemoteVideoFrameY);
-DEF_FIELD(RemoteVideoFrameSize);
 DEF_FIELD(VideoOnHold);
 DEF_FIELD(VideoOnRing);
+
+static const wxChar * const VideoWindowKeyBase[2][OpalVideoFormat::NumContentRole] = {
+  { wxT("RemoteVideoFrame"), wxT("PresentationVideoFrame"), wxT("RemoteVideoFrame"), wxT("SpeakerVideoFrame"), wxT("SignLanguageVideoFrame") },
+  { wxT("LocalVideoFrame"), wxT("PresentationPreviewFrame"), wxT("LocalVideoFrame"), wxT("SpeakerPreviewFrame"), wxT("SignLanguagePreviewFrame") }
+};
 
 static const wxChar FaxGroup[] = wxT("/Fax");
 DEF_FIELD(FaxStationIdentifier);
@@ -582,6 +581,39 @@ PThreadLocalStorage<TextCtrlChannel> TextCtrlChannel::sm_instances;
 
 ///////////////////////////////////////////////////////////////////////////////
 
+MyManager::VideoWindowInfo::VideoWindowInfo(const PVideoOutputDevice * device)
+{
+  if (device != NULL && device->GetPosition(x, y))
+    size = device->GetChannel();
+  else
+    x = y = size = INT_MIN;
+}
+
+
+bool MyManager::VideoWindowInfo::operator==(const VideoWindowInfo & info) const
+{
+  return x == info.x && y == info.y && size == info.size;
+}
+
+
+bool MyManager::VideoWindowInfo::ReadConfig(wxConfigBase * config, const wxString & keyBase)
+{
+  return config->Read(keyBase + 'X', &x) &&
+         config->Read(keyBase + 'Y', &y) &&
+         config->Read(keyBase + "Size", &size);
+}
+
+
+void MyManager::VideoWindowInfo::WriteConfig(wxConfigBase * config, const wxString & keyBase)
+{
+  config->Write(keyBase + 'X', x);
+  config->Write(keyBase + 'Y', y);
+  config->Write(keyBase + "Size", size);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
 IMPLEMENT_APP(OpenPhoneApp)
 
 OpenPhoneApp::OpenPhoneApp()
@@ -766,12 +798,6 @@ MyManager::MyManager()
   , m_OverrideProductInfo(false)
   , m_ForwardingTimeout(30)
   , m_VideoGrabPreview(true)
-  , m_localVideoFrameX(INT_MIN)
-  , m_localVideoFrameY(INT_MIN)
-  , m_localVideoFrameSize(0)
-  , m_remoteVideoFrameX(INT_MIN)
-  , m_remoteVideoFrameY(INT_MIN)
-  , m_remoteVideoFrameSize(0)
   , m_primaryVideoGrabber(NULL)
   , m_SecondaryVideoGrabPreview(false)
   , m_SecondaryVideoOpening(false)
@@ -1240,12 +1266,10 @@ bool MyManager::Initialise(bool startMinimised)
     videoArgs.deviceName = str.p_str();
   pcssEP->SetVideoOnRingDevice(videoArgs);
 
-  config->Read(LocalVideoFrameXKey, &m_localVideoFrameX);
-  config->Read(LocalVideoFrameYKey, &m_localVideoFrameY);
-  config->Read(LocalVideoFrameSizeKey, &m_localVideoFrameSize);
-  config->Read(RemoteVideoFrameXKey, &m_remoteVideoFrameX);
-  config->Read(RemoteVideoFrameYKey, &m_remoteVideoFrameY);
-  config->Read(RemoteVideoFrameSizeKey, &m_remoteVideoFrameSize);
+  for (int preview = 0; preview < 2; ++preview) {
+    for (OpalVideoFormat::ContentRole role = OpalVideoFormat::BeginContentRole; role < OpalVideoFormat::EndContentRole; ++role)
+      m_videoWindowInfo[preview][role].ReadConfig(config, VideoWindowKeyBase[preview][role]);
+  }
 
   ////////////////////////////////////////
   // Fax fields
@@ -2894,33 +2918,25 @@ void MyManager::OnClosedMediaStream(const OpalMediaStream & stream)
 
   PostEvent(wxEvtStreamsChanged);
 
-  if (PIsDescendant(&stream, OpalVideoMediaStream)) {
-    PVideoOutputDevice * device = ((const OpalVideoMediaStream &)stream).GetVideoOutputDevice();
-    if (device != NULL && device->GetDeviceName().FindRegEx(" ([0-9])\"") == P_MAX_INDEX) {
-      int x, y;
-      if (device->GetPosition(x, y)) {
-        wxConfigBase * config = wxConfig::Get();
-        config->SetPath(VideoGroup);
+  const OpalVideoMediaStream * videoStream = dynamic_cast<const OpalVideoMediaStream *>(&stream);
+  if (videoStream == NULL)
+    return;
 
-        if (stream.IsSource()) {
-          if (x != m_localVideoFrameX || y != m_localVideoFrameY) {
-            config->Write(LocalVideoFrameXKey, m_localVideoFrameX = x);
-            config->Write(LocalVideoFrameYKey, m_localVideoFrameY = y);
-            config->Write(LocalVideoFrameSizeKey, m_localVideoFrameSize = device->GetChannel());
-          }
-        }
-        else {
-          if (x != m_remoteVideoFrameX || y != m_remoteVideoFrameY) {
-            config->Write(RemoteVideoFrameXKey, m_remoteVideoFrameX = x);
-            config->Write(RemoteVideoFrameYKey, m_remoteVideoFrameY = y);
-            config->Write(RemoteVideoFrameSizeKey, m_remoteVideoFrameSize = device->GetChannel());
-          }
-        }
+  VideoWindowInfo newWindowInfo(videoStream->GetVideoOutputDevice());
+  if (newWindowInfo.x == INT_MIN)
+    return;
 
-        config->Flush();
-      }
-    }
-  }
+  bool isPreview = stream.IsSource();
+  OpalVideoFormat::ContentRole role = stream.GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole);
+  if (m_videoWindowInfo[isPreview][role] == newWindowInfo)
+    return;
+
+  m_videoWindowInfo[isPreview][role] = newWindowInfo;
+
+  wxConfigBase * config = wxConfig::Get();
+  config->SetPath(VideoGroup);
+  newWindowInfo.WriteConfig(config, VideoWindowKeyBase[isPreview][role]);
+  config->Flush();
 }
 
 
@@ -3410,40 +3426,37 @@ void MyManager::OnDefVidWinPos(wxCommandEvent & /*event*/)
   if (!GetConnection(connection, PSafeReadOnly))
     return;
 
-  PVideoOutputDevice * preview = NULL;
-  {
-    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), true);
-    if (stream != NULL)
-      preview = dynamic_cast<const OpalVideoMediaStream *>(&*stream)->GetVideoOutputDevice();
-  }
-
-  PVideoOutputDevice * remote = NULL;
-  {
-    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Video(), false);
-    if (stream != NULL)
-      remote = dynamic_cast<const OpalVideoMediaStream *>(&*stream)->GetVideoOutputDevice();
-  }
+  wxConfigBase * config = wxConfig::Get();
+  config->SetPath(VideoGroup);
 
   wxRect rect(GetPosition(), GetSize());
 
-  m_remoteVideoFrameX = rect.GetLeft();
-  m_remoteVideoFrameY = rect.GetBottom();
-  if (remote != NULL)
-    remote->SetPosition(m_remoteVideoFrameX, m_remoteVideoFrameY);
+  int y = rect.GetBottom();
+  for (OpalVideoFormat::ContentRole role = OpalVideoFormat::BeginContentRole; role < OpalVideoFormat::EndContentRole; ++role) {
+    int x = rect.GetLeft();
+    for (int preview = 0; preview < 2; ++preview) {
+      m_videoWindowInfo[preview][role].x = x;
+      m_videoWindowInfo[preview][role].y = y;
+      m_videoWindowInfo[preview][role].WriteConfig(config, VideoWindowKeyBase[preview][role]);
 
-  m_localVideoFrameX = rect.GetLeft();
-  m_localVideoFrameY = rect.GetBottom();
-  if (remote != NULL)
-    m_localVideoFrameX += remote->GetFrameWidth();
-  if (preview != NULL)
-    preview->SetPosition(m_localVideoFrameX, m_localVideoFrameY);
+      int w = PVideoFrameInfo::CIFWidth;
+      int h = PVideoFrameInfo::CIFHeight;
+      PSafePtr<OpalVideoMediaStream> stream = ::PSafePtrCast<OpalMediaStream, OpalVideoMediaStream>(connection->GetMediaStream(OpalMediaType::Video(), preview));
+      if (stream != NULL) {
+        PVideoOutputDevice * device = stream->GetVideoOutputDevice();
+        if (device != NULL) {
+          w = device->GetFrameWidth();
+          h = device->GetFrameHeight();
+        }
+      }
 
-  wxConfigBase * config = wxConfig::Get();
-  config->SetPath(VideoGroup);
-  config->Write(LocalVideoFrameXKey, m_localVideoFrameX);
-  config->Write(LocalVideoFrameYKey, m_localVideoFrameY);
-  config->Write(RemoteVideoFrameXKey, m_remoteVideoFrameX);
-  config->Write(RemoteVideoFrameYKey, m_remoteVideoFrameY);
+      if (preview)
+        y += h;
+      else
+        x += w;
+    }
+  }
+
   config->Flush();
 }
 
@@ -3540,10 +3553,10 @@ bool MyManager::CreateVideoInputDevice(const OpalConnection & connection,
 
 
 PBoolean MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
-                                        const OpalMediaFormat & mediaFormat,
-                                        PBoolean preview,
-                                        PVideoOutputDevice * & device,
-                                        PBoolean & autoDelete)
+                                            const OpalMediaFormat & mediaFormat,
+                                            PBoolean preview,
+                                            PVideoOutputDevice * & device,
+                                            PBoolean & autoDelete)
 {
   unsigned openChannelCount = 0;
   OpalMediaStreamPtr mediaStream;
@@ -3553,40 +3566,18 @@ PBoolean MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
   if (preview && !(openChannelCount > 0 ? m_SecondaryVideoGrabPreview : m_VideoGrabPreview))
     return false;
 
-  unsigned deltaX = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
+  OpalVideoFormat::ContentRole role = mediaFormat.GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole);
 
-  if (m_localVideoFrameX == INT_MIN) {
-    wxRect rect(GetPosition(), GetSize());
-    m_localVideoFrameX = rect.GetLeft() + deltaX;
-    m_localVideoFrameY = rect.GetBottom();
-    m_remoteVideoFrameX = rect.GetLeft();
-    m_remoteVideoFrameY = rect.GetBottom();
-  }
-
-  PVideoDevice::OpenArgs videoArgs;
-  PString title;
-  int x, y;
-  if (preview) {
-    videoArgs = GetVideoPreviewDevice();
-    title = "Preview";
-    x = m_localVideoFrameX;
-    y = m_localVideoFrameY;
-    videoArgs.channelNumber = m_localVideoFrameSize;
-  }
-  else {
-    videoArgs = GetVideoOutputDevice();
-    title = connection.GetRemotePartyName();
-    x = m_remoteVideoFrameX;
-    y = m_remoteVideoFrameY;
-    videoArgs.channelNumber = m_remoteVideoFrameSize;
-  }
-
+  static PConstString const PreviewWindowTitle("Preview");
+  PString title = preview ? PreviewWindowTitle : connection.GetRemotePartyName();
   if (openChannelCount > 0)
     title.sprintf(" (%u)", openChannelCount);
 
-  x += deltaX*openChannelCount;
+  PVideoDevice::OpenArgs videoArgs = preview ? GetVideoPreviewDevice() : GetVideoOutputDevice();
+  videoArgs.channelNumber = m_videoWindowInfo[preview][role].size;
+  videoArgs.deviceName = psprintf(VIDEO_WINDOW_DEVICE" TITLE=\"%s\" X=%i Y=%i", (const char *)title,
+                                  m_videoWindowInfo[preview][role].x, m_videoWindowInfo[preview][role].y);
 
-  videoArgs.deviceName = psprintf(VIDEO_WINDOW_DEVICE" TITLE=\"%s\" X=%i Y=%i", (const char *)title, x, y);
   mediaFormat.AdjustVideoArgs(videoArgs);
 
   autoDelete = true;
@@ -5995,8 +5986,7 @@ void OptionsDialog::TestVideoThreadMain()
 
   PVideoDevice::OpenArgs displayArgs;
   displayArgs.deviceName = psprintf(VIDEO_WINDOW_DEVICE" TITLE=\"Video Test\" X=%i Y=%i",
-                                    m_manager.m_localVideoFrameX != INT_MAX ? m_manager.m_localVideoFrameX : winRect.GetLeft(),
-                                    m_manager.m_localVideoFrameY != INT_MAX ? m_manager.m_localVideoFrameY : winRect.GetTop());
+                                    m_manager.m_videoWindowInfo[1][0].x, m_manager.m_videoWindowInfo[1][0].y);
   displayArgs.width = grabberArgs.width;
   displayArgs.height = grabberArgs.height;
 
