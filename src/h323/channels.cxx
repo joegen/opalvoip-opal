@@ -192,13 +192,11 @@ void H323Channel::Close()
 
 void H323Channel::InternalClose()
 {
-  if (opened) {
-    // Signal to the connection that this channel is on the way out
+  // Signal to the connection that this channel is on the way out
+  if (opened)
     connection.OnClosedLogicalChannel(*this);
-
-    connection.SetBandwidthUsed(GetDirection() == IsReceiver ? OpalBandwidth::Rx : OpalBandwidth::Tx, m_bandwidthUsed, 0);
-  }
   
+  connection.SetBandwidthUsed(GetDirection() == IsReceiver ? OpalBandwidth::Rx : OpalBandwidth::Tx, m_bandwidthUsed, 0);
   PTRACE(4, "LogChan\tCleaned up " << number);
 }
 
@@ -305,11 +303,11 @@ PBoolean H323Channel::SetBandwidthUsed(OpalBandwidth bandwidth)
 {
   if (!connection.SetBandwidthUsed(GetDirection() == IsReceiver ? OpalBandwidth::Rx : OpalBandwidth::Tx, m_bandwidthUsed, bandwidth)) {
     m_bandwidthUsed = 0;
-    PTRACE(2, "LogChan\tFailed bandwidth request=" << bandwidth << ", used=" << m_bandwidthUsed);
+    PTRACE(2, "LogChan\tFailed bandwidth request=" << bandwidth << ", currently using=" << m_bandwidthUsed);
     return false;
   }
 
-  PTRACE(3, "LogChan\tBandwidth requested=" << bandwidth << ", used=" << m_bandwidthUsed);
+  PTRACE(3, "LogChan\tBandwidth requested=" << bandwidth << ", currently using=" << m_bandwidthUsed);
   m_bandwidthUsed = bandwidth;
   return true;
 }
