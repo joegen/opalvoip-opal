@@ -491,8 +491,10 @@ H460_FeatureParameter::operator OpalGloballyUniqueID() const
 
 void H460_FeatureParameter::SetContent(const H460_FeatureContent & con)
 {
-  IncludeOptionalField(e_content);
-  m_content = con;
+  if (con.IsValid()) {
+    IncludeOptionalField(e_content);
+    m_content = con;
+  }
 }
 
 
