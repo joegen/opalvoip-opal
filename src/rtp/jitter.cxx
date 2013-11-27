@@ -96,11 +96,8 @@ const unsigned MaxConsecutiveOverflows = 10;
         out.resize(size);
       }
 
-      void In(PTimeInterval tick, DWORD time, size_t depth, const char * extra)
+      void In(const PTimeInterval & tick, DWORD time, size_t depth, const char * extra)
       {
-        if (tick == 0)
-          tick = PTimer::Tick();
-
         if (inPos == 0)
           in[inPos++].tick = tick;
 
@@ -112,10 +109,10 @@ const unsigned MaxConsecutiveOverflows = 10;
         }
       }
 
-      void Out(PTimeInterval tick, DWORD time, size_t depth, const char * extra)
+      void Out(const PTimeInterval & tick, DWORD time, size_t depth, const char * extra)
       {
-        if (tick == 0)
-          tick = PTimer::Tick();
+        if (inPos == 0) // Don't do anything until the first received packet. Removes a lot of noise.
+          return;
 
         if (outPos == 0)
           out[outPos++].tick = tick;
@@ -223,6 +220,10 @@ OpalJitterBuffer::OpalJitterBuffer(const Init & init)
   , m_consecutiveLatePackets(0)
   , m_consecutiveOverflows(0)
   , m_lastSyncSource(0)
+#if PTRACING
+  , m_lastInsertTick(PTimer::Tick())
+  , m_lastRemoveTick(m_lastInsertTick)
+#endif
 #ifdef NO_ANALYSER
   , m_analyser(NULL)
 #else
@@ -297,7 +298,7 @@ void OpalJitterBuffer::Reset()
 }
 
 
-PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInterval & PTRACE_PARAM(tick))
+PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, PTimeInterval PTRACE_PARAM(tick))
 {
   if (frame.GetSize() < RTP_DataFrame::MinHeaderSize) {
     PTRACE(2, "Jitter\tWriting invalid RTP data frame.");
@@ -414,7 +415,10 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
   pair<FrameMap::iterator,bool> result = m_frames.insert(FrameMap::value_type(timestamp, frame));
   if (result.second) {
     ANALYSE(In, timestamp, m_synchronisationState != e_SynchronisationDone ? "PreBuf" : "");
-    PTRACE(EVERY_PACKET_TRACE_LEVEL, "Jitter\tInserted packet : ts=" << timestamp);
+    PTRACE(EVERY_PACKET_TRACE_LEVEL, "Jitter\tInserted packet : ts=" << timestamp << ", dT=" << (tick - m_lastInsertTick));
+#if PTRACING
+    m_lastInsertTick = tick;
+#endif
   }
   else {
     PTRACE(2, "Jitter\tAttempt to insert two RTP packets with same timestamp: " << timestamp);
@@ -451,9 +455,9 @@ bool OpalJitterBuffer::AdjustCurrentJitterDelay(int delta)
 }
 
 
-#define COMMON_TRACE_INFO ": ts=" << requiredTimestamp << " (" << playOutTimestamp << "), size=" << m_frames.size()
+#define COMMON_TRACE_INFO ": ts=" << requiredTimestamp << " (" << playOutTimestamp << "), dT=" << removalDelta << ", size=" << m_frames.size()
 
-PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval & PTRACE_PARAM(tick))
+PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, PTimeInterval PTRACE_PARAM(tick))
 {
   // Default response is an empty frame, ie silence
   frame.SetPayloadSize(0);
@@ -462,6 +466,11 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
 
   // Make sure the input side to jitter buffer has been started
   Start();
+
+#if PTRACING
+  PTimeInterval removalDelta = tick - m_lastRemoveTick;
+  m_lastRemoveTick = tick;
+#endif
 
   // Now we get the timestamp the caller wants
   DWORD playOutTimestamp = frame.GetTimestamp();
