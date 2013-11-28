@@ -1556,6 +1556,31 @@ SDPMediaFormat * SDPVideoMediaDescription::CreateSDPMediaFormat()
 static const char * const ContentRoleNames[OpalVideoFormat::EndContentRole] = { NULL, "slides", "main", "speaker", "sl" };
 
 
+static void OuputRTCP_FB(ostream & strm, int payloadType, OpalVideoFormat::RTCPFeedback rtcp_fb)
+{
+  static struct {
+    const char * m_prefix;
+    OpalVideoFormat::RTCPFeedback m_bits;
+  } const Prefixes[] = {
+    { "nack", OpalVideoFormat::e_PLI|OpalVideoFormat::e_NACK|OpalVideoFormat::e_SLI },
+    { "ccm",  OpalVideoFormat::e_FIR|OpalVideoFormat::e_TMMBR|OpalVideoFormat::e_TSTR|OpalVideoFormat::e_VBCM }
+  };
+
+  for (PINDEX i = 0; i < PARRAYSIZE(Prefixes); ++i) {
+    OpalVideoFormat::RTCPFeedback masked(rtcp_fb - ~Prefixes[i].m_bits);
+    if (masked != OpalVideoFormat::e_NoRTCPFb) {
+      strm << "a=rtcp-fb:";
+      if (payloadType < 0)
+        strm << '*';
+      else
+        strm << payloadType;
+      masked -= OpalVideoFormat::e_NACK; // Or ends up in there twice
+      strm << ' ' << Prefixes[i].m_prefix << ' ' << masked << "\r\n";
+    }
+  }
+}
+
+
 void SDPVideoMediaDescription::OutputAttributes(ostream & strm) const
 {
   // call ancestor
@@ -1565,8 +1590,7 @@ void SDPVideoMediaDescription::OutputAttributes(ostream & strm) const
     strm << "a=content:" << ContentRoleNames[m_contentRole] << "\r\n";
 
   // m_rtcp_fb is set via SDPRTPAVPMediaDescription::PreEncode according to various options
-  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb)
-    strm << "a=rtcp-fb:* " << m_rtcp_fb << "\r\n";
+  OuputRTCP_FB(strm, -1, m_rtcp_fb);
 }
 
 
@@ -1729,8 +1753,7 @@ void SDPVideoMediaDescription::Format::PrintOn(ostream & strm) const
 {
   SDPMediaFormat::PrintOn(strm);
 
-  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb)
-    strm << "a=rtcp-fb:" << (int)m_payloadType << ' ' << m_rtcp_fb << "\r\n";
+  OuputRTCP_FB(strm, m_payloadType, m_rtcp_fb);
 
   if (m_mediaFormat.GetOptionEnum(OpalVideoFormat::UseImageAttributeInSDP(), OpalVideoFormat::ImageAttrSuppressed) != OpalVideoFormat::ImageAttrSuppressed)
     strm << "a=imageattr:" << (int)m_payloadType
