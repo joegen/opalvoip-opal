@@ -725,7 +725,7 @@ static bool SetNxECapabilities(OpalRFC2833Proto * handler,
   // Merge remotes format into ours.
   // Note if this is our initial offer remote is the same as local.
   OpalMediaFormat adjustedFormat = *localFmt;
-  adjustedFormat.Update(*remFmt);
+  adjustedFormat.Merge(*remFmt, true);
 
   handler->SetTxMediaFormat(adjustedFormat);
 

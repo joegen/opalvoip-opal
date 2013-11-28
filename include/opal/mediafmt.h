@@ -953,7 +953,8 @@ class OpalMediaFormat : public PContainer
        merged.
       */
     bool Merge(
-      const OpalMediaFormat & mediaFormat
+      const OpalMediaFormat & mediaFormat,
+      bool copyPayloadType = false
     );
     /**Return true if the given mediaFormat will successfully merge.
       */
