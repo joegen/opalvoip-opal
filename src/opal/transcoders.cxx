@@ -94,20 +94,8 @@ bool OpalTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const Opa
 {
   PWaitAndSignal mutex(updateMutex);
 
-  bool ok = true;
-  if (input.IsValid()) {
-    if (input == inputMediaFormat)
-      ok = inputMediaFormat.Update(input);
-    else
-      ok = inputMediaFormat.Merge(input);
-  }
-
-  if (output.IsValid()) {
-    if (output == outputMediaFormat)
-      ok = outputMediaFormat.Update(output) && ok; // Avoid McCarthy boolean
-    else
-      ok = outputMediaFormat.Merge(output) && ok; // Avoid McCarthy boolean
-  }
+  bool ok = inputMediaFormat.Update(input);
+  ok = outputMediaFormat.Update(output) && ok; // Avoid McCarthy boolean
 
   m_inClockRate = inputMediaFormat.GetClockRate();
   m_outClockRate = outputMediaFormat.GetClockRate();
@@ -334,7 +322,7 @@ static bool MergeFormats(const OpalMediaFormatList & masterFormats,
     srcFormat = *masterFormat;
     PTRACE(5, "Initial source format from master:\n" << setw(-1) << srcFormat
                             << "Merging with capability\n" << setw(-1) << srcCapability);
-    if (!srcFormat.Update(srcCapability)) // This includes the PayloadType, a normal Merge does not.
+    if (!srcFormat.Merge(srcCapability, true)) // Include the PayloadType.
       return false;
   }
 
@@ -348,7 +336,7 @@ static bool MergeFormats(const OpalMediaFormatList & masterFormats,
     PTRACE(5, "Initial destination format from master:\n" << setw(-1) << dstFormat
                                  << "Merging with capability\n" << setw(-1) << dstCapability);
 
-    if (!dstFormat.Update(dstCapability)) // This includes the PayloadType, a normal Merge does not.
+    if (!dstFormat.Merge(dstCapability, true)) // Include the PayloadType.
       return false;
   }
 
