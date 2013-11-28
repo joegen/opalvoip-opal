@@ -1067,19 +1067,22 @@ bool OpalMediaFormat::Update(const OpalMediaFormat & mediaFormat)
     return m_info->OpalMediaFormatInternal::Merge(*mediaFormat.m_info);
   }
 
-  PTRACE_IF(4, GetPayloadType() != mediaFormat.GetPayloadType(),
-            "MediaFormat\tChanging payload type from " << GetPayloadType()
-            << " to " << mediaFormat.GetPayloadType() << " in " << *this);
-
   *this = mediaFormat;
   return true;
 }
 
 
-bool OpalMediaFormat::Merge(const OpalMediaFormat & mediaFormat)
+bool OpalMediaFormat::Merge(const OpalMediaFormat & mediaFormat, bool copyPayloadType)
 {
   PWaitAndSignal m(m_mutex);
   MakeUnique();
+
+  if (copyPayloadType && GetPayloadType() != mediaFormat.GetPayloadType()) {
+    PTRACE(4, "MediaFormat\tChanging payload type from " << GetPayloadType()
+           << " to " << mediaFormat.GetPayloadType() << " in " << *this);
+    SetPayloadType(mediaFormat.GetPayloadType());
+  }
+
   return m_info != NULL && mediaFormat.m_info != NULL && m_info->Merge(*mediaFormat.m_info);
 }
 
