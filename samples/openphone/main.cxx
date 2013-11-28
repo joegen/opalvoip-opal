@@ -600,7 +600,7 @@ bool MyManager::VideoWindowInfo::ReadConfig(wxConfigBase * config, const wxStrin
 {
   return config->Read(keyBase + 'X', &x) &&
          config->Read(keyBase + 'Y', &y) &&
-         config->Read(keyBase + "Size", &size);
+         config->Read(keyBase + wxT("Size"), &size);
 }
 
 
@@ -608,7 +608,7 @@ void MyManager::VideoWindowInfo::WriteConfig(wxConfigBase * config, const wxStri
 {
   config->Write(keyBase + 'X', x);
   config->Write(keyBase + 'Y', y);
-  config->Write(keyBase + "Size", size);
+  config->Write(keyBase + wxT("Size"), size);
 }
 
 
