@@ -1208,7 +1208,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
           case RTP_ControlFrame::e_TMMBR :
             if (size >= sizeof(RTP_ControlFrame::FbTMMB)) {
               const RTP_ControlFrame::FbTMMB * tmmb = (const RTP_ControlFrame::FbTMMB *)payload;
-              PTRACE(4, "RTP\tSession " << m_sessionId << ", received TMMBR " << tmmb->GetBitRate());
+              PTRACE(4, "RTP\tSession " << m_sessionId << ", "
+                        "sender SSRC=" << RTP_TRACE_SRC(tmmb->fci.senderSSRC) << ", "
+                        "request SSRC=" << RTP_TRACE_SRC(tmmb->requestSSRC) << ", "
+                        "received TMMBR " << tmmb->GetBitRate());
               m_connection.ExecuteMediaCommand(OpalMediaFlowControl(tmmb->GetBitRate()), m_sessionId);
             }
             else {
@@ -1235,12 +1238,19 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
       case RTP_ControlFrame::e_PayloadSpecificFeedBack :
         switch (frame.GetFbType()) {
           case RTP_ControlFrame::e_PictureLossIndication :
-            PTRACE(4, "RTP\tSession " << m_sessionId << ", received RFC5104 PLI");
+            PTRACE(4, "RTP\tSession " << m_sessionId << ", "
+                      "sender SSRC=" << RTP_TRACE_SRC(((const RTP_ControlFrame::FbFCI *)payload)->senderSSRC) << ", "
+                      "media SSRC=" << RTP_TRACE_SRC(((const RTP_ControlFrame::FbFCI *)payload)->mediaSSRC) << ", "
+                      "received RFC4585 PLI");
             m_connection.OnRxIntraFrameRequest(*this, false);
             break;
 
           case RTP_ControlFrame::e_FullIntraRequest :
-            PTRACE(4, "RTP\tSession " << m_sessionId << ", received RFC5104 FIR");
+            PTRACE(4, "RTP\tSession " << m_sessionId << ", "
+                      "sender SSRC=" << RTP_TRACE_SRC(((const RTP_ControlFrame::FbFIR *)payload)->fci.senderSSRC) << ", "
+                      "request SSRC=" << RTP_TRACE_SRC(((const RTP_ControlFrame::FbFIR *)payload)->requestSSRC) << ", "
+                      "received RFC5104 FIR, "
+                      "sn=" << (unsigned)((const RTP_ControlFrame::FbFIR *)payload)->sequenceNumber);
             m_connection.OnRxIntraFrameRequest(*this, true);
             break;
 
@@ -1321,7 +1331,15 @@ void OpalRTPSession::OnRxSourceDescription(const SourceDescriptionArray & PTRACE
 
 void OpalRTPSession::OnRxGoodbye(const PDWORDArray & PTRACE_PARAM(src), const PString & PTRACE_PARAM(reason))
 {
-  PTRACE(3, "RTP\tSession " << m_sessionId << ", OnGoodbye: \"" << reason << "\" srcs=" << src);
+#if PTRACING
+  if (PTrace::CanTrace(3)) {
+    ostream & strm = PTrace::Begin(3, __FILE__, __LINE__, this);
+    strm << "RTP\tSession " << m_sessionId << ", OnGoodbye: " << reason << "\" SSRC=";
+    for (PINDEX i = 0; i < src.GetSize(); i++)
+      strm << RTP_TRACE_SRC(src[i]) << ' ';
+    strm << PTrace::End;
+  }
+#endif
 }
 
 
