@@ -254,6 +254,35 @@ PString SDPMediaFormat::GetFMTP() const
 }
 
 
+#if OPAL_VIDEO
+  static void OuputRTCP_FB(ostream & strm, int payloadType, OpalVideoFormat::RTCPFeedback rtcp_fb)
+  {
+    static struct {
+      const char * m_prefix;
+      OpalVideoFormat::RTCPFeedback m_bits;
+    } const Prefixes[] = {
+      { "nack", OpalVideoFormat::e_PLI|OpalVideoFormat::e_NACK|OpalVideoFormat::e_SLI },
+      { "ccm",  OpalVideoFormat::e_FIR|OpalVideoFormat::e_TMMBR|OpalVideoFormat::e_TSTR|OpalVideoFormat::e_VBCM }
+    };
+
+    for (PINDEX i = 0; i < PARRAYSIZE(Prefixes); ++i) {
+      OpalVideoFormat::RTCPFeedback masked(rtcp_fb - ~Prefixes[i].m_bits);
+      if (masked != OpalVideoFormat::e_NoRTCPFb) {
+        strm << "a=rtcp-fb:";
+        if (payloadType < 0)
+          strm << '*';
+        else
+          strm << payloadType;
+        masked -= OpalVideoFormat::e_NACK; // Or ends up in there twice
+        strm << ' ' << Prefixes[i].m_prefix << ' ' << masked << "\r\n";
+      }
+    }
+  }
+#else
+  #define OuputRTCP_FB(...)
+#endif // OPAL_VIDEO
+
+
 void SDPMediaFormat::PrintOn(ostream & strm) const
 {
   if (!PAssert(!encodingName.IsEmpty(), "SDPMediaFormat encoding name is empty"))
@@ -271,10 +300,7 @@ void SDPMediaFormat::PrintOn(ostream & strm) const
   if (!fmtpString.IsEmpty())
     strm << "a=fmtp:" << (int)payloadType << ' ' << fmtpString << "\r\n";
 
-#if OPAL_VIDEO
-  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb)
-    strm << "a=rtcp-fb:" << (int)payloadType << ' ' << m_rtcp_fb << "\r\n";
-#endif
+  OuputRTCP_FB(strm, payloadType, m_rtcp_fb);
 }
 
 
@@ -1276,11 +1302,7 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
   for (SDPMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format)
     strm << *format;
 
-#if OPAL_VIDEO
-  // m_rtcp_fb is set via SDPRTPAVPMediaDescription::PreEncode according to various options
-  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb)
-    strm << "a=rtcp-fb:* " << m_rtcp_fb << "\r\n";
-#endif
+  OuputRTCP_FB(strm, -1, m_rtcp_fb);
 
   for (PList<SDPCryptoSuite>::const_iterator crypto = m_cryptoSuites.begin(); crypto != m_cryptoSuites.end(); ++crypto)
     strm << *crypto;

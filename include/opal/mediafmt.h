@@ -1438,16 +1438,18 @@ class OpalVideoFormat : public OpalMediaFormat
     /// RTP/RTCP Feedback options
     P_DECLARE_STREAMABLE_BITWISE_ENUM_EX(
       RTCPFeedback,
-      5,
+      7,
       (
         e_NoRTCPFb,
         e_PLI,      ///< Picture Loss Indication
         e_FIR,      ///< Full Intra-frame Request
         e_TMMBR,    ///< Temporary Maximum Media Stream Bit Rate Request
         e_TSTR,     ///< Temporal/Spatial Tradeoff Request
-        e_VBCM      ///< Video Back Channel Messages
+        e_VBCM,     ///< Video Back Channel Messages
+        e_NACK,     ///< Negative Acknowlegde
+        e_SLI       ///< Slice Loss Indication
       ),
-      "", "pli", "fir", "tmmbr", "tstr", "vcbm"
+      "", "pli", "fir", "tmmbr", "tstr", "vcbm", "nack", "sli"
     );
     /// RTP/RTCP Feedback options
     static const PString & RTCPFeedbackOption();
