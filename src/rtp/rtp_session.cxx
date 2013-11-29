@@ -157,6 +157,8 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , resequenceOutOfOrderPackets(true)
   , consecutiveOutOfOrderPackets(0)
   , outOfOrderWaitTime(GetDefaultOutOfOrderWaitTime())
+  , m_lastFIRSequenceNumber(0)
+  , m_lastTSTOSequenceNumber(0)
   , timeStampOffs(0)
   , oobTimeStampBaseEstablished(false)
   , oobTimeStampOutBase(0)
@@ -1441,7 +1443,8 @@ void OpalRTPSession::SendFlowControl(unsigned maxBitRate, unsigned overhead, boo
 void OpalRTPSession::SendIntraFrameRequest(bool rfc2032, bool pictureLoss)
 {
   PTRACE(3, "RTP\tSession " << m_sessionId << ", SendIntraFrameRequest using "
-         << (rfc2032 ? "RFC2032" : (pictureLoss ? "RFC4585 PLI" : "RFC5104 FIR")));
+         << (rfc2032 ? "RFC2032" : (pictureLoss ? "RFC4585 PLI" : "RFC5104 FIR"))
+         << " for SSRC=" << RTP_TRACE_SRC(syncSourceIn));
 
   // Create packet
   RTP_ControlFrame request;
@@ -1456,11 +1459,11 @@ void OpalRTPSession::SendIntraFrameRequest(bool rfc2032, bool pictureLoss)
     // Insert SSRC
     request.SetCount(1);
     BYTE * payload = request.GetPayloadPtr();
-    *(PUInt32b *)payload = syncSourceOut;
+    *(PUInt32b *)payload = syncSourceIn;
   }
   else {
     request.SetPayloadType(RTP_ControlFrame::e_PayloadSpecificFeedBack);
-    if (pictureLoss)
+    if (pictureLoss) {
       request.SetFbType(RTP_ControlFrame::e_PictureLossIndication, sizeof(RTP_ControlFrame::FbHeader));
       RTP_ControlFrame::FbHeader * hdr = (RTP_ControlFrame::FbHeader *)request.GetPayloadPtr();
       hdr->senderSSRC = syncSourceOut;
@@ -1472,6 +1475,7 @@ void OpalRTPSession::SendIntraFrameRequest(bool rfc2032, bool pictureLoss)
       fir->hdr.senderSSRC = syncSourceOut;
       fir->hdr.mediaSSRC = 0;
       fir->requestSSRC = syncSourceIn;
+      fir->sequenceNumber = m_lastFIRSequenceNumber++;
     }
   }
 
@@ -1496,6 +1500,7 @@ void OpalRTPSession::SendTemporalSpatialTradeOff(unsigned tradeOff)
   tsto->hdr.senderSSRC = syncSourceOut;
   tsto->hdr.mediaSSRC = 0;
   tsto->requestSSRC = syncSourceIn;
+  tsto->sequenceNumber = m_lastTSTOSequenceNumber++;
   tsto->tradeOff = (BYTE)tradeOff;
 
   // Send it
