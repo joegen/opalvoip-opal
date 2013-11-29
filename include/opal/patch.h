@@ -273,8 +273,14 @@ class OpalMediaPatch : public PSafeObject
         bool RateControlExceeded(bool & forceIFrame);
         OpalVideoRateController * rateController;
 
-        bool (*IsKeyFrame)(const RTP_DataFrame & rtp, void *);
+        enum VideoFrameType {
+          e_NonFrameBoundary,
+          e_IntraFrame,
+          e_InterFrame
+        };
+        VideoFrameType (*GetVideoFrameType)(const RTP_DataFrame & rtp, void *);
         PBYTEArray m_keyFrameDetectContext;
+        unsigned   m_videoFrames;
         unsigned   m_keyFrames;
 #endif
     };
