@@ -598,16 +598,16 @@ bool MyManager::VideoWindowInfo::operator==(const VideoWindowInfo & info) const
 
 bool MyManager::VideoWindowInfo::ReadConfig(wxConfigBase * config, const wxString & keyBase)
 {
-  return config->Read(keyBase + 'X', &x) &&
-         config->Read(keyBase + 'Y', &y) &&
+  return config->Read(keyBase + wxT("X"), &x) &&
+         config->Read(keyBase + wxT("Y"), &y) &&
          config->Read(keyBase + wxT("Size"), &size);
 }
 
 
 void MyManager::VideoWindowInfo::WriteConfig(wxConfigBase * config, const wxString & keyBase)
 {
-  config->Write(keyBase + 'X', x);
-  config->Write(keyBase + 'Y', y);
+  config->Write(keyBase + wxT("X"), x);
+  config->Write(keyBase + wxT("Y"), y);
   config->Write(keyBase + wxT("Size"), size);
 }
 
