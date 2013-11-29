@@ -97,6 +97,8 @@ else
   OPAL_SHARED_LIB_FILE = $(OPAL_OPT_SHARED_FILE)
 endif
 
+OPAL_LIBS = -L$(OPAL_LIBDIR) -l$(OPAL_LIB_BASE)$(LIB_DEBUG_SUFFIX)$(LIB_STATIC_SUFFIX)
+
 
 ###############################################################################
 # Add common directory to include path
@@ -112,9 +114,13 @@ ifeq (,$(findstring $(OPAL_PLATFORM_INC_DIR),$(CPPFLAGS)))
 endif
 
 
-ifneq ($(OPAL_BUILDING_ITSELF),yes)
+ifeq ($(OPAL_BUILDING_ITSELF),yes)
 
-  LIBS := -L$(OPAL_LIBDIR) -l$(OPAL_LIB_BASE)$(LIB_DEBUG_SUFFIX)$(LIB_STATIC_SUFFIX) $(LIBS)
+  LIBS := $(PTLIB_LIBS) $(LIBS)
+
+else
+
+  LIBS := $(OPAL_LIBS) $(LIBS)
 
   include $(PTLIB_MAKE_DIR)/ptlib.mak
 
