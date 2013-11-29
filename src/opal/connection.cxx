@@ -1218,11 +1218,11 @@ bool OpalConnection::ChangeVideoOutputDevice(const PVideoDevice::OpenArgs & devi
 
 bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, bool force) const
 {
-  if (!ExecuteMediaCommand(force ? OpalVideoUpdatePicture() : OpalVideoPictureLoss(), sessionID, OpalMediaType::Video()))
-    return false;
+  bool ok = force ? ExecuteMediaCommand(OpalVideoUpdatePicture(), sessionID, OpalMediaType::Video())
+                  : ExecuteMediaCommand(OpalVideoPictureLoss(),   sessionID, OpalMediaType::Video());
 
-  PTRACE(3, "OpalCon\tVideo update picture (I-Frame) requested on " << *this);
-  return true;
+  PTRACE(3, "OpalCon\tVideo " << (force ? "force update picture" : "picture loss") << " (I-Frame) requested on " << *this << ", ok=" << ok);
+  return ok;
 }
 
 
@@ -1837,6 +1837,7 @@ bool OpalConnection::ExecuteMediaCommand(const OpalMediaCommand & command,
     return false;
   }
 
+  PTRACE(5, "OpalCon\tExecute " << mediaType << " stream command " << command << " in connection " << *this);
   return stream->ExecuteCommand(command);
 }
 
