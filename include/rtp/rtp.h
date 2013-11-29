@@ -206,19 +206,19 @@ class RTP_ControlFrame : public PBYTEArray
       e_ApplicationLayerFbMessage = 15
     };
 
-    struct FbFCI {
+    struct FbHeader {
       PUInt32b senderSSRC;  /* data source of sender of message */
       PUInt32b mediaSSRC;   /* data source of media */
     };
 
     struct FbFIR {
-      FbFCI    fci;
+      FbHeader hdr;
       PUInt32b requestSSRC;
       BYTE     sequenceNumber;
     };
 
     struct FbTSTO {
-      FbFCI    fci;
+      FbHeader hdr;
       PUInt32b requestSSRC;
       BYTE     sequenceNumber;
       BYTE     reserver[2];
@@ -227,7 +227,7 @@ class RTP_ControlFrame : public PBYTEArray
 
     // Same for request (e_TMMBR) and notification (e_TMMBN)
     struct FbTMMB {
-      FbFCI    fci;
+      FbHeader hdr;
       PUInt32b requestSSRC;
       PUInt32b bitRateAndOverhead; // Various bit fields
 
