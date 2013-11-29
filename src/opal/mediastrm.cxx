@@ -758,6 +758,12 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
 
   timestamp = packet.GetTimestamp();
 
+  if (m_mediaPatch->IsBypassed()) {
+    // Only thing we change is the SSRC to agree with RTCP coming out of OpalRTPSession
+    packet.SetSyncSource(rtpSession.GetSyncSourceOut());
+    return rtpSession.WriteData(packet, NULL, false);
+  }
+
   if (packet.GetPayloadSize() == 0)
     return true;
 
