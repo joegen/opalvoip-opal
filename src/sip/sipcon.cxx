@@ -2664,21 +2664,23 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   SIPMIMEInfo & mime = m_lastReceivedINVITE->GetMIME();
 
   m_remoteIdentity = mime.GetPAssertedIdentity();
-  m_ciscoRemotePartyID = SIPURL(mime, RemotePartyID);
-  PTRACE_IF(4, !m_ciscoRemotePartyID.IsEmpty(),
-            "SIP\tOld style Remote-Party-ID set to \"" << m_ciscoRemotePartyID << '"');
 
   // update the dialog context
   m_dialog.SetLocalTag(GetToken());
   m_dialog.Update(request);
-  UpdateRemoteAddresses();
 
   // We received a Re-INVITE for a current connection
-  if (isReinvite) { 
+  if (isReinvite) {
     m_lastReceivedINVITE->DecodeSDP(m_endpoint, GetLocalMediaFormats());
     OnReceivedReINVITE(request);
     return;
   }
+
+  m_ciscoRemotePartyID = SIPURL(mime, RemotePartyID);
+  PTRACE_IF(4, !m_ciscoRemotePartyID.IsEmpty(),
+            "SIP\tOld style Remote-Party-ID set to \"" << m_ciscoRemotePartyID << '"');
+
+  UpdateRemoteAddresses();
 
   SetPhase(SetUpPhase);
 
