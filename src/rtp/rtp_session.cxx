@@ -1211,7 +1211,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
               const RTP_ControlFrame::FbTMMB * tmmb = (const RTP_ControlFrame::FbTMMB *)payload;
               PTRACE(4, "RTP\tSession " << m_sessionId << ", "
                         "received TMMBR: rate=" << tmmb->GetBitRate() << ", "
-                        "sender SSRC=" << RTP_TRACE_SRC(tmmb->fci.senderSSRC) << ", "
+                        "sender SSRC=" << RTP_TRACE_SRC(tmmb->hdr.senderSSRC) << ", "
                         "request SSRC=" << RTP_TRACE_SRC(tmmb->requestSSRC));
               m_connection.ExecuteMediaCommand(OpalMediaFlowControl(tmmb->GetBitRate()), m_sessionId);
             }
@@ -1241,16 +1241,16 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
           case RTP_ControlFrame::e_PictureLossIndication :
             PTRACE(4, "RTP\tSession " << m_sessionId << ", "
                       "received RFC4585 PLI: " << ", "
-                      "sender SSRC=" << RTP_TRACE_SRC(((const RTP_ControlFrame::FbFCI *)payload)->senderSSRC) << ", "
-                      "media SSRC=" << RTP_TRACE_SRC(((const RTP_ControlFrame::FbFCI *)payload)->mediaSSRC));
+                      "sender SSRC=" << RTP_TRACE_SRC(((const RTP_ControlFrame::FbHeader *)payload)->senderSSRC) << ", "
+                      "media SSRC=" << RTP_TRACE_SRC(((const RTP_ControlFrame::FbHeader *)payload)->mediaSSRC));
             m_connection.OnRxIntraFrameRequest(*this, false);
             break;
 
           case RTP_ControlFrame::e_FullIntraRequest :
             PTRACE(4, "RTP\tSession " << m_sessionId << ", "
                       "received RFC5104 FIR: "
-                      "sender SSRC=" << RTP_TRACE_SRC(((const RTP_ControlFrame::FbFIR *)payload)->fci.senderSSRC) << ", "
-                      "request SSRC=" << RTP_TRACE_SRC(((const RTP_ControlFrame::FbFIR *)payload)->requestSSRC)
+                      "sender SSRC=" << RTP_TRACE_SRC(((const RTP_ControlFrame::FbFIR *)payload)->hdr.senderSSRC) << ", "
+                      "request SSRC=" << RTP_TRACE_SRC(((const RTP_ControlFrame::FbFIR *)payload)->requestSSRC) << ", "
                       "sn=" << (unsigned)((const RTP_ControlFrame::FbFIR *)payload)->sequenceNumber);
             m_connection.OnRxIntraFrameRequest(*this, true);
             break;
