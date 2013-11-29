@@ -351,6 +351,8 @@ void OpalRTPSession::SendBYE()
   RTP_ControlFrame report;
   InitialiseControlFrame(report);
 
+  PTRACE(3, "RTP\tSession " << m_sessionId << ", Sending BYE, SSRC=" << RTP_TRACE_SRC(syncSourceOut));
+
   static char const ReasonStr[] = "Session ended";
   static size_t ReasonLen = sizeof(ReasonStr);
 
@@ -543,7 +545,7 @@ void OpalRTPSession::AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiv
     receiver.dlsr = 0;
   }
   
-  PTRACE(3, "RTP\tSession " << m_sessionId << ", SentReceiverReport:"
+  PTRACE(3, "RTP\tSession " << m_sessionId << ", Sending ReceiverReport:"
             " SSRC=" << RTP_TRACE_SRC(syncSourceIn)
          << " fraction=" << (unsigned)receiver.fraction
          << " lost=" << receiver.GetLostPackets()
@@ -932,8 +934,7 @@ bool OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report)
 
       // add the SSRC to the start of the payload
       *(PUInt32b *)report.GetPayloadPtr() = syncSourceOut;
-      PTRACE(3, "RTP\tSession " << m_sessionId << ", SentReceiverReport:"
-                " SSRC=" << RTP_TRACE_SRC(syncSourceIn));
+      PTRACE(3, "RTP\tSession " << m_sessionId << ", Sending ReceiverReport: SSRC=" << RTP_TRACE_SRC(syncSourceIn));
     }
     else {
       report.SetPayloadSize(sizeof(PUInt32b) + sizeof(RTP_ControlFrame::ReceiverReport));  // length is SSRC of packet sender plus RR
@@ -966,7 +967,7 @@ bool OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report)
     sender->psent    = packetsSent;
     sender->osent    = octetsSent;
 
-    PTRACE(3, "RTP\tSession " << m_sessionId << ", SentSenderReport:"
+    PTRACE(3, "RTP\tSession " << m_sessionId << ", Sending SenderReport:"
               " SSRC=" << RTP_TRACE_SRC(syncSourceOut)
            << " ntp=" << sender->ntp_sec << '.' << sender->ntp_frac
            << " rtp=" << sender->rtp_ts
@@ -983,7 +984,7 @@ bool OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report)
   report.EndPacket();
 
   // Add the SDES part to compound RTCP packet
-  PTRACE(3, "RTP\tSession " << m_sessionId << ", sending SDES: " << m_canonicalName);
+  PTRACE(3, "RTP\tSession " << m_sessionId << ", Sending SDES: " << m_canonicalName);
   report.StartNewPacket();
 
   report.SetCount(0); // will be incremented automatically
@@ -1410,10 +1411,12 @@ DWORD OpalRTPSession::GetPacketOverruns() const
 
 void OpalRTPSession::SendFlowControl(unsigned maxBitRate, unsigned overhead, bool notify)
 {
-  PTRACE(3, "RTP\tSession " << m_sessionId << ", SendFlowControl(" << maxBitRate << ") using TMMBR");
   // Create packet
   RTP_ControlFrame request;
   InitialiseControlFrame(request);
+
+  PTRACE(3, "RTP\tSession " << m_sessionId << ", Sending TMMBR (flow control) "
+            "rate=" << maxBitRate << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn));
 
   request.StartNewPacket();
 
@@ -1446,13 +1449,13 @@ void OpalRTPSession::SendFlowControl(unsigned maxBitRate, unsigned overhead, boo
 
 void OpalRTPSession::SendIntraFrameRequest(bool rfc2032, bool pictureLoss)
 {
-  PTRACE(3, "RTP\tSession " << m_sessionId << ", SendIntraFrameRequest using "
-         << (rfc2032 ? "RFC2032" : (pictureLoss ? "RFC4585 PLI" : "RFC5104 FIR"))
-         << " for SSRC=" << RTP_TRACE_SRC(syncSourceIn));
-
   // Create packet
   RTP_ControlFrame request;
   InitialiseControlFrame(request);
+
+  PTRACE(3, "RTP\tSession " << m_sessionId << ", Sending "
+         << (rfc2032 ? "RFC2032" : (pictureLoss ? "RFC4585 PLI" : "RFC5104 FIR"))
+         << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn));
 
   request.StartNewPacket();
 
@@ -1491,10 +1494,11 @@ void OpalRTPSession::SendIntraFrameRequest(bool rfc2032, bool pictureLoss)
 
 void OpalRTPSession::SendTemporalSpatialTradeOff(unsigned tradeOff)
 {
-  PTRACE(3, "RTP\tSession " << m_sessionId << ", SendTemporalSpatialTradeOff " << tradeOff);
-
   RTP_ControlFrame request;
   InitialiseControlFrame(request);
+
+  PTRACE(3, "RTP\tSession " << m_sessionId << ", Sending TSTO (temporal spatial trade off) "
+            "value=" << tradeOff << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn));
 
   request.StartNewPacket();
 
