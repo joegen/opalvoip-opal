@@ -1215,8 +1215,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
               const RTP_ControlFrame::FbTMMB * tmmb = (const RTP_ControlFrame::FbTMMB *)payload;
               PTRACE(4, "RTP\tSession " << m_sessionId << ", "
                         "received TMMBR " << tmmb->GetBitRate() << ", "
-                        "sender SSRC=" << RTP_TRACE_SRC(tmmb->hdr.senderSSRC) << ", "
-                        "request SSRC=" << RTP_TRACE_SRC(tmmb->requestSSRC));
+                        "sender SSRC=" << tmmb->hdr.senderSSRC << ", "
+                        "request SSRC=" << tmmb->requestSSRC);
               m_connection.ExecuteMediaCommand(OpalMediaFlowControl(tmmb->GetBitRate()), m_sessionId);
             }
             else {
@@ -1245,16 +1245,16 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
           case RTP_ControlFrame::e_PictureLossIndication :
             PTRACE(4, "RTP\tSession " << m_sessionId << ", "
                       "received RFC4585 PLI: "
-                      "sender SSRC=" << RTP_TRACE_SRC(((const RTP_ControlFrame::FbHeader *)payload)->senderSSRC) << ", "
-                      "media SSRC=" << RTP_TRACE_SRC(((const RTP_ControlFrame::FbHeader *)payload)->mediaSSRC));
+                      "sender SSRC=" << ((const RTP_ControlFrame::FbHeader *)payload)->senderSSRC << ", "
+                      "media SSRC=" << ((const RTP_ControlFrame::FbHeader *)payload)->mediaSSRC);
             m_connection.OnRxIntraFrameRequest(*this, false);
             break;
 
           case RTP_ControlFrame::e_FullIntraRequest :
             PTRACE(4, "RTP\tSession " << m_sessionId << ", "
                       "received RFC5104 FIR: "
-                      "sender SSRC=" << RTP_TRACE_SRC(((const RTP_ControlFrame::FbFIR *)payload)->hdr.senderSSRC) << ", "
-                      "request SSRC=" << RTP_TRACE_SRC(((const RTP_ControlFrame::FbFIR *)payload)->requestSSRC) << ", "
+                      "sender SSRC=" << ((const RTP_ControlFrame::FbFIR *)payload)->hdr.senderSSRC << ", "
+                      "request SSRC=" << ((const RTP_ControlFrame::FbFIR *)payload)->requestSSRC << ", "
                       "sn=" << (unsigned)((const RTP_ControlFrame::FbFIR *)payload)->sequenceNumber);
             m_connection.OnRxIntraFrameRequest(*this, true);
             break;
@@ -1444,7 +1444,7 @@ void OpalRTPSession::SendIntraFrameRequest(bool rfc2032, bool pictureLoss)
 {
   PTRACE(3, "RTP\tSession " << m_sessionId << ", SendIntraFrameRequest using "
          << (rfc2032 ? "RFC2032" : (pictureLoss ? "RFC4585 PLI" : "RFC5104 FIR"))
-         << " for SSRC=" << RTP_TRACE_SRC(syncSourceIn));
+         << " for SSRC=" << syncSourceIn);
 
   // Create packet
   RTP_ControlFrame request;
