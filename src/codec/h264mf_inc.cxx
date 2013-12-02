@@ -144,6 +144,11 @@ static const char PacketizationFMTPName[] = "packetization-mode";
 #define MAX_BR_SDP    240001
 #define MAX_BR_H241   9601
 
+#define SCALE_MBPS_H241 500
+#define SCALE_FS_H241   256
+#define SCALE_BR_H241   30000
+#define SCALE_BR_SDP    1000
+
 
 static struct {
   char     m_Name[9];
@@ -253,10 +258,10 @@ static bool MyToNormalised(PluginCodec_OptionMap & original, PluginCodec_OptionM
         break;
     }
 
-    maxMBPS = (original.GetUnsigned(MaxMBPS_H241_Name)%MAX_MBPS_H241)*500;
-    maxSMBPS = (original.GetUnsigned(MaxSMBPS_H241_Name)%MAX_MBPS_H241)*500;
-    maxFrameSizeInMB = (original.GetUnsigned(MaxFS_H241_Name)%MAX_FS_H241)*256;
-    maxBitRate = (original.GetUnsigned(MaxBR_H241_Name)%MAX_BR_H241)*25000;
+    maxMBPS = (original.GetUnsigned(MaxMBPS_H241_Name)%MAX_MBPS_H241)*SCALE_MBPS_H241;
+    maxSMBPS = (original.GetUnsigned(MaxSMBPS_H241_Name)%MAX_MBPS_H241)*SCALE_MBPS_H241;
+    maxFrameSizeInMB = (original.GetUnsigned(MaxFS_H241_Name)%MAX_FS_H241)*SCALE_FS_H241;
+    maxBitRate = (original.GetUnsigned(MaxBR_H241_Name)%MAX_BR_H241)*SCALE_BR_H241;
 
     if (maxMBPS > 0)
       PluginCodec_Utilities::Change(maxMBPS, original, changed, MaxMBPS_SDP_Name); 
@@ -265,7 +270,7 @@ static bool MyToNormalised(PluginCodec_OptionMap & original, PluginCodec_OptionM
     if (maxFrameSizeInMB > 0)
       PluginCodec_Utilities::Change(maxFrameSizeInMB, original, changed, MaxFS_SDP_Name);
     if (maxBitRate > 0)
-      PluginCodec_Utilities::Change((maxBitRate+999)/1000, original, changed, MaxBR_SDP_Name); 
+      PluginCodec_Utilities::Change((maxBitRate+SCALE_BR_SDP-1)/SCALE_BR_SDP, original, changed, MaxBR_SDP_Name); 
   }
   else if (original[PLUGINCODEC_OPTION_PROTOCOL] == PLUGINCODEC_OPTION_PROTOCOL_SIP) {
     std::string sdpProfLevel = original[SDPProfileAndLevelName];
@@ -301,16 +306,16 @@ static bool MyToNormalised(PluginCodec_OptionMap & original, PluginCodec_OptionM
     maxMBPS = original.GetUnsigned(MaxMBPS_SDP_Name)%MAX_MBPS_SDP;
     maxSMBPS = original.GetUnsigned(MaxSMBPS_SDP_Name)%MAX_MBPS_SDP;
     maxFrameSizeInMB = original.GetUnsigned(MaxFS_SDP_Name)%MAX_FS_SDP;
-    maxBitRate = (original.GetUnsigned(MaxBR_SDP_Name)%MAX_BR_SDP)*1000;
+    maxBitRate = (original.GetUnsigned(MaxBR_SDP_Name)%MAX_BR_SDP)*SCALE_BR_SDP;
 
     if (maxMBPS > 0)
-      PluginCodec_Utilities::Change((maxMBPS+499)/500, original, changed, MaxMBPS_H241_Name); 
+      PluginCodec_Utilities::Change((maxMBPS+SCALE_MBPS_H241-1)/SCALE_MBPS_H241, original, changed, MaxMBPS_H241_Name); 
     if (maxSMBPS > 0)
-      PluginCodec_Utilities::Change((maxSMBPS+499)/500, original, changed, MaxSMBPS_H241_Name);
+      PluginCodec_Utilities::Change((maxSMBPS+SCALE_MBPS_H241-1)/SCALE_MBPS_H241, original, changed, MaxSMBPS_H241_Name);
     if (maxFrameSizeInMB > 0)
-      PluginCodec_Utilities::Change((maxFrameSizeInMB+255)/256, original, changed, MaxFS_H241_Name); 
+      PluginCodec_Utilities::Change((maxFrameSizeInMB+SCALE_FS_H241-1)/SCALE_FS_H241, original, changed, MaxFS_H241_Name); 
     if (maxBitRate > 0)
-      PluginCodec_Utilities::Change((maxBitRate+24999)/25000, original, changed, MaxBR_H241_Name); 
+      PluginCodec_Utilities::Change((maxBitRate+SCALE_BR_H241-1)/SCALE_BR_H241, original, changed, MaxBR_H241_Name); 
   }
   else {
     std::string profileName = original[ProfileName];
@@ -418,7 +423,7 @@ static bool MyToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionM
   // Do this afer the clamping, maxFrameSizeInMB may change
   if (maxMacroBlocks > LevelInfo[levelIndex].m_MaxFrameSize) {
     PluginCodec_Utilities::ClampMax(maxMacroBlocks, original, changed, MaxFS_SDP_Name, true);
-    PluginCodec_Utilities::ClampMax((maxMacroBlocks+255)/256, original, changed, MaxFS_H241_Name, true);
+    PluginCodec_Utilities::ClampMax((maxMacroBlocks+SCALE_FS_H241-1)/SCALE_FS_H241, original, changed, MaxFS_H241_Name, true);
   }
   else {
     PluginCodec_Utilities::Change(0U, original, changed, MaxFS_SDP_Name);
@@ -428,8 +433,8 @@ static bool MyToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionM
   // Set exception to bit rate if necessary
   unsigned bitRate = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_BIT_RATE);
   if (bitRate > LevelInfo[levelIndex].m_MaxBitRate) {
-    PluginCodec_Utilities::ClampMax((bitRate+999)/1000, original, changed, MaxBR_SDP_Name, true);
-    PluginCodec_Utilities::ClampMax((bitRate+24999)/25000, original, changed, MaxBR_H241_Name, true);
+    PluginCodec_Utilities::ClampMax((bitRate+SCALE_BR_SDP-1)/SCALE_BR_SDP, original, changed, MaxBR_SDP_Name, true);
+    PluginCodec_Utilities::ClampMax((bitRate+SCALE_BR_H241-1)/SCALE_BR_H241, original, changed, MaxBR_H241_Name, true);
   }
   else {
     PluginCodec_Utilities::Change(0U, original, changed, MaxBR_SDP_Name);
@@ -439,7 +444,7 @@ static bool MyToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionM
   // Set exception to frame rate if necessary
   if (macroBlocksPerSecond > LevelInfo[levelIndex].m_MaxMBPS) {
     PluginCodec_Utilities::ClampMax(macroBlocksPerSecond, original, changed, MaxMBPS_SDP_Name, true);
-    PluginCodec_Utilities::ClampMax((macroBlocksPerSecond+499)/500, original, changed, MaxMBPS_H241_Name, true);
+    PluginCodec_Utilities::ClampMax((macroBlocksPerSecond+SCALE_MBPS_H241-1)/SCALE_MBPS_H241, original, changed, MaxMBPS_H241_Name, true);
   }
   else {
     PluginCodec_Utilities::Change(0U, original, changed, MaxMBPS_SDP_Name);
