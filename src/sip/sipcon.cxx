@@ -957,7 +957,7 @@ static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
 
   if (!remoteChanged) {
     OpalMediaFormatList::const_iterator fmt = answerFormats.FindFormat(stream->GetMediaFormat());
-    if (fmt != answerFormats.end() && stream->UpdateMediaFormat(*fmt)) {
+    if (fmt != answerFormats.end() && stream->UpdateMediaFormat(*fmt, true)) {
       PTRACE2(4, &*stream, "SIP\tINVITE change needs to " << (paused ? "pause" : "resume") << " stream " << *stream);
       stream->SetPaused(paused);
       return !paused;
@@ -1201,7 +1201,8 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
     }
 
     if (sendStream != NULL) {
-      sendStream->UpdateMediaFormat(*m_answerFormatList.FindFormat(sendStream->GetMediaFormat()));
+      // In case is re-INVITE and remote has tweaked the streams paramters, we need to merge them
+      sendStream->UpdateMediaFormat(*m_answerFormatList.FindFormat(sendStream->GetMediaFormat()), true);
       sendStream->SetPaused((otherSidesDir&SDPMediaDescription::RecvOnly) == 0);
     }
 
@@ -1222,7 +1223,7 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
       if (newDirection == SDPMediaDescription::SendRecv)
         adjustedMediaFormat.SetPayloadType(sendStream->GetMediaFormat().GetPayloadType());
 
-      recvStream->UpdateMediaFormat(adjustedMediaFormat);
+      recvStream->UpdateMediaFormat(adjustedMediaFormat, true);
       recvStream->SetPaused((otherSidesDir&SDPMediaDescription::SendOnly) == 0);
     }
   }
