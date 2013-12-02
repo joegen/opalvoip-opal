@@ -145,13 +145,22 @@ bool OpalMediaStream::SetMediaFormat(const OpalMediaFormat & newMediaFormat)
 }
 
 
-bool OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaFormat)
+bool OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaFormat, bool mergeOnly)
 {
   // We make referenced copy of pointer so can't be deleted out from under us
   OpalMediaPatchPtr mediaPatch = m_mediaPatch;
 
-  return mediaPatch != NULL ? mediaPatch->UpdateMediaFormat(newMediaFormat)
-                            : InternalUpdateMediaFormat(newMediaFormat);
+  OpalMediaFormat adjustedMediaFormat;
+  if (!mergeOnly)
+    adjustedMediaFormat = newMediaFormat;
+  else {
+    adjustedMediaFormat = mediaFormat;
+    if (!adjustedMediaFormat.Merge(newMediaFormat, true))
+      return false;
+  }
+
+  return mediaPatch != NULL ? mediaPatch->UpdateMediaFormat(adjustedMediaFormat)
+                            : InternalUpdateMediaFormat(adjustedMediaFormat);
 }
 
 
