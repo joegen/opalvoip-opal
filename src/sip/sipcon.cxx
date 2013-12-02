@@ -902,7 +902,7 @@ static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
 
   if (!remoteChanged) {
     OpalMediaFormatList::const_iterator fmt = answerFormats.FindFormat(stream->GetMediaFormat());
-    if (fmt != answerFormats.end() && stream->UpdateMediaFormat(*fmt)) {
+    if (fmt != answerFormats.end() && stream->UpdateMediaFormat(*fmt, true)) {
       PTRACE2(4, &*stream, "SIP\tINVITE change needs to " << (paused ? "pause" : "resume") << " stream " << *stream);
       stream->InternalSetPaused(paused, false, false);
       return !paused;
@@ -1208,7 +1208,8 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
     }
 
     if (sendStream != NULL) {
-      sendStream->UpdateMediaFormat(*m_answerFormatList.FindFormat(sendStream->GetMediaFormat()));
+      // In case is re-INVITE and remote has tweaked the streams paramters, we need to merge them
+      sendStream->UpdateMediaFormat(*m_answerFormatList.FindFormat(sendStream->GetMediaFormat()), true);
       sendStream->InternalSetPaused((otherSidesDir&SDPMediaDescription::RecvOnly) == 0, false, false);
     }
 
@@ -1238,7 +1239,7 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
       if (newDirection == SDPMediaDescription::SendRecv)
         adjustedMediaFormat.SetPayloadType(sendStream->GetMediaFormat().GetPayloadType());
 
-      recvStream->UpdateMediaFormat(adjustedMediaFormat);
+      recvStream->UpdateMediaFormat(adjustedMediaFormat, true);
       recvStream->InternalSetPaused((otherSidesDir&SDPMediaDescription::SendOnly) == 0, false, false);
     }
   }
@@ -3469,10 +3470,8 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
 #if OPAL_VIDEO
                                          , mediaDescription->GetContentRole()
 #endif
-                                         ) && (recvStream = GetMediaStream(sessionId, true)) != NULL) {
-      recvStream->UpdateMediaFormat(*m_localMediaFormats.FindFormat(recvStream->GetMediaFormat()));
+                                         ) && (recvStream = GetMediaStream(sessionId, true)) != NULL)
       recvStream->InternalSetPaused(recvDisabled, false, false);
-    }
     else if (!recvDisabled)
       SendReINVITE(PTRACE_PARAM("close after rx open fail"));
   }
