@@ -214,6 +214,11 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
   delete secondaryCodec;
   secondaryCodec = NULL;
 
+  PSafeLockReadWrite mutex1(patch.source);
+  PSafeLockReadWrite mutex2(*stream);
+  if (!mutex1.IsLocked() || !mutex2.IsLocked())
+    return false;
+
   // Find the media formats than can be used to get from source to sink
   OpalMediaFormat sourceFormat = patch.source.GetMediaFormat();
   OpalMediaFormat destinationFormat = stream->GetMediaFormat();
@@ -572,6 +577,9 @@ bool OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
     return false;
   }
 
+  if (!source.LockReadWrite())
+    return false;
+
   bool atLeastOne = source.InternalUpdateMediaFormat(mediaFormat);
 
   for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
@@ -580,6 +588,8 @@ bool OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
       atLeastOne = true;
     }
   }
+
+  source.UnlockReadWrite();
 
   PTRACE_IF(2, !atLeastOne, "Patch\tCould not update media format for any stream/transcoder in " << *this);
   return atLeastOne;
@@ -851,6 +861,9 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
 
 bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 {
+  if (!stream->LockReadWrite())
+    return false;
+
   bool ok;
 
   if (primaryCodec == NULL)
@@ -866,6 +879,8 @@ bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat
 #if OPAL_VIDEO
     SetRateControlParameters(stream->GetMediaFormat());
 #endif
+
+  stream->UnlockReadWrite();
 
   PTRACE(3, "Patch\tUpdated Sink: format=" << mediaFormat << " ok=" << ok);
   return ok;

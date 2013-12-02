@@ -139,9 +139,14 @@ bool OpalMediaStream::SetMediaFormat(const OpalMediaFormat & newMediaFormat)
     return true;
 
   // Couldn't switch, put it back
-  mediaFormat = oldMediaFormat;
-  mediaPatch->ResetTranscoders();
+  if (!LockReadWrite())
+    return false;
 
+  mediaFormat = oldMediaFormat;
+
+  UnlockReadWrite();
+
+  mediaPatch->ResetTranscoders();
   return false;
 }
 
@@ -160,8 +165,16 @@ bool OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaFormat, 
       return false;
   }
 
-  return mediaPatch != NULL ? mediaPatch->UpdateMediaFormat(adjustedMediaFormat)
-                            : InternalUpdateMediaFormat(adjustedMediaFormat);
+  if (mediaPatch != NULL)
+    return mediaPatch->UpdateMediaFormat(adjustedMediaFormat);
+
+  if (!LockReadWrite())
+    return false;
+
+  bool ok = InternalUpdateMediaFormat(adjustedMediaFormat);
+
+  UnlockReadWrite();
+  return ok;
 }
 
 
@@ -449,15 +462,17 @@ bool OpalMediaStream::SetPaused(bool pause, bool fromPatch)
   if (!fromPatch && mediaPatch != NULL)
     return mediaPatch->SetPaused(pause);
 
-  PSafeLockReadWrite mutex(*this);
-  if (!mutex.IsLocked())
-    return false;
+  {
+    PSafeLockReadWrite mutex(*this);
+    if (!mutex.IsLocked())
+      return false;
 
-  if (m_paused == pause)
-    return false;
+    if (m_paused == pause)
+      return false;
 
-  PTRACE(3, "Media\t" << (pause ? "Paused" : "Resumed") << " stream " << *this);
-  m_paused = pause;
+    PTRACE(3, "Media\t" << (pause ? "Paused" : "Resumed") << " stream " << *this);
+    m_paused = pause;
+  }
 
   connection.OnPauseMediaStream(*this, pause);
   return true;
