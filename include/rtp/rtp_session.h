@@ -560,6 +560,7 @@ class OpalRTPSession : public OpalMediaSession
 
     void SetNextSentSequenceNumber(WORD num) { lastSentSequenceNumber = (WORD)(num-1); }
 
+    WORD  GetLastSentSequenceNumber() const { return lastSentSequenceNumber; }
     DWORD GetLastSentTimestamp() const { return lastSentTimestamp; }
     const PTimeInterval & GetLastSentPacketTime() const { return lastSentPacketTime; }
     DWORD GetSyncSourceIn() const { return syncSourceIn; }
