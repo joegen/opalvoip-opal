@@ -60,7 +60,7 @@ PLUGINCODEC_LICENSE(
 
   MyDescription,                                                // codec description
   "Xiph",                                                       // codec author
-  "1.0.3",                                                      // codec version
+  "1.1",                                                        // codec version
   "opus@xiph.org",                                              // codec email
   "http://www.opus-codec.org",                                  // codec URL
   "Copyright 2013, Xiph.Org Foundation",                   // codec copyright information
@@ -171,6 +171,7 @@ class OpusPluginMediaFormat : public PluginCodec_AudioFormat<MY_CODEC>
       m_rawFormat = rawFormat;
       m_recommendedFramesPerPacket = 1; // 20ms
       m_maxFramesPerPacket = 6; // 120ms
+      m_maxBandwidth = 512000;
       m_flags |= PluginCodec_SetChannels(2) | PluginCodec_RTPTypeShared;
     }
 
