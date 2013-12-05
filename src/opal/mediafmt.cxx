@@ -1194,13 +1194,13 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
   if (nj)
     AddOption(new OpalMediaOptionBoolean(OpalMediaFormat::NeedsJitterOption(), true, OpalMediaOption::OrMerge, true));
 
-  if (bw > 0)
+  if (bw > 0) {
     AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxBitRateOption(), true, OpalMediaOption::MinMerge, bw, 100));
-
-  if (fs > 0) {
-    AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxFrameSizeOption(), true, OpalMediaOption::NoMerge, fs));
     AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::TargetBitRateOption(), false, OpalMediaOption::AlwaysMerge, bw, 100));
   }
+
+  if (fs > 0)
+    AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxFrameSizeOption(), true, OpalMediaOption::NoMerge, fs));
 
   if (ft > 0)
     AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::FrameTimeOption(), true, OpalMediaOption::NoMerge, ft));
