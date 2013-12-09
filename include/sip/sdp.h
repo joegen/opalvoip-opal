@@ -189,13 +189,15 @@ class SDPCommonAttributes
 
 class SDPMediaDescription : public PObject, public SDPCommonAttributes
 {
-  PCLASSINFO(SDPMediaDescription, PObject);
-  public:
+    PCLASSINFO(SDPMediaDescription, PObject);
+  protected:
+    SDPMediaDescription();
     SDPMediaDescription(
       const OpalTransportAddress & address,
       const OpalMediaType & mediaType
     );
 
+  public:
     virtual bool PreEncode();
     virtual void Encode(const OpalTransportAddress & commonAddr, ostream & str) const;
 
@@ -281,6 +283,7 @@ class SDPDummyMediaDescription : public SDPMediaDescription
 {
     PCLASSINFO(SDPDummyMediaDescription, SDPMediaDescription);
   public:
+    SDPDummyMediaDescription() { }
     SDPDummyMediaDescription(const OpalTransportAddress & address, const PStringArray & tokens);
     virtual PString GetSDPMediaType() const;
     virtual PCaselessString GetSDPTransportType() const;
