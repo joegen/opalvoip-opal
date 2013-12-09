@@ -1003,22 +1003,25 @@ bool SIPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPS
       if (!PAssert(incomingMedia != NULL, PLogicError))
         return false;
 
-      OpalMediaType mediaType = incomingMedia->GetMediaType();
-
       // Create, if not already, a new session as a "place holder" in the SDP sessions
-      OpalMediaSession * mediaSession = NULL;
-      if (!mediaType.empty())
-        mediaSession = UseMediaSession(sessionId, mediaType, incomingMedia->GetSessionType());
+      OpalMediaSession * mediaSession = GetMediaSession(sessionId);
+      if (mediaSession == NULL) {
+        OpalMediaType mediaType = incomingMedia->GetMediaType();
+        if (!mediaType.empty()) {
+          mediaSession = UseMediaSession(sessionId, mediaType, incomingMedia->GetSessionType());
+          if (!PAssert(mediaSession != NULL, PLogicError))
+            return false;
 
-      if (!PAssert(mediaSession != NULL, PLogicError))
-        return false;
+          // Special hack for T.38 fax switch, make sure we send back a 488, always
+          if (m_needReINVITE && mediaSession->GetMediaType() != mediaType)
+            return false;
 
-      // Special hack for T.38 fax switch, make sure we send back a 488, always
-      if (m_needReINVITE && mediaSession->GetMediaType() != mediaType)
-        return false;
+          mediaSession->Close();
+        }
+      }
 
-      mediaSession->Close();
-      SDPMediaDescription * outgoingMedia = mediaSession->CreateSDPMediaDescription();
+      SDPMediaDescription * outgoingMedia = mediaSession != NULL ? mediaSession->CreateSDPMediaDescription()
+                                                                 : new SDPDummyMediaDescription();
       if (!PAssert(outgoingMedia != NULL, PLogicError))
         return false;
 
