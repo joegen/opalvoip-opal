@@ -71,8 +71,9 @@ class OpalMixerConnection;
     Note the timestamps of the input media are extremely important as they are
     used so that breaks or too fast data in the input media is dealt with correctly.
   */
-class OpalBaseMixer : public PObject
+class OpalBaseMixer : public PSmartObject
 {
+    PCLASSINFO(OpalBaseMixer, PSmartObject);
   public:
     OpalBaseMixer(
       bool pushThread,    ///< Indicate if the push thread should be started
@@ -190,6 +191,7 @@ class OpalBaseMixer : public PObject
   */
 class OpalAudioMixer : public OpalBaseMixer
 {
+    PCLASSINFO(OpalAudioMixer, OpalBaseMixer);
   public:
     OpalAudioMixer(
       bool stereo = false,    ///< Indicate stero or mixed mono mode
@@ -285,6 +287,7 @@ class OpalAudioMixer : public OpalBaseMixer
   */
 class OpalVideoMixer : public OpalBaseMixer
 {
+    PCLASSINFO(OpalVideoMixer, OpalBaseMixer);
   public:
     enum Styles {
       eSideBySideLetterbox, /**< Two images side by side with black bars top and bottom.
@@ -305,6 +308,7 @@ class OpalVideoMixer : public OpalBaseMixer
                                  ratio. e.g. for CIF inputs, output would be 352x576. */
       eGrid,                /**< Standard 2x2, 3x3, 4x4 grid pattern. Size of grid is
                                  dependent on the number of video streams. */
+      eUser                 /**< User defined */
     };
 
     OpalVideoMixer(
@@ -359,6 +363,11 @@ class OpalVideoMixer : public OpalBaseMixer
     virtual Stream * CreateStream();
     virtual bool MixStreams(RTP_DataFrame & frame);
     virtual size_t GetOutputSize() const;
+
+    virtual bool MixVideo();
+    virtual bool StartMix(unsigned & x, unsigned & y, unsigned & w, unsigned & h, unsigned & left);
+    virtual bool NextMix(unsigned & x, unsigned & y, unsigned & w, unsigned & h, unsigned & left);
+    void InsertVideoFrame(const StreamMap_T::iterator & it, unsigned x, unsigned y, unsigned w, unsigned h);
 
   protected:
     Styles     m_style;
@@ -424,6 +433,8 @@ struct OpalMixerNodeInfo
 ///////////////////////////////////////////////////////////////////////////////
 
 class OpalMixerNode;
+class OpalAudioStreamMixer;
+class OpalVideoStreamMixer;
 
 
 /** Mixer node manager.
@@ -538,6 +549,14 @@ class OpalMixerNodeManager
       const OpalMixerNode & node,            ///< Node that has changed state
       OpalConferenceState::ChangeType change ///< Change that occurred
     );
+
+    /// Create the instance of the audio mixer
+    virtual OpalAudioStreamMixer * CreateAudioMixer(const OpalMixerNodeInfo & info);
+
+#if OPAL_VIDEO
+    /// Create the instance of the video mixer
+    virtual OpalVideoStreamMixer * CreateVideoMixer(const OpalMixerNodeInfo & info);
+#endif
 
     /// Get manager
     OpalManager & GetManager() const { return m_manager; }
@@ -995,10 +1014,81 @@ class OpalMixerMediaStream : public OpalMediaStream
 
     PSafePtr<OpalMixerNode> m_node;
     bool m_listenOnly;
-#if OPAL_VIDEO
-    bool m_video;
+};
+
+
+class OpalMediaStreamMixer
+{
+  public:
+    OpalMediaStreamMixer();
+    void Append(const PSafePtr<OpalMixerMediaStream> & stream) { m_outputStreams.Append(stream); }
+    void Remove(const PSafePtr<OpalMixerMediaStream> & stream) { m_outputStreams.Remove(stream); }
+    void CloseOne(const PSafePtr<OpalMixerMediaStream> & stream);
+
+  protected:
+    PSafeList<OpalMixerMediaStream> m_outputStreams;
+};
+
+/** Audio mixer.
+    This class represents the store for the mixed audio.
+*/
+class OpalAudioStreamMixer : public OpalAudioMixer, public OpalMediaStreamMixer
+{
+    PCLASSINFO(OpalAudioStreamMixer, OpalAudioMixer);
+  public:
+    OpalAudioStreamMixer(const OpalMixerNodeInfo & info);
+    ~OpalAudioStreamMixer();
+
+    virtual bool OnPush();
+
+  protected:
+    struct CachedAudio
+    {
+      CachedAudio();
+      ~CachedAudio();
+      enum
+      {
+        Collecting, Collected, Completed
+      } m_state;
+      RTP_DataFrame    m_raw;
+      RTP_DataFrame    m_encoded;
+      OpalTranscoder * m_transcoder;
+    };
+    std::map<PString, CachedAudio> m_cache;
+
+    void PushOne(
+      PSafePtr<OpalMixerMediaStream> & stream,
+      CachedAudio & cache,
+      const short * audioToSubtract
+    );
+
+#ifdef OPAL_MIXER_AUDIO_DEBUG
+    class PAudioMixerDebug * m_audioDebug;
 #endif
 };
+
+
+#if OPAL_VIDEO
+/** Video mixer.
+    This class represents the frame store for the mixed video.
+
+    A user would typically create a derived class to override the MixVideo()
+    or the StartMix()/NextMix() virtual functions for new screen
+    patterns/algorithms.
+*/
+class OpalVideoStreamMixer : public OpalVideoMixer, public OpalMediaStreamMixer
+{
+    PCLASSINFO(OpalVideoStreamMixer, OpalVideoMixer);
+  public:
+    OpalVideoStreamMixer(const OpalMixerNodeInfo & info);
+    ~OpalVideoStreamMixer();
+
+    virtual bool OnMixed(RTP_DataFrame * & output);
+
+  protected:
+    PDictionary<PString, OpalTranscoder> m_transcoders;
+};
+#endif // OPAL_VIDEO
 
 
 /** Mixer node.
@@ -1081,23 +1171,14 @@ class OpalMixerNode : public PSafeObject
     bool SetJitterBufferSize(
       const OpalBaseMixer::Key_T & key,     ///< key for mixer stream
       const OpalJitterBuffer::Init & init   ///< Initialisation information
-    ) { return m_audioMixer.SetJitterBufferSize(key, init); }
+    );
 
     /**Write data to mixer.
       */
-    bool WriteAudio(
-      const OpalBaseMixer::Key_T & key, ///< key for mixer stream
-      const RTP_DataFrame & input       ///< Input RTP data for media
-    ) { return m_audioMixer.WriteStream(key, input); }
-
-#if OPAL_VIDEO
-    /**Write data to mixer.
-      */
-    bool WriteVideo(
-      const OpalBaseMixer::Key_T & key, ///< key for mixer stream
-      const RTP_DataFrame & input       ///< Input RTP data for media
-    ) { return m_videoMixer.WriteStream(key, input); }
-#endif // OPAL_VIDEO
+    bool WritePacket(
+      const OpalMixerMediaStream & stream,  ///< key for mixer stream
+      const RTP_DataFrame & input           ///< Input RTP data for media
+    );
 
     /**Send a user input indication to all connections.
       */
@@ -1195,53 +1276,10 @@ class OpalMixerNode : public PSafeObject
     PSafeList<OpalConnection> m_connections;
     PString                   m_ownerConnection;
 
-    struct MediaMixer
-    {
-      MediaMixer();
-      void CloseOne(const PSafePtr<OpalMixerMediaStream> & stream);
-
-      PSafeList<OpalMixerMediaStream> m_outputStreams;
-    };
-
-    struct AudioMixer : public OpalAudioMixer, public MediaMixer
-    {
-      AudioMixer(const OpalMixerNodeInfo & info);
-      ~AudioMixer();
-
-      virtual bool OnPush();
-
-      struct CachedAudio {
-        CachedAudio();
-        ~CachedAudio();
-        enum { Collecting, Collected, Completed } m_state;
-        RTP_DataFrame    m_raw;
-        RTP_DataFrame    m_encoded;
-        OpalTranscoder * m_transcoder;
-      };
-      std::map<PString, CachedAudio> m_cache;
-
-      void PushOne(
-        PSafePtr<OpalMixerMediaStream> & stream,
-        CachedAudio & cache,
-        const short * audioToSubtract
-      );
-#ifdef OPAL_MIXER_AUDIO_DEBUG
-      class PAudioMixerDebug * m_audioDebug;
-#endif
-    };
-    AudioMixer m_audioMixer;
-
+    OpalAudioStreamMixer * m_audioMixer;
 #if OPAL_VIDEO
-    struct VideoMixer : public OpalVideoMixer, public MediaMixer
-    {
-      VideoMixer(const OpalMixerNodeInfo & info);
-      ~VideoMixer();
-
-      virtual bool OnMixed(RTP_DataFrame * & output);
-
-      PDictionary<PString, OpalTranscoder> m_transcoders;
-    };
-    VideoMixer m_videoMixer;
+    typedef std::map<PString, PSmartPtr<OpalVideoStreamMixer> > VideoMixerMap;
+    VideoMixerMap m_videoMixers;
 #endif // OPAL_VIDEO
 };
 
