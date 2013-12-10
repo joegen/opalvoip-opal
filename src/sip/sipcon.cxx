@@ -3304,6 +3304,11 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
     }
 
     OnConnected();
+
+    if (!mediaStreams.IsEmpty() && GetPhase() == ConnectedPhase) {
+      SetPhase(EstablishedPhase);
+      OnEstablished();
+    }
   }
 
   switch (m_holdToRemote) {
