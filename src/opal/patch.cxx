@@ -673,6 +673,8 @@ void OpalMediaPatch::Main()
   while (source.IsOpen()) {
     if (source.IsPaused()) {
       PThread::Sleep(100);
+      if (patchThread == NULL)
+        break; // Shutting down
       continue;
     }
 
