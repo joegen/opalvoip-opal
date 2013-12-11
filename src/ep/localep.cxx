@@ -379,6 +379,7 @@ void OpalLocalConnection::AlertingIncoming(bool withMedia)
 
 void OpalLocalConnection::AcceptIncoming()
 {
+  PTRACE(4, "LocalCon\tQueueing accept incoming for " << *this);
   GetEndPoint().GetManager().QueueDecoupledEvent(
         new PSafeWorkNoArg<OpalLocalConnection>(this, &OpalLocalConnection::InternalAcceptIncoming));
 }
@@ -386,6 +387,8 @@ void OpalLocalConnection::AcceptIncoming()
 
 void OpalLocalConnection::InternalAcceptIncoming()
 {
+  PTRACE(4, "LocalCon\tAccept incoming for " << *this);
+
   PThread::Sleep(100);
   
   if (LockReadWrite()) {

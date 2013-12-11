@@ -414,7 +414,7 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
   pair<FrameMap::iterator,bool> result = m_frames.insert(FrameMap::value_type(timestamp, frame));
   if (result.second) {
     ANALYSE(In, timestamp, m_synchronisationState != e_SynchronisationDone ? "PreBuf" : "");
-    PTRACE(EVERY_PACKET_TRACE_LEVEL, "Jitter\tInserted packet : ts=" << timestamp);
+    PTRACE(EVERY_PACKET_TRACE_LEVEL, "Jitter\tInserted packet : ts=" << timestamp << " sz=" << frame.GetPayloadSize());
   }
   else {
     PTRACE(2, "Jitter\tAttempt to insert two RTP packets with same timestamp: " << timestamp);
