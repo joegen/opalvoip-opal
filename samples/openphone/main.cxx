@@ -107,11 +107,6 @@
 extern void InitXmlResource(); // From resource.cpp whichis compiled openphone.xrc
 
 
-#define CONFERENCE_PREFIX "conference"
-#define CONFERENCE_NAME   "local"
-#define CONFERENCE_URI    CONFERENCE_PREFIX":"CONFERENCE_NAME
-
-
 // Definitions of the configuration file section and key names
 
 #define DEF_FIELD(name) static const wxChar name##Key[] = wxT(#name)
@@ -969,8 +964,7 @@ bool MyManager::Initialise(bool startMinimised)
 #endif
 
 #if OPAL_HAS_MIXER
-  m_mcuEP = new OpalMixerEndPoint(*this, CONFERENCE_PREFIX);
-  m_mcuEP->AddNode(new OpalMixerNodeInfo(CONFERENCE_NAME));
+  m_mcuEP = new OpalMixerEndPoint(*this);
 #endif
 
 #if OPAL_FAX
@@ -3116,21 +3110,18 @@ void MyManager::OnConference(wxCommandEvent & theEvent)
 void MyManager::AddToConference(OpalCall & call)
 {
   if (m_activeCall != NULL) {
-    PSafePtr<OpalConnection> connection = GetConnection(true, PSafeReference);
-    m_activeCall->Transfer(CONFERENCE_URI, connection);
-    LogWindow << "Added \"" << connection->GetRemotePartyName() << "\" to conference." << endl;
-
-    PString pc = "pc:*;" OPAL_URL_PARAM_PREFIX OPAL_OPT_CONF_OWNER "=yes";
-    if (connection->GetMediaStream(OpalMediaType::Video(), true) == NULL)
-      pc += ";" OPAL_URL_PARAM_PREFIX OPAL_OPT_AUTO_START "=video:no";
-    SetUpCall(pc, CONFERENCE_URI);
+    if (!SetUpConference(*m_activeCall)) {
+      LogWindow << "Could not conference \"" << m_activeCall->GetRemoteParty() << "\"." << endl;
+      return;
+    }
+    LogWindow << "Added \"" << m_activeCall->GetRemoteParty() << "\" to conference." << endl;
     m_activeCall.SetNULL();
   }
 
-  PSafePtr<OpalLocalConnection> connection = call.GetConnectionAs<OpalLocalConnection>();
-  call.Transfer(CONFERENCE_URI, connection);
-  call.Retrieve();
-  LogWindow << "Added \"" << connection->GetRemotePartyName() << "\" to conference." << endl;
+  if (SetUpConference(call))
+    LogWindow << "Added \"" << call.GetRemoteParty() << "\" to conference." << endl;
+  else
+    LogWindow << "Could not conference \"" << call.GetRemoteParty() << "\"." << endl;
 }
 
 
