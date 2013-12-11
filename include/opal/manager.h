@@ -297,6 +297,28 @@ class OpalManager : public PObject
       OpalConnection::StringOptions * stringOptions = NULL ///< Options to pass to connection
     );
 
+#if OPAL_HAS_MIXER
+    /**Set up a conference between the parties.
+       The \p call is added to a conference specified by \p mixerURI.
+
+       If \p mixerURI is NULL or empty, then a suitable default is created
+       based on the OpalMixerEndPoint contained in the manager.
+
+       If the conference node does not exist then it is created.
+
+       If the mixer node (conference) is empty then the \p localParty is also
+       added to the conference.
+
+       If \p localURI is NULL then a suitable default (e.g. "pc:*") is used,
+       hoeever, if it an empty string, then no local connection is created.
+      */
+    virtual bool SetUpConference(
+      OpalCall & call,
+      const char * mixerURI = NULL,
+      const char * localURI = NULL
+    );
+#endif // OPAL_HAS_MIXER
+
     /**Determine if a call is active.
        Return true if there is an active call with the specified token. Note
        that the call could clear any time (even milliseconds) after this

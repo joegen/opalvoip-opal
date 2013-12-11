@@ -529,7 +529,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
   }
 #endif
 
-  if (IsOnHold()) {
+  if (!transfer && IsOnHold()) {
     PTRACE(3, "Call\tOpenSourceMediaStreams (call on hold)" << traceText);
     return false;
   }

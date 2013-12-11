@@ -1245,7 +1245,7 @@ PBoolean OpalAudioMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameTime)
   PTRACE(3, "Media\tAudio " << (IsSource() ? "source" : "sink") << " data size set to "
          << dataSize << " (" << frameTime << "), buffers set to "
          << bufferCount << 'x' << frameSize << " byte buffers.");
-  return OpalMediaStream::SetDataSize(dataSize, frameTime) &&
+  return OpalMediaStream::SetDataSize(frameSize, frameTime) &&
          ((PSoundChannel *)m_channel)->SetBuffers(frameSize, bufferCount);
 }
 
