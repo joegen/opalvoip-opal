@@ -1227,14 +1227,18 @@ void OpalMixerNode::ShutDown()
   while (GetConnectionCount() > 0)
     PThread::Sleep(100);
 
-  m_audioMixer.RemoveAllStreams();
+  if (LockReadWrite()) {
+    m_audioMixer.RemoveAllStreams();
 #if OPAL_VIDEO
-  m_videoMixer.RemoveAllStreams();
+    m_videoMixer.RemoveAllStreams();
 #endif
-  m_manager.RemoveNodeNames(GetNames());
-  m_names.RemoveAll();
+    m_manager.RemoveNodeNames(GetNames());
+    m_names.RemoveAll();
 
-  m_manager.RemoveNode(*this);
+    m_manager.RemoveNode(*this);
+
+    UnlockReadWrite();
+  }
 }
 
 
@@ -1248,6 +1252,10 @@ void OpalMixerNode::PrintOn(ostream & strm) const
 void OpalMixerNode::AddName(const PString & name)
 {
   if (name.IsEmpty())
+    return;
+
+  PSafeLockReadWrite mutex(*this);
+  if (!mutex.IsLocked())
     return;
 
   if (m_names.Contains(name)) {
@@ -1264,6 +1272,10 @@ void OpalMixerNode::AddName(const PString & name)
 void OpalMixerNode::RemoveName(const PString & name)
 {
   if (name.IsEmpty())
+    return;
+
+  PSafeLockReadWrite mutex(*this);
+  if (!mutex.IsLocked())
     return;
 
   PStringSet::iterator it = m_names.find(name);
