@@ -108,11 +108,6 @@
 extern void InitXmlResource(); // From resource.cpp whichis compiled openphone.xrc
 
 
-#define CONFERENCE_PREFIX "conference"
-#define CONFERENCE_NAME   "local"
-#define CONFERENCE_URI    CONFERENCE_PREFIX":"CONFERENCE_NAME
-
-
 // Definitions of the configuration file section and key names
 
 #define DEF_FIELD(name) static const wxChar name##Key[] = wxT(#name)
@@ -1016,8 +1011,7 @@ bool MyManager::Initialise(bool startMinimised)
 #endif
 
 #if OPAL_HAS_MIXER
-  m_mcuEP = new OpalMixerEndPoint(*this, CONFERENCE_PREFIX);
-  m_mcuEP->AddNode(new OpalMixerNodeInfo(CONFERENCE_NAME));
+  m_mcuEP = new OpalMixerEndPoint(*this);
 #endif
 
 #if OPAL_FAX
@@ -2485,6 +2479,9 @@ bool MyManager::AnswerCall()
   if (PAssert(!m_incomingToken.IsEmpty(), PLogicError)) {
     StopRingSound();
 
+    if (m_activeCall != NULL)
+      m_activeCall->Hold();
+
     PString token = m_incomingToken.p_str();
     m_incomingToken.clear();
 
@@ -3153,24 +3150,18 @@ void MyManager::OnConference(wxCommandEvent & theEvent)
 void MyManager::AddToConference(OpalCall & call)
 {
   if (m_activeCall != NULL) {
-    PSafePtr<OpalLocalConnection> connection;
-    if (!GetConnection(connection, PSafeReference))
+    if (!SetUpConference(*m_activeCall)) {
+      LogWindow << "Could not conference \"" << m_activeCall->GetRemoteParty() << "\"." << endl;
       return;
-
-    m_activeCall->Transfer(CONFERENCE_URI, connection);
-    LogWindow << "Added \"" << connection->GetRemotePartyName() << "\" to conference." << endl;
-
-    PString pc = "pc:*" OPAL_MAKE_URL_PARAM2(OPAL_OPT_CONF_OWNER, "yes");
-    if (connection->GetMediaStream(OpalMediaType::Video(), true) == NULL)
-      pc += OPAL_MAKE_URL_PARAM2(OPAL_OPT_AUTO_START, "video:no");
-    SetUpCall(pc, CONFERENCE_URI);
+    }
+    LogWindow << "Added \"" << m_activeCall->GetRemoteParty() << "\" to conference." << endl;
     m_activeCall.SetNULL();
   }
 
-  PSafePtr<OpalLocalConnection> connection = call.GetConnectionAs<OpalLocalConnection>();
-  call.Transfer(CONFERENCE_URI, connection);
-  call.Retrieve();
-  LogWindow << "Added \"" << connection->GetRemotePartyName() << "\" to conference." << endl;
+  if (SetUpConference(call))
+    LogWindow << "Added \"" << call.GetRemoteParty() << "\" to conference." << endl;
+  else
+    LogWindow << "Could not conference \"" << call.GetRemoteParty() << "\"." << endl;
 }
 
 
