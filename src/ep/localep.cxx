@@ -346,7 +346,7 @@ PBoolean OpalLocalConnection::SetUpConnection()
     return false;
   }
 
-  if (!m_endpoint.IsDeferredAlerting())
+  if (!m_endpoint.IsDeferredAlerting() && m_endpoint.IsDeferredAnswer())
     AlertingIncoming();
 
   return true;

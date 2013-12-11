@@ -48,6 +48,7 @@
 #include <codec/rfc2435.h>
 #include <codec/opalpluginmgr.h>
 #include <im/im_ep.h>
+#include <ep/opalmixer.h>
 
 #if OPAL_HAS_H281
   #include <h224/h281.h>
@@ -511,10 +512,76 @@ PBoolean OpalManager::SetUpCall(const PString & partyA,
 }
 
 
+#if OPAL_HAS_MIXER
+
+bool OpalManager::SetUpConference(OpalCall & call, const char * mixerURI, const char * localURI)
+{
+  PString confURI(mixerURI);
+  if (confURI.IsEmpty())
+    confURI = OPAL_MIXER_PREFIX":local-conference";
+
+  PString mixerPrefix, mixerNode;
+  if (!confURI.Split(':', mixerPrefix, mixerNode)) {
+    mixerPrefix = OPAL_MIXER_PREFIX;
+    mixerNode = confURI;
+    confURI.Splice(OPAL_MIXER_PREFIX":", 0);
+  }
+
+  OpalMixerEndPoint * mixerEP = FindEndPointAs<OpalMixerEndPoint>(mixerPrefix);
+  if (mixerEP == NULL) {
+    PTRACE(2, "OpalMan", "No mixer endpoint using prefix \"" << mixerPrefix << '"');
+    return false;
+  }
+
+  PSafePtr<OpalLocalConnection> connection = call.GetConnectionAs<OpalLocalConnection>();
+  if (connection == NULL) {
+    PTRACE(2, "OpalMan", "Cannot conference gateway call " << call);
+    return false;
+  }
+
+  PSafePtr<OpalMixerNode> node = mixerEP->FindNode(mixerNode);
+  if (node == NULL) {
+    node = mixerEP->AddNode(new OpalMixerNodeInfo(mixerNode));
+    PTRACE(3, "OpalMan", "Created mixer node \"" << mixerNode << '"');
+  }
+
+  if (!call.Transfer(confURI, connection)) {
+    PTRACE(2, "OpalMan", "Could not add call " << call << " to conference \"" << confURI << '"');
+    return false;
+  }
+
+  call.Retrieve(); // Make sure is not still on hold
+
+  PTRACE(3, &call, "OpalMan", "Added call " << call << " to conference \"" << confURI << '"');
+
+  PString uri = localURI != NULL ? localURI : "pc:*";
+  if (uri.IsEmpty() || node->GetConnectionCount() > 1)
+    return true;
+
+  /* If after adding the above to conference, it's the only one there, and we
+     have a local URI specified (typically pc:*) then we add that too. */
+  if (connection->GetMediaStream(OpalMediaType::Video(), true) == NULL)
+    uri += ";" OPAL_URL_PARAM_PREFIX OPAL_OPT_AUTO_START "=video:no";
+
+  PSafePtr<OpalCall> localCall = SetUpCall(uri + ";" OPAL_URL_PARAM_PREFIX OPAL_OPT_CONF_OWNER "=yes", confURI);
+  if (localCall != NULL) {
+    PTRACE(3, localCall, "OpalMan", "Added local call \"" << uri << "\" to conference \"" << confURI << '"');
+    return true;
+  }
+
+  PTRACE(2, "OpalMan", "Could not start local call into conference");
+  return false;
+}
+
+#endif // OPAL_HAS_MIXER
+
+
 static void AsynchCallSetUp(PSafePtr<OpalConnection> connection)
 {
   if (!connection.SetSafetyMode(PSafeReadWrite))
     return;
+
+  PTRACE_CONTEXT_ID_PUSH_THREAD(connection);
 
   if (connection->SetUpConnection())
     return;
