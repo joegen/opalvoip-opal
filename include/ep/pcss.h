@@ -47,6 +47,8 @@
 
 class OpalPCSSConnection;
 
+#define OPAL_PCSS_PREFIX "pc"
+
 
 /** PC Sound System endpoint.
  */
@@ -60,7 +62,7 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
      */
     OpalPCSSEndPoint(
       OpalManager & manager,  ///<  Manager of all endpoints.
-      const char * prefix = "pc" ///<  Prefix for URL style address strings
+      const char * prefix = OPAL_PCSS_PREFIX ///<  Prefix for URL style address strings
     );
 
     /**Destroy endpoint.
