@@ -46,6 +46,9 @@
 class OpalIVRConnection;
 
 
+#define OPAL_IVR_PREFIX "ivr"
+
+
 /**Interactive Voice Response endpoint.
  */
 class OpalIVREndPoint : public OpalLocalEndPoint
@@ -58,7 +61,7 @@ class OpalIVREndPoint : public OpalLocalEndPoint
      */
     OpalIVREndPoint(
       OpalManager & manager,  ///<  Manager of all endpoints.
-      const char * prefix = "ivr" ///<  Prefix for URL style address strings
+      const char * prefix = OPAL_IVR_PREFIX ///<  Prefix for URL style address strings
     );
 
     /**Destroy endpoint.

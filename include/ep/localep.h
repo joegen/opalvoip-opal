@@ -43,6 +43,9 @@
 class OpalLocalConnection;
 
 
+#define OPAL_LOCAL_PREFIX "local"
+
+
 /** Local EndPoint.
     This class represents an endpoint on the local machine that can receive
     media via virtual functions.
@@ -57,7 +60,7 @@ class OpalLocalEndPoint : public OpalEndPoint
      */
     OpalLocalEndPoint(
       OpalManager & manager,        ///<  Manager of all endpoints.
-      const char * prefix = "local" ///<  Prefix for URL style address strings
+      const char * prefix = OPAL_LOCAL_PREFIX  ///<  Prefix for URL style address strings
     );
 
     /**Destroy endpoint.

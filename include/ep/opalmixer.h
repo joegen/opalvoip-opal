@@ -56,6 +56,8 @@ class OpalMixerConnection;
 //#define OPAL_MIXER_AUDIO_DEBUG 1
 
 
+#define OPAL_MIXER_PREFIX "mcu"
+
 #define OPAL_OPT_LISTEN_ONLY "Listen-Only"      ///< String option for listen only mixer connection
 #define OPAL_OPT_CONF_OWNER  "Conference-Owner" ///< String option for listen only mixer connection
 
@@ -567,7 +569,7 @@ class OpalMixerEndPoint : public OpalLocalEndPoint, public OpalMixerNodeManager
      */
     OpalMixerEndPoint(
       OpalManager & manager,  ///<  Manager of all endpoints.
-      const char * prefix     ///<  Prefix for URL style address strings
+      const char * prefix = OPAL_MIXER_PREFIX  ///<  Prefix for URL style address strings
     );
 
     /**Destroy endpoint.
