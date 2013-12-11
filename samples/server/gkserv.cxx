@@ -81,10 +81,12 @@ static const char AliasRouteMapsName[] = "Gatekeeper Alias Route Maps";
 static const char * CompatibilityIssueKey[H323Connection::NumCompatibilityIssues] = {
   "No Multiple Tunnelled H245",
   "Bad Master Slave Conflict",
-  "No User Input Capability"
+  "No User Input Capability",
+  "H.224 Must Be Session 3"
 };
 
 
+#define PTraceModule() "OpalServer"
 #define new PNEW
 
 
@@ -183,7 +185,7 @@ bool MyH323EndPoint::Initialise(PConfig & cfg, PConfigPage * rsrc)
     }
   }
   else {
-    PSYSTEMLOG(Info, "Not using gatekeeper.");
+    PSYSTEMLOG(Info, "Not using remote gatekeeper.");
     RemoveGatekeeper();
   }
 
@@ -396,6 +398,7 @@ bool MyGatekeeperServer::Initialise(PConfig & cfg, PConfigPage * rsrc)
   PHTTPFieldArray * fieldArray = new PHTTPFieldArray(new PHTTPStringField(GkServerListenersKey, 0, "",
                          "Local network interfaces to listen for RAS, blank means all", 1, 25), false);
   H323TransportAddressArray interfaces = fieldArray->GetStrings(cfg);
+  PTRACE(3, "Starting gatekeeper server on interfaces " << interfaces);
   AddListeners(interfaces);
   rsrc->Add(fieldArray);
 
@@ -487,6 +490,7 @@ bool MyGatekeeperServer::Initialise(PConfig & cfg, PConfigPage * rsrc)
   security->Append(new PHTTPPasswordField(PasswordKey, 25));
   rsrc->Add(new PHTTPFieldArray(security, false));
 
+  PTRACE(3, "Gatekeeper server initialised");
   return true;
 }
 
