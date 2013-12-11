@@ -2410,6 +2410,9 @@ bool MyManager::AnswerCall()
   if (PAssert(!m_incomingToken.IsEmpty(), PLogicError)) {
     StopRingSound();
 
+    if (m_activeCall != NULL)
+      m_activeCall->Hold();
+
     PString token = m_incomingToken.p_str();
     m_incomingToken.clear();
 
