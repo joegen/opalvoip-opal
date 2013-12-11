@@ -88,6 +88,9 @@ PLUGINCODEC_LICENSE(
 ///////////////////////////////////////////////////////////////////////////////
 
 const unsigned MaxBitRate = 16000000;
+#define MAX_FR_SDP 30
+#define MAX_FS_SDP 65536
+
 
 static struct PluginCodec_Option const MaxFR =
 {
@@ -95,12 +98,12 @@ static struct PluginCodec_Option const MaxFR =
   "max-fr",                           // User visible name
   false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
-  "30",                               // Initial value
+  STRINGIZE(MAX_FR_SDP),              // Initial value
   "max-fr",                           // FMTP option name
-  "30",                               // FMTP default value
+  STRINGIZE(MAX_FR_SDP),              // FMTP default value
   0,                                  // H.245 generic capability code and bit mask
   "1",                                // Minimum value
-  "30"                                // Maximum value
+  STRINGIZE(MAX_FR_SDP)               // Maximum value
 };
 
 static struct PluginCodec_Option const MaxFS =
@@ -109,12 +112,12 @@ static struct PluginCodec_Option const MaxFS =
   "max-fs",                           // User visible name
   false,                              // User Read/Only flag
   PluginCodec_MinMerge,               // Merge mode
-  "0",                                // Initial value
+  STRINGIZE(MAX_FS_SDP),              // Initial value
   "max-fs",                           // FMTP option name
-  "0",                                // FMTP default value
+  STRINGIZE(MAX_FS_SDP),              // FMTP default value
   0,                                  // H.245 generic capability code and bit mask
   "48",                               // Minimum value
-  "65535"                             // Maximum value
+  STRINGIZE(MAX_FS_SDP)               // Maximum value
 };
 
 #if INCLUDE_OM_CUSTOM_PACKETIZATION
@@ -274,7 +277,7 @@ class VP8FormatRFC : public VP8Format
     {
       OptionMap::iterator it = original.find(MaxFS.m_name);
       if (it != original.end() && !it->second.empty()) {
-        unsigned maxFrameSize = String2Unsigned(it->second);
+        unsigned maxFrameSize = String2Unsigned(it->second)%MAX_FS_SDP;
         ClampResolution(m_maxWidth, m_maxHeight, maxFrameSize);
         Change(maxFrameSize,  original, changed, MaxFS.m_name);
         ClampMax(m_maxWidth,  original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
