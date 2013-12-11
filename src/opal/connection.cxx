@@ -271,6 +271,7 @@ bool OpalConnection::GarbageCollection()
 
 void OpalConnection::InternalSetAsOriginating()
 {
+  PTRACE(4, "OpalCon\tSet originating " << *this);
   m_originating = true;
 #if OPAL_SCRIPT
   PScriptLanguage * script = endpoint.GetManager().GetScript();
@@ -292,7 +293,7 @@ PBoolean OpalConnection::SetUpConnection()
       return false;
     }
 
-    PTRACE(3, "OpalCon\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
+    PTRACE(3, "OpalCon\tOutgoing call routed to " << ownerCall.GetPartyB() << " to " << *this);
     if (!ownerCall.OnSetUp(*this)) {
       Release(EndedByNoAccept);
       return false;
@@ -305,7 +306,7 @@ PBoolean OpalConnection::SetUpConnection()
     OnConnectedInternal();
   }
   else {
-    PTRACE(3, "OpalCon\tIncoming call from " << remotePartyName);
+    PTRACE(3, "OpalCon\tIncoming call from " << remotePartyName << " to " << *this);
 
     OnApplyStringOptions();
   }

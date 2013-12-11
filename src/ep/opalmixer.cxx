@@ -1644,6 +1644,8 @@ void OpalMixerNode::AudioMixer::PushOne(PSafePtr<OpalMixerMediaStream> & stream,
           << cache.m_encoded.GetTimestamp() << ','
           << cache.m_encoded.GetPayloadSize() << ',');
       stream.SetSafetyMode(PSafeReference); // OpalMediaStream::PushPacket might block
+      PTRACE(6, stream, "MixerNode", "Pushing cached encoded packet: pt=" << cache.m_encoded.GetPayloadType()
+             << " ts=" << cache.m_encoded.GetTimestamp() << " sz=" << cache.m_encoded.GetPayloadSize());
       stream->PushPacket(cache.m_encoded);
       stream.SetSafetyMode(PSafeReadOnly); // restore lock
       return;
@@ -1664,6 +1666,7 @@ void OpalMixerNode::AudioMixer::PushOne(PSafePtr<OpalMixerMediaStream> & stream,
         << cache.m_raw.GetPayloadSize() << ',');
     MIXER_DEBUG_WAV(stream->GetID(), cache.m_raw);
     stream.SetSafetyMode(PSafeReference); // OpalMediaStream::PushPacket might block
+    PTRACE(6, stream, "MixerNode", "Pushing raw packet: ts=" << cache.m_raw.GetTimestamp() << " sz=" << cache.m_raw.GetPayloadSize());
     stream->PushPacket(cache.m_raw);
     stream.SetSafetyMode(PSafeReadOnly); // restore lock
     return;
@@ -1696,6 +1699,8 @@ void OpalMixerNode::AudioMixer::PushOne(PSafePtr<OpalMixerMediaStream> & stream,
         << cache.m_encoded.GetPayloadSize() << ',');
     MIXER_DEBUG_WAV(stream->GetID(), cache.m_raw);
     stream.SetSafetyMode(PSafeReference); // OpalMediaStream::PushPacket might block
+    PTRACE(6, stream, "MixerNode", "Pushing new packet: pt=" << cache.m_encoded.GetPayloadType()
+            << " ts=" << cache.m_encoded.GetTimestamp() << " sz=" << cache.m_encoded.GetPayloadSize());
     stream->PushPacket(cache.m_encoded);
     stream.SetSafetyMode(PSafeReadOnly); // restore lock
   }
