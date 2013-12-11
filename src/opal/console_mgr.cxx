@@ -138,7 +138,7 @@ protected:
       output << m_endpoint.GetPrefixName() << "user input mode: " << m_endpoint.GetSendUserInputMode() << '\n';
 
 
-    PCaselessString interfaces = args.GetOptionString("sip");
+    PCaselessString interfaces = args.GetOptionString(m_endpoint.GetPrefixName());
     if (!m_endpoint.StartListeners(interfaces.Lines())) {
       output << "Could not start listeners for " << m_endpoint.GetPrefixName() << endl;
       return false;
