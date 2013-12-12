@@ -420,14 +420,19 @@ bool H323EndPoint::InternalCreateGatekeeper(H323Transport * transport, const H32
     PIPSocket::Address interfaceIP(PIPSocket::GetInvalidAddress());
 
     // See if the system can tell us which interface would be used
-    PIPSocket::Address remoteIP;
-    if (gkAddress.GetIpAddress(remoteIP) && !remoteIP.IsAny())
-      interfaceIP = PIPSocket::GetRouteInterfaceAddress(remoteIP);
+    {
+      PIPSocket::Address remoteIP;
+      if (gkAddress.GetIpAddress(remoteIP) && !remoteIP.IsAny()) {
+        interfaceIP = PIPSocket::GetRouteInterfaceAddress(remoteIP);
+        PTRACE_IF(4, interfaceIP.IsValid(), "H323\tUsing interface " << interfaceIP << " routed from " << remoteIP);
+      }
+    }
 
     if (!interfaceIP.IsValid()) {
       OpalTransportAddressArray interfaces = GetInterfaceAddresses();
       for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
         if (interfaces[i].IsCompatible(gkAddress)) {
+          PTRACE(4, "H323\tInterface " << interfaces[i] << " compatible with " << gkAddress);
           if (interfaceIP.IsValid())
             interfaces[i].GetIpAddress(interfaceIP);
           else {
