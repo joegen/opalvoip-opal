@@ -471,14 +471,12 @@ public:
 
 
     if (args.HasOption("gk-host") || args.HasOption("gk-id")) {
-      if (verbose)
-        output << "H.323 Gatekeeper: " << flush;
       if (!UseGatekeeperFromArgs(args, "gk-host", "gk-id", "gk-password")) {
-        output << "\nCould not complete gatekeeper registration" << endl;
+        output << "Could not initiate gatekeeper registration." << endl;
         return false;
       }
       if (verbose)
-        output << *GetGatekeeper() << flush;
+        output << "H.323 Gatekeeper: " << *GetGatekeeper() << " (awaiting respone)\n";
     }
 
     AddRoutesFor(this, defaultRoute);
