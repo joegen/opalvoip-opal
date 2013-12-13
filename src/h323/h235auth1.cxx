@@ -471,7 +471,6 @@ H235Authenticator::ValidationResult H235AuthProcedure1::ValidateCryptoToken(
 PBoolean H235AuthProcedure1::IsCapability(const H235_AuthenticationMechanism & mechansim,
                                       const PASN_ObjectId & algorithmOID)
 {
-return false;
   return mechansim.GetTag() == H235_AuthenticationMechanism::e_pwdHash &&
          algorithmOID.AsString() == OID_U;
 }
