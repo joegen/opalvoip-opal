@@ -94,7 +94,7 @@ class H323GatekeeperRequest : public H323Transaction
     virtual PBoolean WritePDU(
       H323TransactionPDU & pdu
     );
-    PBoolean CheckCryptoTokens();
+    virtual bool CheckCryptoTokens();
     PBoolean CheckGatekeeperIdentifier();
     PBoolean GetRegisteredEndPoint();
 
@@ -102,7 +102,6 @@ class H323GatekeeperRequest : public H323Transaction
     virtual unsigned GetGatekeeperRejectTag() const = 0;
     virtual PString GetEndpointIdentifier() const = 0;
     virtual unsigned GetRegisteredEndPointRejectTag() const = 0;
-    virtual unsigned GetSecurityRejectTag() const = 0;
 
     H323GatekeeperListener & GetRasChannel() const { return rasChannel; }
 
@@ -129,6 +128,7 @@ class H323GatekeeperGRQ : public H323GatekeeperRequest
     virtual unsigned GetGatekeeperRejectTag() const;
     virtual PString GetEndpointIdentifier() const;
     virtual unsigned GetRegisteredEndPointRejectTag() const;
+    virtual void PrepareConfirm();
     virtual H235Authenticator::ValidationResult ValidatePDU() const;
     virtual unsigned GetSecurityRejectTag() const;
     virtual void SetRejectReason(
@@ -883,6 +883,10 @@ class H323RegisteredEndPoint : public PSafeObject
     /**Get the H225 version reported in the RRQ
       */
     PBoolean GetH225Version() const { return h225Version; }
+
+    /**Get the creation time for endpoint.
+      */
+    const PTime & GetCreationTime() const { return m_creationTime; }
   //@}
 
   /**@name H.501 access functions */
@@ -921,6 +925,7 @@ class H323RegisteredEndPoint : public PSafeObject
     unsigned                  timeToLive;
     H235Authenticators        authenticators;
 
+    PTime m_creationTime;
     PTime lastRegistration;
     PTime lastInfoResponse;
 
@@ -1191,14 +1196,14 @@ class H323GatekeeperServer : public H323TransactionServer
 
     /**Create a new registered endpoint object.
        The user woiuld not usually use this function as it is used internally
-       by the server when new registration requests (RRQ) are received.
+       by the server when new GRQ or RRQ is received.
 
        However, a user may override this function to create objects that are
        user defined descendants of H323RegisteredEndPoint so the user can
        maintain extra information on a endpoint by endpoint basis.
       */
     virtual H323RegisteredEndPoint * CreateRegisteredEndPoint(
-      H323GatekeeperRRQ & request
+      H323GatekeeperRequest & request
     );
 
     /**Create a new unique identifier for the registered endpoint.
@@ -1666,17 +1671,17 @@ class H323GatekeeperServer : public H323TransactionServer
     unsigned maximumBandwidth;
     unsigned defaultTimeToLive;
     unsigned defaultInfoResponseRate;
-    PBoolean     overwriteOnSameSignalAddress;
-    PBoolean     canHaveDuplicateAlias;
-    PBoolean     canHaveDuplicatePrefix;
-    PBoolean     canOnlyCallRegisteredEP;
-    PBoolean     canOnlyAnswerRegisteredEP;
-    PBoolean     answerCallPreGrantedARQ;
-    PBoolean     makeCallPreGrantedARQ;
-    PBoolean     isGatekeeperRouted;
-    PBoolean     aliasCanBeHostName;
-    PBoolean     requireH235;
-    PBoolean     disengageOnHearbeatFail;
+    bool     overwriteOnSameSignalAddress;
+    bool     canHaveDuplicateAlias;
+    bool     canHaveDuplicatePrefix;
+    bool     canOnlyCallRegisteredEP;
+    bool     canOnlyAnswerRegisteredEP;
+    bool     answerCallPreGrantedARQ;
+    bool     makeCallPreGrantedARQ;
+    bool     isGatekeeperRouted;
+    bool     aliasCanBeHostName;
+    bool     requireH235;
+    bool     disengageOnHearbeatFail;
 
     PStringToString passwords;
 
@@ -1693,6 +1698,8 @@ class H323GatekeeperServer : public H323TransactionServer
 #if OPAL_H501
     H323PeerElement * peerElement;
 #endif
+
+    PSafeDictionary<H225_AliasAddress, H323RegisteredEndPoint> m_discoveredEndpoints;
 
     PSafeDictionary<PString, H323RegisteredEndPoint> byIdentifier;
 
@@ -1711,13 +1718,15 @@ class H323GatekeeperServer : public H323TransactionServer
 
     PINDEX peakRegistrations;
     PINDEX totalRegistrations;
-    PINDEX rejectedRegistrations;
+    PAtomicInteger rejectedRegistrations;
     PINDEX peakCalls;
     PINDEX totalCalls;
-    PINDEX rejectedCalls;
+    PAtomicInteger rejectedCalls;
 
   friend class H323GatekeeperRRQ;
   friend class H323GatekeeperARQ;
+
+  P_REMOVE_VIRTUAL(H323RegisteredEndPoint *,CreateRegisteredEndPoint(H323GatekeeperRRQ &),0);
 };
 
 

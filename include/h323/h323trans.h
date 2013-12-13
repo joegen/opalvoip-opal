@@ -76,19 +76,17 @@ class H323TransactionPDU {
       const H235Authenticators & auth
     ) { authenticators = auth; }
 
-    H235Authenticator::ValidationResult Validate(
-      const PASN_Array & clearTokens,
-      unsigned clearOptionalField,
-      const PASN_Array & cryptoTokens,
-      unsigned cryptoOptionalField
-    ) const { return authenticators.ValidatePDU(*this, clearTokens, clearOptionalField, cryptoTokens, cryptoOptionalField, rawPDU); }
+    template <class RAS> H235Authenticator::ValidationResult Validate(const RAS & ras) const
+    {
+      return authenticators.ValidatePDU(*this, ras, rawPDU);
+    }
 
-    void Prepare(
-      PASN_Array & clearTokens,
-      unsigned clearOptionalField,
-      PASN_Array & cryptoTokens,
-      unsigned cryptoOptionalField
-    ) { authenticators.PreparePDU(*this, clearTokens, clearOptionalField, cryptoTokens, cryptoOptionalField); }
+    template <class PDU> void Prepare(PDU & pdu)
+    {
+      authenticators.PreparePDU(*this, pdu);
+    }
+
+    const PBYTEArray & GetRawPDU() const { return rawPDU; }
 
   protected:
     mutable H235Authenticators authenticators;
@@ -269,13 +267,12 @@ class H323Transactor : public PObject
       const H323TransactionPDU & pdu,
       unsigned delay
     );
-    PBoolean CheckCryptoTokens(
+    bool CheckCryptoTokens1(const H323TransactionPDU & pdu);
+    bool CheckCryptoTokens2();
+    template <class RAS> bool CheckCryptoTokens(
       const H323TransactionPDU & pdu,
-      const PASN_Array & clearTokens,
-      unsigned clearOptionalField,
-      const PASN_Array & cryptoTokens,
-      unsigned cryptoOptionalField
-    );
+      const RAS & ras
+    ) { return CheckCryptoTokens1(pdu) || (pdu.Validate(ras) == H235Authenticator::e_OK && CheckCryptoTokens2()); }
 
     void AgeResponses();
     PBoolean SendCachedResponse(
@@ -353,14 +350,15 @@ class H323Transaction : public PObject
       H323TransactionPDU & pdu
     );
 
-    PBoolean CheckCryptoTokens(
-      const H235Authenticators & authenticators
-    );
+    virtual void PrepareConfirm() { }
+
+    virtual bool CheckCryptoTokens();
 
 #if PTRACING
     virtual const char * GetName() const = 0;
 #endif
     virtual H235Authenticator::ValidationResult ValidatePDU() const = 0;
+    virtual unsigned GetSecurityRejectTag() const { return 0; }
     virtual void SetRejectReason(
       unsigned reasonCode
     ) = 0;
@@ -372,6 +370,7 @@ class H323Transaction : public PObject
     PBoolean IsBehindNAT() const { return isBehindNAT; }
     H323Transactor & GetTransactor() const { return transactor; }
     H235Authenticator::ValidationResult GetAuthenticatorResult() const { return authenticatorResult; }
+    void SetAuthenticators(const H235Authenticators & auth) { authenticators = auth; }
 
   protected:
     virtual Response OnHandlePDU() = 0;
@@ -380,15 +379,15 @@ class H323Transaction : public PObject
     H323Transactor         & transactor;
     unsigned                 requestSequenceNumber;
     H323TransportAddressArray replyAddresses;
-    PBoolean                     fastResponseRequired;
+    bool                     fastResponseRequired;
     H323TransactionPDU     * request;
     H323TransactionPDU     * confirm;
     H323TransactionPDU     * reject;
 
     H235Authenticators                  authenticators;
     H235Authenticator::ValidationResult authenticatorResult;
-    PBoolean                                isBehindNAT;
-    PBoolean                                canSendRIP;
+    bool                                isBehindNAT;
+    bool                                canSendRIP;
 };
 
 

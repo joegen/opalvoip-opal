@@ -565,8 +565,7 @@ void H225_RAS::OnSendRegistrationRequest(H323RasPDU & pdu, H225_RegistrationRequ
                  rrq);
 #endif
     
-  pdu.Prepare(rrq.m_tokens, H225_RegistrationRequest::e_tokens,
-              rrq.m_cryptoTokens, H225_RegistrationRequest::e_cryptoTokens);
+  pdu.Prepare(rrq);
 }
 
 
@@ -588,8 +587,7 @@ void H225_RAS::OnSendRegistrationConfirm(H323RasPDU & pdu, H225_RegistrationConf
   SendFeatureSet(this, H460_MessageType::e_registrationConfirm, rcf);
 #endif
 
-  pdu.Prepare(rcf.m_tokens, H225_RegistrationConfirm::e_tokens,
-              rcf.m_cryptoTokens, H225_RegistrationConfirm::e_cryptoTokens);
+  pdu.Prepare(rcf);
 }
 
 
@@ -611,8 +609,7 @@ void H225_RAS::OnSendRegistrationReject(H323RasPDU & pdu, H225_RegistrationRejec
   SendFeatureSet(this, H460_MessageType::e_registrationReject, rrj);
 #endif
 
-  pdu.Prepare(rrj.m_tokens, H225_RegistrationReject::e_tokens,
-              rrj.m_cryptoTokens, H225_RegistrationReject::e_cryptoTokens);
+  pdu.Prepare(rrj);
 }
 
 
@@ -653,9 +650,7 @@ PBoolean H225_RAS::OnReceiveRegistrationConfirm(const H323RasPDU & pdu, const H2
     }
   }
 
-  if (!CheckCryptoTokens(pdu,
-                         rcf.m_tokens, H225_RegistrationConfirm::e_tokens,
-                         rcf.m_cryptoTokens, H225_RegistrationConfirm::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, rcf))
     return false;
 
 #if OPAL_H460
@@ -680,9 +675,7 @@ PBoolean H225_RAS::OnReceiveRegistrationReject(const H323RasPDU & pdu, const H22
   if (!CheckForResponse(H225_RasMessage::e_registrationRequest, rrj.m_requestSeqNum, &rrj.m_rejectReason))
     return false;
 
-  if (!CheckCryptoTokens(pdu,
-                         rrj.m_tokens, H225_RegistrationReject::e_tokens,
-                         rrj.m_cryptoTokens, H225_RegistrationReject::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, rrj))
     return false;
   
 #if OPAL_H460
@@ -702,8 +695,7 @@ PBoolean H225_RAS::OnReceiveRegistrationReject(const H225_RegistrationReject & /
 void H225_RAS::OnSendUnregistrationRequest(H323RasPDU & pdu, H225_UnregistrationRequest & urq)
 {
   OnSendUnregistrationRequest(urq);
-  pdu.Prepare(urq.m_tokens, H225_UnregistrationRequest::e_tokens,
-              urq.m_cryptoTokens, H225_UnregistrationRequest::e_cryptoTokens);
+  pdu.Prepare(urq);
 }
 
 
@@ -715,8 +707,7 @@ void H225_RAS::OnSendUnregistrationRequest(H225_UnregistrationRequest & /*urq*/)
 void H225_RAS::OnSendUnregistrationConfirm(H323RasPDU & pdu, H225_UnregistrationConfirm & ucf)
 {
   OnSendUnregistrationConfirm(ucf);
-  pdu.Prepare(ucf.m_tokens, H225_UnregistrationConfirm::e_tokens,
-              ucf.m_cryptoTokens, H225_UnregistrationConfirm::e_cryptoTokens);
+  pdu.Prepare(ucf);
 }
 
 
@@ -728,8 +719,7 @@ void H225_RAS::OnSendUnregistrationConfirm(H225_UnregistrationConfirm & /*ucf*/)
 void H225_RAS::OnSendUnregistrationReject(H323RasPDU & pdu, H225_UnregistrationReject & urj)
 {
   OnSendUnregistrationReject(urj);
-  pdu.Prepare(urj.m_tokens, H225_UnregistrationReject::e_tokens,
-              urj.m_cryptoTokens, H225_UnregistrationReject::e_cryptoTokens);
+  pdu.Prepare(urj);
 }
 
 
@@ -740,9 +730,7 @@ void H225_RAS::OnSendUnregistrationReject(H225_UnregistrationReject & /*urj*/)
 
 PBoolean H225_RAS::OnReceiveUnregistrationRequest(const H323RasPDU & pdu, const H225_UnregistrationRequest & urq)
 {
-  if (!CheckCryptoTokens(pdu,
-                         urq.m_tokens, H225_UnregistrationRequest::e_tokens,
-                         urq.m_cryptoTokens, H225_UnregistrationRequest::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, urq))
     return false;
 
 #if OPAL_H460
@@ -764,9 +752,7 @@ PBoolean H225_RAS::OnReceiveUnregistrationConfirm(const H323RasPDU & pdu, const 
   if (!CheckForResponse(H225_RasMessage::e_unregistrationRequest, ucf.m_requestSeqNum))
     return false;
 
-  if (!CheckCryptoTokens(pdu,
-                         ucf.m_tokens, H225_UnregistrationConfirm::e_tokens,
-                         ucf.m_cryptoTokens, H225_UnregistrationConfirm::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, ucf))
     return false;
 
   return OnReceiveUnregistrationConfirm(ucf);
@@ -784,9 +770,7 @@ PBoolean H225_RAS::OnReceiveUnregistrationReject(const H323RasPDU & pdu, const H
   if (!CheckForResponse(H225_RasMessage::e_unregistrationRequest, urj.m_requestSeqNum, &urj.m_rejectReason))
     return false;
 
-  if (!CheckCryptoTokens(pdu,
-                         urj.m_tokens, H225_UnregistrationReject::e_tokens,
-                         urj.m_cryptoTokens, H225_UnregistrationReject::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, urj))
     return false;
 
   return OnReceiveUnregistrationReject(urj);
@@ -807,8 +791,7 @@ void H225_RAS::OnSendAdmissionRequest(H323RasPDU & pdu, H225_AdmissionRequest & 
   SendGenericData(this, H460_MessageType::e_admissionRequest, arq);
 #endif
     
-  pdu.Prepare(arq.m_tokens, H225_AdmissionRequest::e_tokens,
-              arq.m_cryptoTokens, H225_AdmissionRequest::e_cryptoTokens);
+  pdu.Prepare(arq);
 }
 
 
@@ -825,8 +808,7 @@ void H225_RAS::OnSendAdmissionConfirm(H323RasPDU & pdu, H225_AdmissionConfirm & 
   SendGenericData(this, H460_MessageType::e_admissionConfirm, acf);
 #endif
     
-  pdu.Prepare(acf.m_tokens, H225_AdmissionConfirm::e_tokens,
-              acf.m_cryptoTokens, H225_AdmissionConfirm::e_cryptoTokens);
+  pdu.Prepare(acf);
 }
 
 
@@ -843,8 +825,7 @@ void H225_RAS::OnSendAdmissionReject(H323RasPDU & pdu, H225_AdmissionReject & ar
     SendGenericData(this, H460_MessageType::e_admissionReject, arj);
 #endif
     
-  pdu.Prepare(arj.m_tokens, H225_AdmissionReject::e_tokens,
-              arj.m_cryptoTokens, H225_AdmissionReject::e_cryptoTokens);
+  pdu.Prepare(arj);
 }
 
 
@@ -855,9 +836,7 @@ void H225_RAS::OnSendAdmissionReject(H225_AdmissionReject & /*arj*/)
 
 PBoolean H225_RAS::OnReceiveAdmissionRequest(const H323RasPDU & pdu, const H225_AdmissionRequest & arq)
 {
-  if (!CheckCryptoTokens(pdu,
-                         arq.m_tokens, H225_AdmissionRequest::e_tokens,
-                         arq.m_cryptoTokens, H225_AdmissionRequest::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, arq))
     return false;
     
 #if OPAL_H460
@@ -879,9 +858,7 @@ PBoolean H225_RAS::OnReceiveAdmissionConfirm(const H323RasPDU & pdu, const H225_
   if (!CheckForResponse(H225_RasMessage::e_admissionRequest, acf.m_requestSeqNum))
     return false;
 
-  if (!CheckCryptoTokens(pdu,
-                         acf.m_tokens, H225_AdmissionConfirm::e_tokens,
-                         acf.m_cryptoTokens, H225_AdmissionConfirm::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, acf))
     return false;
   
 #if OPAL_H460
@@ -903,9 +880,7 @@ PBoolean H225_RAS::OnReceiveAdmissionReject(const H323RasPDU & pdu, const H225_A
   if (!CheckForResponse(H225_RasMessage::e_admissionRequest, arj.m_requestSeqNum, &arj.m_rejectReason))
     return false;
 
-  if (!CheckCryptoTokens(pdu,
-                         arj.m_tokens, H225_AdmissionReject::e_tokens,
-                         arj.m_cryptoTokens, H225_AdmissionReject::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, arj))
     return false;
   
 #if OPAL_H460
@@ -925,8 +900,7 @@ PBoolean H225_RAS::OnReceiveAdmissionReject(const H225_AdmissionReject & /*arj*/
 void H225_RAS::OnSendBandwidthRequest(H323RasPDU & pdu, H225_BandwidthRequest & brq)
 {
   OnSendBandwidthRequest(brq);
-  pdu.Prepare(brq.m_tokens, H225_BandwidthRequest::e_tokens,
-              brq.m_cryptoTokens, H225_BandwidthRequest::e_cryptoTokens);
+  pdu.Prepare(brq);
 }
 
 
@@ -937,9 +911,7 @@ void H225_RAS::OnSendBandwidthRequest(H225_BandwidthRequest & /*brq*/)
 
 PBoolean H225_RAS::OnReceiveBandwidthRequest(const H323RasPDU & pdu, const H225_BandwidthRequest & brq)
 {
-  if (!CheckCryptoTokens(pdu,
-                         brq.m_tokens, H225_BandwidthRequest::e_tokens,
-                         brq.m_cryptoTokens, H225_BandwidthRequest::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, brq))
     return false;
 
   return OnReceiveBandwidthRequest(brq);
@@ -955,8 +927,7 @@ PBoolean H225_RAS::OnReceiveBandwidthRequest(const H225_BandwidthRequest & /*brq
 void H225_RAS::OnSendBandwidthConfirm(H323RasPDU & pdu, H225_BandwidthConfirm & bcf)
 {
   OnSendBandwidthConfirm(bcf);
-  pdu.Prepare(bcf.m_tokens, H225_BandwidthConfirm::e_tokens,
-              bcf.m_cryptoTokens, H225_BandwidthConfirm::e_cryptoTokens);
+  pdu.Prepare(bcf);
 }
 
 
@@ -970,9 +941,7 @@ PBoolean H225_RAS::OnReceiveBandwidthConfirm(const H323RasPDU & pdu, const H225_
   if (!CheckForResponse(H225_RasMessage::e_bandwidthRequest, bcf.m_requestSeqNum))
     return false;
 
-  if (!CheckCryptoTokens(pdu,
-                         bcf.m_tokens, H225_BandwidthConfirm::e_tokens,
-                         bcf.m_cryptoTokens, H225_BandwidthConfirm::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, bcf))
     return false;
 
   return OnReceiveBandwidthConfirm(bcf);
@@ -988,8 +957,7 @@ PBoolean H225_RAS::OnReceiveBandwidthConfirm(const H225_BandwidthConfirm & /*bcf
 void H225_RAS::OnSendBandwidthReject(H323RasPDU & pdu, H225_BandwidthReject & brj)
 {
   OnSendBandwidthReject(brj);
-  pdu.Prepare(brj.m_tokens, H225_BandwidthReject::e_tokens,
-              brj.m_cryptoTokens, H225_BandwidthReject::e_cryptoTokens);
+  pdu.Prepare(brj);
 }
 
 
@@ -1003,9 +971,7 @@ PBoolean H225_RAS::OnReceiveBandwidthReject(const H323RasPDU & pdu, const H225_B
   if (!CheckForResponse(H225_RasMessage::e_bandwidthRequest, brj.m_requestSeqNum, &brj.m_rejectReason))
     return false;
 
-  if (!CheckCryptoTokens(pdu,
-                         brj.m_tokens, H225_BandwidthReject::e_tokens,
-                         brj.m_cryptoTokens, H225_BandwidthReject::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, brj))
     return false;
 
   return OnReceiveBandwidthReject(brj);
@@ -1021,8 +987,7 @@ PBoolean H225_RAS::OnReceiveBandwidthReject(const H225_BandwidthReject & /*brj*/
 void H225_RAS::OnSendDisengageRequest(H323RasPDU & pdu, H225_DisengageRequest & drq)
 {
   OnSendDisengageRequest(drq);
-  pdu.Prepare(drq.m_tokens, H225_DisengageRequest::e_tokens,
-              drq.m_cryptoTokens, H225_DisengageRequest::e_cryptoTokens);
+  pdu.Prepare(drq);
 
 #if OPAL_H460
   SendGenericData(this, H460_MessageType::e_disengagerequest, drq);
@@ -1037,9 +1002,7 @@ void H225_RAS::OnSendDisengageRequest(H225_DisengageRequest & /*drq*/)
 
 PBoolean H225_RAS::OnReceiveDisengageRequest(const H323RasPDU & pdu, const H225_DisengageRequest & drq)
 {
-  if (!CheckCryptoTokens(pdu,
-                         drq.m_tokens, H225_DisengageRequest::e_tokens,
-                         drq.m_cryptoTokens, H225_DisengageRequest::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, drq))
     return false;
 
 #if OPAL_H460
@@ -1059,8 +1022,7 @@ PBoolean H225_RAS::OnReceiveDisengageRequest(const H225_DisengageRequest & /*drq
 void H225_RAS::OnSendDisengageConfirm(H323RasPDU & pdu, H225_DisengageConfirm & dcf)
 {
   OnSendDisengageConfirm(dcf);
-  pdu.Prepare(dcf.m_tokens, H225_DisengageConfirm::e_tokens,
-              dcf.m_cryptoTokens, H225_DisengageConfirm::e_cryptoTokens);
+  pdu.Prepare(dcf);
 
 #if OPAL_H460
   SendGenericData(this, H460_MessageType::e_disengageconfirm, dcf);
@@ -1078,9 +1040,7 @@ PBoolean H225_RAS::OnReceiveDisengageConfirm(const H323RasPDU & pdu, const H225_
   if (!CheckForResponse(H225_RasMessage::e_disengageRequest, dcf.m_requestSeqNum))
     return false;
 
-  if (!CheckCryptoTokens(pdu,
-                         dcf.m_tokens, H225_DisengageConfirm::e_tokens,
-                         dcf.m_cryptoTokens, H225_DisengageConfirm::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, dcf))
     return false;
 
 #if OPAL_H460
@@ -1100,8 +1060,7 @@ PBoolean H225_RAS::OnReceiveDisengageConfirm(const H225_DisengageConfirm & /*dcf
 void H225_RAS::OnSendDisengageReject(H323RasPDU & pdu, H225_DisengageReject & drj)
 {
   OnSendDisengageReject(drj);
-  pdu.Prepare(drj.m_tokens, H225_DisengageReject::e_tokens,
-              drj.m_cryptoTokens, H225_DisengageReject::e_cryptoTokens);
+  pdu.Prepare(drj);
 }
 
 
@@ -1115,9 +1074,7 @@ PBoolean H225_RAS::OnReceiveDisengageReject(const H323RasPDU & pdu, const H225_D
   if (!CheckForResponse(H225_RasMessage::e_disengageRequest, drj.m_requestSeqNum, &drj.m_rejectReason))
     return false;
 
-  if (!CheckCryptoTokens(pdu,
-                         drj.m_tokens, H225_DisengageReject::e_tokens,
-                         drj.m_cryptoTokens, H225_DisengageReject::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, drj))
     return false;
 
   return OnReceiveDisengageReject(drj);
@@ -1138,8 +1095,7 @@ void H225_RAS::OnSendLocationRequest(H323RasPDU & pdu, H225_LocationRequest & lr
   SendGenericData(this, H460_MessageType::e_locationRequest, lrq);
 #endif
     
-  pdu.Prepare(lrq.m_tokens, H225_LocationRequest::e_tokens,
-              lrq.m_cryptoTokens, H225_LocationRequest::e_cryptoTokens);
+  pdu.Prepare(lrq);
 }
 
 
@@ -1150,9 +1106,7 @@ void H225_RAS::OnSendLocationRequest(H225_LocationRequest & /*lrq*/)
 
 PBoolean H225_RAS::OnReceiveLocationRequest(const H323RasPDU & pdu, const H225_LocationRequest & lrq)
 {
-  if (!CheckCryptoTokens(pdu,
-                         lrq.m_tokens, H225_LocationRequest::e_tokens,
-                         lrq.m_cryptoTokens, H225_LocationRequest::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, lrq))
     return false;
     
 #if OPAL_H460
@@ -1177,8 +1131,7 @@ void H225_RAS::OnSendLocationConfirm(H323RasPDU & pdu, H225_LocationConfirm & lc
   SendGenericData(this, H460_MessageType::e_locationConfirm, lcf);
 #endif
     
-  pdu.Prepare(lcf.m_tokens, H225_LocationRequest::e_tokens,
-              lcf.m_cryptoTokens, H225_LocationRequest::e_cryptoTokens);
+  pdu.Prepare(lcf);
 }
 
 
@@ -1219,8 +1172,7 @@ void H225_RAS::OnSendLocationReject(H323RasPDU & pdu, H225_LocationReject & lrj)
   SendGenericData(this, H460_MessageType::e_locationReject, lrj);
 #endif
     
-  pdu.Prepare(lrj.m_tokens, H225_LocationReject::e_tokens,
-              lrj.m_cryptoTokens, H225_LocationReject::e_cryptoTokens);
+  pdu.Prepare(lrj);
 }
 
 
@@ -1234,9 +1186,7 @@ PBoolean H225_RAS::OnReceiveLocationReject(const H323RasPDU & pdu, const H225_Lo
   if (!CheckForResponse(H225_RasMessage::e_locationRequest, lrj.m_requestSeqNum, &lrj.m_rejectReason))
     return false;
 
-  if (!CheckCryptoTokens(pdu,
-                         lrj.m_tokens, H225_LocationReject::e_tokens,
-                         lrj.m_cryptoTokens, H225_LocationReject::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, lrj))
     return false;
   
 #if OPAL_H460
@@ -1256,8 +1206,7 @@ PBoolean H225_RAS::OnReceiveLocationReject(const H225_LocationReject & /*lrj*/)
 void H225_RAS::OnSendInfoRequest(H323RasPDU & pdu, H225_InfoRequest & irq)
 {
   OnSendInfoRequest(irq);
-  pdu.Prepare(irq.m_tokens, H225_InfoRequest::e_tokens,
-              irq.m_cryptoTokens, H225_InfoRequest::e_cryptoTokens);
+  pdu.Prepare(irq);
 
 #if OPAL_H460
   SendGenericData(this, H460_MessageType::e_inforequest, irq);
@@ -1272,9 +1221,7 @@ void H225_RAS::OnSendInfoRequest(H225_InfoRequest & /*irq*/)
 
 PBoolean H225_RAS::OnReceiveInfoRequest(const H323RasPDU & pdu, const H225_InfoRequest & irq)
 {
-  if (!CheckCryptoTokens(pdu,
-                         irq.m_tokens, H225_InfoRequest::e_tokens,
-                         irq.m_cryptoTokens, H225_InfoRequest::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, irq))
     return false;
 
 #if OPAL_H460
@@ -1294,8 +1241,7 @@ PBoolean H225_RAS::OnReceiveInfoRequest(const H225_InfoRequest & /*irq*/)
 void H225_RAS::OnSendInfoRequestResponse(H323RasPDU & pdu, H225_InfoRequestResponse & irr)
 {
   OnSendInfoRequestResponse(irr);
-  pdu.Prepare(irr.m_tokens, H225_InfoRequestResponse::e_tokens,
-              irr.m_cryptoTokens, H225_InfoRequestResponse::e_cryptoTokens);
+  pdu.Prepare(irr);
 
 #if OPAL_H460
   SendGenericData(this, H460_MessageType::e_inforequestresponse, irr);
@@ -1313,9 +1259,7 @@ PBoolean H225_RAS::OnReceiveInfoRequestResponse(const H323RasPDU & pdu, const H2
   if (!CheckForResponse(H225_RasMessage::e_infoRequest, irr.m_requestSeqNum))
     return false;
 
-  if (!CheckCryptoTokens(pdu,
-                         irr.m_tokens, H225_InfoRequestResponse::e_tokens,
-                         irr.m_cryptoTokens, H225_InfoRequestResponse::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, irr))
     return false;
 
 #if OPAL_H460
@@ -1340,8 +1284,7 @@ void H225_RAS::OnSendNonStandardMessage(H323RasPDU & pdu, H225_NonStandardMessag
   SendGenericData(this, H460_MessageType::e_nonStandardMessage, nsm);
 #endif
     
-  pdu.Prepare(nsm.m_tokens, H225_InfoRequestResponse::e_tokens,
-              nsm.m_cryptoTokens, H225_InfoRequestResponse::e_cryptoTokens);
+  pdu.Prepare(nsm);
 }
 
 
@@ -1352,9 +1295,7 @@ void H225_RAS::OnSendNonStandardMessage(H225_NonStandardMessage & /*nsm*/)
 
 PBoolean H225_RAS::OnReceiveNonStandardMessage(const H323RasPDU & pdu, const H225_NonStandardMessage & nsm)
 {
-  if (!CheckCryptoTokens(pdu,
-                         nsm.m_tokens, H225_NonStandardMessage::e_tokens,
-                         nsm.m_cryptoTokens, H225_NonStandardMessage::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, nsm))
     return false;
     
 #if OPAL_H460
@@ -1374,8 +1315,7 @@ PBoolean H225_RAS::OnReceiveNonStandardMessage(const H225_NonStandardMessage & /
 void H225_RAS::OnSendUnknownMessageResponse(H323RasPDU & pdu, H225_UnknownMessageResponse & umr)
 {
   OnSendUnknownMessageResponse(umr);
-  pdu.Prepare(umr.m_tokens, H225_UnknownMessageResponse::e_tokens,
-              umr.m_cryptoTokens, H225_UnknownMessageResponse::e_cryptoTokens);
+  pdu.Prepare(umr);
 }
 
 
@@ -1386,9 +1326,7 @@ void H225_RAS::OnSendUnknownMessageResponse(H225_UnknownMessageResponse & /*umr*
 
 PBoolean H225_RAS::OnReceiveUnknownMessageResponse(const H323RasPDU & pdu, const H225_UnknownMessageResponse & umr)
 {
-  if (!CheckCryptoTokens(pdu,
-                         umr.m_tokens, H225_UnknownMessageResponse::e_tokens,
-                         umr.m_cryptoTokens, H225_UnknownMessageResponse::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, umr))
     return false;
 
   return OnReceiveUnknownMessageResponse(umr);
@@ -1404,8 +1342,7 @@ PBoolean H225_RAS::OnReceiveUnknownMessageResponse(const H225_UnknownMessageResp
 void H225_RAS::OnSendRequestInProgress(H323RasPDU & pdu, H225_RequestInProgress & rip)
 {
   OnSendRequestInProgress(rip);
-  pdu.Prepare(rip.m_tokens, H225_RequestInProgress::e_tokens,
-              rip.m_cryptoTokens, H225_RequestInProgress::e_cryptoTokens);
+  pdu.Prepare(rip);
 }
 
 
@@ -1417,8 +1354,7 @@ void H225_RAS::OnSendRequestInProgress(H225_RequestInProgress & /*rip*/)
 void H225_RAS::OnSendResourcesAvailableIndicate(H323RasPDU & pdu, H225_ResourcesAvailableIndicate & rai)
 {
   OnSendResourcesAvailableIndicate(rai);
-  pdu.Prepare(rai.m_tokens, H225_ResourcesAvailableIndicate::e_tokens,
-              rai.m_cryptoTokens, H225_ResourcesAvailableIndicate::e_cryptoTokens);
+  pdu.Prepare(rai);
 }
 
 
@@ -1429,9 +1365,7 @@ void H225_RAS::OnSendResourcesAvailableIndicate(H225_ResourcesAvailableIndicate 
 
 PBoolean H225_RAS::OnReceiveResourcesAvailableIndicate(const H323RasPDU & pdu, const H225_ResourcesAvailableIndicate & rai)
 {
-  if (!CheckCryptoTokens(pdu,
-                         rai.m_tokens, H225_ResourcesAvailableIndicate::e_tokens,
-                         rai.m_cryptoTokens, H225_ResourcesAvailableIndicate::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, rai))
     return false;
 
   return OnReceiveResourcesAvailableIndicate(rai);
@@ -1447,8 +1381,7 @@ PBoolean H225_RAS::OnReceiveResourcesAvailableIndicate(const H225_ResourcesAvail
 void H225_RAS::OnSendResourcesAvailableConfirm(H323RasPDU & pdu, H225_ResourcesAvailableConfirm & rac)
 {
   OnSendResourcesAvailableConfirm(rac);
-  pdu.Prepare(rac.m_tokens, H225_ResourcesAvailableConfirm::e_tokens,
-              rac.m_cryptoTokens, H225_ResourcesAvailableConfirm::e_cryptoTokens);
+  pdu.Prepare(rac);
 }
 
 
@@ -1462,9 +1395,7 @@ PBoolean H225_RAS::OnReceiveResourcesAvailableConfirm(const H323RasPDU & pdu, co
   if (!CheckForResponse(H225_RasMessage::e_resourcesAvailableIndicate, rac.m_requestSeqNum))
     return false;
 
-  if (!CheckCryptoTokens(pdu,
-                         rac.m_tokens, H225_ResourcesAvailableConfirm::e_tokens,
-                         rac.m_cryptoTokens, H225_ResourcesAvailableConfirm::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, rac))
     return false;
 
   return OnReceiveResourcesAvailableConfirm(rac);
@@ -1485,8 +1416,7 @@ void H225_RAS::OnSendServiceControlIndication(H323RasPDU & pdu, H225_ServiceCont
   SendGenericData(this, H460_MessageType::e_serviceControlIndication, sci);
 #endif
     
-  pdu.Prepare(sci.m_tokens, H225_ServiceControlIndication::e_tokens,
-              sci.m_cryptoTokens, H225_ServiceControlIndication::e_cryptoTokens);
+  pdu.Prepare(sci);
 }
 
 
@@ -1497,9 +1427,7 @@ void H225_RAS::OnSendServiceControlIndication(H225_ServiceControlIndication & /*
 
 PBoolean H225_RAS::OnReceiveServiceControlIndication(const H323RasPDU & pdu, const H225_ServiceControlIndication & sci)
 {
-  if (!CheckCryptoTokens(pdu,
-                         sci.m_tokens, H225_ServiceControlIndication::e_tokens,
-                         sci.m_cryptoTokens, H225_ServiceControlIndication::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, sci))
     return false;
     
 #if OPAL_H460
@@ -1524,8 +1452,7 @@ void H225_RAS::OnSendServiceControlResponse(H323RasPDU & pdu, H225_ServiceContro
   SendGenericData(this, H460_MessageType::e_serviceControlResponse, scr);
 #endif
     
-  pdu.Prepare(scr.m_tokens, H225_ResourcesAvailableConfirm::e_tokens,
-              scr.m_cryptoTokens, H225_ResourcesAvailableConfirm::e_cryptoTokens);
+  pdu.Prepare(scr);
 }
 
 
@@ -1539,9 +1466,7 @@ PBoolean H225_RAS::OnReceiveServiceControlResponse(const H323RasPDU & pdu, const
   if (!CheckForResponse(H225_RasMessage::e_serviceControlIndication, scr.m_requestSeqNum))
     return false;
 
-  if (!CheckCryptoTokens(pdu,
-                         scr.m_tokens, H225_ServiceControlResponse::e_tokens,
-                         scr.m_cryptoTokens, H225_ServiceControlResponse::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, scr))
     return false;
   
 #if OPAL_H460
@@ -1561,8 +1486,7 @@ PBoolean H225_RAS::OnReceiveServiceControlResponse(const H225_ServiceControlResp
 void H225_RAS::OnSendInfoRequestAck(H323RasPDU & pdu, H225_InfoRequestAck & iack)
 {
   OnSendInfoRequestAck(iack);
-  pdu.Prepare(iack.m_tokens, H225_InfoRequestAck::e_tokens,
-              iack.m_cryptoTokens, H225_InfoRequestAck::e_cryptoTokens);
+  pdu.Prepare(iack);
 }
 
 
@@ -1576,9 +1500,7 @@ PBoolean H225_RAS::OnReceiveInfoRequestAck(const H323RasPDU & pdu, const H225_In
   if (!CheckForResponse(H225_RasMessage::e_infoRequestResponse, iack.m_requestSeqNum))
     return false;
 
-  if (!CheckCryptoTokens(pdu,
-                         iack.m_tokens, H225_InfoRequestAck::e_tokens,
-                         iack.m_cryptoTokens, H225_InfoRequestAck::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, iack))
     return false;
 
   return OnReceiveInfoRequestAck(iack);
@@ -1594,8 +1516,7 @@ PBoolean H225_RAS::OnReceiveInfoRequestAck(const H225_InfoRequestAck & /*iack*/)
 void H225_RAS::OnSendInfoRequestNak(H323RasPDU & pdu, H225_InfoRequestNak & inak)
 {
   OnSendInfoRequestNak(inak);
-  pdu.Prepare(inak.m_tokens, H225_InfoRequestAck::e_tokens,
-              inak.m_cryptoTokens, H225_InfoRequestAck::e_cryptoTokens);
+  pdu.Prepare(inak);
 }
 
 
@@ -1609,9 +1530,7 @@ PBoolean H225_RAS::OnReceiveInfoRequestNak(const H323RasPDU & pdu, const H225_In
   if (!CheckForResponse(H225_RasMessage::e_infoRequestResponse, inak.m_requestSeqNum, &inak.m_nakReason))
     return false;
 
-  if (!CheckCryptoTokens(pdu,
-                         inak.m_tokens, H225_InfoRequestNak::e_tokens,
-                         inak.m_cryptoTokens, H225_InfoRequestNak::e_cryptoTokens))
+  if (!CheckCryptoTokens(pdu, inak))
     return false;
 
   return OnReceiveInfoRequestNak(inak);

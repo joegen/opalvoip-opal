@@ -52,7 +52,7 @@
 
 H235Authenticator::H235Authenticator()
 {
-  enabled = true;
+  m_enabled = true;
   sentRandomSequenceNumber = PRandom::Number()&INT_MAX;
   lastRandomSequenceNumber = 0;
   lastTimestamp = 0;
@@ -66,27 +66,24 @@ void H235Authenticator::PrintOn(ostream & strm) const
   PWaitAndSignal m(mutex);
 
   strm << GetName() << '<';
-  if (IsActive())
-    strm << "active";
-  else if (!enabled)
+  if (!IsEnabled())
     strm << "disabled";
   else if (password.IsEmpty())
     strm << "no-pwd";
   else
-    strm << "inactive";
+    strm << "active";
   strm << '>';
 }
 
 
-PBoolean H235Authenticator::PrepareTokens(PASN_Array & clearTokens,
-                                          PASN_Array & cryptoTokens)
+PBoolean H235Authenticator::PrepareTokens(PASN_Array & clearTokens, PASN_Array & cryptoTokens, unsigned rasPDU)
 {
   PWaitAndSignal m(mutex);
 
-  if (!IsActive())
+  if (!IsEnabled() || !IsSecuredPDU(rasPDU, false))
     return false;
 
-  H235_ClearToken * clearToken = CreateClearToken();
+  H235_ClearToken * clearToken = CreateClearToken(rasPDU);
   if (clearToken != NULL) {
     // Check if already have a token of thsi type and overwrite it
     for (PINDEX i = 0; i < clearTokens.GetSize(); i++) {
@@ -104,19 +101,31 @@ PBoolean H235Authenticator::PrepareTokens(PASN_Array & clearTokens,
   }
 
   H225_CryptoH323Token * cryptoToken;
-  if ((cryptoToken = CreateCryptoToken(false)) != NULL)
+  if ((cryptoToken = CreateCryptoToken(false, rasPDU)) != NULL)
     cryptoTokens.Append(cryptoToken);
 
-  if ((cryptoToken = CreateCryptoToken(true)) != NULL)
+  if ((cryptoToken = CreateCryptoToken(true, rasPDU)) != NULL)
     cryptoTokens.Append(cryptoToken);
 
   return true;
 }
 
 
+H235_ClearToken * H235Authenticator::CreateClearToken(unsigned)
+{
+  return CreateClearToken();
+}
+
+
 H235_ClearToken * H235Authenticator::CreateClearToken()
 {
   return NULL;
+}
+
+
+H225_CryptoH323Token * H235Authenticator::CreateCryptoToken(bool digits, unsigned)
+{
+  return CreateCryptoToken(digits);
 }
 
 
@@ -139,7 +148,7 @@ H235Authenticator::ValidationResult H235Authenticator::ValidateTokens(
 {
   PWaitAndSignal m(mutex);
 
-  if (!IsActive())
+  if (!IsEnabled())
     return e_Disabled;
 
   PINDEX i;
@@ -186,12 +195,6 @@ PBoolean H235Authenticator::IsSecuredPDU(unsigned, PBoolean) const
 }
 
 
-PBoolean H235Authenticator::IsActive() const
-{
-  return enabled && !password;
-}
-
-
 PBoolean H235Authenticator::AddCapability(unsigned mechanism,
                                       const PString & oid,
                                       H225_ArrayOf_AuthenticationMechanism & mechanisms,
@@ -199,9 +202,8 @@ PBoolean H235Authenticator::AddCapability(unsigned mechanism,
 {
   PWaitAndSignal m(mutex);
 
-  if (!IsActive()) {
-    PTRACE(2, "RAS\tAuthenticator " << *this
-            << " not active during GRQ SetCapability negotiation");
+  if (!IsEnabled()) {
+    PTRACE(3, "RAS\tAuthenticator " << *this << " not enabled during GRQ SetCapability negotiation");
     return false;
   }
 
@@ -232,11 +234,11 @@ PBoolean H235Authenticator::AddCapability(unsigned mechanism,
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void H235Authenticators::PreparePDU(H323TransactionPDU & pdu,
-                                    PASN_Array & clearTokens,
-                                    unsigned clearOptionalField,
-                                    PASN_Array & cryptoTokens,
-                                    unsigned cryptoOptionalField)
+void H235Authenticators::InternalPreparePDU(H323TransactionPDU & pdu,
+                                            PASN_Array & clearTokens,
+                                            unsigned clearOptionalField,
+                                            PASN_Array & cryptoTokens,
+                                            unsigned cryptoOptionalField)
 {
   // Clean out any crypto tokens in case this is a retry message
   // and we are regenerating the tokens due to possible timestamp
@@ -244,9 +246,9 @@ void H235Authenticators::PreparePDU(H323TransactionPDU & pdu,
   // other endpoints and should be passed through unchanged.
   cryptoTokens.RemoveAll();
 
+  unsigned pduTag = pdu.GetChoice().GetTag();
   for (iterator iterAuth = begin(); iterAuth != end(); ++iterAuth) {
-    if (iterAuth->IsSecuredPDU(pdu.GetChoice().GetTag(), false) &&
-        iterAuth->PrepareTokens(clearTokens, cryptoTokens)) {
+    if (iterAuth->IsEnabled() && iterAuth->PrepareTokens(clearTokens, cryptoTokens, pduTag)) {
       PTRACE(4, "H235RAS\tPrepared PDU with authenticator " << *iterAuth);
     }
   }
@@ -261,16 +263,18 @@ void H235Authenticators::PreparePDU(H323TransactionPDU & pdu,
 
 
 H235Authenticator::ValidationResult
-       H235Authenticators::ValidatePDU(const H323TransactionPDU & pdu,
-                                       const PASN_Array & clearTokens,
-                                       unsigned clearOptionalField,
-                                       const PASN_Array & cryptoTokens,
-                                       unsigned cryptoOptionalField,
-                                       const PBYTEArray & rawPDU)
+       H235Authenticators::InternalValidatePDU(const H323TransactionPDU & pdu,
+                                               const PASN_Array & clearTokens,
+                                               unsigned clearOptionalField,
+                                               const PASN_Array & cryptoTokens,
+                                               unsigned cryptoOptionalField,
+                                               const PBYTEArray & rawPDU)
 {
+  unsigned pduTag = pdu.GetChoice().GetTag();
+
   PBoolean noneActive = true;
   for (iterator iterAuth = begin(); iterAuth != end(); ++iterAuth) {
-    if (iterAuth->IsActive() && iterAuth->IsSecuredPDU(pdu.GetChoice().GetTag(), true)) {
+    if (iterAuth->IsEnabled() && iterAuth->IsSecuredPDU(pduTag, true)) {
       noneActive = false;
       break;
     }
@@ -289,7 +293,7 @@ H235Authenticator::ValidationResult
   }
 
   for (iterator iterAuth = begin(); iterAuth != end(); ++iterAuth) {
-    if (iterAuth->IsSecuredPDU(pdu.GetChoice().GetTag(), true)) {
+    if (iterAuth->IsSecuredPDU(pduTag, true)) {
       H235Authenticator::ValidationResult result = iterAuth->ValidateTokens(clearTokens, cryptoTokens, rawPDU);
       switch (result) {
         case H235Authenticator::e_OK :
@@ -318,9 +322,10 @@ H235Authenticator::ValidationResult
 
 ///////////////////////////////////////////////////////////////////////////////
 
-PFACTORY_CREATE(PFactory<H235Authenticator>, H235AuthSimpleMD5, "SimpleMD5", false);
-
+static const char Name_MD5[] = "MD5";
 static const char OID_MD5[] = "1.2.840.113549.2.5";
+
+PFACTORY_CREATE(PFactory<H235Authenticator>, H235AuthSimpleMD5, Name_MD5, false);
 
 H235AuthSimpleMD5::H235AuthSimpleMD5()
 {
@@ -336,13 +341,13 @@ PObject * H235AuthSimpleMD5::Clone() const
 
 const char * H235AuthSimpleMD5::GetName() const
 {
-  return "MD5";
+  return Name_MD5;
 }
 
 
 H225_CryptoH323Token * H235AuthSimpleMD5::CreateCryptoToken(bool digits)
 {
-  if (!IsActive())
+  if (!IsEnabled())
     return NULL;
 
   if (localId.IsEmpty()) {
@@ -408,7 +413,7 @@ H235Authenticator::ValidationResult H235AuthSimpleMD5::ValidateCryptoToken(
                                              const H225_CryptoH323Token & cryptoToken,
                                              const PBYTEArray &)
 {
-  if (!IsActive())
+  if (!IsEnabled())
     return e_Disabled;
 
   // verify the token is of correct type
@@ -460,6 +465,7 @@ H235Authenticator::ValidationResult H235AuthSimpleMD5::ValidateCryptoToken(
 PBoolean H235AuthSimpleMD5::IsCapability(const H235_AuthenticationMechanism & mechanism,
                                      const PASN_ObjectId & algorithmOID)
 {
+return false;
   return mechanism.GetTag() == H235_AuthenticationMechanism::e_pwdHash &&
          algorithmOID.AsString() == OID_MD5;
 }
@@ -474,6 +480,9 @@ PBoolean H235AuthSimpleMD5::SetCapability(H225_ArrayOf_AuthenticationMechanism &
 
 PBoolean H235AuthSimpleMD5::IsSecuredPDU(unsigned rasPDU, PBoolean received) const
 {
+  if (password.IsEmpty())
+    return false;
+
   switch (rasPDU) {
     case H225_RasMessage::e_registrationRequest :
     case H225_RasMessage::e_unregistrationRequest :
@@ -491,9 +500,10 @@ PBoolean H235AuthSimpleMD5::IsSecuredPDU(unsigned rasPDU, PBoolean received) con
 
 ///////////////////////////////////////////////////////////////////////////////
 
-PFACTORY_CREATE(PFactory<H235Authenticator>, H235AuthCAT, "SimpleCAT", false);
-
+static const char Name_CAT[] = "CAT";
 static const char OID_CAT[] = "1.2.840.113548.10.1.2.1";
+
+PFACTORY_CREATE(PFactory<H235Authenticator>, H235AuthCAT, Name_CAT, false);
 
 H235AuthCAT::H235AuthCAT()
 {
@@ -509,14 +519,19 @@ PObject * H235AuthCAT::Clone() const
 
 const char * H235AuthCAT::GetName() const
 {
-  return "CAT";
+  return Name_CAT;
 }
 
 
 H235_ClearToken * H235AuthCAT::CreateClearToken()
 {
-  if (!IsActive())
+  if (!IsEnabled())
     return NULL;
+
+  if (password.IsEmpty()) {
+    PTRACE(4, "H235RAS\tH235AuthCAT requires password.");
+    return NULL;
+  }
 
   if (localId.IsEmpty()) {
     PTRACE(2, "H235RAS\tH235AuthCAT requires local ID for encoding.");
@@ -554,11 +569,16 @@ H235_ClearToken * H235AuthCAT::CreateClearToken()
 }
 
 
-H235Authenticator::ValidationResult
-        H235AuthCAT::ValidateClearToken(const H235_ClearToken & clearToken)
+H235Authenticator::ValidationResult H235AuthCAT::ValidateClearToken(const H235_ClearToken & clearToken)
 {
-  if (!IsActive())
+  if (!IsEnabled())
     return e_Disabled;
+
+  if (password.IsEmpty()) {
+    PTRACE(4, "H235RAS\tH235AuthCAT requires password.");
+    return e_BadPassword;
+  }
+
 
   if (clearToken.m_tokenOID != OID_CAT)
     return e_Absent;
@@ -637,6 +657,7 @@ PBoolean H235AuthCAT::IsCapability(const H235_AuthenticationMechanism & mechanis
     return false;
 
   const H235_AuthenticationBES & bes = mechanism;
+return false;
   return bes.GetTag() == H235_AuthenticationBES::e_radius;
 }
 
@@ -656,6 +677,9 @@ PBoolean H235AuthCAT::SetCapability(H225_ArrayOf_AuthenticationMechanism & mecha
 
 PBoolean H235AuthCAT::IsSecuredPDU(unsigned rasPDU, PBoolean received) const
 {
+  if (password.IsEmpty())
+    return false;
+
   switch (rasPDU) {
     case H225_RasMessage::e_registrationRequest :
     case H225_RasMessage::e_admissionRequest :

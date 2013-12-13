@@ -75,8 +75,7 @@ H323TransactionPDU * H501Transaction::CreateRIP(unsigned sequenceNumber,
 
 H235Authenticator::ValidationResult H501Transaction::ValidatePDU() const
 {
-  return request->Validate(requestCommon.m_tokens, H501_MessageCommonInfo::e_tokens,
-                           requestCommon.m_cryptoTokens, H501_MessageCommonInfo::e_cryptoTokens);
+  return request->Validate(requestCommon);
 }
 
 

@@ -70,10 +70,13 @@ class H235Authenticator : public PObject
 
     virtual PBoolean PrepareTokens(
       PASN_Array & clearTokens,
-      PASN_Array & cryptoTokens
+      PASN_Array & cryptoTokens,
+      unsigned rasPDU
     );
 
+    virtual H235_ClearToken * CreateClearToken(unsigned rasPDU);
     virtual H235_ClearToken * CreateClearToken();
+    virtual H225_CryptoH323Token * CreateCryptoToken(bool digits, unsigned rasPDU);
     virtual H225_CryptoH323Token * CreateCryptoToken(bool digits);
 
     virtual PBoolean Finalise(
@@ -122,12 +125,11 @@ class H235Authenticator : public PObject
       PBoolean received
     ) const;
 
-    virtual PBoolean IsActive() const;
-
     void Enable(
       PBoolean enab = true
-    ) { enabled = enab; }
-    void Disable() { enabled = false; }
+    ) { m_enabled = enab; }
+    void Disable() { m_enabled = false; }
+    bool IsEnabled() const { return m_enabled; }
 
     const PString & GetRemoteId() const { return remoteId; }
     void SetRemoteId(const PString & id) { remoteId = id; }
@@ -156,7 +158,7 @@ class H235Authenticator : public PObject
       H225_ArrayOf_PASN_ObjectId & algorithmOIDs
     );
 
-    PBoolean     enabled;
+    bool     m_enabled;
 
     PString  remoteId;      // ID of remote entity
     PString  localId;       // ID of local entity
@@ -173,20 +175,20 @@ class H235Authenticator : public PObject
 
   private:
     P_REMOVE_VIRTUAL(H225_CryptoH323Token *,CreateCryptoToken(),NULL);
+    P_REMOVE_VIRTUAL(PBoolean,PrepareTokens(PASN_Array &,PASN_Array &),false);
 };
 
 
 PDECLARE_LIST(H235Authenticators, H235Authenticator)
-  public:
-    void PreparePDU(
+  protected:
+    void InternalPreparePDU(
       H323TransactionPDU & pdu,
       PASN_Array & clearTokens,
       unsigned clearOptionalField,
       PASN_Array & cryptoTokens,
       unsigned cryptoOptionalField
     );
-
-    H235Authenticator::ValidationResult ValidatePDU(
+    H235Authenticator::ValidationResult InternalValidatePDU(
       const H323TransactionPDU & pdu,
       const PASN_Array & clearTokens,
       unsigned clearOptionalField,
@@ -194,6 +196,15 @@ PDECLARE_LIST(H235Authenticators, H235Authenticator)
       unsigned cryptoOptionalField,
       const PBYTEArray & rawPDU
     );
+  public:
+    template <class RAS> void PreparePDU(H323TransactionPDU & pdu, RAS & ras)
+    {
+      InternalPreparePDU(pdu, ras.m_tokens, RAS::e_tokens, ras.m_cryptoTokens, RAS::e_cryptoTokens);
+    }
+    template <class RAS> H235Authenticator::ValidationResult ValidatePDU(const H323TransactionPDU & pdu,const RAS & ras, const PBYTEArray & rawPDU)
+    {
+      return InternalValidatePDU(pdu, ras.m_tokens, RAS::e_tokens, ras.m_cryptoTokens, RAS::e_cryptoTokens, rawPDU);
+    }
 };
 
 
@@ -281,6 +292,53 @@ PFACTORY_LOAD(H235AuthCAT);
 
 
 #if OPAL_PTLIB_SSL
+
+/** This class embodies a simple password encoded using DES-ECB encryption.
+*/
+class H235AuthPwd_DES_ECB : public H235Authenticator
+{
+    PCLASSINFO(H235AuthPwd_DES_ECB, H235Authenticator);
+  public:
+    H235AuthPwd_DES_ECB();
+
+    PObject * Clone() const;
+
+    virtual const char * GetName() const;
+
+    virtual H235_ClearToken * CreateClearToken(unsigned rasPDU);
+    virtual H225_CryptoH323Token * CreateCryptoToken(bool digits, unsigned rasPDU);
+
+    virtual ValidationResult ValidateClearToken(
+      const H235_ClearToken & clearToken
+    );
+    virtual ValidationResult ValidateCryptoToken(
+      const H225_CryptoH323Token & cryptoToken,
+      const PBYTEArray & rawPDU
+    );
+
+    virtual PBoolean SetCapability(
+      H225_ArrayOf_AuthenticationMechanism & mechansim,
+      H225_ArrayOf_PASN_ObjectId & algorithmOIDs
+    );
+
+    virtual PBoolean IsCapability(
+      const H235_AuthenticationMechanism & mechansim,
+      const PASN_ObjectId & algorithmOID
+    );
+
+    virtual PBoolean IsSecuredPDU(
+      unsigned rasPDU,
+      PBoolean received
+    ) const;
+
+  protected:
+    bool EncryptToken(PBYTEArray & encryptedToken);
+
+    PBYTEArray m_encodedToken;
+};
+
+PFACTORY_LOAD(H235AuthPwd_DES_ECB);
+
 
 /** This class embodies the H.235 "base line Procedure 1" from Annex D.
 */
