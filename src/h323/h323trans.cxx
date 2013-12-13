@@ -191,7 +191,7 @@ void H323Transactor::PrintOn(ostream & strm) const
   if (transport == NULL)
     strm << "<<no-transport>>";
   else
-    strm << transport->GetRemoteAddress();
+    strm << transport->GetLocalAddress();
 }
 
 
@@ -466,11 +466,7 @@ PBoolean H323Transactor::HandleRequestInProgress(const H323TransactionPDU & pdu,
 }
 
 
-PBoolean H323Transactor::CheckCryptoTokens(const H323TransactionPDU & pdu,
-                                       const PASN_Array & clearTokens,
-                                       unsigned clearOptionalField,
-                                       const PASN_Array & cryptoTokens,
-                                       unsigned cryptoOptionalField)
+bool H323Transactor::CheckCryptoTokens1(const H323TransactionPDU & pdu)
 {
   // If cypto token checking disabled, just return true.
   if (!GetCheckResponseCryptoTokens())
@@ -482,23 +478,26 @@ PBoolean H323Transactor::CheckCryptoTokens(const H323TransactionPDU & pdu,
            << setfill(',') << pdu.GetAuthenticators() << setfill(' '));
   }
 
-  if (pdu.Validate(clearTokens, clearOptionalField,
-                   cryptoTokens, cryptoOptionalField) == H235Authenticator::e_OK)
-    return true;
+  // Need futher checking
+  return false;
+}
+
+
+bool H323Transactor::CheckCryptoTokens2()
+{
+  if (lastRequest != NULL)
+    return true; // or false?
 
   /* Note that a crypto tokens error is flagged to the requestor in the
      responseResult field but the other thread is NOT signalled. This is so
      it can wait for the full timeout for any other packets that might have
      the correct tokens, preventing a possible DOS attack.
    */
-  if (lastRequest != NULL) {
-    lastRequest->responseResult = Request::BadCryptoTokens;
-    lastRequest->responseHandled.Signal();
-    lastRequest->responseMutex.Signal();
-    lastRequest = NULL;
-  }
-
-  return false;
+  lastRequest->responseResult = Request::BadCryptoTokens;
+  lastRequest->responseHandled.Signal();
+  lastRequest->responseMutex.Signal();
+  lastRequest = NULL;
+  return true;
 }
 
 
@@ -700,8 +699,10 @@ PBoolean H323Transaction::HandlePDU()
       return false;
 
     case Confirm :
-      if (confirm != NULL)
+      if (confirm != NULL) {
+        PrepareConfirm();
         WritePDU(*confirm);
+      }
       return false;
 
     case Reject :
@@ -749,16 +750,15 @@ PBoolean H323Transaction::WritePDU(H323TransactionPDU & pdu)
 }
 
 
-PBoolean H323Transaction::CheckCryptoTokens(const H235Authenticators & auth)
+bool H323Transaction::CheckCryptoTokens()
 {
-  authenticators = auth;
-
   request->SetAuthenticators(authenticators);
 
   authenticatorResult = ValidatePDU();
-
   if (authenticatorResult == H235Authenticator::e_OK)
     return true;
+
+  SetRejectReason(GetSecurityRejectTag());
 
   PINDEX i;
   for (i = 0; (authenticatorStrings[i].code >= 0) && (authenticatorStrings[i].code != authenticatorResult); ++i) 
@@ -804,7 +804,7 @@ PBoolean H323TransactionServer::AddListeners(const H323TransportAddressArray & i
       }
     }
     if (remove) {
-      PTRACE(3, "Trans\tRemoving listener " << *iterListener);
+      PTRACE(3, "Trans\tRemoving existing listener " << *iterListener);
       listeners.erase(iterListener++);
     }
     else
@@ -839,14 +839,14 @@ PBoolean H323TransactionServer::AddListener(const H323TransportAddress & interfa
     return AddListener(interfaceName.CreateTransport(ownerEndPoint));
 
   if (!addr.IsAny())
-    return AddListener(new H323TransportUDP(ownerEndPoint, addr, port));
+    return AddListener(new H323TransportUDP(ownerEndPoint, addr, port, false, true));
 
   PIPSocket::InterfaceTable interfaces;
   if (!PIPSocket::GetInterfaceTable(interfaces)) {
     PTRACE(1, "Trans\tNo interfaces on system!");
     if (!PIPSocket::GetHostAddress(addr))
       return false;
-    return AddListener(new H323TransportUDP(ownerEndPoint, addr, port));
+    return AddListener(new H323TransportUDP(ownerEndPoint, addr, port, false, true));
   }
 
   PTRACE(4, "Trans\tAdding interfaces:\n" << setfill('\n') << interfaces << setfill(' '));
@@ -855,7 +855,7 @@ PBoolean H323TransactionServer::AddListener(const H323TransportAddress & interfa
 
   for (i = 0; i < interfaces.GetSize(); i++) {
     addr = interfaces[i].GetAddress();
-    if (addr != 0) {
+    if (addr.IsValid()) {
       if (AddListener(new H323TransportUDP(ownerEndPoint, addr, port, false, true)))
         atLeastOne = true;
     }
@@ -867,10 +867,13 @@ PBoolean H323TransactionServer::AddListener(const H323TransportAddress & interfa
 
 PBoolean H323TransactionServer::AddListener(H323Transport * transport)
 {
-  if (transport == NULL)
+  if (transport == NULL) {
+    PTRACE(2, "Trans\tTried to listen on NULL transport");
     return false;
+  }
 
   if (!transport->IsOpen()) {
+    PTRACE(3, "Trans\tTransport is not open");
     delete transport;
     return false;
   }
@@ -884,7 +887,7 @@ PBoolean H323TransactionServer::AddListener(H323Transactor * listener)
   if (listener == NULL)
     return false;
 
-  PTRACE(3, "Trans\tStarted listener " << *listener);
+  PTRACE(3, "Trans\tStarted listener \"" << *listener << '"');
 
   mutex.Wait();
   listeners.Append(listener);

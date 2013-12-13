@@ -748,8 +748,7 @@ class H323EndPoint : public OpalRTPEndPoint
      * Override this to notify the user they are behind a NAT.
      */
     virtual void OnGatekeeperNATDetect(
-      PIPSocket::Address publicAddr,         ///> Public address as returned by the Gatekeeper
-      PString & gkIdentifier,                ///> Identifier at the gatekeeper
+      const PIPSocket::Address & publicAddr, ///> Public address as returned by the Gatekeeper
       H323TransportAddress & gkRouteAddress  ///> Gatekeeper Route Address
     );
   //@}
@@ -1414,6 +1413,7 @@ class H323EndPoint : public OpalRTPEndPoint
     P_REMOVE_VIRTUAL_VOID(OnGatekeeperReject());
     P_REMOVE_VIRTUAL_VOID(OnRegistrationConfirm());
     P_REMOVE_VIRTUAL_VOID(OnRegistrationReject());
+    P_REMOVE_VIRTUAL_VOID(OnGatekeeperNATDetect(PIPSocket::Address, PString &, H323TransportAddress &));
 };
 
 #endif // OPAL_H323

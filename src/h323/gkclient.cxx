@@ -63,6 +63,20 @@ static PTimeInterval AdjustTimeout(unsigned seconds)
 }
 
 
+PString EpIdAsStr(const PWCharArray & id)
+{
+  if (id.IsEmpty())
+    return "<<empty>>";
+
+  for (PINDEX i = 0; i < id.GetSize(); ++i) {
+    if (id[i] != 0 && !isprint(id[i]))
+      return PSTRSTRM('[' << hex << setfill('0') << setw(4) << id << ']');
+  }
+
+  return id; // Convert to string
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
@@ -347,10 +361,18 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm
       iterAuth->SetRemoteId(gatekeeperIdentifier);
   }
 
-  if (gcf.HasOptionalField(H225_GatekeeperConfirm::e_authenticationMode) &&
-      gcf.HasOptionalField(H225_GatekeeperConfirm::e_algorithmOID)) {
-    for (H235Authenticators::iterator iterAuth = authenticators.begin(); iterAuth != authenticators.end(); ++iterAuth)
-      iterAuth->Enable(iterAuth->IsCapability(gcf.m_authenticationMode, gcf.m_algorithmOID));
+  if (gcf.HasOptionalField(H225_GatekeeperConfirm::e_authenticationMode) && gcf.HasOptionalField(H225_GatekeeperConfirm::e_algorithmOID)) {
+    for (H235Authenticators::iterator iterAuth = authenticators.begin(); iterAuth != authenticators.end(); ++iterAuth) {
+      if (!iterAuth->IsCapability(gcf.m_authenticationMode, gcf.m_algorithmOID))
+        iterAuth->Enable(false);
+      else {
+        PBYTEArray rawPDU;
+        if (lastRequest != NULL)
+          rawPDU = lastRequest->requestPDU.GetRawPDU();
+        H235Authenticator::ValidationResult result = iterAuth->ValidateTokens(gcf.m_tokens, gcf.m_cryptoTokens, rawPDU);
+        iterAuth->Enable(result == H235Authenticator::e_OK || result == H235Authenticator::e_Absent);
+      }
+    }
   }
 
   {
@@ -471,9 +493,9 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
     rrq.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
 
-  if (!endpointIdentifier.IsEmpty()) {
+  if (!m_endpointIdentifier.IsEmpty()) {
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_endpointIdentifier);
-    rrq.m_endpointIdentifier = endpointIdentifier;
+    rrq.m_endpointIdentifier = m_endpointIdentifier;
   }
 
   PTimeInterval ttl = endpoint.GetGatekeeperTimeToLive();
@@ -500,6 +522,7 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
     }
 
     endpoint.SetEndpointTypeInfo(rrq.m_terminalType);
+    rrq.m_terminalType.RemoveOptionalField(H225_EndpointType::e_vendor); // Don't want it twice
     endpoint.SetVendorIdentifierInfo(rrq.m_endpointVendor);
 
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_terminalAlias);
@@ -561,7 +584,7 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
   if (MakeRequest(request))
     return true;
 
-  PTRACE(3, "RAS\tFailed registration of " << endpointIdentifier << " with " << gatekeeperIdentifier);
+  PTRACE(3, "RAS\tFailed registration of " << EpIdAsStr(m_endpointIdentifier) << " with " << gatekeeperIdentifier);
   switch (request.responseResult) {
     case Request::RejectReceived :
       switch (request.rejectReason) {
@@ -617,8 +640,8 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
 
   reregisterNow = false;
 
-  endpointIdentifier = rcf.m_endpointIdentifier;
-  PTRACE(3, "RAS\tRegistered " << endpointIdentifier << " with " << gatekeeperIdentifier);
+  m_endpointIdentifier = rcf.m_endpointIdentifier;
+  PTRACE(3, "RAS\tRegistered " << EpIdAsStr(m_endpointIdentifier) << " with " << gatekeeperIdentifier);
 
 
   if (rcf.HasOptionalField(H225_RegistrationConfirm::e_alternateGatekeeper))
@@ -701,7 +724,7 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
     if (NATaddr.NumCompare("NAT=") == EqualTo) {
       PIPSocket::Address ip(NATaddr.Mid(4));
       if (ip.IsValid())
-        endpoint.OnGatekeeperNATDetect(ip, endpointIdentifier, gkRouteAddress);
+        endpoint.OnGatekeeperNATDetect(ip, gkRouteAddress);
     }
   }
   
@@ -807,9 +830,9 @@ PBoolean H323Gatekeeper::UnregistrationRequest(int reason)
     urq.m_gatekeeperIdentifier = gatekeeperIdentifier;
   }
 
-  if (!endpointIdentifier.IsEmpty()) {
+  if (!m_endpointIdentifier.IsEmpty()) {
     urq.IncludeOptionalField(H225_UnregistrationRequest::e_endpointIdentifier);
-    urq.m_endpointIdentifier = endpointIdentifier;
+    urq.m_endpointIdentifier = m_endpointIdentifier;
   }
 
   if (reason >= 0) {
@@ -878,7 +901,7 @@ PBoolean H323Gatekeeper::OnReceiveUnregistrationRequest(const H225_Unregistratio
   }
 
   if (!urq.HasOptionalField(H225_UnregistrationRequest::e_endpointIdentifier) ||
-       urq.m_endpointIdentifier.GetValue() != endpointIdentifier) {
+       urq.m_endpointIdentifier != m_endpointIdentifier) {
     PTRACE(2, "RAS\tInconsistent endpointIdentifier!");
     return false;
   }
@@ -941,9 +964,9 @@ PBoolean H323Gatekeeper::LocationRequest(const PStringList & aliases,
 
   H323SetAliasAddresses(aliases, lrq.m_destinationInfo);
 
-  if (!endpointIdentifier.IsEmpty()) {
+  if (!m_endpointIdentifier.IsEmpty()) {
     lrq.IncludeOptionalField(H225_LocationRequest::e_endpointIdentifier);
-    lrq.m_endpointIdentifier = endpointIdentifier;
+    lrq.m_endpointIdentifier = m_endpointIdentifier;
   }
 
   H323TransportAddress replyAddress = transport->GetLocalAddress();
@@ -1026,7 +1049,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
   H225_AdmissionRequest & arq = pdu.BuildAdmissionRequest(GetNextSequenceNumber());
 
   arq.m_callType.SetTag(H225_CallType::e_pointToPoint);
-  arq.m_endpointIdentifier = endpointIdentifier;
+  arq.m_endpointIdentifier = m_endpointIdentifier;
   arq.m_answerCall = answeringCall;
   arq.m_canMapAlias = true; // Stack supports receiving a different number in the ACF 
                             // to the one sent in the ARQ
@@ -1100,9 +1123,6 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
   request.responseInfo = &info;
 
   if (!authenticators.IsEmpty()) {
-    pdu.Prepare(arq.m_tokens, H225_AdmissionRequest::e_tokens,
-                arq.m_cryptoTokens, H225_AdmissionRequest::e_cryptoTokens);
-
     H235Authenticators adjustedAuthenticators;
     if (connection.GetAdmissionRequestAuthentication(arq, adjustedAuthenticators)) {
       PTRACE(3, "RAS\tAuthenticators credentials replaced with \""
@@ -1113,11 +1133,10 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
           iterAuth->SetRemoteId(gatekeeperIdentifier);
       }
 
-      adjustedAuthenticators.PreparePDU(pdu,
-                                        arq.m_tokens, H225_AdmissionRequest::e_tokens,
-                                        arq.m_cryptoTokens, H225_AdmissionRequest::e_cryptoTokens);
       pdu.SetAuthenticators(adjustedAuthenticators);
     }
+
+    pdu.Prepare(arq);
   }
 
   if (!MakeRequest(request)) {
@@ -1156,7 +1175,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
       return false;
 
     // Reset the gk info in ARQ
-    arq.m_endpointIdentifier = endpointIdentifier;
+    arq.m_endpointIdentifier = m_endpointIdentifier;
     if (!gatekeeperIdentifier) {
       arq.IncludeOptionalField(H225_AdmissionRequest::e_gatekeeperIdentifier);
       arq.m_gatekeeperIdentifier = gatekeeperIdentifier;
@@ -1346,7 +1365,7 @@ PBoolean H323Gatekeeper::DisengageRequest(const H323Connection & connection, uns
   H323RasPDU pdu;
   H225_DisengageRequest & drq = pdu.BuildDisengageRequest(GetNextSequenceNumber());
 
-  drq.m_endpointIdentifier = endpointIdentifier;
+  drq.m_endpointIdentifier = m_endpointIdentifier;
   drq.m_conferenceID = connection.GetConferenceIdentifier();
   drq.m_callReferenceValue = connection.GetCallReference();
   drq.m_callIdentifier.m_guid = connection.GetCallIdentifier();
@@ -1426,7 +1445,7 @@ PBoolean H323Gatekeeper::BandwidthRequest(H323Connection & connection, OpalBandw
   H323RasPDU pdu;
   H225_BandwidthRequest & brq = pdu.BuildBandwidthRequest(GetNextSequenceNumber());
 
-  brq.m_endpointIdentifier = endpointIdentifier;
+  brq.m_endpointIdentifier = m_endpointIdentifier;
   brq.m_conferenceID = connection.GetConferenceIdentifier();
   brq.m_callReferenceValue = connection.GetCallReference();
   brq.m_callIdentifier.m_guid = connection.GetCallIdentifier();
@@ -1506,7 +1525,7 @@ H225_InfoRequestResponse & H323Gatekeeper::BuildInfoRequestResponse(H323RasPDU &
   H225_InfoRequestResponse & irr = response.BuildInfoRequestResponse(seqNum);
 
   endpoint.SetEndpointTypeInfo(irr.m_endpointType);
-  irr.m_endpointIdentifier = endpointIdentifier;
+  irr.m_endpointIdentifier = m_endpointIdentifier;
 
   H323TransportAddress address = transport->GetLocalAddress();
   

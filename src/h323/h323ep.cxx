@@ -519,12 +519,10 @@ H235Authenticators H323EndPoint::CreateAuthenticators()
   H235Authenticators authenticators;
 
   PFactory<H235Authenticator>::KeyList_T keyList = PFactory<H235Authenticator>::GetKeyList();
-  PFactory<H235Authenticator>::KeyList_T::const_iterator r;
-  for (r = keyList.begin(); r != keyList.end(); ++r) {
-    H235Authenticator * Auth = PFactory<H235Authenticator>::CreateInstance(*r);
-    if ((Auth->GetApplication() == H235Authenticator::GKAdmission) ||
-                  (Auth->GetApplication() == H235Authenticator::AnyApplication)) 
-                               authenticators.Append(Auth);
+  for (PFactory<H235Authenticator>::KeyList_T::const_iterator it = keyList.begin(); it != keyList.end(); ++it) {
+    H235Authenticator * auth = PFactory<H235Authenticator>::CreateInstance(*it);
+    if (auth->GetApplication() == H235Authenticator::GKAdmission || auth->GetApplication() == H235Authenticator::AnyApplication)
+      authenticators.Append(auth);
   }
 
   return authenticators;
@@ -1173,9 +1171,8 @@ void H323EndPoint::OnClosedLogicalChannel(H323Connection & /*connection*/,
 }
 
 
-void H323EndPoint::OnGatekeeperNATDetect(PIPSocket::Address /* publicAddr*/,
-           PString & /*gkIdentifier*/,
-           H323TransportAddress & /*gkRouteAddress*/)
+void H323EndPoint::OnGatekeeperNATDetect(const PIPSocket::Address & /* publicAddr*/,
+                                         H323TransportAddress & /*gkRouteAddress*/)
 {
 }
 
