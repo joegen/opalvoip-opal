@@ -36,6 +36,7 @@
 #if OPAL_H323
 
 #include <ptclib/pssl.h>
+#include <ptclib/random.h>
 
 #include <h323/h235auth.h>
 #include <h323/h323pdu.h>
@@ -175,8 +176,14 @@ const char * H235AuthProcedure1::GetName() const
 
 H225_CryptoH323Token * H235AuthProcedure1::CreateCryptoToken(bool digits)
 {
-  if (!IsActive() || digits)
+  if (!IsEnabled() || digits)
     return NULL;
+
+  if (password.IsEmpty()) {
+    PTRACE(4, "H235RAS\tH235Procedure1 requires password.");
+    return NULL;
+  }
+
 
   H225_CryptoH323Token * cryptoToken = new H225_CryptoH323Token;
 
@@ -234,7 +241,7 @@ H225_CryptoH323Token * H235AuthProcedure1::CreateCryptoToken(bool digits)
 
 PBoolean H235AuthProcedure1::Finalise(PBYTEArray & rawPDU)
 {
-  if (!IsActive())
+  if (!IsEnabled())
     return false;
 
   // Find the pattern
@@ -464,6 +471,7 @@ H235Authenticator::ValidationResult H235AuthProcedure1::ValidateCryptoToken(
 PBoolean H235AuthProcedure1::IsCapability(const H235_AuthenticationMechanism & mechansim,
                                       const PASN_ObjectId & algorithmOID)
 {
+return false;
   return mechansim.GetTag() == H235_AuthenticationMechanism::e_pwdHash &&
          algorithmOID.AsString() == OID_U;
 }
@@ -479,6 +487,216 @@ PBoolean H235AuthProcedure1::SetCapability(H225_ArrayOf_AuthenticationMechanism 
 PBoolean H235AuthProcedure1::UseGkAndEpIdentifiers() const
 {
   return true;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+static const char Name_DES_ECB[] = "PWD-DES-ECB";
+static const char OID_DES_ECB[] = "1.3.14.3.2.6";
+
+PFACTORY_CREATE(PFactory<H235Authenticator>, H235AuthPwd_DES_ECB, Name_DES_ECB, false);
+
+H235AuthPwd_DES_ECB::H235AuthPwd_DES_ECB()
+{
+  usage = AnyApplication;
+}
+
+
+PObject * H235AuthPwd_DES_ECB::Clone() const
+{
+  return new H235AuthPwd_DES_ECB(*this);
+}
+
+
+const char * H235AuthPwd_DES_ECB::GetName() const
+{
+  return Name_DES_ECB;
+}
+
+
+bool H235AuthPwd_DES_ECB::EncryptToken(PBYTEArray & encryptedToken)
+{
+  PSSLCipherContext cipher(true);
+  cipher.SetPadding(PSSLCipherContext::PadCipherStealing);
+
+  if (!cipher.SetAlgorithm(OID_DES_ECB)) {
+    PTRACE(2, "H323\tCould not set SSL cipher algorithm for DES-ECB");
+    return false;
+  }
+
+  PBYTEArray key(cipher.GetKeyLength());
+
+  // Build key from password according to H.235.0/8.2.1
+  memcpy(key.GetPointer(), password.GetPointer(), std::min(key.GetSize(), password.GetLength()));
+  for (PINDEX i = key.GetSize(); i < password.GetLength(); ++i)
+    key[i%key.GetSize()] ^= password[i];
+
+#if 0
+  // But some things imply LSB of OpenSSL DES key is parity bit ...
+  for (PINDEX i = 0; i < key.GetSize(); ++i) {
+    static const struct ParityTable {
+      BYTE table[128];
+      ParityTable()
+      {
+        for (PINDEX i = 0; i < 128; ++i)
+          table[i] = (BYTE)((i&1)^1);
+      }
+    } parity;
+
+    unsigned value = key[i] & 0x7f;
+    key[i] = (BYTE)((value << 1)|parity.table[value]);
+  }
+#endif
+
+  if (!cipher.SetKey(key))
+    return false;
+
+  if (cipher.Process(m_encodedToken, encryptedToken))
+    return true;
+
+  PTRACE(2, "H323\tNot adding H.235 encryption key as encryption failed.");
+  return false;
+}
+
+
+H235_ClearToken * H235AuthPwd_DES_ECB::CreateClearToken(unsigned rasPDU)
+{
+  if (rasPDU != H225_RasMessage::e_gatekeeperConfirm)
+    return NULL;
+
+  H235_PwdCertToken * clearToken =  new H235_PwdCertToken;
+  clearToken->m_tokenOID = "0.0";
+
+  clearToken->m_generalID = localId;
+
+  clearToken->IncludeOptionalField(H235_ClearToken::e_timeStamp);
+  clearToken->m_timeStamp.SetValue((unsigned)PTime().GetTimeInSeconds());
+
+  clearToken->IncludeOptionalField(H235_ClearToken::e_random);
+  clearToken->m_random = ++sentRandomSequenceNumber;
+
+#ifdef AS_PER_SPECIFICATION_BUT_AVAYA_DOES_NOT
+  clearToken->IncludeOptionalField(H235_ClearToken::e_challenge);
+  PRandom::Octets(clearToken->m_challenge.GetWritableValue(), 16);
+#endif
+
+  PPER_Stream stream;
+  clearToken->Encode(stream);
+  stream.CompleteEncoding();
+  m_encodedToken = stream;
+
+  PTRACE(4, "H235RAS\tH235AuthPwd_DES_ECB: sending token " << m_encodedToken.GetSize() << " bytes.");
+  return clearToken;
+}
+
+
+H225_CryptoH323Token * H235AuthPwd_DES_ECB::CreateCryptoToken(bool digits, unsigned rasPDU)
+{
+  if (!IsEnabled() || digits || rasPDU != H225_RasMessage::e_registrationRequest || m_encodedToken.IsEmpty())
+    return NULL;
+
+  // Create the H.225 crypto token using the encrypted clear token we got earlier
+  H225_CryptoH323Token * cryptoToken = new H225_CryptoH323Token;
+  cryptoToken->SetTag(H225_CryptoH323Token::e_cryptoEPPwdEncr);
+  H235_ENCRYPTED<H235_EncodedPwdCertToken> & pwd = *cryptoToken;
+  pwd.m_algorithmOID = OID_DES_ECB;
+  if (EncryptToken(pwd.m_encryptedData.GetWritableValue()))
+    return cryptoToken;
+
+  delete cryptoToken;
+  return NULL;
+}
+
+
+H235Authenticator::ValidationResult H235AuthPwd_DES_ECB::ValidateClearToken(const H235_ClearToken & clearToken)
+{
+  /* This really should check that timestamp is withing some range of the
+     current wall clock time. But Avaya don't do that, so we don't */
+  if (clearToken.m_timeStamp.GetValue() == 0) {
+    PTRACE(2, "H235RAS\tH235AuthPwd_DES_ECB: zero timestamp");
+    return e_InvalidTime;
+  }
+
+  PPER_Stream stream;
+  clearToken.Encode(stream);
+  stream.CompleteEncoding();
+  m_encodedToken = stream;
+
+  PTRACE(4, "H235RAS\tH235AuthPwd_DES_ECB: received token " << m_encodedToken.GetSize() << " bytes.");
+  return m_encodedToken.IsEmpty() ? e_Error : e_OK;
+}
+
+
+H235Authenticator::ValidationResult H235AuthPwd_DES_ECB::ValidateCryptoToken(const H225_CryptoH323Token & cryptoToken, const PBYTEArray &)
+{
+  if (!IsEnabled())
+    return e_Disabled;
+
+  // verify the token is of correct type
+  if (cryptoToken.GetTag() != H225_CryptoH323Token::e_cryptoEPPwdEncr)
+    return e_Absent;
+
+  PBYTEArray localEncryptedData;
+  if (!EncryptToken(localEncryptedData))
+    return e_Error;
+
+  const PBYTEArray & remoteEncryptedData = ((const H235_ENCRYPTED<H235_EncodedPwdCertToken> &)cryptoToken).m_encryptedData;
+  if (remoteEncryptedData == localEncryptedData)
+    return e_OK;
+
+  PTRACE(4, "H235RAS\tH235AuthPwd_DES_ECB::ValidateCryptoToken failed:\n"
+          << hex << setfill('0') << setw(2) <<
+            "   clear\n" << m_encodedToken << "\n"
+            "   remote\n" << remoteEncryptedData << "\n"
+            "   local\n" << localEncryptedData << dec);
+  return e_BadPassword;
+}
+
+
+PBoolean H235AuthPwd_DES_ECB::IsCapability(const H235_AuthenticationMechanism & mechanism, const PASN_ObjectId & algorithmOID)
+{
+  return mechanism.GetTag() == H235_AuthenticationMechanism::e_pwdSymEnc && algorithmOID.AsString() == OID_DES_ECB;
+}
+
+
+PBoolean H235AuthPwd_DES_ECB::SetCapability(H225_ArrayOf_AuthenticationMechanism & mechanisms, H225_ArrayOf_PASN_ObjectId & algorithmOIDs)
+{
+  return AddCapability(H235_AuthenticationMechanism::e_pwdSymEnc, OID_DES_ECB, mechanisms, algorithmOIDs);
+}
+
+
+PBoolean H235AuthPwd_DES_ECB::IsSecuredPDU(unsigned rasPDU, PBoolean received) const
+{
+  switch (rasPDU) {
+    case H225_RasMessage::e_gatekeeperConfirm :
+      if (received)
+        return false;
+
+      if (localId.IsEmpty()) {
+        PTRACE(4, "H235RAS\tH235AuthPwd_DES_ECB cannot add challenge to GCF without localId");
+        return false;
+      }
+
+      PTRACE(4, "H235RAS\tH235AuthPwd_DES_ECB adding challenge to GCF for \"" << localId << '"');
+      return true;
+
+    case  H225_RasMessage::e_registrationRequest :
+      if (m_encodedToken.IsEmpty()) {
+        PTRACE(4, "H235RAS\tH235AuthPwd_DES_ECB cannot secure RRQ without challenge");
+        return false;
+      }
+
+      if (password.IsEmpty()) {
+        PTRACE(4, "H235RAS\tH235AuthPwd_DES_ECB cannot secure RRQ without password");
+        return false;
+      }
+
+      PTRACE(4, "H235RAS\tH235AuthPwd_DES_ECB securing RRQ");
+      return true;
+  }
+
+  return false;
 }
 
 

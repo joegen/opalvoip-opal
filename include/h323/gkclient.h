@@ -282,7 +282,7 @@ class H323Gatekeeper : public H225_RAS
 
     /** Get the endpoint identifier
       */
-    const PString & GetEndpointIdentifier() const { return endpointIdentifier; }
+    PString GetEndpointIdentifier() const { return m_endpointIdentifier; }
 
     /**Set the H.235 password in the gatekeeper.
        If no username is present then it will default to the endpoint local
@@ -341,7 +341,7 @@ class H323Gatekeeper : public H225_RAS
     );
     
     virtual H323Transport * CreateTransport(PIPSocket::Address bindng = PIPSocket::GetDefaultIpAny(), WORD port = 0, PBoolean reuseAddr = false);
-    
+
     // Handling interface changes
     void OnAddInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority);
     void OnRemoveInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority);
@@ -349,7 +349,7 @@ class H323Gatekeeper : public H225_RAS
 
     // Gatekeeper registration state variables
     bool     discoveryComplete;
-    PString  endpointIdentifier;
+    PWCharArray m_endpointIdentifier;
     RegistrationFailReasons m_registrationFailReason;
     void SetRegistrationFailReason(unsigned reason, unsigned commandMask);
     void SetRegistrationFailReason(RegistrationFailReasons reason);
