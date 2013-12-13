@@ -465,7 +465,6 @@ H235Authenticator::ValidationResult H235AuthSimpleMD5::ValidateCryptoToken(
 PBoolean H235AuthSimpleMD5::IsCapability(const H235_AuthenticationMechanism & mechanism,
                                      const PASN_ObjectId & algorithmOID)
 {
-return false;
   return mechanism.GetTag() == H235_AuthenticationMechanism::e_pwdHash &&
          algorithmOID.AsString() == OID_MD5;
 }
@@ -657,7 +656,6 @@ PBoolean H235AuthCAT::IsCapability(const H235_AuthenticationMechanism & mechanis
     return false;
 
   const H235_AuthenticationBES & bes = mechanism;
-return false;
   return bes.GetTag() == H235_AuthenticationBES::e_radius;
 }
 
