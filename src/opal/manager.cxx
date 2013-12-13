@@ -566,10 +566,12 @@ bool OpalManager::SetUpConference(OpalCall & call, const char * mixerURI, const 
   if (uri.IsEmpty() || node->GetConnectionCount() > 1)
     return true;
 
+#if OPAL_VIDEO
   /* If after adding the above to conference, it's the only one there, and we
      have a local URI specified (typically pc:*) then we add that too. */
   if (connection->GetMediaStream(OpalMediaType::Video(), true) == NULL)
     uri += ";" OPAL_URL_PARAM_PREFIX OPAL_OPT_AUTO_START "=video:no";
+#endif
 
   PSafePtr<OpalCall> localCall = SetUpCall(uri + ";" OPAL_URL_PARAM_PREFIX OPAL_OPT_CONF_OWNER "=yes", confURI);
   if (localCall != NULL) {

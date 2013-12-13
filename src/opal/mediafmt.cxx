@@ -1196,7 +1196,7 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
 
   if (bw > 0) {
     AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxBitRateOption(), true, OpalMediaOption::MinMerge, bw, 100));
-    AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::TargetBitRateOption(), false, OpalMediaOption::AlwaysMerge, bw, 100));
+    AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::TargetBitRateOption(), false, OpalMediaOption::AlwaysMerge, bw, 100));
   }
 
   if (fs > 0)
