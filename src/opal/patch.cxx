@@ -982,12 +982,12 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
         case e_IntraFrame :
           ++m_videoFrames;
           ++m_keyFrames;
-          PTRACE(4, "Patch\tI-Frame detected, total=" << m_videoFrames << ", key=" << m_keyFrames << ", on " << patch);
+          PTRACE(4, "Patch\tI-Frame detected, ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoFrames << ", key=" << m_keyFrames << ", on " << patch);
           break;
 
         case e_InterFrame :
           ++m_videoFrames;
-          PTRACE(4, "Patch\tP-Frame detected, total=" << m_videoFrames << ", key=" << m_keyFrames << ", on " << patch);
+          PTRACE(5, "Patch\tP-Frame detected, ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoFrames << ", key=" << m_keyFrames << ", on " << patch);
           break;
 
         default :
