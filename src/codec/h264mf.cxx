@@ -83,7 +83,8 @@ class OpalH264Format : public OpalVideoFormatInternal
         H264_LEVEL_STR_4_1,
         H264_LEVEL_STR_4_2,
         H264_LEVEL_STR_5,
-        H264_LEVEL_STR_5_1
+        H264_LEVEL_STR_5_1,
+        H264_LEVEL_STR_5_2,
       };
       AddOption(option = new OpalMediaOptionEnum(LevelName, false, levels, PARRAYSIZE(levels), OpalMediaOption::MinMerge, PARRAYSIZE(levels)-1));
 
