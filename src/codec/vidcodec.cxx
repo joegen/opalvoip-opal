@@ -177,6 +177,12 @@ void OpalVideoTranscoder::GetStatistics(OpalMediaStatistics & statistics) const
 
 ///////////////////////////////////////////////////////////////////////////////
 
+PObject * OpalVideoUpdatePicture::Clone() const
+{
+  return new OpalVideoUpdatePicture(*this);
+}
+
+
 PString OpalVideoUpdatePicture::GetName() const
 {
   return "Update Picture";
@@ -187,6 +193,12 @@ OpalVideoPictureLoss::OpalVideoPictureLoss(unsigned sequenceNumber, unsigned tim
   : m_sequenceNumber(sequenceNumber)
   , m_timestamp(timestamp)
 {
+}
+
+
+PObject * OpalVideoPictureLoss::Clone() const
+{
+  return new OpalVideoPictureLoss(*this);
 }
 
 

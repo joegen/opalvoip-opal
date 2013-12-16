@@ -177,6 +177,7 @@ class OpalVideoUpdatePicture : public OpalMediaCommand
 {
   PCLASSINFO(OpalVideoUpdatePicture, OpalMediaCommand);
   public:
+    virtual PObject * Clone() const;
     virtual PString GetName() const;
 };
 
@@ -191,6 +192,7 @@ class OpalVideoPictureLoss : public OpalVideoUpdatePicture
   public:
     OpalVideoPictureLoss(unsigned sequenceNumber = 0, unsigned timestamp = 0);
 
+    virtual PObject * Clone() const;
     virtual PString GetName() const;
 
     unsigned GetSequenceNumber() const { return m_sequenceNumber; }

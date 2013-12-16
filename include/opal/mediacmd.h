@@ -93,6 +93,7 @@ class OpalMediaCommand : public PObject
       PCLASSINFO(cls, OpalMediaCommand) \
     public: \
       cls() { } \
+      virtual PObject * Clone() const { return new cls(*this); } \
       virtual PString GetName() const { return name; } \
   }
 
@@ -106,6 +107,7 @@ class OpalMediaFlowControl : public OpalMediaCommand
     OpalMediaFlowControl(unsigned maxBitRate)
       : m_maxBitRate(maxBitRate)  { }
 
+    virtual PObject * Clone() const;
     virtual PString GetName() const;
 
     unsigned GetMaxBitRate() const { return m_maxBitRate; }

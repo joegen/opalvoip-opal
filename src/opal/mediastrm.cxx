@@ -1553,6 +1553,12 @@ unsigned * OpalMediaCommand::GetPlugInSize() const
 }
 
 
+PObject * OpalMediaFlowControl::Clone() const
+{
+  return new OpalMediaFlowControl(*this);
+}
+
+
 PString OpalMediaFlowControl::GetName() const
 {
   return "Flow Control";
