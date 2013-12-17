@@ -2102,6 +2102,15 @@ H323GatekeeperListener::~H323GatekeeperListener()
 }
 
 
+void H323GatekeeperListener::PrintOn(ostream & strm) const
+{
+  if (transport != NULL)
+    strm << gatekeeperIdentifier << '@' << transport->GetLocalAddress().GetHostName(true);
+  else
+    H225_RAS::PrintOn(strm);
+}
+
+
 H323GatekeeperRequest::Response H323GatekeeperListener::OnDiscovery(H323GatekeeperGRQ & info)
 {
   PTRACE_BLOCK("H323GatekeeperListener::OnDiscovery");
@@ -2782,10 +2791,10 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnRegistration(H323Gatekee
   }
 
   if(noAliasesInRRQ) {
-    info.SetRejectReason(H225_RegistrationRejectReason::e_invalidTerminalAliases);
-    PTRACE(2, "RAS\tRRQ rejected, no aliases");
-    return H323GatekeeperRequest::Reject;
-  }
+      info.SetRejectReason(H225_RegistrationRejectReason::e_invalidTerminalAliases);
+      PTRACE(2, "RAS\tRRQ rejected, no aliases");
+      return H323GatekeeperRequest::Reject;
+    }
 
   if (info.rrq.HasOptionalField(H225_RegistrationRequest::e_terminalAlias) && 
 	  (!AllowDuplicateAlias(info.rrq.m_terminalAlias) || !noAliasesInRRQ)) {
@@ -2816,24 +2825,24 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnRegistration(H323Gatekee
 
       // Only voice prefixes are supported
       if (protocols[i].GetTag() == H225_SupportedProtocols::e_voice) {
-	H225_VoiceCaps & voiceCaps = protocols[i];
-	if (voiceCaps.HasOptionalField(H225_VoiceCaps::e_supportedPrefixes)) {
-	  H225_ArrayOf_SupportedPrefix & prefixes = voiceCaps.m_supportedPrefixes;
-	  for (PINDEX j = 0; j < prefixes.GetSize(); j++) {
+        H225_VoiceCaps & voiceCaps = protocols[i];
+        if (voiceCaps.HasOptionalField(H225_VoiceCaps::e_supportedPrefixes)) {
+	        H225_ArrayOf_SupportedPrefix & prefixes = voiceCaps.m_supportedPrefixes;
+	        for (PINDEX j = 0; j < prefixes.GetSize(); j++) {
 
-	    // Reject if the prefix be matched to a registered alias or prefix
-	    PSafePtr<H323RegisteredEndPoint> ep2 = FindEndPointByAliasAddress(prefixes[j].m_prefix);
-	    if (ep2 != NULL && ep2 != info.endpoint && !canHaveDuplicatePrefix) {
-	      info.SetRejectReason(H225_RegistrationRejectReason::e_duplicateAlias);
-              H225_ArrayOf_AliasAddress & aliases = info.rrj.m_rejectReason;
-              aliases.SetSize(1);
-	      aliases[0] = prefixes[j].m_prefix;
-	      PTRACE(2, "RAS\tRRQ rejected, duplicate prefix");
-	      return H323GatekeeperRequest::Reject;
-	    }
-	  }
-	}
-	break;  // If voice protocol is found, don't look any further
+	          // Reject if the prefix be matched to a registered alias or prefix
+	          PSafePtr<H323RegisteredEndPoint> ep2 = FindEndPointByAliasAddress(prefixes[j].m_prefix);
+	          if (ep2 != NULL && ep2 != info.endpoint && !canHaveDuplicatePrefix) {
+	            info.SetRejectReason(H225_RegistrationRejectReason::e_duplicateAlias);
+                    H225_ArrayOf_AliasAddress & aliases = info.rrj.m_rejectReason;
+                    aliases.SetSize(1);
+	            aliases[0] = prefixes[j].m_prefix;
+	            PTRACE(2, "RAS\tRRQ rejected, duplicate prefix");
+	            return H323GatekeeperRequest::Reject;
+	          }
+	        }
+        }
+        break;  // If voice protocol is found, don't look any further
       }
     }
   }
