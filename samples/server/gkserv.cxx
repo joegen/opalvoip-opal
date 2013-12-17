@@ -38,6 +38,7 @@ static const char GatekeeperInterfaceKey[] = "Remote Gatekeeper Interface";
 static const char GatekeeperPasswordKey[] = "Remote Gatekeeper Password";
 static const char GatekeeperTokenOIDKey[] = "Remote Gatekeeper Token OID";
 
+static const char ServerGatekeeperEnableKey[] = "Gatekeeper Server Enable";
 static const char ServerGatekeeperIdentifierKey[] = "Gatekeeper Server Identifier";
 static const char AvailableBandwidthKey[] = "Gatekeeper Total Bandwidth";
 static const char DefaultBandwidthKey[] = "Gatekeeper Default Bandwidth Allocation";
@@ -328,6 +329,13 @@ bool MyGatekeeperServer::Initialise(PConfig & cfg, PConfigPage * rsrc)
   PINDEX i;
 
   PWaitAndSignal mutex(reconfigurationMutex);
+
+  bool srvEnable = cfg.GetBoolean(ServerGatekeeperEnableKey, true);
+  rsrc->Add(new PHTTPBooleanField(ServerGatekeeperEnableKey, srvEnable, "Enable gatekeeper server"));
+  if (!srvEnable) {
+    RemoveListener(NULL);
+    return true;
+  }
 
 #ifdef H323_H501
 
