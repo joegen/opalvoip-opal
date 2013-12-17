@@ -486,7 +486,7 @@ bool H323Transactor::CheckCryptoTokens1(const H323TransactionPDU & pdu)
 bool H323Transactor::CheckCryptoTokens2()
 {
   if (lastRequest == NULL)
-    return true; // or false?
+    return false; // or true?
 
   /* Note that a crypto tokens error is flagged to the requestor in the
      responseResult field but the other thread is NOT signalled. This is so
@@ -497,7 +497,7 @@ bool H323Transactor::CheckCryptoTokens2()
   lastRequest->responseHandled.Signal();
   lastRequest->responseMutex.Signal();
   lastRequest = NULL;
-  return true;
+  return false;
 }
 
 

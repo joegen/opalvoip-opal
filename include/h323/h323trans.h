@@ -272,7 +272,7 @@ class H323Transactor : public PObject
     template <class RAS> bool CheckCryptoTokens(
       const H323TransactionPDU & pdu,
       const RAS & ras
-    ) { return CheckCryptoTokens1(pdu) || (pdu.Validate(ras) == H235Authenticator::e_OK && CheckCryptoTokens2()); }
+    ) { return CheckCryptoTokens1(pdu) || (pdu.Validate(ras) == H235Authenticator::e_OK || CheckCryptoTokens2()); }
 
     void AgeResponses();
     PBoolean SendCachedResponse(
