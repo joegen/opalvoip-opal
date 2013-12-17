@@ -53,6 +53,8 @@ static const char AnswerCallPreGrantedARQKey[] = "Answer Call Pregranted ARQ";
 static const char MakeCallPreGrantedARQKey[] = "Make Call Pregranted ARQ";
 static const char IsGatekeeperRoutedKey[] = "Gatekeeper Routed";
 static const char AliasCanBeHostNameKey[] = "H.323 Alias Can Be Host Name";
+static const char MinAliasToAllocateKey[] = "Minimum Alias to Allocate";
+static const char MaxAliasToAllocateKey[] = "Maximum Alias to Allocate";
 static const char RequireH235Key[] = "Gatekeeper Requires H.235 Authentication";
 static const char UsernameKey[] = "Username";
 static const char PasswordKey[] = "Password";
@@ -457,6 +459,14 @@ bool MyGatekeeperServer::Initialise(PConfig & cfg, PConfigPage * rsrc)
   aliasCanBeHostName = cfg.GetBoolean(AliasCanBeHostNameKey, aliasCanBeHostName);
   rsrc->Add(new PHTTPBooleanField(AliasCanBeHostNameKey, aliasCanBeHostName,
               "Gatekeeper allows endpoint to simply registerit's host name/IP address"));
+
+  m_minAliasToAllocate = cfg.GetInteger(MinAliasToAllocateKey, m_minAliasToAllocate);
+  rsrc->Add(new PHTTPIntegerField(MinAliasToAllocateKey, 0, INT_MAX, m_minAliasToAllocate, "",
+            "Minimum value for aliases gatekeeper will allocate when endpoint does not provide one, 0 disables"));
+
+  m_maxAliasToAllocate = cfg.GetInteger(MaxAliasToAllocateKey, m_maxAliasToAllocate);
+  rsrc->Add(new PHTTPIntegerField(MaxAliasToAllocateKey, 0, INT_MAX, m_maxAliasToAllocate, "",
+            "Minimum value for aliases gatekeeper will allocate when endpoint does not provide one, 0 disables"));
 
   isGatekeeperRouted = cfg.GetBoolean(IsGatekeeperRoutedKey, isGatekeeperRouted);
   rsrc->Add(new PHTTPBooleanField(IsGatekeeperRoutedKey, isGatekeeperRouted,

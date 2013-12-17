@@ -2631,6 +2631,7 @@ H323GatekeeperServer::H323GatekeeperServer(H323EndPoint & ep)
   defaultTimeToLive = 3600;       // One hour, zero disables
   defaultInfoResponseRate = 60;   // One minute, zero disables
   overwriteOnSameSignalAddress = true;
+  m_aliasToAllocate = m_maxAliasToAllocate = m_minAliasToAllocate = 0;
   canHaveDuplicateAlias = false;
   canHaveDuplicatePrefix = false;
   canOnlyCallRegisteredEP = false;
@@ -2762,22 +2763,23 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnRegistration(H323Gatekee
     return H323GatekeeperRequest::Reject;
   }
 
-  // reject if new registration comes with no aliases.
-  bool noAliasesInRRQ = !info.rrq.HasOptionalField(H225_RegistrationRequest::e_terminalAlias) || info.rrq.m_terminalAlias.GetSize() == 0;
+  if (info.rrq.HasOptionalField(H225_RegistrationRequest::e_terminalAlias) && info.rrq.m_terminalAlias.GetSize() == 0)
+    info.rrq.RemoveOptionalField(H225_RegistrationRequest::e_terminalAlias);
 
   for (i = 0; i < info.rrq.m_callSignalAddress.GetSize(); i++) {
     PSafePtr<H323RegisteredEndPoint> ep2 = FindEndPointBySignalAddress(info.rrq.m_callSignalAddress[i]);
+    if (ep2 == NULL)
+      continue;
 
     // keep old aliases if missing in new request.
-    if((ep2 != NULL) && (ep2->GetAliases().GetSize() > 0) && noAliasesInRRQ) {
-      noAliasesInRRQ = false;
+    if (ep2->GetAliases().GetSize() > 0 && info.rrq.HasOptionalField(H225_RegistrationRequest::e_terminalAlias)) {
       H323SetAliasAddresses(ep2->GetAliases(), info.rrq.m_terminalAlias);
       info.rrq.IncludeOptionalField(H225_RegistrationRequest::e_terminalAlias);
 
       PTRACE(2, "RAS\tRRQ missing aliases, keeping saved ones: " << ep2->GetAliases());
     }
 
-    if (ep2 != NULL && ep2 != info.endpoint) {
+    if (ep2 != info.endpoint) {
       if (overwriteOnSameSignalAddress) {
         PTRACE(2, "RAS\tOverwriting existing endpoint " << *ep2);
         RemoveEndPoint(ep2);
@@ -2790,14 +2792,22 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnRegistration(H323Gatekee
     }
   }
 
-  if(noAliasesInRRQ) {
+  if (!info.rrq.HasOptionalField(H225_RegistrationRequest::e_terminalAlias)) {
+    PString alias = AllocateAlias(info.rrq);
+    if (alias.IsEmpty()) {
+      // reject if new registration comes with no aliases.
       info.SetRejectReason(H225_RegistrationRejectReason::e_invalidTerminalAliases);
       PTRACE(2, "RAS\tRRQ rejected, no aliases");
       return H323GatekeeperRequest::Reject;
     }
 
-  if (info.rrq.HasOptionalField(H225_RegistrationRequest::e_terminalAlias) && 
-	  (!AllowDuplicateAlias(info.rrq.m_terminalAlias) || !noAliasesInRRQ)) {
+    // Fake it
+    info.rrq.m_terminalAlias.SetSize(1);
+    H323SetAliasAddress(alias, info.rrq.m_terminalAlias[0]);
+    info.rrq.IncludeOptionalField(H225_RegistrationRequest::e_terminalAlias);
+  }
+
+  if (info.rrq.HasOptionalField(H225_RegistrationRequest::e_terminalAlias) && !AllowDuplicateAlias(info.rrq.m_terminalAlias)) {
     H225_ArrayOf_AliasAddress duplicateAliases;
     for (i = 0; i < info.rrq.m_terminalAlias.GetSize(); i++) {
       PSafePtr<H323RegisteredEndPoint> ep2 = FindEndPointByAliasAddress(info.rrq.m_terminalAlias[i]);
@@ -2820,6 +2830,7 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnRegistration(H323Gatekee
   const H225_EndpointType & terminalType = info.rrq.m_terminalType;
   if (terminalType.HasOptionalField(H225_EndpointType::e_gateway) &&
       terminalType.m_gateway.HasOptionalField(H225_GatewayInfo::e_protocol)) {
+
     const H225_ArrayOf_SupportedProtocols & protocols = terminalType.m_gateway.m_protocol;
     for (i = 0; i < protocols.GetSize(); i++) {
 
@@ -2898,6 +2909,32 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnRegistration(H323Gatekee
 
   PTRACE(3, "RAS\tRRQ accepted: \"" << *info.endpoint << '"');
   return H323GatekeeperRequest::Confirm;
+}
+
+
+PString H323GatekeeperServer::AllocateAlias(H225_RegistrationRequest &)
+{
+  PWaitAndSignal m(mutex);
+
+  if (m_minAliasToAllocate == 0 || m_minAliasToAllocate > m_maxAliasToAllocate)
+    return PString::Empty();
+
+  if (m_aliasToAllocate < m_minAliasToAllocate)
+    m_aliasToAllocate = m_minAliasToAllocate;
+  if (m_aliasToAllocate > m_maxAliasToAllocate)
+    m_aliasToAllocate = m_maxAliasToAllocate;
+
+  unsigned startAlias = m_aliasToAllocate;
+  do {
+    PString alias(PString::Printf, "%08u", m_aliasToAllocate++);
+    if (m_aliasToAllocate > m_maxAliasToAllocate)
+      m_aliasToAllocate = m_minAliasToAllocate;
+    if (FindEndPointByAliasString(alias) == NULL)
+      return alias;
+  } while (m_aliasToAllocate != startAlias);
+
+  PTRACE(3, "RAS\tAll aliases from " << m_minAliasToAllocate << " to " << m_maxAliasToAllocate << " are allocated.");
+  return PString::Empty();
 }
 
 

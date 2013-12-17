@@ -1663,6 +1663,8 @@ class H323GatekeeperServer : public H323TransactionServer
     virtual PBoolean AllowDuplicateAlias(const H225_ArrayOf_AliasAddress & /*aliases*/)
     { return canHaveDuplicateAlias; }
 
+    virtual PString AllocateAlias(H225_RegistrationRequest & rrq);
+
 #if OPAL_H460
     virtual PBoolean OnSendFeatureSet(H460_MessageType pduType, H225_FeatureSet & features) const;
     virtual void OnReceiveFeatureSet(H460_MessageType pduType, const H225_FeatureSet & features) const;
@@ -1681,6 +1683,9 @@ class H323GatekeeperServer : public H323TransactionServer
     unsigned defaultTimeToLive;
     unsigned defaultInfoResponseRate;
     bool     overwriteOnSameSignalAddress;
+    unsigned m_minAliasToAllocate; // Zero is no allocation RRJ
+    unsigned m_maxAliasToAllocate;
+    unsigned m_aliasToAllocate;
     bool     canHaveDuplicateAlias;
     bool     canHaveDuplicatePrefix;
     bool     canOnlyCallRegisteredEP;
