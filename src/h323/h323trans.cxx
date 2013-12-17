@@ -191,7 +191,7 @@ void H323Transactor::PrintOn(ostream & strm) const
   if (transport == NULL)
     strm << "<<no-transport>>";
   else
-    strm << transport->GetLocalAddress();
+    strm << transport->GetRemoteAddress().GetHostName(true);
 }
 
 
@@ -485,7 +485,7 @@ bool H323Transactor::CheckCryptoTokens1(const H323TransactionPDU & pdu)
 
 bool H323Transactor::CheckCryptoTokens2()
 {
-  if (lastRequest != NULL)
+  if (lastRequest == NULL)
     return true; // or false?
 
   /* Note that a crypto tokens error is flagged to the requestor in the
