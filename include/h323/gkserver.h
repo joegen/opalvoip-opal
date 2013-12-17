@@ -959,6 +959,15 @@ class H323GatekeeperListener : public H225_RAS
     ~H323GatekeeperListener();
   //@}
 
+  /**@name Overrides from PObject */
+  //@{
+    /**Print the name of the gatekeeper.
+      */
+    void PrintOn(
+      ostream & strm    ///<  Stream to print to.
+    ) const;
+  //@}
+
   /**@name Operations */
   //@{
     /**Send a UnregistrationRequest (URQ) to endpoint.
