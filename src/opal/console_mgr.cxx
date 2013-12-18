@@ -1764,8 +1764,15 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
 #if P_CURSES
     if (m_cli == NULL && args.HasOption("tui")) {
       PCLICurses * cli = CreateCLICurses();
-      m_outputStream = cli->GetWindow(0);
-      m_cli = cli;
+      if (cli != NULL) {
+        PCLICurses::Window * mainWindow = cli->GetWindow(0);
+        if (mainWindow == NULL) {
+          *LockedOutput() << "Could not create text user interface, probably redirected I/O" << endl;
+          return false;
+        }
+        m_outputStream = mainWindow;
+        m_cli = cli;
+      }
     }
 #endif // P_CURSES
 
