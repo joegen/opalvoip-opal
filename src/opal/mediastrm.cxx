@@ -784,7 +784,8 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
 
   timestamp = packet.GetTimestamp();
 
-  if (m_mediaPatch->IsBypassed()) {
+  OpalMediaPatchPtr mediaPatch = m_mediaPatch;
+  if (mediaPatch != NULL && mediaPatch->IsBypassed()) {
     /* Try to maintain the seqeunce numbers from when we were not bypassed. But
        can't just allow OpalRTPSession to do it as then all sequence numbers
        are, well, sequential, and missing packets get hidden. */
