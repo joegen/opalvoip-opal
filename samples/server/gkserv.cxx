@@ -26,11 +26,17 @@
 //#define TEST_TOKEN
 
 static const char H323AliasesKey[] = "H.323 Aliases";
+static const char H323TerminalTypeKey[] = "H.323 Terminal Type";
 static const char DisableFastStartKey[] = "Disable H.323 Fast Start";
 static const char DisableH245TunnelingKey[] = "Disable H.245 Tunneling";
 static const char DisableH245inSetupKey[] = "Disable H.245 in Setup";
 static const char H323BandwidthKey[] = "H.323 Bandwidth";
 static const char H323ListenersKey[] = "H.323 Interfaces";
+#if OPAL_PTLIB_SSL
+static const char H323SignalingSecurityKey[] = "H.323 Security";
+static const char H323MediaCryptoSuitesKey[] = "H.323 Crypto Suites";
+#endif
+
 static const char GatekeeperEnableKey[] = "Remote Gatekeeper Enable";
 static const char GatekeeperAddressKey[] = "Remote Gatekeeper Address";
 static const char RemoteGatekeeperIdentifierKey[] = "Remote Gatekeeper Identifier";
@@ -105,69 +111,82 @@ MyH323EndPoint::MyH323EndPoint(MyManager & mgr)
 
 bool MyH323EndPoint::Initialise(PConfig & cfg, PConfigPage * rsrc)
 {
-  PHTTPFieldArray * fieldArray;
-
-
   // Add H.323 parameters
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(H323AliasesKey, 0, "",
-                             "H.323 Alias names for local user", 1, 30), true);
-  PStringArray aliases = fieldArray->GetStrings(cfg);
-  if (aliases.IsEmpty())
-    fieldArray->SetStrings(cfg, GetAliasNames());
-  else {
-    SetLocalUserName(aliases[0]);
-    for (PINDEX i = 1; i < aliases.GetSize(); i++)
-      AddAliasName(aliases[i]);
-  }
-  rsrc->Add(fieldArray);
-
-  DisableFastStart(cfg.GetBoolean(DisableFastStartKey, IsFastStartDisabled()));
-  rsrc->Add(new PHTTPBooleanField(DisableFastStartKey,  IsFastStartDisabled(),
-                                        "Disable H.323 Fast Connect feature"));
-
-  DisableH245Tunneling(cfg.GetBoolean(DisableH245TunnelingKey, IsH245TunnelingDisabled()));
-  rsrc->Add(new PHTTPBooleanField(DisableH245TunnelingKey,  IsH245TunnelingDisabled(),
-                              "Disable H.245 tunneled in H.225.0 signalling channel"));
-
-  DisableH245inSetup(cfg.GetBoolean(DisableH245inSetupKey, IsH245inSetupDisabled()));
-  rsrc->Add(new PHTTPBooleanField(DisableH245inSetupKey,  IsH245inSetupDisabled(),
-                       "Disable sending initial tunneled H.245 PDU in SETUP PDU"));
-
-  OpalBandwidth bandwidth = cfg.GetInteger(H323BandwidthKey, GetInitialBandwidth(OpalBandwidth::RxTx)/1000);
-  SetInitialBandwidth(OpalBandwidth::RxTx, bandwidth*1000);
-  rsrc->Add(new PHTTPIntegerField(H323BandwidthKey, 1, OpalBandwidth::Max()/1000, bandwidth,
-               "kb/s", "Bandwidth to request to gatekeeper on originating/answering calls"));
-
-  for (PINDEX i = 0; i < H323Connection::NumCompatibilityIssues; ++i) {
-    H323Connection::CompatibilityIssues issue = (H323Connection::CompatibilityIssues)i;
-    PString key = PAssertNULL(CompatibilityIssueKey[issue]);
-    SetCompatibility(issue, cfg.GetString(key, GetCompatibility(issue)));
-    rsrc->Add(new PHTTPStringField(key, 0, GetCompatibility(issue),
-              "Compatibility issue work around, product name/version regular expression", 1, 50));
+  {
+    PStringArray aliases = rsrc->AddStringArrayField(H323AliasesKey, false, 0, GetAliasNames(), "H.323 Alias names for local user", 1, 30);
+    if (!aliases.IsEmpty()) {
+      SetLocalUserName(aliases[0]);
+      for (PINDEX i = 1; i < aliases.GetSize(); i++)
+        AddAliasName(aliases[i]);
+    }
   }
 
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(H323ListenersKey, 0, "",
-               "Local network interfaces to listen for H.323, blank means all", 1, 30), false);
-  if (!StartListeners(fieldArray->GetStrings(cfg), false)) {
+  SetTerminalType((TerminalTypes)rsrc->AddIntegerField(H323TerminalTypeKey, 0, 255, GetTerminalType(), "",
+                  "H.323 Terminal Type code for master/slave resolution:<BR>"
+                  "50=terminal<BR>"
+                  "60=gateway<BR>"
+                  "120=gatekeeper<BR>"
+                  "160=MCU<BR>"
+                  "190=MCU with A/V"));
+  DisableFastStart(rsrc->AddBooleanField(DisableFastStartKey,  IsFastStartDisabled(), "Disable H.323 Fast Connect feature"));
+  DisableH245Tunneling(rsrc->AddBooleanField(DisableH245TunnelingKey,  IsH245TunnelingDisabled(), "Disable H.245 tunneled in H.225.0 signalling channel"));
+  DisableH245inSetup(rsrc->AddBooleanField(DisableH245inSetupKey,  IsH245inSetupDisabled(), "Disable sending initial tunneled H.245 PDU in SETUP PDU"));
+
+  SetInitialBandwidth(OpalBandwidth::RxTx, rsrc->AddIntegerField(H323BandwidthKey, 1, OpalBandwidth::Max()/1000,
+                                                                  GetInitialBandwidth(OpalBandwidth::RxTx)/1000,
+                              "kb/s", "Bandwidth to request to gatekeeper on originating/answering calls")*1000);
+
+#if OPAL_PTLIB_SSL
+  PINDEX security = 0;
+  if (manager.FindEndPoint("h323") != NULL)
+    security |= 1;
+  if (manager.FindEndPoint("h323s") != NULL)
+    security |= 2;
+  security = cfg.GetInteger(H323SignalingSecurityKey, security);
+  switch (security) {
+    case 1 :
+      manager.AttachEndPoint(this, "h323");
+      manager.DetachEndPoint("h323s");
+      break;
+
+    case 2 :
+      manager.AttachEndPoint(this, "h323s");
+      manager.DetachEndPoint("h323");
+      break;
+
+    default :
+      manager.AttachEndPoint(this, "h323");
+      manager.AttachEndPoint(this, "h323s");
+  }
+  static const char * const SignalingSecurityValues[] = { "1", "2", "3" };
+  static const char * const SignalingSecurityTitles[] = { "h323 only", "h323s only", "h323 & h323s" };
+  rsrc->Add(new PHTTPRadioField(H323SignalingSecurityKey,
+                     PARRAYSIZE(SignalingSecurityValues), SignalingSecurityValues, SignalingSecurityTitles,
+                                                        security, "Signaling security methods available."));
+
+  SetMediaCryptoSuites(rsrc->AddSelectArrayField(H323MediaCryptoSuitesKey, true, GetMediaCryptoSuites(),
+                                                GetAllMediaCryptoSuites(), "Media security methods available."));
+#endif
+
+  for (H323Connection::CompatibilityIssues issue = H323Connection::BeginCompatibilityIssues; issue < H323Connection::EndCompatibilityIssues; ++issue)
+    SetCompatibility(issue, rsrc->AddStringField(PAssertNULL(CompatibilityIssueKey[issue]), 0, GetCompatibility(issue),
+                                    "Compatibility issue work around, product name/version regular expression", 1, 50));
+
+  if (!StartListeners(rsrc->AddStringArrayField(H323ListenersKey, false, 0, PStringArray(),
+                   "Local network interfaces to listen for H.323, blank means all", 1, 30))) {
     PSYSTEMLOG(Error, "Could not open any H.323 listeners!");
   }
-  rsrc->Add(fieldArray);
 
-  bool gkEnable = cfg.GetBoolean(GatekeeperEnableKey, false);
-  rsrc->Add(new PHTTPBooleanField(GatekeeperEnableKey, gkEnable,
-               "Enable registration with gatekeeper as client"));
+  bool gkEnable = rsrc->AddBooleanField(GatekeeperEnableKey, false, "Enable registration with gatekeeper as client");
 
-  PString gkAddress = cfg.GetString(GatekeeperAddressKey);
-  rsrc->Add(new PHTTPStringField(GatekeeperAddressKey, 0, gkAddress,
-            "IP/hostname of gatekeeper to register with, if blank a broadcast is used", 1, 30));
+  PString gkAddress = rsrc->AddStringField(GatekeeperAddressKey, 0, PString::Empty(),
+      "IP/hostname of gatekeeper to register with, if blank a broadcast is used", 1, 30);
 
-  PString gkIdentifier = cfg.GetString(RemoteGatekeeperIdentifierKey);
-  rsrc->Add(new PHTTPStringField(RemoteGatekeeperIdentifierKey, 0, gkIdentifier,
-            "Gatekeeper identifier to register with, if blank any gatekeeper is used", 1, 30));
+  PString gkIdentifier = rsrc->AddStringField(RemoteGatekeeperIdentifierKey, 0, PString::Empty(),
+                "Gatekeeper identifier to register with, if blank any gatekeeper is used", 1, 30);
 
-  PString gkInterface = cfg.GetString(GatekeeperInterfaceKey);
-  rsrc->Add(new PHTTPStringField(GatekeeperInterfaceKey, 0, gkInterface,
-            "Local network interface to use to register with gatekeeper, if blank all are used", 1, 30));
+  PString gkInterface = rsrc->AddStringField(GatekeeperInterfaceKey, 0, PString::Empty(),
+            "Local network interface to use to register with gatekeeper, if blank all are used", 1, 30);
 
   PString gkPassword = PHTTPPasswordField::Decrypt(cfg.GetString(GatekeeperPasswordKey));
   if (!gkPassword)
@@ -175,9 +194,8 @@ bool MyH323EndPoint::Initialise(PConfig & cfg, PConfigPage * rsrc)
   rsrc->Add(new PHTTPPasswordField(GatekeeperPasswordKey, 30, gkPassword,
             "Password for gatekeeper authentication, user is the first alias"));
 
-  SetGkAccessTokenOID(cfg.GetString(GatekeeperTokenOIDKey));
-  rsrc->Add(new PHTTPStringField(GatekeeperTokenOIDKey, 0, GetGkAccessTokenOID(),
-                         "Gatekeeper access token OID for H.235 support", 1, 30));
+  SetGkAccessTokenOID(rsrc->AddStringField(GatekeeperTokenOIDKey, 0, GetGkAccessTokenOID(),
+                                   "Gatekeeper access token OID for H.235 support", 1, 30));
 
   if (gkEnable) {
     if (UseGatekeeper(gkAddress, gkIdentifier, gkInterface)) {
@@ -332,8 +350,7 @@ bool MyGatekeeperServer::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
   PWaitAndSignal mutex(reconfigurationMutex);
 
-  bool srvEnable = cfg.GetBoolean(ServerGatekeeperEnableKey, true);
-  rsrc->Add(new PHTTPBooleanField(ServerGatekeeperEnableKey, srvEnable, "Enable gatekeeper server"));
+  bool srvEnable = rsrc->AddBooleanField(ServerGatekeeperEnableKey, true, "Enable gatekeeper server");
   if (!srvEnable) {
     RemoveListener(NULL);
     return true;
@@ -342,11 +359,8 @@ bool MyGatekeeperServer::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #ifdef H323_H501
 
   // set clearing house address
-  PString clearingHouse = cfg.GetString(ClearingHouseKey);
-  rsrc->Add(new PHTTPStringField(ClearingHouseKey, 25, clearingHouse));
-
-  PString h501Interface = cfg.GetString(H501InterfaceKey);
-  rsrc->Add(new PHTTPStringField(H501InterfaceKey, 25, h501Interface));
+  PString clearingHouse = rsrc->AddStringField(ClearingHouseKey, 25));
+  PString h501Interface = rsrc->AddStringField(H501InterfaceKey, 25));
 
   if (clearingHouse.IsEmpty())
     SetPeerElement(NULL);
@@ -361,18 +375,12 @@ bool MyGatekeeperServer::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
 #ifdef H323_TRANSNEXUS_OSP
   PString oldOSPServer = ospRoutingURL;
-  ospRoutingURL = cfg.GetString(OSPRoutingURLKey, ospRoutingURL);
-  rsrc->Add(new PHTTPStringField(OSPRoutingURLKey, 25, ospRoutingURL));
+  ospRoutingURL = rsrc->AddStringField(OSPRoutingURLKey, 25, ospRoutingURL);
   bool ospChanged = oldOSPServer != ospRoutingURL;
 
-  ospPrivateKeyFileName = cfg.GetString(OSPPrivateKeyFileKey, ospPrivateKeyFileName);
-  rsrc->Add(new PHTTPStringField(OSPPrivateKeyFileKey, 25, ospPrivateKeyFileName));
-
-  ospPublicKeyFileName = cfg.GetString(OSPPublicKeyFileKey, ospPublicKeyFileName);
-  rsrc->Add(new PHTTPStringField(OSPPublicKeyFileKey, 25, ospPublicKeyFileName));
-
-  ospServerKeyFileName = cfg.GetString(OSPServerKeyFileKey, ospServerKeyFileName);
-  rsrc->Add(new PHTTPStringField(OSPServerKeyFileKey, 25, ospServerKeyFileName));
+  ospPrivateKeyFileName = rsrc->AddStringField(OSPPrivateKeyFileKey, 25, ospPrivateKeyFileName);
+  ospPublicKeyFileName =  rsrc->AddStringField(OSPPublicKeyFileKey, 25, ospPublicKeyFileName);
+  ospServerKeyFileName = rsrc->AddStringField(OSPServerKeyFileKey, 25, ospServerKeyFileName);
 
   if (!ospRoutingURL.IsEmpty()) {
     if (ospProvider != NULL && ospProvider->IsOpen() && ospChanged) {
@@ -399,78 +407,58 @@ bool MyGatekeeperServer::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
 #endif
 
-  PString gkid = cfg.GetString(ServerGatekeeperIdentifierKey, MyProcess::Current().GetName() + " on " + PIPSocket::GetHostName());
-  rsrc->Add(new PHTTPStringField(ServerGatekeeperIdentifierKey, 0, gkid,
-                      "Identifier (name) for gatekeeper server", 1, 30));
-  SetGatekeeperIdentifier(gkid);
+  SetGatekeeperIdentifier(rsrc->AddStringField(ServerGatekeeperIdentifierKey, 0,
+                                               MyProcess::Current().GetName() + " on " + PIPSocket::GetHostName(),
+                                               "Identifier (name) for gatekeeper server", 1, 30));
 
   // Interfaces to listen on
-  PHTTPFieldArray * fieldArray = new PHTTPFieldArray(new PHTTPStringField(GkServerListenersKey, 0, "",
-                         "Local network interfaces to listen for RAS, blank means all", 1, 25), false);
-  H323TransportAddressArray interfaces = fieldArray->GetStrings(cfg);
-  PTRACE(3, "Starting gatekeeper server on interfaces " << interfaces);
-  AddListeners(interfaces);
-  rsrc->Add(fieldArray);
+  AddListeners(rsrc->AddStringArrayField(GkServerListenersKey, false, 0, PStringArray(),
+                  "Local network interfaces to listen for RAS, blank means all", 1, 25));
 
-  SetAvailableBandwidth(cfg.GetInteger(AvailableBandwidthKey, GetAvailableBandwidth()/10)*10);
-  rsrc->Add(new PHTTPIntegerField(AvailableBandwidthKey, 1, INT_MAX, GetAvailableBandwidth()/10,
-              "kb/s", "Total bandwidth to allocate across all calls through gatekeeper server"));
+  SetAvailableBandwidth(rsrc->AddIntegerField(AvailableBandwidthKey, 1, INT_MAX, GetAvailableBandwidth()/10,
+                       "kb/s", "Total bandwidth to allocate across all calls through gatekeeper server")*10);
 
-  defaultBandwidth = cfg.GetInteger(DefaultBandwidthKey, defaultBandwidth/10)*10;
-  rsrc->Add(new PHTTPIntegerField(DefaultBandwidthKey, 1, INT_MAX, defaultBandwidth/10,
-         "kb/s", "Default bandwidth to allocate for a call through gatekeeper server"));
+  defaultBandwidth = rsrc->AddIntegerField(DefaultBandwidthKey, 1, INT_MAX, defaultBandwidth/10,
+               "kb/s", "Default bandwidth to allocate for a call through gatekeeper server")*10;
 
-  maximumBandwidth = cfg.GetInteger(MaximumBandwidthKey, maximumBandwidth/10)*10;
-  rsrc->Add(new PHTTPIntegerField(MaximumBandwidthKey, 1, INT_MAX, maximumBandwidth/10,
-            "kb/s", "Maximum bandwidth to allow for a call through gatekeeper server"));
+  maximumBandwidth = rsrc->AddIntegerField(MaximumBandwidthKey, 1, INT_MAX, maximumBandwidth/10,
+                  "kb/s", "Maximum bandwidth to allow for a call through gatekeeper server")*10;
 
-  defaultTimeToLive = cfg.GetInteger(DefaultTimeToLiveKey, defaultTimeToLive);
-  rsrc->Add(new PHTTPIntegerField(DefaultTimeToLiveKey, 10, 86400, defaultTimeToLive, "seconds",
-                               "Default time before assume endpoint is offline to gatekeeper server"));
+  defaultTimeToLive = rsrc->AddIntegerField(DefaultTimeToLiveKey, 10, 86400, defaultTimeToLive,
+              "seconds", "Default time before assume endpoint is offline to gatekeeper server");
 
-  defaultInfoResponseRate = cfg.GetInteger(CallHeartbeatTimeKey, defaultInfoResponseRate);
-  rsrc->Add(new PHTTPIntegerField(CallHeartbeatTimeKey, 0, 86400, defaultInfoResponseRate, "seconds",
-                         "Time between validation requests on call controlled by gatekeeper server"));
+  defaultInfoResponseRate = rsrc->AddIntegerField(CallHeartbeatTimeKey, 0, 86400, defaultInfoResponseRate,
+                    "seconds", "Time between validation requests on call controlled by gatekeeper server");
 
-  overwriteOnSameSignalAddress = cfg.GetBoolean(OverwriteOnSameSignalAddressKey, overwriteOnSameSignalAddress);
-  rsrc->Add(new PHTTPBooleanField(OverwriteOnSameSignalAddressKey, overwriteOnSameSignalAddress,
-            "Allow new registration to gatekeeper on a specific signal address to override previous registration"));
+  overwriteOnSameSignalAddress = rsrc->AddBooleanField(OverwriteOnSameSignalAddressKey, overwriteOnSameSignalAddress,
+               "Allow new registration to gatekeeper on a specific signal address to override previous registration");
 
-  canHaveDuplicateAlias = cfg.GetBoolean(CanHaveDuplicateAliasKey, canHaveDuplicateAlias);
-  rsrc->Add(new PHTTPBooleanField(CanHaveDuplicateAliasKey, canHaveDuplicateAlias,
-            "Different endpoint can register with gatekeeper the same alias name as another endpoint"));
+  canHaveDuplicateAlias = rsrc->AddBooleanField(CanHaveDuplicateAliasKey, canHaveDuplicateAlias,
+      "Different endpoint can register with gatekeeper the same alias name as another endpoint");
 
-  canOnlyCallRegisteredEP = cfg.GetBoolean(CanOnlyCallRegisteredEPKey, canOnlyCallRegisteredEP);
-  rsrc->Add(new PHTTPBooleanField(CanOnlyCallRegisteredEPKey, canOnlyCallRegisteredEP,
-                "Gatekeeper will only allow EP to call another endpoint registered localy"));
+  canOnlyCallRegisteredEP = rsrc->AddBooleanField(CanOnlyCallRegisteredEPKey, canOnlyCallRegisteredEP,
+                           "Gatekeeper will only allow EP to call another endpoint registered localy");
 
-  canOnlyAnswerRegisteredEP = cfg.GetBoolean(CanOnlyAnswerRegisteredEPKey, canOnlyAnswerRegisteredEP);
-  rsrc->Add(new PHTTPBooleanField(CanOnlyAnswerRegisteredEPKey, canOnlyAnswerRegisteredEP,
-                "Gatekeeper will only allow endpoint to answer another endpoint registered localy"));
+  canOnlyAnswerRegisteredEP = rsrc->AddBooleanField(CanOnlyAnswerRegisteredEPKey, canOnlyAnswerRegisteredEP,
+                         "Gatekeeper will only allow endpoint to answer another endpoint registered localy");
 
-  answerCallPreGrantedARQ = cfg.GetBoolean(AnswerCallPreGrantedARQKey, answerCallPreGrantedARQ);
-  rsrc->Add(new PHTTPBooleanField(AnswerCallPreGrantedARQKey, answerCallPreGrantedARQ,
-                                    "Gatekeeper pre-grants all incoming calls to endpoint"));
+  answerCallPreGrantedARQ = rsrc->AddBooleanField(AnswerCallPreGrantedARQKey, answerCallPreGrantedARQ,
+                                               "Gatekeeper pre-grants all incoming calls to endpoint");
 
-  makeCallPreGrantedARQ = cfg.GetBoolean(MakeCallPreGrantedARQKey, makeCallPreGrantedARQ);
-  rsrc->Add(new PHTTPBooleanField(MakeCallPreGrantedARQKey, makeCallPreGrantedARQ,
-                        "Gatekeeper pre-grants all outgoing calls from endpoint"));
+  makeCallPreGrantedARQ = rsrc->AddBooleanField(MakeCallPreGrantedARQKey, makeCallPreGrantedARQ,
+                                       "Gatekeeper pre-grants all outgoing calls from endpoint");
 
-  aliasCanBeHostName = cfg.GetBoolean(AliasCanBeHostNameKey, aliasCanBeHostName);
-  rsrc->Add(new PHTTPBooleanField(AliasCanBeHostNameKey, aliasCanBeHostName,
-              "Gatekeeper allows endpoint to simply registerit's host name/IP address"));
+  aliasCanBeHostName = rsrc->AddBooleanField(AliasCanBeHostNameKey, aliasCanBeHostName,
+              "Gatekeeper allows endpoint to simply registerit's host name/IP address");
 
-  m_minAliasToAllocate = cfg.GetInteger(MinAliasToAllocateKey, m_minAliasToAllocate);
-  rsrc->Add(new PHTTPIntegerField(MinAliasToAllocateKey, 0, INT_MAX, m_minAliasToAllocate, "",
-            "Minimum value for aliases gatekeeper will allocate when endpoint does not provide one, 0 disables"));
+  m_minAliasToAllocate = rsrc->AddIntegerField(MinAliasToAllocateKey, 0, INT_MAX, m_minAliasToAllocate, "",
+       "Minimum value for aliases gatekeeper will allocate when endpoint does not provide one, 0 disables");
 
-  m_maxAliasToAllocate = cfg.GetInteger(MaxAliasToAllocateKey, m_maxAliasToAllocate);
-  rsrc->Add(new PHTTPIntegerField(MaxAliasToAllocateKey, 0, INT_MAX, m_maxAliasToAllocate, "",
-            "Minimum value for aliases gatekeeper will allocate when endpoint does not provide one, 0 disables"));
+  m_maxAliasToAllocate = rsrc->AddIntegerField(MaxAliasToAllocateKey, 0, INT_MAX, m_maxAliasToAllocate, "",
+       "Minimum value for aliases gatekeeper will allocate when endpoint does not provide one, 0 disables");
 
-  isGatekeeperRouted = cfg.GetBoolean(IsGatekeeperRoutedKey, isGatekeeperRouted);
-  rsrc->Add(new PHTTPBooleanField(IsGatekeeperRoutedKey, isGatekeeperRouted,
-        "All endpoionts will route sigaling for all calls through the gatekeeper"));
+  isGatekeeperRouted = rsrc->AddBooleanField(IsGatekeeperRoutedKey, isGatekeeperRouted,
+             "All endpoionts will route sigaling for all calls through the gatekeeper");
 
   routes.RemoveAll();
   PINDEX arraySize = cfg.GetInteger(ROUTES_SECTION, ROUTES_KEY" Array Size");
@@ -487,9 +475,8 @@ bool MyGatekeeperServer::Initialise(PConfig & cfg, PConfigPage * rsrc)
   routeFields->Append(new PHTTPStringField(RouteHostKey, 30));
   rsrc->Add(new PHTTPFieldArray(routeFields, true));
 
-  requireH235 = cfg.GetBoolean(RequireH235Key, requireH235);
-  rsrc->Add(new PHTTPBooleanField(RequireH235Key, requireH235,
-            "Gatekeeper requires H.235 cryptographic authentication for registrations"));
+  requireH235 = rsrc->AddBooleanField(RequireH235Key, requireH235,
+      "Gatekeeper requires H.235 cryptographic authentication for registrations");
 
   passwords.RemoveAll();
   arraySize = cfg.GetInteger(USERS_SECTION, USERS_KEY" Array Size");

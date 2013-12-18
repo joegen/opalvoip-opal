@@ -64,6 +64,11 @@ static const char NATServerKey[] = "NAT Server";
 static const char STUNServerKey[] = "STUN Server";
 #endif
 
+static const char OverrideProductInfoKey[] = "Override Product Info";
+static const char VendorNameKey[] = "Product Vendor";
+static const char ProductNameKey[] = "Product Name";
+static const char ProductVersionKey[] = "Product Version";
+
 #if OPAL_SIP
 static const char SIPUsernameKey[] = "SIP User Name";
 static const char SIPPrackKey[] = "SIP Provisional Responses";
@@ -213,7 +218,6 @@ void MyProcess::OnConfigChanged()
 }
 
 
-
 PBoolean MyProcess::Initialise(const char * initMsg)
 {
   PConfig cfg(ParametersSection);
@@ -244,21 +248,20 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   PConfigPage * rsrc = new PConfigPage(*this, "Parameters", ParametersSection, authority);
 
   // HTTP authentication username/password
-  rsrc->Add(new PHTTPStringField(UsernameKey, 25, username,
-            "User name to access HTTP user interface for server."));
+  rsrc->AddStringField(UsernameKey, 25, username, "User name to access HTTP user interface for server.");
   rsrc->Add(new PHTTPPasswordField(PasswordKey, 20, password));
 
   // Log level for messages
-  rsrc->Add(new PHTTPIntegerField(LogLevelKey,
-                                  PSystemLog::Fatal, PSystemLog::NumLogLevels-1,
-                                  GetLogLevel(),
-                                  "1=Fatal only, 2=Errors, 3=Warnings, 4=Info, 5=Debug"));
+  rsrc->AddIntegerField(LogLevelKey,
+                        PSystemLog::Fatal, PSystemLog::NumLogLevels-1,
+                        GetLogLevel(),
+                        "1=Fatal only, 2=Errors, 3=Warnings, 4=Info, 5=Debug");
 
 #if OPAL_PTLIB_SSL
   // SSL certificate file.
   PString certificateFile = cfg.GetString(HTTPCertificateFileKey);
-  rsrc->Add(new PHTTPStringField(HTTPCertificateFileKey, 250, certificateFile,
-            "Certificate for HTTPS user interface, if empty HTTP is used.", 1, 50));
+  rsrc->AddStringField(HTTPCertificateFileKey, 250, certificateFile,
+      "Certificate for HTTPS user interface, if empty HTTP is used.", 1, 50);
   if (certificateFile.IsEmpty())
     DisableSSL();
   else if (!SetServerCertificate(certificateFile, true)) {
@@ -268,9 +271,8 @@ PBoolean MyProcess::Initialise(const char * initMsg)
 #endif
 
   // HTTP Port number to use.
-  WORD httpPort = (WORD)cfg.GetInteger(HttpPortKey, DefaultHTTPPort);
-  rsrc->Add(new PHTTPIntegerField(HttpPortKey, 1, 32767, httpPort,
-            "Port for HTTP user interface for server."));
+  WORD httpPort = (WORD)rsrc->AddIntegerField(HttpPortKey, 1, 32767, DefaultHTTPPort,
+                                          "Port for HTTP user interface for server.");
 
   // Initialise the core of the system
   if (!m_manager.Initialise(cfg, rsrc))
@@ -399,7 +401,6 @@ MyManager::~MyManager()
 PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 {
   PINDEX arraySize;
-  PHTTPFieldArray * fieldArray;
 
   PString defaultSection = cfg.GetDefaultSection();
 
@@ -446,66 +447,35 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
                   PARRAYSIZE(MediaTransferModeValues), MediaTransferModeValues, MediaTransferModeTitles,
                                m_mediaTransferMode, "How media is to be routed between the endpoints."));
 
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(PreferredMediaKey, 25,
-                                   "", "Preference order for codecs to be offered to remotes"), true);
-  PStringArray formats = fieldArray->GetStrings(cfg);
-  if (formats.GetSize() > 0)
-    SetMediaFormatOrder(formats);
-  else
-    fieldArray->SetStrings(cfg, GetMediaFormatOrder());
-  rsrc->Add(fieldArray);
+  SetMediaFormatOrder(rsrc->AddStringArrayField(PreferredMediaKey, true, 25, GetMediaFormatOrder(),
+                                           "Preference order for codecs to be offered to remotes"));
 
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(RemovedMediaKey, 25,
-                                   "", "Codecs to be prevented from being used"), true);
-  formats = fieldArray->GetStrings(cfg);
-  if (formats.GetSize() > 0)
-    SetMediaFormatMask(formats);
-  else
-    fieldArray->SetStrings(cfg, GetMediaFormatMask());
-  rsrc->Add(fieldArray);
+  SetMediaFormatMask(rsrc->AddStringArrayField(RemovedMediaKey, true, 25, GetMediaFormatMask(), "Codecs to be prevented from being used"));
+  
+  SetAudioJitterDelay(rsrc->AddIntegerField(MinJitterKey, 20, 2000, GetMinAudioJitterDelay(), "ms", "Minimum jitter buffer size"),
+                      rsrc->AddIntegerField(MaxJitterKey, 20, 2000, GetMaxAudioJitterDelay(), "ms", "Maximum jitter buffer size"));
 
-  SetAudioJitterDelay(cfg.GetInteger(MinJitterKey, GetMinAudioJitterDelay()),
-                      cfg.GetInteger(MaxJitterKey, GetMaxAudioJitterDelay()));
-  rsrc->Add(new PHTTPIntegerField(MinJitterKey, 20, 2000, GetMinAudioJitterDelay(),
-            "ms", "Minimum jitter buffer size"));
-  rsrc->Add(new PHTTPIntegerField(MaxJitterKey, 20, 2000, GetMaxAudioJitterDelay(),
-            "ms", " Maximum jitter buffer size"));
+  SetTCPPorts  (rsrc->AddIntegerField(TCPPortBaseKey, 0, 65535, GetTCPPortBase(),   "", "Base of port range for allocating TCP streams, e.g. H.323 signalling channel"),
+                rsrc->AddIntegerField(TCPPortMaxKey,  0, 65535, GetTCPPortMax(),    "", "Maximum of port range for allocating TCP streams"));
+  SetUDPPorts  (rsrc->AddIntegerField(UDPPortBaseKey, 0, 65535, GetUDPPortBase(),   "", "Base of port range for allocating UDP streams, e.g. SIP signalling channel"),
+                rsrc->AddIntegerField(UDPPortMaxKey,  0, 65535, GetUDPPortMax(),    "", "Maximum of port range for allocating UDP streams"));
+  SetRtpIpPorts(rsrc->AddIntegerField(RTPPortBaseKey, 0, 65535, GetRtpIpPortBase(), "", "Base of port range for allocating RTP/UDP streams"),
+                rsrc->AddIntegerField(RTPPortMaxKey,  0, 65535, GetRtpIpPortMax(),  "", "Maximum of port range for allocating RTP/UDP streams"));
 
-  SetTCPPorts(cfg.GetInteger(TCPPortBaseKey, GetTCPPortBase()),
-              cfg.GetInteger(TCPPortMaxKey, GetTCPPortMax()));
-  SetUDPPorts(cfg.GetInteger(UDPPortBaseKey, GetUDPPortBase()),
-              cfg.GetInteger(UDPPortMaxKey, GetUDPPortMax()));
-  SetRtpIpPorts(cfg.GetInteger(RTPPortBaseKey, GetRtpIpPortBase()),
-                cfg.GetInteger(RTPPortMaxKey, GetRtpIpPortMax()));
-
-  rsrc->Add(new PHTTPIntegerField(TCPPortBaseKey, 0, 65535, GetTCPPortBase(),
-            "", "Base of port range for allocating TCP streams, e.g. H.323 signalling channel"));
-  rsrc->Add(new PHTTPIntegerField(TCPPortMaxKey,  0, 65535, GetTCPPortMax(),
-            "", "Maximum of port range for allocating TCP streams"));
-  rsrc->Add(new PHTTPIntegerField(UDPPortBaseKey, 0, 65535, GetUDPPortBase(),
-            "", "Base of port range for allocating UDP streams, e.g. SIP signalling channel"));
-  rsrc->Add(new PHTTPIntegerField(UDPPortMaxKey,  0, 65535, GetUDPPortMax(),
-            "", "Maximum of port range for allocating UDP streams"));
-  rsrc->Add(new PHTTPIntegerField(RTPPortBaseKey, 0, 65535, GetRtpIpPortBase(),
-            "", "Base of port range for allocating RTP/UDP streams"));
-  rsrc->Add(new PHTTPIntegerField(RTPPortMaxKey,  0, 65535, GetRtpIpPortMax(),
-            "", "Maximum of port range for allocating RTP/UDP streams"));
-
-  SetMediaTypeOfService(cfg.GetInteger(RTPTOSKey, GetMediaTypeOfService()));
-  rsrc->Add(new PHTTPIntegerField(RTPTOSKey,  0, 255, GetMediaTypeOfService(),
-            "", "Value for DIFSERV Quality of Service"));
+  SetMediaTypeOfService(rsrc->AddIntegerField(RTPTOSKey,  0, 255, GetMediaTypeOfService(), "", "Value for DIFSERV Quality of Service"));
 
 #if P_NAT
-  {
-    PString method = cfg.GetString(NATMethodKey, PSTUNClient::MethodName());
-    PString server = cfg.GetString(NATServerKey, cfg.GetString(STUNServerKey, GetNATServer()));
-    SetNATServer(method, server);
-    rsrc->Add(new PHTTPStringField(NATMethodKey, 25, method,
-              "Mothod for NAT traversal"));
-    rsrc->Add(new PHTTPStringField(NATServerKey, 100, server,
-              "Server IP/hostname for NAT traversal", 1, 30));
-  }
+  SetNATServer(rsrc->AddStringField(NATMethodKey, 25, PSTUNClient::MethodName(), "Method for NAT traversal"),
+               rsrc->AddStringField(NATServerKey, 100, cfg.GetString(STUNServerKey, GetNATServer()), "Server IP/hostname for NAT traversal", 1, 30));
 #endif // P_NAT
+
+  bool overrideProductInfo = rsrc->AddBooleanField(OverrideProductInfoKey, false, "Override the default product information");
+  OpalProductInfo productInfo = GetProductInfo();
+  productInfo.vendor = rsrc->AddStringField(VendorNameKey, 20, productInfo.vendor);
+  productInfo.name = rsrc->AddStringField(ProductNameKey, 20, productInfo.name);
+  productInfo.version = rsrc->AddStringField(ProductVersionKey, 20, productInfo.version);
+  if (overrideProductInfo)
+    SetProductInfo(productInfo);
 
 #if OPAL_H323
   if (!m_h323EP->Initialise(cfg, rsrc))
@@ -514,16 +484,12 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
 #if OPAL_SIP
   // Add SIP parameters
-  m_sipEP->SetDefaultLocalPartyName(cfg.GetString(SIPUsernameKey, m_sipEP->GetDefaultLocalPartyName()));
-  rsrc->Add(new PHTTPStringField(SIPUsernameKey, 25, m_sipEP->GetDefaultLocalPartyName(),
-            "SIP local user name"));
+  m_sipEP->SetDefaultLocalPartyName(rsrc->AddStringField(SIPUsernameKey, 25, m_sipEP->GetDefaultLocalPartyName(),"SIP local user name"));
 
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(SIPListenersKey, 25,
-                                   "", "Local network interfaces to listen for SIP, blank means all"), false);
-  if (!m_sipEP->StartListeners(fieldArray->GetStrings(cfg), false)) {
+  if (!m_sipEP->StartListeners(rsrc->AddStringArrayField(SIPListenersKey, false, 25, PStringArray(),
+                                    "Local network interfaces to listen for SIP, blank means all"))) {
     PSYSTEMLOG(Error, "Could not open any SIP listeners!");
   }
-  rsrc->Add(fieldArray);
 
   SIPConnection::PRACKMode prack = cfg.GetEnum(SIPPrackKey, m_sipEP->GetDefaultPRACKMode());
   static const char * const prackModes[] = { "Disabled", "Supported", "Required" };
@@ -531,10 +497,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
             "SIP provisional responses (100rel) handling."));
   m_sipEP->SetDefaultPRACKMode(prack);
 
-  PString proxy = m_sipEP->GetProxy().AsString();
-  m_sipEP->SetProxy(cfg.GetString(SIPProxyKey, proxy));
-  rsrc->Add(new PHTTPStringField(SIPProxyKey, 100, proxy,
-            "SIP outbound proxy IP/hostname", 1, 30));
+  m_sipEP->SetProxy(rsrc->AddStringField(SIPProxyKey, 100, m_sipEP->GetProxy().AsString(), "SIP outbound proxy IP/hostname", 1, 30));
 
 #if OPAL_PTLIB_SSL
   PINDEX security = 0;
@@ -564,14 +527,8 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
                      PARRAYSIZE(SignalingSecurityValues), SignalingSecurityValues, SignalingSecurityTitles,
                                                         security, "Signaling security methods available."));
 
-  fieldArray = new PHTTPFieldArray(new PHTTPSelectField(SIPMediaCryptoSuitesKey,
-              m_sipEP->GetAllMediaCryptoSuites(), 0, "Media security methods available."), true);
-  PStringArray cryptoSuites = fieldArray->GetStrings(cfg);
-  if (cryptoSuites.GetSize() > 0)
-    m_sipEP->SetMediaCryptoSuites(cryptoSuites);
-  else
-    fieldArray->SetStrings(cfg, m_sipEP->GetMediaCryptoSuites());
-  rsrc->Add(fieldArray);
+  m_sipEP->SetMediaCryptoSuites(rsrc->AddSelectArrayField(SIPMediaCryptoSuitesKey, true, m_sipEP->GetMediaCryptoSuites(),
+                                                m_sipEP->GetAllMediaCryptoSuites(), "Media security methods available."));
 #endif
 
   // Registrar
@@ -608,19 +565,15 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
 #if OPAL_LID
   // Add POTS and PSTN endpoints
-  fieldArray = new PHTTPFieldArray(new PHTTPSelectField(LIDKey, OpalLineInterfaceDevice::GetAllDevices(),
-                                   0, "Line Interface Devices (PSTN, ISDN etc) to monitor, if any"), false);
-  PStringArray devices = fieldArray->GetStrings(cfg);
-  if (!m_potsEP->AddDeviceNames(devices)) {
+  if (!m_potsEP->AddDeviceNames(rsrc->AddSelectArrayField(LIDKey, false, OpalLineInterfaceDevice::GetAllDevices(),
+                                    PStringArray(),"Line Interface Devices (PSTN, ISDN etc) to monitor, if any"))) {
     PSYSTEMLOG(Error, "No LID devices!");
   }
-  rsrc->Add(fieldArray);
 #endif // OPAL_LID
 
 
 #if OPAL_CAPI
-  m_enableCAPI = cfg.GetBoolean(EnableCAPIKey);
-  rsrc->Add(new PHTTPBooleanField(EnableCAPIKey, m_enableCAPI, "Enable CAPI ISDN controller(s), if available"));
+  m_enableCAPI = rsrc->AddBooleanField(EnableCAPIKey, m_enableCAPI, "Enable CAPI ISDN controller(s), if available");
   if (m_enableCAPI && m_capiEP->OpenControllers() == 0) {
     PSYSTEMLOG(Error, "No CAPI controllers!");
   }
@@ -628,45 +581,27 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
 
 #if OPAL_IVR
-  {
-    // Set IVR protocol handler
-    PString vxml = cfg.GetString(VXMLKey);
-    rsrc->Add(new PHTTPStringField(VXMLKey, 0, vxml,
-              "Interactive Voice Response VXML script, may be a URL or the actual VXML", 10, 80));
-    if (!vxml)
-      m_ivrEP->SetDefaultVXML(vxml);
-  }
-
-  {
-    PDirectory dir = cfg.GetString(IVRCacheKey, m_ivrEP->GetCacheDir());
-    rsrc->Add(new PHTTPStringField(IVRCacheKey, 0, dir,
-              "Interactive Voice Response directory to cache Text To Speech phrases", 1, 50));
-    m_ivrEP->SetCacheDir(dir);
-
-    dir = cfg.GetString(IVRRecordDirKey, m_ivrEP->GetRecordDirectory());
-    rsrc->Add(new PHTTPStringField(IVRRecordDirKey, 0, dir,
-              "Interactive Voice Response directory to save recorded messages", 1, 50));
-    m_ivrEP->SetRecordDirectory(dir);
-  }
+  // Set IVR protocol handler
+  m_ivrEP->SetDefaultVXML(rsrc->AddStringField(VXMLKey, 0, PString::Empty(),
+      "Interactive Voice Response VXML script, may be a URL or the actual VXML", 10, 80));
+  m_ivrEP->SetCacheDir(rsrc->AddStringField(IVRCacheKey, 0, m_ivrEP->GetCacheDir(),
+      "Interactive Voice Response directory to cache Text To Speech phrases", 1, 50));
+  m_ivrEP->SetRecordDirectory(rsrc->AddStringField(IVRRecordDirKey, 0, m_ivrEP->GetRecordDirectory(),
+      "Interactive Voice Response directory to save recorded messages", 1, 50));
 #endif
 
 #if OPAL_HAS_MIXER
   {
     OpalMixerNodeInfo adHoc;
-
-    adHoc.m_mediaPassThru = cfg.GetBoolean(ConfMediaPassThruKey, adHoc.m_mediaPassThru);
-    rsrc->Add(new PHTTPBooleanField(ConfMediaPassThruKey, adHoc.m_mediaPassThru,
-              "Conference media pass though optimisation"));
+    adHoc.m_mediaPassThru = rsrc->AddBooleanField(ConfMediaPassThruKey, adHoc.m_mediaPassThru, "Conference media pass though optimisation");
 
 #if OPAL_VIDEO
-    adHoc.m_audioOnly = cfg.GetBoolean(ConfAudioOnlyKey, adHoc.m_audioOnly);
-    rsrc->Add(new PHTTPBooleanField(ConfAudioOnlyKey, adHoc.m_audioOnly,
-              "Conference is audio only"));
+    adHoc.m_audioOnly = rsrc->AddBooleanField(ConfAudioOnlyKey, adHoc.m_audioOnly, "Conference is audio only");
 
-    PString resolution = cfg.GetString(ConfVideoResolutionKey, PVideoFrameInfo::AsString(adHoc.m_width, adHoc.m_height));
-    rsrc->Add(new PHTTPStringField(ConfVideoResolutionKey, 10, resolution,
-              "Conference video frame resolution"));
-    PVideoFrameInfo::ParseSize(resolution, adHoc.m_width, adHoc.m_height);
+    PVideoFrameInfo::ParseSize(rsrc->AddStringField(ConfVideoResolutionKey, 10,
+                                                    PVideoFrameInfo::AsString(adHoc.m_width, adHoc.m_height),
+                                                    "Conference video frame resolution"),
+                               adHoc.m_width, adHoc.m_height);
 #endif
 
     adHoc.m_closeOnEmpty = true;
@@ -684,9 +619,8 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     rsrc->Add(new PHTTPRadioField(ScriptLanguageKey, languages,
               languages.GetValuesIndex(language),"Interpreter script language."));
   
-    PString script = cfg.GetString(ScriptTextKey);
-    rsrc->Add(new PHTTPStringField(ScriptTextKey, 0, script,
-              "Interpreter script, may be a filename or the actual script text", 10, 80));
+    PString script = rsrc->AddStringField(ScriptTextKey, 0, PString::Empty(),
+        "Interpreter script, may be a filename or the actual script text", 10, 80);
     if (m_scriptLanguage != language || m_scriptText != script) {
       m_scriptLanguage = language;
       m_scriptText = script;
