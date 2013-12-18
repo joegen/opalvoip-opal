@@ -525,7 +525,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   static const char * const SignalingSecurityTitles[] = { "sip only", "sips only", "sip & sips" };
   rsrc->Add(new PHTTPRadioField(SIPSignalingSecurityKey,
                      PARRAYSIZE(SignalingSecurityValues), SignalingSecurityValues, SignalingSecurityTitles,
-                                                        security, "Signaling security methods available."));
+                                                        security-1, "Signaling security methods available."));
 
   m_sipEP->SetMediaCryptoSuites(rsrc->AddSelectArrayField(SIPMediaCryptoSuitesKey, true, m_sipEP->GetMediaCryptoSuites(),
                                                 m_sipEP->GetAllMediaCryptoSuites(), "Media security methods available."));

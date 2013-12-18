@@ -162,7 +162,7 @@ bool MyH323EndPoint::Initialise(PConfig & cfg, PConfigPage * rsrc)
   static const char * const SignalingSecurityTitles[] = { "h323 only", "h323s only", "h323 & h323s" };
   rsrc->Add(new PHTTPRadioField(H323SignalingSecurityKey,
                      PARRAYSIZE(SignalingSecurityValues), SignalingSecurityValues, SignalingSecurityTitles,
-                                                        security, "Signaling security methods available."));
+                                                        security-1, "Signaling security methods available."));
 
   SetMediaCryptoSuites(rsrc->AddSelectArrayField(H323MediaCryptoSuitesKey, true, GetMediaCryptoSuites(),
                                                 GetAllMediaCryptoSuites(), "Media security methods available."));
