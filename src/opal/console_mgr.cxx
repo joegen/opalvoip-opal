@@ -1813,6 +1813,7 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
                     "Quit command line interpreter, note quitting from console also shuts down application.");
   m_cli->SetCommand("shutdown", PCREATE_NOTIFIER(CmdShutDown),
                     "Shut down the application");
+  m_cli->SetExitCommand(PString::Empty()); // Using ours
 
   for (PINDEX i = 0; i < m_endpointPrefixes.GetSize(); ++i) {
     OpalConsoleEndPoint * ep = GetConsoleEndPoint(m_endpointPrefixes[i]);
@@ -2048,6 +2049,7 @@ void OpalManagerCLI::CmdShutDown(PCLI::Arguments & args, P_INT_PTR)
 #if _WIN32
   PProcess::Current().SetWaitOnExitConsoleWindow(false);
 #endif
+  args.GetContext() << "Shutting down " << PProcess::Current().GetName() << " . . . " << endl;
   args.GetContext().GetCLI().Stop();
 }
 
