@@ -1571,6 +1571,22 @@ const PString & OpalVideoFormat::UseImageAttributeInSDP()         { static const
 #endif
 
 
+OpalVideoFormat::OpalVideoFormat(OpalVideoFormatInternal * info)
+  : OpalMediaFormat(info)
+{
+}
+
+
+OpalVideoFormat & OpalVideoFormat::operator=(const OpalMediaFormat & other)
+{
+  if (dynamic_cast<OpalVideoFormatInternal *>(other.m_info) != NULL)
+    OpalMediaFormat::operator=(other);
+  else
+    OpalMediaFormat::operator=(OpalMediaFormat());
+  return *this;
+}
+
+
 OpalVideoFormat::OpalVideoFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
                                  const char * encodingName,
@@ -1679,6 +1695,65 @@ void OpalMediaFormat::AdjustVideoArgs(PVideoDevice::OpenArgs & args) const
   unsigned maxRate = GetClockRate()/GetFrameTime();
   if (args.rate > maxRate)
     args.rate = maxRate;
+}
+
+
+OpalVideoFormat::VideoFrameType OpalVideoFormat::GetVideoFrameType(const RTP_DataFrame & rtp, PBYTEArray & context) const
+{
+  PWaitAndSignal m(m_mutex);
+  return m_info == NULL ? e_UnknownFrameType : dynamic_cast<OpalVideoFormatInternal *>(m_info)->GetVideoFrameType(rtp, context);
+}
+
+
+OpalVideoFormat::VideoFrameType OpalVideoFormatInternal::GetVideoFrameType(const RTP_DataFrame & rtp, PBYTEArray & context) const
+{
+  // This should really do the key frame detection from the codec plugin, but we cheat for now
+  struct KeyFrameDetectorVP8
+  {
+    int dummy; // To give it non-zero size.
+    OpalVideoFormat::VideoFrameType GetVideoFrameType(const RTP_DataFrame & data)
+    {
+      if (data.GetPayloadSize() < 3)
+        return OpalVideoFormat::e_NonFrameBoundary;
+
+      const BYTE * rtp = data.GetPayloadPtr();
+      PINDEX headerSize = 1;
+      if ((rtp[0]&0x80) != 0) { // Check X bit
+        ++headerSize;           // Allow for X byte
+
+        if ((rtp[1]&0x80) != 0) { // Check I bit
+          ++headerSize;           // Allow for I field
+          if ((rtp[2]&0x80) != 0) // > 7 bit picture ID
+            ++headerSize;         // Allow for extra bits of I field
+        }
+
+        if ((rtp[1]&0x40) != 0) // Check L bit
+          ++headerSize;         // Allow for L byte
+
+        if ((rtp[1]&0x30) != 0) // Check T or K bit
+          ++headerSize;         // Allow for T/K byte
+      }
+
+      if (data.GetPayloadSize() <= headerSize)
+        return OpalVideoFormat::e_NonFrameBoundary;
+
+      // Key frame is S bit == 1 && P bit == 0
+      if ((rtp[0]&0x10) == 0)
+        return OpalVideoFormat::e_NonFrameBoundary;
+
+      return (rtp[headerSize]&0x01) == 0 ? OpalVideoFormat::e_IntraFrame : OpalVideoFormat::e_InterFrame;
+    }
+  };
+
+  if (context.IsEmpty() && formatName == "VP8-WebM")
+    context.SetSize(sizeof(KeyFrameDetectorVP8));
+  if (context.IsEmpty())
+    return OpalVideoFormat::e_UnknownFrameType;
+
+  #undef new
+  KeyFrameDetectorVP8 * kfd = new (context.GetPointer(sizeof(KeyFrameDetectorVP8))) KeyFrameDetectorVP8;
+  #define new PNEW
+  return kfd->GetVideoFrameType(rtp);
 }
 
 #endif // OPAL_VIDEO

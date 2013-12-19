@@ -1244,6 +1244,7 @@ class OpalMediaFormat : public PContainer
 
   friend class OpalMediaFormatInternal;
   friend class OpalMediaFormatList;
+  friend class OpalVideoFormat;
 };
 
 
@@ -1295,31 +1296,16 @@ class OpalAudioFormat : public OpalMediaFormat
 };
 
 #if OPAL_VIDEO
-class OpalVideoFormatInternal : public OpalMediaFormatInternal
-{
-  public:
-    OpalVideoFormatInternal(
-      const char * fullName,
-      RTP_DataFrame::PayloadTypes rtpPayloadType,
-      const char * encodingName,
-      unsigned maxFrameWidth,
-      unsigned maxFrameHeight,
-      unsigned maxFrameRate,
-      unsigned maxBitRate,
-      time_t timeStamp = 0
-    );
-    virtual PObject * Clone() const;
-    virtual bool Merge(const OpalMediaFormatInternal & mediaFormat);
-};
 
+class OpalVideoFormatInternal;
 
 class OpalVideoFormat : public OpalMediaFormat
 {
     PCLASSINFO(OpalVideoFormat, OpalMediaFormat);
   public:
     OpalVideoFormat(
-      OpalMediaFormatInternal * info = NULL
-    ) : OpalMediaFormat(info) { }
+      OpalVideoFormatInternal * info = NULL
+    );
     OpalVideoFormat(
       const char * fullName,    ///<  Full name of media format
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
@@ -1330,6 +1316,8 @@ class OpalVideoFormat : public OpalMediaFormat
       unsigned maxBitRate,      ///<  Maximum bits per second
       time_t timeStamp = 0      ///<  timestamp (for versioning)
     );
+
+    OpalVideoFormat & operator=(const OpalMediaFormat & other);
 
     static const PString & FrameWidthOption();
     static const PString & FrameHeightOption();
@@ -1389,8 +1377,35 @@ class OpalVideoFormat : public OpalMediaFormat
 #if OPAL_SIP
     static const PString & UseImageAttributeInSDP();
 #endif
+
+    enum VideoFrameType {
+      e_UnknownFrameType,
+      e_NonFrameBoundary,
+      e_IntraFrame,
+      e_InterFrame
+    };
+    VideoFrameType GetVideoFrameType(const RTP_DataFrame & rtp, PBYTEArray & context) const;
 };
-#endif
+
+class OpalVideoFormatInternal : public OpalMediaFormatInternal
+{
+  public:
+    OpalVideoFormatInternal(
+      const char * fullName,
+      RTP_DataFrame::PayloadTypes rtpPayloadType,
+      const char * encodingName,
+      unsigned maxFrameWidth,
+      unsigned maxFrameHeight,
+      unsigned maxFrameRate,
+      unsigned maxBitRate,
+      time_t timeStamp = 0
+    );
+    virtual PObject * Clone() const;
+    virtual bool Merge(const OpalMediaFormatInternal & mediaFormat);
+    virtual OpalVideoFormat::VideoFrameType GetVideoFrameType(const RTP_DataFrame & rtp, PBYTEArray & context) const;
+};
+
+#endif // OPAL_VIDEO
 
 
 #include <codec/known.h>
