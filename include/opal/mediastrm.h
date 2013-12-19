@@ -297,7 +297,7 @@ class OpalMediaStream : public PSafeObject
     /**Get the data size in bytes that is expected to be used. Some media
        streams can make use of this information to perform optimisations.
       */
-    PINDEX GetDataSize() const { return defaultDataSize; }
+    PINDEX GetDataSize() const { return m_defaultDataSize; }
 
     /**Indicate if the media stream is synchronous.
        If this returns true then the media stream will block of the amount of
@@ -439,7 +439,7 @@ class OpalMediaStream : public PSafeObject
     bool             m_paused;
     bool             m_isSource;
     bool             m_isOpen;
-    PINDEX           defaultDataSize;
+    PINDEX           m_defaultDataSize;
     unsigned         timestamp;
     bool             marker;
 
