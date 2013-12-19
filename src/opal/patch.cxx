@@ -972,37 +972,45 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
 #endif // OPAL_VIDEO
 
   if (bypassing || primaryCodec == NULL) {
-    writeSuccessful = stream->WritePacket(sourceFrame);
-    if (!writeSuccessful)
-      return false;
-
 #if OPAL_VIDEO
     if (GetVideoFrameType != NULL) {
       switch (GetVideoFrameType(sourceFrame, m_keyFrameDetectContext.GetPointer())) {
         case e_IntraFrame :
           ++m_videoFrames;
           ++m_keyFrames;
-          PTRACE(4, "Patch\tI-Frame detected, ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoFrames << ", key=" << m_keyFrames << ", on " << patch);
+          PTRACE(4, "Patch\tI-Frame detected: SSRC=" << RTP_TRACE_SRC(sourceFrame.GetSyncSource())
+                 << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoFrames << ", key=" << m_keyFrames << ", on " << patch);
           break;
 
         case e_InterFrame :
           ++m_videoFrames;
-          PTRACE(5, "Patch\tP-Frame detected, ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoFrames << ", key=" << m_keyFrames << ", on " << patch);
+          PTRACE(5, "Patch\tP-Frame detected SSRC=" << RTP_TRACE_SRC(sourceFrame.GetSyncSource())
+                 << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoFrames << ", key=" << m_keyFrames << ", on " << patch);
           break;
 
         default :
+          if (sourceFrame.GetPayloadSize() == 0 && !sourceFrame.GetMarker())
+            return true;
           break;
+      }
+      if (m_keyFrames == 0) {
+        PTRACE(6, "Patch\tIgnoring encoded packet until I-Frame detected on " << patch);
+        return true;
       }
     }
 #endif
 
+    writeSuccessful = stream->WritePacket(sourceFrame);
+    if (!writeSuccessful)
+      return false;
+
     PTRACE_IF(6, bypassing, "Patch\tBypassed packet "
-                         << " M="  << sourceFrame.GetMarker()
-                         << " PT=" << sourceFrame.GetPayloadType()
-                         << " SN=" << sourceFrame.GetSequenceNumber()
-                         << " TS=" << sourceFrame.GetTimestamp()
-                         << " SSRC=" << RTP_TRACE_SRC(sourceFrame.GetSyncSource())
-                         << " P-SZ=" << sourceFrame.GetPayloadSize());
+                          << " M="  << sourceFrame.GetMarker()
+                          << " PT=" << sourceFrame.GetPayloadType()
+                          << " SN=" << sourceFrame.GetSequenceNumber()
+                          << " TS=" << sourceFrame.GetTimestamp()
+                          << " SSRC=" << RTP_TRACE_SRC(sourceFrame.GetSyncSource())
+                          << " P-SZ=" << sourceFrame.GetPayloadSize());
     return true;
   }
 
