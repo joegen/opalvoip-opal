@@ -930,7 +930,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
   if (bypassing || primaryCodec == NULL) {
 #if OPAL_VIDEO
     if (m_videoFormat.IsValid()) {
-      switch (m_videoFormat.GetVideoFrameType(sourceFrame, m_keyFrameDetectContext)) {
+      switch (m_videoFormat.GetVideoFrameType(sourceFrame.GetPayloadPtr(), sourceFrame.GetPayloadSize(), m_keyFrameDetectContext)) {
       case OpalVideoFormat::e_IntraFrame :
           ++m_videoFrames;
           ++m_keyFrames;
