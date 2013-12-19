@@ -981,7 +981,7 @@ PBoolean OpalLineMediaStream::ReadPacket(RTP_DataFrame & packet)
   if (notUsingRTP)
     return OpalMediaStream::ReadPacket(packet);
 
-  if (!packet.SetMinSize(RTP_DataFrame::MinHeaderSize+defaultDataSize))
+  if (!packet.SetMinSize(RTP_DataFrame::MinHeaderSize+GetDataSize()))
     return false;
 
   PINDEX count = packet.GetSize();

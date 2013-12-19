@@ -69,7 +69,7 @@ OpalMediaStream::OpalMediaStream(OpalConnection & conn, const OpalMediaFormat & 
   , m_paused(false)
   , m_isSource(isSourceStream)
   , m_isOpen(false)
-  , defaultDataSize(mediaFormat.GetFrameSize()*mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1))
+  , m_defaultDataSize(mediaFormat.GetFrameSize()*mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1))
   , timestamp(0)
   , marker(true)
   , m_payloadType(mediaFormat.GetPayloadType())
@@ -293,14 +293,14 @@ PBoolean OpalMediaStream::ReadPacket(RTP_DataFrame & packet)
   unsigned oldTimestamp = timestamp;
   WORD oldSeqNumber = m_sequenceNumber;
 
-  if (defaultDataSize > (packet.GetSize() - RTP_DataFrame::MinHeaderSize)) {
+  if (GetDataSize() > (packet.GetSize() - RTP_DataFrame::MinHeaderSize)) {
     stringstream str;
-    str << "Media stream packet " << (packet.GetSize() - RTP_DataFrame::MinHeaderSize) << " too small for media data " << defaultDataSize;
+    str << "Media stream packet " << (packet.GetSize() - RTP_DataFrame::MinHeaderSize) << " too small for media data " << GetDataSize();
     PAssertAlways(str.str().c_str());
   }
 
   PINDEX lastReadCount;
-  if (!ReadData(packet.GetPayloadPtr(), defaultDataSize, lastReadCount))
+  if (!ReadData(packet.GetPayloadPtr(), GetDataSize(), lastReadCount))
     return false;
 
   // If the ReadData() function did not change the timestamp then use the default
@@ -429,9 +429,9 @@ PBoolean OpalMediaStream::SetDataSize(PINDEX dataSize, PINDEX /*frameTime*/)
   if (dataSize <= 0)
     return false;
 
-  PTRACE_IF(4, defaultDataSize != dataSize, "Media\tSet data size from "
-            << defaultDataSize << " to " << dataSize << " on " << *this);
-  defaultDataSize = dataSize;
+  PTRACE_IF(4, GetDataSize() != dataSize, "Media\tSet data size from "
+            << GetDataSize() << " to " << dataSize << " on " << *this);
+  m_defaultDataSize = dataSize;
   return true;
 }
 
@@ -688,7 +688,7 @@ PBoolean OpalNullMediaStream::WriteData(const BYTE * /*buffer*/, PINDEX length, 
   if (!IsOpen())
     return false;
 
-  written = length != 0 ? length : defaultDataSize;
+  written = length != 0 ? length : GetDataSize();
 
   if (m_isSynchronous)
     Pace(false, written, marker);
@@ -741,7 +741,7 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
      practical UDP packet size. This means we have a buffer that can accept
      whatever the RTP sender throws at us. For sink, we set it to the
      maximum size based on MTU (or other criteria). */
-  defaultDataSize = isSource ? conn.GetEndPoint().GetManager().GetMaxRtpPacketSize() : conn.GetMaxRtpPayloadSize();
+  m_defaultDataSize = isSource ? conn.GetEndPoint().GetManager().GetMaxRtpPacketSize() : conn.GetMaxRtpPayloadSize();
 
   rtpSession.SafeReference();
 
@@ -876,7 +876,7 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
 
 PBoolean OpalRTPMediaStream::SetDataSize(PINDEX PTRACE_PARAM(dataSize), PINDEX /*frameTime*/)
 {
-  PTRACE(3, "Media\tRTP data size cannot be changed to " << dataSize << ", fixed at " << defaultDataSize);
+  PTRACE(3, "Media\tRTP data size cannot be changed to " << dataSize << ", fixed at " << GetDataSize());
   return true;
 }
 
@@ -1075,7 +1075,7 @@ bool OpalRawMediaStream::SetChannel(PChannel * chan, bool autoDelete)
   m_channel = chan;
   m_autoDelete = autoDelete;
 
-  SetDataSize(GetDataSize(), 1);
+  SetDataSize(GetDataSize(), m_frameTime);
 
   m_channelMutex.Signal();
 
@@ -1246,7 +1246,7 @@ PBoolean OpalAudioMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameTime)
   PTRACE(3, "Media\tAudio " << (IsSource() ? "source" : "sink") << " data size set to "
          << dataSize << " (" << frameTime << "), buffers set to "
          << bufferCount << 'x' << frameSize << " byte buffers.");
-  return OpalMediaStream::SetDataSize(frameSize, frameTime) &&
+  return OpalMediaStream::SetDataSize(std::max(dataSize, frameSize), frameTime) &&
          ((PSoundChannel *)m_channel)->SetBuffers(frameSize, bufferCount);
 }
 
