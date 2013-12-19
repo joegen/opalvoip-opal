@@ -227,53 +227,6 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
             "Source format:\n" << setw(-1) << sourceFormat << "\n"
             "Destination format:\n" << setw(-1) << destinationFormat);
 
-#if OPAL_VIDEO
-  // This should really get the key frame detection function from (ultimately) the codec plugin
-  if (sourceFormat == "VP8-WebM" || destinationFormat == "VP8-WebM") {
-    struct KeyFrameDetectorVP8 {
-      VideoFrameType GetVideoFrameType(const RTP_DataFrame & data)
-      {
-        if (data.GetPayloadSize() < 3)
-          return e_NonFrameBoundary;
-
-        const BYTE * rtp = data.GetPayloadPtr();
-        PINDEX headerSize = 1;
-        if ((rtp[0]&0x80) != 0) { // Check X bit
-          ++headerSize;           // Allow for X byte
-
-          if ((rtp[1]&0x80) != 0) { // Check I bit
-            ++headerSize;           // Allow for I field
-            if ((rtp[2]&0x80) != 0) // > 7 bit picture ID
-              ++headerSize;         // Allow for extra bits of I field
-          }
-
-          if ((rtp[1]&0x40) != 0) // Check L bit
-            ++headerSize;         // Allow for L byte
-
-          if ((rtp[1]&0x30) != 0) // Check T or K bit
-            ++headerSize;         // Allow for T/K byte
-        }
-
-        if (data.GetPayloadSize() <= headerSize)
-          return e_NonFrameBoundary;
-
-        // Key frame is S bit == 1 && P bit == 0
-        if ((rtp[0]&0x10) == 0)
-          return e_NonFrameBoundary;
-
-        return (rtp[headerSize]&0x01) == 0 ? e_IntraFrame : e_InterFrame;
-      }
-
-      static VideoFrameType GetVideoFrameType(const RTP_DataFrame & rtp, void * context)
-      {
-        return reinterpret_cast<KeyFrameDetectorVP8*>(context)->GetVideoFrameType(rtp);
-      }
-    };
-    m_keyFrameDetectContext.SetSize(sizeof(KeyFrameDetectorVP8));
-    GetVideoFrameType = KeyFrameDetectorVP8::GetVideoFrameType;
-  }
-#endif // OPAL_VIDEO
-
   if (sourceFormat == destinationFormat) {
     PINDEX framesPerPacket = destinationFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(),
                                   sourceFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1));
@@ -283,6 +236,10 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
     stream->SetDataSize(packetSize, packetTime);
     stream->InternalUpdateMediaFormat(stream->GetMediaFormat());
     patch.source.InternalUpdateMediaFormat(patch.source.GetMediaFormat());
+#if OPAL_VIDEO
+    if (sourceFormat.GetMediaType() == OpalMediaType::Video())
+      m_videoFormat = sourceFormat;
+#endif // OPAL_VIDEO
     PTRACE(3, "Patch\tAdded direct media stream sink " << *stream);
     return true;
   }
@@ -494,7 +451,6 @@ OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s)
   , writeSuccessful(true)
 #if OPAL_VIDEO
   , rateController(NULL)
-  , GetVideoFrameType(NULL)
   , m_videoFrames(0)
   , m_keyFrames(0)
 #endif
@@ -973,19 +929,19 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
 
   if (bypassing || primaryCodec == NULL) {
 #if OPAL_VIDEO
-    if (GetVideoFrameType != NULL) {
-      switch (GetVideoFrameType(sourceFrame, m_keyFrameDetectContext.GetPointer())) {
-        case e_IntraFrame :
+    if (m_videoFormat.IsValid()) {
+      switch (m_videoFormat.GetVideoFrameType(sourceFrame, m_keyFrameDetectContext)) {
+      case OpalVideoFormat::e_IntraFrame :
           ++m_videoFrames;
           ++m_keyFrames;
           PTRACE(4, "Patch\tI-Frame detected: SSRC=" << RTP_TRACE_SRC(sourceFrame.GetSyncSource())
-                 << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoFrames << ", key=" << m_keyFrames << ", on " << patch);
+                  << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoFrames << ", key=" << m_keyFrames << ", on " << patch);
           break;
 
-        case e_InterFrame :
+        case OpalVideoFormat::e_InterFrame :
           ++m_videoFrames;
           PTRACE(5, "Patch\tP-Frame detected SSRC=" << RTP_TRACE_SRC(sourceFrame.GetSyncSource())
-                 << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoFrames << ", key=" << m_keyFrames << ", on " << patch);
+                  << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoFrames << ", key=" << m_keyFrames << ", on " << patch);
           break;
 
         default :
@@ -998,7 +954,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
         return true;
       }
     }
-#endif
+#endif // OPAL_VIDEO
 
     writeSuccessful = stream->WritePacket(sourceFrame);
     if (!writeSuccessful)
