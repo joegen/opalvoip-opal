@@ -561,13 +561,16 @@ bool OpalPCSSConnection::ChangeSoundChannel(const PString & device, bool isSourc
 {
   PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(
                       sessionID != 0 ? GetMediaStream(sessionID, isSource) : GetMediaStream(OpalMediaType::Audio(), isSource));
-  if (stream == NULL)
+  if (stream == NULL) {
+    PTRACE(4, "PCSS\tNo audio stream for change of sound channel to " << device);
     return false;
-
+  }
 
   PSoundChannel * channel = dynamic_cast<PSoundChannel *>(stream->GetChannel());
-  if (channel != NULL && channel->GetName() == device)
+  if (channel != NULL && channel->GetName() == device) {
+    PTRACE(4, "PCSS\tNo change of sound channel required to " << device);
     return true;
+  }
 
   stream->SetChannel(m_endpoint.CreateSoundChannel(*this, stream->GetMediaFormat(), device, isSource));
   return true;
