@@ -47,7 +47,7 @@
 const unsigned AverageFrameTimePackets = 4;
 const unsigned MaxConsecutiveOverflows = 10;
 
-#define EVERY_PACKET_TRACE_LEVEL 5
+#define EVERY_PACKET_TRACE_LEVEL 6
 #define ANALYSER_TRACE_LEVEL     5
 
 
@@ -222,6 +222,7 @@ OpalJitterBuffer::OpalJitterBuffer(const Init & init)
   , m_maxConsecutiveMarkerBits(10)
   , m_consecutiveLatePackets(0)
   , m_consecutiveOverflows(0)
+  , m_consecutiveEmpty(0)
   , m_lastSyncSource(0)
 #ifdef NO_ANALYSER
   , m_analyser(NULL)
@@ -288,6 +289,7 @@ void OpalJitterBuffer::Reset()
 
   m_consecutiveLatePackets = 0;
   m_consecutiveOverflows   = 0;
+  m_consecutiveEmpty       = 0;
 
   m_synchronisationState = e_SynchronisationStart;
 
@@ -481,10 +483,13 @@ PBoolean OpalJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval &
       m_bufferEmptiedTime = playOutTimestamp;
     }
 
-    PTRACE(m_synchronisationState == e_SynchronisationDone ? 4 : EVERY_PACKET_TRACE_LEVEL,
+    ++m_consecutiveEmpty;
+    PTRACE_IF(4, m_consecutiveEmpty == 100, "Jitter\tAlways empty    " COMMON_TRACE_INFO);
+    PTRACE(m_consecutiveEmpty < 100 && m_synchronisationState == e_SynchronisationDone ? 4 : EVERY_PACKET_TRACE_LEVEL,
            "Jitter\tBuffer is empty " COMMON_TRACE_INFO);
     return true;
   }
+  m_consecutiveEmpty  = 0;
   m_bufferEmptiedTime = playOutTimestamp;
 
   size_t framesInBuffer = m_frames.size(); // Disable Clock overrun check if no m_incomingFrameTime yet
