@@ -1384,7 +1384,7 @@ class OpalVideoFormat : public OpalMediaFormat
       e_IntraFrame,
       e_InterFrame
     };
-    VideoFrameType GetVideoFrameType(const RTP_DataFrame & rtp, PBYTEArray & context) const;
+    VideoFrameType GetVideoFrameType(const BYTE * payloadPtr, PINDEX payloadSize, PBYTEArray & context) const;
 };
 
 class OpalVideoFormatInternal : public OpalMediaFormatInternal
@@ -1402,7 +1402,7 @@ class OpalVideoFormatInternal : public OpalMediaFormatInternal
     );
     virtual PObject * Clone() const;
     virtual bool Merge(const OpalMediaFormatInternal & mediaFormat);
-    virtual OpalVideoFormat::VideoFrameType GetVideoFrameType(const RTP_DataFrame & rtp, PBYTEArray & context) const;
+    virtual OpalVideoFormat::VideoFrameType GetVideoFrameType(const BYTE * payloadPtr, PINDEX payloadSize, PBYTEArray & context) const;
 };
 
 #endif // OPAL_VIDEO
