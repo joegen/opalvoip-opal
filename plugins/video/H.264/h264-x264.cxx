@@ -231,7 +231,7 @@ static struct PluginCodec_Option const MaxMBPS_H241 =
   ,
   NULL,
   NULL,
-  "0"                                 // H.245 default value
+  STRINGIZE(MAX_MBPS_H241)            // H.245 default value
 #endif
 };
 
@@ -265,7 +265,7 @@ static struct PluginCodec_Option const MaxSMBPS_H241 =
   ,
   NULL,
   NULL,
-  "0"                                 // H.245 default value
+  STRINGIZE(MAX_MBPS_H241)            // H.245 default value
 #endif
 };
 
@@ -299,7 +299,7 @@ static struct PluginCodec_Option const MaxFS_H241 =
   ,
   NULL,
   NULL,
-  "0"                                 // H.245 default value
+  STRINGIZE(MAX_FS_H241)              // H.245 default value
 #endif
 };
 
@@ -333,7 +333,7 @@ static struct PluginCodec_Option const MaxBR_H241 =
   ,
   NULL,
   NULL,
-  "0"                                 // H.245 default value
+  STRINGIZE(MAX_BR_H241)              // H.245 default value
 #endif
 };
 
