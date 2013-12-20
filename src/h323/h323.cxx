@@ -3743,8 +3743,8 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
         negChannel.Close();
     }
     if (!transmitterSidePaused) {
-      OnHold(true, true);
       transmitterSidePaused = true;
+      OnHold(true, true);
     }
   }
   else {
@@ -3959,7 +3959,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
   // Check for if all the 245 conditions are met so can start up logical
   // channels and complete the connection establishment.
   if (m_fastStartState != FastStartAcknowledged) {
-    if (!h245_available)
+    if (!h245_available || transmitterSidePaused)
       return;
 
     // If we are early starting, start channels as soon as possible instead of
