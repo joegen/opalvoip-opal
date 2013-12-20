@@ -880,6 +880,32 @@ bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
   localMedia->SetCryptoKeys(mediaSession->GetOfferedCryptoKeys());
 #endif
 
+#if OPAL_RTP_FEC
+  OpalMediaFormat redundantMediaFormat;
+  for (OpalMediaFormatList::iterator it = m_localMediaFormats.begin(); it != m_localMediaFormats.end(); ++it) {
+    if (it->GetMediaType() == OpalFEC::MediaType() && it->GetOptionString(OpalFEC::MediaTypeOption()) == mediaType) {
+      if (it->GetName().NumCompare(OPAL_REDUNDANT_PREFIX) == EqualTo)
+        redundantMediaFormat = *it;
+      else
+        localMedia->AddMediaFormat(*it);
+    }
+  }
+  if (redundantMediaFormat.IsValid()) {
+    // Calculate the fmtp for red
+    PStringStream fmtp;
+    OpalMediaFormatList formats = localMedia->GetMediaFormats();
+    for (OpalMediaFormatList::iterator it = formats.begin(); it != formats.end(); ++it) {
+      if (it->IsTransportable() && *it != redundantMediaFormat) {
+        if (!fmtp.IsEmpty())
+          fmtp << '/';
+        fmtp << (unsigned)it->GetPayloadType();
+      }
+    }
+    redundantMediaFormat.SetOptionString("FMTP", fmtp);
+    localMedia->AddMediaFormat(redundantMediaFormat);
+  }
+#endif // OPAL_RTP_FEC
+
   sdp.AddMediaDescription(localMedia);
 
   return true;
@@ -1157,7 +1183,7 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
   }
 #endif // OPAL_SRTP
 
-  PTRACE(4, "SIP\tAnswering offer for media type " << mediaType << ", direction=" << otherSidesDir);
+	PTRACE(4, "SIP\tAnswering offer for media type " << mediaType << ", direction=" << otherSidesDir);
 
   if (GetPhase() < ConnectedPhase) {
     // If processing initial INVITE and video, obey the auto-start flags
@@ -1296,7 +1322,13 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
   ownerCall.ResetSwitchingT38();
 #endif
 
-  PTRACE(4, "SIP\tAnswered offer for media type " << mediaType << ' ' << localMedia->GetMediaAddress());
+#if OPAL_RTP_FEC
+  OpalMediaFormatList fec = NegotiateFECMediaFormats(*mediaSession);
+  for (OpalMediaFormatList::iterator it = fec.begin(); it != fec.end(); ++it)
+    localMedia->AddMediaFormat(*it);
+#endif
+
+	PTRACE(4, "SIP\tAnswered offer for media type " << mediaType << ' ' << localMedia->GetMediaAddress());
   return localMedia.release();
 }
 
@@ -3512,7 +3544,11 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
   if (mediaDescription->GetSDPMediaFormats().GetSize() > maxFormats)
     multipleFormats = true;
 
-  PTRACE_IF(3, otherSidesDir == SDPMediaDescription::Inactive, "SIP\tNo streams opened as " << mediaType << " inactive");
+#if OPAL_RTP_FEC
+  NegotiateFECMediaFormats(*mediaSession);
+#endif
+
+	PTRACE_IF(3, otherSidesDir == SDPMediaDescription::Inactive, "SIP\tNo streams opened as " << mediaType << " inactive");
   return true;
 }
 

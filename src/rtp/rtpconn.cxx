@@ -312,6 +312,37 @@ bool OpalRTPConnection::NoMediaBypass(const OpalConnection & otherConnection, co
 }
 
 
+#if OPAL_RTP_FEC
+OpalMediaFormatList OpalRTPConnection::NegotiateFECMediaFormats(OpalMediaSession & session)
+{
+  OpalMediaFormatList fecFormats;
+
+  OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(&session);
+  if (rtpSession != NULL) {
+    OpalMediaFormatList remoteFormats = GetMediaFormats();
+
+    for (OpalMediaFormatList::iterator it = m_localMediaFormats.begin(); it != m_localMediaFormats.end(); ++it) {
+      if (it->GetMediaType() == OpalFEC::MediaType() && it->GetOptionString(OpalFEC::MediaTypeOption()) == session.GetMediaType()) {
+        OpalMediaFormatList::const_iterator fmt = remoteFormats.FindFormat(*it);
+        if (fmt != remoteFormats.end()) {
+          fecFormats += *it;
+
+          if (fmt->GetName().NumCompare(OPAL_REDUNDANT_PREFIX) == EqualTo)
+            rtpSession->SetRedundencyPayloadType(fmt->GetPayloadType());
+          else if (fmt->GetName().NumCompare(OPAL_ULP_FEC_PREFIX) == EqualTo)
+            rtpSession->SetUlpFecPayloadType(fmt->GetPayloadType());
+
+          PTRACE(4, "OpalCon\tAccepted FEC format " << *fmt << ", pt=" << fmt->GetPayloadType());
+        }
+      }
+    }
+  }
+
+  return fecFormats;
+}
+#endif // OPAL_RTP_FEC
+
+
 bool OpalRTPConnection::ChangeSessionID(unsigned fromSessionID, unsigned toSessionID)
 {
   SessionMap::iterator from = m_sessions.find(fromSessionID);
@@ -543,6 +574,12 @@ void OpalRTPConnection::AdjustMediaFormats(bool   local,
       else
         mediaFormats -= *fmt++;
     }
+#if OPAL_RTP_FEC
+    mediaFormats += OpalRedundantAudio;
+    mediaFormats += OpalRedundantVideo;
+    mediaFormats += OpalUlpFecAudio;
+    mediaFormats += OpalUlpFecVideo;
+#endif
   }
 
   OpalConnection::AdjustMediaFormats(local, otherConnection, mediaFormats);

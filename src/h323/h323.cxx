@@ -3824,6 +3824,10 @@ void H323Connection::OnSetLocalCapabilities()
     H235SecurityCapability::AddAllCapabilities(localCapabilities, endpoint.GetMediaCryptoSuites(), "SRTP");
 #endif // OPAL_H235_8
 
+#if OPAL_RTP_FEC
+  H323FECCapability::AddAllCapabilities(localCapabilities, formats);
+#endif // OPAL_RTP_FEC
+
   OpalMediaFormatList::const_iterator rfc2833 = formats.FindFormat(OpalRFC2833);
   H323_UserInputCapability::AddAllCapabilities(localCapabilities, 0, P_MAX_INDEX, rfc2833 != formats.end());
 

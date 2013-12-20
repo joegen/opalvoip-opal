@@ -2760,6 +2760,101 @@ void H323_UserInputCapability::AddAllCapabilities(H323Capabilities & capabilitie
 }
 
 
+#if OPAL_RTP_FEC
+
+H323FECCapability::H323FECCapability(const OpalMediaFormat & mediaFormat, unsigned protectedCapability)
+  : m_protectedCapability(protectedCapability)
+{
+  m_mediaFormat = mediaFormat;
+}
+
+
+H323Capability::MainTypes H323FECCapability::GetMainType() const
+{
+  return e_FEC;
+}
+
+
+unsigned H323FECCapability::GetSubType() const
+{
+  return 0;
+}
+
+
+PString H323FECCapability::GetFormatName() const
+{
+  return m_mediaFormat.GetName();
+}
+
+
+PBoolean H323FECCapability::OnSendingPDU(H245_Capability & pdu) const
+{
+  pdu.SetTag(H245_Capability::e_fecCapability);
+  H245_FECCapability & cap = pdu;
+  cap.m_protectedCapability = m_protectedCapability;
+  cap.IncludeOptionalField(H245_FECCapability::e_rfc2733Format); // Now RFC 5109
+  cap.m_rfc2733Format.SetTag(m_mediaFormat.GetName().NumCompare(OPAL_REDUNDANT_PREFIX) == EqualTo
+                             ? H245_FECCapability_rfc2733Format::e_rfc2733rfc2198
+                             : H245_FECCapability_rfc2733Format::e_rfc2733sameport);
+  return true;
+}
+
+
+PBoolean H323FECCapability::OnReceivedPDU(const H245_Capability & pdu)
+{
+  if (pdu.GetTag() != H245_Capability::e_fecCapability)
+    return false;
+  
+  const H245_FECCapability & cap = pdu;
+  m_protectedCapability = cap.m_protectedCapability;
+  if (!cap.HasOptionalField(H245_FECCapability::e_rfc2733Format)) { // Now RFC 5109
+    PTRACE(3, "H323\tOnly RFC2733/RFC5109 FEC is supported.");
+    return false;
+  }
+
+  switch (cap.m_rfc2733Format.GetTag()) {
+    case H245_FECCapability_rfc2733Format::e_rfc2733rfc2198 :
+      break;
+
+    case H245_FECCapability_rfc2733Format::e_rfc2733sameport :
+      break;
+
+    default:
+      PTRACE(3, "H323\tUsupported RFC2733/RFC5109 FEC mode.");
+      return false;
+  }
+
+  return true;
+}
+
+
+void H323FECCapability::AddAllCapabilities(H323Capabilities & capabilities, const OpalMediaFormatList & localFormats)
+{
+  for (OpalMediaFormatList::const_iterator fmt = localFormats.begin(); fmt != localFormats.end(); ++fmt) {
+    if (fmt->GetMediaType() == OpalFEC::MediaType()) {
+      const H323CapabilitiesSet & set = capabilities.GetSet();
+      PINDEX outerSize = set.GetSize();
+      for (PINDEX outer = 0; outer < outerSize; outer++) {
+        PINDEX middleSize = set[outer].GetSize();
+        for (PINDEX middle = 0; middle < middleSize; middle++) {
+          PINDEX innerSize = set[outer][middle].GetSize();
+          for (PINDEX inner = 0; inner < innerSize; inner++) {
+            H323Capability & capability = set[outer][middle][inner];
+            OpalMediaType mediaType = capability.GetMediaFormat().GetMediaType();
+            if (fmt->GetOptionString(OpalFEC::MediaTypeOption()) == mediaType &&
+                mediaType->GetMediaSessionType().Find("RTP") != P_MAX_INDEX) {
+              capabilities.SetCapability(outer, middle, new H323FECCapability(*fmt, capability.GetCapabilityNumber()));
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+#endif // OPAL_RTP_FEC
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 PBoolean H323SimultaneousCapabilities::SetSize(PINDEX newSize)
