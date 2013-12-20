@@ -97,20 +97,20 @@ class OpalH264Format : public OpalVideoFormatInternal
       option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_LEVEL));
       AddOption(option);
 
-      option = new OpalMediaOptionUnsigned(MaxMBPS_H241_Name, true, OpalMediaOption::MinMerge, MAX_MBPS_H241, 0, 1966);
-      option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_CustomMaxMBPS, "0"));
+      option = new OpalMediaOptionUnsigned(MaxMBPS_H241_Name, true, OpalMediaOption::MinMerge, MAX_MBPS_H241, 0, MAX_MBPS_H241);
+      option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_CustomMaxMBPS, STRINGIZE(MAX_MBPS_H241)));
       AddOption(option);
 
-      option = new OpalMediaOptionUnsigned(MaxSMBPS_H241_Name, true, OpalMediaOption::MinMerge, MAX_MBPS_H241, 0, 1966);
-      option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_CustomMaxSMBPS, "0"));
+      option = new OpalMediaOptionUnsigned(MaxSMBPS_H241_Name, true, OpalMediaOption::MinMerge, MAX_MBPS_H241, 0, MAX_MBPS_H241);
+      option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_CustomMaxSMBPS, STRINGIZE(MAX_MBPS_H241)));
       AddOption(option);
 
-      option = new OpalMediaOptionUnsigned(MaxFS_H241_Name, true, OpalMediaOption::MinMerge, MAX_FS_H241, 0, 144);
-      option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_CustomMaxFS, "0"));
+      option = new OpalMediaOptionUnsigned(MaxFS_H241_Name, true, OpalMediaOption::MinMerge, MAX_FS_H241, 0, MAX_FS_H241);
+      option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_CustomMaxFS, STRINGIZE(MAX_FS_H241)));
       AddOption(option);
 
-      option = new OpalMediaOptionUnsigned(MaxBR_H241_Name, true, OpalMediaOption::MinMerge, MAX_BR_H241, 0, 9600);
-      option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_CustomMaxBRandCPB, "0"));
+      option = new OpalMediaOptionUnsigned(MaxBR_H241_Name, true, OpalMediaOption::MinMerge, MAX_BR_H241, 0, MAX_BR_H241);
+      option->SetH245Generic(OpalMediaOption::H245GenericInfo(H241_CustomMaxBRandCPB, STRINGIZE(MAX_BR_H241)));
       AddOption(option);
 
       static const char * const PacketizationModes[] = {
