@@ -563,7 +563,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
   if (rewriteHeader) {
     PTimeInterval tick = PTimer::Tick();  // Timestamp set now
 
-    frame.SetSequenceNumber(++lastSentSequenceNumber);
+    lastSentSequenceNumber += (WORD)(frame.GetDiscontinuity() + 1);
+    PTRACE_IF(6, frame.GetDiscontinuity() > 0, "RTP\tHave discontinuity: "
+              << frame.GetDiscontinuity() << ", sn=" << lastSentSequenceNumber);
+    frame.SetSequenceNumber(lastSentSequenceNumber);
     frame.SetSyncSource(syncSourceOut);
 
     // special handling for first packet
