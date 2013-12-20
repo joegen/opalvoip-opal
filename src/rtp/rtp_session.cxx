@@ -140,6 +140,10 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_toolName(PProcess::Current().GetName())
   , m_maxNoReceiveTime(init.m_connection.GetEndPoint().GetManager().GetNoMediaTimeout())
   , m_maxNoTransmitTime(0, 10)          // Sending data for 10 seconds, ICMP says still not there
+#if OPAL_RTP_FEC
+  , m_redundencyPayloadType(RTP_DataFrame::IllegalPayloadType)
+  , m_ulpFecPayloadType(RTP_DataFrame::IllegalPayloadType)
+#endif
   , syncSourceOut(PRandom::Number())
   , syncSourceIn(0)
   , lastSentTimestamp(0)  // should be calculated, but we'll settle for initialising it)
@@ -662,19 +666,27 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
   if (frame.GetVersion() != RTP_DataFrame::ProtocolVersion)
     return e_IgnorePacket; // Non fatal error, just ignore
 
+  RTP_DataFrame::PayloadTypes pt = frame.GetPayloadType();
+#if OPAL_RTP_FEC
+  if (pt == m_redundencyPayloadType) {
+    SendReceiveStatus status = OnReceiveRedundantData(frame);
+    if (status != e_ProcessPacket)
+      return status;
+  }
+#endif // OPAL_RTP_FEC
+
   // Check if expected payload type
   if (lastReceivedPayloadType == RTP_DataFrame::IllegalPayloadType)
-    lastReceivedPayloadType = frame.GetPayloadType();
+    lastReceivedPayloadType = pt;
 
-  if (lastReceivedPayloadType != frame.GetPayloadType() && !ignorePayloadTypeChanges) {
-
+  if (lastReceivedPayloadType != pt && !ignorePayloadTypeChanges) {
     PTRACE(4, "RTP\tSession " << m_sessionId << ", got payload type "
-           << frame.GetPayloadType() << ", but was expecting " << lastReceivedPayloadType);
+           << pt << ", but was expecting " << lastReceivedPayloadType);
     return e_IgnorePacket;
   }
 
   // Check for if a control packet rather than data packet.
-  if (frame.GetPayloadType() > RTP_DataFrame::MaxPayloadType)
+  if (pt > RTP_DataFrame::MaxPayloadType)
     return e_IgnorePacket; // Non fatal error, just ignore
 
   PTimeInterval tick = PTimer::Tick();  // Get timestamp now
@@ -688,7 +700,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
     firstPacketReceived.SetCurrentTime();
     PTRACE(3, "RTP\tSession " << m_sessionId << ", first receive data:"
               " ver=" << frame.GetVersion()
-           << " pt=" << frame.GetPayloadType()
+           << " pt=" << pt
            << " psz=" << frame.GetPayloadSize()
            << " m=" << frame.GetMarker()
            << " x=" << frame.GetExtension()
@@ -703,7 +715,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
     PTRACE_CONTEXT_ID_TO(m_metrics);
 #endif
 
-    if ((frame.GetPayloadType() == RTP_DataFrame::T38) &&
+    if ((pt == RTP_DataFrame::T38) &&
         (frame.GetSequenceNumber() >= 0x8000) &&
          (frame.GetPayloadSize() == 0)) {
       PTRACE(4, "RTP\tSession " << m_sessionId << ", ignoring left over audio packet from switch to T.38");
@@ -2239,6 +2251,36 @@ bool OpalRTPSession::WriteRawPDU(const BYTE * framePtr, PINDEX frameSize, bool t
 
   return true;
 }
+
+
+#if OPAL_RTP_FEC
+OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveRedundantData(RTP_DataFrame & frame)
+{
+  const BYTE * payload = frame.GetPayloadPtr();
+  PINDEX size = frame.GetPayloadSize();
+  while (size >= 4 && (*payload & 0x80) != 0) {
+    PINDEX len = (((payload[2] & 3) << 8) | payload[3]) + 4;
+    if (len >= size) {
+      PTRACE(2, "RTP_UDP\tSession " << m_sessionId << " redundant packet too small");
+      return e_IgnorePacket;
+    }
+    // ProcessRedundantData(packet+4, len-4);
+    payload += len;
+    size -= len;
+  }
+
+  if (size <= 0) {
+    PTRACE(2, "RTP_UDP\tSession " << m_sessionId << " primary encoding block too small");
+    return e_IgnorePacket;
+  }
+
+  // Get the primary encoding block
+  frame.SetPayloadType((RTP_DataFrame::PayloadTypes)(*payload & 0x7f));
+  memmove(frame.GetPayloadPtr(), ++payload, --size);
+  frame.SetPayloadSize(size);
+  return e_ProcessPacket;
+}
+#endif // OPAL_RTP_FEC
 
 
 /////////////////////////////////////////////////////////////////////////////

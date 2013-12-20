@@ -38,6 +38,36 @@
 #include <opal/endpoint.h>
 
 
+#if OPAL_RTP_FEC
+namespace OpalFEC
+{
+  const OpalMediaType & MediaType();
+
+  // RFC 2193 media format "place holders"
+  #define OPAL_REDUNDANT_PREFIX  "Redundant"
+  #define OPAL_REDUNDANT_AUDIO   OPAL_REDUNDANT_PREFIX"-Audio"
+  #define OpalRedundantAudio     OpalFEC::RedundantAudio()
+  extern const OpalMediaFormat & RedundantAudio();
+
+  #define OPAL_REDUNDANT_VIDEO   OPAL_REDUNDANT_PREFIX"-Video"
+  #define OpalRedundantVideo     OpalFEC::RedundantVideo()
+  extern const OpalMediaFormat & RedundantVideo();
+
+  // RFC 5109 media format "place holders"
+  #define OPAL_ULP_FEC_PREFIX    "ULP-FEC"
+  #define OPAL_ULP_FEC_AUDIO     OPAL_ULP_FEC_PREFIX"-Audio"
+  #define OpalUlpFecAudio        OpalFEC::UlpFecAudio()
+  extern const OpalMediaFormat & UlpFecAudio();
+
+  #define OPAL_ULP_FEC_VIDEO     OPAL_ULP_FEC_PREFIX"-Video"
+  #define OpalUlpFecVideo        OpalFEC::UlpFecVideo()
+  extern const OpalMediaFormat & UlpFecVideo();
+
+  const PString & MediaTypeOption();
+};
+#endif // OPAL_RTP_FEC
+
+
 /**Base class for endpoint types that use RTP for media transport.
    Currently used by H323EndPoint and SIPEndPoint
   */

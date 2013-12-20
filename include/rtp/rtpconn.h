@@ -305,6 +305,10 @@ class OpalRTPConnection : public OpalConnection
 
     virtual bool NoMediaBypass(const OpalConnection & otherConnection, const OpalMediaType & mediaType) const;
 
+#if OPAL_RTP_FEC
+    OpalMediaFormatList NegotiateFECMediaFormats(OpalMediaSession & session);
+#endif
+
 
     SessionMap m_sessions;
     bool m_remoteBehindNAT;

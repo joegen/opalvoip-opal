@@ -135,6 +135,7 @@ class H323Capability : public PObject
       e_UserInput,      ///< User Input capability
       e_GenericControl, ///< Generic Control
       e_H235Security,   ///< H.235 security capability
+      e_FEC,            ///< Forward Error Correction
       e_NumMainTypes    ///< Count of main types
     };
 
@@ -2392,6 +2393,88 @@ class H323_UserInputCapability : public H323Capability
     SubTypes subType;
 };
 
+
+///////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_RTP_FEC
+
+class H323FECCapability : public H323Capability
+{
+  PCLASSINFO(H323FECCapability, H323Capability);
+
+public:
+  /**@name Construction */
+  //@{
+  /**Create a new Forward Error Correction capability.
+  */
+  H323FECCapability(
+    const OpalMediaFormat & mediaFormat,
+    unsigned protectedCapability
+  );
+  //@}
+
+  /**@name Overrides from class H323Capability */
+  //@{
+  /** Get the main type of the capability.
+
+     This function is overridden by one of the three main sub-classes off
+     which real capabilities would be descendend.
+  */
+  virtual MainTypes GetMainType() const;
+
+  /** Get the sub-type of the capability. This is a code dependent on the
+      main type of the capability.
+  */
+  virtual unsigned  GetSubType()  const;
+
+  /**Get the name of the media data format this class represents.
+  */
+  virtual PString GetFormatName() const;
+
+  /** This function is called whenever and outgoing TerminalCapabilitySet
+      PDU is being constructed for the control channel. It allows the
+      capability to set the PDU fields from information in members specific
+      to the class.
+
+      The default behaviour is pure.
+  */
+  virtual PBoolean OnSendingPDU(
+    H245_Capability & pdu  ///<  PDU to set information on
+    ) const;
+
+  /** This function is called whenever and incoming TerminalCapabilitySet
+      PDU is received on the control channel, and a new H323Capability
+      descendent was created. This completes reading fields from the PDU
+      into the classes members.
+
+      If the function returns false then the received PDU codec description
+      is not supported, so will be ignored.
+
+      The default behaviour sets the capabilityDirection member variable
+      from the PDU and then returns true. Note that this means it is very
+      important to call the ancestor function when overriding.
+  */
+  virtual PBoolean OnReceivedPDU(
+    const H245_Capability & pdu ///<  PDU to get information from
+    );
+  //@}
+
+  unsigned GetProtectedCapability() const
+  {
+    return m_protectedCapability;
+  }
+
+  static void AddAllCapabilities(
+    H323Capabilities & capabilities,
+    const OpalMediaFormatList & localFormats
+  );
+
+protected:
+  PString  m_scheme;
+  unsigned m_protectedCapability;
+};
+
+#endif // OPAL_RTP_FEC
 
 
 ///////////////////////////////////////////////////////////////////////////////
