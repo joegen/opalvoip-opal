@@ -3661,8 +3661,8 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
         negChannel.Close();
     }
     if (!transmitterSidePaused) {
-      OnHold(true, true);
       transmitterSidePaused = true;
+      OnHold(true, true);
     }
   }
   else {
@@ -3683,7 +3683,7 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
       transmitterSidePaused = false;
       connectionState = HasExecutedSignalConnect;
       capabilityExchangeProcedure->Start(true);
-      masterSlaveDeterminationProcedure->Start(false);
+      masterSlaveDeterminationProcedure->Start(true);
     }
     else if (connectionState > HasExecutedSignalConnect && previousCaps > 0 && remoteCapabilities.GetSize() > previousCaps) {
       PTRACE(3, "H323\tReceived CapabilitySet with more media types.");
@@ -3891,7 +3891,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
   // Check for if all the 245 conditions are met so can start up logical
   // channels and complete the connection establishment.
   if (m_fastStartState != FastStartAcknowledged) {
-    if (!h245_available)
+    if (!h245_available || transmitterSidePaused)
       return;
 
     // If we are early starting, start channels as soon as possible instead of
