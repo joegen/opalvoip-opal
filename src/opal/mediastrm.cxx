@@ -696,7 +696,6 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
   , rtpSession(rtp)
   , minAudioJitterDelay(minJitter)
   , maxAudioJitterDelay(maxJitter)
-  , m_bypassedSequenceNumber(UINT_MAX)
 {
   if (!mediaFormat.NeedsJitterBuffer())
     minAudioJitterDelay = maxAudioJitterDelay = 0;
@@ -785,19 +784,8 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
   timestamp = packet.GetTimestamp();
 
   OpalMediaPatchPtr mediaPatch = m_mediaPatch;
-  if (mediaPatch != NULL && mediaPatch->IsBypassed()) {
-    /* Try to maintain the seqeunce numbers from when we were not bypassed. But
-       can't just allow OpalRTPSession to do it as then all sequence numbers
-       are, well, sequential, and missing packets get hidden. */
-    if (m_bypassedSequenceNumber == UINT_MAX)
-      m_bypassedSequenceNumber = packet.GetSequenceNumber();
-    packet.SetSequenceNumber((WORD)(packet.GetSequenceNumber()-m_bypassedSequenceNumber+rtpSession.GetLastSentSequenceNumber()));
-    // Must adjust the SSRC to agree with RTCP coming out of OpalRTPSession
-    packet.SetSyncSource(rtpSession.GetSyncSourceOut());
-    return rtpSession.WriteData(packet, NULL, false);
-  }
-
-  m_bypassedSequenceNumber = UINT_MAX;
+  if (mediaPatch != NULL && mediaPatch->IsBypassed())
+    return rtpSession.WriteData(packet);
 
   if (packet.GetPayloadSize() == 0)
     return true;
