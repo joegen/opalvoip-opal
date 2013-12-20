@@ -1318,14 +1318,9 @@ bool MyManager::Initialise(bool startMinimised)
   // Codec fields
   {
     OpalMediaFormatList mediaFormats;
-    mediaFormats += pcssEP->GetMediaFormats();
-    mediaFormats += potsEP->GetMediaFormats();
-#if OPAL_IVR
-    mediaFormats += ivrEP->GetMediaFormats();
-#endif
-#if OPAL_FAX
-    mediaFormats += m_faxEP->GetMediaFormats();
-#endif
+    PList<OpalEndPoint> endpoints = GetEndPoints();
+    for (PList<OpalEndPoint>::iterator it = endpoints.begin(); it != endpoints.end(); ++it)
+      mediaFormats += it->GetMediaFormats();
 
     OpalMediaFormatList possibleFormats = OpalTranscoder::GetPossibleFormats(mediaFormats);
     for (OpalMediaFormatList::iterator format = possibleFormats.begin(); format != possibleFormats.end(); ++format) {

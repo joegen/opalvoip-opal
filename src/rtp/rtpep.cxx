@@ -38,6 +38,110 @@
 #include <rtp/rtpconn.h>
 
 
+#if OPAL_RTP_FEC
+
+namespace OpalFEC
+{
+  class MediaDefinition : public OpalMediaTypeDefinition
+  {
+  public:
+    static const char * Name()
+    {
+      return "RTP-FEC";
+    }
+
+    MediaDefinition()
+      : OpalMediaTypeDefinition(Name(), NULL)
+    {
+    }
+  };
+
+  OPAL_INSTANTIATE_MEDIATYPE2(MediaDefinition, MediaDefinition::Name());
+
+  const OpalMediaType & MediaType()
+  {
+    static OpalMediaType mt(MediaDefinition::Name());
+    return mt;
+  }
+
+
+  const PString & MediaTypeOption()
+  {
+    static const PConstCaselessString s("Media-Type");
+    return s;
+  }
+
+
+  class BaseMediaFormat : public OpalMediaFormat
+  {
+    PCLASSINFO(BaseMediaFormat, OpalMediaFormat)
+  public:
+    BaseMediaFormat(const char * name, const OpalMediaType & mediaType, unsigned clockRate, const char * encodingName, const char * desc)
+      : OpalMediaFormat(name, MediaType(), RTP_DataFrame::DynamicBase, encodingName, false, 0, 0, 0, clockRate)
+    {
+      SetOptionString(OpalMediaFormat::DescriptionOption(), desc + mediaType);
+      AddOption(new OpalMediaOptionString(MediaTypeOption(), true, mediaType));
+    }
+  };
+
+
+  class RedundantMediaFormat : public BaseMediaFormat
+  {
+    PCLASSINFO(RedundantMediaFormat, BaseMediaFormat)
+  public:
+    RedundantMediaFormat(const char * name, const OpalMediaType & mediaType, unsigned clockRate)
+      : BaseMediaFormat(name, mediaType, clockRate, "red", "RFC 2198 Redundant RTP for ")
+    {
+      AddOption(new OpalMediaOptionString("FMTP", true));
+    }
+  };
+
+
+  const OpalMediaFormat & RedundantAudio()
+  {
+    static RedundantMediaFormat const fmt(OPAL_REDUNDANT_AUDIO, OpalMediaType::Audio(), OpalMediaFormat::AudioClockRate);
+    return fmt;
+  }
+
+
+  const OpalMediaFormat & RedundantVideo()
+  {
+    static RedundantMediaFormat const fmt(OPAL_REDUNDANT_VIDEO, OpalMediaType::Video(), OpalMediaFormat::VideoClockRate);
+    return fmt;
+  }
+
+
+  class UlpFecMediaFormat : public BaseMediaFormat
+  {
+    PCLASSINFO(UlpFecMediaFormat, BaseMediaFormat)
+  public:
+    UlpFecMediaFormat(const char * name, const OpalMediaType & mediaType, unsigned clockRate)
+      : BaseMediaFormat(name, mediaType, clockRate, "ulpfec", "RFC 5109 ULP Forward Error Correction for ")
+    {
+    }
+  };
+
+
+  const OpalMediaFormat & UlpFecAudio()
+  {
+    static UlpFecMediaFormat const fmt(OPAL_ULP_FEC_AUDIO, OpalMediaType::Audio(), OpalMediaFormat::AudioClockRate);
+    return fmt;
+  }
+
+
+  const OpalMediaFormat & UlpFecVideo()
+  {
+    static UlpFecMediaFormat const fmt(OPAL_ULP_FEC_VIDEO, OpalMediaType::Video(), OpalMediaFormat::VideoClockRate);
+    return fmt;
+  }
+
+};
+
+#endif // OPAL_RTP_FEC
+
+
+///////////////////////////////////////////////////////////////////////////////
+
 OpalRTPEndPoint::OpalRTPEndPoint(OpalManager & manager,     ///<  Manager of all endpoints.
                        const PCaselessString & prefix,      ///<  Prefix for URL style address strings
                                       unsigned attributes)  ///<  Bit mask of attributes endpoint has
@@ -63,7 +167,14 @@ PBoolean OpalRTPEndPoint::IsRTPNATEnabled(OpalConnection & conn,
 
 OpalMediaFormatList OpalRTPEndPoint::GetMediaFormats() const
 {
-  return manager.GetCommonMediaFormats(true, false);
+  OpalMediaFormatList list = manager.GetCommonMediaFormats(true, false);
+#if OPAL_RTP_FEC
+  list += OpalRedundantAudio;
+  list += OpalRedundantVideo;
+  list += OpalUlpFecAudio;
+  list += OpalUlpFecVideo;
+#endif
+  return list;
 }
 
 

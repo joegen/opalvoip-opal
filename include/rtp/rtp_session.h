@@ -180,6 +180,9 @@ class OpalRTPSession : public OpalMediaSession
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
+#if OPAL_RTP_FEC
+    virtual SendReceiveStatus OnReceiveRedundantData(RTP_DataFrame & frame);
+#endif
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
 
     class ReceiverReport : public PObject  {
@@ -299,6 +302,20 @@ class OpalRTPSession : public OpalMediaSession
     void SetAudio(
       bool aud    /// New audio indication flag
     ) { m_isAudio = aud; }
+
+#if OPAL_RTP_FEC
+    /// Get the RFC 2198 redundent data payload type
+    RTP_DataFrame::PayloadTypes GetRedundencyPayloadType() const { return m_redundencyPayloadType; }
+
+    /// Set the RFC 2198 redundent data payload type
+    void SetRedundencyPayloadType(RTP_DataFrame::PayloadTypes pt) { m_redundencyPayloadType = pt; }
+
+    /// Get the RFC 5109 Uneven Level Protection Forward Error Correction payload type
+    RTP_DataFrame::PayloadTypes GetUlpFecPayloadType() const { return m_ulpFecPayloadType; }
+
+    /// Set the RFC 5109 Uneven Level Protection Forward Error Correction payload type
+    void SetUlpFecPayloadType(RTP_DataFrame::PayloadTypes pt) { m_ulpFecPayloadType = pt; }
+#endif // OPAL_RTP_FEC
 
     /**Get the canonical name for the RTP session.
       */
@@ -595,6 +612,10 @@ class OpalRTPSession : public OpalMediaSession
     RTPExtensionHeaders m_extensionHeaders;
     PTimeInterval       m_maxNoReceiveTime;
     PTimeInterval       m_maxNoTransmitTime;
+#if OPAL_RTP_FEC
+    RTP_DataFrame::PayloadTypes m_redundencyPayloadType;
+    RTP_DataFrame::PayloadTypes m_ulpFecPayloadType;
+#endif
 
     DWORD         syncSourceOut;
     DWORD         syncSourceIn;

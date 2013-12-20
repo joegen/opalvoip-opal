@@ -164,6 +164,7 @@
 
 #undef  OPAL_STATISTICS
 #undef  OPAL_RTCP_XR
+#undef  OPAL_RTP_FEC
 #undef GCC_HAS_CLZ
 
 #undef OPAL_HAS_MIXER
