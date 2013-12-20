@@ -3765,7 +3765,7 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
       transmitterSidePaused = false;
       connectionState = HasExecutedSignalConnect;
       capabilityExchangeProcedure->Start(true);
-      masterSlaveDeterminationProcedure->Start(false);
+      masterSlaveDeterminationProcedure->Start(true);
     }
     else if (connectionState > HasExecutedSignalConnect && previousCaps > 0 && remoteCapabilities.GetSize() > previousCaps) {
       PTRACE(3, "H323\tReceived CapabilitySet with more media types.");
