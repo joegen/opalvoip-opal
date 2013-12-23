@@ -274,10 +274,27 @@ void OpalTransportAddressArray::AppendString(const PString & str)
 }
 
 
-void OpalTransportAddressArray::AppendAddress(const OpalTransportAddress & addr)
+bool OpalTransportAddressArray::AppendAddress(const OpalTransportAddress & addr)
 {
-  if (!addr)
-    Append(new OpalTransportAddress(addr));
+  if (addr.IsEmpty())
+    return false;
+
+  Append(new OpalTransportAddress(addr));
+  return true;
+}
+
+
+bool OpalTransportAddressArray::SetAddressPair(const OpalTransportAddress & addr1, const OpalTransportAddress & addr2)
+{
+  RemoveAll();
+
+  if (!AppendAddress(addr1))
+    return false;
+
+  if (addr1 != addr2)
+    AppendAddress(addr2);
+
+  return true;
 }
 
 
