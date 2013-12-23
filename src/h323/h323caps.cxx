@@ -837,7 +837,7 @@ static void H323GenericCapabilityInfo_OnReceivedGenericPDU(OpalMediaFormat & med
         continue;
       }
     }
-    else if (PIsDescendant(&option, OpalMediaOptionUnsigned)) {
+    else if (PIsDescendant(&option, OpalMediaOptionUnsigned) || PIsDescendant(&option, OpalMediaOptionInteger)) {
       unsigned tag;
       switch (genericInfo.integerType) {
         default :
