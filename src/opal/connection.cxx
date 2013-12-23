@@ -1107,11 +1107,11 @@ OpalMediaStreamPtr OpalConnection::GetMediaStream(const OpalMediaType & mediaTyp
 }
 
 
-bool OpalConnection::GetMediaTransportAddresses(OpalConnection &,
+bool OpalConnection::GetMediaTransportAddresses(OpalConnection & PTRACE_PARAM(otherConnection),
                                            const OpalMediaType & PTRACE_PARAM(mediaType),
                                       OpalTransportAddressArray &) const
 {
-  PTRACE(4, "OpalCon\tGetMediaTransportAddresses for " << mediaType << " not allowed.");
+  PTRACE(3, "OpalCon\tGetMediaTransportAddresses of " << mediaType << " could not find transports for " << otherConnection << " on " << *this);
   return false;
 }
 

@@ -353,8 +353,12 @@ class OpalTransportAddressArray : public PArray<OpalTransportAddress>
     void AppendString(
       const PString & address
     );
-    void AppendAddress(
+    bool AppendAddress(
       const OpalTransportAddress & address
+    );
+    bool SetAddressPair(
+      const OpalTransportAddress & addr1,
+      const OpalTransportAddress & addr2
     );
 
     virtual PObject * Clone() const

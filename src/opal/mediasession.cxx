@@ -439,14 +439,17 @@ bool OpalDummySession::SetRemoteAddress(const OpalTransportAddress & remoteAddre
 #if OPAL_SIP
 SDPMediaDescription * OpalDummySession::CreateSDPMediaDescription()
 {
-  return new SDPDummyMediaDescription(GetLocalAddress(), PStringArray());
+  if (m_mediaType.empty())
+    return new SDPDummyMediaDescription(GetLocalAddress(), PStringArray());
+
+  return OpalMediaSession::CreateSDPMediaDescription();
 }
 #endif
 
 
-OpalMediaStream * OpalDummySession::CreateMediaStream(const OpalMediaFormat &, unsigned, bool)
+OpalMediaStream * OpalDummySession::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
 {
-  return NULL;
+  return new OpalNullMediaStream(m_connection, mediaFormat, sessionID, isSource, false, false);
 }
 
 

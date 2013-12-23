@@ -992,7 +992,7 @@ class OpalManager : public PObject
     ) const;
 
     /// How to handle media between two "network" connections.
-    enum MediaTransferMode {
+    P_DECLARE_TRACED_ENUM(MediaTransferMode,
       MediaTransferBypass,   /**< Media bypasses this host completely. The RTP
                                   addressess of each side is passed to the
                                   other so media goes directly. */
@@ -1002,7 +1002,7 @@ class OpalManager : public PObject
       MediaTransferTranscode /**< Media is passed through this host and if
                                   necessary transcoded between media formats.
                                   Note this can take a lot of CPU. */
-    };
+    );
 
     /**Determine how to handle media between two "network" connections.
        Determine if media is to bypass this host when it is possible to do so.

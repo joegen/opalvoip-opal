@@ -1232,6 +1232,10 @@ bool SDPRTPAVPMediaDescription::Decode(const PStringArray & tokens)
   if (!SDPMediaDescription::Decode(tokens))
     return false;
 
+  PIPSocket::Address ip;
+  if (m_mediaAddress.GetIpAddress(ip))
+    m_controlAddress = OpalTransportAddress(ip, m_port+1, OpalTransportAddress::UdpPrefix());
+
   m_enableFeedback = m_transportType.Find("AVPF") != P_MAX_INDEX;
   return true;
 }
