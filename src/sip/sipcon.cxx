@@ -219,7 +219,7 @@ SIPConnection::SIPConnection(const Init & init)
   , m_lastReceivedINVITE(NULL)
   , m_delayedAckInviteResponse(NULL)
   , m_delayedAckTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnDelayedAckTimeout)
-  , m_delayedAckTimeout(0, 1) // 1 second
+  , m_delayedAckTimeout(0, 2) // second(s)
   , m_lastSentAck(NULL)
   , m_sdpSessionId(PTime().GetTimeInSeconds())
   , m_sdpVersion(0)
@@ -612,22 +612,21 @@ bool SIPConnection::GetMediaTransportAddresses(OpalConnection & otherConnection,
   if (NoMediaBypass(otherConnection, mediaType))
     return false;
 
-  if (m_lastReceivedINVITE == NULL)
+  SDPSessionDescription * sdp = NULL;
+  if (m_delayedAckInviteResponse != NULL)
+    sdp = m_delayedAckInviteResponse->GetSDP();
+  else if (m_lastReceivedINVITE != NULL)
+    sdp = m_lastReceivedINVITE->GetSDP();
+
+  SDPMediaDescription * md = sdp != NULL ? sdp->GetMediaDescriptionByType(mediaType) : NULL;
+  if (md == NULL)
     return OpalRTPConnection::GetMediaTransportAddresses(otherConnection, mediaType, transports);
 
-  SDPSessionDescription * sdp = m_lastReceivedINVITE->GetSDP();
-  if (sdp == NULL)
+  if (!transports.SetAddressPair(md->GetMediaAddress(), md->GetControlAddress()))
     return false;
 
-  SDPMediaDescription * md = sdp->GetMediaDescriptionByType(mediaType);
-  if (md == NULL)
-    return false;
-
-  transports.AppendAddress(md->GetMediaAddress());
-  if (!md->GetControlAddress().IsEmpty())
-    transports.AppendAddress(md->GetControlAddress());
-
-  PTRACE(3, "SIP\tGetMediaTransport for " << mediaType << " found " << transports[0]);
+  PTRACE(3, "SIP\tGetMediaTransportAddresses of " << mediaType << " found remote SDP "
+         << setfill(',') << transports << " for " << otherConnection << " on " << *this);
   return true;
 }
 
@@ -1117,9 +1116,20 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
   if (mediaSession == NULL)
     return NULL;
 
+  bool replaceSession = false;
+
+  PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
+  if (otherParty != NULL) {
+    OpalTransportAddressArray transports;
+    if (otherParty->GetMediaTransportAddresses(*this, mediaType, transports)) {
+      PTRACE(4, "SIP\tCreated replacement dummy " << mediaType << " session " << sessionId);
+      mediaSession = new OpalDummySession(OpalMediaSession::Init(*this, sessionId, mediaType, m_remoteBehindNAT), transports);
+      replaceSession = true;
+    }
+  }
+
   // For fax for example, we have to switch the media session according to mediaType
-  bool replaceSession = mediaSession->GetMediaType() != mediaType;
-  if (replaceSession) {
+  if (mediaSession->GetMediaType() != mediaType) {
     PTRACE(3, "SIP\tReplacing " << mediaSession->GetMediaType() << " session " << sessionId << " with " << mediaType);
 #if OPAL_T38_CAPABILITY
     if (mediaType == OpalMediaType::Fax()) {
@@ -1143,6 +1153,7 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
 
     // Set flag to force media stream close
     remoteChanged = true;
+    replaceSession = true;
   }
 
   // construct a new media session list 
@@ -1216,7 +1227,6 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
      We open tx (other party source) side first so we follow the remote
      endpoints preferences. */
   if (!incomingMedia->GetMediaAddress().IsEmpty()) {
-    PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
     if (otherParty != NULL && sendStream == NULL) {
       if ((sendStream = GetMediaStream(sessionId, false)) == NULL) {
         PTRACE(5, "SIP\tOpening tx " << mediaType << " stream from offer SDP");
@@ -1456,11 +1466,10 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
 #endif // OPAL_T38_CAPABILITY
   {
     SDPSessionDescription * sdp = NULL;
-
-    if (m_lastReceivedINVITE != NULL)
-      sdp = m_lastReceivedINVITE->GetSDP();
-    else if (m_delayedAckInviteResponse != NULL)
+    if (m_delayedAckInviteResponse != NULL)
       sdp = m_delayedAckInviteResponse->GetSDP();
+    else if (m_lastReceivedINVITE != NULL)
+      sdp = m_lastReceivedINVITE->GetSDP();
 
     if (sdp != NULL) {
       SDPMediaDescription * mediaDescription = sdp->GetMediaDescriptionByIndex(sessionID);
@@ -2239,6 +2248,7 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
     return true;
   }
 
+  PTRACE(4, "SIP\tSaving INVITE response for delayed ACK");
   m_delayedAckInviteResponse = new SIP_PDU(response);
   m_delayedAckTimer = m_delayedAckTimeout;
 
@@ -2250,6 +2260,23 @@ void SIPConnection::OnDelayedAckTimeout()
 {
   PTRACE(4, "SIP\tDelayed ACK timeout");
   SendDelayedACK(true);
+}
+
+
+static bool AwaitingMedia(SIPConnection & connection, const OpalMediaType & mediaType, bool isSource)
+{
+  if (!(connection.GetAutoStart(mediaType) & (isSource ? OpalMediaType::Receive : OpalMediaType::Transmit)))
+    return false;
+
+  OpalMediaStreamPtr stream = connection.GetMediaStream(mediaType, isSource);
+  if (stream == NULL)
+    return true;
+
+  OpalMediaSession * session = connection.GetMediaSession(stream->GetSessionID());
+  if (session == NULL)
+    return true;
+
+  return session->GetRemoteAddress(true).IsEmpty();
 }
 
 
@@ -2265,9 +2292,7 @@ void SIPConnection::SendDelayedACK(bool force)
 
     OpalMediaTypeList mediaTypes = otherConnection->GetMediaFormats().GetMediaTypes();
     for (OpalMediaTypeList::iterator mediaType = mediaTypes.begin(); mediaType != mediaTypes.end(); ++mediaType) {
-      OpalMediaType::AutoStartMode autoStart = GetAutoStart(*mediaType);
-      if (((autoStart&OpalMediaType::Receive ) != 0 && GetMediaStream(*mediaType, true ) == NULL) ||
-          ((autoStart&OpalMediaType::Transmit) != 0 && GetMediaStream(*mediaType, false) == NULL)) {
+      if (AwaitingMedia(*this, *mediaType, false) || AwaitingMedia(*this, *mediaType, true)) {
         PTRACE(4, "SIP\tDelayed ACK does not have both " << *mediaType << " channels yet");
         return;
       }
@@ -2277,7 +2302,7 @@ void SIPConnection::SendDelayedACK(bool force)
   PTRACE(3, "SIP\tSending delayed ACK");
 
   PSafePtr<SIPTransaction> transaction = GetEndPoint().GetTransaction(m_delayedAckInviteResponse->GetTransactionID());
-  if (transaction ==  NULL)
+  if (transaction == NULL)
     Release(EndedByCapabilityExchange);
   else {
     // ACK constructed following 13.2.2.4 or 17.1.1.3
@@ -3363,8 +3388,8 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 bool SIPConnection::OnReceivedAnswerSDP(SIP_PDU & response, SIPTransaction * transaction)
 {
   if (transaction != NULL && transaction->GetSDP() == NULL) {
-    PTRACE(4, "SIP", "No offer made, processing remote offer in delayed ACK");
-    return false;
+    PTRACE(4, "SIP", "No local offer made, processing remote offer in delayed ACK");
+    return true;
   }
 
   SDPSessionDescription * sdp = response.GetSDP();

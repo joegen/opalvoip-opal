@@ -261,6 +261,7 @@ OpalMediaSession * OpalRTPConnection::CreateMediaSession(unsigned sessionId,
       // Make sure we do not include any transcoded format combinations
       m_localMediaFormats.Remove(PString('@')+mediaType);
       m_localMediaFormats += otherConnection->GetMediaFormats();
+      PTRACE(4, "RTPCon\tCreated dummy " << mediaType << " session " << sessionId << " using formats " << setfill(',') << m_localMediaFormats);
       return new OpalDummySession(init, transports);
     }
   }
@@ -288,13 +289,11 @@ bool OpalRTPConnection::GetMediaTransportAddresses(OpalConnection & otherConnect
     return false;
 
   for (SessionMap::const_iterator session = m_sessions.begin(); session != m_sessions.end(); ++session) {
-    if (session->second->GetMediaType() == mediaType) {
-      OpalTransportAddress address = session->second->GetRemoteAddress();
-      if (!address.IsEmpty()) {
-        transports.AppendAddress(address);
-        PTRACE(3, "RTPCon\tGetMediaTransport for " << mediaType << " found " << setfill(',') << address);
-        return true;
-      }
+    if (session->second->GetMediaType() == mediaType &&
+        transports.SetAddressPair(session->second->GetRemoteAddress(true), session->second->GetRemoteAddress(false))) {
+      PTRACE(3, "RTPCon\tGetMediaTransportAddresses of " << mediaType << " found session addresses "
+              << setfill(',') << transports << " for " << otherConnection << " on " << *this);
+      return true;
     }
   }
 
