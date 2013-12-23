@@ -447,10 +447,37 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
                   PARRAYSIZE(MediaTransferModeValues), MediaTransferModeValues, MediaTransferModeTitles,
                                m_mediaTransferMode, "How media is to be routed between the endpoints."));
 
-  SetMediaFormatOrder(rsrc->AddStringArrayField(PreferredMediaKey, true, 25, GetMediaFormatOrder(),
-                                           "Preference order for codecs to be offered to remotes"));
+  {
+    OpalMediaFormatList allFormats;
+    PList<OpalEndPoint> endpoints = GetEndPoints();
+    for (PList<OpalEndPoint>::iterator it = endpoints.begin(); it != endpoints.end(); ++it)
+      allFormats += it->GetMediaFormats();
+    OpalMediaFormatList transportableFormats;
+    for (OpalMediaFormatList::iterator it = allFormats.begin(); it != allFormats.end(); ++it) {
+      if (it->IsTransportable())
+        transportableFormats += *it;
+    }
+    PStringStream help;
+    help << "Preference order for codecs to be offered to remotes.<p>"
+            "Note, these are not regular expressions, just simple "
+            "wildcards where '*' matches any number of characters.<p>"
+            "Known media formats are:<br>";
+    for (OpalMediaFormatList::iterator it = transportableFormats.begin(); it != transportableFormats.end(); ++it) {
+      if (it != transportableFormats.begin())
+        help << ", ";
+      help << *it;
+    }
+    SetMediaFormatOrder(rsrc->AddStringArrayField(PreferredMediaKey, true, 25, GetMediaFormatOrder(), help));
+  }
 
-  SetMediaFormatMask(rsrc->AddStringArrayField(RemovedMediaKey, true, 25, GetMediaFormatMask(), "Codecs to be prevented from being used"));
+  SetMediaFormatMask(rsrc->AddStringArrayField(RemovedMediaKey, true, 25, GetMediaFormatMask(),
+                     "Codecs to be prevented from being used.<p>"
+                     "These are wildcards as in the above Preferred Media, with "
+                     "the addition of preceding the expression with a '!' which "
+                     "removes all formats <i>except</i> the indicated wildcard. "
+                     "Also, the '@' character may also be used to indicate a "
+                     "media type, e.g. <code>@video</code> removes all video "
+                     "codecs."));
   
   SetAudioJitterDelay(rsrc->AddIntegerField(MinJitterKey, 20, 2000, GetMinAudioJitterDelay(), "ms", "Minimum jitter buffer size"),
                       rsrc->AddIntegerField(MaxJitterKey, 20, 2000, GetMaxAudioJitterDelay(), "ms", "Maximum jitter buffer size"));
@@ -661,7 +688,52 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
   PHTTPCompositeField * routeFields = new PHTTPCompositeField(
            ROUTES_SECTION"\\"ROUTES_KEY" %u\\", ROUTES_SECTION,
-           "Internal routing of calls to varous sub-systems");
+           "Internal routing of calls to varous sub-systems.<p>"
+           "The A Party and B Party columns are regular expressions for the call "
+           "originator and receiver respectively. The Destination string determines "
+           "the endpoint used for the outbound leg of the route. This can be be "
+           "constructed using various meta-strings that correspond to parts of the "
+           "B Party address.<p>"
+           "A Destination starting with the string 'label:' causes the router "
+           "to restart searching from the beginning of the route table using "
+           "the new string as the A Party<p>"
+           "The available meta-strings are:<p>"
+           "<dl>"
+           "<dt><code>&lt;da&gt;</code></dt><dd>"
+                 "Replaced by the B Party string. For example A Party=\"pc:.*\" "
+                 "B Party=\".*\" Destination=\"sip:&lt;da&gt;\" directs calls "
+                 "to the SIP protocol. In this case there is a special condition "
+                 "where if the original destination had a valid protocol, eg "
+                 "h323:fred.com, then the entire string is replaced not just "
+                 "the &lt;da&gt; part.</dd>"
+           "<dt><code>&lt;db&gt;</code></dt><dd>"
+                 "Same as &lt;da&gt;, but without the special condtion.</dd>"
+           "<dt><code>&lt;du&gt;</code></dt><dd>"
+                 "Copy the \"user\" part of the B Party string. This is "
+                 "essentially the component after the : and before the '@', or "
+                 "the whole B Party string if these are not present.</dd>"
+           "<dt><code>&lt;!du&gt;</code></dt><dd>"
+                 "The rest of the B Party string after the &lt;du&gt; section. The "
+                 "protocol is still omitted. This is usually the '@' and onward. "
+                 "Note, if there is already an '@' in the destination before the "
+                 "&lt;!du&gt; and what is about to replace it also has an '@' then "
+                 "everything between the @ and the &lt;!du&gt; (inclusive) is deleted, "
+                 "then the substitution is made so a legal URL can be produced.</dd>"
+           "<dt><code>&lt;dn&gt;</code></dt><dd>"
+                 "Copy all valid consecutive E.164 digits from the B Party so "
+                 "pots:0061298765@vpb:1/2 becomes sip:0061298765@carrier.com</dd>"
+           "<dt><code>&lt;dnX&gt;</code></dt><dd>"
+                 "As above but skip X digits, eg &lt;dn2&gt; skips 2 digits, so "
+                 "pots:00612198765 becomes sip:61298765@carrier.com</dd>"
+           "<dt><code>&lt;!dn&gt;</code></dt><dd>"
+                 "The rest of the B Party after the &lt;dn&gt; or &lt;dnX&gt; sections.</dd>"
+           "<dt><code>&lt;dn2ip&gt;</code></dt><dd>"
+                 "Translate digits separated by '*' characters to an IP "
+                 "address. e.g. 10*0*1*1 becomes 10.0.1.1, also "
+                 "1234*10*0*1*1 becomes 1234@10.0.1.1 and "
+                 "1234*10*0*1*1*1722 becomes 1234@10.0.1.1:1722.</dd>"
+           "</dl>"
+           );
   routeFields->Append(new PHTTPStringField(RouteAPartyKey, 0, NULL, NULL, 1, 20));
   routeFields->Append(new PHTTPStringField(RouteBPartyKey, 0, NULL, NULL, 1, 20));
   routeFields->Append(new PHTTPStringField(RouteDestKey, 0, NULL, NULL, 1, 30));
