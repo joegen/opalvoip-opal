@@ -753,7 +753,7 @@ PBoolean H323GenericCapabilityInfo::OnSendingGenericPDU(H245_GenericCapability &
 
     if (PIsDescendant(&option, OpalMediaOptionBoolean))
       H323AddGenericParameterBoolean(params, genericInfo.ordinal, ((const OpalMediaOptionBoolean &)option).GetValue());
-    else if (PIsDescendant(&option, OpalMediaOptionUnsigned)) {
+    else if (PIsDescendant(&option, OpalMediaOptionUnsigned) || PIsDescendant(&option, OpalMediaOptionInteger)) {
       H245_ParameterValue::Choices tag;
       switch (genericInfo.integerType) {
         default :
