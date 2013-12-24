@@ -62,9 +62,11 @@ bool MyManager::Initialise(PArgList & args, bool verbose)
 
   m_cli->SetPrompt("OPAL> ");
 
-  m_cli->SetCommand("call",     PCREATE_NOTIFIER(CmdCall),     "Start call", "<uri>");
+  m_cli->SetCommand("auto-answer", m_autoAnswer, "Auto-answer", "Answer call automatically");
+
+  m_cli->SetCommand("call",     PCREATE_NOTIFIER(CmdCall), "Start call", "<uri>");
   m_cli->SetCommand("answer",   PCREATE_NOTIFIER(CmdAnswer),   "Answer call");
-  m_cli->SetCommand("hold",     PCREATE_NOTIFIER(CmdHold),     "Hold call");
+  m_cli->SetCommand("hold",     PCREATE_NOTIFIER(CmdHold), "Hold call");
   m_cli->SetCommand("retrieve", PCREATE_NOTIFIER(CmdRetrieve), "Retrieve call from hold");
   m_cli->SetCommand("transfer", PCREATE_NOTIFIER(CmdTransfer), "Transfer call", "<uri>");
   m_cli->SetCommand("hangup",   PCREATE_NOTIFIER(CmdHangUp),   "Hang up call");
