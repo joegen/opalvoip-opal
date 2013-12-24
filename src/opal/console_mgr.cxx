@@ -485,18 +485,6 @@ public:
 
 
 #if P_CLI
-  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, H323ConsoleEndPoint, CmdFast, P_INT_PTR, )
-  {
-    if (args.GetCount() < 1)
-      args.GetContext() << "Fast connect: " << (IsFastStartDisabled() ? "OFF" : "ON") << endl;
-    else if (args[0] *= "on")
-      DisableFastStart(false);
-    else if (args[0] *= "off")
-      DisableFastStart(true);
-    else
-      args.WriteUsage();
-  }
-
   PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, H323ConsoleEndPoint, CmdTunnel, P_INT_PTR, )
   {
     if (args.GetCount() < 1)
@@ -533,12 +521,9 @@ public:
   virtual void AddCommands(PCLI & cli)
   {
     OpalRTPConsoleEndPoint::AddCommands(cli);
-    cli.SetCommand("h323 fast", PCREATE_NOTIFIER(CmdFast),
-                   "Set fast connect mode",
-                   "[ \"on\" / \"off\" ]");
-    cli.SetCommand("h323 tunnel", PCREATE_NOTIFIER(CmdTunnel),
-                   "Set H.245 tunneling mode",
-                   "[ \"on\" / \"off\" ]");
+    cli.SetCommand("h323 fast", disableFastStart, "Fast Connect Disable");
+    cli.SetCommand("h323 tunnel", disableH245Tunneling, "H.245 Tunnelling Disable");
+    cli.SetCommand("h323 h245-in-setup", disableH245inSetup, "H.245 in SETUP Disable");
     cli.SetCommand("h323 gatekeeper", PCREATE_NOTIFIER(CmdGatekeeper),
                    "Set gatekeeper",
                    "[ options ] [ \"on\" / \"off\" ]",
@@ -892,8 +877,7 @@ public:
                      PSTRSTRM("Audio " << AudioDeviceVariables[i].m_description << " device."),
                      "[ option ] <name>", "D-driver:  Optional driver name.");
 
-    cli.SetCommand(GetPrefixName() & "buffers", PCREATE_NOTIFIER(CmdAudioBuffers),
-                   "Audio buffer time in ms (default 120)\n");
+    cli.SetCommand(GetPrefixName() & "buffers", m_soundChannelBufferTime, "Audio Buffer Time", 20, 1000, "Audio buffer time in ms");
 
 #if OPAL_VIDEO
     for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i)
