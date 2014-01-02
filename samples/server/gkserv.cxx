@@ -102,14 +102,15 @@ static const char * CompatibilityIssueKey[H323Connection::NumCompatibilityIssues
 ///////////////////////////////////////////////////////////////
 
 MyH323EndPoint::MyH323EndPoint(MyManager & mgr)
-  : H323EndPoint(mgr)
+  : H323ConsoleEndPoint(mgr)
+  , m_manager(mgr)
   , P_DISABLE_MSVC_WARNINGS(4355, m_gkServer(*this))
 {
   terminalType = e_MCUWithAVMP;
 }
 
 
-bool MyH323EndPoint::Initialise(PConfig & cfg, PConfigPage * rsrc)
+bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
 {
   // Add H.323 parameters
   {
@@ -137,35 +138,7 @@ bool MyH323EndPoint::Initialise(PConfig & cfg, PConfigPage * rsrc)
                               "kb/s", "Bandwidth to request to gatekeeper on originating/answering calls")*1000);
 
 #if OPAL_PTLIB_SSL
-  PINDEX security = 0;
-  if (manager.FindEndPoint("h323") != NULL)
-    security |= 1;
-  if (manager.FindEndPoint("h323s") != NULL)
-    security |= 2;
-  security = cfg.GetInteger(H323SignalingSecurityKey, security);
-  switch (security) {
-    case 1 :
-      manager.AttachEndPoint(this, "h323");
-      manager.DetachEndPoint("h323s");
-      break;
-
-    case 2 :
-      manager.AttachEndPoint(this, "h323s");
-      manager.DetachEndPoint("h323");
-      break;
-
-    default :
-      manager.AttachEndPoint(this, "h323");
-      manager.AttachEndPoint(this, "h323s");
-  }
-  static const char * const SignalingSecurityValues[] = { "1", "2", "3" };
-  static const char * const SignalingSecurityTitles[] = { "h323 only", "h323s only", "h323 & h323s" };
-  rsrc->Add(new PHTTPRadioField(H323SignalingSecurityKey,
-                     PARRAYSIZE(SignalingSecurityValues), SignalingSecurityValues, SignalingSecurityTitles,
-                                                        security-1, "Signaling security methods available."));
-
-  SetMediaCryptoSuites(rsrc->AddSelectArrayField(H323MediaCryptoSuitesKey, true, GetMediaCryptoSuites(),
-                                                GetAllMediaCryptoSuites(), "Media security methods available."));
+  m_manager.ConfigureSecurity(this, H323SignalingSecurityKey, H323MediaCryptoSuitesKey, cfg, rsrc);
 #endif
 
   for (H323Connection::CompatibilityIssues issue = H323Connection::BeginCompatibilityIssues; issue < H323Connection::EndCompatibilityIssues; ++issue)
@@ -210,7 +183,7 @@ bool MyH323EndPoint::Initialise(PConfig & cfg, PConfigPage * rsrc)
     RemoveGatekeeper();
   }
 
-  return m_gkServer.Initialise(cfg, rsrc);
+  return m_gkServer.Configure(cfg, rsrc);
 }
 
 
@@ -344,7 +317,7 @@ MyGatekeeperServer::MyGatekeeperServer(H323EndPoint & ep)
 }
 
 
-bool MyGatekeeperServer::Initialise(PConfig & cfg, PConfigPage * rsrc)
+bool MyGatekeeperServer::Configure(PConfig & cfg, PConfigPage * rsrc)
 {
   PINDEX i;
 
@@ -495,7 +468,7 @@ bool MyGatekeeperServer::Initialise(PConfig & cfg, PConfigPage * rsrc)
   security->Append(new PHTTPPasswordField(PasswordKey, 25));
   rsrc->Add(new PHTTPFieldArray(security, false));
 
-  PTRACE(3, "Gatekeeper server initialised");
+  PTRACE(3, "Gatekeeper server configured");
   return true;
 }
 
