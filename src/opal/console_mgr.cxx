@@ -36,14 +36,7 @@
 
 #include <opal/console_mgr.h>
 
-#include <sip/sipep.h>
-#include <h323/h323ep.h>
 #include <h323/gkclient.h>
-#include <lids/lidep.h>
-#include <lids/capi_ep.h>
-#include <ep/pcss.h>
-#include <ep/ivr.h>
-#include <ep/opalmixer.h>
 #include <rtp/srtp_session.h>
 #include <ptclib/pstun.h>
 
@@ -64,6 +57,9 @@ static void PrintVersion(ostream & strm)
 
 void OpalConsoleEndPoint::AddRoutesFor(const OpalEndPoint * endpoint, const PString & defaultRoute)
 {
+  if (defaultRoute.IsEmpty())
+    return;
+
   PStringList prefixes = m_console.GetPrefixNames(endpoint);
 
   for (PINDEX i = 0; i < prefixes.GetSize(); ++i)
@@ -71,599 +67,597 @@ void OpalConsoleEndPoint::AddRoutesFor(const OpalEndPoint * endpoint, const PStr
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+
 #if OPAL_SIP || OPAL_H323
-class OpalRTPConsoleEndPoint : public OpalConsoleEndPoint
+OpalRTPConsoleEndPoint::OpalRTPConsoleEndPoint(OpalConsoleManager & console, OpalRTPEndPoint * endpoint)
+  : OpalConsoleEndPoint(console)
+  , m_endpoint(*endpoint)
 {
-protected:
-  OpalRTPEndPoint & m_endpoint;
+}
 
-  OpalRTPConsoleEndPoint(OpalConsoleManager & console, OpalRTPEndPoint * endpoint)
-    : OpalConsoleEndPoint(console)
-    , m_endpoint(*endpoint)
-  {
+
+bool OpalRTPConsoleEndPoint::SetUIMode(const PCaselessString & str)
+{
+  if (str == "inband")
+    m_endpoint.SetSendUserInputMode(OpalConnection::SendUserInputInBand);
+  else if (str == "rfc2833")
+    m_endpoint.SetSendUserInputMode(OpalConnection::SendUserInputAsRFC2833);
+  else if (str == "signal" || str == "info-tone" || str == "h245-signal")
+    m_endpoint.SetSendUserInputMode(OpalConnection::SendUserInputAsTone);
+  else if (str == "string" || str == "info-string" || str == "h245-string")
+    m_endpoint.SetSendUserInputMode(OpalConnection::SendUserInputAsString);
+  else
+    return false;
+
+  return true;
+}
+
+
+void OpalRTPConsoleEndPoint::GetArgumentSpec(ostream & strm) const
+{
+  strm << '-' << m_endpoint.GetPrefixName() << "-crypto:       Set crypto suites in priority order.\n"
+          "-" << m_endpoint.GetPrefixName() << "-bandwidth:    Set total bandwidth (both directions) to be used for SIP call\n"
+          "-" << m_endpoint.GetPrefixName() << "-rx-bandwidth: Set receive bandwidth to be used for SIP call\n"
+          "-" << m_endpoint.GetPrefixName() << "-tx-bandwidth: Set transmit bandwidth to be used for SIP call\n"
+          "-" << m_endpoint.GetPrefixName() << "-ui:           SIP User Indication mode (inband,rfc2833,signal,string)\n";
+}
+
+
+bool OpalRTPConsoleEndPoint::Initialise(PArgList & args, ostream & output, bool verbose)
+{
+  if (args.HasOption(m_endpoint.GetPrefixName()+"-crypto"))
+    m_endpoint.SetMediaCryptoSuites(args.GetOptionString(m_endpoint.GetPrefixName()+"-crypto").Lines());
+
+  if (verbose)
+    output << m_endpoint.GetPrefixName().ToUpper() << " crypto suites: "
+            << setfill(',') << m_endpoint.GetMediaCryptoSuites() << setfill(' ') << '\n';
+
+
+  if (args.HasOption(m_endpoint.GetPrefixName()+"-bandwidth"))
+    m_endpoint.SetInitialBandwidth(OpalBandwidth::RxTx, args.GetOptionString(m_endpoint.GetPrefixName()+"-bandwidth"));
+  if (args.HasOption(m_endpoint.GetPrefixName()+"-rx-bandwidth"))
+    m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, args.GetOptionString(m_endpoint.GetPrefixName()+"-rx-bandwidth"));
+  if (args.HasOption(m_endpoint.GetPrefixName()+"-tx-bandwidth"))
+    m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, args.GetOptionString(m_endpoint.GetPrefixName()+"-tx-bandwidth"));
+
+
+  if (args.HasOption(m_endpoint.GetPrefixName()+"-ui") && !SetUIMode(args.GetOptionString(m_endpoint.GetPrefixName()+"-ui"))) {
+    output << "Unknown user indication mode for " << m_endpoint.GetPrefixName() << endl;
+    return false;
   }
 
+  if (verbose)
+    output << m_endpoint.GetPrefixName() << "user input mode: " << m_endpoint.GetSendUserInputMode() << '\n';
 
-  bool SetUIMode(const PCaselessString & str)
-  {
-    if (str == "inband")
-      m_endpoint.SetSendUserInputMode(OpalConnection::SendUserInputInBand);
-    else if (str == "rfc2833")
-      m_endpoint.SetSendUserInputMode(OpalConnection::SendUserInputAsRFC2833);
-    else if (str == "signal" || str == "info-tone" || str == "h245-signal")
-      m_endpoint.SetSendUserInputMode(OpalConnection::SendUserInputAsTone);
-    else if (str == "string" || str == "info-string" || str == "h245-string")
-      m_endpoint.SetSendUserInputMode(OpalConnection::SendUserInputAsString);
-    else
-      return false;
 
-    return true;
+  PCaselessString interfaces = args.GetOptionString(m_endpoint.GetPrefixName());
+  if (!m_endpoint.StartListeners(interfaces.Lines())) {
+    output << "Could not start listeners for " << m_endpoint.GetPrefixName() << endl;
+    return false;
   }
 
+  if (verbose)
+    output << m_endpoint.GetPrefixName() << " listening on: " << setfill(',') << m_endpoint.GetListeners() << setfill(' ') << '\n';
 
-  void GetArgumentSpec(ostream & strm) const
-  {
-    strm << '-' << m_endpoint.GetPrefixName() << "-crypto:       Set crypto suites in priority order.\n"
-            "-" << m_endpoint.GetPrefixName() << "-bandwidth:    Set total bandwidth (both directions) to be used for SIP call\n"
-            "-" << m_endpoint.GetPrefixName() << "-rx-bandwidth: Set receive bandwidth to be used for SIP call\n"
-            "-" << m_endpoint.GetPrefixName() << "-tx-bandwidth: Set transmit bandwidth to be used for SIP call\n"
-            "-" << m_endpoint.GetPrefixName() << "-ui:           SIP User Indication mode (inband,rfc2833,signal,string)\n";
-  }
-
-
-  bool Initialise(PArgList & args, ostream & output, bool verbose)
-  {
-    if (args.HasOption(m_endpoint.GetPrefixName()+"-crypto"))
-      m_endpoint.SetMediaCryptoSuites(args.GetOptionString(m_endpoint.GetPrefixName()+"-crypto").Lines());
-
-    if (verbose)
-      output << m_endpoint.GetPrefixName().ToUpper() << " crypto suites: "
-             << setfill(',') << m_endpoint.GetMediaCryptoSuites() << setfill(' ') << '\n';
-
-
-    if (args.HasOption(m_endpoint.GetPrefixName()+"-bandwidth"))
-      m_endpoint.SetInitialBandwidth(OpalBandwidth::RxTx, args.GetOptionString(m_endpoint.GetPrefixName()+"-bandwidth"));
-    if (args.HasOption(m_endpoint.GetPrefixName()+"-rx-bandwidth"))
-      m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, args.GetOptionString(m_endpoint.GetPrefixName()+"-rx-bandwidth"));
-    if (args.HasOption(m_endpoint.GetPrefixName()+"-tx-bandwidth"))
-      m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, args.GetOptionString(m_endpoint.GetPrefixName()+"-tx-bandwidth"));
-
-
-    if (args.HasOption(m_endpoint.GetPrefixName()+"-ui") && !SetUIMode(args.GetOptionString(m_endpoint.GetPrefixName()+"-ui"))) {
-      output << "Unknown user indication mode for " << m_endpoint.GetPrefixName() << endl;
-      return false;
-    }
-
-    if (verbose)
-      output << m_endpoint.GetPrefixName() << "user input mode: " << m_endpoint.GetSendUserInputMode() << '\n';
-
-
-    PCaselessString interfaces = args.GetOptionString(m_endpoint.GetPrefixName());
-    if (!m_endpoint.StartListeners(interfaces.Lines())) {
-      output << "Could not start listeners for " << m_endpoint.GetPrefixName() << endl;
-      return false;
-    }
-
-    if (verbose)
-      output << m_endpoint.GetPrefixName() << " listening on: " << setfill(',') << m_endpoint.GetListeners() << setfill(' ') << '\n';
-
-    return true;
-  }
+  return true;
+}
 
 
 #if P_CLI
-  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, OpalRTPConsoleEndPoint, CmdInterfaces, P_INT_PTR, )
-  {
-    if (args.GetCount() < 1)
-      args.WriteUsage();
-    else {
-      PStringArray interfaces(args.GetCount());
-      for (PINDEX i = 0; i < args.GetCount(); ++i)
-        interfaces[i] = args[i];
+void OpalRTPConsoleEndPoint::CmdInterfaces(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() < 1)
+    args.WriteUsage();
+  else {
+    PStringArray interfaces(args.GetCount());
+    for (PINDEX i = 0; i < args.GetCount(); ++i)
+      interfaces[i] = args[i];
 
-      if (m_endpoint.StartListeners(interfaces))
-        args.GetContext() << "Listening on: " << setfill(',') << m_endpoint.GetListeners() << setfill(' ') << endl;
-      else
-        args.WriteError("Could not start .");
-    }
+    if (m_endpoint.StartListeners(interfaces))
+      args.GetContext() << "Listening on: " << setfill(',') << m_endpoint.GetListeners() << setfill(' ') << endl;
+    else
+      args.WriteError("Could not start .");
+  }
+}
+
+
+void OpalRTPConsoleEndPoint::CmdCryptoSuites(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.HasOption("list")) {
+    args.GetContext() << "All crypto suites: " << setfill(',') << m_endpoint.GetAllMediaCryptoSuites() << setfill (' ') << endl;
+    return;
   }
 
-  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, OpalRTPConsoleEndPoint, CmdCryptoSuites, P_INT_PTR, )
-  {
-    if (args.HasOption("list")) {
-      args.GetContext() << "All crypto suites: " << setfill(',') << m_endpoint.GetAllMediaCryptoSuites() << setfill (' ') << endl;
-      return;
-    }
+  if (args.GetCount() > 0)
+    m_endpoint.SetMediaCryptoSuites(args.GetParameters());
 
-    if (args.GetCount() > 0)
-      m_endpoint.SetMediaCryptoSuites(args.GetParameters());
+  args.GetContext() << "Current crypto suites: " << setfill(',') << m_endpoint.GetMediaCryptoSuites() << setfill (' ') << endl;
+}
 
-    args.GetContext() << "Current crypto suites: " << setfill(',') << m_endpoint.GetMediaCryptoSuites() << setfill (' ') << endl;
-  }
 
-  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, OpalRTPConsoleEndPoint, CmdBandwidth, P_INT_PTR, )
-  {
-    if (args.GetCount() < 1)
-      args.WriteUsage();
+void OpalRTPConsoleEndPoint::CmdBandwidth(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() < 1)
+    args.WriteUsage();
+  else {
+    OpalBandwidth bandwidth(args[0]);
+    if (bandwidth == 0)
+      args.WriteError("Illegal bandwidth parameter");
     else {
-      OpalBandwidth bandwidth(args[0]);
-      if (bandwidth == 0)
-        args.WriteError("Illegal bandwidth parameter");
+      if (!args.HasOption("rx") && !args.HasOption("tx"))
+        m_endpoint.SetInitialBandwidth(OpalBandwidth::RxTx, bandwidth);
       else {
-        if (!args.HasOption("rx") && !args.HasOption("tx"))
-          m_endpoint.SetInitialBandwidth(OpalBandwidth::RxTx, bandwidth);
-        else {
-          if (args.HasOption("rx"))
-            m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, bandwidth);
-          if (args.HasOption("tx"))
-            m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, bandwidth);
-        }
+        if (args.HasOption("rx"))
+          m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, bandwidth);
+        if (args.HasOption("tx"))
+          m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, bandwidth);
       }
     }
   }
+}
 
-  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, OpalRTPConsoleEndPoint, CmdUserInput, P_INT_PTR, )
-  {
-    if (args.GetCount() < 1)
-      args.WriteUsage();
-    else if (!SetUIMode(args[0]))
-      args.WriteError("Unknown user indication mode");
-  }
 
-  void AddCommands(PCLI & cli)
-  {
-    cli.SetCommand(m_endpoint.GetPrefixName() & "interfaces", PCREATE_NOTIFIER(CmdInterfaces),
-                   "Set listener interfaces");
-    cli.SetCommand(m_endpoint.GetPrefixName() & "crypto", PCREATE_NOTIFIER(CmdCryptoSuites),
-                   "Set crypto suites in priority order",
-                   " --list | [ <suite> ... ]",
-                   "l-list. List all possible crypto suite names");
-    cli.SetCommand(m_endpoint.GetPrefixName() & "bandwidth", PCREATE_NOTIFIER(CmdBandwidth),
-                   "Set bandwidth to use for calls",
-                   "[ <dir> ] <bps>",
-                   "-rx. Receive bandwidth\n"
-                   "-tx. Transmit bandwidth");
-    cli.SetCommand(m_endpoint.GetPrefixName() & "ui", PCREATE_NOTIFIER(CmdUserInput),
-                   "Set user input mode",
-                   "\"inband\" | \"rfc2833\" | \"signal\" | \"string\"");
-  }
+void OpalRTPConsoleEndPoint::CmdUserInput(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() < 1)
+    args.WriteUsage();
+  else if (!SetUIMode(args[0]))
+    args.WriteError("Unknown user indication mode");
+}
+
+
+void OpalRTPConsoleEndPoint::AddCommands(PCLI & cli)
+{
+  cli.SetCommand(m_endpoint.GetPrefixName() & "interfaces", PCREATE_NOTIFIER(CmdInterfaces),
+                  "Set listener interfaces");
+  cli.SetCommand(m_endpoint.GetPrefixName() & "crypto", PCREATE_NOTIFIER(CmdCryptoSuites),
+                  "Set crypto suites in priority order",
+                  " --list | [ <suite> ... ]",
+                  "l-list. List all possible crypto suite names");
+  cli.SetCommand(m_endpoint.GetPrefixName() & "bandwidth", PCREATE_NOTIFIER(CmdBandwidth),
+                  "Set bandwidth to use for calls",
+                  "[ <dir> ] <bps>",
+                  "-rx. Receive bandwidth\n"
+                  "-tx. Transmit bandwidth");
+  cli.SetCommand(m_endpoint.GetPrefixName() & "ui", PCREATE_NOTIFIER(CmdUserInput),
+                  "Set user input mode",
+                  "\"inband\" | \"rfc2833\" | \"signal\" | \"string\"");
+}
 #endif //P_CLI
-};
 #endif // OPAL_SIP || OPAL_H323
 
+
+/////////////////////////////////////////////////////////////////////////////
+
 #if OPAL_SIP
-class SIPConsoleEndPoint : public SIPEndPoint, public OpalRTPConsoleEndPoint
+SIPConsoleEndPoint::SIPConsoleEndPoint(OpalConsoleManager & manager)
+  : SIPEndPoint(manager)
+  , P_DISABLE_MSVC_WARNINGS(4355, OpalRTPConsoleEndPoint(manager, this))
 {
-  PCLASSINFO(SIPConsoleEndPoint, SIPEndPoint)
-public:
-  SIPConsoleEndPoint(OpalConsoleManager & manager)
-    : SIPEndPoint(manager)
-    , P_DISABLE_MSVC_WARNINGS(4355, OpalRTPConsoleEndPoint(manager, this))
-  {
-  }
+}
 
 
-  virtual void OnRegistrationStatus(const RegistrationStatus & status)
-  {
-    SIPEndPoint::OnRegistrationStatus(status);
+void SIPConsoleEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
+{
+  SIPEndPoint::OnRegistrationStatus(status);
 
-    unsigned reasonClass = status.m_reason/100;
-    if (reasonClass == 1 || (status.m_reRegistering && reasonClass == 2))
-      return;
+  unsigned reasonClass = status.m_reason/100;
+  if (reasonClass == 1 || (status.m_reRegistering && reasonClass == 2))
+    return;
 
-    *m_console.LockedOutput() << '\n' << status << endl;
-  }
+  *m_console.LockedOutput() << '\n' << status << endl;
+}
 
 
-  bool DoRegistration(ostream & output,
-                      bool verbose,
-                      const PString & aor,
-                      const PString & pwd,
-                      const PArgList & args, 
-                      const char * authId,
-                      const char * realm,
-                      const char * proxy,
-                      const char * mode,
-                      const char * ttl)
-  {
-    SIPRegister::Params params;
-    params.m_addressOfRecord  = aor;
-    params.m_password         = pwd;
-    params.m_authID           = args.GetOptionString(authId);
-    params.m_realm            = args.GetOptionString(realm);
-    params.m_proxyAddress     = args.GetOptionString(proxy);
+bool SIPConsoleEndPoint::DoRegistration(ostream & output,
+                                        bool verbose,
+                                        const PString & aor,
+                                        const PString & pwd,
+                                        const PArgList & args, 
+                                        const char * authId,
+                                        const char * realm,
+                                        const char * proxy,
+                                        const char * mode,
+                                        const char * ttl)
+{
+  SIPRegister::Params params;
+  params.m_addressOfRecord  = aor;
+  params.m_password         = pwd;
+  params.m_authID           = args.GetOptionString(authId);
+  params.m_realm            = args.GetOptionString(realm);
+  params.m_proxyAddress     = args.GetOptionString(proxy);
 
-    if (args.HasOption(mode)) {
-      PCaselessString str = args.GetOptionString("register-mode");
-      if (str == "normal")
-        params.m_compatibility = SIPRegister::e_FullyCompliant;
-      else if (str == "single")
-        params.m_compatibility = SIPRegister::e_CannotRegisterMultipleContacts;
-      else if (str == "public")
-        params.m_compatibility = SIPRegister::e_CannotRegisterPrivateContacts;
-      else if (str == "ALG")
-        params.m_compatibility = SIPRegister::e_HasApplicationLayerGateway;
-      else if (str == "RFC5626")
-        params.m_compatibility = SIPRegister::e_RFC5626;
-      else {
-        output << "Unknown SIP registration mode \"" << str << '"' << endl;
-        return false;
-      }
-    }
-
-    params.m_expire = args.GetOptionString(ttl, "300").AsUnsigned();
-    if (params.m_expire < 30) {
-      output << "SIP registrar Time To Live must be more than 30 seconds\n";
+  if (args.HasOption(mode)) {
+    PCaselessString str = args.GetOptionString("register-mode");
+    if (str == "normal")
+      params.m_compatibility = SIPRegister::e_FullyCompliant;
+    else if (str == "single")
+      params.m_compatibility = SIPRegister::e_CannotRegisterMultipleContacts;
+    else if (str == "public")
+      params.m_compatibility = SIPRegister::e_CannotRegisterPrivateContacts;
+    else if (str == "ALG")
+      params.m_compatibility = SIPRegister::e_HasApplicationLayerGateway;
+    else if (str == "RFC5626")
+      params.m_compatibility = SIPRegister::e_RFC5626;
+    else {
+      output << "Unknown SIP registration mode \"" << str << '"' << endl;
       return false;
     }
+  }
 
+  params.m_expire = args.GetOptionString(ttl, "300").AsUnsigned();
+  if (params.m_expire < 30) {
+    output << "SIP registrar Time To Live must be more than 30 seconds\n";
+    return false;
+  }
+
+  if (verbose)
+    output << "SIP registrar: " << flush;
+
+  PString finalAoR;
+  SIP_PDU::StatusCodes status;
+  if (!Register(params, finalAoR, &status)) {
+    output << "\nSIP registration to " << params.m_addressOfRecord
+            << " failed (" << status << ')' << endl;
+    return false;
+  }
+
+  if (verbose)
+    output << finalAoR << endl;
+
+  return true;
+}
+
+
+void SIPConsoleEndPoint::GetArgumentSpec(ostream & strm) const
+{
+  strm << "[SIP options:]"
+          "-no-sip.           Disable SIP\n"
+          "S-sip:             SIP listens on interface, defaults to udp$*:5060.\n";
+  OpalRTPConsoleEndPoint::GetArgumentSpec(strm);
+  strm << "r-register:        SIP registration to server.\n"
+          "-register-auth-id: SIP registration authorisation id, default is username.\n"
+          "-register-realm:   SIP registration authorisation realm, default is any.\n"
+          "-register-proxy:   SIP registration proxy, default is none.\n"
+          "-register-ttl:     SIP registration Time To Live, default 300 seconds.\n"
+          "-register-mode:    SIP registration mode (normal, single, public, ALG, RFC5626).\n"
+          "-proxy:            SIP outbound proxy.\n";
+}
+
+
+bool SIPConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
+{
+  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  ostream & output = lockedOutput;
+
+  // Set up SIP
+  if (args.HasOption("no-sip")) {
     if (verbose)
-      output << "SIP registrar: " << flush;
-
-    PString finalAoR;
-    SIP_PDU::StatusCodes status;
-    if (!Register(params, finalAoR, &status)) {
-      output << "\nSIP registration to " << params.m_addressOfRecord
-             << " failed (" << status << ')' << endl;
-      return false;
-    }
-
-    if (verbose)
-      output << finalAoR << endl;
-
+      output << "SIP protocol disabled.\n";
     return true;
   }
 
+  if (!OpalRTPConsoleEndPoint::Initialise(args, output, verbose))
+    return false;
 
-  virtual void GetArgumentSpec(ostream & strm) const
-  {
-    strm << "[SIP options:]"
-            "-no-sip.           Disable SIP\n"
-            "S-sip:             SIP listens on interface, defaults to udp$*:5060.\n";
-    OpalRTPConsoleEndPoint::GetArgumentSpec(strm);
-    strm << "r-register:        SIP registration to server.\n"
-            "-register-auth-id: SIP registration authorisation id, default is username.\n"
-            "-register-realm:   SIP registration authorisation realm, default is any.\n"
-            "-register-proxy:   SIP registration proxy, default is none.\n"
-            "-register-ttl:     SIP registration Time To Live, default 300 seconds.\n"
-            "-register-mode:    SIP registration mode (normal, single, public, ALG, RFC5626).\n"
-            "-proxy:            SIP outbound proxy.\n";
+  if (args.HasOption("proxy")) {
+    SetProxy(args.GetOptionString("proxy"), args.GetOptionString("user"), args.GetOptionString("password"));
+    if (verbose)
+      output << "SIP proxy: " << GetProxy() << '\n';
   }
 
-
-  virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
-  {
-    OpalConsoleManager::LockedStream lockedOutput(m_console);
-    ostream & output = lockedOutput;
-
-    // Set up SIP
-    if (args.HasOption("no-sip")) {
-      if (verbose)
-        output << "SIP protocol disabled.\n";
-      return true;
-    }
-
-    if (!OpalRTPConsoleEndPoint::Initialise(args, output, verbose))
+  if (args.HasOption("register")) {
+    if (!DoRegistration(output, verbose,
+                        args.GetOptionString("register"),
+                        args.GetOptionString("password"),
+                        args,
+                        "register-auth-id",
+                        "register-realm",
+                        "register-proxy",
+                        "register-mode",
+                        "register-ttl"))
       return false;
-
-    if (args.HasOption("proxy")) {
-      SetProxy(args.GetOptionString("proxy"), args.GetOptionString("user"), args.GetOptionString("password"));
-      if (verbose)
-        output << "SIP proxy: " << GetProxy() << '\n';
-    }
-
-    if (args.HasOption("register")) {
-      if (!DoRegistration(output, verbose,
-                          args.GetOptionString("register"),
-                          args.GetOptionString("password"),
-                          args,
-                          "register-auth-id",
-                          "register-realm",
-                          "register-proxy",
-                          "register-mode",
-                          "register-ttl"))
-        return false;
-    }
-
-    AddRoutesFor(this, defaultRoute);
-    return true;
   }
+
+  AddRoutesFor(this, defaultRoute);
+  return true;
+}
 
 
 #if P_CLI
-  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, SIPConsoleEndPoint, CmdProxy, P_INT_PTR, )
-  {
-    if (args.GetCount() < 1)
-      args.WriteUsage();
-    else {
-      SetProxy(args[0], args.GetOptionString("user"), args.GetOptionString("password"));
-      args.GetContext() << "SIP proxy: " << GetProxy() << endl;
-    }
+void SIPConsoleEndPoint::CmdProxy(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() < 1)
+    args.WriteUsage();
+  else {
+    SetProxy(args[0], args.GetOptionString("user"), args.GetOptionString("password"));
+    args.GetContext() << "SIP proxy: " << GetProxy() << endl;
   }
+}
 
-  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, SIPConsoleEndPoint, CmdRegister, P_INT_PTR, )
-  {
-    DoRegistration(args.GetContext(), true, args[0], args[1], args, "auth-id", "realm", "proxy", "mode", "ttl");
-  }
 
-  virtual void AddCommands(PCLI & cli)
-  {
-    OpalRTPConsoleEndPoint::AddCommands(cli);
-    cli.SetCommand("sip proxy", PCREATE_NOTIFIER(CmdProxy),
-                   "Set listener interfaces",
-                   "[ options ] <uri>",
-                   "-u-user: Username for proxy\n"
-                   "-p-password: Password for proxy");
-    cli.SetCommand("sip register", PCREATE_NOTIFIER(CmdRegister),
-                   "Register with SIP registrar",
-                   "[ options ] <address> [ <password> ]",
-                   "a-auth-id: Override user for authorisation\n"
-                   "r-realm: Set realm for authorisation\n"
-                   "p-proxy: Set proxy for registration\n"
-                   "m-mode: Set registration mode (normal, single, public)\n"
-                   "t-ttl: Set Time To Live for registration\n");
-  }
+void SIPConsoleEndPoint::CmdRegister(PCLI::Arguments & args, P_INT_PTR)
+{
+  DoRegistration(args.GetContext(), true, args[0], args[1], args, "auth-id", "realm", "proxy", "mode", "ttl");
+}
+
+
+void SIPConsoleEndPoint::AddCommands(PCLI & cli)
+{
+  OpalRTPConsoleEndPoint::AddCommands(cli);
+  cli.SetCommand("sip proxy", PCREATE_NOTIFIER(CmdProxy),
+                  "Set listener interfaces",
+                  "[ options ] <uri>",
+                  "-u-user: Username for proxy\n"
+                  "-p-password: Password for proxy");
+  cli.SetCommand("sip register", PCREATE_NOTIFIER(CmdRegister),
+                  "Register with SIP registrar",
+                  "[ options ] <address> [ <password> ]",
+                  "a-auth-id: Override user for authorisation\n"
+                  "r-realm: Set realm for authorisation\n"
+                  "p-proxy: Set proxy for registration\n"
+                  "m-mode: Set registration mode (normal, single, public)\n"
+                  "t-ttl: Set Time To Live for registration\n");
+}
 #endif // P_CLI
-};
 #endif // OPAL_SIP
 
 
+/////////////////////////////////////////////////////////////////////////////
+
 #if OPAL_H323
-class H323ConsoleEndPoint : public H323EndPoint, public OpalRTPConsoleEndPoint
+H323ConsoleEndPoint::H323ConsoleEndPoint(OpalConsoleManager & manager)
+  : H323EndPoint(manager)
+  , P_DISABLE_MSVC_WARNINGS(4355, OpalRTPConsoleEndPoint(manager, this))
 {
-  PCLASSINFO(H323ConsoleEndPoint, H323EndPoint)
-public:
-  H323ConsoleEndPoint(OpalConsoleManager & manager)
-    : H323EndPoint(manager)
-    , P_DISABLE_MSVC_WARNINGS(4355, OpalRTPConsoleEndPoint(manager, this))
-  {
-  }
+}
 
 
-  virtual void OnGatekeeperStatus(H323Gatekeeper::RegistrationFailReasons status)
-  {
-    *m_console.LockedOutput() << "\nH.323 registration: " << *GetGatekeeper() << " - " << status << endl;
-  }
-
-  virtual void GetArgumentSpec(ostream & strm) const
-  {
-    strm << "[H.323 options:]"
-            "-no-h323.           Disable H.323\n"
-            "H-h323:             H.323 listens on interface, defaults to tcp$*:1720.\n";
-    OpalRTPConsoleEndPoint::GetArgumentSpec(strm);
-    strm << "g-gk-host:          H.323 gatekeeper host.\n"
-            "G-gk-id:            H.323 gatekeeper identifier.\n"
-            "-gk-password:       H.323 gatekeeper password (if different from --password).\n"
-            "-no-fast.           H.323 fast connect disabled.\n"
-            "-no-tunnel.         H.323 tunnel for H.245 disabled.\n";
-  }
+void H323ConsoleEndPoint::OnGatekeeperStatus(H323Gatekeeper::RegistrationFailReasons status)
+{
+  *m_console.LockedOutput() << "\nH.323 registration: " << *GetGatekeeper() << " - " << status << endl;
+}
 
 
-  bool UseGatekeeperFromArgs(const PArgList & args, const char * host, const char * ident, const char * pass)
-  {
-    SetGatekeeperPassword(args.GetOptionString(pass, args.GetOptionString("password")));
-    return UseGatekeeper(args.GetOptionString(host), args.GetOptionString(ident));
-  }
+void H323ConsoleEndPoint::GetArgumentSpec(ostream & strm) const
+{
+  strm << "[H.323 options:]"
+          "-no-h323.           Disable H.323\n"
+          "H-h323:             H.323 listens on interface, defaults to tcp$*:1720.\n";
+  OpalRTPConsoleEndPoint::GetArgumentSpec(strm);
+  strm << "g-gk-host:          H.323 gatekeeper host.\n"
+          "G-gk-id:            H.323 gatekeeper identifier.\n"
+          "-gk-password:       H.323 gatekeeper password (if different from --password).\n"
+          "-no-fast.           H.323 fast connect disabled.\n"
+          "-no-tunnel.         H.323 tunnel for H.245 disabled.\n";
+}
 
 
-  virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
-  {
-    OpalConsoleManager::LockedStream lockedOutput(m_console);
-    ostream & output = lockedOutput;
+bool H323ConsoleEndPoint::UseGatekeeperFromArgs(const PArgList & args, const char * host, const char * ident, const char * pass)
+{
+  SetGatekeeperPassword(args.GetOptionString(pass, args.GetOptionString("password")));
+  return UseGatekeeper(args.GetOptionString(host), args.GetOptionString(ident));
+}
 
-    // Set up H.323
-    if (args.HasOption("no-h323")) {
-      if (verbose)
-        output << "H.323 protocol disabled.\n";
-      return true;
-    }
 
-    if (!OpalRTPConsoleEndPoint::Initialise(args, output, verbose))
-      return false;
+bool H323ConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
+{
+  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  ostream & output = lockedOutput;
 
-    DisableFastStart(args.HasOption("no-fast"));
-    DisableH245Tunneling(args.HasOption("no-tunnel"));
-
+  // Set up H.323
+  if (args.HasOption("no-h323")) {
     if (verbose)
-      output << "H.323 options: "
-             << (IsFastStartDisabled() ? "Slow" : "Fast") << " connect, "
-             << (IsH245TunnelingDisabled() ? "Separate" : "Tunnelled") << " H.245\n";
-
-
-    if (args.HasOption("gk-host") || args.HasOption("gk-id")) {
-      if (!UseGatekeeperFromArgs(args, "gk-host", "gk-id", "gk-password")) {
-        output << "Could not initiate gatekeeper registration." << endl;
-        return false;
-      }
-      if (verbose)
-        output << "H.323 Gatekeeper: " << *GetGatekeeper() << " (awaiting respone)\n";
-    }
-
-    AddRoutesFor(this, defaultRoute);
+      output << "H.323 protocol disabled.\n";
     return true;
   }
 
+  if (!OpalRTPConsoleEndPoint::Initialise(args, output, verbose))
+    return false;
+
+  DisableFastStart(args.HasOption("no-fast"));
+  DisableH245Tunneling(args.HasOption("no-tunnel"));
+
+  if (verbose)
+    output << "H.323 options: "
+            << (IsFastStartDisabled() ? "Slow" : "Fast") << " connect, "
+            << (IsH245TunnelingDisabled() ? "Separate" : "Tunnelled") << " H.245\n";
+
+
+  if (args.HasOption("gk-host") || args.HasOption("gk-id")) {
+    if (!UseGatekeeperFromArgs(args, "gk-host", "gk-id", "gk-password")) {
+      output << "Could not initiate gatekeeper registration." << endl;
+      return false;
+    }
+    if (verbose)
+      output << "H.323 Gatekeeper: " << *GetGatekeeper() << " (awaiting respone)\n";
+  }
+
+  AddRoutesFor(this, defaultRoute);
+  return true;
+}
+
 
 #if P_CLI
-  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, H323ConsoleEndPoint, CmdTunnel, P_INT_PTR, )
-  {
-    if (args.GetCount() < 1)
-      args.GetContext() << "H.245 tunneling: " << (IsH245TunnelingDisabled() ? "OFF" : "ON") << endl;
-    else if (args[0] *= "on")
-      DisableH245Tunneling(false);
-    else if (args[0] *= "off")
-      DisableH245Tunneling(true);
-    else
-      args.WriteUsage();
-  }
+void H323ConsoleEndPoint::CmdTunnel(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() < 1)
+    args.GetContext() << "H.245 tunneling: " << (IsH245TunnelingDisabled() ? "OFF" : "ON") << endl;
+  else if (args[0] *= "on")
+    DisableH245Tunneling(false);
+  else if (args[0] *= "off")
+    DisableH245Tunneling(true);
+  else
+    args.WriteUsage();
+}
 
-  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, H323ConsoleEndPoint, CmdGatekeeper, P_INT_PTR, )
-  {
-    if (args.GetCount() < 1) {
-      if (GetGatekeeper() != NULL)
-        args.GetContext() << "Gatekeeper: " << *GetGatekeeper() << endl;
-      else
-        args.GetContext() << "No gatekeeper active." << endl;
-    }
-    else if (args[0] *= "off")
-      RemoveGatekeeper();
-    else if (args[0] *= "on") {
-      args.GetContext() << "H.323 Gatekeeper: " << flush;
-      if (UseGatekeeperFromArgs(args, "host", "identifier", "password"))
-        args.GetContext()<< *GetGatekeeper() << endl;
-      else
-        args.GetContext() << "unavailable" << endl;
-    }
-    else
-      args.WriteUsage();
-  }
 
-  virtual void AddCommands(PCLI & cli)
-  {
-    OpalRTPConsoleEndPoint::AddCommands(cli);
-    cli.SetCommand("h323 fast", disableFastStart, "Fast Connect Disable");
-    cli.SetCommand("h323 tunnel", disableH245Tunneling, "H.245 Tunnelling Disable");
-    cli.SetCommand("h323 h245-in-setup", disableH245inSetup, "H.245 in SETUP Disable");
-    cli.SetCommand("h323 gatekeeper", PCREATE_NOTIFIER(CmdGatekeeper),
-                   "Set gatekeeper",
-                   "[ options ] [ \"on\" / \"off\" ]",
-                   "h-host: Host name or IP address of gatekeeper\n"
-                   "i-identifier: Identifier for gatekeeper\n"
-                   "p-password: Password for H.235.1 authentication");
+void H323ConsoleEndPoint::CmdGatekeeper(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() < 1) {
+    if (GetGatekeeper() != NULL)
+      args.GetContext() << "Gatekeeper: " << *GetGatekeeper() << endl;
+    else
+      args.GetContext() << "No gatekeeper active." << endl;
   }
+  else if (args[0] *= "off")
+    RemoveGatekeeper();
+  else if (args[0] *= "on") {
+    args.GetContext() << "H.323 Gatekeeper: " << flush;
+    if (UseGatekeeperFromArgs(args, "host", "identifier", "password"))
+      args.GetContext()<< *GetGatekeeper() << endl;
+    else
+      args.GetContext() << "unavailable" << endl;
+  }
+  else
+    args.WriteUsage();
+}
+
+
+void H323ConsoleEndPoint::AddCommands(PCLI & cli)
+{
+  OpalRTPConsoleEndPoint::AddCommands(cli);
+  cli.SetCommand("h323 fast", disableFastStart, "Fast Connect Disable");
+  cli.SetCommand("h323 tunnel", disableH245Tunneling, "H.245 Tunnelling Disable");
+  cli.SetCommand("h323 h245-in-setup", disableH245inSetup, "H.245 in SETUP Disable");
+  cli.SetCommand("h323 gatekeeper", PCREATE_NOTIFIER(CmdGatekeeper),
+                  "Set gatekeeper",
+                  "[ options ] [ \"on\" / \"off\" ]",
+                  "h-host: Host name or IP address of gatekeeper\n"
+                  "i-identifier: Identifier for gatekeeper\n"
+                  "p-password: Password for H.235.1 authentication");
+}
 #endif // P_CLI
-};
 #endif // OPAL_H323
 
 
+/////////////////////////////////////////////////////////////////////////////
+
 #if OPAL_LID
-class OpalConsoleLineEndPoint : public OpalLineEndPoint, public OpalConsoleEndPoint
+OpalConsoleLineEndPoint::OpalConsoleLineEndPoint(OpalConsoleManager & manager)
+  : OpalLineEndPoint(manager)
+  , OpalConsoleEndPoint(manager)
 {
-  PCLASSINFO(OpalConsoleLineEndPoint, OpalLineEndPoint)
-public:
-  OpalConsoleLineEndPoint(OpalConsoleManager & manager)
-    : OpalLineEndPoint(manager)
-    , OpalConsoleEndPoint(manager)
-  {
-  }
+}
 
 
-  virtual void GetArgumentSpec(ostream & strm) const
-  {
-    strm << "[PSTN options:]"
-            "-no-lid.           Disable Line Interface Devices\n"
-            "L-lines:           Set Line Interface Devices.\n"
-            "-country:          Select country to use for LID (eg \"US\", \"au\" or \"+61\").\n";
-  }
+void OpalConsoleLineEndPoint::GetArgumentSpec(ostream & strm) const
+{
+  strm << "[PSTN options:]"
+          "-no-lid.           Disable Line Interface Devices\n"
+          "L-lines:           Set Line Interface Devices.\n"
+          "-country:          Select country to use for LID (eg \"US\", \"au\" or \"+61\").\n";
+}
 
 
-  virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
-  {
-    OpalConsoleManager::LockedStream lockedOutput(m_console);
-    ostream & output = lockedOutput;
+bool OpalConsoleLineEndPoint::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
+{
+  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  ostream & output = lockedOutput;
 
-    // If we have LIDs speficied in command line, load them
-    if (args.HasOption("no-lid")) {
-      if (verbose)
-        output << "PSTN disabled.\n";
-      return true;
-    }
-    
-    if (!args.HasOption("lines")) {
-      output << "No PSTN lines supplied.\n";
-      return true;
-    }
-
-    if (!AddDeviceNames(args.GetOptionString("lines").Lines())) {
-      output << "Could not start Line Interface Device(s)" << endl;
-      return false;
-    }
+  // If we have LIDs speficied in command line, load them
+  if (args.HasOption("no-lid")) {
     if (verbose)
-      output << "Line Interface listening on: " << setfill(',') << GetLines() << setfill(' ') << '\n';
-
-    PString country = args.GetOptionString("country");
-    if (!country.IsEmpty()) {
-      if (!SetCountryCodeName(country))
-        output << "Could not set LID to country name \"" << country << '"' << endl;
-      else if (verbose)
-        output << "LID to country: " << GetLine("*")->GetDevice().GetCountryCodeName() << '\n';
-    }
-
-    AddRoutesFor(this, defaultRoute);
+      output << "PSTN disabled.\n";
+    return true;
+  }
+    
+  if (!args.HasOption("lines")) {
+    output << "No PSTN lines supplied.\n";
     return true;
   }
 
+  if (!AddDeviceNames(args.GetOptionString("lines").Lines())) {
+    output << "Could not start Line Interface Device(s)" << endl;
+    return false;
+  }
+  if (verbose)
+    output << "Line Interface listening on: " << setfill(',') << GetLines() << setfill(' ') << '\n';
+
+  PString country = args.GetOptionString("country");
+  if (!country.IsEmpty()) {
+    if (!SetCountryCodeName(country))
+      output << "Could not set LID to country name \"" << country << '"' << endl;
+    else if (verbose)
+      output << "LID to country: " << GetLine("*")->GetDevice().GetCountryCodeName() << '\n';
+  }
+
+  AddRoutesFor(this, defaultRoute);
+  return true;
+}
+
 
 #if P_CLI
-  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, OpalConsoleLineEndPoint, CmdCountry, P_INT_PTR, )
-  {
-    if (args.GetCount() < 1)
-      args.Usage();
-    else if (!SetCountryCodeName(args[0]))
-      args.WriteError() << "Could not set LID to country name \"" << args[0] << '"' << endl;
-  }
+void OpalConsoleLineEndPoint::CmdCountry(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() < 1)
+    args.Usage();
+  else if (!SetCountryCodeName(args[0]))
+    args.WriteError() << "Could not set LID to country name \"" << args[0] << '"' << endl;
+}
 
-  virtual void AddCommands(PCLI & cli)
-  {
-    cli.SetCommand("pstn country", PCREATE_NOTIFIER(CmdCountry),
-                   "Set country code or name",
-                   "[ <name> ]");
-  }
+
+void OpalConsoleLineEndPoint::AddCommands(PCLI & cli)
+{
+  cli.SetCommand("pstn country", PCREATE_NOTIFIER(CmdCountry),
+                  "Set country code or name",
+                  "[ <name> ]");
+}
 #endif // P_CLI
-};
 #endif // OPAL_LID
 
 
+/////////////////////////////////////////////////////////////////////////////
+
 #if OPAL_CAPI
-class OpalConsoleCapiEndPoint : public OpalCapiEndPoint, public OpalConsoleEndPoint
+OpalConsoleCapiEndPoint::OpalConsoleCapiEndPoint(OpalConsoleManager & manager)
+  : OpalCapiEndPoint(manager)
+  , OpalConsoleEndPoint(manager)
 {
-  PCLASSINFO(OpalConsoleCapiEndPoint, OpalCapiEndPoint)
-public:
-  OpalConsoleCapiEndPoint(OpalConsoleManager & manager)
-    : OpalCapiEndPoint(manager)
-    , OpalConsoleEndPoint(manager)
-  {
-  }
-
-  virtual void GetArgumentSpec(ostream & strm) const
-  {
-    strm << "[ISDN (CAPI) options:]"
-            "-no-capi.          Disable ISDN via CAPI\n";
-  }
+}
 
 
-  virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
-  {
-    OpalConsoleManager::LockedStream lockedOutput(m_console);
-    ostream & output = lockedOutput;
+void OpalConsoleCapiEndPoint::GetArgumentSpec(ostream & strm) const
+{
+  strm << "[ISDN (CAPI) options:]"
+          "-no-capi.          Disable ISDN via CAPI\n";
+}
 
-    if (args.HasOption("no-capi")) {
-      if (verbose)
-        output << "CAPI ISDN disabled.\n";
-      return true;
-    }
 
-    unsigned controllers = OpenControllers();
-    if (verbose) {
-      if (controllers == 0)
-        output << "No CAPI controllers available.\n";
-      else
-        output << "Found " << controllers << " CAPI controllers.\n";
-    }
+bool OpalConsoleCapiEndPoint::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
+{
+  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  ostream & output = lockedOutput;
 
-    AddRoutesFor(this, defaultRoute);
+  if (args.HasOption("no-capi")) {
+    if (verbose)
+      output << "CAPI ISDN disabled.\n";
     return true;
   }
 
+  unsigned controllers = OpenControllers();
+  if (verbose) {
+    if (controllers == 0)
+      output << "No CAPI controllers available.\n";
+    else
+      output << "Found " << controllers << " CAPI controllers.\n";
+  }
+
+  AddRoutesFor(this, defaultRoute);
+  return true;
+}
+
 
 #if P_CLI
-  virtual void AddCommands(PCLI &)
-  {
-  }
+void OpalConsoleCapiEndPoint::AddCommands(PCLI &)
+{
+}
 #endif // P_CLI
-};
 #endif // OPAL_CAPI
 
+
+/////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_HAS_PCSS
 
@@ -761,181 +755,238 @@ static struct {
 };
 #endif // OPAL_VIDEO
 
-class OpalConsolePCSSEndPoint : public OpalPCSSEndPoint, public OpalConsoleEndPoint
+
+OpalConsolePCSSEndPoint::OpalConsolePCSSEndPoint(OpalConsoleManager & manager)
+  : OpalPCSSEndPoint(manager)
+  , OpalConsoleEndPoint(manager)
 {
-  PCLASSINFO(OpalConsolePCSSEndPoint, OpalPCSSEndPoint)
-public:
-  OpalConsolePCSSEndPoint(OpalConsoleManager & manager)
-    : OpalPCSSEndPoint(manager)
-    , OpalConsoleEndPoint(manager)
-  {
-  }
+}
 
-  virtual void GetArgumentSpec(ostream & strm) const
-  {
-    strm << "[PC options:]";
-    for (PINDEX i = 0; i < PARRAYSIZE(AudioDeviceVariables); ++i) {
-      const char * name = AudioDeviceVariables[i].m_name;
-      const char * desc = AudioDeviceVariables[i].m_description;
-      strm << '-' << name << "-driver: Audio " << desc << " driver.\n"
-              "-" << name << "-device: Audio " << desc << " device.\n";
-    }
-    strm << "-audio-buffer:   Audio buffer time in ms (default 120)\n";
+
+void OpalConsolePCSSEndPoint::GetArgumentSpec(ostream & strm) const
+{
+  strm << "[PC options:]";
+  for (PINDEX i = 0; i < PARRAYSIZE(AudioDeviceVariables); ++i) {
+    const char * name = AudioDeviceVariables[i].m_name;
+    const char * desc = AudioDeviceVariables[i].m_description;
+    strm << '-' << name << "-driver: Audio " << desc << " driver.\n"
+            "-" << name << "-device: Audio " << desc << " device.\n";
+  }
+  strm << "-audio-buffer:   Audio buffer time in ms (default 120)\n";
 
 #if OPAL_VIDEO
-    for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i) {
-      const char * name = VideoDeviceVariables[i].m_name;
-      const char * desc = VideoDeviceVariables[i].m_description;
-      strm << '-' << name << "-driver:  Video " << desc << " driver.\n"
-              "-" << name << "-device:  Video " << desc << " device.\n"
-              "-" << name << "-format:  Video " << desc << " format (\"pal\"/\"ntsc\")\n"
-              "-" << name << "-channel: Video " << desc << " channel number.\n";
-    }
+  for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i) {
+    const char * name = VideoDeviceVariables[i].m_name;
+    const char * desc = VideoDeviceVariables[i].m_description;
+    strm << '-' << name << "-driver:  Video " << desc << " driver.\n"
+            "-" << name << "-device:  Video " << desc << " device.\n"
+            "-" << name << "-format:  Video " << desc << " format (\"pal\"/\"ntsc\")\n"
+            "-" << name << "-channel: Video " << desc << " channel number.\n";
+  }
 #endif // OPAL_VIDEO
+}
+
+
+bool OpalConsolePCSSEndPoint::Initialise(PArgList & args, bool verbose, const PString &)
+{
+  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  ostream & output = lockedOutput;
+
+  for (PINDEX i = 0; i < PARRAYSIZE(AudioDeviceVariables); ++i) {
+    if (!AudioDeviceVariables[i].Initialise(*this, output, verbose, args, false))
+      return false;
   }
 
-
-  virtual bool Initialise(PArgList & args, bool verbose, const PString &)
-  {
-    OpalConsoleManager::LockedStream lockedOutput(m_console);
-    ostream & output = lockedOutput;
-
-    for (PINDEX i = 0; i < PARRAYSIZE(AudioDeviceVariables); ++i) {
-      if (!AudioDeviceVariables[i].Initialise(*this, output, verbose, args, false))
-        return false;
-    }
-
-    if (args.HasOption("audio-buffer"))
-      SetSoundChannelBufferTime(args.GetOptionString("audio-buffer").AsUnsigned());
-    if (verbose)
-      output << "Audio buffer time: " << GetSoundChannelBufferTime() << "ms\n";
+  if (args.HasOption("audio-buffer"))
+    SetSoundChannelBufferTime(args.GetOptionString("audio-buffer").AsUnsigned());
+  if (verbose)
+    output << "Audio buffer time: " << GetSoundChannelBufferTime() << "ms\n";
 
 #if OPAL_VIDEO
-    for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i) {
-      if (!VideoDeviceVariables[i].Initialise(*this, output, verbose, args, false))
-        return false;
-    }
+  for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i) {
+    if (!VideoDeviceVariables[i].Initialise(*this, output, verbose, args, false))
+      return false;
+  }
 #endif // OPAL_VIDEO
 
-    return true;
-  }
+  return true;
+}
 
 
 #if P_CLI
-  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, OpalConsolePCSSEndPoint, CmdVolume, P_INT_PTR, )
-  {
-    PSafePtr<OpalConnection> connection = GetConnectionWithLock(args.GetOptionString('c', "*"), PSafeReadOnly);
-    if (connection == NULL) {
-      args.WriteError("No call in progress.");
-      return;
-    }
-
-    bool mike = args.GetCommandName().Find("speaker") == P_MAX_INDEX;
-
-    if (args.GetCount() == 0) {
-      unsigned percent;
-      if (connection->GetAudioVolume(mike, percent))
-        args.GetContext() << percent << '%' << endl;
-      else
-        args.WriteError("Could not get volume.");
-    }
-    else {
-      if (!connection->SetAudioVolume(mike, args[0].AsUnsigned()))
-        args.WriteError("Could not set volume.");
-    }
+void OpalConsolePCSSEndPoint::CmdVolume(PCLI::Arguments & args, P_INT_PTR)
+{
+  PSafePtr<OpalConnection> connection = GetConnectionWithLock(args.GetOptionString('c', "*"), PSafeReadOnly);
+  if (connection == NULL) {
+    args.WriteError("No call in progress.");
+    return;
   }
 
-  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, OpalConsolePCSSEndPoint, CmdAudioDevice, P_INT_PTR, )
-  {
-    for (PINDEX i = 0; i < PARRAYSIZE(AudioDeviceVariables); ++i) {
-      if (args.GetCommandName().Find(AudioDeviceVariables[i].m_name) != P_MAX_INDEX)
-        AudioDeviceVariables[i].Initialise(*this, args.GetContext(), true, args, true);
-    }
-  }
+  bool mike = args.GetCommandName().Find("speaker") == P_MAX_INDEX;
 
-  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, OpalConsolePCSSEndPoint, CmdAudioBuffers, P_INT_PTR, )
-  {
-    if (args.GetCount() > 0)
-      SetSoundChannelBufferTime(args[0].AsUnsigned());
-    args.GetContext() << "Audio buffer time: " << GetSoundChannelBufferTime() << "ms" << endl;
+  if (args.GetCount() == 0) {
+    unsigned percent;
+    if (connection->GetAudioVolume(mike, percent))
+      args.GetContext() << percent << '%' << endl;
+    else
+      args.WriteError("Could not get volume.");
   }
+  else {
+    if (!connection->SetAudioVolume(mike, args[0].AsUnsigned()))
+      args.WriteError("Could not set volume.");
+  }
+}
+
+
+void OpalConsolePCSSEndPoint::CmdAudioDevice(PCLI::Arguments & args, P_INT_PTR)
+{
+  for (PINDEX i = 0; i < PARRAYSIZE(AudioDeviceVariables); ++i) {
+    if (args.GetCommandName().Find(AudioDeviceVariables[i].m_name) != P_MAX_INDEX)
+      AudioDeviceVariables[i].Initialise(*this, args.GetContext(), true, args, true);
+  }
+}
+
+
+void OpalConsolePCSSEndPoint::CmdAudioBuffers(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() > 0)
+    SetSoundChannelBufferTime(args[0].AsUnsigned());
+  args.GetContext() << "Audio buffer time: " << GetSoundChannelBufferTime() << "ms" << endl;
+}
+
 
 #if OPAL_VIDEO
-  PDECLARE_NOTIFIER_EXT(PCLI::Arguments, args, OpalConsolePCSSEndPoint, CmdVideoDevice, P_INT_PTR, )
-  {
-    for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i) {
-      if (args.GetCommandName().Find(VideoDeviceVariables[i].m_name) != P_MAX_INDEX)
-        VideoDeviceVariables[i].Initialise(*this, args.GetContext(), true, args, true);
-    }
+void OpalConsolePCSSEndPoint::CmdVideoDevice(PCLI::Arguments & args, P_INT_PTR)
+{
+  for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i) {
+    if (args.GetCommandName().Find(VideoDeviceVariables[i].m_name) != P_MAX_INDEX)
+      VideoDeviceVariables[i].Initialise(*this, args.GetContext(), true, args, true);
   }
+}
 #endif // OPAL_VIDEO
 
-  virtual void AddCommands(PCLI & cli)
-  {
-    for (PINDEX i = 0; i < PARRAYSIZE(AudioDeviceVariables); ++i)
-      cli.SetCommand(GetPrefixName() & AudioDeviceVariables[i].m_name, PCREATE_NOTIFIER(CmdAudioDevice),
-                     PSTRSTRM("Audio " << AudioDeviceVariables[i].m_description << " device."),
-                     "[ option ] <name>", "D-driver:  Optional driver name.");
 
-    cli.SetCommand(GetPrefixName() & "buffers", m_soundChannelBufferTime, "Audio Buffer Time", 20, 1000, "Audio buffer time in ms");
+void OpalConsolePCSSEndPoint::AddCommands(PCLI & cli)
+{
+  for (PINDEX i = 0; i < PARRAYSIZE(AudioDeviceVariables); ++i)
+    cli.SetCommand(GetPrefixName() & AudioDeviceVariables[i].m_name, PCREATE_NOTIFIER(CmdAudioDevice),
+                    PSTRSTRM("Audio " << AudioDeviceVariables[i].m_description << " device."),
+                    "[ option ] <name>", "D-driver:  Optional driver name.");
+
+  cli.SetCommand(GetPrefixName() & "buffers", m_soundChannelBufferTime, "Audio Buffer Time", 20, 1000, "Audio buffer time in ms");
 
 #if OPAL_VIDEO
-    for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i)
-      cli.SetCommand(GetPrefixName() & VideoDeviceVariables[i].m_name, PCREATE_NOTIFIER(CmdVideoDevice),
-                     PSTRSTRM("Video " << VideoDeviceVariables[i].m_description << " device."),
-                     "[ options ] <name>",
-                     "-driver:  Driver name.\n"
-                     "-format:  Format (\"pal\"/\"ntsc\")\n"
-                     "-channel: Channel number.\n");
+  for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i)
+    cli.SetCommand(GetPrefixName() & VideoDeviceVariables[i].m_name, PCREATE_NOTIFIER(CmdVideoDevice),
+                    PSTRSTRM("Video " << VideoDeviceVariables[i].m_description << " device."),
+                    "[ options ] <name>",
+                    "-driver:  Driver name.\n"
+                    "-format:  Format (\"pal\"/\"ntsc\")\n"
+                    "-channel: Channel number.\n");
 #endif // OPAL_VIDEO
 
-    cli.SetCommand(GetPrefixName() & "microphone volume", PCREATE_NOTIFIER(CmdVolume),
-                   "Set volume for microphone",
-                   "[ <percent> ]", "c-call: Call token");
-    cli.SetCommand(GetPrefixName() & "speaker volume", PCREATE_NOTIFIER(CmdVolume),
-                   "Set volume for speaker",
-                   "[ <percent> ]", "c-call: Call token");
-  }
+  cli.SetCommand(GetPrefixName() & "microphone volume", PCREATE_NOTIFIER(CmdVolume),
+                  "Set volume for microphone",
+                  "[ <percent> ]", "c-call: Call token");
+  cli.SetCommand(GetPrefixName() & "speaker volume", PCREATE_NOTIFIER(CmdVolume),
+                  "Set volume for speaker",
+                  "[ <percent> ]", "c-call: Call token");
+}
 #endif // P_CLI
-};
 #endif // OPAL_HAS_PCSS
 
 
+/////////////////////////////////////////////////////////////////////////////
+
 #if OPAL_IVR
-class OpalConsoleIVREndPoint : public OpalIVREndPoint, public OpalConsoleEndPoint
+OpalConsoleIVREndPoint::OpalConsoleIVREndPoint(OpalConsoleManager & manager)
+  : OpalIVREndPoint(manager)
+  , OpalConsoleEndPoint(manager)
 {
-  PCLASSINFO(OpalConsoleIVREndPoint, OpalIVREndPoint)
-public:
-  OpalConsoleIVREndPoint(OpalConsoleManager & manager)
-    : OpalIVREndPoint(manager)
-    , OpalConsoleEndPoint(manager)
-  {
-  }
-
-  virtual void GetArgumentSpec(ostream & strm) const
-  {
-    strm << "[Interactive Voice Response options:]"
-            "-ivr-script:      The default VXML script to run\n";
-  }
+}
 
 
-  virtual bool Initialise(PArgList & args, bool, const PString &)
-  {
-    PString vxml = args.GetOptionString("ivr-script");
-    if (!vxml.IsEmpty())
-      SetDefaultVXML(vxml);
+void OpalConsoleIVREndPoint::GetArgumentSpec(ostream & strm) const
+{
+  strm << "[Interactive Voice Response options:]"
+          "-no-ivr.     Disable IVR subsystem\n"
+          "-ivr-script: The default VXML script to run\n";
+}
 
+
+bool OpalConsoleIVREndPoint::Initialise(PArgList & args, bool verbose, const PString &)
+{
+  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  ostream & output = lockedOutput;
+
+  if (args.HasOption("no-ivr")) {
+    if (verbose)
+      output << "IVR disabled.\n";
     return true;
   }
 
+  PString vxml = args.GetOptionString("ivr-script");
+  if (!vxml.IsEmpty()) {
+    if (verbose)
+      output << "Set default IVR script: " << vxml.Left(vxml.FindOneOf("\r\n")) << '\n';
+    SetDefaultVXML(vxml);
+  }
+
+  return true;
+}
+
 
 #if P_CLI
-  virtual void AddCommands(PCLI &)
-  {
-  }
+void OpalConsoleIVREndPoint::AddCommands(PCLI &)
+{
+}
 #endif // P_CLI
-};
 #endif // OPAL_IVR
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_HAS_MIXER
+OpalConsoleMixerEndPoint::OpalConsoleMixerEndPoint(OpalConsoleManager & manager)
+  : OpalMixerEndPoint(manager)
+  , OpalConsoleEndPoint(manager)
+{
+}
+
+
+void OpalConsoleMixerEndPoint::GetArgumentSpec(ostream & strm) const
+{
+  strm << "[Mixer (MCU) options:]"
+          "-no-mcu.       Disable MCU subsystem\n"
+          "-audio-only.   Audio only conference\n";
+}
+
+
+bool OpalConsoleMixerEndPoint::Initialise(PArgList & args, bool verbose, const PString &)
+{
+  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  ostream & output = lockedOutput;
+
+  if (args.HasOption("no-mcu")) {
+    if (verbose)
+      output << "Conference disabled.\n";
+    return true;
+  }
+
+  OpalMixerNodeInfo adHoc;
+  adHoc.m_audioOnly = args.HasOption("audio-only");
+  SetAdHocNodeInfo(adHoc);
+
+  return true;
+}
+
+
+#if P_CLI
+void OpalConsoleMixerEndPoint::AddCommands(PCLI &)
+{
+}
+#endif // P_CLI
+#endif // OPAL_HAS_MIXER
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1372,7 +1423,7 @@ void OpalConsoleManager::Run()
 void OpalConsoleManager::EndRun(bool interrupt)
 {
   if (m_verbose)
-    *LockedOutput() << "Exiting application." << endl;
+    *LockedOutput() << "Shutting down " << PProcess::Current().GetName() << " . . . " << endl;
 
   m_interrupted = interrupt;
   m_endRun.Signal();
@@ -1418,7 +1469,7 @@ OpalConsoleEndPoint * OpalConsoleManager::GetConsoleEndPoint(const PString & pre
 
 
 #if OPAL_SIP
-SIPEndPoint * OpalConsoleManager::CreateSIPEndPoint()
+SIPConsoleEndPoint * OpalConsoleManager::CreateSIPEndPoint()
 {
   return new SIPConsoleEndPoint(*this);
 }
@@ -1426,7 +1477,7 @@ SIPEndPoint * OpalConsoleManager::CreateSIPEndPoint()
 
 
 #if OPAL_H323
-H323EndPoint * OpalConsoleManager::CreateH323EndPoint()
+H323ConsoleEndPoint * OpalConsoleManager::CreateH323EndPoint()
 {
   return new H323ConsoleEndPoint(*this);
 }
@@ -1434,7 +1485,7 @@ H323EndPoint * OpalConsoleManager::CreateH323EndPoint()
 
 
 #if OPAL_LID
-OpalLineEndPoint * OpalConsoleManager::CreateLineEndPoint()
+OpalConsoleLineEndPoint * OpalConsoleManager::CreateLineEndPoint()
 {
   return new OpalConsoleLineEndPoint(*this);
 }
@@ -1442,7 +1493,7 @@ OpalLineEndPoint * OpalConsoleManager::CreateLineEndPoint()
 
 
 #if OPAL_CAPI
-OpalCapiEndPoint * OpalConsoleManager::CreateCapiEndPoint()
+OpalConsoleCapiEndPoint * OpalConsoleManager::CreateCapiEndPoint()
 {
   return new OpalConsoleCapiEndPoint(*this);
 }
@@ -1450,7 +1501,7 @@ OpalCapiEndPoint * OpalConsoleManager::CreateCapiEndPoint()
 
 
 #if OPAL_HAS_PCSS
-OpalPCSSEndPoint * OpalConsoleManager::CreatePCSSEndPoint()
+OpalConsolePCSSEndPoint * OpalConsoleManager::CreatePCSSEndPoint()
 {
   return new OpalConsolePCSSEndPoint(*this);
 }
@@ -1458,7 +1509,7 @@ OpalPCSSEndPoint * OpalConsoleManager::CreatePCSSEndPoint()
 
 
 #if OPAL_IVR
-OpalIVREndPoint * OpalConsoleManager::CreateIVREndPoint()
+OpalConsoleIVREndPoint * OpalConsoleManager::CreateIVREndPoint()
 {
   return new OpalConsoleIVREndPoint(*this);
 }
@@ -1466,9 +1517,9 @@ OpalIVREndPoint * OpalConsoleManager::CreateIVREndPoint()
 
 
 #if OPAL_HAS_MIXER
-OpalMixerEndPoint * OpalConsoleManager::CreateMixerEndPoint()
+OpalConsoleMixerEndPoint * OpalConsoleManager::CreateMixerEndPoint()
 {
-  return new OpalMixerEndPoint(*this , OPAL_PREFIX_MIXER);
+  return new OpalConsoleMixerEndPoint(*this);
 }
 #endif
 
@@ -1764,7 +1815,7 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
       return false;
   }
 
-  m_cli->SetPrompt(args.GetCommandName());
+  m_cli->SetPrompt(args.GetCommandName() + "> ");
 
 #if P_NAT
   m_cli->SetCommand("nat list", PCREATE_NOTIFIER(CmdNatList),
@@ -1796,7 +1847,11 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
   m_cli->SetCommand("quit\nexit", PCREATE_NOTIFIER(CmdQuit),
                     "Quit command line interpreter, note quitting from console also shuts down application.");
   m_cli->SetCommand("shutdown", PCREATE_NOTIFIER(CmdShutDown),
-                    "Shut down the application");
+                    "Shut down the application"
+#if _WIN32
+                    , NULL, "-wait"
+#endif
+                    );
   m_cli->SetExitCommand(PString::Empty()); // Using ours
 
   for (PINDEX i = 0; i < m_endpointPrefixes.GetSize(); ++i) {
@@ -2031,10 +2086,10 @@ void OpalManagerCLI::CmdQuit(PCLI::Arguments & args, P_INT_PTR)
 void OpalManagerCLI::CmdShutDown(PCLI::Arguments & args, P_INT_PTR)
 {
 #if _WIN32
-  PProcess::Current().SetWaitOnExitConsoleWindow(false);
+  if (!args.HasOption("wait"))
+    PProcess::Current().SetWaitOnExitConsoleWindow(false);
 #endif
-  args.GetContext() << "Shutting down " << PProcess::Current().GetName() << " . . . " << endl;
-  args.GetContext().GetCLI().Stop();
+  EndRun(false);
 }
 
 
