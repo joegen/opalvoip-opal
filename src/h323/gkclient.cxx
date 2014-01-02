@@ -69,7 +69,7 @@ PString EpIdAsStr(const PWCharArray & id)
     return "<<empty>>";
 
   for (PINDEX i = 0; i < id.GetSize(); ++i) {
-    if (id[i] != 0 && !isprint(id[i]))
+    if (id[i] <= 0 || id[i] > 255 || !isprint(id[i]))
       return PSTRSTRM('[' << hex << setfill('0') << setw(4) << id << ']');
   }
 
