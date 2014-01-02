@@ -201,7 +201,7 @@ class OpalManager : public PObject
       */
     template <class T> T * FindEndPointAs(
       const PString & prefix  ///< Prefix string for endpoint URL
-    ) { return dynamic_cast<T *>(FindEndPoint(prefix)); }
+    ) const { return dynamic_cast<T *>(FindEndPoint(prefix)); }
 
     /**Get the endpoints attached to this manager.
       */
