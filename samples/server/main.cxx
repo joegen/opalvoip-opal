@@ -38,6 +38,7 @@ PCREATE_PROCESS(MyProcess);
 static const char ParametersSection[] = "Parameters";
 
 const WORD DefaultHTTPPort = 1719;
+const WORD DefaultTelnetPort = 1718;
 static const char UsernameKey[] = "Username";
 static const char PasswordKey[] = "Password";
 static const char LogLevelKey[] = "Log Level";
@@ -46,6 +47,7 @@ static const char DefaultAddressFamilyKey[] = "AddressFamily";
 static const char HTTPCertificateFileKey[]  = "HTTP Certificate";
 #endif
 static const char HttpPortKey[] = "HTTP Port";
+static const char TelnetPortKey[] = "Console Port";
 static const char MediaTransferModeKey[] = "Media Transfer Mode";
 static const char PreferredMediaKey[] = "Preferred Media";
 static const char RemovedMediaKey[] = "Removed Media";
@@ -129,7 +131,7 @@ static const char * const DefaultRoutes[] = {
   ROUTE_USERNAME("#", "ivr:"),
 #endif
 #if OPAL_HAS_MIXER
-  ROUTE_USERNAME(CONFERENCE_NAME, "mcu:<du>"),
+  ROUTE_USERNAME(CONFERENCE_NAME, OPAL_PREFIX_MIXER":<du>"),
 #endif
 #if OPAL_LID
   "pots:\\+*[0-9]+ = tel:<dn>",
@@ -182,7 +184,9 @@ PBoolean MyProcess::OnStart()
   httpNameSpace.AddResource(new PHTTPDirectory("data", "data"));
   httpNameSpace.AddResource(new PServiceHTTPDirectory("html", "html"));
 
-  return PHTTPServiceProcess::OnStart();
+  return m_manager.PreInitialise(GetArguments(), false) &&
+         PHTTPServiceProcess::OnStart() &&
+         m_manager.Initialise(GetArguments(), false);
 }
 
 
@@ -271,11 +275,11 @@ PBoolean MyProcess::Initialise(const char * initMsg)
 #endif
 
   // HTTP Port number to use.
-  WORD httpPort = (WORD)rsrc->AddIntegerField(HttpPortKey, 1, 32767, DefaultHTTPPort,
-                                          "Port for HTTP user interface for server.");
+  WORD httpPort = (WORD)rsrc->AddIntegerField(HttpPortKey, 1, 65535, DefaultHTTPPort,
+                                      "", "Port for HTTP user interface for server.");
 
-  // Initialise the core of the system
-  if (!m_manager.Initialise(cfg, rsrc))
+  // Configure the core of the system
+  if (!m_manager.Configure(cfg, rsrc))
     return false;
 
   // Finished the resource to add, generate HTML for it and add to name space
@@ -358,37 +362,62 @@ PBoolean MyProcess::Initialise(const char * initMsg)
 }
 
 
-void MyProcess::Main()
+#if OPAL_PTLIB_SSL
+void MyManager::ConfigureSecurity(OpalEndPoint * ep,
+                                  const PString & signalingKey,
+                                  const PString & suitesKey,
+                                  PConfig & cfg,
+                                  PConfigPage * rsrc)
 {
-  Suspend();
+  PString normalPrefix = ep->GetPrefixName();
+  PString securePrefix = normalPrefix + 's';
+
+  PINDEX security = 0;
+  if (FindEndPoint(normalPrefix) != NULL)
+    security |= 1;
+  if (FindEndPoint(securePrefix) != NULL)
+    security |= 2;
+
+  security = cfg.GetInteger(signalingKey, security);
+
+  switch (security) {
+    case 1:
+      AttachEndPoint(ep, normalPrefix);
+      DetachEndPoint(securePrefix);
+      break;
+
+    case 2:
+      AttachEndPoint(ep, securePrefix);
+      DetachEndPoint(normalPrefix);
+      break;
+
+    default:
+      AttachEndPoint(ep, normalPrefix);
+      AttachEndPoint(ep, securePrefix);
+  }
+
+  PStringArray valueArray, titleArray;
+  valueArray[0] = '1'; titleArray[0] = normalPrefix & "only";
+  valueArray[1] = '2'; titleArray[1] = securePrefix & "only";
+  valueArray[2] = '3'; titleArray[2] = normalPrefix & '&' & securePrefix;
+  rsrc->Add(new PHTTPRadioField(signalingKey, valueArray, titleArray, security - 1, "Signaling security methods available."));
+
+  ep->SetMediaCryptoSuites(rsrc->AddSelectArrayField(suitesKey, true, ep->GetMediaCryptoSuites(),
+                                            ep->GetAllMediaCryptoSuites(), "Media security methods available."));
 }
+#endif // OPAL_PTLIB_SSL
 
 
 ///////////////////////////////////////////////////////////////
 
 MyManager::MyManager()
-  : m_mediaTransferMode(MediaTransferForward)
-#if OPAL_H323
-  , m_h323EP(NULL)
-#endif
-#if OPAL_SIP
-  , m_sipEP(NULL)
-#endif
-#if OPAL_LID
-  , m_potsEP(NULL)
-#endif
+  : OpalManagerCLI(OPAL_CONSOLE_PREFIXES OPAL_PREFIX_PCSS" "OPAL_PREFIX_IVR" "OPAL_PREFIX_MIXER)
+  , m_mediaTransferMode(MediaTransferForward)
 #if OPAL_CAPI
-  , m_capiEP(NULL)
   , m_enableCAPI(true)
 #endif
-#if OPAL_IVR
-  , m_ivrEP(NULL)
-#endif
-#if OPAL_HAS_MIXER
-  , m_mcuEP(NULL)
-#endif
-  , m_loopbackEP(NULL)
 {
+  new OpalLocalEndPoint(*this, LoopbackPrefix);
   OpalMediaFormat::RegisterKnownMediaFormats(); // Make sure codecs are loaded
 }
 
@@ -398,54 +427,55 @@ MyManager::~MyManager()
 }
 
 
-PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
+void MyManager::EndRun(bool)
+{
+  PServiceProcess::Current().OnStop();
+}
+
+
+H323ConsoleEndPoint * MyManager::CreateH323EndPoint()
+{
+  return new MyH323EndPoint(*this);
+}
+
+
+SIPConsoleEndPoint * MyManager::CreateSIPEndPoint()
+{
+  return new MySIPEndPoint(*this);
+}
+
+
+PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 {
   PINDEX arraySize;
 
   PString defaultSection = cfg.GetDefaultSection();
 
-  // Create all the endpoints
-
-#if OPAL_H323
-  if (m_h323EP == NULL)
-    m_h323EP = new MyH323EndPoint(*this);
-#endif
-
-#if OPAL_SIP
-  if (m_sipEP == NULL)
-    m_sipEP = new SIPEndPoint(*this);
-#endif
-
-#if OPAL_LID
-  if (m_potsEP == NULL)
-    m_potsEP = new OpalLineEndPoint(*this);
-#endif
-
-#if OPAL_CAPI
-  if (m_capiEP == NULL)
-    m_capiEP = new OpalCapiEndPoint(*this);
-#endif
-
-#if OPAL_IVR
-  if (m_ivrEP == NULL)
-    m_ivrEP = new OpalIVREndPoint(*this);
-#endif
-
-#if OPAL_HAS_MIXER
-  if (m_mcuEP == NULL)
-    m_mcuEP = new OpalMixerEndPoint(*this, "mcu");
-#endif
-
-  if (m_loopbackEP == NULL)
-    m_loopbackEP = new OpalLocalEndPoint(*this, LoopbackPrefix);
+  // Telnet Port number to use.
+  {
+    WORD telnetPort = (WORD)rsrc->AddIntegerField(TelnetPortKey, 0, 65535, DefaultTelnetPort,
+                                   "", "Port for console user interface (telnet) of server (zero disables).");
+    PCLISocket * cliSocket = dynamic_cast<PCLISocket *>(m_cli);
+    if (cliSocket != NULL && telnetPort != 0)
+      cliSocket->Listen(telnetPort);
+    else {
+      delete m_cli;
+      if (telnetPort == 0)
+        m_cli = NULL;
+      else {
+        m_cli = new PCLITelnet(telnetPort);
+        m_cli->Start();
+      }
+    }
+  }
 
   // General parameters for all endpoint types
   m_mediaTransferMode = cfg.GetEnum(MediaTransferModeKey, m_mediaTransferMode);
   static const char * const MediaTransferModeValues[] = { "0", "1", "2" };
   static const char * const MediaTransferModeTitles[] = { "Bypass", "Forward", "Transcode" };
   rsrc->Add(new PHTTPRadioField(MediaTransferModeKey,
-                  PARRAYSIZE(MediaTransferModeValues), MediaTransferModeValues, MediaTransferModeTitles,
-                               m_mediaTransferMode, "How media is to be routed between the endpoints."));
+    PARRAYSIZE(MediaTransferModeValues), MediaTransferModeValues, MediaTransferModeTitles,
+    m_mediaTransferMode, "How media is to be routed between the endpoints."));
 
   {
     OpalMediaFormatList allFormats;
@@ -459,9 +489,9 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     }
     PStringStream help;
     help << "Preference order for codecs to be offered to remotes.<p>"
-            "Note, these are not regular expressions, just simple "
-            "wildcards where '*' matches any number of characters.<p>"
-            "Known media formats are:<br>";
+      "Note, these are not regular expressions, just simple "
+      "wildcards where '*' matches any number of characters.<p>"
+      "Known media formats are:<br>";
     for (OpalMediaFormatList::iterator it = transportableFormats.begin(); it != transportableFormats.end(); ++it) {
       if (it != transportableFormats.begin())
         help << ", ";
@@ -471,25 +501,25 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   }
 
   SetMediaFormatMask(rsrc->AddStringArrayField(RemovedMediaKey, true, 25, GetMediaFormatMask(),
-                     "Codecs to be prevented from being used.<p>"
-                     "These are wildcards as in the above Preferred Media, with "
-                     "the addition of preceding the expression with a '!' which "
-                     "removes all formats <i>except</i> the indicated wildcard. "
-                     "Also, the '@' character may also be used to indicate a "
-                     "media type, e.g. <code>@video</code> removes all video "
-                     "codecs."));
-  
+    "Codecs to be prevented from being used.<p>"
+    "These are wildcards as in the above Preferred Media, with "
+    "the addition of preceding the expression with a '!' which "
+    "removes all formats <i>except</i> the indicated wildcard. "
+    "Also, the '@' character may also be used to indicate a "
+    "media type, e.g. <code>@video</code> removes all video "
+    "codecs."));
+
   SetAudioJitterDelay(rsrc->AddIntegerField(MinJitterKey, 20, 2000, GetMinAudioJitterDelay(), "ms", "Minimum jitter buffer size"),
                       rsrc->AddIntegerField(MaxJitterKey, 20, 2000, GetMaxAudioJitterDelay(), "ms", "Maximum jitter buffer size"));
 
-  SetTCPPorts  (rsrc->AddIntegerField(TCPPortBaseKey, 0, 65535, GetTCPPortBase(),   "", "Base of port range for allocating TCP streams, e.g. H.323 signalling channel"),
-                rsrc->AddIntegerField(TCPPortMaxKey,  0, 65535, GetTCPPortMax(),    "", "Maximum of port range for allocating TCP streams"));
-  SetUDPPorts  (rsrc->AddIntegerField(UDPPortBaseKey, 0, 65535, GetUDPPortBase(),   "", "Base of port range for allocating UDP streams, e.g. SIP signalling channel"),
-                rsrc->AddIntegerField(UDPPortMaxKey,  0, 65535, GetUDPPortMax(),    "", "Maximum of port range for allocating UDP streams"));
+  SetTCPPorts(rsrc->AddIntegerField(TCPPortBaseKey, 0, 65535, GetTCPPortBase(), "", "Base of port range for allocating TCP streams, e.g. H.323 signalling channel"),
+              rsrc->AddIntegerField(TCPPortMaxKey, 0, 65535, GetTCPPortMax(), "", "Maximum of port range for allocating TCP streams"));
+  SetUDPPorts(rsrc->AddIntegerField(UDPPortBaseKey, 0, 65535, GetUDPPortBase(), "", "Base of port range for allocating UDP streams, e.g. SIP signalling channel"),
+              rsrc->AddIntegerField(UDPPortMaxKey, 0, 65535, GetUDPPortMax(), "", "Maximum of port range for allocating UDP streams"));
   SetRtpIpPorts(rsrc->AddIntegerField(RTPPortBaseKey, 0, 65535, GetRtpIpPortBase(), "", "Base of port range for allocating RTP/UDP streams"),
-                rsrc->AddIntegerField(RTPPortMaxKey,  0, 65535, GetRtpIpPortMax(),  "", "Maximum of port range for allocating RTP/UDP streams"));
+                rsrc->AddIntegerField(RTPPortMaxKey, 0, 65535, GetRtpIpPortMax(), "", "Maximum of port range for allocating RTP/UDP streams"));
 
-  SetMediaTypeOfService(rsrc->AddIntegerField(RTPTOSKey,  0, 255, GetMediaTypeOfService(), "", "Value for DIFSERV Quality of Service"));
+  SetMediaTypeOfService(rsrc->AddIntegerField(RTPTOSKey, 0, 255, GetMediaTypeOfService(), "", "Value for DIFSERV Quality of Service"));
 
 #if P_NAT
   SetNATServer(rsrc->AddStringField(NATMethodKey, 25, PSTUNClient::MethodName(), "Method for NAT traversal"),
@@ -505,95 +535,19 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     SetProductInfo(productInfo);
 
 #if OPAL_H323
-  if (!m_h323EP->Initialise(cfg, rsrc))
+  if (!GetH323EndPoint().Configure(cfg, rsrc))
     return false;
 #endif
 
 #if OPAL_SIP
-  // Add SIP parameters
-  m_sipEP->SetDefaultLocalPartyName(rsrc->AddStringField(SIPUsernameKey, 25, m_sipEP->GetDefaultLocalPartyName(),"SIP local user name"));
-
-  if (!m_sipEP->StartListeners(rsrc->AddStringArrayField(SIPListenersKey, false, 25, PStringArray(),
-                                    "Local network interfaces to listen for SIP, blank means all"))) {
-    PSYSTEMLOG(Error, "Could not open any SIP listeners!");
-  }
-
-  SIPConnection::PRACKMode prack = cfg.GetEnum(SIPPrackKey, m_sipEP->GetDefaultPRACKMode());
-  static const char * const prackModes[] = { "Disabled", "Supported", "Required" };
-  rsrc->Add(new PHTTPRadioField(SIPPrackKey, PARRAYSIZE(prackModes), prackModes, prack,
-            "SIP provisional responses (100rel) handling."));
-  m_sipEP->SetDefaultPRACKMode(prack);
-
-  m_sipEP->SetProxy(rsrc->AddStringField(SIPProxyKey, 100, m_sipEP->GetProxy().AsString(), "SIP outbound proxy IP/hostname", 1, 30));
-
-#if OPAL_PTLIB_SSL
-  PINDEX security = 0;
-  if (FindEndPoint("sip") != NULL)
-    security |= 1;
-  if (FindEndPoint("sips") != NULL)
-    security |= 2;
-  security = cfg.GetInteger(SIPSignalingSecurityKey, security);
-  switch (security) {
-    case 1 :
-      AttachEndPoint(m_sipEP, "sip");
-      DetachEndPoint("sips");
-      break;
-
-    case 2 :
-      AttachEndPoint(m_sipEP, "sips");
-      DetachEndPoint("sip");
-      break;
-
-    default :
-      AttachEndPoint(m_sipEP, "sip");
-      AttachEndPoint(m_sipEP, "sips");
-  }
-  static const char * const SignalingSecurityValues[] = { "1", "2", "3" };
-  static const char * const SignalingSecurityTitles[] = { "sip only", "sips only", "sip & sips" };
-  rsrc->Add(new PHTTPRadioField(SIPSignalingSecurityKey,
-                     PARRAYSIZE(SignalingSecurityValues), SignalingSecurityValues, SignalingSecurityTitles,
-                                                        security-1, "Signaling security methods available."));
-
-  m_sipEP->SetMediaCryptoSuites(rsrc->AddSelectArrayField(SIPMediaCryptoSuitesKey, true, m_sipEP->GetMediaCryptoSuites(),
-                                                m_sipEP->GetAllMediaCryptoSuites(), "Media security methods available."));
-#endif
-
-  // Registrar
-  list<SIPRegister::Params> registrations;
-  arraySize = cfg.GetInteger(REGISTRATIONS_SECTION, REGISTRATIONS_KEY" Array Size");
-  for (PINDEX i = 0; i < arraySize; i++) {
-    SIPRegister::Params registrar;
-    cfg.SetDefaultSection(psprintf(REGISTRATIONS_SECTION"\\"REGISTRATIONS_KEY" %u", i+1));
-    registrar.m_addressOfRecord = cfg.GetString(SIPAddressofRecordKey);
-    registrar.m_authID = cfg.GetString(SIPAuthIDKey);
-    registrar.m_password = cfg.GetString(SIPPasswordKey);
-    if (!registrar.m_addressOfRecord.IsEmpty())
-      registrations.push_back(registrar);
-  }
-  cfg.SetDefaultSection(defaultSection);
-
-  PHTTPCompositeField * registrationsFields = new PHTTPCompositeField(
-        REGISTRATIONS_SECTION"\\"REGISTRATIONS_KEY" %u\\", REGISTRATIONS_SECTION,
-        "Registration of SIP username at domain/hostname/IP address");
-  registrationsFields->Append(new PHTTPStringField(SIPAddressofRecordKey, 0, NULL, NULL, 1, 40));
-  registrationsFields->Append(new PHTTPStringField(SIPAuthIDKey, 0, NULL, NULL, 1, 25));
-  registrationsFields->Append(new PHTTPPasswordField(SIPPasswordKey, 15));
-  rsrc->Add(new PHTTPFieldArray(registrationsFields, false));
-
-  for (list<SIPRegister::Params>::iterator it = registrations.begin(); it != registrations.end(); ++it) {
-    PString aor;
-    if (m_sipEP->Register(*it, aor))
-      PSYSTEMLOG(Info, "Started register of " << aor);
-    else
-      PSYSTEMLOG(Error, "Could not register " << *it);
-  }
-
+  if (!GetSIPEndPoint().Configure(cfg, rsrc))
+    return false;
 #endif
 
 #if OPAL_LID
   // Add POTS and PSTN endpoints
-  if (!m_potsEP->AddDeviceNames(rsrc->AddSelectArrayField(LIDKey, false, OpalLineInterfaceDevice::GetAllDevices(),
-                                    PStringArray(),"Line Interface Devices (PSTN, ISDN etc) to monitor, if any"))) {
+  if (!FindEndPointAs<OpalLineEndPoint>(OPAL_PREFIX_POTS)->AddDeviceNames(rsrc->AddSelectArrayField(LIDKey, false,
+    OpalLineInterfaceDevice::GetAllDevices(), PStringArray(), "Line Interface Devices (PSTN, ISDN etc) to monitor, if any"))) {
     PSYSTEMLOG(Error, "No LID devices!");
   }
 #endif // OPAL_LID
@@ -601,25 +555,31 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 
 #if OPAL_CAPI
   m_enableCAPI = rsrc->AddBooleanField(EnableCAPIKey, m_enableCAPI, "Enable CAPI ISDN controller(s), if available");
-  if (m_enableCAPI && m_capiEP->OpenControllers() == 0) {
+  if (m_enableCAPI && FindEndPointAs<OpalCapiEndPoint>(OPAL_PREFIX_CAPI)->OpenControllers() == 0) {
     PSYSTEMLOG(Error, "No CAPI controllers!");
   }
 #endif
 
 
 #if OPAL_IVR
-  // Set IVR protocol handler
-  m_ivrEP->SetDefaultVXML(rsrc->AddStringField(VXMLKey, 0, PString::Empty(),
-      "Interactive Voice Response VXML script, may be a URL or the actual VXML", 10, 80));
-  m_ivrEP->SetCacheDir(rsrc->AddStringField(IVRCacheKey, 0, m_ivrEP->GetCacheDir(),
-      "Interactive Voice Response directory to cache Text To Speech phrases", 1, 50));
-  m_ivrEP->SetRecordDirectory(rsrc->AddStringField(IVRRecordDirKey, 0, m_ivrEP->GetRecordDirectory(),
-      "Interactive Voice Response directory to save recorded messages", 1, 50));
+  {
+    OpalIVREndPoint * ivrEP = FindEndPointAs<OpalIVREndPoint>(OPAL_PREFIX_IVR);
+    // Set IVR protocol handler
+    ivrEP->SetDefaultVXML(rsrc->AddStringField(VXMLKey, 0, PString::Empty(),
+                          "Interactive Voice Response VXML script, may be a URL or the actual VXML", 10, 80));
+    ivrEP->SetCacheDir(rsrc->AddStringField(IVRCacheKey, 0, ivrEP->GetCacheDir(),
+                       "Interactive Voice Response directory to cache Text To Speech phrases", 1, 50));
+    ivrEP->SetRecordDirectory(rsrc->AddStringField(IVRRecordDirKey, 0, ivrEP->GetRecordDirectory(),
+                              "Interactive Voice Response directory to save recorded messages", 1, 50));
+  }
 #endif
 
 #if OPAL_HAS_MIXER
   {
+    OpalMixerEndPoint * mcuEP = FindEndPointAs<OpalMixerEndPoint>(OPAL_PREFIX_MIXER);
     OpalMixerNodeInfo adHoc;
+    if (mcuEP->GetAdHocNodeInfo() != NULL)
+      adHoc = *mcuEP->GetAdHocNodeInfo();
     adHoc.m_mediaPassThru = rsrc->AddBooleanField(ConfMediaPassThruKey, adHoc.m_mediaPassThru, "Conference media pass though optimisation");
 
 #if OPAL_VIDEO
@@ -632,7 +592,7 @@ PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #endif
 
     adHoc.m_closeOnEmpty = true;
-    m_mcuEP->SetAdHocNodeInfo(adHoc);
+    mcuEP->SetAdHocNodeInfo(adHoc);
   }
 #endif
 
@@ -1040,5 +1000,72 @@ PCREATE_SERVICE_MACRO_BLOCK(CallStatus,resource,P_EMPTY,htmlBlock)
   return substitution;
 }
 
+
+#if OPAL_SIP
+
+MySIPEndPoint::MySIPEndPoint(MyManager & mgr)
+  : SIPConsoleEndPoint(mgr)
+  , m_manager(mgr)
+{
+}
+
+
+bool MySIPEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
+{
+  // Add SIP parameters
+  SetDefaultLocalPartyName(rsrc->AddStringField(SIPUsernameKey, 25, GetDefaultLocalPartyName(), "SIP local user name"));
+
+  if (!StartListeners(rsrc->AddStringArrayField(SIPListenersKey, false, 25, PStringArray(),
+    "Local network interfaces to listen for SIP, blank means all"))) {
+    PSYSTEMLOG(Error, "Could not open any SIP listeners!");
+  }
+
+  SIPConnection::PRACKMode prack = cfg.GetEnum(SIPPrackKey, GetDefaultPRACKMode());
+  static const char * const prackModes[] = { "Disabled", "Supported", "Required" };
+  rsrc->Add(new PHTTPRadioField(SIPPrackKey, PARRAYSIZE(prackModes), prackModes, prack,
+    "SIP provisional responses (100rel) handling."));
+  SetDefaultPRACKMode(prack);
+
+  SetProxy(rsrc->AddStringField(SIPProxyKey, 100, GetProxy().AsString(), "SIP outbound proxy IP/hostname", 1, 30));
+
+#if OPAL_PTLIB_SSL
+  m_manager.ConfigureSecurity(this, SIPSignalingSecurityKey, SIPMediaCryptoSuitesKey, cfg, rsrc);
+#endif
+
+  // Registrar
+  PString defaultSection = cfg.GetDefaultSection();
+  list<SIPRegister::Params> registrations;
+  PINDEX arraySize = cfg.GetInteger(REGISTRATIONS_SECTION, REGISTRATIONS_KEY" Array Size");
+  for (PINDEX i = 0; i < arraySize; i++) {
+    SIPRegister::Params registrar;
+    cfg.SetDefaultSection(psprintf(REGISTRATIONS_SECTION"\\"REGISTRATIONS_KEY" %u", i + 1));
+    registrar.m_addressOfRecord = cfg.GetString(SIPAddressofRecordKey);
+    registrar.m_authID = cfg.GetString(SIPAuthIDKey);
+    registrar.m_password = cfg.GetString(SIPPasswordKey);
+    if (!registrar.m_addressOfRecord.IsEmpty())
+      registrations.push_back(registrar);
+  }
+  cfg.SetDefaultSection(defaultSection);
+
+  PHTTPCompositeField * registrationsFields = new PHTTPCompositeField(
+                  REGISTRATIONS_SECTION"\\"REGISTRATIONS_KEY" %u\\", REGISTRATIONS_SECTION,
+                  "Registration of SIP username at domain/hostname/IP address");
+  registrationsFields->Append(new PHTTPStringField(SIPAddressofRecordKey, 0, NULL, NULL, 1, 40));
+  registrationsFields->Append(new PHTTPStringField(SIPAuthIDKey, 0, NULL, NULL, 1, 25));
+  registrationsFields->Append(new PHTTPPasswordField(SIPPasswordKey, 15));
+  rsrc->Add(new PHTTPFieldArray(registrationsFields, false));
+
+  for (list<SIPRegister::Params>::iterator it = registrations.begin(); it != registrations.end(); ++it) {
+    PString aor;
+    if (Register(*it, aor))
+      PSYSTEMLOG(Info, "Started register of " << aor);
+    else
+      PSYSTEMLOG(Error, "Could not register " << *it);
+  }
+
+  return true;
+}
+
+#endif // OPAL_SIP
 
 // End of File ///////////////////////////////////////////////////////////////

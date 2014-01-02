@@ -78,7 +78,7 @@ class MyGatekeeperServer : public H323GatekeeperServer
     );
 
     // new functions
-    bool Initialise(PConfig & cfg, PConfigPage * rsrc);
+    bool Configure(PConfig & cfg, PConfigPage * rsrc);
     PString OnLoadEndPointStatus(const PString & htmlBlock);
 
 #ifdef H323_TRANSNEXUS_OSP
@@ -131,32 +131,61 @@ class MyGatekeeperServer : public H323GatekeeperServer
 };
 
 
-class MyH323EndPoint : public H323EndPoint
+class MyH323EndPoint : public H323ConsoleEndPoint
 {
-    PCLASSINFO(MyH323EndPoint, H323EndPoint);
+    PCLASSINFO(MyH323EndPoint, H323ConsoleEndPoint);
   public:
     MyH323EndPoint(MyManager & mgr);
 
-    bool Initialise(PConfig & cfg, PConfigPage * rsrc);
+    bool Configure(PConfig & cfg, PConfigPage * rsrc);
 
     const MyGatekeeperServer & GetGatekeeperServer() const { return m_gkServer; }
           MyGatekeeperServer & GetGatekeeperServer()       { return m_gkServer; }
 
   protected:
+    MyManager        & m_manager;
     MyGatekeeperServer m_gkServer;
 };
 
 #endif // OPAL_H323
 
 
-class MyManager : public OpalManager
+#if OPAL_SIP
+
+class MySIPEndPoint : public SIPConsoleEndPoint
 {
-    PCLASSINFO(MyManager, OpalManager);
+  PCLASSINFO(MySIPEndPoint, SIPConsoleEndPoint);
+public:
+  MySIPEndPoint(MyManager & mgr);
+
+  bool Configure(PConfig & cfg, PConfigPage * rsrc);
+
+protected:
+  MyManager & m_manager;
+};
+
+#endif // OPAL_SIP
+
+
+class MyManager : public OpalManagerCLI
+{
+    PCLASSINFO(MyManager, OpalManagerCLI);
   public:
     MyManager();
     ~MyManager();
 
-    bool Initialise(PConfig & cfg, PConfigPage * rsrc);
+    virtual void EndRun(bool interrupt);
+
+    bool Configure(PConfig & cfg, PConfigPage * rsrc);
+#if OPAL_PTLIB_SSL
+    void ConfigureSecurity(
+      OpalEndPoint * ep,
+      const PString & signalingKey,
+      const PString & suitesKey,
+      PConfig & cfg,
+      PConfigPage * rsrc
+    );
+#endif
 
     virtual MediaTransferMode GetMediaTransferMode(
       const OpalConnection & source,      ///<  Source connection
@@ -177,35 +206,20 @@ class MyManager : public OpalManager
     PString OnLoadCallStatus(const PString & htmlBlock);
 
 #if OPAL_H323
-    MyH323EndPoint & GetH323EndPoint() const { return *m_h323EP; }
+    virtual H323ConsoleEndPoint * CreateH323EndPoint();
+    MyH323EndPoint & GetH323EndPoint() const { return *FindEndPointAs<MyH323EndPoint>(OPAL_PREFIX_H323); }
 #endif
 #if OPAL_SIP
-    SIPEndPoint & GetSIPEndPoint() const { return *m_sipEP; }
+    virtual SIPConsoleEndPoint * CreateSIPEndPoint();
+    MySIPEndPoint & GetSIPEndPoint() const { return *FindEndPointAs<MySIPEndPoint>(OPAL_PREFIX_SIP); }
 #endif
 
   protected:
     MediaTransferMode m_mediaTransferMode;
 
-#if OPAL_H323
-    MyH323EndPoint * m_h323EP;
-#endif
-#if OPAL_SIP
-    SIPEndPoint * m_sipEP;
-#endif
-#if OPAL_LID
-    OpalLineEndPoint * m_potsEP;
-#endif
 #if OPAL_CAPI
-    OpalCapiEndPoint * m_capiEP;
     bool               m_enableCAPI;
 #endif
-#if OPAL_IVR
-    OpalIVREndPoint * m_ivrEP;
-#endif
-#if OPAL_HAS_MIXER
-    OpalMixerEndPoint * m_mcuEP;
-#endif
-    OpalLocalEndPoint * m_loopbackEP;
 #if OPAL_SCRIPT
     PString m_scriptLanguage;
     PString m_scriptText;
@@ -218,7 +232,6 @@ class MyProcess : public MyProcessAncestor
     PCLASSINFO(MyProcess, MyProcessAncestor)
   public:
     MyProcess();
-    virtual void Main();
     virtual PBoolean OnStart();
     virtual void OnStop();
     virtual void OnControl();
