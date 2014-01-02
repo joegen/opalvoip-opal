@@ -30,7 +30,7 @@
 
 #include <ptlib.h>
 
-#include <opal/manager.h>
+#include <opal/console_mgr.h>
 
 #if OPAL_PTLIB_SSL
 #include <ptclib/shttpsvc.h>
