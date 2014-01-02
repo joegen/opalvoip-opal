@@ -37,16 +37,16 @@
 
 #include <opal.h>
 #include <opal/manager.h>
+#include <sip/sipep.h>
+#include <h323/h323ep.h>
+#include <lids/lidep.h>
+#include <lids/capi_ep.h>
+#include <ep/pcss.h>
+#include <ep/ivr.h>
+#include <ep/opalmixer.h>
+
 #include <ptclib/cli.h>
 
-class SIPEndPoint;
-class H323EndPoint;
-class OpalLineEndPoint;
-class OpalCapiEndPoint;
-
-class OpalPCSSEndPoint;
-class OpalIVREndPoint;
-class OpalMixerEndPoint;
 
 class OpalConsoleManager;
 
@@ -63,7 +63,6 @@ class OpalConsoleManager;
 class OpalConsoleEndPoint
 {
 protected:
-  OpalConsoleManager & m_console;
   OpalConsoleEndPoint(OpalConsoleManager & console) : m_console(console) { }
 
   void AddRoutesFor(const OpalEndPoint * endpoint, const PString & defaultRoute);
@@ -80,7 +79,182 @@ public:
 #if P_CLI
   virtual void AddCommands(PCLI & cli) = 0;
 #endif
+
+protected:
+  OpalConsoleManager & m_console;
 };
+
+
+#if OPAL_SIP || OPAL_H323
+class OpalRTPEndPoint;
+
+class OpalRTPConsoleEndPoint : public OpalConsoleEndPoint
+{
+protected:
+  OpalRTPConsoleEndPoint(OpalConsoleManager & console, OpalRTPEndPoint * endpoint);
+
+  void GetArgumentSpec(ostream & strm) const;
+  bool Initialise(PArgList & args, ostream & output, bool verbose);
+
+#if P_CLI
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdInterfaces);
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdCryptoSuites);
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdBandwidth);
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdUserInput);
+  void AddCommands(PCLI & cli);
+#endif //P_CLI
+
+  bool SetUIMode(const PCaselessString & str);
+
+protected:
+  OpalRTPEndPoint & m_endpoint;
+};
+#endif // OPAL_SIP || OPAL_H323
+
+
+#if OPAL_SIP
+class SIPConsoleEndPoint : public SIPEndPoint, public OpalRTPConsoleEndPoint
+{
+  PCLASSINFO(SIPConsoleEndPoint, SIPEndPoint)
+public:
+  SIPConsoleEndPoint(OpalConsoleManager & manager);
+
+  virtual void GetArgumentSpec(ostream & strm) const;
+  virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute);
+
+#if P_CLI
+  PDECLARE_NOTIFIER(PCLI::Arguments, SIPConsoleEndPoint, CmdProxy);
+  PDECLARE_NOTIFIER(PCLI::Arguments, SIPConsoleEndPoint, CmdRegister);
+  virtual void AddCommands(PCLI & cli);
+#endif // P_CLI
+
+  virtual void OnRegistrationStatus(const RegistrationStatus & status);
+  bool DoRegistration(ostream & output,
+                      bool verbose,
+                      const PString & aor,
+                      const PString & pwd,
+                      const PArgList & args,
+                      const char * authId,
+                      const char * realm,
+                      const char * proxy,
+                      const char * mode,
+                      const char * ttl);
+};
+#endif // OPAL_SIP
+
+
+#if OPAL_H323
+class H323ConsoleEndPoint : public H323EndPoint, public OpalRTPConsoleEndPoint
+{
+  PCLASSINFO(H323ConsoleEndPoint, H323EndPoint)
+public:
+  H323ConsoleEndPoint(OpalConsoleManager & manager);
+  virtual void GetArgumentSpec(ostream & strm) const;
+  virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute);
+
+#if P_CLI
+  PDECLARE_NOTIFIER(PCLI::Arguments, H323ConsoleEndPoint, CmdTunnel);
+  PDECLARE_NOTIFIER(PCLI::Arguments, H323ConsoleEndPoint, CmdGatekeeper);
+  virtual void AddCommands(PCLI & cli);
+#endif // P_CLI
+
+  virtual void OnGatekeeperStatus(H323Gatekeeper::RegistrationFailReasons status);
+  bool UseGatekeeperFromArgs(const PArgList & args, const char * host, const char * ident, const char * pass);
+};
+#endif // OPAL_H323
+
+
+#if OPAL_LID
+class OpalConsoleLineEndPoint : public OpalLineEndPoint, public OpalConsoleEndPoint
+{
+  PCLASSINFO(OpalConsoleLineEndPoint, OpalLineEndPoint)
+public:
+  OpalConsoleLineEndPoint(OpalConsoleManager & manager);
+
+  virtual void GetArgumentSpec(ostream & strm) const;
+  virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute);
+
+#if P_CLI
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsoleLineEndPoint, CmdCountry);
+  virtual void AddCommands(PCLI & cli);
+#endif // P_CLI
+};
+#endif // OPAL_LID
+
+
+#if OPAL_CAPI
+class OpalConsoleCapiEndPoint : public OpalCapiEndPoint, public OpalConsoleEndPoint
+{
+  PCLASSINFO(OpalConsoleCapiEndPoint, OpalCapiEndPoint)
+public:
+  OpalConsoleCapiEndPoint(OpalConsoleManager & manager);
+
+  virtual void GetArgumentSpec(ostream & strm) const;
+  virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute);
+
+#if P_CLI
+  virtual void AddCommands(PCLI & cli);
+#endif // P_CLI
+};
+#endif // OPAL_CAPI
+
+
+#if OPAL_HAS_PCSS
+class OpalConsolePCSSEndPoint : public OpalPCSSEndPoint, public OpalConsoleEndPoint
+{
+  PCLASSINFO(OpalConsolePCSSEndPoint, OpalPCSSEndPoint)
+public:
+  OpalConsolePCSSEndPoint(OpalConsoleManager & manager);
+
+  virtual void GetArgumentSpec(ostream & strm) const;
+  virtual bool Initialise(PArgList & args, bool verbose, const PString &);
+
+#if P_CLI
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdVolume);
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdAudioDevice);
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdAudioBuffers);
+#if OPAL_VIDEO
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdVideoDevice);
+#endif // OPAL_VIDEO
+
+  virtual void AddCommands(PCLI & cli);
+#endif // P_CLI
+};
+#endif // OPAL_HAS_PCSS
+
+
+#if OPAL_IVR
+class OpalConsoleIVREndPoint : public OpalIVREndPoint, public OpalConsoleEndPoint
+{
+  PCLASSINFO(OpalConsoleIVREndPoint, OpalIVREndPoint)
+public:
+  OpalConsoleIVREndPoint(OpalConsoleManager & manager);
+
+  virtual void GetArgumentSpec(ostream & strm) const;
+  virtual bool Initialise(PArgList & args, bool, const PString &);
+
+#if P_CLI
+  virtual void AddCommands(PCLI &);
+#endif // P_CLI
+};
+#endif // OPAL_IVR
+
+
+#if OPAL_HAS_MIXER
+class OpalConsoleMixerEndPoint : public OpalMixerEndPoint, public OpalConsoleEndPoint
+{
+  PCLASSINFO(OpalConsoleMixerEndPoint, OpalMixerEndPoint)
+public:
+  OpalConsoleMixerEndPoint(OpalConsoleManager & manager);
+
+  virtual void GetArgumentSpec(ostream & strm) const;
+  virtual bool Initialise(PArgList & args, bool, const PString &);
+
+#if P_CLI
+  virtual void AddCommands(PCLI &);
+#endif // P_CLI
+};
+#endif // OPAL_HAS_MIXER
 
 
 /**OPAL manager class for console applications.
@@ -101,9 +275,11 @@ class OpalConsoleManager : public OpalManager
     virtual PString GetArgumentSpec() const;
     virtual void Usage(ostream & strm, const PArgList & args);
 
+    bool PreInitialise(PArgList & args, bool verbose = false);
+
     virtual bool Initialise(
       PArgList & args,
-      bool verbose,
+      bool verbose = false,
       const PString & defaultRoute = PString::Empty()
     );
     virtual void Run();
@@ -135,29 +311,27 @@ class OpalConsoleManager : public OpalManager
     OpalConsoleEndPoint * GetConsoleEndPoint(const PString & prefix);
 
 #if OPAL_SIP
-    virtual SIPEndPoint * CreateSIPEndPoint();
+    virtual SIPConsoleEndPoint * CreateSIPEndPoint();
 #endif
 #if OPAL_H323
-    virtual H323EndPoint * CreateH323EndPoint();
+    virtual H323ConsoleEndPoint * CreateH323EndPoint();
 #endif
 #if OPAL_LID
-    virtual OpalLineEndPoint * CreateLineEndPoint();
+    virtual OpalConsoleLineEndPoint * CreateLineEndPoint();
 #endif
 #if OPAL_CAPI
-    virtual OpalCapiEndPoint * CreateCapiEndPoint();
+    virtual OpalConsoleCapiEndPoint * CreateCapiEndPoint();
 #endif
 
 #if OPAL_HAS_PCSS
-    virtual OpalPCSSEndPoint * CreatePCSSEndPoint();
+    virtual OpalConsolePCSSEndPoint * CreatePCSSEndPoint();
 #endif
 #if OPAL_IVR
-    virtual OpalIVREndPoint * CreateIVREndPoint();
+    virtual OpalConsoleIVREndPoint * CreateIVREndPoint();
 #endif
 #if OPAL_HAS_MIXER
-    virtual OpalMixerEndPoint * CreateMixerEndPoint();
+    virtual OpalConsoleMixerEndPoint * CreateMixerEndPoint();
 #endif
-
-    bool PreInitialise(PArgList & args, bool verbose);
 
     PStringArray m_endpointPrefixes;
 
