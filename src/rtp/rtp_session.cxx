@@ -133,6 +133,7 @@ static PTimeInterval GetDefaultOutOfOrderWaitTime()
 
 OpalRTPSession::OpalRTPSession(const Init & init)
   : OpalMediaSession(init)
+  , m_endpoint(dynamic_cast<OpalRTPEndPoint &>(init.m_connection.GetEndPoint()))
   , m_singlePort(false)
   , m_isAudio(init.m_mediaType == OpalMediaType::Audio())
   , m_timeUnits(m_isAudio ? 8 : 90)
@@ -197,6 +198,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
 
 OpalRTPSession::OpalRTPSession(const OpalRTPSession & other)
   : OpalMediaSession(Init(other.m_connection, 0, OpalMediaType(), false))
+  , m_endpoint(other.m_endpoint)
 {
 }
 
@@ -295,10 +297,7 @@ void OpalRTPSession::AttachTransport(Transport & transport)
   else {
     PTRACE_CONTEXT_ID_TO(m_dataSocket);
     m_dataSocket->GetLocalAddress(m_localAddress, m_localDataPort);
-
-    OpalRTPEndPoint * ep = dynamic_cast<OpalRTPEndPoint *>(&m_connection.GetEndPoint());
-    if (PAssert(ep != NULL, "RTP createed by non OpalRTPEndPoint derived class"))
-      ep->SetConnectionByRtpLocalPort(this, &m_connection);
+    m_endpoint.RegisterLocalRTP(this, false);
   }
 
   channel = transport.RemoveHead();
@@ -320,6 +319,8 @@ OpalMediaSession::Transport OpalRTPSession::DetachTransport()
 
   // Stop jitter buffer before detaching
   m_jitterBuffer.SetNULL();
+
+  m_endpoint.RegisterLocalRTP(this, true);
 
   m_readMutex.Wait();
   m_dataMutex.Wait();
@@ -1810,9 +1811,6 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
          << m_localAddress << ':' << m_localDataPort << '-' << m_localControlPort
          << " SSRC=" << RTP_TRACE_SRC(syncSourceOut));
 
-  OpalRTPEndPoint * ep = dynamic_cast<OpalRTPEndPoint *>(&m_connection.GetEndPoint());
-  if (PAssert(ep != NULL, "RTP createed by non OpalRTPEndPoint derived class"))
-    ep->SetConnectionByRtpLocalPort(this, &m_connection);
 
   return true;
 }
@@ -1831,9 +1829,7 @@ bool OpalRTPSession::Close()
 
   m_reportTimer.Stop(true);
 
-  OpalRTPEndPoint * ep = dynamic_cast<OpalRTPEndPoint *>(&m_connection.GetEndPoint());
-  if (ep != NULL)
-    ep->SetConnectionByRtpLocalPort(this, NULL);
+  m_endpoint.RegisterLocalRTP(this, true);
 
   // We need to do this to make sure that the sockets are not
   // deleted before select decides there is no more data coming

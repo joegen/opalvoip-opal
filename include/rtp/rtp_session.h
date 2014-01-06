@@ -52,6 +52,7 @@
 #include <list>
 
 
+class OpalRTPEndPoint;
 class PNatMethod;
 class RTCP_XR_Metrics;
 
@@ -603,7 +604,7 @@ class OpalRTPSession : public OpalMediaSession
       const PIPSocketAddressAndPort * remote = NULL
     );
 
-
+    OpalRTPEndPoint   & m_endpoint;
     bool                m_singlePort;
     bool                m_isAudio;
     unsigned            m_timeUnits;
