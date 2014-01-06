@@ -284,14 +284,14 @@ void OpalRTPEndPoint::CheckEndLocalRTP(OpalConnection & connection, OpalRTPSessi
 }
 
 
-void OpalRTPEndPoint::SetConnectionByRtpLocalPort(OpalRTPSession * rtp, OpalConnection * connection)
+void OpalRTPEndPoint::RegisterLocalRTP(OpalRTPSession * rtp, bool removed)
 {
   if (rtp == NULL)
     return;
 
   OpalTransportAddress localAddr = rtp->GetLocalAddress();
   m_connectionsByRtpMutex.Wait();
-  if (connection == NULL) {
+  if (removed) {
     LocalRtpInfoMap::iterator it = m_connectionsByRtpLocalAddr.find(localAddr);
     if (it != m_connectionsByRtpLocalAddr.end()) {
       PTRACE(4, "RTPEp\tSession " << rtp->GetSessionID() << ", "
@@ -301,11 +301,10 @@ void OpalRTPEndPoint::SetConnectionByRtpLocalPort(OpalRTPSession * rtp, OpalConn
   }
   else {
     std::pair<LocalRtpInfoMap::iterator, bool> insertResult =
-                m_connectionsByRtpLocalAddr.insert(LocalRtpInfoMap::value_type(localAddr, *connection));
-    PAssert(insertResult.second || &insertResult.first->second.m_connection == connection,
-            "Failed to remove port " + localAddr);
+      m_connectionsByRtpLocalAddr.insert(LocalRtpInfoMap::value_type(localAddr, rtp->GetConnection()));
+    PAssert(insertResult.second || &insertResult.first->second.m_connection == &rtp->GetConnection(), "Failed to remove port " + localAddr);
     PTRACE_IF(4, insertResult.second, "RTPEp\tSession " << rtp->GetSessionID() << ", "
-              "remembering local RTP at " << localAddr << " on connection " << *connection);
+              "remembering local RTP at " << localAddr << " on connection " << rtp->GetConnection());
   }
   m_connectionsByRtpMutex.Signal();
 }
