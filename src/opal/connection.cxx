@@ -359,7 +359,8 @@ void OpalConnection::SetCallEndReason(CallEndReason reason)
   if (callEndReason == NumCallEndReasons) {
     if (ownerCall.GetCallEndReason() != OpalConnection::NumCallEndReasons) {
       callEndReason = ownerCall.GetCallEndReason();
-      PTRACE(3, "OpalCon\tCall end reason for " << *this << " set to previous value " << callEndReason << ", not " << reason);
+      PTRACE_IF(3, callEndReason != reason, "OpalCon\tCall end reason for "
+                << *this << " not set to " << reason << ", using call value " << callEndReason);
     }
     else {
       PTRACE(3, "OpalCon\tCall end reason for " << *this << " set to " << reason);
