@@ -157,9 +157,10 @@ void SIPEndPoint::ShutDown()
 
 PString SIPEndPoint::GetDefaultTransport() const 
 {
-  return "udp$,tcp$"
+  return          OpalTransportAddress::UdpPrefix()
+          + ',' + OpalTransportAddress::TcpPrefix()
 #if OPAL_PTLIB_SSL
-         ",tls$:5061"
+          + ',' + OpalTransportAddress::TlsPrefix() + ":5061"
 #endif
     ; 
 }

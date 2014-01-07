@@ -149,9 +149,9 @@ void H323EndPoint::ShutDown()
 
 PString H323EndPoint::GetDefaultTransport() const
 {
-  return "tcp$"
+  return OpalTransportAddress::TcpPrefix()
 #if OPAL_PTLIB_SSL
-         ",tls$:1300"
+            + ',' + OpalTransportAddress::TlsPrefix() + ":1300"
 #endif
     ;
 }
