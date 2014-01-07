@@ -429,6 +429,7 @@ void H323ConsoleEndPoint::GetArgumentSpec(ostream & strm) const
   strm << "g-gk-host:          H.323 gatekeeper host.\n"
           "G-gk-id:            H.323 gatekeeper identifier.\n"
           "-gk-password:       H.323 gatekeeper password (if different from --password).\n"
+          "-alias:             H.323 alias name, may be multiple entries.\n"
           "-no-fast.           H.323 fast connect disabled.\n"
           "-no-tunnel.         H.323 tunnel for H.245 disabled.\n";
 }
@@ -459,10 +460,15 @@ bool H323ConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PStrin
   DisableFastStart(args.HasOption("no-fast"));
   DisableH245Tunneling(args.HasOption("no-tunnel"));
 
+  PStringArray aliases = args.GetOptionString("alias").Lines();
+  for (PINDEX i = 0; i < aliases.GetSize(); ++i)
+    AddAliasName(aliases[i]);
+
   if (verbose)
-    output << "H.323 options: "
-            << (IsFastStartDisabled() ? "Slow" : "Fast") << " connect, "
-            << (IsH245TunnelingDisabled() ? "Separate" : "Tunnelled") << " H.245\n";
+    output << "H.323 Aliases: " << setfill(',') << GetAliasNames() << setfill(' ') << "\n"
+              "H.323 options: "
+           << (IsFastStartDisabled() ? "Slow" : "Fast") << " connect, "
+           << (IsH245TunnelingDisabled() ? "Separate" : "Tunnelled") << " H.245\n";
 
 
   if (args.HasOption("gk-host") || args.HasOption("gk-id")) {
@@ -480,16 +486,19 @@ bool H323ConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PStrin
 
 
 #if P_CLI
-void H323ConsoleEndPoint::CmdTunnel(PCLI::Arguments & args, P_INT_PTR)
+void H323ConsoleEndPoint::CmdAlias(PCLI::Arguments & args, P_INT_PTR)
 {
-  if (args.GetCount() < 1)
-    args.GetContext() << "H.245 tunneling: " << (IsH245TunnelingDisabled() ? "OFF" : "ON") << endl;
-  else if (args[0] *= "on")
-    DisableH245Tunneling(false);
-  else if (args[0] *= "off")
-    DisableH245Tunneling(true);
-  else
-    args.WriteUsage();
+  if (args.HasOption('r'))
+    SetLocalUserName(GetLocalUserName());
+
+  for (PINDEX i = 0; i < args.GetCount(); ++i) {
+    if (args.HasOption('d'))
+      RemoveAliasName(args[i]);
+    else
+      AddAliasName(args[i]);
+  }
+
+  args.GetContext() << "Aliases: " << setfill(',') << GetAliasNames() << setfill(' ') << endl;
 }
 
 
@@ -518,9 +527,16 @@ void H323ConsoleEndPoint::CmdGatekeeper(PCLI::Arguments & args, P_INT_PTR)
 void H323ConsoleEndPoint::AddCommands(PCLI & cli)
 {
   OpalRTPConsoleEndPoint::AddCommands(cli);
+
   cli.SetCommand("h323 fast", disableFastStart, "Fast Connect Disable");
   cli.SetCommand("h323 tunnel", disableH245Tunneling, "H.245 Tunnelling Disable");
   cli.SetCommand("h323 h245-in-setup", disableH245inSetup, "H.245 in SETUP Disable");
+
+  cli.SetCommand("h323 alias", PCREATE_NOTIFIER(CmdGatekeeper),
+                 "Set alias name(s)",
+                 "[ -r | -d ] [ <name> ... ]",
+                 "r-reset:  Reset the alias list before starting\n"
+                 "d-delete: Delete the specified alias");
   cli.SetCommand("h323 gatekeeper", PCREATE_NOTIFIER(CmdGatekeeper),
                   "Set gatekeeper",
                   "[ options ] [ \"on\" / \"off\" ]",

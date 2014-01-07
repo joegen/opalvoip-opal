@@ -153,7 +153,7 @@ public:
   virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute);
 
 #if P_CLI
-  PDECLARE_NOTIFIER(PCLI::Arguments, H323ConsoleEndPoint, CmdTunnel);
+  PDECLARE_NOTIFIER(PCLI::Arguments, H323ConsoleEndPoint, CmdAlias);
   PDECLARE_NOTIFIER(PCLI::Arguments, H323ConsoleEndPoint, CmdGatekeeper);
   virtual void AddCommands(PCLI & cli);
 #endif // P_CLI
