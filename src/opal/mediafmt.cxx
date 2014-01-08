@@ -1749,6 +1749,33 @@ struct OpalKeyFrameDetectorVP8 : OpalKeyFrameDetector
 };
 
 
+struct OpalKeyFrameDetectorH264 : OpalKeyFrameDetector
+{
+  virtual OpalVideoFormat::VideoFrameType GetVideoFrameType(const BYTE * rtp, PINDEX size)
+  {
+    if (size > 2) {
+      switch ((*rtp++) & 0x1f) {
+        case 1 : 
+        case 2 :
+          if ((*rtp & 0x80) != 0)
+            return OpalVideoFormat::e_InterFrame;
+          break;
+
+        case 5 : // IDR slice
+          if ((*rtp & 0x80) != 0)
+            return OpalVideoFormat::e_IntraFrame;
+          break;
+
+        case 28 : // Fragment
+          if ((*rtp & 0x80) != 0)
+            return GetVideoFrameType(rtp, size-1);
+      }
+    }
+    return OpalVideoFormat::e_NonFrameBoundary;
+  }
+};
+
+
 OpalVideoFormat::VideoFrameType OpalVideoFormatInternal::GetVideoFrameType(const BYTE * payloadPtr, PINDEX payloadSize, PBYTEArray & context) const
 {
   if (!context.IsEmpty())
@@ -1759,6 +1786,9 @@ OpalVideoFormat::VideoFrameType OpalVideoFormatInternal::GetVideoFrameType(const
     #define new PNEW
   }
   else if (formatName.NumCompare("H.264") == EqualTo) {
+    #undef new
+    kfd = new (context.GetPointer(sizeof(OpalKeyFrameDetectorH264))) OpalKeyFrameDetectorH264;
+    #define new PNEW
   }
 
   return kfd != NULL ? kfd->GetVideoFrameType(payloadPtr, payloadSize) : OpalVideoFormat::e_UnknownFrameType;
