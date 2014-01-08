@@ -988,9 +988,9 @@ PCREATE_SERVICE_MACRO_BLOCK(CallStatus,resource,P_EMPTY,htmlBlock)
     PStringStream duration;
     duration.precision(0);
     if (call->GetEstablishedTime().IsValid())
-      duration << (call->GetEstablishedTime() - PTime());
+      duration << call->GetEstablishedTime().GetElapsed();
     else
-      duration << '(' << (call->GetStartTime() - PTime()) << ')';
+      duration << '(' << call->GetStartTime().GetElapsed() << ')';
     PServiceHTML::SpliceMacro(insert, "status Duration", duration);
 
     // Then put it into the page, moving insertion point along after it.
