@@ -336,6 +336,9 @@ class OpalConsoleManager : public OpalManager
 #if OPAL_H323
     virtual H323ConsoleEndPoint * CreateH323EndPoint();
 #endif
+#if OPAL_SKINNY
+    virtual OpalConsoleSkinnyEndPoint * CreateSkinnyEndPoint();
+#endif
 #if OPAL_LID
     virtual OpalConsoleLineEndPoint * CreateLineEndPoint();
 #endif
