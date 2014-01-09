@@ -483,8 +483,12 @@ bool H323EndPoint::InternalCreateGatekeeper(const H323TransportAddress & remoteA
       if (gatekeeper == NULL)
         return false;
 
+      PTRACE(3, "H323\tAdded gatekeeper for aliases: " << setfill(',') << aliasSubset);
+      gatekeeper->SetAliases(aliasSubset);
       gatekeeper->SetPassword(GetGatekeeperPassword(), GetGatekeeperUsername());
       m_gatekeepers.Append(gatekeeper);
+
+      aliasSubset.RemoveAll();
     }
   }
 
@@ -509,7 +513,9 @@ PBoolean H323EndPoint::IsRegisteredWithGatekeeper() const
 
 PBoolean H323EndPoint::RemoveGatekeeper(int reason)
 {
-  PBoolean ok = true;
+  PTRACE(3, "H323\tRemoving gatekeeper");
+
+  bool ok = true;
 
   for (PList<H323Gatekeeper>::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it) {
     if (it->IsRegistered()) { // If we are registered send a URQ
