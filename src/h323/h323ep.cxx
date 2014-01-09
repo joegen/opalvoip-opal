@@ -103,8 +103,8 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   , callIntrusionT3(0,30)                  // Seconds
   , callIntrusionT4(0,30)                  // Seconds
   , callIntrusionT5(0,10)                  // Seconds
-  , callIntrusionT6(0,10)                   // Seconds
-  , gatekeeper(NULL)
+  , callIntrusionT6(0,10)                  // Seconds
+  , m_gatekeeperAliasLimit(P_MAX_INDEX)
 #if OPAL_H450
   , nextH450CallIdentity(0)
 #endif
@@ -326,12 +326,13 @@ const H323Capabilities & H323EndPoint::GetCapabilities() const
 }
 
 
-PBoolean H323EndPoint::UseGatekeeper(const PString & address,
+bool H323EndPoint::UseGatekeeper(const PString & address,
                                  const PString & identifier,
                                  const PString & localAddress)
 {
+  H323Gatekeeper * gatekeeper = GetGatekeeper();
   if (gatekeeper != NULL) {
-    PBoolean same = true;
+    bool same = true;
 
     if (!address && address != "*")
       same = gatekeeper->GetTransport().GetRemoteAddress().IsEquivalent(address);
@@ -348,28 +349,20 @@ PBoolean H323EndPoint::UseGatekeeper(const PString & address,
     }
   }
 
-  H323Transport * transport = NULL;
-  if (!localAddress.IsEmpty()) {
-    H323TransportAddress iface(localAddress);
-    PIPSocket::Address ip;
-    WORD port = H225_RAS::DefaultRasUdpPort;
-    if (iface.GetIpAndPort(ip, port))
-      transport = new H323TransportUDP(*this, ip, port);
-  }
-
   if (address.IsEmpty() || address == "*") {
     if (identifier.IsEmpty())
-      return DiscoverGatekeeper(transport);
+      return DiscoverGatekeeper(localAddress);
     else
-      return LocateGatekeeper(identifier, transport);
+      return LocateGatekeeper(identifier, localAddress);
   }
   else {
     if (identifier.IsEmpty())
-      return SetGatekeeper(address, transport);
+      return SetGatekeeper(address, localAddress);
     else
-      return SetGatekeeperZone(address, identifier, transport);
+      return SetGatekeeperZone(address, identifier, localAddress);
   }
 }
+
 
 static H323TransportAddress GetGatekeeperAddress(const PString & address)
 {
@@ -384,45 +377,78 @@ static H323TransportAddress GetGatekeeperAddress(const PString & address)
   return H323TransportAddress(address, H225_RAS::DefaultRasUdpPort, OpalTransportAddress::UdpPrefix());
 }
 
-PBoolean H323EndPoint::SetGatekeeper(const PString & address, H323Transport * transport)
+
+bool H323EndPoint::SetGatekeeper(const PString & remoteAddress, const PString & localAddress)
 {
-  H323TransportAddress h323addr = GetGatekeeperAddress(address);
-  return InternalCreateGatekeeper(transport, h323addr) && gatekeeper->DiscoverByAddress(h323addr);
+  H323TransportAddress h323addr = GetGatekeeperAddress(remoteAddress);
+  if (!InternalCreateGatekeeper(h323addr, localAddress))
+    return false;
+
+  for (PList<H323Gatekeeper>::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it) {
+    if (!it->DiscoverByAddress(h323addr))
+      return false;
+  }
+
+  return true;
 }
 
 
-PBoolean H323EndPoint::SetGatekeeperZone(const PString & address,
+bool H323EndPoint::SetGatekeeperZone(const PString & remoteAddress,
                                      const PString & identifier,
-                                     H323Transport * transport)
+                                     const PString & localAddress)
 {
-  H323TransportAddress h323addr = GetGatekeeperAddress(address);
-  return InternalCreateGatekeeper(transport, h323addr) && gatekeeper->DiscoverByNameAndAddress(identifier, h323addr);
+  H323TransportAddress h323addr = GetGatekeeperAddress(remoteAddress);
+  if (!InternalCreateGatekeeper(h323addr, localAddress))
+    return false;
+
+  for (PList<H323Gatekeeper>::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it) {
+    if (!it->DiscoverByNameAndAddress(identifier, h323addr))
+      return false;
+  }
+
+  return true;
 }
 
 
-PBoolean H323EndPoint::LocateGatekeeper(const PString & identifier, H323Transport * transport)
+PBoolean H323EndPoint::LocateGatekeeper(const PString & identifier, const PString & localAddress)
 {
-  return InternalCreateGatekeeper(transport, H323TransportAddress()) && gatekeeper->DiscoverByName(identifier);
+  if (!InternalCreateGatekeeper(H323TransportAddress(), localAddress))
+    return false;
+
+  for (PList<H323Gatekeeper>::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it) {
+    if (!it->DiscoverByName(identifier))
+      return false;
+  }
+
+  return true;
 }
 
 
-PBoolean H323EndPoint::DiscoverGatekeeper(H323Transport * transport)
+PBoolean H323EndPoint::DiscoverGatekeeper(const PString & localAddress)
 {
-  return InternalCreateGatekeeper(transport, H323TransportAddress()) && gatekeeper->DiscoverAny();
+  if (!InternalCreateGatekeeper(H323TransportAddress(), localAddress))
+    return false;
+
+  for (PList<H323Gatekeeper>::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it) {
+    if (!it->DiscoverAny())
+      return false;
+  }
+
+  return true;
 }
 
 
-bool H323EndPoint::InternalCreateGatekeeper(H323Transport * transport, const H323TransportAddress & gkAddress)
+bool H323EndPoint::InternalCreateGatekeeper(const H323TransportAddress & remoteAddress, const PString & localAddress)
 {
   RemoveGatekeeper(H225_UnregRequestReason::e_reregistrationRequired);
 
-  if (transport == NULL) {
-    PIPSocket::Address interfaceIP(PIPSocket::GetInvalidAddress());
+  PIPSocket::Address interfaceIP(PIPSocket::GetInvalidAddress());
 
+  if (localAddress.IsEmpty() || !OpalTransportAddress(localAddress).GetIpAddress(interfaceIP)) {
     // See if the system can tell us which interface would be used
     {
       PIPSocket::Address remoteIP;
-      if (gkAddress.GetIpAddress(remoteIP) && !remoteIP.IsAny()) {
+      if (remoteAddress.GetIpAddress(remoteIP) && !remoteIP.IsAny()) {
         interfaceIP = PIPSocket::GetRouteInterfaceAddress(remoteIP);
         PTRACE_IF(4, interfaceIP.IsValid(), "H323\tUsing interface " << interfaceIP << " routed from " << remoteIP);
       }
@@ -431,8 +457,8 @@ bool H323EndPoint::InternalCreateGatekeeper(H323Transport * transport, const H32
     if (!interfaceIP.IsValid()) {
       OpalTransportAddressArray interfaces = GetInterfaceAddresses();
       for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
-        if (interfaces[i].IsCompatible(gkAddress)) {
-          PTRACE(4, "H323\tInterface " << interfaces[i] << " compatible with " << gkAddress);
+        if (interfaces[i].IsCompatible(remoteAddress)) {
+          PTRACE(4, "H323\tInterface " << interfaces[i] << " compatible with " << remoteAddress);
           if (interfaceIP.IsValid())
             interfaces[i].GetIpAddress(interfaceIP);
           else {
@@ -443,19 +469,25 @@ bool H323EndPoint::InternalCreateGatekeeper(H323Transport * transport, const H32
         }
       }
       if (!interfaceIP.IsValid()) {
-        PTRACE(2, "H323\tCannot find a compatible listener for \"" << gkAddress << '"');
+        PTRACE(2, "H323\tCannot find a compatible listener for \"" << remoteAddress << '"');
         return false;
       }
     }
-
-    transport = new OpalTransportUDP(*this, interfaceIP);
   }
 
-  gatekeeper = CreateGatekeeper(transport);
-  if (gatekeeper == NULL)
-    return false;
+  PStringList aliasSubset;
+  for (PStringList::iterator it = localAliasNames.begin(); it != localAliasNames.end(); ++it) {
+    aliasSubset += *it;
+    if (aliasSubset.GetSize() >= m_gatekeeperAliasLimit || &*it == &localAliasNames.back()) {
+      H323Gatekeeper * gatekeeper = CreateGatekeeper(new OpalTransportUDP(*this, interfaceIP));
+      if (gatekeeper == NULL)
+        return false;
 
-  gatekeeper->SetPassword(gatekeeperPassword, gatekeeperUsername);
+      gatekeeper->SetPassword(GetGatekeeperPassword(), GetGatekeeperUsername());
+      m_gatekeepers.Append(gatekeeper);
+    }
+  }
+
   return true;
 }
 
@@ -468,10 +500,10 @@ H323Gatekeeper * H323EndPoint::CreateGatekeeper(H323Transport * transport)
 
 PBoolean H323EndPoint::IsRegisteredWithGatekeeper() const
 {
-  if (gatekeeper == NULL)
+  if (m_gatekeepers.IsEmpty())
     return false;
 
-  return gatekeeper->IsRegistered();
+  return m_gatekeepers.front().IsRegistered();
 }
 
 
@@ -479,32 +511,49 @@ PBoolean H323EndPoint::RemoveGatekeeper(int reason)
 {
   PBoolean ok = true;
 
-  if (gatekeeper == NULL)
-    return ok;
+  for (PList<H323Gatekeeper>::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it) {
+    if (it->IsRegistered()) { // If we are registered send a URQ
+      ClearAllCalls();
+      if (!it->UnregistrationRequest(reason))
+        ok = false;
+    }
+  }
 
-  ClearAllCalls();
-
-  if (gatekeeper->IsRegistered()) // If we are registered send a URQ
-    ok = gatekeeper->UnregistrationRequest(reason);
-
-  delete gatekeeper;
-  gatekeeper = NULL;
-
+  m_gatekeepers.RemoveAll();
   return ok;
 }
 
 
 void H323EndPoint::SetGatekeeperPassword(const PString & password, const PString & username)
 {
-  gatekeeperUsername = username;
-  gatekeeperPassword = password;
+  m_gatekeeperUsername = username;
+  m_gatekeeperPassword = password;
 
-  if (gatekeeper != NULL) {
-    gatekeeper->SetPassword(gatekeeperPassword, gatekeeperUsername);
-    if (gatekeeper->IsRegistered()) // If we are registered send a URQ
-      gatekeeper->UnregistrationRequest(H225_UnregRequestReason::e_reregistrationRequired);
-    gatekeeper->RegistrationRequest();
+  for (PList<H323Gatekeeper>::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it) {
+    it->SetPassword(GetGatekeeperPassword(), GetGatekeeperUsername());
+    if (it->IsRegistered()) { // If we are registered send a URQ
+      it->UnregistrationRequest(H225_UnregRequestReason::e_reregistrationRequired);
+      it->RegistrationRequest();
+    }
   }
+}
+
+
+void H323EndPoint::SetGatekeeperAliasLimit(PINDEX limit)
+{
+  if (m_gatekeeperAliasLimit == limit)
+    return;
+
+  m_gatekeeperAliasLimit = limit;
+
+  if (m_gatekeepers.IsEmpty())
+    return;
+
+  OpalTransportAddress remoteAddress = m_gatekeepers.front().GetTransport().GetRemoteAddress();
+  PString localAddress = m_gatekeepers.front().GetTransport().GetInterface();
+
+  RemoveGatekeeper();
+  SetGatekeeper(remoteAddress, localAddress);
 }
 
 
@@ -689,6 +738,7 @@ H323Connection * H323EndPoint::InternalMakeCall(OpalCall & call,
   // Restriction: the call must be made on the same local interface as the one
   // that the gatekeeper is using.
   H323Transport * transport;
+  H323Gatekeeper * gatekeeper = GetGatekeeper();
   if (gatekeeper != NULL)
     transport = gatekeeper->GetTransport().GetLocalAddress().CreateTransport(*this, OpalTransportAddress::Streamed);
   else if (!stringOptions->Contains(OPAL_OPT_INTERFACE))
@@ -805,7 +855,7 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
 #if OPAL_PTLIB_DNS_RESOLVER
 
   // if there is no gatekeeper, try altarnate address lookup methods
-  if (gatekeeper == NULL) {
+  if (m_gatekeepers.IsEmpty()) {
     if (url.GetHostName().IsEmpty()) {
       // No host, so lets try ENUM on the username part, and only has digits and +
       PString username = url.GetUserName();
@@ -955,7 +1005,7 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
   }
 
   // User explicitly said to use a gw, or we do not have a gk to do look up
-  if (gatekeeper == NULL || gatewaySpecified) {
+  if (m_gatekeepers.IsEmpty() || gatewaySpecified) {
     /* If URL did not have an '@' as per RFC3508 we get an alias but no
        address, but user said to use gw, or we do not have a gk to do a lookup
        so we MUST have a host. So, we swap the alias into the address field
