@@ -1086,7 +1086,7 @@ class OpalTransportTCP : public OpalTransportIP
       OpalEndPoint & endpoint,    ///<  Endpoint object
       PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to use
       WORD port = 0,              ///<  Local port to bind to
-      PBoolean reuseAddr = false      ///<  Flag for binding to already bound interface
+      bool dummy = false          ///<  Place holder for template reuseAddr param
     );
     OpalTransportTCP(
       OpalEndPoint & endpoint,    ///<  Endpoint object
@@ -1143,8 +1143,6 @@ class OpalTransportTCP : public OpalTransportIP
     virtual const PCaselessString & GetProtoPrefix() const;
 
     bool OnConnectedSocket(PTCPSocket * socket);
-
-    PBoolean reuseAddressFlag;
 };
 
 
@@ -1474,7 +1472,7 @@ class OpalTransportTLS : public OpalTransportTCP
         OpalEndPoint & endpoint,    ///<  Endpoint object
         PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to use
         WORD port = 0,              ///<  Local port to bind to
-        PBoolean reuseAddr = false      ///<  Flag for binding to already bound interface
+        bool dummy = false          ///<  Place holder for template reuseAddr param
       );
 
       /// Destroy the TCPS channel
