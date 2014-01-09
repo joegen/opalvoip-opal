@@ -429,6 +429,7 @@ void H323ConsoleEndPoint::GetArgumentSpec(ostream & strm) const
   strm << "g-gk-host:          H.323 gatekeeper host.\n"
           "G-gk-id:            H.323 gatekeeper identifier.\n"
           "-gk-password:       H.323 gatekeeper password (if different from --password).\n"
+          "-gk-alias-limit:    H.323 gatekeeper alias limit (compatibility issue)\n"
           "-alias:             H.323 alias name, may be multiple entries.\n"
           "-no-fast.           H.323 fast connect disabled.\n"
           "-no-tunnel.         H.323 tunnel for H.245 disabled.\n";
@@ -471,6 +472,8 @@ bool H323ConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PStrin
            << (IsH245TunnelingDisabled() ? "Separate" : "Tunnelled") << " H.245\n";
 
 
+  SetGatekeeperAliasLimit(args.GetOptionAs<PINDEX>("gk-alias-limit", GetGatekeeperAliasLimit()));
+
   if (args.HasOption("gk-host") || args.HasOption("gk-id")) {
     if (!UseGatekeeperFromArgs(args, "gk-host", "gk-id", "gk-password")) {
       output << "Could not initiate gatekeeper registration." << endl;
@@ -504,6 +507,8 @@ void H323ConsoleEndPoint::CmdAlias(PCLI::Arguments & args, P_INT_PTR)
 
 void H323ConsoleEndPoint::CmdGatekeeper(PCLI::Arguments & args, P_INT_PTR)
 {
+  SetGatekeeperAliasLimit(args.GetOptionAs<PINDEX>("limit", GetGatekeeperAliasLimit()));
+
   if (args.GetCount() < 1) {
     if (GetGatekeeper() != NULL)
       args.GetContext() << "Gatekeeper: " << *GetGatekeeper() << endl;
@@ -542,7 +547,8 @@ void H323ConsoleEndPoint::AddCommands(PCLI & cli)
                   "[ options ] [ \"on\" / \"off\" ]",
                   "h-host: Host name or IP address of gatekeeper\n"
                   "i-identifier: Identifier for gatekeeper\n"
-                  "p-password: Password for H.235.1 authentication");
+                  "p-password: Password for H.235.1 authentication\n"
+                  "l-limit: Alias limit for gatekeeper");
 }
 #endif // P_CLI
 #endif // OPAL_H323

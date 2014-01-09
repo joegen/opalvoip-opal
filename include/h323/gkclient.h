@@ -292,7 +292,16 @@ class H323Gatekeeper : public H225_RAS
       const PString & password,            ///<  New password
       const PString & username = PString() ///<  Username for password
     );
-	
+
+    /**Set fixed, single, alias for gatekeeper.
+       If not set, then all the aliases for the H323EndPoint are used.
+      */
+    void SetAliases(const PStringList & aliases) { m_aliases = aliases; }
+
+    /**Get fixed, single, alias for gatekeeper.
+      */
+    const PStringList & GetAliases() const { return m_aliases; }
+
     /*
      * Return the call signalling address for the gatekeeper (if present)
      */
@@ -348,8 +357,9 @@ class H323Gatekeeper : public H225_RAS
     bool SetListenerAddresses(H225_ArrayOf_TransportAddress & pdu);
 
     // Gatekeeper registration state variables
-    bool     discoveryComplete;
-    PWCharArray m_endpointIdentifier;
+    bool                    discoveryComplete;
+    PStringList             m_aliases;
+    PWCharArray             m_endpointIdentifier;
     RegistrationFailReasons m_registrationFailReason;
     void SetRegistrationFailReason(unsigned reason, unsigned commandMask);
     void SetRegistrationFailReason(RegistrationFailReasons reason);
