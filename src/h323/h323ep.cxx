@@ -104,7 +104,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   , callIntrusionT4(0,30)                  // Seconds
   , callIntrusionT5(0,10)                  // Seconds
   , callIntrusionT6(0,10)                  // Seconds
-  , m_gatekeeperAliasLimit(P_MAX_INDEX)
+  , m_gatekeeperAliasLimit(MaxGatekeeperAliasLimit)
 #if OPAL_H450
   , nextH450CallIdentity(0)
 #endif
