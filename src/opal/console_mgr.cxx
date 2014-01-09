@@ -416,7 +416,9 @@ H323ConsoleEndPoint::H323ConsoleEndPoint(OpalConsoleManager & manager)
 
 void H323ConsoleEndPoint::OnGatekeeperStatus(H323Gatekeeper::RegistrationFailReasons status)
 {
-  *m_console.LockedOutput() << "\nH.323 registration: " << *GetGatekeeper() << " - " << status << endl;
+  H323Gatekeeper * gk = GetGatekeeper();
+  if (gk != NULL)
+    *m_console.LockedOutput() << "\nH.323 registration: " << *gk << " - " << status << endl;
 }
 
 
