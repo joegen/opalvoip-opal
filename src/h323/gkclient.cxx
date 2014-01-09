@@ -82,6 +82,7 @@ PString EpIdAsStr(const PWCharArray & id)
 H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   : H225_RAS(ep, trans)
   , discoveryComplete(false)
+  , m_aliases(ep.GetAliasNames())
   , m_registrationFailReason(UnregisteredLocally)
   , m_alternateTemporary(false)
   , requestMutex(1, 1)
@@ -321,7 +322,7 @@ unsigned H323Gatekeeper::SetupGatekeeperRequest(H323RasPDU & request)
   endpoint.SetEndpointTypeInfo(grq.m_endpointType);
 
   grq.IncludeOptionalField(H225_GatekeeperRequest::e_endpointAlias);
-  H323SetAliasAddresses(endpoint.GetAliasNames(), grq.m_endpointAlias);
+  H323SetAliasAddresses(m_aliases, grq.m_endpointAlias);
 
   if (!gatekeeperIdentifier) {
     grq.IncludeOptionalField(H225_GatekeeperRequest::e_gatekeeperIdentifier);
@@ -526,7 +527,7 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
     endpoint.SetVendorIdentifierInfo(rrq.m_endpointVendor);
 
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_terminalAlias);
-    H323SetAliasAddresses(endpoint.GetAliasNames(), rrq.m_terminalAlias);
+    H323SetAliasAddresses(m_aliases, rrq.m_terminalAlias);
 
     PStringArray aliasNamePatterns = endpoint.GetAliasNamePatterns();
     if(aliasNamePatterns.GetSize() > 0) { //set patterns,
@@ -823,7 +824,7 @@ PBoolean H323Gatekeeper::UnregistrationRequest(int reason)
   SetListenerAddresses(urq.m_callSignalAddress);
 
   urq.IncludeOptionalField(H225_UnregistrationRequest::e_endpointAlias);
-  H323SetAliasAddresses(endpoint.GetAliasNames(), urq.m_endpointAlias);
+  H323SetAliasAddresses(m_aliases, urq.m_endpointAlias);
 
   if (!gatekeeperIdentifier) {
     urq.IncludeOptionalField(H225_UnregistrationRequest::e_gatekeeperIdentifier);
@@ -973,7 +974,7 @@ PBoolean H323Gatekeeper::LocationRequest(const PStringList & aliases,
   replyAddress.SetPDU(lrq.m_replyAddress);
 
   lrq.IncludeOptionalField(H225_LocationRequest::e_sourceInfo);
-  H323SetAliasAddresses(endpoint.GetAliasNames(), lrq.m_sourceInfo);
+  H323SetAliasAddresses(m_aliases, lrq.m_sourceInfo);
 
   if (!gatekeeperIdentifier) {
     lrq.IncludeOptionalField(H225_LocationRequest::e_gatekeeperIdentifier);
@@ -1545,7 +1546,7 @@ H225_InfoRequestResponse & H323Gatekeeper::BuildInfoRequestResponse(H323RasPDU &
   SetListenerAddresses(irr.m_callSignalAddress);
 
   irr.IncludeOptionalField(H225_InfoRequestResponse::e_endpointAlias);
-  H323SetAliasAddresses(endpoint.GetAliasNames(), irr.m_endpointAlias);
+  H323SetAliasAddresses(m_aliases, irr.m_endpointAlias);
 
   return irr;
 }

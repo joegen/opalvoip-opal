@@ -43,6 +43,7 @@ static const char RemoteGatekeeperIdentifierKey[] = "Remote Gatekeeper Identifie
 static const char GatekeeperInterfaceKey[] = "Remote Gatekeeper Interface";
 static const char GatekeeperPasswordKey[] = "Remote Gatekeeper Password";
 static const char GatekeeperTokenOIDKey[] = "Remote Gatekeeper Token OID";
+static const char GatekeeperAliasLimitKey[] = "Remote Gatekeeper Alias Limit";
 
 static const char ServerGatekeeperEnableKey[] = "Gatekeeper Server Enable";
 static const char ServerGatekeeperIdentifierKey[] = "Gatekeeper Server Identifier";
@@ -169,6 +170,9 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
 
   SetGkAccessTokenOID(rsrc->AddStringField(GatekeeperTokenOIDKey, 0, GetGkAccessTokenOID(),
                                    "Gatekeeper access token OID for H.235 support", 1, 30));
+
+  SetGatekeeperAliasLimit(rsrc->AddIntegerField(GatekeeperAliasLimitKey, GetGatekeeperAliasLimit(), 1, P_MAX_INDEX, NULL,
+            "Compatibility issue with some gatekeeper not being able to register large numbers of aliases."));
 
   if (gkEnable) {
     if (UseGatekeeper(gkAddress, gkIdentifier, gkInterface)) {

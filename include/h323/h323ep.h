@@ -297,7 +297,7 @@ class H323EndPoint : public OpalRTPEndPoint
        Note that a gatekeeper address of "*" is treated like an empty string
        resulting in gatekeeper discovery.
      */
-    PBoolean UseGatekeeper(
+    bool UseGatekeeper(
       const PString & address = PString::Empty(),     ///<  Address of gatekeeper to use.
       const PString & identifier = PString::Empty(),  ///<  Identifier of gatekeeper to use.
       const PString & localAddress = PString::Empty() ///<  Local interface to use.
@@ -313,9 +313,9 @@ class H323EndPoint : public OpalRTPEndPoint
        the H323Gatekeeper object it becomes associated with. Also if transport
        is NULL then a H323TransportUDP is created.
      */
-    PBoolean SetGatekeeper(
+    bool SetGatekeeper(
       const PString & address,          ///<  Address of gatekeeper to use.
-      H323Transport * transport = NULL  ///<  Transport over which to talk to gatekeeper.
+      const PString & localAddress = PString::Empty() ///<  Local interface to use.
     );
 
     /**Select and register with an explicit gatekeeper and zone.
@@ -332,10 +332,10 @@ class H323EndPoint : public OpalRTPEndPoint
        the H323Gatekeeper object it becomes associated with. Also if transport
        is NULL then a H323TransportUDP is created.
      */
-    PBoolean SetGatekeeperZone(
+    bool SetGatekeeperZone(
       const PString & address,          ///<  Address of gatekeeper to use.
       const PString & identifier,       ///<  Identifier of gatekeeper to use.
-      H323Transport * transport = NULL  ///<  Transport over which to talk to gatekeeper.
+      const PString & localAddress = PString::Empty() ///<  Local interface to use.
     );
 
     /**Locate and select gatekeeper.
@@ -347,9 +347,9 @@ class H323EndPoint : public OpalRTPEndPoint
        H323Gatekeeper created by this function and will be deleted by it. Also
        if transport is NULL then a H323TransportUDP is created.
      */
-    PBoolean LocateGatekeeper(
+    bool LocateGatekeeper(
       const PString & identifier,       ///<  Identifier of gatekeeper to locate.
-      H323Transport * transport = NULL  ///<  Transport over which to talk to gatekeeper.
+      const PString & localAddress = PString::Empty() ///<  Local interface to use.
     );
 
     /**Discover and select gatekeeper.
@@ -360,8 +360,8 @@ class H323EndPoint : public OpalRTPEndPoint
        H323Gatekeeper created by this function and will be deleted by it. Also
        if transport is NULL then a H323TransportUDP is created.
      */
-    PBoolean DiscoverGatekeeper(
-      H323Transport * transport = NULL  ///<  Transport over which to talk to gatekeeper.
+    bool DiscoverGatekeeper(
+      const PString & localAddress = PString::Empty() ///<  Local interface to use.
     );
 
     /**Create a gatekeeper.
@@ -377,7 +377,7 @@ class H323EndPoint : public OpalRTPEndPoint
 
     /**Get the gatekeeper we are registered with.
      */
-    H323Gatekeeper * GetGatekeeper() const { return gatekeeper; }
+    H323Gatekeeper * GetGatekeeper() const { return m_gatekeepers.IsEmpty() ? NULL : &m_gatekeepers.front(); }
 
     /**Return if endpoint is registered with gatekeeper.
       */
@@ -401,11 +401,21 @@ class H323EndPoint : public OpalRTPEndPoint
 
     /**Get the H.235 username for the gatekeeper.
       */
-    virtual const PString & GetGatekeeperUsername() const { return gatekeeperUsername; }
+    virtual const PString & GetGatekeeperUsername() const { return m_gatekeeperUsername; }
 
     /**Get the H.235 password for the gatekeeper.
       */
-    virtual const PString & GetGatekeeperPassword() const { return gatekeeperPassword; }
+    virtual const PString & GetGatekeeperPassword() const { return m_gatekeeperPassword; }
+
+    /** Set gatekeeper alias limit in single RRQ.
+      */
+    void SetGatekeeperAliasLimit(
+      PINDEX limit   ///< New limit for aliases
+    );
+
+    /** Get gatekeeper alias limit in single RRQ.
+      */
+    PINDEX GetGatekeeperAliasLimit() const { return m_gatekeeperAliasLimit; }
 
     /**Create a list of authenticators for gatekeeper.
       */
@@ -1303,9 +1313,10 @@ class H323EndPoint : public OpalRTPEndPoint
 
   protected:
     bool InternalCreateGatekeeper(
-      H323Transport * transport,
-      const H323TransportAddress & gkAddress
+      const H323TransportAddress & remoteAddress,
+      const PString & localAddress
     );
+
     H323Connection * InternalMakeCall(
       OpalCall & call,
       const PString & existingToken,           ///<  Existing connection to be transferred
@@ -1384,12 +1395,14 @@ class H323EndPoint : public OpalRTPEndPoint
 
     // Dynamic variables
     mutable H323Capabilities capabilities;
-    H323Gatekeeper *     gatekeeper;
-    PString              gatekeeperUsername;
-    PString              gatekeeperPassword;
-    H323CallIdentityDict secondaryConnectionsActive;
+
+    PList<H323Gatekeeper> m_gatekeepers;
+    PString               m_gatekeeperUsername;
+    PString               m_gatekeeperPassword;
+    PINDEX                m_gatekeeperAliasLimit;
 
 #if OPAL_H450
+    H323CallIdentityDict   secondaryConnectionsActive;
     mutable PAtomicInteger nextH450CallIdentity;
             /// Next available callIdentity for H450 Transfer operations via consultation.
 #endif
