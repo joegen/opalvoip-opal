@@ -50,6 +50,7 @@
 #include <ep/opalmixer.h>
 #include <im/im_ep.h>
 #include <ep/GstEndPoint.h>
+#include <ep/skinnyep.h>
 
 #include <queue>
 
@@ -1003,6 +1004,10 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
   bool hasIAX2 = CheckProto(args, OPAL_PREFIX_IAX2, defProto, defProtoPos);
 #endif
 
+#if OPAL_SKINNY
+  bool hasSkinny = CheckProto(args, OPAL_PREFIX_SKINNY, defProto, defProtoPos);
+#endif
+
 #if OPAL_LID
   bool hasPOTS = CheckProto(args, OPAL_PREFIX_POTS":<dn>", defUser, defUserPos);
   bool hasPSTN = CheckProto(args, OPAL_PREFIX_PSTN":<dn>", defProto, defProtoPos);
@@ -1051,6 +1056,13 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
   if (hasIAX2) {
     new IAX2EndPoint(*this);
     AddRouteEntry(OPAL_PREFIX_IAX2":.*=" + defUser);
+  }
+#endif
+
+#if OPAL_SKINNY
+  if (hasSkinny) {
+    new OpalSkinnyEndPoint(*this);
+    AddRouteEntry(OPAL_PREFIX_SKINNY":.*=" + defUser);
   }
 #endif
 
@@ -1916,7 +1928,7 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
     }
     return;
   }
-#endif
+#endif // OPAL_H323
 
 #if OPAL_SIP
   SIPEndPoint * sip = dynamic_cast<SIPEndPoint *>(ep);
@@ -2004,9 +2016,18 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
     }
     return;
   }
-#endif
+#endif // OPAL_SIP
 
-  response.SetError("Protocol prefix does not support registration.");
+#if OPAL_SKINNY
+  OpalSkinnyEndPoint * skinnyEP = dynamic_cast<OpalSkinnyEndPoint *>(ep);
+  if (skinnyEP != NULL) {
+    if (!skinnyEP->Register(command.m_param.m_registrationInfo.m_hostName))
+      response.SetError("Failed to initiate SCCP registration.");
+    return;
+  }
+#endif // OPAL_SKINNY
+
+    response.SetError("Protocol prefix does not support registration.");
 }
 
 

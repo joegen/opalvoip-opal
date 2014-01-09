@@ -320,6 +320,7 @@ typedef void (OPAL_EXPORT *OpalFreeMessageFunction)(OpalMessage * message);
 #define OPAL_PREFIX_MIXER "mcu"     ///< Mixer for conferencing
 #define OPAL_PREFIX_IM    "im"      ///< Interactive Voice Response supported string for OpalInitialise()
 #define OPAL_PREFIX_GST   "gst"     ///< GStreamer supported string for OpalInitialise()
+#define OPAL_PREFIX_SKINNY "sccp"   ///< Skinny Client Control Protocol supported string for OpalInitialise()
 
 #define OPAL_PREFIX_ALL OPAL_PREFIX_SIP   " " \
                         OPAL_PREFIX_H323  " " \

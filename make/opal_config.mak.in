@@ -91,6 +91,7 @@ OPAL_SAMPLES     := @OPAL_SAMPLES@
 OPAL_H323        := @OPAL_H323@
 OPAL_SIP         := @OPAL_SIP@
 OPAL_IAX2        := @OPAL_IAX2@
+OPAL_SKINNY      := @OPAL_SKINNY@
 OPAL_VIDEO       := @OPAL_VIDEO@
 OPAL_ZRTP        := @OPAL_ZRTP@
 OPAL_LID         := @OPAL_LID@
