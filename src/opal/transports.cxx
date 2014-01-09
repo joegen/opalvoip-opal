@@ -1149,7 +1149,6 @@ OpalTransportTCP::OpalTransportTCP(OpalEndPoint & ep,
                                    PBoolean reuseAddr)
   : OpalTransportIP(ep, new PTCPSocket(port), binding, port)
 {
-  reuseAddressFlag = reuseAddr;
 }
 
 
