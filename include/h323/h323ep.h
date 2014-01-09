@@ -418,6 +418,15 @@ class H323EndPoint : public OpalRTPEndPoint
       */
     PINDEX GetGatekeeperAliasLimit() const { return m_gatekeeperAliasLimit; }
 
+    /** Set gatekeeper flag to simulate alias pattern with aliases.
+        This will generate separate individual aliases for ranges in the pattern list.
+    */
+    void SetGatekeeperSimulatePattern(bool sim) { m_gatekeeperSimulatePattern = sim; }
+
+    /** Get gatekeeper flag to simulate alias pattern with aliases.
+    */
+    bool GetGatekeeperSimulatePattern() const { return m_gatekeeperSimulatePattern; }
+
     /**Create a list of authenticators for gatekeeper.
       */
     virtual H235Authenticators CreateAuthenticators();
@@ -903,6 +912,8 @@ class H323EndPoint : public OpalRTPEndPoint
     /**Get the alias patterns.
     */
     const PStringList & GetAliasNamePatterns() const { return localAliasPatterns; }
+
+    static int ParseAliasPatternRange(const PString & pattern, PString & start, PString & end);
 
     /**Get the default ILS server to use for user lookup.
       */
@@ -1414,6 +1425,7 @@ class H323EndPoint : public OpalRTPEndPoint
     PString               m_gatekeeperUsername;
     PString               m_gatekeeperPassword;
     PINDEX                m_gatekeeperAliasLimit;
+    bool                  m_gatekeeperSimulatePattern;
 
 #if OPAL_H450
     H323CallIdentityDict   secondaryConnectionsActive;
