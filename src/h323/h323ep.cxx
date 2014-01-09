@@ -105,6 +105,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   , callIntrusionT5(0,10)                  // Seconds
   , callIntrusionT6(0,10)                  // Seconds
   , m_gatekeeperAliasLimit(MaxGatekeeperAliasLimit)
+  , m_gatekeeperSimulatePattern(false)
 #if OPAL_H450
   , nextH450CallIdentity(0)
 #endif
@@ -475,10 +476,30 @@ bool H323EndPoint::InternalCreateGatekeeper(const H323TransportAddress & remoteA
     }
   }
 
+  PStringList allAliases = localAliasNames;
+  if (GetGatekeeperSimulatePattern() && !localAliasPatterns.IsEmpty()) {
+    allAliases.MakeUnique();
+    for (PStringList::iterator it = localAliasPatterns.begin(); it != localAliasPatterns.end(); ++it) {
+      PString start, end;
+      PINDEX fixedDigits = ParseAliasPatternRange(*it, start, end);
+      while (start != end) {
+        allAliases += start;
+        for (PINDEX i = start.GetLength() - 1; i >= fixedDigits; --i) {
+          if (start[i] < '9') {
+            ++start[i];
+            break;
+          }
+          start[i] = '0';
+        }
+      }
+      allAliases += end;
+    }
+  }
+
   PStringList aliasSubset;
-  for (PStringList::iterator it = localAliasNames.begin(); it != localAliasNames.end(); ++it) {
+  for (PStringList::iterator it = allAliases.begin(); it != allAliases.end(); ++it) {
     aliasSubset += *it;
-    if (aliasSubset.GetSize() >= m_gatekeeperAliasLimit || &*it == &localAliasNames.back()) {
+    if (aliasSubset.GetSize() >= m_gatekeeperAliasLimit || &*it == &allAliases.back()) {
       H323Gatekeeper * gatekeeper = CreateGatekeeper(new OpalTransportUDP(*this, interfaceIP));
       if (gatekeeper == NULL)
         return false;
@@ -1329,9 +1350,45 @@ bool H323EndPoint::RemoveAliasName(const PString & name)
 }
 
 
+int H323EndPoint::ParseAliasPatternRange(const PString & pattern, PString & start, PString & end)
+{
+  if (!pattern.Split('-', start, end))
+    return 0;
+
+  if (start.GetLength() != end.GetLength())
+    return 0;
+  if (!OpalIsE164(start))
+    return 0;
+  if (!OpalIsE164(end))
+    return 0;
+
+  PINDEX commonDigits = 0;
+  while (start[commonDigits] == end[commonDigits]) {
+    if (++commonDigits >= start.GetLength())
+      return 0;
+  }
+
+  if (start.Mid(commonDigits) >= end.Mid(commonDigits))
+    return 0;
+
+  return commonDigits;
+}
+
+
 bool H323EndPoint::AddAliasNamePattern(const PString & pattern)
 {
-  PAssert(!pattern, "Must have non-empty string in alias pattern !");
+  if (pattern.IsEmpty()) {
+    PTRACE(2, "H323\tMust have non-empty string in alias pattern !");
+    return false;
+  }
+
+  if (!OpalIsE164(pattern)) {
+    PString start, end;
+    if (ParseAliasPatternRange(pattern, start, end) == 0) {
+      PTRACE(2, "H323\tIllegal range pattern  \"" << pattern << '"');
+      return false;
+    }
+  }
 
   if (localAliasPatterns.find(pattern) != localAliasPatterns.end()) {
     PTRACE(3, "H323\tAlias pattern already present");
