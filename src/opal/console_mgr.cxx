@@ -1577,7 +1577,10 @@ OpalConsoleEndPoint * OpalConsoleManager::GetConsoleEndPoint(const PString & pre
       ep = CreateMixerEndPoint();
     else
 #endif
-      PAssertAlways("Unknown prefix " + prefix);
+    {
+      PTRACE(1, "ConsoleApp\tUnknown prefix " << prefix);
+      return NULL;
+    }
   }
 
   return dynamic_cast<OpalConsoleEndPoint *>(ep);
