@@ -1540,31 +1540,44 @@ OpalConsoleEndPoint * OpalConsoleManager::GetConsoleEndPoint(const PString & pre
 #if OPAL_SIP
     if (prefix == OPAL_PREFIX_SIP)
       ep = CreateSIPEndPoint();
+    else
 #endif // OPAL_SIP
 #if OPAL_H323
-    else if (prefix == OPAL_PREFIX_H323)
+    if (prefix == OPAL_PREFIX_H323)
       ep = CreateH323EndPoint();
+    else
 #endif // OPAL_H323
+#if OPAL_SKINNY
+    if (prefix == OPAL_PREFIX_SKINNY)
+      ep = CreateSkinnyEndPoint();
+    else
+#endif // OPAL_SKINNY
 #if OPAL_LID
-    else if (prefix == OPAL_PREFIX_PSTN)
+    if (prefix == OPAL_PREFIX_PSTN)
       ep = CreateLineEndPoint();
+    else
 #endif // OPAL_LID
 #if OPAL_CAPI
-    else if (prefix == OPAL_PREFIX_CAPI)
+    if (prefix == OPAL_PREFIX_CAPI)
       ep = CreateCapiEndPoint();
+    else
 #endif // OPAL_LID
 #if OPAL_HAS_PCSS
-    else if (prefix == OPAL_PREFIX_PCSS)
+    if (prefix == OPAL_PREFIX_PCSS)
       ep = CreatePCSSEndPoint();
+    else
 #endif
 #if OPAL_IVR
-    else if (prefix == OPAL_PREFIX_IVR)
+    if (prefix == OPAL_PREFIX_IVR)
       ep = CreateIVREndPoint();
+    else
 #endif
 #if OPAL_HAS_MIXER
-    else if (prefix == OPAL_PREFIX_MIXER)
+    if (prefix == OPAL_PREFIX_MIXER)
       ep = CreateMixerEndPoint();
+    else
 #endif
+      PAssertAlways("Unknown prefix " + prefix);
   }
 
   return dynamic_cast<OpalConsoleEndPoint *>(ep);
@@ -1585,6 +1598,14 @@ H323ConsoleEndPoint * OpalConsoleManager::CreateH323EndPoint()
   return new H323ConsoleEndPoint(*this);
 }
 #endif // OPAL_H323
+
+
+#if OPAL_SKINNY
+OpalConsoleSkinnyEndPoint * OpalConsoleManager::CreateSkinnyEndPoint()
+{
+  return new OpalConsoleSkinnyEndPoint(*this);
+}
+#endif // OPAL_SKINNY
 
 
 #if OPAL_LID
