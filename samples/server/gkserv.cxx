@@ -174,7 +174,8 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
   SetGkAccessTokenOID(rsrc->AddStringField(GatekeeperTokenOIDKey, 0, GetGkAccessTokenOID(),
                                    "Gatekeeper access token OID for H.235 support", 1, 30));
 
-  SetGatekeeperAliasLimit(rsrc->AddIntegerField(GatekeeperAliasLimitKey, GetGatekeeperAliasLimit(), 1, P_MAX_INDEX, NULL,
+  SetGatekeeperAliasLimit(rsrc->AddIntegerField(GatekeeperAliasLimitKey,
+            1, H323EndPoint::MaxGatekeeperAliasLimit, GetGatekeeperAliasLimit(), NULL,
             "Compatibility issue with some gatekeeper not being able to register large numbers of aliases."));
 
   if (gkEnable) {

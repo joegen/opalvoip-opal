@@ -407,6 +407,7 @@ class H323EndPoint : public OpalRTPEndPoint
       */
     virtual const PString & GetGatekeeperPassword() const { return m_gatekeeperPassword; }
 
+    enum { MaxGatekeeperAliasLimit = 1000000 };
     /** Set gatekeeper alias limit in single RRQ.
       */
     void SetGatekeeperAliasLimit(
