@@ -1148,12 +1148,16 @@ OpalTransportTCP::OpalTransportTCP(OpalEndPoint & ep,
                                    WORD port,
                                    PBoolean reuseAddr)
   : OpalTransportIP(ep, new PTCPSocket(port), binding, port)
+  , m_pduLengthFormat(0)
+  , m_pduLengthOffset(0)
 {
 }
 
 
 OpalTransportTCP::OpalTransportTCP(OpalEndPoint & ep, PChannel * channel)
   : OpalTransportIP(ep, channel, INADDR_ANY, 0)
+  , m_pduLengthFormat(0)
+  , m_pduLengthOffset(0)
 {
   if (channel != NULL)
     OnConnectedSocket(dynamic_cast<PTCPSocket *>(channel->GetBaseReadChannel()));
@@ -1211,18 +1215,9 @@ PBoolean OpalTransportTCP::Connect()
 
 PBoolean OpalTransportTCP::ReadPDU(PBYTEArray & pdu)
 {
-  // Make sure is a RFC1006 TPKT
-  switch (m_channel->ReadChar()) {
-    case 3 :  // Only support version 3
-      break;
-
-    default :  // Unknown version number
-      m_channel->SetErrorValues(PChannel::ProtocolFailure, 0x80000000);
-      // Do case for read error
-
-    case -1 :
-      return false;
-  }
+  int firstByte = m_channel->ReadChar();
+  if (firstByte < 0)
+    return false;
 
   // Save timeout
   PTimeInterval oldTimeout = m_channel->GetReadTimeout();
@@ -1230,19 +1225,49 @@ PBoolean OpalTransportTCP::ReadPDU(PBYTEArray & pdu)
   // Should get all of PDU in reasonable time or something is seriously wrong,
   SetReadTimeout(endpoint.GetManager().GetSignalingTimeout());
 
-  // Get TPKT length
-  BYTE header[3];
-  PBoolean ok = m_channel->ReadBlock(header, sizeof(header));
-  if (ok) {
-    PINDEX packetLength = ((header[1] << 8)|header[2]);
-    if (packetLength < 4) {
-      PTRACE(2, "H323TCP\tDwarf PDU received (length " << packetLength << ")");
-      ok = false;
-    } else {
-      packetLength -= 4;
-      ok = m_channel->ReadBlock(pdu.GetPointer(packetLength), packetLength);
+  bool ok = false;
+  PINDEX packetLength = 0;
+
+  if (m_pduLengthFormat != 0) {
+    PINDEX count = std::abs(m_pduLengthFormat);
+    BYTE header[8];
+    if (PAssert(count > 0 && count <= sizeof(header), "Invalid PDU length") && m_channel->Read(header, count)) {
+      while (count-- > 0)
+        packetLength |= header[count] << (8 * (m_pduLengthFormat < 0 ? count : (m_pduLengthFormat - count - 1)));
+      if (m_pduLengthOffset > 0 || packetLength > -m_pduLengthOffset)
+        packetLength += m_pduLengthOffset;
+      else {
+        PTRACE(2, "OpalTCP\tDwarf PDU received (length " << packetLength << ")");
+        packetLength = 0;
+      }
     }
   }
+  else {
+    // Make sure is a RFC1006 TPKT
+    if (firstByte != 3) {
+      // Only support version 3
+      m_channel->SetErrorValues(PChannel::ProtocolFailure, 0x80000000);
+      return false;
+    }
+
+    // Get TPKT length
+    BYTE header[3];
+    if (m_channel->ReadBlock(header, sizeof(header))) {
+      packetLength = ((header[1] << 8)|header[2]);
+      if (packetLength > 4)
+        packetLength -= 4;
+      else {
+        PTRACE(2, "OpalTCP\tDwarf PDU received (length " << packetLength << ")");
+        packetLength = 0;
+      }
+    }
+  }
+
+  // Should get all of PDU in reasonable time or something is seriously wrong,
+  SetReadTimeout(endpoint.GetManager().GetSignalingTimeout());
+
+  if (packetLength > 0)
+    ok = m_channel->ReadBlock(pdu.GetPointer(packetLength), packetLength);
 
   m_channel->SetReadTimeout(oldTimeout);
 

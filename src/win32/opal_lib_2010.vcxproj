@@ -325,6 +325,7 @@
     <Lib />
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\ep\skinnyep.cxx" />
     <ClCompile Include="..\h323\h235dh.cxx" />
     <ClCompile Include="..\codec\h261mf.cxx" />
     <ClCompile Include="..\codec\h263mf.cxx" />
@@ -1365,6 +1366,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\ep\skinnyep.h" />
     <ClInclude Include="..\..\include\h323\h235dh.h" />
     <ClInclude Include="..\..\include\rtp\h235_session.h" />
     <ClInclude Include="..\..\include\ep\GstEndPoint.h" />
