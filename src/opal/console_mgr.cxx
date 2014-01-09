@@ -432,6 +432,7 @@ void H323ConsoleEndPoint::GetArgumentSpec(ostream & strm) const
           "G-gk-id:            H.323 gatekeeper identifier.\n"
           "-gk-password:       H.323 gatekeeper password (if different from --password).\n"
           "-gk-alias-limit:    H.323 gatekeeper alias limit (compatibility issue)\n"
+          "-gk-sim-pattern.    H.323 gatekeeper alias patern simulation\n"
           "-alias:             H.323 alias name, may be multiple entries.\n"
           "-alias-pattern:     H.323 alias pattern, may be multiple entries.\n"
           "-no-fast.           H.323 fast connect disabled.\n"
@@ -472,9 +473,12 @@ bool H323ConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PStrin
   for (PINDEX i = 0; i < aliases.GetSize(); ++i)
     AddAliasNamePattern(aliases[i]);
 
+  SetGatekeeperSimulatePattern(args.HasOption("gk-sim-pattern"));
+
   if (verbose)
     output << "H.323 Aliases: " << setfill(',') << GetAliasNames() << setfill(' ') << "\n"
-              "H.323 Alias Patterns: " << setfill(',') << GetAliasNamePatterns() << setfill(' ') << "\n"
+              "H.323 Alias Patterns: " << (GetGatekeeperSimulatePattern() ? "(simulated)" : "")
+                                       << setfill(',') << GetAliasNamePatterns() << setfill(' ') << "\n"
               "H.323 options: "
            << (IsFastStartDisabled() ? "Slow" : "Fast") << " connect, "
            << (IsH245TunnelingDisabled() ? "Separate" : "Tunnelled") << " H.245\n";

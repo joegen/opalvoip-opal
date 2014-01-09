@@ -45,6 +45,7 @@ static const char GatekeeperInterfaceKey[] = "Remote Gatekeeper Interface";
 static const char GatekeeperPasswordKey[] = "Remote Gatekeeper Password";
 static const char GatekeeperTokenOIDKey[] = "Remote Gatekeeper Token OID";
 static const char GatekeeperAliasLimitKey[] = "Remote Gatekeeper Alias Limit";
+static const char GatekeeperSimulatePatternKey[] = "Remote Gatekeeper Simulate Pattern";
 
 static const char ServerGatekeeperEnableKey[] = "Gatekeeper Server Enable";
 static const char ServerGatekeeperIdentifierKey[] = "Gatekeeper Server Identifier";
@@ -176,7 +177,10 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
 
   SetGatekeeperAliasLimit(rsrc->AddIntegerField(GatekeeperAliasLimitKey,
             1, H323EndPoint::MaxGatekeeperAliasLimit, GetGatekeeperAliasLimit(), NULL,
-            "Compatibility issue with some gatekeeper not being able to register large numbers of aliases."));
+            "Compatibility issue with some gatekeepers not being able to register large numbers of aliases in single RRQ."));
+
+  SetGatekeeperSimulatePattern(rsrc->AddBooleanField(GatekeeperSimulatePatternKey, GetGatekeeperSimulatePattern(),
+            "Compatibility issue with some gatekeepers not supporting alias patterns, generate separate aliases for ranges."));
 
   if (gkEnable) {
     if (UseGatekeeper(gkAddress, gkIdentifier, gkInterface)) {

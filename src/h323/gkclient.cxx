@@ -461,6 +461,15 @@ bool H323Gatekeeper::SetListenerAddresses(H225_ArrayOf_TransportAddress & pdu)
 }
 
 
+static H225_AddressPattern & AddTerminalAliasPattern(H225_RegistrationRequest & rrq)
+{
+  rrq.IncludeOptionalField(H225_RegistrationRequest::e_terminalAliasPattern);
+  PINDEX len = rrq.m_terminalAliasPattern.GetSize();
+  rrq.m_terminalAliasPattern.SetSize(len + 1);
+  return rrq.m_terminalAliasPattern[len];
+}
+
+
 bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool lightweight)
 {
   if (PAssertNULL(transport) == NULL)
@@ -529,34 +538,30 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_terminalAlias);
     H323SetAliasAddresses(m_aliases, rrq.m_terminalAlias);
 
-    PStringArray aliasNamePatterns = endpoint.GetAliasNamePatterns();
-    if(aliasNamePatterns.GetSize() > 0) { //set patterns,
-      rrq.IncludeOptionalField(H225_RegistrationRequest::e_terminalAliasPattern);
-      rrq.m_terminalAliasPattern.Append(new H225_AddressPattern);
-      H225_AddressPattern &addressPattern = rrq.m_terminalAliasPattern[0];
-
-      for( PINDEX i = 0; i < aliasNamePatterns.GetSize(); i++){
-        PStringArray nameRange = aliasNamePatterns[i].Tokenise('-', FALSE);
-        if (nameRange.GetSize() == 2 &&
-            nameRange[0].FindSpan("1234567890*#") == P_MAX_INDEX &&
-            nameRange[1].FindSpan("1234567890*#") == P_MAX_INDEX) {
-          addressPattern.SetTag(H225_AddressPattern::e_range);
-          H225_AddressPattern_range &addressPattern_range = addressPattern;
-
-          addressPattern_range.m_startOfRange.SetTag(H225_PartyNumber::e_e164Number);
-          H225_PublicPartyNumber &start= addressPattern_range.m_startOfRange;
-          start.m_publicNumberDigits = nameRange[0];
-          start.m_publicTypeOfNumber.SetTag(H225_PublicTypeOfNumber::e_unknown ); 
-
-          addressPattern_range.m_endOfRange.SetTag(H225_PartyNumber::e_e164Number);
-          H225_PublicPartyNumber &end= addressPattern_range.m_endOfRange;
-          end.m_publicNumberDigits = nameRange[1];
-          end.m_publicTypeOfNumber.SetTag(H225_PublicTypeOfNumber::e_unknown ); 
-        }
-        else { //a wildcard
+    if (!endpoint.GetAliasNamePatterns().IsEmpty() && !endpoint.GetGatekeeperSimulatePattern()) {
+      for (PStringList::const_iterator it = endpoint.GetAliasNamePatterns().begin(); it != endpoint.GetAliasNamePatterns().end(); ++it) {
+        if (OpalIsE164(*it)) {
+          H225_AddressPattern & addressPattern = AddTerminalAliasPattern(rrq);
           addressPattern.SetTag(H225_AddressPattern::e_wildcard);
-          H225_AliasAddress &aliasAddress = addressPattern;
-          H323SetAliasAddress(aliasNamePatterns[i], aliasAddress, H225_AliasAddress::e_dialedDigits);
+          H323SetAliasAddress(*it, addressPattern, H225_AliasAddress::e_dialedDigits);
+        }
+        else {
+          PString start, end;
+          if (H323EndPoint::ParseAliasPatternRange(*it, start, end) > 0) {
+            H225_AddressPattern & addressPattern = AddTerminalAliasPattern(rrq);
+            addressPattern.SetTag(H225_AddressPattern::e_range);
+            H225_AddressPattern_range &addressPattern_range = addressPattern;
+
+            addressPattern_range.m_startOfRange.SetTag(H225_PartyNumber::e_e164Number);
+            H225_PublicPartyNumber & startOfRange = addressPattern_range.m_startOfRange;
+            startOfRange.m_publicNumberDigits = start;
+            startOfRange.m_publicTypeOfNumber.SetTag(H225_PublicTypeOfNumber::e_unknown);
+
+            addressPattern_range.m_endOfRange.SetTag(H225_PartyNumber::e_e164Number);
+            H225_PublicPartyNumber & endOfRange = addressPattern_range.m_endOfRange;
+            endOfRange.m_publicNumberDigits = end;
+            endOfRange.m_publicTypeOfNumber.SetTag(H225_PublicTypeOfNumber::e_unknown);
+          }
         }
       }
     }
