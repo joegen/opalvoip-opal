@@ -26,6 +26,7 @@
 //#define TEST_TOKEN
 
 static const char H323AliasesKey[] = "H.323 Aliases";
+static const char H323AliasPatternsKey[] = "H.323 Alias Patterns";
 static const char H323TerminalTypeKey[] = "H.323 Terminal Type";
 static const char DisableFastStartKey[] = "Disable H.323 Fast Start";
 static const char DisableH245TunnelingKey[] = "Disable H.245 Tunneling";
@@ -122,6 +123,8 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
         AddAliasName(aliases[i]);
     }
   }
+
+  SetAliasNamePatterns(rsrc->AddStringArrayField(H323AliasPatternsKey, false, 0, GetAliasNamePatterns(), "H.323 Alias patterns for local user", 1, 30));
 
   SetTerminalType((TerminalTypes)rsrc->AddIntegerField(H323TerminalTypeKey, 0, 255, GetTerminalType(), "",
                   "H.323 Terminal Type code for master/slave resolution:<BR>"

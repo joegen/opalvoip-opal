@@ -862,15 +862,15 @@ class H323EndPoint : public OpalRTPEndPoint
        The list defaults to the value set in the SetLocalUserName() function.
        Note that calling SetLocalUserName() will clear the alias list.
      */
-    PBoolean AddAliasName(
-      const PString & name  ///<  New alias name to add
+    bool AddAliasName(
+      const PString & name  ///< New alias name to add
     );
 
-    /**Remove an alias name used for the local end of any connections. 
-       defaults to an empty list.
+    /** Remove an alias name.
+        Note, you cannot remove the last alias name.
      */
-    PBoolean RemoveAliasName(
-      const PString & name  ///<  New alias namer to add
+    bool RemoveAliasName(
+      const PString & name  ///< Alias name to remove
     );
 
     /**Get the user name to be used for the local end of any connections. This
@@ -879,16 +879,29 @@ class H323EndPoint : public OpalRTPEndPoint
      */
     const PStringList & GetAliasNames() const { return localAliasNames; }
 
-    /**Get the alias patterns, might be used in terminalAliasPattern.
+    /** Add an alias pattern.
+        If the pattern already exists in the list then is is not added again.
      */
-    const PStringList & GetAliasNamePatterns() const { return localAliasPatterns; }
-
-    /**Add an alias name pattern to localAliasPatterns. If
-       the pattern already exists in the list then is is not added again.
-     */
-    PBoolean AddAliasNamePattern(
-      const PString & pattern  
+    bool AddAliasNamePattern(
+      const PString & pattern  ///< Pattern to add
     );
+
+    /** Remove an alias pattern.
+    */
+    bool RemoveAliasNamePattern(
+      const PString & pattern  ///< Pattern to add
+    );
+
+    /** Set all alias patterns.
+        Overwrites all existing patterns.
+      */
+    void SetAliasNamePatterns(
+      const PStringList & patterns  ///< Patterns to set
+    ) { localAliasPatterns = patterns; }
+
+    /**Get the alias patterns.
+    */
+    const PStringList & GetAliasNamePatterns() const { return localAliasPatterns; }
 
     /**Get the default ILS server to use for user lookup.
       */

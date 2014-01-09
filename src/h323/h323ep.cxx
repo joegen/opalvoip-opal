@@ -1289,26 +1289,34 @@ void H323EndPoint::SetLocalUserName(const PString & name)
 }
 
 
-PBoolean H323EndPoint::AddAliasName(const PString & name)
+bool H323EndPoint::AddAliasName(const PString & name)
 {
-  PAssert(!name, "Must have non-empty string in AliasAddress!");
+  PAssert(!name, "Must have non-empty string in alias name!");
 
-  if (localAliasNames.find(name) != localAliasNames.end())
+  if (localAliasNames.find(name) != localAliasNames.end()) {
+    PTRACE(3, "H323\tAlias already present");
     return false;
+  }
 
   localAliasNames.AppendString(name);
   return true;
 }
 
 
-PBoolean H323EndPoint::RemoveAliasName(const PString & name)
+bool H323EndPoint::RemoveAliasName(const PString & name)
 {
-  PStringList::iterator pos = localAliasNames.find(name);
-  if (pos == localAliasNames.end())
-    return false;
+  PAssert(!name, "Must have non-empty string in alias name!");
 
-  if (!PAssert(localAliasNames.GetSize() > 1, "Must have at least one AliasAddress!"))
+  PStringList::iterator pos = localAliasNames.find(name);
+  if (pos == localAliasNames.end()) {
+    PTRACE(3, "H323\tAlias already removed");
     return false;
+  }
+
+  if (localAliasNames.GetSize() == 1) {
+    PTRACE(3, "H323\tLast alias cannopt be removed");
+    return false;
+  }
 
   localAliasNames.erase(pos);
   return true;
@@ -1317,12 +1325,29 @@ PBoolean H323EndPoint::RemoveAliasName(const PString & name)
 
 bool H323EndPoint::AddAliasNamePattern(const PString & pattern)
 {
-  PAssert(!pattern, "Must have non-empty string in AddressPattern !");
+  PAssert(!pattern, "Must have non-empty string in alias pattern !");
 
-  if (localAliasPatterns.find(pattern) != localAliasPatterns.end())
+  if (localAliasPatterns.find(pattern) != localAliasPatterns.end()) {
+    PTRACE(3, "H323\tAlias pattern already present");
     return false;
+  }
 
   localAliasPatterns.AppendString(pattern);
+  return true;
+}
+
+
+bool H323EndPoint::RemoveAliasNamePattern(const PString & pattern)
+{
+  PAssert(!pattern, "Must have non-empty string in alias pattern !");
+
+  PStringList::iterator pos = localAliasPatterns.find(pattern);
+  if (pos == localAliasPatterns.end()) {
+    PTRACE(3, "H323\tAlias pattern already removed");
+    return false;
+  }
+
+  localAliasPatterns.erase(pos);
   return true;
 }
 
