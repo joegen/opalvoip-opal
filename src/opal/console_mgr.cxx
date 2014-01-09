@@ -431,6 +431,7 @@ void H323ConsoleEndPoint::GetArgumentSpec(ostream & strm) const
           "-gk-password:       H.323 gatekeeper password (if different from --password).\n"
           "-gk-alias-limit:    H.323 gatekeeper alias limit (compatibility issue)\n"
           "-alias:             H.323 alias name, may be multiple entries.\n"
+          "-alias-pattern:     H.323 alias pattern, may be multiple entries.\n"
           "-no-fast.           H.323 fast connect disabled.\n"
           "-no-tunnel.         H.323 tunnel for H.245 disabled.\n";
 }
@@ -465,8 +466,13 @@ bool H323ConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PStrin
   for (PINDEX i = 0; i < aliases.GetSize(); ++i)
     AddAliasName(aliases[i]);
 
+  aliases = args.GetOptionString("alias-pattern").Lines();
+  for (PINDEX i = 0; i < aliases.GetSize(); ++i)
+    AddAliasNamePattern(aliases[i]);
+
   if (verbose)
     output << "H.323 Aliases: " << setfill(',') << GetAliasNames() << setfill(' ') << "\n"
+              "H.323 Alias Patterns: " << setfill(',') << GetAliasNamePatterns() << setfill(' ') << "\n"
               "H.323 options: "
            << (IsFastStartDisabled() ? "Slow" : "Fast") << " connect, "
            << (IsH245TunnelingDisabled() ? "Separate" : "Tunnelled") << " H.245\n";
@@ -491,17 +497,30 @@ bool H323ConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PStrin
 #if P_CLI
 void H323ConsoleEndPoint::CmdAlias(PCLI::Arguments & args, P_INT_PTR)
 {
-  if (args.HasOption('r'))
-    SetLocalUserName(GetLocalUserName());
+  int operation = args.HasOption('d') ? 1 : 0;
+  if (args.HasOption('p'))
+    operation |= 2;
 
-  for (PINDEX i = 0; i < args.GetCount(); ++i) {
-    if (args.HasOption('d'))
-      RemoveAliasName(args[i]);
+  if (args.HasOption('r')) {
+    if (operation < 2)
+      SetLocalUserName(GetLocalUserName());
     else
-      AddAliasName(args[i]);
+      SetAliasNamePatterns(PStringList());
   }
 
-  args.GetContext() << "Aliases: " << setfill(',') << GetAliasNames() << setfill(' ') << endl;
+  for (PINDEX i = 0; i < args.GetCount(); ++i) {
+    switch (operation) {
+      case 0: AddAliasName(args[i]); break;
+      case 1: RemoveAliasName(args[i]); break;
+      case 2: AddAliasNamePattern(args[i]); break;
+      case 3: RemoveAliasNamePattern(args[i]); break;
+    }
+  }
+
+  if (operation < 2)
+    args.GetContext() << "Aliases: " << setfill(',') << GetAliasNames() << setfill(' ') << endl;
+  else
+    args.GetContext() << "Alias Patterns: " << setfill(',') << GetAliasNamePatterns() << setfill(' ') << endl;
 }
 
 
@@ -539,8 +558,9 @@ void H323ConsoleEndPoint::AddCommands(PCLI & cli)
 
   cli.SetCommand("h323 alias", PCREATE_NOTIFIER(CmdGatekeeper),
                  "Set alias name(s)",
-                 "[ -r | -d ] [ <name> ... ]",
+                 "[ <options> ] [ <name> ... ]",
                  "r-reset:  Reset the alias list before starting\n"
+                 "p-pattern: Aliases are patterns (e.g. \"1100*\" or \"1100-1199\")\n"
                  "d-delete: Delete the specified alias");
   cli.SetCommand("h323 gatekeeper", PCREATE_NOTIFIER(CmdGatekeeper),
                   "Set gatekeeper",
