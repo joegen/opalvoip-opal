@@ -63,6 +63,7 @@
 #include <opal/transcoders.h>
 #include <ep/ivr.h>
 #include <ep/opalmixer.h>
+#include <ep/skinnyep.h>
 #include <sip/sippres.h>
 #include <lids/lidep.h>
 #include <lids/capi_ep.h>
@@ -1000,6 +1001,10 @@ bool MyManager::Initialise(bool startMinimised)
 
 #if OPAL_SIP
   sipEP = new MySIPEndPoint(*this);
+#endif
+
+#if OPAL_SIP
+  new OpalSkinnyEndPoint(*this);
 #endif
 
 #if OPAL_CAPI

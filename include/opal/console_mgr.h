@@ -44,6 +44,7 @@
 #include <ep/pcss.h>
 #include <ep/ivr.h>
 #include <ep/opalmixer.h>
+#include <ep/skinnyep.h>
 
 #include <ptclib/cli.h>
 
@@ -53,6 +54,7 @@ class OpalConsoleManager;
 
 #define OPAL_CONSOLE_PREFIXES OPAL_PREFIX_SIP   " " \
                               OPAL_PREFIX_H323  " " \
+                              OPAL_PREFIX_SKINNY" " \
                               OPAL_PREFIX_PSTN  " " \
                               OPAL_PREFIX_CAPI  " "
 
@@ -162,6 +164,24 @@ public:
   bool UseGatekeeperFromArgs(const PArgList & args, const char * host, const char * ident, const char * pass);
 };
 #endif // OPAL_H323
+
+
+#if OPAL_SKINNY
+class OpalConsoleSkinnyEndPoint : public OpalSkinnyEndPoint, public OpalConsoleEndPoint
+{
+  PCLASSINFO(OpalConsoleSkinnyEndPoint, OpalSkinnyEndPoint)
+public:
+  OpalConsoleSkinnyEndPoint(OpalConsoleManager & manager);
+
+  virtual void GetArgumentSpec(ostream & strm) const;
+  virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute);
+
+#if P_CLI
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsoleSkinnyEndPoint, CmdServer);
+  virtual void AddCommands(PCLI & cli);
+#endif // P_CLI
+};
+#endif // OPAL_SKINNY
 
 
 #if OPAL_LID

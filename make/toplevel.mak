@@ -313,6 +313,13 @@ endif
 
 ########################################
 
+ifeq ($(OPAL_SKINNY),yes)
+  SOURCES += $(OPAL_SRCDIR)/ep/skinnyep.cxx
+endif
+
+
+########################################
+
 ifeq ($(OPAL_LID), yes)
   SOURCES += $(OPAL_SRCDIR)/lids/lid.cxx \
              $(OPAL_SRCDIR)/lids/lidep.cxx \

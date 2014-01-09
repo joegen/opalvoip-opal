@@ -28,6 +28,7 @@ dnl ########################################################################
 OPAL_H323=yes
 OPAL_SIP=yes
 OPAL_IAX2=yes
+OPAL_SKINNY=yes
 OPAL_VIDEO=yes
 OPAL_T38_CAPABILITY=yes
 OPAL_FAX=yes
@@ -333,6 +334,10 @@ dnl MSWIN_DISPLAY  iax2,IAX2 support
 dnl MSWIN_DEFINE   iax2,OPAL_IAX2
 OPAL_SIMPLE_OPTION(iax2,OPAL_IAX2, [IAX2 protocol support])
 
+dnl MSWIN_DISPLAY  skinny,Cisco SCCP (skinny) support
+dnl MSWIN_DEFINE   skinny,OPAL_SKINNY
+OPAL_SIMPLE_OPTION(skinny,OPAL_SKINNY, [Cisco SCCP (skinny) support])
+
 dnl MSWIN_DISPLAY  h224,H.224 support
 dnl MSWIN_DEFINE   h224,OPAL_HAS_H224
 OPAL_SIMPLE_OPTION(h224,OPAL_HAS_H224, [H.224 protocol support])
@@ -563,6 +568,7 @@ echo "                  MSRP capability :  $OPAL_HAS_MSRP"
 echo "         RFC-4103 (IM) capability :  $OPAL_HAS_RFC4103"
 echo ""
 echo "                     IAX2 support :  $OPAL_IAX2"
+echo "      Cisco SCCP (skinny) support :  $OPAL_SKINNY"
 echo "            Line Interface Device :  $OPAL_LID"
 echo "                      CAPI (ISDN) :  $OPAL_CAPI"
 echo "                     DAHDI (PSTN) :  $OPAL_DAHDI"

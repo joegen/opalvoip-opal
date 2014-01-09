@@ -89,6 +89,10 @@ static const char SIPAuthIDKey[] = "Auth ID";
 static const char SIPPasswordKey[] = "Password";
 #endif // OPAL_SIP
 
+#if OPAL_SKINNY
+static const char SkinnyServerKey[] = "SCCP Server";
+#endif
+
 #if OPAL_LID
 static const char LIDKey[] = "Line Interface Devices";
 #endif
@@ -542,6 +546,13 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 #if OPAL_SIP
   if (!GetSIPEndPoint().Configure(cfg, rsrc))
     return false;
+#endif
+
+#if OPAL_SKINNY
+  if (!FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY)->Register(rsrc->AddStringField(SkinnyServerKey,
+                                         20, PString::Empty(), "Server for Skinny Client Control Protocol"))) {
+    PSYSTEMLOG(Error, "Could not register with skinny server.");
+  }
 #endif
 
 #if OPAL_LID

@@ -550,10 +550,71 @@ void H323ConsoleEndPoint::AddCommands(PCLI & cli)
 
 /////////////////////////////////////////////////////////////////////////////
 
+#if OPAL_SKINNY
+OpalConsoleSkinnyEndPoint::OpalConsoleSkinnyEndPoint(OpalConsoleManager & manager)
+: OpalSkinnyEndPoint(manager)
+, OpalConsoleEndPoint(manager)
+{
+}
+
+
+void OpalConsoleSkinnyEndPoint::GetArgumentSpec(ostream & strm) const
+{
+  strm << "[PSTN options:]"
+    "-no-sccp.        Disable Skinny Client Control Protocol\n"
+    "-sccp-server:    Set skinny server address.\n";
+}
+
+
+bool OpalConsoleSkinnyEndPoint::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
+{
+  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  ostream & output = lockedOutput;
+
+  // If we have LIDs speficied in command line, load them
+  if (args.HasOption("no-sccp")) {
+    if (verbose)
+      output << "Skinny disabled.\n";
+    return true;
+  }
+
+  PString server = args.GetOptionString("sccp-server");
+  if (!server.IsEmpty()) {
+    if (!Register(server))
+      output << "Could not register with skinny server \"" << server << '"' << endl;
+    else if (verbose)
+      output << "Skinny server: " << server << '\n';
+  }
+
+  AddRoutesFor(this, defaultRoute);
+  return true;
+}
+
+
+#if P_CLI
+void OpalConsoleSkinnyEndPoint::CmdServer(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() < 1)
+    args.Usage();
+  else if (!Register(args[0]))
+    args.WriteError() << "Could not register with skinny server \"" << args[0] << '"' << endl;
+}
+
+
+void OpalConsoleSkinnyEndPoint::AddCommands(PCLI & cli)
+{
+  cli.SetCommand("sccp server", PCREATE_NOTIFIER(CmdServer), "Set skinny server", "[ <host> ]");
+}
+#endif // P_CLI
+#endif // OPAL_SKINNY
+
+
+/////////////////////////////////////////////////////////////////////////////
+
 #if OPAL_LID
 OpalConsoleLineEndPoint::OpalConsoleLineEndPoint(OpalConsoleManager & manager)
-  : OpalLineEndPoint(manager)
-  , OpalConsoleEndPoint(manager)
+: OpalLineEndPoint(manager)
+, OpalConsoleEndPoint(manager)
 {
 }
 
@@ -561,9 +622,9 @@ OpalConsoleLineEndPoint::OpalConsoleLineEndPoint(OpalConsoleManager & manager)
 void OpalConsoleLineEndPoint::GetArgumentSpec(ostream & strm) const
 {
   strm << "[PSTN options:]"
-          "-no-lid.           Disable Line Interface Devices\n"
-          "L-lines:           Set Line Interface Devices.\n"
-          "-country:          Select country to use for LID (eg \"US\", \"au\" or \"+61\").\n";
+    "-no-lid.           Disable Line Interface Devices\n"
+    "L-lines:           Set Line Interface Devices.\n"
+    "-country:          Select country to use for LID (eg \"US\", \"au\" or \"+61\").\n";
 }
 
 
@@ -578,7 +639,7 @@ bool OpalConsoleLineEndPoint::Initialise(PArgList & args, bool verbose, const PS
       output << "PSTN disabled.\n";
     return true;
   }
-    
+
   if (!args.HasOption("lines")) {
     output << "No PSTN lines supplied.\n";
     return true;
@@ -617,8 +678,8 @@ void OpalConsoleLineEndPoint::CmdCountry(PCLI::Arguments & args, P_INT_PTR)
 void OpalConsoleLineEndPoint::AddCommands(PCLI & cli)
 {
   cli.SetCommand("pstn country", PCREATE_NOTIFIER(CmdCountry),
-                  "Set country code or name",
-                  "[ <name> ]");
+                 "Set country code or name",
+                 "[ <name> ]");
 }
 #endif // P_CLI
 #endif // OPAL_LID

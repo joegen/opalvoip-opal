@@ -1136,6 +1136,24 @@ class OpalTransportTCP : public OpalTransportIP
     );
   //@}
 
+    /** Set PDU length format.
+        Zero indicates TPKT format (default)
+        Negative number is number of little endian bytes.
+        Positive number is number of big endian bytes.
+
+        off is added to the length after the above is read.
+
+        Examples:
+        16 bit big endian length header which include the length itself, would be:
+           2, -2 -> 00 05 AA BB CC
+        32 bit little endian length header would be:
+           -4, 0 -> 03 00 00 00 AA BB CC
+      */
+    void SetPDULengthFormat(int fmt,int off)
+    {
+      m_pduLengthFormat = fmt;
+      m_pduLengthOffset = off;
+    }
 
   protected:
     /**Get the prefix for this transports protocol type.
@@ -1143,6 +1161,9 @@ class OpalTransportTCP : public OpalTransportIP
     virtual const PCaselessString & GetProtoPrefix() const;
 
     bool OnConnectedSocket(PTCPSocket * socket);
+
+    int  m_pduLengthFormat;
+    int  m_pduLengthOffset;
 };
 
 
