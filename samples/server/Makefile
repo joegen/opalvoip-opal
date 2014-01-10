@@ -15,11 +15,11 @@
 # the License for the specific language governing rights and limitations
 # under the License.
 #
-# The Original Code is Portable Windows Library.
+# The Original Code is Open Phone Abstraction Library.
 #
 # The Initial Developer of the Original Code is Equivalence Pty. Ltd.
 #
-# Contributor(s): ______________________________________.
+# Contributor(s): Vox Lucida Pty. Ltd.
 #
 # $Revision$
 # $Author$
@@ -27,7 +27,7 @@
 #
 
 PROG	= opalsrv
-SOURCES	:= main.cxx custom.cxx gkserv.cxx
+SOURCES	:= main.cxx custom.cxx h323serv.cxx sipserv.cxx status.cxx cdr.cxx
 
 ifdef OPALDIR
   include $(OPALDIR)/make/opal.mak

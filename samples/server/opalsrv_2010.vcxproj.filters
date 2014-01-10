@@ -18,7 +18,16 @@
     <ClCompile Include="custom.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="gkserv.cxx">
+    <ClCompile Include="h323serv.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="sipserv.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cdr.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="status.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="main.cxx">
