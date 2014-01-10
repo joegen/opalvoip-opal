@@ -480,24 +480,31 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
   if (!IsEstablished() && !extra.GetBoolean(OPAL_OPT_FORWARD_REFER))
     return ForwardCall(remoteParty);
 
-  PTRACE(3, "SIP\tTransfering " << *this << " to " << remoteParty);
-
   // Tell the REFER processing UA if it should suppress NOTIFYs about the REFER processing.
   // If we want to get NOTIFYs we have to clear the old connection on the progress message
   // where the connection is transfered. See OnTransferNotify().
   bool referSub = extra.GetBoolean(OPAL_OPT_REFER_SUB, m_stringOptions.GetBoolean(OPAL_OPT_REFER_SUB, true));
 
-  PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(url.GetHostName(), PSafeReadOnly);
-  if (call == NULL) {
+  // Check for valid RFC2396 scheme
+  if (remoteParty.FindRegEx("^[a-zA-Z][a-zA-Z0-9+.-]") == 0) {
+    PTRACE(3, "SIP\tBlind transfer of " << *this << " to " << remoteParty);
     SIPRefer * referTransaction = new SIPRefer(*this, remoteParty, m_dialog.GetLocalURI(), referSub);
     m_referInProgress = referTransaction->Start();
     return m_referInProgress;
+  }
+
+  PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(url.GetHostName(), PSafeReadOnly);
+  if (call == NULL) {
+    PTRACE(2, "SIP\tRemote party \"" << remoteParty << "\" must be valid call token or URI.");
+    return false;
   }
 
   if (call == &ownerCall) {
     PTRACE(2, "SIP\tCannot transfer connection to itself: " << *this);
     return false;
   }
+
+  PTRACE(3, "SIP\tConsultation transfer of " << *this << " to " << remoteParty);
 
   for (PSafePtr<OpalConnection> connection = call->GetConnection(0); connection != NULL; ++connection) {
     PSafePtr<SIPConnection> sip = PSafePtrCast<OpalConnection, SIPConnection>(connection);
