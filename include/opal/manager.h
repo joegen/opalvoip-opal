@@ -623,6 +623,10 @@ class OpalManager : public PObject
                  1234*10*0*1*1 becomes 1234\@10.0.1.1 and
                  1234*10*0*1*1*1722 becomes 1234\@10.0.1.1:1722.
 
+         <cu>    Copy the "user" part of the "a_party" string. This is
+                 essentially the component after the : and before the '@', or
+                 the whole "b_party" string if these are not present.
+
 
        Returns true if an entry was added.
       */

@@ -875,7 +875,7 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
 
   // Use a routing algorithm to figure out who the B-Party is, and make second connection
   PStringSet routesTried;
-  return OnRouteConnection(routesTried, connection.GetLocalPartyURL(), destination, call, options, &mergedOptions);
+  return OnRouteConnection(routesTried, connection.GetRemotePartyURL(), destination, call, options, &mergedOptions);
 }
 
 
@@ -1696,6 +1696,8 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
     destination.Replace("<du>", user, true);
     ReplaceNDU(destination, "");
   }
+
+  destination.Replace("<cu>", a_party(a_party.Find(':') + 1, a_party.Find('@') - 1), true);
 
   destination.Replace("<dn>", digits, true);
   destination.Replace("<!dn>", b_party.Mid(nonDigitPos), true);
