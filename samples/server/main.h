@@ -1,9 +1,10 @@
 /*
  * main.h
  *
- * PWLib application header file for OPAL Server
+ * OPAL Server main header
  *
  * Copyright (c) 2003 Equivalence Pty. Ltd.
+ * Copyright (c) 2014 Vox Lucida Pty. Ltd.
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -15,11 +16,12 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Open Phone Abstraction Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
- * Contributor(s): ______________________________________.
+ * Contributor(s): Vox Lucida Pty. Ltd.
+ *                 BCS Global, Inc.
  *
  * $Revision$
  * $Author$
@@ -29,8 +31,121 @@
 #ifndef _OPALSRV_MAIN_H
 #define _OPALSRV_MAIN_H
 
+#include "precompile.h" // Really only here as Visual Studio editor syntax checking gets confused
 
 class MyManager;
+
+
+///////////////////////////////////////
+
+class CallDetailRecord
+{
+public:
+  CallDetailRecord();
+
+
+  P_DECLARE_ENUM(FieldCodes,
+    CallId,
+    StartTime,
+    ConnectTime,
+    EndTime,
+    CallState,
+    CallResult, // EndedByXXX text
+    OriginatorID,
+    OriginatorURI,
+    OriginatorSignalAddress,   // ip4:port or [ipv6]:port form
+    DialedNumber,
+    DestinationID,
+    DestinationURI,
+    DestinationSignalAddress,   // ip4:port or [ipv6]:port form
+    AudioCodec,
+    AudioOriginatorMediaAddress,   // ip4:port or [ipv6]:port form
+    AudioDestinationMediaAddress,   // ip4:port or [ipv6]:port form
+    VideoCodec,
+    VideoOriginatorMediaAddress,   // ip4:port or [ipv6]:port form
+    VideoDestinationMediaAddress,   // ip4:port or [ipv6]:port form
+    Bandwidth
+  );
+
+  P_DECLARE_ENUM(ActiveCallStates,
+    CallCompleted,
+    CallSetUp,
+    CallProceeding,
+    CallAlerting,
+    CallConnected,
+    CallEstablished
+  );
+
+  struct Media
+  {
+    Media() : m_closed(false) { }
+
+    OpalMediaFormat         m_Codec;
+    PIPSocketAddressAndPort m_OriginatorAddress;
+    PIPSocketAddressAndPort m_DestinationAddress;
+    bool                    m_closed;
+  };
+  typedef std::map<PString, Media> MediaMap;
+
+
+  Media GetAudio() const { return GetMedia(OpalMediaType::Audio()); }
+  Media GetVideo() const { return GetMedia(OpalMediaType::Video()); }
+  Media GetMedia(const OpalMediaType & mediaType) const;
+  PString ListMedia() const;
+
+  PString GetGUID() const { return m_GUID.AsString(); }
+  PString GetCallState() const;
+
+  void OutputText(ostream & strm, const PString & format) const;
+  void OutputSQL(PODBC::Row & row, PString const mapping[NumFieldCodes]) const;
+  void OutputSummaryHTML(PHTML & html) const;
+  void OutputDetailedHTML(PHTML & html) const;
+
+protected:
+  PGloballyUniqueID             m_GUID;
+  PTime                         m_StartTime;
+  PTime                         m_ConnectTime;
+  PTime                         m_EndTime;
+  ActiveCallStates              m_CallState;
+  OpalConnection::CallEndReason m_CallResult;
+  PString                       m_OriginatorID;
+  PString                       m_OriginatorURI;
+  PIPSocketAddressAndPort       m_OriginatorSignalAddress;
+  PString                       m_DialedNumber;
+  PString                       m_DestinationID;
+  PString                       m_DestinationURI;
+  PIPSocketAddressAndPort       m_DestinationSignalAddress;
+  uint64_t                      m_Bandwidth;
+  MediaMap                      m_media;
+};
+
+
+///////////////////////////////////////
+
+class MyCall : public OpalCall, public CallDetailRecord
+{
+  PCLASSINFO(MyCall, OpalCall);
+public:
+  MyCall(MyManager & manager);
+
+  // Callbacks from OPAL
+  virtual PBoolean OnSetUp(OpalConnection & connection);
+  virtual void OnProceeding(OpalConnection & connection);
+  virtual PBoolean OnAlerting(OpalConnection & connection);
+  virtual PBoolean OnConnected(OpalConnection & connection);
+  virtual void OnEstablishedCall();
+  virtual void OnCleared();
+
+  // Called by MyManager
+  void OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & patch);
+  void OnStopMediaPatch(OpalMediaPatch & patch);
+
+protected:
+  MyManager & m_manager;
+};
+
+
+///////////////////////////////////////
 
 #if OPAL_H323
 
@@ -57,6 +172,8 @@ class MyGatekeeperCall : public H323GatekeeperCall
 #endif
 };
 
+
+///////////////////////////////////////
 
 class MyGatekeeperServer : public H323GatekeeperServer
 {
@@ -131,6 +248,8 @@ class MyGatekeeperServer : public H323GatekeeperServer
 };
 
 
+///////////////////////////////////////
+
 class MyH323EndPoint : public H323ConsoleEndPoint
 {
     PCLASSINFO(MyH323EndPoint, H323ConsoleEndPoint);
@@ -150,6 +269,8 @@ class MyH323EndPoint : public H323ConsoleEndPoint
 #endif // OPAL_H323
 
 
+///////////////////////////////////////
+
 #if OPAL_SIP
 
 class MySIPEndPoint : public SIPConsoleEndPoint
@@ -167,6 +288,122 @@ protected:
 #endif // OPAL_SIP
 
 
+///////////////////////////////////////
+
+class BaseStatusPage : public PServiceHTTPString
+{
+    PCLASSINFO(BaseStatusPage, PServiceHTTPString);
+  public:
+    BaseStatusPage(MyManager & mgr, const PHTTPAuthority & auth, const char * name);
+
+    virtual PString LoadText(
+      PHTTPRequest & request    // Information on this request.
+      );
+
+    virtual PBoolean Post(
+      PHTTPRequest & request,
+      const PStringToString &,
+      PHTML & msg
+      );
+
+  protected:
+    virtual const char * GetTitle() const = 0;
+    virtual void CreateContent(PHTML & html, const PStringToString & query) const = 0;
+    virtual bool OnPostControl(const PStringToString & /*data*/, PHTML & /*msg*/)
+    {
+      return false;
+    }
+
+    MyManager & m_manager;
+};
+
+
+///////////////////////////////////////
+
+#if OPAL_H323 | OPAL_SIP
+
+class RegistrationStatusPage : public BaseStatusPage
+{
+    PCLASSINFO(RegistrationStatusPage, BaseStatusPage);
+  public:
+    RegistrationStatusPage(MyManager & mgr, const PHTTPAuthority & auth);
+
+  protected:
+    virtual const char * GetTitle() const;
+    virtual void CreateContent(PHTML & html, const PStringToString & query) const;
+
+    friend class PServiceMacro_H323RegistrationStatus;
+    friend class PServiceMacro_SIPRegistrationStatus;
+};
+
+#endif
+
+class CallStatusPage : public BaseStatusPage
+{
+    PCLASSINFO(CallStatusPage, BaseStatusPage);
+  public:
+    CallStatusPage(MyManager & mgr, const PHTTPAuthority & auth);
+
+  protected:
+    virtual const char * GetTitle() const;
+    virtual void CreateContent(PHTML & html, const PStringToString & query) const;
+    virtual bool OnPostControl(const PStringToString & data, PHTML & msg);
+
+    friend class PServiceMacro_CallStatus;
+};
+
+
+///////////////////////////////////////
+
+#if OPAL_H323
+
+class GkStatusPage : public BaseStatusPage
+{
+    PCLASSINFO(GkStatusPage, BaseStatusPage);
+  public:
+    GkStatusPage(MyManager & mgr, const PHTTPAuthority & auth);
+
+  protected:
+    virtual const char * GetTitle() const;
+    virtual void CreateContent(PHTML & html, const PStringToString & query) const;
+    virtual bool OnPostControl(const PStringToString & data, PHTML & msg);
+
+    MyGatekeeperServer & m_gkServer;
+
+    friend class PServiceMacro_EndPointStatus;
+};
+
+#endif // OPAL_H323
+
+
+///////////////////////////////////////
+
+class CDRListPage : public BaseStatusPage
+{
+  PCLASSINFO(CDRListPage, BaseStatusPage);
+public:
+  CDRListPage(MyManager & mgr, const PHTTPAuthority & auth);
+protected:
+  virtual const char * GetTitle() const;
+  virtual void CreateContent(PHTML & html, const PStringToString & query) const;
+};
+
+
+///////////////////////////////////////
+
+class CDRPage : public BaseStatusPage
+{
+    PCLASSINFO(CDRPage, BaseStatusPage);
+  public:
+    CDRPage(MyManager & mgr, const PHTTPAuthority & auth);
+  protected:
+    virtual const char * GetTitle() const;
+    virtual void CreateContent(PHTML & html, const PStringToString & query) const;
+};
+
+
+///////////////////////////////////////
+
 class MyManager : public OpalManagerCLI
 {
     PCLASSINFO(MyManager, OpalManagerCLI);
@@ -177,6 +414,8 @@ class MyManager : public OpalManagerCLI
     virtual void EndRun(bool interrupt);
 
     bool Configure(PConfig & cfg, PConfigPage * rsrc);
+    bool ConfigureCDR(PConfig & cfg, PConfigPage * rsrc);
+
 #if OPAL_PTLIB_SSL
     void ConfigureSecurity(
       OpalEndPoint * ep,
@@ -186,6 +425,8 @@ class MyManager : public OpalManagerCLI
       PConfigPage * rsrc
     );
 #endif
+
+    virtual OpalCall * CreateCall(void *);
 
     virtual MediaTransferMode GetMediaTransferMode(
       const OpalConnection & source,      ///<  Source connection
@@ -201,6 +442,10 @@ class MyManager : public OpalManagerCLI
       OpalConnection & connection,  ///< Connection patch is in
       OpalMediaPatch & patch        ///< Media patch being started
     );
+    virtual void OnStopMediaPatch(
+      OpalConnection & connection,
+      OpalMediaPatch & patch
+    );
 
 
     PString OnLoadCallStatus(const PString & htmlBlock);
@@ -214,18 +459,37 @@ class MyManager : public OpalManagerCLI
     MySIPEndPoint & GetSIPEndPoint() const { return *FindEndPointAs<MySIPEndPoint>(OPAL_PREFIX_SIP); }
 #endif
 
+    void DropCDR(const MyCall & call, bool final);
+
+    typedef std::list<CallDetailRecord> CDRList;
+    CDRList::const_iterator BeginCDR();
+    bool NotEndCDR(const CDRList::const_iterator & it);
+    bool FindCDR(const PString & guid, CallDetailRecord & cdr);
+
   protected:
     MediaTransferMode m_mediaTransferMode;
 
 #if OPAL_CAPI
-    bool               m_enableCAPI;
+    bool m_enableCAPI;
 #endif
+
 #if OPAL_SCRIPT
     PString m_scriptLanguage;
     PString m_scriptText;
 #endif
+
+    CDRList   m_cdrList;
+    size_t    m_cdrListMax;
+    PTextFile m_cdrTextFile;
+    PString   m_cdrFormat;
+    PString   m_cdrTable;
+    PString   m_cdrFieldNames[MyCall::NumFieldCodes];
+    PODBC     m_odbc;
+    PMutex    m_cdrMutex;
 };
 
+
+///////////////////////////////////////
 
 class MyProcess : public MyProcessAncestor
 {
@@ -241,86 +505,6 @@ class MyProcess : public MyProcessAncestor
   protected:
     MyManager m_manager;
 };
-
-
-class BaseStatusPage : public PServiceHTTPString
-{
-    PCLASSINFO(BaseStatusPage, PServiceHTTPString);
-  public:
-    BaseStatusPage(MyManager & mgr, PHTTPAuthority & auth, const char * name);
-
-    virtual PString LoadText(
-      PHTTPRequest & request    // Information on this request.
-    );
-
-    virtual PBoolean Post(
-      PHTTPRequest & request,
-      const PStringToString &,
-      PHTML & msg
-    );
-
-  protected:
-    virtual const char * GetTitle() const = 0;
-    virtual void CreateContent(PHTML & html) const = 0;
-    virtual bool OnPostControl(const PStringToString & data, PHTML & msg) = 0;
-
-    MyManager & m_manager;
-};
-
-
-#if OPAL_H323 | OPAL_SIP
-
-class RegistrationStatusPage : public BaseStatusPage
-{
-    PCLASSINFO(RegistrationStatusPage, BaseStatusPage);
-  public:
-    RegistrationStatusPage(MyManager & mgr, PHTTPAuthority & auth);
-
-  protected:
-    virtual const char * GetTitle() const;
-    virtual void CreateContent(PHTML & html) const;
-    virtual bool OnPostControl(const PStringToString & data, PHTML & msg);
-
-  friend class PServiceMacro_H323RegistrationStatus;
-  friend class PServiceMacro_SIPRegistrationStatus;
-};
-
-#endif
-
-class CallStatusPage : public BaseStatusPage
-{
-    PCLASSINFO(CallStatusPage, BaseStatusPage);
-  public:
-    CallStatusPage(MyManager & mgr, PHTTPAuthority & auth);
-
-  protected:
-    virtual const char * GetTitle() const;
-    virtual void CreateContent(PHTML & html) const;
-    virtual bool OnPostControl(const PStringToString & data, PHTML & msg);
-
-  friend class PServiceMacro_CallStatus;
-};
-
-
-#if OPAL_H323
-
-class GkStatusPage : public BaseStatusPage
-{
-    PCLASSINFO(GkStatusPage, BaseStatusPage);
-  public:
-    GkStatusPage(MyManager & gk, PHTTPAuthority & auth);
-
-  protected:
-    virtual const char * GetTitle() const;
-    virtual void CreateContent(PHTML & html) const;
-    virtual bool OnPostControl(const PStringToString & data, PHTML & msg);
-
-    MyGatekeeperServer & m_gkServer;
-
-  friend class PServiceMacro_EndPointStatus;
-};
-
-#endif // OPAL_H323
 
 
 #endif  // _OPALSRV_MAIN_H

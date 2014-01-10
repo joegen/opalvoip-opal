@@ -1,11 +1,10 @@
 /*
  * main.cxx
  *
- * PWLib application source file for OPAL Server
- *
- * Main program entry point.
+ * OPAL Server main program
  *
  * Copyright (c) 2003 Equivalence Pty. Ltd.
+ * Copyright (c) 2014 Vox Lucida Pty. Ltd.
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -17,11 +16,12 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Open Phone Abstraction Library.
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
- * Contributor(s): ______________________________________.
+ * Contributor(s): Vox Lucida Pty. Ltd.
+ *                 BCS Global, Inc.
  *
  * $Revision$
  * $Author$
@@ -70,24 +70,6 @@ static const char OverrideProductInfoKey[] = "Override Product Info";
 static const char VendorNameKey[] = "Product Vendor";
 static const char ProductNameKey[] = "Product Name";
 static const char ProductVersionKey[] = "Product Version";
-
-#if OPAL_SIP
-static const char SIPUsernameKey[] = "SIP User Name";
-static const char SIPPrackKey[] = "SIP Provisional Responses";
-static const char SIPProxyKey[] = "SIP Proxy URL";
-static const char SIPListenersKey[] = "SIP Interfaces";
-#if OPAL_PTLIB_SSL
-static const char SIPSignalingSecurityKey[] = "SIP Security";
-static const char SIPMediaCryptoSuitesKey[] = "SIP Crypto Suites";
-#endif
-
-#define REGISTRATIONS_SECTION "SIP Registrations"
-#define REGISTRATIONS_KEY "Registration"
-
-static const char SIPAddressofRecordKey[] = "Address of Record";
-static const char SIPAuthIDKey[] = "Auth ID";
-static const char SIPPasswordKey[] = "Password";
-#endif // OPAL_SIP
 
 #if OPAL_SKINNY
 static const char SkinnyServerKey[] = "SCCP Server";
@@ -304,6 +286,10 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   httpNameSpace.AddResource(gkStatusPage, PHTTPSpace::Overwrite);
 #endif // OPAL_H323
 
+  CDRListPage * cdrListPage = new CDRListPage(m_manager, authority);
+  httpNameSpace.AddResource(cdrListPage, PHTTPSpace::Overwrite);
+  httpNameSpace.AddResource(new CDRPage(m_manager, authority), PHTTPSpace::Overwrite);
+
   // Log file resource
   PHTTPFile * fullLog = NULL;
   PHTTPTailFile * tailLog = NULL;
@@ -329,16 +315,18 @@ PBoolean MyProcess::Initialise(const char * initMsg)
          << PHTML::Paragraph() << "<center>"
 
          << PHTML::HotLink(rsrc->GetHotLink()) << "System Parameters" << PHTML::HotLink()
-#if OPAL_H323 | OPAL_SIP
          << PHTML::Paragraph()
-         << PHTML::HotLink(registrationStatusPage->GetHotLink()) << "Registration Status" << PHTML::HotLink()
-#endif
-         << PHTML::BreakLine()
          << PHTML::HotLink(callStatusPage->GetHotLink()) << "Call Status" << PHTML::HotLink()
 #if OPAL_H323
          << PHTML::BreakLine()
          << PHTML::HotLink(gkStatusPage->GetHotLink()) << "Gatekeeper Status" << PHTML::HotLink()
 #endif // OPAL_H323
+#if OPAL_H323 | OPAL_SIP
+         << PHTML::BreakLine()
+         << PHTML::HotLink(registrationStatusPage->GetHotLink()) << "Registration Status" << PHTML::HotLink()
+#endif
+         << PHTML::Paragraph()
+         << PHTML::HotLink(cdrListPage->GetHotLink()) << "Call Detail Records" << PHTML::HotLink()
          << PHTML::Paragraph();
 
     if (logFile != NULL)
@@ -346,7 +334,8 @@ PBoolean MyProcess::Initialise(const char * initMsg)
            << PHTML::BreakLine()
            << PHTML::HotLink(tailLog->GetHotLink()) << "Tail Log File" << PHTML::HotLink()
            << PHTML::Paragraph();
- 
+
+
     html << PHTML::HRule()
          << GetCopyrightText()
          << PHTML::Body();
@@ -420,6 +409,7 @@ MyManager::MyManager()
 #if OPAL_CAPI
   , m_enableCAPI(true)
 #endif
+  , m_cdrListMax(100)
 {
   new OpalLocalEndPoint(*this, LoopbackPrefix);
   OpalMediaFormat::RegisterKnownMediaFormats(); // Make sure codecs are loaded
@@ -505,13 +495,13 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
   }
 
   SetMediaFormatMask(rsrc->AddStringArrayField(RemovedMediaKey, true, 25, GetMediaFormatMask(),
-    "Codecs to be prevented from being used.<p>"
-    "These are wildcards as in the above Preferred Media, with "
-    "the addition of preceding the expression with a '!' which "
-    "removes all formats <i>except</i> the indicated wildcard. "
-    "Also, the '@' character may also be used to indicate a "
-    "media type, e.g. <code>@video</code> removes all video "
-    "codecs."));
+                     "Codecs to be prevented from being used.<p>"
+                     "These are wildcards as in the above Preferred Media, with "
+                     "the addition of preceding the expression with a '!' which "
+                     "removes all formats <i>except</i> the indicated wildcard. "
+                     "Also, the '@' character may also be used to indicate a "
+                     "media type, e.g. <code>@video</code> removes all video "
+                     "codecs."));
 
   SetAudioJitterDelay(rsrc->AddIntegerField(MinJitterKey, 20, 2000, GetMinAudioJitterDelay(), "ms", "Minimum jitter buffer size"),
                       rsrc->AddIntegerField(MaxJitterKey, 20, 2000, GetMaxAudioJitterDelay(), "ms", "Maximum jitter buffer size"));
@@ -712,8 +702,13 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
   SetRouteTable(routes);
 
+  return ConfigureCDR(cfg, rsrc);
+}
 
-  return true;
+
+OpalCall * MyManager::CreateCall(void *)
+{
+  return new MyCall(*this);
 }
 
 
@@ -749,334 +744,16 @@ void MyManager::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & 
       SetMediaPassThrough(connection, connection, true, patch.GetSource().GetSessionID());
   }
 
+  dynamic_cast<MyCall &>(connection.GetCall()).OnStartMediaPatch(connection, patch);
   OpalManager::OnStartMediaPatch(connection, patch);
 }
 
 
-///////////////////////////////////////////////////////////////
-
-BaseStatusPage::BaseStatusPage(MyManager & mgr, PHTTPAuthority & auth, const char * name)
-  : PServiceHTTPString(name, PString::Empty(), "text/html; charset=UTF-8", auth)
-  , m_manager(mgr)
+void MyManager::OnStopMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
 {
+  dynamic_cast<MyCall &>(connection.GetCall()).OnStopMediaPatch(patch);
+  OpalManager::OnStopMediaPatch(connection, patch);
 }
 
-
-PString BaseStatusPage::LoadText(PHTTPRequest & request)
-{
-  if (string.IsEmpty()) {
-    PHTML html;
-    html << PHTML::Title(GetTitle())
-         << "<meta http-equiv=\"Refresh\" content=\"30\">\n"
-         << PHTML::Body()
-         << MyProcessAncestor::Current().GetPageGraphic()
-         << PHTML::Paragraph() << "<center>"
-
-         << PHTML::Form("POST");
-
-    CreateContent(html);
-
-    html << PHTML::Form()
-         << PHTML::HRule()
-
-         << MyProcessAncestor::Current().GetCopyrightText()
-         << PHTML::Body();
-    string = html;
-  }
-
-  return PServiceHTTPString::LoadText(request);
-}
-
-
-PBoolean BaseStatusPage::Post(PHTTPRequest & request,
-                              const PStringToString & data,
-                              PHTML & msg)
-{
-  PTRACE(2, "Main\tClear call POST received " << data);
-
-  msg << PHTML::Title() << "Accepted Control Command" << PHTML::Body()
-      << PHTML::Heading(1) << "Accepted Control Command" << PHTML::Heading(1);
-
-  if (!OnPostControl(data, msg))
-    msg << PHTML::Heading(2) << "No calls or endpoints!" << PHTML::Heading(2);
-
-  msg << PHTML::Paragraph()
-      << PHTML::HotLink(request.url.AsString()) << "Reload page" << PHTML::HotLink()
-      << "&nbsp;&nbsp;&nbsp;&nbsp;"
-      << PHTML::HotLink("/") << "Home page" << PHTML::HotLink();
-
-  PServiceHTML::ProcessMacros(request, msg, "html/status.html",
-                              PServiceHTML::LoadFromFile|PServiceHTML::NoSignatureForFile);
-  return TRUE;
-}
-
-
-///////////////////////////////////////////////////////////////
-
-#if OPAL_H323 | OPAL_SIP
-
-RegistrationStatusPage::RegistrationStatusPage(MyManager & mgr, PHTTPAuthority & auth)
-  : BaseStatusPage(mgr, auth, "RegistrationStatus")
-{
-}
-
-
-const char * RegistrationStatusPage::GetTitle() const
-{
-  return "OPAL Server Registration Status";
-}
-
-
-void RegistrationStatusPage::CreateContent(PHTML & html) const
-{
-#if OPAL_H323
-  html << PHTML::TableStart("border=1 cellpadding=5")
-       << PHTML::TableRow()
-       << PHTML::TableData("NOWRAP")
-       << "&nbsp;H.323&nbsp;Gatekeeper&nbsp;"
-       << PHTML::TableData("NOWRAP")
-       << "<!--#macro H323RegistrationStatus-->"
-       << PHTML::TableEnd();
-#endif
-#if OPAL_H323 | OPAL_SIP
-  html << PHTML::Paragraph();
-#endif
-#if OPAL_SIP
-  html << PHTML::TableStart("border=1 cellpadding=5")
-       << PHTML::TableRow()
-       << PHTML::TableHeader()
-       << "&nbsp;SIP&nbsp;Address&nbsp;of&nbsp;Record&nbsp;"
-       << PHTML::TableHeader()
-       << "&nbsp;Status&nbsp;"
-       << "<!--#macrostart SIPRegistrationStatus-->"
-         << PHTML::TableRow()
-         << PHTML::TableData("NOWRAP")
-         << "<!--#status AoR-->"
-         << PHTML::TableData("NOWRAP")
-         << "<!--#status State-->"
-       << "<!--#macroend SIPRegistrationStatus-->"
-       << PHTML::TableEnd();
-#endif
-}
-
-
-bool RegistrationStatusPage::OnPostControl(const PStringToString &, PHTML &)
-{
-  return false;
-}
-
-#if OPAL_H323
-PCREATE_SERVICE_MACRO(H323RegistrationStatus,resource,P_EMPTY)
-{
-  RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
-  if (PAssertNULL(status) == NULL)
-    return PString::Empty();
-
-  H323Gatekeeper * gk = status->m_manager.GetH323EndPoint().GetGatekeeper();
-  if (gk == NULL)
-    return "None";
-
-  if (gk->IsRegistered())
-    return "Registered";
-  
-  PStringStream strm;
-  strm << "Failed: " << gk->GetRegistrationFailReason();
-  return strm;
-}
-#endif
-
-#if OPAL_SIP
-PCREATE_SERVICE_MACRO_BLOCK(SIPRegistrationStatus,resource,P_EMPTY,htmlBlock)
-{
-  RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
-  if (PAssertNULL(status) == NULL)
-    return PString::Empty();
-
-  PString substitution;
-
-  SIPEndPoint & sip = status->m_manager.GetSIPEndPoint();
-  PStringList registrations = sip.GetRegistrations(true);
-  for (PStringList::iterator it = registrations.begin(); it != registrations.end(); ++it) {
-    // make a copy of the repeating html chunk
-    PString insert = htmlBlock;
-
-    PServiceHTML::SpliceMacro(insert, "status AoR",   *it);
-    PServiceHTML::SpliceMacro(insert, "status State",
-          sip.IsRegistered(*it) ? "Registered" : (sip.IsRegistered(*it, true) ? "Offline" : "Failed"));
-
-    // Then put it into the page, moving insertion point along after it.
-    substitution += insert;
-  }
-
-  return substitution;
-}
-#endif
-
-
-#endif
-
-///////////////////////////////////////////////////////////////
-
-CallStatusPage::CallStatusPage(MyManager & mgr, PHTTPAuthority & auth)
-  : BaseStatusPage(mgr, auth, "CallStatus")
-{
-}
-
-
-const char * CallStatusPage::GetTitle() const
-{
-  return "OPAL Server Call Status";
-}
-
-
-void CallStatusPage::CreateContent(PHTML & html) const
-{
-  html << PHTML::TableStart("border=1 cellpadding=3")
-       << PHTML::TableRow()
-       << PHTML::TableHeader()
-       << "&nbsp;A&nbsp;Party&nbsp;"
-       << PHTML::TableHeader()
-       << "&nbsp;B&nbsp;Party&nbsp;"
-       << PHTML::TableHeader()
-       << "&nbsp;Duration&nbsp;"
-       << "<!--#macrostart CallStatus-->"
-         << PHTML::TableRow()
-         << PHTML::TableData("NOWRAP")
-         << "<!--#status A-Party-->"
-         << PHTML::TableData("NOWRAP")
-         << "<!--#status B-Party-->"
-         << PHTML::TableData()
-         << "<!--#status Duration-->"
-         << PHTML::TableData()
-         << PHTML::SubmitButton("Clear", "!--#status Token--")
-       << "<!--#macroend CallStatus-->"
-       << PHTML::TableEnd();
-}
-
-
-bool CallStatusPage::OnPostControl(const PStringToString & data, PHTML & msg)
-{
-  bool gotOne = false;
-
-  for (PStringToString::const_iterator it = data.begin(); it != data.end(); ++it) {
-    PString key = it->first;
-    PString value = it->second;
-    if (value == "Clear") {
-      PSafePtr<OpalCall> call = m_manager.FindCallWithLock(key, PSafeReference);
-      if (call != NULL) {
-        msg << PHTML::Heading(2) << "Clearing call " << *call << PHTML::Heading(2);
-        call->Clear();
-        gotOne = true;
-      }
-    }
-  }
-
-  return gotOne;
-}
-
-
-PCREATE_SERVICE_MACRO_BLOCK(CallStatus,resource,P_EMPTY,htmlBlock)
-{
-  CallStatusPage * status = dynamic_cast<CallStatusPage *>(resource.m_resource);
-  if (PAssertNULL(status) == NULL)
-    return PString::Empty();
-
-  PString substitution;
-
-  PArray<PString> calls = status->m_manager.GetAllCalls();
-  for (PINDEX i = 0; i < calls.GetSize(); ++i) {
-    PSafePtr<OpalCall> call = status->m_manager.FindCallWithLock(calls[i], PSafeReadOnly);
-    if (call == NULL)
-      continue;
-
-    // make a copy of the repeating html chunk
-    PString insert = htmlBlock;
-
-    PServiceHTML::SpliceMacro(insert, "status Token",    call->GetToken());
-    PServiceHTML::SpliceMacro(insert, "status A-Party",  call->GetPartyA());
-    PServiceHTML::SpliceMacro(insert, "status B-Party",  call->GetPartyB());
-
-    PStringStream duration;
-    duration.precision(0);
-    if (call->GetEstablishedTime().IsValid())
-      duration << call->GetEstablishedTime().GetElapsed();
-    else
-      duration << '(' << call->GetStartTime().GetElapsed() << ')';
-    PServiceHTML::SpliceMacro(insert, "status Duration", duration);
-
-    // Then put it into the page, moving insertion point along after it.
-    substitution += insert;
-  }
-
-  return substitution;
-}
-
-
-#if OPAL_SIP
-
-MySIPEndPoint::MySIPEndPoint(MyManager & mgr)
-  : SIPConsoleEndPoint(mgr)
-  , m_manager(mgr)
-{
-}
-
-
-bool MySIPEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
-{
-  // Add SIP parameters
-  SetDefaultLocalPartyName(rsrc->AddStringField(SIPUsernameKey, 25, GetDefaultLocalPartyName(), "SIP local user name"));
-
-  if (!StartListeners(rsrc->AddStringArrayField(SIPListenersKey, false, 25, PStringArray(),
-    "Local network interfaces to listen for SIP, blank means all"))) {
-    PSYSTEMLOG(Error, "Could not open any SIP listeners!");
-  }
-
-  SIPConnection::PRACKMode prack = cfg.GetEnum(SIPPrackKey, GetDefaultPRACKMode());
-  static const char * const prackModes[] = { "Disabled", "Supported", "Required" };
-  rsrc->Add(new PHTTPRadioField(SIPPrackKey, PARRAYSIZE(prackModes), prackModes, prack,
-    "SIP provisional responses (100rel) handling."));
-  SetDefaultPRACKMode(prack);
-
-  SetProxy(rsrc->AddStringField(SIPProxyKey, 100, GetProxy().AsString(), "SIP outbound proxy IP/hostname", 1, 30));
-
-#if OPAL_PTLIB_SSL
-  m_manager.ConfigureSecurity(this, SIPSignalingSecurityKey, SIPMediaCryptoSuitesKey, cfg, rsrc);
-#endif
-
-  // Registrar
-  PString defaultSection = cfg.GetDefaultSection();
-  list<SIPRegister::Params> registrations;
-  PINDEX arraySize = cfg.GetInteger(REGISTRATIONS_SECTION, REGISTRATIONS_KEY" Array Size");
-  for (PINDEX i = 0; i < arraySize; i++) {
-    SIPRegister::Params registrar;
-    cfg.SetDefaultSection(psprintf(REGISTRATIONS_SECTION"\\"REGISTRATIONS_KEY" %u", i + 1));
-    registrar.m_addressOfRecord = cfg.GetString(SIPAddressofRecordKey);
-    registrar.m_authID = cfg.GetString(SIPAuthIDKey);
-    registrar.m_password = cfg.GetString(SIPPasswordKey);
-    if (!registrar.m_addressOfRecord.IsEmpty())
-      registrations.push_back(registrar);
-  }
-  cfg.SetDefaultSection(defaultSection);
-
-  PHTTPCompositeField * registrationsFields = new PHTTPCompositeField(
-                  REGISTRATIONS_SECTION"\\"REGISTRATIONS_KEY" %u\\", REGISTRATIONS_SECTION,
-                  "Registration of SIP username at domain/hostname/IP address");
-  registrationsFields->Append(new PHTTPStringField(SIPAddressofRecordKey, 0, NULL, NULL, 1, 40));
-  registrationsFields->Append(new PHTTPStringField(SIPAuthIDKey, 0, NULL, NULL, 1, 25));
-  registrationsFields->Append(new PHTTPPasswordField(SIPPasswordKey, 15));
-  rsrc->Add(new PHTTPFieldArray(registrationsFields, false));
-
-  for (list<SIPRegister::Params>::iterator it = registrations.begin(); it != registrations.end(); ++it) {
-    PString aor;
-    if (Register(*it, aor))
-      PSYSTEMLOG(Info, "Started register of " << aor);
-    else
-      PSYSTEMLOG(Error, "Could not register " << *it);
-  }
-
-  return true;
-}
-
-#endif // OPAL_SIP
 
 // End of File ///////////////////////////////////////////////////////////////

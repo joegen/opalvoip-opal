@@ -29,8 +29,12 @@
  */
 
 #include <ptlib.h>
+#include <ptclib/podbc.h>
 
 #include <opal/console_mgr.h>
+#include <opal/patch.h>
+#include <h323/gkclient.h>
+#include <h323/gkserver.h>
 
 #if OPAL_PTLIB_SSL
 #include <ptclib/shttpsvc.h>
@@ -39,16 +43,6 @@ typedef PSecureHTTPServiceProcess MyProcessAncestor;
 #include <ptclib/httpsvc.h>
 typedef PHTTPServiceProcess MyProcessAncestor;
 #endif
-
-#include <h323/h323.h>
-#include <h323/gkclient.h>
-#include <h323/gkserver.h>
-#include <sip/sip.h>
-#include <lids/lidep.h>
-#include <lids/capi_ep.h>
-#include <ep/ivr.h>
-#include <ep/opalmixer.h>
-#include <opal/patch.h>
 
 
 // End of File ///////////////////////////////////////////////////////////////
