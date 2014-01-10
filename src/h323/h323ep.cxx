@@ -509,7 +509,7 @@ bool H323EndPoint::InternalCreateGatekeeper(const H323TransportAddress & remoteA
       gatekeeper->SetPassword(GetGatekeeperPassword(), GetGatekeeperUsername());
       m_gatekeepers.Append(gatekeeper);
 
-      aliasSubset.RemoveAll();
+      aliasSubset = PStringList(); /// Don't use RemoveAll() which does it for all references
     }
   }
 
