@@ -415,6 +415,8 @@ PBoolean H323Connection::WriteSignalPDU(H323SignalPDU & pdu)
 
 void H323Connection::HandleSignallingChannel()
 {
+  PTRACE_CONTEXT_ID_PUSH_THREAD(this);
+
   PAssert(m_signallingChannel != NULL, PLogicError);
 
   PTRACE(3, "H225\tReading PDUs: callRef=" << callReference);
@@ -2791,7 +2793,6 @@ PBoolean H323Connection::HandleReceivedControlPDU(PBoolean readStatus, PPER_Stre
 
 PBoolean H323Connection::StartHandleControlChannel()
 {
-
   // Start the TCS and MSD operations on new H.245 channel.
   if (!StartControlNegotiations())
     return FALSE;
@@ -2823,6 +2824,7 @@ void H323Connection::EndHandleControlChannel()
 
 void H323Connection::HandleControlChannel()
 {
+  PTRACE_CONTEXT_ID_PUSH_THREAD(this);
 
   // If have started separate H.245 channel then don't tunnel any more
   h245Tunneling = FALSE;
