@@ -2301,6 +2301,7 @@ void SIPConnection::SendDelayedACK(bool force)
     for (OpalMediaTypeList::iterator mediaType = mediaTypes.begin(); mediaType != mediaTypes.end(); ++mediaType) {
       if (AwaitingMedia(*this, *mediaType, false) || AwaitingMedia(*this, *mediaType, true)) {
         PTRACE(4, "SIP\tDelayed ACK does not have both " << *mediaType << " channels yet");
+        m_delayedAckTimer = m_delayedAckTimeout;
         return;
       }
     }
