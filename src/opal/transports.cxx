@@ -48,6 +48,7 @@
 #include <opal_config.h>
 
 #include <ptclib/pnat.h>
+#include <ptclib/http.h>
 
 
 const PCaselessString & OpalTransportAddress::IpPrefix()  { static PConstCaselessString s("ip$" ); return s; }  // For backward compatibility with OpenH323
