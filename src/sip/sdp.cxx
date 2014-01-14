@@ -733,11 +733,6 @@ bool SDPMediaDescription::Decode(char key, const PString & value)
 
 bool SDPMediaDescription::PostDecode(const OpalMediaFormatList & mediaFormats)
 {
-  if (m_transportType != GetSDPTransportType()) {
-    PTRACE(2, "SDP\tMedia session transport " << m_transportType << " not compatible with " << GetSDPTransportType());
-    return false;
-  }
-
   unsigned bw = GetBandwidth(SDPSessionDescription::TransportIndependentBandwidthType());
   if (bw == UINT_MAX) {
     bw = GetBandwidth(SDPSessionDescription::ApplicationSpecificBandwidthType());
