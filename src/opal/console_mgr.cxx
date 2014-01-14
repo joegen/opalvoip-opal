@@ -1970,8 +1970,15 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
                     "[ <call-token> ]");
 #endif
 
-  m_cli->SetCommand("list codecs", PCREATE_NOTIFIER(CmdListCodecs),
+  m_cli->SetCommand("codec list", PCREATE_NOTIFIER(CmdCodecList),
                     "List available codecs");
+  m_cli->SetCommand("codec order", PCREATE_NOTIFIER(CmdCodecOrderMask),
+                    "Set codec selection order. Simple '*' character may be used for wildcard matching.",
+                    "[ -a ] [ <wildcard> ... ]", "a-add. Add to existing list");
+  m_cli->SetCommand("codec mask", PCREATE_NOTIFIER(CmdCodecOrderMask),
+                    "Set codec selection mask. Simple '*' character may be used for wildcard matching.",
+                    "[ -a ] [ <wildcard> ... ]", "a-add. Add to existing list");
+
   m_cli->SetCommand("delay", PCREATE_NOTIFIER(CmdDelay),
                     "Delay for the specified numebr of seconds",
                     "seconds");
@@ -2158,35 +2165,60 @@ void OpalManagerCLI::CmdStatistics(PCLI::Arguments & args, P_INT_PTR)
 #endif // PTRACING
 
 
-void OpalManagerCLI::CmdListCodecs(PCLI::Arguments & args, P_INT_PTR)
+void OpalManagerCLI::CmdCodecList(PCLI::Arguments & args, P_INT_PTR)
 {
   OpalMediaFormatList formats;
   OpalMediaFormat::GetAllRegisteredMediaFormats(formats);
 
   PCLI::Context & out = args.GetContext();
+  out << "Audio:\n";
   OpalMediaFormatList::iterator format;
   for (format = formats.begin(); format != formats.end(); ++format) {
     if (format->GetMediaType() == OpalMediaType::Audio() && format->IsTransportable())
-      out << *format << '\n';
+      out << "  " << *format << '\n';
   }
 
 #if OPAL_VIDEO
+  out << "Video:\n";
   for (format = formats.begin(); format != formats.end(); ++format) {
     if (format->GetMediaType() == OpalMediaType::Video() && format->IsTransportable())
-      out << *format << '\n';
+      out << "  " << *format << '\n';
   }
 #endif
 
+  out << "Other:\n";
   for (format = formats.begin(); format != formats.end(); ++format) {
     if (format->GetMediaType() != OpalMediaType::Audio() &&
 #if OPAL_VIDEO
         format->GetMediaType() != OpalMediaType::Video() &&
 #endif
         format->IsTransportable())
-      out << *format << '\n';
+        out << "  " << *format << " (" << format->GetMediaType() << ")\n";
   }
 
   out.flush();
+}
+
+
+void OpalManagerCLI::CmdCodecOrderMask(PCLI::Arguments & args, P_INT_PTR)
+{
+  bool mask = args.GetCommandName().Find("mask") != P_MAX_INDEX;
+  PStringArray formats = mask ? GetMediaFormatMask() : GetMediaFormatOrder();
+
+  if (args.GetCount() > 0) {
+    if (!args.HasOption('a'))
+      formats.RemoveAll();
+
+    for (PINDEX i = 0; i < args.GetCount(); ++i)
+      formats += args[i];
+
+    if (mask)
+      SetMediaFormatMask(formats);
+    else
+      SetMediaFormatOrder(formats);
+  }
+
+  args.GetContext() << "Codec " << (mask ? "Mask" : "Order") << ": " << setfill(',') << formats << endl;
 }
 
 
