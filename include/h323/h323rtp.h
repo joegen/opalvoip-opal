@@ -195,7 +195,7 @@ class H323_RTPChannel : public H323_RealTimeChannel
     );
 
   protected:
-    OpalMediaSession & m_session;
+    OpalMediaSession * m_session;
 };
 
 
