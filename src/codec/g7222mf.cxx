@@ -67,6 +67,7 @@ class OpalG7222Format : public OpalAudioFormatInternal
       OPAL_SET_MEDIA_OPTION_H245(FindOption(OpalAudioFormat::RxFramesPerPacketOption()), G7222_H245_MAXAL_SDUFRAMES_RX);
 
       option = FindOption(OpalAudioFormat::TxFramesPerPacketOption());
+      option->SetMerge(OpalMediaOption::MinMerge);
       OPAL_SET_MEDIA_OPTION_H245(option, G7222_H245_MAXAL_SDUFRAMES_TX);
 
       option = new OpalMediaOptionInteger(G7222ModeSetOptionName, true, OpalMediaOption::EqualMerge, G7222_MODE_SET_INITIAL_VALUE);
