@@ -683,36 +683,33 @@ void H323Connection::HandleTunnelPDU(H323SignalPDU * txPDU)
 }
 
 
-static PBoolean BuildFastStartList(const H323Channel & channel,
+static bool BuildFastStartList(const H323Channel & channel,
                                H225_ArrayOf_PASN_OctetString & array,
                                H323Channel::Directions reverseDirection)
 {
   H245_OpenLogicalChannel open;
-  const H323Capability & capability = channel.GetCapability();
 
   if (channel.GetDirection() != reverseDirection) {
-    if (!capability.OnSendingPDU(open.m_forwardLogicalChannelParameters.m_dataType))
+    if (!channel.OnSendingPDU(open))
       return false;
   }
   else {
-    if (!capability.OnSendingPDU(open.m_reverseLogicalChannelParameters.m_dataType))
+    open.IncludeOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters);
+    if (!channel.OnSendingPDU(open))
       return false;
 
+    open.m_reverseLogicalChannelParameters.m_dataType = open.m_forwardLogicalChannelParameters.m_dataType;
+    open.m_forwardLogicalChannelParameters.m_dataType.SetTag(H245_DataType::e_nullData);
     open.m_forwardLogicalChannelParameters.m_multiplexParameters.SetTag(
                 H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters::e_none);
-    open.m_forwardLogicalChannelParameters.m_dataType.SetTag(H245_DataType::e_nullData);
-    open.IncludeOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters);
   }
-
-  if (!channel.OnSendingPDU(open))
-    return false;
 
   PTRACE(4, "H225\tBuild fastStart:\n  " << setprecision(2) << open);
   PINDEX last = array.GetSize();
   array.SetSize(last+1);
   array[last].EncodeSubType(open);
 
-  PTRACE(3, "H225\tBuilt fastStart for " << capability);
+  PTRACE(3, "H225\tBuilt fastStart for " << channel << ' ' << channel.GetCapability());
   return true;
 }
 
@@ -1042,6 +1039,10 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
     if (!capabilityExchangeProcedure->HasReceivedCapabilities())
       remoteCapabilities.RemoveAll();
 
+    bool localCapsEmpty = localCapabilities.GetSize() == 0;
+    if (localCapsEmpty)
+      localCapabilities.AddAllCapabilities(0, 0, "*");
+
     // Extract capabilities from the fast start OpenLogicalChannel structures
     PINDEX i;
     for (i = 0; i < setup.m_fastStart.GetSize(); i++) {
@@ -1061,9 +1062,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
         }
         if (dataType != NULL) {
           H323Capability * capability = remoteCapabilities.FindCapability(*dataType);
-          if (capability == NULL &&
-                      !capabilityExchangeProcedure->HasReceivedCapabilities() &&
-                      (capability = localCapabilities.FindCapability(*dataType)) != NULL) {
+          if (capability == NULL && (capability = localCapabilities.FindCapability(*dataType)) != NULL) {
             // If we actually have the remote capabilities then the remote (very oddly)
             // had a fast connect entry it could not do. If we have not yet got a remote
             // cap table then build one using all possible caps.
@@ -1086,6 +1085,9 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
         PTRACE(1, "H225\tInvalid fast start PDU decode:\n  " << open);
       }
     }
+
+    if (localCapsEmpty)
+      localCapabilities.RemoveAll();
 
     PTRACE(3, "H225\tFound " << m_fastStartChannels.GetSize() << " fast start channels");
     PTRACE_IF(4, !capabilityExchangeProcedure->HasReceivedCapabilities(),
@@ -2369,6 +2371,9 @@ PBoolean H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString 
     m_fastStartState = FastStartDisabled;
     return false;
   }
+
+  // Assure capabilities are set to other connections media list (if not already)
+  OnSetLocalCapabilities();
 
   // See if we need to select our fast start channels
   if (m_fastStartState == FastStartResponse)
@@ -4708,8 +4713,12 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
 
   if (!channel->SetInitialBandwidth())
     errorCode = H245_OpenLogicalChannelReject_cause::e_insufficientBandwidth;
-  else if (channel->OnReceivedPDU(open, errorCode))
-    return channel;
+  else {
+    if (startingFast)
+      channel->SetBandwidthUsed(0); // Release as can prevent other fast connect OLC's from processing.
+    if (channel->OnReceivedPDU(open, errorCode))
+      return channel;
+  }
 
   PTRACE(1, "H323\tOnReceivedPDU gave error " << errorCode);
   delete channel;
