@@ -818,8 +818,13 @@ OpalTransport * OpalListenerWS::OnAccept(PTCPSocket * socket)
   PHTTPServer ws;
   ws.SetWebSocketNotifier("sip", PHTTPServer::WebSocketNotifier());
 
-  if (ws.Open(*socket) && ws.ProcessCommand())
-    return new OpalTransportWS(endpoint, socket);
+  if (ws.Open(*socket)) {
+    while (ws.ProcessCommand())
+      ;
+    ws.Detach();
+    if (socket->IsOpen())
+      return new OpalTransportWS(endpoint, socket);
+  }
 
   delete socket;
   return NULL;
