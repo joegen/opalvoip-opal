@@ -1419,6 +1419,7 @@ OpalTransportWS::OpalTransportWS(OpalEndPoint & endpoint, PIPSocket::Address bin
 OpalTransportWS::OpalTransportWS(OpalEndPoint & endpoint, PChannel * socket)
   : OpalTransportTCP(endpoint, new PWebSocket)
 {
+  OnConnectedSocket(dynamic_cast<PTCPSocket *>(socket));
   dynamic_cast<PWebSocket *>(m_channel)->Open(socket);
 }
 
