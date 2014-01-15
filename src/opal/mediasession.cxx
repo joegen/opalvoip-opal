@@ -417,6 +417,28 @@ const PCaselessString & OpalDummySession::GetSessionType() const
 }
 
 
+bool OpalDummySession::Open(const PString &, const OpalTransportAddress & remoteAddress, bool isMediaAddress)
+{
+  PSafePtr<OpalConnection> otherParty = m_connection.GetOtherPartyConnection();
+  if (otherParty != NULL) {
+    OpalTransportAddressArray transports;
+    if (otherParty->GetMediaTransportAddresses(m_connection, m_mediaType, transports)) {
+      switch (transports.GetSize()) {
+        case 2:
+          m_localTransportAddress[false] = transports[1]; // Control
+        case 1:
+          m_localTransportAddress[true] = transports[0]; // Media
+      }
+    }
+  }
+
+  PTRACE(5, "Media\tSession " << m_sessionId << ", dummy from media address " << GetLocalAddress()
+         << " to " << (isMediaAddress ? "media" : "control") << " address " << remoteAddress);
+
+  return SetRemoteAddress(remoteAddress, isMediaAddress);
+}
+
+
 OpalTransportAddress OpalDummySession::GetLocalAddress(bool isMediaAddress) const
 {
   return m_localTransportAddress[isMediaAddress];
@@ -431,7 +453,18 @@ OpalTransportAddress OpalDummySession::GetRemoteAddress(bool isMediaAddress) con
 
 bool OpalDummySession::SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress)
 {
-  m_remoteTransportAddress[isMediaAddress] = remoteAddress;
+  // Some code to keep the port if new one does not have it but old did.
+  PIPSocket::Address ip;
+  WORD port = 0;
+  if (m_remoteTransportAddress[isMediaAddress].GetIpAndPort(ip, port) && remoteAddress.GetIpAndPort(ip, port))
+    m_remoteTransportAddress[isMediaAddress] = OpalTransportAddress(ip, port, remoteAddress.GetProto());
+  else
+    m_remoteTransportAddress[isMediaAddress] = remoteAddress;
+
+  PTRACE(5, "Media\tSession " << m_sessionId << ", dummy remote "
+         << (isMediaAddress ? "media" : "control") << " address set to "
+         << m_remoteTransportAddress[isMediaAddress]);
+
   return true;
 }
 
