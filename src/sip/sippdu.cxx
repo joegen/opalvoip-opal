@@ -717,26 +717,41 @@ bool SIPURLList::FromString(const PString & str, SIPURL::UsageContext context, b
           ++pos;
       }
 
-      SIPURL uri = line(startURI, pos-1);
-      uri.Sanitise(context);
-
-      if (context == SIPURL::RegContactURI) {
-        double q = uri.GetFieldParameters().GetReal("q");
-        SIPURLList::iterator it = begin();
-        while (it != end() && it->GetFieldParameters().GetReal("q") >= q)
-          ++it;
-        insert(it, uri);
-      }
-      else if (reversed)
-        push_front(uri);
-      else
-        push_back(uri);
-
+      InternalFromString(line(startURI, pos-1), context, reversed);
       startURI = pos + 1;
     }
+
+    InternalFromString(line.Mid(startURI), context, reversed);
   }
 
   return !empty();
+}
+
+
+void SIPURLList::InternalFromString(const PString & str, SIPURL::UsageContext context, bool reversed)
+{
+  if (str.IsEmpty())
+    return;
+
+  SIPURL uri;
+  if (!uri.Parse(str)) {
+    PTRACE(2, "SIP\tCould not parse URI \"" << str << '"');
+    return;
+  }
+
+  uri.Sanitise(context);
+
+  if (context == SIPURL::RegContactURI) {
+    double q = uri.GetFieldParameters().GetReal("q");
+    SIPURLList::iterator it = begin();
+    while (it != end() && it->GetFieldParameters().GetReal("q") >= q)
+      ++it;
+    insert(it, uri);
+  }
+  else if (reversed)
+    push_front(uri);
+  else
+    push_back(uri);
 }
 
 
