@@ -156,11 +156,8 @@ static OpalTransportAddress ParseConnectAddress(const PStringArray & tokens, PIN
         }
         else {
           PIPSocket::Address ip(tokens[offset+2]);
-          if (ip.IsValid()) {
-            OpalTransportAddress address(ip, port, OpalTransportAddress::UdpPrefix());
-            PTRACE(4, "SDP\tParsed connection address " << address);
-            return address;
-          }
+          if (ip.IsValid())
+            return OpalTransportAddress(ip, port, OpalTransportAddress::UdpPrefix());
           PTRACE(1, "SDP\tConnect address has invalid IP address \"" << tokens[offset+2] << '"');
         }
       }
@@ -612,7 +609,8 @@ SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, c
   , m_mediaType(type)
 {
   PIPSocket::Address ip;
-  m_mediaAddress.GetIpAndPort(ip, m_port);
+  if (m_mediaAddress.GetIpAndPort(ip, m_port))
+    m_controlAddress = OpalTransportAddress(ip, m_port+1, OpalTransportAddress::UdpPrefix());
 }
 
 
@@ -669,11 +667,14 @@ bool SDPMediaDescription::Decode(const PStringArray & tokens)
       // Do next case
 
     default :
-      PTRACE(4, "SDP\tMedia session port=" << m_port);
-
       PIPSocket::Address ip;
-      if (m_mediaAddress.GetIpAddress(ip))
+      if (m_mediaAddress.GetIpAddress(ip)) {
         m_mediaAddress = OpalTransportAddress(ip, m_port, OpalTransportAddress::UdpPrefix());
+        PTRACE(4, "SDP\tSetting media connection address " << m_mediaAddress);
+      }
+      else {
+        PTRACE(4, "SDP\tMedia session port=" << m_port);
+      }
   }
 
   CreateSDPMediaFormats(tokens);
@@ -715,8 +716,10 @@ bool SDPMediaDescription::Decode(char key, const PString & value)
       break;
 
     case 'c' : // connection information - optional if included at session-level
-      if (m_port != 0)
+      if (m_port != 0) {
         m_mediaAddress = ParseConnectAddress(value, m_port);
+        PTRACE_IF(4, !m_mediaAddress.IsEmpty(), "SDP\tParsed media connection address " << m_mediaAddress);
+      }
       break;
 
     case 'a' : // zero or more media attribute lines
@@ -1228,8 +1231,10 @@ bool SDPRTPAVPMediaDescription::Decode(const PStringArray & tokens)
     return false;
 
   PIPSocket::Address ip;
-  if (m_mediaAddress.GetIpAddress(ip))
+  if (m_mediaAddress.GetIpAddress(ip)) {
     m_controlAddress = OpalTransportAddress(ip, m_port+1, OpalTransportAddress::UdpPrefix());
+    PTRACE(4, "SDP\tSetting rtcp connection address " << m_controlAddress);
+  }
 
   m_enableFeedback = m_transportType.Find("AVPF") != P_MAX_INDEX;
   return true;
@@ -1394,6 +1399,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
 
   if (attr *= "rtcp") {
     m_controlAddress = ParseConnectAddress(value.Mid(value.Find(' ')+1), (WORD)value.AsUnsigned());
+    PTRACE_IF(4, !m_controlAddress.IsEmpty(), "SDP\tParsed rtcp connection address " << m_controlAddress);
     return;
   }
 
@@ -2103,6 +2109,7 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
 
         case 'c' : // connection information - not required if included in all media
           defaultConnectAddress = ParseConnectAddress(value);
+          PTRACE_IF(4, !defaultConnectAddress.IsEmpty(), "SDP\tParsed default connection address " << defaultConnectAddress);
           break;
 
         case 't' : // time the session is active (mandatory)
@@ -2196,6 +2203,7 @@ void SDPSessionDescription::ParseOwner(const PString & str)
     ownerSessionId   = tokens[1].AsUnsigned();
     ownerVersion     = tokens[2].AsUnsigned();
     ownerAddress = defaultConnectAddress = ParseConnectAddress(tokens, 3);
+    PTRACE_IF(4, !ownerAddress.IsEmpty(), "SDP\tParsed owner connection address " << ownerAddress);
   }
 }
 

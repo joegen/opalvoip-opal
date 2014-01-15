@@ -2174,8 +2174,7 @@ class H323Connection : public OpalRTPConnection
 
     bool       mustSendDRQ;
     bool       mediaWaitForConnect;
-    bool       transmitterSidePaused;
-    bool       remoteTransmitPaused;
+    bool       m_holdToRemote;
     bool       earlyStart;
     PString    t38ModeChangeCapabilities;
     PSyncPoint digitsWaitFlag;
@@ -2184,6 +2183,13 @@ class H323Connection : public OpalRTPConnection
     PSyncPoint endSessionReceived;
     PTimer     enforcedDurationLimit;
     bool       isConsultationTransfer;
+
+    P_DECLARE_TRACED_ENUM(RemoteHoldStates,
+      eOffHoldFromRemote,
+      eOnHoldFromRemote,
+      eRetrieveFromRemote
+    );
+    RemoteHoldStates m_holdFromRemote;
 
     ConferenceGoal m_conferenceGoal;
 

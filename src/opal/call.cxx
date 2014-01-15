@@ -529,11 +529,6 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
   }
 #endif
 
-  if (!transfer && IsOnHold()) {
-    PTRACE(3, "Call\tOpenSourceMediaStreams (call on hold)" << traceText);
-    return false;
-  }
-
   // Check if already done
   OpalMediaStreamPtr sinkStream;
   OpalMediaStreamPtr sourceStream = connection.GetMediaStream(sessionID, true);
@@ -819,8 +814,12 @@ void OpalCall::OnHold(OpalConnection & connection, bool fromRemote, bool onHold)
   else {
     m_handlingHold = true;
     PSafePtr<OpalConnection> otherConnection;
-    while (EnumerateConnections(otherConnection, PSafeReadWrite, &connection))
-      otherConnection->OnHold(fromRemote, onHold);
+    while (EnumerateConnections(otherConnection, PSafeReadWrite, &connection)) {
+      if (!otherConnection->IsNetworkConnection())
+        otherConnection->OnHold(fromRemote, onHold);
+      else if (fromRemote)
+        otherConnection->HoldRemote(onHold);
+    }
     m_handlingHold = false;
   }
 }

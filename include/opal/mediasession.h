@@ -322,6 +322,7 @@ class OpalDummySession : public OpalMediaSession
     OpalDummySession(const Init & init, const OpalTransportAddressArray & transports = OpalTransportAddressArray());
     static const PCaselessString & SessionType();
     virtual const PCaselessString & GetSessionType() const;
+    virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool isMediaAddress);
     virtual OpalTransportAddress GetLocalAddress(bool isMediaAddress = true) const;
     virtual OpalTransportAddress GetRemoteAddress(bool isMediaAddress = true) const;
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress = true);

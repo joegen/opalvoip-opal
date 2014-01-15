@@ -119,12 +119,12 @@ H323Connection::H323Connection(OpalCall & call,
   , m_forceSymmetricTCS(ep.IsForcedSymmetricTCS())
   , mustSendDRQ(false)
   , mediaWaitForConnect(false)
-  , transmitterSidePaused(false)
-  , remoteTransmitPaused(false)
+  , m_holdToRemote(false)
   , earlyStart(false)
   , endSessionSent(false)
   , endSessionNeeded(false)
   , isConsultationTransfer(false)
+  , m_holdFromRemote(eOffHoldFromRemote)
 #if OPAL_H450
   , isCallIntrusion(false)
   , callIntrusionProtectionLevel(endpoint.GetCallIntrusionProtectionLevel())
@@ -2213,8 +2213,28 @@ PBoolean H323Connection::SetConnected()
 
   H225_Connect_UUIE & connect = connectPDU->m_h323_uu_pdu.m_h323_message_body;
 
-  // Now ask the application to select which channels to start
-  if (SendFastStartAcknowledge(connect.m_fastStart))
+  // Reply fast connect, make sure same as previously sent ALERTING or PROGRESS if present
+  const H225_ArrayOf_PASN_OctetString * fastStart = NULL;
+
+  if (alertingPDU != NULL) {
+    const H225_Alerting_UUIE & alerting = alertingPDU->m_h323_uu_pdu.m_h323_message_body;
+    if (alerting.m_fastStart.GetSize() > 0)
+      fastStart = &alerting.m_fastStart;
+  }
+  if (progressPDU != NULL) {
+    const H225_Progress_UUIE & progress = progressPDU->m_h323_uu_pdu.m_h323_message_body;
+    if (progress.m_fastStart.GetSize() > 0)
+      fastStart = &progress.m_fastStart;
+  }
+
+  if (fastStart != NULL)
+    connect.m_fastStart = *fastStart;
+  else {
+    // Not done yey, ask the application to select which channels to start
+    SendFastStartAcknowledge(connect.m_fastStart);
+  }
+
+  if (connect.m_fastStart.GetSize() > 0)
     connect.IncludeOptionalField(H225_Connect_UUIE::e_fastStart);
 
   // See if aborted call
@@ -3474,10 +3494,10 @@ PBoolean H323Connection::IsOnHold(bool fromRemote) const
 {
 #if OPAL_H450
   // Yes this looks around the wrong way, it isn't!
-  return fromRemote ? (transmitterSidePaused || h4504handler->GetState() == H4504Handler::e_ch_NE_Held)
-                    : (remoteTransmitPaused || h4504handler->GetState() == H4504Handler::e_ch_RE_Held);
+  return fromRemote ? (m_holdFromRemote != eOffHoldFromRemote || h4504handler->GetState() == H4504Handler::e_ch_NE_Held)
+                    : (m_holdToRemote || h4504handler->GetState() == H4504Handler::e_ch_RE_Held);
 #else
-  return fromRemote ? transmitterSidePaused : remoteTransmitPaused;
+  return fromRemote ? m_holdFromRemote != eOffHoldFromRemote : m_holdToRemote;
 #endif
 }
 
@@ -3659,6 +3679,10 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
 
   if (remoteCaps.GetSize() == 0) {
     PTRACE(3, "H323\tReceived empty CapabilitySet, shutting down transmitters.");
+    if (m_holdFromRemote != eOnHoldFromRemote) {
+      m_holdFromRemote = eOnHoldFromRemote;
+      OnHold(true, true);
+    }
     // Received empty TCS, so close all transmit channels
     for (H245LogicalChannelDict::iterator it  = logicalChannels->GetChannels().begin();
                                           it != logicalChannels->GetChannels().end(); ++it) {
@@ -3667,16 +3691,12 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
       if (channel != NULL && !channel->GetNumber().IsFromRemote())
         negChannel.Close();
     }
-    if (!transmitterSidePaused) {
-      transmitterSidePaused = true;
-      OnHold(true, true);
-    }
   }
   else {
     /* Received non-empty TCS, if was in paused state or this is the first TCS
        received so we should kill the fake table created by fast start kill
        the remote capabilities table so Merge() becomes a simple assignment */
-    if (transmitterSidePaused || !capabilityExchangeProcedure->HasReceivedCapabilities())
+    if (m_holdFromRemote == eOnHoldFromRemote || !capabilityExchangeProcedure->HasReceivedCapabilities())
       remoteCapabilities.RemoveAll();
 
     PINDEX previousCaps = remoteCapabilities.GetSize();
@@ -3684,11 +3704,9 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
     if (!remoteCapabilities.Merge(remoteCaps))
       return false;
 
-    if (transmitterSidePaused) {
+    if (m_holdFromRemote == eOnHoldFromRemote) {
       PTRACE(3, "H323\tReceived CapabilitySet while paused, re-starting transmitters.");
-      OnHold(true, false);
-      transmitterSidePaused = false;
-      connectionState = HasExecutedSignalConnect;
+      m_holdFromRemote = eRetrieveFromRemote;
       capabilityExchangeProcedure->Start(true);
       masterSlaveDeterminationProcedure->Start(true);
     }
@@ -3715,7 +3733,7 @@ bool H323Connection::SendCapabilitySet(PBoolean empty)
   if (!capabilityExchangeProcedure->Start(true, empty))
     return false;
 
-  remoteTransmitPaused = empty;
+  m_holdToRemote = empty;
   return true;
 }
 
@@ -3888,40 +3906,35 @@ void H323Connection::InternalEstablishedConnectionCheck()
                         capabilityExchangeProcedure->HasReceivedCapabilities();
 
   PTRACE(3, "H323\tInternalEstablishedConnectionCheck: "
-            "connectionState=" << connectionState << " "
-            "m_fastStartState=" << m_fastStartState << " "
+            "connectionState=" << connectionState << ", "
+            "m_fastStartState=" << m_fastStartState << ", "
+            "m_holdFromRemote=" << m_holdFromRemote << ", "
             "H.245 is " << (h245_available ? "ready" : "unavailable"));
-
-  if (h245_available)
-    endSessionNeeded = true;
 
   // Check for if all the 245 conditions are met so can start up logical
   // channels and complete the connection establishment.
-  if (m_fastStartState != FastStartAcknowledged) {
-    if (!h245_available || transmitterSidePaused)
-      return;
+  if (h245_available) {
+    endSessionNeeded = true;
 
-    // If we are early starting, start channels as soon as possible instead of
-    // waiting for connect PDU
-    if (earlyStart && IsH245Master() && FindChannel(H323Capability::DefaultAudioSessionID, false) == NULL)
-      OnSelectLogicalChannels();
-  }
+    H323Channel * chan = logicalChannels->FindChannelBySession(H323Capability::DefaultAudioSessionID, false);
+    if (chan == NULL)
+      chan = logicalChannels->FindChannelBySession(H323Capability::DefaultVideoSessionID, false);
+    if (chan != NULL) {
+      /* Check if we have just been connected, or have come out of a
+         transmitter side paused, or we are "early starting" , that is media
+         over H.245 before CONNECT */
+      if (  m_holdFromRemote == eRetrieveFromRemote ||
+            connectionState == HasExecutedSignalConnect ||
+           (earlyStart && m_fastStartState != FastStartAcknowledged && IsH245Master()))
+        OnSelectLogicalChannels(); // Start some media
 
-#if 0
-  if (h245_available && startT120) {
-    if (remoteCapabilities.FindCapability("T.120") != NULL) {
-      H323Capability * capability = localCapabilities.FindCapability("T.120");
-      if (capability != NULL)
-        OpenLogicalChannel(*capability, 3, H323Channel::IsBidirectional);
+      // Delay handling of off hold until we finish redoing TCS, MSD & OLC.
+      if (m_holdFromRemote == eRetrieveFromRemote && logicalChannels->GetChannels()[chan->GetNumber()].IsEstablished()) {
+        m_holdFromRemote = eOffHoldFromRemote;
+        OnHold(true, false);
+      }
     }
-    startT120 = false;
   }
-#endif
-
-  // Check if we have just been connected, or have come out of a transmitter side
-  // paused, and have not already got an audio transmitter running via fast connect
-  if (connectionState == HasExecutedSignalConnect && FindChannel(H323Capability::DefaultAudioSessionID, false) == NULL)
-    OnSelectLogicalChannels(); // Start some media
 
   switch (GetPhase()) {
     case SetUpPhase :
