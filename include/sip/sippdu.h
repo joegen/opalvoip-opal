@@ -252,6 +252,9 @@ class SIPURLList : public std::list<SIPURL>
     PString ToString() const;
     SIPURL FindCompatible(const OpalTransportAddress & addr PTRACE_PARAM(, const char * listType)) const;
     friend ostream & operator<<(ostream & strm, const SIPURLList & urls);
+
+  protected:
+    void InternalFromString(const PString & str, SIPURL::UsageContext context, bool reversed);
 };
 
 
