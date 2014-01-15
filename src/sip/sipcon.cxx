@@ -689,12 +689,8 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
   }
 
   // Set single port  or disjoint RTCP port, must be done before Open()
-  if (!mediaDescription.GetControlAddress().IsEmpty()) {
-    PTRACE(3, "SIP\tSetting "
-           << (mediaDescription.GetControlAddress() == remoteMediaAddress ? "single" : "non-contiguous")
-           << " port mode on RTP session " << sessionId << " for media type " << mediaType);
+  if (!mediaDescription.GetControlAddress().IsEmpty())
     session->SetRemoteAddress(mediaDescription.GetControlAddress(), false);
-  }
 
   if (!session->Open(GetInterface(), remoteMediaAddress, true)) {
     ReleaseMediaSession(sessionId);
@@ -3559,7 +3555,7 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
 #endif
                                            ) && (sendStream = GetMediaStream(sessionId, false)) != NULL)
         sendStream->InternalSetPaused(sendDisabled, false, false);
-      else if (!sendDisabled)
+      else if (!sendDisabled && !otherParty->IsOnHold(true))
         SendReINVITE(PTRACE_PARAM("close after tx open fail"));
     }
   }

@@ -334,7 +334,8 @@ PBoolean OpalConnection::IsOnHold(bool /*fromRemote*/) const
 
 void OpalConnection::OnHold(bool fromRemote, bool onHold)
 {
-  PTRACE(4, "OpalCon\tOnHold " << *this);
+  PTRACE(4, "OpalCon\tOnHold: " << (onHold ? "on" : "off") << " hold, "
+         << (fromRemote ? "from" : "to") << " remote, " << *this);
   endpoint.OnHold(*this, fromRemote, onHold);
 }
 
