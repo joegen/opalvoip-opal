@@ -1047,3 +1047,13 @@ void OpalPassiveMediaPatch::Start()
   OnStartMediaPatch();
 }
 
+
+void OpalPassiveMediaPatch::Close()
+{
+  OpalMediaPatch::Close();
+
+  if (m_started) {
+    m_started = false;
+    source.OnStopMediaPatch(*this);
+  }
+}
