@@ -97,7 +97,9 @@ public:
   PString GetCallState() const;
 
   void OutputText(ostream & strm, const PString & format) const;
+#if P_ODBC
   void OutputSQL(PODBC::Row & row, PString const mapping[NumFieldCodes]) const;
+#endif
   void OutputSummaryHTML(PHTML & html) const;
   void OutputDetailedHTML(PHTML & html) const;
 
@@ -484,7 +486,9 @@ class MyManager : public OpalManagerCLI
     PString   m_cdrFormat;
     PString   m_cdrTable;
     PString   m_cdrFieldNames[MyCall::NumFieldCodes];
+#if P_ODBC
     PODBC     m_odbc;
+#endif
     PMutex    m_cdrMutex;
 };
 

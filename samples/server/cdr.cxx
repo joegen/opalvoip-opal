@@ -34,6 +34,8 @@
 static const PConstString CDRTextFileKey("CDR Text File");
 static const PConstString CDRTextHeadingsKey("CDR Text Headings");
 static const PConstString CDRTextFormatKey("CDR Text Format");
+
+#if P_ODBC
 static const PConstString CDRDriverKey("CDR Database Driver");
 static const PConstString CDRHostKey("CDR Database Host");
 static const PConstString CDRPortKey("CDR Database Port");
@@ -44,6 +46,7 @@ static const PConstString CDRTableKey("CDR Database Table");
 static const PConstString CDRCreateKey("CDR Create");
 
 static const PConstString CDRFieldMapPrefix("CDR Database Field: ");
+#endif // P_ODBC
 
 
 static struct
@@ -52,26 +55,26 @@ static struct
   unsigned            m_size;
   const char *        m_name;
 } const CDRFields[MyCall::NumFieldCodes] = {
-  { PVarType::VarDynamicString, 36, "CallId" },
-  { PVarType::VarTime, 0, "StartTime" },
-  { PVarType::VarTime, 0, "ConnectTime" },
-  { PVarType::VarTime, 0, "EndTime" },
-  { PVarType::VarInt16, 0, "CallState" },  // -4=Proceeding, -3=Alerting, -2=Connected, -1=Established, >=0 EndedByXXX
-  { PVarType::VarDynamicString, 0, "CallResult" }, // EndedByXXX text
-  { PVarType::VarDynamicString, 50, "OriginatorID" },
-  { PVarType::VarDynamicString, 100, "OriginatorURI" },
-  { PVarType::VarDynamicString, 46, "OriginatorSignalAddress" },   // ip4:port or [ipv6]:port form
-  { PVarType::VarDynamicString, 15, "DialedNumber" },
-  { PVarType::VarDynamicString, 50, "DestinationID" },
-  { PVarType::VarDynamicString, 100, "DestinationURI" },
-  { PVarType::VarDynamicString, 46, "DestinationSignalAddress" },      // ip4:port or [ipv6]:port form
-  { PVarType::VarDynamicString, 15, "AudioCodec" },
-  { PVarType::VarDynamicString, 46, "AudioOriginatorMediaAddress" },   // ip4:port or [ipv6]:port form
-  { PVarType::VarDynamicString, 46, "AudioDestinationMediaAddress" },  // ip4:port or [ipv6]:port form
-  { PVarType::VarDynamicString, 15, "VideoCodec" },
-  { PVarType::VarDynamicString, 46, "VideoOriginatorMediaAddress" },   // ip4:port or [ipv6]:port form
-  { PVarType::VarDynamicString, 46, "VideoDestinationMediaAddress" },  // ip4:port or [ipv6]:port form
-  { PVarType::VarInt32, 0, "Bandwidth" } // kbps
+  { PVarType::VarDynamicString,  36, "CallId"                       },
+  { PVarType::VarTime,            0, "StartTime"                    },
+  { PVarType::VarTime,            0, "ConnectTime"                  },
+  { PVarType::VarTime,            0, "EndTime"                      },
+  { PVarType::VarInt16,           0, "CallState"                    },  // -4=Proceeding, -3=Alerting, -2=Connected, -1=Established, >=0 EndedByXXX
+  { PVarType::VarDynamicString,   0, "CallResult"                   }, // EndedByXXX text
+  { PVarType::VarDynamicString,  50, "OriginatorID"                 },
+  { PVarType::VarDynamicString, 100, "OriginatorURI"                },
+  { PVarType::VarDynamicString,  46, "OriginatorSignalAddress"      },   // ip4:port or [ipv6]:port form
+  { PVarType::VarDynamicString,  15, "DialedNumber"                 },
+  { PVarType::VarDynamicString,  50, "DestinationID"                },
+  { PVarType::VarDynamicString, 100, "DestinationURI"               },
+  { PVarType::VarDynamicString,  46, "DestinationSignalAddress"     },      // ip4:port or [ipv6]:port form
+  { PVarType::VarDynamicString,  15, "AudioCodec"                   },
+  { PVarType::VarDynamicString,  46, "AudioOriginatorMediaAddress"  },   // ip4:port or [ipv6]:port form
+  { PVarType::VarDynamicString,  46, "AudioDestinationMediaAddress" },  // ip4:port or [ipv6]:port form
+  { PVarType::VarDynamicString,  15, "VideoCodec"                   },
+  { PVarType::VarDynamicString,  46, "VideoOriginatorMediaAddress"  },   // ip4:port or [ipv6]:port form
+  { PVarType::VarDynamicString,  46, "VideoDestinationMediaAddress" },  // ip4:port or [ipv6]:port form
+  { PVarType::VarInt32,           0, "Bandwidth"                    } // kbps
 };
 
 static const PConstString CDRDateFormat("yyyy-MM-dd hh:mm:ss");
@@ -130,6 +133,7 @@ bool MyManager::ConfigureCDR(PConfig & cfg, PConfigPage * rsrc)
       PSYSTEMLOG(Error, "Could not open CDR text file \"" << filename << '"');
   }
 
+#if P_ODBC
   PHTML sources(PHTML::InBody);
   sources << "Call Detail Record source name for ODBC";
 
@@ -179,6 +183,7 @@ bool MyManager::ConfigureCDR(PConfig & cfg, PConfigPage * rsrc)
       }
     }
   }
+#endif // P_ODBC
 
   m_cdrListMax = rsrc->AddIntegerField("Web Page CDR Limit", 1, 1000000, m_cdrListMax,
                                        "", "Maximum number of CDR records saved for display on web page.");
@@ -204,6 +209,7 @@ void MyManager::DropCDR(const MyCall & call, bool final)
     }
   }
 
+#if P_ODBC
   if (m_odbc.IsConnected()) {
     PODBC::RecordSet data(m_odbc);
     if (data.Select(m_cdrTable, m_cdrFieldNames[MyCall::CallId] + "='" + call.GetGUID() + '\'') && data.First()) {
@@ -224,6 +230,7 @@ void MyManager::DropCDR(const MyCall & call, bool final)
       PSYSTEMLOG(Info, "Could not drop SQL CDR for " << call.GetGUID());
     }
   }
+#endif // P_ODBC
 
   m_cdrMutex.Signal();
 }
@@ -513,6 +520,7 @@ void CallDetailRecord::OutputText(ostream & strm, const PString & format) const
 }
 
 
+#if P_ODBC
 void CallDetailRecord::OutputSQL(PODBC::Row & row, PString const map[NumFieldCodes]) const
 {
   for (FieldCodes f = BeginFieldCodes; f < EndFieldCodes; ++f) {
@@ -607,6 +615,7 @@ void CallDetailRecord::OutputSQL(PODBC::Row & row, PString const map[NumFieldCod
     }
   }
 }
+#endif // P_ODBC
 
 
 MyCall::Media CallDetailRecord::GetMedia(const OpalMediaType & mediaType) const
