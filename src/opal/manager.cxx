@@ -1304,9 +1304,10 @@ void OpalManager::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch 
 {
   OnStartStopMediaPatch(m_script, "OnStartMedia", connection, patch);
 #else
-void OpalManager::OnStartMediaPatch(OpalConnection & /*connection*/, OpalMediaPatch & /*patch*/)
+void OpalManager::OnStartMediaPatch(OpalConnection & PTRACE_PARAM(connection), OpalMediaPatch & PTRACE_PARAM(patch))
 {
 #endif
+  PTRACE(3, "OpalMan\tOnStartMediaPatch " << patch << " on " << connection);
 }
 
 
@@ -1315,9 +1316,10 @@ void OpalManager::OnStopMediaPatch(OpalConnection & connection, OpalMediaPatch &
 {
   OnStartStopMediaPatch(m_script, "OnStopMedia", connection, patch);
 #else
-void OpalManager::OnStopMediaPatch(OpalConnection & /*connection*/, OpalMediaPatch & patch)
+void OpalManager::OnStopMediaPatch(OpalConnection & PTRACE_PARAM(connection), OpalMediaPatch & patch)
 {
 #endif
+  PTRACE(3, "OpalMan\tOnStopMediaPatch " << patch << " on " << connection);
 
   QueueDecoupledEvent(new PSafeWorkNoArg<OpalMediaPatch>(&patch, &OpalMediaPatch::Close));
 }

@@ -432,8 +432,7 @@ bool OpalDummySession::Open(const PString &, const OpalTransportAddress & remote
     }
   }
 
-  PTRACE(5, "Media\tSession " << m_sessionId << ", dummy from media address " << GetLocalAddress()
-         << " to " << (isMediaAddress ? "media" : "control") << " address " << remoteAddress);
+  PTRACE(5, "Media\tSession " << m_sessionId << ", dummy opened at local media address " << GetLocalAddress());
 
   return SetRemoteAddress(remoteAddress, isMediaAddress);
 }
