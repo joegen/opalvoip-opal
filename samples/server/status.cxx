@@ -35,6 +35,7 @@
 BaseStatusPage::BaseStatusPage(MyManager & mgr, const PHTTPAuthority & auth, const char * name)
   : PServiceHTTPString(name, PString::Empty(), "text/html; charset=UTF-8", auth)
   , m_manager(mgr)
+  , m_refreshRate(30)
 {
 }
 
@@ -42,24 +43,44 @@ BaseStatusPage::BaseStatusPage(MyManager & mgr, const PHTTPAuthority & auth, con
 PString BaseStatusPage::LoadText(PHTTPRequest & request)
 {
   PHTML html;
-  html << PHTML::Title(GetTitle())
-       << "<meta http-equiv=\"Refresh\" content=\"30\">\n"
-       << PHTML::Body()
+  CreateHTML(html, request.url.GetQueryVars());
+  string = html;
+
+  return PServiceHTTPString::LoadText(request);
+}
+
+void BaseStatusPage::CreateHTML(PHTML & html, const PStringToString & query)
+{
+  html << PHTML::Title(GetTitle());
+
+  if (m_refreshRate > 0)
+    html << "<meta http-equiv=\"Refresh\" content=\"" << m_refreshRate << "\">\n";
+
+  html << PHTML::Body()
        << MyProcessAncestor::Current().GetPageGraphic()
        << PHTML::Paragraph() << "<center>"
 
        << PHTML::Form("POST");
 
-  CreateContent(html, request.url.GetQueryVars());
+  CreateContent(html, query);
+
+  if (m_refreshRate > 0)
+    html << PHTML::Paragraph() 
+         << PHTML::TableStart()
+         << PHTML::TableRow()
+         << PHTML::TableData()
+         << "Refresh rate"
+         << PHTML::TableData()
+         << PHTML::InputNumber("Page Refresh Time", 5, 3600, m_refreshRate)
+         << PHTML::TableData()
+         << PHTML::SubmitButton("Set", "Set Page Refresh Time")
+         << PHTML::TableEnd();
 
   html << PHTML::Form()
        << PHTML::HRule()
 
        << MyProcessAncestor::Current().GetCopyrightText()
        << PHTML::Body();
-  string = html;
-
-  return PServiceHTTPString::LoadText(request);
 }
 
 
@@ -69,6 +90,13 @@ PBoolean BaseStatusPage::Post(PHTTPRequest & request,
 {
   PTRACE(2, "Main\tClear call POST received " << data);
 
+  if (data("Set Page Refresh Time") == "Set") {
+    m_refreshRate = data["Page Refresh Time"].AsUnsigned();
+    CreateHTML(msg, request.url.GetQueryVars());
+    PServiceHTML::ProcessMacros(request, msg, "", PServiceHTML::LoadFromFile);
+    return true;
+  }
+
   msg << PHTML::Title() << "Accepted Control Command" << PHTML::Body()
     << PHTML::Heading(1) << "Accepted Control Command" << PHTML::Heading(1);
 
@@ -76,9 +104,9 @@ PBoolean BaseStatusPage::Post(PHTTPRequest & request,
     msg << PHTML::Heading(2) << "No calls or endpoints!" << PHTML::Heading(2);
 
   msg << PHTML::Paragraph()
-    << PHTML::HotLink(request.url.AsString()) << "Reload page" << PHTML::HotLink()
-    << "&nbsp;&nbsp;&nbsp;&nbsp;"
-    << PHTML::HotLink("/") << "Home page" << PHTML::HotLink();
+      << PHTML::HotLink(request.url.AsString()) << "Reload page" << PHTML::HotLink()
+      << "&nbsp;&nbsp;&nbsp;&nbsp;"
+      << PHTML::HotLink("/") << "Home page" << PHTML::HotLink();
 
   PServiceHTML::ProcessMacros(request, msg, "html/status.html",
                               PServiceHTML::LoadFromFile | PServiceHTML::NoSignatureForFile);
