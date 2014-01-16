@@ -499,6 +499,8 @@ bool OpalMediaStream::InternalSetPaused(bool pause, bool fromUser, bool fromPatc
 OpalMediaPatchPtr OpalMediaStream::InternalSetPatchPart1(OpalMediaPatch * newPatch)
 {
   OpalMediaPatchPtr oldPatch = m_mediaPatch.Set(newPatch);
+  if (newPatch == oldPatch)
+    return NULL;
 
 #if PTRACING
   if (PTrace::CanTrace(4) && (newPatch != NULL || oldPatch != NULL)) {
