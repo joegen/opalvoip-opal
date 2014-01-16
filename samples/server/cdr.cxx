@@ -350,22 +350,20 @@ void MyCall::OnEstablishedCall()
 
 void MyCall::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
 {
-  bool originator = &connection == GetConnection(0);
-
   OpalMediaStream & stream = patch.GetSource();
-  PString id = stream.GetID();
 
-  m_media[id].m_Codec = stream.GetMediaFormat();
+  Media & media = m_media[stream.GetID()];
+  media.m_Codec = stream.GetMediaFormat();
 
-  const OpalRTPMediaStream * rtpStream = dynamic_cast<const OpalRTPMediaStream *>(&stream);
-  if (rtpStream != NULL) {
-    PIPSocketAddressAndPort mediaAddress(rtpStream->GetRtpSession().GetRemoteAddress(),
-                                         rtpStream->GetRtpSession().GetRemoteDataPort());
-    if (originator)
-      m_media[id].m_OriginatorAddress = mediaAddress;
-    else
-      m_media[id].m_DestinationAddress = mediaAddress;
-  }
+  OpalRTPConnection * rtpConn = dynamic_cast<OpalRTPConnection *>(&connection);
+  if (rtpConn == NULL)
+    return;
+
+  OpalMediaSession * session = rtpConn->GetMediaSession(stream.GetSessionID());
+  if (session == NULL)
+    return;
+
+  session->GetRemoteAddress().GetIpAndPort(&connection == GetConnection(0) ? media.m_OriginatorAddress : media.m_DestinationAddress);
 }
 
 
