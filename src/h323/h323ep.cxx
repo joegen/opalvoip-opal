@@ -657,9 +657,13 @@ void H323EndPoint::InternalNewIncomingConnection(const OpalTransportPtr & transp
     // Get new instance of a call, abort if none created
     OpalCall * call = manager.InternalCreateCall();
     if (call != NULL) {
+      PTRACE_CONTEXT_ID_SET(*PThread::Current(), call);
       connection = CreateConnection(*call, token, NULL, *transport, PString::Empty(), PString::Empty(), &pdu);
       PTRACE(3, "H323\tCreated new connection: " << token);
     }
+  }
+  else {
+    PTRACE_CONTEXT_ID_SET(*PThread::Current(), connection);
   }
 
   // Make sure transport is attached before AddConnection()
