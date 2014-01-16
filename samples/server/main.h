@@ -310,6 +310,7 @@ class BaseStatusPage : public PServiceHTTPString
 
   protected:
     virtual const char * GetTitle() const = 0;
+    virtual void CreateHTML(PHTML & html, const PStringToString & query);
     virtual void CreateContent(PHTML & html, const PStringToString & query) const = 0;
     virtual bool OnPostControl(const PStringToString & /*data*/, PHTML & /*msg*/)
     {
@@ -317,6 +318,7 @@ class BaseStatusPage : public PServiceHTTPString
     }
 
     MyManager & m_manager;
+    unsigned    m_refreshRate;
 };
 
 

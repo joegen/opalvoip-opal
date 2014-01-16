@@ -713,6 +713,7 @@ void CallDetailRecord::OutputSummaryHTML(PHTML & html) const
 CDRPage::CDRPage(MyManager & mgr, const PHTTPAuthority & auth)
   : BaseStatusPage(mgr, auth, "CallDetailRecord")
 {
+  m_refreshRate = 0;
 }
 
 
@@ -728,7 +729,7 @@ void CDRPage::CreateContent(PHTML & html, const PStringToString & query) const
   if (m_manager.FindCDR(query("guid"), cdr))
     cdr.OutputDetailedHTML(html);
   else
-    html << "Record not found.";
+    html << "No records found.";
 }
 
 
