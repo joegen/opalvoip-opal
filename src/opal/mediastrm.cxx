@@ -592,11 +592,7 @@ void OpalMediaStream::OnStopMediaPatch(OpalMediaPatch & patch)
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalMediaStreamPacing::OpalMediaStreamPacing(const OpalMediaFormat & mediaFormat)
-#if OPAL_VIDEO
-  : m_timeOnMarkers(mediaFormat.GetMediaType() == OpalMediaType::Video())
-#else
-  : m_timeOnMarkers(false)
-#endif
+  : m_timeOnMarkers(mediaFormat.GetMediaType() != OpalMediaType::Audio())
   , m_frameTime(mediaFormat.GetFrameTime())
   , m_frameSize(mediaFormat.GetFrameSize())
   , m_timeUnits(mediaFormat.GetTimeUnits())
