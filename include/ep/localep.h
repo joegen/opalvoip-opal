@@ -237,7 +237,7 @@ class OpalLocalEndPoint : public OpalEndPoint
     /**Call back to get media data for transmission.
        If false is returned then OnReadMediaData() is called.
 
-       Care with the handling of real time is rqeuired, see GetSynchronicity
+       Care with the handling of real time is required, see GetSynchronicity
        for more details.
 
        The default implementation returns false.
@@ -251,8 +251,11 @@ class OpalLocalEndPoint : public OpalEndPoint
     /**Call back to handle received media data.
        If false is returned then OnWriteMediaData() is called.
 
-       Care with the handling of real time is rqeuired, see GetSynchronicity
+       Care with the handling of real time is required, see GetSynchronicity
        for more details.
+
+       Note it is the responsibility of this function to update the \p frame
+       timestamp for correct operation of the jitter buffer.
 
        The default implementation returns false.
       */
@@ -265,10 +268,10 @@ class OpalLocalEndPoint : public OpalEndPoint
     /**Call back to get media data for transmission.
        If false is returned the media stream will be closed.
 
-       Care with the handling of real time is rqeuired, see GetSynchronicity
+       Care with the handling of real time is required, see GetSynchronicity
        for more details.
 
-       The default implementation returns false.
+       The default implementation fills the buffer with zeros and returns true.
       */
     virtual bool OnReadMediaData(
       const OpalLocalConnection & connection, ///<  Connection for media
@@ -281,21 +284,19 @@ class OpalLocalEndPoint : public OpalEndPoint
     /**Call back to handle received media data.
        If false is returned the media stream will be closed.
 
-       Note: For audio media, if \p data is NULL then that indicates there is
-       no incoming audio available from the jitter buffer. The application
-       should output silence for a time. The \p written value should still
-       contain the bytes of silence emitted, even though it ewill be larger
-       that \p length.
+       It is expected that this function be real time. That is if 320 bytes of
+       PCM-16 are written, this function should take 20ms to execute. If not
+       then the jitter buffer will not operate correctly and audio will not be
+       of high quality. This timing can be simulated if required, see
+       GetSynchronicity for more details.
 
-       Also, it is expected that this function be real time. That is if 320
-       bytes of PCM-16 are written, this function should take 20ms to execute.
-       If not then the jitter buffer will not operate correctly and audio will
-       not be of high quality.
+       Note: For encoded audio media, if \p data is NULL then that indicates
+       there is no incoming audio available from the jitter buffer. The
+       application should output silence for a time. The \p written value
+       should still contain the bytes of silence emitted, even though it will
+       be larger that \p length. This does not occcur for raw (PCM-16) audio.
 
-       Care with the handling of real time is rqeuired, see GetSynchronicity
-       for more details.
-
-       The default implementation returns false.
+       The default implementation ignores the media data and returns true.
       */
     virtual bool OnWriteMediaData(
       const OpalLocalConnection & connection, ///<  Connection for media
@@ -789,6 +790,7 @@ class OpalLocalMediaStream : public OpalMediaStream, public OpalMediaStreamPacin
     virtual void InternalClose() { }
 
     OpalLocalEndPoint::Synchronicity m_synchronicity;
+    PBYTEArray                       m_silence;
 };
 
 
