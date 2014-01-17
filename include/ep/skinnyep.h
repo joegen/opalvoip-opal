@@ -172,8 +172,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       */
     bool Register(
       const PString & server,   ///< Server to register with
-      const char * device_name = NULL,
-      unsigned device_type = 1
+      unsigned deviceType = 8 ///< Device type code (gateway virtual phone)
     );
 
 #pragma pack(1)
@@ -184,13 +183,14 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
         SkinnyMsg(const PBYTEArray & pdu, PINDEX len);
 
       public:
-        PINDEX GetLength() const { return m_length; }
-        uint32_t GetID() const { return m_id; }
+        PINDEX GetLength() const { return m_length+8; }
+        void SetLength(PINDEX len) { PAssert(len>= 8, PInvalidParameter); m_length = len-8; }
+        uint32_t GetID() const { return m_messageId; }
 
-      protected:
+      private:
         PUInt32l m_length;
-        PUInt32l m_reserved;
-        PUInt32l m_id;
+        PUInt32l m_headerVersion;
+        PUInt32l m_messageId;
     };
 
     class RegisterMsg : public SkinnyMsg
@@ -213,6 +213,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
         in_addr  m_ip;
         PUInt32l m_deviceType;
         PUInt32l m_maxStreams;
+        BYTE     m_unknown[28];
     };
 
     class RegisterAckMsg : public SkinnyMsg
@@ -229,6 +230,15 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
         char     m_reserved1[2];
         PUInt32l m_secondaryKeepAlive;
         char     m_reserved2[4];
+    };
+
+    class RegisterRejectMsg : public SkinnyMsg
+    {
+      public:
+        enum { ID = 0x009d };
+        RegisterRejectMsg(const PBYTEArray & pdu);
+      protected:
+        PUInt32l m_unknown;
     };
 
     class PortMsg : public SkinnyMsg
@@ -269,6 +279,8 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       public:
         enum { ID = 0x0000 };
         KeepAliveMsg();
+      protected:
+        PUInt32l m_reserved;
     };
 
     class OffHookMsg : public SkinnyMsg

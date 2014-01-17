@@ -41,6 +41,7 @@ OpalSkinnyEndPoint::OpalSkinnyEndPoint(OpalManager & manager, const char *prefix
   : OpalRTPEndPoint(manager, prefix, CanTerminateCall | SupportsE164)
   , P_DISABLE_MSVC_WARNINGS(4355, m_serverTransport(*this))
 {
+  m_serverTransport.SetPDULengthFormat(-4, 4);
 }
 
 
@@ -116,7 +117,7 @@ OpalSkinnyConnection * OpalSkinnyEndPoint::CreateConnection(OpalCall & call,
 }
 
 
-bool OpalSkinnyEndPoint::Register(const PString & server, const char * device_name, unsigned device_type)
+bool OpalSkinnyEndPoint::Register(const PString & server, unsigned device_type)
 {
   m_serverTransport.CloseWait();
 
@@ -125,12 +126,25 @@ bool OpalSkinnyEndPoint::Register(const PString & server, const char * device_na
     return false;
 
   m_serverTransport.AttachThread(new PThreadObj<OpalSkinnyEndPoint>(*this, &OpalSkinnyEndPoint::HandleServerTransport, false, "Skinny"));
-  m_serverTransport.SetPDULengthFormat(-4, 4);
+
+  PString deviceName = "SEP";
+  {
+    PIPSocket::InterfaceTable interfaces;
+    if (PIPSocket::GetInterfaceTable(interfaces)) {
+      for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
+        PString macAddrStr = interfaces[i].GetMACAddress();
+        if (!macAddrStr && macAddrStr != "44-45-53-54-00-00") { /* not Win32 PPP device */
+          deviceName += macAddrStr.ToUpper();
+          break;
+        }
+      }
+    }
+  }
 
   PIPSocket::Address ip;
   WORD port;
   m_serverTransport.GetLocalAddress().GetIpAndPort(ip, port);
-  if (!SendSkinnyMsg(RegisterMsg(device_name, 0, 1, ip, device_type, 0)))
+  if (!SendSkinnyMsg(RegisterMsg(deviceName, 0, 1, ip, device_type, 0)))
     return false;
   
   if (!SendSkinnyMsg(PortMsg(port)))
@@ -150,6 +164,10 @@ void OpalSkinnyEndPoint::HandleServerTransport()
       switch (pdu.GetAs<PUInt32l>(4)) {
         case RegisterAckMsg::ID :
           HandleRegisterAck(RegisterAckMsg(pdu));
+          break;
+
+        case RegisterRejectMsg::ID :
+          PTRACE(2, "Registration rejected");
           break;
 
         case CapabilityRequestMsg::ID:
@@ -210,9 +228,9 @@ PBoolean OpalSkinnyConnection::SetUpConnection()
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalSkinnyEndPoint::SkinnyMsg::SkinnyMsg(uint32_t id, PINDEX len)
-  : m_length(len - sizeof(m_length) - sizeof(m_reserved))
-  , m_reserved(0)
-  , m_id(id)
+  : m_length(len - sizeof(m_length) - sizeof(m_headerVersion))
+  , m_headerVersion(0) // Basic header
+  , m_messageId(id)
 {
 }
 
@@ -237,12 +255,21 @@ OpalSkinnyEndPoint::RegisterMsg::RegisterMsg(const char * deviceName,
   , m_deviceType(deviceType)
   , m_maxStreams(maxStreams)
 {
-  strncpy(m_deviceName, deviceName, sizeof(m_deviceName)-1);
+  strncpy(m_deviceName, PAssertNULL(deviceName), sizeof(m_deviceName)-1);
   m_deviceName[sizeof(m_deviceName)-1] = '\0';
+
+  static BYTE const UnknownValue[sizeof(m_unknown)] = { 0, 0, 0, 0, 0xb, 0, 0x60, 0x85 };
+  memcpy(m_unknown, UnknownValue, sizeof(m_unknown));
 }
 
 
 OpalSkinnyEndPoint::RegisterAckMsg::RegisterAckMsg(const PBYTEArray & pdu)
+  : SkinnyMsg(pdu, sizeof(*this))
+{
+}
+
+
+OpalSkinnyEndPoint::RegisterRejectMsg::RegisterRejectMsg(const PBYTEArray & pdu)
   : SkinnyMsg(pdu, sizeof(*this))
 {
 }
@@ -295,13 +322,14 @@ OpalSkinnyEndPoint::CapabilityResponseMsg::CapabilityResponseMsg(const OpalMedia
 
   if (PAssert(count > 0, "Must have a valid codec!")) {
     m_count = count;
-    m_length = sizeof(m_id) + sizeof(m_count) + count*sizeof(Info);
+    SetLength(sizeof(SkinnyMsg) + sizeof(m_count) + count*sizeof(Info));
   }
 }
 
 
 OpalSkinnyEndPoint::KeepAliveMsg::KeepAliveMsg()
   : SkinnyMsg(ID, sizeof(*this))
+  , m_reserved(0)
 {
 }
 
