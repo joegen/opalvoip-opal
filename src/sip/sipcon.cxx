@@ -766,6 +766,8 @@ PBoolean SIPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
       security |= e_SecureMediaSession;
 #endif
 
+    SetAudioVideoGroup();
+
     vector<bool> sessions = CreateAllMediaSessions(security);
     for (vector<bool>::size_type session = 1; session < sessions.size(); ++session) {
       if (sessions[session]) {
@@ -778,6 +780,26 @@ PBoolean SIPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
   }
 
   return sdpOK && !sdpOut.GetMediaDescriptions().IsEmpty();
+}
+
+
+void SIPConnection::SetAudioVideoGroup()
+{
+  if (!m_stringOptions.GetBoolean(OPAL_OPT_AV_GROUPING, true))
+    return;
+
+  // Googlish audio and video grouping id
+  OpalRTPSession * audioSession = dynamic_cast<OpalRTPSession *>(FindSessionByMediaType(OpalMediaType::Audio()));
+  if (audioSession == NULL)
+    return;
+
+  OpalRTPSession * videoSession = dynamic_cast<OpalRTPSession *>(FindSessionByMediaType(OpalMediaType::Video()));
+  if (videoSession == NULL)
+    return;
+
+  PString group = PBase64::Encode(PRandom::Octets(24));
+  audioSession->SetGroupId(group);
+  videoSession->SetGroupId(group);
 }
 
 
@@ -817,7 +839,7 @@ bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
     return false;
   }
 
-  localMedia->SetAddresses(mediaSession->GetLocalAddress(true), mediaSession->GetLocalAddress(false));
+  localMedia->SetSessionInfo(mediaSession);
   localMedia->SetOptionStrings(m_stringOptions);
 
   if (sdp.GetDefaultConnectAddress().IsEmpty())
@@ -1018,6 +1040,9 @@ bool SIPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPS
       sdpMediaDescriptions[sessionId] = OnSendAnswerSDPSession(incomingMedia, sessionId, sdpOffer.GetDirection(sessionId));
   }
 #endif // OPAL_SRTP
+
+  // Googlish audio and video grouping id
+  SetAudioVideoGroup();
 
   // Fill in refusal for media sessions we didn't like
   bool gotNothing = true;
@@ -1225,6 +1250,8 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
   if (replaceSession)
     ReplaceMediaSession(sessionId, mediaSession);
 
+  localMedia->SetSessionInfo(mediaSession);
+
   /* After (possibly) closing streams, we now open them again if necessary,
      OpenSourceMediaStreams will just return true if they are already open.
      We open tx (other party source) side first so we follow the remote
@@ -1313,7 +1340,7 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
     // RFC3264 says we MUST have an entry, but it should have port zero
     if (empty) {
       localMedia->AddMediaFormat(m_answerFormatList.front());
-      localMedia->SetAddresses(OpalTransportAddress(), OpalTransportAddress());
+      localMedia->SetSessionInfo(NULL);
     }
     else {
       // We can do the media type but choose not to at this time
@@ -1328,8 +1355,6 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
     SetNxECapabilities(m_ciscoNSEHandler, m_localMediaFormats, m_answerFormatList, OpalCiscoNSE, localMedia.get());
 #endif
   }
-
-  localMedia->SetAddresses(mediaSession->GetLocalAddress(true), mediaSession->GetLocalAddress(false));
 
 #if OPAL_T38_CAPABILITY
   ownerCall.ResetSwitchingT38();

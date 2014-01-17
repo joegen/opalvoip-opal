@@ -218,6 +218,16 @@ OpalMediaSession * OpalRTPConnection::GetMediaSession(unsigned sessionID) const
 }
 
 
+OpalMediaSession * OpalRTPConnection::FindSessionByMediaType(const OpalMediaType & mediaType) const
+{
+  for (SessionMap::const_iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
+    if (it->second->GetMediaType() == mediaType)
+      return &*it->second;
+  }
+  return NULL;
+}
+
+
 OpalMediaSession * OpalRTPConnection::FindSessionByLocalPort(WORD port) const
 {
   for (SessionMap::const_iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
