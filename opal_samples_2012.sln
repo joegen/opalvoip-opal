@@ -44,6 +44,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Console Application - Stati
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Console Application - DLL", "samples\console\Console_DLL_2012.vcxproj", "{48F898BB-A51C-4B2E-BC39-D78449C1C5F0}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Recording Calls", "samples\recording\Recording_2012.vcxproj", "{38241B31-75E5-438A-8636-143B59633E40}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Android = Debug|Android
@@ -366,6 +368,19 @@ Global
 		{48F898BB-A51C-4B2E-BC39-D78449C1C5F0}.Release|Win32.Build.0 = Release|Win32
 		{48F898BB-A51C-4B2E-BC39-D78449C1C5F0}.Release|x64.ActiveCfg = Release|x64
 		{48F898BB-A51C-4B2E-BC39-D78449C1C5F0}.Release|x64.Build.0 = Release|x64
+		{38241B31-75E5-438A-8636-143B59633E40}.Debug|Android.ActiveCfg = Debug|Win32
+		{38241B31-75E5-438A-8636-143B59633E40}.Debug|Win32.ActiveCfg = Debug|Win32
+		{38241B31-75E5-438A-8636-143B59633E40}.Debug|Win32.Build.0 = Debug|Win32
+		{38241B31-75E5-438A-8636-143B59633E40}.Debug|x64.ActiveCfg = Debug|x64
+		{38241B31-75E5-438A-8636-143B59633E40}.Debug|x64.Build.0 = Debug|x64
+		{38241B31-75E5-438A-8636-143B59633E40}.No Trace|Android.ActiveCfg = Release|Win32
+		{38241B31-75E5-438A-8636-143B59633E40}.No Trace|Win32.ActiveCfg = Release|Win32
+		{38241B31-75E5-438A-8636-143B59633E40}.No Trace|x64.ActiveCfg = Release|x64
+		{38241B31-75E5-438A-8636-143B59633E40}.Release|Android.ActiveCfg = Release|Win32
+		{38241B31-75E5-438A-8636-143B59633E40}.Release|Win32.ActiveCfg = Release|Win32
+		{38241B31-75E5-438A-8636-143B59633E40}.Release|Win32.Build.0 = Release|Win32
+		{38241B31-75E5-438A-8636-143B59633E40}.Release|x64.ActiveCfg = Release|x64
+		{38241B31-75E5-438A-8636-143B59633E40}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
