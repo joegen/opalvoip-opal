@@ -326,6 +326,14 @@ class OpalRTPSession : public OpalMediaSession
       */
     void SetCanonicalName(const PString & name);
 
+    /**Get the group id for the RTP session.
+    */
+    PString GetGroupId() const;
+
+    /**Set the group id for the RTP session.
+    */
+    void SetGroupId(const PString & id);
+
     /**Get the tool name for the RTP session.
       */
     PString GetToolName() const;
@@ -609,6 +617,7 @@ class OpalRTPSession : public OpalMediaSession
     bool                m_isAudio;
     unsigned            m_timeUnits;
     PString             m_canonicalName;
+    PString             m_groupId;
     PString             m_toolName;
     RTPExtensionHeaders m_extensionHeaders;
     PTimeInterval       m_maxNoReceiveTime;

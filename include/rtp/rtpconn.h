@@ -216,6 +216,13 @@ class OpalRTPConnection : public OpalConnection
       unsigned sessionID    ///<  RTP session number
     ) const;
 
+    /** Find an RTP session for the media type.
+        If there is no session, NULL is returned.
+      */
+    virtual OpalMediaSession * FindSessionByMediaType(
+      const OpalMediaType & mediaType  ///< Media type for session
+    ) const;
+
     /**Find an RTP session for the specified local port.
        If there is no session, NULL is returned.
       */

@@ -233,7 +233,8 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     virtual Direction GetDirection() const { return m_mediaAddress.IsEmpty() ? Inactive : m_direction; }
 
-    virtual bool SetAddresses(const OpalTransportAddress & media, const OpalTransportAddress & control);
+    virtual bool SetSessionInfo(const OpalMediaSession * session);
+    virtual PString GetGroupId() const { return PString::Empty(); }
 
     const OpalTransportAddress & GetMediaAddress() const { return m_mediaAddress; }
     const OpalTransportAddress & GetControlAddress() const { return m_controlAddress; }
@@ -357,6 +358,8 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual bool HasCryptoKeys() const;
 #endif
     virtual void SetAttribute(const PString & attr, const PString & value);
+    virtual bool SetSessionInfo(const OpalMediaSession * session);
+    virtual PString GetGroupId() const { return m_groupId; }
 
     void EnableFeedback() { m_enableFeedback = true; }
 
@@ -368,7 +371,11 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
         bool Initialise(const PString & portString);
     };
 
-    bool m_enableFeedback;
+    bool    m_enableFeedback;
+
+    typedef std::map<DWORD, PStringOptions> SsrcMap;
+    SsrcMap m_ssrcInfo;
+    PString m_groupId;
 
 #if OPAL_SRTP
     PList<SDPCryptoSuite> m_cryptoSuites;

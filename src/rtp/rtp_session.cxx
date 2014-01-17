@@ -137,7 +137,6 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_singlePort(false)
   , m_isAudio(init.m_mediaType == OpalMediaType::Audio())
   , m_timeUnits(m_isAudio ? 8 : 90)
-  , m_canonicalName(PProcess::Current().GetUserName())
   , m_toolName(PProcess::Current().GetName())
   , m_maxNoReceiveTime(init.m_connection.GetEndPoint().GetManager().GetNoMediaTimeout())
   , m_maxNoTransmitTime(0, 10)          // Sending data for 10 seconds, ICMP says still not there
@@ -190,6 +189,12 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_noTransmitErrors(0)
 {
   ClearStatistics();
+
+  /* CNAME is no longer just a username @ host, security!
+     But RFC 6222 hopelessly complicated, while not exactly the same, just
+     using the right most 12 bytes of GUID is very similar. It will do. */
+  PGloballyUniqueID guid;
+  m_canonicalName = PBase64::Encode(&guid[PGloballyUniqueID::Size-12], 12);
 
   PTRACE_CONTEXT_ID_TO(m_reportTimer);
   m_reportTimer.SetNotifier(PCREATE_NOTIFIER(TimedSendReport));
@@ -394,6 +399,23 @@ void OpalRTPSession::SetCanonicalName(const PString & name)
   PWaitAndSignal mutex(m_reportMutex);
   m_canonicalName = name;
   m_canonicalName.MakeUnique();
+}
+
+
+PString OpalRTPSession::GetGroupId() const
+{
+  PWaitAndSignal mutex(m_reportMutex);
+  PString s = m_groupId;
+  s.MakeUnique();
+  return s;
+}
+
+
+void OpalRTPSession::SetGroupId(const PString & id)
+{
+  PWaitAndSignal mutex(m_reportMutex);
+  m_groupId = id;
+  m_groupId.MakeUnique();
 }
 
 
@@ -1801,9 +1823,6 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
     SetMinBufferSize(*m_controlSocket, SO_SNDBUF, RTP_CTRL_BUFFER_SIZE);
   }
 #endif
-
-  if (m_canonicalName.Find('@') == P_MAX_INDEX)
-    m_canonicalName += '@' + GetLocalHostName();
 
   manager.TranslateIPAddress(m_localAddress, m_remoteAddress);
 
