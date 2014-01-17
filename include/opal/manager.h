@@ -358,7 +358,7 @@ class OpalManager : public PObject
 
        The default behaviour does nothing and returns true.
 
-       @!return fals to refuse the call.
+        @return false to refuse the call.
       */
     virtual bool OnLocalIncomingCall(
       OpalCall & call   ///<  Call that was completed
