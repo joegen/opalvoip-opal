@@ -172,7 +172,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       */
     bool Register(
       const PString & server,   ///< Server to register with
-      unsigned deviceType = 8 ///< Device type code (gateway virtual phone)
+      unsigned deviceType = 30032 ///< Device type code (gateway virtual phone)
     );
 
 #pragma pack(1)
