@@ -54,6 +54,8 @@ static const char SDPBandwidthPrefix[] = "SDP-Bandwidth-";
 
 #define SDP_MIN_PTIME 10
 
+static char const CRLF[] = "\r\n";
+
 
 /////////////////////////////////////////////////////////
 //
@@ -290,11 +292,11 @@ void SDPMediaFormat::PrintOn(ostream & strm) const
   strm << "a=rtpmap:" << (int)m_payloadType << ' ' << m_encodingName << '/' << m_clockRate;
   if (!m_parameters.IsEmpty())
     strm << '/' << m_parameters;
-  strm << "\r\n";
+  strm << CRLF;
 
   PString fmtpString = GetFMTP();
   if (!fmtpString.IsEmpty())
-    strm << "a=fmtp:" << (int)m_payloadType << ' ' << fmtpString << "\r\n";
+    strm << "a=fmtp:" << (int)m_payloadType << ' ' << fmtpString << CRLF;
 }
 
 
@@ -486,7 +488,7 @@ OpalBandwidth SDPBandwidth::operator[](const PCaselessString & type) const
 ostream & operator<<(ostream & out, const SDPBandwidth & bw)
 {
   for (SDPBandwidth::const_iterator iter = bw.begin(); iter != bw.end(); ++iter)
-    out << "b=" << iter->first << ':' << (unsigned)iter->second << "\r\n";
+    out << "b=" << iter->first << ':' << (unsigned)iter->second << CRLF;
   return out;
 }
 
@@ -614,18 +616,24 @@ SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, c
 }
 
 
-PBoolean SDPMediaDescription::SetAddresses(const OpalTransportAddress & newAddress,
-                                           const OpalTransportAddress & control)
+bool SDPMediaDescription::SetSessionInfo(const OpalMediaSession * session)
 {
+  if (session == NULL) {
+    m_port = 0;
+    m_mediaAddress = OpalTransportAddress();
+    m_controlAddress = OpalTransportAddress();
+    return true;
+  }
+
   PIPSocket::Address ip;
   WORD port = m_port;
-  if (!newAddress.GetIpAndPort(ip, port))
+  if (!session->GetLocalAddress().GetIpAndPort(ip, port))
     return false;
 
   m_port = port;
 
   m_mediaAddress = OpalTransportAddress(ip, port, OpalTransportAddress::UdpPrefix());
-  m_controlAddress = control;
+  m_controlAddress = session->GetLocalAddress(false);
 
   return true;
 }
@@ -866,7 +874,7 @@ void SDPMediaDescription::Encode(const OpalTransportAddress & commonAddr, ostrea
     strm << portList;
   else
     strm << ' ' << portList;
-  strm << "\r\n";
+  strm << CRLF;
 
   // If we have a port of zero, then shutting down SDP stream. No need for anything more
   if (m_port == 0)
@@ -874,7 +882,7 @@ void SDPMediaDescription::Encode(const OpalTransportAddress & commonAddr, ostrea
 
   PIPSocket::Address commonIP, transportIP;
   if (m_mediaAddress.GetIpAddress(transportIP) && commonAddr.GetIpAddress(commonIP) && commonIP != transportIP)
-    strm << "c=" << GetConnectAddressString(m_mediaAddress) << "\r\n";
+    strm << "c=" << GetConnectAddressString(m_mediaAddress) << CRLF;
 
   strm << m_bandwidth;
   OutputAttributes(strm);
@@ -1210,7 +1218,7 @@ void SDPCryptoSuite::PrintOn(ostream & strm) const
       strm << '=' << it->second;
   }
 
-  strm << "\r\n";
+  strm << CRLF;
 }
 
 #endif // OPAL_SRTP
@@ -1288,6 +1296,11 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
   // call ancestor
   SDPMediaDescription::OutputAttributes(strm);
 
+  // The following should probably be user defined, but hey,
+  // it's only ever audio/video so cheat and use media type.
+  if (!m_groupId.IsEmpty())
+    strm << "mid:" << m_groupId << CRLF;
+
   // output attributes for each payload type
   for (SDPMediaFormatList::const_iterator format = m_formats.begin(); format != m_formats.end(); ++format)
     strm << *format;
@@ -1303,7 +1316,12 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
     PIPSocket::Address ip;
     WORD port = 0;
     if (m_controlAddress.GetIpAndPort(ip, port) && port != (m_port+1))
-      strm << "a=rtcp:" << port << ' ' << GetConnectAddressString(m_mediaAddress) << "\r\n";
+      strm << "a=rtcp:" << port << ' ' << GetConnectAddressString(m_mediaAddress) << CRLF;
+  }
+
+  for (SsrcMap::const_iterator it1 = m_ssrcInfo.begin(); it1 != m_ssrcInfo.end(); ++it1) {
+    for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2)
+      strm << "a=ssrc:" << it1->first << ' ' << it2->first << ':' << it2->second << CRLF;
   }
 }
 
@@ -1403,7 +1421,36 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
     return;
   }
 
+  if (attr *= "ssrc") {
+    DWORD ssrc = value.AsUnsigned();
+    PINDEX colon = value.Find(':');
+    if (ssrc != 0 && colon != P_MAX_INDEX)
+      m_ssrcInfo[ssrc].SetAt(value(value.Find(' ') + 1, colon - 1).Trim(), value.Mid(colon + 1));
+    else {
+      PTRACE(2, "SDP\tCannot decode ssrc attribute: \"" << value << '"');
+    }
+  }
+
   SDPMediaDescription::SetAttribute(attr, value);
+}
+
+
+bool SDPRTPAVPMediaDescription::SetSessionInfo(const OpalMediaSession * session)
+{
+  const OpalRTPSession * rtpSession = dynamic_cast<const OpalRTPSession *>(session);
+  if (rtpSession != NULL) {
+    DWORD ssrc = rtpSession->GetSyncSourceOut();
+    PStringOptions & info = m_ssrcInfo[ssrc];
+    info.SetAt("cname", rtpSession->GetCanonicalName());
+    m_groupId = rtpSession->GetGroupId();
+    if (!m_groupId.IsEmpty()) {
+      PString label = m_groupId + '-' + session->GetMediaType();
+      info.SetAt("mslabel", m_groupId);
+      info.SetAt("label", label);
+      info.SetAt("msid", m_groupId & label);
+    }
+  }
+  return SDPMediaDescription::SetSessionInfo(session);
 }
 
 
@@ -1461,7 +1508,7 @@ void SDPAudioMediaDescription::OutputAttributes(ostream & strm) const
       }
     }
     if (ptime > 0)
-      strm << "a=ptime:" << ptime << "\r\n";
+      strm << "a=ptime:" << ptime << CRLF;
   }
 
   unsigned largestFrameTime = 0;
@@ -1484,7 +1531,7 @@ void SDPAudioMediaDescription::OutputAttributes(ostream & strm) const
   if (maxptime < UINT_MAX) {
     if (maxptime < largestFrameTime)
       maxptime = largestFrameTime;
-    strm << "a=maxptime:" << maxptime << "\r\n";
+    strm << "a=maxptime:" << maxptime << CRLF;
   }
 }
 
@@ -1587,7 +1634,7 @@ static void OuputRTCP_FB(ostream & strm, int payloadType, OpalVideoFormat::RTCPF
       else
         strm << payloadType;
       masked -= OpalVideoFormat::e_NACK; // Or ends up in there twice
-      strm << ' ' << Prefixes[i].m_prefix << ' ' << masked << "\r\n";
+      strm << ' ' << Prefixes[i].m_prefix << ' ' << masked << CRLF;
     }
   }
 }
@@ -1599,7 +1646,7 @@ void SDPVideoMediaDescription::OutputAttributes(ostream & strm) const
   SDPRTPAVPMediaDescription::OutputAttributes(strm);
 
   if (m_contentRole < OpalVideoFormat::EndContentRole && ContentRoleNames[m_contentRole] != NULL)
-    strm << "a=content:" << ContentRoleNames[m_contentRole] << "\r\n";
+    strm << "a=content:" << ContentRoleNames[m_contentRole] << CRLF;
 
   // m_rtcp_fb is set via SDPRTPAVPMediaDescription::PreEncode according to various options
   OuputRTCP_FB(strm, -1, m_rtcp_fb);
@@ -2033,21 +2080,39 @@ void SDPSessionDescription::PrintOn(ostream & str) const
 {
   /* encode mandatory session information, note the order is important according to RFC!
      Must be vosiuepcbzkatrm and within the m it is icbka */
-  str << "v=" << protocolVersion << "\r\n"
-         "o=" << ownerUsername << ' '
+  str << "v=" << protocolVersion << CRLF
+      << "o=" << ownerUsername << ' '
       << ownerSessionId << ' '
       << ownerVersion << ' '
       << GetConnectAddressString(ownerAddress)
-      << "\r\n"
-         "s=" << sessionName << "\r\n";
+      << CRLF
+      << "s=" << sessionName << CRLF;
 
   if (!defaultConnectAddress.IsEmpty())
-    str << "c=" << GetConnectAddressString(defaultConnectAddress) << "\r\n";
+    str << "c=" << GetConnectAddressString(defaultConnectAddress) << CRLF;
 
   str << m_bandwidth
-      << "t=" << "0 0" << "\r\n";
+    << "t=" << "0 0" << CRLF;
 
   OutputAttributes(str);
+
+  // find groups
+  PString bundle;
+  PString groupId;
+  for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
+    PString id = mediaDescriptions[i].GetGroupId();
+    if (!id.IsEmpty()) {
+      if (groupId.IsEmpty())
+        groupId = id;
+      if (id == groupId)
+        bundle &= mediaDescriptions[i].GetMediaType();
+    }
+  }
+
+  if (!bundle.IsEmpty())
+    str << "group:BUNDLE " << bundle << CRLF;
+  if (!groupId.IsEmpty())
+    str << "msid-semantic: WMS " << groupId << CRLF;
 
   // encode media session information
   for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {

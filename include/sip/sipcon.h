@@ -122,6 +122,15 @@ class OpalSIPIMContext;
 #define OPAL_OPT_RTCP_MUX "RTCP-Mux"
 
 
+/**Enable audio/video grouping in SDP.
+   This add various identifiers to the SDP to link the audio and video
+   medis sessions together. For example, to do lip sync.
+
+   Defaults to true.
+*/
+#define OPAL_OPT_AV_GROUPING "AV-Grouping"
+
+
 #define SIP_HEADER_PREFIX      "SIP-Header:"
 #define SIP_HEADER_REPLACES    SIP_HEADER_PREFIX"Replaces"
 #define SIP_HEADER_REFERRED_BY SIP_HEADER_PREFIX"Referred-By"
@@ -751,6 +760,7 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
       OpalTransportAddress & localAddress,
       bool & remoteChanged
     );
+    void SetAudioVideoGroup();
 
     bool SendReINVITE(PTRACE_PARAM(const char * msg));
     bool StartPendingReINVITE();
