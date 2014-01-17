@@ -677,6 +677,17 @@ PBoolean OpalLocalMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
 {
   OpalLocalEndPoint & ep = dynamic_cast<OpalLocalEndPoint &>(connection.GetEndPoint());
   OpalLocalConnection & conn = dynamic_cast<OpalLocalConnection &>(connection);
+
+  if (GetMediaFormat().GetName().NumCompare(OPAL_PCM16) == EqualTo) {
+    if (data != NULL && length != 0)
+      m_silence.SetMinSize(length);
+    else {
+      length = m_silence.GetSize();
+      data = m_silence;
+      PTRACE(6, "Media\tPlaying silence " << length << " bytes");
+    }
+  }
+
   if (!ep.OnWriteMediaData(conn, *this, data, length, written))
     return false;
 
