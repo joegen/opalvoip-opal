@@ -149,7 +149,11 @@ class H323EndPoint : public OpalRTPEndPoint
       unsigned int options = 0,         ///<  options to pass to connection
       OpalConnection::StringOptions * stringOptions = NULL
     );
-  //@}
+
+    /** Get available string option names.
+    */
+    virtual PStringList GetAvailableStringOptions() const;
+    //@}
 
   /**@name Set up functions */
   //@{

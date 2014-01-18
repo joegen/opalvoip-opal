@@ -739,6 +739,43 @@ void OpalEndPoint::OnMessageReceived(const OpalIM & message)
 #endif // OPAL_HAS_IM
 
 
+PStringList OpalEndPoint::GetAvailableStringOptions() const
+{
+  static char const * const StringOpts[] = {
+    OPAL_OPT_AUTO_START,
+    OPAL_OPT_CALL_IDENTIFIER,
+    OPAL_OPT_CALLING_PARTY_URL,
+    OPAL_OPT_CALLING_PARTY_NUMBER,
+    OPAL_OPT_CALLING_PARTY_NAME,
+    OPAL_OPT_CALLING_PARTY_DOMAIN,
+    OPAL_OPT_CALLING_DISPLAY_NAME,
+    OPAL_OPT_CALLED_PARTY_NAME,
+    OPAL_OPT_CALLED_DISPLAY_NAME,
+    OPAL_OPT_REDIRECTING_PARTY,
+    OPAL_OPT_PRESENTATION_BLOCK,
+    OPAL_OPT_ORIGINATOR_ADDRESS,
+    OPAL_OPT_INTERFACE,
+    OPAL_OPT_USER_INPUT_MODE,
+    OPAL_OPT_ENABLE_INBAND_DTMF,
+    OPAL_OPT_ENABLE_INBAND_DTMF,
+    OPAL_OPT_DETECT_INBAND_DTMF,
+    OPAL_OPT_SEND_INBAND_DTMF,
+    OPAL_OPT_DTMF_MULT,
+    OPAL_OPT_DTMF_DIV,
+    OPAL_OPT_DISABLE_JITTER,
+    OPAL_OPT_MAX_JITTER,
+    OPAL_OPT_MIN_JITTER,
+    OPAL_OPT_RECORD_AUDIO,
+    OPAL_OPT_ALERTING_TYPE,
+    OPAL_OPT_REMOVE_CODEC,
+    OPAL_OPT_SILENCE_DETECT_MODE,
+    OPAL_OPT_VIDUP_METHODS
+  };
+
+  return PStringList(PARRAYSIZE(StringOpts), StringOpts, true);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 bool OpalIsE164(const PString & number, bool strict)

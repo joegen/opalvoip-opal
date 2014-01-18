@@ -531,6 +531,30 @@ PBoolean SIPEndPoint::GarbageCollection()
 }
 
 
+PStringList SIPEndPoint::GetAvailableStringOptions() const
+{
+  static char const * const StringOpts[] = {
+    OPAL_OPT_FORWARD_REFER,
+    OPAL_OPT_REFER_SUB,
+    OPAL_OPT_INITIAL_OFFER,
+    OPAL_OPT_SYMMETRIC_HOLD_PRODUCT,
+    OPAL_OPT_ALLOW_EARLY_REPLACE,
+    OPAL_OPT_EXTERNAL_SDP,
+    OPAL_OPT_RTCP_MUX,
+    OPAL_OPT_AV_GROUPING,
+    OPAL_OPT_UNSECURE_SRTP,
+    OPAL_SIP_REFERRED_CONNECTION,
+    OPAL_OPT_OFFER_SDP_PTIME,
+    OPAL_OPT_OFFER_RTCP_FB,
+    OPAL_OPT_FORCE_RTCP_FB
+  };
+
+  PStringList list = OpalEndPoint::GetAvailableStringOptions();
+  list += PStringList(PARRAYSIZE(StringOpts), StringOpts, true);
+  return list;
+}
+
+
 PBoolean SIPEndPoint::IsAcceptedAddress(const SIPURL & /*toAddr*/)
 {
   return true;
