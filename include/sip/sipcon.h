@@ -130,6 +130,15 @@ class OpalSIPIMContext;
 */
 #define OPAL_OPT_AV_GROUPING "AV-Grouping"
 
+/**Enable SRTP when not using secure signalling (sips)
+   Normally SRTP and SDES only applies to secure signalling, sips or
+   transport=tls, however this flag will allow it on unsecure connections
+   which means the key exchange can be observed.
+
+   Defaults to false.
+*/
+#define OPAL_OPT_UNSECURE_SRTP "Unsecure-SRTP"
+
 
 #define SIP_HEADER_PREFIX      "SIP-Header:"
 #define SIP_HEADER_REPLACES    SIP_HEADER_PREFIX"Replaces"
@@ -782,7 +791,7 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
 
     void UpdateRemoteAddresses();
 #if OPAL_SRTP
-    virtual bool CanDoSRTP() const { return m_dialog.GetRemoteTransportAddress(m_dnsEntry).GetProtoPrefix() == OpalTransportAddress::TlsPrefix(); }
+    virtual bool CanDoSRTP() const;
 #endif
 
     void NotifyDialogState(
