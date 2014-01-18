@@ -241,6 +241,13 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
         PUInt32l m_unknown;
     };
 
+    class UnregisterMsg : public SkinnyMsg
+    {
+      public:
+        enum { ID = 0x0027 };
+        UnregisterMsg();
+    };
+
     class PortMsg : public SkinnyMsg
     {
       public:
