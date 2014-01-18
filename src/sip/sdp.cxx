@@ -55,6 +55,7 @@ static const char SDPBandwidthPrefix[] = "SDP-Bandwidth-";
 #define SDP_MIN_PTIME 10
 
 static char const CRLF[] = "\r\n";
+static char const TokenChars[] = "!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`abcdefghijklmnopqrstuvwxyz{|}~"; // From RFC4566
 
 
 /////////////////////////////////////////////////////////
@@ -495,7 +496,7 @@ ostream & operator<<(ostream & out, const SDPBandwidth & bw)
 
 bool SDPBandwidth::Parse(const PString & param)
 {
-  PINDEX pos = param.FindSpan("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`abcdefghijklmnopqrstuvwxyz{|}~"); // Legal chars from RFC
+  PINDEX pos = param.FindSpan(TokenChars); // Legal chars from RFC
   if (pos == P_MAX_INDEX || param[pos] != ':') {
     PTRACE(2, "SDP\tMalformed bandwidth attribute " << param);
     return false;
@@ -524,7 +525,7 @@ const PCaselessString & SDPCommonAttributes::TransportIndependentBandwidthType()
 
 void SDPCommonAttributes::ParseAttribute(const PString & value)
 {
-  PINDEX pos = value.FindSpan("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`abcdefghijklmnopqrstuvwxyz{|}~"); // Legal chars from RFC
+  PINDEX pos = value.FindSpan(TokenChars); // Legal chars from RFC
   if (pos == P_MAX_INDEX)
     SetAttribute(value, "1");
   else if (value[pos] == ':')
@@ -1423,12 +1424,18 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
 
   if (attr *= "ssrc") {
     DWORD ssrc = value.AsUnsigned();
-    PINDEX colon = value.Find(':');
-    if (ssrc != 0 && colon != P_MAX_INDEX)
-      m_ssrcInfo[ssrc].SetAt(value(value.Find(' ') + 1, colon - 1).Trim(), value.Mid(colon + 1));
-    else {
+    PINDEX space = value.Find(' ');
+    PINDEX endToken = value.FindSpan(TokenChars, space+1);
+    if (ssrc == 0 || space == P_MAX_INDEX || (endToken != P_MAX_INDEX && value[endToken] != ':')) {
       PTRACE(2, "SDP\tCannot decode ssrc attribute: \"" << value << '"');
     }
+    else {
+      PCaselessString key = value(space + 1, endToken - 1);
+      PString val = value.Mid(endToken + 1);
+      m_ssrcInfo[ssrc].SetAt(key, val);
+      PTRACE_IF(4, key == "cname", "SDP\tSSRC: " << RTP_TRACE_SRC(ssrc) << " CNAME: " << val);
+    }
+    return;
   }
 
   SDPMediaDescription::SetAttribute(attr, value);
