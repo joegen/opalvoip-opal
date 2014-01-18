@@ -52,6 +52,12 @@ OpalSkinnyEndPoint::~OpalSkinnyEndPoint()
 
 void OpalSkinnyEndPoint::ShutDown()
 {
+  PTRACE(3, prefixName << " endpoint shutting down.");
+  if (m_serverTransport.IsOpen()) {
+    PTRACE(4, "Unregistering");
+    SendSkinnyMsg(UnregisterMsg());
+    PThread::Sleep(1000); // Wait a abit for reply.
+  }
 }
 
 
@@ -117,7 +123,7 @@ OpalSkinnyConnection * OpalSkinnyEndPoint::CreateConnection(OpalCall & call,
 }
 
 
-bool OpalSkinnyEndPoint::Register(const PString & server, unsigned device_type)
+bool OpalSkinnyEndPoint::Register(const PString & server, unsigned deviceType)
 {
   m_serverTransport.CloseWait();
 
@@ -142,15 +148,11 @@ bool OpalSkinnyEndPoint::Register(const PString & server, unsigned device_type)
   }
 
   PIPSocket::Address ip;
-  WORD port;
-  m_serverTransport.GetLocalAddress().GetIpAndPort(ip, port);
-  if (!SendSkinnyMsg(RegisterMsg(deviceName, 0, 1, ip, device_type, 0)))
+  m_serverTransport.GetLocalAddress().GetIpAddress(ip);
+  if (!SendSkinnyMsg(RegisterMsg(deviceName, 0, 1, ip, deviceType, 0)))
     return false;
   
-  if (!SendSkinnyMsg(PortMsg(port)))
-    return false;
-
-  PTRACE(4, "Registering client");
+  PTRACE(4, "Registering client: " << deviceName << ", type=" << deviceType);
   return true;
 }
 
@@ -161,8 +163,10 @@ void OpalSkinnyEndPoint::HandleServerTransport()
   while (m_serverTransport.IsOpen()) {
     PBYTEArray pdu;
     if (m_serverTransport.ReadPDU(pdu)) {
-      switch (pdu.GetAs<PUInt32l>(4)) {
+      unsigned msgId = pdu.GetAs<PUInt32l>(4);
+      switch (msgId) {
         case RegisterAckMsg::ID :
+          PTRACE(4, "Register acknowledged");
           HandleRegisterAck(RegisterAckMsg(pdu));
           break;
 
@@ -171,10 +175,12 @@ void OpalSkinnyEndPoint::HandleServerTransport()
           break;
 
         case CapabilityRequestMsg::ID:
+          PTRACE(4, "Sending capability");
           SendSkinnyMsg(CapabilityResponseMsg(GetMediaFormats()));
           break;
 
         default:
+          PTRACE(4, "Received unhandled message id=0x" << hex << msgId << dec);
           break;
       }
     }
@@ -185,6 +191,10 @@ void OpalSkinnyEndPoint::HandleServerTransport()
 
 void OpalSkinnyEndPoint::HandleRegisterAck(const RegisterAckMsg & ack)
 {
+  PIPSocket::AddressAndPort ap;
+  if (m_serverTransport.GetLocalAddress().GetIpAndPort(ap))
+    SendSkinnyMsg(PortMsg(ap.GetPort()));
+
   KeepAliveMsg msg;
   m_serverTransport.SetKeepAlive(ack.GetKeepALive(), PBYTEArray((const BYTE *)&msg, sizeof(msg), false));
 }
@@ -271,6 +281,12 @@ OpalSkinnyEndPoint::RegisterAckMsg::RegisterAckMsg(const PBYTEArray & pdu)
 
 OpalSkinnyEndPoint::RegisterRejectMsg::RegisterRejectMsg(const PBYTEArray & pdu)
   : SkinnyMsg(pdu, sizeof(*this))
+{
+}
+
+
+OpalSkinnyEndPoint::UnregisterMsg::UnregisterMsg()
+  : SkinnyMsg(ID, sizeof(*this))
 {
 }
 
