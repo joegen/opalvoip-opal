@@ -100,7 +100,8 @@ void OpalRTPConsoleEndPoint::GetArgumentSpec(ostream & strm) const
           "-" << m_endpoint.GetPrefixName() << "-bandwidth:    Set total bandwidth (both directions) to be used for SIP call\n"
           "-" << m_endpoint.GetPrefixName() << "-rx-bandwidth: Set receive bandwidth to be used for SIP call\n"
           "-" << m_endpoint.GetPrefixName() << "-tx-bandwidth: Set transmit bandwidth to be used for SIP call\n"
-          "-" << m_endpoint.GetPrefixName() << "-ui:           SIP User Indication mode (inband,rfc2833,signal,string)\n";
+          "-" << m_endpoint.GetPrefixName() << "-ui:           Set User Indication mode (inband,rfc2833,signal,string)\n"
+          "-" << m_endpoint.GetPrefixName() << "-option:       Set string option (key[=value]), may be multiple occurrences\n";
 }
 
 
@@ -131,8 +132,9 @@ bool OpalRTPConsoleEndPoint::Initialise(PArgList & args, ostream & output, bool 
     output << m_endpoint.GetPrefixName() << "user input mode: " << m_endpoint.GetSendUserInputMode() << '\n';
 
 
-  PCaselessString interfaces = args.GetOptionString(m_endpoint.GetPrefixName());
-  if (!m_endpoint.StartListeners(interfaces.Lines())) {
+  m_endpoint.SetDefaultStringOptions(args.GetOptionString(m_endpoint.GetPrefixName() + "-option"));
+
+  if (!m_endpoint.StartListeners(args.GetOptionString(m_endpoint.GetPrefixName()).Lines())) {
     output << "Could not start listeners for " << m_endpoint.GetPrefixName() << endl;
     return false;
   }
@@ -207,6 +209,31 @@ void OpalRTPConsoleEndPoint::CmdUserInput(PCLI::Arguments & args, P_INT_PTR)
 }
 
 
+void OpalRTPConsoleEndPoint::CmdStringOption(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.HasOption('l')) {
+    args.GetContext() << "Options available for " << m_endpoint.GetPrefixName() << ":\n"
+                      << setfill('\n') << m_endpoint.GetAvailableStringOptions() << setfill(' ')
+                      << endl;
+    return;
+  }
+
+  if (args.HasOption('c'))
+    m_endpoint.SetDefaultStringOptions(OpalConnection::StringOptions());
+
+  if (args.GetCount() > 0) {
+    PString value;
+    for (PINDEX i = 1; i < args.GetCount(); ++i)
+      value &= args[i];
+    m_endpoint.SetDefaultStringOption(args[0], value);
+  }
+
+  args.GetContext() << "Options for " << m_endpoint.GetPrefixName()<< ":\n"
+                    << m_endpoint.GetDefaultStringOptions()
+                    << endl;
+}
+
+
 void OpalRTPConsoleEndPoint::AddCommands(PCLI & cli)
 {
   cli.SetCommand(m_endpoint.GetPrefixName() & "interfaces", PCREATE_NOTIFIER(CmdInterfaces),
@@ -223,6 +250,11 @@ void OpalRTPConsoleEndPoint::AddCommands(PCLI & cli)
   cli.SetCommand(m_endpoint.GetPrefixName() & "ui", PCREATE_NOTIFIER(CmdUserInput),
                   "Set user input mode",
                   "\"inband\" | \"rfc2833\" | \"signal\" | \"string\"");
+  cli.SetCommand(m_endpoint.GetPrefixName() & "option", PCREATE_NOTIFIER(CmdStringOption),
+                 "Set default string option",
+                 "[ -c ] [ <key> [ <value> ] ]\n-l",
+                 "c-clear. Clear all string options before adding\n"
+                 "l-list.  List all available string options");
 }
 #endif //P_CLI
 #endif // OPAL_SIP || OPAL_H323

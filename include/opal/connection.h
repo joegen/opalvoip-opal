@@ -500,6 +500,9 @@ class OpalConnection : public PSafeObject
     class StringOptions : public PStringOptions 
     {
       public:
+        StringOptions() { }
+        StringOptions(const PString & str) : PStringOptions(str) { }
+
         /** Extract the parameters that start with "OPAL-XXX" from the URL and
             insert into the string options dictionary. The parameters are
             removed from the URL.

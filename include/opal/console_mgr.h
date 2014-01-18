@@ -103,6 +103,7 @@ protected:
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdCryptoSuites);
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdBandwidth);
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdUserInput);
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdStringOption);
   void AddCommands(PCLI & cli);
 #endif //P_CLI
 
