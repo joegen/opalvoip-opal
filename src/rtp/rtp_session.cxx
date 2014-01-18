@@ -47,6 +47,7 @@
 
 #include <ptclib/random.h>
 #include <ptclib/pnat.h>
+#include <ptclib/cypher.h>
 
 #include <algorithm>
 
