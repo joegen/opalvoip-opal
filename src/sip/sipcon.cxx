@@ -2384,6 +2384,14 @@ void SIPConnection::UpdateRemoteAddresses()
 }
 
 
+#if OPAL_SRTP
+bool SIPConnection::CanDoSRTP() const
+{
+  return m_stringOptions.GetBoolean(OPAL_OPT_UNSECURE_SRTP) ||
+         m_dialog.GetRemoteTransportAddress(m_dnsEntry).GetProtoPrefix() == OpalTransportAddress::TlsPrefix();
+}
+#endif
+
 void SIPConnection::NotifyDialogState(SIPDialogNotification::States state, SIPDialogNotification::Events eventType, unsigned eventCode)
 {
   if (GetPhase() == EstablishedPhase)
