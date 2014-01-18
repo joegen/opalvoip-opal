@@ -180,7 +180,11 @@ class SIPEndPoint : public OpalRTPEndPoint
         Default behaviour deletes the objects in the connectionsActive list.
       */
     virtual PBoolean GarbageCollection();
-  //@}
+
+    /** Get available string option names.
+      */
+    virtual PStringList GetAvailableStringOptions() const;
+    //@}
 
   /**@name Customisation call backs */
   //@{

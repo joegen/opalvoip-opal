@@ -865,6 +865,10 @@ class OpalEndPoint : public PObject
       */
     void SetDefaultStringOption(const PCaselessString & key, const PString & data) { m_defaultStringOptions.SetAt(key, data); }
 
+    /** Get available string option names.
+      */
+    virtual PStringList GetAvailableStringOptions() const;
+
     /**Get the default mode for sending User Input Indications.
       */
     OpalConnection::SendUserInputModes GetSendUserInputMode() const { return defaultSendUserInputMode; }
