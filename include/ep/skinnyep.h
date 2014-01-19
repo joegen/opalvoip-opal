@@ -122,28 +122,6 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       OpalConnection::StringOptions * stringOptions  ///<  complex string options
     );
 
-    /** A call back function whenever a connection is broken.
-        This function can do any internal cleaning up and waiting on background
-        threads that may be using the connection object.
-
-        Note that there is not a one to one relationship with the
-        OnEstablishedConnection() function. This function may be called without
-        that function being called. For example if MakeConnection() was used
-        but the call never completed.
-
-        Classes that override this function should make sure they call the
-        ancestor version for correct operation.
-
-        An application will not typically call this function as it is used by
-        the OpalManager during a release of the connection.
-
-        The default behaviour removes the connection from the internal database
-        and calls the OpalManager function of the same name.
-    */
-    virtual void OnReleased(
-      OpalConnection & connection   ///<  Connection that was established
-    );
-
     /** Execute garbage collection for endpoint.
         Returns true if all garbage has been collected.
         Default behaviour deletes the objects in the connectionsActive list.
@@ -158,9 +136,10 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
         The default implementation is to create a OpalSkinnyConnection.
       */
     virtual OpalSkinnyConnection * CreateConnection(
-      OpalCall & call,        ///<  Owner of connection
-      const PString & number, ///<  Number ot dial, empty for incoming call
-      void * userData,        ///<  Arbitrary data to pass to connection
+      OpalCall & call,            ///< Owner of connection
+      const PString & token,      ///< Token to identify call
+      const PString & dialNumber, ///< Number to dial out, empty if incoming
+      void * userData,            ///< Arbitrary data to pass to connection
       unsigned int options,
       OpalConnection::StringOptions * stringOptions = NULL
     );
@@ -172,7 +151,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       */
     bool Register(
       const PString & server,   ///< Server to register with
-      unsigned deviceType = 30032 ///< Device type code (gateway virtual phone)
+      unsigned deviceType = 30016 ///< Device type code (Cisco IP Communicator)
     );
 
 #pragma pack(1)
@@ -193,171 +172,227 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
         PUInt32l m_messageId;
     };
 
-    class RegisterMsg : public SkinnyMsg
-    {
-      public:
-        enum { ID = 0x0001 };
-        RegisterMsg(
-          const char * deviceName,
-          unsigned userId,
-          unsigned instance,
-          const PIPSocket::Address & ip,
-          unsigned deviceType,
-          unsigned maxStreams
-        );
+    #define OPAL_SKINNY_MSG(cls, id, vars) \
+      class cls : public SkinnyMsg \
+      { \
+        public: \
+          enum { ID = id }; \
+          cls() : SkinnyMsg(ID, sizeof(*this)) { } \
+          cls(const PBYTEArray & pdu) : SkinnyMsg(pdu, sizeof(*this)) { } \
+          vars \
+      }; \
+      virtual bool OnReceiveMsg(const cls & msg)
 
-      protected:
-        char     m_deviceName[16];
-        PUInt32l m_userId;
-        PUInt32l m_instance;
-        in_addr  m_ip;
-        PUInt32l m_deviceType;
-        PUInt32l m_maxStreams;
-        BYTE     m_unknown[28];
+    OPAL_SKINNY_MSG(KeepAliveMsg, 0x0000,
+      PUInt32l m_unknown;
+    );
+
+    OPAL_SKINNY_MSG(KeepAliveAckMsg, 0x0100,
+    );
+
+    OPAL_SKINNY_MSG(RegisterMsg, 0x0001,
+      char     m_deviceName[16];
+      PUInt32l m_userId;
+      PUInt32l m_instance;
+      in_addr  m_ip;
+      PUInt32l m_deviceType;
+      PUInt32l m_maxStreams;
+      BYTE     m_unknown[28];
+    );
+
+    OPAL_SKINNY_MSG(RegisterAckMsg, 0x0081,
+      PUInt32l m_keepAlive;
+      char     m_dateFormat[6];
+      BYTE     m_unknown1[2];
+      PUInt32l m_secondaryKeepAlive;
+      BYTE     m_unknown2[4];
+    );
+
+    OPAL_SKINNY_MSG(RegisterRejectMsg, 0x009d,
+      char m_errorText[33];
+    );
+
+    OPAL_SKINNY_MSG(UnregisterMsg, 0x0027,
+    );
+
+    OPAL_SKINNY_MSG(UnregisterAckMsg, 0x0118,
+      PUInt32l m_status;
+    );
+
+    OPAL_SKINNY_MSG(PortMsg, 0x0002,
+      PUInt16l m_port;
+    );
+
+    OPAL_SKINNY_MSG(CapabilityRequestMsg, 0x009B,
+    );
+
+    OPAL_SKINNY_MSG(CapabilityResponseMsg, 0x0010,
+      PUInt32l m_count;
+      struct Info
+      {
+        PUInt32l m_codec;
+        PUInt16l m_maxFramesPerPacket;
+        char     m_unknown[10];
+      } m_capability[32];
+    );
+
+    enum CallStates
+    {
+      eStateOffHook = 1,
+      eStateOnHook,
+      eStateRingOut,
+      eStateRingIn,
+      eStateConnected,
+      eStateBusy,
+      eStateCongestion,
+      eStateHold,
+      eStateCallWaiting,
+      eStateCallTransfer,
+      eStateCallPark,
+      eStateProceed,
+      eStateCallRemoteMultiline,
+      eStateInvalidNumber
     };
-
-    class RegisterAckMsg : public SkinnyMsg
-    {
-      public:
-        enum { ID = 0x0081 };
-        RegisterAckMsg(const PBYTEArray & pdu);
-
-        PTimeInterval GetKeepALive() const { return PTimeInterval(0, m_keepAlive); }
-
-      protected:
-        PUInt32l m_keepAlive;
-        char     m_dateFormat[6];
-        char     m_reserved1[2];
-        PUInt32l m_secondaryKeepAlive;
-        char     m_reserved2[4];
-    };
-
-    class RegisterRejectMsg : public SkinnyMsg
-    {
-      public:
-        enum { ID = 0x009d };
-        RegisterRejectMsg(const PBYTEArray & pdu);
-      protected:
-        PUInt32l m_unknown;
-    };
-
-    class UnregisterMsg : public SkinnyMsg
-    {
-      public:
-        enum { ID = 0x0027 };
-        UnregisterMsg();
-    };
-
-    class PortMsg : public SkinnyMsg
-    {
-      public:
-        enum { ID = 0x0002 };
-        PortMsg(unsigned port);
-
-      protected:
-        PUInt16l m_port;
-    };
-
-    class CapabilityRequestMsg : public SkinnyMsg
-    {
-      public:
-        enum { ID = 0x009B };
-        CapabilityRequestMsg(const PBYTEArray & pdu);
-    };
-
-    class CapabilityResponseMsg : public SkinnyMsg
-    {
-      public:
-        enum { ID = 0x0010 };
-        CapabilityResponseMsg(const OpalMediaFormatList & formats);
-
-      protected:
-        PUInt32l m_count;
-        struct Info
-        {
-          PUInt32l m_codec;
-          PUInt16l m_maxFramesPerPacket;
-          char     m_reserved[10];
-        } m_capability[32];
-    };
-
-    class KeepAliveMsg : public SkinnyMsg
-    {
-      public:
-        enum { ID = 0x0000 };
-        KeepAliveMsg();
-      protected:
-        PUInt32l m_reserved;
-    };
-
-    class OffHookMsg : public SkinnyMsg
-    {
-      public:
-        enum { ID = 0x0006 };
-        OffHookMsg(uint32_t line, uint32_t call);
-
-      protected:
-        PUInt32l m_lineInstance;
-        PUInt32l m_callIdentifier;
-    };
-
-    class OnHookMsg : public SkinnyMsg
-    {
-      public:
-        enum { ID = 0x0007 };
-        OnHookMsg(uint32_t line, uint32_t call);
-
-      protected:
-        PUInt32l m_lineInstance;
-        PUInt32l m_callIdentifier;
-    };
-
-    class StartToneMsg : public SkinnyMsg
-    {
-      public:
-        enum { ID = 0x0082 };
-        StartToneMsg(const PBYTEArray & pdu);
-
-      protected:
-        PUInt32l m_tone;
-        PUInt32l m_reserved;
-        PUInt32l m_lineInstance;
-        PUInt32l m_callIdentifier;
-    };
-
-    class KeyPadButtonMsg : public SkinnyMsg
-    {
-      public:
-        enum { ID = 0x0003 };
-        KeyPadButtonMsg(char button, uint32_t line, uint32_t call);
-
-      protected:
-        char     m_button;
-        PUInt32l m_lineInstance;
-        PUInt32l m_callIdentifier;
-    };
-
-    enum SkinnyCallStates
-    {
-      e_OnHookState    = 0x02,
-      e_ConnectedState = 0x05,
-      e_ProceedState   = 0x12
-    };
-    class CallStateMsg : public SkinnyMsg
-    {
-      public:
-        enum { ID = 0x0111 };
-        CallStateMsg(const PBYTEArray & pdu);
-
-      SkinnyCallStates GetState() const { return (SkinnyCallStates)(uint32_t)m_state; }
-      uint32_t GetLineIdentifier() const { return m_lineIdentifier; }
-      uint32_t GetCallIdentifier() const { return m_callIdentifier; }
-
-    protected:
+    OPAL_SKINNY_MSG(CallStateMsg, 0x0111,
       PUInt32l m_state;
-      PUInt32l m_lineIdentifier;
+      PUInt32l m_lineInstance;
       PUInt32l m_callIdentifier;
+
+      __inline CallStates GetState() const { return (CallStates)(uint32_t)m_state; }
+    );
+
+    enum RingType
+    {
+      eRingOff = 1,
+      eRongInside,
+      eRingOutside,
+      eRingFeature
     };
+    OPAL_SKINNY_MSG(SetRingerMsg, 0x0085,
+      PUInt32l m_ringType;
+      PUInt32l m_ringMode;
+      PUInt32l m_lineInstance;
+      PUInt32l m_callIdentifier;
+
+      __inline RingType GetType() const { return (RingType)(uint32_t)m_ringType; }
+      __inline bool IsForever() const { return m_ringMode == 1; }
+    );
+
+    OPAL_SKINNY_MSG(OffHookMsg, 0x0006,
+      PUInt32l m_lineInstance;
+      PUInt32l m_callIdentifier;
+    );
+
+    OPAL_SKINNY_MSG(OnHookMsg, 0x0007,
+      PUInt32l m_lineInstance;
+      PUInt32l m_callIdentifier;
+    );
+
+    enum Tones
+    {
+      eToneSilence     = 0x00,
+      eToneDial        = 0x21,
+      eToneBusy        = 0x23,
+      eToneAlert       = 0x24,
+      eToneReorder     = 0x25,
+      eToneCallWaiting = 0x2d,
+      eToneNoTone      = 0x7f
+    };
+    OPAL_SKINNY_MSG(StartToneMsg, 0x0082,
+      PUInt32l m_tone;
+      BYTE     m_unknown[4];
+      PUInt32l m_lineInstance;
+      PUInt32l m_callIdentifier;
+
+      __inline Tones GetType() const { return (Tones)(uint32_t)m_tone; }
+    );
+
+    OPAL_SKINNY_MSG(StopToneMsg, 0x0083,
+      PUInt32l m_lineInstance;
+      PUInt32l m_callIdentifier;
+    );
+
+    OPAL_SKINNY_MSG(KeyPadButtonMsg, 0x0003,
+      char     m_button;
+      PUInt32l m_lineInstance;
+      PUInt32l m_callIdentifier;
+    );
+
+    enum SoftKeyEvents
+    {
+      eSoftKeyRedial = 1,
+      eSoftKeyNewCall,
+      eSoftKeyHold,
+      eSoftKeyTransfer,
+      eSoftKeyCfwdall,
+      eSoftKeyCfwdBusy,
+      eSoftKeyCfwdNoAnswer,
+      eSoftKeyBackspace,
+      eSoftKeyEndcall,
+      eSoftKeyResume,
+      eSoftKeyAnswer,
+      eSoftKeyInfo,
+      eSoftKeyConf,
+      eSoftKeyPark,
+      eSoftKeyJoin,
+      eSoftKeyMeetMe,
+      eSoftKeyCallPickup,
+      eSoftKeyGrpCallPickup,
+      eSoftKeyDNS,
+      eSoftKeyDivert
+    };
+    OPAL_SKINNY_MSG(SoftKeyEventMsg, 0x0026,
+      PUInt32l m_event;
+      PUInt32l m_lineInstance;
+      PUInt32l m_callIdentifier;
+
+      __inline SoftKeyEvents GetEvent() const { return (SoftKeyEvents)(uint32_t)m_event; }
+    );
+
+    OPAL_SKINNY_MSG(OpenReceiveChannelMsg, 0x0105,
+      PUInt32l m_callIdentifier;
+      PUInt32l m_passThruPartyId;
+      PUInt32l m_msPerPacket;
+      PUInt32l m_payloadCapability;
+      PUInt32l m_echoCancelType;
+      PUInt32l m_g723Bitrate;
+      BYTE     m_unknown[84];
+    );
+
+    OPAL_SKINNY_MSG(OpenReceiveChannelAckMsg, 0x0022,
+      PUInt32l m_status;
+      in_addr  m_ip;
+      PUInt16l m_port;
+      BYTE     m_padding[2];
+      PUInt32l m_passThruPartyId;
+    );
+
+    OPAL_SKINNY_MSG(CloseReceiveChannelMsg, 0x0106,
+      PUInt32l m_callIdentifier;
+      PUInt32l m_passThruPartyId;
+      PUInt32l m_conferenceId2;
+    );
+
+    OPAL_SKINNY_MSG(StartMediaTransmissionMsg, 0x008a,
+      PUInt32l m_callIdentifier;
+      PUInt32l m_passThruPartyId;
+      in_addr  m_ip;
+      PUInt16l m_port;
+      BYTE     m_padding[2];
+      PUInt32l m_msPerPacket;
+      PUInt32l m_payloadCapability;
+      PUInt32l m_precedence;
+      PUInt32l m_silenceSuppression;
+      PUInt32l m_maxFramesPerPacket;
+      PUInt32l m_g723Bitrate;
+      BYTE     m_unknown[76];
+    );
+
+    OPAL_SKINNY_MSG(StopMediaTransmissionMsg, 0x008b,
+      PUInt32l m_callIdentifier;
+      PUInt32l m_passThruPartyId;
+      PUInt32l m_conferenceId2;
+    );
 #pragma pack()
 
     /** Send a message to server.
@@ -367,7 +402,14 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
 
   protected:
     void HandleServerTransport();
-    virtual void HandleRegisterAck(const RegisterAckMsg & msg);
+    PSafePtr<OpalSkinnyConnection> GetSkinnyConnection(uint32_t callIdentifier, PSafetyMode mode = PSafeReadWrite);
+
+    template <class MSG> bool DelegateMsg(const MSG & msg)
+    {
+      PSafePtr<OpalSkinnyConnection> connection = GetSkinnyConnection(msg.m_callIdentifier);
+      return connection == NULL || connection->OnReceiveMsg(msg);
+    }
+
 
     OpalTransportTCP m_serverTransport;
 };
@@ -386,7 +428,8 @@ class OpalSkinnyConnection : public OpalRTPConnection
     OpalSkinnyConnection(
       OpalCall & call,
       OpalSkinnyEndPoint & ep,
-      const PString & number,
+      const PString & token,
+      const PString & dialNumber,
       void * /*userData*/,
       unsigned options,
       OpalConnection::StringOptions * stringOptions
@@ -412,27 +455,69 @@ class OpalSkinnyConnection : public OpalRTPConnection
         The default behaviour does.
     */
     virtual PBoolean SetUpConnection();
-  //@}
+
+    /** Clean up the termination of the connection.
+        This function can do any internal cleaning up and waiting on background
+        threads that may be using the connection object.
+
+        Note that there is not a one to one relationship with the
+        OnEstablishedConnection() function. This function may be called without
+        that function being called. For example if SetUpConnection() was used
+        but the call never completed.
+
+        Classes that override this function should make sure they call the
+        ancestor version for correct operation.
+
+        An application will not typically call this function as it is used by
+        the OpalManager during a release of the connection.
+
+        The default behaviour calls the OpalEndPoint function of the same name.
+      */
+    virtual void OnReleased();
+
+    /**Indicate to remote endpoint we are connected.
+      */
+    virtual PBoolean SetConnected();
+
+    /** Get alerting type information of an incoming call.
+        The type of "distinctive ringing" for the call. The string is protocol
+        dependent, so the caller would need to be aware of the type of call
+        being made. Some protocols may ignore the field completely.
+
+        For SIP this corresponds to the string contained in the "Alert-Info"
+        header field of the INVITE. This is typically a URI for the ring file.
+
+        For H.323 this must be a string representation of an integer from 0 to 7
+        which will be contained in the Q.931 SIGNAL (0x34) Information Element.
+
+        Default behaviour returns an empty string.
+    */
+    virtual PString GetAlertingType() const;
+    //@}
 
   /**@name Protocol handling routines */
   //@{
-    typedef OpalSkinnyEndPoint::SkinnyMsg SkinnyMsg;
-
-    /** Handle incoming message for this connection.
-      */
-    void HandleMessage(
-      const SkinnyMsg & msg
-    );
+    virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::SetRingerMsg & msg);
+    virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg & msg);
+    virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::OpenReceiveChannelMsg & msg);
+    virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::CloseReceiveChannelMsg & msg);
+    virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::StartMediaTransmissionMsg & msg);
+    virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::StopMediaTransmissionMsg & msg);
     //@}
 
   protected:
+    OpalMediaSession * SetUpMediaSession(uint32_t payloadCapability, bool rx);
+    OpalMediaType GetMediaTypeFromId(uint32_t id);
+    void SetFromIdMediaType(const OpalMediaType & mediaType, uint32_t id);
+
     OpalSkinnyEndPoint & m_endpoint;
 
     uint32_t m_lineInstance;
-    uint32_t m_callidentifier;
-    PString  m_numberToDial;
+    uint32_t m_callIdentifier;
+    PString  m_alertingType;
 
-  friend class OpalSkinnyEndPoint;
+    uint32_t m_audioId;
+    uint32_t m_videoId;
 };
 
 #endif // OPAL_SKINNY
