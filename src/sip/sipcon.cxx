@@ -2796,7 +2796,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   // get the called destination number and name
   m_calledPartyName = request.GetURI().GetUserName();
-  if (!m_calledPartyName.IsEmpty() && m_calledPartyName.FindSpan("0123456789*#") == P_MAX_INDEX) {
+  if (!m_calledPartyName.IsEmpty() && OpalIsE164(m_calledPartyName)) {
     m_calledPartyNumber = m_calledPartyName;
     m_calledPartyName = request.GetURI().GetDisplayName(false);
   }
