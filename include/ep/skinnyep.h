@@ -259,6 +259,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       PUInt32l m_state;
       PUInt32l m_lineInstance;
       PUInt32l m_callIdentifier;
+      BYTE     m_unknown[16];
 
       __inline CallStates GetState() const { return (CallStates)(uint32_t)m_state; }
     );
@@ -524,9 +525,9 @@ class OpalSkinnyConnection : public OpalRTPConnection
 
   /**@name Protocol handling routines */
   //@{
-    virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::SetRingerMsg & msg);
     virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg & msg);
     virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::CallInfoMsg & msg);
+    virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::SetRingerMsg & msg);
     virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::OpenReceiveChannelMsg & msg);
     virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::CloseReceiveChannelMsg & msg);
     virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::StartMediaTransmissionMsg & msg);
