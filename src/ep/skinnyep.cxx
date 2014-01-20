@@ -513,7 +513,7 @@ void OpalSkinnyConnection::OnReleased()
   msg.m_lineInstance = m_lineInstance;
   m_endpoint.SendSkinnyMsg(msg);
 
-  OpalConnection::OnReleased();
+  OpalRTPConnection::OnReleased();
 }
 
 
