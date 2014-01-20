@@ -693,11 +693,17 @@ void OpalConnection::AutoStartMediaStreams(bool transfer)
   PTRACE(4, "OpalCon\tAutoStartMediaStreams("
          << (transfer ? "transfer": (GetPhase() < AlertingPhase ? "alerting" : "normal"))
          << ") on " << *this);
+
+  PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
+  if (otherConnection == NULL)
+    return;
+
   OpalMediaTypeList mediaTypes = OpalMediaType::GetList();
   for (OpalMediaTypeList::iterator iter = mediaTypes.begin(); iter != mediaTypes.end(); ++iter) {
     OpalMediaType mediaType = *iter;
-    if ((GetAutoStart(mediaType)&OpalMediaType::Transmit) != 0 &&
-                      (transfer || GetMediaStream(mediaType, true) == NULL))
+    if ((otherConnection->GetAutoStart(mediaType)&OpalMediaType::Receive) &&
+                         (GetAutoStart(mediaType)&OpalMediaType::Transmit) &&
+                        (transfer || GetMediaStream(mediaType, true) == NULL))
       ownerCall.OpenSourceMediaStreams(*this,
                                        mediaType,
                                        mediaType->GetDefaultSessionId(),
