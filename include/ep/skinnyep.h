@@ -298,7 +298,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
     enum RingType
     {
       eRingOff = 1,
-      eRongInside,
+      eRingInside,
       eRingOutside,
       eRingFeature
     };
@@ -390,7 +390,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       PUInt32l m_payloadCapability;
       PUInt32l m_echoCancelType;
       PUInt32l m_g723Bitrate;
-      BYTE     m_unknown[84];
+      BYTE     m_unknown[72];
     );
 
     OPAL_SKINNY_MSG(OpenReceiveChannelAckMsg, 0x0022,
@@ -419,7 +419,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       PUInt32l m_silenceSuppression;
       PUInt32l m_maxFramesPerPacket;
       PUInt32l m_g723Bitrate;
-      BYTE     m_unknown[76];
+      BYTE     m_unknown[68];
     );
 
     OPAL_SKINNY_MSG(StopMediaTransmissionMsg, 0x008b,
@@ -506,6 +506,16 @@ class OpalSkinnyConnection : public OpalRTPConnection
     /**Indicate to remote endpoint we are connected.
       */
     virtual PBoolean SetConnected();
+
+    /** Indicate whether a particular media type can auto-start.
+        This is typically used for things like video or fax to contol if on
+        initial connection, that media type is opened straight away. Streams
+        of that type may be opened later, during the call, by using the
+        OpalCall::OpenSourceMediaStreams() function.
+    */
+    virtual OpalMediaType::AutoStartMode GetAutoStart(
+      const OpalMediaType & mediaType  ///< media type to check
+    ) const;
 
     /** Get alerting type information of an incoming call.
         The type of "distinctive ringing" for the call. The string is protocol

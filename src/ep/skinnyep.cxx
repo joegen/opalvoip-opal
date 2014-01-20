@@ -84,8 +84,8 @@ void OpalSkinnyEndPoint::SkinnyMsg::Construct(const PBYTEArray & pdu)
 {
   PINDEX len = m_length + sizeof(m_headerVersion);
   memcpy((char *)this + sizeof(m_length), pdu, std::min(len, pdu.GetSize()));
-  PTRACE_IF(3, len != pdu.GetSize(), &pdu, PTraceModule(), "Received message size error: "
-            "id=" << GetID() << ", expected = " << len << ", received = " << pdu.GetSize());
+  PTRACE_IF(3, len > pdu.GetSize(), &pdu, PTraceModule(), "Received message size error: "
+            "id=0x" << hex << GetID() << dec << ", expected = " << len << ", received = " << pdu.GetSize());
 }
 
 
@@ -519,11 +519,23 @@ void OpalSkinnyConnection::OnReleased()
 
 PBoolean OpalSkinnyConnection::SetConnected()
 {
+  if (GetPhase() >= ConnectedPhase)
+    return true;
+
+  SetPhase(ConnectedPhase);
+
   OpalSkinnyEndPoint::SoftKeyEventMsg msg;
   msg.m_event = OpalSkinnyEndPoint::eSoftKeyAnswer;
   msg.m_callIdentifier = m_callIdentifier;
   msg.m_lineInstance = m_lineInstance;
   return m_endpoint.SendSkinnyMsg(msg);
+}
+
+
+OpalMediaType::AutoStartMode OpalSkinnyConnection::GetAutoStart(const OpalMediaType &) const
+{
+  // Driven from server, so we don't try and open media streams directly.
+  return OpalMediaType::DontOffer;
 }
 
 
@@ -535,11 +547,6 @@ PString OpalSkinnyConnection::GetAlertingType() const
 
 bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg & msg)
 {
-  if (m_lineInstance != msg.m_lineInstance) {
-    m_lineInstance = msg.m_lineInstance;
-    PTRACE(4, "Line instance set to " << m_lineInstance);
-  }
-
   if (m_callIdentifier != msg.m_callIdentifier) {
     m_callIdentifier = msg.m_callIdentifier;
     PTRACE(3, "Call identifier set to " << m_callIdentifier);
@@ -548,6 +555,11 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg &
       callToken = newToken;
       PTRACE(3, "Set incoming calls new token to \"" << callToken << '"');
     }
+  }
+
+  if (m_lineInstance != msg.m_lineInstance) {
+    m_lineInstance = msg.m_lineInstance;
+    PTRACE(4, "Line instance set to " << m_lineInstance);
   }
 
   switch (msg.GetState()) {
@@ -561,6 +573,13 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg &
 
     case OpalSkinnyEndPoint::eStateOnHook:
       Release(EndedByRemoteUser);
+      break;
+
+    case OpalSkinnyEndPoint::eStateConnected :
+      if (IsOriginating())
+        OnConnectedInternal();
+      else
+        SetPhase(EstablishedPhase);
       break;
 
     default :
@@ -590,7 +609,8 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallInfoMsg & 
     m_calledPartyNumber = m_calledPartyName;
 
   PTRACE(3, "Called party: number= " << m_calledPartyName << ", name=\"" << m_calledPartyNumber << "\" - "
-         "Remote party: number= " << remotePartyNumber << ", name=\"" << remotePartyName << '"');
+            "Remote party: number= " << remotePartyNumber << ", name=\"" << remotePartyName << "\" "
+            "for " << *this);
 
   if (GetPhase() == UninitialisedPhase) {
     SetPhase(SetUpPhase);
@@ -604,9 +624,21 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallInfoMsg & 
 
 bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::SetRingerMsg & msg)
 {
-  m_callIdentifier = msg.m_callIdentifier;
-  m_lineInstance = msg.m_lineInstance;
-  m_alertingType = PSTRSTRM(msg.m_ringMode << ' ' << msg.m_ringType);
+  switch (msg.GetType()) {
+    case OpalSkinnyEndPoint::eRingOff :
+      return true;
+
+    case OpalSkinnyEndPoint::eRingInside :
+      m_alertingType = "Inside";
+      break;
+
+    case OpalSkinnyEndPoint::eRingOutside :
+      m_alertingType = "Outside";
+      break;
+
+    default:
+      break;
+  }
   SetPhase(AlertingPhase);
   return true;
 }
@@ -655,6 +687,7 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::OpenReceiveCha
     m_endpoint.SendSkinnyMsg(ack);
 
     SetFromIdMediaType(mediaSession->GetMediaType(), msg.m_passThruPartyId);
+    PTRACE(3, "Opened receive channel for " << *this);
   }
 
   return true;
@@ -676,6 +709,7 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::StartMediaTran
   if (mediaSession != NULL) {
     mediaSession->SetRemoteAddress(OpalTransportAddress(msg.m_ip, msg.m_port, OpalTransportAddress::UdpPrefix()));
     SetFromIdMediaType(mediaSession->GetMediaType(), msg.m_passThruPartyId);
+    PTRACE(3, "Started media transmission for " << *this);
   }
 
   return true;
@@ -705,11 +739,15 @@ OpalMediaType OpalSkinnyConnection::GetMediaTypeFromId(uint32_t id)
 
 void OpalSkinnyConnection::SetFromIdMediaType(const OpalMediaType & mediaType, uint32_t id)
 {
-  if (mediaType == OpalMediaType::Audio())
+  if (mediaType == OpalMediaType::Audio()) {
     m_audioId = id;
+    PTRACE(4, "Setting audio stream id to " << id);
+  }
 
-  if (mediaType == OpalMediaType::Video())
+  if (mediaType == OpalMediaType::Video()) {
     m_videoId = id;
+    PTRACE(4, "Setting video stream id to " << id);
+  }
 }
 
 
