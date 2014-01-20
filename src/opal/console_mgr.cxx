@@ -626,7 +626,8 @@ void OpalConsoleSkinnyEndPoint::GetArgumentSpec(ostream & strm) const
 {
   strm << "[PSTN options:]"
     "-no-sccp.        Disable Skinny Client Control Protocol\n"
-    "-sccp-server:    Set skinny server address.\n";
+    "-sccp-server:    Set Skinny server address.\n"
+    "-sccp-streams:   Set max number of streams for Skinny client.\n";
 }
 
 
@@ -642,9 +643,10 @@ bool OpalConsoleSkinnyEndPoint::Initialise(PArgList & args, bool verbose, const 
     return true;
   }
 
+  unsigned maxStreams = args.GetOptionAs<unsigned>("sccp-streams", 1);
   PString server = args.GetOptionString("sccp-server");
   if (!server.IsEmpty()) {
-    if (!Register(server))
+    if (!Register(server, maxStreams))
       output << "Could not register with skinny server \"" << server << '"' << endl;
     else if (verbose)
       output << "Skinny server: " << server << '\n';
