@@ -84,7 +84,8 @@ void OpalSkinnyEndPoint::SkinnyMsg::Construct(const PBYTEArray & pdu)
 {
   PINDEX len = m_length + sizeof(m_headerVersion);
   memcpy((char *)this + sizeof(m_length), pdu, std::min(len, pdu.GetSize()));
-  PTRACE_IF(3, len != pdu.GetSize(), &pdu, PTraceModule(), "Received message size error: expected=" << len << ", received=" << pdu.GetSize());
+  PTRACE_IF(3, len != pdu.GetSize(), &pdu, PTraceModule(), "Received message size error: "
+            "id=" << GetID() << ", expected = " << len << ", received = " << pdu.GetSize());
 }
 
 
@@ -109,7 +110,7 @@ void OpalSkinnyEndPoint::ShutDown()
   if (m_serverTransport.IsOpen()) {
     PTRACE(4, "Unregistering");
     SendSkinnyMsg(UnregisterMsg());
-    PThread::Sleep(1000); // Wait a abit for reply.
+    PThread::Sleep(1000); // Wait a bit for reply.
   }
 }
 
@@ -283,7 +284,7 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(const RegisterAckMsg & ack)
     SendSkinnyMsg(PortMsg(ap.GetPort()));
 
   KeepAliveMsg msg;
-  m_serverTransport.SetKeepAlive(PTimeInterval(0, ack.m_keepAlive), PBYTEArray((const BYTE *)&msg, sizeof(msg), false));
+  m_serverTransport.SetKeepAlive(PTimeInterval(0, ack.m_keepAlive), PBYTEArray((const BYTE *)&msg, sizeof(msg)));
   return true;
 }
 
@@ -532,20 +533,6 @@ PString OpalSkinnyConnection::GetAlertingType() const
 }
 
 
-bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::SetRingerMsg & msg)
-{
-  m_callIdentifier = msg.m_callIdentifier;
-  m_lineInstance = msg.m_lineInstance;
-  m_alertingType = PSTRSTRM(msg.m_ringMode << ' ' << msg.m_ringType);
-
-  OnApplyStringOptions();
-  if (OnIncomingConnection(0, NULL))
-    ownerCall.OnSetUp(*this);
-
-  return true;
-}
-
-
 bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg & msg)
 {
   if (m_lineInstance != msg.m_lineInstance) {
@@ -564,6 +551,9 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg &
   }
 
   switch (msg.GetState()) {
+    case OpalSkinnyEndPoint::eStateRingIn :
+      break;
+
     case OpalSkinnyEndPoint::eStateOffHook:
       if (IsOriginating())
         OnProceeding();
@@ -576,6 +566,48 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg &
     default :
       PTRACE(4, "Unhandled state: " << msg.GetState());
   }
+  return true;
+}
+
+
+bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallInfoMsg & msg)
+{
+  if (msg.GetType() == OpalSkinnyEndPoint::eTypeOutboundCall) {
+    remotePartyName = msg.m_calledPartyName;
+    remotePartyNumber = msg.m_calledPartyNumber;
+  }
+  else {
+    remotePartyName = msg.m_callingPartyName;
+    remotePartyNumber = msg.m_callingPartyNumber;
+    m_calledPartyName = msg.m_calledPartyName;
+    m_calledPartyNumber = msg.m_calledPartyNumber;
+    m_redirectingParty = GetPrefixName() + ':' + msg.m_lastRedirectingPartyNumber;
+  }
+
+  if (remotePartyNumber.IsEmpty() && OpalIsE164(remotePartyName))
+    remotePartyNumber = remotePartyName;
+  if (m_calledPartyNumber.IsEmpty() && OpalIsE164(m_calledPartyName))
+    m_calledPartyNumber = m_calledPartyName;
+
+  PTRACE(3, "Called party: number= " << m_calledPartyName << ", name=\"" << m_calledPartyNumber << "\" - "
+         "Remote party: number= " << remotePartyNumber << ", name=\"" << remotePartyName << '"');
+
+  if (GetPhase() == UninitialisedPhase) {
+    SetPhase(SetUpPhase);
+    OnApplyStringOptions();
+    if (OnIncomingConnection(0, NULL))
+      ownerCall.OnSetUp(*this);
+  }
+  return true;
+}
+
+
+bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::SetRingerMsg & msg)
+{
+  m_callIdentifier = msg.m_callIdentifier;
+  m_lineInstance = msg.m_lineInstance;
+  m_alertingType = PSTRSTRM(msg.m_ringMode << ' ' << msg.m_ringType);
+  SetPhase(AlertingPhase);
   return true;
 }
 
@@ -655,23 +687,6 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::StopMediaTrans
   OpalMediaStreamPtr mediaStream = GetMediaStream(GetMediaTypeFromId(msg.m_passThruPartyId), false);
   if (mediaStream != NULL)
     mediaStream->Close();
-  return true;
-}
-
-
-bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallInfoMsg & msg)
-{
-  if (msg.GetType() == OpalSkinnyEndPoint::eTypeOutboundCall) {
-    remotePartyName = msg.m_calledPartyName;
-    remotePartyNumber = msg.m_calledPartyNumber;
-  }
-  else {
-    remotePartyName = msg.m_callingPartyName;
-    remotePartyNumber = msg.m_callingPartyNumber;
-    m_calledPartyName = msg.m_calledPartyName;
-    m_calledPartyNumber = msg.m_calledPartyNumber;
-    m_redirectingParty = GetPrefixName() + ':' + msg.m_lastRedirectingPartyNumber;
-  }
   return true;
 }
 
