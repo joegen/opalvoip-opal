@@ -64,7 +64,7 @@ bool MyManager::Initialise(PArgList & args, bool verbose)
 
   m_autoAnswer = args.HasOption("auto-answer");
   if (verbose)
-    *LockedOutput() << "Auto answer:" << (m_autoAnswer ? "yes" : "no") << 'n';
+    *LockedOutput() << "Auto answer: " << (m_autoAnswer ? "yes" : "no") << '\n';
 
   m_cli->SetCommand("auto-answer", m_autoAnswer, "Auto-answer", "Answer call automatically");
 
