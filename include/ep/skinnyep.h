@@ -390,7 +390,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       PUInt32l m_payloadCapability;
       PUInt32l m_echoCancelType;
       PUInt32l m_g723Bitrate;
-      BYTE     m_unknown[72];
+      BYTE     m_unknown[68];
     );
 
     OPAL_SKINNY_MSG(OpenReceiveChannelAckMsg, 0x0022,
@@ -433,6 +433,8 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       */
     bool SendSkinnyMsg(const SkinnyMsg & msg);
   //@}
+
+    const OpalTransport & GetServerTransport() const { return m_serverTransport; }
 
   protected:
     void HandleServerTransport();
