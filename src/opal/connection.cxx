@@ -503,6 +503,12 @@ PBoolean OpalConnection::OnIncomingConnection(unsigned options, OpalConnection::
 
 PString OpalConnection::GetDestinationAddress()
 {
+  if (!IsOriginating()) {
+    if (!m_calledPartyNumber)
+      return m_calledPartyNumber;
+    if (!m_calledPartyName)
+      return m_calledPartyName;
+  }
   return '*';
 }
 
@@ -1477,7 +1483,7 @@ PString OpalConnection::GetRemotePartyURL() const
   if (!remotePartyName.IsEmpty())
     return MakeURL(GetPrefixName(), remotePartyName);
 
-  return PString::Empty();
+  return MakeURL(GetPrefixName(), "*");
 }
 
 
