@@ -608,8 +608,8 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallInfoMsg & 
   if (m_calledPartyNumber.IsEmpty() && OpalIsE164(m_calledPartyName))
     m_calledPartyNumber = m_calledPartyName;
 
-  PTRACE(3, "Called party: number= " << m_calledPartyName << ", name=\"" << m_calledPartyNumber << "\" - "
-            "Remote party: number= " << remotePartyNumber << ", name=\"" << remotePartyName << "\" "
+  PTRACE(3, "Called party: number=\"" << m_calledPartyName << "\", name=\"" << m_calledPartyNumber << "\" - "
+            "Remote party: number=\"" << remotePartyNumber << "\", name=\"" << remotePartyName << "\" "
             "for " << *this);
 
   if (GetPhase() == UninitialisedPhase) {
@@ -660,6 +660,11 @@ OpalMediaSession * OpalSkinnyConnection::SetUpMediaSession(uint32_t payloadCapab
   if (mediaSession == NULL) {
     PTRACE(2, "Could not create session for " << mediaFormat);
     Release(EndedByCapabilityExchange);
+    return NULL;
+  }
+
+  if (!mediaSession->Open(m_endpoint.GetServerTransport().GetInterface(), m_endpoint.GetServerTransport().GetRemoteAddress(), false)) {
+    PTRACE(2, "Could not open media session for " << mediaFormat);
     return NULL;
   }
 
