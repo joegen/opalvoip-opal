@@ -62,6 +62,10 @@ bool MyManager::Initialise(PArgList & args, bool verbose)
 
   m_cli->SetPrompt("OPAL> ");
 
+  m_autoAnswer = args.HasOption("auto-answer");
+  if (verbose)
+    *LockedOutput() << "Auto answer:" << (m_autoAnswer ? "yes" : "no") << 'n';
+
   m_cli->SetCommand("auto-answer", m_autoAnswer, "Auto-answer", "Answer call automatically");
 
   m_cli->SetCommand("call",     PCREATE_NOTIFIER(CmdCall), "Start call", "<uri>");
