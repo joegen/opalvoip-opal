@@ -39,9 +39,8 @@
 
 static PString CreateToken(unsigned callIdentifier)
 {
-  return psprintf("Skinny:%u", callIdentifier);
+  return psprintf("Skinny/%u", callIdentifier);
 }
-
 
 static PConstString const OutgoingConnectionToken("SkinnyOut");
 
@@ -232,6 +231,7 @@ void OpalSkinnyEndPoint::HandleServerTransport()
         ON_RECEIVE_MSG(CapabilityRequestMsg);
         ON_RECEIVE_MSG(CapabilityResponseMsg);
         ON_RECEIVE_MSG(CallStateMsg);
+        ON_RECEIVE_MSG(CallInfoMsg);
         ON_RECEIVE_MSG(SetRingerMsg);
         ON_RECEIVE_MSG(OffHookMsg);
         ON_RECEIVE_MSG(OnHookMsg);
@@ -379,6 +379,12 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(const CallStateMsg & msg)
     return true;
 
   return connection->OnReceiveMsg(msg);
+}
+
+
+bool OpalSkinnyEndPoint::OnReceiveMsg(const CallInfoMsg & msg)
+{
+  return DelegateMsg(msg);
 }
 
 
@@ -549,8 +555,12 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg &
 
   if (m_callIdentifier != msg.m_callIdentifier) {
     m_callIdentifier = msg.m_callIdentifier;
-    callToken = CreateToken(m_callIdentifier);
-    PTRACE(3, "Call identifier set to " << m_callIdentifier << ", new token \"" << callToken << '"');
+    PTRACE(3, "Call identifier set to " << m_callIdentifier);
+    PString newToken = CreateToken(m_callIdentifier);
+    if (callToken != newToken) {
+      callToken = newToken;
+      PTRACE(3, "Set incoming calls new token to \"" << callToken << '"');
+    }
   }
 
   switch (msg.GetState()) {
@@ -645,6 +655,23 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::StopMediaTrans
   OpalMediaStreamPtr mediaStream = GetMediaStream(GetMediaTypeFromId(msg.m_passThruPartyId), false);
   if (mediaStream != NULL)
     mediaStream->Close();
+  return true;
+}
+
+
+bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallInfoMsg & msg)
+{
+  if (msg.GetType() == OpalSkinnyEndPoint::eTypeOutboundCall) {
+    remotePartyName = msg.m_calledPartyName;
+    remotePartyNumber = msg.m_calledPartyNumber;
+  }
+  else {
+    remotePartyName = msg.m_callingPartyName;
+    remotePartyNumber = msg.m_callingPartyNumber;
+    m_calledPartyName = msg.m_calledPartyName;
+    m_calledPartyNumber = msg.m_calledPartyNumber;
+    m_redirectingParty = GetPrefixName() + ':' + msg.m_lastRedirectingPartyNumber;
+  }
   return true;
 }
 

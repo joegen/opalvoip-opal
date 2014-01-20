@@ -263,6 +263,37 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       __inline CallStates GetState() const { return (CallStates)(uint32_t)m_state; }
     );
 
+    enum CallType
+    {
+      eTypeInboundCall = 1,
+      eTypeOutboundCall,
+      eTypeForwardCall
+    };
+    OPAL_SKINNY_MSG(CallInfoMsg, 0x008f,
+      char     m_callingPartyName[40];
+      char     m_callingPartyNumber[24];
+      char     m_calledPartyName[40];
+      char     m_calledPartyNumber[24];
+      PUInt32l m_lineInstance;
+      PUInt32l m_callIdentifier;
+      PUInt32l m_callType;
+      char     m_originalCalledPartyName[40];
+      char     m_originalCalledPartyNumber[24];
+      char     m_lastRedirectingPartyName[40];
+      char     m_lastRedirectingPartyNumber[24];
+      PUInt32l m_originalCalledPartyRedirectReason;
+      PUInt32l m_lastRedirectingReason;
+      char     m_callingPartyVoiceMailbox[24];
+      char     m_calledPartyVoiceMailbox[24];
+      char     m_originalCalledPartyVoiceMailbox[24];
+      char     m_lastRedirectingVoiceMailbox[24];
+      PUInt32l m_callInstance;
+      PUInt32l m_callSecurityStatus;
+      PUInt32l m_partyPIRestrictionBits;
+
+      __inline CallType GetType() const { return (CallType)(uint32_t)m_callType; }
+    );
+
     enum RingType
     {
       eRingOff = 1,
@@ -405,13 +436,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
   protected:
     void HandleServerTransport();
     PSafePtr<OpalSkinnyConnection> GetSkinnyConnection(uint32_t callIdentifier, PSafetyMode mode = PSafeReadWrite);
-
-    template <class MSG> bool DelegateMsg(const MSG & msg)
-    {
-      PSafePtr<OpalSkinnyConnection> connection = GetSkinnyConnection(msg.m_callIdentifier);
-      return connection == NULL || connection->OnReceiveMsg(msg);
-    }
-
+    template <class MSG> bool DelegateMsg(const MSG & msg);
 
     OpalTransportTCP m_serverTransport;
 };
@@ -501,6 +526,7 @@ class OpalSkinnyConnection : public OpalRTPConnection
   //@{
     virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::SetRingerMsg & msg);
     virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg & msg);
+    virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::CallInfoMsg & msg);
     virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::OpenReceiveChannelMsg & msg);
     virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::CloseReceiveChannelMsg & msg);
     virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::StartMediaTransmissionMsg & msg);
@@ -521,6 +547,14 @@ class OpalSkinnyConnection : public OpalRTPConnection
     uint32_t m_audioId;
     uint32_t m_videoId;
 };
+
+
+template <class MSG> bool OpalSkinnyEndPoint::DelegateMsg(const MSG & msg)
+{
+  PSafePtr<OpalSkinnyConnection> connection = GetSkinnyConnection(msg.m_callIdentifier);
+  return connection == NULL || connection->OnReceiveMsg(msg);
+}
+
 
 #endif // OPAL_SKINNY
 
