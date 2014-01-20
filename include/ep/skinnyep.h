@@ -150,8 +150,9 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
     /** Register with skinny server.
       */
     bool Register(
-      const PString & server,   ///< Server to register with
-      unsigned deviceType = 30016 ///< Device type code (Cisco IP Communicator)
+      const PString & server,      ///< Server to register with
+      unsigned maxStreams = 1,     ///< Max "lines" for client
+      unsigned deviceType = 30016  ///< Device type code (Cisco IP Communicator)
     );
 
 #pragma pack(1)
@@ -159,7 +160,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
     {
       protected:
         SkinnyMsg(uint32_t id, PINDEX len);
-        SkinnyMsg(const PBYTEArray & pdu, PINDEX len);
+        void Construct(const PBYTEArray & pdu);
 
       public:
         PINDEX GetLength() const { return m_length+8; }
@@ -178,7 +179,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
         public: \
           enum { ID = id }; \
           cls() : SkinnyMsg(ID, sizeof(*this)) { } \
-          cls(const PBYTEArray & pdu) : SkinnyMsg(pdu, sizeof(*this)) { } \
+          cls(const PBYTEArray & pdu) : SkinnyMsg(ID, sizeof(*this)) { Construct(pdu); } \
           vars \
       }; \
       virtual bool OnReceiveMsg(const cls & msg)
@@ -197,8 +198,9 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       in_addr  m_ip;
       PUInt32l m_deviceType;
       PUInt32l m_maxStreams;
-      BYTE     m_unknown[28];
-    );
+      BYTE     m_unknown[16];
+      char     m_macAddress[12];
+      );
 
     OPAL_SKINNY_MSG(RegisterAckMsg, 0x0081,
       PUInt32l m_keepAlive;
@@ -209,7 +211,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
     );
 
     OPAL_SKINNY_MSG(RegisterRejectMsg, 0x009d,
-      char m_errorText[33];
+      char m_errorText[32];
     );
 
     OPAL_SKINNY_MSG(UnregisterMsg, 0x0027,
