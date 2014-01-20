@@ -76,15 +76,16 @@ static POrdinalToString const CodecCodeToMediaFormat(PARRAYSIZE(CodecCodes), Cod
 OpalSkinnyEndPoint::SkinnyMsg::SkinnyMsg(uint32_t id, PINDEX len)
 {
   memset(this, 0, len);
-  m_length = len - sizeof(m_length)-sizeof(m_headerVersion);
+  m_length = len - sizeof(m_length) - sizeof(m_headerVersion);
   m_messageId = id;
 }
 
 
-OpalSkinnyEndPoint::SkinnyMsg::SkinnyMsg(const PBYTEArray & pdu, PINDEX len)
+void OpalSkinnyEndPoint::SkinnyMsg::Construct(const PBYTEArray & pdu)
 {
-  if (pdu.GetSize() == (len - (PINDEX)sizeof(m_length)))
-    memcpy(this + sizeof(m_length), pdu, pdu.GetSize());
+  PINDEX len = m_length + sizeof(m_headerVersion);
+  memcpy((char *)this + sizeof(m_length), pdu, std::min(len, pdu.GetSize()));
+  PTRACE_IF(3, len != pdu.GetSize(), &pdu, PTraceModule(), "Received message size error: expected=" << len << ", received=" << pdu.GetSize());
 }
 
 
@@ -174,7 +175,7 @@ OpalSkinnyConnection * OpalSkinnyEndPoint::CreateConnection(OpalCall & call,
 }
 
 
-bool OpalSkinnyEndPoint::Register(const PString & server, unsigned deviceType)
+bool OpalSkinnyEndPoint::Register(const PString & server, unsigned maxStreams, unsigned deviceType)
 {
   m_serverTransport.CloseWait();
 
@@ -184,29 +185,18 @@ bool OpalSkinnyEndPoint::Register(const PString & server, unsigned deviceType)
 
   m_serverTransport.AttachThread(new PThreadObj<OpalSkinnyEndPoint>(*this, &OpalSkinnyEndPoint::HandleServerTransport, false, "Skinny"));
 
-  PString deviceName = "SEP";
-  {
-    PIPSocket::InterfaceTable interfaces;
-    if (PIPSocket::GetInterfaceTable(interfaces)) {
-      for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
-        PString macAddrStr = interfaces[i].GetMACAddress();
-        if (!macAddrStr && macAddrStr != "44-45-53-54-00-00") { /* not Win32 PPP device */
-          deviceName += macAddrStr.ToUpper();
-          break;
-        }
-      }
-    }
-  }
-
-
   PIPSocket::Address ip;
   m_serverTransport.GetLocalAddress().GetIpAddress(ip);
 
-  RegisterMsg msg;
-  strncpy(msg.m_deviceName, PAssertNULL(deviceName), sizeof(msg.m_deviceName)-1);
+  PString macAddress = PIPSocket::GetInterfaceMACAddress().ToUpper();
+  PString deviceName = "SEP" + macAddress;
 
-  static BYTE const UnknownValue[sizeof(msg.m_unknown)] = { 0, 0, 0, 0, 0xb, 0, 0x60, 0x85 };
-  memcpy(msg.m_unknown, UnknownValue, sizeof(msg.m_unknown));
+  RegisterMsg msg;
+  strncpy(msg.m_deviceName, deviceName, sizeof(msg.m_deviceName) - 1);
+  strncpy(msg.m_macAddress, macAddress, sizeof(msg.m_macAddress));
+  msg.m_ip = ip;
+  msg.m_maxStreams = maxStreams;
+  msg.m_deviceType = deviceType;
 
   if (!SendSkinnyMsg(msg))
     return false;
@@ -231,10 +221,29 @@ void OpalSkinnyEndPoint::HandleServerTransport()
       bool ok;
       unsigned msgId = pdu.GetAs<PUInt32l>(4);
       switch (msgId) {
+        ON_RECEIVE_MSG(KeepAliveMsg);
+        ON_RECEIVE_MSG(KeepAliveAckMsg);
+        ON_RECEIVE_MSG(RegisterMsg);
         ON_RECEIVE_MSG(RegisterAckMsg);
         ON_RECEIVE_MSG(RegisterRejectMsg);
+        ON_RECEIVE_MSG(UnregisterMsg);
+        ON_RECEIVE_MSG(UnregisterAckMsg);
+        ON_RECEIVE_MSG(PortMsg);
         ON_RECEIVE_MSG(CapabilityRequestMsg);
+        ON_RECEIVE_MSG(CapabilityResponseMsg);
         ON_RECEIVE_MSG(CallStateMsg);
+        ON_RECEIVE_MSG(SetRingerMsg);
+        ON_RECEIVE_MSG(OffHookMsg);
+        ON_RECEIVE_MSG(OnHookMsg);
+        ON_RECEIVE_MSG(StartToneMsg);
+        ON_RECEIVE_MSG(StopToneMsg);
+        ON_RECEIVE_MSG(KeyPadButtonMsg);
+        ON_RECEIVE_MSG(SoftKeyEventMsg);
+        ON_RECEIVE_MSG(OpenReceiveChannelMsg);
+        ON_RECEIVE_MSG(OpenReceiveChannelAckMsg);
+        ON_RECEIVE_MSG(CloseReceiveChannelMsg);
+        ON_RECEIVE_MSG(StartMediaTransmissionMsg);
+        ON_RECEIVE_MSG(StopMediaTransmissionMsg);
 
         default:
           PTRACE(4, "Received unhandled message id=0x" << hex << msgId << dec);
