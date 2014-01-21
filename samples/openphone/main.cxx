@@ -1003,7 +1003,7 @@ bool MyManager::Initialise(bool startMinimised)
   sipEP = new MySIPEndPoint(*this);
 #endif
 
-#if OPAL_SIP
+#if OPAL_SKINNY
   new OpalSkinnyEndPoint(*this);
 #endif
 
