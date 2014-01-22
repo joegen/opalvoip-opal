@@ -430,11 +430,6 @@ class MyManager : public OpalManagerCLI
       const OpalConnection & destination, ///<  Destination connection
       const OpalMediaType & mediaType     ///<  Media type for session
     ) const;
-    void AdjustMediaFormats(
-      bool local,
-      const OpalConnection & connection,
-      OpalMediaFormatList & mediaFormats
-    ) const;
     virtual void OnStartMediaPatch(
       OpalConnection & connection,  ///< Connection patch is in
       OpalMediaPatch & patch        ///< Media patch being started

@@ -1072,8 +1072,19 @@ void OpalManager::AdjustMediaFormats(bool local,
                                      OpalMediaFormatList & mediaFormats) const
 {
   mediaFormats.Remove(mediaFormatMask);
-  if (local)
-    mediaFormats.Reorder(mediaFormatOrder);
+
+  // Don't do the reorder done if acting as gateway, use other network endpoints ordering
+  if (local) {
+    bool reorder = true;
+    if (connection.IsNetworkConnection()) {
+      PSafePtr<OpalConnection> otherConnection = connection.GetOtherPartyConnection();
+      if (otherConnection != NULL && otherConnection->IsNetworkConnection())
+        reorder = false;
+    }
+    if (reorder)
+      mediaFormats.Reorder(mediaFormatOrder);
+  }
+
   connection.GetCall().AdjustMediaFormats(local, connection, mediaFormats);
 }
 
