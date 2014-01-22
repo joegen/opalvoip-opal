@@ -501,6 +501,7 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
     virtual void PrintOn(ostream & strm) const;
     virtual PString Encode() const;
     virtual bool Decode(const PString & str, const OpalMediaFormatList & mediaFormats);
+    virtual void SetAttribute(const PString & attr, const PString & value);
 
     void SetSessionName(const PString & v);
     PString GetSessionName() const { return sessionName; }
@@ -532,6 +533,9 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
     OpalTransportAddress GetOwnerAddress() const { return ownerAddress; }
     void SetOwnerAddress(OpalTransportAddress addr) { ownerAddress = addr; }
 
+    typedef PDictionary<PString, PStringArray> GroupDict;
+    GroupDict GetGroups() const { return m_groups; }
+
     OpalMediaFormatList GetMediaFormats() const;
 
   protected:
@@ -547,6 +551,9 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
     unsigned ownerVersion;
     OpalTransportAddress ownerAddress;
     OpalTransportAddress defaultConnectAddress;
+
+    GroupDict m_groups;
+    PString   m_groupId;
 };
 
 /////////////////////////////////////////////////////////
