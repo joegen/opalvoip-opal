@@ -80,6 +80,17 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       */
     virtual WORD GetDefaultSignalPort() const;
 
+    /**Get the data formats this endpoint is capable of operating.
+       This provides a list of media data format names that may be used by an
+       OpalMediaStream may be created by a connection from this endpoint.
+
+       Note that a specific connection may not actually support all of the
+       media formats returned here, but should return no more.
+
+       The default behaviour is pure.
+      */
+    virtual OpalMediaFormatList GetMediaFormats() const;
+
     /** Handle new incoming connection from listener.
       */
     virtual void NewIncomingConnection(
