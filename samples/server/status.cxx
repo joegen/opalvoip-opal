@@ -119,6 +119,7 @@ PBoolean BaseStatusPage::Post(PHTTPRequest & request,
 ClearLogPage::ClearLogPage(MyManager & mgr, const PHTTPAuthority & auth)
   : BaseStatusPage(mgr, auth, "ClearLogFile")
 {
+  m_refreshRate = 0;
 }
 
 
@@ -140,7 +141,7 @@ bool ClearLogPage::OnPostControl(const PStringToString & data, PHTML & msg)
     PSystemLogToFile * logFile = dynamic_cast<PSystemLogToFile *>(&PSystemLog::GetTarget());
     if (logFile == NULL)
       msg << "Not logging to a file";
-    else if (PFile::Remove(logFile->GetFilePath()))
+    else if (logFile->Clear())
       msg << "Cleared log file " << logFile->GetFilePath();
     else
       msg << "Could not clear log file " << logFile->GetFilePath() << PHTML::Paragraph()
