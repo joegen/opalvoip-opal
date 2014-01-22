@@ -155,6 +155,8 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       unsigned deviceType = 30016  ///< Device type code (Cisco IP Communicator)
     );
 
+    const PString & GetRegistrationStatus() const { return m_registrationStatus; }
+
 #pragma pack(1)
     class SkinnyMsg
     {
@@ -442,6 +444,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
     template <class MSG> bool DelegateMsg(const MSG & msg);
 
     OpalTransportTCP m_serverTransport;
+    PString          m_registrationStatus;
 };
 
 

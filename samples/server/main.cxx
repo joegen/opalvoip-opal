@@ -73,6 +73,7 @@ static const char ProductVersionKey[] = "Product Version";
 
 #if OPAL_SKINNY
 static const char SkinnyServerKey[] = "SCCP Server";
+static const char SkinnyStreamsKey[] = "SCCP Max Streams";
 #endif
 
 #if OPAL_LID
@@ -539,9 +540,12 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 #endif
 
 #if OPAL_SKINNY
-  if (!FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY)->Register(rsrc->AddStringField(SkinnyServerKey,
-                                         20, PString::Empty(), "Server for Skinny Client Control Protocol"))) {
-    PSYSTEMLOG(Error, "Could not register with skinny server.");
+  {
+    PString server = rsrc->AddStringField(SkinnyServerKey, 20, PString::Empty(), "Server for Skinny Client Control Protocol");
+    unsigned maxStreams = rsrc->AddIntegerField(SkinnyStreamsKey, 1, 1000, 100, "", "Max Streams for Skinny Client Control Protocol");
+    if (!server.IsEmpty() && !FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY)->Register(server, maxStreams)) {
+      PSYSTEMLOG(Error, "Could not register with skinny server.");
+    }
   }
 #endif
 

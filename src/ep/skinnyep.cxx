@@ -94,6 +94,7 @@ void OpalSkinnyEndPoint::SkinnyMsg::Construct(const PBYTEArray & pdu)
 OpalSkinnyEndPoint::OpalSkinnyEndPoint(OpalManager & manager, const char *prefix)
   : OpalRTPEndPoint(manager, prefix, CanTerminateCall | SupportsE164)
   , P_DISABLE_MSVC_WARNINGS(4355, m_serverTransport(*this))
+  , m_registrationStatus("Not registered")
 {
   m_serverTransport.SetPDULengthFormat(-4, 4);
 }
@@ -107,10 +108,19 @@ OpalSkinnyEndPoint::~OpalSkinnyEndPoint()
 void OpalSkinnyEndPoint::ShutDown()
 {
   PTRACE(3, prefixName << " endpoint shutting down.");
+
   if (m_serverTransport.IsOpen()) {
-    PTRACE(4, "Unregistering");
+    PTRACE(4, "Unregistering from " << m_serverTransport.GetRemoteAddress().GetHostName());
     SendSkinnyMsg(UnregisterMsg());
-    PThread::Sleep(1000); // Wait a bit for reply.
+
+    // Wait a bit for reply.
+    for (PINDEX wait = 0; wait < 10; ++wait) {
+      if (!m_serverTransport.IsOpen())
+        break;
+      PThread::Sleep(200);
+    }
+
+    m_serverTransport.CloseWait();
   }
 }
 
@@ -180,8 +190,10 @@ bool OpalSkinnyEndPoint::Register(const PString & server, unsigned maxStreams, u
   m_serverTransport.CloseWait();
 
   OpalTransportAddress addr(server, GetDefaultSignalPort(), GetDefaultTransport());
-  if (!m_serverTransport.ConnectTo(addr))
+  if (!m_serverTransport.ConnectTo(addr)) {
+    m_registrationStatus = "Transport error: " + m_serverTransport.GetErrorText();
     return false;
+  }
 
   m_serverTransport.AttachThread(new PThreadObj<OpalSkinnyEndPoint>(*this, &OpalSkinnyEndPoint::HandleServerTransport, false, "Skinny"));
 
@@ -252,7 +264,7 @@ void OpalSkinnyEndPoint::HandleServerTransport()
           break;
       }
       if (!ok)
-        break;
+        m_serverTransport.Close();
     }
   }
   PTRACE(4, "Ended client handler thread");
@@ -279,6 +291,8 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(const RegisterMsg &)
 
 bool OpalSkinnyEndPoint::OnReceiveMsg(const RegisterAckMsg & ack)
 {
+  m_registrationStatus = "Registered: " + m_serverTransport.GetRemoteAddress().GetHostName();
+
   PIPSocket::AddressAndPort ap;
   if (m_serverTransport.GetLocalAddress().GetIpAndPort(ap))
     SendSkinnyMsg(PortMsg(ap.GetPort()));
@@ -292,7 +306,7 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(const RegisterAckMsg & ack)
 bool OpalSkinnyEndPoint::OnReceiveMsg(const RegisterRejectMsg & PTRACE_PARAM(msg))
 {
   PTRACE(2, "Server rejected registration: " << msg.m_errorText);
-  m_serverTransport.Close();
+  m_registrationStatus = PConstString("Rejected: ") + msg.m_errorText;
   return false;
 }
 
@@ -305,7 +319,9 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(const UnregisterMsg &)
 
 bool OpalSkinnyEndPoint::OnReceiveMsg(const UnregisterAckMsg &)
 {
-  return true;
+  PTRACE(2, "Unregistered from server");
+  m_registrationStatus = "Unregistered";
+  return false;
 }
 
 
