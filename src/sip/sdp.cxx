@@ -1300,7 +1300,7 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
   // The following should probably be user defined, but hey,
   // it's only ever audio/video so cheat and use media type.
   if (!m_groupId.IsEmpty())
-    strm << "mid:" << m_groupId << CRLF;
+    strm << "a=mid:" << m_groupId << CRLF;
 
   // output attributes for each payload type
   for (SDPMediaFormatList::const_iterator format = m_formats.begin(); format != m_formats.end(); ++format)
@@ -1435,6 +1435,11 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
       m_ssrcInfo[ssrc].SetAt(key, val);
       PTRACE_IF(4, key == "cname", "SDP\tSSRC: " << RTP_TRACE_SRC(ssrc) << " CNAME: " << val);
     }
+    return;
+  }
+
+  if (attr *= "mid") {
+    m_groupId  = value;
     return;
   }
 
@@ -2083,25 +2088,25 @@ SDPSessionDescription::SDPSessionDescription(time_t sessionId, unsigned version,
 }
 
 
-void SDPSessionDescription::PrintOn(ostream & str) const
+void SDPSessionDescription::PrintOn(ostream & strm) const
 {
   /* encode mandatory session information, note the order is important according to RFC!
      Must be vosiuepcbzkatrm and within the m it is icbka */
-  str << "v=" << protocolVersion << CRLF
-      << "o=" << ownerUsername << ' '
-      << ownerSessionId << ' '
-      << ownerVersion << ' '
-      << GetConnectAddressString(ownerAddress)
-      << CRLF
-      << "s=" << sessionName << CRLF;
+  strm << "v=" << protocolVersion << CRLF
+       << "o=" << ownerUsername << ' '
+       << ownerSessionId << ' '
+       << ownerVersion << ' '
+       << GetConnectAddressString(ownerAddress)
+       << CRLF
+       << "s=" << sessionName << CRLF;
 
   if (!defaultConnectAddress.IsEmpty())
-    str << "c=" << GetConnectAddressString(defaultConnectAddress) << CRLF;
+    strm << "c=" << GetConnectAddressString(defaultConnectAddress) << CRLF;
 
-  str << m_bandwidth
-    << "t=" << "0 0" << CRLF;
+  strm << m_bandwidth
+       << "t=" << "0 0" << CRLF;
 
-  OutputAttributes(str);
+  OutputAttributes(strm);
 
   // find groups
   PString bundle;
@@ -2117,14 +2122,14 @@ void SDPSessionDescription::PrintOn(ostream & str) const
   }
 
   if (!bundle.IsEmpty())
-    str << "group:BUNDLE " << bundle << CRLF;
+    strm << "a=group:BUNDLE " << bundle << CRLF;
   if (!groupId.IsEmpty())
-    str << "msid-semantic: WMS " << groupId << CRLF;
+    strm << "a=msid-semantic: WMS " << groupId << CRLF;
 
   // encode media session information
   for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
     if (mediaDescriptions[i].PreEncode())
-      mediaDescriptions[i].Encode(defaultConnectAddress, str);
+      mediaDescriptions[i].Encode(defaultConnectAddress, strm);
   }
 }
 
@@ -2260,6 +2265,28 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
   }
 
   return ok && (atLeastOneValidMedia || mediaDescriptions.IsEmpty());
+}
+
+
+void SDPSessionDescription::SetAttribute(const PString & attr, const PString & value)
+{
+  if (attr *= "group") {
+    PStringArray words = value.Tokenise(" \t\r\n", false); // Spec says space only, but lets be forgiving
+    if (words.GetSize() > 2) {
+      PString name = words[0];
+      words.RemoveAt(0);
+      m_groups.SetAt(name, new PStringArray(words));
+    }
+    return;
+  }
+
+  if (attr *= "msid-semantic") {
+    if (value.NumCompare("WMS") == EqualTo)
+      m_groupId = value.Mid(3).Trim();
+    return;
+  }
+
+  SDPCommonAttributes::SetAttribute(attr, value);
 }
 
 
