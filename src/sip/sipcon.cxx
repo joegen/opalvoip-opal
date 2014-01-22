@@ -766,7 +766,7 @@ PBoolean SIPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
       security |= e_SecureMediaSession;
 #endif
 
-    SetAudioVideoGroup();
+    SetAudioVideoGroup(); // Googlish audio and video grouping id
 
     vector<bool> sessions = CreateAllMediaSessions(security);
     for (vector<bool>::size_type session = 1; session < sessions.size(); ++session) {
@@ -1041,14 +1041,15 @@ bool SIPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPS
   }
 #endif // OPAL_SRTP
 
-  // Googlish audio and video grouping id
-  SetAudioVideoGroup();
+  SetAudioVideoGroup(); // Googlish audio and video grouping id
 
   // Fill in refusal for media sessions we didn't like
   bool gotNothing = true;
   for (sessionId = 1; sessionId <= sessionCount; ++sessionId) {
-    if (sdpMediaDescriptions[sessionId] != NULL) {
-      sdpOut.AddMediaDescription(sdpMediaDescriptions[sessionId]);
+    SDPMediaDescription * md = sdpMediaDescriptions[sessionId];
+    if (md != NULL) {
+      md->SetSessionInfo(GetMediaSession(sessionId));
+      sdpOut.AddMediaDescription(md);
       gotNothing = false;
     }
     else {
@@ -1249,8 +1250,6 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
   // See if we need to do a session switcharoo, but must be after stream closing
   if (replaceSession)
     ReplaceMediaSession(sessionId, mediaSession);
-
-  localMedia->SetSessionInfo(mediaSession);
 
   /* After (possibly) closing streams, we now open them again if necessary,
      OpenSourceMediaStreams will just return true if they are already open.
