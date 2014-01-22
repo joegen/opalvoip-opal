@@ -116,7 +116,7 @@ PBoolean BaseStatusPage::Post(PHTTPRequest & request,
 
 ///////////////////////////////////////////////////////////////
 
-#if OPAL_H323 | OPAL_SIP
+#if OPAL_H323 | OPAL_SIP | OPAL_SKINNY
 
 RegistrationStatusPage::RegistrationStatusPage(MyManager & mgr, const PHTTPAuthority & auth)
   : BaseStatusPage(mgr, auth, "RegistrationStatus")
@@ -140,10 +140,12 @@ void RegistrationStatusPage::CreateContent(PHTML & html, const PStringToString &
        << PHTML::TableData("NOWRAP")
        << "<!--#macro H323RegistrationStatus-->"
        << PHTML::TableEnd();
-#endif
-#if OPAL_H323 | OPAL_SIP
+#endif // OPAL_H323
+
+#if OPAL_H323 && OPAL_SIP
   html << PHTML::Paragraph();
 #endif
+
 #if OPAL_SIP
   html << PHTML::TableStart("border=1 cellpadding=5")
        << PHTML::TableRow()
@@ -159,7 +161,21 @@ void RegistrationStatusPage::CreateContent(PHTML & html, const PStringToString &
          << "<!--#status State-->"
        << "<!--#macroend SIPRegistrationStatus-->"
        << PHTML::TableEnd();
+#endif // OPAL_SIP
+
+#if OPAL_SIP && OPAL_SKINNY
+  html << PHTML::Paragraph();
 #endif
+
+#if OPAL_SKINNY
+  html << PHTML::TableStart("border=1 cellpadding=5")
+       << PHTML::TableRow()
+       << PHTML::TableData("NOWRAP")
+       << "&nbsp;SCCP&nbsp;Call&nbsp;Manager&nbsp;"
+       << PHTML::TableData("NOWRAP")
+       << "<!--#macro SkinnyRegistrationStatus-->"
+       << PHTML::TableEnd();
+#endif // OPAL_SKINNY
 }
 
 
@@ -174,14 +190,14 @@ PCREATE_SERVICE_MACRO(H323RegistrationStatus,resource,P_EMPTY)
   if (gk == NULL)
     return "None";
 
-  if (gk->IsRegistered())
-    return "Registered";
-  
   PStringStream strm;
-  strm << "Failed: " << gk->GetRegistrationFailReason();
+  if (gk->IsRegistered())
+    strm  << "Registered: " << *gk;
+  else
+    strm << "Failed: " << gk->GetRegistrationFailReason();
   return strm;
 }
-#endif
+#endif // OPAL_H323
 
 #if OPAL_SIP
 PCREATE_SERVICE_MACRO_BLOCK(SIPRegistrationStatus,resource,P_EMPTY,htmlBlock)
@@ -208,10 +224,22 @@ PCREATE_SERVICE_MACRO_BLOCK(SIPRegistrationStatus,resource,P_EMPTY,htmlBlock)
 
   return substitution;
 }
-#endif
+#endif // OPAL_SIP
+
+#if OPAL_SKINNY
+PCREATE_SERVICE_MACRO(SkinnyRegistrationStatus, resource, P_EMPTY)
+{
+  RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
+  if (PAssertNULL(status) == NULL)
+    return PString::Empty();
+
+  OpalSkinnyEndPoint * ep = status->m_manager.FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY);
+  return ep != NULL ? ep->GetRegistrationStatus() : "None";
+}
+#endif // OPAL_SKINNY
 
 
-#endif
+#endif // OPAL_H323 | OPAL_SIP | OPAL_SKINNY
 
 ///////////////////////////////////////////////////////////////
 
