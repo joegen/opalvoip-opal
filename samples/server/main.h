@@ -308,17 +308,15 @@ class BaseStatusPage : public PServiceHTTPString
       PHTML & msg
       );
 
+    MyManager & m_manager;
+
   protected:
     virtual const char * GetTitle() const = 0;
     virtual void CreateHTML(PHTML & html, const PStringToString & query);
     virtual void CreateContent(PHTML & html, const PStringToString & query) const = 0;
-    virtual bool OnPostControl(const PStringToString & /*data*/, PHTML & /*msg*/)
-    {
-      return false;
-    }
+    virtual bool OnPostControl(const PStringToString & /*data*/, PHTML & /*msg*/) { return false; }
 
-    MyManager & m_manager;
-    unsigned    m_refreshRate;
+    unsigned m_refreshRate;
 };
 
 
@@ -335,9 +333,6 @@ class RegistrationStatusPage : public BaseStatusPage
   protected:
     virtual const char * GetTitle() const;
     virtual void CreateContent(PHTML & html, const PStringToString & query) const;
-
-    friend class PServiceMacro_H323RegistrationStatus;
-    friend class PServiceMacro_SIPRegistrationStatus;
 };
 
 #endif
@@ -352,8 +347,6 @@ class CallStatusPage : public BaseStatusPage
     virtual const char * GetTitle() const;
     virtual void CreateContent(PHTML & html, const PStringToString & query) const;
     virtual bool OnPostControl(const PStringToString & data, PHTML & msg);
-
-    friend class PServiceMacro_CallStatus;
 };
 
 
