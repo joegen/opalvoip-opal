@@ -124,6 +124,15 @@ WORD OpalSkinnyEndPoint::GetDefaultSignalPort() const
 }
 
 
+OpalMediaFormatList OpalSkinnyEndPoint::GetMediaFormats() const
+{
+  OpalMediaFormatList formats;
+  for (PINDEX i = 0; i < PARRAYSIZE(CodecCodes); ++i)
+    formats += CodecCodes[i].value;
+  return formats;
+}
+
+
 void OpalSkinnyEndPoint::NewIncomingConnection(OpalListener & /*listener*/, const OpalTransportPtr & /*transport*/)
 {
 }
