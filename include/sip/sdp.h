@@ -230,11 +230,13 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 #endif
 
     virtual void SetAttribute(const PString & attr, const PString & value);
+    virtual void OutputAttributes(ostream & str) const;
 
     virtual Direction GetDirection() const { return m_mediaAddress.IsEmpty() ? Inactive : m_direction; }
 
     virtual bool SetSessionInfo(const OpalMediaSession * session);
-    virtual PString GetGroupId() const { return PString::Empty(); }
+    virtual PString GetMediaGroupId() const { return m_mediaGroupId; }
+    virtual void SetMediaGroupId(const PString & id) { m_mediaGroupId = id; }
 
     const OpalTransportAddress & GetMediaAddress() const { return m_mediaAddress; }
     const OpalTransportAddress & GetControlAddress() const { return m_controlAddress; }
@@ -269,6 +271,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     WORD                 m_port;
     WORD                 m_portCount;
     OpalMediaType        m_mediaType;
+    PString              m_mediaGroupId;
 
     SDPMediaFormatList   m_formats;
 
@@ -359,9 +362,11 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
 #endif
     virtual void SetAttribute(const PString & attr, const PString & value);
     virtual bool SetSessionInfo(const OpalMediaSession * session);
-    virtual PString GetGroupId() const { return m_groupId; }
 
     void EnableFeedback() { m_enableFeedback = true; }
+
+    typedef std::map<DWORD, PStringOptions> SsrcInfo;
+    const SsrcInfo & GetSsrcInfo() const { return m_ssrcInfo; }
 
   protected:
     class Format : public SDPMediaFormat
@@ -371,11 +376,8 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
         bool Initialise(const PString & portString);
     };
 
-    bool    m_enableFeedback;
-
-    typedef std::map<DWORD, PStringOptions> SsrcMap;
-    SsrcMap m_ssrcInfo;
-    PString m_groupId;
+    bool     m_enableFeedback;
+    SsrcInfo m_ssrcInfo;
 
 #if OPAL_SRTP
     PList<SDPCryptoSuite> m_cryptoSuites;
