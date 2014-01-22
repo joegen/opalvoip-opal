@@ -155,6 +155,10 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       unsigned deviceType = 30016  ///< Device type code (Cisco IP Communicator)
     );
 
+    /** Unregister from server.
+      */
+    void Unregister();
+
     const PString & GetRegistrationStatus() const { return m_registrationStatus; }
 
 #pragma pack(1)
