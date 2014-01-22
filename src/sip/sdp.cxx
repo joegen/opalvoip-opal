@@ -801,6 +801,11 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
     return;
   }
 
+  if (attr *= "mid") {
+    m_mediaGroupId = value;
+    return;
+  }
+
   SDPCommonAttributes::SetAttribute(attr, value);
 }
 
@@ -887,6 +892,15 @@ void SDPMediaDescription::Encode(const OpalTransportAddress & commonAddr, ostrea
 
   strm << m_bandwidth;
   OutputAttributes(strm);
+}
+
+
+void SDPMediaDescription::OutputAttributes(ostream & strm) const
+{
+  SDPCommonAttributes::OutputAttributes(strm);
+
+  if (!m_mediaGroupId.IsEmpty())
+    strm << "a=mid:" << m_mediaGroupId << CRLF;
 }
 
 
@@ -1297,11 +1311,6 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
   // call ancestor
   SDPMediaDescription::OutputAttributes(strm);
 
-  // The following should probably be user defined, but hey,
-  // it's only ever audio/video so cheat and use media type.
-  if (!m_groupId.IsEmpty())
-    strm << "a=mid:" << m_groupId << CRLF;
-
   // output attributes for each payload type
   for (SDPMediaFormatList::const_iterator format = m_formats.begin(); format != m_formats.end(); ++format)
     strm << *format;
@@ -1320,7 +1329,7 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
       strm << "a=rtcp:" << port << ' ' << GetConnectAddressString(m_mediaAddress) << CRLF;
   }
 
-  for (SsrcMap::const_iterator it1 = m_ssrcInfo.begin(); it1 != m_ssrcInfo.end(); ++it1) {
+  for (SsrcInfo::const_iterator it1 = m_ssrcInfo.begin(); it1 != m_ssrcInfo.end(); ++it1) {
     for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2)
       strm << "a=ssrc:" << it1->first << ' ' << it2->first << ':' << it2->second << CRLF;
   }
@@ -1438,11 +1447,6 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
     return;
   }
 
-  if (attr *= "mid") {
-    m_groupId  = value;
-    return;
-  }
-
   SDPMediaDescription::SetAttribute(attr, value);
 }
 
@@ -1454,12 +1458,16 @@ bool SDPRTPAVPMediaDescription::SetSessionInfo(const OpalMediaSession * session)
     DWORD ssrc = rtpSession->GetSyncSourceOut();
     PStringOptions & info = m_ssrcInfo[ssrc];
     info.SetAt("cname", rtpSession->GetCanonicalName());
-    m_groupId = rtpSession->GetGroupId();
-    if (!m_groupId.IsEmpty()) {
-      PString label = m_groupId + '-' + session->GetMediaType();
-      info.SetAt("mslabel", m_groupId);
+    PString mslabel = rtpSession->GetGroupId();
+    if (!mslabel.IsEmpty()) {
+      PString label = mslabel + '+' + session->GetMediaType();
+      info.SetAt("mslabel", mslabel);
       info.SetAt("label", label);
-      info.SetAt("msid", m_groupId & label);
+      info.SetAt("msid", mslabel & label);
+
+      // Probably should be arbitrary string, but everyone seems to use
+      // the media type, as in "audio" and "video".
+      m_mediaGroupId = GetMediaType();
     }
   }
   return SDPMediaDescription::SetSessionInfo(session);
@@ -2110,21 +2118,24 @@ void SDPSessionDescription::PrintOn(ostream & strm) const
 
   // find groups
   PString bundle;
-  PString groupId;
+  PString msid;
   for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
-    PString id = mediaDescriptions[i].GetGroupId();
+    const SDPRTPAVPMediaDescription * rtp = dynamic_cast<const SDPRTPAVPMediaDescription *>(&mediaDescriptions[i]);
+    if (rtp != NULL) {
+      PString id = rtp->GetMediaGroupId();
     if (!id.IsEmpty()) {
-      if (groupId.IsEmpty())
-        groupId = id;
-      if (id == groupId)
-        bundle &= mediaDescriptions[i].GetMediaType();
+        SDPRTPAVPMediaDescription::SsrcInfo::const_iterator it = rtp->GetSsrcInfo().begin();
+        if (it != rtp->GetSsrcInfo().end())
+          msid = it->second.GetString("mslabel");
+        bundle &= id;
+      }
     }
   }
 
   if (!bundle.IsEmpty())
     strm << "a=group:BUNDLE " << bundle << CRLF;
-  if (!groupId.IsEmpty())
-    strm << "a=msid-semantic: WMS " << groupId << CRLF;
+  if (!msid.IsEmpty())
+    strm << "a=msid-semantic: WMS " << msid << CRLF;
 
   // encode media session information
   for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
