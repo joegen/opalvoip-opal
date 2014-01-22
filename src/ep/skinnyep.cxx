@@ -108,20 +108,7 @@ OpalSkinnyEndPoint::~OpalSkinnyEndPoint()
 void OpalSkinnyEndPoint::ShutDown()
 {
   PTRACE(3, prefixName << " endpoint shutting down.");
-
-  if (m_serverTransport.IsOpen()) {
-    PTRACE(4, "Unregistering from " << m_serverTransport.GetRemoteAddress().GetHostName());
-    SendSkinnyMsg(UnregisterMsg());
-
-    // Wait a bit for reply.
-    for (PINDEX wait = 0; wait < 10; ++wait) {
-      if (!m_serverTransport.IsOpen())
-        break;
-      PThread::Sleep(200);
-    }
-
-    m_serverTransport.CloseWait();
-  }
+  Unregister();
 }
 
 
@@ -187,7 +174,7 @@ OpalSkinnyConnection * OpalSkinnyEndPoint::CreateConnection(OpalCall & call,
 
 bool OpalSkinnyEndPoint::Register(const PString & server, unsigned maxStreams, unsigned deviceType)
 {
-  m_serverTransport.CloseWait();
+  Unregister();
 
   OpalTransportAddress addr(server, GetDefaultSignalPort(), GetDefaultTransport());
   if (!m_serverTransport.ConnectTo(addr)) {
@@ -215,6 +202,25 @@ bool OpalSkinnyEndPoint::Register(const PString & server, unsigned maxStreams, u
   
   PTRACE(4, "Registering client: " << deviceName << ", type=" << deviceType);
   return true;
+}
+
+
+void OpalSkinnyEndPoint::Unregister()
+{
+  if (!m_serverTransport.IsOpen())
+    return;
+
+  PTRACE(4, "Unregistering from " << m_serverTransport.GetRemoteAddress().GetHostName());
+  SendSkinnyMsg(UnregisterMsg());
+
+  // Wait a bit for reply.
+  for (PINDEX wait = 0; wait < 10; ++wait) {
+    if (!m_serverTransport.IsOpen())
+      break;
+    PThread::Sleep(200);
+  }
+
+  m_serverTransport.CloseWait();
 }
 
 
@@ -337,6 +343,8 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(const CapabilityRequestMsg &)
 
   PINDEX count = 0;
   OpalMediaFormatList formats = GetMediaFormats();
+  formats.Remove(manager.GetMediaFormatMask());
+  formats.Reorder(manager.GetMediaFormatOrder());
   for (OpalMediaFormatList::iterator it = formats.begin(); it != formats.end(); ++it) {
     if (MediaFormatToCodecCode.Contains(it->GetName())) {
       msg.m_capability[count].m_codec = MediaFormatToCodecCode[it->GetName()];
