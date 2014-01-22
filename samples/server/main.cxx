@@ -722,21 +722,6 @@ MyManager::MediaTransferMode MyManager::GetMediaTransferMode(const OpalConnectio
 }
 
 
-void MyManager::AdjustMediaFormats(bool local,
-                                   const OpalConnection & connection,
-                                   OpalMediaFormatList & mediaFormats) const
-{
-  // Don't do the reorder done in OpalManager::AdjustMediaFormats if acting as gateway
-  if (local && connection.IsNetworkConnection()) {
-    PSafePtr<OpalConnection> otherConnection = connection.GetOtherPartyConnection();
-    if (otherConnection != NULL && otherConnection->IsNetworkConnection())
-      return;
-  }
-
-  OpalManager::AdjustMediaFormats(local, connection, mediaFormats);
-}
-
-
 void MyManager::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
 {
   PSafePtr<OpalConnection> other = connection.GetOtherPartyConnection();
