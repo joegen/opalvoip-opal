@@ -55,6 +55,7 @@ static const char SDPBandwidthPrefix[] = "SDP-Bandwidth-";
 #define SDP_MIN_PTIME 10
 
 static char const CRLF[] = "\r\n";
+static PConstString const WhiteSpace(" \t\r\n");
 static char const TokenChars[] = "!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`abcdefghijklmnopqrstuvwxyz{|}~"; // From RFC4566
 
 
@@ -183,7 +184,7 @@ static OpalTransportAddress ParseConnectAddress(const PStringArray & tokens, PIN
 
 static OpalTransportAddress ParseConnectAddress(const PString & str, WORD port = 0)
 {
-  PStringArray tokens = str.Tokenise(' ');
+  PStringArray tokens = str.Tokenise(WhiteSpace, false); // Spec says space only, but lets be forgiving
   return ParseConnectAddress(tokens, 0, port);
 }
 
@@ -2085,14 +2086,14 @@ bool SDPApplicationMediaDescription::Format::Initialise(const PString & portStri
 //////////////////////////////////////////////////////////////////////////////
 
 SDPSessionDescription::SDPSessionDescription(time_t sessionId, unsigned version, const OpalTransportAddress & address)
-  : sessionName(SIP_DEFAULT_SESSION_NAME)
+  : protocolVersion(0)
+  , sessionName(SIP_DEFAULT_SESSION_NAME)
   , ownerUsername('-')
   , ownerSessionId(sessionId)
   , ownerVersion(version)
   , ownerAddress(address)
   , defaultConnectAddress(address)
 {
-  protocolVersion  = 0;
 }
 
 
@@ -2230,7 +2231,7 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
 
             OpalMediaType mediaType;
             OpalMediaTypeDefinition * defn;
-            PStringArray tokens = value.Tokenise(" ");
+            PStringArray tokens = value.Tokenise(WhiteSpace, false); // Spec says space only, but lets be forgiving
             if (tokens.GetSize() < 4) {
               PTRACE(1, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
             }
@@ -2282,11 +2283,11 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
 void SDPSessionDescription::SetAttribute(const PString & attr, const PString & value)
 {
   if (attr *= "group") {
-    PStringArray words = value.Tokenise(" \t\r\n", false); // Spec says space only, but lets be forgiving
-    if (words.GetSize() > 2) {
-      PString name = words[0];
-      words.RemoveAt(0);
-      m_groups.SetAt(name, new PStringArray(words));
+    PStringArray tokens = value.Tokenise(WhiteSpace, false); // Spec says space only, but lets be forgiving
+    if (tokens.GetSize() > 2) {
+      PString name = tokens[0];
+      tokens.RemoveAt(0);
+      m_groups.SetAt(name, new PStringArray(tokens));
     }
     return;
   }
@@ -2303,7 +2304,7 @@ void SDPSessionDescription::SetAttribute(const PString & attr, const PString & v
 
 void SDPSessionDescription::ParseOwner(const PString & str)
 {
-  PStringArray tokens = str.Tokenise(" ");
+  PStringArray tokens = str.Tokenise(WhiteSpace, false); // Spec says space only, but lets be forgiving
 
   if (tokens.GetSize() != 6) {
     PTRACE(2, "SDP\tOrigin has incorrect number of elements (" << tokens.GetSize() << ')');
