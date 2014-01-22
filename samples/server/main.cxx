@@ -293,12 +293,16 @@ PBoolean MyProcess::Initialise(const char * initMsg)
 
   // Log file resource
   PHTTPFile * fullLog = NULL;
+  ClearLogPage * clearLog = NULL;
   PHTTPTailFile * tailLog = NULL;
 
   PSystemLogToFile * logFile = dynamic_cast<PSystemLogToFile *>(&PSystemLog::GetTarget());
   if (logFile != NULL) {
     fullLog = new PHTTPFile("FullLog", logFile->GetFilePath(), PMIMEInfo::TextPlain(), authority);
     httpNameSpace.AddResource(fullLog, PHTTPSpace::Overwrite);
+
+    clearLog = new ClearLogPage(m_manager, authority);
+    httpNameSpace.AddResource(clearLog, PHTTPSpace::Overwrite);
 
     tailLog = new PHTTPTailFile("TailLog", logFile->GetFilePath(), PMIMEInfo::TextPlain(), authority);
     httpNameSpace.AddResource(tailLog, PHTTPSpace::Overwrite);
@@ -332,6 +336,8 @@ PBoolean MyProcess::Initialise(const char * initMsg)
 
     if (logFile != NULL)
       html << PHTML::HotLink(fullLog->GetHotLink()) << "Full Log File" << PHTML::HotLink()
+           << PHTML::BreakLine()
+           << PHTML::HotLink(clearLog->GetHotLink()) << "Clear Log File" << PHTML::HotLink()
            << PHTML::BreakLine()
            << PHTML::HotLink(tailLog->GetHotLink()) << "Tail Log File" << PHTML::HotLink()
            << PHTML::Paragraph();

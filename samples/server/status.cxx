@@ -116,6 +116,43 @@ PBoolean BaseStatusPage::Post(PHTTPRequest & request,
 
 ///////////////////////////////////////////////////////////////
 
+ClearLogPage::ClearLogPage(MyManager & mgr, const PHTTPAuthority & auth)
+  : BaseStatusPage(mgr, auth, "ClearLogFile")
+{
+}
+
+
+const char * ClearLogPage::GetTitle() const
+{
+  return "OPAL Server Clear Log File";
+}
+
+
+void ClearLogPage::CreateContent(PHTML & html, const PStringToString &) const
+{
+  html << PHTML::Paragraph() << "<center>" << PHTML::SubmitButton("Clear Log File", "Clear Log File");
+}
+
+
+bool ClearLogPage::OnPostControl(const PStringToString & data, PHTML & msg)
+{
+  if (data("Clear Log File") == "Clear Log File") {
+    PSystemLogToFile * logFile = dynamic_cast<PSystemLogToFile *>(&PSystemLog::GetTarget());
+    if (logFile == NULL)
+      msg << "Not logging to a file";
+    else if (PFile::Remove(logFile->GetFilePath()))
+      msg << "Cleared log file " << logFile->GetFilePath();
+    else
+      msg << "Could not clear log file " << logFile->GetFilePath() << PHTML::Paragraph()
+          << "Probably just in use, you can usually just try again.";
+  }
+
+  return true;
+}
+
+
+///////////////////////////////////////////////////////////////
+
 #if OPAL_H323 | OPAL_SIP | OPAL_SKINNY
 
 RegistrationStatusPage::RegistrationStatusPage(MyManager & mgr, const PHTTPAuthority & auth)
