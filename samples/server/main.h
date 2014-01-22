@@ -322,7 +322,22 @@ class BaseStatusPage : public PServiceHTTPString
 
 ///////////////////////////////////////
 
-#if OPAL_H323 | OPAL_SIP
+class ClearLogPage : public BaseStatusPage
+{
+  PCLASSINFO(ClearLogPage, BaseStatusPage);
+public:
+  ClearLogPage(MyManager & mgr, const PHTTPAuthority & auth);
+
+protected:
+  virtual const char * GetTitle() const;
+  virtual void CreateContent(PHTML & html, const PStringToString & query) const;
+  virtual bool OnPostControl(const PStringToString & data, PHTML & msg);
+};
+
+
+///////////////////////////////////////
+
+#if OPAL_H323 | OPAL_SIP | OPAL_SKINNY
 
 class RegistrationStatusPage : public BaseStatusPage
 {
@@ -335,7 +350,9 @@ class RegistrationStatusPage : public BaseStatusPage
     virtual void CreateContent(PHTML & html, const PStringToString & query) const;
 };
 
-#endif
+#endif // OPAL_H323 | OPAL_SIP | OPAL_SKINNY
+
+///////////////////////////////////////
 
 class CallStatusPage : public BaseStatusPage
 {
