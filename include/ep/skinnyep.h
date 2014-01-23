@@ -565,6 +565,7 @@ class OpalSkinnyConnection : public OpalRTPConnection
     OpalMediaSession * SetUpMediaSession(uint32_t payloadCapability, bool rx);
     OpalMediaType GetMediaTypeFromId(uint32_t id);
     void SetFromIdMediaType(const OpalMediaType & mediaType, uint32_t id);
+    void DelayCloseMediaStream(OpalMediaStreamPtr mediaStream);
 
     OpalSkinnyEndPoint & m_endpoint;
 
@@ -574,6 +575,8 @@ class OpalSkinnyConnection : public OpalRTPConnection
 
     uint32_t m_audioId;
     uint32_t m_videoId;
+
+    OpalMediaFormatList m_remoteMediaFormats;
 };
 
 
