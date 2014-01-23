@@ -486,7 +486,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
   bool referSub = extra.GetBoolean(OPAL_OPT_REFER_SUB, m_stringOptions.GetBoolean(OPAL_OPT_REFER_SUB, true));
 
   // Check for valid RFC2396 scheme
-  if (remoteParty.FindRegEx("^[a-zA-Z][a-zA-Z0-9+.-]") == 0) {
+  if (remoteParty.FindRegEx("^[a-zA-Z][a-zA-Z0-9+.-]*:") == 0) {
     PTRACE(3, "SIP\tBlind transfer of " << *this << " to " << remoteParty);
     SIPRefer * referTransaction = new SIPRefer(*this, remoteParty, m_dialog.GetLocalURI(), referSub);
     m_referInProgress = referTransaction->Start();
