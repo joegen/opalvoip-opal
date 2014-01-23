@@ -76,7 +76,7 @@ H264Encoder::H264Encoder()
   // Default
   x264_param_default_preset(&m_context, "veryfast", "fastdecode,zerolatency");
 
-  SetProfileLevel(66, 30, 0xc0);
+  SetProfileLevel(100, 30, 0xc0);
 
   // default size, will likely get reset later
   m_context.i_width = 352;
