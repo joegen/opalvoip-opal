@@ -199,14 +199,13 @@ bool OpalSkinnyEndPoint::Register(const PString & server, unsigned maxStreams, u
   PString macAddress = PIPSocket::GetInterfaceMACAddress().ToUpper();
   PString deviceName = "SEP" + macAddress;
 
-  RegisterMsg msg;
-  strncpy(msg.m_deviceName, deviceName, sizeof(msg.m_deviceName) - 1);
-  strncpy(msg.m_macAddress, macAddress, sizeof(msg.m_macAddress));
-  msg.m_ip = ip;
-  msg.m_maxStreams = maxStreams;
-  msg.m_deviceType = deviceType;
+  strncpy(m_registerMsg.m_deviceName, deviceName, sizeof(m_registerMsg.m_deviceName) - 1);
+  strncpy(m_registerMsg.m_macAddress, macAddress, sizeof(m_registerMsg.m_macAddress));
+  m_registerMsg.m_ip = ip;
+  m_registerMsg.m_maxStreams = maxStreams;
+  m_registerMsg.m_deviceType = deviceType;
 
-  if (!SendSkinnyMsg(msg))
+  if (!SendSkinnyMsg(m_registerMsg))
     return false;
   
   PTRACE(4, "Registering client: " << deviceName << ", type=" << deviceType);
@@ -216,13 +215,15 @@ bool OpalSkinnyEndPoint::Register(const PString & server, unsigned maxStreams, u
 
 void OpalSkinnyEndPoint::Unregister()
 {
+  m_registerMsg.m_deviceName[0] = '\0';
+
   if (!m_serverTransport.IsOpen())
     return;
 
   PTRACE(4, "Unregistering from " << m_serverTransport.GetRemoteAddress().GetHostName());
   SendSkinnyMsg(UnregisterMsg());
 
-  // Wait a bit for reply.
+  // Wait a bit for ack reply.
   for (PINDEX wait = 0; wait < 10; ++wait) {
     if (!m_serverTransport.IsOpen())
       break;
@@ -280,6 +281,31 @@ void OpalSkinnyEndPoint::HandleServerTransport()
       }
       if (!ok)
         m_serverTransport.Close();
+    }
+    else {
+      switch (m_serverTransport.GetErrorCode(PChannel::LastReadError)) {
+        case PChannel::NoError :
+          PTRACE(3, "Lost transport to " << m_serverTransport);
+          // Remote close of TCP
+          for (;;) {
+            m_serverTransport.Close();
+            if (m_registerMsg.m_deviceName[0] == '\0')
+              break;
+            if (m_serverTransport.Connect() && SendSkinnyMsg(m_registerMsg))
+              break;
+            PTRACE(2, "Server transport reconnect error: " << m_serverTransport.GetErrorText());
+            PThread::Sleep(10000);
+          }
+          break;
+
+        case PChannel::Timeout :
+        case PChannel::Interrupted :
+          break;
+
+        default :
+          PTRACE(2, "Server transport error: " << m_serverTransport.GetErrorText(PChannel::LastReadError));
+          m_serverTransport.Close();
+      }
     }
   }
   PTRACE(4, "Ended client handler thread");
@@ -547,6 +573,15 @@ void OpalSkinnyConnection::OnReleased()
   m_endpoint.SendSkinnyMsg(msg);
 
   OpalRTPConnection::OnReleased();
+}
+
+
+OpalMediaFormatList OpalSkinnyConnection::GetMediaFormats() const
+{
+  OpalMediaFormatList mediaFormats;
+  for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream)
+    mediaFormats += mediaStream->GetMediaFormat();
+  return mediaFormats;
 }
 
 
