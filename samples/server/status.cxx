@@ -170,55 +170,63 @@ const char * RegistrationStatusPage::GetTitle() const
 
 void RegistrationStatusPage::CreateContent(PHTML & html, const PStringToString &) const
 {
-#if OPAL_H323
-  html << PHTML::TableStart("border=1 cellpadding=5")
+  html << PHTML::TableStart(PHTML::Border1, PHTML::CellPad4)
        << PHTML::TableRow()
-       << PHTML::TableData("NOWRAP")
-       << "&nbsp;H.323&nbsp;Gatekeeper&nbsp;"
-       << PHTML::TableData("NOWRAP")
+       << PHTML::TableHeader() << ' '
+       << PHTML::TableHeader(PHTML::NoWrap) << "Address"
+       << PHTML::TableHeader(PHTML::NoWrap) << "Status"
+#if OPAL_H323
+       << PHTML::TableRow()
+       << PHTML::TableHeader(PHTML::NoWrap)
+       << " H.323 Gatekeeper"
+       << PHTML::TableData(PHTML::NoWrap)
+       << "<!--#macro H323GatekeeperAddress-->"
+       << PHTML::TableData(PHTML::NoWrap)
        << "<!--#macro H323RegistrationStatus-->"
-       << PHTML::TableEnd();
 #endif // OPAL_H323
 
-#if OPAL_H323 && OPAL_SIP
-  html << PHTML::Paragraph();
-#endif
-
 #if OPAL_SIP
-  html << PHTML::TableStart("border=1 cellpadding=5")
-       << PHTML::TableRow()
-       << PHTML::TableHeader()
-       << "&nbsp;SIP&nbsp;Address&nbsp;of&nbsp;Record&nbsp;"
-       << PHTML::TableHeader()
-       << "&nbsp;Status&nbsp;"
        << "<!--#macrostart SIPRegistrationStatus-->"
-         << PHTML::TableRow()
-         << PHTML::TableData("NOWRAP")
-         << "<!--#status AoR-->"
-         << PHTML::TableData("NOWRAP")
-         << "<!--#status State-->"
+           << PHTML::TableRow()
+           << PHTML::TableHeader(PHTML::NoWrap)
+           << " SIP Registrar "
+           << PHTML::TableData(PHTML::NoWrap)
+           << "<!--#status AoR-->"
+           << PHTML::TableData(PHTML::NoWrap)
+           << "<!--#status State-->"
        << "<!--#macroend SIPRegistrationStatus-->"
-       << PHTML::TableEnd();
 #endif // OPAL_SIP
 
-#if OPAL_SIP && OPAL_SKINNY
-  html << PHTML::Paragraph();
-#endif
-
 #if OPAL_SKINNY
-  html << PHTML::TableStart("border=1 cellpadding=5")
        << PHTML::TableRow()
-       << PHTML::TableData("NOWRAP")
-       << "&nbsp;SCCP&nbsp;Call&nbsp;Manager&nbsp;"
-       << PHTML::TableData("NOWRAP")
+       << PHTML::TableHeader(PHTML::NoWrap)
+       << " SCCP Call Manager "
+       << PHTML::TableData(PHTML::NoWrap, "colspan=2")
        << "<!--#macro SkinnyRegistrationStatus-->"
-       << PHTML::TableEnd();
 #endif // OPAL_SKINNY
+       << PHTML::TableEnd();
 }
 
 
 #if OPAL_H323
-PCREATE_SERVICE_MACRO(H323RegistrationStatus,resource,P_EMPTY)
+PCREATE_SERVICE_MACRO(H323GatekeeperAddress, resource, P_EMPTY)
+{
+  RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
+  if (PAssertNULL(status) == NULL)
+    return PString::Empty();
+
+  PStringStream strm;
+
+  H323Gatekeeper * gk = status->m_manager.GetH323EndPoint().GetGatekeeper();
+  if (gk != NULL)
+    strm << *gk;
+  else
+    strm << "&nbsp;";
+
+  return strm;
+}
+
+PCREATE_SERVICE_MACRO(H323RegistrationStatus, resource, P_EMPTY)
 {
   RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
   if (PAssertNULL(status) == NULL)
@@ -226,7 +234,7 @@ PCREATE_SERVICE_MACRO(H323RegistrationStatus,resource,P_EMPTY)
 
   H323Gatekeeper * gk = status->m_manager.GetH323EndPoint().GetGatekeeper();
   if (gk == NULL)
-    return "None";
+    return "Not registered";
 
   PStringStream strm;
   if (gk->IsRegistered())
@@ -253,11 +261,16 @@ PCREATE_SERVICE_MACRO_BLOCK(SIPRegistrationStatus,resource,P_EMPTY,htmlBlock)
     PString insert = htmlBlock;
 
     PServiceHTML::SpliceMacro(insert, "status AoR",   *it);
-    PServiceHTML::SpliceMacro(insert, "status State",
-          sip.IsRegistered(*it) ? "Registered" : (sip.IsRegistered(*it, true) ? "Offline" : "Failed"));
+    PServiceHTML::SpliceMacro(insert, "status State", sip.IsRegistered(*it) ? "Registered" : (sip.IsRegistered(*it, true) ? "Offline" : "Failed"));
 
     // Then put it into the page, moving insertion point along after it.
     substitution += insert;
+  }
+
+  if (substitution.IsEmpty()) {
+    substitution = htmlBlock;
+    PServiceHTML::SpliceMacro(substitution, "status AoR", "&nbsp;");
+    PServiceHTML::SpliceMacro(substitution, "status State", "Not registered");
   }
 
   return substitution;
@@ -295,7 +308,7 @@ const char * CallStatusPage::GetTitle() const
 
 void CallStatusPage::CreateContent(PHTML & html, const PStringToString &) const
 {
-  html << PHTML::TableStart("border=1 cellpadding=3")
+  html << PHTML::TableStart(PHTML::Border1, PHTML::CellPad4)
        << PHTML::TableRow()
        << PHTML::TableHeader()
        << "&nbsp;A&nbsp;Party&nbsp;"
@@ -305,9 +318,9 @@ void CallStatusPage::CreateContent(PHTML & html, const PStringToString &) const
        << "&nbsp;Duration&nbsp;"
        << "<!--#macrostart CallStatus-->"
          << PHTML::TableRow()
-         << PHTML::TableData("NOWRAP")
+         << PHTML::TableData(PHTML::NoWrap)
          << "<!--#status A-Party-->"
-         << PHTML::TableData("NOWRAP")
+         << PHTML::TableData(PHTML::NoWrap)
          << "<!--#status B-Party-->"
          << PHTML::TableData()
          << "<!--#status Duration-->"
@@ -395,7 +408,7 @@ const char * GkStatusPage::GetTitle() const
 
 void GkStatusPage::CreateContent(PHTML & html, const PStringToString &) const
 {
-  html << PHTML::TableStart("border=1")
+  html << PHTML::TableStart(PHTML::Border1)
        << PHTML::TableRow()
        << PHTML::TableHeader()
        << "&nbsp;End&nbsp;Point&nbsp;Identifier&nbsp;"
@@ -413,9 +426,9 @@ void GkStatusPage::CreateContent(PHTML & html, const PStringToString &) const
        << "<!--#status EndPointIdentifier-->"
        << PHTML::TableData()
        << "<!--#status CallSignalAddresses-->"
-       << PHTML::TableData("NOWRAP")
+       << PHTML::TableData(PHTML::NoWrap)
        << "<!--#status EndPointAliases-->"
-       << PHTML::TableData("NOWRAP")
+       << PHTML::TableData(PHTML::NoWrap)
        << "<!--#status Application-->"
        << PHTML::TableData("align=center")
        << "<!--#status ActiveCalls-->"
