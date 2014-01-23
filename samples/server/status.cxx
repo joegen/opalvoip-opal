@@ -201,7 +201,9 @@ void RegistrationStatusPage::CreateContent(PHTML & html, const PStringToString &
        << PHTML::TableRow()
        << PHTML::TableHeader(PHTML::NoWrap)
        << " SCCP Call Manager "
-       << PHTML::TableData(PHTML::NoWrap, "colspan=2")
+       << PHTML::TableData(PHTML::NoWrap)
+       << "<!--#macro SkinnyServerAddress-->"
+       << PHTML::TableData(PHTML::NoWrap)
        << "<!--#macro SkinnyRegistrationStatus-->"
 #endif // OPAL_SKINNY
        << PHTML::TableEnd();
@@ -238,7 +240,7 @@ PCREATE_SERVICE_MACRO(H323RegistrationStatus, resource, P_EMPTY)
 
   PStringStream strm;
   if (gk->IsRegistered())
-    strm  << "Registered: " << *gk;
+    strm  << "Registered";
   else
     strm << "Failed: " << gk->GetRegistrationFailReason();
   return strm;
@@ -278,6 +280,20 @@ PCREATE_SERVICE_MACRO_BLOCK(SIPRegistrationStatus,resource,P_EMPTY,htmlBlock)
 #endif // OPAL_SIP
 
 #if OPAL_SKINNY
+PCREATE_SERVICE_MACRO(SkinnyServerAddress, resource, P_EMPTY)
+{
+  RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
+  if (PAssertNULL(status) == NULL)
+    return PString::Empty();
+
+  OpalSkinnyEndPoint * ep = status->m_manager.FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY);
+  if (ep == NULL)
+    return "&nbsp;";
+  
+  return ep->GetServerTransport().GetRemoteAddress().GetHostName(true);
+}
+
+
 PCREATE_SERVICE_MACRO(SkinnyRegistrationStatus, resource, P_EMPTY)
 {
   RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
@@ -285,7 +301,7 @@ PCREATE_SERVICE_MACRO(SkinnyRegistrationStatus, resource, P_EMPTY)
     return PString::Empty();
 
   OpalSkinnyEndPoint * ep = status->m_manager.FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY);
-  return ep != NULL ? ep->GetRegistrationStatus() : "None";
+  return ep != NULL ? ep->GetRegistrationStatus() : "Not registered";
 }
 #endif // OPAL_SKINNY
 
