@@ -86,8 +86,6 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
 
        Note that a specific connection may not actually support all of the
        media formats returned here, but should return no more.
-
-       The default behaviour is pure.
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
 
@@ -135,7 +133,6 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
 
     /** Execute garbage collection for endpoint.
         Returns true if all garbage has been collected.
-        Default behaviour deletes the objects in the connectionsActive list.
     */
     virtual PBoolean GarbageCollection();
   //@}
@@ -144,7 +141,6 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
   /**@name Customisation call backs */
   //@{
     /** Create a connection for the skinny endpoint.
-        The default implementation is to create a OpalSkinnyConnection.
       */
     virtual OpalSkinnyConnection * CreateConnection(
       OpalCall & call,            ///< Owner of connection
@@ -389,7 +385,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       eSoftKeyMeetMe,
       eSoftKeyCallPickup,
       eSoftKeyGrpCallPickup,
-      eSoftKeyDNS,
+      eSoftKeyDND,
       eSoftKeyDivert
     };
     OPAL_SKINNY_MSG(SoftKeyEventMsg, 0x0026,
@@ -459,6 +455,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
     template <class MSG> bool DelegateMsg(const MSG & msg);
 
     OpalTransportTCP m_serverTransport;
+    RegisterMsg      m_registerMsg;
     PString          m_registrationStatus;
 };
 
@@ -499,8 +496,6 @@ class OpalSkinnyConnection : public OpalRTPConnection
     /** Start an outgoing connection.
         This function will initiate the connection to the remote entity, for
         example in H.323 it sends a SETUP, in SIP it sends an INVITE etc.
-
-        The default behaviour does.
     */
     virtual PBoolean SetUpConnection();
 
@@ -518,10 +513,14 @@ class OpalSkinnyConnection : public OpalRTPConnection
 
         An application will not typically call this function as it is used by
         the OpalManager during a release of the connection.
-
-        The default behaviour calls the OpalEndPoint function of the same name.
       */
     virtual void OnReleased();
+
+    /**Get the data formats this connection is capable of operating.
+       This provides a list of media data format names that a
+       OpalMediaStream may be created in within this connection.
+      */
+    virtual OpalMediaFormatList GetMediaFormats() const;
 
     /**Indicate to remote endpoint we are connected.
       */
@@ -547,8 +546,6 @@ class OpalSkinnyConnection : public OpalRTPConnection
 
         For H.323 this must be a string representation of an integer from 0 to 7
         which will be contained in the Q.931 SIGNAL (0x34) Information Element.
-
-        Default behaviour returns an empty string.
     */
     virtual PString GetAlertingType() const;
     //@}
