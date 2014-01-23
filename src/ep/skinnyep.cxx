@@ -578,10 +578,7 @@ void OpalSkinnyConnection::OnReleased()
 
 OpalMediaFormatList OpalSkinnyConnection::GetMediaFormats() const
 {
-  OpalMediaFormatList mediaFormats;
-  for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream)
-    mediaFormats += mediaStream->GetMediaFormat();
-  return mediaFormats;
+  return m_remoteMediaFormats;
 }
 
 
@@ -721,6 +718,8 @@ OpalMediaSession * OpalSkinnyConnection::SetUpMediaSession(uint32_t payloadCapab
     return NULL;
   }
 
+  m_remoteMediaFormats += mediaFormat;
+
   OpalMediaType mediaType = mediaFormat.GetMediaType();
   unsigned sessionId = mediaType->GetDefaultSessionId();
 
@@ -771,7 +770,9 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CloseReceiveCh
 {
   OpalMediaStreamPtr mediaStream = GetMediaStream(GetMediaTypeFromId(msg.m_passThruPartyId), true);
   if (mediaStream != NULL)
-    mediaStream->Close();
+    m_endpoint.GetManager().QueueDecoupledEvent(
+                     new PSafeWorkArg1<OpalSkinnyConnection, OpalMediaStreamPtr>(this,
+                            mediaStream, &OpalSkinnyConnection::DelayCloseMediaStream));
   return true;
 }
 
@@ -793,8 +794,25 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::StopMediaTrans
 {
   OpalMediaStreamPtr mediaStream = GetMediaStream(GetMediaTypeFromId(msg.m_passThruPartyId), false);
   if (mediaStream != NULL)
-    mediaStream->Close();
+    m_endpoint.GetManager().QueueDecoupledEvent(
+                     new PSafeWorkArg1<OpalSkinnyConnection, OpalMediaStreamPtr>(this,
+                            mediaStream, &OpalSkinnyConnection::DelayCloseMediaStream));
   return true;
+}
+
+
+void OpalSkinnyConnection::DelayCloseMediaStream(OpalMediaStreamPtr mediaStream)
+{
+  /* We delay closing the media stream slightly as Skinny server closes them
+    before sending the "on hook" message for ending the call. This means that
+    phantom re-INVITE or CLC gets sent when in gateway mode */
+  for (PINDEX delay = 0; delay < 10; ++delay) {
+    if (IsReleased())
+      return;
+    PThread::Sleep(50);
+  }
+
+  mediaStream->Close();
 }
 
 
