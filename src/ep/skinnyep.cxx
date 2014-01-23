@@ -332,7 +332,7 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(const RegisterMsg &)
 
 bool OpalSkinnyEndPoint::OnReceiveMsg(const RegisterAckMsg & ack)
 {
-  m_registrationStatus = "Registered: " + m_serverTransport.GetRemoteAddress().GetHostName();
+  m_registrationStatus = "Registered";
 
   PIPSocket::AddressAndPort ap;
   if (m_serverTransport.GetLocalAddress().GetIpAndPort(ap))
