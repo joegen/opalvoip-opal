@@ -79,6 +79,9 @@ OpalRTPConsoleEndPoint::OpalRTPConsoleEndPoint(OpalConsoleManager & console, Opa
 
 bool OpalRTPConsoleEndPoint::SetUIMode(const PCaselessString & str)
 {
+  if (str.IsEmpty())
+    return true;
+
   if (str == "inband")
     m_endpoint.SetSendUserInputMode(OpalConnection::SendUserInputInBand);
   else if (str == "rfc2833")
@@ -107,23 +110,24 @@ void OpalRTPConsoleEndPoint::GetArgumentSpec(ostream & strm) const
 
 bool OpalRTPConsoleEndPoint::Initialise(PArgList & args, ostream & output, bool verbose)
 {
-  if (args.HasOption(m_endpoint.GetPrefixName()+"-crypto"))
-    m_endpoint.SetMediaCryptoSuites(args.GetOptionString(m_endpoint.GetPrefixName()+"-crypto").Lines());
+  PStringArray cryptoSuites = args.GetOptionString(m_endpoint.GetPrefixName() + "-crypto").Lines();
+  if (!cryptoSuites.IsEmpty())
+    m_endpoint.SetMediaCryptoSuites(cryptoSuites);
 
   if (verbose)
     output << m_endpoint.GetPrefixName().ToUpper() << " crypto suites: "
             << setfill(',') << m_endpoint.GetMediaCryptoSuites() << setfill(' ') << '\n';
 
 
-  if (args.HasOption(m_endpoint.GetPrefixName()+"-bandwidth"))
-    m_endpoint.SetInitialBandwidth(OpalBandwidth::RxTx, args.GetOptionString(m_endpoint.GetPrefixName()+"-bandwidth"));
-  if (args.HasOption(m_endpoint.GetPrefixName()+"-rx-bandwidth"))
-    m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, args.GetOptionString(m_endpoint.GetPrefixName()+"-rx-bandwidth"));
-  if (args.HasOption(m_endpoint.GetPrefixName()+"-tx-bandwidth"))
-    m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, args.GetOptionString(m_endpoint.GetPrefixName()+"-tx-bandwidth"));
+  m_endpoint.SetInitialBandwidth(OpalBandwidth::RxTx, args.GetOptionAs(m_endpoint.GetPrefixName() + "-bandwidth",
+                                                                       m_endpoint.GetInitialBandwidth(OpalBandwidth::RxTx)));
+  m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, args.GetOptionAs(m_endpoint.GetPrefixName() + "-rx-bandwidth",
+                                                                     m_endpoint.GetInitialBandwidth(OpalBandwidth::Rx)));
+  m_endpoint.SetInitialBandwidth(OpalBandwidth::Tx, args.GetOptionAs(m_endpoint.GetPrefixName() + "-tx-bandwidth",
+                                                                     m_endpoint.GetInitialBandwidth(OpalBandwidth::Tx)));
 
 
-  if (args.HasOption(m_endpoint.GetPrefixName()+"-ui") && !SetUIMode(args.GetOptionString(m_endpoint.GetPrefixName()+"-ui"))) {
+  if (!SetUIMode(args.GetOptionString(m_endpoint.GetPrefixName()+"-ui"))) {
     output << "Unknown user indication mode for " << m_endpoint.GetPrefixName() << endl;
     return false;
   }
@@ -300,25 +304,23 @@ bool SIPConsoleEndPoint::DoRegistration(ostream & output,
   params.m_realm            = args.GetOptionString(realm);
   params.m_proxyAddress     = args.GetOptionString(proxy);
 
-  if (args.HasOption(mode)) {
-    PCaselessString str = args.GetOptionString("register-mode");
-    if (str == "normal")
-      params.m_compatibility = SIPRegister::e_FullyCompliant;
-    else if (str == "single")
-      params.m_compatibility = SIPRegister::e_CannotRegisterMultipleContacts;
-    else if (str == "public")
-      params.m_compatibility = SIPRegister::e_CannotRegisterPrivateContacts;
-    else if (str == "ALG")
-      params.m_compatibility = SIPRegister::e_HasApplicationLayerGateway;
-    else if (str == "RFC5626")
-      params.m_compatibility = SIPRegister::e_RFC5626;
-    else {
-      output << "Unknown SIP registration mode \"" << str << '"' << endl;
-      return false;
-    }
+  PCaselessString str = args.GetOptionString(mode);
+  if (str == "normal")
+    params.m_compatibility = SIPRegister::e_FullyCompliant;
+  else if (str == "single")
+    params.m_compatibility = SIPRegister::e_CannotRegisterMultipleContacts;
+  else if (str == "public")
+    params.m_compatibility = SIPRegister::e_CannotRegisterPrivateContacts;
+  else if (str == "ALG")
+    params.m_compatibility = SIPRegister::e_HasApplicationLayerGateway;
+  else if (str == "RFC5626")
+    params.m_compatibility = SIPRegister::e_RFC5626;
+  else if (!str.IsEmpty()) {
+    output << "Unknown SIP registration mode \"" << str << '"' << endl;
+    return false;
   }
 
-  params.m_expire = args.GetOptionString(ttl, "300").AsUnsigned();
+  params.m_expire = args.GetOptionAs(ttl, 300);
   if (params.m_expire < 30) {
     output << "SIP registrar Time To Live must be more than 30 seconds\n";
     return false;
@@ -494,8 +496,10 @@ bool H323ConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PStrin
   if (!OpalRTPConsoleEndPoint::Initialise(args, output, verbose))
     return false;
 
-  DisableFastStart(args.HasOption("no-fast"));
-  DisableH245Tunneling(args.HasOption("no-tunnel"));
+  if (args.HasOption("no-fast"))
+    DisableFastStart(true);
+  if (args.HasOption("no-tunnel"))
+    DisableH245Tunneling(true);
 
   PStringArray aliases = args.GetOptionString("alias").Lines();
   for (PINDEX i = 0; i < aliases.GetSize(); ++i)
@@ -505,7 +509,8 @@ bool H323ConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PStrin
   for (PINDEX i = 0; i < aliases.GetSize(); ++i)
     AddAliasNamePattern(aliases[i]);
 
-  SetGatekeeperSimulatePattern(args.HasOption("gk-sim-pattern"));
+  if (args.HasOption("gk-sim-pattern"))
+    SetGatekeeperSimulatePattern(true);
 
   if (verbose)
     output << "H.323 Aliases: " << setfill(',') << GetAliasNames() << setfill(' ') << "\n"
@@ -643,7 +648,7 @@ bool OpalConsoleSkinnyEndPoint::Initialise(PArgList & args, bool verbose, const 
     return true;
   }
 
-  unsigned maxStreams = args.GetOptionAs<unsigned>("sccp-streams", 1);
+  unsigned maxStreams = args.GetOptionAs("sccp-streams", 1);
   PString server = args.GetOptionString("sccp-server");
   if (!server.IsEmpty()) {
     if (!Register(server, maxStreams))
