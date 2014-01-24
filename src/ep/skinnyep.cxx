@@ -344,7 +344,7 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(const RegisterAckMsg & ack)
 }
 
 
-bool OpalSkinnyEndPoint::OnReceiveMsg(const RegisterRejectMsg & PTRACE_PARAM(msg))
+bool OpalSkinnyEndPoint::OnReceiveMsg(const RegisterRejectMsg & msg)
 {
   PTRACE(2, "Server rejected registration: " << msg.m_errorText);
   m_registrationStatus = PConstString("Rejected: ") + msg.m_errorText;
