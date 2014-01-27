@@ -666,8 +666,14 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
     return NULL;
 
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
-  if (rtpSession != NULL)
+  if (rtpSession != NULL) {
     rtpSession->SetExtensionHeader(mediaDescription.GetExtensionHeaders());
+    if (m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX)) {
+      PTRACE(3, "SIP\tSetting single port mode for answer RTP session " << sessionId << " for media type " << mediaType);
+      rtpSession->SetSinglePort();
+    }
+  }
+
 
   // see if remote socket information has changed
   if (!remoteMediaAddress.IsEmpty()) {
@@ -785,7 +791,7 @@ PBoolean SIPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
 
 void SIPConnection::SetAudioVideoGroup()
 {
-  if (!m_stringOptions.GetBoolean(OPAL_OPT_AV_GROUPING, true))
+  if (!m_stringOptions.GetBoolean(OPAL_OPT_AV_GROUPING))
     return;
 
   // Googlish audio and video grouping id
