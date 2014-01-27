@@ -839,7 +839,7 @@ bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
     return false;
   }
 
-  localMedia->SetSessionInfo(mediaSession);
+  localMedia->SetSessionInfo(mediaSession, true);
   localMedia->SetOptionStrings(m_stringOptions);
 
   if (sdp.GetDefaultConnectAddress().IsEmpty())
@@ -1046,19 +1046,22 @@ bool SIPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPS
   // Fill in refusal for media sessions we didn't like
   bool gotNothing = true;
   for (sessionId = 1; sessionId <= sessionCount; ++sessionId) {
+    SDPMediaDescription * incomingMedia = sdpOffer.GetMediaDescriptionByIndex(sessionId);
+    if (!PAssert(incomingMedia != NULL, PLogicError))
+      return false;
+
     SDPMediaDescription * md = sdpMediaDescriptions[sessionId];
+    OpalMediaSession * mediaSession = GetMediaSession(sessionId);
     if (md != NULL) {
-      md->SetSessionInfo(GetMediaSession(sessionId));
+      bool hasICE = incomingMedia->HasICE();
+      if (hasICE)
+        mediaSession->SetRemoteUserPass(incomingMedia->GetUsername(), incomingMedia->GetPassword());
+      md->SetSessionInfo(mediaSession, hasICE);
       sdpOut.AddMediaDescription(md);
       gotNothing = false;
     }
     else {
-      SDPMediaDescription * incomingMedia = sdpOffer.GetMediaDescriptionByIndex(sessionId);
-      if (!PAssert(incomingMedia != NULL, PLogicError))
-        return false;
-
       // Create, if not already, a new session as a "place holder" in the SDP sessions
-      OpalMediaSession * mediaSession = GetMediaSession(sessionId);
       if (mediaSession == NULL) {
         OpalMediaType mediaType = incomingMedia->GetMediaType();
         if (!mediaType.empty()) {
@@ -1223,7 +1226,7 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
   }
 #endif // OPAL_SRTP
 
-	PTRACE(4, "SIP\tAnswering offer for media type " << mediaType << ", direction=" << otherSidesDir);
+  PTRACE(4, "SIP\tAnswering offer for media type " << mediaType << ", direction=" << otherSidesDir);
 
   if (GetPhase() < ConnectedPhase) {
     // If processing initial INVITE and video, obey the auto-start flags
@@ -1339,7 +1342,7 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
     // RFC3264 says we MUST have an entry, but it should have port zero
     if (empty) {
       localMedia->AddMediaFormat(m_answerFormatList.front());
-      localMedia->SetSessionInfo(NULL);
+      localMedia->SetSessionInfo(NULL, false);
     }
     else {
       // We can do the media type but choose not to at this time

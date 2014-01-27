@@ -182,6 +182,7 @@ class SDPCommonAttributes
     Direction           m_direction;
     SDPBandwidth        m_bandwidth;
     RTPExtensionHeaders m_extensionHeaders;
+    PStringSet          m_iceOptions;
 };
 
 
@@ -234,7 +235,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     virtual Direction GetDirection() const { return m_mediaAddress.IsEmpty() ? Inactive : m_direction; }
 
-    virtual bool SetSessionInfo(const OpalMediaSession * session);
+    virtual bool SetSessionInfo(const OpalMediaSession * session, bool ice);
     virtual PString GetMediaGroupId() const { return m_mediaGroupId; }
     virtual void SetMediaGroupId(const PString & id) { m_mediaGroupId = id; }
 
@@ -242,6 +243,21 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     const OpalTransportAddress & GetControlAddress() const { return m_controlAddress; }
 
     virtual WORD GetPort() const { return m_port; }
+
+    PString GetUsername() const { return m_username; }
+    PString GetPassword() const { return m_password; }
+    PNatCandidateList GetCandidates() const { return m_candidates; }
+    bool HasICE() const;
+    void SetICE(
+      const PString & username,
+      const PString & password,
+      const PNatCandidateList & candidates
+      )
+    {
+      m_username = username;
+      m_password = password;
+      m_candidates = candidates;
+    }
 
     virtual OpalMediaType GetMediaType() const { return m_mediaType; }
 
@@ -272,7 +288,9 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     WORD                 m_portCount;
     OpalMediaType        m_mediaType;
     PString              m_mediaGroupId;
-
+    PNatCandidateList    m_candidates;
+    PString              m_username;
+    PString              m_password;
     SDPMediaFormatList   m_formats;
 
   P_REMOVE_VIRTUAL(SDPMediaFormat *,CreateSDPMediaFormat(const PString &),0);
@@ -361,7 +379,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual bool HasCryptoKeys() const;
 #endif
     virtual void SetAttribute(const PString & attr, const PString & value);
-    virtual bool SetSessionInfo(const OpalMediaSession * session);
+    virtual bool SetSessionInfo(const OpalMediaSession * session, bool ice);
 
     void EnableFeedback() { m_enableFeedback = true; }
 
@@ -538,6 +556,8 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
     typedef PDictionary<PString, PStringArray> GroupDict;
     GroupDict GetGroups() const { return m_groups; }
 
+    PStringSet GetICEOptions() const { return m_iceOptions; }
+
     OpalMediaFormatList GetMediaFormats() const;
 
   protected:
@@ -554,8 +574,8 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
     OpalTransportAddress ownerAddress;
     OpalTransportAddress defaultConnectAddress;
 
-    GroupDict m_groups;
-    PString   m_groupId;
+    GroupDict  m_groups;
+    PString    m_groupId;
 };
 
 /////////////////////////////////////////////////////////
