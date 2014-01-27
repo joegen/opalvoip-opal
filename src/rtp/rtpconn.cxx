@@ -334,7 +334,7 @@ OpalMediaFormatList OpalRTPConnection::NegotiateFECMediaFormats(OpalMediaSession
       if (it->GetMediaType() == OpalFEC::MediaType() && it->GetOptionString(OpalFEC::MediaTypeOption()) == session.GetMediaType()) {
         OpalMediaFormatList::const_iterator fmt = remoteFormats.FindFormat(*it);
         if (fmt != remoteFormats.end()) {
-          fecFormats += *it;
+          fecFormats += *fmt;
 
           if (fmt->GetName().NumCompare(OPAL_REDUNDANT_PREFIX) == EqualTo)
             rtpSession->SetRedundencyPayloadType(fmt->GetPayloadType());
