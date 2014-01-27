@@ -1998,9 +1998,8 @@ bool OpalRTPSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress
       if ((port&1) == 1 && m_remoteDataPort == 0)
         m_remoteDataPort = (WORD)(port - 1);
     }
-    m_singlePort = m_remoteDataPort == m_remoteControlPort;
-    PTRACE_IF(3, m_singlePort, "RTP_UDP\tSession " << m_sessionId << ", single port mode");
-    PTRACE_IF(3, m_remoteDataPort+1 != m_remoteControlPort, "RTP_UDP\tSession " << m_sessionId << ", disjoint control port");
+    PTRACE_IF(3, m_remoteDataPort == m_remoteControlPort, "RTP_UDP\tSession " << m_sessionId << ", remote using single port mode");
+    PTRACE_IF(3, m_remoteDataPort != (m_remoteControlPort&0xfffe), "RTP_UDP\tSession " << m_sessionId << ", remote has disjoint control port");
   }
 
   if (m_localHasRestrictedNAT) {
