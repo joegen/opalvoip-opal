@@ -54,6 +54,7 @@
 
 class OpalRTPEndPoint;
 class PNatMethod;
+class PSTUNServer;
 class RTCP_XR_Metrics;
 
 
@@ -90,6 +91,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual OpalTransportAddress GetLocalAddress(bool isMediaAddress = true) const;
     virtual OpalTransportAddress GetRemoteAddress(bool isMediaAddress = true) const;
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress = true);
+    virtual void SetRemoteUserPass(const PString & user, const PString & pass);
 
     virtual void AttachTransport(Transport & transport);
     virtual Transport DetachTransport();
@@ -740,6 +742,10 @@ class OpalRTPSession : public OpalMediaSession
     JitterBufferPtr m_jitterBuffer;
 
     ApplDefinedNotifierList m_applDefinedNotifiers;
+
+#if P_STUNSRVR
+    PSTUNServer * m_stunServer;
+#endif
 
   private:
     OpalRTPSession(const OpalRTPSession &);
