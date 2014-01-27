@@ -57,6 +57,8 @@ static const char SDPBandwidthPrefix[] = "SDP-Bandwidth-";
 static char const CRLF[] = "\r\n";
 static PConstString const WhiteSpace(" \t\r\n");
 static char const TokenChars[] = "!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`abcdefghijklmnopqrstuvwxyz{|}~"; // From RFC4566
+static char const * const CandidateTypeNames[PNatCandidate::NumTypes] = { "host", "srflx", "prflx", "relay" };
+static PConstString const IceLiteOption("ice-lite");
 
 
 /////////////////////////////////////////////////////////
@@ -527,10 +529,11 @@ const PCaselessString & SDPCommonAttributes::TransportIndependentBandwidthType()
 void SDPCommonAttributes::ParseAttribute(const PString & value)
 {
   PINDEX pos = value.FindSpan(TokenChars); // Legal chars from RFC
+  PCaselessString attr(value.Left(pos));
   if (pos == P_MAX_INDEX)
-    SetAttribute(value, "1");
+    SetAttribute(attr, "1");
   else if (value[pos] == ':')
-    SetAttribute(value.Left(pos), value.Mid(pos+1));
+    SetAttribute(attr, value.Mid(pos + 1));
   else {
     PTRACE(2, "SDP\tMalformed media attribute " << value);
   }
@@ -567,6 +570,13 @@ void SDPCommonAttributes::SetAttribute(const PString & attr, const PString & val
     return;
   }
 
+  if (attr *= "ice-options") {
+    PStringArray tokens = value.Tokenise(WhiteSpace, false); // Spec says space only, but lets be forgiving
+    for (PINDEX i = 0; i < tokens.GetSize(); ++i)
+      m_iceOptions += tokens[i];
+    return;
+  }
+
   // unknown attributes
   PTRACE(2, "SDP\tUnknown attribute " << attr);
 }
@@ -594,6 +604,20 @@ void SDPCommonAttributes::OutputAttributes(ostream & strm) const
 
   for (RTPExtensionHeaders::const_iterator it = m_extensionHeaders.begin(); it != m_extensionHeaders.end(); ++it)
     it->OutputSDP(strm);
+
+  const char * crlf = "";
+  for (PStringSet::const_iterator it = m_iceOptions.begin(); it != m_iceOptions.end(); ++it) {
+    if (*it == IceLiteOption)
+      continue;
+    if (it != m_iceOptions.begin())
+      strm << ' ';
+    else {
+      strm << "a=ice-options:";
+      crlf = CRLF;
+    }
+    strm << *it;
+  }
+  strm << crlf;
 }
 
 
@@ -618,7 +642,28 @@ SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, c
 }
 
 
-bool SDPMediaDescription::SetSessionInfo(const OpalMediaSession * session)
+static void CalculateCandidatePriority(PNatCandidate & candidate)
+{
+  candidate.m_priority = (126 << 24) | (256 - candidate.m_component);
+
+  PIPSocket::Address ip = candidate.m_localTransportAddress.GetAddress();
+  if (ip.GetVersion() != 6)
+    candidate.m_priority |= 0xffff00;
+  else {
+    /* Incomplete need to get precedence from following table, for now use 50
+          Prefix        Precedence Label
+          ::1/128               50     0
+          ::/0                  40     1
+          2002::/16             30     2
+          ::/96                 20     3
+          ::ffff:0:0/96         10     4
+    */
+    candidate.m_priority |= 50 << 8;
+  }
+}
+
+
+bool SDPMediaDescription::SetSessionInfo(const OpalMediaSession * session, bool ice)
 {
   if (session == NULL) {
     m_port = 0;
@@ -636,6 +681,23 @@ bool SDPMediaDescription::SetSessionInfo(const OpalMediaSession * session)
 
   m_mediaAddress = OpalTransportAddress(ip, port, OpalTransportAddress::UdpPrefix());
   m_controlAddress = session->GetLocalAddress(false);
+
+  if (ice) {
+    PNatCandidateList candidates;
+    PNatCandidate candidate(PNatCandidate::HostType, PNatMethod::eComponent_RTP, "xyzzy");
+    if (m_mediaAddress.GetIpAndPort(candidate.m_localTransportAddress)) {
+      CalculateCandidatePriority(candidate);
+      candidates.Append(new PNatCandidate(candidate));
+
+      if (m_controlAddress.GetIpAndPort(candidate.m_localTransportAddress)) {
+        candidate.m_component = PNatMethod::eComponent_RTCP;
+        CalculateCandidatePriority(candidate);
+        candidates.Append(new PNatCandidate(candidate));
+      }
+
+      SetICE(session->GetLocalUsername(), session->GetLocalPassword(), candidates);
+    }
+  }
 
   return true;
 }
@@ -807,6 +869,52 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
     return;
   }
 
+  if (attr *= "ice-ufrag") {
+    m_username = value;
+    return;
+  }
+
+  if (attr *= "ice-pwd") {
+    m_password = value;
+    return;
+  }
+
+  if (attr *= "candidate") {
+    PStringArray words = value.Tokenise(WhiteSpace, false); // Spec says space only, but lets be forgiving
+    if (words.GetSize() < 8) {
+      PTRACE(2, "SDP\tNot enough parameters in candidate: \"" << value << '"');
+      return;
+    }
+
+    PNatCandidate candidate;
+    candidate.m_foundation = words[0];
+    candidate.m_component = (PNatMethod::Component)words[1].AsUnsigned();
+    candidate.m_protocol = words[2];
+    candidate.m_priority = words[3].AsUnsigned();
+
+    PIPSocket::Address ip(words[4]);
+    if (!ip.IsValid()) {
+      PTRACE(2, "SDP\tIllegal IP address in candidate: \"" << words[4] << '"');
+      return;
+    }
+
+    candidate.m_localTransportAddress.SetAddress(ip, (WORD)words[5].AsUnsigned());
+    if (words[6] *= "typ") {
+      for (candidate.m_type = PNatCandidate::BeginTypes; candidate.m_type < PNatCandidate::EndTypes; ++candidate.m_type) {
+        if (words[7] *= CandidateTypeNames[candidate.m_type])
+          break;
+      }
+      PTRACE_IF(3, candidate.m_type == PNatCandidate::EndTypes, "SDP\tUnknown candidate type: \"" << words[7] << '"');
+    }
+    else {
+      PTRACE(2, "SDP\tMissing candidate type: \"" << words[6] << '"');
+      return;
+    }
+
+    m_candidates.Append(new PNatCandidate(candidate));
+    return;
+  }
+
   SDPCommonAttributes::SetAttribute(attr, value);
 }
 
@@ -896,14 +1004,66 @@ void SDPMediaDescription::Encode(const OpalTransportAddress & commonAddr, ostrea
 }
 
 
+static bool CanUseCandidate(const PNatCandidate & candidate)
+{
+  return !candidate.m_foundation.IsEmpty() &&
+          candidate.m_component > 0 &&
+         !candidate.m_protocol.IsEmpty() &&
+          candidate.m_priority > 0 &&
+          candidate.m_localTransportAddress.IsValid() &&
+          candidate.m_type < PNatCandidate::NumTypes;
+}
+
 void SDPMediaDescription::OutputAttributes(ostream & strm) const
 {
   SDPCommonAttributes::OutputAttributes(strm);
 
   if (!m_mediaGroupId.IsEmpty())
     strm << "a=mid:" << m_mediaGroupId << CRLF;
+
+  if (m_username.IsEmpty() || m_password.IsEmpty())
+    return;
+
+  bool haveCandidate = false;
+  for (PNatCandidateList::const_iterator it = m_candidates.begin(); it != m_candidates.end(); ++it) {
+    if (CanUseCandidate(*it)) {
+      strm << "a=candidate:"
+           << it->m_foundation << ' '
+           << it->m_component << ' '
+           << it->m_protocol << ' '
+           << it->m_priority << ' '
+           << it->m_localTransportAddress.GetAddress() << ' '
+           << it->m_localTransportAddress.GetPort()
+           << " typ " << CandidateTypeNames[it->m_type]
+           << CRLF;
+      haveCandidate = true;
+    }
+  }
+
+  if (haveCandidate)
+    strm << "a=ice-ufrag:" << m_username << CRLF
+         << "a=ice-pwd:" << m_password << CRLF;
 }
 
+
+bool SDPMediaDescription::HasICE() const
+{
+  if (m_username.IsEmpty())
+    return false;
+  
+  if (m_password.IsEmpty())
+    return false;
+
+  if (m_candidates.IsEmpty())
+    return false;
+
+  for (PNatCandidateList::const_iterator it = m_candidates.begin(); it != m_candidates.end(); ++it) {
+    if (CanUseCandidate(*it))
+      return true;
+  }
+
+  return false;
+}
 
 PString SDPMediaDescription::GetSDPMediaType() const
 {
@@ -1452,7 +1612,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
 }
 
 
-bool SDPRTPAVPMediaDescription::SetSessionInfo(const OpalMediaSession * session)
+bool SDPRTPAVPMediaDescription::SetSessionInfo(const OpalMediaSession * session, bool ice)
 {
   const OpalRTPSession * rtpSession = dynamic_cast<const OpalRTPSession *>(session);
   if (rtpSession != NULL) {
@@ -1471,7 +1631,8 @@ bool SDPRTPAVPMediaDescription::SetSessionInfo(const OpalMediaSession * session)
       m_mediaGroupId = GetMediaType();
     }
   }
-  return SDPMediaDescription::SetSessionInfo(session);
+
+  return SDPMediaDescription::SetSessionInfo(session, ice);
 }
 
 
@@ -2118,13 +2279,17 @@ void SDPSessionDescription::PrintOn(ostream & strm) const
   OutputAttributes(strm);
 
   // find groups
+  bool hasICE = false;
   PString bundle;
   PString msid;
   for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
     const SDPRTPAVPMediaDescription * rtp = dynamic_cast<const SDPRTPAVPMediaDescription *>(&mediaDescriptions[i]);
     if (rtp != NULL) {
+      if (rtp->HasICE())
+        hasICE = true;
+
       PString id = rtp->GetMediaGroupId();
-    if (!id.IsEmpty()) {
+      if (!id.IsEmpty()) {
         SDPRTPAVPMediaDescription::SsrcInfo::const_iterator it = rtp->GetSsrcInfo().begin();
         if (it != rtp->GetSsrcInfo().end())
           msid = it->second.GetString("mslabel");
@@ -2137,6 +2302,9 @@ void SDPSessionDescription::PrintOn(ostream & strm) const
     strm << "a=group:BUNDLE " << bundle << CRLF;
   if (!msid.IsEmpty())
     strm << "a=msid-semantic: WMS " << msid << CRLF;
+
+  if (hasICE)
+    strm << "a=" << IceLiteOption << CRLF;
 
   // encode media session information
   for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
@@ -2295,6 +2463,11 @@ void SDPSessionDescription::SetAttribute(const PString & attr, const PString & v
   if (attr *= "msid-semantic") {
     if (value.NumCompare("WMS") == EqualTo)
       m_groupId = value.Mid(3).Trim();
+    return;
+  }
+
+  if (attr *= IceLiteOption) {
+    m_iceOptions += IceLiteOption;
     return;
   }
 

@@ -48,6 +48,7 @@
 #include <ptclib/random.h>
 #include <ptclib/pnat.h>
 #include <ptclib/cypher.h>
+#include <ptclib/pstunsrvr.h>
 
 #include <algorithm>
 
@@ -188,6 +189,9 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_remoteBehindNAT(init.m_remoteBehindNAT)
   , m_localHasRestrictedNAT(false)
   , m_noTransmitErrors(0)
+#if P_STUNSRVR
+  , m_stunServer(NULL)
+#endif
 {
   ClearStatistics();
 
@@ -2053,6 +2057,22 @@ bool OpalRTPSession::InternalReadData(RTP_DataFrame & frame)
 }
 
 
+void OpalRTPSession::SetRemoteUserPass(const PString & user, const PString & pass)
+{
+  delete m_stunServer;
+  m_stunServer = NULL;
+
+  OpalMediaSession::SetRemoteUserPass(user, pass);
+  if (user.IsEmpty() || pass.IsEmpty())
+    return;
+
+  m_stunServer = new PSTUNServer;
+  m_stunServer->Open(m_dataSocket, m_controlSocket);
+  m_stunServer->SetCredentials(m_localUsername + ':' + m_remoteUsername, m_localPassword, PString::Empty());
+  PTRACE(4, "RTP\tSession " << m_sessionId << ", created STUN server for ICE");
+}
+
+
 OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr,
                                                              PINDEX & frameSize,
                                                              bool fromDataChannel)
@@ -2061,32 +2081,43 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr,
   const char * channelName = fromDataChannel ? "Data" : "Control";
 #endif
   PUDPSocket & socket = *(fromDataChannel ? m_dataSocket : m_controlSocket);
-  PIPSocket::Address addr;
-  WORD port;
+  PIPSocket::AddressAndPort ap;
 
-  if (socket.ReadFrom(framePtr, frameSize, addr, port)) {
-    // Ignore one byte packet, likely from the block breaker in OpalRTPSession::Shutdown()
-    if (socket.GetLastReadCount() == 1 && addr == m_localAddress)
+  if (socket.ReadFrom(framePtr, frameSize, ap)) {
+    frameSize = socket.GetLastReadCount();
+
+    // Ignore one byte packet from ourself, likely from the I/O block breaker in OpalRTPSession::Shutdown()
+    if (frameSize == 1 && ap.GetAddress() == m_localAddress)
       return e_IgnorePacket;
+
+    if (m_stunServer != NULL) {
+      PSTUNMessage message(framePtr, frameSize, ap);
+      if (message.IsValid()) {
+        m_stunServer->OnReceiveMessage(message, PSTUNServer::SocketInfo(&socket));
+        return e_IgnorePacket;
+      }
+
+      delete m_stunServer;
+      m_stunServer = NULL;
+      PTRACE(4, "RTP\tSession " << m_sessionId << ", deleted STUN server as ICE completed");
+    }
 
     // If remote address never set from higher levels, then try and figure
     // it out from the first packet received.
     if (!m_remoteAddress.IsValid()) {
-      m_remoteAddress = addr;
-      PTRACE(4, "RTP\tSession " << m_sessionId << ", set remote address from first "
-             << channelName << " PDU from " << addr << ':' << port);
+      m_remoteAddress = ap.GetAddress();
+      PTRACE(4, "RTP\tSession " << m_sessionId << ", set remote address from first " << channelName << " PDU from " << ap);
     }
     if (fromDataChannel) {
       if (m_remoteDataPort == 0)
-        m_remoteDataPort = port;
+        m_remoteDataPort = ap.GetPort();
     }
     else {
       if (m_remoteControlPort == 0)
-        m_remoteControlPort = port;
+        m_remoteControlPort = ap.GetPort();
     }
 
     m_noTransmitErrors = 0;
-    frameSize = socket.GetLastReadCount();
 
     return e_ProcessPacket;
   }

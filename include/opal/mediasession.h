@@ -288,10 +288,22 @@ class OpalMediaSession : public PSafeObject
     unsigned GetSessionID() const { return m_sessionId; }
     const OpalMediaType & GetMediaType() const { return m_mediaType; }
 
+    const PString & GetLocalUsername() const { return m_localUsername; }
+    const PString & GetLocalPassword() const { return m_localPassword; }
+
+    virtual void SetRemoteUserPass(
+      const PString & user,
+      const PString & pass
+    );
+
   protected:
     OpalConnection & m_connection;
     unsigned         m_sessionId;  // unique session ID
     OpalMediaType    m_mediaType;  // media type for session
+    PString          m_localUsername;    // ICE username sent to remote
+    PString          m_localPassword;    // ICE password sent to remote
+    PString          m_remoteUsername;   // ICE username expected from remote
+    PString          m_remotePassword;   // ICE password expected from remote
 
     OpalMediaCryptoKeyList m_offeredCryptokeys;
 

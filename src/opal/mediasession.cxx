@@ -41,6 +41,9 @@
 #include <h323/h323caps.h>
 #include <sip/sdp.h>
 
+#include <ptclib/random.h>
+#include <ptclib/cypher.h>
+
 
 #define new PNEW
 
@@ -285,6 +288,8 @@ OpalMediaSession::OpalMediaSession(const Init & init)
   : m_connection(init.m_connection)
   , m_sessionId(init.m_sessionId)
   , m_mediaType(init.m_mediaType)
+  , m_localUsername(PBase64::Encode(PRandom::Octets(12)))
+  , m_localPassword(PBase64::Encode(PRandom::Octets(18)))
 {
   PTRACE_CONTEXT_ID_FROM(init.m_connection);
   PTRACE(5, "Media\tSession " << m_sessionId << " for " << m_mediaType << " created.");
@@ -385,6 +390,13 @@ bool OpalMediaSession::ApplyCryptoKey(OpalMediaCryptoKeyList &, bool)
 bool OpalMediaSession::IsCryptoSecured(bool) const
 {
   return false;
+}
+
+
+void OpalMediaSession::SetRemoteUserPass(const PString & user, const PString & pass)
+{
+  m_remoteUsername = user;
+  m_remotePassword = pass;
 }
 
 
