@@ -655,6 +655,15 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
   }
 
   OpalTransportAddress remoteMediaAddress = mediaDescription.GetMediaAddress();
+  OpalTransportAddress remoteControlAddress = mediaDescription.GetControlAddress();
+
+  PNatCandidateList candidates = mediaDescription.GetCandidates();
+  for (PNatCandidateList::iterator it = candidates.begin(); it != candidates.end(); ++it) {
+    if (it->m_type == PNatCandidate::HostType && it->m_protocol == "udp")
+      (it->m_component == PNatMethod::eComponent_RTCP ? remoteControlAddress : remoteMediaAddress)
+              = OpalTransportAddress(it->m_localTransportAddress, OpalTransportAddress::UdpPrefix());
+  }
+
   if (remoteMediaAddress.IsEmpty()) {
     PTRACE(2, "SIP\tReceived media description with no address for " << mediaType);
     remoteChanged = true;
@@ -666,14 +675,8 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
     return NULL;
 
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
-  if (rtpSession != NULL) {
+  if (rtpSession != NULL)
     rtpSession->SetExtensionHeader(mediaDescription.GetExtensionHeaders());
-    if (m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX)) {
-      PTRACE(3, "SIP\tSetting single port mode for answer RTP session " << sessionId << " for media type " << mediaType);
-      rtpSession->SetSinglePort();
-    }
-  }
-
 
   // see if remote socket information has changed
   if (!remoteMediaAddress.IsEmpty()) {
@@ -694,9 +697,17 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
     }
   }
 
-  // Set single port  or disjoint RTCP port, must be done before Open()
-  if (!mediaDescription.GetControlAddress().IsEmpty())
-    session->SetRemoteAddress(mediaDescription.GetControlAddress(), false);
+  // Set single port or disjoint RTCP port, must be done before Open()
+  if (rtpSession != NULL && m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX)) {
+    PTRACE(3, "SIP\tSetting single port mode for answer RTP session " << sessionId << " for media type " << mediaType);
+    rtpSession->SetSinglePort();
+  }
+
+  if (!remoteControlAddress.IsEmpty())
+    session->SetRemoteAddress(remoteControlAddress, false);
+
+  if (mediaDescription.HasICE())
+    session->SetRemoteUserPass(mediaDescription.GetUsername(), mediaDescription.GetPassword());
 
   if (!session->Open(GetInterface(), remoteMediaAddress, true)) {
     ReleaseMediaSession(sessionId);
@@ -1059,10 +1070,7 @@ bool SIPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPS
     SDPMediaDescription * md = sdpMediaDescriptions[sessionId];
     OpalMediaSession * mediaSession = GetMediaSession(sessionId);
     if (md != NULL) {
-      bool hasICE = incomingMedia->HasICE();
-      if (hasICE)
-        mediaSession->SetRemoteUserPass(incomingMedia->GetUsername(), incomingMedia->GetPassword());
-      md->SetSessionInfo(mediaSession, hasICE);
+      md->SetSessionInfo(mediaSession, incomingMedia->HasICE());
       sdpOut.AddMediaDescription(md);
       gotNothing = false;
     }
