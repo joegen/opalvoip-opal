@@ -2095,10 +2095,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr,
         m_stunServer->OnReceiveMessage(message, PSTUNServer::SocketInfo(&socket));
         return e_IgnorePacket;
       }
-
-      delete m_stunServer;
-      m_stunServer = NULL;
-      PTRACE(4, "RTP\tSession " << m_sessionId << ", deleted STUN server as ICE completed");
     }
 
     // If remote address never set from higher levels, then try and figure
