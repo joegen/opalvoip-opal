@@ -672,15 +672,12 @@ bool SDPMediaDescription::SetSessionInfo(const OpalMediaSession * session, bool 
     return true;
   }
 
-  PIPSocket::Address ip;
-  WORD port = m_port;
-  if (!session->GetLocalAddress().GetIpAndPort(ip, port))
-    return false;
-
-  m_port = port;
-
-  m_mediaAddress = OpalTransportAddress(ip, port, OpalTransportAddress::UdpPrefix());
+  m_mediaAddress = session->GetLocalAddress(true);
   m_controlAddress = session->GetLocalAddress(false);
+
+  PIPSocket::Address dummy;
+  if (!m_mediaAddress.GetIpAndPort(dummy, m_port))
+    return false;
 
   if (ice) {
     PNatCandidateList candidates;
