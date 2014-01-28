@@ -1240,6 +1240,8 @@
                                                         <choice>SIP/UDP</choice>
                                                         <choice>SIP/TCP</choice>
                                                         <choice>SIP/TLS</choice>
+                                                        <choice>SIP/WS</choice>
+                                                        <choice>SIP/WSS</choice>
                                                     </choices>
                                                 </object>
                                             </object>
