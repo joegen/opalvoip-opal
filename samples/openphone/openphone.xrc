@@ -981,6 +981,8 @@
                                                         <item>SIP/UDP</item>
                                                         <item>SIP/TCP</item>
                                                         <item>SIP/TLS</item>
+                                                        <item>SIP/WS</item>
+                                                        <item>SIP/WSS</item>
                                                     </content>
                                                 </object>
                                             </object>

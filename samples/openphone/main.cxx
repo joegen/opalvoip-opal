@@ -5732,7 +5732,7 @@ void OptionsDialog::ChangedInterfaceInfo(wxCommandEvent & /*event*/)
 
 
 static const char * const InterfacePrefixes[] = {
-  "all:", "h323:tcp$", "h323:tls$", "sip:udp$", "sip:tcp$", "sip:tls$"
+  "all:", "h323:tcp$", "h323:tls$", "sip:udp$", "sip:tcp$", "sip:tls$", "sip:ws$", "sip:wss$"
 };
 
 void OptionsDialog::AddInterface(wxCommandEvent & /*event*/)
