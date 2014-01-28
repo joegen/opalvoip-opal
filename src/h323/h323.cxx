@@ -1815,10 +1815,12 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
     for (;;) {
       safeLock.Unlock();
       PBoolean ok = gatekeeper->AdmissionRequest(*this, response, alias.IsEmpty());
-      if (!safeLock.Lock())
+      if (!safeLock.Lock() ||IsReleased())
         return EndedByCallerAbort;
+
       if (ok)
         break;
+
       PTRACE(2, "H225\tGatekeeper refused admission: "
              << (response.rejectReason == UINT_MAX
                   ? PString("Transport error")
@@ -1932,16 +1934,12 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   bool connectFailed = !m_signallingChannel->Connect();
 
     // Lock while checking for shutting down.
-  if (!safeLock.Lock())
-    return EndedByCallerAbort;
-
-  if (IsReleased())
+  if (!safeLock.Lock() || IsReleased())
     return EndedByCallerAbort;
 
   // See if transport connect failed, abort if so.
   if (connectFailed) {
     connectionState = NoConnectionActive;
-    SetPhase(UninitialisedPhase);
     switch (m_signallingChannel->GetErrorNumber()) {
       case ENETUNREACH :
         return EndedByUnreachable;
@@ -1970,6 +1968,9 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
 
   // Get the local capabilities before fast start is handled
   OnSetLocalCapabilities();
+
+  if (IsReleased())
+    return EndedByCallerAbort;
 
   // Start channels, if allowed
   m_fastStartChannels.RemoveAll();
@@ -2131,14 +2132,12 @@ PBoolean H323Connection::SetAlerting(const PString & calleeName, PBoolean withMe
   if (!safeLock.IsLocked())
     return false;
 
+  if (GetPhase() >= ConnectedPhase || alertingPDU == NULL) {
+    PTRACE(3, "H323\tNo Alerting possible for " << *this);
+    return false;
+  }
+
   PTRACE(3, "H323\tSetAlerting " << *this);
-  if (alertingPDU == NULL)
-    return false;
-
-  // See if aborted call
-  if (connectionState == ShuttingDownConnection)
-    return false;
-
   H225_Alerting_UUIE & alerting = alertingPDU->m_h323_uu_pdu.m_h323_message_body;
 
   if (withMedia && !mediaWaitForConnect) {
@@ -2197,22 +2196,24 @@ PBoolean H323Connection::SetAlerting(const PString & calleeName, PBoolean withMe
 PBoolean H323Connection::SetConnected()
 {
   PSafeLockReadWrite safeLock(*this);
-  if (!safeLock.IsLocked() || GetPhase() >= ConnectedPhase)
+  if (!safeLock.IsLocked())
     return false;
+
+  if (GetPhase() >= ConnectedPhase || connectPDU == NULL) {
+    PTRACE(3, "H323\tNo Connect possible for " << *this);
+    return false;
+  }
 
   mediaWaitForConnect = false;
 
   PTRACE(3, "H323CON\tSetConnected " << *this);
-  if (connectPDU == NULL){
-    PTRACE(1, "H323CON\tSetConnected connectPDU is null" << *this);
-    return false;
-  }
 
   if (!endpoint.OnSendConnect(*this, *connectPDU)){
     /* let the application to avoid sending the connect, mainly for testing other endpoints*/
     PTRACE(2, "H323CON\tSetConnected connect not sent");
     return true;
   }
+
   // Assure capabilities are set to other connections media list (if not already)
   OnSetLocalCapabilities();
 
@@ -2296,13 +2297,14 @@ PBoolean H323Connection::SetProgressed()
   if (!safeLock.IsLocked())
     return false;
 
-  mediaWaitForConnect = false;
-
-  PTRACE(3, "H323\tSetProgressed " << *this);
-  if (progressPDU == NULL){
-    PTRACE(1, "H323\tSetProgressed progressPDU is null" << *this);
+  if (GetPhase() >= ConnectedPhase || progressPDU == NULL) {
+    PTRACE(3, "H323\tNo Progress possible for " << *this);
     return false;
   }
+
+  PTRACE(3, "H323\tSetProgressed " << *this);
+
+  mediaWaitForConnect = false;
 
   // Assure capabilities are set to other connections media list (if not already)
   OnSetLocalCapabilities();
@@ -2312,10 +2314,6 @@ PBoolean H323Connection::SetProgressed()
   // Now ask the application to select which channels to start
   if (SendFastStartAcknowledge(progress.m_fastStart))
     progress.IncludeOptionalField(H225_Connect_UUIE::e_fastStart);
-
-  // See if aborted call
-  if (connectionState == ShuttingDownConnection)
-    return false;
 
   //h450dispatcher->AttachToProgress(*progress);
   if (!endpoint.IsH245Disabled()){
