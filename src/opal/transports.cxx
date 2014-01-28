@@ -968,14 +968,15 @@ const PCaselessString & OpalListenerUDP::GetProtoPrefix() const
 
 OpalTransportAddress OpalListenerUDP::GetLocalAddress(const OpalTransportAddress & remoteAddress) const
 {
-  PIPSocket::Address localIP = PIPSocket::GetInvalidAddress();
-  WORD port = listenerPort;
-
   if (IsOpen()) {
     PIPSocket::Address remoteIP;
-    if (remoteAddress.GetIpAddress(remoteIP) &&
-        listenerBundle->GetAddress(PString::Empty(), localIP, port, !endpoint.GetManager().IsLocalAddress(remoteIP)))
-      return OpalTransportAddress(localIP, port, GetProtoPrefix());
+    if (remoteAddress.GetIpAddress(remoteIP)) {
+      PIPSocket::Address localIP = localAddress.IsValid() && !localAddress.IsAny() ? localAddress
+                                                  : PIPSocket::GetRouteInterfaceAddress(remoteIP);
+      WORD port;
+      if (listenerBundle->GetAddress(localIP.AsString(), localIP, port, !endpoint.GetManager().IsLocalAddress(remoteIP)))
+        return OpalTransportAddress(localIP, port, GetProtoPrefix());
+    }
   }
 
   return OpalListenerIP::GetLocalAddress(remoteAddress);
