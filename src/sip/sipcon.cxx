@@ -543,19 +543,21 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
 
 PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean withMedia)
 {
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return false;
+
   if (IsOriginating() || m_lastReceivedINVITE == NULL) {
     PTRACE(2, "SIP\tSetAlerting ignored on call we originated.");
     return true;
   }
 
-  PSafeLockReadWrite safeLock(*this);
-  if (!safeLock.IsLocked())
+  if (GetPhase() >= ConnectedPhase) {
+    PTRACE(2, "SIP\tSetAlerting ignored on released or already connected call " << *this);
     return false;
-  
-  PTRACE(3, "SIP\tSetAlerting");
+  }
 
-  if (GetPhase() >= AlertingPhase) 
-    return false;
+  PTRACE(3, "SIP\tSetAlerting");
 
   if (!withMedia && (!m_prackEnabled || m_lastReceivedINVITE->GetSDP() != NULL))
     SendInviteResponse(SIP_PDU::Information_Ringing);
@@ -578,17 +580,17 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
 
 PBoolean SIPConnection::SetConnected()
 {
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return false;
+
   if (IsOriginating()) {
     PTRACE(2, "SIP\tSetConnected ignored on call we originated " << *this);
     return true;
   }
 
-  PSafeLockReadWrite safeLock(*this);
-  if (!safeLock.IsLocked())
-    return false;
-  
   if (GetPhase() >= ConnectedPhase) {
-    PTRACE(2, "SIP\tSetConnected ignored on already connected call " << *this);
+    PTRACE(2, "SIP\tSetConnected ignored on released or already connected call " << *this);
     return false;
   }
   
@@ -2877,6 +2879,9 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       return;
     }
 
+    if (IsReleased())
+      return;
+
     PTRACE(3, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
 
     if (!SetRemoteMediaFormats(m_lastReceivedINVITE)) {
@@ -2885,6 +2890,9 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     }
 
     if (ownerCall.OnSetUp(*this)) {
+      if (IsReleased())
+        return;
+
       if (GetPhase() < ProceedingPhase) {
         SetPhase(ProceedingPhase);
         OnProceeding();
@@ -3132,6 +3140,13 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
 {
   SIPTransaction * response = new SIPResponse(m_endpoint, request, SIP_PDU::Successful_OK);
 
+  if (IsReleased()) {
+    PTRACE(2, "SIP\tRejecting REFER as released " << *this);
+    response->SetStatusCode(SIP_PDU::Failure_TransactionDoesNotExist);
+    response->Send();
+    return;
+  }
+
   const SIPMIMEInfo & requestMIME = request.GetMIME();
 
   SIPURL referTo = requestMIME.GetReferTo();
@@ -3240,7 +3255,12 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
     return;
   }
 
-  PTRACE(3, "SIP\tCancel received for " << *this);
+  if (IsReleased()) {
+    PTRACE(2, "SIP\tCANCEL for Already released " << *this);
+    return;
+  }
+
+  PTRACE(3, "SIP\tCANCEL received for " << *this);
 
   SIPTransaction * response = new SIPResponse(m_endpoint, request, SIP_PDU::Successful_OK);
   response->GetMIME().SetTo(m_dialog.GetLocalURI());
@@ -3332,6 +3352,11 @@ void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
 
 PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response)
 {
+  if (IsReleased()) {
+    PTRACE(2, "SIP\tNo authentication retry as released " << *this);
+    return false;
+  }
+
   // Try to find authentication parameters for the given realm,
   // if not, use the proxy authentication parameters (if any)
   SIP_PDU::StatusCodes status = HandleAuthentication(response);
@@ -3365,6 +3390,11 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
 
 void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
+  if (IsReleased()) {
+    PTRACE(2, "SIP\tNot processing OK as released " << *this);
+    return;
+  }
+
   switch (transaction.GetMethod()) {
     case SIP_PDU::Method_INVITE :
       break;
