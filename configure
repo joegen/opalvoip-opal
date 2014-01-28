@@ -630,6 +630,7 @@ OPAL_HAS_PRESENCE
 OPAL_HAS_PCSS
 OPAL_HAS_MIXER
 OPAL_RTCP_XR
+OPAL_RTP_FEC
 OPAL_G711PLC
 OPAL_AEC
 OPAL_RFC2435
@@ -652,6 +653,7 @@ OPAL_HAS_MSRP
 OPAL_T38_CAPABILITY
 OPAL_HAS_H281
 OPAL_HAS_H224
+OPAL_SKINNY
 OPAL_IAX2
 OPAL_H323
 OPAL_SIP
@@ -829,6 +831,7 @@ enable_video
 enable_sip
 enable_h323
 enable_iax2
+enable_skinny
 enable_h224
 enable_h281
 enable_t38
@@ -851,6 +854,7 @@ enable_rfc4175
 enable_rfc2435
 enable_aec
 enable_g711plc
+enable_rtpfec
 enable_rtcpxr
 enable_mixer
 enable_pcss
@@ -1522,6 +1526,7 @@ Optional Features:
   --disable-sip           disable SIP protocol support
   --disable-h323          disable H.323 protocol support
   --disable-iax2          disable IAX2 protocol support
+  --disable-skinny        disable Cisco SCCP (skinny) support
   --disable-h224          disable H.224 protocol support
   --disable-h281          disable H.281 (Far End Camera Control) protocol
                           support
@@ -1545,6 +1550,7 @@ Optional Features:
   --disable-rfc2435       disable RFC2435 support (experimental)
   --disable-aec           disable accoustic echo cancellation support
   --disable-g711plc       disable Packet Loss Concealment for G.711
+  --disable-rtpfec        disable RTP Forward Error Correction support
   --disable-rtcpxr        disable RTCP Extended Reports support
   --disable-mixer         disable media mixing support
   --disable-pcss          disable PC sound system support
@@ -5696,6 +5702,7 @@ fi
 OPAL_H323=yes
 OPAL_SIP=yes
 OPAL_IAX2=yes
+OPAL_SKINNY=yes
 OPAL_VIDEO=yes
 OPAL_T38_CAPABILITY=yes
 OPAL_FAX=yes
@@ -5712,6 +5719,7 @@ OPAL_T120DATA=no
 OPAL_LID=yes
 OPAL_CAPI=yes
 OPAL_STATISTICS=yes
+OPAL_RTP_FEC=no
 OPAL_RTCP_XR=yes
 OPAL_AEC=yes
 OPAL_IVR=yes
@@ -8090,6 +8098,67 @@ fi
 
 
 
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Cisco SCCP (skinny) support" >&5
+$as_echo_n "checking Cisco SCCP (skinny) support... " >&6; }
+
+   # Check whether --enable-skinny was given.
+if test "${enable_skinny+set}" = set; then :
+  enableval=$enable_skinny;
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+$as_echo "disabled by user" >&6; }
+         fi
+
+else
+
+         enableval=$OPAL_SKINNY
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+$as_echo "disabled by default" >&6; }
+         fi
+
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   if test "x${enableval}" = "xyes"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+   fi
+
+
+   if test "x$enableval" = "xyes"; then :
+
+         OPAL_SKINNY=yes
+
+
+$as_echo "#define OPAL_SKINNY 1" >>confdefs.h
+
+
+else
+  OPAL_SKINNY=no
+fi
+
+
+   enable_skinny="$enableval"
+
+
+
+
+
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking H.224 protocol support" >&5
 $as_echo_n "checking H.224 protocol support... " >&6; }
 
@@ -9567,6 +9636,67 @@ fi
 
 
    enable_g711plc="$enableval"
+
+
+
+
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking RTP Forward Error Correction support" >&5
+$as_echo_n "checking RTP Forward Error Correction support... " >&6; }
+
+   # Check whether --enable-rtpfec was given.
+if test "${enable_rtpfec+set}" = set; then :
+  enableval=$enable_rtpfec;
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+$as_echo "disabled by user" >&6; }
+         fi
+
+else
+
+         enableval=$OPAL_RTP_FEC
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+$as_echo "disabled by default" >&6; }
+         fi
+
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   if test "x${enableval}" = "xyes"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+   fi
+
+
+   if test "x$enableval" = "xyes"; then :
+
+         OPAL_RTP_FEC=yes
+
+
+$as_echo "#define OPAL_RTP_FEC 1" >>confdefs.h
+
+
+else
+  OPAL_RTP_FEC=no
+fi
+
+
+   enable_rtpfec="$enableval"
 
 
 
@@ -11575,6 +11705,7 @@ echo "                  MSRP capability :  $OPAL_HAS_MSRP"
 echo "         RFC-4103 (IM) capability :  $OPAL_HAS_RFC4103"
 echo ""
 echo "                     IAX2 support :  $OPAL_IAX2"
+echo "      Cisco SCCP (skinny) support :  $OPAL_SKINNY"
 echo "            Line Interface Device :  $OPAL_LID"
 echo "                      CAPI (ISDN) :  $OPAL_CAPI"
 echo "                     DAHDI (PSTN) :  $OPAL_DAHDI"
