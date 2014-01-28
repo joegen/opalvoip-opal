@@ -31,6 +31,7 @@ static const char H323TerminalTypeKey[] = "H.323 Terminal Type";
 static const char DisableFastStartKey[] = "Disable H.323 Fast Start";
 static const char DisableH245TunnelingKey[] = "Disable H.245 Tunneling";
 static const char DisableH245inSetupKey[] = "Disable H.245 in Setup";
+static const char ForceSymmetricTCSKey[] = "Force Symmetric TCS";
 static const char H323BandwidthKey[] = "H.323 Bandwidth";
 static const char H323ListenersKey[] = "H.323 Interfaces";
 #if OPAL_PTLIB_SSL
@@ -137,6 +138,7 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
   DisableFastStart(rsrc->AddBooleanField(DisableFastStartKey,  IsFastStartDisabled(), "Disable H.323 Fast Connect feature"));
   DisableH245Tunneling(rsrc->AddBooleanField(DisableH245TunnelingKey,  IsH245TunnelingDisabled(), "Disable H.245 tunneled in H.225.0 signalling channel"));
   DisableH245inSetup(rsrc->AddBooleanField(DisableH245inSetupKey,  IsH245inSetupDisabled(), "Disable sending initial tunneled H.245 PDU in SETUP PDU"));
+  ForceSymmetricTCS(rsrc->AddBooleanField(ForceSymmetricTCSKey, IsForcedSymmetricTCS(), "Force indication of symmetric codecs in TCS"));
 
   SetInitialBandwidth(OpalBandwidth::RxTx, rsrc->AddIntegerField(H323BandwidthKey, 1, OpalBandwidth::Max()/1000,
                                                                   GetInitialBandwidth(OpalBandwidth::RxTx)/1000,
