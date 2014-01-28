@@ -2135,32 +2135,34 @@ PBoolean H323Connection::SetAlerting(const PString & calleeName, PBoolean withMe
   if (alertingPDU == NULL)
     return false;
 
+  // See if aborted call
+  if (connectionState == ShuttingDownConnection)
+    return false;
+
+  H225_Alerting_UUIE & alerting = alertingPDU->m_h323_uu_pdu.m_h323_message_body;
+
   if (withMedia && !mediaWaitForConnect) {
-    H225_Alerting_UUIE & alerting = alertingPDU->m_h323_uu_pdu.m_h323_message_body;
     if (SendFastStartAcknowledge(alerting.m_fastStart))
       alerting.IncludeOptionalField(H225_Alerting_UUIE::e_fastStart);
-    else {
-      // See if aborted call
-      if (connectionState == ShuttingDownConnection)
-        return false;
-
-      // Do early H.245 start
-      if (!endpoint.IsH245Disabled()) {
-        earlyStart = true;
-        if (h245Tunneling) {
-          if (!StartControlNegotiations())
-            return false;
-        } else if (m_controlChannel == NULL) {
-          if (!CreateIncomingControlChannel(alerting,
-                                            alerting.m_h245Address, H225_Alerting_UUIE::e_h245Address,
-                                            alerting.m_h245SecurityMode, H225_Alerting_UUIE::e_h245SecurityMode))
-            return false;
-        }
-      }
-    }
+    earlyStart = true;
   }
 
   HandleTunnelPDU(alertingPDU);
+
+  bool startH245 = !endpoint.IsH245Disabled();
+  if (startH245) {
+    OnSetLocalCapabilities();
+    if (localCapabilities.GetSize() == 0)
+      startH245 = false; // Don't do early media if don't have any capabilities
+  }
+
+  // Do early H.245 start
+  if (startH245 && !h245Tunneling && m_controlChannel == NULL) {
+    if (!CreateIncomingControlChannel(alerting,
+                                      alerting.m_h245Address, H225_Alerting_UUIE::e_h245Address,
+                                      alerting.m_h245SecurityMode, H225_Alerting_UUIE::e_h245SecurityMode))
+      return false;
+  }
 
 #if OPAL_H450
   h450dispatcher->AttachToAlerting(*alertingPDU);
@@ -2175,14 +2177,20 @@ PBoolean H323Connection::SetAlerting(const PString & calleeName, PBoolean withMe
   // send Q931 Alerting PDU
   PTRACE(3, "H323CON\tSetAlerting sending Alerting PDU");
 
-  PBoolean bOk = WriteSignalPDU(*alertingPDU);
-  if (!endpoint.OnSentAlerting(*this)){
-    /* let the application to know that the alerting has been sent */
-    /* do nothing for now, at least check for the return value */
+  if (!WriteSignalPDU(*alertingPDU))
+    return false;
+
+  if (!endpoint.OnSentAlerting(*this))
+    return false;
+
+  // Do early H.245 start
+  if (startH245 && h245Tunneling) {
+    if (!StartControlNegotiations())
+      return false;
   }
 
   InternalEstablishedConnectionCheck();
-  return bOk;
+  return true;
 }
 
 
