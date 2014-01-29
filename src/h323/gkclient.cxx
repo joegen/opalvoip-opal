@@ -907,7 +907,8 @@ PBoolean H323Gatekeeper::OnReceiveUnregistrationRequest(const H225_Unregistratio
   }
 
   if (!urq.HasOptionalField(H225_UnregistrationRequest::e_endpointIdentifier) ||
-       urq.m_endpointIdentifier != m_endpointIdentifier) {
+      m_endpointIdentifier != (PWCharArray)urq.m_endpointIdentifier)
+  {
     PTRACE(2, "RAS\tInconsistent endpointIdentifier!");
     return false;
   }
