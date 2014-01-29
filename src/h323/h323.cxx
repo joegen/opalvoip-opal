@@ -2408,7 +2408,7 @@ PBoolean H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString 
   // Remove any channels that were not started by OnSelectLogicalChannels(),
   // those that were started are put into the logical channel dictionary
   for (H323LogicalChannelList::iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ) {
-    if (logicalChannels->FindChannel(channel->GetNumber(), channel->GetNumber().IsFromRemote()) == NULL)
+    if (logicalChannels->FindChannel(channel->GetNumber(), channel->GetNumber().IsFromRemote()) != NULL)
       ++channel;
     else
       m_fastStartChannels.erase(channel++); // Do ++ in both legs so iterator works with erase
