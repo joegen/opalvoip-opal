@@ -125,6 +125,7 @@ copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\common\dyna.cxx" />
+    <ClCompile Include="..\common\ffmpeg.cxx" />
     <ClCompile Include="h264-x264.cxx" />
     <ClCompile Include="shared\x264wrap.cxx" />
     <ClCompile Include="shared\h264frame.cxx" />
