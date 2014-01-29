@@ -40,6 +40,7 @@
 #include <h323/h323rtp.h>
 
 #include <opal/manager.h>
+#include <codec/silencedetect.h>
 #include <h323/h323ep.h>
 #include <h323/h323con.h>
 #include <h323/h323pdu.h>
@@ -121,19 +122,24 @@ PBoolean H323_RTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameters & para
   param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel);
   mediaControlAddress.SetPDU(param.m_mediaControlChannel);
 
-  if (GetDirection() == H323Channel::IsReceiver) {
-    // set mediaChannel
+  if (GetDirection() == H323Channel::IsTransmitter) {
+    // Set flag for we are going to stop sending audio on silence
+    if (mediaType == OpalMediaType::Audio()) {
+      PSafePtr<OpalConnection> otherConnection = connection.GetOtherPartyConnection();
+      if (otherConnection != NULL) {
+        OpalSilenceDetector * silenceDetector = otherConnection->GetSilenceDetector();
+        if (silenceDetector != NULL && silenceDetector->GetStatus(NULL, NULL) != OpalSilenceDetector::NoSilenceDetection) {
+          param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_silenceSuppression);
+          param.m_silenceSuppression = true;
+        }
+      }
+    }
+  }
+  else {
+    // Set mediaChannel on receiver
     H323TransportAddress mediaAddress(m_session->GetLocalAddress(true));
     param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel);
     mediaAddress.SetPDU(param.m_mediaChannel);
-  }
-
-  if (GetDirection() != H323Channel::IsReceiver) {
-    // Set flag for we are going to stop sending audio on silence
-    if (mediaType == OpalMediaType::Audio()) {
-      param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_silenceSuppression);
-      param.m_silenceSuppression = (connection.GetEndPoint().GetManager().GetSilenceDetectParams().m_mode != OpalSilenceDetector::NoSilenceDetection);
-    }
   }
 
   // Set dynamic payload type, if is one
