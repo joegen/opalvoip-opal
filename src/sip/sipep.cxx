@@ -546,7 +546,8 @@ PStringList SIPEndPoint::GetAvailableStringOptions() const
     OPAL_SIP_REFERRED_CONNECTION,
     OPAL_OPT_OFFER_SDP_PTIME,
     OPAL_OPT_OFFER_RTCP_FB,
-    OPAL_OPT_FORCE_RTCP_FB
+    OPAL_OPT_FORCE_RTCP_FB,
+    OPAL_OPT_OFFER_ICE
   };
 
   PStringList list = OpalEndPoint::GetAvailableStringOptions();
