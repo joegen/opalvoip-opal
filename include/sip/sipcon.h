@@ -139,6 +139,11 @@ class OpalSIPIMContext;
 */
 #define OPAL_OPT_UNSECURE_SRTP "Unsecure-SRTP"
 
+/**Enable ICE offerred in SDP.
+   Defaults to false.
+*/
+#define OPAL_OPT_OFFER_ICE "Offer-ICE"
+
 
 #define SIP_HEADER_PREFIX      "SIP-Header:"
 #define SIP_HEADER_REPLACES    SIP_HEADER_PREFIX"Replaces"

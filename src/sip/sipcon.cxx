@@ -858,7 +858,7 @@ bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
     return false;
   }
 
-  localMedia->SetSessionInfo(mediaSession, true);
+  localMedia->SetSessionInfo(mediaSession, m_stringOptions.GetBoolean(OPAL_OPT_OFFER_ICE));
   localMedia->SetOptionStrings(m_stringOptions);
 
   if (sdp.GetDefaultConnectAddress().IsEmpty())
