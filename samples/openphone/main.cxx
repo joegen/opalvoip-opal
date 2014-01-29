@@ -246,11 +246,13 @@ DEF_FIELD(DisableH245inSETUP);
 DEF_FIELD(ForceSymmetricTCS);
 DEF_FIELD(ExtendedVideoRoles);
 DEF_FIELD(EnableH239Control);
+#if OPAL_PTLIB_SSL
 DEF_FIELD(H323SignalingSecurity);
 DEF_FIELD(H323MediaCryptoSuites);
-
+#endif
 
 static const wxChar H323AliasesGroup[] = wxT("/H.323/Aliases");
+static const wxChar H323StringOptionsGroup[] = wxT("/H.323/Options");
 
 static const wxChar SIPGroup[] = wxT("/SIP");
 DEF_FIELD(SIPProxyUsed);
@@ -260,8 +262,12 @@ DEF_FIELD(SIPProxyPassword);
 DEF_FIELD(LineAppearanceCode);
 DEF_FIELD(SIPUserInputMode);
 DEF_FIELD(SIPPRACKMode);
+#if OPAL_PTLIB_SSL
 DEF_FIELD(SIPSignalingSecurity);
 DEF_FIELD(SIPMediaCryptoSuites);
+#endif
+
+static const wxChar SIPStringOptionsGroup[] = wxT("/SIP/Options");
 
 static const wxChar RegistrarGroup[] = wxT("/SIP/Registrars");
 DEF_FIELD(RegistrationType);
@@ -1161,7 +1167,7 @@ bool MyManager::Initialise(bool startMinimised)
 
 
   config->SetPath(LocalInterfacesGroup);
-  wxString entryName;
+  PwxString entryName;
   long entryIndex;
   if (config->GetFirstEntry(entryName, entryIndex)) {
     do {
@@ -1443,10 +1449,19 @@ bool MyManager::Initialise(bool startMinimised)
 #if OPAL_PTLIB_SSL
   if (!config->Read(H323SignalingSecurityKey, &value1))
     value1 = 0;
-  SetSignalingSecurity(h323EP, value1, "h323", "h323s");
+  SetSignalingSecurity(h323EP, value1);
   if (config->Read(H323MediaCryptoSuitesKey, &str))
     h323EP->SetMediaCryptoSuites(str.p_str().Tokenise(','));
 #endif
+
+  config->SetPath(H323StringOptionsGroup);
+  if (config->GetFirstEntry(entryName, entryIndex)) {
+    do {
+      PwxString value;
+      if (config->Read(entryName, &value))
+        h323EP->SetDefaultStringOption(entryName, value);
+    } while (config->GetNextEntry(entryName, entryIndex));
+  }
 
   config->Read(GatekeeperModeKey, &m_gatekeeperMode, 0);
   if (config->Read(GatekeeperTTLKey, &value1))
@@ -1493,10 +1508,19 @@ bool MyManager::Initialise(bool startMinimised)
 #if OPAL_PTLIB_SSL
   if (!config->Read(SIPSignalingSecurityKey, &value1))
     value1 = 0;
-  SetSignalingSecurity(sipEP, value1, "sip", "sips");
+  SetSignalingSecurity(sipEP, value1);
   if (config->Read(SIPMediaCryptoSuitesKey, &str))
     sipEP->SetMediaCryptoSuites(str.p_str().Tokenise(','));
 #endif
+
+  config->SetPath(SIPStringOptionsGroup);
+  if (config->GetFirstEntry(entryName, entryIndex)) {
+    do {
+      PwxString value;
+      if (config->Read(entryName, &value))
+        sipEP->SetDefaultStringOption(entryName.p_str(), value.p_str());
+    } while (config->GetNextEntry(entryName, entryIndex));
+  }
 
   if (config->Read(RegistrarTimeToLiveKey, &value1))
     sipEP->SetRegistrarTimeToLive(PTimeInterval(0, value1));
@@ -1666,22 +1690,22 @@ void MyManager::StartAllListeners()
 
 
 #if OPAL_PTLIB_SSL
-void MyManager::SetSignalingSecurity(OpalEndPoint * ep, int security, const char * unsecure, const char * secure)
+void MyManager::SetSignalingSecurity(OpalEndPoint * ep, int security)
 {
   switch (security) {
     case 0 :
-      AttachEndPoint(ep, unsecure);
-      DetachEndPoint(secure);
+      AttachEndPoint(ep, ep->GetPrefixName());
+      DetachEndPoint(ep->GetPrefixName() + 's');
       break;
 
     case 1 :
-      AttachEndPoint(ep, secure);
-      DetachEndPoint(unsecure);
+      AttachEndPoint(ep, ep->GetPrefixName() + 's');
+      DetachEndPoint(ep->GetPrefixName());
       break;
 
     default :
-      AttachEndPoint(ep, unsecure);
-      AttachEndPoint(ep, secure);
+      AttachEndPoint(ep, ep->GetPrefixName());
+      AttachEndPoint(ep, ep->GetPrefixName() + 's');
   }
 }
 #endif
@@ -4361,22 +4385,15 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
 
   ////////////////////////////////////////
   // H.323 fields
-#if OPAL_PTLIB_SSL
-  EVT_RADIOBOX(wxXmlResource::GetXRCID(H323SignalingSecurityKey), OptionsDialog::H323SignalingSecurityChanged)
-  EVT_LISTBOX(wxXmlResource::GetXRCID(H323MediaCryptoSuitesKey), OptionsDialog::H323MediaCryptoSuiteChanged)
-  EVT_BUTTON(XRCID("H323MediaCryptoSuiteUp"), OptionsDialog::H323MediaCryptoSuiteUp)
-  EVT_BUTTON(XRCID("H323MediaCryptoSuiteDown"), OptionsDialog::H323MediaCryptoSuiteDown)
-#endif
+  EVT_BUTTON(XRCID("MoreOptionsH323"), OptionsDialog::MoreOptionsH323)
+  EVT_LISTBOX(XRCID("Aliases"), OptionsDialog::SelectedAlias)
+  EVT_BUTTON(XRCID("AddAlias"), OptionsDialog::AddAlias)
+  EVT_BUTTON(XRCID("RemoveAlias"), OptionsDialog::RemoveAlias)
+  EVT_TEXT(XRCID("NewAlias"), OptionsDialog::ChangedNewAlias)
 
   ////////////////////////////////////////
   // SIP fields
-#if OPAL_PTLIB_SSL
-  EVT_RADIOBOX(wxXmlResource::GetXRCID(SIPSignalingSecurityKey), OptionsDialog::SIPSignalingSecurityChanged)
-  EVT_LISTBOX(wxXmlResource::GetXRCID(SIPMediaCryptoSuitesKey), OptionsDialog::SIPMediaCryptoSuiteChanged)
-  EVT_BUTTON(XRCID("SIPMediaCryptoSuiteUp"), OptionsDialog::SIPMediaCryptoSuiteUp)
-  EVT_BUTTON(XRCID("SIPMediaCryptoSuiteDown"), OptionsDialog::SIPMediaCryptoSuiteDown)
-#endif
-
+  EVT_BUTTON(XRCID("MoreOptionsSIP"), OptionsDialog::MoreOptionsSIP)
   EVT_BUTTON(XRCID("AddRegistrar"), OptionsDialog::AddRegistration)
   EVT_BUTTON(XRCID("ChangeRegistrar"), OptionsDialog::ChangeRegistration)
   EVT_BUTTON(XRCID("RemoveRegistrar"), OptionsDialog::RemoveRegistration)
@@ -4400,13 +4417,6 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_BUTTON(XRCID("RestoreDefaultRoutes"), OptionsDialog::RestoreDefaultRoutes)
 
   ////////////////////////////////////////
-  // H.323 fields
-  EVT_LISTBOX(XRCID("Aliases"), OptionsDialog::SelectedAlias)
-  EVT_BUTTON(XRCID("AddAlias"), OptionsDialog::AddAlias)
-  EVT_BUTTON(XRCID("RemoveAlias"), OptionsDialog::RemoveAlias)
-  EVT_TEXT(XRCID("NewAlias"), OptionsDialog::ChangedNewAlias)
-
-  ////////////////////////////////////////
   // Tracing fields
 #if PTRACING
   EVT_BUTTON(XRCID("BrowseTraceFile"), OptionsDialog::BrowseTraceFile)
@@ -4423,42 +4433,6 @@ END_EVENT_TABLE()
   FindWindowByNameAs(m_##name##Ctrl, this, name##Key)->SetValidator(wxGenericValidator(&m_##name))
 
 
-#if OPAL_PTLIB_SSL
-static void InitSecurityFields(OpalEndPoint * ep, wxCheckListBox * listbox, bool securedSignaling)
-{
-  PStringArray allMethods = ep->GetAllMediaCryptoSuites();
-  PStringArray enabledMethods = ep->GetMediaCryptoSuites();
-
-  listbox->Clear();
-
-  bool noneEnabled = true;
-  for (PINDEX i = 0; i < enabledMethods.GetSize(); ++i) {
-    OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(enabledMethods[i]);
-    if (cryptoSuite != NULL) {
-      listbox->Check(listbox->Append(PwxString(cryptoSuite->GetDescription())), securedSignaling);
-      noneEnabled = false;
-    }
-  }
-
-  for (PINDEX i = 0; i < allMethods.GetSize(); ++i) {
-    if (enabledMethods.GetValuesIndex(allMethods[i]) != P_MAX_INDEX)
-      continue;
-
-    OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(allMethods[i]);
-    if (cryptoSuite == NULL)
-      continue;
-
-    listbox->Check(listbox->Append(PwxString(cryptoSuite->GetDescription())), false);
-  }
-
-  if (noneEnabled || !securedSignaling)
-    listbox->Check(listbox->FindString(PwxString(OpalMediaCryptoSuite::ClearText())));
-
-  listbox->Enable(securedSignaling && allMethods.GetSize() > 1);
-}
-#endif // OPAL_PTLIB_SSL
-
-
 static int wxCALLBACK MediaFormatSort(wxIntPtr item1, wxIntPtr item2, wxIntPtr)
 {
   MyMedia * media1 = (MyMedia *)item1;
@@ -4471,6 +4445,8 @@ static int wxCALLBACK MediaFormatSort(wxIntPtr item1, wxIntPtr item2, wxIntPtr)
 
 OptionsDialog::OptionsDialog(MyManager * manager)
   : m_manager(*manager)
+  , m_H323options(manager, manager->h323EP)
+  , m_SIPoptions(manager, manager->sipEP)
   , m_TestVideoThread(NULL)
   , m_TestVideoGrabber(NULL)
   , m_TestVideoDisplay(NULL)
@@ -4851,24 +4827,6 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(ExtendedVideoRoles, m_manager.m_ExtendedVideoRoles);
   INIT_FIELD(EnableH239Control, m_manager.h323EP->GetDefaultH239Control());
 
-#if OPAL_PTLIB_SSL
-  m_H323SignalingSecurity = 0;
-  if (m_manager.FindEndPoint("h323") != NULL)
-    m_H323SignalingSecurity |= 1;
-  if (m_manager.FindEndPoint("h323s") != NULL)
-    m_H323SignalingSecurity |= 2;
-  --m_H323SignalingSecurity;
-  FindWindowByName(H323SignalingSecurityKey)->SetValidator(wxGenericValidator(&m_H323SignalingSecurity));
-  FindWindowByNameAs(m_H323MediaCryptoSuiteUp, this, wxT("H323MediaCryptoSuiteUp"));
-  FindWindowByNameAs(m_H323MediaCryptoSuiteDown, this, wxT("H323MediaCryptoSuiteDown"));
-  InitSecurityFields(m_manager.h323EP,
-                     FindWindowByNameAs(m_H323MediaCryptoSuites, this, H323MediaCryptoSuitesKey),
-                     m_H323SignalingSecurity > 0);
-#else
-  FindWindowByName(H323SignalingSecurityKey)->Disable();
-  FindWindowByName(H323MediaCryptoSuitesKey)->Disable();
-#endif // OPAL_PTLIB_SSL
-
   INIT_FIELD(GatekeeperMode, m_manager.m_gatekeeperMode);
   INIT_FIELD(GatekeeperAddress, m_manager.m_gatekeeperAddress);
   INIT_FIELD(GatekeeperIdentifier, m_manager.m_gatekeeperIdentifier);
@@ -4890,24 +4848,6 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   if (m_SIPUserInputMode >= OpalConnection::SendUserInputAsProtocolDefault)
     m_SIPUserInputMode = OpalConnection::SendUserInputAsRFC2833;
   m_SIPUserInputMode--; // No SendUserInputAsQ931 mode, so decrement
-
-#if OPAL_PTLIB_SSL
-  m_SIPSignalingSecurity = 0;
-  if (m_manager.FindEndPoint("sip") != NULL)
-    m_SIPSignalingSecurity |= 1;
-  if (m_manager.FindEndPoint("sips") != NULL)
-    m_SIPSignalingSecurity |= 2;
-  --m_SIPSignalingSecurity;
-  FindWindowByName(SIPSignalingSecurityKey)->SetValidator(wxGenericValidator(&m_SIPSignalingSecurity));
-  FindWindowByNameAs(m_SIPMediaCryptoSuiteUp, this, wxT("SIPMediaCryptoSuiteUp"));
-  FindWindowByNameAs(m_SIPMediaCryptoSuiteDown, this, wxT("SIPMediaCryptoSuiteDown"));
-  InitSecurityFields(m_manager.sipEP,
-                     FindWindowByNameAs(m_SIPMediaCryptoSuites, this, SIPMediaCryptoSuitesKey),
-                     m_SIPSignalingSecurity > 0);
-#else
-  FindWindowByName(SIPSignalingSecurityKey)->Disable();
-  FindWindowByName(SIPMediaCryptoSuitesKey)->Disable();
-#endif // OPAL_PTLIB_SSL
 
   m_SelectedRegistration = INT_MAX;
 
@@ -5034,35 +4974,6 @@ OptionsDialog::~OptionsDialog()
   set(m_##name1, m_##name2); \
   config->Write(name1##Key, m_##name1); \
   config->Write(name2##Key, m_##name2)
-
-
-#if OPAL_PTLIB_SSL
-static void SaveSecurityFields(OpalEndPoint * ep, wxCheckListBox * listbox, bool securedSignaling,
-                               wxConfigBase * config, const wxChar * securedSignalingKey, const wxChar * mediaCryptoSuitesKey)
-{
-  config->Write(securedSignalingKey, securedSignaling);
-
-  PStringArray allMethods = ep->GetAllMediaCryptoSuites();
-  PStringArray enabledMethods;
-  for (unsigned item = 0; item < listbox->GetCount(); ++item) {
-    if (listbox->IsChecked(item)) {
-      PString description = PwxString(listbox->GetString(item));
-      for (PINDEX i = 0; i < allMethods.GetSize(); ++i) {
-        OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(allMethods[i]);
-        if (cryptoSuite != NULL && description == cryptoSuite->GetDescription()) {
-          enabledMethods.AppendString(allMethods[i]);
-          break;
-        }
-      }
-    }
-  }
-
-  ep->SetMediaCryptoSuites(enabledMethods);
-  PStringStream strm;
-  strm << setfill(',') << enabledMethods;
-  config->Write(mediaCryptoSuitesKey, PwxString(strm));
-}
-#endif // OPAL_PTLIB_SSL
 
 
 bool OptionsDialog::TransferDataFromWindow()
@@ -5386,11 +5297,9 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(EnableH239Control, m_manager.h323EP->SetDefaultH239Control);
 
 #if OPAL_PTLIB_SSL
-  SaveSecurityFields(m_manager.h323EP, m_H323MediaCryptoSuites, m_H323SignalingSecurity > 0,
-                     config, H323SignalingSecurityKey, H323MediaCryptoSuitesKey);
-  m_manager.SetSignalingSecurity(m_manager.h323EP, m_H323SignalingSecurity, "h323", "h323s");
-  config->Write(H323SignalingSecurityKey, m_H323SignalingSecurity);
+  m_H323options.SaveSecurityFields(config, H323SignalingSecurityKey, H323MediaCryptoSuitesKey);
 #endif
+  m_H323options.SaveOptions(config, H323StringOptionsGroup);
 
   config->Write(GatekeeperTTLKey, m_GatekeeperTTL);
   m_manager.h323EP->SetGatekeeperTimeToLive(PTimeInterval(0, m_GatekeeperTTL));
@@ -5426,11 +5335,9 @@ bool OptionsDialog::TransferDataFromWindow()
   config->Write(SIPPRACKModeKey, m_SIPPRACKMode);
 
 #if OPAL_PTLIB_SSL
-  SaveSecurityFields(m_manager.sipEP, m_SIPMediaCryptoSuites, m_SIPSignalingSecurity > 0,
-                     config, SIPSignalingSecurityKey, SIPMediaCryptoSuitesKey);
-  m_manager.SetSignalingSecurity(m_manager.sipEP, m_SIPSignalingSecurity, "sip", "sips");
-  config->Write(SIPSignalingSecurityKey, m_SIPSignalingSecurity);
+  m_SIPoptions.SaveSecurityFields(config, SIPSignalingSecurityKey, SIPMediaCryptoSuitesKey);
 #endif
+  m_SIPoptions.SaveOptions(config, SIPStringOptionsGroup);
 
   RegistrationList newRegistrations;
 
@@ -6338,68 +6245,12 @@ void OptionsDialog::ChangedCodecOptionValue(wxCommandEvent & /*event*/)
 
 
 ////////////////////////////////////////
-
-#if OPAL_PTLIB_SSL
-static void MediaCryptoSuiteChanged(wxCheckListBox * listbox, wxButton * up, wxButton * down)
-{
-  int selection = listbox->GetSelection();
-  up->Enable(selection > 0);
-  down->Enable((unsigned)selection < listbox->GetCount()-1);
-}
-
-
-static void MediaCryptoSuiteMove(wxCheckListBox * listbox, wxButton * up, wxButton * down, int dir)
-{
-  int selection = listbox->GetSelection();
-  if (dir < 0 ? (selection <= 0) : ((unsigned)selection >= listbox->GetCount()-1))
-    return;
-
-  wxString str = listbox->GetString(selection);
-  bool check = listbox->IsChecked(selection);
-
-  listbox->Delete(selection);
-
-  selection += dir;
-
-  listbox->Insert(str, selection);
-  listbox->Check(selection, check);
-
-  MediaCryptoSuiteChanged(listbox, up, down);
-}
-#endif // OPAL_PTLIB_SSL
-
-
-////////////////////////////////////////
 // H.323 fields
 
-#if OPAL_PTLIB_SSL
-void OptionsDialog::H323SignalingSecurityChanged(wxCommandEvent & /*event*/)
+void OptionsDialog::MoreOptionsH323(wxCommandEvent & /*event*/)
 {
-  if (!wxDialog::TransferDataFromWindow())
-    return;
-
-  InitSecurityFields(m_manager.h323EP, m_H323MediaCryptoSuites, m_H323SignalingSecurity > 0);
-  MediaCryptoSuiteChanged(m_H323MediaCryptoSuites, m_H323MediaCryptoSuiteUp, m_H323MediaCryptoSuiteDown);
+  m_H323options.ShowModal();
 }
-
-
-void OptionsDialog::H323MediaCryptoSuiteChanged(wxCommandEvent & /*event*/)
-{
-  MediaCryptoSuiteChanged(m_H323MediaCryptoSuites, m_H323MediaCryptoSuiteUp, m_H323MediaCryptoSuiteDown);
-}
-
-
-void OptionsDialog::H323MediaCryptoSuiteUp(wxCommandEvent & /*event*/)
-{
-  MediaCryptoSuiteMove(m_H323MediaCryptoSuites, m_H323MediaCryptoSuiteUp, m_H323MediaCryptoSuiteDown, -1);
-}
-
-
-void OptionsDialog::H323MediaCryptoSuiteDown(wxCommandEvent & /*event*/)
-{
-  MediaCryptoSuiteMove(m_H323MediaCryptoSuites, m_H323MediaCryptoSuiteUp, m_H323MediaCryptoSuiteDown, +1);
-}
-#endif
 
 
 void OptionsDialog::SelectedAlias(wxCommandEvent & /*event*/)
@@ -6432,34 +6283,10 @@ void OptionsDialog::RemoveAlias(wxCommandEvent & /*event*/)
 ////////////////////////////////////////
 // SIP fields
 
-#if OPAL_PTLIB_SSL
-void OptionsDialog::SIPSignalingSecurityChanged(wxCommandEvent & /*event*/)
+void OptionsDialog::MoreOptionsSIP(wxCommandEvent & /*event*/)
 {
-  if (!wxDialog::TransferDataFromWindow())
-    return;
-
-  InitSecurityFields(m_manager.sipEP, m_SIPMediaCryptoSuites, m_SIPSignalingSecurity > 0);
-  MediaCryptoSuiteChanged(m_SIPMediaCryptoSuites, m_SIPMediaCryptoSuiteUp, m_SIPMediaCryptoSuiteDown);
+  m_SIPoptions.ShowModal();
 }
-
-
-void OptionsDialog::SIPMediaCryptoSuiteChanged(wxCommandEvent & /*event*/)
-{
-  MediaCryptoSuiteChanged(m_SIPMediaCryptoSuites, m_SIPMediaCryptoSuiteUp, m_SIPMediaCryptoSuiteDown);
-}
-
-
-void OptionsDialog::SIPMediaCryptoSuiteUp(wxCommandEvent & /*event*/)
-{
-  MediaCryptoSuiteMove(m_SIPMediaCryptoSuites, m_SIPMediaCryptoSuiteUp, m_SIPMediaCryptoSuiteDown, -1);
-}
-
-
-void OptionsDialog::SIPMediaCryptoSuiteDown(wxCommandEvent & /*event*/)
-{
-  MediaCryptoSuiteMove(m_SIPMediaCryptoSuites, m_SIPMediaCryptoSuiteUp, m_SIPMediaCryptoSuiteDown, +1);
-}
-#endif
 
 
 static void RenumberList(wxListCtrl * list, int position)
@@ -6746,6 +6573,201 @@ void OptionsDialog::BrowseTraceFile(wxCommandEvent & /*event*/)
     m_TraceFileName = newFile;
     TransferDataToWindow();
   }
+}
+#endif
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+BEGIN_EVENT_TABLE(NetOptionsDialog, wxDialog)
+#if OPAL_PTLIB_SSL
+  EVT_RADIOBOX(XRCID("SignalingSecurityKey"), NetOptionsDialog::SignalingSecurityChanged)
+  EVT_LISTBOX(XRCID("MediaCryptoSuitesKey"),  NetOptionsDialog::MediaCryptoSuiteChanged)
+  EVT_BUTTON(XRCID("MediaCryptoSuiteUp"),     NetOptionsDialog::MediaCryptoSuiteUp)
+  EVT_BUTTON(XRCID("MediaCryptoSuiteDown"),   NetOptionsDialog::MediaCryptoSuiteDown)
+#endif
+END_EVENT_TABLE()
+
+NetOptionsDialog::NetOptionsDialog(MyManager * manager, OpalRTPEndPoint * ep)
+  : m_manager(*manager)
+  , m_endpoint(ep)
+{
+  wxXmlResource::Get()->LoadDialog(this, manager, wxT("NetOptionsDialog"));
+
+#if OPAL_PTLIB_SSL
+  m_SignalingSecurity = 0;
+  if (m_manager.FindEndPoint(ep->GetPrefixName()) != NULL)
+    m_SignalingSecurity |= 1;
+  if (m_manager.FindEndPoint(ep->GetPrefixName()+'s') != NULL)
+    m_SignalingSecurity |= 2;
+  --m_SignalingSecurity;
+
+  wxRadioBox * radio;
+  FindWindowByNameAs(radio, this, wxT("SignalingSecurity"))->SetValidator(wxGenericValidator(&m_SignalingSecurity));
+  for (size_t i = 0; i < radio->GetColumnCount(); ++i) {
+    wxString str = radio->GetString(i);
+    str.Replace("XXX", PwxString(ep->GetPrefixName()));
+    radio->SetString(i, str);
+  }
+
+  FindWindowByNameAs(m_MediaCryptoSuiteUp, this, wxT("MediaCryptoSuiteUp"));
+  FindWindowByNameAs(m_MediaCryptoSuiteDown, this, wxT("MediaCryptoSuiteDown"));
+  FindWindowByNameAs(m_MediaCryptoSuites, this, wxT("MediaCryptoSuites"));
+  InitSecurityFields();
+#else
+  FindWindowByName(wxT("SignalingSecurity"))->Disable();
+  FindWindowByName(wxT("MediaCryptoSuites"))->Disable();
+  FindWindowByName(wxT("MediaCryptoSuiteUp"))->Disable();
+  FindWindowByName(wxT("MediaCryptoSuiteDown"))->Disable();
+#endif // OPAL_PTLIB_SSL
+
+  FindWindowByNameAs(m_stringOptions, this, wxT("StringOptions"));
+  m_stringOptions->CreateGrid(0, 1);
+  m_stringOptions->SetColLabelValue(0, wxT("Option Value"));
+  m_stringOptions->SetColLabelSize(wxGRID_AUTOSIZE);
+  m_stringOptions->AutoSizeColLabelSize(0);
+  m_stringOptions->SetRowLabelAlignment(wxALIGN_LEFT, wxALIGN_TOP);
+
+  const PStringToString & defaultOptions = m_endpoint->GetDefaultStringOptions();
+  PStringList optionNames = m_endpoint->GetAvailableStringOptions();
+  m_stringOptions->AppendRows(optionNames.GetSize());
+  int row = 0;
+  for (PStringList::iterator it = optionNames.begin(); it != optionNames.end(); ++it, ++row) {
+    m_stringOptions->SetRowLabelValue(row, PwxString(*it));
+    m_stringOptions->SetCellValue(PwxString(defaultOptions(*it, DefaultAttributeValue)), row, 0);
+  }
+
+  m_stringOptions->SetRowLabelSize(wxGRID_AUTOSIZE);
+  m_stringOptions->SetColSize(0, m_stringOptions->GetSize().GetWidth() -
+                              m_stringOptions->GetRowLabelSize() - 8);
+}
+
+
+void NetOptionsDialog::SaveOptions(wxConfigBase * config, const wxChar * stringOptionsGroup)
+{
+  wxString oldPath = config->GetPath();
+  config->DeleteGroup(stringOptionsGroup);
+  config->SetPath(stringOptionsGroup);
+  for (int row = 0; row < m_stringOptions->GetRows(); ++row) {
+    PwxString value = m_stringOptions->GetCellValue(row, 0);
+    if (value != DefaultAttributeValue)
+      config->Write(m_stringOptions->GetRowLabelValue(row), value);
+  }
+  config->SetPath(oldPath);
+}
+
+
+#if OPAL_PTLIB_SSL
+void NetOptionsDialog::InitSecurityFields()
+{
+  PStringArray allMethods = m_endpoint->GetAllMediaCryptoSuites();
+  PStringArray enabledMethods = m_endpoint->GetMediaCryptoSuites();
+
+  m_MediaCryptoSuites->Clear();
+
+  bool noneEnabled = true;
+  for (PINDEX i = 0; i < enabledMethods.GetSize(); ++i) {
+    OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(enabledMethods[i]);
+    if (cryptoSuite != NULL) {
+      m_MediaCryptoSuites->Check(m_MediaCryptoSuites->Append(PwxString(cryptoSuite->GetDescription())), m_SignalingSecurity > 0);
+      noneEnabled = false;
+    }
+  }
+
+  for (PINDEX i = 0; i < allMethods.GetSize(); ++i) {
+    if (enabledMethods.GetValuesIndex(allMethods[i]) != P_MAX_INDEX)
+      continue;
+
+    OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(allMethods[i]);
+    if (cryptoSuite == NULL)
+      continue;
+
+    m_MediaCryptoSuites->Check(m_MediaCryptoSuites->Append(PwxString(cryptoSuite->GetDescription())), false);
+  }
+
+  if (noneEnabled || m_SignalingSecurity == 0)
+    m_MediaCryptoSuites->Check(m_MediaCryptoSuites->FindString(PwxString(OpalMediaCryptoSuite::ClearText())));
+
+  m_MediaCryptoSuites->Enable(m_SignalingSecurity > 0 && allMethods.GetSize() > 1);
+}
+
+
+void NetOptionsDialog::SaveSecurityFields(wxConfigBase * config, const wxChar * securedSignalingKey, const wxChar * mediaCryptoSuitesKey)
+{
+  config->Write(securedSignalingKey, m_SignalingSecurity);
+
+  PStringArray allMethods = m_endpoint->GetAllMediaCryptoSuites();
+  PStringArray enabledMethods;
+  for (unsigned item = 0; item < m_MediaCryptoSuites->GetCount(); ++item) {
+    if (m_MediaCryptoSuites->IsChecked(item)) {
+      PString description = PwxString(m_MediaCryptoSuites->GetString(item));
+      for (PINDEX i = 0; i < allMethods.GetSize(); ++i) {
+        OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(allMethods[i]);
+        if (cryptoSuite != NULL && description == cryptoSuite->GetDescription()) {
+          enabledMethods.AppendString(allMethods[i]);
+          break;
+        }
+      }
+    }
+  }
+
+  m_endpoint->SetMediaCryptoSuites(enabledMethods);
+  PStringStream strm;
+  strm << setfill(',') << enabledMethods;
+  config->Write(mediaCryptoSuitesKey, PwxString(strm));
+
+  m_manager.SetSignalingSecurity(m_endpoint, m_SignalingSecurity);
+}
+
+
+void NetOptionsDialog::SignalingSecurityChanged(wxCommandEvent & theEvent)
+{
+  if (!wxDialog::TransferDataFromWindow())
+    return;
+
+  InitSecurityFields();
+  MediaCryptoSuiteChanged(theEvent);
+}
+
+
+void NetOptionsDialog::MediaCryptoSuiteChanged(wxCommandEvent & /*event*/)
+{
+  int selection = m_MediaCryptoSuites->GetSelection();
+  m_MediaCryptoSuiteUp->Enable(selection > 0);
+  m_MediaCryptoSuiteDown->Enable((unsigned)selection < m_MediaCryptoSuites->GetCount() - 1);
+}
+
+
+void NetOptionsDialog::MediaCryptoSuiteUp(wxCommandEvent & /*event*/)
+{
+  MediaCryptoSuiteMove(-1);
+}
+
+
+void NetOptionsDialog::MediaCryptoSuiteDown(wxCommandEvent & /*event*/)
+{
+  MediaCryptoSuiteMove(+1);
+}
+
+
+void NetOptionsDialog::MediaCryptoSuiteMove(int dir)
+{
+  int selection = m_MediaCryptoSuites->GetSelection();
+  if (dir < 0 ? (selection <= 0) : ((unsigned)selection >= m_MediaCryptoSuites->GetCount() - 1))
+    return;
+
+  wxString str = m_MediaCryptoSuites->GetString(selection);
+  bool check = m_MediaCryptoSuites->IsChecked(selection);
+
+  m_MediaCryptoSuites->Delete(selection);
+
+  selection += dir;
+
+  m_MediaCryptoSuites->Insert(str, selection);
+  m_MediaCryptoSuites->Check(selection, check);
+
+  wxCommandEvent dummy;
+  MediaCryptoSuiteChanged(dummy);
 }
 #endif
 

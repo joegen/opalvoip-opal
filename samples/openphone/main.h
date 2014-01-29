@@ -592,6 +592,38 @@ class RegistrationDialog : public wxDialog
 };
 
 
+class NetOptionsDialog : public wxDialog
+{
+  public:
+    NetOptionsDialog(MyManager *manager, OpalRTPEndPoint * ep);
+
+  private:
+    MyManager & m_manager;
+    OpalRTPEndPoint * m_endpoint;
+
+#if OPAL_PTLIB_SSL
+    int              m_SignalingSecurity;
+    wxCheckListBox * m_MediaCryptoSuites;
+    wxButton       * m_MediaCryptoSuiteUp;
+    wxButton       * m_MediaCryptoSuiteDown;
+    void InitSecurityFields();
+    void SaveSecurityFields(wxConfigBase * config, const wxChar * securedSignalingKey, const wxChar * mediaCryptoSuitesKey);
+    void SignalingSecurityChanged(wxCommandEvent & /*event*/);
+    void MediaCryptoSuiteChanged(wxCommandEvent & /*event*/);
+    void MediaCryptoSuiteUp(wxCommandEvent & /*event*/);
+    void MediaCryptoSuiteDown(wxCommandEvent & /*event*/);
+    void MediaCryptoSuiteMove(int dir);
+#endif
+
+    wxGrid * m_stringOptions;
+    void SaveOptions(wxConfigBase * config, const wxChar * stringOptionsGroup);
+
+    friend class OptionsDialog;
+
+    DECLARE_EVENT_TABLE()
+};
+
+
 class OptionsDialog : public wxDialog
 {
   public:
@@ -829,16 +861,8 @@ class OptionsDialog : public wxDialog
     void AddAlias(wxCommandEvent & /*event*/);
     void RemoveAlias(wxCommandEvent & /*event*/);
 
-#if OPAL_PTLIB_SSL
-    int              m_H323SignalingSecurity;
-    wxCheckListBox * m_H323MediaCryptoSuites;
-    wxButton       * m_H323MediaCryptoSuiteUp;
-    wxButton       * m_H323MediaCryptoSuiteDown;
-    void H323SignalingSecurityChanged(wxCommandEvent & /*event*/);
-    void H323MediaCryptoSuiteChanged(wxCommandEvent & /*event*/);
-    void H323MediaCryptoSuiteUp(wxCommandEvent & /*event*/);
-    void H323MediaCryptoSuiteDown(wxCommandEvent & /*event*/);
-#endif
+    void MoreOptionsH323(wxCommandEvent & /*event*/);
+    NetOptionsDialog m_H323options;
 
     ////////////////////////////////////////
     // SIP fields
@@ -869,16 +893,8 @@ class OptionsDialog : public wxDialog
     void DeselectedRegistration(wxListEvent & /*event*/);
     void ActivateRegistration(wxListEvent & /*event*/);
 
-#if OPAL_PTLIB_SSL
-    int              m_SIPSignalingSecurity;
-    wxCheckListBox * m_SIPMediaCryptoSuites;
-    wxButton       * m_SIPMediaCryptoSuiteUp;
-    wxButton       * m_SIPMediaCryptoSuiteDown;
-    void SIPSignalingSecurityChanged(wxCommandEvent & /*event*/);
-    void SIPMediaCryptoSuiteChanged(wxCommandEvent & /*event*/);
-    void SIPMediaCryptoSuiteUp(wxCommandEvent & /*event*/);
-    void SIPMediaCryptoSuiteDown(wxCommandEvent & /*event*/);
-#endif
+    void MoreOptionsSIP(wxCommandEvent & /*event*/);
+    NetOptionsDialog m_SIPoptions;
 
     ////////////////////////////////////////
     // Routing fields
@@ -1011,6 +1027,10 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
       const PString & str = PString::Empty(),
       const void * data = NULL
     );
+
+#if OPAL_PTLIB_SSL
+    void SetSignalingSecurity(OpalEndPoint * ep, int security);
+#endif
 
   private:
     // PAsyncNotifierTarget override
@@ -1225,9 +1245,6 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
 
     vector<PwxString> m_LocalInterfaces;
     void StartAllListeners();
-#if OPAL_PTLIB_SSL
-    void SetSignalingSecurity(OpalEndPoint * ep, int security, const char * unsecure, const char * secure);
-#endif
 
 #if OPAL_H323
     MyH323EndPoint * h323EP;
