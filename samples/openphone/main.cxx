@@ -6649,9 +6649,14 @@ void NetOptionsDialog::SaveOptions(wxConfigBase * config, const wxChar * stringO
   config->DeleteGroup(stringOptionsGroup);
   config->SetPath(stringOptionsGroup);
   for (int row = 0; row < m_stringOptions->GetRows(); ++row) {
+    PwxString key = m_stringOptions->GetRowLabelValue(row);
     PwxString value = m_stringOptions->GetCellValue(row, 0);
-    if (value != DefaultAttributeValue)
+    if (value == DefaultAttributeValue)
+      m_endpoint->RemoveDefaultStringOption(key);
+    else {
       config->Write(m_stringOptions->GetRowLabelValue(row), value);
+      m_endpoint->SetDefaultStringOption(key, value);
+    }
   }
   config->SetPath(oldPath);
 }
