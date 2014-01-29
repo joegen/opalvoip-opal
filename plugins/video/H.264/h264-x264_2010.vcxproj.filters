@@ -21,6 +21,9 @@
     <ClCompile Include="..\common\dyna.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\ffmpeg.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h264-x264.h">
