@@ -865,6 +865,10 @@ class OpalEndPoint : public PObject
       */
     void SetDefaultStringOption(const PCaselessString & key, const PString & data) { m_defaultStringOptions.SetAt(key, data); }
 
+    /**Removet the default option for created connections.
+      */
+    void RemoveDefaultStringOption(const PCaselessString & key) { m_defaultStringOptions.RemoveAt(key); }
+
     /** Get available string option names.
       */
     virtual PStringList GetAvailableStringOptions() const;
