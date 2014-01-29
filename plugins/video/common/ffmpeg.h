@@ -115,6 +115,7 @@ class FFMPEGCodec
     size_t           m_alignedInputSize;
     EncodedFrame   * m_fullFrame;
     int              m_errorCount;
+    bool             m_ignorePackets;
 
   public:
     FFMPEGCodec(const char * prefix, EncodedFrame * fullFrame);
