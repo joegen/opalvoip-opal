@@ -4445,11 +4445,11 @@ static int wxCALLBACK MediaFormatSort(wxIntPtr item1, wxIntPtr item2, wxIntPtr)
 
 OptionsDialog::OptionsDialog(MyManager * manager)
   : m_manager(*manager)
-  , m_H323options(manager, manager->h323EP)
-  , m_SIPoptions(manager, manager->sipEP)
   , m_TestVideoThread(NULL)
   , m_TestVideoGrabber(NULL)
   , m_TestVideoDisplay(NULL)
+  , m_H323options(manager, manager->h323EP)
+  , m_SIPoptions(manager, manager->sipEP)
 {
   PINDEX i;
   wxChoice * choice;
@@ -6606,7 +6606,7 @@ NetOptionsDialog::NetOptionsDialog(MyManager * manager, OpalRTPEndPoint * ep)
   FindWindowByNameAs(radio, this, wxT("SignalingSecurity"))->SetValidator(wxGenericValidator(&m_SignalingSecurity));
   for (size_t i = 0; i < radio->GetColumnCount(); ++i) {
     wxString str = radio->GetString(i);
-    str.Replace("XXX", PwxString(ep->GetPrefixName()));
+    str.Replace(wxT("XXX"), PwxString(ep->GetPrefixName()));
     radio->SetString(i, str);
   }
 
