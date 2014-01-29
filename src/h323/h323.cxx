@@ -2146,10 +2146,8 @@ PBoolean H323Connection::SetAlerting(const PString & calleeName, PBoolean withMe
     earlyStart = true;
   }
 
-  HandleTunnelPDU(alertingPDU);
-
   bool startH245 = !endpoint.IsH245Disabled();
-  if (startH245) {
+  if (startH245 && localCapabilities.GetSize() == 0) {
     OnSetLocalCapabilities();
     if (localCapabilities.GetSize() == 0)
       startH245 = false; // Don't do early media if don't have any capabilities
@@ -2167,7 +2165,9 @@ PBoolean H323Connection::SetAlerting(const PString & calleeName, PBoolean withMe
   h450dispatcher->AttachToAlerting(*alertingPDU);
 #endif
 
-  if (!endpoint.OnSendAlerting(*this, *alertingPDU, calleeName, withMedia)){
+  HandleTunnelPDU(alertingPDU);
+
+  if (!endpoint.OnSendAlerting(*this, *alertingPDU, calleeName, withMedia)) {
     /* let the application to avoid sending the alerting, mainly for testing other endpoints*/
     PTRACE(3, "H323CON\tSetAlerting Alerting not sent");
     return true;
@@ -2408,7 +2408,7 @@ PBoolean H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString 
   // Remove any channels that were not started by OnSelectLogicalChannels(),
   // those that were started are put into the logical channel dictionary
   for (H323LogicalChannelList::iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ) {
-    if (channel->IsOpen())
+    if (logicalChannels->FindChannel(channel->GetNumber(), channel->GetNumber().IsFromRemote()) == NULL)
       ++channel;
     else
       m_fastStartChannels.erase(channel++); // Do ++ in both legs so iterator works with erase
@@ -4829,10 +4829,10 @@ PBoolean H323Connection::OnCreateLogicalChannel(const H323Capability & capabilit
   // Default error if returns false
   errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
 
-  // Check if in set at all
+  // Check if is allowed in respective TCS
   if (dir != H323Channel::IsReceiver) {
     H323Capability * remoteCapability = remoteCapabilities.FindCapability(capability);
-    if (remoteCapability == NULL || !localCapabilities.IsAllowed(*remoteCapability)) {
+    if (remoteCapability == NULL || !remoteCapabilities.IsAllowed(*remoteCapability)) {
       PTRACE(2, "H323\tOnCreateLogicalChannel - transmit capability " << capability << " not allowed.");
       return false;
     }
