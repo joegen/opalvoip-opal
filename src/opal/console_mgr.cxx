@@ -666,7 +666,7 @@ bool OpalConsoleSkinnyEndPoint::Initialise(PArgList & args, bool verbose, const 
 void OpalConsoleSkinnyEndPoint::CmdServer(PCLI::Arguments & args, P_INT_PTR)
 {
   if (args.GetCount() < 1)
-    args.Usage();
+    args.WriteUsage();
   else if (!Register(args[0]))
     args.WriteError() << "Could not register with skinny server \"" << args[0] << '"' << endl;
 }
@@ -740,7 +740,7 @@ bool OpalConsoleLineEndPoint::Initialise(PArgList & args, bool verbose, const PS
 void OpalConsoleLineEndPoint::CmdCountry(PCLI::Arguments & args, P_INT_PTR)
 {
   if (args.GetCount() < 1)
-    args.Usage();
+    args.WriteUsage();
   else if (!SetCountryCodeName(args[0]))
     args.WriteError() << "Could not set LID to country name \"" << args[0] << '"' << endl;
 }
@@ -1306,7 +1306,8 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
     SetSilenceDetectParams(params);
   }
 
-  DisableDetectInBandDTMF(args.HasOption("no-inband-detect"));
+  if (args.HasOption("no-inband-detect"))
+    DisableDetectInBandDTMF(true);
 
 #if OPAL_PTLIB_SSL
   m_caFiles = args.GetOptionString("ssl-ca", m_caFiles);
@@ -2009,6 +2010,8 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
                     "[ <call-token> ]");
 #endif
 
+  m_cli->SetCommand("pc vad", PCREATE_NOTIFIER(CmdSilenceDetect),
+                    "Voice Activity Detection (aka Silence Detection)", "\"on\" | \"adaptive\" | <level>");
   m_cli->SetCommand("codec list", PCREATE_NOTIFIER(CmdCodecList),
                     "List available codecs");
   m_cli->SetCommand("codec order", PCREATE_NOTIFIER(CmdCodecOrderMask),
@@ -2019,7 +2022,7 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
                     "[ -a ] [ <wildcard> ... ]", "a-add. Add to existing list");
 
   m_cli->SetCommand("delay", PCREATE_NOTIFIER(CmdDelay),
-                    "Delay for the specified numebr of seconds",
+                    "Delay for the specified number of seconds",
                     "seconds");
   m_cli->SetCommand("version", PCREATE_NOTIFIER(CmdVersion),
                     "Print application vesion number and library details.");
@@ -2236,6 +2239,51 @@ void OpalManagerCLI::CmdCodecList(PCLI::Arguments & args, P_INT_PTR)
   }
 
   out.flush();
+}
+
+
+void OpalManagerCLI::CmdSilenceDetect(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() > 1) {
+    args.WriteUsage();
+    return;
+  }
+
+  OpalSilenceDetector::Params params = GetSilenceDetectParams();
+  if (args.GetCount() != 0) {
+    if (args[0] *= "off")
+      params.m_mode = OpalSilenceDetector::NoSilenceDetection;
+    else if (PConstCaselessString("adaptive").NumCompare(args[0]) == EqualTo)
+      params.m_mode = OpalSilenceDetector::AdaptiveSilenceDetection;
+    else if (args[0].FindSpan("0123456789") == P_MAX_INDEX) {
+      params.m_mode = OpalSilenceDetector::FixedSilenceDetection;
+      params.m_threshold = args[0].AsUnsigned();
+    }
+    else {
+      args.WriteUsage();
+      return;
+    }
+    SetSilenceDetectParams(params);
+  }
+
+  ostream & out = args.GetContext();
+  out << "Silence Detect: ";
+  switch (params.m_mode) {
+    case OpalSilenceDetector::NoSilenceDetection :
+      out << "OFF";
+      break;
+
+    case OpalSilenceDetector::FixedSilenceDetection:
+      out << "FIXED at " << params.m_threshold;
+      break;
+
+    case OpalSilenceDetector::AdaptiveSilenceDetection:
+      out << "ADAPTIVE, "
+             "period=" << params.m_adaptivePeriod << ", "
+             "signal deadband=" << params.m_signalDeadband << ", "
+             "silence deadband=" << params.m_silenceDeadband;
+  }
+  out << endl;
 }
 
 
