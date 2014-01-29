@@ -601,18 +601,26 @@ PBoolean H245NegLogicalChannel::Close()
 
 PBoolean H245NegLogicalChannel::HandleOpen(const H245_OpenLogicalChannel & pdu)
 {
-  PTRACE(3, "H245\tReceived open channel: " << channelNumber << ", state=" << state);
+  H323ControlPDU reply;
+  H245_OpenLogicalChannelAck & ack = reply.BuildOpenLogicalChannelAck(channelNumber);
 
   if (channel != NULL) {
+    if (state == e_Established) {
+      PTRACE(3, "H245\tReceived duplicate open channel: " << channelNumber << ", state=" << state);
+      // Really should check that the codec has not changed, later maybe
+      channel->OnSendOpenAck(pdu, ack);
+      return connection.WriteControlPDU(reply);
+    }
+
+    PTRACE(3, "H245\tClosing channel due to received open channel: " << channelNumber << ", state=" << state);
     channel->Close();
     delete channel;
     channel = NULL;
   }
 
-  state = e_Establishing;
+  PTRACE(3, "H245\tReceived open channel: " << channelNumber << ", state=" << state);
 
-  H323ControlPDU reply;
-  H245_OpenLogicalChannelAck & ack = reply.BuildOpenLogicalChannelAck(channelNumber);
+  state = e_Establishing;
 
   PBoolean ok = false;
 
