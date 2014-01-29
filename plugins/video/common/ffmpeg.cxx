@@ -106,6 +106,7 @@ FFMPEGCodec::FFMPEGCodec(const char * prefix, EncodedFrame * fullFrame)
   , m_alignedInputSize(0)
   , m_fullFrame(fullFrame)
   , m_errorCount(0)
+  , m_ignorePackets(false)
 {
   avcodec_register_all();
 
@@ -499,6 +500,19 @@ bool FFMPEGCodec::DecodeVideoPacket(const PluginCodec_RTP & in, unsigned & flags
   if (m_codec == NULL) {
     PTRACE(1, m_prefix, "Decoder did not open");
     return false;
+  }
+
+  if ((flags & PluginCodec_CoderPacketLoss) != 0) {
+    m_ignorePackets = true;
+    if (m_fullFrame != NULL)
+      m_fullFrame->Reset();
+    return;
+  }
+
+  if (m_ignorePackets) {
+    if (in.GetMarker())
+      m_ignorePackets = false;
+    return true;
   }
 
   flags = 0;
