@@ -506,7 +506,7 @@ bool FFMPEGCodec::DecodeVideoPacket(const PluginCodec_RTP & in, unsigned & flags
     m_ignorePackets = true;
     if (m_fullFrame != NULL)
       m_fullFrame->Reset();
-    return;
+    return true;
   }
 
   if (m_ignorePackets) {
