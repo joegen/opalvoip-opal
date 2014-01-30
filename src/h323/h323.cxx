@@ -2137,7 +2137,7 @@ PBoolean H323Connection::SetAlerting(const PString & calleeName, PBoolean withMe
     return false;
   }
 
-  PTRACE(3, "H323\tSetAlerting " << *this);
+  PTRACE(3, "H323\tSetAlerting " << (withMedia ? "with media" : "normal") << ' ' << *this);
   H225_Alerting_UUIE & alerting = alertingPDU->m_h323_uu_pdu.m_h323_message_body;
 
   if (withMedia && !mediaWaitForConnect) {
@@ -3859,16 +3859,20 @@ void H323Connection::OnSetLocalCapabilities()
   H323FECCapability::AddAllCapabilities(localCapabilities, formats);
 #endif // OPAL_RTP_FEC
 
-  OpalMediaFormatList::const_iterator rfc2833 = formats.FindFormat(OpalRFC2833);
-  H323_UserInputCapability::AddAllCapabilities(localCapabilities, 0, P_MAX_INDEX, rfc2833 != formats.end());
+  H323Capability * rfc2833Capability = NULL;
+  OpalMediaFormatList::const_iterator rfc2833Format = formats.FindFormat(OpalRFC2833);
+  if (rfc2833Format != formats.end()) {
+    rfc2833Capability = new H323_UserInputCapability(H323_UserInputCapability::SignalToneRFC2833);
+    rfc2833Capability->SetPayloadType(rfc2833Format->GetPayloadType());  // Set the correct dynamic payload type
+    m_rfc2833Handler->SetRxMediaFormat(rfc2833Capability->GetMediaFormat());  // Adjust the RF2388 transitter to local capabilities.
+  }
 
-  // Special test for the RFC2833 capability to get the correct dynamic payload type
-  H323Capability * capability = localCapabilities.FindCapability(OpalRFC2833);
-  if (capability != NULL && rfc2833 != formats.end())
-    capability->SetPayloadType(rfc2833->GetPayloadType());
-
-  // Adjust the RF2388 transitter to local capabilities.
-  m_rfc2833Handler->SetRxMediaFormat(capability != NULL ? capability->GetMediaFormat() : OpalMediaFormat());
+  PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
+  if (otherConnection == NULL || !otherConnection->IsNetworkConnection() ||
+      GetEndPoint().GetManager().GetMediaTransferMode(*this, *otherConnection, OpalMediaType::Audio()) == OpalManager::MediaTransferTranscode)
+    H323_UserInputCapability::AddAllCapabilities(localCapabilities, 0, P_MAX_INDEX, rfc2833Capability);
+  else if (rfc2833Capability != NULL)
+    localCapabilities.SetCapability(0, P_MAX_INDEX, rfc2833Capability);
 
   PTRACE(3, "H323\tSetLocalCapabilities:\n" << setprecision(2) << localCapabilities);
 }
