@@ -292,14 +292,17 @@ H323Channel * H323Capability::CreateChannel(H323Connection &,
 }
 
 
+#if OPAL_H235_6 || OPAL_H235_8
 PBoolean H323Capability::OnSendingPDU(H245_DataType & pdu) const
 {
-#if OPAL_H235_6 || OPAL_H235_8
   if (m_cryptoCapability != NULL) {
     H245_H235Media & h235 = pdu;
     if (!m_cryptoCapability->OnSendingPDU(h235.m_encryptionAuthenticationAndIntegrity))
       return false;
   }
+#else
+PBoolean H323Capability::OnSendingPDU(H245_DataType & /*pdu*/) const
+{
 #endif
 
   GetWritableMediaFormat().SetOptionString(OpalMediaFormat::ProtocolOption(), PLUGINCODEC_OPTION_PROTOCOL_H323);
@@ -395,14 +398,17 @@ PBoolean H323Capability::OnReceivedPDU(const H245_Capability & cap)
 }
 
 
+#if OPAL_H235_6 || OPAL_H235_8
 PBoolean H323Capability::OnReceivedPDU(const H245_DataType & pdu, PBoolean /*receiver*/)
 {
-#if OPAL_H235_6 || OPAL_H235_8
   if (pdu.GetTag() == H245_DataType::e_h235Media && m_cryptoCapability != NULL) {
     const H245_H235Media & h235 = pdu;
     if (!m_cryptoCapability->OnReceivedPDU(h235.m_encryptionAuthenticationAndIntegrity))
       return false;
   }
+#else
+  PBoolean H323Capability::OnReceivedPDU(const H245_DataType & /*pdu*/, PBoolean /*receiver*/)
+  {
 #endif // OPAL_H235_6 || OPAL_H235_8
 
   GetWritableMediaFormat().SetOptionString(OpalMediaFormat::ProtocolOption(), PLUGINCODEC_OPTION_PROTOCOL_H323);
