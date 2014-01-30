@@ -773,7 +773,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
     {
       vpx_image_t * image;
 
-      bool lostPackets = (flags & PluginCodec_CoderPacketLoss) == 0;
+      bool noLostPackets = (flags & PluginCodec_CoderPacketLoss) == 0;
 
       flags = m_intraFrame ? PluginCodec_ReturnCoderIFrame : 0;
 
@@ -785,7 +785,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
 #ifdef VPX_CODEC_USE_ERROR_CONCEALMENT
                              (m_flags & VPX_CODEC_USE_ERROR_CONCEALMENT) != 0 ||
 #endif
-                             lostPackets))
+                             noLostPackets))
           return true;
 
         PluginCodec_RTP srcRTP(fromPtr, fromLen);
