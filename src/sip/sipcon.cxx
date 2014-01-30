@@ -1416,7 +1416,7 @@ OpalMediaFormatList SIPConnection::GetMediaFormats() const
   }
 
   if (!m_remoteFormatList.IsEmpty()) {
-    PTRACE(4, "SIP\tUsing remote media format list");
+    PTRACE(4, "SIP\tUsing remote media format list: " << setfill(',') << m_remoteFormatList);
     return m_remoteFormatList;
   }
 
@@ -1427,7 +1427,7 @@ OpalMediaFormatList SIPConnection::GetMediaFormats() const
      calculate a media list based on ANYTHING we know about. A later call
      after OnIncomingConnection() will fill m_remoteFormatList appropriately
      adjusted by AdjustMediaFormats() */
-  if (m_lastReceivedINVITE != NULL && m_lastReceivedINVITE->GetMIME().GetContentType() == "application/sdp") {
+  if (m_lastReceivedINVITE != NULL && m_lastReceivedINVITE->IsContentSDP()) {
     SDPSessionDescription sdp(0, 0, OpalTransportAddress());
     if (sdp.Decode(m_lastReceivedINVITE->GetEntityBody(), OpalMediaFormat::GetAllRegisteredMediaFormats()))
       return sdp.GetMediaFormats();
@@ -1437,7 +1437,7 @@ OpalMediaFormatList SIPConnection::GetMediaFormats() const
 }
 
 
-bool SIPConnection::SetRemoteMediaFormats(SIP_PDU * pdu)
+int SIPConnection::SetRemoteMediaFormats(SIP_PDU & pdu)
 {
   /* As SIP does not really do capability exchange, if we don't have an initial
      INVITE from the remote (indicated by sdp == NULL) then all we can do is
@@ -1445,26 +1445,28 @@ bool SIPConnection::SetRemoteMediaFormats(SIP_PDU * pdu)
      everything we know about, but there is no point in assuming it can do any
      more than we can, really.
      */
-  if (pdu == NULL || !pdu->DecodeSDP(m_endpoint, GetLocalMediaFormats())) {
-    m_remoteFormatList = GetLocalMediaFormats();
-    m_remoteFormatList.MakeUnique();
-#if OPAL_FAX
-    m_remoteFormatList += OpalT38; // Assume remote can do it.
-#endif
-  }
-  else {
-    m_remoteFormatList = pdu->GetSDP()->GetMediaFormats();
-    AdjustMediaFormats(false, NULL, m_remoteFormatList);
+  if (!pdu.DecodeSDP(m_endpoint, GetLocalMediaFormats()))
+    return 0;
 
-    if (m_remoteFormatList.IsEmpty()) {
-      PTRACE(2, "SIP\tAll possible media formats to offer were removed.");
-      return false;
-    }
+  m_remoteFormatList = pdu.GetSDP()->GetMediaFormats();
+  AdjustMediaFormats(false, NULL, m_remoteFormatList);
+
+  if (m_remoteFormatList.IsEmpty()) {
+    PTRACE(2, "SIP\tAll possible media formats to offer were removed.");
+    return -1;
   }
+
+#if OPAL_T38_CAPABILITY
+  /* We default to having T.38 included as most UAs do not actually
+     tell you that they support it or not. For the re-INVITE mechanism
+     to work correctly, the rest ofthe system has to assume that the
+     UA is capable of it, even it it isn't. */
+  m_remoteFormatList += OpalT38;
+#endif
 
   PTRACE(4, "SIP\tRemote media formats set:\n    " << setfill(',') << m_remoteFormatList << setfill(' '));
 
-  return true;
+  return 1;
 }
 
 
@@ -1870,8 +1872,11 @@ PBoolean SIPConnection::SetUpConnection()
 
   ++m_sdpVersion;
 
-  if (!SetRemoteMediaFormats(m_lastReceivedINVITE))
-    return false;
+#if 0
+  m_remoteFormatList = GetLocalMediaFormats();
+  m_remoteFormatList.MakeUnique();
+  AdjustMediaFormats(false, NULL, m_remoteFormatList);
+#endif
 
   PSafePtr<OpalConnection> other = GetOtherPartyConnection();
   if (other != NULL && other->GetConferenceState(NULL))
@@ -2289,7 +2294,7 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
      But all that is in the future, so we need to save the 200 OK until the
      above has happened and we can actually send the ACK with SDP. */
 
-  if (!SetRemoteMediaFormats(&response)) {
+  if (SetRemoteMediaFormats(response) <= 0) {
     Release(EndedByCapabilityExchange);
     return true;
   }
@@ -2570,6 +2575,10 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
       }
     }
   }
+
+  // For 180/183 may have some SDP that can be used as early remote media capbility
+  if (responseClass == 1)
+    SetRemoteMediaFormats(response);
 
   bool handled = false;
 
@@ -2884,7 +2893,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
     PTRACE(3, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
 
-    if (!SetRemoteMediaFormats(m_lastReceivedINVITE)) {
+    if (SetRemoteMediaFormats(*m_lastReceivedINVITE) < 0) {
       Release(EndedByCapabilityExchange);
       return;
     }
@@ -2931,7 +2940,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     }
   }
 
-  if (!SetRemoteMediaFormats(m_lastReceivedINVITE)) {
+  if (SetRemoteMediaFormats(*m_lastReceivedINVITE) < 0) {
     Release(EndedByCapabilityExchange);
     return;
   }

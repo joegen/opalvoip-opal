@@ -917,9 +917,7 @@ bool SIPEndPoint::OnReceivedINVITE(SIP_PDU * request)
     return false;
   }
 
-  if (!request->GetEntityBody().IsEmpty() &&
-         (!mime.GetContentEncoding().IsEmpty() ||
-           mime.GetContentType() != "application/sdp")) {
+  if (!request->IsContentSDP()) {
     // Do not currently support anything other than SDP, in particular multipart stuff.
     PTRACE(2, "SIP\tIncoming INVITE for " << request->GetURI() << " does not contain SDP");
     SIP_PDU response(*request, SIP_PDU::Failure_UnsupportedMediaType);

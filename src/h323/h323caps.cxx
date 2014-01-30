@@ -2739,7 +2739,7 @@ static PINDEX SetUserInputCapability(H323Capabilities & capabilities,
 void H323_UserInputCapability::AddAllCapabilities(H323Capabilities & capabilities,
                                                   PINDEX descriptorNum,
                                                   PINDEX simultaneous,
-                                                  bool includeRFC2833)
+                                                  H323Capability * rfc2833)
 {
   PINDEX num = SetUserInputCapability(capabilities, descriptorNum, simultaneous, HookFlashH245);
   if (descriptorNum == P_MAX_INDEX) {
@@ -2755,8 +2755,8 @@ void H323_UserInputCapability::AddAllCapabilities(H323Capabilities & capabilitie
 
   SetUserInputCapability(capabilities, descriptorNum, simultaneous, SignalToneH245);
 
-  if (includeRFC2833)
-    SetUserInputCapability(capabilities, descriptorNum, simultaneous, SignalToneRFC2833);
+  if (rfc2833 != NULL)
+    capabilities.SetCapability(descriptorNum, simultaneous, rfc2833);
 }
 
 

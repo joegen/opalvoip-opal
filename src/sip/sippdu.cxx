@@ -2496,15 +2496,25 @@ void SIP_PDU::Build(PString & pduStr, PINDEX & pduLen)
 }
 
 
+bool SIP_PDU::IsContentSDP() const
+{
+  if (m_entityBody.IsEmpty())
+    return false;
+
+  if (m_mime.GetContentEncoding().IsEmpty() && m_mime.GetContentType() == "application/sdp")
+    return true;
+
+  PTRACE(3, "SIP\tUnsupported content encoding or content type.");
+  return false;
+}
+
+
 bool SIP_PDU::DecodeSDP(SIPEndPoint & endpoint, const OpalMediaFormatList & localList)
 {
   if (m_SDP != NULL)
     return true;
 
-  if (m_entityBody.IsEmpty())
-    return false;
-
-  if (m_mime.GetContentType() != "application/sdp")
+  if (!IsContentSDP())
     return false;
 
   m_SDP = endpoint.CreateSDP(0, 0, OpalTransportAddress());
