@@ -74,7 +74,7 @@ ifneq (,$(SUBDIRS))
   all install uninstall clean ::
 	$(Q)set -e; $(foreach dir,$(SUBDIRS), \
           if test -d $(dir) ; then \
-            $(MAKE) --print-directory -C $(dir) $@; \
+            $(MAKE) --print-directory -C $(dir) DEBUG_BUILD=$(DEBUG_BUILD) $@; \
           else \
             echo Directory $(dir) does not exist; \
           fi; \
@@ -130,7 +130,9 @@ endif
 clean distclean ::
 	rm -rf $(OBJDIR)
 
-both opt debug optshared debugshared optstatic debugstatic: all
+debug debugshared debugstatic :: DEBUG_BUILD=yes
+opt   optshared   optstatic   :: DEBUG_BUILD=no
+both opt debug optshared debugshared optstatic debugstatic :: all
 
 optdepend debugdepend bothdepend optlibs debuglibs bothlibs:
 	@true
