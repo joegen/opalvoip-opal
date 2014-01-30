@@ -950,8 +950,13 @@ unsigned H323AudioCapability::GetRxFramesInPacket() const
 
 PBoolean H323AudioCapability::OnSendingPDU(H245_Capability & cap) const
 {
-  cap.SetTag(capabilityDirection == e_Receive ? H245_Capability::e_receiveAudioCapability
-                                              : H245_Capability::e_receiveAndTransmitAudioCapability);
+  static unsigned const tags[NumCapabilityDirections] = {
+    H245_Capability::e_receiveAndTransmitAudioCapability,
+    H245_Capability::e_receiveAudioCapability,
+    H245_Capability::e_transmitAudioCapability,
+    H245_Capability::e_receiveAndTransmitAudioCapability
+  };
+  cap.SetTag(tags[capabilityDirection]);
   return OnSendingPDU((H245_AudioCapability &)cap, GetRxFramesInPacket(), e_TCS);
 }
 
@@ -1266,8 +1271,13 @@ H323Capability::MainTypes H323VideoCapability::GetMainType() const
 
 PBoolean H323VideoCapability::OnSendingPDU(H245_Capability & cap) const
 {
-  cap.SetTag(capabilityDirection == e_Receive ? H245_Capability::e_receiveVideoCapability
-                                              : H245_Capability::e_receiveAndTransmitVideoCapability);
+  static unsigned const tags[NumCapabilityDirections] = {
+    H245_Capability::e_receiveAndTransmitVideoCapability,
+    H245_Capability::e_receiveVideoCapability,
+    H245_Capability::e_transmitVideoCapability,
+    H245_Capability::e_receiveAndTransmitVideoCapability
+  };
+  cap.SetTag(tags[capabilityDirection]);
   return OnSendingPDU((H245_VideoCapability &)cap, e_TCS);
 }
 
@@ -2327,8 +2337,13 @@ unsigned H323DataCapability::GetDefaultSessionID() const
 
 PBoolean H323DataCapability::OnSendingPDU(H245_Capability & cap) const
 {
-  cap.SetTag(capabilityDirection == e_Receive ? H245_Capability::e_receiveDataApplicationCapability
-                                              : H245_Capability::e_receiveAndTransmitDataApplicationCapability);
+  static unsigned const tags[NumCapabilityDirections] = {
+    H245_Capability::e_receiveAndTransmitDataApplicationCapability,
+    H245_Capability::e_receiveDataApplicationCapability,
+    H245_Capability::e_transmitDataApplicationCapability,
+    H245_Capability::e_receiveAndTransmitDataApplicationCapability
+  };
+  cap.SetTag(tags[capabilityDirection]);
   H245_DataApplicationCapability & app = cap;
   m_maxBitRate.SetH245(app.m_maxBitRate);
   return OnSendingPDU(app, e_TCS);
@@ -2668,8 +2683,13 @@ PBoolean H323_UserInputCapability::OnSendingPDU(H245_Capability & pdu) const
     atec.m_audioTelephoneEvent = events;
   }
   else {
-    pdu.SetTag(capabilityDirection == e_Receive ? H245_Capability::e_receiveUserInputCapability
-                                                : H245_Capability::e_receiveAndTransmitUserInputCapability);
+    static unsigned const tags[NumCapabilityDirections] = {
+      H245_Capability::e_receiveAndTransmitUserInputCapability,
+      H245_Capability::e_receiveUserInputCapability,
+      H245_Capability::e_transmitUserInputCapability,
+      H245_Capability::e_receiveAndTransmitUserInputCapability
+    };
+    pdu.SetTag(tags[capabilityDirection]);
     H245_UserInputCapability & ui = pdu;
     ui.SetTag(UserInputCapabilitySubTypeCodes[subType]);
   }
@@ -3112,18 +3132,12 @@ PINDEX H323Capabilities::AddMediaFormat(PINDEX descriptorNum,
   if (!mediaFormat.IsValidForProtocol(PLUGINCODEC_OPTION_PROTOCOL_H323))
     return reply;
 
-  if (FindCapability(mediaFormat, H323Capability::e_Unknown, true) != NULL)
+  if (FindCapability(mediaFormat, direction, true) != NULL)
     return reply;
 
   H323Capability * capability = H323Capability::Create(mediaFormat);
   if (capability == NULL)
     return reply;
-
-  H323Capability * existingCapability = FindCapability(*capability);
-  if (existingCapability != NULL) {
-    delete capability;
-    return reply;
-  }
 
   capability->SetCapabilityDirection(direction);
   capability->GetWritableMediaFormat() = mediaFormat;
