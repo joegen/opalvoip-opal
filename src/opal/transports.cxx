@@ -54,18 +54,19 @@
 const PCaselessString & OpalTransportAddress::IpPrefix()  { static PConstCaselessString s("ip$" ); return s; }  // For backward compatibility with OpenH323
 const PCaselessString & OpalTransportAddress::UdpPrefix() { static PConstCaselessString s("udp$"); return s; }
 const PCaselessString & OpalTransportAddress::TcpPrefix() { static PConstCaselessString s("tcp$"); return s; }
-const PCaselessString & OpalTransportAddress::WsPrefix()  { static PConstCaselessString s("ws$");  return s; }
 
 static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPTransport> opalInternalTCPTransportFactory(OpalTransportAddress::TcpPrefix(), true);
 static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPTransport> opalInternalIPTransportFactory (OpalTransportAddress::IpPrefix (), true);
 static PFactory<OpalInternalTransport>::Worker<OpalInternalUDPTransport> opalInternalUDPTransportFactory(OpalTransportAddress::UdpPrefix(), true);
-static PFactory<OpalInternalTransport>::Worker<OpalInternalWSTransport>  opalInternalWSTransportFactory (OpalTransportAddress::WsPrefix(),  true);
 
 #if OPAL_PTLIB_SSL
 #include <ptclib/pssl.h>
 const PCaselessString & OpalTransportAddress::TlsPrefix() { static PConstCaselessString s("tls$"); return s; }
+const PCaselessString & OpalTransportAddress::WsPrefix()  { static PConstCaselessString s("ws$");  return s; }
 const PCaselessString & OpalTransportAddress::WssPrefix() { static PConstCaselessString s("wss$"); return s; }
+
 static PFactory<OpalInternalTransport>::Worker<OpalInternalTLSTransport> opalInternalTLSTransportFactory(OpalTransportAddress::TlsPrefix(), true);
+static PFactory<OpalInternalTransport>::Worker<OpalInternalWSTransport>  opalInternalWSTransportFactory(OpalTransportAddress::WsPrefix(), true);
 static PFactory<OpalInternalTransport>::Worker<OpalInternalWSSTransport> opalInternalWSSTransportFactory(OpalTransportAddress::WssPrefix(), true);
 #endif
 
@@ -801,56 +802,6 @@ const PCaselessString & OpalListenerTCP::GetProtoPrefix() const
 
 //////////////////////////////////////////////////////////////////////////
 
-OpalListenerWS::OpalListenerWS(OpalEndPoint & endpoint, PIPSocket::Address binding, WORD port, bool exclusive)
-  : OpalListenerTCP(endpoint, binding, port, exclusive)
-{
-}
-
-
-OpalListenerWS::OpalListenerWS(OpalEndPoint & endpoint, const OpalTransportAddress & binding, OpalTransportAddress::BindOptions option)
-  : OpalListenerTCP(endpoint, binding, option)
-{
-}
-
-
-OpalTransport * OpalListenerWS::OnAccept(PTCPSocket * socket)
-{
-  PHTTPServer ws;
-  ws.SetWebSocketNotifier("sip", PHTTPServer::WebSocketNotifier());
-
-  if (ws.Open(*socket)) {
-    while (ws.ProcessCommand())
-      ;
-    ws.Detach();
-    if (socket->IsOpen())
-      return new OpalTransportWS(endpoint, socket);
-  }
-
-  delete socket;
-  return NULL;
-}
-
-
-OpalTransport * OpalListenerWS::CreateTransport(const OpalTransportAddress & localAddress, const OpalTransportAddress & remoteAddress) const
-{
-  if (!CanCreateTransport(localAddress, remoteAddress))
-    return NULL;
-
-  if (localAddress.IsEmpty())
-    return new OpalTransportWS(endpoint);
-
-  return localAddress.CreateTransport(endpoint, OpalTransportAddress::HostOnly);
-}
-
-
-const PCaselessString & OpalListenerWS::GetProtoPrefix() const
-{
-  return OpalTransportAddress::WsPrefix();
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-
 OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
                                  PIPSocket::Address binding,
                                  WORD port,
@@ -1412,55 +1363,6 @@ const PCaselessString & OpalTransportTCP::GetProtoPrefix() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalTransportWS::OpalTransportWS(OpalEndPoint & endpoint, PIPSocket::Address binding, WORD port, bool dummy)
-  : OpalTransportTCP(endpoint, binding, port, dummy)
-{
-}
-
-
-OpalTransportWS::OpalTransportWS(OpalEndPoint & endpoint, PChannel * socket)
-  : OpalTransportTCP(endpoint, new PWebSocket)
-{
-  OnConnectedSocket(dynamic_cast<PTCPSocket *>(socket));
-  dynamic_cast<PWebSocket *>(m_channel)->Open(socket);
-}
-
-
-PBoolean OpalTransportWS::Connect()
-{
-  PSafeLockReadWrite mutex(*this);
-
-  if (!OpalTransportTCP::Connect())
-    return false;
-
-  PWebSocket * webSocket = new PWebSocket();
-  if (!webSocket->Open(m_channel))
-    return false;
-  m_channel = webSocket;
-  return webSocket->Connect("sip");
-}
-
-
-PBoolean OpalTransportWS::ReadPDU(PBYTEArray & pdu)
-{
-  return dynamic_cast<PWebSocket *>(m_channel)->ReadMessage(pdu);
-}
-
-
-PBoolean OpalTransportWS::WritePDU(const PBYTEArray & pdu)
-{
-  return Write(pdu, pdu.GetSize());
-}
-
-
-const PCaselessString & OpalTransportWS::GetProtoPrefix() const
-{
-  return OpalTransportAddress::WsPrefix();
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-
 OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
                                    PIPSocket::Address binding,
                                    WORD localPort,
@@ -1734,6 +1636,75 @@ const PCaselessString & OpalTransportUDP::GetProtoPrefix() const
 
 #if OPAL_PTLIB_SSL
 
+OpalListenerTLS::OpalListenerTLS(OpalEndPoint & ep,
+                                 PIPSocket::Address binding,
+                                 WORD port,
+                                 PBoolean exclusive)
+                                 : OpalListenerTCP(ep, binding, port, exclusive)
+                                 , m_sslContext(NULL)
+{
+}
+
+
+OpalListenerTLS::OpalListenerTLS(OpalEndPoint & ep,
+                                 const OpalTransportAddress & binding,
+                                 OpalTransportAddress::BindOptions option)
+                                 : OpalListenerTCP(ep, binding, option)
+                                 , m_sslContext(NULL)
+{
+}
+
+
+OpalListenerTLS::~OpalListenerTLS()
+{
+  delete m_sslContext;
+}
+
+
+PBoolean OpalListenerTLS::Open(const AcceptHandler & acceptHandler, ThreadMode mode)
+{
+  m_sslContext = new PSSLContext();
+  m_sslContext->SetCipherList("ALL");
+
+  if (!endpoint.ApplySSLCredentials(*m_sslContext, true))
+    return false;
+
+  return OpalListenerTCP::Open(acceptHandler, mode);
+}
+
+
+OpalTransport * OpalListenerTLS::OnAccept(PTCPSocket * socket)
+{
+  PSSLChannel * ssl = new PSSLChannel(m_sslContext);
+  if (ssl->Accept(socket))
+    return new OpalTransportTLS(endpoint, ssl);
+
+  PTRACE(1, "OpalTLS\tAccept failed: " << ssl->GetErrorText());
+  delete ssl; // Will also delete socket
+  return NULL;
+}
+
+
+const PCaselessString & OpalListenerTLS::GetProtoPrefix() const
+{
+  return OpalTransportAddress::TlsPrefix();
+}
+
+
+OpalTransport * OpalListenerTLS::CreateTransport(const OpalTransportAddress & localAddress,
+                                                 const OpalTransportAddress & remoteAddress) const
+{
+  if (!CanCreateTransport(localAddress, remoteAddress))
+    return NULL;
+
+  PIPSocket::Address binding = PIPSocket::Address::GetAny();
+  if (!localAddress.IsEmpty())
+    localAddress.GetIpAddress(binding);
+
+  return new OpalTransportTLS(endpoint, binding);
+}
+
+
 OpalTransportTLS::OpalTransportTLS(OpalEndPoint & ep,
                                    PIPSocket::Address binding,
                                    WORD port,
@@ -1755,6 +1726,8 @@ OpalTransportTLS::~OpalTransportTLS()
   PTRACE(4,"Opal\tDeleted transport " << *this);
 }
 
+
+//////////////////////////////////////////////////////////////////////////
 
 PBoolean OpalTransportTLS::IsCompatibleTransport(const OpalTransportAddress & address) const
 {
@@ -1836,107 +1809,51 @@ bool OpalTransportTLS::IsAuthenticated(const PString & domain) const
 
 //////////////////////////////////////////////////////////////////////////
 
-OpalTransportWSS::OpalTransportWSS(OpalEndPoint & endpoint, PIPSocket::Address binding, WORD port, bool dummy)
-  : OpalTransportTLS(endpoint, binding, port, dummy)
+OpalListenerWS::OpalListenerWS(OpalEndPoint & endpoint, PIPSocket::Address binding, WORD port, bool exclusive)
+: OpalListenerTCP(endpoint, binding, port, exclusive)
 {
 }
 
 
-OpalTransportWSS::OpalTransportWSS(OpalEndPoint & endpoint, PChannel * socket)
-  : OpalTransportTLS(endpoint, socket)
+OpalListenerWS::OpalListenerWS(OpalEndPoint & endpoint, const OpalTransportAddress & binding, OpalTransportAddress::BindOptions option)
+: OpalListenerTCP(endpoint, binding, option)
 {
 }
 
 
-PBoolean OpalTransportWSS::Connect()
+OpalTransport * OpalListenerWS::OnAccept(PTCPSocket * socket)
 {
-  PSafeLockReadWrite mutex(*this);
+  PHTTPServer ws;
+  ws.SetWebSocketNotifier("sip", PHTTPServer::WebSocketNotifier());
 
-  if (!OpalTransportTLS::Connect())
-    return false;
+  if (ws.Open(*socket)) {
+    while (ws.ProcessCommand())
+      ;
+    ws.Detach();
+    if (socket->IsOpen())
+      return new OpalTransportWS(endpoint, socket);
+  }
 
-  PWebSocket * webSocket = new PWebSocket();
-  if (!webSocket->Open(m_channel))
-    return false;
-  m_channel = webSocket;
-  return webSocket->Connect("sip");
-}
-
-
-const PCaselessString & OpalTransportWSS::GetProtoPrefix() const
-{
-  return OpalTransportAddress::WssPrefix();
-}
-
-
-//////////////////////////////////////////////////////////////////////////
-
-OpalListenerTLS::OpalListenerTLS(OpalEndPoint & ep,
-                                 PIPSocket::Address binding,
-                                 WORD port,
-                                 PBoolean exclusive)
-  : OpalListenerTCP(ep, binding, port, exclusive)
-  , m_sslContext(NULL)
-{
-}
-
-
-OpalListenerTLS::OpalListenerTLS(OpalEndPoint & ep,
-                                    const OpalTransportAddress & binding,
-                                    OpalTransportAddress::BindOptions option)
-  : OpalListenerTCP(ep, binding, option)
-  , m_sslContext(NULL)
-{
-}
-
-
-OpalListenerTLS::~OpalListenerTLS()
-{
-  delete m_sslContext;
-}
-
-
-PBoolean OpalListenerTLS::Open(const AcceptHandler & acceptHandler, ThreadMode mode)
-{
-  m_sslContext = new PSSLContext();
-  m_sslContext->SetCipherList("ALL");
-
-  if (!endpoint.ApplySSLCredentials(*m_sslContext, true))
-    return false;
-
-  return OpalListenerTCP::Open(acceptHandler, mode);
-}
-
-
-OpalTransport * OpalListenerTLS::OnAccept(PTCPSocket * socket)
-{
-  PSSLChannel * ssl = new PSSLChannel(m_sslContext);
-  if (ssl->Accept(socket))
-    return new OpalTransportTLS(endpoint, ssl);
-
-  PTRACE(1, "OpalTLS\tAccept failed: " << ssl->GetErrorText());
-  delete ssl; // Will also delete socket
+  delete socket;
   return NULL;
 }
 
 
-const PCaselessString & OpalListenerTLS::GetProtoPrefix() const
-{
-  return OpalTransportAddress::TlsPrefix();
-}
-
-
-OpalTransport * OpalListenerTLS::CreateTransport(const OpalTransportAddress & localAddress,
-                                                 const OpalTransportAddress & remoteAddress) const
+OpalTransport * OpalListenerWS::CreateTransport(const OpalTransportAddress & localAddress, const OpalTransportAddress & remoteAddress) const
 {
   if (!CanCreateTransport(localAddress, remoteAddress))
     return NULL;
 
-  PIPSocket::Address binding = PIPSocket::Address::GetAny();
-  if (!localAddress.IsEmpty())
-    localAddress.GetIpAddress(binding);
+  if (localAddress.IsEmpty())
+    return new OpalTransportWS(endpoint);
 
-  return new OpalTransportTLS(endpoint, binding);
+  return localAddress.CreateTransport(endpoint, OpalTransportAddress::HostOnly);
+}
+
+
+const PCaselessString & OpalListenerWS::GetProtoPrefix() const
+{
+  return OpalTransportAddress::WsPrefix();
 }
 
 
@@ -1972,6 +1889,90 @@ OpalTransport * OpalListenerWSS::OnAccept(PTCPSocket * socket)
 
 
 const PCaselessString & OpalListenerWSS::GetProtoPrefix() const
+{
+  return OpalTransportAddress::WssPrefix();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+OpalTransportWS::OpalTransportWS(OpalEndPoint & endpoint, PIPSocket::Address binding, WORD port, bool dummy)
+: OpalTransportTCP(endpoint, binding, port, dummy)
+{
+}
+
+
+OpalTransportWS::OpalTransportWS(OpalEndPoint & endpoint, PChannel * socket)
+: OpalTransportTCP(endpoint, new PWebSocket)
+{
+  OnConnectedSocket(dynamic_cast<PTCPSocket *>(socket));
+  dynamic_cast<PWebSocket *>(m_channel)->Open(socket);
+}
+
+
+PBoolean OpalTransportWS::Connect()
+{
+  PSafeLockReadWrite mutex(*this);
+
+  if (!OpalTransportTCP::Connect())
+    return false;
+
+  PWebSocket * webSocket = new PWebSocket();
+  if (!webSocket->Open(m_channel))
+    return false;
+  m_channel = webSocket;
+  return webSocket->Connect("sip");
+}
+
+
+PBoolean OpalTransportWS::ReadPDU(PBYTEArray & pdu)
+{
+  return dynamic_cast<PWebSocket *>(m_channel)->ReadMessage(pdu);
+}
+
+
+PBoolean OpalTransportWS::WritePDU(const PBYTEArray & pdu)
+{
+  return Write(pdu, pdu.GetSize());
+}
+
+
+const PCaselessString & OpalTransportWS::GetProtoPrefix() const
+{
+  return OpalTransportAddress::WsPrefix();
+}
+
+
+//////////////////////////////////////////////////////////////////////////
+
+OpalTransportWSS::OpalTransportWSS(OpalEndPoint & endpoint, PIPSocket::Address binding, WORD port, bool dummy)
+: OpalTransportTLS(endpoint, binding, port, dummy)
+{
+}
+
+
+OpalTransportWSS::OpalTransportWSS(OpalEndPoint & endpoint, PChannel * socket)
+: OpalTransportTLS(endpoint, socket)
+{
+}
+
+
+PBoolean OpalTransportWSS::Connect()
+{
+  PSafeLockReadWrite mutex(*this);
+
+  if (!OpalTransportTLS::Connect())
+    return false;
+
+  PWebSocket * webSocket = new PWebSocket();
+  if (!webSocket->Open(m_channel))
+    return false;
+  m_channel = webSocket;
+  return webSocket->Connect("sip");
+}
+
+
+const PCaselessString & OpalTransportWSS::GetProtoPrefix() const
 {
   return OpalTransportAddress::WssPrefix();
 }
