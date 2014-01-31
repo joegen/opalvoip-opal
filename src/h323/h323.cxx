@@ -783,10 +783,10 @@ void H323Connection::SetRemoteVersions(const H225_ProtocolIdentifier & protocolI
   if (protocolIdentifier.GetSize() < 6)
     return;
 
-  h225version = protocolIdentifier[5];
+  h225version = std::min(protocolIdentifier[5], h225version);
 
   if (h245versionSet) {
-    PTRACE(3, "H225\tSet protocol version to " << h225version);
+    PTRACE(3, "H225\tSet protocol versions: H.225.0=" << h225version << ", H.245=" << h245version);
     return;
   }
 
@@ -2968,7 +2968,7 @@ PBoolean H323Connection::OnH245Request(const H323ControlPDU & pdu)
     {
       const H245_TerminalCapabilitySet & tcs = request;
       if (tcs.m_protocolIdentifier.GetSize() >= 6) {
-        h245version = tcs.m_protocolIdentifier[5];
+        h245version = std::min(tcs.m_protocolIdentifier[5], h245version);
         h245versionSet = true;
         PTRACE(3, "H245\tSet protocol version to " << h245version);
       }
