@@ -33,7 +33,7 @@ SOURCES   := $(CURDIR)/mpeg4.cxx \
              $(COMMONDIR)/dyna.cxx
 
 PLUGIN_CPPFLAGS = $(LIBAVCODEC_CFLAGS) -I$(COMMONDIR)
-PLUGIN_LIBS     = $(DLFCN_LIBS)
+PLUGIN_LIBS     = $(LIBAVCODEC_LIBS) $(DLFCN_LIBS)
 
 vpath   %.cxx $(COMMONDIR)
 
