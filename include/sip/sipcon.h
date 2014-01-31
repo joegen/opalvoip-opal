@@ -785,6 +785,8 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     virtual void SendDelayedACK(bool force);
     void OnDelayedAckTimeout();
 
+    void RetryHoldRemote(bool placeOnHold);
+
     virtual bool SendInviteOK();
     virtual PBoolean SendInviteResponse(
       SIP_PDU::StatusCodes code,
