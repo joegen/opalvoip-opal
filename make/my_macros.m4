@@ -100,8 +100,8 @@ dnl $5 program main
 dnl $6 success code
 dnl $7 failure code
 AC_DEFUN([MY_LINK_IFELSE],[
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $2"
    LIBS="$3 $LIBS"
    AC_MSG_CHECKING($1)
@@ -111,8 +111,8 @@ AC_DEFUN([MY_LINK_IFELSE],[
       [usable=no]
    )
    AC_MSG_RESULT($usable)
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
    MY_IFELSE([usable], [$6], [$7])
 ])
 

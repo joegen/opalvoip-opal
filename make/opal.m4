@@ -119,7 +119,11 @@ dnl OPAL_SYSTEM_PLUGIN
 dnl as MY_MODULE_OPTION but defines OPAL_xxx for make and define
 AC_DEFUN([OPAL_SYSTEM_PLUGIN],[
    if test -d "$4" ; then
+      dnl MY_MODULE_OPTION adds to LIBS and normally this right, but for plugins
+      dnl we want each plugin to only have its libs so don't add it for everyone
+      OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
       MY_MODULE_OPTION([$1],[$2],[$3],[$5],[$6],[$7],[$8],[$9],[$10],[$11],[$12],[$13],[$14],[$15])
+      LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$$1[_SYSTEM]" = "xno" ; then
          if test "x$usable" = "xyes" ; then
             PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $4"

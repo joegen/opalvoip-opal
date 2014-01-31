@@ -180,6 +180,10 @@ dnl ########################################################################
 
 OPAL_SIMPLE_PLUGIN([H261], [h.261], [H.261 video codec], [$PLUGIN_SRC_DIR/video/H.261-vic])
 
+dnl MY_MODULE_OPTION adds to LIBS and normally this right, but for plugins
+dnl we want each plugin to only have its libs so don't add it for everyone
+oldLIBS="$LIBS"
+
 MY_MODULE_OPTION(
    [LIBAVCODEC],
    [libavcodec],
@@ -205,6 +209,9 @@ MY_MODULE_OPTION(
    )],
    [HAVE_LIBAVCODEC=no]
 )
+
+LIBS="$oldLIBS"
+
 
 AC_SUBST(HAVE_LIBAVCODEC_RTP_MODE, 0)
 
