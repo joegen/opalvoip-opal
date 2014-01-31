@@ -3932,7 +3932,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
   // Delay handling of off hold until we finish redoing TCS, MSD & OLC.
   if (m_holdFromRemote == eRetrieveFromRemote) {
     H323Channel * chan;
-    if ((logicalChannels->FindChannelBySession(H323Capability::DefaultAudioSessionID, false)) == NULL)
+    if ((chan = logicalChannels->FindChannelBySession(H323Capability::DefaultAudioSessionID, false)) == NULL)
       chan = logicalChannels->FindChannelBySession(H323Capability::DefaultVideoSessionID, false);
     if (chan != NULL) {
       if ((chan = logicalChannels->FindChannelBySession(H323Capability::DefaultAudioSessionID, true)) == NULL)
