@@ -1872,11 +1872,13 @@ PBoolean SIPConnection::SetUpConnection()
 
   ++m_sdpVersion;
 
-#if 0
   m_remoteFormatList = GetLocalMediaFormats();
   m_remoteFormatList.MakeUnique();
   AdjustMediaFormats(false, NULL, m_remoteFormatList);
-#endif
+  if (m_remoteFormatList.IsEmpty()) {
+    PTRACE(2, "SIP\tNo media formats to offer!");
+    return false;
+  }
 
   PSafePtr<OpalConnection> other = GetOtherPartyConnection();
   if (other != NULL && other->GetConferenceState(NULL))
