@@ -88,32 +88,20 @@ class H245NegMasterSlaveDetermination : public H245Negotiator
     PBoolean HandleRelease(const H245_MasterSlaveDeterminationRelease & pdu);
     void HandleTimeout();
 
-    PBoolean IsMaster() const     { return status == e_DeterminedMaster; }
-    PBoolean IsDetermined() const { return state == e_Idle && status != e_Indeterminate; }
+    PBoolean IsMaster() const     { return m_status == e_DeterminedMaster; }
+    PBoolean IsDetermined() const { return m_status != e_Indeterminate; }
 
   protected:
     PBoolean Restart();
 
-    enum States {
-      e_Idle, e_Outgoing, e_Incoming,
-      e_NumStates
-    } state;
-#if PTRACING
-    static const char * GetStateName(States s);
-    friend ostream & operator<<(ostream & o, States s) { return o << GetStateName(s); }
-#endif
+    P_DECLARE_TRACED_ENUM(States, e_Idle, e_Outgoing, e_Incoming);
+    States m_state;
 
-    DWORD    determinationNumber;
-    unsigned retryCount;
+    DWORD    m_determinationNumber;
+    unsigned m_retryCount;
 
-    enum MasterSlaveStatus {
-      e_Indeterminate, e_DeterminedMaster, e_DeterminedSlave,
-      e_NumStatuses
-    } status;
-#if PTRACING
-    static const char * GetStatusName(MasterSlaveStatus s);
-    friend ostream & operator<<(ostream & o , MasterSlaveStatus s) { return o << GetStatusName(s); }
-#endif
+    P_DECLARE_TRACED_ENUM(MasterSlaveStatus, e_Indeterminate, e_DeterminedMaster, e_DeterminedSlave);
+    MasterSlaveStatus m_status;
 };
 
 
