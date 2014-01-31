@@ -632,7 +632,8 @@ void OpalConsoleSkinnyEndPoint::GetArgumentSpec(ostream & strm) const
   strm << "[PSTN options:]"
     "-no-sccp.        Disable Skinny Client Control Protocol\n"
     "-sccp-server:    Set Skinny server address.\n"
-    "-sccp-streams:   Set max number of streams for Skinny client.\n";
+    "-sccp-name:      Set device name for Skinny client, may be present multiple times.\n"
+    "-sccp-device:    Set device type code for Skinny clients.\n";
 }
 
 
@@ -648,13 +649,17 @@ bool OpalConsoleSkinnyEndPoint::Initialise(PArgList & args, bool verbose, const 
     return true;
   }
 
-  unsigned maxStreams = args.GetOptionAs("sccp-streams", 1);
+  unsigned deviceType = args.GetOptionAs<unsigned>("sccp-device", OpalSkinnyEndPoint::DefaultDeviceType);
   PString server = args.GetOptionString("sccp-server");
   if (!server.IsEmpty()) {
-    if (!Register(server, maxStreams))
-      output << "Could not register with skinny server \"" << server << '"' << endl;
-    else if (verbose)
-      output << "Skinny server: " << server << '\n';
+    PStringArray names = args.GetOptionString("sccp-name").Lines();
+    for (PINDEX i = 0; i < names.GetSize(); ++i) {
+      PString name = names[i];
+      if (!Register(server, name, deviceType))
+        output << "Could not register " << name << " with skinny server \"" << server << '"' << endl;
+      else if (verbose)
+        output << "Skinny client: " << name << '@' << server << '\n';
+    }
   }
 
   AddRoutesFor(this, defaultRoute);
@@ -663,18 +668,39 @@ bool OpalConsoleSkinnyEndPoint::Initialise(PArgList & args, bool verbose, const 
 
 
 #if P_CLI
-void OpalConsoleSkinnyEndPoint::CmdServer(PCLI::Arguments & args, P_INT_PTR)
+void OpalConsoleSkinnyEndPoint::CmdRegister(PCLI::Arguments & args, P_INT_PTR)
 {
-  if (args.GetCount() < 1)
+  if (args.GetCount() < 2)
     args.WriteUsage();
-  else if (!Register(args[0]))
-    args.WriteError() << "Could not register with skinny server \"" << args[0] << '"' << endl;
+  else if (!Register(args[0], args[1]))
+    args.WriteError() << "Could not register \"" << args[1] << "\" with skinny server \"" << args[0] << '"' << endl;
+}
+
+
+void OpalConsoleSkinnyEndPoint::CmdStatus(PCLI::Arguments & args, P_INT_PTR)
+{
+  ostream & out = args.GetContext();
+
+  bool none = true;
+
+  PStringArray names = GetPhoneDeviceNames();
+  for (PINDEX i = 0; i < names.GetSize(); ++i) {
+    OpalSkinnyEndPoint::PhoneDevice * phoneDevice = GetPhoneDevice(names[i]);
+    if (phoneDevice != NULL) {
+      out << *phoneDevice << endl;
+      none = false;
+    }
+  }
+
+  if (none)
+    out << "No phone devices registered" << endl;
 }
 
 
 void OpalConsoleSkinnyEndPoint::AddCommands(PCLI & cli)
 {
-  cli.SetCommand("sccp server", PCREATE_NOTIFIER(CmdServer), "Set skinny server", "[ <host> ]");
+  cli.SetCommand("sccp register", PCREATE_NOTIFIER(CmdRegister), "Set skinny server", "[ <host> <name> ]");
+  cli.SetCommand("sccp status", PCREATE_NOTIFIER(CmdStatus), "Display status of registered Skinny phone devices");
 }
 #endif // P_CLI
 #endif // OPAL_SKINNY

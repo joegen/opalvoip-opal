@@ -1577,7 +1577,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     }
     else {
       OpalMediaType mediaType = mediaName.ToLower();
-      if (OpalMediaType::GetDefinition(mediaType) != NULL) {
+      if (!mediaType.empty()) {
         // Known media type name, change all codecs of that type
         for (OpalMediaFormatList::iterator it = allCodecs.begin(); it != allCodecs.end(); ++it) {
           if (it->GetMediaType() == mediaType) {
@@ -2021,7 +2021,7 @@ void OpalManager_C::HandleRegistration(const OpalMessage & command, OpalMessageB
 #if OPAL_SKINNY
   OpalSkinnyEndPoint * skinnyEP = dynamic_cast<OpalSkinnyEndPoint *>(ep);
   if (skinnyEP != NULL) {
-    if (!skinnyEP->Register(command.m_param.m_registrationInfo.m_hostName))
+    if (!skinnyEP->Register(command.m_param.m_registrationInfo.m_hostName, command.m_param.m_registrationInfo.m_identifier))
       response.SetError("Failed to initiate SCCP registration.");
     return;
   }

@@ -198,13 +198,15 @@ void RegistrationStatusPage::CreateContent(PHTML & html, const PStringToString &
 #endif // OPAL_SIP
 
 #if OPAL_SKINNY
+       << "<!--#macrostart SkinnyRegistrationStatus-->"
        << PHTML::TableRow()
        << PHTML::TableHeader(PHTML::NoWrap)
-       << " SCCP Call Manager "
+       << " Skinny Client "
        << PHTML::TableData(PHTML::NoWrap)
-       << "<!--#macro SkinnyServerAddress-->"
+       << "<!--#status Name-->"
        << PHTML::TableData(PHTML::NoWrap)
-       << "<!--#macro SkinnyRegistrationStatus-->"
+       << "<!--#status Status-->"
+       << "<!--#macroend SkinnyRegistrationStatus-->"
 #endif // OPAL_SKINNY
        << PHTML::TableEnd();
 }
@@ -280,28 +282,43 @@ PCREATE_SERVICE_MACRO_BLOCK(SIPRegistrationStatus,resource,P_EMPTY,htmlBlock)
 #endif // OPAL_SIP
 
 #if OPAL_SKINNY
-PCREATE_SERVICE_MACRO(SkinnyServerAddress, resource, P_EMPTY)
+PCREATE_SERVICE_MACRO_BLOCK(SkinnyRegistrationStatus, resource, P_EMPTY, htmlBlock)
 {
   RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
   if (PAssertNULL(status) == NULL)
     return PString::Empty();
 
-  OpalSkinnyEndPoint * ep = status->m_manager.FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY);
-  if (ep == NULL)
-    return "&nbsp;";
-  
-  return ep->GetServerTransport().GetRemoteAddress().GetHostName(true);
-}
-
-
-PCREATE_SERVICE_MACRO(SkinnyRegistrationStatus, resource, P_EMPTY)
-{
-  RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
-  if (PAssertNULL(status) == NULL)
-    return PString::Empty();
+  PString substitution;
 
   OpalSkinnyEndPoint * ep = status->m_manager.FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY);
-  return ep != NULL ? ep->GetRegistrationStatus() : "Not registered";
+  if (ep != NULL) {
+    PStringArray names = ep->GetPhoneDeviceNames();
+    for (PINDEX i = 0; i < names.GetSize(); ++i) {
+      OpalSkinnyEndPoint::PhoneDevice * phoneDevice = ep->GetPhoneDevice(names[i]);
+      if (phoneDevice != NULL) {
+        // make a copy of the repeating html chunk
+        PString insert = htmlBlock;
+
+        PStringStream str;
+        str << *phoneDevice;
+        PString name, status;
+        str.Split('-', name, status);
+        PServiceHTML::SpliceMacro(insert, "status Name", name);
+        PServiceHTML::SpliceMacro(insert, "status Status", status);
+
+        // Then put it into the page, moving insertion point along after it.
+        substitution += insert;
+      }
+    }
+  }
+
+  if (substitution.IsEmpty()) {
+    substitution = htmlBlock;
+    PServiceHTML::SpliceMacro(substitution, "status Name", "&nbsp;");
+    PServiceHTML::SpliceMacro(substitution, "status Status", "Nothing registered");
+  }
+
+  return substitution;
 }
 #endif // OPAL_SKINNY
 

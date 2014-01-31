@@ -49,31 +49,31 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
 {
     PCLASSINFO(OpalSkinnyEndPoint, OpalRTPEndPoint);
   public:
-  /**@name Construction */
-  //@{
+    /**@name Construction */
+    //@{
     /**Create a new endpoint.
      */
     OpalSkinnyEndPoint(
       OpalManager & manager,
       const char *prefix = "sccp"
-    );
+      );
 
     /**Destroy endpoint.
      */
     virtual ~OpalSkinnyEndPoint();
-  //@}
+    //@}
 
-  /**@name Overrides from OpalEndPoint */
-  //@{
+    /**@name Overrides from OpalEndPoint */
+    //@{
     /** Shut down the endpoint, this is called by the OpalManager just before
         destroying the object and can be handy to make sure some things are
         stopped before the vtable gets clobbered.
-      */
+        */
     virtual void ShutDown();
 
     /** Get the default transports for the endpoint type.
         Overrides the default behaviour to return udp and tcp.
-      */
+        */
     virtual PString GetDefaultTransport() const;
 
     /** Get the default signal port for this endpoint.
@@ -86,7 +86,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
 
        Note that a specific connection may not actually support all of the
        media formats returned here, but should return no more.
-      */
+       */
     virtual OpalMediaFormatList GetMediaFormats() const;
 
     /** Handle new incoming connection from listener.
@@ -94,7 +94,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
     virtual void NewIncomingConnection(
       OpalListener & listener,            ///<  Listner that created transport
       const OpalTransportPtr & transport  ///<  Transport connection came in on
-    );
+      );
 
     /** Set up a connection to a remote party.
         This is called from the OpalManager::MakeConnection() function once
@@ -122,51 +122,97 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
         then it may return immediately. Returning a non-NULL value does not
         mean that the connection will succeed, only that an attempt is being
         made.
-      */
+        */
     virtual PSafePtr<OpalConnection> MakeConnection(
       OpalCall & call,                         ///<  Owner of connection
       const PString & party,                   ///<  Remote party to call
       void * userData,                         ///<  Arbitrary data to pass to connection
       unsigned int options,                    ///<  options to pass to conneciton
       OpalConnection::StringOptions * stringOptions  ///<  complex string options
-    );
+      );
 
     /** Execute garbage collection for endpoint.
         Returns true if all garbage has been collected.
-    */
+        */
     virtual PBoolean GarbageCollection();
-  //@}
+    //@}
 
 
-  /**@name Customisation call backs */
-  //@{
+    class PhoneDevice;
+
+    /**@name Customisation call backs */
+    //@{
     /** Create a connection for the skinny endpoint.
       */
     virtual OpalSkinnyConnection * CreateConnection(
       OpalCall & call,            ///< Owner of connection
-      const PString & token,      ///< Token to identify call
+      PhoneDevice & client,            ///< Registered client for call
+      unsigned callIdentifier,    ///< Identifier for call
       const PString & dialNumber, ///< Number to dial out, empty if incoming
       void * userData,            ///< Arbitrary data to pass to connection
       unsigned int options,
       OpalConnection::StringOptions * stringOptions = NULL
-    );
-  //@}
+      );
+    //@}
 
-  /**@name Protocol handling routines */
-  //@{
+    /**@name Protocol handling routines */
+    //@{
+    enum { DefaultDeviceType = 30016 }; // Cisco IP Communicator
+
     /** Register with skinny server.
       */
     bool Register(
       const PString & server,      ///< Server to register with
-      unsigned maxStreams = 1,     ///< Max "lines" for client
-      unsigned deviceType = 30016  ///< Device type code (Cisco IP Communicator)
+      const PString & name,        ///< Name of cient "psuedo device" to register
+      unsigned deviceType = DefaultDeviceType  ///< Device type code
     );
 
     /** Unregister from server.
       */
-    void Unregister();
+    bool Unregister(
+      const PString & name         ///< Name of client "psuedo device" to unregister
+    );
 
-    const PString & GetRegistrationStatus() const { return m_registrationStatus; }
+    PhoneDevice * GetPhoneDevice(
+      const PString & name         ///< Name of client "psuedo device" to unregister
+    ) const { return m_phoneDevices.GetAt(name); }
+
+    PArray<PString> GetPhoneDeviceNames() const { return m_phoneDevices.GetKeys(); }
+    //@}
+
+
+    class SkinnyMsg;
+
+    class PhoneDevice : public PObject
+    {
+      PCLASSINFO(PhoneDevice, PObject);
+      public:
+        PhoneDevice(OpalSkinnyEndPoint & ep, const PString & name, unsigned deviceType);
+
+        virtual void PrintOn(ostream & strm) const;
+
+        bool Start(const PString & server);
+        void Stop();
+
+        bool SendSkinnyMsg(const SkinnyMsg & msg);
+
+        const PString & GetName() const { return m_name; }
+        const PString & GetStatus() const { return m_status; }
+
+      protected:
+        void HandleTransport();
+        bool SendRegisterMsg();
+
+        OpalSkinnyEndPoint & m_endpoint;
+        PString              m_name;
+        unsigned             m_deviceType;
+        OpalTransportTCP     m_transport;
+        PString              m_status;
+
+      friend class OpalSkinnyEndPoint;
+      friend class OpalSkinnyConnection;
+    };
+
 
 #pragma pack(1)
     class SkinnyMsg
@@ -176,9 +222,18 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
         void Construct(const PBYTEArray & pdu);
 
       public:
-        PINDEX GetLength() const { return m_length+8; }
-        void SetLength(PINDEX len) { PAssert(len>= 8, PInvalidParameter); m_length = len-8; }
-        uint32_t GetID() const { return m_messageId; }
+        PINDEX GetLength() const
+        {
+          return m_length + 8;
+        }
+        void SetLength(PINDEX len)
+        {
+          PAssert(len >= 8, PInvalidParameter); m_length = len - 8;
+        }
+        uint32_t GetID() const
+        {
+          return m_messageId;
+        }
 
       private:
         PUInt32l m_length;
@@ -186,16 +241,16 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
         PUInt32l m_messageId;
     };
 
-    #define OPAL_SKINNY_MSG(cls, id, vars) \
-      class cls : public SkinnyMsg \
-      { \
-        public: \
-          enum { ID = id }; \
-          cls() : SkinnyMsg(ID, sizeof(*this)) { } \
-          cls(const PBYTEArray & pdu) : SkinnyMsg(ID, sizeof(*this)) { Construct(pdu); } \
-          vars \
-      }; \
-      virtual bool OnReceiveMsg(const cls & msg)
+#define OPAL_SKINNY_MSG(cls, id, vars) \
+    class cls : public SkinnyMsg \
+    { \
+      public: \
+        enum { ID = id }; \
+        cls() : SkinnyMsg(ID, sizeof(*this)) { } \
+        cls(const PBYTEArray & pdu) : SkinnyMsg(ID, sizeof(*this)) { Construct(pdu); } \
+        vars \
+    }; \
+    virtual bool OnReceiveMsg(PhoneDevice & client, const cls & msg)
 
     OPAL_SKINNY_MSG(KeepAliveMsg, 0x0000,
       PUInt32l m_unknown;
@@ -205,7 +260,8 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
     );
 
     OPAL_SKINNY_MSG(RegisterMsg, 0x0001,
-      char     m_deviceName[16];
+      enum { MaxNameSize = 15 };
+      char     m_deviceName[MaxNameSize+1];
       PUInt32l m_userId;
       PUInt32l m_instance;
       in_addr  m_ip;
@@ -213,7 +269,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       PUInt32l m_maxStreams;
       BYTE     m_unknown[16];
       char     m_macAddress[12];
-      );
+    );
 
     OPAL_SKINNY_MSG(RegisterAckMsg, 0x0081,
       PUInt32l m_keepAlive;
@@ -444,23 +500,18 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
 
     /** Send a message to server.
       */
-    bool SendSkinnyMsg(const SkinnyMsg & msg);
   //@}
 
-    const OpalTransport & GetServerTransport() const { return m_serverTransport; }
-
   protected:
-    void HandleServerTransport();
-    PSafePtr<OpalSkinnyConnection> GetSkinnyConnection(uint32_t callIdentifier, PSafetyMode mode = PSafeReadWrite);
-    template <class MSG> bool DelegateMsg(const MSG & msg);
+    PSafePtr<OpalSkinnyConnection> GetSkinnyConnection(const PhoneDevice & client, uint32_t callIdentifier, PSafetyMode mode = PSafeReadWrite);
+    template <class MSG> bool DelegateMsg(const PhoneDevice & client, const MSG & msg);
 
-    OpalTransportTCP m_serverTransport;
-    RegisterMsg      m_registerMsg;
-    PString          m_registrationStatus;
+    typedef PDictionary<PString, PhoneDevice> PhoneDeviceDict;
+    PhoneDeviceDict m_phoneDevices;
 };
 
 
-/**Connection for interfacing Cisco SCCP (Skinny Client Control Protocol).
+/**Connection for interfacing Cisco SCCP (Skinny PhoneDevice Control Protocol).
   */
 class OpalSkinnyConnection : public OpalRTPConnection
 {
@@ -473,7 +524,8 @@ class OpalSkinnyConnection : public OpalRTPConnection
     OpalSkinnyConnection(
       OpalCall & call,
       OpalSkinnyEndPoint & ep,
-      const PString & token,
+      OpalSkinnyEndPoint::PhoneDevice & client,
+      unsigned callIdentifier,
       const PString & dialNumber,
       void * /*userData*/,
       unsigned options,
@@ -568,6 +620,7 @@ class OpalSkinnyConnection : public OpalRTPConnection
     void DelayCloseMediaStream(OpalMediaStreamPtr mediaStream);
 
     OpalSkinnyEndPoint & m_endpoint;
+    OpalSkinnyEndPoint::PhoneDevice & m_client;
 
     uint32_t m_lineInstance;
     uint32_t m_callIdentifier;
@@ -580,9 +633,9 @@ class OpalSkinnyConnection : public OpalRTPConnection
 };
 
 
-template <class MSG> bool OpalSkinnyEndPoint::DelegateMsg(const MSG & msg)
+template <class MSG> bool OpalSkinnyEndPoint::DelegateMsg(const PhoneDevice & client, const MSG & msg)
 {
-  PSafePtr<OpalSkinnyConnection> connection = GetSkinnyConnection(msg.m_callIdentifier);
+  PSafePtr<OpalSkinnyConnection> connection = GetSkinnyConnection(client, msg.m_callIdentifier);
   return connection == NULL || connection->OnReceiveMsg(msg);
 }
 

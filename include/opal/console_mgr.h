@@ -178,7 +178,8 @@ public:
   virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute);
 
 #if P_CLI
-  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsoleSkinnyEndPoint, CmdServer);
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsoleSkinnyEndPoint, CmdRegister);
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsoleSkinnyEndPoint, CmdStatus);
   virtual void AddCommands(PCLI & cli);
 #endif // P_CLI
 };
