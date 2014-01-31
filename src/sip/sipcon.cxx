@@ -1946,39 +1946,60 @@ PString SIPConnection::GetCallInfo() const
 
 bool SIPConnection::HoldRemote(bool placeOnHold)
 {
-#if PTRACING
-  const char * holdStr = placeOnHold ? "on" : "off";
-#endif
-
   switch (m_holdToRemote) {
     case eHoldOff :
+    case eRetrieveInProgress :
       if (!placeOnHold) {
-        PTRACE(4, "SIP\tHold off request ignored as not in hold on " << *this);
+        PTRACE(4, "SIP\tHold off request ignored as not on hold for " << *this);
         return true;
       }
       break;
 
     case eHoldOn :
+    case eHoldInProgress :
       if (placeOnHold) {
-        PTRACE(4, "SIP\tHold on request ignored as already in hold on " << *this);
+        PTRACE(4, "SIP\tHold on request ignored as already on hold fir " << *this);
         return true;
       }
       break;
-
-    default :
-      PTRACE(4, "SIP\tHold " << holdStr << " request ignored as in progress on " << *this);
-      return false;
   }
 
-
   HoldState origState = m_holdToRemote;
-  m_holdToRemote = placeOnHold ? eHoldInProgress : eRetrieveInProgress;
+
+  switch (m_holdToRemote) {
+    case eHoldOff :
+      m_holdToRemote = eHoldInProgress;
+      break;
+
+    case eHoldOn :
+      m_holdToRemote = eRetrieveInProgress;
+      break;
+
+    case eRetrieveInProgress :
+    case eHoldInProgress :
+      PTRACE(4, "SIP\tHold " << (placeOnHold ? "on" : "off") << " request deferred as in progress for " << *this);
+      GetEndPoint().GetManager().QueueDecoupledEvent(new PSafeWorkArg1<SIPConnection, bool>(
+                                         this, placeOnHold, &SIPConnection::RetryHoldRemote));
+      return true;
+  }
 
   if (SendReINVITE(PTRACE_PARAM(placeOnHold ? "put connection on hold" : "retrieve connection from hold")))
     return true;
 
   m_holdToRemote = origState;
   return false;
+}
+
+
+void SIPConnection::RetryHoldRemote(bool placeOnHold)
+{
+  HoldState progressState = placeOnHold ? eRetrieveInProgress : eHoldInProgress;
+  while (m_holdToRemote == progressState) {
+    PThread::Sleep(100);
+      PTRACE(4, "SIP\tHold " << (placeOnHold ? "on" : "off") << " request still in progress for " << *this);
+  }
+
+  HoldRemote(placeOnHold);
 }
 
 
