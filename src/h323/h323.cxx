@@ -3713,8 +3713,11 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
     if (m_holdFromRemote == eOnHoldFromRemote) {
       PTRACE(3, "H323\tReceived CapabilitySet while paused, re-starting transmitters.");
       m_holdFromRemote = eRetrieveFromRemote;
-      capabilityExchangeProcedure->Start(true);
-      masterSlaveDeterminationProcedure->Start(true);
+      if (HasCompatibilityIssue(e_NeedTCSAfterNonEmptyTCS))
+        capabilityExchangeProcedure->Start(true);
+      if (HasCompatibilityIssue(e_NeedMSDAfterNonEmptyTCS))
+        masterSlaveDeterminationProcedure->Start(true);
+      OnSelectLogicalChannels();
     }
     else if (connectionState > HasExecutedSignalConnect && previousCaps > 0 && remoteCapabilities.GetSize() > previousCaps) {
       PTRACE(3, "H323\tReceived CapabilitySet with more media types.");
