@@ -3943,8 +3943,12 @@ void H323Connection::InternalEstablishedConnectionCheck()
 
       // Delay handling of off hold until we finish redoing TCS, MSD & OLC.
       if (m_holdFromRemote == eRetrieveFromRemote && logicalChannels->GetChannels()[chan->GetNumber()].IsEstablished()) {
-        m_holdFromRemote = eOffHoldFromRemote;
-        OnHold(true, false);
+        if ((chan = logicalChannels->FindChannelBySession(H323Capability::DefaultAudioSessionID, true)) != NULL)
+          chan = logicalChannels->FindChannelBySession(H323Capability::DefaultVideoSessionID, true);
+        if (chan != NULL && logicalChannels->GetChannels()[chan->GetNumber()].IsEstablished()) {
+          m_holdFromRemote = eOffHoldFromRemote;
+          OnHold(true, false);
+        }
       }
     }
   }
