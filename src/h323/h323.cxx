@@ -3926,29 +3926,20 @@ void H323Connection::InternalEstablishedConnectionCheck()
 
   // Check for if all the 245 conditions are met so can start up logical
   // channels and complete the connection establishment.
-  if (h245_available) {
+  if (h245_available)
     endSessionNeeded = true;
 
-    H323Channel * chan = logicalChannels->FindChannelBySession(H323Capability::DefaultAudioSessionID, false);
-    if (chan == NULL)
+  // Delay handling of off hold until we finish redoing TCS, MSD & OLC.
+  if (m_holdFromRemote == eRetrieveFromRemote) {
+    H323Channel * chan;
+    if ((logicalChannels->FindChannelBySession(H323Capability::DefaultAudioSessionID, false)) == NULL)
       chan = logicalChannels->FindChannelBySession(H323Capability::DefaultVideoSessionID, false);
     if (chan != NULL) {
-      /* Check if we have just been connected, or have come out of a
-         transmitter side paused, or we are "early starting" , that is media
-         over H.245 before CONNECT */
-      if (  m_holdFromRemote == eRetrieveFromRemote ||
-            connectionState == HasExecutedSignalConnect ||
-           (earlyStart && m_fastStartState != FastStartAcknowledged && IsH245Master()))
-        OnSelectLogicalChannels(); // Start some media
-
-      // Delay handling of off hold until we finish redoing TCS, MSD & OLC.
-      if (m_holdFromRemote == eRetrieveFromRemote && logicalChannels->GetChannels()[chan->GetNumber()].IsEstablished()) {
-        if ((chan = logicalChannels->FindChannelBySession(H323Capability::DefaultAudioSessionID, true)) != NULL)
-          chan = logicalChannels->FindChannelBySession(H323Capability::DefaultVideoSessionID, true);
-        if (chan != NULL && logicalChannels->GetChannels()[chan->GetNumber()].IsEstablished()) {
-          m_holdFromRemote = eOffHoldFromRemote;
-          OnHold(true, false);
-        }
+      if ((chan = logicalChannels->FindChannelBySession(H323Capability::DefaultAudioSessionID, true)) == NULL)
+        chan = logicalChannels->FindChannelBySession(H323Capability::DefaultVideoSessionID, true);
+      if (chan != NULL) {
+        m_holdFromRemote = eOffHoldFromRemote;
+        OnHold(true, false);
       }
     }
   }
@@ -3957,7 +3948,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
     case SetUpPhase :
     case ProceedingPhase :
     case AlertingPhase :
-      if (connectionState == HasExecutedSignalConnect) {
+      if (h245_available) {
         bool hasEstablishedChannel = false;
         bool inProgressChannel = false;
         for (H245LogicalChannelDict::iterator it  = logicalChannels->GetChannels().begin();
@@ -3967,7 +3958,8 @@ void H323Connection::InternalEstablishedConnectionCheck()
           if (it->second.IsAwaitingEstablishment())
             inProgressChannel = true;
         }
-        if (hasEstablishedChannel && !inProgressChannel)
+        if (hasEstablishedChannel && !inProgressChannel &&
+              (connectionState == HasExecutedSignalConnect || (earlyStart && m_fastStartState != FastStartAcknowledged)))
           OnConnectedInternal();
       }
       break;
