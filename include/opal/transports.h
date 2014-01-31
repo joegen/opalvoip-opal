@@ -501,6 +501,10 @@ class OpalListener : public PObject
     PThread      * thread;
     AcceptHandler  acceptHandler;
     ThreadMode     threadMode;
+
+  private:
+    OpalListener(const OpalListener & other) : PObject(other), endpoint(other.endpoint) { }
+    void operator=(const OpalListener &) { }
 };
 
 
@@ -1016,6 +1020,10 @@ class OpalTransport : public PSafeObject
     PBYTEArray     m_keepAliveData;
     PSimpleTimer   m_idleTimer;
     PAtomicInteger m_referenceCount;
+
+  private:
+    OpalTransport(const OpalTransport & other) : PSafeObject(other), endpoint(other.endpoint) { }
+    void operator=(const OpalTransport &) { }
 };
 
 
