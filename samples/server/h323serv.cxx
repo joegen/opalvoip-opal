@@ -95,7 +95,10 @@ static const char * CompatibilityIssueKey[H323Connection::NumCompatibilityIssues
   "No Multiple Tunnelled H245",
   "Bad Master Slave Conflict",
   "No User Input Capability",
-  "H.224 Must Be Session 3"
+  "H.224 Must Be Session 3",
+  "Need TCS after Non-Empty TCS",
+  "Need MSD after Non-Empty TCS"
+
 };
 
 
