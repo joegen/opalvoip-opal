@@ -80,16 +80,17 @@ void H245Negotiator::HandleTimeout()
 H245NegMasterSlaveDetermination::H245NegMasterSlaveDetermination(H323EndPoint & end,
                                                                  H323Connection & conn)
   : H245Negotiator(end, conn)
+  , m_state(e_Idle)
+  , m_determinationNumber(0)
+  , m_retryCount(1)
+  , m_status(e_Indeterminate)
 {
-  retryCount = 1;
-  state = e_Idle;
-  status = e_Indeterminate;
 }
 
 
 PBoolean H245NegMasterSlaveDetermination::Start(PBoolean renegotiate)
 {
-  if (state != e_Idle) {
+  if (m_state != e_Idle) {
     PTRACE(3, "H245\tMasterSlaveDetermination already in progress");
     return true;
   }
@@ -97,7 +98,7 @@ PBoolean H245NegMasterSlaveDetermination::Start(PBoolean renegotiate)
   if (!renegotiate && IsDetermined())
     return true;
 
-  retryCount = 1;
+  m_retryCount = 1;
   return Restart();
 }
 
@@ -107,35 +108,35 @@ PBoolean H245NegMasterSlaveDetermination::Restart()
   PTRACE(3, "H245\tSending MasterSlaveDetermination");
 
   // Begin the Master/Slave determination procedure
-  determinationNumber = PRandom::Number()%16777216;
+  m_determinationNumber = PRandom::Number() % 16777216;
   replyTimer = endpoint.GetMasterSlaveDeterminationTimeout();
-  state = e_Outgoing;
+  m_state = e_Outgoing;
 
   H323ControlPDU pdu;
-  pdu.BuildMasterSlaveDetermination(endpoint.GetTerminalType(), determinationNumber);
+  pdu.BuildMasterSlaveDetermination(endpoint.GetTerminalType(), m_determinationNumber);
   return connection.WriteControlPDU(pdu);
 }
 
 
 void H245NegMasterSlaveDetermination::Stop()
 {
-  PTRACE(3, "H245\tStopping MasterSlaveDetermination: state=" << state);
+  PTRACE(3, "H245\tStopping MasterSlaveDetermination: state=" << m_state);
 
-  if (state == e_Idle)
+  if (m_state == e_Idle)
     return;
 
   replyTimer.Stop(false);
-  state = e_Idle;
+  m_state = e_Idle;
 }
 
 
 PBoolean H245NegMasterSlaveDetermination::HandleIncoming(const H245_MasterSlaveDetermination & pdu)
 {
-  PTRACE(3, "H245\tReceived MasterSlaveDetermination: state=" << state);
+  PTRACE(3, "H245\tReceived MasterSlaveDetermination: state=" << m_state);
 
-  if (state == e_Incoming) {
+  if (m_state == e_Incoming) {
     replyTimer.Stop(false);
-    state = e_Idle;
+    m_state = e_Idle;
     return connection.OnControlProtocolError(H323Connection::e_MasterSlaveDetermination,
                                              "Duplicate MasterSlaveDetermination");
   }
@@ -149,7 +150,7 @@ PBoolean H245NegMasterSlaveDetermination::HandleIncoming(const H245_MasterSlaveD
   else if (pdu.m_terminalType > (unsigned)endpoint.GetTerminalType())
     newStatus = e_DeterminedSlave;
   else {
-    DWORD moduloDiff = (pdu.m_statusDeterminationNumber - determinationNumber)&0xffffff;
+    DWORD moduloDiff = (pdu.m_statusDeterminationNumber - m_determinationNumber) & 0xffffff;
     if (moduloDiff == 0 || moduloDiff == 0x800000)
       newStatus = e_Indeterminate;
     else if (moduloDiff < 0x800000)
@@ -164,16 +165,15 @@ PBoolean H245NegMasterSlaveDetermination::HandleIncoming(const H245_MasterSlaveD
     PTRACE(3, "H245\tMasterSlaveDetermination: local is "
                   << (newStatus == e_DeterminedMaster ? "master" : "slave"));
     reply.BuildMasterSlaveDeterminationAck(newStatus == e_DeterminedMaster);
-    state = state == e_Outgoing ? e_Incoming : e_Idle;
-    status = newStatus;
+    m_state = m_state == e_Outgoing ? e_Incoming : e_Idle;
+    m_status = newStatus;
   }
-  else if (state == e_Outgoing) {
-    retryCount++;
-    if (retryCount < endpoint.GetMasterSlaveDeterminationRetries())
+  else if (m_state == e_Outgoing) {
+    if (++m_retryCount < endpoint.GetMasterSlaveDeterminationRetries())
       return Restart(); // Try again
 
     replyTimer.Stop(false);
-    state = e_Idle;
+    m_state = e_Idle;
     return connection.OnControlProtocolError(H323Connection::e_MasterSlaveDetermination,
                                              "Retries exceeded");
   }
@@ -187,9 +187,9 @@ PBoolean H245NegMasterSlaveDetermination::HandleIncoming(const H245_MasterSlaveD
 
 PBoolean H245NegMasterSlaveDetermination::HandleAck(const H245_MasterSlaveDeterminationAck & pdu)
 {
-  PTRACE(3, "H245\tReceived MasterSlaveDeterminationAck: state=" << state);
+  PTRACE(3, "H245\tReceived MasterSlaveDeterminationAck: state=" << m_state);
 
-  if (state == e_Idle)
+  if (m_state == e_Idle)
     return true;
 
   replyTimer = endpoint.GetMasterSlaveDeterminationTimeout();
@@ -201,8 +201,8 @@ PBoolean H245NegMasterSlaveDetermination::HandleAck(const H245_MasterSlaveDeterm
     newStatus = e_DeterminedSlave;
 
   H323ControlPDU reply;
-  if (state == e_Outgoing) {
-    status = newStatus;
+  if (m_state == e_Outgoing) {
+    m_status = newStatus;
     PTRACE(3, "H245\tMasterSlaveDetermination: remote is "
                   << (newStatus == e_DeterminedSlave ? "master" : "slave"));
     reply.BuildMasterSlaveDeterminationAck(newStatus == e_DeterminedMaster);
@@ -211,9 +211,9 @@ PBoolean H245NegMasterSlaveDetermination::HandleAck(const H245_MasterSlaveDeterm
   }
 
   replyTimer.Stop(false);
-  state = e_Idle;
+  m_state = e_Idle;
 
-  if (status != newStatus)
+  if (m_status != newStatus)
     return connection.OnControlProtocolError(H323Connection::e_MasterSlaveDetermination,
                                              "Master/Slave mismatch");
 
@@ -223,16 +223,15 @@ PBoolean H245NegMasterSlaveDetermination::HandleAck(const H245_MasterSlaveDeterm
 
 PBoolean H245NegMasterSlaveDetermination::HandleReject(const H245_MasterSlaveDeterminationReject & pdu)
 {
-  PTRACE(3, "H245\tReceived MasterSlaveDeterminationReject: state=" << state);
+  PTRACE(3, "H245\tReceived MasterSlaveDeterminationReject: state=" << m_state);
 
-  switch (state) {
+  switch (m_state) {
     case e_Idle :
       return true;
 
     case e_Outgoing :
       if (pdu.m_cause.GetTag() == H245_MasterSlaveDeterminationReject_cause::e_identicalNumbers) {
-        retryCount++;
-        if (retryCount < endpoint.GetMasterSlaveDeterminationRetries())
+        if (++m_retryCount < endpoint.GetMasterSlaveDeterminationRetries())
           return Restart();
       }
 
@@ -241,7 +240,7 @@ PBoolean H245NegMasterSlaveDetermination::HandleReject(const H245_MasterSlaveDet
   }
 
   replyTimer.Stop(false);
-  state = e_Idle;
+  m_state = e_Idle;
 
   return connection.OnControlProtocolError(H323Connection::e_MasterSlaveDetermination,
                                            "Retries exceeded");
@@ -250,13 +249,13 @@ PBoolean H245NegMasterSlaveDetermination::HandleReject(const H245_MasterSlaveDet
 
 PBoolean H245NegMasterSlaveDetermination::HandleRelease(const H245_MasterSlaveDeterminationRelease & /*pdu*/)
 {
-  PTRACE(3, "H245\tReceived MasterSlaveDeterminationRelease: state=" << state);
+  PTRACE(3, "H245\tReceived MasterSlaveDeterminationRelease: state=" << m_state);
 
-  if (state == e_Idle)
+  if (m_state == e_Idle)
     return true;
 
   replyTimer.Stop(false);
-  state = e_Idle;
+  m_state = e_Idle;
 
   return connection.OnControlProtocolError(H323Connection::e_MasterSlaveDetermination,
                                            "Aborted");
@@ -265,42 +264,22 @@ PBoolean H245NegMasterSlaveDetermination::HandleRelease(const H245_MasterSlaveDe
 
 void H245NegMasterSlaveDetermination::HandleTimeout()
 {
-  if (state == e_Idle)
+  if (m_state == e_Idle)
     return;
 
-  PTRACE(3, "H245\tTimeout on MasterSlaveDetermination: state=" << state);
+  PTRACE(3, "H245\tTimeout on MasterSlaveDetermination: state=" << m_state);
 
-  if (state == e_Outgoing) {
+  if (m_state == e_Outgoing) {
     H323ControlPDU reply;
     reply.Build(H245_IndicationMessage::e_masterSlaveDeterminationRelease);
     connection.WriteControlPDU(reply);
   }
 
-  state = e_Idle;
+  m_state = e_Idle;
 
   connection.OnControlProtocolError(H323Connection::e_MasterSlaveDetermination,
                                     "Timeout");
 }
-
-
-#if PTRACING
-const char * H245NegMasterSlaveDetermination::GetStateName(States s)
-{
-  static const char * const names[] = {
-    "Idle", "Outgoing", "Incoming"
-  };
-  return s < PARRAYSIZE(names) ? names[s] : "<Unknown>";
-}
-
-
-const char * H245NegMasterSlaveDetermination::GetStatusName(MasterSlaveStatus s)
-{
-  static const char * const names[] = {
-    "Indeterminate", "DeterminedMaster", "DeterminedSlave"
-  };
-  return s < PARRAYSIZE(names) ? names[s] : "<Unknown>";
-}
-#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
