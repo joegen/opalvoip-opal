@@ -73,7 +73,7 @@ static const char ProductVersionKey[] = "Product Version";
 
 #if OPAL_SKINNY
 static const char SkinnyServerKey[] = "SCCP Server";
-static const char SkinnyStreamsKey[] = "SCCP Max Streams";
+static const char SkinnyNamesKey[] = "SCCP Device Names";
 #endif
 
 #if OPAL_LID
@@ -547,10 +547,33 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
 #if OPAL_SKINNY
   {
+    OpalSkinnyEndPoint * ep = FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY);
     PString server = rsrc->AddStringField(SkinnyServerKey, 20, PString::Empty(), "Server for Skinny Client Control Protocol");
-    unsigned maxStreams = rsrc->AddIntegerField(SkinnyStreamsKey, 1, 1000, 100, "", "Max Streams for Skinny Client Control Protocol");
-    if (!server.IsEmpty() && !FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY)->Register(server, maxStreams)) {
-      PSYSTEMLOG(Error, "Could not register with skinny server.");
+    PStringArray names = ep->GetPhoneDeviceNames();
+    names = rsrc->AddStringArrayField(SkinnyNamesKey, false, 15, names, "Max Streams for Skinny Client Control Protocol");
+    if (!server.IsEmpty()) {
+      for (PINDEX i = 0; i < names.GetSize(); ++i) {
+        PString name = names[i];
+
+        static PRegularExpression const Wildcards("\\[([0-9]+)-([0-9]+)\\]", PRegularExpression::Extended);
+        PIntArray starts(3), ends(3);
+        if (Wildcards.Execute(name, starts, ends)) {
+          unsigned number = name(starts[1], ends[1]-1).AsUnsigned();
+          unsigned lastNumber = name(starts[2], ends[2]-1).AsUnsigned();
+          unsigned digits = ends[2] - starts[2];
+          while (number <= lastNumber) {
+            PString calculatedName = name.Left(starts[0]) + psprintf("%0*u", digits, number++) + name.Mid(ends[0]);
+            if (!ep->Register(server, calculatedName)) {
+              PSYSTEMLOG(Error, "Could not register " << calculatedName << " with skinny server \"" << server << '"');
+            }
+          }
+        }
+        else {
+          if (!ep->Register(server, name)) {
+            PSYSTEMLOG(Error, "Could not register " << name << " with skinny server \"" << server << '"');
+          }
+        }
+      }
     }
   }
 #endif
