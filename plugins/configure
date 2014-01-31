@@ -6396,6 +6396,7 @@ fi
 
 
    if test -d "$PLUGIN_SRC_DIR/audio/GSM0610" ; then
+                  OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    GSM_SYSTEM="yes"
 
@@ -6567,8 +6568,8 @@ fi
 
          if test "x$usable" = "xyes" ; then
 
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $GSM_CFLAGS"
    LIBS="$GSM_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GSM 06.10 audio codec usability" >&5
@@ -6595,8 +6596,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"; then :
 
@@ -6634,6 +6635,7 @@ $as_echo "$as_me: Using internal source for GSM 06.10 audio codec" >&6;}
 
 
 
+      LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$GSM_SYSTEM" = "xno" ; then
          if test "x$usable" = "xyes" ; then
             PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/GSM0610"
@@ -6663,6 +6665,7 @@ $as_echo "$as_me: Using internal source for GSM 06.10 audio codec" >&6;}
 
 
    if test -d "$PLUGIN_SRC_DIR/audio/iLBC" ; then
+                  OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    ILBC_SYSTEM="yes"
 
@@ -6834,8 +6837,8 @@ fi
 
          if test "x$usable" = "xyes" ; then
 
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $ILBC_CFLAGS"
    LIBS="$ILBC_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for iLBC audio codec usability" >&5
@@ -6864,8 +6867,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"; then :
 
@@ -6912,6 +6915,7 @@ $as_echo "$as_me: Using internal source for iLBC audio codec" >&6;}
 fi
 
 
+      LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$ILBC_SYSTEM" = "xno" ; then
          if test "x$usable" = "xyes" ; then
             PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/iLBC"
@@ -6941,6 +6945,7 @@ fi
 
 
    if test -d "$PLUGIN_SRC_DIR/audio/Speex" ; then
+                  OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    SPEEX_SYSTEM="yes"
 
@@ -7112,8 +7117,8 @@ fi
 
          if test "x$usable" = "xyes" ; then
 
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $SPEEX_CFLAGS"
    LIBS="$SPEEX_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Speex audio codec usability" >&5
@@ -7139,8 +7144,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"; then :
 
@@ -7186,6 +7191,7 @@ $as_echo "$as_me: Using internal source for Speex audio codec" >&6;}
 fi
 
 
+      LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$SPEEX_SYSTEM" = "xno" ; then
          if test "x$usable" = "xyes" ; then
             PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/Speex"
@@ -7215,6 +7221,7 @@ fi
 
 
    if test -d "$PLUGIN_SRC_DIR/audio/SBC/bluez_sbc" ; then
+                  OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    SBC_SYSTEM="yes"
 
@@ -7370,8 +7377,8 @@ fi
 
          if test "x$usable" = "xyes" ; then
 
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $SBC_CFLAGS"
    LIBS="$SBC_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Bluetooth SBC audio codec usability" >&5
@@ -7398,8 +7405,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"; then :
 
@@ -7429,6 +7436,7 @@ fi
 
 
 
+      LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$SBC_SYSTEM" = "xno" ; then
          if test "x$usable" = "xyes" ; then
             PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/SBC/bluez_sbc"
@@ -7458,6 +7466,7 @@ fi
 
 
    if test -d "$PLUGIN_SRC_DIR/audio/celt" ; then
+                  OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    CELT_SYSTEM="yes"
 
@@ -7595,8 +7604,8 @@ fi
 
          if test "x$usable" = "xyes" ; then
 
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $CELT_CFLAGS"
    LIBS="$CELT_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CELT audio codec usability" >&5
@@ -7622,8 +7631,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"; then :
 
@@ -7659,6 +7668,7 @@ fi
 fi
 
 
+      LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$CELT_SYSTEM" = "xno" ; then
          if test "x$usable" = "xyes" ; then
             PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/celt"
@@ -7691,6 +7701,7 @@ fi
 
 
    if test -d "$PLUGIN_SRC_DIR/audio/Opus" ; then
+                  OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    OPUS_SYSTEM="yes"
 
@@ -7862,8 +7873,8 @@ fi
 
          if test "x$usable" = "xyes" ; then
 
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $OPUS_CFLAGS"
    LIBS="$OPUS_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Opus Interactive Audio Codec usability" >&5
@@ -7889,8 +7900,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"; then :
 
@@ -7941,6 +7952,7 @@ $as_echo "$as_me: Using internal source for Opus Interactive Audio Codec" >&6;}
 fi
 
 
+      LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$OPUS_SYSTEM" = "xno" ; then
          if test "x$usable" = "xyes" ; then
             PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/Opus"
@@ -7997,6 +8009,8 @@ fi
       HAVE_H261="no (missing directory $PLUGIN_SRC_DIR/video/H.261-vic)"
    fi
 
+
+oldLIBS="$LIBS"
 
 
    LIBAVCODEC_SYSTEM="yes"
@@ -8153,8 +8167,8 @@ fi
 
          if test "x$usable" = "xyes" ; then
 
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $LIBAVCODEC_CFLAGS"
    LIBS="$LIBAVCODEC_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FFMPEG libavcodec library usability" >&5
@@ -8180,8 +8194,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"; then :
 
@@ -8364,8 +8378,8 @@ fi
 
          if test "x$usable" = "xyes" ; then
 
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $LIBAVUITL_CFLAGS"
    LIBS="$LIBAVUITL_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FFMPEG libavutil library usability" >&5
@@ -8391,8 +8405,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"; then :
 
@@ -8434,6 +8448,9 @@ else
 
 fi
 
+
+
+LIBS="$oldLIBS"
 
 
 HAVE_LIBAVCODEC_RTP_MODE=0
@@ -8619,6 +8636,7 @@ fi
 
 
    if test -d "$PLUGIN_SRC_DIR/video/H.264" ; then
+                  OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    X264_SYSTEM="yes"
 
@@ -8774,8 +8792,8 @@ fi
 
          if test "x$usable" = "xyes" ; then
 
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $X264_CFLAGS"
    LIBS="$X264_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for VideoLan x264 H.264 video codec usability" >&5
@@ -8814,8 +8832,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"; then :
 
@@ -8860,6 +8878,7 @@ fi
 fi
 
 
+      LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$X264_SYSTEM" = "xno" ; then
          if test "x$usable" = "xyes" ; then
             PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/H.264"
@@ -8895,6 +8914,7 @@ fi
 
 
    if test -d "$PLUGIN_SRC_DIR/video/VP8-WebM" ; then
+                  OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    VP8_SYSTEM="yes"
 
@@ -9050,8 +9070,8 @@ fi
 
          if test "x$usable" = "xyes" ; then
 
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $VP8_CFLAGS"
    LIBS="$VP8_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for VP8 (WebM) video codec usability" >&5
@@ -9081,8 +9101,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"; then :
 
@@ -9112,6 +9132,7 @@ fi
 
 
 
+      LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$VP8_SYSTEM" = "xno" ; then
          if test "x$usable" = "xyes" ; then
             PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/VP8-WebM"
@@ -9141,6 +9162,7 @@ fi
 
 
    if test -d "$PLUGIN_SRC_DIR/video/THEORA" ; then
+                  OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    THEORA_SYSTEM="yes"
 
@@ -9296,8 +9318,8 @@ fi
 
          if test "x$usable" = "xyes" ; then
 
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $THEORA_CFLAGS"
    LIBS="$THEORA_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Theora video codec usability" >&5
@@ -9327,8 +9349,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"; then :
 
@@ -9358,6 +9380,7 @@ fi
 
 
 
+      LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$THEORA_SYSTEM" = "xno" ; then
          if test "x$usable" = "xyes" ; then
             PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/THEORA"
@@ -9389,6 +9412,7 @@ fi
 
 
    if test -d "$PLUGIN_SRC_DIR/LID/VPB" ; then
+                  OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    VPB_SYSTEM="yes"
 
@@ -9544,8 +9568,8 @@ fi
 
          if test "x$usable" = "xyes" ; then
 
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $VPB_CFLAGS"
    LIBS="$VPB_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Voicetronics VPB telephony card usability" >&5
@@ -9572,8 +9596,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"; then :
 
@@ -9603,6 +9627,7 @@ fi
 
 
 
+      LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$VPB_SYSTEM" = "xno" ; then
          if test "x$usable" = "xyes" ; then
             PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/LID/VPB"
@@ -9634,6 +9659,7 @@ fi
 
 
    if test -d "$PLUGIN_SRC_DIR/fax/fax_spandsp" ; then
+                  OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    SPANDSP_SYSTEM="yes"
 
@@ -9789,8 +9815,8 @@ fi
 
          if test "x$usable" = "xyes" ; then
 
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $SPANDSP_CFLAGS"
    LIBS="$SPANDSP_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SpanDSP based fax usability" >&5
@@ -9820,8 +9846,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"; then :
 
@@ -9851,6 +9877,7 @@ fi
 
 
 
+      LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$SPANDSP_SYSTEM" = "xno" ; then
          if test "x$usable" = "xyes" ; then
             PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/fax/fax_spandsp"

@@ -6276,8 +6276,8 @@ fi
 
          if test "x$usable" = "xyes" ; then
 
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $SRTP_CFLAGS"
    LIBS="$SRTP_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SRTP protocol support usability" >&5
@@ -6306,8 +6306,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"; then :
 
@@ -6528,8 +6528,8 @@ fi
 
          if test "x$usable" = "xyes" ; then
 
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $ZRTP_CFLAGS"
    LIBS="$ZRTP_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ZRTP protocol support usability" >&5
@@ -6556,8 +6556,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"; then :
 
@@ -6768,8 +6768,8 @@ fi
 
          if test "x$usable" = "xyes" ; then
 
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $SPEEXDSP_CFLAGS"
    LIBS="$SPEEXDSP_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Speex DSP support usability" >&5
@@ -6795,8 +6795,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"; then :
 
@@ -6840,8 +6840,8 @@ $as_echo "#define OPAL_SYSTEM_SPEEX 1" >>confdefs.h
       fi
 
 
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $SPEEXDSP_CFLAGS"
    LIBS="$SPEEXDSP_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Speex noise reduction" >&5
@@ -6875,8 +6875,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"; then :
   $as_echo "#define OPAL_SPEEX_FLOAT_NOISE 1" >>confdefs.h
@@ -7050,8 +7050,8 @@ fi
 
          if test "x$usable" = "xyes" ; then
 
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $CAPI_CFLAGS"
    LIBS="$CAPI_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CAPI ISDN support usability" >&5
@@ -7078,8 +7078,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"; then :
 
@@ -7275,8 +7275,8 @@ fi
 
          if test "x$usable" = "xyes" ; then
 
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $DAHDI_CFLAGS"
    LIBS="$DAHDI_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DAHDI E1 support usability" >&5
@@ -7303,8 +7303,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"; then :
 
@@ -7542,8 +7542,8 @@ fi
 
          if test "x$usable" = "xyes" ; then
 
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $JAVA_CFLAGS"
    LIBS="$JAVA_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Java JNI support usability" >&5
@@ -7570,8 +7570,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"; then :
 
@@ -7767,8 +7767,8 @@ fi
 
          if test "x$usable" = "xyes" ; then
 
-   oldCPPFLAGS="$CPPFLAGS"
-   oldLIBS="$LIBS"
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $RUBY_CFLAGS"
    LIBS="$RUBY_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Ruby support usability" >&5
@@ -7795,8 +7795,8 @@ rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
 $as_echo "$usable" >&6; }
-   CPPFLAGS="$oldCPPFLAGS"
-   LIBS="$oldLIBS"
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
 
    if test "x$usable" = "xyes"; then :
 
