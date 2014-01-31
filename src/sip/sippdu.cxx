@@ -2496,15 +2496,15 @@ void SIP_PDU::Build(PString & pduStr, PINDEX & pduLen)
 }
 
 
-bool SIP_PDU::IsContentSDP() const
+bool SIP_PDU::IsContentSDP(bool emptyOK) const
 {
   if (m_entityBody.IsEmpty())
-    return false;
+    return emptyOK;
 
-  if (m_mime.GetContentEncoding().IsEmpty() && m_mime.GetContentType() == "application/sdp")
-    return true;
+  if (m_mime.GetContentEncoding().IsEmpty())
+    return m_mime.GetContentType() == "application/sdp";
 
-  PTRACE(3, "SIP\tUnsupported content encoding or content type.");
+  PTRACE(3, "SIP\tUnsupported content encoding.");
   return false;
 }
 
