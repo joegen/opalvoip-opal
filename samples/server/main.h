@@ -345,9 +345,19 @@ class RegistrationStatusPage : public BaseStatusPage
   public:
     RegistrationStatusPage(MyManager & mgr, const PHTTPAuthority & auth);
 
+#if OPAL_SKINNY
+    PStringArray GetSkinnyNames() const { return m_skinnyNames; }
+
+#endif
+
   protected:
+    virtual PString LoadText(PHTTPRequest & request);
     virtual const char * GetTitle() const;
     virtual void CreateContent(PHTML & html, const PStringToString & query) const;
+
+#if OPAL_SKINNY
+    PStringArray m_skinnyNames;
+#endif
 };
 
 #endif // OPAL_H323 | OPAL_SIP | OPAL_SKINNY

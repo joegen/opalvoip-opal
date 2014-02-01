@@ -247,7 +247,7 @@ OpalSkinnyEndPoint::PhoneDevice::PhoneDevice(OpalSkinnyEndPoint & ep, const PStr
 
 void OpalSkinnyEndPoint::PhoneDevice::PrintOn(ostream & strm) const
 {
-  strm << m_name << '@' << m_transport.GetRemoteAddress().GetHostName() << " - " << m_status;
+  strm << m_name << '@' << m_transport.GetRemoteAddress().GetHostName() << '\t' << m_status;
 }
 
 
@@ -259,8 +259,9 @@ bool OpalSkinnyEndPoint::PhoneDevice::Start(const PString & server)
     return false;
   }
 
+  m_status = "Registering";
   m_transport.AttachThread(new PThreadObj<PhoneDevice>(*this, &PhoneDevice::HandleTransport, false, "Skinny"));
-  return SendRegisterMsg();
+  return true;
 }
 
 
@@ -281,7 +282,7 @@ bool OpalSkinnyEndPoint::PhoneDevice::SendRegisterMsg()
   if (!SendSkinnyMsg(msg))
     return false;
   
-  PTRACE(4, "Sent registermessage for " << m_name << ", type=" << m_deviceType);
+  PTRACE(4, "Sent register message for " << m_name << ", type=" << m_deviceType);
   return true;
 }
 
@@ -371,6 +372,7 @@ void OpalSkinnyEndPoint::PhoneDevice::HandleTransport()
       switch (m_transport.GetErrorCode(PChannel::LastReadError)) {
         case PChannel::NoError:
           PTRACE(3, "Lost transport to " << m_transport);
+          m_status = "Lost transport";
         case PChannel::NotOpen:
           // Remote close of TCP
           for (;;) {
@@ -389,7 +391,8 @@ void OpalSkinnyEndPoint::PhoneDevice::HandleTransport()
           break;
 
         default :
-          PTRACE(2, "Server transport error: " << m_transport.GetErrorText(PChannel::LastReadError));
+          m_status = "Transport error: " + m_transport.GetErrorText(PChannel::LastReadError);
+          PTRACE(2, m_status);
           m_transport.Close();
       }
     }
