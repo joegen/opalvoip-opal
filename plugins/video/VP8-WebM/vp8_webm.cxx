@@ -715,6 +715,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
     vpx_codec_flags_t    m_flags;
     vpx_codec_iter_t     m_iterator;
     std::vector<uint8_t> m_fullFrame;
+    bool                 m_firstFrame;
     bool                 m_intraFrame;
     bool                 m_ignoreTillKeyFrame;
 
@@ -724,6 +725,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
       , m_iface(vpx_codec_vp8_dx())
       , m_flags(0)
       , m_iterator(NULL)
+      , m_firstFrame(true)
       , m_intraFrame(false)
       , m_ignoreTillKeyFrame(false)
     {
@@ -777,8 +779,8 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
 
       flags = m_intraFrame ? PluginCodec_ReturnCoderIFrame : 0;
 
-      if ((image = vpx_codec_get_frame(&m_codec, &m_iterator)) == NULL) {
-        /* Unless error concealment implementedm decoder has a problems with
+      if (m_firstFrame || (image = vpx_codec_get_frame(&m_codec, &m_iterator)) == NULL) {
+        /* Unless error concealment implemented, decoder has a problems with
            missing data in the frame and can gets it;s knickers thorougly
            twisted, so just ignore everything till next I-Frame. */
         if (BadDecode(flags,
@@ -839,6 +841,8 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
         m_iterator = NULL;
         if ((image = vpx_codec_get_frame(&m_codec, &m_iterator)) == NULL)
           return true;
+
+        m_firstFrame = false;
       }
 
       if (image->fmt != VPX_IMG_FMT_I420) {
