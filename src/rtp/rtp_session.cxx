@@ -2093,6 +2093,11 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr,
       PSTUNMessage message(framePtr, frameSize, ap);
       if (message.IsValid()) {
         m_stunServer->OnReceiveMessage(message, PSTUNServer::SocketInfo(&socket));
+        if (message.FindAttribute(PSTUNAttribute::USE_CANDIDATE) != NULL) {
+          PTRACE(4, "RTP\tSession " << m_sessionId << ", " << channelName << " remote address set from STUN to " << ap);
+          m_remoteAddress = ap.GetAddress();
+          (fromDataChannel ? m_remoteDataPort : m_remoteControlPort) = ap.GetPort();
+        }
         return e_IgnorePacket;
       }
     }
@@ -2101,7 +2106,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr,
     // it out from the first packet received.
     if (!m_remoteAddress.IsValid()) {
       m_remoteAddress = ap.GetAddress();
-      PTRACE(4, "RTP\tSession " << m_sessionId << ", set remote address from first " << channelName << " PDU from " << ap);
+      PTRACE(4, "RTP\tSession " << m_sessionId << ", " << channelName << " remote address set from first PDU to " << ap);
     }
     if (fromDataChannel) {
       if (m_remoteDataPort == 0)

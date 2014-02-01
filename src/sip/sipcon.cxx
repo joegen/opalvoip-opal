@@ -657,15 +657,6 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
   }
 
   OpalTransportAddress remoteMediaAddress = mediaDescription.GetMediaAddress();
-  OpalTransportAddress remoteControlAddress = mediaDescription.GetControlAddress();
-
-  PNatCandidateList candidates = mediaDescription.GetCandidates();
-  for (PNatCandidateList::iterator it = candidates.begin(); it != candidates.end(); ++it) {
-    if (it->m_type == PNatCandidate::HostType && it->m_protocol == "udp")
-      (it->m_component == PNatMethod::eComponent_RTCP ? remoteControlAddress : remoteMediaAddress)
-              = OpalTransportAddress(it->m_localTransportAddress, OpalTransportAddress::UdpPrefix());
-  }
-
   if (remoteMediaAddress.IsEmpty()) {
     PTRACE(2, "SIP\tReceived media description with no address for " << mediaType);
     remoteChanged = true;
@@ -681,21 +672,19 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
     rtpSession->SetExtensionHeader(mediaDescription.GetExtensionHeaders());
 
   // see if remote socket information has changed
-  if (!remoteMediaAddress.IsEmpty()) {
-    OpalTransportAddress oldRemoteMediaAddress = session->GetRemoteAddress();
-    bool firstTime = oldRemoteMediaAddress.IsEmpty();
-    remoteChanged = !firstTime && oldRemoteMediaAddress != remoteMediaAddress;
+  OpalTransportAddress oldRemoteMediaAddress = session->GetRemoteAddress();
+  bool firstTime = oldRemoteMediaAddress.IsEmpty();
+  remoteChanged = !firstTime && oldRemoteMediaAddress != remoteMediaAddress;
 
-    if (remoteChanged) {
-      PTRACE(3, "SIP\tRemote changed IP address: "<< oldRemoteMediaAddress << "!=" << remoteMediaAddress);
-      ((OpalRTPEndPoint &)endpoint).CheckEndLocalRTP(*this, rtpSession);
-    }
+  if (remoteChanged) {
+    PTRACE(3, "SIP\tRemote changed IP address: "<< oldRemoteMediaAddress << "!=" << remoteMediaAddress);
+    ((OpalRTPEndPoint &)endpoint).CheckEndLocalRTP(*this, rtpSession);
+  }
 
-    if (firstTime || remoteChanged) {
-      if (!session->SetRemoteAddress(remoteMediaAddress)) {
-        ReleaseMediaSession(sessionId);
-        return NULL;
-      }
+  if (firstTime || remoteChanged) {
+    if (!session->SetRemoteAddress(remoteMediaAddress)) {
+      ReleaseMediaSession(sessionId);
+      return NULL;
     }
   }
 
@@ -705,6 +694,7 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
     rtpSession->SetSinglePort();
   }
 
+  OpalTransportAddress remoteControlAddress = mediaDescription.GetControlAddress();
   if (!remoteControlAddress.IsEmpty())
     session->SetRemoteAddress(remoteControlAddress, false);
 
