@@ -164,6 +164,9 @@ RegistrationStatusPage::RegistrationStatusPage(MyManager & mgr, const PHTTPAutho
 
 PString RegistrationStatusPage::LoadText(PHTTPRequest & request)
 {
+#if OPAL_SIP
+  m_sipAoRs = m_manager.GetSIPEndPoint().GetRegistrations(true);
+#endif
 #if OPAL_SKINNY
   OpalSkinnyEndPoint * ep = m_manager.FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY);
   if (ep != NULL)
@@ -197,10 +200,11 @@ void RegistrationStatusPage::CreateContent(PHTML & html, const PStringToString &
 #endif // OPAL_H323
 
 #if OPAL_SIP
+       << PHTML::TableRow()
+       << PHTML::TableHeader(PHTML::NoWrap, "rowspan=<!--#macro SIPCount-->")
+       << " SIP Registrars "
        << "<!--#macrostart SIPRegistrationStatus-->"
            << PHTML::TableRow()
-           << PHTML::TableHeader(PHTML::NoWrap)
-           << " SIP Registrar "
            << PHTML::TableData(PHTML::NoWrap)
            << "<!--#status AoR-->"
            << PHTML::TableData(PHTML::NoWrap)
@@ -211,7 +215,7 @@ void RegistrationStatusPage::CreateContent(PHTML & html, const PStringToString &
 #if OPAL_SKINNY
        << PHTML::TableRow()
        << PHTML::TableHeader(PHTML::NoWrap, "rowspan=<!--#macro SkinnyCount-->")
-       << " SCCP Server "
+       << " SCCP Servers "
        << "<!--#macrostart SkinnyRegistrationStatus-->"
          << PHTML::TableRow()
          << PHTML::TableData(PHTML::NoWrap)
@@ -262,7 +266,17 @@ PCREATE_SERVICE_MACRO(H323RegistrationStatus, resource, P_EMPTY)
 #endif // OPAL_H323
 
 #if OPAL_SIP
-PCREATE_SERVICE_MACRO_BLOCK(SIPRegistrationStatus,resource,P_EMPTY,htmlBlock)
+PCREATE_SERVICE_MACRO(SIPCount, resource, P_EMPTY)
+{
+  RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
+  if (PAssertNULL(status) == NULL)
+    return PString::Empty();
+
+  return PString(status->GetAoRs().GetSize() + 1);
+}
+
+
+PCREATE_SERVICE_MACRO_BLOCK(SIPRegistrationStatus, resource, P_EMPTY, htmlBlock)
 {
   RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
   if (PAssertNULL(status) == NULL)
@@ -271,8 +285,8 @@ PCREATE_SERVICE_MACRO_BLOCK(SIPRegistrationStatus,resource,P_EMPTY,htmlBlock)
   PString substitution;
 
   SIPEndPoint & sip = status->m_manager.GetSIPEndPoint();
-  PStringList registrations = sip.GetRegistrations(true);
-  for (PStringList::iterator it = registrations.begin(); it != registrations.end(); ++it) {
+  const PStringList & registrations = status->GetAoRs();
+  for (PStringList::const_iterator it = registrations.begin(); it != registrations.end(); ++it) {
     // make a copy of the repeating html chunk
     PString insert = htmlBlock;
 
