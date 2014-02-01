@@ -345,9 +345,11 @@ class RegistrationStatusPage : public BaseStatusPage
   public:
     RegistrationStatusPage(MyManager & mgr, const PHTTPAuthority & auth);
 
+#if OPAL_SIP
+    PStringList GetAoRs() const { return m_sipAoRs; }
+#endif
 #if OPAL_SKINNY
     PStringArray GetSkinnyNames() const { return m_skinnyNames; }
-
 #endif
 
   protected:
@@ -355,6 +357,9 @@ class RegistrationStatusPage : public BaseStatusPage
     virtual const char * GetTitle() const;
     virtual void CreateContent(PHTML & html, const PStringToString & query) const;
 
+#if OPAL_SIP
+    PStringList m_sipAoRs;
+#endif
 #if OPAL_SKINNY
     PStringArray m_skinnyNames;
 #endif
