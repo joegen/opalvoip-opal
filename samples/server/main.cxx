@@ -550,7 +550,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
     OpalSkinnyEndPoint * ep = FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY);
     PString server = rsrc->AddStringField(SkinnyServerKey, 20, PString::Empty(), "Server for Skinny Client Control Protocol");
     PStringArray names = ep->GetPhoneDeviceNames();
-    names = rsrc->AddStringArrayField(SkinnyNamesKey, false, 15, names, "Max Streams for Skinny Client Control Protocol");
+    names = rsrc->AddStringArrayField(SkinnyNamesKey, false, 30, names, "Max Streams for Skinny Client Control Protocol");
     if (!server.IsEmpty()) {
       for (PINDEX i = 0; i < names.GetSize(); ++i) {
         PString name = names[i];

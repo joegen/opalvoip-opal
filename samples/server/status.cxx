@@ -162,6 +162,17 @@ RegistrationStatusPage::RegistrationStatusPage(MyManager & mgr, const PHTTPAutho
 }
 
 
+PString RegistrationStatusPage::LoadText(PHTTPRequest & request)
+{
+#if OPAL_SKINNY
+  OpalSkinnyEndPoint * ep = m_manager.FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY);
+  if (ep != NULL)
+    m_skinnyNames = ep->GetPhoneDeviceNames();
+#endif
+  return BaseStatusPage::LoadText(request);
+}
+
+
 const char * RegistrationStatusPage::GetTitle() const
 {
   return "OPAL Server Registration Status";
@@ -198,14 +209,15 @@ void RegistrationStatusPage::CreateContent(PHTML & html, const PStringToString &
 #endif // OPAL_SIP
 
 #if OPAL_SKINNY
-       << "<!--#macrostart SkinnyRegistrationStatus-->"
        << PHTML::TableRow()
-       << PHTML::TableHeader(PHTML::NoWrap)
-       << " Skinny Client "
-       << PHTML::TableData(PHTML::NoWrap)
-       << "<!--#status Name-->"
-       << PHTML::TableData(PHTML::NoWrap)
-       << "<!--#status Status-->"
+       << PHTML::TableHeader(PHTML::NoWrap, "rowspan=<!--#macro SkinnyCount-->")
+       << " SCCP Server "
+       << "<!--#macrostart SkinnyRegistrationStatus-->"
+         << PHTML::TableRow()
+         << PHTML::TableData(PHTML::NoWrap)
+         << "<!--#status Name-->"
+         << PHTML::TableData(PHTML::NoWrap)
+         << "<!--#status Status-->"
        << "<!--#macroend SkinnyRegistrationStatus-->"
 #endif // OPAL_SKINNY
        << PHTML::TableEnd();
@@ -282,6 +294,16 @@ PCREATE_SERVICE_MACRO_BLOCK(SIPRegistrationStatus,resource,P_EMPTY,htmlBlock)
 #endif // OPAL_SIP
 
 #if OPAL_SKINNY
+PCREATE_SERVICE_MACRO(SkinnyCount, resource, P_EMPTY)
+{
+  RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
+  if (PAssertNULL(status) == NULL)
+    return PString::Empty();
+
+  return PString(status->GetSkinnyNames().GetSize()+1);
+}
+
+
 PCREATE_SERVICE_MACRO_BLOCK(SkinnyRegistrationStatus, resource, P_EMPTY, htmlBlock)
 {
   RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
@@ -292,7 +314,7 @@ PCREATE_SERVICE_MACRO_BLOCK(SkinnyRegistrationStatus, resource, P_EMPTY, htmlBlo
 
   OpalSkinnyEndPoint * ep = status->m_manager.FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY);
   if (ep != NULL) {
-    PStringArray names = ep->GetPhoneDeviceNames();
+    const PStringArray & names = status->GetSkinnyNames();
     for (PINDEX i = 0; i < names.GetSize(); ++i) {
       OpalSkinnyEndPoint::PhoneDevice * phoneDevice = ep->GetPhoneDevice(names[i]);
       if (phoneDevice != NULL) {
@@ -302,12 +324,16 @@ PCREATE_SERVICE_MACRO_BLOCK(SkinnyRegistrationStatus, resource, P_EMPTY, htmlBlo
         PStringStream str;
         str << *phoneDevice;
         PString name, status;
-        str.Split('-', name, status);
+        str.Split('\t', name, status);
         PServiceHTML::SpliceMacro(insert, "status Name", name);
         PServiceHTML::SpliceMacro(insert, "status Status", status);
 
         // Then put it into the page, moving insertion point along after it.
         substitution += insert;
+      }
+      else {
+        PServiceHTML::SpliceMacro(substitution, "status Name", names[i]);
+        PServiceHTML::SpliceMacro(substitution, "status Status", "Unregistered");
       }
     }
   }
