@@ -322,7 +322,7 @@ AC_DEFUN([MY_VERSION_FILE],[
    AC_DEFINE_UNQUOTED([$2[_BUILD]],   [${build}], [Build number])
    AC_DEFINE_UNQUOTED([$2[_VERSION]], ["$version"],[PTLib version])
 
-   AC_MSG_NOTICE("$2 version is $version")
+   AC_MSG_NOTICE([$2 version is $version])
 ])
 
 
@@ -610,7 +610,7 @@ fi
 
 target=${target_os}_${target_cpu}
 
-AC_MSG_NOTICE([using \"$target_os\" release \"$target_release\" on \"$target_cpu\"])
+AC_MSG_NOTICE([Platform: \"$target_os\" release \"$target_release\" on \"$target_cpu\"])
 
 
 dnl add additional information for the debugger to ensure the user can indeed
