@@ -2295,10 +2295,6 @@ void OpalManagerCLI::CmdSilenceDetect(PCLI::Arguments & args, P_INT_PTR)
   ostream & out = args.GetContext();
   out << "Silence Detect: ";
   switch (params.m_mode) {
-    case OpalSilenceDetector::NoSilenceDetection :
-      out << "OFF";
-      break;
-
     case OpalSilenceDetector::FixedSilenceDetection:
       out << "FIXED at " << params.m_threshold;
       break;
@@ -2308,6 +2304,10 @@ void OpalManagerCLI::CmdSilenceDetect(PCLI::Arguments & args, P_INT_PTR)
              "period=" << params.m_adaptivePeriod << ", "
              "signal deadband=" << params.m_signalDeadband << ", "
              "silence deadband=" << params.m_silenceDeadband;
+      break;
+
+    default :
+      out << "OFF";
   }
   out << endl;
 }
