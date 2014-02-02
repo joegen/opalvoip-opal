@@ -29,6 +29,9 @@ BASENAME := speex
 SRCDIR   := $(CURDIR)/libspeex
 SOURCES  := $(CURDIR)/speexcodec.cxx 
 
+PLUGIN_CPPFLAGS = $(SPEEX_CFLAGS)
+PLUGIN_LIBS     = $(SPEEX_LIBS)
+
 PLUGIN_SYSTEM  = $(SPEEX_SYSTEM)
 LOCAL_SOURCES := $(SRCDIR)/bits.c \
                  $(SRCDIR)/cb_search.c \
