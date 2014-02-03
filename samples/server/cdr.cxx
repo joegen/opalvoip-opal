@@ -77,8 +77,6 @@ static struct
   { PVarType::VarInt32,           0, "Bandwidth"                    } // kbps
 };
 
-static const PConstString CDRDateFormat("yyyy-MM-dd hh:mm:ss");
-
 
 static PString GetDefaultTextHeadings()
 {
@@ -430,14 +428,14 @@ void CallDetailRecord::OutputText(ostream & strm, const PString & format) const
             strm << m_GUID;
             break;
           case StartTime:
-            strm << m_StartTime.AsString(CDRDateFormat);
+            strm << m_StartTime.AsString(PTime::LoggingFormat);
             break;
           case ConnectTime:
             if (m_ConnectTime.IsValid())
-              strm << m_ConnectTime.AsString(CDRDateFormat);
+              strm << m_ConnectTime.AsString(PTime::LoggingFormat);
             break;
           case EndTime:
-            strm << m_EndTime.AsString(CDRDateFormat);
+            strm << m_EndTime.AsString(PTime::LoggingFormat);
             break;
           case CallState:
             if (m_CallState != CallCompleted)
@@ -676,7 +674,7 @@ const char * CDRListPage::GetTitle() const
 
 void CDRListPage::CreateContent(PHTML & html, const PStringToString &) const
 {
-  html << PHTML::TableStart("border=1")
+  html << PHTML::TableStart(PHTML::Border1, PHTML::CellPad4)
        << PHTML::TableRow()
        << PHTML::TableHeader() << "Call&nbsp;Identifier"
        << PHTML::TableHeader() << "Originator"
@@ -735,7 +733,7 @@ void CDRPage::CreateContent(PHTML & html, const PStringToString & query) const
 
 void CallDetailRecord::OutputDetailedHTML(PHTML & html) const
 {
-  html << PHTML::TableStart("border=1");
+  html << PHTML::TableStart(PHTML::Border1, PHTML::CellPad4);
 
   for (MyCall::FieldCodes f = MyCall::BeginFieldCodes; f < MyCall::EndFieldCodes; ++f) {
     html << PHTML::TableRow()
