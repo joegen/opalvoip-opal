@@ -363,42 +363,42 @@ class OpalManager_C : public OpalManager
 };
 
 OpalManager_C::HandlerFunc OpalManager_C::m_handlers[OpalMessageTypeCount] = {
-  NULL, // OpalIndCommandError
-  &OpalManager_C::HandleSetGeneral,
-  &OpalManager_C::HandleSetProtocol,
-  &OpalManager_C::HandleRegistration,
-  NULL, // OpalIndRegistration
-  &OpalManager_C::HandleSetUpCall,
-  NULL, // OpalIndIncomingCall
-  &OpalManager_C::HandleAnswerCall,
-  &OpalManager_C::HandleClearCall,
-  NULL, // OpalIndAlerting
-  NULL, // OpalIndEstablished
-  NULL, // OpalIndUserInput
-  NULL, // OpalIndCallCleared
-  &OpalManager_C::HandleHoldCall,
-  &OpalManager_C::HandleRetrieveCall,
-  &OpalManager_C::HandleTransferCall,
-  &OpalManager_C::HandleUserInput,
-  NULL, // OpalIndMessageWaiting
-  NULL, // OpalIndMediaStream
-  &OpalManager_C::HandleMediaStream,
-  &OpalManager_C::HandleSetUserData,
-  NULL, // OpalIndLineAppearance
-  &OpalManager_C::HandleStartRecording,
-  &OpalManager_C::HandleStopRecording,
-  NULL, // OpalIndProceeding
-  &OpalManager_C::HandleAlerting,
-  NULL, // OpalIndOnHold
-  NULL, // OpalIndOffHold
-  NULL, // OpalIndTransferCall
-  NULL, // OpalIndCompletedIVR
-  &OpalManager_C::HandleAuthorisePresence,
-  &OpalManager_C::HandleSubscribePresence,
-  &OpalManager_C::HandleSetLocalPresence,
-  NULL, // OpalIndPresenceChange
-  &OpalManager_C::HandleSendIM,
-  NULL, // OpalIndReceiveIM
+  NULL,                                     // OpalIndCommandError
+  &OpalManager_C::HandleSetGeneral,         // OpalCmdSetGeneralParameters
+  &OpalManager_C::HandleSetProtocol,        // OpalCmdSetProtocolParameters
+  &OpalManager_C::HandleRegistration,       // OpalCmdRegistration
+  NULL,                                     // OpalIndRegistration
+  &OpalManager_C::HandleSetUpCall,          // OpalCmdSetUpCall
+  NULL,                                     // OpalIndIncomingCall
+  &OpalManager_C::HandleAnswerCall,         // OpalCmdAnswerCall
+  &OpalManager_C::HandleClearCall,          // OpalCmdClearCall
+  NULL,                                     // OpalIndAlerting
+  NULL,                                     // OpalIndEstablished
+  NULL,                                     // OpalIndUserInput
+  NULL,                                     // OpalIndCallCleared
+  &OpalManager_C::HandleHoldCall,           // OpalCmdHoldCall
+  &OpalManager_C::HandleRetrieveCall,       // OpalCmdRetrieveCall
+  &OpalManager_C::HandleTransferCall,       // OpalCmdTransferCall
+  &OpalManager_C::HandleUserInput,          // OpalCmdUserInput
+  NULL,                                     // OpalIndMessageWaiting
+  NULL,                                     // OpalIndMediaStream
+  &OpalManager_C::HandleMediaStream,        // OpalCmdMediaStream
+  &OpalManager_C::HandleSetUserData,        // OpalCmdSetUserData
+  NULL,                                     // OpalIndLineAppearance
+  &OpalManager_C::HandleStartRecording,     // OpalCmdStartRecording
+  &OpalManager_C::HandleStopRecording,      // OpalCmdStopRecording
+  NULL,                                     // OpalIndProceeding
+  &OpalManager_C::HandleAlerting,           // OpalCmdAlerting
+  NULL,                                     // OpalIndOnHold
+  NULL,                                     // OpalIndOffHold
+  NULL,                                     // OpalIndTransferCall
+  NULL,                                     // OpalIndCompletedIVR
+  &OpalManager_C::HandleAuthorisePresence,  // OpalCmdAuthorisePresence
+  &OpalManager_C::HandleSubscribePresence,  // OpalCmdSubscribePresence
+  &OpalManager_C::HandleSetLocalPresence,   // OpalCmdSetLocalPresence
+  NULL,                                     // OpalIndPresenceChange
+  &OpalManager_C::HandleSendIM,             // OpalCmdSendIM
+  NULL,                                     // OpalIndReceiveIM
 };
 
 
