@@ -118,6 +118,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
 {
   localAliasNames.AppendString(defaultLocalPartyName);
 
+  m_connectionsByCallId.DisallowDeleteObjects();
   secondaryConnectionsActive.DisallowDeleteObjects();
 
   manager.AttachEndPoint(this, "h323s");
@@ -639,6 +640,13 @@ PStringList H323EndPoint::GetAvailableStringOptions() const
 }
 
 
+void H323EndPoint::OnReleased(OpalConnection & connection)
+{
+  m_connectionsByCallId.RemoveAt(connection.GetIdentifier());
+  OpalRTPEndPoint::OnReleased(connection);
+}
+
+
 void H323EndPoint::NewIncomingConnection(OpalListener &, const OpalTransportPtr & transport)
 {
   if (transport != NULL)
@@ -664,8 +672,7 @@ void H323EndPoint::InternalNewIncomingConnection(const OpalTransportPtr & transp
   PString token = transport->GetRemoteAddress();
   token.sprintf("/%u", callReference);
 
-  PSafePtr<H323Connection> connection = FindConnectionWithLock(token);
-
+  PSafePtr<H323Connection> connection = PSafePtrCast<OpalConnection, H323Connection>(GetConnectionWithLock(token, PSafeReadWrite));
   if (connection == NULL) {
     // Get new instance of a call, abort if none created
     OpalCall * call = manager.InternalCreateCall();
@@ -684,6 +691,7 @@ void H323EndPoint::InternalNewIncomingConnection(const OpalTransportPtr & transp
     connection->AttachSignalChannel(token, transport, true);
 
   if (AddConnection(connection) != NULL && connection->HandleSignalPDU(pdu)) {
+    m_connectionsByCallId.SetAt(connection->GetIdentifier(), connection);
     // All subsequent PDU's should wait forever
     transport->SetReadTimeout(PMaxTimeInterval);
     connection->HandleSignallingChannel();
@@ -735,11 +743,9 @@ PBoolean H323EndPoint::SetupTransfer(const PString & oldToken,
                                  void * userData)
 {
   // Make a new connection
-  PSafePtr<OpalConnection> otherConnection =
-    GetConnectionWithLock(oldToken, PSafeReference);
-  if (otherConnection == NULL) {
+  PSafePtr<OpalConnection> otherConnection = GetConnectionWithLock(oldToken, PSafeReference);
+  if (otherConnection == NULL)
     return false;
-  }
 
   OpalCall & call = otherConnection->GetCall();
 
@@ -823,6 +829,7 @@ H323Connection * H323EndPoint::InternalMakeCall(OpalCall & call,
   // See if we are starting an outgoing connection as first in a call
   if (call.GetConnection(0) == (OpalConnection*)connection || !existingToken.IsEmpty())
     connection->SetUpConnection();
+  m_connectionsByCallId.SetAt(connection->GetIdentifier(), connection);
 
   return connection;
 }
@@ -1089,19 +1096,10 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
 PSafePtr<H323Connection> H323EndPoint::FindConnectionWithLock(const PString & token, PSafetyMode mode)
 {
   PSafePtr<H323Connection> connection = PSafePtrCast<OpalConnection, H323Connection>(GetConnectionWithLock(token, mode));
-  if (connection != NULL)
-    return connection;
+  if (connection == NULL)
+    connection = m_connectionsByCallId.FindWithLock(token, mode);
 
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReference); conn != NULL; ++conn) {
-    connection = PSafePtrCast<OpalConnection, H323Connection>(conn);
-    if (  connection != NULL &&
-          connection.SetSafetyMode(PSafeReadOnly) &&
-         (connection->GetCallIdentifier().AsString() == token ||
-          connection->GetConferenceIdentifier().AsString() == token))
-      return connection.SetSafetyMode(mode) ? connection : NULL;
-  }
-
-  return NULL;
+  return connection;
 }
 
 

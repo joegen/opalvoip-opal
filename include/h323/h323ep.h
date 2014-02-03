@@ -150,6 +150,28 @@ class H323EndPoint : public OpalRTPEndPoint
       OpalConnection::StringOptions * stringOptions = NULL
     );
 
+    /**A call back function whenever a connection is broken.
+       This function can do any internal cleaning up and waiting on background
+       threads that may be using the connection object.
+
+       Note that there is not a one to one relationship with the
+       OnEstablishedConnection() function. This function may be called without
+       that function being called. For example if MakeConnection() was used
+       but the call never completed.
+
+       Classes that override this function should make sure they call the
+       ancestor version for correct operation.
+
+       An application will not typically call this function as it is used by
+       the OpalManager during a release of the connection.
+
+       The default behaviour removes the connection from the internal database
+       and calls the OpalManager function of the same name.
+      */
+    virtual void OnReleased(
+      OpalConnection & connection   ///<  Connection that was established
+    );
+
     /** Get available string option names.
     */
     virtual PStringList GetAvailableStringOptions() const;
@@ -1423,6 +1445,8 @@ class H323EndPoint : public OpalRTPEndPoint
     PTimeInterval callIntrusionT6;
 
     // Dynamic variables
+    PSafeDictionary<PString, H323Connection> m_connectionsByCallId;
+
     mutable H323Capabilities capabilities;
 
     PList<H323Gatekeeper> m_gatekeepers;
