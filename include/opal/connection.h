@@ -69,7 +69,11 @@ class PURL;
 #define OPAL_MAKE_URL_PARAM(opt)        ";" OPAL_URL_PARAM_PREFIX opt
 #define OPAL_MAKE_URL_PARAM2(opt, val)  OPAL_MAKE_URL_PARAM(opt) "=" val
 
-#define OPAL_OPT_AUTO_START           "AutoStart"             ///< String option for auto-started media types
+#define OPAL_OPT_AUTO_START           "AutoStart"             /**< String option for auto-started media types. This is a '\n' separated list
+                                                                   of entries of the form type:mode, type is "ausio", "video", "fax" etc. The
+                                                                   mode is "inactive", "sendonly", "recvonly", "sendrecv" or "no". "yes" is a
+                                                                   synonym for "sendrecv".
+                                                                */
 #define OPAL_OPT_CALL_IDENTIFIER      "Call-Identifier"       ///< String option to override generated call identifier
 #define OPAL_OPT_CALLING_PARTY_URL    "Calling-Party-URL"     ///< String option to set outgoing local URL
 #define OPAL_OPT_CALLING_PARTY_NUMBER "Calling-Party-Number"  ///< String option to set outgoing local number, deprecated, same as OPAL_OPT_CALLING_PARTY_NAME
