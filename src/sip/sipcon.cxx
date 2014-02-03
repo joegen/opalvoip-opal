@@ -1984,9 +1984,16 @@ bool SIPConnection::HoldRemote(bool placeOnHold)
 void SIPConnection::RetryHoldRemote(bool placeOnHold)
 {
   HoldState progressState = placeOnHold ? eRetrieveInProgress : eHoldInProgress;
+  PSimpleTimer failsafe(m_endpoint.GetNonInviteTimeout());
   while (m_holdToRemote == progressState) {
     PThread::Sleep(100);
-      PTRACE(4, "SIP\tHold " << (placeOnHold ? "on" : "off") << " request still in progress for " << *this);
+
+    if (IsReleased() || failsafe.HasExpired()) {
+      PTRACE(3, "SIP\tHold " << (placeOnHold ? "on" : "off") << " request failed for " << *this);
+      return;
+    }
+
+    PTRACE(5, "SIP\tHold " << (placeOnHold ? "on" : "off") << " request still in progress for " << *this);
   }
 
   HoldRemote(placeOnHold);
