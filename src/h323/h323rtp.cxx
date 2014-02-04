@@ -231,7 +231,7 @@ PBoolean H323_RTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelParameters
       ap.SetPort(ap.GetPort() & 0xfffe);
       OpalTransportAddress mediaAddress(ap, controlAddress.GetProto());
       m_session->SetRemoteAddress(mediaAddress);
-      PTRACE(2, "RTP_UDP\tNo mediaChannel, using " << mediaAddress << " for " << *this);
+      PTRACE(3, "RTP_UDP\tNo mediaChannel, using " << mediaAddress << " for " << *this);
     }
   }
 

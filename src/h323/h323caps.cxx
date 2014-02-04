@@ -2014,7 +2014,7 @@ bool H235SecurityAlgorithmCapability::OnSendingPDU(H245_EncryptionSync & encrypt
 
     v3data.IncludeOptionalField(H235_V3KeySyncMaterial::e_encryptedSessionKey);
     if (!enc.Process(keys.front().GetCipherKey(), v3data.m_encryptedSessionKey.GetWritableValue())) {
-      PTRACE(3, "H323\tNot adding H.235 encryption key as encryption failed.");
+      PTRACE(2, "H323\tNot adding H.235 encryption key as encryption failed.");
       return false;
     }
   }
@@ -2029,7 +2029,7 @@ bool H235SecurityAlgorithmCapability::OnSendingPDU(H245_EncryptionSync & encrypt
     eksm.m_clearData.EncodeSubType(ksm);
 
     if (!enc.Process(eksm.m_clearData.GetValue(), eksm.m_encryptedData.GetWritableValue())) {
-      PTRACE(3, "H323\tNot adding H.235 encryption key as encryption failed.");
+      PTRACE(2, "H323\tNot adding H.235 encryption key as encryption failed.");
       return false;
     }
   }
@@ -2068,7 +2068,7 @@ bool H235SecurityAlgorithmCapability::OnReceivedPDU(const H245_EncryptionSync & 
         return false;
 
       if (!dec.Process(eksm.m_encryptedData.GetValue(), const_cast<H235_EncodedKeySyncMaterial &>(eksm.m_clearData).GetWritableValue())) {
-        PTRACE(3, "H323\tH.235 encryption key decryption failed.");
+        PTRACE(2, "H323\tH.235 encryption key decryption failed.");
         return false;
       }
 
@@ -2112,7 +2112,7 @@ bool H235SecurityAlgorithmCapability::OnReceivedPDU(const H245_EncryptionSync & 
         return false;
 
       if (!dec.Process(v3data.m_encryptedSessionKey.GetValue(), sessionKey)) {
-        PTRACE(3, "H323\tH.235 encryption key decryption failed.");
+        PTRACE(2, "H323\tH.235 encryption key decryption failed.");
         return false;
       }
 
@@ -3029,8 +3029,9 @@ H323Capabilities & H323Capabilities::operator=(const H323Capabilities & original
 {
   RemoveAll();
 
+  table.SetSize(original.GetSize());
   for (PINDEX i = 0; i < original.GetSize(); i++)
-    Copy(original[i]);
+    table.SetAt(i, original[i].CloneAs<H323Capability>());
 
   PINDEX outerSize = original.set.GetSize();
   set.SetSize(outerSize);
@@ -3039,8 +3040,15 @@ H323Capabilities & H323Capabilities::operator=(const H323Capabilities & original
     set[outer].SetSize(middleSize);
     for (PINDEX middle = 0; middle < middleSize; middle++) {
       PINDEX innerSize = original.set[outer][middle].GetSize();
-      for (PINDEX inner = 0; inner < innerSize; inner++)
-        set[outer][middle].Append(FindCapability(original.set[outer][middle][inner].GetCapabilityNumber()));
+      for (PINDEX inner = 0; inner < innerSize; inner++) {
+        unsigned capabilityNumber = original.set[outer][middle][inner].GetCapabilityNumber();
+        for (PINDEX i = 0; i < table.GetSize(); i++) {
+          if (table[i].GetCapabilityNumber() == capabilityNumber) {
+            set[outer][middle].Append(&table[i]);
+            break;
+          }
+        }
+      }
     }
   }
 
@@ -3209,7 +3217,7 @@ void H323Capabilities::Add(H323Capability * capability)
 
   PTRACE_CONTEXT_ID_TO(capability);
 
-  PTRACE(3, "H323\tAdded capability: " << *capability);
+  PTRACE(4, "H323\tAdded capability: " << *capability);
 }
 
 
@@ -3219,7 +3227,7 @@ H323Capability * H323Capabilities::Copy(const H323Capability & capability)
   newCapability->SetCapabilityNumber(MergeCapabilityNumber(table, capability.GetCapabilityNumber()));
   table.Append(newCapability);
 
-  PTRACE(3, "H323\tAdded capability: " << *newCapability);
+  PTRACE(4, "H323\tAdded capability: " << *newCapability);
   return newCapability;
 }
 
@@ -3229,7 +3237,7 @@ void H323Capabilities::Remove(H323Capability * capability)
   if (capability == NULL)
     return;
 
-  PTRACE(3, "H323\tRemoving capability: " << *capability);
+  PTRACE(4, "H323\tRemoving capability: " << *capability);
 
   unsigned capabilityNumber = capability->GetCapabilityNumber();
 
@@ -3284,7 +3292,7 @@ H323Capability * H323Capabilities::FindCapability(unsigned capabilityNumber) con
 {
   for (PINDEX i = 0; i < table.GetSize(); i++) {
     if (table[i].GetCapabilityNumber() == capabilityNumber) {
-      PTRACE(3, "H323\tFound capability: " << table[i]);
+      PTRACE(4, "H323\tFound capability: " << table[i]);
       return &table[i];
     }
   }
@@ -3305,7 +3313,7 @@ H323Capability * H323Capabilities::FindCapability(const PString & formatName,
     if ((exact ? (str == formatName) : MatchWildcard(str, wildcard)) &&
           (direction == H323Capability::e_Unknown ||
            table[i].GetCapabilityDirection() == direction)) {
-      PTRACE(3, "H323\tFound capability: " << table[i]);
+      PTRACE(4, "H323\tFound capability: " << table[i]);
       return &table[i];
     }
   }
@@ -3320,7 +3328,7 @@ H323Capability * H323Capabilities::FindCapability(
 {
   for (PINDEX i = 0; i < table.GetSize(); i++) {
     if (table[i].GetCapabilityDirection() == direction) {
-      PTRACE(3, "H323\tFound capability: " << table[i]);
+      PTRACE(4, "H323\tFound capability: " << table[i]);
       return &table[i];
     }
   }
@@ -3335,7 +3343,7 @@ H323Capability * H323Capabilities::FindCapability(const H323Capability & capabil
 
   for (PINDEX i = 0; i < table.GetSize(); i++) {
     if (table[i] == capability) {
-      PTRACE(3, "H323\tFound capability: " << table[i]);
+      PTRACE(4, "H323\tFound capability: " << table[i]);
       return &table[i];
     }
   }
@@ -3647,7 +3655,7 @@ H323Capability * H323Capabilities::FindCapability(H323Capability::MainTypes main
     H323Capability & capability = table[i];
     if (capability.GetMainType() == mainType &&
                         (subType == UINT_MAX || capability.GetSubType() == subType)) {
-      PTRACE(3, "H323\tFound capability: " << capability);
+      PTRACE(4, "H323\tFound capability: " << capability);
       return &capability;
     }
   }
@@ -3750,8 +3758,7 @@ PBoolean H323Capabilities::Merge(const H323Capabilities & newCaps)
     }
   }
 
-  PTRACE_IF(4, !table.IsEmpty(), "H323\tCapability merge result:\n" << *this);
-  PTRACE(3, "H323\tReceived capability set, is " << (table.IsEmpty() ? "rejected" : "accepted"));
+  PTRACE(3, "H323\tReceived capability set, is " << (table.IsEmpty() ? "rejected" : "accepted") << ", merge result:\n" << *this);
   return !table.IsEmpty();
 }
 
