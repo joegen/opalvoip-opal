@@ -1041,7 +1041,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
 
     bool localCapsEmpty = localCapabilities.GetSize() == 0;
     if (localCapsEmpty)
-      localCapabilities.AddAllCapabilities(0, 0, "*");
+      localCapabilities = endpoint.GetCapabilities();
 
     // Extract capabilities from the fast start OpenLogicalChannel structures
     PINDEX i;
