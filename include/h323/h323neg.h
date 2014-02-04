@@ -162,7 +162,8 @@ class H245NegLogicalChannel : public H245Negotiator
     virtual PBoolean Open(
       const H323Capability & capability,
       unsigned sessionID,
-      unsigned replacementFor = 0
+      unsigned replacementFor = 0,
+      OpalMediaStreamPtr mediaStream = NULL
     );
     virtual PBoolean Close();
     virtual PBoolean HandleOpen(const H245_OpenLogicalChannel & pdu);
@@ -226,7 +227,8 @@ class H245NegLogicalChannels : public H245Negotiator
     virtual PBoolean Open(
       const H323Capability & capability,
       unsigned sessionID,
-      unsigned replacementFor = 0
+      unsigned replacementFor = 0,
+      OpalMediaStreamPtr mediaStream = NULL
     );
     virtual PBoolean Close(unsigned channelNumber, PBoolean fromRemote);
     virtual PBoolean HandleOpen(const H245_OpenLogicalChannel & pdu);

@@ -200,6 +200,8 @@ H323Connection::H323Connection(OpalCall & call,
       break;
   }
 
+  m_conflictingChannels.DisallowDeleteObjects();
+
   masterSlaveDeterminationProcedure = new H245NegMasterSlaveDetermination(endpoint, *this);
   capabilityExchangeProcedure = new H245NegTerminalCapabilitySet(endpoint, *this);
   logicalChannels = new H245NegLogicalChannels(endpoint, *this);
@@ -4515,6 +4517,12 @@ PBoolean H323Connection::OnOpenLogicalChannel(const H245_OpenLogicalChannel & op
       ackPDU.IncludeOptionalField(H245_OpenLogicalChannelAck::e_genericInformation);
   }
 
+  // See if we got a master/slave conflict OLC reject prior to their OLC
+  if (m_conflictingChannels.Contains(sessionID)) {
+    OnConflictingLogicalChannel(channel);
+    return true;
+  }
+
   // Detect symmetry issues
   H323Capability * capability = remoteCapabilities.FindCapability(channel.GetCapability());
   if (capability == NULL || capability->GetCapabilityDirection() != H323Capability::e_ReceiveAndTransmit) {
@@ -4526,7 +4534,7 @@ PBoolean H323Connection::OnOpenLogicalChannel(const H245_OpenLogicalChannel & op
   // Yep are symmetrical, see if opening something different
   H323Channel * otherChannel = FindChannel(sessionID, false);
   if (otherChannel == NULL)
-    return true; // No other channel so symmtery yet to raise it's ugly head
+    return true; // No other channel so symmetry yet to raise it's ugly head
 
   if (channel.GetCapability() == otherChannel->GetCapability())
     return true; // Is symmetric, all OK!
@@ -4547,7 +4555,7 @@ PBoolean H323Connection::OnOpenLogicalChannel(const H245_OpenLogicalChannel & op
 
 void H323Connection::OnReceiveOLCGenericInformation(unsigned sessionID, const H245_ArrayOf_GenericInformation & infos, bool isAck) const
 {
-  PTRACE(4,"Handling Generic OLC Session " << sessionID);
+  PTRACE(4, "H245\tHandling Generic OLC Session " << sessionID);
 #if OPAL_H460
   if (m_features != NULL) {
     for (PINDEX i = 0; i < infos.GetSize(); i++) {
@@ -4571,7 +4579,7 @@ bool H323Connection::OnSendingOLCGenericInformation(unsigned sessionID,
                                                     H245_ArrayOf_GenericInformation & info,
                                                     bool isAck) const
 {
-  PTRACE(4,"Set Generic " << (isAck ? "OLCack" : "OLC") << " Session " << sessionID );
+  PTRACE(4, "H245\tSet Generic " << (isAck ? "OLCack" : "OLC") << " Session " << sessionID );
 
 #if OPAL_H460
   if (m_features != NULL) {
@@ -4600,9 +4608,9 @@ bool H323Connection::OnSendingOLCGenericInformation(unsigned sessionID,
 
 PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingChannel)
 {
-  unsigned session = conflictingChannel.GetSessionID();
+  unsigned sessionID = conflictingChannel.GetSessionID();
   PTRACE(2, "H323\tLogical channel " << conflictingChannel
-         << " conflict on session " << session
+         << " conflict on session " << sessionID
          << ", we are " << (IsH245Master() ? "master" : " slave")
          << ", codec: " << conflictingChannel.GetCapability());
 
@@ -4622,43 +4630,61 @@ PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingCh
       some channel. Possibly closing channels as master has precedence.
    */
 
-  PBoolean fromRemote = conflictingChannel.GetNumber().IsFromRemote();
-  H323Channel * channel = FindChannel(session, !fromRemote);
-  if (channel == NULL) {
-    PTRACE(1, "H323\tCould not resolve conflict, no reverse channel.");
-    return false;
-  }
+  OpalMediaStreamPtr mediaStream = m_conflictingChannels.FindWithLock(sessionID, PSafeReference);
+  bool fromRemote = conflictingChannel.GetNumber().IsFromRemote();
+  H323Channel * otherChannel = FindChannel(sessionID, !fromRemote);
+  H323Capability * capability;
 
-  if (!fromRemote) {
-    // close the source media stream so it will be re-established
-    OpalMediaStreamPtr stream = conflictingChannel.GetMediaStream();
-    if (stream != NULL) {
-      OpalMediaPatchPtr patch = stream->GetPatch();
-      if (patch != NULL)
-        patch->GetSource().Close();
+  if (fromRemote) {
+    if (otherChannel != NULL) {
+      if (mediaStream != NULL) {
+        PTRACE(1, "H323\tInvalid master/slave conflict resolution, already have conflicting channel info");
+        m_conflictingChannels.RemoveAt(sessionID);
+      }
+
+      mediaStream = otherChannel->GetMediaStream();
+      otherChannel->SetMediaStream(NULL);
+      otherChannel->Close();
+    }
+    else {
+      if (mediaStream == NULL) {
+        // The only way to get in here is some pathological cases when releasing
+        // call in the middle of the conflict negotiation
+        PTRACE(1, "H323\tInvalid master/slave conflict resolution, no conflicting channel");
+        return false;
+      }
+    }
+
+    capability = remoteCapabilities.FindCapability(conflictingChannel.GetCapability());
+  }
+  else {
+    if (mediaStream != NULL) {
+      // The only way to get in here is if we had two OLC's running at the same
+      // time and both were rejected. This should be impossible.
+      PTRACE(1, "H323\tInvalid master/slave conflict resolution, simultaneous OLC?");
+      m_conflictingChannels.RemoveAt(sessionID);
+    }
+
+    mediaStream = conflictingChannel.GetMediaStream();
+    conflictingChannel.SetMediaStream(NULL);
+
+    // From OLC reject, but don't have remote OLC yet, remember ...
+    if (otherChannel == NULL) {
+      PTRACE(1, "H323\tCannot resolve conflict yet, no reverse channel.");
+      m_conflictingChannels.SetAt(sessionID, mediaStream);
+      return true;
     }
 
     conflictingChannel.Close();
-    H323Capability * capability = remoteCapabilities.FindCapability(channel->GetCapability());
-    if (capability == NULL) {
-      PTRACE(1, "H323\tCould not resolve conflict, capability not available on remote.");
-      return false;
-    }
-    OpenLogicalChannel(*capability, session, H323Channel::IsTransmitter);
+    capability = remoteCapabilities.FindCapability(otherChannel->GetCapability());
+  }
+
+  if (capability == NULL) {
+    PTRACE(1, "H323\tCould not resolve conflict, capability not available on remote.");
     return true;
   }
 
-  // Get the conflisting channel number to close
-  H323ChannelNumber number = channel->GetNumber();
-
-  // Close the conflicting channel that got in before our transmitter
-  channel->Close();
-  CloseLogicalChannelNumber(number);
-
-  // Must be slave and conflict from something we are sending, so try starting a
-  // new channel using the master endpoints transmitter codec.
-  logicalChannels->Open(conflictingChannel.GetCapability(), session);
-  return true;
+  return logicalChannels->Open(*capability, sessionID, 0, mediaStream);
 }
 
 

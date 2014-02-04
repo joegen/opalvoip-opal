@@ -2186,6 +2186,8 @@ class H323Connection : public OpalRTPConnection
     PTimer     enforcedDurationLimit;
     bool       isConsultationTransfer;
 
+    PSafeDictionary<POrdinalKey, OpalMediaStream> m_conflictingChannels;
+
     P_DECLARE_TRACED_ENUM(RemoteHoldStates,
       eOffHoldFromRemote,
       eOnHoldFromRemote,
