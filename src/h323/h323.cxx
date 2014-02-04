@@ -2179,6 +2179,8 @@ PBoolean H323Connection::SetAlerting(const PString & calleeName, PBoolean withMe
   if (!WriteSignalPDU(*alertingPDU))
     return false;
 
+  SetPhase(AlertingPhase);
+
   if (!endpoint.OnSentAlerting(*this))
     return false;
 
