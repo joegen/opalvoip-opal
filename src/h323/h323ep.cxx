@@ -130,6 +130,19 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   SetCompatibility(H323Connection::e_H224MustBeSession3,      "HDX");
   SetCompatibility(H323Connection::e_NeedMSDAfterNonEmptyTCS, "Avaya|Radvision");
 
+  m_capabilities.AddAllCapabilities(0, 0, "*");
+  H323_UserInputCapability::AddAllCapabilities(m_capabilities, P_MAX_INDEX, P_MAX_INDEX);
+#if OPAL_H239
+  m_capabilities.Add(new H323H239VideoCapability(OpalMediaFormat()));
+  m_capabilities.Add(new H323H239ControlCapability());
+#endif
+#if OPAL_H235_6
+  m_capabilities.Add(new H235SecurityAlgorithmCapability(OpalMediaFormat(), 1)); // Just a template for cloning
+#endif
+#if OPAL_H235_8
+  m_capabilities.Add(new H235SecurityGenericCapability(OpalMediaFormat(), 1)); // Just a template for cloning
+#endif
+
   PTRACE(4, "H323\tCreated endpoint.");
 }
 
@@ -255,77 +268,6 @@ bool H323EndPoint::SetGatewaySupportedProtocol(H225_ArrayOf_SupportedProtocols &
 bool H323EndPoint::OnSetGatewayPrefixes(PStringList & /*prefixes*/) const
 {
   return false;
-}
-
-
-H323Capability * H323EndPoint::FindCapability(const H245_Capability & cap) const
-{
-  return GetCapabilities().FindCapability(cap);
-}
-
-
-H323Capability * H323EndPoint::FindCapability(const H245_DataType & dataType) const
-{
-  return GetCapabilities().FindCapability(dataType);
-}
-
-
-H323Capability * H323EndPoint::FindCapability(H323Capability::MainTypes mainType,
-                                              unsigned subType) const
-{
-  return GetCapabilities().FindCapability(mainType, subType);
-}
-
-
-void H323EndPoint::AddCapability(H323Capability * capability)
-{
-  capabilities.Add(capability);
-}
-
-
-PINDEX H323EndPoint::SetCapability(PINDEX descriptorNum,
-                                   PINDEX simultaneousNum,
-                                   H323Capability * capability)
-{
-  return capabilities.SetCapability(descriptorNum, simultaneousNum, capability);
-}
-
-
-PINDEX H323EndPoint::AddAllCapabilities(PINDEX descriptorNum,
-                                        PINDEX simultaneous,
-                                        const PString & name)
-{
-  return capabilities.AddAllCapabilities(*this, descriptorNum, simultaneous, name);
-}
-
-
-void H323EndPoint::AddAllUserInputCapabilities(PINDEX descriptorNum,
-                                               PINDEX simultaneous)
-{
-  H323_UserInputCapability::AddAllCapabilities(capabilities, descriptorNum, simultaneous);
-}
-
-
-void H323EndPoint::RemoveCapabilities(const PStringArray & codecNames)
-{
-  capabilities.Remove(codecNames);
-}
-
-
-void H323EndPoint::ReorderCapabilities(const PStringArray & preferenceOrder)
-{
-  capabilities.Reorder(preferenceOrder);
-}
-
-
-const H323Capabilities & H323EndPoint::GetCapabilities() const
-{
-  if (capabilities.GetSize() == 0) {
-    capabilities.AddAllCapabilities(*this, P_MAX_INDEX, P_MAX_INDEX, "*");
-    H323_UserInputCapability::AddAllCapabilities(capabilities, P_MAX_INDEX, P_MAX_INDEX);
-  }
-
-  return capabilities;
 }
 
 
