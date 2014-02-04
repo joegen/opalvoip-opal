@@ -865,12 +865,12 @@ PNatMethod * H460_Feature::GetNatMethod(const char * methodName) const
 
   PNatMethod * natMethod = m_endpoint->GetManager().GetNatMethods().GetMethodByName(methodName);
   if (natMethod == NULL) {
-    PTRACE(2, "Disabled as no NAT method");
+    PTRACE(4, "Disabled as no NAT method");
     return NULL;
   }
 
   if (!natMethod->IsActive()) {
-    PTRACE(3, "Std19\tDisabled as NAT method deactivated");
+    PTRACE(4, "Std19\tDisabled as NAT method deactivated");
     return NULL;
   }
 

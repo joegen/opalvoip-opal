@@ -153,6 +153,18 @@ static char LoopbackPrefix[] = "loopback";
 MyProcess::MyProcess()
   : MyProcessAncestor(ProductInfo)
 {
+  PConfig cfg(ParametersSection);
+
+  // Sert log level as early as possible
+  SetLogLevel(cfg.GetEnum(LogLevelKey, GetLogLevel()));
+
+#if PTRACING
+  PTrace::SetLevel(GetLogLevel());
+  PTrace::ClearOptions(PTrace::Timestamp);
+ #if _DEBUG
+  PTrace::SetOptions(PTrace::FileAndLine | PTrace::ContextIdentifier);
+ #endif
+#endif
 }
 
 
@@ -212,16 +224,6 @@ void MyProcess::OnConfigChanged()
 PBoolean MyProcess::Initialise(const char * initMsg)
 {
   PConfig cfg(ParametersSection);
-
-  // Sert log level as early as possible
-  SetLogLevel(cfg.GetEnum(LogLevelKey, GetLogLevel()));
-#if PTRACING
-  PTrace::SetLevel(GetLogLevel());
-  PTrace::ClearOptions(PTrace::Timestamp);
-#if _DEBUG
-  PTrace::SetOptions(PTrace::FileAndLine|PTrace::ContextIdentifier);
-#endif
-#endif
 
   // Get the HTTP basic authentication info
   PString username = cfg.GetString(UsernameKey);

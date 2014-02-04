@@ -192,6 +192,12 @@ OpalRTPSession::OpalRTPSession(const Init & init)
 #if P_STUNSRVR
   , m_stunServer(NULL)
 #endif
+#if PTRACING
+  , m_levelTxRR(3)
+  , m_levelRxSR(3)
+  , m_levelRxRR(3)
+  , m_levelRxSDES(3)
+#endif
 {
   ClearStatistics();
 
@@ -577,7 +583,7 @@ void OpalRTPSession::AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiv
     receiver.dlsr = 0;
   }
   
-  PTRACE(3, "RTP\tSession " << m_sessionId << ", Sending ReceiverReport:"
+  PTRACE(m_levelTxRR, "RTP\tSession " << m_sessionId << ", Sending ReceiverReport:"
             " SSRC=" << RTP_TRACE_SRC(syncSourceIn)
          << " fraction=" << (unsigned)receiver.fraction
          << " lost=" << receiver.GetLostPackets()
@@ -977,7 +983,7 @@ bool OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report)
 
       // add the SSRC to the start of the payload
       *(PUInt32b *)report.GetPayloadPtr() = syncSourceOut;
-      PTRACE(3, "RTP\tSession " << m_sessionId << ", Sending ReceiverReport: SSRC=" << RTP_TRACE_SRC(syncSourceIn));
+      PTRACE(m_levelTxRR, "RTP\tSession " << m_sessionId << ", Sending ReceiverReport: SSRC=" << RTP_TRACE_SRC(syncSourceIn));
     }
     else {
       report.SetPayloadSize(sizeof(PUInt32b) + sizeof(RTP_ControlFrame::ReceiverReport));  // length is SSRC of packet sender plus RR
@@ -1010,7 +1016,7 @@ bool OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report)
     sender->psent    = packetsSent;
     sender->osent    = octetsSent;
 
-    PTRACE(3, "RTP\tSession " << m_sessionId << ", Sending SenderReport:"
+    PTRACE(m_levelTxRR, "RTP\tSession " << m_sessionId << ", Sending SenderReport:"
               " SSRC=" << RTP_TRACE_SRC(syncSourceOut)
            << " ntp=" << sender->ntp_sec << '.' << sender->ntp_frac
            << " rtp=" << sender->rtp_ts
@@ -1027,7 +1033,7 @@ bool OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report)
   report.EndPacket();
 
   // Add the SDES part to compound RTCP packet
-  PTRACE(3, "RTP\tSession " << m_sessionId << ", Sending SDES: " << m_canonicalName);
+  PTRACE(m_levelTxRR, "RTP\tSession " << m_sessionId << ", Sending SDES: " << m_canonicalName);
   report.StartNewPacket();
 
   report.SetCount(0); // will be incremented automatically
@@ -1036,6 +1042,9 @@ bool OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report)
   report.AddSourceDescriptionItem(RTP_ControlFrame::e_TOOL, m_toolName);
   report.EndPacket();
   
+#if PTRACING
+  m_levelTxRR = 4;
+#endif
   return true;
 }
 
@@ -1319,12 +1328,13 @@ void OpalRTPSession::OnRxSenderReport(const SenderReport & sender, const Receive
   m_syncRealTime = sender.realTimestamp;
 
 #if PTRACING
-  if (PTrace::CanTrace(3)) {
-    ostream & strm = PTrace::Begin(3, __FILE__, __LINE__, this);
+  if (PTrace::CanTrace(m_levelRxSR)) {
+    ostream & strm = PTrace::Begin(m_levelRxSR, __FILE__, __LINE__, this);
     strm << "RTP\tSession " << m_sessionId << ", OnRxSenderReport: " << sender << '\n';
     for (PINDEX i = 0; i < reports.GetSize(); i++)
       strm << "  RR: " << reports[i] << '\n';
     strm << PTrace::End;
+    m_levelRxSR = 4;
   }
 #endif
 
@@ -1335,12 +1345,13 @@ void OpalRTPSession::OnRxSenderReport(const SenderReport & sender, const Receive
 void OpalRTPSession::OnRxReceiverReport(DWORD PTRACE_PARAM(src), const ReceiverReportArray & reports)
 {
 #if PTRACING
-  if (PTrace::CanTrace(3)) {
-    ostream & strm = PTrace::Begin(2, __FILE__, __LINE__, this);
+  if (PTrace::CanTrace(m_levelRxRR)) {
+    ostream & strm = PTrace::Begin(m_levelRxRR, __FILE__, __LINE__, this);
     strm << "RTP\tSession " << m_sessionId << ", OnReceiverReport: SSRC=" << RTP_TRACE_SRC(src) << '\n';
     for (PINDEX i = 0; i < reports.GetSize(); i++)
       strm << "  RR: " << reports[i] << '\n';
     strm << PTrace::End;
+    m_levelRxRR = 4;
   }
 #endif
   OnReceiverReports(reports);
@@ -1362,12 +1373,13 @@ void OpalRTPSession::OnReceiverReports(const ReceiverReportArray & reports)
 void OpalRTPSession::OnRxSourceDescription(const SourceDescriptionArray & PTRACE_PARAM(description))
 {
 #if PTRACING
-  if (PTrace::CanTrace(3)) {
-    ostream & strm = PTrace::Begin(3, __FILE__, __LINE__, this);
+  if (PTrace::CanTrace(m_levelRxSDES)) {
+    ostream & strm = PTrace::Begin(m_levelRxSDES, __FILE__, __LINE__, this);
     strm << "RTP\tSession " << m_sessionId << ", OnSourceDescription: " << description.GetSize() << " entries";
     for (PINDEX i = 0; i < description.GetSize(); i++)
       strm << "\n  " << description[i];
     strm << PTrace::End;
+    m_levelRxSDES = 4;
   }
 #endif
 }

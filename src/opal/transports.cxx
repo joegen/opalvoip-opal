@@ -1461,7 +1461,7 @@ PString OpalTransportUDP::GetInterface() const
 
 bool OpalTransportUDP::SetInterface(const PString & iface)
 {
-  PTRACE(3, "OpalUDP\tSetting interface to " << iface);
+  PTRACE(4, "OpalUDP\tSetting interface to " << iface);
 
   PMonitoredSocketChannel * socket = dynamic_cast<PMonitoredSocketChannel *>(m_channel);
   if (socket == NULL)

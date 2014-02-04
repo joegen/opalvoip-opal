@@ -4298,7 +4298,7 @@ bool SIPWorkItem::GetTarget(PSafePtr<SIPTransaction> & transaction)
     return false;
   }
 
-  PTRACE(3, transaction, "SIP\tHandling timeout for transaction using id=" << m_token);
+  PTRACE(4, transaction, "SIP\tHandling timeout for transaction using id=" << m_token);
   return true;
 }
 
@@ -4314,7 +4314,7 @@ bool SIPWorkItem::GetTarget(PSafePtr<SIPConnection> & connection)
     return false;
   }
 
-  PTRACE(3, connection, "SIP\tHandling timeout for connection using token=" << m_token);
+  PTRACE(4, connection, "SIP\tHandling timeout for connection using token=" << m_token);
   return true;
 }
 
@@ -4330,7 +4330,7 @@ bool SIPWorkItem::GetTarget(PSafePtr<SIPHandler> & handler)
     return false;
   }
 
-  PTRACE(3, handler, "SIP\tHandling timeout for handler using token=" << m_token);
+  PTRACE(4, handler, "SIP\tHandling timeout for handler using token=" << m_token);
   return true;
 }
 

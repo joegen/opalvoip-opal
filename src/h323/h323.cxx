@@ -3762,7 +3762,7 @@ void H323Connection::OnSetLocalCapabilities()
   // create the list of media formats supported locally
   OpalMediaFormatList formats = GetLocalMediaFormats();
   if (formats.IsEmpty()) {
-    PTRACE(2, "H323\tSetLocalCapabilities - no existing formats in call");
+    PTRACE(3, "H323\tSetLocalCapabilities - no existing formats in call");
     return;
   }
 
