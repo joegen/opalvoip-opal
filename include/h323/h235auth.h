@@ -151,7 +151,7 @@ class H235Authenticator : public PObject
 
 
   protected:
-    PBoolean AddCapability(
+    PINDEX AddCapabilityIfNeeded(
       unsigned mechanism,
       const PString & oid,
       H225_ArrayOf_AuthenticationMechanism & mechansims,

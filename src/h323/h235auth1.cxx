@@ -479,7 +479,7 @@ PBoolean H235AuthProcedure1::IsCapability(const H235_AuthenticationMechanism & m
 PBoolean H235AuthProcedure1::SetCapability(H225_ArrayOf_AuthenticationMechanism & mechanisms,
                                       H225_ArrayOf_PASN_ObjectId & algorithmOIDs)
 {
-  return AddCapability(H235_AuthenticationMechanism::e_pwdHash, OID_U, mechanisms, algorithmOIDs);
+  return AddCapabilityIfNeeded(H235_AuthenticationMechanism::e_pwdHash, OID_U, mechanisms, algorithmOIDs) != P_MAX_INDEX;
 }
 
 
@@ -661,7 +661,7 @@ PBoolean H235AuthPwd_DES_ECB::IsCapability(const H235_AuthenticationMechanism & 
 
 PBoolean H235AuthPwd_DES_ECB::SetCapability(H225_ArrayOf_AuthenticationMechanism & mechanisms, H225_ArrayOf_PASN_ObjectId & algorithmOIDs)
 {
-  return AddCapability(H235_AuthenticationMechanism::e_pwdSymEnc, OID_DES_ECB, mechanisms, algorithmOIDs);
+  return AddCapabilityIfNeeded(H235_AuthenticationMechanism::e_pwdSymEnc, OID_DES_ECB, mechanisms, algorithmOIDs) != P_MAX_INDEX;
 }
 
 
