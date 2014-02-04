@@ -487,7 +487,8 @@ H245NegLogicalChannel::~H245NegLogicalChannel()
 
 PBoolean H245NegLogicalChannel::Open(const H323Capability & capability,
                                  unsigned sessionID,
-                                 unsigned replacementFor)
+                                 unsigned replacementFor,
+                                 OpalMediaStreamPtr mediaStream)
 {
   if (state != e_Released && state != e_AwaitingRelease) {
     PTRACE(2, "H245\tOpen of channel currently in negotiations: " << channelNumber);
@@ -510,6 +511,7 @@ PBoolean H245NegLogicalChannel::Open(const H323Capability & capability,
   }
 
   channel->SetNumber(channelNumber);
+  channel->SetMediaStream(mediaStream);
 
   if (!channel->PreOpen()) {
     PTRACE(2, "H245\tOpen channel: " << channelNumber << ", pre-open failed");
@@ -724,7 +726,8 @@ PBoolean H245NegLogicalChannel::HandleOpenConfirm(const H245_OpenLogicalChannelC
 
 PBoolean H245NegLogicalChannel::HandleReject(const H245_OpenLogicalChannelReject & pdu)
 {
-  PTRACE(3, "H245\tReceived open channel reject: " << channelNumber << ", state=" << state);
+  PTRACE(3, "H245\tReceived open channel reject: " << channelNumber
+         << ", cause=" << pdu.m_cause.GetTagName() << ", state=" << state);
 
   switch (state) {
     case e_Released :
@@ -736,8 +739,10 @@ PBoolean H245NegLogicalChannel::HandleReject(const H245_OpenLogicalChannelReject
                                                "Reject established channel");
     case e_AwaitingEstablishment :
       // Master rejected our attempt to open, so try something else.
-      if (pdu.m_cause.GetTag() == H245_OpenLogicalChannelReject_cause::e_masterSlaveConflict)
-        connection.OnConflictingLogicalChannel(*channel);
+      if (pdu.m_cause.GetTag() == H245_OpenLogicalChannelReject_cause::e_masterSlaveConflict) {
+        if (!connection.OnConflictingLogicalChannel(*channel))
+          return false;
+      }
       // Do next case
 
     case e_AwaitingRelease :
@@ -932,14 +937,15 @@ void H245NegLogicalChannels::Add(H323Channel & channel)
 
 PBoolean H245NegLogicalChannels::Open(const H323Capability & capability,
                                   unsigned sessionID,
-                                  unsigned replacementFor)
+                                  unsigned replacementFor,
+                                  OpalMediaStreamPtr mediaStream)
 {
   lastChannelNumber++;
 
   H245NegLogicalChannel * negChan = new H245NegLogicalChannel(endpoint, connection, lastChannelNumber);
   channels.SetAt(lastChannelNumber, negChan);
 
-  return negChan->Open(capability, sessionID, replacementFor);
+  return negChan->Open(capability, sessionID, replacementFor, mediaStream);
 }
 
 
