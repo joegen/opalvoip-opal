@@ -2959,20 +2959,7 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
 
   // Decode out of the PDU, the list of known codecs.
   if (pdu.HasOptionalField(H245_TerminalCapabilitySet::e_capabilityTable)) {
-    H323Capabilities allCapabilities(connection.GetLocalCapabilities());
-    allCapabilities.AddAllCapabilities(0, 0, "*");
-    H323_UserInputCapability::AddAllCapabilities(allCapabilities, P_MAX_INDEX, P_MAX_INDEX);
-#if OPAL_H239
-    allCapabilities.Add(new H323H239VideoCapability(OpalMediaFormat()));
-    allCapabilities.Add(new H323H239ControlCapability());
-#endif
-#if OPAL_H235_6
-    allCapabilities.Add(new H235SecurityAlgorithmCapability(OpalMediaFormat(), 1)); // Just a template for cloning
-#endif
-#if OPAL_H235_8
-    allCapabilities.Add(new H235SecurityGenericCapability(OpalMediaFormat(), 1)); // Just a template for cloning
-#endif
-    allCapabilities.m_mediaPacketizations = m_mediaPacketizations;
+    H323Capabilities allCapabilities(dynamic_cast<const H323EndPoint &>(connection.GetEndPoint()).GetCapabilities());
     PTRACE(4, "H323\tParsing remote capabilities");
 
     for (PINDEX i = 0; i < pdu.m_capabilityTable.GetSize(); i++) {

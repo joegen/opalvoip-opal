@@ -212,95 +212,6 @@ class H323EndPoint : public OpalRTPEndPoint
   //@}
 
 
-  /**@name Capabilities */
-  //@{
-    /**Add a codec to the capabilities table. This will assure that the
-       assignedCapabilityNumber field in the codec is unique for all codecs
-       installed on this endpoint.
-
-       If the specific instnace of the capability is already in the table, it
-       is not added again. Ther can be multiple instances of the same
-       capability class however.
-     */
-    void AddCapability(
-      H323Capability * capability   ///<  New codec specification
-    );
-
-    /**Set the capability descriptor lists. This is three tier set of
-       codecs. The top most level is a list of particular capabilities. Each
-       of these consists of a list of alternatives that can operate
-       simultaneously. The lowest level is a list of codecs that cannot
-       operate together. See H323 section 6.2.8.1 and H245 section 7.2 for
-       details.
-
-       If descriptorNum is P_MAX_INDEX, the the next available index in the
-       array of descriptors is used. Similarly if simultaneous is P_MAX_INDEX
-       the the next available SimultaneousCapabilitySet is used. The return
-       value is the index used for the new entry. Note if both are P_MAX_INDEX
-       then the return value is the descriptor index as the simultaneous index
-       must be zero.
-
-       Note that the capability specified here is automatically added to the
-       capability table using the AddCapability() function. A specific
-       instance of a capability is only ever added once, so multiple
-       SetCapability() calls with the same H323Capability pointer will only
-       add that capability once.
-     */
-    PINDEX SetCapability(
-      PINDEX descriptorNum, ///<  The member of the capabilityDescriptor to add
-      PINDEX simultaneous,  ///<  The member of the SimultaneousCapabilitySet to add
-      H323Capability * cap  ///<  New capability specification
-    );
-
-    /**Add all matching capabilities in list.
-       All capabilities that match the specified name are added. See the
-       capabilities code for details on the matching algorithm.
-      */
-    PINDEX AddAllCapabilities(
-      PINDEX descriptorNum, ///<  The member of the capabilityDescriptor to add
-      PINDEX simultaneous,  ///<  The member of the SimultaneousCapabilitySet to add
-      const PString & name  ///<  New capabilities name, if using "known" one.
-    );
-
-    /**Add all user input capabilities to this endpoints capability table.
-      */
-    void AddAllUserInputCapabilities(
-      PINDEX descriptorNum, ///<  The member of the capabilityDescriptor to add
-      PINDEX simultaneous   ///<  The member of the SimultaneousCapabilitySet to add
-    );
-
-    /**Remove capabilites in table.
-      */
-    void RemoveCapabilities(
-      const PStringArray & codecNames
-    );
-
-    /**Reorder capabilites in table.
-      */
-    void ReorderCapabilities(
-      const PStringArray & preferenceOrder
-    );
-
-    /**Find a capability that has been registered.
-     */
-    H323Capability * FindCapability(
-      const H245_Capability & cap  ///<  H245 capability table entry
-    ) const;
-
-    /**Find a capability that has been registered.
-     */
-    H323Capability * FindCapability(
-      const H245_DataType & dataType  ///<  H245 data type of codec
-    ) const;
-
-    /**Find a capability that has been registered.
-     */
-    H323Capability * FindCapability(
-      H323Capability::MainTypes mainType,   ///<  Main type of codec
-      unsigned subType                      ///<  Subtype of codec
-    ) const;
-  //@}
-
   /**@name Gatekeeper management */
   //@{
     /**Use and register with an explicit gatekeeper.
@@ -1048,9 +959,11 @@ class H323EndPoint : public OpalRTPEndPoint
      */
     PBoolean CanAutoCallForward() const { return autoCallForward; }
 
-    /**Get the current capability table for this endpoint.
+    /**Get the "template" capability table for this endpoint.
+       This table contains all known capabilities from which specific
+       capabilities for a H323Connection, local and remote, are derived.
      */
-    const H323Capabilities & GetCapabilities() const;
+    const H323Capabilities & GetCapabilities() const { return m_capabilities; }
 
     /**Endpoint types.
      */
@@ -1447,7 +1360,7 @@ class H323EndPoint : public OpalRTPEndPoint
     // Dynamic variables
     PSafeDictionary<PString, H323Connection> m_connectionsByCallId;
 
-    mutable H323Capabilities capabilities;
+    H323Capabilities m_capabilities;
 
     PList<H323Gatekeeper> m_gatekeepers;
     PString               m_gatekeeperUsername;
