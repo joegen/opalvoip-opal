@@ -393,29 +393,30 @@ PBoolean H323UnidirectionalChannel::SetInitialBandwidth()
 
 bool H323UnidirectionalChannel::PreOpen()
 {
-  if (m_mediaStream != NULL)
-    return true;
-
-  m_mediaStream = connection.CreateMediaStream(GetMediaFormat(), GetSessionID(), receiver);
-
-  OpalCall & call = connection.GetCall();
-  OpalMediaType mediaType = GetMediaFormat().GetMediaType();
-
-  if (GetDirection() == IsReceiver) {
-    if (!call.OpenSourceMediaStreams(connection, mediaType, GetSessionID(), GetMediaFormat())) {
-      PTRACE(1, "LogChan\tReceive OpenSourceMediaStreams failed");
+  if (m_mediaStream == NULL) {
+    m_mediaStream = connection.CreateMediaStream(GetMediaFormat(), GetSessionID(), receiver);
+    if (m_mediaStream == NULL)
       return false;
+
+    OpalCall & call = connection.GetCall();
+    OpalMediaType mediaType = GetMediaFormat().GetMediaType();
+
+    if (GetDirection() == IsReceiver) {
+      if (!call.OpenSourceMediaStreams(connection, mediaType, GetSessionID(), GetMediaFormat())) {
+        PTRACE(1, "LogChan\tReceive OpenSourceMediaStreams failed");
+        return false;
+      }
     }
-  }
-  else {
-    PSafePtr<OpalConnection> otherConnection = call.GetOtherPartyConnection(connection);
-    if (otherConnection == NULL) {
-      PTRACE(1, "LogChan\tTransmit failed, no other connection");
-      return false;
-    }
-    if (!call.OpenSourceMediaStreams(*otherConnection, mediaType, GetSessionID(), GetMediaFormat())) {
-      PTRACE(1, "LogChan\tTransmit OpenSourceMediaStreams failed");
-      return false;
+    else {
+      PSafePtr<OpalConnection> otherConnection = call.GetOtherPartyConnection(connection);
+      if (otherConnection == NULL) {
+        PTRACE(1, "LogChan\tTransmit failed, no other connection");
+        return false;
+      }
+      if (!call.OpenSourceMediaStreams(*otherConnection, mediaType, GetSessionID(), GetMediaFormat())) {
+        PTRACE(1, "LogChan\tTransmit OpenSourceMediaStreams failed");
+        return false;
+      }
     }
   }
 
@@ -461,7 +462,8 @@ OpalMediaStreamPtr H323UnidirectionalChannel::GetMediaStream() const
 void H323UnidirectionalChannel::SetMediaStream(OpalMediaStreamPtr mediaStream)
 {
   m_mediaStream = mediaStream;
-  capability->UpdateMediaFormat(m_mediaStream->GetMediaFormat());
+  if (mediaStream != NULL)
+    capability->UpdateMediaFormat(m_mediaStream->GetMediaFormat());
 }
 
 
