@@ -474,7 +474,7 @@ void SIPHandler::RetryLater(unsigned after)
   if (after == 0 || GetExpire() == 0)
     return;
 
-  PTRACE(3, "SIP\tRetrying " << GetMethod() << " after " << after << " seconds.");
+  PTRACE(3, "SIP\tRetrying " << GetMethod() << ' ' << GetAddressOfRecord() << " after " << after << " seconds.");
   m_expireTimer.SetInterval(0, after); // Keep trying to get it back
 }
 
