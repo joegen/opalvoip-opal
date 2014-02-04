@@ -89,7 +89,7 @@ bool H460_FeatureStd23::Initialise(H323EndPoint & ep, H323Connection * con)
     return false;
 
   if (!GetNatMethod(PNatMethod_H46024::MethodName(), m_natMethod)) {
-    PTRACE(2, "Could not find NAT method " << PNatMethod_H46024::MethodName());
+    PTRACE(4, "Could not find NAT method " << PNatMethod_H46024::MethodName());
     return false;
   }
 

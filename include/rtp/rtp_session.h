@@ -747,6 +747,13 @@ class OpalRTPSession : public OpalMediaSession
     PSTUNServer * m_stunServer;
 #endif
 
+#if PTRACING
+    unsigned m_levelTxRR;
+    unsigned m_levelRxSR;
+    unsigned m_levelRxRR;
+    unsigned m_levelRxSDES;
+#endif
+
   private:
     OpalRTPSession(const OpalRTPSession &);
     void operator=(const OpalRTPSession &) { }
