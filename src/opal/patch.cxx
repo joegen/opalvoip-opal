@@ -494,7 +494,7 @@ void OpalMediaPatch::AddFilter(const PNotifier & filter, const OpalMediaFormat &
   // ensures that a filter is added only once
   for (PList<Filter>::iterator f = filters.begin(); f != filters.end(); ++f) {
     if (f->notifier == filter && f->stage == stage) {
-      PTRACE(3, "OpalCon\tFilter already added for stage " << stage);
+      PTRACE(4, "OpalCon\tFilter already added for stage " << stage);
       return;
     }
   }
@@ -513,7 +513,7 @@ PBoolean OpalMediaPatch::RemoveFilter(const PNotifier & filter, const OpalMediaF
     }
   }
 
-  PTRACE(3, "OpalCon\tNo filter to remove for stage " << stage);
+  PTRACE(4, "OpalCon\tNo filter to remove for stage " << stage);
   return false;
 }
 
