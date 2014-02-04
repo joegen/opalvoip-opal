@@ -195,30 +195,20 @@ PBoolean H235Authenticator::IsSecuredPDU(unsigned, PBoolean) const
 }
 
 
-PBoolean H235Authenticator::AddCapability(unsigned mechanism,
-                                      const PString & oid,
-                                      H225_ArrayOf_AuthenticationMechanism & mechanisms,
-                                      H225_ArrayOf_PASN_ObjectId & algorithmOIDs)
+PINDEX H235Authenticator::AddCapabilityIfNeeded(unsigned mechanism,
+                                                const PString & oid,
+                                                H225_ArrayOf_AuthenticationMechanism & mechanisms,
+                                                H225_ArrayOf_PASN_ObjectId & algorithmOIDs)
 {
   PWaitAndSignal m(mutex);
 
   if (!IsEnabled()) {
     PTRACE(3, "RAS\tAuthenticator " << *this << " not enabled during GRQ SetCapability negotiation");
-    return false;
+    return P_MAX_INDEX;
   }
 
   PINDEX i;
-  PINDEX size = mechanisms.GetSize();
-  for (i = 0; i < size; i++) {
-    if (mechanisms[i].GetTag() == mechanism)
-      break;
-  }
-  if (i >= size) {
-    mechanisms.SetSize(size+1);
-    mechanisms[size].SetTag(mechanism);
-  }
-
-  size = algorithmOIDs.GetSize();
+  PINDEX size = algorithmOIDs.GetSize();
   for (i = 0; i < size; i++) {
     if (algorithmOIDs[i] == oid)
       break;
@@ -228,7 +218,15 @@ PBoolean H235Authenticator::AddCapability(unsigned mechanism,
     algorithmOIDs[size] = oid;
   }
 
-  return true;
+  size = mechanisms.GetSize();
+  for (i = 0; i < size; i++) {
+    if (mechanisms[i].GetTag() == mechanism)
+      return i;
+  }
+
+  mechanisms.SetSize(size + 1);
+  mechanisms[size].SetTag(mechanism);
+  return size;
 }
 
 
@@ -473,7 +471,7 @@ PBoolean H235AuthSimpleMD5::IsCapability(const H235_AuthenticationMechanism & me
 PBoolean H235AuthSimpleMD5::SetCapability(H225_ArrayOf_AuthenticationMechanism & mechanisms,
                                       H225_ArrayOf_PASN_ObjectId & algorithmOIDs)
 {
-  return AddCapability(H235_AuthenticationMechanism::e_pwdHash, OID_MD5, mechanisms, algorithmOIDs);
+  return AddCapabilityIfNeeded(H235_AuthenticationMechanism::e_pwdHash, OID_MD5, mechanisms, algorithmOIDs) != P_MAX_INDEX;
 }
 
 
@@ -663,11 +661,11 @@ PBoolean H235AuthCAT::IsCapability(const H235_AuthenticationMechanism & mechanis
 PBoolean H235AuthCAT::SetCapability(H225_ArrayOf_AuthenticationMechanism & mechanisms,
                                 H225_ArrayOf_PASN_ObjectId & algorithmOIDs)
 {
-  if (!AddCapability(H235_AuthenticationMechanism::e_authenticationBES, OID_CAT,
-                     mechanisms, algorithmOIDs))
+  PINDEX idx = AddCapabilityIfNeeded(H235_AuthenticationMechanism::e_authenticationBES, OID_CAT, mechanisms, algorithmOIDs);
+  if (idx == P_MAX_INDEX)
     return false;
 
-  H235_AuthenticationBES & bes = mechanisms[mechanisms.GetSize()-1];
+  H235_AuthenticationBES & bes = mechanisms[idx];
   bes.SetTag(H235_AuthenticationBES::e_radius);
   return true;
 }
