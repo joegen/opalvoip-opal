@@ -161,9 +161,10 @@ MyProcess::MyProcess()
 #if PTRACING
   PTrace::SetLevel(GetLogLevel());
   PTrace::ClearOptions(PTrace::Timestamp);
- #if _DEBUG
-  PTrace::SetOptions(PTrace::FileAndLine | PTrace::ContextIdentifier);
- #endif
+  PTrace::SetOptions(PTrace::ContextIdentifier);
+#if _DEBUG
+  PTrace::SetOptions(PTrace::FileAndLine);
+#endif
 #endif
 }
 
