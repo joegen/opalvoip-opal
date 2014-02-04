@@ -4611,7 +4611,7 @@ PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingCh
   unsigned sessionID = conflictingChannel.GetSessionID();
   PTRACE(2, "H323\tLogical channel " << conflictingChannel
          << " conflict on session " << sessionID
-         << ", we are " << (IsH245Master() ? "master" : " slave")
+         << ", we are " << (IsH245Master() ? "master" : "slave")
          << ", codec: " << conflictingChannel.GetCapability());
 
   /* Matrix of conflicts:
@@ -4631,16 +4631,15 @@ PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingCh
    */
 
   OpalMediaStreamPtr mediaStream = m_conflictingChannels.FindWithLock(sessionID, PSafeReference);
+  m_conflictingChannels.RemoveAt(sessionID);
+
   bool fromRemote = conflictingChannel.GetNumber().IsFromRemote();
   H323Channel * otherChannel = FindChannel(sessionID, !fromRemote);
   H323Capability * capability;
 
   if (fromRemote) {
     if (otherChannel != NULL) {
-      if (mediaStream != NULL) {
-        PTRACE(1, "H323\tInvalid master/slave conflict resolution, already have conflicting channel info");
-        m_conflictingChannels.RemoveAt(sessionID);
-      }
+      PTRACE_IF(1, mediaStream != NULL, "H323\tInvalid master/slave conflict resolution, already have conflicting channel info");
 
       mediaStream = otherChannel->GetMediaStream();
       otherChannel->SetMediaStream(NULL);
@@ -4658,12 +4657,9 @@ PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingCh
     capability = remoteCapabilities.FindCapability(conflictingChannel.GetCapability());
   }
   else {
-    if (mediaStream != NULL) {
-      // The only way to get in here is if we had two OLC's running at the same
-      // time and both were rejected. This should be impossible.
-      PTRACE(1, "H323\tInvalid master/slave conflict resolution, simultaneous OLC?");
-      m_conflictingChannels.RemoveAt(sessionID);
-    }
+    // The only way for the following is if we had two OLC's running at the same
+    // time and both were rejected. This should be impossible.
+    PTRACE_IF(1, mediaStream != NULL, "H323\tInvalid master/slave conflict resolution, simultaneous OLC?");
 
     mediaStream = conflictingChannel.GetMediaStream();
     conflictingChannel.SetMediaStream(NULL);
