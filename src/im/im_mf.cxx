@@ -331,7 +331,7 @@ void OpalIMContext::SetCompositionIndicationNotifier(const CompositionIndication
 const PCaselessString & OpalIMEndPoint::Prefix() { static PConstCaselessString s("im"); return s; }
 
 OpalIMEndPoint::OpalIMEndPoint(OpalManager & manager)
-  : OpalEndPoint(manager, Prefix(), 0)
+  : OpalEndPoint(manager, Prefix(), NoAttributes)
   , m_manager(manager)
   , m_deleting(false)
 {

@@ -51,10 +51,10 @@ static const OpalBandwidth DefaultInitialBandwidth = 4000000; // 4Mb/s
 
 OpalEndPoint::OpalEndPoint(OpalManager & mgr,
                            const PCaselessString & prefix,
-                           unsigned attributes)
+                           Attributes attributes)
   : manager(mgr)
   , prefixName(prefix)
-  , attributeBits(attributes)
+  , m_attributes(attributes)
   , m_maxSizeUDP(4096)
   , productInfo(mgr.GetProductInfo())
   , defaultLocalPartyName(manager.GetDefaultUserName())

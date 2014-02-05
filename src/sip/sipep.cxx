@@ -67,7 +67,7 @@ static BYTE DefaultKeepAliveData[] = { '\r', '\n', '\r', '\n' };
 ////////////////////////////////////////////////////////////////////////////
 
 SIPEndPoint::SIPEndPoint(OpalManager & mgr, unsigned maxThreads)
-  : OpalRTPEndPoint(mgr, "sip", CanTerminateCall|SupportsE164)
+  : OpalRTPEndPoint(mgr, "sip", IsNetworkEndPoint | SupportsE164)
   , m_defaultPrackMode(SIPConnection::e_prackSupported)
   , m_maxPacketSizeUDP(1300)         // As per RFC 3261 section 18.1.1
   , maxRetries(10)
