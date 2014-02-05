@@ -49,7 +49,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 OpalLocalEndPoint::OpalLocalEndPoint(OpalManager & mgr, const char * prefix, bool useCallbacks)
-  : OpalEndPoint(mgr, prefix, CanTerminateCall)
+  : OpalEndPoint(mgr, prefix, NoAttributes)
   , m_deferredAlerting(false)
   , m_deferredAnswer(false)
   , m_pauseTransmitMediaOnHold(true)

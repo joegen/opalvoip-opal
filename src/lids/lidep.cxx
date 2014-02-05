@@ -54,7 +54,7 @@ static const char PrefixPOTS[] = "pots";
 /////////////////////////////////////////////////////////////////////////////
 
 OpalLineEndPoint::OpalLineEndPoint(OpalManager & mgr)
-  : OpalEndPoint(mgr, PrefixPOTS, CanTerminateCall|SupportsE164),
+  : OpalEndPoint(mgr, PrefixPOTS, SupportsE164),
     defaultLine("*")
 {
   PTRACE(4, "LID EP\tOpalLineEndPoint created");
@@ -243,6 +243,8 @@ PBoolean OpalLineEndPoint::AddLinesFromDevice(OpalLineInterfaceDevice & device)
       linesMutex.Wait();
       lines.Append(newLine);
       linesMutex.Signal();
+      if (!device.IsLineTerminal(line))
+        m_attributes |= IsNetworkEndPoint;
       PTRACE(3, "LID EP\tAdded line  " << line << ", " << (device.IsLineTerminal(line) ? "terminal" : "network"));
     }
     else {

@@ -82,7 +82,7 @@ class OpalRTPEndPoint : public OpalEndPoint
     OpalRTPEndPoint(
       OpalManager & manager,          ///<  Manager of all endpoints.
       const PCaselessString & prefix, ///<  Prefix for URL style address strings
-      unsigned attributes             ///<  Bit mask of attributes endpoint has
+      Attributes attributes           ///<  Bit mask of attributes endpoint has
     );
 
     /**Destroy the endpoint.
