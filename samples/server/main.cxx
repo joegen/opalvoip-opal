@@ -49,6 +49,7 @@ static const char HTTPCertificateFileKey[]  = "HTTP Certificate";
 static const char HttpPortKey[] = "HTTP Port";
 static const char TelnetPortKey[] = "Console Port";
 static const char MediaTransferModeKey[] = "Media Transfer Mode";
+static const char AutoStartKeyPrefix[] = "Auto Start ";
 static const char PreferredMediaKey[] = "Preferred Media";
 static const char RemovedMediaKey[] = "Removed Media";
 static const char MinJitterKey[] = "Minimum Jitter";
@@ -478,8 +479,23 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
   static const char * const MediaTransferModeValues[] = { "0", "1", "2" };
   static const char * const MediaTransferModeTitles[] = { "Bypass", "Forward", "Transcode" };
   rsrc->Add(new PHTTPRadioField(MediaTransferModeKey,
-    PARRAYSIZE(MediaTransferModeValues), MediaTransferModeValues, MediaTransferModeTitles,
-    m_mediaTransferMode, "How media is to be routed between the endpoints."));
+                    PARRAYSIZE(MediaTransferModeValues), MediaTransferModeValues, MediaTransferModeTitles,
+                    m_mediaTransferMode, "How media is to be routed between the endpoints."));
+
+  {
+    OpalMediaTypeList mediaTypes = OpalMediaType::GetList();
+    for (OpalMediaTypeList::iterator it = mediaTypes.begin(); it != mediaTypes.end(); ++it) {
+      PString key = AutoStartKeyPrefix;
+      key &= it->c_str();
+
+      (*it)->SetAutoStart(cfg.GetEnum<OpalMediaType::AutoStartMode::Enumeration>(key, (*it)->GetAutoStart()));
+
+      static const char * const AutoStartValues[] = { "Offer inactive", "Receive only", "Send only", "Send & Receive", "Don't offer" };
+      rsrc->Add(new PHTTPEnumField<OpalMediaType::AutoStartMode::Enumeration>(key,
+                    PARRAYSIZE(AutoStartValues), AutoStartValues, (*it)->GetAutoStart(),
+                    "Initial start up mode for media type."));
+    }
+  }
 
   {
     OpalMediaFormatList allFormats;
