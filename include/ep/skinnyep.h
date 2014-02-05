@@ -193,6 +193,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
 
         bool Start(const PString & server);
         void Stop();
+        void Close();
 
         bool SendSkinnyMsg(const SkinnyMsg & msg);
 
@@ -208,6 +209,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
         unsigned             m_deviceType;
         OpalTransportTCP     m_transport;
         PString              m_status;
+        PSyncPoint           m_exit;
 
       friend class OpalSkinnyEndPoint;
       friend class OpalSkinnyConnection;
