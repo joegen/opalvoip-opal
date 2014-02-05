@@ -60,7 +60,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 H323EndPoint::H323EndPoint(OpalManager & manager)
-  : OpalRTPEndPoint(manager, "h323", CanTerminateCall|SupportsE164)
+  : OpalRTPEndPoint(manager, "h323", IsNetworkEndPoint | SupportsE164)
   , autoCallForward(true)
   , disableFastStart(false)
   , disableH245Tunneling(false)

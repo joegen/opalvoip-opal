@@ -521,7 +521,7 @@ static struct {
 ///////////////////////////////////////////////////////////////////////
 
 OpalCapiEndPoint::OpalCapiEndPoint(OpalManager & manager)
-  : OpalEndPoint(manager, "isdn", CanTerminateCall|SupportsE164)
+  : OpalEndPoint(manager, "isdn", IsNetworkEndPoint | SupportsE164)
   , m_capi(new OpalCapiFunctions)
   , m_thread(NULL)
   , m_applicationId(0)

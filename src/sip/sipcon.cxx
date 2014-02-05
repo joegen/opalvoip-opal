@@ -486,7 +486,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
   bool referSub = extra.GetBoolean(OPAL_OPT_REFER_SUB, m_stringOptions.GetBoolean(OPAL_OPT_REFER_SUB, true));
 
   // Check for valid RFC2396 scheme
-  if (remoteParty.FindRegEx("^[a-zA-Z][a-zA-Z0-9+.-]") == 0) {
+  if (!PURL::ExtractScheme(remoteParty).IsEmpty()) {
     PTRACE(3, "SIP\tBlind transfer of " << *this << " to " << remoteParty);
     SIPRefer * referTransaction = new SIPRefer(*this, remoteParty, m_dialog.GetLocalURI(), referSub);
     m_referInProgress = referTransaction->Start();
@@ -1871,7 +1871,18 @@ PBoolean SIPConnection::SetUpConnection()
     m_allowedEvents += SIPSubscribe::EventPackage(SIPSubscribe::Conference);
 
   SIP_PDU::StatusCodes reason = StartTransaction(PCREATE_NOTIFIER(WriteINVITE));
-  m_dialog.SetForking(false);
+
+  // If we user entered sip:user rather than sip:address, then try again using default registrar
+  if (reason == SIP_PDU::Local_BadTransportAddress && m_dialog.GetRequestURI().GetUserName().IsEmpty()) {
+    PStringList registrations = m_endpoint.GetRegistrations();
+    if (!registrations.IsEmpty()) {
+      SIPURL newDestination(registrations.front());
+      newDestination.SetUserName(m_dialog.GetRequestURI().GetHostName());
+      m_dialog.SetRequestURI(newDestination);
+      m_dialog.SetRemoteURI(newDestination);
+      reason = StartTransaction(PCREATE_NOTIFIER(WriteINVITE));
+    }
+  }
 
   SetPhase(SetUpPhase);
 
@@ -1880,6 +1891,7 @@ PBoolean SIPConnection::SetUpConnection()
     return false;
   }
 
+  m_dialog.SetForking(false);
   releaseMethod = ReleaseWithCANCEL;
   m_handlingINVITE = true;
   return true;

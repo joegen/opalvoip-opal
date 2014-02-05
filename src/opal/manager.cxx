@@ -780,25 +780,14 @@ PSafePtr<OpalConnection> OpalManager::MakeConnection(OpalCall & call,
 {
   PTRACE(3, "OpalMan\tSet up connection to \"" << remoteParty << '"');
 
-  if (remoteParty.IsEmpty())
-    return NULL;
-
-  PCaselessString epname = remoteParty.Left(remoteParty.Find(':'));
-
   PReadWaitAndSignal mutex(endpointsMutex);
 
-  OpalEndPoint * ep = NULL;
-  if (epname.IsEmpty()) {
-    if (endpointMap.size() > 0)
-      ep = endpointMap.begin()->second;
-  }
-  else
-    ep = FindEndPoint(epname);
-
+  PCaselessString epname = PURL::ExtractScheme(remoteParty);
+  OpalEndPoint * ep = FindEndPoint(epname);
   if (ep != NULL)
     return ep->MakeConnection(call, remoteParty, userData, options, stringOptions);
 
-  PTRACE(1, "OpalMan\tCould not find endpoint to handle protocol \"" << epname << '"');
+  PTRACE(1, "OpalMan\tCould not find endpoint for protocol \"" << epname << '"');
   return NULL;
 }
 
@@ -890,9 +879,22 @@ bool OpalManager::OnRouteConnection(PStringSet & routesTried,
   for (;;) {
     PString route = ApplyRouteTable(a_party, b_party, tableEntry);
     if (route.IsEmpty()) {
+      if (a_party == b_party) {
+        PTRACE(3, "OpalMan\tCircular route a=b=\"" << a_party << "\", call=" << call);
+        return false;
+      }
+
       // Check for if B-Party is an explicit address
-      if (a_party != b_party && FindEndPoint(b_party.Left(b_party.Find(':'))) != NULL)
+      PCaselessString scheme = PURL::ExtractScheme(b_party);
+      if (FindEndPoint(scheme) != NULL)
         return MakeConnection(call, b_party, NULL, options, stringOptions) != NULL;
+
+      if (scheme.IsEmpty()) {
+        for (PList<OpalEndPoint>::iterator it = endpointList.begin(); it != endpointList.end(); ++it) {
+          if (it->HasAttribute(OpalEndPoint::IsNetworkEndPoint) == (call.GetConnectionCount() > 0))
+            return MakeConnection(call, it->GetPrefixName() + ':' + b_party, NULL, options, stringOptions) != NULL;
+        }
+      }
 
       PTRACE(3, "OpalMan\tCould not route a=\"" << a_party << "\", b=\"" << b_party << "\", call=" << call);
       return false;

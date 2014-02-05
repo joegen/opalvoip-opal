@@ -70,10 +70,11 @@ class OpalEndPoint : public PObject
 {
     PCLASSINFO(OpalEndPoint, PObject);
   public:
-    enum Attributes {
-      CanTerminateCall = 1,
-      SupportsE164 = 2
-    };
+    P_DECLARE_BITWISE_ENUM(Attributes, 2, (
+      NoAttributes,
+      IsNetworkEndPoint,
+      SupportsE164
+    ));
 
   /**@name Construction */
   //@{
@@ -82,7 +83,7 @@ class OpalEndPoint : public PObject
     OpalEndPoint(
       OpalManager & manager,          ///<  Manager of all endpoints.
       const PCaselessString & prefix, ///<  Prefix for URL style address strings
-      unsigned attributes             ///<  Bit mask of attributes endpoint has
+      Attributes attributes           ///<  Bit mask of attributes endpoint has
     );
 
     /**Destroy the endpoint.
@@ -806,7 +807,7 @@ class OpalEndPoint : public PObject
 
     /**Get an indication of if this endpoint has particular option.
       */
-    PBoolean HasAttribute(Attributes opt) const { return (attributeBits&opt) != 0; }
+    bool HasAttribute(Attributes opt) const { return m_attributes & opt; }
 
     /**Get the product info for all endpoints.
       */
@@ -885,7 +886,7 @@ class OpalEndPoint : public PObject
   protected:
     OpalManager   & manager;
     PCaselessString prefixName;
-    unsigned        attributeBits;
+    Attributes      m_attributes;
     PINDEX          m_maxSizeUDP;
     OpalProductInfo productInfo;
     PString         defaultLocalPartyName;

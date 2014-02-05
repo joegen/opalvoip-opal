@@ -94,7 +94,7 @@ void OpalSkinnyEndPoint::SkinnyMsg::Construct(const PBYTEArray & pdu)
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalSkinnyEndPoint::OpalSkinnyEndPoint(OpalManager & manager, const char *prefix)
-  : OpalRTPEndPoint(manager, prefix, CanTerminateCall | SupportsE164)
+  : OpalRTPEndPoint(manager, prefix, IsNetworkEndPoint | SupportsE164)
 {
 }
 

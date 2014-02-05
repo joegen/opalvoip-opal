@@ -54,7 +54,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 IAX2EndPoint::IAX2EndPoint(OpalManager & mgr)
-  : OpalEndPoint(mgr, "iax2", CanTerminateCall|SupportsE164)
+  : OpalEndPoint(mgr, "iax2", IsNetworkEndPoint | SupportsE164)
 {
   localUserName = mgr.GetDefaultUserName();
   localNumber   = "1234";
