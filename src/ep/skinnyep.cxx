@@ -71,6 +71,8 @@ static POrdinalToString::Initialiser const CodecCodes[] = {
 static PStringToOrdinal const MediaFormatToCodecCode(PARRAYSIZE(CodecCodes), CodecCodes);
 static POrdinalToString const CodecCodeToMediaFormat(PARRAYSIZE(CodecCodes), CodecCodes);
 
+static PConstString const RegisteredStatusText("Registered");
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -106,10 +108,27 @@ OpalSkinnyEndPoint::~OpalSkinnyEndPoint()
 
 void OpalSkinnyEndPoint::ShutDown()
 {
-  PTRACE(3, prefixName << " endpoint shutting down.");
+  PTRACE(3, "Endpoint shutting down.");
 
   for (PhoneDeviceDict::iterator it = m_phoneDevices.begin(); it != m_phoneDevices.end(); ++it)
     it->second.Stop();
+
+  // Wait a bit for ack replies.
+  for (PINDEX wait = 0; wait < 10; ++wait) {
+    PhoneDeviceDict::iterator it;
+    for (it = m_phoneDevices.begin(); it != m_phoneDevices.end(); ++it) {
+      if (it->second.m_status == RegisteredStatusText)
+        break;
+    }
+    if (it == m_phoneDevices.end())
+      break;
+    PThread::Sleep(200);
+  }
+
+  for (PhoneDeviceDict::iterator it = m_phoneDevices.begin(); it != m_phoneDevices.end(); ++it)
+    it->second.Close();
+
+  PTRACE(4, "Endpoint shut down.");
 }
 
 
@@ -230,6 +249,7 @@ bool OpalSkinnyEndPoint::Unregister(const PString & name)
   }
 
   phoneDevice->Stop();
+  phoneDevice->Close();
   m_phoneDevices.RemoveAt(name);
   return true;
 }
@@ -289,22 +309,27 @@ bool OpalSkinnyEndPoint::PhoneDevice::SendRegisterMsg()
 
 void OpalSkinnyEndPoint::PhoneDevice::Stop()
 {
-  m_name.MakeEmpty();
+  if (m_status == RegisteredStatusText) {
+    PTRACE(4, "Unregistering " << m_name);
+    SendSkinnyMsg(UnregisterMsg());
+  }
+}
 
-  if (!m_transport.IsOpen())
-    return;
 
-  PTRACE(4, "Unregistering from " << m_transport.GetRemoteAddress().GetHostName());
-  if (!SendSkinnyMsg(UnregisterMsg()))
-    return;
+void OpalSkinnyEndPoint::PhoneDevice::Close()
+{
+  PTRACE(4, "Closing " << m_name);
 
   // Wait a bit for ack reply.
-  for (PINDEX wait = 0; wait < 10; ++wait) {
-    if (!m_transport.IsOpen())
-      break;
-    PThread::Sleep(200);
+  if (m_status == RegisteredStatusText) {
+    for (PINDEX wait = 0; wait < 10; ++wait) {
+      if (!m_transport.IsOpen())
+        break;
+      PThread::Sleep(200);
+    }
   }
 
+  m_exit.Signal();
   m_transport.CloseWait();
 }
 
@@ -314,7 +339,7 @@ bool OpalSkinnyEndPoint::PhoneDevice::SendSkinnyMsg(const SkinnyMsg & msg)
   if (m_transport.Write(&msg, msg.GetLength()))
     return true;
 
-  PTRACE(3, "Error writing message to " << m_transport.GetRemoteAddress().GetHostName());
+  PTRACE(3, "Error writing message for " << m_name << " to " << m_transport.GetRemoteAddress().GetHostName());
   return false;
 }
 
@@ -322,17 +347,18 @@ bool OpalSkinnyEndPoint::PhoneDevice::SendSkinnyMsg(const SkinnyMsg & msg)
 #define ON_RECEIVE_MSG(cls) \
   case cls::ID : \
   PTRACE(4, "Received " << typeid(cls).name()); \
-  ok = m_endpoint.OnReceiveMsg(*this, cls(pdu)); \
+  if (!m_endpoint.OnReceiveMsg(*this, cls(pdu))) \
+    running = false; \
   break
 
 void OpalSkinnyEndPoint::PhoneDevice::HandleTransport()
 {
-  PTRACE(4, "Started client handler thread");
+  PTRACE(4, "Started client handler thread: " << m_name);
 
-  while (!m_name.IsEmpty()) {
+  bool running = true;
+  while (running) {
     PBYTEArray pdu;
     if (m_transport.ReadPDU(pdu)) {
-      bool ok;
       unsigned msgId = pdu.GetAs<PUInt32l>(4);
       switch (msgId) {
         ON_RECEIVE_MSG(KeepAliveMsg);
@@ -362,11 +388,8 @@ void OpalSkinnyEndPoint::PhoneDevice::HandleTransport()
 
         default:
           PTRACE(4, "Received unhandled message id=0x" << hex << msgId << dec);
-          ok = true;
           break;
       }
-      if (!ok)
-        m_transport.Close();
     }
     else {
       switch (m_transport.GetErrorCode(PChannel::LastReadError)) {
@@ -375,14 +398,14 @@ void OpalSkinnyEndPoint::PhoneDevice::HandleTransport()
           m_status = "Lost transport";
         case PChannel::NotOpen:
           // Remote close of TCP
-          for (;;) {
-            m_transport.Close();
-            if (m_name.IsEmpty())
+          m_transport.Close();
+          while (!m_transport.Connect() || !SendRegisterMsg()) {
+            PTRACE(2, "Server for " << m_name << " transport reconnect error: " << m_transport.GetErrorText());
+            if (m_exit.Wait(10000)) {
+              PTRACE(4, "Exiting thread for " << m_name);
+              running = false;
               break;
-            if (m_transport.Connect() && SendRegisterMsg())
-              break;
-            PTRACE(2, "Server transport reconnect error: " << m_transport.GetErrorText());
-            PThread::Sleep(10000);
+            }
           }
           break;
 
@@ -393,11 +416,13 @@ void OpalSkinnyEndPoint::PhoneDevice::HandleTransport()
         default :
           m_status = "Transport error: " + m_transport.GetErrorText(PChannel::LastReadError);
           PTRACE(2, m_status);
-          m_transport.Close();
+          running = false;
       }
     }
   }
-  PTRACE(4, "Ended client handler thread");
+
+  m_transport.Close();
+  PTRACE(4, "Ended client handler thread: " << m_name);
 }
 
 
@@ -421,7 +446,7 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice &, const RegisterMsg &)
 
 bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const RegisterAckMsg & ack)
 {
-  client.m_status = "Registered";
+  client.m_status = RegisteredStatusText;
 
   PIPSocket::AddressAndPort ap;
   if (client.m_transport.GetLocalAddress().GetIpAndPort(ap))
