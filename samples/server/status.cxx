@@ -151,16 +151,17 @@ bool ClearLogPage::OnPostControl(const PStringToString & data, PHTML & msg)
 
   if (data("submit") == ClearLogFileStr) {
     if (logFile->Clear())
-      msg << "Cleared log file " << logFile->GetFilePath();
+      msg << "Cleared ";
     else
-      msg << "Could not clear log file " << logFile->GetFilePath() << PHTML::Paragraph()
-          << "Probably just in use, you can usually just try again.";
+      msg << "Could not clear ";
+    msg << " log file " << logFile->GetFilePath();
   }
   else if (data("submit") == RotateLogFilesStr) {
     if (logFile->Rotate(true))
-      msg << "Rotated log file " << logFile->GetFilePath();
+      msg << "Rotated";
     else
-      msg << "Could not rotate log file " << logFile->GetFilePath();
+      msg << "Could not rotate";
+    msg << " log file " << logFile->GetFilePath() << " to " << logFile->GetRotateInfo().m_directory;
   }
 
   return true;
