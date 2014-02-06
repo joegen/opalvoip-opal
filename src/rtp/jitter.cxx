@@ -373,7 +373,7 @@ PBoolean OpalJitterBuffer::WriteData(const RTP_DataFrame & frame, const PTimeInt
         m_frameTimeCount = 0;
 
         // If new average changed by more than millisecond, start using it.
-        if (std::abs(newFrameTime - (int)m_incomingFrameTime) > (int)m_timeUnits) {
+        if (std::abs(newFrameTime - (int)m_incomingFrameTime) >= (int)m_timeUnits) {
           m_incomingFrameTime = newFrameTime;
           AdjustCurrentJitterDelay(0);
           PTRACE(4, "Jitter\tFrame time set  : ts=" << timestamp << ", size=" << m_frames.size() << ","
