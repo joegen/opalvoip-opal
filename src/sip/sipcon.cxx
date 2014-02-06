@@ -775,7 +775,9 @@ PBoolean SIPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
       security |= e_SecureMediaSession;
 #endif
 
+#if OPAL_VIDEO
     SetAudioVideoGroup(); // Googlish audio and video grouping id
+#endif
 
     vector<bool> sessions = CreateAllMediaSessions(security);
     for (vector<bool>::size_type session = 1; session < sessions.size(); ++session) {
@@ -792,6 +794,7 @@ PBoolean SIPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
 }
 
 
+#if OPAL_VIDEO
 void SIPConnection::SetAudioVideoGroup()
 {
   if (!m_stringOptions.GetBoolean(OPAL_OPT_AV_GROUPING))
@@ -810,6 +813,7 @@ void SIPConnection::SetAudioVideoGroup()
   audioSession->SetGroupId(group);
   videoSession->SetGroupId(group);
 }
+#endif // OPAL_VIDEO
 
 
 bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
@@ -1050,7 +1054,9 @@ bool SIPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPS
   }
 #endif // OPAL_SRTP
 
+#if OPAL_VIDEO
   SetAudioVideoGroup(); // Googlish audio and video grouping id
+#endif
 
   // Fill in refusal for media sessions we didn't like
   bool gotNothing = true;

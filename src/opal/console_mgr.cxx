@@ -1132,7 +1132,10 @@ void OpalConsoleMixerEndPoint::GetArgumentSpec(ostream & strm) const
 {
   strm << "[Mixer (MCU) options:]"
           "-no-mcu.       Disable MCU subsystem\n"
-          "-audio-only.   Audio only conference\n";
+#if OPAL_VIDEO
+          "-audio-only.   Audio only conference\n"
+#endif
+          ;
 }
 
 
@@ -1148,7 +1151,9 @@ bool OpalConsoleMixerEndPoint::Initialise(PArgList & args, bool verbose, const P
   }
 
   OpalMixerNodeInfo adHoc;
+#if OPAL_VIDEO
   adHoc.m_audioOnly = args.HasOption("audio-only");
+#endif
   SetAdHocNodeInfo(adHoc);
 
   return true;
