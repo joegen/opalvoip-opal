@@ -129,23 +129,38 @@ const char * ClearLogPage::GetTitle() const
 }
 
 
+static PConstString const ClearLogFileStr("Clear Log File");
+static PConstString const RotateLogFilesStr("Rotate Log Files");
+
 void ClearLogPage::CreateContent(PHTML & html, const PStringToString &) const
 {
-  html << PHTML::Paragraph() << "<center>" << PHTML::SubmitButton("Clear Log File", "Clear Log File");
+  html << PHTML::Paragraph() << "<center>" << PHTML::SubmitButton(ClearLogFileStr);
+  PSystemLogToFile * logFile = dynamic_cast<PSystemLogToFile *>(&PSystemLog::GetTarget());
+  if (logFile != NULL && logFile->GetRotateInfo().CanRotate())
+    html << PHTML::Paragraph() << "<center>" << PHTML::SubmitButton(RotateLogFilesStr);
 }
 
 
 bool ClearLogPage::OnPostControl(const PStringToString & data, PHTML & msg)
 {
-  if (data("Clear Log File") == "Clear Log File") {
-    PSystemLogToFile * logFile = dynamic_cast<PSystemLogToFile *>(&PSystemLog::GetTarget());
-    if (logFile == NULL)
-      msg << "Not logging to a file";
-    else if (logFile->Clear())
+  PSystemLogToFile * logFile = dynamic_cast<PSystemLogToFile *>(&PSystemLog::GetTarget());
+  if (logFile == NULL) {
+    msg << "Not logging to a file";
+    return true;
+  }
+
+  if (data("submit") == ClearLogFileStr) {
+    if (logFile->Clear())
       msg << "Cleared log file " << logFile->GetFilePath();
     else
       msg << "Could not clear log file " << logFile->GetFilePath() << PHTML::Paragraph()
           << "Probably just in use, you can usually just try again.";
+  }
+  else if (data("submit") == RotateLogFilesStr) {
+    if (logFile->Rotate(true))
+      msg << "Rotated log file " << logFile->GetFilePath();
+    else
+      msg << "Could not rotate log file " << logFile->GetFilePath();
   }
 
   return true;

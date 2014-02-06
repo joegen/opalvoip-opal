@@ -42,6 +42,11 @@ const WORD DefaultTelnetPort = 1718;
 static const char UsernameKey[] = "Username";
 static const char PasswordKey[] = "Password";
 static const char LogLevelKey[] = "Log Level";
+static const char LogFileKey[] = "Log File";
+static const char LogRotateDirKey[]  = "Log Rotate Directory";
+static const char LogRotateSizeKey[] = "Log Rotate File Size";
+static const char LogRotateCountKey[] = "Log Rotate File Count";
+static const char LogRotateAgeKey[] = "Log Rotate File Age";
 static const char DefaultAddressFamilyKey[] = "AddressFamily";
 #if OPAL_PTLIB_SSL
 static const char HTTPCertificateFileKey[]  = "HTTP Certificate";
@@ -154,36 +159,27 @@ static char LoopbackPrefix[] = "loopback";
 MyProcess::MyProcess()
   : MyProcessAncestor(ProductInfo)
 {
-  PConfig cfg(ParametersSection);
-
-  // Sert log level as early as possible
-  SetLogLevel(cfg.GetEnum(LogLevelKey, GetLogLevel()));
-
-#if PTRACING
-  PTrace::SetLevel(GetLogLevel());
-  PTrace::ClearOptions(PTrace::Timestamp);
-  PTrace::SetOptions(PTrace::ContextIdentifier);
-#if _DEBUG
-  PTrace::SetOptions(PTrace::FileAndLine);
-#endif
-#endif
 }
 
 
 PBoolean MyProcess::OnStart()
 {
-  // change to the default directory to the one containing the executable
-  PDirectory exeDir = GetFile().GetDirectory();
-
-#if defined(_WIN32) && defined(_DEBUG)
-  // Special check to aid in using DevStudio for debugging.
-  if (exeDir.Find("\\Debug\\") != P_MAX_INDEX)
-    exeDir = exeDir.GetParent();
-#endif
-  exeDir.Change();
-
-  httpNameSpace.AddResource(new PHTTPDirectory("data", "data"));
-  httpNameSpace.AddResource(new PServiceHTTPDirectory("html", "html"));
+  // Set log level as early as possible
+  {
+    PConfig cfg(ParametersSection);
+    PString file = cfg.GetString(LogFileKey);
+    if (!file.IsEmpty()) {
+      PSystemLogToFile * logFile = new PSystemLogToFile(file);
+      PSystemLogToFile::RotateInfo info = logFile->GetRotateInfo();
+      info.m_directory = cfg.GetString(LogRotateDirKey, info.m_directory);
+      info.m_maxSize = cfg.GetInteger(LogRotateSizeKey, info.m_maxSize / 1000) * 1000;
+      info.m_maxFileCount = cfg.GetInteger(LogRotateCountKey, info.m_maxFileCount);
+      info.m_maxFileAge.SetInterval(0, 0, 0, 0, cfg.GetInteger(LogRotateAgeKey, info.m_maxFileAge.GetDays()));
+      logFile->SetRotateInfo(info, true);
+      PSystemLog::SetTarget(logFile);
+    }
+    SetLogLevel(cfg.GetEnum(LogLevelKey, GetLogLevel()));
+  }
 
   return m_manager.PreInitialise(GetArguments(), false) &&
          PHTTPServiceProcess::OnStart() &&
@@ -251,6 +247,34 @@ PBoolean MyProcess::Initialise(const char * initMsg)
                         PSystemLog::Fatal, PSystemLog::NumLogLevels-1,
                         GetLogLevel(),
                         "1=Fatal only, 2=Errors, 3=Warnings, 4=Info, 5=Debug");
+  SetLogLevel(cfg.GetEnum(LogLevelKey, GetLogLevel()));
+
+  PSystemLogToFile * logFile = dynamic_cast<PSystemLogToFile *>(&PSystemLog::GetTarget());
+
+  PString logFileName = rsrc->AddStringField(LogFileKey, 0, logFile != NULL ? logFile->GetFilePath() : PString::Empty(),
+                                             "File for logging output, empty string disables logging", 1, 80);
+  if (logFileName.IsEmpty()) {
+    if (logFile != NULL)
+      PSystemLog::SetTarget(new PSystemLogToNowhere);
+  }
+  else {
+    if (logFile == NULL || logFile->GetFilePath() != logFileName)
+      PSystemLog::SetTarget(new PSystemLogToFile(logFileName));
+  }
+
+  if ((logFile = dynamic_cast<PSystemLogToFile *>(&PSystemLog::GetTarget())) != NULL) {
+    PSystemLogToFile::RotateInfo info = logFile->GetRotateInfo();
+    info.m_directory = rsrc->AddStringField(LogRotateDirKey, 0, info.m_directory,
+                                           "Directory path for log file rotation", 1, 80);
+    info.m_maxSize = rsrc->AddIntegerField(LogRotateSizeKey, 0, INT_MAX, info.m_maxSize / 1000,
+                                           "kb", "Size of log file to trigger rotation, zero disables")*1000;
+    info.m_maxFileCount = rsrc->AddIntegerField(LogRotateCountKey, 0, 10000, info.m_maxFileCount,
+                                                "", "Number of rotated log file to keep, zero is infinite");
+    info.m_maxFileAge.SetInterval(0, 0, 0, 0, rsrc->AddIntegerField(LogRotateAgeKey,
+                                              0, 10000, info.m_maxFileAge.GetDays(),
+                                              "days", "Number of days to keep rotated log files, zero is infinite"));
+    logFile->SetRotateInfo(info);
+  }
 
 #if OPAL_PTLIB_SSL
   // SSL certificate file.
@@ -300,7 +324,6 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   ClearLogPage * clearLog = NULL;
   PHTTPTailFile * tailLog = NULL;
 
-  PSystemLogToFile * logFile = dynamic_cast<PSystemLogToFile *>(&PSystemLog::GetTarget());
   if (logFile != NULL) {
     fullLog = new PHTTPFile("FullLog", logFile->GetFilePath(), PMIMEInfo::TextPlain(), authority);
     httpNameSpace.AddResource(fullLog, PHTTPSpace::Overwrite);
