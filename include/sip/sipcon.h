@@ -774,7 +774,9 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
       OpalTransportAddress & localAddress,
       bool & remoteChanged
     );
+#if OPAL_VIDEO
     void SetAudioVideoGroup();
+#endif
 
     bool SendReINVITE(PTRACE_PARAM(const char * msg));
     bool StartPendingReINVITE();
