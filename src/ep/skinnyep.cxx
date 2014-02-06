@@ -62,10 +62,12 @@ static POrdinalToString::Initialiser const CodecCodes[] = {
   {  82, OPAL_G726_32K       },
   {  83, OPAL_G726_24K       },
   {  84, OPAL_G726_16K       },
-  { 100, OPAL_H261           },
+#if OPAL_VIDEO
+  { 100, OPAL_H261 },
   { 101, OPAL_H263           },
   { 103, OPAL_H264           },
   { 106, OPAL_FECC_RTP       },
+#endif
   { 257, OPAL_RFC2833        }
 };
 static PStringToOrdinal const MediaFormatToCodecCode(PARRAYSIZE(CodecCodes), CodecCodes);
@@ -932,8 +934,10 @@ OpalMediaType OpalSkinnyConnection::GetMediaTypeFromId(uint32_t id)
   if (id == m_audioId)
     return OpalMediaType::Audio();
 
+#if OPAL_VIDEO
   if (id == m_videoId)
     return OpalMediaType::Video();
+#endif
 
   return OpalMediaType();
 }
@@ -946,10 +950,12 @@ void OpalSkinnyConnection::SetFromIdMediaType(const OpalMediaType & mediaType, u
     PTRACE(4, "Setting audio stream id to " << id);
   }
 
+#if OPAL_VIDEO
   if (mediaType == OpalMediaType::Video()) {
     m_videoId = id;
     PTRACE(4, "Setting video stream id to " << id);
   }
+#endif
 }
 
 
