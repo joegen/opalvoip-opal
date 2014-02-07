@@ -129,7 +129,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   SetCompatibility(H323Connection::e_NoUserInputCapability,   "AltiServ-ITG");
   SetCompatibility(H323Connection::e_H224MustBeSession3,      "HDX");
   SetCompatibility(H323Connection::e_NeedMSDAfterNonEmptyTCS, "Avaya|Radvision");
-  SetCompatibility(H323Connection::e_ForceMaintainConnection, "Avaya");
+  SetCompatibility(H323Connection::e_ForceMaintainConnection, "Multivantage");
 
   m_capabilities.AddAllCapabilities(0, 0, "*");
   H323_UserInputCapability::AddAllCapabilities(m_capabilities, P_MAX_INDEX, P_MAX_INDEX);
@@ -609,6 +609,7 @@ void H323EndPoint::OnReleased(OpalConnection & connection)
 
   OpalTransportPtr signallingChannel = dynamic_cast<H323Connection &>(connection).GetSignallingChannel();
   if (signallingChannel != NULL) {
+    PTRACE(3, "H323", "Maintaining TCP connection: " << *signallingChannel);
     m_reusableTransports.Append(signallingChannel);
     signallingChannel->AttachThread(new PThreadObj1Arg<H323EndPoint, const OpalTransportPtr &>(*this,
                 signallingChannel, &H323EndPoint::InternalNewIncomingConnection, false, "H225 Answer"));
@@ -1560,10 +1561,10 @@ bool H323EndPoint::HasCompatibilityIssue(H323Connection::CompatibilityIssues iss
   if (it != m_compatibility.end())
     found = productInfo.AsString().FindRegEx(it->second) != P_MAX_INDEX;
 
-  PTRACE(4, "H.323\tChecking compatibility issue " << issue << ", "
+  PTRACE(found ? 3 : 4, "H.323\t" << (found ? "Found" : "Checked")
+         << " compatibility issue " << issue << ", "
             "product=\"" << productInfo << "\", "
-            "re=\"" << (it != m_compatibility.end() ? it->second.GetPattern() : PString::Empty()) << "\", "
-            "found=" << found);
+            "regex=\"" << (it != m_compatibility.end() ? it->second.GetPattern() : PString::Empty()) << '"');
   return found;
 }
 

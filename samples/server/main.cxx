@@ -53,6 +53,7 @@ static const char HTTPCertificateFileKey[]  = "HTTP Certificate";
 #endif
 static const char HttpPortKey[] = "HTTP Port";
 static const char TelnetPortKey[] = "Console Port";
+static const char DisplayNameKey[] = "Display Name";
 static const char MediaTransferModeKey[] = "Media Transfer Mode";
 static const char AutoStartKeyPrefix[] = "Auto Start ";
 static const char PreferredMediaKey[] = "Preferred Media";
@@ -498,6 +499,8 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
   }
 
   // General parameters for all endpoint types
+  SetDefaultDisplayName(rsrc->AddStringField(DisplayNameKey, 25, GetDefaultDisplayName(), "Display name used in various protocols"));
+
   m_mediaTransferMode = cfg.GetEnum(MediaTransferModeKey, m_mediaTransferMode);
   static const char * const MediaTransferModeValues[] = { "0", "1", "2" };
   static const char * const MediaTransferModeTitles[] = { "Bypass", "Forward", "Transcode" };
