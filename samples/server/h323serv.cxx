@@ -91,17 +91,6 @@ static const char AliasRouteMapsName[] = "Gatekeeper Alias Route Maps";
 #define ROUTES_SECTION "Route Maps"
 #define ROUTES_KEY     "Mapping"
 
-static const char * CompatibilityIssueKey[H323Connection::NumCompatibilityIssues] = {
-  "No Multiple Tunnelled H245",
-  "Bad Master Slave Conflict",
-  "No User Input Capability",
-  "H.224 Must Be Session 3",
-  "Need TCS after Non-Empty TCS",
-  "Need MSD after Non-Empty TCS",
-  "Force Maintain TCP Connection"
-};
-
-
 #define PTraceModule() "OpalServer"
 #define new PNEW
 
@@ -152,8 +141,8 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
 #endif
 
   for (H323Connection::CompatibilityIssues issue = H323Connection::BeginCompatibilityIssues; issue < H323Connection::EndCompatibilityIssues; ++issue)
-    SetCompatibility(issue, rsrc->AddStringField(PAssertNULL(CompatibilityIssueKey[issue]), 0, GetCompatibility(issue),
-                                    "Compatibility issue work around, product name/version regular expression", 1, 50));
+    SetCompatibility(issue, rsrc->AddStringField(H323Connection::CompatibilityIssuesToString(issue), 0, GetCompatibility(issue),
+                                                 "Compatibility issue work around, product name/version regular expression", 1, 50));
 
   if (!StartListeners(rsrc->AddStringArrayField(H323ListenersKey, false, 0, PStringArray(),
                    "Local network interfaces to listen for H.323, blank means all", 1, 30))) {
