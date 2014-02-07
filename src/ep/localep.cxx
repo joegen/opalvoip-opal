@@ -251,8 +251,8 @@ bool OpalLocalEndPoint::CreateVideoOutputDevice(const OpalConnection & connectio
 
 
 OpalLocalEndPoint::Synchronicity
-OpalLocalEndPoint::GetSynchronicity(const OpalMediaFormat & mediaFormat,
-                                    bool isSource) const
+        OpalLocalEndPoint::GetSynchronicity(const OpalMediaFormat & mediaFormat,
+                                            bool isSource) const
 {
   if (mediaFormat.GetMediaType() == OpalMediaType::Audio())
     return m_defaultAudioSynchronicity;
@@ -390,8 +390,7 @@ OpalMediaStream * OpalLocalConnection::CreateMediaStream(const OpalMediaFormat &
                                                          PBoolean isSource)
 {
   if (m_endpoint.UseCallback(mediaFormat, isSource))
-    return new OpalLocalMediaStream(*this, mediaFormat, sessionID, isSource,
-                                    m_endpoint.GetSynchronicity(mediaFormat, isSource));
+    return new OpalLocalMediaStream(*this, mediaFormat, sessionID, isSource, GetSynchronicity(mediaFormat, isSource));
 
 #if OPAL_VIDEO
   if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
@@ -535,6 +534,36 @@ void OpalLocalConnection::InternalAcceptIncoming()
 }
 
 
+bool OpalLocalConnection::OnReadMediaFrame(const OpalMediaStream & mediaStream, RTP_DataFrame & frame)
+{
+  return m_endpoint.OnReadMediaFrame(*this, mediaStream, frame);
+}
+
+
+bool OpalLocalConnection::OnWriteMediaFrame(const OpalMediaStream & mediaStream, RTP_DataFrame & frame)
+{
+  return m_endpoint.OnWriteMediaFrame(*this, mediaStream, frame);
+}
+
+
+bool OpalLocalConnection::OnReadMediaData(const OpalMediaStream & mediaStream, void * data, PINDEX size, PINDEX & length)
+{
+  return m_endpoint.OnReadMediaData(*this, mediaStream, data, size, length);
+}
+
+
+bool OpalLocalConnection::OnWriteMediaData(const OpalMediaStream & mediaStream, const void * data, PINDEX length, PINDEX & written)
+{
+  return m_endpoint.OnWriteMediaData(*this, mediaStream, data, length, written);
+}
+
+
+OpalLocalEndPoint::Synchronicity OpalLocalConnection::GetSynchronicity(const OpalMediaFormat & mediaFormat, bool isSource) const
+{
+  return m_endpoint.GetSynchronicity(mediaFormat, isSource);
+}
+
+
 #if OPAL_VIDEO
 
 bool OpalLocalConnection::CreateVideoInputDevice(const OpalMediaFormat & mediaFormat,
@@ -627,6 +656,7 @@ OpalLocalMediaStream::OpalLocalMediaStream(OpalLocalConnection & connection,
                                            OpalLocalEndPoint::Synchronicity synchronicity)
   : OpalMediaStream(connection, mediaFormat, sessionID, isSource)
   , OpalMediaStreamPacing(mediaFormat)
+  , m_connection(connection)
   , m_synchronicity(synchronicity)
 {
 }
@@ -637,9 +667,7 @@ PBoolean OpalLocalMediaStream::ReadPacket(RTP_DataFrame & frame)
   if (!IsOpen())
     return false;
 
-  OpalLocalEndPoint & ep = dynamic_cast<OpalLocalEndPoint &>(connection.GetEndPoint());
-  OpalLocalConnection & conn = dynamic_cast<OpalLocalConnection &>(connection);
-  if (ep.OnReadMediaFrame(conn, *this, frame))
+  if (m_connection.OnReadMediaFrame(*this, frame))
     return true;
 
   return OpalMediaStream::ReadPacket(frame);
@@ -651,9 +679,7 @@ PBoolean OpalLocalMediaStream::WritePacket(RTP_DataFrame & frame)
   if (!IsOpen())
     return false;
 
-  OpalLocalEndPoint & ep = dynamic_cast<OpalLocalEndPoint &>(connection.GetEndPoint());
-  OpalLocalConnection & conn = dynamic_cast<OpalLocalConnection &>(connection);
-  if (ep.OnWriteMediaFrame(conn, *this, frame))
+  if (m_connection.OnWriteMediaFrame(*this, frame))
     return true;
 
   return OpalMediaStream::WritePacket(frame);
@@ -662,9 +688,7 @@ PBoolean OpalLocalMediaStream::WritePacket(RTP_DataFrame & frame)
 
 PBoolean OpalLocalMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length)
 {
-  OpalLocalEndPoint & ep = dynamic_cast<OpalLocalEndPoint &>(connection.GetEndPoint());
-  OpalLocalConnection & conn = dynamic_cast<OpalLocalConnection &>(connection);
-  if (!ep.OnReadMediaData(conn, *this, data, size, length))
+  if (!m_connection.OnReadMediaData(*this, data, size, length))
     return false;
 
   if (m_synchronicity == OpalLocalEndPoint::e_SimulateSyncronous)
@@ -675,9 +699,6 @@ PBoolean OpalLocalMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
 
 PBoolean OpalLocalMediaStream::WriteData(const BYTE * data, PINDEX length, PINDEX & written)
 {
-  OpalLocalEndPoint & ep = dynamic_cast<OpalLocalEndPoint &>(connection.GetEndPoint());
-  OpalLocalConnection & conn = dynamic_cast<OpalLocalConnection &>(connection);
-
   if (GetMediaFormat().GetName().NumCompare(OPAL_PCM16) == EqualTo) {
     if (data != NULL && length != 0)
       m_silence.SetMinSize(length);
@@ -688,7 +709,7 @@ PBoolean OpalLocalMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
     }
   }
 
-  if (!ep.OnWriteMediaData(conn, *this, data, length, written))
+  if (!m_connection.OnWriteMediaData(*this, data, length, written))
     return false;
 
   if (m_synchronicity == OpalLocalEndPoint::e_SimulateSyncronous)
