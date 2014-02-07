@@ -256,7 +256,7 @@ class OpalMediaClearText : public OpalMediaCryptoSuite
   virtual bool ChangeSessionType(PCaselessString & /*mediaSession*/) const { return true; }
   virtual const char * GetDescription() const { return OpalMediaCryptoSuite::ClearText(); }
 #if OPAL_H235_6 || OPAL_H235_8
-  virtual H235SecurityCapability * CreateCapability(const OpalMediaFormat & mediaFormat, unsigned capabilityNumber) const { return new H235SecurityAlgorithmCapability(mediaFormat, capabilityNumber); }
+  virtual H235SecurityCapability * CreateCapability(const OpalMediaFormat &, unsigned) const { return NULL; }
   virtual const char * GetOID() const { return "0.0.8.235.0.3.26"; }
 #endif
   virtual PINDEX GetCipherKeyBits() const { return 0; }
