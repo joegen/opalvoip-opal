@@ -2098,6 +2098,15 @@ class H323Connection : public OpalRTPConnection
       e_NeedMSDAfterNonEmptyTCS, ///< Must send a MSD after get a retrieve from hold (non-empty) TCS
       e_ForceMaintainConnection  ///< Server will re-use TCP connection for another without setting flag in PDU
     );
+    P_DECLARE_ENUM_NAMES(CompatibilityIssues,
+      "No Multiple Tunnelled H245",
+      "Bad Master Slave Conflict",
+      "No User Input Capability",
+      "H.224 Must Be Session 3",
+      "Need TCS after Non-Empty TCS",
+      "Need MSD after Non-Empty TCS",
+      "Force Maintain TCP Connection"
+    );
 
     /// Determine if we must compensate for remote endpoint.
     bool HasCompatibilityIssue(
