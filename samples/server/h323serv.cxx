@@ -97,8 +97,8 @@ static const char * CompatibilityIssueKey[H323Connection::NumCompatibilityIssues
   "No User Input Capability",
   "H.224 Must Be Session 3",
   "Need TCS after Non-Empty TCS",
-  "Need MSD after Non-Empty TCS"
-
+  "Need MSD after Non-Empty TCS",
+  "Force Maintain TCP Connection"
 };
 
 

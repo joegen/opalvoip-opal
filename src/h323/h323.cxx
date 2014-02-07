@@ -124,6 +124,7 @@ H323Connection::H323Connection(OpalCall & call,
   , endSessionSent(false)
   , endSessionNeeded(false)
   , isConsultationTransfer(false)
+  , m_maintainConnection(false)
   , m_holdFromRemote(eOffHoldFromRemote)
 #if OPAL_H450
   , isCallIntrusion(false)
@@ -334,9 +335,11 @@ void H323Connection::OnReleased()
   if (m_controlChannel != NULL)
     m_controlChannel->CloseWait();
 
-  // Wait for signalling channel to be cleaned up (thread ended).
-  if (m_signallingChannel != NULL)
+  // Do not close m_signallingChannel as H323Endpoint can take it back for possible re-use
+  if (!m_maintainConnection && m_signallingChannel != NULL) {
     m_signallingChannel->CloseWait();
+    m_signallingChannel.SetNULL();
+  }
 
   OpalRTPConnection::OnReleased();
 }
@@ -665,6 +668,7 @@ void H323Connection::HandleTunnelPDU(H323SignalPDU * txPDU)
 
   if (h245TunnelRxPDU->m_h323_uu_pdu.m_h323_message_body.GetTag() == H225_H323_UU_PDU_h323_message_body::e_setup) {
     H225_Setup_UUIE & setup = h245TunnelRxPDU->m_h323_uu_pdu.m_h323_message_body;
+    setup.m_maintainConnection = m_maintainConnection;
 
     if (doH245inSETUP && setup.HasOptionalField(H225_Setup_UUIE::e_parallelH245Control)) {
       for (i = 0; i < setup.m_parallelH245Control.GetSize(); i++) {
@@ -829,6 +833,17 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
 
   H225_Setup_UUIE & setup = setupPDU->m_h323_uu_pdu.m_h323_message_body;
 
+  SetRemoteVersions(setup.m_protocolIdentifier);
+  SetRemotePartyInfo(*setupPDU); // Determine the remote parties name/number/address as best we can
+  SetRemoteApplication(setup.m_sourceInfo);
+#if OPAL_H235_6
+  SetDiffieHellman(setup);
+#endif
+  if (HasCompatibilityIssue(e_ForceMaintainConnection))
+    m_maintainConnection = true;
+  else
+    SetMaintainConnectionFlag(setup);
+
   switch (setup.m_conferenceGoal.GetTag()) {
     case H225_Setup_UUIE_conferenceGoal::e_create:
       m_conferenceGoal = e_Create;
@@ -849,8 +864,6 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
       return endpoint.OnNegotiateConferenceCapabilities(*setupPDU);
   }
 
-  SetRemoteVersions(setup.m_protocolIdentifier);
-
   // Get the ring pattern
   distinctiveRing = setupPDU->GetDistinctiveRing();
 
@@ -858,14 +871,6 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
   if (setup.HasOptionalField(H225_Setup_UUIE::e_callIdentifier))
     callIdentifier = setup.m_callIdentifier.m_guid;
   conferenceIdentifier = setup.m_conferenceID;
-  SetRemoteApplication(setup.m_sourceInfo);
-#if OPAL_H235_6
-  if (setup.HasOptionalField(H225_Setup_UUIE::e_tokens))
-    m_dh.FromTokens(setup.m_tokens);
-#endif
-
-  // Determine the remote parties name/number/address as best we can
-  SetRemotePartyInfo(*setupPDU);
 
   setupPDU->GetQ931().GetRedirectingNumber(m_redirectingParty);
 
@@ -1250,9 +1255,9 @@ PBoolean H323Connection::OnReceivedCallProceeding(const H323SignalPDU & pdu)
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(call.m_destinationInfo);
 #if OPAL_H235_6
-  if (call.HasOptionalField(H225_CallProceeding_UUIE::e_tokens))
-    m_dh.FromTokens(call.m_tokens);
+  SetDiffieHellman(call);
 #endif
+  SetMaintainConnectionFlag(call);
 
 
 #if OPAL_H460
@@ -1289,9 +1294,9 @@ PBoolean H323Connection::OnReceivedProgress(const H323SignalPDU & pdu)
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(progress.m_destinationInfo);
 #if OPAL_H235_6
-  if (progress.HasOptionalField(H225_Progress_UUIE::e_tokens))
-    m_dh.FromTokens(progress.m_tokens);
+  SetDiffieHellman(progress);
 #endif
+  SetMaintainConnectionFlag(progress);
 
   // Check for fastStart data and start fast
   if (progress.HasOptionalField(H225_Progress_UUIE::e_fastStart))
@@ -1320,9 +1325,9 @@ PBoolean H323Connection::OnReceivedAlerting(const H323SignalPDU & pdu)
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(alert.m_destinationInfo);
 #if OPAL_H235_6
-  if (alert.HasOptionalField(H225_Alerting_UUIE::e_tokens))
-    m_dh.FromTokens(alert.m_tokens);
+  SetDiffieHellman(alert);
 #endif
+  SetMaintainConnectionFlag(alert);
 
 #if OPAL_H460
   if (alert.HasOptionalField(H225_Alerting_UUIE::e_featureSet))
@@ -1365,9 +1370,9 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   SetRemotePartyInfo(pdu);
   SetRemoteApplication(connect.m_destinationInfo);
 #if OPAL_H235_6
-  if (connect.HasOptionalField(H225_Connect_UUIE::e_tokens))
-    m_dh.FromTokens(connect.m_tokens);
+  SetDiffieHellman(connect);
 #endif
+  SetMaintainConnectionFlag(connect);
 
 #if OPAL_H460
   if (connect.HasOptionalField(H225_Connect_UUIE::e_featureSet))
@@ -1464,18 +1469,19 @@ PBoolean H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
     return false;
   const H225_Facility_UUIE & fac = pdu.m_h323_uu_pdu.m_h323_message_body;
 
+  SetRemoteVersions(fac.m_protocolIdentifier);
+  if (fac.HasOptionalField(H225_Facility_UUIE::e_destinationInfo))
+    SetRemoteApplication(fac.m_destinationInfo);
+#if OPAL_H235_6
+  SetDiffieHellman(fac);
+#endif
+  SetMaintainConnectionFlag(fac);
+
 #if OPAL_H460
   // Do not process H.245 Control PDU's
   if (!pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_h245Control) &&
        fac.HasOptionalField(H225_Facility_UUIE::e_featureSet))
     OnReceiveFeatureSet(H460_MessageType::e_facility, fac.m_featureSet);
-#endif
-
-  SetRemoteVersions(fac.m_protocolIdentifier);
-
-#if OPAL_H235_6
-  if (fac.HasOptionalField(H225_Facility_UUIE::e_tokens))
-    m_dh.FromTokens(fac.m_tokens);
 #endif
 
   // Check for fastStart data and start fast
@@ -1568,8 +1574,7 @@ PBoolean H323Connection::OnReceivedSignalNotify(const H323SignalPDU & pdu)
     const H225_Notify_UUIE & notify = pdu.m_h323_uu_pdu.m_h323_message_body;
     SetRemoteVersions(notify.m_protocolIdentifier);
 #if OPAL_H235_6
-    if (notify.HasOptionalField(H225_Notify_UUIE::e_tokens))
-      m_dh.FromTokens(notify.m_tokens);
+    SetDiffieHellman(notify);
 #endif
   }
   return true;
@@ -1582,8 +1587,7 @@ PBoolean H323Connection::OnReceivedSignalStatus(const H323SignalPDU & pdu)
     const H225_Status_UUIE & status = pdu.m_h323_uu_pdu.m_h323_message_body;
     SetRemoteVersions(status.m_protocolIdentifier);
 #if OPAL_H235_6
-    if (status.HasOptionalField(H225_Status_UUIE::e_tokens))
-      m_dh.FromTokens(status.m_tokens);
+    SetDiffieHellman(status);
 #endif
   }
   return true;
@@ -1596,8 +1600,7 @@ PBoolean H323Connection::OnReceivedStatusEnquiry(const H323SignalPDU & pdu)
     const H225_StatusInquiry_UUIE & status = pdu.m_h323_uu_pdu.m_h323_message_body;
     SetRemoteVersions(status.m_protocolIdentifier);
 #if OPAL_H235_6
-    if (status.HasOptionalField(H225_StatusInquiry_UUIE::e_tokens))
-      m_dh.FromTokens(status.m_tokens);
+    SetDiffieHellman(status);
 #endif
   }
 
@@ -2139,6 +2142,7 @@ PBoolean H323Connection::SetAlerting(const PString & calleeName, PBoolean withMe
 
   PTRACE(3, "H323\tSetAlerting " << (withMedia ? "with media" : "normal") << ' ' << *this);
   H225_Alerting_UUIE & alerting = alertingPDU->m_h323_uu_pdu.m_h323_message_body;
+  alerting.m_maintainConnection = m_maintainConnection;
 
   if (withMedia && !mediaWaitForConnect) {
     if (SendFastStartAcknowledge(alerting.m_fastStart))
@@ -2223,6 +2227,7 @@ PBoolean H323Connection::SetConnected()
   SetBearerCapabilities(*connectPDU);
 
   H225_Connect_UUIE & connect = connectPDU->m_h323_uu_pdu.m_h323_message_body;
+  connect.m_maintainConnection = m_maintainConnection;
 
   // Reply fast connect, make sure same as previously sent ALERTING or PROGRESS if present
   const H225_ArrayOf_PASN_OctetString * fastStart = NULL;
@@ -2312,6 +2317,7 @@ PBoolean H323Connection::SetProgressed()
   OnSetLocalCapabilities();
 
   H225_Progress_UUIE & progress = progressPDU->m_h323_uu_pdu.m_h323_message_body;
+  progress.m_maintainConnection = m_maintainConnection;
 
   // Now ask the application to select which channels to start
   if (SendFastStartAcknowledge(progress.m_fastStart))

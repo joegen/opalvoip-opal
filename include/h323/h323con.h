@@ -1950,7 +1950,7 @@ class H323Connection : public OpalRTPConnection
 
     /**Get the signalling channel being used.
       */
-    const H323Transport * GetSignallingChannel() const { return m_signallingChannel; }
+    OpalTransportPtr GetSignallingChannel() const { return m_signallingChannel; }
 
     /**Get the signalling channel protocol version number.
       */
@@ -2095,7 +2095,8 @@ class H323Connection : public OpalRTPConnection
       e_NoUserInputCapability,   ///< Endpoint ignores TCS if has User Input Capability
       e_H224MustBeSession3,      ///< H.224 channel must be session number 3, do not use H.245 negotiation
       e_NeedTCSAfterNonEmptyTCS, ///< Must send a TCS after get a retrieve from hold (non-empty) TCS
-      e_NeedMSDAfterNonEmptyTCS  ///< Must send a MSD after get a retrieve from hold (non-empty) TCS
+      e_NeedMSDAfterNonEmptyTCS, ///< Must send a MSD after get a retrieve from hold (non-empty) TCS
+      e_ForceMaintainConnection  ///< Server will re-use TCP connection for another without setting flag in PDU
     );
 
     /// Determine if we must compensate for remote endpoint.
@@ -2185,6 +2186,13 @@ class H323Connection : public OpalRTPConnection
     PSyncPoint endSessionReceived;
     PTimer     enforcedDurationLimit;
     bool       isConsultationTransfer;
+    bool       m_maintainConnection;
+
+    template <class PDU> void SetMaintainConnectionFlag(const PDU & pdu)
+    {
+      if (pdu.HasOptionalField(PDU::e_maintainConnection) && pdu.m_maintainConnection)
+        m_maintainConnection = true;
+    }
 
     PSafeDictionary<POrdinalKey, OpalMediaStream> m_conflictingChannels;
 
@@ -2248,6 +2256,12 @@ class H323Connection : public OpalRTPConnection
 
 #if OPAL_H235_6
     H235DiffieHellman m_dh;
+
+    template <class PDU> void SetDiffieHellman(const PDU & pdu)
+    {
+      if (pdu.HasOptionalField(PDU::e_tokens))
+        m_dh.FromTokens(pdu.m_tokens);
+    }
 #endif
 
   private:
