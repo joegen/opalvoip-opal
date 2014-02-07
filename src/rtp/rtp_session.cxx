@@ -189,7 +189,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_remoteBehindNAT(init.m_remoteBehindNAT)
   , m_localHasRestrictedNAT(false)
   , m_noTransmitErrors(0)
-#if P_STUNSRVR
+#if OPAL_ICE
   , m_stunServer(NULL)
 #endif
 #if PTRACING
