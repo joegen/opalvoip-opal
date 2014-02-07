@@ -127,7 +127,7 @@ ifneq (,$(PLUGIN_PATH))
 
 endif
 
-clean distclean ::
+clean optclean debugclean distclean ::
 	rm -rf $(OBJDIR)
 
 debug debugshared debugstatic :: DEBUG_BUILD=yes
