@@ -182,6 +182,12 @@ OpalRTPSession::OpalRTPSession(OpalConnection & conn, unsigned sessionId, const 
   , m_remoteBehindNAT(conn.RemoteIsNAT())
   , m_localHasRestrictedNAT(false)
   , m_noTransmitErrors(0)
+#if PTRACING
+  , m_levelTxRR(3)
+  , m_levelRxSR(3)
+  , m_levelRxRR(3)
+  , m_levelRxSDES(3)
+#endif
 {
   ClearStatistics();
 
@@ -560,7 +566,7 @@ void OpalRTPSession::AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiv
     receiver.dlsr = 0;
   }
   
-  PTRACE(3, "RTP\tSession " << m_sessionId << ", Sending ReceiverReport:"
+  PTRACE(m_levelTxRR, "RTP\tSession " << m_sessionId << ", Sending ReceiverReport:"
             " SSRC=" << RTP_TRACE_SRC(syncSourceIn)
          << " fraction=" << (unsigned)receiver.fraction
          << " lost=" << receiver.GetLostPackets()
@@ -952,7 +958,7 @@ bool OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report)
 
       // add the SSRC to the start of the payload
       *(PUInt32b *)report.GetPayloadPtr() = syncSourceOut;
-      PTRACE(3, "RTP\tSession " << m_sessionId << ", Sending ReceiverReport: SSRC=" << RTP_TRACE_SRC(syncSourceIn));
+      PTRACE(m_levelTxRR, "RTP\tSession " << m_sessionId << ", Sending ReceiverReport: SSRC=" << RTP_TRACE_SRC(syncSourceIn));
     }
     else {
       report.SetPayloadSize(sizeof(PUInt32b) + sizeof(RTP_ControlFrame::ReceiverReport));  // length is SSRC of packet sender plus RR
@@ -985,7 +991,7 @@ bool OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report)
     sender->psent    = packetsSent;
     sender->osent    = octetsSent;
 
-    PTRACE(3, "RTP\tSession " << m_sessionId << ", Sending SenderReport:"
+    PTRACE(m_levelTxRR, "RTP\tSession " << m_sessionId << ", Sending SenderReport:"
               " SSRC=" << RTP_TRACE_SRC(syncSourceOut)
            << " ntp=" << sender->ntp_sec << '.' << sender->ntp_frac
            << " rtp=" << sender->rtp_ts
@@ -1002,7 +1008,7 @@ bool OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report)
   report.EndPacket();
 
   // Add the SDES part to compound RTCP packet
-  PTRACE(3, "RTP\tSession " << m_sessionId << ", Sending SDES: " << m_canonicalName);
+  PTRACE(m_levelTxRR, "RTP\tSession " << m_sessionId << ", Sending SDES: " << m_canonicalName);
   report.StartNewPacket();
 
   report.SetCount(0); // will be incremented automatically
@@ -1011,6 +1017,9 @@ bool OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report)
   report.AddSourceDescriptionItem(RTP_ControlFrame::e_TOOL, m_toolName);
   report.EndPacket();
   
+#if PTRACING
+  m_levelTxRR = 4;
+#endif
   return true;
 }
 
@@ -1253,14 +1262,14 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
 
 #if OPAL_VIDEO
       case RTP_ControlFrame::e_IntraFrameRequest :
-        PTRACE(4, "RTP\tSession " << m_sessionId << ", received RFC2032 FIR");
+        PTRACE(3, "RTP\tSession " << m_sessionId << ", received RFC2032 FIR");
         m_connection.OnRxIntraFrameRequest(*this, true);
         break;
 
       case RTP_ControlFrame::e_PayloadSpecificFeedBack :
         switch (frame.GetFbType()) {
           case RTP_ControlFrame::e_PictureLossIndication :
-            PTRACE(4, "RTP\tSession " << m_sessionId << ", "
+            PTRACE(3, "RTP\tSession " << m_sessionId << ", "
                       "received RFC4585 PLI: "
                       "sender SSRC=" << RTP_TRACE_SRC(((const RTP_ControlFrame::FbHeader *)payload)->senderSSRC) << ", "
                       "media SSRC=" << RTP_TRACE_SRC(((const RTP_ControlFrame::FbHeader *)payload)->mediaSSRC));
@@ -1268,7 +1277,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
             break;
 
           case RTP_ControlFrame::e_FullIntraRequest :
-            PTRACE(4, "RTP\tSession " << m_sessionId << ", "
+            PTRACE(3, "RTP\tSession " << m_sessionId << ", "
                       "received RFC5104 FIR: "
                       "sender SSRC=" << RTP_TRACE_SRC(((const RTP_ControlFrame::FbFIR *)payload)->hdr.senderSSRC) << ", "
                       "request SSRC=" << RTP_TRACE_SRC(((const RTP_ControlFrame::FbFIR *)payload)->requestSSRC) << ", "
@@ -1297,12 +1306,13 @@ void OpalRTPSession::OnRxSenderReport(const SenderReport & sender, const Receive
   m_syncRealTime = sender.realTimestamp;
 
 #if PTRACING
-  if (PTrace::CanTrace(3)) {
+  if (PTrace::CanTrace(m_levelRxSR)) {
     ostream & strm = PTrace::Begin(3, __FILE__, __LINE__, this);
     strm << "RTP\tSession " << m_sessionId << ", OnRxSenderReport: " << sender << '\n';
     for (PINDEX i = 0; i < reports.GetSize(); i++)
       strm << "  RR: " << reports[i] << '\n';
     strm << PTrace::End;
+    m_levelRxSR = 4;
   }
 #endif
 
@@ -1313,12 +1323,13 @@ void OpalRTPSession::OnRxSenderReport(const SenderReport & sender, const Receive
 void OpalRTPSession::OnRxReceiverReport(DWORD PTRACE_PARAM(src), const ReceiverReportArray & reports)
 {
 #if PTRACING
-  if (PTrace::CanTrace(3)) {
+  if (PTrace::CanTrace(m_levelRxRR)) {
     ostream & strm = PTrace::Begin(2, __FILE__, __LINE__, this);
-    strm << "RTP\tSession " << m_sessionId << ", OnReceiverReport: SSRC=" << RTP_TRACE_SRC(src) << '\n';
+    strm << "RTP\tSession " << m_sessionId << ", OnRxReceiverReport: SSRC=" << RTP_TRACE_SRC(src) << '\n';
     for (PINDEX i = 0; i < reports.GetSize(); i++)
       strm << "  RR: " << reports[i] << '\n';
     strm << PTrace::End;
+    m_levelRxRR = 4;
   }
 #endif
   OnReceiverReports(reports);
@@ -1340,12 +1351,13 @@ void OpalRTPSession::OnReceiverReports(const ReceiverReportArray & reports)
 void OpalRTPSession::OnRxSourceDescription(const SourceDescriptionArray & PTRACE_PARAM(description))
 {
 #if PTRACING
-  if (PTrace::CanTrace(3)) {
+  if (PTrace::CanTrace(m_levelRxSDES)) {
     ostream & strm = PTrace::Begin(3, __FILE__, __LINE__, this);
-    strm << "RTP\tSession " << m_sessionId << ", OnSourceDescription: " << description.GetSize() << " entries";
+    strm << "RTP\tSession " << m_sessionId << ", OnRxSourceDescription: " << description.GetSize() << " entries";
     for (PINDEX i = 0; i < description.GetSize(); i++)
       strm << "\n  " << description[i];
     strm << PTrace::End;
+    m_levelRxSDES = 4;
   }
 #endif
 }
@@ -1354,8 +1366,9 @@ void OpalRTPSession::OnRxSourceDescription(const SourceDescriptionArray & PTRACE
 void OpalRTPSession::OnRxGoodbye(const PDWORDArray & PTRACE_PARAM(src), const PString & PTRACE_PARAM(reason))
 {
 #if PTRACING
-  if (PTrace::CanTrace(3)) {
-    ostream & strm = PTrace::Begin(3, __FILE__, __LINE__, this);
+  static unsigned const Level = 3;
+  if (PTrace::CanTrace(Level)) {
+    ostream & strm = PTrace::Begin(Level, __FILE__, __LINE__, this);
     strm << "RTP\tSession " << m_sessionId << ", OnGoodbye: " << reason << "\" SSRC=";
     for (PINDEX i = 0; i < src.GetSize(); i++)
       strm << RTP_TRACE_SRC(src[i]) << ' ';
