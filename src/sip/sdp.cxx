@@ -31,7 +31,7 @@
 #include <ptlib.h>
 #include <opal_config.h>
 
-#if OPAL_SIP
+#if OPAL_SDP
 
 #ifdef __GNUC__
 #pragma implementation "sdp.h"
@@ -57,7 +57,9 @@ static const char SDPBandwidthPrefix[] = "SDP-Bandwidth-";
 static char const CRLF[] = "\r\n";
 static PConstString const WhiteSpace(" \t\r\n");
 static char const TokenChars[] = "!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`abcdefghijklmnopqrstuvwxyz{|}~"; // From RFC4566
-static char const * const CandidateTypeNames[PNatCandidate::NumTypes] = { "host", "srflx", "prflx", "relay" };
+#if OPAL_ICE
+  static char const * const CandidateTypeNames[PNatCandidate::NumTypes] = { "host", "srflx", "prflx", "relay" };
+#endif
 static PConstString const IceLiteOption("ice-lite");
 
 
@@ -570,12 +572,14 @@ void SDPCommonAttributes::SetAttribute(const PString & attr, const PString & val
     return;
   }
 
+#if OPAL_ICE
   if (attr *= "ice-options") {
     PStringArray tokens = value.Tokenise(WhiteSpace, false); // Spec says space only, but lets be forgiving
     for (PINDEX i = 0; i < tokens.GetSize(); ++i)
       m_iceOptions += tokens[i];
     return;
   }
+#endif //OPAL_ICE
 
   // unknown attributes
   PTRACE(2, "SDP\tUnknown attribute " << attr);
@@ -605,6 +609,7 @@ void SDPCommonAttributes::OutputAttributes(ostream & strm) const
   for (RTPExtensionHeaders::const_iterator it = m_extensionHeaders.begin(); it != m_extensionHeaders.end(); ++it)
     it->OutputSDP(strm);
 
+#if OPAL_ICE
   const char * crlf = "";
   for (PStringSet::const_iterator it = m_iceOptions.begin(); it != m_iceOptions.end(); ++it) {
     if (*it == IceLiteOption)
@@ -618,6 +623,7 @@ void SDPCommonAttributes::OutputAttributes(ostream & strm) const
     strm << *it;
   }
   strm << crlf;
+#endif //OPAL_ICE
 }
 
 
@@ -642,6 +648,17 @@ SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, c
 }
 
 
+#if OPAL_ICE
+static bool CanUseCandidate(const PNatCandidate & candidate)
+{
+  return !candidate.m_foundation.IsEmpty() &&
+    candidate.m_component > 0 &&
+    !candidate.m_protocol.IsEmpty() &&
+    candidate.m_priority > 0 &&
+    candidate.m_localTransportAddress.IsValid() &&
+    candidate.m_type < PNatCandidate::NumTypes;
+}
+
 static void CalculateCandidatePriority(PNatCandidate & candidate)
 {
   candidate.m_priority = (126 << 24) | (256 - candidate.m_component);
@@ -661,9 +678,15 @@ static void CalculateCandidatePriority(PNatCandidate & candidate)
     candidate.m_priority |= 50 << 8;
   }
 }
+#endif //OPAL_ICE
 
 
-bool SDPMediaDescription::SetSessionInfo(const OpalMediaSession * session, bool ice)
+bool SDPMediaDescription::SetSessionInfo(const OpalMediaSession * session,
+#if OPAL_ICE
+                                         const SDPMediaDescription * offer)
+#else
+                                         const SDPMediaDescription *)
+#endif
 {
   if (session == NULL) {
     m_port = 0;
@@ -679,7 +702,8 @@ bool SDPMediaDescription::SetSessionInfo(const OpalMediaSession * session, bool 
   if (!m_mediaAddress.GetIpAndPort(dummy, m_port))
     return false;
 
-  if (ice) {
+#if OPAL_ICE
+  if (offer != NULL ? offer->HasICE() : m_stringOptions.GetBoolean(OPAL_OPT_OFFER_ICE)) {
     PNatCandidateList candidates;
     PNatCandidate candidate(PNatCandidate::HostType, PNatMethod::eComponent_RTP, "xyzzy");
     if (m_mediaAddress.GetIpAndPort(candidate.m_localTransportAddress)) {
@@ -695,6 +719,7 @@ bool SDPMediaDescription::SetSessionInfo(const OpalMediaSession * session, bool 
       SetICE(session->GetLocalUsername(), session->GetLocalPassword(), candidates);
     }
   }
+#endif // OPAL_ICE
 
   return true;
 }
@@ -866,6 +891,7 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
     return;
   }
 
+#if OPAL_ICE
   if (attr *= "ice-ufrag") {
     m_username = value;
     return;
@@ -911,6 +937,7 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
     m_candidates.Append(new PNatCandidate(candidate));
     return;
   }
+#endif //OPAL_ICE
 
   SDPCommonAttributes::SetAttribute(attr, value);
 }
@@ -1001,16 +1028,6 @@ void SDPMediaDescription::Encode(const OpalTransportAddress & commonAddr, ostrea
 }
 
 
-static bool CanUseCandidate(const PNatCandidate & candidate)
-{
-  return !candidate.m_foundation.IsEmpty() &&
-          candidate.m_component > 0 &&
-         !candidate.m_protocol.IsEmpty() &&
-          candidate.m_priority > 0 &&
-          candidate.m_localTransportAddress.IsValid() &&
-          candidate.m_type < PNatCandidate::NumTypes;
-}
-
 void SDPMediaDescription::OutputAttributes(ostream & strm) const
 {
   SDPCommonAttributes::OutputAttributes(strm);
@@ -1018,6 +1035,7 @@ void SDPMediaDescription::OutputAttributes(ostream & strm) const
   if (!m_mediaGroupId.IsEmpty())
     strm << "a=mid:" << m_mediaGroupId << CRLF;
 
+#if OPAL_ICE
   if (m_username.IsEmpty() || m_password.IsEmpty())
     return;
 
@@ -1040,9 +1058,11 @@ void SDPMediaDescription::OutputAttributes(ostream & strm) const
   if (haveCandidate)
     strm << "a=ice-ufrag:" << m_username << CRLF
          << "a=ice-pwd:" << m_password << CRLF;
+#endif //OPAL_ICE
 }
 
 
+#if OPAL_ICE
 bool SDPMediaDescription::HasICE() const
 {
   if (m_username.IsEmpty())
@@ -1061,6 +1081,8 @@ bool SDPMediaDescription::HasICE() const
 
   return false;
 }
+#endif //OPAL_ICE
+
 
 PString SDPMediaDescription::GetSDPMediaType() const
 {
@@ -1609,7 +1631,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
 }
 
 
-bool SDPRTPAVPMediaDescription::SetSessionInfo(const OpalMediaSession * session, bool ice)
+bool SDPRTPAVPMediaDescription::SetSessionInfo(const OpalMediaSession * session, const SDPMediaDescription * offer)
 {
   const OpalRTPSession * rtpSession = dynamic_cast<const OpalRTPSession *>(session);
   if (rtpSession != NULL) {
@@ -1629,7 +1651,7 @@ bool SDPRTPAVPMediaDescription::SetSessionInfo(const OpalMediaSession * session,
     }
   }
 
-  return SDPMediaDescription::SetSessionInfo(session, ice);
+  return SDPMediaDescription::SetSessionInfo(session, offer);
 }
 
 
@@ -2282,8 +2304,10 @@ void SDPSessionDescription::PrintOn(ostream & strm) const
   for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
     const SDPRTPAVPMediaDescription * rtp = dynamic_cast<const SDPRTPAVPMediaDescription *>(&mediaDescriptions[i]);
     if (rtp != NULL) {
+#if OPAL_ICE
       if (rtp->HasICE())
         hasICE = true;
+#endif //OPAL_ICE
 
       PString id = rtp->GetMediaGroupId();
       if (!id.IsEmpty()) {
@@ -2463,10 +2487,12 @@ void SDPSessionDescription::SetAttribute(const PString & attr, const PString & v
     return;
   }
 
+#if OPAL_ICE
   if (attr *= IceLiteOption) {
     m_iceOptions += IceLiteOption;
     return;
   }
+#endif //OPAL_ICE
 
   SDPCommonAttributes::SetAttribute(attr, value);
 }
@@ -2627,6 +2653,6 @@ void SDPSessionDescription::SetUserName(const PString & v)
 }
 
 
-#endif // OPAL_SIP
+#endif // OPAL_SDP
 
 // End of file ////////////////////////////////////////////////////////////////

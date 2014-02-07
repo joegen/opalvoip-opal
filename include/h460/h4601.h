@@ -617,7 +617,9 @@ class H460_Feature : public PObject
 
     bool IsFeatureNegotiatedOnGk(const H460_FeatureID & id) const;
 
+#if OPAL_H460_NAT
     PNatMethod * GetNatMethod(const char * methodName) const;
+#endif
 
     template <class METH> bool GetNatMethod(const char * methodName, METH * & natMethod) const
     {

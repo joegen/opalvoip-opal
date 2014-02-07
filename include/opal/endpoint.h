@@ -916,7 +916,9 @@ class OpalEndPoint : public PObject
     P_REMOVE_VIRTUAL_VOID(OnMessageReceived(const PURL&,const PString&,const PURL&,const PString&,const PString&,const PString&));
     P_REMOVE_VIRTUAL(OpalMediaSession *, CreateMediaSession(OpalConnection &, unsigned, const OpalMediaType &), NULL);
     P_REMOVE_VIRTUAL(PBoolean, NewIncomingConnection(OpalTransport *), false);
-    P_REMOVE_VIRTUAL(PNatMethod *, GetNatMethod(const PIPSocket::Address &) const,NULL);
+#if P_NAT
+    P_REMOVE_VIRTUAL(PNatMethod *, GetNatMethod(const PIPSocket::Address &) const, NULL);
+#endif
 };
 
 

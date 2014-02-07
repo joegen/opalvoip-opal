@@ -38,7 +38,7 @@
 
 #include <opal_config.h>
 
-#if OPAL_SIP
+#if OPAL_SDP
 
 #include <opal/transports.h>
 #include <opal/mediatype.h>
@@ -66,6 +66,11 @@
    parameter presented by the remote. Default false.
   */
 #define OPAL_OPT_FORCE_RTCP_FB  "Force-RTCP-FB"
+
+/**Enable ICE offerred in SDP.
+   Defaults to false.
+*/
+#define OPAL_OPT_OFFER_ICE "Offer-ICE"
 
 
 /////////////////////////////////////////////////////////
@@ -182,7 +187,9 @@ class SDPCommonAttributes
     Direction           m_direction;
     SDPBandwidth        m_bandwidth;
     RTPExtensionHeaders m_extensionHeaders;
+#if OPAL_ICE
     PStringSet          m_iceOptions;
+#endif //OPAL_ICE
 };
 
 
@@ -235,7 +242,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     virtual Direction GetDirection() const { return m_mediaAddress.IsEmpty() ? Inactive : m_direction; }
 
-    virtual bool SetSessionInfo(const OpalMediaSession * session, bool ice);
+    virtual bool SetSessionInfo(const OpalMediaSession * session, const SDPMediaDescription * offer);
     virtual PString GetMediaGroupId() const { return m_mediaGroupId; }
     virtual void SetMediaGroupId(const PString & id) { m_mediaGroupId = id; }
 
@@ -244,6 +251,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     virtual WORD GetPort() const { return m_port; }
 
+#if OPAL_ICE
     PString GetUsername() const { return m_username; }
     PString GetPassword() const { return m_password; }
     PNatCandidateList GetCandidates() const { return m_candidates; }
@@ -252,12 +260,13 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
       const PString & username,
       const PString & password,
       const PNatCandidateList & candidates
-      )
+    )
     {
       m_username = username;
       m_password = password;
       m_candidates = candidates;
     }
+#endif //OPAL_ICE
 
     virtual OpalMediaType GetMediaType() const { return m_mediaType; }
 
@@ -288,9 +297,11 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     WORD                 m_portCount;
     OpalMediaType        m_mediaType;
     PString              m_mediaGroupId;
+#if OPAL_ICE
     PNatCandidateList    m_candidates;
     PString              m_username;
     PString              m_password;
+#endif //OPAL_ICE
     SDPMediaFormatList   m_formats;
 
   P_REMOVE_VIRTUAL(SDPMediaFormat *,CreateSDPMediaFormat(const PString &),0);
@@ -379,7 +390,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual bool HasCryptoKeys() const;
 #endif
     virtual void SetAttribute(const PString & attr, const PString & value);
-    virtual bool SetSessionInfo(const OpalMediaSession * session, bool ice);
+    virtual bool SetSessionInfo(const OpalMediaSession * session, const SDPMediaDescription * offer);
 
     void EnableFeedback() { m_enableFeedback = true; }
 
@@ -556,7 +567,9 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
     typedef PDictionary<PString, PStringArray> GroupDict;
     GroupDict GetGroups() const { return m_groups; }
 
+#if OPAL_ICE
     PStringSet GetICEOptions() const { return m_iceOptions; }
+#endif
 
     OpalMediaFormatList GetMediaFormats() const;
 
@@ -581,7 +594,7 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
 /////////////////////////////////////////////////////////
 
 
-#endif // OPAL_SIP
+#endif // OPAL_SDP
 
 #endif // OPAL_SIP_SDP_H
 
