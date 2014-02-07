@@ -214,8 +214,10 @@ class OpalLocalEndPoint : public OpalEndPoint
       const OpalLocalConnection & connection, ///<  Connection having event
       const PString & indication    ///< User input received
     );
+  //@}
 
-
+  /**@name Media call backs */
+  //@{
     /// Enumeration for usage of media callback direction in CallbackMap
     P_DECLARE_BITWISE_ENUM(CallbackUsage, 2, (NoCallbacks, UseSourceCallback, UseSinkCallback));
 
@@ -367,7 +369,10 @@ class OpalLocalEndPoint : public OpalEndPoint
       const OpalMediaFormat & mediaFormat,  ///< Media format for stream being opened.
       bool isSource                         ///< Stream is a a source
     ) const;
+  //@}
 
+  /**@name Member access */
+  //@{
     /**Get default synchronous mode for audio sources and sinks.
       */
     Synchronicity GetDefaultAudioSynchronicity() const { return m_defaultAudioSynchronicity; }
@@ -637,6 +642,90 @@ class OpalLocalConnection : public OpalConnection
       */
     virtual void AcceptIncoming();
 
+
+  /**@name Media call backs */
+  //@{
+    /**Call back to get media data for transmission.
+       If false is returned then OnReadMediaData() is called.
+
+       Care with the handling of real time is required, see GetSynchronicity
+       for more details.
+
+       The default implementation returns false.
+      */
+    virtual bool OnReadMediaFrame(
+      const OpalMediaStream & mediaStream,    ///<  Media stream data is required for
+      RTP_DataFrame & frame                   ///<  RTP frame for data
+    );
+
+    /**Call back to handle received media data.
+       If false is returned then OnWriteMediaData() is called.
+
+       Care with the handling of real time is required, see GetSynchronicity
+       for more details.
+
+       Note it is the responsibility of this function to update the \p frame
+       timestamp for correct operation of the jitter buffer.
+
+       The default implementation returns false.
+      */
+    virtual bool OnWriteMediaFrame(
+      const OpalMediaStream & mediaStream,    ///<  Media stream data is required for
+      RTP_DataFrame & frame                   ///<  RTP frame for data
+    );
+
+    /**Call back to get media data for transmission.
+       If false is returned the media stream will be closed.
+
+       Care with the handling of real time is required, see GetSynchronicity
+       for more details.
+
+       The default implementation fills the buffer with zeros and returns true.
+      */
+    virtual bool OnReadMediaData(
+      const OpalMediaStream & mediaStream,    ///<  Media stream data is required for
+      void * data,                            ///<  Data to send
+      PINDEX size,                            ///<  Maximum size of data buffer
+      PINDEX & length                         ///<  Number of bytes placed in buffer
+    );
+
+    /**Call back to handle received media data.
+       If false is returned the media stream will be closed.
+
+       It is expected that this function be real time. That is if 320 bytes of
+       PCM-16 are written, this function should take 20ms to execute. If not
+       then the jitter buffer will not operate correctly and audio will not be
+       of high quality. This timing can be simulated if required, see
+       GetSynchronicity for more details.
+
+       Note: For encoded audio media, if \p data is NULL then that indicates
+       there is no incoming audio available from the jitter buffer. The
+       application should output silence for a time. The \p written value
+       should still contain the bytes of silence emitted, even though it will
+       be larger that \p length. This does not occcur for raw (PCM-16) audio.
+
+       The default implementation ignores the media data and returns true.
+      */
+    virtual bool OnWriteMediaData(
+      const OpalMediaStream & mediaStream,    ///<  Media stream data is required for
+      const void * data,                      ///<  Data received
+      PINDEX length,                          ///<  Amount of data available to write
+      PINDEX & written                        ///<  Amount of data written
+    );
+
+    /**Indicate the I/O synchronous mode.
+       See Synchronicity for more details.
+
+       Default behaviour returns m_defaultAudioSynchronicity (initially
+       e_Synchronous) when is audio source or sink,
+       m_defaultVideoSourceSynchronicity (initially e_Synchronous) when a
+       video source, e_Asynchronous in all other cases.
+      */
+    virtual OpalLocalEndPoint::Synchronicity GetSynchronicity(
+      const OpalMediaFormat & mediaFormat,  ///< Media format for stream being opened.
+      bool isSource                         ///< Stream is a a source
+    ) const;
+
 #if OPAL_VIDEO
     /**Create an PVideoInputDevice for a source media stream.
       */
@@ -789,6 +878,7 @@ class OpalLocalMediaStream : public OpalMediaStream, public OpalMediaStreamPacin
   protected:
     virtual void InternalClose() { }
 
+    OpalLocalConnection            & m_connection;
     OpalLocalEndPoint::Synchronicity m_synchronicity;
     PBYTEArray                       m_silence;
 };

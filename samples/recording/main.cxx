@@ -77,6 +77,8 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString & defaul
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+
 MyLocalEndPoint::MyLocalEndPoint(OpalConsoleManager & manager)
   : OpalLocalEndPoint(manager, EXTERNAL_SCHEME)
   , m_manager(manager)
@@ -135,17 +137,6 @@ bool MyLocalEndPoint::Initialise(PArgList & args)
 
 bool MyLocalEndPoint::OnIncomingCall(OpalLocalConnection & connection)
 {
-  if (!m_mixer.m_wavFile.IsOpen()) {
-    PFilePath uniqueFilename("Call_" + connection.GetCall().GetToken() + '_', m_wavDir);
-    uniqueFilename.SetType(".wav");
-    MyLocalConnection & myConnection = dynamic_cast<MyLocalConnection &>(connection);
-    if (!myConnection.m_wavFile.Open(uniqueFilename, PFile::WriteOnly)) {
-      *m_manager.LockedOutput() << "Could not open WAV file \"" << uniqueFilename << "\""
-                                   " for call from " << connection.GetRemotePartyURL() << endl;
-      return false; // Refuse call
-    }
-  }
-
   *m_manager.LockedOutput() << "Recording call from " << connection.GetRemotePartyURL() << endl;
 
   // Must call ancestor function to accept call
@@ -190,25 +181,29 @@ bool MyLocalEndPoint::OnWriteMediaFrame(const OpalLocalConnection & connection,
 }
 
 
-bool MyLocalEndPoint::OnWriteMediaData(const OpalLocalConnection & connection,
-                                       const OpalMediaStream & /*mediaStream*/,
-                                       const void * data,
-                                       PINDEX length,
-                                       PINDEX & written)
-{
-  MyLocalConnection & myConnection = dynamic_cast<MyLocalConnection &>(const_cast<OpalLocalConnection &>(connection));
-  if (myConnection.m_wavFile.Write(data, length))
-    written = length;
-
-  return true;
-}
-
-
 bool MyLocalEndPoint::Mixer::OnMixed(RTP_DataFrame * & output)
 {
   return m_wavFile.Write(output->GetPayloadPtr(), output->GetPayloadSize());
 }
 
+
+bool MyLocalEndPoint::OpenWAVFile(const OpalCall & call, PWAVFile & wavFile)
+{
+  if (m_mixer.m_wavFile.IsOpen())
+    return true; // We are doing "mixed" mode
+
+  PFilePath uniqueFilename("Call_" + call.GetToken() + '_', m_wavDir);
+  uniqueFilename.SetType(".wav");
+  if (wavFile.Open(uniqueFilename, PFile::WriteOnly))
+    return true;
+
+  *m_manager.LockedOutput() << "Could not open WAV file \"" << uniqueFilename << "\""
+                               " for call from " << call.GetRemoteParty() << endl;
+  return false; // Refuse call
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
 
 MyLocalConnection::MyLocalConnection(OpalCall & call,
                                      MyLocalEndPoint & ep,
@@ -217,6 +212,27 @@ MyLocalConnection::MyLocalConnection(OpalCall & call,
                                      OpalConnection::StringOptions * stringOptions)
   : OpalLocalConnection(call, ep, userData, options, stringOptions)
 {
+}
+
+
+bool MyLocalConnection::OnIncoming()
+{
+  if (!dynamic_cast<MyLocalEndPoint &>(endpoint).OpenWAVFile(GetCall(), m_wavFile))
+    return false; // Refuse call
+
+  return OpalLocalConnection::OnIncoming();
+}
+
+
+bool MyLocalConnection::OnWriteMediaData(const OpalMediaStream & /*mediaStream*/,
+                                         const void * data,
+                                         PINDEX length,
+                                         PINDEX & written)
+{
+  if (m_wavFile.Write(data, length))
+    written = length;
+
+  return true;
 }
 
 
