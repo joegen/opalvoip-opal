@@ -49,9 +49,11 @@ namespace OpalFEC
   #define OpalRedundantAudio     OpalFEC::RedundantAudio()
   extern const OpalMediaFormat & RedundantAudio();
 
+#if OPAL_VIDEO
   #define OPAL_REDUNDANT_VIDEO   OPAL_REDUNDANT_PREFIX"-Video"
   #define OpalRedundantVideo     OpalFEC::RedundantVideo()
   extern const OpalMediaFormat & RedundantVideo();
+#endif
 
   // RFC 5109 media format "place holders"
   #define OPAL_ULP_FEC_PREFIX    "ULP-FEC"
@@ -59,9 +61,11 @@ namespace OpalFEC
   #define OpalUlpFecAudio        OpalFEC::UlpFecAudio()
   extern const OpalMediaFormat & UlpFecAudio();
 
+#if OPAL_VIDEO
   #define OPAL_ULP_FEC_VIDEO     OPAL_ULP_FEC_PREFIX"-Video"
   #define OpalUlpFecVideo        OpalFEC::UlpFecVideo()
   extern const OpalMediaFormat & UlpFecVideo();
+#endif
 
   const PString & MediaTypeOption();
 };
