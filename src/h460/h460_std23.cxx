@@ -77,7 +77,9 @@ H460_FEATURE(Std23, "H.460.23");
 
 H460_FeatureStd23::H460_FeatureStd23()
   : H460_Feature(ID())
+#if OPAL_H460_24
   , m_natMethod(NULL)
+#endif
   , m_applicationLevelGateway(false)
 {
 }
@@ -88,10 +90,12 @@ bool H460_FeatureStd23::Initialise(H323EndPoint & ep, H323Connection * con)
   if (!H460_Feature::Initialise(ep, con))
     return false;
 
+#if OPAL_H460_24
   if (!GetNatMethod(PNatMethod_H46024::MethodName(), m_natMethod)) {
     PTRACE(4, "Could not find NAT method " << PNatMethod_H46024::MethodName());
     return false;
   }
+#endif
 
   AddParameter(RemoteNAT_ID, ep.GetH46019Server() != NULL);
 #if OPAL_H460_24A
@@ -113,11 +117,13 @@ bool H460_FeatureStd23::OnSendGatekeeperRequest(H460_FeatureDescriptor & pdu)
 bool H460_FeatureStd23::OnSendRegistrationRequest(H460_FeatureDescriptor & pdu, bool lightweight)
 {
   if (lightweight) {
+#if OPAL_H460_24
     PNatMethod::NatTypes natType = m_natMethod->GetNatType();
     if (natType == PNatMethod::UnknownNat)
       return false;
 
     pdu.AddParameter(NATType_ID, H460_FeatureContent(natType, sizeof(BYTE)));
+#endif
     return true;
   }
 
@@ -152,6 +158,7 @@ void H460_FeatureStd23::OnReceiveRegistrationConfirm(const H460_FeatureDescripto
     }
   }
 
+#if OPAL_H460_24
   if (!m_applicationLevelGateway && pdu.HasParameter(NATTest_ID)) {
     H323TransportAddress addr = pdu.GetParameter(NATTest_ID);
     m_natMethod->SetPortRanges(m_endpoint->GetManager().GetUDPPortBase(), m_endpoint->GetManager().GetUDPPortMax());
@@ -162,6 +169,7 @@ void H460_FeatureStd23::OnReceiveRegistrationConfirm(const H460_FeatureDescripto
       PTRACE(2, "Could not set STUN server to " << addr);
     }
   }
+#endif
 }
 
 

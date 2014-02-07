@@ -91,7 +91,9 @@ class OpalRTPSession : public OpalMediaSession
     virtual OpalTransportAddress GetLocalAddress(bool isMediaAddress = true) const;
     virtual OpalTransportAddress GetRemoteAddress(bool isMediaAddress = true) const;
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress = true);
+#if OPAL_ICE
     virtual void SetRemoteUserPass(const PString & user, const PString & pass);
+#endif
 
     virtual void AttachTransport(Transport & transport);
     virtual Transport DetachTransport();
@@ -743,7 +745,7 @@ class OpalRTPSession : public OpalMediaSession
 
     ApplDefinedNotifierList m_applDefinedNotifiers;
 
-#if P_STUNSRVR
+#if OPAL_ICE
     PSTUNServer * m_stunServer;
 #endif
 

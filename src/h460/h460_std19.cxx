@@ -103,12 +103,14 @@ bool H460_FeatureStd19::OnSendPDU(H460_MessageType pduType, H460_FeatureDescript
 
   H460_Feature::OnSendPDU(pduType, pdu);
 
+#if OPAL_H460_24
   // Check for H.460.24 override
   H460_FeatureStd24 * feat24;
   if (GetFeatureOnGk(feat24) && feat24->IsDisabledH46019()) {
     PTRACE(4, "Disabled via H.460.24.");
     return false;
   }
+#endif
 
   return true;
 }
@@ -127,6 +129,7 @@ bool H460_FeatureStd19::OnSendingOLCGenericInformation(unsigned sessionID, H245_
   if (!PAssert(m_connection != NULL, PLogicError))
     return false;
 
+#if OPAL_H460_24
   // Check for H.460.24 override
   {
     H460_FeatureStd24 * feat24;
@@ -135,6 +138,7 @@ bool H460_FeatureStd19::OnSendingOLCGenericInformation(unsigned sessionID, H245_
       return false;
     }
   }
+#endif
 
   OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(m_connection->GetMediaSession(sessionID));
   if (session == NULL) {

@@ -2102,7 +2102,7 @@ void H323Connection::DetermineRTPNAT(const PIPSocket::Address & localAddr,
                                      const PIPSocket::Address & peerAddr,
                                      const PIPSocket::Address & signalAddr)
 {
-#if OPAL_H460
+#if OPAL_H460_NAT
   if (m_features != NULL) {
     H460_Feature * feature = m_features->GetFeature(H460_FeatureStd19::ID());
     if (feature != NULL && feature->IsNegotiated()) {
@@ -2783,7 +2783,7 @@ PBoolean H323Connection::OnStartHandleControlChannel()
 
   PTRACE(2, "H46018\tStarted control channel");
 
-#if OPAL_H460
+#if OPAL_H460_NAT
   if (m_features != NULL) {
     H460_FeatureStd18 * feature;
     if (m_features->GetFeature(feature) && !feature->OnStartControlChannel())
