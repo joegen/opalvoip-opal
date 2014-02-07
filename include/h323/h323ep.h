@@ -113,6 +113,12 @@ class H323EndPoint : public OpalRTPEndPoint
       */
     virtual void ShutDown();
 
+    /** Execute garbage collection for endpoint.
+    Returns true if all garbage has been collected.
+    Default behaviour deletes the objects in the connectionsActive list.
+    */
+    virtual PBoolean GarbageCollection();
+
     /**Set up a connection to a remote party.
        This is called from the OpalManager::SetUpConnection() function once
        it has determined that this is the endpoint for the protocol.
@@ -1098,9 +1104,9 @@ class H323EndPoint : public OpalRTPEndPoint
      */
     const PTimeInterval & GetSignallingChannelCallTimeout() const { return signallingChannelCallTimeout; }
 
-    /**Get the default timeout for incoming H.245 connection.
+    /**Get the default timeout for first signalling PDU on a connection
      */
-    const PTimeInterval & GetControlChannelStartTimeout() const { return controlChannelStartTimeout; }
+    const PTimeInterval & GetFirstSignalPduTimeout() const { return firstSignalPduTimeout; }
 
     /**Get the default timeout for waiting on an end session.
      */
@@ -1317,7 +1323,7 @@ class H323EndPoint : public OpalRTPEndPoint
 
     // Some more configuration variables, rarely changed.
     PTimeInterval signallingChannelCallTimeout;
-    PTimeInterval controlChannelStartTimeout;
+    PTimeInterval firstSignalPduTimeout;
     PTimeInterval endSessionTimeout;
     PTimeInterval masterSlaveDeterminationTimeout;
     unsigned      masterSlaveDeterminationRetries;
@@ -1359,6 +1365,7 @@ class H323EndPoint : public OpalRTPEndPoint
 
     // Dynamic variables
     PSafeDictionary<PString, H323Connection> m_connectionsByCallId;
+    PSafeList<OpalTransport> m_reusableTransports;
 
     H323Capabilities m_capabilities;
 

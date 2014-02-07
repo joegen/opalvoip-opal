@@ -78,7 +78,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
 #endif
   , clearCallOnRoundTripFail(false)
   , signallingChannelCallTimeout(0, 0, 1)  // Minutes
-  , controlChannelStartTimeout(0, 0, 2)    // Minutes
+  , firstSignalPduTimeout(0, 2)            // Seconds
   , endSessionTimeout(0, 10)               // Seconds
   , masterSlaveDeterminationTimeout(0, 30) // Seconds
   , masterSlaveDeterminationRetries(10)
@@ -129,6 +129,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   SetCompatibility(H323Connection::e_NoUserInputCapability,   "AltiServ-ITG");
   SetCompatibility(H323Connection::e_H224MustBeSession3,      "HDX");
   SetCompatibility(H323Connection::e_NeedMSDAfterNonEmptyTCS, "Avaya|Radvision");
+  SetCompatibility(H323Connection::e_ForceMaintainConnection, "Avaya");
 
   m_capabilities.AddAllCapabilities(0, 0, "*");
   H323_UserInputCapability::AddAllCapabilities(m_capabilities, P_MAX_INDEX, P_MAX_INDEX);
@@ -154,12 +155,32 @@ H323EndPoint::~H323EndPoint()
 
 void H323EndPoint::ShutDown()
 {
+  OpalTransportPtr transport(m_reusableTransports);
+  while (transport != NULL) {
+    transport->CloseWait();
+    m_reusableTransports.Remove(transport++);
+  }
+
   /* Unregister request needs/depends OpalEndpoint listeners object, so shut
      down the gatekeeper (if there was one) before cleaning up the OpalEndpoint
      object which kills the listeners. */
   RemoveGatekeeper();
 
   OpalEndPoint::ShutDown();
+}
+
+
+PBoolean H323EndPoint::GarbageCollection()
+{
+  OpalTransportPtr transport(m_reusableTransports);
+  while (transport != NULL) {
+    if (transport->IsOpen())
+      ++transport;
+    else
+      m_reusableTransports.Remove(transport++);
+  }
+
+  return OpalRTPEndPoint::GarbageCollection();
 }
 
 
@@ -585,6 +606,14 @@ PStringList H323EndPoint::GetAvailableStringOptions() const
 void H323EndPoint::OnReleased(OpalConnection & connection)
 {
   m_connectionsByCallId.RemoveAt(connection.GetIdentifier());
+
+  OpalTransportPtr signallingChannel = dynamic_cast<H323Connection &>(connection).GetSignallingChannel();
+  if (signallingChannel != NULL) {
+    m_reusableTransports.Append(signallingChannel);
+    signallingChannel->AttachThread(new PThreadObj1Arg<H323EndPoint, const OpalTransportPtr &>(*this,
+                signallingChannel, &H323EndPoint::InternalNewIncomingConnection, false, "H225 Answer"));
+  }
+
   OpalRTPEndPoint::OnReleased(connection);
 }
 
@@ -599,13 +628,16 @@ void H323EndPoint::NewIncomingConnection(OpalListener &, const OpalTransportPtr 
 void H323EndPoint::InternalNewIncomingConnection(const OpalTransportPtr & transport)
 {
   PTRACE(3, "H225\tAwaiting first PDU");
-  transport->SetReadTimeout(15000); // Await 15 seconds after connect for first byte
+  transport->SetReadTimeout(GetFirstSignalPduTimeout());
 
   H323SignalPDU pdu;
   if (!pdu.Read(*transport)) {
     PTRACE(1, "H225\tFailed to get initial Q.931 PDU, connection not started.");
+    transport->Close();
     return;
   }
+
+  m_reusableTransports.Remove(transport);
 
   unsigned callReference = pdu.GetQ931().GetCallReference();
   PTRACE(3, "H225\tIncoming call, first PDU: callReference=" << callReference);
