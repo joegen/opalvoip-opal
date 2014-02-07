@@ -585,9 +585,11 @@ void OpalRTPConnection::AdjustMediaFormats(bool   local,
     }
 #if OPAL_RTP_FEC
     mediaFormats += OpalRedundantAudio;
-    mediaFormats += OpalRedundantVideo;
     mediaFormats += OpalUlpFecAudio;
+ #if OPAL_VIDEO
+    mediaFormats += OpalRedundantVideo;
     mediaFormats += OpalUlpFecVideo;
+ #endif
 #endif
   }
 
