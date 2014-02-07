@@ -74,7 +74,9 @@ class H460_FeatureStd23 : public H460_Feature
   #endif
 
   protected:
+#if OPAL_H460_24
     PNatMethod_H46024 * m_natMethod;
+#endif
     bool                m_applicationLevelGateway;
 };
 

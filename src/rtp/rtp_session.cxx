@@ -2068,6 +2068,7 @@ bool OpalRTPSession::InternalReadData(RTP_DataFrame & frame)
 }
 
 
+#if OPAL_ICE
 void OpalRTPSession::SetRemoteUserPass(const PString & user, const PString & pass)
 {
   delete m_stunServer;
@@ -2082,6 +2083,7 @@ void OpalRTPSession::SetRemoteUserPass(const PString & user, const PString & pas
   m_stunServer->SetCredentials(m_localUsername + ':' + m_remoteUsername, m_localPassword, PString::Empty());
   PTRACE(4, "RTP\tSession " << m_sessionId << ", created STUN server for ICE");
 }
+#endif // OPAL_ICE
 
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr,
@@ -2101,6 +2103,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr,
     if (frameSize == 1 && ap.GetAddress() == m_localAddress)
       return e_IgnorePacket;
 
+#if OPAL_ICE
     if (m_stunServer != NULL) {
       PSTUNMessage message(framePtr, frameSize, ap);
       if (message.IsValid()) {
@@ -2113,6 +2116,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr,
         return e_IgnorePacket;
       }
     }
+#endif // OPAL_ICE
 
     // If remote address never set from higher levels, then try and figure
     // it out from the first packet received.

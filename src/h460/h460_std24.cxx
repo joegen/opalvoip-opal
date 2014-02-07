@@ -43,7 +43,7 @@
 
 #include <h460/h460_std24.h>
 
-#if OPAL_H460_NAT
+#if OPAL_H460_24
 
 #include <h323/h323ep.h>
 #include <h323/h323pdu.h>
@@ -454,4 +454,4 @@ void H460_FeatureStd24AnnexA::ProbeResponse(OpalRTPSession &, const RTP_ControlF
 
 #endif // OPAL_H460_24A
 
-#endif // OPAL_H460_NAT
+#endif // OPAL_H460_24

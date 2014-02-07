@@ -856,6 +856,7 @@ bool H460_Feature::IsFeatureNegotiatedOnGk(const H460_FeatureID & id) const
 }
 
 
+#if OPAL_H460_NAT
 PNatMethod * H460_Feature::GetNatMethod(const char * methodName) const
 {
   if (m_endpoint == NULL) {
@@ -876,6 +877,7 @@ PNatMethod * H460_Feature::GetNatMethod(const char * methodName) const
 
   return natMethod;
 }
+#endif //OPAL_H460_NAT
 
 
 H460_Feature * H460_Feature::FromContext(PObject * context, const H460_FeatureID & id)

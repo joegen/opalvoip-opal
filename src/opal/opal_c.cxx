@@ -1398,11 +1398,13 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
 
   // Note: in this case there is a difference between NULL and "".
   if (command.m_param.m_general.m_natMethod == NULL) {
+#if P_STUN
     if (command.m_param.m_general.m_natServer != NULL &&
         !SetNATServer(PSTUNClient::MethodName(), command.m_param.m_general.m_natServer)) {
       response.SetError("Error setting STUN server.");
       return;
     }
+#endif
   }
   else {
     PIPSocket::Address ip;

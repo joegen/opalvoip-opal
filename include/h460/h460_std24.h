@@ -42,7 +42,7 @@
 
 #include <opal_config.h>
 
-#if OPAL_H460_NAT
+#if OPAL_H460_24
 
 #include <h460/h4601.h>
 #include <rtp/rtp_session.h>
@@ -157,6 +157,6 @@ class H460_FeatureStd24AnnexA : public H460_Feature
 
 #endif // OPAL_H460_24A
 
-#endif // OPAL_H460_NAT
+#endif // OPAL_H460_24
 
 #endif // OPAL_H460_STD24_H
