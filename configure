@@ -696,6 +696,7 @@ SRTP_CFLAGS
 SRTP_SYSTEM
 OPAL_PTLIB_GSTREAMER
 OPAL_PTLIB_CLI
+OPAL_PTLIB_HTTPSVC
 OPAL_PTLIB_CONFIG_FILE
 OPAL_PTLIB_AUDIO
 OPAL_PTLIB_DNS_RESOLVER
@@ -5991,8 +5992,8 @@ $as_echo "${OPAL_PTLIB_EXPAT}" >&6; }
 
 
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking PTLib for video" >&5
-$as_echo_n "checking PTLib for video... " >&6; }
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking PTLib for Video" >&5
+$as_echo_n "checking PTLib for Video... " >&6; }
    OPAL_PTLIB_VIDEO=`pkg-config --variable=PTLIB_VIDEO ptlib`
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${OPAL_PTLIB_VIDEO}" >&5
 $as_echo "${OPAL_PTLIB_VIDEO}" >&6; }
@@ -6061,8 +6062,8 @@ $as_echo "${OPAL_PTLIB_DNS_RESOLVER}" >&6; }
 
 
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking PTLib for audio" >&5
-$as_echo_n "checking PTLib for audio... " >&6; }
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking PTLib for Audio" >&5
+$as_echo_n "checking PTLib for Audio... " >&6; }
    OPAL_PTLIB_AUDIO=`pkg-config --variable=PTLIB_AUDIO ptlib`
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${OPAL_PTLIB_AUDIO}" >&5
 $as_echo "${OPAL_PTLIB_AUDIO}" >&6; }
@@ -6071,11 +6072,21 @@ $as_echo "${OPAL_PTLIB_AUDIO}" >&6; }
 
 
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking PTLib for config" >&5
-$as_echo_n "checking PTLib for config... " >&6; }
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking PTLib for Config file" >&5
+$as_echo_n "checking PTLib for Config file... " >&6; }
    OPAL_PTLIB_CONFIG_FILE=`pkg-config --variable=PTLIB_CONFIG_FILE ptlib`
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${OPAL_PTLIB_CONFIG_FILE}" >&5
 $as_echo "${OPAL_PTLIB_CONFIG_FILE}" >&6; }
+
+
+
+
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking PTLib for HTTP Server" >&5
+$as_echo_n "checking PTLib for HTTP Server... " >&6; }
+   OPAL_PTLIB_HTTPSVC=`pkg-config --variable=PTLIB_HTTPSVC ptlib`
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${OPAL_PTLIB_HTTPSVC}" >&5
+$as_echo "${OPAL_PTLIB_HTTPSVC}" >&6; }
 
 
 
@@ -6091,8 +6102,8 @@ $as_echo "${OPAL_PTLIB_CLI}" >&6; }
 
 
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking PTLib for GSTREAMER" >&5
-$as_echo_n "checking PTLib for GSTREAMER... " >&6; }
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking PTLib for GStreamer" >&5
+$as_echo_n "checking PTLib for GStreamer... " >&6; }
    OPAL_PTLIB_GSTREAMER=`pkg-config --variable=PTLIB_GSTREAMER ptlib`
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${OPAL_PTLIB_GSTREAMER}" >&5
 $as_echo "${OPAL_PTLIB_GSTREAMER}" >&6; }
@@ -8183,6 +8194,14 @@ fi
 
 
 
+
+      if    test "x${enableval}" = "xyes" && \
+            test "x$OPAL_PTLIB_ASN" != "x1" && \
+            test "x$OPAL_PTLIB_ASN" != "xyes"; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_PTLIB_ASN=$OPAL_PTLIB_ASN" >&5
+$as_echo "disabled due to disabled dependency OPAL_PTLIB_ASN=$OPAL_PTLIB_ASN" >&6; }
+         enableval=no
+      fi
 
 
 
