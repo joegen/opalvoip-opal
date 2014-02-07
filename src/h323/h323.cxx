@@ -4055,8 +4055,10 @@ unsigned H323Connection::GetNextSessionID(const OpalMediaType & mediaType, bool 
 
     sessionID = mediaType->GetDefaultSessionId(); // Use default session
     if (sessionID == 0) {
+#if OPAL_HAS_H224
       if (HasCompatibilityIssue(e_H224MustBeSession3) && mediaType == OpalH224MediaType())
         return H323Capability::DefaultDataSessionID;
+#endif
       sessionID = H323Capability::MasterAllocatedBaseSessionID; // No default, allocate new session
     }
   }
