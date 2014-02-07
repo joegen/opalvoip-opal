@@ -89,7 +89,9 @@ public:
 
 
   Media GetAudio() const { return GetMedia(OpalMediaType::Audio()); }
+#if OPAL_VIDEO
   Media GetVideo() const { return GetMedia(OpalMediaType::Video()); }
+#endif
   Media GetMedia(const OpalMediaType & mediaType) const;
   PString ListMedia() const;
 
@@ -433,9 +435,15 @@ class CDRPage : public BaseStatusPage
 
 ///////////////////////////////////////
 
-class MyManager : public OpalManagerCLI
+#if P_CLI
+typedef OpalManagerCLI MyManagerParent;
+#else
+  typedef OpalConsoleManager MyManagerParent;
+#endif
+
+class MyManager : public MyManagerParent
 {
-    PCLASSINFO(MyManager, OpalManagerCLI);
+    PCLASSINFO(MyManager, MyManagerParent);
   public:
     MyManager();
     ~MyManager();
