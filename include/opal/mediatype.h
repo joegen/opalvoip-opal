@@ -154,7 +154,7 @@ class OpalMediaTypeDefinition
       */
     const PCaselessString & GetMediaSessionType() const { return m_mediaSessionType; }
 
-#if OPAL_SIP
+#if OPAL_SDP
     virtual PString GetSDPMediaType() const;
     virtual PString GetSDPTransportType() const;
 
@@ -170,7 +170,7 @@ class OpalMediaTypeDefinition
     virtual SDPMediaDescription * CreateSDPMediaDescription(
       const OpalTransportAddress & localAddress
     ) const;
-#endif // OPAL_SIP
+#endif // OPAL_SDP
 
   protected:
     OpalMediaType   m_mediaType;
@@ -243,7 +243,7 @@ class OpalAudioMediaDefinition : public OpalRTPAVPMediaDefinition
 
     OpalAudioMediaDefinition();
 
-#if OPAL_SIP
+#if OPAL_SDP
     SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress &) const;
 #endif
 };
@@ -258,7 +258,7 @@ class OpalVideoMediaDefinition : public OpalRTPAVPMediaDefinition
 
     OpalVideoMediaDefinition();
 
-#if OPAL_SIP
+#if OPAL_SDP
     SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress &) const;
 #endif
 };
@@ -276,7 +276,7 @@ class OpalFaxMediaDefinition : public OpalMediaTypeDefinition
 
     OpalFaxMediaDefinition();
 
-#if OPAL_SIP
+#if OPAL_SDP
     virtual PString GetSDPMediaType() const;
     virtual PString GetSDPTransportType() const;
 

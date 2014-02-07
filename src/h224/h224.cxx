@@ -56,7 +56,7 @@ class OpalH224MediaDefinition : public OpalRTPAVPMediaDefinition
 
     OpalH224MediaDefinition() : OpalRTPAVPMediaDefinition(Name(), 0, OpalMediaType::ReceiveTransmit) { }
 
-#if OPAL_SIP
+#if OPAL_SDP
     virtual PString GetSDPMediaType() const { return SDPApplicationMediaDescription::TypeName(); }
 
     virtual bool MatchesSDP(const PCaselessString & sdpMediaType,
@@ -80,7 +80,7 @@ class OpalH224MediaDefinition : public OpalRTPAVPMediaDefinition
     {
       return new SDPRTPAVPMediaDescription(localAddress, OpalH224MediaType());
     }
-#endif // OPAL_SIP
+#endif // OPAL_SDP
 };
 
 OPAL_MEDIATYPE(OpalH224Media);

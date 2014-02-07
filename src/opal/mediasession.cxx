@@ -347,12 +347,12 @@ OpalMediaSession::Transport OpalMediaSession::DetachTransport()
 }
 
 
-#if OPAL_SIP
+#if OPAL_SDP
 SDPMediaDescription * OpalMediaSession::CreateSDPMediaDescription()
 {
   return m_mediaType->CreateSDPMediaDescription(GetLocalAddress());
 }
-#endif
+#endif // OPAL_SDP
 
 #if OPAL_STATISTICS
 void OpalMediaSession::GetStatistics(OpalMediaStatistics &, bool) const
@@ -480,7 +480,7 @@ bool OpalDummySession::SetRemoteAddress(const OpalTransportAddress & remoteAddre
 }
 
 
-#if OPAL_SIP
+#if OPAL_SDP
 SDPMediaDescription * OpalDummySession::CreateSDPMediaDescription()
 {
   if (m_mediaType.empty())
@@ -488,7 +488,7 @@ SDPMediaDescription * OpalDummySession::CreateSDPMediaDescription()
 
   return OpalMediaSession::CreateSDPMediaDescription();
 }
-#endif
+#endif // OPAL_SDP
 
 
 OpalMediaStream * OpalDummySession::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)

@@ -439,7 +439,7 @@ void MyManager::ConfigureSecurity(OpalEndPoint * ep,
 ///////////////////////////////////////////////////////////////
 
 MyManager::MyManager()
-  : OpalManagerCLI(OPAL_CONSOLE_PREFIXES OPAL_PREFIX_PCSS" "OPAL_PREFIX_IVR" "OPAL_PREFIX_MIXER)
+  : MyManagerParent(OPAL_CONSOLE_PREFIXES OPAL_PREFIX_PCSS" "OPAL_PREFIX_IVR" "OPAL_PREFIX_MIXER)
   , m_mediaTransferMode(MediaTransferForward)
 #if OPAL_CAPI
   , m_enableCAPI(true)
@@ -462,16 +462,20 @@ void MyManager::EndRun(bool)
 }
 
 
+#if OPAL_H323
 H323ConsoleEndPoint * MyManager::CreateH323EndPoint()
 {
   return new MyH323EndPoint(*this);
 }
+#endif
 
 
+#if OPAL_SIP
 SIPConsoleEndPoint * MyManager::CreateSIPEndPoint()
 {
   return new MySIPEndPoint(*this);
 }
+#endif
 
 
 PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
@@ -480,6 +484,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
   PString defaultSection = cfg.GetDefaultSection();
 
+#if P_CLI && P_TELNET
   // Telnet Port number to use.
   {
     WORD telnetPort = (WORD)rsrc->AddIntegerField(TelnetPortKey, 0, 65535, DefaultTelnetPort,
@@ -497,6 +502,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
       }
     }
   }
+#endif //P_CLI && P_TELNET
 
   // General parameters for all endpoint types
   SetDefaultDisplayName(rsrc->AddStringField(DisplayNameKey, 25, GetDefaultDisplayName(), "Display name used in various protocols"));
