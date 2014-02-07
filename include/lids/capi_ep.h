@@ -40,6 +40,7 @@
 #if OPAL_CAPI
 
 #include <opal/endpoint.h>
+#include <ptclib/qchannel.h>
 
 
 class OpalCapiFunctions;
