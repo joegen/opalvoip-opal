@@ -1302,9 +1302,9 @@ PBoolean H323VideoCapability::OnSendingPDU(H245_VideoCapability & /*pdu*/) const
 }
 
 
+#if OPAL_H239
 PBoolean H323VideoCapability::OnSendingPDU(H245_VideoCapability & pdu, CommandType type) const
 {
-#if OPAL_H239
   if (type != e_OLC)
     return OnSendingPDU(pdu);
 
@@ -1314,10 +1314,13 @@ PBoolean H323VideoCapability::OnSendingPDU(H245_VideoCapability & pdu, CommandTy
 
   H323H239VideoCapability h239(GetMediaFormat());
   return h239.OnSendingPDU(pdu, type);
-#else
-  return OnSendingPDU(pdu);
-#endif
 }
+#else // OPAL_H239
+PBoolean H323VideoCapability::OnSendingPDU(H245_VideoCapability & pdu, CommandType) const
+{
+  return OnSendingPDU(pdu);
+}
+#endif // OPAL_H239
 
 
 PBoolean H323VideoCapability::OnSendingPDU(H245_VideoMode &) const
