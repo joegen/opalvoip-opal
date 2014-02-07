@@ -47,8 +47,11 @@ endif
 
 ifeq ($(OPAL_SAMPLES),yes)
 
-  SUBDIRS += $(OPAL_TOP_LEVEL_DIR)/samples/c_api \
-             $(OPAL_TOP_LEVEL_DIR)/samples/server
+  SUBDIRS += $(OPAL_TOP_LEVEL_DIR)/samples/c_api
+
+  ifeq ($(OPAL_PTLIB_HTTPSVC),yes)
+    SUBDIRS += $(OPAL_TOP_LEVEL_DIR)/samples/server
+  endif
 
   ifeq ($(OPAL_HAS_PCSS),yes)
     SUBDIRS += $(OPAL_TOP_LEVEL_DIR)/samples/console
