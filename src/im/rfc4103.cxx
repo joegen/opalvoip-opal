@@ -41,10 +41,7 @@
 #include <opal/connection.h>
 #include <im/im_ep.h>
 #include <im/t140.h>
-
-#if OPAL_SIP
 #include <sip/sdp.h>
-#endif
 
 
 class OpalT140MediaDefinition : public OpalRTPAVPMediaDefinition
@@ -57,13 +54,13 @@ class OpalT140MediaDefinition : public OpalRTPAVPMediaDefinition
     {
     }
 
-#if OPAL_SIP
+#if OPAL_SDP
     virtual PString GetSDPMediaType() const { static PConstCaselessString const s("text"); return s; }
     virtual SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress & localAddress) const
     {
       return new SDPRTPAVPMediaDescription(localAddress, GetMediaType());
     }
-#endif
+#endif // OPAL_SDP
 };
 
 OPAL_MEDIATYPE(OpalT140Media);

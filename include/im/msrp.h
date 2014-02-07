@@ -283,7 +283,7 @@ class OpalMSRPMediaSession : public OpalMediaSession
     virtual OpalTransportAddress GetLocalAddress(bool isMediaAddress = true) const;
     virtual OpalTransportAddress GetRemoteAddress(bool isMediaAddress = true) const;
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress = true);
-#if OPAL_SIP
+#if OPAL_SDP
     virtual SDPMediaDescription * CreateSDPMediaDescription();
 #endif
 

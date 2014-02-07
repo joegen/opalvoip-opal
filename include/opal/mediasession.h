@@ -259,7 +259,7 @@ class OpalMediaSession : public PSafeObject
     virtual void AttachTransport(Transport & transport);
     virtual Transport DetachTransport();
 
-#if OPAL_SIP
+#if OPAL_SDP
     virtual SDPMediaDescription * CreateSDPMediaDescription();
 #endif
 
@@ -338,7 +338,7 @@ class OpalDummySession : public OpalMediaSession
     virtual OpalTransportAddress GetLocalAddress(bool isMediaAddress = true) const;
     virtual OpalTransportAddress GetRemoteAddress(bool isMediaAddress = true) const;
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress = true);
-#if OPAL_SIP
+#if OPAL_SDP
     virtual SDPMediaDescription * CreateSDPMediaDescription();
 #endif
     virtual OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource);

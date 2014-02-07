@@ -68,14 +68,14 @@ class OpalMSRPMediaDefinition : public OpalMediaTypeDefinition
     {
     }
 
-#if OPAL_SIP
+#if OPAL_SDP
     virtual PString GetSDPMediaType() const { static PConstCaselessString const s("message"); return s; }
     virtual PString GetSDPTransportType() const { return OpalMSRPMediaSession::TCP_MSRP(); }
 
     virtual SDPMediaDescription * CreateSDPMediaDescription(
       const OpalTransportAddress & localAddress
     ) const;
-#endif // OPAL_SIP
+#endif // OPAL_SDP
 };
 
 OPAL_MEDIATYPE(OpalMSRPMedia);

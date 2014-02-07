@@ -371,6 +371,7 @@ void MyCall::OnStopMediaPatch(OpalMediaPatch & patch)
 
   m_media[stream.GetID()].m_closed = true;
 
+#if OPAL_STATISTICS
   const OpalRTPMediaStream * rtpStream = dynamic_cast<const OpalRTPMediaStream *>(&stream);
   if (rtpStream != NULL) {
     OpalMediaStatistics stats;
@@ -379,6 +380,7 @@ void MyCall::OnStopMediaPatch(OpalMediaPatch & patch)
     if (duration > 0)
       m_Bandwidth += stats.m_totalBytes * 8 / duration;
   }
+#endif
 }
 
 
@@ -490,6 +492,7 @@ void CallDetailRecord::OutputText(ostream & strm, const PString & format) const
           case AudioDestinationMediaAddress:
             strm << GetAudio().m_DestinationAddress;
             break;
+#if OPAL_VIDEO
           case VideoCodec:
             strm << GetVideo().m_Codec;
             break;
@@ -499,6 +502,7 @@ void CallDetailRecord::OutputText(ostream & strm, const PString & format) const
           case VideoDestinationMediaAddress:
             strm << GetVideo().m_DestinationAddress;
             break;
+#endif // OPAL_VIDEO
           case Bandwidth:
             if (m_Bandwidth > 0)
               strm << (m_Bandwidth + 999) / 1000;
@@ -589,6 +593,7 @@ void CallDetailRecord::OutputSQL(PODBC::Row & row, PString const map[NumFieldCod
           if (GetAudio().m_DestinationAddress.IsValid())
             field = GetAudio().m_DestinationAddress.AsString();
           break;
+#if OPAL_VIDEO
         case VideoCodec:
           if (!GetVideo().m_Codec.GetName())
             field = GetVideo().m_Codec.GetName();
@@ -601,6 +606,7 @@ void CallDetailRecord::OutputSQL(PODBC::Row & row, PString const map[NumFieldCod
           if (GetVideo().m_DestinationAddress.IsValid())
             field = GetVideo().m_DestinationAddress.AsString();
           break;
+#endif //OPAL_VIDEO
         case Bandwidth:
           if (m_Bandwidth > 0)
             field = (m_Bandwidth + 999) / 1000;
@@ -791,6 +797,7 @@ void CallDetailRecord::OutputDetailedHTML(PHTML & html) const
       case AudioDestinationMediaAddress:
         html << GetAudio().m_DestinationAddress;
         break;
+#if OPAL_VIDEO
       case VideoCodec:
         html << GetVideo().m_Codec;
         break;
@@ -800,6 +807,7 @@ void CallDetailRecord::OutputDetailedHTML(PHTML & html) const
       case VideoDestinationMediaAddress:
         html << GetVideo().m_DestinationAddress;
         break;
+#endif //OPAL_VIDEO
       case Bandwidth:
         if (m_Bandwidth > 0)
           html << (m_Bandwidth + 999) / 1000;
