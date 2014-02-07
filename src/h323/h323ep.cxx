@@ -106,9 +106,6 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   , callIntrusionT6(0,10)                  // Seconds
   , m_gatekeeperAliasLimit(MaxGatekeeperAliasLimit)
   , m_gatekeeperSimulatePattern(false)
-#if OPAL_H450
-  , nextH450CallIdentity(0)
-#endif
 #if OPAL_H460
   , m_features(NULL)
 #endif
@@ -119,7 +116,9 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   localAliasNames.AppendString(defaultLocalPartyName);
 
   m_connectionsByCallId.DisallowDeleteObjects();
-  secondaryConnectionsActive.DisallowDeleteObjects();
+#if OPAL_H460
+  m_secondaryConnectionsActive.DisallowDeleteObjects();
+#endif
 
   manager.AttachEndPoint(this, "h323s");
 
