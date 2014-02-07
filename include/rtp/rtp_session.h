@@ -717,6 +717,13 @@ class OpalRTPSession : public OpalMediaSession
     typedef PSafePtr<OpalJitterBuffer, PSafePtrMultiThreaded> JitterBufferPtr;
     JitterBufferPtr m_jitterBuffer;
 
+#if PTRACING
+    unsigned m_levelTxRR;
+    unsigned m_levelRxSR;
+    unsigned m_levelRxRR;
+    unsigned m_levelRxSDES;
+#endif
+
   private:
     OpalRTPSession(const OpalRTPSession &);
     void operator=(const OpalRTPSession &) { }
