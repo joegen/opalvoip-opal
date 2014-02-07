@@ -1228,15 +1228,15 @@ class H323EndPoint : public OpalRTPEndPoint
     const PTimeInterval & GetCallIntrusionT5() const { return callIntrusionT5; }
     const PTimeInterval & GetCallIntrusionT6() const { return callIntrusionT6; }
 
+#if OPAL_H450
     /**Get the dictionary of <callIdentities, connections>
      */
-    H323CallIdentityDict& GetCallIdentityDictionary() { return secondaryConnectionsActive; }
+    H323CallIdentityDict& GetCallIdentityDictionary() { return m_secondaryConnectionsActive; }
 
     /**Get the next available invoke Id for H450 operations
       */
-#if OPAL_H450
-    unsigned GetNextH450CallIdentityValue() const { return ++nextH450CallIdentity; }
-#endif
+    unsigned GetNextH450CallIdentityValue() const { return ++m_nextH450CallIdentity; }
+#endif //OPAL_H450
 
     /**Get the default transports for the endpoint type.
        Overrides the default behaviour to return udp and tcp.
@@ -1376,8 +1376,8 @@ class H323EndPoint : public OpalRTPEndPoint
     bool                  m_gatekeeperSimulatePattern;
 
 #if OPAL_H450
-    H323CallIdentityDict   secondaryConnectionsActive;
-    mutable PAtomicInteger nextH450CallIdentity;
+    H323CallIdentityDict   m_secondaryConnectionsActive;
+    mutable PAtomicInteger m_nextH450CallIdentity;
             /// Next available callIdentity for H450 Transfer operations via consultation.
 #endif
 
