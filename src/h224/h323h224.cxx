@@ -35,9 +35,7 @@
 #include <h224/h323h224.h>
 
 
-#if OPAL_HAS_H224
-
-#if OPAL_H323
+#if OPAL_HAS_H281 && OPAL_H323
 
 #include <h323/h323ep.h>
 #include <h323/h323con.h>
@@ -131,6 +129,4 @@ PBoolean H323_H224_HDLCTunnelingCapability::OnReceivedPDU(const H245_DataApplica
 }
 
 
-#endif // OPAL_H323
-
-#endif // OPAL_HAS_H224
+#endif // OPAL_HAS_H281 && OPAL_H323

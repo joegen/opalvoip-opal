@@ -33,8 +33,7 @@
 
 #include <opal_config.h>
 
-#if OPAL_HAS_H224
-#if OPAL_H323
+#if OPAL_HAS_H281 && OPAL_H323
 
 #include <h323/h323caps.h>
 
@@ -103,8 +102,6 @@ public:
 };
 
 
-#endif // OPAL_H323
-
-#endif // OPAL_HAS_H224
+#endif // OPAL_HAS_H281 && OPAL_H323
 
 #endif // OPAL_H224_H323H224_H

@@ -104,13 +104,6 @@ namespace OpalFEC
   }
 
 
-  const OpalMediaFormat & RedundantVideo()
-  {
-    static RedundantMediaFormat const fmt(OPAL_REDUNDANT_VIDEO, OpalMediaType::Video(), OpalMediaFormat::VideoClockRate);
-    return fmt;
-  }
-
-
   class UlpFecMediaFormat : public BaseMediaFormat
   {
     PCLASSINFO(UlpFecMediaFormat, BaseMediaFormat)
@@ -129,11 +122,20 @@ namespace OpalFEC
   }
 
 
+#if OPAL_VIDEO
+  const OpalMediaFormat & RedundantVideo()
+  {
+    static RedundantMediaFormat const fmt(OPAL_REDUNDANT_VIDEO, OpalMediaType::Video(), OpalMediaFormat::VideoClockRate);
+    return fmt;
+  }
+
+
   const OpalMediaFormat & UlpFecVideo()
   {
     static UlpFecMediaFormat const fmt(OPAL_ULP_FEC_VIDEO, OpalMediaType::Video(), OpalMediaFormat::VideoClockRate);
     return fmt;
   }
+#endif //OPAL_VIDEO
 
 };
 
@@ -170,9 +172,11 @@ OpalMediaFormatList OpalRTPEndPoint::GetMediaFormats() const
   OpalMediaFormatList list = manager.GetCommonMediaFormats(true, false);
 #if OPAL_RTP_FEC
   list += OpalRedundantAudio;
-  list += OpalRedundantVideo;
   list += OpalUlpFecAudio;
+ #if OPAL_VIDEO
+  list += OpalRedundantVideo;
   list += OpalUlpFecVideo;
+ #endif
 #endif
   return list;
 }
