@@ -325,10 +325,6 @@ class OpalRTPConnection : public OpalConnection
     OpalRFC2833Proto * m_ciscoNSEHandler;
 #endif
 
-#if OPAL_VIDEO
-    PSimpleTimer m_rtcpIntraFrameRequestTimer;
-#endif
-
     P_REMOVE_VIRTUAL(PBoolean,IsRTPNATEnabled(const PIPSocket::Address&,const PIPSocket::Address&,const PIPSocket::Address&,PBoolean),false);
 };
 
