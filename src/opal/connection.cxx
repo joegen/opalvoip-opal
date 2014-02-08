@@ -1754,12 +1754,17 @@ bool OpalConnection::OnMediaFailed(unsigned sessionId, bool source)
 
 bool OpalConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
 {
-  PTRACE(3, "OpalCon\tOnMediaCommand \"" << command << "\" on " << stream << " for " << *this);
-  if (&stream.GetConnection() != this)
+  if (&stream.GetConnection() != this) {
+    PTRACE(3, "OpalCon\tTerminating OnMediaCommand \"" << command << "\" on " << stream << " for " << *this);
     return false;
+  }
 
   PSafePtr<OpalConnection> other = GetOtherPartyConnection();
-  return other != NULL && other->OnMediaCommand(stream, command);
+  if (other == NULL)
+    return false;
+
+  PTRACE(3, "OpalCon\tPasing on OnMediaCommand \"" << command << "\" on " << stream << " to " << *other);
+  return other->OnMediaCommand(stream, command);
 }
 
 
