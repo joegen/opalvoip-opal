@@ -468,7 +468,10 @@ void OpalRTPConnection::DetermineRTPNAT(const PIPSocket::Address & localAddr,
 
 bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
 {
-  PTRACE(5, "RTPCon\tOnMediaCommand \"" << command << '"');
+  PTRACE(5, "RTPCon\tOnMediaCommand \"" << command << "\" for " << *this);
+
+  if (stream.IsSource() == (&stream.GetConnection() == this))
+    return OpalConnection::OnMediaCommand(stream, command);
 
   unsigned sessionID = stream.GetSessionID();
   OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(GetMediaSession(sessionID));
@@ -507,12 +510,7 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
 
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
     unsigned mask = m_stringOptions.GetInteger(OPAL_OPT_VIDUP_METHODS, OPAL_OPT_VIDUP_METHOD_DEFAULT);
-    if ((mask&(OPAL_OPT_VIDUP_METHOD_RTCP|OPAL_OPT_VIDUP_METHOD_PLI|OPAL_OPT_VIDUP_METHOD_FIR)) != 0) {
-      if (m_rtcpIntraFrameRequestTimer.IsRunning()) {
-        PTRACE(4, "RTPCon\tRecent RTCP FIR was sent, not sending another");
-        return true;
-      }
-
+    if ((mask&(OPAL_OPT_VIDUP_METHOD_RTCP | OPAL_OPT_VIDUP_METHOD_PLI | OPAL_OPT_VIDUP_METHOD_FIR)) != 0) {
       bool has_AVPF_PLI = (rtcp_fb & OpalVideoFormat::e_PLI) || (mask & OPAL_OPT_VIDUP_METHOD_PLI);
       bool has_AVPF_FIR = (rtcp_fb & OpalVideoFormat::e_FIR) || (mask & OPAL_OPT_VIDUP_METHOD_FIR);
 
@@ -525,15 +523,14 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
       else
         session->SendIntraFrameRequest(true, false);  // Fall back to RFC2032
 
-      m_rtcpIntraFrameRequestTimer.SetInterval(0, 1);
-
 #if OPAL_STATISTICS
       m_VideoUpdateRequestsSent++;
 #endif
 
       return true;
     }
-    PTRACE(5, "RTPCon\tRTCP Intra-Frame Request disabled in string options");
+
+    PTRACE(4, "RTPCon\tRTCP Intra-Frame Request disabled in string options");
   }
 #endif // OPAL_VIDEO
 
