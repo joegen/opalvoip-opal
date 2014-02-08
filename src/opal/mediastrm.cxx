@@ -203,11 +203,12 @@ bool OpalMediaStream::ExecuteCommand(const OpalMediaCommand & command)
 
 bool OpalMediaStream::InternalExecuteCommand(const OpalMediaCommand & command)
 {
-  PTRACE(4, "Media\tExecute command \"" << command << "\" on " << *this << " for " << connection);
-
-  if (IsSink())
+  if (IsSink()) {
+    PTRACE(4, "Media\tTerminating ExecuteCommand \"" << command << "\" on " << *this);
     return false;
+  }
 
+  PTRACE(4, "Media\tPassing on ExecuteCommand \"" << command << "\" on " << *this << " to " << connection);
   return connection.OnMediaCommand(*this, command);
 }
 

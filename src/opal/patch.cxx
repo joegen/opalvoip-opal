@@ -554,33 +554,48 @@ bool OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 
 PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command)
 {
-  PSafeLockReadOnly mutex(*this);
+  bool atLeastOne = false;
 
-  OpalMediaPatch * patch;
+  if (!LockReadOnly())
+    return false;
+
+  PSafePtr<OpalMediaPatch> fromPatch;
   if (m_bypassFromPatch != NULL) // Don't use tradic ?: as GNU doesn't like it
-    patch = m_bypassFromPatch;
+    fromPatch = m_bypassFromPatch;
   else
-    patch = this;
-  bool atLeastOne = patch->source.InternalExecuteCommand(command);
+    fromPatch = this;
 
+  PSafePtr<OpalMediaPatch> toPatch;
   if (m_bypassToPatch != NULL) // Don't use tradic ?: as GNU doesn't like it
-    patch = m_bypassToPatch;
+    toPatch = m_bypassToPatch;
   else
-    patch = this;
-  for (PList<Sink>::iterator s = patch->sinks.begin(); s != patch->sinks.end(); ++s) {
-    if (s->ExecuteCommand(command))
-      atLeastOne = true;
+    toPatch = this;
+
+  UnlockReadOnly();
+
+
+  if (fromPatch.SetSafetyMode(PSafeReadOnly)) {
+    atLeastOne = fromPatch->source.InternalExecuteCommand(command);
+    fromPatch.SetSafetyMode(PSafeReference);
+  }
+
+  if (toPatch.SetSafetyMode(PSafeReadOnly)) {
+    for (PList<Sink>::iterator s = toPatch->sinks.begin(); s != toPatch->sinks.end(); ++s) {
+      if (s->ExecuteCommand(command))
+        atLeastOne = true;
+    }
+    toPatch.SetSafetyMode(PSafeReference);
   }
 
 #if PTRACING
   if (PTrace::CanTrace(5)) {
     ostream & trace = PTrace::Begin(5, __FILE__, __LINE__, this);
-    trace << "Patch\t" << (atLeastOne ? "Locally executed" : "No local execute of")
+    trace << "Patch\tExecute" << (atLeastOne ? "d" : "fail for ")
           << " command \"" << command << '"';
-    if (m_bypassFromPatch != NULL)
-      trace << " bypassing " << *m_bypassFromPatch << " to " << *this;
-    else if (m_bypassToPatch != NULL)
-      trace << " bypassing " << *this << " to " << *m_bypassToPatch;
+    if (fromPatch != this)
+      trace << " bypassing " << *fromPatch << " to " << *this;
+    else if (toPatch != this)
+      trace << " bypassing " << *this << " to " << *toPatch;
     else
       trace << " on " << *this;
     trace << PTrace::End;

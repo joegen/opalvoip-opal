@@ -322,12 +322,17 @@ PBoolean OpalRTPConnection::IsRTPNATEnabled(const PIPSocket::Address & localAddr
 
 bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
 {
-  PTRACE(5, "RTPCon\tOnMediaCommand \"" << command << '"');
+  PTRACE(5, "RTPCon\tOnMediaCommand \"" << command << "\" for " << *this);
+
+  if (stream.IsSource() == (&stream.GetConnection() == this))
+    return OpalConnection::OnMediaCommand(stream, command);
 
   unsigned sessionID = stream.GetSessionID();
   OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(GetMediaSession(sessionID));
   if (session == NULL)
     return OpalConnection::OnMediaCommand(stream, command);
+
+#if OPAL_VIDEO
 
   OpalVideoFormat::RTCPFeedback rtcp_fb = stream.GetMediaFormat().GetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(),
                                                                                 OpalVideoFormat::e_NoRTCPFb);
@@ -346,8 +351,6 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
     PTRACE(3, "RTPCon\tRemote not capable of flow control (TMMBR)");
     return OpalConnection::OnMediaCommand(stream, command);
   }
-
-#if OPAL_VIDEO
 
   const OpalTemporalSpatialTradeOff * tsto = dynamic_cast<const OpalTemporalSpatialTradeOff *>(&command);
   if (tsto != NULL) {
@@ -380,7 +383,8 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
 
       return true;
     }
-    PTRACE(5, "RTPCon\tRTCP Intra-Frame Request disabled in string options");
+
+    PTRACE(4, "RTPCon\tRTCP Intra-Frame Request disabled in string options");
   }
 #endif // OPAL_VIDEO
 

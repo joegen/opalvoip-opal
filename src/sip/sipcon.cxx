@@ -3624,12 +3624,12 @@ bool SIPConnection::SendINFO(const SIPInfo::Params & params, SIP_PDU * reply)
 
 bool SIPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
 {
+  PTRACE(5, "SIP\tOnMediaCommand \"" << command << "\" for " << *this);
+
   bool done = OpalRTPConnection::OnMediaCommand(stream, command);
 
-  PTRACE(5, "SIP\tOnMediaCommand \"" << command << '"');
-
 #if OPAL_VIDEO
-  if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
+  if (PIsDescendant(&command, OpalVideoUpdatePicture) && (stream.IsSource() == (&stream.GetConnection() == this))) {
     if ((m_stringOptions.GetInteger(OPAL_OPT_VIDUP_METHODS, OPAL_OPT_VIDUP_METHOD_DEFAULT)&OPAL_OPT_VIDUP_METHOD_OOB) == 0) {
       PTRACE(5, "RTPCon\tINFO picture_fast_update disabled in string options");
     }
