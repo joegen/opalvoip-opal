@@ -38,6 +38,7 @@
 
 #include <lids/lid.h>
 
+#if OPAL_LID
 
 #define new PNEW
 
@@ -1160,6 +1161,8 @@ OpalLIDRegistration::~OpalLIDRegistration()
     previous->link = link;
   }
 }
+
+#endif // OPAL_LID
 
 
 /////////////////////////////////////////////////////////////////////////////

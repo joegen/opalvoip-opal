@@ -573,7 +573,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
   SetMediaTypeOfService(rsrc->AddIntegerField(RTPTOSKey, 0, 255, GetMediaTypeOfService(), "", "Value for DIFSERV Quality of Service"));
 
-#if P_NAT
+#if P_STUN
   SetNATServer(rsrc->AddStringField(NATMethodKey, 25, PSTUNClient::MethodName(), "Method for NAT traversal"),
                rsrc->AddStringField(NATServerKey, 100, cfg.GetString(STUNServerKey, GetNATServer()), "Server IP/hostname for NAT traversal", 1, 30));
 #endif // P_NAT

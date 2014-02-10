@@ -268,12 +268,14 @@ static PString SubstituteAll(const PString & original,
     Substitute(str, OPAL_GST_BLOCK_SIZE, std::max(mediaFormat.GetFrameTime()*2, 320U));
     Substitute(str, OPAL_GST_LATENCY, stream.GetConnection().GetMaxAudioJitterDelay());
   }
+#if OPAL_VIDEO
   else if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
     Substitute(str, OPAL_GST_WIDTH, mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), 352));
     Substitute(str, OPAL_GST_HEIGHT, mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), 288));
     Substitute(str, OPAL_GST_FRAME_RATE, psprintf("(fraction)90000/%u", mediaFormat.GetFrameTime()));
     Substitute(str, OPAL_GST_MTU, mediaFormat.GetOptionInteger(OpalMediaFormat::MaxTxPacketSizeOption(), 1400), packetiser);
   }
+#endif // OPAL_VIDEO
   
   return str;
 }
@@ -409,9 +411,9 @@ bool GstEndPoint::BuildPipeline(ostream & description, const GstMediaStream * au
   if (!PAssert(audioStream == NULL, PInvalidParameter))
     return false;
 
-  int rtpIndex = BuildRTPElement(description, *audioStream, 0) ? 0 : -1;
+  int rtpIndex = BuildRTPPipeline(description, *audioStream, 0) ? 0 : -1;
 
-  if (stream.IsSource())
+  if (audioStream->IsSource())
     return BuildAudioSourcePipeline(description, *audioStream, rtpIndex);
   else
     return BuildAudioSinkPipeline(description, *audioStream, rtpIndex);
