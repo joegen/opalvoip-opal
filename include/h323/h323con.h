@@ -2124,7 +2124,8 @@ class H323Connection : public OpalRTPConnection
        the fast start algorithm.
     */
     virtual void InternalEstablishedConnectionCheck();
-    PBoolean InternalEndSessionCheck(PPER_Stream & strm);
+    bool InternalEndSessionCheck(PPER_Stream & strm);
+    bool SendReleaseComplete();
     void SetRemoteVersions(const H225_ProtocolIdentifier & id);
     void SetBearerCapabilities(H323SignalPDU & pdu) const;
     void MonitorCallStatus();
@@ -2190,8 +2191,8 @@ class H323Connection : public OpalRTPConnection
     bool       earlyStart;
     PString    t38ModeChangeCapabilities;
     PSyncPoint digitsWaitFlag;
-    bool       endSessionSent;
-    bool       endSessionNeeded;
+    bool       m_releaseCompleteNeeded;
+    bool       m_endSessionNeeded;
     PSyncPoint endSessionReceived;
     PTimer     enforcedDurationLimit;
     bool       isConsultationTransfer;

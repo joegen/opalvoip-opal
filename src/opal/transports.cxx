@@ -638,6 +638,7 @@ bool OpalListener::Open(const AcceptHandler & theAcceptHandler, ThreadMode mode)
 
 void OpalListener::TransportThreadMain(OpalTransportPtr transport)
 {
+  PTRACE_IF(3, transport != NULL, "Listen\tHandling accepted connection: " << *transport);
   acceptHandler(*this, transport);
 }
 

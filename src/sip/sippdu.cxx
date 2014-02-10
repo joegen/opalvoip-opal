@@ -3144,6 +3144,7 @@ bool SIPTransaction::Start()
   }
 
   if (m_transport == NULL) {
+    PTRACE(2, "SIP\tTried to start transaction without a transport");
     SetTerminated(Terminated_TransportError);
     return false;
   }
@@ -3172,8 +3173,10 @@ bool SIPTransaction::Start()
         // switch to TCP as per RFC3261 18.1.1
         if (m_owner->SwitchTransportProto("tcp", this) != Successful_OK) {
           // Could not connect using TCP, go back to UDP and send it regardless of size
-          if (m_owner->SwitchTransportProto("udp", this) != Successful_OK)
+          if (m_owner->SwitchTransportProto("udp", this) != Successful_OK) {
+            PTRACE(2, "SIP\tImpossible transition from UDP to TCP and back to UDP");
             return false; // Huh? We where able to a moment ago!
+          }
         }
 
         CalculateVia();

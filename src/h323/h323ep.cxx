@@ -154,11 +154,9 @@ H323EndPoint::~H323EndPoint()
 
 void H323EndPoint::ShutDown()
 {
-  OpalTransportPtr transport(m_reusableTransports);
-  while (transport != NULL) {
-    transport->CloseWait();
-    m_reusableTransports.Remove(transport++);
-  }
+  for (set<OpalTransportPtr>::iterator it = m_reusableTransports.begin(); it != m_reusableTransports.end(); ++it)
+    (*it)->CloseWait();
+  m_reusableTransports.clear();
 
   /* Unregister request needs/depends OpalEndpoint listeners object, so shut
      down the gatekeeper (if there was one) before cleaning up the OpalEndpoint
@@ -171,12 +169,11 @@ void H323EndPoint::ShutDown()
 
 PBoolean H323EndPoint::GarbageCollection()
 {
-  OpalTransportPtr transport(m_reusableTransports);
-  while (transport != NULL) {
-    if (transport->IsOpen())
-      ++transport;
+  for (set<OpalTransportPtr>::iterator it = m_reusableTransports.begin(); it != m_reusableTransports.end(); ) {
+    if ((*it)->IsOpen())
+      ++it;
     else
-      m_reusableTransports.Remove(transport++);
+      m_reusableTransports.erase(it++);
   }
 
   return OpalRTPEndPoint::GarbageCollection();
@@ -607,11 +604,11 @@ void H323EndPoint::OnReleased(OpalConnection & connection)
   m_connectionsByCallId.RemoveAt(connection.GetIdentifier());
 
   OpalTransportPtr signallingChannel = dynamic_cast<H323Connection &>(connection).GetSignallingChannel();
-  if (signallingChannel != NULL) {
+  if (signallingChannel != NULL && signallingChannel->IsOpen()) {
     PTRACE(3, "H323", "Maintaining TCP connection: " << *signallingChannel);
-    m_reusableTransports.Append(signallingChannel);
-    signallingChannel->AttachThread(new PThreadObj1Arg<H323EndPoint, const OpalTransportPtr &>(*this,
-                signallingChannel, &H323EndPoint::InternalNewIncomingConnection, false, "H225 Answer"));
+    m_reusableTransports.insert(signallingChannel);
+    signallingChannel->AttachThread(new PThreadObj2Arg<H323EndPoint, OpalTransportPtr, bool>(*this,
+                signallingChannel, true, &H323EndPoint::InternalNewIncomingConnection, false, "H225 Answer"));
   }
 
   OpalRTPEndPoint::OnReleased(connection);
@@ -625,22 +622,29 @@ void H323EndPoint::NewIncomingConnection(OpalListener &, const OpalTransportPtr 
 }
 
 
-void H323EndPoint::InternalNewIncomingConnection(const OpalTransportPtr & transport)
+void H323EndPoint::InternalNewIncomingConnection(OpalTransportPtr transport, bool reused)
 {
-  PTRACE(3, "H225\tAwaiting first PDU");
+  if (transport == NULL)
+    return;
+
+  PTRACE(4, "H225\tAwaiting first PDU on " << (reused ? "reused" : "initial") << " connection " << *transport);
   transport->SetReadTimeout(GetFirstSignalPduTimeout());
 
   H323SignalPDU pdu;
   if (!pdu.Read(*transport)) {
-    PTRACE(1, "H225\tFailed to get initial Q.931 PDU, connection not started.");
-    transport->Close();
+    if (reused) {
+      PTRACE(4, "H225\tReusable TCP connection not reused.");
+      transport->Close();
+      return;
+    }
+
+    PTRACE(2, "H225\tFailed to get initial Q.931 PDU, connection not started.");
     return;
   }
 
-  m_reusableTransports.Remove(transport);
-
   unsigned callReference = pdu.GetQ931().GetCallReference();
-  PTRACE(3, "H225\tIncoming call, first PDU: callReference=" << callReference);
+  PTRACE(3, "H225\tIncoming call, first PDU: callReference=" << callReference
+         << " on " << (reused ? "reused" : "initial") << " connection " << *transport);
 
   // Get a new (or old) connection from the endpoint, calculate token
   PString token = transport->GetRemoteAddress();
@@ -661,8 +665,10 @@ void H323EndPoint::InternalNewIncomingConnection(const OpalTransportPtr & transp
   }
 
   // Make sure transport is attached before AddConnection()
-  if (connection != NULL)
+  if (connection != NULL) {
+    m_reusableTransports.erase(transport);
     connection->AttachSignalChannel(token, transport, true);
+  }
 
   if (AddConnection(connection) != NULL && connection->HandleSignalPDU(pdu)) {
     m_connectionsByCallId.SetAt(connection->GetIdentifier(), connection);
