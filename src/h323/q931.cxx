@@ -1015,6 +1015,15 @@ PBoolean Q931::GetCallingPartyNumber(PString  & number,
 }
 
 
+PString Q931::GetCallingPartyNumber() const
+{
+  PString number;
+  if (GetCallingPartyNumber(number))
+    return number;
+  return PString::Empty();
+}
+
+
 void Q931::SetCalledPartyNumber(const PString & number, unsigned plan, unsigned type)
 {
   SetIE(CalledPartyNumberIE,
@@ -1026,6 +1035,15 @@ PBoolean Q931::GetCalledPartyNumber(PString & number, unsigned * plan, unsigned 
 {
   return GetNumberIE(GetIE(CalledPartyNumberIE),
                      number, plan, type, NULL, NULL, NULL, 0, 0, 0);
+}
+
+
+PString Q931::GetCalledPartyNumber() const
+{
+  PString number;
+  if (GetCalledPartyNumber(number))
+    return number;
+  return PString::Empty();
 }
 
 

@@ -391,7 +391,8 @@ class H323EndPoint : public OpalRTPEndPoint
     );
 
     void InternalNewIncomingConnection(
-      const OpalTransportPtr & transport   ///< Transport connection came in on
+      OpalTransportPtr transport,   ///< Transport connection came in on
+      bool reused = false
     );
 
     /**Create a connection that uses the specified call.
@@ -1365,7 +1366,7 @@ class H323EndPoint : public OpalRTPEndPoint
 
     // Dynamic variables
     PSafeDictionary<PString, H323Connection> m_connectionsByCallId;
-    PSafeList<OpalTransport> m_reusableTransports;
+    std::set<OpalTransportPtr> m_reusableTransports;
 
     H323Capabilities m_capabilities;
 

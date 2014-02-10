@@ -121,8 +121,8 @@ H323Connection::H323Connection(OpalCall & call,
   , mediaWaitForConnect(false)
   , m_holdToRemote(false)
   , earlyStart(false)
-  , endSessionSent(false)
-  , endSessionNeeded(false)
+  , m_releaseCompleteNeeded(true)
+  , m_endSessionNeeded(false)
   , isConsultationTransfer(false)
   , m_maintainConnection(false)
   , m_holdFromRemote(eOffHoldFromRemote)
@@ -256,50 +256,55 @@ void H323Connection::OnApplyStringOptions()
 }
 
 
-void H323Connection::OnReleased()
+bool H323Connection::SendReleaseComplete()
 {
-  PTRACE(4, "H323\tOnReleased: " << callToken << ", connectionState=" << connectionState);
-
-  connectionState = ShuttingDownConnection;
-
-  PTRACE(3, "H225\tSending release complete PDU: callRef=" << callReference);
   H323SignalPDU rcPDU;
   rcPDU.BuildReleaseComplete(*this);
 #if OPAL_H450
   h450dispatcher->AttachToReleaseComplete(rcPDU);
 #endif
 
-  PBoolean sendingReleaseComplete = OnSendReleaseComplete(rcPDU);
+  bool sendingReleaseComplete = m_releaseCompleteNeeded && OnSendReleaseComplete(rcPDU);
+  PTRACE_IF(3, sendingReleaseComplete, "H225\tSending release complete PDU: callRef=" << callReference);
 
-  if (endSessionNeeded) {
+  if (m_endSessionNeeded) {
     if (sendingReleaseComplete)
       h245TunnelTxPDU = &rcPDU; // Piggy back H245 on this reply
 
     // Send an H.245 end session to the remote endpoint.
     H323ControlPDU pdu;
     pdu.BuildEndSessionCommand(H245_EndSessionCommand::e_disconnect);
-    if (!WriteControlPDU(pdu)) {
+    if (WriteControlPDU(pdu))
+      m_endSessionNeeded = false;
+    else {
       PTRACE(2, "H225\tCould not send endSession");
     }
-    endSessionSent = true;
   }
 
   if (sendingReleaseComplete) {
+    m_releaseCompleteNeeded = false;
     h245TunnelTxPDU = NULL;
-    WriteSignalPDU(rcPDU);
+    return WriteSignalPDU(rcPDU);
   }
 
-  // Check for gatekeeper and do disengage if have one
-  if (mustSendDRQ) {
-    H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper();
-    if (gatekeeper != NULL)
-      gatekeeper->DisengageRequest(*this, H225_DisengageReason::e_normalDrop);
-  }
+  return true;
+}
+
+
+void H323Connection::OnReleased()
+{
+  PTRACE(4, "H323\tOnReleased: " << callToken << ", connectionState=" << connectionState);
+
+  connectionState = ShuttingDownConnection;
 
   // Unblock sync points
   digitsWaitFlag.Signal();
 
+ bool waitForEndSession = m_endSessionNeeded; // SendReleaseComplete() will reset flag, so remember it
+
   if (LockReadWrite()) {
+    SendReleaseComplete();
+
     // Clean up any fast start "pending" channels we may have running.
     for (H323LogicalChannelList::iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel)
       channel->Close();
@@ -311,7 +316,14 @@ void H323Connection::OnReleased()
     UnlockReadWrite();
   }
 
-  if (endSessionNeeded) {
+  // Check for gatekeeper and do disengage if have one
+  if (mustSendDRQ) {
+    H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper();
+    if (gatekeeper != NULL)
+      gatekeeper->DisengageRequest(*this, H225_DisengageReason::e_normalDrop);
+  }
+
+  if (waitForEndSession) {
     // Calculate time since we sent the end session command so we do not actually
     // wait for returned endSession if it has already been that long
     PTimeInterval waitTime = endpoint.GetEndSessionTimeout();
@@ -437,7 +449,6 @@ void H323Connection::HandleSignallingChannel()
     else if (m_signallingChannel->GetErrorCode() != PChannel::Timeout) {
       if (m_controlChannel == NULL || !m_controlChannel->IsOpen())
         Release(EndedByTransportFail);
-      m_signallingChannel->Close();
       break;
     }
     else {
@@ -470,7 +481,7 @@ void H323Connection::HandleSignallingChannel()
     endSessionReceived.Signal();
   }
 
-  PTRACE(3, "H225\tSignal channel closed.");
+  PTRACE(3, "H225\tSignal channel finished for " << *this);
 }
 
 
@@ -479,8 +490,11 @@ PBoolean H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
   // Process the PDU.
   const Q931 & q931 = pdu.GetQ931();
 
-  PTRACE(3, "H225\tHandling PDU: " << q931.GetMessageTypeName()
-                    << " callRef=" << q931.GetCallReference());
+  PTRACE(3, "H225\tHandling PDU: " << q931.GetMessageTypeName() <<
+                       " callRef=" << q931.GetCallReference() <<
+                       " dn=\""    << q931.GetCalledPartyNumber() << "\""
+                       " clid=\""  << q931.GetCallingPartyNumber() << "\""
+                       " disp=\""  << q931.GetDisplayName() << '"');
 
   PSafeLockReadWrite safeLock(*this);
   if (!safeLock.IsLocked())
@@ -1653,6 +1667,7 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
   }
 
   Release(reason);
+  SendReleaseComplete();
 }
 
 
@@ -2773,7 +2788,7 @@ PBoolean H323Connection::StartControlNegotiations()
     return false;
   }
 
-  endSessionNeeded = true;
+  m_endSessionNeeded = true;
   return true;
 }
 
@@ -2822,8 +2837,8 @@ PBoolean H323Connection::HandleReceivedControlPDU(PBoolean readStatus, PPER_Stre
   // call end reason.  This could happen if the remote end point misbehaves
   // and simply closes the H.245 TCP connection rather than sending an
   // endSession.
-  PTRACE(4, "H245\tChannel closed: endSessionNeeded=" << endSessionNeeded << " endSessionSent=" << endSessionSent);
-  if (endSessionNeeded && !endSessionSent)
+  PTRACE(4, "H245\tChannel closed: endSessionNeeded=" << m_endSessionNeeded);
+  if (!IsReleased())
     Release(EndedByTransportFail);
 
   return false;
@@ -2885,7 +2900,7 @@ void H323Connection::HandleControlChannel()
 }
 
 
-PBoolean H323Connection::InternalEndSessionCheck(PPER_Stream & strm)
+bool H323Connection::InternalEndSessionCheck(PPER_Stream & strm)
 {
   H323ControlPDU pdu;
 
@@ -2901,9 +2916,11 @@ PBoolean H323Connection::InternalEndSessionCheck(PPER_Stream & strm)
     return true;
 
   H245_CommandMessage & command = pdu;
-  if (command.GetTag() == H245_CommandMessage::e_endSessionCommand)
-    endSessionReceived.Signal();
-  return false;
+  if (command.GetTag() != H245_CommandMessage::e_endSessionCommand)
+    return true;
+
+  endSessionReceived.Signal();
+  return SendReleaseComplete();
 }
 
 
@@ -3082,7 +3099,7 @@ PBoolean H323Connection::OnH245Command(const H323ControlPDU & pdu)
       return OnH245_MiscellaneousCommand(command);
 
     case H245_CommandMessage::e_endSessionCommand :
-      endSessionNeeded = true;
+      m_endSessionNeeded = true;
       endSessionReceived.Signal();
       switch (connectionState) {
         case EstablishedConnection :
@@ -3094,6 +3111,7 @@ PBoolean H323Connection::OnH245Command(const H323ControlPDU & pdu)
         default :
           Release(EndedByRefusal);
       }
+      SendReleaseComplete();
       return false;
 
 #if OPAL_H239
@@ -3935,7 +3953,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
   // Check for if all the 245 conditions are met so can start up logical
   // channels and complete the connection establishment.
   if (h245_available)
-    endSessionNeeded = true;
+    m_endSessionNeeded = true;
 
   // Delay handling of off hold until we finish redoing TCS, MSD & OLC.
   if (m_holdFromRemote == eRetrieveFromRemote) {

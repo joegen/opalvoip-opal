@@ -333,6 +333,7 @@ class Q931 : public PObject
       unsigned defPresentation = 0,   ///<  Default value if octet3a not present
       unsigned defScreening = 0       ///<  Default value if octet3a not present
     ) const;
+    PString GetCallingPartyNumber() const;
 
     void SetCalledPartyNumber(
       const PString & number, ///<  Number string
@@ -344,6 +345,7 @@ class Q931 : public PObject
       unsigned * plan = NULL, ///<  ISDN/Telephony numbering system
       unsigned * type = NULL  ///<  Number type
     ) const;
+    PString GetCalledPartyNumber() const;
 
     void SetRedirectingNumber(
       const PString & number, ///<  Number string
