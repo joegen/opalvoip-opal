@@ -1804,10 +1804,7 @@ void OpalManager_C::HandleSetProtocol(const OpalMessage & command, OpalMessageBu
       }
 
       GstEndPoint::CodecPipelines codecPipeline;
-      if (!gstEP->GetMapping(mediaFormat, codecPipeline)) {
-        response.SetError(PSTRSTRM("Could not get pipeline elements for media format " << mediaFormat));
-        return;
-      }
+      gstEP->GetMapping(mediaFormat, codecPipeline);
 
       codecPipeline.m_encoder = fields[1];
       codecPipeline.m_decoder = fields[2];
