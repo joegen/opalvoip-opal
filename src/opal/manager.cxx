@@ -829,19 +829,23 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
   if (connection.IsNetworkConnection()) {
     OpalIMEndPoint * imEP = FindEndPointAs<OpalIMEndPoint>(OpalIMEndPoint::Prefix());
     if (imEP != NULL) {
-      OpalMediaFormatList formats = connection.GetMediaFormats();
+      OpalMediaFormatList formats = imEP->GetMediaFormats();
+      connection.AdjustMediaFormats(true, NULL, formats);
       if (!formats.IsEmpty()) {
-        PStringStream autoStart;
-        OpalMediaFormatList::iterator it;
-        for (it = formats.begin(); it != formats.end(); ++it) {
-          static const char prefix[] = OPAL_IM_MEDIA_TYPE_PREFIX;
-          if (it->GetMediaType().compare(0, sizeof(prefix)-1, prefix) != 0)
-            break;
-          autoStart << it->GetMediaType() << ":sendrecv\n";
-        }
-        if (it == formats.end()) {
-          mergedOptions.SetAt(OPAL_OPT_AUTO_START, autoStart);
-          return imEP->MakeConnection(call, OpalIMEndPoint::Prefix()+":*", NULL, options, &mergedOptions);
+        OpalMediaFormatList formats = connection.GetMediaFormats();
+        if (!formats.IsEmpty()) {
+          PStringStream autoStart;
+          OpalMediaFormatList::iterator it;
+          for (it = formats.begin(); it != formats.end(); ++it) {
+            static const char prefix[] = OPAL_IM_MEDIA_TYPE_PREFIX;
+            if (it->GetMediaType().compare(0, sizeof(prefix)-1, prefix) != 0)
+              break;
+            autoStart << it->GetMediaType() << ":sendrecv\n";
+          }
+          if (it == formats.end()) {
+            mergedOptions.SetAt(OPAL_OPT_AUTO_START, autoStart);
+            return imEP->MakeConnection(call, OpalIMEndPoint::Prefix() + ":*", NULL, options, &mergedOptions);
+          }
         }
       }
     }
