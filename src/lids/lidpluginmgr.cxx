@@ -37,6 +37,8 @@
 
 #include <opal_config.h>
 
+#if OPAL_LID
+
 #include <lids/lidpluginmgr.h>
 #include <ptclib/dtmf.h>
 
@@ -1160,3 +1162,4 @@ PStringList OpalPluginLID::GetCountryCodeNameList() const
   }
 }
 
+#endif //OPAL_LID

@@ -108,7 +108,7 @@ bool MySIPEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
     if (Register(*it, aor))
       PSYSTEMLOG(Info, "Started register of " << aor);
     else
-      PSYSTEMLOG(Error, "Could not register " << *it);
+      PSYSTEMLOG(Error, "Could not register " << it->m_addressOfRecord);
   }
 
   return true;

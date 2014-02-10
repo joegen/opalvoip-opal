@@ -38,6 +38,8 @@
 
 #include <opal_config.h>
 
+#if OPAL_LID
+
 #include <ptlib/pluginmgr.h>
 #include <ptlib/sound.h>
 #include <lids/lidplugin.h>
@@ -665,5 +667,6 @@ class OpalPluginLID : public OpalLineInterfaceDevice
 
 PFACTORY_LOAD(OpalPluginLIDManager);
 
+#endif // OPAL_LID
 
 #endif // OPAL_LIDS_LIDPLUGINMGR_H

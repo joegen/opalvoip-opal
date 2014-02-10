@@ -619,13 +619,13 @@ class H460_Feature : public PObject
 
 #if OPAL_H460_NAT
     PNatMethod * GetNatMethod(const char * methodName) const;
-#endif
 
     template <class METH> bool GetNatMethod(const char * methodName, METH * & natMethod) const
     {
       natMethod = dynamic_cast<METH *>(GetNatMethod(methodName));
       return natMethod != NULL;
     }
+#endif // OPAL_H460_NAT
 
     Category               m_category;
     H323EndPoint         * m_endpoint;

@@ -40,6 +40,8 @@
 
 #include <opal_config.h>
 
+#if OPAL_LID
+
 #include <opal/mediafmt.h>
 
 
@@ -1449,6 +1451,7 @@ OpalLineInterfaceDevice * cls##_Registration::Create(void * param) const
   OPAL_REGISTER_LID_FUNCTION(cls, type, parameter) \
   { return new cls(parameter); }
 
+#endif // OPAL_LID
 
 #endif // OPAL_LIDS_LID_H
 
