@@ -7164,6 +7164,18 @@ fi
 
 
 
+      if    test "x${enableval}" = "xyes" && \
+            test "x$OPAL_PTLIB_DTMF" != "x1" && \
+            test "x$OPAL_PTLIB_DTMF" != "xyes"; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_PTLIB_DTMF
+=$OPAL_PTLIB_DTMF
+" >&5
+$as_echo "disabled due to disabled dependency OPAL_PTLIB_DTMF
+=$OPAL_PTLIB_DTMF
+" >&6; }
+         enableval=no
+      fi
+
 
 
 
@@ -7299,7 +7311,6 @@ int
 main ()
 {
 ;
-
   ;
   return 0;
 }
