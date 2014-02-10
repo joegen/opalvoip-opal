@@ -84,6 +84,7 @@ class wxSplitterEvent;
 class wxSpinCtrl;
 class wxListCtrl;
 class wxListEvent;
+class wxListItem;
 class wxCheckListBox;
 class wxNotebook;
 class wxGrid;
@@ -530,6 +531,25 @@ class SpeedDialDialog : public wxDialog, public SpeedDialInfo
 };
 
 
+class MyMedia
+{
+public:
+  MyMedia();
+  MyMedia(const OpalMediaFormat & format);
+
+  bool operator<(const MyMedia & other)
+  {
+    return preferenceOrder < other.preferenceOrder;
+  }
+
+  OpalMediaFormat mediaFormat;
+  const wxChar  * validProtocols;
+  int             preferenceOrder;
+};
+
+typedef std::list<MyMedia> MyMediaList;
+
+
 class RegistrationInfo
 {
   public:
@@ -821,6 +841,7 @@ class OptionsDialog : public wxDialog
     wxTextCtrl   * m_codecOptionValue;
     wxStaticText * m_CodecOptionValueLabel;
     wxStaticText * m_CodecOptionValueError;
+    wxButton     * m_SetDefaultCodecOption;
 
     void AddCodec(wxCommandEvent & /*event*/);
     void RemoveCodec(wxCommandEvent & /*event*/);
@@ -831,6 +852,9 @@ class OptionsDialog : public wxDialog
     void SelectedCodecOption(wxListEvent & /*event*/);
     void DeselectedCodecOption(wxListEvent & /*event*/);
     void ChangedCodecOptionValue(wxCommandEvent & /*event*/);
+    void SetDefaultCodecOption(wxCommandEvent & /*event*/);
+    void SetCodecOptionValue(bool useDefault, PwxString newValue);
+    MyMedia * GetCodecOptionInfo(wxListItem & item, PwxString & optionName, PwxString & defaultValue);
 
     ////////////////////////////////////////
     // H.323 fields
@@ -943,22 +967,6 @@ class OptionsDialog : public wxDialog
 
     DECLARE_EVENT_TABLE()
 };
-
-
-class MyMedia
-{
-public:
-  MyMedia();
-  MyMedia(const OpalMediaFormat & format);
-
-  bool operator<(const MyMedia & other) { return preferenceOrder < other.preferenceOrder; }
-
-  OpalMediaFormat mediaFormat;
-  const wxChar  * validProtocols;
-  int             preferenceOrder;
-};
-
-typedef std::list<MyMedia> MyMediaList;
 
 
 class MyTaskBarIcon : public wxTaskBarIcon

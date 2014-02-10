@@ -4309,6 +4309,7 @@ DEF_XRCID(AllCodecs);
 DEF_XRCID(SelectedCodecs);
 DEF_XRCID(CodecOptionsList);
 DEF_XRCID(CodecOptionValue);
+DEF_XRCID(SetDefaultCodecOption);
 DEF_XRCID(AddCodec);
 DEF_XRCID(RemoveCodec);
 DEF_XRCID(MoveUpCodec);
@@ -4382,6 +4383,7 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_LIST_ITEM_SELECTED(ID_CodecOptionsList, OptionsDialog::SelectedCodecOption)
   EVT_LIST_ITEM_DESELECTED(ID_CodecOptionsList, OptionsDialog::DeselectedCodecOption)
   EVT_TEXT(ID_CodecOptionValue, OptionsDialog::ChangedCodecOptionValue)
+  EVT_BUTTON(ID_SetDefaultCodecOption, OptionsDialog::SetDefaultCodecOption)
 
   ////////////////////////////////////////
   // H.323 fields
@@ -4792,6 +4794,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   FindWindowByNameAs(m_codecOptionValue, this, ID_CodecOptionValue)->Disable();
   FindWindowByNameAs(m_CodecOptionValueLabel, this, wxT("CodecOptionValueLabel"))->Disable();
   FindWindowByNameAs(m_CodecOptionValueError, this, wxT("CodecOptionValueError"))->Show(false);
+  FindWindowByNameAs(m_SetDefaultCodecOption, this, ID_SetDefaultCodecOption)->Disable();
 
 #if OPAL_H323
   ////////////////////////////////////////
@@ -6170,6 +6173,7 @@ void OptionsDialog::SelectedCodec(wxCommandEvent & /*event*/)
   m_codecOptionValue->SetValue(wxEmptyString);
   m_codecOptionValue->Disable();
   m_CodecOptionValueLabel->Disable();
+  m_SetDefaultCodecOption->Disable();
 
   if (count == 1) {
     MyMedia * media = (MyMedia *)m_selectedCodecs->GetClientData(selections[0]);
@@ -6188,15 +6192,46 @@ void OptionsDialog::SelectedCodec(wxCommandEvent & /*event*/)
 }
 
 
+MyMedia * OptionsDialog::GetCodecOptionInfo(wxListItem & item, PwxString & optionName, PwxString & defaultValue)
+{
+  wxArrayInt selections;
+  if (!PAssert(m_selectedCodecs->GetSelections(selections) == 1, PLogicError))
+    return NULL;
+
+  MyMedia * media = (MyMedia *)m_selectedCodecs->GetClientData(selections[0]);
+  if (!PAssert(media != NULL, PLogicError))
+    return NULL;
+
+  item.m_itemId = m_codecOptions->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
+  if (item.m_itemId < 0)
+    return NULL;
+
+  item.m_mask = wxLIST_MASK_TEXT;
+  m_codecOptions->GetItem(item);
+  optionName = item.m_text;
+
+  PString val;
+  OpalMediaFormat(media->mediaFormat.GetName()).GetOptionValue(optionName, val);
+  defaultValue = val;
+
+  item.m_mask = wxLIST_MASK_TEXT | wxLIST_MASK_DATA;
+  item.m_col = 1;
+  m_codecOptions->GetItem(item);
+
+  return media;
+}
+
+
 void OptionsDialog::SelectedCodecOption(wxListEvent & /*event*/)
 {
   wxListItem item;
-  item.m_mask = wxLIST_MASK_TEXT|wxLIST_MASK_DATA;
-  item.m_itemId = m_codecOptions->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
-  item.m_col = 1;
-  m_codecOptions->GetItem(item);
+  PwxString optionName, defaultValue;
+  if (GetCodecOptionInfo(item, optionName, defaultValue) == NULL)
+    return;
+
   m_codecOptionValue->Enable(!item.m_data);
   m_CodecOptionValueLabel->Enable(!item.m_data);
+  m_SetDefaultCodecOption->Enable(!item.m_data && item.m_text != defaultValue);
   if (!item.m_data)
     m_codecOptionValue->SetValue(item.m_text);
 }
@@ -6207,37 +6242,41 @@ void OptionsDialog::DeselectedCodecOption(wxListEvent & /*event*/)
   m_codecOptionValue->SetValue(wxEmptyString);
   m_codecOptionValue->Disable();
   m_CodecOptionValueLabel->Disable();
+  m_SetDefaultCodecOption->Disable();
 }
 
 
 void OptionsDialog::ChangedCodecOptionValue(wxCommandEvent & /*event*/)
 {
+  SetCodecOptionValue(false, m_codecOptionValue->GetValue());
+}
+
+
+void OptionsDialog::SetDefaultCodecOption(wxCommandEvent & /*event*/)
+{
+  SetCodecOptionValue(true, wxEmptyString);
+}
+
+
+void OptionsDialog::SetCodecOptionValue(bool useDefault, PwxString newValue)
+{
   wxListItem item;
-  item.m_itemId = m_codecOptions->GetNextItem(-1, wxLIST_NEXT_ALL, wxLIST_STATE_SELECTED);
-  if (item.m_itemId < 0)
+  PwxString optionName, defaultValue;
+  MyMedia * media = GetCodecOptionInfo(item, optionName, defaultValue);
+  if (media == NULL)
     return;
 
-  item.m_mask = wxLIST_MASK_TEXT;
-  item.m_col = 1;
-  m_codecOptions->GetItem(item);
+  if (useDefault)
+    newValue = defaultValue;
 
-  PwxString newValue = m_codecOptionValue->GetValue();
   if (item.m_text == newValue)
     return;
 
-  wxArrayInt selections;
-  PAssert(m_selectedCodecs->GetSelections(selections) == 1, PLogicError);
-  MyMedia * media = (MyMedia *)m_selectedCodecs->GetClientData(selections[0]);
-  if (!PAssert(media != NULL, PLogicError))
-    return;
-
-  item.m_col = 0;
-  m_codecOptions->GetItem(item);
-  bool ok = media->mediaFormat.SetOptionValue(PwxString(item.m_text), newValue);
+  bool ok = media->mediaFormat.SetOptionValue(optionName, newValue);
   if (ok) {
-    item.m_col = 1;
     item.m_text = newValue;
     m_codecOptions->SetItem(item);
+    m_codecOptionValue->SetValue(newValue);
   }
 
   m_CodecOptionValueError->Show(!ok);
