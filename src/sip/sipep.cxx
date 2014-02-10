@@ -720,6 +720,10 @@ bool SIPEndPoint::OnReceivedPDU(SIP_PDU * pdu)
       }
 
     case SIP_PDU::Method_INVITE :
+      // Do we already know about this dialog?
+      if (hasToConnection || hasFromConnection)
+        break;
+
       if (toToken.IsEmpty()) {
         PWaitAndSignal mutex(m_receivedConnectionMutex);
 
@@ -729,17 +733,17 @@ bool SIPEndPoint::OnReceivedPDU(SIP_PDU * pdu)
           if (connection != NULL) {
             PTRACE_CONTEXT_ID_PUSH_THREAD(*connection);
             switch (connection->CheckINVITE(*pdu)) {
-              case SIPConnection::IsNewINVITE : // Process new INVITE
+              case SIPConnection::IsNewINVITE: // Process new INVITE
                 break;
 
-              case SIPConnection::IsDuplicateINVITE : // Completely ignore duplicate INVITE
+              case SIPConnection::IsDuplicateINVITE: // Completely ignore duplicate INVITE
                 return false;
 
-              case SIPConnection::IsReINVITE : // Pass on to worker thread if re-INVITE
+              case SIPConnection::IsReINVITE: // Pass on to worker thread if re-INVITE
                 new SIP_PDU_Work(*this, token, pdu);
                 return true;
 
-              case SIPConnection::IsLoopedINVITE : // Send back error if looped INVITE
+              case SIPConnection::IsLoopedINVITE: // Send back error if looped INVITE
                 SIP_PDU response(*pdu, SIP_PDU::Failure_LoopDetected);
                 response.GetMIME().SetProductInfo(GetUserAgent(), connection->GetProductInfo());
                 response.Send();
@@ -747,18 +751,14 @@ bool SIPEndPoint::OnReceivedPDU(SIP_PDU * pdu)
             }
           }
         }
-      }
-      else if (!hasToConnection) {
-        // Has to tag but doesn't correspond to anything, odd.
-        pdu->SendResponse(SIP_PDU::Failure_TransactionDoesNotExist);
-        return false;
+
+        pdu->SendResponse(SIP_PDU::Information_Trying);
+        return OnReceivedINVITE(pdu);
       }
 
-      if (hasToConnection || hasFromConnection)
-        break;
-
-      pdu->SendResponse(SIP_PDU::Information_Trying);
-      return OnReceivedINVITE(pdu);
+      // Has to tag but doesn't correspond to a known connection, wrong.
+      pdu->SendResponse(SIP_PDU::Failure_TransactionDoesNotExist);
+      return false;
 
     case SIP_PDU::Method_BYE :
     case SIP_PDU::Method_ACK :
