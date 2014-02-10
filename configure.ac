@@ -263,7 +263,11 @@ OPAL_MODULE_OPTION(
    [],
    [-ltonezone],
    [#include <dahdi/user.h>],
-   [;]
+   [;],
+   [],
+   [],
+   [],
+   [OPAL_PTLIB_DTMF]
 )
 
 
