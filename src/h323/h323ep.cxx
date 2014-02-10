@@ -116,7 +116,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   localAliasNames.AppendString(defaultLocalPartyName);
 
   m_connectionsByCallId.DisallowDeleteObjects();
-#if OPAL_H460
+#if OPAL_H450
   m_secondaryConnectionsActive.DisallowDeleteObjects();
 #endif
 

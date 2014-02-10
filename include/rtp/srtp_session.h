@@ -94,7 +94,7 @@ class OpalSRTPCryptoSuite : public OpalMediaCryptoSuite
     OpalSRTPCryptoSuite() { }
 
   public:
-#if OPAL_H235_6 || OPAL_H235_8
+#if OPAL_H235_8
     virtual H235SecurityCapability * CreateCapability(const OpalMediaFormat & mediaFormat, unsigned capabilityNumber) const;
 #endif
     virtual bool Supports(const PCaselessString & proto) const;
