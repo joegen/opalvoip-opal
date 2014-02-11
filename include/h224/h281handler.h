@@ -135,7 +135,9 @@ class OpalH281Client : public OpalH224Client
      */
     virtual void OnActivatePreset(BYTE presetNumber);
 
-    void SetCapabilityChangedNotifier(const PNotifier & notifier) { m_capabilityChanged = notifier; }
+    /**Set notifier for when remote camera capabilties change
+      */
+    void SetCapabilityChangedNotifier(const PNotifier & notifier);
 
   protected:
     PDECLARE_NOTIFIER(PTimer, OpalH281Client, ContinueAction);
