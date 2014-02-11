@@ -431,7 +431,7 @@ class StatisticsPage
     void operator=(const StatisticsPage &) { }
 };
 
-class InCallPanel : public CallPanelBase
+class InCallPanel : public CallPanelBase, PAsyncNotifierTarget
 {
   public:
     InCallPanel(MyManager & manager, const PSafePtr<OpalCall> & call, wxWindow * parent);
@@ -461,9 +461,13 @@ class InCallPanel : public CallPanelBase
     void OnUserInputFlash(wxCommandEvent & /*event*/);
     void OnUpdateVU(wxTimerEvent & /*event*/);
 
+    // PAsyncNotifierTarget override
+    virtual void AsyncNotifierSignal();
+    void OnEvtAsyncNotification(wxCommandEvent & /*event*/);
+
 #if OPAL_HAS_H281
     void OnMouseFECC(wxMouseEvent & /*event*/);
-    PDECLARE_NOTIFIER(OpalH281Client, InCallPanel, OnChangedFECC);
+    PDECLARE_ASYNC_NOTIFIER(OpalH281Client, InCallPanel, OnChangedFECC);
 #endif
 
     void SpeakerVolume(wxScrollEvent & /*event*/);

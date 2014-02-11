@@ -514,6 +514,15 @@ void OpalH281Client::OnRemoteCapabilitiesChanged()
 }
 
 
+void OpalH281Client::SetCapabilityChangedNotifier(const PNotifier & notifier)
+{
+  m_capabilityChanged = notifier;
+  static uint16_t const noCapabilities[NumVideoSources];
+  if (memcmp(m_remoteCapability, noCapabilities, sizeof(m_remoteCapability)) != 0)
+    OnRemoteCapabilitiesChanged();
+}
+
+
 void OpalH281Client::OnSelectVideoSource(VideoSources /*source*/, H281_Frame::VideoMode /*videoMode*/)
 {
   // not handled
