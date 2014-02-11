@@ -344,6 +344,25 @@
     <Lib />
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\csharp\csharp_msvc_wrapper.cxx">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\csharp\csharp_swig_wrapper.cxx">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Android'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\ep\skinnyep.cxx" />
     <ClCompile Include="..\h323\h235dh.cxx" />
     <ClCompile Include="..\codec\h261mf.cxx" />
@@ -1632,6 +1651,180 @@ configure -Dac_top_build_prefix=$(ProjectDir)..\..\Lib\$(Platform)\ --no-search 
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <CustomBuild Include="..\csharp\opal.i">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.inc" "%(FullPath)"
+if errorlevel 2 goto missing
+if errorlevel 1 exit 1
+copy "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" &gt; nul
+exit 0
+:missing
+echo Ignoring missing SWIG and using pre-compiled versions.
+copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx" "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" &gt; nul
+exit 0
+</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">Generating C# files</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)../../include/opal.h</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.inc" "%(FullPath)"
+if errorlevel 2 goto missing
+if errorlevel 1 exit 1
+copy "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" &gt; nul
+exit 0
+:missing
+echo Ignoring missing SWIG and using pre-compiled versions.
+copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx" "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" &gt; nul
+exit 0
+</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">Generating C# files</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">$(ProjectDir)../../include/opal.h</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Android'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.inc" "%(FullPath)"
+if errorlevel 2 goto missing
+if errorlevel 1 exit 1
+copy "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" &gt; nul
+exit 0
+:missing
+echo Ignoring missing SWIG and using pre-compiled versions.
+copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx" "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" &gt; nul
+exit 0
+</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Android'">Generating C# files</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Android'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)../../include/opal.h</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.inc" "%(FullPath)"
+if errorlevel 2 goto missing
+if errorlevel 1 exit 1
+copy "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" &gt; nul
+exit 0
+:missing
+echo Ignoring missing SWIG and using pre-compiled versions.
+copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx" "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" &gt; nul
+exit 0
+</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Generating C# files</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)../../include/opal.h</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.inc" "%(FullPath)"
+if errorlevel 2 goto missing
+if errorlevel 1 exit 1
+copy "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" &gt; nul
+exit 0
+:missing
+echo Ignoring missing SWIG and using pre-compiled versions.
+copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx" "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" &gt; nul
+exit 0
+</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Generating C# files</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(ProjectDir)../../include/opal.h</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.inc" "%(FullPath)"
+if errorlevel 2 goto missing
+if errorlevel 1 exit 1
+copy "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" &gt; nul
+exit 0
+:missing
+echo Ignoring missing SWIG and using pre-compiled versions.
+copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx" "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" &gt; nul
+exit 0
+</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Generating C# files</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)../../include/opal.h</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.inc" "%(FullPath)"
+if errorlevel 2 goto missing
+if errorlevel 1 exit 1
+copy "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" &gt; nul
+exit 0
+:missing
+echo Ignoring missing SWIG and using pre-compiled versions.
+copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx" "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" &gt; nul
+exit 0
+</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating C# files</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)../../include/opal.h</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.inc" "%(FullPath)"
+if errorlevel 2 goto missing
+if errorlevel 1 exit 1
+copy "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" &gt; nul
+exit 0
+:missing
+echo Ignoring missing SWIG and using pre-compiled versions.
+copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx" "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" &gt; nul
+exit 0
+</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">Generating C# files</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">$(ProjectDir)../../include/opal.h</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.inc" "%(FullPath)"
+if errorlevel 2 goto missing
+if errorlevel 1 exit 1
+copy "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" &gt; nul
+exit 0
+:missing
+echo Ignoring missing SWIG and using pre-compiled versions.
+copy "%(RootDir)%(Directory)\csharp_swig_wrapper.cxx" "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" &gt; nul
+exit 0
+</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating C# files</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)../../include/opal.h</AdditionalInputs>
+    </CustomBuild>
+    <None Include="..\csharp\OPAL.cs" />
+    <None Include="..\csharp\OpalCallEndReason.cs" />
+    <None Include="..\csharp\OpalContext.cs" />
+    <None Include="..\csharp\OpalEchoCancelMode.cs" />
+    <None Include="..\csharp\OpalInstantMessage.cs" />
+    <None Include="..\csharp\OpalLineAppearanceStates.cs" />
+    <None Include="..\csharp\OpalMediaDataType.cs" />
+    <None Include="..\csharp\OpalMediaStates.cs" />
+    <None Include="..\csharp\OpalMediaTiming.cs" />
+    <None Include="..\csharp\OpalMessage.cs" />
+    <None Include="..\csharp\OpalMessageParam.cs" />
+    <None Include="..\csharp\OpalMessagePtr.cs" />
+    <None Include="..\csharp\OpalMessageType.cs" />
+    <None Include="..\csharp\OpalParamAnswerCall.cs" />
+    <None Include="..\csharp\OpalParamCallCleared.cs" />
+    <None Include="..\csharp\OpalParamGeneral.cs" />
+    <None Include="..\csharp\OpalParamProtocol.cs" />
+    <None Include="..\csharp\OpalParamRecording.cs" />
+    <None Include="..\csharp\OpalParamRegistration.cs" />
+    <None Include="..\csharp\OpalParamSetUpCall.cs" />
+    <None Include="..\csharp\OpalParamSetUserData.cs" />
+    <None Include="..\csharp\OPALPINVOKE.cs" />
+    <None Include="..\csharp\OpalPresenceStates.cs" />
+    <None Include="..\csharp\OpalPresenceStatus.cs" />
+    <None Include="..\csharp\OpalProductDescription.cs" />
+    <None Include="..\csharp\OpalRegistrationStates.cs" />
+    <None Include="..\csharp\OpalSilenceDetectMode.cs" />
+    <None Include="..\csharp\OpalStatusCallCleared.cs" />
+    <None Include="..\csharp\OpalStatusIncomingCall.cs" />
+    <None Include="..\csharp\OpalStatusIVR.cs" />
+    <None Include="..\csharp\OpalStatusLineAppearance.cs" />
+    <None Include="..\csharp\OpalStatusMediaStream.cs" />
+    <None Include="..\csharp\OpalStatusMessageWaiting.cs" />
+    <None Include="..\csharp\OpalStatusRegistration.cs" />
+    <None Include="..\csharp\OpalStatusTransferCall.cs" />
+    <None Include="..\csharp\OpalStatusUserInput.cs" />
+    <None Include="..\csharp\OpalUserInputModes.cs" />
+    <None Include="..\csharp\OpalVideoRecordMixMode.cs" />
+    <None Include="..\csharp\SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int.cs" />
+    <None Include="..\csharp\SWIGTYPE_p_f_p_q_const__OpalMessage__int.cs" />
+    <None Include="..\csharp\SWIGTYPE_p_OpalHandleStruct.cs" />
+    <None Include="..\csharp\SWIGTYPE_p_OpalMessage.cs" />
+    <None Include="..\csharp\SWIGTYPE_p_p_char.cs" />
+    <None Include="..\csharp\SWIGTYPE_p_unsigned_int.cs" />
+    <None Include="..\csharp\SWIGTYPE_p_void.cs" />
     <None Include="..\..\configure.ac" />
     <CustomBuild Include="..\..\revision.h.in">
       <FileType>Document</FileType>
