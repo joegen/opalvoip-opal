@@ -3985,8 +3985,10 @@ void H323Connection::InternalEstablishedConnectionCheck()
             inProgressChannel = true;
         }
         if (hasEstablishedChannel && !inProgressChannel &&
-              (connectionState == HasExecutedSignalConnect || (earlyStart && m_fastStartState != FastStartAcknowledged)))
+            (connectionState == HasExecutedSignalConnect || (earlyStart && m_fastStartState != FastStartAcknowledged))) {
+          OnSelectLogicalChannels();
           OnConnectedInternal();
+        }
       }
       break;
 
