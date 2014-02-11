@@ -302,7 +302,7 @@ dnl ########################################################################
 dnl C# Support
 dnl MSWIN_DISPLAY  csharp,C# interface
 dnl MSWIN_DEFINE   csharp,OPAL_CSHARP
-OPAL_SIMPLE_OPTION(csharp,OPAL_CSHARP, [C# interface])
+OPAL_SIMPLE_OPTION(csharp,OPAL_CSHARP, [C-sharp interface])
 
 
 dnl ########################################################################

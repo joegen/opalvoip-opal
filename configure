@@ -663,6 +663,7 @@ RUBY_USABLE
 RUBY_LIBS
 RUBY_CFLAGS
 RUBY_SYSTEM
+OPAL_CSHARP
 OPAL_JAVA
 JAVA_USABLE
 JAVA_LIBS
@@ -826,6 +827,7 @@ enable_dahdi
 with_dahdi_dir
 enable_java
 with_java_dir
+enable_csharp
 enable_ruby
 with_ruby_dir
 enable_video
@@ -1522,6 +1524,7 @@ Optional Features:
   --disable-capi          disable CAPI ISDN support
   --disable-dahdi         disable DAHDI E1 support
   --disable-java          disable Java JNI support
+  --disable-csharp        disable C-sharp interface
   --disable-ruby          disable Ruby support
   --disable-video         disable video support
   --disable-sip           disable SIP protocol support
@@ -5731,6 +5734,7 @@ OPAL_PLUGINS=yes
 OPAL_SAMPLES=no
 OPAL_ZRTP=no
 OPAL_JAVA=yes
+OPAL_CSHARP=yes
 OPAL_RUBY=yes
 OPAL_SCRIPT=yes
 OPAL_HAS_MSRP=yes
@@ -7628,6 +7632,68 @@ fi
 
    fi
    OPAL_JAVA=$usable
+
+
+
+
+
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking C-sharp interface" >&5
+$as_echo_n "checking C-sharp interface... " >&6; }
+
+   # Check whether --enable-csharp was given.
+if test "${enable_csharp+set}" = set; then :
+  enableval=$enable_csharp;
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+$as_echo "disabled by user" >&6; }
+         fi
+
+else
+
+         enableval=$OPAL_CSHARP
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+$as_echo "disabled by default" >&6; }
+         fi
+
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   if test "x${enableval}" = "xyes"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+   fi
+
+
+   if test "x$enableval" = "xyes"; then :
+
+         OPAL_CSHARP=yes
+
+
+$as_echo "#define OPAL_CSHARP 1" >>confdefs.h
+
+
+else
+  OPAL_CSHARP=no
+fi
+
+
+   enable_csharp="$enableval"
 
 
 
@@ -11759,6 +11825,7 @@ echo "       Media mixing (conferences) :  $OPAL_HAS_MIXER"
 echo "     Statistics gathering support :  $OPAL_STATISTICS"
 echo "        Script language interface :  $OPAL_SCRIPT"
 echo "                     Java support :  $OPAL_JAVA"
+echo "                       C# support :  $OPAL_CSHARP"
 echo "                     Ruby support :  $OPAL_RUBY"
 
 echo ""
