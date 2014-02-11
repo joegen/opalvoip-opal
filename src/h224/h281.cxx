@@ -315,12 +315,12 @@ bool OpalH281Client::Action(PVideoControlInfo::Types actionType, int direction)
 
       // send a ContinueAction every 400msec
       m_continueTimer.RunContinuous(400);
-      break;
+      return true;
     }
   }
 
   m_transmitFrame.SetRequestType(H281_Frame::IllegalRequest);
-  return true;
+  return false;
 }
 
 
@@ -330,10 +330,10 @@ void OpalH281Client::SendStopAction()
     return;
 
   PTRACE(3, "Stopping action");
+  m_continueTimer.Stop();
   m_transmitFrame.SetRequestType(H281_Frame::StopAction);
   m_h224Handler->TransmitClientFrame(*this, m_transmitFrame);
   m_transmitFrame.SetRequestType(H281_Frame::IllegalRequest);
-  m_continueTimer.Stop();
 }
 
 
