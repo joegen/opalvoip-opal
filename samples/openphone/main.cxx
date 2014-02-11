@@ -473,10 +473,18 @@ DEFINE_USER_COMMAND(wxEvtRinging);
 DEFINE_USER_COMMAND(wxEvtEstablished);
 DEFINE_USER_COMMAND(wxEvtOnHold);
 DEFINE_USER_COMMAND(wxEvtCleared);
-DEFINE_USER_COMMAND(wxEvtAsyncNotification);
 DEFINE_USER_COMMAND(wxEvtSetTrayTipText);
 DEFINE_USER_COMMAND(wxEvtTestVideoEnded);
 DEFINE_USER_COMMAND(wxEvtGetSSLPassword);
+
+DEFINE_USER_COMMAND(wxEvtAsyncNotification);
+
+static void PostAsyncNotification(wxWindow & wnd)
+{
+  wxCommandEvent theEvent(wxEvtAsyncNotification);
+  theEvent.SetEventObject(&wnd);
+  wnd.GetEventHandler()->AddPendingEvent(theEvent);
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -872,7 +880,7 @@ void MyManager::PostEvent(const wxCommandEvent & cmdEvent, const PString & str, 
 
 void MyManager::AsyncNotifierSignal()
 {
-  PostEvent(wxEvtAsyncNotification);
+  PostAsyncNotification(*this);
 }
 
 
@@ -7212,9 +7220,7 @@ void IMDialog::OnCloseWindow(wxCloseEvent & WXUNUSED(event))
 
 void IMDialog::AsyncNotifierSignal()
 {
-  wxCommandEvent theEvent(wxEvtAsyncNotification);
-  theEvent.SetEventObject(this);
-  GetEventHandler()->AddPendingEvent(theEvent);
+  PostAsyncNotification(*this);
 }
 
 
@@ -7505,6 +7511,7 @@ BEGIN_EVENT_TABLE(InCallPanel, CallPanelBase)
   EVT_COMMAND_SCROLL(XRCID("MicrophoneVolume"), InCallPanel::MicrophoneVolume)
 
   EVT_TIMER(VU_UPDATE_TIMER_ID, InCallPanel::OnUpdateVU)
+  EVT_USER_COMMAND(wxEvtAsyncNotification, InCallPanel::OnEvtAsyncNotification)
 END_EVENT_TABLE()
 
 #define SET_CTRL_VAR(name) FindWindowByNameAs(m_##name, this, wxT(#name));
@@ -7596,6 +7603,19 @@ void InCallPanel::OnChangedFECC(OpalH281Client &, P_INT_PTR)
 #endif // OPAL_HAS_H281
 
 
+void InCallPanel::AsyncNotifierSignal()
+{
+  PostAsyncNotification(*this);
+}
+
+
+void InCallPanel::OnEvtAsyncNotification(wxCommandEvent &)
+{
+  while (AsyncNotifierExecute())
+    ;
+}
+
+
 bool InCallPanel::Show(bool show)
 {
   wxConfigBase * config = wxConfig::Get();
@@ -7649,7 +7669,7 @@ void InCallPanel::OnStreamsChanged()
 
 #if OPAL_HAS_H281
   if (connection->GetMediaStream(OpalH224MediaType(), true) != NULL) {
-    PTRACE(4, "OpenPhone\tDetected H.224 channel, enabling FECC");
+    PTRACE(4, "OpenPhone\tDetected H.224 channel, setting FECC capabilities");
     for (PVideoControlInfo::Types type = PVideoControlInfo::BeginTypes; type < PVideoControlInfo::EndTypes; ++type) {
       if (connection->FarEndCameraControl(type, 0)) {
         for (unsigned dir = 0; dir < 2; ++dir)
