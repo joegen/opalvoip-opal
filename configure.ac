@@ -56,6 +56,7 @@ OPAL_PLUGINS=yes
 OPAL_SAMPLES=no
 OPAL_ZRTP=no
 OPAL_JAVA=yes
+OPAL_CSHARP=yes
 OPAL_RUBY=yes
 OPAL_SCRIPT=yes
 OPAL_HAS_MSRP=yes
@@ -295,6 +296,13 @@ OPAL_MODULE_OPTION(
    [#include <jni.h>],
    [JNIEnv * env]
 )
+
+
+dnl ########################################################################
+dnl C# Support
+dnl MSWIN_DISPLAY  csharp,C# interface
+dnl MSWIN_DEFINE   csharp,OPAL_CSHARP
+OPAL_SIMPLE_OPTION(csharp,OPAL_CSHARP, [C# interface])
 
 
 dnl ########################################################################
@@ -597,6 +605,7 @@ echo "       Media mixing (conferences) :  $OPAL_HAS_MIXER"
 echo "     Statistics gathering support :  $OPAL_STATISTICS"
 echo "        Script language interface :  $OPAL_SCRIPT"
 echo "                     Java support :  $OPAL_JAVA"
+echo "                       C# support :  $OPAL_CSHARP"
 echo "                     Ruby support :  $OPAL_RUBY"
 
 echo ""

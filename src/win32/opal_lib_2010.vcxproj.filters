@@ -124,6 +124,9 @@
     <Filter Include="Header Files\Config\Android">
       <UniqueIdentifier>{eef1cb49-cb0b-41b8-99cc-a06e880e2434}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\SWIG\C#">
+      <UniqueIdentifier>{2c2965e8-baa1-4ba4-8e81-53750c9b9c27}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\asn\h4506.cxx">
@@ -675,12 +678,6 @@
     <ClCompile Include="..\codec\mpeg4mf.cxx">
       <Filter>Source Files\Codec</Filter>
     </ClCompile>
-    <ClCompile Include="..\java\java_swig_wrapper.cxx">
-      <Filter>Source Files\SWIG</Filter>
-    </ClCompile>
-    <ClCompile Include="..\java\java_msvc_wrapper.cxx">
-      <Filter>Source Files\SWIG</Filter>
-    </ClCompile>
     <ClCompile Include="..\rtp\h235_session.cxx">
       <Filter>Source Files\RTP</Filter>
     </ClCompile>
@@ -692,6 +689,18 @@
     </ClCompile>
     <ClCompile Include="..\ep\skinnyep.cxx">
       <Filter>Source Files\Endpoints</Filter>
+    </ClCompile>
+    <ClCompile Include="..\java\java_msvc_wrapper.cxx">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\java\java_swig_wrapper.cxx">
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\csharp\csharp_swig_wrapper.cxx">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </ClCompile>
+    <ClCompile Include="..\csharp\csharp_msvc_wrapper.cxx">
+      <Filter>Source Files\SWIG\C#</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1262,7 +1271,10 @@
       <Filter>Header Files</Filter>
     </CustomBuild>
     <CustomBuild Include="..\java\opal.i">
-      <Filter>Source Files\SWIG</Filter>
+      <Filter>Source Files\SWIG\Java Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\csharp\opal.i">
+      <Filter>Source Files\SWIG\C#</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
@@ -1455,6 +1467,141 @@
     </None>
     <None Include="..\java\SWIGTYPE_p_OpalHandleStruct.java">
       <Filter>Source Files\SWIG\Java Files</Filter>
+    </None>
+    <None Include="..\csharp\OPAL.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalCallEndReason.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalContext.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalEchoCancelMode.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalInstantMessage.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalLineAppearanceStates.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalMediaDataType.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalMediaStates.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalMediaTiming.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalMessage.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalMessageParam.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalMessagePtr.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalMessageType.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalParamAnswerCall.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalParamCallCleared.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalParamGeneral.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalParamProtocol.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalParamRecording.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalParamRegistration.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalParamSetUpCall.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalParamSetUserData.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OPALPINVOKE.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalPresenceStates.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalPresenceStatus.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalProductDescription.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalRegistrationStates.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalSilenceDetectMode.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalStatusCallCleared.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalStatusIncomingCall.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalStatusIVR.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalStatusLineAppearance.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalStatusMediaStream.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalStatusMessageWaiting.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalStatusRegistration.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalStatusTransferCall.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalStatusUserInput.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalUserInputModes.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\OpalVideoRecordMixMode.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_void_p_void_int__int.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\SWIGTYPE_p_f_p_q_const__OpalMessage__int.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\SWIGTYPE_p_OpalHandleStruct.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\SWIGTYPE_p_OpalMessage.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\SWIGTYPE_p_p_char.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\SWIGTYPE_p_unsigned_int.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
+    </None>
+    <None Include="..\csharp\SWIGTYPE_p_void.cs">
+      <Filter>Source Files\SWIG\C#</Filter>
     </None>
   </ItemGroup>
 </Project>
