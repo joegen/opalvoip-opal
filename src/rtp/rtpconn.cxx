@@ -470,7 +470,7 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
 {
   PTRACE(5, "RTPCon\tOnMediaCommand \"" << command << "\" for " << *this);
 
-  if (stream.IsSource() == (&stream.GetConnection() == this))
+  if (stream.IsSource() != (&stream.GetConnection() == this))
     return OpalConnection::OnMediaCommand(stream, command);
 
   unsigned sessionID = stream.GetSessionID();
