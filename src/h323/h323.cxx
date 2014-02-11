@@ -1630,8 +1630,6 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
 
   CallEndReason reason(EndedByRefusal, pdu.GetQ931().GetCause());
 
-  const H225_ReleaseComplete_UUIE & rc = pdu.m_h323_uu_pdu.m_h323_message_body;
-
   switch (connectionState) {
     case EstablishedConnection :
       reason.code = EndedByRemoteUser;
@@ -1647,20 +1645,18 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
 
       // Are we involved in a transfer with a non H.450.2 compatible transferred-to endpoint?
 #if OPAL_H450
-      if (h4502handler->GetState() == H4502Handler::e_ctAwaitSetupResponse &&
-          h4502handler->IsctTimerRunning())
-      {
+      if (h4502handler->GetState() == H4502Handler::e_ctAwaitSetupResponse && h4502handler->IsctTimerRunning()) {
         PTRACE(4, "H4502\tThe Remote Endpoint has rejected our transfer request and does not support H.450.2.");
         h4502handler->OnReceivedSetupReturnError(H4501_GeneralErrorList::e_notAvailable);
       }
 #endif
 
-#if OPAL_H460
-      if (rc.HasOptionalField(H225_ReleaseComplete_UUIE::e_featureSet))
-        OnReceiveFeatureSet(H460_MessageType::e_releaseComplete, rc.m_featureSet);
-#endif
-
       if (pdu.m_h323_uu_pdu.m_h323_message_body.GetTag() == H225_H323_UU_PDU_h323_message_body::e_releaseComplete) {
+        const H225_ReleaseComplete_UUIE & rc = pdu.m_h323_uu_pdu.m_h323_message_body;
+#if OPAL_H460
+        if (rc.HasOptionalField(H225_ReleaseComplete_UUIE::e_featureSet))
+          OnReceiveFeatureSet(H460_MessageType::e_releaseComplete, rc.m_featureSet);
+#endif
         SetRemoteVersions(rc.m_protocolIdentifier);
         reason = H323TranslateToCallEndReason(pdu.GetQ931().GetCause(), rc.m_reason.GetTag());
       }
