@@ -113,6 +113,10 @@ VPATH_CXX := $(OPAL_SRCDIR)/opal \
              $(OPAL_SRCDIR)/t38 \
              $(OPAL_SRCDIR)/im
 
+ifeq ($(OPAL_PTLIB_ASN), yes)
+  VPATH_CXX += $(ASN_SRCDIR)
+endif
+
 VPATH_C := $(OPAL_SRCDIR)/codec
 
 
@@ -172,8 +176,7 @@ endif
 
 ifeq ($(OPAL_H323),yes)
   VPATH_CXX += $(OPAL_SRCDIR)/h323 \
-               $(OPAL_SRCDIR)/t120 \
-               $(OPAL_SRCDIR)/asn 
+               $(OPAL_SRCDIR)/t120
 
   SIMPLE_ASN_FILES := x880 mcs gcc
 
@@ -263,7 +266,6 @@ ifeq ($(OPAL_H323),yes)
   endif
 
   ifeq ($(OPAL_HAS_H224), yes)
-    VPATH_CXX += $(OPAL_SRCDIR)/h224
     SOURCES += $(OPAL_SRCDIR)/h224/h323h224.cxx
   endif
 
@@ -457,6 +459,7 @@ endif # OPAL_AEC
 
 # Far end camera control
 ifeq ($(OPAL_HAS_H224), yes)
+  VPATH_CXX += $(OPAL_SRCDIR)/h224
   SOURCES += $(OPAL_SRCDIR)/h224/q922.cxx \
              $(OPAL_SRCDIR)/h224/h224.cxx \
              $(OPAL_SRCDIR)/h224/h281.cxx
