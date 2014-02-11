@@ -380,6 +380,9 @@ static const char * const DefaultRoutes[] = {
 };
 
 
+static PConstString DefaultAttributeValue("<<default>>");
+
+
 // Menu and command identifiers
 #define DEF_XRCID(name) static int ID_##name = XRCID(#name)
 DEF_XRCID(MenuCall);
@@ -6010,8 +6013,6 @@ void OptionsDialog::EditedPresentity(wxListEvent & evt)
     evt.Veto();
 }
 
-
-static PConstString DefaultAttributeValue("<<default>>");
 
 bool OptionsDialog::FillPresentityAttributes(OpalPresentity * presentity)
 {
