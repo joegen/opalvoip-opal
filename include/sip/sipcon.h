@@ -872,10 +872,6 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     PSafePtr<OpalSIPIMContext> m_imContext;
 #endif
 
-#if OPAL_VIDEO
-    PSimpleTimer m_infoPictureFastUpdateTimer;
-#endif
-
     enum {
       UserInputMethodUnknown,
       ReceivedRFC2833,

@@ -121,6 +121,8 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
                                          const OpalMediaFormat & outputMediaFormat)
   : OpalTranscoder(inputMediaFormat, outputMediaFormat)
   , m_errorConcealment(false)
+  , m_freezeTillIFrame(false)
+  , m_frozenTillIFrame(false)
   , m_inDataSize(10*1024)
   , m_outDataSize(10*1024)
   , m_forceIFrame(false)
@@ -156,6 +158,9 @@ bool OpalVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, cons
     PTRACE(4, "Media\tReducing \"" << OpalMediaFormat::MaxTxPacketSizeOption() << "\" to " << maxOutputSize);
     outputMediaFormat.SetOptionInteger(OpalMediaFormat::MaxTxPacketSizeOption(), maxOutputSize);
   }
+
+  m_freezeTillIFrame = inputMediaFormat.GetOptionBoolean(OpalVideoFormat::FreezeUntilIntraFrameOption()) ||
+                      outputMediaFormat.GetOptionBoolean(OpalVideoFormat::FreezeUntilIntraFrameOption());
 
   return true;
 }
@@ -199,6 +204,23 @@ void OpalVideoTranscoder::GetStatistics(OpalMediaStatistics & statistics) const
   statistics.m_keyFrames   = m_keyFrames;
 }
 #endif
+
+
+void OpalVideoTranscoder::RequestIFrame(unsigned sequenceNumber, unsigned timestamp)
+{
+  m_frozenTillIFrame = m_freezeTillIFrame;
+
+  if (m_requestIFrameTimer.IsRunning()) {
+    PTRACE(4, "Media\tI-Frame requested, but not sent due to throttling.");
+    return;
+  }
+
+  if (sequenceNumber == 0 && timestamp == 0)
+    NotifyCommand(OpalVideoUpdatePicture());
+  else
+    NotifyCommand(OpalVideoPictureLoss(sequenceNumber, timestamp));
+  m_requestIFrameTimer.SetInterval(0, 1);
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
