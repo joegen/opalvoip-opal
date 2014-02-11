@@ -1763,7 +1763,7 @@ bool OpalConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCom
   if (other == NULL)
     return false;
 
-  PTRACE(3, "OpalCon\tPasing on OnMediaCommand \"" << command << "\" on " << stream << " to " << *other);
+  PTRACE(3, "OpalCon\tPassing on OnMediaCommand \"" << command << "\" on " << stream << " to " << *other);
   return other->OnMediaCommand(stream, command);
 }
 

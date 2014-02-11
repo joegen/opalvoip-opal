@@ -204,7 +204,7 @@ bool OpalMediaStream::ExecuteCommand(const OpalMediaCommand & command)
 bool OpalMediaStream::InternalExecuteCommand(const OpalMediaCommand & command)
 {
   if (IsSink()) {
-    PTRACE(4, "Media\tTerminating ExecuteCommand \"" << command << "\" on " << *this);
+    PTRACE(4, "Media\tEnded processing ExecuteCommand \"" << command << "\" on " << *this);
     return false;
   }
 
