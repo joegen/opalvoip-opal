@@ -186,13 +186,13 @@ class OpalH281Client : public OpalH224Client
     void SetLocalCapability(
       VideoSourceIds sourceId,   ///< From 1 to NumVideoSources
       const Capability & capability
-    ) { m_localCapability[sourceId == CurrentVideoSource ? m_localSource : sourceId] = capability; }
+    ) { m_localCapability[sourceId == CurrentVideoSource ? m_localSourceId : sourceId] = capability; }
 
     /** Get remote video source capability.
     */
     const Capability & GetRemoteCapability(
       VideoSourceIds sourceId   ///< From 1 to NumVideoSources
-    ) const { return m_remoteCapability[sourceId == CurrentVideoSource ? m_remoteSource : sourceId]; }
+    ) const { return m_remoteCapability[sourceId == CurrentVideoSource ? m_remoteSourceId : sourceId]; }
 
   protected:
     PDECLARE_NOTIFIER(PTimer, OpalH281Client, ContinueAction);
@@ -204,12 +204,12 @@ class OpalH281Client : public OpalH224Client
 
     PNotifier      m_capabilityChanged;
 
-    VideoSourceIds m_localSource;
+    VideoSourceIds m_localSourceId;
     Capability     m_localCapability[NumVideoSourceIds];
     unsigned       m_localNumberOfPresets;
     PTimer         m_receiveTimer;
 
-    VideoSourceIds m_remoteSource;
+    VideoSourceIds m_remoteSourceId;
     Capability     m_remoteCapability[NumVideoSourceIds];
     unsigned       m_remoteNumberOfPresets;
 
