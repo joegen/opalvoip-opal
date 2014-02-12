@@ -805,7 +805,12 @@ bool OpalH224Handler::OnReceivedFrame(H224_Frame & frame)
   if (frame.GetClientID() == OpalH224Client::CMEClientID)
     return OnReceivedCMEMessage(frame);
 
-  OpalH224Client * client = FindClient(frame);
+  OpalH224Client * client = FindClient(frame.GetClientID(),
+                                       frame.GetExtendedClientID(),
+                                       frame.GetCountryCode(),
+                                       frame.GetCountryCodeExtension(),
+                                       frame.GetManufacturerCode(),
+                                       frame.GetManufacturerClientID());
   if (client != NULL) {
     PTRACE(4, "Received message for client " << (unsigned)client->GetClientID());
     client->OnReceivedMessage(frame);
@@ -818,23 +823,26 @@ bool OpalH224Handler::OnReceivedFrame(H224_Frame & frame)
 }
 
 
-OpalH224Client * OpalH224Handler::FindClient(const H224_Frame & frame) const
+OpalH224Client * OpalH224Handler::FindClient(BYTE clientID,
+                                             BYTE extendedClientID,
+                                             BYTE countryCode,
+                                             BYTE countryCodeExtension,
+                                             WORD manufacturerCode,
+                                             BYTE manufacturerClientID) const
 {
-  BYTE clientID = frame.GetClientID();
-
   for (PINDEX i = 0; i < m_clients.GetSize(); i++) {
     OpalH224Client & client = m_clients[i];
     if (client.GetClientID() == clientID) {
       if (clientID < OpalH224Client::ExtendedClientID)
         return &client;
 
-      if (clientID == OpalH224Client::ExtendedClientID && client.GetExtendedClientID() == frame.GetExtendedClientID())
+      if (clientID == OpalH224Client::ExtendedClientID && client.GetExtendedClientID() == extendedClientID)
         return &client;
 
-      if (client.GetCountryCode() == frame.GetCountryCode() &&
-          client.GetCountryCodeExtension() == frame.GetCountryCodeExtension() &&
-          client.GetManufacturerCode() == frame.GetManufacturerCode() &&
-          client.GetManufacturerClientID() == frame.GetManufacturerClientID())
+      if (client.GetCountryCode() == countryCode &&
+          client.GetCountryCodeExtension() == countryCodeExtension &&
+          client.GetManufacturerCode() == manufacturerCode &&
+          client.GetManufacturerClientID() == manufacturerClientID)
         return &client;
     }
   }
@@ -910,30 +918,15 @@ bool OpalH224Handler::OnReceivedClientList(H224_Frame & frame)
       dataIndex++;
     }
 
-    for (PINDEX i = 0; i < m_clients.GetSize(); i++) {
-      OpalH224Client & client = m_clients[i];
-      bool found = false;
-      if (client.GetClientID() == clientID) {
-        if (clientID < OpalH224Client::ExtendedClientID) {
-          found = true;
-        } else if (clientID == OpalH224Client::ExtendedClientID) {
-          if (client.GetExtendedClientID() == extendedClientID) {
-            found = true;
-          }
-        } else {
-          if (client.GetCountryCode() == countryCode &&
-             client.GetCountryCodeExtension() == countryCodeExtension &&
-             client.GetManufacturerCode() == manufacturerCode &&
-             client.GetManufacturerClientID() == manufacturerClientID) {
-            found = true;
-          }
-        }
-      }
-      if (found == true) {
-        client.SetRemoteClientAvailable(true, hasExtraCapabilities);
-        break;
-      }
-    }
+    OpalH224Client * client = FindClient(clientID,
+                                         extendedClientID,
+                                         countryCode,
+                                         countryCodeExtension,
+                                         manufacturerCode,
+                                         manufacturerClientID);
+    if (client != NULL)
+      client->SetRemoteClientAvailable(true, hasExtraCapabilities);
+
     numberOfClients--;
   }
 
@@ -974,32 +967,18 @@ bool OpalH224Handler::OnReceivedExtraCapabilities(H224_Frame & frame)
     dataIndex = 8;
   }
 
-  for (PINDEX i = 0; i < m_clients.GetSize(); i++) {
-    OpalH224Client & client = m_clients[i];
-    bool found = false;
-    if (client.GetClientID() == clientID) {
-      if (clientID < OpalH224Client::ExtendedClientID) {
-        found = true;
-      } else if (clientID == OpalH224Client::ExtendedClientID) {
-        if (client.GetExtendedClientID() == extendedClientID) {
-          found = true;
-        }
-      } else {
-        if (client.GetCountryCode() == countryCode &&
-           client.GetCountryCodeExtension() == countryCodeExtension &&
-           client.GetManufacturerCode() == manufacturerCode &&
-           client.GetManufacturerClientID() == manufacturerClientID) {
-          found = true;
-        }
-      }
-    }
-    if (found) {
-      PINDEX size = frame.GetClientDataSize() - dataIndex;
-      client.SetRemoteClientAvailable(true, true);
-      PTRACE(4, "Extra capabilities for client " << (unsigned)clientID << ", size=" << size);
-      client.OnReceivedExtraCapabilities((data + dataIndex), size);
-      return true;
-    }
+  OpalH224Client * client = FindClient(clientID,
+                                       extendedClientID,
+                                       countryCode,
+                                       countryCodeExtension,
+                                       manufacturerCode,
+                                       manufacturerClientID);
+  if (client != NULL) {
+    PINDEX size = frame.GetClientDataSize() - dataIndex;
+    client->SetRemoteClientAvailable(true, true);
+    PTRACE(4, "Extra capabilities for client " << (unsigned)clientID << ", size=" << size);
+    client->OnReceivedExtraCapabilities((data + dataIndex), size);
+    return true;
   }
 
   // Simply ignore if no client is available for this clientID
