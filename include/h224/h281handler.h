@@ -164,6 +164,7 @@ class OpalH281Client : public OpalH224Client
       PINDEX Decode(VideoSourceIds sourceId, const BYTE * capabilities, PINDEX offset);
 
       PString m_name;
+      bool    m_available;
 
       enum Attributes
       {

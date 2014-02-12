@@ -188,7 +188,14 @@ public:
 
 protected:
   void TransmitFrame(H224_Frame & frame);
-  OpalH224Client * FindClient(const H224_Frame & frame) const;
+  OpalH224Client * FindClient(
+    BYTE clientID,
+    BYTE extendedClientID,
+    BYTE countryCode,
+    BYTE countryCodeExtension,
+    WORD manufacturerCode,
+    BYTE manufacturerClientID
+  ) const;
 
   PMutex                m_transmitMutex;
   bool                  m_canTransmit;
