@@ -42,6 +42,9 @@
 #define PTraceModule() "H.281"
 
 
+static BYTE CapabilityAttributeBits[OpalH281Client::Capability::NumAttributes] = { 0x80, 0x40, 0x20, 0x10, 0x4, 0x2, 0x1 };
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 const OpalMediaFormat & GetOpalFECC_RTP()
@@ -57,6 +60,48 @@ const OpalMediaFormat & GetOpalFECC_HDLC()
   return h224_hdlc;
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+
+OpalH281Client::Capability::Capability()
+{
+  memset(m_attribute, 0, sizeof(m_attribute));
+}
+
+
+#if PTRACING
+ostream & operator<<(ostream & strm, const OpalH281Client::Capability & cap)
+{
+  strm << cap.m_name;
+  bool nothing = true;
+  for (int i = 0; i < PARRAYSIZE(cap.m_attribute); ++i) {
+    if (cap.m_attribute[i]) {
+      if (nothing)
+        strm << ' ';
+      if (i < PVideoControlInfo::NumTypes)
+        strm << PVideoControlInfo::TypesFromInt(i);
+      else {
+        switch (i) {
+          case OpalH281Client::Capability::MotionVideo:
+            strm << "Motion";
+            break;
+          case OpalH281Client::Capability::NormalResolutionStillImage:
+            strm << "Normal-Still";
+            break;
+          case OpalH281Client::Capability::DoubleResolutionStillImage:
+            strm << "Double-Still";
+            break;
+        }
+      }
+    }
+  }
+
+  if (nothing)
+    strm << " (no-caps)";
+
+  return strm;
+}
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -272,14 +317,22 @@ void H281_Frame::SetPresetNumber(BYTE presetNumber)
 
 ///////////////////////////////////////////////////////////////////////////////
 
+const PConstString & OpalH281Client::MainCamera()              { static PConstString const s("Main Camera");      return s; }
+const PConstString & OpalH281Client::AuxiliaryCamera()         { static PConstString const s("Auxiliary Camera"); return s; }
+const PConstString & OpalH281Client::DocumentCamera()          { static PConstString const s("Document Camera");  return s; }
+const PConstString & OpalH281Client::AuxiliaryDocumentCamera() { static PConstString const s("Aux Doc Camera");   return s; }
+const PConstString & OpalH281Client::VideoPlayback()           { static PConstString const s("Video Playback");   return s; }
+
 OpalH281Client::OpalH281Client()
-  : m_localSource(NumVideoSources)
-  , m_localNumberOfPresets(0)
-  , m_remoteSource(MainCamera)
-  , m_remoteNumberOfPresets(0)
+  : m_localSource(NumVideoSourceIds)
+  , m_remoteSource(MainCameraId)
 {
-  memset(m_localCapability, 0, sizeof(m_remoteCapability));
-  memset(m_remoteCapability, 0, sizeof(m_remoteCapability));
+  // Predefined names
+  m_localCapability[MainCameraId].m_name = m_remoteCapability[MainCameraId].m_name = MainCamera();
+  m_localCapability[AuxiliaryCameraId].m_name = m_remoteCapability[AuxiliaryCameraId].m_name = AuxiliaryCamera();
+  m_localCapability[DocumentCameraId].m_name = m_remoteCapability[DocumentCameraId].m_name = DocumentCamera();
+  m_localCapability[AuxiliaryDocumentCameraId].m_name = m_remoteCapability[AuxiliaryDocumentCameraId].m_name = AuxiliaryDocumentCamera();
+  m_localCapability[VideoPlaybackSourceId].m_name = m_remoteCapability[VideoPlaybackSourceId].m_name = VideoPlayback();
 
   m_transmitFrame.SetClient(*this);
   m_transmitFrame.SetRequestType(H281_Frame::IllegalRequest);
@@ -287,7 +340,8 @@ OpalH281Client::OpalH281Client()
   m_transmitFrame.SetES(true);
 
   m_continueTimer.SetNotifier(PCREATE_NOTIFIER(ContinueAction));
-  m_receiveTimer.SetNotifier(PCREATE_NOTIFIER(StopActionLocally));
+  m_stopTimer.SetNotifier(PCREATE_NOTIFIER(StopAction));
+  m_receiveTimer.SetNotifier(PCREATE_NOTIFIER(ReceiveActionTimeout));
 }
 
 
@@ -298,7 +352,7 @@ OpalH281Client::~OpalH281Client()
 }
 
 
-bool OpalH281Client::Action(PVideoControlInfo::Types actionType, int direction)
+bool OpalH281Client::Action(PVideoControlInfo::Types actionType, int direction, const PTimeInterval & duration)
 {
   SendStopAction();
 
@@ -315,6 +369,7 @@ bool OpalH281Client::Action(PVideoControlInfo::Types actionType, int direction)
 
       // send a ContinueAction every 400msec
       m_continueTimer.RunContinuous(400);
+      m_stopTimer = duration;
       return true;
     }
   }
@@ -337,43 +392,52 @@ void OpalH281Client::SendStopAction()
 }
 
 
-bool OpalH281Client::SelectVideoSource(VideoSources source, H281_Frame::VideoMode videoMode)
+bool OpalH281Client::SelectVideoSource(const PString & source, H281_Frame::VideoMode videoMode)
 {
   PWaitAndSignal m(m_mutex);
 
+  VideoSourceIds sourceId = MainCameraId;
+  while (m_remoteCapability[sourceId].m_name != source) {
+    if (++sourceId > NumVideoSourceIds) {
+      PTRACE(2, "Unknown remote video source \"" << source << '"');
+      return false;
+    }
+  }
+
   switch (videoMode) {
     case H281_Frame::MotionVideo :
-      if ((m_remoteCapability[m_remoteSource]&H281_Frame::CanMotionVideo) == 0) {
-        PTRACE(3, "Cannot do MotionVideo on remote");
+      if (!m_remoteCapability[sourceId].m_attribute[Capability::MotionVideo]) {
+        PTRACE(2, "Cannot do MotionVideo on " << m_remoteCapability[sourceId]);
         return false;
       }
       break;
 
     case H281_Frame::NormalResolutionStillImage :
-      if ((m_remoteCapability[m_remoteSource]&H281_Frame::CanNormalResolutionStillImage) == 0) {
-        PTRACE(3, "Cannot do NormalResolutionStillImage on remote");
+      if (!m_remoteCapability[sourceId].m_attribute[Capability::NormalResolutionStillImage]) {
+        PTRACE(2, "Cannot do NormalResolutionStillImage on " << m_remoteCapability[sourceId]);
         return false;
       }
       break;
 
     case H281_Frame::DoubleResolutionStillImage :
-      if ((m_remoteCapability[m_remoteSource]&H281_Frame::CanDoubleResolutionStillImage) == 0) {
-        PTRACE(3, "Cannot do DoubleResolutionStillImage on remote");
+      if (!m_remoteCapability[sourceId].m_attribute[Capability::DoubleResolutionStillImage]) {
+        PTRACE(2, "Cannot do DoubleResolutionStillImage on " << m_remoteCapability[sourceId]);
         return false;
       }
       break;
 
     default :
-      PTRACE(2, "Illegal mode for selecting remote source");
+      PTRACE(2, "Illegal mode for selecting remote video source \"" << source << '"');
       return false;
   }
 
-  PTRACE(3, "Selected source " << source);
+  m_remoteSource = sourceId;
+  PTRACE(3, "Selecting source id=" << sourceId << ' ' << m_remoteCapability[sourceId]);
 
   SendStopAction();
 
   m_transmitFrame.SetRequestType(H281_Frame::SelectVideoSource);
-  m_transmitFrame.SetVideoSourceNumber((BYTE)source);
+  m_transmitFrame.SetVideoSourceNumber((BYTE)sourceId);
   m_transmitFrame.SetVideoMode(videoMode);
 
   m_h224Handler->TransmitClientFrame(*this, m_transmitFrame);
@@ -413,51 +477,90 @@ void OpalH281Client::ActivatePreset(BYTE presetNumber)
 }
 
 
+PINDEX OpalH281Client::Capability::Encode(VideoSourceIds sourceId, BYTE * capabilities, PINDEX offset) const
+{
+  if (m_name.IsEmpty())
+    return offset;
+
+  capabilities[offset] = (BYTE)(sourceId << 4);
+
+  if (m_attribute[MotionVideo])
+    capabilities[offset] |= CapabilityAttributeBits[MotionVideo];
+  if (m_attribute[NormalResolutionStillImage])
+    capabilities[offset] |= CapabilityAttributeBits[NormalResolutionStillImage];
+  if (m_attribute[DoubleResolutionStillImage])
+    capabilities[offset] |= CapabilityAttributeBits[DoubleResolutionStillImage];
+
+  ++offset;
+
+  if (sourceId >= UserDefinedSourceId1) {
+    PINDEX len = m_name.GetLength() + 1; // Include '\0'
+    memcpy(capabilities + offset, m_name.GetPointer(), len);
+    offset += len;
+  }
+
+  capabilities[offset] = 0;
+  for (PVideoControlInfo::Types type = PVideoControlInfo::BeginTypes; type < PVideoControlInfo::EndTypes; ++type) {
+    if (m_attribute[type])
+      capabilities[offset] |= CapabilityAttributeBits[type];
+  }
+
+  return offset + 1;
+}
+
+
 void OpalH281Client::SendExtraCapabilities() const
 {
-  BYTE capabilities[11];
+  BYTE capabilities[NumVideoSourceIds*17];
 
   // The default implementation has no presets
   capabilities[0] = 0x00;
 
   PINDEX size = 1;
 
-  for (VideoSources source = MainCamera; source < NumVideoSources; source++) {
-    if (m_localCapability[source] != 0) {
-      PTRACE(4, "Sending local capability: 0x" << hex << m_localCapability[source]);
-      capabilities[size++] = (BYTE)((m_localCapability[source] >> 8) | (source << 4));
-      capabilities[size++] = (BYTE)  m_localCapability[source];
-    }
+  for (VideoSourceIds sourceId = MainCameraId; sourceId < NumVideoSourceIds; sourceId++) {
+    PTRACE(4, "Sending local capability: id=" << sourceId << ' ' << m_localCapability[sourceId]);
+    size = m_localCapability[sourceId].Encode(sourceId, capabilities, size);
   }
 
   m_h224Handler->SendExtraCapabilitiesMessage(*this, capabilities, size);
 }
 
 
+PINDEX OpalH281Client::Capability::Decode(VideoSourceIds sourceId, const BYTE * capabilities, PINDEX offset)
+{
+  m_attribute[MotionVideo]                = (capabilities[offset] & CapabilityAttributeBits[MotionVideo               ]) != 0;
+  m_attribute[NormalResolutionStillImage] = (capabilities[offset] & CapabilityAttributeBits[NormalResolutionStillImage]) != 0;
+  m_attribute[DoubleResolutionStillImage] = (capabilities[offset] & CapabilityAttributeBits[DoubleResolutionStillImage]) != 0;
+
+  ++offset;
+
+  if (sourceId >= UserDefinedSourceId1) {
+    m_name.MakeEmpty();
+    while (capabilities[offset] != '\0')
+      m_name += (char)capabilities[offset++];
+    if (m_name.IsEmpty())
+      m_name.sprintf("User Camera %u", sourceId);
+  }
+
+  for (PVideoControlInfo::Types type = PVideoControlInfo::BeginTypes; type < PVideoControlInfo::EndTypes; ++type)
+    m_attribute[type] = (capabilities[offset] & CapabilityAttributeBits[type]) != 0;
+
+  return offset + 1;
+}
+
+
 void OpalH281Client::OnReceivedExtraCapabilities(const BYTE *capabilities, PINDEX size)
 {
-  memset(m_remoteCapability, 0, sizeof(m_remoteCapability));
   m_remoteNumberOfPresets = (capabilities[0] & 0x0f);
 
-  PINDEX i = 1;
-
-  while (i < size) {
-    unsigned videoSource = (capabilities[i] >> 4) & 0x0f;
-    if (videoSource < NumVideoSources) {
-      m_remoteCapability[videoSource] = *(PUInt16b*)&capabilities[i];
-      PTRACE(4, "Remote camera capability for source " << videoSource
-             << ": 0x" << hex << m_remoteCapability[videoSource]);
-      i += 2;
-    }
-    else {
-      // video sources from 6 to 15 are not supported but still need to be parsed
-      do {
-        i++;
-      } while (capabilities[i] != 0);
-
-      // scan past the pan/tilt/zoom/focus field
-      i++;
-    }
+  PINDEX pos = 1;
+  while (pos < size) {
+    VideoSourceIds sourceId = VideoSourceIdsFromInt((capabilities[pos] >> 4) & 0x0f);
+    if (sourceId == CurrentVideoSource)
+      sourceId = m_remoteSource; // Zero shouldn't happen, but just in case
+    pos += m_remoteCapability[sourceId].Decode(sourceId, capabilities, pos);
+    PTRACE(4, "Received remote camera capability: id=" << sourceId << ' ' << m_remoteCapability[sourceId]);
   }
 
   OnRemoteCapabilitiesChanged();
@@ -489,8 +592,9 @@ void OpalH281Client::OnReceivedMessage(const H224_Frame & h224Frame)
       break;
 
     case H281_Frame::SelectVideoSource :
-      m_localSource = VideoSourcesFromInt(message.GetVideoSourceNumber());
-      OnSelectVideoSource(m_localSource, message.GetVideoMode());
+      if (message.GetVideoSourceNumber() > 0)
+        m_localSource = VideoSourceIdsFromInt(message.GetVideoSourceNumber());
+      OnSelectVideoSource(m_localCapability[m_localSource].m_name, message.GetVideoMode());
       break;
 
     case H281_Frame::StoreAsPreset :
@@ -517,13 +621,11 @@ void OpalH281Client::OnRemoteCapabilitiesChanged()
 void OpalH281Client::SetCapabilityChangedNotifier(const PNotifier & notifier)
 {
   m_capabilityChanged = notifier;
-  static uint16_t const noCapabilities[NumVideoSources];
-  if (memcmp(m_remoteCapability, noCapabilities, sizeof(m_remoteCapability)) != 0)
-    OnRemoteCapabilitiesChanged();
+  OnRemoteCapabilitiesChanged();
 }
 
 
-void OpalH281Client::OnSelectVideoSource(VideoSources /*source*/, H281_Frame::VideoMode /*videoMode*/)
+void OpalH281Client::OnSelectVideoSource(const PString & /*source*/, H281_Frame::VideoMode /*videoMode*/)
 {
   // not handled
 }
@@ -554,8 +656,15 @@ void OpalH281Client::ContinueAction(PTimer &, P_INT_PTR)
 }
 
 
-void OpalH281Client::StopActionLocally(PTimer &, P_INT_PTR)
+void OpalH281Client::StopAction(PTimer &, P_INT_PTR)
 {
+  SendStopAction();
+}
+
+
+void OpalH281Client::ReceiveActionTimeout(PTimer &, P_INT_PTR)
+{
+  // Never got explicit stop action, so timeout does it
   OnStopAction();
 }
 
@@ -572,44 +681,39 @@ OpalFarEndCameraControl::OpalFarEndCameraControl()
 }
 
 
-void OpalFarEndCameraControl::Attach(PVideoInputDevice * device, VideoSources source)
+void OpalFarEndCameraControl::Attach(PVideoInputDevice * device, const PString & source)
 {
-  if (m_videoInputDevices[source] == device)
+  VideoSourceIds sourceId = MainCameraId;
+  while (sourceId < NumVideoSourceIds && m_localCapability[sourceId].m_name != source)
+    ++sourceId;
+
+  if (sourceId < NumVideoSourceIds && m_videoInputDevices[sourceId] == device)
     return;
 
-  m_videoInputDevices[source] = device;
-  m_localCapability[source] = 0;
+  if (sourceId >= NumVideoSourceIds) {
+    sourceId = UserDefinedSourceId1;
+    while (!m_localCapability[sourceId].m_name.IsEmpty()) {
+      if (++sourceId >= NumVideoSourceIds) {
+        PTRACE(2, "No more video sources available");
+        return;
+      }
+    }
+    m_localCapability[sourceId].m_name = source;
+  }
+
+  m_videoInputDevices[sourceId] = device;
 
   if (device != NULL) {
     PTRACE(3, "Attaching " << device->GetDeviceName());
 
-    if (m_localSource == NumVideoSources)
-      m_localSource = source;
+    if (m_localSource == NumVideoSourceIds)
+      m_localSource = sourceId;
 
     PVideoInputDevice::Capabilities caps;
-    if (m_videoInputDevices[source]->GetDeviceCapabilities(&caps)) {
-      m_localCapability[source] = H281_Frame::CanMotionVideo;
-      for (std::list<PVideoControlInfo>::iterator it = caps.controls.begin(); it != caps.controls.end(); ++it) {
-        if (it->IsValid()) {
-          switch (it->GetType()) {
-            case PVideoControlInfo::Pan :
-              m_localCapability[source] |= H281_Frame::CanPan;
-              break;
-            case PVideoControlInfo::Tilt :
-              m_localCapability[source] |= H281_Frame::CanTilt;
-              break;
-            case PVideoControlInfo::Zoom :
-              m_localCapability[source] |= H281_Frame::CanZoom;
-              break;
-            case PVideoControlInfo::Focus :
-              m_localCapability[source] |= H281_Frame::CanFocus;
-              break;
-            default :
-              PAssertAlways("Illegal FECC type");
-              break;
-          }
-        }
-      }
+    if (m_videoInputDevices[sourceId]->GetDeviceCapabilities(&caps)) {
+      m_localCapability[sourceId].m_attribute[Capability::MotionVideo] = true;
+      for (std::list<PVideoControlInfo>::iterator it = caps.controls.begin(); it != caps.controls.end(); ++it)
+        m_localCapability[sourceId].m_attribute[it->GetType()] = it->IsValid();
     }
   }
 
@@ -624,15 +728,14 @@ void OpalFarEndCameraControl::Detach(PVideoInputDevice * device)
 
   PTRACE(3, "Detaching " << device->GetDeviceName());
 
-  for (VideoSources source = BeginVideoSources; source < EndVideoSources; ++source) {
-    if (m_videoInputDevices[source] == device) {
-      m_videoInputDevices[source] = NULL;
-      m_localCapability[source] = 0;
+  for (VideoSourceIds sourceId = MainCameraId; sourceId < NumVideoSourceIds; ++sourceId) {
+    if (m_videoInputDevices[sourceId] == device) {
+      m_videoInputDevices[sourceId] = NULL;
       SendExtraCapabilities();
 
-      for (m_localSource = BeginVideoSources; m_localSource < EndVideoSources; ++m_localSource) {
+      for (m_localSource = MainCameraId; m_localSource < NumVideoSourceIds; ++m_localSource) {
         if (m_videoInputDevices[m_localSource] != NULL) {
-          PTRACE(3, "Switched to source " << m_localSource);
+          PTRACE(3, "Switched to source \"" << m_localCapability[m_localSource].m_name << "\" id=" << m_localSource);
           break;
         }
       }
@@ -645,9 +748,9 @@ bool OpalFarEndCameraControl::SelectVideoDevice(PVideoInputDevice * device, H281
 {
   PWaitAndSignal m(m_mutex);
 
-  for (VideoSources source = BeginVideoSources; source < EndVideoSources; ++source) {
-    if (m_videoInputDevices[source] == device)
-      return SelectVideoSource(source, mode);
+  for (VideoSourceIds sourceId = MainCameraId; sourceId < NumVideoSourceIds; ++sourceId) {
+    if (m_videoInputDevices[sourceId] == device)
+      return SelectVideoSource(m_remoteCapability[sourceId].m_name, mode);
   }
 
   PTRACE(3, "Video device " << device->GetDeviceName() << " not attached.");
