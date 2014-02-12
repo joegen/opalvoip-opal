@@ -463,7 +463,7 @@ class SDPVideoMediaDescription : public SDPRTPAVPMediaDescription
 
         virtual bool PreEncode();
 
-        void AddRTCP_FB(const PString & str) { m_rtcp_fb.FromString(str, false); }
+        void AddRTCP_FB(const PString & str);
         void SetRTCP_FB(const OpalVideoFormat::RTCPFeedback & v) { m_rtcp_fb = v; }
         OpalVideoFormat::RTCPFeedback GetRTCP_FB() const { return m_rtcp_fb; }
 
