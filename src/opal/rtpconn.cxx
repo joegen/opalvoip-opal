@@ -367,6 +367,8 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
     if ((mask&(OPAL_OPT_VIDUP_METHOD_RTCP|OPAL_OPT_VIDUP_METHOD_PLI|OPAL_OPT_VIDUP_METHOD_FIR)) != 0) {
       bool has_AVPF_PLI = (rtcp_fb & OpalVideoFormat::e_PLI) || (mask & OPAL_OPT_VIDUP_METHOD_PLI);
       bool has_AVPF_FIR = (rtcp_fb & OpalVideoFormat::e_FIR) || (mask & OPAL_OPT_VIDUP_METHOD_FIR);
+      PTRACE(4, "RTPCon\tPLI=" << ((rtcp_fb & OpalVideoFormat::e_PLI) ? "allowed" : ((mask & OPAL_OPT_VIDUP_METHOD_PLI) ? "forced" : "diabled"))
+                    << " FIR=" << ((rtcp_fb & OpalVideoFormat::e_FIR) ? "allowed" : ((mask & OPAL_OPT_VIDUP_METHOD_FIR) ? "forced" : "diabled")));
 
       if (has_AVPF_PLI && has_AVPF_FIR)
         session->SendIntraFrameRequest(false, PIsDescendant(&command, OpalVideoPictureLoss));
