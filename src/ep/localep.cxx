@@ -634,9 +634,9 @@ bool OpalLocalConnection::ChangeVideoOutputDevice(const PVideoDevice::OpenArgs &
 
 
 #if OPAL_HAS_H281
-bool OpalLocalConnection::FarEndCameraControl(PVideoControlInfo::Types what, int direction)
+bool OpalLocalConnection::FarEndCameraControl(PVideoControlInfo::Types what, int direction, const PTimeInterval & duration)
 {
-  return m_farEndCameraControl->Action(what, direction);
+  return m_farEndCameraControl->Action(what, direction, duration);
 }
 
 

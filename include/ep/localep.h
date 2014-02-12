@@ -773,11 +773,15 @@ class OpalLocalConnection : public OpalConnection
        If \p direction is zero then the operation is stopped. This can also be
        used to determine if the remote is capabile of the operation.
 
+       If \p duration is non-zero then the actionis automatically stopped after
+       that period. Zero indicated continue until explicitly stopped.
+
        @returns false if the operation cannot be performed.
       */
     bool FarEndCameraControl(
-      PVideoControlInfo::Types what,    ///< What to control, pan, tilt, zoom or focus
-      int direction                     ///< Direction to move
+      PVideoControlInfo::Types what,      ///< What to control, pan, tilt, zoom or focus
+      int direction = 0,                  ///< Direction to move
+      const PTimeInterval & duration = 0  ///< Duration of move
     );
 
     /// Set a callback for when the far end camera control capabilities change.

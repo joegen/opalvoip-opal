@@ -119,7 +119,6 @@ public:
   bool GetRemoteClientHasExtraCapabilities() const { return m_remoteClientHasExtraCapabilities; }
 
 protected:
-
   bool              m_remoteClientAvailable;
   bool              m_remoteClientHasExtraCapabilities;
   OpalH224Handler * m_h224Handler;
@@ -156,11 +155,7 @@ public:
   bool AddClient(OpalH224Client & client);
   bool RemoveClient(OpalH224Client & client);
 
-  /**Sets the transmit / receive media format*/
-  void SetTransmitMediaFormat(const OpalMediaFormat & mediaFormat);
-  void SetReceiveMediaFormat(const OpalMediaFormat & mediaFormat);
-
-  /**Sets / unsets the transmit H224 media stream*/
+  /** Sets the transmit H224 media stream */
   void SetTransmitMediaStream(OpalH224MediaStream * transmitMediaStream);
 
   virtual void StartTransmit();
@@ -184,7 +179,6 @@ public:
   /**Callback for H.224 clients to send a client frame */
   bool TransmitClientFrame(const OpalH224Client & client, H224_Frame & frame);
 
-  bool HandleFrame(const RTP_DataFrame & rtpFrame);
   virtual bool OnReceivedFrame(H224_Frame & frame);
   virtual bool OnReceivedCMEMessage(H224_Frame & frame);
   virtual bool OnReceivedClientList(H224_Frame & frame);
@@ -194,11 +188,11 @@ public:
 
 protected:
   void TransmitFrame(H224_Frame & frame);
+  OpalH224Client * FindClient(const H224_Frame & frame) const;
 
   PMutex                m_transmitMutex;
   bool                  m_canTransmit;
   bool                  m_transmitHDLCTunneling;
-  bool                  m_receiveHDLCTunneling;
   PINDEX                m_transmitBitIndex;
   PTime                 m_transmitStartTime;
   OpalH224MediaStream * m_transmitMediaStream;
