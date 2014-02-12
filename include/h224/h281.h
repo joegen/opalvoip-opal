@@ -53,16 +53,6 @@ public:
     ActivatePreset      = 0x08
   };
 
-  enum CapabilityBits {
-    CanPan   = 0x80,
-    CanTilt  = 0x40,
-    CanZoom  = 0x20,
-    CanFocus = 0x10,
-    CanMotionVideo = 0x400,
-    CanNormalResolutionStillImage = 0x200,
-    CanDoubleResolutionStillImage = 0x100
-  };
-
   enum VideoMode {
     MotionVideo                 = 0x00,
     IllegalVideoMode            = 0x01,

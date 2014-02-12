@@ -52,14 +52,31 @@ class OpalH281Client : public OpalH224Client
     OpalH281Client();
     ~OpalH281Client();
 
-    P_DECLARE_ENUM(VideoSources,
+    P_DECLARE_ENUM(VideoSourceIds,
       CurrentVideoSource,
-      MainCamera,
-      AuxiliaryCamera,
-      DocumentCamera,
-      AuxiliaryDocumentCamera,
-      VideoPlaybackSource
+      MainCameraId,
+      AuxiliaryCameraId,
+      DocumentCameraId,
+      AuxiliaryDocumentCameraId,
+      VideoPlaybackSourceId,
+      UserDefinedSourceId1,
+      UserDefinedSourceId2,
+      UserDefinedSourceId3,
+      UserDefinedSourceId4,
+      UserDefinedSourceId5,
+      UserDefinedSourceId6,
+      UserDefinedSourceId7,
+      UserDefinedSourceId8,
+      UserDefinedSourceId9,
+      UserDefinedSourceId10
     );
+
+    // Predefined source names
+    static const PConstString & MainCamera();
+    static const PConstString & AuxiliaryCamera();
+    static const PConstString & DocumentCamera();
+    static const PConstString & AuxiliaryDocumentCamera();
+    static const PConstString & VideoPlayback();
 
     /**Overriding default OpalH224Client methods */
     virtual BYTE GetClientID() const { return OpalH224Client::H281ClientID; }
@@ -76,16 +93,17 @@ class OpalH281Client : public OpalH224Client
     unsigned GetRemoteNumberOfPresets() const { return m_remoteNumberOfPresets; }
 
     /** Causes the H.281 handler to start the desired action
-        The action will continue until StopAction() is called.
+        if \p duration os zero, then the action continues until an Action with
+        \p direction of zero is executed.
      */
-    bool Action(PVideoControlInfo::Types type, int direction);
+    bool Action(PVideoControlInfo::Types type, int direction, const PTimeInterval & duration);
 
     /** Tells the remote side to select the desired video source using the
       mode specified. Does nothing if either video source or mode aren't
       available
     */
     bool SelectVideoSource(
-      VideoSources source,
+      const PString & source,
       H281_Frame::VideoMode mode = H281_Frame::MotionVideo
     );
 
@@ -125,7 +143,7 @@ class OpalH281Client : public OpalH224Client
 
     /** Indicates to select the desired video source
      */
-    virtual void OnSelectVideoSource(VideoSources source, H281_Frame::VideoMode videoMode);
+    virtual void OnSelectVideoSource(const PString & source, H281_Frame::VideoMode videoMode);
 
     /** Indicates to store the current camera settings as a preset
      */
@@ -139,25 +157,64 @@ class OpalH281Client : public OpalH224Client
       */
     void SetCapabilityChangedNotifier(const PNotifier & notifier);
 
+    struct Capability
+    {
+      Capability();
+      PINDEX Encode(VideoSourceIds sourceId, BYTE * capabilities, PINDEX offset) const;
+      PINDEX Decode(VideoSourceIds sourceId, const BYTE * capabilities, PINDEX offset);
+
+      PString m_name;
+
+      enum Attributes
+      {
+        // First four are from PVideoControlInfo::Types
+        MotionVideo = PVideoControlInfo::NumTypes,
+        NormalResolutionStillImage,
+        DoubleResolutionStillImage,
+        NumAttributes
+      };
+      bool m_attribute[NumAttributes];
+
+#if PTRACING
+      friend ostream & operator<<(ostream & strm, const Capability & cap);
+#endif
+    };
+
+    /** Set local video source capability
+    */
+    void SetLocalCapability(
+      VideoSourceIds sourceId,   ///< From 1 to NumVideoSources
+      const Capability & capability
+    ) { m_localCapability[sourceId == CurrentVideoSource ? m_localSource : sourceId] = capability; }
+
+    /** Get remote video source capability.
+    */
+    const Capability & GetRemoteCapability(
+      VideoSourceIds sourceId   ///< From 1 to NumVideoSources
+    ) const { return m_remoteCapability[sourceId == CurrentVideoSource ? m_remoteSource : sourceId]; }
+
   protected:
     PDECLARE_NOTIFIER(PTimer, OpalH281Client, ContinueAction);
-    PDECLARE_NOTIFIER(PTimer, OpalH281Client, StopActionLocally);
+    PDECLARE_NOTIFIER(PTimer, OpalH281Client, StopAction);
+    PDECLARE_NOTIFIER(PTimer, OpalH281Client, ReceiveActionTimeout);
     void SendStopAction();
 
     PMutex m_mutex;
 
-    PNotifier    m_capabilityChanged;
+    PNotifier      m_capabilityChanged;
 
-    VideoSources m_localSource;
-    uint16_t     m_localCapability[NumVideoSources];
-    unsigned     m_localNumberOfPresets;
-    PTimer       m_receiveTimer;
+    VideoSourceIds m_localSource;
+    Capability     m_localCapability[NumVideoSourceIds];
+    unsigned       m_localNumberOfPresets;
+    PTimer         m_receiveTimer;
 
-    VideoSources m_remoteSource;
-    uint16_t     m_remoteCapability[NumVideoSources];
-    unsigned     m_remoteNumberOfPresets;
-    H281_Frame   m_transmitFrame;
-    PTimer       m_continueTimer;
+    VideoSourceIds m_remoteSource;
+    Capability     m_remoteCapability[NumVideoSourceIds];
+    unsigned       m_remoteNumberOfPresets;
+
+    H281_Frame     m_transmitFrame;
+    PTimer         m_continueTimer;
+    PTimer         m_stopTimer;
 };
 
 
@@ -172,7 +229,7 @@ class OpalFarEndCameraControl : public OpalH281Client
     /// Attach an active video input device to be controlled
     void Attach(
       PVideoInputDevice * device,
-      VideoSources source = MainCamera
+      const PString & source = MainCamera()
     );
     void Detach(
       PVideoInputDevice * device
@@ -189,7 +246,7 @@ class OpalFarEndCameraControl : public OpalH281Client
     PDECLARE_NOTIFIER(PTimer, OpalFarEndCameraControl, StepCamera);
 
     PTimeInterval       m_stepRate;
-    PVideoInputDevice * m_videoInputDevices[NumVideoSources];
+    PVideoInputDevice * m_videoInputDevices[NumVideoSourceIds];
     int                 m_step[PVideoControlInfo::NumTypes];
     PTimer              m_stepTimer;
 };

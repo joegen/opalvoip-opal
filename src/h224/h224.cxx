@@ -166,12 +166,7 @@ H224_Frame::~H224_Frame()
 void H224_Frame::SetHighPriority(bool flag)
 {
   SetHighOrderAddressOctet(0x00);
-
-  if (flag) {
-    SetLowOrderAddressOctet(0x71);
-  } else {
-    SetLowOrderAddressOctet(0x061);
-  }
+  SetLowOrderAddressOctet(flag ? 0x71 : 0x061);
 }
 
 
@@ -211,15 +206,13 @@ void H224_Frame::SetClient(const OpalH224Client & h224Client)
 
   SetClientID(clientID);
 
-  if (clientID == OpalH224Client::ExtendedClientID) {
+  if (clientID == OpalH224Client::ExtendedClientID)
     SetExtendedClientID(h224Client.GetExtendedClientID());
-
-  } else if (clientID == OpalH224Client::NonStandardClientID) {
+  else if (clientID == OpalH224Client::NonStandardClientID)
     SetNonStandardClientInformation(h224Client.GetCountryCode(),
                                     h224Client.GetCountryCodeExtension(),
                                     h224Client.GetManufacturerCode(),
                                     h224Client.GetManufacturerClientID());
-  }
 }
 
 
@@ -239,9 +232,8 @@ void H224_Frame::SetClientID(BYTE clientID)
 
 BYTE H224_Frame::GetExtendedClientID() const
 {
-  if (GetClientID() != OpalH224Client::ExtendedClientID) {
+  if (GetClientID() != OpalH224Client::ExtendedClientID)
     return 0x00;
-  }
 
   BYTE *data = GetInformationFieldPtr();
   return data[5];
@@ -250,9 +242,8 @@ BYTE H224_Frame::GetExtendedClientID() const
 
 void H224_Frame::SetExtendedClientID(BYTE extendedClientID)
 {
-  if (GetClientID() != OpalH224Client::ExtendedClientID) {
+  if (GetClientID() != OpalH224Client::ExtendedClientID)
     return;
-  }
 
   BYTE *data = GetInformationFieldPtr();
   data[5] = extendedClientID;
@@ -261,9 +252,8 @@ void H224_Frame::SetExtendedClientID(BYTE extendedClientID)
 
 BYTE H224_Frame::GetCountryCode() const
 {
-  if (GetClientID() != OpalH224Client::NonStandardClientID) {
+  if (GetClientID() != OpalH224Client::NonStandardClientID)
     return 0x00;
-  }
 
   BYTE *data = GetInformationFieldPtr();
   return data[5];
@@ -272,9 +262,8 @@ BYTE H224_Frame::GetCountryCode() const
 
 BYTE H224_Frame::GetCountryCodeExtension() const
 {
-  if (GetClientID() != OpalH224Client::NonStandardClientID) {
+  if (GetClientID() != OpalH224Client::NonStandardClientID)
     return 0x00;
-  }
 
   BYTE *data = GetInformationFieldPtr();
   return data[6];
@@ -283,9 +272,8 @@ BYTE H224_Frame::GetCountryCodeExtension() const
 
 WORD H224_Frame::GetManufacturerCode() const
 {
-  if (GetClientID() != OpalH224Client::NonStandardClientID) {
+  if (GetClientID() != OpalH224Client::NonStandardClientID)
     return 0x0000;
-  }
 
   BYTE *data = GetInformationFieldPtr();
   return (((WORD)data[7] << 8) | (WORD)data[8]);
@@ -294,9 +282,8 @@ WORD H224_Frame::GetManufacturerCode() const
 
 BYTE H224_Frame::GetManufacturerClientID() const
 {
-  if (GetClientID() != OpalH224Client::NonStandardClientID) {
+  if (GetClientID() != OpalH224Client::NonStandardClientID)
     return 0x00;
-  }
 
   BYTE *data = GetInformationFieldPtr();
   return data[9];
@@ -308,9 +295,8 @@ void H224_Frame::SetNonStandardClientInformation(BYTE countryCode,
                                                  WORD manufacturerCode,
                                                  BYTE manufacturerClientID)
 {
-  if (GetClientID() != OpalH224Client::NonStandardClientID) {
+  if (GetClientID() != OpalH224Client::NonStandardClientID)
     return;
-  }
 
   BYTE *data = GetInformationFieldPtr();
 
@@ -325,7 +311,6 @@ void H224_Frame::SetNonStandardClientInformation(BYTE countryCode,
 bool H224_Frame::GetBS() const
 {
   BYTE *data = GetInformationFieldPtr();
-
   return (data[5] & 0x80) != 0;
 }
 
@@ -334,17 +319,15 @@ void H224_Frame::SetBS(bool flag)
 {
   BYTE *data = GetInformationFieldPtr();
 
-  if (flag) {
+  if (flag)
     data[5] |= 0x80;
-  }  else {
+  else
     data[5] &= 0x7f;
-  }
 }
 
 bool H224_Frame::GetES() const
 {
   BYTE *data = GetInformationFieldPtr();
-
   return (data[5] & 0x40) != 0;
 }
 
@@ -352,18 +335,16 @@ void H224_Frame::SetES(bool flag)
 {
   BYTE *data = GetInformationFieldPtr();
 
-  if (flag) {
+  if (flag)
     data[5] |= 0x40;
-  } else {
+  else
     data[5] &= 0xbf;
-  }
 }
 
 
 bool H224_Frame::GetC1() const
 {
   BYTE *data = GetInformationFieldPtr();
-
   return (data[5] & 0x20) != 0;
 }
 
@@ -372,18 +353,16 @@ void H224_Frame::SetC1(bool flag)
 {
   BYTE *data = GetInformationFieldPtr();
 
-  if (flag) {
+  if (flag)
     data[5] |= 0x20;
-  } else {
+  else
     data[5] &= 0xdf;
-  }
 }
 
 
 bool H224_Frame::GetC0() const
 {
   BYTE *data = GetInformationFieldPtr();
-
   return (data[5] & 0x10) != 0;
 }
 
@@ -392,17 +371,16 @@ void H224_Frame::SetC0(bool flag)
 {
   BYTE *data = GetInformationFieldPtr();
 
-  if (flag) {
+  if (flag)
     data[5] |= 0x10;
-  }  else {
+  else
     data[5] &= 0xef;
-  }
 }
+
 
 BYTE H224_Frame::GetSegmentNumber() const
 {
   BYTE *data = GetInformationFieldPtr();
-
   return (data[5] & 0x0f);
 }
 
@@ -438,22 +416,18 @@ void H224_Frame::SetClientDataSize(PINDEX size)
 
 bool H224_Frame::DecodeAnnexQ(const BYTE *data, PINDEX size)
 {
-  bool result = Q922_Frame::DecodeAnnexQ(data, size);
-
-  if (result == false) {
+  if (!Q922_Frame::DecodeAnnexQ(data, size))
     return false;
-  }
 
   // doing some validity checks for H.224 frames
   BYTE highOrderAddressOctet = GetHighOrderAddressOctet();
   BYTE lowOrderAddressOctet = GetLowOrderAddressOctet();
   BYTE controlFieldOctet = GetControlFieldOctet();
 
-  if ((highOrderAddressOctet != 0x00) ||
-      (!(lowOrderAddressOctet == 0x61 || lowOrderAddressOctet == 0x71)) ||
-      (controlFieldOctet != 0x03)) {
+  if (  highOrderAddressOctet != 0x00 ||
+      !(lowOrderAddressOctet == 0x61 || lowOrderAddressOctet == 0x71) ||
+        controlFieldOctet != 0x03)
     return false;
-  }
 
   return true;
 
@@ -462,22 +436,18 @@ bool H224_Frame::DecodeAnnexQ(const BYTE *data, PINDEX size)
 
 bool H224_Frame::DecodeHDLC(const BYTE *data, PINDEX size)
 {
-  bool result = Q922_Frame::DecodeHDLC(data, size);
-
-  if (result == false) {
+  if (!Q922_Frame::DecodeHDLC(data, size))
     return false;
-  }
 
   // doing some validity checks for H.224 frames
   BYTE highOrderAddressOctet = GetHighOrderAddressOctet();
   BYTE lowOrderAddressOctet = GetLowOrderAddressOctet();
   BYTE controlFieldOctet = GetControlFieldOctet();
 
-  if ((highOrderAddressOctet != 0x00) ||
-     (!(lowOrderAddressOctet == 0x61 || lowOrderAddressOctet == 0x71)) ||
-     (controlFieldOctet != 0x03)) {
+  if (  highOrderAddressOctet != 0x00 ||
+      !(lowOrderAddressOctet == 0x61 || lowOrderAddressOctet == 0x71) ||
+        controlFieldOctet != 0x03)
     return false;
-  }
 
   return true;
 }
@@ -487,13 +457,13 @@ PINDEX H224_Frame::GetHeaderSize() const
 {
   BYTE clientID = GetClientID();
 
-  if (clientID < OpalH224Client::ExtendedClientID) {
+  if (clientID < OpalH224Client::ExtendedClientID)
     return 6;
-  } else if (clientID == OpalH224Client::ExtendedClientID) {
+
+  if (clientID == OpalH224Client::ExtendedClientID)
     return 7; // one extra octet
-  } else {
-    return 11; // 5 extra octets
-  }
+
+  return 11; // 5 extra octets
 }
 
 
@@ -502,7 +472,6 @@ PINDEX H224_Frame::GetHeaderSize() const
 OpalH224Handler::OpalH224Handler()
   : m_canTransmit(false)
   , m_transmitHDLCTunneling(false)
-  , m_receiveHDLCTunneling(false)
   , m_transmitBitIndex(7)
   , m_transmitStartTime(0)
   , m_transmitMediaStream(NULL)
@@ -540,25 +509,15 @@ bool OpalH224Handler::RemoveClient(OpalH224Client & client)
 }
 
 
-void OpalH224Handler::SetTransmitMediaFormat(const OpalMediaFormat & mediaFormat)
-{
-  PAssert(mediaFormat.GetMediaType() == OpalH224MediaType(), "H.224 handler passed incorrect media format");
-  m_transmitHDLCTunneling = mediaFormat.GetOptionBoolean(OpalH224MediaFormat::HDLCTunnelingOption());
-}
-
-
-void OpalH224Handler::SetReceiveMediaFormat(const OpalMediaFormat & mediaFormat)
-{
-  PAssert(mediaFormat.GetMediaType() == OpalH224MediaType(), "H.224 handler passed incorrect media format");
-  m_receiveHDLCTunneling = mediaFormat.GetOptionBoolean(OpalH224MediaFormat::HDLCTunnelingOption());
-}
-
-
 void OpalH224Handler::SetTransmitMediaStream(OpalH224MediaStream * mediaStream)
 {
   PWaitAndSignal m(m_transmitMutex);
+
   m_transmitMediaStream = mediaStream;
+  if (mediaStream != NULL)
+    m_transmitHDLCTunneling = mediaStream->GetMediaFormat().GetOptionBoolean(OpalH224MediaFormat::HDLCTunnelingOption());
 }
+
 
 void OpalH224Handler::StartTransmit()
 {
@@ -620,18 +579,18 @@ bool OpalH224Handler::SendClientList()
 
     BYTE clientID = client.GetClientID();
 
-    if (client.HasExtraCapabilities()) {
+    if (client.HasExtraCapabilities())
       ptr[dataIndex] = (0x80 | clientID);
-    } else {
+    else
       ptr[dataIndex] = (0x7f & clientID);
-    }
     dataIndex++;
 
     if (clientID == OpalH224Client::ExtendedClientID) {
       ptr[dataIndex] = client.GetExtendedClientID();
       dataIndex++;
 
-    } else if (clientID == OpalH224Client::NonStandardClientID) {
+    }
+    else if (clientID == OpalH224Client::NonStandardClientID) {
 
       ptr[dataIndex] = client.GetCountryCode();
       dataIndex++;
@@ -793,12 +752,13 @@ bool OpalH224Handler::SendExtraCapabilitiesMessage(const OpalH224Client & client
 
   ptr[2] = (extendedCapabilitiesFlag | (clientID & 0x7f));
 
-  if (clientID < OpalH224Client::ExtendedClientID) {
+  if (clientID < OpalH224Client::ExtendedClientID)
     headerSize = 3;
-  } else if (clientID == OpalH224Client::ExtendedClientID) {
+  else if (clientID == OpalH224Client::ExtendedClientID) {
     ptr[3] = client.GetExtendedClientID();
     headerSize = 4;
-  } else {
+  }
+  else {
     ptr[3] = client.GetCountryCode();
     ptr[4] = client.GetCountryCodeExtension();
 
@@ -841,41 +801,45 @@ bool OpalH224Handler::OnReceivedFrame(H224_Frame & frame)
     PTRACE(3, "Received frame with non-broadcast address");
     return true;
   }
-  BYTE clientID = frame.GetClientID();
 
-  if (clientID == OpalH224Client::CMEClientID) {
+  if (frame.GetClientID() == OpalH224Client::CMEClientID)
     return OnReceivedCMEMessage(frame);
+
+  OpalH224Client * client = FindClient(frame);
+  if (client != NULL) {
+    PTRACE(4, "Received message for client " << (unsigned)client->GetClientID());
+    client->OnReceivedMessage(frame);
+    return true;
   }
+
+  // ignore if no client found
+  PTRACE(4, "Ignored message for client " << (unsigned)frame.GetClientID());
+  return true;
+}
+
+
+OpalH224Client * OpalH224Handler::FindClient(const H224_Frame & frame) const
+{
+  BYTE clientID = frame.GetClientID();
 
   for (PINDEX i = 0; i < m_clients.GetSize(); i++) {
     OpalH224Client & client = m_clients[i];
     if (client.GetClientID() == clientID) {
-      bool found = false;
-      if (clientID < OpalH224Client::ExtendedClientID) {
-        found = true;
-      } else if (clientID == OpalH224Client::ExtendedClientID) {
-        if (client.GetExtendedClientID() == frame.GetExtendedClientID()) {
-          found = true;
-        }
-      } else {
-        if (client.GetCountryCode() == frame.GetCountryCode() &&
-           client.GetCountryCodeExtension() == frame.GetCountryCodeExtension() &&
-           client.GetManufacturerCode() == frame.GetManufacturerCode() &&
-           client.GetManufacturerClientID() == frame.GetManufacturerClientID()) {
-          found = true;
-        }
-      }
-      if (found == true) {
-        PTRACE(4, "Received message for client " << (unsigned)clientID);
-        client.OnReceivedMessage(frame);
-        return true;
-      }
+      if (clientID < OpalH224Client::ExtendedClientID)
+        return &client;
+
+      if (clientID == OpalH224Client::ExtendedClientID && client.GetExtendedClientID() == frame.GetExtendedClientID())
+        return &client;
+
+      if (client.GetCountryCode() == frame.GetCountryCode() &&
+          client.GetCountryCodeExtension() == frame.GetCountryCodeExtension() &&
+          client.GetManufacturerCode() == frame.GetManufacturerCode() &&
+          client.GetManufacturerClientID() == frame.GetManufacturerClientID())
+        return &client;
     }
   }
 
-  // ignore if no client found
-
-  return true;
+  return NULL;
 }
 
 
@@ -883,26 +847,27 @@ bool OpalH224Handler::OnReceivedCMEMessage(H224_Frame & frame)
 {
   BYTE *data = frame.GetClientDataPtr();
 
-  if (data[0] == CMEClientListCode) {
+  switch (data[0]) {
+    case CMEClientListCode :
+      switch (data[1]) {
+        case CMEMessage :
+          return OnReceivedClientList(frame);
+        case CMECommand :
+          return OnReceivedClientListCommand();
+      }
+      break;
 
-    if (data[1] == CMEMessage) {
-      return OnReceivedClientList(frame);
-
-    } else if (data[1] == CMECommand) {
-      return OnReceivedClientListCommand();
-    }
-
-  } else if (data[0] == CMEExtraCapabilitiesCode) {
-
-    if (data[1] == CMEMessage) {
-      return OnReceivedExtraCapabilities(frame);
-
-    } else if (data[1] == CMECommand) {
-      return OnReceivedExtraCapabilitiesCommand();
-    }
+    case CMEExtraCapabilitiesCode :
+      switch (data[1]) {
+        case CMEMessage:
+          return OnReceivedExtraCapabilities(frame);
+        case CMECommand:
+          return OnReceivedExtraCapabilitiesCommand();
+      }
   }
 
   // incorrect frames are simply ignored
+  PTRACE(4, "Ignored unknown CME message.");
   return true;
 }
 
@@ -916,6 +881,7 @@ bool OpalH224Handler::OnReceivedClientList(H224_Frame & frame)
   BYTE *data = frame.GetClientDataPtr();
 
   BYTE numberOfClients = data[2];
+  PTRACE(4, "Received client list: " << (unsigned)numberOfClients);
 
   PINDEX dataIndex = 3;
 
@@ -970,7 +936,6 @@ bool OpalH224Handler::OnReceivedClientList(H224_Frame & frame)
     }
     numberOfClients--;
   }
-  PTRACE(4, "Received client list: " << numberOfClients);
 
   return true;
 }
@@ -978,6 +943,7 @@ bool OpalH224Handler::OnReceivedClientList(H224_Frame & frame)
 
 bool OpalH224Handler::OnReceivedClientListCommand()
 {
+  PTRACE(4, "Handling request to send client list");
   SendClientList();
   return true;
 }
@@ -1037,29 +1003,16 @@ bool OpalH224Handler::OnReceivedExtraCapabilities(H224_Frame & frame)
   }
 
   // Simply ignore if no client is available for this clientID
-
+  PTRACE(4, "Ignoring extra capabilities for client " << (unsigned)clientID);
   return true;
 }
 
 
 bool OpalH224Handler::OnReceivedExtraCapabilitiesCommand()
 {
+  PTRACE(4, "Handling request to send extra capabilities");
   SendExtraCapabilities();
   return true;
-}
-
-
-bool OpalH224Handler::HandleFrame(const RTP_DataFrame & dataFrame)
-{
-  PTRACE(4, "Received frame: " << dataFrame);
-
-  H224_Frame receiveFrame;
-  if (m_receiveHDLCTunneling ? receiveFrame.DecodeHDLC(dataFrame.GetPayloadPtr(), dataFrame.GetPayloadSize())
-                             : receiveFrame.DecodeAnnexQ(dataFrame.GetPayloadPtr(), dataFrame.GetPayloadSize()))
-    return OnReceivedFrame(receiveFrame);
-
-  PTRACE(1, "Decoding of the frame failed");
-  return false;
 }
 
 
@@ -1101,12 +1054,8 @@ OpalH224MediaStream::OpalH224MediaStream(OpalConnection & connection,
   , m_h224Handler(handler)
   , m_consecutiveErrors(0)
 {
-  if (isSource == true) {
-    m_h224Handler.SetTransmitMediaFormat(mediaFormat);
+  if (isSource)
     m_h224Handler.SetTransmitMediaStream(this);
-  } else {
-    m_h224Handler.SetReceiveMediaFormat(mediaFormat);
-  }
 }
 
 
@@ -1140,11 +1089,17 @@ PBoolean OpalH224MediaStream::ReadPacket(RTP_DataFrame & /*packet*/)
 
 PBoolean OpalH224MediaStream::WritePacket(RTP_DataFrame & packet)
 {
-  if (m_h224Handler.HandleFrame(packet)) {
+  PTRACE(4, "Received frame: " << packet);
+
+  H224_Frame receiveFrame;
+  if (mediaFormat.GetOptionBoolean(OpalH224MediaFormat::HDLCTunnelingOption())
+            ? receiveFrame.DecodeHDLC(packet.GetPayloadPtr(), packet.GetPayloadSize())
+            : receiveFrame.DecodeAnnexQ(packet.GetPayloadPtr(), packet.GetPayloadSize())) {
     m_consecutiveErrors = 0;
-    return true;
+    return m_h224Handler.OnReceivedFrame(receiveFrame);
   }
 
+  PTRACE(m_consecutiveErrors > 0 ? 4 : 2, "Decoding of frame failed");
   if (++m_consecutiveErrors < 10)
     return true;
 

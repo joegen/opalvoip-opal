@@ -430,6 +430,10 @@ class OpalManagerCLI : public OpalConsoleManager
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdStatistics);
 #endif
 
+#if OPAL_HAS_H281
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdFarEndCamera);
+#endif
+
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdSilenceDetect);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdCodecList);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdCodecOrderMask);

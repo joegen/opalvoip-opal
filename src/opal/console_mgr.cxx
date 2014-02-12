@@ -2041,6 +2041,13 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
                     "[ <call-token> ]");
 #endif
 
+#if OPAL_HAS_H281
+  m_cli->SetCommand("camera", PCREATE_NOTIFIER(CmdFarEndCamera),
+                    "Far End Camera Control",
+                    "{ \"pan\" | \"tilt\" | \"zoom\" | \"focus\" } { \"in\" | \"out\" } <milliseconds>",
+                    "c-call: Indicate the call token to use, default is first call");
+#endif
+
   m_cli->SetCommand("pc vad", PCREATE_NOTIFIER(CmdSilenceDetect),
                     "Voice Activity Detection (aka Silence Detection)", "\"on\" | \"adaptive\" | <level>");
   m_cli->SetCommand("codec list", PCREATE_NOTIFIER(CmdCodecList),
@@ -2235,7 +2242,61 @@ void OpalManagerCLI::CmdStatistics(PCLI::Arguments & args, P_INT_PTR)
 
   OutputCallStatistics(LockedOutput(), *call);
 }
-#endif // PTRACING
+#endif // OPAL_STATISTICS
+
+
+#if OPAL_HAS_H281
+void OpalManagerCLI::CmdFarEndCamera(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() < 3) {
+    args.WriteUsage();
+    return;
+  }
+
+  PVideoControlInfo::Types type = PVideoControlInfo::TypesFromString(args[0], false);
+  if (type == PVideoControlInfo::NumTypes) {
+    args.WriteUsage();
+    return;
+  }
+
+  int dir;
+  if (args[1] *= "in")
+    dir = 1;
+  else if (args[1] *= "out")
+    dir = -1;
+  else {
+    args.WriteUsage();
+    return;
+  }
+
+  PString token = args.GetOptionString("call");
+  if (token.IsEmpty()) {
+    PStringArray tokens = GetAllCalls();
+    if (tokens.IsEmpty()) {
+      args.WriteError() << "No calls active." << endl;
+      return;
+    }
+    token = tokens[0];
+  }
+
+  PSafePtr<OpalCall> call = FindCallWithLock(token, PSafeReadOnly);
+  if (call == NULL) {
+    args.WriteError() << "No call with supplied token." << endl;
+    return;
+  }
+
+  PSafePtr<OpalLocalConnection> connection = call->GetConnectionAs<OpalLocalConnection>();
+  if (connection == NULL) {
+    args.WriteError() << "Cannot do far end camera control with connection." << endl;
+    return;
+  }
+
+  if (connection->FarEndCameraControl(type, dir, args[2].AsUnsigned()))
+    args.WriteError() << "Executing far end camera control." << endl;
+  else
+    args.WriteError() << "Could not perform far end camera control." << endl;
+}
+#endif // OPAL_HAS_H281
 
 
 void OpalManagerCLI::CmdCodecList(PCLI::Arguments & args, P_INT_PTR)
