@@ -1463,6 +1463,13 @@ bool SDPVideoMediaDescription::Format::PreEncode()
 }
 
 
+void SDPVideoMediaDescription::Format::AddRTCP_FB(const PString & str)
+{
+  m_rtcp_fb.FromString(str, false);
+  PTRACE(4, "SDP\tAdded feedback options, result: " << m_rtcp_fb);
+}
+
+
 static bool AdjustResolution(OpalMediaFormat & mediaFormat, const PString & name, unsigned value, bool lower)
 {
   if (value == 0)
