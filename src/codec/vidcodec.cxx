@@ -184,11 +184,13 @@ bool OpalVideoTranscoder::HandleIFrameRequest()
   static PTimeInterval const MaxThrottle(0, 4);
 
   if (timeSinceLast < MinThrottle && m_throttleSendIFrameTimer < MaxThrottle)
-    m_throttleSendIFrameTimer = m_throttleSendIFrameTimer*2;
+    m_throttleSendIFrameTimer = m_throttleSendIFrameTimer * 2;
   else if (timeSinceLast > MaxThrottle && m_throttleSendIFrameTimer > MinThrottle)
-    m_throttleSendIFrameTimer = m_throttleSendIFrameTimer/2;
-  else
+    m_throttleSendIFrameTimer = m_throttleSendIFrameTimer / 2;
+  else if (m_throttleSendIFrameTimer > MinThrottle)
     m_throttleSendIFrameTimer = m_throttleSendIFrameTimer;
+  else
+    m_throttleSendIFrameTimer = MinThrottle;
 
   PTRACE(3, "Media\tI-Frame forced (throttle " << m_throttleSendIFrameTimer << ") in video stream " << *this);
   m_forceIFrame = true; // Reset when I-Frame is sent
