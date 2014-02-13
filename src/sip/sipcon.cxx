@@ -3633,9 +3633,6 @@ bool SIPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaComm
     if ((m_stringOptions.GetInteger(OPAL_OPT_VIDUP_METHODS, OPAL_OPT_VIDUP_METHOD_DEFAULT)&OPAL_OPT_VIDUP_METHOD_OOB) == 0) {
       PTRACE(5, "RTPCon\tINFO picture_fast_update disabled in string options");
     }
-    else if (m_infoPictureFastUpdateTimer.IsRunning()) {
-      PTRACE(4, "SIP\tRecent INFO picture_fast_update was sent, not sending another");
-    }
     else {
       SIPInfo::Params params(ApplicationMediaControlXMLKey,
                              "<?xml version=\"1.0\" encoding=\"utf-8\" ?>"
@@ -3647,10 +3644,8 @@ bool SIPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaComm
                                "</to_encoder>"
                               "</vc_primitive>"
                              "</media_control>");
-      if (SendINFO(params)) {
-        m_infoPictureFastUpdateTimer.SetInterval(0, 3);
+      if (SendINFO(params))
         done = true;
-      }
     }
   }
 #endif
