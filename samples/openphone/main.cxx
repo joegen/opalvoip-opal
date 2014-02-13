@@ -7585,6 +7585,7 @@ void InCallPanel::OnMouseFECC(wxMouseEvent & theEvent)
     for (PVideoControlInfo::Types type = PVideoControlInfo::BeginTypes; type < PVideoControlInfo::EndTypes; ++type) {
       for (unsigned dir = 0; dir < 2; ++dir) {
         if (theEvent.GetEventObject() == m_fecc[type][dir]) {
+          PTRACE(4, "OpenPhone\tFar end camera control mouse " << (start ? "started" : "ended"));
           connection->FarEndCameraControl(type, start ? dir*2-1 : 0);
           return;
         }

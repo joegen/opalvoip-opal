@@ -526,6 +526,7 @@ void OpalH224Handler::StartTransmit()
   if (m_canTransmit)
     return;
 
+  PTRACE(4, "Starting transmission");
   m_canTransmit = true;
 
   m_transmitBitIndex = 7;
@@ -540,6 +541,7 @@ void OpalH224Handler::StopTransmit()
 {
   PWaitAndSignal m(m_transmitMutex);
   m_canTransmit = false;
+  PTRACE(4, "Stopping transmission");
 }
 
 
@@ -783,11 +785,15 @@ bool OpalH224Handler::TransmitClientFrame(const OpalH224Client & client, H224_Fr
 {
   PWaitAndSignal m(m_transmitMutex);
 
-  if (!m_canTransmit)
+  if (!m_canTransmit) {
+    PTRACE(4, "Transmitter not enabled");
     return false;
+  }
 
-  if (m_clients.GetObjectsIndex(&client) == P_MAX_INDEX)
-    return false; // Only allow if the client is really registered
+  if (m_clients.GetObjectsIndex(&client) == P_MAX_INDEX) {
+    PTRACE(4, "Client not registered");
+    return false;
+  }
 
   TransmitFrame(frame);
   return true;

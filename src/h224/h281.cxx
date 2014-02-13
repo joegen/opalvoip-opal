@@ -359,6 +359,16 @@ OpalH281Client::~OpalH281Client()
 
 bool OpalH281Client::Action(PVideoControlInfo::Types actionType, int direction, const PTimeInterval & duration)
 {
+  if (m_remoteSourceId == NumVideoSourceIds) {
+    PTRACE(3, "Remote source not yet set.");
+    return false;
+  }
+
+  if (!m_remoteCapability[m_remoteSourceId].m_available) {
+    PTRACE(3, "Remote source not available: " << m_remoteCapability[m_remoteSourceId]);
+    return false;
+  }
+
   SendStopAction();
 
   m_transmitFrame.SetRequestType(H281_Frame::StartAction);
@@ -380,7 +390,7 @@ bool OpalH281Client::Action(PVideoControlInfo::Types actionType, int direction, 
   }
 
   m_transmitFrame.SetRequestType(H281_Frame::IllegalRequest);
-  return false;
+  return true;
 }
 
 
@@ -529,7 +539,8 @@ void OpalH281Client::SendExtraCapabilities() const
   PINDEX size = 1;
 
   for (VideoSourceIds sourceId = MainCameraId; sourceId < NumVideoSourceIds; sourceId++) {
-    PTRACE(4, "Sending local capability: id=" << sourceId << ' ' << m_localCapability[sourceId]);
+    PTRACE_IF(4, m_localCapability[sourceId].m_available,
+              "Sending local capability: id=" << sourceId << ' ' << m_localCapability[sourceId]);
     size = m_localCapability[sourceId].Encode(sourceId, capabilities, size);
   }
 
@@ -671,10 +682,7 @@ void OpalH281Client::ContinueAction(PTimer &, P_INT_PTR)
 
   PTRACE(4, "Continue action");
   m_transmitFrame.SetRequestType(H281_Frame::ContinueAction);
-
   m_h224Handler->TransmitClientFrame(*this, m_transmitFrame);
-
-  m_transmitFrame.SetRequestType(H281_Frame::IllegalRequest);
 }
 
 
