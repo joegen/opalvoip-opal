@@ -1474,6 +1474,7 @@ bool MyManager::Initialise(bool startMinimised)
     } while (config->GetNextEntry(entryName, entryIndex));
   }
 
+  config->SetPath(H323Group);
   config->Read(GatekeeperModeKey, &m_gatekeeperMode, 0);
   if (config->Read(GatekeeperTTLKey, &value1))
     h323EP->SetGatekeeperTimeToLive(PTimeInterval(0, value1));
