@@ -1827,15 +1827,19 @@ static void OuputRTCP_FB(ostream & strm, int payloadType, OpalVideoFormat::RTCPF
   };
 
   for (PINDEX i = 0; i < PARRAYSIZE(Prefixes); ++i) {
-    OpalVideoFormat::RTCPFeedback masked(rtcp_fb - ~Prefixes[i].m_bits);
-    if (masked != OpalVideoFormat::e_NoRTCPFb) {
-      strm << "a=rtcp-fb:";
-      if (payloadType < 0)
-        strm << '*';
-      else
-        strm << payloadType;
-      masked -= OpalVideoFormat::e_NACK; // Or ends up in there twice
-      strm << ' ' << Prefixes[i].m_prefix << ' ' << masked << CRLF;
+    OpalVideoFormat::RTCPFeedback fbForPrefix(rtcp_fb - ~Prefixes[i].m_bits);
+    for (OpalVideoFormat::RTCPFeedback fb = OpalVideoFormat::RTCPFeedback::Begin(); fb != OpalVideoFormat::RTCPFeedback::End(); ++fb) {
+      if (fbForPrefix & fb) {
+        strm << "a=rtcp-fb:";
+        if (payloadType < 0)
+          strm << '*';
+        else
+          strm << payloadType;
+        strm << ' ' << Prefixes[i].m_prefix;
+        if (fb != OpalVideoFormat::e_NACK)
+          strm << ' ' << fb;
+        strm << "\r\n";
+      }
     }
   }
 }
