@@ -125,8 +125,6 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
   , m_inDataSize(10*1024)
   , m_outDataSize(10*1024)
   , m_errorConcealment(false)
-  , m_freezeTillIFrame(false)
-  , m_frozenTillIFrame(false)
   , m_forceIFrame(false)
   , m_lastFrameWasIFrame(false)
   , m_totalFrames(0)
@@ -215,8 +213,10 @@ bool OpalVideoTranscoder::HandleIFrameRequest()
     m_throttleSendIFrameTimer = m_throttleSendIFrameTimer*2;
   else if (timeSinceLast > MaxThrottle && m_throttleSendIFrameTimer > MinThrottle)
     m_throttleSendIFrameTimer = m_throttleSendIFrameTimer/2;
-  else
+  else if (m_throttleSendIFrameTimer > MinThrottle)
     m_throttleSendIFrameTimer = m_throttleSendIFrameTimer;
+  else
+    m_throttleSendIFrameTimer = MinThrottle;
 
   PTRACE(3, "Media\tI-Frame forced (throttle " << m_throttleSendIFrameTimer << ") in video stream " << *this);
   m_forceIFrame = true; // Reset when I-Frame is sent
@@ -254,21 +254,6 @@ void OpalVideoTranscoder::SendIFrameRequest(unsigned sequenceNumber, unsigned ti
   else
     NotifyCommand(OpalVideoPictureLoss(sequenceNumber, timestamp));
   m_throttleRequestIFrameTimer.SetInterval(0, 1);
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-  if (m_requestIFrameTimer.IsRunning()) {
-    PTRACE(4, "Media\tI-Frame requested, but not sent due to throttling.");
-    return;
-  }
-
-  if (sequenceNumber == 0 && timestamp == 0)
-    NotifyCommand(OpalVideoUpdatePicture());
-  else
-    NotifyCommand(OpalVideoPictureLoss(sequenceNumber, timestamp));
-  m_requestIFrameTimer.SetInterval(0, 1);
 }
 
 
