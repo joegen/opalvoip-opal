@@ -769,13 +769,9 @@ void TranscoderThread::OnTranscoderCommand(OpalMediaCommand & cmd, P_INT_PTR)
     cout << "decoder lost sync" << endl;
     coutMutex.Signal();
     m_forceIFrame = true;
-    ((OpalVideoTranscoder *)m_encoder)->ForceIFrame();
   }
-  else {
-    coutMutex.Wait();
-    cout << "unknown decoder command " << cmd.GetName() << endl;
-    coutMutex.Signal();
-  }
+
+  m_encoder->ExecuteCommand(cmd);
 }
 
 
@@ -980,7 +976,7 @@ void TranscoderThread::Main()
             coutMutex.Signal();
           }
           if (m_forceIFrame || rateControlForceIFrame)
-            ((OpalVideoTranscoder *)m_encoder)->ForceIFrame();
+            m_encoder->ExecuteCommand(OpalVideoUpdatePicture());
         }
 
         if (m_extensionHeader != 255)
