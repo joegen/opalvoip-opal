@@ -1080,7 +1080,7 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
                           ", sending OpalVideoPictureLoss in hope of an I-Frame: sn=" << sequenceNumber);
   bool pictureLost = packetsLost || (flags & PluginCodec_ReturnCoderRequestIFrame) != 0;
   if (pictureLost)
-    RequestIFrame(sequenceNumber, src.GetTimestamp());
+    SendIFrameRequest(sequenceNumber, src.GetTimestamp());
 
   if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
     m_lastFrameWasIFrame = true;
