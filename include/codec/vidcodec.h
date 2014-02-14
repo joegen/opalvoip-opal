@@ -177,7 +177,7 @@ class OpalVideoTranscoder : public OpalTranscoder
 
     PSimpleTimer  m_throttleRequestIFrameTimer;
     PSimpleTimer  m_throttleSendIFrameTimer;
-    PTimeInterval m_lastSentIFrame;
+    PTimeInterval m_lastReceivedIFrameRequest;
 
     DWORD m_totalFrames;
     DWORD m_keyFrames;
