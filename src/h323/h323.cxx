@@ -3948,21 +3948,27 @@ void H323Connection::InternalEstablishedConnectionCheck()
 
   // Check for if all the 245 conditions are met so can start up logical
   // channels and complete the connection establishment.
-  if (h245_available)
+  if (h245_available) {
     m_endSessionNeeded = true;
 
-  // Delay handling of off hold until we finish redoing TCS, MSD & OLC.
-  if (m_holdFromRemote == eRetrieveFromRemote) {
     H323Channel * chan;
     if ((chan = logicalChannels->FindChannelBySession(H323Capability::DefaultAudioSessionID, false)) == NULL)
       chan = logicalChannels->FindChannelBySession(H323Capability::DefaultVideoSessionID, false);
-    if (chan != NULL) {
-      if ((chan = logicalChannels->FindChannelBySession(H323Capability::DefaultAudioSessionID, true)) == NULL)
-        chan = logicalChannels->FindChannelBySession(H323Capability::DefaultVideoSessionID, true);
+
+    // Delay handling of off hold until we finish redoing TCS, MSD & OLC.
+    if (m_holdFromRemote == eRetrieveFromRemote) {
       if (chan != NULL) {
-        m_holdFromRemote = eOffHoldFromRemote;
-        OnHold(true, false);
+        if ((chan = logicalChannels->FindChannelBySession(H323Capability::DefaultAudioSessionID, true)) == NULL)
+          chan = logicalChannels->FindChannelBySession(H323Capability::DefaultVideoSessionID, true);
+        if (chan != NULL) {
+          m_holdFromRemote = eOffHoldFromRemote;
+          OnHold(true, false);
+        }
       }
+    }
+    else {
+      if (chan == NULL && (connectionState >= HasExecutedSignalConnect || (earlyStart && m_fastStartState != FastStartAcknowledged)))
+        OnSelectLogicalChannels();
     }
   }
 
@@ -3980,11 +3986,8 @@ void H323Connection::InternalEstablishedConnectionCheck()
           if (it->second.IsAwaitingEstablishment())
             inProgressChannel = true;
         }
-        if (hasEstablishedChannel && !inProgressChannel &&
-            (connectionState == HasExecutedSignalConnect || (earlyStart && m_fastStartState != FastStartAcknowledged))) {
-          OnSelectLogicalChannels();
+        if (hasEstablishedChannel && !inProgressChannel)
           OnConnectedInternal();
-        }
       }
       break;
 
