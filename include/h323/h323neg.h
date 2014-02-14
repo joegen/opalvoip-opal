@@ -128,14 +128,8 @@ class H245NegTerminalCapabilitySet : public H245Negotiator
     bool HasReceivedCapabilities() const { return receivedCapabilites; }
 
   protected:
-    enum States {
-      e_Idle, e_InProgress, e_Confirmed,
-      e_NumStates
-    } state;
-#if PTRACING
-    static const char * GetStateName(States s);
-    friend ostream & operator<<(ostream & o, States s) { return o << GetStateName(s); }
-#endif
+    P_DECLARE_TRACED_ENUM(States, e_Idle, e_InProgress, e_Confirmed);
+    States state;
 
     unsigned inSequenceNumber;
     unsigned outSequenceNumber;
@@ -191,7 +185,7 @@ class H245NegLogicalChannel : public H245Negotiator
 
     H323ChannelNumber channelNumber;
 
-    enum States {
+    P_DECLARE_TRACED_ENUM(States,
       e_Released,
       e_AwaitingEstablishment,
       e_Establishing,
@@ -200,12 +194,8 @@ class H245NegLogicalChannel : public H245Negotiator
       e_AwaitingConfirmation,
       e_AwaitingResponse,
       e_NumStates
-    } state;
-#if PTRACING
-    static const char * GetStateName(States s);
-    friend ostream & operator<<(ostream & o, States s) { return o << GetStateName(s); }
-#endif
-
+    );
+    States state;
 
   friend class H245NegLogicalChannels;
 };

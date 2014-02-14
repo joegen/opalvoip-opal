@@ -441,17 +441,6 @@ void H245NegTerminalCapabilitySet::HandleTimeout()
 }
 
 
-#if PTRACING
-const char * H245NegTerminalCapabilitySet::GetStateName(States s)
-{
-  static const char * const names[] = {
-    "Idle", "InProgress", "Sent"
-  };
-  return s < PARRAYSIZE(names) ? names[s] : "<Unknown>";
-}
-#endif
-
-
 /////////////////////////////////////////////////////////////////////////////
 
 H245NegLogicalChannel::H245NegLogicalChannel(H323EndPoint & end,
@@ -901,22 +890,6 @@ H323Channel * H245NegLogicalChannel::GetChannel() const
 {
   return channel;
 }
-
-
-#if PTRACING
-const char * H245NegLogicalChannel::GetStateName(States s)
-{
-  static const char * const names[] = {
-    "Released",
-    "AwaitingEstablishment",
-    "Established",
-    "AwaitingRelease",
-    "AwatingConfirmation",
-    "AwaitingResponse"
-  };
-  return s < PARRAYSIZE(names) ? names[s] : "<Unknown>";
-}
-#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
