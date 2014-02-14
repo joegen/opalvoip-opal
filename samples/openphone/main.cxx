@@ -6205,7 +6205,7 @@ void OptionsDialog::SelectedCodec(wxCommandEvent & /*event*/)
 MyMedia * OptionsDialog::GetCodecOptionInfo(wxListItem & item, PwxString & optionName, PwxString & defaultValue)
 {
   wxArrayInt selections;
-  if (!PAssert(m_selectedCodecs->GetSelections(selections) == 1, PLogicError))
+  if (m_selectedCodecs->GetSelections(selections) != 1)
     return NULL;
 
   MyMedia * media = (MyMedia *)m_selectedCodecs->GetClientData(selections[0]);
