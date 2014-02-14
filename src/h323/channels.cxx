@@ -394,15 +394,16 @@ PBoolean H323UnidirectionalChannel::SetInitialBandwidth()
 bool H323UnidirectionalChannel::PreOpen()
 {
   if (m_mediaStream == NULL) {
-    m_mediaStream = connection.CreateMediaStream(GetMediaFormat(), GetSessionID(), receiver);
+    OpalMediaFormat mediaFormat = GetMediaFormat();
+    m_mediaStream = connection.CreateMediaStream(mediaFormat, GetSessionID(), receiver);
     if (m_mediaStream == NULL)
       return false;
 
     OpalCall & call = connection.GetCall();
-    OpalMediaType mediaType = GetMediaFormat().GetMediaType();
+    OpalMediaType mediaType = mediaFormat.GetMediaType();
 
     if (GetDirection() == IsReceiver) {
-      if (!call.OpenSourceMediaStreams(connection, mediaType, GetSessionID(), GetMediaFormat())) {
+      if (!call.OpenSourceMediaStreams(connection, mediaType, GetSessionID(), mediaFormat)) {
         PTRACE(1, "LogChan\tReceive OpenSourceMediaStreams failed");
         return false;
       }
@@ -413,7 +414,7 @@ bool H323UnidirectionalChannel::PreOpen()
         PTRACE(1, "LogChan\tTransmit failed, no other connection");
         return false;
       }
-      if (!call.OpenSourceMediaStreams(*otherConnection, mediaType, GetSessionID(), GetMediaFormat())) {
+      if (!call.OpenSourceMediaStreams(*otherConnection, mediaType, GetSessionID(), mediaFormat)) {
         PTRACE(1, "LogChan\tTransmit OpenSourceMediaStreams failed");
         return false;
       }
@@ -462,8 +463,13 @@ OpalMediaStreamPtr H323UnidirectionalChannel::GetMediaStream() const
 void H323UnidirectionalChannel::SetMediaStream(OpalMediaStreamPtr mediaStream)
 {
   m_mediaStream = mediaStream;
-  if (mediaStream != NULL)
+  if (mediaStream != NULL) {
     capability->UpdateMediaFormat(m_mediaStream->GetMediaFormat());
+    if (!m_mediaStream->SetMediaFormat(capability->GetMediaFormat())) {
+      m_mediaStream->Close();
+      m_mediaStream.SetNULL();
+    }
+  }
 }
 
 
