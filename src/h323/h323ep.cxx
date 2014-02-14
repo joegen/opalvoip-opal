@@ -630,16 +630,18 @@ void H323EndPoint::InternalNewIncomingConnection(OpalTransportPtr transport, boo
   transport->SetReadTimeout(GetFirstSignalPduTimeout());
 
   H323SignalPDU pdu;
-  if (!pdu.Read(*transport)) {
-    if (reused) {
-      PTRACE(4, "H225\tReusable TCP connection not reused.");
-      transport->Close();
+  do {
+    if (!pdu.Read(*transport)) {
+      if (reused) {
+        PTRACE(4, "H225\tReusable TCP connection not reused.");
+        transport->Close();
+        return;
+      }
+
+      PTRACE(2, "H225\tFailed to get initial Q.931 PDU, connection not started.");
       return;
     }
-
-    PTRACE(2, "H225\tFailed to get initial Q.931 PDU, connection not started.");
-    return;
-  }
+  } while (pdu.GetQ931().GetMessageType() != Q931::SetupMsg);
 
   unsigned callReference = pdu.GetQ931().GetCallReference();
   PTRACE(3, "H225\tIncoming call, first PDU: callReference=" << callReference
