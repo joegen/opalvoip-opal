@@ -187,7 +187,7 @@ public:
   virtual bool OnReceivedExtraCapabilitiesCommand();
 
 protected:
-  void TransmitFrame(H224_Frame & frame);
+  bool TransmitFrame(H224_Frame & frame);
   OpalH224Client * FindClient(
     BYTE clientID,
     BYTE extendedClientID,
