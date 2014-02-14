@@ -351,7 +351,6 @@ static const wxChar * const IconStatusNames[NumIconStates] =
 
 
 static const char * const DefaultRoutes[] = {
-    ".*:[0-9]+ = tel:<du>",
 #if OPAL_IVR
     ".*:#  = ivr:", // A hash from anywhere goes to IVR
 #endif
