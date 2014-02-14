@@ -192,6 +192,10 @@ bool OpalVideoTranscoder::HandleIFrameRequest()
   if (outputMediaFormat == OpalYUV420P)
     return false;
 
+  PTimeInterval now = PTimer::Tick();
+  PTimeInterval timeSinceLast = now - m_lastReceivedIFrameRequest;
+  m_lastReceivedIFrameRequest = now;
+
   if (m_forceIFrame) {
     PTRACE(5, "Media\tIgnoring forced I-Frame as already in progress for " << *this);
     return true;
@@ -201,10 +205,6 @@ bool OpalVideoTranscoder::HandleIFrameRequest()
     PTRACE(4, "Media\tIgnoring forced I-Frame request due to throttling for " << *this);
     return true;
   }
-
-  PTimeInterval now = PTimer::Tick();
-  PTimeInterval timeSinceLast = now - m_lastSentIFrame;
-  m_lastSentIFrame = now;
 
   static PTimeInterval const MinThrottle(500);
   static PTimeInterval const MaxThrottle(0, 4);
