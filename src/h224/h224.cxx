@@ -549,9 +549,6 @@ bool OpalH224Handler::SendClientList()
 {
   PWaitAndSignal m(m_transmitMutex);
 
-  if (!m_canTransmit)
-    return false;
-
   // If all clients are non-standard, 5 octets per clients + 3 octets header information
   H224_Frame h224Frame = H224_Frame(5*m_clients.GetSize() + 3);
 
@@ -612,9 +609,7 @@ bool OpalH224Handler::SendClientList()
 
   h224Frame.SetClientDataSize(dataIndex);
 
-  TransmitFrame(h224Frame);
-
-  return true;
+  return TransmitFrame(h224Frame);
 }
 
 
@@ -630,9 +625,6 @@ bool OpalH224Handler::SendExtraCapabilities()
 bool OpalH224Handler::SendClientListCommand()
 {
   PWaitAndSignal m(m_transmitMutex);
-
-  if (!m_canTransmit)
-    return false;
 
   H224_Frame h224Frame = H224_Frame(2);
   h224Frame.SetHighPriority(true);
@@ -654,21 +646,13 @@ bool OpalH224Handler::SendClientListCommand()
   ptr[0] = OpalH224Handler::CMEClientListCode;
   ptr[1] = OpalH224Handler::CMECommand;
 
-  TransmitFrame(h224Frame);
-
-  return true;
+  return TransmitFrame(h224Frame);
 }
 
 
 bool OpalH224Handler::SendExtraCapabilitiesCommand(const OpalH224Client & client)
 {
   PWaitAndSignal m(m_transmitMutex);
-
-  if (!m_canTransmit)
-    return false;
-
-  if (m_clients.GetObjectsIndex(&client) == P_MAX_INDEX)
-    return false; // only allow if the client is really registered
 
   H224_Frame h224Frame = H224_Frame(8);
   h224Frame.SetHighPriority(true);
@@ -714,9 +698,7 @@ bool OpalH224Handler::SendExtraCapabilitiesCommand(const OpalH224Client & client
   }
   h224Frame.SetClientDataSize(dataSize);
 
-  TransmitFrame(h224Frame);
-
-  return true;
+  return TransmitClientFrame(client, h224Frame);
 }
 
 
@@ -724,9 +706,6 @@ bool OpalH224Handler::SendExtraCapabilitiesMessage(const OpalH224Client & client
                                                        BYTE *data, PINDEX length)
 {
   PWaitAndSignal m(m_transmitMutex);
-
-  if (m_clients.GetObjectsIndex(&client) == P_MAX_INDEX)
-    return false; // Only allow if the client is really registered
 
   H224_Frame h224Frame = H224_Frame(length+3);
   h224Frame.SetHighPriority(true);
@@ -775,9 +754,7 @@ bool OpalH224Handler::SendExtraCapabilitiesMessage(const OpalH224Client & client
   h224Frame.SetClientDataSize(length+headerSize);
   memcpy(ptr+headerSize, data, length);
 
-  TransmitFrame(h224Frame);
-
-  return true;
+  return TransmitClientFrame(client, h224Frame);
 }
 
 
@@ -785,18 +762,12 @@ bool OpalH224Handler::TransmitClientFrame(const OpalH224Client & client, H224_Fr
 {
   PWaitAndSignal m(m_transmitMutex);
 
-  if (!m_canTransmit) {
-    PTRACE(4, "Transmitter not enabled");
-    return false;
-  }
-
   if (m_clients.GetObjectsIndex(&client) == P_MAX_INDEX) {
     PTRACE(4, "Client not registered");
     return false;
   }
 
-  TransmitFrame(frame);
-  return true;
+  return TransmitFrame(frame);
 }
 
 
@@ -1001,10 +972,17 @@ bool OpalH224Handler::OnReceivedExtraCapabilitiesCommand()
 }
 
 
-void OpalH224Handler::TransmitFrame(H224_Frame & frame)
+bool OpalH224Handler::TransmitFrame(H224_Frame & frame)
 {
-  if (m_transmitMediaStream == NULL)
-    return;
+  if (m_transmitMediaStream == NULL) {
+    PTRACE(4, "Transmit stream not attached");
+    return false;
+  }
+
+  if (!m_canTransmit) {
+    PTRACE(4, "Transmitter not started");
+    return false;
+  }
 
   PINDEX size = m_transmitHDLCTunneling ? frame.GetHDLCEncodedSize() : frame.GetAnnexQEncodedSize();
   RTP_DataFrame transmitFrame(size);
@@ -1013,7 +991,7 @@ void OpalH224Handler::TransmitFrame(H224_Frame & frame)
   if (!(m_transmitHDLCTunneling ? frame.EncodeHDLC(transmitFrame.GetPayloadPtr(), size, m_transmitBitIndex)
                                 : frame.EncodeAnnexQ(transmitFrame.GetPayloadPtr(), size))) {
     PTRACE(1, "Failed to encode the frame");
-    return;
+    return false;
   }
 
   // determining correct timestamp
@@ -1025,6 +1003,7 @@ void OpalH224Handler::TransmitFrame(H224_Frame & frame)
 
   PTRACE(4, "Sending frame: " << transmitFrame);
   m_transmitMediaStream->PushPacket(transmitFrame);
+  return true;
 }
 
 
