@@ -4665,7 +4665,7 @@ PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingCh
 
       mediaStream = otherChannel->GetMediaStream();
       otherChannel->SetMediaStream(NULL);
-      otherChannel->Close();
+      CloseLogicalChannelNumber(otherChannel->GetNumber());
     }
     else {
       if (mediaStream == NULL) {
@@ -4693,7 +4693,7 @@ PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingCh
       return true;
     }
 
-    conflictingChannel.Close();
+    CloseLogicalChannelNumber(conflictingChannel.GetNumber());
     capability = remoteCapabilities.FindCapability(otherChannel->GetCapability());
   }
 
