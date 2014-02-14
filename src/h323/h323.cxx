@@ -4259,6 +4259,9 @@ void H323Connection::OnClosedMediaStream(const OpalMediaStream & stream)
 
 bool H323Connection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
 {
+  if (stream.IsSource() != (&stream.GetConnection() == this))
+    return OpalConnection::OnMediaCommand(stream, command);
+
   H323Channel * channel = FindChannel(stream.GetSessionID(), true);
   if (channel == NULL) {
     PTRACE(4, "H.323\tOnMediaCommand, no channel found for session " << stream.GetSessionID());
