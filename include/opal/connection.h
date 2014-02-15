@@ -2027,7 +2027,7 @@ class OpalConnection : public PSafeObject
     P_REMOVE_VIRTUAL_VOID(OnSwitchedFaxMediaStreams(bool));
     P_REMOVE_VIRTUAL(bool, CloseMediaStream(OpalMediaStream &),false);
     P_REMOVE_VIRTUAL(bool,GetMediaTransportAddresses(const OpalMediaType&,OpalTransportAddressArray&) const,false);
-#if P_NAT
+#if OPAL_PTLIB_NAT
     P_REMOVE_VIRTUAL(PNatMethod *, GetNatMethod(const PIPSocket::Address &) const,NULL);
 #endif
     P_REMOVE_VIRTUAL(bool,Hold(bool,bool),false);

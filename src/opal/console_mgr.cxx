@@ -1224,7 +1224,7 @@ PString OpalConsoleManager::GetArgumentSpec() const
 #endif
 
   str << "[IP options:]"
-#if P_NAT
+#if OPAL_PTLIB_NAT
          "-nat-method:       Set NAT method, defaults to STUN\n"
          "-nat-server:       Set NAT server for the above method\n"
 #if P_STUN
@@ -1408,7 +1408,7 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
 #endif
               "RTP payload size: " << GetMaxRtpPayloadSize() << '\n';
 
-#if P_NAT
+#if OPAL_PTLIB_NAT
   PString natMethod, natServer;
   if (args.HasOption("translate")) {
     natMethod = PNatMethod_Fixed::MethodName();
@@ -1451,7 +1451,7 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
       output << '\n';
     }
   }
-#endif // P_NAT
+#endif // OPAL_PTLIB_NAT
 
   if (verbose) {
     PIPSocket::InterfaceTable interfaceTable;
@@ -2021,7 +2021,7 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
 
   m_cli->SetPrompt(args.GetCommandName() + "> ");
 
-#if P_NAT
+#if OPAL_PTLIB_NAT
   m_cli->SetCommand("nat list", PCREATE_NOTIFIER(CmdNatList),
                     "List NAT methods and server addresses");
   m_cli->SetCommand("nat server", PCREATE_NOTIFIER(CmdNatAddress),
@@ -2145,7 +2145,7 @@ PCLICurses * OpalManagerCLI::CreateCLICurses()
 #endif // P_CURSES
 
 
-#if P_NAT
+#if OPAL_PTLIB_NAT
 void OpalManagerCLI::CmdNatList(PCLI::Arguments & args, P_INT_PTR)
 {
   PCLI::Context & out = args.GetContext();
