@@ -86,20 +86,30 @@ OpalMediaTypeDefinition * OpalMediaType::GetDefinition(const OpalMediaType & key
 
 OpalMediaTypeList OpalMediaType::GetList()
 {
-  OpalMediaTypesFactory::KeyList_T types = OpalMediaTypesFactory::GetKeyList();
+  OpalMediaTypeList types = OpalMediaTypesFactory::GetKeyList();
+  types.PrioritiseAudioVideo();
+  return types;
+}
+
+
+void OpalMediaTypeList::PrioritiseAudioVideo()
+{
   OpalMediaTypesFactory::KeyList_T::iterator it;
 
-  it = std::find(types.begin(), types.end(), Audio());
-  if (it != types.end())
-    std::swap(*types.begin(), *it);
-
 #if OPAL_VIDEO
-  it = std::find(types.begin(), types.end(), Video());
-  if (it != types.end())
-    std::swap(*(types.begin()+1), *it);
+  // For maximum compatibility, make sure audio/video are first
+  it = std::find(begin(), end(), OpalMediaType::Video());
+  if (it != end() && it != begin()) {
+    erase(it);
+    insert(begin(), OpalMediaType::Video());
+  }
 #endif
 
-  return types;
+  it = std::find(begin(), end(), OpalMediaType::Audio());
+  if (it != end() && it != begin()) {
+    erase(it);
+    insert(begin(), OpalMediaType::Audio());
+  }
 }
 
 
