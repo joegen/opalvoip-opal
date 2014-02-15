@@ -426,6 +426,20 @@ void OpalMediaOptionEnum::ReadFrom(istream & strm)
 }
 
 
+bool OpalMediaOptionEnum::Merge(const OpalMediaOption & option)
+{
+  if (m_merge != IntersectionMerge)
+    return OpalMediaOption::Merge(option);
+
+  const OpalMediaOptionEnum * otherOption = PDownCast(const OpalMediaOptionEnum, &option);
+  if (otherOption == NULL)
+    return false;
+
+  m_value &= otherOption->m_value;
+  return true;
+}
+
+
 PObject::Comparison OpalMediaOptionEnum::CompareValue(const OpalMediaOption & option) const
 {
   const OpalMediaOptionEnum * otherOption = PDownCast(const OpalMediaOptionEnum, &option);
@@ -1846,34 +1860,36 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MinRxFrameHeightOption(),         false, OpalMediaOption::MaxMerge,    PVideoFrameInfo::SQCIFHeight,16,  32767));
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MaxRxFrameWidthOption(),          false, OpalMediaOption::MinMerge,    maxFrameWidth,               16,  32767));
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MaxRxFrameHeightOption(),         false, OpalMediaOption::MinMerge,    maxFrameHeight,              16,  32767));
-  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::TxKeyFramePeriodOption(),         false, OpalMediaOption::AlwaysMerge, 125,                         0,    1000));
-  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::RateControlPeriodOption(),        false, OpalMediaOption::AlwaysMerge, 1000,                        100, 60000));
-  AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxTxPacketSizeOption(),          true,  OpalMediaOption::AlwaysMerge, PluginCodec_RTP_MaxPayloadSize, 100    ));
-  AddOption(new OpalMediaOptionString  (OpalVideoFormat::RateControllerOption(),           false                                                                       ));
-  AddOption(new OpalMediaOptionBoolean (OpalVideoFormat::FreezeUntilIntraFrameOption(),    false, OpalMediaOption::NoMerge,     false                                  ));
-  AddOption(new OpalMediaOptionEnum    (OpalVideoFormat::RTCPFeedbackOption(),             false, OpalVideoFormat::RTCPFeedback().Names(), P_MAX_INDEX,
-                                     OpalMediaOption::IntersectionMerge, OpalVideoFormat::e_PLI|OpalVideoFormat::e_FIR|OpalVideoFormat::e_TMMBR|OpalVideoFormat::e_TSTR));
+  if (rtpPayloadType < RTP_DataFrame::LastKnownPayloadType || encodingName != NULL) {
+    AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::TxKeyFramePeriodOption(),         false, OpalMediaOption::AlwaysMerge, 125,                         0,    1000));
+    AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::RateControlPeriodOption(),        false, OpalMediaOption::AlwaysMerge, 1000,                        100, 60000));
+    AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxTxPacketSizeOption(),          true,  OpalMediaOption::AlwaysMerge, PluginCodec_RTP_MaxPayloadSize, 100    ));
+    AddOption(new OpalMediaOptionString  (OpalVideoFormat::RateControllerOption(),           false                                                                       ));
+    AddOption(new OpalMediaOptionBoolean (OpalVideoFormat::FreezeUntilIntraFrameOption(),    false, OpalMediaOption::NoMerge,     false                                  ));
+    AddOption(new OpalMediaOptionEnum    (OpalVideoFormat::RTCPFeedbackOption(),             false, OpalVideoFormat::RTCPFeedback().Names(), P_MAX_INDEX,
+                                          OpalMediaOption::IntersectionMerge, OpalVideoFormat::e_PLI|OpalVideoFormat::e_FIR|OpalVideoFormat::e_TMMBR|OpalVideoFormat::e_TSTR));
 #if OPAL_SIP
-  AddOption(new OpalMediaOptionEnum    (OpalVideoFormat::UseImageAttributeInSDP(),         false,
-                                            OpalVideoFormat::PEnumNames_ImageAttributeInSDP::Names(), OpalVideoFormat::NumImageAttributeInSDP,
-                                            OpalMediaOption::AlwaysMerge, OpalVideoFormat::ImageAddrOffered));
+    AddOption(new OpalMediaOptionEnum    (OpalVideoFormat::UseImageAttributeInSDP(),         false,
+                                          OpalVideoFormat::PEnumNames_ImageAttributeInSDP::Names(), OpalVideoFormat::NumImageAttributeInSDP,
+                                          OpalMediaOption::AlwaysMerge, OpalVideoFormat::ImageAddrOffered));
 #endif
 
-  static const char * const RoleEnumerations[OpalVideoFormat::EndContentRole] = {
-    "No Role",
-    "Presentation",
-    "Main",
-    "Speaker",
-    "Sign Language"
-  };
-  AddOption(new OpalMediaOptionEnum(OpalVideoFormat::ContentRoleOption(), false,
-                                    RoleEnumerations, PARRAYSIZE(RoleEnumerations),
-                                    OpalMediaOption::AlwaysMerge));
+    static const char * const RoleEnumerations[OpalVideoFormat::EndContentRole] = {
+      "No Role",
+      "Presentation",
+      "Main",
+      "Speaker",
+      "Sign Language"
+    };
+    AddOption(new OpalMediaOptionEnum(OpalVideoFormat::ContentRoleOption(), false,
+                                      RoleEnumerations, PARRAYSIZE(RoleEnumerations),
+                                      OpalMediaOption::AlwaysMerge));
 
-  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::ContentRoleMaskOption(),
-                                        false, OpalMediaOption::IntersectionMerge,
-                                        OpalVideoFormat::ContentRoleMask,
-                                        0, OpalVideoFormat::ContentRoleMask));
+    AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::ContentRoleMaskOption(),
+                                          false, OpalMediaOption::IntersectionMerge,
+                                          OpalVideoFormat::ContentRoleMask,
+                                          0, OpalVideoFormat::ContentRoleMask));
+  }
 
   // For video the max bit rate and frame rate is adjustable by user
   FindOption(OpalVideoFormat::MaxBitRateOption())->SetReadOnly(false);
