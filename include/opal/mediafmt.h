@@ -611,6 +611,7 @@ class OpalMediaOptionEnum : public OpalMediaOption
     virtual void PrintOn(ostream & strm) const;
     virtual void ReadFrom(istream & strm);
 
+    virtual bool Merge(const OpalMediaOption & option);
     virtual Comparison CompareValue(const OpalMediaOption & option) const;
     virtual void Assign(const OpalMediaOption & option);
 
