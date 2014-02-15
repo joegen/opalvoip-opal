@@ -1734,7 +1734,7 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
 
   OpalManager & manager = m_connection.GetEndPoint().GetManager();
 
-#if P_NAT
+#if OPAL_PTLIB_NAT
   PNatMethod * natMethod = manager.GetNatMethods().GetMethod(bindingAddress, this);
   if (natMethod != NULL) {
     PTRACE(4, "RTP\tNAT Method " << natMethod->GetMethodName() << " selected for call.");
@@ -1795,7 +1795,7 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
         break;
     }
   }
-#endif
+#endif // OPAL_PTLIB_NAT
 
   if (m_dataSocket == NULL) {
     m_dataSocket = new PUDPSocket();

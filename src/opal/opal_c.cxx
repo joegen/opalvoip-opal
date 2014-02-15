@@ -1381,7 +1381,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     }
   }
 
-#if P_NAT
+#if OPAL_PTLIB_NAT
   {
     PStringStream natMethods;
     PStringStream natServers;
@@ -1429,7 +1429,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
       }
     }
   }
-#endif // P_NAT
+#endif // OPAL_PTLIB_NAT
 
   response->m_param.m_general.m_tcpPortBase = GetTCPPortBase();
   response->m_param.m_general.m_tcpPortMax = GetTCPPortMax();
