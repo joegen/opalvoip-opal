@@ -1651,19 +1651,51 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
        << right << setw(TitleWidth) << "Encoding Name" << left << "       = " << rtpEncodingName << '\n';
   for (i = 0; i < options.GetSize(); i++) {
     const OpalMediaOption & option = options[i];
+#if OPAL_H323
+    const OpalMediaOption::H245GenericInfo & genericInfo = option.GetH245Generic();
+#endif // OPAL_H323
+
     strm << right << setw(TitleWidth) << option.GetName() << " (R/" << (option.IsReadOnly() ? 'O' : 'W')
-         << ") = " << left << setw(10) << option;
+         << ") = " << left << setw(20) << option << ' ' << setw(14);
+
+    // Show the type of the option: Boolean, Unsigned, String, etc.
+    if (PIsDescendant(&option, OpalMediaOptionBoolean))
+      strm << "Boolean";
+    else if (PIsDescendant(&option, OpalMediaOptionUnsigned))
+#if OPAL_H323
+      switch (genericInfo.integerType) {
+        default :
+        case OpalMediaOption::H245GenericInfo::UnsignedInt :
+          strm << "UnsignedInt";
+          break;
+        case OpalMediaOption::H245GenericInfo::Unsigned32 :
+          strm << "Unsigned32";
+          break;
+        case OpalMediaOption::H245GenericInfo::BooleanArray :
+          strm << "BooleanArray";
+          break;
+      }
+#else
+      strm << "UnsignedInt";
+#endif // OPAL_H323
+    else if (PIsDescendant(&option, OpalMediaOptionOctets))
+      strm << "OctetString";
+    else if (PIsDescendant(&option, OpalMediaOptionString))
+      strm << "String";
+    else if (PIsDescendant(&option, OpalMediaOptionEnum))
+      strm << "Enum";
+    else
+      strm << "Unknown";
 
 #if OPAL_SIP
     if (!option.GetFMTPName().IsEmpty())
-      strm << "  FMTP name: " << option.GetFMTPName() << " (" << option.GetFMTPDefault() << ')';
+      strm << " FMTP name: " << option.GetFMTPName() << " (" << option.GetFMTPDefault() << ')';
 #endif // OPAL_SIP
 
 #if OPAL_H323
-    const OpalMediaOption::H245GenericInfo & genericInfo = option.GetH245Generic();
     if (genericInfo.mode != OpalMediaOption::H245GenericInfo::None) {
-      strm << "  H.245 Ordinal: " << genericInfo.ordinal
-           << ' ' << (genericInfo.mode == OpalMediaOption::H245GenericInfo::Collapsing ? "Collapsing" : "Non-Collapsing");
+      strm << " H.245 Ordinal: " << setw(2) << genericInfo.ordinal
+        << ' ' << (genericInfo.mode == OpalMediaOption::H245GenericInfo::Collapsing ? "Collapsing" : "Non-Collapsing");
       if (!genericInfo.excludeTCS)
         strm << " TCS";
       if (!genericInfo.excludeOLC)
@@ -1672,35 +1704,6 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
         strm << " RM";
     }
 #endif // OPAL_H323
-
-    // Show the type of the option: Boolean, Unsigned, String, etc.
-    if (PIsDescendant(&option, OpalMediaOptionBoolean))
-      strm << " Boolean";
-    else if (PIsDescendant(&option, OpalMediaOptionUnsigned))
-#if OPAL_H323
-      switch (genericInfo.integerType) {
-        default :
-        case OpalMediaOption::H245GenericInfo::UnsignedInt :
-          strm << " UnsignedInt";
-          break;
-        case OpalMediaOption::H245GenericInfo::Unsigned32 :
-          strm << " Unsigned32";
-          break;
-        case OpalMediaOption::H245GenericInfo::BooleanArray :
-          strm << " BooleanArray";
-          break;
-      }
-#else
-      strm << " UnsignedInt";
-#endif // OPAL_H323
-    else if (PIsDescendant(&option, OpalMediaOptionOctets))
-      strm << " OctetString";
-    else if (PIsDescendant(&option, OpalMediaOptionString))
-      strm << " String";
-    else if (PIsDescendant(&option, OpalMediaOptionEnum))
-      strm << " Enum";
-    else
-      strm << " Unknown";
 
     strm << '\n';
   }
