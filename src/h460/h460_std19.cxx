@@ -454,6 +454,12 @@ H46019UDPSocket::~H46019UDPSocket()
 }
 
 
+const char * H46019UDPSocket::GetNatName() const
+{
+  return PPlugin_PNatMethod_H46019().GetFriendlyName();
+}
+
+
 RTP_DataFrame::PayloadTypes H46019UDPSocket::FindKeepAlivePayloadType(H323Connection & connection)
 {
   if (m_keepAlivePayloadType == RTP_DataFrame::IllegalPayloadType) {
