@@ -2064,8 +2064,9 @@ void SDPVideoMediaDescription::Format::SetMediaFormatOptions(OpalMediaFormat & m
   SDPMediaFormat::SetMediaFormatOptions(mediaFormat);
 
   // Save the RTCP feedback (RFC4585) capability.
-  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb || !m_parent.GetOptionStrings().GetBoolean(OPAL_OPT_FORCE_RTCP_FB))
-    mediaFormat.SetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), m_rtcp_fb);
+  if (!m_parent.GetOptionStrings().GetBoolean(OPAL_OPT_FORCE_RTCP_FB))
+    mediaFormat.SetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(),
+                m_rtcp_fb * mediaFormat.GetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), OpalVideoFormat::e_NoRTCPFb));
 
   if (mediaFormat.GetOptionEnum(OpalVideoFormat::UseImageAttributeInSDP(), OpalVideoFormat::ImageAttrSuppressed) != OpalVideoFormat::ImageAttrSuppressed) {
     bool ok = false;
