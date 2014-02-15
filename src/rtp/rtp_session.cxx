@@ -2322,19 +2322,23 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveRedundantData(RTP_Dat
 {
   const BYTE * payload = frame.GetPayloadPtr();
   PINDEX size = frame.GetPayloadSize();
+
   while (size >= 4 && (*payload & 0x80) != 0) {
     PINDEX len = (((payload[2] & 3) << 8) | payload[3]) + 4;
     if (len >= size) {
-      PTRACE(2, "RTP_UDP\tSession " << m_sessionId << " redundant packet too small");
+      PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", redundant packet too small");
       return e_IgnorePacket;
     }
-    // ProcessRedundantData(packet+4, len-4);
+    if (ProcessRedundantData((RTP_DataFrame::PayloadTypes)(payload[0] & 0x7f),
+                             frame.GetTimestamp() - (payload[1] << 6) - (payload[2] >> 2),
+                             payload + 4, len - 4) == e_AbortTransport)
+      return e_AbortTransport;
     payload += len;
     size -= len;
   }
 
   if (size <= 0) {
-    PTRACE(2, "RTP_UDP\tSession " << m_sessionId << " primary encoding block too small");
+    PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", redundant packet primary block missing");
     return e_IgnorePacket;
   }
 
@@ -2342,7 +2346,31 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveRedundantData(RTP_Dat
   frame.SetPayloadType((RTP_DataFrame::PayloadTypes)(*payload & 0x7f));
   memmove(frame.GetPayloadPtr(), ++payload, --size);
   frame.SetPayloadSize(size);
+  PTRACE(5, "RTP_UDP\tSession " << m_sessionId << ", redundant packet primary block extracted:"
+            " pt=" << frame.GetPayloadType() << ", sz=" << frame.GetPayloadSize());
   return e_ProcessPacket;
+}
+
+
+OpalRTPSession::SendReceiveStatus OpalRTPSession::ProcessRedundantData(RTP_DataFrame::PayloadTypes payloadType,
+                                                                       unsigned timestamp,
+                                                                       const BYTE * data,
+                                                                       PINDEX size)
+{
+  if (payloadType == m_ulpFecPayloadType)
+    return ProcessUlpFec(timestamp, data, size);
+
+  PTRACE(5, "RTP_UDP\tSession " << m_sessionId << ", unknown redundant block:"
+            " pt=" << payloadType << ", ts=" << timestamp << ", sz=" << size);
+  return e_IgnorePacket;
+}
+
+
+OpalRTPSession::SendReceiveStatus OpalRTPSession::ProcessUlpFec(unsigned timestamp, const BYTE * /*data*/, PINDEX size)
+{
+  PTRACE(5, "RTP_UDP\tSession " << m_sessionId << ", redundant ULP-FEC:"
+            " ts=" << timestamp << ", sz=" << size);
+  return e_IgnorePacket;
 }
 #endif // OPAL_RTP_FEC
 
