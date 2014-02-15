@@ -51,7 +51,16 @@ class OpalConnection;
 //
 class OpalMediaType;
 typedef PFactory<OpalMediaTypeDefinition, OpalMediaType> OpalMediaTypesFactory;
-typedef OpalMediaTypesFactory::KeyList_T OpalMediaTypeList;
+class OpalMediaTypeList : public OpalMediaTypesFactory::KeyList_T
+{
+  public:
+    OpalMediaTypeList() { }
+
+    OpalMediaTypeList(const OpalMediaTypesFactory::KeyList_T & list)
+      : OpalMediaTypesFactory::KeyList_T(list) { }
+
+    void PrioritiseAudioVideo();
+};
 
 
 /** Define the type used to hold the media type identifiers, i.e. "audio", "video", "h.224", "fax" etc
