@@ -435,7 +435,12 @@ bool OpalMediaOptionEnum::Merge(const OpalMediaOption & option)
   if (otherOption == NULL)
     return false;
 
-  m_value &= otherOption->m_value;
+  int newValue = m_value & otherOption->m_value;
+  if (m_value != newValue) {
+    PTRACE(4, "MediaFormat\tChanged media option \"" << m_name << "\" "
+              "from 0x" << hex << m_value << " to 0x" << newValue << dec);
+    m_value = newValue;
+  }
   return true;
 }
 
@@ -564,14 +569,14 @@ bool OpalMediaOptionString::Merge(const OpalMediaOption & option)
       mySet.RemoveAt(i);
   }
 
-  if (mySet.IsEmpty())
-    m_value.MakeEmpty();
-  else {
-    m_value = mySet[0];
-    for (i = 1; i < mySet.GetSize(); ++i)
-      m_value += ',' + mySet[i];
-  }
+  PStringStream newValue;
+  newValue << setfill(',') << mySet;
 
+  if (m_value != newValue) {
+    PTRACE(4, "MediaFormat\tChanged media option \"" << m_name << "\" "
+              "from " << m_value << " to " << newValue);
+    m_value = newValue;
+  }
   return true;
 }
 
