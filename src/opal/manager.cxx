@@ -262,7 +262,7 @@ OpalManager::OpalManager()
   , m_privateKeyFile(PProcess::Current().GetHomeDirectory() + "opal_private_key.pem")
   , m_autoCreateCertificate(true)
 #endif
-#if P_NAT
+#if OPAL_PTLIB_NAT
   , m_natMethods(new PNatMethods(true))
   , m_onInterfaceChange(PCREATE_InterfaceNotifier(OnInterfaceChange))
 #endif
@@ -302,7 +302,7 @@ OpalManager::OpalManager()
   SetAutoStartReceiveVideo(!videoOutputDevice.deviceName.IsEmpty());
 #endif
 
-#if P_NAT
+#if OPAL_PTLIB_NAT
   PInterfaceMonitor::GetInstance().AddNotifier(m_onInterfaceChange);
 #endif
 
@@ -328,7 +328,7 @@ OpalManager::~OpalManager()
   // Clean up any calls that the cleaner thread missed on the way out
   GarbageCollection();
 
-#if P_NAT
+#if OPAL_PTLIB_NAT
   PInterfaceMonitor::GetInstance().RemoveNotifier(m_onInterfaceChange);
   delete m_natMethods;
 #endif
@@ -1809,7 +1809,7 @@ bool OpalManager::ApplySSLCredentials(const OpalEndPoint & /*ep*/,
 
 PBoolean OpalManager::IsLocalAddress(const PIPSocket::Address & ip) const
 {
-#if P_NAT
+#if OPAL_PTLIB_NAT
   return m_natMethods->IsLocalAddress(ip);
 #else
   /* Check if the remote address is a private IP, broadcast, or us */
@@ -1907,7 +1907,7 @@ PBoolean OpalManager::TranslateIPAddress(PIPSocket::Address & localAddress,
   if (IsLocalAddress(remoteAddress))
     return false; // Does not need to be translated
 
-#if P_NAT
+#if OPAL_PTLIB_NAT
   PNatMethod * natMethod = m_natMethods->GetMethod(localAddress);
   if (natMethod != NULL)
     return natMethod->GetExternalAddress(localAddress); // Translate it!
@@ -1917,7 +1917,7 @@ PBoolean OpalManager::TranslateIPAddress(PIPSocket::Address & localAddress,
 }
 
 
-#if P_NAT
+#if OPAL_PTLIB_NAT
 
 bool OpalManager::SetNATServer(const PString & method, const PString & server, bool activate, unsigned priority)
 {
@@ -1943,7 +1943,7 @@ PString OpalManager::GetNATServer(const PString & method) const
   PNatMethod * natMethod = m_natMethods->GetMethodByName(method);
   return natMethod == NULL ? PString::Empty() : natMethod->GetServer();
 }
-#endif  // P_NAT
+#endif  // OPAL_PTLIB_NAT
 
 
 void OpalManager::SetTCPPorts(unsigned tcpBase, unsigned tcpMax)
@@ -1956,7 +1956,7 @@ void OpalManager::SetUDPPorts(unsigned udpBase, unsigned udpMax)
 {
   m_udpPorts.Set(udpBase, udpMax, 99, 0);
 
-#if P_NAT
+#if OPAL_PTLIB_NAT
   GetNatMethods().SetPortRanges(GetUDPPortRange().GetBase(), GetUDPPortRange().GetMax(),
                                 GetRtpIpPortRange().GetBase(), GetRtpIpPortRange().GetMax());
 #endif
@@ -1967,7 +1967,7 @@ void OpalManager::SetRtpIpPorts(unsigned rtpIpBase, unsigned rtpIpMax)
 {
   m_rtpIpPorts.Set((rtpIpBase+1)&0xfffe, rtpIpMax&0xfffe, 199, 5000);
 
-#if P_NAT
+#if OPAL_PTLIB_NAT
   GetNatMethods().SetPortRanges(GetUDPPortRange().GetBase(), GetUDPPortRange().GetMax(),
                                 GetRtpIpPortRange().GetBase(), GetRtpIpPortRange().GetMax());
 #endif
@@ -2303,7 +2303,7 @@ bool OpalManager::RunScript(const PString & script, const char * language)
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if P_NAT
+#if OPAL_PTLIB_NAT
 void OpalManager::OnInterfaceChange(PInterfaceMonitor &, PInterfaceMonitor::InterfaceChange entry)
 {
   PIPSocket::Address addr;
@@ -2319,7 +2319,7 @@ void OpalManager::OnInterfaceChange(PInterfaceMonitor &, PInterfaceMonitor::Inte
     }
   }
 }
-#endif // P_NAT
+#endif // OPAL_PTLIB_NAT
 
 
 /////////////////////////////////////////////////////////////////////////////

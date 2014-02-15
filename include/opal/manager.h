@@ -1520,7 +1520,7 @@ class OpalManager : public PObject
       const PIPSocket::Address & remoteAddress
     );
 
-#if P_NAT
+#if OPAL_PTLIB_NAT
     /** Get all NAT Methods
       */
     PNatMethods & GetNatMethods() const { return *m_natMethods; }
@@ -1539,7 +1539,7 @@ class OpalManager : public PObject
     PString GetNATServer(
       const PString & method = PString::Empty()
     ) const;
-#endif // P_NAT
+#endif // OPAL_PTLIB_NAT
 
     /**Get the TCP port number base.
      */
@@ -1995,7 +1995,7 @@ class OpalManager : public PObject
     bool      m_autoCreateCertificate;
 #endif
 
-#if P_NAT
+#if OPAL_PTLIB_NAT
     PNatMethods * m_natMethods;
     PDECLARE_InterfaceNotifier(OpalManager, OnInterfaceChange);
     PInterfaceMonitor::Notifier m_onInterfaceChange;
@@ -2051,7 +2051,7 @@ class OpalManager : public PObject
     P_REMOVE_VIRTUAL_VOID(OnMessageReceived(const PURL&,const PString&,const PURL&,const PString&,const PString&,const PString&));
     P_REMOVE_VIRTUAL_VOID(OnRTPStatistics(const OpalConnection &, const OpalRTPSession &));
     P_REMOVE_VIRTUAL(PBoolean, IsMediaBypassPossible(const OpalConnection &,const OpalConnection &,unsigned) const, false);
-#if P_NAT
+#if OPAL_PTLIB_NAT
     P_REMOVE_VIRTUAL(PNatMethod *, GetNatMethod(const PIPSocket::Address &) const, NULL);
 #endif
 };
