@@ -2894,11 +2894,22 @@ static void LogMediaStream(const char * stopStart, const OpalMediaStream & strea
   OpalMediaFormat mediaFormat = stream.GetMediaFormat();
   LogWindow << stopStart << (stream.IsSource() ? " receiving " : " sending ");
 
+#if OPAL_SRTP || OPAL_PTLIB_NAT
+  const OpalRTPMediaStream * rtpStream = dynamic_cast<const OpalRTPMediaStream *>(&stream);
+  if (rtpStream != NULL) {
 #if OPAL_SRTP
-  const OpalRTPMediaStream * rtp = dynamic_cast<const OpalRTPMediaStream *>(&stream);
-  if (rtp != NULL && rtp->GetRtpSession().IsCryptoSecured(stream.IsSource()))
-    LogWindow << "secured ";
+    if (rtpStream->GetRtpSession().IsCryptoSecured(stream.IsSource()))
+      LogWindow << "secured ";
 #endif
+
+#if OPAL_PTLIB_NAT
+    PString sockName = rtpStream->GetRtpSession().GetDataSocket().GetName();
+    sockName.Delete(sockName.Find(':'), P_MAX_INDEX);
+    if (sockName != "udp")
+      LogWindow << '(' << sockName << ") ";
+#endif
+  }
+#endif // OPAL_SRTP || OPAL_PTLIB_NAT
 
   LogWindow << mediaFormat;
 
