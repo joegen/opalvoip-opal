@@ -149,6 +149,7 @@ class OpalVideoTranscoder : public OpalTranscoder
 
     virtual bool HasErrorConcealment() const  { return m_errorConcealment; }
     bool WasLastFrameIFrame() const { return m_lastFrameWasIFrame; }
+    void ForceIFrame()              { m_forceIFrame = true; }
     virtual void SendIFrameRequest(unsigned sequenceNumber, unsigned timestamp);
     virtual bool HandleIFrameRequest();
   //@}
