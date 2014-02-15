@@ -188,6 +188,8 @@ class H46019UDPSocket : public PNATUDPSocket
 
     /**@name Functions */
     //@{
+    virtual const char * GetNatName() const { return PNatMethod_H46019::MethodName(); }
+
     /** Activate keep-alive mechanism.
     */
     void ActivateKeepAliveRTP(
