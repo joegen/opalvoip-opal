@@ -186,9 +186,10 @@ class OpalRTPSession : public OpalMediaSession
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
 #if OPAL_RTP_FEC
-    virtual SendReceiveStatus OnReceiveRedundantData(RTP_DataFrame & frame);
-    virtual SendReceiveStatus ProcessRedundantData(RTP_DataFrame::PayloadTypes payloadType, unsigned timestamp, const BYTE * data, PINDEX size);
-    virtual SendReceiveStatus ProcessUlpFec(unsigned timestamp, const BYTE * data, PINDEX size);
+    virtual SendReceiveStatus OnSendRedundantFrame(RTP_DataFrame & frame);
+    virtual SendReceiveStatus OnSendRedundantData(RTP_DataFrame::PayloadTypes & payloadType, unsigned & timestamp, BYTE * data, PINDEX & size);
+    virtual SendReceiveStatus OnReceiveRedundantFrame(RTP_DataFrame & frame);
+    virtual SendReceiveStatus OnReceiveRedundantData(RTP_DataFrame::PayloadTypes payloadType, unsigned timestamp, const BYTE * data, PINDEX size);
 #endif
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
 
