@@ -1744,7 +1744,7 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
 
 #if OPAL_PTLIB_NAT
   PNatMethod * natMethod = manager.GetNatMethods().GetMethod(bindingAddress, this);
-  if (natMethod != NULL) {
+  if (natMethod != NULL && (m_remoteBehindNAT || !manager.IsLocalAddress(m_remoteAddress))) {
     PTRACE(4, "RTP\tNAT Method " << natMethod->GetMethodName() << " selected for call.");
 
     switch (natMethod->GetRTPSupport()) {
