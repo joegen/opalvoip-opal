@@ -29,10 +29,10 @@
 PROG = ivropal
 SOURCES := main.cxx
 
-ifdef OPALDIR
-  include $(OPALDIR)/make/opal.mak
-else
-  include $(shell pkg-config opal --variable=makedir)/opal.mak
+OPAL_MAKE_DIR := $(if $(OPALDIR),$(OPALDIR)/make,$(shell pkg-config opal --variable=makedir))
+ifeq ($(OPAL_MAKE_DIR),)
+  $(error Cannot build without OPAL installed or OPALDIR set)
 endif
+include $(OPAL_MAKE_DIR)/opal.mak
 
 # End of Makefile
