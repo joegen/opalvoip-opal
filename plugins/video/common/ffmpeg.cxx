@@ -226,7 +226,7 @@ bool FFMPEGCodec::InitDecoder(AVCodecID codecId)
 
   m_picture->quality = -1;
 
-#ifdef FF_ER_AGGRESSIVE
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(53, 0, 0)
   m_context->error_recognition = FF_ER_AGGRESSIVE;
 #endif
   m_context->error_concealment = FF_EC_GUESS_MVS | FF_EC_DEBLOCK;

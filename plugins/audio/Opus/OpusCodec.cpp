@@ -304,7 +304,8 @@ class OpusPluginEncoder : public OpusPluginCodec
       }
 
       toLen = result;
-      fromLen = opus_packet_get_nb_samples((const unsigned char *)toPtr, toLen, m_sampleRate)*m_channels*2;
+      fromLen = opus_packet_get_samples_per_frame((const unsigned char *)toPtr, m_sampleRate) *
+                opus_packet_get_nb_frames((const unsigned char *)toPtr, toLen) * m_channels * 2;
       return true;
     }
 };
