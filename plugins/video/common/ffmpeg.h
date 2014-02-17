@@ -65,7 +65,7 @@ extern "C" {
   #include "libavformat/avformat.h"
 #endif
 
-#if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52, 123, 0)
+#if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(53, 35, 0)
   typedef CodecID AVCodecID;
 #endif
 
