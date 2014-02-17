@@ -41,10 +41,16 @@ PLUGIN_ACLOCAL_M4 := $(TOP_LEVEL_DIR)/plugins/aclocal.m4
 
 
 ifdef PTLIBDIR
-  include $(PTLIBDIR)/make/autoconf.mak
+  PTLIB_MAKE_DIR := $(PTLIBDIR)/make
 else
-  include $(shell pkg-config ptlib --variable=makedir)/autoconf.mak
+  PTLIB_MAKE_DIR := $(shell pkg-config ptlib --variable=makedir)
 endif
+
+ifeq ($(PTLIB_MAKE_DIR),)
+  $(error Must have PTLib installed or set PTLIBDIR)
+endif
+
+include $(PTLIB_MAKE_DIR)/autoconf.mak
 
 
 ifeq ($(AUTOCONF_AVAILABLE),yes)
