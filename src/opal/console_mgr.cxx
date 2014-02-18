@@ -138,7 +138,8 @@ bool OpalRTPConsoleEndPoint::Initialise(PArgList & args, ostream & output, bool 
 
   m_endpoint.SetDefaultStringOptions(args.GetOptionString(m_endpoint.GetPrefixName() + "-option"));
 
-  if (!m_endpoint.StartListeners(args.GetOptionString(m_endpoint.GetPrefixName()).Lines())) {
+  PStringArray interfaces = args.GetOptionString(m_endpoint.GetPrefixName()).Lines();
+  if ((m_endpoint.GetListeners().IsEmpty() || !interfaces.IsEmpty()) && !m_endpoint.StartListeners(interfaces)) {
     output << "Could not start listeners for " << m_endpoint.GetPrefixName() << endl;
     return false;
   }
