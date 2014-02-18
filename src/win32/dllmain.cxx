@@ -40,9 +40,15 @@
 #include <opal/recording.h>
 
 
+#if OPAL_JAVA
+  // Include symbol hook so links in all the SWIG interface.
+  extern int opal_java_swig_wrapper_link;
+  static int const * const force_java_swig_wrapper_link = &opal_java_swig_wrapper_link;
+#endif
+
 #if OPAL_RUBY
-extern "C" void Init_opal();
-static void (*dummy)() = Init_opal;
+  extern "C" void Init_opal();
+  static void (*dummy)() = Init_opal;
 #endif
 
 
