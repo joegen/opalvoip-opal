@@ -5,6 +5,7 @@
   %{
     /* Includes the header in the wrapper code */
     #include "opal.h"
+    int opal_csharp_swig_wrapper_link;
   %}
 
   %include "typemaps.i"
