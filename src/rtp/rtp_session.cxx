@@ -2141,7 +2141,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr,
       return e_IgnorePacket;
 
     default:
-      PTRACE(1, "RTP_UDP\tSession " << m_sessionId << ", " << channelName
+      PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", " << channelName
              << " read error (" << socket.GetErrorNumber(PChannel::LastReadError) << "): "
              << socket.GetErrorText(PChannel::LastReadError));
       m_connection.OnMediaFailed(m_sessionId, true);
