@@ -80,6 +80,7 @@ static const char ProductVersionKey[] = "Product Version";
 
 #if OPAL_SKINNY
 static const char SkinnyServerKey[] = "SCCP Server";
+static const char SkinnyTypeKey[] = "SCCP Device Type";
 static const char SkinnyNamesKey[] = "SCCP Device Names";
 #endif
 
@@ -482,6 +483,10 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 {
   PINDEX arraySize;
 
+  // Make sure all endpoints created
+  for (PINDEX i = 0; i < m_endpointPrefixes.GetSize(); ++i)
+    GetConsoleEndPoint(m_endpointPrefixes[i]);
+
   PString defaultSection = cfg.GetDefaultSection();
 
 #if P_CLI && P_TELNET
@@ -600,8 +605,9 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
   {
     OpalSkinnyEndPoint * ep = FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY);
     PString server = rsrc->AddStringField(SkinnyServerKey, 20, PString::Empty(), "Server for Skinny Client Control Protocol");
+    unsigned deviceType = rsrc->AddIntegerField(SkinnyTypeKey, 1, 32767, OpalSkinnyEndPoint::DefaultDeviceType, "Device type for Skinny Client Control Protocol");
     PStringArray names = ep->GetPhoneDeviceNames();
-    names = rsrc->AddStringArrayField(SkinnyNamesKey, false, 30, names, "Max Streams for Skinny Client Control Protocol");
+    names = rsrc->AddStringArrayField(SkinnyNamesKey, false, 30, names, "Device names for Skinny Client Control Protocol");
     if (!server.IsEmpty()) {
       for (PINDEX i = 0; i < names.GetSize(); ++i) {
         PString name = names[i];
@@ -620,7 +626,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
           }
         }
         else {
-          if (!ep->Register(server, name)) {
+          if (!ep->Register(server, name, deviceType)) {
             PSYSTEMLOG(Error, "Could not register " << name << " with skinny server \"" << server << '"');
           }
         }
