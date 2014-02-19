@@ -1010,7 +1010,7 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
       return false;
     }
 
-    H323TransportAddress gkAddr = address;
+    H323TransportAddress gkAddr(url.GetHostName(), url.GetPort(), OpalTransportAddress::UdpPrefix());
     PTRACE(3, "H323\tLooking for \"" << alias << "\" on gatekeeper at " << gkAddr);
 
     H323Gatekeeper * gk = CreateGatekeeper(new H323TransportUDP(*this));
