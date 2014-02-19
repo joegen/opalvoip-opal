@@ -605,7 +605,8 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
   {
     OpalSkinnyEndPoint * ep = FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY);
     PString server = rsrc->AddStringField(SkinnyServerKey, 20, PString::Empty(), "Server for Skinny Client Control Protocol");
-    unsigned deviceType = rsrc->AddIntegerField(SkinnyTypeKey, 1, 32767, OpalSkinnyEndPoint::DefaultDeviceType, "Device type for Skinny Client Control Protocol");
+    unsigned deviceType = rsrc->AddIntegerField(SkinnyTypeKey, 1, 32767, OpalSkinnyEndPoint::DefaultDeviceType,
+                          "", "Device type for Skinny Client Control Protocol. Default 30016 = Cisco IP Communicator.");
     PStringArray names = ep->GetPhoneDeviceNames();
     names = rsrc->AddStringArrayField(SkinnyNamesKey, false, 30, names, "Device names for Skinny Client Control Protocol");
     if (!server.IsEmpty()) {
