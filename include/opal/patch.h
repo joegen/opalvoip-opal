@@ -219,7 +219,8 @@ class OpalMediaPatch : public PSafeObject
        @return true if bypass was set, false if conflict with another bypass.
       */
     bool SetBypassPatch(
-      const OpalMediaPatchPtr & patch
+      const OpalMediaPatchPtr & patch,
+      bool closing = false
     );
 
     bool IsBypassed() const { return m_bypassToPatch != NULL || m_bypassFromPatch != NULL; }

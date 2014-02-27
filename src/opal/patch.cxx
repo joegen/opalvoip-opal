@@ -123,9 +123,9 @@ void OpalMediaPatch::Close()
     return;
 
   if (m_bypassFromPatch != NULL)
-    m_bypassFromPatch->SetBypassPatch(NULL);
+    m_bypassFromPatch->SetBypassPatch(NULL, true);
   else
-    SetBypassPatch(NULL);
+    SetBypassPatch(NULL, true);
 
   filters.RemoveAll();
   if (source.GetPatch() == this)
@@ -751,7 +751,7 @@ void OpalMediaPatch::Main()
 }
 
 
-bool OpalMediaPatch::SetBypassPatch(const OpalMediaPatchPtr & patch)
+bool OpalMediaPatch::SetBypassPatch(const OpalMediaPatchPtr & patch, bool closing)
 {
   PSafeLockReadWrite mutex(*this);
 
@@ -779,6 +779,9 @@ bool OpalMediaPatch::SetBypassPatch(const OpalMediaPatchPtr & patch)
   }
 
   m_bypassToPatch = patch;
+
+  if (closing)
+    return true;
 
 #if OPAL_VIDEO
   OpalMediaFormat format = source.GetMediaFormat();
