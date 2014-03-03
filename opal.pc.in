@@ -17,7 +17,7 @@ objdir=obj/@target@${suffix}
 
 cppflags=-I${includedir} @CPPFLAGS@
 cxxflags=-I${includedir} @CPPFLAGS@ @CXXFLAGS@
-Cflags: -I${includedir} @CPPFLAGS@ @CFLAGS@
+Cflags: -I${includedir}/opal @CPPFLAGS@ @CFLAGS@
 Libs: @LDFLAGS@ -L${libdir} -lopal${suffix} @LIBS@
 
 #Optional OPAL features
