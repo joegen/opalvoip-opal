@@ -57,6 +57,12 @@
 #include "rfc2190.h"
 #include "rfc2429.h"
 
+#if defined(_WIN32) || defined(_WIN32_WCE)
+  #define STRCMPI  _strcmpi
+#else
+  #define STRCMPI  strcasecmp
+#endif
+
 
 /////////////////////////////////////////////////////////////////////////////
 

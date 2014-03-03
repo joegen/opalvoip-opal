@@ -43,6 +43,10 @@
 #include <stdio.h>
 #include <iomanip>
 
+#ifndef PLUGIN_CODEC_DLL_EXPORTS
+#include "plugin_config.h"
+#endif
+
 
 #if PLUGINCODEC_TRACING
 static void logCallbackFFMPEG(void * avcl, int severity, const char* fmt , va_list arg)
