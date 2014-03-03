@@ -518,7 +518,7 @@ INCSUBDIRS:=asn codec ep h323 h460 h224 iax2 im lids opal rtp sip t120 t38
 install:
 	for dir in $(DESTDIR)$(libdir) \
 	           $(DESTDIR)$(libdir)/pkgconfig \
-		   $(DESTDIR)$(includedir) \
+		   $(DESTDIR)$(includedir)/opal \
                    $(DESTDIR)$(datarootdir)/opal/make ; \
 	do \
 	    $(MKDIR_P) $$dir ; \
@@ -540,12 +540,12 @@ install:
 	   $(LN_S) -f $(notdir $(OPAL_DEBUG_SHARED_FILE)) $(notdir $(OPAL_DEBUG_SHARED_LINK)) ; \
 	fi
 	$(INSTALL) -m 644 make/*.mak $(DESTDIR)$(datarootdir)/opal/make
-	$(INSTALL) -m 644 include/*.h $(DESTDIR)$(includedir)
+	$(INSTALL) -m 644 include/*.h $(DESTDIR)$(includedir)/opal
 	for dir in $(INCSUBDIRS); \
 	do \
-	   $(MKDIR_P) $(DESTDIR)$(includedir)/$$dir ; \
-	   chmod 755 $(DESTDIR)$(includedir)/$$dir ; \
-	   $(INSTALL) -m 644 include/$$dir/*.h $(DESTDIR)$(includedir)/$$dir ; \
+	   $(MKDIR_P) $(DESTDIR)$(includedir)/opal/$$dir ; \
+	   chmod 755 $(DESTDIR)$(includedir)/opal/$$dir ; \
+	   $(INSTALL) -m 644 include/$$dir/*.h $(DESTDIR)$(includedir)/opal/$$dir ; \
 	done
 	$(INSTALL) -m 644 opal.pc $(DESTDIR)$(libdir)/pkgconfig
 ifeq ($(OPAL_PLUGINS),yes)
