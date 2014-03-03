@@ -204,6 +204,7 @@ MY_MODULE_OPTION(
       [avutil_version()],
       [
          HAVE_LIBAVCODEC=yes
+         LIBAVCODEC_LIBS="$LIBAVCODEC_LIBS -lavutil"
       ],
       [HAVE_LIBAVCODEC=no]
    )],
