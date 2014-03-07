@@ -457,10 +457,12 @@ OpalMediaFormatList OpalTranscoder::GetPossibleFormats(const OpalMediaFormatList
 {
   OpalMediaFormatList possibleFormats;
 
-  // Run through the formats connection can do directly and calculate all of
-  // the possible formats, including ones via a transcoder
-  for (OpalMediaFormatList::const_iterator f = formats.begin(); f != formats.end(); ++f) {
+  // Start possible formats with the formats connection can do directly
+  for (OpalMediaFormatList::const_iterator f = formats.begin(); f != formats.end(); ++f)
     possibleFormats += *f;
+
+  // Now calculate all of the possible formats via a transcoder
+  for (OpalMediaFormatList::const_iterator f = formats.begin(); f != formats.end(); ++f) {
     OpalMediaFormatList srcFormats = GetSourceFormats(*f);
     for (OpalMediaFormatList::iterator s = srcFormats.begin(); s != srcFormats.end(); ++s) {
       OpalMediaFormatList dstFormats = GetDestinationFormats(*s);
