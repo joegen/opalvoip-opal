@@ -148,6 +148,9 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
 
 H323EndPoint::~H323EndPoint()
 {
+#if OPAL_H460
+  delete m_features;
+#endif
 }
 
 

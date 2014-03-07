@@ -962,6 +962,8 @@ void H460_FeatureSet::LoadFeatureSet(H323Connection * con)
 
     if (feature->Initialise(m_endpoint, con))
       AddFeature(feature);
+    else
+      delete feature;
   }
 }
 
