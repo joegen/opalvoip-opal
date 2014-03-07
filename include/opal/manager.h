@@ -1542,7 +1542,8 @@ class OpalManager : public PObject
 
     // Backward compatibility
     void SetTranslationAddress(const PString & addr) { SetNATServer("Fixed", addr); }
-    void SetSTUNServer(const PString & addr) { SetNATServer("STUN", addr); }
+    PNatMethod::NatTypes SetSTUNServer(const PString & addr)
+	{ return SetNATServer("STUN", addr) ? GetNatMethods().GetMethodByName("STUN")->GetNatType() : PNatMethod::UnknownNat; }
 #endif // OPAL_PTLIB_NAT
 
     /**Get the TCP port number base.
