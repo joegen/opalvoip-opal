@@ -1539,6 +1539,10 @@ class OpalManager : public PObject
     PString GetNATServer(
       const PString & method = PString::Empty()
     ) const;
+
+    // Backward compatibility
+    void SetTranslationAddress(const PString & addr) { SetNATServer("Fixed", addr); }
+    void SetSTUNServer(const PString & addr) { SetNATServer("STUN", addr); }
 #endif // OPAL_PTLIB_NAT
 
     /**Get the TCP port number base.
