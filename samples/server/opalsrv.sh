@@ -7,7 +7,7 @@ NAME=opalsrv
 INFO_DIR=$HOME/.opalsrv
 ARGS="--pid-file $INFO_DIR/${NAME}.pid --ini-file $INFO_DIR/${NAME}.ini --log-file $INFO_DIR/${NAME}.log"
 
-PROG=`ls $SRC_DIR/obj*[^d]/$NAME | head -1`
+PROG=`ls $SRC_DIR/obj*[!d]/$NAME | head -1`
 if [ ! -x $PROG ]; then
   echo "No executable found"
   exit 1
@@ -36,8 +36,13 @@ case $1 in
     exit 0
   ;;
 
+  tail )
+    tail -f $INFO_DIR/${NAME}.log
+    exit 0
+  ;;
+
   *)
-    echo "usage: $0 start | stop | status"
+    echo "usage: $0 start | stop | status | log | tail | debug"
     exit 1
   ;;
 esac
