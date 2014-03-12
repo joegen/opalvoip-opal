@@ -2894,38 +2894,37 @@ static void LogMediaStream(const char * stopStart, const OpalMediaStream & strea
   OpalMediaFormat mediaFormat = stream.GetMediaFormat();
   LogWindow << stopStart << (stream.IsSource() ? " receiving " : " sending ");
 
-#if OPAL_SRTP || OPAL_PTLIB_NAT
+#if OPAL_PTLIB_NAT || OPAL_SRTP || OPAL_RTP_FEC
   bool outputSomething = false;
   const OpalRTPMediaStream * rtpStream = dynamic_cast<const OpalRTPMediaStream *>(&stream);
   if (rtpStream != NULL) {
-#if OPAL_SRTP
-    if (rtpStream->GetRtpSession().IsCryptoSecured(stream.IsSource())) {
-      if (!outputSomething)
-        LogWindow << '(';
-      LogWindow << "secured";
-      outputSomething = true;
-    }
-#endif
 
 #if OPAL_PTLIB_NAT
     PString sockName = rtpStream->GetRtpSession().GetDataSocket().GetName();
-    sockName.Delete(sockName.Find(':'), P_MAX_INDEX);
-    if (sockName != "udp") {
-      LogWindow << (outputSomething ? ", " : "(") << sockName;
+    if (sockName.NumCompare("udp") != PObject::EqualTo) {
+      LogWindow << '(' << sockName.Left(sockName.Find(':'));
       outputSomething = true;
     }
-#endif
+#endif // OPAL_PTLIB_NAT
+
+#if OPAL_SRTP
+    if (rtpStream->GetRtpSession().IsCryptoSecured(stream.IsSource())) {
+      LogWindow << (outputSomething ? ", " : "(") << "secured";
+      outputSomething = true;
+    }
+#endif // OPAL_SRTP
 
 #if OPAL_RTP_FEC
     if (rtpStream->GetRtpSession().GetUlpFecPayloadType() != RTP_DataFrame::IllegalPayloadType) {
-      LogWindow << (outputSomething ? ", " : "(") << "FEC";
+      LogWindow << (outputSomething ? ", " : "(") << "error correction";
       outputSomething = true;
     }
-#endif
+#endif // OPAL_RTP_FEC
+
     if (outputSomething)
       LogWindow << ") ";
   }
-#endif // OPAL_SRTP || OPAL_PTLIB_NAT
+#endif // OPAL_PTLIB_NAT || OPAL_SRTP || OPAL_RTP_FEC
 
   LogWindow << mediaFormat;
 

@@ -883,7 +883,7 @@ PNatMethod * H460_Feature::GetNatMethod(const char * methodName) const
 H460_Feature * H460_Feature::FromContext(PObject * context, const H460_FeatureID & id)
 {
   if (context == NULL) {
-    PTRACE(5, context, "Not available without context");
+    PTRACE(5, context, "Feature " << id << " not available without context");
     return NULL;
   }
 
@@ -897,7 +897,7 @@ H460_Feature * H460_Feature::FromContext(PObject * context, const H460_FeatureID
     if (connection == NULL) {
       OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(context);
       if (session == NULL) {
-        PTRACE(4, context, "Not available without OpalRTPSession as context");
+        PTRACE(4, context, "Feature " << id << " not available without OpalRTPSession as context");
         return NULL;
       }
 
@@ -905,7 +905,7 @@ H460_Feature * H460_Feature::FromContext(PObject * context, const H460_FeatureID
     }
 
     if (connection == NULL) {
-      PTRACE(4, context, "Not available without H323Connection");
+      PTRACE(4, context, "Feature " << id << " not available without H323Connection");
       return NULL;
     }
 
@@ -913,13 +913,13 @@ H460_Feature * H460_Feature::FromContext(PObject * context, const H460_FeatureID
   }
 
   if (featureSet == NULL) {
-    PTRACE(4, context, "Not available without feature set");
+    PTRACE(4, context, "Feature " << id << " not available without feature set");
     return NULL;
   }
 
   H460_Feature * feature = featureSet->GetFeature(id);
   if (feature == NULL) {
-    PTRACE(4, context, "Not available without feature in set");
+    PTRACE(4, context, "Feature " << id << " not available in feature set");
     return NULL;
   }
 
@@ -962,6 +962,8 @@ void H460_FeatureSet::LoadFeatureSet(H323Connection * con)
 
     if (feature->Initialise(m_endpoint, con))
       AddFeature(feature);
+    else
+      delete feature;
   }
 }
 

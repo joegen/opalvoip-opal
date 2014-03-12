@@ -46,6 +46,12 @@
   static int const * const force_java_swig_wrapper_link = &opal_java_swig_wrapper_link;
 #endif
 
+#if OPAL_CSHARP
+  // Include symbol hook so links in all the SWIG interface.
+  extern int opal_csharp_swig_wrapper_link;
+  static int const * const force_csharp_swig_wrapper_link = &opal_csharp_swig_wrapper_link;
+#endif
+
 #if OPAL_RUBY
   extern "C" void Init_opal();
   static void (*dummy)() = Init_opal;

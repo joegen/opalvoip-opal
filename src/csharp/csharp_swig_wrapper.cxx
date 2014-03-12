@@ -282,6 +282,7 @@ SWIGEXPORT void SWIGSTDCALL SWIGRegisterStringCallback_OPAL(SWIG_CSharpStringHel
 
     /* Includes the header in the wrapper code */
     #include "opal.h"
+    int opal_csharp_swig_wrapper_link;
   
 
 #ifdef __cplusplus
