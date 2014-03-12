@@ -1823,6 +1823,22 @@ const PString & OpalVideoFormat::UseImageAttributeInSDP()         { static const
 #endif
 
 
+OpalVideoFormat::OpalVideoFormat(OpalVideoFormatInternal * info)
+  : OpalMediaFormat(info)
+{
+}
+
+
+OpalVideoFormat & OpalVideoFormat::operator=(const OpalMediaFormat & other)
+{
+  if (dynamic_cast<OpalVideoFormatInternal *>(other.m_info) != NULL)
+    OpalMediaFormat::operator=(other);
+  else
+    OpalMediaFormat::operator=(OpalMediaFormat());
+  return *this;
+}
+
+
 OpalVideoFormat::OpalVideoFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
                                  const char * encodingName,
@@ -1935,6 +1951,103 @@ void OpalMediaFormat::AdjustVideoArgs(PVideoDevice::OpenArgs & args) const
   unsigned maxRate = GetClockRate()/GetFrameTime();
   if (args.rate > maxRate)
     args.rate = maxRate;
+}
+
+
+OpalVideoFormat::VideoFrameType OpalVideoFormat::GetVideoFrameType(const BYTE * payloadPtr, PINDEX payloadSize, PBYTEArray & context) const
+{
+  PWaitAndSignal m(m_mutex);
+  return m_info == NULL ? e_UnknownFrameType : dynamic_cast<OpalVideoFormatInternal *>(m_info)->GetVideoFrameType(payloadPtr, payloadSize, context);
+}
+
+
+// This should really do the key frame detection from the codec plugin, but we cheat for now
+struct OpalKeyFrameDetector
+{
+  virtual ~OpalKeyFrameDetector() { }
+  virtual OpalVideoFormat::VideoFrameType GetVideoFrameType(const BYTE * rtp, PINDEX size) = 0;
+} * kfd = NULL;
+
+
+struct OpalKeyFrameDetectorVP8 : OpalKeyFrameDetector
+{
+  virtual OpalVideoFormat::VideoFrameType GetVideoFrameType(const BYTE * rtp, PINDEX size)
+  {
+    if (size < 3)
+      return OpalVideoFormat::e_NonFrameBoundary;
+
+    PINDEX headerSize = 1;
+    if ((rtp[0]&0x80) != 0) { // Check X bit
+      ++headerSize;           // Allow for X byte
+
+      if ((rtp[1]&0x80) != 0) { // Check I bit
+        ++headerSize;           // Allow for I field
+        if ((rtp[2]&0x80) != 0) // > 7 bit picture ID
+          ++headerSize;         // Allow for extra bits of I field
+      }
+
+      if ((rtp[1]&0x40) != 0) // Check L bit
+        ++headerSize;         // Allow for L byte
+
+      if ((rtp[1]&0x30) != 0) // Check T or K bit
+        ++headerSize;         // Allow for T/K byte
+    }
+
+    if (size <= headerSize)
+      return OpalVideoFormat::e_NonFrameBoundary;
+
+    // Key frame is S bit == 1 && P bit == 0
+    if ((rtp[0]&0x10) == 0)
+      return OpalVideoFormat::e_NonFrameBoundary;
+
+    return (rtp[headerSize]&0x01) == 0 ? OpalVideoFormat::e_IntraFrame : OpalVideoFormat::e_InterFrame;
+  }
+};
+
+
+struct OpalKeyFrameDetectorH264 : OpalKeyFrameDetector
+{
+  virtual OpalVideoFormat::VideoFrameType GetVideoFrameType(const BYTE * rtp, PINDEX size)
+  {
+    if (size > 2) {
+      switch ((*rtp++) & 0x1f) {
+        case 1 : 
+        case 2 :
+          if ((*rtp & 0x80) != 0)
+            return OpalVideoFormat::e_InterFrame;
+          break;
+
+        case 5 : // IDR slice
+          if ((*rtp & 0x80) != 0)
+            return OpalVideoFormat::e_IntraFrame;
+          break;
+
+        case 28 : // Fragment
+          if ((*rtp & 0x80) != 0)
+            return GetVideoFrameType(rtp, size-1);
+      }
+    }
+    return OpalVideoFormat::e_NonFrameBoundary;
+  }
+};
+
+
+OpalVideoFormat::VideoFrameType OpalVideoFormatInternal::GetVideoFrameType(const BYTE * payloadPtr, PINDEX payloadSize, PBYTEArray & context) const
+{
+  if (!context.IsEmpty())
+    kfd = reinterpret_cast<OpalKeyFrameDetector *>(context.GetPointer());
+  else if (formatName == "VP8-WebM") {
+    #undef new
+    kfd = new (context.GetPointer(sizeof(OpalKeyFrameDetectorVP8))) OpalKeyFrameDetectorVP8;
+    #define new PNEW
+  }
+  else if (formatName.NumCompare("H.264") == EqualTo) {
+    #undef new
+    kfd = new (context.GetPointer(sizeof(OpalKeyFrameDetectorH264))) OpalKeyFrameDetectorH264;
+    #define new PNEW
+  }
+
+  return kfd != NULL ? kfd->GetVideoFrameType(payloadPtr, payloadSize) : OpalVideoFormat::e_UnknownFrameType;
 }
 
 #endif // OPAL_VIDEO

@@ -261,6 +261,10 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
     stream->SetDataSize(packetSize, packetTime);
     stream->InternalUpdateMediaFormat(stream->GetMediaFormat());
     patch.source.InternalUpdateMediaFormat(patch.source.GetMediaFormat());
+#if OPAL_VIDEO
+    if (sourceFormat.GetMediaType() == OpalMediaType::Video())
+      m_videoFormat = sourceFormat;
+#endif // OPAL_VIDEO
     PTRACE(3, "Patch\tAdded direct media stream sink " << *stream);
     return true;
   }
@@ -450,8 +454,15 @@ void OpalMediaPatch::Sink::GetStatistics(OpalMediaStatistics & statistics, bool 
 
   if (secondaryCodec != NULL)
     secondaryCodec->GetStatistics(statistics);
-}
+
+#if OPAL_VIDEO
+  if (m_videoFrames > 0 || statistics.m_totalFrames == 0)
+    statistics.m_totalFrames = m_videoFrames;
+  if (m_keyFrames > 0 || statistics.m_keyFrames == 0)
+    statistics.m_keyFrames = m_keyFrames;
 #endif
+}
+#endif // OPAL_STATISTICS
 
 
 OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s)
@@ -462,6 +473,8 @@ OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s)
   , writeSuccessful(true)
 #if OPAL_VIDEO
   , rateController(NULL)
+  , m_videoFrames(0)
+  , m_keyFrames(0)
 #endif
 {
   PTRACE_CONTEXT_ID_FROM(p);
@@ -826,32 +839,17 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
 
   FilterFrame(frame, source.GetMediaFormat());
 
+  OpalMediaPatchPtr patch = m_bypassToPatch;
+  if (patch == NULL)
+    patch = this;
+
+  UnlockReadOnly();
+
   bool written = false;
-
-  if (m_bypassToPatch == NULL) {
-    for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
-      if (s->WriteFrame(frame))
-        written = true;
-    }
-    UnlockReadOnly();
-  }
-  else {
-    OpalMediaPatchPtr bypassToPatch = m_bypassToPatch;
-    UnlockReadOnly();
-
-    PSafeLockReadOnly guard(*bypassToPatch);
-    for (PList<Sink>::iterator s = bypassToPatch->sinks.begin(); s != bypassToPatch->sinks.end(); ++s) {
-      if (s->stream->WritePacket(frame)) {
-        PTRACE(6, "Patch\tBypassed packet "
-               << " M="  << frame.GetMarker()
-               << " PT=" << frame.GetPayloadType()
-               << " SN=" << frame.GetSequenceNumber()
-               << " TS=" << frame.GetTimestamp()
-               << " SSRC=" << RTP_TRACE_SRC(frame.GetSyncSource())
-               << " P-SZ=" << frame.GetPayloadSize());
-        written = true;
-      }
-    }
+  PSafeLockReadOnly guard(*patch);
+  for (PList<Sink>::iterator s = patch->sinks.begin(); s != patch->sinks.end(); ++s) {
+    if (s->WriteFrame(frame, patch != this))
+      written = true;
   }
 
   return written;
@@ -929,7 +927,7 @@ bool OpalMediaPatch::Sink::RateControlExceeded(bool & forceIFrame)
 #endif
 
 
-bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
+bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassing)
 {
   if (!writeSuccessful)
     return false;
@@ -961,10 +959,48 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
       return true;
     }
   }
-#endif
+#endif // OPAL_VIDEO
 
-  if (primaryCodec == NULL)
-    return (writeSuccessful = stream->WritePacket(sourceFrame));
+  if (bypassing || primaryCodec == NULL) {
+    writeSuccessful = stream->WritePacket(sourceFrame);
+    if (!writeSuccessful)
+      return false;
+
+#if OPAL_VIDEO
+    if (m_videoFormat.IsValid()) {
+      switch (m_videoFormat.GetVideoFrameType(sourceFrame.GetPayloadPtr(), sourceFrame.GetPayloadSize(), m_keyFrameDetectContext)) {
+      case OpalVideoFormat::e_IntraFrame :
+          ++m_videoFrames;
+          ++m_keyFrames;
+          PTRACE(4, "Patch\tI-Frame detected: SSRC=" << RTP_TRACE_SRC(sourceFrame.GetSyncSource())
+                 << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoFrames << ", key=" << m_keyFrames << ", on " << patch);
+          break;
+
+        case OpalVideoFormat::e_InterFrame :
+          ++m_videoFrames;
+          PTRACE(5, "Patch\tP-Frame detected SSRC=" << RTP_TRACE_SRC(sourceFrame.GetSyncSource())
+                 << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoFrames << ", key=" << m_keyFrames << ", on " << patch);
+          break;
+
+        default :
+          break;
+      }
+    }
+#endif // OPAL_VIDEO
+
+    writeSuccessful = stream->WritePacket(sourceFrame);
+    if (!writeSuccessful)
+      return false;
+
+    PTRACE_IF(6, bypassing, "Patch\tBypassed packet "
+                         << " M="  << sourceFrame.GetMarker()
+                         << " PT=" << sourceFrame.GetPayloadType()
+                         << " SN=" << sourceFrame.GetSequenceNumber()
+                         << " TS=" << sourceFrame.GetTimestamp()
+                         << " SSRC=" << RTP_TRACE_SRC(sourceFrame.GetSyncSource())
+                         << " P-SZ=" << sourceFrame.GetPayloadSize());
+    return true;
+  }
 
   if (!primaryCodec->ConvertFrames(sourceFrame, intermediateFrames)) {
     PTRACE(1, "Patch\tMedia conversion (primary) failed");
@@ -991,7 +1027,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
     }
   }
   else 
-#endif
+#endif // OPAL_VIDEO
   for (RTP_DataFrameList::iterator interFrame = intermediateFrames.begin(); interFrame != intermediateFrames.end(); ++interFrame) {
     patch.FilterFrame(*interFrame, primaryCodec->GetOutputFormat());
 
