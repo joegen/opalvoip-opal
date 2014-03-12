@@ -648,6 +648,23 @@ SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, c
 }
 
 
+PBoolean SDPMediaDescription::SetAddresses(const OpalTransportAddress & media,
+                                           const OpalTransportAddress & control)
+{
+  PIPSocket::Address ip;
+  WORD port = m_port;
+  if (!media.GetIpAndPort(ip, port))
+    return false;
+
+  m_port = port;
+
+  m_mediaAddress = OpalTransportAddress(ip, port, OpalTransportAddress::UdpPrefix());
+  m_controlAddress = control;
+
+  return true;
+}
+
+
 #if OPAL_ICE
 static bool CanUseCandidate(const PNatCandidate & candidate)
 {
