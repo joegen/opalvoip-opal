@@ -76,6 +76,7 @@ OpalMediaStatistics::OpalMediaStatistics()
   , m_totalFrames(0)
   , m_deltaFrames(0)
   , m_keyFrames(0)
+  , m_updateRequests(0)
   , m_quality(-1)
 #endif
 {

@@ -92,6 +92,7 @@ class OpalMediaStatistics : public PObject
     unsigned m_totalFrames;
     unsigned m_deltaFrames;
     unsigned m_keyFrames;
+    unsigned m_updateRequests;
     int      m_quality; // -1 is none, 0 is very good > 0 is progressively worse
 #endif
 
