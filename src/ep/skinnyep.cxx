@@ -396,7 +396,7 @@ void OpalSkinnyEndPoint::PhoneDevice::HandleTransport()
     else {
       switch (m_transport.GetErrorCode(PChannel::LastReadError)) {
         case PChannel::NoError:
-          PTRACE(3, "Lost transport to " << m_transport);
+          PTRACE(3, "Lost transport to " << m_transport << " for " << m_name);
           m_status = "Lost transport";
         case PChannel::NotOpen:
           // Remote close of TCP
@@ -462,7 +462,7 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const RegisterAckMsg
 
 bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const RegisterRejectMsg & msg)
 {
-  PTRACE(2, "Server rejected registration: " << msg.m_errorText);
+  PTRACE(2, "Server rejected registration for " << client.m_name << ": " << msg.m_errorText);
   client.m_status = PConstString("Rejected: ") + msg.m_errorText;
   return false;
 }
@@ -476,7 +476,7 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice &, const UnregisterMsg &)
 
 bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const UnregisterAckMsg &)
 {
-  PTRACE(2, "Unregistered from server");
+  PTRACE(2, "Unregistered " << client.m_name << " from server");
   client.m_status = "Unregistered";
   return false;
 }

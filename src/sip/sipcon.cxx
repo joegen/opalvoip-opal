@@ -447,12 +447,14 @@ void SIPConnection::OnReleased()
   OpalRTPConnection::OnReleased();
 
   // If forwardParty is a connection token, then must be INVITE with replaces scenario
-  PSafePtr<OpalConnection> replacerConnection = GetEndPoint().GetConnectionWithLock(m_forwardParty);
-  if (replacerConnection != NULL) {
-    /* According to RFC 3891 we now send a 200 OK in both the early and confirmed
-       dialog cases. OnReleased() is responsible for if the replaced connection is
-       sent a BYE or a CANCEL. */
-    replacerConnection->SetConnected();
+  if (!m_forwardParty.IsEmpty()) {
+    PSafePtr<OpalConnection> replacerConnection = GetEndPoint().GetConnectionWithLock(m_forwardParty);
+    if (replacerConnection != NULL) {
+      /* According to RFC 3891 we now send a 200 OK in both the early and confirmed
+         dialog cases. OnReleased() is responsible for if the replaced connection is
+         sent a BYE or a CANCEL. */
+      replacerConnection->SetConnected();
+    }
   }
 }
 

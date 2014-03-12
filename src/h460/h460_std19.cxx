@@ -427,7 +427,7 @@ bool PNatMethod_H46019::IsAvailable(const PIPSocket::Address & binding, PObject 
     return false;
 
   if (!feature->IsRemoteServer()) {
-    PTRACE(4, "Not available if remote is not a server");
+    PTRACE(4, "Not available when remote is not a server.");
     return false;
   }
 
