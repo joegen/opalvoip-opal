@@ -257,7 +257,7 @@ class OpalMediaPatch : public PSafeObject
         bool CreateTranscoders();
         bool UpdateMediaFormat(const OpalMediaFormat & mediaFormat);
         bool ExecuteCommand(const OpalMediaCommand & command);
-        bool WriteFrame(RTP_DataFrame & sourceFrame);
+        bool WriteFrame(RTP_DataFrame & sourceFrame, bool bypassing);
 #if OPAL_STATISTICS
         void GetStatistics(OpalMediaStatistics & statistics, bool fromSource) const;
 #endif
@@ -274,6 +274,11 @@ class OpalMediaPatch : public PSafeObject
         void SetRateControlParameters(const OpalMediaFormat & mediaFormat);
         bool RateControlExceeded(bool & forceIFrame);
         OpalVideoRateController * rateController;
+
+        OpalVideoFormat m_videoFormat;
+        PBYTEArray      m_keyFrameDetectContext;
+        unsigned        m_videoFrames;
+        unsigned        m_keyFrames;
 #endif
     };
     PList<Sink> sinks;
