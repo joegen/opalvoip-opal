@@ -248,6 +248,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     const OpalTransportAddress & GetMediaAddress() const { return m_mediaAddress; }
     const OpalTransportAddress & GetControlAddress() const { return m_controlAddress; }
+    bool SetAddresses(const OpalTransportAddress & media, const OpalTransportAddress & control);
 
     virtual WORD GetPort() const { return m_port; }
 
