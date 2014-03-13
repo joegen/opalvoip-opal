@@ -211,7 +211,7 @@ void OpalMediaStatistics::PrintOn(ostream & strm) const
 const PCaselessString & OpalMediaCryptoSuite::ClearText() { static const PConstCaselessString s("Clear"); return s; }
 
 #if OPAL_H235_6 || OPAL_H235_8
-H235SecurityCapability * OpalMediaCryptoSuite::CreateCapability(const OpalMediaFormat & mediaFormat, unsigned capabilityNumber) const
+H235SecurityCapability * OpalMediaCryptoSuite::CreateCapability(const OpalMediaFormat &, unsigned) const
 {
   return NULL;
 }
