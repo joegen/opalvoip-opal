@@ -3951,24 +3951,26 @@ void H323Connection::InternalEstablishedConnectionCheck()
   if (h245_available) {
     m_endSessionNeeded = true;
 
-    H323Channel * chan;
-    if ((chan = logicalChannels->FindChannelBySession(H323Capability::DefaultAudioSessionID, false)) == NULL)
-      chan = logicalChannels->FindChannelBySession(H323Capability::DefaultVideoSessionID, false);
+    if (m_holdFromRemote != eOnHoldFromRemote) {
+      H323Channel * chan;
+      if ((chan = logicalChannels->FindChannelBySession(H323Capability::DefaultAudioSessionID, false)) == NULL)
+        chan = logicalChannels->FindChannelBySession(H323Capability::DefaultVideoSessionID, false);
 
-    // Delay handling of off hold until we finish redoing TCS, MSD & OLC.
-    if (m_holdFromRemote == eRetrieveFromRemote) {
-      if (chan != NULL) {
-        if ((chan = logicalChannels->FindChannelBySession(H323Capability::DefaultAudioSessionID, true)) == NULL)
-          chan = logicalChannels->FindChannelBySession(H323Capability::DefaultVideoSessionID, true);
+      // Delay handling of off hold until we finish redoing TCS, MSD & OLC.
+      if (m_holdFromRemote == eRetrieveFromRemote) {
         if (chan != NULL) {
-          m_holdFromRemote = eOffHoldFromRemote;
-          OnHold(true, false);
+          if ((chan = logicalChannels->FindChannelBySession(H323Capability::DefaultAudioSessionID, true)) == NULL)
+            chan = logicalChannels->FindChannelBySession(H323Capability::DefaultVideoSessionID, true);
+          if (chan != NULL) {
+            m_holdFromRemote = eOffHoldFromRemote;
+            OnHold(true, false);
+          }
         }
       }
-    }
-    else {
-      if (chan == NULL && (connectionState >= HasExecutedSignalConnect || (earlyStart && m_fastStartState != FastStartAcknowledged)))
-        OnSelectLogicalChannels();
+      else {
+        if (chan == NULL && (connectionState >= HasExecutedSignalConnect || (earlyStart && m_fastStartState != FastStartAcknowledged)))
+          OnSelectLogicalChannels();
+      }
     }
   }
 
@@ -3976,7 +3978,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
     case SetUpPhase :
     case ProceedingPhase :
     case AlertingPhase :
-      if (h245_available) {
+      if (h245_available && connectionState >= HasExecutedSignalConnect) {
         bool hasEstablishedChannel = false;
         bool inProgressChannel = false;
         for (H245LogicalChannelDict::iterator it  = logicalChannels->GetChannels().begin();
