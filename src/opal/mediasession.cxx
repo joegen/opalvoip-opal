@@ -211,6 +211,12 @@ void OpalMediaStatistics::PrintOn(ostream & strm) const
 const PCaselessString & OpalMediaCryptoSuite::ClearText() { static const PConstCaselessString s("Clear"); return s; }
 
 #if OPAL_H235_6 || OPAL_H235_8
+H235SecurityCapability * OpalMediaCryptoSuite::CreateCapability(const OpalMediaFormat & mediaFormat, unsigned capabilityNumber) const
+{
+  return NULL;
+}
+
+
 OpalMediaCryptoSuite * OpalMediaCryptoSuite::FindByOID(const PString & oid)
 {
   OpalMediaCryptoSuiteFactory::KeyList_T all = OpalMediaCryptoSuiteFactory::GetKeyList();
