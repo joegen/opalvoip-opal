@@ -1849,9 +1849,13 @@ class OpalConnection : public PSafeObject
     virtual PINDEX GetMaxRtpPayloadSize() const;
 
 #if OPAL_STATISTICS
-    /**Get Video Update requests statistic.
+    /**Get Video Update requests sent statistic.
       */
     unsigned GetVideoUpdateRequestsSent() const { return m_VideoUpdateRequestsSent; }
+
+    /**Get Video Update requests received statistic.
+      */
+    unsigned GetVideoUpdateRequestsReceived() const { return m_VideoUpdateRequestsReceived; }
 #endif
   //@}
 
@@ -1962,6 +1966,7 @@ class OpalConnection : public PSafeObject
 
 #if OPAL_STATISTICS
     unsigned m_VideoUpdateRequestsSent;
+    unsigned m_VideoUpdateRequestsReceived;
 #endif
 
     struct AutoStartInfo {

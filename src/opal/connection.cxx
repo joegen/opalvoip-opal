@@ -155,6 +155,7 @@ OpalConnection::OpalConnection(OpalCall & call,
 #endif
 #if OPAL_STATISTICS
   , m_VideoUpdateRequestsSent(0)
+  , m_VideoUpdateRequestsReceived(0)
 #endif
 {
   PTRACE_CONTEXT_ID_FROM(call);
@@ -1127,6 +1128,8 @@ bool OpalConnection::GetMediaTransportAddresses(OpalConnection & PTRACE_PARAM(ot
 
 bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, bool force) const
 {
+  ++const_cast<OpalConnection *>(this)->m_VideoUpdateRequestsReceived;
+
   bool ok = force ? ExecuteMediaCommand(OpalVideoUpdatePicture(), sessionID, OpalMediaType::Video())
                   : ExecuteMediaCommand(OpalVideoPictureLoss(),   sessionID, OpalMediaType::Video());
 
