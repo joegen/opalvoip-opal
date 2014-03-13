@@ -194,7 +194,7 @@ class OpalMediaCryptoSuite : public PObject
 
     virtual const char * GetDescription() const = 0;
 #if OPAL_H235_6 || OPAL_H235_8
-    virtual H235SecurityCapability * CreateCapability(const OpalMediaFormat & mediaFormat, unsigned capabilityNumber) const = 0;
+    virtual H235SecurityCapability * CreateCapability(const OpalMediaFormat & mediaFormat, unsigned capabilityNumber) const;
     virtual const char * GetOID() const = 0;
     static OpalMediaCryptoSuite * FindByOID(const PString & oid);
 #endif
