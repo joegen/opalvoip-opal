@@ -150,6 +150,10 @@ void SIPEndPoint::ShutDown()
       PThread::Sleep(100);
   }
 
+  for (PSafeDictionary<OpalTransportAddress, OpalTransport>::iterator it = m_transportsTable.begin(); it != m_transportsTable.end(); ++it)
+    it->second->CloseWait();
+  m_transportsTable.RemoveAll();
+
   // Now shut down listeners and aggregators
   OpalEndPoint::ShutDown();
 }
@@ -506,17 +510,11 @@ PBoolean SIPEndPoint::GarbageCollection()
   bool handlersDone = activeSIPHandlers.DeleteObjectsToBeRemoved();
 
 
-  {
-    PWaitAndSignal mutex(m_transportsTable.GetMutex());
-    PArray<OpalTransportAddress> keys = m_transportsTable.GetKeys();
-    for (PINDEX i = 0; i < keys.GetSize(); ++i) {
-      const OpalTransportAddress & addr = keys[i];
-      PSafePtr<OpalTransport> transport = m_transportsTable.FindWithLock(addr, PSafeReference);
-      if (transport != NULL && transport->IsIdle()) {
-        PTRACE(3, "SIP\tRemoving transport to " << addr);
-        transport->CloseWait();
-        m_transportsTable.RemoveAt(addr);
-      }
+  for (PSafeDictionary<OpalTransportAddress, OpalTransport>::iterator it = m_transportsTable.begin(); it != m_transportsTable.end(); ++it) {
+    if (it->second->IsIdle()) {
+      PTRACE(3, "SIP\tRemoving transport to " << it->first);
+      it->second->CloseWait();
+      m_transportsTable.RemoveAt(it->first);
     }
   }
   bool transportsDone = m_transportsTable.DeleteObjectsToBeRemoved();
