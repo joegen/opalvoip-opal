@@ -562,6 +562,8 @@ H235Authenticators H323EndPoint::CreateAuthenticators()
     H235Authenticator * auth = PFactory<H235Authenticator>::CreateInstance(*it);
     if (auth->GetApplication() == H235Authenticator::GKAdmission || auth->GetApplication() == H235Authenticator::AnyApplication)
       authenticators.Append(auth);
+    else
+      delete auth;
   }
 
   return authenticators;
