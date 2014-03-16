@@ -2507,8 +2507,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       return;
     }
 
-    if (request.GetSDP() != NULL)
-      DetermineRTPNAT(GetTransport(), request.GetSDP()->GetDefaultConnectAddress());
+    if (originalInvite->GetSDP() != NULL)
+      DetermineRTPNAT(GetTransport(), originalInvite->GetSDP()->GetDefaultConnectAddress());
 
     if (ownerCall.OnSetUp(*this)) {
       if (GetPhase() < ProceedingPhase) {
