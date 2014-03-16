@@ -1023,24 +1023,9 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
   if (setup.m_sourceAddress.GetSize() > 0)
     remotePartyAddress = H323GetAliasAddressString(setup.m_sourceAddress[0]) + '@' + signallingChannel->GetRemoteAddress();
 
-  // compare the source call signalling address
-  if (setup.HasOptionalField(H225_Setup_UUIE::e_sourceCallSignalAddress)) {
-
-    // get the address that remote end *thinks* it is using from the sourceCallSignalAddress field
-    PIPSocket::Address sigAddr;
-    {
-      H323TransportAddress sigAddress(setup.m_sourceCallSignalAddress);
-      sigAddress.GetIpAddress(sigAddr);
-    }
-
-    // get the local and peer transport addresses
-    PIPSocket::Address peerAddr, localAddr;
-    signallingChannel->GetRemoteAddress().GetIpAddress(peerAddr);
-    signallingChannel->GetLocalAddress().GetIpAddress(localAddr);
-
-    // allow the application to determine if RTP NAT is enabled or not
-    remoteIsNAT = IsRTPNATEnabled(localAddr, peerAddr, sigAddr, true);
-  }
+  // get the address that remote end *thinks* it is using from the sourceCallSignalAddress field
+  if (setup.HasOptionalField(H225_Setup_UUIE::e_sourceCallSignalAddress))
+    DetermineRTPNAT(*signallingChannel, H323TransportAddress(setup.m_sourceCallSignalAddress));
 
   // Anything else we need from setup PDU
   mediaWaitForConnect = setup.m_mediaWaitForConnect;
