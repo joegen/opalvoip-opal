@@ -87,7 +87,7 @@ class OpalG7221Format : public OpalAudioFormatInternal
 
   #define CAPABILITY(rate) \
     static H323CapabilityFactory::Worker< \
-      H323GenericAudioCapabilityTemplate<G7221_##rate##_Identifier, GetOpalG7221_##rate##, G7221_##rate##_BIT_RATE> \
+      H323GenericAudioCapabilityTemplate<G7221_##rate##_Identifier, GetOpalG7221_##rate, G7221_##rate##_BIT_RATE> \
     > capability(G7221FormatName##rate, true)
 #else
 #define CAPABILITY(rate)
