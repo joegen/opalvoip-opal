@@ -250,7 +250,7 @@ class OpalRTPConnection : public OpalConnection
     /** Return true if the remote appears to be behind a NAT firewall
     */
     virtual PBoolean RemoteIsNAT() const
-    { return remoteIsNAT; }
+    { return m_remoteBehindNAT; }
 
     /**Determine if the RTP session needs to accommodate a NAT router.
        For endpoints that do not use STUN or something similar to set up all the
@@ -269,11 +269,9 @@ class OpalRTPConnection : public OpalConnection
        the protocol, eg H.323 SETUP sourceCallSignalAddress or SIP "To" or
        "Contact" fields, and makes a guess that the remote is behind a NAT router.
      */
-    virtual PBoolean IsRTPNATEnabled(
-      const PIPSocket::Address & localAddr,   ///< Local physical address of connection
-      const PIPSocket::Address & peerAddr,    ///< Remote physical address of connection
-      const PIPSocket::Address & signalAddr,  ///< Remotes signaling address as indicated by protocol of connection
-      PBoolean incoming                       ///< Incoming/outgoing connection
+    virtual void DetermineRTPNAT(
+      const OpalTransport & transport,          ///< Transport to get physical address of connection
+      const OpalTransportAddress & signalAddr   ///< Remotes signaling address as indicated by protocol of connection
     );
   //@}
 
@@ -296,14 +294,14 @@ class OpalRTPConnection : public OpalConnection
     void CheckForMediaBypass(OpalMediaSession & session);
 
     SessionMap m_sessions;
+    bool m_remoteBehindNAT;
 
     OpalRFC2833Proto * rfc2833Handler;
 #if OPAL_T38_CAPABILITY
     OpalRFC2833Proto * ciscoNSEHandler;
 #endif
 
-    PBoolean remoteIsNAT;
-    PBoolean useRTPAggregation;
+    P_REMOVE_VIRTUAL(PBoolean,IsRTPNATEnabled(const PIPSocket::Address&,const PIPSocket::Address&,const PIPSocket::Address&,PBoolean),false);
 };
 
 

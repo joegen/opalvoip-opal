@@ -2453,21 +2453,12 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   PTRACE_IF(4, !m_redirectingParty.IsEmpty(),
             "SIP\tRedirecting party (Referred-By/Diversion) set to \"" << m_redirectingParty << '"');
 
-  // get the address that remote end *thinks* it is using from the Contact field
-  PIPSocket::Address sigAddr;
-  if (!PIPSocket::GetHostAddress(m_dialog.GetRequestURI().GetHostName(), sigAddr)) {
+  {
+    // get the address that remote end *thinks* it is using from the Via field
     PString via = mime.GetFirstVia();
     if (!via.IsEmpty())
-      sigAddr = via(via.Find(' ')+1, via.Find(':')-1);
+      DetermineRTPNAT(GetTransport(), "ip$" + via(via.Find(' ') + 1, via.Find(':') - 1));
   }
-
-  // get the local and peer transport addresses
-  PIPSocket::Address peerAddr, localAddr;
-  GetTransport().GetRemoteAddress().GetIpAddress(peerAddr);
-  GetTransport().GetLocalAddress().GetIpAddress(localAddr);
-
-  // allow the application to determine if RTP NAT is enabled or not
-  remoteIsNAT = IsRTPNATEnabled(localAddr, peerAddr, sigAddr, PTrue);
 
   bool prackSupported = mime.GetSupported().Contains("100rel");
   bool prackRequired = mime.GetRequire().Contains("100rel");
@@ -2515,6 +2506,9 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       Release(EndedByCapabilityExchange);
       return;
     }
+
+    if (request.GetSDP() != NULL)
+      DetermineRTPNAT(GetTransport(), request.GetSDP()->GetDefaultConnectAddress());
 
     if (ownerCall.OnSetUp(*this)) {
       if (GetPhase() < ProceedingPhase) {

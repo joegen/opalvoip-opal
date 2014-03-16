@@ -57,7 +57,7 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
                                    unsigned int options,
                                 StringOptions * stringOptions)
   : OpalConnection(call, ep, token, options, stringOptions)
-  , remoteIsNAT(false)
+  , m_remoteBehindNAT(false)
 {
   rfc2833Handler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineRFC2833), OpalRFC2833);
   PTRACE_CONTEXT_ID_TO(rfc2833Handler);
@@ -311,12 +311,16 @@ bool OpalRTPConnection::SetSessionQoS(OpalRTPSession * /*session*/)
 }
 
 
-PBoolean OpalRTPConnection::IsRTPNATEnabled(const PIPSocket::Address & localAddr, 
-                                            const PIPSocket::Address & peerAddr,
-                                            const PIPSocket::Address & sigAddr,
-                                                              PBoolean incoming)
+void OpalRTPConnection::DetermineRTPNAT(const OpalTransport & transport, const OpalTransportAddress & signalAddr)
 {
-  return static_cast<OpalRTPEndPoint &>(endpoint).IsRTPNATEnabled(*this, localAddr, peerAddr, sigAddr, incoming);
+  PIPSocket::Address localAddr, peerAddr, sigAddr;
+
+  transport.GetLocalAddress().GetIpAddress(localAddr);
+  transport.GetRemoteAddress().GetIpAddress(peerAddr);
+  signalAddr.GetIpAddress(sigAddr);
+
+  if (dynamic_cast<OpalRTPEndPoint &>(endpoint).IsRTPNATEnabled(*this, localAddr, peerAddr, sigAddr, !IsOriginating()))
+    m_remoteBehindNAT = true;
 }
 
 
