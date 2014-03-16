@@ -294,9 +294,8 @@ class OpalRTPConnection : public OpalConnection
        "Contact" fields, and makes a guess that the remote is behind a NAT router.
      */
     virtual void DetermineRTPNAT(
-      const PIPSocket::Address & localAddr,   ///< Local physical address of connection
-      const PIPSocket::Address & peerAddr,    ///< Remote physical address of connection
-      const PIPSocket::Address & signalAddr   ///< Remotes signaling address as indicated by protocol of connection
+      const OpalTransport & transport,          ///< Transport to get physical address of connection
+      const OpalTransportAddress & signalAddr   ///< Remotes signaling address as indicated by protocol of connection
     );
   //@}
 
