@@ -889,23 +889,8 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
   setupPDU->GetQ931().GetRedirectingNumber(m_redirectingParty);
 
   // compare the source call signalling address
-  if (setup.HasOptionalField(H225_Setup_UUIE::e_sourceCallSignalAddress)) {
-
-    // get the address that remote end *thinks* it is using from the sourceCallSignalAddress field
-    PIPSocket::Address sigAddr;
-    {
-      H323TransportAddress sigAddress(setup.m_sourceCallSignalAddress);
-      sigAddress.GetIpAddress(sigAddr);
-    }
-
-    // get the local and peer transport addresses
-    PIPSocket::Address peerAddr, localAddr;
-    m_signallingChannel->GetRemoteAddress().GetIpAddress(peerAddr);
-    m_signallingChannel->GetLocalAddress().GetIpAddress(localAddr);
-
-    // allow the application to determine if RTP NAT is enabled or not
-    DetermineRTPNAT(localAddr, peerAddr, sigAddr);
-  }
+  if (setup.HasOptionalField(H225_Setup_UUIE::e_sourceCallSignalAddress))
+    DetermineRTPNAT(*m_signallingChannel, H323TransportAddress(setup.m_sourceCallSignalAddress));
 
   // Anything else we need from setup PDU
   mediaWaitForConnect = setup.m_mediaWaitForConnect;
@@ -2109,9 +2094,7 @@ PBoolean H323Connection::OnSendCallProceeding(H323SignalPDU & callProceedingPDU)
 }
 
 
-void H323Connection::DetermineRTPNAT(const PIPSocket::Address & localAddr,
-                                     const PIPSocket::Address & peerAddr,
-                                     const PIPSocket::Address & signalAddr)
+void H323Connection::DetermineRTPNAT(const OpalTransport & transport, const OpalTransportAddress & signalAddr)
 {
 #if OPAL_H460_NAT
   if (m_features != NULL) {
@@ -2123,7 +2106,7 @@ void H323Connection::DetermineRTPNAT(const PIPSocket::Address & localAddr,
   }
 #endif
 
-  OpalRTPConnection::DetermineRTPNAT(localAddr, peerAddr, signalAddr);
+  OpalRTPConnection::DetermineRTPNAT(transport, signalAddr);
 }
 
 
