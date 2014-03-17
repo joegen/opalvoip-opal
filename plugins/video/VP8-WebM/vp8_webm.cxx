@@ -718,6 +718,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
     bool                 m_firstFrame;
     bool                 m_intraFrame;
     bool                 m_ignoreTillKeyFrame;
+    unsigned             m_consecutiveErrors;
 
   public:
     VP8Decoder(const PluginCodec_Definition * defn)
@@ -728,6 +729,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
       , m_firstFrame(true)
       , m_intraFrame(false)
       , m_ignoreTillKeyFrame(false)
+      , m_consecutiveErrors(0)
     {
       memset(&m_codec, 0, sizeof(m_codec));
       m_fullFrame.reserve(10000);
@@ -800,7 +802,14 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
         vpx_codec_err_t err = vpx_codec_decode(&m_codec, &m_fullFrame[0], m_fullFrame.size(), NULL, 0);
         switch (err) {
           case VPX_CODEC_OK :
+            m_consecutiveErrors = 0;
             break;
+
+          case VPX_CODEC_UNSUP_BITSTREAM :
+            if (m_consecutiveErrors++ > 10) {
+              IsError(err, "vpx_codec_decode");
+              return false;
+            }
 
           // Non fatal errors
           case VPX_CODEC_UNSUP_FEATURE :
@@ -809,7 +818,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
             BadDecode(flags, false);
             return true;
 
-          default :
+          default:
             IsError(err, "vpx_codec_decode");
             return false;
         }
