@@ -643,10 +643,10 @@ X264_LIBS
 X264_CFLAGS
 X264_SYSTEM
 HAVE_LIBAVCODEC_RTP_MODE
-LIBAVUITL_USABLE
-LIBAVUITL_LIBS
-LIBAVUITL_CFLAGS
-LIBAVUITL_SYSTEM
+LIBAVUTIL_USABLE
+LIBAVUTIL_LIBS
+LIBAVUTIL_CFLAGS
+LIBAVUTIL_SYSTEM
 LIBAVCODEC_USABLE
 LIBAVCODEC_LIBS
 LIBAVCODEC_CFLAGS
@@ -852,8 +852,8 @@ OPUS_CFLAGS
 OPUS_LIBS
 LIBAVCODEC_CFLAGS
 LIBAVCODEC_LIBS
-LIBAVUITL_CFLAGS
-LIBAVUITL_LIBS
+LIBAVUTIL_CFLAGS
+LIBAVUTIL_LIBS
 X264_CFLAGS
 X264_LIBS
 VP8_CFLAGS
@@ -1566,10 +1566,10 @@ Some influential environment variables:
               C compiler flags for LIBAVCODEC, overriding pkg-config
   LIBAVCODEC_LIBS
               linker flags for LIBAVCODEC, overriding pkg-config
-  LIBAVUITL_CFLAGS
-              C compiler flags for LIBAVUITL, overriding pkg-config
-  LIBAVUITL_LIBS
-              linker flags for LIBAVUITL, overriding pkg-config
+  LIBAVUTIL_CFLAGS
+              C compiler flags for LIBAVUTIL, overriding pkg-config
+  LIBAVUTIL_LIBS
+              linker flags for LIBAVUTIL, overriding pkg-config
   X264_CFLAGS C compiler flags for X264, overriding pkg-config
   X264_LIBS   linker flags for X264, overriding pkg-config
   VP8_CFLAGS  C compiler flags for VP8, overriding pkg-config
@@ -6618,6 +6618,7 @@ fi
 
 
             if test "x$usable" = "xno" ; then
+               usable="yes"
                GSM_SYSTEM="no"
                GSM_CFLAGS=
                GSM_LIBS=
@@ -6889,6 +6890,7 @@ fi
 
 
             if test "x$usable" = "xno" ; then
+               usable="yes"
                ILBC_SYSTEM="no"
                ILBC_CFLAGS=
                ILBC_LIBS=
@@ -7166,6 +7168,7 @@ fi
 
 
             if test "x$usable" = "xno" ; then
+               usable="yes"
                SPEEX_SYSTEM="no"
                SPEEX_CFLAGS=
                SPEEX_LIBS=
@@ -7922,6 +7925,7 @@ fi
 
 
             if test "x$usable" = "xno" ; then
+               usable="yes"
                OPUS_SYSTEM="no"
                OPUS_CFLAGS=
                OPUS_LIBS=
@@ -8224,7 +8228,7 @@ fi
 
    if test "x$usable" = "xyes"; then :
 
-   LIBAVUITL_SYSTEM="yes"
+   LIBAVUTIL_SYSTEM="yes"
 
 
 
@@ -8241,7 +8245,7 @@ $as_echo "disabled by user" >&6; }
 
 else
 
-         enableval=${DEFAULT_LIBAVUITL:-yes}
+         enableval=${DEFAULT_LIBAVUTIL:-yes}
          if test "x$enableval" = "xno"; then
             { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
@@ -8282,24 +8286,24 @@ fi
 
    if test "x$usable" = "xyes" ; then
 
-      if test "x$LIBAVUITL_SYSTEM" = "xyes" ; then
+      if test "x$LIBAVUTIL_SYSTEM" = "xyes" ; then
 
 # Check whether --with-libavutil-dir was given.
 if test "${with_libavutil_dir+set}" = set; then :
   withval=$with_libavutil_dir;
                   { $as_echo "$as_me:${as_lineno-$LINENO}: Using directory $withval for FFMPEG libavutil library" >&5
 $as_echo "$as_me: Using directory $withval for FFMPEG libavutil library" >&6;}
-                  LIBAVUITL_CFLAGS="-I$withval/include "
-                  LIBAVUITL_LIBS="-L$withval/lib -lavutil"
+                  LIBAVUTIL_CFLAGS="-I$withval/include "
+                  LIBAVUTIL_LIBS="-L$withval/lib -lavutil"
 
 else
 
 pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBAVUITL" >&5
-$as_echo_n "checking for LIBAVUITL... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBAVUTIL" >&5
+$as_echo_n "checking for LIBAVUTIL... " >&6; }
 
-if test -n "$LIBAVUITL_CFLAGS"; then
-    pkg_cv_LIBAVUITL_CFLAGS="$LIBAVUITL_CFLAGS"
+if test -n "$LIBAVUTIL_CFLAGS"; then
+    pkg_cv_LIBAVUTIL_CFLAGS="$LIBAVUTIL_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
     { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libavutil >= 51.11.0\""; } >&5
@@ -8307,7 +8311,7 @@ if test -n "$LIBAVUITL_CFLAGS"; then
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LIBAVUITL_CFLAGS=`$PKG_CONFIG --cflags "libavutil >= 51.11.0" 2>/dev/null`
+  pkg_cv_LIBAVUTIL_CFLAGS=`$PKG_CONFIG --cflags "libavutil >= 51.11.0" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -8315,8 +8319,8 @@ fi
  else
     pkg_failed=untried
 fi
-if test -n "$LIBAVUITL_LIBS"; then
-    pkg_cv_LIBAVUITL_LIBS="$LIBAVUITL_LIBS"
+if test -n "$LIBAVUTIL_LIBS"; then
+    pkg_cv_LIBAVUTIL_LIBS="$LIBAVUTIL_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
     { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libavutil >= 51.11.0\""; } >&5
@@ -8324,7 +8328,7 @@ if test -n "$LIBAVUITL_LIBS"; then
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_LIBAVUITL_LIBS=`$PKG_CONFIG --libs "libavutil >= 51.11.0" 2>/dev/null`
+  pkg_cv_LIBAVUTIL_LIBS=`$PKG_CONFIG --libs "libavutil >= 51.11.0" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -8345,29 +8349,29 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        LIBAVUITL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libavutil >= 51.11.0" 2>&1`
+	        LIBAVUTIL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libavutil >= 51.11.0" 2>&1`
         else
-	        LIBAVUITL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libavutil >= 51.11.0" 2>&1`
+	        LIBAVUTIL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libavutil >= 51.11.0" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
-	echo "$LIBAVUITL_PKG_ERRORS" >&5
+	echo "$LIBAVUTIL_PKG_ERRORS" >&5
 
 
-                     LIBAVUITL_CFLAGS=""
-                     LIBAVUITL_LIBS="-lavutil"
+                     LIBAVUTIL_CFLAGS=""
+                     LIBAVUTIL_LIBS="-lavutil"
 
 
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
-                     LIBAVUITL_CFLAGS=""
-                     LIBAVUITL_LIBS="-lavutil"
+                     LIBAVUTIL_CFLAGS=""
+                     LIBAVUTIL_LIBS="-lavutil"
 
 
 else
-	LIBAVUITL_CFLAGS=$pkg_cv_LIBAVUITL_CFLAGS
-	LIBAVUITL_LIBS=$pkg_cv_LIBAVUITL_LIBS
+	LIBAVUTIL_CFLAGS=$pkg_cv_LIBAVUTIL_CFLAGS
+	LIBAVUTIL_LIBS=$pkg_cv_LIBAVUTIL_LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
@@ -8380,8 +8384,8 @@ fi
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
-   CPPFLAGS="$CPPFLAGS $LIBAVUITL_CFLAGS"
-   LIBS="$LIBAVUITL_LIBS $LIBS"
+   CPPFLAGS="$CPPFLAGS $LIBAVUTIL_CFLAGS"
+   LIBS="$LIBAVUTIL_LIBS $LIBS"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FFMPEG libavutil library usability" >&5
 $as_echo_n "checking for FFMPEG libavutil library usability... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -8411,8 +8415,8 @@ $as_echo "$usable" >&6; }
    if test "x$usable" = "xyes"; then :
 
 
-   LIBS="$LIBAVUITL_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $LIBAVUITL_CFLAGS"
+   LIBS="$LIBAVUTIL_LIBS $LIBS"
+   CPPFLAGS="$CPPFLAGS $LIBAVUTIL_CFLAGS"
 
 
 
@@ -8429,13 +8433,14 @@ fi
       fi
    fi
 
-   LIBAVUITL_USABLE=$usable
+   LIBAVUTIL_USABLE=$usable
 
 
 
    if test "x$usable" = "xyes"; then :
 
          HAVE_LIBAVCODEC=yes
+         LIBAVCODEC_LIBS="$LIBAVCODEC_LIBS -lavutil"
 
 else
   HAVE_LIBAVCODEC=no
