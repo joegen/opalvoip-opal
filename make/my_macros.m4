@@ -246,6 +246,7 @@ AC_DEFUN([MY_MODULE_OPTION],[
 
          m4_bmatch([$4], [.*local-source.*], [
             if test "x$usable" = "xno" ; then
+               usable="yes"
                $1[_SYSTEM]="no"
                $1[_CFLAGS]=
                $1[_LIBS]=

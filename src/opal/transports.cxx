@@ -944,11 +944,13 @@ OpalTransport::OpalTransport(OpalEndPoint & end, PChannel * channel)
   , m_idleTimer(endpoint.GetManager().GetTransportIdleTime())
 {
   m_keepAliveTimer.SetNotifier(PCREATE_NOTIFIER(KeepAlive));
+  PTRACE(5, "Opal\tTransport constructed: " << m_channel);
 }
 
 
 OpalTransport::~OpalTransport()
 {
+  PTRACE(5, "Opal\tTransport destroyed: " << m_channel);
   PAssert(m_thread == NULL, PLogicError);
   delete m_channel;
 }

@@ -641,12 +641,10 @@ PBoolean H225_RAS::OnReceiveRegistrationConfirm(const H323RasPDU & pdu, const H2
 
   if (lastRequest != NULL) {
     PString endpointIdentifier = rcf.m_endpointIdentifier;
-    // NOTE this diff here might not have been needed.. needs review
-    const H235Authenticators & authenticators = lastRequest->requestPDU.GetAuthenticators();
-    for (PINDEX i = 0; i < authenticators.GetSize(); i++) {
-      H235Authenticator & authenticator = authenticators[i];
-      if (authenticator.UseGkAndEpIdentifiers())
-        authenticator.SetLocalId(endpointIdentifier);
+    H235Authenticators & authenticators = lastRequest->requestPDU.GetAuthenticators();
+    for (H235Authenticators::iterator it = authenticators.begin(); it != authenticators.end(); ++it) {
+      if (it->UseGkAndEpIdentifiers())
+        it->SetLocalId(endpointIdentifier);
     }
   }
 

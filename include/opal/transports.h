@@ -1003,7 +1003,6 @@ class OpalTransport : public PSafeObject
       { if (m_channel != NULL) m_channel->SetReadTimeout(t); }
 
     PChannel * GetChannel() const { return m_channel; }
-    void SetChannel(PChannel * chan) { m_channel = chan; }
 
     bool IsIdle() const { return m_referenceCount == 0 && m_idleTimer.HasExpired(); }
 

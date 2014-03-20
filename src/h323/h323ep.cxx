@@ -156,6 +156,7 @@ H323EndPoint::~H323EndPoint()
 
 void H323EndPoint::ShutDown()
 {
+  PTRACE(4, "H323\tShutting down: " << m_reusableTransports.size() << " maintained transports");
   for (set<OpalTransportPtr>::iterator it = m_reusableTransports.begin(); it != m_reusableTransports.end(); ++it)
     (*it)->CloseWait();
   m_reusableTransports.clear();
@@ -174,8 +175,11 @@ PBoolean H323EndPoint::GarbageCollection()
   for (set<OpalTransportPtr>::iterator it = m_reusableTransports.begin(); it != m_reusableTransports.end(); ) {
     if ((*it)->IsOpen())
       ++it;
-    else
+    else {
+      PTRACE(4, "H323\tRemoving maintained transport " << **it);
+      (*it)->CloseWait();
       m_reusableTransports.erase(it++);
+    }
   }
 
   return OpalRTPEndPoint::GarbageCollection();
@@ -562,6 +566,8 @@ H235Authenticators H323EndPoint::CreateAuthenticators()
     H235Authenticator * auth = PFactory<H235Authenticator>::CreateInstance(*it);
     if (auth->GetApplication() == H235Authenticator::GKAdmission || auth->GetApplication() == H235Authenticator::AnyApplication)
       authenticators.Append(auth);
+    else
+      delete auth;
   }
 
   return authenticators;
