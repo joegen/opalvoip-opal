@@ -555,7 +555,11 @@ class H323GenericCapabilityInfo
 
     PString       m_identifier;
     OpalBandwidth m_maxBitRate;
-    bool          m_fixedBitRate;
+    enum {
+      e_VariableBitRate,
+      e_FixedBitRateStandard,
+      e_FixedBitRateG7221,
+    } m_bitRateMode;
 };
 
 /**This class describes the interface to a codec that has channels based on

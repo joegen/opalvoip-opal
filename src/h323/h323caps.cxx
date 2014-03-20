@@ -693,7 +693,7 @@ PObject::Comparison H323NonStandardCapabilityInfo::CompareData(const PBYTEArray 
 H323GenericCapabilityInfo::H323GenericCapabilityInfo(const PString & standardId, unsigned bitRate, bool fixed)
   : m_identifier(standardId)
   , m_maxBitRate(bitRate)
-  , m_fixedBitRate(fixed)
+  , m_bitRateMode(fixed ? (standardId == OpalPluginCodec_Identifer_G7221 ? e_FixedBitRateG7221 : e_FixedBitRateStandard) : e_VariableBitRate)
 {
 }
 
@@ -712,12 +712,21 @@ PBoolean H323GenericCapabilityInfo::OnSendingGenericPDU(H245_GenericCapability &
 {
   H323SetCapabilityIdentifier(m_identifier, pdu.m_capabilityIdentifier);
 
-  if (m_fixedBitRate)
-    m_maxBitRate.SetH245(pdu.m_maxBitRate);
-  else if (type == H323Capability::e_TCS)
-    mediaFormat.GetMaxBandwidth().SetH245(pdu.m_maxBitRate);
-  else
-    mediaFormat.GetUsedBandwidth().SetH245(pdu.m_maxBitRate);
+  switch (m_bitRateMode) {
+    case e_FixedBitRateG7221:
+      pdu.m_maxBitRate = m_maxBitRate;
+      break;
+
+    case e_FixedBitRateStandard:
+      m_maxBitRate.SetH245(pdu.m_maxBitRate);
+      break;
+
+    default:
+      if (type == H323Capability::e_TCS)
+        mediaFormat.GetMaxBandwidth().SetH245(pdu.m_maxBitRate);
+      else
+        mediaFormat.GetUsedBandwidth().SetH245(pdu.m_maxBitRate);
+  }
 
   if (pdu.m_maxBitRate != 0)
     pdu.IncludeOptionalField(H245_GenericCapability::e_maxBitRate);
@@ -889,7 +898,7 @@ PBoolean H323GenericCapabilityInfo::OnReceivedGenericPDU(OpalMediaFormat & media
   if (H323GetCapabilityIdentifier(pdu.m_capabilityIdentifier) != m_identifier)
     return false;
 
-  if (!m_fixedBitRate && pdu.HasOptionalField(H245_GenericCapability::e_maxBitRate)) {
+  if (m_bitRateMode == e_VariableBitRate && pdu.HasOptionalField(H245_GenericCapability::e_maxBitRate)) {
     m_maxBitRate.FromH245(pdu.m_maxBitRate);
     mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), m_maxBitRate);
   }
@@ -1128,7 +1137,7 @@ PObject::Comparison H323GenericAudioCapability::Compare(const PObject & obj) con
     return result;
 
   const H323GenericAudioCapability & other = dynamic_cast<const H323GenericAudioCapability &>(obj);
-  if (m_fixedBitRate && m_maxBitRate != other.m_maxBitRate)
+  if (m_bitRateMode != e_VariableBitRate && m_maxBitRate != other.m_maxBitRate)
     return m_maxBitRate < other.m_maxBitRate ? PObject::LessThan : PObject::GreaterThan;
 
   return CompareInfo(other);
@@ -1173,10 +1182,17 @@ PBoolean H323GenericAudioCapability::IsMatch(const PASN_Object & subTypePDU, con
   if (!H323GenericCapabilityInfo::IsMatch(GetMediaFormat(), genericCap))
     return false;
 
-  if (m_fixedBitRate)
-    return m_maxBitRate == genericCap.m_maxBitRate;
+  switch (m_bitRateMode) {
+    case e_FixedBitRateG7221:
+      if (m_maxBitRate == genericCap.m_maxBitRate.GetValue())
+        return true;
 
-  return true;
+    case e_FixedBitRateStandard:
+      return m_maxBitRate == genericCap.m_maxBitRate.GetValue()*100;
+
+    default:
+      return true;
+  }
 }
 
 
