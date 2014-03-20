@@ -278,7 +278,10 @@ bool OpalPCSSEndPoint::OnOutgoingCall(const OpalLocalConnection & connection)
 
 bool OpalPCSSEndPoint::OnIncomingCall(OpalLocalConnection & connection)
 {
-  return OnShowIncoming(dynamic_cast<const OpalPCSSConnection &>(connection));
+  if (m_deferredAnswer)
+    return OnShowIncoming(dynamic_cast<const OpalPCSSConnection &>(connection));
+
+  return OpalLocalEndPoint::OnIncomingCall(connection);
 }
 
 
