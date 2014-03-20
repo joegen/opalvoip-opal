@@ -65,9 +65,9 @@
   <form id="PlayFile">
     <log expr="'Playing WAV file'"/>
     
-    <audio expr="application.TestWAV"/>
+    <audio expr="'file:'+application.TestWAV"/>
     <break time="5s"/>
-    <audio expr="application.TestWAV"/>
+    <audio expr="'file:'+application.TestWAV"/>
     
     <!-- No stack, have to go back to main menu explicitly  -->
     <goto expritem="application.TestGoto"/>
