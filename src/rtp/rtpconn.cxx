@@ -444,11 +444,16 @@ bool OpalRTPConnection::SetSessionQoS(OpalRTPSession * /*session*/)
 }
 
 
-void OpalRTPConnection::DetermineRTPNAT(const PIPSocket::Address & localAddr, 
-                                        const PIPSocket::Address & peerAddr,
-                                        const PIPSocket::Address & sigAddr)
+void OpalRTPConnection::DetermineRTPNAT(const OpalTransport & transport, const OpalTransportAddress & signalAddr)
 {
-  m_remoteBehindNAT = dynamic_cast<OpalRTPEndPoint &>(endpoint).IsRTPNATEnabled(*this, localAddr, peerAddr, sigAddr, !IsOriginating());
+  PIPSocket::Address localAddr, peerAddr, sigAddr;
+
+  transport.GetLocalAddress().GetIpAddress(localAddr);
+  transport.GetRemoteAddress().GetIpAddress(peerAddr);
+  signalAddr.GetIpAddress(sigAddr);
+
+  if (dynamic_cast<OpalRTPEndPoint &>(endpoint).IsRTPNATEnabled(*this, localAddr, peerAddr, sigAddr, !IsOriginating()))
+    m_remoteBehindNAT = true;
 }
 
 
