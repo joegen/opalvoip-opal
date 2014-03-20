@@ -63,6 +63,8 @@ OpalPCSSEndPoint::OpalPCSSEndPoint(OpalManager & mgr, const char * prefix)
     soundChannelPlayDevice(PSoundChannel::GetDefaultDevice(PSoundChannel::Player)),
     soundChannelRecordDevice(PSoundChannel::GetDefaultDevice(PSoundChannel::Recorder))
 {
+  m_deferredAnswer = true;
+
 #ifdef _WIN32
   // Windows MultMedia stuff seems to need greater depth due to enormous
   // latencies in its operation
@@ -265,7 +267,10 @@ bool OpalPCSSEndPoint::OnOutgoingCall(const OpalLocalConnection & connection)
 
 bool OpalPCSSEndPoint::OnIncomingCall(OpalLocalConnection & connection)
 {
-  return OnShowIncoming(dynamic_cast<const OpalPCSSConnection &>(connection));
+  if (m_deferredAnswer)
+    return OnShowIncoming(dynamic_cast<const OpalPCSSConnection &>(connection));
+
+  return OpalLocalEndPoint::OnIncomingCall(connection);
 }
 
 
