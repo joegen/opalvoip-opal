@@ -477,7 +477,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
   StringOptions extra;
   extra.ExtractFromURL(url);
 
-  if (!IsEstablished() && !extra.GetBoolean(OPAL_OPT_FORWARD_REFER))
+  if (!(IsOriginating() || IsEstablished() || extra.GetBoolean(OPAL_OPT_FORWARD_REFER)))
     return ForwardCall(remoteParty);
 
   // Tell the REFER processing UA if it should suppress NOTIFYs about the REFER processing.
