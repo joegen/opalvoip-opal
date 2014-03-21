@@ -1755,7 +1755,7 @@ bool OpalConnection::OnMediaFailed(unsigned sessionId, bool source)
 bool OpalConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
 {
   if (&stream.GetConnection() != this) {
-    PTRACE(3, "OpalCon\tTerminating OnMediaCommand \"" << command << "\" on " << stream << " for " << *this);
+    PTRACE(3, "OpalCon\tEnded processing OnMediaCommand \"" << command << "\" on " << stream << " for " << *this);
     return false;
   }
 

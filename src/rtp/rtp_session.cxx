@@ -605,8 +605,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
              << " ts=" << frame.GetTimestamp()
              << " src=" << RTP_TRACE_SRC(frame.GetSyncSource())
              << " ccnt=" << frame.GetContribSrcCount()
-             << " rem=" << GetRemoteAddress()
-             << " local=" << GetLocalAddress());
+             << " rem=" << GetRemoteAddress() << ':' << GetRemoteDataPort()
+             << " local=" << GetLocalAddress() << ':' << GetLocalDataPort());
     }
 
     else {
