@@ -1866,7 +1866,7 @@ OpalListenerWSS::OpalListenerWSS(OpalEndPoint & endpoint, PIPSocket::Address bin
 
 
 OpalListenerWSS::OpalListenerWSS(OpalEndPoint & endpoint, const OpalTransportAddress & binding, OpalTransportAddress::BindOptions option)
-: OpalListenerTLS(endpoint, binding, option)
+  : OpalListenerTLS(endpoint, binding, option)
 {
 }
 
@@ -1913,8 +1913,10 @@ PBoolean OpalTransportWS::Connect()
     return false;
 
   PWebSocket * webSocket = new PWebSocket();
-  if (!webSocket->Open(m_channel))
+  if (!webSocket->Open(m_channel)) {
+    delete webSocket;
     return false;
+  }
   m_channel = webSocket;
   return webSocket->Connect("sip");
 }
@@ -1941,14 +1943,15 @@ const PCaselessString & OpalTransportWS::GetProtoPrefix() const
 //////////////////////////////////////////////////////////////////////////
 
 OpalTransportWSS::OpalTransportWSS(OpalEndPoint & endpoint, PIPSocket::Address binding, WORD port, bool dummy)
-: OpalTransportTLS(endpoint, binding, port, dummy)
+  : OpalTransportTLS(endpoint, binding, port, dummy)
 {
 }
 
 
 OpalTransportWSS::OpalTransportWSS(OpalEndPoint & endpoint, PChannel * socket)
-: OpalTransportTLS(endpoint, socket)
+: OpalTransportTLS(endpoint, new PWebSocket)
 {
+  dynamic_cast<PWebSocket *>(m_channel)->Open(socket);
 }
 
 
@@ -1960,10 +1963,24 @@ PBoolean OpalTransportWSS::Connect()
     return false;
 
   PWebSocket * webSocket = new PWebSocket();
-  if (!webSocket->Open(m_channel))
+  if (!webSocket->Open(m_channel)) {
+    delete webSocket;
     return false;
+  }
   m_channel = webSocket;
   return webSocket->Connect("sip");
+}
+
+
+PBoolean OpalTransportWSS::ReadPDU(PBYTEArray & pdu)
+{
+  return dynamic_cast<PWebSocket *>(m_channel)->ReadMessage(pdu);
+}
+
+
+PBoolean OpalTransportWSS::WritePDU(const PBYTEArray & pdu)
+{
+  return Write(pdu, pdu.GetSize());
 }
 
 
