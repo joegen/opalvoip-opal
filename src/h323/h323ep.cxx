@@ -616,7 +616,7 @@ void H323EndPoint::OnReleased(OpalConnection & connection)
     PTRACE(3, "H323", "Maintaining TCP connection: " << *signallingChannel);
     m_reusableTransports.insert(signallingChannel);
     signallingChannel->AttachThread(new PThreadObj2Arg<H323EndPoint, OpalTransportPtr, bool>(*this,
-                signallingChannel, true, &H323EndPoint::InternalNewIncomingConnection, false, "H225 Answer"));
+                signallingChannel, true, &H323EndPoint::InternalNewIncomingConnection, false, "H225 Maintain"));
   }
 
   OpalRTPEndPoint::OnReleased(connection);
@@ -642,7 +642,7 @@ void H323EndPoint::InternalNewIncomingConnection(OpalTransportPtr transport, boo
   do {
     if (!pdu.Read(*transport)) {
       if (reused) {
-        PTRACE(4, "H225\tReusable TCP connection not reused.");
+        PTRACE(3, "H225\tReusable TCP connection not reused.");
         transport->Close();
         return;
       }
