@@ -1813,18 +1813,26 @@ OpalListenerWS::OpalListenerWS(OpalEndPoint & endpoint, const OpalTransportAddre
 }
 
 
-OpalTransport * OpalListenerWS::OnAccept(PTCPSocket * socket)
+static bool AcceptWS(PChannel & chan)
 {
   PHTTPServer ws;
   ws.SetWebSocketNotifier("sip", PHTTPServer::WebSocketNotifier());
 
-  if (ws.Open(*socket)) {
-    while (ws.ProcessCommand())
-      ;
-    ws.Detach();
-    if (socket->IsOpen())
-      return new OpalTransportWS(endpoint, socket);
-  }
+  if (!ws.Open(chan))
+    return false;
+
+  while (ws.ProcessCommand())
+    ;
+  ws.Detach();
+
+  return chan.IsOpen();
+}
+
+
+OpalTransport * OpalListenerWS::OnAccept(PTCPSocket * socket)
+{
+  if (AcceptWS(*socket))
+    return new OpalTransportWS(endpoint, socket);
 
   delete socket;
   return NULL;
@@ -1866,13 +1874,8 @@ OpalListenerWSS::OpalListenerWSS(OpalEndPoint & endpoint, const OpalTransportAdd
 OpalTransport * OpalListenerWSS::OnAccept(PTCPSocket * socket)
 {
   PSSLChannel * ssl = new PSSLChannel(m_sslContext);
-  if (ssl->Accept(socket)) {
-    PHTTPServer ws;
-    ws.SetWebSocketNotifier("sip", PHTTPServer::WebSocketNotifier());
-
-    if (ws.Open(*ssl) && ws.ProcessCommand())
-      return new OpalTransportWSS(endpoint, ssl);
-  }
+  if (ssl->Accept(socket) && AcceptWS(*ssl))
+    return new OpalTransportWSS(endpoint, ssl);
 
   PTRACE(1, "OpalTLS\tAccept failed: " << ssl->GetErrorText());
   delete ssl; // Will also delete socket
