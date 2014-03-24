@@ -1651,6 +1651,28 @@ public:
   */
   virtual PBoolean Connect();
 
+  /** Read a packet from the transport.
+  This will read using the transports mechanism for PDU boundaries, for
+  example UDP is a single Read() call, while for TCP there is a TPKT
+  header that indicates the size of the PDU.
+
+  If false is returned but there is data returned in the \p packet
+  that indicates that the available buffer space was too small, e.g. an
+  EMSGSIZE error was returned by recvfrom.
+  */
+  virtual PBoolean ReadPDU(
+    PBYTEArray & pdu  ///<  PDU read from transport
+    );
+
+  /**Write a packet to the transport.
+  This will write using the transports mechanism for PDU boundaries, for
+  example UDP is a single Write() call, while for TCP there is a TPKT
+  header that indicates the size of the PDU.
+  */
+  virtual PBoolean WritePDU(
+    const PBYTEArray & pdu     ///<  Packet to write
+    );
+
   virtual const PCaselessString & GetProtoPrefix() const;
 };
 
