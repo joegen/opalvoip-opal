@@ -347,11 +347,15 @@ class RegistrationStatusPage : public BaseStatusPage
   public:
     RegistrationStatusPage(MyManager & mgr, const PHTTPAuthority & auth);
 
+    typedef map<PString, PString> StatusMap;
+#if OPAL_H323
+    const StatusMap & GetH323() const { return m_h323; }
+#endif
 #if OPAL_SIP
-    PStringList GetAoRs() const { return m_sipAoRs; }
+    const StatusMap & GetSIP() const { return m_sip; }
 #endif
 #if OPAL_SKINNY
-    PStringArray GetSkinnyNames() const { return m_skinnyNames; }
+    const StatusMap & GetSkinny() const { return m_skinny; }
 #endif
 
   protected:
@@ -359,11 +363,14 @@ class RegistrationStatusPage : public BaseStatusPage
     virtual const char * GetTitle() const;
     virtual void CreateContent(PHTML & html, const PStringToString & query) const;
 
+#if OPAL_H323
+    StatusMap m_h323;
+#endif
 #if OPAL_SIP
-    PStringList m_sipAoRs;
+    StatusMap m_sip;
 #endif
 #if OPAL_SKINNY
-    PStringArray m_skinnyNames;
+    StatusMap m_skinny;
 #endif
 };
 
