@@ -1079,14 +1079,12 @@ void OpalTransport::KeepAlive(PTimer &, P_INT_PTR)
   if (!LockReadOnly())
     return;
 
-#if PTRACING
-  bool ok =
-#endif
-  Write(m_keepAliveData, m_keepAliveData.GetSize());
-
-  PTRACE(ok ? 5 : 2, "Opal\tTransport keep alive "
-         << (ok ? "send to " : "failed on ")
-         << *this << ": " << m_channel->GetLastWriteCount() << " bytes");
+  if (Write(m_keepAliveData, m_keepAliveData.GetSize())) {
+    PTRACE(4, "Opal\tTransport keep alive (" << m_channel->GetLastWriteCount() << " bytes) sent on " << *this);
+  }
+  else {
+    PTRACE(2, "Opal\tTransport keep alive failed on " << *this << ": " << m_channel->GetErrorText(PChannel::LastWriteError));
+  }
 
   UnlockReadOnly();
 }

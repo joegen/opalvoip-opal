@@ -621,7 +621,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
           unsigned digits = ends[2] - starts[2];
           while (number <= lastNumber) {
             PString calculatedName = name.Left(starts[0]) + psprintf("%0*u", digits, number++) + name.Mid(ends[0]);
-            if (!ep->Register(server, calculatedName)) {
+            if (!ep->Register(server, calculatedName, deviceType)) {
               PSYSTEMLOG(Error, "Could not register " << calculatedName << " with skinny server \"" << server << '"');
             }
           }
