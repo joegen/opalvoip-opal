@@ -53,6 +53,7 @@
 #undef VPX_CODEC_USE_ERROR_CONCEALMENT
 #endif
 
+#define HAS_OUTPUT_PARTITION (defined(VPX_CODEC_CAP_OUTPUT_PARTITION) && defined(VPX_CODEC_USE_OUTPUT_PARTITION))
 
 #define INCLUDE_OM_CUSTOM_PACKETIZATION 1
 #define IGNORE_X_MX_MAX_SIZE 1
@@ -198,23 +199,27 @@ static struct PluginCodec_Option const PictureID =
   "None:Byte:Word"                    // Enumeration
 };
 
+#if HAS_OUTPUT_PARTITION
 static struct PluginCodec_Option const OutputPartition =
 {
   PluginCodec_BoolOption,             // Option type
   "Output Partition",                 // User visible name
   false,                              // User Read/Only flag
   PluginCodec_AndMerge,               // Merge mode
-  "1",                                // Initial value
+  "0",                                // Initial value
   NULL,                               // FMTP option name
   NULL,                               // FMTP default value
   0                                   // H.245 generic capability code and bit mask
 };
+#endif
 
 static struct PluginCodec_Option const * OptionTableRFC[] = {
   &MaxFR,
   &MaxFS,
   &PictureID,
+#if HAS_OUTPUT_PARTITION
   &OutputPartition,
+#endif
   &TemporalSpatialTradeOff,
   &SpatialResampling,
   &SpatialResamplingUp,
@@ -242,21 +247,13 @@ class VP8Format : public PluginCodec_VideoFormat<VP8_CODEC>
   private:
     typedef PluginCodec_VideoFormat<VP8_CODEC> BaseClass;
 
-  protected:
-    bool m_partition;
-
   public:
     VP8Format(const char * formatName, const char * payloadName, const char * description, OptionsTable options)
       : BaseClass(formatName, payloadName, description, MaxBitRate, options)
-      , m_partition(false)
     {
 #ifdef VPX_CODEC_USE_ERROR_CONCEALMENT
       if ((vpx_codec_get_caps(vpx_codec_vp8_dx()) & VPX_CODEC_CAP_ERROR_CONCEALMENT) != 0)
         m_flags |= PluginCodec_ErrorConcealment; // Prevent video update request on packet loss
-#endif
-#ifdef VPX_CODEC_CAP_OUTPUT_PARTITION
-      if ((vpx_codec_get_caps(vpx_codec_vp8_dx()) & VPX_CODEC_CAP_OUTPUT_PARTITION) != 0)
-        m_partition = true;
 #endif
     }
 };
@@ -288,9 +285,6 @@ class VP8FormatRFC : public VP8Format
       if (it != original.end() && !it->second.empty())
         ClampMin(PLUGINCODEC_VIDEO_CLOCK/String2Unsigned(it->second), original, changed, PLUGINCODEC_OPTION_FRAME_TIME);
 
-      if (!m_partition)
-        ClampMax(0, original, changed, OutputPartition.m_name);
-
       return true;
     }
 
@@ -303,9 +297,6 @@ class VP8FormatRFC : public VP8Format
 
       Change(PLUGINCODEC_VIDEO_CLOCK/original.GetUnsigned(PLUGINCODEC_OPTION_FRAME_TIME),
              original, changed, MaxFR.m_name);
-
-      if (!m_partition)
-        ClampMax(0, original, changed, OutputPartition.m_name);
 
       return true;
     }
@@ -603,8 +594,9 @@ class VP8EncoderRFC : public VP8Encoder
         return false;
       }
 
-#ifdef VPX_CODEC_USE_OUTPUT_PARTITION
-      if (strcasecmp(optionName, OutputPartition.m_name) == 0)
+#if HAS_OUTPUT_PARTITION
+      if (strcasecmp(optionName, OutputPartition.m_name) == 0 &&
+                    (vpx_codec_get_caps(vpx_codec_vp8_dx()) & VPX_CODEC_CAP_OUTPUT_PARTITION) != 0)
         return SetOptionBit(m_initFlags, VPX_CODEC_USE_OUTPUT_PARTITION, optionValue);
 #endif
 
@@ -621,9 +613,9 @@ class VP8EncoderRFC : public VP8Encoder
       if (m_offset == 0)
         rtp[0] |= 0x10; // Add S bit if start of partition
 
-#ifdef VPX_CODEC_USE_OUTPUT_PARTITION
-      if (m_packet->data.frame.partition_id >= 0)
-        rtp[0] |= (uint8_t)(m_packet->data.frame.partition_id&0x0f);
+#if HAS_OUTPUT_PARTITION
+      if (m_packet->data.frame.partition_id > 0 && m_packet->data.frame.partition_id <= 8)
+        rtp[0] |= (uint8_t)m_packet->data.frame.partition_id;
 #endif
 
       if ((m_packet->data.frame.flags&VPX_FRAME_IS_DROPPABLE) != 0)
