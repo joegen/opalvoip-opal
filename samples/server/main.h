@@ -384,10 +384,15 @@ class CallStatusPage : public BaseStatusPage
   public:
     CallStatusPage(MyManager & mgr, const PHTTPAuthority & auth);
 
+    const PArray<PString> & GetCalls() const { return m_calls; }
+
   protected:
+    virtual PString LoadText(PHTTPRequest & request);
     virtual const char * GetTitle() const;
     virtual void CreateContent(PHTML & html, const PStringToString & query) const;
     virtual bool OnPostControl(const PStringToString & data, PHTML & msg);
+
+    PArray<PString> m_calls;
 };
 
 
