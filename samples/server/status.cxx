@@ -78,7 +78,7 @@ void BaseStatusPage::CreateHTML(PHTML & html, const PStringToString & query)
 
   html << PHTML::Form()
        << PHTML::HRule()
-
+       << "Last update: <!--#macro LongDateTime-->" << PHTML::Paragraph()
        << MyProcessAncestor::Current().GetCopyrightText()
        << PHTML::Body();
 }
@@ -370,6 +370,13 @@ CallStatusPage::CallStatusPage(MyManager & mgr, const PHTTPAuthority & auth)
 }
 
 
+PString CallStatusPage::LoadText(PHTTPRequest & request)
+{
+  m_calls = m_manager.GetAllCalls();
+  return BaseStatusPage::LoadText(request);
+}
+
+
 const char * CallStatusPage::GetTitle() const
 {
   return "OPAL Server Call Status";
@@ -378,7 +385,8 @@ const char * CallStatusPage::GetTitle() const
 
 void CallStatusPage::CreateContent(PHTML & html, const PStringToString &) const
 {
-  html << PHTML::TableStart(PHTML::Border1, PHTML::CellPad4)
+  html << "Current call count: <!--#macro CallCount-->" << PHTML::Paragraph()
+       << PHTML::TableStart(PHTML::Border1, PHTML::CellPad4)
        << PHTML::TableRow()
        << PHTML::TableHeader()
        << "&nbsp;A&nbsp;Party&nbsp;"
@@ -422,6 +430,13 @@ bool CallStatusPage::OnPostControl(const PStringToString & data, PHTML & msg)
 }
 
 
+PCREATE_SERVICE_MACRO(CallCount, resource, P_EMPTY)
+{
+  CallStatusPage * status = dynamic_cast<CallStatusPage *>(resource.m_resource);
+  return PAssertNULL(status) == NULL ? 0 : status->GetCalls().GetSize();
+}
+
+
 PCREATE_SERVICE_MACRO_BLOCK(CallStatus,resource,P_EMPTY,htmlBlock)
 {
   CallStatusPage * status = dynamic_cast<CallStatusPage *>(resource.m_resource);
@@ -430,7 +445,7 @@ PCREATE_SERVICE_MACRO_BLOCK(CallStatus,resource,P_EMPTY,htmlBlock)
 
   PString substitution;
 
-  PArray<PString> calls = status->m_manager.GetAllCalls();
+  const PArray<PString> & calls = status->GetCalls();
   for (PINDEX i = 0; i < calls.GetSize(); ++i) {
     PSafePtr<OpalCall> call = status->m_manager.FindCallWithLock(calls[i], PSafeReadOnly);
     if (call == NULL)
