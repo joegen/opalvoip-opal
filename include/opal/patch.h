@@ -306,6 +306,8 @@ class OpalMediaPatch : public PSafeObject
     Thread * patchThread;
     PMutex patchThreadMutex;
 
+    bool m_transcoderChanged;
+
   private:
     P_REMOVE_VIRTUAL(bool, OnPatchStart(), false);
 };
