@@ -46,11 +46,8 @@
 #endif
 
 #include <codec/opalplugin.h>
+#include <codec/known.h>
 
-
-#define OPAL_RGB24   "RGB24"
-#define OPAL_RGB32   "RGB32"
-#define OPAL_YUV420P "YUV420P"
 
 extern const OpalVideoFormat & GetOpalRGB24();
 extern const OpalVideoFormat & GetOpalRGB32();
