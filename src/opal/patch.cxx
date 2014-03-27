@@ -57,6 +57,7 @@ OpalMediaPatch::OpalMediaPatch(OpalMediaStream & src)
   , m_bypassToPatch(NULL)
   , m_bypassFromPatch(NULL)
   , patchThread(NULL)
+  , m_transcoderChanged(false)
 {
   PTRACE_CONTEXT_ID_FROM(src);
 
@@ -221,6 +222,7 @@ bool OpalMediaPatch::ResetTranscoders()
       return false;
   }
 
+  m_transcoderChanged = true;
   return true;
 }
 
@@ -828,6 +830,13 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
 {
   if (!LockReadOnly())
     return false;
+
+  if (m_transcoderChanged) {
+    m_transcoderChanged = false;
+    UnlockReadOnly();
+    PTRACE(3, "Patch\tIgnoring source data with transcoder change on " << *this);
+    return true;
+  }
 
   if (m_bypassFromPatch != NULL) {
     PTRACE(3, "Patch\tMedia patch bypass started by " << *m_bypassFromPatch << " on " << *this);
