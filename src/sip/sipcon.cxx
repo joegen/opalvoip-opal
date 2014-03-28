@@ -219,7 +219,7 @@ SIPConnection::SIPConnection(const Init & init)
   , m_lastReceivedINVITE(NULL)
   , m_delayedAckInviteResponse(NULL)
   , m_delayedAckTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnDelayedAckTimeout)
-  , m_delayedAckTimeout1(0, 30) // second(s)
+  , m_delayedAckTimeout1(init.m_endpoint.GetInviteTimeout() - PTimeInterval(0,2)) // A couple of seconds shorter
   , m_delayedAckTimeout2(0, 2) // second(s)
   , m_delayedAckPDU(NULL)
   , m_sdpSessionId(PTime().GetTimeInSeconds())
