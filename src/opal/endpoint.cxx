@@ -46,6 +46,8 @@ static const OpalBandwidth DefaultInitialBandwidth = 4000000; // 4Mb/s
 
 #define new PNEW
 
+#define PTraceModule() "OpalEP"
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -68,19 +70,19 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
   if (defaultLocalPartyName.IsEmpty())
     defaultLocalPartyName = PProcess::Current().GetName() & "User";
 
-  PTRACE(4, "OpalEP\tCreated endpoint: " << prefixName);
+  PTRACE(4, "Created endpoint: " << prefixName);
 }
 
 
 OpalEndPoint::~OpalEndPoint()
 {
-  PTRACE(4, "OpalEP\t" << prefixName << " endpoint destroyed.");
+  PTRACE(4, prefixName << " endpoint destroyed.");
 }
 
 
 void OpalEndPoint::ShutDown()
 {
-  PTRACE(3, "OpalEP\t" << prefixName << " endpoint shutting down.");
+  PTRACE(3, prefixName << " endpoint shutting down.");
 
   // Shut down the listeners as soon as possible to avoid race conditions
   listeners.RemoveAll();
@@ -143,7 +145,7 @@ bool OpalEndPoint::StartListeners(const PStringArray & listenerAddresses, bool a
   if (listenerAddresses.IsEmpty()) {
     interfaces = GetDefaultListeners();
     if (interfaces.IsEmpty()) {
-      PTRACE(1, "OpalMan", "No default listener interfaces specified for " << GetPrefixName());
+      PTRACE(1, "No default listener interfaces specified for " << GetPrefixName());
       return false;
     }
   }
@@ -205,7 +207,7 @@ PBoolean OpalEndPoint::StartListener(const OpalTransportAddress & listenerAddres
   if (iface.IsEmpty()) {
     PStringArray interfaces = GetDefaultListeners();
     if (interfaces.IsEmpty()) {
-      PTRACE(1, "OpalMan", "No default listener interfaces specified for " << GetPrefixName());
+      PTRACE(1, "No default listener interfaces specified for " << GetPrefixName());
       return false;
     }
     iface = OpalTransportAddress(interfaces[0], GetDefaultSignalPort());
@@ -214,14 +216,14 @@ PBoolean OpalEndPoint::StartListener(const OpalTransportAddress & listenerAddres
   // Check for already listening
   for (OpalListenerList::iterator it = listeners.begin(); it != listeners.end(); ++it) {
     if (it->GetLocalAddress().IsEquivalent(iface)) {
-      PTRACE(4, "OpalEP\tAlready listening on " << iface);
+      PTRACE(4, "Already listening on " << iface);
       return true;
     }
   }
 
   listener = iface.CreateListener(*this, OpalTransportAddress::FullTSAP);
   if (listener == NULL) {
-    PTRACE(1, "OpalEP\tCould not create listener: " << iface);
+    PTRACE(1, "Could not create listener: " << iface);
     return false;
   }
 
@@ -242,7 +244,7 @@ PBoolean OpalEndPoint::StartListener(OpalListener * listener)
   // stopping the listener thread. This is good - it means that the 
   // listener Close function will appear to have stopped the thread
   if (!listener->Open(PCREATE_NOTIFIER(NewIncomingConnection))) {
-    PTRACE(1, "OpalEP\tCould not start listener: " << *listener);
+    PTRACE(1, "Could not start listener: " << *listener);
     delete listener;
     return false;
   }
@@ -439,7 +441,7 @@ void OpalEndPoint::DestroyConnection(OpalConnection * connection)
 
 PBoolean OpalEndPoint::OnSetUpConnection(OpalConnection & PTRACE_PARAM(connection))
 {
-  PTRACE(3, "OpalEP\tOnSetUpConnection " << connection);
+  PTRACE(3, "OnSetUpConnection " << connection);
   return true;
 }
 
@@ -481,7 +483,7 @@ void OpalEndPoint::OnEstablished(OpalConnection & connection)
 
 void OpalEndPoint::OnReleased(OpalConnection & connection)
 {
-  PTRACE(4, "OpalEP\tOnReleased " << connection);
+  PTRACE(4, "OnReleased " << connection);
   connectionsActive.RemoveAt(connection.GetToken());
   manager.OnReleased(connection);
 }
@@ -502,7 +504,7 @@ void OpalEndPoint::OnHold(OpalConnection & connection)
 PBoolean OpalEndPoint::OnForwarded(OpalConnection & connection,
 			       const PString & forwardParty)
 {
-  PTRACE(4, "OpalEP\tOnForwarded " << connection);
+  PTRACE(4, "OnForwarded " << connection);
   return manager.OnForwarded(connection, forwardParty);
 }
 
@@ -540,7 +542,7 @@ PBoolean OpalEndPoint::ClearCallSynchronous(const PString & token,
   if (!ClearCall(token, reason, sync))
     return false;
 
-  PTRACE(5, "OpalCon\tSynchronous wait for " << token);
+  PTRACE(5, "Synchronous wait for " << token);
   sync->Wait();
   return true;
 }
