@@ -3701,15 +3701,26 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 
   m_owner->FinaliseForking(*this, response); // Need this before sending ACK
 
-  if (response.GetMIME().GetCSeq().Find(MethodNames[Method_INVITE]) != P_MAX_INDEX &&
-                            GetConnection()->OnReceivedResponseToINVITE(*this, response)) {
-    // ACK constructed following 13.2.2.4 or 17.1.1.3
-    SIPAck ack(*this, response);
-    if (!ack.Send())
-      return false;
+  bool delayedACK = false;
+  if (response.GetMIME().GetCSeq().Find(MethodNames[Method_INVITE]) != P_MAX_INDEX) {
+    if (GetConnection()->OnReceivedResponseToINVITE(*this, response)) {
+      // ACK constructed following 13.2.2.4 or 17.1.1.3
+      SIPAck ack(*this, response);
+      if (!ack.Send())
+        return false;
+    }
+    else
+      delayedACK = true;
   }
 
-  return SIPTransaction::OnReceivedResponse(response);
+  if (!SIPTransaction::OnReceivedResponse(response))
+    return false;
+
+  // Delayed ack, increase the timeout
+  if (delayedACK && response.GetStatusCode()/100 == 2)
+    m_completionTimer = GetEndPoint().GetInviteTimeout();
+
+  return true;
 }
 
 
