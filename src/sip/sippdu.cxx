@@ -3718,6 +3718,8 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 SIPAck::SIPAck(const SIPTransaction & invite, const SIP_PDU & response)
   : SIP_PDU(Method_ACK, response.GetTransport())
 {
+  PTRACE_CONTEXT_ID_FROM(invite);
+
   if (response.GetStatusCode() < 300)
     InitialiseHeaders(*invite.GetConnection(), invite.GetMIME().GetCSeqIndex());
   else {
