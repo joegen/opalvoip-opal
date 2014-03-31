@@ -241,7 +241,9 @@ class OpalMediaPatch : public PSafeObject
   protected:
     PDECLARE_NOTIFIER(OpalMediaCommand, OpalMediaPatch, InternalOnMediaCommand1);
     void InternalOnMediaCommand2(OpalMediaCommand * command);
-                
+
+    bool CanStart() const;
+
     /**Called from the associated patch thread */
     virtual void Main();
     void StopThread();
