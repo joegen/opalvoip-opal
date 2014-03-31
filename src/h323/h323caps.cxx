@@ -2641,7 +2641,7 @@ class H323_UserInputCapability_##type : public H323_UserInputCapability \
   DECLARE_USER_INPUT_CLASS(type) \
   const OpalMediaFormat UserInput_##type( \
     UIISubTypeNames[H323_UserInputCapability::type], \
-    OpalMediaType::UserInput(), RTP_DataFrame::IllegalPayloadType, NULL, false, 1, 0, 0, 0 \
+    OpalMediaType::UserInput(), RTP_DataFrame::MaxPayloadType, NULL, false, 1, 0, 0, 0 \
   ); \
   H323_REGISTER_CAPABILITY(H323_UserInputCapability_##type, UIISubTypeNames[H323_UserInputCapability::type]) \
 
