@@ -47,6 +47,8 @@
 
 #define new PNEW
 
+#define PTraceModule() "Call"
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -82,7 +84,7 @@ OpalCall::OpalCall(OpalManager & mgr)
   }
 #endif
 
-  PTRACE(3, "Call\tCreated " << *this);
+  PTRACE(3, "Created " << *this);
 }
 
 
@@ -100,7 +102,7 @@ OpalCall::~OpalCall()
   }
 #endif
 
-  PTRACE(3, "Call\tDestroyed " << *this);
+  PTRACE(3, "Destroyed " << *this);
 }
 
 
@@ -112,7 +114,7 @@ void OpalCall::PrintOn(ostream & strm) const
 
 void OpalCall::OnEstablishedCall()
 {
-  PTRACE(3, "Call\tEstablished " << *this);
+  PTRACE(3, "Established " << *this);
   manager.OnEstablishedCall(*this);
 }
 
@@ -130,7 +132,7 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
 {
   PTRACE_CONTEXT_ID_PUSH_THREAD(this);
 
-  PTRACE(3, "Call\tClearing " << (sync != NULL ? "(sync) " : "") << *this << " reason=" << reason);
+  PTRACE(3, "Clearing " << (sync != NULL ? "(sync) " : "") << *this << " reason=" << reason);
 
   {
     PSafeLockReadWrite lock(*this);
@@ -190,7 +192,7 @@ void OpalCall::InternalOnClear()
 
   if (LockReadWrite()) {
     while (!m_endCallSyncPoint.empty()) {
-      PTRACE(5, "Call\tSignalling end call.");
+      PTRACE(5, "Signalling end call.");
       m_endCallSyncPoint.front()->Signal();
       m_endCallSyncPoint.pop_front();
     }
@@ -219,7 +221,7 @@ void OpalCall::OnNewConnection(OpalConnection & connection)
 
 PBoolean OpalCall::OnSetUp(OpalConnection & connection)
 {
-  PTRACE(3, "Call\tOnSetUp " << connection);
+  PTRACE(3, "OnSetUp " << connection);
 
   if (m_isClearing)
     return false;
@@ -240,13 +242,13 @@ PBoolean OpalCall::OnSetUp(OpalConnection & connection)
 
 void OpalCall::OnProceeding(OpalConnection & PTRACE_PARAM(connection))
 {
-  PTRACE(3, "Call\tOnProceeding " << connection);
+  PTRACE(3, "OnProceeding " << connection);
 }
 
 
 PBoolean OpalCall::OnAlerting(OpalConnection & connection)
 {
-  PTRACE(3, "Call\tOnAlerting " << connection);
+  PTRACE(3, "OnAlerting " << connection);
 
   if (m_isClearing)
     return false;
@@ -269,14 +271,14 @@ PBoolean OpalCall::OnAlerting(OpalConnection & connection)
 OpalConnection::AnswerCallResponse OpalCall::OnAnswerCall(OpalConnection & PTRACE_PARAM(connection),
                                                           const PString & PTRACE_PARAM(caller))
 {
-  PTRACE(3, "Call\tOnAnswerCall " << connection << " caller \"" << caller << '"');
+  PTRACE(3, "OnAnswerCall " << connection << " caller \"" << caller << '"');
   return OpalConnection::AnswerCallDeferred;
 }
 
 
 PBoolean OpalCall::OnConnected(OpalConnection & connection)
 {
-  PTRACE(3, "Call\tOnConnected " << connection);
+  PTRACE(3, "OnConnected " << connection);
 
   if (m_isClearing || !LockReadOnly())
     return false;
@@ -310,7 +312,7 @@ PBoolean OpalCall::OnConnected(OpalConnection & connection)
 
 PBoolean OpalCall::OnEstablished(OpalConnection & connection)
 {
-  PTRACE(3, "Call\tOnEstablished " << connection);
+  PTRACE(3, "OnEstablished " << connection);
 
   PSafeLockReadWrite lock(*this);
   if (m_isClearing || !lock.IsLocked())
@@ -339,7 +341,7 @@ PBoolean OpalCall::OnEstablished(OpalConnection & connection)
 
 PSafePtr<OpalConnection> OpalCall::GetOtherPartyConnection(const OpalConnection & connection) const
 {
-  PTRACE(4, "Call\tGetOtherPartyConnection " << connection);
+  PTRACE(4, "GetOtherPartyConnection " << connection);
 
   PSafePtr<OpalConnection> otherConnection;
   EnumerateConnections(otherConnection, PSafeReference, &connection);
@@ -351,7 +353,7 @@ bool OpalCall::Hold(bool placeOnHold)
 {
   PTRACE_CONTEXT_ID_PUSH_THREAD(this);
 
-  PTRACE(3, "Call\t" << (placeOnHold ? "Setting to" : "Retrieving from") << " On Hold");
+  PTRACE(3, (placeOnHold ? "Setting to" : "Retrieving from") << " On Hold");
 
   bool ok = false;
 
@@ -396,12 +398,12 @@ bool OpalCall::Transfer(const PString & newAddress, OpalConnection * connection)
         return conn->TransferConnection(newAddress);
     }
 
-    PTRACE(2, "Call\tUnable to resolve transfer to \"" << newAddress << '"');
+    PTRACE(2, "Unable to resolve transfer to \"" << newAddress << '"');
     return false;
   }
 
   if (connection->IsReleased()) {
-    PTRACE(2, "Call\tCannot transfer to released connection " << *connection);
+    PTRACE(2, "Cannot transfer to released connection " << *connection);
     return false;
   }
 
@@ -411,7 +413,7 @@ bool OpalCall::Transfer(const PString & newAddress, OpalConnection * connection)
   if (prefix.IsEmpty() || prefix == connection->GetPrefixName() || manager.HasCall(newAddress))
     return connection->TransferConnection(newAddress);
 
-  PTRACE(3, "Call\tTransferring " << *connection << " to \"" << newAddress << '"');
+  PTRACE(3, "Transferring " << *connection << " to \"" << newAddress << '"');
 
   PSafePtr<OpalConnection> connectionToKeep = GetOtherPartyConnection(*connection);
   if (connectionToKeep == NULL)
@@ -480,7 +482,7 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection)
 
   connection.AdjustMediaFormats(true, NULL, commonFormats);
 
-  PTRACE(4, "Call\tGetMediaFormats for " << connection << "\n    "
+  PTRACE(4, "GetMediaFormats for " << connection << "\n    "
          << setfill(',') << commonFormats << setfill(' '));
 
   return commonFormats;
@@ -541,20 +543,20 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
         (sinkStream != NULL && sinkStream->GetMediaFormat() == preselectedFormat)) {
       if (sourceStream->IsPaused()) {
         sourceStream->SetPaused(false);
-        PTRACE(3, "Call\tOpenSourceMediaStreams (un-pausing)" << traceText);
+        PTRACE(3, "OpenSourceMediaStreams (un-pausing)" << traceText);
       }
       else {
-        PTRACE(3, "Call\tOpenSourceMediaStreams (already opened)" << traceText);
+        PTRACE(3, "OpenSourceMediaStreams (already opened)" << traceText);
       }
       return true;
     }
     if (sinkStream == NULL && sourceStream->IsOpen()) {
-      PTRACE(3, "Call\tOpenSourceMediaStreams (is opening)" << traceText);
+      PTRACE(3, "OpenSourceMediaStreams (is opening)" << traceText);
       return true;
     }
   }
 
-  PTRACE(3, "Call\tOpenSourceMediaStreams " << (sourceStream != NULL ? "replace" : "open") << traceText);
+  PTRACE(3, "OpenSourceMediaStreams " << (sourceStream != NULL ? "replace" : "open") << traceText);
   sourceStream.SetNULL();
 
   // Create the sinks and patch if needed
@@ -574,7 +576,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
 
     OpalMediaFormatList sinkMediaFormats = otherConnection->GetMediaFormats();
     if (sinkMediaFormats.IsEmpty()) {
-      PTRACE(2, "Call\tOpenSourceMediaStreams failed with no sink formats" << traceText);
+      PTRACE(2, "OpenSourceMediaStreams failed with no sink formats" << traceText);
       return false;
     }
 
@@ -589,7 +591,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
     else {
       sourceMediaFormats = connection.GetMediaFormats();
       if (sourceMediaFormats.IsEmpty()) {
-        PTRACE(2, "Call\tOpenSourceMediaStreams failed with no source formats" << traceText);
+        PTRACE(2, "OpenSourceMediaStreams failed with no source formats" << traceText);
         return false;
       }
 
@@ -612,7 +614,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
     if (contentRole == OpalVideoFormat::eNoRole && preselectedFormat.IsValid())
       contentRole = preselectedFormat.GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole);
     if (contentRole != OpalVideoFormat::eNoRole) {
-      PTRACE(4, "Call\tContent Role " << contentRole << traceText);
+      PTRACE(4, "Content Role " << contentRole << traceText);
 
       bool noDefaultMainRole = contentRole != OpalVideoFormat::eMainRole;
 
@@ -640,7 +642,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
 
       if (noDefaultMainRole) {
         if (newLists[0].IsEmpty() || newLists[1].IsEmpty()) {
-          PTRACE(2, "Call\tUnsupported Content Role " << contentRole << traceText);
+          PTRACE(2, "Unsupported Content Role " << contentRole << traceText);
           return false;
         }
 
@@ -648,7 +650,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
         sinkMediaFormats = newLists[1];
       }
       else {
-        PTRACE(4, "Call\tDefault main content role used " << traceText);
+        PTRACE(4, "Default main content role used " << traceText);
         contentRole = OpalVideoFormat::eNoRole;
       }
     }
@@ -669,7 +671,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
 
     if (sessionID == 0) {
       sessionID = otherConnection->GetNextSessionID(mediaType, false);
-      PTRACE(3, "Call\tOpenSourceMediaStreams using session " << sessionID << " on " << connection);
+      PTRACE(3, "OpenSourceMediaStreams using session " << sessionID << " on " << connection);
     }
 
     // Finally have the negotiated formats, open the streams
@@ -735,11 +737,11 @@ bool OpalCall::SelectMediaFormats(const OpalMediaType & mediaType,
                                   OpalMediaFormat & dstFormat) const
 {
   if (OpalTranscoder::SelectFormats(mediaType, srcFormats, dstFormats, allFormats, srcFormat, dstFormat)) {
-    PTRACE(3, "Call\tSelected media formats " << srcFormat << " -> " << dstFormat);
+    PTRACE(3, "Selected media formats " << srcFormat << " -> " << dstFormat);
     return true;
   }
 
-  PTRACE(2, "Call\tSelectMediaFormats could not find compatible " << mediaType << " format:\n"
+  PTRACE(2, "SelectMediaFormats could not find compatible " << mediaType << " format:\n"
             "  source formats=" << setfill(',') << srcFormats << "\n"
             "   sink  formats=" << dstFormats << setfill(' '));
   return false;
@@ -778,6 +780,8 @@ void OpalCall::OnUserInputTone(OpalConnection & connection,
       reprocess = false;
   }
 
+  PTRACE(4, "OnUserInputTone: '" << tone << "', duration=" << duration << ", " << (reprocess ? "reprocessing as string" : "handled"));
+
   if (reprocess)
     connection.OnUserInputString(tone);
 }
@@ -785,7 +789,7 @@ void OpalCall::OnUserInputTone(OpalConnection & connection,
 
 void OpalCall::OnReleased(OpalConnection & connection)
 {
-  PTRACE(3, "Call\tOnReleased " << connection);
+  PTRACE(3, "OnReleased " << connection);
 
   SetCallEndReason(connection.GetCallEndReason());
 
@@ -797,7 +801,7 @@ void OpalCall::OnReleased(OpalConnection & connection)
   {
     PSafePtr<OpalConnection> last = connectionsActive.GetAt(0, PSafeReference);
     if (last != NULL) {
-      PTRACE(4, "Call", "Releasing last connection in call");
+      PTRACE(4, "Releasing last connection in call");
       last->Release(connection.GetCallEndReason(), true);
     }
   }
@@ -831,7 +835,7 @@ bool OpalCall::StartRecording(const PFilePath & fn, const OpalRecordManager::Opt
 
   OpalRecordManager * newManager = OpalRecordManager::Factory::CreateInstance(fn.GetType());
   if (newManager == NULL) {
-    PTRACE(2, "OPAL\tCannot record to file type " << fn);
+    PTRACE(2, "Cannot record to file type " << fn);
     return false;
   }
 
