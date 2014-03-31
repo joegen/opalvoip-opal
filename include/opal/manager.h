@@ -1223,8 +1223,16 @@ class OpalManager : public PObject
     );
 
     /**Call back for remote enpoint has sent user input as tones.
-       If duration is zero then this indicates the beginning of the tone. If
-       duration is non-zero then it indicates the end of the tone output.
+       If \p duration is zero then this indicates the beginning of the tone.
+       If \p duration is greater than zero then it indicates the end of the
+       tone output and how long the tone had run.
+
+       Note, there is no guarantee a zero value (start tone) will occur. There
+       is also no guarantee this function is called at all, given how the
+       remote may send user indications. For simple, "event" based, user
+       indications the OnUserInputString() should be used. THis function is
+       only for when a more precise representation of the tone, and it's
+       duration, is required.
 
        The default behaviour calls the OpalCall function of the same name.
       */

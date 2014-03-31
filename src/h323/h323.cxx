@@ -140,9 +140,12 @@ H323Connection::H323Connection(OpalCall & call,
 #if OPAL_H460
   , P_DISABLE_MSVC_WARNINGS(4355, m_features(ep.InternalCreateFeatureSet(this)))
 #endif
+  , m_lastUserInputIndication('\0')
 {
   PTRACE_CONTEXT_ID_TO(localCapabilities);
   PTRACE_CONTEXT_ID_TO(remoteCapabilities);
+
+  m_UserInputIndicationTimer.SetNotifier(PCREATE_NOTIFIER(UserInputIndicationTimeout));
 
   localAliasNames.MakeUnique();
   gkAccessTokenOID.MakeUnique();
@@ -5181,20 +5184,31 @@ void H323Connection::OnUserInputIndication(const H245_UserInputIndication & ind)
       break;
 
     case H245_UserInputIndication::e_signal :
-    {
-      const H245_UserInputIndication_signal & sig = ind;
-      OnUserInputTone(sig.m_signalType[0],
-                      sig.HasOptionalField(H245_UserInputIndication_signal::e_duration)
-                                ? (unsigned)sig.m_duration : 0);
+      {
+        if (m_UserInputIndicationTimer.IsRunning())
+          OnUserInputTone(m_lastUserInputIndication, (unsigned)m_lastUserInputIndicationStart.GetElapsed().GetMilliSeconds());
+
+        const H245_UserInputIndication_signal & sig = ind;
+        m_lastUserInputIndication = sig.m_signalType[0];
+        m_lastUserInputIndicationStart = 0;
+        m_UserInputIndicationTimer = sig.HasOptionalField(H245_UserInputIndication_signal::e_duration) ? sig.m_duration.GetValue() : 90;
+        OnUserInputTone(m_lastUserInputIndication, 0);
+      }
       break;
-    }
-    case H245_UserInputIndication::e_signalUpdate :
-    {
-      const H245_UserInputIndication_signalUpdate & sig = ind;
-      OnUserInputTone(' ', sig.m_duration);
+
+    case H245_UserInputIndication::e_signalUpdate:
+      m_UserInputIndicationTimer = ((const H245_UserInputIndication_signalUpdate &)ind).m_duration;
       break;
-    }
   }
+}
+
+
+void H323Connection::UserInputIndicationTimeout(PTimer&, P_INT_PTR)
+{
+  GetEndPoint().GetManager().QueueDecoupledEvent(
+            new PSafeWorkArg2<OpalConnection, char, unsigned>(this, m_lastUserInputIndication,
+                                                              (unsigned)m_lastUserInputIndicationStart.GetElapsed().GetMilliSeconds(),
+                                                              &OpalConnection::OnUserInputTone));
 }
 
 
