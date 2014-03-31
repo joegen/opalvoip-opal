@@ -121,21 +121,14 @@ class OpalRFC2833Proto : public PObject
 
     virtual bool SendToneAsync(
       char tone, 
-      unsigned duration
+      unsigned milliseconds
     );
 
     virtual void OnStartReceive(
       char tone,
       unsigned timestamp
     );
-    virtual void OnStartReceive(
-      char tone
-    );
-    virtual void OnEndReceive(
-      char tone,
-      unsigned duration,
-      unsigned timestamp
-    );
+    virtual void OnEndReceive();
 
     void UseRTPSession(bool rx, OpalRTPSession * session);
 
@@ -148,31 +141,23 @@ class OpalRFC2833Proto : public PObject
     static char RFC2833ToASCII(PINDEX rfc2833, bool hasNSE);
 
   protected:
-    void SendAsyncFrame();
+    bool InternalTransmitFrame();
+    bool AbortTransmit();
+    WORD GetTimestampSince(const PTimeInterval & tick) const;
 
     PDECLARE_RTPFilterNotifier(OpalRFC2833Proto, ReceivedPacket);
     PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, ReceiveTimeout);
-    PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, AsyncTimeout);
+    PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, TransmitTimeout);
 
-    OpalMediaFormat             m_baseMediaFormat;
-    RTP_DataFrame::PayloadTypes m_txPayloadType;
-    RTP_DataFrame::PayloadTypes m_rxPayloadType;
-    OpalRFC2833EventsMask       m_txEvents;
-    OpalRFC2833EventsMask       m_rxEvents;
-    PNotifier                   m_receiveNotifier;
+    OpalMediaFormat                m_baseMediaFormat;
+    RTP_DataFrame::PayloadTypes    m_txPayloadType;
+    RTP_DataFrame::PayloadTypes    m_rxPayloadType;
+    OpalRFC2833EventsMask          m_txEvents;
+    OpalRFC2833EventsMask          m_rxEvents;
+    PNotifier                      m_receiveNotifier;
     OpalRTPSession::FilterNotifier m_receiveHandler;
 
-    enum {
-      ReceiveIdle,
-      ReceiveActive,
-      ReceiveEnding
-    } m_receiveState;
-
-    PMutex   m_receiveMutex;
-    BYTE     m_receivedTone;
-    unsigned m_tonesReceived;
-    PTimer   m_receiveTimer;
-    DWORD    m_previousReceivedTimestamp;
+    OpalRTPSession * m_rtpSession;
 
     enum {
       TransmitIdle,
@@ -180,17 +165,24 @@ class OpalRFC2833Proto : public PObject
       TransmitEnding1,
       TransmitEnding2,
       TransmitEnding3,
-    } m_transmitState;
-
-    PMutex           m_sendMutex;
-    OpalRTPSession * m_rtpSession;
-    PTimer           m_asyncTransmitTimer;
-    PTimer           m_asyncDurationTimer;
+    }                m_transmitState;
+    PTimer           m_transmitUpdateTimer;
+    PTimer           m_transmitDurationTimer;
     DWORD            m_transmitTimestamp;
-    bool             m_rewriteTransmitTimestamp;
-    PTimeInterval    m_asyncStart;
+    PTimeInterval    m_transmitStartTime;
     BYTE             m_transmitCode;
-    unsigned         m_transmitDuration;
+    WORD             m_transmitDuration;
+    PMutex           m_transmitMutex;
+
+    bool     m_receiveIdle;
+    BYTE     m_receivedTone;
+    DWORD    m_receivedTimestamp;
+    WORD     m_receivedDuration;
+    PTimer   m_receiveTimer;
+    PMutex   m_receiveMutex;
+
+  P_REMOVE_VIRTUAL_VOID(OnStartReceive(char));
+  P_REMOVE_VIRTUAL_VOID(OnEndReceive(char, unsigned, unsigned));
 };
 
 
