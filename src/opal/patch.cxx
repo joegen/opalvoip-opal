@@ -99,6 +99,30 @@ void OpalMediaPatch::PrintOn(ostream & strm) const
   UnlockReadOnly();
 }
 
+
+bool OpalMediaPatch::CanStart() const
+{
+  if (!source.IsOpen()) {
+    PTRACE(4, "Media\tDelaying thread starting till source stream open");
+    return false;
+  }
+
+  if (sinks.IsEmpty()) {
+    PTRACE(4, "Media\tDelaying thread starting till have sink stream");
+    return false;
+  }
+
+  for (PList<Sink>::const_iterator s = sinks.begin(); s != sinks.end(); ++s) {
+    if (!s->stream->IsOpen()) {
+      PTRACE(4, "Media\tDelaying thread starting till sink stream open");
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
 void OpalMediaPatch::Start()
 {
   PWaitAndSignal m(patchThreadMutex);
@@ -108,27 +132,12 @@ void OpalMediaPatch::Start()
     return;
   }
 
-  if (!source.IsOpen()) {
-    PTRACE(4, "Media\tDelaying thread starting till source stream open");
-    return;
+  if (CanStart()) {
+    patchThread = new PThreadObj<OpalMediaPatch>(*this, &OpalMediaPatch::Main, false, "Media Patch", PThread::HighPriority);
+    PTRACE_CONTEXT_ID_TO(patchThread);
+    PThread::Yield();
+    PTRACE(4, "Media\tStarting thread " << patchThread->GetThreadName());
   }
-
-  if (sinks.IsEmpty()) {
-    PTRACE(4, "Media\tDelaying thread starting till have sink stream");
-    return;
-  }
-
-  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
-    if (!s->stream->IsOpen()) {
-      PTRACE(4, "Media\tDelaying thread starting till sink stream open");
-      return;
-    }
-  }
-
-  patchThread = new PThreadObj<OpalMediaPatch>(*this, &OpalMediaPatch::Main, false, "Media Patch", PThread::HighPriority);
-  PTRACE_CONTEXT_ID_TO(patchThread);
-  PThread::Yield();
-  PTRACE(4, "Media\tStarting thread " << patchThread->GetThreadName());
 }
 
 
@@ -1088,8 +1097,11 @@ void OpalPassiveMediaPatch::Start()
   if (m_started)
     return;
 
-  m_started = true;
-  OnStartMediaPatch();
+  if (CanStart()) {
+    m_started = true;
+    PTRACE(4, "Patch\tPassive medai patch started");
+    OnStartMediaPatch();
+  }
 }
 
 
