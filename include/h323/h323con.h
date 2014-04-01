@@ -2273,6 +2273,11 @@ class H323Connection : public OpalRTPConnection
     }
 #endif
 
+    char         m_lastUserInputIndication;
+    PSimpleTimer m_lastUserInputIndicationStart;
+    PTimer       m_UserInputIndicationTimer;
+    PDECLARE_NOTIFIER(PTimer, H323Connection, UserInputIndicationTimeout);
+
   private:
     P_REMOVE_VIRTUAL_VOID(CleanUpOnCallEnd());
     P_REMOVE_VIRTUAL_VOID(OnCleared());

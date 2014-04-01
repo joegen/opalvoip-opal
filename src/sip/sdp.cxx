@@ -1302,8 +1302,10 @@ SDPCryptoSuite::SDPCryptoSuite(unsigned tag)
 
 bool SDPCryptoSuite::Decode(const PString & sdp)
 {
-  if (sdp.GetLength() < 7 || sdp[0] < '1' || sdp[0] > '9' || sdp[1] != ' ')
+  if (sdp.GetLength() < 7 || !isdigit(sdp[0]) || sdp[1] != ' ') {
+    PTRACE(2, "SDP", "Illegal format crypto attribute \"" << sdp << '"');
     return false;
+  }
 
   m_tag = sdp[0] - '0';
 
@@ -1560,8 +1562,11 @@ OpalMediaCryptoKeyList SDPRTPAVPMediaDescription::GetCryptoKeys() const
 {
   OpalMediaCryptoKeyList keys;
 
-  for (PList<SDPCryptoSuite>::const_iterator it = m_cryptoSuites.begin(); it != m_cryptoSuites.end(); ++it)
-    keys.Append(it->GetKeyInfo());
+  for (PList<SDPCryptoSuite>::const_iterator it = m_cryptoSuites.begin(); it != m_cryptoSuites.end(); ++it) {
+    OpalMediaCryptoKeyInfo * key = it->GetKeyInfo();
+    if (key != NULL)
+      keys.Append(key);
+  }
 
   return keys;
 }

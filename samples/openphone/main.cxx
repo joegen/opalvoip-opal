@@ -3144,7 +3144,7 @@ void MyManager::OnUserInputString(OpalConnection & connection, const PString & v
 #if OPAL_FAX
 void MyManager::OnUserInputTone(OpalConnection & connection, char tone, int duration)
 {
-  if (toupper(tone) == 'X' && m_currentAnswerMode == AnswerDetect)
+  if (toupper(tone) == 'X' && m_currentAnswerMode == AnswerDetect && duration > 0)
     new PThreadObj<MyManager>(*this, &MyManager::SwitchToFax, true, "SwitchToFax");
 
   OpalManager::OnUserInputTone(connection, tone, duration);

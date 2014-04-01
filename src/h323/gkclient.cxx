@@ -647,7 +647,7 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
   reregisterNow = false;
 
   m_endpointIdentifier = rcf.m_endpointIdentifier;
-  PTRACE(3, "RAS\tRegistered " << EpIdAsStr(m_endpointIdentifier) << " with " << gatekeeperIdentifier);
+  PTRACE(3, "RAS\tRegistered " << EpIdAsStr(m_endpointIdentifier) << " with " << *this);
 
 
   if (rcf.HasOptionalField(H225_RegistrationConfirm::e_alternateGatekeeper))

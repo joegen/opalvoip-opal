@@ -1451,24 +1451,21 @@ class OpalConnection : public PSafeObject
     );
 
     /**Send a user input indication to the remote endpoint.
-       This sends DTMF emulation user input. If something more sophisticated
-       than the simple tones that can be sent using the SendUserInput()
-       function.
+       This sends DTMF emulation user input indication.
 
-       A duration of zero indicates that no duration is to be indicated.
-       A non-zero logical channel indicates that the tone is to be syncronised
-       with the logical channel at the rtpTimestamp value specified.
-
-       The tone parameter must be one of "0123456789#*ABCD!" where '!'
+       The \p tone parameter must be one of "0123456789#*ABCD!" where '!'
        indicates a hook flash. If tone is a ' ' character then a
        signalUpdate PDU is sent that updates the last tone indication
        sent. See the H.245 specifcation for more details on this.
 
+       A \p duration of zero indicates that a default duration (90ms) is to be
+       used.
+
        The default behaviour sends the tone using RFC2833.
       */
     virtual PBoolean SendUserInputTone(
-      char tone,        ///<  DTMF tone code
-      unsigned duration = 0  ///<  Duration of tone in milliseconds
+      char tone,              ///<  DTMF tone code
+      unsigned duration = 0   ///<  Duration of tone in milliseconds
     );
 
     /**Call back for remote enpoint has sent user input as a string.
@@ -1483,14 +1480,22 @@ class OpalConnection : public PSafeObject
     void OnUserInputStringCallback(PString value) { OnUserInputString(value); }
 
     /**Call back for remote enpoint has sent user input.
-       If duration is zero then this indicates the beginning of the tone. If
-       duration is non-zero then it indicates the end of the tone output.
+       If \p duration is zero then this indicates the beginning of the tone.
+       If \p duration is greater than zero then it indicates the end of the
+       tone output and how long the tone had run.
+
+       Note, there is no guarantee a zero value (start tone) will occur. There
+       is also no guarantee this function is called at all, given how the
+       remote may send user indications. For simple, "event" based, user
+       indications the OnUserInputString() should be used. THis function is
+       only for when a more precise representation of the tone, and it's
+       duration, is required.
 
        The default behaviour calls the OpalEndPoint function of the same name.
       */
     virtual void OnUserInputTone(
-      char tone,
-      unsigned duration
+      char tone,          ///< Received tone
+      unsigned duration   ///< Duration of tone in milliseconds
     );
 
     /**Send a user input indication to the remote endpoint.
