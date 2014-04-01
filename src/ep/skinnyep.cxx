@@ -367,7 +367,7 @@ bool OpalSkinnyEndPoint::PhoneDevice::SendSkinnyMsg(const SkinnyMsg & msg)
 
 #define ON_RECEIVE_MSG(cls) \
   case cls::ID : \
-  PTRACE(3, "Received " << typeid(cls).name() << ' ' << readTimer.GetElapsed()); \
+  PTRACE(3, "Received " << typeid(cls).name()); \
   if (!m_endpoint.OnReceiveMsg(*this, cls(pdu))) \
     running = false; \
   break
@@ -385,7 +385,6 @@ void OpalSkinnyEndPoint::PhoneDevice::HandleTransport()
 
   while (running) {
     PBYTEArray pdu;
-PSimpleTimer readTimer;
     if (m_transport.ReadPDU(pdu)) {
       unsigned msgId = pdu.GetAs<PUInt32l>(4);
       switch (msgId) {
@@ -684,11 +683,7 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const StopMediaTrans
 
 PSafePtr<OpalSkinnyConnection> OpalSkinnyEndPoint::GetSkinnyConnection(const PhoneDevice & client, uint32_t callIdentifier, PSafetyMode mode)
 {
-  PSimpleTimer check;
-  PSafePtr<OpalSkinnyConnection> connection = PSafePtrCast<OpalConnection, OpalSkinnyConnection>(connectionsActive.FindWithLock(CreateToken(client, callIdentifier), mode));
-  PTimeInterval duration = check.GetElapsed();
-  PTRACE_IF(3, duration > 10, "Connection look up and lock took: " << duration);
-  return connection;
+  return PSafePtrCast<OpalConnection, OpalSkinnyConnection>(connectionsActive.FindWithLock(CreateToken(client, callIdentifier), mode));
 }
 
 
