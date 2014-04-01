@@ -219,8 +219,9 @@ SIPConnection::SIPConnection(const Init & init)
   , m_lastReceivedINVITE(NULL)
   , m_delayedAckInviteResponse(NULL)
   , m_delayedAckTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnDelayedAckTimeout)
-  , m_delayedAckTimeout(0, 2) // second(s)
-  , m_lastSentAck(NULL)
+  , m_delayedAckTimeout1(init.m_endpoint.GetInviteTimeout() - PTimeInterval(0,2)) // A couple of seconds shorter
+  , m_delayedAckTimeout2(0, 2) // second(s)
+  , m_delayedAckPDU(NULL)
   , m_sdpSessionId(PTime().GetTimeInSeconds())
   , m_sdpVersion(0)
   , m_needReINVITE(false)
@@ -298,7 +299,7 @@ SIPConnection::~SIPConnection()
 
   delete m_lastReceivedINVITE;
   delete m_delayedAckInviteResponse;
-  delete m_lastSentAck;
+  delete m_delayedAckPDU;
 }
 
 
@@ -2183,18 +2184,19 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   if (!lock.IsLocked())
     return true;
 
+  // Still doing delayed ACK, don't send one yet
   if (m_delayedAckInviteResponse != NULL)
     return false;
 
-  if (m_lastSentAck != NULL) {
-    if (m_lastSentAck->GetTransactionID() == transaction.GetTransactionID()) {
-      m_lastSentAck->Send();
-      return false;
-    }
-
-    delete m_lastSentAck;
-    m_lastSentAck = NULL;
+  // Have a dealyed ACK (probably with media) so send this one
+  if (m_delayedAckPDU != NULL && m_delayedAckPDU->GetTransactionID() == transaction.GetTransactionID()) {
+    m_delayedAckPDU->Send();
+    return false;
   }
+
+  // See if duplicate response because our ACK was lost or too slow.
+  if (transaction.IsCompleted())
+    return true;
 
   // See if this is an initial INVITE or a re-INVITE
   bool reInvite = true;
@@ -2337,9 +2339,9 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
     return true;
   }
 
-  PTRACE(4, "SIP\tSaving INVITE response for delayed ACK");
+  PTRACE(3, "SIP\tSaving INVITE response for delayed ACK, timeout=" << m_delayedAckTimeout1);
   m_delayedAckInviteResponse = new SIP_PDU(response);
-  m_delayedAckTimer = m_delayedAckTimeout;
+  m_delayedAckTimer = m_delayedAckTimeout1;
 
   return false; // Don't send ACK ... yet
 }
@@ -2371,7 +2373,7 @@ static bool AwaitingMedia(SIPConnection & connection, const OpalMediaType & medi
 
 void SIPConnection::SendDelayedACK(bool force)
 {
-  if (m_delayedAckInviteResponse == NULL || m_lastSentAck != NULL)
+  if (m_delayedAckInviteResponse == NULL || m_delayedAckPDU != NULL)
     return;
 
   if (!force) {
@@ -2382,34 +2384,38 @@ void SIPConnection::SendDelayedACK(bool force)
     OpalMediaTypeList mediaTypes = otherConnection->GetMediaFormats().GetMediaTypes();
     for (OpalMediaTypeList::iterator mediaType = mediaTypes.begin(); mediaType != mediaTypes.end(); ++mediaType) {
       if (AwaitingMedia(*this, *mediaType, false) || AwaitingMedia(*this, *mediaType, true)) {
-        PTRACE(4, "SIP\tDelayed ACK does not have both " << *mediaType << " channels yet");
-        m_delayedAckTimer = m_delayedAckTimeout;
+        PTRACE(4, "SIP\tDelayed ACK does not have both " << *mediaType << " channels yet, timeout=" << m_delayedAckTimeout2);
+        m_delayedAckTimer = m_delayedAckTimeout2;
         return;
       }
     }
   }
 
-  PTRACE(3, "SIP\tSending delayed ACK");
-
   PSafePtr<SIPTransaction> transaction = GetEndPoint().GetTransaction(m_delayedAckInviteResponse->GetTransactionID());
-  if (transaction == NULL)
+  if (transaction == NULL) {
+    PTRACE(3, "SIP\tDelayed ACK failed, could not find transaction");
     Release(EndedByCapabilityExchange);
+  }
   else {
+    PTRACE(3, "SIP\tCreating delayed ACK: " << (force ? "timeout" : "media opened"));
     // ACK constructed following 13.2.2.4 or 17.1.1.3
-    m_lastSentAck = new SIPAck(*transaction, *m_delayedAckInviteResponse);
+    m_delayedAckPDU = new SIPAck(*transaction, *m_delayedAckInviteResponse);
 
     SDPSessionDescription * sdp = m_endpoint.CreateSDP(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
     sdp->SetSessionName(m_delayedAckInviteResponse->GetMIME().GetUserAgent());
-    m_lastSentAck->SetSDP(sdp);
+    m_delayedAckPDU->SetSDP(sdp);
 
     m_delayedAckInviteResponse->DecodeSDP(m_endpoint, GetLocalMediaFormats());
-    if (!OnSendAnswerSDP(*m_delayedAckInviteResponse->GetSDP(), *sdp))
-      Release(EndedByCapabilityExchange);
-    else {
-      if (!m_lastSentAck->Send())
-        Release(EndedByTransportFail);
-      else
+    if (OnSendAnswerSDP(*m_delayedAckInviteResponse->GetSDP(), *sdp)) {
+      if (m_delayedAckPDU->Send())
         StartMediaStreams();
+      else
+        Release(EndedByTransportFail);
+    }
+    else {
+      Release(EndedByCapabilityExchange);
+      m_delayedAckPDU->SetSDP(NULL);
+      m_delayedAckPDU->Send();
     }
   }
 

@@ -78,7 +78,7 @@ void BaseStatusPage::CreateHTML(PHTML & html, const PStringToString & query)
 
   html << PHTML::Form()
        << PHTML::HRule()
-
+       << "Last update: <!--#macro LongDateTime-->" << PHTML::Paragraph()
        << MyProcessAncestor::Current().GetCopyrightText()
        << PHTML::Body();
 }
@@ -180,13 +180,46 @@ RegistrationStatusPage::RegistrationStatusPage(MyManager & mgr, const PHTTPAutho
 
 PString RegistrationStatusPage::LoadText(PHTTPRequest & request)
 {
-#if OPAL_SIP
-  m_sipAoRs = m_manager.GetSIPEndPoint().GetRegistrations(true);
+#if OPAL_H323
+  const PList<H323Gatekeeper> gkList = m_manager.GetH323EndPoint().GetGatekeepers();
+  for (PList<H323Gatekeeper>::const_iterator gk = gkList.begin(); gk != gkList.end(); ++gk) {
+    PString addr = '@' + gk->GetTransport().GetRemoteAddress().GetHostName(true);
+
+    PStringStream status;
+    if (gk->IsRegistered())
+      status << "Registered";
+    else
+      status << "Failed: " << gk->GetRegistrationFailReason();
+
+    const PStringList & aliases = gk->GetAliases();
+    for (PStringList::const_iterator it = aliases.begin(); it != aliases.end(); ++it)
+      m_h323[*it + addr] = status;
+  }
 #endif
+
+#if OPAL_SIP
+  SIPEndPoint & sipEP = m_manager.GetSIPEndPoint();
+  const PStringList & registrations = sipEP.GetRegistrations(true);
+  for (PStringList::const_iterator it = registrations.begin(); it != registrations.end(); ++it)
+    m_sip[*it] = sipEP.IsRegistered(*it) ? "Registered" : (sipEP.IsRegistered(*it, true) ? "Offline" : "Failed");
+
+#endif
+
 #if OPAL_SKINNY
   OpalSkinnyEndPoint * ep = m_manager.FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY);
-  if (ep != NULL)
-    m_skinnyNames = ep->GetPhoneDeviceNames();
+  if (ep != NULL) {
+    PArray<PString> names = ep->GetPhoneDeviceNames();
+    for (PINDEX i = 0; i < names.GetSize(); ++i) {
+      OpalSkinnyEndPoint::PhoneDevice * phoneDevice = ep->GetPhoneDevice(names[i]);
+      if (phoneDevice != NULL) {
+        PStringStream str;
+        str << *phoneDevice;
+        PString name, status;
+        if (str.Split('\t', name, status))
+          m_skinny[name] = status;
+      }
+    }
+  }
 #endif
   return BaseStatusPage::LoadText(request);
 }
@@ -207,12 +240,15 @@ void RegistrationStatusPage::CreateContent(PHTML & html, const PStringToString &
        << PHTML::TableHeader(PHTML::NoWrap) << "Status"
 #if OPAL_H323
        << PHTML::TableRow()
-       << PHTML::TableHeader(PHTML::NoWrap)
+       << PHTML::TableHeader(PHTML::NoWrap, "rowspan=<!--#macro H323Count-->")
        << " H.323 Gatekeeper"
-       << PHTML::TableData(PHTML::NoWrap)
-       << "<!--#macro H323GatekeeperAddress-->"
-       << PHTML::TableData(PHTML::NoWrap)
-       << "<!--#macro H323RegistrationStatus-->"
+       << "<!--#macrostart H323RegistrationStatus-->"
+           << PHTML::TableRow()
+           << PHTML::TableData(PHTML::NoWrap)
+           << "<!--#status Name-->"
+           << PHTML::TableData(PHTML::NoWrap)
+           << "<!--#status Status-->"
+       << "<!--#macroend H323RegistrationStatus-->"
 #endif // OPAL_H323
 
 #if OPAL_SIP
@@ -222,9 +258,9 @@ void RegistrationStatusPage::CreateContent(PHTML & html, const PStringToString &
        << "<!--#macrostart SIPRegistrationStatus-->"
            << PHTML::TableRow()
            << PHTML::TableData(PHTML::NoWrap)
-           << "<!--#status AoR-->"
+           << "<!--#status Name-->"
            << PHTML::TableData(PHTML::NoWrap)
-           << "<!--#status State-->"
+           << "<!--#status Status-->"
        << "<!--#macroend SIPRegistrationStatus-->"
 #endif // OPAL_SIP
 
@@ -244,137 +280,82 @@ void RegistrationStatusPage::CreateContent(PHTML & html, const PStringToString &
 }
 
 
-#if OPAL_H323
-PCREATE_SERVICE_MACRO(H323GatekeeperAddress, resource, P_EMPTY)
+typedef const RegistrationStatusPage::StatusMap & (RegistrationStatusPage::*StatusFunc)() const;
+static PINDEX GetRegistrationCount(PHTTPRequest & resource, StatusFunc func)
 {
   RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
   if (PAssertNULL(status) == NULL)
-    return PString::Empty();
+    return 2;
 
-  PStringStream strm;
+  PINDEX count = (status->*func)().size();
+  if (count == 0)
+    return 2;
 
-  H323Gatekeeper * gk = status->m_manager.GetH323EndPoint().GetGatekeeper();
-  if (gk != NULL)
-    strm << *gk;
-  else
-    strm << "&nbsp;";
-
-  return strm;
-}
-
-PCREATE_SERVICE_MACRO(H323RegistrationStatus, resource, P_EMPTY)
-{
-  RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
-  if (PAssertNULL(status) == NULL)
-    return PString::Empty();
-
-  H323Gatekeeper * gk = status->m_manager.GetH323EndPoint().GetGatekeeper();
-  if (gk == NULL)
-    return "Not registered";
-
-  PStringStream strm;
-  if (gk->IsRegistered())
-    strm  << "Registered";
-  else
-    strm << "Failed: " << gk->GetRegistrationFailReason();
-  return strm;
-}
-#endif // OPAL_H323
-
-#if OPAL_SIP
-PCREATE_SERVICE_MACRO(SIPCount, resource, P_EMPTY)
-{
-  RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
-  if (PAssertNULL(status) == NULL)
-    return PString::Empty();
-
-  return PString(status->GetAoRs().GetSize() + 1);
+  return count+1;
 }
 
 
-PCREATE_SERVICE_MACRO_BLOCK(SIPRegistrationStatus, resource, P_EMPTY, htmlBlock)
+static PString GetRegistrationStatus(PHTTPRequest & resource, const PString htmlBlock, StatusFunc func)
 {
-  RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
-  if (PAssertNULL(status) == NULL)
-    return PString::Empty();
-
   PString substitution;
 
-  SIPEndPoint & sip = status->m_manager.GetSIPEndPoint();
-  const PStringList & registrations = status->GetAoRs();
-  for (PStringList::const_iterator it = registrations.begin(); it != registrations.end(); ++it) {
-    // make a copy of the repeating html chunk
-    PString insert = htmlBlock;
-
-    PServiceHTML::SpliceMacro(insert, "status AoR",   *it);
-    PServiceHTML::SpliceMacro(insert, "status State", sip.IsRegistered(*it) ? "Registered" : (sip.IsRegistered(*it, true) ? "Offline" : "Failed"));
-
-    // Then put it into the page, moving insertion point along after it.
-    substitution += insert;
-  }
-
-  if (substitution.IsEmpty()) {
-    substitution = htmlBlock;
-    PServiceHTML::SpliceMacro(substitution, "status AoR", "&nbsp;");
-    PServiceHTML::SpliceMacro(substitution, "status State", "Not registered");
-  }
-
-  return substitution;
-}
-#endif // OPAL_SIP
-
-#if OPAL_SKINNY
-PCREATE_SERVICE_MACRO(SkinnyCount, resource, P_EMPTY)
-{
   RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
-  if (PAssertNULL(status) == NULL)
-    return PString::Empty();
-
-  return PString(status->GetSkinnyNames().GetSize()+1);
-}
-
-
-PCREATE_SERVICE_MACRO_BLOCK(SkinnyRegistrationStatus, resource, P_EMPTY, htmlBlock)
-{
-  RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
-  if (PAssertNULL(status) == NULL)
-    return PString::Empty();
-
-  PString substitution;
-
-  OpalSkinnyEndPoint * ep = status->m_manager.FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY);
-  if (ep != NULL) {
-    const PStringArray & names = status->GetSkinnyNames();
-    for (PINDEX i = 0; i < names.GetSize(); ++i) {
-      OpalSkinnyEndPoint::PhoneDevice * phoneDevice = ep->GetPhoneDevice(names[i]);
-      if (phoneDevice != NULL) {
-        // make a copy of the repeating html chunk
-        PString insert = htmlBlock;
-
-        PStringStream str;
-        str << *phoneDevice;
-        PString name, status;
-        str.Split('\t', name, status);
-        PServiceHTML::SpliceMacro(insert, "status Name", name);
-        PServiceHTML::SpliceMacro(insert, "status Status", status);
-
-        // Then put it into the page, moving insertion point along after it.
-        substitution += insert;
-      }
-      else {
-        PServiceHTML::SpliceMacro(substitution, "status Name", names[i]);
-        PServiceHTML::SpliceMacro(substitution, "status Status", "Unregistered");
-      }
+  if (PAssertNULL(status) != NULL) {
+    const RegistrationStatusPage::StatusMap & statuses = (status->*func)();
+    for (RegistrationStatusPage::StatusMap::const_iterator it = statuses.begin(); it != statuses.end(); ++it) {
+      PString insert = htmlBlock;
+      PServiceHTML::SpliceMacro(insert, "status Name", it->first);
+      PServiceHTML::SpliceMacro(insert, "status Status", it->second);
+      substitution += insert;
     }
   }
 
   if (substitution.IsEmpty()) {
     substitution = htmlBlock;
     PServiceHTML::SpliceMacro(substitution, "status Name", "&nbsp;");
-    PServiceHTML::SpliceMacro(substitution, "status Status", "Nothing registered");
+    PServiceHTML::SpliceMacro(substitution, "status Status", "Not registered");
   }
 
   return substitution;
+}
+
+
+#if OPAL_H323
+PCREATE_SERVICE_MACRO(H323Count, resource, P_EMPTY)
+{
+  return GetRegistrationCount(resource, &RegistrationStatusPage::GetH323);
+}
+
+
+PCREATE_SERVICE_MACRO_BLOCK(H323RegistrationStatus, resource, P_EMPTY, htmlBlock)
+{
+  return GetRegistrationStatus(resource, htmlBlock, &RegistrationStatusPage::GetH323);
+}
+#endif // OPAL_H323
+
+#if OPAL_SIP
+PCREATE_SERVICE_MACRO(SIPCount, resource, P_EMPTY)
+{
+  return GetRegistrationCount(resource, &RegistrationStatusPage::GetSIP);
+}
+
+
+PCREATE_SERVICE_MACRO_BLOCK(SIPRegistrationStatus, resource, P_EMPTY, htmlBlock)
+{
+  return GetRegistrationStatus(resource, htmlBlock, &RegistrationStatusPage::GetSIP);
+}
+#endif // OPAL_SIP
+
+#if OPAL_SKINNY
+PCREATE_SERVICE_MACRO(SkinnyCount, resource, P_EMPTY)
+{
+  return GetRegistrationCount(resource, &RegistrationStatusPage::GetSkinny);
+}
+
+
+PCREATE_SERVICE_MACRO_BLOCK(SkinnyRegistrationStatus, resource, P_EMPTY, htmlBlock)
+{
+  return GetRegistrationStatus(resource, htmlBlock, &RegistrationStatusPage::GetSkinny);
 }
 #endif // OPAL_SKINNY
 
@@ -389,6 +370,13 @@ CallStatusPage::CallStatusPage(MyManager & mgr, const PHTTPAuthority & auth)
 }
 
 
+PString CallStatusPage::LoadText(PHTTPRequest & request)
+{
+  m_calls = m_manager.GetAllCalls();
+  return BaseStatusPage::LoadText(request);
+}
+
+
 const char * CallStatusPage::GetTitle() const
 {
   return "OPAL Server Call Status";
@@ -397,7 +385,8 @@ const char * CallStatusPage::GetTitle() const
 
 void CallStatusPage::CreateContent(PHTML & html, const PStringToString &) const
 {
-  html << PHTML::TableStart(PHTML::Border1, PHTML::CellPad4)
+  html << "Current call count: <!--#macro CallCount-->" << PHTML::Paragraph()
+       << PHTML::TableStart(PHTML::Border1, PHTML::CellPad4)
        << PHTML::TableRow()
        << PHTML::TableHeader()
        << "&nbsp;A&nbsp;Party&nbsp;"
@@ -441,6 +430,13 @@ bool CallStatusPage::OnPostControl(const PStringToString & data, PHTML & msg)
 }
 
 
+PCREATE_SERVICE_MACRO(CallCount, resource, P_EMPTY)
+{
+  CallStatusPage * status = dynamic_cast<CallStatusPage *>(resource.m_resource);
+  return PAssertNULL(status) == NULL ? 0 : status->GetCalls().GetSize();
+}
+
+
 PCREATE_SERVICE_MACRO_BLOCK(CallStatus,resource,P_EMPTY,htmlBlock)
 {
   CallStatusPage * status = dynamic_cast<CallStatusPage *>(resource.m_resource);
@@ -449,7 +445,7 @@ PCREATE_SERVICE_MACRO_BLOCK(CallStatus,resource,P_EMPTY,htmlBlock)
 
   PString substitution;
 
-  PArray<PString> calls = status->m_manager.GetAllCalls();
+  const PArray<PString> & calls = status->GetCalls();
   for (PINDEX i = 0; i < calls.GetSize(); ++i) {
     PSafePtr<OpalCall> call = status->m_manager.FindCallWithLock(calls[i], PSafeReadOnly);
     if (call == NULL)

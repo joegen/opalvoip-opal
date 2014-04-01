@@ -46,13 +46,8 @@
 #endif
 
 #include <codec/opalplugin.h>
+#include <codec/known.h>
 
-
-#define OPAL_RGB24   "RGB24"
-#define OPAL_RGB32   "RGB32"
-#define OPAL_BGR24   "BGR24"
-#define OPAL_BGR32   "BGR32"
-#define OPAL_YUV420P "YUV420P"
 
 extern const OpalVideoFormat & GetOpalRGB24();
 extern const OpalVideoFormat & GetOpalRGB32();
@@ -159,6 +154,13 @@ class OpalVideoTranscoder : public OpalTranscoder
 #if OPAL_STATISTICS
     virtual void GetStatistics(OpalMediaStatistics & statistics) const;
 #endif
+
+    static OpalVideoFormat::VideoFrameType GetVideoFrameType(
+      const PCaselessString & rtpEncodingName,
+      const BYTE * payloadPtr,
+      PINDEX payloadSize,
+      PBYTEArray & context
+    );
 
     virtual bool HasErrorConcealment() const  { return m_errorConcealment; }
     bool WasLastFrameIFrame() const { return m_lastFrameWasIFrame; }

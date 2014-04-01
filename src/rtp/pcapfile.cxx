@@ -191,7 +191,11 @@ int OpalPCAPFile::GetRTP(RTP_DataFrame & rtp)
   if (rtp.GetVersion() != 2)
     return -1;
 
-  return rtp.GetPayloadType();
+  RTP_DataFrame::PayloadTypes pt = rtp.GetPayloadType();
+  if (pt >= RTP_DataFrame::StartConflictRTCP && pt <= RTP_DataFrame::EndConflictRTCP)
+    return -1;
+
+  return pt;
 }
 
 
@@ -312,6 +316,20 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTPMap & discoveredRTPMap)
 
   OpalMediaFormatList formats = OpalMediaFormat::GetAllRegisteredMediaFormats();
 
+#if OPAL_VIDEO
+  struct
+  {
+    OpalVideoFormat m_format;
+    PBYTEArray      m_context;
+  } VideoCodecs[] = {
+    { OPAL_H263 },
+    { OPAL_H263plus },
+    { OPAL_MPEG4 },
+    { OPAL_H264 },
+    { OPAL_VP8 },
+  };
+#endif
+
   size_t index = 1;
   DiscoveredRTPMap::iterator iter = discoveredRTPMap.begin();
   while (iter != discoveredRTPMap.end()) {
@@ -346,10 +364,10 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTPMap & discoveredRTPMap)
 
           // look for known audio types
           if (pt <= RTP_DataFrame::Cisco_CN) {
-            OpalMediaFormatList::const_iterator r;
-            if ((r = formats.FindFormat(pt, OpalMediaFormat::AudioClockRate)) != formats.end()) {
-              info.m_type[dir]   = r->GetMediaType();
-              info.m_format[dir] = r->GetName();
+            OpalMediaFormatList::const_iterator it = formats.FindFormat(pt, OpalMediaFormat::AudioClockRate);
+            if (it != formats.end()) {
+              info.m_type[dir]   = it->GetMediaType();
+              info.m_format[dir] = it->GetName();
             }
           }
 
@@ -364,33 +382,13 @@ bool OpalPCAPFile::DiscoverRTP(DiscoveredRTPMap & discoveredRTPMap)
           }
           else {
             // try and identify media by inspection
-            PINDEX size = info.m_firstFrame[dir].GetPayloadSize();
-            if (size > 6) {
-              const BYTE * data = info.m_firstFrame[dir].GetPayloadPtr();
-
-              OpalMediaFormatList::const_iterator selectedFormat;
-
-              // xxx00111 01000010 xxxx0000 - H.264
-              if ((data[0]&0x1f) == 7 && data[1] == 0x42 && (data[2]&0x0f) == 0)
-                selectedFormat = formats.FindFormat("*h.264*");
-
-              // 00000000 00000000 00011011 - MPEG4
-              else if (data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01)
-                selectedFormat = formats.FindFormat("*mpeg4*");
-
-              // xxxxx100 00000000 100000xx  - RFC4629/H.263+
-              else if ((data[0]&0x07) == 4 && data[1] == 0x00 && (data[2]&0xfc) == 0x80) {
-                selectedFormat = formats.FindFormat("*263P*");
-                if (selectedFormat == formats.end()) {
-                  selectedFormat = formats.FindFormat("*263+*");
-                  if (selectedFormat == formats.end())
-                    selectedFormat = formats.FindFormat("*263*");
-                }
-              }
-
-              if (selectedFormat != formats.end()) {
+            for (PINDEX i = 0; i < PARRAYSIZE(VideoCodecs); ++i) {
+              if (VideoCodecs[i].m_format.GetVideoFrameType(info.m_firstFrame[dir].GetPayloadPtr(),
+                                                            info.m_firstFrame[dir].GetPayloadSize(),
+                                                            VideoCodecs[i].m_context) == OpalVideoFormat::e_IntraFrame) {
                 info.m_type[dir] = OpalMediaType::Video();
-                info.m_format[dir] = selectedFormat->GetName();
+                info.m_format[dir] = VideoCodecs[i].m_format.GetName();
+                break;
               }
             }
           }

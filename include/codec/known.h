@@ -84,6 +84,11 @@
 #define OPAL_GSMAMR         "GSM-AMR"
 #define OPAL_iLBC           "iLBC"
 
+#define OPAL_RGB24          "RGB24"
+#define OPAL_RGB32          "RGB32"
+#define OPAL_BGR24          "BGR24"
+#define OPAL_BGR32          "BGR32"
+#define OPAL_YUV420P        "YUV420P"
 #define OPAL_H261           "H.261"
 #define OPAL_H263           "H.263"
 #define OPAL_H263plus       "H.263plus"
@@ -92,6 +97,7 @@
 #define OPAL_H264_MODE1     "H.264-1"
 #define OPAL_H264_High      "H.264-High"
 #define OPAL_MPEG4          "MPEG4"
+#define OPAL_VP8            "VP8-WebM"
 
 #define OPAL_RFC2833        "UserInput/RFC2833"
 #define OPAL_CISCONSE       "NamedSignalEvent"
