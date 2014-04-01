@@ -208,7 +208,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
         PString              m_name;
         unsigned             m_deviceType;
         OpalTransportTCP     m_transport;
-        PTimeInterval        m_startupDelay;
+        PTimeInterval        m_delay;
         PString              m_status;
         PSyncPoint           m_exit;
 
@@ -331,7 +331,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       PUInt32l m_state;
       PUInt32l m_lineInstance;
       PUInt32l m_callIdentifier;
-      BYTE     m_unknown[16];
+      BYTE     m_unknown[12];
 
       __inline CallStates GetState() const { return (CallStates)(uint32_t)m_state; }
     );
@@ -629,6 +629,7 @@ class OpalSkinnyConnection : public OpalRTPConnection
     uint32_t m_lineInstance;
     uint32_t m_callIdentifier;
     PString  m_alertingType;
+    bool     m_needSoftKeyEndcall;
 
     uint32_t m_audioId;
     uint32_t m_videoId;
@@ -640,6 +641,7 @@ class OpalSkinnyConnection : public OpalRTPConnection
 template <class MSG> bool OpalSkinnyEndPoint::DelegateMsg(const PhoneDevice & client, const MSG & msg)
 {
   PSafePtr<OpalSkinnyConnection> connection = GetSkinnyConnection(client, msg.m_callIdentifier);
+  PTRACE_CONTEXT_ID_PUSH_THREAD(connection);
   return connection == NULL || connection->OnReceiveMsg(msg);
 }
 
