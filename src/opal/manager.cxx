@@ -134,6 +134,8 @@ OPAL_REGISTER_RFC2435_JPEG();
 
 #define new PNEW
 
+#define PTraceModule() "OpalMan"
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -306,7 +308,7 @@ OpalManager::OpalManager()
   PInterfaceMonitor::GetInstance().AddNotifier(m_onInterfaceChange);
 #endif
 
-  PTRACE(4, "OpalMan\tCreated manager.");
+  PTRACE(4, "Created manager.");
 }
 
 
@@ -333,7 +335,7 @@ OpalManager::~OpalManager()
   delete m_natMethods;
 #endif
 
-  PTRACE(4, "OpalMan\tDeleted manager.");
+  PTRACE(4, "Deleted manager.");
 }
 
 
@@ -368,14 +370,14 @@ PStringList OpalManager::GetPrefixNames(const OpalEndPoint * endpoint) const
 
 void OpalManager::ShutDownEndpoints()
 {
-  PTRACE(3, "OpalMan\tShutting down manager.");
+  PTRACE(3, "Shutting down manager.");
 
   // Clear any pending calls, set flag so no calls can be received before endpoints removed
   InternalClearAllCalls(OpalConnection::EndedByLocalUser, true, m_clearingAllCallsCount++ == 0);
 
 #if OPAL_HAS_PRESENCE
   // Remove (and unsubscribe) all the presentities
-  PTRACE(4, "OpalIM\tShutting down all presentities");
+  PTRACE(4, "Shutting down all presentities");
   for (PSafePtr<OpalPresentity> presentity(m_presentities, PSafeReference); presentity != NULL; ++presentity)
     presentity->Close();
   m_presentities.RemoveAll();
@@ -383,7 +385,7 @@ void OpalManager::ShutDownEndpoints()
     PThread::Sleep(100);
 #endif // OPAL_HAS_PRESENCE
 
-  PTRACE(4, "OpalMan\tShutting down endpoints.");
+  PTRACE(4, "Shutting down endpoints.");
   // Deregister the endpoints
   endpointsMutex.StartRead();
   for (PList<OpalEndPoint>::iterator ep = endpointList.begin(); ep != endpointList.end(); ++ep)
@@ -414,7 +416,7 @@ void OpalManager::AttachEndPoint(OpalEndPoint * endpoint, const PString & prefix
   PWriteWaitAndSignal mutex(endpointsMutex);
 
   if (endpointMap.find(thePrefix) != endpointMap.end()) {
-    PTRACE(1, "OpalMan\tCannot re-attach endpoint prefix " << thePrefix);
+    PTRACE(1, "Cannot re-attach endpoint prefix " << thePrefix);
     return;
   }
 
@@ -431,7 +433,7 @@ void OpalManager::AttachEndPoint(OpalEndPoint * endpoint, const PString & prefix
   if (m_garbageCollector == NULL)
     m_garbageCollector = PThread::Create(PCREATE_NOTIFIER(GarbageMain), "Opal Garbage");
 
-  PTRACE(3, "OpalMan\tAttached endpoint with prefix " << thePrefix);
+  PTRACE(3, "Attached endpoint with prefix " << thePrefix);
 }
 
 
@@ -529,30 +531,30 @@ bool OpalManager::SetUpConference(OpalCall & call, const char * mixerURI, const 
 
   OpalMixerEndPoint * mixerEP = FindEndPointAs<OpalMixerEndPoint>(mixerPrefix);
   if (mixerEP == NULL) {
-    PTRACE(2, "OpalMan", "No mixer endpoint using prefix \"" << mixerPrefix << '"');
+    PTRACE(2, "No mixer endpoint using prefix \"" << mixerPrefix << '"');
     return false;
   }
 
   PSafePtr<OpalLocalConnection> connection = call.GetConnectionAs<OpalLocalConnection>();
   if (connection == NULL) {
-    PTRACE(2, "OpalMan", "Cannot conference gateway call " << call);
+    PTRACE(2, "Cannot conference gateway call " << call);
     return false;
   }
 
   PSafePtr<OpalMixerNode> node = mixerEP->FindNode(mixerNode);
   if (node == NULL) {
     node = mixerEP->AddNode(new OpalMixerNodeInfo(mixerNode));
-    PTRACE(3, "OpalMan", "Created mixer node \"" << mixerNode << '"');
+    PTRACE(3, "Created mixer node \"" << mixerNode << '"');
   }
 
   if (!call.Transfer(confURI, connection)) {
-    PTRACE(2, "OpalMan", "Could not add call " << call << " to conference \"" << confURI << '"');
+    PTRACE(2, "Could not add call " << call << " to conference \"" << confURI << '"');
     return false;
   }
 
   call.Retrieve(); // Make sure is not still on hold
 
-  PTRACE(3, &call, "OpalMan", "Added call " << call << " to conference \"" << confURI << '"');
+  PTRACE(3, &call, "Added call " << call << " to conference \"" << confURI << '"');
 
   PString uri = localURI != NULL ? localURI : "pc:*";
   if (uri.IsEmpty() || node->GetConnectionCount() > 1)
@@ -567,11 +569,11 @@ bool OpalManager::SetUpConference(OpalCall & call, const char * mixerURI, const 
 
   PSafePtr<OpalCall> localCall = SetUpCall(uri + ";" OPAL_URL_PARAM_PREFIX OPAL_OPT_CONF_OWNER "=yes", confURI);
   if (localCall != NULL) {
-    PTRACE(3, localCall, "OpalMan", "Added local call \"" << uri << "\" to conference \"" << confURI << '"');
+    PTRACE(3, localCall, "Added local call \"" << uri << "\" to conference \"" << confURI << '"');
     return true;
   }
 
-  PTRACE(2, "OpalMan", "Could not start local call into conference");
+  PTRACE(2, "Could not start local call into conference");
   return false;
 }
 
@@ -588,7 +590,7 @@ static void AsynchCallSetUp(PSafePtr<OpalConnection> connection)
   if (connection->SetUpConnection())
     return;
 
-  PTRACE(2, "OpalMan\tCould not set up connection on " << *connection);
+  PTRACE(2, "Could not set up connection on " << *connection);
   if (connection->GetCallEndReason() == OpalConnection::NumCallEndReasons)
     connection->Release(OpalConnection::EndedByTemporaryFailure);
 }
@@ -600,7 +602,7 @@ PSafePtr<OpalCall> OpalManager::SetUpCall(const PString & partyA,
                                              unsigned int options,
                           OpalConnection::StringOptions * stringOptions)
 {
-  PTRACE(3, "OpalMan\tSet up call from " << partyA << " to " << partyB);
+  PTRACE(3, "Set up call from " << partyA << " to " << partyB);
 
   OpalCall * call = InternalCreateCall(userData);
   if (call == NULL)
@@ -616,12 +618,12 @@ PSafePtr<OpalCall> OpalManager::SetUpCall(const PString & partyA,
   // thread.
   PSafePtr<OpalConnection> connection = MakeConnection(*call, partyA.Trim(), userData, options, stringOptions);
   if (connection != NULL) {
-    PTRACE(4, "OpalMan\tSetUpCall started, call=" << *call);
+    PTRACE(4, "SetUpCall started, call=" << *call);
     new PThread1Arg< PSafePtr<OpalConnection> >(connection, AsynchCallSetUp, true, "SetUpCall");
     return call;
   }
 
-  PTRACE(2, "OpalMan\tCould not create connection for \"" << partyA << '"');
+  PTRACE(2, "Could not create connection for \"" << partyA << '"');
 
   OpalConnection::CallEndReason endReason = call->GetCallEndReason();
   if (endReason == OpalConnection::NumCallEndReasons)
@@ -682,7 +684,7 @@ PBoolean OpalManager::ClearCall(const PString & token,
   // Find the call by token, callid or conferenceid
   PSafePtr<OpalCall> call = activeCalls.FindWithLock(token, PSafeReference);
   if (call == NULL) {
-    PTRACE(2, "OpalMan\tCould not find/lock call token \"" << token << '"');
+    PTRACE(2, "Could not find/lock call token \"" << token << '"');
     return false;
   }
 
@@ -715,7 +717,7 @@ void OpalManager::InternalClearAllCalls(OpalConnection::CallEndReason reason, bo
   if (m_garbageCollector == NULL)
     return;
 
-  PTRACE(3, "OpalMan\tClearing all calls " << (wait ? "and waiting" : "asynchronously")
+  PTRACE(3, "Clearing all calls " << (wait ? "and waiting" : "asynchronously")
                       << ", " << (firstThread ? "primary" : "secondary") << " thread.");
 
   if (firstThread) {
@@ -734,20 +736,20 @@ void OpalManager::InternalClearAllCalls(OpalConnection::CallEndReason reason, bo
     m_clearingAllCallsMutex.Signal();
   }
 
-  PTRACE(3, "OpalMan\tAll calls cleared.");
+  PTRACE(3, "All calls cleared.");
 }
 
 
 void OpalManager::OnClearedCall(OpalCall & PTRACE_PARAM(call))
 {
-  PTRACE(3, "OpalMan\tOnClearedCall " << call << " from \"" << call.GetPartyA() << "\" to \"" << call.GetPartyB() << '"');
+  PTRACE(3, "OnClearedCall " << call << " from \"" << call.GetPartyA() << "\" to \"" << call.GetPartyB() << '"');
 }
 
 
 OpalCall * OpalManager::InternalCreateCall(void * userData)
 {
   if (m_clearingAllCallsCount != 0) {
-    PTRACE(2, "OpalMan\tCreate call not performed as currently clearing all calls.");
+    PTRACE(2, "Create call not performed as currently clearing all calls.");
     return NULL;
   }
 
@@ -778,7 +780,7 @@ PSafePtr<OpalConnection> OpalManager::MakeConnection(OpalCall & call,
                                                    unsigned int options,
                                 OpalConnection::StringOptions * stringOptions)
 {
-  PTRACE(3, "OpalMan\tSet up connection to \"" << remoteParty << '"');
+  PTRACE(3, "Set up connection to \"" << remoteParty << '"');
 
   PReadWaitAndSignal mutex(endpointsMutex);
 
@@ -787,14 +789,14 @@ PSafePtr<OpalConnection> OpalManager::MakeConnection(OpalCall & call,
   if (ep != NULL)
     return ep->MakeConnection(call, remoteParty, userData, options, stringOptions);
 
-  PTRACE(1, "OpalMan\tCould not find endpoint for protocol \"" << epname << '"');
+  PTRACE(1, "Could not find endpoint for protocol \"" << epname << '"');
   return NULL;
 }
 
 
 PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned options, OpalConnection::StringOptions * stringOptions)
 {
-  PTRACE(3, "OpalMan\tOnIncoming connection " << connection);
+  PTRACE(3, "OnIncoming connection " << connection);
 
   connection.OnApplyStringOptions();
 
@@ -812,7 +814,7 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
   if (destination.IsEmpty()) {
     destination = connection.GetDestinationAddress();
     if (destination.IsEmpty()) {
-      PTRACE(3, "OpalMan\tCannot complete call, no destination address from connection " << connection);
+      PTRACE(3, "Cannot complete call, no destination address from connection " << connection);
       return false;
     }
   }
@@ -884,7 +886,7 @@ bool OpalManager::OnRouteConnection(PStringSet & routesTried,
     PString route = ApplyRouteTable(a_party, b_party, tableEntry);
     if (route.IsEmpty()) {
       if (a_party == b_party) {
-        PTRACE(3, "OpalMan\tCircular route a=b=\"" << a_party << "\", call=" << call);
+        PTRACE(3, "Circular route a=b=\"" << a_party << "\", call=" << call);
         return false;
       }
 
@@ -900,7 +902,7 @@ bool OpalManager::OnRouteConnection(PStringSet & routesTried,
         }
       }
 
-      PTRACE(3, "OpalMan\tCould not route a=\"" << a_party << "\", b=\"" << b_party << "\", call=" << call);
+      PTRACE(3, "Could not route a=\"" << a_party << "\", b=\"" << b_party << "\", call=" << call);
       return false;
     }
 
@@ -925,7 +927,7 @@ bool OpalManager::OnRouteConnection(PStringSet & routesTried,
 
 void OpalManager::OnProceeding(OpalConnection & connection)
 {
-  PTRACE(3, "OpalMan\tOnProceeding " << connection);
+  PTRACE(3, "OnProceeding " << connection);
 
   connection.GetCall().OnProceeding(connection);
 
@@ -940,7 +942,7 @@ void OpalManager::OnProceeding(OpalConnection & connection)
 
 void OpalManager::OnAlerting(OpalConnection & connection)
 {
-  PTRACE(3, "OpalMan\tOnAlerting " << connection);
+  PTRACE(3, "OnAlerting " << connection);
 
   connection.GetCall().OnAlerting(connection);
 
@@ -962,7 +964,7 @@ OpalConnection::AnswerCallResponse OpalManager::OnAnswerCall(OpalConnection & co
 
 void OpalManager::OnConnected(OpalConnection & connection)
 {
-  PTRACE(3, "OpalMan\tOnConnected " << connection);
+  PTRACE(3, "OnConnected " << connection);
 
 #if OPAL_SCRIPT
   if (m_script != NULL)
@@ -977,7 +979,7 @@ void OpalManager::OnConnected(OpalConnection & connection)
 
 void OpalManager::OnEstablished(OpalConnection & connection)
 {
-  PTRACE(3, "OpalMan\tOnEstablished " << connection);
+  PTRACE(3, "OnEstablished " << connection);
 
   connection.GetCall().OnEstablished(connection);
 }
@@ -985,7 +987,7 @@ void OpalManager::OnEstablished(OpalConnection & connection)
 
 void OpalManager::OnReleased(OpalConnection & connection)
 {
-  PTRACE(3, "OpalMan\tOnReleased " << connection);
+  PTRACE(3, "OnReleased " << connection);
 
   connection.GetCall().OnReleased(connection);
 }
@@ -993,8 +995,9 @@ void OpalManager::OnReleased(OpalConnection & connection)
 
 void OpalManager::OnHold(OpalConnection & connection, bool PTRACE_PARAM(fromRemote), bool PTRACE_PARAM(onHold))
 {
-  PTRACE(3, "OpalMan\t" << (onHold ? "On" : "Off") << " Hold "
-         << (fromRemote ? "from remote" : "request succeeded") << " on " << connection);
+  PTRACE(3, (onHold ? "On" : "Off") << " Hold "
+         << (fromRemote ? "from remote" : "request succeeded")
+         << " on " << connection);
   connection.GetEndPoint().OnHold(connection);
 }
 
@@ -1007,14 +1010,14 @@ void OpalManager::OnHold(OpalConnection & /*connection*/)
 PBoolean OpalManager::OnForwarded(OpalConnection & PTRACE_PARAM(connection),
 			      const PString & /*forwardParty*/)
 {
-  PTRACE(4, "OpalEP\tOnForwarded " << connection);
+  PTRACE(4, "OnForwarded " << connection);
   return true;
 }
 
 
 bool OpalManager::OnTransferNotify(OpalConnection & PTRACE_PARAM(connection), const PStringToString & info)
 {
-  PTRACE(4, "OpalManager\tOnTransferNotify for " << connection << '\n' << info);
+  PTRACE(4, "OnTransferNotify for " << connection << '\n' << info);
   return info["result"] != "success";
 }
 
@@ -1099,7 +1102,7 @@ OpalManager::MediaTransferMode OpalManager::GetMediaTransferMode(const OpalConne
                                                                  const OpalConnection & PTRACE_PARAM(destination),
                                                                   const OpalMediaType & PTRACE_PARAM(mediaType)) const
 {
-  PTRACE(3, "OpalMan\tMedia transfer mode set to forwarding for " << mediaType << ", "
+  PTRACE(3, "Media transfer mode set to forwarding for " << mediaType << ", "
             "from " << source << " to " << destination);
   return MediaTransferForward;
 }
@@ -1108,7 +1111,7 @@ OpalManager::MediaTransferMode OpalManager::GetMediaTransferMode(const OpalConne
 PBoolean OpalManager::OnOpenMediaStream(OpalConnection & PTRACE_PARAM(connection),
                                         OpalMediaStream & PTRACE_PARAM(stream))
 {
-  PTRACE(3, "OpalMan\tOnOpenMediaStream " << connection << ',' << stream);
+  PTRACE(3, "OnOpenMediaStream " << connection << ',' << stream);
   return true;
 }
 
@@ -1118,7 +1121,7 @@ bool OpalManager::OnLocalRTP(OpalConnection & PTRACE_PARAM(connection1),
                              unsigned         PTRACE_PARAM(sessionID),
                              bool             PTRACE_PARAM(started)) const
 {
-  PTRACE(3, "OpalMan\tOnLocalRTP(" << connection1 << ',' << connection2 << ',' << sessionID << ',' << started);
+  PTRACE(3, "OnLocalRTP(" << connection1 << ',' << connection2 << ',' << sessionID << ',' << started);
   return false;
 }
 
@@ -1128,29 +1131,29 @@ static bool PassOneThrough(OpalMediaStreamPtr source,
                            bool bypass)
 {
   if (source == NULL) {
-    PTRACE(2, "OpalMan\tSetMediaPassThrough could not complete as source stream does not exist");
+    PTRACE(2, "SetMediaPassThrough could not complete as source stream does not exist");
     return false;
   }
 
   if (sink == NULL) {
-    PTRACE(2, "OpalMan\tSetMediaPassThrough could not complete as sink stream does not exist");
+    PTRACE(2, "SetMediaPassThrough could not complete as sink stream does not exist");
     return false;
   }
 
   OpalMediaPatchPtr sourcePatch = source->GetPatch();
   if (sourcePatch == NULL) {
-    PTRACE(2, "OpalMan\tSetMediaPassThrough could not complete as source patch does not exist");
+    PTRACE(2, "SetMediaPassThrough could not complete as source patch does not exist");
     return false;
   }
 
   OpalMediaPatchPtr sinkPatch = sink->GetPatch();
   if (sinkPatch == NULL) {
-    PTRACE(2, "OpalMan\tSetMediaPassThrough could not complete as sink patch does not exist");
+    PTRACE(2, "SetMediaPassThrough could not complete as sink patch does not exist");
     return false;
   }
 
   if (source->GetMediaFormat() != sink->GetMediaFormat()) {
-    PTRACE(3, "OpalMan\tSetMediaPassThrough could not complete as different formats: "
+    PTRACE(3, "SetMediaPassThrough could not complete as different formats: "
            << source->GetMediaFormat() << "!=" << sink->GetMediaFormat());
     return false;
   }
@@ -1200,7 +1203,7 @@ bool OpalManager::SetMediaPassThrough(const PString & token1,
   PSafePtr<OpalCall> call2 = FindCallWithLock(token2);
 
   if (call1 == NULL || call2 == NULL) {
-    PTRACE(2, "OpalMan\tSetMediaPassThrough could not complete as one call does not exist");
+    PTRACE(2, "SetMediaPassThrough could not complete as one call does not exist");
     return false;
   }
 
@@ -1213,7 +1216,7 @@ bool OpalManager::SetMediaPassThrough(const PString & token1,
     ++connection2;
 
   if (connection1 == NULL || connection2 == NULL) {
-    PTRACE(2, "OpalMan\tSetMediaPassThrough could not complete as network connection not present in calls");
+    PTRACE(2, "SetMediaPassThrough could not complete as network connection not present in calls");
     return false;
   }
 
@@ -1223,7 +1226,7 @@ bool OpalManager::SetMediaPassThrough(const PString & token1,
 
 void OpalManager::OnClosedMediaStream(const OpalMediaStream & PTRACE_PARAM(channel))
 {
-  PTRACE(5, "OpalMan\tOnClosedMediaStream " << channel);
+  PTRACE(5, "OnClosedMediaStream " << channel);
 }
 
 #if OPAL_VIDEO
@@ -1246,7 +1249,7 @@ PBoolean OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection
 {
   autoDelete = true;
   device = PVideoInputDevice::CreateOpenedDevice(args, false);
-  PTRACE_IF(4, device == NULL, "OpalMan\tCould not open video input device \"" << args.deviceName << '"');
+  PTRACE_IF(4, device == NULL, "Could not open video input device \"" << args.deviceName << '"');
   return device != NULL;
 }
 
@@ -1260,7 +1263,7 @@ PBoolean OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
   // Make copy so we can adjust the size
   PVideoDevice::OpenArgs args = preview ? videoPreviewDevice : videoOutputDevice;
   if (args.deviceName.IsEmpty() && args.driverName.IsEmpty()) {
-    PTRACE(4, "OpalMan\tNo video output device specified.");
+    PTRACE(4, "No video output device specified.");
     return false; // Disabled
   }
 
@@ -1284,7 +1287,7 @@ bool OpalManager::CreateVideoOutputDevice(const OpalConnection & /*connection*/,
 {
   autoDelete = true;
   device = PVideoOutputDevice::CreateOpenedDevice(args, false);
-  PTRACE_IF(4, device == NULL, "OpalMan\tCould not open video output device \"" << args.deviceName << '"');
+  PTRACE_IF(4, device == NULL, "Could not open video output device \"" << args.deviceName << '"');
   return device != NULL;
 }
 
@@ -1324,7 +1327,7 @@ void OpalManager::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch 
 void OpalManager::OnStartMediaPatch(OpalConnection & PTRACE_PARAM(connection), OpalMediaPatch & PTRACE_PARAM(patch))
 {
 #endif
-  PTRACE(3, "OpalMan\tOnStartMediaPatch " << patch << " on " << connection);
+  PTRACE(3, "OnStartMediaPatch " << patch << " on " << connection);
 }
 
 
@@ -1336,7 +1339,7 @@ void OpalManager::OnStopMediaPatch(OpalConnection & connection, OpalMediaPatch &
 void OpalManager::OnStopMediaPatch(OpalConnection & PTRACE_PARAM(connection), OpalMediaPatch & patch)
 {
 #endif
-  PTRACE(3, "OpalMan\tOnStopMediaPatch " << patch << " on " << connection);
+  PTRACE(3, "OnStopMediaPatch " << patch << " on " << connection);
 
   QueueDecoupledEvent(new PSafeWorkNoArg<OpalMediaPatch>(&patch, &OpalMediaPatch::Close));
 }
@@ -1344,7 +1347,7 @@ void OpalManager::OnStopMediaPatch(OpalConnection & PTRACE_PARAM(connection), Op
 
 bool OpalManager::OnMediaFailed(OpalConnection & connection, unsigned PTRACE_PARAM(sessionId), bool PTRACE_PARAM(source))
 {
-  PTRACE(2, "OpalMan\tSession " << sessionId << ' '
+  PTRACE(2, "Session " << sessionId << ' '
          << (source ? "receive" : "transmit") << " media failed, releasing " << connection);
   if (connection.AllMediaFailed())
     connection.Release(OpalConnection::EndedByMediaFailed);
@@ -1372,14 +1375,14 @@ PString OpalManager::ReadUserInput(OpalConnection & connection,
                                   unsigned lastDigitTimeout,
                                   unsigned firstDigitTimeout)
 {
-  PTRACE(3, "OpalMan\tReadUserInput from " << connection);
+  PTRACE(3, "ReadUserInput from " << connection);
 
   connection.PromptUserInput(true);
   PString digit = connection.GetUserInput(firstDigitTimeout);
   connection.PromptUserInput(false);
 
   if (digit.IsEmpty()) {
-    PTRACE(2, "OpalMan\tReadUserInput first character timeout (" << firstDigitTimeout << " seconds) on " << *this);
+    PTRACE(2, "ReadUserInput first character timeout (" << firstDigitTimeout << " seconds) on " << *this);
     return PString::Empty();
   }
 
@@ -1389,7 +1392,7 @@ PString OpalManager::ReadUserInput(OpalConnection & connection,
 
     digit = connection.GetUserInput(lastDigitTimeout);
     if (digit.IsEmpty()) {
-      PTRACE(2, "OpalMan\tReadUserInput last character timeout (" << lastDigitTimeout << " seconds) on " << *this);
+      PTRACE(2, "ReadUserInput last character timeout (" << lastDigitTimeout << " seconds) on " << *this);
       return input; // Input so far will have to do
     }
   }
@@ -1402,7 +1405,7 @@ void OpalManager::OnMWIReceived(const PString & PTRACE_PARAM(party),
                                 MessageWaitingType PTRACE_PARAM(type),
                                 const PString & PTRACE_PARAM(extraInfo))
 {
-  PTRACE(3, "OpalMan\tOnMWIReceived(" << party << ',' << type << ',' << extraInfo << ')');
+  PTRACE(3, "OnMWIReceived(" << party << ',' << type << ',' << extraInfo << ')');
 }
 
 
@@ -1421,7 +1424,7 @@ bool OpalManager::GetConferenceStates(OpalConferenceStates & states, const PStri
 
 void OpalManager::OnConferenceStatusChanged(OpalEndPoint & endpoint, const PString & uri, OpalConferenceState::ChangeType change)
 {
-  PTRACE(4, "OpalMan\tOnConferenceStatusChanged(" << endpoint << ",\"" << uri << "\"," << change << ')');
+  PTRACE(4, "OnConferenceStatusChanged(" << endpoint << ",\"" << uri << "\"," << change << ')');
 
   PReadWaitAndSignal mutex(endpointsMutex);
 
@@ -1436,7 +1439,7 @@ bool OpalManager::OnChangedPresentationRole(OpalConnection & PTRACE_PARAM(connec
                                            const PString & PTRACE_PARAM(newChairURI),
                                            bool)
 {
-  PTRACE(3, "OpalCon", "OnChangedPresentationRole to " << newChairURI << " on " << connection);
+  PTRACE(3, "OnChangedPresentationRole to " << newChairURI << " on " << connection);
   return true;
 }
 
@@ -1506,7 +1509,7 @@ void OpalManager::RouteEntry::CompileRegEx()
   PStringStream pattern;
   pattern << "^(" << m_partyA << ")\t(" << m_partyB << ")$";
   if (!m_regex.Compile(pattern, PRegularExpression::IgnoreCase|PRegularExpression::Extended)) {
-    PTRACE(1, "OpalMan\tCould not compile route regular expression \"" << pattern << '"');
+    PTRACE(1, "Could not compile route regular expression \"" << pattern << '"');
   }
 }
 
@@ -1527,8 +1530,7 @@ bool OpalManager::RouteEntry::IsMatch(const PString & search) const
 {
   PINDEX dummy;
   bool ok = m_regex.Execute(search, dummy);
-  PTRACE(4, "OpalMan\t" << (ok ? "Matched" : "Did not match")
-         << " regex \"" << m_regex.GetPattern() << "\" (" << *this << ')');
+  PTRACE(4, (ok ? "Matched" : "Did not match") << " regex \"" << m_regex.GetPattern() << "\" (" << *this << ')');
   return ok;
 }
 
@@ -1541,10 +1543,10 @@ PBoolean OpalManager::AddRouteEntry(const PString & spec)
   if (spec[0] == '@') { // Load from file
     PTextFile file;
     if (!file.Open(spec.Mid(1), PFile::ReadOnly)) {
-      PTRACE(1, "OpalMan\tCould not open route file \"" << file.GetFilePath() << '"');
+      PTRACE(1, "Could not open route file \"" << file.GetFilePath() << '"');
       return false;
     }
-    PTRACE(4, "OpalMan\tAdding routes from file \"" << file.GetFilePath() << '"');
+    PTRACE(4, "Adding routes from file \"" << file.GetFilePath() << '"');
     PBoolean ok = false;
     PString line;
     while (file.good()) {
@@ -1557,12 +1559,12 @@ PBoolean OpalManager::AddRouteEntry(const PString & spec)
 
   RouteEntry * entry = new RouteEntry(spec);
   if (!entry->IsValid()) {
-    PTRACE(2, "OpalMan\tIllegal specification for route table entry: \"" << spec << '"');
+    PTRACE(2, "Illegal specification for route table entry: \"" << spec << '"');
     delete entry;
     return false;
   }
 
-  PTRACE(4, "OpalMan\tAdded route \"" << *entry << '"');
+  PTRACE(4, "Added route \"" << *entry << '"');
   m_routeMutex.Wait();
   m_routeTable.Append(entry);
   m_routeMutex.Signal();
@@ -1619,7 +1621,7 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
     return routeIndex++ == 0 ? b_party : PString::Empty();
 
   PString search = a_party + '\t' + b_party;
-  PTRACE(4, "OpalMan\tSearching for route \"" << search << '"');
+  PTRACE(4, "Searching for route \"" << search << '"');
 
   /* Examples:
         Call from UI       pc:USB Audio Device\USB Audio Device      sip:fred@boggs.com
@@ -1824,7 +1826,7 @@ PBoolean OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
                                       const PIPSocket::Address & sigAddr,
                                       PBoolean PTRACE_PARAM(incoming))
 {
-  PTRACE(4, "OPAL\tChecking " << (incoming ? "incoming" : "outgoing") << " call for NAT: local=" << localAddr << ", peer=" << peerAddr << ", sig=" << sigAddr);
+  PTRACE(4, "Checking " << (incoming ? "incoming" : "outgoing") << " call for NAT: local=" << localAddr << ", peer=" << peerAddr << ", sig=" << sigAddr);
 
   /* The peer endpoint may be on a public address, the local network (LAN) or
      NATed. If the last, it either knows it is behind the NAT or is blissfully
@@ -1933,7 +1935,7 @@ bool OpalManager::SetNATServer(const PString & method, const PString & server, b
   if (!natMethod->SetServer(server) || !natMethod->Open(PIPSocket::GetDefaultIpAny()))
     return false;
 
-  PTRACE(3, "OPAL\tNAT " << *natMethod);
+  PTRACE(3, "NAT " << *natMethod);
   return true;
 }
 
@@ -2034,14 +2036,14 @@ void OpalManager::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 void OpalManager::SetMediaFormatOrder(const PStringArray & order)
 {
   mediaFormatOrder = order;
-  PTRACE(3, "OPAL\tSetMediaFormatOrder(" << setfill(',') << order << ')');
+  PTRACE(3, "SetMediaFormatOrder(" << setfill(',') << order << ')');
 }
 
 
 void OpalManager::SetMediaFormatMask(const PStringArray & mask)
 {
   mediaFormatMask = mask;
-  PTRACE(3, "OPAL\tSetMediaFormatMask(" << setfill(',') << mask << ')');
+  PTRACE(3, "SetMediaFormatMask(" << setfill(',') << mask << ')');
 }
 
 
@@ -2167,7 +2169,7 @@ PSafePtr<OpalPresentity> OpalManager::AddPresentity(const PString & presentity)
   if (newPresentity == NULL)
     return NULL;
 
-  PTRACE(4, "OpalMan\tAdded presentity for " << *newPresentity);
+  PTRACE(4, "Added presentity for " << *newPresentity);
   m_presentities.SetAt(presentity, newPresentity);
   return PSafePtr<OpalPresentity>(newPresentity, PSafeReadWrite);
 }
@@ -2192,7 +2194,7 @@ PStringList OpalManager::GetPresentities() const
 
 bool OpalManager::RemovePresentity(const PString & presentity)
 {
-  PTRACE(4, "OpalMan\tRemoving presentity for " << presentity);
+  PTRACE(4, "Removing presentity for " << presentity);
   return m_presentities.RemoveAt(presentity);
 }
 #endif // OPAL_HAS_PRESENCE

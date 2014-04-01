@@ -208,6 +208,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
         PString              m_name;
         unsigned             m_deviceType;
         OpalTransportTCP     m_transport;
+        PTimeInterval        m_startupDelay;
         PString              m_status;
         PSyncPoint           m_exit;
 
@@ -510,6 +511,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
 
     typedef PDictionary<PString, PhoneDevice> PhoneDeviceDict;
     PhoneDeviceDict m_phoneDevices;
+    PMutex          m_phoneDevicesMutex;
 };
 
 

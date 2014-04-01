@@ -322,6 +322,10 @@ class H323EndPoint : public OpalRTPEndPoint
      */
     H323Gatekeeper * GetGatekeeper() const { return m_gatekeepers.IsEmpty() ? NULL : &m_gatekeepers.front(); }
 
+    /**Get all the gatekeepers we are registered with.
+    */
+    const PList<H323Gatekeeper> GetGatekeepers() const { return m_gatekeepers; }
+
     /**Return if endpoint is registered with gatekeeper.
       */
     PBoolean IsRegisteredWithGatekeeper() const;

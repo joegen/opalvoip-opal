@@ -1399,6 +1399,9 @@ class OpalVideoFormat : public OpalMediaFormat
       OpalVideoFormatInternal * info = NULL
     );
     OpalVideoFormat(
+      const char * fullName
+    ) : OpalMediaFormat(fullName) { }
+    OpalVideoFormat(
       const char * fullName,    ///<  Full name of media format
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
       const char * encodingName,///<  RTP encoding name

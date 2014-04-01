@@ -1493,7 +1493,7 @@ void OpalMixerNode::GetConferenceState(OpalConferenceState & state) const
     state.m_accessURI.push_back(newURI);
   }
 
-  for (PSafePtr<OpalConnection> conn(m_connections, PSafeReference); conn != NULL; ++conn) {
+  for (PSafePtr<OpalConnection> conn(m_connections, PSafeReadOnly); conn != NULL; ++conn) {
     PSafePtr<OpalConnection> other = conn->GetOtherPartyConnection();
     if (other != NULL && other->IsNetworkConnection()) {
       OpalConferenceState::User user;

@@ -923,6 +923,10 @@ void TranscoderThread::Main()
 
   RTP_DataFrame srcFrame;
 
+  OpalVideoFormat videoFormat(m_encoder->GetOutputFormat());
+  PBYTEArray videoDetectorContext;
+  bool videoDetectorFailed = false;
+
   while ((m_running && m_framesToTranscode < 0) || (m_framesToTranscode-- > 0)) {
 
     //////////////////////////////////////////////
@@ -941,6 +945,10 @@ void TranscoderThread::Main()
     srcFrame.SetTimestamp(m_timestamp);
     m_timestamp += m_frameTime;
     ++totalInputFrameCount;
+
+    bool detectorSaysIntra = false;
+    bool encoderSaysIntra = false;
+    bool decoderSaysIntra = false;
 
     //////////////////////////////////////////////
     //
@@ -988,11 +996,8 @@ void TranscoderThread::Main()
           cerr << "Encoder " << (state ? "restor" : "fail") << "ed at input frame " << totalInputFrameCount-1 << endl;
           continue;
         }
-        if (isVideo && ((OpalVideoTranscoder *)m_encoder)->WasLastFrameIFrame()) {
-          coutMutex.Wait();
-          cout << "Encoder returned I-Frame at input frame " << totalInputFrameCount-1 << endl;
-          coutMutex.Signal();
-        }
+        if (isVideo)
+          encoderSaysIntra = ((OpalVideoTranscoder *)m_encoder)->WasLastFrameIFrame();
       }
 
       //////////////////////////////////////////////
@@ -1096,11 +1101,7 @@ void TranscoderThread::Main()
             cerr << "Non rate controlled video decoder returned != 1 output frame for input frame " << totalInputFrameCount-1 << endl;
           else if (outFrames.GetSize() == 1) {
             if (isVideo) {
-              if (((OpalVideoTranscoder *)m_decoder)->WasLastFrameIFrame()) {
-                coutMutex.Wait();
-                cout << "Decoder returned I-Frame at output frame " << totalOutputFrameCount << endl;
-                coutMutex.Signal();
-              } 
+              decoderSaysIntra = ((OpalVideoTranscoder *)m_decoder)->WasLastFrameIFrame();
               if (g_infoCount > 1) {
                 coutMutex.Wait();
                 cout << "Decoder generated payload of size " << outFrames[0].GetPayloadSize() << endl;
@@ -1116,6 +1117,24 @@ void TranscoderThread::Main()
               ((VideoThread *)this)->CalcSNR(outFrames[0]);
             totalOutputFrameCount++;
           }
+        }
+
+        bool detectedInter = false;
+        for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
+          switch (videoFormat.GetVideoFrameType(encFrames[i].GetPayloadPtr(), encFrames[i].GetPayloadSize(), videoDetectorContext)) {
+            case OpalVideoFormat::e_IntraFrame :
+              detectorSaysIntra = true;
+              break;
+            case OpalVideoFormat::e_InterFrame :
+              detectedInter = true;
+              break;
+          }
+        }
+        if (!videoDetectorFailed && !detectorSaysIntra && !detectedInter) {
+          videoDetectorFailed = true;
+          coutMutex.Wait();
+          cout << "Video detector could not determine if I-Frame or P-Frame" << endl;
+          coutMutex.Signal();
         }
       }
 
@@ -1150,11 +1169,7 @@ void TranscoderThread::Main()
           if (outFrames.GetSize() > 1) 
             cerr << "Rate controlled video decoder returned > 1 output frame for input frame " << totalInputFrameCount-1 << endl;
           else if (outFrames.GetSize() == 1) {
-            if (((OpalVideoTranscoder *)m_decoder)->WasLastFrameIFrame()) {
-              coutMutex.Wait();
-              cout << "Decoder returned I-Frame at output frame " << totalOutputFrameCount << endl;
-              coutMutex.Signal();
-            }
+            decoderSaysIntra = ((OpalVideoTranscoder *)m_decoder)->WasLastFrameIFrame();
             bool state = Write(outFrames[0]);
             if (oldOutState != state) {
               oldOutState = state;
@@ -1166,6 +1181,25 @@ void TranscoderThread::Main()
           }
         }
       }
+    }
+
+    if (detectorSaysIntra || encoderSaysIntra || decoderSaysIntra) {
+      int count = (detectorSaysIntra ? 1 : 0) + (encoderSaysIntra ? 1 : 0) + (decoderSaysIntra ? 1 : 0);
+
+      coutMutex.Wait();
+      cout << "I-Frame at input frame " << totalInputFrameCount - 1 << " from ";
+      if (detectorSaysIntra)
+        cout << "detector";
+      if (count == 3)
+        cout << ", ";
+      if (encoderSaysIntra)
+        cout << "encoder";
+      if (count > 1)
+        cout << " and ";
+      if (decoderSaysIntra)
+        cout << "decoder";
+      cout << '.' << endl;
+      coutMutex.Signal();
     }
 
     {

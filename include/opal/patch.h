@@ -241,7 +241,9 @@ class OpalMediaPatch : public PSafeObject
   protected:
     PDECLARE_NOTIFIER(OpalMediaCommand, OpalMediaPatch, InternalOnMediaCommand1);
     void InternalOnMediaCommand2(OpalMediaCommand * command);
-                
+
+    bool CanStart() const;
+
     /**Called from the associated patch thread */
     virtual void Main();
     void StopThread();
@@ -298,6 +300,8 @@ class OpalMediaPatch : public PSafeObject
 
     PThread * patchThread;
     PMutex patchThreadMutex;
+
+    bool m_transcoderChanged;
 
   private:
     P_REMOVE_VIRTUAL(bool, OnPatchStart(), false);

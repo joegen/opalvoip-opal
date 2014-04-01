@@ -57,6 +57,7 @@ OpalMediaPatch::OpalMediaPatch(OpalMediaStream & src)
   , m_bypassToPatch(NULL)
   , m_bypassFromPatch(NULL)
   , patchThread(NULL)
+  , m_transcoderChanged(false)
 {
   PTRACE_CONTEXT_ID_FROM(src);
 
@@ -98,6 +99,30 @@ void OpalMediaPatch::PrintOn(ostream & strm) const
   UnlockReadOnly();
 }
 
+
+bool OpalMediaPatch::CanStart() const
+{
+  if (!source.IsOpen()) {
+    PTRACE(4, "Media\tDelaying thread starting till source stream open");
+    return false;
+  }
+
+  if (sinks.IsEmpty()) {
+    PTRACE(4, "Media\tDelaying thread starting till have sink stream");
+    return false;
+  }
+
+  for (PList<Sink>::const_iterator s = sinks.begin(); s != sinks.end(); ++s) {
+    if (!s->stream->IsOpen()) {
+      PTRACE(4, "Media\tDelaying thread starting till sink stream open");
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
 void OpalMediaPatch::Start()
 {
   PWaitAndSignal m(patchThreadMutex);
@@ -107,27 +132,12 @@ void OpalMediaPatch::Start()
     return;
   }
 
-  if (!source.IsOpen()) {
-    PTRACE(4, "Media\tDelaying thread starting till source stream open");
-    return;
+  if (CanStart()) {
+    patchThread = new PThreadObj<OpalMediaPatch>(*this, &OpalMediaPatch::Main, false, "Media Patch", PThread::HighPriority);
+    PTRACE_CONTEXT_ID_TO(patchThread);
+    PThread::Yield();
+    PTRACE(4, "Media\tStarting thread " << patchThread->GetThreadName());
   }
-
-  if (sinks.IsEmpty()) {
-    PTRACE(4, "Media\tDelaying thread starting till have sink stream");
-    return;
-  }
-
-  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
-    if (!s->stream->IsOpen()) {
-      PTRACE(4, "Media\tDelaying thread starting till sink stream open");
-      return;
-    }
-  }
-
-  patchThread = new PThreadObj<OpalMediaPatch>(*this, &OpalMediaPatch::Main, false, "Media Patch", PThread::HighPriority);
-  PTRACE_CONTEXT_ID_TO(patchThread);
-  PThread::Yield();
-  PTRACE(4, "Media\tStarting thread " << patchThread->GetThreadName());
 }
 
 
@@ -221,6 +231,7 @@ bool OpalMediaPatch::ResetTranscoders()
       return false;
   }
 
+  m_transcoderChanged = true;
   return true;
 }
 
@@ -829,6 +840,13 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
   if (!LockReadOnly())
     return false;
 
+  if (m_transcoderChanged) {
+    m_transcoderChanged = false;
+    UnlockReadOnly();
+    PTRACE(3, "Patch\tIgnoring source data with transcoder change on " << *this);
+    return true;
+  }
+
   if (m_bypassFromPatch != NULL) {
     PTRACE(3, "Patch\tMedia patch bypass started by " << *m_bypassFromPatch << " on " << *this);
     UnlockReadOnly();
@@ -1079,8 +1097,11 @@ void OpalPassiveMediaPatch::Start()
   if (m_started)
     return;
 
-  m_started = true;
-  OnStartMediaPatch();
+  if (CanStart()) {
+    m_started = true;
+    PTRACE(4, "Patch\tPassive medai patch started");
+    OnStartMediaPatch();
+  }
 }
 
 
