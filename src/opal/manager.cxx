@@ -1705,17 +1705,19 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
   destination.Replace("<da>", b_party, true);
   destination.Replace("<db>", b_party, true);
 
-  if (at != P_MAX_INDEX) {
-    destination.Replace("<du>", user, true);
-    ReplaceNDU(destination, b_party.Mid(at));
-  }
-  else if (PIPSocket::IsLocalHost(user.Left(user.Find(':')))) {
-    destination.Replace("<du>", "", true);
-    ReplaceNDU(destination, user);
-  }
-  else {
-    destination.Replace("<du>", user, true);
-    ReplaceNDU(destination, "");
+  if (destination.Find("<du>") != P_MAX_INDEX) {
+    if (at != P_MAX_INDEX) {
+      destination.Replace("<du>", user, true);
+      ReplaceNDU(destination, b_party.Mid(at));
+    }
+    else if (PIPSocket::IsLocalHost(user.Left(user.Find(':')))) {
+      destination.Replace("<du>", "", true);
+      ReplaceNDU(destination, user);
+    }
+    else {
+      destination.Replace("<du>", user, true);
+      ReplaceNDU(destination, "");
+    }
   }
 
   destination.Replace("<cu>", a_party(a_party.Find(':') + 1, a_party.Find('@') - 1), true);
