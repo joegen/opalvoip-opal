@@ -1615,48 +1615,51 @@ static void ReplaceNDU(PString & destination, const PString & subst)
 
 PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_party, PINDEX & routeIndex)
 {
-  PWaitAndSignal mutex(m_routeMutex);
-
-  if (m_routeTable.IsEmpty())
-    return routeIndex++ == 0 ? b_party : PString::Empty();
-
-  PString search = a_party + '\t' + b_party;
-  PTRACE(4, "Searching for route \"" << search << '"');
-
-  /* Examples:
-        Call from UI       pc:USB Audio Device\USB Audio Device      sip:fred@boggs.com
-                           pc:USB Audio Device\USB Audio Device      h323:fred@boggs.com
-                           pc:USB Audio Device\USB Audio Device      fred
-        Call from handset  pots:TigerJet:USB Audio Device            123
-        Call from SIP      sip:me@here.net                           sip:you@there.com
-                           sip:me@here.net:5061                      sip:you@there.com
-        Call from H.323    h323:me@here.net                          h323:there.com
-                           h323:me@here.net:1721                     h323:fred
-
-     Table:
-        .*:#  = ivr:
-        pots:.*\\*.*\\*.* = sip:<dn2ip>
-        pots:.*           = sip:<da>
-        pc:.*             = sip:<da>
-        h323:.*           = pots:<dn>
-        sip:.*            = pots:<dn>
-        h323:.*           = pc:
-        sip:.*            = pc:
-   */
-
   PString destination;
-  while (routeIndex < m_routeTable.GetSize()) {
-    RouteEntry & entry = m_routeTable[routeIndex++];
-    if (entry.IsMatch(search)) {
-      search = entry.GetDestination();
 
-      if (search.NumCompare("label:") != EqualTo) {
-        destination = search;
-        break;
+  {
+    PWaitAndSignal mutex(m_routeMutex);
+
+    if (m_routeTable.IsEmpty())
+      return routeIndex++ == 0 ? b_party : PString::Empty();
+
+    PString search = a_party + '\t' + b_party;
+    PTRACE(4, "Searching for route \"" << search << '"');
+
+    /* Examples:
+          Call from UI       pc:USB Audio Device\USB Audio Device      sip:fred@boggs.com
+          pc:USB Audio Device\USB Audio Device      h323:fred@boggs.com
+          pc:USB Audio Device\USB Audio Device      fred
+          Call from handset  pots:TigerJet:USB Audio Device            123
+          Call from SIP      sip:me@here.net                           sip:you@there.com
+          sip:me@here.net:5061                      sip:you@there.com
+          Call from H.323    h323:me@here.net                          h323:there.com
+          h323:me@here.net:1721                     h323:fred
+
+          Table:
+          .*:#  = ivr:
+          pots:.*\\*.*\\*.* = sip:<dn2ip>
+          pots:.*           = sip:<da>
+          pc:.*             = sip:<da>
+          h323:.*           = pots:<dn>
+          sip:.*            = pots:<dn>
+          h323:.*           = pc:
+          sip:.*            = pc:
+          */
+
+    while (routeIndex < m_routeTable.GetSize()) {
+      RouteEntry & entry = m_routeTable[routeIndex++];
+      if (entry.IsMatch(search)) {
+        search = entry.GetDestination();
+
+        if (search.NumCompare("label:") != EqualTo) {
+          destination = search;
+          break;
+        }
+
+        // restart search in table using label.
+        routeIndex = 0;
       }
-
-      // restart search in table using label.
-      routeIndex = 0;
     }
   }
 
