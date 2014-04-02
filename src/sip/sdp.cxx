@@ -652,13 +652,10 @@ PBoolean SDPMediaDescription::SetAddresses(const OpalTransportAddress & media,
                                            const OpalTransportAddress & control)
 {
   PIPSocket::Address ip;
-  WORD port = m_port;
-  if (!media.GetIpAndPort(ip, port))
+  if (!media.GetIpAndPort(ip, m_port))
     return false;
 
-  m_port = port;
-
-  m_mediaAddress = OpalTransportAddress(ip, port, OpalTransportAddress::UdpPrefix());
+  m_mediaAddress = OpalTransportAddress(ip, m_port, OpalTransportAddress::UdpPrefix());
   m_controlAddress = control;
 
   return true;
