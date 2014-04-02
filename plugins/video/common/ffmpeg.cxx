@@ -106,6 +106,7 @@ FFMPEGCodec::FFMPEGCodec(const char * prefix, EncodedFrame * fullFrame)
   , m_alignedInputSize(0)
   , m_fullFrame(fullFrame)
   , m_errorCount(0)
+  , m_hadMissingPacket(false)
 {
   avcodec_register_all();
 
@@ -501,7 +502,20 @@ bool FFMPEGCodec::DecodeVideoPacket(const PluginCodec_RTP & in, unsigned & flags
     return false;
   }
 
+  // Because we cannot trust the decoder not to crash on missing packets, we throw away the whole frame
+  if ((flags & PluginCodec_CoderPacketLoss) != 0) {
+    m_hadMissingPacket = true;
+    m_fullFrame->Reset();
+  }
+
   flags = 0;
+
+  if (m_hadMissingPacket) {
+    // Ignore packets till end of frame
+    if (in.GetMarker())
+      m_hadMissingPacket = false;
+    return true;
+  }
 
   if (m_fullFrame == NULL)
     return DecodeVideoFrame(in.GetPayloadPtr(), in.GetPayloadSize(), flags);
