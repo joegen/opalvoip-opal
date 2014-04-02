@@ -891,8 +891,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
                  << ", incorrect sequence after re-ordering, got "
                  << sequenceNumber << " expected " << expectedSequenceNumber);
         }
-
-        outOfOrderPacketTime = tick;
       }
 
       unsigned dropped = sequenceNumber - expectedSequenceNumber;
