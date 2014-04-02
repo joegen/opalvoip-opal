@@ -555,7 +555,7 @@ void SDPCommonAttributes::OutputAttributes(ostream & strm) const
 
 SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & type)
   : m_mediaAddress(address)
-  , m_port(65535)
+  , m_port(0)
   , m_portCount(1)
   , m_mediaType(type)
 {
@@ -568,13 +568,10 @@ PBoolean SDPMediaDescription::SetAddresses(const OpalTransportAddress & newAddre
                                            const OpalTransportAddress & control)
 {
   PIPSocket::Address ip;
-  WORD port = m_port;
-  if (!newAddress.GetIpAndPort(ip, port))
+  if (!newAddress.GetIpAndPort(ip, m_port))
     return false;
 
-  m_port = port;
-
-  m_mediaAddress = OpalTransportAddress(ip, port, OpalTransportAddress::UdpPrefix());
+  m_mediaAddress = OpalTransportAddress(ip, m_port, OpalTransportAddress::UdpPrefix());
   m_controlAddress = control;
 
   return true;
@@ -702,13 +699,8 @@ bool SDPMediaDescription::PostDecode(const OpalMediaFormatList & mediaFormats)
   if (bw == 0)
     bw = GetBandwidth(SDPSessionDescription::ApplicationSpecificBandwidthType())*1000;
 
-  SDPMediaFormatList::iterator format = m_formats.begin();
-  while (format != m_formats.end()) {
-    if (format->PostDecode(mediaFormats, bw))
-      ++format;
-    else
-      m_formats.erase(format++);
-  }
+  for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format)
+    format->PostDecode(mediaFormats, bw);
 
   return true;
 }

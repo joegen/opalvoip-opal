@@ -1038,26 +1038,12 @@ bool SIPConnection::OnSendAnswerSDP(SDPSessionDescription & sdpOut)
     else {
       SDPMediaDescription * incomingMedia = sdp->GetMediaDescriptionByIndex(session);
       if (PAssert(incomingMedia != NULL, "SDP Media description list changed")) {
-        SDPMediaDescription * outgoingMedia = NULL;
-        SDPDummyMediaDescription * dummy = dynamic_cast<SDPDummyMediaDescription *>(incomingMedia);
-        if (dummy != NULL)
-          outgoingMedia = new SDPDummyMediaDescription(*dummy);
-        else {
-          OpalMediaTypeDefinition * def = incomingMedia->GetMediaType().GetDefinition();
-          if (def != NULL)
-            outgoingMedia = def->CreateSDPMediaDescription(OpalTransportAddress(), NULL);
-        }
-        if (PAssert(outgoingMedia != NULL, "SDP Media description clone failed")) {
-          SDPMediaFormat * fmt = outgoingMedia->CreateSDPMediaFormat();
-          if (fmt != NULL) {
-            if (incomingMedia->GetSDPMediaFormats().IsEmpty())
-              fmt->Initialise(OpalG711_ULAW_64K);
-            else
-              fmt->Initialise(incomingMedia->GetSDPMediaFormats().front().GetMediaFormat());
-            outgoingMedia->AddSDPMediaFormat(fmt);
-          }
-          sdpOut.AddMediaDescription(outgoingMedia);
-        }
+        PStringArray tokens(4);
+        tokens[0] = incomingMedia->GetSDPMediaType();
+        tokens[1] = '0';
+        tokens[2] = incomingMedia->GetSDPTransportType();
+        tokens[3] = incomingMedia->GetSDPPortList();
+        sdpOut.AddMediaDescription(new SDPDummyMediaDescription(OpalTransportAddress(), tokens));
       }
     }
   }
@@ -1112,16 +1098,6 @@ bool SIPConnection::OnSendAnswerSDPSession(const SDPSessionDescription & sdpIn,
 
   if (!m_answerFormatList.HasType(mediaType)) {
     PTRACE(1, "SIP\tNo available media formats in SDP media description for session " << sessionId);
-
-    // Send back a m= line with port value zero and the first entry of the offer payload types as per RFC3264
-    localMedia = mediaDef->CreateSDPMediaDescription(OpalTransportAddress(), NULL);
-    if (localMedia  == NULL) {
-      PTRACE(1, "SIP\tCould not create SDP media description for media type " << mediaType);
-      return false;
-    }
-    if (!incomingMedia->GetSDPMediaFormats().IsEmpty())
-      localMedia->AddSDPMediaFormat(new SDPMediaFormat(incomingMedia->GetSDPMediaFormats().front()));
-    sdpOut.AddMediaDescription(localMedia);
     return false;
   }
   
