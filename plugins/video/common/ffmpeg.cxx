@@ -503,7 +503,8 @@ bool FFMPEGCodec::DecodeVideoPacket(const PluginCodec_RTP & in, unsigned & flags
   }
 
   // Because we cannot trust the decoder not to crash on missing packets, we throw away the whole frame
-  if ((flags & PluginCodec_CoderPacketLoss) != 0) {
+  if (!m_hadMissingPacket && (flags & PluginCodec_CoderPacketLoss) != 0) {
+    PTRACE(3, m_prefix, "Decoder throwing away entire video frame due to packet loss");
     m_hadMissingPacket = true;
     m_fullFrame->Reset();
   }
