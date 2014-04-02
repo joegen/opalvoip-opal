@@ -462,53 +462,49 @@ PBoolean OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & addr
 {
   PString host, device, service;
   if (!SplitAddress(address, host, device, service))
-    return false;
+    return PFalse;
 
   if (host.IsEmpty() && device.IsEmpty()) {
     PTRACE(2, "Opal\tIllegal IP transport address: \"" << address << '"');
-    return false;
+    return PFalse;
   }
 
-  if (service == "*")
-    port = 0;
-  else if (!service.IsEmpty()) {
+  WORD newPort;
+  if (service.IsEmpty())
+    newPort = port;
+  else if (service == "*")
+    newPort = 0;
+  else {
     PCaselessString proto = address.GetProtoPrefix();
     if (proto == OpalTransportAddress::IpPrefix())
       proto = OpalTransportAddress::TcpPrefix();
-
-    if ((port = PIPSocket::GetPortByService(proto, service)) == 0) {
+    if ((newPort = PIPSocket::GetPortByService(proto, service)) == 0) {
       PTRACE(2, "Opal\tIllegal IP transport port/service: \"" << address << '"');
       return false;
     }
   }
 
-  if (host[0] == '*') {
+  if (host[0] == '*')
     ip = PIPSocket::GetDefaultIpAny();
-    return true;
-  }
-
-  if (host == "0.0.0.0") {
+  else if (host == "0.0.0.0")
     ip = PIPSocket::Address::GetAny(4);
-    return true;
-  }
-
-  if (host == "::" || host == "[::]") {
+  else if (host == "::" || host == "[::]")
     ip = PIPSocket::Address::GetAny(6);
-    return true;
-  }
-
-  if (device.IsEmpty()) {
-    if (PIPSocket::GetHostAddress(host, ip))
-      return true;
-    PTRACE(1, "Opal\tCould not find host \"" << host << '"');
+  else if (device.IsEmpty()) {
+    if (!PIPSocket::GetHostAddress(host, ip)) {
+      PTRACE(1, "Opal\tCould not find host \"" << host << '"');
+      return false;
+    }
   }
   else {
-    if (ip.FromString(device))
-      return true;
-    PTRACE(1, "Opal\tCould not find device \"" << device << '"');
+    if (!ip.FromString(device)) {
+      PTRACE(1, "Opal\tCould not find device \"" << device << '"');
+      return false;
+    }
   }
 
-  return false;
+  port = newPort;
+  return true;
 }
 
 

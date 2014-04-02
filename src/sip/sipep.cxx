@@ -727,7 +727,7 @@ bool SIPEndPoint::OnReceivedPDU(SIP_PDU * pdu)
 
         PString token = m_receivedConnectionTokens(mime.GetCallID());
         if (!token.IsEmpty()) {
-          PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(token, PSafeReference);
+          PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(token, PSafeReadOnly);
           if (connection != NULL) {
             PTRACE_CONTEXT_ID_PUSH_THREAD(*connection);
             switch (connection->CheckINVITE(*pdu)) {

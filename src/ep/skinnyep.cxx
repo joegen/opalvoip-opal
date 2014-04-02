@@ -39,7 +39,7 @@
 
 static PString CreateToken(const OpalSkinnyEndPoint::PhoneDevice & client, unsigned callIdentifier)
 {
-  PString token = "Skinny:" + client.GetName();
+  PString token = "sccp:" + client.GetName();
   if (callIdentifier > 0)
     token.sprintf("/%u", callIdentifier);
 
@@ -297,11 +297,11 @@ bool OpalSkinnyEndPoint::PhoneDevice::Start(const PString & server)
   // Set start up delay dependent on how many connections are pensing.
   for (PhoneDeviceDict::iterator it = m_endpoint.m_phoneDevices.begin(); it != m_endpoint.m_phoneDevices.end(); ++it) {
     if (it->second.m_status == "Registering")
-      m_startupDelay += 50;
+      m_delay += 50;
   }
 
   m_status = "Registering";
-  m_transport.AttachThread(new PThreadObj<PhoneDevice>(*this, &PhoneDevice::HandleTransport, false, "Skinny"));
+  m_transport.AttachThread(new PThreadObj<PhoneDevice>(*this, &PhoneDevice::HandleTransport, false, "Skinny", PThread::HighPriority));
   return true;
 }
 
@@ -367,18 +367,18 @@ bool OpalSkinnyEndPoint::PhoneDevice::SendSkinnyMsg(const SkinnyMsg & msg)
 
 #define ON_RECEIVE_MSG(cls) \
   case cls::ID : \
-  PTRACE(4, "Received " << typeid(cls).name()); \
+  PTRACE(3, "Received " << typeid(cls).name()); \
   if (!m_endpoint.OnReceiveMsg(*this, cls(pdu))) \
     running = false; \
   break
 
 void OpalSkinnyEndPoint::PhoneDevice::HandleTransport()
 {
-  PTRACE(4, "Started client handler thread: " << m_name << ", delay=" << m_startupDelay);
+  PTRACE(4, "Started client handler thread: " << m_name << ", delay=" << m_delay);
 
   bool running = true;
 
-  if (m_exit.Wait(m_startupDelay)) {
+  if (m_exit.Wait(m_delay)) {
     PTRACE(4, "Exiting thread for " << m_name);
     running = false;
   }
@@ -389,7 +389,6 @@ void OpalSkinnyEndPoint::PhoneDevice::HandleTransport()
       unsigned msgId = pdu.GetAs<PUInt32l>(4);
       switch (msgId) {
         ON_RECEIVE_MSG(KeepAliveMsg);
-        ON_RECEIVE_MSG(KeepAliveAckMsg);
         ON_RECEIVE_MSG(RegisterMsg);
         ON_RECEIVE_MSG(RegisterAckMsg);
         ON_RECEIVE_MSG(RegisterRejectMsg);
@@ -413,6 +412,12 @@ void OpalSkinnyEndPoint::PhoneDevice::HandleTransport()
         ON_RECEIVE_MSG(StartMediaTransmissionMsg);
         ON_RECEIVE_MSG(StopMediaTransmissionMsg);
 
+        // Don't use above macro as PTRACE() generate a lot of noise
+        case KeepAliveAckMsg::ID :
+          if (!m_endpoint.OnReceiveMsg(*this, KeepAliveAckMsg(pdu)))
+            running = false;
+          break;
+
         default:
           PTRACE(4, "Received unhandled message id=0x" << hex << msgId << dec);
           break;
@@ -420,30 +425,37 @@ void OpalSkinnyEndPoint::PhoneDevice::HandleTransport()
     }
     else {
       switch (m_transport.GetErrorCode(PChannel::LastReadError)) {
-        case PChannel::NoError:
-          PTRACE(3, "Lost transport to " << m_transport << " for " << m_name);
-          m_status = "Lost transport";
-        case PChannel::NotOpen:
-          // Remote close of TCP
-          m_transport.Close();
-          while (!m_transport.Connect() || !SendRegisterMsg()) {
-            PTRACE(2, "Server for " << m_name << " transport reconnect error: " << m_transport.GetErrorText());
-            if (m_exit.Wait(10000)) {
-              PTRACE(4, "Exiting thread for " << m_name);
-              running = false;
-              break;
-            }
-          }
-          break;
-
         case PChannel::Timeout :
         case PChannel::Interrupted :
+          continue;
+
+        case PChannel::NotOpen :
+          break;
+
+        case PChannel::NoError:
+          // Remote close of TCP
+          PTRACE(3, "Lost transport to " << m_transport << " for " << m_name);
+          m_status = "Lost transport";
           break;
 
         default :
           m_status = "Transport error: " + m_transport.GetErrorText(PChannel::LastReadError);
           PTRACE(2, m_status);
+          break;
+      }
+
+      m_transport.Close();
+      m_delay.SetInterval(0, 10);
+      while (!m_transport.Connect() || !SendRegisterMsg()) {
+        PTRACE(2, "Server for " << m_name << " transport reconnect error: " << m_transport.GetErrorText());
+        if (m_exit.Wait(m_delay)) {
+          PTRACE(4, "Exiting thread for " << m_name);
           running = false;
+          break;
+        }
+
+        if (m_delay < 60)
+          m_delay += 10000;
       }
     }
   }
@@ -555,6 +567,7 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const CallStateMsg &
   PString dialOutToken = CreateToken(client, 0);
   PSafePtr<OpalSkinnyConnection> connection = PSafePtrCast<OpalConnection, OpalSkinnyConnection>(connectionsActive.FindWithLock(dialOutToken, PSafeReadWrite));
   if (connection != NULL) {
+    PTRACE_CONTEXT_ID_PUSH_THREAD(connection);
     if (!connection->OnReceiveMsg(msg))
       return false;
 
@@ -564,8 +577,10 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const CallStateMsg &
   }
 
   connection = GetSkinnyConnection(client, msg.m_callIdentifier);
-  if (connection != NULL)
+  if (connection != NULL) {
+    PTRACE_CONTEXT_ID_PUSH_THREAD(connection);
     return connection->OnReceiveMsg(msg);
+  }
 
   if (msg.GetState() != eStateRingIn) {
     PTRACE(4, "Unhandled state: " << msg.GetState());
@@ -583,6 +598,7 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const CallStateMsg &
   if (AddConnection(connection) == NULL)
     return true;
 
+  PTRACE_CONTEXT_ID_PUSH_THREAD(connection);
   return connection->OnReceiveMsg(msg);
 }
 
@@ -686,6 +702,7 @@ OpalSkinnyConnection::OpalSkinnyConnection(OpalCall & call,
   , m_client(client)
   , m_lineInstance(0)
   , m_callIdentifier(callIdentifier)
+  , m_needSoftKeyEndcall(true)
   , m_audioId(0)
   , m_videoId(0)
 {
@@ -707,11 +724,13 @@ PBoolean OpalSkinnyConnection::SetUpConnection()
 
 void OpalSkinnyConnection::OnReleased()
 {
-  OpalSkinnyEndPoint::SoftKeyEventMsg msg;
-  msg.m_event = OpalSkinnyEndPoint::eSoftKeyEndcall;
-  msg.m_callIdentifier = m_callIdentifier;
-  msg.m_lineInstance = m_lineInstance;
-  m_client.SendSkinnyMsg(msg);
+  if (m_needSoftKeyEndcall) {
+    OpalSkinnyEndPoint::SoftKeyEventMsg msg;
+    msg.m_event = OpalSkinnyEndPoint::eSoftKeyEndcall;
+    msg.m_callIdentifier = m_callIdentifier;
+    msg.m_lineInstance = m_lineInstance;
+    m_client.SendSkinnyMsg(msg);
+  }
 
   OpalRTPConnection::OnReleased();
 }
@@ -778,14 +797,17 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg &
       break;
 
     case OpalSkinnyEndPoint::eStateOnHook:
+      m_needSoftKeyEndcall = false;
       Release(EndedByRemoteUser);
       break;
 
     case OpalSkinnyEndPoint::eStateConnected :
       if (IsOriginating())
         OnConnectedInternal();
-      else
+      else if (GetPhase() < EstablishedPhase) {
         SetPhase(EstablishedPhase);
+        OnEstablished();
+      }
       break;
 
     default :
@@ -830,6 +852,9 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallInfoMsg & 
 
 bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::SetRingerMsg & msg)
 {
+  if (GetPhase() >= AlertingPhase)
+    return true;
+
   switch (msg.GetType()) {
     case OpalSkinnyEndPoint::eRingOff :
       return true;
@@ -845,7 +870,9 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::SetRingerMsg &
     default:
       break;
   }
+
   SetPhase(AlertingPhase);
+  OnAlerting();
   return true;
 }
 
