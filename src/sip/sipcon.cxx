@@ -1259,11 +1259,11 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
   // Check if we had a stream and the remote has either changed the codec or
   // changed the direction of the stream
   OpalMediaStreamPtr sendStream = GetMediaStream(sessionId, false);
-  if (PauseOrCloseMediaStream(sendStream, m_answerFormatList, remoteChanged, (otherSidesDir&SDPMediaDescription::RecvOnly) == 0))
+  if (PauseOrCloseMediaStream(sendStream, m_answerFormatList, remoteChanged || replaceSession, (otherSidesDir&SDPMediaDescription::RecvOnly) == 0))
     newDirection = SDPMediaDescription::SendOnly;
 
   OpalMediaStreamPtr recvStream = GetMediaStream(sessionId, true);
-  if (PauseOrCloseMediaStream(recvStream, m_answerFormatList, remoteChanged,
+  if (PauseOrCloseMediaStream(recvStream, m_answerFormatList, remoteChanged || replaceSession,
                               m_holdToRemote >= eHoldOn || (otherSidesDir&SDPMediaDescription::SendOnly) == 0))
     newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv : SDPMediaDescription::RecvOnly;
 
@@ -2521,6 +2521,12 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
     return;
+
+  if (m_remoteAddress.IsEmpty()) {
+    OpalTransportPtr transport = transaction.GetTransport();
+    if (transport != NULL)
+      m_remoteAddress = transport->GetRemoteAddress();
+  }
 
   m_allowedMethods |= response.GetMIME().GetAllowBitMask();
 
