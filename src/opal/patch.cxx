@@ -1099,7 +1099,7 @@ void OpalPassiveMediaPatch::Start()
 
   if (CanStart()) {
     m_started = true;
-    PTRACE(4, "Patch\tPassive medai patch started");
+    PTRACE(4, "Patch\tPassive media patch started");
     OnStartMediaPatch();
   }
 }
