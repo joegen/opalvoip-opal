@@ -3726,6 +3726,12 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
       if (HasCompatibilityIssue(e_NeedMSDAfterNonEmptyTCS))
         masterSlaveDeterminationProcedure->Start(true);
       OnSelectLogicalChannels();
+
+      /* A cheat to help in some debugging, some systems connect to one media,
+         immediately put us on hold, then restore on another media source. This
+         saves that time that took in the (usually) unused forwarding phase
+         time entry. */
+      m_phaseTime[ForwardingPhase].SetCurrentTime();
     }
     else if (connectionState > HasExecutedSignalConnect && previousCaps > 0 && remoteCapabilities.GetSize() > previousCaps) {
       PTRACE(3, "H323\tReceived CapabilitySet with more media types.");
