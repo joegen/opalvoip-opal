@@ -199,10 +199,17 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
 
         const PString & GetName() const { return m_name; }
         const PString & GetStatus() const { return m_status; }
+        OpalTransportAddress GetRemoteAddress() const { return m_transport.GetRemoteAddress(); }
 
       protected:
         void HandleTransport();
         bool SendRegisterMsg();
+
+        template <class MSG> bool OnReceiveMsg(const MSG & msg)
+        {
+          PTRACE(3, "Skinny", "Received " << msg);
+          return m_endpoint.OnReceiveMsg(*this, msg);
+        }
 
         OpalSkinnyEndPoint & m_endpoint;
         PString              m_name;
@@ -218,35 +225,30 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
 
 
 #pragma pack(1)
-    class SkinnyMsg
+    class SkinnyMsg : public PObject
     {
+        PCLASSINFO(SkinnyMsg, PObject);
       protected:
         SkinnyMsg(uint32_t id, PINDEX len);
         void Construct(const PBYTEArray & pdu);
 
       public:
-        PINDEX GetLength() const
-        {
-          return m_length + 8;
-        }
-        void SetLength(PINDEX len)
-        {
-          PAssert(len >= 8, PInvalidParameter); m_length = len - 8;
-        }
-        uint32_t GetID() const
-        {
-          return m_messageId;
-        }
+        uint32_t GetID() const { return m_messageId; }
 
-      private:
+        const BYTE * GetPacketPtr() const { return (const BYTE *)&m_length; }
+        PINDEX       GetPacketLen() const { return m_length + sizeof(m_length) + sizeof(m_headerVersion); }
+
+      protected:
         PUInt32l m_length;
         PUInt32l m_headerVersion;
         PUInt32l m_messageId;
     };
 
+    // Note: all derived classes MUST NOT have composite members, e.g. PString
 #define OPAL_SKINNY_MSG(cls, id, vars) \
     class cls : public SkinnyMsg \
     { \
+        PCLASSINFO(cls, SkinnyMsg); \
       public: \
         enum { ID = id }; \
         cls() : SkinnyMsg(ID, sizeof(*this)) { } \
@@ -272,6 +274,8 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       PUInt32l m_maxStreams;
       BYTE     m_unknown[16];
       char     m_macAddress[12];
+
+      virtual void PrintOn(ostream & strm) const { strm << GetClass() << " device=" << m_deviceName << " type=" << m_deviceType << " streams=" << m_maxStreams << " ip=" << PIPAddress(m_ip); }
     );
 
     OPAL_SKINNY_MSG(RegisterAckMsg, 0x0081,
@@ -280,6 +284,8 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       BYTE     m_unknown1[2];
       PUInt32l m_secondaryKeepAlive;
       BYTE     m_unknown2[4];
+
+      virtual void PrintOn(ostream & strm) const { strm << GetClass() << " keepAlive=" << m_keepAlive; }
     );
 
     OPAL_SKINNY_MSG(RegisterRejectMsg, 0x009d,
@@ -295,6 +301,8 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
 
     OPAL_SKINNY_MSG(PortMsg, 0x0002,
       PUInt16l m_port;
+
+      virtual void PrintOn(ostream & strm) const { strm << GetClass() << ' ' << m_port; }
     );
 
     OPAL_SKINNY_MSG(CapabilityRequestMsg, 0x009B,
@@ -308,11 +316,19 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
         PUInt16l m_maxFramesPerPacket;
         char     m_unknown[10];
       } m_capability[32];
+
+      virtual void PrintOn(ostream & strm) const { strm << GetClass() << ' ' << m_count << " codecs"; }
+
+      void SetCount(PINDEX count)
+      {
+        m_count = count;
+        m_length = m_length - (PARRAYSIZE(m_capability) - count) * sizeof(Info);
+      }
     );
 
-    enum CallStates
-    {
-      eStateOffHook = 1,
+    P_DECLARE_STREAMABLE_ENUM(CallStates,
+      eUnknownState,
+      eStateOffHook,
       eStateOnHook,
       eStateRingOut,
       eStateRingIn,
@@ -326,7 +342,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       eStateProceed,
       eStateCallRemoteMultiline,
       eStateInvalidNumber
-    };
+    );
     OPAL_SKINNY_MSG(CallStateMsg, 0x0111,
       PUInt32l m_state;
       PUInt32l m_lineInstance;
@@ -334,14 +350,15 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       BYTE     m_unknown[12];
 
       __inline CallStates GetState() const { return (CallStates)(uint32_t)m_state; }
+      virtual void PrintOn(ostream & strm) const { strm << GetClass() << ' ' << GetState() << " line=" << m_lineInstance << " call=" << m_callIdentifier; }
     );
 
-    enum CallType
-    {
-      eTypeInboundCall = 1,
+    P_DECLARE_STREAMABLE_ENUM(CallType,
+      eTypeUnknownCall,
+      eTypeInboundCall,
       eTypeOutboundCall,
       eTypeForwardCall
-    };
+    );
     OPAL_SKINNY_MSG(CallInfoMsg, 0x008f,
       char     m_callingPartyName[40];
       char     m_callingPartyNumber[24];
@@ -365,6 +382,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       PUInt32l m_partyPIRestrictionBits;
 
       __inline CallType GetType() const { return (CallType)(uint32_t)m_callType; }
+      virtual void PrintOn(ostream & strm) const { strm << GetClass() << ' ' << GetType() << " line=" << m_lineInstance << " call=" << m_callIdentifier; }
     );
 
     enum RingType
@@ -382,16 +400,21 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
 
       __inline RingType GetType() const { return (RingType)(uint32_t)m_ringType; }
       __inline bool IsForever() const { return m_ringMode == 1; }
+      virtual void PrintOn(ostream & strm) const { strm << GetClass() << ' ' << GetType() << " mode=" << m_ringMode << " line=" << m_lineInstance << " call=" << m_callIdentifier; }
     );
 
     OPAL_SKINNY_MSG(OffHookMsg, 0x0006,
       PUInt32l m_lineInstance;
       PUInt32l m_callIdentifier;
+
+      virtual void PrintOn(ostream & strm) const { strm << GetClass() << " line=" << m_lineInstance << " call=" << m_callIdentifier; }
     );
 
     OPAL_SKINNY_MSG(OnHookMsg, 0x0007,
       PUInt32l m_lineInstance;
       PUInt32l m_callIdentifier;
+
+      virtual void PrintOn(ostream & strm) const { strm << GetClass() << " line=" << m_lineInstance << " call=" << m_callIdentifier; }
     );
 
     enum Tones
@@ -411,22 +434,27 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       PUInt32l m_callIdentifier;
 
       __inline Tones GetType() const { return (Tones)(uint32_t)m_tone; }
+      virtual void PrintOn(ostream & strm) const { strm << GetClass() << ' ' << GetType() << " line=" << m_lineInstance << " call=" << m_callIdentifier; }
     );
 
     OPAL_SKINNY_MSG(StopToneMsg, 0x0083,
       PUInt32l m_lineInstance;
       PUInt32l m_callIdentifier;
+
+      virtual void PrintOn(ostream & strm) const { strm << GetClass() << " line=" << m_lineInstance << " call=" << m_callIdentifier; }
     );
 
     OPAL_SKINNY_MSG(KeyPadButtonMsg, 0x0003,
       char     m_button;
       PUInt32l m_lineInstance;
       PUInt32l m_callIdentifier;
+
+      virtual void PrintOn(ostream & strm) const { strm << GetClass() << " \'" << m_button<< "' line=" << m_lineInstance << " call=" << m_callIdentifier; }
     );
 
-    enum SoftKeyEvents
-    {
-      eSoftKeyRedial = 1,
+    P_DECLARE_STREAMABLE_ENUM(SoftKeyEvents,
+      eSoftUnknown,
+      eSoftKeyRedial,
       eSoftKeyNewCall,
       eSoftKeyHold,
       eSoftKeyTransfer,
@@ -446,13 +474,14 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       eSoftKeyGrpCallPickup,
       eSoftKeyDND,
       eSoftKeyDivert
-    };
+    );
     OPAL_SKINNY_MSG(SoftKeyEventMsg, 0x0026,
       PUInt32l m_event;
       PUInt32l m_lineInstance;
       PUInt32l m_callIdentifier;
 
       __inline SoftKeyEvents GetEvent() const { return (SoftKeyEvents)(uint32_t)m_event; }
+      virtual void PrintOn(ostream & strm) const { strm << GetClass() << ' ' << GetEvent() << " line=" << m_lineInstance << " call=" << m_callIdentifier; }
     );
 
     OPAL_SKINNY_MSG(OpenReceiveChannelMsg, 0x0105,
@@ -463,6 +492,8 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       PUInt32l m_echoCancelType;
       PUInt32l m_g723Bitrate;
       BYTE     m_unknown[68];
+
+      virtual void PrintOn(ostream & strm) const { strm << GetClass() << " call=" << m_callIdentifier; }
     );
 
     OPAL_SKINNY_MSG(OpenReceiveChannelAckMsg, 0x0022,
@@ -471,12 +502,15 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       PUInt16l m_port;
       BYTE     m_padding[2];
       PUInt32l m_passThruPartyId;
+      virtual void PrintOn(ostream & strm) const { strm << GetClass() << ' ' << PIPAddress(m_ip) << ':' << m_port; }
     );
 
     OPAL_SKINNY_MSG(CloseReceiveChannelMsg, 0x0106,
       PUInt32l m_callIdentifier;
       PUInt32l m_passThruPartyId;
       PUInt32l m_conferenceId2;
+
+      virtual void PrintOn(ostream & strm) const { strm << GetClass() << " call=" << m_callIdentifier; }
     );
 
     OPAL_SKINNY_MSG(StartMediaTransmissionMsg, 0x008a,
@@ -492,12 +526,16 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       PUInt32l m_maxFramesPerPacket;
       PUInt32l m_g723Bitrate;
       BYTE     m_unknown[68];
+
+      virtual void PrintOn(ostream & strm) const { strm << GetClass() << " call=" << m_callIdentifier << ' ' << PIPAddress(m_ip) << ':' << m_port; }
     );
 
     OPAL_SKINNY_MSG(StopMediaTransmissionMsg, 0x008b,
       PUInt32l m_callIdentifier;
       PUInt32l m_passThruPartyId;
       PUInt32l m_conferenceId2;
+
+      virtual void PrintOn(ostream & strm) const { strm << GetClass() << " call=" << m_callIdentifier; }
     );
 #pragma pack()
 
@@ -604,6 +642,10 @@ class OpalSkinnyConnection : public OpalRTPConnection
         which will be contained in the Q.931 SIGNAL (0x34) Information Element.
     */
     virtual PString GetAlertingType() const;
+
+    /** Get the remote transport address
+      */
+    virtual OpalTransportAddress GetRemoteAddress() const;
     //@}
 
   /**@name Protocol handling routines */
