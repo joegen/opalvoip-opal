@@ -39,9 +39,9 @@
 
 static PString CreateToken(const OpalSkinnyEndPoint::PhoneDevice & client, unsigned callIdentifier)
 {
-  PString token = "sccp:" + client.GetName();
+  PString token = "sccp-" + client.GetName();
   if (callIdentifier > 0)
-    token.sprintf("/%u", callIdentifier);
+    token.sprintf("-%u", callIdentifier);
 
   return token;
 }
@@ -78,10 +78,12 @@ static PConstString const RegisteredStatusText("Registered");
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalSkinnyEndPoint::SkinnyMsg::SkinnyMsg(uint32_t id, PINDEX len)
+OpalSkinnyEndPoint::SkinnyMsg::SkinnyMsg(uint32_t id, PINDEX sizeofClass)
+  : m_length(0)
+  , m_headerVersion(0)
 {
-  memset(this, 0, len);
-  m_length = len - sizeof(m_length) - sizeof(m_headerVersion);
+  m_length = sizeofClass - ((char *)&m_messageId - (char *)this);
+  memset(&m_messageId, 0, m_length);
   m_messageId = id;
 }
 
@@ -89,7 +91,7 @@ OpalSkinnyEndPoint::SkinnyMsg::SkinnyMsg(uint32_t id, PINDEX len)
 void OpalSkinnyEndPoint::SkinnyMsg::Construct(const PBYTEArray & pdu)
 {
   PINDEX len = m_length + sizeof(m_headerVersion);
-  memcpy((char *)this + sizeof(m_length), pdu, std::min(len, pdu.GetSize()));
+  memcpy(&m_headerVersion, pdu, std::min(len, pdu.GetSize()));
   PTRACE_IF(3, len > pdu.GetSize(), &pdu, PTraceModule(), "Received message size error: "
             "id=0x" << hex << GetID() << dec << ", expected = " << len << ", received = " << pdu.GetSize());
 }
@@ -357,20 +359,14 @@ void OpalSkinnyEndPoint::PhoneDevice::Close()
 
 bool OpalSkinnyEndPoint::PhoneDevice::SendSkinnyMsg(const SkinnyMsg & msg)
 {
-  if (m_transport.Write(&msg, msg.GetLength()))
+  PTRACE(3, "Sending " << msg);
+  if (m_transport.Write(msg.GetPacketPtr(), msg.GetPacketLen()))
     return true;
 
-  PTRACE(3, "Error writing message for " << m_name << " to " << m_transport.GetRemoteAddress().GetHostName());
+  PTRACE(2, "Error writing message for " << m_name << " to " << m_transport.GetRemoteAddress().GetHostName());
   return false;
 }
 
-
-#define ON_RECEIVE_MSG(cls) \
-  case cls::ID : \
-  PTRACE(3, "Received " << typeid(cls).name()); \
-  if (!m_endpoint.OnReceiveMsg(*this, cls(pdu))) \
-    running = false; \
-  break
 
 void OpalSkinnyEndPoint::PhoneDevice::HandleTransport()
 {
@@ -388,6 +384,7 @@ void OpalSkinnyEndPoint::PhoneDevice::HandleTransport()
     if (m_transport.ReadPDU(pdu)) {
       unsigned msgId = pdu.GetAs<PUInt32l>(4);
       switch (msgId) {
+#define ON_RECEIVE_MSG(cls) case cls::ID: running = OnReceiveMsg(cls(pdu)); break
         ON_RECEIVE_MSG(KeepAliveMsg);
         ON_RECEIVE_MSG(RegisterMsg);
         ON_RECEIVE_MSG(RegisterAckMsg);
@@ -495,7 +492,7 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const RegisterAckMsg
   }
 
   KeepAliveMsg msg;
-  client.m_transport.SetKeepAlive(PTimeInterval(0, ack.m_keepAlive), PBYTEArray((const BYTE *)&msg, sizeof(msg)));
+  client.m_transport.SetKeepAlive(PTimeInterval(0, ack.m_keepAlive-1), PBYTEArray(msg.GetPacketPtr(), msg.GetPacketLen()));
   return true;
 }
 
@@ -546,10 +543,8 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const CapabilityRequ
     }
   }
 
-  if (PAssert(count > 0, "Must have a valid codec!")) {
-    msg.m_count = count;
-    msg.SetLength(sizeof(SkinnyMsg)+sizeof(msg.m_count) + count*sizeof(CapabilityResponseMsg::Info));
-  }
+  PTRACE_IF(2, count == 0, "Must have a valid codec!");
+  msg.SetCount(count);
 
   return client.SendSkinnyMsg(msg);
 }
@@ -770,6 +765,12 @@ PString OpalSkinnyConnection::GetAlertingType() const
 }
 
 
+OpalTransportAddress OpalSkinnyConnection::GetRemoteAddress() const
+{
+  return m_client.GetRemoteAddress();
+}
+
+
 bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg & msg)
 {
   if (m_callIdentifier != msg.m_callIdentifier) {
@@ -909,6 +910,7 @@ OpalMediaSession * OpalSkinnyConnection::SetUpMediaSession(uint32_t payloadCapab
     return NULL;
   }
 
+  StartMediaStreams();
   return mediaSession;
 }
 
