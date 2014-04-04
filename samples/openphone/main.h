@@ -1075,9 +1075,9 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
       const OpalConnection & connection,  ///<  Connection that is about to use formats
       OpalMediaFormatList & mediaFormats  ///<  Media formats to use
     ) const;
-    virtual PBoolean OnOpenMediaStream(
-      OpalConnection & connection,  /// Connection that owns the media stream
-      OpalMediaStream & stream    /// New media stream being opened
+    virtual void OnStartMediaPatch(
+      OpalConnection & connection,  ///< Connection patch is in
+      OpalMediaPatch & patch        ///< Media patch being started
     );
     virtual void OnClosedMediaStream(
       const OpalMediaStream & stream     ///<  Stream being closed
