@@ -59,6 +59,7 @@
 #include <wx/cmdline.h>
 
 #include <opal/mediasession.h>
+#include <opal/patch.h>
 #include <rtp/srtp_session.h>
 #include <opal/transcoders.h>
 #include <ep/ivr.h>
@@ -2898,24 +2899,27 @@ static void LogMediaStream(const char * stopStart, const OpalMediaStream & strea
   bool outputSomething = false;
   const OpalRTPMediaStream * rtpStream = dynamic_cast<const OpalRTPMediaStream *>(&stream);
   if (rtpStream != NULL) {
+    OpalRTPSession & rtpSession = rtpStream->GetRtpSession();
 
 #if OPAL_PTLIB_NAT
-    PString sockName = rtpStream->GetRtpSession().GetDataSocket().GetName();
-    if (sockName.NumCompare("udp") != PObject::EqualTo) {
-      LogWindow << '(' << sockName.Left(sockName.Find(':'));
-      outputSomething = true;
+    if (rtpSession.IsOpen()) {
+      PString sockName = rtpSession.GetDataSocket().GetName();
+      if (sockName.NumCompare("udp") != PObject::EqualTo) {
+        LogWindow << '(' << sockName.Left(sockName.Find(':'));
+        outputSomething = true;
+      }
     }
 #endif // OPAL_PTLIB_NAT
 
 #if OPAL_SRTP
-    if (rtpStream->GetRtpSession().IsCryptoSecured(stream.IsSource())) {
+    if (rtpSession.IsCryptoSecured(stream.IsSource())) {
       LogWindow << (outputSomething ? ", " : "(") << "secured";
       outputSomething = true;
     }
 #endif // OPAL_SRTP
 
 #if OPAL_RTP_FEC
-    if (rtpStream->GetRtpSession().GetUlpFecPayloadType() != RTP_DataFrame::IllegalPayloadType) {
+    if (rtpSession.GetUlpFecPayloadType() != RTP_DataFrame::IllegalPayloadType) {
       LogWindow << (outputSomething ? ", " : "(") << "error correction";
       outputSomething = true;
     }
@@ -2956,15 +2960,13 @@ void MyManager::AdjustMediaFormats(bool   local,
 }
 
 
-PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
+void MyManager::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
 {
-  if (!OpalManager::OnOpenMediaStream(connection, stream))
-    return false;
+  OpalManager::OnStartMediaPatch(connection, patch);
 
-  LogMediaStream("Started", stream, connection);
+  LogMediaStream("Started", patch.GetSource(), connection);
 
   PostEvent(wxEvtStreamsChanged, connection.GetCall().GetToken());
-  return true;
 }
 
 
