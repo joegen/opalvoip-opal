@@ -773,6 +773,14 @@ PBoolean SIPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
   else {
     PTRACE(4, "SIP\tOffering all configured media:\n    " << setfill(',') << m_localMediaFormats << setfill(' '));
 
+    if (m_remoteFormatList.IsEmpty()) {
+      // Need to fake the remote formats with everything we do,
+      // so parts of the offering work correctly
+      m_remoteFormatList = GetLocalMediaFormats();
+      m_remoteFormatList.MakeUnique();
+      AdjustMediaFormats(false, NULL, m_remoteFormatList);
+    }
+
     // Create media sessions based on available media types and make sure audio and video are first two sessions
     CreateMediaSessionsSecurity security = e_ClearMediaSession;
 #if OPAL_SRTP
