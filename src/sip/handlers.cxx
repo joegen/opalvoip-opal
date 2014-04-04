@@ -742,10 +742,9 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 
   // If this is the final (possibly one and only) REGISTER, process it
   if (m_externalAddress == externalAddress) {
-    int minExpiry = INT_MAX;
+    int minExpiry = mime.GetExpires(GetEndPoint().GetRegistrarTimeToLive().GetSeconds());
     for (SIPURLList::iterator contact = replyContacts.begin(); contact != replyContacts.end(); ++contact) {
-      long expires = contact->GetFieldParameters().GetInteger("expires",
-                          mime.GetExpires(GetEndPoint().GetRegistrarTimeToLive().GetSeconds()));
+      long expires = contact->GetFieldParameters().GetInteger("expires");
       if (expires > 0 && minExpiry > expires)
         minExpiry = expires;
     }
