@@ -980,10 +980,6 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
 #endif // OPAL_VIDEO
 
   if (bypassing || primaryCodec == NULL) {
-    writeSuccessful = stream->WritePacket(sourceFrame);
-    if (!writeSuccessful)
-      return false;
-
 #if OPAL_VIDEO
     if (m_videoFormat.IsValid()) {
       switch (m_videoFormat.GetVideoFrameType(sourceFrame.GetPayloadPtr(), sourceFrame.GetPayloadSize(), m_keyFrameDetectContext)) {
