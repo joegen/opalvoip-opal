@@ -2909,9 +2909,12 @@ void MyManager::AdjustMediaFormats(bool   local,
 void MyManager::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
 {
   OpalManager::OnStartMediaPatch(connection, patch);
-  if (connection.IsNetworkConnection())
-    patch.GetSource().PrintDetail(LogWindow, "Started",
-          OpalMediaStream::DetailNAT | OpalMediaStream::DetailSecured | OpalMediaStream::DetailFEC | OpalMediaStream::DetailEOL);
+
+  OpalMediaStreamPtr stream = connection.IsNetworkConnection() ? &patch.GetSource() : patch.GetSink();
+  if (stream != NULL)
+    stream->PrintDetail(LogWindow, "Started",
+          OpalMediaStream::DetailNAT|OpalMediaStream::DetailSecured|OpalMediaStream::DetailFEC|OpalMediaStream::DetailEOL);
+
   PostEvent(wxEvtStreamsChanged, connection.GetCall().GetToken());
 }
 
