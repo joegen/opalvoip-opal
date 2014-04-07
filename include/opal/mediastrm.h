@@ -412,6 +412,21 @@ class OpalMediaStream : public PSafeObject
 #if OPAL_STATISTICS
     virtual void GetStatistics(OpalMediaStatistics & statistics, bool fromPatch = false) const;
 #endif
+
+    P_DECLARE_BITWISE_ENUM(Details, 6,(
+      DetailMinimum,
+      DetailEOL, // end of line
+      DetailNAT,
+      DetailSecured,
+      DetailFEC,
+      DetailAudio,
+      DetailAddresses
+    ));
+    virtual void PrintDetail(
+      ostream & strm,
+      const char * prefix = NULL,
+      Details details = Details::All()
+    ) const;
   //@}
 
     virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat);
