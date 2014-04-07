@@ -457,6 +457,12 @@ bool OpalDummySession::Open(const PString &, const OpalTransportAddress & remote
 }
 
 
+bool OpalDummySession::IsOpen() const
+{
+  return !m_remoteTransportAddress[true].IsEmpty();
+}
+
+
 OpalTransportAddress OpalDummySession::GetLocalAddress(bool isMediaAddress) const
 {
   return m_localTransportAddress[isMediaAddress];
