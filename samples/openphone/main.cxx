@@ -2910,7 +2910,8 @@ void MyManager::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & 
 {
   OpalManager::OnStartMediaPatch(connection, patch);
 
-  OpalMediaStreamPtr stream = connection.IsNetworkConnection() ? &patch.GetSource() : patch.GetSink();
+  OpalMediaStreamPtr stream = connection.IsNetworkConnection()
+                                    ? OpalMediaStreamPtr(&patch.GetSource()) : patch.GetSink();
   if (stream != NULL)
     stream->PrintDetail(LogWindow, "Started",
           OpalMediaStream::DetailNAT|OpalMediaStream::DetailSecured|OpalMediaStream::DetailFEC|OpalMediaStream::DetailEOL);
