@@ -2157,9 +2157,16 @@ SIP_PDU::StatusCodes SIP_PDU::Read()
   datagram = PString(pdu);
   status = Parse(datagram, truncated);
 
-  PTRACE_IF(2, status == Local_TransportLost,
-            "SIP\tInvalid datagram from " << m_transport->GetLastReceivedAddress() <<
-            " - " << pdu.GetSize() << " bytes:\n" << hex << setprecision(2) << pdu << dec);
+#if PTRACING
+  if (status == Local_TransportLost && PTrace::CanTrace(2)) {
+    if (m_transport->GetLastReceivedAddress() == m_transport->GetRemoteAddress() &&
+                    pdu.GetSize() <= 4 && memcmp(pdu.GetPointer(), "\0\0\0", std::min((PINDEX)4, pdu.GetSize())) == 0)
+      PTRACE(4, "SIP\tProbable keep-alive on " << *m_transport);
+    else
+      PTRACE(2, "SIP\tInvalid datagram from " << m_transport->GetLastReceivedAddress() << " on " << *m_transport <<
+                " - " << pdu.GetSize() << " bytes:\n" << hex << setprecision(2) << pdu << dec);
+  }
+#endif
 
   if (m_method == NumMethods)
     return status;
