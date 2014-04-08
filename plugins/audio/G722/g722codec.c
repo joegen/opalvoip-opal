@@ -44,10 +44,10 @@
    see RFC3551/4.5.2. So some of these values have to be lied about so that
    the OPAL system gets it right.
   */
-#define CLOCK_RATE              8000  // Clock rate is not samples/second in this case!
+#define RTP_CLOCK_RATE          8000  // Clock rate is not samples/second in this case!
 #define BITS_PER_SECOND         64000 // raw bits per second
-#define FRAME_TIME              1000  // Microseconds in a millisecond
-#define SAMPLES_PER_FRAME       32    // Samples in a millisecond
+#define FRAME_TIME_MS           1000  // Microseconds in a millisecond
+#define FRAME_TIME_RTP          8     // Normally, samples in a millisecond, but here it is RTP clock rate cycles
 #define	BYTES_PER_FRAME         8     // Bytes in a millisecond
 #define MAX_FRAMES_PER_PACKET   90    // 90 milliseconds, which means RTP packets smaller than 1500 bytes typical LAN maximum
 #define PREF_FRAMES_PER_PACKET  20    // 20 milliseconds
@@ -174,8 +174,8 @@ static struct PluginCodec_Definition g722CodecDefn[] =
 
     16000,                                // samples per second
     BITS_PER_SECOND,                      // raw bits per second
-    FRAME_TIME,                           // microseconds per frame
-    SAMPLES_PER_FRAME,                    // samples per frame
+    FRAME_TIME_MS,                        // microseconds per frame
+    FRAME_TIME_RTP,                       // samples per frame
     BYTES_PER_FRAME,                      // bytes per frame
     PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
     MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
@@ -209,8 +209,8 @@ static struct PluginCodec_Definition g722CodecDefn[] =
 
     16000,                                // samples per second
     BITS_PER_SECOND,                      // raw bits per second
-    FRAME_TIME,                           // microseconds per frame
-    SAMPLES_PER_FRAME,                    // samples per frame
+    FRAME_TIME_MS,                        // microseconds per frame
+    FRAME_TIME_RTP,                       // samples per frame
     BYTES_PER_FRAME,                      // bytes per frame
     PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
     MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
@@ -244,10 +244,10 @@ static struct PluginCodec_Definition g722CodecDefn[] =
 
     0,                                    // user data
 
-    CLOCK_RATE,                           // samples per second
+    RTP_CLOCK_RATE,                       // samples per second (not really)
     BITS_PER_SECOND,                      // raw bits per second
-    FRAME_TIME,                           // microseconds per frame
-    SAMPLES_PER_FRAME,                    // samples per frame
+    FRAME_TIME_MS,                        // microseconds per frame
+    FRAME_TIME_RTP,                       // samples per frame
     BYTES_PER_FRAME,                      // bytes per frame
     PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
     MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
@@ -271,7 +271,6 @@ static struct PluginCodec_Definition g722CodecDefn[] =
     PluginCodec_MediaTypeAudio |          // audio codec
     PluginCodec_InputTypeRaw |            // raw input data
     PluginCodec_OutputTypeRaw |           // raw output data
-    PluginCodec_EmptyPayload |            // Can accept and empty payload
     PluginCodec_RTPTypeExplicit,          // specified RTP type
 
     desc,                                 // text decription
@@ -280,10 +279,10 @@ static struct PluginCodec_Definition g722CodecDefn[] =
 
     0,                                    // user data
 
-    CLOCK_RATE,                           // samples per second
+    RTP_CLOCK_RATE,                       // samples per second (not really)
     BITS_PER_SECOND,                      // raw bits per second
-    FRAME_TIME,                           // microseconds per frame
-    SAMPLES_PER_FRAME,                    // samples per frame
+    FRAME_TIME_MS,                        // microseconds per frame
+    FRAME_TIME_RTP,                       // samples per frame
     BYTES_PER_FRAME,                      // bytes per frame
     PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
     MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
