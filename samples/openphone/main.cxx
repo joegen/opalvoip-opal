@@ -2887,60 +2887,6 @@ void MyManager::OnEvtOnHold(wxCommandEvent & theEvent)
 }
 
 
-static void LogMediaStream(const char * stopStart, const OpalMediaStream & stream, const OpalConnection & connection)
-{
-  if (!connection.IsNetworkConnection())
-    return;
-
-  OpalMediaFormat mediaFormat = stream.GetMediaFormat();
-  LogWindow << stopStart << (stream.IsSource() ? " receiving " : " sending ");
-
-#if OPAL_PTLIB_NAT || OPAL_SRTP || OPAL_RTP_FEC
-  bool outputSomething = false;
-  const OpalRTPMediaStream * rtpStream = dynamic_cast<const OpalRTPMediaStream *>(&stream);
-  if (rtpStream != NULL) {
-    OpalRTPSession & rtpSession = rtpStream->GetRtpSession();
-
-#if OPAL_PTLIB_NAT
-    if (rtpSession.IsOpen()) {
-      PString sockName = rtpSession.GetDataSocket().GetName();
-      if (sockName.NumCompare("udp") != PObject::EqualTo) {
-        LogWindow << '(' << sockName.Left(sockName.Find(':'));
-        outputSomething = true;
-      }
-    }
-#endif // OPAL_PTLIB_NAT
-
-#if OPAL_SRTP
-    if (rtpSession.IsCryptoSecured(stream.IsSource())) {
-      LogWindow << (outputSomething ? ", " : "(") << "secured";
-      outputSomething = true;
-    }
-#endif // OPAL_SRTP
-
-#if OPAL_RTP_FEC
-    if (rtpSession.GetUlpFecPayloadType() != RTP_DataFrame::IllegalPayloadType) {
-      LogWindow << (outputSomething ? ", " : "(") << "error correction";
-      outputSomething = true;
-    }
-#endif // OPAL_RTP_FEC
-
-    if (outputSomething)
-      LogWindow << ") ";
-  }
-#endif // OPAL_PTLIB_NAT || OPAL_SRTP || OPAL_RTP_FEC
-
-  LogWindow << mediaFormat;
-
-  if (!stream.IsSource() && mediaFormat.GetMediaType() == OpalMediaType::Audio())
-    LogWindow << " (" << mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption())*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits() << "ms)";
-
-  LogWindow << (stream.IsSource() ? " from " : " to ")
-            << connection.GetPrefixName() << " endpoint"
-            << endl;
-}
-
-
 void MyManager::AdjustMediaFormats(bool   local,
                    const OpalConnection & connection,
                     OpalMediaFormatList & mediaFormats) const
@@ -2964,7 +2910,10 @@ void MyManager::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & 
 {
   OpalManager::OnStartMediaPatch(connection, patch);
 
-  LogMediaStream("Started", patch.GetSource(), connection);
+  OpalMediaStreamPtr stream = connection.IsNetworkConnection() ? &patch.GetSource() : patch.GetSink();
+  if (stream != NULL)
+    stream->PrintDetail(LogWindow, "Started",
+          OpalMediaStream::DetailNAT|OpalMediaStream::DetailSecured|OpalMediaStream::DetailFEC|OpalMediaStream::DetailEOL);
 
   PostEvent(wxEvtStreamsChanged, connection.GetCall().GetToken());
 }
@@ -2974,8 +2923,8 @@ void MyManager::OnClosedMediaStream(const OpalMediaStream & stream)
 {
   OpalManager::OnClosedMediaStream(stream);
 
-  LogMediaStream("Stopped", stream, stream.GetConnection());
-
+  if (stream.GetConnection().IsNetworkConnection())
+    stream.PrintDetail(LogWindow, "Stopped", OpalMediaStream::DetailMinimum | OpalMediaStream::DetailEOL);
   PostEvent(wxEvtStreamsChanged);
 
   const OpalVideoMediaStream * videoStream = dynamic_cast<const OpalVideoMediaStream *>(&stream);
