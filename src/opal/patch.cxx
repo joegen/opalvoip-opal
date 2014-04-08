@@ -42,6 +42,7 @@
 #include <opal/mediastrm.h>
 #include <opal/endpoint.h>
 #include <opal/transcoders.h>
+#include <rtp/rtpconn.h>
 
 #if OPAL_VIDEO
 #include <codec/vidcodec.h>
@@ -119,7 +120,19 @@ bool OpalMediaPatch::CanStart() const
     }
   }
 
-  return true;
+  const OpalRTPConnection * connection = dynamic_cast<const OpalRTPConnection *>(&source.GetConnection());
+  if (connection == NULL)
+    return true;
+
+  OpalMediaSession * session = connection->GetMediaSession(source.GetSessionID());
+  if (session == NULL)
+    return true;
+
+  if (session->IsOpen())
+    return true;
+
+  PTRACE(4, "Media\tDelaying thread starting till session " << session->GetSessionID() << " open");
+  return false;
 }
 
 
