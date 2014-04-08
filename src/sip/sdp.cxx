@@ -2088,17 +2088,10 @@ void SDPVideoMediaDescription::Format::SetMediaFormatOptions(OpalMediaFormat & m
                 m_rtcp_fb * mediaFormat.GetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), OpalVideoFormat::e_NoRTCPFb));
 
   if (mediaFormat.GetOptionEnum(OpalVideoFormat::UseImageAttributeInSDP(), OpalVideoFormat::ImageAttrSuppressed) != OpalVideoFormat::ImageAttrSuppressed) {
-    bool ok = false;
-    if (AdjustResolution(mediaFormat, OpalVideoFormat::FrameWidthOption(), m_minTxWidth, false) &&
-        AdjustResolution(mediaFormat, OpalVideoFormat::FrameHeightOption(), m_minTxHeight, false) &&
-        AdjustResolution(mediaFormat, OpalVideoFormat::FrameWidthOption(), m_maxTxWidth, true) &&
-        AdjustResolution(mediaFormat, OpalVideoFormat::FrameHeightOption(), m_maxTxHeight, true))
-      ok = true;
-    if (AdjustResolution(mediaFormat, OpalVideoFormat::MinRxFrameWidthOption(),  m_minRxWidth,  false) &&
-        AdjustResolution(mediaFormat, OpalVideoFormat::MinRxFrameHeightOption(), m_minRxHeight, false) &&
-        AdjustResolution(mediaFormat, OpalVideoFormat::MaxRxFrameWidthOption(),  m_maxRxWidth,  true) &&
-        AdjustResolution(mediaFormat, OpalVideoFormat::MaxRxFrameHeightOption(), m_maxRxHeight, true))
-      ok = true;
+    bool ok = AdjustResolution(mediaFormat, OpalVideoFormat::MinRxFrameWidthOption(),  m_minRxWidth,  false) &&
+              AdjustResolution(mediaFormat, OpalVideoFormat::MinRxFrameHeightOption(), m_minRxHeight, false) &&
+              AdjustResolution(mediaFormat, OpalVideoFormat::MaxRxFrameWidthOption(),  m_maxRxWidth,  true) &&
+              AdjustResolution(mediaFormat, OpalVideoFormat::MaxRxFrameHeightOption(), m_maxRxHeight, true);
     mediaFormat.SetOptionEnum(OpalVideoFormat::UseImageAttributeInSDP(), ok ? OpalVideoFormat::ImageAttrAnswerRequired
                                                                             : OpalVideoFormat::ImageAttrSuppressed);
     PTRACE(4, "SDP\t" << (ok ? "Enabled" : "Disabled") << " imageattr in reply for " << mediaFormat);
