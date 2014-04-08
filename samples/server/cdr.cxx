@@ -372,14 +372,11 @@ void MyCall::OnStopMediaPatch(OpalMediaPatch & patch)
   m_media[stream.GetID()].m_closed = true;
 
 #if OPAL_STATISTICS
-  const OpalRTPMediaStream * rtpStream = dynamic_cast<const OpalRTPMediaStream *>(&stream);
-  if (rtpStream != NULL) {
-    OpalMediaStatistics stats;
-    rtpStream->GetStatistics(stats);
-    int duration = (PTime() - stats.m_startTime).GetSeconds();
-    if (duration > 0)
-      m_Bandwidth += stats.m_totalBytes * 8 / duration;
-  }
+  OpalMediaStatistics stats;
+  stream.GetStatistics(stats);
+  int duration = (PTime() - stats.m_startTime).GetSeconds();
+  if (duration > 0)
+    m_Bandwidth += stats.m_totalBytes * 8 / duration;
 #endif
 }
 

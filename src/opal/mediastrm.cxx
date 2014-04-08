@@ -592,6 +592,67 @@ void OpalMediaStream::OnStopMediaPatch(OpalMediaPatch & patch)
 }
 
 
+void OpalMediaStream::PrintDetail(ostream & strm, const char * prefix, Details details) const
+{
+  if (prefix == NULL)
+    strm << (IsSource() ? "R" : "S");
+  else
+    strm << prefix << (IsSource() ? " receiving " : " sending ");
+
+  const OpalRTPConnection * rtpConnection = dynamic_cast<const OpalRTPConnection *>(&connection);
+  OpalMediaSession * session = rtpConnection != NULL ? rtpConnection->GetMediaSession(sessionID) : NULL;
+
+#if OPAL_PTLIB_NAT || OPAL_SRTP || OPAL_RTP_FEC
+  bool outputSomething = false;
+  if (session != NULL) {
+#if OPAL_PTLIB_NAT
+    OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
+    if ((details & DetailNAT) && rtpSession != NULL && session->IsOpen()) {
+      PString sockName = rtpSession->GetDataSocket().GetName();
+      if (sockName.NumCompare("udp") != PObject::EqualTo) {
+        strm << '(' << sockName.Left(sockName.Find(':'));
+        outputSomething = true;
+      }
+    }
+#endif // OPAL_PTLIB_NAT
+
+#if OPAL_SRTP
+    if ((details & DetailSecured) && session->IsCryptoSecured(IsSource())) {
+      strm << (outputSomething ? ", " : "(") << "secured";
+      outputSomething = true;
+    }
+#endif // OPAL_SRTP
+
+#if OPAL_RTP_FEC
+    if ((details & DetailFEC) && rtpSession != NULL && rtpSession->GetUlpFecPayloadType() != RTP_DataFrame::IllegalPayloadType) {
+      LogWindow << (outputSomething ? ", " : "(") << "error correction";
+      outputSomething = true;
+    }
+#endif // OPAL_RTP_FEC
+
+    if (outputSomething)
+      strm << ") ";
+  }
+#endif // OPAL_PTLIB_NAT || OPAL_SRTP || OPAL_RTP_FEC
+
+  strm << mediaFormat;
+
+  if ((details & DetailAudio) && !IsSource() && mediaFormat.GetMediaType() == OpalMediaType::Audio())
+    strm << " (" << mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption())*mediaFormat.GetFrameTime() / mediaFormat.GetTimeUnits() << "ms)";
+
+  strm << (IsSource() ? " from " : " to ") << connection.GetPrefixName();
+
+  if ((details & DetailAddresses) && session != NULL) {
+    strm << " media=" << session->GetRemoteAddress(true) << "<if=" << session->GetLocalAddress(true) << '>';
+    if (!session->GetRemoteAddress(false).IsEmpty())
+      strm << " control=" << session->GetRemoteAddress(false) << "<if=" << session->GetLocalAddress(false) << '>';
+  }
+
+  if (details & DetailEOL)
+    strm << endl;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalMediaStreamPacing::OpalMediaStreamPacing(const OpalMediaFormat & mediaFormat)
@@ -1002,7 +1063,6 @@ PBoolean OpalRawMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & lengt
     size -= lastReadCount;
   }
 
-
   return true;
 }
 
@@ -1240,11 +1300,17 @@ PBoolean OpalAudioMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameTime)
   PINDEX bufferCount = (m_soundChannelBufferTime+frameMilliseconds-1)/frameMilliseconds;
   if (bufferCount < m_soundChannelBuffers)
     bufferCount = m_soundChannelBuffers;
+  if (IsSource())
+    bufferCount = std::max(bufferCount, (dataSize + frameSize - 1) / frameSize);
 
-  PTRACE(3, "Media\tAudio " << (IsSource() ? "source" : "sink") << " data size set to "
-         << dataSize << " (" << frameTime << "), buffers set to "
-         << bufferCount << 'x' << frameSize << " byte buffers.");
-  return OpalMediaStream::SetDataSize(std::max(dataSize, frameSize), frameTime) &&
+  PINDEX adjustedSize = (dataSize + frameSize - 1) / frameSize * frameSize;
+  PTRACE(3, "Media\tAudio " << (IsSource() ? "source" : "sink") << " "
+            "data size set to " << adjustedSize << " (" << dataSize << "), "
+            "frameTime=" << frameTime << ", "
+            "clock=" << mediaFormat.GetClockRate() << ", "
+            "buffers=" << bufferCount << 'x' << frameSize);
+
+  return OpalMediaStream::SetDataSize(adjustedSize, frameTime) &&
          ((PSoundChannel *)m_channel)->SetBuffers(frameSize, bufferCount);
 }
 

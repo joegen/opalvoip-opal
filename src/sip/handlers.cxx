@@ -742,18 +742,23 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 
   // If this is the final (possibly one and only) REGISTER, process it
   if (m_externalAddress == externalAddress) {
-    int minExpiry = mime.GetExpires(GetEndPoint().GetRegistrarTimeToLive().GetSeconds());
+    int defExpiry = mime.GetExpires(GetEndPoint().GetRegistrarTimeToLive().GetSeconds());
+    int minExpiry = INT_MAX;
     for (SIPURLList::iterator contact = replyContacts.begin(); contact != replyContacts.end(); ++contact) {
-      long expires = contact->GetFieldParameters().GetInteger("expires");
+      long expires = contact->GetFieldParameters().GetInteger("expires", defExpiry);
       if (expires > 0 && minExpiry > expires)
         minExpiry = expires;
     }
-    SetExpire(minExpiry);
+    if (minExpiry != INT_MAX) {
+      SetExpire(minExpiry);
+      m_contactAddresses = replyContacts;
+      SetState(Subscribed);
+      SendStatus(SIP_PDU::Successful_OK, previousState);
+      return;
+    }
 
-    m_contactAddresses = replyContacts;
-    SetState(Subscribed);
-    SendStatus(SIP_PDU::Successful_OK, previousState);
-    return;
+    PTRACE(4, "SIP\tNo Contact addresses we requested have non-zero expiry.");
+    SetExpire(0);
   }
 
   if (GetExpire() == 0) {
