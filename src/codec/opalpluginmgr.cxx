@@ -1726,7 +1726,7 @@ OpalMediaFormatInternal * OpalPluginCodecHandler::OnCreateAudioFormat(OpalPlugin
 void OpalPluginCodecHandler::RegisterAudioTranscoder(const PString & src, const PString & dst, const PluginCodec_Definition * codec, bool isEnc)
 {
   OpalTranscoderKey key(src, dst);
-  if (OpalMediaFormat(isEnc ? dst : src).GetFrameTime() == 8)
+  if ((codec->flags&PluginCodec_MediaTypeMask) == PluginCodec_MediaTypeAudioStreamed)
     new OpalPluginTranscoderFactory<OpalPluginStreamedAudioTranscoder>::Worker(key, codec, isEnc);
   else
     new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(key, codec, isEnc);

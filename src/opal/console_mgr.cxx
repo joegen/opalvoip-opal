@@ -1756,38 +1756,13 @@ void OpalConsoleManager::OnHold(OpalConnection & connection, bool fromRemote, bo
 }
 
 
-static void LogMediaStream(ostream & out, const char * stopStart, const OpalMediaStream & stream, const OpalConnection & connection)
-{
-  if (!connection.IsNetworkConnection())
-    return;
-
-  OpalMediaFormat mediaFormat = stream.GetMediaFormat();
-  out << stopStart << (stream.IsSource() ? " receiving " : " sending ");
-
-#if OPAL_SRTP
-  const OpalRTPMediaStream * rtp = dynamic_cast<const OpalRTPMediaStream *>(&stream);
-  if (rtp != NULL && dynamic_cast<const OpalSRTPSession *>(&rtp->GetRtpSession()) != NULL)
-    out << "secured ";
-#endif
-
-  out << mediaFormat;
-
-  if (!stream.IsSource() && mediaFormat.GetMediaType() == OpalMediaType::Audio())
-    out << " (" << mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption())*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits() << "ms)";
-
-  out << (stream.IsSource() ? " from " : " to ")
-      << connection.GetPrefixName() << " endpoint"
-      << endl;
-}
-
-
 PBoolean OpalConsoleManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
 {
   if (!OpalManager::OnOpenMediaStream(connection, stream))
     return false;
 
-  if (m_verbose)
-    LogMediaStream(LockedOutput(), "Started", stream, connection);
+  if (m_verbose && connection.IsNetworkConnection())
+    stream.PrintDetail(LockedOutput(), "Started");
   return true;
 }
 
@@ -1804,8 +1779,8 @@ void OpalConsoleManager::OnClosedMediaStream(const OpalMediaStream & stream)
 {
   OpalManager::OnClosedMediaStream(stream);
 
-  if (m_verbose)
-    LogMediaStream(LockedOutput(), "Stopped", stream, stream.GetConnection());
+  if (m_verbose && stream.GetConnection().IsNetworkConnection())
+    stream.PrintDetail(LockedOutput(), "Stopped");
 
 #if OPAL_STATISTICS
   m_statsMutex.Wait();

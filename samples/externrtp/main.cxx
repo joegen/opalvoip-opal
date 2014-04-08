@@ -72,11 +72,7 @@ MyManager::MediaTransferMode MyManager::GetMediaTransferMode(const OpalConnectio
 
 PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
 {
-  OpalRTPMediaStream * rtpStream = dynamic_cast<OpalRTPMediaStream *>(&stream);
-  if (rtpStream != NULL)
-    *LockedOutput() << "Remote RTP media:   " << rtpStream->GetRtpSession().GetRemoteAddress(true) << "\n"
-                       "Remote RTP control: " << rtpStream->GetRtpSession().GetRemoteAddress(false) << endl;
-
+  stream.PrintDetail(*LockedOutput());
   return OpalManager::OnOpenMediaStream(connection, stream);
 }
 
