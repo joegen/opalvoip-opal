@@ -1063,7 +1063,6 @@ PBoolean OpalRawMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & lengt
     size -= lastReadCount;
   }
 
-
   return true;
 }
 
@@ -1301,11 +1300,17 @@ PBoolean OpalAudioMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameTime)
   PINDEX bufferCount = (m_soundChannelBufferTime+frameMilliseconds-1)/frameMilliseconds;
   if (bufferCount < m_soundChannelBuffers)
     bufferCount = m_soundChannelBuffers;
+  if (IsSource())
+    bufferCount = std::max(bufferCount, (dataSize + frameSize - 1) / frameSize);
 
-  PTRACE(3, "Media\tAudio " << (IsSource() ? "source" : "sink") << " data size set to "
-         << dataSize << " (" << frameTime << "), buffers set to "
-         << bufferCount << 'x' << frameSize << " byte buffers.");
-  return OpalMediaStream::SetDataSize(std::max(dataSize, frameSize), frameTime) &&
+  PINDEX adjustedSize = (dataSize + frameSize - 1) / frameSize * frameSize;
+  PTRACE(3, "Media\tAudio " << (IsSource() ? "source" : "sink") << " "
+            "data size set to " << adjustedSize << " (" << dataSize << "), "
+            "frameTime=" << frameTime << ", "
+            "clock=" << mediaFormat.GetClockRate() << ", "
+            "buffers=" << bufferCount << 'x' << frameSize);
+
+  return OpalMediaStream::SetDataSize(adjustedSize, frameTime) &&
          ((PSoundChannel *)m_channel)->SetBuffers(frameSize, bufferCount);
 }
 
