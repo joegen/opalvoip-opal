@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <Type Name="OpalEndPoint">
+    <DisplayString>{{{prefixName} connections={connectionsActive}}}</DisplayString>
+  </Type>
+
+  <Type Name="OpalConnection">
+    <DisplayString>{{{endpoint.prefixName} call={ownerCall}}}</DisplayString>
+  </Type>
+
+  <Type Name="OpalCall">
+    <DisplayString>{{token={myToken}}}</DisplayString>
+    <Expand>
+      <Item Name="Token">myToken</Item>
+      <Item Name="A-Party">m_partyA</Item>
+      <Item Name="B-Party">m_partyB</Item>
+      <Item Name="Connections">connectionsActive</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="OpalMediaFormat">
+    <DisplayString Condition="m_info==0">(empty)</DisplayString>
+    <DisplayString>{m_info->formatName}</DisplayString>
+    <Expand>
+      <ExpandedItem>*m_info</ExpandedItem>
+    </Expand>
+  </Type>
+
+  <Type Name="OpalMediaOption">
+    <DisplayString>{{name={m_name} merge={{{m_merge}}}}}</DisplayString>
+  </Type>
+
+  <Type Name="OpalMediaOptionValue&lt;*&gt;">
+    <DisplayString>{{name={m_name} value={m_value} merge={{{m_merge}}}}}</DisplayString>
+  </Type>
+
+  <Type Name="OpalMediaOptionString">
+    <DisplayString>{{name={m_name} value={m_value} merge={{{m_merge}}}}}</DisplayString>
+  </Type>
+
+  <Type Name="OpalMediaOptionOctets">
+    <DisplayString>{{name={m_name} value={m_value} merge={{{m_merge}}}}}</DisplayString>
+  </Type>
+
+  <Type Name="OpalBandwidth">
+    <DisplayString Condition="m_bps &lt; 10000">{{{m_bps} bps}}</DisplayString>
+    <DisplayString Condition="m_bps &lt; 10000000">{{{m_bps/1000} kbps}}</DisplayString>
+    <DisplayString>{{{m_bps/1000000} Mbps}}</DisplayString>
+  </Type>
+
+
+</AutoVisualizer>
