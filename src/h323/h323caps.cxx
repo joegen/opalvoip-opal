@@ -2939,7 +2939,7 @@ H323Capabilities::H323Capabilities()
 }
 
 
-H323Capabilities::H323Capabilities(const H323Connection & connection,
+H323Capabilities::H323Capabilities(H323Connection & connection,
                                    const H245_TerminalCapabilitySet & pdu)
 {
   PTRACE_CONTEXT_ID_FROM(connection);
@@ -2979,6 +2979,7 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
   // Decode out of the PDU, the list of known codecs.
   if (pdu.HasOptionalField(H245_TerminalCapabilitySet::e_capabilityTable)) {
     H323Capabilities allCapabilities(dynamic_cast<const H323EndPoint &>(connection.GetEndPoint()).GetCapabilities());
+    OpalMediaFormatList localFormats = connection.GetLocalMediaFormats();
     PTRACE(4, "H323\tParsing remote capabilities");
 
     for (PINDEX i = 0; i < pdu.m_capabilityTable.GetSize(); i++) {
@@ -2990,6 +2991,9 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
             delete copy;
           else {
             copy->SetCapabilityNumber(pdu.m_capabilityTable[i].m_capabilityTableEntryNumber);
+            OpalMediaFormatList::const_iterator it = localFormats.FindFormat(copy->GetMediaFormat());
+            if (it != localFormats.end())
+              copy->UpdateMediaFormat(*it);
             table.Append(copy);
           }
         }

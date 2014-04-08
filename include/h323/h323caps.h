@@ -2522,7 +2522,7 @@ class H323Capabilities : public PObject
     /**Construct a capability set from the H.245 PDU provided.
       */
     H323Capabilities(
-      const H323Connection & connection,      ///<  Connection for capabilities
+      H323Connection & connection,            ///<  Connection for capabilities
       const H245_TerminalCapabilitySet & pdu  ///<  PDU to convert to a capability set.
     );
 
