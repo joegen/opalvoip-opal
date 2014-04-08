@@ -122,6 +122,8 @@ bool OpalMediaPatch::CanStart() const
 
   const OpalRTPConnection * connection = dynamic_cast<const OpalRTPConnection *>(&source.GetConnection());
   if (connection == NULL)
+    connection = dynamic_cast<const OpalRTPConnection *>(&*source.GetConnection().GetOtherPartyConnectionAs<OpalRTPConnection>());
+  if (connection == NULL)
     return true;
 
   OpalMediaSession * session = connection->GetMediaSession(source.GetSessionID());
