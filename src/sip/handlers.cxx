@@ -749,17 +749,16 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
       if (expires > 0 && minExpiry > expires)
         minExpiry = expires;
     }
-    if (minExpiry != INT_MAX)
+    if (minExpiry != INT_MAX) {
       SetExpire(minExpiry);
-    else {
-      PTRACE(4, "SIP\tNo Contact addresses we requested, with non-zero expiry.");
-      SetExpire(0);
+      m_contactAddresses = replyContacts;
+      SetState(Subscribed);
+      SendStatus(SIP_PDU::Successful_OK, previousState);
+      return;
     }
 
-    m_contactAddresses = replyContacts;
-    SetState(Subscribed);
-    SendStatus(SIP_PDU::Successful_OK, previousState);
-    return;
+    PTRACE(4, "SIP\tNo Contact addresses we requested have non-zero expiry.");
+    SetExpire(0);
   }
 
   if (GetExpire() == 0) {
