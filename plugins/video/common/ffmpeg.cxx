@@ -521,17 +521,17 @@ bool FFMPEGCodec::DecodeVideoPacket(const PluginCodec_RTP & in, unsigned & flags
   if (m_fullFrame == NULL)
     return DecodeVideoFrame(in.GetPayloadPtr(), in.GetPayloadSize(), flags);
 
-  if (in.GetMarker()) {
-    flags |= PluginCodec_ReturnCoderLastFrame;
-    if (in.GetPayloadSize() == 0 && m_fullFrame->GetLength() == 0)
-      return true; // This happens if needed to make buffer bigger, already have frame to return
-  }
-
   if (in.GetPayloadSize() > 0 && !m_fullFrame->AddPacket(in, flags))
     return false;
 
-  if ((flags&PluginCodec_ReturnCoderLastFrame) == 0)
+  if (!in.GetMarker())
     return true;
+
+  if (in.GetPayloadSize() == 0 && m_fullFrame->GetLength() == 0) {
+    if (m_picture->data[0] != NULL)
+      flags |= PluginCodec_ReturnCoderLastFrame;
+    return true; // This happens if needed to make buffer bigger, already have frame to return
+  }
 
   bool result = DecodeVideoFrame(m_fullFrame->GetBuffer(), m_fullFrame->GetLength(), flags);
   m_fullFrame->Reset();
@@ -573,6 +573,7 @@ bool FFMPEGCodec::DecodeVideoFrame(const uint8_t * frame, size_t length, unsigne
     flags |= PluginCodec_ReturnCoderRequestIFrame;
 
   if (gotPicture) {
+    flags |= PluginCodec_ReturnCoderLastFrame;
     bool isIntra = m_fullFrame != NULL ? m_fullFrame->IsIntraFrame() : (m_picture->pict_type == AV_PICTURE_TYPE_I);
     if (isIntra)
       flags |= PluginCodec_ReturnCoderIFrame;
@@ -582,8 +583,6 @@ bool FFMPEGCodec::DecodeVideoFrame(const uint8_t * frame, size_t length, unsigne
            (isIntra ? 'I' : 'P') << "-Frame at " << m_context->width << "x" << m_context->height);
   }
   else {
-    flags &= ~PluginCodec_ReturnCoderLastFrame;
-
     PTRACE(4, m_prefix, "Decoded " << bytesDecoded << " of " << length << " bytes without an output frame");
   }
 
