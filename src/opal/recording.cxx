@@ -39,6 +39,8 @@
 #include <opal/recording.h>
 #include <codec/opalwavfile.h>
 
+#define PTraceModule() "OpalRecord"
+
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -95,7 +97,7 @@ bool OpalWAVRecordManager::OpenFile(const PFilePath & fn)
   PWaitAndSignal mutex(m_mutex);
 
   if (IsOpen()) {
-    PTRACE(2, "OpalRecord\tCannot open mixer after it has started.");
+    PTRACE(2, "Cannot open mixer after it has started.");
     return false;
   }
 
@@ -149,7 +151,7 @@ bool OpalWAVRecordManager::CloseStream(const PString & streamId)
     m_mixer->RemoveStream(streamId);
   m_mutex.Signal();
 
-  PTRACE(4, "OpalRecord\tClosed stream " << streamId);
+  PTRACE(4, "Closed stream " << streamId);
   return true;
 }
 
@@ -170,12 +172,12 @@ bool OpalWAVRecordManager::WriteVideo(const PString &, const RTP_DataFrame &)
 bool OpalWAVRecordManager::Mixer::Open(const PFilePath & fn, const Options & options)
 {
   if (!m_file.SetFormat(options.m_audioFormat)) {
-    PTRACE(2, "OpalRecord\tWAV file recording does not support format " << options.m_audioFormat);
+    PTRACE(2, "WAV file recording does not support format " << options.m_audioFormat);
     return false;
   }
 
   if (!m_file.Open(fn, PFile::ReadWrite, PFile::Create|PFile::Truncate)) {
-    PTRACE(2, "OpalRecord\tCould not open file \"" << fn << '"');
+    PTRACE(2, "Could not open file \"" << fn << '"');
     return false;
   }
 
@@ -185,7 +187,7 @@ bool OpalWAVRecordManager::Mixer::Open(const PFilePath & fn, const Options & opt
       m_stereo = true;
   }
 
-  PTRACE(4, "OpalRecord\t" << (m_stereo ? "Stereo" : "Mono") << " mixer opened for file \"" << fn << '"');
+  PTRACE(4, (m_stereo ? "Stereo" : "Mono") << " mixer opened for file \"" << fn << '"');
   return true;
 }
 
@@ -198,7 +200,7 @@ bool OpalWAVRecordManager::Mixer::OnMixed(RTP_DataFrame * & output)
   if (m_file.Write(output->GetPayloadPtr(), output->GetPayloadSize()))
     return true;
 
-  PTRACE(1, "OpalRecord\tError writing WAV file " << m_file.GetFilePath());
+  PTRACE(1, "Error writing WAV file " << m_file.GetFilePath());
   return false;
 }
 
@@ -257,6 +259,8 @@ class OpalAVIRecordManager : public OpalRecordManager
     virtual bool OpenVideo(const PString & strmId, const OpalMediaFormat & format);
     virtual bool OnMixedVideo(const RTP_DataFrame & frame);
 
+    bool GetVideoCompressorInfo(const PString & format);
+
     #if PTRACING
       bool IsResultError(HRESULT result, const char * msg)
       {
@@ -267,7 +271,7 @@ class OpalAVIRecordManager : public OpalRecordManager
           return true;
 
         ostream & strm = PTrace::Begin(2, __FILE__, __LINE__);
-        strm << "OpalRecord\tError " << msg << ": ";
+        strm << "Error " << msg << ": ";
         switch (result) {
           case AVIERR_UNSUPPORTED :
             strm << "Unsupported compressor '" << m_options.m_videoFormat << '\'';
@@ -275,6 +279,10 @@ class OpalAVIRecordManager : public OpalRecordManager
 
           case AVIERR_NOCOMPRESSOR :
             strm << "No compressor '" << m_options.m_videoFormat << '\'';
+            break;
+
+          case AVIERR_BADFORMAT :
+            strm << "Bad format for '" << m_options.m_videoFormat << '\'';
             break;
 
           default :
@@ -301,6 +309,8 @@ class OpalAVIRecordManager : public OpalRecordManager
     DWORD      m_audioSampleSize;
     PAVISTREAM m_videoStream;
     PAVISTREAM m_videoCompressor;
+    DWORD      m_videoCompressorKeyFrameRate;
+    DWORD      m_videoCompressorQuality;
     DWORD      m_VideoFrameCount;
     PBYTEArray m_videoBuffer;
     PColourConverter * m_videoConverter;
@@ -341,26 +351,57 @@ OpalAVIRecordManager::~OpalAVIRecordManager()
 }
 
 
+bool OpalAVIRecordManager::GetVideoCompressorInfo(const PString & format)
+{
+  if (format.GetLength() != 4)
+    return false;
+
+  HIC hic = ICOpen(mmioFOURCC('v','i','d','c'), mmioFOURCC(format[0], format[1], format[2], format[3]), ICMODE_COMPRESS);
+  if (hic == NULL)
+    return false;
+
+#if PTRACING
+  ICINFO info;
+  ICGetInfo(hic, &info,sizeof(info));
+  PTRACE(4, "Found " << format << ' ' << PString(info.szDescription));
+#endif
+
+  ICSendMessage(hic, ICM_GETDEFAULTKEYFRAMERATE, (DWORD_PTR)(LPVOID)&m_videoCompressorKeyFrameRate, sizeof(DWORD));
+  ICSendMessage(hic, ICM_GETDEFAULTQUALITY, (DWORD_PTR)(LPVOID)&m_videoCompressorQuality, sizeof(DWORD));
+
+  ICClose(hic);
+  return true;
+}
+
+
 bool OpalAVIRecordManager::OpenFile(const PFilePath & fn)
 {
   if (m_options.m_audioFormat.IsEmpty())
     m_options.m_audioFormat = OpalPCM16.GetName();
-  else if (m_options.m_audioFormat != OpalPCM16) {
-    PTRACE(2, "OpalRecord\tAVI file recording does not (yet) support format " << m_options.m_audioFormat);
+  else if (m_options.m_audioFormat != OpalPCM16 && m_options.m_audioFormat != OpalGSM0610) {
+    PTRACE(2, "AVI file recording does not (yet) support format " << m_options.m_audioFormat);
     return false;
   }
 
-  if (m_options.m_videoFormat.IsEmpty())
-    m_options.m_videoFormat = "MSVC"; // Default to Microsoft Video 1, every system has that!
-  else if (m_options.m_videoFormat.GetLength() != 4) {
-    PTRACE(2, "OpalRecord\tAVI file recording does not (yet) support format " << m_options.m_videoFormat);
+  if (m_options.m_videoFormat.IsEmpty()) {
+    static const char * const DefaultCompressor[] =
+      { "H264", "XVID", "DIVX", "MPEG", "H263", "IV50", "CVID", "MSVC" }; // Final default to Microsoft Video 1, every system has that!
+    for (PINDEX i = 0; i < PARRAYSIZE(DefaultCompressor); ++i) {
+      if (GetVideoCompressorInfo(DefaultCompressor[i])) {
+        m_options.m_videoFormat = DefaultCompressor[i];
+        break;
+      }
+    }
+  }
+  else if (!GetVideoCompressorInfo(m_options.m_videoFormat)) {
+    PTRACE(2, "AVI file recording does not (yet) support format " << m_options.m_videoFormat);
     return false;
   }
 
   PWaitAndSignal mutex(m_mutex);
 
   if (m_file != NULL) {
-    PTRACE(2, "OpalRecord\tCannot open mixer after it has started.");
+    PTRACE(2, "Cannot open mixer after it has started.");
     return false;
   }
 
@@ -396,7 +437,7 @@ bool OpalAVIRecordManager::OpenFile(const PFilePath & fn)
 
   m_videoMixer = new VideoMixer(*this, style, m_options.m_videoWidth, m_options.m_videoHeight);
 
-  PTRACE(4, "OpalRecord\t" << (m_options.m_stereo ? "Stereo" : "Mono") << "-PCM/"
+  PTRACE(4, (m_options.m_stereo ? "Stereo" : "Mono") << "-PCM/"
          << m_options.m_videoFormat << "-Video mixers opened for file \"" << fn << '"');
   return true;
 }
@@ -473,7 +514,7 @@ bool OpalAVIRecordManager::CloseStream(const PString & streamId)
 
   m_mutex.Signal();
 
-  PTRACE(4, "OpalRecord\tClosed stream " << streamId);
+  PTRACE(4, "Closed stream " << streamId);
   return true;
 }
 
@@ -503,10 +544,10 @@ bool OpalAVIRecordManager::OpenAudio(const PString & strmId, const OpalMediaForm
   if (m_audioStream != NULL)
     return m_audioMixer->AddStream(strmId);
 
-  PTRACE(4, "OpalRecord\tCreating AVI stream for audio format '" << m_options.m_audioFormat << '\'');
+  PTRACE(4, "Creating AVI stream for audio format '" << m_options.m_audioFormat << '\'');
 
   WAVEFORMATEX fmt;
-  fmt.wFormatTag = WAVE_FORMAT_PCM;
+  fmt.wFormatTag = m_options.m_audioFormat == OpalGSM0610 ? PWAVFile::fmt_GSM : WAVE_FORMAT_PCM;
   fmt.wBitsPerSample = 16;
   fmt.nChannels = m_audioMixer->IsStereo() ? 2 : 1;
   fmt.nSamplesPerSec = m_audioMixer->GetSampleRate();
@@ -560,14 +601,10 @@ bool OpalAVIRecordManager::OpenVideo(const PString & strmId, const OpalMediaForm
   if (m_videoStream != NULL)
     return m_videoMixer->AddStream(strmId);
 
-  PTRACE(4, "OpalRecord\tCreating AVI stream for video format '" << m_options.m_videoFormat << '\'');
+  PTRACE(4, "Creating AVI stream for video format '" << m_options.m_videoFormat << '\'');
 
   PVideoFrameInfo yuv(m_options.m_videoWidth, m_options.m_videoHeight, "YUV420P");
   PVideoFrameInfo rgb(m_options.m_videoWidth, m_options.m_videoHeight, "BGR24");
-  m_videoConverter = PColourConverter::Create(yuv, rgb);
-  if (m_videoConverter == NULL)
-    return false;
-  m_videoConverter->SetVFlipState(true);
 
   AVISTREAMINFO info;
   memset(&info, 0, sizeof(info));
@@ -576,8 +613,8 @@ bool OpalAVIRecordManager::OpenVideo(const PString & strmId, const OpalMediaForm
   info.dwScale = info.dwRate/m_options.m_videoRate;
   info.rcFrame.right = m_options.m_videoWidth;
   info.rcFrame.bottom = m_options.m_videoHeight;
-  info.dwSuggestedBufferSize = m_options.m_videoWidth*m_options.m_videoHeight*3/2;
-  info.dwQuality = (DWORD)-1;
+  info.dwSuggestedBufferSize = m_options.m_videoWidth*m_options.m_videoHeight;
+  info.dwQuality = m_videoCompressorQuality;
   strcpy(info.szName, VideoModeNames[m_options.m_videoMixing]);
 
   if (IS_RESULT_ERROR(AVIFileCreateStream(m_file, &m_videoStream, &info), "creating AVI video stream"))
@@ -590,24 +627,38 @@ bool OpalAVIRecordManager::OpenVideo(const PString & strmId, const OpalMediaForm
                                m_options.m_videoFormat[1],
                                m_options.m_videoFormat[2],
                                m_options.m_videoFormat[3]);
-  opts.dwQuality = (DWORD)-1;
+  opts.dwQuality = m_videoCompressorQuality;
+  opts.dwKeyFrameEvery = m_videoCompressorKeyFrameRate;
+  opts.dwBytesPerSecond = 100000;
+  opts.dwFlags = AVICOMPRESSF_KEYFRAMES|AVICOMPRESSF_DATARATE;
   if (IS_RESULT_ERROR(AVIMakeCompressedStream(&m_videoCompressor, m_videoStream, &opts, NULL), "creating AVI video compressor"))
     return false;
 
   BITMAPINFOHEADER fmt;
   memset(&fmt, 0, sizeof(fmt));
   fmt.biSize = sizeof(fmt);
-  fmt.biCompression = BI_RGB;
+  fmt.biCompression = mmioFOURCC('I','4','2','0');
   fmt.biWidth = m_options.m_videoWidth;
   fmt.biHeight = m_options.m_videoHeight;
-  fmt.biBitCount = 24;
-  fmt.biPlanes = 1;
+  fmt.biBitCount = 12;
   fmt.biSizeImage = rgb.CalculateFrameBytes();
 
-  if (IS_RESULT_ERROR(AVIStreamSetFormat(m_videoCompressor, 0, &fmt, sizeof(fmt)), "setting format of AVI video compressor"))
-    return false;
+  if (AVIStreamSetFormat(m_videoCompressor, 0, &fmt, sizeof(fmt)) != AVIERR_OK) {
+    fmt.biCompression = BI_RGB;
+    fmt.biBitCount = 24;
+    fmt.biPlanes = 1;
+    fmt.biSizeImage = rgb.CalculateFrameBytes();
 
-  PTRACE(4, "OpalRecord\tAllocating video buffer " << fmt.biSizeImage << " bytes");
+    if (IS_RESULT_ERROR(AVIStreamSetFormat(m_videoCompressor, 0, &fmt, sizeof(fmt)), "setting format of AVI video compressor"))
+      return false;
+
+    m_videoConverter = PColourConverter::Create(yuv, rgb);
+    if (m_videoConverter == NULL)
+      return false;
+    m_videoConverter->SetVFlipState(true);
+  }
+
+  PTRACE(4, "Allocating video buffer " << fmt.biSizeImage << " bytes");
   return m_videoBuffer.SetSize(fmt.biSizeImage) &&
          m_videoMixer->AddStream(strmId);
 }
@@ -620,24 +671,21 @@ bool OpalAVIRecordManager::OnMixedVideo(const RTP_DataFrame & frame)
 
   PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)frame.GetPayloadPtr();
   if (header->x != 0 || header->y != 0 || header->width != m_options.m_videoWidth || header->height != m_options.m_videoHeight) {
-    PTRACE(2, "OpalRecord\tUnexpected change of video frame size!");
+    PTRACE(2, "Unexpected change of video frame size!");
     return false;
   }
 
-  PINDEX bytesReturned = 0;
-  if (!m_videoConverter->Convert(OPAL_VIDEO_FRAME_DATA_PTR(header), m_videoBuffer.GetPointer(), &bytesReturned)) {
-    PTRACE(2, "OpalRecord\tConversion of YUV420P to RGB24 failed!");
+  PINDEX bytesReturned = m_options.m_videoWidth*m_options.m_videoHeight*3/2;
+  if (m_videoConverter != NULL && !m_videoConverter->Convert(OPAL_VIDEO_FRAME_DATA_PTR(header), m_videoBuffer.GetPointer(), &bytesReturned)) {
+    PTRACE(2, "Conversion of YUV420P to RGB24 failed!");
     return false;
   }
 
-  if (IS_RESULT_ERROR(AVIStreamWrite(m_videoCompressor,
-                                     m_VideoFrameCount, 1,
-                                     m_videoBuffer.GetPointer(), bytesReturned,
-                                     AVIIF_KEYFRAME, NULL, NULL), "writing AVI video stream"))
-    return false;
-
-  ++m_VideoFrameCount;
-  return true;
+  return !IS_RESULT_ERROR(AVIStreamWrite(m_videoCompressor,
+                                         ++m_VideoFrameCount, 1,
+                                         m_videoBuffer.GetPointer(), bytesReturned,
+                                         0/*AVIIF_KEYFRAME*/, NULL, NULL),
+                          "writing AVI video stream");
 }
 
 
