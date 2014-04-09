@@ -1052,6 +1052,8 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
     }
   }
 
+  PTRACE(3, "RAS\tAdmissionRequest answering = " << answeringCall << " local alias name " << connection.GetLocalAliasNames());
+
   H323RasPDU pdu;
   H225_AdmissionRequest & arq = pdu.BuildAdmissionRequest(GetNextSequenceNumber());
 
@@ -1068,9 +1070,12 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
   }
 
   PString destInfo = connection.GetRemotePartyName();
+  PIPAddressAndPort destAddr(destInfo, endpoint.GetDefaultSignalPort());
+
   arq.m_srcInfo.SetSize(1);
   if (answeringCall) {
-    H323SetAliasAddress(destInfo, arq.m_srcInfo[0]);
+    if (!destAddr.IsValid())
+      H323SetAliasAddress(destInfo, arq.m_srcInfo[0]);
 
     if (!connection.GetLocalPartyName()) {
       arq.IncludeOptionalField(H225_AdmissionRequest::e_destinationInfo);
@@ -1079,14 +1084,13 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
   }
   else {
     H323SetAliasAddresses(connection.GetLocalAliasNames(), arq.m_srcInfo);
-    if (response.transportAddress == NULL || destInfo != *response.transportAddress) {
+
+    if (!destAddr.IsValid()) {
       arq.IncludeOptionalField(H225_AdmissionRequest::e_destinationInfo);
       arq.m_destinationInfo.SetSize(1);
       H323SetAliasAddress(destInfo, arq.m_destinationInfo[0]);
     }
   }
-
-  PTRACE(3, "RAS\tAdmissionRequest answering = " << answeringCall << " local alias name " << connection.GetLocalAliasNames());
 
   const H323Transport * signallingChannel = connection.GetSignallingChannel();
   if (answeringCall) {
@@ -1103,9 +1107,10 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
       H323TransportAddress signalAddress = signallingChannel->GetLocalAddress();
       signalAddress.SetPDU(arq.m_srcCallSignalAddress);
     }
-    if (response.transportAddress != NULL && !response.transportAddress->IsEmpty()) {
+
+    if (destAddr.IsValid()) {
       arq.IncludeOptionalField(H225_AdmissionRequest::e_destCallSignalAddress);
-      response.transportAddress->SetPDU(arq.m_destCallSignalAddress);
+      H323TransportAddress(destAddr).SetPDU(arq.m_destCallSignalAddress);
     }
   }
 
