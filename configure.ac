@@ -81,6 +81,7 @@ if test "x$OPALDIR" != "x" ; then
    makedir="$OPALDIR/make"
    VERSION_DIR="$OPALDIR"
 else
+   CPPFLAGS += "${includedir}/opal"
    makedir="\${datarootdir}/opal/make"
    VERSION_DIR="."
 fi
