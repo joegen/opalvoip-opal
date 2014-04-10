@@ -8,78 +8,105 @@
     <Filter Include="G.722.1 Files">
       <UniqueIdentifier>{02da8b01-f74a-49bf-a261-1fc11b0a6c63}</UniqueIdentifier>
     </Filter>
+    <Filter Include="G.722.1 Files\Sources">
+      <UniqueIdentifier>{4eabae0e-216c-4f4a-bc10-25d58b4ef7c5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="G.722.1 Files\Headers">
+      <UniqueIdentifier>{b5adc3fb-a506-4b02-9880-9cd262a64390}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="G7221Codec.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="G722-1\basop32.c">
-      <Filter>G.722.1 Files</Filter>
+    <ClCompile Include="libg722_1\src\basop32.c">
+      <Filter>G.722.1 Files\Sources</Filter>
     </ClCompile>
-    <ClCompile Include="G722-1\coef2sam.c">
-      <Filter>G.722.1 Files</Filter>
+    <ClCompile Include="libg722_1\src\bitstream.c">
+      <Filter>G.722.1 Files\Sources</Filter>
     </ClCompile>
-    <ClCompile Include="G722-1\common.c">
-      <Filter>G.722.1 Files</Filter>
+    <ClCompile Include="libg722_1\src\coef2sam.c">
+      <Filter>G.722.1 Files\Sources</Filter>
     </ClCompile>
-    <ClCompile Include="G722-1\count.c">
-      <Filter>G.722.1 Files</Filter>
+    <ClCompile Include="libg722_1\src\common.c">
+      <Filter>G.722.1 Files\Sources</Filter>
     </ClCompile>
-    <ClCompile Include="G722-1\dct4_a.c">
-      <Filter>G.722.1 Files</Filter>
+    <ClCompile Include="libg722_1\src\commonf.c">
+      <Filter>G.722.1 Files\Sources</Filter>
     </ClCompile>
-    <ClCompile Include="G722-1\dct4_s.c">
-      <Filter>G.722.1 Files</Filter>
+    <ClCompile Include="libg722_1\src\dct4.c">
+      <Filter>G.722.1 Files\Sources</Filter>
     </ClCompile>
-    <ClCompile Include="G722-1\decode.c">
-      <Filter>G.722.1 Files</Filter>
+    <ClCompile Include="libg722_1\src\dct4_a.c">
+      <Filter>G.722.1 Files\Sources</Filter>
     </ClCompile>
-    <ClCompile Include="G722-1\decoder.c">
-      <Filter>G.722.1 Files</Filter>
+    <ClCompile Include="libg722_1\src\dct4_s.c">
+      <Filter>G.722.1 Files\Sources</Filter>
     </ClCompile>
-    <ClCompile Include="G722-1\encode.c">
-      <Filter>G.722.1 Files</Filter>
+    <ClCompile Include="libg722_1\src\decoder.c">
+      <Filter>G.722.1 Files\Sources</Filter>
     </ClCompile>
-    <ClCompile Include="G722-1\encoder.c">
-      <Filter>G.722.1 Files</Filter>
+    <ClCompile Include="libg722_1\src\decoderf.c">
+      <Filter>G.722.1 Files\Sources</Filter>
     </ClCompile>
-    <ClCompile Include="G722-1\huff_tab.c">
-      <Filter>G.722.1 Files</Filter>
+    <ClCompile Include="libg722_1\src\encoder.c">
+      <Filter>G.722.1 Files\Sources</Filter>
     </ClCompile>
-    <ClCompile Include="G722-1\sam2coef.c">
-      <Filter>G.722.1 Files</Filter>
+    <ClCompile Include="libg722_1\src\encoderf.c">
+      <Filter>G.722.1 Files\Sources</Filter>
     </ClCompile>
-    <ClCompile Include="G722-1\tables.c">
-      <Filter>G.722.1 Files</Filter>
+    <ClCompile Include="libg722_1\src\msvc\gettimeofday.c">
+      <Filter>G.722.1 Files\Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="libg722_1\src\huff_tab.c">
+      <Filter>G.722.1 Files\Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="libg722_1\src\sam2coef.c">
+      <Filter>G.722.1 Files\Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="libg722_1\src\tables.c">
+      <Filter>G.722.1 Files\Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="libg722_1\src\utilities.c">
+      <Filter>G.722.1 Files\Sources</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="G722-1\basop32.h">
-      <Filter>G.722.1 Files</Filter>
+    <ClInclude Include="libg722_1\src\basop32.h">
+      <Filter>G.722.1 Files\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="G722-1\count.h">
-      <Filter>G.722.1 Files</Filter>
+    <ClInclude Include="libg722_1\src\bitstream.h">
+      <Filter>G.722.1 Files\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="G722-1\dct4_a.h">
-      <Filter>G.722.1 Files</Filter>
+    <ClInclude Include="libg722_1\src\coef2sam.h">
+      <Filter>G.722.1 Files\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="G722-1\dct4_s.h">
-      <Filter>G.722.1 Files</Filter>
+    <ClInclude Include="libg722_1\src\dct4_a.h">
+      <Filter>G.722.1 Files\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="G722-1\defs.h">
-      <Filter>G.722.1 Files</Filter>
+    <ClInclude Include="libg722_1\src\dct4_s.h">
+      <Filter>G.722.1 Files\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="G722-1\huff_def.h">
-      <Filter>G.722.1 Files</Filter>
+    <ClInclude Include="libg722_1\src\defs.h">
+      <Filter>G.722.1 Files\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="G722-1\huff_tab.h">
-      <Filter>G.722.1 Files</Filter>
+    <ClInclude Include="libg722_1\src\huff_tab.h">
+      <Filter>G.722.1 Files\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="G722-1\tables.h">
-      <Filter>G.722.1 Files</Filter>
+    <ClInclude Include="libg722_1\src\sam2coef.h">
+      <Filter>G.722.1 Files\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="G722-1\typedef.h">
-      <Filter>G.722.1 Files</Filter>
+    <ClInclude Include="libg722_1\src\tables.h">
+      <Filter>G.722.1 Files\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="libg722_1\src\utilities.h">
+      <Filter>G.722.1 Files\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="libg722_1\src\generated\dct4.h">
+      <Filter>G.722.1 Files\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="libg722_1\src\generated\g722_1.h">
+      <Filter>G.722.1 Files\Headers</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

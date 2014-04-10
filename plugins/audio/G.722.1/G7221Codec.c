@@ -31,6 +31,7 @@
  *
  * Initial development by: Ted Szoczei, Nimajin Software Consulting, 09-12-09
  * Portions developed by: Robert Jongbloed, Vox Lucida Pty. Ltd.
+ * Major rewrite to use libg722_1 and support G.722.1 Annex C 10-Apr-2014
  *
  ****************************************************************************/
 
@@ -43,11 +44,13 @@
 
 #include <codec/opalplugin.h>
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
+#include "../../../src/codec/g7221mf_inc.cxx"
+
+#ifdef strcasecmp
+#undef strcasecmp
 #endif
 
-#include "../../../src/codec/g7221mf_inc.cxx"
+#include "g722_1.h"
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -73,188 +76,60 @@ PLUGINCODEC_LICENSE(
   PluginCodec_License_NoRoyalties                              // codec license code
 );
 
-static short EndianWord = 0x1234;
-#define LittleEndian ((*(const char *)&EndianWord) == 0x34)
 
-
-/////////////////////////////////////////////////////////////////////////////
-
-#include "G722-1/defs.h"
-
-
-// bits and bytes per 20 ms frame, depending on bitrate
-// 60 bytes for 24000, 80 for 32000
-#define G722_1_FRAME_BITS(rate) ((Word16)((rate) / 50))
-#define G722_1_FRAME_BYTES(rate) ((rate) / 400)
-
-
-/////////////////////////////////////////////////////////////////////////////
-// Compress audio for transport
-
-
-typedef struct
+static void * G7221EncoderCreate(const struct PluginCodec_Definition * defn)
 {
-  unsigned bitsPerSec;                  // can be changed between frames
-  Word16 history [G7221_SAMPLES_PER_FRAME];
-  Word16 mlt_coefs [G7221_SAMPLES_PER_FRAME];
-  Word16 mag_shift;
-} G7221EncoderContext;
-
-
-static void * G7221EncoderCreate (const struct PluginCodec_Definition * codec)
-{
-  int i;
-  G7221EncoderContext * Context = (G7221EncoderContext *) malloc (sizeof(G7221EncoderContext));
-  if (Context == NULL)
-    return NULL;
-
-  Context->bitsPerSec = codec->bitsPerSec;
-
-  // initialize the mlt history buffer
-  for (i = 0; i < G7221_SAMPLES_PER_FRAME; i++)
-    Context->history[i] = 0;
-
-  return Context;
+  return g722_1_encode_init(NULL, defn->bitsPerSec, defn->sampleRate);
 }
 
 
 static void G7221EncoderDestroy (const struct PluginCodec_Definition * codec, void * context)
 {
-  free (context);
+  if (context != NULL)
+    g722_1_encode_release((g722_1_encode_state_t *)context);
 }
 
 
-static int G7221Encode (const struct PluginCodec_Definition * codec, 
-                                                       void * context,
-                                                 const void * fromPtr, 
-                                                   unsigned * fromLen,
-                                                       void * toPtr,         
-                                                   unsigned * toLen,
-                                               unsigned int * flag)
+static int G7221Encode(const struct PluginCodec_Definition * codec, 
+                                                      void * context,
+                                                const void * fromPtr, 
+                                                  unsigned * fromLen,
+                                                      void * toPtr,         
+                                                  unsigned * toLen,
+                                              unsigned int * flag)
 {
-  G7221EncoderContext * Context = (G7221EncoderContext *) context;
-  if (Context == NULL)
+  if (context == NULL)
     return 0;
 
-  if (*fromLen < G7221_SAMPLES_PER_FRAME * sizeof(Word16))
-    return 0;                           // Source is not a full frame
-
-  if (*toLen < G722_1_FRAME_BYTES (Context->bitsPerSec))
-    return 0;                           // Destination buffer not big enough
-
-  // Convert input samples to rmlt coefs
-  Context->mag_shift = samples_to_rmlt_coefs ((Word16 *) fromPtr, Context->history, Context->mlt_coefs, G7221_SAMPLES_PER_FRAME);
-
-  // Encode the mlt coefs
-  encoder (G722_1_FRAME_BITS (Context->bitsPerSec), NUMBER_OF_REGIONS, Context->mlt_coefs, Context->mag_shift, (Word16 *) toPtr);
-
-  // return the number of encoded bytes to the caller
-  *fromLen = G7221_SAMPLES_PER_FRAME * sizeof(Word16);
-  *toLen = G722_1_FRAME_BYTES (Context->bitsPerSec);
-
-  // Do some endian swapping, if needed
-  if (LittleEndian)
-    swab(toPtr, toPtr, *toLen);
-
+  *toLen = g722_1_encode((g722_1_encode_state_t *)context, toPtr, (const int16_t *)fromPtr, *fromLen / 2);
   return 1;
 }
 
 
-/////////////////////////////////////////////////////////////////////////////
-// Convert encoded source to audio
-
-
-typedef struct
+static void * G7221DecoderCreate(const struct PluginCodec_Definition * defn)
 {
-  unsigned bitsPerSec;                  // can be changed between frames
-  Bit_Obj bitobj;
-  Rand_Obj randobj;
-  Word16 decoder_mlt_coefs [G7221_SAMPLES_PER_FRAME];
-  Word16 mag_shift;
-  Word16 old_samples [G7221_SAMPLES_PER_FRAME / 2];
-  Word16 old_decoder_mlt_coefs [G7221_SAMPLES_PER_FRAME];
-  Word16 old_mag_shift;
-  Word16 frame_error_flag;
-} G7221DecoderContext;
-
-
-static void * G7221DecoderCreate (const struct PluginCodec_Definition * codec)
-{
-  int i;
-  G7221DecoderContext * Context = (G7221DecoderContext *) malloc (sizeof(G7221DecoderContext));
-  if (Context == NULL)
-    return NULL;
-
-  Context->bitsPerSec = codec->bitsPerSec;
-
-  Context->old_mag_shift = 0;
-  Context->frame_error_flag = 0;
-
-  // initialize the coefs history
-  for (i = 0; i < G7221_SAMPLES_PER_FRAME; i++)
-    Context->old_decoder_mlt_coefs[i] = 0;    
-
-  for (i = 0; i < (G7221_SAMPLES_PER_FRAME >> 1); i++)
-    Context->old_samples[i] = 0;
-    
-  // initialize the random number generator
-  Context->randobj.seed0 =
-  Context->randobj.seed1 =
-  Context->randobj.seed2 =
-  Context->randobj.seed3 = 1;
-
-  return Context;
+  return g722_1_decode_init(NULL, defn->bitsPerSec, defn->sampleRate);
 }
 
 
 static void G7221DecoderDestroy (const struct PluginCodec_Definition * codec, void * context)
 {
-  free (context);
+  g722_1_decode_release((g722_1_decode_state_t *)context);
 }
 
 
-static int G7221Decode (const struct PluginCodec_Definition * codec, 
-                                                       void * context,
-                                                 const void * fromPtr, 
-                                                   unsigned * fromLen,
-                                                       void * toPtr,         
-                                                   unsigned * toLen,
-                                               unsigned int * flag)
+static int G7221Decode(const struct PluginCodec_Definition * codec, 
+                                                      void * context,
+                                                const void * fromPtr, 
+                                                  unsigned * fromLen,
+                                                      void * toPtr,         
+                                                  unsigned * toLen,
+                                              unsigned int * flag)
 {
-  int i;
-  G7221DecoderContext * Context = (G7221DecoderContext *) context;
-  if (Context == NULL)
+  if (context == NULL)
     return 0;
 
-  if (*fromLen < G722_1_FRAME_BYTES (Context->bitsPerSec))
-    return 0;                           // Source is not a full frame
-
-  if (*toLen < G7221_SAMPLES_PER_FRAME * sizeof(Word16))
-    return 0;                           // Destination buffer not big enough
-
-  // Do some endian swapping, if needed
-  if (LittleEndian)
-    swab((void *)fromPtr, (void *)fromPtr, G722_1_FRAME_BYTES (Context->bitsPerSec));
-
-  // reinit the current word to point to the start of the buffer
-  Context->bitobj.code_word_ptr = (Word16 *) fromPtr;
-  Context->bitobj.current_word = *((Word16 *) fromPtr);
-  Context->bitobj.code_bit_count = 0;
-  Context->bitobj.number_of_bits_left = G722_1_FRAME_BITS(Context->bitsPerSec);
-        
-  // process the out_words into decoder_mlt_coefs
-  decoder (&Context->bitobj, &Context->randobj, NUMBER_OF_REGIONS, Context->decoder_mlt_coefs, &Context->mag_shift, &Context->old_mag_shift, Context->old_decoder_mlt_coefs, Context->frame_error_flag);
-  
-  // convert the decoder_mlt_coefs to samples
-  rmlt_coefs_to_samples (Context->decoder_mlt_coefs, Context->old_samples, (Word16 *) toPtr, G7221_SAMPLES_PER_FRAME, Context->mag_shift);
-
-  // For ITU testing, off the 2 lsbs.
-  for (i = 0; i < G7221_SAMPLES_PER_FRAME; i++)
-    ((Word16 *) toPtr) [i] &= 0xFFFC;
-      
-  // return the number of decoded bytes to the caller
-  *fromLen = G722_1_FRAME_BYTES (Context->bitsPerSec);
-  *toLen = G7221_SAMPLES_PER_FRAME * sizeof(Word16);
+  *toLen = g722_1_decode((g722_1_decode_state_t *)context, (int16_t *)toPtr, fromPtr, *fromLen)*2;
   return 1;
 }
 
@@ -269,12 +144,12 @@ static struct PluginCodec_Option BitRateOption24k =
   G7221BitRateOptionName,           // Generic (human readable) option name
   1,                                // Read Only flag
   PluginCodec_EqualMerge,           // Merge mode
-  STRINGIZE(G7221_24K_BIT_RATE),    // Initial value
+  "24000",                          // Initial value
   G7221BitRateFMTPName,             // SIP/SDP FMTP name
   "0",                              // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0,                                // H.245 Generic Capability number and scope bits
-  STRINGIZE(G7221_24K_BIT_RATE),    // Minimum value (enum values separated by ':')
-  STRINGIZE(G7221_24K_BIT_RATE)     // Maximum value
+  "24000",                          // Minimum value (enum values separated by ':')
+  "24000"                           // Maximum value
 };
 
 static struct PluginCodec_Option BitRateOption32k =
@@ -283,12 +158,26 @@ static struct PluginCodec_Option BitRateOption32k =
   G7221BitRateOptionName,           // Generic (human readable) option name
   1,                                // Read Only flag
   PluginCodec_EqualMerge,           // Merge mode
-  STRINGIZE(G7221_32K_BIT_RATE),    // Initial value
+  "32000",                          // Initial value
   G7221BitRateFMTPName,             // SIP/SDP FMTP name
   "0",                              // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0,                                // H.245 Generic Capability number and scope bits
-  STRINGIZE(G7221_32K_BIT_RATE),    // Minimum value (enum values separated by ':')
-  STRINGIZE(G7221_32K_BIT_RATE)     // Maximum value
+  "32000",                          // Minimum value (enum values separated by ':')
+  "32000"                           // Maximum value
+};
+
+static struct PluginCodec_Option BitRateOption48k =
+{
+  PluginCodec_IntegerOption,        // PluginCodec_OptionTypes
+  G7221BitRateOptionName,           // Generic (human readable) option name
+  1,                                // Read Only flag
+  PluginCodec_EqualMerge,           // Merge mode
+  "48000",                          // Initial value
+  G7221BitRateFMTPName,             // SIP/SDP FMTP name
+  "0",                              // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  0,                                // H.245 Generic Capability number and scope bits
+  "48000",                          // Minimum value (enum values separated by ':')
+  "48000"                           // Maximum value
 };
 
 static struct PluginCodec_Option RxFramesPerPacket =
@@ -320,6 +209,14 @@ static struct PluginCodec_Option const * const OptionTable32k[] =
 };
 
 
+static struct PluginCodec_Option const * const OptionTable48k[] =
+{
+  &BitRateOption48k,
+  &RxFramesPerPacket,
+  NULL
+};
+
+
 static int get_codec_options (const struct PluginCodec_Definition * defn,
                                                              void * context, 
                                                        const char * name,
@@ -329,7 +226,38 @@ static int get_codec_options (const struct PluginCodec_Definition * defn,
   if (parm == NULL || parmLen == NULL || *parmLen != sizeof(struct PluginCodec_Option **))
     return 0;
 
-  *(struct PluginCodec_Option const * const * *)parm = (defn->bitsPerSec == G7221_24K_BIT_RATE)? OptionTable24k : OptionTable32k;
+  switch (defn->sampleRate) {
+    case 16000 :
+      switch (defn->bitsPerSec) {
+        case G7221_24K_BIT_RATE :
+          *(struct PluginCodec_Option const * const * *)parm = OptionTable24k;
+          break;
+        case G7221_32K_BIT_RATE :
+          *(struct PluginCodec_Option const * const * *)parm = OptionTable32k;
+          break;
+        default :
+          return 0;
+      }
+      break;
+    case 32000 :
+      switch (defn->bitsPerSec) {
+        case G7221C_24K_BIT_RATE :
+          *(struct PluginCodec_Option const * const * *)parm = OptionTable24k;
+          break;
+        case G7221C_32K_BIT_RATE :
+          *(struct PluginCodec_Option const * const * *)parm = OptionTable32k;
+          break;
+        case G7221C_48K_BIT_RATE :
+          *(struct PluginCodec_Option const * const * *)parm = OptionTable48k;
+          break;
+        default :
+          return 0;
+      }
+      break;
+    default :
+      return 0;
+  }
+
   *parmLen = 0;
   return 1;
 }
@@ -348,55 +276,42 @@ static struct PluginCodec_ControlDefn G7221Controls[] =
 
 /////////////////////////////////////////////////////////////////////////////
 
+#define CAPABILITY(type) \
+  static const struct PluginCodec_H323GenericCodecData type##_Capability = { type##_OID, type##_BIT_RATE }
 
-static const struct PluginCodec_H323GenericCodecData G722124kCap =
-{
-  OpalPluginCodec_Identifer_G7221, // capability identifier (Ref: G.722.1 (05/2005) Table A.2)
-  G7221_24K_BIT_RATE               // Must always be this regardless of "Max Bit Rate" option
-};
-
-static const struct PluginCodec_H323GenericCodecData G722132kCap =
-{
-  OpalPluginCodec_Identifer_G7221, // capability identifier (Ref: G.722.1 (05/2005) Table A.2)
-  G7221_32K_BIT_RATE               // Must always be this regardless of "Max Bit Rate" option
-};
+CAPABILITY(G7221_24K);
+CAPABILITY(G7221_32K);
+CAPABILITY(G7221C_24K);
+CAPABILITY(G7221C_32K);
+CAPABILITY(G7221C_48K);
 
 
 /////////////////////////////////////////////////////////////////////////////
 
+#define G7221_PLUGINCODEC_AUDIO_CODEC(type) \
+  PLUGINCODEC_AUDIO_CODEC( \
+    type##_FormatName, \
+    G7221EncodingName, \
+    G7221Description, \
+    type##_SAMPLE_RATE, \
+    type##_BIT_RATE, \
+    type##_SAMPLE_RATE*G7221_FRAME_MS/1000, \
+    1,1, \
+    PluginCodec_RTPTypeShared, \
+    0, \
+    PluginCodec_H323Codec_generic, &type##_Capability, \
+    G7221EncoderCreate, G7221EncoderDestroy, G7221Encode, \
+    G7221DecoderCreate, G7221DecoderDestroy, G7221Decode, \
+    G7221Controls \
+  )
 
 static struct PluginCodec_Definition G7221CodecDefn[] =
 {
-  PLUGINCODEC_AUDIO_CODEC(
-    G7221FormatName24K,
-    G7221EncodingName,
-    G7221Description,
-    G7221_SAMPLE_RATE,
-    G7221_24K_BIT_RATE,
-    G7221_SAMPLES_PER_FRAME,
-    1,1,
-    PluginCodec_RTPTypeShared,
-    0, // IANA RTP payload code -  dynamic
-    PluginCodec_H323Codec_generic, &G722124kCap,
-    G7221EncoderCreate, G7221EncoderDestroy, G7221Encode,
-    G7221DecoderCreate, G7221DecoderDestroy, G7221Decode,
-    G7221Controls
-  ),
-  PLUGINCODEC_AUDIO_CODEC(
-    G7221FormatName32K,
-    G7221EncodingName,
-    G7221Description,
-    G7221_SAMPLE_RATE,
-    G7221_32K_BIT_RATE,
-    G7221_SAMPLES_PER_FRAME,
-    1,1,
-    PluginCodec_RTPTypeShared,
-    0, // IANA RTP payload code -  dynamic
-    PluginCodec_H323Codec_generic, &G722132kCap,
-    G7221EncoderCreate, G7221EncoderDestroy, G7221Encode,
-    G7221DecoderCreate, G7221DecoderDestroy, G7221Decode,
-    G7221Controls
-  )
+  G7221_PLUGINCODEC_AUDIO_CODEC(G7221_24K),
+  G7221_PLUGINCODEC_AUDIO_CODEC(G7221_32K),
+  G7221_PLUGINCODEC_AUDIO_CODEC(G7221C_24K),
+  G7221_PLUGINCODEC_AUDIO_CODEC(G7221C_32K),
+  G7221_PLUGINCODEC_AUDIO_CODEC(G7221C_48K)
 };
 
 

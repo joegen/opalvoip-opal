@@ -35,18 +35,26 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static const char G7221FormatName24K[] = OPAL_G7221_24K;
-static const char G7221FormatName32K[] = OPAL_G7221_32K;
-static const char G7221FormatNameAnnexC[] = OPAL_G7221_AnnexC;
+static const char G7221_24K_FormatName [] = OPAL_G7221_24K;
+static const char G7221_32K_FormatName [] = OPAL_G7221_32K;
+static const char G7221C_24K_FormatName[] = OPAL_G7221C_24K;
+static const char G7221C_32K_FormatName[] = OPAL_G7221C_32K;
+static const char G7221C_48K_FormatName[] = OPAL_G7221C_48K;
 
 static const char G7221EncodingName[] = "G7221"; // MIME name rfc's 3047, 5577
 
 #define G7221_24K_BIT_RATE         24000
 #define G7221_32K_BIT_RATE         32000
-#define G7221_AnnexC_BIT_RATE      48000
+#define G7221C_24K_BIT_RATE        24000
+#define G7221C_32K_BIT_RATE        32000
+#define G7221C_48K_BIT_RATE        48000
 
-#define G7221_SAMPLES_PER_FRAME    320   // 20 ms frame
-#define G7221_SAMPLE_RATE          16000
+#define G7221_FRAME_MS             20
+#define G7221_24K_SAMPLE_RATE      16000
+#define G7221_32K_SAMPLE_RATE      16000
+#define G7221C_24K_SAMPLE_RATE     32000
+#define G7221C_32K_SAMPLE_RATE     32000
+#define G7221C_48K_SAMPLE_RATE     32000
 
 static const char G7221BitRateOptionName[] = "Bit Rate";
 static const char G7221BitRateFMTPName[]   = "bitrate";
@@ -57,6 +65,12 @@ enum
     G7221_H241_RxFramesPerPacket = 1 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
     G7221_H241_ExtendedModes     = 2 | PluginCodec_H245_Collapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode | PluginCodec_H245_BooleanArray,
 };
+
+#define G7221_24K_OID    OpalPluginCodec_Identifer_G7221
+#define G7221_32K_OID    OpalPluginCodec_Identifer_G7221
+#define G7221C_24K_OID   OpalPluginCodec_Identifer_G7221ext
+#define G7221C_32K_OID   OpalPluginCodec_Identifer_G7221ext
+#define G7221C_48K_OID   OpalPluginCodec_Identifer_G7221ext
 
 
 // End of File ///////////////////////////////////////////////////////////////
