@@ -41,14 +41,14 @@
 class OpalG7221Format : public OpalAudioFormatInternal
 {
   public:
-    OpalG7221Format(const char * formatName, unsigned rate)
+    OpalG7221Format(const char * formatName, unsigned bitRate, unsigned sampleRate)
       : OpalAudioFormatInternal(formatName,
                                 RTP_DataFrame::DynamicBase,
                                 G7221EncodingName,
-                                rate/400,
-                                G7221_SAMPLES_PER_FRAME,
+                                bitRate/400,
+                                sampleRate*G7221_FRAME_MS/1000,
                                 1, 1, 1,
-                                G7221_SAMPLE_RATE)
+                                sampleRate)
     {
       OpalMediaOption * option;
 
@@ -56,7 +56,7 @@ class OpalG7221Format : public OpalAudioFormatInternal
       option = new OpalMediaOptionInteger(G7221BitRateOptionName,
                                           true,
                                           OpalMediaOption::EqualMerge,
-                                          rate, G7221_24K_BIT_RATE, G7221_AnnexC_BIT_RATE);
+                                          bitRate, bitRate, bitRate);
       option->SetFMTP(G7221BitRateFMTPName, "0");
       AddOption(option);
 #endif
@@ -64,7 +64,7 @@ class OpalG7221Format : public OpalAudioFormatInternal
 #if OPAL_H323
       OPAL_SET_MEDIA_OPTION_H245(FindOption(OpalAudioFormat::RxFramesPerPacketOption()), G7221_H241_RxFramesPerPacket);
 
-      if (rate == G7221_AnnexC_BIT_RATE) {
+      if (sampleRate == G7221C_24K_SAMPLE_RATE) {
         option = new OpalMediaOptionUnsigned(G7221ExtendedModesOptionName, true, OpalMediaOption::IntersectionMerge, 0x70, 0, 255);
         OPAL_SET_MEDIA_OPTION_H245(option, G7221_H241_ExtendedModes);
         AddOption(option);
@@ -81,31 +81,34 @@ class OpalG7221Format : public OpalAudioFormatInternal
 
 
 #if OPAL_H323
-  extern const char G7221_24K_Identifier[] = OpalPluginCodec_Identifer_G7221;
-  extern const char G7221_32K_Identifier[] = OpalPluginCodec_Identifer_G7221;
-  extern const char G7221_AnnexC_Identifier[] = OpalPluginCodec_Identifer_G7221ext;
+  #define OID(type) \
+    extern const char type##_Identifier[] = type##_OID;
 
-  #define CAPABILITY(rate) \
+  #define CAPABILITY(type) \
     static H323CapabilityFactory::Worker< \
-      H323GenericAudioCapabilityTemplate<G7221_##rate##_Identifier, GetOpalG7221_##rate, G7221_##rate##_BIT_RATE> \
-    > capability(G7221FormatName##rate, true)
+      H323GenericAudioCapabilityTemplate<type##_Identifier, GetOpal##type, type##_BIT_RATE> \
+    > capability(type##_FormatName, true);
 #else
-#define CAPABILITY(rate)
+  #define OID(type)
+  #define CAPABILITY(type)
 #endif
 
 
-#define FORMAT(rate) \
-  const OpalAudioFormat & GetOpalG7221_##rate() \
+#define FORMAT(type) \
+  OID(type) \
+  const OpalAudioFormat & GetOpal##type() \
   { \
-  static OpalAudioFormat const format(new OpalG7221Format(G7221FormatName##rate, G7221_##rate##_BIT_RATE)); \
-  CAPABILITY(rate); \
-  return format; \
-}
+    static OpalAudioFormat const format(new OpalG7221Format(type##_FormatName, type##_BIT_RATE, type##_SAMPLE_RATE)); \
+    CAPABILITY(type) \
+    return format; \
+  }
 
 
-FORMAT(24K);
-FORMAT(32K);
-FORMAT(AnnexC);
+FORMAT(G7221_24K)
+FORMAT(G7221_32K)
+FORMAT(G7221C_24K)
+FORMAT(G7221C_32K)
+FORMAT(G7221C_48K)
 
 
 // End of File ///////////////////////////////////////////////////////////////
