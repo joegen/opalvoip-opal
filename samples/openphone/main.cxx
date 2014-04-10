@@ -234,6 +234,7 @@ static const wxChar CodecNameKey[] = wxT("Name");
 static const wxChar H323Group[] = wxT("/H.323");
 DEF_FIELD(GatekeeperMode);
 DEF_FIELD(GatekeeperAddress);
+DEF_FIELD(GatekeeperInterface);
 DEF_FIELD(GatekeeperIdentifier);
 DEF_FIELD(GatekeeperTTL);
 DEF_FIELD(GatekeeperLogin);
@@ -1484,6 +1485,7 @@ bool MyManager::Initialise(bool startMinimised)
   h323EP->SetGatekeeperPassword(password, username);
 
   config->Read(GatekeeperAddressKey, &m_gatekeeperAddress, wxEmptyString);
+  config->Read(GatekeeperInterfaceKey, &m_gatekeeperInterface, wxEmptyString);
   config->Read(GatekeeperIdentifierKey, &m_gatekeeperIdentifier, wxEmptyString);
   if (!StartGatekeeper())
     return false;
@@ -3635,7 +3637,7 @@ bool MyManager::StartGatekeeper()
   if (m_gatekeeperMode == 0)
     h323EP->RemoveGatekeeper();
   else {
-    if (h323EP->UseGatekeeper(m_gatekeeperAddress, m_gatekeeperIdentifier)) {
+    if (h323EP->UseGatekeeper(m_gatekeeperAddress, m_gatekeeperIdentifier, m_gatekeeperInterface)) {
       LogWindow << "H.323 registration started for " << *h323EP->GetGatekeeper() << endl;
       return true;
     }
@@ -4821,6 +4823,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   INIT_FIELD(GatekeeperMode, m_manager.m_gatekeeperMode);
   INIT_FIELD(GatekeeperAddress, m_manager.m_gatekeeperAddress);
+  INIT_FIELD(GatekeeperInterface, m_manager.m_gatekeeperInterface);
   INIT_FIELD(GatekeeperIdentifier, m_manager.m_gatekeeperIdentifier);
   INIT_FIELD(GatekeeperTTL, m_manager.h323EP->GetGatekeeperTimeToLive().GetSeconds());
   INIT_FIELD(GatekeeperLogin, m_manager.h323EP->GetGatekeeperUsername());
@@ -5298,11 +5301,13 @@ bool OptionsDialog::TransferDataFromWindow()
 
   if (m_manager.m_gatekeeperMode != m_GatekeeperMode ||
       m_manager.m_gatekeeperAddress != m_GatekeeperAddress ||
+      m_manager.m_gatekeeperInterface != m_GatekeeperInterface ||
       m_manager.m_gatekeeperIdentifier != m_GatekeeperIdentifier ||
       PwxString(m_manager.h323EP->GetGatekeeperUsername()) != m_GatekeeperLogin ||
       PwxString(m_manager.h323EP->GetGatekeeperPassword()) != m_GatekeeperPassword) {
     SAVE_FIELD(GatekeeperMode, m_manager.m_gatekeeperMode = );
     SAVE_FIELD(GatekeeperAddress, m_manager.m_gatekeeperAddress = );
+    SAVE_FIELD(GatekeeperInterface, m_manager.m_gatekeeperInterface = );
     SAVE_FIELD(GatekeeperIdentifier, m_manager.m_gatekeeperIdentifier = );
     SAVE_FIELD2(GatekeeperPassword, GatekeeperLogin, m_manager.h323EP->SetGatekeeperPassword);
 

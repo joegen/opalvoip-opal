@@ -303,13 +303,15 @@ bool H323EndPoint::UseGatekeeper(const PString & address,
     bool same = true;
 
     if (!address && address != "*")
-      same = gatekeeper->GetTransport().GetRemoteAddress().IsEquivalent(address);
+      same = gatekeeper->GetTransport().GetRemoteAddress().IsEquivalent(
+                OpalTransportAddress(address, H225_RAS::DefaultRasUdpPort, OpalTransportAddress::UdpPrefix()));
 
     if (!same && !identifier)
       same = gatekeeper->GetIdentifier() == identifier;
 
     if (!same && !localAddress)
-      same = gatekeeper->GetTransport().GetLocalAddress().IsEquivalent(localAddress);
+      same = gatekeeper->GetTransport().GetLocalAddress().IsEquivalent(
+                OpalTransportAddress(localAddress, H225_RAS::DefaultRasUdpPort, OpalTransportAddress::UdpPrefix()));
 
     if (same) {
       PTRACE(3, "H323\tUsing existing gatekeeper " << *gatekeeper);
@@ -411,8 +413,9 @@ bool H323EndPoint::InternalCreateGatekeeper(const H323TransportAddress & remoteA
   RemoveGatekeeper(H225_UnregRequestReason::e_reregistrationRequired);
 
   PIPSocket::Address interfaceIP(PIPSocket::GetInvalidAddress());
+  WORD interfacePort = 0;
 
-  if (localAddress.IsEmpty() || !OpalTransportAddress(localAddress).GetIpAddress(interfaceIP)) {
+  if (localAddress.IsEmpty() || !OpalTransportAddress(localAddress).GetIpAndPort(interfaceIP, interfacePort)) {
     // See if the system can tell us which interface would be used
     {
       PIPSocket::Address remoteIP;
@@ -467,7 +470,7 @@ bool H323EndPoint::InternalCreateGatekeeper(const H323TransportAddress & remoteA
   for (PStringList::iterator it = allAliases.begin(); it != allAliases.end(); ++it) {
     aliasSubset += *it;
     if (aliasSubset.GetSize() >= m_gatekeeperAliasLimit || &*it == &allAliases.back()) {
-      H323Gatekeeper * gatekeeper = CreateGatekeeper(new OpalTransportUDP(*this, interfaceIP));
+      H323Gatekeeper * gatekeeper = CreateGatekeeper(new OpalTransportUDP(*this, interfaceIP, interfacePort));
       if (gatekeeper == NULL)
         return false;
 
