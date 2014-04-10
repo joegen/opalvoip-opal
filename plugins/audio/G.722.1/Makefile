@@ -26,22 +26,24 @@
 
 BASENAME := g7221
 
-SRCDIR   := $(CURDIR)/G722-1
-SOURCES  := $(CURDIR)/G7221Codec.c \
-            $(SRCDIR)/basop32.c \
-            $(SRCDIR)/coef2sam.c \
-            $(SRCDIR)/common.c \
-            $(SRCDIR)/count.c \
-            $(SRCDIR)/dct4_a.c \
-            $(SRCDIR)/dct4_s.c \
-            $(SRCDIR)/decoder.c \
-            $(SRCDIR)/encoder.c \
-            $(SRCDIR)/huff_tab.c \
-            $(SRCDIR)/sam2coef.c \
-            $(SRCDIR)/tables.c
+SOURCES  := $(CURDIR)/G7221Codec.c
+
+LIBG7221_DIR := $(CURDIR)/libg722_1
+LIBG7221_FILE := $(CURDIR)/libg722_1/src/.libs/libg722_1.a
+
+PLUGIN_CPPFLAGS = -I$(LIBG7221_DIR)/src
+PLIGIN_LIBS     = -I$(dir $(LIBG7221_FILE)) -lg722_1
 
 INSTALL_DIR = $(AUD_PLUGIN_DIR)
 include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
+
+$(PLUGIN_PATH): $(LIBG7221_FILE)
+
+$(LIBG7221_FILE): $(LIBG7221_DIR)/Makefile
+	$(MAKE) -C $(LIBG7221_DIR) CFLAGS="$(CPPFLAGS)"
+
+$(LIBG7221_DIR)/Makefile:
+	cd $(LIBG7221_DIR) ; ./configure
 
 
 ###########################################
