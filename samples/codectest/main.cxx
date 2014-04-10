@@ -428,7 +428,8 @@ bool AudioThread::Initialise(PArgList & args)
   cout << "Audio Recorder ";
   if (!driverName.IsEmpty())
     cout << "driver \"" << driverName << "\" and ";
-  cout << "device \"" << m_recorder->GetName() << "\" using "
+  cout << "device \"" << m_recorder->GetName() << "\" at "
+       << PString(PString::ScaleSI, m_recorder->GetSampleRate()) << "Hz, using "
        << bufferCount << 'x' << m_readSize << " byte buffers ";
 
   if (!m_recorder->SetBuffers(m_readSize, bufferCount)) {
@@ -464,7 +465,8 @@ bool AudioThread::Initialise(PArgList & args)
   cout << "Audio Player ";
   if (!driverName.IsEmpty())
     cout << "driver \"" << driverName << "\" and ";
-  cout << "device \"" << m_player->GetName() << "\" using "
+  cout << "device \"" << m_player->GetName() << "\" at "
+       << PString(PString::ScaleSI, m_player->GetSampleRate()) << "Hz, using "
        << bufferCount << 'x' << m_readSize << " byte buffers ";
 
   if (!m_player->SetBuffers(m_readSize, bufferCount)) {
@@ -1119,22 +1121,24 @@ void TranscoderThread::Main()
           }
         }
 
-        bool detectedInter = false;
-        for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
-          switch (videoFormat.GetVideoFrameType(encFrames[i].GetPayloadPtr(), encFrames[i].GetPayloadSize(), videoDetectorContext)) {
-            case OpalVideoFormat::e_IntraFrame :
-              detectorSaysIntra = true;
-              break;
-            case OpalVideoFormat::e_InterFrame :
-              detectedInter = true;
-              break;
+        if (isVideo) {
+          bool detectedInter = false;
+          for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
+            switch (videoFormat.GetVideoFrameType(encFrames[i].GetPayloadPtr(), encFrames[i].GetPayloadSize(), videoDetectorContext)) {
+              case OpalVideoFormat::e_IntraFrame :
+                detectorSaysIntra = true;
+                break;
+              case OpalVideoFormat::e_InterFrame :
+                detectedInter = true;
+                break;
+            }
           }
-        }
-        if (!videoDetectorFailed && !detectorSaysIntra && !detectedInter) {
-          videoDetectorFailed = true;
-          coutMutex.Wait();
-          cout << "Video detector could not determine if I-Frame or P-Frame" << endl;
-          coutMutex.Signal();
+          if (!videoDetectorFailed && !detectorSaysIntra && !detectedInter) {
+            videoDetectorFailed = true;
+            coutMutex.Wait();
+            cout << "Video detector could not determine if I-Frame or P-Frame" << endl;
+            coutMutex.Signal();
+          }
         }
       }
 
