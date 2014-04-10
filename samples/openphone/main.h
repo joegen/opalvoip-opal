@@ -864,6 +864,7 @@ class OptionsDialog : public wxDialog
     // H.323 fields
     int          m_GatekeeperMode;
     PwxString    m_GatekeeperAddress;
+    PwxString    m_GatekeeperInterface;
     PwxString    m_GatekeeperIdentifier;
     int          m_GatekeeperTTL;
     PwxString    m_GatekeeperLogin;
@@ -1262,6 +1263,7 @@ class MyManager : public wxFrame, public OpalManager, public PAsyncNotifierTarge
     MyH323EndPoint * h323EP;
     int              m_gatekeeperMode;
     PwxString        m_gatekeeperAddress;
+    PwxString        m_gatekeeperInterface;
     PwxString        m_gatekeeperIdentifier;
 #endif
     bool StartGatekeeper();
