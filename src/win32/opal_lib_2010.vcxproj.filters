@@ -702,6 +702,9 @@
     <ClCompile Include="..\csharp\csharp_msvc_wrapper.cxx">
       <Filter>Source Files\SWIG\C#</Filter>
     </ClCompile>
+    <ClCompile Include="..\rtp\dtls_srtp_session.cpp">
+      <Filter>Source Files\RTP</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\codec\echocancel.h">
@@ -1261,6 +1264,9 @@
     </ClInclude>
     <ClInclude Include="..\..\include\ep\skinnyep.h">
       <Filter>Header Files\Endpoints</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\rtp\dtls_srtp_session.h">
+      <Filter>Header Files\RTP</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

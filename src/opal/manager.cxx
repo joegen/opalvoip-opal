@@ -1972,7 +1972,7 @@ void OpalManager::SetUDPPorts(unsigned udpBase, unsigned udpMax)
 
 void OpalManager::SetRtpIpPorts(unsigned rtpIpBase, unsigned rtpIpMax)
 {
-  m_rtpIpPorts.Set((rtpIpBase+1)&0xfffe, rtpIpMax&0xfffe, 199, 5000);
+  m_rtpIpPorts.Set(rtpIpBase&0xfffe, rtpIpMax&0xfffe, 198, 5000);
 
 #if OPAL_PTLIB_NAT
   GetNatMethods().SetPortRanges(GetUDPPortRange().GetBase(), GetUDPPortRange().GetMax(),
