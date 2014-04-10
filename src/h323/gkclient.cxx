@@ -1070,11 +1070,12 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
   }
 
   PString destInfo = connection.GetRemotePartyName();
+  bool e164 = OpalIsE164(destInfo);
   PIPAddressAndPort destAddr(destInfo, endpoint.GetDefaultSignalPort());
 
   arq.m_srcInfo.SetSize(1);
   if (answeringCall) {
-    if (!destAddr.IsValid())
+    if (e164 || !destAddr.IsValid())
       H323SetAliasAddress(destInfo, arq.m_srcInfo[0]);
 
     if (!connection.GetLocalPartyName()) {
@@ -1085,7 +1086,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
   else {
     H323SetAliasAddresses(connection.GetLocalAliasNames(), arq.m_srcInfo);
 
-    if (!destAddr.IsValid()) {
+    if (e164 || !destAddr.IsValid()) {
       arq.IncludeOptionalField(H225_AdmissionRequest::e_destinationInfo);
       arq.m_destinationInfo.SetSize(1);
       H323SetAliasAddress(destInfo, arq.m_destinationInfo[0]);
@@ -1108,7 +1109,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
       signalAddress.SetPDU(arq.m_srcCallSignalAddress);
     }
 
-    if (destAddr.IsValid()) {
+    if (!e164 && destAddr.IsValid()) {
       arq.IncludeOptionalField(H225_AdmissionRequest::e_destCallSignalAddress);
       H323TransportAddress(destAddr).SetPDU(arq.m_destCallSignalAddress);
     }
