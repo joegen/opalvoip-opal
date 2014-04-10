@@ -39,11 +39,8 @@ include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
 
 $(PLUGIN_PATH): $(LIBG7221_FILE)
 
-$(LIBG7221_FILE): $(LIBG7221_DIR)/Makefile
-	$(MAKE) -C $(LIBG7221_DIR) CFLAGS="$(CPPFLAGS)"
-
-$(LIBG7221_DIR)/Makefile:
-	cd $(LIBG7221_DIR) ; ./configure
+$(LIBG7221_FILE):
+	$(MAKE) -C $(LIBG7221_DIR)
 
 
 ###########################################
