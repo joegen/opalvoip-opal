@@ -639,9 +639,10 @@ bool OpalAVIRecordManager::OpenVideo(const PString & strmId, const OpalMediaForm
   fmt.biSize = sizeof(fmt);
   fmt.biCompression = mmioFOURCC('I','4','2','0');
   fmt.biWidth = m_options.m_videoWidth;
-  fmt.biHeight = m_options.m_videoHeight;
+  fmt.biHeight = (DWORD)-m_options.m_videoHeight;
   fmt.biBitCount = 12;
-  fmt.biSizeImage = rgb.CalculateFrameBytes();
+  fmt.biPlanes = 3;
+  fmt.biSizeImage = yuv.CalculateFrameBytes();
 
   if (AVIStreamSetFormat(m_videoCompressor, 0, &fmt, sizeof(fmt)) != AVIERR_OK) {
     fmt.biCompression = BI_RGB;
@@ -655,10 +656,13 @@ bool OpalAVIRecordManager::OpenVideo(const PString & strmId, const OpalMediaForm
     m_videoConverter = PColourConverter::Create(yuv, rgb);
     if (m_videoConverter == NULL)
       return false;
-    m_videoConverter->SetVFlipState(true);
+
+    PTRACE(4, "Compressor requires RGB, creating converter, buffer size=" << fmt.biSizeImage);
+  }
+  else {
+    PTRACE(4, "Compressor can use YUV420P directly, no converter needed, buffer size=" << fmt.biSizeImage);
   }
 
-  PTRACE(4, "Allocating video buffer " << fmt.biSizeImage << " bytes");
   return m_videoBuffer.SetSize(fmt.biSizeImage) &&
          m_videoMixer->AddStream(strmId);
 }
