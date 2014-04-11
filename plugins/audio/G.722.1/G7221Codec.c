@@ -149,7 +149,7 @@ static struct PluginCodec_Option BitRateOption24k =
   "0",                              // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0,                                // H.245 Generic Capability number and scope bits
   "24000",                          // Minimum value (enum values separated by ':')
-  "24000"                           // Maximum value
+  "48000"                           // Maximum value
 };
 
 static struct PluginCodec_Option BitRateOption32k =
@@ -162,8 +162,8 @@ static struct PluginCodec_Option BitRateOption32k =
   G7221BitRateFMTPName,             // SIP/SDP FMTP name
   "0",                              // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0,                                // H.245 Generic Capability number and scope bits
-  "32000",                          // Minimum value (enum values separated by ':')
-  "32000"                           // Maximum value
+  "24000",                          // Minimum value (enum values separated by ':')
+  "48000"                           // Maximum value
 };
 
 static struct PluginCodec_Option BitRateOption48k =
@@ -176,7 +176,7 @@ static struct PluginCodec_Option BitRateOption48k =
   G7221BitRateFMTPName,             // SIP/SDP FMTP name
   "0",                              // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   0,                                // H.245 Generic Capability number and scope bits
-  "48000",                          // Minimum value (enum values separated by ':')
+  "24000",                          // Minimum value (enum values separated by ':')
   "48000"                           // Maximum value
 };
 
