@@ -578,7 +578,7 @@ bool OpalAVIRecordManager::OpenAudio(const PString & strmId, const OpalMediaForm
 
 bool OpalAVIRecordManager::OnMixedAudio(const RTP_DataFrame & frame)
 {
-  if (!IsOpen() || PAssertNULL(m_audioStream) == NULL)
+  if (!IsOpen() || m_audioStream == NULL)
     return false;
 
   DWORD samples = frame.GetPayloadSize()/m_audioSampleSize;
@@ -639,7 +639,7 @@ bool OpalAVIRecordManager::OpenVideo(const PString & strmId, const OpalMediaForm
   fmt.biSize = sizeof(fmt);
   fmt.biCompression = mmioFOURCC('I','4','2','0');
   fmt.biWidth = m_options.m_videoWidth;
-  fmt.biHeight = (DWORD)-m_options.m_videoHeight;
+  fmt.biHeight = -(int)m_options.m_videoHeight;
   fmt.biBitCount = 12;
   fmt.biPlanes = 3;
   fmt.biSizeImage = yuv.CalculateFrameBytes();
@@ -670,7 +670,7 @@ bool OpalAVIRecordManager::OpenVideo(const PString & strmId, const OpalMediaForm
 
 bool OpalAVIRecordManager::OnMixedVideo(const RTP_DataFrame & frame)
 {
-  if (!IsOpen() || PAssertNULL(m_videoStream) == NULL || PAssertNULL(m_videoConverter) == NULL)
+  if (!IsOpen() || m_videoStream == NULL)
     return false;
 
   PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)frame.GetPayloadPtr();
