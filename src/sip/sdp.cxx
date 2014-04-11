@@ -1195,7 +1195,7 @@ void SDPMediaDescription::ProcessMediaOptions(SDPMediaFormat & /*sdpFormat*/, co
 void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaFormats, const OpalMediaType & mediaType)
 {
   for (OpalMediaFormatList::const_iterator format = mediaFormats.begin(); format != mediaFormats.end(); ++format) {
-    if (format->GetMediaType() == mediaType && (format->IsTransportable()))
+    if (format->GetMediaType() == mediaType)
       AddMediaFormat(*format);
   }
 }
