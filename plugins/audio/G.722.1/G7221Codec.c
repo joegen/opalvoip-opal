@@ -297,7 +297,7 @@ CAPABILITY(G7221C_48K);
     type##_BIT_RATE, \
     type##_SAMPLE_RATE*G7221_FRAME_MS/1000, \
     1,1, \
-    PluginCodec_RTPTypeShared, \
+    0, \
     0, \
     PluginCodec_H323Codec_generic, &type##_Capability, \
     G7221EncoderCreate, G7221EncoderDestroy, G7221Encode, \
