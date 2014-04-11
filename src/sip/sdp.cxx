@@ -432,16 +432,18 @@ bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsign
       SetMediaFormatOptions(adjustedFormat);
       // skip formats whose fmtp don't match options
       if (iterFormat->ValidateMerge(adjustedFormat)) {
-        PTRACE(3, "SDP\tMatched \"" << m_encodingName << "\", pt=" << m_payloadType << ", clock=" << m_clockRate << " to " << *iterFormat);
+        PTRACE(3, "SDP\tMatched payload type " << m_payloadType << " to " << *iterFormat);
         m_mediaFormat = adjustedFormat;
         break;
       }
 
-      PTRACE(4, "SDP\tDid not match\"" << m_encodingName << "\", pt=" << m_payloadType << ", clock=" << m_clockRate << " to " << *iterFormat);
+      PTRACE(4, "SDP\tDid not match \"" << m_encodingName << "\", pt=" << m_payloadType
+             << ", clock=" << m_clockRate << " fmtp=\"" << m_fmtp << "\" to " << *iterFormat);
     }
 
     if (m_mediaFormat.IsEmpty()) {
-      PTRACE(2, "SDP\tCould not find media format for \"" << m_encodingName << "\", pt=" << m_payloadType << ", clock=" << m_clockRate);
+      PTRACE(2, "SDP\tCould not find media format for \"" << m_encodingName << "\", "
+                "pt=" << m_payloadType << ", clock=" << m_clockRate << " fmtp=\"" << m_fmtp << '"');
       return false;
     }
   }
