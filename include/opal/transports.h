@@ -1627,7 +1627,7 @@ public:
     const PBYTEArray & pdu     ///<  Packet to write
     );
 
-protected:
+  virtual PBoolean IsCompatibleTransport(const OpalTransportAddress & address) const;
   virtual const PCaselessString & GetProtoPrefix() const;
 };
 
@@ -1673,6 +1673,7 @@ public:
     const PBYTEArray & pdu     ///<  Packet to write
     );
 
+  virtual PBoolean IsCompatibleTransport(const OpalTransportAddress & address) const;
   virtual const PCaselessString & GetProtoPrefix() const;
 };
 
