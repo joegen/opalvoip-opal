@@ -136,7 +136,7 @@ static PTimeInterval GetDefaultOutOfOrderWaitTime()
 OpalRTPSession::OpalRTPSession(const Init & init)
   : OpalMediaSession(init)
   , m_endpoint(dynamic_cast<OpalRTPEndPoint &>(init.m_connection.GetEndPoint()))
-  , m_singlePort(false)
+  , m_singlePortRx(false)
   , m_isAudio(init.m_mediaType == OpalMediaType::Audio())
   , m_timeUnits(m_isAudio ? 8 : 90)
   , m_toolName(PProcess::Current().GetName())
@@ -1757,7 +1757,7 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
 
       case PNatMethod::RTPSupported :
         PTRACE ( 4, "RTP\tAttempting natMethod: " << natMethod->GetMethodName());            
-        if (m_singlePort) {
+        if (m_singlePortRx) {
           if (natMethod->CreateSocket(m_dataSocket, bindingAddress))
             m_dataSocket->GetLocalAddress(m_localAddress, m_localDataPort);
           else {
@@ -1805,7 +1805,7 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
 
   if (m_dataSocket == NULL) {
     m_dataSocket = new PUDPSocket();
-    if (m_singlePort) {
+    if (m_singlePortRx) {
       // If media and control address the same, then we are only using one port.
       if (manager.GetRtpIpPortRange().Listen(*m_dataSocket, bindingAddress))
         m_localControlPort = m_localDataPort = m_dataSocket->GetPort();
@@ -2016,7 +2016,7 @@ bool OpalRTPSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress
       if ((port&1) == 1 && m_remoteDataPort == 0)
         m_remoteDataPort = (WORD)(port - 1);
     }
-    PTRACE_IF(3, m_remoteDataPort == m_remoteControlPort, "RTP_UDP\tSession " << m_sessionId << ", remote using single port mode");
+    PTRACE_IF(3, IsSinglePortTx(), "RTP_UDP\tSession " << m_sessionId << ", remote using single port mode");
     PTRACE_IF(3, m_remoteDataPort != (m_remoteControlPort&0xfffe), "RTP_UDP\tSession " << m_sessionId << ", remote has disjoint control port");
   }
 

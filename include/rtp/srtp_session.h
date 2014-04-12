@@ -116,6 +116,13 @@ class OpalLibSRTP
     bool UnprotectRTP(RTP_DataFrame & frame);
     bool UnprotectRTCP(RTP_ControlFrame & frame);
 
+    bool Open(DWORD ssrc, OpalMediaCryptoKeyInfo* key, bool rx);
+    void Close();
+    bool IsSecured(bool rx) const;
+    void Change(DWORD from_ssrc, DWORD to_ssrc);
+
+    OpalSRTPKeyInfo* CreateKeyInfo(bool rx);
+
     struct Context;
     Context * m_rx;
     Context * m_tx;
@@ -124,7 +131,7 @@ class OpalLibSRTP
 
 /** This class implements SRTP using libSRTP
   */
-class OpalSRTPSession : public OpalRTPSession, OpalLibSRTP
+class OpalSRTPSession : public OpalRTPSession, protected OpalLibSRTP
 {
   PCLASSINFO(OpalSRTPSession, OpalRTPSession);
   public:
@@ -144,6 +151,9 @@ class OpalSRTPSession : public OpalRTPSession, OpalLibSRTP
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
+
+  protected:
+    virtual bool SetCryptoKey(OpalMediaCryptoKeyInfo* key, bool rx);
 };
 
 

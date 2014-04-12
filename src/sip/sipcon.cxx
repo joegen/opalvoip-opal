@@ -45,6 +45,7 @@
 #include <sip/sdp.h>
 #include <h323/q931.h>
 #include <rtp/srtp_session.h>
+#include <rtp/dtls_srtp_session.h>
 #include <codec/vidcodec.h>
 #include <codec/rfc2833.h>
 #include <im/sipim.h>
@@ -694,7 +695,7 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
   // Set single port or disjoint RTCP port, must be done before Open()
   if (rtpSession != NULL && m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX)) {
     PTRACE(3, "SIP\tSetting single port mode for answer RTP session " << sessionId << " for media type " << mediaType);
-    rtpSession->SetSinglePort();
+    rtpSession->SetSinglePortRx();
   }
 
   OpalTransportAddress remoteControlAddress = mediaDescription.GetControlAddress();
@@ -705,6 +706,17 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
   if (mediaDescription.HasICE())
     session->SetRemoteUserPass(mediaDescription.GetUsername(), mediaDescription.GetPassword());
 #endif //OPAL_ICE
+
+#if OPAL_SRTP
+  OpalDTLSSRTPSession* dltsMediaSession = dynamic_cast<OpalDTLSSRTPSession*>(session);
+  if (dltsMediaSession) { // DTLS
+    dltsMediaSession->SetRemoteFingerprint(mediaDescription.GetFingerprint());
+    dltsMediaSession->SetConnectionInitiator(mediaDescription.GetSetup() & SDPCommonAttributes::SetupPassive);
+#if OPAL_ICE
+    dltsMediaSession->SetCandidates(mediaDescription.GetCandidates());
+#endif //OPAL_ICE
+  }
+#endif // OPAL_SRTP
 
   if (!session->Open(GetInterface(), remoteMediaAddress, true)) {
     ReleaseMediaSession(sessionId);
@@ -849,7 +861,7 @@ bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
     OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(mediaSession);
     if (rtpSession != NULL) {
       PTRACE(3, "SIP\tSetting single port mode for offerred RTP session " << sessionId << " for media type " << mediaType);
-      rtpSession->SetSinglePort();
+      rtpSession->SetSinglePortRx();
     }
   }
 
@@ -1223,7 +1235,7 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
   }
 
 #if OPAL_SRTP
-  if (!keys.IsEmpty()) {
+  if (!keys.IsEmpty()) {// SDES
     // Set rx key from the other side SDP, which it's tx key
     if (!mediaSession->ApplyCryptoKey(keys, true)) {
       PTRACE(2, "SIP\tIncompatible crypto suite(s) for " << mediaType << " session " << sessionId);
