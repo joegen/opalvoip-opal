@@ -236,12 +236,14 @@ void SIPEndPoint::TransportThreadMain(OpalTransportPtr transport)
 {
   PTRACE(4, "SIP\tTransport read thread started.");
 
-  transport->SetReadTimeout(GetManager().GetTransportIdleTime()+10000);
-  do {
-    HandlePDU(transport);
-  } while (transport->IsGood());
+  if (transport != NULL) {
+    transport->SetReadTimeout(GetManager().GetTransportIdleTime()+10000);
+    do {
+      HandlePDU(transport);
+    } while (transport->IsGood());
 
-  transport->Close();
+    transport->Close();
+  }
 
   PTRACE(4, "SIP\tTransport read thread finished.");
 }

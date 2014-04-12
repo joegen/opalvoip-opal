@@ -44,7 +44,7 @@
 #include <opal/mediatype.h>
 #include <opal/mediafmt.h>
 #include <rtp/rtp_session.h>
-
+#include <ptclib/pssl.h>
 
 
 /**OpalConnection::StringOption key to a boolean indicating the SDP ptime
@@ -157,8 +157,24 @@ class SDPCommonAttributes
       SendRecv
     };
 
+    P_DECLARE_BITWISE_ENUM(SetupType, 3, (
+      SetupNotSet,
+      SetupActive,
+      SetupPassive,
+      SetupHoldConnection
+    ));
+
+    enum ConnectionMode
+    {
+      ConnectionNotSet,
+      ConnectionNew,
+      ConnectionExisting
+    };
+
     SDPCommonAttributes()
       : m_direction(Undefined)
+      , m_setup(SetupNotSet)
+      , m_connectionMode(ConnectionNotSet)
     { }
 
     virtual ~SDPCommonAttributes() { }
@@ -179,16 +195,44 @@ class SDPCommonAttributes
 
     virtual void OutputAttributes(ostream & strm) const;
 
+    SetupType GetSetup() const { return m_setup; }
+    void SetSetup(SetupType setupType) { m_setup = setupType; }
+    ConnectionMode GetConnectionMode() const { return m_connectionMode; }
+    void SetConnectionMode(ConnectionMode mode) { m_connectionMode = mode; }
+#if OPAL_SRTP
+    const PSSLCertificateFingerprint& GetFingerprint() const { return m_fingerprint; }
+    void SetFingerprint(const PSSLCertificateFingerprint& fp) { m_fingerprint = fp; }
+#endif
+
     static const PCaselessString & ConferenceTotalBandwidthType();
     static const PCaselessString & ApplicationSpecificBandwidthType();
     static const PCaselessString & TransportIndependentBandwidthType(); // RFC3890
+
+#if OPAL_ICE
+    PString GetUsername() const { return m_username; }
+    PString GetPassword() const { return m_password; }
+    void SetUserPass(
+      const PString & username,
+      const PString & password
+    ) {
+      m_username = username;
+      m_password = password;
+    }
+#endif //OPAL_ICE
 
   protected:
     Direction           m_direction;
     SDPBandwidth        m_bandwidth;
     RTPExtensionHeaders m_extensionHeaders;
+#if OPAL_SRTP // DTLS
+    SetupType      m_setup;
+    ConnectionMode m_connectionMode;
+    PSSLCertificateFingerprint m_fingerprint;
+#endif
 #if OPAL_ICE
     PStringSet          m_iceOptions;
+    PString             m_username;
+    PString             m_password;
 #endif //OPAL_ICE
 };
 
@@ -253,8 +297,6 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     virtual WORD GetPort() const { return m_port; }
 
 #if OPAL_ICE
-    PString GetUsername() const { return m_username; }
-    PString GetPassword() const { return m_password; }
     PNatCandidateList GetCandidates() const { return m_candidates; }
     bool HasICE() const;
     void SetICE(
@@ -300,8 +342,6 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     PString              m_mediaGroupId;
 #if OPAL_ICE
     PNatCandidateList    m_candidates;
-    PString              m_username;
-    PString              m_password;
 #endif //OPAL_ICE
     SDPMediaFormatList   m_formats;
 
@@ -385,6 +425,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual SDPMediaFormat * CreateSDPMediaFormat();
     virtual PString GetSDPPortList() const;
     virtual void OutputAttributes(ostream & str) const;
+
 #if OPAL_SRTP
     virtual void SetCryptoKeys(OpalMediaCryptoKeyList & cryptoKeys);
     virtual OpalMediaCryptoKeyList GetCryptoKeys() const;
@@ -411,6 +452,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
 
 #if OPAL_SRTP
     PList<SDPCryptoSuite> m_cryptoSuites;
+    bool m_useDTLS;
 #endif
 };
 

@@ -43,7 +43,7 @@
 #include <opal/transports.h>
 #include <codec/opalplugin.h>
 #include <rtp/srtp_session.h>
-
+#include <rtp/dtls_srtp_session.h>
 
 #define SIP_DEFAULT_SESSION_NAME    "Opal SIP Session"
 
@@ -110,7 +110,7 @@ bool OpalRTPAVPMediaDefinition::MatchesSDP(const PCaselessString & sdpMediaType,
   if (!OpalMediaTypeDefinition::MatchesSDP(sdpMediaType, sdpTransport, sdpLines, index))
     return false;
 
-  return sdpTransport.NumCompare("RTP/") == PObject::EqualTo &&
+  return sdpTransport.Find("RTP/") != P_MAX_INDEX &&
          sdpTransport.Find("AVP") != P_MAX_INDEX;
 }
 
@@ -572,11 +572,61 @@ void SDPCommonAttributes::SetAttribute(const PString & attr, const PString & val
     return;
   }
 
+#if OPAL_SRTP
+  if (attr *= "setup") {
+    if (value == "holdconn")
+      SetSetup(SetupHoldConnection);
+    else if (value == "active")
+      SetSetup(SetupActive);
+    else if (value == "passive")
+      SetSetup(SetupPassive);
+    else if (value == "actpass")
+      SetSetup(SetupActive | SetupPassive);
+    else
+      PTRACE(2, "SDP\tUnknow parameter in setup attribute: \"" << value << '"');
+    return;
+  }
+
+  if (attr *= "connection") {
+    if (value *= "existing")
+      m_connectionMode = ConnectionExisting;
+    else if (value *= "new")
+      m_connectionMode = ConnectionNew;
+    return;
+  }
+
+  if (attr *= "fingerprint") {
+    PSSLCertificateFingerprint fp(value);
+    if (!fp.IsValid())
+    {
+      PTRACE(2, "SDP\tInvalid fingerprint value: \"" << value << '"');
+      return;
+    }
+    if (fp.GetHash() != PSSLCertificateFingerprint::HashSha256 && fp.GetHash() != PSSLCertificateFingerprint::HashSha1)
+    {
+      PTRACE(2, "SDP\tNot supported fingerprint hash: \"" << value << '"');
+      return;
+    }
+    SetFingerprint(fp);
+    return;
+  }
+#endif // OPAL_SRTP
+
 #if OPAL_ICE
   if (attr *= "ice-options") {
     PStringArray tokens = value.Tokenise(WhiteSpace, false); // Spec says space only, but lets be forgiving
     for (PINDEX i = 0; i < tokens.GetSize(); ++i)
       m_iceOptions += tokens[i];
+    return;
+  }
+
+  if (attr *= "ice-ufrag") {
+    m_username = value;
+    return;
+  }
+
+  if (attr *= "ice-pwd") {
+    m_password = value;
     return;
   }
 #endif //OPAL_ICE
@@ -605,6 +655,43 @@ void SDPCommonAttributes::OutputAttributes(ostream & strm) const
     default:
       break;
   }
+
+#if OPAL_SRTP
+  if (m_setup != SetupNotSet) {
+    strm << "a=setup:";
+    switch (m_setup.AsBits()) {
+      case SetupActive:
+        strm << "active";
+        break;
+      case SetupPassive:
+        strm << "passive";
+        break;
+      case (unsigned)SetupActive | SetupPassive:
+        strm << "actpass";
+        break;
+      case SetupHoldConnection:
+        strm << "holdconn";
+        break;
+      default:
+        break;
+    }
+    strm << CRLF;
+  }
+
+  switch (m_connectionMode) {
+    case ConnectionNew :
+      strm << "a=connection:new" << CRLF;
+      break;
+    case ConnectionExisting :
+      strm << "a=connection:existing" << CRLF;
+      break;
+    default :
+      break;
+  }
+
+  if (m_fingerprint.IsValid())
+    strm << "a=fingerprint:" << m_fingerprint.AsString() << CRLF;
+#endif
 
   for (RTPExtensionHeaders::const_iterator it = m_extensionHeaders.begin(); it != m_extensionHeaders.end(); ++it)
     it->OutputSDP(strm);
@@ -666,11 +753,11 @@ PBoolean SDPMediaDescription::SetAddresses(const OpalTransportAddress & media,
 static bool CanUseCandidate(const PNatCandidate & candidate)
 {
   return !candidate.m_foundation.IsEmpty() &&
-    candidate.m_component > 0 &&
-    !candidate.m_protocol.IsEmpty() &&
-    candidate.m_priority > 0 &&
-    candidate.m_localTransportAddress.IsValid() &&
-    candidate.m_type < PNatCandidate::NumTypes;
+          candidate.m_component > 0 &&
+         !candidate.m_protocol.IsEmpty() &&
+          candidate.m_priority > 0 &&
+          candidate.m_localTransportAddress.IsValid() &&
+          candidate.m_type < PNatCandidate::NumTypes;
 }
 
 static void CalculateCandidatePriority(PNatCandidate & candidate)
@@ -906,16 +993,6 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
   }
 
 #if OPAL_ICE
-  if (attr *= "ice-ufrag") {
-    m_username = value;
-    return;
-  }
-
-  if (attr *= "ice-pwd") {
-    m_password = value;
-    return;
-  }
-
   if (attr *= "candidate") {
     PStringArray words = value.Tokenise(WhiteSpace, false); // Spec says space only, but lets be forgiving
     if (words.GetSize() < 8) {
@@ -1440,6 +1517,9 @@ void SDPCryptoSuite::PrintOn(ostream & strm) const
 SDPRTPAVPMediaDescription::SDPRTPAVPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & mediaType)
   : SDPMediaDescription(address, mediaType)
   , m_enableFeedback(false)
+#if OPAL_SRTP
+  , m_useDTLS(false)
+#endif
 {
 }
 
@@ -1456,6 +1536,7 @@ bool SDPRTPAVPMediaDescription::Decode(const PStringArray & tokens)
   }
 
   m_enableFeedback = m_transportType.Find("AVPF") != P_MAX_INDEX;
+  m_useDTLS = m_transportType.NumCompare("UDP/TLS/") == EqualTo;
   return true;
 }
 
@@ -1463,7 +1544,9 @@ bool SDPRTPAVPMediaDescription::Decode(const PStringArray & tokens)
 PCaselessString SDPRTPAVPMediaDescription::GetSDPTransportType() const
 {
 #if OPAL_SRTP
-  if (!m_cryptoSuites.IsEmpty())
+  if (m_useDTLS) // Prefer DTLS over SDES
+    return m_enableFeedback ? OpalDTLSSRTPSession::RTP_DTLS_SAVPF() : OpalDTLSSRTPSession::RTP_DTLS_SAVP();
+  if (!m_cryptoSuites.IsEmpty()) // SDES
     return m_enableFeedback ? OpalSRTPSession::RTP_SAVPF() : OpalSRTPSession::RTP_SAVP();
 #endif
   return m_enableFeedback ? OpalRTPSession::RTP_AVPF() : OpalRTPSession::RTP_AVP();
@@ -1574,6 +1657,7 @@ bool SDPRTPAVPMediaDescription::HasCryptoKeys() const
   return !m_cryptoSuites.IsEmpty();
 }
 
+
 #endif // OPAL_SRTP
 
 
@@ -1668,6 +1752,15 @@ bool SDPRTPAVPMediaDescription::SetSessionInfo(const OpalMediaSession * session,
       // the media type, as in "audio" and "video".
       m_mediaGroupId = GetMediaType();
     }
+  }
+
+  const OpalDTLSSRTPSession* dltsMediaSession = dynamic_cast<const OpalDTLSSRTPSession*>(session);
+  if (dltsMediaSession != NULL) {
+    m_useDTLS = true;
+    SetFingerprint(dltsMediaSession->GetLocalFingerprint());
+    SetSetup(dltsMediaSession->GetConnectionInitiator()
+                         ? SDPCommonAttributes::SetupActive
+                         : SDPCommonAttributes::SetupPassive);
   }
 
   return SDPMediaDescription::SetSessionInfo(session, offer);
@@ -2470,6 +2563,9 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
               PTRACE_CONTEXT_ID_TO(currentMedia);
             }
 
+            // Set some media data from session level
+            *static_cast<SDPCommonAttributes *>(currentMedia) = *this;
+
             mediaDescriptions.Append(currentMedia);
           }
           break;
@@ -2486,6 +2582,9 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
     if (!currentMedia->PostDecode(mediaFormats))
       ok = false;
   }
+
+  // Reset setup flag for session...
+  SetSetup(SetupNotSet);
 
   return ok && (atLeastOneValidMedia || mediaDescriptions.IsEmpty());
 }
