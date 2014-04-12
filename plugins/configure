@@ -651,7 +651,6 @@ LIBAVCODEC_USABLE
 LIBAVCODEC_LIBS
 LIBAVCODEC_CFLAGS
 LIBAVCODEC_SYSTEM
-subdirs
 OPUS_USABLE
 OPUS_LIBS
 OPUS_CFLAGS
@@ -676,6 +675,7 @@ GSM_USABLE
 GSM_LIBS
 GSM_CFLAGS
 GSM_SYSTEM
+subdirs
 PLUGIN_SUBDIRS
 PLUGIN_SRC_DIR
 FAX_PLUGIN_DIR
@@ -864,7 +864,8 @@ VPB_CFLAGS
 VPB_LIBS
 SPANDSP_CFLAGS
 SPANDSP_LIBS'
-ac_subdirs_all='./audio/Opus/opus'
+ac_subdirs_all='./audio/G.722.1/libg722_1
+./audio/Opus/opus'
 
 # Initialize some variables set by options.
 ac_init_help=
@@ -6395,6 +6396,19 @@ fi
 
 
 
+if test "$HAVE_G7221" = "yes"; then
+   if test -n "${srcdir}" && test `cd ${srcdir} ; pwd` != `pwd`; then
+      $HAVE_G7221="no (internal libg722_1 does not support out-of-source configure)"
+   else
+
+
+subdirs="$subdirs ./audio/G.722.1/libg722_1"
+
+   fi
+fi
+
+
+
    if test -d "$PLUGIN_SRC_DIR/audio/GSM0610" ; then
                   OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
@@ -7697,8 +7711,6 @@ fi
    else
       HAVE_CELT="no (missing directory $PLUGIN_SRC_DIR/audio/celt)"
    fi
-
-
 
 
 

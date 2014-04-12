@@ -1902,6 +1902,13 @@ OpalTransportWS::OpalTransportWS(OpalEndPoint & endpoint, PChannel * socket)
 }
 
 
+PBoolean OpalTransportWS::IsCompatibleTransport(const OpalTransportAddress & address) const
+{
+    return OpalTransportTCP::IsCompatibleTransport(address) ||
+               address.NumCompare(OpalTransportAddress::WsPrefix()) == EqualTo;
+}
+
+
 PBoolean OpalTransportWS::Connect()
 {
   PSafeLockReadWrite mutex(*this);
@@ -1949,6 +1956,13 @@ OpalTransportWSS::OpalTransportWSS(OpalEndPoint & endpoint, PChannel * socket)
 : OpalTransportTLS(endpoint, new PWebSocket)
 {
   dynamic_cast<PWebSocket *>(m_channel)->Open(socket);
+}
+
+
+PBoolean OpalTransportWSS::IsCompatibleTransport(const OpalTransportAddress & address) const
+{
+    return OpalTransportTLS::IsCompatibleTransport(address) ||
+               address.NumCompare(OpalTransportAddress::WssPrefix()) == EqualTo;
 }
 
 

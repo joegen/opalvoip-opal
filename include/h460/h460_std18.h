@@ -67,7 +67,7 @@ class H460_FeatureStd18 : public H460_Feature
 
     // H.225.0 Messages
     virtual bool OnSendGatekeeperRequest  (H460_FeatureDescriptor & /*pdu*/                  ) { return true; }
-    virtual bool OnSendRegistrationRequest(H460_FeatureDescriptor & /*pdu*/, bool lightweight) { return !lightweight; }
+    virtual bool OnSendRegistrationRequest(H460_FeatureDescriptor & /*pdu*/, bool /*lightweight*/) { return true; /*!lightweight; - Bug in GnuGK if we do this */ }
     virtual bool OnSendSetup_UUIE         (H460_FeatureDescriptor & /*pdu*/                  ) { return true; }
 
     virtual void OnReceiveServiceControlIndication(const H460_FeatureDescriptor & pdu);
