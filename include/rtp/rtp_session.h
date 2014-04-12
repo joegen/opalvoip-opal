@@ -296,10 +296,20 @@ class OpalRTPSession : public OpalMediaSession
 
   /**@name Member variable access */
   //@{
-    /**Set flag for single port operation.
+    /**Set flag for single port receive.
        This must be done before Open() is called to take effect.
+       This is only for incoming RTP/RTCP, for transmit, simple make the the
+       remote data port and remote control port the same.
       */
-    void SetSinglePort(bool v = true) { m_singlePort = v; }
+    void SetSinglePortRx(bool v = true) { m_singlePortRx = v; }
+
+    /**Get flag for single port receive.
+      */
+    bool IsSinglePortRx() { return m_singlePortRx; }
+
+    /**Get flag for single port transmit.
+    */
+    bool IsSinglePortTx() { return m_remoteDataPort == m_remoteControlPort; }
 
     /**Get flag for is audio RTP.
       */
@@ -620,7 +630,7 @@ class OpalRTPSession : public OpalMediaSession
     );
 
     OpalRTPEndPoint   & m_endpoint;
-    bool                m_singlePort;
+    bool                m_singlePortRx;
     bool                m_isAudio;
     unsigned            m_timeUnits;
     PString             m_canonicalName;
