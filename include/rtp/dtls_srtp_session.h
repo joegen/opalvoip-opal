@@ -101,7 +101,7 @@ private:
     typedef std::list<Candidate> Candidates;
 
   private:
-    std::unique_ptr<PSSLChannelDTLS> m_channels[2]; // Media and control channels
+    std::auto_ptr<PSSLChannelDTLS> m_channels[2]; // Media and control channels
     Candidates m_candidates[2]; // Candidates for media and control channels
     bool m_stopSend[2];
     bool m_connectionInitiator;

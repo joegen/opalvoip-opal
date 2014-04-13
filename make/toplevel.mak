@@ -343,7 +343,8 @@ endif
 ####################################################
 
 ifeq ($(OPAL_SRTP), yes)
-  SOURCES += $(OPAL_SRCDIR)/rtp/srtp_session.cxx
+  SOURCES += $(OPAL_SRCDIR)/rtp/srtp_session.cxx \
+             $(OPAL_SRCDIR)/rtp/dtls_srtp_session.cxx
 
   ifeq ($(SRTP_SYSTEM),no)
     SRTP_DIR := $(OPAL_TOP_LEVEL_DIR)/src/rtp/libsrtp
