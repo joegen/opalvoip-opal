@@ -627,7 +627,7 @@ void OpalMediaStream::PrintDetail(ostream & strm, const char * prefix, Details d
 
 #if OPAL_RTP_FEC
     if ((details & DetailFEC) && rtpSession != NULL && rtpSession->GetUlpFecPayloadType() != RTP_DataFrame::IllegalPayloadType) {
-      LogWindow << (outputSomething ? ", " : "(") << "error correction";
+      strm << (outputSomething ? ", " : "(") << "error correction";
       outputSomething = true;
     }
 #endif // OPAL_RTP_FEC
