@@ -173,8 +173,10 @@ class SDPCommonAttributes
 
     SDPCommonAttributes()
       : m_direction(Undefined)
+#if OPAL_SRTP // DTLS
       , m_setup(SetupNotSet)
       , m_connectionMode(ConnectionNotSet)
+#endif
     { }
 
     virtual ~SDPCommonAttributes() { }
@@ -195,11 +197,11 @@ class SDPCommonAttributes
 
     virtual void OutputAttributes(ostream & strm) const;
 
+#if OPAL_SRTP
     SetupType GetSetup() const { return m_setup; }
     void SetSetup(SetupType setupType) { m_setup = setupType; }
     ConnectionMode GetConnectionMode() const { return m_connectionMode; }
     void SetConnectionMode(ConnectionMode mode) { m_connectionMode = mode; }
-#if OPAL_SRTP
     const PSSLCertificateFingerprint& GetFingerprint() const { return m_fingerprint; }
     void SetFingerprint(const PSSLCertificateFingerprint& fp) { m_fingerprint = fp; }
 #endif
