@@ -1538,7 +1538,9 @@ bool SDPRTPAVPMediaDescription::Decode(const PStringArray & tokens)
   }
 
   m_enableFeedback = m_transportType.Find("AVPF") != P_MAX_INDEX;
+#if OPAL_SRTP
   m_useDTLS = m_transportType.NumCompare("UDP/TLS/") == EqualTo;
+#endif
   return true;
 }
 
@@ -1756,6 +1758,7 @@ bool SDPRTPAVPMediaDescription::SetSessionInfo(const OpalMediaSession * session,
     }
   }
 
+#if OPAL_SRTP
   const OpalDTLSSRTPSession* dltsMediaSession = dynamic_cast<const OpalDTLSSRTPSession*>(session);
   if (dltsMediaSession != NULL) {
     m_useDTLS = true;
@@ -1764,6 +1767,7 @@ bool SDPRTPAVPMediaDescription::SetSessionInfo(const OpalMediaSession * session,
                          ? SDPCommonAttributes::SetupActive
                          : SDPCommonAttributes::SetupPassive);
   }
+#endif
 
   return SDPMediaDescription::SetSessionInfo(session, offer);
 }
@@ -2585,8 +2589,10 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
       ok = false;
   }
 
+#if OPAL_SRTP
   // Reset setup flag for session...
   SetSetup(SetupNotSet);
+#endif
 
   return ok && (atLeastOneValidMedia || mediaDescriptions.IsEmpty());
 }
