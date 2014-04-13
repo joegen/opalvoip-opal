@@ -453,7 +453,7 @@ static struct PluginCodec_H323NonStandardCodecData ilbc13k3Cap =
   EQUIVALENCE_COUNTRY_CODE, 
   EQUIVALENCE_EXTENSION_CODE, 
   EQUIVALENCE_MANUFACTURER_CODE,
-  iLBC13k3, sizeof(iLBC13k3)-1,
+  (unsigned char *)iLBC13k3, sizeof(iLBC13k3)-1,
   NULL
 };
 
@@ -463,7 +463,7 @@ static struct PluginCodec_H323NonStandardCodecData ilbc15k2Cap =
   EQUIVALENCE_COUNTRY_CODE, 
   EQUIVALENCE_EXTENSION_CODE, 
   EQUIVALENCE_MANUFACTURER_CODE,
-  iLBC15k2, sizeof(iLBC15k2)-1,
+  (unsigned char *)iLBC15k2, sizeof(iLBC15k2)-1,
   NULL
 };
 
