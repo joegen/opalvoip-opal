@@ -345,15 +345,11 @@ endif
 ifeq ($(OPAL_SRTP), yes)
   SOURCES += $(OPAL_SRCDIR)/rtp/srtp_session.cxx
 
-  ifeq ($(SRTP_SYSTEM),no)
+  ifneq ($(SRTP_SYSTEM),yes)
     SRTP_DIR := $(OPAL_TOP_LEVEL_DIR)/src/rtp/libsrtp
     CPPFLAGS += -I$(SRTP_DIR)/include -I$(SRTP_DIR)/crypto/include
     LIBS     := -L$(SRTP_DIR) -lsrtp $(LIBS)
-    
-    internal_build :: $(SRTP_DIR)/libsrtp.a
-    
-    $(SRTP_DIR)/libsrtp.a :
-	$(MAKE) -C $(SRTP_DIR)
+    SRTP_LIB := $(SRTP_DIR)/libsrtp.a
   endif
 endif
 
@@ -481,6 +477,14 @@ internal_build ::
 
 include $(PTLIB_MAKE_DIR)/pre.mak
 include $(PTLIB_MAKE_DIR)/post.mak
+
+
+ifdef SRTP_LIB
+  $(STATIC_LIB_FILE) : $(SRTP_LIB)
+
+  $(SRTP_LIB) :
+	$(MAKE) -C $(SRTP_DIR)
+endif
 
 
 ###############################################################################
