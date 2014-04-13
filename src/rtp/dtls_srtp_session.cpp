@@ -1,4 +1,4 @@
-r/*
+/*
  * dtls_srtp_session.cxx
  *
  * SRTP protocol session handler with DTLS key exchange
@@ -352,7 +352,7 @@ OpalDTLSSRTPSession::SendReceiveStatus OpalDTLSSRTPSession::IceNegotiation(const
   {
     if (!m_stopSend[index])
     {
-      for (Candidates::const_iterator it = m_candidates[index].cbegin(); it != m_candidates[index].cend(); ++it)
+      for (Candidates::const_iterator it = m_candidates[index].begin(); it != m_candidates[index].end(); ++it)
       {
         PTRACE(4, "DTLS-RTP\tSend stun request to " << (*it).ap << " index " << index);
         if (!SendStunRequest(*socket, (*it).ap))
@@ -361,7 +361,7 @@ OpalDTLSSRTPSession::SendReceiveStatus OpalDTLSSRTPSession::IceNegotiation(const
     }
   }
 
-  for (Candidates::const_iterator it = m_candidates[index].cbegin(); !m_stunNegotiated && it != m_candidates[index].cend(); ++it)
+  for (Candidates::const_iterator it = m_candidates[index].begin(); !m_stunNegotiated && it != m_candidates[index].end(); ++it)
   {
     if ((*it).Ready())
     {
@@ -440,7 +440,7 @@ void OpalDTLSSRTPSession::OnHandshake(PSSLChannelDTLS & channel, INT failed)
     remoteSalt = (localSalt + masterSaltLength);
   }
 
-  std::unique_ptr<OpalSRTPKeyInfo> keyPtr;
+  std::auto_ptr<OpalSRTPKeyInfo> keyPtr;
 
   keyPtr.reset(dynamic_cast<OpalSRTPKeyInfo*>(cryptoSuite->CreateKeyInfo()));
   keyPtr->SetCipherKey(PBYTEArray(remoteKey, masterKeyLength));
