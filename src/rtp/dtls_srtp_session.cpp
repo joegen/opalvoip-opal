@@ -355,8 +355,9 @@ OpalDTLSSRTPSession::SendReceiveStatus OpalDTLSSRTPSession::IceNegotiation(const
       for (Candidates::const_iterator it = m_candidates[index].begin(); it != m_candidates[index].end(); ++it)
       {
         PTRACE(4, "DTLS-RTP\tSend stun request to " << (*it).ap << " index " << index);
-        if (!SendStunRequest(*socket, (*it).ap))
+        if (!SendStunRequest(*socket, (*it).ap)) {
           PTRACE(2, "DTLS-RTP\tCan't send stun request.");
+        }
       }
     }
   }
@@ -397,7 +398,7 @@ void OpalDTLSSRTPSession::SetCandidates(const PNatCandidateList& candidates)
 }
 
 
-void OpalDTLSSRTPSession::OnHandshake(PSSLChannelDTLS & channel, INT failed)
+void OpalDTLSSRTPSession::OnHandshake(PSSLChannelDTLS & channel, P_INT_PTR failed)
 {
   if (failed) {
     Close();
