@@ -385,8 +385,6 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm
       return false;
     }
 
-    transport->SetInterface(transport->GetLastReceivedInterface());
-
     PTRACE(3, "RAS\tGatekeeper discovered at: "
            << transport->GetRemoteAddress()
            << " (if=" << transport->GetLocalAddress() << ')');
@@ -510,8 +508,8 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
 
   PTimeInterval ttl = endpoint.GetGatekeeperTimeToLive();
 #if OPAL_H460_NAT
-  if (m_features != NULL && m_features->HasFeature(H460_FeatureStd18::ID()) && ttl > endpoint.GetManager().GetTransportIdleTime())
-    ttl = endpoint.GetManager().GetTransportIdleTime();
+  if (m_features != NULL && m_features->HasFeature(H460_FeatureStd18::ID()) && ttl > endpoint.GetManager().GetNatKeepAliveTime())
+    ttl = endpoint.GetManager().GetNatKeepAliveTime();
 #endif
   if (ttl > 0) {
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_timeToLive);
