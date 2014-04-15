@@ -267,91 +267,96 @@ OpalTransportPtr SIPEndPoint::GetTransport(const SIPTransactionOwner & transacto
     }
   }
 
-  // See if already have a link to that remote
-  OpalTransportPtr transport = m_transportsTable.FindWithLock(remoteAddress, PSafeReference);
-  if (transport != NULL && transport->IsOpen()) {
-    PTRACE(4, "SIP\tFound existing transport " << *transport);
-    return transport;
-  }
+  OpalTransportPtr transport;
+  {
+    PWaitAndSignal transportsGuard(m_transportsTable.GetMutex());
 
-  if (transport == NULL) {
-    // No link, so need to create one
-    OpalTransportAddress localAddress;
-    PString localInterface = transactor.GetInterface();
-    if (localInterface.IsEmpty())
-      localInterface = transactor.GetRemoteURI().GetParamVars()(OPAL_INTERFACE_PARAM);
-    if (!localInterface.IsEmpty())
-      localAddress = OpalTransportAddress(localInterface, 0, remoteAddress.GetProtoPrefix());
-    else {
-      PString domain = transactor.GetRequestURI().GetHostPort();
-      PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByDomain(domain, SIP_PDU::Method_REGISTER, PSafeReadOnly);
-      if (handler != NULL) {
-        localAddress = handler->GetInterface();
-        if (localAddress.IsEmpty()) {
-          PTRACE(4, "SIP\tNo transport to registrar on domain " << domain);
-        }
-        else {
-          PTRACE(4, "SIP\tFound registrar on domain " << domain << ", using interface " << handler->GetInterface());
-        }
-      }
-      else {
-        PTRACE(4, "SIP\tNo registrar on domain " << domain);
-      }
-    }
-
-    for (OpalListenerList::iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
-      if ((transport = listener->CreateTransport(localAddress, remoteAddress)) != NULL)
-        break;
+    // See if already have a link to that remote
+    transport = m_transportsTable.FindWithLock(remoteAddress, PSafeReference);
+    if (transport != NULL && transport->IsOpen()) {
+      PTRACE(4, "SIP\tFound existing transport " << *transport);
+      return transport;
     }
 
     if (transport == NULL) {
-      // No compatible listeners, can't create a transport to send if we cannot hear the responses!
-      PTRACE(2, "SIP\tNo compatible listener to create transport for " << remoteAddress);
-      reason = SIP_PDU::Local_NoCompatibleListener;
-      return NULL;
+      // No link, so need to create one
+      OpalTransportAddress localAddress;
+      PString localInterface = transactor.GetInterface();
+      if (localInterface.IsEmpty())
+        localInterface = transactor.GetRemoteURI().GetParamVars()(OPAL_INTERFACE_PARAM);
+      if (!localInterface.IsEmpty())
+        localAddress = OpalTransportAddress(localInterface, 0, remoteAddress.GetProtoPrefix());
+      else {
+        PString domain = transactor.GetRequestURI().GetHostPort();
+        PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByDomain(domain, SIP_PDU::Method_REGISTER, PSafeReadOnly);
+        if (handler != NULL) {
+          localAddress = handler->GetInterface();
+          if (localAddress.IsEmpty()) {
+            PTRACE(4, "SIP\tNo transport to registrar on domain " << domain);
+          }
+          else {
+            PTRACE(4, "SIP\tFound registrar on domain " << domain << ", using interface " << handler->GetInterface());
+          }
+        }
+        else {
+          PTRACE(4, "SIP\tNo registrar on domain " << domain);
+        }
+      }
+
+      for (OpalListenerList::iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
+        if ((transport = listener->CreateTransport(localAddress, remoteAddress)) != NULL)
+          break;
+      }
+
+      if (transport == NULL) {
+        // No compatible listeners, can't create a transport to send if we cannot hear the responses!
+        PTRACE(2, "SIP\tNo compatible listener to create transport for " << remoteAddress);
+        reason = SIP_PDU::Local_NoCompatibleListener;
+        return NULL;
+      }
+
+      if (!transport->SetRemoteAddress(remoteAddress)) {
+        PTRACE(1, "SIP\tCould not find " << remoteAddress);
+        return NULL;
+      }
+
+      transport->GetChannel()->SetBufferSize(m_maxSizeUDP);
+
+      PTRACE(4, "SIP\tCreated transport " << *transport);
     }
 
-    if (!transport->SetRemoteAddress(remoteAddress)) {
-      PTRACE(1, "SIP\tCould not find " << remoteAddress);
-      return NULL;
+    // Link just created or was closed/lost
+    if (!transport->Connect()) {
+      PTRACE(1, "SIP\tCould not connect to " << remoteAddress << " - " << transport->GetErrorText());
+      switch (transport->GetErrorCode()) {
+        case PChannel::Timeout :
+          reason = SIP_PDU::Local_Timeout;
+          break;
+        case PChannel::AccessDenied :
+          reason = SIP_PDU::Local_NotAuthenticated;
+          break;
+        default :
+          reason = SIP_PDU::Local_TransportError;
+      }
     }
+    else if (!transport->IsAuthenticated(transactor.GetRequestURI().GetHostName()))
+      reason = SIP_PDU::Local_NotAuthenticated;
+    else {
+      if (transport->IsReliable())
+        transport->AttachThread(new PThreadObj1Arg<SIPEndPoint, OpalTransportPtr>
+        (*this, transport, &SIPEndPoint::TransportThreadMain, false, "SIP Transport", PThread::HighestPriority));
+      else
+        transport->SetPromiscuous(OpalTransport::AcceptFromAny);
 
-    transport->GetChannel()->SetBufferSize(m_maxSizeUDP);
-
-    PTRACE(4, "SIP\tCreated transport " << *transport);
+      AddTransport(transport);
+      return transport;
+    }
   }
 
-  // Link just created or was closed/lost
-  if (!transport->Connect()) {
-    PTRACE(1, "SIP\tCould not connect to " << remoteAddress << " - " << transport->GetErrorText());
-    switch (transport->GetErrorCode()) {
-      case PChannel::Timeout :
-        reason = SIP_PDU::Local_Timeout;
-        break;
-      case PChannel::AccessDenied :
-        reason = SIP_PDU::Local_NotAuthenticated;
-        break;
-      default :
-        reason = SIP_PDU::Local_TransportError;
-    }
+  if (transport != NULL)
     transport->CloseWait();
-    return NULL;
-  }
 
-  if (!transport->IsAuthenticated(transactor.GetRequestURI().GetHostName())) {
-    reason = SIP_PDU::Local_NotAuthenticated;
-    transport->CloseWait();
-    return NULL;
-  }
-
-  if (transport->IsReliable())
-    transport->AttachThread(new PThreadObj1Arg<SIPEndPoint, OpalTransportPtr>
-            (*this, transport, &SIPEndPoint::TransportThreadMain, false, "SIP Transport", PThread::HighestPriority));
-  else
-    transport->SetPromiscuous(OpalTransport::AcceptFromAny);
-
-  AddTransport(transport);
-  return transport;
+  return NULL;
 }
 
 
