@@ -86,7 +86,7 @@ bool H460_FeatureStd18::Initialise(H323EndPoint & ep, H323Connection * con)
 
 bool H460_FeatureStd18::IsNegotiated() const
 {
-  return m_connection != NULL && H460_Feature::IsNegotiated();
+  return m_connection != NULL ? IsFeatureNegotiatedOnGk(ID()) : H460_Feature::IsNegotiated();
 }
 
 
