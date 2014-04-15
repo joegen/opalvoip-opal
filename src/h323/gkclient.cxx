@@ -507,10 +507,6 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
   }
 
   PTimeInterval ttl = endpoint.GetGatekeeperTimeToLive();
-#if OPAL_H460_NAT
-  if (m_features != NULL && m_features->HasFeature(H460_FeatureStd18::ID()) && ttl > endpoint.GetManager().GetNatKeepAliveTime())
-    ttl = endpoint.GetManager().GetNatKeepAliveTime();
-#endif
   if (ttl > 0) {
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_timeToLive);
     rrq.m_timeToLive = (int)ttl.GetSeconds();
@@ -657,6 +653,13 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
   else
     timeToLive = AdjustTimeout(endpoint.GetGatekeeperTimeToLive().GetSeconds());
 
+#if OPAL_H460_NAT
+  if (m_features != NULL && m_features->HasFeature(H460_FeatureStd18::ID()) && timeToLive > endpoint.GetManager().GetNatKeepAliveTime()) {
+    static BYTE const EmptyTPKT[] = { 3, 0, 0, 0 };
+    transport->SetKeepAlive(endpoint.GetManager().GetNatKeepAliveTime(), PBYTEArray(EmptyTPKT, sizeof(EmptyTPKT), false));
+  }
+#endif
+
   // At present only support first call signal address to GK
   if (rcf.m_callSignalAddress.GetSize() > 0)
     gkRouteAddress = rcf.m_callSignalAddress[0];
@@ -731,7 +734,7 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
         endpoint.OnGatekeeperNATDetect(ip, gkRouteAddress);
     }
   }
-  
+
   SetRegistrationFailReason(RegistrationSuccessful);
 
   return true;
