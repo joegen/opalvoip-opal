@@ -1891,6 +1891,16 @@ class OpalManager : public PObject
       const PTimeInterval & newInterval  ///<  New timeout for signaling
     ) { m_transportIdleTime = newInterval; }
 
+    /**Get the amount of time between "keep-alive" packets to maintain NAT pin-hole.
+    */
+    const PTimeInterval & GetNatKeepAliveTime() const { return m_natKeepAliveTime; }
+
+    /**Set the amount of time between "keep-alive" packets to maintain NAT pin-hole.
+    */
+    void SetNatKeepAliveTime(
+      const PTimeInterval & newInterval  ///<  New timeout for signaling
+    ) { m_natKeepAliveTime = newInterval; }
+
     /**Get the default ILS server to use for user lookup.
       */
     const PString & GetDefaultILSServer() const { return ilsServer; }
@@ -1986,6 +1996,7 @@ class OpalManager : public PObject
     PTimeInterval m_noMediaTimeout;
     PTimeInterval m_signalingTimeout;
     PTimeInterval m_transportIdleTime;
+    PTimeInterval m_natKeepAliveTime;
     PString       ilsServer;
 
     OpalSilenceDetector::Params silenceDetectParams;
