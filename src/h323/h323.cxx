@@ -79,6 +79,10 @@ const PTimeInterval MonitorCallStatusTime(0, 0, 1); // Minutes
   static PConstString const H239MessageOID("0.0.8.239.2");
 #endif
 
+#if OPAL_H460_NAT
+  static BYTE const EmptyTPKT[] = { 3, 0, 0, 0 };
+#endif
+
 #define new PNEW
 
 
@@ -406,6 +410,11 @@ void H323Connection::AttachSignalChannel(const PString & token,
 
   // Set our call token for identification in endpoint dictionary
   callToken = token;
+
+#if OPAL_H460_NAT
+  if (m_features != NULL && m_features->HasFeature(H460_FeatureStd18::ID()))
+    channel->SetKeepAlive(endpoint.GetManager().GetNatKeepAliveTime(), PBYTEArray(EmptyTPKT, sizeof(EmptyTPKT), false));
+#endif
 }
 
 
@@ -2783,8 +2792,12 @@ PBoolean H323Connection::OnStartHandleControlChannel()
 #if OPAL_H460_NAT
   if (m_features != NULL) {
     H460_FeatureStd18 * feature;
-    if (m_features->GetFeature(feature) && !feature->OnStartControlChannel())
-      return false;
+    if (m_features->GetFeature(feature)) {
+      if (!feature->OnStartControlChannel())
+        return false;
+
+      m_controlChannel->SetKeepAlive(endpoint.GetManager().GetNatKeepAliveTime(), PBYTEArray(EmptyTPKT, sizeof(EmptyTPKT), false));
+    }
   }
 #endif
 
