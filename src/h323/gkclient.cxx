@@ -654,10 +654,8 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
     timeToLive = AdjustTimeout(endpoint.GetGatekeeperTimeToLive().GetSeconds());
 
 #if OPAL_H460_NAT
-  if (m_features != NULL && m_features->HasFeature(H460_FeatureStd18::ID()) && timeToLive > endpoint.GetManager().GetNatKeepAliveTime()) {
-    static BYTE const EmptyTPKT[] = { 3, 0, 0, 0 };
-    transport->SetKeepAlive(endpoint.GetManager().GetNatKeepAliveTime(), PBYTEArray(EmptyTPKT, sizeof(EmptyTPKT), false));
-  }
+  if (m_features != NULL && m_features->HasFeature(H460_FeatureStd18::ID()) && timeToLive > endpoint.GetManager().GetNatKeepAliveTime())
+    timeToLive = endpoint.GetManager().GetNatKeepAliveTime();
 #endif
 
   // At present only support first call signal address to GK
