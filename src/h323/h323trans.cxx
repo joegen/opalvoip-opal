@@ -258,6 +258,8 @@ void H323Transactor::HandleTransactions(PThread &, P_INT_PTR)
     PTRACE(5, "Trans\tReading PDU");
     H323TransactionPDU * response = CreateTransactionPDU();
     if (response->Read(*transport)) {
+      if (transport->GetInterface().IsEmpty())
+        transport->SetInterface(transport->GetLastReceivedInterface());
       consecutiveErrors = 0;
       lastRequest = NULL;
       if (HandleTransaction(response->GetPDU()))

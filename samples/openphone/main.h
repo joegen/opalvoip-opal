@@ -865,6 +865,7 @@ class OptionsDialog : public wxDialog
     int          m_GatekeeperMode;
     PwxString    m_GatekeeperAddress;
     PwxString    m_GatekeeperInterface;
+    bool         m_GatekeeperSuppressGRQ;
     PwxString    m_GatekeeperIdentifier;
     int          m_GatekeeperTTL;
     PwxString    m_GatekeeperLogin;
