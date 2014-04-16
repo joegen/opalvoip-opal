@@ -602,38 +602,8 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 #endif
 
 #if OPAL_SKINNY
-  {
-    OpalSkinnyEndPoint * ep = FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY);
-    PString server = rsrc->AddStringField(SkinnyServerKey, 20, PString::Empty(), "Server for Skinny Client Control Protocol");
-    unsigned deviceType = rsrc->AddIntegerField(SkinnyTypeKey, 1, 32767, OpalSkinnyEndPoint::DefaultDeviceType,
-                          "", "Device type for Skinny Client Control Protocol. Default 30016 = Cisco IP Communicator.");
-    PStringArray names = ep->GetPhoneDeviceNames();
-    names = rsrc->AddStringArrayField(SkinnyNamesKey, false, 30, names, "Device names for Skinny Client Control Protocol");
-    if (!server.IsEmpty()) {
-      for (PINDEX i = 0; i < names.GetSize(); ++i) {
-        PString name = names[i];
-
-        static PRegularExpression const Wildcards("\\[([0-9]+)-([0-9]+)\\]", PRegularExpression::Extended);
-        PIntArray starts(3), ends(3);
-        if (Wildcards.Execute(name, starts, ends)) {
-          unsigned number = name(starts[1], ends[1]-1).AsUnsigned();
-          unsigned lastNumber = name(starts[2], ends[2]-1).AsUnsigned();
-          unsigned digits = ends[2] - starts[2];
-          while (number <= lastNumber) {
-            PString calculatedName = name.Left(starts[0]) + psprintf("%0*u", digits, number++) + name.Mid(ends[0]);
-            if (!ep->Register(server, calculatedName, deviceType)) {
-              PSYSTEMLOG(Error, "Could not register " << calculatedName << " with skinny server \"" << server << '"');
-            }
-          }
-        }
-        else {
-          if (!ep->Register(server, name, deviceType)) {
-            PSYSTEMLOG(Error, "Could not register " << name << " with skinny server \"" << server << '"');
-          }
-        }
-      }
-    }
-  }
+  if (!GetSkinnyEndPoint().Configure(cfg, rsrc))
+    return false;
 #endif
 
 #if OPAL_LID
@@ -694,13 +664,13 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
     PStringArray languages;
     for (PFactory<PScriptLanguage>::KeyList_T::iterator it = keys.begin(); it != keys.end(); ++it)
       languages.AppendString(*it);
-    PString language = cfg.GetString(ScriptLanguageKey, languages[0]);
+    PCaselessString language = cfg.GetString(ScriptLanguageKey, languages[0]);
     rsrc->Add(new PHTTPRadioField(ScriptLanguageKey, languages,
               languages.GetValuesIndex(language),"Interpreter script language."));
   
     PString script = rsrc->AddStringField(ScriptTextKey, 0, PString::Empty(),
         "Interpreter script, may be a filename or the actual script text", 10, 80);
-    if (m_scriptLanguage != language || m_scriptText != script) {
+    if (language != m_scriptLanguage || script != m_scriptText) {
       m_scriptLanguage = language;
       m_scriptText = script;
       RunScript(script, language);
@@ -830,6 +800,66 @@ void MyManager::OnStopMediaPatch(OpalConnection & connection, OpalMediaPatch & p
   dynamic_cast<MyCall &>(connection.GetCall()).OnStopMediaPatch(patch);
   OpalManager::OnStopMediaPatch(connection, patch);
 }
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_SKINNY
+
+OpalConsoleSkinnyEndPoint * MyManager::CreateSkinnyEndPoint()
+{
+  return new MySkinnyEndPoint(*this);
+}
+
+
+MySkinnyEndPoint::MySkinnyEndPoint(MyManager & mgr)
+  : OpalConsoleSkinnyEndPoint(mgr)
+  , m_manager(mgr)
+  , m_deviceType(OpalSkinnyEndPoint::DefaultDeviceType)
+{
+}
+
+
+bool MySkinnyEndPoint::Configure(PConfig &, PConfigPage * rsrc)
+{
+  PString server = rsrc->AddStringField(SkinnyServerKey, 20, PString::Empty(), "Server for Skinny Client Control Protocol");
+  m_deviceType = rsrc->AddIntegerField(SkinnyTypeKey, 1, 32767, m_deviceType,
+                                              "", "Device type for Skinny Client Control Protocol. Default 30016 = Cisco IP Communicator.");
+  PStringArray names = GetPhoneDeviceNames();
+  names = rsrc->AddStringArrayField(SkinnyNamesKey, false, 30, names, "Device names for Skinny Client Control Protocol");
+  if (!server.IsEmpty()) {
+    for (PINDEX i = 0; i < names.GetSize(); ++i)
+      RegisterWildcard(server, names[i]);
+  }
+
+  return true;
+}
+
+
+void MySkinnyEndPoint::RegisterWildcard(const PString & server, const PString & wildcard)
+{
+  static PRegularExpression const Wildcards("\\[([0-9]+)-([0-9]+)\\]", PRegularExpression::Extended);
+
+  PIntArray starts(3), ends(3);
+  if (Wildcards.Execute(wildcard, starts, ends)) {
+    unsigned number = wildcard(starts[1], ends[1] - 1).AsUnsigned();
+    unsigned lastNumber = wildcard(starts[2], ends[2] - 1).AsUnsigned();
+    unsigned digits = ends[2] - starts[2];
+    while (number <= lastNumber) {
+      PString calculatedName = wildcard.Left(starts[0]) + psprintf("%0*u", digits, number++) + wildcard.Mid(ends[0]);
+      if (!Register(server, calculatedName, m_deviceType)) {
+        PSYSTEMLOG(Error, "Could not register " << calculatedName << " with skinny server \"" << server << '"');
+      }
+    }
+  }
+  else {
+    if (!Register(server, wildcard, m_deviceType)) {
+      PSYSTEMLOG(Error, "Could not register " << wildcard << " with skinny server \"" << server << '"');
+    }
+  }
+}
+
+#endif // OPAL_SKINNY
 
 
 // End of File ///////////////////////////////////////////////////////////////

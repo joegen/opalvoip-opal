@@ -40,6 +40,13 @@ static const char SIPListenersKey[] = "SIP Interfaces";
 static const char SIPSignalingSecurityKey[] = "SIP Security";
 static const char SIPMediaCryptoSuitesKey[] = "SIP Crypto Suites";
 #endif
+static const char SIPLocalRegistrarKey[] = "SIP Local Registrar Domains";
+#if OPAL_H323
+static const char SIPAutoRegisterH323Key[] = "SIP Auto-Register H.323";
+#endif
+#if OPAL_SKINNY
+static const char SIPAutoRegisterSkinnyKey[] = "SIP Auto-Register Skinny";
+#endif
 
 #define REGISTRATIONS_SECTION "SIP Registrations"
 #define REGISTRATIONS_KEY "Registration"
@@ -54,6 +61,12 @@ static const char SIPPasswordKey[] = "Password";
 MySIPEndPoint::MySIPEndPoint(MyManager & mgr)
   : SIPConsoleEndPoint(mgr)
   , m_manager(mgr)
+#if OPAL_H323
+  , m_autoRegisterH323(false)
+#endif
+#if OPAL_SKINNY
+  , m_autoRegisterSkinny(false)
+#endif
 {
 }
 
@@ -111,8 +124,45 @@ bool MySIPEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
       PSYSTEMLOG(Error, "Could not register " << it->m_addressOfRecord);
   }
 
-  return true;
+  SetRegistrarDomains(rsrc->AddStringArrayField(SIPLocalRegistrarKey, false, 25,
+                      PStringArray(m_registrarDomains), "SIP local registrar domain names"));
+
+#if OPAL_H323
+  m_autoRegisterH323 = rsrc->AddBooleanField(SIPAutoRegisterH323Key, m_autoRegisterH323,
+                                             "Auto-register H.323 alias of same name as incoming SIP registration");
+#endif
+#if OPAL_SKINNY
+  m_autoRegisterSkinny = rsrc->AddBooleanField(SIPAutoRegisterSkinnyKey, m_autoRegisterSkinny,
+                                               "Auto-register SCCP device of same name as incoming SIP registration");
+#endif
+    return true;
 }
+
+
+#if OPAL_H323 || OPAL_SKINNY
+void MySIPEndPoint::OnChangedRegistrarAoR(RegistrarAoR & ua)
+{
+  PString username = ua.GetAoR().GetUserName();
+  PString domain = ua.GetAoR().GetHostPort();
+
+#if OPAL_H323
+  if (m_autoRegisterH323) {
+    if (username.IsEmpty())
+      m_manager.GetH323EndPoint().AddAliasName(domain);
+    else if (domain.IsEmpty())
+      m_manager.GetH323EndPoint().AddAliasName(username);
+    else
+      m_manager.GetH323EndPoint().AddAliasName(username + '@' + domain);
+  }
+#endif // OPAL_H323
+
+#if OPAL_SKINNY
+  if (m_autoRegisterSkinny)
+    m_manager.GetSkinnyEndPoint().RegisterWildcard(domain, username);
+#endif // OPAL_SKINNY
+}
+#endif // OPAL_H323 || OPAL_SKINNY
+
 
 #endif // OPAL_SIP
 

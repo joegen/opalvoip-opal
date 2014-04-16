@@ -949,9 +949,19 @@ SIPURL SIPMIMEInfo::GetContact() const
 }
 
 
-bool SIPMIMEInfo::GetContacts(SIPURLList & contacts) const
+bool SIPMIMEInfo::GetContacts(SIPURLList & contacts, unsigned defaultExpires) const
 {
-  return contacts.FromString(GetString("Contact"), SIPURL::RegContactURI);
+  if (!contacts.FromString(GetString("Contact"), SIPURL::RegContactURI))
+    return false;
+
+  defaultExpires = GetExpires(defaultExpires);
+  for (SIPURLList::iterator it = contacts.begin(); it != contacts.end(); ++it) {
+    PStringOptions & params = it->GetFieldParameters();
+    if (!params.Has("expires"))
+      params.SetInteger("expires", defaultExpires);
+  }
+
+  return true;
 }
 
 
@@ -1135,7 +1145,9 @@ bool SIPMIMEInfo::GetRecordRoute(SIPURLList & proxies, bool reversed) const
 
 void SIPMIMEInfo::SetRecordRoute(const PString & v)
 {
-  if (!v.IsEmpty())
+  if (v.IsEmpty())
+    Remove("Record-Route");
+  else
     SetAt("Record-Route",  v);
 }
 

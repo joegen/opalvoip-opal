@@ -802,6 +802,44 @@ class SIPEndPoint : public OpalRTPEndPoint
       const PURL & to
     );
 
+    // Registrar
+    class RegistrarAoR : public PSafeObject
+    {
+      PCLASSINFO(RegistrarAoR, PSafeObject)
+      public:
+        RegistrarAoR(const PURL & aor);
+
+        virtual Comparison Compare(const PObject & obj) const;
+        virtual void PrintOn(ostream & strm) const;
+
+        virtual SIP_PDU::StatusCodes OnReceivedREGISTER(SIPEndPoint & endpoint, const SIP_PDU & request);
+        virtual bool ExpireBindings();
+
+        const PURL & GetAoR() const { return m_aor; }
+        SIPURLList GetContacts() const;
+
+      protected:
+        PURL m_aor;
+
+        struct Binding {
+          PString m_id;
+          PTime   m_lastUpdate;
+        };
+        typedef std::map<SIPURL, Binding> BindingMap;
+        BindingMap m_bindings;
+
+        std::map<PString, unsigned> m_cseq;
+    };
+    friend class RegistrarAoR;
+
+    virtual RegistrarAoR * CreateRegistrarAoR(const SIP_PDU & request);
+    virtual PSafePtr<RegistrarAoR> FindRegistrarAoR(const SIPURL & aor) { return m_registeredUAs.FindWithLock(RegistrarAoR(aor)); }
+    virtual SIPURLList GetRegistrarAoRs() const;
+    virtual void OnChangedRegistrarAoR(RegistrarAoR & ua);
+
+    void SetRegistrarDomains(const PStringSet & domains) { m_registrarDomains = domains; }
+    const PStringSet & GetRegistrarDomains() const { return m_registrarDomains; }
+
     /** Get the allowed events for SUBSCRIBE commands.
       */
     const PStringSet & GetAllowedEvents() const { return m_allowedEvents; }
@@ -1044,6 +1082,11 @@ class SIPEndPoint : public OpalRTPEndPoint
     ConnectionlessMessageNotifier m_onConnectionlessMessage;
     typedef std::multimap<PString, SIPURL> ConferenceMap;
     ConferenceMap m_conferenceAOR;
+
+    // Registrar
+    typedef PSafeSortedList<RegistrarAoR> RegistrarList;
+    RegistrarList m_registeredUAs;
+    PStringSet    m_registrarDomains;
 
     // Thread pooling
     SIPThreadPool m_threadPool;
