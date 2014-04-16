@@ -1110,9 +1110,13 @@ PBoolean H323EndPoint::ParsePartyName(const PString & remoteParty,
     return true;
   }
 
-  // We have a gatekeeper and user provided a host, all done
-  if (!address)
+  // We have a gatekeeper and user provided a host
+  if (!address) {
+    // Most H.323 gatekeepers want RFC4282 Network Access Identifier as alias,
+    // so we treat the host part of the URL as the "realm" of the NAI
+    alias += '@' + url.GetHostName();
     return true;
+  }
 
   // We have a gk and user did not explicitly supply a host, so lets
   // do a check to see if it is an IP address 
