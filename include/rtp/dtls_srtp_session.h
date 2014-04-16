@@ -57,6 +57,7 @@ class OpalDTLSSRTPSession : public OpalSRTPSession
     OpalDTLSSRTPSession(const Init & init);
     ~OpalDTLSSRTPSession();
     virtual const PCaselessString & GetSessionType() const { return RTP_DTLS_SAVP(); }
+    virtual void SetRemoteUserPass(const PString & user, const PString & pass);
     void SetConnectionInitiator(bool connectionInitiator);
     bool GetConnectionInitiator() const;
     const PSSLCertificateFingerprint& GetLocalFingerprint() const;
@@ -103,13 +104,13 @@ private:
   private:
     std::auto_ptr<PSSLChannelDTLS> m_channels[2]; // Media and control channels
     Candidates m_candidates[2]; // Candidates for media and control channels
+    bool m_dtlsReady[2]; // Ready flag for media and control channels
     bool m_stopSend[2];
     bool m_connectionInitiator;
     PSSLCertificateFingerprint m_remoteFingerprint;
     bool m_stunNegotiated;
     PSTUN m_remoteStun; // Used for receive requests from other party and send responses
     PSTUN m_localStun; // Used for send request to other party and handle responses
-    bool m_dtlsReady;
 };
 
 

@@ -331,6 +331,8 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     virtual void Copy(SDPMediaDescription & mediaDescription);
 
+    bool RTCPMuxed() const { return m_controlAddress == m_mediaAddress; }
+
   protected:
     virtual SDPMediaFormat * FindFormat(PString & str) const;
 

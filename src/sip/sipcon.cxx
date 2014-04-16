@@ -693,7 +693,7 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
   }
 
   // Set single port or disjoint RTCP port, must be done before Open()
-  if (rtpSession != NULL && m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX)) {
+  if (rtpSession != NULL && (m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX) || mediaDescription.RTCPMuxed())) {
     PTRACE(3, "SIP\tSetting single port mode for answer RTP session " << sessionId << " for media type " << mediaType);
     rtpSession->SetSinglePortRx();
   }
