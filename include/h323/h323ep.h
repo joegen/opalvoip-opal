@@ -814,6 +814,17 @@ class H323EndPoint : public OpalRTPEndPoint
      */
     virtual const PString & GetLocalUserName() const { return localAliasNames.front(); }
 
+    /**Add alias names to be used for the local end of any connections. If
+       an alias name already exists in the list then is is not added again.
+
+       The list defaults to the value set in the SetLocalUserName() function.
+       Note that this will clear the alias list and the first entry will become
+       the value returned by GetLocalUserName().
+     */
+    bool AddAliasNames(
+      const PStringList & names  ///< New alias names to add
+    );
+
     /**Add an alias name to be used for the local end of any connections. If
        the alias name already exists in the list then is is not added again.
 
@@ -1286,11 +1297,15 @@ class H323EndPoint : public OpalRTPEndPoint
     ) const;
   //@}
 
+    void TickleGatekeeperMonitor() { m_gatekeeperMonitorTickle.Signal(); }
+
   protected:
     bool InternalCreateGatekeeper(
       const H323TransportAddress & remoteAddress,
       const PString & localAddress
     );
+    void RestartGatekeeper();
+    void GatekeeperMonitor();
 
     H323Connection * InternalMakeCall(
       OpalCall & call,
@@ -1379,6 +1394,10 @@ class H323EndPoint : public OpalRTPEndPoint
     PString               m_gatekeeperPassword;
     PINDEX                m_gatekeeperAliasLimit;
     bool                  m_gatekeeperSimulatePattern;
+    PThread             * m_gatekeeperMonitor;
+    bool                  m_gatekeeperMonitorStop;
+    PSyncPoint            m_gatekeeperMonitorTickle;
+    PMutex                m_gatekeeperMutex;
 
 #if OPAL_H450
     H323CallIdentityDict   m_secondaryConnectionsActive;
