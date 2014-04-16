@@ -5267,6 +5267,12 @@ bool OptionsDialog::TransferDataFromWindow()
   config->DeleteGroup(H323AliasesGroup);
   config->SetPath(H323AliasesGroup);
   m_manager.h323EP->SetLocalUserName(m_Username);
+
+  for (PStringList::iterator it = m_manager.h323EP->m_configuredAliasNames.begin(); it != m_manager.h323EP->m_configuredAliasNames.end(); ++it) {
+    if (m_Aliases->FindString(PwxString(*it)) < 0)
+      m_manager.h323EP->RemoveAliasName(*it);
+  }
+
   m_manager.h323EP->m_configuredAliasNames.RemoveAll();
   for (size_t i = 0; i < m_Aliases->GetCount(); i++) {
     PwxString alias = m_Aliases->GetString(i);
