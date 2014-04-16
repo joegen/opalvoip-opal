@@ -521,11 +521,17 @@ PBoolean SIPEndPoint::GarbageCollection()
   }
   bool transportsDone = m_transportsTable.DeleteObjectsToBeRemoved();
 
+  for (PSafePtr<RegistrarAoR> ua(m_registeredUAs); ua != NULL; ++ua) {
+    if (ua->ExpireBindings())
+      OnChangedRegistrarAoR(*ua);
+  }
+  bool registrarDone = m_registeredUAs.DeleteObjectsToBeRemoved();
+
   if (!OpalEndPoint::GarbageCollection())
     return false;
 
   if (m_shuttingDown)
-    return transactionsDone && handlersDone && transportsDone;
+    return transactionsDone && handlersDone && transportsDone && registrarDone;
 
   return true;
 }
@@ -785,9 +791,175 @@ bool SIPEndPoint::OnReceivedPDU(SIP_PDU * pdu)
 }
 
 
-bool SIPEndPoint::OnReceivedREGISTER(SIP_PDU & /*request*/)
+bool SIPEndPoint::OnReceivedREGISTER(SIP_PDU & request)
 {
-  return false;
+  if (m_registrarDomains.IsEmpty())
+    return false;
+
+  SIPURL aor = request.GetMIME().GetTo();
+  if (!m_registrarDomains.Contains(request.GetURI().GetHostPort()) &&
+      !m_registrarDomains.Contains(aor.GetHostPort())) {
+    request.SendResponse(SIP_PDU::Failure_NotFound);
+    return true;
+  }
+
+  if (!request.GetMIME().GetRequire().IsEmpty()) {
+    PTRACE(3, "SIP-Reg", "REGISTER required unsupported feature: " << setfill(',') << request.GetMIME().GetRequire());
+    request.SendResponse(SIP_PDU::Failure_BadExtension);
+    return true;
+  }
+
+  PSafePtr<RegistrarAoR> ua = m_registeredUAs.FindWithLock(RegistrarAoR(aor));
+  if (ua == NULL) {
+    ua = CreateRegistrarAoR(request);
+    if (ua == NULL) {
+      request.SendResponse(SIP_PDU::Failure_Forbidden);
+      return true;
+    }
+
+    PTRACE(3, "SIP-Reg", "Created new Registered UA: " << *ua);
+    m_registeredUAs.Append(ua);
+  }
+
+  request.GetMIME().SetRecordRoute(PString::Empty()); // RFC3261/10.3
+
+  SIP_PDU response(request, ua->OnReceivedREGISTER(*this, request));
+  if (response.GetStatusCode() == SIP_PDU::Successful_OK)
+    response.GetMIME().SetContact(ua->GetContacts().ToString());
+  response.Send();
+
+  OnChangedRegistrarAoR(*ua);
+  return true;
+}
+
+
+SIPEndPoint::RegistrarAoR * SIPEndPoint::CreateRegistrarAoR(const SIP_PDU & request)
+{
+  return new RegistrarAoR(request.GetMIME().GetTo());
+}
+
+
+SIPURLList SIPEndPoint::GetRegistrarAoRs() const
+{
+  SIPURLList list;
+  for (PSafePtr<RegistrarAoR> ua(m_registeredUAs); ua != NULL; ++ua)
+    list.push_back(ua->GetAoR());
+  return list;
+}
+
+
+void SIPEndPoint::OnChangedRegistrarAoR(RegistrarAoR & PTRACE_PARAM(ua))
+{
+  PTRACE(3, "SIP-Reg", "Registered UA status: " << ua);
+}
+
+
+SIPEndPoint::RegistrarAoR::RegistrarAoR(const PURL & aor)
+  : m_aor(aor)
+{
+}
+
+
+PObject::Comparison SIPEndPoint::RegistrarAoR::Compare(const PObject & obj) const
+{
+  return m_aor.Compare(dynamic_cast<const RegistrarAoR &>(obj).m_aor);
+}
+
+
+void SIPEndPoint::RegistrarAoR::PrintOn(ostream & strm) const
+{
+  strm << m_aor;
+  if (m_bindings.empty())
+    strm << "<unbound>";
+  else {
+    strm << " => ";
+    for (BindingMap::const_iterator it = m_bindings.begin(); it != m_bindings.end(); ++it) {
+      if (it != m_bindings.begin())
+        strm << ',';
+      strm << it->first;
+    }
+  }
+}
+
+
+PBoolean SIPEndPoint::RegistrarAoR::ExpireBindings()
+{
+  PTime now;
+  bool expiredOne = false;
+
+  for (BindingMap::iterator it = m_bindings.begin(); it != m_bindings.end(); ) {
+    int expires = it->first.GetFieldParameters().GetInteger("expires") + 5; // A few seconds grace
+    if ((now - it->second.m_lastUpdate).GetSeconds() < expires)
+      ++it;
+    else {
+      PTRACE(4, "SIP-Reg", "Expired Contact " << it->first << " for AoR=" << m_aor);
+      m_bindings.erase(it++);
+      expiredOne = true;
+    }
+  }
+
+  return expiredOne;
+}
+
+
+SIPURLList SIPEndPoint::RegistrarAoR::GetContacts() const
+{
+  SIPURLList list;
+  for (BindingMap::const_iterator it = m_bindings.begin(); it != m_bindings.end(); ++it)
+    list.push_back(it->first);
+  return list;
+}
+
+
+SIP_PDU::StatusCodes SIPEndPoint::RegistrarAoR::OnReceivedREGISTER(SIPEndPoint & endpoint, const SIP_PDU & request)
+{
+  const SIPMIMEInfo & mime = request.GetMIME();
+
+  SIPURLList newContacts;
+  if (!mime.GetContacts(newContacts, endpoint.GetRegistrarTimeToLive().GetSeconds())) {
+    PTRACE(4, "SIP-Reg", "Empty Contacts header");
+    return SIP_PDU::Successful_OK;
+  }
+
+  PString id = mime.GetCallID();
+  {
+    unsigned cseq = mime.GetCSeqIndex();
+    std::map<PString, unsigned>::iterator it = m_cseq.find(id);
+    if (it == m_cseq.end())
+      m_cseq[id] = cseq;
+    else if (cseq > it->second)
+      it->second = cseq;
+    else {
+      PTRACE(4, "SIP-Reg", "Old/duplicate REGISTER, not updating anything");
+      return SIP_PDU::Successful_OK;
+    }
+  }
+
+  // Remove all with this ID, if in REGISTER again will be added back
+  for (BindingMap::iterator it = m_bindings.begin(); it != m_bindings.end();) {
+    if (it->second.m_id != id)
+      ++it;
+    else
+      m_bindings.erase(it++);
+  }
+
+  // Special case of '*', everything says removed
+  if (newContacts.size() == 1 && newContacts.front().GetHostName() == "*") {
+    if (mime.GetExpires() != 0) {
+      PTRACE(2, "SIP-Reg", "Non zero Expires with '*' Contacts");
+      return SIP_PDU::Failure_BadRequest;
+    }
+
+    return SIP_PDU::Successful_OK;
+  }
+
+  // PUt bindings we have been given back again, effectively updating them
+  for (SIPURLList::const_iterator contact = newContacts.begin(); contact != newContacts.end(); ++contact) {
+    if (contact->GetFieldParameters().GetInteger("expires") > 0)
+      m_bindings[*contact].m_id = id;
+  }
+
+  return SIP_PDU::Successful_OK;
 }
 
 

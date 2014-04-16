@@ -251,6 +251,7 @@ class SIPURLList : public std::list<SIPURL>
     );
     PString ToString() const;
     SIPURL FindCompatible(const OpalTransportAddress & addr PTRACE_PARAM(, const char * listType)) const;
+
     friend ostream & operator<<(ostream & strm, const SIPURLList & urls);
 
   protected:
@@ -335,7 +336,7 @@ class SIPMIMEInfo : public PMIMEInfo
     void SetCallID(const PString & v);
 
     SIPURL GetContact() const;
-    bool GetContacts(SIPURLList & contacts) const;
+    bool GetContacts(SIPURLList & contacts, unsigned defaultExpires) const;
     void SetContact(const PString & v);
 
     PString GetSubject() const;
