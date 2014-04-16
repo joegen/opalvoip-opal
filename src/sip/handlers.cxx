@@ -697,11 +697,12 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 
   m_serviceRoute.FromString(mime("Service-Route"));
 
+  unsigned systemDefaultExpires = GetEndPoint().GetRegistrarTimeToLive().GetSeconds();
   SIPURLList requestedContacts;
-  transaction.GetMIME().GetContacts(requestedContacts);
+  transaction.GetMIME().GetContacts(requestedContacts, systemDefaultExpires);
 
   SIPURLList replyContacts;
-  mime.GetContacts(replyContacts);
+  mime.GetContacts(replyContacts, systemDefaultExpires);
 
   /* See if we are behind NAT and the Via header rport was present. This is
      a STUN free mechanism for working behind firewalls. Also, some servers
@@ -742,10 +743,9 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
 
   // If this is the final (possibly one and only) REGISTER, process it
   if (m_externalAddress == externalAddress) {
-    int defExpiry = mime.GetExpires(GetEndPoint().GetRegistrarTimeToLive().GetSeconds());
     int minExpiry = INT_MAX;
     for (SIPURLList::iterator contact = replyContacts.begin(); contact != replyContacts.end(); ++contact) {
-      long expires = contact->GetFieldParameters().GetInteger("expires", defExpiry);
+      long expires = contact->GetFieldParameters().GetInteger("expires");
       if (expires > 0 && minExpiry > expires)
         minExpiry = expires;
     }

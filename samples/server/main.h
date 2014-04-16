@@ -285,11 +285,44 @@ public:
 
   bool Configure(PConfig & cfg, PConfigPage * rsrc);
 
+#if OPAL_H323 || OPAL_SKINNY
+  virtual void OnChangedRegistrarAoR(RegistrarAoR & ua);
+#endif
+
 protected:
   MyManager & m_manager;
+#if OPAL_H323
+  bool        m_autoRegisterH323;
+#endif
+#if OPAL_SKINNY
+  bool        m_autoRegisterSkinny;
+#endif
 };
 
 #endif // OPAL_SIP
+
+
+///////////////////////////////////////
+
+#if OPAL_SKINNY
+
+class MySkinnyEndPoint : public OpalConsoleSkinnyEndPoint
+{
+  PCLASSINFO(MySkinnyEndPoint, OpalConsoleSkinnyEndPoint);
+public:
+  MySkinnyEndPoint(MyManager & mgr);
+
+  bool Configure(PConfig & cfg, PConfigPage * rsrc);
+
+  void RegisterWildcard(const PString & server, const PString & wildcard);
+
+protected:
+
+  MyManager & m_manager;
+  unsigned    m_deviceType;
+};
+
+#endif // OPAL_SKINNY
 
 
 ///////////////////////////////////////
@@ -501,6 +534,10 @@ class MyManager : public MyManagerParent
 #if OPAL_SIP
     virtual SIPConsoleEndPoint * CreateSIPEndPoint();
     MySIPEndPoint & GetSIPEndPoint() const { return *FindEndPointAs<MySIPEndPoint>(OPAL_PREFIX_SIP); }
+#endif
+#if OPAL_SKINNY
+    virtual OpalConsoleSkinnyEndPoint * CreateSkinnyEndPoint();
+    MySkinnyEndPoint & GetSkinnyEndPoint() const { return *FindEndPointAs<MySkinnyEndPoint>(OPAL_PREFIX_SKINNY); }
 #endif
 
     void DropCDR(const MyCall & call, bool final);
