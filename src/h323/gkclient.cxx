@@ -90,10 +90,9 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   , pregrantMakeCall(RequireARQ)
   , pregrantAnswerCall(RequireARQ)
   , autoReregister(true)
-  , reregisterNow(false)
+  , m_reregisterNow(false)
   , requiresDiscovery(false)
   , willRespondToIRR(false)
-  , monitorStop(false)
 #if OPAL_H460
   , m_features(ep.InternalCreateFeatureSet(NULL))
 #endif
@@ -101,8 +100,6 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   timeToLive.SetNotifier(PCREATE_NOTIFIER(TickleMonitor));
   infoRequestRate.SetNotifier(PCREATE_NOTIFIER(TickleMonitor));
 
-  monitor = PThread::Create(PCREATE_NOTIFIER(MonitorMain), "GkMonitor");
-  
   PInterfaceMonitor::GetInstance().AddNotifier(PCREATE_InterfaceNotifier(OnHighPriorityInterfaceChange), 80);
   PInterfaceMonitor::GetInstance().AddNotifier(PCREATE_InterfaceNotifier(OnLowPriorityInterfaceChange), 40);
 }
@@ -112,14 +109,6 @@ H323Gatekeeper::~H323Gatekeeper()
 {
   PInterfaceMonitor::GetInstance().RemoveNotifier(PCREATE_InterfaceNotifier(OnHighPriorityInterfaceChange));
   PInterfaceMonitor::GetInstance().RemoveNotifier(PCREATE_InterfaceNotifier(OnLowPriorityInterfaceChange));
-
-  if (monitor != NULL) {
-    monitorStop = true;
-    monitorTickle.Signal();
-    monitor->WaitForTermination();
-    delete monitor;
-    monitor = NULL;
-  }
 
   StopChannel();
 
@@ -246,7 +235,7 @@ bool H323Gatekeeper::StartGatekeeper(const H323TransportAddress & initialAddress
     return false;
   }
 
-  reregisterNow = true;
+  ReRegisterNow();
 
   // Make sure transctor (socket read) thread has started, before kicking off GRQ
   timeToLive.SetInterval(500);
@@ -385,8 +374,6 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm
       return false;
     }
 
-    transport->SetInterface(transport->GetLastReceivedInterface());
-
     PTRACE(3, "RAS\tGatekeeper discovered at: "
            << transport->GetRemoteAddress()
            << " (if=" << transport->GetLocalAddress() << ')');
@@ -509,10 +496,6 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
   }
 
   PTimeInterval ttl = endpoint.GetGatekeeperTimeToLive();
-#if OPAL_H460_NAT
-  if (m_features != NULL && m_features->HasFeature(H460_FeatureStd18::ID()) && ttl > endpoint.GetManager().GetTransportIdleTime())
-    ttl = endpoint.GetManager().GetTransportIdleTime();
-#endif
   if (ttl > 0) {
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_timeToLive);
     rrq.m_timeToLive = (int)ttl.GetSeconds();
@@ -603,8 +586,7 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
         case H225_RegistrationRejectReason::e_fullRegistrationRequired :
           SetRegistrationFailReason(GatekeeperLostRegistration);
           // Set timer to retry registration
-          reregisterNow = true;
-          monitorTickle.Signal();
+          ReRegisterNow();
           break;
 
         // Onse below here are permananent errors, so don't try again
@@ -644,7 +626,7 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
   if (!H225_RAS::OnReceiveRegistrationConfirm(rcf))
     return false;
 
-  reregisterNow = false;
+  m_reregisterNow = false;
 
   m_endpointIdentifier = rcf.m_endpointIdentifier;
   PTRACE(3, "RAS\tRegistered " << EpIdAsStr(m_endpointIdentifier) << " with " << *this);
@@ -658,6 +640,11 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
     timeToLive = AdjustTimeout(rcf.m_timeToLive);
   else
     timeToLive = AdjustTimeout(endpoint.GetGatekeeperTimeToLive().GetSeconds());
+
+#if OPAL_H460_NAT
+  if (m_features != NULL && m_features->HasFeature(H460_FeatureStd18::ID()) && timeToLive > endpoint.GetManager().GetNatKeepAliveTime())
+    timeToLive = endpoint.GetManager().GetNatKeepAliveTime();
+#endif
 
   // At present only support first call signal address to GK
   if (rcf.m_callSignalAddress.GetSize() > 0)
@@ -782,7 +769,7 @@ void H323Gatekeeper::RegistrationTimeToLive()
     timeToLive.SetInterval(0, 0, 1);
     if (endpoint.GetSendGRQ()) {
       if (!DiscoverGatekeeper()) {
-        PTRACE_IF(2, !reregisterNow, "RAS\tDiscovery failed, retrying in 1 minute");
+        PTRACE_IF(2, !m_reregisterNow, "RAS\tDiscovery failed, retrying in 1 minute");
         return;
       }
       requiresDiscovery = false;
@@ -809,8 +796,8 @@ void H323Gatekeeper::RegistrationTimeToLive()
     didGkDiscovery = true;
   }
 
-  if (!RegistrationRequest(autoReregister, didGkDiscovery)) {
-    PTRACE_IF(2, !reregisterNow, "RAS\tTime To Live reregistration failed, retrying in 1 minute");
+  if (!RegistrationRequest(autoReregister, didGkDiscovery, !m_reregisterNow)) {
+    PTRACE_IF(2, !m_reregisterNow, "RAS\tTime To Live reregistration failed, retrying in 1 minute");
     timeToLive = PTimeInterval(0, 0, 1);
   }
 }
@@ -929,8 +916,7 @@ PBoolean H323Gatekeeper::OnReceiveUnregistrationRequest(const H225_Unregistratio
   if (autoReregister) {
     PTRACE(4, "RAS\tReregistering by setting timeToLive");
     discoveryComplete = false;
-    reregisterNow = true;
-    monitorTickle.Signal();
+    ReRegisterNow();
   }
 
   return ok;
@@ -1826,8 +1812,7 @@ void H323Gatekeeper::OnTerminalAliasChanged()
 {
   // Do a non-lightweight RRQ. Treat the GK as unregistered and immediately send a RRQ
   SetRegistrationFailReason(UnregisteredLocally);
-  reregisterNow = TRUE;
-  monitorTickle.Signal();
+  ReRegisterNow();
 }
 
 
@@ -1842,36 +1827,35 @@ void H323Gatekeeper::SetPassword(const PString & password,
     iterAuth->SetLocalId(localId);
     iterAuth->SetPassword(password);
   }
+
+  ReRegisterNow();
 }
 
 
-void H323Gatekeeper::MonitorMain(PThread &, P_INT_PTR)
+void H323Gatekeeper::Monitor()
 {
-  PTRACE(4, "RAS\tBackground thread started");
-
-  for (;;) {
-    monitorTickle.Wait();
-    if (monitorStop)
-      break;
-
-    if (reregisterNow || (!timeToLive.IsRunning() && timeToLive.GetResetTime() > 0)) {
-      RegistrationTimeToLive();
-      timeToLive.Reset();
-    }
-
-    if (!infoRequestRate.IsRunning() && infoRequestRate.GetResetTime() > 0) {
-      InfoRequestResponse();
-      infoRequestRate.Reset();
-    }
+  if (m_reregisterNow || (!timeToLive.IsRunning() && timeToLive.GetResetTime() > 0)) {
+    RegistrationTimeToLive();
+    timeToLive.Reset();
   }
 
-  PTRACE(4, "RAS\tBackground thread ended");
+  if (!infoRequestRate.IsRunning() && infoRequestRate.GetResetTime() > 0) {
+    InfoRequestResponse();
+    infoRequestRate.Reset();
+  }
+}
+
+
+void H323Gatekeeper::ReRegisterNow()
+{
+  m_reregisterNow = true;
+  endpoint.TickleGatekeeperMonitor();
 }
 
 
 void H323Gatekeeper::TickleMonitor(PTimer &, P_INT_PTR)
 {
-  monitorTickle.Signal();
+  endpoint.TickleGatekeeperMonitor();
 }
 
 
@@ -1941,8 +1925,7 @@ PBoolean H323Gatekeeper::MakeRequestWithReregister(Request & request, unsigned u
   if (!autoReregister)
     return false;
 
-  reregisterNow = true;
-  monitorTickle.Signal();
+  ReRegisterNow();
   return false;
 }
 
@@ -2102,8 +2085,7 @@ void H323Gatekeeper::OnLowPriorityInterfaceChange(PInterfaceMonitor & monitor, P
   if (monitor.GetInterfaces(false, addr).GetSize() > 0) {
     // at least one interface available, locate gatekeper
     discoveryComplete = false;
-    reregisterNow = true;
-    monitorTickle.Signal();
+    ReRegisterNow();
   }
 }
 

@@ -86,7 +86,7 @@ bool H460_FeatureStd18::Initialise(H323EndPoint & ep, H323Connection * con)
 
 bool H460_FeatureStd18::IsNegotiated() const
 {
-  return m_connection != NULL && H460_Feature::IsNegotiated();
+  return m_connection != NULL ? IsFeatureNegotiatedOnGk(ID()) : H460_Feature::IsNegotiated();
 }
 
 
@@ -210,6 +210,11 @@ void H460_FeatureStd18::ConnectThreadMain(H323TransportAddress address, OpalGlob
     PTRACE(3, "H46018\tError Writing PDU.");
     return;
   }
+
+  // Thread now owned by OpalTransport
+  PThread * thread = PThread::Current();
+  transport->AttachThread(thread);
+  thread->SetNoAutoDelete();
 
   PTRACE(4, "H46018\tEstablished call for " << callId << ", awaiting SETUP.");
   m_endpoint->InternalNewIncomingConnection(transport);

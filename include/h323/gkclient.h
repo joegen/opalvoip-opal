@@ -313,13 +313,15 @@ class H323Gatekeeper : public H225_RAS
     H460_FeatureSet * GetFeatures() { return m_features; }
 #endif
 
+    void Monitor();
+    void ReRegisterNow();
+
   protected:
     bool StartGatekeeper(const H323TransportAddress & address);
     virtual bool DiscoverGatekeeper();
     unsigned SetupGatekeeperRequest(H323RasPDU & request);
 	
     void Connect(const H323TransportAddress & address, const PString & gatekeeperIdentifier);
-    PDECLARE_NOTIFIER(PThread, H323Gatekeeper, MonitorMain);
     PDECLARE_NOTIFIER(PTimer, H323Gatekeeper, TickleMonitor);
     void RegistrationTimeToLive();
 
@@ -406,14 +408,11 @@ class H323Gatekeeper : public H225_RAS
 
     // Gatekeeper operation variables
     bool       autoReregister;
-    bool       reregisterNow;
+    bool       m_reregisterNow;
     PTimer     timeToLive;
     bool       requiresDiscovery;
     PTimer     infoRequestRate;
     bool       willRespondToIRR;
-    PThread  * monitor;
-    bool       monitorStop;
-    PSyncPoint monitorTickle;
 
     PDictionary<POrdinalKey, H323ServiceControlSession> serviceControlSessions;
 	

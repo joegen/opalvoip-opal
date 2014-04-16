@@ -235,6 +235,7 @@ static const wxChar H323Group[] = wxT("/H.323");
 DEF_FIELD(GatekeeperMode);
 DEF_FIELD(GatekeeperAddress);
 DEF_FIELD(GatekeeperInterface);
+DEF_FIELD(GatekeeperSuppressGRQ);
 DEF_FIELD(GatekeeperIdentifier);
 DEF_FIELD(GatekeeperTTL);
 DEF_FIELD(GatekeeperLogin);
@@ -1486,6 +1487,8 @@ bool MyManager::Initialise(bool startMinimised)
 
   config->Read(GatekeeperAddressKey, &m_gatekeeperAddress, wxEmptyString);
   config->Read(GatekeeperInterfaceKey, &m_gatekeeperInterface, wxEmptyString);
+  config->Read(GatekeeperSuppressGRQKey, &onoff);
+  h323EP->SetSendGRQ(!onoff);
   config->Read(GatekeeperIdentifierKey, &m_gatekeeperIdentifier, wxEmptyString);
   if (!StartGatekeeper())
     return false;
@@ -4824,6 +4827,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(GatekeeperMode, m_manager.m_gatekeeperMode);
   INIT_FIELD(GatekeeperAddress, m_manager.m_gatekeeperAddress);
   INIT_FIELD(GatekeeperInterface, m_manager.m_gatekeeperInterface);
+  INIT_FIELD(GatekeeperSuppressGRQ, !m_manager.h323EP->GetSendGRQ());
   INIT_FIELD(GatekeeperIdentifier, m_manager.m_gatekeeperIdentifier);
   INIT_FIELD(GatekeeperTTL, m_manager.h323EP->GetGatekeeperTimeToLive().GetSeconds());
   INIT_FIELD(GatekeeperLogin, m_manager.h323EP->GetGatekeeperUsername());
@@ -5263,6 +5267,12 @@ bool OptionsDialog::TransferDataFromWindow()
   config->DeleteGroup(H323AliasesGroup);
   config->SetPath(H323AliasesGroup);
   m_manager.h323EP->SetLocalUserName(m_Username);
+
+  for (PStringList::iterator it = m_manager.h323EP->m_configuredAliasNames.begin(); it != m_manager.h323EP->m_configuredAliasNames.end(); ++it) {
+    if (m_Aliases->FindString(PwxString(*it)) < 0)
+      m_manager.h323EP->RemoveAliasName(*it);
+  }
+
   m_manager.h323EP->m_configuredAliasNames.RemoveAll();
   for (size_t i = 0; i < m_Aliases->GetCount(); i++) {
     PwxString alias = m_Aliases->GetString(i);
@@ -5299,18 +5309,22 @@ bool OptionsDialog::TransferDataFromWindow()
   config->Write(GatekeeperTTLKey, m_GatekeeperTTL);
   m_manager.h323EP->SetGatekeeperTimeToLive(PTimeInterval(0, m_GatekeeperTTL));
 
+  bool suppressGRQ = !m_manager.h323EP->GetSendGRQ();
   if (m_manager.m_gatekeeperMode != m_GatekeeperMode ||
       m_manager.m_gatekeeperAddress != m_GatekeeperAddress ||
       m_manager.m_gatekeeperInterface != m_GatekeeperInterface ||
+      suppressGRQ != m_GatekeeperSuppressGRQ ||
       m_manager.m_gatekeeperIdentifier != m_GatekeeperIdentifier ||
       PwxString(m_manager.h323EP->GetGatekeeperUsername()) != m_GatekeeperLogin ||
       PwxString(m_manager.h323EP->GetGatekeeperPassword()) != m_GatekeeperPassword) {
     SAVE_FIELD(GatekeeperMode, m_manager.m_gatekeeperMode = );
     SAVE_FIELD(GatekeeperAddress, m_manager.m_gatekeeperAddress = );
     SAVE_FIELD(GatekeeperInterface, m_manager.m_gatekeeperInterface = );
+    SAVE_FIELD(GatekeeperSuppressGRQ, suppressGRQ = );
     SAVE_FIELD(GatekeeperIdentifier, m_manager.m_gatekeeperIdentifier = );
     SAVE_FIELD2(GatekeeperPassword, GatekeeperLogin, m_manager.h323EP->SetGatekeeperPassword);
 
+    m_manager.h323EP->SetSendGRQ(!suppressGRQ);
     if (!m_manager.StartGatekeeper())
       m_manager.Close();
   }

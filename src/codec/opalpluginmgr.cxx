@@ -505,8 +505,10 @@ OpalPluginAudioFormatInternal::OpalPluginAudioFormatInternal(const PluginCodec_D
   PopulateOptions(*this);
 
   // Override calculated value if we have an explicit bit rate
-  if (codecDefn->bitsPerSec > 0)
+  if (codecDefn->bitsPerSec > 0) {
     SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), codecDefn->bitsPerSec);
+    SetOptionInteger(OpalMediaFormat::TargetBitRateOption(), codecDefn->bitsPerSec);
+  }
 }
 
 

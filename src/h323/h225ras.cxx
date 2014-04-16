@@ -658,6 +658,8 @@ PBoolean H225_RAS::OnReceiveRegistrationConfirm(const H323RasPDU & pdu, const H2
     DisableFeatureSet();
 #endif
 
+  if (rcf.HasOptionalField(H225_RegistrationConfirm::e_gatekeeperIdentifier))
+    gatekeeperIdentifier = rcf.m_gatekeeperIdentifier;
   return OnReceiveRegistrationConfirm(rcf);
 }
 
