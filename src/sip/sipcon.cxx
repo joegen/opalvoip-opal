@@ -3223,7 +3223,10 @@ bool SIPConnection::SendInviteOK()
     SDPSessionDescription sdpOut(m_sdpSessionId, ++m_sdpVersion, GetDefaultSDPConnectAddress());
     if (!OnSendAnswerSDP(sdpOut))
       return false;
-    return SendInviteResponse(SIP_PDU::Successful_OK, &sdpOut);
+
+    if (!SendInviteResponse(SIP_PDU::Successful_OK, &sdpOut))
+      SendInviteResponse(SIP_PDU::Successful_OK, &sdpOut);
+    return true;
   }
 
   SIP_PDU response(*originalInvite, SIP_PDU::Successful_OK);
