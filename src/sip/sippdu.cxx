@@ -2300,7 +2300,10 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
 #endif
 
   bool ok = transport.Write((const char *)pduStr, pduLen);
-  PTRACE_IF(1, !ok, "SIP\tPDU Write failed: " << transport.GetErrorText(PChannel::LastWriteError));
+  if (!ok) {
+    PTRACE(1, "SIP\tPDU Write failed: " << transport.GetErrorText(PChannel::LastWriteError));
+    transport.Close();
+  }
 
   transport.SetInterface(oldInterface);
   transport.SetRemoteAddress(oldRemoteAddress);

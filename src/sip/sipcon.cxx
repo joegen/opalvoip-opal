@@ -351,7 +351,7 @@ bool SIPConnection::GarbageCollection()
 
 OpalTransport & SIPConnection::GetTransport() const
 {
-  if (m_transport == NULL)
+  if (m_transport == NULL || !m_transport->IsOpen())
     PAssert(const_cast<SIPConnection*>(this)->SetTransport(m_dialog.GetRemoteTransportAddress()), "Could not re-create transport");
 
   return *m_transport;
