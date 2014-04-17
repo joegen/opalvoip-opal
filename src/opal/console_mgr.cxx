@@ -468,6 +468,8 @@ void H323ConsoleEndPoint::GetArgumentSpec(ostream & strm) const
           "-gk-password:       H.323 gatekeeper password (if different from --password).\n"
           "-gk-alias-limit:    H.323 gatekeeper alias limit (compatibility issue)\n"
           "-gk-sim-pattern.    H.323 gatekeeper alias patern simulation\n"
+          "-gk-suppress-grq.   H.323 gatekeeper GRQ is not sent on registration.\n"
+          "-gk-interface:      H.323 gatekeeper network interface to use for RAS.\n"
           "-alias:             H.323 alias name, may be multiple entries.\n"
           "-alias-pattern:     H.323 alias pattern, may be multiple entries.\n"
           "-no-fast.           H.323 fast connect disabled.\n"
@@ -475,10 +477,10 @@ void H323ConsoleEndPoint::GetArgumentSpec(ostream & strm) const
 }
 
 
-bool H323ConsoleEndPoint::UseGatekeeperFromArgs(const PArgList & args, const char * host, const char * ident, const char * pass)
+bool H323ConsoleEndPoint::UseGatekeeperFromArgs(const PArgList & args, const char * host, const char * ident, const char * pass, const char * inter)
 {
   SetGatekeeperPassword(args.GetOptionString(pass, args.GetOptionString("password")));
-  return UseGatekeeper(args.GetOptionString(host), args.GetOptionString(ident));
+  return UseGatekeeper(args.GetOptionString(host), args.GetOptionString(ident), args.GetOptionString(inter));
 }
 
 
@@ -513,6 +515,9 @@ bool H323ConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PStrin
   if (args.HasOption("gk-sim-pattern"))
     SetGatekeeperSimulatePattern(true);
 
+  if (args.HasOption("gk-suppress-grq"))
+    SetSendGRQ(false);
+
   if (verbose)
     output << "H.323 Aliases: " << setfill(',') << GetAliasNames() << setfill(' ') << "\n"
               "H.323 Alias Patterns: " << (GetGatekeeperSimulatePattern() ? "(simulated)" : "")
@@ -525,7 +530,7 @@ bool H323ConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PStrin
   SetGatekeeperAliasLimit(args.GetOptionAs<PINDEX>("gk-alias-limit", GetGatekeeperAliasLimit()));
 
   if (args.HasOption("gk-host") || args.HasOption("gk-id")) {
-    if (!UseGatekeeperFromArgs(args, "gk-host", "gk-id", "gk-password")) {
+    if (!UseGatekeeperFromArgs(args, "gk-host", "gk-id", "gk-password", "gk-interface")) {
       output << "Could not initiate gatekeeper registration." << endl;
       return false;
     }
@@ -582,7 +587,9 @@ void H323ConsoleEndPoint::CmdGatekeeper(PCLI::Arguments & args, P_INT_PTR)
     RemoveGatekeeper();
   else if (args[0] *= "on") {
     args.GetContext() << "H.323 Gatekeeper: " << flush;
-    if (UseGatekeeperFromArgs(args, "host", "identifier", "password"))
+    if (args.HasOption("suppress-grq"))
+      SetSendGRQ(false);
+    if (UseGatekeeperFromArgs(args, "host", "identifier", "password", "interface"))
       args.GetContext()<< *GetGatekeeper() << endl;
     else
       args.GetContext() << "unavailable" << endl;
@@ -611,8 +618,10 @@ void H323ConsoleEndPoint::AddCommands(PCLI & cli)
                   "[ options ] [ \"on\" / \"off\" ]",
                   "h-host: Host name or IP address of gatekeeper\n"
                   "i-identifier: Identifier for gatekeeper\n"
+                  "I-interface: Network interface for RAS channel.\n"
                   "p-password: Password for H.235.1 authentication\n"
-                  "l-limit: Alias limit for gatekeeper");
+                  "l-limit: Alias limit for gatekeeper\n"
+                  "g-suppress-grq: Do not send GRQ in registration");
 }
 #endif // P_CLI
 #endif // OPAL_H323
