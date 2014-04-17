@@ -730,6 +730,9 @@ class SIPConnection : public OpalRTPConnection
     PString               m_alertInfo;
     SIPAuthentication   * m_authentication;
     unsigned              m_authenticatedCseq;
+#if OPAL_VIDEO
+    bool                  m_canDoVideoFastUpdateINFO;
+#endif
     PTimer                sessionTimer;
 
     std::map<SIP_PDU::Methods, unsigned> m_lastRxCSeq;

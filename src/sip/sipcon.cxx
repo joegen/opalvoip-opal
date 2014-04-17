@@ -243,6 +243,9 @@ SIPConnection::SIPConnection(OpalCall & call,
   , m_appearanceCode(ep.GetDefaultAppearanceCode())
   , m_authentication(NULL)
   , m_authenticatedCseq(0)
+#if OPAL_VIDEO
+  , m_canDoVideoFastUpdateINFO(true)
+#endif
   , m_prackMode((PRACKMode)m_stringOptions.GetInteger(OPAL_OPT_PRACK_MODE, ep.GetDefaultPRACKMode()))
   , m_prackEnabled(false)
   , m_prackSequenceNumber(0)
@@ -3599,7 +3602,7 @@ bool SIPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaComm
   bool done = OpalRTPConnection::OnMediaCommand(stream, command);
 
 #if OPAL_VIDEO
-  if (PIsDescendant(&command, OpalVideoUpdatePicture) && (stream.IsSource() == (&stream.GetConnection() == this))) {
+  if (m_canDoVideoFastUpdateINFO && PIsDescendant(&command, OpalVideoUpdatePicture) && (stream.IsSource() == (&stream.GetConnection() == this))) {
     if ((m_stringOptions.GetInteger(OPAL_OPT_VIDUP_METHODS, OPAL_OPT_VIDUP_METHOD_DEFAULT)&OPAL_OPT_VIDUP_METHOD_OOB) == 0) {
       PTRACE(5, "RTPCon\tINFO picture_fast_update disabled in string options");
     }
@@ -3616,6 +3619,8 @@ bool SIPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaComm
                              "</media_control>");
       if (SendINFO(params))
         done = true;
+      else
+        m_canDoVideoFastUpdateINFO = false;
     }
   }
 #endif
