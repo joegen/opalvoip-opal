@@ -468,6 +468,7 @@ void H323ConsoleEndPoint::GetArgumentSpec(ostream & strm) const
           "-gk-password:       H.323 gatekeeper password (if different from --password).\n"
           "-gk-alias-limit:    H.323 gatekeeper alias limit (compatibility issue)\n"
           "-gk-sim-pattern.    H.323 gatekeeper alias patern simulation\n"
+          "-gk-suppress-grq.   H.323 gatekeeper GRQ is not sent on registration.\n"
           "-alias:             H.323 alias name, may be multiple entries.\n"
           "-alias-pattern:     H.323 alias pattern, may be multiple entries.\n"
           "-no-fast.           H.323 fast connect disabled.\n"
@@ -512,6 +513,9 @@ bool H323ConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PStrin
 
   if (args.HasOption("gk-sim-pattern"))
     SetGatekeeperSimulatePattern(true);
+
+  if (args.HasOption("gk-suppress-grq"))
+    SetSendGRQ(false);
 
   if (verbose)
     output << "H.323 Aliases: " << setfill(',') << GetAliasNames() << setfill(' ') << "\n"
@@ -582,6 +586,8 @@ void H323ConsoleEndPoint::CmdGatekeeper(PCLI::Arguments & args, P_INT_PTR)
     RemoveGatekeeper();
   else if (args[0] *= "on") {
     args.GetContext() << "H.323 Gatekeeper: " << flush;
+    if (args.HasOption("suppress-grq"))
+      SetSendGRQ(false);
     if (UseGatekeeperFromArgs(args, "host", "identifier", "password"))
       args.GetContext()<< *GetGatekeeper() << endl;
     else
@@ -612,7 +618,8 @@ void H323ConsoleEndPoint::AddCommands(PCLI & cli)
                   "h-host: Host name or IP address of gatekeeper\n"
                   "i-identifier: Identifier for gatekeeper\n"
                   "p-password: Password for H.235.1 authentication\n"
-                  "l-limit: Alias limit for gatekeeper");
+                  "l-limit: Alias limit for gatekeeper\n"
+                  "g-suppress-grq: Do not send GRQ in registration");
 }
 #endif // P_CLI
 #endif // OPAL_H323
