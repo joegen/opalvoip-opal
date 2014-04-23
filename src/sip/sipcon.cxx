@@ -371,7 +371,7 @@ bool SIPConnection::SetTransport(const SIPURL & destination)
   }
 
   if (deleteTransport && m_transport != NULL) {
-    GetTransport().CloseWait();
+    m_transport->CloseWait();
     delete m_transport;
   }
 
