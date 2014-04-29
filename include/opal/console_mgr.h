@@ -232,6 +232,7 @@ public:
   virtual bool Initialise(PArgList & args, bool verbose, const PString &);
 
 #if P_CLI
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdRingFileAndDevice);
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdVolume);
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdAudioDevice);
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdAudioBuffers);
@@ -241,6 +242,27 @@ public:
 
   virtual void AddCommands(PCLI & cli);
 #endif // P_CLI
+
+  void SetRingInfo(ostream & out, bool verbose, const PString & filename, const PString & device, const PString & driver);
+
+  // Various call backs
+  virtual PBoolean OnShowIncoming(const OpalPCSSConnection & connection);
+  virtual void OnConnected(OpalConnection & connection);
+  virtual void OnReleased(OpalConnection & connection);
+  virtual void ShutDown();
+
+  protected:
+    PFilePath             m_ringFileName;
+    PSoundChannel::Params m_ringChannelParams;
+    PThread             * m_ringThread;
+    PSyncPoint            m_ringSignal;
+    enum RingState
+    {
+      e_RingIdle,
+      e_Ringing,
+      e_RingShutDown
+    } m_ringState;
+    void RingThreadMain();
 };
 #endif // OPAL_HAS_PCSS
 

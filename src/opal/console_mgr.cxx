@@ -41,6 +41,9 @@
 #include <ptclib/pstun.h>
 
 
+#define PTraceModule() "Console"
+
+
 static void PrintVersion(ostream & strm)
 {
   const PProcess & process = PProcess::Current();
@@ -226,12 +229,8 @@ void OpalRTPConsoleEndPoint::CmdStringOption(PCLI::Arguments & args, P_INT_PTR)
   if (args.HasOption('c'))
     m_endpoint.SetDefaultStringOptions(OpalConnection::StringOptions());
 
-  if (args.GetCount() > 0) {
-    PString value;
-    for (PINDEX i = 1; i < args.GetCount(); ++i)
-      value &= args[i];
-    m_endpoint.SetDefaultStringOption(args[0], value);
-  }
+  if (args.GetCount() > 0)
+    m_endpoint.SetDefaultStringOption(args[0], args.GetParameters(1).ToString());
 
   args.GetContext() << "Options for " << m_endpoint.GetPrefixName()<< ":\n"
                     << m_endpoint.GetDefaultStringOptions()
@@ -845,6 +844,30 @@ void OpalConsoleCapiEndPoint::AddCommands(PCLI &)
 
 #if OPAL_HAS_PCSS
 
+static void OutputSoundDeviceError(ostream & output,
+                                   PSoundChannel::Directions dir,
+                                   const PString & device,
+                                   const PString & driver)
+{
+  PStringArray names;
+  if (driver.IsEmpty()) {
+    names = PSoundChannel::GetDeviceNames(dir);
+    output << " device name \"" << device << '"';
+  }
+  else if ((names = PSoundChannel::GetDriversDeviceNames(driver, dir)).IsEmpty()) {
+    names = PSoundChannel::GetDriverNames();
+    output << " driver \"" << driver << "\" invalid, select one of:";
+  }
+  else
+    output << " device name \"" << device << "\" with driver \"" << driver << "\" invalid, select one of:";
+
+  output << " invalid, select one of:";
+  for (PINDEX i = 0; i < names.GetSize(); ++i)
+    output << "\n   " << names[i];
+  output << endl;
+}
+
+
 static struct {
   PSoundChannel::Directions m_dir;
   const char * m_name;
@@ -869,11 +892,8 @@ static struct {
       device = '*';
 
     if ((!driver.IsEmpty() || !device.IsEmpty()) && !(ep.*m_set)(driver + device)) {
-      output << "Illegal audio " << m_description << " driver/device, select one of:";
-      PStringArray available = PSoundChannel::GetDeviceNames(m_dir);
-      for (PINDEX i = 0; i < available.GetSize(); ++i)
-        output << "\n   " << available[i];
-      output << endl;
+      output << "Audio " << m_description;
+      OutputSoundDeviceError(output, m_dir, device, driver);
       return false;
     }
 
@@ -899,15 +919,18 @@ static struct {
 
   bool Initialise(OpalPCSSEndPoint & ep, ostream & output, bool verbose, const PArgList & args, bool fromCLI)
   {
+    PVideoDevice::OpenArgs video = (ep.*m_get)();
+
     PString prefix;
-    if (!fromCLI) {
+    if (fromCLI)
+      video.deviceName = args.GetParameters().ToString();
+    else {
       prefix += m_name;
       prefix += '-';
+      video.deviceName = args.GetOptionString(prefix + "device");
     }
 
-    PVideoDevice::OpenArgs video = (ep.*m_get)();
     video.driverName = args.GetOptionString(prefix+"driver");
-    video.deviceName = fromCLI ? args[0] : args.GetOptionString(prefix+"device");
     video.channelNumber = args.GetOptionString(prefix+"channel").AsUnsigned();
 
     PString fmt = args.GetOptionString(prefix+"format");
@@ -943,13 +966,19 @@ static struct {
 OpalConsolePCSSEndPoint::OpalConsolePCSSEndPoint(OpalConsoleManager & manager)
   : OpalPCSSEndPoint(manager)
   , OpalConsoleEndPoint(manager)
+  , m_ringChannelParams(PSoundChannel::Player, PSoundChannel::GetDefaultDevice(PSoundChannel::Player))
+  , m_ringThread(NULL)
+  , m_ringState(e_RingIdle)
 {
 }
 
 
 void OpalConsolePCSSEndPoint::GetArgumentSpec(ostream & strm) const
 {
-  strm << "[PC options:]";
+  strm << "[PC options:]"
+          "-ring-file:   WAV file to play on incoming call\n"
+          "-ring-device: Audio device to play the ring-file\n"
+          "-ring-driver: Audio driver to play the ring-file\n";
   for (PINDEX i = 0; i < PARRAYSIZE(AudioDeviceVariables); ++i) {
     const char * name = AudioDeviceVariables[i].m_name;
     const char * desc = AudioDeviceVariables[i].m_description;
@@ -986,6 +1015,12 @@ bool OpalConsolePCSSEndPoint::Initialise(PArgList & args, bool verbose, const PS
   if (verbose)
     output << "Audio buffer time: " << GetSoundChannelBufferTime() << "ms\n";
 
+  if (args.HasOption("ring-file"))
+    SetRingInfo(output, verbose,
+                args.GetOptionString("ring-file"),
+                args.GetOptionString("ring-device", m_ringChannelParams.m_device),
+                args.GetOptionString("ring-driver", m_ringChannelParams.m_driver));
+
 #if OPAL_VIDEO
   for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i) {
     if (!VideoDeviceVariables[i].Initialise(*this, output, verbose, args, false))
@@ -998,6 +1033,15 @@ bool OpalConsolePCSSEndPoint::Initialise(PArgList & args, bool verbose, const PS
 
 
 #if P_CLI
+void OpalConsolePCSSEndPoint::CmdRingFileAndDevice(PCLI::Arguments & args, P_INT_PTR)
+{
+  SetRingInfo(args.GetContext(), true,
+              args.GetCount() < 1 ? m_ringFileName : args[0],
+              args.GetOptionString('d', m_ringChannelParams.m_device),
+              args.GetOptionString('D', m_ringChannelParams.m_driver));
+}
+
+
 void OpalConsolePCSSEndPoint::CmdVolume(PCLI::Arguments & args, P_INT_PTR)
 {
   PSafePtr<OpalConnection> connection = GetConnectionWithLock(args.GetOptionString('c', "*"), PSafeReadOnly);
@@ -1052,6 +1096,11 @@ void OpalConsolePCSSEndPoint::CmdVideoDevice(PCLI::Arguments & args, P_INT_PTR)
 
 void OpalConsolePCSSEndPoint::AddCommands(PCLI & cli)
 {
+  cli.SetCommand(GetPrefixName() & "ring", PCREATE_NOTIFIER(CmdRingFileAndDevice),
+                 "Set ring file for incoming calls", "[ options ] <file> ",
+                 "d-device: Set sound device name for playing file\n"
+                 "D-driver: Set sound device driver for playing file\n");
+
   for (PINDEX i = 0; i < PARRAYSIZE(AudioDeviceVariables); ++i)
     cli.SetCommand(GetPrefixName() & AudioDeviceVariables[i].m_name, PCREATE_NOTIFIER(CmdAudioDevice),
                     PSTRSTRM("Audio " << AudioDeviceVariables[i].m_description << " device."),
@@ -1077,6 +1126,122 @@ void OpalConsolePCSSEndPoint::AddCommands(PCLI & cli)
                   "[ <percent> ]", "c-call: Call token");
 }
 #endif // P_CLI
+
+
+void OpalConsolePCSSEndPoint::SetRingInfo(ostream & output, bool verbose, const PString & filename, const PString & device, const PString & driver)
+{
+  m_ringFileName = filename;
+  m_ringChannelParams.m_device = device;
+  m_ringChannelParams.m_driver = driver;
+
+  if (verbose)
+    output << "Ring file: ";
+
+  if (m_ringFileName.IsEmpty()) {
+    if (verbose)
+      output << "not configured." << endl;
+    return;
+  }
+
+  PWAVFile wavFile;
+  if (!wavFile.Open(m_ringFileName, PFile::ReadOnly)) {
+    output << '"' << m_ringFileName << "\" non-existant or invalid." << endl;
+    return;
+  }
+
+  m_ringChannelParams.m_channels = wavFile.GetChannels();
+  m_ringChannelParams.m_sampleRate = wavFile.GetSampleRate();
+  m_ringChannelParams.m_bitsPerSample = wavFile.GetSampleSize();
+
+  if (!PSoundChannel().Open(m_ringChannelParams)) {
+    OutputSoundDeviceError(output, PSoundChannel::Player, device, driver);
+    return;
+  }
+
+  if (verbose)
+    output << '"' << m_ringFileName << "\" on " << m_ringChannelParams << endl;
+}
+
+
+PBoolean OpalConsolePCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
+{
+  if (!OpalPCSSEndPoint::OnShowIncoming(connection))
+    return false;
+
+  m_ringState = e_Ringing;
+
+  if (m_ringThread == NULL)
+    m_ringThread = new PThreadObj<OpalConsolePCSSEndPoint>(*this, &OpalConsolePCSSEndPoint::RingThreadMain, false, "Ringer");
+  else
+    m_ringSignal.Signal();
+
+  return true;
+}
+
+
+void OpalConsolePCSSEndPoint::OnConnected(OpalConnection & connection)
+{
+  m_ringState = e_RingIdle;
+  m_ringSignal.Signal();
+  OpalPCSSEndPoint::OnConnected(connection);
+}
+
+
+void OpalConsolePCSSEndPoint::OnReleased(OpalConnection & connection)
+{
+  m_ringState = e_RingIdle;
+  m_ringSignal.Signal();
+  OpalPCSSEndPoint::OnReleased(connection);
+}
+
+
+void OpalConsolePCSSEndPoint::ShutDown()
+{
+  if (m_ringThread != NULL) {
+    m_ringState = e_RingShutDown;
+    m_ringSignal.Signal();
+    m_ringThread->WaitForTermination();
+    delete m_ringThread;
+    m_ringThread = NULL;
+  }
+
+  OpalPCSSEndPoint::ShutDown();
+}
+
+
+void OpalConsolePCSSEndPoint::RingThreadMain()
+{
+  PTRACE(4, "Ringer thread started");
+  for (;;) {
+    switch (m_ringState) {
+      case e_RingIdle :
+        m_ringSignal.Wait();
+        break;
+
+      case e_RingShutDown :
+        PTRACE(4, "Ringer thread ended");
+        return;
+
+      case e_Ringing:
+        PSoundChannel channel;
+        if (!channel.Open(m_ringChannelParams)) {
+          PTRACE(2, "Could not open " << m_ringChannelParams);
+          m_ringState = e_RingIdle;
+          break;
+        }
+
+        PTRACE(3, "Started playing ring file \"" << m_ringFileName << "\" on " << m_ringChannelParams);
+
+        while (m_ringState == e_Ringing) {
+          if (channel.HasPlayCompleted())
+            channel.PlayFile(m_ringFileName, false);
+          else
+            m_ringSignal.Wait(200);
+        }
+        PTRACE(3, "Ended playing ring file \"" << m_ringFileName << "\" on " << m_ringChannelParams);
+    }
+  }
+}
 #endif // OPAL_HAS_PCSS
 
 
@@ -1665,7 +1830,7 @@ OpalConsoleEndPoint * OpalConsoleManager::GetConsoleEndPoint(const PString & pre
     else
 #endif
     {
-      PTRACE(1, "ConsoleApp\tUnknown prefix " << prefix);
+      PTRACE(1, "Unknown prefix " << prefix);
       return NULL;
     }
   }
