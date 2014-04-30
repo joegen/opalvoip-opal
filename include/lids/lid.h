@@ -790,10 +790,27 @@ class OpalLineInterfaceDevice : public PObject
       */
     PString GetCountryCodeName() const;
 
-    /**Get the country code set for the device as a string.
+    /**Get the country code as a string.
       */
     static PString GetCountryCodeName(T35CountryCodes code);
+
+    /**Get the country code from a string.
+      */
     static T35CountryCodes GetCountryCode(const PString & name);
+
+    struct T35CountryInfo
+    {
+      const char *    m_isoName;
+      unsigned        m_dialCode;
+      T35CountryCodes m_t35Code;
+      const char    * m_fullName;
+      const char    * m_tone[NumTones];
+    };
+
+    /**Get the T.35 country information.
+    */
+    static const T35CountryInfo & GetCountryInfo(T35CountryCodes code);
+
 
     /**Set the country code set for the device.
        This may change the line analogue coefficients, ring detect, call
