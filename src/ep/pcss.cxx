@@ -329,6 +329,7 @@ bool OpalPCSSEndPoint::SetLocalRingbackTone(const PString & tone)
   if (PFile::Exists(tone))
     m_localRingbackTone = tone;
   else {
+#if OPAL_LID
     OpalLineInterfaceDevice::T35CountryCodes code = OpalLineInterfaceDevice::GetCountryCode(tone);
     PString toneSpec = tone;
     if (code != OpalLineInterfaceDevice::UnknownCountry) {
@@ -345,6 +346,14 @@ bool OpalPCSSEndPoint::SetLocalRingbackTone(const PString & tone)
     }
 
     m_localRingbackTone = toneSpec;
+#else
+    if (!PTones().Generate(tone)) {
+      PTRACE(2, "PCSS\tIllegal tone specification \"" << tone << '"');
+      return false;
+    }
+
+    m_localRingbackTone = tone;
+#endif // OPAL_LID
   }
 
   return true;
