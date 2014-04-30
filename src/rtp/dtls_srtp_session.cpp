@@ -80,14 +80,13 @@ class DTLSContext : public PSSLContext
         << "/CN=*";
 
       PSSLPrivateKey pk(1024);
-      PSSLCertificate cert;
-      if (!cert.CreateRoot(dn, pk))
+      if (!m_cert.CreateRoot(dn, pk))
       {
         PTRACE(1, "DTLSFactory\tCould not create certificate for DTLS.");
         return;
       }
 
-      if (!UseCertificate(cert))
+      if (!UseCertificate(m_cert))
       {
         PTRACE(1, "DTLSFactory\tCould not use DTLS certificate.");
         return;
@@ -98,8 +97,6 @@ class DTLSContext : public PSSLContext
         PTRACE(1, "DTLSFactory\tCould not use private key for DTLS.");
         return;
       }
-
-      m_fingerprint = PSSLCertificateFingerprint(PSSLCertificateFingerprint::HashSha1, cert);
 
       PStringStream ext;
       for (PINDEX i = 0; i < PARRAYSIZE(ProfileNames); ++i) {
@@ -118,13 +115,13 @@ class DTLSContext : public PSSLContext
       }
     }
 
-    const PSSLCertificateFingerprint & GetFingerprint() const
+    PSSLCertificateFingerprint GetFingerprint(PSSLCertificateFingerprint::HashType aType) const
     {
-      return m_fingerprint;
+      return PSSLCertificateFingerprint(aType, m_cert);
     }
 
   protected:
-    PSSLCertificateFingerprint m_fingerprint;
+    PSSLCertificate m_cert;
 };
 
 typedef PSingleton<DTLSContext> DTLSContextSingleton;
@@ -140,9 +137,9 @@ public:
     , m_usedForData(isData)
   {
     if (isServer)
-      Accept(socket);
+      Accept(socket, false);
     else
-      Connect(socket);
+      Connect(socket, false);
   }
 
   OpalDTLSSRTPSession & m_session;
@@ -218,9 +215,15 @@ OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::OnSendControl(RTP_Control
 
 const PSSLCertificateFingerprint& OpalDTLSSRTPSession::GetLocalFingerprint() const
 {
-  return DTLSContextSingleton()->GetFingerprint();
+  if (!m_localFingerprint.IsValid())
+  {
+    PSSLCertificateFingerprint::HashType type = PSSLCertificateFingerprint::HashSha1;
+    if (GetRemoteFingerprint().IsValid())
+      type = GetRemoteFingerprint().GetHash();
+    const_cast<OpalDTLSSRTPSession*>(this)->m_localFingerprint = DTLSContextSingleton()->GetFingerprint(type);
+  }
+  return m_localFingerprint;
 }
-
 
 void OpalDTLSSRTPSession::SetRemoteFingerprint(const PSSLCertificateFingerprint& fp)
 {
@@ -430,10 +433,9 @@ void OpalDTLSSRTPSession::OnHandshake(PSSLChannelDTLS & channel, P_INT_PTR faile
   PINDEX masterKeyLength = srtp_profile_get_master_key_length(profile);
   PINDEX masterSaltLength = srtp_profile_get_master_salt_length(profile);
 
-  if (((masterSaltLength + masterKeyLength) << 1) < channel.GetKeyMaterial().GetSize())
+  PBYTEArray keyMaterial;
+  if (!channel.GetKeyMaterial(((masterSaltLength + masterKeyLength) << 1), &keyMaterial))
   {
-    PTRACE(2, "OpalDTLSSRTPSession\tInvalid key size for this profile: "
-           << ((masterSaltLength + masterKeyLength) << 1) << " < " << channel.GetKeyMaterial().GetSize());
     Close();
     return;
   }
@@ -444,14 +446,14 @@ void OpalDTLSSRTPSession::OnHandshake(PSSLChannelDTLS & channel, P_INT_PTR faile
   const uint8_t *remoteSalt;
   if (channel.IsServer())
   {
-    remoteKey = channel.GetKeyMaterial();
+    remoteKey = keyMaterial;
     localKey = remoteKey + masterKeyLength;
     remoteSalt = (localKey + masterKeyLength);
     localSalt = (remoteSalt + masterSaltLength);
   }
   else
   {
-    localKey = channel.GetKeyMaterial();
+    localKey = keyMaterial;
     remoteKey = localKey + masterKeyLength;
     localSalt = (remoteKey + masterKeyLength); 
     remoteSalt = (localSalt + masterSaltLength);
@@ -535,6 +537,16 @@ void OpalDTLSSRTPSession::SetRemoteUserPass(const PString& user, const PString& 
   // Prevent call method from OpalSRTPSession for prevent STUN server implementation from open.
   // We need handle STUN packets itself.
   OpalMediaSession::SetRemoteUserPass(user, pass);
+}
+
+bool OpalDTLSSRTPSession::Close()
+{
+  for (int i = 0; i < 2; ++i) {
+    PSSLChannelDTLS* channel = m_channels[i].get();
+    if (channel)
+      channel->Close();
+  }
+  return OpalSRTPSession::Close();
 }
 
 
