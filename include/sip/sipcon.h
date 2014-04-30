@@ -567,6 +567,7 @@ class SIPConnection : public OpalRTPConnection
 
     OpalTransport & GetTransport() const;
     bool SetTransport(const SIPURL & destination);
+    void SetTransport(OpalTransport & transport);
 
     SIPEndPoint & GetEndPoint() const { return endpoint; }
     SIPDialogContext & GetDialog() { return m_dialog; }

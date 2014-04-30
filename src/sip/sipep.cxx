@@ -680,6 +680,10 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   else
     return OnReceivedConnectionlessPDU(transport, pdu);
 
+  PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(token, PSafeReadWrite);
+  if (connection != NULL)
+    connection->SetTransport(transport);
+
   m_connectionThreadPool.AddWork(new SIP_Work(*this, pdu, token), token);
   return true;
 }

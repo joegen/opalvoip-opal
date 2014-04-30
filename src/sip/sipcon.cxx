@@ -382,6 +382,23 @@ bool SIPConnection::SetTransport(const SIPURL & destination)
 }
 
 
+void SIPConnection::SetTransport(OpalTransport & transport)
+{
+  if (&transport == m_transport)
+    return;
+
+  PTRACE(4, "SIP\tSetting new transport to " << transport);
+
+  if (deleteTransport && m_transport != NULL) {
+    m_transport->CloseWait();
+    delete m_transport;
+  }
+
+  m_transport = &transport;
+  deleteTransport = false;
+}
+
+
 void SIPConnection::OnReleased()
 {
   PTRACE(3, "SIP\tOnReleased: " << *this);
