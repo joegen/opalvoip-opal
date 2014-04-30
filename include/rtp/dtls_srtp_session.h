@@ -56,6 +56,8 @@ class OpalDTLSSRTPSession : public OpalSRTPSession
 
     OpalDTLSSRTPSession(const Init & init);
     ~OpalDTLSSRTPSession();
+
+    virtual bool Close();
     virtual const PCaselessString & GetSessionType() const { return RTP_DTLS_SAVP(); }
     virtual void SetRemoteUserPass(const PString & user, const PString & pass);
     void SetConnectionInitiator(bool connectionInitiator);
@@ -108,6 +110,7 @@ private:
     bool m_stopSend[2];
     bool m_connectionInitiator;
     PSSLCertificateFingerprint m_remoteFingerprint;
+    PSSLCertificateFingerprint m_localFingerprint;
     bool m_stunNegotiated;
     PSTUN m_remoteStun; // Used for receive requests from other party and send responses
     PSTUN m_localStun; // Used for send request to other party and handle responses
