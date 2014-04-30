@@ -182,6 +182,7 @@ DEF_FIELD(SoundPlayer);
 DEF_FIELD(SoundRecorder);
 DEF_FIELD(SoundBufferTime);
 DEF_FIELD(EchoCancellation);
+DEF_FIELD(LocalRingbackTone);
 DEF_FIELD(LineInterfaceDevice);
 DEF_FIELD(AEC);
 DEF_FIELD(Country);
@@ -1211,6 +1212,9 @@ bool MyManager::Initialise(bool startMinimised)
   config->Read(EchoCancellationKey, &aecParams.m_enabled);
   SetEchoCancelParams(aecParams);
 #endif
+
+  if (config->Read(LocalRingbackToneKey, &str))
+    pcssEP->SetLocalRingbackTone(str);
 
   if (config->Read(MinJitterKey, &value1)) {
     config->Read(MaxJitterKey, &value2, value1);
@@ -4569,6 +4573,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 #if OPAL_AEC
   INIT_FIELD(EchoCancellation, m_manager.GetEchoCancelParams().m_enabled);
 #endif
+  INIT_FIELD(LocalRingbackTone, m_manager.pcssEP->GetLocalRingbackTone());
   INIT_FIELD(MinJitter, m_manager.GetMinAudioJitterDelay());
   INIT_FIELD(MaxJitter, m_manager.GetMaxAudioJitterDelay());
   INIT_FIELD(SilenceSuppression, m_manager.GetSilenceDetectParams().m_mode);
@@ -5124,6 +5129,7 @@ bool OptionsDialog::TransferDataFromWindow()
   m_manager.SetEchoCancelParams(aecParams);
 #endif
 
+  SAVE_FIELD(LocalRingbackTone, m_manager.pcssEP->SetLocalRingbackTone);
   SAVE_FIELD2(MinJitter, MaxJitter, m_manager.SetAudioJitterDelay);
 
   OpalSilenceDetector::Params silenceParams;

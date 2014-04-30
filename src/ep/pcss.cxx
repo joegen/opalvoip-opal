@@ -50,6 +50,8 @@
 #include <ptlib/sound.h>
 #include <opal/call.h>
 #include <opal/manager.h>
+#include <opal/patch.h>
+#include <lids/lid.h>
 
 
 #define new PNEW
@@ -58,6 +60,7 @@
 
 OpalPCSSEndPoint::OpalPCSSEndPoint(OpalManager & mgr, const char * prefix)
   : OpalLocalEndPoint(mgr, prefix, false)
+  , m_localRingbackTone("")
   , m_soundChannelPlayDevice(PSoundChannel::GetDefaultDevice(PSoundChannel::Player))
   , m_soundChannelRecordDevice(PSoundChannel::GetDefaultDevice(PSoundChannel::Recorder))
   , m_soundChannelOnHoldDevice(P_NULL_AUDIO_DEVICE)
@@ -321,6 +324,42 @@ PBoolean OpalPCSSEndPoint::OnShowUserInput(const OpalPCSSConnection &, const PSt
 }
 
 
+bool OpalPCSSEndPoint::SetLocalRingbackTone(const PString & tone)
+{
+  if (PFile::Exists(tone))
+    m_localRingbackTone = tone;
+  else {
+#if OPAL_LID
+    OpalLineInterfaceDevice::T35CountryCodes code = OpalLineInterfaceDevice::GetCountryCode(tone);
+    PString toneSpec = tone;
+    if (code != OpalLineInterfaceDevice::UnknownCountry) {
+      toneSpec = OpalLineInterfaceDevice::GetCountryInfo(code).m_tone[OpalLineInterfaceDevice::RingTone];
+      if (toneSpec.IsEmpty()) {
+        PTRACE(2, "PCSS\tCountry code \"" << tone << "\" does not have a ringback tone specified");
+        return false;
+      }
+    }
+
+    if (!PTones().Generate(toneSpec)) {
+      PTRACE(2, "PCSS\tIllegal country code or tone specification \"" << tone << '"');
+      return false;
+    }
+
+    m_localRingbackTone = toneSpec;
+#else
+    if (!PTones().Generate(tone)) {
+      PTRACE(2, "PCSS\tIllegal tone specification \"" << tone << '"');
+      return false;
+    }
+
+    m_localRingbackTone = tone;
+#endif // OPAL_LID
+  }
+
+  return true;
+}
+
+
 PBoolean OpalPCSSEndPoint::SetSoundChannelPlayDevice(const PString & name)
 {
   return SetDeviceName(name, PSoundChannel::Player, m_soundChannelPlayDevice);
@@ -407,6 +446,7 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
                           OpalConnection::StringOptions * stringOptions)
   : OpalLocalConnection(call, ep, NULL, options, stringOptions, 'P')
   , m_endpoint(ep)
+  , m_localRingbackTone(ep.GetLocalRingbackTone())
   , m_soundChannelPlayDevice(playDevice)
   , m_soundChannelRecordDevice(recordDevice)
   , m_soundChannelOnHoldDevice(ep.GetSoundChannelOnHoldDevice())
@@ -417,6 +457,7 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
   , m_videoOnHoldDevice(ep.GetVideoOnHoldDevice())
   , m_videoOnRingDevice(ep.GetVideoOnRingDevice())
 #endif
+  , m_ringbackThread(NULL)
 {
   silenceDetector = new OpalPCM16SilenceDetector(endpoint.GetManager().GetSilenceDetectParams());
   PTRACE_CONTEXT_ID_TO(silenceDetector);
@@ -434,6 +475,74 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
 OpalPCSSConnection::~OpalPCSSConnection()
 {
   PTRACE(4, "PCSS\tDeleted PC sound system connection.");
+}
+
+
+void OpalPCSSConnection::OnReleased()
+{
+  if (m_ringbackThread != NULL) {
+    PTRACE(4, "OnRelease stopping ringback thread");
+    m_ringbackStop.Signal();
+    m_ringbackThread->WaitForTermination();
+    delete m_ringbackThread;
+    m_ringbackThread = NULL;
+  }
+
+  OpalLocalConnection::OnReleased();
+}
+
+
+PBoolean OpalPCSSConnection::SetAlerting(const PString & calleeName, PBoolean withMedia)
+{
+  if (!OpalLocalConnection::SetAlerting(calleeName, withMedia))
+    return false;
+
+  if (!m_localRingbackTone.IsEmpty() && m_ringbackThread == NULL && GetMediaStream(OpalMediaType::Audio(), false) == NULL)
+    m_ringbackThread = new PThreadObj<OpalPCSSConnection>(*this, &OpalPCSSConnection::RingbackMain, false, "Ringback");
+
+  return true;
+}
+
+
+void OpalPCSSConnection::OnStartMediaPatch(OpalMediaPatch & patch)
+{
+  if (&patch.GetSource().GetConnection() != this) {
+    PTRACE(4, "Stopping ringback due to starting media");
+    m_ringbackStop.Signal();
+  }
+
+  OpalLocalConnection::OnStartMediaPatch(patch);
+}
+
+
+void OpalPCSSConnection::RingbackMain()
+{
+  PTRACE(4, "Started ringback thread");
+
+  PSoundChannel * channel = CreateSoundChannel(OpalPCM16, false);
+
+  if (PFile::Exists(m_localRingbackTone)) {
+    do {
+      if (channel->HasPlayCompleted())
+        channel->PlayFile(m_localRingbackTone, false);
+    } while (!m_ringbackStop.Wait(200));
+  }
+  else {
+    PTones tone(m_localRingbackTone);
+    PTimeInterval delay;
+    do {
+      if (channel->HasPlayCompleted()) {
+        tone.Write(*channel);
+        delay = tone.GetSize()*1000/tone.GetSampleRate()/2;
+      }
+      else
+        delay = 10;
+    } while (!m_ringbackStop.Wait(delay));
+  }
+
+  delete channel;
+
+  PTRACE(4, "Ended ringback thread");
 }
 
 
