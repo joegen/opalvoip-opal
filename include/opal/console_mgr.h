@@ -233,6 +233,7 @@ public:
 
 #if P_CLI
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdRingFileAndDevice);
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdRingbackTone);
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdVolume);
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdAudioDevice);
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdAudioBuffers);

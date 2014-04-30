@@ -39,6 +39,7 @@
 #include <h323/gkclient.h>
 #include <rtp/srtp_session.h>
 #include <ptclib/pstun.h>
+#include <ptclib/pwavfile.h>
 
 
 #define PTraceModule() "Console"
@@ -978,7 +979,8 @@ void OpalConsolePCSSEndPoint::GetArgumentSpec(ostream & strm) const
   strm << "[PC options:]"
           "-ring-file:   WAV file to play on incoming call\n"
           "-ring-device: Audio device to play the ring-file\n"
-          "-ring-driver: Audio driver to play the ring-file\n";
+          "-ring-driver: Audio driver to play the ring-file\n"
+          "-ringback-tone: Set ringback tone (WAV file, Country or tone specification)\n";
   for (PINDEX i = 0; i < PARRAYSIZE(AudioDeviceVariables); ++i) {
     const char * name = AudioDeviceVariables[i].m_name;
     const char * desc = AudioDeviceVariables[i].m_description;
@@ -1021,6 +1023,11 @@ bool OpalConsolePCSSEndPoint::Initialise(PArgList & args, bool verbose, const PS
                 args.GetOptionString("ring-device", m_ringChannelParams.m_device),
                 args.GetOptionString("ring-driver", m_ringChannelParams.m_driver));
 
+  if (args.HasOption("ringback-tone") && !SetLocalRingbackTone(args.GetOptionString("ringback-tone"))) {
+    output << "Invalid ringback tone specification." << endl;
+    return false;
+  }
+
 #if OPAL_VIDEO
   for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i) {
     if (!VideoDeviceVariables[i].Initialise(*this, output, verbose, args, false))
@@ -1039,6 +1046,15 @@ void OpalConsolePCSSEndPoint::CmdRingFileAndDevice(PCLI::Arguments & args, P_INT
               args.GetCount() < 1 ? m_ringFileName : args[0],
               args.GetOptionString('d', m_ringChannelParams.m_device),
               args.GetOptionString('D', m_ringChannelParams.m_driver));
+}
+
+
+void OpalConsolePCSSEndPoint::CmdRingbackTone(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() > 0 && !SetLocalRingbackTone(args[0]))
+    args.WriteError("Invalid ringback tone");
+  else
+    args.GetContext() << "Ringback tone: " << GetLocalRingbackTone() << endl;
 }
 
 
@@ -1097,9 +1113,12 @@ void OpalConsolePCSSEndPoint::CmdVideoDevice(PCLI::Arguments & args, P_INT_PTR)
 void OpalConsolePCSSEndPoint::AddCommands(PCLI & cli)
 {
   cli.SetCommand(GetPrefixName() & "ring", PCREATE_NOTIFIER(CmdRingFileAndDevice),
-                 "Set ring file for incoming calls", "[ options ] <file> ",
+                 "Set ring file for incoming calls", "[ options ] <file>",
                  "d-device: Set sound device name for playing file\n"
                  "D-driver: Set sound device driver for playing file\n");
+
+  cli.SetCommand(GetPrefixName() & "ringback", PCREATE_NOTIFIER(CmdRingbackTone),
+                 "Set local ringback tone for outgoing calls.", "<spec>");
 
   for (PINDEX i = 0; i < PARRAYSIZE(AudioDeviceVariables); ++i)
     cli.SetCommand(GetPrefixName() & AudioDeviceVariables[i].m_name, PCREATE_NOTIFIER(CmdAudioDevice),
