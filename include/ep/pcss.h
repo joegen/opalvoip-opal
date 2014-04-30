@@ -252,6 +252,23 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
 
   /**@name Member variable access */
   //@{
+    /**Set the local ringback tone to be played when remote indicates it is
+       ringing.
+
+       This string may be one of several forms:
+          A filename for an existing WAV file.
+          A two letter country code, or the full country name.
+          A tone specification as per PTones class.
+      */
+    bool SetLocalRingbackTone(
+      const PString & tone    ///< Tone specification string
+    );
+
+    /**Get the local ringback tone to be played when remote indicates it is
+       ringing.
+      */
+    const PString & GetLocalRingbackTone() const { return m_localRingbackTone; }
+
     /**Set the name for the sound channel to be used for output.
        If the name is not suitable for use with the PSoundChannel class then
        the function will return false and not change the device.
@@ -382,6 +399,7 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
   //@}
 
   protected:
+    PString  m_localRingbackTone;
     PString  m_soundChannelPlayDevice;
     PString  m_soundChannelRecordDevice;
     PString  m_soundChannelOnHoldDevice;
@@ -424,6 +442,40 @@ class OpalPCSSConnection : public OpalLocalConnection
 
   /**@name Overrides from OpalConnection */
   //@{
+    /**Clean up the termination of the connection.
+       This function can do any internal cleaning up and waiting on background
+       threads that may be using the connection object.
+
+       Note that there is not a one to one relationship with the
+       OnEstablishedConnection() function. This function may be called without
+       that function being called. For example if SetUpConnection() was used
+       but the call never completed.
+
+       Classes that override this function should make sure they call the
+       ancestor version for correct operation.
+
+       An application will not typically call this function as it is used by
+       the OpalManager during a release of the connection.
+
+       The default behaviour calls the OpalEndPoint function of the same name.
+      */
+    virtual void OnReleased();
+
+    /**Indicate to remote endpoint an alert is in progress.
+       If this is an incoming connection and the AnswerCallResponse is in a
+       AnswerCallDeferred or AnswerCallPending state, then this function is
+       used to indicate to that endpoint that an alert is in progress. This is
+       usually due to another connection which is in the call (the B party)
+       has received an OnAlerting() indicating that its remote endpoint is
+       "ringing".
+
+       The default behaviour does nothing.
+      */
+    virtual PBoolean SetAlerting(
+      const PString & calleeName,   ///<  Name of endpoint being alerted.
+      PBoolean withMedia            ///<  Open media with alerting
+    );
+
     /**Initiate the transfer of an existing call (connection) to a new remote 
        party.
 
@@ -461,6 +513,14 @@ class OpalPCSSConnection : public OpalLocalConnection
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
       PBoolean isSource                        ///<  Is a source stream
+    );
+
+    /**Call back when media stream patch thread starts.
+
+       Default behaviour calls OpalManager function of same name.
+      */
+    virtual void OnStartMediaPatch(
+      OpalMediaPatch & patch    ///< Patch being started
     );
 
     /**Set  the volume (gain) for the audio media channel.
@@ -533,6 +593,11 @@ class OpalPCSSConnection : public OpalLocalConnection
 
   /**@name Member variable access */
   //@{
+    /**Get the local ringback tone to be played when remote indicates it is
+       ringing.
+      */
+    const PString & GetLocalRingbackTone() const { return m_localRingbackTone; }
+
     /**Get the name for the sound channel to be used for output.
        This defaults to the value of the PSoundChannel::GetDefaultDevice()
        function.
@@ -583,6 +648,7 @@ class OpalPCSSConnection : public OpalLocalConnection
 
   protected:
     OpalPCSSEndPoint & m_endpoint;
+    PString            m_localRingbackTone;
     PString            m_soundChannelPlayDevice;
     PString            m_soundChannelRecordDevice;
     PString            m_soundChannelOnHoldDevice;
@@ -593,6 +659,10 @@ class OpalPCSSConnection : public OpalLocalConnection
     PVideoDevice::OpenArgs m_videoOnHoldDevice;
     PVideoDevice::OpenArgs m_videoOnRingDevice;
 #endif
+
+    PThread  * m_ringbackThread;
+    PSyncPoint m_ringbackStop;
+    void RingbackMain();
 };
 
 #else
