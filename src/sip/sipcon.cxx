@@ -1234,6 +1234,13 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
     return NULL;
   }
 
+  {
+   SDPRTPAVPMediaDescription* localSDPAVP = dynamic_cast<SDPRTPAVPMediaDescription*>(localMedia.get());
+   SDPRTPAVPMediaDescription* incomingSDPAVP = dynamic_cast<SDPRTPAVPMediaDescription*>(incomingMedia);
+   if (localSDPAVP && incomingSDPAVP && incomingSDPAVP->IsFeedbackEnabled())
+     localSDPAVP->EnableFeedback();
+  }
+
 #if OPAL_SRTP
   if (!keys.IsEmpty()) {// SDES
     // Set rx key from the other side SDP, which it's tx key

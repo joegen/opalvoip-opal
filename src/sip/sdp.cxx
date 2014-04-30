@@ -1599,8 +1599,10 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
     strm << *format;
 
 #if OPAL_SRTP
-  for (PList<SDPCryptoSuite>::const_iterator crypto = m_cryptoSuites.begin(); crypto != m_cryptoSuites.end(); ++crypto)
-    strm << *crypto;
+  if (!m_useDTLS) {
+    for (PList<SDPCryptoSuite>::const_iterator crypto = m_cryptoSuites.begin(); crypto != m_cryptoSuites.end(); ++crypto)
+      strm << *crypto;
+  }
 #endif
 
   if (m_controlAddress == m_mediaAddress)
@@ -1770,6 +1772,17 @@ bool SDPRTPAVPMediaDescription::SetSessionInfo(const OpalMediaSession * session,
 #endif
 
   return SDPMediaDescription::SetSessionInfo(session, offer);
+}
+
+
+bool SDPRTPAVPMediaDescription::PostDecode(const OpalMediaFormatList & mediaFormats)
+{
+  bool result = SDPMediaDescription::PostDecode(mediaFormats);
+#if OPAL_SRTP
+  if (result && GetFingerprint().IsValid() && GetSetup() != SDPCommonAttributes::SetupNotSet)
+    m_useDTLS = true;
+#endif
+  return result;
 }
 
 

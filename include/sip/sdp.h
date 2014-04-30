@@ -438,10 +438,13 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual void SetAttribute(const PString & attr, const PString & value);
     virtual bool SetSessionInfo(const OpalMediaSession * session, const SDPMediaDescription * offer);
 
+    bool IsFeedbackEnabled() const { return m_enableFeedback; }
     void EnableFeedback() { m_enableFeedback = true; }
 
     typedef std::map<DWORD, PStringOptions> SsrcInfo;
     const SsrcInfo & GetSsrcInfo() const { return m_ssrcInfo; }
+
+    virtual bool PostDecode(const OpalMediaFormatList & mediaFormats);
 
   protected:
     class Format : public SDPMediaFormat
