@@ -1329,6 +1329,12 @@ void OpalManager::OnStartMediaPatch(OpalConnection & PTRACE_PARAM(connection), O
 {
 #endif
   PTRACE(3, "OnStartMediaPatch " << patch << " on " << connection);
+
+  if (&patch.GetSource().GetConnection() == &connection) {
+    PSafePtr<OpalConnection> other = connection.GetOtherPartyConnection();
+    if (other != NULL)
+      other->OnStartMediaPatch(patch);
+  }
 }
 
 
