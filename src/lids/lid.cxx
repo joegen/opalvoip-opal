@@ -662,13 +662,7 @@ OpalLineInterfaceDevice::CallProgressTones
 }
 
 
-static struct {
-  const char * isoName;
-  unsigned dialCode;
-  OpalLineInterfaceDevice::T35CountryCodes t35Code;
-  const char * fullName;
-  const char * tone[OpalLineInterfaceDevice::NumTones];
-} const CountryInfo[] = {
+static OpalLineInterfaceDevice::T35CountryInfo const CountryInfo[] = {
   { "AF", 93,   OpalLineInterfaceDevice::Afghanistan,           "Afghanistan" },
   { "AL", 355,  OpalLineInterfaceDevice::Albania,               "Albania" },
   { "DZ", 213,  OpalLineInterfaceDevice::Algeria,               "Algeria" },
@@ -863,28 +857,71 @@ static struct {
   { "YU", 381,  OpalLineInterfaceDevice::Yugoslavia,            "Yugoslavia" },
   { "xx", 0,    OpalLineInterfaceDevice::Zaire,                 "Zaire" },
   { "ZM", 260,  OpalLineInterfaceDevice::Zambia,                "Zambia" },
-  { "ZW", 263,  OpalLineInterfaceDevice::Zimbabwe,              "Zimbabwe" }
+  { "ZW", 263,  OpalLineInterfaceDevice::Zimbabwe,              "Zimbabwe" },
+  { NULL, 0,    OpalLineInterfaceDevice::UnknownCountry,        "<Unknown>" }
 };
 
-OpalLineInterfaceDevice::T35CountryCodes OpalLineInterfaceDevice::GetCountryCode(const PString & str)
+
+const OpalLineInterfaceDevice::T35CountryInfo & OpalLineInterfaceDevice::GetCountryInfo(T35CountryCodes code)
 {
-  for (PINDEX i = 0; i < PARRAYSIZE(CountryInfo); i++) {
-    if (str *= CountryInfo[i].fullName)
-      return CountryInfo[i].t35Code;
+  PINDEX i;
+  for (i = 0; i < PARRAYSIZE(CountryInfo)-1; i++) {
+    if (CountryInfo[i].m_t35Code == code)
+      break;
   }
 
-  return OpalLineInterfaceDevice::UnknownCountry;
+  return CountryInfo[i];
 }
 
 
-PString OpalLineInterfaceDevice::GetCountryCodeName(T35CountryCodes c) 
+OpalLineInterfaceDevice::T35CountryCodes OpalLineInterfaceDevice::GetCountryCode(const PString & str)
 {
-  for (PINDEX i = 0; i < PARRAYSIZE(CountryInfo); i++) {
-    if (CountryInfo[i].t35Code == c)
-      return CountryInfo[i].fullName;
+  PINDEX i;
+
+  if (str.IsEmpty())
+    return UnknownCountry;
+
+  if (isdigit(str[0]))
+    return (T35CountryCodes)str.AsUnsigned();
+
+  if (str[0] == '+') {
+    unsigned code = str.AsUnsigned();
+    for (i = 0; i < PARRAYSIZE(CountryInfo); i++) {
+      if (code == CountryInfo[i].m_dialCode)
+        return CountryInfo[i].m_t35Code;
+    }
+    return UnknownCountry;
   }
 
-  return "<Unknown>";
+  if (str.GetLength() == 2) {
+    for (i = 0; i < PARRAYSIZE(CountryInfo); i++) {
+      if (str *= CountryInfo[i].m_isoName)
+        return CountryInfo[i].m_t35Code;
+    }
+    return UnknownCountry;
+  }
+
+  T35CountryCodes partial = NumCountryCodes;
+  for (i = 0; i < PARRAYSIZE(CountryInfo); i++) {
+    PConstCaselessString countryName(CountryInfo[i].m_fullName);
+    if (countryName == str)
+      return CountryInfo[i].m_t35Code;
+
+    if (countryName.NumCompare(str) == EqualTo) {
+      if (partial == NumCountryCodes)
+        partial = CountryInfo[i].m_t35Code;
+      else
+        partial = UnknownCountry;
+    }
+  }
+
+  return partial != NumCountryCodes ? partial : UnknownCountry;
+}
+
+
+PString OpalLineInterfaceDevice::GetCountryCodeName(T35CountryCodes code)
+{
+  return GetCountryInfo(code).m_fullName;
 }
 
 
@@ -894,30 +931,27 @@ PString OpalLineInterfaceDevice::GetCountryCodeName() const
 }
 
 
-PBoolean OpalLineInterfaceDevice::SetCountryCode(T35CountryCodes country)
+PBoolean OpalLineInterfaceDevice::SetCountryCode(T35CountryCodes code)
 {
-  for (PINDEX i = 0; i < PARRAYSIZE(CountryInfo); i++) {
-    if (CountryInfo[i].t35Code == country) {
-      PTRACE(3, "LID\tCountry set to \"" << CountryInfo[i].fullName << '"');
-      for (unsigned line = 0; line < GetLineCount(); line++) {
-        for (int tone = 0; tone < NumTones; tone++) {
-          const char * toneStr = CountryInfo[i].tone[tone];
-          if (toneStr == NULL) {
-            toneStr = CountryInfo[UnitedStates].tone[tone];
-            if (toneStr == NULL)
-              toneStr = m_callProgressTones[tone];
-          }
-          SetToneDescription(line, (CallProgressTones)tone, toneStr);
-          m_callProgressTones[tone] = toneStr;
-        }
-      }
-      countryCode = country;
-      return true;
-    }
+  const T35CountryInfo & info = GetCountryInfo(code);
+  if (info.m_t35Code != code) {
+    PTRACE(2, "LID\tCountry could not be set to T.35 code " << (unsigned)code << ", leaving as \"" << GetCountryCodeName() << '"');
+    return false;
   }
 
-  PTRACE(2, "LID\tCountry could not be set to \"" << GetCountryCodeName(country) <<"\", leaving as \"" << GetCountryCodeName() << '"');
-  return false;
+  PTRACE(3, "LID\tCountry set to \"" << info.m_fullName << '"');
+  countryCode = code;
+
+  for (unsigned line = 0; line < GetLineCount(); line++) {
+    for (int tone = 0; tone < NumTones; tone++) {
+      const char * toneStr = info.m_tone[tone];
+      if (toneStr == NULL)
+        toneStr = m_callProgressTones[tone];
+      SetToneDescription(line, (CallProgressTones)tone, toneStr);
+      m_callProgressTones[tone] = toneStr;
+    }
+  }
+  return true;
 }
 
 
@@ -925,54 +959,17 @@ PStringList OpalLineInterfaceDevice::GetCountryCodeNameList() const
 {
   PStringList list;
   for (PINDEX i = 0; i < PARRAYSIZE(CountryInfo); i++) {
-    if (CountryInfo[i].tone[DialTone] != NULL)
-      list.AppendString(CountryInfo[i].fullName);
+    if (CountryInfo[i].m_tone[DialTone] != NULL)
+      list.AppendString(CountryInfo[i].m_fullName);
   }
   return list;
-}
-
-
-static PCaselessString DeSpaced(const PString & orig)
-{
-  PString str = orig.Trim();
-
-  PINDEX space = 0;
-  while ((space = str.Find(' ')) != P_MAX_INDEX)
-    str.Delete(space, 1);
-
-  return str;
 }
 
 
 PBoolean OpalLineInterfaceDevice::SetCountryCodeName(const PString & countryName)
 {
   PTRACE(4, "LID\tSetting country code name to \"" << countryName << '"');
-  PCaselessString spacelessAndCaseless = DeSpaced(countryName);
-  if (spacelessAndCaseless.IsEmpty())
-    return false;
-
-  if (isdigit(spacelessAndCaseless[0]))
-    return SetCountryCode((T35CountryCodes)spacelessAndCaseless.AsUnsigned());
-
-  PINDEX i;
-  if (spacelessAndCaseless[0] == '+') {
-    unsigned code = spacelessAndCaseless.AsUnsigned();
-    for (i = 0; i < PARRAYSIZE(CountryInfo); i++)
-      if (code == CountryInfo[i].dialCode)
-        return SetCountryCode(CountryInfo[i].t35Code);
-  }
-  else if (spacelessAndCaseless.GetLength() == 2) {
-    for (i = 0; i < PARRAYSIZE(CountryInfo); i++)
-      if (spacelessAndCaseless == CountryInfo[i].isoName)
-        return SetCountryCode(CountryInfo[i].t35Code);
-  }
-  else {
-    for (i = 0; i < PARRAYSIZE(CountryInfo); i++)
-      if (spacelessAndCaseless == DeSpaced(CountryInfo[i].fullName))
-        return SetCountryCode(CountryInfo[i].t35Code);
-  }
-
-  SetCountryCode(UnknownCountry);
+  SetCountryCode(GetCountryCode(countryName));
   return false;
 }
 

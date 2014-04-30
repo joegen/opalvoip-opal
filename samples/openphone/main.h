@@ -733,6 +733,7 @@ class OptionsDialog : public wxDialog
 #if OPAL_AEC
     bool      m_EchoCancellation;
 #endif
+    PwxString m_LocalRingbackTone;
     PwxString m_LineInterfaceDevice;
     int       m_AEC;
     PwxString m_Country;
