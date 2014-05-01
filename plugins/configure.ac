@@ -172,7 +172,7 @@ OPAL_SYSTEM_PLUGIN(
    [#include <opus.h>],
    [opus_get_version_string()],
    [
-      if test "x$OPAL_SYSTEM" = "xno" ; then
+      if test "x$OPUS_SYSTEM" != "xyes" ; then
          if test -n "${srcdir}" && test `cd ${srcdir} ; pwd` != `pwd`; then
             HAVE_OPUS="no (internal libopus does not support out-of-source configure)"
             usable=no
