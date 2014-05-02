@@ -1928,6 +1928,10 @@ void SIP_PDU::InitialiseHeaders(const SIPURL & dest,
   m_uri = dest;
   m_uri.Sanitise(m_method == Method_REGISTER ? SIPURL::RegisterURI : SIPURL::RequestURI);
 
+  const PStringOptions & headers = dest.GetQueryVars();
+  for (PStringOptions::const_iterator hdr = headers.begin(); hdr != headers.end(); ++hdr)
+    m_mime.SetAt(hdr->first, hdr->second);
+
   SIPURL tmp = to;
   tmp.Sanitise(SIPURL::ToURI);
   m_mime.SetTo(tmp);
