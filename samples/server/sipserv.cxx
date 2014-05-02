@@ -142,23 +142,29 @@ bool MySIPEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
 #if OPAL_H323 || OPAL_SKINNY
 void MySIPEndPoint::OnChangedRegistrarAoR(RegistrarAoR & ua)
 {
-  PString username = ua.GetAoR().GetUserName();
-  PString domain = ua.GetAoR().GetHostPort();
+  m_manager.OnChangedRegistrarAoR(ua.GetAoR(), ua.HasBindings());
+}
 
+void MyManager::OnChangedRegistrarAoR(const PURL & aor, bool registering)
+{
 #if OPAL_H323
-  if (m_autoRegisterH323) {
-    if (username.IsEmpty())
-      m_manager.GetH323EndPoint().AddAliasName(domain);
-    else if (domain.IsEmpty())
-      m_manager.GetH323EndPoint().AddAliasName(username);
-    else
-      m_manager.GetH323EndPoint().AddAliasName(username + '@' + domain);
+  if (aor.GetScheme() == "h323") {
+    if (aor.GetUserName().IsEmpty())
+      GetH323EndPoint().AutoRegister(aor.GetHostName(), registering);
+    else if (aor.GetHostName().IsEmpty())
+      GetH323EndPoint().AutoRegister(aor.GetUserName(), registering);
+    else if (!aor.GetHostName().IsEmpty())
+      GetH323EndPoint().AutoRegister(PSTRSTRM(aor.GetUserName() << '@' << aor.GetHostName()), registering);
   }
+  else if (GetSIPEndPoint().m_autoRegisterH323 && aor.GetScheme().NumCompare("sip") == EqualTo)
+    GetH323EndPoint().AutoRegister(aor.GetUserName(), registering);
 #endif // OPAL_H323
 
 #if OPAL_SKINNY
-  if (m_autoRegisterSkinny)
-    m_manager.GetSkinnyEndPoint().RegisterWildcard(domain, username);
+  if (aor.GetScheme() == "sccp")
+    GetSkinnyEndPoint().AutoRegister(aor.GetHostPort(), aor.GetUserName(), registering);
+  else if (GetSIPEndPoint().m_autoRegisterSkinny && aor.GetScheme().NumCompare("sip") == EqualTo)
+    GetSkinnyEndPoint().AutoRegister(PString::Empty(), aor.GetUserName(), registering);
 #endif // OPAL_SKINNY
 }
 #endif // OPAL_H323 || OPAL_SKINNY
