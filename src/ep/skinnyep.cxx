@@ -34,7 +34,24 @@
 
 #if OPAL_SKINNY
 
+#include <ptclib/url.h>
+
+
 #define PTraceModule() "Skinny"
+
+
+PURL_LEGACY_SCHEME(sccp,
+                   true,  /* URL scheme has a username */
+                   false, /* URL scheme has a password */
+                   true,  /* URL scheme has a host:port */
+                   true,  /* URL scheme is username if no @, otherwise host:port */
+                   false, /* URL scheme defaults to PIPSocket::GetHostName() if not present */
+                   false, /* URL scheme has a query section */
+                   true,  /* URL scheme has a parameter section */
+                   false, /* URL scheme has a fragment section */
+                   false, /* URL scheme has a path */
+                   false, /* URL scheme has relative path (no //) then scheme: is not output */
+                   2000);
 
 
 static PString CreateToken(const OpalSkinnyEndPoint::PhoneDevice & client, unsigned callIdentifier)

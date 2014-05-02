@@ -193,6 +193,26 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
 }
 
 
+void MyH323EndPoint::AutoRegister(const PString & alias, bool registering)
+{
+  if (alias.IsEmpty())
+    return;
+
+  if (alias.Find('-') == P_MAX_INDEX && alias.Find("..") != P_MAX_INDEX) {
+    if (registering)
+      AddAliasNamePattern(alias);
+    else
+      RemoveAliasNamePattern(alias);
+  }
+  else {
+    if (registering)
+      AddAliasName(alias);
+    else
+      RemoveAliasName(alias);
+  }
+}
+
+
 PString MyGatekeeperServer::OnLoadEndPointStatus(const PString & htmlBlock)
 {
   PINDEX i;
