@@ -80,10 +80,11 @@ if test "x$OPALDIR" != "x" ; then
    fi
    makedir="$OPALDIR/make"
    VERSION_DIR="$OPALDIR"
+   CPPFLAGS="${CPPFLAGS} -I\${includedir}"
 else
-   CPPFLAGS="${CPPFLAGS} ${includedir}/opal"
    makedir="\${datarootdir}/opal/make"
-   VERSION_DIR="."
+   VERSION_DIR=`pwd`
+   CPPFLAGS="${CPPFLAGS} -I\${includedir}/opal"
 fi
 
 AC_SUBST(makedir)
