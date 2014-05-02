@@ -818,6 +818,8 @@ class SIPEndPoint : public OpalRTPEndPoint
         const PURL & GetAoR() const { return m_aor; }
         SIPURLList GetContacts() const;
 
+        bool HasBindings() const { return !m_bindings.empty(); }
+
       protected:
         PURL m_aor;
 

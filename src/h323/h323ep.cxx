@@ -1482,8 +1482,13 @@ bool H323EndPoint::RemoveAliasName(const PString & name)
 
 int H323EndPoint::ParseAliasPatternRange(const PString & pattern, PString & start, PString & end)
 {
-  if (!pattern.Split('-', start, end))
-    return 0;
+  if (!pattern.Split('-', start, end)) {
+    PINDEX dots = pattern.Find("..");
+    if (dots == P_MAX_INDEX)
+      return 0;
+    start = pattern.Left(dots);
+    end = pattern.Mid(dots + 2);
+  }
 
   if (start.GetLength() != end.GetLength())
     return 0;

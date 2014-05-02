@@ -262,6 +262,8 @@ class MyH323EndPoint : public H323ConsoleEndPoint
 
     bool Configure(PConfig & cfg, PConfigPage * rsrc);
 
+    void AutoRegister(const PString & alias, bool registering);
+
     const MyGatekeeperServer & GetGatekeeperServer() const { return m_gkServer; }
           MyGatekeeperServer & GetGatekeeperServer()       { return m_gkServer; }
 
@@ -289,14 +291,15 @@ public:
   virtual void OnChangedRegistrarAoR(RegistrarAoR & ua);
 #endif
 
-protected:
-  MyManager & m_manager;
 #if OPAL_H323
-  bool        m_autoRegisterH323;
+  bool m_autoRegisterH323;
 #endif
 #if OPAL_SKINNY
-  bool        m_autoRegisterSkinny;
+  bool m_autoRegisterSkinny;
 #endif
+
+protected:
+  MyManager & m_manager;
 };
 
 #endif // OPAL_SIP
@@ -314,12 +317,14 @@ public:
 
   bool Configure(PConfig & cfg, PConfigPage * rsrc);
 
-  void RegisterWildcard(const PString & server, const PString & wildcard);
+  void AutoRegister(const PString & server, const PString & name, bool registering);
+  static PStringArray ExpandWildcards(const PStringArray & names);
 
 protected:
-
-  MyManager & m_manager;
-  unsigned    m_deviceType;
+  MyManager  & m_manager;
+  PString      m_server;
+  unsigned     m_deviceType;
+  PStringArray m_deviceNames;
 };
 
 #endif // OPAL_SKINNY
@@ -526,6 +531,10 @@ class MyManager : public MyManagerParent
 
 
     PString OnLoadCallStatus(const PString & htmlBlock);
+
+#if OPAL_SIP && (OPAL_H323 || OPAL_SKINNY)
+    void OnChangedRegistrarAoR(const PURL & aor, bool registering);
+#endif
 
 #if OPAL_H323
     virtual H323ConsoleEndPoint * CreateH323EndPoint();

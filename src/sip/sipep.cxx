@@ -801,39 +801,48 @@ bool SIPEndPoint::OnReceivedREGISTER(SIP_PDU & request)
   if (m_registrarDomains.IsEmpty())
     return false;
 
-  SIPURL aor = request.GetMIME().GetTo();
+  SIPMIMEInfo & mime = request.GetMIME();
+  mime.SetRecordRoute(PString::Empty()); // RFC3261/10.3
+
   if (!m_registrarDomains.Contains(request.GetURI().GetHostPort()) &&
-      !m_registrarDomains.Contains(aor.GetHostPort())) {
+      !m_registrarDomains.Contains(mime.GetTo().GetHostPort())) {
     request.SendResponse(SIP_PDU::Failure_NotFound);
     return true;
   }
 
-  if (!request.GetMIME().GetRequire().IsEmpty()) {
-    PTRACE(3, "SIP-Reg", "REGISTER required unsupported feature: " << setfill(',') << request.GetMIME().GetRequire());
+  if (!mime.GetRequire().IsEmpty()) {
+    PTRACE(3, "SIP-Reg", "REGISTER required unsupported feature: " << setfill(',') << mime.GetRequire());
     request.SendResponse(SIP_PDU::Failure_BadExtension);
     return true;
   }
 
-  PSafePtr<RegistrarAoR> ua = m_registeredUAs.FindWithLock(RegistrarAoR(aor));
-  if (ua == NULL) {
-    ua = CreateRegistrarAoR(request);
+  // Private extension for mass registration.
+  SIPURLList aorList;
+  if (!aorList.FromString(mime.Get("X-OPAL-AoR-List"), SIPURL::ExternalURI))
+    aorList.push_back(mime.GetTo());
+
+  for (SIPURLList::iterator aor = aorList.begin(); aor != aorList.end(); ++aor) {
+    mime.SetTo(*aor);
+
+    PSafePtr<RegistrarAoR> ua = m_registeredUAs.FindWithLock(RegistrarAoR(*aor));
     if (ua == NULL) {
-      request.SendResponse(SIP_PDU::Failure_Forbidden);
-      return true;
+      ua = CreateRegistrarAoR(request);
+      if (ua == NULL) {
+        request.SendResponse(SIP_PDU::Failure_Forbidden);
+        return true;
+      }
+
+      PTRACE(3, "SIP-Reg", "Created new Registered UA: " << *ua);
+      m_registeredUAs.Append(ua);
     }
 
-    PTRACE(3, "SIP-Reg", "Created new Registered UA: " << *ua);
-    m_registeredUAs.Append(ua);
+    SIP_PDU response(request, ua->OnReceivedREGISTER(*this, request));
+    if (response.GetStatusCode() == SIP_PDU::Successful_OK)
+      response.GetMIME().SetContact(ua->GetContacts().ToString());
+    response.Send();
+
+    OnChangedRegistrarAoR(*ua);
   }
-
-  request.GetMIME().SetRecordRoute(PString::Empty()); // RFC3261/10.3
-
-  SIP_PDU response(request, ua->OnReceivedREGISTER(*this, request));
-  if (response.GetStatusCode() == SIP_PDU::Successful_OK)
-    response.GetMIME().SetContact(ua->GetContacts().ToString());
-  response.Send();
-
-  OnChangedRegistrarAoR(*ua);
   return true;
 }
 
