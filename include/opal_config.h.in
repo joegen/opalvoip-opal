@@ -157,7 +157,7 @@
   #undef  OPAL_H460
   #if OPAL_H460 && OPAL_PTLIB_NAT
     #undef OPAL_H460_NAT
-    #if P_STUN
+    #if OPAL_H460_NAT && P_STUN
       #define OPAL_H460_24 1
       #if OPAL_PTLIB_SSL
         #define OPAL_H460_24A 1
