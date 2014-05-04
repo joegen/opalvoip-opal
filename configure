@@ -636,6 +636,11 @@ OPAL_AEC
 OPAL_RFC2435
 OPAL_RFC4175
 OPAL_IVR
+OPAL_DAHDI
+DAHDI_USABLE
+DAHDI_LIBS
+DAHDI_CFLAGS
+DAHDI_SYSTEM
 OPAL_LID
 OPAL_T120DATA
 OPAL_H501
@@ -670,11 +675,6 @@ JAVA_LIBS
 JAVA_CFLAGS
 JAVA_SYSTEM
 SWIG
-OPAL_DAHDI
-DAHDI_USABLE
-DAHDI_LIBS
-DAHDI_CFLAGS
-DAHDI_SYSTEM
 OPAL_CAPI
 CAPI_USABLE
 CAPI_LIBS
@@ -823,8 +823,6 @@ enable_localspeexdsp
 with_speexdsp_dir
 enable_capi
 with_capi_dir
-enable_dahdi
-with_dahdi_dir
 enable_java
 with_java_dir
 enable_csharp
@@ -852,6 +850,8 @@ enable_h2358
 enable_h501
 enable_t120
 enable_lid
+enable_dahdi
+with_dahdi_dir
 enable_ivr
 enable_rfc4175
 enable_rfc2435
@@ -892,12 +892,12 @@ SPEEXDSP_CFLAGS
 SPEEXDSP_LIBS
 CAPI_CFLAGS
 CAPI_LIBS
-DAHDI_CFLAGS
-DAHDI_LIBS
 JAVA_CFLAGS
 JAVA_LIBS
 RUBY_CFLAGS
-RUBY_LIBS'
+RUBY_LIBS
+DAHDI_CFLAGS
+DAHDI_LIBS'
 ac_subdirs_all='src/rtp/libsrtp
 plugins'
 
@@ -1522,7 +1522,6 @@ Optional Features:
   --disable-speexdsp      disable Speex DSP support
   --enable-localspeexdsp  force use internal source for Speex DSP support
   --disable-capi          disable CAPI ISDN support
-  --disable-dahdi         disable DAHDI E1 support
   --disable-java          disable Java JNI support
   --disable-csharp        disable C-sharp interface
   --disable-ruby          disable Ruby support
@@ -1549,6 +1548,7 @@ Optional Features:
   --disable-h501          disable H.501
   --disable-t120          disable T.120
   --disable-lid           disable LID support
+  --disable-dahdi         disable DAHDI E1 support
   --disable-ivr           disable IVR support
   --disable-rfc4175       disable RFC4175 support
   --disable-rfc2435       disable RFC2435 support (experimental)
@@ -1571,9 +1571,9 @@ Optional Packages:
   --with-speexdsp-dir=<dir>
                           location for Speex DSP support
   --with-capi-dir=<dir>   location for CAPI ISDN support
-  --with-dahdi-dir=<dir>  location for DAHDI E1 support
   --with-java-dir=<dir>   location for Java JNI support
   --with-ruby-dir=<dir>   location for Ruby support
+  --with-dahdi-dir=<dir>  location for DAHDI E1 support
   --with-plugin-installdir=DIR
                           Location where plugins are installed
 
@@ -1606,13 +1606,13 @@ Some influential environment variables:
               linker flags for SPEEXDSP, overriding pkg-config
   CAPI_CFLAGS C compiler flags for CAPI, overriding pkg-config
   CAPI_LIBS   linker flags for CAPI, overriding pkg-config
-  DAHDI_CFLAGS
-              C compiler flags for DAHDI, overriding pkg-config
-  DAHDI_LIBS  linker flags for DAHDI, overriding pkg-config
   JAVA_CFLAGS C compiler flags for JAVA, overriding pkg-config
   JAVA_LIBS   linker flags for JAVA, overriding pkg-config
   RUBY_CFLAGS C compiler flags for RUBY, overriding pkg-config
   RUBY_LIBS   linker flags for RUBY, overriding pkg-config
+  DAHDI_CFLAGS
+              C compiler flags for DAHDI, overriding pkg-config
+  DAHDI_LIBS  linker flags for DAHDI, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -7137,242 +7137,6 @@ fi
 
 
 
-
-
-
-   DAHDI_SYSTEM="yes"
-
-
-
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking DAHDI E1 support" >&5
-$as_echo_n "checking DAHDI E1 support... " >&6; }
-
-   # Check whether --enable-dahdi was given.
-if test "${enable_dahdi+set}" = set; then :
-  enableval=$enable_dahdi;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
-$as_echo "disabled by user" >&6; }
-         fi
-
-else
-
-         enableval=${DEFAULT_DAHDI:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
-$as_echo "disabled by default" >&6; }
-         fi
-
-
-fi
-
-
-
-
-
-
-
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_PTLIB_DTMF" != "x1" && \
-            test "x$OPAL_PTLIB_DTMF" != "xyes"; then
-         { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_PTLIB_DTMF
-=$OPAL_PTLIB_DTMF
-" >&5
-$as_echo "disabled due to disabled dependency OPAL_PTLIB_DTMF
-=$OPAL_PTLIB_DTMF
-" >&6; }
-         enableval=no
-      fi
-
-
-
-
-
-
-
-
-
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-   fi
-
-
-   if test "x$enableval" = "xyes"; then :
-  usable=yes
-else
-  usable=no
-fi
-
-
-   enable_dahdi="$enableval"
-
-
-   if test "x$usable" = "xyes" ; then
-
-      if test "x$DAHDI_SYSTEM" = "xyes" ; then
-
-# Check whether --with-dahdi-dir was given.
-if test "${with_dahdi_dir+set}" = set; then :
-  withval=$with_dahdi_dir;
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: Using directory $withval for DAHDI E1 support" >&5
-$as_echo "$as_me: Using directory $withval for DAHDI E1 support" >&6;}
-                  DAHDI_CFLAGS="-I$withval/include "
-                  DAHDI_LIBS="-L$withval/lib -ltonezone"
-
-else
-
-pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for DAHDI" >&5
-$as_echo_n "checking for DAHDI... " >&6; }
-
-if test -n "$DAHDI_CFLAGS"; then
-    pkg_cv_DAHDI_CFLAGS="$DAHDI_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"dahdi\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "dahdi") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_DAHDI_CFLAGS=`$PKG_CONFIG --cflags "dahdi" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-if test -n "$DAHDI_LIBS"; then
-    pkg_cv_DAHDI_LIBS="$DAHDI_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"dahdi\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "dahdi") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_DAHDI_LIBS=`$PKG_CONFIG --libs "dahdi" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-
-
-
-if test $pkg_failed = yes; then
-   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        DAHDI_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "dahdi" 2>&1`
-        else
-	        DAHDI_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "dahdi" 2>&1`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$DAHDI_PKG_ERRORS" >&5
-
-
-                     DAHDI_CFLAGS=""
-                     DAHDI_LIBS="-ltonezone"
-
-
-elif test $pkg_failed = untried; then
-     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-                     DAHDI_CFLAGS=""
-                     DAHDI_LIBS="-ltonezone"
-
-
-else
-	DAHDI_CFLAGS=$pkg_cv_DAHDI_CFLAGS
-	DAHDI_LIBS=$pkg_cv_DAHDI_LIBS
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-fi
-
-fi
-
-
-         if test "x$usable" = "xyes" ; then
-
-   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
-   MY_LINK_IFELSE_LIBS="$LIBS"
-   CPPFLAGS="$CPPFLAGS $DAHDI_CFLAGS"
-   LIBS="$DAHDI_LIBS $LIBS"
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DAHDI E1 support usability" >&5
-$as_echo_n "checking for DAHDI E1 support usability... " >&6; }
-   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <dahdi/user.h>
-int
-main ()
-{
-;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  usable=yes
-else
-  usable=no
-
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
-$as_echo "$usable" >&6; }
-   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
-   LIBS="$MY_LINK_IFELSE_LIBS"
-
-   if test "x$usable" = "xyes"; then :
-
-
-   LIBS="$DAHDI_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $DAHDI_CFLAGS"
-
-
-
-
-else
-  usable=no
-
-fi
-
-
-         fi
-
-
-      fi
-   fi
-
-   DAHDI_USABLE=$usable
-
-
-
-
-
-
-   if test "x$usable" = "xyes" ; then
-      $as_echo "#define OPAL_DAHDI 1" >>confdefs.h
-
-   fi
-   OPAL_DAHDI=$usable
-
-
-
-
 # Extract the first word of "swig", so it can be a program name with args.
 set dummy swig; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -9400,6 +9164,244 @@ fi
 
    enable_lid="$enableval"
 
+
+
+
+if test "x$OPAL_LID" != "xno"; then
+
+
+   DAHDI_SYSTEM="yes"
+
+
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking DAHDI E1 support" >&5
+$as_echo_n "checking DAHDI E1 support... " >&6; }
+
+   # Check whether --enable-dahdi was given.
+if test "${enable_dahdi+set}" = set; then :
+  enableval=$enable_dahdi;
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+$as_echo "disabled by user" >&6; }
+         fi
+
+else
+
+         enableval=${DEFAULT_DAHDI:-yes}
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+$as_echo "disabled by default" >&6; }
+         fi
+
+
+fi
+
+
+
+
+
+
+
+      if    test "x${enableval}" = "xyes" && \
+            test "x$OPAL_PTLIB_DTMF" != "x1" && \
+            test "x$OPAL_PTLIB_DTMF" != "xyes"; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_PTLIB_DTMF
+   =$OPAL_PTLIB_DTMF
+   " >&5
+$as_echo "disabled due to disabled dependency OPAL_PTLIB_DTMF
+   =$OPAL_PTLIB_DTMF
+   " >&6; }
+         enableval=no
+      fi
+
+
+
+
+
+
+
+
+
+   if test "x${enableval}" = "xyes"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+   fi
+
+
+   if test "x$enableval" = "xyes"; then :
+  usable=yes
+else
+  usable=no
+fi
+
+
+   enable_dahdi="$enableval"
+
+
+   if test "x$usable" = "xyes" ; then
+
+      if test "x$DAHDI_SYSTEM" = "xyes" ; then
+
+# Check whether --with-dahdi-dir was given.
+if test "${with_dahdi_dir+set}" = set; then :
+  withval=$with_dahdi_dir;
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: Using directory $withval for DAHDI E1 support" >&5
+$as_echo "$as_me: Using directory $withval for DAHDI E1 support" >&6;}
+                  DAHDI_CFLAGS="-I$withval/include "
+                  DAHDI_LIBS="-L$withval/lib -ltonezone"
+
+else
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for DAHDI" >&5
+$as_echo_n "checking for DAHDI... " >&6; }
+
+if test -n "$DAHDI_CFLAGS"; then
+    pkg_cv_DAHDI_CFLAGS="$DAHDI_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"dahdi\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "dahdi") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_DAHDI_CFLAGS=`$PKG_CONFIG --cflags "dahdi" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$DAHDI_LIBS"; then
+    pkg_cv_DAHDI_LIBS="$DAHDI_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"dahdi\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "dahdi") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_DAHDI_LIBS=`$PKG_CONFIG --libs "dahdi" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        DAHDI_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "dahdi" 2>&1`
+        else
+	        DAHDI_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "dahdi" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$DAHDI_PKG_ERRORS" >&5
+
+
+                     DAHDI_CFLAGS=""
+                     DAHDI_LIBS="-ltonezone"
+
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+                     DAHDI_CFLAGS=""
+                     DAHDI_LIBS="-ltonezone"
+
+
+else
+	DAHDI_CFLAGS=$pkg_cv_DAHDI_CFLAGS
+	DAHDI_LIBS=$pkg_cv_DAHDI_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi
+
+fi
+
+
+         if test "x$usable" = "xyes" ; then
+
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
+   CPPFLAGS="$CPPFLAGS $DAHDI_CFLAGS"
+   LIBS="$DAHDI_LIBS $LIBS"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DAHDI E1 support usability" >&5
+$as_echo_n "checking for DAHDI E1 support usability... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <dahdi/user.h>
+int
+main ()
+{
+;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
+
+   if test "x$usable" = "xyes"; then :
+
+
+   LIBS="$DAHDI_LIBS $LIBS"
+   CPPFLAGS="$CPPFLAGS $DAHDI_CFLAGS"
+
+
+
+
+else
+  usable=no
+
+fi
+
+
+         fi
+
+
+      fi
+   fi
+
+   DAHDI_USABLE=$usable
+
+
+
+
+
+
+   if test "x$usable" = "xyes" ; then
+      $as_echo "#define OPAL_DAHDI 1" >>confdefs.h
+
+   fi
+   OPAL_DAHDI=$usable
+
+
+fi
 
 
 
