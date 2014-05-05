@@ -202,6 +202,12 @@ PBoolean SIPEndPoint::NewIncomingConnection(OpalTransport * transport)
       }
     }
 
+    // Abort transactions using this transport
+    for (PSafePtr<SIPTransaction> transaction = m_transactions; transaction != NULL;  ++transaction) {
+      if (&transaction->GetTransport() == transport)
+        transaction->Abort();
+    }
+
     PTRACE(2, "SIP\tListening thread finished.");
   }
   else {
