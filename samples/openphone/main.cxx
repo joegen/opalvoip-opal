@@ -4433,7 +4433,11 @@ END_EVENT_TABLE()
   FindWindowByNameAs(m_##name##Ctrl, this, name##Key)->SetValidator(wxGenericValidator(&m_##name))
 
 
+#if wxCHECK_VERSION(2,9,0)
 static int wxCALLBACK MediaFormatSort(wxIntPtr item1, wxIntPtr item2, wxIntPtr)
+#else
+static int wxCALLBACK MediaFormatSort(long item1, long item2, long)
+#endif
 {
   MyMedia * media1 = (MyMedia *)item1;
   MyMedia * media2 = (MyMedia *)item2;

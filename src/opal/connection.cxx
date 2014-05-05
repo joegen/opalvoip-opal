@@ -1129,7 +1129,9 @@ bool OpalConnection::GetMediaTransportAddresses(OpalConnection & PTRACE_PARAM(ot
 
 bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, bool force) const
 {
+#if OPAL_STATISTICS
   ++const_cast<OpalConnection *>(this)->m_VideoUpdateRequestsReceived;
+#endif
 
   bool ok = force ? ExecuteMediaCommand(OpalVideoUpdatePicture(), sessionID, OpalMediaType::Video())
                   : ExecuteMediaCommand(OpalVideoPictureLoss(),   sessionID, OpalMediaType::Video());

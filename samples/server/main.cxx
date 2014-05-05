@@ -391,14 +391,19 @@ PBoolean MyProcess::Initialise(const char * initMsg)
 }
 
 
-#if OPAL_PTLIB_SSL
-void MyManager::ConfigureSecurity(OpalEndPoint * ep,
-                                  const PString & signalingKey,
-                                  const PString & suitesKey,
-                                  PConfig & cfg,
-                                  PConfigPage * rsrc)
+bool MyManager::ConfigureCommon(OpalEndPoint * ep,
+                                const PString & cfgPrefix,
+                                PConfig & cfg,
+                                PConfigPage * rsrc)
 {
   PString normalPrefix = ep->GetPrefixName();
+
+  if (!ep->StartListeners(rsrc->AddStringArrayField(cfgPrefix + " Interfaces", false, 25, PStringArray(),
+                          "Local network interfaces and ports to listen on, blank means all"))) {
+    PSYSTEMLOG(Error, "Could not open any listeners for " << normalPrefix);
+  }
+
+#if OPAL_PTLIB_SSL
   PString securePrefix = normalPrefix + 's';
 
   PINDEX security = 0;
@@ -407,6 +412,7 @@ void MyManager::ConfigureSecurity(OpalEndPoint * ep,
   if (FindEndPoint(securePrefix) != NULL)
     security |= 2;
 
+  PString signalingKey = cfgPrefix + " Security";
   security = cfg.GetInteger(signalingKey, security);
 
   switch (security) {
@@ -431,10 +437,31 @@ void MyManager::ConfigureSecurity(OpalEndPoint * ep,
   valueArray[2] = '3'; titleArray[2] = normalPrefix & '&' & securePrefix;
   rsrc->Add(new PHTTPRadioField(signalingKey, valueArray, titleArray, security - 1, "Signaling security methods available."));
 
-  ep->SetMediaCryptoSuites(rsrc->AddSelectArrayField(suitesKey, true, ep->GetMediaCryptoSuites(),
+  ep->SetMediaCryptoSuites(rsrc->AddSelectArrayField(cfgPrefix + " Crypto Suites", true, ep->GetMediaCryptoSuites(),
                                             ep->GetAllMediaCryptoSuites(), "Media security methods available."));
-}
 #endif // OPAL_PTLIB_SSL
+
+  PString optionsSection = cfgPrefix + " Default Options";
+  PString optionsItemFmt = cfgPrefix + " Default Options\\Option %u";
+
+  ep->SetDefaultStringOptions(OpalConnection::StringOptions());
+  PString defaultSection = cfg.GetDefaultSection();
+  list<SIPRegister::Params> registrations;
+  PINDEX arraySize = cfg.GetInteger(optionsSection, "Option Array Size");
+  for (PINDEX i = 0; i < arraySize; i++) {
+    cfg.SetDefaultSection(psprintf(optionsItemFmt, i + 1));
+    ep->SetDefaultStringOption(cfg.GetString("Name"), cfg.GetString("Value"));
+  }
+  cfg.SetDefaultSection(defaultSection);
+
+  PHTTPCompositeField * optionsFields = new PHTTPCompositeField(optionsItemFmt + '\\', optionsSection,
+                                                                "Default options for calls using " + cfgPrefix);
+  optionsFields->Append(new PHTTPStringField("Name", 0, NULL, NULL, 1, 30));
+  optionsFields->Append(new PHTTPStringField("Value", 0, NULL, NULL, 1, 30));
+  rsrc->Add(new PHTTPFieldArray(optionsFields, false));
+
+  return true;
+}
 
 
 ///////////////////////////////////////////////////////////////

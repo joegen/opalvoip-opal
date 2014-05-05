@@ -33,11 +33,6 @@ static const char DisableH245TunnelingKey[] = "Disable H.245 Tunneling";
 static const char DisableH245inSetupKey[] = "Disable H.245 in Setup";
 static const char ForceSymmetricTCSKey[] = "Force Symmetric TCS";
 static const char H323BandwidthKey[] = "H.323 Bandwidth";
-static const char H323ListenersKey[] = "H.323 Interfaces";
-#if OPAL_PTLIB_SSL
-static const char H323SignalingSecurityKey[] = "H.323 Security";
-static const char H323MediaCryptoSuitesKey[] = "H.323 Crypto Suites";
-#endif
 
 static const char GatekeeperEnableKey[] = "Remote Gatekeeper Enable";
 static const char GatekeeperAddressKey[] = "Remote Gatekeeper Address";
@@ -108,6 +103,9 @@ MyH323EndPoint::MyH323EndPoint(MyManager & mgr)
 
 bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
 {
+  if (!m_manager.ConfigureCommon(this, "H.323", cfg, rsrc))
+    return false;
+
   // Add H.323 parameters
   {
     PStringArray aliases = rsrc->AddStringArrayField(H323AliasesKey, false, 0, GetAliasNames(), "H.323 Alias names for local user", 1, 30);
@@ -136,18 +134,9 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
                                                                   GetInitialBandwidth(OpalBandwidth::RxTx)/1000,
                               "kb/s", "Bandwidth to request to gatekeeper on originating/answering calls")*1000);
 
-#if OPAL_PTLIB_SSL
-  m_manager.ConfigureSecurity(this, H323SignalingSecurityKey, H323MediaCryptoSuitesKey, cfg, rsrc);
-#endif
-
   for (H323Connection::CompatibilityIssues issue = H323Connection::BeginCompatibilityIssues; issue < H323Connection::EndCompatibilityIssues; ++issue)
     SetCompatibility(issue, rsrc->AddStringField(H323Connection::CompatibilityIssuesToString(issue), 0, GetCompatibility(issue),
                                                  "Compatibility issue work around, product name/version regular expression", 1, 50));
-
-  if (!StartListeners(rsrc->AddStringArrayField(H323ListenersKey, false, 0, PStringArray(),
-                   "Local network interfaces to listen for H.323, blank means all", 1, 30))) {
-    PSYSTEMLOG(Error, "Could not open any H.323 listeners!");
-  }
 
   bool gkEnable = rsrc->AddBooleanField(GatekeeperEnableKey, false, "Enable registration with gatekeeper as client");
 
