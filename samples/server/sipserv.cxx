@@ -35,11 +35,6 @@
 static const char SIPUsernameKey[] = "SIP User Name";
 static const char SIPPrackKey[] = "SIP Provisional Responses";
 static const char SIPProxyKey[] = "SIP Proxy URL";
-static const char SIPListenersKey[] = "SIP Interfaces";
-#if OPAL_PTLIB_SSL
-static const char SIPSignalingSecurityKey[] = "SIP Security";
-static const char SIPMediaCryptoSuitesKey[] = "SIP Crypto Suites";
-#endif
 
 #define REGISTRATIONS_SECTION "SIP Registrations"
 #define REGISTRATIONS_KEY "Registration"
@@ -60,13 +55,11 @@ MySIPEndPoint::MySIPEndPoint(MyManager & mgr)
 
 bool MySIPEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
 {
+  if (!m_manager.ConfigureCommon(this, "SIP", cfg, rsrc))
+    return false;
+
   // Add SIP parameters
   SetDefaultLocalPartyName(rsrc->AddStringField(SIPUsernameKey, 25, GetDefaultLocalPartyName(), "SIP local user name"));
-
-  if (!StartListeners(rsrc->AddStringArrayField(SIPListenersKey, false, 25, PStringArray(),
-    "Local network interfaces to listen for SIP, blank means all"))) {
-    PSYSTEMLOG(Error, "Could not open any SIP listeners!");
-  }
 
   SIPConnection::PRACKMode prack = cfg.GetEnum(SIPPrackKey, GetDefaultPRACKMode());
   static const char * const prackModes[] = { "Disabled", "Supported", "Required" };
@@ -76,11 +69,7 @@ bool MySIPEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
 
   SetProxy(rsrc->AddStringField(SIPProxyKey, 100, GetProxy().AsString(), "SIP outbound proxy IP/hostname", 1, 30));
 
-#if OPAL_PTLIB_SSL
-  m_manager.ConfigureSecurity(this, SIPSignalingSecurityKey, SIPMediaCryptoSuitesKey, cfg, rsrc);
-#endif
-
-  // Registrar
+  // Registrars
   PString defaultSection = cfg.GetDefaultSection();
   list<SIPRegister::Params> registrations;
   PINDEX arraySize = cfg.GetInteger(REGISTRATIONS_SECTION, REGISTRATIONS_KEY" Array Size");
