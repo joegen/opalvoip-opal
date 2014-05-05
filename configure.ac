@@ -80,10 +80,11 @@ if test "x$OPALDIR" != "x" ; then
    fi
    makedir="$OPALDIR/make"
    VERSION_DIR="$OPALDIR"
+   CPPFLAGS="${CPPFLAGS} -I\${includedir}"
 else
-   CPPFLAGS += "${includedir}/opal"
    makedir="\${datarootdir}/opal/make"
-   VERSION_DIR="."
+   VERSION_DIR=`pwd`
+   CPPFLAGS="${CPPFLAGS} -I\${includedir}/opal"
 fi
 
 AC_SUBST(makedir)
@@ -255,25 +256,6 @@ OPAL_MODULE_OPTION(
 
 
 dnl ########################################################################
-dnl See if DAHDI interface is available
-
-OPAL_MODULE_OPTION(
-   [DAHDI],
-   [dahdi],
-   [DAHDI E1 support],
-   [dahdi],
-   [],
-   [-ltonezone],
-   [#include <dahdi/user.h>],
-   [;],
-   [],
-   [],
-   [],
-   [OPAL_PTLIB_DTMF]
-)
-
-
-dnl ########################################################################
 dnl We should use SWIG if it is there
 AC_PATH_PROG(SWIG, swig)
 
@@ -429,6 +411,27 @@ OPAL_SIMPLE_OPTION(   t120,OPAL_T120DATA, [T.120], [OPAL_H323])
 dnl MSWIN_DISPLAY  lid,Line Interface Device
 dnl MSWIN_DEFINE   lid,OPAL_LID
 OPAL_SIMPLE_OPTION(lid,OPAL_LID, [LID support])
+
+dnl ########################################################################
+dnl See if DAHDI interface is available
+
+if test "x$OPAL_LID" != "xno"; then
+   OPAL_MODULE_OPTION(
+      [DAHDI],
+      [dahdi],
+      [DAHDI E1 support],
+      [dahdi],
+      [],
+      [-ltonezone],
+      [#include <dahdi/user.h>],
+      [;],
+      [],
+      [],
+      [],
+      [OPAL_PTLIB_DTMF]
+   )
+fi
+
 
 dnl MSWIN_DISPLAY  ivr,IVR support
 dnl MSWIN_DEFINE   ivr,OPAL_IVR

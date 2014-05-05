@@ -9099,10 +9099,7 @@ $as_echo_n "checking for VP8 (WebM) video codec usability... " >&6; }
 int
 main ()
 {
-
-      vpx_codec_ctx_t codec;
-      vpx_codec_destroy(&codec);
-
+vpx_codec_iface_t * bp8 = vpx_codec_vp8_cx();
 
   ;
   return 0;

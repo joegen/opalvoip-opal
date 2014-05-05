@@ -77,20 +77,20 @@
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">vp8_webm_ptplugin</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>.\vpx-vp8\include;..\..\..\..\external\vpx-vp8\include;..\..\..\..\vpx\include;..\..\..\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>.\vpx-vp8\lib\Win32;..\..\..\..\external\vpx-vp8\lib\Win32;..\..\..\..\vpx\lib\win32;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <IncludePath>.\vpx-vp8;..\..\..\..\external\vpx-vp8;..\..\..\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>.\vpx-vp8\vs12_32\Win32\Debug;..\..\..\..\external\vpx-vp8\vs12_32\Win32\Debug;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>.\vpx-vp8\include;..\..\..\..\external\vpx-vp8\include;..\..\..\..\vpx\include;..\..\..\..\vpx\include;..\..\..\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath)</IncludePath>
-    <LibraryPath>.\vpx-vp8\lib\x64;..\..\..\..\external\vpx-vp8\lib\x64;..\..\..\..\vpx\lib\x64;$(VCInstallDir)lib\amd64;$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>.\vpx-vp8\vs12_64\x64\Debug;..\..\..\..\external\vpx-vp8\vs12_64\x64\Debug;$(VCInstallDir)lib\amd64;$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <IncludePath>.\vpx-vp8;..\..\..\..\external\vpx-vp8;..\..\..\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>.\vpx-vp8\include;..\..\..\..\external\vpx-vp8\include;..\..\..\..\vpx\include;..\..\..\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>.\vpx-vp8\lib\Win32;..\..\..\..\external\vpx-vp8\lib\Win32;..\..\..\..\vpx\lib\win32;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <IncludePath>.\vpx-vp8;..\..\..\..\external\vpx-vp8;..\..\..\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>.\vpx-vp8\vs12_32\Win32\Release;..\..\..\..\external\vpx-vp8\vs12_32\Win32\Release;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>.\vpx-vp8\include;..\..\..\..\external\vpx-vp8\include;..\..\..\..\vpx\include;..\..\..\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>.\vpx-vp8\lib\x64;..\..\..\..\external\vpx-vp8\lib\x64;..\..\..\..\vpx\lib\x64;$(VCInstallDir)lib\amd64;$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <LibraryPath>.\vpx-vp8\vs12_64\x64\Release;..\..\..\..\external\vpx-vp8\vs12_64\x64\Release;$(VCInstallDir)lib\amd64;$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <IncludePath>.\vpx-vp8;..\..\..\..\external\vpx-vp8;..\..\..\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
