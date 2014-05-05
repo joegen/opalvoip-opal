@@ -503,15 +503,12 @@ class MyManager : public MyManagerParent
     bool Configure(PConfig & cfg, PConfigPage * rsrc);
     bool ConfigureCDR(PConfig & cfg, PConfigPage * rsrc);
 
-#if OPAL_PTLIB_SSL
-    void ConfigureSecurity(
+    bool ConfigureCommon(
       OpalEndPoint * ep,
-      const PString & signalingKey,
-      const PString & suitesKey,
+      const PString & cfgPrefix,
       PConfig & cfg,
       PConfigPage * rsrc
     );
-#endif
 
     virtual OpalCall * CreateCall(void *);
 

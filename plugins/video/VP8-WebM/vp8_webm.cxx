@@ -32,17 +32,41 @@
 
 #include <codec/opalplugin.hpp>
 
-#include <vector>
-
 #ifdef _MSC_VER
 #pragma warning(disable:4505)
 #endif
+
+
+/* Building notes for Windows.
+   As of v1.3.0, no prebuilt libraries seem to be available, you must build it
+   from scratch, and to do that you must have Cygwin installed.
+
+   After unpacking the source into opal/plugins/video/VP8-WebM/vpx-vp8, run
+   cygwin and go to that directory. Then, depending on the Visual Studio
+   version you with to compile against, XX=10, XX=11 or XX=12
+
+      mkdir vsXX_32
+      cd vsXX_32
+      ../configure --target=x86-win32-vsXX
+      make
+      ./vpx.sln
+   And finally, batch build vpx Debug and Release.
+
+   And if desired (XX=11 or XX=12 only) again for 64-bit:
+      cd ..
+      mkdir vsXX_64
+      cd vsXX_64
+      ../configure --target=x86_64-win64-vsXX
+      make
+ */
 
 #define VPX_CODEC_DISABLE_COMPAT 1
 #include "vpx/vpx_encoder.h"
 #include "vpx/vp8cx.h"
 #include "vpx/vpx_decoder.h"
 #include "vpx/vp8dx.h"
+
+#include <vector>
 
 
 /* Error concelment (handling missing data) does not appear to work. Or we are
