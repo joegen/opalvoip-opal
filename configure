@@ -813,6 +813,7 @@ ac_user_opts='
 enable_option_checking
 enable_ios
 enable_force32
+with_ptlib
 enable_srtp
 enable_localsrtp
 with_srtp_dir
@@ -1566,6 +1567,7 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-ptlib=<dir>      location of PTLib
   --with-srtp-dir=<dir>   location for SRTP protocol support
   --with-zrtp-dir=<dir>   location for ZRTP protocol support
   --with-speexdsp-dir=<dir>
@@ -5818,11 +5820,27 @@ $as_echo "$as_me: OPAL version is $version" >&6;}
 
 
 
-if test "x$PTLIBDIR" != "x" ; then
-   export PKG_CONFIG_PATH=$PTLIBDIR/lib_$target:$PTLIBDIR:$PKG_CONFIG_PATH
-   { $as_echo "$as_me:${as_lineno-$LINENO}: PTLIBDIR environment variable detected as $PTLIBDIR" >&5
+
+# Check whether --with-ptlib was given.
+if test "${with_ptlib+set}" = set; then :
+  withval=$with_ptlib;
+      OPAL_PTLIB_DIR="$withval (--with-ptlib)"
+      export PKG_CONFIG_PATH=$withval/lib_$target:$withval:$PKG_CONFIG_PATH
+      { $as_echo "$as_me:${as_lineno-$LINENO}: with PTLib at $withval" >&5
+$as_echo "$as_me: with PTLib at $withval" >&6;}
+
+else
+
+      if test "x$PTLIBDIR" != "x" ; then
+         OPAL_PTLIB_DIR="$PTLIBDIR (PTLIBDIR)"
+         export PKG_CONFIG_PATH=$PTLIBDIR/lib_$target:$PTLIBDIR:$PKG_CONFIG_PATH
+         { $as_echo "$as_me:${as_lineno-$LINENO}: PTLIBDIR environment variable detected as $PTLIBDIR" >&5
 $as_echo "$as_me: PTLIBDIR environment variable detected as $PTLIBDIR" >&6;}
+      fi
+
+
 fi
+
 
 
 pkg_failed=no
@@ -5917,6 +5935,10 @@ PTLIB_MAKE_DIR=`pkg-config ptlib --variable=makedir`
 
 PTLIB_LIB_DIR=`pkg-config ptlib --variable=libdir`
 
+
+if test "x$OPAL_PTLIB_DIR" = "x"; then
+   OPAL_PTLIB_DIR="`pkg-config ptlib --variable=prefix` (pkg-config)"
+fi
 
 
 
@@ -11794,8 +11816,10 @@ echo "                     Machine Type :  $target_cpu"
 echo "                           prefix :  $prefix"
 echo "                      exec_prefix :  $exec_prefix"
 echo "                           libdir :  $libdir"
-echo "                Plug in diractory :  $OPAL_PLUGIN_DIR"
+echo "                Plug in directory :  $OPAL_PLUGIN_DIR"
 
+echo ""
+echo "                            PTLib :  $OPAL_PTLIB_DIR"
 echo ""
 
 echo "                            Audio :  $OPAL_PTLIB_AUDIO"
