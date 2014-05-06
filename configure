@@ -632,7 +632,6 @@ OPAL_HAS_MIXER
 OPAL_RTCP_XR
 OPAL_RTP_FEC
 OPAL_G711PLC
-OPAL_AEC
 OPAL_RFC2435
 OPAL_RFC4175
 OPAL_IVR
@@ -680,6 +679,7 @@ CAPI_USABLE
 CAPI_LIBS
 CAPI_CFLAGS
 CAPI_SYSTEM
+OPAL_AEC
 SPEEXDSP_USABLE
 SPEEXDSP_LIBS
 SPEEXDSP_CFLAGS
@@ -813,6 +813,7 @@ ac_user_opts='
 enable_option_checking
 enable_ios
 enable_force32
+with_ptlib
 enable_srtp
 enable_localsrtp
 with_srtp_dir
@@ -821,6 +822,7 @@ with_zrtp_dir
 enable_speexdsp
 enable_localspeexdsp
 with_speexdsp_dir
+enable_aec
 enable_capi
 with_capi_dir
 enable_java
@@ -855,7 +857,6 @@ with_dahdi_dir
 enable_ivr
 enable_rfc4175
 enable_rfc2435
-enable_aec
 enable_g711plc
 enable_rtpfec
 enable_rtcpxr
@@ -1521,6 +1522,7 @@ Optional Features:
   --disable-zrtp          disable ZRTP protocol support
   --disable-speexdsp      disable Speex DSP support
   --enable-localspeexdsp  force use internal source for Speex DSP support
+  --disable-aec           disable accoustic echo cancellation support
   --disable-capi          disable CAPI ISDN support
   --disable-java          disable Java JNI support
   --disable-csharp        disable C-sharp interface
@@ -1552,7 +1554,6 @@ Optional Features:
   --disable-ivr           disable IVR support
   --disable-rfc4175       disable RFC4175 support
   --disable-rfc2435       disable RFC2435 support (experimental)
-  --disable-aec           disable accoustic echo cancellation support
   --disable-g711plc       disable Packet Loss Concealment for G.711
   --disable-rtpfec        disable RTP Forward Error Correction support
   --disable-rtcpxr        disable RTCP Extended Reports support
@@ -1566,6 +1567,7 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-ptlib=<dir>      location of PTLib
   --with-srtp-dir=<dir>   location for SRTP protocol support
   --with-zrtp-dir=<dir>   location for ZRTP protocol support
   --with-speexdsp-dir=<dir>
@@ -5818,11 +5820,27 @@ $as_echo "$as_me: OPAL version is $version" >&6;}
 
 
 
-if test "x$PTLIBDIR" != "x" ; then
-   export PKG_CONFIG_PATH=$PTLIBDIR/lib_$target:$PTLIBDIR:$PKG_CONFIG_PATH
-   { $as_echo "$as_me:${as_lineno-$LINENO}: PTLIBDIR environment variable detected as $PTLIBDIR" >&5
+
+# Check whether --with-ptlib was given.
+if test "${with_ptlib+set}" = set; then :
+  withval=$with_ptlib;
+      OPAL_PTLIB_DIR="$withval (--with-ptlib)"
+      export PKG_CONFIG_PATH=$withval/lib_$target:$withval:$PKG_CONFIG_PATH
+      { $as_echo "$as_me:${as_lineno-$LINENO}: with PTLib at $withval" >&5
+$as_echo "$as_me: with PTLib at $withval" >&6;}
+
+else
+
+      if test "x$PTLIBDIR" != "x" ; then
+         OPAL_PTLIB_DIR="$PTLIBDIR (PTLIBDIR)"
+         export PKG_CONFIG_PATH=$PTLIBDIR/lib_$target:$PTLIBDIR:$PKG_CONFIG_PATH
+         { $as_echo "$as_me:${as_lineno-$LINENO}: PTLIBDIR environment variable detected as $PTLIBDIR" >&5
 $as_echo "$as_me: PTLIBDIR environment variable detected as $PTLIBDIR" >&6;}
+      fi
+
+
 fi
+
 
 
 pkg_failed=no
@@ -5833,12 +5851,12 @@ if test -n "$PTLIB_CFLAGS"; then
     pkg_cv_PTLIB_CFLAGS="$PTLIB_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ptlib >= 2.14.0\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "ptlib >= 2.14.0") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ptlib >= 2.14.1\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ptlib >= 2.14.1") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_PTLIB_CFLAGS=`$PKG_CONFIG --cflags "ptlib >= 2.14.0" 2>/dev/null`
+  pkg_cv_PTLIB_CFLAGS=`$PKG_CONFIG --cflags "ptlib >= 2.14.1" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -5850,12 +5868,12 @@ if test -n "$PTLIB_LIBS"; then
     pkg_cv_PTLIB_LIBS="$PTLIB_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ptlib >= 2.14.0\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "ptlib >= 2.14.0") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ptlib >= 2.14.1\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ptlib >= 2.14.1") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_PTLIB_LIBS=`$PKG_CONFIG --libs "ptlib >= 2.14.0" 2>/dev/null`
+  pkg_cv_PTLIB_LIBS=`$PKG_CONFIG --libs "ptlib >= 2.14.1" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -5876,9 +5894,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "ptlib >= 2.14.0" 2>&1`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "ptlib >= 2.14.1" 2>&1`
         else
-	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "ptlib >= 2.14.0" 2>&1`
+	        PTLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "ptlib >= 2.14.1" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$PTLIB_PKG_ERRORS" >&5
@@ -5917,6 +5935,10 @@ PTLIB_MAKE_DIR=`pkg-config ptlib --variable=makedir`
 
 PTLIB_LIB_DIR=`pkg-config ptlib --variable=libdir`
 
+
+if test "x$OPAL_PTLIB_DIR" = "x"; then
+   OPAL_PTLIB_DIR="`pkg-config ptlib --variable=prefix` (pkg-config)"
+fi
 
 
 
@@ -6907,6 +6929,75 @@ fi
 
 
 fi
+
+
+
+
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking accoustic echo cancellation support" >&5
+$as_echo_n "checking accoustic echo cancellation support... " >&6; }
+
+   # Check whether --enable-aec was given.
+if test "${enable_aec+set}" = set; then :
+  enableval=$enable_aec;
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+$as_echo "disabled by user" >&6; }
+         fi
+
+else
+
+         enableval=$OPAL_AEC
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+$as_echo "disabled by default" >&6; }
+         fi
+
+
+fi
+
+
+
+
+      if    test "x${enableval}" = "xyes" && \
+            test "x$OPAL_SPEEXDSP" != "x1" && \
+            test "x$OPAL_SPEEXDSP" != "xyes"; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_SPEEXDSP=$OPAL_SPEEXDSP" >&5
+$as_echo "disabled due to disabled dependency OPAL_SPEEXDSP=$OPAL_SPEEXDSP" >&6; }
+         enableval=no
+      fi
+
+
+
+
+
+
+
+
+
+
+
+
+   if test "x${enableval}" = "xyes"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+   fi
+
+
+   if test "x$enableval" = "xyes"; then :
+
+         OPAL_AEC=yes
+
+
+$as_echo "#define OPAL_AEC 1" >>confdefs.h
+
+
+else
+  OPAL_AEC=no
+fi
+
+
+   enable_aec="$enableval"
 
 
 
@@ -9621,67 +9712,6 @@ fi
 
 
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking accoustic echo cancellation support" >&5
-$as_echo_n "checking accoustic echo cancellation support... " >&6; }
-
-   # Check whether --enable-aec was given.
-if test "${enable_aec+set}" = set; then :
-  enableval=$enable_aec;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
-$as_echo "disabled by user" >&6; }
-         fi
-
-else
-
-         enableval=$OPAL_AEC
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
-$as_echo "disabled by default" >&6; }
-         fi
-
-
-fi
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-   fi
-
-
-   if test "x$enableval" = "xyes"; then :
-
-         OPAL_AEC=yes
-
-
-$as_echo "#define OPAL_AEC 1" >>confdefs.h
-
-
-else
-  OPAL_AEC=no
-fi
-
-
-   enable_aec="$enableval"
-
-
-
-
-
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking Packet Loss Concealment for G.711" >&5
 $as_echo_n "checking Packet Loss Concealment for G.711... " >&6; }
 
@@ -11786,8 +11816,10 @@ echo "                     Machine Type :  $target_cpu"
 echo "                           prefix :  $prefix"
 echo "                      exec_prefix :  $exec_prefix"
 echo "                           libdir :  $libdir"
-echo "                Plug in diractory :  $OPAL_PLUGIN_DIR"
+echo "                Plug in directory :  $OPAL_PLUGIN_DIR"
 
+echo ""
+echo "                            PTLib :  $OPAL_PTLIB_DIR"
 echo ""
 
 echo "                            Audio :  $OPAL_PTLIB_AUDIO"

@@ -165,6 +165,7 @@
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
       <DelayLoadDLLs>LIBGSTREAMER-0.10-0.DLL;LIBGSTAPP-0.10-0.DLL;LIBGOBJECT-2.0-0.DLL;LIBGLIB-2.0-0.DLL;JPEG62.DLL;SDL.DLL;LUA5.1.DLL;OPENLDAP.DLL;LIBEAY32.DLL;SSLEAY32.DLL;LIBSASL.DLL;QWAVE.DLL;%(DelayLoadDLLs)</DelayLoadDLLs>
+      <IgnoreSpecificDefaultLibraries>libcmt</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">
@@ -206,6 +207,7 @@
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
       <DelayLoadDLLs>LIBGSTREAMER-0.10-0.DLL;LIBGSTAPP-0.10-0.DLL;LIBGOBJECT-2.0-0.DLL;LIBGLIB-2.0-0.DLL;JPEG62.DLL;SDL.DLL;LUA5.1.DLL;OPENLDAP.DLL;LIBEAY32.DLL;SSLEAY32.DLL;LIBSASL.DLL;QWAVE.DLL;%(DelayLoadDLLs)</DelayLoadDLLs>
+      <IgnoreSpecificDefaultLibraries>libcmt</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -321,6 +323,7 @@
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
       <DelayLoadDLLs>LIBGSTREAMER-0.10-0.DLL;LIBGSTAPP-0.10-0.DLL;LIBGOBJECT-2.0-0.DLL;LIBGLIB-2.0-0.DLL;JPEG62.DLL;SDL.DLL;LUA5.1.DLL;OPENLDAP.DLL;LIBEAY32.DLL;SSLEAY32.DLL;LIBSASL.DLL;QWAVE.DLL;%(DelayLoadDLLs)</DelayLoadDLLs>
+      <IgnoreSpecificDefaultLibraries>libcmt</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
