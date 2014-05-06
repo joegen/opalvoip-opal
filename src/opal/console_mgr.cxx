@@ -104,9 +104,9 @@ bool OpalRTPConsoleEndPoint::SetUIMode(const PCaselessString & str)
 void OpalRTPConsoleEndPoint::GetArgumentSpec(ostream & strm) const
 {
   strm << '-' << m_endpoint.GetPrefixName() << "-crypto:       Set crypto suites in priority order.\n"
-          "-" << m_endpoint.GetPrefixName() << "-bandwidth:    Set total bandwidth (both directions) to be used for SIP call\n"
-          "-" << m_endpoint.GetPrefixName() << "-rx-bandwidth: Set receive bandwidth to be used for SIP call\n"
-          "-" << m_endpoint.GetPrefixName() << "-tx-bandwidth: Set transmit bandwidth to be used for SIP call\n"
+          "-" << m_endpoint.GetPrefixName() << "-bandwidth:    Set total bandwidth (both directions) to be used for call\n"
+          "-" << m_endpoint.GetPrefixName() << "-rx-bandwidth: Set receive bandwidth to be used for call\n"
+          "-" << m_endpoint.GetPrefixName() << "-tx-bandwidth: Set transmit bandwidth to be used for call\n"
           "-" << m_endpoint.GetPrefixName() << "-ui:           Set User Indication mode (inband,rfc2833,signal,string)\n"
           "-" << m_endpoint.GetPrefixName() << "-option:       Set string option (key[=value]), may be multiple occurrences\n";
 }
@@ -639,7 +639,7 @@ OpalConsoleSkinnyEndPoint::OpalConsoleSkinnyEndPoint(OpalConsoleManager & manage
 
 void OpalConsoleSkinnyEndPoint::GetArgumentSpec(ostream & strm) const
 {
-  strm << "[PSTN options:]"
+  strm << "[SCCP options:]"
     "-no-sccp.        Disable Skinny Client Control Protocol\n"
     "-sccp-server:    Set Skinny server address.\n"
     "-sccp-name:      Set device name for Skinny client, may be present multiple times.\n"
