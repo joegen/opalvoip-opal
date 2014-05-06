@@ -236,6 +236,10 @@ MY_MODULE_OPTION(
    ]
 )
 
+dnl MSWIN_DISPLAY  aec,Accoustic Echo Cancellation
+dnl MSWIN_DEFINE   aec,OPAL_AEC
+OPAL_SIMPLE_OPTION(aec,OPAL_AEC, [accoustic echo cancellation support], [OPAL_SPEEXDSP])
+
 
 dnl ########################################################################
 dnl CAPI ISDN
@@ -448,10 +452,6 @@ dnl MSWIN_DIR_SYMBOL rfc2435,JPEGLIB_DIR
 dnl MSWIN_CHECK_DIR  rfc2435,%ProgramFiles%\GnuWin32\include\
 dnl MSWIN_CHECK_DIR  rfc2435,%ProgramW6432%\GnuWin32\include\
 OPAL_SIMPLE_OPTION(rfc2435,OPAL_RFC2435, [RFC2435 support (experimental)], [OPAL_VIDEO])
-
-dnl MSWIN_DISPLAY  aec,Accoustic Echo Cancellation
-dnl MSWIN_DEFINE   aec,OPAL_AEC
-OPAL_SIMPLE_OPTION(aec,OPAL_AEC, [accoustic echo cancellation support])
 
 dnl MSWIN_DISPLAY  g711plc,Packet Loss Concealment for G.711
 dnl MSWIN_DEFINE   g711plc,OPAL_G711PLC

@@ -632,7 +632,6 @@ OPAL_HAS_MIXER
 OPAL_RTCP_XR
 OPAL_RTP_FEC
 OPAL_G711PLC
-OPAL_AEC
 OPAL_RFC2435
 OPAL_RFC4175
 OPAL_IVR
@@ -680,6 +679,7 @@ CAPI_USABLE
 CAPI_LIBS
 CAPI_CFLAGS
 CAPI_SYSTEM
+OPAL_AEC
 SPEEXDSP_USABLE
 SPEEXDSP_LIBS
 SPEEXDSP_CFLAGS
@@ -821,6 +821,7 @@ with_zrtp_dir
 enable_speexdsp
 enable_localspeexdsp
 with_speexdsp_dir
+enable_aec
 enable_capi
 with_capi_dir
 enable_java
@@ -855,7 +856,6 @@ with_dahdi_dir
 enable_ivr
 enable_rfc4175
 enable_rfc2435
-enable_aec
 enable_g711plc
 enable_rtpfec
 enable_rtcpxr
@@ -1521,6 +1521,7 @@ Optional Features:
   --disable-zrtp          disable ZRTP protocol support
   --disable-speexdsp      disable Speex DSP support
   --enable-localspeexdsp  force use internal source for Speex DSP support
+  --disable-aec           disable accoustic echo cancellation support
   --disable-capi          disable CAPI ISDN support
   --disable-java          disable Java JNI support
   --disable-csharp        disable C-sharp interface
@@ -1552,7 +1553,6 @@ Optional Features:
   --disable-ivr           disable IVR support
   --disable-rfc4175       disable RFC4175 support
   --disable-rfc2435       disable RFC2435 support (experimental)
-  --disable-aec           disable accoustic echo cancellation support
   --disable-g711plc       disable Packet Loss Concealment for G.711
   --disable-rtpfec        disable RTP Forward Error Correction support
   --disable-rtcpxr        disable RTCP Extended Reports support
@@ -6912,6 +6912,75 @@ fi
 
 
 
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking accoustic echo cancellation support" >&5
+$as_echo_n "checking accoustic echo cancellation support... " >&6; }
+
+   # Check whether --enable-aec was given.
+if test "${enable_aec+set}" = set; then :
+  enableval=$enable_aec;
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+$as_echo "disabled by user" >&6; }
+         fi
+
+else
+
+         enableval=$OPAL_AEC
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+$as_echo "disabled by default" >&6; }
+         fi
+
+
+fi
+
+
+
+
+      if    test "x${enableval}" = "xyes" && \
+            test "x$OPAL_SPEEXDSP" != "x1" && \
+            test "x$OPAL_SPEEXDSP" != "xyes"; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_SPEEXDSP=$OPAL_SPEEXDSP" >&5
+$as_echo "disabled due to disabled dependency OPAL_SPEEXDSP=$OPAL_SPEEXDSP" >&6; }
+         enableval=no
+      fi
+
+
+
+
+
+
+
+
+
+
+
+
+   if test "x${enableval}" = "xyes"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+   fi
+
+
+   if test "x$enableval" = "xyes"; then :
+
+         OPAL_AEC=yes
+
+
+$as_echo "#define OPAL_AEC 1" >>confdefs.h
+
+
+else
+  OPAL_AEC=no
+fi
+
+
+   enable_aec="$enableval"
+
+
+
+
+
 
 
 
@@ -9616,67 +9685,6 @@ fi
 
 
    enable_rfc2435="$enableval"
-
-
-
-
-
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking accoustic echo cancellation support" >&5
-$as_echo_n "checking accoustic echo cancellation support... " >&6; }
-
-   # Check whether --enable-aec was given.
-if test "${enable_aec+set}" = set; then :
-  enableval=$enable_aec;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
-$as_echo "disabled by user" >&6; }
-         fi
-
-else
-
-         enableval=$OPAL_AEC
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
-$as_echo "disabled by default" >&6; }
-         fi
-
-
-fi
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-   fi
-
-
-   if test "x$enableval" = "xyes"; then :
-
-         OPAL_AEC=yes
-
-
-$as_echo "#define OPAL_AEC 1" >>confdefs.h
-
-
-else
-  OPAL_AEC=no
-fi
-
-
-   enable_aec="$enableval"
 
 
 
