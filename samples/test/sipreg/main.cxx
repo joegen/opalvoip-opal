@@ -93,6 +93,7 @@ void RegTest::Main()
                   "I-interfaces: Use specified interface(s)\n"
                   "p-password: Pasword to use for all registrations\n"
                   "P-proxy: Proxy to use for registration.\n"
+                  "d-delay: Delay time (seconds) before unregistering (2 seconds)\n"
                   "v-verbose. Indicate verbose output.\n"
                   PTRACE_ARGLIST
                   "h-help."
@@ -111,6 +112,7 @@ void RegTest::Main()
     OpalManager manager;
     MySIPEndPoint * endpoint = new MySIPEndPoint(manager);
     endpoint->PerformTest(args);
+    PThread::Sleep(PTimeInterval(0, args.GetOptionAs('d', 2)));
     cout << "Unregistering ..." << endl;
   }
 
