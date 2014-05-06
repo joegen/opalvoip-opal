@@ -105,10 +105,22 @@ MY_VERSION_FILE([$VERSION_DIR/version.h], [OPAL])
 dnl ########################################################################
 dnl Check for PTLib
 
-if test "x$PTLIBDIR" != "x" ; then
-   export PKG_CONFIG_PATH=$PTLIBDIR/lib_$target:$PTLIBDIR:$PKG_CONFIG_PATH
-   AC_MSG_NOTICE(PTLIBDIR environment variable detected as $PTLIBDIR)
-fi
+AC_ARG_WITH(
+   ptlib,
+   AS_HELP_STRING([--with-ptlib=<dir>],[location of PTLib]),
+   [
+      OPAL_PTLIB_DIR="$withval (--with-ptlib)"
+      export PKG_CONFIG_PATH=$withval/lib_$target:$withval:$PKG_CONFIG_PATH
+      AC_MSG_NOTICE(with PTLib at $withval)
+   ],
+   [
+      if test "x$PTLIBDIR" != "x" ; then
+         OPAL_PTLIB_DIR="$PTLIBDIR (PTLIBDIR)"
+         export PKG_CONFIG_PATH=$PTLIBDIR/lib_$target:$PTLIBDIR:$PKG_CONFIG_PATH
+         AC_MSG_NOTICE(PTLIBDIR environment variable detected as $PTLIBDIR)
+      fi
+   ]
+)
 
 PKG_CHECK_MODULES(
    [PTLIB],
@@ -131,6 +143,10 @@ fi
 
 AC_SUBST(PTLIB_MAKE_DIR, `pkg-config ptlib --variable=makedir`)
 AC_SUBST(PTLIB_LIB_DIR,  `pkg-config ptlib --variable=libdir`)
+
+if test "x$OPAL_PTLIB_DIR" = "x"; then
+   OPAL_PTLIB_DIR="`pkg-config ptlib --variable=prefix` (pkg-config)"
+fi
 
 
 OPAL_CHECK_PTLIB_OPTION([URL],          [PTLIB_URL],  [Must have URL functionality enabled in PTLib])
@@ -564,8 +580,10 @@ echo "                     Machine Type :  $target_cpu"
 echo "                           prefix :  $prefix"
 echo "                      exec_prefix :  $exec_prefix"
 echo "                           libdir :  $libdir"
-echo "                Plug in diractory :  $OPAL_PLUGIN_DIR"
+echo "                Plug in directory :  $OPAL_PLUGIN_DIR"
 
+echo ""
+echo "                            PTLib :  $OPAL_PTLIB_DIR"
 echo ""
 
 echo "                            Audio :  $OPAL_PTLIB_AUDIO"
