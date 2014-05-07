@@ -117,6 +117,9 @@
       <Project>{d96e9539-b594-4c4b-8782-33a54d990f5f}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="..\..\plugins\video\VP8-WebM\vp8_webm_2010.vcxproj">
+      <Project>{f663f1b8-24d5-4baa-8a3c-e76a5ac619d4}</Project>
+    </ProjectReference>
     <ProjectReference Include="OpenPhoneInstaller_2010.vcxproj">
       <Project>{ae1c39fc-a03d-4947-9127-abe9fe7edf3a}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
@@ -163,14 +166,14 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\SVN-Trunk-2010\opal\samples\openphone\config.wxs">
+    <ClInclude Include="config.wxs">
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Copying default installer configuration</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(FullPath)</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(FullPath).in</AdditionalInputs>
       <FileType>Document</FileType>
       <SubType>Designer</SubType>
     </ClInclude>
-    <CustomBuild Include="..\..\..\SVN-Trunk-2010\opal\samples\openphone\config.wxs.in">
+    <CustomBuild Include="config.wxs.in">
       <FileType>Document</FileType>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Copying default installer configuration</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy "%(FullPath)" "%(RootDir)%(Directory)%(Filename)" &gt; nul</Command>
