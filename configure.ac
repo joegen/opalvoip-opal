@@ -72,14 +72,23 @@ OPAL_DAHDI=no
 
 dnl ########################################################################
 dnl Check for non-installed "environment variable" mode
-if test "x$OPALDIR" != "x" ; then
-   AC_MSG_NOTICE(OPALDIR environment variable detected as $OPALDIR)
-   ac_default_prefix=$OPALDIR
-   if test "x$prefix" = "xNONE" ; then
-      libdir+=_$target
+if test "x$prefix" != "x" && test "x$prefix" != "xNONE" ; then
+   if test "$prefix" = `pwd`; then
+      INTERNAL_OPALDIR="$prefix"
    fi
-   makedir="$OPALDIR/make"
-   VERSION_DIR="$OPALDIR"
+else
+   if test "x$OPALDIR" != "x" ; then
+      AC_MSG_NOTICE(OPALDIR environment variable detected as $OPALDIR)
+      ac_default_prefix=$OPALDIR
+      INTERNAL_OPALDIR="$OPALDIR"
+   fi
+fi
+
+if test "x$INTERNAL_OPALDIR" != "x"; then
+   libdir+=_$target
+   datarootdir="\${exec_prefix}"
+   makedir="\${datarootdir}/make"
+   VERSION_DIR="$INTERNAL_OPALDIR"
    CPPFLAGS="${CPPFLAGS} -I\${includedir}"
 else
    makedir="\${datarootdir}/opal/make"
@@ -577,11 +586,14 @@ echo ""
 echo "=========================== Configuration =============================="
 echo "                          OS Type :  $target_os"
 echo "                     Machine Type :  $target_cpu"
+echo ""
 echo "                           prefix :  $prefix"
 echo "                      exec_prefix :  $exec_prefix"
+echo "                       includedir :  $includedir"
 echo "                           libdir :  $libdir"
+echo "                      datarootdir :  $datarootdir"
+echo "                          makedir :  $makedir"
 echo "                Plug in directory :  $OPAL_PLUGIN_DIR"
-
 echo ""
 echo "                            PTLib :  $OPAL_PTLIB_DIR"
 echo ""
