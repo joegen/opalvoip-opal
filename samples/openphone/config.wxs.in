@@ -1,9 +1,9 @@
 <Include>
    <?define LuaDir = "$(env.ProgramFiles)\lua\5.1" ?>
-   <?define JPEGDir = "C:\Tools" ?>
-   <?define SaslDir = "C:\Tools" ?>
-   <?define LDAPDir = "C:\Tools" ?>
-   <?define SSLDir = "C:\Tools" ?>
+   <?define JPEGDir = "C:\Tools\bin" ?>
+   <?define SaslDir = "C:\Tools\bin" ?>
+   <?define LDAPDir = "C:\Tools\bin" ?>
+   <?define SSLDir = "$(env.ProgramW6432)\OpenSSL-Win32\bin" ?>
    <?define OPALDir = "..\.." ?>
    <?define PTLibDir = "..\..\..\ptlib" ?>
    <?define PluginDir = "C:\PTLib_Plugins" ?>
