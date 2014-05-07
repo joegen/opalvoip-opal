@@ -626,7 +626,6 @@ OPAL_PLUGIN_DIR
 OPAL_PLUGINS
 OPAL_SAMPLES
 OPAL_SCRIPT
-OPAL_HAS_PRESENCE
 OPAL_HAS_PCSS
 OPAL_HAS_MIXER
 OPAL_RTCP_XR
@@ -654,6 +653,7 @@ OPAL_STATISTICS
 OPAL_HAS_RFC4103
 OPAL_HAS_SIPIM
 OPAL_HAS_MSRP
+OPAL_HAS_PRESENCE
 OPAL_T38_CAPABILITY
 OPAL_HAS_H281
 OPAL_HAS_H224
@@ -838,6 +838,7 @@ enable_skinny
 enable_h224
 enable_h281
 enable_t38
+enable_presence
 enable_msrp
 enable_sipim
 enable_rfc4103
@@ -862,7 +863,6 @@ enable_rtpfec
 enable_rtcpxr
 enable_mixer
 enable_pcss
-enable_presence
 enable_script
 enable_samples
 enable_plugins
@@ -1536,6 +1536,7 @@ Optional Features:
   --disable-h281          disable H.281 (Far End Camera Control) protocol
                           support
   --disable-t38           disable T.38 capability support
+  --disable-presence      disable presence support
   --disable-msrp          disable MSRP support
   --disable-sipim         disable SIPIM session support
   --disable-rfc4103       disable RFC4103 support
@@ -1559,7 +1560,6 @@ Optional Features:
   --disable-rtcpxr        disable RTCP Extended Reports support
   --disable-mixer         disable media mixing support
   --disable-pcss          disable PC sound system support
-  --enable-presence       whether to enable presence support
   --disable-script        disable script language support
   --enable-samples        enable samples build
   --disable-plugins       disable plugin support
@@ -8314,6 +8314,67 @@ fi
 
 
 
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking presence support" >&5
+$as_echo_n "checking presence support... " >&6; }
+
+   # Check whether --enable-presence was given.
+if test "${enable_presence+set}" = set; then :
+  enableval=$enable_presence;
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+$as_echo "disabled by user" >&6; }
+         fi
+
+else
+
+         enableval=$OPAL_HAS_PRESENCE
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+$as_echo "disabled by default" >&6; }
+         fi
+
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   if test "x${enableval}" = "xyes"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+   fi
+
+
+   if test "x$enableval" = "xyes"; then :
+
+         OPAL_HAS_PRESENCE=yes
+
+
+$as_echo "#define OPAL_HAS_PRESENCE 1" >>confdefs.h
+
+
+else
+  OPAL_HAS_PRESENCE=no
+fi
+
+
+   enable_presence="$enableval"
+
+
+
+
+
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking MSRP support" >&5
 $as_echo_n "checking MSRP support... " >&6; }
 
@@ -8338,6 +8399,14 @@ fi
 
 
 
+
+      if    test "x${enableval}" = "xyes" && \
+            test "x$OPAL_HAS_PRESENCE" != "x1" && \
+            test "x$OPAL_HAS_PRESENCE" != "xyes"; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_HAS_PRESENCE=$OPAL_HAS_PRESENCE" >&5
+$as_echo "disabled due to disabled dependency OPAL_HAS_PRESENCE=$OPAL_HAS_PRESENCE" >&6; }
+         enableval=no
+      fi
 
 
 
@@ -8400,6 +8469,14 @@ fi
 
 
 
+      if    test "x${enableval}" = "xyes" && \
+            test "x$OPAL_HAS_PRESENCE" != "x1" && \
+            test "x$OPAL_HAS_PRESENCE" != "xyes"; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_HAS_PRESENCE=$OPAL_HAS_PRESENCE" >&5
+$as_echo "disabled due to disabled dependency OPAL_HAS_PRESENCE=$OPAL_HAS_PRESENCE" >&6; }
+         enableval=no
+      fi
+
 
 
 
@@ -8460,6 +8537,14 @@ fi
 
 
 
+
+      if    test "x${enableval}" = "xyes" && \
+            test "x$OPAL_HAS_PRESENCE" != "x1" && \
+            test "x$OPAL_HAS_PRESENCE" != "xyes"; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_HAS_PRESENCE=$OPAL_HAS_PRESENCE" >&5
+$as_echo "disabled due to disabled dependency OPAL_HAS_PRESENCE=$OPAL_HAS_PRESENCE" >&6; }
+         enableval=no
+      fi
 
 
 
@@ -10021,67 +10106,6 @@ fi
 
 
    enable_pcss="$enableval"
-
-
-
-
-
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable presence support" >&5
-$as_echo_n "checking whether to enable presence support... " >&6; }
-
-   # Check whether --enable-presence was given.
-if test "${enable_presence+set}" = set; then :
-  enableval=$enable_presence;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
-$as_echo "disabled by user" >&6; }
-         fi
-
-else
-
-         enableval=$OPAL_HAS_PRESENCE
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
-$as_echo "disabled by default" >&6; }
-         fi
-
-
-fi
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-   fi
-
-
-   if test "x$enableval" = "xyes"; then :
-
-         OPAL_HAS_PRESENCE=yes
-
-
-$as_echo "#define OPAL_HAS_PRESENCE 1" >>confdefs.h
-
-
-else
-  OPAL_HAS_PRESENCE=no
-fi
-
-
-   enable_presence="$enableval"
 
 
 
@@ -11872,6 +11896,7 @@ echo ""
 echo "         PC Sound System Endpoint :  $OPAL_HAS_PCSS"
 echo "                      IVR support :  $OPAL_IVR"
 echo "       Media mixing (conferences) :  $OPAL_HAS_MIXER"
+echo "                         Presence :  $OPAL_HAS_PRESENCE"
 echo "     Statistics gathering support :  $OPAL_STATISTICS"
 echo "        Script language interface :  $OPAL_SCRIPT"
 echo "                     Java support :  $OPAL_JAVA"
