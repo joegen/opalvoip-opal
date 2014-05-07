@@ -72,14 +72,23 @@ OPAL_DAHDI=no
 
 dnl ########################################################################
 dnl Check for non-installed "environment variable" mode
-if test "x$OPALDIR" != "x" ; then
-   AC_MSG_NOTICE(OPALDIR environment variable detected as $OPALDIR)
-   ac_default_prefix=$OPALDIR
-   if test "x$prefix" = "xNONE" ; then
-      libdir+=_$target
+if test "x$prefix" != "x" && test "x$prefix" != "xNONE" ; then
+   if test "$prefix" = `pwd`; then
+      INTERNAL_OPALDIR="$prefix"
    fi
-   makedir="$OPALDIR/make"
-   VERSION_DIR="$OPALDIR"
+else
+   if test "x$OPALDIR" != "x" ; then
+      AC_MSG_NOTICE(OPALDIR environment variable detected as $OPALDIR)
+      ac_default_prefix=$OPALDIR
+      INTERNAL_OPALDIR="$OPALDIR"
+   fi
+fi
+
+if test "x$INTERNAL_OPALDIR" != "x"; then
+   libdir+=_$target
+   datarootdir="\${exec_prefix}"
+   makedir="\${datarootdir}/make"
+   VERSION_DIR="$INTERNAL_OPALDIR"
    CPPFLAGS="${CPPFLAGS} -I\${includedir}"
 else
    makedir="\${datarootdir}/opal/make"
@@ -366,17 +375,21 @@ dnl MSWIN_DISPLAY  t38,T.38 capability
 dnl MSWIN_DEFINE   t38,OPAL_T38_CAPABILITY
 OPAL_SIMPLE_OPTION(t38,OPAL_T38_CAPABILITY, [T.38 capability support])
 
+dnl MSWIN_DISPLAY  presence,Presence support
+dnl MSWIN_DEFINE   presence,OPAL_HAS_PRESENCE
+OPAL_SIMPLE_OPTION(presence,OPAL_HAS_PRESENCE, [presence support])
+
 dnl MSWIN_DISPLAY  msrp,MSRP capability
 dnl MSWIN_DEFINE   msrp,OPAL_HAS_MSRP
-OPAL_SIMPLE_OPTION(msrp,OPAL_HAS_MSRP, [MSRP support])
+OPAL_SIMPLE_OPTION(msrp,OPAL_HAS_MSRP, [MSRP support], [OPAL_HAS_PRESENCE])
 
 dnl MSWIN_DISPLAY  sipim,SIPIM capability
 dnl MSWIN_DEFINE   sipim,OPAL_HAS_SIPIM
-OPAL_SIMPLE_OPTION(sipim,OPAL_HAS_SIPIM, [SIPIM session support])
+OPAL_SIMPLE_OPTION(sipim,OPAL_HAS_SIPIM, [SIPIM session support], [OPAL_HAS_PRESENCE])
 
 dnl MSWIN_DISPLAY  rfc4103,RFC4103 capability
 dnl MSWIN_DEFINE   rfc4103,OPAL_HAS_RFC4103
-OPAL_SIMPLE_OPTION(rfc4103,OPAL_HAS_RFC4103, [RFC4103 support])
+OPAL_SIMPLE_OPTION(rfc4103,OPAL_HAS_RFC4103, [RFC4103 support], [OPAL_HAS_PRESENCE])
 
 dnl MSWIN_DISPLAY  statistics,Statistics gathering support
 dnl MSWIN_DEFINE   statistics,OPAL_STATISTICS
@@ -490,10 +503,6 @@ dnl MSWIN_DISPLAY  pcss,PC Sound System Endpoint
 dnl MSWIN_DEFINE   pcss,OPAL_HAS_PCSS
 OPAL_SIMPLE_OPTION(pcss,OPAL_HAS_PCSS, [PC sound system support])
 
-dnl MSWIN_DISPLAY  presence,Presence support
-dnl MSWIN_DEFINE   presence,OPAL_HAS_PRESENCE
-OPAL_SIMPLE_OPTION(presence,OPAL_HAS_PRESENCE, [whether to enable presence support])
-
 dnl MSWIN_DISPLAY  script,Script language interface
 dnl MSWIN_DEFINE   script,OPAL_SCRIPT
 OPAL_SIMPLE_OPTION(script,OPAL_SCRIPT, [script language support])
@@ -577,11 +586,14 @@ echo ""
 echo "=========================== Configuration =============================="
 echo "                          OS Type :  $target_os"
 echo "                     Machine Type :  $target_cpu"
+echo ""
 echo "                           prefix :  $prefix"
 echo "                      exec_prefix :  $exec_prefix"
+echo "                       includedir :  $includedir"
 echo "                           libdir :  $libdir"
+echo "                      datarootdir :  $datarootdir"
+echo "                          makedir :  $makedir"
 echo "                Plug in directory :  $OPAL_PLUGIN_DIR"
-
 echo ""
 echo "                            PTLib :  $OPAL_PTLIB_DIR"
 echo ""
@@ -624,6 +636,7 @@ echo ""
 echo "         PC Sound System Endpoint :  $OPAL_HAS_PCSS"
 echo "                      IVR support :  $OPAL_IVR"
 echo "       Media mixing (conferences) :  $OPAL_HAS_MIXER"
+echo "                         Presence :  $OPAL_HAS_PRESENCE"
 echo "     Statistics gathering support :  $OPAL_STATISTICS"
 echo "        Script language interface :  $OPAL_SCRIPT"
 echo "                     Java support :  $OPAL_JAVA"

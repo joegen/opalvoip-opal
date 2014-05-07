@@ -1849,10 +1849,11 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
 
   manager.TranslateIPAddress(m_localAddress, m_remoteAddress);
 
+  m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
+
   PTRACE(3, "RTP_UDP\tSession " << m_sessionId << " opened: "
          << m_localAddress << ':' << m_localDataPort << '-' << m_localControlPort
          << " SSRC=" << RTP_TRACE_SRC(syncSourceOut));
-
 
   return true;
 }
