@@ -217,6 +217,14 @@
                            DiskId='1'
                            KeyPath='yes' />
                   </Component>
+                  <Component Id='VP8'
+                             Guid='*'>
+                     <File Id='VP8_DLL'
+                           Name='vp8_webm_ptplugin.dll'
+                           Source='$(var.OPALDir)\bin\plugins\Release\vp8_webm_ptplugin.dll'
+                           DiskId='1'
+                           KeyPath='yes' />
+                  </Component>
                   <Component Id='SpanDSPFax'
                              Guid='*'>
                      <File Id='SpanDSPFax_DLL'
@@ -398,6 +406,7 @@
          <ComponentRef Id='H.263' />
          <ComponentRef Id='AVCODEC' />
          <ComponentRef Id='AVUTIL' />
+         <ComponentRef Id='VP8' />
          <ComponentRef Id='SpanDSPFax' />
          <ComponentRef Id='SpanDSPLib' />
          <ComponentRef Id='CM' />
