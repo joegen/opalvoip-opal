@@ -905,7 +905,7 @@ PStringArray MySkinnyEndPoint::ExpandWildcards(const PStringArray & names)
     PString name = names[i];
 
     PIntArray starts(3), ends(3);
-    static PRegularExpression const Wildcards("^.*([0-9]+)\\.\\.([0-9]+)$", PRegularExpression::Extended);
+    static PRegularExpression const Wildcards("([0-9]+)\\.\\.([0-9]+)$", PRegularExpression::Extended);
     if (!Wildcards.Execute(name, starts, ends))
       expanded.AppendString(name);
     else {
@@ -913,7 +913,7 @@ PStringArray MySkinnyEndPoint::ExpandWildcards(const PStringArray & names)
       unsigned lastNumber = name(starts[2], ends[2] - 1).AsUnsigned();
       unsigned digits = ends[2] - starts[2];
       while (number <= lastNumber)
-        expanded.AppendString(name.Left(starts[0]) + psprintf("%0*u", digits, number++) + name.Mid(ends[0]));
+        expanded.AppendString(name.Left(starts[1]) + psprintf("%0*u", digits, number++));
     }
   }
 
