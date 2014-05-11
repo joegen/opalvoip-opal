@@ -246,10 +246,7 @@ MY_MODULE_OPTION(
          [for Speex noise reduction],
          [$SPEEXDSP_CFLAGS],
          [$SPEEXDSP_LIBS],
-         [
-            #include <speex/speex.h>
-            #include <speex/speex_preprocess.h>
-         ],
+         [#include <speex/speex_echo.h>],
          [
             SpeexEchoState *st;
             spx_int16_t *x;
