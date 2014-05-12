@@ -6966,10 +6966,10 @@ fi
 
 
       if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_SPEEXDSP" != "x1" && \
-            test "x$OPAL_SPEEXDSP" != "xyes"; then
-         { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_SPEEXDSP=$OPAL_SPEEXDSP" >&5
-$as_echo "disabled due to disabled dependency OPAL_SPEEXDSP=$OPAL_SPEEXDSP" >&6; }
+            test "x$SPEEXDSP_USABLE" != "x1" && \
+            test "x$SPEEXDSP_USABLE" != "xyes"; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency SPEEXDSP_USABLE=$SPEEXDSP_USABLE" >&5
+$as_echo "disabled due to disabled dependency SPEEXDSP_USABLE=$SPEEXDSP_USABLE" >&6; }
          enableval=no
       fi
 
