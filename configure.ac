@@ -260,7 +260,7 @@ MY_MODULE_OPTION(
 
 dnl MSWIN_DISPLAY  aec,Accoustic Echo Cancellation
 dnl MSWIN_DEFINE   aec,OPAL_AEC
-OPAL_SIMPLE_OPTION(aec,OPAL_AEC, [accoustic echo cancellation support], [OPAL_SPEEXDSP])
+OPAL_SIMPLE_OPTION(aec,OPAL_AEC, [accoustic echo cancellation support], [SPEEXDSP_USABLE])
 
 
 dnl ########################################################################
