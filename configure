@@ -6894,8 +6894,8 @@ $as_echo "#define OPAL_SYSTEM_SPEEX 1" >>confdefs.h
    MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $SPEEXDSP_CFLAGS"
    LIBS="$SPEEXDSP_LIBS $LIBS"
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Speex noise reduction" >&5
-$as_echo_n "checking for Speex noise reduction... " >&6; }
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for float parameter in Speex noise reduction" >&5
+$as_echo_n "checking for float parameter in Speex noise reduction... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 

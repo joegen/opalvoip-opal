@@ -243,10 +243,13 @@ MY_MODULE_OPTION(
       fi
 
       MY_LINK_IFELSE(
-         [for Speex noise reduction],
+         [for float parameter in Speex noise reduction],
          [$SPEEXDSP_CFLAGS],
          [$SPEEXDSP_LIBS],
-         [#include <speex/speex_echo.h>],
+         [
+            #include <speex/speex.h>
+            #include <speex/speex_preprocess.h>
+         ],
          [
             SpeexEchoState *st;
             spx_int16_t *x;
