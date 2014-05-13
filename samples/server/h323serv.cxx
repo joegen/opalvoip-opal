@@ -76,15 +76,11 @@ static const char OSPPublicKeyFileKey[] = "OSP Public Key";
 static const char OSPServerKeyFileKey[] = "OSP Server Key";
 #endif
 
-#define LISTENER_INTERFACE_KEY        "Interface"
-
 static const char AuthenticationCredentialsName[] = "Gatekeeper Authenticated Users";
-#define USERS_SECTION "Authentication"
-#define USERS_KEY     "Credentials"
+static const char AuthenticationCredentialsKey[] = "Authentication\\Credentials %u\\";
 
 static const char AliasRouteMapsName[] = "Gatekeeper Alias Route Maps";
-#define ROUTES_SECTION "Route Maps"
-#define ROUTES_KEY     "Mapping"
+static const char AliasRouteMapsKey[] = "Route Maps\\Mapping %u\\";
 
 #define PTraceModule() "OpalServer"
 #define new PNEW
@@ -359,40 +355,40 @@ bool MyGatekeeperServer::Configure(PConfig & cfg, PConfigPage * rsrc)
   isGatekeeperRouted = rsrc->AddBooleanField(IsGatekeeperRoutedKey, isGatekeeperRouted,
              "All endpoionts will route sigaling for all calls through the gatekeeper");
 
-  routes.RemoveAll();
-  PINDEX arraySize = cfg.GetInteger(ROUTES_SECTION, ROUTES_KEY" Array Size");
-  for (i = 0; i < arraySize; i++) {
-    cfg.SetDefaultSection(psprintf(ROUTES_SECTION"\\"ROUTES_KEY" %u", i+1));
-    RouteMap map(cfg.GetString(RouteAliasKey), cfg.GetString(RouteHostKey));
-    if (map.IsValid())
-      routes.Append(new RouteMap(map));
-  }
+  PHTTPCompositeField * routeFields = new PHTTPCompositeField(AliasRouteMapsKey, AliasRouteMapsName,
+                                                              "Fixed mapping of alias names to hostnames for calls routed through gatekeeper");
+  routeFields->Append(new PHTTPStringField(RouteAliasKey, 0, NULL, NULL, 1, 20));
+  routeFields->Append(new PHTTPStringField(RouteHostKey, 0, NULL, NULL, 1, 30));
+  PHTTPFieldArray * routeArray = new PHTTPFieldArray(routeFields, true);
+  rsrc->Add(routeArray);
 
-  PHTTPCompositeField * routeFields = new PHTTPCompositeField(ROUTES_SECTION"\\"ROUTES_KEY" %u\\", AliasRouteMapsName,
-                                      "Fixed mapping of alias names to hostnames for calls routed through gatekeeper");
-  routeFields->Append(new PHTTPStringField(RouteAliasKey, 20));
-  routeFields->Append(new PHTTPStringField(RouteHostKey, 30));
-  rsrc->Add(new PHTTPFieldArray(routeFields, true));
+  routes.RemoveAll();
+  if (!routeArray->LoadFromConfig(cfg)) {
+    for (i = 0; i < routeArray->GetSize(); ++i) {
+      PHTTPCompositeField & item = dynamic_cast<PHTTPCompositeField &>((*routeArray)[i]);
+      RouteMap map(item[0].GetValue(), item[1].GetValue());
+      if (map.IsValid())
+        routes.Append(new RouteMap(map));
+    }
+  }
 
   requireH235 = rsrc->AddBooleanField(RequireH235Key, requireH235,
       "Gatekeeper requires H.235 cryptographic authentication for registrations");
 
-  passwords.RemoveAll();
-  arraySize = cfg.GetInteger(USERS_SECTION, USERS_KEY" Array Size");
-  for (i = 0; i < arraySize; i++) {
-    cfg.SetDefaultSection(psprintf(USERS_SECTION"\\"USERS_KEY" %u", i+1));
-    PString username = cfg.GetString(UsernameKey);
-    if (!username) {
-      PString password = PHTTPPasswordField::Decrypt(cfg.GetString(PasswordKey));
-      passwords.SetAt(username, password);
-    }
-  }
-
-  PHTTPCompositeField * security = new PHTTPCompositeField(USERS_SECTION"\\"USERS_KEY" %u\\", AuthenticationCredentialsName,
-                                     "Table of username/password for authenticated endpoints on gatekeeper, requires H.235");
+  PHTTPCompositeField * security = new PHTTPCompositeField(AuthenticationCredentialsKey, AuthenticationCredentialsName,
+                                                           "Table of username/password for authenticated endpoints on gatekeeper, requires H.235");
   security->Append(new PHTTPStringField(UsernameKey, 25));
   security->Append(new PHTTPPasswordField(PasswordKey, 25));
-  rsrc->Add(new PHTTPFieldArray(security, false));
+  PHTTPFieldArray * securityArray = new PHTTPFieldArray(security, false);
+  rsrc->Add(securityArray);
+
+  passwords.RemoveAll();
+  if (!securityArray->LoadFromConfig(cfg)) {
+    for (i = 0; i < securityArray->GetSize(); ++i) {
+      PHTTPCompositeField & item = dynamic_cast<PHTTPCompositeField &>((*securityArray)[i]);
+      passwords.SetAt(item[0].GetValue(), PHTTPPasswordField::Decrypt(item[1].GetValue()));
+    }
+  }
 
   PTRACE(3, "Gatekeeper server configured");
   return true;
