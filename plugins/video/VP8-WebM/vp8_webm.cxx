@@ -707,6 +707,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
     vpx_codec_flags_t    m_flags;
     vpx_codec_iter_t     m_iterator;
     std::vector<uint8_t> m_fullFrame;
+    bool                 m_firstFrame;
     bool                 m_intraFrame;
     bool                 m_ignoreTillKeyFrame;
     unsigned             m_consecutiveErrors;
@@ -717,8 +718,9 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
       , m_iface(vpx_codec_vp8_dx())
       , m_flags(0)
       , m_iterator(NULL)
+      , m_firstFrame(true)
       , m_intraFrame(false)
-      , m_ignoreTillKeyFrame(true)
+      , m_ignoreTillKeyFrame(false)
       , m_consecutiveErrors(0)
     {
       memset(&m_codec, 0, sizeof(m_codec));
@@ -771,8 +773,8 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
 
       flags = m_intraFrame ? PluginCodec_ReturnCoderIFrame : 0;
 
-      if ((image = vpx_codec_get_frame(&m_codec, &m_iterator)) == NULL) {
-        /* Unless error concealment implementedm decoder has a problems with
+      if (m_firstFrame || (image = vpx_codec_get_frame(&m_codec, &m_iterator)) == NULL) {
+        /* Unless error concealment implemented, decoder has a problems with
            missing data in the frame and can gets it;s knickers thorougly
            twisted, so just ignore everything till next I-Frame. */
         if (BadDecode(flags,
@@ -840,6 +842,8 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
         m_iterator = NULL;
         if ((image = vpx_codec_get_frame(&m_codec, &m_iterator)) == NULL)
           return true;
+
+        m_firstFrame = false;
       }
 
       if (image->fmt != VPX_IMG_FMT_I420) {
@@ -876,9 +880,13 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
 
 class VP8DecoderRFC : public VP8Decoder
 {
+  protected:
+    unsigned m_partitionID;
+
   public:
     VP8DecoderRFC(const PluginCodec_Definition * defn)
       : VP8Decoder(defn)
+      , m_partitionID(0)
     {
     }
 
@@ -915,9 +923,24 @@ class VP8DecoderRFC : public VP8Decoder
         return false;
       }
 
-      if ((rtp[0]&0x10) != 0 && !m_fullFrame.empty()) { // Check S bit
-        PTRACE(3, MY_CODEC_LOG, "Missing start to frame, ignoring till next key frame.");
-        return false;
+      if ((rtp[0]&0x10) != 0) { // Check S bit
+        unsigned partitionID = rtp[0] & 0xf;
+        if (partitionID != 0) {
+          ++m_partitionID;
+          if (m_partitionID != partitionID) {
+            PTRACE(3, MY_CODEC_LOG, "Missing partition "
+                   "(expected " << m_partitionID << " , got " << partitionID << "),"
+                   " ignoring till next key frame.");
+            return false;
+          }
+        }
+        else {
+          m_partitionID = 0;
+          if (!m_fullFrame.empty()) {
+            PTRACE(3, MY_CODEC_LOG, "Start bit seen but not completed previous frame, ignoring till next key frame.");
+            return false;
+          }
+        }
       }
 
       if (m_ignoreTillKeyFrame) {
@@ -1051,6 +1074,9 @@ class VP8DecoderOM : public VP8Decoder
           case LandscapeDown :
             planeInfo[p].CopyLandscapeDown();
             break;
+
+          default :
+            return 0;
         }
       }
 
