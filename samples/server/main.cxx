@@ -110,7 +110,7 @@ static const char ScriptTextKey[] = "Script";
 #endif
 
 #define ROUTES_SECTION "Routes"
-#define ROUTES_KEY "Route"
+#define ROUTES_KEY     ROUTES_SECTION"\\Route %u\\"
 
 static const char RouteAPartyKey[] = "A Party";
 static const char RouteBPartyKey[] = "B Party";
@@ -441,24 +441,20 @@ bool MyManager::ConfigureCommon(OpalEndPoint * ep,
                                             ep->GetAllMediaCryptoSuites(), "Media security methods available."));
 #endif // OPAL_PTLIB_SSL
 
-  PString optionsSection = cfgPrefix + " Default Options";
-  PString optionsItemFmt = cfgPrefix + " Default Options\\Option %u";
-
-  ep->SetDefaultStringOptions(OpalConnection::StringOptions());
-  PString defaultSection = cfg.GetDefaultSection();
-  list<SIPRegister::Params> registrations;
-  PINDEX arraySize = cfg.GetInteger(optionsSection, "Option Array Size");
-  for (PINDEX i = 0; i < arraySize; i++) {
-    cfg.SetDefaultSection(psprintf(optionsItemFmt, i + 1));
-    ep->SetDefaultStringOption(cfg.GetString("Name"), cfg.GetString("Value"));
-  }
-  cfg.SetDefaultSection(defaultSection);
-
-  PHTTPCompositeField * optionsFields = new PHTTPCompositeField(optionsItemFmt + '\\', optionsSection,
+  PString section = cfgPrefix + " Default Options";
+  PHTTPCompositeField * optionsFields = new PHTTPCompositeField(section + "\\Option %u\\", section,
                                                                 "Default options for calls using " + cfgPrefix);
   optionsFields->Append(new PHTTPStringField("Name", 0, NULL, NULL, 1, 30));
   optionsFields->Append(new PHTTPStringField("Value", 0, NULL, NULL, 1, 30));
-  rsrc->Add(new PHTTPFieldArray(optionsFields, false));
+  PHTTPFieldArray * optionsArray = new PHTTPFieldArray(optionsFields, false);
+  rsrc->Add(optionsArray);
+
+  if (!optionsArray->LoadFromConfig(cfg)) {
+    for (PINDEX i = 0; i < optionsArray->GetSize(); ++i) {
+      PHTTPCompositeField & item = dynamic_cast<PHTTPCompositeField &>((*optionsArray)[i]);
+      ep->SetDefaultStringOption(item[0].GetValue(), item[1].GetValue());
+    }
+  }
 
   return true;
 }
@@ -508,8 +504,6 @@ SIPConsoleEndPoint * MyManager::CreateSIPEndPoint()
 
 PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 {
-  PINDEX arraySize;
-
   // Make sure all endpoints created
   for (PINDEX i = 0; i < m_endpointPrefixes.GetSize(); ++i)
     GetConsoleEndPoint(m_endpointPrefixes[i]);
@@ -520,7 +514,7 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
   // Telnet Port number to use.
   {
     WORD telnetPort = (WORD)rsrc->AddIntegerField(TelnetPortKey, 0, 65535, DefaultTelnetPort,
-                                   "", "Port for console user interface (telnet) of server (zero disables).");
+                                                  "", "Port for console user interface (telnet) of server (zero disables).");
     PCLISocket * cliSocket = dynamic_cast<PCLISocket *>(m_cli);
     if (cliSocket != NULL && telnetPort != 0)
       cliSocket->Listen(telnetPort);
@@ -543,8 +537,8 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
   static const char * const MediaTransferModeValues[] = { "0", "1", "2" };
   static const char * const MediaTransferModeTitles[] = { "Bypass", "Forward", "Transcode" };
   rsrc->Add(new PHTTPRadioField(MediaTransferModeKey,
-                    PARRAYSIZE(MediaTransferModeValues), MediaTransferModeValues, MediaTransferModeTitles,
-                    m_mediaTransferMode, "How media is to be routed between the endpoints."));
+    PARRAYSIZE(MediaTransferModeValues), MediaTransferModeValues, MediaTransferModeTitles,
+    m_mediaTransferMode, "How media is to be routed between the endpoints."));
 
   {
     OpalMediaTypeList mediaTypes = OpalMediaType::GetList();
@@ -556,8 +550,8 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
       static const char * const AutoStartValues[] = { "Offer inactive", "Receive only", "Send only", "Send & Receive", "Don't offer" };
       rsrc->Add(new PHTTPEnumField<OpalMediaType::AutoStartMode::Enumeration>(key,
-                    PARRAYSIZE(AutoStartValues), AutoStartValues, (*it)->GetAutoStart(),
-                    "Initial start up mode for media type."));
+        PARRAYSIZE(AutoStartValues), AutoStartValues, (*it)->GetAutoStart(),
+        "Initial start up mode for media type."));
     }
   }
 
@@ -585,13 +579,13 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
   }
 
   SetMediaFormatMask(rsrc->AddStringArrayField(RemovedMediaKey, true, 25, GetMediaFormatMask(),
-                     "Codecs to be prevented from being used.<p>"
-                     "These are wildcards as in the above Preferred Media, with "
-                     "the addition of preceding the expression with a '!' which "
-                     "removes all formats <i>except</i> the indicated wildcard. "
-                     "Also, the '@' character may also be used to indicate a "
-                     "media type, e.g. <code>@video</code> removes all video "
-                     "codecs."));
+    "Codecs to be prevented from being used.<p>"
+    "These are wildcards as in the above Preferred Media, with "
+    "the addition of preceding the expression with a '!' which "
+    "removes all formats <i>except</i> the indicated wildcard. "
+    "Also, the '@' character may also be used to indicate a "
+    "media type, e.g. <code>@video</code> removes all video "
+    "codecs."));
 
   SetAudioJitterDelay(rsrc->AddIntegerField(MinJitterKey, 20, 2000, GetMinAudioJitterDelay(), "ms", "Minimum jitter buffer size"),
                       rsrc->AddIntegerField(MaxJitterKey, 20, 2000, GetMaxAudioJitterDelay(), "ms", "Maximum jitter buffer size"));
@@ -655,11 +649,11 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
     OpalIVREndPoint * ivrEP = FindEndPointAs<OpalIVREndPoint>(OPAL_PREFIX_IVR);
     // Set IVR protocol handler
     ivrEP->SetDefaultVXML(rsrc->AddStringField(VXMLKey, 0, PString::Empty(),
-                          "Interactive Voice Response VXML script, may be a URL or the actual VXML", 10, 80));
+      "Interactive Voice Response VXML script, may be a URL or the actual VXML", 10, 80));
     ivrEP->SetCacheDir(rsrc->AddStringField(IVRCacheKey, 0, ivrEP->GetCacheDir(),
-                       "Interactive Voice Response directory to cache Text To Speech phrases", 1, 50));
+      "Interactive Voice Response directory to cache Text To Speech phrases", 1, 50));
     ivrEP->SetRecordDirectory(rsrc->AddStringField(IVRRecordDirKey, 0, ivrEP->GetRecordDirectory(),
-                              "Interactive Voice Response directory to save recorded messages", 1, 50));
+      "Interactive Voice Response directory to save recorded messages", 1, 50));
   }
 #endif
 
@@ -675,9 +669,9 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
     adHoc.m_audioOnly = rsrc->AddBooleanField(ConfAudioOnlyKey, adHoc.m_audioOnly, "Conference is audio only");
 
     PVideoFrameInfo::ParseSize(rsrc->AddStringField(ConfVideoResolutionKey, 10,
-                                                    PVideoFrameInfo::AsString(adHoc.m_width, adHoc.m_height),
-                                                    "Conference video frame resolution"),
-                               adHoc.m_width, adHoc.m_height);
+      PVideoFrameInfo::AsString(adHoc.m_width, adHoc.m_height),
+      "Conference video frame resolution"),
+      adHoc.m_width, adHoc.m_height);
 #endif
 
     adHoc.m_closeOnEmpty = true;
@@ -694,9 +688,9 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
     PCaselessString language = cfg.GetString(ScriptLanguageKey, languages[0]);
     rsrc->Add(new PHTTPRadioField(ScriptLanguageKey, languages,
               languages.GetValuesIndex(language),"Interpreter script language."));
-  
+
     PString script = rsrc->AddStringField(ScriptTextKey, 0, PString::Empty(),
-        "Interpreter script, may be a filename or the actual script text", 10, 80);
+                                          "Interpreter script, may be a filename or the actual script text", 10, 80);
     if (language != m_scriptLanguage || script != m_scriptText) {
       m_scriptLanguage = language;
       m_scriptText = script;
@@ -706,87 +700,83 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 #endif //OPAL_SCRIPT
 
   // Routing
-  RouteTable routes;
-  arraySize = cfg.GetInteger(ROUTES_SECTION, ROUTES_KEY" Array Size");
-  for (PINDEX i = 0; i < arraySize; i++) {
-    cfg.SetDefaultSection(psprintf(ROUTES_SECTION"\\"ROUTES_KEY" %u", i+1));
-    RouteEntry * entry = new RouteEntry(cfg.GetString(RouteAPartyKey),
-                                        cfg.GetString(RouteBPartyKey),
-                                        cfg.GetString(RouteDestKey));
-    if (entry->IsValid())
-      routes.Append(entry);
-    else
-      delete entry;
-  }
-
-  if (routes.IsEmpty()) {
-    arraySize = 0;
-    for (PINDEX i = 0; i < PARRAYSIZE(DefaultRoutes); ++i) {
-      RouteEntry * entry = new RouteEntry(DefaultRoutes[i]);
-      PAssert(entry->IsValid(), PLogicError);
-      routes.Append(entry);
-
-      cfg.SetDefaultSection(psprintf(ROUTES_SECTION"\\"ROUTES_KEY" %u", ++arraySize));
-      cfg.SetString(RouteAPartyKey, entry->GetPartyA());
-      cfg.SetString(RouteBPartyKey, entry->GetPartyB());
-      cfg.SetString(RouteDestKey,   entry->GetDestination());
-    }
-    cfg.SetInteger(ROUTES_SECTION, ROUTES_KEY" Array Size", arraySize);
-  }
-  cfg.SetDefaultSection(defaultSection);
-
-  PHTTPCompositeField * routeFields = new PHTTPCompositeField(
-           ROUTES_SECTION"\\"ROUTES_KEY" %u\\", ROUTES_SECTION,
-           "Internal routing of calls to varous sub-systems.<p>"
-           "The A Party and B Party columns are regular expressions for the call "
-           "originator and receiver respectively. The Destination string determines "
-           "the endpoint used for the outbound leg of the route. This can be be "
-           "constructed using various meta-strings that correspond to parts of the "
-           "B Party address.<p>"
-           "A Destination starting with the string 'label:' causes the router "
-           "to restart searching from the beginning of the route table using "
-           "the new string as the A Party<p>"
-           "The available meta-strings are:<p>"
-           "<dl>"
-           "<dt><code>&lt;da&gt;</code></dt><dd>"
-                 "Replaced by the B Party string. For example A Party=\"pc:.*\" "
-                 "B Party=\".*\" Destination=\"sip:&lt;da&gt;\" directs calls "
-                 "to the SIP protocol. In this case there is a special condition "
-                 "where if the original destination had a valid protocol, eg "
-                 "h323:fred.com, then the entire string is replaced not just "
-                 "the &lt;da&gt; part.</dd>"
-           "<dt><code>&lt;db&gt;</code></dt><dd>"
-                 "Same as &lt;da&gt;, but without the special condtion.</dd>"
-           "<dt><code>&lt;du&gt;</code></dt><dd>"
-                 "Copy the \"user\" part of the B Party string. This is "
-                 "essentially the component after the : and before the '@', or "
-                 "the whole B Party string if these are not present.</dd>"
-           "<dt><code>&lt;!du&gt;</code></dt><dd>"
-                 "The rest of the B Party string after the &lt;du&gt; section. The "
-                 "protocol is still omitted. This is usually the '@' and onward. "
-                 "Note, if there is already an '@' in the destination before the "
-                 "&lt;!du&gt; and what is about to replace it also has an '@' then "
-                 "everything between the @ and the &lt;!du&gt; (inclusive) is deleted, "
-                 "then the substitution is made so a legal URL can be produced.</dd>"
-           "<dt><code>&lt;dn&gt;</code></dt><dd>"
-                 "Copy all valid consecutive E.164 digits from the B Party so "
-                 "pots:0061298765@vpb:1/2 becomes sip:0061298765@carrier.com</dd>"
-           "<dt><code>&lt;dnX&gt;</code></dt><dd>"
-                 "As above but skip X digits, eg &lt;dn2&gt; skips 2 digits, so "
-                 "pots:00612198765 becomes sip:61298765@carrier.com</dd>"
-           "<dt><code>&lt;!dn&gt;</code></dt><dd>"
-                 "The rest of the B Party after the &lt;dn&gt; or &lt;dnX&gt; sections.</dd>"
-           "<dt><code>&lt;dn2ip&gt;</code></dt><dd>"
-                 "Translate digits separated by '*' characters to an IP "
-                 "address. e.g. 10*0*1*1 becomes 10.0.1.1, also "
-                 "1234*10*0*1*1 becomes 1234@10.0.1.1 and "
-                 "1234*10*0*1*1*1722 becomes 1234@10.0.1.1:1722.</dd>"
-           "</dl>"
-           );
+  PHTTPCompositeField * routeFields = new PHTTPCompositeField(ROUTES_KEY, ROUTES_SECTION,
+    "Internal routing of calls to varous sub-systems.<p>"
+    "The A Party and B Party columns are regular expressions for the call "
+    "originator and receiver respectively. The Destination string determines "
+    "the endpoint used for the outbound leg of the route. This can be be "
+    "constructed using various meta-strings that correspond to parts of the "
+    "B Party address.<p>"
+    "A Destination starting with the string 'label:' causes the router "
+    "to restart searching from the beginning of the route table using "
+    "the new string as the A Party<p>"
+    "The available meta-strings are:<p>"
+    "<dl>"
+    "<dt><code>&lt;da&gt;</code></dt><dd>"
+    "Replaced by the B Party string. For example A Party=\"pc:.*\" "
+    "B Party=\".*\" Destination=\"sip:&lt;da&gt;\" directs calls "
+    "to the SIP protocol. In this case there is a special condition "
+    "where if the original destination had a valid protocol, eg "
+    "h323:fred.com, then the entire string is replaced not just "
+    "the &lt;da&gt; part.</dd>"
+    "<dt><code>&lt;db&gt;</code></dt><dd>"
+    "Same as &lt;da&gt;, but without the special condtion.</dd>"
+    "<dt><code>&lt;du&gt;</code></dt><dd>"
+    "Copy the \"user\" part of the B Party string. This is "
+    "essentially the component after the : and before the '@', or "
+    "the whole B Party string if these are not present.</dd>"
+    "<dt><code>&lt;!du&gt;</code></dt><dd>"
+    "The rest of the B Party string after the &lt;du&gt; section. The "
+    "protocol is still omitted. This is usually the '@' and onward. "
+    "Note, if there is already an '@' in the destination before the "
+    "&lt;!du&gt; and what is about to replace it also has an '@' then "
+    "everything between the @ and the &lt;!du&gt; (inclusive) is deleted, "
+    "then the substitution is made so a legal URL can be produced.</dd>"
+    "<dt><code>&lt;dn&gt;</code></dt><dd>"
+    "Copy all valid consecutive E.164 digits from the B Party so "
+    "pots:0061298765@vpb:1/2 becomes sip:0061298765@carrier.com</dd>"
+    "<dt><code>&lt;dnX&gt;</code></dt><dd>"
+    "As above but skip X digits, eg &lt;dn2&gt; skips 2 digits, so "
+    "pots:00612198765 becomes sip:61298765@carrier.com</dd>"
+    "<dt><code>&lt;!dn&gt;</code></dt><dd>"
+    "The rest of the B Party after the &lt;dn&gt; or &lt;dnX&gt; sections.</dd>"
+    "<dt><code>&lt;dn2ip&gt;</code></dt><dd>"
+    "Translate digits separated by '*' characters to an IP "
+    "address. e.g. 10*0*1*1 becomes 10.0.1.1, also "
+    "1234*10*0*1*1 becomes 1234@10.0.1.1 and "
+    "1234*10*0*1*1*1722 becomes 1234@10.0.1.1:1722.</dd>"
+    "</dl>"
+    );
   routeFields->Append(new PHTTPStringField(RouteAPartyKey, 0, NULL, NULL, 1, 20));
   routeFields->Append(new PHTTPStringField(RouteBPartyKey, 0, NULL, NULL, 1, 20));
   routeFields->Append(new PHTTPStringField(RouteDestKey, 0, NULL, NULL, 1, 30));
-  rsrc->Add(new PHTTPFieldArray(routeFields, true));
+  PHTTPFieldArray * routeArray = new PHTTPFieldArray(routeFields, true);
+  rsrc->Add(routeArray);
+
+  RouteTable routes;
+  if (routeArray->LoadFromConfig(cfg) || routeArray->GetSize() == 0) {
+    routeArray->SetSize(PARRAYSIZE(DefaultRoutes));
+    for (PINDEX i = 0; i < PARRAYSIZE(DefaultRoutes); ++i) {
+      PHTTPCompositeField & item = dynamic_cast<PHTTPCompositeField &>((*routeArray)[i]);
+      RouteEntry * entry = new RouteEntry(DefaultRoutes[i]);
+      PAssert(entry->IsValid(), PLogicError);
+      routes.Append(entry);
+      item[0].SetValue(entry->GetPartyA());
+      item[1].SetValue(entry->GetPartyB());
+      item[2].SetValue(entry->GetDestination());
+    }
+    routeArray->SaveToConfig(cfg);
+  }
+  else {
+    for (PINDEX i = 0; i < routeArray->GetSize(); ++i) {
+      PHTTPCompositeField & item = dynamic_cast<PHTTPCompositeField &>((*routeArray)[i]);
+      RouteEntry * entry = new RouteEntry(item[0].GetValue(), item[1].GetValue(), item[2].GetValue());
+      if (entry->IsValid())
+        routes.Append(entry);
+      else
+        delete entry;
+    }
+  }
 
   SetRouteTable(routes);
 
