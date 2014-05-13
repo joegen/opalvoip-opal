@@ -535,6 +535,7 @@ bool OpalAVIRecordManager::WriteVideo(const PString & strmId, const RTP_DataFram
 
 bool OpalAVIRecordManager::OpenAudio(const PString & strmId, const OpalMediaFormat & format)
 {
+  // m_mutex already locked
   if (m_audioMixer == NULL)
     return false;
 
@@ -578,6 +579,8 @@ bool OpalAVIRecordManager::OpenAudio(const PString & strmId, const OpalMediaForm
 
 bool OpalAVIRecordManager::OnMixedAudio(const RTP_DataFrame & frame)
 {
+  PWaitAndSignal mutex(m_mutex);
+
   if (!IsOpen() || m_audioStream == NULL)
     return false;
 
@@ -588,6 +591,7 @@ bool OpalAVIRecordManager::OnMixedAudio(const RTP_DataFrame & frame)
                                    0, NULL, NULL), "writing AVI audio stream"))
     return false;
 
+  PTRACE(6, "Written video samples at " << m_audioSampleCount << ", count=" << samples);
   m_audioSampleCount += samples;
   return true;
 }
@@ -595,6 +599,7 @@ bool OpalAVIRecordManager::OnMixedAudio(const RTP_DataFrame & frame)
 
 bool OpalAVIRecordManager::OpenVideo(const PString & strmId, const OpalMediaFormat & /*format*/)
 {
+  // m_mutex already locked
   if (m_videoMixer == NULL)
     return false;
 
@@ -670,6 +675,8 @@ bool OpalAVIRecordManager::OpenVideo(const PString & strmId, const OpalMediaForm
 
 bool OpalAVIRecordManager::OnMixedVideo(const RTP_DataFrame & frame)
 {
+  PWaitAndSignal mutex(m_mutex);
+
   if (!IsOpen() || m_videoStream == NULL)
     return false;
 
@@ -685,11 +692,14 @@ bool OpalAVIRecordManager::OnMixedVideo(const RTP_DataFrame & frame)
     return false;
   }
 
-  return !IS_RESULT_ERROR(AVIStreamWrite(m_videoCompressor,
-                                         ++m_VideoFrameCount, 1,
-                                         m_videoBuffer.GetPointer(), bytesReturned,
-                                         0/*AVIIF_KEYFRAME*/, NULL, NULL),
-                          "writing AVI video stream");
+  if (IS_RESULT_ERROR(AVIStreamWrite(m_videoCompressor,
+                                     ++m_VideoFrameCount, 1,
+                                     m_videoBuffer.GetPointer(), bytesReturned,
+                                     0, NULL, NULL), "writing AVI video stream"))
+    return false;
+
+  PTRACE(6, "Written video frame " << m_VideoFrameCount << ", size=" << bytesReturned);
+  return true;
 }
 
 

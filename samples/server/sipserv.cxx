@@ -44,7 +44,7 @@ static const char SIPAutoRegisterSkinnyKey[] = "SIP Auto-Register Skinny";
 #endif
 
 #define REGISTRATIONS_SECTION "SIP Registrations"
-#define REGISTRATIONS_KEY "Registration"
+#define REGISTRATIONS_KEY     REGISTRATIONS_SECTION"\\Registration %u\\"
 
 static const char SIPAddressofRecordKey[] = "Address of Record";
 static const char SIPAuthIDKey[] = "Auth ID";
@@ -83,34 +83,30 @@ bool MySIPEndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
   SetProxy(rsrc->AddStringField(SIPProxyKey, 100, GetProxy().AsString(), "SIP outbound proxy IP/hostname", 1, 30));
 
   // Registrars
-  PString defaultSection = cfg.GetDefaultSection();
-  list<SIPRegister::Params> registrations;
-  PINDEX arraySize = cfg.GetInteger(REGISTRATIONS_SECTION, REGISTRATIONS_KEY" Array Size");
-  for (PINDEX i = 0; i < arraySize; i++) {
-    SIPRegister::Params registrar;
-    cfg.SetDefaultSection(psprintf(REGISTRATIONS_SECTION"\\"REGISTRATIONS_KEY" %u", i + 1));
-    registrar.m_addressOfRecord = cfg.GetString(SIPAddressofRecordKey);
-    registrar.m_authID = cfg.GetString(SIPAuthIDKey);
-    registrar.m_password = cfg.GetString(SIPPasswordKey);
-    if (!registrar.m_addressOfRecord.IsEmpty())
-      registrations.push_back(registrar);
-  }
-  cfg.SetDefaultSection(defaultSection);
-
-  PHTTPCompositeField * registrationsFields = new PHTTPCompositeField(
-                            REGISTRATIONS_SECTION"\\"REGISTRATIONS_KEY" %u\\", REGISTRATIONS_SECTION,
-                            "Registration of SIP username at domain/hostname/IP address");
+  PHTTPCompositeField * registrationsFields = new PHTTPCompositeField(REGISTRATIONS_KEY, REGISTRATIONS_SECTION,
+                                                  "Registration of SIP username at domain/hostname/IP address");
   registrationsFields->Append(new PHTTPStringField(SIPAddressofRecordKey, 0, NULL, NULL, 1, 40));
   registrationsFields->Append(new PHTTPStringField(SIPAuthIDKey, 0, NULL, NULL, 1, 25));
   registrationsFields->Append(new PHTTPPasswordField(SIPPasswordKey, 15));
-  rsrc->Add(new PHTTPFieldArray(registrationsFields, false));
+  PHTTPFieldArray * registrationsArray = new PHTTPFieldArray(registrationsFields, false);
+  rsrc->Add(registrationsArray);
 
-  for (list<SIPRegister::Params>::iterator it = registrations.begin(); it != registrations.end(); ++it) {
-    PString aor;
-    if (Register(*it, aor))
-      PSYSTEMLOG(Info, "Started register of " << aor);
-    else
-      PSYSTEMLOG(Error, "Could not register " << it->m_addressOfRecord);
+  if (!registrationsArray->LoadFromConfig(cfg)) {
+    for (PINDEX i = 0; i < registrationsArray->GetSize(); ++i) {
+      PHTTPCompositeField & item = dynamic_cast<PHTTPCompositeField &>((*registrationsArray)[i]);
+
+      SIPRegister::Params registrar;
+      registrar.m_addressOfRecord = item[0].GetValue();
+      if (!registrar.m_addressOfRecord.IsEmpty()) {
+        registrar.m_authID = item[1].GetValue();
+        registrar.m_password = item[2].GetValue();
+        PString aor;
+        if (Register(registrar, aor))
+          PSYSTEMLOG(Info, "Started register of " << aor);
+        else
+          PSYSTEMLOG(Error, "Could not register " << registrar.m_addressOfRecord);
+      }
+    }
   }
 
   SetRegistrarDomains(rsrc->AddStringArrayField(SIPLocalRegistrarKey, false, 25,
