@@ -903,9 +903,13 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
 
 class VP8DecoderRFC : public VP8Decoder
 {
+  protected:
+    unsigned m_partitionID;
+
   public:
     VP8DecoderRFC(const PluginCodec_Definition * defn)
       : VP8Decoder(defn)
+      , m_partitionID(0)
     {
     }
 
@@ -942,9 +946,24 @@ class VP8DecoderRFC : public VP8Decoder
         return false;
       }
 
-      if ((rtp[0]&0x10) != 0 && !m_fullFrame.empty()) { // Check S bit
-        PTRACE(3, MY_CODEC_LOG, "Missing start to frame, ignoring till next key frame.");
-        return false;
+      if ((rtp[0]&0x10) != 0) { // Check S bit
+        unsigned partitionID = rtp[0] & 0xf;
+        if (partitionID != 0) {
+          ++m_partitionID;
+          if (m_partitionID != partitionID) {
+            PTRACE(3, MY_CODEC_LOG, "Missing partition "
+                   "(expected " << m_partitionID << " , got " << partitionID << "),"
+                   " ignoring till next key frame.");
+            return false;
+          }
+        }
+        else {
+          m_partitionID = 0;
+          if (!m_fullFrame.empty()) {
+            PTRACE(3, MY_CODEC_LOG, "Start bit seen but not completed previous frame, ignoring till next key frame.");
+            return false;
+          }
+        }
       }
 
       if (m_ignoreTillKeyFrame) {
