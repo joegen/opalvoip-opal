@@ -218,12 +218,8 @@ class H323Transactor : public PObject
       public:
         Request(
           unsigned seqNum,
-          H323TransactionPDU & pdu
-        );
-        Request(
-          unsigned seqNum,
           H323TransactionPDU & pdu,
-          const H323TransportAddressArray & addresses
+          const H323TransportAddressArray & addresses = H323TransportAddressArray()
         );
 
         PBoolean Poll(H323Transactor &,
@@ -232,17 +228,13 @@ class H323Transactor : public PObject
         void CheckResponse(unsigned, const PASN_Choice *);
         void OnReceiveRIP(unsigned milliseconds);
 
+        unsigned                  sequenceNumber;
+        H323TransactionPDU      & requestPDU;
+        H323TransportAddressArray requestAddresses;
+
         // Inter-thread transfer variables
         unsigned rejectReason;
         void   * responseInfo;
-
-        H323TransportAddressArray requestAddresses;
-
-        unsigned             sequenceNumber;
-        H323TransactionPDU & requestPDU;
-        PTimeInterval        whenResponseExpected;
-        PSyncPoint           responseHandled;
-        PMutex               responseMutex;
 
         enum {
           AwaitingResponse,
@@ -253,6 +245,10 @@ class H323Transactor : public PObject
           RequestInProgress,
           NoResponseReceived
         } responseResult;
+
+        PTimeInterval whenResponseExpected;
+        PSyncPoint    responseHandled;
+        PMutex        responseMutex;
     };
 
     virtual PBoolean MakeRequest(
