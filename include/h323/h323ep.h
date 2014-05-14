@@ -1300,11 +1300,9 @@ class H323EndPoint : public OpalRTPEndPoint
     void TickleGatekeeperMonitor() { m_gatekeeperMonitorTickle.Signal(); }
 
   protected:
-    bool InternalCreateGatekeeper(
-      const H323TransportAddress & remoteAddress,
-      const PString & localAddress
-    );
-    void RestartGatekeeper();
+    bool InternalStartGatekeeper(const H323TransportAddress & remoteAddress, const PString & localAddress);
+    bool InternalRestartGatekeeper(bool adjustingRegistrations = true);
+    bool InternalCreateGatekeeper(bool adjustingRegistrations, const PStringList & aliases);
     void GatekeeperMonitor();
 
     H323Connection * InternalMakeCall(
@@ -1389,15 +1387,16 @@ class H323EndPoint : public OpalRTPEndPoint
 
     H323Capabilities m_capabilities;
 
-    PList<H323Gatekeeper> m_gatekeepers;
-    PString               m_gatekeeperUsername;
-    PString               m_gatekeeperPassword;
-    PINDEX                m_gatekeeperAliasLimit;
-    bool                  m_gatekeeperSimulatePattern;
-    PThread             * m_gatekeeperMonitor;
-    bool                  m_gatekeeperMonitorStop;
-    PSyncPoint            m_gatekeeperMonitorTickle;
-    PMutex                m_gatekeeperMutex;
+    PList<H323Gatekeeper>   m_gatekeepers;
+    PIPSocketAddressAndPort m_gatekeeperInterface;
+    PString                 m_gatekeeperUsername;
+    PString                 m_gatekeeperPassword;
+    PINDEX                  m_gatekeeperAliasLimit;
+    bool                    m_gatekeeperSimulatePattern;
+    PThread               * m_gatekeeperMonitor;
+    bool                    m_gatekeeperMonitorStop;
+    PSyncPoint              m_gatekeeperMonitorTickle;
+    PMutex                  m_gatekeeperMutex;
 
 #if OPAL_H450
     H323CallIdentityDict   m_secondaryConnectionsActive;
