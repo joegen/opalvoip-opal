@@ -505,22 +505,16 @@ bool H323Transactor::CheckCryptoTokens2()
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323Transactor::Request::Request(unsigned seqNum, H323TransactionPDU & pdu)
-  : requestPDU(pdu)
-{
-  sequenceNumber = seqNum;
-  responseInfo   = NULL;
-}
-
-
 H323Transactor::Request::Request(unsigned seqNum,
                                  H323TransactionPDU & pdu,
                                  const H323TransportAddressArray & addresses)
-  : requestAddresses(addresses),
-    requestPDU(pdu)
+  : sequenceNumber(seqNum)
+  , requestPDU(pdu)
+  , requestAddresses(addresses)
+  , rejectReason(0)
+  , responseInfo(NULL)
+  , responseResult(NoResponseReceived)
 {
-  sequenceNumber = seqNum;
-  responseInfo   = NULL;
 }
 
 
