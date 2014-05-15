@@ -233,8 +233,8 @@ void OpalBaseMixer::StopPushThread(bool lock)
   m_mutex.Signal();
 
   if (thread != NULL) {
-    PTRACE(4, "Mixer\tWaiting for push thread to terminate");
-    PAssert(thread->WaitForTermination(5000), "Mixer worker thread took too long to terminate.");
+    PTRACE(4, "Mixer\tWaiting for push thread " << *thread << " to terminate");
+    PAssert(thread->WaitForTermination(5000), PSTRSTRM("Mixer worker thread " << *thread << " took too long to terminate."));
     delete thread;
   }
 }
