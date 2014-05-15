@@ -453,10 +453,10 @@ bool OpalAVIRecordManager::Close()
 {
   m_mutex.Wait();
 
-  delete m_audioMixer;
+  AudioMixer * audioMixer = m_audioMixer;
   m_audioMixer = NULL;
 
-  delete m_videoMixer;
+  VideoMixer * videoMixer = m_videoMixer;
   m_videoMixer = NULL;
 
   delete m_videoConverter;
@@ -483,6 +483,9 @@ bool OpalAVIRecordManager::Close()
   }
 
   m_mutex.Signal();
+
+  delete audioMixer;
+  delete videoMixer;
 
   return true;
 }
@@ -698,7 +701,7 @@ bool OpalAVIRecordManager::OnMixedVideo(const RTP_DataFrame & frame)
                                      0, NULL, NULL), "writing AVI video stream"))
     return false;
 
-  PTRACE(6, "Written video frame " << m_VideoFrameCount << ", size=" << bytesReturned);
+  PTRACE(5, "Written video frame " << m_VideoFrameCount << ", size=" << bytesReturned);
   return true;
 }
 
