@@ -30,7 +30,7 @@
  */
 #include "easycodecs.h"
 
-#include "EasyG728/EasyG728.h"
+#include "EasyG728.h"
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -68,7 +68,7 @@ class G728_EasyCodec : public EasyCodec
 }; 
 
 #pragma data_seg(".G728_SHARED")				// define the segment
-#pragma comment(lib,"EasyG728/EasyG728.lib")
+#pragma comment(lib,"EasyG728.lib")
 static G728_EasyCodec * m_G728codec = NULL; 	// specify the data and initialise at Instantiation
 #pragma data_seg()
 #pragma comment(linker, "/section:.G728_SHARED,rws") // Link the segment
