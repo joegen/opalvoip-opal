@@ -81,39 +81,44 @@ bool MyManager::Initialise(PArgList & args, bool verbose)
 
 bool MyManager::OnLocalIncomingCall(OpalCall & call)
 {
-  LockedStream lockedOutput(*this);
-  ostream & output = lockedOutput;
+  if (!OpalManagerCLI::OnLocalIncomingCall(call))
+    return false;
 
-  output << "\nIncoming call at " << PTime().AsString("w h:mma")
-         << " from " << call.GetPartyA();
+  PStringStream output;
+  output << '\n' << call.GetToken() << ": incoming call at "
+         << PTime().AsString("w h : mma") << " from " << call.GetPartyA();
 
   if (m_activeCall != NULL) {
-    output << " refused as busy." << endl;
+    output << " refused as busy.";
+    Broadcast(output);
     return false;
   }
 
   m_activeCall = &call;
 
   if (m_autoAnswer) {
-    output << ", auto-answered.";
     PSafePtr<OpalLocalConnection> connection = call.GetConnectionAs<OpalLocalConnection>();
-    if (connection == NULL)
+    if (connection == NULL) {
+      output << ", failed.";
+      Broadcast(output);
       return false;
+    }
+    output << ", auto-answered.";
     connection->AcceptIncoming();
   }
   else
     output << ", answer? ";
 
-  output << endl;
+  Broadcast(output);
   return true;
 }
 
 
 bool MyManager::OnLocalOutgoingCall(OpalCall & call)
 {
-  *LockedOutput() << "\nCall at " << PTime().AsString("w h:mma")
+  Broadcast(PSTRSTRM("Call at " << PTime().AsString("w h:mma")
                   << " from " << call.GetPartyA() << " to " << call.GetPartyB()
-                  << " ringing." << endl;
+                  << " ringing."));
   return true;
 }
 
