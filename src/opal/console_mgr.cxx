@@ -59,6 +59,64 @@ static void PrintVersion(ostream & strm)
 }
 
 
+static bool GetCallFromArgs(OpalManager & manager, PCLI::Arguments & args, PSafePtr<OpalCall> & call)
+{
+  if (manager.GetCallCount() == 0) {
+    args.WriteError("No calls active.");
+    return false;
+  }
+
+  if (args.HasOption("call")) {
+    if ((call = manager.FindCallWithLock(args.GetOptionString("call"))) != NULL)
+      return true;
+    args.WriteError("Specified token does not correspond to call.");
+    return false;
+  }
+
+  PStringArray calls = manager.GetAllCalls();
+  for (PINDEX i = 0; i < calls.GetSize(); ++i) {
+    if ((call = manager.FindCallWithLock(calls[i])) != NULL)
+      return true;
+  }
+
+  args.WriteError("Call(s) disappeared while locating.");
+  return false;
+}
+
+
+template <class CONTYPE>
+static bool GetConnectionFromArgs(OpalManager & manager, PCLI::Arguments & args, PSafePtr<CONTYPE> & connection)
+{
+  PSafePtr<OpalCall> call;
+  if (!GetCallFromArgs(manager, args, call))
+    return false;
+
+  if ((connection = call->GetConnectionAs<CONTYPE>(0)) != NULL)
+    return true;
+
+  args.WriteError("Not a suitable call for operation.");
+  return false;
+}
+
+
+static bool GetStreamFromArgs(OpalManager & manager,
+                              PCLI::Arguments & args,
+                              const OpalMediaType & mediaType,
+                              bool source,
+                              PSafePtr<OpalMediaStream> & stream)
+{
+  PSafePtr<OpalLocalConnection> connection;
+  if (!GetConnectionFromArgs(manager, args, connection))
+    return false;
+
+  if ((stream = connection->GetMediaStream(mediaType, source)) != NULL)
+    return true;
+
+  args.WriteError() << "No " << (source ? "transmit" : "receive") << ' ' << mediaType << " stream open." << endl;
+  return false;
+}
+
+
 void OpalConsoleEndPoint::AddRoutesFor(const OpalEndPoint * endpoint, const PString & defaultRoute)
 {
   if (defaultRoute.IsEmpty())
@@ -904,10 +962,10 @@ static struct {
     return true;
   }
 } AudioDeviceVariables[] = {
-  { PSoundChannel::Recorder, "record", "recorder", &OpalPCSSEndPoint::GetSoundChannelRecordDevice, &OpalPCSSEndPoint::SetSoundChannelRecordDevice },
-  { PSoundChannel::Player,   "play",   "player",   &OpalPCSSEndPoint::GetSoundChannelPlayDevice,   &OpalPCSSEndPoint::SetSoundChannelPlayDevice   },
-  { PSoundChannel::Recorder, "moh",    "on hold",  &OpalPCSSEndPoint::GetSoundChannelOnHoldDevice, &OpalPCSSEndPoint::SetSoundChannelOnHoldDevice },
-  { PSoundChannel::Recorder, "aor",    "on ring",  &OpalPCSSEndPoint::GetSoundChannelOnRingDevice, &OpalPCSSEndPoint::SetSoundChannelOnRingDevice }
+  { PSoundChannel::Recorder, "record", "recorder (transmit)", &OpalPCSSEndPoint::GetSoundChannelRecordDevice, &OpalPCSSEndPoint::SetSoundChannelRecordDevice },
+  { PSoundChannel::Player,   "play",   "player (receive)",    &OpalPCSSEndPoint::GetSoundChannelPlayDevice,   &OpalPCSSEndPoint::SetSoundChannelPlayDevice   },
+  { PSoundChannel::Recorder, "moh",    "on hold",             &OpalPCSSEndPoint::GetSoundChannelOnHoldDevice, &OpalPCSSEndPoint::SetSoundChannelOnHoldDevice },
+  { PSoundChannel::Recorder, "aor",    "on ring",             &OpalPCSSEndPoint::GetSoundChannelOnRingDevice, &OpalPCSSEndPoint::SetSoundChannelOnRingDevice }
 };
 
 #if OPAL_VIDEO
@@ -1082,11 +1140,23 @@ void OpalConsolePCSSEndPoint::CmdVolume(PCLI::Arguments & args, P_INT_PTR)
 }
 
 
-void OpalConsolePCSSEndPoint::CmdAudioDevice(PCLI::Arguments & args, P_INT_PTR)
+void OpalConsolePCSSEndPoint::CmdDefaultAudioDevice(PCLI::Arguments & args, P_INT_PTR)
 {
   for (PINDEX i = 0; i < PARRAYSIZE(AudioDeviceVariables); ++i) {
     if (args.GetCommandName().Find(AudioDeviceVariables[i].m_name) != P_MAX_INDEX)
       AudioDeviceVariables[i].Initialise(*this, args.GetContext(), true, args, true);
+  }
+}
+
+
+void OpalConsolePCSSEndPoint::CmdChangeAudioDevice(PCLI::Arguments & args, P_INT_PTR)
+{
+  PSafePtr<OpalPCSSConnection> connection;
+  if (GetConnectionFromArgs(GetManager(), args, connection)) {
+    if (connection->TransferConnection(args[0]))
+      args.GetContext() << "Switched audio device" << endl;
+    else
+      args.WriteError("Could not switch audio device");
   }
 }
 
@@ -1100,11 +1170,25 @@ void OpalConsolePCSSEndPoint::CmdAudioBuffers(PCLI::Arguments & args, P_INT_PTR)
 
 
 #if OPAL_VIDEO
-void OpalConsolePCSSEndPoint::CmdVideoDevice(PCLI::Arguments & args, P_INT_PTR)
+void OpalConsolePCSSEndPoint::CmdDefaultVideoDevice(PCLI::Arguments & args, P_INT_PTR)
 {
   for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i) {
     if (args.GetCommandName().Find(VideoDeviceVariables[i].m_name) != P_MAX_INDEX)
       VideoDeviceVariables[i].Initialise(*this, args.GetContext(), true, args, true);
+  }
+}
+
+
+void OpalConsolePCSSEndPoint::CmdChangeVideoDevice(PCLI::Arguments & args, P_INT_PTR)
+{
+  PSafePtr<OpalPCSSConnection> connection;
+  if (GetConnectionFromArgs(GetManager(), args, connection)) {
+    PVideoDevice::OpenArgs video = GetVideoGrabberDevice();
+    video.deviceName = args[0];
+    if (connection->ChangeVideoInputDevice(video))
+      args.GetContext() << "Switched video device" << endl;
+    else
+      args.WriteError("Could not switch video device");
   }
 }
 #endif // OPAL_VIDEO
@@ -1112,37 +1196,47 @@ void OpalConsolePCSSEndPoint::CmdVideoDevice(PCLI::Arguments & args, P_INT_PTR)
 
 void OpalConsolePCSSEndPoint::AddCommands(PCLI & cli)
 {
-  cli.SetCommand(GetPrefixName() & "ring", PCREATE_NOTIFIER(CmdRingFileAndDevice),
+  cli.SetCommand("pc ring", PCREATE_NOTIFIER(CmdRingFileAndDevice),
                  "Set ring file for incoming calls", "[ options ] <file>",
                  "d-device: Set sound device name for playing file\n"
                  "D-driver: Set sound device driver for playing file\n");
 
-  cli.SetCommand(GetPrefixName() & "ringback", PCREATE_NOTIFIER(CmdRingbackTone),
+  cli.SetCommand("pc ringback", PCREATE_NOTIFIER(CmdRingbackTone),
                  "Set local ringback tone for outgoing calls.", "<spec>");
 
   for (PINDEX i = 0; i < PARRAYSIZE(AudioDeviceVariables); ++i)
-    cli.SetCommand(GetPrefixName() & AudioDeviceVariables[i].m_name, PCREATE_NOTIFIER(CmdAudioDevice),
-                    PSTRSTRM("Audio " << AudioDeviceVariables[i].m_description << " device."),
-                    "[ option ] <name>", "D-driver:  Optional driver name.");
+    cli.SetCommand(GetPrefixName() & AudioDeviceVariables[i].m_name, PCREATE_NOTIFIER(CmdDefaultAudioDevice),
+                   PSTRSTRM("Audio " << AudioDeviceVariables[i].m_description << " device."),
+                   "[ option ] <name>", "D-driver:  Optional driver name.");
 
-  cli.SetCommand(GetPrefixName() & "buffers", m_soundChannelBufferTime, "Audio Buffer Time", 20, 1000, "Audio buffer time in ms");
+  cli.SetCommand("pc buffers", m_soundChannelBufferTime, "Audio Buffer Time", 20, 1000, "Audio buffer time in ms");
+
+  cli.SetCommand("pc microphone volume", PCREATE_NOTIFIER(CmdVolume),
+                 "Set volume for microphone",
+                 "[ <percent> ]", "c-call: Call token");
+  cli.SetCommand("pc speaker volume", PCREATE_NOTIFIER(CmdVolume),
+                 "Set volume for speaker",
+                 "[ <percent> ]", "c-call: Call token");
+
+  cli.SetCommand("audio device", PCREATE_NOTIFIER(CmdChangeAudioDevice),
+                 "Set audio device for active call", "[ --call ] [ --rx | --tx ] <device>",
+                 "c-call: Token for call to change\n"
+                 "r-rx.   Receive audio device\n"
+                 "t-tx.   Transmit audio device\n");
 
 #if OPAL_VIDEO
   for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i)
-    cli.SetCommand(GetPrefixName() & VideoDeviceVariables[i].m_name, PCREATE_NOTIFIER(CmdVideoDevice),
+    cli.SetCommand(GetPrefixName() & VideoDeviceVariables[i].m_name, PCREATE_NOTIFIER(CmdDefaultVideoDevice),
                     PSTRSTRM("Video " << VideoDeviceVariables[i].m_description << " device."),
                     "[ options ] <name>",
                     "-driver:  Driver name.\n"
                     "-format:  Format (\"pal\"/\"ntsc\")\n"
                     "-channel: Channel number.\n");
-#endif // OPAL_VIDEO
 
-  cli.SetCommand(GetPrefixName() & "microphone volume", PCREATE_NOTIFIER(CmdVolume),
-                  "Set volume for microphone",
-                  "[ <percent> ]", "c-call: Call token");
-  cli.SetCommand(GetPrefixName() & "speaker volume", PCREATE_NOTIFIER(CmdVolume),
-                  "Set volume for speaker",
-                  "[ <percent> ]", "c-call: Call token");
+  cli.SetCommand("video device", PCREATE_NOTIFIER(CmdChangeVideoDevice),
+                 "Set video device for active call", "[ --call ] <device>",
+                 "c-call: Token for call to change");
+#endif // OPAL_VIDEO
 }
 #endif // P_CLI
 
@@ -1797,10 +1891,18 @@ void OpalConsoleManager::Run()
 void OpalConsoleManager::EndRun(bool interrupt)
 {
   if (m_verbose)
-    *LockedOutput() << "Shutting down " << PProcess::Current().GetName() << " . . . " << endl;
+    *LockedOutput() << "\nShutting down " << PProcess::Current().GetName()
+                    << (interrupt ? " via interrupt" : " normally") << " . . . " << endl;
 
   m_interrupted = interrupt;
   m_endRun.Signal();
+}
+
+
+void OpalConsoleManager::Broadcast(const PString & msg)
+{
+  if (m_verbose)
+    *LockedOutput() << msg << endl;
 }
 
 
@@ -1935,17 +2037,14 @@ void OpalConsoleManager::OnHold(OpalConnection & connection, bool fromRemote, bo
 {
   OpalManager::OnHold(connection, fromRemote, onHold);
 
-  if (!m_verbose)
-    return;
-
-  LockedStream lockedOutput(*this);
-  ostream & output = *lockedOutput;
-  output << "Remote " << connection.GetRemotePartyName() << " has ";
+  PStringStream output;
+  output << '\n' << connection.GetCall().GetToken() << ": remote " << connection.GetRemotePartyName() << " has ";
   if (fromRemote)
     output << (onHold ? "put you on" : "released you from");
   else
     output << " been " << (onHold ? "put on" : "released from");
-  output << " hold." << endl;
+  output << " hold.";
+  Broadcast(output);
 }
 
 
@@ -1989,14 +2088,11 @@ void OpalConsoleManager::OnClearedCall(OpalCall & call)
 {
   OpalManager::OnClearedCall(call);
 
-  if (!m_verbose)
-    return;
-
   PString name = call.GetPartyB().IsEmpty() ? call.GetPartyA() : call.GetPartyB();
 
-  LockedStream lockedOutput(*this);
-  ostream & output = *lockedOutput;
+  PStringStream output;
 
+  output << '\n' << call.GetToken() << ": ";
   switch (call.GetCallEndReason()) {
     case OpalConnection::EndedByRemoteUser :
       output << '"' << name << "\" has cleared the call";
@@ -2034,8 +2130,8 @@ void OpalConsoleManager::OnClearedCall(OpalCall & call)
 
   PTime now;
   output << ", on " << now.AsString("w h:mma") << ", duration "
-            << setprecision(0) << setw(5) << (now - call.GetStartTime()) << "s."
-            << endl;
+            << setprecision(0) << setw(5) << (now - call.GetStartTime()) << "s.";
+  Broadcast(output);
 }
 
 
@@ -2081,7 +2177,7 @@ bool OpalConsoleManager::OutputCallStatistics(ostream & strm, OpalCall & call)
       connection = otherConnection;
   }
 
-  strm << "Call " << call.GetToken() << " from " << call.GetPartyA() << " to " << call.GetPartyB() << "\n"
+  strm << '\n' << call.GetToken() << ": call from " << call.GetPartyA() << " to " << call.GetPartyB() << "\n"
           "  started at " << call.GetStartTime();
   strm << '\n';
 
@@ -2217,6 +2313,38 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
                     "c-call: Indicate the call token to use, default is first call");
 #endif
 
+  m_cli->SetCommand("audio codec", PCREATE_NOTIFIER(CmdAudioCodec),
+                    "Set audio codec for active call", "[ --call ] <codec>", "c-call: Token for call to change");
+#if OPAL_VIDEO
+  m_cli->SetCommand("video codec", PCREATE_NOTIFIER(CmdVideoCodec),
+                    "Set video codec for active call", "[ --call ] <codec>", "c-call: Token for call to change");
+  m_cli->SetCommand("video default", PCREATE_NOTIFIER(CmdVideoDefault),
+                    "Set default video parameters for active call",
+                    "[ --size ] [ --frame-rate ] [ --bit-rate ] [ --tsto ]",
+                    "s-size:         Desired transmit resolution\n"
+                    "m-max-size:     Maximum receive resolution\n"
+                    "f-frame-rate:   Desired transmit frame rate (fps)\n"
+                    "b-bit-rate:     Desired transmit target bit rate (kbps)\n"
+                    "M-max-bit-rate: Maximum receive bit rate (kbps)\n"
+                    "t-tsto:         Desired transmit temporal/spatial trade off (1=quality 31=speed)\n");
+  m_cli->SetCommand("video transmit", PCREATE_NOTIFIER(CmdVideoTransmit),
+                    "Set video transmit parameters for active call",
+                    "[ --call ] [ --size ] [ --frame-rate ] [ --bit-rate ] [ --tsto ]",
+                    "c-call:       Token for call to change\n"
+                    "s-size:       Transmit resolution\n"
+                    "f-frame-rate: Transmit frame rate (fps)\n"
+                    "b-bit-rate:   Transmit target bit rate (kbps)\n"
+                    "t-tsto:       Transmit temporal/spatial trade off (1=quality 31=speed)\n");
+  m_cli->SetCommand("video receive", PCREATE_NOTIFIER(CmdVideoReceive),
+                    "Request video receive parameters for active call",
+                    "[ --call ] [ --bit-rate ] [ --tsto ]",
+                    "c-call:       Token for call to change\n"
+                    "b-bit-rate:   Requested receive target bit rate (kbps)\n"
+                    "t-tsto:       Requested receive temporal/spatial trade off (1=quality 31=speed)\n"
+                    "i-intra.      Request Intra-Frame (key frame)\n");
+#endif // OPAL_VIDEO
+
+
   m_cli->SetCommand("pc vad", PCREATE_NOTIFIER(CmdSilenceDetect),
                     "Voice Activity Detection (aka Silence Detection)", "\"on\" | \"adaptive\" | <level>");
   m_cli->SetCommand("codec list", PCREATE_NOTIFIER(CmdCodecList),
@@ -2286,6 +2414,18 @@ void OpalManagerCLI::EndRun(bool interrupt)
   }
 
   OpalConsoleManager::EndRun(interrupt);
+}
+
+
+void OpalManagerCLI::Broadcast(const PString & msg)
+{
+  *LockedStream(*this) << '\n' << msg << endl;
+
+#if P_TELNET
+  PCLITelnet * telnet = dynamic_cast<PCLITelnet *>(m_cli);
+  if (telnet != NULL)
+    telnet->Broadcast(msg);
+#endif // P_TELNET
 }
 
 
@@ -2501,6 +2641,186 @@ void OpalManagerCLI::CmdCodecList(PCLI::Arguments & args, P_INT_PTR)
 
   out.flush();
 }
+
+
+static void ChangeMediaCodec(OpalManagerCLI & manager, PCLI::Arguments & args, const OpalMediaType & mediaType)
+{
+  OpalMediaStreamPtr stream;
+  if (!GetStreamFromArgs(manager, args, mediaType, true, stream))
+    return;
+
+  if (args.GetCount() == 0) {
+    args.GetContext() << "Current codec: " << stream->GetMediaFormat() << endl;
+    return;
+  }
+
+  OpalMediaFormat mediaFormat(args[0]);
+  if (!mediaFormat.IsTransportable()) {
+    args.WriteError("Media format is not available.");
+    return;
+  }
+
+  if (mediaFormat.GetMediaType() != mediaType) {
+    args.WriteError() << "Media format is not " << mediaType << '.' << endl;
+    return;
+  }
+
+  if (stream->SetMediaFormat(mediaFormat))
+    args.GetContext() << "Changed codec to " << mediaFormat << endl;
+  else
+    args.WriteError() << "Could not change codec to " << mediaFormat << endl;
+
+}
+
+
+void OpalManagerCLI::CmdAudioCodec(PCLI::Arguments & args, P_INT_PTR)
+{
+  ChangeMediaCodec(*this, args, OpalMediaType::Audio());
+}
+
+
+#if OPAL_VIDEO
+void OpalManagerCLI::CmdVideoCodec(PCLI::Arguments & args, P_INT_PTR)
+{
+  ChangeMediaCodec(*this, args, OpalMediaType::Video());
+}
+
+
+static int GetNumberFromArgs(PCLI::Arguments & args, const PString & option, unsigned & value, unsigned minimum, unsigned maximum)
+{
+  if (!args.HasOption(option))
+    return 0;
+
+  value = args.GetOptionAs<unsigned>(option);
+  if (value >= minimum && value <= maximum)
+    return 1;
+
+  args.WriteError() << "Value for " << option << " out of range " << minimum << " to " << maximum << '.' << endl;;
+  return -1;
+}
+
+
+static int GetResolutionFromArgs(PCLI::Arguments & args, const PString & option, unsigned & width, unsigned & height)
+{
+  if (!args.HasOption(option))
+    return 0;
+
+  if (PVideoFrameInfo::ParseSize(args.GetOptionString(option), width, height))
+    return 1;
+
+  args.WriteError("Not a valid frame resolution.");
+  return -1;
+}
+
+
+void OpalManagerCLI::CmdVideoDefault(PCLI::Arguments & args, P_INT_PTR)
+{
+  unsigned prefWidth = PVideoFrameInfo::CIFWidth, prefHeight = PVideoFrameInfo::CIFHeight;
+  if (GetResolutionFromArgs(args, "size", prefWidth, prefHeight) < 0)
+    return;
+
+  unsigned maxWidth = PVideoFrameInfo::MaxWidth, maxHeight = PVideoFrameInfo::MaxHeight;
+  if (GetResolutionFromArgs(args, "max-size", maxWidth, maxHeight) < 0)
+    return;
+
+  unsigned frameRate = 15;
+  if (GetNumberFromArgs(args, "frame-rate", frameRate, 1, 30) < 0)
+    return;
+
+  const unsigned AbsoluteMaxBitRate = 2000000; //Gbps
+  unsigned bitRate = 256;
+  if (GetNumberFromArgs(args, "bit-rate", bitRate, 1, AbsoluteMaxBitRate) < 0)
+    return;
+
+  unsigned maxBitRate = AbsoluteMaxBitRate;
+  if (GetNumberFromArgs(args, "max-bit-rate", maxBitRate, 1, AbsoluteMaxBitRate) < 0)
+    return;
+
+  unsigned tsto = 1;
+  if (GetNumberFromArgs(args, "tsto", tsto, 1, 31) < 0)
+    return;
+
+  OpalMediaFormatList formats = OpalMediaFormat::GetAllRegisteredMediaFormats();
+  for (OpalMediaFormatList::iterator it = formats.begin(); it != formats.end(); ++it) {
+    if (it->GetMediaType() == OpalMediaType::Video()) {
+      OpalMediaFormat format = *it;
+      format.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), prefWidth);
+      format.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), prefHeight);
+      format.SetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption(), maxWidth);
+      format.SetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(), maxHeight);
+      format.SetOptionInteger(OpalVideoFormat::FrameTimeOption(), format.GetClockRate()/frameRate);
+      format.SetOptionInteger(OpalVideoFormat::TargetBitRateOption(), bitRate);
+      if (format.GetOptionInteger(OpalVideoFormat::MaxBitRateOption()) > (int)maxBitRate)
+        format.SetOptionInteger(OpalVideoFormat::MaxBitRateOption(), maxBitRate);
+      OpalMediaFormat::SetRegisteredMediaFormat(format);
+    }
+  }
+}
+
+
+void OpalManagerCLI::CmdVideoTransmit(PCLI::Arguments & args, P_INT_PTR)
+{
+  OpalMediaStreamPtr stream;
+  if (!GetStreamFromArgs(*this, args, OpalMediaType::Video(), true, stream))
+    return;
+
+  OpalMediaFormat mediaFormat = stream->GetMediaFormat();
+
+  unsigned width, height;
+  switch (GetResolutionFromArgs(args, "size", width, height)) {
+    case -1 :
+      return;
+    case 1 :
+      mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), width);
+      mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), height);
+  }
+
+  unsigned frameRate;
+  switch (GetNumberFromArgs(args, "frame-rate", frameRate, 1, 30)) {
+    case -1:
+      return;
+    case 1:
+      mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), mediaFormat.GetClockRate() / frameRate);
+  }
+
+  unsigned bitRate;
+  switch (GetNumberFromArgs(args, "bit-rate", bitRate, 1, mediaFormat.GetMaxBandwidth() / 1000)) {
+    case -1:
+      return;
+    case 1:
+      mediaFormat.SetOptionInteger(OpalVideoFormat::TargetBitRateOption(), bitRate*1000);
+  }
+
+  unsigned tsto;
+  switch (GetNumberFromArgs(args, "tsto", tsto, 1, 31)) {
+    case -1:
+      return;
+    case 1:
+      mediaFormat.SetOptionInteger(OpalVideoFormat::TemporalSpatialTradeOffOption(), tsto);
+  }
+
+  stream->UpdateMediaFormat(mediaFormat);
+}
+
+
+void OpalManagerCLI::CmdVideoReceive(PCLI::Arguments & args, P_INT_PTR)
+{
+  OpalMediaStreamPtr stream;
+  if (!GetStreamFromArgs(*this, args, OpalMediaType::Video(), false, stream))
+    return;
+
+  unsigned bitRate;
+  if (GetNumberFromArgs(args, "bit-rate", bitRate, 1, stream->GetMediaFormat().GetMaxBandwidth() / 1000) > 0)
+    stream->ExecuteCommand(OpalMediaFlowControl(bitRate));
+
+  unsigned tsto;
+  if (GetNumberFromArgs(args, "tsto", tsto, 1, 31) > 0)
+    stream->ExecuteCommand(OpalTemporalSpatialTradeOff(tsto));
+
+  if (args.HasOption("intra"))
+    stream->ExecuteCommand(OpalVideoUpdatePicture());
+}
+#endif // OPAL_VIDEO
 
 
 void OpalManagerCLI::CmdSilenceDetect(PCLI::Arguments & args, P_INT_PTR)
