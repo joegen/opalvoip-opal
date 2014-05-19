@@ -243,7 +243,7 @@ void OpalBaseMixer::StopPushThread(bool lock)
 void OpalBaseMixer::PushThreadMain()
 {
   PTRACE(4, "Mixer\tPushThread start " << m_periodMS << " ms");
-  PAdaptiveDelay delay;
+  PAdaptiveDelay delay(500);
   while (m_threadRunning && OnPush())
     delay.Delay(m_periodMS);
 
