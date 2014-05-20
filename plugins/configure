@@ -789,6 +789,7 @@ enable_g_722
 enable_g_722_1
 enable_g_722_2
 enable_lpc10
+enable_isac
 enable_gsm
 enable_localgsm
 with_gsm_dir
@@ -1490,6 +1491,7 @@ Optional Features:
   --disable-g.722.1       disable G.722.1 wideband audio codec
   --disable-g.722.2       disable G.722.2 wideband audio codec
   --disable-lpc10         disable LPC-10 very low bandwidth audio codec
+  --disable-isac          disable iSAC audio codec
   --disable-gsm           disable GSM 06.10 audio codec
   --enable-localgsm       force use internal source for GSM 06.10 audio codec
   --disable-iLBC          disable iLBC audio codec
@@ -6395,6 +6397,33 @@ fi
    fi
 
 
+   if test -d "$PLUGIN_SRC_DIR/audio/iSAC" ; then
+      # Check whether --enable-isac was given.
+if test "${enable_isac+set}" = set; then :
+  enableval=$enable_isac;
+            if test "x$enableval" = "xno" ; then
+               HAVE_ISAC="no (disabled by user)"
+            else
+               HAVE_ISAC="yes"
+            fi
+
+else
+
+            if test "x${HAVE_ISAC}" = "x" ; then
+               HAVE_ISAC="yes"
+            fi
+
+
+fi
+
+      if test "x$HAVE_ISAC" = "xyes" ; then
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/iSAC"
+      fi
+   else
+      HAVE_ISAC="no (missing directory $PLUGIN_SRC_DIR/audio/iSAC)"
+   fi
+
+
 
 if test "$HAVE_G7221" = "yes"; then
    if test -n "${srcdir}" && test `cd ${srcdir} ; pwd` != `pwd`; then
@@ -6925,7 +6954,6 @@ $as_echo "$as_me: Using internal source for iLBC audio codec" >&6;}
          $as_echo "#define OPAL_SYSTEM_ILBC 1" >>confdefs.h
 
       fi
-
 
 
 fi
@@ -11407,6 +11435,7 @@ echo ""
 echo "                              GSM :  ${HAVE_GSM}"
 echo "                          GSM-AMR :  ${HAVE_GSMAMR}"
 echo "                             iLBC :  ${HAVE_ILBC}"
+echo "                             iSAC :  ${HAVE_ISAC}"
 echo "                            Speex :  ${HAVE_SPEEX}"
 echo "                            G.722 :  ${HAVE_G722}"
 echo "                          G.722.1 :  ${HAVE_G7221}"
