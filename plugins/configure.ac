@@ -76,7 +76,7 @@ OPAL_SIMPLE_PLUGIN([ISAC],     [isac],     [iSAC audio codec],                  
 
 if test "$HAVE_G7221" = "yes"; then
    if test -n "${srcdir}" && test `cd ${srcdir} ; pwd` != `pwd`; then
-      $HAVE_G7221="no (internal libg722_1 does not support out-of-source configure)"
+      HAVE_G7221="no (internal libg722_1 does not support out-of-source configure)"
    else
       AC_CONFIG_SUBDIRS(./audio/G.722.1/libg722_1)
    fi
