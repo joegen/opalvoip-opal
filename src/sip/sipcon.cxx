@@ -1556,8 +1556,13 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
           sessionType = mediaDescription->GetSessionType();
       }
 
-      if (sessionType.IsEmpty())
+      if (sessionType.IsEmpty()) {
+        if (m_delayedAckInviteResponse != NULL) {
+          PTRACE(1, "SIP\tNo offer of " << mediaType << " stream for session " << sessionID);
+          return NULL;
+        }
         sessionID = sdp->GetMediaDescriptions().GetSize()+1;
+      }
     }
   }
 

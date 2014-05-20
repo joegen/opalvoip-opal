@@ -82,6 +82,7 @@ static const char ProductVersionKey[] = "Product Version";
 static const char SkinnyServerKey[] = "SCCP Server";
 static const char SkinnyTypeKey[] = "SCCP Device Type";
 static const char SkinnyNamesKey[] = "SCCP Device Names";
+static const char SkinnySimulatedAudioFileKey[] = "SCCP Simulated Audio File";
 #endif
 
 #if OPAL_LID
@@ -839,10 +840,14 @@ MySkinnyEndPoint::MySkinnyEndPoint(MyManager & mgr)
 
 bool MySkinnyEndPoint::Configure(PConfig &, PConfigPage * rsrc)
 {
-  m_server = rsrc->AddStringField(SkinnyServerKey, 20, PString::Empty(), "Server for Skinny Client Control Protocol");
+  m_server = rsrc->AddStringField(SkinnyServerKey, 20, PString::Empty(),
+                                  "Server for Skinny Client Control Protocol (SCCP).");
   m_deviceType = rsrc->AddIntegerField(SkinnyTypeKey, 1, 32767, m_deviceType, "",
-                                       "Device type for Skinny Client Control Protocol. Default 30016 = Cisco IP Communicator.");
-  m_deviceNames = rsrc->AddStringArrayField(SkinnyNamesKey, false, 30, m_deviceNames, "Device names for Skinny Client Control Protocol");
+                                       "Device type for SCCP. Default 30016 = Cisco IP Communicator.");
+  m_deviceNames = rsrc->AddStringArrayField(SkinnyNamesKey, false, 30, m_deviceNames,
+                                            "Names of all devices to simulate for SCCP.");
+  SetSimulatedAudioFile(rsrc->AddStringField(SkinnySimulatedAudioFileKey, 0, GetSimulatedAudioFile(),
+                        "WAV file to simulate audio on SCCP when can't gateway channel.", 1, 80));
 
   PStringArray oldNames = GetPhoneDeviceNames();
   PStringArray newNames = ExpandWildcards(m_deviceNames);
