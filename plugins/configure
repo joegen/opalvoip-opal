@@ -786,10 +786,10 @@ enable_gsmamr
 enable_g_726
 enable_ima_adpcm
 enable_g_722
-enable_g_722_1
 enable_g_722_2
 enable_lpc10
 enable_isac
+enable_g_722_1
 enable_gsm
 enable_localgsm
 with_gsm_dir
@@ -1488,10 +1488,10 @@ Optional Features:
   --disable-g.726         disable G.726 audio codec
   --disable-ima-adpcm     disable IMA ADPCM codec
   --disable-g.722         disable G.722 wideband audio codec
-  --disable-g.722.1       disable G.722.1 wideband audio codec
   --disable-g.722.2       disable G.722.2 wideband audio codec
   --disable-lpc10         disable LPC-10 very low bandwidth audio codec
   --disable-isac          disable iSAC audio codec
+  --disable-g.722.1       disable G.722.1 wideband audio codec
   --disable-gsm           disable GSM 06.10 audio codec
   --enable-localgsm       force use internal source for GSM 06.10 audio codec
   --disable-iLBC          disable iLBC audio codec
@@ -6200,6 +6200,7 @@ else
 
 fi
 
+
       if test "x$HAVE_SILK" = "xyes" ; then
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/SILK"
       fi
@@ -6226,6 +6227,7 @@ else
 
 
 fi
+
 
       if test "x$HAVE_GSMAMR" = "xyes" ; then
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/gsm-amr"
@@ -6254,6 +6256,7 @@ else
 
 fi
 
+
       if test "x$HAVE_G726" = "xyes" ; then
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/G726"
       fi
@@ -6280,6 +6283,7 @@ else
 
 
 fi
+
 
       if test "x$HAVE_IMA_ADPCM" = "xyes" ; then
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/IMA_ADPCM"
@@ -6308,38 +6312,12 @@ else
 
 fi
 
+
       if test "x$HAVE_G722" = "xyes" ; then
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/G722"
       fi
    else
       HAVE_G722="no (missing directory $PLUGIN_SRC_DIR/audio/G722)"
-   fi
-
-
-   if test -d "$PLUGIN_SRC_DIR/audio/G.722.1" ; then
-      # Check whether --enable-g.722.1 was given.
-if test "${enable_g_722_1+set}" = set; then :
-  enableval=$enable_g_722_1;
-            if test "x$enableval" = "xno" ; then
-               HAVE_G7221="no (disabled by user)"
-            else
-               HAVE_G7221="yes"
-            fi
-
-else
-
-            if test "x${HAVE_G7221}" = "x" ; then
-               HAVE_G7221="yes"
-            fi
-
-
-fi
-
-      if test "x$HAVE_G7221" = "xyes" ; then
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/G.722.1"
-      fi
-   else
-      HAVE_G7221="no (missing directory $PLUGIN_SRC_DIR/audio/G.722.1)"
    fi
 
 
@@ -6361,6 +6339,7 @@ else
 
 
 fi
+
 
       if test "x$HAVE_G7222" = "xyes" ; then
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/G.722.2"
@@ -6389,6 +6368,7 @@ else
 
 fi
 
+
       if test "x$HAVE_LPC10" = "xyes" ; then
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/LPC_10"
       fi
@@ -6416,6 +6396,7 @@ else
 
 fi
 
+
       if test "x$HAVE_ISAC" = "xyes" ; then
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/iSAC"
       fi
@@ -6425,16 +6406,43 @@ fi
 
 
 
-if test "$HAVE_G7221" = "yes"; then
+
+
+
+   if test -d "$PLUGIN_SRC_DIR/audio/G.722.1" ; then
+      # Check whether --enable-g.722.1 was given.
+if test "${enable_g_722_1+set}" = set; then :
+  enableval=$enable_g_722_1;
+            if test "x$enableval" = "xno" ; then
+               HAVE_G7221="no (disabled by user)"
+            else
+               HAVE_G7221="yes"
+            fi
+
+else
+
+            if test "x${HAVE_G7221}" = "x" ; then
+               HAVE_G7221="yes"
+            fi
+
+
+fi
+
+
    if test -n "${srcdir}" && test `cd ${srcdir} ; pwd` != `pwd`; then
       HAVE_G7221="no (internal libg722_1 does not support out-of-source configure)"
    else
-
-
-subdirs="$subdirs ./audio/G.722.1/libg722_1"
+      subdirs="$subdirs ./audio/G.722.1/libg722_1"
 
    fi
-fi
+
+      if test "x$HAVE_G7221" = "xyes" ; then
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/G.722.1"
+      fi
+   else
+      HAVE_G7221="no (missing directory $PLUGIN_SRC_DIR/audio/G.722.1)"
+   fi
+
 
 
 
@@ -8046,6 +8054,7 @@ else
 
 fi
 
+
       if test "x$HAVE_H261" = "xyes" ; then
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/H.261-vic"
       fi
@@ -8644,6 +8653,7 @@ else
 
 fi
 
+
       if test "x$HAVE_H263" = "xyes" ; then
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/H.263-1998"
       fi
@@ -8670,6 +8680,7 @@ else
 
 
 fi
+
 
       if test "x$HAVE_MPEG4" = "xyes" ; then
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/MPEG4-ffmpeg"
