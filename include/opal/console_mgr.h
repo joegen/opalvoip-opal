@@ -235,10 +235,12 @@ public:
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdRingFileAndDevice);
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdRingbackTone);
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdVolume);
-  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdAudioDevice);
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdDefaultAudioDevice);
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdChangeAudioDevice);
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdAudioBuffers);
 #if OPAL_VIDEO
-  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdVideoDevice);
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdDefaultVideoDevice);
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdChangeVideoDevice);
 #endif // OPAL_VIDEO
 
   virtual void AddCommands(PCLI & cli);
@@ -329,6 +331,7 @@ class OpalConsoleManager : public OpalManager
     );
     virtual void Run();
     virtual void EndRun(bool interrupt = false);
+    virtual void Broadcast(const PString & msg);
 
     void OnEstablishedCall(OpalCall & call);
     void OnHold(OpalConnection & connection, bool fromRemote, bool onHold);
@@ -422,6 +425,7 @@ class OpalManagerCLI : public OpalConsoleManager
     );
     ~OpalManagerCLI();
 
+    // Overrides from OpalConsoleManager
     virtual PString GetArgumentSpec() const;
     virtual bool Initialise(
       PArgList & args,
@@ -430,6 +434,7 @@ class OpalManagerCLI : public OpalConsoleManager
     );
     virtual void Run();
     virtual void EndRun(bool interrupt);
+    virtual void Broadcast(const PString & msg);
 
   protected:
     PCLI * CreateCLIStandard();
@@ -456,6 +461,14 @@ class OpalManagerCLI : public OpalConsoleManager
 #if OPAL_HAS_H281
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdFarEndCamera);
 #endif
+
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdAudioCodec);
+#if OPAL_VIDEO
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdVideoCodec);
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdVideoDefault);
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdVideoTransmit);
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdVideoReceive);
+#endif // OPAL_VIDEO
 
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdSilenceDetect);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdCodecList);

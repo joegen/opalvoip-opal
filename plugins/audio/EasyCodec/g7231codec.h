@@ -30,7 +30,7 @@
  */
 #include "easycodecs.h"
 
-#include "EasyG7231/EasyG7231.h"
+#include "EasyG7231.h"
 
 
 
@@ -90,7 +90,7 @@ class G7231_63_EasyCodec : public G7231_EasyCodec
 
 
 #pragma data_seg(".G7231_SHARED")				// define the segment
-#pragma comment(lib,"EasyG7231/EasyG7231.lib")
+#pragma comment(lib,"EasyG7231.lib")
 static G7231_63_EasyCodec * m_G7231_63_codec = NULL;	// specify the data and initialise at Instantiation
 #pragma data_seg()
 #pragma comment(linker, "/section:.G7231_SHARED,rws") // Link the segment
