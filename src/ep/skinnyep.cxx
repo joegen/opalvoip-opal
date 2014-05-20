@@ -35,6 +35,8 @@
 #if OPAL_SKINNY
 
 #include <ptclib/url.h>
+#include <opal/patch.h>
+#include <codec/opalwavfile.h>
 
 
 #define PTraceModule() "Skinny"
@@ -336,13 +338,14 @@ bool OpalSkinnyEndPoint::PhoneDevice::SendRegisterMsg()
   strncpy(msg.m_deviceName, m_name, sizeof(msg.m_deviceName) - 1);
   strncpy(msg.m_macAddress, PIPSocket::GetInterfaceMACAddress().ToUpper(), sizeof(msg.m_macAddress));
   msg.m_ip = ip;
-  msg.m_maxStreams = 2;
+  msg.m_maxStreams = 5;
   msg.m_deviceType = m_deviceType;
+  msg.m_protocolVersion = 15;
 
   if (!SendSkinnyMsg(msg))
     return false;
   
-  PTRACE(4, "Sent register message for " << m_name << ", type=" << m_deviceType);
+  PTRACE(4, "Sent register message for " << m_name << ", type=" << m_deviceType << ", protocol=" << msg.m_protocolVersion);
   return true;
 }
 
@@ -413,6 +416,7 @@ void OpalSkinnyEndPoint::PhoneDevice::HandleTransport()
         ON_RECEIVE_MSG(CapabilityResponseMsg);
         ON_RECEIVE_MSG(CallStateMsg);
         ON_RECEIVE_MSG(CallInfoMsg);
+        ON_RECEIVE_MSG(CallInfo5Msg);
         ON_RECEIVE_MSG(SetRingerMsg);
         ON_RECEIVE_MSG(OffHookMsg);
         ON_RECEIVE_MSG(OnHookMsg);
@@ -500,6 +504,8 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice &, const RegisterMsg &)
 bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const RegisterAckMsg & ack)
 {
   client.m_status = RegisteredStatusText;
+
+  PTRACE(2, "Server protocol version " << ack.m_protocolVersion);
 
   PIPSocket::AddressAndPort ap;
   if (client.m_transport.GetLocalAddress().GetIpAndPort(ap)) {
@@ -621,6 +627,12 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const CallInfoMsg & 
 }
 
 
+bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const CallInfo5Msg & msg)
+{
+  return DelegateMsg(client, msg);
+}
+
+
 bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const SetRingerMsg & msg)
 {
   return DelegateMsg(client, msg);
@@ -715,8 +727,6 @@ OpalSkinnyConnection::OpalSkinnyConnection(OpalCall & call,
   , m_lineInstance(0)
   , m_callIdentifier(callIdentifier)
   , m_needSoftKeyEndcall(true)
-  , m_audioId(0)
-  , m_videoId(0)
 {
   m_calledPartyNumber = dialNumber;
 }
@@ -815,8 +825,10 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg &
       break;
 
     case OpalSkinnyEndPoint::eStateOnHook:
-      m_needSoftKeyEndcall = false;
-      Release(EndedByRemoteUser);
+      if (IsEstablished()) {
+        m_needSoftKeyEndcall = false;
+        Release(EndedByRemoteUser);
+      }
       break;
 
     case OpalSkinnyEndPoint::eStateConnected :
@@ -837,16 +849,28 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg &
 
 bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallInfoMsg & msg)
 {
+  return OnReceiveCallInfo(msg);
+}
+
+
+bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallInfo5Msg & msg)
+{
+  return OnReceiveCallInfo(msg);
+}
+
+
+bool OpalSkinnyConnection::OnReceiveCallInfo(const OpalSkinnyEndPoint::CallInfoCommon & msg)
+{
   if (msg.GetType() == OpalSkinnyEndPoint::eTypeOutboundCall) {
-    remotePartyName = msg.m_calledPartyName;
-    remotePartyNumber = msg.m_calledPartyNumber;
+    remotePartyName = msg.GetCalledPartyName();
+    remotePartyNumber = msg.GetCalledPartyNumber();
   }
   else {
-    remotePartyName = msg.m_callingPartyName;
-    remotePartyNumber = msg.m_callingPartyNumber;
-    m_calledPartyName = msg.m_calledPartyName;
-    m_calledPartyNumber = msg.m_calledPartyNumber;
-    m_redirectingParty = GetPrefixName() + ':' + msg.m_lastRedirectingPartyNumber;
+    remotePartyName = msg.GetCallingPartyName();
+    remotePartyNumber = msg.GetCallingPartyNumber();
+    m_calledPartyName = msg.GetCalledPartyName();
+    m_calledPartyNumber = msg.GetCalledPartyNumber();
+    m_redirectingParty = GetPrefixName() + ':' + msg.GetRedirectingPartyNumber();
   }
 
   if (remotePartyNumber.IsEmpty() && OpalIsE164(remotePartyName))
@@ -854,7 +878,7 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallInfoMsg & 
   if (m_calledPartyNumber.IsEmpty() && OpalIsE164(m_calledPartyName))
     m_calledPartyNumber = m_calledPartyName;
 
-  PTRACE(3, "Called party: number=\"" << m_calledPartyName << "\", name=\"" << m_calledPartyNumber << "\" - "
+  PTRACE(3, "Called party: number=\"" << m_calledPartyNumber << "\", name=\"" << m_calledPartyName << "\" - "
             "Remote party: number=\"" << remotePartyNumber << "\", name=\"" << remotePartyName << "\" "
             "for " << *this);
 
@@ -867,6 +891,14 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallInfoMsg & 
   return true;
 }
 
+
+const char * OpalSkinnyEndPoint::CallInfo5Msg::GetStringByIndex(PINDEX idx) const
+{
+  const char * str = m_strings;
+  while (idx-- > 0)
+    str += strlen(str)+1;
+  return str;
+}
 
 bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::SetRingerMsg & msg)
 {
@@ -895,7 +927,7 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::SetRingerMsg &
 }
 
 
-OpalMediaSession * OpalSkinnyConnection::SetUpMediaSession(uint32_t payloadCapability, bool rx)
+OpalMediaSession * OpalSkinnyConnection::SetUpMediaSession(unsigned sessionId, uint32_t payloadCapability, const OpalTransportAddress & mediaAddress)
 {
   OpalMediaFormat mediaFormat = CodecCodeToMediaFormat(payloadCapability);
   if (mediaFormat.IsEmpty()) {
@@ -906,35 +938,73 @@ OpalMediaSession * OpalSkinnyConnection::SetUpMediaSession(uint32_t payloadCapab
 
   m_remoteMediaFormats += mediaFormat;
 
+  bool rx = mediaAddress.IsEmpty();
+
   OpalMediaType mediaType = mediaFormat.GetMediaType();
-  unsigned sessionId = mediaType->GetDefaultSessionId();
+  if (sessionId == 0)
+    sessionId = GetNextSessionID(mediaType, rx);
 
   OpalMediaSession * mediaSession = UseMediaSession(sessionId, mediaType);
   if (mediaSession == NULL) {
-    PTRACE(2, "Could not create session for " << mediaFormat);
+    PTRACE(2, "Could not create session " << sessionId << " for " << mediaFormat);
     Release(EndedByCapabilityExchange);
     return NULL;
   }
 
-  if (!mediaSession->Open(m_client.m_transport.GetInterface(), m_client.m_transport.GetRemoteAddress(), false)) {
-    PTRACE(2, "Could not open media session for " << mediaFormat);
+  if (!mediaSession->Open(m_client.m_transport.GetInterface(), rx ? m_client.m_transport.GetRemoteAddress() : mediaAddress, false)) {
+    PTRACE(2, "Could not open session " << sessionId << " for " << mediaFormat);
     return NULL;
   }
 
   PSafePtr<OpalConnection> con = rx ? this : GetOtherPartyConnection();
-  if (con == NULL || !ownerCall.OpenSourceMediaStreams(*con, mediaType, sessionId, mediaFormat)) {
-    PTRACE(2, "Could not open media streams for " << mediaFormat);
+  if (con == NULL)
+      return NULL;
+
+  if (ownerCall.OpenSourceMediaStreams(*con, mediaType, sessionId, mediaFormat)) {
+    StartMediaStreams();
+    PTRACE(3, "Opened " << (rx ? 'r' : 't') << "x " << mediaType << " stream, session=" << sessionId);
+    return mediaSession;
+  }
+
+  if (rx || mediaType != OpalMediaType::Audio() || m_endpoint.GetSimulatedAudioFile().IsEmpty()) {
+    PTRACE(2, "Could not open " << (rx ? 'r' : 't') << "x " << mediaType << " stream, session=" << sessionId);
     return NULL;
   }
 
-  StartMediaStreams();
-  return mediaSession;
+  if (dynamic_cast<OpalRTPSession *>(mediaSession) == NULL) {
+    mediaSession = new OpalRTPSession(OpalMediaSession::Init(*this, sessionId, mediaType, false));
+    if (!mediaSession->Open(m_client.m_transport.GetInterface(), mediaAddress, true)) {
+      PTRACE(2, "Could not open RTP session " << sessionId << " for " << mediaFormat << " using " << mediaAddress);
+      delete mediaSession;
+      return NULL;
+    }
+    m_sessions.SetAt(sessionId, mediaSession);
+  }
+
+  OpalMediaStreamPtr sinkStream = OpenMediaStream(mediaFormat, sessionId, false);
+  if (sinkStream != NULL) {
+    OpalMediaStreamPtr sourceStream = new OpalFileMediaStream(*this, OPAL_PCM16_8KHZ, sessionId, true,
+                                                              new OpalWAVFile(m_endpoint.GetSimulatedAudioFile(), PFile::ReadOnly));
+    if (sourceStream->Open()) {
+      mediaStreams.Append(sourceStream);
+      OpalMediaPatchPtr patch = m_endpoint.GetManager().CreateMediaPatch(*sourceStream, true);
+      if (patch != NULL && patch->AddSink(sinkStream)) {
+        StartMediaStreams();
+        PTRACE(3, "Simulating transmit " << mediaType << " stream, session=" << sessionId << ", file=" << m_endpoint.GetSimulatedAudioFile());
+        return mediaSession;
+      }
+    }
+  }
+
+  PTRACE(2, "Could not start patch for simulated transmit " << mediaType << " stream, session=" << sessionId);
+  return NULL;
 }
 
 
 bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::OpenReceiveChannelMsg & msg)
 {
-  OpalMediaSession * mediaSession = SetUpMediaSession(msg.m_payloadCapability, true);
+    
+  OpalMediaSession * mediaSession = SetUpMediaSession(m_passThruIdToSessionId[msg.m_passThruPartyId], msg.m_payloadCapability, OpalTransportAddress());
   if (mediaSession != NULL) {
     PIPSocket::AddressAndPort ap;
     mediaSession->GetLocalAddress().GetIpAndPort(ap);
@@ -945,8 +1015,7 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::OpenReceiveCha
     ack.m_port = ap.GetPort();
     m_client.SendSkinnyMsg(ack);
 
-    SetFromIdMediaType(mediaSession->GetMediaType(), msg.m_passThruPartyId);
-    PTRACE(3, "Opened receive channel for " << *this);
+    m_passThruIdToSessionId[msg.m_passThruPartyId] = mediaSession->GetSessionID();
   }
 
   return true;
@@ -955,7 +1024,7 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::OpenReceiveCha
 
 bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CloseReceiveChannelMsg & msg)
 {
-  OpalMediaStreamPtr mediaStream = GetMediaStream(GetMediaTypeFromId(msg.m_passThruPartyId), true);
+  OpalMediaStreamPtr mediaStream = GetMediaStream(m_passThruIdToSessionId[msg.m_passThruPartyId], true);
   if (mediaStream != NULL)
     m_endpoint.GetManager().QueueDecoupledEvent(
                      new PSafeWorkArg1<OpalSkinnyConnection, OpalMediaStreamPtr>(this,
@@ -966,12 +1035,10 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CloseReceiveCh
 
 bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::StartMediaTransmissionMsg & msg)
 {
-  OpalMediaSession * mediaSession = SetUpMediaSession(msg.m_payloadCapability, false);
-  if (mediaSession != NULL) {
-    mediaSession->SetRemoteAddress(OpalTransportAddress(msg.m_ip, msg.m_port, OpalTransportAddress::UdpPrefix()));
-    SetFromIdMediaType(mediaSession->GetMediaType(), msg.m_passThruPartyId);
-    PTRACE(3, "Started media transmission for " << *this);
-  }
+  OpalMediaSession * mediaSession = SetUpMediaSession(m_passThruIdToSessionId[msg.m_passThruPartyId], msg.m_payloadCapability,
+                                                      OpalTransportAddress(msg.m_ip, msg.m_port, OpalTransportAddress::UdpPrefix()));
+  if (mediaSession != NULL)
+    m_passThruIdToSessionId[msg.m_passThruPartyId] = mediaSession->GetSessionID();
 
   return true;
 }
@@ -979,7 +1046,7 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::StartMediaTran
 
 bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::StopMediaTransmissionMsg & msg)
 {
-  OpalMediaStreamPtr mediaStream = GetMediaStream(GetMediaTypeFromId(msg.m_passThruPartyId), false);
+  OpalMediaStreamPtr mediaStream = GetMediaStream(m_passThruIdToSessionId[msg.m_passThruPartyId], false);
   if (mediaStream != NULL)
     m_endpoint.GetManager().QueueDecoupledEvent(
                      new PSafeWorkArg1<OpalSkinnyConnection, OpalMediaStreamPtr>(this,
@@ -1000,36 +1067,6 @@ void OpalSkinnyConnection::DelayCloseMediaStream(OpalMediaStreamPtr mediaStream)
   }
 
   mediaStream->Close();
-}
-
-
-OpalMediaType OpalSkinnyConnection::GetMediaTypeFromId(uint32_t id)
-{
-  if (id == m_audioId)
-    return OpalMediaType::Audio();
-
-#if OPAL_VIDEO
-  if (id == m_videoId)
-    return OpalMediaType::Video();
-#endif
-
-  return OpalMediaType();
-}
-
-
-void OpalSkinnyConnection::SetFromIdMediaType(const OpalMediaType & mediaType, uint32_t id)
-{
-  if (mediaType == OpalMediaType::Audio()) {
-    m_audioId = id;
-    PTRACE(4, "Setting audio stream id to " << id);
-  }
-
-#if OPAL_VIDEO
-  if (mediaType == OpalMediaType::Video()) {
-    m_videoId = id;
-    PTRACE(4, "Setting video stream id to " << id);
-  }
-#endif
 }
 
 

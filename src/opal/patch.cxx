@@ -104,18 +104,18 @@ void OpalMediaPatch::PrintOn(ostream & strm) const
 bool OpalMediaPatch::CanStart() const
 {
   if (!source.IsOpen()) {
-    PTRACE(4, "Media\tDelaying thread starting till source stream open");
+    PTRACE(4, "Media\tDelaying thread start till opened source stream " << source);
     return false;
   }
 
   if (sinks.IsEmpty()) {
-    PTRACE(4, "Media\tDelaying thread starting till have sink stream");
+    PTRACE(4, "Media\tDelaying thread start till have sink stream");
     return false;
   }
 
   for (PList<Sink>::const_iterator s = sinks.begin(); s != sinks.end(); ++s) {
     if (!s->stream->IsOpen()) {
-      PTRACE(4, "Media\tDelaying thread starting till sink stream open");
+      PTRACE(4, "Media\tDelaying thread start till opened sink stream " << *s->stream);
       return false;
     }
   }
@@ -133,7 +133,7 @@ bool OpalMediaPatch::CanStart() const
   if (session->IsOpen())
     return true;
 
-  PTRACE(4, "Media\tDelaying thread starting till session " << session->GetSessionID() << " open");
+  PTRACE(4, "Media\tDelaying thread start till session " << session->GetSessionID() << " open");
   return false;
 }
 
