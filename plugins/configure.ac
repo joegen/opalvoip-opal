@@ -71,6 +71,7 @@ OPAL_SIMPLE_PLUGIN([G722],     [g.722],    [G.722 wideband audio codec],        
 OPAL_SIMPLE_PLUGIN([G7221],    [g.722.1],  [G.722.1 wideband audio codec],          [$PLUGIN_SRC_DIR/audio/G.722.1])
 OPAL_SIMPLE_PLUGIN([G7222],    [g.722.2],  [G.722.2 wideband audio codec],          [$PLUGIN_SRC_DIR/audio/G.722.2])
 OPAL_SIMPLE_PLUGIN([LPC10],    [lpc10],    [LPC-10 very low bandwidth audio codec], [$PLUGIN_SRC_DIR/audio/LPC_10])
+OPAL_SIMPLE_PLUGIN([ISAC],     [isac],     [iSAC audio codec],                      [$PLUGIN_SRC_DIR/audio/iSAC])
 
 
 if test "$HAVE_G7221" = "yes"; then
@@ -112,7 +113,6 @@ OPAL_SYSTEM_PLUGIN(
          AC_DEFINE(OPAL_SYSTEM_ILBC, [1])
       fi
    ]
-
 )
 
 OPAL_SYSTEM_PLUGIN(
@@ -411,6 +411,7 @@ echo ""
 echo "                              GSM :  ${HAVE_GSM}"
 echo "                          GSM-AMR :  ${HAVE_GSMAMR}"
 echo "                             iLBC :  ${HAVE_ILBC}"
+echo "                             iSAC :  ${HAVE_ISAC}"
 echo "                            Speex :  ${HAVE_SPEEX}"
 echo "                            G.722 :  ${HAVE_G722}"
 echo "                          G.722.1 :  ${HAVE_G7221}"

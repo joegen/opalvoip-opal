@@ -75,6 +75,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Audio - Opus SILK Common", 
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Audio - Opus SILK Float", "audio\Opus\opus\win32\VS2012\silk_float.vcxproj", "{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Audio - iSAC", "audio\iSAC\isaccodec_2012.vcxproj", "{851A8648-5021-4FC3-ACED-40D2802D9C5E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -319,6 +321,14 @@ Global
 		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.Release|Win32.Build.0 = Release|Win32
 		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.Release|x64.ActiveCfg = Release|x64
 		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.Release|x64.Build.0 = Release|x64
+		{851A8648-5021-4FC3-ACED-40D2802D9C5E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{851A8648-5021-4FC3-ACED-40D2802D9C5E}.Debug|Win32.Build.0 = Debug|Win32
+		{851A8648-5021-4FC3-ACED-40D2802D9C5E}.Debug|x64.ActiveCfg = Debug|x64
+		{851A8648-5021-4FC3-ACED-40D2802D9C5E}.Debug|x64.Build.0 = Debug|x64
+		{851A8648-5021-4FC3-ACED-40D2802D9C5E}.Release|Win32.ActiveCfg = Release|Win32
+		{851A8648-5021-4FC3-ACED-40D2802D9C5E}.Release|Win32.Build.0 = Release|Win32
+		{851A8648-5021-4FC3-ACED-40D2802D9C5E}.Release|x64.ActiveCfg = Release|x64
+		{851A8648-5021-4FC3-ACED-40D2802D9C5E}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
