@@ -75,6 +75,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "silk_common", "audio\Opus\o
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "silk_float", "audio\Opus\opus\win32\VS2010\silk_float.vcxproj", "{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "iSAC Audio Codec", "audio\iSAC\isaccodec_2010.vcxproj", "{852D2624-0006-1049-27C7-1F44674BD4DC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -311,6 +313,12 @@ Global
 		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.Release|Win32.Build.0 = Release|Win32
 		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.Release|x64.ActiveCfg = Release|x64
 		{9C4961D2-5DDB-40C7-9BE8-CA918DC4E782}.Release|x64.Build.0 = Release|x64
+		{852D2624-0006-1049-27C7-1F44674BD4DC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{852D2624-0006-1049-27C7-1F44674BD4DC}.Debug|Win32.Build.0 = Debug|Win32
+		{852D2624-0006-1049-27C7-1F44674BD4DC}.Debug|x64.ActiveCfg = Debug|Win32
+		{852D2624-0006-1049-27C7-1F44674BD4DC}.Release|Win32.ActiveCfg = Release|Win32
+		{852D2624-0006-1049-27C7-1F44674BD4DC}.Release|Win32.Build.0 = Release|Win32
+		{852D2624-0006-1049-27C7-1F44674BD4DC}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
