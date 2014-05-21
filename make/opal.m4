@@ -88,6 +88,7 @@ dnl $1 module name
 dnl $2 command line name
 dnl $3 command line help
 dnl $4 source directory
+dnl $5 optional extra test
 AC_DEFUN([OPAL_SIMPLE_PLUGIN],[
    if test -d "$4" ; then
       AC_ARG_ENABLE(
@@ -106,6 +107,7 @@ AC_DEFUN([OPAL_SIMPLE_PLUGIN],[
             fi
          ]
       )
+      m4_ifnblank([$5],[$5])
       if test "x$HAVE_$1" = "xyes" ; then
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $4"
       fi
