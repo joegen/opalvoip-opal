@@ -685,7 +685,7 @@ void H323Connection::HandleTunnelPDU(H323SignalPDU * txPDU)
   if (lastPDUWasH245inSETUP &&
       (h245TunnelRxPDU->m_h323_uu_pdu.m_h245Control.GetSize() == 0) &&
       (h245TunnelRxPDU->GetQ931().GetMessageType() != Q931::CallProceedingMsg)) {
-    PTRACE(4, "H225\tH.245 in SETUP ignored - resetting H.245 negotiations");
+    PTRACE(4, "H225\tTunnelled H.245 in SETUP ignored - resetting H.245 negotiations");
     masterSlaveDeterminationProcedure->Stop();
     lastPDUWasH245inSETUP = false;
     capabilityExchangeProcedure->Stop(true);
@@ -1090,7 +1090,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
             // had a fast connect entry it could not do. If we have not yet got a remote
             // cap table then build one using all possible caps.
             capability = remoteCapabilities.Copy(*capability);
-            remoteCapabilities.SetCapability(0, capability->GetDefaultSessionID(), capability);
+            remoteCapabilities.SetCapability(0, capability->GetDefaultSessionID()-1, capability);
           }
           if (capability != NULL) {
             unsigned error;
