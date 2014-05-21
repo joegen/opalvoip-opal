@@ -358,11 +358,8 @@ OPAL_SYSTEM_PLUGIN(
    [spandsp],
    [],
    [-lspandsp],
-   [#include <theora/theora.h>],
-   [
-      theora_info info;
-      theora_info_init(&info);
-   ]
+   [#include <spandsp.h>],
+   [fax_state_t * fax = fax_init(NULL, 1)]
 )
 
 dnl ########################################################################
