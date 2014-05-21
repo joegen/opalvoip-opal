@@ -5284,7 +5284,7 @@
                                                                 <object class="wxStaticText" name="RxFaxBytes" base="EditStaticText">
                                                                     <style>wxST_NO_AUTORESIZE</style>
                                                                     <attribute>1</attribute>
-                                                                    <label>%u</label>
+                                                                    <label>%llu</label>
                                                                     <size>40, 9d</size>
                                                                 </object>
                                                             </object>
@@ -5295,7 +5295,7 @@
                                                                 <object class="wxStaticText" name="TxFaxBytes" base="EditStaticText">
                                                                     <style>wxST_NO_AUTORESIZE</style>
                                                                     <attribute>1</attribute>
-                                                                    <label>%u</label>
+                                                                    <label>%llu</label>
                                                                     <size>40, 9d</size>
                                                                 </object>
                                                             </object>
