@@ -3893,6 +3893,17 @@ void H323Connection::OnSetLocalCapabilities()
   }
 #endif
 
+#if OPAL_H235_6 || OPAL_H235_8
+  // Remove secure capabilities and regenerate them
+  for (PINDEX c = 0; c < localCapabilities.GetSize(); c++) {
+    H323Capability * capability = &localCapabilities[c];
+    if (dynamic_cast<H235SecurityCapability *>(capability) != NULL) {
+      localCapabilities.Remove(capability);
+      c--;
+    }
+  }
+#endif // OPAL_H235_6 || OPAL_H235_8
+
 #if OPAL_H235_6
   if (!GetDiffieHellman().IsEmpty())
     H235SecurityCapability::AddAllCapabilities(localCapabilities, endpoint.GetMediaCryptoSuites(), "H.235");
