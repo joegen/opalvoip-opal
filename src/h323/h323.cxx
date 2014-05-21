@@ -355,7 +355,7 @@ void H323Connection::OnReleased()
     m_controlChannel->CloseWait();
 
   // Do not close m_signallingChannel as H323Endpoint can take it back for possible re-use
-  if (!m_maintainConnection && m_signallingChannel != NULL) {
+  if (m_signallingChannel != NULL) {
     if (m_maintainConnection) {
       PTRACE(4, "H323\tMaintaining signalling channel.");
       m_signallingChannel->AttachThread(NULL);
