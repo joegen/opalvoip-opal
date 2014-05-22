@@ -7997,6 +7997,7 @@ $as_echo "$as_me: Using internal source for Opus Interactive Audio Codec" >&6;}
          else
             subdirs="$subdirs ./audio/Opus/opus"
 
+            ac_configure_args="$ac_configure_args --with-pic"
          fi
       fi
 
