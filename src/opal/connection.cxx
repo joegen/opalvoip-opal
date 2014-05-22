@@ -57,7 +57,7 @@
 
 #define new PNEW
 
-#define PTraceModule() "OplaCon"
+#define PTraceModule() "OpalCon"
 
 #if PTRACING
 
