@@ -1579,6 +1579,23 @@ int H323EndPoint::ParseAliasPatternRange(const PString & pattern, PString & star
 }
 
 
+bool H323EndPoint::SetAliasNamePatterns(const PStringList & patterns)
+{
+  for (PStringList::const_iterator it = patterns.begin(); it != patterns.end(); ++it) {
+    PString start, end;
+    if (ParseAliasPatternRange(*it, start, end) == 0) {
+      PTRACE(2, "H323\tIllegal range pattern  \"" << *it << '"');
+      return false;
+    }
+  }
+
+  localAliasPatterns = patterns;
+  PTRACE(3, "H323\tSet alias patterns: " << setfill(',') << localAliasPatterns);
+  InternalRestartGatekeeper();
+  return true;
+}
+
+
 bool H323EndPoint::AddAliasNamePattern(const PString & pattern)
 {
   if (pattern.IsEmpty()) {
@@ -1586,7 +1603,7 @@ bool H323EndPoint::AddAliasNamePattern(const PString & pattern)
     return false;
   }
 
-  if (!OpalIsE164(pattern)) {
+  {
     PString start, end;
     if (ParseAliasPatternRange(pattern, start, end) == 0) {
       PTRACE(2, "H323\tIllegal range pattern  \"" << pattern << '"');
