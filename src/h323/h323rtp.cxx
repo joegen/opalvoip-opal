@@ -119,8 +119,8 @@ PBoolean H323_RTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameters & para
 
   // unicast must have mediaControlChannel
   H323TransportAddress mediaControlAddress(m_session->GetLocalAddress(false));
-  param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel);
-  mediaControlAddress.SetPDU(param.m_mediaControlChannel);
+  if (mediaControlAddress.SetPDU(param.m_mediaControlChannel))
+    param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel);
 
   if (GetDirection() == H323Channel::IsTransmitter) {
     // Set flag for we are going to stop sending audio on silence
@@ -138,8 +138,8 @@ PBoolean H323_RTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameters & para
   else {
     // Set mediaChannel on receiver
     H323TransportAddress mediaAddress(m_session->GetLocalAddress(true));
-    param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel);
-    mediaAddress.SetPDU(param.m_mediaChannel);
+    if (mediaAddress.SetPDU(param.m_mediaChannel))
+      param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel);
   }
 
   // Set dynamic payload type, if is one

@@ -108,7 +108,7 @@ SDPFaxMediaDescription::SDPFaxMediaDescription(const OpalTransportAddress & addr
 }
 
 
-bool SDPFaxMediaDescription::Format::Initialise(const PString & portString)
+bool SDPFaxMediaDescription::Format::FromSDP(const PString & portString)
 {
   const OpalMediaFormat mediaFormat(RTP_DataFrame::DynamicBase, 0, portString, "sip");
   if (mediaFormat.IsEmpty()) {
@@ -117,7 +117,7 @@ bool SDPFaxMediaDescription::Format::Initialise(const PString & portString)
   }
 
   PTRACE(3, "SDPFax\tUsing RTP payload " << mediaFormat.GetPayloadType() << " for " << portString);
-  Initialise(mediaFormat);
+  FromMediaFormat(mediaFormat);
   return true;
 }
 

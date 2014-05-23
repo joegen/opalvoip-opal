@@ -3986,19 +3986,13 @@ void H323Connection::InternalEstablishedConnectionCheck()
     m_endSessionNeeded = true;
 
     if (m_holdFromRemote != eOnHoldFromRemote) {
-      H323Channel * chan;
-      if ((chan = logicalChannels->FindChannelBySession(H323Capability::DefaultAudioSessionID, false)) == NULL)
-        chan = logicalChannels->FindChannelBySession(H323Capability::DefaultVideoSessionID, false);
+      H323Channel * chan = logicalChannels->FindChannelBySession(0, false);
 
       // Delay handling of off hold until we finish redoing TCS, MSD & OLC.
       if (m_holdFromRemote == eRetrieveFromRemote) {
-        if (chan != NULL) {
-          if ((chan = logicalChannels->FindChannelBySession(H323Capability::DefaultAudioSessionID, true)) == NULL)
-            chan = logicalChannels->FindChannelBySession(H323Capability::DefaultVideoSessionID, true);
-          if (chan != NULL) {
-            m_holdFromRemote = eOffHoldFromRemote;
-            OnHold(true, false);
-          }
+        if (chan != NULL && (chan = logicalChannels->FindChannelBySession(chan->GetSessionID(), true)) != NULL) {
+          m_holdFromRemote = eOffHoldFromRemote;
+          OnHold(true, false);
         }
       }
       else {
@@ -4118,7 +4112,7 @@ unsigned H323Connection::GetNextSessionID(const OpalMediaType & mediaType, bool 
     }
   }
 
-  if (!IsH245Master())
+  if (sessionID > H323Capability::DefaultDataSessionID && !IsH245Master())
     sessionID = H323Capability::DeferredSessionID;
 
   while (GetMediaStream(sessionID, true) != NULL || GetMediaStream(sessionID, false) != NULL)
@@ -4880,7 +4874,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
   if (ownerCall.IsSwitchingT38()) {
     OpalMediaSession * otherSession = GetMediaSession(sessionID == H323Capability::DefaultAudioSessionID
                           ? H323Capability::DefaultDataSessionID : H323Capability::DefaultAudioSessionID);
-    if (otherSession != NULL) {
+    if (otherSession != NULL && otherSession->IsOpen()) {
       OpalMediaSession::Transport transport = otherSession->DetachTransport();
       session->AttachTransport(transport);
     }

@@ -1338,17 +1338,16 @@ void OpalManager::OnStartMediaPatch(OpalConnection & PTRACE_PARAM(connection), O
 }
 
 
-#if OPAL_SCRIPT
 void OpalManager::OnStopMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
 {
-  OnStartStopMediaPatch(m_script, "OnStopMedia", connection, patch);
-#else
-void OpalManager::OnStopMediaPatch(OpalConnection & PTRACE_PARAM(connection), OpalMediaPatch & patch)
-{
-#endif
   PTRACE(3, "OnStopMediaPatch " << patch << " on " << connection);
 
-  QueueDecoupledEvent(new PSafeWorkNoArg<OpalMediaPatch>(&patch, &OpalMediaPatch::Close));
+#if OPAL_SCRIPT
+  OnStartStopMediaPatch(m_script, "OnStopMedia", connection, patch);
+#endif
+
+  QueueDecoupledEvent(new PSafeWorkArg1<OpalConnection, OpalMediaStreamPtr, bool>(&connection,
+                                        &patch.GetSource(), &OpalConnection::CloseMediaStream));
 }
 
 
