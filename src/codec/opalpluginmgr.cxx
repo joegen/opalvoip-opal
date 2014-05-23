@@ -1665,8 +1665,10 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, const Plug
         !AddMediaFormat(handler, timeNow, codecDefn, codecDefn->sourceFormat, src))
       continue;
 
-    // Create transcoder factories for the codecs
-    bool isEncoder = dst.IsTransportable();
+    /* Serious kludge for fax. "TIFF-File" and "PCM-16" are both not
+       transportable, so need some other thing to distinguish encoder
+       from decoder. */
+    bool isEncoder = dst.IsTransportable() || src == OpalPCM16;
 
     OpalMediaType mediaType = (isEncoder ? dst : src).GetMediaType();
 #if OPAL_VIDEO

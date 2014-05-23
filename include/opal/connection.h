@@ -1108,6 +1108,12 @@ class OpalConnection : public PSafeObject
       bool source          ///<  Indicates the direction of stream.
     );
 
+    /**Close of a media stream.
+    */
+    bool CloseMediaStream(
+      OpalMediaStreamPtr stream ///<  Stream to close.
+    );
+
     /**Remove the specified media stream from the list of streams for this channel.
        This will automatically delete the stream if the stream was found in the
        stream list.

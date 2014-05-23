@@ -749,7 +749,7 @@ static bool SetNxECapabilities(OpalRFC2833Proto * handler,
     // Set the receive handler to what we are sending to remote in our SDP
     handler->SetRxMediaFormat(adjustedFormat);
     SDPMediaFormat * fmt = localMedia->CreateSDPMediaFormat();
-    fmt->Initialise(adjustedFormat);
+    fmt->FromMediaFormat(adjustedFormat);
     localMedia->AddSDPMediaFormat(fmt);
   }
 
@@ -1025,7 +1025,9 @@ bool SIPConnection::OnSendAnswerSDP(SDPSessionDescription & sdpOut)
     OnHold(true, holdFromRemote);
   }
 
-  return OnSendAnswerSDP(*sdp, sdpOut);
+  bool ok = OnSendAnswerSDP(*sdp, sdpOut);
+  m_answerFormatList.RemoveAll();
+  return ok;
 }
 
 
@@ -1630,7 +1632,12 @@ void SIPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch
 
 void SIPConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 {
-  if (!m_symmetricOpenStream && !m_handlingINVITE && GetPhase() == EstablishedPhase)
+  if (!m_symmetricOpenStream &&
+      !m_handlingINVITE &&
+#if OPAL_T38_CAPABILITY
+      !ownerCall.IsSwitchingT38() &&
+#endif // OPAL_T38_CAPABILITY
+      GetPhase() == EstablishedPhase)
     SendReINVITE(PTRACE_PARAM("close channel"));
 
   OpalConnection::OnClosedMediaStream(stream);
@@ -3037,8 +3044,6 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
     StartMediaStreams();
   else
     SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
-
-  m_answerFormatList.RemoveAll();
 
   SIPURL newRemotePartyID(request.GetMIME(), RemotePartyID);
   if (newRemotePartyID.IsEmpty() || m_ciscoRemotePartyID == newRemotePartyID)
