@@ -97,11 +97,11 @@ class SDPMediaFormat : public PObject
     SDPMediaFormat(SDPMediaDescription & parent);
 
   public:
-    virtual bool Initialise(
+    virtual bool FromSDP(
       const PString & portString
     );
 
-    virtual void Initialise(
+    virtual void FromMediaFormat(
       const OpalMediaFormat & mediaFormat
     );
 
@@ -137,6 +137,10 @@ class SDPMediaFormat : public PObject
     PCaselessString             m_encodingName;
     PString                     m_parameters;
     PString                     m_fmtp;
+
+    P_REMOVE_VIRTUAL(bool,Initialise(const PString &),false);
+    P_REMOVE_VIRTUAL_VOID(Initialise(const OpalMediaFormat &));
+
 };
 
 typedef PList<SDPMediaFormat> SDPMediaFormatList;
@@ -403,7 +407,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     {
       public:
         Format(SDPRTPAVPMediaDescription & parent) : SDPMediaFormat(parent) { }
-        bool Initialise(const PString & portString);
+        virtual bool FromSDP(const PString & portString);
     };
 
     bool     m_enableFeedback;
@@ -514,7 +518,7 @@ class SDPApplicationMediaDescription : public SDPMediaDescription
     {
       public:
         Format(SDPApplicationMediaDescription & parent) : SDPMediaFormat(parent) { }
-        bool Initialise(const PString & portString);
+        virtual bool FromSDP(const PString & portString);
     };
 };
 

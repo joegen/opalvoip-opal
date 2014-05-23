@@ -176,7 +176,7 @@ class SDPMSRPMediaDescription : public SDPMediaDescription
         Format(SDPMSRPMediaDescription & parent, const OpalMediaFormat & mediaFormat)
           : SDPMediaFormat(parent)
         {
-          Initialise(mediaFormat);
+          FromMediaFormat(mediaFormat);
         }
     };
 
