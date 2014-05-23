@@ -1388,7 +1388,7 @@ class H323EndPoint : public OpalRTPEndPoint
     H323Capabilities m_capabilities;
 
     PList<H323Gatekeeper>   m_gatekeepers;
-    PIPSocketAddressAndPort m_gatekeeperInterface;
+    PIPSocketAddressAndPortVector m_gatekeeperInterfaces;
     PString                 m_gatekeeperUsername;
     PString                 m_gatekeeperPassword;
     PINDEX                  m_gatekeeperAliasLimit;
