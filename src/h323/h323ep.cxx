@@ -430,7 +430,9 @@ bool H323EndPoint::InternalStartGatekeeper(const H323TransportAddress & remoteAd
 {
   RemoveGatekeeper(H225_UnregRequestReason::e_reregistrationRequired);
 
-  if (localAddress.IsEmpty() || !OpalTransportAddress(localAddress).GetIpAndPort(m_gatekeeperInterface)) {
+  m_gatekeeperInterfaces.clear();
+
+  if (localAddress.IsEmpty()) {
     PIPSocket::Address interfaceIP(PIPSocket::GetInvalidAddress());
 
     // See if the system can tell us which interface would be used
@@ -461,7 +463,33 @@ bool H323EndPoint::InternalStartGatekeeper(const H323TransportAddress & remoteAd
         return false;
       }
     }
-    m_gatekeeperInterface.SetAddress(interfaceIP);
+    m_gatekeeperInterfaces.push_back(interfaceIP);
+  }
+  else if (localAddress.NumCompare("<<interfaces>>") == EqualTo) {
+    PIPSocket::InterfaceTable interfaces;
+    if (!PIPSocket::GetInterfaceTable(interfaces)) {
+      PTRACE(2, "H323\tNo legal interfaces are up!");
+      return false;
+    }
+
+    PINDEX colon = localAddress.Find(':');
+    WORD port = (WORD)(colon != P_MAX_INDEX ? localAddress.Mid(colon + 1).AsUnsigned() : 0);
+
+    for (PINDEX i = 0; i < interfaces.GetSize(); ++i)
+      m_gatekeeperInterfaces.push_back(PIPSocketAddressAndPort(interfaces[i].GetAddress(), port));
+  }
+  else {
+    PStringArray localAddresses = localAddress.Tokenise(",;\t\n");
+    for (PINDEX i = 0; i < localAddresses.GetSize(); ++i) {
+      PIPSocketAddressAndPort ap;
+      if (OpalTransportAddress(localAddresses[i]).GetIpAndPort(ap))
+        m_gatekeeperInterfaces.push_back(ap);
+    }
+
+    if (m_gatekeeperInterfaces.empty()) {
+      PTRACE(2, "H323\tNo legal local interface address in \"" << localAddress << '"');
+      return false;
+    }
   }
 
   return InternalRestartGatekeeper(false);
@@ -569,11 +597,25 @@ bool H323EndPoint::InternalRestartGatekeeper(bool adjustingRegistrations)
 
 bool H323EndPoint::InternalCreateGatekeeper(bool adjustingRegistrations, const PStringList & aliases)
 {
-  H323Gatekeeper * gatekeeper = CreateGatekeeper(new OpalTransportUDP(*this, m_gatekeeperInterface.GetAddress(), m_gatekeeperInterface.GetPort()));
+  OpalTransportUDP * transport = NULL;
+  for (PIPSocketAddressAndPortVector::iterator it = m_gatekeeperInterfaces.begin(); it != m_gatekeeperInterfaces.end(); ++it) {
+    transport = new OpalTransportUDP(*this, it->GetAddress(), it->GetPort(), false, true);
+    if (transport->IsOpen())
+      break;
+    delete transport;
+    transport = NULL;
+  }
+
+  if (transport == NULL) {
+    PTRACE(2, "H323\tCannot bind to local interface address.");
+    return false;
+  }
+
+  H323Gatekeeper * gatekeeper = CreateGatekeeper(transport);
   if (gatekeeper == NULL)
     return false;
 
-  PTRACE(3, "H323\tAdded gatekeeper for aliases: " << setfill(',') << aliases);
+  PTRACE(3, "H323\tAdded gatekeeper (if=" << transport->GetLocalAddress() << ") for aliases: " << setfill(',') << aliases);
   gatekeeper->SetAliases(aliases);
   gatekeeper->SetPassword(GetGatekeeperPassword(), GetGatekeeperUsername());
   m_gatekeepers.Append(gatekeeper);
