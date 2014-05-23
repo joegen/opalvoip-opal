@@ -864,9 +864,9 @@ class H323EndPoint : public OpalRTPEndPoint
     /** Set all alias patterns.
         Overwrites all existing patterns.
       */
-    void SetAliasNamePatterns(
+    bool SetAliasNamePatterns(
       const PStringList & patterns  ///< Patterns to set
-    ) { localAliasPatterns = patterns; }
+    );
 
     /**Get the alias patterns.
     */
