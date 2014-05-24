@@ -55,13 +55,13 @@ static const char SIPPasswordKey[] = "Password";
 
 MySIPEndPoint::MySIPEndPoint(MyManager & mgr)
   : SIPConsoleEndPoint(mgr)
-  , m_manager(mgr)
 #if OPAL_H323
   , m_autoRegisterH323(false)
 #endif
 #if OPAL_SKINNY
   , m_autoRegisterSkinny(false)
 #endif
+  , m_manager(mgr)
 {
 }
 
