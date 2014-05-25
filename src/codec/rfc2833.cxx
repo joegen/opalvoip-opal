@@ -105,6 +105,9 @@ istream & operator>>(istream & strm, OpalRFC2833EventsMask & mask)
   for (;;) {
     unsigned eventCode;
     strm >> eventCode;
+    if (eventCode >= mask.size())
+      return strm;
+
     if (strm.fail())
       return strm;
 

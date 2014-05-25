@@ -177,6 +177,7 @@ OPAL_SYSTEM_PLUGIN(
             usable=no
          else
             AC_CONFIG_SUBDIRS(./audio/Opus/opus)
+            ac_configure_args="$ac_configure_args --with-pic"
          fi
       fi
    ]
@@ -358,11 +359,8 @@ OPAL_SYSTEM_PLUGIN(
    [spandsp],
    [],
    [-lspandsp],
-   [#include <theora/theora.h>],
-   [
-      theora_info info;
-      theora_info_init(&info);
-   ]
+   [#include <spandsp.h>],
+   [fax_state_t * fax = fax_init(NULL, 1)]
 )
 
 dnl ########################################################################

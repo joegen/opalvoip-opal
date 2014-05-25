@@ -4206,7 +4206,7 @@
                                                                 <object class="wxStaticText" name="RxFaxBytes">
                                                                     <style>wxST_NO_AUTORESIZE</style>
                                                                     <size>40, 9d</size>
-                                                                    <label>%u</label>
+                                                                    <label>%llu</label>
                                                                 </object>
                                                             </object>
                                                             <object class="sizeritem">
@@ -4214,7 +4214,7 @@
                                                                 <object class="wxStaticText" name="TxFaxBytes">
                                                                     <style>wxST_NO_AUTORESIZE</style>
                                                                     <size>40, 9d</size>
-                                                                    <label>%u</label>
+                                                                    <label>%llu</label>
                                                                 </object>
                                                             </object>
                                                             <object class="sizeritem">

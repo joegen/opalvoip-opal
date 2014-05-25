@@ -1094,8 +1094,8 @@ H323Channel * H245NegLogicalChannels::FindChannelBySession(unsigned rtpSessionId
     H245NegLogicalChannel & logChan = it->second;
     if (logChan.IsAwaitingEstablishment() || logChan.IsEstablished()) {
       H323Channel * channel = logChan.GetChannel();
-      if (channel != NULL && channel->GetSessionID() == rtpSessionId &&
-                             channel->GetDirection() == desiredDirection)
+      if (channel != NULL && (rtpSessionId == 0 || channel->GetSessionID() == rtpSessionId) &&
+                                                   channel->GetDirection() == desiredDirection)
         return channel;
     }
   }

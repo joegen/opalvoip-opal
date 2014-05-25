@@ -685,7 +685,7 @@ void H323Connection::HandleTunnelPDU(H323SignalPDU * txPDU)
   if (lastPDUWasH245inSETUP &&
       (h245TunnelRxPDU->m_h323_uu_pdu.m_h245Control.GetSize() == 0) &&
       (h245TunnelRxPDU->GetQ931().GetMessageType() != Q931::CallProceedingMsg)) {
-    PTRACE(4, "H225\tH.245 in SETUP ignored - resetting H.245 negotiations");
+    PTRACE(4, "H225\tTunnelled H.245 in SETUP ignored - resetting H.245 negotiations");
     masterSlaveDeterminationProcedure->Stop();
     lastPDUWasH245inSETUP = false;
     capabilityExchangeProcedure->Stop(true);
@@ -1090,7 +1090,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
             // had a fast connect entry it could not do. If we have not yet got a remote
             // cap table then build one using all possible caps.
             capability = remoteCapabilities.Copy(*capability);
-            remoteCapabilities.SetCapability(0, capability->GetDefaultSessionID(), capability);
+            remoteCapabilities.SetCapability(0, capability->GetDefaultSessionID()-1, capability);
           }
           if (capability != NULL) {
             unsigned error;
@@ -1419,32 +1419,26 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   // and bails if already started.
 
   // Check for fastStart data and start fast
-  if (connect.HasOptionalField(H225_Connect_UUIE::e_fastStart))
-    HandleFastStartAcknowledge(connect.m_fastStart);
+  if (connect.HasOptionalField(H225_Connect_UUIE::e_fastStart)) {
+    // We have fast started channels, can connect immediately, this starts the media streams.
+    if (HandleFastStartAcknowledge(connect.m_fastStart))
+      OnConnectedInternal();
+  }
+
+  if (m_fastStartState != FastStartAcknowledged) {
+    // If didn't get fast start channels accepted by remote then clear our
+    // proposed channels
+    m_fastStartState = FastStartDisabled;
+    m_fastStartChannels.RemoveAll();
+  }
 
   // Check that it has the H.245 channel connection info
   if (!CreateOutgoingControlChannel(connect,
                                     connect.m_h245Address, H225_Connect_UUIE::e_h245Address,
-                                    connect.m_h245SecurityMode, H225_Connect_UUIE::e_h245SecurityMode) &&
-      m_fastStartState != FastStartAcknowledged)
-    return false;
-
-  // If didn't get fast start channels accepted by remote then clear our
-  // proposed channels
-  if (m_fastStartState != FastStartAcknowledged) {
-    m_fastStartState = FastStartDisabled;
-    m_fastStartChannels.RemoveAll();
-  }
-  else {
-    PTRACE(4, "H323\tOpening " << m_fastStartChannels.GetSize() << " fast connect channels");
-
-    // Otherwise make sure fast started channels are open
-    for (H323LogicalChannelList::iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel)
-      channel->Open();
-    m_fastStartChannels.RemoveAll();
-
-    // We have fast start, can connect immediately, this starts the media streams.
-    OnConnectedInternal();
+                                    connect.m_h245SecurityMode, H225_Connect_UUIE::e_h245SecurityMode)) {
+    if (m_fastStartState != FastStartAcknowledged)
+      return false;
+    // Have media through fast start, so even though H.245 cactus, we battle on
   }
 
   /* do not start h245 negotiation if it is disabled */
@@ -2463,6 +2457,9 @@ PBoolean H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString 
 
 PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetString & array)
 {
+  if (m_fastStartState == FastStartAcknowledged)
+    return true;
+
   if (m_fastStartChannels.IsEmpty()) {
     PTRACE(2, "H225\tFast start response with no channels to open");
     return false;
@@ -2508,6 +2505,7 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
               // localCapability or remoteCapability structures.
               if (OnCreateLogicalChannel(*channelCapability, dir, error)) {
                 if (channelToStart.SetInitialBandwidth()) {
+                  PTRACE(4, "H225\tFast start channel opened: " << *channel);
                   replyFastStartChannels.Append(&*channel);
                   m_fastStartChannels.DisallowDeleteObjects();
                   m_fastStartChannels.erase(channel);
@@ -2531,17 +2529,28 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
     }
   }
 
-  // The channels we just transferred to the logical channels dictionary
-  // should not be deleted via this structure now.
-  m_fastStartChannels = replyFastStartChannels;
-  m_fastStartChannels.DisallowDeleteObjects();
+  // Delete all the ones we couldn't open
+  m_fastStartChannels.RemoveAll();
 
-  PTRACE(3, "H225\tFast starting " << m_fastStartChannels.GetSize() << " channels");
-  if (m_fastStartChannels.IsEmpty())
+  PTRACE(3, "H225\tFast start opening " << replyFastStartChannels.GetSize() << " channels");
+  if (replyFastStartChannels.IsEmpty())
     return false;
 
   m_fastStartState = FastStartAcknowledged;
 
+  /* Need to put the opened channels back into the m_fastStartChannels member
+     so the OpalMediaStream opening stuff can see them */
+  m_fastStartChannels = replyFastStartChannels;
+
+  for (H323LogicalChannelList::iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel)
+    channel->Open();
+
+  /* The channels were transferred to the logical channels dictionary and
+     should not be deleted via this structure now. */
+  m_fastStartChannels.DisallowDeleteObjects();
+  m_fastStartChannels.RemoveAll();
+
+  StartMediaStreams();
   return true;
 }
 
@@ -3800,6 +3809,8 @@ void H323Connection::OnSetLocalCapabilities()
     return;
   }
 
+  PTRACE(4, "H323\tSetLocalCapabilities: " << setfill(',') << formats);
+
 #if OPAL_H239
   H323H239ControlCapability * h329Control = NULL;
   if (m_h239Control) {
@@ -3881,6 +3892,17 @@ void H323Connection::OnSetLocalCapabilities()
       delete h329Control;
   }
 #endif
+
+#if OPAL_H235_6 || OPAL_H235_8
+  // Remove secure capabilities and regenerate them
+  for (PINDEX c = 0; c < localCapabilities.GetSize(); c++) {
+    H323Capability * capability = &localCapabilities[c];
+    if (dynamic_cast<H235SecurityCapability *>(capability) != NULL) {
+      localCapabilities.Remove(capability);
+      c--;
+    }
+  }
+#endif // OPAL_H235_6 || OPAL_H235_8
 
 #if OPAL_H235_6
   if (!GetDiffieHellman().IsEmpty())
@@ -3964,19 +3986,13 @@ void H323Connection::InternalEstablishedConnectionCheck()
     m_endSessionNeeded = true;
 
     if (m_holdFromRemote != eOnHoldFromRemote) {
-      H323Channel * chan;
-      if ((chan = logicalChannels->FindChannelBySession(H323Capability::DefaultAudioSessionID, false)) == NULL)
-        chan = logicalChannels->FindChannelBySession(H323Capability::DefaultVideoSessionID, false);
+      H323Channel * chan = logicalChannels->FindChannelBySession(0, false);
 
       // Delay handling of off hold until we finish redoing TCS, MSD & OLC.
       if (m_holdFromRemote == eRetrieveFromRemote) {
-        if (chan != NULL) {
-          if ((chan = logicalChannels->FindChannelBySession(H323Capability::DefaultAudioSessionID, true)) == NULL)
-            chan = logicalChannels->FindChannelBySession(H323Capability::DefaultVideoSessionID, true);
-          if (chan != NULL) {
-            m_holdFromRemote = eOffHoldFromRemote;
-            OnHold(true, false);
-          }
+        if (chan != NULL && (chan = logicalChannels->FindChannelBySession(chan->GetSessionID(), true)) != NULL) {
+          m_holdFromRemote = eOffHoldFromRemote;
+          OnHold(true, false);
         }
       }
       else {
@@ -4096,7 +4112,7 @@ unsigned H323Connection::GetNextSessionID(const OpalMediaType & mediaType, bool 
     }
   }
 
-  if (!IsH245Master())
+  if (sessionID > H323Capability::DefaultDataSessionID && !IsH245Master())
     sessionID = H323Capability::DeferredSessionID;
 
   while (GetMediaStream(sessionID, true) != NULL || GetMediaStream(sessionID, false) != NULL)
@@ -4858,7 +4874,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
   if (ownerCall.IsSwitchingT38()) {
     OpalMediaSession * otherSession = GetMediaSession(sessionID == H323Capability::DefaultAudioSessionID
                           ? H323Capability::DefaultDataSessionID : H323Capability::DefaultAudioSessionID);
-    if (otherSession != NULL) {
+    if (otherSession != NULL && otherSession->IsOpen()) {
       OpalMediaSession::Transport transport = otherSession->DetachTransport();
       session->AttachTransport(transport);
     }

@@ -120,7 +120,7 @@ class OpalSIPIMSDPMediaDescription : public SDPMediaDescription
         Format(OpalSIPIMSDPMediaDescription & parent, const OpalMediaFormat & mediaFormat)
           : SDPMediaFormat(parent)
         {
-          Initialise(mediaFormat);
+          FromMediaFormat(mediaFormat);
         }
     };
 

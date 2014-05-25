@@ -531,7 +531,9 @@ void H323ConsoleEndPoint::GetArgumentSpec(ostream & strm) const
           "-alias:             H.323 alias name, may be multiple entries.\n"
           "-alias-pattern:     H.323 alias pattern, may be multiple entries.\n"
           "-no-fast.           H.323 fast connect disabled.\n"
-          "-no-tunnel.         H.323 tunnel for H.245 disabled.\n";
+          "-no-tunnel.         H.323 tunnel for H.245 disabled.\n"
+          "-no-h235-setup.     H.323 tunnel for H.245 during SETUP disabled.\n"
+          "-h323-term-type:    H.323 terminal type value (1..255, default 50).\n";
 }
 
 
@@ -561,6 +563,19 @@ bool H323ConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PStrin
     DisableFastStart(true);
   if (args.HasOption("no-tunnel"))
     DisableH245Tunneling(true);
+  if (args.HasOption("no-h245-tunnel"))
+    DisableH245inSetup(true);
+
+  if (args.HasOption("h323-term-type")) {
+    unsigned newType = args.GetOptionAs<unsigned>("h323-term-type");
+    if (newType < 1 || newType > 255) {
+      output << "Invalid H.323 terminal type value." << endl;
+      return false;
+    }
+    SetTerminalType((TerminalTypes)newType);
+    if (verbose)
+      output << "H.323 terminal type: " << GetTerminalType() << '\n';
+  }
 
   PStringArray aliases = args.GetOptionString("alias").Lines();
   for (PINDEX i = 0; i < aliases.GetSize(); ++i)
@@ -602,6 +617,20 @@ bool H323ConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PStrin
 
 
 #if P_CLI
+void H323ConsoleEndPoint::CmdTerminalType(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() > 0) {
+    unsigned newType = args[0].AsUnsigned();
+    if (newType < 1 || newType > 255) {
+      args.WriteError("Invalid H.323 terminal type value.");
+      return;
+    }
+    SetTerminalType((TerminalTypes)newType);
+  }
+  args.GetContext() << "H.323 Terminal Type: " << GetTerminalType() << endl;
+}
+
+
 void H323ConsoleEndPoint::CmdAlias(PCLI::Arguments & args, P_INT_PTR)
 {
   int operation = args.HasOption('d') ? 1 : 0;
@@ -664,6 +693,7 @@ void H323ConsoleEndPoint::AddCommands(PCLI & cli)
   cli.SetCommand("h323 fast", disableFastStart, "Fast Connect Disable");
   cli.SetCommand("h323 tunnel", disableH245Tunneling, "H.245 Tunnelling Disable");
   cli.SetCommand("h323 h245-in-setup", disableH245inSetup, "H.245 in SETUP Disable");
+  cli.SetCommand("h323 term-type", PCREATE_NOTIFIER(CmdTerminalType), "Terminal type value (1..255, default 50)");
 
   cli.SetCommand("h323 alias", PCREATE_NOTIFIER(CmdGatekeeper),
                  "Set alias name(s)",

@@ -65,7 +65,7 @@ class SDPFaxMediaDescription : public SDPMediaDescription
     {
       public:
         Format(SDPFaxMediaDescription & parent) : SDPMediaFormat(parent) { }
-        bool Initialise(const PString & portString);
+        virtual bool FromSDP(const PString & portString);
     };
 
     PStringToString t38Attributes;

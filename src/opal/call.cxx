@@ -253,13 +253,12 @@ PBoolean OpalCall::OnAlerting(OpalConnection & connection)
   if (m_isClearing)
     return false;
 
-  PBoolean hasMedia = connection.GetMediaStream(OpalMediaType::Audio(), true) != NULL;
-
   bool ok = false;
 
   PSafePtr<OpalConnection> otherConnection;
   while (EnumerateConnections(otherConnection, PSafeReadWrite, &connection)) {
-    if (otherConnection->SetAlerting(connection.GetRemotePartyName(), hasMedia))
+    if (otherConnection->SetAlerting(connection.GetRemotePartyName(),
+                                     connection.GetMediaStream(OpalMediaType(), true) != NULL))
       ok = true;
   }
 
