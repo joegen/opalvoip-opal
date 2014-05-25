@@ -57,7 +57,7 @@
 
 #define new PNEW
 
-#define PTraceModule() "OplaCon"
+#define PTraceModule() "OpalCon"
 
 #if PTRACING
 
@@ -818,7 +818,15 @@ OpalMediaStreamPtr OpalConnection::OpenMediaStream(const OpalMediaFormat & media
 
 bool OpalConnection::CloseMediaStream(unsigned sessionId, bool source)
 {
+  PSafeLockReadWrite safeLock(*this);
   OpalMediaStreamPtr stream = GetMediaStream(sessionId, source);
+  return stream != NULL && stream->Close();
+}
+
+
+bool OpalConnection::CloseMediaStream(OpalMediaStreamPtr stream)
+{
+  PSafeLockReadWrite safeLock(*this);
   return stream != NULL && stream->Close();
 }
 

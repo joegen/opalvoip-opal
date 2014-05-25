@@ -844,7 +844,7 @@ PBoolean OpalListenerUDP::Open(const AcceptHandler & theAcceptHandler, ThreadMod
     return true;
   }
 
-  PTRACE(1, "Listen\tCould not start any UDP listeners");
+  PTRACE(1, "Listen\tCould not start any UDP listeners for port " << listenerPort);
   return false;
 }
 

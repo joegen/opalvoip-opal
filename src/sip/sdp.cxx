@@ -218,13 +218,13 @@ SDPMediaFormat::SDPMediaFormat(SDPMediaDescription & parent)
 }
 
 
-bool SDPMediaFormat::Initialise(const PString &)
+bool SDPMediaFormat::FromSDP(const PString &)
 {
   return true;
 }
 
 
-void SDPMediaFormat::Initialise(const OpalMediaFormat & fmt)
+void SDPMediaFormat::FromMediaFormat(const OpalMediaFormat & fmt)
 {
   m_mediaFormat = fmt;
   m_payloadType = fmt.GetPayloadType();
@@ -886,7 +886,7 @@ void SDPMediaDescription::CreateSDPMediaFormats(const PStringArray & tokens)
   for (PINDEX i = 3; i < tokens.GetSize(); i++) {
     SDPMediaFormat * fmt = CreateSDPMediaFormat();
     if (fmt != NULL) {
-      if (fmt->Initialise(tokens[i]))
+      if (fmt->FromSDP(tokens[i]))
         m_formats.Append(fmt);
       else
         delete fmt;
@@ -1261,7 +1261,7 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
   }
 
   SDPMediaFormat * sdpFormat = CreateSDPMediaFormat();
-  sdpFormat->Initialise(mediaFormat);
+  sdpFormat->FromMediaFormat(mediaFormat);
   AddSDPMediaFormat(sdpFormat);
 }
 
@@ -1557,7 +1557,7 @@ PCaselessString SDPRTPAVPMediaDescription::GetSDPTransportType() const
 }
 
 
-bool SDPRTPAVPMediaDescription::Format::Initialise(const PString & portString)
+bool SDPRTPAVPMediaDescription::Format::FromSDP(const PString & portString)
 {
   int pt = portString.AsInteger();
   if (pt < 0 || pt > 127)
@@ -2387,7 +2387,7 @@ SDPMediaFormat * SDPApplicationMediaDescription::CreateSDPMediaFormat()
 }
 
 
-bool SDPApplicationMediaDescription::Format::Initialise(const PString & portString)
+bool SDPApplicationMediaDescription::Format::FromSDP(const PString & portString)
 {
   if (portString.IsEmpty())
     return false;
