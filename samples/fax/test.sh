@@ -39,13 +39,13 @@ function test_fax()
   XX_ARG="-ttttt --trace-option +file+date-time --no-lid --no-capi --timeout 2:30"
 
   if [ "$1" = "sip" ]; then
-    TX_ARG+=" --sip udp\$$HOST:25060"
-    RX_ARG+=" --sip udp\$$HOST:15060"
+    TX_ARG+=" --sip $HOST:25060"
+    RX_ARG+=" --sip $HOST:15060"
     XX_ARG+=" --no-h323"
     DEST_URL="sip:$HOST:15060"
   else
-    TX_ARG+=" --h323 tcp\$$HOST:21720"
-    RX_ARG+=" --h323 tcp\$$HOST:11720"
+    TX_ARG+=" --h323 $HOST:21720"
+    RX_ARG+=" --h323 $HOST:11720"
     XX_ARG+=" --no-sip"
     DEST_URL="h323:$HOST:11720"
   fi

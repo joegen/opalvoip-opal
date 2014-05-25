@@ -887,16 +887,7 @@ void OpalFaxConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 {
   OpalLocalConnection::OnClosedMediaStream(stream);
 
-  bool bothClosed = false;
-  OpalMediaStreamPtr other;
-  if (stream.IsSource()) {
-    other = GetMediaStream(stream.GetID(), false);
-    bothClosed = other == NULL || !other->IsOpen();
-  }
-  else {
-    other = GetMediaStream(stream.GetID(), true);
-    bothClosed = other == NULL || !other->IsOpen();
-
+  if (stream.IsSink()) {
     PTRACE(4, "FAX\tTerminating fax in closed media stream id=" << stream.GetID());
     stream.ExecuteCommand(OpalFaxTerminate());
 
@@ -907,7 +898,8 @@ void OpalFaxConnection::OnClosedMediaStream(const OpalMediaStream & stream)
     }
   }
 
-  if (bothClosed) {
+  OpalMediaStreamPtr other = GetMediaStream(stream.GetID(), stream.IsSink());
+  if (other == NULL || !other->IsOpen()) {
     if (    m_finalStatistics.m_fax.m_result == 0 /* success!*/ ||
           !(m_finalStatistics.m_fax.m_result < 0  /* in progress */ || IsReleased() || ownerCall.IsSwitchingT38()))
       InternalOnFaxCompleted();

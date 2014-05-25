@@ -44,10 +44,18 @@
 
   #include <windows.h>
 
-  #ifdef _DEBUG
-    #define OPAL_DLL "OPALd.DLL"
+  #ifdef _WIN64
+    #ifdef _DEBUG
+      #define OPAL_DLL "OPAL64d.DLL"
+    #else
+      #define OPAL_DLL "OPAL64.DLL"
+    #endif
   #else
-    #define OPAL_DLL "OPAL.DLL"
+    #ifdef _DEBUG
+      #define OPAL_DLL "OPALd.DLL"
+    #else
+      #define OPAL_DLL "OPAL.DLL"
+    #endif
   #endif
 
   #define OPEN_LIBRARY(name)             LoadLibrary(name)

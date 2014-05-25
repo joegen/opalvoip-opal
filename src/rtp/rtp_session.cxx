@@ -338,6 +338,7 @@ OpalMediaSession::Transport OpalRTPSession::DetachTransport()
 
   m_endpoint.RegisterLocalRTP(this, true);
 
+  Shutdown(true);
   m_readMutex.Wait();
   m_dataMutex.Wait();
 
@@ -361,6 +362,9 @@ OpalMediaSession::Transport OpalRTPSession::DetachTransport()
 
 void OpalRTPSession::SendBYE()
 {
+  if (!IsOpen())
+    return;
+
   {
     PWaitAndSignal mutex(m_dataMutex);
     if (m_byeSent)
@@ -2272,6 +2276,11 @@ bool OpalRTPSession::WriteData(RTP_DataFrame & frame,
 bool OpalRTPSession::WriteControl(RTP_ControlFrame & frame, const PIPSocketAddressAndPort * remote)
 {
   PWaitAndSignal m(m_dataMutex);
+
+  if (!IsOpen() || m_shutdownWrite) {
+    PTRACE(3, "RTP_UDP\tSession " << m_sessionId << ", write shutdown.");
+    return false;
+  }
 
   switch (OnSendControl(frame)) {
     case e_ProcessPacket :
