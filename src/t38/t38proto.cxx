@@ -568,8 +568,16 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
   PPER_Stream rawData(thisUDPTL);
 
   // Decode the PDU, but not if still receiving RTP
-  if (!m_receivedPacket->Decode(rawData) || rawData.GetPosition() < pduSize ||
-            (m_awaitingGoodPacket && m_receivedPacket->m_seq_number >= 32768)) {
+  if (  !m_receivedPacket->Decode(rawData) ||
+         rawData.GetPosition() < pduSize ||
+        (m_awaitingGoodPacket &&
+          (
+            m_receivedPacket->m_primary_ifp_packet.GetSize() == 0 ||
+            m_receivedPacket->m_seq_number >= 32768
+          )
+        )
+     )
+  {
     if (++m_consecutiveBadPackets > 1000) {
       PTRACE(1, "T38_UDPTL\tRaw data decode failed 1000 times, remote probably not switched from audio, aborting!");
       return false;
