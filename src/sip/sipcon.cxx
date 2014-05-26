@@ -1625,7 +1625,8 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
 
 void SIPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
 {
-  SendDelayedACK(false);
+  if (!SendDelayedACK(false))
+    m_delayedAckTimer = m_delayedAckTimeout2;
   OpalRTPConnection::OnPatchMediaStream(isSource, patch);
 }
 
@@ -2386,22 +2387,25 @@ static bool AwaitingMedia(SIPConnection & connection, const OpalMediaType & medi
 }
 
 
-void SIPConnection::SendDelayedACK(bool force)
+bool SIPConnection::SendDelayedACK(bool force)
 {
   if (m_delayedAckInviteResponse == NULL || m_delayedAckPDU != NULL)
-    return;
+    return true;
 
   if (!force) {
     PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
     if (otherConnection == NULL)
-      return; // Not sure how we could have got here.
+      return false; // Not sure how we could have got here.
 
     OpalMediaTypeList mediaTypes = otherConnection->GetMediaFormats().GetMediaTypes();
+    if (mediaTypes.empty()) {
+      PTRACE(4, "SIP\tDelayed ACK does not have any channels yet");
+      return false;
+    }
     for (OpalMediaTypeList::iterator mediaType = mediaTypes.begin(); mediaType != mediaTypes.end(); ++mediaType) {
       if (AwaitingMedia(*this, *mediaType, false) || AwaitingMedia(*this, *mediaType, true)) {
-        PTRACE(4, "SIP\tDelayed ACK does not have both " << *mediaType << " channels yet, timeout=" << m_delayedAckTimeout2);
-        m_delayedAckTimer = m_delayedAckTimeout2;
-        return;
+        PTRACE(4, "SIP\tDelayed ACK does not have both " << *mediaType << " channels yet");
+        return false;
       }
     }
   }
@@ -2437,6 +2441,7 @@ void SIPConnection::SendDelayedACK(bool force)
   delete m_delayedAckInviteResponse;
   m_delayedAckInviteResponse = NULL;
   m_handlingINVITE = false;
+  return true;
 }
 
 
@@ -3538,6 +3543,8 @@ bool SIPConnection::OnReceivedAnswerSDP(SIP_PDU & response, SIPTransaction * tra
 {
   if (transaction != NULL && transaction->GetSDP() == NULL) {
     PTRACE(4, "SIP", "No local offer made, processing remote offer in delayed ACK");
+    if (!SendDelayedACK(false))
+      m_delayedAckTimer = m_delayedAckTimeout1;
     return true;
   }
 
