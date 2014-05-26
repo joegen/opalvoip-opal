@@ -1921,7 +1921,7 @@ void OpalConsoleManager::Run()
 void OpalConsoleManager::EndRun(bool interrupt)
 {
   Broadcast(PSTRSTRM("Shutting down " << PProcess::Current().GetName()
-                     << (interrupt ? " via interrupt" : " normally") << " . . . ");
+                     << (interrupt ? " via interrupt" : " normally") << " . . . "));
 
   m_interrupted = interrupt;
   m_endRun.Signal();
