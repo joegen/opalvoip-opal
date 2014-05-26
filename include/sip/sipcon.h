@@ -779,7 +779,7 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     friend class SIPInvite;
     PDECLARE_WriteConnectCallback(SIPConnection, WriteINVITE);
 
-    virtual void SendDelayedACK(bool force);
+    virtual bool SendDelayedACK(bool force);
     void OnDelayedAckTimeout();
 
     void RetryHoldRemote(bool placeOnHold);
