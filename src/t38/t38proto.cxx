@@ -122,6 +122,13 @@ void OpalFaxMediaStream::InternalClose()
 }
 
 
+void OpalFaxMediaStream::GetStatistics(OpalMediaStatistics & statistics, bool fromPatch) const
+{
+  m_session.GetStatistics(statistics, IsSource());
+  OpalMediaStream::GetStatistics(statistics, fromPatch);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalFaxSession::OpalFaxSession(const Init & init)
@@ -137,6 +144,11 @@ OpalFaxSession::OpalFaxSession(const Init & init)
   , m_secondaryPacket(-1)
   , m_optimiseOnRetransmit(false) // not optimise udptl packets on retransmit
   , m_sentPacket(new T38_UDPTLPacket)
+  , m_txBytes(0)
+  , m_txPackets(0)
+  , m_rxBytes(0)
+  , m_rxPackets(0)
+  , m_missingPackets(0)
 {
   m_timerWriteDataIdle.SetNotifier(PCREATE_NOTIFIER(OnWriteDataIdle));
 
@@ -503,6 +515,9 @@ bool OpalFaxSession::WriteUDPTL()
 
   PTRACE(5, "UDPTL\tEncoded transmitted UDPTL data, size=" << rawData.GetSize() << " :\n  " << setprecision(2) << *m_sentPacket);
 
+  m_txBytes += rawData.GetSize();
+  ++m_txPackets;
+
   return m_dataSocket->Write(rawData.GetPointer(), rawData.GetSize());
 }
 
@@ -532,6 +547,8 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
       return false;
     }
 
+    m_rxBytes += m_dataSocket->GetLastReadCount();
+    ++m_rxPackets;
     frame.SetPayloadSize(m_dataSocket->GetLastReadCount());
     PTRACE(5, "UDPTL\tRead raw UDPTL of size " << frame.GetPayloadSize());
     return true;
@@ -625,7 +642,19 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
   SetFrameFromIFP(frame, m_receivedPacket->m_primary_ifp_packet, m_receivedPacket->m_seq_number);
   m_expectedSequenceNumber = m_receivedPacket->m_seq_number+1;
 
+  m_rxBytes += pduSize;
+  ++m_rxPackets;
+  m_missingPackets += missing;
+
   return true;
+}
+
+
+void OpalFaxSession::GetStatistics(OpalMediaStatistics & statistics, bool receiver) const
+{
+  statistics.m_totalBytes = receiver ? m_rxBytes : m_txBytes;
+  statistics.m_totalPackets = receiver ? m_rxPackets : m_txPackets;
+  statistics.m_packetsLost = receiver ? m_missingPackets : 0;
 }
 
 
