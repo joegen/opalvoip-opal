@@ -319,6 +319,8 @@ class OpalFaxSession : public OpalMediaSession
 
     void ApplyMediaOptions(const OpalMediaFormat & mediaFormat);
 
+    virtual void GetStatistics(OpalMediaStatistics & statistics, bool receiver) const;
+
   protected:
     void SetFrameFromIFP(RTP_DataFrame & frame, const PASN_OctetString & ifp, unsigned sequenceNumber);
     void DecrementSentPacketRedundancy(bool stripRedundancy);
@@ -346,6 +348,12 @@ class OpalFaxSession : public OpalMediaSession
     PMutex             m_writeMutex;
     PTimer             m_timerWriteDataIdle;
     PDECLARE_NOTIFIER(PTimer,  OpalFaxSession, OnWriteDataIdle);
+
+    PUInt64  m_txBytes;
+    unsigned m_txPackets;
+    PUInt64  m_rxBytes;
+    unsigned m_rxPackets;
+    unsigned m_missingPackets;
 };
 
 class OpalFaxMediaStream : public OpalMediaStream
@@ -364,6 +372,7 @@ class OpalFaxMediaStream : public OpalMediaStream
     virtual PBoolean WritePacket(RTP_DataFrame & packet);
     virtual PBoolean IsSynchronous() const;
     virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat);
+    virtual void GetStatistics(OpalMediaStatistics & statistics, bool fromPatch) const;
 
   protected:
     virtual void InternalClose();
