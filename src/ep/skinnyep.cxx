@@ -805,7 +805,7 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg &
     case OpalSkinnyEndPoint::eStateConnected :
       if (IsOriginating())
         OnConnectedInternal();
-      else if (GetPhase() < EstablishedPhase) {
+      else if (GetPhase() == ConnectedPhase) {
         SetPhase(EstablishedPhase);
         OnEstablished();
       }
@@ -853,9 +853,6 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallInfoMsg & 
 
 bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::SetRingerMsg & msg)
 {
-  if (GetPhase() >= AlertingPhase)
-    return true;
-
   switch (msg.GetType()) {
     case OpalSkinnyEndPoint::eRingOff :
       return true;
@@ -872,8 +869,6 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::SetRingerMsg &
       break;
   }
 
-  SetPhase(AlertingPhase);
-  OnAlerting();
   return true;
 }
 
