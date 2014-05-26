@@ -341,7 +341,7 @@ void SIPConsoleEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
   if (reasonClass == 1 || (status.m_reRegistering && reasonClass == 2))
     return;
 
-  *m_console.LockedOutput() << '\n' << status << endl;
+  m_console.Broadcast(PSTRSTRM(status));
 }
 
 
@@ -511,7 +511,7 @@ void H323ConsoleEndPoint::OnGatekeeperStatus(H323Gatekeeper::RegistrationFailRea
 {
   H323Gatekeeper * gk = GetGatekeeper();
   if (gk != NULL)
-    *m_console.LockedOutput() << "\nH.323 registration: " << *gk << " - " << status << endl;
+    m_console.Broadcast(PSTRSTRM("H.323 registration: " << *gk << " - " << status));
 }
 
 
@@ -1920,9 +1920,8 @@ void OpalConsoleManager::Run()
 
 void OpalConsoleManager::EndRun(bool interrupt)
 {
-  if (m_verbose)
-    *LockedOutput() << "\nShutting down " << PProcess::Current().GetName()
-                    << (interrupt ? " via interrupt" : " normally") << " . . . " << endl;
+  Broadcast(PSTRSTRM("Shutting down " << PProcess::Current().GetName()
+                     << (interrupt ? " via interrupt" : " normally") << " . . . ");
 
   m_interrupted = interrupt;
   m_endRun.Signal();
@@ -2056,9 +2055,7 @@ OpalConsoleMixerEndPoint * OpalConsoleManager::CreateMixerEndPoint()
 
 void OpalConsoleManager::OnEstablishedCall(OpalCall & call)
 {
-  if (m_verbose)
-    *LockedOutput() << "In call with " << call.GetPartyB() << " using " << call.GetPartyA() << endl;
-
+  Broadcast(PSTRSTRM("In call with " << call.GetPartyB() << " using " << call.GetPartyA()));
   OpalManager::OnEstablishedCall(call);
 }
 
@@ -2571,7 +2568,7 @@ void OpalManagerCLI::CmdTrace(PCLI::Arguments & args, P_INT_PTR)
 void OpalManagerCLI::CmdStatistics(PCLI::Arguments & args, P_INT_PTR)
 {
   if (args.GetCount() == 0) {
-    OutputStatistics(LockedOutput());
+    OutputStatistics(args.GetContext());
     return;
   }
 
@@ -2581,7 +2578,7 @@ void OpalManagerCLI::CmdStatistics(PCLI::Arguments & args, P_INT_PTR)
     return;
   }
 
-  OutputCallStatistics(LockedOutput(), *call);
+  OutputCallStatistics(args.GetContext(), *call);
 }
 #endif // OPAL_STATISTICS
 
