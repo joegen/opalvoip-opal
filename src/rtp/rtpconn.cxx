@@ -155,8 +155,14 @@ vector<bool> OpalRTPConnection::CreateAllMediaSessions(CreateMediaSessionsSecuri
 
     for (PINDEX csIdx = 0; csIdx < cryptoSuites.GetSize(); ++csIdx) {
       PCaselessString cryptoSuiteName = cryptoSuites[csIdx];
-      if (security == (cryptoSuiteName != OpalMediaCryptoSuite::ClearText() ? e_ClearMediaSession : e_SecureMediaSession))
+      if (cryptoSuiteName == OpalMediaCryptoSuite::ClearText() && !(security & e_ClearMediaSession)) {
+        PTRACE(4, "RTPCon\tSkipping " << cryptoSuiteName << " as secure media required.");
         continue;
+      }
+      if (cryptoSuiteName != OpalMediaCryptoSuite::ClearText() && !(security & e_SecureMediaSession)) {
+        PTRACE(4, "RTPCon\tSkipping " << cryptoSuiteName << " as non-secure media required.");
+        continue;
+      }
 
       OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(cryptoSuiteName);
       if (cryptoSuite == NULL) {
