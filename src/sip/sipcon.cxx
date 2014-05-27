@@ -659,12 +659,6 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
     return NULL;
   }
 
-  OpalTransportAddress remoteMediaAddress = mediaDescription.GetMediaAddress();
-  if (remoteMediaAddress.IsEmpty()) {
-    PTRACE(2, "SIP\tReceived media description with no address for " << mediaType);
-    remoteChanged = true;
-  }
-
   // Create the OpalMediaSession if required
   OpalMediaSession * session = UseMediaSession(sessionId, mediaType, mediaDescription.GetSessionType());
   if (session == NULL)
@@ -673,6 +667,13 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
   if (rtpSession != NULL)
     rtpSession->SetExtensionHeader(mediaDescription.GetExtensionHeaders());
+
+  OpalTransportAddress remoteMediaAddress = mediaDescription.GetMediaAddress();
+  if (remoteMediaAddress.IsEmpty()) {
+    PTRACE(2, "SIP\tReceived media description with no address for " << mediaType);
+    remoteChanged = true;
+    return session;
+  }
 
   // see if remote socket information has changed
   OpalTransportAddress oldRemoteMediaAddress = session->GetRemoteAddress();
