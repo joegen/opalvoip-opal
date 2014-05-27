@@ -677,18 +677,23 @@ OpalTransportAddress OpalListenerIP::GetLocalAddress(const OpalTransportAddress 
 bool OpalListenerIP::CanCreateTransport(const OpalTransportAddress & localAddress,
                                         const OpalTransportAddress & remoteAddress) const
 {
-  if (remoteAddress.GetProtoPrefix() != GetProtoPrefix())
+  if (remoteAddress.GetProtoPrefix() != GetProtoPrefix()) {
+    PTRACE(4, "OpalIP", "Remote protocol (" << remoteAddress.GetProtoPrefix() << ") different to listener (" << GetProtoPrefix() << ')');
     return false;
+  }
 
   // The following then checks for IPv4/IPv6
   OpalTransportAddress myLocalAddress = GetLocalAddress();
-  if (!myLocalAddress.IsCompatible(remoteAddress))
+  if (!myLocalAddress.IsCompatible(remoteAddress)) {
+    PTRACE(4, "OpalIP", "Remote address (" << remoteAddress << ") not compatible to listener (" << myLocalAddress << ')');
     return false;
+  }
 
-  if (localAddress.IsEmpty())
+  if (localAddress.IsEmpty() || myLocalAddress.IsCompatible(localAddress))
     return true;
   
-  return myLocalAddress.IsCompatible(localAddress);
+  PTRACE(4, "OpalIP", "Local address (" << localAddress << ") not compatible to listener (" << myLocalAddress << ')');
+  return false;
 }
 
 
@@ -1444,18 +1449,20 @@ PString OpalTransportUDP::GetInterface() const
   if (socket != NULL)
     return socket->GetInterface();
 
+  PTRACE(4, "OpalUDP\tNo interface as no bundled socket");
   return OpalTransportIP::GetInterface();
 }
 
 
 bool OpalTransportUDP::SetInterface(const PString & iface)
 {
-  PTRACE(4, "OpalUDP\tSetting interface to " << iface);
-
   PMonitoredSocketChannel * socket = dynamic_cast<PMonitoredSocketChannel *>(m_channel);
-  if (socket == NULL)
+  if (socket == NULL) {
+    PTRACE(2, "OpalUDP\tCould not set interface to " << iface);
     return false;
-    
+  }
+
+  PTRACE(4, "OpalUDP\tSetting interface to " << iface);
   socket->SetInterface(iface);
   return true;
 }
