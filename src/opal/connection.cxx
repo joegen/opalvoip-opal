@@ -1719,7 +1719,7 @@ bool OpalConnection::OnMediaFailed(unsigned sessionId, bool source)
 
 bool OpalConnection::AllMediaFailed() const
 {
-  for (OpalMediaStreamPtr mediaStream = mediaStreams; mediaStream != NULL; ++mediaStream) {
+  for (OpalMediaStreamPtr mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
     if (m_mediaSessionFailed.find(mediaStream->GetSessionID()*2 + mediaStream->IsSource()) == m_mediaSessionFailed.end())
       return false;
   }
