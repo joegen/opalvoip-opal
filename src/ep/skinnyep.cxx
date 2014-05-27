@@ -946,7 +946,7 @@ OpalMediaSession * OpalSkinnyConnection::SetUpMediaSession(unsigned sessionId, u
     return NULL;
   }
 
-  if (!mediaSession->Open(m_client.m_transport.GetInterface(), rx ? m_client.m_transport.GetRemoteAddress() : mediaAddress, false)) {
+  if (!mediaSession->Open(m_client.m_transport.GetInterface(), rx ? m_client.m_transport.GetRemoteAddress() : mediaAddress, true)) {
     PTRACE(2, "Could not open session " << sessionId << " for " << mediaFormat);
     return NULL;
   }
