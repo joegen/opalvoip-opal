@@ -72,7 +72,8 @@ class OpalWAVFile : public PWAVFile
     OpalWAVFile(
       OpenMode mode,                  ///<  Mode in which to open the file.
       OpenOptions opts = ModeDefault, ///<  <code>OpenOptions</code> enum for open operation.
-      unsigned format = fmt_PCM       ///<  Type of WAV File to create
+      unsigned format = fmt_PCM,      ///<  Type of WAV File to create
+      bool autoConvert = true         ///<  Enable auto-conversion to PCM-16
     );
 
     /**Create a WAV file object with the specified name and open it in
@@ -88,7 +89,16 @@ class OpalWAVFile : public PWAVFile
       const PFilePath & name,         ///<  Name of file to open.
       OpenMode mode = ReadWrite,      ///<  Mode in which to open the file.
       OpenOptions opts = ModeDefault, ///<  <code>OpenOptions</code> enum for open operation.
-      unsigned format = fmt_PCM       ///<  Type of WAV File to create
+      unsigned format = fmt_PCM,      ///<  Type of WAV File to create
+      bool autoConvert = true         ///<  Enable auto-conversion to PCM-16
+    );
+
+    OpalWAVFile(
+      const OpalMediaFormat & mediaFormat, ///< Media format to
+      const PFilePath & name,         ///<  Name of file to open.
+      OpenMode mode = ReadWrite,      ///<  Mode in which to open the file.
+      OpenOptions opts = ModeDefault, ///<  <code>OpenOptions</code> enum for open operation.
+      bool autoConvert = true         ///<  Enable auto-conversion to PCM-16
     );
 
 

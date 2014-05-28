@@ -978,8 +978,24 @@ OpalMediaSession * OpalSkinnyConnection::SetUpMediaSession(unsigned sessionId, u
 
   OpalMediaStreamPtr sinkStream = OpenMediaStream(mediaFormat, sessionId, false);
   if (sinkStream != NULL) {
-    OpalMediaStreamPtr sourceStream = new OpalFileMediaStream(*this, OPAL_PCM16_8KHZ, sessionId, true,
-                                                              new OpalWAVFile(m_endpoint.GetSimulatedAudioFile(), PFile::ReadOnly));
+    OpalMediaStreamPtr sourceStream;
+    OpalWAVFile * wavFile = new OpalWAVFile(m_endpoint.GetSimulatedAudioFile(), PFile::ReadOnly, PFile::ModeDefault, PWAVFile::fmt_PCM, false);
+    if (!wavFile->IsOpen()) {
+      PTRACE(3, "Could not simulate transmit " << mediaType << " stream, session=" << sessionId
+              << ", file=" << m_endpoint.GetSimulatedAudioFile() << ": " << wavFile->GetErrorText());
+      return NULL;
+    }
+    if (wavFile->GetFormatString() == mediaFormat)
+      sourceStream = new OpalFileMediaStream(*this, mediaFormat, sessionId, true, wavFile);
+    else {
+      if (!wavFile->SetAutoconvert()) {
+        PTRACE(3, "Could not simulate transmit " << mediaType << " stream, session=" << sessionId
+                << ", file=" << m_endpoint.GetSimulatedAudioFile() << ": unsupported codec");
+        return NULL;
+      }
+      sourceStream = new OpalFileMediaStream(*this, OpalPCM16, sessionId, true, wavFile);
+    }
+
     if (sourceStream->Open()) {
       mediaStreams.Append(sourceStream);
       OpalMediaPatchPtr patch = m_endpoint.GetManager().CreateMediaPatch(*sourceStream, true);

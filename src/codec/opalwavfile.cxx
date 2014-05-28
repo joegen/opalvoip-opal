@@ -44,24 +44,27 @@
 OpalWAVFile::OpalWAVFile(unsigned fmt)
   : PWAVFile(fmt)
 {
-  SetAutoconvert();
 }
 
 
-OpalWAVFile::OpalWAVFile(OpenMode mode, OpenOptions opts, unsigned fmt)
+OpalWAVFile::OpalWAVFile(OpenMode mode, OpenOptions opts, unsigned fmt, bool autoConvert)
   : PWAVFile(mode, opts, fmt)
 {
-  SetAutoconvert();
+  SetAutoconvert(autoConvert);
 }
 
 
-OpalWAVFile::OpalWAVFile(const PFilePath & name, 
-                                  OpenMode mode,  /// Mode in which to open the file.
-                               OpenOptions opts,  /// #OpenOptions enum# for open operation.
-                                   unsigned fmt)  /// Type of WAV File to create
+OpalWAVFile::OpalWAVFile(const PFilePath & name, OpenMode mode, OpenOptions opts, unsigned fmt, bool autoConvert)
   : PWAVFile(name, mode, opts, fmt)
 {
-  SetAutoconvert();
+  SetAutoconvert(autoConvert);
+}
+
+
+OpalWAVFile::OpalWAVFile(const OpalMediaFormat & mediaFormat, const PFilePath & name, OpenMode mode, OpenOptions opts, bool autoConvert)
+  : PWAVFile(mediaFormat, name, mode, opts)
+{
+  SetAutoconvert(autoConvert);
 }
 
 
@@ -375,9 +378,11 @@ static struct PWAVFilePluginValidFormat {
   const BYTE * m_extendedHeaderData;
   PINDEX       m_extendedHeaderSize;
 } const ValidFormats[] = {
-  { "MS-GSM",         PWAVFile::fmt_GSM,  MSGSM_ExtendedHeader, sizeof(MSGSM_ExtendedHeader) },
-  { OPAL_G728,        PWAVFile::fmt_G728 },
-  { OPAL_G729,        PWAVFile::fmt_G729 },
+  { OPAL_G711_ULAW_64K, PWAVFile::fmt_uLaw },
+  { OPAL_G711_ALAW_64K, PWAVFile::fmt_ALaw },
+  { "MS-GSM",           PWAVFile::fmt_GSM,  MSGSM_ExtendedHeader, sizeof(MSGSM_ExtendedHeader) },
+  { OPAL_G728,          PWAVFile::fmt_G728 },
+  { OPAL_G729,          PWAVFile::fmt_G729 },
   { }
 };
 
@@ -411,7 +416,7 @@ bool OpalWAVFile::AddMediaFormat(const OpalMediaFormat & mediaFormat)
     if (mediaFormat == fmt->m_name) {
       PWAVFileFormat * formatHandler = PWAVFileFormatByFormatFactory::CreateInstance(mediaFormat.GetName());
       if (formatHandler == NULL) {
-        // Deleted by factor infrastructure
+        // Deleted by factory infrastructure
         new PWAVFilePluginFactory<PWAVFileFormatByIDFactory, PWAVFileFormatPlugin>(fmt->m_code, *fmt);
         new PWAVFilePluginFactory<PWAVFileFormatByFormatFactory, PWAVFileFormatPlugin>(fmt->m_name, *fmt);
       }
@@ -423,6 +428,9 @@ bool OpalWAVFile::AddMediaFormat(const OpalMediaFormat & mediaFormat)
 
   return false;
 }
+
+static bool uLaw = OpalWAVFile::AddMediaFormat(OpalG711_ULAW_64K);
+static bool ALaw = OpalWAVFile::AddMediaFormat(OpalG711_ALAW_64K);
 
 #endif
 
