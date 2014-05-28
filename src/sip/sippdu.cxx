@@ -1892,6 +1892,9 @@ SIP_PDU::~SIP_PDU()
 
 void SIP_PDU::SetTransport(const OpalTransportPtr & transport)
 {
+  if (!LockReadWrite())
+    return;
+
   if (m_transport != NULL) {
     PTRACE(5, "SIP\tDereferenced transport 0x" << m_transport << " from 0x" << this << ' ' << *this);
     m_transport->Dereference();
@@ -1904,6 +1907,8 @@ void SIP_PDU::SetTransport(const OpalTransportPtr & transport)
     PTRACE(5, "SIP\tReferenced transport 0x" << m_transport << " from 0x" << this << ' ' << *this);
     m_transport->Reference();
   }
+
+  UnlockReadWrite();
 }
 
 
@@ -3349,7 +3354,8 @@ PBoolean SIPTransaction::OnCompleted(SIP_PDU & /*response*/)
 
 void SIPTransaction::OnRetry()
 {
-  // Can do this outside mutex as never changes from this state
+  // Note this is always called with LockReadWrite() via the pool timer.
+
   if (IsTerminated())
     return;
 
@@ -3387,7 +3393,8 @@ void SIPTransaction::OnRetry()
 
 void SIPTransaction::OnTimeout()
 {
-  // Can do this outside mutex as never changes from this state
+  // Note this is always called with LockReadWrite() via the pool timer.
+
   if (IsTerminated())
     return;
 
