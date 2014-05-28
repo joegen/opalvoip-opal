@@ -1886,7 +1886,11 @@ SIP_PDU & SIP_PDU::operator=(const SIP_PDU & pdu)
 SIP_PDU::~SIP_PDU()
 {
   delete m_SDP;
-  SetTransport(NULL);
+
+  if (m_transport != NULL) {
+    PTRACE(5, "SIP\tFinal dereference transport 0x" << m_transport << " from 0x" << this << ' ' << *this);
+    m_transport->Dereference();
+  }
 }
 
 
