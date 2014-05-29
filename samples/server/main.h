@@ -539,6 +539,7 @@ class MyProcess : public MyProcessAncestor
     PCLASSINFO(MyProcess, MyProcessAncestor)
   public:
     MyProcess();
+    ~MyProcess();
     virtual PBoolean OnStart();
     virtual void OnStop();
     virtual void OnControl();
@@ -546,7 +547,7 @@ class MyProcess : public MyProcessAncestor
     virtual PBoolean Initialise(const char * initMsg);
 
   protected:
-    MyManager m_manager;
+    MyManager * m_manager;
 };
 
 

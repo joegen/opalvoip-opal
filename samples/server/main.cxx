@@ -68,9 +68,8 @@ static const char RTPPortBaseKey[] = "RTP Port Base";
 static const char RTPPortMaxKey[] = "RTP Port Max";
 static const char RTPTOSKey[] = "RTP Type of Service";
 #if P_NAT
-static const char NATMethodKey[] = "NAT Method";
-static const char NATServerKey[] = "NAT Server";
-static const char STUNServerKey[] = "STUN Server";
+static const char NATActiveKey[] = "Active";
+static const char NATServerKey[] = "Server";
 #endif
 
 static const char OverrideProductInfoKey[] = "Override Product Info";
@@ -160,7 +159,14 @@ static char LoopbackPrefix[] = "loopback";
 
 MyProcess::MyProcess()
   : MyProcessAncestor(ProductInfo)
+  , m_manager(NULL)
 {
+}
+
+
+MyProcess::~MyProcess()
+{
+  delete m_manager;
 }
 
 
@@ -183,15 +189,18 @@ PBoolean MyProcess::OnStart()
     SetLogLevel(cfg.GetEnum(LogLevelKey, GetLogLevel()));
   }
 
-  return m_manager.PreInitialise(GetArguments(), false) &&
+  if (m_manager == NULL)
+    m_manager = new MyManager();
+  return m_manager->PreInitialise(GetArguments(), false) &&
          PHTTPServiceProcess::OnStart() &&
-         m_manager.Initialise(GetArguments(), false);
+         m_manager->Initialise(GetArguments(), false);
 }
 
 
 void MyProcess::OnStop()
 {
-  m_manager.ShutDownEndpoints();
+  if (m_manager != NULL)
+    m_manager->ShutDownEndpoints();
   PHTTPServiceProcess::OnStop();
 }
 
@@ -248,7 +257,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   rsrc->AddIntegerField(LogLevelKey,
                         PSystemLog::Fatal, PSystemLog::NumLogLevels-1,
                         GetLogLevel(),
-                        "1=Fatal only, 2=Errors, 3=Warnings, 4=Info, 5=Debug");
+                        "0=Fatal only, 1=Errors, 2=Warnings, 3=Info, 4=Debug, 5=Detailed");
   SetLogLevel(cfg.GetEnum(LogLevelKey, GetLogLevel()));
 
   PSystemLogToFile * logFile = dynamic_cast<PSystemLogToFile *>(&PSystemLog::GetTarget());
@@ -296,7 +305,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
                                       "", "Port for HTTP user interface for server.");
 
   // Configure the core of the system
-  if (!m_manager.Configure(cfg, rsrc))
+  if (!m_manager->Configure(cfg, rsrc))
     return false;
 
   // Finished the resource to add, generate HTML for it and add to name space
@@ -305,21 +314,21 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   httpNameSpace.AddResource(rsrc, PHTTPSpace::Overwrite);
 
 #if OPAL_H323 | OPAL_SIP
-  RegistrationStatusPage * registrationStatusPage = new RegistrationStatusPage(m_manager, authority);
+  RegistrationStatusPage * registrationStatusPage = new RegistrationStatusPage(*m_manager, authority);
   httpNameSpace.AddResource(registrationStatusPage, PHTTPSpace::Overwrite);
 #endif
 
-  CallStatusPage * callStatusPage = new CallStatusPage(m_manager, authority);
+  CallStatusPage * callStatusPage = new CallStatusPage(*m_manager, authority);
   httpNameSpace.AddResource(callStatusPage, PHTTPSpace::Overwrite);
 
 #if OPAL_H323
-  GkStatusPage * gkStatusPage = new GkStatusPage(m_manager, authority);
+  GkStatusPage * gkStatusPage = new GkStatusPage(*m_manager, authority);
   httpNameSpace.AddResource(gkStatusPage, PHTTPSpace::Overwrite);
 #endif // OPAL_H323
 
-  CDRListPage * cdrListPage = new CDRListPage(m_manager, authority);
+  CDRListPage * cdrListPage = new CDRListPage(*m_manager, authority);
   httpNameSpace.AddResource(cdrListPage, PHTTPSpace::Overwrite);
-  httpNameSpace.AddResource(new CDRPage(m_manager, authority), PHTTPSpace::Overwrite);
+  httpNameSpace.AddResource(new CDRPage(*m_manager, authority), PHTTPSpace::Overwrite);
 
   // Log file resource
   PHTTPFile * fullLog = NULL;
@@ -330,7 +339,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
     fullLog = new PHTTPFile("FullLog", logFile->GetFilePath(), PMIMEInfo::TextPlain(), authority);
     httpNameSpace.AddResource(fullLog, PHTTPSpace::Overwrite);
 
-    clearLog = new ClearLogPage(m_manager, authority);
+    clearLog = new ClearLogPage(*m_manager, authority);
     httpNameSpace.AddResource(clearLog, PHTTPSpace::Overwrite);
 
     tailLog = new PHTTPTailFile("TailLog", logFile->GetFilePath(), PMIMEInfo::TextPlain(), authority);
@@ -370,7 +379,6 @@ PBoolean MyProcess::Initialise(const char * initMsg)
            << PHTML::BreakLine()
            << PHTML::HotLink(tailLog->GetHotLink()) << "Tail Log File" << PHTML::HotLink()
            << PHTML::Paragraph();
-
 
     html << PHTML::HRule()
          << GetCopyrightText()
@@ -550,8 +558,8 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
       static const char * const AutoStartValues[] = { "Offer inactive", "Receive only", "Send only", "Send & Receive", "Don't offer" };
       rsrc->Add(new PHTTPEnumField<OpalMediaType::AutoStartMode::Enumeration>(key,
-        PARRAYSIZE(AutoStartValues), AutoStartValues, (*it)->GetAutoStart(),
-        "Initial start up mode for media type."));
+                        PARRAYSIZE(AutoStartValues), AutoStartValues, (*it)->GetAutoStart(),
+                        "Initial start up mode for media type."));
     }
   }
 
@@ -600,8 +608,36 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
   SetMediaTypeOfService(rsrc->AddIntegerField(RTPTOSKey, 0, 255, GetMediaTypeOfService(), "", "Value for DIFSERV Quality of Service"));
 
 #if P_STUN
-  SetNATServer(rsrc->AddStringField(NATMethodKey, 25, PSTUNClient::MethodName(), "Method for NAT traversal"),
-               rsrc->AddStringField(NATServerKey, 100, cfg.GetString(STUNServerKey, GetNATServer()), "Server IP/hostname for NAT traversal", 1, 30));
+  {
+    struct NATInfo {
+      PString m_method;
+      PString m_friendly;
+      bool    m_active;
+      PString m_server;
+      NATInfo(const PNatMethod & method)
+        : m_method(method.GetMethodName())
+        , m_friendly(method.GetFriendlyName())
+        , m_active(method.IsActive())
+        , m_server(method.GetServer())
+      { }
+      __inline bool operator<(const NATInfo & other) const { return m_method < other.m_method; }
+    };
+    std::set<NATInfo> natInfo;
+
+    // Need to make a copy of info as call SetNATServer alters GetNatMethods() so iterator fails
+    for (PNatMethods::iterator it = GetNatMethods().begin(); it != GetNatMethods().end(); ++it)
+      natInfo.insert(*it);
+
+    for (std::set<NATInfo>::iterator it = natInfo.begin(); it != natInfo.end(); ++it) {
+      PHTTPCompositeField * fields = new PHTTPCompositeField("NAT\\" + it->m_method, it->m_method,
+                   "Enable flag and Server IP/hostname for NAT traversal using " + it->m_friendly);
+      fields->Append(new PHTTPBooleanField(NATActiveKey, it->m_active));
+      fields->Append(new PHTTPStringField(NATServerKey, 0, 0, it->m_server, NULL, 1, 50));
+      rsrc->Add(fields);
+      if (!fields->LoadFromConfig(cfg))
+        SetNATServer(it->m_method, (*fields)[1].GetValue(), (*fields)[0].GetValue() *= "true");
+    }
+  }
 #endif // P_NAT
 
   bool overrideProductInfo = rsrc->AddBooleanField(OverrideProductInfoKey, false, "Override the default product information");
