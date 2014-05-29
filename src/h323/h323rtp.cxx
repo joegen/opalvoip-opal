@@ -160,7 +160,7 @@ PBoolean H323_RTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameters & para
 
 PBoolean H323_RTPChannel::OnSendingAltPDU(H245_ArrayOf_GenericInformation & alternate) const
 {
-  PTRACE ( 4, "H323RTP\tOnSendingAltPDU");
+  PTRACE(4, "H323RTP\tOnSendingAltPDU");
 #if OPAL_H460
   return connection.OnSendingOLCGenericInformation(GetSessionID(), alternate, false);
 #else
@@ -175,13 +175,13 @@ void H323_RTPChannel::OnSendOpenAck(H245_H2250LogicalChannelAckParameters & para
 
   // set mediaControlChannel
   H323TransportAddress mediaControlAddress(m_session->GetLocalAddress(false));
-  param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaControlChannel);
-  mediaControlAddress.SetPDU(param.m_mediaControlChannel);
+  if (mediaControlAddress.SetPDU(param.m_mediaControlChannel))
+    param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaControlChannel);
 
   // set mediaChannel
   H323TransportAddress mediaAddress(m_session->GetLocalAddress(true));
-  param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel);
-  mediaAddress.SetPDU(param.m_mediaChannel);
+  if (mediaAddress.SetPDU(param.m_mediaChannel))
+    param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel);
 
   // Set dynamic payload type, if is one
   int rtpPayloadType = GetDynamicRTPPayloadType();
