@@ -155,6 +155,24 @@ static const char * const DefaultRoutes[] = {
 static char LoopbackPrefix[] = "loopback";
 
 
+#if P_STUN
+struct NATInfo {
+  PString m_method;
+  PString m_friendly;
+  bool    m_active;
+  PString m_server;
+  NATInfo(const PNatMethod & method)
+    : m_method(method.GetMethodName())
+    , m_friendly(method.GetFriendlyName())
+    , m_active(method.IsActive())
+    , m_server(method.GetServer())
+  { }
+
+  __inline bool operator<(const NATInfo & other) const { return m_method < other.m_method; }
+};
+#endif // P_STUN
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 MyProcess::MyProcess()
@@ -609,19 +627,6 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 
 #if P_STUN
   {
-    struct NATInfo {
-      PString m_method;
-      PString m_friendly;
-      bool    m_active;
-      PString m_server;
-      NATInfo(const PNatMethod & method)
-        : m_method(method.GetMethodName())
-        , m_friendly(method.GetFriendlyName())
-        , m_active(method.IsActive())
-        , m_server(method.GetServer())
-      { }
-      __inline bool operator<(const NATInfo & other) const { return m_method < other.m_method; }
-    };
     std::set<NATInfo> natInfo;
 
     // Need to make a copy of info as call SetNATServer alters GetNatMethods() so iterator fails
