@@ -545,7 +545,7 @@ PBoolean OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFram
     PINDEX inLen;
     if (inputIsRTP) {
       inputPtr = (const BYTE *)input;
-      inLen    = input.GetHeaderSize() + input.GetPayloadSize(); 
+      inLen = input.GetPacketSize();
     }
     else
     {
