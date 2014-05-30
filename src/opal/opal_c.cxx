@@ -650,7 +650,7 @@ bool OpalMediaDataCallbacks::OnWriteMediaFrame(const OpalLocalConnection & conne
                                 mediaStream.GetMediaFormat().GetName(),
                                 connection.GetUserData(),
                                 frame.GetPointer(),
-                                frame.GetHeaderSize()+frame.GetPayloadSize());
+                                frame.GetPacketSize());
   return result >= 0;
 }
 
