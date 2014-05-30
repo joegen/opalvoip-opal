@@ -149,29 +149,30 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
     if (sync != NULL)
       m_endCallSyncPoint.push_back(sync);
 
-    switch (connectionsActive.GetSize()) {
-      case 0 :
-        break;
-
-      case 1 :
-        {
-          PSafePtr<OpalConnection> connection = connectionsActive.GetAt(0, PSafeReference);
-          if (connection != NULL)
-            connection->Release(reason);
-        }
-        break;
-
-      default :
-        // Release all but A-Party, it gets done in the B-Party OnReleased thread.
-        for (PINDEX i = 1; i < connectionsActive.GetSize(); ++i) {
-          PSafePtr<OpalConnection> connection = connectionsActive.GetAt(i, PSafeReference);
-          if (connection != NULL)
-            connection->Release(reason);
-        }
+    PINDEX i = connectionsActive.GetSize();
+    while (i > 0) {
+      PSafePtr<OpalConnection> connection = connectionsActive.GetAt(--i, PSafeReference);
+      if (connection != NULL)
+        connection->Release(reason);
     }
   }
 
   // Outside of lock
+  InternalOnClear();
+}
+
+
+void OpalCall::OnReleased(OpalConnection & connection)
+{
+  PTRACE(3, "OnReleased " << connection);
+  connectionsActive.Remove(&connection);
+
+  PSafePtr<OpalConnection> other = connectionsActive.GetAt(0, PSafeReference);
+  if (other != NULL && other->GetPhase() == OpalConnection::ReleasingPhase) {
+    PTRACE(4, "Follow on OnReleased to " << *other);
+    other->OnReleased();
+  }
+
   InternalOnClear();
 }
 
@@ -783,29 +784,6 @@ void OpalCall::OnUserInputTone(OpalConnection & connection,
 
   if (reprocess)
     connection.OnUserInputString(tone);
-}
-
-
-void OpalCall::OnReleased(OpalConnection & connection)
-{
-  PTRACE(3, "OnReleased " << connection);
-
-  SetCallEndReason(connection.GetCallEndReason());
-
-  connectionsActive.Remove(&connection);
-
-  // A call will evaporate when one connection left, at some point this is
-  // to be changes so can have "parked" connections. 
-  if(connectionsActive.GetSize() == 1)
-  {
-    PSafePtr<OpalConnection> last = connectionsActive.GetAt(0, PSafeReference);
-    if (last != NULL) {
-      PTRACE(4, "Releasing last connection in call");
-      last->Release(connection.GetCallEndReason(), true);
-    }
-  }
-
-  InternalOnClear();
 }
 
 
