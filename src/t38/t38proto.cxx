@@ -769,7 +769,7 @@ OpalMediaFormatList OpalFaxEndPoint::GetMediaFormats() const
 void OpalFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool PTRACE_PARAM(failed))
 {
   PTRACE(3, "FAX\tFax " << (failed ? "failed" : "completed") << " on connection: " << connection);
-  connection.Release();
+  connection.Release(failed ? OpalConnection::EndedByMediaFailed : OpalConnection::EndedByLocalUser);
 }
 
 
