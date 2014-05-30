@@ -187,7 +187,7 @@ PBoolean OpalZrtp_UDP::WriteZrtpData(RTP_DataFrame & frame) {
 	}
 
 	while (!dataSocket->WriteTo(frame.GetPointer(), 
-								frame.GetHeaderSize()+frame.GetPayloadSize(),
+    frame.GetPacketSize(),
 								remoteAddress, remoteDataPort))
     {
 		switch (dataSocket->GetErrorCode(LastWriteError)) {
@@ -208,7 +208,7 @@ RTP_UDP::SendReceiveStatus OpalZrtp_UDP::OnSendData(RTP_DataFrame & frame) {
 		return stat;
 	}
  
-	unsigned len = frame.GetHeaderSize() + frame.GetPayloadSize();
+  unsigned len = frame.GetPacketSize();
  
  	zrtp_status_t err = ::zrtp_process_rtp(zrtpStream, (char *)frame.GetPointer(), &len);
    
@@ -221,7 +221,7 @@ RTP_UDP::SendReceiveStatus OpalZrtp_UDP::OnSendData(RTP_DataFrame & frame) {
 }
  
 RTP_UDP::SendReceiveStatus OpalZrtp_UDP::OnReceiveData(RTP_DataFrame & frame) {
-	unsigned len = frame.GetHeaderSize() + frame.GetPayloadSize();
+  unsigned len = frame.GetPacketSize();
 	zrtp_status_t err = ::zrtp_process_srtp(zrtpStream, (char *)frame.GetPointer(), &len);
  
 	if (err != zrtp_status_ok) {
