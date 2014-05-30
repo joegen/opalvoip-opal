@@ -405,14 +405,15 @@ bool OpalConnection::TransferConnection(const PString & PTRACE_PARAM(remoteParty
 
 void OpalConnection::Release(CallEndReason reason, bool synchronous)
 {
-  {
-    PWaitAndSignal mutex(m_phaseMutex);
-    if (IsReleased()) {
-      PTRACE(3, "Already released " << *this);
-      return;
-    }
-    SetPhase(ReleasingPhase);
-    SetCallEndReason(reason);
+  if (InternalRelease(reason))
+    return;
+
+  /* If we have exactly 2 connections, then we release the other connection
+     as well, which clears the entire call. */
+  if (ownerCall.GetConnectionCount() == 2) {
+    PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+    if (other != NULL)
+      other->InternalRelease(reason); // Do not execute OnReleased() here, see OpalCall::OnReleased()
   }
 
   // Add a reference for the thread we are about to start
@@ -429,6 +430,21 @@ void OpalConnection::Release(CallEndReason reason, bool synchronous)
 }
 
 
+bool OpalConnection::InternalRelease(CallEndReason reason)
+{
+  PWaitAndSignal mutex(m_phaseMutex);
+
+  if (IsReleased()) {
+    PTRACE(3, "Already released " << *this);
+    return true;
+  }
+
+  SetPhase(ReleasingPhase);
+  SetCallEndReason(reason);
+  return false;
+}
+
+
 void OpalConnection::InternalOnReleased()
 {
   PTRACE_CONTEXT_ID_TO(PThread::Current());
@@ -442,13 +458,6 @@ void OpalConnection::InternalOnReleased()
      up to OnReleased() to manage it's locking regime. */
   if (LockReadOnly()) {
     UnlockReadOnly();
-
-    if (ownerCall.GetConnectionCount() == 2) {
-      PSafePtr<OpalConnection> other = GetOtherPartyConnection();
-      if (other != NULL)
-        other->Release(callEndReason, true);
-    }
-
     OnReleased();
   }
 
