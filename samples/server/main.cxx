@@ -331,7 +331,11 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   rsrc->BuildHTML(html);
   httpNameSpace.AddResource(rsrc, PHTTPSpace::Overwrite);
 
-#if OPAL_H323 | OPAL_SIP
+#if OPAL_SIP
+  httpNameSpace.AddResource(new OpalHTTPConnector(*m_manager, "/websocket", authority), PHTTPSpace::Overwrite);
+#endif
+
+#if OPAL_H323 | OPAL_SIP | OPAL_SKINNY
   RegistrationStatusPage * registrationStatusPage = new RegistrationStatusPage(*m_manager, authority);
   httpNameSpace.AddResource(registrationStatusPage, PHTTPSpace::Overwrite);
 #endif
@@ -382,7 +386,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
          << PHTML::BreakLine()
          << PHTML::HotLink(gkStatusPage->GetHotLink()) << "Gatekeeper Status" << PHTML::HotLink()
 #endif // OPAL_H323
-#if OPAL_H323 | OPAL_SIP
+#if OPAL_H323 | OPAL_SIP | OPAL_SKINNY
          << PHTML::BreakLine()
          << PHTML::HotLink(registrationStatusPage->GetHotLink()) << "Registration Status" << PHTML::HotLink()
 #endif
