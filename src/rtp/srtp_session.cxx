@@ -547,7 +547,7 @@ bool OpalLibSRTP::ProtectRTP(RTP_DataFrame & frame)
 
 bool OpalLibSRTP::Context::ProtectRTP(RTP_DataFrame & frame)
 {
-  int len = frame.GetHeaderSize() + frame.GetPayloadSize();
+  int len = frame.GetPacketSize();
   frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
   if (!CHECK_ERROR(srtp_protect,(m_ctx, frame.GetPointer(), &len)))
     return false;
@@ -598,7 +598,7 @@ bool OpalLibSRTP::UnprotectRTP(RTP_DataFrame & frame)
 
 bool OpalLibSRTP::Context::UnprotectRTP(RTP_DataFrame & frame)
 {
-  int len = frame.GetHeaderSize() + frame.GetPayloadSize();
+  int len = frame.GetPacketSize();
   if (!CHECK_ERROR(srtp_unprotect,(m_ctx, frame.GetPointer(), &len)))
     return false;
 

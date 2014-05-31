@@ -109,6 +109,9 @@
 #if defined(P_GSTREAMER) && !defined(OPAL_GSTREAMER)
   #define  OPAL_GSTREAMER P_GSTREAMER
 #endif
+#if defined(P_HTTP) && !defined(OPAL_PTLIB_HTTP)
+  #define  OPAL_PTLIB_HTTP P_HTTP
+#endif
 
 // Video
 #if P_VIDEO

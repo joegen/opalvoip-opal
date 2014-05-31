@@ -1894,6 +1894,7 @@ class OpalConnection : public PSafeObject
     void OnConnectedInternal();
     void InternalSetAsOriginating();
 
+    bool InternalRelease(CallEndReason reason);
     void InternalOnReleased();
 
 #if OPAL_HAS_MIXER

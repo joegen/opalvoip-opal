@@ -1001,7 +1001,7 @@ PBoolean OpalLineMediaStream::WritePacket(RTP_DataFrame & packet)
     return OpalMediaStream::WritePacket(packet);
 
   PINDEX written = 0;
-  return line.WriteFrame(packet.GetPointer(), packet.GetHeaderSize()+packet.GetPayloadSize(), written);
+  return line.WriteFrame(packet.GetPointer(), packet.GetPacketSize(), written);
 }
 
 

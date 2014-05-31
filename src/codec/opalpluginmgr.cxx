@@ -1039,7 +1039,7 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
   m_lastSequenceNumber = sequenceNumber;
 
   // call the codec function
-  unsigned fromLen = src.GetHeaderSize() + src.GetPayloadSize();
+  unsigned fromLen = src.GetPacketSize();
   unsigned toLen = m_bufferRTP->GetSize();
   unsigned flags = packetsLost ? PluginCodec_CoderPacketLoss : 0;
 
@@ -1286,7 +1286,7 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
       unsigned fromLen;
       if (inputIsRTP) {
         fromPtr = (const BYTE *)src;
-        fromLen = src.GetHeaderSize() + src.GetPayloadSize();
+        fromLen = src.GetPacketSize();
       }
       else {
         fromPtr = src.GetPayloadPtr();
