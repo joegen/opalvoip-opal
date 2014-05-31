@@ -1095,7 +1095,7 @@ PBoolean GstMediaStream::WritePacket(RTP_DataFrame & packet)
   if (!StartPlaying(state))
     return false;
 
-  PINDEX size = packet.GetHeaderSize() + packet.GetPayloadSize();
+  PINDEX size = packet.GetPacketSize();
   PTRACE(5, "Pushing " << size << " bytes, state=" << state << ", "
             "marker=" << packet.GetMarker() << " ts=" << packet.GetTimestamp());
   if (m_pipeSource.Push(packet.GetPointer(), size))

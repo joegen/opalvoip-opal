@@ -397,7 +397,7 @@ bool OpalFaxSession::WriteData(RTP_DataFrame & frame)
     return false;
 
   if (m_rawUDPTL) {
-    PTRACE(4, "UDPTL\tSending raw UDPTL of size " << frame.GetPayloadSize());
+    PTRACE(5, "UDPTL\tSending raw UDPTL, size=" << frame.GetPayloadSize());
     return m_dataSocket->Write(frame.GetPayloadPtr(), frame.GetPayloadSize());
   }
 
@@ -550,7 +550,7 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
     m_rxBytes += m_dataSocket->GetLastReadCount();
     ++m_rxPackets;
     frame.SetPayloadSize(m_dataSocket->GetLastReadCount());
-    PTRACE(5, "UDPTL\tRead raw UDPTL of size " << frame.GetPayloadSize());
+    PTRACE(5, "UDPTL\tRead raw UDPTL, size " << frame.GetPayloadSize());
     return true;
   }
 
@@ -565,8 +565,8 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
     return true;
   }
 
-  PBYTEArray thisUDPTL(m_datagramSize);
-  if (!m_dataSocket->Read(thisUDPTL.GetPointer(), m_datagramSize)) {
+  PPER_Stream rawData;
+  if (!m_dataSocket->Read(rawData.GetPointer(m_datagramSize), m_datagramSize)) {
     if (m_dataSocket->GetErrorCode(PChannel::LastReadError) == PChannel::BufferTooSmall) {
       PTRACE(4, "UDPTL\tProbable RTP packet");
       return true;
@@ -582,8 +582,6 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
 
   PINDEX pduSize = m_dataSocket->GetLastReadCount();
       
-  PPER_Stream rawData(thisUDPTL);
-
   // Decode the PDU, but not if still receiving RTP
   if (  !m_receivedPacket->Decode(rawData) ||
          rawData.GetPosition() < pduSize ||
@@ -606,11 +604,13 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
       ostream & trace = PTrace::Begin(Level, __FILE__, __LINE__);
       trace << "UDPTL\t";
       if (m_awaitingGoodPacket)
-        trace << "Probable RTP packet: " << rawData.GetSize() << " bytes.";
-      else
+        trace << "Probable RTP packet: " << pduSize << " bytes.";
+      else {
+        rawData.SetSize(pduSize);
         trace << "Raw data decode failure:\n  "
               << setprecision(2) << rawData << "\n  UDPTL = "
               << setprecision(2) << m_receivedPacket;
+      }
       trace << PTrace::End;
     }
 #endif
@@ -769,7 +769,7 @@ OpalMediaFormatList OpalFaxEndPoint::GetMediaFormats() const
 void OpalFaxEndPoint::OnFaxCompleted(OpalFaxConnection & connection, bool PTRACE_PARAM(failed))
 {
   PTRACE(3, "FAX\tFax " << (failed ? "failed" : "completed") << " on connection: " << connection);
-  connection.Release();
+  connection.Release(failed ? OpalConnection::EndedByMediaFailed : OpalConnection::EndedByLocalUser);
 }
 
 

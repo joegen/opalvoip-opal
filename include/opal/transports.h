@@ -44,6 +44,7 @@
 
 #include <ptlib/sockets.h>
 #include <ptclib/psockbun.h>
+#include <ptclib/http.h>
 
 
 class OpalManager;
@@ -505,6 +506,8 @@ class OpalListener : public PObject
   private:
     OpalListener(const OpalListener & other) : PObject(other), endpoint(other.endpoint) { }
     void operator=(const OpalListener &) { }
+
+  friend class OpalHTTPConnector;
 };
 
 
@@ -1530,6 +1533,8 @@ typedef OpalListenerTLS OpalListenerTCPS;
 
 ////////////////////////////////////////////////////////////////
 
+#if OPAL_PTLIB_HTTP
+
 class OpalListenerWS : public OpalListenerTCP
 {
   PCLASSINFO(OpalListenerWS, OpalListenerTCP);
@@ -1681,6 +1686,29 @@ public:
 typedef OpalInternalIPTransportTemplate<OpalListenerWS, OpalTransportWS, OpalTransportAddress::Datagram, OpalTransportUDP> OpalInternalWSTransport;
 typedef OpalInternalIPTransportTemplate<OpalListenerWSS, OpalTransportWSS, OpalTransportAddress::Datagram, OpalTransportUDP> OpalInternalWSSTransport;
 
+
+class OpalHTTPConnector : public PHTTPResource
+{
+    PCLASSINFO(OpalHTTPConnector, PHTTPResource)
+  public:
+    OpalHTTPConnector(
+      OpalManager & manager,         ///< Opal manager
+      const PURL & url               ///< Name of the resource in URL space.
+    );
+    OpalHTTPConnector(
+      OpalManager & manager,         ///< Opal manager
+      const PURL & url,              ///< Name of the resource in URL space.
+      const PHTTPAuthority & auth    ///< Authorisation for the resource.
+    );
+
+    virtual bool OnWebSocket(PHTTPServer & server, PHTTPConnectionInfo & connectInfo);
+
+  protected:
+    OpalManager & m_manager;
+};
+
+
+#endif // OPAL_PTLIB_HTTP
 #endif // OPAL_PTLIB_SSL
 
 
