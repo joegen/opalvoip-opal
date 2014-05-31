@@ -409,7 +409,7 @@ class OpalRTPSession : public OpalMediaSession
 
     /**Get the time interval for sending RTCP reports in the session.
       */
-    const PTimeInterval & GetReportTimeInterval() { return m_reportTimer.GetResetTime(); }
+    PTimeInterval GetReportTimeInterval() { return m_reportTimer.GetResetTime(); }
 
     /**Set the time interval for sending RTCP reports in the session.
       */
