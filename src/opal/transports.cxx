@@ -1798,6 +1798,8 @@ bool OpalTransportTLS::IsAuthenticated(const PString & domain) const
 
 //////////////////////////////////////////////////////////////////////////
 
+#if OPAL_PTLIB_HTTP
+
 OpalListenerWS::OpalListenerWS(OpalEndPoint & endpoint, PIPSocket::Address binding, WORD port, bool exclusive)
 : OpalListenerTCP(endpoint, binding, port, exclusive)
 {
@@ -1810,10 +1812,10 @@ OpalListenerWS::OpalListenerWS(OpalEndPoint & endpoint, const OpalTransportAddre
 }
 
 
-static bool AcceptWS(PChannel & chan)
+static bool AcceptWS(PChannel & chan, const PString & protocol)
 {
   PHTTPServer ws;
-  ws.SetWebSocketNotifier("sip", PHTTPServer::WebSocketNotifier());
+  ws.SetWebSocketNotifier(protocol, PHTTPServer::WebSocketNotifier());
 
   if (!ws.Open(chan))
     return false;
@@ -1828,7 +1830,7 @@ static bool AcceptWS(PChannel & chan)
 
 OpalTransport * OpalListenerWS::OnAccept(PTCPSocket * socket)
 {
-  if (AcceptWS(*socket))
+  if (AcceptWS(*socket, endpoint.GetPrefixName()))
     return new OpalTransportWS(endpoint, socket);
 
   delete socket;
@@ -1871,7 +1873,7 @@ OpalListenerWSS::OpalListenerWSS(OpalEndPoint & endpoint, const OpalTransportAdd
 OpalTransport * OpalListenerWSS::OnAccept(PTCPSocket * socket)
 {
   PSSLChannel * ssl = new PSSLChannel(m_sslContext);
-  if (ssl->Accept(socket) && AcceptWS(*ssl))
+  if (ssl->Accept(socket) && AcceptWS(*ssl, endpoint.GetPrefixName()))
     return new OpalTransportWSS(endpoint, ssl);
 
   PTRACE(1, "OpalTLS\tAccept failed: " << ssl->GetErrorText());
@@ -1922,7 +1924,7 @@ PBoolean OpalTransportWS::Connect()
     return false;
   }
   m_channel = webSocket;
-  return webSocket->Connect("sip");
+  return webSocket->Connect(endpoint.GetPrefixName());
 }
 
 
@@ -2001,6 +2003,44 @@ const PCaselessString & OpalTransportWSS::GetProtoPrefix() const
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+
+OpalHTTPConnector::OpalHTTPConnector(OpalManager & manager, const PURL & url)
+  : PHTTPResource(url)
+  , m_manager(manager)
+{
+}
+
+
+OpalHTTPConnector::OpalHTTPConnector(OpalManager & manager, const PURL & url, const PHTTPAuthority & auth)
+  : PHTTPResource(url, auth)
+  , m_manager(manager)
+{
+}
+
+
+bool OpalHTTPConnector::OnWebSocket(PHTTPServer & server, PHTTPConnectionInfo & connectInfo)
+{
+  PURL dest(connectInfo.GetURL().GetQueryVars().Get("dest"));
+  OpalEndPoint * ep = m_manager.FindEndPoint(dest.GetScheme());
+  if (ep == NULL) {
+    return false;
+  }
+
+  OpalTransport * transport = new OpalTransportWS(*ep, server.GetSocket());
+  server.Detach();
+
+  OpalTransportAddress addr;
+  if (!ep->FindListenerForProtocol(OpalTransportAddress::WsPrefix(), addr)) {
+    return false;
+  }
+
+  transport->AttachThread(new PThreadObj1Arg<OpalListener, OpalTransportPtr>(
+                *ep->FindListener(addr), transport, &OpalListener::TransportThreadMain, false, "Opal Answer"));
+  return false;
+}
+
+#endif // OPAL_PTLIB_HTTP
 #endif // OPAL_PTLIB_SSL
 
 
