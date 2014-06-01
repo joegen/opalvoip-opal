@@ -65,7 +65,7 @@ ifeq ($(OPAL_SAMPLES),yes)
   ifeq ($(OPAL_HAS_PCSS)$(OPAL_IVR)$(OPAL_PTLIB_CLI),yesyesyes)
     SUBDIRS += $(OPAL_TOP_LEVEL_DIR)/samples/callgen
   endif
-  ifeq ($(OPAL_HAS_PRESENCE), yes)
+  ifeq ($(OPAL_SIP)$(OPAL_HAS_PRESENCE), yesyes)
     SUBDIRS += $(OPAL_TOP_LEVEL_DIR)/samples/test/presence
   endif
   ifeq ($(OPAL_PTLIB_CLI)$(OPAL_FAX), yesyes)
