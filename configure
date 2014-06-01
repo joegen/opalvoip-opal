@@ -8480,6 +8480,14 @@ $as_echo "disabled due to disabled dependency OPAL_HAS_PRESENCE=$OPAL_HAS_PRESEN
 
 
 
+      if    test "x${enableval}" = "xyes" && \
+            test "x$OPAL_SIP" != "x1" && \
+            test "x$OPAL_SIP" != "xyes"; then
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_SIP=$OPAL_SIP" >&5
+$as_echo "disabled due to disabled dependency OPAL_SIP=$OPAL_SIP" >&6; }
+         enableval=no
+      fi
+
 
 
 
