@@ -1369,7 +1369,7 @@ bool MyManager::Initialise(bool startMinimised)
     PwxString codecName;
     if (config->Read(CodecNameKey, &codecName) && !codecName.empty()) {
       for (MyMediaList::iterator mm = m_mediaInfo.begin(); mm != m_mediaInfo.end(); ++mm) {
-        if (codecName == mm->mediaFormat) {
+        if (codecName == mm->mediaFormat.GetName()) {
           mm->preferenceOrder = codecIndex;
           for (PINDEX i = 0; i < mm->mediaFormat.GetOptionCount(); i++) {
             const OpalMediaOption & option = mm->mediaFormat.GetOption(i);
@@ -1932,14 +1932,14 @@ void MyManager::OnAdjustMenus(wxMenuEvent & WXUNUSED(event))
   bool hasStartVideo = false;
   bool hasTxVideo = false;
   bool hasRxVideo = false;
-  wxString audioFormat, videoFormat;
+  PwxString audioFormat, videoFormat;
 
   PSafePtr<OpalConnection> connection = GetNetworkConnection(PSafeReadOnly);
   if (connection != NULL) {
     // Get ID of open audio to check the menu item
     OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaType::Audio(), true);
     if (stream != NULL)
-      audioFormat = PwxString(stream->GetMediaFormat());
+      audioFormat = stream->GetMediaFormat().GetName();
 
     stream = connection->GetMediaStream(OpalMediaType::Video(), false);
     if (stream != NULL) {
@@ -1951,7 +1951,7 @@ void MyManager::OnAdjustMenus(wxMenuEvent & WXUNUSED(event))
 
     stream = connection->GetMediaStream(OpalMediaType::Video(), true);
     if (stream != NULL) {
-      videoFormat = PwxString(stream->GetMediaFormat());
+      videoFormat = stream->GetMediaFormat().GetName();
       hasRxVideo = stream->IsOpen();
     }
 
@@ -2278,7 +2278,7 @@ void MyManager::OnPasteSpeedDial(wxCommandEvent & WXUNUSED(event))
       wxStringTokenizer tabbedText(tabbedLines.GetNextToken(), wxT("\t"), wxTOKEN_RET_EMPTY_ALL);
       if (tabbedText.CountTokens() >= 5) {
         SpeedDialInfo info;
-        info.m_Name = MakeUniqueSpeedDialName(m_speedDials, tabbedText.GetNextToken());
+        info.m_Name = MakeUniqueSpeedDialName(m_speedDials, tabbedText.GetNextToken().c_str());
         info.m_Number = tabbedText.GetNextToken();
         info.m_Address = tabbedText.GetNextToken();
         info.m_Description = tabbedText.GetNextToken();
@@ -3910,16 +3910,11 @@ void MyManager::ApplyMediaInfo()
       mediaFormatMask.AppendString(mm->mediaFormat);
     else {
       mediaFormatOrder.AppendString(mm->mediaFormat);
+      PwxString formatName(mm->mediaFormat.GetName());
       if (mm->mediaFormat.GetMediaType() == OpalMediaType::Audio())
-        audioMenu->Append(mm->preferenceOrder+ID_AUDIO_CODEC_MENU_BASE,
-                          PwxString(mm->mediaFormat.GetName()),
-                          wxEmptyString,
-                          true);
+        audioMenu->Append(mm->preferenceOrder+ID_AUDIO_CODEC_MENU_BASE, formatName, wxEmptyString, true);
       else if (mm->mediaFormat.GetMediaType() == OpalMediaType::Video())
-        videoMenu->Append(mm->preferenceOrder+ID_VIDEO_CODEC_MENU_BASE,
-                          PwxString(mm->mediaFormat.GetName()),
-                          wxEmptyString,
-                          true);
+        videoMenu->Append(mm->preferenceOrder+ID_VIDEO_CODEC_MENU_BASE, formatName, wxEmptyString, true);
     }
   }
 
@@ -4782,7 +4777,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
     m_allCodecs->SetItemPtrData(index, (wxUIntPtr)&*mm);
     m_allCodecs->SetItem(index, 1, PwxString(mm->mediaFormat.GetDescription()));
 
-    PwxString str(mm->mediaFormat);
+    PwxString str(mm->mediaFormat.GetName());
     if (mm->preferenceOrder >= 0 && m_selectedCodecs->FindString(str) < 0)
       m_selectedCodecs->Append(str, &*mm);
   }
@@ -5246,7 +5241,7 @@ bool OptionsDialog::TransferDataFromWindow()
   for (codecIndex = 0; codecIndex < m_selectedCodecs->GetCount(); codecIndex++) {
     PwxString selectedFormat = m_selectedCodecs->GetString(codecIndex);
     for (mm = m_manager.m_mediaInfo.begin(); mm != m_manager.m_mediaInfo.end(); ++mm) {
-      if (selectedFormat == mm->mediaFormat) {
+      if (selectedFormat == mm->mediaFormat.GetName()) {
         mm->preferenceOrder = codecIndex;
         break;
       }
@@ -5261,7 +5256,7 @@ bool OptionsDialog::TransferDataFromWindow()
       wxString groupName;
       groupName.sprintf(wxT("%s/%04u"), CodecsGroup, mm->preferenceOrder);
       config->SetPath(groupName);
-      config->Write(CodecNameKey, PwxString(mm->mediaFormat));
+      config->Write(CodecNameKey, PwxString(mm->mediaFormat.GetName()));
       for (PINDEX i = 0; i < mm->mediaFormat.GetOptionCount(); i++) {
         const OpalMediaOption & option = mm->mediaFormat.GetOption(i);
         if (!option.IsReadOnly())
@@ -6517,7 +6512,7 @@ static int MoveRoute(wxListCtrl * routes, int selection, int delta)
   item.m_mask = wxLIST_MASK_TEXT;
   for (item.m_col = 0; item.m_col < routes->GetColumnCount(); item.m_col++) {
     routes->GetItem(item);
-    cols.Add(item.m_text);
+    cols.Add(item.m_text.c_str());
   }
 
   routes->DeleteItem(selection);

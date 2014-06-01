@@ -246,7 +246,6 @@ AC_DEFUN([MY_MODULE_OPTION],[
 
          m4_bmatch([$4], [.*local-source.*], [
             if test "x$usable" = "xno" ; then
-               usable="yes"
                $1[_SYSTEM]="no"
                $1[_CFLAGS]=
                $1[_LIBS]=
@@ -430,8 +429,8 @@ case "$target_os" in
       AR="libtool"
       ARFLAGS="-static -o"
       RANLIB=
-      CPPFLAGS="${CPPFLAGS} -stdlib=libstdc++"
-      LDFLAGS="${LDFLAGS} -stdlib=libstdc++"
+      CPPFLAGS="${CPPFLAGS} -stdlib=libc++"
+      LDFLAGS="${LDFLAGS} -stdlib=libc++"
       LIBS="-framework AudioToolbox -framework CoreAudio -framework SystemConfiguration -framework Foundation -lobjc $LIBS"
    ;;
 
@@ -465,7 +464,7 @@ case "$target_os" in
       target_os=Darwin
       target_release=`sw_vers -productVersion`
 
-      MIN_MACOSX_VER="10.6"
+      MIN_MACOSX_VER="10.8"
       if test $target_release \< $MIN_MACOSX_VER ; then
          AC_MSG_ERROR([Requires Mac OS-X release $MIN_MACOSX_VER, is $target_release])
       fi
