@@ -37,6 +37,7 @@
 #include <opal/console_mgr.h>
 
 #include <h323/gkclient.h>
+#include <codec/vidcodec.h>
 #include <rtp/srtp_session.h>
 #include <ptclib/pstun.h>
 #include <ptclib/pwavfile.h>
