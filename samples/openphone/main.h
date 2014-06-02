@@ -40,7 +40,21 @@
   #undef NDEBUG
 #endif
 
-#include <wx/wx.h>
+// Total insanity ....
+#if _WIN32
+	#include <ptlib.h>
+	#include <wx/wx.h>
+#else
+	#include <wx/wx.h>
+	#include <ptlib.h>
+#endif
+
+#include <opal/manager.h>
+
+#ifndef OPAL_PTLIB_AUDIO
+  #error Cannot compile without PTLib sound channel support!
+#endif
+
 #include <wx/taskbar.h>
 #include <wx/dataobj.h>
 
@@ -49,12 +63,6 @@
 #include <ptlib/wxstring.h>
 #include <ptlib/notifier_ext.h>
 #include <ptclib/pssl.h>
-
-#include <opal/manager.h>
-
-#ifndef OPAL_PTLIB_AUDIO
-#error Cannot compile without PTLib sound channel support!
-#endif
 
 #include <h323/h323.h>
 #include <h323/gkclient.h>
