@@ -32,11 +32,6 @@
 #ifndef _OpenPhone_MAIN_H
 #define _OpenPhone_MAIN_H
 
-#ifndef _PTLIB_H
-#include <ptlib.h>
-#endif
-
-
 #if !defined(NDEBUG) && defined(OPAL_WX_DEBUG_HACK)
   // This hack is so can compile debug version of OpenPhone/OPAL/PTLib with
   // the release only version of wxWidgets found in most distributions.
@@ -49,23 +44,25 @@
 #include <wx/taskbar.h>
 #include <wx/dataobj.h>
 
+#include <ptlib.h>
+#include <ptclib/url.h>
+#include <ptlib/wxstring.h>
+#include <ptlib/notifier_ext.h>
+#include <ptclib/pssl.h>
+
 #include <opal/manager.h>
 
 #ifndef OPAL_PTLIB_AUDIO
 #error Cannot compile without PTLib sound channel support!
 #endif
 
-#include <ep/pcss.h>
-
 #include <h323/h323.h>
 #include <h323/gkclient.h>
 #include <sip/sip.h>
+#include <ep/pcss.h>
 #include <t38/t38proto.h>
 #include <im/im_ep.h>
 #include <h224/h224.h>
-#include <ptlib/wxstring.h>
-#include <ptlib/notifier_ext.h>
-#include <ptclib/pssl.h>
 
 #include <list>
 
@@ -541,7 +538,7 @@ public:
   MyMedia();
   MyMedia(const OpalMediaFormat & format);
 
-  bool operator<(const MyMedia & other)
+  bool operator<(const MyMedia & other) const
   {
     return preferenceOrder < other.preferenceOrder;
   }
