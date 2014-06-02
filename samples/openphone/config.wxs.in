@@ -4,6 +4,7 @@
    <?define SaslDir = "C:\Tools\bin" ?>
    <?define LDAPDir = "C:\Tools\bin" ?>
    <?define SSLDir = "$(env.ProgramW6432)\OpenSSL-Win32\bin" ?>
+   <?define WxDir = "C:\Tools\wxWidgets-3.0.0\lib" ?>
    <?define OPALDir = "..\.." ?>
    <?define PTLibDir = "..\..\..\ptlib" ?>
    <?define PluginDir = "C:\PTLib_Plugins" ?>
