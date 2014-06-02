@@ -361,6 +361,38 @@
                            DiskId='1'
                            KeyPath='yes' />
                   </Component>
+                  <Component Id='WxXRC'
+                             Guid='*'>
+                     <File Id='WXMSW30U_XRC_DLL'
+                           Name='WXMSW30U_XRC_VC100.DLL'
+                           Source='$(var.WxDir)\WXMSW30U_XRC_VC100.DLL'
+                           DiskId='1'
+                           KeyPath='yes' />
+                  </Component>
+                  <Component Id='WxADV'
+                             Guid='*'>
+                     <File Id='WXMSW30U_ADV_DLL'
+                           Name='WXMSW30U_ADV_VC100.DLL'
+                           Source='$(var.WxDir)\WXMSW30U_ADV_VC100.DLL'
+                           DiskId='1'
+                           KeyPath='yes' />
+                  </Component>
+                  <Component Id='WxCore'
+                             Guid='*'>
+                     <File Id='WXMSW30U_CORE_DLL'
+                           Name='WXMSW30U_CORE_VC100.DLL'
+                           Source='$(var.WxDir)\WXMSW30U_CORE_VC100.DLL'
+                           DiskId='1'
+                           KeyPath='yes' />
+                  </Component>
+                  <Component Id='WxBase'
+                             Guid='*'>
+                     <File Id='WXBASE30U_DLL'
+                           Name='WXBASE30U_VC100.DLL'
+                           Source='$(var.WxDir)\WXBASE30U_VC100.DLL'
+                           DiskId='1'
+                           KeyPath='yes' />
+                  </Component>
                </Directory>
             </Directory>
          </Directory>
@@ -456,6 +488,17 @@
          <ComponentRef Id='OpenLDAP' />
          <ComponentRef Id='OpenSSL1' />
          <ComponentRef Id='OpenSSL2' />
+      </Feature>
+
+      <Feature Id='WxWidgets'
+               Title="wxWidgets library"
+               AllowAdvertise="no"
+               Display="hidden"
+               Level='1'>
+         <ComponentRef Id='WxBase' />
+         <ComponentRef Id='WxCore' />
+         <ComponentRef Id='WxADV' />
+         <ComponentRef Id='WxXRC' />
       </Feature>
 
       <Feature Id="VCRedist"
