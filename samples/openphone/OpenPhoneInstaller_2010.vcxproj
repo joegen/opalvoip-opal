@@ -73,6 +73,12 @@
       <Project>{f1c13640-a056-4280-b1c6-6582e5890b89}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="..\..\plugins\audio\iSAC\isaccodec_2010.vcxproj">
+      <Project>{852d2624-0006-1049-27c7-1f44674bd4dc}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\plugins\audio\Opus\OpusCodec_2010.vcxproj">
+      <Project>{8fd8cfc0-086c-4b92-9f17-f28fb71869dd}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\plugins\audio\Speex\Speex_2010.vcxproj">
       <Project>{02afb070-a9d5-4fb7-a041-311722c9f8d4}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
@@ -178,6 +184,7 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Copying default installer configuration</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">copy "%(FullPath)" "%(RootDir)%(Directory)%(Filename)" &gt; nul</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RootDir)%(Directory)%(Filename)</Outputs>
+      <SubType>Designer</SubType>
     </CustomBuild>
     <None Include="version.wxs">
       <SubType>Designer</SubType>

@@ -177,6 +177,22 @@
                            DiskId='1'
                            KeyPath='yes' />
                   </Component>
+                  <Component Id='iSAC'
+                             Guid='*'>
+                     <File Id='iSAC_DLL'
+                           Name='iSAC_ptplugin.dll'
+                           Source='$(var.OPALDir)\bin\plugins\Release\iSAC_ptplugin.dll'
+                           DiskId='1'
+                           KeyPath='yes' />
+                  </Component>
+                  <Component Id='Opus'
+                             Guid='*'>
+                     <File Id='Opus_DLL'
+                           Name='opus_ptplugin.dll'
+                           Source='$(var.OPALDir)\bin\plugins\Release\opus_ptplugin.dll'
+                           DiskId='1'
+                           KeyPath='yes' />
+                  </Component>
                   <Component Id='Speex'
                              Guid='*'>
                      <File Id='Speex_DLL'
@@ -401,6 +417,8 @@
          <ComponentRef Id='G.726' />
          <ComponentRef Id='GSM0610' />
          <ComponentRef Id='iLBC' />
+         <ComponentRef Id='iSAC' />
+         <ComponentRef Id='Opus' />
          <ComponentRef Id='Speex' />
          <ComponentRef Id='H.261' />
          <ComponentRef Id='H.263' />
