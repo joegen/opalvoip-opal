@@ -1805,18 +1805,17 @@ class OpalManager : public PObject
     /**Set the parameters for the video device to be used for input.
        If the name is not suitable for use with the PVideoInputDevice class
        then the function will return false and not change the device.
-
-       This defaults to the value of the PVideoInputDevice::GetInputDeviceNames()
-       function.
      */
-    virtual PBoolean SetVideoInputDevice(
-      const PVideoDevice::OpenArgs & deviceArgs ///<  Full description of device
+    virtual bool SetVideoInputDevice(
+      const PVideoDevice::OpenArgs & deviceArgs, ///<  Full description of device
+      OpalVideoFormat::ContentRole role = OpalVideoFormat::eNoRole  ///< Role for video stream to set
     );
 
     /**Get the parameters for the video device to be used for input.
-       This defaults to the value of the PSoundChannel::GetInputDeviceNames()[0].
      */
-    const PVideoDevice::OpenArgs & GetVideoInputDevice() const { return videoInputDevice; }
+    const PVideoDevice::OpenArgs & GetVideoInputDevice(
+      OpalVideoFormat::ContentRole role = OpalVideoFormat::eNoRole  ///< Role for video stream to get
+    ) const { return m_videoInputDevice[role]; }
 
     /**Set the parameters for the video device to be used to preview input.
        If the name is not suitable for use with the PVideoOutputDevice class
@@ -2005,7 +2004,7 @@ class OpalManager : public PObject
 #endif
 
 #if OPAL_VIDEO
-    PVideoDevice::OpenArgs videoInputDevice;
+    PVideoDevice::OpenArgs m_videoInputDevice[OpalVideoFormat::NumContentRole];
     PVideoDevice::OpenArgs videoPreviewDevice;
     PVideoDevice::OpenArgs videoOutputDevice;
 #endif

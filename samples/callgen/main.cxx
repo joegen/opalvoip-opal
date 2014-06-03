@@ -141,6 +141,7 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
 #endif // P_WAVFILE
 
 #if OPAL_VIDEO
+  PVideoDevice::OpenArgs videoInputDevice = GetVideoInputDevice();
   videoInputDevice.deviceName = P_FAKE_VIDEO_NTSC;
   videoOutputDevice.deviceName = P_NULL_VIDEO_DEVICE;
   videoPreviewDevice.deviceName.MakeEmpty();  // Don't want any preview for video, there could be ... lots
@@ -159,6 +160,7 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
       PTRACE(1, "CallGen\tOutgoing video file \"" << yuvFile << "\" does not exist");
     }
   }
+  SetVideoInputDevice(videoInputDevice);
 #endif // OPAL_VIDEO
 
   {
