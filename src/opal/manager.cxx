@@ -733,7 +733,7 @@ void OpalManager::InternalClearAllCalls(OpalConnection::CallEndReason reason, bo
        released from the PSyncPoint wait. */
     m_clearingAllCallsMutex.Wait();
     if (firstThread)
-      PAssert(m_allCallsCleared.Wait(PTimeInterval(0,activeCalls.GetSize()*15+10)), "All calls not cleared in a timely manner");
+      PAssert(m_allCallsCleared.Wait(PTimeInterval(0,activeCalls.GetSize()*2,1)), "All calls not cleared in a timely manner");
     m_clearingAllCallsMutex.Signal();
   }
 
