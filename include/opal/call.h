@@ -425,7 +425,8 @@ class OpalCall : public PSafeObject
 #if OPAL_VIDEO
       OpalVideoFormat::ContentRole contentRole = OpalVideoFormat::eNoRole, ///< Content role for video
 #endif
-      bool transfer = false
+      bool transfer = false,
+      bool startPaused = false
     );
 
     /**Select media format pair from the source/destination list.

@@ -1309,45 +1309,56 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
     if (otherParty != NULL && sendStream == NULL) {
       if ((sendStream = GetMediaStream(sessionId, false)) == NULL) {
         PTRACE(5, "SIP\tOpening tx " << mediaType << " stream from offer SDP");
-        if (!ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, sessionId, OpalMediaFormat()
+        if (ownerCall.OpenSourceMediaStreams(*otherParty,
+                                             mediaType,
+                                             sessionId,
+                                             OpalMediaFormat(),
 #if OPAL_VIDEO
-              , incomingMedia->GetContentRole()
+                                             incomingMedia->GetContentRole(),
 #endif
-           ))
-          return NULL;
-
-        if ((sendStream = GetMediaStream(sessionId, false)) == NULL)
-          return NULL;
+                                             false,
+                                             (otherSidesDir&SDPMediaDescription::RecvOnly) == 0))
+          sendStream = GetMediaStream(sessionId, false);
       }
 
-      if ((otherSidesDir&SDPMediaDescription::RecvOnly) != 0)
+      if ((otherSidesDir&SDPMediaDescription::RecvOnly) != 0) {
+        if (sendStream == NULL) {
+          PTRACE(4, "SIP\tDid not open required tx " << mediaType << " stream.");
+          return NULL;
+        }
         newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv
                                                                      : SDPMediaDescription::SendOnly;
+      }
     }
 
     if (sendStream != NULL) {
       // In case is re-INVITE and remote has tweaked the streams paramters, we need to merge them
       sendStream->UpdateMediaFormat(*m_answerFormatList.FindFormat(sendStream->GetMediaFormat()), true);
-      sendStream->InternalSetPaused((otherSidesDir&SDPMediaDescription::RecvOnly) == 0, false, false);
     }
 
     if (recvStream == NULL) {
       if ((recvStream = GetMediaStream(sessionId, true)) == NULL) {
         PTRACE(5, "SIP\tOpening rx " << mediaType << " stream from offer SDP");
-        if (!ownerCall.OpenSourceMediaStreams(*this, mediaType, sessionId, OpalMediaFormat()
+        if (ownerCall.OpenSourceMediaStreams(*this,
+                                             mediaType,
+                                             sessionId,
+                                             OpalMediaFormat(),
 #if OPAL_VIDEO
-              , incomingMedia->GetContentRole()
+                                             incomingMedia->GetContentRole(),
 #endif
-           ))
-          return NULL;
-
-        if ((recvStream = GetMediaStream(sessionId, true)) == NULL)
-          return NULL;
+                                             false,
+                                             (otherSidesDir&SDPMediaDescription::SendOnly) == 0))
+          recvStream = GetMediaStream(sessionId, true);
       }
 
-      if ((otherSidesDir&SDPMediaDescription::SendOnly) != 0)
+      if ((otherSidesDir&SDPMediaDescription::SendOnly) != 0) {
+        if (recvStream == NULL) {
+          PTRACE(4, "SIP\tDid not open required rx " << mediaType << " stream.");
+          return NULL;
+        }
         newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv
                                                                      : SDPMediaDescription::RecvOnly;
+      }
     }
 
     if (recvStream != NULL) {
@@ -1358,7 +1369,6 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
         adjustedMediaFormat.SetPayloadType(sendStream->GetMediaFormat().GetPayloadType());
 
       recvStream->UpdateMediaFormat(adjustedMediaFormat, true);
-      recvStream->InternalSetPaused((otherSidesDir&SDPMediaDescription::SendOnly) == 0, false, false);
     }
   }
 
