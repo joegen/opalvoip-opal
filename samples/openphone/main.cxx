@@ -3342,13 +3342,15 @@ void MyManager::OnStartVideo(wxCommandEvent & /*event*/)
     contentRole = (OpalVideoFormat::ContentRole)dlg.m_contentRole;
   }
   else {
+    PVideoDevice::OpenArgs args = GetVideoInputDevice();
     StartVideoDialog dlg(this, false);
-    dlg.m_device = videoInputDevice.deviceName;
+    dlg.m_device = args.deviceName;
     dlg.m_preview = m_VideoGrabPreview;
     if (dlg.ShowModal() != wxID_OK)
       return;
 
-    videoInputDevice.deviceName = dlg.m_device.p_str();
+    args.deviceName = dlg.m_device.p_str();
+    SetVideoInputDevice(args);
     m_VideoGrabPreview = dlg.m_preview;
   }
 

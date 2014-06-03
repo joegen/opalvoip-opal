@@ -1898,23 +1898,23 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
                                           OpalVideoFormat::PEnumNames_ImageAttributeInSDP::Names(), OpalVideoFormat::NumImageAttributeInSDP,
                                           OpalMediaOption::AlwaysMerge, OpalVideoFormat::ImageAddrOffered));
 #endif
-
-    static const char * const RoleEnumerations[OpalVideoFormat::EndContentRole] = {
-      "No Role",
-      "Presentation",
-      "Main",
-      "Speaker",
-      "Sign Language"
-    };
-    AddOption(new OpalMediaOptionEnum(OpalVideoFormat::ContentRoleOption(), false,
-                                      RoleEnumerations, PARRAYSIZE(RoleEnumerations),
-                                      OpalMediaOption::AlwaysMerge));
-
-    AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::ContentRoleMaskOption(),
-                                          false, OpalMediaOption::IntersectionMerge,
-                                          OpalVideoFormat::ContentRoleMask,
-                                          0, OpalVideoFormat::ContentRoleMask));
   }
+
+  static const char * const RoleEnumerations[OpalVideoFormat::EndContentRole] = {
+    "No Role",
+    "Presentation",
+    "Main",
+    "Speaker",
+    "Sign Language"
+  };
+  AddOption(new OpalMediaOptionEnum(OpalVideoFormat::ContentRoleOption(), false,
+                                    RoleEnumerations, PARRAYSIZE(RoleEnumerations),
+                                    OpalMediaOption::AlwaysMerge));
+
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::ContentRoleMaskOption(),
+                                        false, OpalMediaOption::IntersectionMerge,
+                                        OpalVideoFormat::ContentRoleMask,
+                                        0, OpalVideoFormat::ContentRoleMask));
 
   // For video the max bit rate and frame rate is adjustable by user
   FindOption(OpalVideoFormat::MaxBitRateOption())->SetReadOnly(false);
