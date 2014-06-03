@@ -597,9 +597,15 @@ void OpalMediaStream::OnStopMediaPatch(OpalMediaPatch & patch)
 void OpalMediaStream::PrintDetail(ostream & strm, const char * prefix, Details details) const
 {
   if (prefix == NULL)
-    strm << (IsSource() ? "R" : "S");
+    strm << (IsSource() ? "Receiving " : "Sending ");
   else
     strm << prefix << (IsSource() ? " receiving " : " sending ");
+
+#if OPAL_VIDEO
+  OpalVideoFormat::ContentRole contentRole = mediaFormat.GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole);
+  if (contentRole != OpalVideoFormat::eNoRole)
+    strm << (OpalVideoFormat::ContentRoleToString(contentRole) + 1) << " video ";
+#endif
 
   const OpalRTPConnection * rtpConnection = dynamic_cast<const OpalRTPConnection *>(&connection);
   OpalMediaSession * session = rtpConnection != NULL ? rtpConnection->GetMediaSession(sessionID) : NULL;
@@ -645,9 +651,9 @@ void OpalMediaStream::PrintDetail(ostream & strm, const char * prefix, Details d
   strm << (IsSource() ? " from " : " to ") << connection.GetPrefixName();
 
   if ((details & DetailAddresses) && session != NULL) {
-    strm << " media=" << session->GetRemoteAddress(true) << "<if=" << session->GetLocalAddress(true) << '>';
+    strm << "\n  media=" << session->GetRemoteAddress(true) << "<if=" << session->GetLocalAddress(true) << '>';
     if (!session->GetRemoteAddress(false).IsEmpty())
-      strm << " control=" << session->GetRemoteAddress(false) << "<if=" << session->GetLocalAddress(false) << '>';
+      strm << "\n  control=" << session->GetRemoteAddress(false) << "<if=" << session->GetLocalAddress(false) << '>';
   }
 
   if (details & DetailEOL)

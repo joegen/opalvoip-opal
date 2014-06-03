@@ -286,23 +286,23 @@ OpalManager::OpalManager()
   PINDEX i;
   for (i = 0; i < devices.GetSize(); ++i) {
     PCaselessString dev = devices[i];
-    if (dev[0] == '*' || dev.NumCompare(P_FAKE_VIDEO_PREFIX) == EqualTo)
-      continue;
-    videoInputDevice.deviceName = devices[i];
-    break;
+    if (dev[0] != '*' && dev.NumCompare(P_FAKE_VIDEO_PREFIX) != EqualTo) {
+      m_videoInputDevice[OpalVideoFormat::eNoRole].deviceName = m_videoInputDevice[OpalVideoFormat::eMainRole].deviceName = dev;
+      SetAutoStartTransmitVideo(true);
+      break;
+    }
   }
-  SetAutoStartTransmitVideo(!videoInputDevice.deviceName.IsEmpty());
 
   devices = PVideoOutputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
   for (i = 0; i < devices.GetSize(); ++i) {
     PCaselessString dev = devices[i];
-    if (dev[0] == '*' || dev == P_NULL_VIDEO_DEVICE)
-      continue;
-    videoOutputDevice.deviceName = devices[i];
-    videoPreviewDevice = videoOutputDevice;
-    break;
+    if (dev[0] != '*' && dev != P_NULL_VIDEO_DEVICE) {
+      videoOutputDevice.deviceName = devices[i];
+      videoPreviewDevice = videoOutputDevice;
+      SetAutoStartReceiveVideo(true);
+      break;
+    }
   }
-  SetAutoStartReceiveVideo(!videoOutputDevice.deviceName.IsEmpty());
 #endif
 
 #if OPAL_PTLIB_NAT
@@ -733,7 +733,7 @@ void OpalManager::InternalClearAllCalls(OpalConnection::CallEndReason reason, bo
        released from the PSyncPoint wait. */
     m_clearingAllCallsMutex.Wait();
     if (firstThread)
-      PAssert(m_allCallsCleared.Wait(PTimeInterval(0,activeCalls.GetSize()*15+10)), "All calls not cleared in a timely manner");
+      PAssert(m_allCallsCleared.Wait(PTimeInterval(0,activeCalls.GetSize()*2,1)), "All calls not cleared in a timely manner");
     m_clearingAllCallsMutex.Signal();
   }
 
@@ -1052,7 +1052,7 @@ OpalMediaFormatList OpalManager::GetCommonMediaFormats(bool transportable, bool 
   }
 
 #if OPAL_VIDEO
-  if (!videoInputDevice.deviceName.IsEmpty())
+  if (!GetVideoInputDevice().deviceName.IsEmpty())
     formats += OpalYUV420P;
 #endif
 
@@ -1238,10 +1238,11 @@ PBoolean OpalManager::CreateVideoInputDevice(const OpalConnection & connection,
                                          PBoolean & autoDelete)
 {
   // Make copy so we can adjust the size
-  PVideoDevice::OpenArgs args = videoInputDevice;
+  PVideoDevice::OpenArgs args = m_videoInputDevice[mediaFormat.GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole)];
   mediaFormat.AdjustVideoArgs(args);
   return CreateVideoInputDevice(connection, args, device, autoDelete);
 }
+
 
 PBoolean OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection*/,
                                          const PVideoDevice::OpenArgs & args,
@@ -2059,9 +2060,9 @@ void OpalManager::SetMediaFormatMask(const PStringArray & mask)
 
 
 #if OPAL_VIDEO
-PBoolean OpalManager::SetVideoInputDevice(const PVideoDevice::OpenArgs & args)
+bool OpalManager::SetVideoInputDevice(const PVideoDevice::OpenArgs & args, OpalVideoFormat::ContentRole role)
 {
-  return args.Validate<PVideoInputDevice>(videoInputDevice);
+  return args.Validate<PVideoInputDevice>(m_videoInputDevice[role]);
 }
 
 

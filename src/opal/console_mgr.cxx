@@ -217,18 +217,12 @@ bool OpalRTPConsoleEndPoint::Initialise(PArgList & args, ostream & output, bool 
 #if P_CLI
 void OpalRTPConsoleEndPoint::CmdInterfaces(PCLI::Arguments & args, P_INT_PTR)
 {
-  if (args.GetCount() < 1)
-    args.WriteUsage();
-  else {
-    PStringArray interfaces(args.GetCount());
-    for (PINDEX i = 0; i < args.GetCount(); ++i)
-      interfaces[i] = args[i];
-
-    if (m_endpoint.StartListeners(interfaces))
-      args.GetContext() << "Listening on: " << setfill(',') << m_endpoint.GetListeners() << setfill(' ') << endl;
-    else
-      args.WriteError("Could not start .");
+  if (args.GetCount() > 0 && !m_endpoint.StartListeners(args.GetParameters())) {
+    args.WriteError("Could not start listening on specified interfaces.");
+    return;
   }
+
+  args.GetContext() << "Listening on: " << setfill(',') << m_endpoint.GetListeners() << setfill(' ') << endl;
 }
 
 
@@ -408,15 +402,15 @@ void SIPConsoleEndPoint::GetArgumentSpec(ostream & strm) const
 {
   strm << "[SIP options:]"
           "-no-sip.           Disable SIP\n"
-          "S-sip:             SIP listens on interface, defaults to udp$*:5060.\n";
+          "S-sip:             Listen on interface(s), defaults to udp$*:5060.\n";
   OpalRTPConsoleEndPoint::GetArgumentSpec(strm);
-  strm << "r-register:        SIP registration to server.\n"
-          "-register-auth-id: SIP registration authorisation id, default is username.\n"
-          "-register-realm:   SIP registration authorisation realm, default is any.\n"
-          "-register-proxy:   SIP registration proxy, default is none.\n"
-          "-register-ttl:     SIP registration Time To Live, default 300 seconds.\n"
-          "-register-mode:    SIP registration mode (normal, single, public, ALG, RFC5626).\n"
-          "-proxy:            SIP outbound proxy.\n";
+  strm << "r-register:        Registration to server.\n"
+          "-register-auth-id: Registration authorisation id, default is username.\n"
+          "-register-realm:   Registration authorisation realm, default is any.\n"
+          "-register-proxy:   Registration proxy, default is none.\n"
+          "-register-ttl:     Registration Time To Live, default 300 seconds.\n"
+          "-register-mode:    Registration mode (normal, single, public, ALG, RFC5626).\n"
+          "-proxy:            Outbound proxy.\n";
 }
 
 
@@ -520,21 +514,22 @@ void H323ConsoleEndPoint::GetArgumentSpec(ostream & strm) const
 {
   strm << "[H.323 options:]"
           "-no-h323.           Disable H.323\n"
-          "H-h323:             H.323 listens on interface, defaults to tcp$*:1720.\n";
+          "H-h323:             Listens on interface(s), defaults to tcp$*:1720.\n";
   OpalRTPConsoleEndPoint::GetArgumentSpec(strm);
-  strm << "g-gk-host:          H.323 gatekeeper host.\n"
-          "G-gk-id:            H.323 gatekeeper identifier.\n"
-          "-gk-password:       H.323 gatekeeper password (if different from --password).\n"
-          "-gk-alias-limit:    H.323 gatekeeper alias limit (compatibility issue)\n"
-          "-gk-sim-pattern.    H.323 gatekeeper alias patern simulation\n"
-          "-gk-suppress-grq.   H.323 gatekeeper GRQ is not sent on registration.\n"
-          "-gk-interface:      H.323 gatekeeper network interface to use for RAS.\n"
-          "-alias:             H.323 alias name, may be multiple entries.\n"
-          "-alias-pattern:     H.323 alias pattern, may be multiple entries.\n"
-          "-no-fast.           H.323 fast connect disabled.\n"
-          "-no-tunnel.         H.323 tunnel for H.245 disabled.\n"
-          "-no-h235-setup.     H.323 tunnel for H.245 during SETUP disabled.\n"
-          "-h323-term-type:    H.323 terminal type value (1..255, default 50).\n";
+  strm << "g-gk-host:          Gatekeeper host.\n"
+          "G-gk-id:            Gatekeeper identifier.\n"
+          "-gk-password:       Gatekeeper password (if different from --password).\n"
+          "-gk-alias-limit:    Gatekeeper alias limit (compatibility issue)\n"
+          "-gk-sim-pattern.    Gatekeeper alias patern simulation\n"
+          "-gk-suppress-grq.   Gatekeeper GRQ is not sent on registration.\n"
+          "-gk-interface:      Gatekeeper network interface to use for RAS.\n"
+          "-alias:             Alias name, may be multiple entries.\n"
+          "-alias-pattern:     Alias pattern, may be multiple entries.\n"
+          "-no-fast.           Fast connect disabled.\n"
+          "-no-tunnel.         H.245 tunnel disabled.\n"
+          "-no-h235-setup.     H.245 tunnel during SETUP disabled.\n"
+          "-h239-control.      H.239 control capability.\n"
+          "-h323-term-type:    Terminal type value (1..255, default 50).\n";
 }
 
 
@@ -591,6 +586,9 @@ bool H323ConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PStrin
 
   if (args.HasOption("gk-suppress-grq"))
     SetSendGRQ(false);
+
+  if (args.HasOption("h239-control"))
+    SetDefaultH239Control(true);
 
   if (verbose)
     output << "H.323 Aliases: " << setfill(',') << GetAliasNames() << setfill(' ') << "\n"
@@ -694,6 +692,7 @@ void H323ConsoleEndPoint::AddCommands(PCLI & cli)
   cli.SetCommand("h323 fast", disableFastStart, "Fast Connect Disable");
   cli.SetCommand("h323 tunnel", disableH245Tunneling, "H.245 Tunnelling Disable");
   cli.SetCommand("h323 h245-in-setup", disableH245inSetup, "H.245 in SETUP Disable");
+  cli.SetCommand("h323 h239-control", m_defaultH239Control, "H.239 control capability enable");
   cli.SetCommand("h323 term-type", PCREATE_NOTIFIER(CmdTerminalType), "Terminal type value (1..255, default 50)");
 
   cli.SetCommand("h323 alias", PCREATE_NOTIFIER(CmdGatekeeper),
@@ -1003,11 +1002,11 @@ static struct {
 static struct {
   const char * m_name;
   const char * m_description;
-  const PVideoDevice::OpenArgs & (OpalPCSSEndPoint:: *m_get)() const;
-  PBoolean (OpalPCSSEndPoint:: *m_set)(const PVideoDevice::OpenArgs &);
+  const PVideoDevice::OpenArgs & (OpalConsolePCSSEndPoint:: *m_get)() const;
+  PBoolean(OpalConsolePCSSEndPoint:: *m_set)(const PVideoDevice::OpenArgs &);
   PStringArray (*m_list)(const PString &, PPluginManager *);
 
-  bool Initialise(OpalPCSSEndPoint & ep, ostream & output, bool verbose, const PArgList & args, bool fromCLI)
+  bool Initialise(OpalConsolePCSSEndPoint & ep, ostream & output, bool verbose, const PArgList & args, bool fromCLI)
   {
     PVideoDevice::OpenArgs video = (ep.*m_get)();
 
@@ -1044,11 +1043,15 @@ static struct {
     return true;
   }
 } VideoDeviceVariables[] = {
-  { "grabber", "input grabber",  &OpalPCSSEndPoint::GetVideoGrabberDevice, &OpalPCSSEndPoint::SetVideoGrabberDevice, &PVideoInputDevice::GetDriversDeviceNames  },
-  { "preview", "input preview",  &OpalPCSSEndPoint::GetVideoPreviewDevice, &OpalPCSSEndPoint::SetVideoPreviewDevice, &PVideoOutputDevice::GetDriversDeviceNames },
-  { "display", "output display", &OpalPCSSEndPoint::GetVideoDisplayDevice, &OpalPCSSEndPoint::SetVideoDisplayDevice, &PVideoOutputDevice::GetDriversDeviceNames },
-  { "voh",     "on hold",        &OpalPCSSEndPoint::GetVideoOnHoldDevice,  &OpalPCSSEndPoint::SetVideoOnHoldDevice,  &PVideoInputDevice::GetDriversDeviceNames  },
-  { "vor",     "on ring",        &OpalPCSSEndPoint::GetVideoOnRingDevice,  &OpalPCSSEndPoint::SetVideoOnRingDevice,  &PVideoInputDevice::GetDriversDeviceNames  }
+#define VID_DEV_VAR(cmd,hlp,get,set) { cmd, hlp, &OpalConsolePCSSEndPoint::get, &OpalConsolePCSSEndPoint::set, &PVideoInputDevice::GetDriversDeviceNames }
+  VID_DEV_VAR("grabber",      "input grabber",      GetVideoGrabberDevice,      SetVideoGrabberDevice),
+  VID_DEV_VAR("preview",      "input preview",      GetVideoPreviewDevice,      SetVideoPreviewDevice),
+  VID_DEV_VAR("display",      "output display",     GetVideoDisplayDevice,      SetVideoDisplayDevice),
+  VID_DEV_VAR("voh",          "on hold",            GetVideoOnHoldDevice,       SetVideoOnHoldDevice),
+  VID_DEV_VAR("vor",          "on ring",            GetVideoOnRingDevice,       SetVideoOnRingDevice),
+  VID_DEV_VAR("presentation", "presentation role",  GetPresentationVideoDevice, SetPresentationVideoDevice),
+  VID_DEV_VAR("speaker",      "speaker role",       GetSpeakerVideoDevice,      SetSpeakerVideoDevice),
+  VID_DEV_VAR("sign",         "sign langauge role", GetSignVideoDevice,         SetSignVideoDevice)
 };
 #endif // OPAL_VIDEO
 
@@ -1222,6 +1225,70 @@ void OpalConsolePCSSEndPoint::CmdChangeVideoDevice(PCLI::Arguments & args, P_INT
       args.WriteError("Could not switch video device");
   }
 }
+
+
+void OpalConsolePCSSEndPoint::CmdOpenVideoStream(PCLI::Arguments & args, P_INT_PTR)
+{
+  PSafePtr<OpalPCSSConnection> connection;
+  if (GetConnectionFromArgs(GetManager(), args, connection)) {
+    OpalVideoFormat::ContentRole contentRole;
+    if (args.GetCount() == 0)
+      contentRole = connection->GetMediaStream(OpalMediaType::Video(), true) != NULL
+                        ? OpalVideoFormat::ePresentation : OpalVideoFormat::eMainRole;
+    else if ((contentRole = OpalVideoFormat::ContentRoleFromString('e' + args[0], false)) == OpalVideoFormat::EndContentRole) {
+      args.WriteUsage();
+      return;
+    }
+
+    if (connection->GetCall().OpenSourceMediaStreams(*connection,
+                                                     OpalMediaType::Video(),
+                                                     0, // Allocate session automatically
+                                                     OpalMediaFormat(),
+                                                     contentRole))
+      args.GetContext() << "Switched video device" << endl;
+    else
+      args.WriteError("Could not open video to remote");
+  }
+}
+
+
+struct OpalCmdPresentationToken
+{
+  P_DECLARE_STREAMABLE_ENUM(Cmd, request, release);
+};
+
+void OpalConsolePCSSEndPoint::CmdPresentationToken(PCLI::Arguments & args, P_INT_PTR)
+{
+  PSafePtr<OpalPCSSConnection> connection;
+  if (GetConnectionFromArgs(GetManager(), args, connection)) {
+    if (args.GetCount() == 0)
+      args.GetContext() << "Presentation token is " << (connection->HasPresentationRole() ? "acquired." : "released.") << endl;
+    else {
+      switch (OpalCmdPresentationToken::CmdFromString(args[0])) {
+        case OpalCmdPresentationToken::request :
+          if (connection->HasPresentationRole())
+            args.GetContext() << "Presentation token is already acquired." << endl;
+          else if (connection->RequestPresentationRole(false))
+            args.GetContext() << "Presentation token requested." << endl;
+          else
+            args.WriteError("Presentation token not supported by remote.");
+          break;
+
+        case OpalCmdPresentationToken::release :
+          if (connection->HasPresentationRole())
+            args.GetContext() << "Presentation token is already released." << endl;
+          else if (connection->RequestPresentationRole(true))
+            args.GetContext() << "Presentation token released." << endl;
+          else
+            args.WriteError("Presentation token release failed.");
+          break;
+
+        default :
+          args.WriteUsage();
+      }
+    }
+  }
+}
 #endif // OPAL_VIDEO
 
 
@@ -1266,6 +1333,14 @@ void OpalConsolePCSSEndPoint::AddCommands(PCLI & cli)
 
   cli.SetCommand("video device", PCREATE_NOTIFIER(CmdChangeVideoDevice),
                  "Set video device for active call", "[ --call ] <device>",
+                 "c-call: Token for call to change");
+  cli.SetCommand("video open", PCREATE_NOTIFIER(CmdOpenVideoStream),
+                 "Open video stream for active call with a given role. Default is \"main\" if no\n"
+                 "video is open, and \"presentation\" if there is a video stream already.",
+                 "[ --call ] [ main | presentation | speaker | sign ]",
+                 "c-call: Token for call to change");
+  cli.SetCommand("video presentation", PCREATE_NOTIFIER(CmdPresentationToken),
+                 "Request/release presentation token for active call", "[ --call ] [ request | release ]",
                  "c-call: Token for call to change");
 #endif // OPAL_VIDEO
 }
@@ -1513,7 +1588,7 @@ PString OpalConsoleManager::GetArgumentSpec() const
          "p-password:        Set password for authentication.\n"
          "D-disable:         Disable use of specified media formats (codecs).\n"
          "P-prefer:          Set preference order for media formats (codecs).\n"
-         "O-option:          Set options for media format, argument is of form fmt:opt=val.\n"
+         "O-option:          Set options for media format, argument is of form fmt:opt=val or @type:opt=val.\n"
          "-tel:              Protocol to use for tel: URI, e.g. sip\n"
          "[Audio options:]"
          "-jitter:           Set audio jitter buffer size (min[,max] default 50,250)\n"
@@ -1600,6 +1675,55 @@ bool OpalConsoleManager::PreInitialise(PArgList & args, bool verbose)
     PrintVersion(LockedOutput());
     return false;
   }
+
+  return true;
+}
+
+
+static bool SetMediaFormatOption(ostream & output, bool verbose, const PString & format, const PString & name, const PString & value)
+{
+  if (format[0] == '@') {
+    OpalMediaType mediaType = format.Mid(1);
+    if (mediaType.empty()) {
+      output << "Unknown media type \"" << format << '"' << endl;
+      return false;
+    }
+
+    OpalMediaFormatList allFormats;
+    OpalMediaFormat::GetAllRegisteredMediaFormats(allFormats);
+    for (OpalMediaFormatList::iterator it = allFormats.begin(); it != allFormats.end(); ++it) {
+      if (it->GetMediaType() == mediaType && !SetMediaFormatOption(output, verbose, it->GetName(), name, value))
+        return false;
+    }
+
+    return true;
+  }
+
+  OpalMediaFormat mediaFormat(format);
+  if (!mediaFormat.IsValid()) {
+    output << "Unknown media format \"" << format << '"' << endl;
+    return false;
+  }
+
+  if (!mediaFormat.HasOption(name)) {
+    output << "Unknown option name \"" << name << "\" in media format \"" << format << '"' << endl;
+    return false;
+  }
+
+  if (!mediaFormat.SetOptionValue(name, value)) {
+    output << "Ilegal value \"" << value << "\""
+              " for option name \"" << name << "\""
+              " in media format \"" << format << '"' << endl;
+    return false;
+  }
+
+  if (!OpalMediaFormat::SetRegisteredMediaFormat(format)) {
+    output << "Could not set registered media format \"" << format << '"' << endl;
+    return false;
+  }
+
+  if (verbose)
+    output << "Media format \"" << format << "\" option \"" << name << "\" set to \"" << value << "\"\n";
 
   return true;
 }
@@ -1852,32 +1976,15 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
   if (args.HasOption("option")) {
     PStringArray options = args.GetOptionString("option").Lines();
     for (PINDEX i = 0; i < options.GetSize(); ++i) {
-      PRegularExpression parse("\\([A-Za-z].*\\):\\([A-Za-z].*\\)=\\(.*\\)");
+      PRegularExpression parse("(@?[A-Za-z].*):([A-Za-z].*)=(.*)", PRegularExpression::Extended);
       PStringArray subexpressions(4);
       if (!parse.Execute(options[i], subexpressions)) {
         output << "Invalid media format option \"" << options[i] << '"' << endl;
         return false;
       }
 
-      OpalMediaFormat format(subexpressions[1]);
-      if (!format.IsValid()) {
-        output << "Unknown media format \"" << subexpressions[1] << '"' << endl;
+      if (!SetMediaFormatOption(output, verbose, subexpressions[1], subexpressions[2], subexpressions[3]))
         return false;
-      }
-      if (!format.HasOption(subexpressions[2])) {
-        output << "Unknown option name \"" << subexpressions[2] << "\""
-                    " in media format \"" << subexpressions[1] << '"' << endl;
-        return false;
-      }
-      if (!format.SetOptionValue(subexpressions[2], subexpressions[3])) {
-        output << "Ilegal value \"" << subexpressions[3] << "\""
-                    " for option name \"" << subexpressions[2] << "\""
-                    " in media format \"" << subexpressions[1] << '"' << endl;
-        return false;
-      }
-      if (verbose)
-        output << "Set " << format << " option " << subexpressions[2] << " to " << subexpressions[3] << '\n';
-      OpalMediaFormat::SetRegisteredMediaFormat(format);
     }
   }
 
@@ -2073,6 +2180,23 @@ void OpalConsoleManager::OnHold(OpalConnection & connection, bool fromRemote, bo
     output << " been " << (onHold ? "put on" : "released from");
   output << " hold.";
   Broadcast(output);
+}
+
+
+bool OpalConsoleManager::OnChangedPresentationRole(OpalConnection & connection, const PString & newChairURI, bool request)
+{
+  PStringStream output;
+  output << '\n' << connection.GetCall().GetToken() << ": presentation role token now owned by ";
+  if (newChairURI.IsEmpty())
+    output << "nobody";
+  else if (newChairURI == connection.GetLocalPartyURL())
+    output << "local user";
+  else
+    output << '"' << newChairURI << '"';
+  output << '.';
+  Broadcast(output);
+
+  return OpalManager::OnChangedPresentationRole(connection, newChairURI, request);
 }
 
 
@@ -2319,7 +2443,8 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
                     "List NAT methods and server addresses");
   m_cli->SetCommand("nat server", PCREATE_NOTIFIER(CmdNatAddress),
                     "Set NAT server address for method, \"off\" deactivates method",
-                    "<method> <address>");
+                    "[ --interface <iface> ] <method> <address>",
+                    "I-interface: Set interface to bind NAT method");
 #endif
 
 #if PTRACING
@@ -2383,6 +2508,9 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
   m_cli->SetCommand("codec mask", PCREATE_NOTIFIER(CmdCodecOrderMask),
                     "Set codec selection mask. Simple '*' character may be used for wildcard matching.",
                     "[ -a ] [ <wildcard> ... ]", "a-add. Add to existing list");
+  m_cli->SetCommand("codec option", PCREATE_NOTIFIER(CmdCodecOption),
+                    "Get/Set codec option value. The format may be @type (e.g. @video) and all codecs of that type are set.",
+                    "<format> [ <name> [ <value> ] ]");
 
   m_cli->SetCommand("delay", PCREATE_NOTIFIER(CmdDelay),
                     "Delay for the specified number of seconds",
@@ -2490,14 +2618,14 @@ void OpalManagerCLI::CmdNatList(PCLI::Arguments & args, P_INT_PTR)
   PCLI::Context & out = args.GetContext();
   out << std::left
       << setw(12) << "Name" << ' '
-      << setw(8) << "State" << ' '
+      << setw(10) << "State" << ' '
       << setw(20) << "Type" << ' '
       << setw(20) << "Server" << ' '
       <<             "External\n";
 
   for (PNatMethods::iterator it = GetNatMethods().begin(); it != GetNatMethods().end(); ++it) {
     out << setw(12) << it->GetMethodName() << ' '
-        << setw(8) << (it->IsAvailable() ? "Active" : "N/A")
+        << setw(10) << (it->IsActive() ? "Active" : "Inactive")
         << setw(20);
 
     PNatMethod::NatTypes type = it->GetNatType();
@@ -2537,13 +2665,27 @@ void OpalManagerCLI::CmdNatAddress(PCLI::Arguments & args, P_INT_PTR)
     return;
   }
 
-  if (natMethod->SetServer(args[1])) {
-    args.WriteError() << natMethod->GetMethodName() << " server address invalid \"" << args[1] << '"';
+  PIPSocket::Address iface(PIPSocket::GetDefaultIpAny());
+  if (args.HasOption("interface")) {
+    iface = args.GetOptionString("interface");
+    if (!iface.IsValid()) {
+      args.WriteError("Invalid IP address for interface");
+      return;
+    }
+  }
+
+  if (!natMethod->SetServer(args[1])) {
+    args.WriteError() << natMethod->GetMethodName() << " server address invalid \"" << args[1] << '"' << endl;
+    return;
+  }
+
+  if (!natMethod->Open(iface)) {
+    args.WriteError() << natMethod->GetMethodName() << " could not access  \"" << natMethod->GetServer() << '"' << endl;
     return;
   }
 
   PCLI::Context & out = args.GetContext();
-  out << natMethod->GetMethodName() << " server \"" << natMethod->GetServer() << " replies " << natMethod->GetNatType();
+  out << natMethod->GetMethodName() << " server \"" << natMethod->GetServer() << "\" replies " << natMethod->GetNatType();
   PIPSocket::Address externalAddress;
   if (natMethod->GetExternalAddress(externalAddress))
     out << " with address " << externalAddress;
@@ -2670,6 +2812,46 @@ void OpalManagerCLI::CmdCodecList(PCLI::Arguments & args, P_INT_PTR)
   }
 
   out.flush();
+}
+
+
+void OpalManagerCLI::CmdCodecOption(PCLI::Arguments & args, P_INT_PTR)
+{
+  PString name;
+
+  switch (args.GetCount()) {
+    case 0 :
+      args.WriteUsage();
+      return;
+
+    case 1 :
+      break;
+
+    case 2:
+      name = args[1];
+      break;
+
+    default :
+      SetMediaFormatOption(args.GetContext(), true, args[0], args[1], args.GetParameters(2).ToString());
+      return;
+  }
+
+  OpalMediaFormat mediaFormat(args[0]);
+  if (!mediaFormat.IsValid()) {
+    args.WriteError() << "Unknown media format \"" << args[0] << '"' << endl;
+    return;
+  }
+
+  if (name.IsEmpty()) {
+    args.GetContext() << setw(-1) << mediaFormat << endl;
+    return;
+  }
+
+  PString value;
+  if (mediaFormat.GetOptionValue(name, value))
+    args.GetContext() << "Media format \"" << mediaFormat << "\" option \"" << name << "\" is \"" << value << '"' << endl;
+  else
+    args.WriteError() << "Unknown option name \"" << name << "\" in media format \"" << mediaFormat << '"' << endl;
 }
 
 
