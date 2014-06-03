@@ -504,7 +504,8 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
 #if OPAL_VIDEO
                               OpalVideoFormat::ContentRole contentRole,
 #endif
-                                                      bool transfer)
+                                                      bool transfer,
+                                                      bool startPaused)
 {
   PTRACE_CONTEXT_ID_PUSH_THREAD(this);
 
@@ -709,6 +710,11 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
     if (sourceStream != NULL)
       sourceStream->Close();
     return false;
+  }
+
+  if (startPaused) {
+    sourceStream->InternalSetPaused(true, false, false);
+    sinkStream->InternalSetPaused(true, false, false);
   }
 
   // if a patch was created, make sure the callback is called, just once per
