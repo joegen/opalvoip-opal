@@ -2624,24 +2624,24 @@ void H323GatekeeperListener::OnReceiveFeatureSet(H460_MessageType pduType, const
 H323GatekeeperServer::H323GatekeeperServer(H323EndPoint & ep)
   : H323TransactionServer(ep)
 {
-  totalBandwidth = UINT_MAX;      // Unlimited total bandwidth
-  usedBandwidth = 0;              // None used so far
-  defaultBandwidth = 2560;        // Enough for bidirectional G.711 and 64k H.261
-  maximumBandwidth = 200000;      // 10baseX LAN bandwidth
-  defaultTimeToLive = 3600;       // One hour, zero disables
-  defaultInfoResponseRate = 60;   // One minute, zero disables
-  overwriteOnSameSignalAddress = true;
+  m_totalBandwidth = UINT_MAX;      // Unlimited total bandwidth
+  m_usedBandwidth = 0;              // None used so far
+  m_defaultBandwidth = 2560;        // Enough for bidirectional G.711 and 64k H.261
+  m_maximumBandwidth = 200000;      // 10baseX LAN bandwidth
+  m_defaultTimeToLive = 3600;       // One hour, zero disables
+  m_defaultInfoResponseRate = 60;   // One minute, zero disables
+  m_overwriteOnSameSignalAddress = true;
   m_aliasToAllocate = m_maxAliasToAllocate = m_minAliasToAllocate = 0;
-  canHaveDuplicateAlias = false;
-  canHaveDuplicatePrefix = false;
-  canOnlyCallRegisteredEP = false;
-  canOnlyAnswerRegisteredEP = false;
-  answerCallPreGrantedARQ = false;
-  makeCallPreGrantedARQ = false;
-  isGatekeeperRouted = false;
-  aliasCanBeHostName = true;
-  requireH235 = false;
-  disengageOnHearbeatFail = true;
+  m_canHaveDuplicateAlias = false;
+  m_canHaveDuplicatePrefix = false;
+  m_canOnlyCallRegisteredEP = false;
+  m_canOnlyAnswerRegisteredEP = false;
+  m_answerCallPreGrantedARQ = false;
+  m_makeCallPreGrantedARQ = false;
+  m_isGatekeeperRouted = false;
+  m_aliasCanBeHostName = true;
+  m_requireH235 = false;
+  m_disengageOnHearbeatFail = true;
 
   identifierBase = PTime().GetTimeInSeconds();
   nextIdentifier = 1;
@@ -2674,7 +2674,7 @@ H323GatekeeperServer::~H323GatekeeperServer()
 
 H323Transactor * H323GatekeeperServer::CreateListener(H323Transport * transport)
 {
-  return new H323GatekeeperListener(ownerEndPoint, *this, gatekeeperIdentifier, transport);
+  return new H323GatekeeperListener(ownerEndPoint, *this, m_gatekeeperIdentifier, transport);
 }
 
 
@@ -2706,7 +2706,7 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnDiscovery(H323Gatekeeper
         if (iterAuth->IsCapability(info.grq.m_authenticationCapability[cap], info.grq.m_algorithmOIDs[alg])) {
           PTRACE(3, "RAS\tGRQ accepted on " << H323TransportAddress(info.gcf.m_rasAddress, OpalTransportAddress::UdpPrefix())
                  << " using authenticator " << *iterAuth);
-          iterAuth->SetLocalId(gatekeeperIdentifier);
+          iterAuth->SetLocalId(m_gatekeeperIdentifier);
 
           // Disable all the others, there can be only one!
           for (H235Authenticators::iterator otherAuth = authenticators.begin(); otherAuth != authenticators.end(); ++otherAuth)
@@ -2724,7 +2724,7 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnDiscovery(H323Gatekeeper
     }
   }
 
-  if (requireH235) {
+  if (m_requireH235) {
     info.SetRejectReason(H225_GatekeeperRejectReason::e_securityDenial);
     return H323GatekeeperRequest::Reject;
   }
@@ -2743,15 +2743,15 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnRegistration(H323Gatekee
 
   // Initialise reply with default stuff
   info.rcf.IncludeOptionalField(H225_RegistrationConfirm::e_preGrantedARQ);
-  info.rcf.m_preGrantedARQ.m_answerCall = answerCallPreGrantedARQ;
-  info.rcf.m_preGrantedARQ.m_useGKCallSignalAddressToAnswer = answerCallPreGrantedARQ && isGatekeeperRouted;
-  info.rcf.m_preGrantedARQ.m_makeCall = makeCallPreGrantedARQ;
-  info.rcf.m_preGrantedARQ.m_useGKCallSignalAddressToMakeCall = makeCallPreGrantedARQ && isGatekeeperRouted;
+  info.rcf.m_preGrantedARQ.m_answerCall = m_answerCallPreGrantedARQ;
+  info.rcf.m_preGrantedARQ.m_useGKCallSignalAddressToAnswer = m_answerCallPreGrantedARQ && m_isGatekeeperRouted;
+  info.rcf.m_preGrantedARQ.m_makeCall = m_makeCallPreGrantedARQ;
+  info.rcf.m_preGrantedARQ.m_useGKCallSignalAddressToMakeCall = m_makeCallPreGrantedARQ && m_isGatekeeperRouted;
   info.rcf.m_willRespondToIRR = true;
 
-  if (defaultInfoResponseRate > 0 && info.rrq.m_protocolIdentifier[5] > 2) {
+  if (m_defaultInfoResponseRate > 0 && info.rrq.m_protocolIdentifier[5] > 2) {
     info.rcf.m_preGrantedARQ.IncludeOptionalField(H225_RegistrationConfirm_preGrantedARQ::e_irrFrequencyInCall);
-    info.rcf.m_preGrantedARQ.m_irrFrequencyInCall = defaultInfoResponseRate;
+    info.rcf.m_preGrantedARQ.m_irrFrequencyInCall = m_defaultInfoResponseRate;
   }
 
   if (info.rrq.m_keepAlive) {
@@ -2780,7 +2780,7 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnRegistration(H323Gatekee
     }
 
     if (ep2 != info.endpoint) {
-      if (overwriteOnSameSignalAddress) {
+      if (m_overwriteOnSameSignalAddress) {
         PTRACE(2, "RAS\tOverwriting existing endpoint " << *ep2);
         RemoveEndPoint(ep2);
       }
@@ -2843,7 +2843,7 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnRegistration(H323Gatekee
 
 	          // Reject if the prefix be matched to a registered alias or prefix
 	          PSafePtr<H323RegisteredEndPoint> ep2 = FindEndPointByAliasAddress(prefixes[j].m_prefix);
-	          if (ep2 != NULL && ep2 != info.endpoint && !canHaveDuplicatePrefix) {
+            if (ep2 != NULL && ep2 != info.endpoint && !m_canHaveDuplicatePrefix) {
 	            info.SetRejectReason(H225_RegistrationRejectReason::e_duplicateAlias);
                     H225_ArrayOf_AliasAddress & aliases = info.rrj.m_rejectReason;
                     aliases.SetSize(1);
@@ -3368,22 +3368,22 @@ unsigned H323GatekeeperServer::AllocateBandwidth(unsigned newBandwidth,
 
   // If first request for bandwidth, then only give them a maximum of the
   // configured default bandwidth
-  if (oldBandwidth == 0 && newBandwidth > defaultBandwidth)
-    newBandwidth = defaultBandwidth;
+  if (oldBandwidth == 0 && newBandwidth > m_defaultBandwidth)
+    newBandwidth = m_defaultBandwidth;
 
   // If then are asking for more than we have in total, drop it down to whatevers left
-  if (newBandwidth > oldBandwidth && (newBandwidth - oldBandwidth) > (totalBandwidth - usedBandwidth))
-    newBandwidth = totalBandwidth - usedBandwidth - oldBandwidth;
+  if (newBandwidth > oldBandwidth && (newBandwidth - oldBandwidth) > (m_totalBandwidth - m_usedBandwidth))
+    newBandwidth = m_totalBandwidth - m_usedBandwidth - oldBandwidth;
 
   // If greater than the absolute maximum configured for any endpoint, clamp it
-  if (newBandwidth > maximumBandwidth)
-    newBandwidth = maximumBandwidth;
+  if (newBandwidth > m_maximumBandwidth)
+    newBandwidth = m_maximumBandwidth;
 
   // Finally have adjusted new bandwidth, allocate it!
-  usedBandwidth += (newBandwidth - oldBandwidth);
+  m_usedBandwidth += (newBandwidth - oldBandwidth);
 
   PTRACE(3, "RAS\tBandwidth allocation: +" << newBandwidth << " -" << oldBandwidth
-         << " used=" << usedBandwidth << " left=" << (totalBandwidth - usedBandwidth));
+         << " used=" << m_usedBandwidth << " left=" << (m_totalBandwidth - m_usedBandwidth));
   return newBandwidth;
 }
 
@@ -3525,7 +3525,7 @@ PBoolean H323GatekeeperServer::TranslateAliasAddressToSignalAddress(const H225_A
 
   PString aliasString = H323GetAliasAddressString(alias);
 
-  if (isGatekeeperRouted) {
+  if (m_isGatekeeperRouted) {
     const H323ListenerList & listeners = ownerEndPoint.GetListeners();
     address = listeners.front().GetLocalAddress();
     PTRACE(3, "RAS\tTranslating alias " << aliasString << " to " << address << ", gatekeeper routed");
@@ -3539,7 +3539,7 @@ PBoolean H323GatekeeperServer::TranslateAliasAddressToSignalAddress(const H225_A
     return true;
   }
 
-  if (!aliasCanBeHostName)
+  if (!m_aliasCanBeHostName)
     return false;
 
   // If is E.164 address then assume isn't a host name or IP address
@@ -3574,7 +3574,7 @@ PBoolean H323GatekeeperServer::CheckAliasAddressPolicy(const H323RegisteredEndPo
 {
   PWaitAndSignal wait(mutex);
 
-  if (arq.m_answerCall ? canOnlyAnswerRegisteredEP : canOnlyCallRegisteredEP) {
+  if (arq.m_answerCall ? m_canOnlyAnswerRegisteredEP : m_canOnlyCallRegisteredEP) {
     PSafePtr<H323RegisteredEndPoint> ep = FindEndPointByAliasAddress(alias);
     if (ep == NULL)
       return false;
@@ -3590,7 +3590,7 @@ PBoolean H323GatekeeperServer::CheckAliasStringPolicy(const H323RegisteredEndPoi
 {
   PWaitAndSignal wait(mutex);
 
-  if (arq.m_answerCall ? canOnlyAnswerRegisteredEP : canOnlyCallRegisteredEP) {
+  if (arq.m_answerCall ? m_canOnlyAnswerRegisteredEP : m_canOnlyCallRegisteredEP) {
     PSafePtr<H323RegisteredEndPoint> ep = FindEndPointByAliasString(alias);
     if (ep == NULL)
       return false;
@@ -3605,7 +3605,7 @@ void H323GatekeeperServer::SetGatekeeperIdentifier(const PString & id,
 {
   mutex.Wait();
 
-  gatekeeperIdentifier = id;
+  m_gatekeeperIdentifier = id;
 
   if (adjustListeners) {
     for (ListenerList::iterator iterListener = listeners.begin(); iterListener != listeners.end(); ++iterListener)
@@ -3678,7 +3678,7 @@ void H323GatekeeperServer::MonitorMain(PThread &, P_INT_PTR)
 
     for (PSafePtr<H323GatekeeperCall> call = GetFirstCall(PSafeReference); call != NULL; call++) {
       if (!call->OnHeartbeat()) {
-        if (disengageOnHearbeatFail)
+        if (m_disengageOnHearbeatFail)
           call->Disengage();
       }
     }

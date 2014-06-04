@@ -50,6 +50,7 @@ static const char DefaultBandwidthKey[] = "Gatekeeper Default Bandwidth Allocati
 static const char MaximumBandwidthKey[] = "Gatekeeper Maximum Bandwidth Allocation";
 static const char DefaultTimeToLiveKey[] = "Gatekeeper Default Time To Live";
 static const char CallHeartbeatTimeKey[]    = "Gatekeeper Call Heartbeat Time";
+static const char DisengageOnHearbeatFailKey[] = "Disengage On Hearbeat Fail";
 static const char OverwriteOnSameSignalAddressKey[] = "Gatekeeper Overwrite EP On Same Signal Address";
 static const char CanHaveDuplicateAliasKey[] = "Gatekeeper Can Have Duplicate Alias";
 static const char CanOnlyCallRegisteredEPKey[] = "Can Only Call Registered EP";
@@ -313,47 +314,50 @@ bool MyGatekeeperServer::Configure(PConfig & cfg, PConfigPage * rsrc)
   SetAvailableBandwidth(rsrc->AddIntegerField(AvailableBandwidthKey, 1, INT_MAX, GetAvailableBandwidth()/10,
                        "kb/s", "Total bandwidth to allocate across all calls through gatekeeper server")*10);
 
-  defaultBandwidth = rsrc->AddIntegerField(DefaultBandwidthKey, 1, INT_MAX, defaultBandwidth/10,
-               "kb/s", "Default bandwidth to allocate for a call through gatekeeper server")*10;
+  SetDefaultBandwidth(rsrc->AddIntegerField(DefaultBandwidthKey, 1, INT_MAX, GetDefaultBandwidth()/10,
+               "kb/s", "Default bandwidth to allocate for a call through gatekeeper server")*10);
 
-  maximumBandwidth = rsrc->AddIntegerField(MaximumBandwidthKey, 1, INT_MAX, maximumBandwidth/10,
-                  "kb/s", "Maximum bandwidth to allow for a call through gatekeeper server")*10;
+  SetMaximumBandwidth(rsrc->AddIntegerField(MaximumBandwidthKey, 1, INT_MAX, GetMaximumBandwidth() / 10,
+                  "kb/s", "Maximum bandwidth to allow for a call through gatekeeper server")*10);
 
-  defaultTimeToLive = rsrc->AddIntegerField(DefaultTimeToLiveKey, 10, 86400, defaultTimeToLive,
-              "seconds", "Default time before assume endpoint is offline to gatekeeper server");
+  SetTimeToLive(rsrc->AddIntegerField(DefaultTimeToLiveKey, 10, 86400, GetTimeToLive(),
+              "seconds", "Default time before assume endpoint is offline to gatekeeper server"));
 
-  defaultInfoResponseRate = rsrc->AddIntegerField(CallHeartbeatTimeKey, 0, 86400, defaultInfoResponseRate,
-                    "seconds", "Time between validation requests on call controlled by gatekeeper server");
+  SetInfoResponseRate(rsrc->AddIntegerField(CallHeartbeatTimeKey, 0, 86400, GetInfoResponseRate(),
+                    "seconds", "Time between validation requests on call controlled by gatekeeper server"));
 
-  overwriteOnSameSignalAddress = rsrc->AddBooleanField(OverwriteOnSameSignalAddressKey, overwriteOnSameSignalAddress,
-               "Allow new registration to gatekeeper on a specific signal address to override previous registration");
+  SetDisengageOnHearbeatFail(rsrc->AddBooleanField(DisengageOnHearbeatFailKey, GetDisengageOnHearbeatFail(),
+                                                                  "Hang up call if heartbeat (IRR) fails."));
 
-  canHaveDuplicateAlias = rsrc->AddBooleanField(CanHaveDuplicateAliasKey, canHaveDuplicateAlias,
-      "Different endpoint can register with gatekeeper the same alias name as another endpoint");
+  SetOverwriteOnSameSignalAddress(rsrc->AddBooleanField(OverwriteOnSameSignalAddressKey, GetOverwriteOnSameSignalAddress(),
+               "Allow new registration to gatekeeper on a specific signal address to override previous registration"));
 
-  canOnlyCallRegisteredEP = rsrc->AddBooleanField(CanOnlyCallRegisteredEPKey, canOnlyCallRegisteredEP,
-                           "Gatekeeper will only allow EP to call another endpoint registered localy");
+  SetCanHaveDuplicateAlias(rsrc->AddBooleanField(CanHaveDuplicateAliasKey, GetCanHaveDuplicateAlias(),
+      "Different endpoint can register with gatekeeper the same alias name as another endpoint"));
 
-  canOnlyAnswerRegisteredEP = rsrc->AddBooleanField(CanOnlyAnswerRegisteredEPKey, canOnlyAnswerRegisteredEP,
-                         "Gatekeeper will only allow endpoint to answer another endpoint registered localy");
+  SetCanOnlyCallRegisteredEP(rsrc->AddBooleanField(CanOnlyCallRegisteredEPKey, GetCanOnlyCallRegisteredEP(),
+                           "Gatekeeper will only allow EP to call another endpoint registered localy"));
 
-  answerCallPreGrantedARQ = rsrc->AddBooleanField(AnswerCallPreGrantedARQKey, answerCallPreGrantedARQ,
-                                               "Gatekeeper pre-grants all incoming calls to endpoint");
+  SetCanOnlyAnswerRegisteredEP(rsrc->AddBooleanField(CanOnlyAnswerRegisteredEPKey, GetCanOnlyAnswerRegisteredEP(),
+                         "Gatekeeper will only allow endpoint to answer another endpoint registered localy"));
 
-  makeCallPreGrantedARQ = rsrc->AddBooleanField(MakeCallPreGrantedARQKey, makeCallPreGrantedARQ,
-                                       "Gatekeeper pre-grants all outgoing calls from endpoint");
+  SetAnswerCallPreGrantedARQ(rsrc->AddBooleanField(AnswerCallPreGrantedARQKey, GetAnswerCallPreGrantedARQ(),
+                                               "Gatekeeper pre-grants all incoming calls to endpoint"));
 
-  aliasCanBeHostName = rsrc->AddBooleanField(AliasCanBeHostNameKey, aliasCanBeHostName,
-              "Gatekeeper allows endpoint to simply registerit's host name/IP address");
+  SetMakeCallPreGrantedARQ(rsrc->AddBooleanField(MakeCallPreGrantedARQKey, GetMakeCallPreGrantedARQ(),
+                                       "Gatekeeper pre-grants all outgoing calls from endpoint"));
 
-  m_minAliasToAllocate = rsrc->AddIntegerField(MinAliasToAllocateKey, 0, INT_MAX, m_minAliasToAllocate, "",
-       "Minimum value for aliases gatekeeper will allocate when endpoint does not provide one, 0 disables");
+  SetAliasCanBeHostName(rsrc->AddBooleanField(AliasCanBeHostNameKey, GetAliasCanBeHostName(),
+              "Gatekeeper allows endpoint to simply register its host name/IP address"));
 
-  m_maxAliasToAllocate = rsrc->AddIntegerField(MaxAliasToAllocateKey, 0, INT_MAX, m_maxAliasToAllocate, "",
-       "Minimum value for aliases gatekeeper will allocate when endpoint does not provide one, 0 disables");
+  SetMinAliasToAllocate(rsrc->AddIntegerField(MinAliasToAllocateKey, 0, INT_MAX, GetMinAliasToAllocate(), "",
+       "Minimum value for aliases gatekeeper will allocate when endpoint does not provide one, 0 disables"));
 
-  isGatekeeperRouted = rsrc->AddBooleanField(IsGatekeeperRoutedKey, isGatekeeperRouted,
-             "All endpoionts will route sigaling for all calls through the gatekeeper");
+  SetMaxAliasToAllocate(rsrc->AddIntegerField(MaxAliasToAllocateKey, 0, INT_MAX, GetMaxAliasToAllocate(), "",
+       "Maximum value for aliases gatekeeper will allocate when endpoint does not provide one, 0 disables"));
+
+  SetGatekeeperRouted(rsrc->AddBooleanField(IsGatekeeperRoutedKey, IsGatekeeperRouted(),
+             "All endpoionts will route sigaling for all calls through the gatekeeper"));
 
   PHTTPCompositeField * routeFields = new PHTTPCompositeField(AliasRouteMapsKey, AliasRouteMapsName,
                                                               "Fixed mapping of alias names to hostnames for calls routed through gatekeeper");
@@ -372,8 +376,8 @@ bool MyGatekeeperServer::Configure(PConfig & cfg, PConfigPage * rsrc)
     }
   }
 
-  requireH235 = rsrc->AddBooleanField(RequireH235Key, requireH235,
-      "Gatekeeper requires H.235 cryptographic authentication for registrations");
+  SetRequiredH235(rsrc->AddBooleanField(RequireH235Key, IsRequiredH235(),
+      "Gatekeeper requires H.235 cryptographic authentication for registrations"));
 
   PHTTPCompositeField * security = new PHTTPCompositeField(AuthenticationCredentialsKey, AuthenticationCredentialsName,
                                                            "Table of username/password for authenticated endpoints on gatekeeper, requires H.235");
