@@ -777,10 +777,10 @@ H323GatekeeperCall::H323GatekeeperCall(H323GatekeeperServer& gk,
   , m_conferenceIdentifier(NULL)
   , m_bandwidthUsed(0)
   , m_infoResponseRate(gk.GetInfoResponseRate())
+  , m_drqReceived(false)
   , m_alertingTime(0)
   , m_connectedTime(0)
   , m_callEndTime(0)
-  , m_drqReceived(false)
   , m_callEndReason(H323Connection::NumCallEndReasons)
 {
 }
