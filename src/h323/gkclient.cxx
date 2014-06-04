@@ -365,24 +365,23 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm
     }
   }
 
-  {
-    PSafeLockReadWrite mutex(*transport);
-
-    H323TransportAddress locatedAddress(gcf.m_rasAddress, OpalTransportAddress::UdpPrefix());
-    if (!transport->SetRemoteAddress(locatedAddress)) {
-      PTRACE(2, "RAS\tInvalid gatekeeper discovery address: \"" << locatedAddress << '"');
-      return false;
-    }
-
-    PTRACE(3, "RAS\tGatekeeper discovered at: "
-           << transport->GetRemoteAddress()
-           << " (if=" << transport->GetLocalAddress() << ')');
-  }
-
   if (gcf.HasOptionalField(H225_GatekeeperConfirm::e_alternateGatekeeper))
     SetAlternates(gcf.m_alternateGatekeeper, false);
 
-  discoveryComplete = true;
+  PSafeLockReadWrite mutex(*transport);
+
+  OpalTransportAddress previousAddress(transport->GetRemoteAddress());
+  H323TransportAddress locatedAddress(gcf.m_rasAddress, OpalTransportAddress::UdpPrefix());
+  if (!transport->SetRemoteAddress(locatedAddress)) {
+    PTRACE(2, "RAS\tInvalid gatekeeper discovery address: \"" << locatedAddress << '"');
+    return false;
+  }
+
+  PTRACE(3, "RAS\tGatekeeper discovered at: "
+          << transport->GetRemoteAddress()
+          << " (if=" << transport->GetLocalAddress() << ')');
+
+  discoveryComplete = previousAddress.Find('*') != P_MAX_INDEX || previousAddress == locatedAddress;
   return true;
 }
 
