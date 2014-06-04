@@ -3350,6 +3350,12 @@ PBoolean H323GatekeeperServer::GetUsersPassword(const PString & alias, PString &
 }
 
 
+void H323GatekeeperServer::SetUsersPassword(const PString & alias, const PString & password)
+{
+  m_passwords.SetAt(alias, password);
+}
+
+
 unsigned H323GatekeeperServer::AllocateBandwidth(unsigned newBandwidth,
                                                  unsigned oldBandwidth)
 {
