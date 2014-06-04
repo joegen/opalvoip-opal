@@ -221,7 +221,7 @@ void H323EndPoint::SetEndpointTypeInfo(H225_EndpointType & info) const
     case e_SimpleEndpointType :
       info.IncludeOptionalField(H225_EndpointType::e_set);
       info.m_set.Set(0); // Audio SET
-      info.m_set.Clear(0); // Not conference aware
+      info.m_set.Clear(1); // Not conference aware
       break;
 
     case e_TerminalOnly :
