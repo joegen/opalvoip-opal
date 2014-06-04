@@ -1518,6 +1518,11 @@ class H323GatekeeperServer : public H323TransactionServer
       const PString & alias,
       PString & password
     ) const;
+    virtual void SetUsersPassword(
+      const PString & alias,
+      const PString & password
+    );
+    virtual void ClearPasswords() { m_passwords.RemoveAll(); }
   //@}
 
 #if OPAL_H501
