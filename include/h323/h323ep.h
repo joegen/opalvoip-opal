@@ -990,6 +990,7 @@ class H323EndPoint : public OpalRTPEndPoint
     /**Endpoint types.
      */
     enum TerminalTypes {
+      e_SimpleEndpointType = 40,
       e_TerminalOnly = 50,
       e_TerminalAndMC = 70,
       e_GatewayOnly = 60,

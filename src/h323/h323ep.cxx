@@ -218,6 +218,12 @@ void H323EndPoint::SetEndpointTypeInfo(H225_EndpointType & info) const
   SetVendorIdentifierInfo(info.m_vendor);
 
   switch (terminalType) {
+    case e_SimpleEndpointType :
+      info.IncludeOptionalField(H225_EndpointType::e_set);
+      info.m_set.Set(0); // Audio SET
+      info.m_set.Clear(0); // Not conference aware
+      break;
+
     case e_TerminalOnly :
     case e_TerminalAndMC :
       info.IncludeOptionalField(H225_EndpointType::e_terminal);
