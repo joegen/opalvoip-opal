@@ -95,20 +95,20 @@ class H323GatekeeperRequest : public H323Transaction
       H323TransactionPDU & pdu
     );
     virtual bool CheckCryptoTokens();
-    PBoolean CheckGatekeeperIdentifier();
-    PBoolean GetRegisteredEndPoint();
+    bool CheckGatekeeperIdentifier();
+    bool GetRegisteredEndPoint();
 
     virtual PString GetGatekeeperIdentifier() const = 0;
     virtual unsigned GetGatekeeperRejectTag() const = 0;
     virtual PString GetEndpointIdentifier() const = 0;
     virtual unsigned GetRegisteredEndPointRejectTag() const = 0;
 
-    H323GatekeeperListener & GetRasChannel() const { return rasChannel; }
+    H323GatekeeperListener & GetRasChannel() const { return m_rasChannel; }
 
-    PSafePtr<H323RegisteredEndPoint> endpoint;
+    PSafePtr<H323RegisteredEndPoint> m_endpoint;
 
   protected:
-    H323GatekeeperListener & rasChannel;
+    H323GatekeeperListener & m_rasChannel;
 };
 
 
@@ -499,7 +499,7 @@ class H323GatekeeperCall : public PSafeObject
 
     /**Add call credit and duration information to PDU.
       */
-    PBoolean AddCallCreditServiceControl(
+    bool AddCallCreditServiceControl(
       H225_ArrayOf_ServiceControlSession & serviceControl
     ) const;
 
@@ -527,57 +527,57 @@ class H323GatekeeperCall : public PSafeObject
 
   /**@name Access functions */
   //@{
-    H323GatekeeperServer & GetGatekeeper() const { return gatekeeper; }
-    H323RegisteredEndPoint & GetEndPoint() const { return *PAssertNULL(endpoint); }
-    PBoolean IsAnsweringCall() const { return direction == AnsweringCall; }
-    unsigned GetCallReference() const { return callReference; }
-    const OpalGloballyUniqueID & GetCallIdentifier() const { return callIdentifier; }
-    const OpalGloballyUniqueID & GetConferenceIdentifier() const { return conferenceIdentifier; }
-    const PString & GetSourceNumber() const { return srcNumber; }
-    const PStringArray & GetSourceAliases() const { return srcAliases; }
-    const H323TransportAddress & GetSourceHost() const { return srcHost; }
+    H323GatekeeperServer & GetGatekeeper() const { return m_gatekeeper; }
+    H323RegisteredEndPoint & GetEndPoint() const { return *PAssertNULL(m_endpoint); }
+    bool IsAnsweringCall() const { return m_direction == AnsweringCall; }
+    unsigned GetCallReference() const { return m_callReference; }
+    const OpalGloballyUniqueID & GetCallIdentifier() const { return m_callIdentifier; }
+    const OpalGloballyUniqueID & GetConferenceIdentifier() const { return m_conferenceIdentifier; }
+    const PString & GetSourceNumber() const { return m_srcNumber; }
+    const PStringArray & GetSourceAliases() const { return m_srcAliases; }
+    const H323TransportAddress & GetSourceHost() const { return m_srcHost; }
     PString GetSourceAddress() const;
-    const PString & GetDestinationNumber() const { return dstNumber; }
-    const PStringArray & GetDestinationAliases() const { return dstAliases; }
-    const H323TransportAddress & GetDestinationHost() const { return dstHost; }
+    const PString & GetDestinationNumber() const { return m_dstNumber; }
+    const PStringArray & GetDestinationAliases() const { return m_dstAliases; }
+    const H323TransportAddress & GetDestinationHost() const { return m_dstHost; }
     PString GetDestinationAddress() const;
-    unsigned GetBandwidthUsed() const { return bandwidthUsed; }
-    PBoolean SetBandwidthUsed(unsigned bandwidth);
-    const PTime & GetLastInfoResponseTime() const { return lastInfoResponse; }
-    const PTime & GetCallStartTime() const { return callStartTime; }
-    const PTime & GetAlertingTime() const { return alertingTime; }
-    const PTime & GetConnectedTime() const { return connectedTime; }
-    const PTime & GetCallEndTime() const { return callEndTime; }
-    H323Connection::CallEndReason GetCallEndReason() const { return callEndReason; }
+    unsigned GetBandwidthUsed() const { return m_bandwidthUsed; }
+    bool SetBandwidthUsed(unsigned bandwidth);
+    const PTime & GetLastInfoResponseTime() const { return m_lastInfoResponse; }
+    const PTime & GetCallStartTime() const { return m_callStartTime; }
+    const PTime & GetAlertingTime() const { return m_alertingTime; }
+    const PTime & GetConnectedTime() const { return m_connectedTime; }
+    const PTime & GetCallEndTime() const { return m_callEndTime; }
+    H323Connection::CallEndReason GetCallEndReason() const { return m_callEndReason; }
   //@}
 
   protected:
     void SetUsageInfo(const H225_RasUsageInformation & usage);
 
-    H323GatekeeperServer   & gatekeeper;
-    H323RegisteredEndPoint * endpoint;
-    H323GatekeeperListener * rasChannel;
+    H323GatekeeperServer   & m_gatekeeper;
+    H323RegisteredEndPoint * m_endpoint;
+    H323GatekeeperListener * m_rasChannel;
 
-    Direction            direction;
-    unsigned             callReference;
-    OpalGloballyUniqueID callIdentifier;
-    OpalGloballyUniqueID conferenceIdentifier;
-    PString              srcNumber;
-    PStringArray         srcAliases;
-    H323TransportAddress srcHost;
-    PString              dstNumber;
-    PStringArray         dstAliases;
-    H323TransportAddress dstHost;
-    unsigned             bandwidthUsed;
-    unsigned             infoResponseRate;
-    PTime                lastInfoResponse;
+    Direction            m_direction;
+    unsigned             m_callReference;
+    OpalGloballyUniqueID m_callIdentifier;
+    OpalGloballyUniqueID m_conferenceIdentifier;
+    PString              m_srcNumber;
+    PStringArray         m_srcAliases;
+    H323TransportAddress m_srcHost;
+    PString              m_dstNumber;
+    PStringArray         m_dstAliases;
+    H323TransportAddress m_dstHost;
+    unsigned             m_bandwidthUsed;
+    unsigned             m_infoResponseRate;
+    PTime                m_lastInfoResponse;
 
-    PBoolean                          drqReceived;
-    PTime                         callStartTime;
-    PTime                         alertingTime;
-    PTime                         connectedTime;
-    PTime                         callEndTime;
-    H323Connection::CallEndReason callEndReason;
+    bool                          m_drqReceived;
+    PTime                         m_callStartTime;
+    PTime                         m_alertingTime;
+    PTime                         m_connectedTime;
+    PTime                         m_callEndTime;
+    H323Connection::CallEndReason m_callEndReason;
 };
 
 
@@ -635,13 +635,13 @@ class H323RegisteredEndPoint : public PSafeObject
 
     /**Get the count of active calls on this endpoint.
       */
-    PINDEX GetCallCount() const { return activeCalls.GetSize(); }
+    PINDEX GetCallCount() const { return m_activeCalls.GetSize(); }
 
     /**Get the details of teh active call on this endpoint.
       */
     H323GatekeeperCall & GetCall(
       PINDEX idx
-    ) { return activeCalls[idx]; }
+    ) { return m_activeCalls[idx]; }
   //@}
 
   /**@name Protocol Operations */
@@ -765,69 +765,69 @@ class H323RegisteredEndPoint : public PSafeObject
 
     /**Get the endpoint identifier assigned to the endpoint.
       */
-    const PString & GetIdentifier() const { return identifier; }
+    const PString & GetIdentifier() const { return m_identifier; }
 
     /**Get the Peer Element descriptor ID assigned to the endpoint.
       */
-    const OpalGloballyUniqueID & GetDescriptorID() const { return descriptorID; }
+    const OpalGloballyUniqueID & GetDescriptorID() const { return m_descriptorID; }
 
     /**Get the gatekeeper server data object that owns this endpoint.
       */
-    H323GatekeeperServer & GetGatekeeper() const { return gatekeeper; }
+    H323GatekeeperServer & GetGatekeeper() const { return m_gatekeeper; }
 
     /**Get the addresses that can be used to contact this endpoint via the
        RAS protocol.
       */
-    const H323TransportAddressArray & GetRASAddresses() const { return rasAddresses; }
+    const H323TransportAddressArray & GetRASAddresses() const { return m_rasAddresses; }
 
     /**Get the number of addresses that can be used to contact this
        endpoint via the RAS protocol.
       */
-    PINDEX GetRASAddressCount() const { return rasAddresses.GetSize(); }
+    PINDEX GetRASAddressCount() const { return m_rasAddresses.GetSize(); }
 
     /**Get an address that can be used to contact this endpoint via the RAS
        protocol.
       */
     H323TransportAddress GetRASAddress(
       PINDEX idx
-    ) const { return rasAddresses[idx]; }
+    ) const { return m_rasAddresses[idx]; }
 
     /**Get the addresses that can be used to contact this
        endpoint via the H.225/Q.931 protocol, ie normal calls.
       */
-    const H323TransportAddressArray & GetSignalAddresses() const { return signalAddresses; }
+    const H323TransportAddressArray & GetSignalAddresses() const { return m_signalAddresses; }
 
     /**Get the number of addresses that can be used to contact this
        endpoint via the H.225/Q.931 protocol, ie normal calls.
       */
-    PINDEX GetSignalAddressCount() const { return signalAddresses.GetSize(); }
+    PINDEX GetSignalAddressCount() const { return m_signalAddresses.GetSize(); }
 
     /**Get an address that can be used to contact this endpoint via the
        H.225/Q.931 protocol, ie normal calls.
       */
     H323TransportAddress GetSignalAddress(
       PINDEX idx
-    ) const { return signalAddresses[idx]; }
+    ) const { return m_signalAddresses[idx]; }
 
     /**Get the aliases this endpoint may be identified by.
       */
-    const PStringArray & GetAliases() const { return aliases; }
+    const PStringArray & GetAliases() const { return m_aliases; }
 
     /**Determine if alias is an alias that this endpoint may be identified by.
       */
-    PBoolean ContainsAlias(
+    bool ContainsAlias(
       const PString & alias
-      ) { return aliases.GetStringsIndex(alias) != P_MAX_INDEX; }
+      ) { return m_aliases.GetStringsIndex(alias) != P_MAX_INDEX; }
 
     /**Get the number of aliases this endpoint may be identified by.
       */
-    PINDEX GetAliasCount() const { return aliases.GetSize(); }
+    PINDEX GetAliasCount() const { return m_aliases.GetSize(); }
 
     /**Get an alias that this endpoint may be identified by.
       */
     PString GetAlias(
       PINDEX idx
-    ) const { if (idx < aliases.GetSize()) return aliases[idx]; return PString::Empty(); }
+    ) const { if (idx < m_aliases.GetSize()) return m_aliases[idx]; return PString::Empty(); }
 
     /** Remove an alias that this endpoint may be identified by.
       * If this was the last alias, then endpoint will be deleted soon
@@ -840,49 +840,49 @@ class H323RegisteredEndPoint : public PSafeObject
 
     /**Get the security context for this RAS connection.
       */
-    virtual const H235Authenticators & GetAuthenticators() const { return authenticators; }
+    virtual const H235Authenticators & GetAuthenticators() const { return m_authenticators; }
 
     /**Get the number of prefixes this endpoint can accept.
       */
-    PINDEX GetPrefixCount() const { return voicePrefixes.GetSize(); }
+    PINDEX GetPrefixCount() const { return m_voicePrefixes.GetSize(); }
 
     /**Get a prefix that this endpoint can accept.
       */
     PString GetPrefix(
       PINDEX idx
-    ) const { return voicePrefixes[idx]; }
+    ) const { return m_voicePrefixes[idx]; }
 
     /**Get application info (name/version etc) for endpoint.
       */
-    PCaselessString GetApplicationInfo() const { return productInfo.AsString(); }
+    PCaselessString GetApplicationInfo() const { return m_productInfo.AsString(); }
 
     /**Get application info (name/version etc) for endpoint.
       */
-    const OpalProductInfo & GetProductInfo() const { return productInfo; }
+    const OpalProductInfo & GetProductInfo() const { return m_productInfo; }
 
     /**Get the protocol version the endpoint registered with.
       */
-    unsigned GetProtocolVersion() const { return protocolVersion; }
+    unsigned GetProtocolVersion() const { return m_protocolVersion; }
 
     /**Return if gatekeeper thinks the endpoint is behind a firewall.
       */
-    PBoolean IsBehindNAT() const { return isBehindNAT; }
+    bool IsBehindNAT() const { return m_isBehindNAT; }
 
     /**Get the flag indicating the endpoint can display credit amounts.
       */
-    PBoolean CanDisplayAmountString() const { return canDisplayAmountString; }
+    bool CanDisplayAmountString() const { return m_canDisplayAmountString; }
 
     /**Get the flag indicating the endpoint can enforce a duration limit.
       */
-    PBoolean CanEnforceDurationLimit() const { return canEnforceDurationLimit; }
+    bool CanEnforceDurationLimit() const { return m_canEnforceDurationLimit; }
 
     /**Get the flag indicating the endpoint can handle RIPs (H225v1 endpoints cannot)
       */
-    PBoolean CanReceiveRIP() const;
+    bool CanReceiveRIP() const;
 
     /**Get the H225 version reported in the RRQ
       */
-    PBoolean GetH225Version() const { return h225Version; }
+    bool GetH225Version() const { return m_h225Version; }
 
     /**Get the creation time for endpoint.
       */
@@ -907,30 +907,30 @@ class H323RegisteredEndPoint : public PSafeObject
 
 
   protected:
-    H323GatekeeperServer    & gatekeeper;
-    H323GatekeeperListener  * rasChannel;
+    H323GatekeeperServer    & m_gatekeeper;
+    H323GatekeeperListener  * m_rasChannel;
 
-    PString                   identifier;
-    OpalGloballyUniqueID      descriptorID;
-    H323TransportAddressArray rasAddresses;
-    H323TransportAddressArray signalAddresses;
-    PStringArray              aliases;
-    PStringArray              voicePrefixes;
-    OpalProductInfo           productInfo;
-    unsigned                  protocolVersion;
-    PBoolean                      isBehindNAT;
-    PBoolean                      canDisplayAmountString;
-    PBoolean                      canEnforceDurationLimit;
-    unsigned                  h225Version;
-    unsigned                  timeToLive;
-    H235Authenticators        authenticators;
+    PString                   m_identifier;
+    OpalGloballyUniqueID      m_descriptorID;
+    H323TransportAddressArray m_rasAddresses;
+    H323TransportAddressArray m_signalAddresses;
+    PStringArray              m_aliases;
+    PStringArray              m_voicePrefixes;
+    OpalProductInfo           m_productInfo;
+    unsigned                  m_protocolVersion;
+    bool                      m_isBehindNAT;
+    bool                      m_canDisplayAmountString;
+    bool                      m_canEnforceDurationLimit;
+    unsigned                  m_h225Version;
+    unsigned                  m_timeToLive;
+    H235Authenticators        m_authenticators;
 
     PTime m_creationTime;
-    PTime lastRegistration;
-    PTime lastInfoResponse;
+    PTime m_lastRegistration;
+    PTime m_lastInfoResponse;
 
-    PSortedList<H323GatekeeperCall> activeCalls;
-    POrdinalDictionary<PString>     serviceControlSessions;
+    PSortedList<H323GatekeeperCall> m_activeCalls;
+    POrdinalDictionary<PString>     m_serviceControlSessions;
 };
 
 
@@ -972,14 +972,14 @@ class H323GatekeeperListener : public H225_RAS
   //@{
     /**Send a UnregistrationRequest (URQ) to endpoint.
       */
-    PBoolean UnregistrationRequest(
+    virtual PBoolean UnregistrationRequest(
       const H323RegisteredEndPoint & ep,
       unsigned reason
     );
 
     /**Send a DisengageRequest (DRQ) to endpoint.
       */
-    PBoolean DisengageRequest(
+    virtual PBoolean DisengageRequest(
       const H323GatekeeperCall & call,
       unsigned reason
     );
@@ -1092,12 +1092,12 @@ class H323GatekeeperListener : public H225_RAS
 
   /**@name Member access */
   //@{
-    H323GatekeeperServer & GetGatekeeper() const { return gatekeeper; }
+    H323GatekeeperServer & GetGatekeeper() const { return m_gatekeeper; }
   //@}
 
 
   protected:
-    H323GatekeeperServer & gatekeeper;
+    H323GatekeeperServer & m_gatekeeper;
 };
 
 
@@ -1278,7 +1278,7 @@ class H323GatekeeperServer : public H323TransactionServer
       */
     PSafePtr<H323RegisteredEndPoint> GetFirstEndPoint(
       PSafetyMode mode = PSafeReference
-    ) { return PSafePtr<H323RegisteredEndPoint>(byIdentifier, mode); }
+    ) { return PSafePtr<H323RegisteredEndPoint>(m_byIdentifier, mode); }
   //@}
 
     PSafePtr<H323RegisteredEndPoint> FindDestinationEndPoint(
@@ -1364,7 +1364,7 @@ class H323GatekeeperServer : public H323TransactionServer
       */
     PSafePtr<H323GatekeeperCall> GetFirstCall(
       PSafetyMode mode = PSafeReference
-    ) { return PSafePtr<H323GatekeeperCall>(activeCalls, mode); }
+    ) { return PSafePtr<H323GatekeeperCall>(m_activeCalls, mode); }
   //@}
 
   /**@name Routing operations */
@@ -1525,7 +1525,7 @@ class H323GatekeeperServer : public H323TransactionServer
   //@{
     /**Get the associated peer element for the gatekeeper.
       */
-    H323PeerElement * GetPeerElement() const { return peerElement; }
+    H323PeerElement * GetPeerElement() const { return m_peerElement; }
 
     /**Set the associated peer element for the gatekeeper.
        The existing peer element is automatically deleted.
@@ -1548,10 +1548,10 @@ class H323GatekeeperServer : public H323TransactionServer
        and recreated. If append is true then a new service relationship is
        added to the existing peer element.
       */
-    PBoolean OpenPeerElement(
+    bool OpenPeerElement(
       const H323TransportAddress & remotePeer,
-      PBoolean append = false,
-      PBoolean keepTrying = true
+      bool append = false,
+      bool keepTrying = true
     );
   //@}
 #endif
@@ -1569,7 +1569,7 @@ class H323GatekeeperServer : public H323TransactionServer
       */
     void SetGatekeeperIdentifier(
       const PString & id,
-      PBoolean adjustListeners = true
+      bool adjustListeners = true
     );
 
     /**Get the total bandwidth available in 100's of bits per second.
@@ -1656,45 +1656,45 @@ class H323GatekeeperServer : public H323TransactionServer
 
     /**Get flag for is gatekeeper routed.
       */
-    PBoolean IsGatekeeperRouted() const { return m_isGatekeeperRouted; }
+    bool IsGatekeeperRouted() const { return m_isGatekeeperRouted; }
     void SetGatekeeperRouted(bool is) { m_isGatekeeperRouted = is; }
 
     /**Get flag for if H.235 authentication is required.
       */
-    PBoolean IsRequiredH235() const { return m_requireH235; }
+    bool IsRequiredH235() const { return m_requireH235; }
     void SetRequiredH235(bool req) { m_requireH235 = req; }
 
     /**Get the currently active registration count.
       */
-    unsigned GetActiveRegistrations() const { return byIdentifier.GetSize(); }
+    unsigned GetActiveRegistrations() const { return m_byIdentifier.GetSize(); }
 
     /**Get the peak registration count.
       */
-    unsigned GetPeakRegistrations() const { return peakRegistrations; }
+    unsigned GetPeakRegistrations() const { return m_peakRegistrations; }
 
     /**Get the total registrations since start up.
       */
-    unsigned GetTotalRegistrations() const { return totalRegistrations; }
+    unsigned GetTotalRegistrations() const { return m_totalRegistrations; }
 
     /**Get the total registrations rejected since start up.
       */
-    unsigned GetRejectedRegistrations() const { return rejectedRegistrations; }
+    unsigned GetRejectedRegistrations() const { return m_rejectedRegistrations; }
 
     /**Get the currently active call count.
       */
-    unsigned GetActiveCalls() const { return activeCalls.GetSize(); }
+    unsigned GetActiveCalls() const { return m_activeCalls.GetSize(); }
 
     /**Get the peak calls count.
       */
-    unsigned GetPeakCalls() const { return peakCalls; }
+    unsigned GetPeakCalls() const { return m_peakCalls; }
 
     /**Get the total calls since start up.
       */
-    unsigned GetTotalCalls() const { return totalCalls; }
+    unsigned GetTotalCalls() const { return m_totalCalls; }
 
     /**Get the total calls rejected since start up.
       */
-    unsigned GetRejectedCalls() const { return rejectedCalls; }
+    unsigned GetRejectedCalls() const { return m_rejectedCalls; }
   //@}
 
     // Remove an alias from the server database.
@@ -1749,25 +1749,24 @@ class H323GatekeeperServer : public H323TransactionServer
     bool     m_requireH235;
     bool     m_disengageOnHearbeatFail;
 
-    PStringToString passwords;
+    PStringToString m_passwords;
 
     // Dynamic variables
-    PMutex         mutex;
-    time_t         identifierBase;
-    unsigned       nextIdentifier;
-    PThread      * monitorThread;
-    PSyncPoint     monitorExit;
+    time_t      m_identifierBase;
+    unsigned    m_nextIdentifier;
+    PThread   * m_monitorThread;
+    PSyncPoint  m_monitorExit;
 
     PLIST(ListenerList, H323GatekeeperListener);
-    ListenerList listeners;
+    ListenerList m_listeners;
 
 #if OPAL_H501
-    H323PeerElement * peerElement;
+    H323PeerElement * m_peerElement;
 #endif
 
     PSafeDictionary<H225_AliasAddress, H323RegisteredEndPoint> m_discoveredEndpoints;
 
-    PSafeDictionary<PString, H323RegisteredEndPoint> byIdentifier;
+    PSafeDictionary<PString, H323RegisteredEndPoint> m_byIdentifier;
 
     class StringMap : public PString {
         PCLASSINFO(StringMap, PString);
@@ -1776,18 +1775,18 @@ class H323GatekeeperServer : public H323TransactionServer
           : PString(from), identifier(id) { }
         PString identifier;
     };
-    PSortedStringList byAddress;
-    PSortedStringList byAlias;
-    PSortedStringList byVoicePrefix;
+    PSortedStringList m_byAddress;
+    PSortedStringList m_byAlias;
+    PSortedStringList m_byVoicePrefix;
 
-    PSafeSortedList<H323GatekeeperCall> activeCalls;
+    PSafeSortedList<H323GatekeeperCall> m_activeCalls;
 
-    PINDEX peakRegistrations;
-    PINDEX totalRegistrations;
-    PAtomicInteger rejectedRegistrations;
-    PINDEX peakCalls;
-    PINDEX totalCalls;
-    PAtomicInteger rejectedCalls;
+    PINDEX         m_peakRegistrations;
+    PINDEX         m_totalRegistrations;
+    PAtomicInteger m_rejectedRegistrations;
+    PINDEX         m_peakCalls;
+    PINDEX         m_totalCalls;
+    PAtomicInteger m_rejectedCalls;
 
   friend class H323GatekeeperRRQ;
   friend class H323GatekeeperARQ;
