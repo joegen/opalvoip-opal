@@ -1560,7 +1560,7 @@ class H323GatekeeperServer : public H323TransactionServer
   //@{
     /**Get the identifier name for this gatekeeper.
       */
-    const PString & GetGatekeeperIdentifier() const { return gatekeeperIdentifier; }
+    const PString & GetGatekeeperIdentifier() const { return m_gatekeeperIdentifier; }
 
     /**Set the identifier name for this gatekeeper.
        If adjustListeners is true then all gatekeeper listeners that are
@@ -1574,43 +1574,95 @@ class H323GatekeeperServer : public H323TransactionServer
 
     /**Get the total bandwidth available in 100's of bits per second.
       */
-    unsigned GetAvailableBandwidth() const { return totalBandwidth; }
+    unsigned GetAvailableBandwidth() const { return m_totalBandwidth; }
 
     /**Set the total bandwidth available in 100's of bits per second.
       */
-    void SetAvailableBandwidth(unsigned bps100) { totalBandwidth = bps100; }
+    void SetAvailableBandwidth(unsigned bps100) { m_totalBandwidth = bps100; }
 
     /**Get the total bandwidth used in 100's of bits per second.
       */
-    unsigned GetUsedBandwidth() const { return usedBandwidth; }
+    unsigned GetUsedBandwidth() const { return m_usedBandwidth; }
 
     /**Get the default bandwidth for calls.
       */
-    unsigned GetDefaultBandwidth() const { return defaultBandwidth; }
+    unsigned GetDefaultBandwidth() const { return m_defaultBandwidth; }
+    void SetDefaultBandwidth(unsigned bw) { m_defaultBandwidth = bw; }
+
+    /**Get the maximum bandwidth for calls.
+      */
+    unsigned GetMaximumBandwidth() const { return m_maximumBandwidth; }
+    void SetMaximumBandwidth(unsigned bw) { m_maximumBandwidth = bw; }
 
     /**Get the default time to live for new registered endpoints.
       */
-    unsigned GetTimeToLive() const { return defaultTimeToLive; }
+    unsigned GetTimeToLive() const { return m_defaultTimeToLive; }
 
     /**Set the default time to live for new registered endpoints.
       */
-    void SetTimeToLive(unsigned seconds) { defaultTimeToLive = seconds; }
+    void SetTimeToLive(unsigned seconds) { m_defaultTimeToLive = seconds; }
 
     /**Get the default time for monitoring calls via IRR.
       */
-    unsigned GetInfoResponseRate() const { return defaultInfoResponseRate; }
+    unsigned GetInfoResponseRate() const { return m_defaultInfoResponseRate; }
 
     /**Set the default time for monitoring calls via IRR.
       */
-    void SetInfoResponseRate(unsigned seconds) { defaultInfoResponseRate = seconds; }
+    void SetInfoResponseRate(unsigned seconds) { m_defaultInfoResponseRate = seconds; }
+
+    /// Allow new registration to gatekeeper on a specific signal address to override previous registration
+    bool GetOverwriteOnSameSignalAddress() const { return m_overwriteOnSameSignalAddress; }
+    void SetOverwriteOnSameSignalAddress(bool v) { m_overwriteOnSameSignalAddress = v; }
+
+    /// Minimum value for aliases gatekeeper will allocate when endpoint does not provide one, 0 disables
+    unsigned GetMinAliasToAllocate() const { return m_minAliasToAllocate; }
+    void SetMinAliasToAllocate(unsigned v) { m_minAliasToAllocate = v; }
+
+    /// Maximum value for aliases gatekeeper will allocate when endpoint does not provide one, 0 disables
+    unsigned GetMaxAliasToAllocate() const { return m_maxAliasToAllocate; }
+    void SetMaxAliasToAllocate(unsigned v) { m_maxAliasToAllocate = v; }
+
+    /// Different endpoint can register with gatekeeper the same alias name as another endpoint
+    bool GetCanHaveDuplicateAlias() const { return m_canHaveDuplicateAlias; }
+    void SetCanHaveDuplicateAlias(bool v) { m_canHaveDuplicateAlias = v; }
+
+    /// Gateways may register duplicate prefix E.164 numbers.
+    bool GetCanHaveDuplicatePrefix() const { return m_canHaveDuplicatePrefix; }
+    void SetCanHaveDuplicatePrefix(bool v) { m_canHaveDuplicatePrefix = v; }
+
+    /// Gatekeeper will only allow EP to call another endpoint registered localy
+    bool GetCanOnlyCallRegisteredEP() const { return m_canOnlyCallRegisteredEP; }
+    void SetCanOnlyCallRegisteredEP(bool v) { m_canOnlyCallRegisteredEP = v; }
+
+    /// Gatekeeper will only allow endpoint to answer another endpoint registered localy
+    bool GetCanOnlyAnswerRegisteredEP() const { return m_canOnlyAnswerRegisteredEP; }
+    void SetCanOnlyAnswerRegisteredEP(bool v) { m_canOnlyAnswerRegisteredEP = v; }
+
+    /// Gatekeeper pre-grants all incoming calls to endpoint
+    bool GetAnswerCallPreGrantedARQ() const { return m_answerCallPreGrantedARQ; }
+    void SetAnswerCallPreGrantedARQ(bool v) { m_answerCallPreGrantedARQ = v; }
+
+    /// Gatekeeper pre-grants all outgoing calls from endpoint
+    bool GetMakeCallPreGrantedARQ() const { return m_makeCallPreGrantedARQ; }
+    void SetMakeCallPreGrantedARQ(bool v) { m_makeCallPreGrantedARQ = v; }
+
+    /// Gatekeeper allows endpoint to simply register its host name/IP address
+    bool GetAliasCanBeHostName() const { return m_aliasCanBeHostName; }
+    void SetAliasCanBeHostName(bool v) { m_aliasCanBeHostName = v; }
+
+    /// Hang up call if heartbeat (IRR) fails.
+    bool GetDisengageOnHearbeatFail() const { return m_disengageOnHearbeatFail; }
+    void SetDisengageOnHearbeatFail(bool v) { m_disengageOnHearbeatFail = v; }
 
     /**Get flag for is gatekeeper routed.
       */
-    PBoolean IsGatekeeperRouted() const { return isGatekeeperRouted; }
+    PBoolean IsGatekeeperRouted() const { return m_isGatekeeperRouted; }
+    void SetGatekeeperRouted(bool is) { m_isGatekeeperRouted = is; }
 
     /**Get flag for if H.235 authentication is required.
       */
-    PBoolean IsRequiredH235() const { return requireH235; }
+    PBoolean IsRequiredH235() const { return m_requireH235; }
+    void SetRequiredH235(bool req) { m_requireH235 = req; }
 
     /**Get the currently active registration count.
       */
@@ -1661,7 +1713,7 @@ class H323GatekeeperServer : public H323TransactionServer
     { return true; } 
 
     virtual PBoolean AllowDuplicateAlias(const H225_ArrayOf_AliasAddress & /*aliases*/)
-    { return canHaveDuplicateAlias; }
+    { return m_canHaveDuplicateAlias; }
 
     virtual PString AllocateAlias(H225_RegistrationRequest & rrq);
 
@@ -1675,27 +1727,27 @@ class H323GatekeeperServer : public H323TransactionServer
     PDECLARE_NOTIFIER(PThread, H323GatekeeperServer, MonitorMain);
 
     // Configuration & policy variables
-    PString  gatekeeperIdentifier;
-    unsigned totalBandwidth;
-    unsigned usedBandwidth;
-    unsigned defaultBandwidth;
-    unsigned maximumBandwidth;
-    unsigned defaultTimeToLive;
-    unsigned defaultInfoResponseRate;
-    bool     overwriteOnSameSignalAddress;
+    PString  m_gatekeeperIdentifier;
+    unsigned m_totalBandwidth;
+    unsigned m_usedBandwidth;
+    unsigned m_defaultBandwidth;
+    unsigned m_maximumBandwidth;
+    unsigned m_defaultTimeToLive;
+    unsigned m_defaultInfoResponseRate;
+    bool     m_overwriteOnSameSignalAddress;
     unsigned m_minAliasToAllocate; // Zero is no allocation RRJ
     unsigned m_maxAliasToAllocate;
     unsigned m_aliasToAllocate;
-    bool     canHaveDuplicateAlias;
-    bool     canHaveDuplicatePrefix;
-    bool     canOnlyCallRegisteredEP;
-    bool     canOnlyAnswerRegisteredEP;
-    bool     answerCallPreGrantedARQ;
-    bool     makeCallPreGrantedARQ;
-    bool     isGatekeeperRouted;
-    bool     aliasCanBeHostName;
-    bool     requireH235;
-    bool     disengageOnHearbeatFail;
+    bool     m_canHaveDuplicateAlias;
+    bool     m_canHaveDuplicatePrefix;
+    bool     m_canOnlyCallRegisteredEP;
+    bool     m_canOnlyAnswerRegisteredEP;
+    bool     m_answerCallPreGrantedARQ;
+    bool     m_makeCallPreGrantedARQ;
+    bool     m_isGatekeeperRouted;
+    bool     m_aliasCanBeHostName;
+    bool     m_requireH235;
+    bool     m_disengageOnHearbeatFail;
 
     PStringToString passwords;
 
