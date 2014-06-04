@@ -386,11 +386,11 @@ bool MyGatekeeperServer::Configure(PConfig & cfg, PConfigPage * rsrc)
   PHTTPFieldArray * securityArray = new PHTTPFieldArray(security, false);
   rsrc->Add(securityArray);
 
-  passwords.RemoveAll();
+  ClearPasswords();
   if (!securityArray->LoadFromConfig(cfg)) {
     for (i = 0; i < securityArray->GetSize(); ++i) {
       PHTTPCompositeField & item = dynamic_cast<PHTTPCompositeField &>((*securityArray)[i]);
-      passwords.SetAt(item[0].GetValue(), PHTTPPasswordField::Decrypt(item[1].GetValue()));
+      SetUsersPassword(item[0].GetValue(), PHTTPPasswordField::Decrypt(item[1].GetValue()));
     }
   }
 
