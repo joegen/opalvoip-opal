@@ -1251,6 +1251,8 @@ void OpalMixerNode::ShutDown()
   if (LockReadWrite()) {
     m_audioMixer->RemoveAllStreams();
 #if OPAL_VIDEO
+    for (VideoMixerMap::iterator it = m_videoMixers.begin(); it != m_videoMixers.end(); ++it)
+      delete it->second;
     m_videoMixers.clear();
 #endif
     m_manager.RemoveNodeNames(GetNames());
@@ -1356,21 +1358,27 @@ bool OpalMixerNode::AttachStream(OpalMixerMediaStream * stream)
 
 #if OPAL_VIDEO
   if (stream->GetMediaFormat().GetMediaType() == OpalMediaType::Video()) {
-    OpalVideoStreamMixer * mixer;
-    VideoMixerMap::iterator it = m_videoMixers.find(id);
+    OpalVideoFormat::ContentRole role = stream->GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole);
+    OpalVideoStreamMixer * videoMixer;
+    VideoMixerMap::iterator it = m_videoMixers.find(role);
     if (it != m_videoMixers.end())
-      mixer = it->second;
+      videoMixer = it->second;
     else {
-      mixer = m_manager.CreateVideoMixer(*m_info);
-      m_videoMixers[id] = mixer;
+      videoMixer = m_manager.CreateVideoMixer(*m_info);
+      m_videoMixers[role] = videoMixer;
     }
 
+    m_mixerById[id] = videoMixer;
+
     if (stream->IsSink())
-      return mixer->AddStream(id);
-    mixer->Append(stream);
+      return videoMixer->AddStream(id);
+
+    videoMixer->Append(stream);
     return true;
   }
 #endif // OPAL_VIDEO
+
+  m_mixerById[id] = m_audioMixer;
 
   if (stream->IsSink())
     return m_audioMixer->AddStream(id);
@@ -1390,14 +1398,13 @@ void OpalMixerNode::DetachStream(OpalMixerMediaStream * stream)
 
 #if OPAL_VIDEO
   if (stream->GetMediaFormat().GetMediaType() == OpalMediaType::Video()) {
-    VideoMixerMap::iterator it = m_videoMixers.find(id);
+    VideoMixerMap::iterator it = m_videoMixers.find(stream->GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole));
     if (it == m_videoMixers.end())
       return;
     if (stream->IsSource())
       it->second->Remove(stream);
     else
       it->second->RemoveStream(stream->GetID());
-    m_videoMixers.erase(it);
     return;
   }
 #endif
@@ -1452,15 +1459,8 @@ bool OpalMixerNode::SetJitterBufferSize(const OpalBaseMixer::Key_T & key, const 
 bool OpalMixerNode::WritePacket(const OpalMixerMediaStream & stream, const RTP_DataFrame & input)
 {
   PString id = stream.GetID();
-
-#if OPAL_VIDEO
-  if (stream.GetMediaFormat().GetMediaType() == OpalMediaType::Video()) {
-    VideoMixerMap::iterator it = m_videoMixers.find(id);
-    return it != m_videoMixers.end() && it->second->WriteStream(id, input);
-  }
-#endif
-
-  return m_audioMixer != NULL && m_audioMixer->WriteStream(id, input);
+  MixerByIdMap::iterator it = m_mixerById.find(id);
+  return it != m_mixerById.end() && it->second->WriteStream(id, input);
 }
 
 
