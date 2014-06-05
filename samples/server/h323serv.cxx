@@ -117,6 +117,7 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
 
   SetTerminalType((TerminalTypes)rsrc->AddIntegerField(H323TerminalTypeKey, 0, 255, GetTerminalType(), "",
                   "H.323 Terminal Type code for master/slave resolution:<BR>"
+                  "40=SET<BR>"
                   "50=terminal<BR>"
                   "60=gateway<BR>"
                   "120=gatekeeper<BR>"
