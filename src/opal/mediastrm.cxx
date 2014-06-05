@@ -120,10 +120,11 @@ bool OpalMediaStream::SetMediaFormat(const OpalMediaFormat & newMediaFormat)
     return true;
   }
 
-  PTRACE(4, "Media\tSwitch media format from " << mediaFormat << " to " << newMediaFormat << " on " << *this);
+  PTRACE(3, "Media\tSwitch media format from " << mediaFormat << " to " << newMediaFormat << " on " << *this);
 
   OpalMediaFormat oldMediaFormat = mediaFormat;
   mediaFormat = newMediaFormat;
+	InternalUpdateMediaFormat(newMediaFormat);
 
   // We make referenced copy of pointer so can't be deleted out from under us
   OpalMediaPatchPtr mediaPatch = m_mediaPatch;
