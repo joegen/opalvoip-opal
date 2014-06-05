@@ -255,7 +255,7 @@ void OpalRTPConsoleEndPoint::CmdBandwidth(PCLI::Arguments & args, P_INT_PTR)
         if (args.HasOption("rx"))
           m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, bandwidth);
         if (args.HasOption("tx"))
-          m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, bandwidth);
+          m_endpoint.SetInitialBandwidth(OpalBandwidth::Tx, bandwidth);
       }
     }
   }
@@ -689,8 +689,8 @@ void H323ConsoleEndPoint::AddCommands(PCLI & cli)
 {
   OpalRTPConsoleEndPoint::AddCommands(cli);
 
-  cli.SetCommand("h323 fast", disableFastStart, "Fast Connect Disable");
-  cli.SetCommand("h323 tunnel", disableH245Tunneling, "H.245 Tunnelling Disable");
+  cli.SetCommand("h323 fast-connect", disableFastStart, "Fast Connect Disable");
+  cli.SetCommand("h323 tunnel-h245", disableH245Tunneling, "H.245 Tunnelling Disable");
   cli.SetCommand("h323 h245-in-setup", disableH245inSetup, "H.245 in SETUP Disable");
   cli.SetCommand("h323 h239-control", m_defaultH239Control, "H.239 control capability enable");
   cli.SetCommand("h323 term-type", PCREATE_NOTIFIER(CmdTerminalType), "Terminal type value (1..255, default 50)");
@@ -701,7 +701,7 @@ void H323ConsoleEndPoint::AddCommands(PCLI & cli)
                  "r-reset:  Reset the alias list before starting\n"
                  "p-pattern: Aliases are patterns (e.g. \"1100*\" or \"1100-1199\")\n"
                  "d-delete: Delete the specified alias");
-  cli.SetCommand("h323 gatekeeper", PCREATE_NOTIFIER(CmdGatekeeper),
+  cli.SetCommand("h323 gatekeeper\nh323 gk", PCREATE_NOTIFIER(CmdGatekeeper),
                   "Set gatekeeper",
                   "[ options ] [ \"on\" / \"off\" ]",
                   "h-host: Host name or IP address of gatekeeper\n"
@@ -1044,14 +1044,14 @@ static struct {
   }
 } VideoDeviceVariables[] = {
 #define VID_DEV_VAR(cmd,hlp,get,set) { cmd, hlp, &OpalConsolePCSSEndPoint::get, &OpalConsolePCSSEndPoint::set, &PVideoInputDevice::GetDriversDeviceNames }
-  VID_DEV_VAR("grabber",      "input grabber",      GetVideoGrabberDevice,      SetVideoGrabberDevice),
-  VID_DEV_VAR("preview",      "input preview",      GetVideoPreviewDevice,      SetVideoPreviewDevice),
-  VID_DEV_VAR("display",      "output display",     GetVideoDisplayDevice,      SetVideoDisplayDevice),
-  VID_DEV_VAR("voh",          "on hold",            GetVideoOnHoldDevice,       SetVideoOnHoldDevice),
-  VID_DEV_VAR("vor",          "on ring",            GetVideoOnRingDevice,       SetVideoOnRingDevice),
-  VID_DEV_VAR("presentation", "presentation role",  GetPresentationVideoDevice, SetPresentationVideoDevice),
-  VID_DEV_VAR("speaker",      "speaker role",       GetSpeakerVideoDevice,      SetSpeakerVideoDevice),
-  VID_DEV_VAR("sign",         "sign langauge role", GetSignVideoDevice,         SetSignVideoDevice)
+  VID_DEV_VAR("grabber",            "input grabber",      GetVideoGrabberDevice,      SetVideoGrabberDevice),
+  VID_DEV_VAR("preview",            "input preview",      GetVideoPreviewDevice,      SetVideoPreviewDevice),
+  VID_DEV_VAR("display",            "output display",     GetVideoDisplayDevice,      SetVideoDisplayDevice),
+  VID_DEV_VAR("hold-video",         "on hold",            GetVideoOnHoldDevice,       SetVideoOnHoldDevice),
+  VID_DEV_VAR("ring-video",         "on ring",            GetVideoOnRingDevice,       SetVideoOnRingDevice),
+  VID_DEV_VAR("presentation-video", "presentation role",  GetPresentationVideoDevice, SetPresentationVideoDevice),
+  VID_DEV_VAR("speaker-video",      "speaker role",       GetSpeakerVideoDevice,      SetSpeakerVideoDevice),
+  VID_DEV_VAR("sign-language-video","sign langauge role", GetSignVideoDevice,         SetSignVideoDevice)
 };
 #endif // OPAL_VIDEO
 
