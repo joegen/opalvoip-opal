@@ -2111,8 +2111,14 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr,
     frameSize = socket.GetLastReadCount();
 
     // Ignore one byte packet from ourself, likely from the I/O block breaker in OpalRTPSession::Shutdown()
-    if (frameSize == 1 && ap.GetAddress() == m_localAddress)
-      return e_IgnorePacket;
+    if (frameSize == 1) {
+      PIPSocketAddressAndPort localAP;
+      m_dataSocket->PUDPSocket::InternalGetLocalAddress(localAP);
+      if (ap == localAP) {
+        PTRACE(5, "RTP\tSession " << m_sessionId << ", " << channelName << " bock breaker ignored.");
+        return e_IgnorePacket;
+      }
+    }
 
 #if OPAL_ICE
     if (m_stunServer != NULL) {
