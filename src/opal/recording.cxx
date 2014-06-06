@@ -706,7 +706,7 @@ bool OpalAVIRecordManager::OnMixedVideo(const RTP_DataFrame & frame)
 }
 
 
-#endif // _WIN32
+#endif // OPAL_VIDEO && P_VFW_CAPTURE
 
 #endif // OPAL_HAS_MIXER
 
