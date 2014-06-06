@@ -1842,7 +1842,6 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
 
   m_dataSocket->SetReadTimeout(m_maxNoReceiveTime);
 
-#ifndef __BEOS__
   // Increase internal buffer size on media UDP sockets
   SetMinBufferSize(*m_dataSocket, SO_RCVBUF, m_isAudio ? RTP_AUDIO_RX_BUFFER_SIZE : RTP_VIDEO_RX_BUFFER_SIZE);
   SetMinBufferSize(*m_dataSocket, SO_SNDBUF, RTP_DATA_TX_BUFFER_SIZE);
@@ -1850,7 +1849,6 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
     SetMinBufferSize(*m_controlSocket, SO_RCVBUF, RTP_CTRL_BUFFER_SIZE);
     SetMinBufferSize(*m_controlSocket, SO_SNDBUF, RTP_CTRL_BUFFER_SIZE);
   }
-#endif
 
   manager.TranslateIPAddress(m_localAddress, m_remoteAddress);
 
@@ -2112,8 +2110,14 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr,
     frameSize = socket.GetLastReadCount();
 
     // Ignore one byte packet from ourself, likely from the I/O block breaker in OpalRTPSession::Shutdown()
-    if (frameSize == 1 && ap.GetAddress() == m_localAddress)
-      return e_IgnorePacket;
+    if (frameSize == 1) {
+      PIPSocketAddressAndPort localAP;
+      m_dataSocket->PUDPSocket::InternalGetLocalAddress(localAP);
+      if (ap == localAP) {
+        PTRACE(5, "RTP\tSession " << m_sessionId << ", " << channelName << " bock breaker ignored.");
+        return e_IgnorePacket;
+      }
+    }
 
 #if OPAL_ICE
     if (m_stunServer != NULL) {
