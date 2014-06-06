@@ -377,8 +377,6 @@ protected:
 
 ///////////////////////////////////////
 
-#if OPAL_H323 | OPAL_SIP | OPAL_SKINNY
-
 class RegistrationStatusPage : public BaseStatusPage
 {
     PCLASSINFO(RegistrationStatusPage, BaseStatusPage);
@@ -412,7 +410,6 @@ class RegistrationStatusPage : public BaseStatusPage
 #endif
 };
 
-#endif // OPAL_H323 | OPAL_SIP | OPAL_SKINNY
 
 ///////////////////////////////////////
 

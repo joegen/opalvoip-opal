@@ -332,14 +332,10 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   rsrc->BuildHTML(html);
   httpNameSpace.AddResource(rsrc, PHTTPSpace::Overwrite);
 
-#if OPAL_SIP
   httpNameSpace.AddResource(new OpalHTTPConnector(*m_manager, "/websocket", authority), PHTTPSpace::Overwrite);
-#endif
 
-#if OPAL_H323 | OPAL_SIP | OPAL_SKINNY
   RegistrationStatusPage * registrationStatusPage = new RegistrationStatusPage(*m_manager, authority);
   httpNameSpace.AddResource(registrationStatusPage, PHTTPSpace::Overwrite);
-#endif
 
   CallStatusPage * callStatusPage = new CallStatusPage(*m_manager, authority);
   httpNameSpace.AddResource(callStatusPage, PHTTPSpace::Overwrite);

@@ -170,8 +170,6 @@ bool ClearLogPage::OnPostControl(const PStringToString & data, PHTML & msg)
 
 ///////////////////////////////////////////////////////////////
 
-#if OPAL_H323 | OPAL_SIP | OPAL_SKINNY
-
 RegistrationStatusPage::RegistrationStatusPage(MyManager & mgr, const PHTTPAuthority & auth)
   : BaseStatusPage(mgr, auth, "RegistrationStatus")
 {
@@ -276,6 +274,17 @@ void RegistrationStatusPage::CreateContent(PHTML & html, const PStringToString &
          << "<!--#status Status-->"
        << "<!--#macroend SkinnyRegistrationStatus-->"
 #endif // OPAL_SKINNY
+
+#if OPAL_PTLIB_NAT
+       << PHTML::TableRow()
+       << PHTML::TableHeader(PHTML::NoWrap)
+       << " STUN Server "
+       << PHTML::TableData(PHTML::NoWrap)
+       << "<!--#macro STUNServer-->"
+       << PHTML::TableData(PHTML::NoWrap)
+       << "<!--#macro STUNStatus-->"
+#endif // OPAL_PTLIB_NAT
+
        << PHTML::TableEnd();
 }
 
@@ -360,7 +369,53 @@ PCREATE_SERVICE_MACRO_BLOCK(SkinnyRegistrationStatus, resource, P_EMPTY, htmlBlo
 #endif // OPAL_SKINNY
 
 
-#endif // OPAL_H323 | OPAL_SIP | OPAL_SKINNY
+#if OPAL_PTLIB_NAT
+static bool GetSTUN(PHTTPRequest & resource, PSTUNClient * & stun)
+{
+  RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
+  if (PAssertNULL(status) == NULL)
+    return false;
+
+  stun = dynamic_cast<PSTUNClient *>(status->m_manager.GetNatMethods().GetMethodByName(PSTUNClient::MethodName()));
+  return stun != NULL;
+}
+
+
+PCREATE_SERVICE_MACRO(STUNServer, resource, P_EMPTY)
+{
+  PSTUNClient * stun;
+  if (!GetSTUN(resource, stun))
+    return PString::Empty();
+
+  PHTML html(PHTML::InBody);
+  html << stun->GetServer();
+
+  PIPAddressAndPort ap;
+  if (stun->GetServerAddress(ap))
+    html << PHTML::BreakLine() << ap;
+
+  return html;
+}
+
+
+PCREATE_SERVICE_MACRO(STUNStatus, resource, P_EMPTY)
+{
+  PSTUNClient * stun;
+  if (!GetSTUN(resource, stun))
+    return PString::Empty();
+
+  PHTML html(PHTML::InBody);
+  PNatMethod::NatTypes type = stun->GetNatType();
+  html << type;
+
+  PIPAddress ip;
+  if (stun->GetExternalAddress(ip))
+    html << PHTML::BreakLine() << ip;
+
+  return html;
+}
+#endif // OPAL_PTLIB_NAT
+
 
 ///////////////////////////////////////////////////////////////
 
