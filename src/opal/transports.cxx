@@ -513,36 +513,38 @@ PBoolean OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & addr
 PBoolean OpalInternalIPTransport::GetAdjustedIpAndPort(const OpalTransportAddress & address,
                                  OpalEndPoint & endpoint,
                                  OpalTransportAddress::BindOptions option,
-                                 PIPSocket::Address & ip,
-                                 WORD & port,
+                                 PIPSocketAddressAndPort & ap,
                                  PBoolean & reuseAddr)
 {
   reuseAddr = address[address.GetLength()-1] == '+';
 
+  ap.SetPort(0);
+  PIPAddress ip;
   switch (option) {
     case OpalTransportAddress::NoBinding :
       if (address.GetIpAddress(ip))
-        ip = PIPSocket::Address::GetAny(ip.GetVersion());
+        ap.SetAddress(PIPSocket::Address::GetAny(ip.GetVersion()));
       else
-        ip = PIPSocket::GetDefaultIpAny();
-      port = 0;
+        ap.SetAddress(PIPSocket::GetDefaultIpAny());
       return true;
 
     case OpalTransportAddress::HostOnly :
-      port = 0;
-      return address.GetIpAddress(ip);
+      if (!address.GetIpAddress(ip))
+        return false;
+      ap.SetAddress(ip);
+      return true;
 
     case OpalTransportAddress::RouteInterface :
-      if (address.GetIpAndPort(ip, port))
-        ip = PIPSocket::GetRouteInterfaceAddress(ip);
+      if (address.GetIpAddress(ip))
+        ap.SetAddress(PIPSocket::GetRouteInterfaceAddress(ip));
       else
-        ip = PIPSocket::GetDefaultIpAny();
-      port = 0;
+        ap.SetAddress(PIPSocket::GetDefaultIpAny());
+      ap.SetPort(0);
       return TRUE;
 
     default :
-      port = endpoint.GetDefaultSignalPort();
-      return address.GetIpAndPort(ip, port);
+      ap.SetPort(endpoint.GetDefaultSignalPort());
+      return address.GetIpAndPort(ap);
   }
 }
 
@@ -550,10 +552,10 @@ PBoolean OpalInternalIPTransport::GetAdjustedIpAndPort(const OpalTransportAddres
 //////////////////////////////////////////////////////////////////////////
 
 OpalListener::OpalListener(OpalEndPoint & ep)
-  : endpoint(ep)
+  : m_endpoint(ep)
+  , m_thread(NULL)
+  , m_threadMode(SpawnNewThreadMode)
 {
-  thread = NULL;
-  threadMode = SpawnNewThreadMode;
 }
 
 
@@ -585,35 +587,35 @@ void OpalListener::CloseWait()
   PTRACE(3, "Listen\tStopping listening thread on " << GetLocalAddress());
   Close();
 
-  PThread * exitingThread = thread;
-  thread = NULL;
-  WaitForTransportThread(exitingThread, endpoint);
+  PThread * exitingThread = m_thread;
+  m_thread = NULL;
+  WaitForTransportThread(exitingThread, m_endpoint);
 }
 
 
 void OpalListener::ListenForConnections()
 {
   PTRACE(3, "Listen\tStarted listening thread on " << GetLocalAddress());
-  PAssert(!acceptHandler.IsNULL(), PLogicError);
+  PAssert(!m_acceptHandler.IsNULL(), PLogicError);
 
   while (IsOpen()) {
     OpalTransport * transport = Accept(PMaxTimeInterval);
     if (transport == NULL)
-      acceptHandler(*this, 0);
+      m_acceptHandler(*this, 0);
     else {
-      switch (threadMode) {
+      switch (m_threadMode) {
         case SpawnNewThreadMode :
           transport->AttachThread(new PThreadObj1Arg<OpalListener, OpalTransportPtr>(
                         *this, transport, &OpalListener::TransportThreadMain, false, "Opal Answer"));
           break;
 
         case HandOffThreadMode :
-          transport->AttachThread(thread);
-          thread = NULL;
+          transport->AttachThread(m_thread);
+          m_thread = NULL;
           // Then do next case
 
         case SingleThreadMode :
-          acceptHandler(*this, transport);
+          m_acceptHandler(*this, transport);
       }
       // Note: acceptHandler is responsible for deletion of the transport
     }
@@ -623,19 +625,19 @@ void OpalListener::ListenForConnections()
 
 bool OpalListener::Open(const AcceptHandler & theAcceptHandler, ThreadMode mode)
 {
-  acceptHandler = theAcceptHandler;
-  threadMode = mode;
+  m_acceptHandler = theAcceptHandler;
+  m_threadMode = mode;
 
-  thread = new PThreadObj<OpalListener>(*this, &OpalListener::ListenForConnections, false, "Opal Listener");
+  m_thread = new PThreadObj<OpalListener>(*this, &OpalListener::ListenForConnections, false, "Opal Listener");
 
-  return thread != NULL;
+  return m_thread != NULL;
 }
 
 
 void OpalListener::TransportThreadMain(OpalTransportPtr transport)
 {
   PTRACE_IF(3, transport != NULL, "Listen\tHandling accepted connection: " << *transport);
-  acceptHandler(*this, transport);
+  m_acceptHandler(*this, transport);
 }
 
 
@@ -645,11 +647,10 @@ OpalListenerIP::OpalListenerIP(OpalEndPoint & ep,
                                PIPSocket::Address binding,
                                WORD port,
                                PBoolean exclusive)
-  : OpalListener(ep),
-    localAddress(binding)
+  : OpalListener(ep)
+  , m_binding(binding, port)
+  , m_exclusiveListener(exclusive)
 {
-  listenerPort = port;
-  exclusiveListener = exclusive;
 }
 
 
@@ -658,19 +659,19 @@ OpalListenerIP::OpalListenerIP(OpalEndPoint & endpoint,
                                OpalTransportAddress::BindOptions option)
   : OpalListener(endpoint)
 {
-  OpalInternalIPTransport::GetAdjustedIpAndPort(binding, endpoint, option, localAddress, listenerPort, exclusiveListener);
+  OpalInternalIPTransport::GetAdjustedIpAndPort(binding, endpoint, option, m_binding, m_exclusiveListener);
 }
 
 
 OpalTransportAddress OpalListenerIP::GetLocalAddress(const OpalTransportAddress & remoteAddress) const
 {
-  PIPSocket::Address localIP = localAddress;
+  PIPSocket::Address localIP = m_binding.GetAddress();
 
   PIPSocket::Address remoteIP;
   if (remoteAddress.GetIpAddress(remoteIP) && (!localIP.IsValid() || localIP.IsAny()))
     localIP = PIPSocket::GetRouteInterfaceAddress(remoteIP);
 
-  return OpalTransportAddress(localIP, listenerPort, GetProtoPrefix());
+  return OpalTransportAddress(localIP, m_binding.GetPort(), GetProtoPrefix());
 }
 
 
@@ -719,52 +720,51 @@ OpalListenerTCP::~OpalListenerTCP()
 
 PBoolean OpalListenerTCP::Open(const AcceptHandler & theAcceptHandler, ThreadMode mode)
 {
-  if (listenerPort == 0) {
-    OpalManager & manager = endpoint.GetManager();
-    if (manager.GetTCPPortRange().Listen(listener, localAddress, 1)) {
-      listenerPort = listener.GetPort();
+  if (m_binding.GetPort() == 0) {
+    OpalManager & manager = m_endpoint.GetManager();
+    if (manager.GetTCPPortRange().Listen(m_listener, m_binding.GetAddress(), 1)) {
+      m_binding.SetPort(m_listener.GetPort());
       return OpalListenerIP::Open(theAcceptHandler, mode);
     }
   }
   else {
-    if (listener.Listen(localAddress, 10, listenerPort, exclusiveListener ? PSocket::AddressIsExclusive : PSocket::CanReuseAddress))
+    if (m_listener.Listen(m_binding.GetAddress(), 10, m_binding.GetPort(), m_exclusiveListener ? PSocket::AddressIsExclusive : PSocket::CanReuseAddress))
       return OpalListenerIP::Open(theAcceptHandler, mode);
   }
 
-  PTRACE(1, "Listen\tOpen (" << (exclusiveListener ? "EXCLUSIVE" : "REUSEADDR") << ") on "
-         << localAddress.AsString(true) << ':' << listener.GetPort()
-         << " failed: " << listener.GetErrorText());
+  PTRACE(1, "Listen\tOpen (" << (m_exclusiveListener ? "EXCLUSIVE" : "REUSEADDR") << ") on "
+         << m_binding << " failed: " << m_listener.GetErrorText());
   return false;
 }
 
 
 bool OpalListenerTCP::IsOpen() const
 {
-  return listener.IsOpen();
+  return m_listener.IsOpen();
 }
 
 
 void OpalListenerTCP::Close()
 {
-  listener.Close();
+  m_listener.Close();
 }
 
 
 OpalTransport * OpalListenerTCP::Accept(const PTimeInterval & timeout)
 {
-  if (!listener.IsOpen())
+  if (!m_listener.IsOpen())
     return NULL;
 
-  listener.SetReadTimeout(timeout); // Wait for remote connect
+  m_listener.SetReadTimeout(timeout); // Wait for remote connect
 
   PTRACE(4, "Listen\tWaiting on socket accept on " << GetLocalAddress());
   PTCPSocket * socket = new PTCPSocket;
-  if (socket->Accept(listener))
+  if (socket->Accept(m_listener))
     return OnAccept(socket);
 
   if (socket->GetErrorCode() != PChannel::Interrupted) {
     PTRACE(1, "Listen\tAccept error:" << socket->GetErrorText());
-    listener.Close();
+    m_listener.Close();
   }
 
   delete socket;
@@ -774,7 +774,7 @@ OpalTransport * OpalListenerTCP::Accept(const PTimeInterval & timeout)
 
 OpalTransport * OpalListenerTCP::OnAccept(PTCPSocket * socket)
 {
-  return new OpalTransportTCP(endpoint, socket);
+  return new OpalTransportTCP(m_endpoint, socket);
 }
 
 
@@ -785,9 +785,9 @@ OpalTransport * OpalListenerTCP::CreateTransport(const OpalTransportAddress & lo
     return NULL;
 
   if (localAddress.IsEmpty())
-    return new OpalTransportTCP(endpoint);
+    return new OpalTransportTCP(m_endpoint);
 
-  return localAddress.CreateTransport(endpoint, OpalTransportAddress::HostOnly);
+  return localAddress.CreateTransport(m_endpoint, OpalTransportAddress::HostOnly);
 }
 
 
@@ -803,10 +803,10 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
                                  PIPSocket::Address binding,
                                  WORD port,
                                  PBoolean exclusive)
-  : OpalListenerIP(endpoint, binding, port, exclusive),
-    listenerBundle(PMonitoredSockets::Create(binding.AsString(),
-                                             !exclusive
-                                             P_NAT_PARAM(&endpoint.GetManager().GetNatMethods())))
+  : OpalListenerIP(endpoint, binding, port, exclusive)
+  , m_listenerBundle(PMonitoredSockets::Create(binding.AsString(),
+                                               !exclusive
+                                               P_NAT_PARAM(&endpoint.GetManager().GetNatMethods())))
 {
 }
 
@@ -815,13 +815,13 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
                                  const OpalTransportAddress & binding,
                                  OpalTransportAddress::BindOptions option)
   : OpalListenerIP(endpoint, binding, option)
-  , listenerBundle(PMonitoredSockets::Create(binding.GetHostName(),
-                                             !exclusiveListener
-                                             P_NAT_PARAM(&endpoint.GetManager().GetNatMethods())))
+  , m_listenerBundle(PMonitoredSockets::Create(binding.GetHostName(),
+                                               !m_exclusiveListener
+                                               P_NAT_PARAM(&endpoint.GetManager().GetNatMethods())))
   , m_bufferSize(32768)
 {
   if (binding.GetHostName() == "*")
-    localAddress = PIPSocket::GetInvalidAddress(); // Set invalid to distinguish between "*", "0.0.0.0" and "[::]"
+    m_binding.SetAddress(PIPSocket::GetInvalidAddress()); // Set invalid to distinguish between "*", "0.0.0.0" and "[::]"
 }
 
 
@@ -833,32 +833,32 @@ OpalListenerUDP::~OpalListenerUDP()
 
 PBoolean OpalListenerUDP::Open(const AcceptHandler & theAcceptHandler, ThreadMode /*mode*/)
 {
-  if (listenerBundle != NULL &&
-      listenerBundle->Open(listenerPort) &&
+  if (m_listenerBundle != NULL &&
+      m_listenerBundle->Open(m_binding.GetPort()) &&
       OpalListenerIP::Open(theAcceptHandler, SingleThreadMode)) {
     /* UDP packets need to be handled. Not so much at high speed, but must not be
        significantly delayed by media threads which are running at HighPriority.
        This, for example, helps make sure that a SIP BYE is received and processed
        to kill a call where codecs etc in the media threads are hogging all the CPU. */
-    thread->SetPriority(PThread::HighestPriority);
+    m_thread->SetPriority(PThread::HighestPriority);
     return true;
   }
 
-  PTRACE(1, "Listen\tCould not start any UDP listeners for port " << listenerPort);
+  PTRACE(1, "Listen\tCould not start any UDP listeners for port " << m_binding.GetPort());
   return false;
 }
 
 
 bool OpalListenerUDP::IsOpen() const
 {
-  return listenerBundle != NULL && listenerBundle->IsOpen();
+  return m_listenerBundle != NULL && m_listenerBundle->IsOpen();
 }
 
 
 void OpalListenerUDP::Close()
 {
-  if (listenerBundle != NULL)
-    listenerBundle->Close();
+  if (m_listenerBundle != NULL)
+    m_listenerBundle->Close();
 }
 
 
@@ -872,14 +872,14 @@ OpalTransport * OpalListenerUDP::Accept(const PTimeInterval & timeout)
   param.m_buffer = pdu.GetPointer(m_bufferSize);
   param.m_length = m_bufferSize;
   param.m_timeout = timeout;
-  listenerBundle->ReadFromBundle(param);
+  m_listenerBundle->ReadFromBundle(param);
 
   if (param.m_errorCode != PChannel::NoError)
     return NULL;
 
   pdu.SetSize(param.m_lastCount);
 
-  OpalTransportUDP * transport = new OpalTransportUDP(endpoint, listenerBundle, param.m_iface);
+  OpalTransportUDP * transport = new OpalTransportUDP(m_endpoint, m_listenerBundle, param.m_iface);
   transport->m_preReadPacket = pdu;
   transport->m_preReadOK = param.m_errorCode == PChannel::NoError;
   transport->SetRemoteAddress(OpalTransportAddress(param.m_addr, param.m_port, OpalTransportAddress::UdpPrefix()));
@@ -904,7 +904,7 @@ OpalTransport * OpalListenerUDP::CreateTransport(const OpalTransportAddress & lo
       iface = addr.AsString(true);
   }
 
-  return new OpalTransportUDP(endpoint, listenerBundle, iface);
+  return new OpalTransportUDP(m_endpoint, m_listenerBundle, iface);
 }
 
 
@@ -919,10 +919,10 @@ OpalTransportAddress OpalListenerUDP::GetLocalAddress(const OpalTransportAddress
   if (IsOpen()) {
     PIPSocket::Address remoteIP;
     if (remoteAddress.GetIpAddress(remoteIP)) {
-      PIPSocket::Address localIP = localAddress.IsValid() && !localAddress.IsAny() ? localAddress
-                                                  : PIPSocket::GetRouteInterfaceAddress(remoteIP);
+      PIPSocket::Address localIP = m_binding.IsValid() && !m_binding.GetAddress().IsAny() ? m_binding.GetAddress()
+                                                                   : PIPSocket::GetRouteInterfaceAddress(remoteIP);
       WORD port;
-      if (listenerBundle->GetAddress(localIP.AsString(), localIP, port, !endpoint.GetManager().IsLocalAddress(remoteIP)))
+      if (m_listenerBundle->GetAddress(localIP.AsString(), localIP, port, !m_endpoint.GetManager().IsLocalAddress(remoteIP)))
         return OpalTransportAddress(localIP, port, GetProtoPrefix());
     }
   }
@@ -934,10 +934,10 @@ OpalTransportAddress OpalListenerUDP::GetLocalAddress(const OpalTransportAddress
 //////////////////////////////////////////////////////////////////////////
 
 OpalTransport::OpalTransport(OpalEndPoint & end, PChannel * channel)
-  : endpoint(end)
+  : m_endpoint(end)
   , m_channel(channel)
   , m_thread(NULL)
-  , m_idleTimer(endpoint.GetManager().GetTransportIdleTime())
+  , m_idleTimer(m_endpoint.GetManager().GetTransportIdleTime())
 {
   m_keepAliveTimer.SetNotifier(PCREATE_NOTIFIER(KeepAlive));
   PTRACE(5, "Opal\tTransport constructed: " << m_channel);
@@ -995,7 +995,7 @@ void OpalTransport::CloseWait()
 
   m_keepAliveTimer.Stop();
 
-  WaitForTransportThread(exitingThread, endpoint);
+  WaitForTransportThread(exitingThread, m_endpoint);
 }
 
 
@@ -1094,7 +1094,7 @@ PBoolean OpalTransport::Write(const void * buf, PINDEX len)
   if (!IsOpen())
     return false;
 
-  m_idleTimer = endpoint.GetManager().GetTransportIdleTime();
+  m_idleTimer = m_endpoint.GetManager().GetTransportIdleTime();
   m_keepAliveTimer.Reset();
   return m_channel->Write(buf, len);
 }
@@ -1106,48 +1106,29 @@ OpalTransportIP::OpalTransportIP(OpalEndPoint & end,
                                  PChannel * channel,
                                  PIPSocket::Address binding,
                                  WORD port)
-  : OpalTransport(end, channel),
-    localAddress(binding),
-    remoteAddress(PIPSocket::Address::GetAny(binding.GetVersion()))
+  : OpalTransport(end, channel)
+  , m_localAP(binding, port)
+  , m_remoteAP(PIPSocket::Address::GetAny(binding.GetVersion()))
 {
-  localPort = port;
-  remotePort = 0;
 }
 
 
 OpalTransportAddress OpalTransportIP::GetLocalAddress() const
 {
-  return OpalTransportAddress(localAddress, localPort, GetProtoPrefix());
-}
-
-
-PBoolean OpalTransportIP::SetLocalAddress(const OpalTransportAddress & newLocalAddress)
-{
-  if (!IsCompatibleTransport(newLocalAddress))
-    return false;
-
-  if (!IsOpen())
-    return newLocalAddress.GetIpAndPort(localAddress, localPort);
-
-  PIPSocket::Address address;
-  WORD port = 0;
-  if (!newLocalAddress.GetIpAndPort(address, port))
-    return false;
-
-  return localAddress == address && localPort == port;
+  return OpalTransportAddress(m_localAP, GetProtoPrefix());
 }
 
 
 OpalTransportAddress OpalTransportIP::GetRemoteAddress() const
 {
-  return OpalTransportAddress(remoteAddress, remotePort, GetProtoPrefix());
+  return OpalTransportAddress(m_remoteAP, GetProtoPrefix());
 }
 
 
 PBoolean OpalTransportIP::SetRemoteAddress(const OpalTransportAddress & address)
 {
   if (IsCompatibleTransport(address))
-    return address.GetIpAndPort(remoteAddress, remotePort);
+    return address.GetIpAndPort(m_remoteAP);
 
   PTRACE(2, "OpalIP\tAttempt to set incompatible transport " << address);
   return false;
@@ -1208,15 +1189,14 @@ PBoolean OpalTransportTCP::Connect()
   if (socket == NULL)
     return false;
 
-  socket->SetPort(remotePort);
+  socket->SetPort(m_remoteAP.GetPort());
 
-  OpalManager & manager = endpoint.GetManager();
+  OpalManager & manager = m_endpoint.GetManager();
   socket->SetReadTimeout(manager.GetSignalingTimeout());
 
-  PTRACE(4, "OpalTCP\tConnecting to " << remoteAddress.AsString(true) << ':' << remotePort);
-  if (!manager.GetTCPPortRange().Connect(*socket, remoteAddress, localAddress)) {
-    PTRACE(1, "OpalTCP\tCould not connect to "
-              << remoteAddress.AsString(true) << ':' << remotePort
+  PTRACE(4, "OpalTCP\tConnecting to " << m_remoteAP);
+  if (!manager.GetTCPPortRange().Connect(*socket, m_remoteAP.GetAddress(), m_localAP.GetAddress())) {
+    PTRACE(1, "OpalTCP\tCould not connect to " << m_remoteAP
               << " (range=" << manager.GetTCPPortRange() << ") - "
               << socket->GetErrorText() << '(' << socket->GetErrorNumber() << ')');
     return false;
@@ -1236,7 +1216,7 @@ PBoolean OpalTransportTCP::ReadPDU(PBYTEArray & pdu)
   PTimeInterval oldTimeout = m_channel->GetReadTimeout();
 
   // Should get all of PDU in reasonable time or something is seriously wrong,
-  SetReadTimeout(endpoint.GetManager().GetSignalingTimeout());
+  SetReadTimeout(m_endpoint.GetManager().GetSignalingTimeout());
 
   bool ok = false;
   PINDEX packetLength = 0;
@@ -1304,24 +1284,29 @@ bool OpalTransportTCP::OnConnectedSocket(PTCPSocket * socket)
     return false;
 
   // If write take longer than this, something is wrong
-  const PTimeInterval timeout = endpoint.GetManager().GetSignalingTimeout();
+  const PTimeInterval timeout = m_endpoint.GetManager().GetSignalingTimeout();
   socket->SetWriteTimeout(timeout);
 
   // Initial read is infinite though
   socket->SetReadTimeout(PMaxTimeInterval);
 
   // Get name of the remote computer for information purposes
-  if (!socket->GetPeerAddress(remoteAddress, remotePort)) {
+  if (!socket->GetPeerAddress(m_remoteAP)) {
     PTRACE(1, "OpalTCP\tGetPeerAddress() failed: " << socket->GetErrorText());
     return false;
   }
 
   // get local address of incoming socket to ensure that multi-homed machines
   // use a NIC address that is guaranteed to be addressable to destination
-  if (!socket->GetLocalAddress(localAddress, localPort)) {
+  PIPSocket::Address ip;
+  WORD port;
+  if (!socket->GetLocalAddress(ip, port)) {
     PTRACE(1, "OpalTCP\tGetLocalAddress() failed: " << socket->GetErrorText());
     return false;
   }
+
+  m_endpoint.GetManager().TranslateIPAddress(ip, m_remoteAP.GetAddress());
+  m_localAP.SetAddress(ip, port);
 
   if (!socket->SetOption(TCP_NODELAY, 1, IPPROTO_TCP)) {
     PTRACE(1, "OpalTCP\tSetOption(TCP_NODELAY) failed: " << socket->GetErrorText());
@@ -1334,10 +1319,7 @@ bool OpalTransportTCP::OnConnectedSocket(PTCPSocket * socket)
     return false;
   }
 
-    PTRACE(3, "OpalTCP\tStarted connection to "
-         << remoteAddress.AsString(true) << ':' << remotePort
-         << " (if=" << localAddress.AsString(true) << ':' << localPort << ')');
-
+  PTRACE(3, "OpalTCP\tStarted connection to " << m_remoteAP << " (if=" << m_localAP << ')');
   return true;
 }
 
@@ -1356,13 +1338,13 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
                                    bool reuseAddr,
                                    bool preOpen)
   : OpalTransportIP(ep, NULL, binding, localPort)
-  , manager(ep.GetManager())
+  , m_manager(ep.GetManager())
   , m_bufferSize(8192)
   , m_preReadOK(false)
 {
   PMonitoredSockets * sockets = PMonitoredSockets::Create(binding.AsString(),
                                                           reuseAddr
-                                                          P_NAT_PARAM(&manager.GetNatMethods()));
+                                                          P_NAT_PARAM(&m_manager.GetNatMethods()));
   if (preOpen)
     sockets->Open(localPort);
   m_channel = new PMonitoredSocketChannel(sockets, false);
@@ -1373,16 +1355,16 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
                                    const PMonitoredSocketsPtr & listener,
                                    const PString & iface)
   : OpalTransportIP(ep, NULL, PIPSocket::GetDefaultIpAny(), 0)
-  , manager(ep.GetManager())
+  , m_manager(ep.GetManager())
   , m_bufferSize(8192)
   , m_preReadOK(true)
 {
   PMonitoredSocketChannel * socket = new PMonitoredSocketChannel(listener, true);
   socket->SetInterface(iface);
-  socket->GetLocal(localAddress, localPort, !manager.IsLocalAddress(remoteAddress));
+  socket->GetLocal(m_localAP, !m_manager.IsLocalAddress(m_remoteAP.GetAddress()));
   m_channel = socket;
 
-  PTRACE(3, "OpalUDP\tBinding to interface: " << localAddress.AsString(true) << ':' << localPort);
+  PTRACE(3, "OpalUDP\tBinding to interface: " << m_localAP);
 }
 
 
@@ -1408,15 +1390,17 @@ PBoolean OpalTransportUDP::IsCompatibleTransport(const OpalTransportAddress & ad
 
 PBoolean OpalTransportUDP::Connect()
 {	
-  if (remotePort == 0)
+  if (m_remoteAP.GetPort() == 0)
     return false;
 
-  if (remoteAddress.IsAny() || remoteAddress.IsBroadcast()) {
-	  remoteAddress = PIPSocket::Address::GetBroadcast(remoteAddress.GetVersion());
-    PTRACE(3, "OpalUDP\tBroadcast connect to port " << remotePort);
+  if (m_remoteAP.GetAddress().IsAny())
+	  m_remoteAP.SetAddress(PIPSocket::Address::GetBroadcast(m_remoteAP.GetAddress().GetVersion()));
+
+  if (m_remoteAP.GetAddress().IsBroadcast()) {
+    PTRACE(3, "OpalUDP\tBroadcast connect to port " << m_remoteAP.GetPort());
   }
   else {
-    PTRACE(3, "OpalUDP\tStarted connect to " << remoteAddress.AsString(true) << ':' << remotePort);
+    PTRACE(3, "OpalUDP\tStarted connect to " << m_remoteAP);
   }
 
   if (PAssertNULL(m_channel) == NULL)
@@ -1426,12 +1410,12 @@ PBoolean OpalTransportUDP::Connect()
   if (bundle->IsOpen())
     return true;
 
-  if (!bundle->Open(localPort)) {
-    PTRACE(1, "OpalUDP\tCould not bind to any port in range " << endpoint.GetManager().GetUDPPortRange());
+  if (!bundle->Open(m_localAP.GetPort())) {
+    PTRACE(1, "OpalUDP\tCould not bind to port " << m_localAP.GetPort());
     return false;
   }
 
-  localPort = bundle->GetPort();
+  m_localAP.SetPort(bundle->GetPort());
   return true;
 }
 
@@ -1464,30 +1448,11 @@ OpalTransportAddress OpalTransportUDP::GetLocalAddress() const
   PMonitoredSocketChannel * socket = dynamic_cast<PMonitoredSocketChannel *>(m_channel);
   if (socket != NULL) {
     OpalTransportUDP * thisWritable = const_cast<OpalTransportUDP *>(this);
-    if (!socket->GetLocal(thisWritable->localAddress, thisWritable->localPort, !manager.IsLocalAddress(remoteAddress)))
+    if (!socket->GetLocal(thisWritable->m_localAP, !m_manager.IsLocalAddress(m_remoteAP.GetAddress())))
       return OpalTransportAddress();
   }
 
   return OpalTransportIP::GetLocalAddress();
-}
-
-
-PBoolean OpalTransportUDP::SetLocalAddress(const OpalTransportAddress & newLocalAddress)
-{
-  if (OpalTransportIP::GetLocalAddress().IsEquivalent(newLocalAddress))
-    return true;
-
-  if (!IsCompatibleTransport(newLocalAddress))
-    return false;
-
-  if (!newLocalAddress.GetIpAndPort(localAddress, localPort))
-    return false;
-
-  PMonitoredSocketChannel * socket = dynamic_cast<PMonitoredSocketChannel *>(m_channel);
-  if (socket != NULL)
-    socket->GetMonitoredSockets()->Open(localPort);
-
-  return OpalTransportIP::SetLocalAddress(newLocalAddress);
 }
 
 
@@ -1498,7 +1463,7 @@ PBoolean OpalTransportUDP::SetRemoteAddress(const OpalTransportAddress & address
 
   PMonitoredSocketChannel * socket = dynamic_cast<PMonitoredSocketChannel *>(m_channel);
   if (socket != NULL)
-    socket->SetRemote(remoteAddress, remotePort);
+    socket->SetRemote(m_remoteAP);
 
   return true;
 }
@@ -1595,7 +1560,7 @@ bool OpalTransportUDP::WriteConnect(const WriteConnectCallback & function)
   PBoolean ok = false;
   for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
     PIPSocket::Address ifip(interfaces[i]);
-    if (ifip.GetVersion() != remoteAddress.GetVersion())
+    if (ifip.GetVersion() != m_remoteAP.GetAddress().GetVersion())
       PTRACE(4, "OpalUDP\tSkipping incompatible interface " << i << " - \"" << interfaces[i] << '"');
     else {
       PTRACE(4, "OpalUDP\tWriting to interface " << i << " - \"" << interfaces[i] << '"');
@@ -1653,7 +1618,7 @@ PBoolean OpalListenerTLS::Open(const AcceptHandler & acceptHandler, ThreadMode m
   m_sslContext = new PSSLContext();
   m_sslContext->SetCipherList("ALL");
 
-  if (!endpoint.ApplySSLCredentials(*m_sslContext, true))
+  if (!m_endpoint.ApplySSLCredentials(*m_sslContext, true))
     return false;
 
   return OpalListenerTCP::Open(acceptHandler, mode);
@@ -1664,7 +1629,7 @@ OpalTransport * OpalListenerTLS::OnAccept(PTCPSocket * socket)
 {
   PSSLChannel * ssl = new PSSLChannel(m_sslContext);
   if (ssl->Accept(socket))
-    return new OpalTransportTLS(endpoint, ssl);
+    return new OpalTransportTLS(m_endpoint, ssl);
 
   PTRACE(1, "OpalTLS\tAccept failed: " << ssl->GetErrorText());
   delete ssl; // Will also delete socket
@@ -1688,7 +1653,7 @@ OpalTransport * OpalListenerTLS::CreateTransport(const OpalTransportAddress & lo
   if (!localAddress.IsEmpty())
     localAddress.GetIpAddress(binding);
 
-  return new OpalTransportTLS(endpoint, binding);
+  return new OpalTransportTLS(m_endpoint, binding);
 }
 
 
@@ -1731,12 +1696,12 @@ PBoolean OpalTransportTLS::Connect()
   PSafeLockReadWrite mutex(*this);
 
   delete m_channel;
-  m_channel = new PTCPSocket(remotePort);
+  m_channel = new PTCPSocket(m_remoteAP.GetPort());
   if (!OpalTransportTCP::Connect())
     return false;
 
   PSSLContext * context = new PSSLContext();
-  if (!endpoint.ApplySSLCredentials(*context, false)) {
+  if (!m_endpoint.ApplySSLCredentials(*context, false)) {
     delete context;
     return false;
   }
@@ -1828,8 +1793,8 @@ static bool AcceptWS(PChannel & chan, const PString & protocol)
 
 OpalTransport * OpalListenerWS::OnAccept(PTCPSocket * socket)
 {
-  if (AcceptWS(*socket, endpoint.GetPrefixName()))
-    return new OpalTransportWS(endpoint, socket);
+  if (AcceptWS(*socket, m_endpoint.GetPrefixName()))
+    return new OpalTransportWS(m_endpoint, socket);
 
   delete socket;
   return NULL;
@@ -1842,9 +1807,9 @@ OpalTransport * OpalListenerWS::CreateTransport(const OpalTransportAddress & loc
     return NULL;
 
   if (localAddress.IsEmpty())
-    return new OpalTransportWS(endpoint);
+    return new OpalTransportWS(m_endpoint);
 
-  return localAddress.CreateTransport(endpoint, OpalTransportAddress::HostOnly);
+  return localAddress.CreateTransport(m_endpoint, OpalTransportAddress::HostOnly);
 }
 
 
@@ -1871,8 +1836,8 @@ OpalListenerWSS::OpalListenerWSS(OpalEndPoint & endpoint, const OpalTransportAdd
 OpalTransport * OpalListenerWSS::OnAccept(PTCPSocket * socket)
 {
   PSSLChannel * ssl = new PSSLChannel(m_sslContext);
-  if (ssl->Accept(socket) && AcceptWS(*ssl, endpoint.GetPrefixName()))
-    return new OpalTransportWSS(endpoint, ssl);
+  if (ssl->Accept(socket) && AcceptWS(*ssl, m_endpoint.GetPrefixName()))
+    return new OpalTransportWSS(m_endpoint, ssl);
 
   PTRACE(1, "OpalTLS\tAccept failed: " << ssl->GetErrorText());
   delete ssl; // Will also delete socket
@@ -1922,7 +1887,7 @@ PBoolean OpalTransportWS::Connect()
     return false;
   }
   m_channel = webSocket;
-  return webSocket->Connect(endpoint.GetPrefixName());
+  return webSocket->Connect(m_endpoint.GetPrefixName());
 }
 
 
