@@ -185,13 +185,35 @@ class OpalRTPSession : public OpalMediaSession
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
+    virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
+
 #if OPAL_RTP_FEC
     virtual SendReceiveStatus OnSendRedundantFrame(RTP_DataFrame & frame);
-    virtual SendReceiveStatus OnSendRedundantData(RTP_DataFrame::PayloadTypes & payloadType, unsigned & timestamp, BYTE * data, PINDEX & size);
+    virtual SendReceiveStatus OnSendRedundantData(RTP_DataFrame & primary, RTP_DataFrameList & redundancies);
     virtual SendReceiveStatus OnReceiveRedundantFrame(RTP_DataFrame & frame);
-    virtual SendReceiveStatus OnReceiveRedundantData(RTP_DataFrame::PayloadTypes payloadType, unsigned timestamp, const BYTE * data, PINDEX size);
-#endif
-    virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
+    virtual SendReceiveStatus OnReceiveRedundantData(RTP_DataFrame & primary, RTP_DataFrame::PayloadTypes payloadType, unsigned timestamp, const BYTE * data, PINDEX size);
+
+    struct FecLevel
+    {
+      PBYTEArray m_mask; // Points to 16 or 48 bits
+      PBYTEArray m_data;
+    };
+    struct FecData
+    {
+      unsigned m_timestamp;
+      bool     m_pRecovery;
+      bool     m_xRecovery;
+      unsigned m_ccRecovery;
+      bool     m_mRecovery;
+      unsigned m_ptRecovery;
+      unsigned m_snBase;
+      unsigned m_tsRecovery;
+      unsigned m_lenRecovery;
+      vector<FecLevel> m_level;
+    };
+    virtual SendReceiveStatus OnSendFEC(RTP_DataFrame & primary, FecData & fec);
+    virtual SendReceiveStatus OnReceiveFEC(RTP_DataFrame & primary, const FecData & fec);
+#endif // OPAL_RTP_FEC
 
     class ReceiverReport : public PObject  {
         PCLASSINFO(ReceiverReport, PObject);
@@ -333,6 +355,12 @@ class OpalRTPSession : public OpalMediaSession
 
     /// Set the RFC 5109 Uneven Level Protection Forward Error Correction payload type
     void SetUlpFecPayloadType(RTP_DataFrame::PayloadTypes pt) { m_ulpFecPayloadType = pt; }
+
+    /// Get the RFC 5109 transmit level (number of packets that can be lost)
+    unsigned GetUlpFecSendLevel() const { return m_ulpFecSendLevel; }
+
+    /// Set the RFC 2198 redundent data payload type
+    void SetUlpFecSendLevel(unsigned level) { m_ulpFecSendLevel = level; }
 #endif // OPAL_RTP_FEC
 
     /**Get the canonical name for the RTP session.
@@ -642,6 +670,8 @@ class OpalRTPSession : public OpalMediaSession
 #if OPAL_RTP_FEC
     RTP_DataFrame::PayloadTypes m_redundencyPayloadType;
     RTP_DataFrame::PayloadTypes m_ulpFecPayloadType;
+    unsigned                    m_ulpFecSendLevel;
+    RTP_DataFrameList           m_ulpFecSentPackets;
 #endif
 
     DWORD         syncSourceOut;
@@ -667,7 +697,7 @@ class OpalRTPSession : public OpalMediaSession
     BYTE          m_lastFIRSequenceNumber;
     BYTE          m_lastTSTOSequenceNumber;
 
-    std::list<RTP_DataFrame> m_outOfOrderPackets;
+    RTP_DataFrameList m_pendingPackets;
     void SaveOutOfOrderPacket(RTP_DataFrame & frame);
 
     // Statistics

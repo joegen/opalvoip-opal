@@ -145,6 +145,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
 #if OPAL_RTP_FEC
   , m_redundencyPayloadType(RTP_DataFrame::IllegalPayloadType)
   , m_ulpFecPayloadType(RTP_DataFrame::IllegalPayloadType)
+  , m_ulpFecSendLevel(2)
 #endif
   , syncSourceOut(PRandom::Number())
   , syncSourceIn(0)
@@ -513,10 +514,10 @@ bool OpalRTPSession::ReadData(RTP_DataFrame & frame)
   if (jitter != NULL)
     return jitter->ReadData(frame);
 
-  if (m_outOfOrderPackets.empty())
+  if (m_pendingPackets.empty())
     return InternalReadData(frame);
 
-  unsigned sequenceNumber = m_outOfOrderPackets.back().GetSequenceNumber();
+  unsigned sequenceNumber = m_pendingPackets.back().GetSequenceNumber();
   if (sequenceNumber != expectedSequenceNumber) {
     PTRACE(5, "RTP\tSession " << m_sessionId << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn)
            << ", still out of order packets, next "
@@ -524,13 +525,13 @@ bool OpalRTPSession::ReadData(RTP_DataFrame & frame)
     return InternalReadData(frame);
   }
 
-  frame = m_outOfOrderPackets.back();
-  m_outOfOrderPackets.pop_back();
+  frame = m_pendingPackets.back();
+  m_pendingPackets.pop_back();
   expectedSequenceNumber = (WORD)(sequenceNumber + 1);
 
-  PTRACE(m_outOfOrderPackets.empty() ? 2 : 5,
+  PTRACE(m_pendingPackets.empty() ? 2 : 5,
          "RTP\tSession " << m_sessionId << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn) << ", resequenced "
-         << (m_outOfOrderPackets.empty() ? "last" : "next") << " out of order packet " << sequenceNumber);
+         << (m_pendingPackets.empty() ? "last" : "next") << " out of order packet " << sequenceNumber);
   return true;
 }
 
@@ -666,7 +667,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
     if (status != e_ProcessPacket)
       return status;
   }
-#endif // OPAL_RTP_FEC
+#endif
 
   if (txStatisticsCount < txStatisticsInterval)
     return e_ProcessPacket;
@@ -719,7 +720,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
     if (status != e_ProcessPacket)
       return status;
   }
-#endif // OPAL_RTP_FEC
+#endif
 
   // Check if expected payload type
   if (lastReceivedPayloadType == RTP_DataFrame::IllegalPayloadType)
@@ -798,7 +799,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
       expectedSequenceNumber++;
       consecutiveOutOfOrderPackets = 0;
 
-      if (!m_outOfOrderPackets.empty()) {
+      if (!m_pendingPackets.empty()) {
         PTRACE(5, "RTP\tSession " << m_sessionId << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn)
                << ", received out of order packet " << sequenceNumber);
         outOfOrderPacketTime = tick;
@@ -840,7 +841,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
     else if (allowSequenceChange) {
       expectedSequenceNumber = (WORD) (sequenceNumber + 1);
       allowSequenceChange = false;
-      m_outOfOrderPackets.clear();
+      m_pendingPackets.clear();
       PTRACE(2, "RTP\tSession " << m_sessionId << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn)
              << ", adjusting sequence numbers to expect " << expectedSequenceNumber);
     }
@@ -867,25 +868,25 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
       }
     }
     else if (resequenceOutOfOrderPackets &&
-                (m_outOfOrderPackets.empty() || (tick - outOfOrderPacketTime) < outOfOrderWaitTime)) {
-      if (m_outOfOrderPackets.empty())
+                (m_pendingPackets.empty() || (tick - outOfOrderPacketTime) < outOfOrderWaitTime)) {
+      if (m_pendingPackets.empty())
         outOfOrderPacketTime = tick;
       // Maybe packet lost, maybe out of order, save for now
       SaveOutOfOrderPacket(frame);
       return e_IgnorePacket;
     }
     else {
-      if (!m_outOfOrderPackets.empty()) {
+      if (!m_pendingPackets.empty()) {
         // Give up on the packet, probably never coming in. Save current and switch in
         // the lowest numbered packet.
         SaveOutOfOrderPacket(frame);
 
         for (;;) {
-          if (m_outOfOrderPackets.empty())
+          if (m_pendingPackets.empty())
             return e_IgnorePacket;
 
-          frame = m_outOfOrderPackets.back();
-          m_outOfOrderPackets.pop_back();
+          frame = m_pendingPackets.back();
+          m_pendingPackets.pop_back();
 
           sequenceNumber = frame.GetSequenceNumber();
           if (sequenceNumber >= expectedSequenceNumber)
@@ -960,18 +961,18 @@ void OpalRTPSession::SaveOutOfOrderPacket(RTP_DataFrame & frame)
 {
   WORD sequenceNumber = frame.GetSequenceNumber();
 
-  PTRACE(m_outOfOrderPackets.empty() ? 2 : 5,
+  PTRACE(m_pendingPackets.empty() ? 2 : 5,
          "RTP\tSession " << m_sessionId << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn) << ", "
-         << (m_outOfOrderPackets.empty() ? "first" : "next") << " out of order packet, got "
+         << (m_pendingPackets.empty() ? "first" : "next") << " out of order packet, got "
          << sequenceNumber << " expected " << expectedSequenceNumber);
 
-  std::list<RTP_DataFrame>::iterator it;
-  for (it  = m_outOfOrderPackets.begin(); it != m_outOfOrderPackets.end(); ++it) {
+  RTP_DataFrameList::iterator it;
+  for (it = m_pendingPackets.begin(); it != m_pendingPackets.end(); ++it) {
     if (sequenceNumber > it->GetSequenceNumber())
       break;
   }
 
-  m_outOfOrderPackets.insert(it, frame);
+  m_pendingPackets.insert(it, frame);
   frame.MakeUnique();
 }
 
@@ -2331,122 +2332,6 @@ bool OpalRTPSession::WriteRawPDU(const BYTE * framePtr, PINDEX frameSize, bool t
 
   return true;
 }
-
-
-#if OPAL_RTP_FEC
-OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendRedundantFrame(RTP_DataFrame & frame)
-{
-  RTP_DataFrame red(0, frame.GetSize()*2);
-  red.CopyHeader(frame);
-  red.SetPayloadType(m_redundencyPayloadType);
-
-  for (;;) {
-    RTP_DataFrame::PayloadTypes payloadType;
-    unsigned timestamp;
-    PINDEX size = red.GetSize() - red.GetPayloadSize() - frame.GetPayloadSize() - 5;
-    switch (OnSendRedundantData(payloadType, timestamp, red.GetPayloadPtr() + red.GetPayloadSize() + 4, size)) {
-      case e_AbortTransport :
-        return e_AbortTransport;
-
-      case e_ProcessPacket :
-        break;
-
-      case e_IgnorePacket :
-        // Set the primary encoding block
-        PINDEX oldPayloadSize = red.GetPayloadSize();
-        red.SetPayloadSize(oldPayloadSize + frame.GetPayloadSize() + 1);
-        BYTE * payload = red.GetPayloadPtr() + oldPayloadSize;
-        *payload++ = (BYTE)frame.GetPayloadType();
-        memmove(payload, frame.GetPayloadPtr(), frame.GetPayloadSize());
-
-        PTRACE(5, "RTP_UDP\tSession " << m_sessionId << ", redundant packet primary block added:"
-               " pt=" << frame.GetPayloadType() << ", sz=" << frame.GetPayloadSize());
-        frame = red;
-        return e_ProcessPacket;
-    }
-
-    BYTE * payload = red.GetPayloadPtr() + red.GetPayloadSize();
-    *payload++ = (BYTE)(payloadType | 0x80);
-    *payload++ = (BYTE)(timestamp >> 6);
-    *payload++ = (BYTE)(((timestamp & 0x3f) << 2) | (size >> 8));
-    *payload++ = (BYTE)size;
-    red.SetPayloadSize(red.GetPayloadSize() + size + 4);
-  }
-}
-
-
-OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendRedundantData(RTP_DataFrame::PayloadTypes & payloadType,
-                                                                      unsigned & timestamp,
-                                                                      BYTE * /*data*/,
-                                                                      PINDEX & /*size*/)
-{
-  if (m_ulpFecPayloadType == RTP_DataFrame::IllegalPayloadType) {
-    PTRACE(5, "RTP_UDP\tSession " << m_sessionId << ", no redundant blocks added");
-    return e_IgnorePacket;
-  }
-
-  payloadType = m_ulpFecPayloadType;
-  timestamp = lastSentTimestamp;
-  PTRACE(5, "RTP_UDP\tSession " << m_sessionId << ", adding (eventually) redundant ULP-FEC");
-  return e_IgnorePacket;
-}
-
-
-OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveRedundantFrame(RTP_DataFrame & frame)
-{
-  const BYTE * payload = frame.GetPayloadPtr();
-  PINDEX size = frame.GetPayloadSize();
-
-  while (size >= 4 && (*payload & 0x80) != 0) {
-    PINDEX len = (((payload[2] & 3) << 8) | payload[3]) + 4;
-    if (len >= size) {
-      PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", redundant packet too small");
-      return e_IgnorePacket;
-    }
-    if (OnReceiveRedundantData((RTP_DataFrame::PayloadTypes)(payload[0] & 0x7f),
-                               frame.GetTimestamp() - (payload[1] << 6) - (payload[2] >> 2),
-                               payload + 4, len - 4) == e_AbortTransport)
-      return e_AbortTransport;
-    payload += len;
-    size -= len;
-  }
-
-  if (size <= 0) {
-    PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", redundant packet primary block missing");
-    return e_IgnorePacket;
-  }
-
-  // Get the primary encoding block
-  frame.SetPayloadType((RTP_DataFrame::PayloadTypes)(*payload & 0x7f));
-  memmove(frame.GetPayloadPtr(), ++payload, --size);
-  frame.SetPayloadSize(size);
-  PTRACE(5, "RTP_UDP\tSession " << m_sessionId << ", redundant packet primary block extracted:"
-            " pt=" << frame.GetPayloadType() << ", sz=" << frame.GetPayloadSize());
-  return e_ProcessPacket;
-}
-
-
-OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveRedundantData(RTP_DataFrame::PayloadTypes payloadType,
-                                                                       unsigned timestamp,
-                                                                       const BYTE * /*data*/,
-                                                                       PINDEX size)
-{
-  if (payloadType != m_ulpFecPayloadType) {
-    PTRACE(5, "RTP_UDP\tSession " << m_sessionId << ", unknown redundant block:"
-           " pt=" << payloadType << ", ts=" << timestamp << ", sz=" << size);
-    return e_IgnorePacket;
-  }
-
-  if (size < 10) {
-    PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", redundant ULP-FEC too small");
-    return e_IgnorePacket;
-  }
-
-  PTRACE(5, "RTP_UDP\tSession " << m_sessionId << ", redundant ULP-FEC:"
-         " ts=" << timestamp << ", sz=" << size);
-  return e_IgnorePacket;
-}
-#endif // OPAL_RTP_FEC
 
 
 /////////////////////////////////////////////////////////////////////////////
