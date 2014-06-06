@@ -1323,7 +1323,6 @@ bool OpalTransportTCP::OnConnectedSocket(PTCPSocket * socket)
     return false;
   }
 
-#ifndef __BEOS__
   if (!socket->SetOption(TCP_NODELAY, 1, IPPROTO_TCP)) {
     PTRACE(1, "OpalTCP\tSetOption(TCP_NODELAY) failed: " << socket->GetErrorText());
   }
@@ -1334,7 +1333,6 @@ bool OpalTransportTCP::OnConnectedSocket(PTCPSocket * socket)
     PTRACE(1, "OpalTCP\tSetOption(SO_LINGER) failed: " << socket->GetErrorText());
     return false;
   }
-#endif
 
     PTRACE(3, "OpalTCP\tStarted connection to "
          << remoteAddress.AsString(true) << ':' << remotePort
