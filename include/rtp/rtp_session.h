@@ -657,7 +657,7 @@ class OpalRTPSession : public OpalMediaSession
     BYTE          m_lastFIRSequenceNumber;
     BYTE          m_lastTSTOSequenceNumber;
 
-    std::list<RTP_DataFrame> m_outOfOrderPackets;
+    RTP_DataFrameList m_pendingPackets;
     void SaveOutOfOrderPacket(RTP_DataFrame & frame);
 
     // Statistics

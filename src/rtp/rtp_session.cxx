@@ -513,10 +513,10 @@ bool OpalRTPSession::ReadData(RTP_DataFrame & frame)
   if (jitter != NULL)
     return jitter->ReadData(frame);
 
-  if (m_outOfOrderPackets.empty())
+  if (m_pendingPackets.empty())
     return InternalReadData(frame);
 
-  unsigned sequenceNumber = m_outOfOrderPackets.back().GetSequenceNumber();
+  unsigned sequenceNumber = m_pendingPackets.back().GetSequenceNumber();
   if (sequenceNumber != expectedSequenceNumber) {
     PTRACE(5, "RTP\tSession " << m_sessionId << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn)
            << ", still out of order packets, next "
@@ -524,13 +524,13 @@ bool OpalRTPSession::ReadData(RTP_DataFrame & frame)
     return InternalReadData(frame);
   }
 
-  frame = m_outOfOrderPackets.back();
-  m_outOfOrderPackets.pop_back();
+  frame = m_pendingPackets.back();
+  m_pendingPackets.pop_back();
   expectedSequenceNumber = (WORD)(sequenceNumber + 1);
 
-  PTRACE(m_outOfOrderPackets.empty() ? 2 : 5,
+  PTRACE(m_pendingPackets.empty() ? 2 : 5,
          "RTP\tSession " << m_sessionId << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn) << ", resequenced "
-         << (m_outOfOrderPackets.empty() ? "last" : "next") << " out of order packet " << sequenceNumber);
+         << (m_pendingPackets.empty() ? "last" : "next") << " out of order packet " << sequenceNumber);
   return true;
 }
 
@@ -798,7 +798,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
       expectedSequenceNumber++;
       consecutiveOutOfOrderPackets = 0;
 
-      if (!m_outOfOrderPackets.empty()) {
+      if (!m_pendingPackets.empty()) {
         PTRACE(5, "RTP\tSession " << m_sessionId << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn)
                << ", received out of order packet " << sequenceNumber);
         outOfOrderPacketTime = tick;
@@ -840,7 +840,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
     else if (allowSequenceChange) {
       expectedSequenceNumber = (WORD) (sequenceNumber + 1);
       allowSequenceChange = false;
-      m_outOfOrderPackets.clear();
+      m_pendingPackets.clear();
       PTRACE(2, "RTP\tSession " << m_sessionId << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn)
              << ", adjusting sequence numbers to expect " << expectedSequenceNumber);
     }
@@ -867,25 +867,25 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
       }
     }
     else if (resequenceOutOfOrderPackets &&
-                (m_outOfOrderPackets.empty() || (tick - outOfOrderPacketTime) < outOfOrderWaitTime)) {
-      if (m_outOfOrderPackets.empty())
+                (m_pendingPackets.empty() || (tick - outOfOrderPacketTime) < outOfOrderWaitTime)) {
+      if (m_pendingPackets.empty())
         outOfOrderPacketTime = tick;
       // Maybe packet lost, maybe out of order, save for now
       SaveOutOfOrderPacket(frame);
       return e_IgnorePacket;
     }
     else {
-      if (!m_outOfOrderPackets.empty()) {
+      if (!m_pendingPackets.empty()) {
         // Give up on the packet, probably never coming in. Save current and switch in
         // the lowest numbered packet.
         SaveOutOfOrderPacket(frame);
 
         for (;;) {
-          if (m_outOfOrderPackets.empty())
+          if (m_pendingPackets.empty())
             return e_IgnorePacket;
 
-          frame = m_outOfOrderPackets.back();
-          m_outOfOrderPackets.pop_back();
+          frame = m_pendingPackets.back();
+          m_pendingPackets.pop_back();
 
           sequenceNumber = frame.GetSequenceNumber();
           if (sequenceNumber >= expectedSequenceNumber)
@@ -960,18 +960,18 @@ void OpalRTPSession::SaveOutOfOrderPacket(RTP_DataFrame & frame)
 {
   WORD sequenceNumber = frame.GetSequenceNumber();
 
-  PTRACE(m_outOfOrderPackets.empty() ? 2 : 5,
+  PTRACE(m_pendingPackets.empty() ? 2 : 5,
          "RTP\tSession " << m_sessionId << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn) << ", "
-         << (m_outOfOrderPackets.empty() ? "first" : "next") << " out of order packet, got "
+         << (m_pendingPackets.empty() ? "first" : "next") << " out of order packet, got "
          << sequenceNumber << " expected " << expectedSequenceNumber);
 
-  std::list<RTP_DataFrame>::iterator it;
-  for (it  = m_outOfOrderPackets.begin(); it != m_outOfOrderPackets.end(); ++it) {
+  RTP_DataFrameList::iterator it;
+  for (it = m_pendingPackets.begin(); it != m_pendingPackets.end(); ++it) {
     if (sequenceNumber > it->GetSequenceNumber())
       break;
   }
 
-  m_outOfOrderPackets.insert(it, frame);
+  m_pendingPackets.insert(it, frame);
   frame.MakeUnique();
 }
 
