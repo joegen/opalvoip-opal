@@ -705,6 +705,9 @@
     <ClCompile Include="..\rtp\dtls_srtp_session.cpp">
       <Filter>Source Files\RTP</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\SVN-Trunk-2012\opal\src\rtp\rtp_fec.cxx">
+      <Filter>Source Files\RTP</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\codec\echocancel.h">
