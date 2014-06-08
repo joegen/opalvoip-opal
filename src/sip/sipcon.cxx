@@ -1862,10 +1862,13 @@ void SIPConnection::OnCreatingINVITE(SIPInvite & request)
 
     PString oldInterface = GetInterface();
 
-    PString newInterface = request.GetTransport()->GetInterface();
-    if (newInterface.IsEmpty())
-      newInterface = request.GetTransport()->GetLocalAddress().GetHostName();
-    m_dialog.SetInterface(newInterface);
+    PSafePtr<OpalTransport> transport = request.GetTransport();
+    if (transport != NULL) {
+      PString newInterface = transport->GetInterface();
+      if (newInterface.IsEmpty())
+        newInterface = transport->GetLocalAddress().GetHostName();
+      m_dialog.SetInterface(newInterface);
+    }
 
     SDPSessionDescription * sdp = m_endpoint.CreateSDP(m_sdpSessionId, m_sdpVersion, OpalTransportAddress());
     if (OnSendOfferSDP(*sdp, m_needReINVITE)) {
