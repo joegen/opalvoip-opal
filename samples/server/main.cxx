@@ -498,6 +498,7 @@ MyManager::MyManager()
 {
   new OpalLocalEndPoint(*this, LoopbackPrefix);
   OpalMediaFormat::RegisterKnownMediaFormats(); // Make sure codecs are loaded
+  m_outputStream = &m_systemLog;
 }
 
 
