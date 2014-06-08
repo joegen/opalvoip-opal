@@ -819,7 +819,7 @@ class OpalTransport : public PSafeObject
 
         The default behaviour returns the local address via GetLocalAddress()
       */
-    virtual PString GetInterface() const;
+    virtual PString GetInterface() const = 0;
 
     /**Bind this transport to an interface.
         This is generally only relevant for datagram based transports such as
@@ -1039,6 +1039,10 @@ class OpalTransportIP : public OpalTransport
   public:
   /**@name Operations */
   //@{
+    /** Get the interface this transport is bound to.
+      */
+    virtual PString GetInterface() const;
+
     /**Get the transport dependent name of the local endpoint.
       */
     virtual OpalTransportAddress GetLocalAddress() const;
