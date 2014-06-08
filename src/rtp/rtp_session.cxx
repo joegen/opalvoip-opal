@@ -2113,7 +2113,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr,
       PIPSocketAddressAndPort localAP;
       m_dataSocket->PUDPSocket::InternalGetLocalAddress(localAP);
       if (ap == localAP) {
-        PTRACE(5, "RTP\tSession " << m_sessionId << ", " << channelName << " bock breaker ignored.");
+        PTRACE(5, "RTP\tSession " << m_sessionId << ", " << channelName << " I/O block breaker ignored.");
         return e_IgnorePacket;
       }
     }
