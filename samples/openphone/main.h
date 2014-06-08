@@ -32,23 +32,7 @@
 #ifndef _OpenPhone_MAIN_H
 #define _OpenPhone_MAIN_H
 
-#if !defined(NDEBUG) && defined(OPAL_WX_DEBUG_HACK)
-  // This hack is so can compile debug version of OpenPhone/OPAL/PTLib with
-  // the release only version of wxWidgets found in most distributions.
-  #define NDEBUG
-  #include <wx/defs.h>
-  #undef NDEBUG
-#endif
-
-// Total insanity ....
-#if _WIN32
-	#include <ptlib.h>
-	#include <wx/wx.h>
-#else
-	#include <wx/wx.h>
-	#include <ptlib.h>
-#endif
-
+#include <ptlib_wx.h>
 #include <opal/manager.h>
 
 #ifndef OPAL_PTLIB_AUDIO
@@ -58,9 +42,6 @@
 #include <wx/taskbar.h>
 #include <wx/dataobj.h>
 
-#include <ptlib.h>
-#include <ptclib/url.h>
-#include <ptlib/wxstring.h>
 #include <ptlib/notifier_ext.h>
 #include <ptclib/pssl.h>
 
@@ -72,7 +53,8 @@
 #include <im/im_ep.h>
 #include <h224/h224.h>
 
-#include <list>
+// Note, include this after everything else so gets all the conversions
+#include <ptlib/wxstring.h>
 
 
 class MyManager;
