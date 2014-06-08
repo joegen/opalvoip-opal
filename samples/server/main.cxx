@@ -490,6 +490,7 @@ bool MyManager::ConfigureCommon(OpalEndPoint * ep,
 
 MyManager::MyManager()
   : MyManagerParent(OPAL_CONSOLE_PREFIXES OPAL_PREFIX_PCSS" "OPAL_PREFIX_IVR" "OPAL_PREFIX_MIXER)
+  , m_systemLog(PSystemLog::Info)
   , m_mediaTransferMode(MediaTransferForward)
 #if OPAL_CAPI
   , m_enableCAPI(true)
