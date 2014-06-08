@@ -958,12 +958,6 @@ void OpalTransport::PrintOn(ostream & strm) const
 }
 
 
-PString OpalTransport::GetInterface() const
-{
-  return GetLocalAddress().GetHostName();
-}
-
-
 bool OpalTransport::SetInterface(const PString &)
 {
   return true;
@@ -1110,6 +1104,21 @@ OpalTransportIP::OpalTransportIP(OpalEndPoint & end,
   , m_localAP(binding, port)
   , m_remoteAP(PIPSocket::Address::GetAny(binding.GetVersion()))
 {
+}
+
+
+PString OpalTransportIP::GetInterface() const
+{
+  if (IsOpen()) {
+    PIPSocket * socket = dynamic_cast<PIPSocket *>(m_channel);
+    if (socket != NULL) {
+      PIPSocket::Address ip;
+      if (socket->PIPSocket::GetLocalAddress(ip))
+        return ip.AsString();
+    }
+  }
+
+  return PString::Empty();
 }
 
 
