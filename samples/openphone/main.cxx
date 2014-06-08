@@ -54,13 +54,15 @@
 #include <wx/valgen.h>
 #include <wx/notebook.h>
 #include <wx/progdlg.h>
-#undef LoadMenu // Bizarre but necessary before the xml code
 #include <wx/xrc/xmlres.h>
 #include <wx/cmdline.h>
 
+#include <ptclib/pstun.h>
+#include <ptclib/pwavfile.h>
+#include <ptclib/dtmf.h>
+
 #include <opal/mediasession.h>
 #include <opal/patch.h>
-#include <rtp/srtp_session.h>
 #include <opal/transcoders.h>
 #include <ep/ivr.h>
 #include <ep/opalmixer.h>
@@ -68,10 +70,8 @@
 #include <sip/sippres.h>
 #include <lids/lidep.h>
 #include <lids/capi_ep.h>
-#include <ptclib/pstun.h>
 #include <codec/vidcodec.h>
-#include <ptclib/pwavfile.h>
-#include <ptclib/dtmf.h>
+#include <rtp/srtp_session.h>
 
 #include <algorithm>
 
@@ -630,7 +630,7 @@ void MyManager::VideoWindowInfo::WriteConfig(wxConfigBase * config, const wxStri
 
 ///////////////////////////////////////////////////////////////////////////////
 
-IMPLEMENT_APP(OpenPhoneApp)
+wxIMPLEMENT_APP(OpenPhoneApp);
 
 OpenPhoneApp::OpenPhoneApp()
   : PProcess(MANUFACTURER_TEXT, PRODUCT_NAME_TEXT,
