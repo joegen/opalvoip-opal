@@ -491,14 +491,17 @@ bool MyManager::ConfigureCommon(OpalEndPoint * ep,
 
 MyManager::MyManager()
   : MyManagerParent(OPAL_CONSOLE_PREFIXES OPAL_PREFIX_PCSS" "OPAL_PREFIX_IVR" "OPAL_PREFIX_MIXER)
+  , m_systemLog(PSystemLog::Info)
   , m_mediaTransferMode(MediaTransferForward)
 #if OPAL_CAPI
   , m_enableCAPI(true)
 #endif
   , m_cdrListMax(100)
 {
-  new OpalLocalEndPoint(*this, LoopbackPrefix);
+  OpalLocalEndPoint * ep = new OpalLocalEndPoint(*this, LoopbackPrefix);
+  ep->SetDefaultAudioSynchronicity(OpalLocalEndPoint::e_SimulateSyncronous);
   OpalMediaFormat::RegisterKnownMediaFormats(); // Make sure codecs are loaded
+  m_outputStream = &m_systemLog;
 }
 
 

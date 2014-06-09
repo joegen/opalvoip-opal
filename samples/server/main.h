@@ -483,7 +483,7 @@ class CDRPage : public BaseStatusPage
 ///////////////////////////////////////
 
 #if P_CLI
-typedef OpalManagerCLI MyManagerParent;
+  typedef OpalManagerCLI MyManagerParent;
 #else
   typedef OpalConsoleManager MyManagerParent;
 #endif
@@ -551,6 +551,8 @@ class MyManager : public MyManagerParent
     bool FindCDR(const PString & guid, CallDetailRecord & cdr);
 
   protected:
+    PSystemLog m_systemLog;
+
     MediaTransferMode m_mediaTransferMode;
 
 #if OPAL_CAPI
