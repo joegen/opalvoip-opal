@@ -576,11 +576,6 @@ bool OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 {
   PSafeLockReadOnly mutex(*this);
 
-  if (m_bypassFromPatch != NULL || m_bypassToPatch != NULL) {
-    PTRACE(3, "Patch\tCould not update media format for bypassed patch " << *this);
-    return false;
-  }
-
   bool atLeastOne = source.InternalUpdateMediaFormat(mediaFormat);
 
   for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
