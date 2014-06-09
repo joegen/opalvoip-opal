@@ -498,13 +498,13 @@ class OpalListener : public PObject
     void ListenForConnections();
     void TransportThreadMain(OpalTransportPtr transport);
 
-    OpalEndPoint & endpoint;
-    PThread      * thread;
-    AcceptHandler  acceptHandler;
-    ThreadMode     threadMode;
+    OpalEndPoint & m_endpoint;
+    PThread      * m_thread;
+    AcceptHandler  m_acceptHandler;
+    ThreadMode     m_threadMode;
 
   private:
-    OpalListener(const OpalListener & other) : PObject(other), endpoint(other.endpoint) { }
+    OpalListener(const OpalListener & other) : PObject(other), m_endpoint(other.m_endpoint) { }
     void operator=(const OpalListener &) { }
 
   friend class OpalHTTPConnector;
@@ -549,7 +549,7 @@ class OpalListenerIP : public OpalListener
 
   /**@name Operations */
   //@{
-    WORD GetListenerPort() const { return listenerPort; }
+    WORD GetListenerPort() const { return m_binding.GetPort(); }
 
     virtual const PCaselessString & GetProtoPrefix() const = 0;
   //@}
@@ -561,9 +561,8 @@ class OpalListenerIP : public OpalListener
       const OpalTransportAddress & remoteAddress
     ) const;
 
-    PIPSocket::Address localAddress;
-    WORD               listenerPort;
-    bool               exclusiveListener;
+    PIPSocketAddressAndPort m_binding;
+    bool                    m_exclusiveListener;
 };
 
 
@@ -646,7 +645,7 @@ class OpalListenerTCP : public OpalListenerIP
     virtual const PCaselessString & GetProtoPrefix() const;
     virtual OpalTransport * OnAccept(PTCPSocket * socket);
 
-    PTCPSocket listener;
+    PTCPSocket m_listener;
 };
 
 
@@ -746,7 +745,7 @@ class OpalListenerUDP : public OpalListenerIP
   protected:
     virtual const PCaselessString & GetProtoPrefix() const;
 
-    PMonitoredSocketsPtr listenerBundle;
+    PMonitoredSocketsPtr m_listenerBundle;
     PINDEX               m_bufferSize;
 };
 
@@ -820,7 +819,7 @@ class OpalTransport : public PSafeObject
 
         The default behaviour returns the local address via GetLocalAddress()
       */
-    virtual PString GetInterface() const;
+    virtual PString GetInterface() const = 0;
 
     /**Bind this transport to an interface.
         This is generally only relevant for datagram based transports such as
@@ -835,14 +834,6 @@ class OpalTransport : public PSafeObject
     /**Get the transport dependent name of the local endpoint.
       */
     virtual OpalTransportAddress GetLocalAddress() const = 0;
-
-    /**Set local address to connect from.
-       Note that this may not work for all transport types or may work only
-       before Connect() has been called.
-      */
-    virtual PBoolean SetLocalAddress(
-      const OpalTransportAddress & address
-    ) = 0;
 
     /**Get the transport address of the remote endpoint.
       */
@@ -981,7 +972,7 @@ class OpalTransport : public PSafeObject
     virtual PBoolean IsRunning() const;
   //@}
 
-    OpalEndPoint & GetEndPoint() const { return endpoint; }
+    OpalEndPoint & GetEndPoint() const { return m_endpoint; }
 
     /**Get the prefix for this transports protocol type.
       */
@@ -1015,7 +1006,7 @@ class OpalTransport : public PSafeObject
   protected:
     PDECLARE_NOTIFIER(PTimer, OpalTransport, KeepAlive);
 
-    OpalEndPoint & endpoint;
+    OpalEndPoint & m_endpoint;
     PChannel     * m_channel;
     PThread      * m_thread;      ///<  Thread handling the transport
     PTimer         m_keepAliveTimer;
@@ -1024,7 +1015,7 @@ class OpalTransport : public PSafeObject
     PAtomicInteger m_referenceCount;
 
   private:
-    OpalTransport(const OpalTransport & other) : PSafeObject(other), endpoint(other.endpoint) { }
+    OpalTransport(const OpalTransport & other) : PSafeObject(other), m_endpoint(other.m_endpoint) { }
     void operator=(const OpalTransport &) { }
 };
 
@@ -1048,17 +1039,13 @@ class OpalTransportIP : public OpalTransport
   public:
   /**@name Operations */
   //@{
+    /** Get the interface this transport is bound to.
+      */
+    virtual PString GetInterface() const;
+
     /**Get the transport dependent name of the local endpoint.
       */
     virtual OpalTransportAddress GetLocalAddress() const;
-
-    /**Set local address to connect from.
-       Note that this may not work for all transport types or may work only
-       before Connect() has been called.
-      */
-    virtual PBoolean SetLocalAddress(
-      const OpalTransportAddress & address
-    );
 
     /**Get the transport dependent name of the remote endpoint.
       */
@@ -1080,10 +1067,8 @@ class OpalTransportIP : public OpalTransport
       */
     virtual const PCaselessString & GetProtoPrefix() const = 0;
 
-    PIPSocket::Address localAddress;  // Address of the local interface
-    WORD               localPort;
-    PIPSocket::Address remoteAddress; // Address of the remote host
-    WORD               remotePort;
+    PIPSocketAddressAndPort m_localAP;  // Address of the local (NAT adjusted)
+    PIPSocketAddressAndPort m_remoteAP; // Address of the remote host
 };
 
 
@@ -1255,14 +1240,6 @@ class OpalTransportUDP : public OpalTransportIP
       */
     virtual OpalTransportAddress GetLocalAddress() const;
 
-    /**Set local address to connect from.
-       Note that this may not work for all transport types or may work only
-       before Connect() has been called.
-      */
-    virtual PBoolean SetLocalAddress(
-      const OpalTransportAddress & address
-    );
-
     /**Set remote address to connect to.
        Note that this does not necessarily initiate a transport level
        connection, but only indicates where to connect to. The actual
@@ -1347,7 +1324,7 @@ class OpalTransportUDP : public OpalTransportIP
       */
     virtual const PCaselessString & GetProtoPrefix() const;
 
-    OpalManager & manager;
+    OpalManager & m_manager;
     PINDEX        m_bufferSize;
     PBYTEArray    m_preReadPacket;
     bool          m_preReadOK;
@@ -1415,8 +1392,7 @@ class OpalInternalIPTransport : public OpalInternalTransport
     static PBoolean GetAdjustedIpAndPort(const OpalTransportAddress & address,
                                      OpalEndPoint & endpoint,
                                      OpalTransportAddress::BindOptions option,
-                                     PIPSocket::Address & ip,
-                                     WORD & port,
+                                     PIPSocketAddressAndPort & ap,
                                      PBoolean & reuseAddr);
 };
 
@@ -1439,14 +1415,13 @@ class OpalInternalIPTransportTemplate : public OpalInternalIPTransport
       OpalTransportAddress::BindOptions options
     ) const
     {
-      PIPSocket::Address ip;
-      WORD port;
+      PIPSocketAddressAndPort ap;
       PBoolean reuseAddr;
-      if (GetAdjustedIpAndPort(address, endpoint, options, ip, port, reuseAddr)) {
+      if (GetAdjustedIpAndPort(address, endpoint, options, ap, reuseAddr)) {
         if (options == AltTypeOption)
-          return new AltTypeClass(endpoint, ip, 0, reuseAddr);
+          return new AltTypeClass(endpoint, ap.GetAddress(), 0, reuseAddr);
         else
-          return new TransportType(endpoint, ip, 0, reuseAddr);
+          return new TransportType(endpoint, ap.GetAddress(), 0, reuseAddr);
       }
       return NULL;
     }
