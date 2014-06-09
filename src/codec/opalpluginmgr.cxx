@@ -1087,8 +1087,10 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
   if (pictureLost)
     SendIFrameRequest(sequenceNumber, src.GetTimestamp());
 
-  if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
+  if ((flags & PluginCodec_ReturnCoderIFrame) != 0) {
+		m_throttleRequestIFrameTimer.Stop();
     m_lastFrameWasIFrame = true;
+	}
 
   if ((flags & PluginCodec_ReturnCoderLastFrame) == 0)
     return true;
