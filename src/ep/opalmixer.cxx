@@ -1134,6 +1134,10 @@ OpalMixerMediaStream::OpalMixerMediaStream(OpalConnection & conn,
   : OpalMediaStream(conn, format, sessionID, isSource)
   , m_node(node)
   , m_listenOnly(listenOnly)
+#if OPAL_VIDEO
+  , m_mixedVideoWidth(0)
+  , m_mixedVideoHeight(0)
+#endif
 {
   /* We are a bit sneaky here. OpalCall::OpenSourceMediaStream will have
      selected the network codec (e.g. G.723.1) anbd passed it to us, but for
@@ -1211,6 +1215,16 @@ bool OpalMixerMediaStream::InternalSetJitterBuffer(const OpalJitterBuffer::Init 
   return IsSink() && m_node->SetJitterBufferSize(GetID(), init);
 }
 
+
+#if OPAL_VIDEO
+bool OpalMixerMediaStream::CheckMixedVideoSize(unsigned width, unsigned height)
+{
+  bool different = m_mixedVideoWidth != width || m_mixedVideoHeight != height;
+  m_mixedVideoWidth = width;
+  m_mixedVideoHeight = height;
+  return different;
+}
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1860,8 +1874,10 @@ OpalVideoStreamMixer::~OpalVideoStreamMixer()
 
 bool OpalVideoStreamMixer::OnMixed(RTP_DataFrame * & output)
 {
-  std::map<PString, RTP_DataFrameList> cachedVideo;
-  std::map<PString, RTP_DataFrame>     cachedFrameStore;
+  typedef std::map<PString, RTP_DataFrameList> CachedPackets;
+  CachedPackets cachedPackets;
+  typedef std::map<unsigned, RTP_DataFrame> CachedFrameStore;
+  CachedFrameStore cachedFrameStore;
 
   for (PSafePtr<OpalMixerMediaStream> stream(m_outputStreams, PSafeReadOnly); stream != NULL; ++stream) {
     OpalMediaFormat mediaFormat = stream->GetMediaFormat();
@@ -1871,26 +1887,34 @@ bool OpalVideoStreamMixer::OnMixed(RTP_DataFrame * & output)
       stream.SetSafetyMode(PSafeReadOnly); // restore lock
     }
     else {
+      unsigned width, height;
       const OpalVideoTranscoder::FrameHeader * header = (const OpalVideoTranscoder::FrameHeader *)output->GetPayloadPtr();
-      unsigned width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption());
-      unsigned height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption());
-
-      if (header->width != width || header->height != height) {
+      if (stream->CheckMixedVideoSize(header->width, header->height)) {
         // Try and set outgoing video to same size as mixed frame store
         mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), header->width);
         mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), header->height);
-        if (stream->UpdateMediaFormat(mediaFormat)) {
-          width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption());
-          height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption());
-          PTRACE(4, "Stream video frame size set to " << width << 'x' << height);
+        if (!stream->UpdateMediaFormat(mediaFormat, true)) {
+          PTRACE(2, "Could not adjust media format to " << header->width << 'x' << header->height);
+          continue;
         }
+        mediaFormat = stream->GetMediaFormat();
+        width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption());
+        height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption());
+        PTRACE(4, "Output of " << mediaFormat << " started at " << width << 'x' << height
+               << " (" << header->width << 'x' << header->height << ")"
+                  " to stream id " << stream->GetID());
+      }
+      else {
+        width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption());
+        height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption());
       }
 
-      PStringStream key;
-      key << mediaFormat << width << height;
+      PStringStream keyPackets;
+      keyPackets << mediaFormat << ' ' << width << 'x' << height;
 
-      if (cachedVideo.find(key) == cachedVideo.end()) {
-        OpalTranscoder * transcoder = m_transcoders.GetAt(key);
+      CachedPackets::iterator itPackets = cachedPackets.find(keyPackets);
+      if (itPackets == cachedPackets.end()) {
+        OpalTranscoder * transcoder = m_transcoders.GetAt(keyPackets);
         if (transcoder == NULL) {
           transcoder = OpalTranscoder::Create(OpalYUV420P, mediaFormat);
           if (transcoder == NULL) {
@@ -1900,18 +1924,27 @@ bool OpalVideoStreamMixer::OnMixed(RTP_DataFrame * & output)
           }
           PTRACE(3, "Created transcoder to " << mediaFormat << ' '
                  << width << 'x' << height << " for stream id " << stream->GetID());
-          m_transcoders.SetAt(key, transcoder);
+          m_transcoders.SetAt(keyPackets, transcoder);
         }
 
-        const RTP_DataFrame * rawRTP;
-        if (header->width == width && header->height == height)
+        RTP_DataFrame * rawRTP;
+        if (header->width == width && header->height == height) {
+          PTRACE(5, "Using mixer video frame: " << width << 'x' << height);
           rawRTP = output;
+        }
         else {
-          if (cachedFrameStore.find(key) == cachedFrameStore.end()) {
-            PTRACE(5, "Added scaled video frame " << header->width << 'x' << header->height << " to " << width << 'x' << height);
-            RTP_DataFrame & store = cachedFrameStore[key];
-            store.SetPayloadSize(width*height*3/2+sizeof(OpalVideoTranscoder::FrameHeader));
-            OpalVideoTranscoder::FrameHeader * resized = (OpalVideoTranscoder::FrameHeader *)store.GetPayloadPtr();
+          unsigned frameStoreKey = width + height*65536;
+          CachedFrameStore::iterator itFrameStore = cachedFrameStore.find(frameStoreKey);
+          if (itFrameStore != cachedFrameStore.end()) {
+            PTRACE(5, "Using cached video frame: " << header->width << 'x' << header->height << " to " << width << 'x' << height);
+            rawRTP = &itFrameStore->second;
+          }
+          else {
+            PTRACE(5, "Scaling video frame: " << header->width << 'x' << header->height << " to " << width << 'x' << height);
+            rawRTP = &cachedFrameStore[frameStoreKey];
+            rawRTP->CopyHeader(*output);
+            rawRTP->SetPayloadSize(width*height*3/2+sizeof(OpalVideoTranscoder::FrameHeader));
+            OpalVideoTranscoder::FrameHeader * resized = (OpalVideoTranscoder::FrameHeader *)rawRTP->GetPayloadPtr();
             resized->width = width;
             resized->height = height;
             PColourConverter::CopyYUV420P(0, 0, header->width, header->height,
@@ -1920,20 +1953,21 @@ bool OpalVideoStreamMixer::OnMixed(RTP_DataFrame * & output)
                                           width, height, OPAL_VIDEO_FRAME_DATA_PTR(resized),
                                           PVideoFrameInfo::eScale);
           }
-          rawRTP = &cachedFrameStore[key];
         }
 
-        if (!transcoder->ConvertFrames(*rawRTP, cachedVideo[key])) {
+        RTP_DataFrameList packets;
+        if (!transcoder->ConvertFrames(*rawRTP, packets)) {
           PTRACE(2, "Could not convert video to " << mediaFormat << " for stream id " << stream->GetID());
           CloseOne(stream);
           continue;
         }
+
+        itPackets = cachedPackets.insert(CachedPackets::value_type(keyPackets, packets)).first;
       }
 
       stream.SetSafetyMode(PSafeReference); // OpalMediaStream::PushPacket might block
 
-      RTP_DataFrameList & list = cachedVideo[key];
-      for (RTP_DataFrameList::iterator frame = list.begin(); frame != list.end(); ++frame)
+      for (RTP_DataFrameList::iterator frame = itPackets->second.begin(); frame != itPackets->second.end(); ++frame)
         stream->PushPacket(*frame);
 
       stream.SetSafetyMode(PSafeReadOnly); // restore lock

@@ -1010,12 +1010,20 @@ class OpalMixerMediaStream : public OpalMediaStream
     PSafePtr<OpalMixerNode> GetNode() { return m_node; }
   //@}
 
+#if OPAL_VIDEO
+    bool CheckMixedVideoSize(unsigned width, unsigned height);
+#endif
+
   protected:
     virtual void InternalClose();
     virtual bool InternalSetJitterBuffer(const OpalJitterBuffer::Init & init) const;
 
     PSafePtr<OpalMixerNode> m_node;
     bool m_listenOnly;
+#if OPAL_VIDEO
+    unsigned m_mixedVideoWidth;
+    unsigned m_mixedVideoHeight;
+#endif
 };
 
 
