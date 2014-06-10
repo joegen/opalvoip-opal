@@ -2206,7 +2206,10 @@ void SDPVideoMediaDescription::Format::SetMediaFormatOptions(OpalMediaFormat & m
               AdjustResolution(mediaFormat, OpalVideoFormat::MaxRxFrameHeightOption(), m_maxRxHeight, true);
     mediaFormat.SetOptionEnum(OpalVideoFormat::UseImageAttributeInSDP(), ok ? OpalVideoFormat::ImageAttrAnswerRequired
                                                                             : OpalVideoFormat::ImageAttrSuppressed);
-    PTRACE(4, "SDP\t" << (ok ? "Enabled" : "Disabled") << " imageattr in reply for " << mediaFormat);
+    PTRACE(4, "SDP\t" << (ok ? "Enabled" : "Disabled") << " imageattr "
+              "("  << m_minRxWidth << 'x' << m_minRxHeight <<
+              ".." << m_maxRxWidth << 'x' << m_maxRxHeight << ")"
+              " in reply for " << mediaFormat);
   }
 }
 

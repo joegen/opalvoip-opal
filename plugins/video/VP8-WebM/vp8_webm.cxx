@@ -294,18 +294,20 @@ class VP8FormatRFC : public VP8Format
     }
 
 
-    virtual bool ToNormalised(OptionMap & original, OptionMap & changed)
+    virtual bool IsValidForProtocol(const char * protocol) const
+		{
+			return strcasecmp(protocol, PLUGINCODEC_OPTION_PROTOCOL_SIP) == 0;
+		}
+
+
+    virtual bool ToNormalised(OptionMap & original, OptionMap & changed) const
     {
       OptionMap::iterator it = original.find(MaxFS.m_name);
       if (it != original.end() && !it->second.empty()) {
         unsigned maxFrameSize = String2Unsigned(it->second)%MAX_FS_SDP;
-        ClampResolution(m_maxWidth, m_maxHeight, maxFrameSize);
-        Change(maxFrameSize,  original, changed, MaxFS.m_name);
-        ClampMax(m_maxWidth,  original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
-        ClampMax(m_maxHeight, original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
-        ClampMax(m_maxWidth,  original, changed, PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH);
-        ClampMax(m_maxHeight, original, changed, PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT);
-      }
+				if (ClampResolution(original, changed, m_maxWidth, m_maxHeight, maxFrameSize))
+					Change(maxFrameSize,  original, changed, MaxFS.m_name);
+			}
 
       it = original.find(MaxFR.m_name);
       if (it != original.end() && !it->second.empty())
@@ -315,7 +317,7 @@ class VP8FormatRFC : public VP8Format
     }
 
 
-    virtual bool ToCustomised(OptionMap & original, OptionMap & changed)
+    virtual bool ToCustomised(OptionMap & original, OptionMap & changed) const
     {
       Change(GetMacroBlocks(original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH),
                             original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT)),
@@ -328,7 +330,7 @@ class VP8FormatRFC : public VP8Format
     }
 };
 
-static VP8FormatRFC VP8MediaFormatInfoRFC;
+static VP8FormatRFC const VP8MediaFormatInfoRFC;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -344,7 +346,13 @@ class VP8FormatOM : public VP8Format
     }
 
 
-    virtual bool ToNormalised(OptionMap & original, OptionMap & changed)
+    virtual bool IsValidForProtocol(const char * protocol) const
+		{
+			return strcasecmp(protocol, PLUGINCODEC_OPTION_PROTOCOL_SIP) == 0;
+		}
+
+
+    virtual bool ToNormalised(OptionMap & original, OptionMap & changed) const
     {
       OptionMap::iterator it = original.find(MaxFrameSizeOM.m_name);
       if (it != original.end() && !it->second.empty()) {
@@ -365,7 +373,7 @@ class VP8FormatOM : public VP8Format
     }
 
 
-    virtual bool ToCustomised(OptionMap & original, OptionMap & changed)
+    virtual bool ToCustomised(OptionMap & original, OptionMap & changed) const
     {
       unsigned maxWidth = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
       unsigned maxHeight = original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
@@ -376,7 +384,7 @@ class VP8FormatOM : public VP8Format
     }
 };
 
-static VP8FormatOM VP8MediaFormatInfoOM;
+static VP8FormatOM const VP8MediaFormatInfoOM;
 
 #endif // INCLUDE_OM_CUSTOM_PACKETIZATION
 
