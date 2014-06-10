@@ -136,8 +136,35 @@ static struct PluginCodec_Option const * const MyOptions[] = {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static PluginCodec_AudioFormat<MY_CODEC> const MyMediaFormat8k ("SILK-8",  MyPayloadName, MyDescription, 160, 50,  8000, MyOptions);
-static PluginCodec_AudioFormat<MY_CODEC> const MyMediaFormat16k("SILK-16", MyPayloadName, MyDescription, 320, 75, 16000, MyOptions);
+class SilkPluginMediaFormat : public PluginCodec_AudioFormat<MY_CODEC>
+{
+  public:
+    unsigned m_actualSampleRate;
+    unsigned m_actualChannels;
+
+    SilkPluginMediaFormat(const char * formatName, unsigned samplesPerFrame, unsigned bytesPerFrame, unsigned sampleRate)
+      : PluginCodec_AudioFormat<MY_CODEC>(formatName, MyPayloadName, MyDescription, samplesPerFrame, bytesPerFrame, sampleRate, MyOptions)
+    {
+		}
+
+    virtual bool IsValidForProtocol(const char * protocol) const
+		{
+			return strcasecmp(protocol, PLUGINCODEC_OPTION_PROTOCOL_SIP) == 0;
+		}
+
+		virtual bool ToNormalised(OptionMap & /*original*/, OptionMap & /*changed*/) const
+		{
+			return true;
+		}
+
+    virtual bool ToCustomised(OptionMap & /*original*/, OptionMap & /*changed*/) const
+    {
+      return true;
+    }
+};
+
+static SilkPluginMediaFormat const MyMediaFormat8k ("SILK-8",  160, 50,  8000);
+static SilkPluginMediaFormat const MyMediaFormat16k("SILK-16", 320, 75, 16000);
 
 
 ///////////////////////////////////////////////////////////////////////////////

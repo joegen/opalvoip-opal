@@ -222,25 +222,6 @@ static unsigned hexbyte(const char * hex)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static void ClampSizes(unsigned maxWidth,
-                       unsigned maxHeight,
-                       unsigned & maxFrameSize,
-                       PluginCodec_OptionMap & original,
-                       PluginCodec_OptionMap & changed)
-{
-  if (PluginCodec_Utilities::ClampResolution(maxWidth, maxHeight, maxFrameSize)) {
-    PTRACE(5, MY_CODEC_LOG, "Reduced max resolution to " << maxWidth << 'x' << maxHeight);
-  }
-
-  PluginCodec_Utilities::ClampMax(maxWidth,  original, changed, PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH);
-  PluginCodec_Utilities::ClampMax(maxHeight, original, changed, PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT);
-  PluginCodec_Utilities::ClampMax(maxWidth,  original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
-  PluginCodec_Utilities::ClampMax(maxHeight, original, changed, PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
-  PluginCodec_Utilities::ClampMax(maxWidth,  original, changed, PLUGINCODEC_OPTION_FRAME_WIDTH);
-  PluginCodec_Utilities::ClampMax(maxHeight, original, changed, PLUGINCODEC_OPTION_FRAME_HEIGHT);
-}
-
-
 static bool MyToNormalised(PluginCodec_OptionMap & original, PluginCodec_OptionMap & changed)
 {
   size_t levelIndex = 0;
@@ -345,10 +326,10 @@ static bool MyToNormalised(PluginCodec_OptionMap & original, PluginCodec_OptionM
 
   if (maxFrameSizeInMB < LevelInfo[levelIndex].m_MaxFrameSize)
     maxFrameSizeInMB = LevelInfo[levelIndex].m_MaxFrameSize;
-  ClampSizes(original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH),
-             original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT),
-             maxFrameSizeInMB,
-             original, changed);
+  PluginCodec_Utilities::ClampResolution(original, changed,
+																			   original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH),
+																				 original.GetUnsigned(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT),
+																				 maxFrameSizeInMB);
 
   // Frame rate
   if (maxMBPS < LevelInfo[levelIndex].m_MaxMBPS)
@@ -431,7 +412,7 @@ static bool MyToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionM
   PluginCodec_Utilities::Change(sdpProfLevel, original, changed, SDPProfileAndLevelName);
 
   // Clamp other variables (width/height etc) according to the adjusted profile/level
-  ClampSizes(maxWidth, maxHeight, maxMacroBlocks, original, changed);
+  PluginCodec_Utilities::ClampResolution(original, changed, maxWidth, maxHeight, maxMacroBlocks);
 
   // Do this afer the clamping, maxFrameSizeInMB may change
   if (maxMacroBlocks > LevelInfo[levelIndex].m_MaxFrameSize) {
