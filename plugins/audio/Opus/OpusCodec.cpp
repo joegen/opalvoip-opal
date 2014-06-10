@@ -175,8 +175,17 @@ class OpusPluginMediaFormat : public PluginCodec_AudioFormat<MY_CODEC>
       m_flags |= PluginCodec_SetChannels(2) | PluginCodec_RTPTypeShared;
     }
 
+    virtual bool IsValidForProtocol(const char * protocol) const
+		{
+			return strcasecmp(protocol, PLUGINCODEC_OPTION_PROTOCOL_SIP) == 0;
+		}
 
-    virtual bool ToCustomised(OptionMap &, OptionMap & changed)
+		virtual bool ToNormalised(OptionMap & /*original*/, OptionMap & /*changed*/) const
+		{
+			return true;
+		}
+
+    virtual bool ToCustomised(OptionMap &, OptionMap & changed) const
     {
       Unsigned2String(m_actualSampleRate, changed[MaxPlaybackRate.m_name]);
       changed[MaxCaptureRate.m_name] = changed[MaxPlaybackRate.m_name];

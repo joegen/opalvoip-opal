@@ -319,20 +319,26 @@ public:
   }
 
 
-  virtual bool ToNormalised(OptionMap & original, OptionMap & changed)
+  virtual bool IsValidForProtocol(const char * protocol) const
+	{
+		return true;
+	}
+
+
+  virtual bool ToNormalised(OptionMap & original, OptionMap & changed) const
   {
     return ClampToNormalised(original, changed);
   }
 
 
-  virtual bool ToCustomised(OptionMap & original, OptionMap & changed)
+  virtual bool ToCustomised(OptionMap & original, OptionMap & changed) const
   {
     return ClampToCustomised(original, changed);
   }
 }; 
 
-static H263_PluginMediaFormat MyMediaFormatInfo_RFC2190(H263FormatName,     H263EncodingName,     OptionTable_RFC2190);
-static H263_PluginMediaFormat MyMediaFormatInfo_RFC2429(H263plusFormatName, H263plusEncodingName, OptionTable_RFC22429);
+static H263_PluginMediaFormat const MyMediaFormatInfo_RFC2190(H263FormatName,     H263EncodingName,     OptionTable_RFC2190);
+static H263_PluginMediaFormat const MyMediaFormatInfo_RFC2429(H263plusFormatName, H263plusEncodingName, OptionTable_RFC22429);
 
 
 /////////////////////////////////////////////////////////////////////////////
