@@ -342,11 +342,41 @@ class PluginCodec_Utilities
           ++index;
       }
 
+      PTRACE(4, "Plugin", "ClampResolution: idx=" << index << ' '
+             << width << 'x' << height << " > " << maxFrameSize << "mb reduced to "
+             << MaxVideoResolutions[index].m_width << 'x' << MaxVideoResolutions[index].m_height
+             << '=' << MaxVideoResolutions[index].m_macroblocks << "mb");
       width = MaxVideoResolutions[index].m_width;
       height = MaxVideoResolutions[index].m_height;
       maxFrameSize = MaxVideoResolutions[index].m_macroblocks;
       return true;
     }
+
+    static bool ClampResolution(
+			PluginCodec_OptionMapBase & original,
+			PluginCodec_OptionMapBase & changed,
+			unsigned maxWidth,
+			unsigned maxHeight,
+      unsigned & maxMacroBlocks,
+      const char * widthKey = PLUGINCODEC_OPTION_FRAME_WIDTH,
+      const char * heightKey = PLUGINCODEC_OPTION_FRAME_HEIGHT,
+      const char * maxWidthKey = PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH,
+      const char * maxHeightKey = PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT,
+      const char * minWidthKey = PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH,
+      const char * minHeightKey = PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT
+    )
+		{
+      if (!ClampResolution(maxWidth, maxHeight, maxMacroBlocks))
+				return false;
+
+      ClampMax(maxWidth,  original, changed, widthKey);
+      ClampMax(maxHeight, original, changed, heightKey);
+      ClampMax(maxWidth,  original, changed, maxWidthKey);
+      ClampMax(maxHeight, original, changed, maxHeightKey);
+      ClampMax(maxWidth,  original, changed, minWidthKey);
+      ClampMax(maxHeight, original, changed, minHeightKey);
+			return true;
+		}
 };
 
 
@@ -457,14 +487,10 @@ class PluginCodec_MediaFormat : public PluginCodec_Utilities
 
 
     /// Determine if codec is valid for the specified protocol
-    virtual bool IsValidForProtocol(const char * /*protocol*/)
-    {
-      return true;
-    }
-
+    virtual bool IsValidForProtocol(const char * /*protocol*/) const = 0;
 
     /// Utility function to adjust option strings, used by ToNormalised()/ToCustomised().
-    bool AdjustOptions(void * parm, unsigned * parmLen, bool (PluginCodec_MediaFormat:: * adjuster)(OptionMap & original, OptionMap & changed))
+    bool AdjustOptions(void * parm, unsigned * parmLen, bool (PluginCodec_MediaFormat:: * adjuster)(OptionMap & original, OptionMap & changed) const) const
     {
       if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***)) {
         PTRACE(1, "Plugin", "Invalid parameters to AdjustOptions.");
@@ -483,20 +509,12 @@ class PluginCodec_MediaFormat : public PluginCodec_Utilities
 
 
     /// Adjust normalised options calculated from codec specific options.
-    virtual bool ToNormalised(OptionMap & /*original*/, OptionMap & /*changed*/)
-    {
-      return true;
-    }
-
+    virtual bool ToNormalised(OptionMap & /*original*/, OptionMap & /*changed*/) const = 0;
 
     // Adjust codec specific options calculated from normalised options.
-    virtual bool ToCustomised(OptionMap & /*original*/, OptionMap & /*changed*/)
-    {
-      return true;
-    }
+    virtual bool ToCustomised(OptionMap & /*original*/, OptionMap & /*changed*/) const = 0;
 
-
-    virtual void AdjustForVersion(unsigned version, const PluginCodec_Definition * /*definition*/)
+    virtual void AdjustForVersion(unsigned version, const PluginCodec_Definition * /*definition*/) const
     {
       if (version < PLUGIN_CODEC_VERSION_INTERSECT) {
         for (PluginCodec_Option ** options = (PluginCodec_Option **)m_options; *options != NULL; ++options) {
@@ -524,6 +542,10 @@ class PluginCodec_MediaFormat : public PluginCodec_Utilities
 template<typename NAME>
 class PluginCodec_AudioFormat : public PluginCodec_MediaFormat<NAME>
 {
+  public:
+    typedef PluginCodec_MediaFormat<NAME> Parent;
+    typedef typename Parent::OptionsTable OptionsTable;
+
   protected:
     unsigned m_samplesPerFrame;
     unsigned m_bytesPerFrame;
@@ -531,9 +553,6 @@ class PluginCodec_AudioFormat : public PluginCodec_MediaFormat<NAME>
     unsigned m_recommendedFramesPerPacket;
     unsigned m_maxFramesPerPacket;
 
-  public:
-    typedef PluginCodec_MediaFormat<NAME> Parent;
-    typedef typename Parent::OptionsTable OptionsTable;
 
     PluginCodec_AudioFormat(
       const char * formatName,
@@ -556,32 +575,33 @@ class PluginCodec_AudioFormat : public PluginCodec_MediaFormat<NAME>
 
     }
 
+    __inline PluginCodec_AudioFormat & SetFlags(unsigned b, unsigned m = 0) { this->Parent::SetFlags(b,m); return *this; }
+    __inline PluginCodec_AudioFormat & SetPayloadType(unsigned p) { this->Parent::SetPayloadType(p); return *this; }
+    __inline PluginCodec_AudioFormat & SetH323Capability(unsigned type, const void * data = NULL) { this->Parent::SetH323Capability(type, data); return *this; }
+    __inline PluginCodec_AudioFormat & SetMaxFramesPerPacket(unsigned p) { this->m_maxFramesPerPacket = p; return *this; }
+    __inline PluginCodec_AudioFormat & SetChannels(unsigned n)    { this->m_flags |= PluginCodec_SetChannels(n); return *this; }
 
+  public:
     __inline unsigned GetSamplesPerFrame() const { return this->m_samplesPerFrame; }
     __inline unsigned GetBytesPerFrame() const { return this->m_bytesPerFrame; }
     __inline unsigned GetSampleRate() const { return this->m_sampleRate; }
     __inline unsigned GetFrameTime() const { return this->m_samplesPerFrame*1000000/this->m_sampleRate; }
     __inline unsigned GetRecommendedFramesPerPacket() const { return this->m_recommendedFramesPerPacket; }
     __inline unsigned GetMaxFramesPerPacket() const { return this->m_maxFramesPerPacket; }
-
-    __inline PluginCodec_AudioFormat & SetFlags(unsigned b, unsigned m = 0) { this->Parent::SetFlags(b,m); return *this; }
-    __inline PluginCodec_AudioFormat & SetPayloadType(unsigned p) { this->Parent::SetPayloadType(p); return *this; }
-    __inline PluginCodec_AudioFormat & SetH323Capability(unsigned type, const void * data = NULL) { this->Parent::SetH323Capability(type, data); return *this; }
-    __inline PluginCodec_AudioFormat & SetMaxFramesPerPacket(unsigned p) { this->m_maxFramesPerPacket = p; return *this; }
-    __inline PluginCodec_AudioFormat & SetChannels(unsigned n)    { this->m_flags |= PluginCodec_SetChannels(n); return *this; }
 };
 
 
 template<typename NAME>
 class PluginCodec_VideoFormat : public PluginCodec_MediaFormat<NAME>
 {
+  public:
+    typedef PluginCodec_MediaFormat<NAME> Parent;
+    typedef typename Parent::OptionsTable OptionsTable;
+
   protected:
     unsigned m_maxWidth;
     unsigned m_maxHeight;
 
-  public:
-    typedef PluginCodec_MediaFormat<NAME> Parent;
-    typedef typename Parent::OptionsTable OptionsTable;
 
     PluginCodec_VideoFormat(
       const char * formatName,
@@ -598,14 +618,13 @@ class PluginCodec_VideoFormat : public PluginCodec_MediaFormat<NAME>
                     | PluginCodec_OutputTypeRTP; /* raw output data */
     }
 
-
-    __inline unsigned GetMaxWidth() const { return this->m_maxWidth; }
-    __inline unsigned GetMaxHeight() const { return this->m_maxHeight; }
-
     __inline PluginCodec_VideoFormat & SetFlags(unsigned b, unsigned m = 0) { this->Parent::SetFlags(b,m); return *this; }
     __inline PluginCodec_VideoFormat & SetPayloadType(unsigned p) { this->Parent::SetPayloadType(p); return *this; }
     __inline PluginCodec_VideoFormat & SetH323Capability(unsigned type, const void * data = NULL) { this->Parent::SetH323Capability(type, data); return *this; }
-    __inline PluginCodec_VideoFormat & SetMaxResolution(unsigned w, unsigned h) { this->m_maxWidth = w; this->m_maxHeight = h; return *this; }
+
+  public:
+    __inline unsigned GetMaxWidth() const { return this->m_maxWidth; }
+    __inline unsigned GetMaxHeight() const { return this->m_maxHeight; }
 };
 
 

@@ -232,18 +232,23 @@ public:
   }
 
 
-  virtual bool ToNormalised(OptionMap & original, OptionMap & changed)
+  virtual bool IsValidForProtocol(const char * protocol) const
+	{
+		return true;
+	}
+
+  virtual bool ToNormalised(OptionMap & original, OptionMap & changed) const
   {
     return MyToNormalised(original, changed);
   }
 
-  virtual bool ToCustomised(OptionMap & original, OptionMap & changed)
+  virtual bool ToCustomised(OptionMap & original, OptionMap & changed) const
   {
     return MyToCustomised(original, changed);
   }
 };
 
-static MPEG4_PluginMediaFormat MyMediaFormatInfo;
+static MPEG4_PluginMediaFormat const MyMediaFormatInfo;
 
 
 /////////////////////////////////////////////////////////////////////////////
