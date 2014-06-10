@@ -486,10 +486,10 @@ dnl MSWIN_DISPLAY  g711plc,Packet Loss Concealment for G.711
 dnl MSWIN_DEFINE   g711plc,OPAL_G711PLC
 OPAL_SIMPLE_OPTION(g711plc,OPAL_G711PLC, [Packet Loss Concealment for G.711])
 
-dnl MSWIN_DISPLAY  rtpfec,RTP Forward Error Correction
+dnl MSWIN_DISPLAY  rtpfec,RTP Forward Error Correction (incomplete and experimental!)
 dnl MSWIN_DEFAULT  rtpfec,Disabled
 dnl MSWIN_DEFINE   rtpfec,OPAL_RTP_FEC
-OPAL_SIMPLE_OPTION(rtpfec,OPAL_RTP_FEC, [RTP Forward Error Correction support])
+OPAL_SIMPLE_OPTION(rtpfec,OPAL_RTP_FEC, [RTP Forward Error Correction (incomplete and experimental!)])
 
 dnl MSWIN_DISPLAY  rtcpxr,RTCP Extended Reports support
 dnl MSWIN_DEFINE   rtcpxr,OPAL_RTCP_XR
