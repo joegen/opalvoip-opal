@@ -536,19 +536,19 @@ public:
   }
 
 
-  virtual bool IsValidForProtocol(const char * protocol)
+  virtual bool IsValidForProtocol(const char * protocol) const
   {
     return strcasecmp(protocol, PLUGINCODEC_OPTION_PROTOCOL_SIP) == 0 || m_options != MyOptionTable_0;
   }
 
 
-  virtual bool ToNormalised(OptionMap & original, OptionMap & changed)
+  virtual bool ToNormalised(OptionMap & original, OptionMap & changed) const
   {
     return MyToNormalised(original, changed);
   }
 
 
-  virtual bool ToCustomised(OptionMap & original, OptionMap & changed)
+  virtual bool ToCustomised(OptionMap & original, OptionMap & changed) const
   {
     return MyToCustomised(original, changed);
   }
@@ -556,9 +556,9 @@ public:
 
 /* SIP requires two completely independent media formats for packetisation
    modes zero and one. */
-static H264_PluginMediaFormat MyMediaFormatInfo_Mode0(H264_Mode0_FormatName, MyOptionTable_0);
-static H264_PluginMediaFormat MyMediaFormatInfo_Mode1(H264_Mode1_FormatName, MyOptionTable_1);
-static H264_PluginMediaFormat MyMediaFormatInfo_High (H264_High_FormatName,  MyOptionTable_High);
+static H264_PluginMediaFormat const MyMediaFormatInfo_Mode0(H264_Mode0_FormatName, MyOptionTable_0);
+static H264_PluginMediaFormat const MyMediaFormatInfo_Mode1(H264_Mode1_FormatName, MyOptionTable_1);
+static H264_PluginMediaFormat const MyMediaFormatInfo_High (H264_High_FormatName,  MyOptionTable_High);
 
 
 ///////////////////////////////////////////////////////////////////////////////
