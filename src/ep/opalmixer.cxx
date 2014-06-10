@@ -84,6 +84,8 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 
+#define PTraceModule() "Mixer"
+
 OpalBaseMixer::OpalBaseMixer(bool pushThread, unsigned periodMS, unsigned periodTS)
   : m_pushThread(pushThread)
   , m_periodMS(periodMS)
@@ -110,7 +112,7 @@ void OpalBaseMixer::RemoveStream(const Key_T & key)
   if (iter != m_inputStreams.end()) {
     delete iter->second;
     m_inputStreams.erase(iter);
-    PTRACE(4, "Mixer\tRemoved stream at key " << key);
+    PTRACE(4, "Removed stream at key " << key);
   }
 
   if (m_inputStreams.empty())
@@ -122,7 +124,7 @@ void OpalBaseMixer::RemoveStream(const Key_T & key)
 
 void OpalBaseMixer::RemoveAllStreams()
 {
-  PTRACE(4, "Mixer\tRemoving all streams");
+  PTRACE(4, "Removing all streams");
 
   m_mutex.Wait();
 
@@ -148,7 +150,7 @@ bool OpalBaseMixer::AddStream(const Key_T & key)
 
   m_inputStreams[key] = stream;
   PTRACE_CONTEXT_ID_SET(*stream, key);
-  PTRACE(4, "Mixer\tAdded input stream " << stream << " at key " << key);
+  PTRACE(4, "Added input stream " << stream << " at key " << key);
 
   StartPushThread();
   return true;
@@ -233,7 +235,7 @@ void OpalBaseMixer::StopPushThread(bool lock)
   m_mutex.Signal();
 
   if (thread != NULL) {
-    PTRACE(4, "Mixer\tWaiting for push thread " << *thread << " to terminate");
+    PTRACE(4, "Waiting for push thread " << *thread << " to terminate");
     PAssert(thread->WaitForTermination(5000), PSTRSTRM("Mixer worker thread " << *thread << " took too long to terminate."));
     delete thread;
   }
@@ -242,12 +244,12 @@ void OpalBaseMixer::StopPushThread(bool lock)
 
 void OpalBaseMixer::PushThreadMain()
 {
-  PTRACE(4, "Mixer\tPushThread start " << m_periodMS << " ms");
+  PTRACE(4, "PushThread start " << m_periodMS << " ms");
   PAdaptiveDelay delay(500);
   while (m_threadRunning && OnPush())
     delay.Delay(m_periodMS);
 
-  PTRACE(4, "Mixer\tPushThread end");
+  PTRACE(4, "PushThread end");
 }
 
 
@@ -294,7 +296,7 @@ OpalBaseMixer::Stream * OpalAudioMixer::CreateStream()
     else if (m_right == NULL)
       m_right = stream;
     else {
-      PTRACE(2, "Mixer\tCannot have more than two streams for stereo mode!");
+      PTRACE(2, "Cannot have more than two streams for stereo mode!");
       delete stream;
       return NULL;
     }
@@ -340,7 +342,7 @@ bool OpalAudioMixer::SetSampleRate(unsigned rate)
   m_mixedAudio.resize(m_periodTS);
   for (StreamMap_T::iterator iter = m_inputStreams.begin(); iter != m_inputStreams.end(); ++iter)
     ((AudioStream *)iter->second)->m_cacheSamples.SetSize(m_periodTS);
-  PTRACE(4, "Mixer\tSample rate set to " << rate);
+  PTRACE(4, "Sample rate set to " << rate);
   return true;
 }
 
@@ -361,7 +363,7 @@ bool OpalAudioMixer::SetJitterBufferSize(const Key_T & key, const OpalJitterBuff
 
   if (init.m_maxJitterDelay == 0) {
     if (jitter != NULL) {
-      PTRACE(4, "AudioMix\tJitter buffer disabled");
+      PTRACE(4, "Jitter buffer disabled");
       delete jitter;
       jitter = NULL;
     }
@@ -371,7 +373,7 @@ bool OpalAudioMixer::SetJitterBufferSize(const Key_T & key, const OpalJitterBuff
   if (jitter != NULL)
     jitter->SetDelay(init);
   else {
-    PTRACE(4, "AudioMix\tJitter buffer enabled");
+    PTRACE(4, "Jitter buffer enabled");
     jitter = new OpalJitterBuffer(init);
     PTRACE_CONTEXT_ID_SET(*jitter, audioStream);
   }
@@ -563,7 +565,7 @@ bool OpalVideoMixer::SetFrameRate(unsigned rate)
   m_mutex.Wait();
   m_periodMS = 1000/rate;
   m_periodTS = OpalMediaFormat::VideoClockRate/rate;
-  PTRACE(4, "Mixer\tPushThread period adjusted to " << m_periodMS << " ms");
+  PTRACE(4, "PushThread period adjusted to " << m_periodMS << " ms");
   m_mutex.Signal();
 
   return true;
@@ -754,7 +756,7 @@ void OpalVideoMixer::VideoStream::InsertVideoFrame(unsigned x, unsigned y, unsig
 
   PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)m_queue.front().GetPayloadPtr();
 
-  PTRACE(DETAIL_LOG_LEVEL, "Mixer\tCopying video: " << header->width << 'x' << header->height
+  PTRACE(DETAIL_LOG_LEVEL, "Copying video: " << header->width << 'x' << header->height
          << " -> " << x << ',' << y << '/' << w << 'x' << h);
 
   PColourConverter::CopyYUV420P(0, 0, header->width, header->height,
@@ -777,26 +779,29 @@ void OpalVideoMixer::VideoStream::InsertVideoFrame(unsigned x, unsigned y, unsig
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#undef  PTraceModule
+#define PTraceModule() "MixerEP"
+
 OpalMixerEndPoint::OpalMixerEndPoint(OpalManager & manager, const char * prefix)
   : OpalLocalEndPoint(manager, prefix, false)
   , OpalMixerNodeManager(manager)
   , m_adHocNodeInfo(NULL)
   , m_factoryNodeInfo(NULL)
 {
-  PTRACE(4, "MixerEP\tConstructed");
+  PTRACE(4, "Constructed");
 }
 
 
 OpalMixerEndPoint::~OpalMixerEndPoint()
 {
   delete m_adHocNodeInfo;
-  PTRACE(4, "MixerEP\tDestroyed");
+  PTRACE(4, "Destroyed");
 }
 
 
 void OpalMixerEndPoint::ShutDown()
 {
-  PTRACE(4, "MixerEP\tShutting down");
+  PTRACE(4, "Shutting down");
 
   OpalMixerNodeManager::ShutDown();
 
@@ -821,7 +826,7 @@ PSafePtr<OpalConnection> OpalMixerEndPoint::MakeConnection(OpalCall & call,
                                                          unsigned int options,
                                       OpalConnection::StringOptions * stringOptions)
 {
-  PTRACE(4, "MixerEP\tMaking connection to \"" << party << '"');
+  PTRACE(4, "Making connection to \"" << party << '"');
 
   PSafePtr<OpalMixerNode> node;
 
@@ -839,7 +844,7 @@ PSafePtr<OpalConnection> OpalMixerEndPoint::MakeConnection(OpalCall & call,
     OpalMixerNodeInfo * info = m_factoryNodeInfo->Clone();
     info->m_name = GetNewFactoryName();
     if (info->m_name.IsEmpty() || (node = AddNode(info)) == NULL) {
-      PTRACE(2, "MixerEP\tCannot make factory node.");
+      PTRACE(2, "Cannot make factory node.");
       return NULL;
     }
 
@@ -853,7 +858,7 @@ PSafePtr<OpalConnection> OpalMixerEndPoint::MakeConnection(OpalCall & call,
 
   if (name.IsEmpty() || name == "*") {
     if (m_adHocNodeInfo == NULL || m_adHocNodeInfo->m_name.IsEmpty()) {
-      PTRACE(2, "MixerEP\tCannot make ad-hoc node for default alias");
+      PTRACE(2, "Cannot make ad-hoc node for default alias");
       return NULL;
     }
     name = m_adHocNodeInfo->m_name;
@@ -867,7 +872,7 @@ PSafePtr<OpalConnection> OpalMixerEndPoint::MakeConnection(OpalCall & call,
   }
 
   if (node == NULL) {
-    PTRACE(2, "MixerEP\tNode alias \"" << party << "\" does not exist and cannot make ad-hoc node.");
+    PTRACE(2, "Node alias \"" << party << "\" does not exist and cannot make ad-hoc node.");
     return NULL;
   }
 
@@ -994,6 +999,9 @@ void OpalMixerEndPoint::OnNodeStatusChanged(const OpalMixerNode & node, OpalConf
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#undef  PTraceModule
+#define PTraceModule() "MixerCon"
+
 OpalMixerConnection::OpalMixerConnection(PSafePtr<OpalMixerNode> node,
                                                       OpalCall & call,
                                              OpalMixerEndPoint & ep,
@@ -1013,13 +1021,13 @@ OpalMixerConnection::OpalMixerConnection(PSafePtr<OpalMixerNode> node,
   else
     localPartyName = *names.begin();
 
-  PTRACE(4, "MixerCon\tConstructed");
+  PTRACE(4, "Constructed");
 }
 
 
 OpalMixerConnection::~OpalMixerConnection()
 {
-  PTRACE(4, "MixerCon\tDestroyed");
+  PTRACE(4, "Destroyed");
 }
 
 
@@ -1098,7 +1106,7 @@ bool OpalMixerConnection::GetConferenceState(OpalConferenceState * state) const
 
 void OpalMixerConnection::SetListenOnly(bool listenOnly)
 {
-  PTRACE(3, "MixerCon\tSet listen only mode to " << (listenOnly ? "ON" : "OFF"));
+  PTRACE(3, "Set listen only mode to " << (listenOnly ? "ON" : "OFF"));
 
   m_listenOnly = listenOnly;
 
@@ -1126,6 +1134,10 @@ OpalMixerMediaStream::OpalMixerMediaStream(OpalConnection & conn,
   : OpalMediaStream(conn, format, sessionID, isSource)
   , m_node(node)
   , m_listenOnly(listenOnly)
+#if OPAL_VIDEO
+  , m_mixedVideoWidth(0)
+  , m_mixedVideoHeight(0)
+#endif
 {
   /* We are a bit sneaky here. OpalCall::OpenSourceMediaStream will have
      selected the network codec (e.g. G.723.1) anbd passed it to us, but for
@@ -1161,7 +1173,7 @@ PBoolean OpalMixerMediaStream::Open()
    && mediaFormat.GetMediaType() != OpalMediaType::Video()
 #endif
   ) {
-    PTRACE(3, "MixerStrm\tCannot open media stream of type " << mediaFormat.GetMediaType());
+    PTRACE(3, "Cannot open media stream of type " << mediaFormat.GetMediaType());
     return false;
   }
 
@@ -1204,7 +1216,20 @@ bool OpalMixerMediaStream::InternalSetJitterBuffer(const OpalJitterBuffer::Init 
 }
 
 
+#if OPAL_VIDEO
+bool OpalMixerMediaStream::CheckMixedVideoSize(unsigned width, unsigned height)
+{
+  bool different = m_mixedVideoWidth != width || m_mixedVideoHeight != height;
+  m_mixedVideoWidth = width;
+  m_mixedVideoHeight = height;
+  return different;
+}
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////
+
+#undef  PTraceModule
+#define PTraceModule() "MixerNode"
 
 OpalMixerNode::OpalMixerNode(OpalMixerNodeManager & manager,
                                 OpalMixerNodeInfo * info)
@@ -1218,7 +1243,7 @@ OpalMixerNode::OpalMixerNode(OpalMixerNodeManager & manager,
 
   AddName(m_info->m_name);
 
-  PTRACE(4, "MixerNode\tConstructed " << *this);
+  PTRACE(4, "Constructed " << *this);
 }
 
 
@@ -1229,7 +1254,7 @@ OpalMixerNode::~OpalMixerNode()
   delete m_audioMixer;
   delete m_info;
 
-  PTRACE(4, "MixerNode\tDestroyed " << *this);
+  PTRACE(4, "Destroyed " << *this);
 }
 
 
@@ -1238,7 +1263,7 @@ void OpalMixerNode::ShutDown()
   if (m_shuttingDown.TestAndSet(true))
     return;
 
-  PTRACE(4, "MixerNode\tShutting down " << *this);
+  PTRACE(4, "Shutting down " << *this);
 
   m_manager.OnNodeStatusChanged(*this, OpalConferenceState::Destroyed);
 
@@ -1282,11 +1307,11 @@ void OpalMixerNode::AddName(const PString & name)
     return;
 
   if (m_names.Contains(name)) {
-    PTRACE(4, "MixerNode\tName \"" << name << "\" already added to " << *this);
+    PTRACE(4, "Name \"" << name << "\" already added to " << *this);
     return;
   }
 
-  PTRACE(4, "MixerNode\tAdding name \"" << name << "\" to " << *this);
+  PTRACE(4, "Adding name \"" << name << "\" to " << *this);
   m_names += name;
   m_manager.AddNodeName(name, this);
 }
@@ -1303,9 +1328,9 @@ void OpalMixerNode::RemoveName(const PString & name)
 
   PStringSet::iterator it = m_names.find(name);
   if (it == m_names.end())
-    PTRACE(4, "MixerNode\tName \"" << name << "\" not present in " << *this);
+    PTRACE(4, "Name \"" << name << "\" not present in " << *this);
   else {
-    PTRACE(4, "MixerNode\tRemoving name \"" << name << "\" from " << *this);
+    PTRACE(4, "Removing name \"" << name << "\" from " << *this);
     m_names.erase(it);
     m_manager.RemoveNodeName(name);
   }
@@ -1352,7 +1377,7 @@ bool OpalMixerNode::AttachStream(OpalMixerMediaStream * stream)
 {
   PString id = stream->GetID();
 
-  PTRACE(4, "MixerNode\tAttaching " << stream->GetMediaFormat()
+  PTRACE(4, "Attaching " << stream->GetMediaFormat()
          << ' ' << (stream->IsSource() ? "source" : "sink")
          << " stream with id " << id << " to " << *this);
 
@@ -1392,7 +1417,7 @@ void OpalMixerNode::DetachStream(OpalMixerMediaStream * stream)
 {
   PString id = stream->GetID();
 
-  PTRACE(4, "MixerNode\tDetaching " << stream->GetMediaFormat()
+  PTRACE(4, "Detaching " << stream->GetMediaFormat()
          << ' ' << (stream->IsSource() ? "source" : "sink")
          << " stream with id " << id << " from " << *this);
 
@@ -1703,7 +1728,7 @@ void OpalAudioStreamMixer::PushOne(PSafePtr<OpalMixerMediaStream> & stream,
           << cache.m_encoded.GetTimestamp() << ','
           << cache.m_encoded.GetPayloadSize() << ',');
       stream.SetSafetyMode(PSafeReference); // OpalMediaStream::PushPacket might block
-      PTRACE(6, stream, "MixerNode", "Pushing cached encoded packet: pt=" << cache.m_encoded.GetPayloadType()
+      PTRACE(6, "Pushing cached encoded packet: pt=" << cache.m_encoded.GetPayloadType()
              << " ts=" << cache.m_encoded.GetTimestamp() << " sz=" << cache.m_encoded.GetPayloadSize());
       stream->PushPacket(cache.m_encoded);
       stream.SetSafetyMode(PSafeReadOnly); // restore lock
@@ -1725,7 +1750,7 @@ void OpalAudioStreamMixer::PushOne(PSafePtr<OpalMixerMediaStream> & stream,
         << cache.m_raw.GetPayloadSize() << ',');
     MIXER_DEBUG_WAV(stream->GetID(), cache.m_raw);
     stream.SetSafetyMode(PSafeReference); // OpalMediaStream::PushPacket might block
-    PTRACE(6, stream, "MixerNode", "Pushing raw packet: ts=" << cache.m_raw.GetTimestamp() << " sz=" << cache.m_raw.GetPayloadSize());
+    PTRACE(6, "Pushing raw packet: ts=" << cache.m_raw.GetTimestamp() << " sz=" << cache.m_raw.GetPayloadSize());
     stream->PushPacket(cache.m_raw);
     stream.SetSafetyMode(PSafeReadOnly); // restore lock
     return;
@@ -1734,11 +1759,12 @@ void OpalAudioStreamMixer::PushOne(PSafePtr<OpalMixerMediaStream> & stream,
   if (cache.m_transcoder == NULL) {
     cache.m_transcoder = OpalTranscoder::Create(OpalPCM16, mediaFormat);
     if (cache.m_transcoder == NULL) {
-      PTRACE(2, "MixerNode\tCould not create transcoder to "
+      PTRACE(2, "Could not create transcoder to "
              << mediaFormat << " for stream id " << stream->GetID());
       CloseOne(stream);
       return;
     }
+    PTRACE(3, "Created transcoder to " << mediaFormat << " for stream id " << stream->GetID());
   }
 
   if (cache.m_raw.GetPayloadSize() < cache.m_transcoder->GetOptimalDataFrameSize(true)) {
@@ -1758,14 +1784,13 @@ void OpalAudioStreamMixer::PushOne(PSafePtr<OpalMixerMediaStream> & stream,
         << cache.m_encoded.GetPayloadSize() << ',');
     MIXER_DEBUG_WAV(stream->GetID(), cache.m_raw);
     stream.SetSafetyMode(PSafeReference); // OpalMediaStream::PushPacket might block
-    PTRACE(6, stream, "MixerNode", "Pushing new packet: pt=" << cache.m_encoded.GetPayloadType()
+    PTRACE(6, "Pushing new packet: pt=" << cache.m_encoded.GetPayloadType()
             << " ts=" << cache.m_encoded.GetTimestamp() << " sz=" << cache.m_encoded.GetPayloadSize());
     stream->PushPacket(cache.m_encoded);
     stream.SetSafetyMode(PSafeReadOnly); // restore lock
   }
   else {
-    PTRACE(2, "MixerNode\tCould not convert audio to "
-           << mediaFormat << " for stream id " << stream->GetID());
+    PTRACE(2, "Could not convert audio to " << mediaFormat << " for stream id " << stream->GetID());
     CloseOne(stream);
   }
 }
@@ -1849,8 +1874,10 @@ OpalVideoStreamMixer::~OpalVideoStreamMixer()
 
 bool OpalVideoStreamMixer::OnMixed(RTP_DataFrame * & output)
 {
-  std::map<PString, RTP_DataFrameList> cachedVideo;
-  std::map<PString, RTP_DataFrame>     cachedFrameStore;
+  typedef std::map<PString, RTP_DataFrameList> CachedPackets;
+  CachedPackets cachedPackets;
+  typedef std::map<unsigned, RTP_DataFrame> CachedFrameStore;
+  CachedFrameStore cachedFrameStore;
 
   for (PSafePtr<OpalMixerMediaStream> stream(m_outputStreams, PSafeReadOnly); stream != NULL; ++stream) {
     OpalMediaFormat mediaFormat = stream->GetMediaFormat();
@@ -1860,59 +1887,87 @@ bool OpalVideoStreamMixer::OnMixed(RTP_DataFrame * & output)
       stream.SetSafetyMode(PSafeReadOnly); // restore lock
     }
     else {
-      unsigned width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption());
-      unsigned height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption());
+      unsigned width, height;
+      const OpalVideoTranscoder::FrameHeader * header = (const OpalVideoTranscoder::FrameHeader *)output->GetPayloadPtr();
+      if (stream->CheckMixedVideoSize(header->width, header->height)) {
+        // Try and set outgoing video to same size as mixed frame store
+        mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), header->width);
+        mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), header->height);
+        if (!stream->UpdateMediaFormat(mediaFormat, true)) {
+          PTRACE(2, "Could not adjust media format to " << header->width << 'x' << header->height);
+          continue;
+        }
+        mediaFormat = stream->GetMediaFormat();
+        width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption());
+        height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption());
+        PTRACE(4, "Output of " << mediaFormat << " started at " << width << 'x' << height
+               << " (" << header->width << 'x' << header->height << ")"
+                  " to stream id " << stream->GetID());
+      }
+      else {
+        width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption());
+        height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption());
+      }
 
-      PStringStream key;
-      key << mediaFormat << width << height;
+      PStringStream keyPackets;
+      keyPackets << mediaFormat << ' ' << width << 'x' << height;
 
-      if (cachedVideo.find(key) == cachedVideo.end()) {
-        OpalTranscoder * transcoder = m_transcoders.GetAt(key);
+      CachedPackets::iterator itPackets = cachedPackets.find(keyPackets);
+      if (itPackets == cachedPackets.end()) {
+        OpalTranscoder * transcoder = m_transcoders.GetAt(keyPackets);
         if (transcoder == NULL) {
           transcoder = OpalTranscoder::Create(OpalYUV420P, mediaFormat);
           if (transcoder == NULL) {
-            PTRACE(2, "MixerNode\tCould not create transcoder to "
-                   << mediaFormat << " for stream id " << stream->GetID());
+            PTRACE(2, "Could not create transcoder to " << mediaFormat << " for stream id " << stream->GetID());
             CloseOne(stream);
             continue;
           }
-          PTRACE(3, "MixerNode\tCreated transcoder to "
-                 << mediaFormat << " for stream id " << stream->GetID());
-          m_transcoders.SetAt(key, transcoder);
+          PTRACE(3, "Created transcoder to " << mediaFormat << ' '
+                 << width << 'x' << height << " for stream id " << stream->GetID());
+          m_transcoders.SetAt(keyPackets, transcoder);
         }
 
-        const RTP_DataFrame * rawRTP;
-        const OpalVideoTranscoder::FrameHeader * header = (const OpalVideoTranscoder::FrameHeader *)output->GetPayloadPtr();
-        if (header->width == width && header->height == height)
+        RTP_DataFrame * rawRTP;
+        if (header->width == width && header->height == height) {
+          PTRACE(5, "Using mixer video frame: " << width << 'x' << height);
           rawRTP = output;
+        }
         else {
-          if (cachedFrameStore.find(key) == cachedFrameStore.end()) {
-            RTP_DataFrame & store = cachedFrameStore[key];
-            store.SetPayloadSize(width*height*3/2+sizeof(OpalVideoTranscoder::FrameHeader));
-            OpalVideoTranscoder::FrameHeader * resized = (OpalVideoTranscoder::FrameHeader *)store.GetPayloadPtr();
+          unsigned frameStoreKey = width + height*65536;
+          CachedFrameStore::iterator itFrameStore = cachedFrameStore.find(frameStoreKey);
+          if (itFrameStore != cachedFrameStore.end()) {
+            PTRACE(5, "Using cached video frame: " << header->width << 'x' << header->height << " to " << width << 'x' << height);
+            rawRTP = &itFrameStore->second;
+          }
+          else {
+            PTRACE(5, "Scaling video frame: " << header->width << 'x' << header->height << " to " << width << 'x' << height);
+            rawRTP = &cachedFrameStore[frameStoreKey];
+            rawRTP->CopyHeader(*output);
+            rawRTP->SetPayloadSize(width*height*3/2+sizeof(OpalVideoTranscoder::FrameHeader));
+            OpalVideoTranscoder::FrameHeader * resized = (OpalVideoTranscoder::FrameHeader *)rawRTP->GetPayloadPtr();
             resized->width = width;
             resized->height = height;
             PColourConverter::CopyYUV420P(0, 0, header->width, header->height,
-                                            header->width, header->height, OPAL_VIDEO_FRAME_DATA_PTR(header),
+                                          header->width, header->height, OPAL_VIDEO_FRAME_DATA_PTR(header),
                                           0, 0, width, height,
                                           width, height, OPAL_VIDEO_FRAME_DATA_PTR(resized),
                                           PVideoFrameInfo::eScale);
           }
-          rawRTP = &cachedFrameStore[key];
         }
 
-        if (!transcoder->ConvertFrames(*rawRTP, cachedVideo[key])) {
-          PTRACE(2, "MixerNode\tCould not convert video to "
-                 << mediaFormat << " for stream id " << stream->GetID());
+        RTP_DataFrameList packets;
+        if (!transcoder->ConvertFrames(*rawRTP, packets)) {
+          PTRACE(2, "Could not convert video to " << mediaFormat << " for stream id " << stream->GetID());
           CloseOne(stream);
           continue;
         }
+
+        itPackets = cachedPackets.insert(CachedPackets::value_type(keyPackets, packets)).first;
       }
 
       stream.SetSafetyMode(PSafeReference); // OpalMediaStream::PushPacket might block
 
-      RTP_DataFrameList & list = cachedVideo[key];
-      for (RTP_DataFrameList::iterator frame = list.begin(); frame != list.end(); ++frame)
+      for (RTP_DataFrameList::iterator frame = itPackets->second.begin(); frame != itPackets->second.end(); ++frame)
         stream->PushPacket(*frame);
 
       stream.SetSafetyMode(PSafeReadOnly); // restore lock
@@ -1942,7 +1997,7 @@ OpalMixerNodeManager::~OpalMixerNodeManager()
 
 void OpalMixerNodeManager::ShutDown()
 {
-  PTRACE(4, "Mixer\tDestroying " << m_nodesByUID.GetSize() << '/' << m_nodesByName.GetSize() << " nodes");
+  PTRACE(4, "Destroying " << m_nodesByUID.GetSize() << '/' << m_nodesByName.GetSize() << " nodes");
 
   PSafePtr<OpalMixerNode> node;
   while ((node = m_nodesByUID.GetAt(0)) != NULL)
@@ -1971,7 +2026,7 @@ PSafePtr<OpalMixerNode> OpalMixerNodeManager::AddNode(OpalMixerNodeInfo * info)
     delete info;
   else {
     m_nodesByUID.SetAt(node->GetGUID(), node);
-    PTRACE(3, "MixerEP\tAdded new node, id=" << node->GetGUID());
+    PTRACE(3, "Added new node, id=" << node->GetGUID());
     OnNodeStatusChanged(*node, OpalConferenceState::Created);
   }
 
