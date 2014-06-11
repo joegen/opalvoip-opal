@@ -1330,7 +1330,7 @@ void OpalConsolePCSSEndPoint::CmdOpenVideoStream(PCLI::Arguments & args, P_INT_P
   if (GetConnectionFromArgs(GetManager(), args, connection)) {
     OpalVideoFormat::ContentRole contentRole;
     if (args.GetCount() == 0)
-      contentRole = connection->GetMediaStream(OpalMediaType::Video(), true) != NULL
+      contentRole = connection->GetMediaStream(OpalMediaType::Video(), false) != NULL
                         ? OpalVideoFormat::ePresentation : OpalVideoFormat::eMainRole;
     else if ((contentRole = OpalVideoFormat::ContentRoleFromString('e' + args[0], false)) == OpalVideoFormat::EndContentRole) {
       args.WriteUsage();
@@ -1360,41 +1360,43 @@ void OpalConsolePCSSEndPoint::CmdOpenVideoStream(PCLI::Arguments & args, P_INT_P
 }
 
 
-struct OpalCmdPresentationToken
+static OpalMediaStreamPtr FindStreamForRole(OpalRTPConnection & connection, OpalVideoFormat::ContentRole contentRole)
 {
-  P_DECLARE_STREAMABLE_ENUM(Cmd, request, release);
-};
+  OpalMediaStreamPtr stream;
+  while ((stream = connection.GetMediaStream(OpalMediaType::Video(), false, stream)) != NULL) {
+    if (stream->GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole) == contentRole)
+      break;
+  }
+  return stream;
+}
 
-void OpalConsolePCSSEndPoint::CmdPresentationToken(PCLI::Arguments & args, P_INT_PTR)
+void OpalConsolePCSSEndPoint::CmdCloseVideoStream(PCLI::Arguments & args, P_INT_PTR)
 {
   PSafePtr<OpalRTPConnection> connection;
   if (GetConnectionFromArgs(GetManager(), args, connection)) {
-    if (args.GetCount() == 0)
-      args.GetContext() << "Presentation token is " << (connection->HasPresentationRole() ? "acquired." : "released.") << endl;
-    else {
-      switch (OpalCmdPresentationToken::CmdFromString(args[0])) {
-        case OpalCmdPresentationToken::request :
-          if (connection->HasPresentationRole())
-            args.GetContext() << "Presentation token is already acquired." << endl;
-          else if (connection->RequestPresentationRole(false))
-            args.GetContext() << "Presentation token requested." << endl;
-          else
-            args.WriteError("Presentation token not supported by remote.");
-          break;
+    OpalMediaStreamPtr stream;
+    if (args.GetCount() != 0) {
+      OpalVideoFormat::ContentRole contentRole = OpalVideoFormat::ContentRoleFromString('e' + args[0], false);
+      if (contentRole == OpalVideoFormat::EndContentRole) {
+        args.WriteUsage();
+        return;
+      }
 
-        case OpalCmdPresentationToken::release :
-          if (connection->HasPresentationRole())
-            args.GetContext() << "Presentation token is already released." << endl;
-          else if (connection->RequestPresentationRole(true))
-            args.GetContext() << "Presentation token released." << endl;
-          else
-            args.WriteError("Presentation token release failed.");
-          break;
-
-        default :
-          args.WriteUsage();
+      if ((stream = FindStreamForRole(*connection, contentRole)) == NULL) {
+        args.WriteError("No video with that role.");
+        return;
       }
     }
+    else {
+      if ((stream = FindStreamForRole(*connection, OpalVideoFormat::ePresentation)) == NULL) {
+        if ((stream = connection->GetMediaStream(OpalMediaType::Video(), false, stream)) == NULL) {
+          args.WriteError("No video streams open.");
+          return;
+        }
+      }
+    }
+    if (stream->Close())
+      args.GetContext() << "Closing video." << endl;
   }
 }
 #endif // OPAL_VIDEO
@@ -1454,9 +1456,11 @@ void OpalConsolePCSSEndPoint::AddCommands(PCLI & cli)
                  "f-frame-rate: Transmit frame rate (fps)\n"
                  "b-bit-rate:   Transmit target bit rate (kbps)\n"
                  "t-tsto:       Transmit temporal/spatial trade off (1=quality 31=speed)\n");
-  cli.SetCommand("video presentation", PCREATE_NOTIFIER(CmdPresentationToken),
-                 "Request/release presentation token for active call", "[ --call ] [ request | release ]",
-                 "c-call: Token for call to change");
+  cli.SetCommand("video close", PCREATE_NOTIFIER(CmdCloseVideoStream),
+                 "Close video stream for active call with a given role. Default is \"presentation\" if\n"
+                 "one is open, and \"main\" if there is that is the only video stream open.\n",
+                 "[ <options> ... ] [ main | presentation | speaker | sign ]",
+                 "c-call:       Token for call to change\n");
 #endif // OPAL_VIDEO
 }
 #endif // P_CLI
@@ -2610,6 +2614,9 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
                     "b-bit-rate:   Requested receive target bit rate (kbps)\n"
                     "t-tsto:       Requested receive temporal/spatial trade off (1=quality 31=speed)\n"
                     "i-intra.      Request Intra-Frame (key frame)\n");
+  m_cli->SetCommand("video presentation", PCREATE_NOTIFIER(CmdPresentationToken),
+                    "Request/release presentation token for active call", "[ --call ] [ request | release ]",
+                    "c-call: Token for call to change");
 #endif // OPAL_VIDEO
 
 
@@ -3068,6 +3075,45 @@ void OpalManagerCLI::CmdVideoReceive(PCLI::Arguments & args, P_INT_PTR)
 
   if (args.HasOption("intra"))
     stream->ExecuteCommand(OpalVideoUpdatePicture());
+}
+
+
+struct OpalCmdPresentationToken
+{
+  P_DECLARE_STREAMABLE_ENUM(Cmd, request, release);
+};
+
+void OpalManagerCLI::CmdPresentationToken(PCLI::Arguments & args, P_INT_PTR)
+{
+  PSafePtr<OpalRTPConnection> connection;
+  if (GetConnectionFromArgs(*this, args, connection)) {
+    if (args.GetCount() == 0)
+      args.GetContext() << "Presentation token is " << (connection->HasPresentationRole() ? "acquired." : "released.") << endl;
+    else {
+      switch (OpalCmdPresentationToken::CmdFromString(args[0])) {
+        case OpalCmdPresentationToken::request :
+          if (connection->HasPresentationRole())
+            args.GetContext() << "Presentation token is already acquired." << endl;
+          else if (connection->RequestPresentationRole(false))
+            args.GetContext() << "Presentation token requested." << endl;
+          else
+            args.WriteError("Presentation token not supported by remote.");
+          break;
+
+        case OpalCmdPresentationToken::release :
+          if (!connection->HasPresentationRole())
+            args.GetContext() << "Presentation token is already released." << endl;
+          else if (connection->RequestPresentationRole(true))
+            args.GetContext() << "Presentation token released." << endl;
+          else
+            args.WriteError("Presentation token release failed.");
+          break;
+
+        default :
+          args.WriteUsage();
+      }
+    }
+  }
 }
 #endif // OPAL_VIDEO
 

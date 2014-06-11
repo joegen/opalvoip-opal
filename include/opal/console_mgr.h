@@ -243,7 +243,7 @@ public:
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdDefaultVideoDevice);
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdChangeVideoDevice);
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdOpenVideoStream);
-  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdPresentationToken);
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdCloseVideoStream);
 
   bool SetPresentationVideoDevice(const PVideoDevice::OpenArgs & args) { return manager.SetVideoInputDevice(args, OpalVideoFormat::ePresentation); }
   const PVideoDevice::OpenArgs & GetPresentationVideoDevice() const { return manager.GetVideoInputDevice(OpalVideoFormat::ePresentation); }
@@ -486,6 +486,7 @@ class OpalManagerCLI : public OpalConsoleManager
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdVideoDefault);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdVideoTransmit);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdVideoReceive);
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdPresentationToken);
 #endif // OPAL_VIDEO
 
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdSilenceDetect);
