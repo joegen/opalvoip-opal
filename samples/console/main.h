@@ -48,6 +48,7 @@ class MyManager : public OpalManagerCLI
     virtual void OnEstablishedCall(OpalCall & call);
     virtual void OnClearedCall(OpalCall & call);
 
+    PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdSpeedDial);
     PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdCall);
     PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdAnswer);
     PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdHold);
@@ -56,6 +57,7 @@ class MyManager : public OpalManagerCLI
     PDECLARE_NOTIFIER(PCLI::Arguments, MyManager, CmdHangUp);
 
     bool               m_autoAnswer;
+    PStringToString    m_speedDial;
     PSafePtr<OpalCall> m_activeCall;
     PSafePtr<OpalCall> m_heldCall;
 };
