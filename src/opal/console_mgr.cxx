@@ -118,7 +118,7 @@ static bool GetStreamFromArgs(OpalManager & manager,
 }
 
 
-template <typename T> static int GetValueFromArgs(PCLI::Arguments & args, const PString & option, T & value, T minimum, T maximum)
+template <typename T> static int GetValueFromArgs(PCLI::Arguments & args, const PString & option, T & value, T minimum, T maximum, const char * errorContext)
 {
   if (!args.HasOption(option))
     return 0;
@@ -127,7 +127,7 @@ template <typename T> static int GetValueFromArgs(PCLI::Arguments & args, const 
   if (value >= minimum && value <= maximum)
     return 1;
 
-  args.WriteError() << "Value for " << option << " out of range " << minimum << " to " << maximum << '.' << endl;;
+  args.WriteError() << "Value for " << option << " out of range [" << minimum << ".." << maximum << ']' << errorContext << endl;;
   return -1;
 }
 
@@ -136,15 +136,16 @@ template <typename T> static int GetValueFromArgs(PCLI::Arguments & args, const 
 static const OpalBandwidth AbsoluteMinBitRate("10kbps");
 static const OpalBandwidth AbsoluteMaxBitRate("2Gbps");
 
-static int GetResolutionFromArgs(PCLI::Arguments & args, const PString & option, unsigned & width, unsigned & height)
+static int GetResolutionFromArgs(PCLI::Arguments & args, const PString & option, unsigned & width, unsigned & height, const char * errorContext)
 {
   if (!args.HasOption(option))
     return 0;
 
-  if (PVideoFrameInfo::ParseSize(args.GetOptionString(option), width, height))
+  PString value = args.GetOptionString(option);
+  if (PVideoFrameInfo::ParseSize(value, width, height))
     return 1;
 
-  args.WriteError("Not a valid frame resolution.");
+  args.WriteError() << "Not a valid frame resolution (" << value << ')' << errorContext << endl;
   return -1;
 }
 
@@ -154,8 +155,10 @@ static bool GetVideoFormatFromArgs(PCLI::Arguments & args, OpalMediaFormat & med
   unsigned width, height;
   OpalBandwidth bitRate;
 
+  PStringStream errorContext;
+  errorContext << " for setting media format " << mediaFormat;
   if (withMaximums) {
-    switch (GetResolutionFromArgs(args, "max-size", width, height)) {
+    switch (GetResolutionFromArgs(args, "max-size", width, height, errorContext)) {
       case -1:
         return false;
       case 1:
@@ -163,7 +166,7 @@ static bool GetVideoFormatFromArgs(PCLI::Arguments & args, OpalMediaFormat & med
         mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(), height);
     }
 
-    switch (GetValueFromArgs(args, "max-bit-rate", bitRate, AbsoluteMinBitRate, mediaFormat.GetMaxBandwidth())) {
+    switch (GetValueFromArgs(args, "max-bit-rate", bitRate, AbsoluteMinBitRate, mediaFormat.GetMaxBandwidth(), errorContext)) {
       case -1:
         return false;
       case 1:
@@ -171,7 +174,7 @@ static bool GetVideoFormatFromArgs(PCLI::Arguments & args, OpalMediaFormat & med
     }
   }
 
-  switch (GetResolutionFromArgs(args, "size", width, height)) {
+  switch (GetResolutionFromArgs(args, "size", width, height, errorContext)) {
     case -1 :
       return false;
     case 1 :
@@ -179,7 +182,7 @@ static bool GetVideoFormatFromArgs(PCLI::Arguments & args, OpalMediaFormat & med
       mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), height);
   }
 
-  switch (GetValueFromArgs(args, "bit-rate", bitRate, AbsoluteMinBitRate, mediaFormat.GetMaxBandwidth())) {
+  switch (GetValueFromArgs(args, "bit-rate", bitRate, AbsoluteMinBitRate, mediaFormat.GetMaxBandwidth(), errorContext)) {
     case -1:
       return false;
     case 1:
@@ -187,7 +190,7 @@ static bool GetVideoFormatFromArgs(PCLI::Arguments & args, OpalMediaFormat & med
   }
 
   unsigned frameRate;
-  switch (GetValueFromArgs(args, "frame-rate", frameRate, 1U, 30U)) {
+  switch (GetValueFromArgs(args, "frame-rate", frameRate, 1U, 30U, errorContext)) {
     case -1:
       return false;
     case 1:
@@ -195,7 +198,7 @@ static bool GetVideoFormatFromArgs(PCLI::Arguments & args, OpalMediaFormat & med
   }
 
   unsigned tsto;
-  switch (GetValueFromArgs(args, "tsto", tsto, 1U, 31U)) {
+  switch (GetValueFromArgs(args, "tsto", tsto, 1U, 31U, errorContext)) {
     case -1:
       return false;
     case 1:
@@ -778,9 +781,9 @@ void H323ConsoleEndPoint::AddCommands(PCLI & cli)
 {
   OpalRTPConsoleEndPoint::AddCommands(cli);
 
-  cli.SetCommand("h323 fast-connect", disableFastStart, "Fast Connect Disable");
-  cli.SetCommand("h323 tunnel-h245", disableH245Tunneling, "H.245 Tunnelling Disable");
-  cli.SetCommand("h323 h245-in-setup", disableH245inSetup, "H.245 in SETUP Disable");
+  cli.SetCommand("h323 fast-connect-disable", disableFastStart, "Fast Connect Disable");
+  cli.SetCommand("h323 tunnel-h245-disable", disableH245Tunneling, "H.245 Tunnelling Disable");
+  cli.SetCommand("h323 h245-in-setup-disable", disableH245inSetup, "H.245 in SETUP Disable");
   cli.SetCommand("h323 h239-control", m_defaultH239Control, "H.239 control capability enable");
   cli.SetCommand("h323 term-type", PCREATE_NOTIFIER(CmdTerminalType), "Terminal type value (1..255, default 50)");
 
@@ -1105,11 +1108,12 @@ static struct {
     else {
       prefix += m_name;
       prefix += '-';
+      prefix.Replace(' ', '-', true);
       video.deviceName = args.GetOptionString(prefix + "device");
     }
 
     video.driverName = args.GetOptionString(prefix+"driver");
-    video.channelNumber = args.GetOptionString(prefix+"channel").AsUnsigned();
+    video.channelNumber = args.GetOptionAs(prefix+"channel", video.channelNumber);
 
     PString fmt = args.GetOptionString(prefix+"format");
     if (!fmt.IsEmpty() && (video.videoFormat = PVideoDevice::VideoFormatFromString(fmt, false)) == PVideoDevice::NumVideoFormat) {
@@ -1133,14 +1137,17 @@ static struct {
   }
 } VideoDeviceVariables[] = {
 #define VID_DEV_VAR(cmd,hlp,get,set) { cmd, hlp, &OpalConsolePCSSEndPoint::get, &OpalConsolePCSSEndPoint::set, &PVideoInputDevice::GetDriversDeviceNames }
-  VID_DEV_VAR("grabber",            "input grabber",                GetVideoGrabberDevice,      SetVideoGrabberDevice),
-  VID_DEV_VAR("preview",            "input preview",                GetVideoPreviewDevice,      SetVideoPreviewDevice),
-  VID_DEV_VAR("display",            "output display",               GetVideoDisplayDevice,      SetVideoDisplayDevice),
-  VID_DEV_VAR("hold-video",         "input on hold",                GetVideoOnHoldDevice,       SetVideoOnHoldDevice),
-  VID_DEV_VAR("ring-video",         "input on ring",                GetVideoOnRingDevice,       SetVideoOnRingDevice),
-  VID_DEV_VAR("presentation-video", "input for presentation role",  GetPresentationVideoDevice, SetPresentationVideoDevice),
-  VID_DEV_VAR("speaker-video",      "input for speaker role",       GetSpeakerVideoDevice,      SetSpeakerVideoDevice),
-  VID_DEV_VAR("sign-language-video","input for sign langauge role", GetSignVideoDevice,         SetSignVideoDevice)
+  VID_DEV_VAR("grabber",              "input grabber",                        GetVideoGrabberDevice,        SetVideoGrabberDevice),
+  VID_DEV_VAR("preview",              "input preview",                        GetVideoPreviewDevice,        SetVideoPreviewDevice),
+  VID_DEV_VAR("display",              "output display",                       GetVideoDisplayDevice,        SetVideoDisplayDevice),
+  VID_DEV_VAR("hold-video",           "input grabber on hold",                GetVideoOnHoldDevice,         SetVideoOnHoldDevice),
+  VID_DEV_VAR("ring-video",           "input grabber on ring",                GetVideoOnRingDevice,         SetVideoOnRingDevice),
+  VID_DEV_VAR("presentation grabber", "input grabber for presentation role",  GetPresentationVideoDevice,   SetPresentationVideoDevice),
+  VID_DEV_VAR("presentation preview", "input preview for presentation role",  GetPresentationPreviewDevice, SetPresentationPreviewDevice),
+  VID_DEV_VAR("speaker grabber",      "input grabber for speaker role",       GetSpeakerVideoDevice,        SetSpeakerVideoDevice),
+  VID_DEV_VAR("speaker preview",      "input preview for speaker role",       GetSpeakerPreviewDevice,      SetSpeakerPreviewDevice),
+  VID_DEV_VAR("sign-language grabber","input grabber for sign langauge role", GetSignVideoDevice,           SetSignVideoDevice),
+  VID_DEV_VAR("sign-language preview","input preview for sign langauge role", GetSignPreviewDevice,         SetSignPreviewDevice)
 };
 #endif // OPAL_VIDEO
 
@@ -1172,7 +1179,8 @@ void OpalConsolePCSSEndPoint::GetArgumentSpec(ostream & strm) const
 
 #if OPAL_VIDEO
   for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i) {
-    const char * name = VideoDeviceVariables[i].m_name;
+    PString name = VideoDeviceVariables[i].m_name;
+    name.Replace(' ', '-', true);
     const char * desc = VideoDeviceVariables[i].m_description;
     strm << '-' << name << "-driver:  Video " << desc << " driver.\n"
             "-" << name << "-device:  Video " << desc << " device.\n"
@@ -1296,7 +1304,7 @@ void OpalConsolePCSSEndPoint::CmdAudioBuffers(PCLI::Arguments & args, P_INT_PTR)
 void OpalConsolePCSSEndPoint::CmdDefaultVideoDevice(PCLI::Arguments & args, P_INT_PTR)
 {
   for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i) {
-    if (args.GetCommandName().Find(VideoDeviceVariables[i].m_name) != P_MAX_INDEX)
+    if (args.GetCommandName().NumCompare(GetPrefixName() & VideoDeviceVariables[i].m_name) == EqualTo)
       VideoDeviceVariables[i].Initialise(*this, args.GetContext(), true, args, true);
   }
 }
@@ -1322,7 +1330,7 @@ void OpalConsolePCSSEndPoint::CmdOpenVideoStream(PCLI::Arguments & args, P_INT_P
   if (GetConnectionFromArgs(GetManager(), args, connection)) {
     OpalVideoFormat::ContentRole contentRole;
     if (args.GetCount() == 0)
-      contentRole = connection->GetMediaStream(OpalMediaType::Video(), true) != NULL
+      contentRole = connection->GetMediaStream(OpalMediaType::Video(), false) != NULL
                         ? OpalVideoFormat::ePresentation : OpalVideoFormat::eMainRole;
     else if ((contentRole = OpalVideoFormat::ContentRoleFromString('e' + args[0], false)) == OpalVideoFormat::EndContentRole) {
       args.WriteUsage();
@@ -1352,41 +1360,43 @@ void OpalConsolePCSSEndPoint::CmdOpenVideoStream(PCLI::Arguments & args, P_INT_P
 }
 
 
-struct OpalCmdPresentationToken
+static OpalMediaStreamPtr FindStreamForRole(OpalRTPConnection & connection, OpalVideoFormat::ContentRole contentRole)
 {
-  P_DECLARE_STREAMABLE_ENUM(Cmd, request, release);
-};
+  OpalMediaStreamPtr stream;
+  while ((stream = connection.GetMediaStream(OpalMediaType::Video(), false, stream)) != NULL) {
+    if (stream->GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole) == contentRole)
+      break;
+  }
+  return stream;
+}
 
-void OpalConsolePCSSEndPoint::CmdPresentationToken(PCLI::Arguments & args, P_INT_PTR)
+void OpalConsolePCSSEndPoint::CmdCloseVideoStream(PCLI::Arguments & args, P_INT_PTR)
 {
   PSafePtr<OpalRTPConnection> connection;
   if (GetConnectionFromArgs(GetManager(), args, connection)) {
-    if (args.GetCount() == 0)
-      args.GetContext() << "Presentation token is " << (connection->HasPresentationRole() ? "acquired." : "released.") << endl;
-    else {
-      switch (OpalCmdPresentationToken::CmdFromString(args[0])) {
-        case OpalCmdPresentationToken::request :
-          if (connection->HasPresentationRole())
-            args.GetContext() << "Presentation token is already acquired." << endl;
-          else if (connection->RequestPresentationRole(false))
-            args.GetContext() << "Presentation token requested." << endl;
-          else
-            args.WriteError("Presentation token not supported by remote.");
-          break;
+    OpalMediaStreamPtr stream;
+    if (args.GetCount() != 0) {
+      OpalVideoFormat::ContentRole contentRole = OpalVideoFormat::ContentRoleFromString('e' + args[0], false);
+      if (contentRole == OpalVideoFormat::EndContentRole) {
+        args.WriteUsage();
+        return;
+      }
 
-        case OpalCmdPresentationToken::release :
-          if (connection->HasPresentationRole())
-            args.GetContext() << "Presentation token is already released." << endl;
-          else if (connection->RequestPresentationRole(true))
-            args.GetContext() << "Presentation token released." << endl;
-          else
-            args.WriteError("Presentation token release failed.");
-          break;
-
-        default :
-          args.WriteUsage();
+      if ((stream = FindStreamForRole(*connection, contentRole)) == NULL) {
+        args.WriteError("No video with that role.");
+        return;
       }
     }
+    else {
+      if ((stream = FindStreamForRole(*connection, OpalVideoFormat::ePresentation)) == NULL) {
+        if ((stream = connection->GetMediaStream(OpalMediaType::Video(), false, stream)) == NULL) {
+          args.WriteError("No video streams open.");
+          return;
+        }
+      }
+    }
+    if (stream->Close())
+      args.GetContext() << "Closing video." << endl;
   }
 }
 #endif // OPAL_VIDEO
@@ -1446,9 +1456,11 @@ void OpalConsolePCSSEndPoint::AddCommands(PCLI & cli)
                  "f-frame-rate: Transmit frame rate (fps)\n"
                  "b-bit-rate:   Transmit target bit rate (kbps)\n"
                  "t-tsto:       Transmit temporal/spatial trade off (1=quality 31=speed)\n");
-  cli.SetCommand("video presentation", PCREATE_NOTIFIER(CmdPresentationToken),
-                 "Request/release presentation token for active call", "[ --call ] [ request | release ]",
-                 "c-call: Token for call to change");
+  cli.SetCommand("video close", PCREATE_NOTIFIER(CmdCloseVideoStream),
+                 "Close video stream for active call with a given role. Default is \"presentation\" if\n"
+                 "one is open, and \"main\" if there is that is the only video stream open.\n",
+                 "[ <options> ... ] [ main | presentation | speaker | sign ]",
+                 "c-call:       Token for call to change\n");
 #endif // OPAL_VIDEO
 }
 #endif // P_CLI
@@ -2602,6 +2614,9 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
                     "b-bit-rate:   Requested receive target bit rate (kbps)\n"
                     "t-tsto:       Requested receive temporal/spatial trade off (1=quality 31=speed)\n"
                     "i-intra.      Request Intra-Frame (key frame)\n");
+  m_cli->SetCommand("video presentation", PCREATE_NOTIFIER(CmdPresentationToken),
+                    "Request/release presentation token for active call", "[ --call ] [ request | release ]",
+                    "c-call: Token for call to change");
 #endif // OPAL_VIDEO
 
 
@@ -3025,9 +3040,8 @@ void OpalManagerCLI::CmdVideoDefault(PCLI::Arguments & args, P_INT_PTR)
   for (OpalMediaFormatList::iterator it = mediaFormats.begin(); it != mediaFormats.end(); ++it) {
     if (it->GetMediaType() == OpalMediaType::Video()) {
       OpalMediaFormat mediaFormat = *it;
-      if (!GetVideoFormatFromArgs(args, mediaFormat, true))
-        return;
-      OpalMediaFormat::SetRegisteredMediaFormat(mediaFormat);
+      if (GetVideoFormatFromArgs(args, mediaFormat, true))
+        OpalMediaFormat::SetRegisteredMediaFormat(mediaFormat);
     }
   }
 }
@@ -3052,15 +3066,54 @@ void OpalManagerCLI::CmdVideoReceive(PCLI::Arguments & args, P_INT_PTR)
     return;
 
   OpalBandwidth bitRate;
-  if (GetValueFromArgs(args, "bit-rate", bitRate, AbsoluteMinBitRate, stream->GetMediaFormat().GetMaxBandwidth()) > 0)
+  if (GetValueFromArgs(args, "bit-rate", bitRate, AbsoluteMinBitRate, stream->GetMediaFormat().GetMaxBandwidth(), " for flow control request") > 0)
     stream->ExecuteCommand(OpalMediaFlowControl(bitRate));
 
   unsigned tsto;
-  if (GetValueFromArgs(args, "tsto", tsto, 1U, 31U) > 0)
+  if (GetValueFromArgs(args, "tsto", tsto, 1U, 31U, " for temporal/spatial trade-off request") > 0)
     stream->ExecuteCommand(OpalTemporalSpatialTradeOff(tsto));
 
   if (args.HasOption("intra"))
     stream->ExecuteCommand(OpalVideoUpdatePicture());
+}
+
+
+struct OpalCmdPresentationToken
+{
+  P_DECLARE_STREAMABLE_ENUM(Cmd, request, release);
+};
+
+void OpalManagerCLI::CmdPresentationToken(PCLI::Arguments & args, P_INT_PTR)
+{
+  PSafePtr<OpalRTPConnection> connection;
+  if (GetConnectionFromArgs(*this, args, connection)) {
+    if (args.GetCount() == 0)
+      args.GetContext() << "Presentation token is " << (connection->HasPresentationRole() ? "acquired." : "released.") << endl;
+    else {
+      switch (OpalCmdPresentationToken::CmdFromString(args[0])) {
+        case OpalCmdPresentationToken::request :
+          if (connection->HasPresentationRole())
+            args.GetContext() << "Presentation token is already acquired." << endl;
+          else if (connection->RequestPresentationRole(false))
+            args.GetContext() << "Presentation token requested." << endl;
+          else
+            args.WriteError("Presentation token not supported by remote.");
+          break;
+
+        case OpalCmdPresentationToken::release :
+          if (!connection->HasPresentationRole())
+            args.GetContext() << "Presentation token is already released." << endl;
+          else if (connection->RequestPresentationRole(true))
+            args.GetContext() << "Presentation token released." << endl;
+          else
+            args.WriteError("Presentation token release failed.");
+          break;
+
+        default :
+          args.WriteUsage();
+      }
+    }
+  }
 }
 #endif // OPAL_VIDEO
 
