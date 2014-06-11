@@ -2085,9 +2085,11 @@ void H323Connection::SetBearerCapabilities(H323SignalPDU & pdu) const
     if (bearerCaps.IsEmpty())
       bearerCaps = "Speech";
 
-    unsigned transferRate = (GetBandwidthAvailable(OpalBandwidth::RxTx)/2+63999)/64000;
+    unsigned transferRate = std::max(GetBandwidthAvailable(OpalBandwidth::Rx),GetBandwidthAvailable(OpalBandwidth::Tx))/64000;
     if (transferRate > 127)
       transferRate = 127;
+    else if (transferRate == 0)
+      transferRate = 1;
     bearerCaps.sprintf(",%u", transferRate);
   }
 
