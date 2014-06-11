@@ -1105,6 +1105,7 @@ static struct {
     else {
       prefix += m_name;
       prefix += '-';
+      prefix.Replace(' ', '-', true);
       video.deviceName = args.GetOptionString(prefix + "device");
     }
 
@@ -1133,14 +1134,17 @@ static struct {
   }
 } VideoDeviceVariables[] = {
 #define VID_DEV_VAR(cmd,hlp,get,set) { cmd, hlp, &OpalConsolePCSSEndPoint::get, &OpalConsolePCSSEndPoint::set, &PVideoInputDevice::GetDriversDeviceNames }
-  VID_DEV_VAR("grabber",            "input grabber",                GetVideoGrabberDevice,      SetVideoGrabberDevice),
-  VID_DEV_VAR("preview",            "input preview",                GetVideoPreviewDevice,      SetVideoPreviewDevice),
-  VID_DEV_VAR("display",            "output display",               GetVideoDisplayDevice,      SetVideoDisplayDevice),
-  VID_DEV_VAR("hold-video",         "input on hold",                GetVideoOnHoldDevice,       SetVideoOnHoldDevice),
-  VID_DEV_VAR("ring-video",         "input on ring",                GetVideoOnRingDevice,       SetVideoOnRingDevice),
-  VID_DEV_VAR("presentation-video", "input for presentation role",  GetPresentationVideoDevice, SetPresentationVideoDevice),
-  VID_DEV_VAR("speaker-video",      "input for speaker role",       GetSpeakerVideoDevice,      SetSpeakerVideoDevice),
-  VID_DEV_VAR("sign-language-video","input for sign langauge role", GetSignVideoDevice,         SetSignVideoDevice)
+  VID_DEV_VAR("grabber",              "input grabber",                        GetVideoGrabberDevice,        SetVideoGrabberDevice),
+  VID_DEV_VAR("preview",              "input preview",                        GetVideoPreviewDevice,        SetVideoPreviewDevice),
+  VID_DEV_VAR("display",              "output display",                       GetVideoDisplayDevice,        SetVideoDisplayDevice),
+  VID_DEV_VAR("hold-video",           "input grabber on hold",                GetVideoOnHoldDevice,         SetVideoOnHoldDevice),
+  VID_DEV_VAR("ring-video",           "input grabber on ring",                GetVideoOnRingDevice,         SetVideoOnRingDevice),
+  VID_DEV_VAR("presentation grabber", "input grabber for presentation role",  GetPresentationVideoDevice,   SetPresentationVideoDevice),
+  VID_DEV_VAR("presentation preview", "input preview for presentation role",  GetPresentationPreviewDevice, SetPresentationPreviewDevice),
+  VID_DEV_VAR("speaker grabber",      "input grabber for speaker role",       GetSpeakerVideoDevice,        SetSpeakerVideoDevice),
+  VID_DEV_VAR("speaker preview",      "input preview for speaker role",       GetSpeakerPreviewDevice,      SetSpeakerPreviewDevice),
+  VID_DEV_VAR("sign-language grabber","input grabber for sign langauge role", GetSignVideoDevice,           SetSignVideoDevice),
+  VID_DEV_VAR("sign-language preview","input preview for sign langauge role", GetSignPreviewDevice,         SetSignPreviewDevice)
 };
 #endif // OPAL_VIDEO
 
@@ -1172,7 +1176,8 @@ void OpalConsolePCSSEndPoint::GetArgumentSpec(ostream & strm) const
 
 #if OPAL_VIDEO
   for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i) {
-    const char * name = VideoDeviceVariables[i].m_name;
+    PString name = VideoDeviceVariables[i].m_name;
+    name.Replace(' ', '-', true);
     const char * desc = VideoDeviceVariables[i].m_description;
     strm << '-' << name << "-driver:  Video " << desc << " driver.\n"
             "-" << name << "-device:  Video " << desc << " device.\n"
@@ -1296,7 +1301,7 @@ void OpalConsolePCSSEndPoint::CmdAudioBuffers(PCLI::Arguments & args, P_INT_PTR)
 void OpalConsolePCSSEndPoint::CmdDefaultVideoDevice(PCLI::Arguments & args, P_INT_PTR)
 {
   for (PINDEX i = 0; i < PARRAYSIZE(VideoDeviceVariables); ++i) {
-    if (args.GetCommandName().Find(VideoDeviceVariables[i].m_name) != P_MAX_INDEX)
+    if (args.GetCommandName().NumCompare(GetPrefixName() & VideoDeviceVariables[i].m_name) == EqualTo)
       VideoDeviceVariables[i].Initialise(*this, args.GetContext(), true, args, true);
   }
 }

@@ -1825,13 +1825,16 @@ class OpalManager : public PObject
        function.
      */
     virtual PBoolean SetVideoPreviewDevice(
-      const PVideoDevice::OpenArgs & deviceArgs ///<  Full description of device
+      const PVideoDevice::OpenArgs & deviceArgs, ///<  Full description of device
+      OpalVideoFormat::ContentRole role = OpalVideoFormat::eNoRole  ///< Role for video stream to set
     );
 
     /**Get the parameters for the video device to be used for input.
        This defaults to the value of the PSoundChannel::GetInputDeviceNames()[0].
      */
-    const PVideoDevice::OpenArgs & GetVideoPreviewDevice() const { return videoPreviewDevice; }
+    const PVideoDevice::OpenArgs & GetVideoPreviewDevice(
+      OpalVideoFormat::ContentRole role = OpalVideoFormat::eNoRole  ///< Role for video stream to get
+    ) const { return m_videoPreviewDevice[role]; }
 
     /**Set the parameters for the video device to be used for output.
        If the name is not suitable for use with the PVideoOutputDevice class
@@ -1841,13 +1844,16 @@ class OpalManager : public PObject
        function.
      */
     virtual PBoolean SetVideoOutputDevice(
-      const PVideoDevice::OpenArgs & deviceArgs ///<  Full description of device
+      const PVideoDevice::OpenArgs & deviceArgs, ///<  Full description of device
+      OpalVideoFormat::ContentRole role = OpalVideoFormat::eNoRole  ///< Role for video stream to set
     );
 
     /**Get the parameters for the video device to be used for input.
        This defaults to the value of the PSoundChannel::GetOutputDeviceNames()[0].
      */
-    const PVideoDevice::OpenArgs & GetVideoOutputDevice() const { return videoOutputDevice; }
+    const PVideoDevice::OpenArgs & GetVideoOutputDevice(
+      OpalVideoFormat::ContentRole role = OpalVideoFormat::eNoRole  ///< Role for video stream to get
+    ) const { return m_videoOutputDevice[role]; }
 
 #endif
 
@@ -2005,8 +2011,8 @@ class OpalManager : public PObject
 
 #if OPAL_VIDEO
     PVideoDevice::OpenArgs m_videoInputDevice[OpalVideoFormat::NumContentRole];
-    PVideoDevice::OpenArgs videoPreviewDevice;
-    PVideoDevice::OpenArgs videoOutputDevice;
+    PVideoDevice::OpenArgs m_videoPreviewDevice[OpalVideoFormat::NumContentRole];
+    PVideoDevice::OpenArgs m_videoOutputDevice[OpalVideoFormat::NumContentRole];
 #endif
 
     PIPSocket::PortRange m_tcpPorts, m_udpPorts, m_rtpIpPorts;

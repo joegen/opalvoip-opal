@@ -247,10 +247,16 @@ public:
 
   bool SetPresentationVideoDevice(const PVideoDevice::OpenArgs & args) { return manager.SetVideoInputDevice(args, OpalVideoFormat::ePresentation); }
   const PVideoDevice::OpenArgs & GetPresentationVideoDevice() const { return manager.GetVideoInputDevice(OpalVideoFormat::ePresentation); }
+  bool SetPresentationPreviewDevice(const PVideoDevice::OpenArgs & args) { return manager.SetVideoPreviewDevice(args, OpalVideoFormat::ePresentation); }
+  const PVideoDevice::OpenArgs & GetPresentationPreviewDevice() const { return manager.GetVideoPreviewDevice(OpalVideoFormat::ePresentation); }
   bool SetSpeakerVideoDevice(const PVideoDevice::OpenArgs & args) { return manager.SetVideoInputDevice(args, OpalVideoFormat::eSpeaker); }
   const PVideoDevice::OpenArgs & GetSpeakerVideoDevice() const { return manager.GetVideoInputDevice(OpalVideoFormat::eSpeaker); }
+  bool SetSpeakerPreviewDevice(const PVideoDevice::OpenArgs & args) { return manager.SetVideoPreviewDevice(args, OpalVideoFormat::eSpeaker); }
+  const PVideoDevice::OpenArgs & GetSpeakerPreviewDevice() const { return manager.GetVideoPreviewDevice(OpalVideoFormat::eSpeaker); }
   bool SetSignVideoDevice(const PVideoDevice::OpenArgs & args) { return manager.SetVideoInputDevice(args, OpalVideoFormat::eSignLanguage); }
   const PVideoDevice::OpenArgs & GetSignVideoDevice() const { return manager.GetVideoInputDevice(OpalVideoFormat::eSignLanguage); }
+  bool SetSignPreviewDevice(const PVideoDevice::OpenArgs & args) { return manager.SetVideoPreviewDevice(args, OpalVideoFormat::eSignLanguage); }
+  const PVideoDevice::OpenArgs & GetSignPreviewDevice() const { return manager.GetVideoPreviewDevice(OpalVideoFormat::eSignLanguage); }
 #endif // OPAL_VIDEO
 
   virtual void AddCommands(PCLI & cli);

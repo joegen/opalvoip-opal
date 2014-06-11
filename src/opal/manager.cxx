@@ -282,6 +282,9 @@ OpalManager::OpalManager()
 #if OPAL_VIDEO
   m_mediaQoS[OpalMediaType::Video()].m_type = PIPSocket::VideoQoS;
 
+  for (OpalVideoFormat::ContentRole role = OpalVideoFormat::BeginContentRole; role < OpalVideoFormat::EndContentRole; ++role)
+    m_videoInputDevice[role].deviceName = m_videoPreviewDevice[role].deviceName = m_videoOutputDevice[role].deviceName = P_NULL_VIDEO_DEVICE;
+
   PStringArray devices = PVideoInputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
   PINDEX i;
   for (i = 0; i < devices.GetSize(); ++i) {
@@ -297,8 +300,9 @@ OpalManager::OpalManager()
   for (i = 0; i < devices.GetSize(); ++i) {
     PCaselessString dev = devices[i];
     if (dev[0] != '*' && dev != P_NULL_VIDEO_DEVICE) {
-      videoOutputDevice.deviceName = devices[i];
-      videoPreviewDevice = videoOutputDevice;
+      for (OpalVideoFormat::ContentRole role = OpalVideoFormat::BeginContentRole; role < OpalVideoFormat::EndContentRole; ++role)
+        m_videoOutputDevice[role].deviceName = devices[i];
+      m_videoPreviewDevice[OpalVideoFormat::eNoRole] = m_videoOutputDevice[OpalVideoFormat::eNoRole];
       SetAutoStartReceiveVideo(true);
       break;
     }
@@ -1263,9 +1267,10 @@ PBoolean OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
                                           PBoolean & autoDelete)
 {
   // Make copy so we can adjust the size
-  PVideoDevice::OpenArgs args = preview ? videoPreviewDevice : videoOutputDevice;
+  OpalVideoFormat::ContentRole role = mediaFormat.GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole);
+  PVideoDevice::OpenArgs args = preview ? m_videoPreviewDevice[role] : m_videoOutputDevice[role];
   if (args.deviceName.IsEmpty() && args.driverName.IsEmpty()) {
-    PTRACE(4, "No video output device specified.");
+    PTRACE(4, "No video " << (preview ? "preview" : "output") << " device specified for " << role);
     return false; // Disabled
   }
 
@@ -2066,15 +2071,15 @@ bool OpalManager::SetVideoInputDevice(const PVideoDevice::OpenArgs & args, OpalV
 }
 
 
-PBoolean OpalManager::SetVideoPreviewDevice(const PVideoDevice::OpenArgs & args)
+PBoolean OpalManager::SetVideoPreviewDevice(const PVideoDevice::OpenArgs & args, OpalVideoFormat::ContentRole role)
 {
-  return args.Validate<PVideoOutputDevice>(videoPreviewDevice);
+  return args.Validate<PVideoOutputDevice>(m_videoPreviewDevice[role]);
 }
 
 
-PBoolean OpalManager::SetVideoOutputDevice(const PVideoDevice::OpenArgs & args)
+PBoolean OpalManager::SetVideoOutputDevice(const PVideoDevice::OpenArgs & args, OpalVideoFormat::ContentRole role)
 {
-  return args.Validate<PVideoOutputDevice>(videoOutputDevice);
+  return args.Validate<PVideoOutputDevice>(m_videoOutputDevice[role]);
 }
 
 #endif // OPAL_VIDEO
