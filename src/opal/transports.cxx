@@ -1112,7 +1112,7 @@ OpalTransportIP::OpalTransportIP(OpalEndPoint & end,
 PString OpalTransportIP::GetInterface() const
 {
   if (IsOpen()) {
-    PIPSocket * socket = dynamic_cast<PIPSocket *>(m_channel);
+    PIPSocket * socket = dynamic_cast<PIPSocket *>(m_channel->GetBaseReadChannel());
     if (socket != NULL) {
       PIPSocket::Address ip;
       if (socket->PIPSocket::GetLocalAddress(ip))
