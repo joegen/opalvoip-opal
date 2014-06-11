@@ -68,9 +68,11 @@ bool MyManager::Initialise(PArgList & args, bool verbose)
 
   m_cli->SetCommand("auto-answer", m_autoAnswer, "Auto-answer", "Answer call automatically");
 
-  m_cli->SetCommand("call",     PCREATE_NOTIFIER(CmdCall), "Start call", "<uri>");
+  m_cli->SetCommand("speed-dial",  PCREATE_NOTIFIER(CmdSpeedDial), "Set speed dial", "[ <name> [ <url> ] ]");
+
+  m_cli->SetCommand("call",     PCREATE_NOTIFIER(CmdCall),     "Start call", "<uri> | <speed-dial>");
   m_cli->SetCommand("answer",   PCREATE_NOTIFIER(CmdAnswer),   "Answer call");
-  m_cli->SetCommand("hold",     PCREATE_NOTIFIER(CmdHold), "Hold call");
+  m_cli->SetCommand("hold",     PCREATE_NOTIFIER(CmdHold),     "Hold call");
   m_cli->SetCommand("retrieve", PCREATE_NOTIFIER(CmdRetrieve), "Retrieve call from hold");
   m_cli->SetCommand("transfer", PCREATE_NOTIFIER(CmdTransfer), "Transfer call", "<uri>");
   m_cli->SetCommand("hangup",   PCREATE_NOTIFIER(CmdHangUp),   "Hang up call");
@@ -141,6 +143,29 @@ void MyManager::OnClearedCall(OpalCall & call)
 }
 
 
+void MyManager::CmdSpeedDial(PCLI::Arguments & args, P_INT_PTR)
+{
+  PStringToString::iterator it;
+  switch (args.GetCount()) {
+    case 0 :
+      for (it = m_speedDial.begin(); it != m_speedDial.end(); ++it)
+        args.GetContext() << it->first << " -> " << it->second << endl;
+      break;
+
+    case 1 :
+      if ((it = m_speedDial.find(args[0])) == m_speedDial.end())
+        args.WriteError("No speed dial of that name.");
+      else
+        args.GetContext() << it->first << " -> " << it->second << endl;
+      break;
+
+    default :
+      m_speedDial.SetAt(args[0], args.GetParameters(1).ToString());
+      args.GetContext() << args[0] << " -> " << m_speedDial[args[0]] << endl;
+  }
+}
+
+
 void MyManager::CmdCall(PCLI::Arguments & args, P_INT_PTR)
 {
   if (args.GetCount() < 1)
@@ -148,10 +173,20 @@ void MyManager::CmdCall(PCLI::Arguments & args, P_INT_PTR)
   else if (m_activeCall != NULL)
     args.WriteError() << "Already in call." << endl;
   else {
-    if (args.GetCount() == 1)
-      m_activeCall = SetUpCall(OPAL_PREFIX_PCSS":*", args[0]);
-    else
-      m_activeCall = SetUpCall(args[0], args[1]);
+    PString from, to;
+    if (args.GetCount() == 1) {
+      from = OPAL_PREFIX_PCSS":*";
+      to = args[0];
+    }
+    else {
+      from = args[0];
+      to = args[1];
+    }
+
+    if (m_speedDial.Contains(to))
+      to = m_speedDial[to];
+
+    m_activeCall = SetUpCall(from, to);
     if (m_activeCall == NULL)
       args.WriteError() << "Could not start call." << endl;
     else
