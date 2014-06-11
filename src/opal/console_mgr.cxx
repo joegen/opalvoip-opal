@@ -118,7 +118,7 @@ static bool GetStreamFromArgs(OpalManager & manager,
 }
 
 
-template <typename T> static int GetValueFromArgs(PCLI::Arguments & args, const PString & option, T & value, T minimum, T maximum)
+template <typename T> static int GetValueFromArgs(PCLI::Arguments & args, const PString & option, T & value, T minimum, T maximum, const char * errorContext)
 {
   if (!args.HasOption(option))
     return 0;
@@ -127,7 +127,7 @@ template <typename T> static int GetValueFromArgs(PCLI::Arguments & args, const 
   if (value >= minimum && value <= maximum)
     return 1;
 
-  args.WriteError() << "Value for " << option << " out of range " << minimum << " to " << maximum << '.' << endl;;
+  args.WriteError() << "Value for " << option << " out of range [" << minimum << ".." << maximum << ']' << errorContext << endl;;
   return -1;
 }
 
@@ -136,15 +136,16 @@ template <typename T> static int GetValueFromArgs(PCLI::Arguments & args, const 
 static const OpalBandwidth AbsoluteMinBitRate("10kbps");
 static const OpalBandwidth AbsoluteMaxBitRate("2Gbps");
 
-static int GetResolutionFromArgs(PCLI::Arguments & args, const PString & option, unsigned & width, unsigned & height)
+static int GetResolutionFromArgs(PCLI::Arguments & args, const PString & option, unsigned & width, unsigned & height, const char * errorContext)
 {
   if (!args.HasOption(option))
     return 0;
 
-  if (PVideoFrameInfo::ParseSize(args.GetOptionString(option), width, height))
+  PString value = args.GetOptionString(option);
+  if (PVideoFrameInfo::ParseSize(value, width, height))
     return 1;
 
-  args.WriteError("Not a valid frame resolution.");
+  args.WriteError() << "Not a valid frame resolution (" << value << ')' << errorContext << endl;
   return -1;
 }
 
@@ -154,8 +155,10 @@ static bool GetVideoFormatFromArgs(PCLI::Arguments & args, OpalMediaFormat & med
   unsigned width, height;
   OpalBandwidth bitRate;
 
+  PStringStream errorContext;
+  errorContext << " for setting media format " << mediaFormat;
   if (withMaximums) {
-    switch (GetResolutionFromArgs(args, "max-size", width, height)) {
+    switch (GetResolutionFromArgs(args, "max-size", width, height, errorContext)) {
       case -1:
         return false;
       case 1:
@@ -163,7 +166,7 @@ static bool GetVideoFormatFromArgs(PCLI::Arguments & args, OpalMediaFormat & med
         mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(), height);
     }
 
-    switch (GetValueFromArgs(args, "max-bit-rate", bitRate, AbsoluteMinBitRate, mediaFormat.GetMaxBandwidth())) {
+    switch (GetValueFromArgs(args, "max-bit-rate", bitRate, AbsoluteMinBitRate, mediaFormat.GetMaxBandwidth(), errorContext)) {
       case -1:
         return false;
       case 1:
@@ -171,7 +174,7 @@ static bool GetVideoFormatFromArgs(PCLI::Arguments & args, OpalMediaFormat & med
     }
   }
 
-  switch (GetResolutionFromArgs(args, "size", width, height)) {
+  switch (GetResolutionFromArgs(args, "size", width, height, errorContext)) {
     case -1 :
       return false;
     case 1 :
@@ -179,7 +182,7 @@ static bool GetVideoFormatFromArgs(PCLI::Arguments & args, OpalMediaFormat & med
       mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), height);
   }
 
-  switch (GetValueFromArgs(args, "bit-rate", bitRate, AbsoluteMinBitRate, mediaFormat.GetMaxBandwidth())) {
+  switch (GetValueFromArgs(args, "bit-rate", bitRate, AbsoluteMinBitRate, mediaFormat.GetMaxBandwidth(), errorContext)) {
     case -1:
       return false;
     case 1:
@@ -187,7 +190,7 @@ static bool GetVideoFormatFromArgs(PCLI::Arguments & args, OpalMediaFormat & med
   }
 
   unsigned frameRate;
-  switch (GetValueFromArgs(args, "frame-rate", frameRate, 1U, 30U)) {
+  switch (GetValueFromArgs(args, "frame-rate", frameRate, 1U, 30U, errorContext)) {
     case -1:
       return false;
     case 1:
@@ -195,7 +198,7 @@ static bool GetVideoFormatFromArgs(PCLI::Arguments & args, OpalMediaFormat & med
   }
 
   unsigned tsto;
-  switch (GetValueFromArgs(args, "tsto", tsto, 1U, 31U)) {
+  switch (GetValueFromArgs(args, "tsto", tsto, 1U, 31U, errorContext)) {
     case -1:
       return false;
     case 1:
@@ -778,9 +781,9 @@ void H323ConsoleEndPoint::AddCommands(PCLI & cli)
 {
   OpalRTPConsoleEndPoint::AddCommands(cli);
 
-  cli.SetCommand("h323 fast-connect", disableFastStart, "Fast Connect Disable");
-  cli.SetCommand("h323 tunnel-h245", disableH245Tunneling, "H.245 Tunnelling Disable");
-  cli.SetCommand("h323 h245-in-setup", disableH245inSetup, "H.245 in SETUP Disable");
+  cli.SetCommand("h323 fast-connect-disable", disableFastStart, "Fast Connect Disable");
+  cli.SetCommand("h323 tunnel-h245-disable", disableH245Tunneling, "H.245 Tunnelling Disable");
+  cli.SetCommand("h323 h245-in-setup-disable", disableH245inSetup, "H.245 in SETUP Disable");
   cli.SetCommand("h323 h239-control", m_defaultH239Control, "H.239 control capability enable");
   cli.SetCommand("h323 term-type", PCREATE_NOTIFIER(CmdTerminalType), "Terminal type value (1..255, default 50)");
 
@@ -3030,9 +3033,8 @@ void OpalManagerCLI::CmdVideoDefault(PCLI::Arguments & args, P_INT_PTR)
   for (OpalMediaFormatList::iterator it = mediaFormats.begin(); it != mediaFormats.end(); ++it) {
     if (it->GetMediaType() == OpalMediaType::Video()) {
       OpalMediaFormat mediaFormat = *it;
-      if (!GetVideoFormatFromArgs(args, mediaFormat, true))
-        return;
-      OpalMediaFormat::SetRegisteredMediaFormat(mediaFormat);
+      if (GetVideoFormatFromArgs(args, mediaFormat, true))
+        OpalMediaFormat::SetRegisteredMediaFormat(mediaFormat);
     }
   }
 }
@@ -3057,11 +3059,11 @@ void OpalManagerCLI::CmdVideoReceive(PCLI::Arguments & args, P_INT_PTR)
     return;
 
   OpalBandwidth bitRate;
-  if (GetValueFromArgs(args, "bit-rate", bitRate, AbsoluteMinBitRate, stream->GetMediaFormat().GetMaxBandwidth()) > 0)
+  if (GetValueFromArgs(args, "bit-rate", bitRate, AbsoluteMinBitRate, stream->GetMediaFormat().GetMaxBandwidth(), " for flow control request") > 0)
     stream->ExecuteCommand(OpalMediaFlowControl(bitRate));
 
   unsigned tsto;
-  if (GetValueFromArgs(args, "tsto", tsto, 1U, 31U) > 0)
+  if (GetValueFromArgs(args, "tsto", tsto, 1U, 31U, " for temporal/spatial trade-off request") > 0)
     stream->ExecuteCommand(OpalTemporalSpatialTradeOff(tsto));
 
   if (args.HasOption("intra"))
