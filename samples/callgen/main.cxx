@@ -141,10 +141,8 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
 #endif // P_WAVFILE
 
 #if OPAL_VIDEO
-  PVideoDevice::OpenArgs videoInputDevice = GetVideoInputDevice();
-  videoInputDevice.deviceName = P_FAKE_VIDEO_NTSC;
-  videoOutputDevice.deviceName = P_NULL_VIDEO_DEVICE;
-  videoPreviewDevice.deviceName.MakeEmpty();  // Don't want any preview for video, there could be ... lots
+  PVideoDevice::OpenArgs videoDevice = GetVideoInputDevice();
+  videoDevice.deviceName = P_FAKE_VIDEO_NTSC;
 
   if (!args.HasOption('Y'))
     cout << "Not using outgoing video file." << endl;
@@ -153,17 +151,24 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
     PINDEX last = yuvFile.GetLength()-1;
     if (PFile::Exists(yuvFile[last] == '*' ? yuvFile.Left(last) : yuvFile)) {
       cout << "Using outgoing video file: " << yuvFile << endl;
-      videoInputDevice.deviceName = yuvFile;
+      videoDevice.deviceName = yuvFile;
     }
     else {
       cout << "Outgoing video file  \"" << yuvFile << "\" does not exist!" << endl;
       PTRACE(1, "CallGen\tOutgoing video file \"" << yuvFile << "\" does not exist");
     }
   }
-  SetVideoInputDevice(videoInputDevice);
+  SetVideoInputDevice(videoDevice);
+
+  videoDevice = GetVideoPreviewDevice();
+  videoDevice.deviceName.MakeEmpty();  // Don't want any preview for video, there could be ... lots
+  SetVideoPreviewDevice(videoDevice);
 #endif // OPAL_VIDEO
 
   {
+    PVideoDevice::OpenArgs videoDevice = GetVideoOutputDevice();
+    videoDevice.deviceName = P_NULL_VIDEO_DEVICE;
+
     PString incomingMediaDirectory = args.GetOptionString('I');
     if (incomingMediaDirectory.IsEmpty())
       cout << "Not saving incoming media data." << endl;
@@ -175,13 +180,15 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
       pcss->SetSoundChannelPlayDevice(incomingMediaDirectory + "*.wav");
 #endif
 #if OPAL_VIDEO
-      videoOutputDevice.deviceName = incomingMediaDirectory + "*.yuv";
+      videoDevice.deviceName = incomingMediaDirectory + "*.yuv";
 #endif
     }
     else {
       cout << "Could not create incoming media directory \"" << incomingMediaDirectory << "\"!" << endl;
       PTRACE(1, "CallGen\tCould not create incoming media directory \"" << incomingMediaDirectory << '"');
     }
+
+    SetVideoOutputDevice(videoDevice);
   }
 
   unsigned simultaneous = args.GetOptionString('m').AsUnsigned();
