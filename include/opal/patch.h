@@ -128,7 +128,7 @@ class OpalMediaPatch : public PSafeObject
 
     /**Get the current source stream for patch.
       */
-    OpalMediaStream & GetSource() const { return source; }
+    OpalMediaStream & GetSource() const { return m_source; }
 
     /**Get the media stream for a sink stream
       */
@@ -249,7 +249,7 @@ class OpalMediaPatch : public PSafeObject
     void StopThread();
     bool DispatchFrame(RTP_DataFrame & frame);
 
-    OpalMediaStream & source;
+    OpalMediaStream & m_source;
 
     class Sink : public PObject {
         PCLASSINFO(Sink, PObject);
@@ -264,18 +264,18 @@ class OpalMediaPatch : public PSafeObject
         void GetStatistics(OpalMediaStatistics & statistics, bool fromSource) const;
 #endif
 
-        OpalMediaPatch  &  patch;
-        OpalMediaStreamPtr stream;
-        OpalTranscoder   * primaryCodec;
-        OpalTranscoder   * secondaryCodec;
-        RTP_DataFrameList  intermediateFrames;
-        RTP_DataFrameList  finalFrames;
-        bool               writeSuccessful;
+        OpalMediaPatch  &  m_patch;
+        OpalMediaStreamPtr m_stream;
+        OpalTranscoder   * m_primaryCodec;
+        OpalTranscoder   * m_secondaryCodec;
+        RTP_DataFrameList  m_intermediateFrames;
+        RTP_DataFrameList  m_finalFrames;
+        bool               m_writeSuccessful;
 
 #if OPAL_VIDEO
         void SetRateControlParameters(const OpalMediaFormat & mediaFormat);
         bool RateControlExceeded(bool & forceIFrame);
-        OpalVideoRateController * rateController;
+        OpalVideoRateController * m_rateController;
 
         OpalVideoFormat m_videoFormat;
         PBYTEArray      m_keyFrameDetectContext;
@@ -283,23 +283,24 @@ class OpalMediaPatch : public PSafeObject
         unsigned        m_keyFrames;
 #endif
     };
-    PList<Sink> sinks;
+    PList<Sink> m_sinks;
 
     class Filter : public PObject {
         PCLASSINFO(Filter, PObject);
       public:
-        Filter(const PNotifier & n, const OpalMediaFormat & s) : notifier(n), stage(s) { }
-        PNotifier notifier;
-        OpalMediaFormat stage;
+        Filter(const PNotifier & n, const OpalMediaFormat & s) : m_notifier(n), m_stage(s) { }
+
+        PNotifier       m_notifier;
+        OpalMediaFormat m_stage;
     };
-    PList<Filter> filters;
+    PList<Filter> m_filters;
 
     OpalMediaPatchPtr m_bypassToPatch;
     OpalMediaPatchPtr m_bypassFromPatch;
     PSyncPoint        m_bypassEnded;
 
-    PThread * patchThread;
-    PMutex patchThreadMutex;
+    PThread * m_patchThread;
+    PMutex    m_patchThreadMutex;
 
     bool m_transcoderChanged;
 
