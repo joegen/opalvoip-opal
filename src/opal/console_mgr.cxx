@@ -1110,7 +1110,7 @@ static struct {
     }
 
     video.driverName = args.GetOptionString(prefix+"driver");
-    video.channelNumber = args.GetOptionString(prefix+"channel").AsUnsigned();
+    video.channelNumber = args.GetOptionAs(prefix+"channel", video.channelNumber);
 
     PString fmt = args.GetOptionString(prefix+"format");
     if (!fmt.IsEmpty() && (video.videoFormat = PVideoDevice::VideoFormatFromString(fmt, false)) == PVideoDevice::NumVideoFormat) {
