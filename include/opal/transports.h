@@ -159,10 +159,12 @@ class OpalTransportAddress : public PCaselessString
     static const PCaselessString & IpPrefix();
     static const PCaselessString & UdpPrefix();
     static const PCaselessString & TcpPrefix();
-    static const PCaselessString & WsPrefix(); // RFC6455 WebSocket
 #if OPAL_PTLIB_SSL
     static const PCaselessString & TlsPrefix();
+#if OPAL_PTLIB_HTTP
+    static const PCaselessString & WsPrefix();  // RFC6455 WebSocket (yes, still needs SSL)
     static const PCaselessString & WssPrefix(); // RFC6455 WebSocket over TLS
+#endif
 #endif
 
   /**@name Construction */
