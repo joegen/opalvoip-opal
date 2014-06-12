@@ -818,7 +818,7 @@ class SIPDialogContext
     SIPURLList  m_routeSet;
     unsigned    m_lastSentCSeq;
     unsigned    m_lastReceivedCSeq;
-    OpalTransportAddress m_externalTransportAddress;
+    OpalTransportAddress m_fixedTransportAddress;
     bool        m_forking;
     SIPURL      m_proxy;
     PString     m_interface;

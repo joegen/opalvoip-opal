@@ -2740,8 +2740,19 @@ void SIPDialogContext::Update(const SIP_PDU & pdu)
     SetRemoteURI(mime.GetFrom());
   }
 
-  m_externalTransportAddress = pdu.GetExternalTransportAddress();
-  m_interface = pdu.GetTransport()->GetInterface();
+  m_fixedTransportAddress = pdu.GetExternalTransportAddress();
+  OpalTransportPtr transport = pdu.GetTransport();
+  if (transport == NULL)
+    return;
+
+#if OPAL_PTLIB_SSL && OPAL_PTLIB_HTTP
+  if (m_fixedTransportAddress.IsEmpty() &&
+            (transport->GetProtoPrefix() == OpalTransportAddress::WsPrefix() ||
+             transport->GetProtoPrefix() == OpalTransportAddress::WssPrefix()))
+    m_fixedTransportAddress = transport->GetRemoteAddress();
+#endif
+
+  m_interface = transport->GetInterface();
 }
 
 
@@ -2777,9 +2788,9 @@ OpalTransportAddress SIPDialogContext::GetRemoteTransportAddress(PINDEX dnsEntry
 {
   // In order of priority ...
 
-  if (!m_externalTransportAddress.IsEmpty()) {
-    PTRACE(4, "SIP\tRemote dialog address external (NAT): " << m_externalTransportAddress);
-    return m_externalTransportAddress;
+  if (!m_fixedTransportAddress.IsEmpty()) {
+    PTRACE(4, "SIP\tRemote dialog address external (NAT/WebSocket): " << m_fixedTransportAddress);
+    return m_fixedTransportAddress;
   }
 
   OpalTransportAddress addr;
