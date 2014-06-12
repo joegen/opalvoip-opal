@@ -52,23 +52,31 @@
 
 
 const PCaselessString & OpalTransportAddress::IpPrefix()  { static PConstCaselessString s("ip$" ); return s; }  // For backward compatibility with OpenH323
-const PCaselessString & OpalTransportAddress::UdpPrefix() { static PConstCaselessString s("udp$"); return s; }
-const PCaselessString & OpalTransportAddress::TcpPrefix() { static PConstCaselessString s("tcp$"); return s; }
-
 static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPTransport> opalInternalTCPTransportFactory(OpalTransportAddress::TcpPrefix(), true);
+
+const PCaselessString & OpalTransportAddress::UdpPrefix() { static PConstCaselessString s("udp$"); return s; }
 static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPTransport> opalInternalIPTransportFactory (OpalTransportAddress::IpPrefix (), true);
+
+const PCaselessString & OpalTransportAddress::TcpPrefix() { static PConstCaselessString s("tcp$"); return s; }
 static PFactory<OpalInternalTransport>::Worker<OpalInternalUDPTransport> opalInternalUDPTransportFactory(OpalTransportAddress::UdpPrefix(), true);
 
 #if OPAL_PTLIB_SSL
+
 #include <ptclib/pssl.h>
 const PCaselessString & OpalTransportAddress::TlsPrefix() { static PConstCaselessString s("tls$"); return s; }
-const PCaselessString & OpalTransportAddress::WsPrefix()  { static PConstCaselessString s("ws$");  return s; }
-const PCaselessString & OpalTransportAddress::WssPrefix() { static PConstCaselessString s("wss$"); return s; }
-
 static PFactory<OpalInternalTransport>::Worker<OpalInternalTLSTransport> opalInternalTLSTransportFactory(OpalTransportAddress::TlsPrefix(), true);
+
+#if OPAL_PTLIB_HTTP
+
+const PCaselessString & OpalTransportAddress::WsPrefix()  { static PConstCaselessString s("ws$");  return s; }
 static PFactory<OpalInternalTransport>::Worker<OpalInternalWSTransport>  opalInternalWSTransportFactory(OpalTransportAddress::WsPrefix(), true);
+
+const PCaselessString & OpalTransportAddress::WssPrefix() { static PConstCaselessString s("wss$"); return s; }
 static PFactory<OpalInternalTransport>::Worker<OpalInternalWSSTransport> opalInternalWSSTransportFactory(OpalTransportAddress::WssPrefix(), true);
-#endif
+
+#endif // OPAL_PTLIB_HTTP
+
+#endif // OPAL_PTLIB_SSL
 
 /////////////////////////////////////////////////////////////////
 
@@ -682,21 +690,21 @@ bool OpalListenerIP::CanCreateTransport(const OpalTransportAddress & localAddres
                                         const OpalTransportAddress & remoteAddress) const
 {
   if (remoteAddress.GetProtoPrefix() != GetProtoPrefix()) {
-    PTRACE(4, "OpalIP", "Remote protocol (" << remoteAddress.GetProtoPrefix() << ") different to listener (" << GetProtoPrefix() << ')');
+    PTRACE(5, "OpalIP", "Remote protocol (" << remoteAddress.GetProtoPrefix() << ") different to listener (" << GetProtoPrefix() << ')');
     return false;
   }
 
   // The following then checks for IPv4/IPv6
   OpalTransportAddress myLocalAddress = GetLocalAddress();
   if (!myLocalAddress.IsCompatible(remoteAddress)) {
-    PTRACE(4, "OpalIP", "Remote address (" << remoteAddress << ") not compatible to listener (" << myLocalAddress << ')');
+    PTRACE(5, "OpalIP", "Remote address (" << remoteAddress << ") not compatible to listener (" << myLocalAddress << ')');
     return false;
   }
 
   if (localAddress.IsEmpty() || myLocalAddress.IsCompatible(localAddress))
     return true;
   
-  PTRACE(4, "OpalIP", "Local address (" << localAddress << ") not compatible to listener (" << myLocalAddress << ')');
+  PTRACE(5, "OpalIP", "Local address (" << localAddress << ") not compatible to listener (" << myLocalAddress << ')');
   return false;
 }
 
@@ -1454,7 +1462,7 @@ bool OpalTransportUDP::SetInterface(const PString & iface)
     PTRACE(2, "OpalUDP\tCould not set interface to " << iface);
     return false;
   }
-
+    
   PTRACE(4, "OpalUDP\tSetting interface to " << iface);
   socket->SetInterface(iface);
   return true;
