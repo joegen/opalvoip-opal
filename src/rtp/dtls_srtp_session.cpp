@@ -157,13 +157,10 @@ static bool RegisteredSAVPF = OpalMediaSessionFactory::RegisterAs(OpalDTLSSRTPSe
 
 OpalDTLSSRTPSession::OpalDTLSSRTPSession(const Init & init)
   : OpalSRTPSession(init)
-  , m_connectionInitiator(false)
-  , m_stunNegotiated(false)
+  , m_passiveMode(false)
 {
-  m_dtlsReady[0] = false;
-  m_dtlsReady[1] = false;
-  m_stopSend[0] = false;
-  m_stopSend[1] = false;
+  m_dtlsReady[e_Data] = false;
+  m_dtlsReady[e_Control] = false;
 }
 
 
@@ -177,46 +174,28 @@ OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::ReadRawPDU(BYTE * framePt
 {
   OpalRTPSession::SendReceiveStatus result = OpalSRTPSession::ReadRawPDU(framePtr, frameSize, fromDataChannel);
   if (result == e_ProcessPacket)
-    result = ProcessPacket(framePtr, frameSize, fromDataChannel, true);
+    result = HandshakeIfNeeded(framePtr, frameSize, fromDataChannel, true);
   return result;
-}
-
-
-void OpalDTLSSRTPSession::SetConnectionInitiator(bool connectionInitiator)
-{
-  m_connectionInitiator = connectionInitiator;
-}
-
-
-bool OpalDTLSSRTPSession::GetConnectionInitiator() const
-{
-  return m_connectionInitiator;
 }
 
 
 OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::OnSendData(RTP_DataFrame& frame, bool rewriteHeader)
 {
-  OpalRTPSession::SendReceiveStatus result = ProcessPacket(frame, frame.GetPacketSize(), true, false);
-  if (result == e_ProcessPacket)
-    return m_dtlsReady[0] ? OpalSRTPSession::OnSendData(frame, rewriteHeader) : e_IgnorePacket;
-  return result;
+  OpalRTPSession::SendReceiveStatus result = HandshakeIfNeeded(frame, frame.GetPacketSize(), true, false);
+  return result != e_ProcessPacket ? result : OpalSRTPSession::OnSendData(frame, rewriteHeader);
 }
 
 
 OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::OnSendControl(RTP_ControlFrame& frame)
 {
-  int ctxIndex = (IsSinglePortTx() ? 0 : 1);
-  OpalRTPSession::SendReceiveStatus result = ProcessPacket(frame, frame.GetSize(), false, false);
-  if (result == e_ProcessPacket)
-    return m_dtlsReady[ctxIndex] && ProtectRTCP(frame) ? e_ProcessPacket : e_IgnorePacket;
-  return result;
+  OpalRTPSession::SendReceiveStatus result = HandshakeIfNeeded(frame, frame.GetSize(), false, false);
+  return result != e_ProcessPacket ? result : OpalSRTPSession::OnSendControl(frame);
 }
 
 
 const PSSLCertificateFingerprint& OpalDTLSSRTPSession::GetLocalFingerprint() const
 {
-  if (!m_localFingerprint.IsValid())
-  {
+  if (!m_localFingerprint.IsValid()) {
     PSSLCertificateFingerprint::HashType type = PSSLCertificateFingerprint::HashSha1;
     if (GetRemoteFingerprint().IsValid())
       type = GetRemoteFingerprint().GetHash();
@@ -224,6 +203,7 @@ const PSSLCertificateFingerprint& OpalDTLSSRTPSession::GetLocalFingerprint() con
   }
   return m_localFingerprint;
 }
+
 
 void OpalDTLSSRTPSession::SetRemoteFingerprint(const PSSLCertificateFingerprint& fp)
 {
@@ -234,178 +214,6 @@ void OpalDTLSSRTPSession::SetRemoteFingerprint(const PSSLCertificateFingerprint&
 const PSSLCertificateFingerprint& OpalDTLSSRTPSession::GetRemoteFingerprint() const
 {
   return m_remoteFingerprint;
-}
-
-
-OpalDTLSSRTPSession::SendReceiveStatus OpalDTLSSRTPSession::ProcessPacket(const BYTE* framePtr, PINDEX frameSize, bool forDataChannel, bool isReceive)
-{
-  OpalRTPSession::SendReceiveStatus result = IceNegotiation(framePtr, frameSize, forDataChannel, isReceive);
-  if (e_ProcessPacket == result)
-    result = HandshakeIfNeeded(framePtr, frameSize, forDataChannel, isReceive);
-  return result;
-}
-
-
-bool OpalDTLSSRTPSession::SendStunResponse(const PSTUNMessage& request, PUDPSocket& socket)
-{
-  PSTUNMessage response;
-  if (m_remoteStun.m_userName.IsEmpty())
-    m_remoteStun.SetCredentials(m_localUsername + ':' + m_remoteUsername, m_localPassword, PString::Empty());
-
-  PSTUNStringAttribute* userAttr = request.FindAttributeAs<PSTUNStringAttribute>(PSTUNAttribute::USERNAME);
-  if (!userAttr)
-  {
-    PTRACE(2, "DTLS-RTP\tNo USERNAME attribute in " << request << " on interface " << request.GetSourceAddressAndPort());
-    response.SetErrorType(400, request.GetTransactionID());
-  }
-  else if (userAttr->GetString() != m_remoteStun.m_userName) {
-    PTRACE(2, "DTLS-RTP\tIncorrect USERNAME attribute in " << request << " on interface " << request.GetSourceAddressAndPort());
-    PTRACE(2, "DTLS-RTP\t current " << m_remoteStun.m_userName << ", received " << userAttr->GetString());
-    response.SetErrorType(401, request.GetTransactionID());
-  }
-  else if (!request.CheckMessageIntegrity(m_remoteStun.m_password)) {
-    PTRACE(2, "DTLS-RTP\tIntegrity check failed for " << request << " on interface " << request.GetSourceAddressAndPort());
-    response.SetErrorType(401, request.GetTransactionID());
-  }
-
-  if (response.GetType() != PSTUNMessage::BindingError)
-  {
-    response.SetType(PSTUNMessage::BindingResponse, request.GetTransactionID());
-    response.AddAttribute(PSTUNAddressAttribute(PSTUNAttribute::XOR_MAPPED_ADDRESS, request.GetSourceAddressAndPort()));
-  }
-
-  response.AddMessageIntegrity(m_remoteStun.m_password);
-  response.AddFingerprint();
-  response.Write(socket, request.GetSourceAddressAndPort());
-
-  return (response.GetType() == PSTUNMessage::BindingResponse);
-}
-
-
-bool OpalDTLSSRTPSession::SendStunRequest(PUDPSocket& socket, const PIPSocketAddressAndPort& ap)
-{
-  PSTUNMessage request(PSTUNMessage::BindingRequest);
-
-  if (m_localStun.m_userName.IsEmpty())
-    m_localStun.SetCredentials(m_remoteUsername + ':' + m_localUsername, m_remotePassword, PString::Empty());
-
-  request.AddAttribute(PSTUNStringAttribute(PSTUNAttribute::USERNAME, m_localStun.m_userName));
-  request.AddAttribute(PSTUNStringAttribute(PSTUNAttribute::REALM,    m_localStun.m_realm));
-  request.AddMessageIntegrity(m_localStun.m_password);
-
-  return request.Write(socket, ap);
-}
-
-
-bool OpalDTLSSRTPSession::CheckStunResponse(const PSTUNMessage& response)
-{
-  // \todo Check transaction id.
-  if (!response.CheckMessageIntegrity(m_localStun.m_password))
-  {
-    PTRACE(2, "DTLS-RTP\tIntegrity check failed for " << response << " from " << response.GetSourceAddressAndPort());
-    return false;
-  }
-  return true;
-}
-
-
-OpalDTLSSRTPSession::SendReceiveStatus OpalDTLSSRTPSession::IceNegotiation(const BYTE* framePtr, PINDEX frameSize, bool forDataChannel, bool isReceive)
-{
-  bool useData = (forDataChannel || IsSinglePortTx());
-  int index = (useData ? 0 : 1);
-  PUDPSocket* socket = (useData ? m_dataSocket : m_controlSocket);
-
-  if (m_candidates[index].size() == 0)
-    m_candidates[index].push_back(Candidate(PIPSocketAddressAndPort(m_remoteAddress, (useData ? m_remoteDataPort : m_remoteControlPort))));
-
-  if (isReceive)
-  {
-    PIPSocketAddressAndPort ap;
-    socket->GetLastReceiveAddress(ap);
-
-    PSTUNMessage message(framePtr, frameSize, ap);
-    for (Candidates::iterator it = m_candidates[index].begin(); message.IsValid() && it != m_candidates[index].end(); ++it)
-    {
-      PIPSocketAddressAndPort msgAp = message.GetSourceAddressAndPort();
-      // The message not for this candidate...
-      if (msgAp != (*it).ap)
-        continue;
-
-      if (message.GetType() == PSTUNMessage::BindingRequest)
-      {
-        PTRACE(3, "DTLS-RTP\tReceive binding request from " << msgAp << ", index " << index);
-        (*it).otherPartyRequests++;
-        if (SendStunResponse(message, *socket))
-        {
-          (*it).ourResponses++;
-          return e_IgnorePacket;
-        }
-        break;
-      }
-      else if (message.GetType() == PSTUNMessage::BindingResponse)
-      {
-        PTRACE(3, "DTLS-RTP\tReceive binding response from " << msgAp << " index " << index);
-        if (CheckStunResponse(message))
-        {
-          (*it).otherPartyResponses++;
-          m_stopSend[index] = ((*it).otherPartyResponses > 1);
-        }
-
-        break;
-      }
-      else
-      {
-        PTRACE(3, "DTLS-RTP\tReceive STUN message " << message);
-      }
-    }
-  }
-  else 
-  {
-    if (!m_stopSend[index])
-    {
-      for (Candidates::const_iterator it = m_candidates[index].begin(); it != m_candidates[index].end(); ++it)
-      {
-        PTRACE(4, "DTLS-RTP\tSend stun request to " << (*it).ap << " index " << index);
-        if (!SendStunRequest(*socket, (*it).ap)) {
-          PTRACE(2, "DTLS-RTP\tCan't send stun request.");
-        }
-      }
-    }
-  }
-
-  for (Candidates::const_iterator it = m_candidates[index].begin(); !m_stunNegotiated && it != m_candidates[index].end(); ++it)
-  {
-    if ((*it).Ready())
-    {
-      PTRACE(4, "DTLS-RTP\tSession " << m_sessionId << " remote address set to " << (*it).ap);
-      if (useData)
-        m_remoteDataPort = (*it).ap.GetPort();
-      else
-        m_remoteControlPort = (*it).ap.GetPort();
-      m_remoteAddress = (*it).ap.GetAddress();
-      m_stunNegotiated = true;
-      break;
-    }
-  }
-
-  if (m_stunNegotiated)
-    return e_ProcessPacket;
-
-  return e_IgnorePacket;
-}
-
-
-void OpalDTLSSRTPSession::SetCandidates(const PNatCandidateList& candidates)
-{
-  for (PNatCandidateList::const_iterator aCandidate = candidates.begin(); aCandidate != candidates.end(); ++aCandidate) {
-    if (aCandidate->m_localTransportAddress.GetPort() == m_remoteDataPort ||
-        aCandidate->m_localTransportAddress.GetPort() == m_remoteControlPort)
-    {
-      PTRACE(3, "DTLS-RTP\tAppend candidate " << aCandidate->m_localTransportAddress
-             << " for " << (aCandidate->m_component == PNatMethod::eComponent_RTP ? "RTP" : "RTCP"));
-      m_candidates[aCandidate->m_component - 1].push_back(Candidate(aCandidate->m_localTransportAddress));
-    }
-  }
 }
 
 
@@ -483,17 +291,7 @@ void OpalDTLSSRTPSession::OnHandshake(PSSLChannelDTLS & channel, P_INT_PTR faile
   //if (!srtpChannel.m_usedForData || IsSinglePortTx()) // Control socket context
   //  OpalLibSRTP::Open(GetSyncSourceOut(), keyPtr.get(), false);
 
-  int ctxIndex = 1;
-  if (srtpChannel.m_usedForData || IsSinglePortTx())
-    ctxIndex = 0;
-  m_dtlsReady[ctxIndex] = true;
-}
-
-
-OpalDTLSSRTPSession::SendReceiveStatus OpalDTLSSRTPSession::OnReceiveControl(RTP_ControlFrame & frame)
-{
-  int ctxIndex = (IsSinglePortTx() ? 0 : 1);
-  return (m_dtlsReady[ctxIndex] && UnprotectRTCP(frame)) ? OpalRTPSession::OnReceiveControl(frame) : e_IgnorePacket;
+  m_dtlsReady[srtpChannel.m_usedForData || IsSinglePortTx()] = true;
 }
 
 
@@ -505,44 +303,35 @@ void OpalDTLSSRTPSession::OnVerify(PSSLChannel & channel, PSSLChannel::VerifyInf
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::HandshakeIfNeeded(const BYTE * framePtr, PINDEX frameSize, bool forDataChannel, bool isReceive)
+OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::HandshakeIfNeeded(const BYTE * framePtr, PINDEX frameSize, bool dataChannel, bool isReceive)
 {
-  int ctxIndex = 1;
-  bool useData = (forDataChannel || IsSinglePortTx());
-  if (useData)
-    ctxIndex = 0;
+  if (m_dtlsReady[dataChannel])
+    return e_ProcessPacket;
 
-  PSSLChannelDTLS* channel = m_channels[ctxIndex].get();
+  if (IsSinglePortTx())
+    dataChannel = true;
+
+  PSSLChannelDTLS* channel = m_sslChannel[dataChannel].get();
   if (channel == NULL) {
-    PUDPSocket * socket = useData ? m_dataSocket : m_controlSocket;
-    socket->SetSendAddress(m_remoteAddress, (useData ? m_remoteDataPort : m_remoteControlPort));
-    m_channels[ctxIndex].reset(channel = new OpalDTLSSRTPChannel(*this, socket, !GetConnectionInitiator(), useData));
+    m_socket[dataChannel]->SetSendAddress(m_remoteAddress, m_remotePort[dataChannel]);
+    channel = new OpalDTLSSRTPChannel(*this, m_socket[dataChannel], m_passiveMode, dataChannel);
     channel->SetVerifyMode(PSSLContext::VerifyPeerMandatory, PCREATE_SSLVerifyNotifier(OnVerify));
     channel->SetHandshakeNotifier(OnHandshake_PNotifier::Create(this));
+    m_sslChannel[dataChannel].reset(channel);
   }
 
-  if (!m_dtlsReady[ctxIndex] && channel && !channel->HandshakeCompleted()) {
-    if (channel->Handshake(framePtr, frameSize, isReceive))
-      return e_IgnorePacket;
+  if (channel->Handshake(framePtr, frameSize, isReceive))
+    return e_IgnorePacket;
 
-    Close();
-    return e_AbortTransport;
-  }
-
-  return e_ProcessPacket;
+  Close();
+  return e_AbortTransport;
 }
 
-void OpalDTLSSRTPSession::SetRemoteUserPass(const PString& user, const PString& pass)
-{
-  // Prevent call method from OpalSRTPSession for prevent STUN server implementation from open.
-  // We need handle STUN packets itself.
-  OpalMediaSession::SetRemoteUserPass(user, pass);
-}
 
 bool OpalDTLSSRTPSession::Close()
 {
   for (int i = 0; i < 2; ++i) {
-    PSSLChannelDTLS* channel = m_channels[i].get();
+    PSSLChannelDTLS* channel = m_sslChannel[i].get();
     if (channel)
       channel->Close();
   }

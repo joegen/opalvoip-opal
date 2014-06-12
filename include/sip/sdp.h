@@ -67,10 +67,25 @@
   */
 #define OPAL_OPT_FORCE_RTCP_FB  "Force-RTCP-FB"
 
+/**Enable offer of RTP/RTCP "single port" mode.
+   While if offerred by the remote, we always honour the SDP a=rtcp-mux
+   attribute, we only offer it if this string option is set to true.
+
+   Defaults to false.
+  */
+#define OPAL_OPT_RTCP_MUX "RTCP-Mux"
+
 /**Enable ICE offerred in SDP.
    Defaults to false.
 */
 #define OPAL_OPT_OFFER_ICE "Offer-ICE"
+
+/**Enable ICE-Lite.
+   Defaults to true.
+   NOTE!!! This is all that is supported at this time, do not set to false
+           unless you are developing full ICE support ....
+*/
+#define OPAL_OPT_ICE_LITE "ICE-Lite"
 
 
 /////////////////////////////////////////////////////////
@@ -215,8 +230,8 @@ class SDPCommonAttributes
     static const PCaselessString & TransportIndependentBandwidthType(); // RFC3890
 
 #if OPAL_ICE
-    PString GetUsername() const { return m_username; }
-    PString GetPassword() const { return m_password; }
+    const PString & GetUsername() const { return m_username; }
+    const PString & GetPassword() const { return m_password; }
     void SetUserPass(
       const PString & username,
       const PString & password
@@ -293,7 +308,8 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     virtual Direction GetDirection() const { return m_mediaAddress.IsEmpty() ? Inactive : m_direction; }
 
-    virtual bool SetSessionInfo(const OpalMediaSession * session, const SDPMediaDescription * offer);
+    virtual bool FromSession(const OpalMediaSession * session, const SDPMediaDescription * offer);
+    virtual bool ToSession(OpalMediaSession * session) const;
     virtual PString GetMediaGroupId() const { return m_mediaGroupId; }
     virtual void SetMediaGroupId(const PString & id) { m_mediaGroupId = id; }
 
@@ -335,8 +351,6 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     const PStringOptions & GetOptionStrings() const { return m_stringOptions; }
 
     virtual void Copy(SDPMediaDescription & mediaDescription);
-
-    bool RTCPMuxed() const { return m_controlAddress == m_mediaAddress; }
 
   protected:
     virtual SDPMediaFormat * FindFormat(PString & str) const;
@@ -443,7 +457,8 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual bool HasCryptoKeys() const;
 #endif
     virtual void SetAttribute(const PString & attr, const PString & value);
-    virtual bool SetSessionInfo(const OpalMediaSession * session, const SDPMediaDescription * offer);
+    virtual bool FromSession(const OpalMediaSession * session, const SDPMediaDescription * offer);
+    virtual bool ToSession(OpalMediaSession * session) const;
 
     virtual bool IsFeedbackEnabled() const;
 

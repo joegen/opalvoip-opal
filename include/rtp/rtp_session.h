@@ -55,6 +55,7 @@
 class OpalRTPEndPoint;
 class PNatMethod;
 class PSTUNServer;
+class PSTUNClient;
 class RTCP_XR_Metrics;
 
 
@@ -92,7 +93,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual OpalTransportAddress GetRemoteAddress(bool isMediaAddress = true) const;
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress = true);
 #if OPAL_ICE
-    virtual void SetRemoteUserPass(const PString & user, const PString & pass);
+    virtual void SetICE(const PString & user, const PString & pass, const PNatCandidateList & candidates);
 #endif
 
     virtual void AttachTransport(Transport & transport);
@@ -331,7 +332,7 @@ class OpalRTPSession : public OpalMediaSession
 
     /**Get flag for single port transmit.
     */
-    bool IsSinglePortTx() { return m_remoteDataPort == m_remoteControlPort; }
+    bool IsSinglePortTx() { return m_remotePort[e_Control] == m_remotePort[e_Data]; }
 
     /**Get flag for is audio RTP.
       */
@@ -471,27 +472,27 @@ class OpalRTPSession : public OpalMediaSession
 
     /**Get local data port of session.
       */
-    virtual WORD GetLocalDataPort() const { return m_localDataPort; }
+    virtual WORD GetLocalDataPort() const { return m_localPort[e_Data]; }
 
     /**Get local control port of session.
       */
-    virtual WORD GetLocalControlPort() const { return m_localControlPort; }
+    virtual WORD GetLocalControlPort() const { return m_localPort[e_Control]; }
 
     /**Get remote data port of session.
       */
-    virtual WORD GetRemoteDataPort() const { return m_remoteDataPort; }
+    virtual WORD GetRemoteDataPort() const { return m_remotePort[e_Data]; }
 
     /**Get remote control port of session.
       */
-    virtual WORD GetRemoteControlPort() const { return m_remoteControlPort; }
+    virtual WORD GetRemoteControlPort() const { return m_remotePort[e_Control]; }
 
     /**Get data UDP socket of session.
       */
-    virtual PUDPSocket & GetDataSocket() { return *m_dataSocket; }
+    virtual PUDPSocket & GetDataSocket() { return *m_socket[e_Data]; }
 
     /**Get control UDP socket of session.
       */
-    virtual PUDPSocket & GetControlSocket() { return *m_controlSocket; }
+    virtual PUDPSocket & GetControlSocket() { return *m_socket[e_Control]; }
 
     /**Get total number of packets sent in session.
       */
@@ -761,17 +762,18 @@ class OpalRTPSession : public OpalMediaSession
 
     list<FilterNotifier> m_filters;
 
-    PIPSocket::Address m_localAddress;
-    WORD               m_localDataPort;
-    WORD               m_localControlPort;
+    enum
+    {
+      e_Control,
+      e_Data
+    };
+    PIPAddress m_localAddress;
+    WORD       m_localPort[2];
 
-    PIPSocket::Address m_remoteAddress;
-    WORD               m_remoteDataPort;
-    WORD               m_remoteControlPort;
+    PIPAddress m_remoteAddress;
+    WORD       m_remotePort[2];
 
-
-    PUDPSocket * m_dataSocket;
-    PUDPSocket * m_controlSocket;
+    PUDPSocket * m_socket[2]; // 0=control, 1=data
 
     bool m_shutdownRead;
     bool m_shutdownWrite;
@@ -789,8 +791,31 @@ class OpalRTPSession : public OpalMediaSession
     ApplDefinedNotifierList m_applDefinedNotifiers;
 
 #if OPAL_ICE
-    PSTUNServer * m_stunServer;
-#endif
+    virtual SendReceiveStatus OnReceiveICE(
+      bool fromDataChannel,
+      const BYTE * framePtr,
+      PINDEX frameSize,
+      const PIPSocket::AddressAndPort & ap
+    );
+    virtual SendReceiveStatus OnSendICE(
+      bool toDataChannel
+    );
+
+    struct CandidateState {
+      PIPSocketAddressAndPort m_remoteAP;
+      // Not sure what else might be necessary here. Work in progress!
+
+      CandidateState(const PIPSocketAddressAndPort& addressAndPort)
+        : m_remoteAP(addressAndPort)
+      {
+      }
+    };
+    typedef std::list<CandidateState> CandidateStates;
+
+    CandidateStates m_candidates[2];
+    PSTUNServer   * m_stunServer;
+    PSTUNClient   * m_stunClient;
+#endif // OPAL_ICE
 
 #if PTRACING
     unsigned m_levelTxRR;
@@ -807,7 +832,7 @@ class OpalRTPSession : public OpalMediaSession
     P_REMOVE_VIRTUAL(SendReceiveStatus,ReadDataOrControlPDU(BYTE *,PINDEX,bool),e_AbortTransport);
     P_REMOVE_VIRTUAL(bool,WriteDataOrControlPDU(const BYTE *,PINDEX,bool),false);
     P_REMOVE_VIRTUAL(SendReceiveStatus,OnSendData(RTP_DataFrame &),e_AbortTransport);
-
+    P_REMOVE_VIRTUAL_VOID(SetRemoteUserPass(const PString &, const PString &));
 
   friend class RTP_JitterBuffer;
 };
