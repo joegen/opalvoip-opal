@@ -268,6 +268,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     // return the string used within SDP to identify the transport used by this media
     virtual PCaselessString GetSDPTransportType() const;
+    virtual void SetSDPTransportType(const PString & type);
 
     // return the string used in factory to create session
     virtual PCaselessString GetSessionType() const;
@@ -342,7 +343,6 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     OpalTransportAddress m_mediaAddress;
     OpalTransportAddress m_controlAddress;
-    PCaselessString      m_transportType;
     PStringOptions       m_stringOptions;
     WORD                 m_port;
     WORD                 m_portCount;
@@ -369,6 +369,7 @@ class SDPDummyMediaDescription : public SDPMediaDescription
     SDPDummyMediaDescription(const OpalTransportAddress & address, const PStringArray & tokens);
     virtual PString GetSDPMediaType() const;
     virtual PCaselessString GetSDPTransportType() const;
+    virtual void SetSDPTransportType(const PString & type);
     virtual PCaselessString GetSessionType() const;
     virtual SDPMediaFormat * CreateSDPMediaFormat();
     virtual PString GetSDPPortList() const;
@@ -430,6 +431,8 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     SDPRTPAVPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & mediaType);
     virtual bool Decode(const PStringArray & tokens);
     virtual PCaselessString GetSDPTransportType() const;
+    virtual void SetSDPTransportType(const PString & type);
+    virtual PCaselessString GetSessionType() const;
     virtual SDPMediaFormat * CreateSDPMediaFormat();
     virtual PString GetSDPPortList() const;
     virtual void OutputAttributes(ostream & str) const;
@@ -442,13 +445,10 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual void SetAttribute(const PString & attr, const PString & value);
     virtual bool SetSessionInfo(const OpalMediaSession * session, const SDPMediaDescription * offer);
 
-    bool IsFeedbackEnabled() const { return m_enableFeedback; }
-    void EnableFeedback() { m_enableFeedback = true; }
+    virtual bool IsFeedbackEnabled() const;
 
     typedef std::map<DWORD, PStringOptions> SsrcInfo;
     const SsrcInfo & GetSsrcInfo() const { return m_ssrcInfo; }
-
-    virtual bool PostDecode(const OpalMediaFormatList & mediaFormats);
 
   protected:
     class Format : public SDPMediaFormat
@@ -458,12 +458,10 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
         virtual bool FromSDP(const PString & portString);
     };
 
-    bool     m_enableFeedback;
-    SsrcInfo m_ssrcInfo;
-
+    PCaselessString       m_transportType;
+    SsrcInfo              m_ssrcInfo;
 #if OPAL_SRTP
     PList<SDPCryptoSuite> m_cryptoSuites;
-    bool m_useDTLS;
 #endif
 };
 
@@ -504,6 +502,7 @@ class SDPVideoMediaDescription : public SDPRTPAVPMediaDescription
     virtual void OutputAttributes(ostream & str) const;
     virtual void SetAttribute(const PString & attr, const PString & value);
     virtual bool PostDecode(const OpalMediaFormatList & mediaFormats);
+    virtual bool IsFeedbackEnabled() const;
     virtual OpalVideoFormat::ContentRole GetContentRole() const { return m_contentRole; }
 
   protected:

@@ -847,9 +847,6 @@ bool SDPMediaDescription::Decode(const PStringArray & tokens)
   }
   m_port = (WORD)portStr.AsUnsigned();
 
-  // parse the transport
-  m_transportType = tokens[2];
-
   // check everything
   switch (m_port) {
     case 0 :
@@ -1189,6 +1186,12 @@ PCaselessString SDPMediaDescription::GetSDPTransportType() const
 }
 
 
+void SDPMediaDescription::SetSDPTransportType(const PString & type)
+{
+  PAssert(GetSDPTransportType() == type, PInvalidParameter);
+}
+
+
 PCaselessString SDPMediaDescription::GetSessionType() const
 {
   return GetSDPTransportType();
@@ -1317,8 +1320,6 @@ SDPDummyMediaDescription::SDPDummyMediaDescription(const OpalTransportAddress & 
     case 3 :
       m_tokens.AppendString("127");
   }
-
-  m_transportType = m_tokens[2];
 }
 
 
@@ -1331,6 +1332,12 @@ PString SDPDummyMediaDescription::GetSDPMediaType() const
 PCaselessString SDPDummyMediaDescription::GetSDPTransportType() const
 {
   return m_tokens[2];
+}
+
+
+void SDPDummyMediaDescription::SetSDPTransportType(const PString & type)
+{
+  m_tokens[2] = type;
 }
 
 
@@ -1357,7 +1364,7 @@ void SDPDummyMediaDescription::Copy(SDPMediaDescription & from)
   m_tokens.SetSize(4);
   m_tokens[0] = from.GetSDPMediaType();
   m_tokens[1] = '0';
-  m_tokens[2] = m_transportType = from.GetSDPTransportType();
+  m_tokens[2] = from.GetSDPTransportType();
   m_tokens[3] = from.GetSDPPortList();
 
   m_port = 0;
@@ -1518,10 +1525,6 @@ void SDPCryptoSuite::PrintOn(ostream & strm) const
 
 SDPRTPAVPMediaDescription::SDPRTPAVPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & mediaType)
   : SDPMediaDescription(address, mediaType)
-  , m_enableFeedback(false)
-#if OPAL_SRTP
-  , m_useDTLS(false)
-#endif
 {
 }
 
@@ -1537,23 +1540,33 @@ bool SDPRTPAVPMediaDescription::Decode(const PStringArray & tokens)
     PTRACE(4, "SDP\tSetting rtcp connection address " << m_controlAddress);
   }
 
-  m_enableFeedback = m_transportType.Find("AVPF") != P_MAX_INDEX;
-#if OPAL_SRTP
-  m_useDTLS = m_transportType.NumCompare("UDP/TLS/") == EqualTo;
-#endif
+  m_transportType = tokens[2];
+
   return true;
 }
 
 
 PCaselessString SDPRTPAVPMediaDescription::GetSDPTransportType() const
 {
+  return m_transportType.IsEmpty() ? GetSessionType() : m_transportType;
+}
+
+
+void SDPRTPAVPMediaDescription::SetSDPTransportType(const PString & type)
+{
+  m_transportType = type;
+}
+
+
+PCaselessString SDPRTPAVPMediaDescription::GetSessionType() const
+{
 #if OPAL_SRTP
-  if (m_useDTLS) // Prefer DTLS over SDES
-    return m_enableFeedback ? OpalDTLSSRTPSession::RTP_DTLS_SAVPF() : OpalDTLSSRTPSession::RTP_DTLS_SAVP();
+  if (GetFingerprint().IsValid()) // Prefer DTLS over SDES
+    return IsFeedbackEnabled() ? OpalDTLSSRTPSession::RTP_DTLS_SAVPF() : OpalDTLSSRTPSession::RTP_DTLS_SAVP();
   if (!m_cryptoSuites.IsEmpty()) // SDES
-    return m_enableFeedback ? OpalSRTPSession::RTP_SAVPF() : OpalSRTPSession::RTP_SAVP();
+    return IsFeedbackEnabled() ? OpalSRTPSession::RTP_SAVPF() : OpalSRTPSession::RTP_SAVP();
 #endif
-  return m_enableFeedback ? OpalRTPSession::RTP_AVPF() : OpalRTPSession::RTP_AVP();
+  return IsFeedbackEnabled() ? OpalRTPSession::RTP_AVPF() : OpalRTPSession::RTP_AVP();
 }
 
 
@@ -1599,10 +1612,8 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
     strm << *format;
 
 #if OPAL_SRTP
-  if (!m_useDTLS) {
-    for (PList<SDPCryptoSuite>::const_iterator crypto = m_cryptoSuites.begin(); crypto != m_cryptoSuites.end(); ++crypto)
-      strm << *crypto;
-  }
+  for (PList<SDPCryptoSuite>::const_iterator crypto = m_cryptoSuites.begin(); crypto != m_cryptoSuites.end(); ++crypto)
+    strm << *crypto;
 #endif
 
   if (m_controlAddress == m_mediaAddress)
@@ -1696,11 +1707,8 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
 #if OPAL_SRTP
   if (attr *= "crypto") {
     SDPCryptoSuite * cryptoSuite = new SDPCryptoSuite(0);
-    if (cryptoSuite->Decode(value)) {
+    if (cryptoSuite->Decode(value))
       m_cryptoSuites.Append(cryptoSuite);
-      if (m_transportType == OpalRTPSession::RTP_AVP())
-        m_transportType = OpalSRTPSession::RTP_SAVP();
-    }
     else {
       delete cryptoSuite;
       PTRACE(2, "SDP\tCannot decode SDP crypto attribute: \"" << value << '"');
@@ -1763,7 +1771,6 @@ bool SDPRTPAVPMediaDescription::SetSessionInfo(const OpalMediaSession * session,
 #if OPAL_SRTP
   const OpalDTLSSRTPSession* dltsMediaSession = dynamic_cast<const OpalDTLSSRTPSession*>(session);
   if (dltsMediaSession != NULL) {
-    m_useDTLS = true;
     SetFingerprint(dltsMediaSession->GetLocalFingerprint());
     SetSetup(dltsMediaSession->GetConnectionInitiator()
                          ? SDPCommonAttributes::SetupActive
@@ -1775,14 +1782,9 @@ bool SDPRTPAVPMediaDescription::SetSessionInfo(const OpalMediaSession * session,
 }
 
 
-bool SDPRTPAVPMediaDescription::PostDecode(const OpalMediaFormatList & mediaFormats)
+bool SDPRTPAVPMediaDescription::IsFeedbackEnabled() const
 {
-  bool result = SDPMediaDescription::PostDecode(mediaFormats);
-#if OPAL_SRTP
-  if (result && GetFingerprint().IsValid() && GetSetup() != SDPCommonAttributes::SetupNotSet)
-    m_useDTLS = true;
-#endif
-  return result;
+  return m_transportType.Find("AVPF") != P_MAX_INDEX;
 }
 
 
@@ -2101,7 +2103,7 @@ bool SDPVideoMediaDescription::PreEncode()
 
   m_rtcp_fb = OpalVideoFormat::e_NoRTCPFb;
 
-  if (m_enableFeedback || m_stringOptions.GetInteger(OPAL_OPT_OFFER_RTCP_FB, 1) == 1) {
+  if (IsFeedbackEnabled() || m_stringOptions.GetInteger(OPAL_OPT_OFFER_RTCP_FB, 1) == 1) {
     bool first = true;
     for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
       Format * vidFmt = dynamic_cast<Format *>(&*format);
@@ -2127,6 +2129,24 @@ bool SDPVideoMediaDescription::PreEncode()
   }
 
   return true;
+}
+
+
+bool SDPVideoMediaDescription::IsFeedbackEnabled() const
+{
+  if (!m_transportType.IsEmpty())
+    return SDPRTPAVPMediaDescription::IsFeedbackEnabled();
+
+  if (m_stringOptions.GetInteger(OPAL_OPT_OFFER_RTCP_FB, 1) == 0)
+    return false;
+
+  for (SDPMediaFormatList::const_iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
+    const Format * vidFmt = dynamic_cast<const Format *>(&*format);
+    if (vidFmt != NULL && vidFmt->GetRTCP_FB() != OpalVideoFormat::e_NoRTCPFb)
+      return true;
+  }
+
+  return false;
 }
 
 
