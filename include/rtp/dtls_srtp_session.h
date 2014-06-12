@@ -59,61 +59,29 @@ class OpalDTLSSRTPSession : public OpalSRTPSession
 
     virtual bool Close();
     virtual const PCaselessString & GetSessionType() const { return RTP_DTLS_SAVP(); }
-    virtual void SetRemoteUserPass(const PString & user, const PString & pass);
-    void SetConnectionInitiator(bool connectionInitiator);
-    bool GetConnectionInitiator() const;
+
+    void SetPassiveMode(bool passive) { m_passiveMode = passive; }
+    bool IsPassiveMode() const { return m_passiveMode; }
+
     const PSSLCertificateFingerprint& GetLocalFingerprint() const;
     void SetRemoteFingerprint(const PSSLCertificateFingerprint& fp);
     const PSSLCertificateFingerprint& GetRemoteFingerprint() const;
-    void SetCandidates(const PNatCandidateList& candidates);
+
   protected:
     virtual SendReceiveStatus ReadRawPDU(BYTE * framePtr, PINDEX & frameSize, bool fromDataChannel);
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, bool rewriteHeader);
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
-    virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
     PDECLARE_NOTIFIER(PSSLChannelDTLS, OpalDTLSSRTPSession, OnHandshake);
     PDECLARE_SSLVerifyNotifier(OpalDTLSSRTPSession, OnVerify);
-private:
-    SendReceiveStatus IceNegotiation(const BYTE * framePtr, PINDEX frameSize, bool forDataChannel, bool isReceive);
-    SendReceiveStatus HandshakeIfNeeded(const BYTE * framePtr, PINDEX frameSize, bool forDataChannel, bool isReceive);
-    SendReceiveStatus ProcessPacket(const BYTE * framePtr, PINDEX frameSize, bool forDataChannel, bool isReceive);
-    // Return true if send BindingResponse, else - false
-    bool SendStunResponse(const PSTUNMessage& request, PUDPSocket& socket);
-    bool SendStunRequest(PUDPSocket& socket, const PIPSocketAddressAndPort& ap);
-    bool CheckStunResponse(const PSTUNMessage& response);
-  private:
-    struct Candidate {
-      PIPSocketAddressAndPort ap;
-      unsigned otherPartyResponses; // Count of responses to our STUN requests.
-      unsigned otherPartyRequests; // Count of incoming STUN requests
-      unsigned ourResponses; // Count of incoming STUN responses
-      Candidate(const PIPSocketAddressAndPort& addressAndPort)
-        : ap(addressAndPort)
-        , otherPartyResponses(0)
-        , otherPartyRequests(0)
-        , ourResponses(0)
-      {
-      }
-      bool Ready() const
-      {
-        return (otherPartyRequests == ourResponses
-          && ourResponses > 1
-          && otherPartyResponses > 1);
-      }
-    };
-    typedef std::list<Candidate> Candidates;
 
   private:
-    std::auto_ptr<PSSLChannelDTLS> m_channels[2]; // Media and control channels
-    Candidates m_candidates[2]; // Candidates for media and control channels
+    SendReceiveStatus HandshakeIfNeeded(const BYTE * framePtr, PINDEX frameSize, bool forDataChannel, bool isReceive);
+
+    std::auto_ptr<PSSLChannelDTLS> m_sslChannel[2]; // Media and control channels
     bool m_dtlsReady[2]; // Ready flag for media and control channels
-    bool m_stopSend[2];
-    bool m_connectionInitiator;
+    bool m_passiveMode;
     PSSLCertificateFingerprint m_remoteFingerprint;
     PSSLCertificateFingerprint m_localFingerprint;
-    bool m_stunNegotiated;
-    PSTUN m_remoteStun; // Used for receive requests from other party and send responses
-    PSTUN m_localStun; // Used for send request to other party and handle responses
 };
 
 

@@ -784,11 +784,11 @@ static void CalculateCandidatePriority(PNatCandidate & candidate)
 #endif //OPAL_ICE
 
 
-bool SDPMediaDescription::SetSessionInfo(const OpalMediaSession * session,
+bool SDPMediaDescription::FromSession(const OpalMediaSession * session,
 #if OPAL_ICE
-                                         const SDPMediaDescription * offer)
+                                      const SDPMediaDescription * offer)
 #else
-                                         const SDPMediaDescription *)
+                                      const SDPMediaDescription *)
 #endif
 {
   if (session == NULL) {
@@ -823,6 +823,33 @@ bool SDPMediaDescription::SetSessionInfo(const OpalMediaSession * session,
     }
   }
 #endif // OPAL_ICE
+
+  return true;
+}
+
+
+bool SDPMediaDescription::ToSession(OpalMediaSession * session) const
+{
+  if (!m_controlAddress.IsEmpty())
+    session->SetRemoteAddress(m_controlAddress, false);
+
+  OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
+
+  if (rtpSession != NULL) {
+    // Set single port or disjoint RTCP port, must be done before Open()
+    if (m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX) || m_controlAddress == m_mediaAddress) {
+      PTRACE(3, "SIP\tSetting single port mode for answer RTP session " << session->GetSessionID() << " for media type " << m_mediaType);
+      rtpSession->SetSinglePortRx();
+    }
+
+#if OPAL_ICE
+    if (HasICE()) {
+      // If ICE-Lite, then don't pass candidates on to session to manage. We
+      // only need to respond to remote requests, and user/pass is enough.
+      rtpSession->SetICE(m_username, m_password, m_stringOptions.GetBoolean(OPAL_OPT_ICE_LITE, true) ? PNatCandidateList() : m_candidates);
+    }
+#endif //OPAL_ICE
+  }
 
   return true;
 }
@@ -1748,7 +1775,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
 }
 
 
-bool SDPRTPAVPMediaDescription::SetSessionInfo(const OpalMediaSession * session, const SDPMediaDescription * offer)
+bool SDPRTPAVPMediaDescription::FromSession(const OpalMediaSession * session, const SDPMediaDescription * offer)
 {
   const OpalRTPSession * rtpSession = dynamic_cast<const OpalRTPSession *>(session);
   if (rtpSession != NULL) {
@@ -1772,13 +1799,25 @@ bool SDPRTPAVPMediaDescription::SetSessionInfo(const OpalMediaSession * session,
   const OpalDTLSSRTPSession* dltsMediaSession = dynamic_cast<const OpalDTLSSRTPSession*>(session);
   if (dltsMediaSession != NULL) {
     SetFingerprint(dltsMediaSession->GetLocalFingerprint());
-    SetSetup(dltsMediaSession->GetConnectionInitiator()
-                         ? SDPCommonAttributes::SetupActive
-                         : SDPCommonAttributes::SetupPassive);
+    SetSetup(dltsMediaSession->IsPassiveMode() ? SDPCommonAttributes::SetupPassive : SDPCommonAttributes::SetupActive);
   }
 #endif
 
-  return SDPMediaDescription::SetSessionInfo(session, offer);
+  return SDPMediaDescription::FromSession(session, offer);
+}
+
+
+bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session) const
+{
+#if OPAL_SRTP
+  OpalDTLSSRTPSession* dltsMediaSession = dynamic_cast<OpalDTLSSRTPSession*>(session);
+  if (dltsMediaSession) { // DTLS
+    dltsMediaSession->SetRemoteFingerprint(GetFingerprint());
+    dltsMediaSession->SetPassiveMode(GetSetup() & SDPCommonAttributes::SetupPassive);
+  }
+#endif // OPAL_SRTP
+
+  return SDPMediaDescription::ToSession(session);
 }
 
 
