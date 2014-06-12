@@ -165,6 +165,10 @@ PString SIPEndPoint::GetDefaultTransport() const
           + ',' + OpalTransportAddress::TcpPrefix()
 #if OPAL_PTLIB_SSL
           + ',' + OpalTransportAddress::TlsPrefix() + ":5061"
+#if OPAL_PTLIB_HTTP
+          + ',' + OpalTransportAddress::WsPrefix() + ":10080"
+          + ',' + OpalTransportAddress::WssPrefix() + ":10081"
+#endif
 #endif
     ; 
 }
