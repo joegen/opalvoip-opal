@@ -400,11 +400,13 @@ bool OpalMediaSession::IsCryptoSecured(bool) const
 }
 
 
-void OpalMediaSession::SetRemoteUserPass(const PString & user, const PString & pass)
+#if OPAL_ICE
+void OpalMediaSession::SetICE(const PString & user, const PString & pass, const PNatCandidateList &)
 {
   m_remoteUsername = user;
   m_remotePassword = pass;
 }
+#endif
 
 
 //////////////////////////////////////////////////////////////////////////////

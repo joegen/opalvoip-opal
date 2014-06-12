@@ -2082,7 +2082,7 @@ void OpalRTPSession::SetICE(const PString & user, const PString & pass, const PN
   delete m_stunClient;
   m_stunClient = NULL;
 
-  OpalMediaSession::SetRemoteUserPass(user, pass);
+  OpalMediaSession::SetICE(user, pass, candidates);
   if (user.IsEmpty() || pass.IsEmpty())
     return;
 
