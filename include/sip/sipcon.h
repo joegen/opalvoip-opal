@@ -113,15 +113,6 @@ class OpalSIPIMContext;
   */
 #define OPAL_OPT_EXTERNAL_SDP "External-SDP"
 
-/**Enable offer of RTP/RTCP "single port" mode.
-   While if offerred by the remote, we always honour the SDP a=rtcp-mux
-   attribute, we only offer it if this string option is set to true.
-
-   Defaults to false.
-  */
-#define OPAL_OPT_RTCP_MUX "RTCP-Mux"
-
-
 /**Enable audio/video grouping in SDP.
    This add various identifiers to the SDP to link the audio and video
    medis sessions together. For example, to do lip sync.
