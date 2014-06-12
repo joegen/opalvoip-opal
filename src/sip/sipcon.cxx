@@ -1237,12 +1237,13 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
     return NULL;
   }
 
-  {
-   SDPRTPAVPMediaDescription* localSDPAVP = dynamic_cast<SDPRTPAVPMediaDescription*>(localMedia.get());
-   SDPRTPAVPMediaDescription* incomingSDPAVP = dynamic_cast<SDPRTPAVPMediaDescription*>(incomingMedia);
-   if (localSDPAVP && incomingSDPAVP && incomingSDPAVP->IsFeedbackEnabled())
-     localSDPAVP->EnableFeedback();
-  }
+  /* Make sure SDP transport type in preply is same as in offer. This is primarily
+     a workaround for broken implementations, esecially with respect to feedback
+     (AVPF) and DTLS (UDP/TLS/SAFP) */
+  localMedia->SetSDPTransportType(incomingMedia->GetSDPTransportType());
+
+  // Get SDP string options through
+  localMedia->SetOptionStrings(m_stringOptions);
 
 #if OPAL_SRTP
   if (!keys.IsEmpty()) {// SDES
@@ -1251,8 +1252,6 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
       PTRACE(2, "SIP\tIncompatible crypto suite(s) for " << mediaType << " session " << sessionId);
       return NULL;
     }
-
-    localMedia->SetOptionStrings(m_stringOptions);
 
     // Use symmetric keys, generate a cloneof the remotes tx key for out yx key
     OpalMediaCryptoKeyInfo * txKey = keys.front().CloneAs<OpalMediaCryptoKeyInfo>();
