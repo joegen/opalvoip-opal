@@ -289,22 +289,26 @@ class OpalMediaSession : public PSafeObject
     unsigned GetSessionID() const { return m_sessionId; }
     const OpalMediaType & GetMediaType() const { return m_mediaType; }
 
+#if OPAL_ICE
+    virtual void SetICE(
+      const PString & user,
+      const PString & pass,
+      const PNatCandidateList & candidates
+    );
     const PString & GetLocalUsername() const { return m_localUsername; }
     const PString & GetLocalPassword() const { return m_localPassword; }
-
-    virtual void SetRemoteUserPass(
-      const PString & user,
-      const PString & pass
-    );
+#endif
 
   protected:
     OpalConnection & m_connection;
     unsigned         m_sessionId;  // unique session ID
     OpalMediaType    m_mediaType;  // media type for session
+#if OPAL_ICE
     PString          m_localUsername;    // ICE username sent to remote
     PString          m_localPassword;    // ICE password sent to remote
     PString          m_remoteUsername;   // ICE username expected from remote
     PString          m_remotePassword;   // ICE password expected from remote
+#endif
 
     OpalMediaCryptoKeyList m_offeredCryptokeys;
 
@@ -318,6 +322,7 @@ class OpalMediaSession : public PSafeObject
     P_REMOVE_VIRTUAL(bool, SetRemoteMediaAddress(const OpalTransportAddress &), false);
     P_REMOVE_VIRTUAL(OpalTransportAddress, GetRemoteControlAddress() const, 0);
     P_REMOVE_VIRTUAL(bool, SetRemoteControlAddress(const OpalTransportAddress &), false);
+    P_REMOVE_VIRTUAL_VOID(SetRemoteUserPass(const PString &, const PString &));
 };
 
 

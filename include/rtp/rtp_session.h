@@ -832,7 +832,6 @@ class OpalRTPSession : public OpalMediaSession
     P_REMOVE_VIRTUAL(SendReceiveStatus,ReadDataOrControlPDU(BYTE *,PINDEX,bool),e_AbortTransport);
     P_REMOVE_VIRTUAL(bool,WriteDataOrControlPDU(const BYTE *,PINDEX,bool),false);
     P_REMOVE_VIRTUAL(SendReceiveStatus,OnSendData(RTP_DataFrame &),e_AbortTransport);
-    P_REMOVE_VIRTUAL_VOID(SetRemoteUserPass(const PString &, const PString &));
 
   friend class RTP_JitterBuffer;
 };
