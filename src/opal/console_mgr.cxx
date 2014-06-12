@@ -1137,17 +1137,20 @@ static struct {
   }
 } VideoDeviceVariables[] = {
 #define VID_DEV_VAR(cmd,hlp,get,set) { cmd, hlp, &OpalConsolePCSSEndPoint::get, &OpalConsolePCSSEndPoint::set, &PVideoInputDevice::GetDriversDeviceNames }
-  VID_DEV_VAR("grabber",              "input grabber",                        GetVideoGrabberDevice,        SetVideoGrabberDevice),
-  VID_DEV_VAR("preview",              "input preview",                        GetVideoPreviewDevice,        SetVideoPreviewDevice),
-  VID_DEV_VAR("display",              "output display",                       GetVideoDisplayDevice,        SetVideoDisplayDevice),
-  VID_DEV_VAR("hold-video",           "input grabber on hold",                GetVideoOnHoldDevice,         SetVideoOnHoldDevice),
-  VID_DEV_VAR("ring-video",           "input grabber on ring",                GetVideoOnRingDevice,         SetVideoOnRingDevice),
-  VID_DEV_VAR("presentation grabber", "input grabber for presentation role",  GetPresentationVideoDevice,   SetPresentationVideoDevice),
-  VID_DEV_VAR("presentation preview", "input preview for presentation role",  GetPresentationPreviewDevice, SetPresentationPreviewDevice),
-  VID_DEV_VAR("speaker grabber",      "input grabber for speaker role",       GetSpeakerVideoDevice,        SetSpeakerVideoDevice),
-  VID_DEV_VAR("speaker preview",      "input preview for speaker role",       GetSpeakerPreviewDevice,      SetSpeakerPreviewDevice),
-  VID_DEV_VAR("sign-language grabber","input grabber for sign langauge role", GetSignVideoDevice,           SetSignVideoDevice),
-  VID_DEV_VAR("sign-language preview","input preview for sign langauge role", GetSignPreviewDevice,         SetSignPreviewDevice)
+  VID_DEV_VAR("grabber",               "input grabber",                         GetVideoGrabberDevice,        SetVideoGrabberDevice),
+  VID_DEV_VAR("preview",               "input preview",                         GetVideoPreviewDevice,        SetVideoPreviewDevice),
+  VID_DEV_VAR("display",               "output display",                        GetVideoDisplayDevice,        SetVideoDisplayDevice),
+  VID_DEV_VAR("hold-video",            "input grabber on hold",                 GetVideoOnHoldDevice,         SetVideoOnHoldDevice),
+  VID_DEV_VAR("ring-video",            "input grabber on ring",                 GetVideoOnRingDevice,         SetVideoOnRingDevice),
+  VID_DEV_VAR("presentation grabber",  "input grabber for presentation role",   GetPresentationVideoDevice,   SetPresentationVideoDevice),
+  VID_DEV_VAR("presentation preview",  "input preview for presentation role",   GetPresentationPreviewDevice, SetPresentationPreviewDevice),
+  VID_DEV_VAR("presentation display",  "output display for presentation role",  GetPresentationOutputDevice,  SetPresentationOutputDevice),
+  VID_DEV_VAR("speaker grabber",       "input grabber for speaker role",        GetSpeakerVideoDevice,        SetSpeakerVideoDevice),
+  VID_DEV_VAR("speaker preview",       "input preview for speaker role",        GetSpeakerPreviewDevice,      SetSpeakerPreviewDevice),
+  VID_DEV_VAR("speaker display",       "output display for speaker role",       GetSpeakerOutputDevice,       SetSpeakerOutputDevice),
+  VID_DEV_VAR("sign-language grabber", "input grabber for sign langauge role",  GetSignVideoDevice,           SetSignVideoDevice),
+  VID_DEV_VAR("sign-language preview", "input preview for sign langauge role",  GetSignPreviewDevice,         SetSignPreviewDevice),
+  VID_DEV_VAR("sign-language display", "output display for sign-language role", GetSignOutputDevice,          SetSignOutputDevice)
 };
 #endif // OPAL_VIDEO
 
