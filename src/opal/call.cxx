@@ -557,7 +557,8 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
     }
   }
 
-  PTRACE(3, "OpenSourceMediaStreams " << (sourceStream != NULL ? "replace" : "open") << traceText);
+  PTRACE(3, "OpenSourceMediaStreams " << (sourceStream != NULL ? "replace" : "open")
+         << (startPaused ? " (paused)" : "") << (transfer ? " (transfer)" : "") << traceText);
   sourceStream.SetNULL();
 
   // Create the sinks and patch if needed
