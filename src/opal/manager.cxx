@@ -290,6 +290,7 @@ OpalManager::OpalManager()
   for (i = 0; i < devices.GetSize(); ++i) {
     PCaselessString dev = devices[i];
     if (dev[0] != '*' && dev.NumCompare(P_FAKE_VIDEO_PREFIX) != EqualTo) {
+      PTRACE(3, "Default video grabber set to \"" << dev << '"');
       m_videoInputDevice[OpalVideoFormat::eNoRole].deviceName = m_videoInputDevice[OpalVideoFormat::eMainRole].deviceName = dev;
       SetAutoStartTransmitVideo(true);
       break;
@@ -300,8 +301,9 @@ OpalManager::OpalManager()
   for (i = 0; i < devices.GetSize(); ++i) {
     PCaselessString dev = devices[i];
     if (dev[0] != '*' && dev != P_NULL_VIDEO_DEVICE) {
+      PTRACE(3, "Default video display set to \"" << dev << '"');
       for (OpalVideoFormat::ContentRole role = OpalVideoFormat::BeginContentRole; role < OpalVideoFormat::EndContentRole; ++role)
-        m_videoOutputDevice[role].deviceName = devices[i];
+        m_videoOutputDevice[role].deviceName = dev;
       m_videoPreviewDevice[OpalVideoFormat::eNoRole] = m_videoOutputDevice[OpalVideoFormat::eNoRole];
       SetAutoStartReceiveVideo(true);
       break;
