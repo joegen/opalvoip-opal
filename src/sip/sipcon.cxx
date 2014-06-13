@@ -1244,8 +1244,6 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
   }
 #endif // OPAL_SRTP
 
-  PTRACE(4, "SIP\tAnswering offer for media type " << mediaType << ", direction=" << otherSidesDir);
-
   if (GetPhase() < ConnectedPhase) {
     // If processing initial INVITE and video, obey the auto-start flags
     OpalMediaType::AutoStartMode autoStart = GetAutoStart(mediaType);
@@ -1254,6 +1252,8 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
     if ((autoStart&OpalMediaType::Receive) == 0)
       otherSidesDir = (otherSidesDir&SDPMediaDescription::RecvOnly) != 0 ? SDPMediaDescription::RecvOnly : SDPMediaDescription::Inactive;
   }
+
+  PTRACE(4, "SIP\tAnswering offer for media type " << mediaType << ", directions=" << otherSidesDir);
 
   SDPMediaDescription::Direction newDirection = SDPMediaDescription::Inactive;
 
