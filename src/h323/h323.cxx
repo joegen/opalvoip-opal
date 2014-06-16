@@ -3861,8 +3861,10 @@ void H323Connection::OnSetLocalCapabilities()
 
   PINDEX simultaneous = P_MAX_INDEX;
   for (PINDEX m = 0; m < PARRAYSIZE(mediaList); m++) {
-    if (m > 1)                    // First two (Audio/Fax) are in same simultaneous set
-      simultaneous = P_MAX_INDEX; // After that each is in it's own simultaneous set in TCS
+#if OPAL_T38_CAPABILITY
+    if (m != 1)                   // Fax is in same simultaneous set as Audio
+#endif
+      simultaneous = P_MAX_INDEX;
 
     for (OpalMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
       if (format->GetMediaType() == mediaList[m] && format->IsTransportable()) {
