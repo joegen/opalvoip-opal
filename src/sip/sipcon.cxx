@@ -3514,12 +3514,13 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
   if (GetPhase() >= ConnectedPhase)
     OnReceivedAnswerSDP(response, &transaction);  // Re-INVITE
   else {
-    // Don't use OnConnectedInternal() as need to process SDp between setting connected
+    // Don't use OnConnectedInternal() as need to process SDP between setting connected
     // state locally and other half of call processing SetConnected()
     SetPhase(ConnectedPhase);
 
     if (!OnReceivedAnswerSDP(response, &transaction)) {
-      Release(EndedByCapabilityExchange);
+      if (mediaStreams.IsEmpty())
+        Release(EndedByCapabilityExchange);
       return;
     }
 
