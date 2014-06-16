@@ -643,6 +643,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame);
     
+    virtual bool InternalSetRemoteAddress(const PIPSocket::AddressAndPort & ap, bool isMediaAddress);
     virtual bool InternalReadData(RTP_DataFrame & frame);
     virtual SendReceiveStatus ReadControlPDU();
     virtual SendReceiveStatus ReadRawPDU(

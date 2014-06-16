@@ -68,7 +68,7 @@ struct OpalLibSRTP::Context
   Context();
   ~Context();
 
-  bool Open(DWORD ssrc, OpalMediaCryptoKeyInfo* key);
+  bool SetKey(DWORD ssrc, OpalMediaCryptoKeyInfo* key);
   bool Change(DWORD from_ssrc, DWORD to_ssrc);
   void Close();
   bool ProtectRTP(RTP_DataFrame & frame);
@@ -447,7 +447,7 @@ OpalLibSRTP::~OpalLibSRTP()
 }
 
 
-bool OpalLibSRTP::Context::Open(DWORD ssrc, OpalMediaCryptoKeyInfo* ki)
+bool OpalLibSRTP::Context::SetKey(DWORD ssrc, OpalMediaCryptoKeyInfo* ki)
 {
   OpalSRTPKeyInfo * keyInfo = dynamic_cast<OpalSRTPKeyInfo*>(ki);
   if (keyInfo == NULL) {
@@ -627,13 +627,6 @@ void OpalLibSRTP::Close()
 }
 
 
-bool OpalLibSRTP::Open(DWORD ssrc, OpalMediaCryptoKeyInfo* key, bool rx)
-{
-  return rx ? m_rx->Open(ssrc, key) : m_tx->Open(ssrc, key);
-
-}
-
-
 bool OpalLibSRTP::IsSecured(bool rx) const
 {
   return (rx ? m_rx : m_tx)->m_keyInfo != NULL;
@@ -702,10 +695,12 @@ OpalMediaCryptoKeyList & OpalSRTPSession::GetOfferedCryptoKeys()
   return OpalRTPSession::GetOfferedCryptoKeys();
 }
 
+
 bool OpalSRTPSession::SetCryptoKey(OpalMediaCryptoKeyInfo* key, bool rx)
 {
-  return OpalLibSRTP::Open(rx ? GetSyncSourceIn() : GetSyncSourceOut(), key, rx);
+  return rx ? m_rx->SetKey(GetSyncSourceIn(), key) : m_tx->SetKey(GetSyncSourceOut(), key);
 }
+
 
 bool OpalSRTPSession::ApplyCryptoKey(OpalMediaCryptoKeyList & keys, bool rx)
 {
