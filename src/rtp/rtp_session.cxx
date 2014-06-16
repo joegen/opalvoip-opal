@@ -1750,64 +1750,66 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
   OpalManager & manager = m_connection.GetEndPoint().GetManager();
 
 #if OPAL_PTLIB_NAT
-  PNatMethod * natMethod = manager.GetNatMethods().GetMethod(bindingAddress, this);
-  if (natMethod != NULL && (m_remoteBehindNAT || !manager.IsLocalAddress(m_remoteAddress))) {
-    PTRACE(4, "RTP\tNAT Method " << natMethod->GetMethodName() << " selected for call.");
+  if (!manager.IsLocalAddress(m_remoteAddress)) {
+    PNatMethod * natMethod = manager.GetNatMethods().GetMethod(bindingAddress, this);
+    if (natMethod != NULL) {
+      PTRACE(4, "RTP\tNAT Method " << natMethod->GetMethodName() << " selected for call.");
 
-    switch (natMethod->GetRTPSupport()) {
-      case PNatMethod::RTPIfSendMedia :
-        /* This NAT variant will work if we send something out through the
-            NAT port to "open" it so packets can then flow inward. We set
-            this flag to make that happen as soon as we get the remotes IP
-            address and port to send to.
-          */
-        m_localHasRestrictedNAT = true;
-        // Then do case for full cone support and create NAT sockets
+      switch (natMethod->GetRTPSupport()) {
+        case PNatMethod::RTPIfSendMedia :
+          /* This NAT variant will work if we send something out through the
+              NAT port to "open" it so packets can then flow inward. We set
+              this flag to make that happen as soon as we get the remotes IP
+              address and port to send to.
+              */
+          m_localHasRestrictedNAT = true;
+          // Then do case for full cone support and create NAT sockets
 
-      case PNatMethod::RTPSupported :
-        PTRACE ( 4, "RTP\tAttempting natMethod: " << natMethod->GetMethodName());            
-        if (m_singlePortRx) {
-          if (natMethod->CreateSocket(m_socket[e_Data], bindingAddress))
-            m_socket[e_Data]->GetLocalAddress(m_localAddress, m_localPort[e_Data]);
-          else {
-            delete m_socket[e_Data];
-            m_socket[e_Data] = NULL;
-            PTRACE(2, "RTP\tSession " << m_sessionId << ", " << natMethod->GetMethodName()
-                    << " could not create NAT RTP socket, using normal sockets.");
+        case PNatMethod::RTPSupported :
+          PTRACE(4, "RTP\tAttempting natMethod: " << natMethod->GetMethodName());
+          if (m_singlePortRx) {
+            if (natMethod->CreateSocket(m_socket[e_Data], bindingAddress))
+              m_socket[e_Data]->GetLocalAddress(m_localAddress, m_localPort[e_Data]);
+            else {
+              delete m_socket[e_Data];
+              m_socket[e_Data] = NULL;
+              PTRACE(2, "RTP\tSession " << m_sessionId << ", " << natMethod->GetMethodName()
+                     << " could not create NAT RTP socket, using normal sockets.");
+            }
           }
-        }
-        else if (natMethod->CreateSocketPair(m_socket[e_Data], m_socket[e_Control], bindingAddress, this)) {
-          PTRACE(4, "RTP\tSession " << m_sessionId << ", " << natMethod->GetMethodName() << " created NAT RTP/RTCP socket pair.");
-          for (int i = 0; i < 2; ++i)
-            m_socket[i]->GetLocalAddress(m_localAddress, m_localPort[i]);
-        }
-        else {
-          PTRACE(2, "RTP\tSession " << m_sessionId << ", " << natMethod->GetMethodName()
-                  << " could not create NAT RTP/RTCP socket pair; trying to create individual sockets.");
-          if (natMethod->CreateSocket(m_socket[e_Data], bindingAddress, 0, this) &&
-              natMethod->CreateSocket(m_socket[e_Control], bindingAddress, 0, this)) {
+          else if (natMethod->CreateSocketPair(m_socket[e_Data], m_socket[e_Control], bindingAddress, this)) {
+            PTRACE(4, "RTP\tSession " << m_sessionId << ", " << natMethod->GetMethodName() << " created NAT RTP/RTCP socket pair.");
             for (int i = 0; i < 2; ++i)
               m_socket[i]->GetLocalAddress(m_localAddress, m_localPort[i]);
           }
           else {
-            for (int i = 0; i < 2; ++i) {
-              delete m_socket[i];
-              m_socket[i] = NULL;
-            }
             PTRACE(2, "RTP\tSession " << m_sessionId << ", " << natMethod->GetMethodName()
-                    << " could not create NAT RTP/RTCP sockets individually either, using normal sockets.");
+                   << " could not create NAT RTP/RTCP socket pair; trying to create individual sockets.");
+            if (natMethod->CreateSocket(m_socket[e_Data], bindingAddress, 0, this) &&
+                natMethod->CreateSocket(m_socket[e_Control], bindingAddress, 0, this)) {
+              for (int i = 0; i < 2; ++i)
+                m_socket[i]->GetLocalAddress(m_localAddress, m_localPort[i]);
+            }
+            else {
+              for (int i = 0; i < 2; ++i) {
+                delete m_socket[i];
+                m_socket[i] = NULL;
+              }
+              PTRACE(2, "RTP\tSession " << m_sessionId << ", " << natMethod->GetMethodName()
+                     << " could not create NAT RTP/RTCP sockets individually either, using normal sockets.");
+            }
           }
-        }
-        break;
+          break;
 
-      default :
-        /* We canot use NAT traversal method (e.g. STUN) to create sockets
-            in the remaining modes as the NAT router will then not let us
-            talk to the real RTP destination. All we can so is bind to the
-            local interface the NAT is on and hope the NAT router is doing
-            something sneaky like symmetric port forwarding. */
-        natMethod->GetInterfaceAddress(m_localAddress);
-        break;
+        default :
+          /* We canot use NAT traversal method (e.g. STUN) to create sockets
+              in the remaining modes as the NAT router will then not let us
+              talk to the real RTP destination. All we can so is bind to the
+              local interface the NAT is on and hope the NAT router is doing
+              something sneaky like symmetric port forwarding. */
+          natMethod->GetInterfaceAddress(m_localAddress);
+          break;
+      }
     }
   }
 #endif // OPAL_PTLIB_NAT
@@ -1841,6 +1843,7 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
     }
 
     m_localAddress = bindingAddress;
+    manager.TranslateIPAddress(m_localAddress, m_remoteAddress);
   }
 
   PTRACE_CONTEXT_ID_TO(m_socket[e_Data]);
@@ -1856,12 +1859,11 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
     SetMinBufferSize(*m_socket[e_Control], SO_SNDBUF, RTP_CTRL_BUFFER_SIZE);
   }
 
-  manager.TranslateIPAddress(m_localAddress, m_remoteAddress);
-
   m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
 
   PTRACE(3, "RTP_UDP\tSession " << m_sessionId << " opened: "
-         << m_localAddress << ':' << m_localPort[e_Data] << '-' << m_localPort[e_Control]
+            " local=" << m_localAddress << ':' << m_localPort[e_Data] << '-' << m_localPort[e_Control]
+         << " remote=" << m_remoteAddress << ':' << m_remotePort[e_Data] << '-' << m_remotePort[e_Control]
          << " SSRC=" << RTP_TRACE_SRC(syncSourceOut));
 
   return true;
