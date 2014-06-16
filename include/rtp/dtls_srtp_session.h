@@ -45,6 +45,7 @@
 #if OPAL_SRTP
 #include <ptclib/pssl.h>
 #include <ptclib/pstun.h>
+#include <ptclib/qchannel.h>
 
 
 class OpalDTLSSRTPSession : public OpalSRTPSession
@@ -57,9 +58,16 @@ class OpalDTLSSRTPSession : public OpalSRTPSession
     OpalDTLSSRTPSession(const Init & init);
     ~OpalDTLSSRTPSession();
 
-    virtual bool Close();
     virtual const PCaselessString & GetSessionType() const { return RTP_DTLS_SAVP(); }
 
+    // OVerrides from OpalRTPSession
+    virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool mediaAddress);
+    virtual bool Close();
+    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, bool rewriteHeader);
+    virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
+    virtual SendReceiveStatus ReadRawPDU(BYTE * framePtr, PINDEX & frameSize, bool fromDataChannel);
+
+    // New members
     void SetPassiveMode(bool passive) { m_passiveMode = passive; }
     bool IsPassiveMode() const { return m_passiveMode; }
 
@@ -68,20 +76,18 @@ class OpalDTLSSRTPSession : public OpalSRTPSession
     const PSSLCertificateFingerprint& GetRemoteFingerprint() const;
 
   protected:
-    virtual SendReceiveStatus ReadRawPDU(BYTE * framePtr, PINDEX & frameSize, bool fromDataChannel);
-    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, bool rewriteHeader);
-    virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
-    PDECLARE_NOTIFIER(PSSLChannelDTLS, OpalDTLSSRTPSession, OnHandshake);
+    virtual bool ExecuteHandshake(bool dataChannel);
     PDECLARE_SSLVerifyNotifier(OpalDTLSSRTPSession, OnVerify);
 
-  private:
-    SendReceiveStatus HandshakeIfNeeded(const BYTE * framePtr, PINDEX frameSize, bool forDataChannel, bool isReceive);
 
-    std::auto_ptr<PSSLChannelDTLS> m_sslChannel[2]; // Media and control channels
-    bool m_dtlsReady[2]; // Ready flag for media and control channels
-    bool m_passiveMode;
+    bool                       m_passiveMode;
     PSSLCertificateFingerprint m_remoteFingerprint;
     PSSLCertificateFingerprint m_localFingerprint;
+
+    // One each for Media and Control channels
+    class SSLChannel;
+    SSLChannel  * m_sslChannel[2];
+    PQueueChannel m_queueChannel[2];
 };
 
 
