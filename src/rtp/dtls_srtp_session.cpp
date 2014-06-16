@@ -211,6 +211,7 @@ OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::ReadRawPDU(BYTE * framePt
   if (frameSize == 0 || framePtr[0] < 20 || framePtr[0] > 64)
     return e_IgnorePacket; // Not a DTLS packet
 
+  PTRACE(5, "Read DTLS packet: " << frameSize << " bytes, queueing to SSL.");
   return m_queueChannel[fromDataChannel].Write(framePtr, frameSize) ? e_IgnorePacket : e_AbortTransport;
 }
 
