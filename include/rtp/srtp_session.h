@@ -116,7 +116,6 @@ class OpalLibSRTP
     bool UnprotectRTP(RTP_DataFrame & frame);
     bool UnprotectRTCP(RTP_ControlFrame & frame);
 
-    bool Open(DWORD ssrc, OpalMediaCryptoKeyInfo* key, bool rx);
     void Close();
     bool IsSecured(bool rx) const;
     void Change(DWORD from_ssrc, DWORD to_ssrc);
