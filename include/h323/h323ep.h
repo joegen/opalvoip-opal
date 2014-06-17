@@ -374,6 +374,14 @@ class H323EndPoint : public OpalRTPEndPoint
     */
     bool GetGatekeeperSimulatePattern() const { return m_gatekeeperSimulatePattern; }
 
+    /** Set gatekeeper flag to redirect to new gatekeeper based on rasAddres field.
+    */
+    void SetGatekeeperRasRedirect(bool redir) { m_gatekeeperRasRedirect = redir; }
+
+    /** Get gatekeeper flag to redirect to new gatekeeper based on rasAddres field.
+    */
+    bool GetGatekeeperRasRedirect() const { return m_gatekeeperRasRedirect; }
+
     /**Create a list of authenticators for gatekeeper.
       */
     virtual H235Authenticators CreateAuthenticators();
@@ -1394,6 +1402,7 @@ class H323EndPoint : public OpalRTPEndPoint
     PString                 m_gatekeeperPassword;
     PINDEX                  m_gatekeeperAliasLimit;
     bool                    m_gatekeeperSimulatePattern;
+    bool                    m_gatekeeperRasRedirect;
     PThread               * m_gatekeeperMonitor;
     bool                    m_gatekeeperMonitorStop;
     PSyncPoint              m_gatekeeperMonitorTickle;

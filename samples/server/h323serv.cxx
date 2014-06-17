@@ -42,6 +42,7 @@ static const char GatekeeperPasswordKey[] = "Remote Gatekeeper Password";
 static const char GatekeeperTokenOIDKey[] = "Remote Gatekeeper Token OID";
 static const char GatekeeperAliasLimitKey[] = "Remote Gatekeeper Alias Limit";
 static const char GatekeeperSimulatePatternKey[] = "Remote Gatekeeper Simulate Pattern";
+static const char GatekeeperRasRedirectKey[] = "Remote Gatekeeper RAS Redirect";
 
 static const char ServerGatekeeperEnableKey[] = "Gatekeeper Server Enable";
 static const char ServerGatekeeperIdentifierKey[] = "Gatekeeper Server Identifier";
@@ -162,6 +163,9 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
 
   SetGatekeeperSimulatePattern(rsrc->AddBooleanField(GatekeeperSimulatePatternKey, GetGatekeeperSimulatePattern(),
             "Compatibility issue with some gatekeepers not supporting alias patterns, generate separate aliases for ranges."));
+
+  SetGatekeeperRasRedirect(rsrc->AddBooleanField(GatekeeperRasRedirectKey, GetGatekeeperRasRedirect(),
+            "Compatibility issue with some gatekeepers using RAS address for alternate gatekeeper."));
 
   if (gkEnable) {
     if (UseGatekeeper(gkAddress, gkIdentifier, gkInterface)) {
