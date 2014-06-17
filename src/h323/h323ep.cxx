@@ -106,6 +106,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   , callIntrusionT6(0,10)                  // Seconds
   , m_gatekeeperAliasLimit(MaxGatekeeperAliasLimit)
   , m_gatekeeperSimulatePattern(false)
+  , m_gatekeeperRasRedirect(true)
   , m_gatekeeperMonitor(NULL)
   , m_gatekeeperMonitorStop(false)
 #if OPAL_H460
