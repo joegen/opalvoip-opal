@@ -969,7 +969,17 @@ OpalTransport::~OpalTransport()
 
 void OpalTransport::PrintOn(ostream & strm) const
 {
-  strm << GetRemoteAddress() << "<if=" << GetLocalAddress() << '>';
+  strm << "rem=" << GetRemoteAddress() << ", ";
+
+  PString iface(GetInterface());
+  OpalTransportAddress local(GetLocalAddress());
+
+  if (local.IsEmpty() || iface.IsEmpty())
+    strm << "not-bound";
+  else if (local.Find(iface.Left(iface.Find('%'))) != P_MAX_INDEX)
+    strm << "if=" << local;
+  else
+    strm << ", rfx=" << local << ", if=" << iface;
 }
 
 
@@ -1240,7 +1250,7 @@ PBoolean OpalTransportTCP::ReadPDU(PBYTEArray & pdu)
   PTimeInterval oldTimeout = m_channel->GetReadTimeout();
 
   // Should get all of PDU in reasonable time or something is seriously wrong,
-  SetReadTimeout(m_endpoint.GetManager().GetSignalingTimeout());
+  m_channel->SetReadTimeout(m_endpoint.GetManager().GetSignalingTimeout());
 
   bool ok = false;
   PINDEX packetLength = 0;
@@ -1307,12 +1317,14 @@ bool OpalTransportTCP::OnConnectedSocket(PTCPSocket * socket)
   if (socket == NULL)
     return false;
 
-  // If write take longer than this, something is wrong
-  const PTimeInterval timeout = m_endpoint.GetManager().GetSignalingTimeout();
-  socket->SetWriteTimeout(timeout);
+  OpalManager & manager = m_endpoint.GetManager();
 
-  // Initial read is infinite though
-  socket->SetReadTimeout(PMaxTimeInterval);
+  // If write take longer than this, something is wrong
+  const PTimeInterval timeout = manager.GetSignalingTimeout();
+  m_channel->SetWriteTimeout(timeout);
+
+  // Initial read timeout to idle time plus a buffer
+  m_channel->SetReadTimeout(manager.GetTransportIdleTime()+10000);
 
   // Get name of the remote computer for information purposes
   if (!socket->GetPeerAddress(m_remoteAP)) {
@@ -1329,7 +1341,7 @@ bool OpalTransportTCP::OnConnectedSocket(PTCPSocket * socket)
     return false;
   }
 
-  m_endpoint.GetManager().TranslateIPAddress(ip, m_remoteAP.GetAddress());
+  manager.TranslateIPAddress(ip, m_remoteAP.GetAddress());
   m_localAP.SetAddress(ip, port);
 
   if (!socket->SetOption(TCP_NODELAY, 1, IPPROTO_TCP)) {
@@ -1890,6 +1902,9 @@ OpalTransportWS::OpalTransportWS(OpalEndPoint & endpoint, PChannel * socket)
 {
   OnConnectedSocket(dynamic_cast<PTCPSocket *>(socket));
   dynamic_cast<PWebSocket *>(m_channel)->Open(socket);
+
+  // Due to the way WebSocket connections often work, we don't use the idle timeout
+  m_channel->SetReadTimeout(PMaxTimeInterval);
 }
 
 
