@@ -597,58 +597,47 @@ void OpalMediaStream::OnStopMediaPatch(OpalMediaPatch & patch)
 void OpalMediaStream::PrintDetail(ostream & strm, const char * prefix, Details details) const
 {
   if (prefix == NULL)
-    strm << (IsSource() ? "Receiving " : "Sending ");
+    strm << (IsSource() ? 'R' : 'S');
   else
-    strm << prefix << (IsSource() ? " receiving " : " sending ");
+    strm << prefix << (IsSource() ? " r" : " s");
+  strm << (IsSource() ? "eceiving from " : "ending to ") << connection.GetPrefixName()
+       << ", session " << GetSessionID()
+       << ", " << mediaFormat;
+
+  if ((details & DetailAudio) && !IsSource() && mediaFormat.GetMediaType() == OpalMediaType::Audio())
+    strm << ", " << mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption())*mediaFormat.GetFrameTime() / mediaFormat.GetTimeUnits() << "ms";
 
 #if OPAL_VIDEO
   OpalVideoFormat::ContentRole contentRole = mediaFormat.GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole);
   if (contentRole != OpalVideoFormat::eNoRole)
-    strm << (OpalVideoFormat::ContentRoleToString(contentRole) + 1) << " video ";
+    strm << ", " << &OpalVideoFormat::ContentRoleToString(contentRole)[1] << " video";
 #endif
 
   const OpalRTPConnection * rtpConnection = dynamic_cast<const OpalRTPConnection *>(&connection);
   OpalMediaSession * session = rtpConnection != NULL ? rtpConnection->GetMediaSession(sessionID) : NULL;
 
 #if OPAL_PTLIB_NAT || OPAL_SRTP || OPAL_RTP_FEC
-  bool outputSomething = false;
   if (session != NULL) {
 #if OPAL_PTLIB_NAT
     OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
     if ((details & DetailNAT) && rtpSession != NULL && session->IsOpen()) {
       PString sockName = rtpSession->GetDataSocket().GetName();
-      if (sockName.NumCompare("udp") != PObject::EqualTo) {
-        strm << '(' << sockName.Left(sockName.Find(':'));
-        outputSomething = true;
-      }
+      if (sockName.NumCompare("udp") != PObject::EqualTo)
+        strm << ", " << sockName.Left(sockName.Find(':'));
     }
 #endif // OPAL_PTLIB_NAT
 
 #if OPAL_SRTP
-    if ((details & DetailSecured) && session->IsCryptoSecured(IsSource())) {
-      strm << (outputSomething ? ", " : "(") << "secured";
-      outputSomething = true;
-    }
+    if ((details & DetailSecured) && session->IsCryptoSecured(IsSource()))
+      strm << ", " << "secured";
 #endif // OPAL_SRTP
 
 #if OPAL_RTP_FEC
-    if ((details & DetailFEC) && rtpSession != NULL && rtpSession->GetUlpFecPayloadType() != RTP_DataFrame::IllegalPayloadType) {
-      LogWindow << (outputSomething ? ", " : "(") << "error correction";
-      outputSomething = true;
-    }
+    if ((details & DetailFEC) && rtpSession != NULL && rtpSession->GetUlpFecPayloadType() != RTP_DataFrame::IllegalPayloadType)
+      strm << ", " << "error correction";
 #endif // OPAL_RTP_FEC
-
-    if (outputSomething)
-      strm << ") ";
   }
 #endif // OPAL_PTLIB_NAT || OPAL_SRTP || OPAL_RTP_FEC
-
-  strm << mediaFormat;
-
-  if ((details & DetailAudio) && !IsSource() && mediaFormat.GetMediaType() == OpalMediaType::Audio())
-    strm << " (" << mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption())*mediaFormat.GetFrameTime() / mediaFormat.GetTimeUnits() << "ms)";
-
-  strm << (IsSource() ? " from " : " to ") << connection.GetPrefixName();
 
   if ((details & DetailAddresses) && session != NULL) {
     strm << "\n  media=" << session->GetRemoteAddress(true) << "<if=" << session->GetLocalAddress(true) << '>';

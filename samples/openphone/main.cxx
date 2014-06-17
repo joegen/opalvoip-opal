@@ -2919,11 +2919,16 @@ void MyManager::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & 
 {
   OpalManager::OnStartMediaPatch(connection, patch);
 
-  OpalMediaStreamPtr stream = connection.IsNetworkConnection()
+  if (connection.IsNetworkConnection()) {
+    OpalMediaStreamPtr stream = &patch.GetSource().GetConnection() == &connection
                                     ? OpalMediaStreamPtr(&patch.GetSource()) : patch.GetSink();
-  if (stream != NULL)
-    stream->PrintDetail(LogWindow, "Started",
-          OpalMediaStream::DetailNAT|OpalMediaStream::DetailSecured|OpalMediaStream::DetailFEC|OpalMediaStream::DetailEOL);
+    if (stream != NULL)
+      stream->PrintDetail(LogWindow, "Started", OpalMediaStream::DetailNAT |
+                                                OpalMediaStream::DetailSecured |
+                                                OpalMediaStream::DetailFEC |
+                                                OpalMediaStream::DetailAudio |
+                                                OpalMediaStream::DetailEOL);
+  }
 
   PostEvent(wxEvtStreamsChanged, connection.GetCall().GetToken());
 }
