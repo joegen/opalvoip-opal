@@ -372,17 +372,30 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm
 
   OpalTransportAddress previousAddress(transport->GetRemoteAddress());
   H323TransportAddress locatedAddress(gcf.m_rasAddress, OpalTransportAddress::UdpPrefix());
-  if (!transport->SetRemoteAddress(locatedAddress)) {
-    PTRACE(2, "RAS\tInvalid gatekeeper discovery address: \"" << locatedAddress << '"');
-    return false;
+  if (previousAddress == locatedAddress) {
+    PTRACE(3, "RAS\tGatekeeper address verified: " << *transport);
+    discoveryComplete = true;
+    return true;
   }
 
-  PTRACE(3, "RAS\tGatekeeper discovered at: "
-          << transport->GetRemoteAddress()
-          << " (if=" << transport->GetLocalAddress() << ')');
+  if (previousAddress.Find('*') != P_MAX_INDEX) {
+    PTRACE(3, "RAS\tGatekeeper discovered at: " << *transport);
+    discoveryComplete = true;
+  }
+  else if (endpoint.GetGatekeeperRasRedirect()) {
+    PTRACE(3, "RAS\tRemote gatekeeper redirected to " << locatedAddress << " from " << *transport);
+    discoveryComplete = false; // Need to do GRQ again
+  }
+  else {
+    PTRACE(3, "RAS\tRemote gatekeeper RAS address (" << locatedAddress << ") different: " << *transport);
+    return true;
+  }
 
-  discoveryComplete = previousAddress.Find('*') != P_MAX_INDEX || previousAddress == locatedAddress;
-  return true;
+  if (transport->SetRemoteAddress(locatedAddress))
+    return true;
+
+  PTRACE(2, "RAS\tInvalid gatekeeper discovery address: \"" << locatedAddress << '"');
+  return false;
 }
 
 
