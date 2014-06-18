@@ -1003,7 +1003,7 @@ bool OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report)
 
       // add the SSRC to the start of the payload
       *(PUInt32b *)report.GetPayloadPtr() = syncSourceOut;
-      PTRACE(m_levelTxRR, "Session " << m_sessionId << ", Sending ReceiverReport: SSRC=" << RTP_TRACE_SRC(syncSourceIn));
+      PTRACE(m_levelTxRR, "Session " << m_sessionId << ", Sending empty ReceiverReport");
     }
     else {
       report.SetPayloadSize(sizeof(PUInt32b) + sizeof(RTP_ControlFrame::ReceiverReport));  // length is SSRC of packet sender plus RR
