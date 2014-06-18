@@ -330,9 +330,13 @@ class OpalRTPSession : public OpalMediaSession
       */
     bool IsSinglePortRx() { return m_singlePortRx; }
 
+    /**Set flag for single port transmit.
+      */
+    void SetSinglePortTx(bool v = true);
+
     /**Get flag for single port transmit.
     */
-    bool IsSinglePortTx() { return m_remotePort[e_Control] == m_remotePort[e_Data]; }
+    bool IsSinglePortTx() { return m_singlePortTx; }
 
     /**Get flag for is audio RTP.
       */
@@ -661,6 +665,7 @@ class OpalRTPSession : public OpalMediaSession
 
     OpalRTPEndPoint   & m_endpoint;
     bool                m_singlePortRx;
+    bool                m_singlePortTx;
     bool                m_isAudio;
     unsigned            m_timeUnits;
     PString             m_canonicalName;
