@@ -183,8 +183,10 @@ bool OpalDTLSSRTPSession::Open(const PString & localInterface, const OpalTranspo
   if (!OpalSRTPSession::Open(localInterface, remoteAddress, mediaAddress))
     return false;
 
-  for (int i = 0; i < 2; ++i)
-    m_sslChannel[i] = new SSLChannel(*this, m_socket[i], m_queueChannel[i], m_passiveMode);
+  for (int i = 0; i < 2; ++i) {
+    if (m_socket[i] != NULL)
+      m_sslChannel[i] = new SSLChannel(*this, m_socket[i], m_queueChannel[i], m_passiveMode);
+  }
 
   return true;
 }
@@ -208,10 +210,7 @@ OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::ReadRawPDU(BYTE * framePt
   if (status != e_ProcessPacket || !m_queueChannel[fromDataChannel].IsOpen())
     return status;
 
-  if (frameSize == 0 || framePtr[0] < 20 || framePtr[0] > 64)
-    return e_IgnorePacket; // Not a DTLS packet
-
-  PTRACE(5, "Read DTLS packet: " << frameSize << " bytes, queueing to SSL.");
+  PTRACE(5, "Queueing packet to SSL: " << frameSize << " bytes.");
   return m_queueChannel[fromDataChannel].Write(framePtr, frameSize) ? e_IgnorePacket : e_AbortTransport;
 }
 
@@ -224,19 +223,13 @@ OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::OnSendData(RTP_DataFrame 
 
 OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::OnSendControl(RTP_ControlFrame & frame)
 {
-  return ExecuteHandshake(false) ? OpalSRTPSession::OnSendControl(frame) : e_AbortTransport;
+  return ExecuteHandshake(IsSinglePortRx() || IsSinglePortTx()) ? OpalSRTPSession::OnSendControl(frame) : e_AbortTransport;
 }
 
 
-const PSSLCertificateFingerprint& OpalDTLSSRTPSession::GetLocalFingerprint() const
+PSSLCertificateFingerprint OpalDTLSSRTPSession::GetLocalFingerprint() const
 {
-  if (!m_localFingerprint.IsValid()) {
-    PSSLCertificateFingerprint::HashType type = PSSLCertificateFingerprint::HashSha1;
-    if (GetRemoteFingerprint().IsValid())
-      type = GetRemoteFingerprint().GetHash();
-    const_cast<OpalDTLSSRTPSession*>(this)->m_localFingerprint = DTLSContextSingleton()->GetFingerprint(type);
-  }
-  return m_localFingerprint;
+  return DTLSContextSingleton()->GetFingerprint(m_remoteFingerprint.IsValid() ? m_remoteFingerprint.GetHash() : PSSLCertificateFingerprint::HashSha1);
 }
 
 

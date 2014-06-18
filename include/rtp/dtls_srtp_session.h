@@ -71,7 +71,7 @@ class OpalDTLSSRTPSession : public OpalSRTPSession
     void SetPassiveMode(bool passive) { m_passiveMode = passive; }
     bool IsPassiveMode() const { return m_passiveMode; }
 
-    const PSSLCertificateFingerprint& GetLocalFingerprint() const;
+    PSSLCertificateFingerprint GetLocalFingerprint() const;
     void SetRemoteFingerprint(const PSSLCertificateFingerprint& fp);
     const PSSLCertificateFingerprint& GetRemoteFingerprint() const;
 
@@ -82,7 +82,6 @@ class OpalDTLSSRTPSession : public OpalSRTPSession
 
     bool                       m_passiveMode;
     PSSLCertificateFingerprint m_remoteFingerprint;
-    PSSLCertificateFingerprint m_localFingerprint;
 
     // One each for Media and Control channels
     class SSLChannel;
