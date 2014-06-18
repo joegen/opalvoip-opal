@@ -613,6 +613,11 @@ class OpalRTPMediaStream : public OpalMediaStream
       */
     virtual bool IsOpen() const;
 
+    /**Callback that is called on the source stream once the media patch has started.
+       The default behaviour calls OpalConnection::OnMediaPatchStart()
+      */
+    virtual void OnStartMediaPatch();
+
     /**Read an RTP frame of data from the source media stream.
        The new behaviour simply calls OpalRTPSession::ReadData().
       */

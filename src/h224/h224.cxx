@@ -1031,7 +1031,8 @@ OpalH224MediaStream::~OpalH224MediaStream()
 
 void OpalH224MediaStream::OnStartMediaPatch()
 {
-  m_h224Handler.StartTransmit();
+  if (IsSource())
+    m_h224Handler.StartTransmit();
   OpalMediaStream::OnStartMediaPatch();
 }
 
