@@ -643,7 +643,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame);
     
-    virtual bool InternalSetRemoteAddress(const PIPSocket::AddressAndPort & ap, bool isMediaAddress);
+    virtual bool InternalSetRemoteAddress(const PIPSocket::AddressAndPort & ap, bool isMediaAddress PTRACE_PARAM(, const char * source));
     virtual bool InternalReadData(RTP_DataFrame & frame);
     virtual SendReceiveStatus ReadControlPDU();
     virtual SendReceiveStatus ReadRawPDU(
@@ -823,6 +823,7 @@ class OpalRTPSession : public OpalMediaSession
     unsigned m_levelRxSR;
     unsigned m_levelRxRR;
     unsigned m_levelRxSDES;
+    unsigned m_levelRxUnknownFEC;
 #endif
 
   private:
