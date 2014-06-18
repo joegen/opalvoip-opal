@@ -583,7 +583,7 @@ void OpalMediaStream::OnStartMediaPatch()
   // We make referenced copy of pointer so can't be deleted out from under us
   OpalMediaPatchPtr mediaPatch = m_mediaPatch;
 
-  if (mediaPatch != NULL)
+  if (mediaPatch != NULL && IsSource())
     connection.OnStartMediaPatch(*mediaPatch);
 }
 
@@ -834,6 +834,17 @@ PBoolean OpalRTPMediaStream::Open()
 bool OpalRTPMediaStream::IsOpen() const
 {
   return OpalMediaStream::IsOpen() && rtpSession.IsOpen();
+}
+
+
+void OpalRTPMediaStream::OnStartMediaPatch()
+{
+  // Make sure a RTCP packet goes out as early as possible, helps with issues
+  // to do with ICE, DTLS, NAT etc.
+  if (IsSink())
+    rtpSession.SendReport(true);
+
+  OpalMediaStream::OnStartMediaPatch();
 }
 
 

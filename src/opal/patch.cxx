@@ -681,6 +681,9 @@ bool OpalMediaPatch::OnStartMediaPatch()
 {
   m_source.OnStartMediaPatch();
 
+  for (PList<Sink>::iterator s = m_sinks.begin(); s != m_sinks.end(); ++s)
+    s->m_stream->OnStartMediaPatch();
+
   if (m_source.IsSynchronous())
     return false;
 
