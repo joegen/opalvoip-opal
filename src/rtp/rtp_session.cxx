@@ -2149,28 +2149,27 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveICE(bool fromDataChan
     if (!m_stunServer->OnReceiveMessage(message, PSTUNServer::SocketInfo(m_socket[fromDataChannel])))
       return e_IgnorePacket;
 
-    if (message.FindAttribute(PSTUNAttribute::USE_CANDIDATE) == NULL)
+    if (!m_candidates[fromDataChannel].empty() && message.FindAttribute(PSTUNAttribute::USE_CANDIDATE) == NULL)
+      return e_IgnorePacket;
+  }
+  else {
+    if (!m_stunClient->ValidateMessageIntegrity(message))
       return e_IgnorePacket;
 
-    PTRACE(4, "RTP\tSession " << m_sessionId << ", " << (fromDataChannel ? "Data" : "Control") << " remote address set from STUN to " << ap);
-    InternalSetRemoteAddress(ap, fromDataChannel);
-    return e_IgnorePacket;
-  }
-
-  if (!m_stunClient->ValidateMessageIntegrity(message))
-    return e_IgnorePacket;
-
-  for (CandidateStates::iterator it = m_candidates[fromDataChannel].begin(); it != m_candidates[fromDataChannel].end(); ++it) {
-    if (message.GetSourceAddressAndPort() == it->m_remoteAP) {
-      PTRACE(4, "RTP\tSession " << m_sessionId << ", " << (fromDataChannel ? "Data" : "Control") << " remote address set from STUN to " << it->m_remoteAP);
-      InternalSetRemoteAddress(it->m_remoteAP, fromDataChannel);
-      m_candidates[fromDataChannel].clear();
-      break;
+    for (CandidateStates::const_iterator it = m_candidates[fromDataChannel].begin(); ; ++it) {
+      if (it == m_candidates[fromDataChannel].end())
+        return e_IgnorePacket;
+      if (it->m_remoteAP == ap)
+        break;
     }
   }
 
+  PTRACE(4, "RTP\tSession " << m_sessionId << ", " << (fromDataChannel ? "Data" : "Control") << " remote address set from STUN to " << ap);
+  InternalSetRemoteAddress(ap, fromDataChannel);
+  m_candidates[fromDataChannel].clear();
   return e_IgnorePacket;
 }
+
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendICE(bool toDataChannel)
 {
