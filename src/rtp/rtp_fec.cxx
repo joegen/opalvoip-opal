@@ -73,7 +73,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendRedundantFrame(RTP_DataF
   memmove(payload, frame.GetPayloadPtr(), frame.GetPayloadSize());
 
   PTRACE(5, "Session " << m_sessionId << ", redundant packet " << red.GetPayloadType()
-         << " primary block added: " << frame.GetPayloadType() << ", sz=" << frame.GetPayloadSize());
+         << " primary block inserted : " << frame.GetPayloadType() << ", sz=" << frame.GetPayloadSize());
   frame = red;
   return e_ProcessPacket;
 }
@@ -223,8 +223,11 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveRedundantData(RTP_Dat
                                                                          PINDEX size)
 {
   if (payloadType != m_ulpFecPayloadType) {
-    PTRACE(5, "Session " << m_sessionId << ", unknown redundant block: "
-           << payloadType << ", ts=" << timestamp << ", sz=" << size);
+    PTRACE(m_levelRxUnknownFEC, "Session " << m_sessionId << ", unknown redundant block: "
+                                           << payloadType << ", ts=" << timestamp << ", sz=" << size);
+#if PTRACING
+    m_levelRxUnknownFEC = 5;
+#endif
     return e_ProcessPacket;
   }
 
