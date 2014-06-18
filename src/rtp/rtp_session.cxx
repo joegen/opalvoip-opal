@@ -140,6 +140,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   : OpalMediaSession(init)
   , m_endpoint(dynamic_cast<OpalRTPEndPoint &>(init.m_connection.GetEndPoint()))
   , m_singlePortRx(false)
+  , m_singlePortTx(false)
   , m_isAudio(init.m_mediaType == OpalMediaType::Audio())
   , m_timeUnits(m_isAudio ? 8 : 90)
   , m_toolName(PProcess::Current().GetName())
@@ -1980,6 +1981,17 @@ PString OpalRTPSession::GetLocalHostName()
 }
 
 
+void OpalRTPSession::SetSinglePortTx(bool v)
+{
+  m_singlePortTx = v;
+
+  if (m_remotePort[e_Data] != 0)
+    m_remotePort[e_Control] = m_remotePort[e_Data];
+  else if (m_remotePort[e_Control] != 0)
+    m_remotePort[e_Data] = m_remotePort[e_Control];
+}
+
+
 bool OpalRTPSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress)
 {
   PWaitAndSignal m(m_dataMutex);
@@ -2010,31 +2022,18 @@ bool OpalRTPSession::InternalSetRemoteAddress(const PIPSocket::AddressAndPort & 
   allowSequenceChange = packetsReceived != 0;
 
   if (port != 0) {
-    if (isMediaAddress) {
+    if (m_singlePortTx)
+      m_remotePort[e_Control] = m_remotePort[e_Data] = port;
+    else if (isMediaAddress) {
       m_remotePort[e_Data] = port;
-      if ((port&1) == 0 && m_remotePort[e_Control] == 0)
-        m_remotePort[e_Control] = (WORD)(port + 1);
+      if (m_remotePort[e_Control] == 0)
+        m_remotePort[e_Control] = (WORD)(port | 1);
     }
     else {
       m_remotePort[e_Control] = port;
-      if ((port&1) == 1 && m_remotePort[e_Data] == 0)
-        m_remotePort[e_Data] = (WORD)(port - 1);
+      if (m_remotePort[e_Data] == 0)
+        m_remotePort[e_Data] = (WORD)(port & 0xfffe);
     }
-  }
-
-  if (m_socket[isMediaAddress] != NULL)
-    m_socket[isMediaAddress]->SetSendAddress(ap);
-  if (m_socket[!isMediaAddress] != NULL)
-    m_socket[!isMediaAddress]->SetSendAddress(m_remoteAddress, m_remotePort[!isMediaAddress]);
-
-  if (m_localHasRestrictedNAT) {
-    PTRACE(2, "Session " << m_sessionId << ", sending empty datagrams to open local restricted NAT");
-    // If have Port Restricted NAT on local host then send a datagram
-    // to remote to open up the port in the firewall for return data.
-    static const BYTE dummy[e_Data] = { 0 };
-    WriteRawPDU(dummy, sizeof(dummy), true);
-    if (m_socket[e_Control] != NULL)
-      WriteRawPDU(dummy, sizeof(dummy), false);
   }
 
 #if PTRACING
@@ -2057,6 +2056,8 @@ bool OpalRTPSession::InternalSetRemoteAddress(const PIPSocket::AddressAndPort & 
       trace << m_localAddress << ':' << m_localPort[e_Data];
       if (!IsSinglePortRx())
         trace << '-' << m_localPort[e_Control];
+      if (m_localHasRestrictedNAT)
+        trace << ", restricted NAT";
     }
     else
       trace << "not open";
@@ -2064,6 +2065,19 @@ bool OpalRTPSession::InternalSetRemoteAddress(const PIPSocket::AddressAndPort & 
     trace << PTrace::End;
   }
 #endif
+
+  for (int i = 0; i < 2; ++i) {
+    if (m_socket[i] != NULL) {
+      m_socket[i]->SetSendAddress(m_remoteAddress, m_remotePort[i]);
+
+      if (m_localHasRestrictedNAT) {
+        // If have Port Restricted NAT on local host then send a datagram
+        // to remote to open up the port in the firewall for return data.
+        static const BYTE dummy[e_Data] = { 0 };
+        m_socket[i]->Write(dummy, sizeof(dummy));
+      }
+    }
+  }
 
   return true;
 }

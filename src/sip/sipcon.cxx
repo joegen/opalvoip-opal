@@ -678,19 +678,11 @@ OpalMediaSession * SIPConnection::SetUpMediaSession(const unsigned sessionId,
 
   // see if remote socket information has changed
   OpalTransportAddress oldRemoteMediaAddress = session->GetRemoteAddress();
-  bool firstTime = oldRemoteMediaAddress.IsEmpty();
-  remoteChanged = !firstTime && oldRemoteMediaAddress != remoteMediaAddress;
+  remoteChanged = !oldRemoteMediaAddress.IsEmpty() && oldRemoteMediaAddress != remoteMediaAddress;
 
   if (remoteChanged) {
     PTRACE(3, "SIP\tRemote changed IP address: "<< oldRemoteMediaAddress << "!=" << remoteMediaAddress);
     ((OpalRTPEndPoint &)endpoint).CheckEndLocalRTP(*this, rtpSession);
-  }
-
-  if (firstTime || remoteChanged) {
-    if (!session->SetRemoteAddress(remoteMediaAddress)) {
-      ReleaseMediaSession(sessionId);
-      return NULL;
-    }
   }
 
   if (mediaDescription.ToSession(session) && session->Open(GetInterface(), remoteMediaAddress, true)) {

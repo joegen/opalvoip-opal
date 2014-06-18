@@ -830,9 +830,6 @@ bool SDPMediaDescription::FromSession(const OpalMediaSession * session,
 
 bool SDPMediaDescription::ToSession(OpalMediaSession * session) const
 {
-  if (!m_controlAddress.IsEmpty())
-    session->SetRemoteAddress(m_controlAddress, false);
-
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
 
   if (rtpSession != NULL) {
@@ -840,6 +837,7 @@ bool SDPMediaDescription::ToSession(OpalMediaSession * session) const
     if (m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX) || m_controlAddress == m_mediaAddress) {
       PTRACE(3, "SIP\tSetting single port mode for answer RTP session " << session->GetSessionID() << " for media type " << m_mediaType);
       rtpSession->SetSinglePortRx();
+      rtpSession->SetSinglePortTx();
     }
 
 #if OPAL_ICE
@@ -850,6 +848,10 @@ bool SDPMediaDescription::ToSession(OpalMediaSession * session) const
     }
 #endif //OPAL_ICE
   }
+
+  // Must be done after ICE setting above
+  session->SetRemoteAddress(m_mediaAddress, true);
+  session->SetRemoteAddress(m_controlAddress, false);
 
   return true;
 }
