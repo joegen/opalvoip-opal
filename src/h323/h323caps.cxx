@@ -1768,7 +1768,7 @@ PObject * H323H239VideoCapability::Clone() const
 
 PString H323H239VideoCapability::GetFormatName() const
 {
-  return m_mediaFormat.GetName() + "+H.239";
+  return PSTRSTRM(m_mediaFormat.GetName() << '+' << GetH239VideoMediaFormat());
 }
 
 
