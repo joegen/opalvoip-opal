@@ -3332,7 +3332,7 @@ bool H323Connection::OnH239Message(unsigned subMessage, const H245_ArrayOf_Gener
 
 bool H323Connection::OnH239FlowControlRequest(unsigned logicalChannel, unsigned PTRACE_PARAM(bitRate))
 {
-  PTRACE(3, "H239\tOnH239FlowControlRequest(" << logicalChannel << ',' << bitRate << ") - sending acknowledge");
+  PTRACE(3, "H239\tOnH239FlowControlRequest: chan=" << logicalChannel << ", bitrate=" << bitRate << " - sending acknowledge");
 
   H323ControlPDU pdu;
   H245_ArrayOf_GenericParameter & params = pdu.BuildGenericResponse(H239MessageOID, 2).m_messageContent;
@@ -3345,7 +3345,7 @@ bool H323Connection::OnH239FlowControlRequest(unsigned logicalChannel, unsigned 
 
 bool H323Connection::OnH239FlowControlResponse(unsigned PTRACE_PARAM(logicalChannel), bool PTRACE_PARAM(rejected))
 {
-  PTRACE(3, "H239\tOnH239FlowControlResponse(" << logicalChannel << ',' << rejected << ')');
+  PTRACE(3, "H239\tOnH239FlowControlResponse: chan=" << logicalChannel << ", " << (rejected ? "rejected" : "acknowledged"));
 
   return true;
 }
@@ -3353,7 +3353,8 @@ bool H323Connection::OnH239FlowControlResponse(unsigned PTRACE_PARAM(logicalChan
 
 bool H323Connection::OnH239PresentationRequest(unsigned logicalChannel, unsigned symmetryBreaking, unsigned terminalLabel)
 {
-  PTRACE(3, "H239\tOnH239PresentationRequest(" << logicalChannel << ',' << symmetryBreaking << ',' << terminalLabel << ") - sending acknowledge");
+  PTRACE(3, "H239\tOnH239PresentationRequest: chan=" << logicalChannel
+				 << ", sym=" << symmetryBreaking << ", label=" << terminalLabel << " - sending acknowledge");
 
   bool ack;
   if (m_h239SymmetryBreaking != 0) {
@@ -3400,7 +3401,8 @@ bool H323Connection::SendH239PresentationRequest(unsigned logicalChannel, unsign
     return false;
   }
 
-  PTRACE(3, "H239\tSendH239PresentationRequest(" << logicalChannel << ',' << symmetryBreaking << ',' << terminalLabel << ')');
+  PTRACE(3, "H239\tSendH239PresentationRequest: chan=" << logicalChannel
+		     << ", sym=" << symmetryBreaking << ", label=" << terminalLabel << ')');
 
   H323ControlPDU pdu;
   H245_ArrayOf_GenericParameter & params = pdu.BuildGenericRequest(H239MessageOID, 3).m_messageContent;
@@ -3415,7 +3417,8 @@ bool H323Connection::SendH239PresentationRequest(unsigned logicalChannel, unsign
 
 bool H323Connection::OnH239PresentationResponse(unsigned logicalChannel, unsigned terminalLabel, bool rejected)
 {
-  PTRACE(3, "H239\tOnH239PresentationResponse(" << logicalChannel << ',' << terminalLabel << ',' << rejected << ')');
+  PTRACE(3, "H239\tOnH239PresentationResponse: chan=" << logicalChannel
+				 << ", label=" << terminalLabel << ", " << (rejected ? "rejected" : "acknowledged"));
 
   // Did we request it?
   if (m_h239SymmetryBreaking == 0)
@@ -3431,7 +3434,7 @@ bool H323Connection::OnH239PresentationResponse(unsigned logicalChannel, unsigne
 
 bool H323Connection::OnH239PresentationRelease(unsigned PTRACE_PARAM(logicalChannel), unsigned PTRACE_PARAM(terminalLabel))
 {
-  PTRACE(3, "H239\tOnH239PresentationRelease(" << logicalChannel << ',' << terminalLabel << ')');
+  PTRACE(3, "H239\tOnH239PresentationRelease: chan=" << logicalChannel << ", label=" << terminalLabel);
   return true;
 }
 
@@ -3443,7 +3446,7 @@ bool H323Connection::SendH239PresentationRelease(unsigned logicalChannel, unsign
     return false;
   }
 
-  PTRACE(3, "H239\tSendH239PresentationRelease(" << logicalChannel << ',' << terminalLabel << ')');
+  PTRACE(3, "H239\tSendH239PresentationRelease: chan=" << logicalChannel << ", label=" << terminalLabel);
 
   H323ControlPDU pdu;
   H245_ArrayOf_GenericParameter & params = pdu.BuildGenericCommand(H239MessageOID, 5).m_messageContent;
@@ -3457,7 +3460,7 @@ bool H323Connection::SendH239PresentationRelease(unsigned logicalChannel, unsign
 
 bool H323Connection::OnH239PresentationIndication(unsigned PTRACE_PARAM(logicalChannel), unsigned PTRACE_PARAM(terminalLabel))
 {
-  PTRACE(3, "H239\tOnH239PresentationIndication(" << logicalChannel << ',' << terminalLabel << ')');
+  PTRACE(3, "H239\tOnH239PresentationIndication: chan=" << logicalChannel << ", label=" << terminalLabel);
   return true;
 }
 
