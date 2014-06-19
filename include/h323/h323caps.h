@@ -1650,8 +1650,7 @@ class H235SecurityCapability : public H323Capability
     /**Create a new Extended Video capability.
       */
     H235SecurityCapability(
-      const OpalMediaFormat & mediaFormat,
-      unsigned mediaCapabilityNumber
+      const H323Capability & mediaCapability
     );
   //@}
 
@@ -1668,6 +1667,10 @@ class H235SecurityCapability : public H323Capability
        main type of the capability.
      */
     virtual unsigned  GetSubType()  const;
+
+    /**Get the name of the media data format this class represents.
+     */
+    virtual PString GetFormatName() const;
 
     /**This function is called whenever and outgoing TerminalCapabilitySet
        PDU is being constructed for the control channel. It allows the
@@ -1736,6 +1739,7 @@ class H235SecurityCapability : public H323Capability
 
   protected:
     unsigned                   m_mediaCapabilityNumber;
+    PString                    m_mediaCapabilityName;
     OpalMediaCryptoSuite::List m_cryptoSuites;
 };
 
@@ -1756,8 +1760,7 @@ class H235SecurityAlgorithmCapability : public H235SecurityCapability
     /**Create a new Extended Video capability.
       */
     H235SecurityAlgorithmCapability(
-      const OpalMediaFormat & mediaFormat,
-      unsigned mediaCapabilityNumber
+      const H323Capability & mediaCapability
     );
   //@}
 
@@ -1770,10 +1773,6 @@ class H235SecurityAlgorithmCapability : public H235SecurityCapability
 
   /**@name Overrides from class H323Capability */
   //@{
-    /**Get the name of the media data format this class represents.
-     */
-    virtual PString GetFormatName() const;
-
     /**Compare the PDU part of the capability.
       */
     virtual PBoolean IsMatch(
@@ -1807,8 +1806,7 @@ class H235SecurityGenericCapability : public H235SecurityCapability,
     /**Create a new Extended Video capability.
       */
     H235SecurityGenericCapability(
-      const OpalMediaFormat & mediaFormat,
-      unsigned mediaCapabilityNumber
+      const H323Capability & mediaCapability
     );
   //@}
 
@@ -1821,10 +1819,6 @@ class H235SecurityGenericCapability : public H235SecurityCapability,
 
   /**@name Overrides from class H323Capability */
   //@{
-    /**Get the name of the media data format this class represents.
-     */
-    virtual PString GetFormatName() const;
-
     /**Compare the PDU part of the capability.
       */
     virtual PBoolean IsMatch(
