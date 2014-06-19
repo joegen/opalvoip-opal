@@ -567,7 +567,7 @@ class H263_RFC2190_Encoder : public H263_Base_Encoder
 
     bool Construct()
     {
-      if (!InitEncoder(CODEC_ID_H263))
+      if (!InitEncoder(AV_CODEC_ID_H263))
         return false;
 
     #if LIBAVCODEC_RTP_MODE
@@ -610,7 +610,7 @@ class H263_RFC2429_Encoder : public H263_Base_Encoder
 
     bool Construct()
     {
-      return InitEncoder(CODEC_ID_H263P);
+      return InitEncoder(AV_CODEC_ID_H263P);
     }
 };
 
@@ -633,7 +633,7 @@ class H263_Base_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCode
     bool Construct()
     {
       m_fullFrame->Reset();
-      return InitDecoder(CODEC_ID_H263) && OpenCodec();
+      return InitDecoder(AV_CODEC_ID_H263) && OpenCodec();
     }
 
 
