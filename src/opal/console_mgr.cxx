@@ -1839,7 +1839,7 @@ static bool SetMediaFormatOption(ostream & output, bool verbose, const PString &
     return false;
   }
 
-  if (!OpalMediaFormat::SetRegisteredMediaFormat(format)) {
+  if (!OpalMediaFormat::SetRegisteredMediaFormat(mediaFormat)) {
     output << "Could not set registered media format \"" << format << '"' << endl;
     return false;
   }
