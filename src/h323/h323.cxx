@@ -2595,7 +2595,7 @@ PBoolean H323Connection::CreateOutgoingControlChannel(const PASN_Sequence & encl
   if (m_controlChannel != NULL)
     return true;
 
-  OpalTransportAddress signallingAddress = m_signallingChannel->GetLocalAddress();
+  PIPAddress localInterface(m_signallingChannel->GetInterface());
 #if OPAL_PTLIB_SSL
   if (enclosingPDU.HasOptionalField(h245SecurityField)) {
     if (h245Security.GetTag() != H225_H245Security::e_tls) {
@@ -2611,12 +2611,12 @@ PBoolean H323Connection::CreateOutgoingControlChannel(const PASN_Sequence & encl
       return false;
     }
 
-    signallingAddress.Splice(OpalTransportAddress::TlsPrefix(), 0, signallingAddress.Find('$'));
+    m_controlChannel = new OpalTransportTLS(endpoint, localInterface);
   }
+  else
 #endif
+    m_controlChannel = new OpalTransportTCP(endpoint, localInterface);
 
-  // Check that it is an IP address, all we support at the moment
-  m_controlChannel = signallingAddress.CreateTransport(endpoint, OpalTransportAddress::HostOnly);
   if (m_controlChannel == NULL) {
     PTRACE(1, "H225\tConnect of H245 failed: Unsupported transport");
     return false;
