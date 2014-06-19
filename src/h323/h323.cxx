@@ -919,16 +919,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
       localDestinationAddress = '*';
   }
 
-  // Make sure we clamp our bandwidth to whatever they said
-  Q931::InformationTransferCapability bearerCap;
-  unsigned transferRate;
-  if (setupPDU->GetQ931().GetBearerCapabilities(bearerCap, transferRate)) {
-    OpalBandwidth newBandwidth = transferRate*64000;
-    if (GetBandwidthAvailable(OpalBandwidth::Rx) > newBandwidth)
-      SetBandwidthAvailable(OpalBandwidth::Rx, newBandwidth);
-    if (GetBandwidthAvailable(OpalBandwidth::Tx) > newBandwidth)
-      SetBandwidthAvailable(OpalBandwidth::Tx, newBandwidth);
-  }
+  SetIncomingBearerCapabilities(*setupPDU);
 
 #if OPAL_H460
   H225_FeatureSet fs;
@@ -1391,6 +1382,7 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   SetDiffieHellman(connect);
 #endif
   SetMaintainConnectionFlag(connect);
+  SetIncomingBearerCapabilities(pdu);
 
 #if OPAL_H460
   if (connect.HasOptionalField(H225_Connect_UUIE::e_featureSet))
@@ -2002,7 +1994,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
       m_fastStartChannels.RemoveAll();
   }
 
-  SetBearerCapabilities(setupPDU);
+  SetOutgoingBearerCapabilities(setupPDU);
 
 #if OPAL_H235_6
   {
@@ -2068,7 +2060,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
 }
 
 
-void H323Connection::SetBearerCapabilities(H323SignalPDU & pdu) const
+void H323Connection::SetOutgoingBearerCapabilities(H323SignalPDU & pdu) const
 {
   PString bearerCaps = m_stringOptions(OPAL_OPT_Q931_BEARER_CAPS);
 
@@ -2091,9 +2083,26 @@ void H323Connection::SetBearerCapabilities(H323SignalPDU & pdu) const
     else if (transferRate == 0)
       transferRate = 1;
     bearerCaps.sprintf(",%u", transferRate);
+    PTRACE(4, "H225\tSet bandwidth in Q.931 caps: " << transferRate << " bearers");
   }
 
   pdu.GetQ931().SetBearerCapabilities(bearerCaps);
+}
+
+
+void H323Connection::SetIncomingBearerCapabilities(const H323SignalPDU & pdu)
+{
+  // Make sure we clamp our bandwidth to whatever they said
+  Q931::InformationTransferCapability bearerCap;
+  unsigned transferRate;
+  if (pdu.GetQ931().GetBearerCapabilities(bearerCap, transferRate)) {
+    PTRACE(4, "H225\tSet bandwidth from Q.931 caps: " << transferRate << " bearers");
+    OpalBandwidth newBandwidth = transferRate*64000;
+    if (GetBandwidthAvailable(OpalBandwidth::Rx) > newBandwidth)
+      SetBandwidthAvailable(OpalBandwidth::Rx, newBandwidth);
+    if (GetBandwidthAvailable(OpalBandwidth::Tx) > newBandwidth)
+      SetBandwidthAvailable(OpalBandwidth::Tx, newBandwidth);
+  }
 }
 
 
@@ -2233,7 +2242,7 @@ PBoolean H323Connection::SetConnected()
   OnSetLocalCapabilities();
 
   // Must be after OnSetLocalCapabilities
-  SetBearerCapabilities(*connectPDU);
+  SetOutgoingBearerCapabilities(*connectPDU);
 
   H225_Connect_UUIE & connect = connectPDU->m_h323_uu_pdu.m_h323_message_body;
   connect.m_maintainConnection = m_maintainConnection;
