@@ -1276,11 +1276,22 @@ PBoolean OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
 
   mediaFormat.AdjustVideoArgs(args);
 
-  PINDEX start = args.deviceName.Find("TITLE=\"");
-  if (start != P_MAX_INDEX) {
-    start += 7;
-    static PConstString const LocalPreview("Local Preview");
-    args.deviceName.Splice(preview ? LocalPreview : connection.GetRemotePartyName(), start, args.deviceName.Find('"', start)-start);
+  if (preview) {
+    static PConstString const LocalPreview("TITLE=\"Local Preview\"");
+    args.deviceName.Replace("TITLE=\"Video Output\"", LocalPreview);
+  }
+  else {
+    PINDEX start = args.deviceName.Find("TITLE=\"");
+    if (start != P_MAX_INDEX) {
+      start += 7;
+      PINDEX end = args.deviceName.Find('"', start + 7) - 1;
+      if (start == end)
+        args.deviceName.Splice(connection.GetRemotePartyName(), start, 0);
+      else if (args.deviceName(start, end) == "Video Output")
+        args.deviceName.Splice(connection.GetRemotePartyName(), start, 13);
+      else if ((start = args.deviceName.Find("%REMOTE%")) < end)
+        args.deviceName.Splice(connection.GetRemotePartyName(), start, 8);
+    }
   }
 
   return CreateVideoOutputDevice(connection, args, device, autoDelete);
