@@ -163,7 +163,7 @@ class Q931 : public PObject
       unsigned & transferRate,          ///<  Number of 64k B channels
       unsigned * codingStandard = NULL, ///<  0 = ITU-T standardized coding
       unsigned * userInfoLayer1 = NULL  ///<  5 = Recommendations H.221 and H.242
-    );
+    ) const;
 
     enum CauseValues {
       UnknownCauseIE               =  0,
