@@ -1925,6 +1925,7 @@ bool H235SecurityCapability::PostTCS(const H323Capabilities & capabilities)
     return false;
 
   m_mediaFormat = cap->GetMediaFormat();
+  m_mediaCapabilityName.Splice(cap->GetFormatName(), 0, m_mediaCapabilityName.FindLast('+'));
   return true;
 }
 
