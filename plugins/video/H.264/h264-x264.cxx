@@ -798,7 +798,7 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCodec
 
     virtual bool Construct()
     {
-      if (!InitDecoder(CODEC_ID_H264))
+      if (!InitDecoder(AV_CODEC_ID_H264))
         return false;
 
 #ifdef FF_IDCT_H264

@@ -360,7 +360,7 @@ class MPEG4_Encoder : public PluginVideoEncoder<MY_CODEC>, public FFMPEGCodec
 
     virtual bool Construct()
     {
-      return InitEncoder(CODEC_ID_MPEG4);
+      return InitEncoder(AV_CODEC_ID_MPEG4);
     }
 
 
@@ -461,7 +461,7 @@ class MPEG4_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCodec
 
     bool Construct()
     {
-      if (!InitDecoder(CODEC_ID_MPEG4))
+      if (!InitDecoder(AV_CODEC_ID_MPEG4))
         return false;
 
       m_context->flags |= CODEC_FLAG_4MV;
