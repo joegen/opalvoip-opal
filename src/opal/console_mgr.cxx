@@ -2572,7 +2572,8 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
 #if PTRACING
   m_cli->SetCommand("trace", PCREATE_NOTIFIER(CmdTrace),
                     "Set trace level (1..6) and filename",
-                    "<n> [ <filename> ]");
+                    "[ --options ] <n> [ <filename> ]",
+                    "O-option: Specify trace option(s),\r" PTRACE_ARGLIST_OPT_HELP);
 #endif
 
 #if OPAL_STATISTICS
@@ -2822,12 +2823,10 @@ void OpalManagerCLI::CmdNatAddress(PCLI::Arguments & args, P_INT_PTR)
 #if PTRACING
 void OpalManagerCLI::CmdTrace(PCLI::Arguments & args, P_INT_PTR)
 {
-  if (args.GetCount() == 0)
-    args.WriteUsage();
-  else
-    PTrace::Initialise(args[0].AsUnsigned(),
-                       args.GetCount() > 1 ? (const char *)args[1] : NULL,
-                       PTrace::GetOptions());
+  if (args.GetCount() > 0)
+    PTrace::Initialise(args, PTrace::GetOptions(), NULL, "1", "option", NULL, "0");
+
+  PTrace::PrintInfo(args.GetContext());
 }
 #endif // PTRACING
 
