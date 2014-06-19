@@ -385,6 +385,7 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm
   else if (endpoint.GetGatekeeperRasRedirect()) {
     PTRACE(3, "RAS\tRemote gatekeeper redirected to " << locatedAddress << " from " << *transport);
     discoveryComplete = false; // Need to do GRQ again
+    ReRegisterNow();
   }
   else {
     PTRACE(3, "RAS\tRemote gatekeeper RAS address (" << locatedAddress << ") different: " << *transport);
