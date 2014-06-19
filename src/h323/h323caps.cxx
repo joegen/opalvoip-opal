@@ -327,7 +327,7 @@ const OpalMediaCryptoSuite * H323Capability::GetCryptoSuite() const
 void H323Capability::SetCryptoSuite(const OpalMediaCryptoSuite & cryptoSuite)
 {
   delete m_cryptoCapability;
-  m_cryptoCapability = cryptoSuite.CreateCapability(GetMediaFormat(), GetCapabilityNumber());
+  m_cryptoCapability = cryptoSuite.CreateCapability(*this);
   PAssertNULL(m_cryptoCapability);
 
   OpalMediaCryptoSuite::List cryptoSuites;
@@ -1768,7 +1768,7 @@ PObject * H323H239VideoCapability::Clone() const
 
 PString H323H239VideoCapability::GetFormatName() const
 {
-  return PSTRSTRM(m_mediaFormat << '+' << GetH239VideoMediaFormat());
+  return m_mediaFormat.GetName() + "+H.239";
 }
 
 
@@ -1825,10 +1825,12 @@ PString H323H239ControlCapability::GetFormatName() const
 
 OPAL_INSTANTIATE_SIMPLE_MEDIATYPE(OpalH235MediaType, "H.235");
 
-H235SecurityCapability::H235SecurityCapability(const OpalMediaFormat & mediaFormat, unsigned mediaCapabilityNumber)
-  : m_mediaCapabilityNumber(mediaCapabilityNumber)
+H235SecurityCapability::H235SecurityCapability(const H323Capability & mediaCapability)
+  : m_mediaCapabilityNumber(mediaCapability.GetCapabilityNumber())
+  , m_mediaCapabilityName(mediaCapability.GetFormatName())
 {
-  m_mediaFormat = mediaFormat;
+  m_mediaCapabilityName += '+';
+  m_mediaFormat = mediaCapability.GetMediaFormat();
 }
 
 
@@ -1841,6 +1843,12 @@ H323Capability::MainTypes H235SecurityCapability::GetMainType() const
 unsigned H235SecurityCapability::GetSubType()  const
 {
   return 0;
+}
+
+
+PString H235SecurityCapability::GetFormatName() const
+{
+  return m_mediaCapabilityName;
 }
 
 
@@ -1937,9 +1945,8 @@ void H235SecurityCapability::AddAllCapabilities(H323Capabilities & capabilities,
       PINDEX innerSize = set[outer][middle].GetSize();
       for (PINDEX inner = 0; inner < innerSize; inner++) {
         H323Capability & capability = set[outer][middle][inner];
-        OpalMediaFormat mediaFormat = capability.GetMediaFormat();
-        if (mediaFormat.GetMediaType()->GetMediaSessionType().Find("RTP") != P_MAX_INDEX) {
-          H235SecurityCapability * cap = cryptoSuites.front().CreateCapability(mediaFormat, capability.GetCapabilityNumber());
+        if (capability.GetMediaFormat().GetMediaType()->GetMediaSessionType().Find("RTP") != P_MAX_INDEX) {
+          H235SecurityCapability * cap = cryptoSuites.front().CreateCapability(capability);
           cap->SetCryptoSuites(cryptoSuites);
           capabilities.SetCapability(outer, middle, cap);
         }
@@ -1955,22 +1962,17 @@ void H235SecurityCapability::AddAllCapabilities(H323Capabilities & capabilities,
 
 #if OPAL_H235_6
 
-H235SecurityAlgorithmCapability::H235SecurityAlgorithmCapability(const OpalMediaFormat & mediaFormat, unsigned mediaCapabilityNumber)
-  : H235SecurityCapability(mediaFormat, mediaCapabilityNumber)
+H235SecurityAlgorithmCapability::H235SecurityAlgorithmCapability(const H323Capability & mediaCapability)
+  : H235SecurityCapability(mediaCapability)
 {
+  static OpalMediaFormat h2356("H.235.6", OpalH235MediaType::Name(), RTP_DataFrame::MaxPayloadType, NULL, false, 0, 0, 0, 0);
+  m_mediaCapabilityName += h2356.GetName();
 }
 
 
 PObject * H235SecurityAlgorithmCapability::Clone() const
 {
   return new H235SecurityAlgorithmCapability(*this);
-}
-
-
-PString H235SecurityAlgorithmCapability::GetFormatName() const
-{
-  static OpalMediaFormat h2356("H.235.6", OpalH235MediaType::Name(), RTP_DataFrame::MaxPayloadType, NULL, false, 0, 0, 0, 0);
-  return PSTRSTRM(m_mediaFormat << '+' << h2356);
 }
 
 
@@ -2202,23 +2204,18 @@ PBoolean H235SecurityAlgorithmCapability::IsMatch(const PASN_Object & subTypePDU
 
 #if OPAL_H235_8
 
-H235SecurityGenericCapability::H235SecurityGenericCapability(const OpalMediaFormat & mediaFormat, unsigned mediaCapabilityNumber)
-  : H235SecurityCapability(mediaFormat, mediaCapabilityNumber)
+H235SecurityGenericCapability::H235SecurityGenericCapability(const H323Capability & mediaCapability)
+  : H235SecurityCapability(mediaCapability)
   , H323GenericCapabilityInfo("0.0.8.235.0.4.90", 0, true)
 {
+  static OpalMediaFormat h2358("H.235.8", OpalH235MediaType::Name(), RTP_DataFrame::MaxPayloadType, NULL, false, 0, 0, 0, 0);
+  m_mediaCapabilityName += h2358.GetName();
 }
 
 
 PObject * H235SecurityGenericCapability::Clone() const
 {
   return new H235SecurityGenericCapability(*this);
-}
-
-
-PString H235SecurityGenericCapability::GetFormatName() const
-{
-  static OpalMediaFormat h2358("H.235.8", OpalH235MediaType::Name(), RTP_DataFrame::MaxPayloadType, NULL, false, 0, 0, 0, 0);
-  return PSTRSTRM(m_mediaFormat << '+' << h2358);
 }
 
 
