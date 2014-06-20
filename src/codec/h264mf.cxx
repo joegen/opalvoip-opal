@@ -187,13 +187,6 @@ extern const char H264_Identifer[] = OpalPluginCodec_Identifer_H264_Generic;
 const OpalVideoFormat & GetOpalH264_MODE0()
 {
   static OpalVideoFormat const format(new OpalH264Format(H264_Mode0_FormatName, OpalH264Format::Aligned));
-
-#if OPAL_H323
-  static H323CapabilityFactory::Worker<
-    H323GenericVideoCapabilityTemplate<H264_Identifer, GetOpalH264_MODE0>
-  > capability(H264_Mode0_FormatName, true);
-#endif // OPAL_H323
-
   return format;
 }
 
