@@ -66,7 +66,12 @@ extern "C" {
 #endif
 
 #if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(53, 35, 0)
-  typedef CodecID AVCodecID;
+  typedef enum AVCodecID {
+		AV_CODEC_ID_H263  = CODEC_ID_H263,
+		AV_CODEC_ID_H263P = CODEC_ID_H263P,
+		AV_CODEC_ID_H264  = CODEC_ID_H264,
+		AV_CODEC_ID_MPEG4 = CODEC_ID_MPEG4
+	} AVCodecID;
 #endif
 
 
