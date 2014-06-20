@@ -171,12 +171,14 @@ OpalMediaFormatList OpalRTPEndPoint::GetMediaFormats() const
 {
   OpalMediaFormatList list = manager.GetCommonMediaFormats(true, false);
 #if OPAL_RTP_FEC
-  list += OpalRedundantAudio;
-  list += OpalUlpFecAudio;
+  if (!list.IsEmpty()) {
+    list += OpalRedundantAudio;
+    list += OpalUlpFecAudio;
  #if OPAL_VIDEO
-  list += OpalRedundantVideo;
-  list += OpalUlpFecVideo;
+    list += OpalRedundantVideo;
+    list += OpalUlpFecVideo;
  #endif
+  }
 #endif
   return list;
 }
