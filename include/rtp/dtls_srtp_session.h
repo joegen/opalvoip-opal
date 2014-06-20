@@ -76,7 +76,7 @@ class OpalDTLSSRTPSession : public OpalSRTPSession
     const PSSLCertificateFingerprint& GetRemoteFingerprint() const;
 
   protected:
-    virtual bool ExecuteHandshake(bool dataChannel);
+    virtual SendReceiveStatus ExecuteHandshake(bool dataChannel);
     PDECLARE_SSLVerifyNotifier(OpalDTLSSRTPSession, OnVerify);
 
 

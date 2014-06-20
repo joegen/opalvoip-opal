@@ -569,27 +569,28 @@ ostream & operator<<(ostream & o, RTP_DataFrame::PayloadTypes t)
 
 RTP_ControlFrame::RTP_ControlFrame(PINDEX sz)
   : PBYTEArray(sz)
-  , compoundOffset(0)
-  , payloadSize(0)
+  , m_packetSize(0)
+  , m_compoundOffset(0)
+  , m_payloadSize(0)
 {
 }
 
 
 RTP_ControlFrame::RTP_ControlFrame(const BYTE * data, PINDEX size, bool dynamic)
   : PBYTEArray(data, size, dynamic)
-  , compoundOffset(0)
-  , payloadSize(0)
+  , m_packetSize(0)
+  , m_compoundOffset(0)
+  , m_payloadSize(0)
 {
 }
 
 
 bool RTP_ControlFrame::IsValid() const
 {
-  PINDEX size = GetSize();
-  if (size < compoundOffset + 4)
+  if (m_packetSize < m_compoundOffset + 4)
     return false;
 
-  if (size < compoundOffset + GetPayloadSize() + 4)
+  if (m_packetSize < m_compoundOffset + GetPayloadSize() + 4)
     return false;
 
   unsigned type = GetPayloadType();
@@ -599,10 +600,11 @@ bool RTP_ControlFrame::IsValid() const
 
 bool RTP_ControlFrame::SetPacketSize(PINDEX size)
 {
-  compoundOffset = 0;
-  payloadSize = 0;
+  m_compoundOffset = 0;
+  m_payloadSize = 0;
 
-  SetSize(size);
+  m_packetSize = size;
+  SetMinSize(size);
 
   return IsValid();
 }
@@ -611,8 +613,8 @@ bool RTP_ControlFrame::SetPacketSize(PINDEX size)
 void RTP_ControlFrame::SetCount(unsigned count)
 {
   PAssert(count < 32, PInvalidParameter);
-  theArray[compoundOffset] &= 0xe0;
-  theArray[compoundOffset] |= count;
+  theArray[m_compoundOffset] &= 0xe0;
+  theArray[m_compoundOffset] |= count;
 }
 
 
@@ -620,95 +622,94 @@ void RTP_ControlFrame::SetFbType(unsigned type, PINDEX fciSize)
 {
   PAssert(type < 32, PInvalidParameter);
   SetPayloadSize(fciSize);
-  theArray[compoundOffset] &= 0xe0;
-  theArray[compoundOffset] |= type;
+  theArray[m_compoundOffset] &= 0xe0;
+  theArray[m_compoundOffset] |= type;
 }
 
 
 void RTP_ControlFrame::SetPayloadType(unsigned t)
 {
   PAssert(t < 256, PInvalidParameter);
-  theArray[compoundOffset+1] = (BYTE)t;
+  theArray[m_compoundOffset+1] = (BYTE)t;
 }
 
-PINDEX RTP_ControlFrame::GetCompoundSize() const 
-{ 
-  // transmitted length is the offset of the last compound block
-  // plus the compound length of the last block
-  return compoundOffset + *(PUInt16b *)&theArray[compoundOffset+2]*4;
-}
 
-void RTP_ControlFrame::SetPayloadSize(PINDEX sz)
+bool RTP_ControlFrame::SetPayloadSize(PINDEX sz)
 {
-  payloadSize = sz;
+  m_payloadSize = sz;
 
   // compound size is in words, rounded up to nearest word
-  PINDEX compoundSize = (payloadSize + 3) & ~3;
-  PAssert(compoundSize <= 0xffff, PInvalidParameter);
+  WORD compoundDWORDs = (WORD)((m_payloadSize + 3)/4);
+  PAssert(compoundDWORDs <= 0x3fff, PInvalidParameter);
+
+  // transmitted length is the offset of the last compound block
+  // plus the compound length of the last block
+  m_packetSize = m_compoundOffset + (compoundDWORDs+1)*4;
 
   // make sure buffer is big enough for previous packets plus packet header plus payload
-  SetMinSize(compoundOffset + 4 + 4*(compoundSize));
+  if (!SetMinSize(m_packetSize))
+    return false;
 
   // put the new compound size into the packet (always at offset 2)
-  *(PUInt16b *)&theArray[compoundOffset+2] = (WORD)(compoundSize / 4);
+  *(PUInt16b *)&theArray[m_compoundOffset+2] = compoundDWORDs;
+  return true;
 }
+
 
 BYTE * RTP_ControlFrame::GetPayloadPtr() const 
 { 
   // payload for current packet is always one DWORD after the current compound start
-  if ((GetPayloadSize() == 0) || ((compoundOffset + 4) >= GetSize()))
+  if ((GetPayloadSize() == 0) || ((m_compoundOffset + 4) >= m_packetSize))
     return NULL;
-  return (BYTE *)(theArray + compoundOffset + 4); 
+  return (BYTE *)(theArray + m_compoundOffset + 4); 
 }
+
 
 bool RTP_ControlFrame::ReadNextPacket()
 {
   // skip over current packet
-  compoundOffset += GetPayloadSize() + 4;
+  m_compoundOffset += GetPayloadSize() + 4;
 
   // see if another packet is feasible
-  if (compoundOffset + 4 > GetSize())
+  if (m_compoundOffset + 4 > m_packetSize)
     return false;
 
   // check if payload size for new packet is legal
-  return compoundOffset + GetPayloadSize() + 4 <= GetSize();
+  return m_compoundOffset + GetPayloadSize() + 4 <= m_packetSize;
 }
 
 
 bool RTP_ControlFrame::StartNewPacket()
 {
   // allocate storage for new packet header
-  if (!SetMinSize(compoundOffset + 4))
+  if (!SetMinSize(m_compoundOffset + 4))
     return false;
 
-  theArray[compoundOffset] = '\x80'; // Set version 2
-  theArray[compoundOffset+1] = 0;    // Set payload type to illegal
-  theArray[compoundOffset+2] = 0;    // Set payload size to zero
-  theArray[compoundOffset+3] = 0;
+  theArray[m_compoundOffset] = '\x80'; // Set version 2
+  theArray[m_compoundOffset+1] = 0;    // Set payload type to illegal
+  theArray[m_compoundOffset+2] = 0;    // Set payload size to zero
+  theArray[m_compoundOffset+3] = 0;
 
   // payload is now zero bytes
-  payloadSize = 0;
-  SetPayloadSize(payloadSize);
-
-  return true;
+  return SetPayloadSize(0);
 }
 
 void RTP_ControlFrame::EndPacket()
 {
   // all packets must align to DWORD boundaries
-  while ((payloadSize & 3) != 0) {
-    theArray[compoundOffset + 4 + payloadSize] = 0;
-    ++payloadSize;
+  while ((m_payloadSize & 3) != 0) {
+    theArray[m_compoundOffset + 4 + m_payloadSize] = 0;
+    ++m_payloadSize;
   }
 
-  compoundOffset += 4 + payloadSize;
-  payloadSize = 0;
+  m_compoundOffset += 4 + m_payloadSize;
+  m_payloadSize = 0;
 }
 
 void RTP_ControlFrame::StartSourceDescription(DWORD src)
 {
   // extend payload to include SSRC + END
-  SetPayloadSize(payloadSize + 4 + 1);  
+  SetPayloadSize(m_payloadSize + 4 + 1);  
   SetPayloadType(RTP_ControlFrame::e_SourceDescription);
   SetCount(GetCount()+1); // will be incremented automatically
 
@@ -722,13 +723,13 @@ void RTP_ControlFrame::StartSourceDescription(DWORD src)
 void RTP_ControlFrame::AddSourceDescriptionItem(unsigned type, const PString & data)
 {
   // get ptr to new item, remembering that END was inserted previously
-  BYTE * payload = GetPayloadPtr() + payloadSize - 1;
+  BYTE * payload = GetPayloadPtr() + m_payloadSize - 1;
 
   // length of new item
   PINDEX dataLength = data.GetLength();
 
   // add storage for new item (note that END has already been included)
-  SetPayloadSize(payloadSize + 1 + 1 + dataLength);
+  SetPayloadSize(m_payloadSize + 1 + 1 + dataLength);
 
   // insert new item
   payload[0] = (BYTE)type;

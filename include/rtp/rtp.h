@@ -60,9 +60,9 @@ class RTP_ControlFrame : public PBYTEArray
 
     bool IsValid() const;
 
-    unsigned GetVersion() const { return (BYTE)theArray[compoundOffset]>>6; }
+    unsigned GetVersion() const { return (BYTE)theArray[m_compoundOffset]>>6; }
 
-    unsigned GetCount() const { return (BYTE)theArray[compoundOffset]&0x1f; }
+    unsigned GetCount() const { return (BYTE)theArray[m_compoundOffset]&0x1f; }
     void     SetCount(unsigned count);
 
     enum PayloadTypes {
@@ -79,11 +79,11 @@ class RTP_ControlFrame : public PBYTEArray
       e_LastValidPayloadType    = 223  // RFC5761
     };
 
-    unsigned GetPayloadType() const { return (BYTE)theArray[compoundOffset+1]; }
+    unsigned GetPayloadType() const { return (BYTE)theArray[m_compoundOffset+1]; }
     void     SetPayloadType(unsigned t);
 
-    PINDEX GetPayloadSize() const { return 4*(*(PUInt16b *)&theArray[compoundOffset+2]); }
-    void   SetPayloadSize(PINDEX sz);
+    PINDEX GetPayloadSize() const { return 4*(*(PUInt16b *)&theArray[m_compoundOffset+2]); }
+    bool   SetPayloadSize(PINDEX sz);
 
     BYTE * GetPayloadPtr() const;
 
@@ -91,8 +91,7 @@ class RTP_ControlFrame : public PBYTEArray
     bool StartNewPacket();
     void EndPacket();
 
-    PINDEX GetCompoundSize() const;
-
+    PINDEX GetPacketSize() const { return m_packetSize; }
     bool SetPacketSize(PINDEX size);
 
 #pragma pack(1)
@@ -186,7 +185,7 @@ class RTP_ControlFrame : public PBYTEArray
     );
 
     // RFC4585 Feedback Message Type (FMT)
-    unsigned GetFbType() const { return (BYTE)theArray[compoundOffset]&0x1f; }
+    unsigned GetFbType() const { return (BYTE)theArray[m_compoundOffset]&0x1f; }
     void     SetFbType(unsigned type, PINDEX fciSize);
 
     enum TransportLayerFbTypes {
@@ -250,8 +249,9 @@ class RTP_ControlFrame : public PBYTEArray
 #pragma pack()
 
   protected:
-    PINDEX compoundOffset;
-    PINDEX payloadSize;
+    PINDEX m_packetSize;
+    PINDEX m_compoundOffset;
+    PINDEX m_payloadSize;
 };
 
 
