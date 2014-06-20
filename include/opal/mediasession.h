@@ -47,6 +47,7 @@ class OpalMediaFormat;
 class OpalMediaFormatList;
 class OpalMediaCryptoSuite;
 class H235SecurityCapability;
+class H323Capability;
 
 
 #if OPAL_STATISTICS
@@ -194,7 +195,7 @@ class OpalMediaCryptoSuite : public PObject
 
     virtual const char * GetDescription() const = 0;
 #if OPAL_H235_6 || OPAL_H235_8
-    virtual H235SecurityCapability * CreateCapability(const OpalMediaFormat & mediaFormat, unsigned capabilityNumber) const;
+    virtual H235SecurityCapability * CreateCapability(const H323Capability & mediaCapability) const;
     virtual const char * GetOID() const = 0;
     static OpalMediaCryptoSuite * FindByOID(const PString & oid);
 #endif
@@ -213,6 +214,9 @@ class OpalMediaCryptoSuite : public PObject
       const PStringArray & cryptoSuiteNames,
       const char * prefix = NULL
     );
+
+  private:
+    P_REMOVE_VIRTUAL(H235SecurityCapability *,CreateCapability(const OpalMediaFormat &, unsigned) const,0);
 };
 
 typedef PFactory<OpalMediaCryptoSuite, PCaselessString> OpalMediaCryptoSuiteFactory;

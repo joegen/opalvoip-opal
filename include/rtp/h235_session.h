@@ -92,7 +92,7 @@ class H2356_CryptoSuite : public OpalMediaCryptoSuite
     H2356_CryptoSuite() { }
 
   public:
-    virtual H235SecurityCapability * CreateCapability(const OpalMediaFormat & mediaFormat, unsigned capabilityNumber) const;
+    virtual H235SecurityCapability * CreateCapability(const H323Capability & mediaCapability) const;
     virtual bool Supports(const PCaselessString & proto) const;
     virtual bool ChangeSessionType(PCaselessString & mediaSession) const;
 
