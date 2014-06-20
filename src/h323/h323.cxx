@@ -3817,7 +3817,7 @@ void H323Connection::OnSetLocalCapabilities()
     return;
 
   // create the list of media formats supported locally
-  OpalMediaFormatList formats = GetLocalMediaFormats();
+  OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this);
   if (formats.IsEmpty()) {
     PTRACE(3, "H323\tSetLocalCapabilities - no existing formats in call");
     return;
@@ -3949,7 +3949,10 @@ void H323Connection::OnSetLocalCapabilities()
   else if (rfc2833Capability != NULL)
     localCapabilities.SetCapability(0, P_MAX_INDEX, rfc2833Capability);
 
-  PTRACE(3, "H323\tSetLocalCapabilities:\n" << setprecision(2) << localCapabilities);
+  m_localMediaFormats = localCapabilities.GetMediaFormats();
+  PTRACE(3, "H323\tSetLocalCapabilities: "
+         << setfill(',') << m_localMediaFormats << '\n'
+         << setfill(' ') << setprecision(2) << localCapabilities);
 }
 
 
@@ -4071,12 +4074,11 @@ OpalMediaFormatList H323Connection::GetMediaFormats() const
        working correctly) and some unecessaary open logical channel round
        trips.
 
-       Techniically, we should be a bit more sophisticated in determining
+       Technically, we should be a bit more sophisticated in determining
        symmtery requirement, but 99.9% of the time of the first, if the entry
        is symmetric, they all are. */
     PStringArray order;
-    OpalMediaFormatList local = localCapabilities.GetMediaFormats();
-    for (OpalMediaFormatList::iterator it = local.begin(); it != local.end(); ++it)
+    for (OpalMediaFormatList::const_iterator it = m_localMediaFormats.begin(); it != m_localMediaFormats.end(); ++it)
       order.AppendString(it->GetName());
     list.Reorder(order);
     PTRACE(2, "H323\tRe-ordered media formats due to symmetry rules on " << *this);
