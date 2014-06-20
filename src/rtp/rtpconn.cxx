@@ -580,12 +580,14 @@ void OpalRTPConnection::AdjustMediaFormats(bool   local,
         mediaFormats -= *fmt++;
     }
 #if OPAL_RTP_FEC
-    mediaFormats += OpalRedundantAudio;
-    mediaFormats += OpalUlpFecAudio;
+    if (!mediaFormats.IsEmpty()) {
+      mediaFormats += OpalRedundantAudio;
+      mediaFormats += OpalUlpFecAudio;
  #if OPAL_VIDEO
-    mediaFormats += OpalRedundantVideo;
-    mediaFormats += OpalUlpFecVideo;
+      mediaFormats += OpalRedundantVideo;
+      mediaFormats += OpalUlpFecVideo;
  #endif
+    }
 #endif
   }
 
