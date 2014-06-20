@@ -139,10 +139,10 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   m_capabilities.Add(new H323H239ControlCapability());
 #endif
 #if OPAL_H235_6
-  m_capabilities.Add(new H235SecurityAlgorithmCapability(OpalMediaFormat(), 1)); // Just a template for cloning
+  m_capabilities.Add(new H235SecurityAlgorithmCapability(m_capabilities[0])); // Just a template for cloning
 #endif
 #if OPAL_H235_8
-  m_capabilities.Add(new H235SecurityGenericCapability(OpalMediaFormat(), 1)); // Just a template for cloning
+  m_capabilities.Add(new H235SecurityGenericCapability(m_capabilities[0])); // Just a template for cloning
 #endif
 
   PTRACE(4, "H323\tCreated endpoint.");

@@ -293,9 +293,9 @@ PFACTORY_CREATE(OpalMediaCryptoSuiteFactory, OpalSRTPCryptoSuite_AES_CM_128_HMAC
 ///////////////////////////////////////////////////////
 
 #if OPAL_H235_8
-H235SecurityCapability * OpalSRTPCryptoSuite::CreateCapability(const OpalMediaFormat & mediaFormat, unsigned capabilityNumber) const
+H235SecurityCapability * OpalSRTPCryptoSuite::CreateCapability(const H323Capability & mediaCapability) const
 {
-  return new H235SecurityGenericCapability(mediaFormat, capabilityNumber);
+  return new H235SecurityGenericCapability(mediaCapability);
 }
 #endif
 
