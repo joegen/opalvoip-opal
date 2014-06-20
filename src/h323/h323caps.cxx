@@ -3551,7 +3551,13 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
       const H245_H235Media & h235 = (const H245_H235Media &)dataType;
       capability = H323CheckExactCapability(dataType, H323FindMediaCapability<>(*this, H323Capability::e_H235Security, h235.m_encryptionAuthenticationAndIntegrity, mediaPacketization));
       if (capability != NULL) {
-        const OpalMediaCryptoSuite & cryptoSuite = dynamic_cast<H235SecurityCapability *>(capability)->GetCryptoSuites().front();
+        const OpalMediaCryptoSuite * cryptoSuite = NULL;
+        {
+          const H235SecurityCapability * h235cap = dynamic_cast<const H235SecurityCapability *>(capability);
+          if (h235cap != NULL && !h235cap->GetCryptoSuites().empty())
+            cryptoSuite = &h235cap->GetCryptoSuites().front();
+        }
+
         switch (h235.m_mediaType.GetTag()) {
           case H245_H235Media_mediaType::e_audioData :
             capability = H323FindMediaCapability<H245_AudioCapability>(*this, H323Capability::e_Audio, h235.m_mediaType, mediaPacketization);
@@ -3568,8 +3574,10 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
           default :
             capability = NULL;
         }
+
         if (capability != NULL) {
-          capability->SetCryptoSuite(cryptoSuite);
+          if (cryptoSuite != NULL)
+            capability->SetCryptoSuite(*cryptoSuite);
           capability = H323CheckExactCapability(dataType, capability);
         }
       }
