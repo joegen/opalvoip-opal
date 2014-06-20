@@ -919,16 +919,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
       localDestinationAddress = '*';
   }
 
-  // Make sure we clamp our bandwidth to whatever they said
-  Q931::InformationTransferCapability bearerCap;
-  unsigned transferRate;
-  if (setupPDU->GetQ931().GetBearerCapabilities(bearerCap, transferRate)) {
-    OpalBandwidth newBandwidth = transferRate*64000;
-    if (GetBandwidthAvailable(OpalBandwidth::Rx) > newBandwidth)
-      SetBandwidthAvailable(OpalBandwidth::Rx, newBandwidth);
-    if (GetBandwidthAvailable(OpalBandwidth::Tx) > newBandwidth)
-      SetBandwidthAvailable(OpalBandwidth::Tx, newBandwidth);
-  }
+  SetIncomingBearerCapabilities(*setupPDU);
 
 #if OPAL_H460
   H225_FeatureSet fs;
@@ -1391,6 +1382,7 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   SetDiffieHellman(connect);
 #endif
   SetMaintainConnectionFlag(connect);
+  SetIncomingBearerCapabilities(pdu);
 
 #if OPAL_H460
   if (connect.HasOptionalField(H225_Connect_UUIE::e_featureSet))
@@ -2002,7 +1994,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
       m_fastStartChannels.RemoveAll();
   }
 
-  SetBearerCapabilities(setupPDU);
+  SetOutgoingBearerCapabilities(setupPDU);
 
 #if OPAL_H235_6
   {
@@ -2068,7 +2060,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
 }
 
 
-void H323Connection::SetBearerCapabilities(H323SignalPDU & pdu) const
+void H323Connection::SetOutgoingBearerCapabilities(H323SignalPDU & pdu) const
 {
   PString bearerCaps = m_stringOptions(OPAL_OPT_Q931_BEARER_CAPS);
 
@@ -2091,9 +2083,26 @@ void H323Connection::SetBearerCapabilities(H323SignalPDU & pdu) const
     else if (transferRate == 0)
       transferRate = 1;
     bearerCaps.sprintf(",%u", transferRate);
+    PTRACE(4, "H225\tSet bandwidth in Q.931 caps: " << transferRate << " bearers");
   }
 
   pdu.GetQ931().SetBearerCapabilities(bearerCaps);
+}
+
+
+void H323Connection::SetIncomingBearerCapabilities(const H323SignalPDU & pdu)
+{
+  // Make sure we clamp our bandwidth to whatever they said
+  Q931::InformationTransferCapability bearerCap;
+  unsigned transferRate;
+  if (pdu.GetQ931().GetBearerCapabilities(bearerCap, transferRate)) {
+    PTRACE(4, "H225\tSet bandwidth from Q.931 caps: " << transferRate << " bearers");
+    OpalBandwidth newBandwidth = transferRate*64000;
+    if (GetBandwidthAvailable(OpalBandwidth::Rx) > newBandwidth)
+      SetBandwidthAvailable(OpalBandwidth::Rx, newBandwidth);
+    if (GetBandwidthAvailable(OpalBandwidth::Tx) > newBandwidth)
+      SetBandwidthAvailable(OpalBandwidth::Tx, newBandwidth);
+  }
 }
 
 
@@ -2233,7 +2242,7 @@ PBoolean H323Connection::SetConnected()
   OnSetLocalCapabilities();
 
   // Must be after OnSetLocalCapabilities
-  SetBearerCapabilities(*connectPDU);
+  SetOutgoingBearerCapabilities(*connectPDU);
 
   H225_Connect_UUIE & connect = connectPDU->m_h323_uu_pdu.m_h323_message_body;
   connect.m_maintainConnection = m_maintainConnection;
@@ -2595,7 +2604,7 @@ PBoolean H323Connection::CreateOutgoingControlChannel(const PASN_Sequence & encl
   if (m_controlChannel != NULL)
     return true;
 
-  OpalTransportAddress signallingAddress = m_signallingChannel->GetLocalAddress();
+  PIPAddress localInterface(m_signallingChannel->GetInterface());
 #if OPAL_PTLIB_SSL
   if (enclosingPDU.HasOptionalField(h245SecurityField)) {
     if (h245Security.GetTag() != H225_H245Security::e_tls) {
@@ -2611,12 +2620,12 @@ PBoolean H323Connection::CreateOutgoingControlChannel(const PASN_Sequence & encl
       return false;
     }
 
-    signallingAddress.Splice(OpalTransportAddress::TlsPrefix(), 0, signallingAddress.Find('$'));
+    m_controlChannel = new OpalTransportTLS(endpoint, localInterface);
   }
+  else
 #endif
+    m_controlChannel = new OpalTransportTCP(endpoint, localInterface);
 
-  // Check that it is an IP address, all we support at the moment
-  m_controlChannel = signallingAddress.CreateTransport(endpoint, OpalTransportAddress::HostOnly);
   if (m_controlChannel == NULL) {
     PTRACE(1, "H225\tConnect of H245 failed: Unsupported transport");
     return false;
@@ -3323,7 +3332,7 @@ bool H323Connection::OnH239Message(unsigned subMessage, const H245_ArrayOf_Gener
 
 bool H323Connection::OnH239FlowControlRequest(unsigned logicalChannel, unsigned PTRACE_PARAM(bitRate))
 {
-  PTRACE(3, "H239\tOnH239FlowControlRequest(" << logicalChannel << ',' << bitRate << ") - sending acknowledge");
+  PTRACE(3, "H239\tOnH239FlowControlRequest: chan=" << logicalChannel << ", bitrate=" << bitRate << " - sending acknowledge");
 
   H323ControlPDU pdu;
   H245_ArrayOf_GenericParameter & params = pdu.BuildGenericResponse(H239MessageOID, 2).m_messageContent;
@@ -3336,7 +3345,7 @@ bool H323Connection::OnH239FlowControlRequest(unsigned logicalChannel, unsigned 
 
 bool H323Connection::OnH239FlowControlResponse(unsigned PTRACE_PARAM(logicalChannel), bool PTRACE_PARAM(rejected))
 {
-  PTRACE(3, "H239\tOnH239FlowControlResponse(" << logicalChannel << ',' << rejected << ')');
+  PTRACE(3, "H239\tOnH239FlowControlResponse: chan=" << logicalChannel << ", " << (rejected ? "rejected" : "acknowledged"));
 
   return true;
 }
@@ -3344,7 +3353,8 @@ bool H323Connection::OnH239FlowControlResponse(unsigned PTRACE_PARAM(logicalChan
 
 bool H323Connection::OnH239PresentationRequest(unsigned logicalChannel, unsigned symmetryBreaking, unsigned terminalLabel)
 {
-  PTRACE(3, "H239\tOnH239PresentationRequest(" << logicalChannel << ',' << symmetryBreaking << ',' << terminalLabel << ") - sending acknowledge");
+  PTRACE(3, "H239\tOnH239PresentationRequest: chan=" << logicalChannel
+				 << ", sym=" << symmetryBreaking << ", label=" << terminalLabel << " - sending acknowledge");
 
   bool ack;
   if (m_h239SymmetryBreaking != 0) {
@@ -3391,7 +3401,8 @@ bool H323Connection::SendH239PresentationRequest(unsigned logicalChannel, unsign
     return false;
   }
 
-  PTRACE(3, "H239\tSendH239PresentationRequest(" << logicalChannel << ',' << symmetryBreaking << ',' << terminalLabel << ')');
+  PTRACE(3, "H239\tSendH239PresentationRequest: chan=" << logicalChannel
+		     << ", sym=" << symmetryBreaking << ", label=" << terminalLabel << ')');
 
   H323ControlPDU pdu;
   H245_ArrayOf_GenericParameter & params = pdu.BuildGenericRequest(H239MessageOID, 3).m_messageContent;
@@ -3406,7 +3417,8 @@ bool H323Connection::SendH239PresentationRequest(unsigned logicalChannel, unsign
 
 bool H323Connection::OnH239PresentationResponse(unsigned logicalChannel, unsigned terminalLabel, bool rejected)
 {
-  PTRACE(3, "H239\tOnH239PresentationResponse(" << logicalChannel << ',' << terminalLabel << ',' << rejected << ')');
+  PTRACE(3, "H239\tOnH239PresentationResponse: chan=" << logicalChannel
+				 << ", label=" << terminalLabel << ", " << (rejected ? "rejected" : "acknowledged"));
 
   // Did we request it?
   if (m_h239SymmetryBreaking == 0)
@@ -3422,7 +3434,7 @@ bool H323Connection::OnH239PresentationResponse(unsigned logicalChannel, unsigne
 
 bool H323Connection::OnH239PresentationRelease(unsigned PTRACE_PARAM(logicalChannel), unsigned PTRACE_PARAM(terminalLabel))
 {
-  PTRACE(3, "H239\tOnH239PresentationRelease(" << logicalChannel << ',' << terminalLabel << ')');
+  PTRACE(3, "H239\tOnH239PresentationRelease: chan=" << logicalChannel << ", label=" << terminalLabel);
   return true;
 }
 
@@ -3434,7 +3446,7 @@ bool H323Connection::SendH239PresentationRelease(unsigned logicalChannel, unsign
     return false;
   }
 
-  PTRACE(3, "H239\tSendH239PresentationRelease(" << logicalChannel << ',' << terminalLabel << ')');
+  PTRACE(3, "H239\tSendH239PresentationRelease: chan=" << logicalChannel << ", label=" << terminalLabel);
 
   H323ControlPDU pdu;
   H245_ArrayOf_GenericParameter & params = pdu.BuildGenericCommand(H239MessageOID, 5).m_messageContent;
@@ -3448,7 +3460,7 @@ bool H323Connection::SendH239PresentationRelease(unsigned logicalChannel, unsign
 
 bool H323Connection::OnH239PresentationIndication(unsigned PTRACE_PARAM(logicalChannel), unsigned PTRACE_PARAM(terminalLabel))
 {
-  PTRACE(3, "H239\tOnH239PresentationIndication(" << logicalChannel << ',' << terminalLabel << ')');
+  PTRACE(3, "H239\tOnH239PresentationIndication: chan=" << logicalChannel << ", label=" << terminalLabel);
   return true;
 }
 

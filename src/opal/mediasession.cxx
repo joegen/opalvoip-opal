@@ -211,7 +211,7 @@ void OpalMediaStatistics::PrintOn(ostream & strm) const
 const PCaselessString & OpalMediaCryptoSuite::ClearText() { static const PConstCaselessString s("Clear"); return s; }
 
 #if OPAL_H235_6 || OPAL_H235_8
-H235SecurityCapability * OpalMediaCryptoSuite::CreateCapability(const OpalMediaFormat &, unsigned) const
+H235SecurityCapability * OpalMediaCryptoSuite::CreateCapability(const H323Capability &) const
 {
   return NULL;
 }
@@ -263,7 +263,6 @@ class OpalMediaClearText : public OpalMediaCryptoSuite
   virtual bool ChangeSessionType(PCaselessString & /*mediaSession*/) const { return true; }
   virtual const char * GetDescription() const { return OpalMediaCryptoSuite::ClearText(); }
 #if OPAL_H235_6 || OPAL_H235_8
-  virtual H235SecurityCapability * CreateCapability(const OpalMediaFormat &, unsigned) const { return NULL; }
   virtual const char * GetOID() const { return "0.0.8.235.0.3.26"; }
 #endif
   virtual PINDEX GetCipherKeyBits() const { return 0; }

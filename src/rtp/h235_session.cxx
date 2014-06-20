@@ -101,9 +101,9 @@ PFACTORY_CREATE(OpalMediaCryptoSuiteFactory, H2356_CryptoSuite_256, AES_256, tru
 
 ///////////////////////////////////////////////////////
 
-H235SecurityCapability * H2356_CryptoSuite::CreateCapability(const OpalMediaFormat & mediaFormat, unsigned capabilityNumber) const
+H235SecurityCapability * H2356_CryptoSuite::CreateCapability(const H323Capability & mediaCapability) const
 {
-  return new H235SecurityAlgorithmCapability(mediaFormat, capabilityNumber);
+  return new H235SecurityAlgorithmCapability(mediaCapability);
 }
 
 
