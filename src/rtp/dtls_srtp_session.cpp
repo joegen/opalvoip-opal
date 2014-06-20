@@ -217,13 +217,19 @@ OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::ReadRawPDU(BYTE * framePt
 
 OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::OnSendData(RTP_DataFrame & frame, bool rewriteHeader)
 {
-  return ExecuteHandshake(true) ? OpalSRTPSession::OnSendData(frame, rewriteHeader) : e_AbortTransport;
+  SendReceiveStatus status = ExecuteHandshake(true);
+  if (status == e_ProcessPacket)
+    status = OpalSRTPSession::OnSendData(frame, rewriteHeader);
+  return status;
 }
 
 
 OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::OnSendControl(RTP_ControlFrame & frame)
 {
-  return ExecuteHandshake(IsSinglePortRx() || IsSinglePortTx()) ? OpalSRTPSession::OnSendControl(frame) : e_AbortTransport;
+  SendReceiveStatus status = ExecuteHandshake(IsSinglePortRx() || IsSinglePortTx());
+  if (status == e_ProcessPacket)
+    status = OpalSRTPSession::OnSendControl(frame);
+  return status;
 }
 
 
@@ -245,21 +251,21 @@ const PSSLCertificateFingerprint& OpalDTLSSRTPSession::GetRemoteFingerprint() co
 }
 
 
-bool OpalDTLSSRTPSession::ExecuteHandshake(bool dataChannel)
+OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::ExecuteHandshake(bool dataChannel)
 {
   {
     PWaitAndSignal mutex(m_dataMutex);
 
     if (m_remotePort[dataChannel] == 0)
-      return true; // Too early
+      return e_IgnorePacket; // Too early
 
     if (m_sslChannel[dataChannel] == NULL)
-      return true; // Too late (done)
+      return e_ProcessPacket; // Too late (done)
   }
 
   SSLChannel & sslChannel = *m_sslChannel[dataChannel];
   if (!sslChannel.ExecuteHandshake())
-    return false;
+    return e_AbortTransport;
 
   const OpalMediaCryptoSuite* cryptoSuite = NULL;
   srtp_profile_t profile = srtp_profile_reserved;
@@ -272,14 +278,14 @@ bool OpalDTLSSRTPSession::ExecuteHandshake(bool dataChannel)
   }
 
   if (profile == srtp_profile_reserved || cryptoSuite == NULL)
-    return false;
+    return e_AbortTransport;
 
   PINDEX masterKeyLength = srtp_profile_get_master_key_length(profile);
   PINDEX masterSaltLength = srtp_profile_get_master_salt_length(profile);
 
   PBYTEArray keyMaterial = sslChannel.GetKeyMaterial(((masterSaltLength + masterKeyLength) << 1), "EXTRACTOR-dtls_srtp");
   if (keyMaterial.IsEmpty())
-    return false;
+    return e_AbortTransport;
 
   const uint8_t *localKey;
   const uint8_t *localSalt;
@@ -317,7 +323,7 @@ bool OpalDTLSSRTPSession::ExecuteHandshake(bool dataChannel)
   sslChannel.Detach(PChannel::ShutdownWrite); // Do not close the socket!
   delete m_sslChannel[dataChannel];
   m_sslChannel[dataChannel] = NULL;
-  return true;
+  return e_ProcessPacket;
 }
 
 

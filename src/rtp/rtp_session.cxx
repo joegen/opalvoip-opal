@@ -602,12 +602,14 @@ void OpalRTPSession::AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiv
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & frame, bool rewriteHeader)
 {
-  PWaitAndSignal mutex(m_dataMutex);
-
-  if (m_remotePort[e_Data] == 0) {
-    PTRACE(5, "Session " << m_sessionId << ", ignoring sent data, no remote address yet.");
+#if OPAL_ICE
+  SendReceiveStatus status = OnSendICE(false);
+  if (status != e_ProcessPacket)
+    return status;
+#else
+  if (m_remotePort[e_Data] == 0)
     return e_IgnorePacket;
-  }
+#endif // OPAL_ICE
 
   if (rewriteHeader) {
     PTimeInterval tick = PTimer::Tick();  // Timestamp set now
@@ -698,15 +700,16 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
   return e_ProcessPacket;
 }
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendControl(RTP_ControlFrame & frame)
-{
-  if (m_remotePort[e_Control] == 0) {
-    PTRACE(5, "Session " << m_sessionId << ", ignoring sent control, no remote address yet.");
-    return e_IgnorePacket;
-  }
 
-  frame.SetSize(frame.GetCompoundSize());
-  return e_ProcessPacket;
+OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendControl(RTP_ControlFrame &)
+{
+  ++rtcpPacketsSent;
+
+#if OPAL_ICE
+  return OnSendICE(false);
+#else
+  return m_remotePort[e_Control] == 0 ? e_IgnorePacket : e_ProcessPacket;
+#endif // OPAL_ICE
 }
 
 
@@ -1148,20 +1151,14 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
   // Should never return e_ProcessPacket, as this has processed it!
 
   PTRACE(6, "Session " << m_sessionId << ", OnReceiveControl - "
-         << frame.GetSize() << " bytes:\n" << hex << setprecision(2) << setfill('0') << frame << dec);
+         << frame.GetPacketSize() << " bytes:\n"
+         << hex << setprecision(2) << setfill('0') << PBYTEArray(frame, frame.GetPacketSize(), false) << dec);
 
   m_firstControl = false;
 
   do {
     BYTE * payload = frame.GetPayloadPtr();
     size_t size = frame.GetPayloadSize(); 
-    if ((payload == NULL) || (size == 0) || ((payload + size) > (frame.GetPointer() + frame.GetSize()))){
-      /* TODO: 1.shall we test for a maximum size ? Indeed but what's the value ? *
-               2. what's the correct exit status ? */
-      PTRACE(2, "Session " << m_sessionId << ", OnReceiveControl invalid frame");
-      break;
-    }
-
     switch (frame.GetPayloadType()) {
       case RTP_ControlFrame::e_SenderReport :
         if (size >= sizeof(PUInt32b)+sizeof(RTP_ControlFrame::SenderReport)+frame.GetCount()*sizeof(RTP_ControlFrame::ReceiverReport)) {
@@ -2198,8 +2195,18 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveICE(bool fromDataChan
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendICE(bool toDataChannel)
 {
-  if (m_candidates[toDataChannel].empty())
-    return e_ProcessPacket;
+  if (m_candidates[toDataChannel].empty()) {
+    if (m_remotePort[toDataChannel] != 0)
+      return e_ProcessPacket;
+
+    PTRACE(4, "Session " << m_sessionId << ", waiting for " << (toDataChannel ? "data" : "control") << " remote address.");
+
+    while (m_remotePort[toDataChannel] == 0) {
+      if (m_shutdownWrite)
+        return e_AbortTransport;
+      PThread::Sleep(10);
+    }
+  }
 
   for (CandidateStates::iterator it = m_candidates[toDataChannel].begin(); it != m_candidates[toDataChannel].end(); ++it) {
     PSTUNMessage request(PSTUNMessage::BindingRequest);
@@ -2338,9 +2345,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReadTimeout(RTP_DataFrame & 
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadControlPDU()
 {
-  RTP_ControlFrame frame(2048);
-
-  PINDEX pduSize = frame.GetSize();
+  PINDEX pduSize = 2048;
+  RTP_ControlFrame frame(pduSize);
   SendReceiveStatus status = ReadRawPDU(frame.GetPointer(), pduSize, m_socket[e_Control] == NULL);
   if (status != e_ProcessPacket)
     return status;
@@ -2360,21 +2366,24 @@ bool OpalRTPSession::WriteData(RTP_DataFrame & frame,
 {
   PWaitAndSignal m(m_dataMutex);
 
-  if (!IsOpen() || m_shutdownWrite) {
-    PTRACE(3, "Session " << m_sessionId << ", write shutdown.");
-    return false;
+  while (IsOpen() && !m_shutdownWrite) {
+    switch (OnSendData(frame, rewriteHeader)) {
+      case e_ProcessPacket :
+        return WriteRawPDU(frame, frame.GetPacketSize(), true, remote);
+
+      case e_AbortTransport :
+        return false;
+
+      case e_IgnorePacket :
+        m_dataMutex.Signal();
+        PTRACE(5, "Session " << m_sessionId << ", data packet write delayed.");
+        PThread::Sleep(20);
+        m_dataMutex.Wait();
+    }
   }
 
-  switch (OnSendData(frame, rewriteHeader)) {
-    case e_ProcessPacket :
-      break;
-    case e_IgnorePacket :
-      return true;
-    case e_AbortTransport :
-      return false;
-  }
-
-  return WriteRawPDU(frame, frame.GetPacketSize(), true, remote);
+  PTRACE(3, "Session " << m_sessionId << ", data packet write shutdown.");
+  return false;
 }
 
 
@@ -2382,38 +2391,29 @@ bool OpalRTPSession::WriteControl(RTP_ControlFrame & frame, const PIPSocketAddre
 {
   PWaitAndSignal m(m_dataMutex);
 
-  if (!IsOpen() || m_shutdownWrite) {
-    PTRACE(3, "Session " << m_sessionId << ", write shutdown.");
-    return false;
+  while (IsOpen() && !m_shutdownWrite) {
+    switch (OnSendControl(frame)) {
+      case e_ProcessPacket :
+        return WriteRawPDU(frame.GetPointer(), frame.GetPacketSize(), m_socket[e_Control] == NULL, remote);
+
+      case e_AbortTransport :
+        return false;
+
+      case e_IgnorePacket :
+        m_dataMutex.Signal();
+        PTRACE(5, "Session " << m_sessionId << ", control packet write delayed.");
+        PThread::Sleep(20);
+        m_dataMutex.Wait();
+    }
   }
 
-  switch (OnSendControl(frame)) {
-    case e_ProcessPacket :
-      rtcpPacketsSent++;
-      break;
-    case e_IgnorePacket :
-      return true;
-    case e_AbortTransport :
-      return false;
-  }
-
-  return WriteRawPDU(frame.GetPointer(), frame.GetSize(), m_socket[e_Control] == NULL, remote);
+  PTRACE(3, "Session " << m_sessionId << ", control packet write shutdown.");
+  return false;
 }
 
 
 bool OpalRTPSession::WriteRawPDU(const BYTE * framePtr, PINDEX frameSize, bool toDataChannel, const PIPSocketAddressAndPort * remote)
 {
-#if OPAL_ICE
-  switch (OnSendICE(toDataChannel)) {
-    case e_ProcessPacket :
-      break;
-    case e_IgnorePacket :
-      return true;
-    case e_AbortTransport :
-      return false;
-  }
-#endif // OPAL_ICE
-
   PIPSocketAddressAndPort remoteAddressAndPort;
   if (remote == NULL) {
     remoteAddressAndPort.SetAddress(m_remoteAddress, m_remotePort[toDataChannel]);
