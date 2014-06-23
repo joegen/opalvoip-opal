@@ -483,7 +483,7 @@ class MPEG4_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCodec
         return true;
 
       PluginCodec_RTP out(toPtr, toLen);
-      toLen = OutputImage(m_picture->data, m_picture->linesize, m_context->width, m_context->height, out, flags);
+      toLen = OutputImage(m_picture->data, m_picture->linesize, m_picture->width, m_picture->height, out, flags);
 
       return true;
     }
