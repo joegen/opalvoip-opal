@@ -559,7 +559,7 @@ bool OpalLibSRTP::Context::ProtectRTP(RTP_DataFrame & frame)
 
 #if PTRACING
   if (m_firstRTP) {
-    PTRACE(3, "SRTP\tProtected first RTP packet.");
+    PTRACE(3, "SRTP\tProtected first RTP packet: " << frame.GetPacketSize() << " ->" << len);
     m_firstRTP = false;
   }
 #endif
@@ -590,7 +590,7 @@ bool OpalLibSRTP::Context::ProtectRTCP(RTP_ControlFrame & frame)
 
 #if PTRACING
   if (m_firstRTCP) {
-    PTRACE(3, "SRTP\tProtected first RTCP packet.");
+    PTRACE(3, "SRTP\tProtected first RTCP packet: " << frame.GetPacketSize() << " ->" << len);
     m_firstRTCP = false;
   }
 #endif
@@ -614,7 +614,7 @@ bool OpalLibSRTP::Context::UnprotectRTP(RTP_DataFrame & frame)
 
 #if PTRACING
   if (m_firstRTP) {
-    PTRACE(3, "SRTP\tUnprotected first RTP packet.");
+    PTRACE(3, "SRTP\tUnprotected first RTP packet: " << frame.GetPacketSize() << " ->" << len);
     m_firstRTP = false;
   }
 #endif
@@ -627,6 +627,24 @@ bool OpalLibSRTP::Context::UnprotectRTP(RTP_DataFrame & frame)
 bool OpalLibSRTP::UnprotectRTCP(RTP_ControlFrame & frame)
 {
   return m_rx->UnprotectRTCP(frame);
+}
+
+
+bool OpalLibSRTP::Context::UnprotectRTCP(RTP_ControlFrame & frame)
+{
+  int len = frame.GetSize();
+  if (!CHECK_ERROR(srtp_unprotect_rtcp,(m_ctx, frame.GetPointer(), &len)))
+    return false;
+
+#if PTRACING
+  if (m_firstRTCP) {
+    PTRACE(3, "SRTP\tUnprotected first RTCP packet: " << frame.GetPacketSize() << " ->" << len);
+    m_firstRTCP = false;
+  }
+#endif
+
+  frame.SetPacketSize(len);
+  return true;
 }
 
 
@@ -655,24 +673,6 @@ OpalSRTPKeyInfo* OpalLibSRTP::CreateKeyInfo(bool rx)
     return new OpalSRTPKeyInfo(*m_rx->m_keyInfo);
 
   return new OpalSRTPKeyInfo(*m_tx->m_keyInfo);
-}
-
-
-bool OpalLibSRTP::Context::UnprotectRTCP(RTP_ControlFrame & frame)
-{
-  int len = frame.GetSize();
-  if (!CHECK_ERROR(srtp_unprotect_rtcp,(m_ctx, frame.GetPointer(), &len)))
-    return false;
-
-#if PTRACING
-  if (m_firstRTCP) {
-    PTRACE(3, "SRTP\tUnprotected first RTCP packet.");
-    m_firstRTCP = false;
-  }
-#endif
-
-  frame.SetSize(len);
-  return true;
 }
 
 
