@@ -578,7 +578,7 @@ RTP_ControlFrame::RTP_ControlFrame(PINDEX sz)
 
 RTP_ControlFrame::RTP_ControlFrame(const BYTE * data, PINDEX size, bool dynamic)
   : PBYTEArray(data, size, dynamic)
-  , m_packetSize(0)
+  , m_packetSize(size)
   , m_compoundOffset(0)
   , m_payloadSize(0)
 {
