@@ -1148,7 +1148,8 @@ OpalRTPSession::BuildReceiverReportArray(const RTP_ControlFrame & frame, PINDEX 
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFrame & frame)
 {
-  // Should never return e_ProcessPacket, as this has processed it!
+  if (frame.GetPacketSize() == 0)
+    return e_IgnorePacket;
 
   PTRACE(6, "Session " << m_sessionId << ", OnReceiveControl - "
          << frame.GetPacketSize() << " bytes:\n"
@@ -1835,20 +1836,20 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
 
   for (int i = 0; i < 2; ++i) {
     if (m_socket[i] != NULL) {
-      PTRACE_CONTEXT_ID_TO(m_socket[i]);
-      m_socket[i]->GetLocalAddress(m_localAddress, m_localPort[i]);
-      m_socket[i]->SetReadTimeout(m_maxNoReceiveTime);
+      PUDPSocket & socket = *m_socket[i];
+      PTRACE_CONTEXT_ID_TO(socket);
+      socket.GetLocalAddress(m_localAddress, m_localPort[i]);
+      socket.SetReadTimeout(m_maxNoReceiveTime);
+      // Increase internal buffer size on media UDP sockets
+      SetMinBufferSize(socket, SO_RCVBUF, i == e_Control ? RTP_CTRL_BUFFER_SIZE : (m_isAudio ? RTP_AUDIO_RX_BUFFER_SIZE : RTP_VIDEO_RX_BUFFER_SIZE));
+      SetMinBufferSize(socket, SO_SNDBUF, i == e_Control ? RTP_CTRL_BUFFER_SIZE : RTP_DATA_TX_BUFFER_SIZE);
     }
   }
-  manager.TranslateIPAddress(m_localAddress, m_remoteAddress);
 
-  // Increase internal buffer size on media UDP sockets
-  SetMinBufferSize(*m_socket[e_Data], SO_RCVBUF, m_isAudio ? RTP_AUDIO_RX_BUFFER_SIZE : RTP_VIDEO_RX_BUFFER_SIZE);
-  SetMinBufferSize(*m_socket[e_Data], SO_SNDBUF, RTP_DATA_TX_BUFFER_SIZE);
-  if (m_socket[e_Control] != NULL) {
-    SetMinBufferSize(*m_socket[e_Control], SO_RCVBUF, RTP_CTRL_BUFFER_SIZE);
-    SetMinBufferSize(*m_socket[e_Control], SO_SNDBUF, RTP_CTRL_BUFFER_SIZE);
-  }
+  if (m_socket[e_Control] == NULL)
+    m_localPort[e_Control] = m_localPort[e_Data];
+
+  manager.TranslateIPAddress(m_localAddress, m_remoteAddress);
 
   m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
 
