@@ -289,7 +289,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     void SetOptionStrings(const PStringOptions & options) { m_stringOptions = options; }
     const PStringOptions & GetOptionStrings() const { return m_stringOptions; }
 
-    virtual void Copy(SDPMediaDescription & mediaDescription);
+    virtual void CopyForRefusal(SDPMediaDescription & mediaDescription);
 
   protected:
     virtual SDPMediaFormat * FindFormat(PString & str) const;
@@ -312,6 +312,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
   P_REMOVE_VIRTUAL(SDPMediaFormat *,CreateSDPMediaFormat(const PString &),0);
   P_REMOVE_VIRTUAL(OpalTransportAddress,GetTransportAddress(),OpalTransportAddress());
   P_REMOVE_VIRTUAL(PBoolean,SetTransportAddress(const OpalTransportAddress &),false);
+  P_REMOVE_VIRTUAL_VOID(Copy(SDPMediaDescription &));
 };
 
 PARRAY(SDPMediaDescriptionArray, SDPMediaDescription);
@@ -328,7 +329,7 @@ class SDPDummyMediaDescription : public SDPMediaDescription
     virtual PCaselessString GetSessionType() const;
     virtual SDPMediaFormat * CreateSDPMediaFormat();
     virtual PString GetSDPPortList() const;
-    virtual void Copy(SDPMediaDescription & mediaDescription);
+    virtual void CopyForRefusal(SDPMediaDescription & mediaDescription);
 
   private:
     PStringArray m_tokens;
