@@ -1086,7 +1086,7 @@ bool SIPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPS
       if (!PAssert(outgoingMedia != NULL, PLogicError))
         return false;
 
-      outgoingMedia->Copy(*incomingMedia);
+      outgoingMedia->CopyForRefusal(*incomingMedia);
       sdpOut.AddMediaDescription(outgoingMedia);
     }
   }
