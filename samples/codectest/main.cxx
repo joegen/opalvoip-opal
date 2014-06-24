@@ -724,6 +724,13 @@ bool VideoThread::Initialise(PArgList & args)
       mediaFormat.SetOptionInteger(OpalMediaFormat::MaxTxPacketSizeOption(), bytes);
     }
     m_encoder->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
+    mediaFormat = m_encoder->GetOutputFormat();
+    width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption());
+    height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption());
+    if (!m_grabber->SetFrameSizeConverter(width, height, resizeMode)) {
+      cerr << "Video grabber device could not be set to size " << width << 'x' << height << endl;
+      return false;
+    }
   }
 
   m_singleStep = args.HasOption("single-step");
