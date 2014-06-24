@@ -1216,11 +1216,11 @@ PString SDPMediaDescription::GetSDPPortList() const
 }
 
 
-void SDPMediaDescription::Copy(SDPMediaDescription & desc)
+void SDPMediaDescription::CopyForRefusal(SDPMediaDescription & desc)
 {
-  SDPMediaFormatList::iterator format;
-  for (format = desc.m_formats.begin(); format != desc.m_formats.end(); ++format)
-    AddSDPMediaFormat(format->CloneAs<SDPMediaFormat>());
+  AddSDPMediaFormat(desc.m_formats.front().CloneAs<SDPMediaFormat>());
+  m_mediaAddress = m_controlAddress = OpalTransportAddress();
+  m_port = 0;
 }
 
 
@@ -1275,7 +1275,7 @@ PString SDPDummyMediaDescription::GetSDPPortList() const
 }
 
 
-void SDPDummyMediaDescription::Copy(SDPMediaDescription & from)
+void SDPDummyMediaDescription::CopyForRefusal(SDPMediaDescription & from)
 {
   m_tokens.SetSize(4);
   m_tokens[0] = from.GetSDPMediaType();
