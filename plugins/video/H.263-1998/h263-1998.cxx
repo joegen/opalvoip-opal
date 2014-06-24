@@ -319,7 +319,7 @@ public:
   }
 
 
-  virtual bool IsValidForProtocol(const char * protocol) const
+  virtual bool IsValidForProtocol(const char *) const
 	{
 		return true;
 	}
@@ -488,9 +488,16 @@ class H263_Base_Encoder : public PluginVideoEncoder<MY_CODEC>, public FFMPEGCode
     }
 
 
+    virtual void ClampResolution()
+    {
+    }
+
+
     virtual bool OnChangedOptions()
     {
       CloseCodec();
+
+      ClampResolution();
 
       if (!m_fullFrame->SetResolution(m_width, m_height)) {
         PTRACE(1, m_prefix, "Unable to allocate memory for packet buffer");
@@ -593,6 +600,34 @@ class H263_RFC2190_Encoder : public H263_Base_Encoder
     #endif
 
       return true;
+    }
+
+
+    /// Get options that are "active" and may be different from the last SetOptions() call.
+    virtual bool GetActiveOptions(PluginCodec_OptionMap & options)
+    {
+      if (!H263_Base_Encoder::GetActiveOptions(options))
+        return false;
+
+      options.SetUnsigned(this->m_width,  PLUGINCODEC_OPTION_FRAME_WIDTH);
+      options.SetUnsigned(this->m_height, PLUGINCODEC_OPTION_FRAME_HEIGHT);
+      return true;
+    }
+
+
+    virtual void ClampResolution()
+    {
+      int i;
+      for (i = 0; i < StandardResolution::Count; i++) {
+        if (m_width == StandardResolutions[i].width && m_height == StandardResolutions[i].height)
+          return;
+        if (m_width < StandardResolutions[i].width || m_height < StandardResolutions[i].height)
+          break;
+      }
+      if (i > 0)
+        --i;
+      m_width = StandardResolutions[i].width;
+      m_height = StandardResolutions[i].height;
     }
 };
 
