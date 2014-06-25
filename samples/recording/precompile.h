@@ -25,6 +25,7 @@
  */
 
 #include <ptlib.h>
+#include <ptclib/pwavfile.h>
 #include <opal/console_mgr.h>
 #include <ep/localep.h>
 #include <sip/sipep.h>
