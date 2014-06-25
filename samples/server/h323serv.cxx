@@ -134,8 +134,8 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
                               "kb/s", "Bandwidth to request to gatekeeper on originating/answering calls")*1000);
 
   for (H323Connection::CompatibilityIssues issue = H323Connection::BeginCompatibilityIssues; issue < H323Connection::EndCompatibilityIssues; ++issue)
-    SetCompatibility(issue, rsrc->AddStringField(H323Connection::CompatibilityIssuesToString(issue), 0, GetCompatibility(issue),
-                                                 "Compatibility issue work around, product name/version regular expression", 1, 50));
+    SetCompatibility(issue, rsrc->AddStringField(PString(H323Connection::CompatibilityIssuesToString(issue)).Replace('-', ' ', true),
+                       0, GetCompatibility(issue),"Compatibility issue work around, product name/version regular expression", 1, 50));
 
   bool gkEnable = rsrc->AddBooleanField(GatekeeperEnableKey, false, "Enable registration with gatekeeper as client");
 
