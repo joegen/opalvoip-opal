@@ -159,6 +159,7 @@ public:
   PDECLARE_NOTIFIER(PCLI::Arguments, H323ConsoleEndPoint, CmdTerminalType);
   PDECLARE_NOTIFIER(PCLI::Arguments, H323ConsoleEndPoint, CmdAlias);
   PDECLARE_NOTIFIER(PCLI::Arguments, H323ConsoleEndPoint, CmdGatekeeper);
+  PDECLARE_NOTIFIER(PCLI::Arguments, H323ConsoleEndPoint, CmdCompatibility);
   virtual void AddCommands(PCLI & cli);
 #endif // P_CLI
 
