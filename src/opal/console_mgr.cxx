@@ -815,7 +815,7 @@ void H323ConsoleEndPoint::AddCommands(PCLI & cli)
   cli.SetCommand("h323 h239-control", m_defaultH239Control, "H.239 control capability enable");
   cli.SetCommand("h323 term-type", PCREATE_NOTIFIER(CmdTerminalType), "Terminal type value (1..255, default 50)");
   cli.SetCommand("h323 compatibility", PCREATE_NOTIFIER(CmdCompatibility),
-                 "Set remote system identification exteneded regular expression for compatibility issues.",
+                 "Set remote system identification extended regular expression for compatibility issues.",
                  "[ <issue> [ <regex> ]]");
 
   cli.SetCommand("h323 alias", PCREATE_NOTIFIER(CmdGatekeeper),
