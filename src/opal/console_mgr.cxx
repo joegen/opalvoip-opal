@@ -777,6 +777,34 @@ void H323ConsoleEndPoint::CmdGatekeeper(PCLI::Arguments & args, P_INT_PTR)
 }
 
 
+void H323ConsoleEndPoint::CmdCompatibility(PCLI::Arguments & args, P_INT_PTR)
+{
+  H323Connection::CompatibilityIssues issue;
+
+  if (args.GetCount() == 0) {
+    size_t width = 0;
+    for (issue = H323Connection::BeginCompatibilityIssues; issue < H323Connection::EndCompatibilityIssues; ++issue) {
+      size_t len = strlen(H323Connection::CompatibilityIssuesToString(issue));
+      if (len > width)
+        width = len;
+    }
+    for (issue = H323Connection::BeginCompatibilityIssues; issue < H323Connection::EndCompatibilityIssues; ++issue)
+      args.GetContext() << left << setw(width) << issue << " : " << GetCompatibility(issue) << endl;
+    return;
+  }
+
+  if ((issue = H323Connection::CompatibilityIssuesFromString(args[0], false)) == H323Connection::EndCompatibilityIssues) {
+    args.WriteError("Unknown or ambiguous compatibility issue");
+    return;
+  }
+
+  if (args.GetCount() > 1)
+    SetCompatibility(issue, args.GetParameters(1).ToString());
+
+  args.GetContext() << issue << " = " << GetCompatibility(issue) << endl;
+}
+
+
 void H323ConsoleEndPoint::AddCommands(PCLI & cli)
 {
   OpalRTPConsoleEndPoint::AddCommands(cli);
@@ -786,6 +814,9 @@ void H323ConsoleEndPoint::AddCommands(PCLI & cli)
   cli.SetCommand("h323 h245-in-setup-disable", disableH245inSetup, "H.245 in SETUP Disable");
   cli.SetCommand("h323 h239-control", m_defaultH239Control, "H.239 control capability enable");
   cli.SetCommand("h323 term-type", PCREATE_NOTIFIER(CmdTerminalType), "Terminal type value (1..255, default 50)");
+  cli.SetCommand("h323 compatibility", PCREATE_NOTIFIER(CmdCompatibility),
+                 "Set remote system identification exteneded regular expression for compatibility issues.",
+                 "[ <issue> [ <regex> ]]");
 
   cli.SetCommand("h323 alias", PCREATE_NOTIFIER(CmdGatekeeper),
                  "Set alias name(s)",
