@@ -694,8 +694,10 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
       if (patch == NULL) {
         patch = manager.CreateMediaPatch(*sourceStream, sinkStream->RequiresPatchThread(sourceStream) &&
                                                         sourceStream->RequiresPatchThread(sinkStream));
-        if (patch == NULL)
+        if (patch == NULL) {
+          PTRACE(3, "OpenSourceMediaStreams could not patch session " << sessionID << " on " << connection);
           return false;
+        }
       }
 
       sourceStream.SetSafetyMode(PSafeReference);
@@ -710,6 +712,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
   if (!startedOne) {
     if (sourceStream != NULL)
       sourceStream->Close();
+    PTRACE(3, "OpenSourceMediaStreams did not start session " << sessionID << " on " << connection);
     return false;
   }
 
@@ -725,13 +728,16 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
       return false;
 
     OpalMediaPatchPtr patch = sourceStream->GetPatch();
-    if (patch == NULL)
+    if (patch == NULL) {
+      PTRACE(3, "OpenSourceMediaStreams patch failed session " << sessionID << " on " << connection);
       return false;
+    }
 
     otherConnection->OnPatchMediaStream(otherConnection == &connection, *patch);
     sourceStream.SetSafetyMode(PSafeReference);
   }
 
+  PTRACE(4, "OpenSourceMediaStreams completed session " << sessionID << " on " << connection);
   return true;
 }
 

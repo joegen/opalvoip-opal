@@ -1129,8 +1129,8 @@ SDPMediaDescription * SIPConnection::OnSendAnswerSDPSession(SDPMediaDescription 
 #if OPAL_SRTP
   OpalMediaCryptoKeyList keys = incomingMedia->GetCryptoKeys();
   if (!keys.IsEmpty() && !CanDoSRTP()) {
-    PTRACE(2, "SIP\tNo secure signaling, cannot use crypto for " << mediaType << " session " << sessionId);
-    return NULL;
+    PTRACE(2, "SIP\tNo secure signaling, cannot use SDES crypto for " << mediaType << " session " << sessionId);
+    keys.RemoveAll();
   }
 
   // See if we already have a secure version of the media session
