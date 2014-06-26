@@ -118,7 +118,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>..\..\lib\</OutDir>
+    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\</IntDir>
     <TargetName>opald</TargetName>
     <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
@@ -127,7 +127,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>..\..\lib\</OutDir>
+    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\</IntDir>
     <TargetName>opal64d</TargetName>
     <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
@@ -137,7 +137,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
-    <OutDir>..\..\lib\</OutDir>
+    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\</IntDir>
     <TargetName>opal</TargetName>
     <IncludePath>$(ProjectDir)..\..\Lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
@@ -146,7 +146,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
-    <OutDir>..\..\lib\</OutDir>
+    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\</IntDir>
     <TargetName>opal64</TargetName>
     <IncludePath>$(ProjectDir)..\..\Lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
@@ -154,7 +154,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\..\lib\</OutDir>
+    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\</IntDir>
     <TargetName>opaln</TargetName>
     <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
@@ -163,7 +163,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\..\lib\</OutDir>
+    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\</IntDir>
     <TargetName>opal64n</TargetName>
     <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
