@@ -1030,12 +1030,12 @@ bool SIPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPS
 #if OPAL_SRTP
   for (sessionId = 1; sessionId <= sessionCount; ++sessionId) {
     SDPMediaDescription * incomingMedia = sdpOffer.GetMediaDescriptionByIndex(sessionId);
-    if (PAssert(incomingMedia != NULL, PLogicError) && incomingMedia->HasCryptoKeys())
+    if (PAssert(incomingMedia != NULL, PLogicError) && incomingMedia->IsSecure())
       sdpMediaDescriptions[sessionId] = OnSendAnswerSDPSession(incomingMedia, sessionId, sdpOffer.GetDirection(sessionId));
   }
   for (sessionId = 1; sessionId <= sessionCount; ++sessionId) {
     SDPMediaDescription * incomingMedia = sdpOffer.GetMediaDescriptionByIndex(sessionId);
-    if (PAssert(incomingMedia != NULL, PLogicError) && !incomingMedia->HasCryptoKeys())
+    if (PAssert(incomingMedia != NULL, PLogicError) && !incomingMedia->IsSecure())
       sdpMediaDescriptions[sessionId] = OnSendAnswerSDPSession(incomingMedia, sessionId, sdpOffer.GetDirection(sessionId));
   }
 #else
