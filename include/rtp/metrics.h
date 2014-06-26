@@ -45,6 +45,31 @@ class RTP_DataFrame;
 ///////////////////////////////////////////////////////////////////////////////
 // RTCP-XR - VoIP Metrics Report Block
 
+class RTP_ExtendedReport : public PObject
+{
+    PCLASSINFO(RTP_ExtendedReport, PObject);
+  public:
+    void PrintOn(ostream &) const;
+
+    DWORD sourceIdentifier;
+    DWORD lossRate;            /* fraction of RTP data packets lost */ 
+    DWORD discardRate;         /* fraction of RTP data packets discarded */
+    DWORD burstDensity;        /* fraction of RTP data packets within burst periods */
+    DWORD gapDensity;          /* fraction of RTP data packets within inter-burst gaps */
+    DWORD roundTripDelay;  /* the most recently calculated round trip time */    
+    DWORD RFactor;            /* voice quality metric of the call */
+    DWORD mosLQ;               /* MOS for listen quality */
+    DWORD mosCQ;               /* MOS for conversational quality */
+    DWORD jbNominal;      /* current nominal jitter buffer delay, in ms */ 
+    DWORD jbMaximum;      /* current maximum jitter buffer delay, in ms */
+    DWORD jbAbsolute;     /* current absolute maximum jitter buffer delay, in ms */
+};
+
+class RTP_ExtendedReportArray : public PArray<RTP_ExtendedReport>
+{
+};
+
+
 /**This is a class used to calculate voice quality metrics acording to the
    E-Model, proposed by ITU-T G.107 recomendation.	
   */
@@ -132,8 +157,8 @@ class RTCP_XR_Metrics : public PObject
     /**Called when a Sender Report is receveid.
       */
     void OnRxSenderReport(
-      PUInt32b lsr,   ///< "Last SR" field of the received SR.
-      PUInt32b dlsr   ///< "Delay since the last SR" field of the received SR.
+      const PTime & lastTimestamp,  ///< "Last SR" field of the received SR.
+      const PTimeInterval & delay   ///< "Delay since the last SR" field of the received SR.
     );
 
     /**Get the fraction of RTP packets lost since the beginning of the reception.
@@ -197,8 +222,11 @@ class RTCP_XR_Metrics : public PObject
       RTP_ControlFrame & report
     );
 
-    static OpalRTPSession::ExtendedReportArray
-    BuildExtendedReportArray(const RTP_ControlFrame & frame, PINDEX offset);
+    static bool ParseExtendedReportArray(
+      const RTP_ControlFrame & frame,
+      DWORD & ssrc,
+      RTP_ExtendedReportArray & reports
+    );
 
 
   protected:

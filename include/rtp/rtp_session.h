@@ -43,6 +43,7 @@
 #include <rtp/rtp.h>
 #include <rtp/jitter.h>
 #include <opal/mediasession.h>
+#include <opal/mediafmt.h>
 #include <ptlib/sockets.h>
 #include <ptlib/safecoll.h>
 #include <ptlib/notifier_ext.h>
@@ -57,6 +58,7 @@ class PNatMethod;
 class PSTUNServer;
 class PSTUNClient;
 class RTCP_XR_Metrics;
+class RTP_ExtendedReportArray;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -98,6 +100,8 @@ class OpalRTPSession : public OpalMediaSession
 
     virtual void AttachTransport(Transport & transport);
     virtual Transport DetachTransport();
+
+    virtual bool UpdateMediaFormat(const OpalMediaFormat & mediaFormat);
 
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, 
@@ -216,64 +220,22 @@ class OpalRTPSession : public OpalMediaSession
     virtual SendReceiveStatus OnReceiveFEC(RTP_DataFrame & primary, const FecData & fec);
 #endif // OPAL_RTP_FEC
 
-    class ReceiverReport : public PObject  {
-        PCLASSINFO(ReceiverReport, PObject);
-      public:
-#if PTRACING
-        void PrintOn(ostream &) const;
-#endif
+    typedef RTP_SenderReport           SenderReport;
+    typedef RTP_ReceiverReport         ReceiverReport;
+    typedef RTP_ReceiverReportArray    ReceiverReportArray;
+    typedef RTP_SourceDescription      SourceDescription;
+    typedef RTP_SourceDescriptionArray SourceDescriptionArray;
 
-        DWORD sourceIdentifier;
-        DWORD fractionLost;         /* fraction lost since last SR/RR */
-        DWORD totalLost;	    /* cumulative number of packets lost (signed!) */
-        DWORD lastSequenceNumber;   /* extended last sequence number received */
-        DWORD jitter;               /* interarrival jitter */
-        PTimeInterval lastTimestamp;/* last SR packet from this source */
-        PTimeInterval delay;        /* delay since last SR packet */
-    };
-    PARRAY(ReceiverReportArray, ReceiverReport);
-
-    class SenderReport : public PObject  {
-        PCLASSINFO(SenderReport, PObject);
-      public:
-#if PTRACING
-        void PrintOn(ostream &) const;
-#endif
-
-        DWORD sourceIdentifier;
-        PTime realTimestamp;
-        DWORD rtpTimestamp;
-        DWORD packetsSent;
-        DWORD octetsSent;
-    };
-
-    virtual void OnRxSenderReport(const SenderReport & sender,
-                                  const ReceiverReportArray & reports);
-    virtual void OnRxReceiverReport(DWORD src,
-                                    const ReceiverReportArray & reports);
+    virtual void OnRxSenderReport(const SenderReport & sender, const ReceiverReportArray & reports);
+    virtual void OnRxReceiverReport(DWORD src, const ReceiverReportArray & reports);
     virtual void OnReceiverReports(const ReceiverReportArray & reports);
-
-    class SourceDescription : public PObject  {
-        PCLASSINFO(SourceDescription, PObject);
-      public:
-        SourceDescription(DWORD src) { sourceIdentifier = src; }
-#if PTRACING
-        void PrintOn(ostream &) const;
-#endif
-
-        DWORD            sourceIdentifier;
-        POrdinalToString items;
-    };
-    PARRAY(SourceDescriptionArray, SourceDescription);
     virtual void OnRxSourceDescription(const SourceDescriptionArray & descriptions);
-
-    virtual void OnRxGoodbye(const PDWORDArray & sources,
-                             const PString & reason);
+    virtual void OnRxGoodbye(const PDWORDArray & sources, const PString & reason);
+    virtual void OnRxNACK(const std::set<unsigned> lostPackets);
+    virtual void OnRxApplDefined(const RTP_ControlFrame::ApplDefinedInfo & info);
 
     typedef PNotifierListTemplate<const RTP_ControlFrame::ApplDefinedInfo &> ApplDefinedNotifierList;
     typedef PNotifierTemplate<const RTP_ControlFrame::ApplDefinedInfo &> ApplDefinedNotifier;
-
-    virtual void OnRxApplDefined(const RTP_ControlFrame::ApplDefinedInfo & info);
 
     void AddApplDefinedNotifier(const ApplDefinedNotifier & notifier)
     {
@@ -286,31 +248,9 @@ class OpalRTPSession : public OpalMediaSession
     }
 
 #if OPAL_RTCP_XR
-    class ExtendedReport : public PObject  {
-        PCLASSINFO(ExtendedReport, PObject);
-      public:
-#if PTRACING
-        void PrintOn(ostream &) const;
-#endif
-
-        DWORD sourceIdentifier;
-        DWORD lossRate;            /* fraction of RTP data packets lost */ 
-        DWORD discardRate;         /* fraction of RTP data packets discarded */
-        DWORD burstDensity;        /* fraction of RTP data packets within burst periods */
-        DWORD gapDensity;          /* fraction of RTP data packets within inter-burst gaps */
-        DWORD roundTripDelay;  /* the most recently calculated round trip time */    
-        DWORD RFactor;            /* voice quality metric of the call */
-        DWORD mosLQ;               /* MOS for listen quality */
-        DWORD mosCQ;               /* MOS for conversational quality */
-        DWORD jbNominal;      /* current nominal jitter buffer delay, in ms */ 
-        DWORD jbMaximum;      /* current maximum jitter buffer delay, in ms */
-        DWORD jbAbsolute;     /* current absolute maximum jitter buffer delay, in ms */
-    };
-    PARRAY(ExtendedReportArray, ExtendedReport);
-
     virtual void OnRxExtendedReport(
       DWORD src,
-      const ExtendedReportArray & reports
+      const RTP_ExtendedReportArray & reports
     );
 
     RTCP_XR_Metrics * GetExtendedMetrics() const { return m_metrics; }
@@ -606,7 +546,7 @@ class OpalRTPSession : public OpalMediaSession
 
     /**Send flow control (Temporary Maximum Media Stream Bit Rate) Request/Notification.
       */
-    virtual void SendFlowControl(
+    virtual bool SendFlowControl(
       unsigned maxBitRate,    ///< New temporary maximum bit rate
       unsigned overhead = 0,  ///< Protocol overhead, defaults to IP/UDP/RTP header size
       bool notify = false     ///< Send request/notification
@@ -617,13 +557,13 @@ class OpalRTPSession : public OpalMediaSession
         This is called when the media stream receives an OpalVideoUpdatePicture
         media command.
       */
-    virtual void SendIntraFrameRequest(bool rfc2032, bool pictureLoss);
+    virtual bool SendIntraFrameRequest(unsigned options);
 
     /** Tell the rtp session to send out an temporal spatial trade off request
         control packet. This is called when the media stream receives an
         OpalTemporalSpatialTradeOff media command.
       */
-    virtual void SendTemporalSpatialTradeOff(unsigned tradeOff);
+    virtual bool SendTemporalSpatialTradeOff(unsigned tradeOff);
 #endif
 
     void SetNextSentSequenceNumber(WORD num) { lastSentSequenceNumber = (WORD)(num-1); }
@@ -646,6 +586,7 @@ class OpalRTPSession : public OpalMediaSession
     bool InitialiseControlFrame(RTP_ControlFrame & report);
     virtual SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame);
+    virtual bool HandleOutOfOrderPacket(RTP_DataFrame & frame);
     
     virtual bool InternalSetRemoteAddress(const PIPSocket::AddressAndPort & ap, bool isMediaAddress PTRACE_PARAM(, const char * source));
     virtual bool InternalReadData(RTP_DataFrame & frame);
@@ -678,7 +619,9 @@ class OpalRTPSession : public OpalMediaSession
     RTP_DataFrame::PayloadTypes m_redundencyPayloadType;
     RTP_DataFrame::PayloadTypes m_ulpFecPayloadType;
     unsigned                    m_ulpFecSendLevel;
-    RTP_DataFrameList           m_ulpFecSentPackets;
+#endif
+#if OPAL_VIDEO
+    OpalVideoFormat::RTCPFeedback m_feedback;
 #endif
 
     DWORD         syncSourceOut;
@@ -690,22 +633,24 @@ class OpalRTPSession : public OpalMediaSession
     unsigned      txStatisticsInterval;
     unsigned      rxStatisticsInterval;
     WORD          lastSentSequenceNumber;
-    WORD          expectedSequenceNumber;
+    WORD          m_expectedSequenceNumber;
     PTimeInterval lastSentPacketTime;
     PTimeInterval lastReceivedPacketTime;
     PTime         lastSRTimestamp;
     PTime         lastSRReceiveTime;
-    PTimeInterval delaySinceLastSR;
     WORD          lastRRSequenceNumber;
-    bool          resequenceOutOfOrderPackets;
-    unsigned      consecutiveOutOfOrderPackets;
-    PTimeInterval outOfOrderWaitTime;
-    PTimeInterval outOfOrderPacketTime;
-    BYTE          m_lastFIRSequenceNumber;
-    BYTE          m_lastTSTOSequenceNumber;
 
+    unsigned      m_lastTxFIRSequenceNumber;
+    unsigned      m_lastRxFIRSequenceNumber;
+    unsigned      m_lastTxTSTOSequenceNumber;
+    unsigned      m_lastRxTSTOSequenceNumber;
+
+    bool              m_resequenceOutOfOrderPackets;
+    unsigned          m_consecutiveOutOfOrderPackets;
+    WORD              m_maxOutOfOrderPackets; // Number of packets before we give up waiting for an out of order packet
+    PTimeInterval     m_waitOutOfOrderTime;   // Milliseconds before we give up on an out of order packet
+    PSimpleTimer      m_waitOutOfOrderTimer;
     RTP_DataFrameList m_pendingPackets;
-    void SaveOutOfOrderPacket(RTP_DataFrame & frame);
 
     // Statistics
     PTime firstPacketSent;
@@ -737,7 +682,7 @@ class OpalRTPSession : public OpalMediaSession
 
     unsigned txStatisticsCount;
     unsigned rxStatisticsCount;
-    
+
 #if OPAL_RTCP_XR
     // Calculate the VoIP Metrics for RTCP-XR
     RTCP_XR_Metrics * m_metrics;
@@ -829,6 +774,7 @@ class OpalRTPSession : public OpalMediaSession
     unsigned m_levelRxRR;
     unsigned m_levelRxSDES;
     unsigned m_levelRxUnknownFEC;
+    bool CheckSSRC(DWORD senderSSRC, DWORD targetSSRC, const char * pduName) const;
 #endif
 
   private:
