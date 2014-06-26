@@ -641,13 +641,13 @@ PSafePtr<OpalCall> OpalManager::SetUpCall(const PString & partyA,
 }
 
 
-bool OpalManager::OnLocalIncomingCall(OpalCall &)
+bool OpalManager::OnLocalIncomingCall(OpalLocalConnection &)
 {
   return true;
 }
 
 
-bool OpalManager::OnLocalOutgoingCall(OpalCall &)
+bool OpalManager::OnLocalOutgoingCall(const OpalLocalConnection &)
 {
   return true;
 }

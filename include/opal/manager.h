@@ -59,6 +59,7 @@
 
 class OpalEndPoint;
 class OpalMediaPatch;
+class OpalLocalConnection;
 class PSSLCertificate;
 class PSSLPrivateKey;
 
@@ -361,7 +362,7 @@ class OpalManager : public PObject
         @return false to refuse the call.
       */
     virtual bool OnLocalIncomingCall(
-      OpalCall & call   ///<  Call that was completed
+      OpalLocalConnection & connection ///< Connection for incoming call
     );
 
     /**A call back function whenever a call is being initated locally.
@@ -372,7 +373,7 @@ class OpalManager : public PObject
        The default behaviour does nothing and returns true.
       */
     virtual bool OnLocalOutgoingCall(
-      OpalCall & call   ///<  Call that was completed
+      const OpalLocalConnection & connection ///< Connection for outgoing call
     );
 
     /**A call back function whenever a call is completed.
@@ -2083,6 +2084,8 @@ class OpalManager : public PObject
 #if OPAL_PTLIB_NAT
     P_REMOVE_VIRTUAL(PNatMethod *, GetNatMethod(const PIPSocket::Address &) const, NULL);
 #endif
+    P_REMOVE_VIRTUAL(bool,OnLocalIncomingCall(OpalCall &),false);
+    P_REMOVE_VIRTUAL(bool,OnLocalOutgoingCall(OpalCall &),false);
 };
 
 

@@ -272,7 +272,7 @@ public:
   void SetRingInfo(ostream & out, bool verbose, const PString & filename, const PString & device, const PString & driver);
 
   // Various call backs
-  virtual PBoolean OnShowIncoming(const OpalPCSSConnection & connection);
+  virtual bool OnIncomingCall(OpalLocalConnection & connection);
   virtual void OnConnected(OpalConnection & connection);
   virtual void OnReleased(OpalConnection & connection);
   virtual void ShutDown();
@@ -356,11 +356,12 @@ class OpalConsoleManager : public OpalManager
     virtual void EndRun(bool interrupt = false);
     virtual void Broadcast(const PString & msg);
 
-    void OnEstablishedCall(OpalCall & call);
-    void OnHold(OpalConnection & connection, bool fromRemote, bool onHold);
-    bool OnChangedPresentationRole(OpalConnection & connection, const PString & newChairURI, bool request);
-    PBoolean OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
-    void OnClosedMediaStream(const OpalMediaStream & stream);
+    virtual bool OnLocalOutgoingCall(const OpalLocalConnection & connection);
+    virtual void OnEstablishedCall(OpalCall & call);
+    virtual void OnHold(OpalConnection & connection, bool fromRemote, bool onHold);
+    virtual bool OnChangedPresentationRole(OpalConnection & connection, const PString & newChairURI, bool request);
+    virtual PBoolean OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
+    virtual void OnClosedMediaStream(const OpalMediaStream & stream);
     virtual void OnClearedCall(OpalCall & call);
 
     class LockedStream : PWaitAndSignal
@@ -379,6 +380,29 @@ class OpalConsoleManager : public OpalManager
     };
     friend class LockedStream;
     __inline LockedStream LockedOutput() const { return *this; }
+
+
+    bool GetCallFromArgs(PCLI::Arguments & args, PSafePtr<OpalCall> & call) const;
+
+    template <class CONTYPE> bool GetConnectionFromArgs(PCLI::Arguments & args, PSafePtr<CONTYPE> & connection) const
+    {
+      PSafePtr<OpalCall> call;
+      if (!GetCallFromArgs(args, call))
+        return false;
+
+      if ((connection = call->GetConnectionAs<CONTYPE>(0)) != NULL)
+        return true;
+
+      args.WriteError("Not a suitable call for operation.");
+      return false;
+    }
+
+    bool GetStreamFromArgs(
+      PCLI::Arguments & args,
+      const OpalMediaType & mediaType,
+      bool source,
+      PSafePtr<OpalMediaStream> & stream
+    ) const;
 
   protected:
     OpalConsoleEndPoint * GetConsoleEndPoint(const PString & prefix);
@@ -501,6 +525,8 @@ class OpalManagerCLI : public OpalConsoleManager
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdCodecOrder);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdCodecMask);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdCodecOption);
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdShowCalls);
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdHangUp);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdDelay);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdVersion);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdQuit);
