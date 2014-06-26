@@ -992,7 +992,7 @@ OpalMediaCryptoKeyList SDPMediaDescription::GetCryptoKeys() const
 }
 
 
-bool SDPMediaDescription::HasCryptoKeys() const
+bool SDPMediaDescription::IsSecure() const
 {
   return false;
 }
@@ -1698,9 +1698,9 @@ OpalMediaCryptoKeyList SDPRTPAVPMediaDescription::GetCryptoKeys() const
 }
 
 
-bool SDPRTPAVPMediaDescription::HasCryptoKeys() const
+bool SDPRTPAVPMediaDescription::IsSecure() const
 {
-  return !m_cryptoSuites.IsEmpty();
+  return !m_cryptoSuites.IsEmpty() || m_fingerprint.IsValid();
 }
 
 
