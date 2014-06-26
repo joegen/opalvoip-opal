@@ -464,7 +464,6 @@ void IAX2Connection::ReceivedSoundPacketFromNetwork(IAX2Frame *soundFrame)
     mediaFrame.SetMarker(false);
     mediaFrame.SetPayloadType(opalPayloadType);
 
-    mediaFrame.SetSize(mediaFrame.GetPacketSize());
     memcpy(mediaFrame.GetPayloadPtr(), soundFrame->GetMediaDataPointer(), soundFrame->GetMediaDataSize());
     jitterBuffer.WriteData(mediaFrame);
     PTRACE(5, "RTP\tIAX2 frame now on jitter buffer (As a RTP frame)");
