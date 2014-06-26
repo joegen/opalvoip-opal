@@ -127,12 +127,13 @@ class PURL;
    Default is 3 (OPAL_OPT_VIDUP_METHOD_DEFAULT) for both out of band and RTCP
    methods.
   */
-#define OPAL_OPT_VIDUP_METHODS        "Video-Update-Picture-Method"
-#define OPAL_OPT_VIDUP_METHOD_OOB     1
-#define OPAL_OPT_VIDUP_METHOD_RTCP    2
-#define OPAL_OPT_VIDUP_METHOD_PLI     4
-#define OPAL_OPT_VIDUP_METHOD_FIR     8
-#define OPAL_OPT_VIDUP_METHOD_DEFAULT 3
+#define OPAL_OPT_VIDUP_METHODS            "Video-Update-Picture-Method"
+#define OPAL_OPT_VIDUP_METHOD_OOB         1
+#define OPAL_OPT_VIDUP_METHOD_RTCP        2
+#define OPAL_OPT_VIDUP_METHOD_PLI         4
+#define OPAL_OPT_VIDUP_METHOD_FIR         8
+#define OPAL_OPT_VIDUP_METHOD_PREFER_PLI 16
+#define OPAL_OPT_VIDUP_METHOD_DEFAULT     3
 
 
 

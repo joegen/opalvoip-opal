@@ -672,6 +672,7 @@ class OpalRTPMediaStream : public OpalMediaStream
   protected:
     virtual void InternalClose();
     virtual bool InternalSetJitterBuffer(const OpalJitterBuffer::Init & init) const;
+    virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat);
     virtual bool InternalSetPaused(bool pause, bool fromUser, bool fromPatch);
 
     OpalRTPSession & rtpSession;

@@ -47,8 +47,6 @@
 #define BAD_TRANSMIT_PKT_MAX 5      // Number of consecutive bad tx packet in below number of seconds
 #define BAD_TRANSMIT_TIME_MAX 10    //  maximum of seconds of transmit fails before session is killed
 
-const unsigned SecondsFrom1900to1970 = (70*365+17)*24*60*60U;
-
 #define RTP_VIDEO_RX_BUFFER_SIZE 0x100000 // 1Mb
 #define RTP_AUDIO_RX_BUFFER_SIZE 0x4000   // 16kb
 #define RTP_DATA_TX_BUFFER_SIZE  0x2000   // 8kb
@@ -562,6 +560,46 @@ ostream & operator<<(ostream & o, RTP_DataFrame::PayloadTypes t)
   return o;
 }
 
+
+void RTP_ReceiverReport::PrintOn(ostream & strm) const
+{
+  strm << "SSRC=" << RTP_TRACE_SRC(sourceIdentifier)
+       << " fraction=" << fractionLost
+       << " lost=" << totalLost
+       << " last_seq=" << lastSequenceNumber
+       << " jitter=" << jitter
+       << " lsr=" << lastTimestamp
+       << " dlsr=" << delay;
+}
+
+
+void RTP_SenderReport::PrintOn(ostream & strm) const
+{
+  strm << "SSRC=" << RTP_TRACE_SRC(sourceIdentifier)
+       << " ntp=" << realTimestamp.AsString("yyyy/M/d-h:m:s.uuuu")
+       << " rtp=" << rtpTimestamp
+       << " psent=" << packetsSent
+       << " osent=" << octetsSent;
+}
+
+
+void RTP_SourceDescription::PrintOn(ostream & strm) const
+{
+  static const char * const DescriptionNames[RTP_ControlFrame::NumDescriptionTypes] = {
+    "END", "CNAME", "NAME", "EMAIL", "PHONE", "LOC", "TOOL", "NOTE", "PRIV"
+  };
+
+  strm << "SSRC=" << RTP_TRACE_SRC(sourceIdentifier);
+  for (POrdinalToString::const_iterator it = items.begin(); it != items.end(); ++it) {
+    unsigned typeNum = it->first;
+    strm << "\n  item[" << typeNum << "]: type=";
+    if (typeNum < PARRAYSIZE(DescriptionNames))
+      strm << DescriptionNames[typeNum];
+    else
+      strm << typeNum;
+    strm << " data=\"" << it->second << '"';
+  }
+}
 #endif // PTRACING
 
 
@@ -593,7 +631,7 @@ bool RTP_ControlFrame::IsValid() const
   if (m_packetSize < m_compoundOffset + GetPayloadSize() + 4)
     return false;
 
-  unsigned type = GetPayloadType();
+  PayloadTypes type = GetPayloadType();
   return type >= e_FirstValidPayloadType && type <= e_LastValidPayloadType;
 }
 
@@ -618,19 +656,22 @@ void RTP_ControlFrame::SetCount(unsigned count)
 }
 
 
-void RTP_ControlFrame::SetFbType(unsigned type, PINDEX fciSize)
+RTP_ControlFrame::FbHeader * RTP_ControlFrame::AddFeedback(PayloadTypes pt, unsigned type, PINDEX fciSize)
 {
   PAssert(type < 32, PInvalidParameter);
+
+  StartNewPacket(pt);
   SetPayloadSize(fciSize);
   theArray[m_compoundOffset] &= 0xe0;
   theArray[m_compoundOffset] |= type;
+  return (FbHeader *)(theArray + m_compoundOffset + 4); 
 }
 
 
-void RTP_ControlFrame::SetPayloadType(unsigned t)
+void RTP_ControlFrame::SetPayloadType(PayloadTypes pt)
 {
-  PAssert(t < 256, PInvalidParameter);
-  theArray[m_compoundOffset+1] = (BYTE)t;
+  PAssert(pt >= e_FirstValidPayloadType && pt <= e_LastValidPayloadType, PInvalidParameter);
+  theArray[m_compoundOffset+1] = (BYTE)pt;
 }
 
 
@@ -679,19 +720,15 @@ bool RTP_ControlFrame::ReadNextPacket()
 }
 
 
-bool RTP_ControlFrame::StartNewPacket()
+bool RTP_ControlFrame::StartNewPacket(PayloadTypes pt)
 {
   // allocate storage for new packet header
   if (!SetMinSize(m_compoundOffset + 4))
     return false;
 
-  theArray[m_compoundOffset] = '\x80'; // Set version 2
-  theArray[m_compoundOffset+1] = 0;    // Set payload type to illegal
-  theArray[m_compoundOffset+2] = 0;    // Set payload size to zero
-  theArray[m_compoundOffset+3] = 0;
-
-  // payload is now zero bytes
-  return SetPayloadSize(0);
+  theArray[m_compoundOffset] = '\x80';      // Set version 2
+  theArray[m_compoundOffset+1] = (BYTE)pt;  // Payload type
+  return SetPayloadSize(0);                 // payload is zero bytes
 }
 
 void RTP_ControlFrame::EndPacket()
@@ -706,11 +743,92 @@ void RTP_ControlFrame::EndPacket()
   m_payloadSize = 0;
 }
 
+
+bool RTP_ControlFrame::ParseGoodbye(DWORD & ssrc, PDWORDArray & csrc, PString & msg)
+{
+  size_t size = GetPayloadSize();
+  size_t count = GetCount();
+  size_t msgOffset = sizeof(PUInt32b)+count*sizeof(PUInt32b);
+  if (size < msgOffset)
+    return false;
+
+  const BYTE * payload = GetPayloadPtr();
+  ssrc = *(const PUInt32b *)payload;
+
+  csrc.SetSize(count);
+  for (size_t i = 0; i < count; i++)
+    csrc[i] = ((const PUInt32b *)payload)[i+1];
+
+  if (size == msgOffset)
+    return true;
+
+  size_t msgLen = payload[msgOffset];
+  if (size < msgOffset + msgLen + 1)
+    return false;
+
+  msg = PString((const char *)(payload+msgOffset+1), msgLen);
+  return true;
+}
+
+
+static void ParseReceiverReportArray(RTP_ReceiverReportArray & reports, const BYTE * payload, PINDEX count)
+{
+  const RTP_ControlFrame::ReceiverReport * rr = (const RTP_ControlFrame::ReceiverReport *)payload;
+  for (PINDEX repIdx = 0; repIdx < count; repIdx++) {
+    RTP_ReceiverReport * report = new RTP_ReceiverReport;
+    report->sourceIdentifier = rr->ssrc;
+    report->fractionLost = rr->fraction;
+    report->totalLost = rr->GetLostPackets();
+    report->lastSequenceNumber = rr->last_seq;
+    report->jitter = rr->jitter;
+    report->lastTimestamp.SetNTP((PInt64)(DWORD)rr->lsr << 16);
+    report->delay.SetInterval(((DWORD)rr->dlsr*65536LL)/1000); // units of 1/65536 seconds
+    reports.SetAt(repIdx, report);
+    rr++;
+  }
+}
+
+
+bool RTP_ControlFrame::ParseReceiverReport(DWORD & ssrc, RTP_ReceiverReportArray & reports)
+{
+  size_t size = GetPayloadSize();
+  size_t count = GetCount();
+  if (size < sizeof(PUInt32b)+count*sizeof(ReceiverReport))
+    return false;
+
+  const BYTE * payload = GetPayloadPtr();
+  ssrc = *(const PUInt32b *)payload;
+  ParseReceiverReportArray(reports, payload + sizeof(PUInt32b), count);
+  return true;
+}
+
+
+bool RTP_ControlFrame::ParseSenderReport(RTP_SenderReport & txReport, RTP_ReceiverReportArray & rxReports)
+{
+  size_t size = GetPayloadSize();
+  size_t count = GetCount();
+  if (size < sizeof(PUInt32b)+sizeof(SenderReport) + count*sizeof(ReceiverReport))
+    return false;
+
+  const BYTE * payload = GetPayloadPtr();
+
+  txReport.sourceIdentifier = *(const PUInt32b *)payload;
+  const SenderReport & sr = *(const SenderReport *)(payload+sizeof(PUInt32b));
+  txReport.realTimestamp.SetNTP(sr.ntp_ts);
+  txReport.rtpTimestamp = sr.rtp_ts;
+  txReport.packetsSent = sr.psent;
+  txReport.octetsSent = sr.osent;
+
+  ParseReceiverReportArray(rxReports, payload + sizeof(PUInt32b) + sizeof(SenderReport), count);
+  return true;
+}
+
+
 void RTP_ControlFrame::StartSourceDescription(DWORD src)
 {
   // extend payload to include SSRC + END
   SetPayloadSize(m_payloadSize + 4 + 1);  
-  SetPayloadType(RTP_ControlFrame::e_SourceDescription);
+  SetPayloadType(e_SourceDescription);
   SetCount(GetCount()+1); // will be incremented automatically
 
   // get ptr to new item SDES
@@ -741,6 +859,215 @@ void RTP_ControlFrame::AddSourceDescriptionItem(unsigned type, const PString & d
 }
 
 
+bool RTP_ControlFrame::ParseSourceDescriptions(RTP_SourceDescriptionArray & descriptions)
+{
+  size_t size = GetPayloadSize();
+  size_t count = GetCount();
+  if (size < count*sizeof(SourceDescription))
+    return false;
+
+  size_t uiSizeCurrent = 0;   /* current size of the items already parsed */
+
+  const SourceDescription * sdes = (const SourceDescription *)GetPayloadPtr();
+  for (size_t srcIdx = 0; srcIdx < count; srcIdx++) {
+    if (uiSizeCurrent >= size)
+      return false;
+
+    descriptions.SetAt(srcIdx, new RTP_SourceDescription(sdes->src));
+    const SourceDescription::Item * item = sdes->item;
+    while (item->type != e_END) {
+      descriptions[srcIdx].items.SetAt(item->type, PString(item->data, item->length));
+      uiSizeCurrent += item->GetLengthTotal();
+      if (uiSizeCurrent >= size)
+        break;
+
+      item = item->GetNextItem();
+    }
+  }
+
+  return true;
+}
+
+
+void RTP_ControlFrame::AddIFR(DWORD syncSourceIn)
+{
+  StartNewPacket(e_IntraFrameRequest);
+  SetPayloadSize(4);
+
+  // Insert SSRC
+  SetCount(1);
+  BYTE * payload = GetPayloadPtr();
+  *(PUInt32b *)payload = syncSourceIn;
+}
+
+
+void RTP_ControlFrame::AddNACK(DWORD syncSourceOut, DWORD syncSourceIn, const std::set<unsigned> & lostPackets)
+{
+  if (lostPackets.empty())
+    return;
+
+  FbNACK * nack;
+  AddFeedback(e_TransportLayerFeedBack, e_TransportNACK, nack);
+
+  nack->hdr.senderSSRC = syncSourceOut;
+  nack->hdr.mediaSSRC = syncSourceIn;
+
+  std::set<unsigned>::const_iterator it = lostPackets.begin();
+  size_t i = 0;
+  nack->fld[i].packetID = (WORD)*it++;
+  unsigned bitmask = 0;
+  while (it != lostPackets.end()) {
+    unsigned bit = (*it - nack->fld[i].packetID)-1;
+    if (bit < 16)
+      bitmask |= (1 << bit);
+    else {
+      nack->fld[i].bitmask = (WORD)bitmask;
+      bitmask = 0;
+
+      ++i;
+      SetPayloadSize(sizeof(FbNACK)+sizeof(FbNACK::Field)*i);
+      nack->fld[i].packetID = (WORD)*it;
+    }
+  }
+  nack->fld[i].bitmask = (WORD)bitmask;
+}
+
+
+bool RTP_ControlFrame::ParseNACK(DWORD & senderSSRC, DWORD & targetSSRC, std::set<unsigned> & lostPackets)
+{
+  size_t size = GetPayloadSize();
+  if (size < sizeof(FbNACK))
+    return false;
+
+  const FbNACK * nack = (const FbNACK *)GetPayloadPtr();
+  senderSSRC = nack->hdr.senderSSRC;
+  targetSSRC = nack->hdr.mediaSSRC;
+
+  size_t count = (size - sizeof(FbNACK)) / sizeof(FbNACK::Field) + 1;
+
+  lostPackets.clear();
+  for (size_t i = 0; i < count; ++i) {
+    unsigned pid = nack->fld[i].packetID;
+    lostPackets.insert(pid);
+    for (unsigned bit = 0; bit < 16; ++bit) {
+      if (nack->fld[i].bitmask & (1 << bit))
+        lostPackets.insert(pid + bit + 1);
+    }
+  }
+
+  return true;
+}
+
+
+void RTP_ControlFrame::AddTMMB(DWORD syncSourceOut, DWORD syncSourceIn, unsigned maxBitRate, unsigned overhead, bool notify)
+{
+  FbTMMB * tmmb;
+  AddFeedback(e_TransportLayerFeedBack, notify ? e_TMMBN : e_TMMBR, tmmb);
+
+  tmmb->hdr.senderSSRC = syncSourceOut;
+  tmmb->hdr.mediaSSRC = 0;
+  tmmb->requestSSRC = syncSourceIn;
+
+  unsigned exponent = 0;
+  unsigned mantissa = maxBitRate;
+  while (mantissa >= 0x20000) {
+    mantissa >>= 1;
+    ++exponent;
+  }
+  tmmb->bitRateAndOverhead = overhead | (mantissa << 9) | (exponent << 26);
+}
+
+
+bool RTP_ControlFrame::ParseTMMB(DWORD & senderSSRC, DWORD & targetSSRC, unsigned & maxBitRate, unsigned & overhead)
+{
+  size_t size = GetPayloadSize();
+  if (size < sizeof(FbTMMB))
+    return false;
+
+  const FbTMMB * tmmb = (const FbTMMB *)GetPayloadPtr();
+  senderSSRC = tmmb->hdr.senderSSRC;
+  targetSSRC = tmmb->requestSSRC;
+  maxBitRate = ((tmmb->bitRateAndOverhead >> 9)&0x1ffff)*(1 << (tmmb->bitRateAndOverhead >> 26));
+  overhead = tmmb->bitRateAndOverhead & 0x1ff;
+  return true;
+}
+
+
+void RTP_ControlFrame::AddPLI(DWORD syncSourceOut, DWORD syncSourceIn)
+{
+  FbHeader * hdr = AddFeedback(e_PayloadSpecificFeedBack, e_PictureLossIndication, sizeof(FbHeader));
+  hdr->senderSSRC = syncSourceOut;
+  hdr->mediaSSRC = syncSourceIn;
+}
+
+
+bool RTP_ControlFrame::ParsePLI(DWORD & senderSSRC, DWORD & targetSSRC)
+{
+  size_t size = GetPayloadSize();
+  if (size < sizeof(FbHeader))
+    return false;
+
+  const FbHeader * hdr = (const FbHeader *)GetPayloadPtr();
+  senderSSRC = hdr->senderSSRC;
+  targetSSRC = hdr->mediaSSRC;
+  return true;
+}
+
+
+void RTP_ControlFrame::AddFIR(DWORD syncSourceOut, DWORD syncSourceIn, unsigned sequenceNumber)
+{
+  FbFIR * fir;
+  AddFeedback(e_PayloadSpecificFeedBack, e_FullIntraRequest, fir);
+
+  fir->hdr.senderSSRC = syncSourceOut;
+  fir->hdr.mediaSSRC = 0;
+  fir->requestSSRC = syncSourceIn;
+  fir->sequenceNumber = (BYTE)sequenceNumber;
+}
+
+
+bool RTP_ControlFrame::ParseFIR(DWORD & senderSSRC, DWORD & targetSSRC, unsigned & sequenceNumber)
+{
+  size_t size = GetPayloadSize();
+  if (size < sizeof(FbFIR))
+    return false;
+
+  const FbFIR * fir = (const FbFIR *)GetPayloadPtr();
+  senderSSRC = fir->hdr.senderSSRC;
+  targetSSRC = fir->requestSSRC;
+  sequenceNumber = fir->sequenceNumber;
+  return true;
+}
+
+
+void RTP_ControlFrame::AddTSTO(DWORD syncSourceOut, DWORD syncSourceIn, unsigned tradeOff, unsigned sequenceNumber)
+{
+  FbTSTO * tsto;
+  AddFeedback(e_PayloadSpecificFeedBack, e_TemporalSpatialTradeOffRequest, tsto);
+
+  tsto->hdr.senderSSRC = syncSourceOut;
+  tsto->hdr.mediaSSRC = 0;
+  tsto->requestSSRC = syncSourceIn;
+  tsto->sequenceNumber = (BYTE)sequenceNumber;
+  tsto->tradeOff = (BYTE)tradeOff;
+}
+
+
+bool RTP_ControlFrame::ParseTSTO(DWORD & senderSSRC, DWORD & targetSSRC, unsigned & tradeOff, unsigned & sequenceNumber)
+{
+  size_t size = GetPayloadSize();
+  if (size < sizeof(FbTSTO))
+    return false;
+
+  const FbTSTO * tsto = (const FbTSTO *)GetPayloadPtr();
+  senderSSRC = tsto->hdr.senderSSRC;
+  targetSSRC = tsto->requestSSRC;
+  tradeOff = tsto->tradeOff;
+  sequenceNumber = tsto->sequenceNumber;
+  return true;
+}
+
+
 RTP_ControlFrame::ApplDefinedInfo::ApplDefinedInfo(const char * type,
                                                    unsigned subType,
                                                    DWORD ssrc,
@@ -748,37 +1075,41 @@ RTP_ControlFrame::ApplDefinedInfo::ApplDefinedInfo(const char * type,
                                                    PINDEX size)
   : m_subType(subType)
   , m_SSRC(ssrc)
-  , m_data(data)
-  , m_size(size)
+  , m_data(data, size)
 {
   memset(m_type, 0, sizeof(m_type));
-  strncmp(m_type, type, sizeof(m_type)-1);
+  if (type != NULL)
+    strncmp(m_type, type, sizeof(m_type)-1);
 }
 
 
-RTP_ControlFrame::ApplDefinedInfo::ApplDefinedInfo(const RTP_ControlFrame & frame)
+void RTP_ControlFrame::AddApplDefined(const ApplDefinedInfo & info)
 {
-  const BYTE * payload = frame.GetPayloadPtr();
-  memcpy(m_type, payload + 4, 4);
-  m_type[4] = '\0';
-  m_subType = frame.GetCount();
-  m_SSRC = *(const PUInt32b *)payload;
-  m_data = payload + 8;
-  m_size = frame.GetPayloadSize() - 8;
-}
-
-
-void RTP_ControlFrame::SetApplDefined(const ApplDefinedInfo & info)
-{
-  StartNewPacket();
-  SetPayloadType(e_ApplDefined);
-  SetPayloadSize(info.m_size + 8);
+  StartNewPacket(e_ApplDefined);
+  SetPayloadSize(info.m_data.GetSize() + 8);
   BYTE * payload = GetPayloadPtr();
   memcpy(payload + 4, info.m_type, 4);
   SetCount(info.m_subType);
   *(PUInt32b *)payload = info.m_SSRC;
-  memcpy(payload + 8, info.m_data, info.m_size);
+  memcpy(payload + 8, info.m_data, info.m_data.GetSize());
   EndPacket();
+}
+
+
+bool RTP_ControlFrame::ParseApplDefined(ApplDefinedInfo & info)
+{
+  size_t size = GetPayloadSize();
+  if (size < 8)
+    return false;
+
+  const BYTE * payload = GetPayloadPtr();
+
+  memcpy(info.m_type, payload + 4, 4);
+  info.m_type[4] = '\0';
+  info.m_subType = GetCount();
+  info.m_SSRC = *(const PUInt32b *)payload;
+  info.m_data = PBYTEArray(payload + 8, size - 8);
+  return true;
 }
 
 
@@ -787,13 +1118,6 @@ void RTP_ControlFrame::ReceiverReport::SetLostPackets(unsigned packets)
   lost[0] = (BYTE)(packets >> 16);
   lost[1] = (BYTE)(packets >> 8);
   lost[2] = (BYTE)packets;
-}
-
-
-unsigned RTP_ControlFrame::FbTMMB::GetBitRate() const
-{
-  DWORD br = bitRateAndOverhead;
-  return ((br >> 9)&0x1ffff)*(1 << (br >> 26));
 }
 
 
