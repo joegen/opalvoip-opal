@@ -300,7 +300,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 #if OPAL_SRTP
     virtual void SetCryptoKeys(OpalMediaCryptoKeyList & cryptoKeys);
     virtual OpalMediaCryptoKeyList GetCryptoKeys() const;
-    virtual bool HasCryptoKeys() const;
+    virtual bool IsSecure() const;
 #endif
 
     virtual void SetAttribute(const PString & attr, const PString & value);
@@ -455,7 +455,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
 #if OPAL_SRTP
     virtual void SetCryptoKeys(OpalMediaCryptoKeyList & cryptoKeys);
     virtual OpalMediaCryptoKeyList GetCryptoKeys() const;
-    virtual bool HasCryptoKeys() const;
+    virtual bool IsSecure() const;
 #endif
     virtual void SetAttribute(const PString & attr, const PString & value);
     virtual bool FromSession(const OpalMediaSession * session, const SDPMediaDescription * offer);
