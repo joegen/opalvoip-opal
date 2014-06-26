@@ -559,7 +559,7 @@ bool OpalLibSRTP::Context::ProtectRTP(RTP_DataFrame & frame)
 
 #if PTRACING
   if (m_firstRTP) {
-    PTRACE(3, "SRTP\tProtected first RTP packet: " << frame.GetPacketSize() << " ->" << len);
+    PTRACE(3, "SRTP\tProtected first RTP packet: " << frame.GetPacketSize() << "->" << len);
     m_firstRTP = false;
   }
 #endif
@@ -590,7 +590,7 @@ bool OpalLibSRTP::Context::ProtectRTCP(RTP_ControlFrame & frame)
 
 #if PTRACING
   if (m_firstRTCP) {
-    PTRACE(3, "SRTP\tProtected first RTCP packet: " << frame.GetPacketSize() << " ->" << len);
+    PTRACE(3, "SRTP\tProtected first RTCP packet: " << frame.GetPacketSize() << "->" << len);
     m_firstRTCP = false;
   }
 #endif
@@ -614,7 +614,7 @@ bool OpalLibSRTP::Context::UnprotectRTP(RTP_DataFrame & frame)
 
 #if PTRACING
   if (m_firstRTP) {
-    PTRACE(3, "SRTP\tUnprotected first RTP packet: " << frame.GetPacketSize() << " ->" << len);
+    PTRACE(3, "SRTP\tUnprotected first RTP packet: " << frame.GetPacketSize() << "->" << len);
     m_firstRTP = false;
   }
 #endif
@@ -638,7 +638,7 @@ bool OpalLibSRTP::Context::UnprotectRTCP(RTP_ControlFrame & frame)
 
 #if PTRACING
   if (m_firstRTCP) {
-    PTRACE(3, "SRTP\tUnprotected first RTCP packet: " << frame.GetPacketSize() << " ->" << len);
+    PTRACE(3, "SRTP\tUnprotected first RTCP packet: " << frame.GetPacketSize() << "->" << len);
     m_firstRTCP = false;
   }
 #endif

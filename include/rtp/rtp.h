@@ -381,6 +381,9 @@ class RTP_ControlFrame : public PBYTEArray
     PINDEX m_packetSize;
     PINDEX m_compoundOffset;
     PINDEX m_payloadSize;
+
+  private:
+    virtual PBoolean SetSize(PINDEX sz) { return PBYTEArray::SetSize(sz); }
 };
 
 
@@ -568,6 +571,9 @@ class RTP_DataFrame : public PBYTEArray
 #if PTRACING
     friend ostream & operator<<(ostream & o, PayloadTypes t);
 #endif
+
+  private:
+    virtual PBoolean SetSize(PINDEX sz) { return PBYTEArray::SetSize(sz); }
 };
 
 PLIST(RTP_DataFrameList, RTP_DataFrame);
