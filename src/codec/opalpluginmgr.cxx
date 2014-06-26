@@ -1053,7 +1053,7 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
   if ((flags & PluginCodec_ReturnCoderBufferTooSmall) != 0) {
     PINDEX newSize = getOutputDataSizeControl.Call((void *)NULL, (unsigned *)NULL, context);
     PTRACE(3, "OpalPlugin\tBuffer too small: needs=" << newSize << ", actual=" << m_bufferRTP->GetSize() << ", ptr=" << m_bufferRTP);
-    if (!m_bufferRTP->SetSize(newSize))
+    if (!m_bufferRTP->SetMinSize(newSize))
       return false;
 
     // Send an empty payload frame that has a marker bit

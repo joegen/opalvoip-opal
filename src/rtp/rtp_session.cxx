@@ -1134,7 +1134,7 @@ bool OpalRTPSession::CheckSSRC(DWORD senderSSRC, DWORD targetSSRC, const char * 
   PTRACE_IF(4, senderSSRC != syncSourceIn, "Session " << m_sessionId << ", " << pduName << " from incorrect SSRC: "
             << RTP_TRACE_SRC(senderSSRC) << ", expected " << RTP_TRACE_SRC(syncSourceIn));
 
-  if (syncSourceIn == targetSSRC)
+  if (syncSourceOut == targetSSRC)
     return true;
 
   PTRACE(2, "Session " << m_sessionId << ", " << pduName << " for incorrect SSRC: "
@@ -1142,7 +1142,7 @@ bool OpalRTPSession::CheckSSRC(DWORD senderSSRC, DWORD targetSSRC, const char * 
   return false;
 }
 #else
-  #define CheckSSRC(senderSSRC, targetSSRC, pduName) (syncSourceIn == targetSSRC)
+  #define CheckSSRC(senderSSRC, targetSSRC, pduName) (syncSourceOut == targetSSRC)
 #endif
 
 
@@ -2283,6 +2283,9 @@ bool OpalRTPSession::HandleUnreachable(PTRACE_PARAM(const char * channelName))
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataPDU(RTP_DataFrame & frame)
 {
+  if (!frame.SetMinSize(m_connection.GetEndPoint().GetManager().GetMaxRtpPacketSize()))
+    return e_AbortTransport;
+
   PINDEX pduSize = frame.GetSize();
   SendReceiveStatus status = ReadRawPDU(frame.GetPointer(), pduSize, true);
   if (status != e_ProcessPacket)
