@@ -355,8 +355,7 @@ void H460_FeatureStd24AnnexA::OnReceiveOLCGenericInformation(unsigned sessionID,
   sha1.Encode(m_session->GetConnection().GetIdentifier() + cui.GetValue(), digest);
   m_remoteSHA1 = digest;
 
-  m_probeInfo.m_data = m_remoteSHA1.GetPointer();
-  m_probeInfo.m_size = m_remoteSHA1.GetSize();
+  m_probeInfo.m_data = m_remoteSHA1;
 
   if (isAck)
     StartProbe();
@@ -405,7 +404,7 @@ void H460_FeatureStd24AnnexA::StartProbe()
 void H460_FeatureStd24AnnexA::SendProbe()
 {
   RTP_ControlFrame frame;
-  frame.SetApplDefined(m_probeInfo);
+  frame.AddApplDefined(m_probeInfo);
   m_session->WriteControl(frame, &m_directControlAddress);
 }
 
@@ -432,9 +431,8 @@ void H460_FeatureStd24AnnexA::ProbeResponse(OpalRTPSession &, const RTP_ControlF
 
   PWaitAndSignal mutex(m_mutex);
 
-  PBYTEArray rxSHA1(info.m_data, info.m_size, false);
-  if (m_localSHA1 != rxSHA1) {
-    PTRACE(4, "Received probe from some other connection/channel:\nGot " << rxSHA1 << "\nExpected: " << m_localSHA1);
+  if (m_localSHA1 != info.m_data) {
+    PTRACE(4, "Received probe from some other connection/channel:\nGot " << info.m_data << "\nExpected: " << m_localSHA1);
     return;
   }
 

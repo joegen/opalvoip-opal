@@ -264,12 +264,16 @@ class OpalMediaSession : public PSafeObject
     virtual void AttachTransport(Transport & transport);
     virtual Transport DetachTransport();
 
+    virtual bool UpdateMediaFormat(
+      const OpalMediaFormat & mediaFormat
+    );
+
 #if OPAL_SDP
     virtual SDPMediaDescription * CreateSDPMediaDescription();
 #endif
 
     virtual OpalMediaStream * CreateMediaStream(
-      const OpalMediaFormat & mediaFormat, 
+      const OpalMediaFormat & mediaFormat,
       unsigned sessionID, 
       bool isSource
     ) = 0;

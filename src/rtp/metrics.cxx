@@ -40,8 +40,6 @@
 #include <math.h>
 
 
-const unsigned SecondsFrom1900to1970 = (70*365+17)*24*60*60U;
-
 class RTP_DataFrame;
 
 RTCP_XR_Metrics::RTCP_XR_Metrics(float    Ie,
@@ -591,31 +589,17 @@ void RTCP_XR_Metrics::OnPacketLost(DWORD dropped)
 }
 
 
-void RTCP_XR_Metrics::OnRxSenderReport(PUInt32b lsr, PUInt32b dlsr)
+void RTCP_XR_Metrics::OnRxSenderReport(const PTime & lastTimestamp, const PTimeInterval & delay)
 {
-  PTime now;
+  m_arrivalTime.SetCurrentTime();
 
-  /* Convert the arrival time to NTP timestamp */
-  PUInt32b arrival_ntp_sec  = (DWORD)(now.GetTimeInSeconds()+SecondsFrom1900to1970); // Convert from 1970 to 1900
-  PUInt32b arrival_ntp_frac = now.GetMicrosecond()*4294; // Scale microseconds to "fraction" from 0 to 2^32
+  /* Get the timestamp of the last SR */
+  if (lastTimestamp.IsValid())
+    m_lsrTime = lastTimestamp;
 
-  /* Take the middle 32 bits of NTP timestamp and break in seconds and microseconds */
-  arrival_ntp_sec = ((arrival_ntp_sec) & 0x0000FFFF);
-  arrival_ntp_frac = ((arrival_ntp_frac) & 0xFFFF0000);
-
-  m_arrivalTime = PTime(arrival_ntp_sec - SecondsFrom1900to1970, arrival_ntp_frac/4294);
-
-  if (lsr != 0) {
-    /* Get the timestamp of the last SR */
-    PUInt32b lsr_ntp_sec = ((lsr >> 16) & 0x0000FFFF);
-    PUInt32b lsr_ntp_frac = ((lsr << 16) & 0xFFFF0000);
-    m_lsrTime = PTime(lsr_ntp_sec - SecondsFrom1900to1970, lsr_ntp_frac/4294);
-  }
-
-  if (dlsr != 0) {
-    /* Get the delay since last SR */
-    m_dlsrTime.SetInterval (dlsr*1000/65536);
-  }
+  /* Get the delay since last SR */
+  if (delay != 0)
+    m_dlsrTime = delay;
 
   m_srPacketsReceived++;
 }
@@ -699,8 +683,7 @@ void RTCP_XR_Metrics::InsertExtendedReportPacket(unsigned PTRACE_PARAM(sessionID
                                                  OpalRTPSession::JitterBufferPtr jitter,
                                                  RTP_ControlFrame & report)
 {
-  report.StartNewPacket();
-  report.SetPayloadType(RTP_ControlFrame::e_ExtendedReport);
+  report.StartNewPacket(RTP_ControlFrame::e_ExtendedReport);
   report.SetPayloadSize(sizeof(PUInt32b) + sizeof(RTP_ControlFrame::ExtendedReport));  // length is SSRC of packet sender plus XR
   report.SetCount(1);
   BYTE * payload = report.GetPayloadPtr();
@@ -763,14 +746,19 @@ void RTCP_XR_Metrics::InsertExtendedReportPacket(unsigned PTRACE_PARAM(sessionID
 }
 
 
-OpalRTPSession::ExtendedReportArray
-RTCP_XR_Metrics::BuildExtendedReportArray(const RTP_ControlFrame & frame, PINDEX offset)
+bool RTCP_XR_Metrics::ParseExtendedReportArray(const RTP_ControlFrame & frame, DWORD & ssrc, RTP_ExtendedReportArray & reports)
 {
-  OpalRTPSession::ExtendedReportArray reports;
+  size_t size = frame.GetPayloadSize();
+  size_t count = frame.GetCount();
+  if (size < sizeof(PUInt32b)+count*sizeof(RTP_ControlFrame::ExtendedReport))
+    return false;
 
-  const RTP_ControlFrame::ExtendedReport * rr = (const RTP_ControlFrame::ExtendedReport *)(frame.GetPayloadPtr()+offset);
+  const BYTE * payload = frame.GetPayloadPtr();
+
+  ssrc = *(const PUInt32b *)payload;
+  const RTP_ControlFrame::ExtendedReport * rr = (const RTP_ControlFrame::ExtendedReport *)(payload + sizeof(PUInt32b));
   for (PINDEX repIdx = 0; repIdx < (PINDEX)frame.GetCount(); repIdx++) {
-    OpalRTPSession::ExtendedReport * report = new OpalRTPSession::ExtendedReport;
+    RTP_ExtendedReport * report = new RTP_ExtendedReport;
     report->sourceIdentifier = rr->ssrc;
     report->lossRate = rr->loss_rate;
     report->discardRate = rr->discard_rate;
@@ -786,11 +774,12 @@ RTCP_XR_Metrics::BuildExtendedReportArray(const RTP_ControlFrame & frame, PINDEX
     reports.SetAt(repIdx, report);
     rr++;
   }
-  return reports;
+
+  return true;
 }
 
 
-void OpalRTPSession::OnRxExtendedReport(DWORD PTRACE_PARAM(src), const ExtendedReportArray & PTRACE_PARAM(reports))
+void OpalRTPSession::OnRxExtendedReport(DWORD PTRACE_PARAM(src), const RTP_ExtendedReportArray & PTRACE_PARAM(reports))
 {
 #if PTRACING
   if (PTrace::CanTrace(3)) {
@@ -805,7 +794,7 @@ void OpalRTPSession::OnRxExtendedReport(DWORD PTRACE_PARAM(src), const ExtendedR
 
 
 #if PTRACING
-void OpalRTPSession::ExtendedReport::PrintOn(ostream & strm) const
+void RTP_ExtendedReport::PrintOn(ostream & strm) const
 {
   strm << "ssrc=" << RTP_TRACE_SRC(sourceIdentifier)
        << " loss_rate=" << lossRate

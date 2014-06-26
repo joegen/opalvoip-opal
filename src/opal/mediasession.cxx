@@ -353,6 +353,12 @@ OpalMediaSession::Transport OpalMediaSession::DetachTransport()
 }
 
 
+bool OpalMediaSession::UpdateMediaFormat(const OpalMediaFormat &)
+{
+  return true;
+}
+
+
 #if OPAL_SDP
 SDPMediaDescription * OpalMediaSession::CreateSDPMediaDescription()
 {

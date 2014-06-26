@@ -94,9 +94,9 @@ OpalMediaStream::~OpalMediaStream()
 
 void OpalMediaStream::PrintOn(ostream & strm) const
 {
-  strm << GetClass() << '[' << this << "]-"
+  strm << GetClass() << '[' << this << "],"
        << (IsSource() ? "Source" : "Sink")
-       << '-' << mediaFormat;
+       << ',' << mediaFormat << ',' << sessionID;
 }
 
 
@@ -977,6 +977,13 @@ PBoolean OpalRTPMediaStream::RequiresPatchThread() const
 bool OpalRTPMediaStream::InternalSetJitterBuffer(const OpalJitterBuffer::Init & init) const
 {
   return IsSource() && RequiresPatchThread() && rtpSession.SetJitterBufferSize(init);
+}
+
+
+bool OpalRTPMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & newMediaFormat)
+{
+  return OpalMediaStream::InternalUpdateMediaFormat(newMediaFormat) &&
+         rtpSession.UpdateMediaFormat(mediaFormat); // use the newly adjusted mediaFormat
 }
 
 
