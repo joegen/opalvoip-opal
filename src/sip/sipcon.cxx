@@ -1525,18 +1525,13 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
 
     if (sdp != NULL) {
       SDPMediaDescription * mediaDescription = sdp->GetMediaDescriptionByIndex(sessionID);
-      if (mediaDescription != NULL && mediaDescription->GetMediaType() == mediaType) {
-#if OPAL_SRTP
-        if (CanDoSRTP() || mediaDescription->GetCryptoKeys().IsEmpty())
-#endif
-          sessionType = mediaDescription->GetSessionType();
-      }
+      if (mediaDescription != NULL && mediaDescription->GetMediaType() == mediaType)
+        sessionType = mediaDescription->GetSessionType();
 
       if (sessionType.IsEmpty()) {
-        if (m_delayedAckInviteResponse != NULL) {
-          PTRACE(1, "SIP\tNo offer of " << mediaType << " stream for session " << sessionID);
+        PTRACE(2, "SIP\tNo SDP offer of " << mediaType << " stream for session " << sessionID);
+        if (m_delayedAckInviteResponse != NULL)
           return NULL;
-        }
         sessionID = sdp->GetMediaDescriptions().GetSize()+1;
       }
     }
