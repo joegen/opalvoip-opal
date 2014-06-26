@@ -113,10 +113,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>..\..\lib\</OutDir>
+    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>..\..\lib\</OutDir>
+    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\</IntDir>
@@ -129,19 +129,19 @@
     <IncludePath>$(ProjectDir)..\..\Lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>..\..\lib\</OutDir>
+    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>..\..\lib\</OutDir>
+    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">
-    <OutDir>..\..\lib\</OutDir>
+    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">
-    <OutDir>..\..\lib\</OutDir>
+    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IntDir>$(OutDir)$(Configuration)\</IntDir>
+    <IntDir>$(OutDir)$(Platform)\$(Configuration)\</IntDir>
     <TargetName>opals</TargetName>
     <IncludePath>$(ProjectDir)..\..\Lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
@@ -151,7 +151,7 @@
     <IncludePath>$(ProjectDir)..\..\Lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">
-    <IntDir>$(OutDir)$(Configuration)\</IntDir>
+    <IntDir>$(OutDir)$(Platform)\$(Configuration)\</IntDir>
     <TargetName>opalsn</TargetName>
     <IncludePath>$(ProjectDir)..\..\Lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
@@ -1900,9 +1900,9 @@ exit 0
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Android'">Generating Java JNI files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Android'">%(RootDir)%(Directory)java_swig_wrapper.inc</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Android'">$(ProjectDir)../../include/opal.h</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)../../include/opal.h</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(ProjectDir)../../include/opal.h</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)../../include/opal.h</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)../../include/opal.h;%(RootDir)%(Directory)java_swig_wrapper.cxx</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(ProjectDir)../../include/opal.h;%(RootDir)%(Directory)java_swig_wrapper.cxx</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)../../include/opal.h;%(RootDir)%(Directory)java_swig_wrapper.cxx</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)../../include/opal.h</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">$(ProjectDir)../../include/opal.h</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)../../include/opal.h</AdditionalInputs>
