@@ -75,60 +75,34 @@ bool MyManager::Initialise(PArgList & args, bool verbose)
   m_cli->SetCommand("hold",     PCREATE_NOTIFIER(CmdHold),     "Hold call");
   m_cli->SetCommand("retrieve", PCREATE_NOTIFIER(CmdRetrieve), "Retrieve call from hold");
   m_cli->SetCommand("transfer", PCREATE_NOTIFIER(CmdTransfer), "Transfer call", "<uri>");
-  m_cli->SetCommand("hangup",   PCREATE_NOTIFIER(CmdHangUp),   "Hang up call");
 
   return true;
 }
 
 
-bool MyManager::OnLocalIncomingCall(OpalCall & call)
+bool MyManager::OnLocalIncomingCall(OpalLocalConnection & connection)
 {
-  if (!OpalManagerCLI::OnLocalIncomingCall(call))
-    return false;
-
   PStringStream output;
-  output << '\n' << call.GetToken() << ": incoming call at "
-         << PTime().AsString("w h : mma") << " from " << call.GetPartyA();
+  output << '\n' << connection.GetCall().GetToken() << ": incoming call at "
+         << PTime().AsString("w h : mma") << " from " << connection.GetCall().GetPartyA();
 
-  if (m_activeCall != NULL) {
+  if (!OpalManagerCLI::OnLocalIncomingCall(connection)) {
     output << " refused as busy.";
     Broadcast(output);
     return false;
   }
 
-  m_activeCall = &call;
+  m_activeCall = &connection.GetCall();
 
   if (m_autoAnswer) {
-    PSafePtr<OpalLocalConnection> connection = call.GetConnectionAs<OpalLocalConnection>();
-    if (connection == NULL) {
-      output << ", failed.";
-      Broadcast(output);
-      return false;
-    }
     output << ", auto-answered.";
-    connection->AcceptIncoming();
+    connection.AcceptIncoming();
   }
   else
     output << ", answer? ";
 
   Broadcast(output);
   return true;
-}
-
-
-bool MyManager::OnLocalOutgoingCall(OpalCall & call)
-{
-  Broadcast(PSTRSTRM("Call at " << PTime().AsString("w h:mma")
-                  << " from " << call.GetPartyA() << " to " << call.GetPartyB()
-                  << " ringing."));
-  return true;
-}
-
-
-void MyManager::OnEstablishedCall(OpalCall & call)
-{
-  PStringStream strm;
-  strm << "Call from " << call.GetPartyA() << " established to " << call.GetPartyB();
 }
 
 
@@ -264,17 +238,6 @@ void MyManager::CmdTransfer(PCLI::Arguments & args, P_INT_PTR)
     args.WriteError() << "Transfer failed." << endl;
   else
     args.GetContext() << "Transfering call with " << m_activeCall->GetRemoteParty() << " to " << args[0] << endl;
-}
-
-
-void MyManager::CmdHangUp(PCLI::Arguments & args, P_INT_PTR)
-{
-  if (m_activeCall == NULL)
-    args.WriteError() << "No active call." << endl;
-  else {
-    args.GetContext() << "Hanging up call with " << m_activeCall->GetRemoteParty() << endl;
-    m_activeCall->Clear();
-  }
 }
 
 
