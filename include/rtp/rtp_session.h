@@ -191,6 +191,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
+    virtual SendReceiveStatus OnOutOfOrderPacket(RTP_DataFrame & frame);
 
 #if OPAL_RTP_FEC
     virtual SendReceiveStatus OnSendRedundantFrame(RTP_DataFrame & frame);
@@ -544,6 +545,14 @@ class OpalRTPSession : public OpalMediaSession
 
     virtual void SetCloseOnBYE(bool v)  { m_closeOnBye = v; }
 
+    /// Set up RTCP as per RFC rules
+    virtual void InitialiseControlFrame(RTP_ControlFrame & report);
+
+    /// Send BYE command
+    virtual void SendBYE();
+
+    virtual bool SendNACK(const std::set<unsigned> & lostPackets);
+
     /**Send flow control (Temporary Maximum Media Stream Bit Rate) Request/Notification.
       */
     virtual bool SendFlowControl(
@@ -578,15 +587,11 @@ class OpalRTPSession : public OpalMediaSession
 
     void AddFilter(const FilterNotifier & filter);
 
-    virtual void SendBYE();
-
   protected:
     ReceiverReportArray BuildReceiverReportArray(const RTP_ControlFrame & frame, PINDEX offset);
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
-    bool InitialiseControlFrame(RTP_ControlFrame & report);
     virtual SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame);
-    virtual bool HandleOutOfOrderPacket(RTP_DataFrame & frame);
     
     virtual bool InternalSetRemoteAddress(const PIPSocket::AddressAndPort & ap, bool isMediaAddress PTRACE_PARAM(, const char * source));
     virtual bool InternalReadData(RTP_DataFrame & frame);

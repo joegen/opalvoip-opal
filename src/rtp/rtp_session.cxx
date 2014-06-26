@@ -891,8 +891,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
     }
     else {
       if (m_resequenceOutOfOrderPackets) {
-        if (HandleOutOfOrderPacket(frame))
-          return e_IgnorePacket;
+        SendReceiveStatus status = OnOutOfOrderPacket(frame);
+        if (status != e_ProcessPacket)
+          return status;
         sequenceNumber = frame.GetSequenceNumber();
       }
 
@@ -955,15 +956,12 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
 }
 
 
-bool OpalRTPSession::HandleOutOfOrderPacket(RTP_DataFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::OnOutOfOrderPacket(RTP_DataFrame & frame)
 {
   WORD sequenceNumber = frame.GetSequenceNumber();
 
-  bool waitingForOnOutOfOrderPacket = true;
   if (m_pendingPackets.empty())
     m_waitOutOfOrderTimer = m_waitOutOfOrderTime;
-  else
-    waitingForOnOutOfOrderPacket = (sequenceNumber - m_pendingPackets.back().GetSequenceNumber()) < m_maxOutOfOrderPackets;
 
   PTRACE(m_pendingPackets.empty() ? 2 : 5,
          "Session " << m_sessionId << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn) << ", "
@@ -979,8 +977,8 @@ bool OpalRTPSession::HandleOutOfOrderPacket(RTP_DataFrame & frame)
   m_pendingPackets.insert(it, frame);
   frame.MakeUnique();
 
-  if (waitingForOnOutOfOrderPacket || m_waitOutOfOrderTimer.IsRunning())
-    return true;
+  if (m_waitOutOfOrderTimer.IsRunning())
+    return e_IgnorePacket;
 
   // Give up on the packet, probably never coming in. Save current and switch in
   // the lowest numbered packet.
@@ -991,18 +989,18 @@ bool OpalRTPSession::HandleOutOfOrderPacket(RTP_DataFrame & frame)
 
     sequenceNumber = frame.GetSequenceNumber();
     if (sequenceNumber >= m_expectedSequenceNumber)
-      return false;
+      return e_ProcessPacket;
 
     PTRACE(2, "Session " << m_sessionId << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn)
             << ", incorrect out of order packet, got "
             << sequenceNumber << " expected " << m_expectedSequenceNumber);
   }
 
-  return true;
+  return e_ProcessPacket;
 }
 
 
-bool OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report)
+void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report)
 {
   // No packets sent yet, so only set RR
   if (packetsSent == 0) {
@@ -1077,7 +1075,6 @@ bool OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report)
 #if PTRACING
   m_levelTxRR = 4;
 #endif
-  return true;
 }
 
 
@@ -1463,6 +1460,28 @@ DWORD OpalRTPSession::GetPacketOverruns() const
 {
   JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count
   return jitter != NULL ? jitter->GetBufferOverruns() : 0;
+}
+
+
+bool OpalRTPSession::SendNACK(const std::set<unsigned> & lostPackets)
+{
+  if (!(m_feedback&OpalVideoFormat::e_NACK)) {
+    PTRACE(3, "Remote not capable of NACK");
+    return false;
+  }
+
+  RTP_ControlFrame request;
+  InitialiseControlFrame(request);
+
+  PTRACE(3, "Session " << m_sessionId << ", Sending NACK, "
+            "SSRC=" << RTP_TRACE_SRC(syncSourceIn) << ", "
+            "lost=" << lostPackets);
+
+  request.AddNACK(syncSourceOut, syncSourceIn, lostPackets);
+
+  // Send it
+  request.EndPacket();
+  return WriteControl(request);
 }
 
 
