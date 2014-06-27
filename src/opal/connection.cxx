@@ -945,6 +945,13 @@ void OpalConnection::OnClosedMediaStream(const OpalMediaStream & stream)
   endpoint.OnClosedMediaStream(stream);
 }
 
+
+void OpalConnection::OnFailedMediaStream(bool fromRemote, const PString & reason)
+{
+  endpoint.OnFailedMediaStream(*this, fromRemote, reason);
+}
+
+
 #if OPAL_HAS_MIXER
 
 static PString MakeRecordingKey(const OpalMediaPatch & patch)
