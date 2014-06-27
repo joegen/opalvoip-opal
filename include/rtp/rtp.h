@@ -364,6 +364,8 @@ class RTP_ControlFrame : public PBYTEArray
       unsigned & sequenceNumber
     );
 
+#pragma pack()
+
     struct ApplDefinedInfo {
       char         m_type[5];
       unsigned     m_subType;
@@ -374,8 +376,6 @@ class RTP_ControlFrame : public PBYTEArray
     };
     void AddApplDefined(const ApplDefinedInfo & info);
     bool ParseApplDefined(ApplDefinedInfo & info);
-
-#pragma pack()
 
   protected:
     PINDEX m_packetSize;
