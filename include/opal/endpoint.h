@@ -639,6 +639,16 @@ class OpalEndPoint : public PObject
       const OpalMediaStream & stream     ///<  Media stream being closed
     );
 
+    /**Call back for a media stream that failed to open.
+
+       The default behaviour calls the OpalManager function of the same name.
+      */
+    virtual void OnFailedMediaStream(
+      OpalConnection & connection,  ///<  Connection that attempted to open media stream
+      bool fromRemote,              ///< Flag indicating the attempt to open was from remote
+      const PString & reason        ///< Reason for the open fail
+    );
+
     /**Set media security methods in priority order.
        The \p security parameter is an array of names for security methods,
        e.g. { "Clear", "AES_CM_128_HMAC_SHA1_80", "AES_CM_128_HMAC_SHA1_32" }.
