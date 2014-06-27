@@ -2672,7 +2672,7 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
                     "Get/Set codec option value. The format may be @type (e.g. @video) and all codecs of that type are set.",
                     "<format> [ <name> [ <value> ] ]");
 
-  m_cli->SetCommand("calls", PCREATE_NOTIFIER(CmdShowCalls), "Show all active calls");
+  m_cli->SetCommand("show calls", PCREATE_NOTIFIER(CmdShowCalls), "Show all active calls");
   m_cli->SetCommand("hangup", PCREATE_NOTIFIER(CmdHangUp), "Hang up call",
                     "[ --call ]", "c-call: Token for call to hang up");
   m_cli->SetCommand("delay", PCREATE_NOTIFIER(CmdDelay),
