@@ -40,8 +40,9 @@ PCREATE_PROCESS(MyApp);
 
 MyManager::MyManager()
   : OpalManagerCLI(OPAL_CONSOLE_PREFIXES OPAL_PREFIX_PCSS)
-  , m_autoAnswer(false)
+  , m_autoAnswerTime(-1)
 {
+  m_autoAnswerTimer.SetNotifier(PCREATE_NOTIFIER(AutoAnswer));
 }
 
 
@@ -50,7 +51,7 @@ PString MyManager::GetArgumentSpec() const
   PString spec = OpalManagerCLI::GetArgumentSpec();
 
   return "[Application options:]"
-         "a-auto-answer.    Automaticall answer incoming calls.\n"
+         "a-auto-answer;    Automatically answer incoming calls.\n"
          + spec;
 }
 
@@ -60,21 +61,16 @@ bool MyManager::Initialise(PArgList & args, bool verbose)
   if (!OpalManagerCLI::Initialise(args, verbose, OPAL_PREFIX_PCSS":"))
     return false;
 
+  SetAutoAnswer(LockedStream(*this), verbose, args, "auto-answer");
+
   m_cli->SetPrompt("OPAL> ");
-
-  m_autoAnswer = args.HasOption("auto-answer");
-  if (verbose)
-    *LockedOutput() << "Auto answer: " << (m_autoAnswer ? "yes" : "no") << '\n';
-
-  m_cli->SetCommand("auto-answer", m_autoAnswer, "Auto-answer", "Answer call automatically");
-
+  m_cli->SetCommand("auto-answer", PCREATE_NOTIFIER(CmdAutoAnswer), "Answer call automatically", "\"off\" | \"on\" | <seconds>");
   m_cli->SetCommand("speed-dial",  PCREATE_NOTIFIER(CmdSpeedDial), "Set speed dial", "[ <name> [ <url> ] ]");
-
-  m_cli->SetCommand("call",     PCREATE_NOTIFIER(CmdCall),     "Start call", "<uri> | <speed-dial>");
-  m_cli->SetCommand("answer",   PCREATE_NOTIFIER(CmdAnswer),   "Answer call");
-  m_cli->SetCommand("hold",     PCREATE_NOTIFIER(CmdHold),     "Hold call");
-  m_cli->SetCommand("retrieve", PCREATE_NOTIFIER(CmdRetrieve), "Retrieve call from hold");
-  m_cli->SetCommand("transfer", PCREATE_NOTIFIER(CmdTransfer), "Transfer call", "<uri>");
+  m_cli->SetCommand("call",        PCREATE_NOTIFIER(CmdCall),     "Start call", "<uri> | <speed-dial>");
+  m_cli->SetCommand("answer",      PCREATE_NOTIFIER(CmdAnswer),   "Answer call");
+  m_cli->SetCommand("hold",        PCREATE_NOTIFIER(CmdHold),     "Hold call");
+  m_cli->SetCommand("retrieve",    PCREATE_NOTIFIER(CmdRetrieve), "Retrieve call from hold");
+  m_cli->SetCommand("transfer",    PCREATE_NOTIFIER(CmdTransfer), "Transfer call", "<uri>");
 
   return true;
 }
@@ -94,15 +90,35 @@ bool MyManager::OnLocalIncomingCall(OpalLocalConnection & connection)
 
   m_activeCall = &connection.GetCall();
 
-  if (m_autoAnswer) {
-    output << ", auto-answered.";
-    connection.AcceptIncoming();
-  }
-  else
+  if (m_autoAnswerTime < 0)
     output << ", answer? ";
+  else {
+    output << ", auto-answer";
+    if (m_autoAnswerTime > 0) {
+      output << " in " << m_autoAnswerTime.GetSeconds() << " seconds.";
+      m_autoAnswerTimer = m_autoAnswerTime;
+    }
+    else {
+      output << " immediately.";
+      connection.AcceptIncoming();
+    }
+  }
 
   Broadcast(output);
   return true;
+}
+
+
+void MyManager::AutoAnswer(PTimer &, P_INT_PTR)
+{
+  if (m_activeCall == NULL)
+    return;
+
+  PSafePtr<OpalLocalConnection> connection = m_activeCall->GetConnectionAs<OpalLocalConnection>();
+  if (connection == NULL)
+    return;
+
+  connection->AcceptIncoming();
 }
 
 
@@ -114,6 +130,44 @@ void MyManager::OnClearedCall(OpalCall & call)
     m_heldCall.SetNULL();
 
   OpalManagerCLI::OnClearedCall(call);
+}
+
+
+bool MyManager::SetAutoAnswer(ostream & output, bool verbose, const PArgList & args, const char * option)
+{
+  if (option != NULL ? args.HasOption(option) : (args.GetCount() > 0)) {
+    PCaselessString value = option != NULL ? args.GetOptionString(option) : args[0];
+    if (value == "off")
+      m_autoAnswerTime = -1;
+    else if (value == "on" || value == "immediate")
+      m_autoAnswerTime = 0;
+    else if (value.FindSpan("0123456789") == P_MAX_INDEX)
+      m_autoAnswerTime.SetInterval(0, value.AsInteger());
+    else
+      return false;
+  }
+
+  FindEndPointAs<OpalPCSSEndPoint>(OPAL_PREFIX_PCSS)->SetDeferredAnswer(m_autoAnswerTime != 0);
+
+  if (verbose) {
+    output << "Auto answer: ";
+    if (m_autoAnswerTime < 0)
+      output << "off";
+    else if (m_autoAnswerTime == 0)
+      output << "immediate";
+    else
+      output << setprecision(0) << m_autoAnswerTime << " seconds";
+    output << endl;
+  }
+
+  return true;
+}
+
+
+void MyManager::CmdAutoAnswer(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (!SetAutoAnswer(args.GetContext(), true, args, NULL))
+    args.WriteError("Invalid value for seconds");
 }
 
 
