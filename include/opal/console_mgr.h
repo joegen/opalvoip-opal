@@ -360,8 +360,9 @@ class OpalConsoleManager : public OpalManager
     virtual void OnEstablishedCall(OpalCall & call);
     virtual void OnHold(OpalConnection & connection, bool fromRemote, bool onHold);
     virtual bool OnChangedPresentationRole(OpalConnection & connection, const PString & newChairURI, bool request);
-    virtual PBoolean OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
+    virtual void OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & patch);
     virtual void OnClosedMediaStream(const OpalMediaStream & stream);
+    virtual void OnFailedMediaStream(OpalConnection & connection, bool fromRemote, const PString & reason);
     virtual void OnClearedCall(OpalCall & call);
 
     class LockedStream : PWaitAndSignal

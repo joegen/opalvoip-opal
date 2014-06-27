@@ -36,6 +36,7 @@
 
 #include <opal/console_mgr.h>
 
+#include <opal/patch.h>
 #include <h323/gkclient.h>
 #include <codec/vidcodec.h>
 #include <rtp/srtp_session.h>
@@ -1524,7 +1525,7 @@ bool OpalConsolePCSSEndPoint::OnIncomingCall(OpalLocalConnection & connection)
   if (!OpalPCSSEndPoint::OnIncomingCall(connection))
     return false;
 
-  if (m_deferredAnswer) {
+  if (m_deferredAnswer && !m_ringFileName.IsEmpty()) {
     m_ringState = e_Ringing;
 
     if (m_ringThread == NULL)
@@ -2348,14 +2349,12 @@ bool OpalConsoleManager::OnChangedPresentationRole(OpalConnection & connection, 
 }
 
 
-PBoolean OpalConsoleManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
+void OpalConsoleManager::OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & patch)
 {
-  if (!OpalManager::OnOpenMediaStream(connection, stream))
-    return false;
+  OpalManager::OnStartMediaPatch(connection, patch);
 
   if (m_verbose && connection.IsNetworkConnection())
-    stream.PrintDetail(LockedOutput(), "Started");
-  return true;
+    patch.GetSource().PrintDetail(LockedOutput(), "Started");
 }
 
 
@@ -2381,6 +2380,15 @@ void OpalConsoleManager::OnClosedMediaStream(const OpalMediaStream & stream)
     m_statistics.erase(it);
   m_statsMutex.Signal();
 #endif
+}
+
+
+void OpalConsoleManager::OnFailedMediaStream(OpalConnection & connection, bool fromRemote, const PString & reason)
+{
+  OpalManager::OnFailedMediaStream(connection, fromRemote, reason);
+
+  if (m_verbose && connection.IsNetworkConnection())
+    *LockedOutput() << (fromRemote ? "Remote" : "Local") << " open of media failed: " << reason << endl;
 }
 
 
@@ -2664,7 +2672,7 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
                     "Get/Set codec option value. The format may be @type (e.g. @video) and all codecs of that type are set.",
                     "<format> [ <name> [ <value> ] ]");
 
-  m_cli->SetCommand("calls", PCREATE_NOTIFIER(CmdShowCalls), "Show all active calls");
+  m_cli->SetCommand("show calls", PCREATE_NOTIFIER(CmdShowCalls), "Show all active calls");
   m_cli->SetCommand("hangup", PCREATE_NOTIFIER(CmdHangUp), "Hang up call",
                     "[ --call ]", "c-call: Token for call to hang up");
   m_cli->SetCommand("delay", PCREATE_NOTIFIER(CmdDelay),
