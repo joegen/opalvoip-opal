@@ -1224,6 +1224,15 @@ class OpalConnection : public PSafeObject
       const OpalMediaStream & stream     ///<  Media stream being closed
     );
 
+    /**Call back for a media stream that failed to open.
+
+       The default behaviour calls the OpalEndPoint function of the same name.
+      */
+    virtual void OnFailedMediaStream(
+      bool fromRemote,           ///< Flag indicating the attempt to open was from remote
+      const PString & reason     ///< Reason for the open fail
+    );
+
     /**Call back when patching a media stream.
        This function is called when a connection has created a new media
        patch between two streams. This is usually called twice per media patch,

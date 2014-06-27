@@ -575,6 +575,12 @@ void OpalEndPoint::OnClosedMediaStream(const OpalMediaStream & stream)
 }
 
 
+void OpalEndPoint::OnFailedMediaStream(OpalConnection & connection, bool fromRemote, const PString & reason)
+{
+  manager.OnFailedMediaStream(connection, fromRemote, reason);
+}
+
+
 void OpalEndPoint::SetMediaCryptoSuites(const PStringArray & security)
 {
   m_mediaCryptoSuites = security;
