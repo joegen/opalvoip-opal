@@ -1524,7 +1524,7 @@ bool OpalConsolePCSSEndPoint::OnIncomingCall(OpalLocalConnection & connection)
   if (!OpalPCSSEndPoint::OnIncomingCall(connection))
     return false;
 
-  if (m_deferredAnswer) {
+  if (m_deferredAnswer && !m_ringFileName.IsEmpty()) {
     m_ringState = e_Ringing;
 
     if (m_ringThread == NULL)
