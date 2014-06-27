@@ -1922,7 +1922,7 @@ bool H235SecurityCapability::PostTCS(const H323Connection & connection, const H3
 {
   PStringArray availableCryptoSuites = connection.OpalRTPConnection::GetMediaCryptoSuites();
   for (PINDEX i = 0; i < m_cryptoSuites.GetSize();) {
-    if (availableCryptoSuites.GetValuesIndex(m_cryptoSuites[i]) != P_MAX_INDEX)
+    if (availableCryptoSuites.GetValuesIndex(m_cryptoSuites[i].GetFactoryName()) != P_MAX_INDEX)
       ++i;
     else
       m_cryptoSuites.RemoveAt(i);
