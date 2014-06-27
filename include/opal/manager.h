@@ -1117,6 +1117,16 @@ class OpalManager : public PObject
       const OpalMediaStream & stream     ///<  Stream being closed
     );
 
+    /**Call back for a media stream that failed to open.
+
+       The default behaviour does nothing.
+      */
+    virtual void OnFailedMediaStream(
+      OpalConnection & connection,  ///<  Connection that attempted to open media stream
+      bool fromRemote,              ///< Flag indicating the attempt to open was from remote
+      const PString & reason        ///< Reason for the open fail
+    );
+
 #if OPAL_VIDEO
     /**Create a PVideoInputDevice for a source media stream.
       */
