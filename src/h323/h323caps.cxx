@@ -1921,11 +1921,11 @@ bool H235SecurityCapability::OnReceivedPDU(const H245_EncryptionSync & encryptio
 bool H235SecurityCapability::PostTCS(const H323Connection & connection, const H323Capabilities & capabilities)
 {
   PStringArray availableCryptoSuites = connection.OpalRTPConnection::GetMediaCryptoSuites();
-  for (PINDEX i = 0; i < m_cryptoSuites.GetSize();) {
-    if (availableCryptoSuites.GetValuesIndex(m_cryptoSuites[i].GetFactoryName()) != P_MAX_INDEX)
-      ++i;
+  for (OpalMediaCryptoSuite::List::iterator it = m_cryptoSuites.begin(); it != m_cryptoSuites.end();) {
+    if (availableCryptoSuites.GetValuesIndex(it->GetFactoryName()) != P_MAX_INDEX)
+      ++it;
     else
-      m_cryptoSuites.RemoveAt(i);
+      m_cryptoSuites.erase(it++);
   }
   if (m_cryptoSuites.IsEmpty()) {
     PTRACE(4, "H323\tH.235 crypto suite(s) not available.");
