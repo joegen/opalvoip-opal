@@ -2388,7 +2388,7 @@ void OpalConsoleManager::OnFailedMediaStream(OpalConnection & connection, bool f
   OpalManager::OnFailedMediaStream(connection, fromRemote, reason);
 
   if (m_verbose && connection.IsNetworkConnection())
-    *LockedOutput() << (fromRemote ? "Remote" : "Local") << " open of media failed: " << reason;
+    *LockedOutput() << (fromRemote ? "Remote" : "Local") << " open of media failed: " << reason << endl;
 }
 
 
