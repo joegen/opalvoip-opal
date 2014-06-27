@@ -4775,6 +4775,7 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
                                                       ::e_h2250LogicalChannelParameters) {
       errorCode = H245_OpenLogicalChannelReject_cause::e_unsuitableReverseParameters;
       PTRACE(1, "H323\tCreateLogicalChannel - reverse channel, H225.0 only supported");
+      OnFailedMediaStream(true, "Unsupported multiplex");
       return NULL;
     }
 
@@ -4793,6 +4794,7 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
                                                       ::e_h2250LogicalChannelParameters) {
       PTRACE(1, "H323\tCreateLogicalChannel - forward channel, H225.0 only supported");
       errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
+      OnFailedMediaStream(true, "Unsupported multiplex");
       return NULL;
     }
 
@@ -4814,12 +4816,14 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
   if (capability == NULL) {
     errorCode = H245_OpenLogicalChannelReject_cause::e_unknownDataType;
     PTRACE(1, "H323\tCreateLogicalChannel - unknown data type");
+    OnFailedMediaStream(true, "Unknown data type");
     return NULL; // If codec not supported, return error
   }
 
   if (!capability->OnReceivedPDU(*dataType, direction == H323Channel::IsReceiver)) {
     errorCode = H245_OpenLogicalChannelReject_cause::e_dataTypeNotSupported;
     PTRACE(1, "H323\tCreateLogicalChannel - data type not supported");
+    OnFailedMediaStream(true, "Data type not supported");
     return NULL; // If codec not supported, return error
   }
 
@@ -4833,13 +4837,15 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
     return NULL;
   }
 
-  if (!channel->SetInitialBandwidth())
-    errorCode = H245_OpenLogicalChannelReject_cause::e_insufficientBandwidth;
-  else {
+  if (channel->SetInitialBandwidth()) {
     if (startingFast)
       channel->SetBandwidthUsed(0); // Release as can prevent other fast connect OLC's from processing.
     if (channel->OnReceivedPDU(open, errorCode))
       return channel;
+  }
+  else {
+    errorCode = H245_OpenLogicalChannelReject_cause::e_insufficientBandwidth;
+    OnFailedMediaStream(true, "Insufficient bandwidth");
   }
 
   PTRACE(1, "H323\tOnReceivedPDU gave error " << errorCode);
@@ -4864,11 +4870,10 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
   H323TransportAddress remoteControlAddress(transport.GetRemoteAddress().GetHostName(), 0, OpalTransportAddress::UdpPrefix());
   if (param != NULL && param->HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel)) {
     remoteControlAddress = H323TransportAddress(param->m_mediaControlChannel);
-    if (remoteControlAddress.IsEmpty())
+    if (remoteControlAddress.IsEmpty() || !transport.GetRemoteAddress().IsCompatible(remoteControlAddress)) {
+      OnFailedMediaStream(dir == H323Channel::IsReceiver, "Invalid transport address");
       return NULL;
-    // Check for IPv4 or IPv6 mismatch.
-    if (!transport.GetRemoteAddress().IsCompatible(remoteControlAddress))
-      return NULL;
+    }
   }
 
   PCaselessString sessionType = mediaType->GetMediaSessionType();
@@ -4885,6 +4890,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
 
   if (session->GetMediaType() != mediaType) {
     PTRACE(1, "H323\tExisting " << session->GetMediaType() << " session " << sessionID << " does not match " << mediaType);
+    OnFailedMediaStream(dir == H323Channel::IsReceiver, "Incompatible channel with session");
     return NULL;
   }
 
@@ -4901,6 +4907,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
 
   if (!session->Open(transport.GetInterface(), remoteControlAddress, false)) {
     ReleaseMediaSession(sessionID);
+    OnFailedMediaStream(dir == H323Channel::IsReceiver, "Could not open session transports");
     return NULL;
   }
 
@@ -4937,6 +4944,7 @@ PBoolean H323Connection::OnCreateLogicalChannel(const H323Capability & capabilit
     H323Capability * remoteCapability = remoteCapabilities.FindCapability(capability);
     if (remoteCapability == NULL || !remoteCapabilities.IsAllowed(*remoteCapability)) {
       PTRACE(2, "H323\tOnCreateLogicalChannel - transmit capability " << capability << " not allowed.");
+      OnFailedMediaStream(false, "Remote endpoint is not capable of media format");
       return false;
     }
   }
@@ -4944,6 +4952,7 @@ PBoolean H323Connection::OnCreateLogicalChannel(const H323Capability & capabilit
     H323Capability * localCapability = localCapabilities.FindCapability(capability);
     if (localCapability == NULL || !localCapabilities.IsAllowed(*localCapability)) {
       PTRACE(2, "H323\tOnCreateLogicalChannel - receive capability " << capability << " not allowed.");
+      OnFailedMediaStream(true, "Local endpoint is not capable of media format");
       return false;
     }
   }
@@ -4957,6 +4966,7 @@ PBoolean H323Connection::OnCreateLogicalChannel(const H323Capability & capabilit
         if (!remoteCapabilities.IsAllowed(capability, channel->GetCapability())) {
           PTRACE(2, "H323\tOnCreateLogicalChannel - transmit capability " << capability
                  << " and " << channel->GetCapability() << " incompatible.");
+          OnFailedMediaStream(false, "Remote endpoint has incompatible media formats");
           return false;
         }
       }
@@ -4964,6 +4974,7 @@ PBoolean H323Connection::OnCreateLogicalChannel(const H323Capability & capabilit
         if (!localCapabilities.IsAllowed(capability, channel->GetCapability())) {
           PTRACE(2, "H323\tOnCreateLogicalChannel - transmit capability " << capability
                  << " and " << channel->GetCapability() << " incompatible.");
+          OnFailedMediaStream(true, "Local endpoint has incompatible media formats");
           return false;
         }
       }

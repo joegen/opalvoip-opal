@@ -1234,6 +1234,15 @@ void OpalManager::OnClosedMediaStream(const OpalMediaStream & PTRACE_PARAM(chann
   PTRACE(5, "OnClosedMediaStream " << channel);
 }
 
+
+void OpalManager::OnFailedMediaStream(OpalConnection & PTRACE_PARAM(connection),
+                                      bool PTRACE_PARAM(fromRemote),
+                                      const PString & PTRACE_PARAM(reason))
+{
+  PTRACE(3, "OnFailedMediaStream \"" << reason << "\" " << (fromRemote ? "from remote" : "by local") << ' ' << connection);
+}
+
+
 #if OPAL_VIDEO
 
 PBoolean OpalManager::CreateVideoInputDevice(const OpalConnection & connection,
