@@ -570,8 +570,8 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
           }
           else {
             int extendedHeight = frame->height + m_extraHeight;
-            extendedData.SetSize(data.GetHeaderSize() + sizeof(OpalVideoTranscoder::FrameHeader) + (frame->width * extendedHeight * 3 / 2));
-            memcpy(extendedData.GetPointer(), (const BYTE *)data, data.GetHeaderSize());
+            extendedData.CopyHeader(data);
+            extendedData.SetPayloadSize(sizeof(OpalVideoTranscoder::FrameHeader) + (frame->width * extendedHeight * 3 / 2));
             OpalVideoTranscoder::FrameHeader * extendedFrame = (OpalVideoTranscoder::FrameHeader *)extendedData.GetPayloadPtr();
             *extendedFrame = *frame;
             extendedFrame->height = extendedHeight;
