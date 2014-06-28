@@ -109,6 +109,10 @@ extern const char MPEG4_Identifer[] = OpalPluginCodec_Identifer_MPEG4;
 
 const OpalVideoFormat & GetOpalMPEG4()
 {
+  static OpalVideoFormat const plugin(MPEG4FormatName);
+  if (plugin.IsValid())
+    return plugin;
+
   static OpalVideoFormat const format(new OpalMPEG4Format());
 
 #if OPAL_H323

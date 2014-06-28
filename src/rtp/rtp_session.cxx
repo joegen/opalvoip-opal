@@ -136,7 +136,7 @@ const PCaselessString & OpalRTPSession::RTP_AVP () { static const PConstCaseless
 const PCaselessString & OpalRTPSession::RTP_AVPF() { static const PConstCaselessString s("RTP/AVPF"); return s; }
 
 PFACTORY_CREATE(OpalMediaSessionFactory, OpalRTPSession, OpalRTPSession::RTP_AVP());
-static bool RegisteredAVPF = OpalMediaSessionFactory::RegisterAs(OpalRTPSession::RTP_AVPF(), OpalRTPSession::RTP_AVP());
+PFACTORY_SYNONYM(OpalMediaSessionFactory, OpalRTPSession, AVPF, OpalRTPSession::RTP_AVPF());
 
 #if P_CONFIG_FILE
 static PTimeInterval GetDefaultOutOfOrderWaitTime()

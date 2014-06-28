@@ -193,6 +193,10 @@ const OpalVideoFormat & GetOpalH264_MODE0()
 
 const OpalVideoFormat & GetOpalH264_MODE1()
 {
+  static OpalVideoFormat const plugin(H264_Mode1_FormatName);
+  if (plugin.IsValid())
+    return plugin;
+
   static OpalVideoFormat const format(new OpalH264Format(H264_Mode1_FormatName, OpalH264Format::NonInterleaved));
 
 #if OPAL_H323

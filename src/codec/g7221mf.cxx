@@ -98,6 +98,7 @@ class OpalG7221Format : public OpalAudioFormatInternal
   OID(type) \
   const OpalAudioFormat & GetOpal##type() \
   { \
+    static OpalAudioFormat const plugin(type##_FormatName); if (plugin.IsValid()) return plugin; \
     static OpalAudioFormat const format(new OpalG7221Format(type##_FormatName, type##_BIT_RATE, type##_SAMPLE_RATE)); \
     CAPABILITY(type) \
     return format; \

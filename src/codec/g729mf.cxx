@@ -87,7 +87,7 @@ class H323_G729CapabilityTemplate : public H323AudioCapability
     }
 };
 
-#define CAPABILITY(type) static H323CapabilityFactory::Worker<H323_G729CapabilityTemplate<type> > type##_Factory(G729Name[type], true)
+#define CAPABILITY(type) static H323CapabilityFactory::Worker<H323_G729CapabilityTemplate<type> > capability(G729Name[type], true)
 
 #else
 #define CAPABILITY(t)
@@ -124,9 +124,10 @@ class OpalG729Format : public OpalAudioFormat
 #define FORMAT(name) \
   const OpalAudioFormat & GetOpal##name() \
   { \
-  static const OpalG729Format name##_Format(G729Name[name]); \
+    static OpalAudioFormat const plugin(G729Name[name]); if (plugin.IsValid()) return plugin; \
+    static const OpalG729Format format(G729Name[name]); \
     CAPABILITY(name); \
-    return name##_Format; \
+    return format; \
   }
 
 FORMAT(G729  );
