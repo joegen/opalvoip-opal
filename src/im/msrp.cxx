@@ -56,7 +56,7 @@
 
 const PCaselessString & OpalMSRPMediaSession::TCP_MSRP() { static const PConstCaselessString s("TCP/MSRP"); return s; }
 
-static OpalMediaSessionFactory::Worker<OpalMSRPMediaSession> tcp_msrp_session(OpalMSRPMediaSession::TCP_MSRP());
+PFACTORY_CREATE(OpalMediaSessionFactory, OpalMSRPMediaSession, OpalMSRPMediaSession::TCP_MSRP());
 
 class OpalMSRPMediaDefinition : public OpalMediaTypeDefinition 
 {
@@ -87,7 +87,7 @@ OPAL_MEDIATYPE(OpalMSRPMedia);
 class IM##title##OpalMSRPEncoding : public OpalMSRPEncoding \
 { \
 }; \
-static PFactory<OpalMSRPEncoding>::Worker<IM##title##OpalMSRPEncoding> worker_##IM##title##OpalMSRPEncoding(encoding, true); \
+PFACTORY_CREATE(PFactory<OpalMSRPEncoding>, IM##title##OpalMSRPEncoding, encoding, true)
 
 
 DECLARE_MSRP_ENCODING(Text, "text/plain");

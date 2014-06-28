@@ -178,7 +178,7 @@ class PWAVFileConverterALaw : public PWAVFileConverterXLaw
 
 
 PFACTORY_CREATE(PWAVFileConverterFactory, PWAVFileConverterULaw, PWAVFile::fmt_uLaw, false);
-PWAVFileConverterFactory::Worker<PWAVFileConverterALaw> ALawConverter(PWAVFile::fmt_ALaw);
+PFACTORY_CREATE(PWAVFileConverterFactory, PWAVFileConverterALaw, PWAVFile::fmt_ALaw);
 
 
 ///////////////////////////////////////////////////////////////////////
