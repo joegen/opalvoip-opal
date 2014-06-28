@@ -234,7 +234,7 @@ void OpalSIPIMSDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaF
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
-static PFactory<OpalIMContext>::Worker<OpalSIPIMContext> static_OpalSIPContext("sip");
+PFACTORY_CREATE(PFactory<OpalIMContext>, OpalSIPIMContext, "sip");
 
 OpalSIPIMContext::OpalSIPIMContext()
 {

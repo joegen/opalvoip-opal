@@ -58,7 +58,7 @@
 
 
 PFACTORY_CREATE(PFactory<OpalPresentity>, SIP_Presentity, "sip", false);
-static bool Synonym_for_pres_URL = PFactory<OpalPresentity>::RegisterAs("pres", "sip");
+PFACTORY_SYNONYM(PFactory<OpalPresentity>, SIP_Presentity, pres, "pres");
 
 const PCaselessString & SIP_Presentity::PIDFEntityKey()    { static const PConstCaselessString s("PIDF-Entity");    return s; }
 const PCaselessString & SIP_Presentity::SubProtocolKey()   { static const PConstCaselessString s("Sub-Protocol");   return s; }

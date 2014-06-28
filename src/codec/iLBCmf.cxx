@@ -116,6 +116,10 @@ extern const char iLBC_Identifier[] = OpalPluginCodec_Identifer_iLBC;
 
 const OpalAudioFormat & GetOpaliLBC()
 {
+  static OpalAudioFormat const plugin(OPAL_iLBC);
+  if (plugin.IsValid())
+    return plugin;
+
   static OpalAudioFormat const iLBC_Format(new OpaliLBCFormat);
 
 #if OPAL_H323

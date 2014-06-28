@@ -416,7 +416,7 @@ void OpalMediaSession::SetICE(const PString & user, const PString & pass, const 
 
 //////////////////////////////////////////////////////////////////////////////
 
-static OpalMediaSessionFactory::Worker<OpalDummySession> dummy_session(OpalDummySession::SessionType());
+PFACTORY_CREATE(OpalMediaSessionFactory, OpalDummySession, OpalDummySession::SessionType());
 
 OpalDummySession::OpalDummySession(const Init & init, const OpalTransportAddressArray & transports)
   : OpalMediaSession(init)

@@ -140,7 +140,7 @@ typedef H323_G7231Capability H323_G7231_5k3_Capability;
 typedef H323_G7231Capability H323_G7231A_6k3_Capability;
 typedef H323_G7231Capability H323_G7231A_5k3_Capability;
 
-#define CAPABILITY(type) static H323CapabilityFactory::Worker<H323_##type##_Capability> type##_Factory(OPAL_##type, true)
+#define CAPABILITY(type) static H323CapabilityFactory::Worker<H323_##type##_Capability> capability(OPAL_##type, true)
 
 #else
 #define CAPABILITY(t)
@@ -178,9 +178,10 @@ class OpalG7231Format : public OpalAudioFormat
 #define FORMAT(name, rate, annex) \
   const OpalAudioFormat & GetOpal##name() \
   { \
-    static const OpalG7231Format name##_Format(OPAL_##name, rate, annex); \
+    static OpalAudioFormat const plugin(OPAL_##name); if (plugin.IsValid()) return plugin; \
+    static const OpalG7231Format format(OPAL_##name, rate, annex); \
     CAPABILITY(name); \
-    return name##_Format; \
+    return format; \
   }
 
 FORMAT(G7231_6k3, 6300, false);

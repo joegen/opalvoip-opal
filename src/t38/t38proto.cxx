@@ -54,7 +54,7 @@ OPAL_DEFINE_MEDIA_COMMAND(OpalFaxTerminate, PLUGINCODEC_CONTROL_TERMINATE_CODEC)
 
 static const char TIFF_File_FormatName[] = OPAL_FAX_TIFF_FILE;
 const PCaselessString & OpalFaxSession::UDPTL() { return OpalFaxMediaDefinition::UDPTL(); }
-static OpalMediaSessionFactory::Worker<OpalFaxSession> udptl_session(OpalFaxMediaDefinition::UDPTL());
+PFACTORY_CREATE(OpalMediaSessionFactory, OpalFaxSession, OpalFaxMediaDefinition::UDPTL());
 
 
 /////////////////////////////////////////////////////////////////////////////

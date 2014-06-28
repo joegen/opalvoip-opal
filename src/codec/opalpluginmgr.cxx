@@ -3034,7 +3034,7 @@ class H323StaticPluginCodec_##name : public H323StaticPluginCodec \
     PluginCodec_GetCodecFunction Get_GetCodecFn() \
     { return &Opal_StaticCodec_##name##_GetCodecs; } \
 }; \
-static H323StaticPluginCodecFactory::Worker<H323StaticPluginCodec_##name > static##name##CodecFactory( #name ); \
+PFACTORY_CREATE(H323StaticPluginCodecFactory, H323StaticPluginCodec_##name, #name )
 
 #ifdef H323_EMBEDDED_GSM
 

@@ -2828,7 +2828,7 @@ class H323Capabilities : public PObject
  */
 typedef PFactory<H323Capability, std::string> H323CapabilityFactory;
 
-#define H323_REGISTER_CAPABILITY(cls, capName)   static H323CapabilityFactory::Worker<cls> cls##Factory(capName, true); \
+#define H323_REGISTER_CAPABILITY(cls, capName) PFACTORY_CREATE(H323CapabilityFactory, cls, capName, true)
 
 
 #endif // OPAL_H323
