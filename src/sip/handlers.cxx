@@ -1295,7 +1295,7 @@ class SIPMwiEventPackageHandler : public SIPEventPackageHandler
   }
 };
 
-static SIPEventPackageFactory::Worker<SIPMwiEventPackageHandler> mwiEventPackageHandler(SIPSubscribe::MessageSummary);
+PFACTORY_CREATE(SIPEventPackageFactory, SIPMwiEventPackageHandler, SIPSubscribe::MessageSummary);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1338,7 +1338,7 @@ class SIPPresenceEventPackageHandler : public SIPEventPackageHandler
   }
 };
 
-static SIPEventPackageFactory::Worker<SIPPresenceEventPackageHandler> presenceEventPackageHandler(SIPSubscribe::Presence);
+PFACTORY_CREATE(SIPEventPackageFactory, SIPPresenceEventPackageHandler, SIPSubscribe::Presence);
 
 #endif // OPAL_SIP_PRESENCE
 
@@ -1503,7 +1503,7 @@ public:
   std::map<PString, SIPDialogNotification> m_activeDialogs;
 };
 
-static SIPEventPackageFactory::Worker<SIPDialogEventPackageHandler> dialogEventPackageHandler(SIPSubscribe::Dialog);
+PFACTORY_CREATE(SIPEventPackageFactory, SIPDialogEventPackageHandler, SIPSubscribe::Dialog);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1576,7 +1576,7 @@ class SIPRegEventPackageHandler : public SIPEventPackageHandler
   }
 };
 
-static SIPEventPackageFactory::Worker<SIPRegEventPackageHandler> regEventPackageHandler(SIPSubscribe::Reg);
+PFACTORY_CREATE(SIPEventPackageFactory, SIPRegEventPackageHandler, SIPSubscribe::Reg);
 
 
 ///////////////////////////////////////////////////////////////////////////////

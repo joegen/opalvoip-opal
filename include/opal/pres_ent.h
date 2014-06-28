@@ -674,8 +674,7 @@ class OpalPresentityCommand {
   { \
     public: virtual void Process(OpalPresentity & presentity) { dynamic_cast<entity &>(presentity).func(*this); } \
   }; \
-  static PFactory<OpalPresentityCommand>::Worker<entity##_##command> \
-  s_##entity##_##command(PDefaultPFactoryKey(entity::Class())+typeid(command).name())
+  PFACTORY_CREATE(PFactory<OpalPresentityCommand>, entity##_##command, PDefaultPFactoryKey(entity::Class())+typeid(command).name())
 
 
 /** Command for subscribing to the status of another presentity.

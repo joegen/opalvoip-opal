@@ -113,6 +113,10 @@ extern const char G7222_Identifier[] = OpalPluginCodec_Identifer_G7222;
 
 const OpalAudioFormat & GetOpalG7222()
 {
+  static OpalAudioFormat const plugin(G7222FormatName);
+  if (plugin.IsValid())
+    return plugin;
+
   static OpalAudioFormat const format(new OpalG7222Format);
 
 #if OPAL_H323

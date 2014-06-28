@@ -195,6 +195,10 @@ class OpalH263Format : public OpalVideoFormatInternal
 
 const OpalVideoFormat & GetOpalH263()
 {
+  static OpalVideoFormat const plugin(H263FormatName);
+  if (plugin.IsValid())
+    return plugin;
+
   static OpalVideoFormat const format(new OpalH263Format(H263FormatName, H263EncodingName));
 
 #if OPAL_H323
@@ -207,6 +211,10 @@ const OpalVideoFormat & GetOpalH263()
 
 const OpalVideoFormat & GetOpalH263plus()
 {
+  static OpalVideoFormat const plugin(H263plusFormatName);
+  if (plugin.IsValid())
+    return plugin;
+
   static OpalVideoFormat const format(new OpalH263Format(H263plusFormatName, H263plusEncodingName));
 
 #if OPAL_H323
