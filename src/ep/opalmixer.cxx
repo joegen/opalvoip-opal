@@ -1666,7 +1666,7 @@ public:
   }
 };
 
-static SIPEventPackageFactory::Worker<SIPConferenceEventPackageHandler> conferenceEventPackageHandler(SIPSubscribe::Conference);
+PFACTORY_CREATE(SIPEventPackageFactory, SIPConferenceEventPackageHandler, SIPSubscribe::Conference);
 
 #endif // OPAL_SIP
 

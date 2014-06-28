@@ -1368,6 +1368,9 @@ class OpalAudioFormat : public OpalMediaFormat
       OpalMediaFormatInternal * info = NULL
     ) : OpalMediaFormat(info) { }
     OpalAudioFormat(
+      const char * fullName
+    ) : OpalMediaFormat(fullName) { }
+    OpalAudioFormat(
       const char * fullName,    ///<  Full name of media format
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
       const char * encodingName,///<  RTP encoding name

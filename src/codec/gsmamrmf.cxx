@@ -81,7 +81,11 @@ extern const char GSM_AMR_Identifier[] = OpalPluginCodec_Identifer_AMR;
 
 const OpalAudioFormat & GetOpalGSMAMR()
 {
-  static OpalAudioFormat const GSMAMR_Format(new OpalGSMAMRFormat);
+  static OpalAudioFormat const plugin(OPAL_GSMAMR);
+  if (plugin.IsValid())
+    return plugin;
+
+  static OpalAudioFormat const format(new OpalGSMAMRFormat);
 
 #if OPAL_H323
   static H323CapabilityFactory::Worker<
@@ -89,7 +93,7 @@ const OpalAudioFormat & GetOpalGSMAMR()
   > capability(OPAL_GSMAMR, true);
 #endif // OPAL_H323
 
-  return GSMAMR_Format;
+  return format;
 }
 
 
