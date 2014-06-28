@@ -247,7 +247,7 @@ const PCaselessString & OpalSRTPSession::RTP_SAVP () { static const PConstCasele
 const PCaselessString & OpalSRTPSession::RTP_SAVPF() { static const PConstCaselessString s("RTP/SAVPF"); return s; }
 
 PFACTORY_CREATE(OpalMediaSessionFactory, OpalSRTPSession, OpalSRTPSession::RTP_SAVP());
-static bool RegisteredSAVPF = OpalMediaSessionFactory::RegisterAs(OpalSRTPSession::RTP_SAVPF(), OpalSRTPSession::RTP_SAVP());
+PFACTORY_SYNONYM(OpalMediaSessionFactory, OpalSRTPSession, SAVPF, OpalSRTPSession::RTP_SAVPF());
 
 static PConstCaselessString AES_CM_128_HMAC_SHA1_80("AES_CM_128_HMAC_SHA1_80");
 

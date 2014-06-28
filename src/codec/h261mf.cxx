@@ -110,6 +110,10 @@ class OpalH261Format : public OpalVideoFormatInternal
 
 const OpalVideoFormat & GetOpalH261()
 {
+  static OpalVideoFormat const plugin(H261FormatName);
+  if (plugin.IsValid())
+    return plugin;
+
   static OpalVideoFormat const format(new OpalH261Format());
 
 #if OPAL_H323

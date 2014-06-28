@@ -52,27 +52,27 @@
 
 
 const PCaselessString & OpalTransportAddress::IpPrefix()  { static PConstCaselessString s("ip$" ); return s; }  // For backward compatibility with OpenH323
-static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPTransport> opalInternalTCPTransportFactory(OpalTransportAddress::TcpPrefix(), true);
+PFACTORY_CREATE(PFactory<OpalInternalTransport>, OpalInternalTCPTransport, OpalTransportAddress::IpPrefix(), true);
 
 const PCaselessString & OpalTransportAddress::UdpPrefix() { static PConstCaselessString s("udp$"); return s; }
-static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPTransport> opalInternalIPTransportFactory (OpalTransportAddress::IpPrefix (), true);
+PFACTORY_CREATE(PFactory<OpalInternalTransport>, OpalInternalUDPTransport, OpalTransportAddress::UdpPrefix(), true);
 
 const PCaselessString & OpalTransportAddress::TcpPrefix() { static PConstCaselessString s("tcp$"); return s; }
-static PFactory<OpalInternalTransport>::Worker<OpalInternalUDPTransport> opalInternalUDPTransportFactory(OpalTransportAddress::UdpPrefix(), true);
+PFACTORY_SYNONYM(PFactory<OpalInternalTransport>, OpalInternalTCPTransport, TCP, OpalTransportAddress::TcpPrefix ());
 
 #if OPAL_PTLIB_SSL
 
 #include <ptclib/pssl.h>
 const PCaselessString & OpalTransportAddress::TlsPrefix() { static PConstCaselessString s("tls$"); return s; }
-static PFactory<OpalInternalTransport>::Worker<OpalInternalTLSTransport> opalInternalTLSTransportFactory(OpalTransportAddress::TlsPrefix(), true);
+PFACTORY_CREATE(PFactory<OpalInternalTransport>, OpalInternalTLSTransport, OpalTransportAddress::TlsPrefix(), true);
 
 #if OPAL_PTLIB_HTTP
 
 const PCaselessString & OpalTransportAddress::WsPrefix()  { static PConstCaselessString s("ws$");  return s; }
-static PFactory<OpalInternalTransport>::Worker<OpalInternalWSTransport>  opalInternalWSTransportFactory(OpalTransportAddress::WsPrefix(), true);
+PFACTORY_CREATE(PFactory<OpalInternalTransport>, OpalInternalWSTransport, OpalTransportAddress::WsPrefix(), true);
 
 const PCaselessString & OpalTransportAddress::WssPrefix() { static PConstCaselessString s("wss$"); return s; }
-static PFactory<OpalInternalTransport>::Worker<OpalInternalWSSTransport> opalInternalWSSTransportFactory(OpalTransportAddress::WssPrefix(), true);
+PFACTORY_CREATE(PFactory<OpalInternalTransport>, OpalInternalWSSTransport, OpalTransportAddress::WssPrefix(), true);
 
 #endif // OPAL_PTLIB_HTTP
 
