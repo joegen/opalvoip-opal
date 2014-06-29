@@ -138,15 +138,19 @@ const PCaselessString & OpalRTPSession::RTP_AVPF() { static const PConstCaseless
 PFACTORY_CREATE(OpalMediaSessionFactory, OpalRTPSession, OpalRTPSession::RTP_AVP());
 PFACTORY_SYNONYM(OpalMediaSessionFactory, OpalRTPSession, AVPF, OpalRTPSession::RTP_AVPF());
 
+
+#define DEFAULT_OUT_OF_ORDER_WAIT_TIME 50
+
 #if P_CONFIG_FILE
 static PTimeInterval GetDefaultOutOfOrderWaitTime()
 {
-  static PTimeInterval ooowt(PConfig(PConfig::Environment).GetInteger("OPAL_RTP_OUT_OF_ORDER_TIME", 100));
+  static PTimeInterval ooowt(PConfig(PConfig::Environment).GetInteger("OPAL_RTP_OUT_OF_ORDER_TIME", DEFAULT_OUT_OF_ORDER_WAIT_TIME));
   return ooowt;
 }
 #else
-#define GetDefaultOutOfOrderWaitTime() (100)
+#define GetDefaultOutOfOrderWaitTime() (DEFAULT_OUT_OF_ORDER_WAIT_TIME)
 #endif
+
 
 OpalRTPSession::OpalRTPSession(const Init & init)
   : OpalMediaSession(init)
@@ -186,7 +190,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_lastRxTSTOSequenceNumber(UINT_MAX)
   , m_resequenceOutOfOrderPackets(true)
   , m_consecutiveOutOfOrderPackets(0)
-  , m_maxOutOfOrderPackets(50)
+  , m_maxOutOfOrderPackets(20)
   , m_waitOutOfOrderTime(GetDefaultOutOfOrderWaitTime())
   , firstPacketSent(0)
   , firstPacketReceived(0)
@@ -960,13 +964,16 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnOutOfOrderPacket(RTP_DataFra
 {
   WORD sequenceNumber = frame.GetSequenceNumber();
 
+  bool waiting = true;
   if (m_pendingPackets.empty())
     m_waitOutOfOrderTimer = m_waitOutOfOrderTime;
+  else if (m_pendingPackets.GetSize() > m_maxOutOfOrderPackets || m_waitOutOfOrderTimer.HasExpired())
+    waiting = false;
 
   PTRACE(m_pendingPackets.empty() ? 2 : 5,
-         "Session " << m_sessionId << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn) << ", "
-         << (m_pendingPackets.empty() ? "first" : "next") << " out of order packet, got "
-         << sequenceNumber << " expected " << m_expectedSequenceNumber);
+         "Session " << m_sessionId << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn) << ", " <<
+         (m_pendingPackets.empty() ? "first" : (waiting ? "next" : "last")) <<
+         " out of order packet, got " << sequenceNumber << " expected " << m_expectedSequenceNumber);
 
   RTP_DataFrameList::iterator it;
   for (it = m_pendingPackets.begin(); it != m_pendingPackets.end(); ++it) {
@@ -977,7 +984,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnOutOfOrderPacket(RTP_DataFra
   m_pendingPackets.insert(it, frame);
   frame.MakeUnique();
 
-  if (m_waitOutOfOrderTimer.IsRunning())
+  if (waiting)
     return e_IgnorePacket;
 
   // Give up on the packet, probably never coming in. Save current and switch in

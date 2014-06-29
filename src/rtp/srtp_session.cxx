@@ -552,6 +552,8 @@ bool OpalLibSRTP::Context::ProtectRTP(RTP_DataFrame & frame)
     return false;
   }
 
+  frame.MakeUnique();
+
   int len = frame.GetPacketSize();
   frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
   if (!CHECK_ERROR(srtp_protect,(m_ctx, frame.GetPointer(), &len)))
@@ -582,6 +584,8 @@ bool OpalLibSRTP::Context::ProtectRTCP(RTP_ControlFrame & frame)
     return false;
   }
 
+  frame.MakeUnique();
+
   int len = frame.GetPacketSize();
   frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
 
@@ -608,6 +612,8 @@ bool OpalLibSRTP::UnprotectRTP(RTP_DataFrame & frame)
 
 bool OpalLibSRTP::Context::UnprotectRTP(RTP_DataFrame & frame)
 {
+  frame.MakeUnique();
+
   int len = frame.GetPacketSize();
   if (!CHECK_ERROR(srtp_unprotect,(m_ctx, frame.GetPointer(), &len)))
     return false;
@@ -632,6 +638,8 @@ bool OpalLibSRTP::UnprotectRTCP(RTP_ControlFrame & frame)
 
 bool OpalLibSRTP::Context::UnprotectRTCP(RTP_ControlFrame & frame)
 {
+  frame.MakeUnique();
+
   int len = frame.GetSize();
   if (!CHECK_ERROR(srtp_unprotect_rtcp,(m_ctx, frame.GetPointer(), &len)))
     return false;

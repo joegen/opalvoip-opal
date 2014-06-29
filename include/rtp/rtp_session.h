@@ -381,6 +381,26 @@ class OpalRTPSession : public OpalMediaSession
       const PTimeInterval & interval ///<  New time interval for reports.
     )  { m_maxNoTransmitTime = interval; }
 
+    /**Get the maximum out of order packets before flagging it missing.
+      */
+    PINDEX GetMaxOutOfOrderPackets() { return m_maxOutOfOrderPackets; }
+
+    /**Set the maximum out of order packets before flagging it missing.
+      */
+    void SetMaxOutOfOrderPackets(
+      PINDEX packets ///<  Number of packets.
+    )  { m_maxOutOfOrderPackets = packets; }
+
+    /**Get the maximum time to wait for an out of order packet before flagging it missing.
+      */
+    const PTimeInterval & GetOutOfOrderWaitTime() { return m_waitOutOfOrderTime; }
+
+    /**Set the maximum time to wait for an out of order packet before flagging it missing.
+      */
+    void SetOutOfOrderWaitTime(
+      const PTimeInterval & interval ///<  New time interval for reports.
+    )  { m_waitOutOfOrderTime = interval; }
+
     /**Get the time interval for sending RTCP reports in the session.
       */
     PTimeInterval GetReportTimeInterval() { return m_reportTimer.GetResetTime(); }
@@ -652,7 +672,7 @@ class OpalRTPSession : public OpalMediaSession
 
     bool              m_resequenceOutOfOrderPackets;
     unsigned          m_consecutiveOutOfOrderPackets;
-    WORD              m_maxOutOfOrderPackets; // Number of packets before we give up waiting for an out of order packet
+    PINDEX            m_maxOutOfOrderPackets; // Number of packets before we give up waiting for an out of order packet
     PTimeInterval     m_waitOutOfOrderTime;   // Milliseconds before we give up on an out of order packet
     PSimpleTimer      m_waitOutOfOrderTimer;
     RTP_DataFrameList m_pendingPackets;
