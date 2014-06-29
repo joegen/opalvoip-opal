@@ -1472,7 +1472,7 @@ DWORD OpalRTPSession::GetPacketOverruns() const
 
 bool OpalRTPSession::SendNACK(const std::set<unsigned> & lostPackets)
 {
-  if (!(m_feedback&OpalVideoFormat::e_NACK)) {
+  if (!(m_feedback&OpalMediaFormat::e_NACK)) {
     PTRACE(3, "Remote not capable of NACK");
     return false;
   }
@@ -1494,7 +1494,7 @@ bool OpalRTPSession::SendNACK(const std::set<unsigned> & lostPackets)
 
 bool OpalRTPSession::SendFlowControl(unsigned maxBitRate, unsigned overhead, bool notify)
 {
-  if (!(m_feedback&OpalVideoFormat::e_TMMBR)) {
+  if (!(m_feedback&OpalMediaFormat::e_TMMBR)) {
     PTRACE(3, "Remote not capable of flow control (TMMBR)");
     return false;
   }
@@ -1663,7 +1663,7 @@ bool OpalRTPSession::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
   if (!OpalMediaSession::UpdateMediaFormat(mediaFormat))
     return false;
 
-  m_feedback = mediaFormat.GetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), OpalVideoFormat::e_NoRTCPFb);
+  m_feedback = mediaFormat.GetOptionEnum(OpalMediaFormat::RTCPFeedbackOption(), OpalMediaFormat::e_NoRTCPFb);
   return true;
 }
 

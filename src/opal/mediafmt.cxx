@@ -755,13 +755,14 @@ const PString & OpalMediaFormat::FrameTimeOption()     { static const PConstStri
 const PString & OpalMediaFormat::ClockRateOption()     { static const PConstString s(PLUGINCODEC_OPTION_CLOCK_RATE);      return s; }
 const PString & OpalMediaFormat::MaxBitRateOption()    { static const PConstString s(PLUGINCODEC_OPTION_MAX_BIT_RATE);    return s; }
 const PString & OpalMediaFormat::TargetBitRateOption() { static const PConstString s(PLUGINCODEC_OPTION_TARGET_BIT_RATE); return s; }
+const PString & OpalMediaFormat::RTCPFeedbackOption()  { static const PConstString s("RTCP Feedback");                    return s; }
 
 #if OPAL_H323
 const PString & OpalMediaFormat::MediaPacketizationOption()  { static const PConstString s(PLUGINCODEC_MEDIA_PACKETIZATION);  return s; }
 const PString & OpalMediaFormat::MediaPacketizationsOption() { static const PConstString s(PLUGINCODEC_MEDIA_PACKETIZATIONS); return s; }
 #endif
 
-const PString & OpalMediaFormat::ProtocolOption()        { static const PConstString s(PLUGINCODEC_OPTION_PROTOCOL); return s; }
+const PString & OpalMediaFormat::ProtocolOption()        { static const PConstString s(PLUGINCODEC_OPTION_PROTOCOL);           return s; }
 const PString & OpalMediaFormat::MaxTxPacketSizeOption() { static const PConstString s(PLUGINCODEC_OPTION_MAX_TX_PACKET_SIZE); return s; }
 
 
@@ -1211,6 +1212,11 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
 
   if (cr > 0)
     AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::ClockRateOption(), true, OpalMediaOption::NoMerge, cr));
+
+  AddOption(new OpalMediaOptionEnum(OpalMediaFormat::RTCPFeedbackOption(), false,
+                                    OpalMediaFormat::RTCPFeedback().Names(), P_MAX_INDEX,
+                                    OpalMediaOption::IntersectionMerge,
+                                    OpalMediaFormat::e_PLI|OpalMediaFormat::e_FIR|OpalMediaFormat::e_TMMBR|OpalMediaFormat::e_TSTR));
 
   AddOption(new OpalMediaOptionString(OpalMediaFormat::ProtocolOption(), true));
 
@@ -1818,7 +1824,6 @@ const PString & OpalVideoFormat::RateControllerOption()           { static const
 const PString & OpalVideoFormat::FreezeUntilIntraFrameOption()    { static const PConstString s("Freeze Until Intra-Frame");                            return s; }
 const PString & OpalVideoFormat::ContentRoleOption()              { static const PConstString s("Content Role");                               return s; }
 const PString & OpalVideoFormat::ContentRoleMaskOption()          { static const PConstString s("Content Role Mask");                          return s; }
-const PString & OpalVideoFormat::RTCPFeedbackOption()             { static const PConstString s("RTCP Feedback"); return s; }
 #if OPAL_SIP
 const PString & OpalVideoFormat::UseImageAttributeInSDP()         { static const PConstString s("Use Image Attribute in SDP"); return s; }
 #endif
@@ -1891,8 +1896,6 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
     AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxTxPacketSizeOption(),          true,  OpalMediaOption::AlwaysMerge, PluginCodec_RTP_MaxPayloadSize, 100    ));
     AddOption(new OpalMediaOptionString  (OpalVideoFormat::RateControllerOption(),           false                                                                       ));
     AddOption(new OpalMediaOptionBoolean (OpalVideoFormat::FreezeUntilIntraFrameOption(),    false, OpalMediaOption::NoMerge,     false                                  ));
-    AddOption(new OpalMediaOptionEnum    (OpalVideoFormat::RTCPFeedbackOption(),             false, OpalVideoFormat::RTCPFeedback().Names(), P_MAX_INDEX,
-                                          OpalMediaOption::IntersectionMerge, OpalVideoFormat::e_PLI|OpalVideoFormat::e_FIR|OpalVideoFormat::e_TMMBR|OpalVideoFormat::e_TSTR));
 #if OPAL_SIP
     AddOption(new OpalMediaOptionEnum    (OpalVideoFormat::UseImageAttributeInSDP(),         false,
                                           OpalVideoFormat::PEnumNames_ImageAttributeInSDP::Names(), OpalVideoFormat::NumImageAttributeInSDP,

@@ -645,9 +645,7 @@ class OpalRTPSession : public OpalMediaSession
     RTP_DataFrame::PayloadTypes m_ulpFecPayloadType;
     unsigned                    m_ulpFecSendLevel;
 #endif
-#if OPAL_VIDEO
-    OpalVideoFormat::RTCPFeedback m_feedback;
-#endif
+    OpalMediaFormat::RTCPFeedback m_feedback;
 
     DWORD         syncSourceOut;
     DWORD         syncSourceIn;

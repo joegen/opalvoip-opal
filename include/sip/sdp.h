@@ -450,6 +450,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual PCaselessString GetSessionType() const;
     virtual SDPMediaFormat * CreateSDPMediaFormat();
     virtual PString GetSDPPortList() const;
+    virtual bool PreEncode();
     virtual void OutputAttributes(ostream & str) const;
 
 #if OPAL_SRTP
@@ -472,6 +473,18 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
       public:
         Format(SDPRTPAVPMediaDescription & parent) : SDPMediaFormat(parent) { }
         virtual bool FromSDP(const PString & portString);
+
+        virtual void PrintOn(ostream & str) const;
+        virtual bool PreEncode();
+
+        void AddRTCP_FB(const PString & str);
+        void SetRTCP_FB(const OpalMediaFormat::RTCPFeedback & v) { m_rtcp_fb = v; }
+        OpalMediaFormat::RTCPFeedback GetRTCP_FB() const { return m_rtcp_fb; }
+
+      protected:
+        virtual void SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const;
+
+        OpalMediaFormat::RTCPFeedback m_rtcp_fb; // RFC4585
     };
 
     PCaselessString       m_transportType;
@@ -479,6 +492,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
 #if OPAL_SRTP
     PList<SDPCryptoSuite> m_cryptoSuites;
 #endif
+    OpalMediaFormat::RTCPFeedback m_rtcp_fb;
 };
 
 /////////////////////////////////////////////////////////
@@ -530,18 +544,10 @@ class SDPVideoMediaDescription : public SDPRTPAVPMediaDescription
         virtual void PrintOn(ostream & str) const;
         virtual PObject * Clone() const { return new Format(*this); }
 
-        virtual bool PreEncode();
-
-        void AddRTCP_FB(const PString & str);
-        void SetRTCP_FB(const OpalVideoFormat::RTCPFeedback & v) { m_rtcp_fb = v; }
-        OpalVideoFormat::RTCPFeedback GetRTCP_FB() const { return m_rtcp_fb; }
-
         void ParseImageAttr(const PString & params);
 
       protected:
         virtual void SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const;
-
-        OpalVideoFormat::RTCPFeedback m_rtcp_fb; // RFC4585
 
         unsigned m_minRxWidth;
         unsigned m_minRxHeight;
@@ -553,7 +559,6 @@ class SDPVideoMediaDescription : public SDPRTPAVPMediaDescription
         unsigned m_maxTxHeight;
     };
 
-    OpalVideoFormat::RTCPFeedback m_rtcp_fb;
     OpalVideoFormat::ContentRole  m_contentRole;
     unsigned                      m_contentMask;
 };
