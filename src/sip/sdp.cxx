@@ -62,6 +62,21 @@ static char const TokenChars[] = "!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ
 #endif
 static PConstString const IceLiteOption("ice-lite");
 
+static struct {
+  const char * m_name;
+  OpalMediaFormat::RTCPFeedback m_bit;
+} const FeebackNames[] = {
+  { "nack",      OpalMediaFormat::e_NACK },
+  { "nack pli",  OpalMediaFormat::e_PLI },
+  { "nack sli",  OpalMediaFormat::e_SLI },
+  { "ccm fir",   OpalMediaFormat::e_FIR },
+  { "ccm tmmbr", OpalMediaFormat::e_TMMBR },
+  { "ccm tstr",  OpalMediaFormat::e_TSTR },
+  { "ccm vbcm",  OpalMediaFormat::e_VBCM },
+  { "goog-remb", OpalMediaFormat::e_REMB }
+};
+
+
 
 /////////////////////////////////////////////////////////
 //
@@ -1601,28 +1616,14 @@ PCaselessString SDPRTPAVPMediaDescription::GetSessionType() const
 
 static void OuputRTCP_FB(ostream & strm, int payloadType, OpalMediaFormat::RTCPFeedback rtcp_fb)
 {
-  static struct {
-    const char * m_prefix;
-    OpalMediaFormat::RTCPFeedback m_bits;
-  } const Prefixes[] = {
-    { "nack", OpalMediaFormat::e_PLI|OpalMediaFormat::e_NACK|OpalMediaFormat::e_SLI },
-    { "ccm",  OpalMediaFormat::e_FIR|OpalMediaFormat::e_TMMBR|OpalMediaFormat::e_TSTR|OpalMediaFormat::e_VBCM }
-  };
-
-  for (PINDEX i = 0; i < PARRAYSIZE(Prefixes); ++i) {
-    OpalMediaFormat::RTCPFeedback fbForPrefix(rtcp_fb - ~Prefixes[i].m_bits);
-    for (OpalMediaFormat::RTCPFeedback fb = OpalMediaFormat::RTCPFeedback::Begin(); fb != OpalMediaFormat::RTCPFeedback::End(); ++fb) {
-      if (fbForPrefix & fb) {
-        strm << "a=rtcp-fb:";
-        if (payloadType < 0)
-          strm << '*';
-        else
-          strm << payloadType;
-        strm << ' ' << Prefixes[i].m_prefix;
-        if (fb != OpalMediaFormat::e_NACK)
-          strm << ' ' << fb;
-        strm << "\r\n";
-      }
+  for (PINDEX i = 0; i < PARRAYSIZE(FeebackNames); ++i) {
+    if (rtcp_fb & FeebackNames[i].m_bit) {
+      strm << "a=rtcp-fb:";
+      if (payloadType < 0)
+        strm << '*';
+      else
+        strm << payloadType;
+      strm << ' ' << FeebackNames[i].m_name << "\r\n";
     }
   }
 }
@@ -1667,8 +1668,13 @@ void SDPRTPAVPMediaDescription::Format::SetMediaFormatOptions(OpalMediaFormat & 
 
 void SDPRTPAVPMediaDescription::Format::AddRTCP_FB(const PString & str)
 {
-  m_rtcp_fb.FromString(str, false);
-  PTRACE(4, "SDP\tAdded feedback options, result: " << m_rtcp_fb);
+  for (PINDEX i = 0; PARRAYSIZE(FeebackNames); ++i) {
+    if (str *= FeebackNames[i].m_name) {
+      m_rtcp_fb |= FeebackNames[i].m_bit;
+      break;
+    }
+  }
+  PTRACE(5, "SDP\tAdded feedback options, result: " << m_rtcp_fb);
 }
 
 
