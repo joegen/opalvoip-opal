@@ -1054,6 +1054,25 @@ class OpalMediaFormat : public PContainer
       */
     static const PString & MaxTxPacketSizeOption();
 
+    /// RTP/RTCP Feedback options
+    P_DECLARE_STREAMABLE_BITWISE_ENUM_EX(
+      RTCPFeedback,
+      7,
+      (
+        e_NoRTCPFb,
+        e_PLI,      ///< Picture Loss Indication
+        e_FIR,      ///< Full Intra-frame Request
+        e_TMMBR,    ///< Temporary Maximum Media Stream Bit Rate Request
+        e_TSTR,     ///< Temporal/Spatial Tradeoff Request
+        e_VBCM,     ///< Video Back Channel Messages
+        e_NACK,     ///< Negative Acknowlegde
+        e_SLI       ///< Slice Loss Indication
+      ),
+      "", "pli", "fir", "tmmbr", "tstr", "vcbm", "nack", "sli"
+    );
+    /// RTP/RTCP Feedback options
+    static const PString & RTCPFeedbackOption();
+
     /**Get all of the option values of the format as a dictionary.
        Each entry is a name value pair.
       */
@@ -1451,25 +1470,6 @@ class OpalVideoFormat : public OpalMediaFormat
     __inline static unsigned ContentRoleBit(ContentRole contentRole) { return contentRole != eNoRole ? (1<<(contentRole-1)) : 0; }
     static const PString & ContentRoleOption();
     static const PString & ContentRoleMaskOption();
-
-    /// RTP/RTCP Feedback options
-    P_DECLARE_STREAMABLE_BITWISE_ENUM_EX(
-      RTCPFeedback,
-      7,
-      (
-        e_NoRTCPFb,
-        e_PLI,      ///< Picture Loss Indication
-        e_FIR,      ///< Full Intra-frame Request
-        e_TMMBR,    ///< Temporary Maximum Media Stream Bit Rate Request
-        e_TSTR,     ///< Temporal/Spatial Tradeoff Request
-        e_VBCM,     ///< Video Back Channel Messages
-        e_NACK,     ///< Negative Acknowlegde
-        e_SLI       ///< Slice Loss Indication
-      ),
-      "", "pli", "fir", "tmmbr", "tstr", "vcbm", "nack", "sli"
-    );
-    /// RTP/RTCP Feedback options
-    static const PString & RTCPFeedbackOption();
 
 #if OPAL_SIP
     /// Enum for media option to include imageattr from RFC 6236

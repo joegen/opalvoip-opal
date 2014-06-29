@@ -1599,6 +1599,35 @@ PCaselessString SDPRTPAVPMediaDescription::GetSessionType() const
 }
 
 
+static void OuputRTCP_FB(ostream & strm, int payloadType, OpalMediaFormat::RTCPFeedback rtcp_fb)
+{
+  static struct {
+    const char * m_prefix;
+    OpalMediaFormat::RTCPFeedback m_bits;
+  } const Prefixes[] = {
+    { "nack", OpalMediaFormat::e_PLI|OpalMediaFormat::e_NACK|OpalMediaFormat::e_SLI },
+    { "ccm",  OpalMediaFormat::e_FIR|OpalMediaFormat::e_TMMBR|OpalMediaFormat::e_TSTR|OpalMediaFormat::e_VBCM }
+  };
+
+  for (PINDEX i = 0; i < PARRAYSIZE(Prefixes); ++i) {
+    OpalMediaFormat::RTCPFeedback fbForPrefix(rtcp_fb - ~Prefixes[i].m_bits);
+    for (OpalMediaFormat::RTCPFeedback fb = OpalMediaFormat::RTCPFeedback::Begin(); fb != OpalMediaFormat::RTCPFeedback::End(); ++fb) {
+      if (fbForPrefix & fb) {
+        strm << "a=rtcp-fb:";
+        if (payloadType < 0)
+          strm << '*';
+        else
+          strm << payloadType;
+        strm << ' ' << Prefixes[i].m_prefix;
+        if (fb != OpalMediaFormat::e_NACK)
+          strm << ' ' << fb;
+        strm << "\r\n";
+      }
+    }
+  }
+}
+
+
 bool SDPRTPAVPMediaDescription::Format::FromSDP(const PString & portString)
 {
   int pt = portString.AsInteger();
@@ -1607,6 +1636,39 @@ bool SDPRTPAVPMediaDescription::Format::FromSDP(const PString & portString)
 
   m_payloadType = (RTP_DataFrame::PayloadTypes)pt;
   return true;
+}
+
+
+void SDPRTPAVPMediaDescription::Format::PrintOn(ostream & strm) const
+{
+  SDPMediaFormat::PrintOn(strm);
+
+  OuputRTCP_FB(strm, m_payloadType, m_rtcp_fb);
+}
+
+
+bool SDPRTPAVPMediaDescription::Format::PreEncode()
+{
+  m_rtcp_fb = m_mediaFormat.GetOptionEnum(OpalMediaFormat::RTCPFeedbackOption(), OpalMediaFormat::e_NoRTCPFb);
+  return SDPMediaFormat::PreEncode();
+}
+
+
+void SDPRTPAVPMediaDescription::Format::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
+{
+  SDPMediaFormat::SetMediaFormatOptions(mediaFormat);
+
+  // Save the RTCP feedback (RFC4585) capability.
+  if (!m_parent.GetOptionStrings().GetBoolean(OPAL_OPT_FORCE_RTCP_FB))
+    mediaFormat.SetOptionEnum(OpalMediaFormat::RTCPFeedbackOption(),
+                m_rtcp_fb * mediaFormat.GetOptionEnum(OpalMediaFormat::RTCPFeedbackOption(), OpalMediaFormat::e_NoRTCPFb));
+}
+
+
+void SDPRTPAVPMediaDescription::Format::AddRTCP_FB(const PString & str)
+{
+  m_rtcp_fb.FromString(str, false);
+  PTRACE(4, "SDP\tAdded feedback options, result: " << m_rtcp_fb);
 }
 
 
@@ -1628,6 +1690,42 @@ PString SDPRTPAVPMediaDescription::GetSDPPortList() const
     strm << ' ' << (int)format->GetPayloadType();
 
   return strm;
+}
+
+
+bool SDPRTPAVPMediaDescription::PreEncode()
+{
+  if (!SDPMediaDescription::PreEncode())
+    return false;
+
+  m_rtcp_fb = OpalMediaFormat::e_NoRTCPFb;
+
+  if (IsFeedbackEnabled() || m_stringOptions.GetInteger(OPAL_OPT_OFFER_RTCP_FB, 1) == 1) {
+    bool first = true;
+    for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
+      Format * vidFmt = dynamic_cast<Format *>(&*format);
+      if (vidFmt == NULL)
+        continue;
+      if (first) {
+        first = false;
+        m_rtcp_fb = vidFmt->GetRTCP_FB();
+      }
+      else if (m_rtcp_fb != vidFmt->GetRTCP_FB()) {
+        m_rtcp_fb = OpalMediaFormat::e_NoRTCPFb;
+        break;
+      }
+    }
+  }
+
+  if (m_rtcp_fb != OpalMediaFormat::e_NoRTCPFb) {
+    for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
+      Format * vidFmt = dynamic_cast<Format *>(&*format);
+      if (PAssertNULL(vidFmt) != NULL)
+        vidFmt->SetRTCP_FB(OpalMediaFormat::e_NoRTCPFb);
+    }
+  }
+
+  return true;
 }
 
 
@@ -1658,6 +1756,9 @@ void SDPRTPAVPMediaDescription::OutputAttributes(ostream & strm) const
     for (PStringOptions::const_iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2)
       strm << "a=ssrc:" << it1->first << ' ' << it2->first << ':' << it2->second << CRLF;
   }
+
+  // m_rtcp_fb is set via SDPRTPAVPMediaDescription::PreEncode according to various options
+  OuputRTCP_FB(strm, -1, m_rtcp_fb);
 }
 
 
@@ -1990,35 +2091,6 @@ SDPMediaFormat * SDPVideoMediaDescription::CreateSDPMediaFormat()
 static const char * const ContentRoleNames[OpalVideoFormat::EndContentRole] = { NULL, "slides", "main", "speaker", "sl" };
 
 
-static void OuputRTCP_FB(ostream & strm, int payloadType, OpalVideoFormat::RTCPFeedback rtcp_fb)
-{
-  static struct {
-    const char * m_prefix;
-    OpalVideoFormat::RTCPFeedback m_bits;
-  } const Prefixes[] = {
-    { "nack", OpalVideoFormat::e_PLI|OpalVideoFormat::e_NACK|OpalVideoFormat::e_SLI },
-    { "ccm",  OpalVideoFormat::e_FIR|OpalVideoFormat::e_TMMBR|OpalVideoFormat::e_TSTR|OpalVideoFormat::e_VBCM }
-  };
-
-  for (PINDEX i = 0; i < PARRAYSIZE(Prefixes); ++i) {
-    OpalVideoFormat::RTCPFeedback fbForPrefix(rtcp_fb - ~Prefixes[i].m_bits);
-    for (OpalVideoFormat::RTCPFeedback fb = OpalVideoFormat::RTCPFeedback::Begin(); fb != OpalVideoFormat::RTCPFeedback::End(); ++fb) {
-      if (fbForPrefix & fb) {
-        strm << "a=rtcp-fb:";
-        if (payloadType < 0)
-          strm << '*';
-        else
-          strm << payloadType;
-        strm << ' ' << Prefixes[i].m_prefix;
-        if (fb != OpalVideoFormat::e_NACK)
-          strm << ' ' << fb;
-        strm << "\r\n";
-      }
-    }
-  }
-}
-
-
 void SDPVideoMediaDescription::OutputAttributes(ostream & strm) const
 {
   // call ancestor
@@ -2026,9 +2098,6 @@ void SDPVideoMediaDescription::OutputAttributes(ostream & strm) const
 
   if (m_contentRole < OpalVideoFormat::EndContentRole && ContentRoleNames[m_contentRole] != NULL)
     strm << "a=content:" << ContentRoleNames[m_contentRole] << CRLF;
-
-  // m_rtcp_fb is set via SDPRTPAVPMediaDescription::PreEncode according to various options
-  OuputRTCP_FB(strm, -1, m_rtcp_fb);
 }
 
 
@@ -2142,33 +2211,6 @@ bool SDPVideoMediaDescription::PreEncode()
       m_contentRole = format->GetMediaFormat().GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole);
   }
 
-  m_rtcp_fb = OpalVideoFormat::e_NoRTCPFb;
-
-  if (IsFeedbackEnabled() || m_stringOptions.GetInteger(OPAL_OPT_OFFER_RTCP_FB, 1) == 1) {
-    bool first = true;
-    for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
-      Format * vidFmt = dynamic_cast<Format *>(&*format);
-      if (vidFmt == NULL)
-        continue;
-      if (first) {
-        first = false;
-        m_rtcp_fb = vidFmt->GetRTCP_FB();
-      }
-      else if (m_rtcp_fb != vidFmt->GetRTCP_FB()) {
-        m_rtcp_fb = OpalVideoFormat::e_NoRTCPFb;
-        break;
-      }
-    }
-  }
-
-  if (m_rtcp_fb != OpalVideoFormat::e_NoRTCPFb) {
-    for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
-      Format * vidFmt = dynamic_cast<Format *>(&*format);
-      if (PAssertNULL(vidFmt) != NULL)
-        vidFmt->SetRTCP_FB(OpalVideoFormat::e_NoRTCPFb);
-    }
-  }
-
   return true;
 }
 
@@ -2207,9 +2249,7 @@ SDPVideoMediaDescription::Format::Format(SDPVideoMediaDescription & parent)
 
 void SDPVideoMediaDescription::Format::PrintOn(ostream & strm) const
 {
-  SDPMediaFormat::PrintOn(strm);
-
-  OuputRTCP_FB(strm, m_payloadType, m_rtcp_fb);
+  SDPRTPAVPMediaDescription::Format::PrintOn(strm);
 
   if (m_mediaFormat.GetOptionEnum(OpalVideoFormat::UseImageAttributeInSDP(), OpalVideoFormat::ImageAttrSuppressed) != OpalVideoFormat::ImageAttrSuppressed)
     strm << "a=imageattr:" << (int)m_payloadType
@@ -2220,20 +2260,6 @@ void SDPVideoMediaDescription::Format::PrintOn(ostream & strm) const
          << "]] send [x=[128:16:" << m_mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption())
          << "],y=[96:16:" << m_mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption())
          << "]]\r\n";
-}
-
-
-bool SDPVideoMediaDescription::Format::PreEncode()
-{
-  m_rtcp_fb = m_mediaFormat.GetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), OpalVideoFormat::e_NoRTCPFb);
-  return SDPMediaFormat::PreEncode();
-}
-
-
-void SDPVideoMediaDescription::Format::AddRTCP_FB(const PString & str)
-{
-  m_rtcp_fb.FromString(str, false);
-  PTRACE(4, "SDP\tAdded feedback options, result: " << m_rtcp_fb);
 }
 
 
@@ -2251,14 +2277,10 @@ static bool AdjustResolution(OpalMediaFormat & mediaFormat, const PString & name
   return true;
 }
 
+
 void SDPVideoMediaDescription::Format::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
 {
-  SDPMediaFormat::SetMediaFormatOptions(mediaFormat);
-
-  // Save the RTCP feedback (RFC4585) capability.
-  if (!m_parent.GetOptionStrings().GetBoolean(OPAL_OPT_FORCE_RTCP_FB))
-    mediaFormat.SetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(),
-                m_rtcp_fb * mediaFormat.GetOptionEnum(OpalVideoFormat::RTCPFeedbackOption(), OpalVideoFormat::e_NoRTCPFb));
+  SDPRTPAVPMediaDescription::Format::SetMediaFormatOptions(mediaFormat);
 
   if (mediaFormat.GetOptionEnum(OpalVideoFormat::UseImageAttributeInSDP(), OpalVideoFormat::ImageAttrSuppressed) != OpalVideoFormat::ImageAttrSuppressed) {
     bool ok = AdjustResolution(mediaFormat, OpalVideoFormat::MinRxFrameWidthOption(),  m_minRxWidth,  false) &&
