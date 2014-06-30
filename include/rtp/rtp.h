@@ -364,6 +364,24 @@ class RTP_ControlFrame : public PBYTEArray
       unsigned & sequenceNumber
     );
 
+    struct FbREMB {
+      FbHeader hdr;
+      char     id[4]; // 'R' 'E' 'M' 'B'
+      BYTE     numSSRC;
+      BYTE     bitRate[3];
+      PUInt32b feedbackSSRC[1];
+    };
+    void AddREMB(
+      DWORD syncSourceOut,
+      DWORD syncSourceIn,
+      unsigned maxBitRate
+    );
+    bool ParseREMB(
+      DWORD & senderSSRC,
+      DWORD & targetSSRC,
+      unsigned & maxBitRate
+    );
+
 #pragma pack()
 
     struct ApplDefinedInfo {
