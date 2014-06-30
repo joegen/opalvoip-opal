@@ -609,6 +609,13 @@ class OpalRTPSession : public OpalMediaSession
 
     void AddFilter(const FilterNotifier & filter);
 
+    virtual bool WriteRawPDU(
+      const BYTE * framePtr,
+      PINDEX frameSize,
+      bool toDataChannel,
+      const PIPSocketAddressAndPort * remote = NULL
+    );
+
   protected:
     ReceiverReportArray BuildReceiverReportArray(const RTP_ControlFrame & frame, PINDEX offset);
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
@@ -624,12 +631,6 @@ class OpalRTPSession : public OpalMediaSession
       bool fromDataChannel
     );
     virtual bool HandleUnreachable(PTRACE_PARAM(const char * channelName));
-    virtual bool WriteRawPDU(
-      const BYTE * framePtr,
-      PINDEX frameSize,
-      bool toDataChannel,
-      const PIPSocketAddressAndPort * remote = NULL
-    );
 
     OpalRTPEndPoint   & m_endpoint;
     bool                m_singlePortRx;
