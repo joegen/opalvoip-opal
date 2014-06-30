@@ -1255,7 +1255,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
             std::set<unsigned> lostPackets;
             if (frame.ParseNACK(senderSSRC, targetSSRC, lostPackets)) {
               if (CheckSSRC(senderSSRC, targetSSRC, "NACK"))
-                OnRxNACK(lostPackets);
+                OnRxNACK(targetSSRC, lostPackets);
             }
             else {
               PTRACE(2, "Session " << m_sessionId << ", NACK packet truncated");
@@ -1270,7 +1270,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
             unsigned overhead;
             if (frame.ParseTMMB(senderSSRC, targetSSRC, maxBitRate, overhead)) {
               if (CheckSSRC(senderSSRC, targetSSRC, "TMMBR")) {
-                PTRACE(4, "Session " << m_sessionId << ", received TMMBR: rate=" << maxBitRate);
+                PTRACE(4, "Session " << m_sessionId << ", received TMMBR: rate=" << maxBitRate << ", SSRC=" << RTP_TRACE_SRC(targetSSRC));
                 m_connection.ExecuteMediaCommand(OpalMediaFlowControl(maxBitRate), m_sessionId);
               }
             }
@@ -1295,7 +1295,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
             DWORD senderSSRC, targetSSRC;
             if (frame.ParsePLI(senderSSRC, targetSSRC)) {
               if (CheckSSRC(senderSSRC, targetSSRC, "PLI")) {
-                PTRACE(4, "Session " << m_sessionId << ", received RFC4585 PLI.");
+                PTRACE(4, "Session " << m_sessionId << ", received RFC4585 PLI, SSRC=" << RTP_TRACE_SRC(targetSSRC));
                 m_connection.OnRxIntraFrameRequest(*this, false);
               }
             }
@@ -1312,7 +1312,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
             if (frame.ParseFIR(senderSSRC, targetSSRC, sequenceNumber)) {
               if (CheckSSRC(senderSSRC, targetSSRC, "FIR")) {
                 PTRACE(4, "Session " << m_sessionId << ", received RFC5104 FIR:"
-                          " sn=" << sequenceNumber << ", last-sn=" << m_lastRxFIRSequenceNumber);
+                          " sn=" << sequenceNumber << ", last-sn=" << m_lastRxFIRSequenceNumber
+                       << ", SSRC=" << RTP_TRACE_SRC(targetSSRC));
                 if (m_lastRxFIRSequenceNumber != sequenceNumber) {
                   m_lastRxFIRSequenceNumber = sequenceNumber;
                   m_connection.OnRxIntraFrameRequest(*this, true);
@@ -1332,7 +1333,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
             if (frame.ParseTSTO(senderSSRC, targetSSRC, tradeOff, sequenceNumber)) {
               if (CheckSSRC(senderSSRC, targetSSRC, "TSTOR")) {
                 PTRACE(4, "Session " << m_sessionId << ", received TSTOR: " << ", tradeOff=" << tradeOff
-                       << ", sn=" << sequenceNumber << ", last-sn=" << m_lastRxTSTOSequenceNumber);
+                       << ", sn=" << sequenceNumber << ", last-sn=" << m_lastRxTSTOSequenceNumber
+                       << ", SSRC=" << RTP_TRACE_SRC(targetSSRC));
                 if (m_lastRxTSTOSequenceNumber != sequenceNumber) {
                   m_lastRxTSTOSequenceNumber = sequenceNumber;
                   m_connection.ExecuteMediaCommand(OpalTemporalSpatialTradeOff(tradeOff), m_sessionId);
@@ -1442,9 +1444,9 @@ void OpalRTPSession::OnRxGoodbye(const PDWORDArray & PTRACE_PARAM(src), const PS
 }
 
 
-void OpalRTPSession::OnRxNACK(const std::set<unsigned> PTRACE_PARAM(lostPackets))
+void OpalRTPSession::OnRxNACK(DWORD PTRACE_PARAM(ssrc), const std::set<unsigned> PTRACE_PARAM(lostPackets))
 {
-  PTRACE(3, "Session " << m_sessionId << ", OnRxNACK: " << lostPackets);
+  PTRACE(3, "Session " << m_sessionId << ", OnRxNACK: SSRC=" << RTP_TRACE_SRC(ssrc) << ", sn=" << lostPackets);
 }
 
 

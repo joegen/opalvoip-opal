@@ -232,7 +232,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual void OnReceiverReports(const ReceiverReportArray & reports);
     virtual void OnRxSourceDescription(const SourceDescriptionArray & descriptions);
     virtual void OnRxGoodbye(const PDWORDArray & sources, const PString & reason);
-    virtual void OnRxNACK(const std::set<unsigned> lostPackets);
+    virtual void OnRxNACK(DWORD ssrc, const std::set<unsigned> lostPackets);
     virtual void OnRxApplDefined(const RTP_ControlFrame::ApplDefinedInfo & info);
 
     typedef PNotifierListTemplate<const RTP_ControlFrame::ApplDefinedInfo &> ApplDefinedNotifierList;
