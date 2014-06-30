@@ -1668,7 +1668,7 @@ void SDPRTPAVPMediaDescription::Format::SetMediaFormatOptions(OpalMediaFormat & 
 
 void SDPRTPAVPMediaDescription::Format::AddRTCP_FB(const PString & str)
 {
-  for (PINDEX i = 0; PARRAYSIZE(FeebackNames); ++i) {
+  for (PINDEX i = 0; i < PARRAYSIZE(FeebackNames); ++i) {
     if (str *= FeebackNames[i].m_name) {
       m_rtcp_fb |= FeebackNames[i].m_bit;
       break;
