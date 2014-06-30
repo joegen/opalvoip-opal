@@ -111,10 +111,10 @@ class OpalLibSRTP
     OpalLibSRTP();
     ~OpalLibSRTP();
 
-    bool ProtectRTP(RTP_DataFrame & frame);
-    bool ProtectRTCP(RTP_ControlFrame & frame);
-    bool UnprotectRTP(RTP_DataFrame & frame);
-    bool UnprotectRTCP(RTP_ControlFrame & frame);
+    OpalRTPSession::SendReceiveStatus ProtectRTP(RTP_DataFrame & frame);
+    OpalRTPSession::SendReceiveStatus ProtectRTCP(RTP_ControlFrame & frame);
+    OpalRTPSession::SendReceiveStatus UnprotectRTP(RTP_DataFrame & frame);
+    OpalRTPSession::SendReceiveStatus UnprotectRTCP(RTP_ControlFrame & frame);
 
     void Close();
     bool IsSecured(bool rx) const;
