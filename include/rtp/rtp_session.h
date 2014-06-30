@@ -189,7 +189,6 @@ class OpalRTPSession : public OpalMediaSession
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, bool rewriteHeader);
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize);
-    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
     virtual SendReceiveStatus OnOutOfOrderPacket(RTP_DataFrame & frame);
 
@@ -799,6 +798,8 @@ class OpalRTPSession : public OpalMediaSession
     unsigned m_levelRxSR;
     unsigned m_levelRxRR;
     unsigned m_levelRxSDES;
+    unsigned m_levelTxRED;
+    unsigned m_levelRxRED;
     unsigned m_levelRxUnknownFEC;
     bool CheckSSRC(DWORD senderSSRC, DWORD targetSSRC, const char * pduName) const;
 #endif
@@ -811,6 +812,7 @@ class OpalRTPSession : public OpalMediaSession
     P_REMOVE_VIRTUAL(SendReceiveStatus,ReadDataOrControlPDU(BYTE *,PINDEX,bool),e_AbortTransport);
     P_REMOVE_VIRTUAL(bool,WriteDataOrControlPDU(const BYTE *,PINDEX,bool),false);
     P_REMOVE_VIRTUAL(SendReceiveStatus,OnSendData(RTP_DataFrame &),e_AbortTransport);
+    P_REMOVE_VIRTUAL(SendReceiveStatus,OnReceiveData(RTP_DataFrame &),e_AbortTransport);
 
   friend class RTP_JitterBuffer;
 };

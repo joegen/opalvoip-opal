@@ -148,7 +148,7 @@ class OpalSRTPSession : public OpalRTPSession, protected OpalLibSRTP
 
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, bool rewriteHeader);
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
-    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
+    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize);
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
 
   protected:
