@@ -72,8 +72,11 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendRedundantFrame(RTP_DataF
   *payload++ = (BYTE)frame.GetPayloadType();
   memmove(payload, frame.GetPayloadPtr(), frame.GetPayloadSize());
 
-  PTRACE(5, "Session " << m_sessionId << ", redundant packet " << red.GetPayloadType()
+  PTRACE(m_levelTxRED, "Session " << m_sessionId << ", redundant packet " << red.GetPayloadType()
          << " primary block inserted : " << frame.GetPayloadType() << ", sz=" << frame.GetPayloadSize());
+#if PTRACING
+    m_levelTxRED = 6;
+#endif
   frame = red;
   return e_ProcessPacket;
 }
@@ -82,7 +85,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendRedundantFrame(RTP_DataF
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendRedundantData(RTP_DataFrame & primary, RTP_DataFrameList & redundancies)
 {
   if (m_ulpFecPayloadType == RTP_DataFrame::IllegalPayloadType) {
-    PTRACE(5, "Session " << m_sessionId << ", no redundant blocks added");
+    PTRACE(m_levelTxRED, "Session " << m_sessionId << ", no redundant blocks added");
     return e_ProcessPacket; // No redundancies, add primary data and return
   }
 
@@ -189,8 +192,11 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveRedundantFrame(RTP_Da
   primary.SetPayloadType((RTP_DataFrame::PayloadTypes)(*payload & 0x7f));
   primary.SetPayloadSize(--size);
   memmove(primary.GetPayloadPtr(), ++payload, size);
-  PTRACE(5, "Session " << m_sessionId << ", redundant packet " << frame.GetPayloadType()
+  PTRACE(m_levelRxRED, "Session " << m_sessionId << ", redundant packet " << frame.GetPayloadType()
          << " primary block extracted: " << primary.GetPayloadType() << ", sz=" << size);
+#if PTRACING
+    m_levelRxRED = 6;
+#endif
 
   // Then go through the redundant entries again
   payload = frame.GetPayloadPtr();
@@ -226,7 +232,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveRedundantData(RTP_Dat
     PTRACE(m_levelRxUnknownFEC, "Session " << m_sessionId << ", unknown redundant block: "
                                            << payloadType << ", ts=" << timestamp << ", sz=" << size);
 #if PTRACING
-    m_levelRxUnknownFEC = 5;
+    m_levelRxUnknownFEC = 6;
 #endif
     return e_ProcessPacket;
   }

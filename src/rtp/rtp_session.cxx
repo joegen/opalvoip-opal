@@ -219,6 +219,8 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_levelRxSR(3)
   , m_levelRxRR(3)
   , m_levelRxSDES(3)
+  , m_levelTxRED(3)
+  , m_levelRxRED(3)
   , m_levelRxUnknownFEC(3)
 #endif
 {
@@ -549,11 +551,27 @@ bool OpalRTPSession::ReadData(RTP_DataFrame & frame)
 
   frame = m_pendingPackets.back();
   m_pendingPackets.pop_back();
-  m_expectedSequenceNumber = (WORD)(sequenceNumber + 1);
+
+  SendReceiveStatus status = OnReceiveData(frame, P_MAX_INDEX);
+#if OPAL_RTP_FEC
+  if (status == e_ProcessPacket && frame.GetPayloadType() == m_redundencyPayloadType)
+    status = OnReceiveRedundantFrame(frame);
+#endif
+
+  switch (status) {
+    case e_AbortTransport:
+      return false;
+
+    case e_IgnorePacket:
+      return InternalReadData(frame);
+
+    case e_ProcessPacket:
+      break;
+  }
 
   PTRACE(m_pendingPackets.empty() ? 2 : 5,
-         "Session " << m_sessionId << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn) << ", resequenced "
-         << (m_pendingPackets.empty() ? "last" : "next") << " out of order packet " << sequenceNumber);
+          "Session " << m_sessionId << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn) << ", resequenced "
+          << (m_pendingPackets.empty() ? "last" : "next") << " out of order packet " << sequenceNumber);
   return true;
 }
 
@@ -729,39 +747,31 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendControl(RTP_ControlFrame
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize)
 {
-  // Check received PDU is big enough
-  return frame.SetPacketSize(pduSize) ? OnReceiveData(frame) : e_IgnorePacket;
-}
+  if (pduSize < RTP_DataFrame::MinHeaderSize)
+    return e_IgnorePacket; // Non fatal error, just ignore
 
-
-OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & frame)
-{
   // Check that the PDU is the right version
   if (frame.GetVersion() != RTP_DataFrame::ProtocolVersion)
     return e_IgnorePacket; // Non fatal error, just ignore
 
   RTP_DataFrame::PayloadTypes pt = frame.GetPayloadType();
-#if OPAL_RTP_FEC
-  if (pt == m_redundencyPayloadType) {
-    SendReceiveStatus status = OnReceiveRedundantFrame(frame);
-    if (status != e_ProcessPacket)
-      return status;
-  }
-#endif
-
-  // Check if expected payload type
-  if (lastReceivedPayloadType == RTP_DataFrame::IllegalPayloadType)
-    lastReceivedPayloadType = pt;
-
-  if (lastReceivedPayloadType != pt && !ignorePayloadTypeChanges) {
-    PTRACE(4, "Session " << m_sessionId << ", got payload type "
-           << pt << ", but was expecting " << lastReceivedPayloadType);
-    return e_IgnorePacket;
-  }
 
   // Check for if a control packet rather than data packet.
   if (pt > RTP_DataFrame::MaxPayloadType)
     return e_IgnorePacket; // Non fatal error, just ignore
+
+  WORD sequenceNumber = frame.GetSequenceNumber();
+
+  if (pduSize != P_MAX_INDEX) {
+    if (!frame.SetPacketSize(pduSize))
+      return e_IgnorePacket; // Received PDU is not big enough, ignore
+
+    if (!m_pendingPackets.empty() && sequenceNumber == m_expectedSequenceNumber) {
+      PTRACE(5, "Session " << m_sessionId << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn)
+             << ", received out of order packet " << sequenceNumber);
+      ++packetsOutOfOrder; // it arrived after all!
+    }
+  }
 
   PTimeInterval tick = PTimer::Tick();  // Get timestamp now
 
@@ -778,7 +788,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
            << " psz=" << frame.GetPayloadSize()
            << " m=" << frame.GetMarker()
            << " x=" << frame.GetExtension()
-           << " seq=" << frame.GetSequenceNumber()
+           << " seq=" << sequenceNumber
            << " ts=" << frame.GetTimestamp()
            << " src=" << RTP_TRACE_SRC(frame.GetSyncSource())
            << " ccnt=" << frame.GetContribSrcCount());
@@ -790,13 +800,13 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
 #endif
 
     if ((pt == RTP_DataFrame::T38) &&
-        (frame.GetSequenceNumber() >= 0x8000) &&
+        (sequenceNumber >= 0x8000) &&
          (frame.GetPayloadSize() == 0)) {
       PTRACE(4, "Session " << m_sessionId << ", ignoring left over audio packet from switch to T.38");
       return e_IgnorePacket; // Non fatal error, just ignore
     }
 
-    m_expectedSequenceNumber = (WORD)(frame.GetSequenceNumber() + 1);
+    m_expectedSequenceNumber = (WORD)(sequenceNumber + 1);
   }
   else {
     if (frame.GetSyncSource() != syncSourceIn) {
@@ -821,16 +831,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
       }
     }
 
-    WORD sequenceNumber = frame.GetSequenceNumber();
     if (sequenceNumber == m_expectedSequenceNumber) {
       m_expectedSequenceNumber++;
       m_consecutiveOutOfOrderPackets = 0;
-
-      if (!m_pendingPackets.empty()) {
-        PTRACE(5, "Session " << m_sessionId << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn)
-               << ", received out of order packet " << sequenceNumber);
-        packetsOutOfOrder++;
-      }
 
       /* For audio we do not do statistics on start of talk burst as that
          could be a substantial time and is not useful, so we only calculate
@@ -916,6 +919,16 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
   }
 
   lastReceivedPacketTime = tick;
+
+  // Check if expected payload type
+  if (lastReceivedPayloadType == RTP_DataFrame::IllegalPayloadType)
+    lastReceivedPayloadType = pt;
+
+  if (lastReceivedPayloadType != pt && !ignorePayloadTypeChanges) {
+    PTRACE(4, "Session " << m_sessionId << ", got payload type "
+           << pt << ", but was expecting " << lastReceivedPayloadType);
+    return e_IgnorePacket;
+  }
 
   octetsReceived += frame.GetPayloadSize();
   packetsReceived++;
@@ -1287,9 +1300,11 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
         PTRACE(4, "Session " << m_sessionId << ", received RFC2032 FIR");
         m_connection.OnRxIntraFrameRequest(*this, true);
         break;
+#endif
 
       case RTP_ControlFrame::e_PayloadSpecificFeedBack :
         switch (frame.GetFbType()) {
+#if OPAL_VIDEO
           case RTP_ControlFrame::e_PictureLossIndication:
           {
             DWORD senderSSRC, targetSSRC;
@@ -1346,13 +1361,27 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
             }
             break;
           }
+#endif
+
+          case RTP_ControlFrame::e_ApplicationLayerFbMessage:
+          {
+            DWORD senderSSRC, targetSSRC;
+            unsigned maxBitRate;
+            if (frame.ParseREMB(senderSSRC, targetSSRC, maxBitRate)) {
+              if (CheckSSRC(senderSSRC, targetSSRC, "REMB")) {
+                PTRACE(4, "Session " << m_sessionId << ", received REMB: maxBitRate=" << maxBitRate
+                       << ", SSRC=" << RTP_TRACE_SRC(targetSSRC));
+                m_connection.ExecuteMediaCommand(OpalMediaFlowControl(maxBitRate), m_sessionId);
+              }
+              break;
+            }
+          }
 
           default :
             PTRACE(2, "Session " << m_sessionId << ", Unknown Payload Specific feedback type: " << frame.GetFbType());
         }
         break;
-  #endif
-
+  
       default :
         PTRACE(2, "Session " << m_sessionId << ", Unknown control payload type: " << frame.GetPayloadType());
     }
@@ -2330,12 +2359,19 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataPDU(RTP_DataFrame & fr
   // Check for single port operation, incoming RTCP on RTP
   RTP_ControlFrame control(frame, pduSize, false);
   unsigned type = control.GetPayloadType();
-  if (type < RTP_ControlFrame::e_FirstValidPayloadType || type > RTP_ControlFrame::e_LastValidPayloadType)
-    return OnReceiveData(frame, pduSize);
+  if (type >= RTP_ControlFrame::e_FirstValidPayloadType && type <= RTP_ControlFrame::e_LastValidPayloadType) {
+    status = OnReceiveControl(control);
+    if (status == e_ProcessPacket)
+      status = e_IgnorePacket;
+  }
+  else {
+    status = OnReceiveData(frame, pduSize);
+#if OPAL_RTP_FEC
+    if (status == e_ProcessPacket && frame.GetPayloadType() == m_redundencyPayloadType)
+      status = OnReceiveRedundantFrame(frame);
+#endif
+  }
 
-  status = OnReceiveControl(control);
-  if (status == e_ProcessPacket)
-    status = e_IgnorePacket;
   return status;
 }
 

@@ -759,11 +759,16 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize)
 {
+  SendReceiveStatus status = OpalRTPSession::OnReceiveData(frame, pduSize);
+  if (status != e_ProcessPacket)
+    return status;
+
   if (GetSyncSourceIn() != frame.GetSyncSource())
     Change(GetSyncSourceIn(), frame.GetSyncSource());
-  return UnprotectRTP(frame) ? OpalRTPSession::OnReceiveData(frame) : e_IgnorePacket;
+
+  return UnprotectRTP(frame) ? e_ProcessPacket : e_IgnorePacket;
 }
 
 
