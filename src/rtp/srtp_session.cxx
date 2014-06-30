@@ -71,10 +71,10 @@ struct OpalLibSRTP::Context
   bool SetKey(DWORD ssrc, OpalMediaCryptoKeyInfo* key);
   bool Change(DWORD from_ssrc, DWORD to_ssrc);
   void Close();
-  bool ProtectRTP(RTP_DataFrame & frame);
-  bool ProtectRTCP(RTP_ControlFrame & frame);
-  bool UnprotectRTP(RTP_DataFrame & frame);
-  bool UnprotectRTCP(RTP_ControlFrame & frame);
+  OpalRTPSession::SendReceiveStatus ProtectRTP(RTP_DataFrame & frame);
+  OpalRTPSession::SendReceiveStatus ProtectRTCP(RTP_ControlFrame & frame);
+  OpalRTPSession::SendReceiveStatus UnprotectRTP(RTP_DataFrame & frame);
+  OpalRTPSession::SendReceiveStatus UnprotectRTCP(RTP_ControlFrame & frame);
 
   OpalSRTPKeyInfo * m_keyInfo;
   struct srtp_ctx_t * m_ctx;
@@ -539,17 +539,17 @@ void OpalLibSRTP::Context::Close()
 }
 
 
-bool OpalLibSRTP::ProtectRTP(RTP_DataFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalLibSRTP::ProtectRTP(RTP_DataFrame & frame)
 {
   return m_tx->ProtectRTP(frame);
 }
 
 
-bool OpalLibSRTP::Context::ProtectRTP(RTP_DataFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalLibSRTP::Context::ProtectRTP(RTP_DataFrame & frame)
 {
   if (m_ctx == NULL) {
     PTRACE(6, "Keys not set, cannot protect data.");
-    return false;
+    return OpalRTPSession::e_IgnorePacket;
   }
 
   frame.MakeUnique();
@@ -557,7 +557,7 @@ bool OpalLibSRTP::Context::ProtectRTP(RTP_DataFrame & frame)
   int len = frame.GetPacketSize();
   frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
   if (!CHECK_ERROR(srtp_protect,(m_ctx, frame.GetPointer(), &len)))
-    return false;
+    return OpalRTPSession::e_AbortTransport;
 
 #if PTRACING
   if (m_firstRTP) {
@@ -567,21 +567,21 @@ bool OpalLibSRTP::Context::ProtectRTP(RTP_DataFrame & frame)
 #endif
 
   frame.SetPayloadSize(len - frame.GetHeaderSize());
-  return true;
+  return OpalRTPSession::e_ProcessPacket;
 }
 
 
-bool OpalLibSRTP::ProtectRTCP(RTP_ControlFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalLibSRTP::ProtectRTCP(RTP_ControlFrame & frame)
 {
   return m_tx->ProtectRTCP(frame);
 }
 
 
-bool OpalLibSRTP::Context::ProtectRTCP(RTP_ControlFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalLibSRTP::Context::ProtectRTCP(RTP_ControlFrame & frame)
 {
   if (m_ctx == NULL) {
     PTRACE(6, "Keys not set, cannot protect control.");
-    return false;
+    return OpalRTPSession::e_IgnorePacket;
   }
 
   frame.MakeUnique();
@@ -590,7 +590,7 @@ bool OpalLibSRTP::Context::ProtectRTCP(RTP_ControlFrame & frame)
   frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
 
   if (!CHECK_ERROR(srtp_protect_rtcp,(m_ctx, frame.GetPointer(), &len)))
-    return false;
+    return OpalRTPSession::e_AbortTransport;
 
 #if PTRACING
   if (m_firstRTCP) {
@@ -600,23 +600,28 @@ bool OpalLibSRTP::Context::ProtectRTCP(RTP_ControlFrame & frame)
 #endif
 
   frame.SetPacketSize(len);
-  return true;
+  return OpalRTPSession::e_ProcessPacket;
 }
 
 
-bool OpalLibSRTP::UnprotectRTP(RTP_DataFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalLibSRTP::UnprotectRTP(RTP_DataFrame & frame)
 {
   return m_rx->UnprotectRTP(frame);
 }
 
 
-bool OpalLibSRTP::Context::UnprotectRTP(RTP_DataFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalLibSRTP::Context::UnprotectRTP(RTP_DataFrame & frame)
 {
+  if (m_ctx == NULL) {
+    PTRACE(6, "Keys not set, cannot protect control.");
+    return OpalRTPSession::e_IgnorePacket;
+  }
+
   frame.MakeUnique();
 
   int len = frame.GetPacketSize();
   if (!CHECK_ERROR(srtp_unprotect,(m_ctx, frame.GetPointer(), &len)))
-    return false;
+    return OpalRTPSession::e_AbortTransport;
 
 #if PTRACING
   if (m_firstRTP) {
@@ -626,23 +631,28 @@ bool OpalLibSRTP::Context::UnprotectRTP(RTP_DataFrame & frame)
 #endif
 
   frame.SetPayloadSize(len - frame.GetHeaderSize());
-  return true;
+  return OpalRTPSession::e_ProcessPacket;
 }
 
 
-bool OpalLibSRTP::UnprotectRTCP(RTP_ControlFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalLibSRTP::UnprotectRTCP(RTP_ControlFrame & frame)
 {
   return m_rx->UnprotectRTCP(frame);
 }
 
 
-bool OpalLibSRTP::Context::UnprotectRTCP(RTP_ControlFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalLibSRTP::Context::UnprotectRTCP(RTP_ControlFrame & frame)
 {
+  if (m_ctx == NULL) {
+    PTRACE(6, "Keys not set, cannot protect control.");
+    return OpalRTPSession::e_IgnorePacket;
+  }
+
   frame.MakeUnique();
 
   int len = frame.GetSize();
   if (!CHECK_ERROR(srtp_unprotect_rtcp,(m_ctx, frame.GetPointer(), &len)))
-    return false;
+    return OpalRTPSession::e_AbortTransport;
 
 #if PTRACING
   if (m_firstRTCP) {
@@ -652,7 +662,7 @@ bool OpalLibSRTP::Context::UnprotectRTCP(RTP_ControlFrame & frame)
 #endif
 
   frame.SetPacketSize(len);
-  return true;
+  return OpalRTPSession::e_ProcessPacket;
 }
 
 
@@ -745,7 +755,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
   if (status != e_ProcessPacket)
     return status;
 
-  return ProtectRTP(frame) ? e_ProcessPacket : e_IgnorePacket;
+  return ProtectRTP(frame);
 }
 
 
@@ -755,7 +765,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
   if (status != e_ProcessPacket)
     return status;
 
-  return ProtectRTCP(frame) ? e_ProcessPacket : e_IgnorePacket;
+  return ProtectRTCP(frame);
 }
 
 
@@ -768,13 +778,16 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
   if (GetSyncSourceIn() != frame.GetSyncSource())
     Change(GetSyncSourceIn(), frame.GetSyncSource());
 
-  return UnprotectRTP(frame) ? e_ProcessPacket : e_IgnorePacket;
+  return UnprotectRTP(frame);
 }
 
 
 OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlFrame & frame)
 {
-  return UnprotectRTCP(frame) ? OpalRTPSession::OnReceiveControl(frame) : e_IgnorePacket;
+  SendReceiveStatus status = UnprotectRTCP(frame);
+  if (status == e_ProcessPacket)
+    status = OpalRTPSession::OnReceiveControl(frame);
+  return status;
 }
 
 
