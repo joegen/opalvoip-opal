@@ -573,7 +573,10 @@ class OpalRTPSession : public OpalMediaSession
 
     virtual bool SendNACK(const std::set<unsigned> & lostPackets);
 
-    /**Send flow control (Temporary Maximum Media Stream Bit Rate) Request/Notification.
+    /**Send flow control Request/Notification.
+       This uses Temporary Maximum Media Stream Bit Rate from RFC 5104.
+       If \p notify is false, and TMMBR is not available, and the Google
+       specific REMB is available, that is sent instead.
       */
     virtual bool SendFlowControl(
       unsigned maxBitRate,    ///< New temporary maximum bit rate

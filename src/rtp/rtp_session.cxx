@@ -1494,8 +1494,8 @@ bool OpalRTPSession::SendNACK(const std::set<unsigned> & lostPackets)
 
 bool OpalRTPSession::SendFlowControl(unsigned maxBitRate, unsigned overhead, bool notify)
 {
-  if (!(m_feedback&OpalMediaFormat::e_TMMBR)) {
-    PTRACE(3, "Remote not capable of flow control (TMMBR)");
+  if (!(m_feedback&(OpalMediaFormat::e_TMMBR|OpalMediaFormat::e_REMB))) {
+    PTRACE(3, "Remote not capable of flow control (TMMBR or REMB)");
     return false;
   }
 
@@ -1503,14 +1503,22 @@ bool OpalRTPSession::SendFlowControl(unsigned maxBitRate, unsigned overhead, boo
   RTP_ControlFrame request;
   InitialiseControlFrame(request);
 
-  if (overhead == 0)
-    overhead = m_localAddress.GetVersion() == 4 ? (20+8+12) : (40+8+12);
+  if (m_feedback&OpalMediaFormat::e_TMMBR) {
+    if (overhead == 0)
+      overhead = m_localAddress.GetVersion() == 4 ? (20 + 8 + 12) : (40 + 8 + 12);
 
-  PTRACE(3, "Session " << m_sessionId << ", Sending TMMBR (flow control) "
-            "rate=" << maxBitRate << ", overhead=" << overhead << ", "
-            "SSRC=" << RTP_TRACE_SRC(syncSourceIn));
+    PTRACE(3, "Session " << m_sessionId << ", Sending TMMBR (flow control) "
+           "rate=" << maxBitRate << ", overhead=" << overhead << ", "
+           "SSRC=" << RTP_TRACE_SRC(syncSourceIn));
 
-  request.AddTMMB(syncSourceOut, syncSourceIn, maxBitRate, overhead, notify);
+    request.AddTMMB(syncSourceOut, syncSourceIn, maxBitRate, overhead, notify);
+  }
+  else {
+    PTRACE(3, "Session " << m_sessionId << ", Sending REMB (flow control) "
+           "rate=" << maxBitRate << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn));
+
+    request.AddREMB(syncSourceOut, syncSourceIn, maxBitRate);
+  }
 
   // Send it
   request.EndPacket();

@@ -928,6 +928,7 @@ void RTP_ControlFrame::AddNACK(DWORD syncSourceOut, DWORD syncSourceIn, const st
       SetPayloadSize(sizeof(FbNACK)+sizeof(FbNACK::Field)*i);
       nack->fld[i].packetID = (WORD)*it;
     }
+    ++it;
   }
   nack->fld[i].bitmask = (WORD)bitmask;
 }
@@ -959,6 +960,17 @@ bool RTP_ControlFrame::ParseNACK(DWORD & senderSSRC, DWORD & targetSSRC, std::se
 }
 
 
+static void SplitBitRate(unsigned bitRate, unsigned & exponent, unsigned & mantissa, unsigned mantissaBits)
+{
+  exponent = 0;
+  mantissa = bitRate;
+  while (mantissa >= mantissaBits) {
+    mantissa >>= 1;
+    ++exponent;
+  }
+}
+
+
 void RTP_ControlFrame::AddTMMB(DWORD syncSourceOut, DWORD syncSourceIn, unsigned maxBitRate, unsigned overhead, bool notify)
 {
   FbTMMB * tmmb;
@@ -968,12 +980,8 @@ void RTP_ControlFrame::AddTMMB(DWORD syncSourceOut, DWORD syncSourceIn, unsigned
   tmmb->hdr.mediaSSRC = 0;
   tmmb->requestSSRC = syncSourceIn;
 
-  unsigned exponent = 0;
-  unsigned mantissa = maxBitRate;
-  while (mantissa >= 0x20000) {
-    mantissa >>= 1;
-    ++exponent;
-  }
+  unsigned exponent, mantissa;
+  SplitBitRate(maxBitRate, exponent, mantissa, 1<<17);
   tmmb->bitRateAndOverhead = overhead | (mantissa << 9) | (exponent << 26);
 }
 
@@ -1064,6 +1072,44 @@ bool RTP_ControlFrame::ParseTSTO(DWORD & senderSSRC, DWORD & targetSSRC, unsigne
   targetSSRC = tsto->requestSSRC;
   tradeOff = tsto->tradeOff;
   sequenceNumber = tsto->sequenceNumber;
+  return true;
+}
+
+
+static const char REMB_ID[4] = { 'R', 'E', 'M', 'B' };
+
+void RTP_ControlFrame::AddREMB(DWORD syncSourceOut, DWORD syncSourceIn, unsigned maxBitRate)
+{
+  FbREMB * remb;
+  AddFeedback(e_PayloadSpecificFeedBack, e_ApplicationLayerFbMessage, remb);
+
+  remb->hdr.senderSSRC = syncSourceOut;
+  remb->hdr.mediaSSRC = 0;
+  memcpy(remb->id, REMB_ID, 4);
+  remb->numSSRC = 1;
+  remb->feedbackSSRC[0] = syncSourceIn;
+
+  unsigned exponent, mantissa;
+  SplitBitRate(maxBitRate, exponent, mantissa, 1<<18);
+  remb->bitRate[0] = (BYTE)((exponent << 2) | (mantissa >> 16));
+  remb->bitRate[1] = (BYTE)(mantissa >> 8);
+  remb->bitRate[2] = (BYTE) mantissa;
+}
+
+
+bool RTP_ControlFrame::ParseREMB(DWORD & senderSSRC, DWORD & targetSSRC, unsigned & maxBitRate)
+{
+  size_t size = GetPayloadSize();
+  if (size < sizeof(FbREMB))
+    return false;
+
+  const FbREMB * remb = (const FbREMB *)GetPayloadPtr();
+  if (memcmp(remb->id, REMB_ID, 4) != 0)
+    return false;
+
+  senderSSRC = remb->hdr.senderSSRC;
+  targetSSRC = remb->feedbackSSRC[0];
+  maxBitRate = (((remb->bitRate[0]&0x3)<<16)|(remb->bitRate[1]<<8)|remb->bitRate[2])*(1 << (remb->bitRate[0] >> 2));
   return true;
 }
 
