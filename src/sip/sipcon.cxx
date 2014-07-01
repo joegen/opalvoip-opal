@@ -1058,36 +1058,12 @@ bool SIPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPS
       return false;
 
     SDPMediaDescription * md = sdpMediaDescriptions[sessionId];
-    OpalMediaSession * mediaSession = GetMediaSession(sessionId);
-    if (md != NULL) {
-      md->FromSession(mediaSession, incomingMedia);
+    if (md == NULL)
+      sdpOut.AddMediaDescription(new SDPDummyMediaDescription(*incomingMedia));
+    else {
+      md->FromSession(GetMediaSession(sessionId), incomingMedia);
       sdpOut.AddMediaDescription(md);
       gotNothing = false;
-    }
-    else {
-      // Create, if not already, a new session as a "place holder" in the SDP sessions
-      if (mediaSession == NULL) {
-        OpalMediaType mediaType = incomingMedia->GetMediaType();
-        if (!mediaType.empty()) {
-          mediaSession = UseMediaSession(sessionId, mediaType, incomingMedia->GetSessionType());
-          if (!PAssert(mediaSession != NULL, PLogicError))
-            return false;
-
-          // Special hack for T.38 fax switch, make sure we send back a 488, always
-          if (m_needReINVITE && mediaSession->GetMediaType() != mediaType)
-            return false;
-
-          mediaSession->Close();
-        }
-      }
-
-      SDPMediaDescription * outgoingMedia = mediaSession != NULL ? mediaSession->CreateSDPMediaDescription()
-                                                                 : new SDPDummyMediaDescription();
-      if (!PAssert(outgoingMedia != NULL, PLogicError))
-        return false;
-
-      outgoingMedia->CopyForRefusal(*incomingMedia);
-      sdpOut.AddMediaDescription(outgoingMedia);
     }
   }
 

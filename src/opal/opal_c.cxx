@@ -1268,21 +1268,30 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     SET_MESSAGE_STRING(response, m_param.m_general.m_videoInputDevice, video.deviceName);
     if (!IsNullString(command.m_param.m_general.m_videoInputDevice)) {
       video.deviceName = command.m_param.m_general.m_videoInputDevice;
-      SetVideoInputDevice(video);
+      if (!SetVideoInputDevice(video)) {
+        response.SetError("Could not set video input device.");
+        return;
+      }
     }
 
     video = GetVideoOutputDevice();
     SET_MESSAGE_STRING(response, m_param.m_general.m_videoOutputDevice, video.deviceName);
     if (!IsNullString(command.m_param.m_general.m_videoOutputDevice)) {
       video.deviceName = command.m_param.m_general.m_videoOutputDevice;
-      SetVideoOutputDevice(video);
+      if (!SetVideoOutputDevice(video)) {
+        response.SetError("Could not set video output device.");
+        return;
+      }
     }
 
     video = GetVideoPreviewDevice();
     SET_MESSAGE_STRING(response, m_param.m_general.m_videoPreviewDevice, video.deviceName);
     if (!IsNullString(command.m_param.m_general.m_videoPreviewDevice)) {
       video.deviceName = command.m_param.m_general.m_videoPreviewDevice;
-      SetVideoPreviewDevice(video);
+      if (!SetVideoPreviewDevice(video)) {
+        response.SetError("Could not set video preview device.");
+        return;
+      }
     }
 #endif // OPAL_VIDEO
   }
@@ -2929,10 +2938,17 @@ bool OpalContext::GetMessage(OpalMessagePtr & message, unsigned timeout)
   if (message.m_message != NULL)
     return true;
 
-  PTRACE(4, "OpalContext::GetMessage() timeout");
+  PTRACE_IF(4, timeout > 0, "OpalContext::GetMessage() timeout");
   message.SetType(OpalIndCommandError);
   message.m_message->m_param.m_commandError = "Timeout getting message.";
   return false;
+}
+
+
+bool OpalContext::SendMessage(const OpalMessagePtr & message)
+{
+  OpalMessagePtr response;
+  return SendMessage(message, response);
 }
 
 
@@ -2988,7 +3004,7 @@ bool OpalContext::ClearCall(const char * callToken, OpalCallEndReason reason)
 
 bool OpalContext::SendUserInput(const char * callToken, const char * userInput, unsigned duration)
 {
-  OpalMessagePtr message(OpalCmdClearCall), response;
+  OpalMessagePtr message(OpalCmdUserInput), response;
   OpalParamUserInput * param = message.GetUserInput();
   param->m_callToken = callToken;
   param->m_userInput = userInput;
@@ -3016,13 +3032,14 @@ OpalMessageType OpalMessagePtr::GetType() const
 }
 
 
-void OpalMessagePtr::SetType(OpalMessageType type)
+OpalMessagePtr & OpalMessagePtr::SetType(OpalMessageType type)
 {
   OpalFreeMessage(m_message);
 
   m_message = (OpalMessage *)malloc(sizeof(OpalMessage)); // Use malloc to be compatible with OpalFreeMessage
   memset(m_message, 0, sizeof(OpalMessage));
   m_message->m_type = type;
+  return *this;
 }
 
 
