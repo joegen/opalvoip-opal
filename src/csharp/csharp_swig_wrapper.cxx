@@ -5365,13 +5365,17 @@ SWIGEXPORT int SWIGSTDCALL CSharp_OpalMessagePtr_GetType(void * jarg1) {
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_OpalMessagePtr_SetType(void * jarg1, int jarg2) {
+SWIGEXPORT void * SWIGSTDCALL CSharp_OpalMessagePtr_SetType(void * jarg1, int jarg2) {
+  void * jresult ;
   OpalMessagePtr *arg1 = (OpalMessagePtr *) 0 ;
   OpalMessageType arg2 ;
+  OpalMessagePtr *result = 0 ;
   
   arg1 = (OpalMessagePtr *)jarg1; 
   arg2 = (OpalMessageType)jarg2; 
-  (arg1)->SetType(arg2);
+  result = (OpalMessagePtr *) &(arg1)->SetType(arg2);
+  jresult = (void *)result; 
+  return jresult;
 }
 
 
@@ -5731,7 +5735,25 @@ SWIGEXPORT unsigned int SWIGSTDCALL CSharp_OpalContext_GetMessage__SWIG_1(void *
 }
 
 
-SWIGEXPORT unsigned int SWIGSTDCALL CSharp_OpalContext_SendMessage(void * jarg1, void * jarg2, void * jarg3) {
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_OpalContext_SendMessage__SWIG_0(void * jarg1, void * jarg2) {
+  unsigned int jresult ;
+  OpalContext *arg1 = (OpalContext *) 0 ;
+  OpalMessagePtr *arg2 = 0 ;
+  bool result;
+  
+  arg1 = (OpalContext *)jarg1; 
+  arg2 = (OpalMessagePtr *)jarg2;
+  if (!arg2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "OpalMessagePtr const & type is null", 0);
+    return 0;
+  } 
+  result = (bool)(arg1)->SendMessage((OpalMessagePtr const &)*arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_OpalContext_SendMessage__SWIG_1(void * jarg1, void * jarg2, void * jarg3) {
   unsigned int jresult ;
   OpalContext *arg1 = (OpalContext *) 0 ;
   OpalMessagePtr *arg2 = 0 ;

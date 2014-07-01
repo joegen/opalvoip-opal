@@ -51,8 +51,9 @@ public class OpalMessagePtr : IDisposable {
     return ret;
   }
 
-  public void SetType(OpalMessageType type) {
-    OPALPINVOKE.OpalMessagePtr_SetType(swigCPtr, (int)type);
+  public OpalMessagePtr SetType(OpalMessageType type) {
+    OpalMessagePtr ret = new OpalMessagePtr(OPALPINVOKE.OpalMessagePtr_SetType(swigCPtr, (int)type), false);
+    return ret;
   }
 
   public string GetCallToken() {

@@ -47,8 +47,8 @@ public class OpalMessagePtr {
     return OpalMessageType.swigToEnum(OPALJNI.OpalMessagePtr_GetType(swigCPtr, this));
   }
 
-  public void SetType(OpalMessageType type) {
-    OPALJNI.OpalMessagePtr_SetType(swigCPtr, this, type.swigValue());
+  public OpalMessagePtr SetType(OpalMessageType type) {
+    return new OpalMessagePtr(OPALJNI.OpalMessagePtr_SetType(swigCPtr, this, type.swigValue()), false);
   }
 
   public String GetCallToken() {
