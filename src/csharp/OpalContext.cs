@@ -74,8 +74,14 @@ public class OpalContext : IDisposable {
     return ret;
   }
 
+  public bool SendMessage(OpalMessagePtr message) {
+    bool ret = OPALPINVOKE.OpalContext_SendMessage__SWIG_0(swigCPtr, OpalMessagePtr.getCPtr(message));
+    if (OPALPINVOKE.SWIGPendingException.Pending) throw OPALPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
   public bool SendMessage(OpalMessagePtr message, OpalMessagePtr response) {
-    bool ret = OPALPINVOKE.OpalContext_SendMessage(swigCPtr, OpalMessagePtr.getCPtr(message), OpalMessagePtr.getCPtr(response));
+    bool ret = OPALPINVOKE.OpalContext_SendMessage__SWIG_1(swigCPtr, OpalMessagePtr.getCPtr(message), OpalMessagePtr.getCPtr(response));
     if (OPALPINVOKE.SWIGPendingException.Pending) throw OPALPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }

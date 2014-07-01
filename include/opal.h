@@ -1596,7 +1596,7 @@ class OpalMessagePtr
     ~OpalMessagePtr();
 
     OpalMessageType GetType() const;
-    void SetType(OpalMessageType type);
+    OpalMessagePtr & SetType(OpalMessageType type);
 
     const char               * GetCallToken() const;          ///< Used by OpalCmdHoldCall/OpalCmdRetrieveCall/OpalCmdStopRecording
     void                       SetCallToken(const char * token);
@@ -1621,6 +1621,27 @@ class OpalMessagePtr
     OpalStatusTransferCall   * GetTransferStatus() const;     ///< Used by OpalIndTransferCall
     OpalPresenceStatus       * GetPresenceStatus() const;     ///< Used by OpalCmdAuthorisePresence/OpalCmdSubscribePresence/OpalIndPresenceChange/OpalCmdSetLocalPresence
     OpalInstantMessage       * GetInstantMessage() const;     ///< Used by OpalCmdSendIM/OpalIndReceiveIM
+
+#ifndef SWIG
+    operator OpalParamGeneral         *() const { return GetGeneralParams(); }
+    operator OpalParamProtocol        *() const { return GetProtocolParams(); }
+    operator OpalParamRegistration    *() const { return GetRegistrationParams(); }
+    operator OpalStatusRegistration   *() const { return GetRegistrationStatus(); }
+    operator OpalParamSetUpCall       *() const { return GetCallSetUp(); }
+    operator OpalStatusIncomingCall   *() const { return GetIncomingCall(); }
+    operator OpalParamAnswerCall      *() const { return GetAnswerCall(); }
+    operator OpalStatusUserInput      *() const { return GetUserInput(); }
+    operator OpalStatusMessageWaiting *() const { return GetMessageWaiting(); }
+    operator OpalStatusLineAppearance *() const { return GetLineAppearance(); }
+    operator OpalStatusCallCleared    *() const { return GetCallCleared(); }
+    operator OpalParamCallCleared     *() const { return GetClearCall(); }
+    operator OpalStatusMediaStream    *() const { return GetMediaStream(); }
+    operator OpalParamSetUserData     *() const { return GetSetUserData(); }
+    operator OpalParamRecording       *() const { return GetRecording(); }
+    operator OpalStatusTransferCall   *() const { return GetTransferStatus(); }
+    operator OpalPresenceStatus       *() const { return GetPresenceStatus(); }
+    operator OpalInstantMessage       *() const { return GetInstantMessage(); }
+#endif // SWIG
 
   protected:
     OpalMessage * m_message;
@@ -1678,6 +1699,9 @@ class OpalContext
 
     /// Calls OpalSendMessage() to send a message to the OPAL context.
     bool SendMessage(
+      const OpalMessagePtr & message  ///< Message to send to OPAL.
+    );
+    bool SendMessage(
       const OpalMessagePtr & message,  ///< Message to send to OPAL.
       OpalMessagePtr & response        ///< Response from OPAL.
     );
@@ -1709,11 +1733,37 @@ class OpalContext
       unsigned     duration = 0   ///< Duration in milliseconds for tone, see OpalCmdUserInput.
     );
 
+#ifndef SWIG
+    // Windows API compatibility
+    __inline bool GetMessageA(
+      OpalMessagePtr & message,
+      unsigned timeout = 0
+    ) { return GetMessage(message, timeout); }
+    __inline bool GetMessageW(
+      OpalMessagePtr & message,
+      unsigned timeout = 0
+    ) { return GetMessage(message, timeout); }
+    __inline bool SendMessageA(
+      const OpalMessagePtr & message
+    ) { return SendMessage(message); }
+    __inline bool SendMessageA(
+      const OpalMessagePtr & message,
+      OpalMessagePtr & response
+    ) { return SendMessage(message, response); }
+    __inline bool SendMessageW(
+      const OpalMessagePtr & message
+    ) { return SendMessage(message); }
+    __inline bool SendMessageW(
+      const OpalMessagePtr & message,
+      OpalMessagePtr & response
+    ) { return SendMessage(message, response); }
+#endif // SWIG
+
   protected:
     OpalHandle m_handle;
 };
 
-#endif
+#endif // defined(__cplusplus)
 
 #endif // OPAL_OPAL_H
 
