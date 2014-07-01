@@ -63,8 +63,12 @@ public class OpalContext {
     return OPALJNI.OpalContext_GetMessage__SWIG_1(swigCPtr, this, OpalMessagePtr.getCPtr(message), message);
   }
 
+  public boolean SendMessage(OpalMessagePtr message) {
+    return OPALJNI.OpalContext_SendMessage__SWIG_0(swigCPtr, this, OpalMessagePtr.getCPtr(message), message);
+  }
+
   public boolean SendMessage(OpalMessagePtr message, OpalMessagePtr response) {
-    return OPALJNI.OpalContext_SendMessage(swigCPtr, this, OpalMessagePtr.getCPtr(message), message, OpalMessagePtr.getCPtr(response), response);
+    return OPALJNI.OpalContext_SendMessage__SWIG_1(swigCPtr, this, OpalMessagePtr.getCPtr(message), message, OpalMessagePtr.getCPtr(response), response);
   }
 
   public boolean SetUpCall(OpalMessagePtr response, String partyB, String partyA, String alertingType) {

@@ -426,7 +426,7 @@ public class OPALJNI {
   public final static native long new_OpalMessagePtr__SWIG_1();
   public final static native void delete_OpalMessagePtr(long jarg1);
   public final static native int OpalMessagePtr_GetType(long jarg1, OpalMessagePtr jarg1_);
-  public final static native void OpalMessagePtr_SetType(long jarg1, OpalMessagePtr jarg1_, int jarg2);
+  public final static native long OpalMessagePtr_SetType(long jarg1, OpalMessagePtr jarg1_, int jarg2);
   public final static native String OpalMessagePtr_GetCallToken(long jarg1, OpalMessagePtr jarg1_);
   public final static native void OpalMessagePtr_SetCallToken(long jarg1, OpalMessagePtr jarg1_, String jarg2);
   public final static native String OpalMessagePtr_GetCommandError(long jarg1, OpalMessagePtr jarg1_);
@@ -456,7 +456,8 @@ public class OPALJNI {
   public final static native void OpalContext_ShutDown(long jarg1, OpalContext jarg1_);
   public final static native boolean OpalContext_GetMessage__SWIG_0(long jarg1, OpalContext jarg1_, long jarg2, OpalMessagePtr jarg2_, long jarg3);
   public final static native boolean OpalContext_GetMessage__SWIG_1(long jarg1, OpalContext jarg1_, long jarg2, OpalMessagePtr jarg2_);
-  public final static native boolean OpalContext_SendMessage(long jarg1, OpalContext jarg1_, long jarg2, OpalMessagePtr jarg2_, long jarg3, OpalMessagePtr jarg3_);
+  public final static native boolean OpalContext_SendMessage__SWIG_0(long jarg1, OpalContext jarg1_, long jarg2, OpalMessagePtr jarg2_);
+  public final static native boolean OpalContext_SendMessage__SWIG_1(long jarg1, OpalContext jarg1_, long jarg2, OpalMessagePtr jarg2_, long jarg3, OpalMessagePtr jarg3_);
   public final static native boolean OpalContext_SetUpCall__SWIG_0(long jarg1, OpalContext jarg1_, long jarg2, OpalMessagePtr jarg2_, String jarg3, String jarg4, String jarg5);
   public final static native boolean OpalContext_SetUpCall__SWIG_1(long jarg1, OpalContext jarg1_, long jarg2, OpalMessagePtr jarg2_, String jarg3, String jarg4);
   public final static native boolean OpalContext_SetUpCall__SWIG_2(long jarg1, OpalContext jarg1_, long jarg2, OpalMessagePtr jarg2_, String jarg3);
