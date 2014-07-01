@@ -1340,14 +1340,6 @@ PString SDPMediaDescription::GetSDPPortList() const
 }
 
 
-void SDPMediaDescription::CopyForRefusal(SDPMediaDescription & desc)
-{
-  AddSDPMediaFormat(desc.m_formats.front().CloneAs<SDPMediaFormat>());
-  m_mediaAddress = m_controlAddress = OpalTransportAddress();
-  m_port = 0;
-}
-
-
 //////////////////////////////////////////////////////////////////////////////
 
 SDPDummyMediaDescription::SDPDummyMediaDescription(const OpalTransportAddress & address, const PStringArray & tokens)
@@ -1364,6 +1356,16 @@ SDPDummyMediaDescription::SDPDummyMediaDescription(const OpalTransportAddress & 
     case 3 :
       m_tokens.AppendString("127");
   }
+}
+
+
+SDPDummyMediaDescription::SDPDummyMediaDescription(const SDPMediaDescription & from)
+  : m_tokens(4)
+{
+  m_tokens[0] = from.GetSDPMediaType();
+  m_tokens[1] = '0';
+  m_tokens[2] = from.GetSDPTransportType();
+  m_tokens[3] = from.GetSDPPortList();
 }
 
 
@@ -1400,18 +1402,6 @@ SDPMediaFormat * SDPDummyMediaDescription::CreateSDPMediaFormat()
 PString SDPDummyMediaDescription::GetSDPPortList() const
 {
   return m_tokens[3];
-}
-
-
-void SDPDummyMediaDescription::CopyForRefusal(SDPMediaDescription & from)
-{
-  m_tokens.SetSize(4);
-  m_tokens[0] = from.GetSDPMediaType();
-  m_tokens[1] = '0';
-  m_tokens[2] = from.GetSDPTransportType();
-  m_tokens[3] = from.GetSDPPortList();
-
-  m_port = 0;
 }
 
 
