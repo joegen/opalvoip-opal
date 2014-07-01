@@ -289,8 +289,6 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     void SetOptionStrings(const PStringOptions & options) { m_stringOptions = options; }
     const PStringOptions & GetOptionStrings() const { return m_stringOptions; }
 
-    virtual void CopyForRefusal(SDPMediaDescription & mediaDescription);
-
   protected:
     virtual SDPMediaFormat * FindFormat(PString & str) const;
 
@@ -324,12 +322,13 @@ class SDPDummyMediaDescription : public SDPMediaDescription
   public:
     SDPDummyMediaDescription() { }
     SDPDummyMediaDescription(const OpalTransportAddress & address, const PStringArray & tokens);
+    SDPDummyMediaDescription(const SDPMediaDescription & mediaDescription);
+
     virtual PString GetSDPMediaType() const;
     virtual PCaselessString GetSDPTransportType() const;
     virtual PCaselessString GetSessionType() const;
     virtual SDPMediaFormat * CreateSDPMediaFormat();
     virtual PString GetSDPPortList() const;
-    virtual void CopyForRefusal(SDPMediaDescription & mediaDescription);
 
   private:
     PStringArray m_tokens;
