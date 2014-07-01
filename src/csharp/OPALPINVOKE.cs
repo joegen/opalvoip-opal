@@ -1428,7 +1428,7 @@ class OPALPINVOKE {
   public static extern int OpalMessagePtr_GetType(HandleRef jarg1);
 
   [DllImport("OPAL", EntryPoint="CSharp_OpalMessagePtr_SetType")]
-  public static extern void OpalMessagePtr_SetType(HandleRef jarg1, int jarg2);
+  public static extern IntPtr OpalMessagePtr_SetType(HandleRef jarg1, int jarg2);
 
   [DllImport("OPAL", EntryPoint="CSharp_OpalMessagePtr_GetCallToken")]
   public static extern string OpalMessagePtr_GetCallToken(HandleRef jarg1);
@@ -1517,8 +1517,11 @@ class OPALPINVOKE {
   [DllImport("OPAL", EntryPoint="CSharp_OpalContext_GetMessage__SWIG_1")]
   public static extern bool OpalContext_GetMessage__SWIG_1(HandleRef jarg1, HandleRef jarg2);
 
-  [DllImport("OPAL", EntryPoint="CSharp_OpalContext_SendMessage")]
-  public static extern bool OpalContext_SendMessage(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
+  [DllImport("OPAL", EntryPoint="CSharp_OpalContext_SendMessage__SWIG_0")]
+  public static extern bool OpalContext_SendMessage__SWIG_0(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("OPAL", EntryPoint="CSharp_OpalContext_SendMessage__SWIG_1")]
+  public static extern bool OpalContext_SendMessage__SWIG_1(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
 
   [DllImport("OPAL", EntryPoint="CSharp_OpalContext_SetUpCall__SWIG_0")]
   public static extern bool OpalContext_SetUpCall__SWIG_0(HandleRef jarg1, HandleRef jarg2, string jarg3, string jarg4, string jarg5);

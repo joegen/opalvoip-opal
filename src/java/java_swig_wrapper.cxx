@@ -7007,16 +7007,20 @@ SWIGEXPORT jint JNICALL Java_org_opalvoip_opal_OPALJNI_OpalMessagePtr_1GetType(J
 }
 
 
-SWIGEXPORT void JNICALL Java_org_opalvoip_opal_OPALJNI_OpalMessagePtr_1SetType(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
+SWIGEXPORT jlong JNICALL Java_org_opalvoip_opal_OPALJNI_OpalMessagePtr_1SetType(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2) {
+  jlong jresult = 0 ;
   OpalMessagePtr *arg1 = (OpalMessagePtr *) 0 ;
   OpalMessageType arg2 ;
+  OpalMessagePtr *result = 0 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg1_;
   arg1 = *(OpalMessagePtr **)&jarg1; 
   arg2 = (OpalMessageType)jarg2; 
-  (arg1)->SetType(arg2);
+  result = (OpalMessagePtr *) &(arg1)->SetType(arg2);
+  *(OpalMessagePtr **)&jresult = result; 
+  return jresult;
 }
 
 
@@ -7478,7 +7482,29 @@ SWIGEXPORT jboolean JNICALL Java_org_opalvoip_opal_OPALJNI_OpalContext_1GetMessa
 }
 
 
-SWIGEXPORT jboolean JNICALL Java_org_opalvoip_opal_OPALJNI_OpalContext_1SendMessage(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
+SWIGEXPORT jboolean JNICALL Java_org_opalvoip_opal_OPALJNI_OpalContext_1SendMessage_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+  jboolean jresult = 0 ;
+  OpalContext *arg1 = (OpalContext *) 0 ;
+  OpalMessagePtr *arg2 = 0 ;
+  bool result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  (void)jarg2_;
+  arg1 = *(OpalContext **)&jarg1; 
+  arg2 = *(OpalMessagePtr **)&jarg2;
+  if (!arg2) {
+    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "OpalMessagePtr const & reference is null");
+    return 0;
+  } 
+  result = (bool)(arg1)->SendMessage((OpalMessagePtr const &)*arg2);
+  jresult = (jboolean)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT jboolean JNICALL Java_org_opalvoip_opal_OPALJNI_OpalContext_1SendMessage_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
   jboolean jresult = 0 ;
   OpalContext *arg1 = (OpalContext *) 0 ;
   OpalMessagePtr *arg2 = 0 ;
