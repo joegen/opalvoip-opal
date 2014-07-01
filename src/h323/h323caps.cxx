@@ -2985,13 +2985,13 @@ H323Capabilities::H323Capabilities(H323Connection & connection,
         H323Capability * capability = allCapabilities.FindCapability(pdu.m_capabilityTable[i].m_capability);
         if (capability != NULL) {
           H323Capability * copy = (H323Capability *)capability->Clone();
+          OpalMediaFormatList::const_iterator it = localFormats.FindFormat(copy->GetMediaFormat());
+          if (it != localFormats.end())
+            copy->UpdateMediaFormat(*it);
           if (!copy->OnReceivedPDU(pdu.m_capabilityTable[i].m_capability))
             delete copy;
           else {
             copy->SetCapabilityNumber(pdu.m_capabilityTable[i].m_capabilityTableEntryNumber);
-            OpalMediaFormatList::const_iterator it = localFormats.FindFormat(copy->GetMediaFormat());
-            if (it != localFormats.end())
-              copy->UpdateMediaFormat(*it);
             table.Append(copy);
           }
         }
