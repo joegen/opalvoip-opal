@@ -3678,29 +3678,36 @@ bool SIPConnection::OnReceivedAnswerSDPSession(SDPSessionDescription & sdp, unsi
 
   if (recvStream == NULL) {
     PTRACE(5, "SIP\tOpening rx " << mediaType << " stream from answer SDP");
-    if (ownerCall.OpenSourceMediaStreams(*this, mediaType, sessionId, OpalMediaFormat()
+    if (ownerCall.OpenSourceMediaStreams(*this,
+                                         mediaType,
+                                         sessionId,
+                                         OpalMediaFormat(),
 #if OPAL_VIDEO
-                                         , mediaDescription->GetContentRole()
+                                         mediaDescription->GetContentRole(),
 #endif
-                                         ) && (recvStream = GetMediaStream(sessionId, true)) != NULL)
-      recvStream->InternalSetPaused(recvDisabled, false, false);
-    else if (!recvDisabled)
+                                         recvDisabled))
+      recvStream = GetMediaStream(sessionId, true);
+    if (!recvDisabled && recvStream == NULL)
       SendReINVITE(PTRACE_PARAM("close after rx open fail"));
   }
 
   if (sendStream == NULL) {
     PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
-    if (otherParty != NULL) {
-      PTRACE(5, "SIP\tOpening tx " << mediaType << " stream from answer SDP");
-      if (ownerCall.OpenSourceMediaStreams(*otherParty, mediaType, sessionId, OpalMediaFormat()
+    if (otherParty == NULL)
+      return false;
+
+    PTRACE(5, "SIP\tOpening tx " << mediaType << " stream from answer SDP");
+    if (ownerCall.OpenSourceMediaStreams(*otherParty,
+                                          mediaType,
+                                          sessionId,
+                                          OpalMediaFormat(),
 #if OPAL_VIDEO
-                                           , mediaDescription->GetContentRole()
+                                          mediaDescription->GetContentRole(),
 #endif
-                                           ) && (sendStream = GetMediaStream(sessionId, false)) != NULL)
-        sendStream->InternalSetPaused(sendDisabled, false, false);
-      else if (!sendDisabled && !otherParty->IsOnHold(true))
-        SendReINVITE(PTRACE_PARAM("close after tx open fail"));
-    }
+                                          sendDisabled))
+      sendStream = GetMediaStream(sessionId, false);
+    if (!sendDisabled && sendStream == NULL && !otherParty->IsOnHold(true))
+      SendReINVITE(PTRACE_PARAM("close after tx open fail"));
   }
 
   PINDEX maxFormats = 1;
