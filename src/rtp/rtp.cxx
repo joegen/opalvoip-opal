@@ -782,7 +782,7 @@ static void ParseReceiverReportArray(RTP_ReceiverReportArray & reports, const BY
     report->lastSequenceNumber = rr->last_seq;
     report->jitter = rr->jitter;
     report->lastTimestamp.SetNTP((PInt64)(DWORD)rr->lsr << 16);
-    report->delay.SetInterval(((DWORD)rr->dlsr*65536LL)/1000); // units of 1/65536 seconds
+    report->delay.SetInterval(((DWORD)rr->dlsr*1000LL)/65536); // units of 1/65536 seconds
     reports.SetAt(repIdx, report);
     rr++;
   }
