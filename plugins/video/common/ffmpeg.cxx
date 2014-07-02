@@ -656,7 +656,7 @@ void FFMPEGCodec::EncodedFrame::RTPCallBack(void *, int, int)
 
 void FFMPEGCodec::ErrorCallback(unsigned level, const char * msg)
 {
-  PTRACE(level, m_prefix, msg);
+  PTRACE(level, m_prefix, "FFMPEG: " << msg);
 
   if (level < 2)
     ++m_errorCount;
