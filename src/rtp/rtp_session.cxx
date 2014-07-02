@@ -183,6 +183,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , lastSentPacketTime(PTimer::Tick())
   , lastSRTimestamp(0)
   , lastSRReceiveTime(0)
+  , lastRRSendTime(0)
   , lastRRSequenceNumber(0)
   , m_lastTxFIRSequenceNumber(0)
   , m_lastRxFIRSequenceNumber(UINT_MAX)
@@ -295,7 +296,8 @@ OpalRTPSession::~OpalRTPSession()
       "    maximumReceiveTime = " << maximumReceiveTime << "\n"
       "    minimumReceiveTime = " << minimumReceiveTime << "\n"
       "    averageJitter      = " << GetAvgJitterTime() << "\n"
-      "    maximumJitter      = " << GetMaxJitterTime()
+      "    maximumJitter      = " << GetMaxJitterTime() << "\n"
+      "    roundTripTime      = " << GetRoundTripTime()
    );
 }
 
@@ -321,6 +323,7 @@ void OpalRTPSession::ClearStatistics()
   jitterLevel = 0;
   maximumJitterLevel = 0;
   jitterLevelOnRemote = 0;
+  roundTripTime = 0;
   markerRecvCount = 0;
   markerSendCount = 0;
 
@@ -612,9 +615,10 @@ void OpalRTPSession::AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiv
 
   receiver.jitter = jitterLevel >> JitterRoundingGuardBits; // Allow for rounding protection bits
 
+  lastRRSendTime.SetCurrentTime();
   if (senderReportsReceived > 0) {
     receiver.lsr  = (DWORD)(lastSRTimestamp.GetNTP() >> 16);
-    receiver.dlsr = (DWORD)((PTime() - lastSRReceiveTime).GetMilliSeconds()*65536/1000); // Delay since last SR
+    receiver.dlsr = (DWORD)((lastRRSendTime - lastSRReceiveTime).GetMilliSeconds()*65536/1000); // Delay since last received SR
   }
   else {
     receiver.lsr = 0;
@@ -1141,6 +1145,7 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, bool receiv
   statistics.m_averageJitter     = receiver ? GetAvgJitterTime()      : GetJitterTimeOnRemote();
   statistics.m_maximumJitter     = receiver ? GetMaxJitterTime()      : 0;
   statistics.m_jitterBufferDelay = receiver ? GetJitterBufferDelay()  : 0;
+  statistics.m_roundTripTime     = GetRoundTripTime();
 }
 #endif
 
@@ -1438,6 +1443,8 @@ void OpalRTPSession::OnReceiverReports(const ReceiverReportArray & reports)
     if (report.sourceIdentifier == syncSourceOut) {
       packetsLostByRemote = report.totalLost;
       jitterLevelOnRemote = report.jitter;
+      if (lastRRSendTime.IsValid())
+        roundTripTime = (DWORD)((PTime() - lastRRSendTime) - report.delay).GetMilliSeconds();
       break;
     }
   }
