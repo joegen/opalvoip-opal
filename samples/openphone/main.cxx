@@ -8046,6 +8046,10 @@ STATISTICS_FIELD_BEG(TxAudio, AvgJitter)
   value.sprintf(m_printFormat, statistics.m_averageJitter);
 STATISTICS_FIELD_END(TxAudio, AvgJitter)
 
+STATISTICS_FIELD_BEG(TxAudio, RoundTripTime)
+  value.sprintf(m_printFormat, statistics.m_roundTripTime);
+STATISTICS_FIELD_END(TxAudio, RoundTripTime)
+
 STATISTICS_FIELD_BEG(RxVideo, Bandwidth)
   value.sprintf(m_printFormat, CalculateBandwidth(statistics.m_totalBytes));
 STATISTICS_FIELD_END(RxVideo, Bandwidth)
@@ -8129,6 +8133,10 @@ STATISTICS_FIELD_END(TxVideo, Lost)
 STATISTICS_FIELD_BEG(TxVideo, MaxTime)
   value.sprintf(m_printFormat, statistics.m_maximumPacketTime);
 STATISTICS_FIELD_END(TxVideo, MaxTime)
+
+STATISTICS_FIELD_BEG(TxVideo, RoundTripTime)
+  value.sprintf(m_printFormat, statistics.m_roundTripTime);
+STATISTICS_FIELD_END(TxVideo, RoundTripTime)
 
 STATISTICS_FIELD_BEG(TxVideo, Frames)
   value.sprintf(m_printFormat, statistics.m_totalFrames);
