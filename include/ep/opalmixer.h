@@ -976,6 +976,13 @@ class OpalMixerMediaStream : public OpalMediaStream
       */
     virtual PBoolean Open();
 
+    /**Start the media stream.
+
+       The default behaviour calls Resume() on the associated OpalMediaPatch
+       thread if it was suspended.
+      */
+    virtual PBoolean Start();
+
     /**Write an RTP frame of data to the sink media stream.
        The default behaviour simply calls WriteData() on the data portion of the
        RTP_DataFrame and and sets the internal timestamp and marker from the
