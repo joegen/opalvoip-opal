@@ -159,6 +159,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , lastSentPacketTime(PTimer::Tick())
   , lastSRTimestamp(0)
   , lastSRReceiveTime(0)
+  , lastRRSendTime(0)
   , lastRRSequenceNumber(0)
   , resequenceOutOfOrderPackets(true)
   , consecutiveOutOfOrderPackets(0)
@@ -259,7 +260,8 @@ OpalRTPSession::~OpalRTPSession()
       "    maximumReceiveTime = " << maximumReceiveTime << "\n"
       "    minimumReceiveTime = " << minimumReceiveTime << "\n"
       "    averageJitter      = " << GetAvgJitterTime() << "\n"
-      "    maximumJitter      = " << GetMaxJitterTime()
+      "    maximumJitter      = " << GetMaxJitterTime() << "\n"
+      "    roundTripTime      = " << GetRoundTripTime()
    );
 }
 
@@ -285,6 +287,7 @@ void OpalRTPSession::ClearStatistics()
   jitterLevel = 0;
   maximumJitterLevel = 0;
   jitterLevelOnRemote = 0;
+  roundTripTime = 0;
   markerRecvCount = 0;
   markerSendCount = 0;
 
@@ -577,10 +580,10 @@ void OpalRTPSession::AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiv
     PUInt32b lsr_ntp_frac = lastSRTimestamp.GetMicrosecond()*4294; // Scale microseconds to "fraction" from 0 to 2^32
     receiver.lsr = (((lsr_ntp_sec << 16) & 0xFFFF0000) | ((lsr_ntp_frac >> 16) & 0x0000FFFF));
   
-    // Calculate the delay since last SR
-    PTime now;
-    delaySinceLastSR = now - lastSRReceiveTime;
-    receiver.dlsr = (DWORD)(delaySinceLastSR.GetMilliSeconds()*65536/1000);
+    // Calculate the delay since last received SR
+    lastRRSendTime.SetCurrentTime();
+    PTimeInterval delay(lastRRSendTime - lastSRReceiveTime);
+    receiver.dlsr = (DWORD)(delay.GetMilliSeconds()*65536/1000);
   }
   else {
     receiver.lsr = 0;
@@ -1102,6 +1105,7 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, bool receiv
   statistics.m_averageJitter     = receiver ? GetAvgJitterTime()      : GetJitterTimeOnRemote();
   statistics.m_maximumJitter     = receiver ? GetMaxJitterTime()      : 0;
   statistics.m_jitterBufferDelay = receiver ? GetJitterBufferDelay()  : 0;
+  statistics.m_roundTripTime     = GetRoundTripTime();
 }
 #endif
 
@@ -1120,7 +1124,7 @@ OpalRTPSession::BuildReceiverReportArray(const RTP_ControlFrame & frame, PINDEX 
     report->lastSequenceNumber = rr->last_seq;
     report->jitter = rr->jitter;
     report->lastTimestamp = (PInt64)(DWORD)rr->lsr;
-    report->delay = ((PInt64)rr->dlsr << 16)/1000;
+    report->delay = (DWORD)rr->dlsr*1000ULL/65536;
     reports.SetAt(repIdx, report);
 #if OPAL_RTCP_XR
     if (m_metrics != NULL) m_metrics->OnRxSenderReport(rr->lsr, rr->dlsr);
@@ -1371,9 +1375,12 @@ void OpalRTPSession::OnRxReceiverReport(DWORD PTRACE_PARAM(src), const ReceiverR
 void OpalRTPSession::OnReceiverReports(const ReceiverReportArray & reports)
 {
   for (PINDEX i = 0; i < reports.GetSize(); i++) {
-    if (reports[i].sourceIdentifier == syncSourceOut) {
-      packetsLostByRemote = reports[i].totalLost;
-      jitterLevelOnRemote = reports[i].jitter;
+    ReceiverReport & report = reports[i];
+    if (report.sourceIdentifier == syncSourceOut) {
+      packetsLostByRemote = report.totalLost;
+      jitterLevelOnRemote = report.jitter;
+      if (lastRRSendTime.IsValid())
+        roundTripTime = (DWORD)((PTime() - lastRRSendTime) - report.delay).GetMilliSeconds();
       break;
     }
   }

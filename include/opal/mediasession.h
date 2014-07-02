@@ -79,14 +79,15 @@ class OpalMediaStatistics : public PObject
     unsigned m_packetsOutOfOrder;
     unsigned m_packetsTooLate;
     unsigned m_packetOverruns;
-    unsigned m_minimumPacketTime;
-    unsigned m_averagePacketTime;
-    unsigned m_maximumPacketTime;
+    unsigned m_minimumPacketTime; // Milliseconds
+    unsigned m_averagePacketTime; // Milliseconds
+    unsigned m_maximumPacketTime; // Milliseconds
+    unsigned m_roundTripTime;     // Milliseconds
 
     // Audio
-    unsigned m_averageJitter;
-    unsigned m_maximumJitter;
-    unsigned m_jitterBufferDelay;
+    unsigned m_averageJitter;     // Milliseconds
+    unsigned m_maximumJitter;     // Milliseconds
+    unsigned m_jitterBufferDelay; // Milliseconds
 
 #if OPAL_VIDEO
     // Video

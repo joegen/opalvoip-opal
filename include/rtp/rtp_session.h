@@ -557,6 +557,11 @@ class OpalRTPSession : public OpalMediaSession
        time of received packets in milliseconds.
       */
     DWORD GetJitterTimeOnRemote() const { return jitterLevelOnRemote/GetJitterTimeUnits(); }
+
+    /**Get round trip time to remote.
+       This is calculated according to the RFC 3550 algorithm.
+      */
+    DWORD GetRoundTripTime() const { return roundTripTime; }
   //@}
 
     virtual void SetCloseOnBYE(bool v)  { m_closeOnBye = v; }
@@ -648,7 +653,7 @@ class OpalRTPSession : public OpalMediaSession
     PTimeInterval lastReceivedPacketTime;
     PTime         lastSRTimestamp;
     PTime         lastSRReceiveTime;
-    PTimeInterval delaySinceLastSR;
+    PTime         lastRRSendTime;
     WORD          lastRRSequenceNumber;
     bool          resequenceOutOfOrderPackets;
     unsigned      consecutiveOutOfOrderPackets;
@@ -681,6 +686,7 @@ class OpalRTPSession : public OpalMediaSession
     DWORD jitterLevel;
     DWORD jitterLevelOnRemote;
     DWORD maximumJitterLevel;
+    DWORD roundTripTime;
 
     DWORD m_syncTimestamp;
     PTime m_syncRealTime;
