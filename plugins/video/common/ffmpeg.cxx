@@ -95,6 +95,45 @@ static void logCallbackFFMPEG(void * avcl, int severity, const char* fmt , va_li
 #endif
 
 
+static size_t const MemoryAlignment = 16;
+
+__inline static bool IsAlignedMemory(uint8_t * ptr)
+{
+  return (((intptr_t)ptr)&(MemoryAlignment-1)) == 0;
+}
+
+
+static bool AllocateAlignedMemory(void * & baseMemory, uint8_t * & alignedMemory, size_t & alignedSize, size_t requestedSize)
+{
+  if (requestedSize > alignedSize && baseMemory != NULL) {
+    free(baseMemory);
+    baseMemory = NULL;
+  }
+
+  if (baseMemory == NULL) {
+#if HAVE_POSIX_MEMALIGN
+    if (posix_memalign(&baseMemory, MemoryAlignment, requestedSize) != 0)
+#else
+    if ((baseMemory = malloc(requestedSize+MemoryAlignment)) == NULL)
+#endif
+    {
+      PTRACE(1, "FFMPEG", "Unable to allocate " << requestedSize << " bytes for aligned buffer.");
+      return false;
+    }
+    alignedSize = requestedSize;
+    PTRACE(5, "FFMPEG", "Allocated " << requestedSize << " byte aligned buffer.");
+  }
+
+#if HAVE_POSIX_MEMALIGN
+  alignedMemory = (uint8_t *)baseMemory;
+#else
+  alignedMemory = (uint8_t *)((MemoryAlignment-1+(intptr_t)baseMemory)&(-(intptr_t)MemoryAlignment));
+#endif
+
+  return true;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 FFMPEGCodec::FFMPEGCodec(const char * prefix, EncodedFrame * fullFrame)
@@ -309,7 +348,7 @@ bool FFMPEGCodec::SetResolution(unsigned width, unsigned height)
     return false;
   }
 
-  PTRACE(5, m_prefix, "Resolution set to " << width << 'x' << height);
+  PTRACE(4, m_prefix, "Resolution set to " << width << 'x' << height);
   return true;
 }
 
@@ -423,20 +462,10 @@ bool FFMPEGCodec::EncodeVideoPacket(const PluginCodec_RTP & in, PluginCodec_RTP 
 
   // May need to copy to local buffer to guarantee 16 byte alignment
   uint8_t * yuv = OPAL_VIDEO_FRAME_DATA_PTR(header);
-  if ((((intptr_t)yuv)&0xf) != 0) {
+  if (!IsAlignedMemory(yuv)) {
     size_t frameSize = planeSize*3/2;
-    size_t alignedSize = frameSize + 16;
-    if (m_alignedInputSize < alignedSize) {
-      if (m_alignedInputYUV != NULL)
-        free(m_alignedInputYUV);
-      if ((m_alignedInputYUV = (uint8_t *)malloc(alignedSize)) == NULL) {
-        PTRACE(1, m_prefix, "Unable to allocate memory for aligned buffer");
-        return false;
-      }
-      m_alignedInputSize = alignedSize;
-    }
-
-    yuv = m_alignedInputYUV + 16 - (((intptr_t)m_alignedInputYUV) & 0xf);
+    if (!AllocateAlignedMemory(m_alignedInputYUV, yuv, m_alignedInputSize, frameSize))
+      return false;
     memcpy(yuv, OPAL_VIDEO_FRAME_DATA_PTR(header), frameSize);
   }
 
@@ -466,7 +495,10 @@ bool FFMPEGCodec::EncodeVideoPacket(const PluginCodec_RTP & in, PluginCodec_RTP 
   if (result < 0)
     return false;
 
-  m_fullFrame->Reset(result);
+  if (!m_fullFrame->Reset(result)) {
+    PTRACE(2, m_prefix, "Encoding/Packetisation error: " << result << " bytes");
+    return false;
+  }
 
   if (m_fullFrame->IsIntraFrame())
     flags |= PluginCodec_ReturnCoderIFrame;
@@ -604,6 +636,7 @@ bool FFMPEGCodec::DecodeVideoFrame(const uint8_t * frame, size_t length, unsigne
 FFMPEGCodec::EncodedFrame::EncodedFrame()
   : m_length(0)
   , m_maxSize(0)
+  , m_memory(NULL)
   , m_buffer(NULL)
   , m_maxPayloadSize(PluginCodec_RTP_MaxPayloadSize)
 {
@@ -612,8 +645,8 @@ FFMPEGCodec::EncodedFrame::EncodedFrame()
 
 FFMPEGCodec::EncodedFrame::~EncodedFrame()
 {
-  if (m_buffer != NULL)
-    free(m_buffer);
+  if (m_memory != NULL)
+    free(m_memory);
 }
 
 
@@ -625,28 +658,20 @@ void FFMPEGCodec::EncodedFrame::SetMaxPayloadSize(size_t size)
 
 bool FFMPEGCodec::EncodedFrame::SetResolution(unsigned width, unsigned height)
 {
-  return SetMaxSize(width*height*2);
-}
-
-
-bool FFMPEGCodec::EncodedFrame::SetMaxSize(size_t newSize)
-{
-  if (newSize <= m_maxSize)
-    return true;
-
-  m_buffer = (uint8_t *)realloc(m_buffer, newSize);
-  if (m_buffer == NULL)
-    return false;
-
-  m_maxSize = newSize;
-  return true;
+  return AllocateAlignedMemory(m_memory, m_buffer, m_maxSize, width*height*2);
 }
 
 
 bool FFMPEGCodec::EncodedFrame::Append(const uint8_t * data, size_t len)
 {
-  if (!SetMaxSize(m_length + len))
-    return false;
+  size_t newSize = m_length + len;
+  if (newSize > m_maxSize) {
+    if ((m_buffer = (uint8_t *)realloc(m_buffer, newSize)) == NULL) {
+      PTRACE(1, "FFMPEG", "Could not (re)allocate " << newSize << " bytes of memory.");
+      return false;
+    }
+    m_maxSize = newSize;
+  }
 
   memcpy(m_buffer+m_length, data, len);
   m_length += len;

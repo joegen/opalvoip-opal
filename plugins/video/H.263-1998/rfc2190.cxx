@@ -141,36 +141,6 @@ RFC2190Packetizer::RFC2190Packetizer()
 }
 
 
-bool RFC2190Packetizer::SetResolution(unsigned width, unsigned height)
-{
-  m_currentMB = 0;
-  m_currentBytes = 0;
-
-  fragments.resize(0);
-
-  size_t newOutputSize = width*height;
-
-  if (m_buffer != NULL && m_maxSize < newOutputSize) {
-    free(m_buffer);
-    m_buffer = NULL;
-  }
-
-  if (m_buffer == NULL) {
-    m_maxSize = newOutputSize;
-#if HAVE_POSIX_MEMALIGN
-    if (posix_memalign((void **)&m_buffer, 64, m_maxSize) != 0) 
-#else
-    if ((m_buffer = (unsigned char *)malloc(m_maxSize)) == NULL) 
-#endif
-    {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-
 void RFC2190Packetizer::SetMaxPayloadSize(size_t size)
 {
   m_maxPayloadSize = size - 8; // Allow for Mode B header
@@ -179,6 +149,9 @@ void RFC2190Packetizer::SetMaxPayloadSize(size_t size)
 
 bool RFC2190Packetizer::Reset(size_t len)
 {
+  if (len > m_maxSize)
+    return false;
+
   // make sure data is at least long enough to contain PSC, TR & minimum PTYPE, PQUANT and CPM
   if (len < 7)
     return false;
@@ -305,8 +278,12 @@ bool RFC2190Packetizer::AddPacket(const PluginCodec_RTP &, unsigned &)
 bool RFC2190Packetizer::GetPacket(PluginCodec_RTP & outputFrame, unsigned int & flags)
 {
   outputFrame.SetPayloadSize(0);
-  if (fragments.empty() || currFrag == fragments.end())
+  if (fragments.empty() || currFrag == fragments.end()) {
+    m_currentMB = 0;
+    m_currentBytes = 0;
+    fragments.resize(0);
     return false;
+  }
       
   fragment frag = *currFrag++;
 
