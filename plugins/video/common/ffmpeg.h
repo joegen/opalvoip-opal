@@ -84,6 +84,7 @@ class FFMPEGCodec
       protected:
         size_t    m_length;
         size_t    m_maxSize;
+        void    * m_memory;
         uint8_t * m_buffer;
         size_t    m_maxPayloadSize;
 
@@ -100,7 +101,6 @@ class FFMPEGCodec
 
         virtual void SetMaxPayloadSize(size_t size);
         virtual bool SetResolution(unsigned width, unsigned height);
-        virtual bool SetMaxSize(size_t newSize);
         virtual bool Reset(size_t len = 0);
 
         virtual bool GetPacket(PluginCodec_RTP & rtp, unsigned & flags) = 0;
@@ -120,7 +120,7 @@ class FFMPEGCodec
     AVCodecContext * m_context;
     AVFrame        * m_picture;
     AVPacket         m_packet;
-    uint8_t        * m_alignedInputYUV;
+    void           * m_alignedInputYUV;
     size_t           m_alignedInputSize;
     EncodedFrame   * m_fullFrame;
     bool             m_open;
