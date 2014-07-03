@@ -499,14 +499,8 @@ class H263_Base_Encoder : public PluginVideoEncoder<MY_CODEC>, public FFMPEGCode
 
       ClampResolution();
 
-      if (!m_fullFrame->SetResolution(m_width, m_height)) {
-        PTRACE(1, m_prefix, "Unable to allocate memory for packet buffer");
-        return false;
-      }
-
       SetResolution(m_width, m_height);
       SetEncoderOptions(m_frameTime, m_maxBitRate, m_maxRTPSize, m_tsto, m_keyFramePeriod);
-      m_fullFrame->SetMaxPayloadSize(m_context->rtp_payload_size);
       PTRACE(4, m_prefix, "Packetization is " << m_fullFrame->GetName());
 
       #define CODEC_TRACER_FLAG(tracer, flag) \
@@ -580,8 +574,6 @@ class H263_RFC2190_Encoder : public H263_Base_Encoder
     #if LIBAVCODEC_RTP_MODE
       m_context->rtp_mode = 1;
     #endif
-
-      m_context->rtp_payload_size = PluginCodec_RTP_MaxPayloadSize;
 
     #ifdef CODEC_FLAG_H263P_UMV
       m_context->flags &= ~CODEC_FLAG_H263P_UMV;

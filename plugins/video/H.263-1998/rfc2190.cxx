@@ -171,6 +171,12 @@ bool RFC2190Packetizer::SetResolution(unsigned width, unsigned height)
 }
 
 
+void RFC2190Packetizer::SetMaxPayloadSize(size_t size)
+{
+  m_maxPayloadSize = size - 8; // Allow for Mode B header
+}
+
+
 bool RFC2190Packetizer::Reset(size_t len)
 {
   // make sure data is at least long enough to contain PSC, TR & minimum PTYPE, PQUANT and CPM
@@ -363,7 +369,7 @@ void RFC2190Packetizer::RTPCallBack(void * data, int size, int mbCount)
 {
   // sometimes, FFmpeg encodes the same frame multiple times
   // we need to detect this in order to avoid duplicating the encoded data
-  if ((data == m_buffer) && (fragments.size() != 0)) {
+  if (data == m_buffer) {
     m_currentMB = 0;
     m_currentBytes = 0;
     fragments.resize(0);
