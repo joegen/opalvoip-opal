@@ -46,6 +46,7 @@ class RFC2190Packetizer : public RFC2190EncodedFrame
   public:
     RFC2190Packetizer();
 
+    virtual void SetMaxPayloadSize(size_t size);
     virtual bool Reset(size_t len = 0);
     virtual bool SetResolution(unsigned width, unsigned height);
 

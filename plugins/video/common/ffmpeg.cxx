@@ -105,6 +105,7 @@ FFMPEGCodec::FFMPEGCodec(const char * prefix, EncodedFrame * fullFrame)
   , m_alignedInputYUV(NULL)
   , m_alignedInputSize(0)
   , m_fullFrame(fullFrame)
+  , m_open(false)
   , m_errorCount(0)
   , m_hadMissingPacket(false)
 {
@@ -186,7 +187,7 @@ static void StaticRTPCallBack(AVCodecContext * ctx, void * data, int size, int n
 
 bool FFMPEGCodec::InitEncoder(AVCodecID codecId)
 {
-  PTRACE(5, m_prefix, "Opening encoder");
+  PTRACE(5, m_prefix, "Initialising encoder");
 
   m_codec = avcodec_find_encoder(codecId);
   if (m_codec == NULL) {
@@ -256,25 +257,29 @@ bool FFMPEGCodec::OpenCodec()
 #endif
 
   if (result < 0) {
-    PTRACE(1, m_prefix, "Failed to open codec");
+    PTRACE(1, m_prefix, "Failed to open codec \"" << m_codec->long_name << '"');
     return false;
   }
 
-  PTRACE(4, m_prefix, "Codec opened");
+  PTRACE(4, m_prefix, "Codec opened \"" << m_codec->long_name << '"');
+  m_open = true;
   return true;
 }
 
 
 void FFMPEGCodec::CloseCodec()
 {
-  if (m_context != NULL && m_context->codec != NULL)
+  if (m_open) {
+    PTRACE(4, m_prefix, "Closing codec \"" << m_codec->long_name << '"');
     avcodec_close(m_context);
+    m_open = false;
+  }
 }
 
 
 bool FFMPEGCodec::SetResolution(unsigned width, unsigned height)
 {
-  bool wasOpen = m_context->codec != NULL;
+  bool wasOpen = m_open;
   if (wasOpen) {
     PTRACE(3, m_prefix, "Resolution has changed - reopening codec");
     CloseCodec();
@@ -358,7 +363,12 @@ void FFMPEGCodec::SetEncoderOptions(unsigned frameTime,
   m_context->lmin = m_context->qmin * FF_QP2LAMBDA;
   m_context->lmax = m_context->qmax * FF_QP2LAMBDA; 
 
-  m_context->rtp_payload_size = maxRTPSize;
+  if (m_fullFrame == NULL)
+    m_context->rtp_payload_size = maxRTPSize;
+  else {
+    m_fullFrame->SetMaxPayloadSize(maxRTPSize);
+    m_context->rtp_payload_size = m_fullFrame->GetMaxPayloadSize(); // Might be adjusted to smaller value
+  }
 
   m_context->qmax = tsto;
   if (m_context->qmax <= m_context->qmin)
@@ -378,7 +388,6 @@ void FFMPEGCodec::SetEncoderOptions(unsigned frameTime,
   PTRACE(5, m_prefix, "qmin set to " << m_context->qmin);
   PTRACE(5, m_prefix, "qmax set to " << m_context->qmax);
   PTRACE(5, m_prefix, "payload size set to " << m_context->rtp_payload_size);
-
 }
 
 
@@ -608,6 +617,12 @@ FFMPEGCodec::EncodedFrame::~EncodedFrame()
 }
 
 
+void FFMPEGCodec::EncodedFrame::SetMaxPayloadSize(size_t size)
+{
+  m_maxPayloadSize = size;
+}
+
+
 bool FFMPEGCodec::EncodedFrame::SetResolution(unsigned width, unsigned height)
 {
   return SetMaxSize(width*height*2);
@@ -656,7 +671,7 @@ void FFMPEGCodec::EncodedFrame::RTPCallBack(void *, int, int)
 
 void FFMPEGCodec::ErrorCallback(unsigned level, const char * msg)
 {
-  PTRACE(level, m_prefix, "FFMPEG: " << msg);
+  PTRACE(level, m_prefix, "FFMPEG(" << level << "): " << msg);
 
   if (level < 2)
     ++m_errorCount;

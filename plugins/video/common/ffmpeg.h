@@ -96,8 +96,9 @@ class FFMPEGCodec
         uint8_t * GetBuffer() const { return m_buffer; }
         size_t GetMaxSize() const { return m_maxSize; }
         size_t GetLength() const { return m_length; }
-        void SetMaxPayloadSize(size_t size) { m_maxPayloadSize = size; }
+        size_t GetMaxPayloadSize() const { return m_maxPayloadSize; }
 
+        virtual void SetMaxPayloadSize(size_t size);
         virtual bool SetResolution(unsigned width, unsigned height);
         virtual bool SetMaxSize(size_t newSize);
         virtual bool Reset(size_t len = 0);
@@ -122,6 +123,7 @@ class FFMPEGCodec
     uint8_t        * m_alignedInputYUV;
     size_t           m_alignedInputSize;
     EncodedFrame   * m_fullFrame;
+    bool             m_open;
     int              m_errorCount;
     bool             m_hadMissingPacket;
 
