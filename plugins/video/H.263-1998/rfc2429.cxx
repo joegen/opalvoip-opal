@@ -316,6 +316,12 @@ bool RFC2429Frame::AddPacket(const PluginCodec_RTP & packet, unsigned int & flag
 }
 
 
+void RFC2429Frame::SetMaxPayloadSize(size_t size)
+{
+  m_maxPayloadSize = size - 2; // Allow for header
+}
+
+
 bool RFC2429Frame::Reset(size_t len)
 {
   m_packetizationOffset = 0;
