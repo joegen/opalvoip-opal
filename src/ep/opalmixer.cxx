@@ -1185,12 +1185,13 @@ PBoolean OpalMixerMediaStream::Open()
 
 PBoolean OpalMixerMediaStream::Start()
 {
-  if (IsSource() || !m_listenOnly) {
-    if (!m_node->AttachStream(this))
-      return false;
-  }
+  if (!OpalMediaStream::Start())
+    return false;
 
-  return OpalMediaStream::Start();
+  if (IsSink() && m_listenOnly)
+    return true;
+
+  return m_node->AttachStream(this);
 }
 
 
