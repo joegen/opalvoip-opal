@@ -141,38 +141,17 @@ RFC2190Packetizer::RFC2190Packetizer()
 }
 
 
-bool RFC2190Packetizer::SetResolution(unsigned width, unsigned height)
+void RFC2190Packetizer::SetMaxPayloadSize(size_t size)
 {
-  m_currentMB = 0;
-  m_currentBytes = 0;
-
-  fragments.resize(0);
-
-  size_t newOutputSize = width*height;
-
-  if (m_buffer != NULL && m_maxSize < newOutputSize) {
-    free(m_buffer);
-    m_buffer = NULL;
-  }
-
-  if (m_buffer == NULL) {
-    m_maxSize = newOutputSize;
-#if HAVE_POSIX_MEMALIGN
-    if (posix_memalign((void **)&m_buffer, 64, m_maxSize) != 0) 
-#else
-    if ((m_buffer = (unsigned char *)malloc(m_maxSize)) == NULL) 
-#endif
-    {
-      return false;
-    }
-  }
-
-  return true;
+  m_maxPayloadSize = size - 8; // Allow for Mode B header
 }
 
 
 bool RFC2190Packetizer::Reset(size_t len)
 {
+  if (len > m_maxSize)
+    return false;
+
   // make sure data is at least long enough to contain PSC, TR & minimum PTYPE, PQUANT and CPM
   if (len < 7)
     return false;
@@ -299,8 +278,12 @@ bool RFC2190Packetizer::AddPacket(const PluginCodec_RTP &, unsigned &)
 bool RFC2190Packetizer::GetPacket(PluginCodec_RTP & outputFrame, unsigned int & flags)
 {
   outputFrame.SetPayloadSize(0);
-  if (fragments.empty() || currFrag == fragments.end())
+  if (fragments.empty() || currFrag == fragments.end()) {
+    m_currentMB = 0;
+    m_currentBytes = 0;
+    fragments.resize(0);
     return false;
+  }
       
   fragment frag = *currFrag++;
 
@@ -363,7 +346,7 @@ void RFC2190Packetizer::RTPCallBack(void * data, int size, int mbCount)
 {
   // sometimes, FFmpeg encodes the same frame multiple times
   // we need to detect this in order to avoid duplicating the encoded data
-  if ((data == m_buffer) && (fragments.size() != 0)) {
+  if (data == m_buffer) {
     m_currentMB = 0;
     m_currentBytes = 0;
     fragments.resize(0);

@@ -84,6 +84,7 @@ class FFMPEGCodec
       protected:
         size_t    m_length;
         size_t    m_maxSize;
+        void    * m_memory;
         uint8_t * m_buffer;
         size_t    m_maxPayloadSize;
 
@@ -96,10 +97,10 @@ class FFMPEGCodec
         uint8_t * GetBuffer() const { return m_buffer; }
         size_t GetMaxSize() const { return m_maxSize; }
         size_t GetLength() const { return m_length; }
-        void SetMaxPayloadSize(size_t size) { m_maxPayloadSize = size; }
+        size_t GetMaxPayloadSize() const { return m_maxPayloadSize; }
 
+        virtual void SetMaxPayloadSize(size_t size);
         virtual bool SetResolution(unsigned width, unsigned height);
-        virtual bool SetMaxSize(size_t newSize);
         virtual bool Reset(size_t len = 0);
 
         virtual bool GetPacket(PluginCodec_RTP & rtp, unsigned & flags) = 0;
@@ -119,9 +120,10 @@ class FFMPEGCodec
     AVCodecContext * m_context;
     AVFrame        * m_picture;
     AVPacket         m_packet;
-    uint8_t        * m_alignedInputYUV;
+    void           * m_alignedInputYUV;
     size_t           m_alignedInputSize;
     EncodedFrame   * m_fullFrame;
+    bool             m_open;
     int              m_errorCount;
     bool             m_hadMissingPacket;
 

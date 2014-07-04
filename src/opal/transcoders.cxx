@@ -122,6 +122,18 @@ PBoolean OpalTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 }
 
 
+void OpalTranscoder::SetMaxOutputSize(PINDEX size)
+{
+  maxOutputSize = size;
+
+  if (outputMediaFormat.GetOptionInteger(OpalMediaFormat::MaxTxPacketSizeOption()) > (int)maxOutputSize) {
+    PTRACE(4, "Media\tReducing \"" << OpalMediaFormat::MaxTxPacketSizeOption() << "\" to " << maxOutputSize);
+    outputMediaFormat.SetOptionInteger(OpalMediaFormat::MaxTxPacketSizeOption(), maxOutputSize);
+    UpdateMediaFormats(inputMediaFormat, outputMediaFormat);
+  }
+}
+
+
 void OpalTranscoder::NotifyCommand(const OpalMediaCommand & command) const
 {
   if (commandNotifier != PNotifier())
