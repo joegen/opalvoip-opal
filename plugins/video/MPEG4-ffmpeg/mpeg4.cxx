@@ -232,7 +232,7 @@ public:
   }
 
 
-  virtual bool IsValidForProtocol(const char * protocol) const
+  virtual bool IsValidForProtocol(const char *) const
 	{
 		return true;
 	}

@@ -70,6 +70,7 @@ public:
 
   virtual const char * GetName() const { return "RFC2429"; }
 
+  virtual void SetMaxPayloadSize(size_t size);
   virtual bool Reset(size_t len = 0);
 
   virtual bool GetPacket(PluginCodec_RTP & frame, unsigned int & flags);
