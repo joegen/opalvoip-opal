@@ -1179,10 +1179,19 @@ PBoolean OpalMixerMediaStream::Open()
 
   SetPaused(IsSink() && m_listenOnly);
 
-  if (!IsPaused() && !m_node->AttachStream(this))
+  return OpalMediaStream::Open();
+}
+
+
+PBoolean OpalMixerMediaStream::Start()
+{
+  if (!OpalMediaStream::Start())
     return false;
 
-  return OpalMediaStream::Open();
+  if (IsSink() && m_listenOnly)
+    return true;
+
+  return m_node->AttachStream(this);
 }
 
 
@@ -1880,6 +1889,9 @@ bool OpalVideoStreamMixer::OnMixed(RTP_DataFrame * & output)
   CachedFrameStore cachedFrameStore;
 
   for (PSafePtr<OpalMixerMediaStream> stream(m_outputStreams, PSafeReadOnly); stream != NULL; ++stream) {
+    if (stream->IsPaused())
+      continue;
+
     OpalMediaFormat mediaFormat = stream->GetMediaFormat();
     if (mediaFormat == OpalYUV420P) {
       stream.SetSafetyMode(PSafeReference); // OpalMediaStream::PushPacket might block
