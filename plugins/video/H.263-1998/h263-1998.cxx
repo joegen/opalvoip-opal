@@ -695,7 +695,7 @@ class H263_Base_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCode
         return true;
 
       PluginCodec_RTP out(toPtr, toLen);
-      toLen = OutputImage(m_picture->data, m_picture->linesize, m_picture->width, m_picture->height, out, flags);
+      toLen = OutputImage(m_picture->data, m_picture->linesize, PICTURE_WIDTH, PICTURE_HEIGHT, out, flags);
 
       return true;
     }
