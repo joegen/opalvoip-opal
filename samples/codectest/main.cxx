@@ -1138,6 +1138,8 @@ void TranscoderThread::Main()
               case OpalVideoFormat::e_InterFrame :
                 detectedInter = true;
                 break;
+              default :
+                break;
             }
           }
           if (!videoDetectorFailed && !detectorSaysIntra && !detectedInter) {
