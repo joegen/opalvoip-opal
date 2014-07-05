@@ -168,8 +168,10 @@ FFMPEGCodec::~FFMPEGCodec()
   if (m_picture != NULL)
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(54, 0, 0)
     av_free(m_picture);
-#else
+#elif LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55, 0, 0)
     avcodec_free_frame(&m_picture);
+#else
+    av_frame_free(&m_picture);
 #endif
   if (m_alignedInputYUV != NULL)
     free(m_alignedInputYUV);
@@ -192,7 +194,11 @@ bool FFMPEGCodec::InitContext()
     return false;
   }
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55, 0, 0)
   m_picture = avcodec_alloc_frame();
+#else
+  m_picture = av_frame_alloc();
+#endif
   if (m_picture == NULL) {
     PTRACE(1, m_prefix, "Failed to allocate frame for encoder");
     return false;
@@ -328,7 +334,8 @@ bool FFMPEGCodec::SetResolution(unsigned width, unsigned height)
     if (width > 352)
       m_context->flags &= ~CODEC_FLAG_EMU_EDGE; // Totally bizarre! FFMPEG crashes if on for CIF4
 
-    avcodec_set_dimensions(m_context, width, height);
+    m_context->width = width;
+    m_context->height = height;
   }
 
   if (m_picture != NULL) {
