@@ -40,7 +40,9 @@ include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
 $(PLUGIN_PATH): $(LIBG7221_FILE)
 
 $(LIBG7221_FILE):
-	touch $(LIBG7221_DIR)/Makefile $(LIBG7221_DIR)/config-h.in
+	touch $(LIBG7221_DIR)/Makefile.in
+	touch $(LIBG7221_DIR)/Makefile
+	touch $(LIBG7221_DIR)/config-h.in
 	$(MAKE) -C $(LIBG7221_DIR)
 
 
