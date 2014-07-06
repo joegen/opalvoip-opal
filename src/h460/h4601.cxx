@@ -43,6 +43,7 @@
 #include <ptlib.h>
 
 #ifdef __GNUC__
+#pragma implementation "h460.h"
 #pragma implementation "h4601.h"
 #endif
 
