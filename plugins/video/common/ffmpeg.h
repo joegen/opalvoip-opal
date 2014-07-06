@@ -71,6 +71,11 @@ extern "C" {
   #define AV_CODEC_ID_H263P  CODEC_ID_H263P
   #define AV_CODEC_ID_H264   CODEC_ID_H264
   #define AV_CODEC_ID_MPEG4  CODEC_ID_MPEG4
+  #define PICTURE_WIDTH      m_context->width
+  #define PICTURE_HEIGHT     m_context->height
+#else
+  #define PICTURE_WIDTH      m_picture->width
+  #define PICTURE_HEIGHT     m_picture->height
 #endif
 
 
