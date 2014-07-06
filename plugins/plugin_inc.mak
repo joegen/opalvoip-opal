@@ -39,8 +39,8 @@ endif
 
 ifneq (,$(BASENAME))
   ifeq (,$(PLUGIN_NAME))
-    SONAME      = $(BASENAME)_ptplugin
-    PLUGIN_NAME = $(SONAME).$(SHAREDLIBEXT)
+    LIB_SONAME  = $(BASENAME)_ptplugin
+    PLUGIN_NAME = $(LIB_SONAME).$(SHAREDLIBEXT)
     CPPFLAGS   += $(SHARED_CPPFLAGS)
     LDFLAGS    := $(SHARED_LDFLAGS) $(LDFLAGS)
   endif
