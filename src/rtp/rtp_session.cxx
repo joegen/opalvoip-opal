@@ -1552,7 +1552,7 @@ bool OpalRTPSession::SendFlowControl(unsigned maxBitRate, unsigned overhead, boo
   }
   else {
     PTRACE(3, "Session " << m_sessionId << ", Sending REMB (flow control) "
-           "rate=" << maxBitRate << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn));
+           "rate=" << maxBitRate << ", SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier));
 
     request.AddREMB(sender->m_sourceIdentifier, receiver->m_sourceIdentifier, maxBitRate);
   }
@@ -1585,13 +1585,13 @@ bool OpalRTPSession::SendIntraFrameRequest(unsigned options, RTP_SyncSourceId sy
   if ((has_AVPF_PLI && !has_AVPF_FIR) || (has_AVPF_PLI && (options & OPAL_OPT_VIDUP_METHOD_PREFER_PLI))) {
     PTRACE(3, "Session " << m_sessionId << ", Sending RFC4585 PLI"
            << ((options & OPAL_OPT_VIDUP_METHOD_PLI) ? " (forced)" : "")
-           << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn));
+           << ", SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier));
     request.AddPLI(sender->m_sourceIdentifier, receiver->m_sourceIdentifier);
   }
   else if (has_AVPF_FIR) {
     PTRACE(3, "Session " << m_sessionId << ", Sending RFC5104 FIR"
            << ((options & OPAL_OPT_VIDUP_METHOD_FIR) ? " (forced)" : "")
-           << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn));
+           << ", SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier));
     request.AddFIR(sender->m_sourceIdentifier, receiver->m_sourceIdentifier, receiver->m_lastFIRSequenceNumber++);
   }
   else {
@@ -1624,7 +1624,7 @@ bool OpalRTPSession::SendTemporalSpatialTradeOff(unsigned tradeOff, RTP_SyncSour
   InitialiseControlFrame(request, *sender);
 
   PTRACE(3, "Session " << m_sessionId << ", Sending TSTO (temporal spatial trade off) "
-            "value=" << tradeOff << ", SSRC=" << RTP_TRACE_SRC(syncSourceIn));
+            "value=" << tradeOff << ", SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier));
 
   request.AddTSTO(sender->m_sourceIdentifier, receiver->m_sourceIdentifier, tradeOff, sender->m_lastTSTOSequenceNumber++);
 
