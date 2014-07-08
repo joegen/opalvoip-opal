@@ -354,7 +354,7 @@ bool H323Capability::OnReceivedPDU(const H245_EncryptionSync & encryptionSync,
 }
 
 
-bool H323Capability::PostTCS(const H323Capabilities &)
+bool H323Capability::PostTCS(const H323Connection &, const H323Capabilities &)
 {
   return true;
 }
@@ -1918,11 +1918,25 @@ bool H235SecurityCapability::OnReceivedPDU(const H245_EncryptionSync & encryptio
 }
 
 
-bool H235SecurityCapability::PostTCS(const H323Capabilities & capabilities)
+bool H235SecurityCapability::PostTCS(const H323Connection & connection, const H323Capabilities & capabilities)
 {
-  H323Capability * cap = capabilities.FindCapability(m_mediaCapabilityNumber);
-  if (cap == NULL)
+  PStringArray availableCryptoSuites = connection.OpalRTPConnection::GetMediaCryptoSuites();
+  for (PINDEX i = 0; i < m_cryptoSuites.GetSize();) {
+    if (availableCryptoSuites.GetValuesIndex(m_cryptoSuites[i].GetFactoryName()) != P_MAX_INDEX)
+      ++i;
+    else
+      m_cryptoSuites.RemoveAt(i);
+  }
+  if (m_cryptoSuites.IsEmpty()) {
+    PTRACE(4, "H323\tH.235 crypto suite(s) not available.");
     return false;
+  }
+
+  H323Capability * cap = capabilities.FindCapability(m_mediaCapabilityNumber);
+  if (cap == NULL) {
+    PTRACE(3, "H323\tH.235 media capability number (" << m_mediaCapabilityNumber << ") does not match anything.");
+    return false;
+  }
 
   m_mediaFormat = cap->GetMediaFormat();
   m_mediaCapabilityName.Splice(cap->GetFormatName(), 0, m_mediaCapabilityName.FindLast('+'));
@@ -3001,20 +3015,21 @@ H323Capabilities::H323Capabilities(H323Connection & connection,
 
 #if OPAL_H235_6 || OPAL_H235_8
   for (PINDEX i = 0; i < table.GetSize(); ) {
-    if (!table[i].PostTCS(*this))
-      table.RemoveAt(i);
-    else {
-      if (!m_mediaPacketizations.IsEmpty()) { // also update the mediaPacketizations option
-        OpalMediaFormat & mediaFormat = table[i].GetWritableMediaFormat();
-        PStringSet intersection;
-        if (PStringSet::Intersection(m_mediaPacketizations, mediaFormat.GetMediaPacketizationSet(), &intersection))
-          mediaFormat.SetMediaPacketizations(intersection);
-      }
-
+    if (table[i].PostTCS(connection, *this))
       ++i;
-    }
+    else
+      table.RemoveAt(i);
   }
 #endif
+
+  if (!m_mediaPacketizations.IsEmpty()) { // also update the mediaPacketizations option
+    for (PINDEX i = 0; i < table.GetSize(); ++i) {
+      OpalMediaFormat & mediaFormat = table[i].GetWritableMediaFormat();
+      PStringSet intersection;
+      if (PStringSet::Intersection(m_mediaPacketizations, mediaFormat.GetMediaPacketizationSet(), &intersection))
+        mediaFormat.SetMediaPacketizations(intersection);
+    }
+  }
 
   PINDEX outerSize = pdu.m_capabilityDescriptors.GetSize();
   set.SetSize(outerSize);
