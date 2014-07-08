@@ -1109,7 +1109,7 @@ void OpalRTPSession::SendReport(bool force)
 
   // Have not got anything yet, do nothing
   for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-    if (!it->second->m_direction == e_Receive && (force || it->second->m_packets > 0)) {
+    if (it->second->m_direction == e_Receive && (force || it->second->m_packets > 0)) {
       RTP_ControlFrame report;
       InitialiseControlFrame(report, *it->second);
 
