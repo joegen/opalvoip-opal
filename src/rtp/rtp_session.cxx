@@ -171,6 +171,9 @@ OpalRTPSession::~OpalRTPSession()
 {
   Close();
 
+  for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it)
+    delete it->second;
+
 #if OPAL_ICE
   delete m_stunServer;
   delete m_stunClient;
@@ -188,7 +191,20 @@ RTP_SyncSourceId OpalRTPSession::AddSyncSource(RTP_SyncSourceId id, Direction di
     } while (m_SSRC.find(id) != m_SSRC.end());
   }
 
-  return m_SSRC.insert(SyncSourceMap::value_type(id, SyncSource(*this, id, dir, cname))).second ? id : 0;
+  SyncSource * ssrc = CreateSyncSource(id, dir, cname);
+  if (m_SSRC.insert(SyncSourceMap::value_type(id, ssrc)).second)
+    return id;
+
+  PTRACE(2, "Session " << GetSessionID() << ", could not add SSRC "
+         << RTP_TRACE_SRC(id) << ", probable clash with receiver.");
+  delete ssrc;
+  return 0;
+}
+
+
+OpalRTPSession::SyncSource * OpalRTPSession::CreateSyncSource(RTP_SyncSourceId id, Direction dir, const char * cname)
+{
+  return new SyncSource(*this, id, dir, cname);
 }
 
 
@@ -197,7 +213,7 @@ RTP_SyncSourceArray OpalRTPSession::GetSyncSources(Direction dir) const
   RTP_SyncSourceArray ssrcs;
 
   for (SyncSourceMap::const_iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-    if (it->second.m_direction == dir)
+    if (it->second->m_direction == dir)
       ssrcs.SetAt(ssrcs.GetSize(), it->first);
   }
 
@@ -219,7 +235,7 @@ bool OpalRTPSession::GetSyncSource(RTP_SyncSourceId ssrc, Direction dir, SyncSou
     it = m_SSRC.find(ssrc);
   else {
     for (it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-      if (it->second.m_direction == dir)
+      if (it->second->m_direction == dir)
         break;
     }
   }
@@ -230,7 +246,7 @@ bool OpalRTPSession::GetSyncSource(RTP_SyncSourceId ssrc, Direction dir, SyncSou
     return false;
   }
 
-  info = const_cast<SyncSource *>(&it->second);
+  info = const_cast<SyncSource *>(it->second);
   return true;
 }
 
@@ -655,7 +671,7 @@ void OpalRTPSession::SendBYE(RTP_SyncSourceId ssrc)
     return;
 
   RTP_ControlFrame report;
-  InitialiseControlFrame(report, it->second);
+  InitialiseControlFrame(report, *it->second);
 
   PTRACE(3, "Session " << m_sessionId << ", Sending BYE, SSRC=" << RTP_TRACE_SRC(ssrc));
 
@@ -679,6 +695,7 @@ void OpalRTPSession::SendBYE(RTP_SyncSourceId ssrc)
   report.EndPacket();
   WriteControl(report);
 
+  delete it->second;
   m_SSRC.erase(it);
 }
 
@@ -763,7 +780,7 @@ bool OpalRTPSession::ReadData(RTP_DataFrame & frame)
     return false;
 
   for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-    switch (it->second.GetPendingFrame(frame)) {
+    switch (it->second->GetPendingFrame(frame)) {
       case e_AbortTransport:
         return false;
       case e_IgnorePacket:
@@ -893,11 +910,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
   RTP_SyncSourceId ssrc = frame.GetSyncSource();
   SyncSource * syncSource;
   if (!GetSyncSource(ssrc, e_Transmit, syncSource)) {
-    if ((ssrc = AddSyncSource(ssrc, e_Transmit)) == 0) {
-      PTRACE(2, "Session " << GetSessionID() << ", could not add SSRC "
-             << RTP_TRACE_SRC(ssrc) << ", probable clash with receiver");
+    if ((ssrc = AddSyncSource(ssrc, e_Transmit)) == 0)
       return e_AbortTransport;
-    }
     GetSyncSource(ssrc, e_Transmit, syncSource);
   }
 
@@ -959,7 +973,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
     it = m_SSRC.find(ssrc);
   }
 
-  SendReceiveStatus status = it->second.OnReceiveData(frame, pduSize);
+  SendReceiveStatus status = it->second->OnReceiveData(frame, pduSize);
 
   // Final user handling of the read frame
   for (list<FilterNotifier>::iterator filter = m_filters.begin(); filter != m_filters.end(); ++filter) 
@@ -983,7 +997,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 {
   unsigned receivers = 0;
   for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-    if (it->second.m_direction == e_Receive && it->second.m_packets > 0)
+    if (it->second->m_direction == e_Receive && it->second->m_packets > 0)
       ++receivers;
   }
 
@@ -1046,8 +1060,8 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
   if (rr != NULL) {
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-      if (it->second.m_direction == e_Receive && it->second.m_packets > 0)
-        it->second.OnSendReceiverReport(*rr++, sender);
+      if (it->second->m_direction == e_Receive && it->second->m_packets > 0)
+        it->second->OnSendReceiverReport(*rr++, sender);
     }
   }
 
@@ -1081,14 +1095,14 @@ void OpalRTPSession::SendReport(bool force)
 
   // Have not got anything yet, do nothing
   for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-    if (!it->second.m_direction == e_Receive && (force || it->second.m_packets > 0)) {
+    if (!it->second->m_direction == e_Receive && (force || it->second->m_packets > 0)) {
       RTP_ControlFrame report;
-      InitialiseControlFrame(report, it->second);
+      InitialiseControlFrame(report, *it->second);
 
 #if OPAL_RTCP_XR
       //Generate and send RTCP-XR packet
-      if (it->second.m_metrics != NULL)
-        it->second.m_metrics->InsertExtendedReportPacket(m_sessionId, it->second.m_sourceIdentifier, it->second.m_jitterBuffer, report);
+      if (it->second->m_metrics != NULL)
+        it->second->m_metrics->InsertExtendedReportPacket(m_sessionId, it->second->m_sourceIdentifier, it->second->m_jitterBuffer, report);
 #endif
 
       WriteControl(report);
@@ -1098,39 +1112,41 @@ void OpalRTPSession::SendReport(bool force)
 
 
 #if OPAL_STATISTICS
-void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, bool receiver) const
+void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, bool receiver, RTP_SyncSourceId ssrc) const
 {
-  statistics.m_totalBytes        = 0;
-  statistics.m_totalPackets      = 0;
-  statistics.m_packetsLost       = 0;
-  statistics.m_packetsOutOfOrder = 0;
-  statistics.m_minimumPacketTime = 0;
-  statistics.m_averagePacketTime = 0;
-  statistics.m_maximumPacketTime = 0;
-  statistics.m_averageJitter     = 0;
-  statistics.m_maximumJitter     = 0;
-
-  bool first = true;
-  for (SyncSourceMap::const_iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-    if (it->second.m_direction == (receiver ? e_Receive : e_Transmit)) {
-      statistics.m_startTime         = it->second.m_firstPacketTime;
-      statistics.m_totalBytes        += it->second.m_octets;
-      statistics.m_totalPackets      += it->second.m_packets;
-      statistics.m_packetsLost       += it->second.m_packetsLost;
-      statistics.m_packetsOutOfOrder += it->second.m_packetsOutOfOrder;
-      if (first) {
-        statistics.m_minimumPacketTime = it->second.m_minimumPacketTime;
-        statistics.m_averagePacketTime = it->second.m_averagePacketTime;
-        statistics.m_maximumPacketTime = it->second.m_maximumPacketTime;
-        statistics.m_averageJitter     = it->second.m_jitter;
-        statistics.m_maximumJitter     = it->second.m_maximumJitter;
-      }
-    }
+  SyncSource * info;
+  if (GetSyncSource(ssrc, receiver ? e_Receive : e_Transmit, info))
+    info->GetStatistics(statistics);
+  else {
+    statistics.m_totalBytes        = 0;
+    statistics.m_totalPackets      = 0;
+    statistics.m_packetsLost       = 0;
+    statistics.m_packetsOutOfOrder = 0;
+    statistics.m_minimumPacketTime = 0;
+    statistics.m_averagePacketTime = 0;
+    statistics.m_maximumPacketTime = 0;
+    statistics.m_averageJitter     = 0;
+    statistics.m_maximumJitter     = 0;
   }
 
   statistics.m_roundTripTime = m_roundTripTime;
 }
 #endif
+
+
+void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics) const
+{
+  statistics.m_startTime         = m_firstPacketTime;
+  statistics.m_totalBytes        = m_octets;
+  statistics.m_totalPackets      = m_packets;
+  statistics.m_packetsLost       = m_packetsLost;
+  statistics.m_packetsOutOfOrder = m_packetsOutOfOrder;
+  statistics.m_minimumPacketTime = m_minimumPacketTime;
+  statistics.m_averagePacketTime = m_averagePacketTime;
+  statistics.m_maximumPacketTime = m_maximumPacketTime;
+  statistics.m_averageJitter     = m_jitter;
+  statistics.m_maximumJitter     = m_maximumJitter;
+}
 
 
 bool OpalRTPSession::CheckControlSSRC(RTP_SyncSourceId senderSSRC, RTP_SyncSourceId targetSSRC, SyncSource * & info PTRACE_PARAM(, const char * pduName)) const

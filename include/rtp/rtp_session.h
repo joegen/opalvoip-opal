@@ -174,7 +174,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual PString GetLocalHostName();
 
 #if OPAL_STATISTICS
-    virtual void GetStatistics(OpalMediaStatistics & statistics, bool receiver) const;
+    virtual void GetStatistics(OpalMediaStatistics & statistics, bool receiver, RTP_SyncSourceId ssrc) const;
 #endif
   //@}
 
@@ -634,18 +634,19 @@ class OpalRTPSession : public OpalMediaSession
     struct SyncSource
     {
       SyncSource(OpalRTPSession & session, RTP_SyncSourceId id, Direction dir, const char * cname);
-      ~SyncSource();
+      virtual ~SyncSource();
 
-      SendReceiveStatus OnSendData(RTP_DataFrame & frame, bool rewriteHeader);
-      SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, PINDEX pduSiz);
-      SendReceiveStatus OnOutOfOrderPacket(RTP_DataFrame & frame);
-      SendReceiveStatus GetPendingFrame(RTP_DataFrame & frame);
+      virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, bool rewriteHeader);
+      virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, PINDEX pduSiz);
+      virtual SendReceiveStatus OnOutOfOrderPacket(RTP_DataFrame & frame);
+      virtual SendReceiveStatus GetPendingFrame(RTP_DataFrame & frame);
 
-      void CalculateStatistics(const RTP_DataFrame & frame);
+      virtual void CalculateStatistics(const RTP_DataFrame & frame);
+      virtual void GetStatistics(OpalMediaStatistics & statistics) const;
 
-      void OnSendReceiverReport(RTP_ControlFrame::ReceiverReport & report, SyncSource & sender);
-      void OnRxSenderReport(const RTP_SenderReport & report);
-      void OnRxReceiverReport(const ReceiverReport & report);
+      virtual void OnSendReceiverReport(RTP_ControlFrame::ReceiverReport & report, SyncSource & sender);
+      virtual void OnRxSenderReport(const RTP_SenderReport & report);
+      virtual void OnRxReceiverReport(const ReceiverReport & report);
 
       OpalRTPSession  & m_session;
       Direction         m_direction;
@@ -706,12 +707,13 @@ class OpalRTPSession : public OpalMediaSession
 
       OpalJitterBufferPtr m_jitterBuffer;
     };
-    typedef std::map<RTP_SyncSourceId, SyncSource> SyncSourceMap;
+    typedef std::map<RTP_SyncSourceId, SyncSource *> SyncSourceMap;
     SyncSourceMap m_SSRC;
     SyncSource    m_dummySyncSource;
     const SyncSource & GetSyncSource(RTP_SyncSourceId ssrc, Direction dir) const;
-    bool GetSyncSource(RTP_SyncSourceId ssrc, Direction dir, SyncSource * & info) const;
-    bool CheckControlSSRC(RTP_SyncSourceId senderSSRC, RTP_SyncSourceId targetSSRC, SyncSource * & info PTRACE_PARAM(, const char * pduName)) const;
+    virtual SyncSource * CreateSyncSource(RTP_SyncSourceId id, Direction dir, const char * cname);
+    virtual bool GetSyncSource(RTP_SyncSourceId ssrc, Direction dir, SyncSource * & info) const;
+    virtual bool CheckControlSSRC(RTP_SyncSourceId senderSSRC, RTP_SyncSourceId targetSSRC, SyncSource * & info PTRACE_PARAM(, const char * pduName)) const;
 
     /// Set up RTCP as per RFC rules
     virtual void InitialiseControlFrame(RTP_ControlFrame & report, SyncSource & ssrc);
