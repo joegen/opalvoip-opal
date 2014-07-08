@@ -29,6 +29,9 @@ BASENAME := silk
 SRCDIR   := $(CURDIR)
 SOURCES  := $(CURDIR)/SILKCodec.cpp
 
+# disable parallel build, otherwise this plugin is built before finishing libSKP_SILK_SDK.a generation
+.NOTPARALLEL:
+
 PLUGIN_LIBS = -L$(CURDIR)/SILK_SDK/obj_$(target) -lSKP_SILK_SDK
 
 SUBDIRS := $(CURDIR)/SILK_SDK
