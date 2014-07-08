@@ -215,8 +215,6 @@ class OpalJitterBuffer : public PSafeObject
     RTP_JitterBufferAnalyser * m_analyser;
 };
 
-typedef PSafePtr<OpalJitterBuffer, PSafePtrMultiThreaded> OpalJitterBufferPtr;
-
 
 /**A descendant of the OpalJitterBuffer that starts a thread to read
    from something continuously and feed it into the jitter buffer.

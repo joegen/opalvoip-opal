@@ -150,9 +150,10 @@ class OpalRTPMediaStream : public OpalMediaStream
     virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat);
     virtual bool InternalSetPaused(bool pause, bool fromUser, bool fromPatch);
 
-    OpalRTPSession    & m_rtpSession;
-    RTP_SyncSourceId    m_syncSource;
-    OpalJitterBufferPtr m_jitterBuffer;
+    OpalRTPSession   & m_rtpSession;
+    RTP_SyncSourceId   m_syncSource;
+    OpalJitterBuffer * m_jitterBuffer;
+    PMutex             m_jitterMutex;
 #if OPAL_VIDEO
     bool             m_forceIntraFrameFlag;
     PSimpleTimer     m_forceIntraFrameTimer;
