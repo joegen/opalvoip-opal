@@ -804,7 +804,7 @@
                                                                 <object class="wxStaticText" name="TxVideoRoundTripTime">
                                                                     <style>wxST_NO_AUTORESIZE</style>
                                                                     <size>32, 9d</size>
-                                                                    <label>%u</label>
+                                                                    <label>%u ms</label>
                                                                 </object>
                                                             </object>
                                                             <object class="sizeritem">
