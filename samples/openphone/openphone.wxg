@@ -5187,7 +5187,7 @@
                                                                 <object class="wxStaticText" name="TxVideoRoundTripTime" base="EditStaticText">
                                                                     <style>wxST_NO_AUTORESIZE</style>
                                                                     <attribute>1</attribute>
-                                                                    <label>%u</label>
+                                                                    <label>%u ms</label>
                                                                     <size>32, 9d</size>
                                                                 </object>
                                                             </object>
