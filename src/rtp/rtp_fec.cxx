@@ -279,9 +279,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveRedundantData(RTP_Dat
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveFEC(RTP_DataFrame & primary, const FecData & fec)
 {
-  if (m_pendingPackets.empty())
-    return e_ProcessPacket;
-
   /* If there is something in m_pendingPackets, then there was a missing
      packet(s). From the primary data packet and the FEC info, it should be
      possible to calculate the missing packet and insert it into the correct

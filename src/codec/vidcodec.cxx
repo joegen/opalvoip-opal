@@ -442,14 +442,21 @@ OpalVideoFormat::VideoFrameType OpalVideoTranscoder::GetVideoFrameType(const PCa
 
 ///////////////////////////////////////////////////////////////////////////////
 
+OpalVideoUpdatePicture::OpalVideoUpdatePicture(unsigned sessionID, unsigned ssrc)
+  : OpalMediaCommand(OpalMediaType::Video(), sessionID, ssrc)
+{
+}
+
+
 PString OpalVideoUpdatePicture::GetName() const
 {
   return "Update Picture";
 }
 
 
-OpalVideoPictureLoss::OpalVideoPictureLoss(unsigned sequenceNumber, unsigned timestamp)
-  : m_sequenceNumber(sequenceNumber)
+OpalVideoPictureLoss::OpalVideoPictureLoss(unsigned sequenceNumber, unsigned timestamp, unsigned sessionID, unsigned ssrc)
+  : OpalVideoUpdatePicture(sessionID, ssrc)
+  , m_sequenceNumber(sequenceNumber)
   , m_timestamp(timestamp)
 {
 }
@@ -458,6 +465,13 @@ OpalVideoPictureLoss::OpalVideoPictureLoss(unsigned sequenceNumber, unsigned tim
 PString OpalVideoPictureLoss::GetName() const
 {
   return "Picture Loss";
+}
+
+
+OpalTemporalSpatialTradeOff::OpalTemporalSpatialTradeOff(unsigned tradeoff, unsigned sessionID, unsigned ssrc)
+  : OpalMediaCommand(OpalMediaType::Video(), sessionID, ssrc)
+  , m_tradeOff(tradeoff)
+{
 }
 
 

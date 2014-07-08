@@ -86,8 +86,8 @@ RTCP_XR_Metrics::~RTCP_XR_Metrics()
 {
   PTRACE_IF(3, m_packetsReceived != 0 || m_packetsLost != 0,
             "VoIP Metrics\tRTCP_XR_Metrics final statistics:\n"
-            "   R Factor = "<< EndOfCallRFactor() << "\n"
-            "   MOS = "<< EndOfCallMOS());
+            "   R Factor = "<< GetEndOfCallRFactor() << "\n"
+            "   MOS = "<< GetEndOfCallMOS());
 }
 
 
@@ -130,65 +130,53 @@ RTCP_XR_Metrics * RTCP_XR_Metrics::Create(const RTP_DataFrame & frame)
 }
 
 
-void RTCP_XR_Metrics::SetJitterDelay(DWORD delay)
+void RTCP_XR_Metrics::SetJitterDelay(unsigned delay)
 {
   m_jitterDelay = delay;
 
   /* If the Id factor has changed, create a new Id period */
-  if (fabs(IdFactor() - m_lastId) < 1e-14) {
+  if (fabs(GetIdFactor() - m_lastId) < 1e-14) {
     PTime now;
-    createIdPeriod(m_lastJitterBufferChangeTimestamp, now);
+    CreateIdPeriod(m_lastJitterBufferChangeTimestamp, now);
     m_lastJitterBufferChangeTimestamp = now;
-    m_lastId = IdFactor();
+    m_lastId = GetIdFactor();
   }
 }
 
 
-BYTE RTCP_XR_Metrics::GetLossRate()
+unsigned RTCP_XR_Metrics::GetLossRate() const
 {
   unsigned packets = m_packetsReceived + m_packetsLost + m_packetsDiscarded;
-  if (packets == 0)
-    return 0;
-
-  return (BYTE)(256 * (float)m_packetsLost/packets);
+  return packets > 0 ? m_packetsLost*256/packets : 0;
 }
 
 
-BYTE RTCP_XR_Metrics::GetDiscardRate()
+unsigned RTCP_XR_Metrics::GetDiscardRate() const
 {
   unsigned packets = m_packetsReceived + m_packetsLost + m_packetsDiscarded;
-  if (packets == 0)
-    return 0;
-
-  return (BYTE)(256 * (float)m_packetsDiscarded/packets);
+  return packets > 0 ? m_packetsDiscarded*256/packets : 0;
 }
 
 
-BYTE RTCP_XR_Metrics::GetBurstDensity()
+unsigned RTCP_XR_Metrics::GetBurstDensity() const
 {
   unsigned packets = m_packetsReceivedInBurst + m_packetsLostInBurst;
-  if (packets == 0)
-    return 0;
-
-  return (BYTE)(ceil(256 * ((float)m_packetsLostInBurst)/packets));
+  return packets > 0 ? (m_packetsLostInBurst*256+packets-1)/packets : 0;
 }
 
 
-BYTE RTCP_XR_Metrics::GetGapDensity()
+unsigned RTCP_XR_Metrics::GetGapDensity() const
 {
   unsigned packets = m_packetsReceivedInGap + m_packetsLostInGap + m_packetsSinceLastLoss;
-  if (packets == 0) {
-    return 0;
-  }
-  return (BYTE)(ceil(256 * ((float)m_packetsLostInGap)/packets));
+  return packets > 0 ? (m_packetsLostInGap*256+packets-1)/packets : 0;
 }
 
 
-PUInt16b RTCP_XR_Metrics::GetBurstDuration()
+unsigned RTCP_XR_Metrics::GetBurstDuration() const
 {
   unsigned averageDuration = 0;
-  PUInt64  totalDuration = 0;
-  DWORD    count = 0;
+  uint64_t totalDuration = 0;
+  unsigned count = 0;
 
   /* If we are within a burst account for it */
   if (m_currentPeriodType == BURST) {
@@ -197,22 +185,22 @@ PUInt16b RTCP_XR_Metrics::GetBurstDuration()
   }
 
   /* Iterate over the list of periods to calculate a mean duration */
-  for (list<TimePeriod>::iterator period = m_timePeriods.begin(); period != m_timePeriods.end(); period++) {
+  for (list<TimePeriod>::const_iterator period = m_timePeriods.begin(); period != m_timePeriods.end(); period++) {
     if ((*period).type == BURST) {
       totalDuration = totalDuration + (*period).duration.GetMilliSeconds();
       count++;
     }
   }
 
-  return (WORD)(count > 0 ? (totalDuration/count) : averageDuration);
+  return (unsigned)(count > 0 ? (totalDuration/count) : averageDuration);
 }
 
 
-PUInt16b RTCP_XR_Metrics::GetGapDuration()
+unsigned RTCP_XR_Metrics::GetGapDuration() const
 {
   unsigned averageDuration = 0;
-  PUInt64  totalDuration = 0;
-  DWORD    count = 0;
+  uint64_t totalDuration = 0;
+  unsigned count = 0;
 
   /* If we are within a burst, the last received packets after the last loss are assumed to be in gap */
   PTime now;
@@ -227,18 +215,18 @@ PUInt16b RTCP_XR_Metrics::GetGapDuration()
   }
 
   /* Iterate over the list of periods to calculate a mean duration */
-  for (list<TimePeriod>::iterator period = m_timePeriods.begin(); period != m_timePeriods.end(); period++) {
+  for (list<TimePeriod>::const_iterator period = m_timePeriods.begin(); period != m_timePeriods.end(); period++) {
     if ((*period).type == GAP) {
       totalDuration = totalDuration + (*period).duration.GetMilliSeconds();
       count++;
     }
   }
 
-  return (WORD)(count > 0 ? (totalDuration/count) : averageDuration);
+  return (unsigned)(count > 0 ? (totalDuration/count) : averageDuration);
 }
 
 
-PUInt16b RTCP_XR_Metrics::GetRoundTripDelay()
+unsigned RTCP_XR_Metrics::GetRoundTripDelay() const
 {
   if (m_srPacketsReceived == 0 || !m_lsrTime.IsValid() || m_dlsrTime == 0)
     return 0;
@@ -252,7 +240,7 @@ PUInt16b RTCP_XR_Metrics::GetRoundTripDelay()
 }
 
 
-PUInt16b RTCP_XR_Metrics::GetEndSystemDelay()
+unsigned RTCP_XR_Metrics::GetEndSystemDelay() const
 {
   if (m_payloadBitrate == 0)
     return 0;
@@ -262,14 +250,14 @@ PUInt16b RTCP_XR_Metrics::GetEndSystemDelay()
 }
 
 
-BYTE RTCP_XR_Metrics::RFactor()
+unsigned RTCP_XR_Metrics::GetRFactor() const
 {
   /* The reported R factor is for conversational listening quality */
-  return RFactor(CQ);
+  return GetRFactor(CQ);
 }
 
 
-BYTE RTCP_XR_Metrics::RFactor(QualityType qt)
+unsigned RTCP_XR_Metrics::GetRFactor(QualityType qt) const
 {
   if (m_payloadBitrate == 0)
     return 127;
@@ -291,51 +279,51 @@ BYTE RTCP_XR_Metrics::RFactor(QualityType qt)
       R = 127;
   }
 
-  return (BYTE)ceil(R);
+  return (unsigned)ceil(R);
 }
 
 
-BYTE RTCP_XR_Metrics::EndOfCallRFactor()
+unsigned RTCP_XR_Metrics::GetEndOfCallRFactor() const
 {
   if (m_payloadBitrate == 0)
     return 127;
 
   /* Compute end of call R factor, according to the extended E-Model */
   double R = 93.4 - GetPonderateId() - GetEndOfCallIe();
-  return (BYTE)ceil(R);
+  return (unsigned)ceil(R);
 }
 
 
-BYTE RTCP_XR_Metrics::MOS_LQ()
+unsigned RTCP_XR_Metrics::GetMOS_LQ() const
 {
   if (m_payloadBitrate == 0)
     return 127;
 
   /* RTCP-XR requires MOS score in the range of 10 to 50 */
-  return (BYTE)ceil(MOS(LQ)*10);
+  return (unsigned)ceil(GetMOS(LQ)*10);
 }
 
 
-BYTE RTCP_XR_Metrics::MOS_CQ()
+unsigned RTCP_XR_Metrics::GetMOS_CQ() const
 {
   if (m_payloadBitrate == 0)
     return 127;
 
   /* RTCP-XR requires MOS score in the range of 10 to 50 */
-  return (BYTE)ceil(MOS(CQ)*10);
+  return (unsigned)ceil(GetMOS(CQ)*10);
 }
 
 
-float RTCP_XR_Metrics::MOS(QualityType qt)
+float RTCP_XR_Metrics::GetMOS(QualityType qt) const
 {
-  float R = RFactor(qt);
+  double R = GetRFactor(qt);
 
   /* Compute MOS, according to ITU-T G.107 */
   if (R <= 6.5153)
     return 1;
 
   if ((6.5153 < R) && (R < 100.))
-    return 1.0f + (0.035f * R) + (R * (R - 60.0f) * (100.0f - R) * 7.0f * pow(10.0f, -6.0f));
+    return (float)(1.0 + (0.035 * R) + (R * (R - 60.0) * (100.0 - R) * 7.0 * pow(10.0, -6.0)));
 
   if (R >= 100)
     return 4.5;
@@ -344,16 +332,16 @@ float RTCP_XR_Metrics::MOS(QualityType qt)
 }
 
 
-float RTCP_XR_Metrics::EndOfCallMOS()
+float RTCP_XR_Metrics::GetEndOfCallMOS() const
 {
-  float R = EndOfCallRFactor();
+  double R = GetEndOfCallRFactor();
 
   /* Compute MOS, according to ITU-T G.107 */
   if (R <= 6.5153)
     return 1;
 
   if ((6.5153 < R) && (R < 100.))
-    return 1.0f + (0.035f * R) + (R * (R - 60.0f) * (100.0f - R) * 7.0f * pow(10.0f, -6.0f));
+    return (float)(1.0 + (0.035 * R) + (R * (R - 60.0) * (100.0 - R) * 7.0 * pow(10.0, -6.0)));
 
   if (R >= 100.)
     return 4.5;
@@ -362,7 +350,7 @@ float RTCP_XR_Metrics::EndOfCallMOS()
 }
 
 
-float RTCP_XR_Metrics::IdFactor()
+float RTCP_XR_Metrics::GetIdFactor() const
 {
   float delay = (float) GetEndSystemDelay();
 
@@ -385,7 +373,7 @@ float RTCP_XR_Metrics::IdFactor()
 }
 
 
-float RTCP_XR_Metrics::GetPonderateId()
+float RTCP_XR_Metrics::GetPonderateId() const
 {
   float   ponderateId = 0;
   float   sumId = 0;
@@ -394,12 +382,12 @@ float RTCP_XR_Metrics::GetPonderateId()
 
   /* Account for the current time and Id value */
   PTime now;
-  sumId = IdFactor() * (now - m_lastJitterBufferChangeTimestamp).GetMilliSeconds();
+  sumId = GetIdFactor() * (now - m_lastJitterBufferChangeTimestamp).GetMilliSeconds();
   sumDuration = sumDuration + (now - m_lastJitterBufferChangeTimestamp).GetMilliSeconds();
   count++;
 
   /* Iterate over the list of periods to calculate an average Id */
-  for (list<IdPeriod>::iterator period = m_idPeriods.begin(); period != m_idPeriods.end(); period++) {
+  for (list<IdPeriod>::const_iterator period = m_idPeriods.begin(); period != m_idPeriods.end(); period++) {
     sumId = sumId + (*period).Id * (*period).duration.GetMilliSeconds();
     sumDuration = sumDuration + (*period).duration.GetMilliSeconds();
     count++;
@@ -412,7 +400,7 @@ float RTCP_XR_Metrics::GetPonderateId()
 }
 
 
-float RTCP_XR_Metrics::Ieff(PeriodType type)
+float RTCP_XR_Metrics::GetIeff(PeriodType type) const
 {
   float Ppl = 0;
 
@@ -439,7 +427,7 @@ float RTCP_XR_Metrics::Ieff(PeriodType type)
 }
 
 
-float RTCP_XR_Metrics::GetEndOfCallIe()
+float RTCP_XR_Metrics::GetEndOfCallIe() const
 {
   /* Calculate the time since the last burst period */
   PTime now;
@@ -450,7 +438,7 @@ float RTCP_XR_Metrics::GetEndOfCallIe()
 }
 
 
-float RTCP_XR_Metrics::GetPonderateIe()
+float RTCP_XR_Metrics::GetPonderateIe() const
 {
   float   ponderateIe = 0;
   float   sumIe = 0;
@@ -459,12 +447,12 @@ float RTCP_XR_Metrics::GetPonderateIe()
 
   /* Account for the current time and Ie value */
   PTime now;
-  ponderateIe = Ieff(m_currentPeriodType) * (now - m_periodBeginTimestamp).GetMilliSeconds();
+  ponderateIe = GetIeff(m_currentPeriodType) * (now - m_periodBeginTimestamp).GetMilliSeconds();
   sumDuration = sumDuration + (now - m_periodBeginTimestamp).GetMilliSeconds();
   count++;
 
   /* Iterate over the list of periods to calculate an average Ie */
-  for (list<IePeriod>::iterator period = m_iePeriods.begin(); period != m_iePeriods.end(); period++) {
+  for (list<IePeriod>::const_iterator period = m_iePeriods.begin(); period != m_iePeriods.end(); period++) {
     sumIe = (*period).Ieff * (*period).duration.GetMilliSeconds();
     sumDuration = sumDuration + (*period).duration.GetMilliSeconds();
     count++;
@@ -477,7 +465,7 @@ float RTCP_XR_Metrics::GetPonderateIe()
 }
 
 
-RTCP_XR_Metrics::TimePeriod RTCP_XR_Metrics::createTimePeriod(PeriodType type, PTime beginTimestamp, PTime endTimestamp)
+RTCP_XR_Metrics::TimePeriod RTCP_XR_Metrics::CreateTimePeriod(PeriodType type, PTime beginTimestamp, PTime endTimestamp)
 {
   TimePeriod newPeriod;
 
@@ -490,12 +478,12 @@ RTCP_XR_Metrics::TimePeriod RTCP_XR_Metrics::createTimePeriod(PeriodType type, P
 }
 
 
-RTCP_XR_Metrics::IdPeriod RTCP_XR_Metrics::createIdPeriod(PTime beginTimestamp, PTime endTimestamp)
+RTCP_XR_Metrics::IdPeriod RTCP_XR_Metrics::CreateIdPeriod(PTime beginTimestamp, PTime endTimestamp)
 {
   IdPeriod newPeriod;
 
   /* Get the current Id value */
-  newPeriod.Id = IdFactor();
+  newPeriod.Id = GetIdFactor();
   newPeriod.duration = endTimestamp - beginTimestamp;
 
   m_idPeriods.push_back(newPeriod);
@@ -504,7 +492,7 @@ RTCP_XR_Metrics::IdPeriod RTCP_XR_Metrics::createIdPeriod(PTime beginTimestamp, 
 }
 
 
-RTCP_XR_Metrics::IePeriod RTCP_XR_Metrics::createIePeriod(RTCP_XR_Metrics::TimePeriod timePeriod)
+RTCP_XR_Metrics::IePeriod RTCP_XR_Metrics::CreateIePeriod(RTCP_XR_Metrics::TimePeriod timePeriod)
 {
   /* Calculate a perceptual Ie average value, according to the extended E-Model, presented by Alan Clark */
   float Ieg = 0;
@@ -519,7 +507,7 @@ RTCP_XR_Metrics::IePeriod RTCP_XR_Metrics::createIePeriod(RTCP_XR_Metrics::TimeP
 
   newPeriod.type = timePeriod.type;
   newPeriod.duration = timePeriod.duration;
-  newPeriod.Ieff = Ieff(newPeriod.type);
+  newPeriod.Ieff = GetIeff(newPeriod.type);
 
   if (newPeriod.type == BURST)
   {
@@ -564,25 +552,25 @@ void RTCP_XR_Metrics::OnPacketReceived()
 {
   m_packetsReceived++;
   m_packetsSinceLastLoss++;
-  markov(PACKET_RECEIVED);
+  Markov(PACKET_RECEIVED);
 }
 
 
 void RTCP_XR_Metrics::OnPacketDiscarded()
 {
   m_packetsDiscarded++;
-  markov(PACKET_DISCARDED);
+  Markov(PACKET_DISCARDED);
 }
 
 
 void RTCP_XR_Metrics::OnPacketLost()
 {
   m_packetsLost++;
-  markov(PACKET_LOST);
+  Markov(PACKET_LOST);
 }
 
 
-void RTCP_XR_Metrics::OnPacketLost(DWORD dropped)
+void RTCP_XR_Metrics::OnPacketLost(unsigned dropped)
 {
   for (DWORD i = 0; i < dropped; i++)
     OnPacketLost();
@@ -605,7 +593,7 @@ void RTCP_XR_Metrics::OnRxSenderReport(const PTime & lastTimestamp, const PTimeI
 }
 
 
-void RTCP_XR_Metrics::markov(RTCP_XR_Metrics::PacketEvent event)
+void RTCP_XR_Metrics::Markov(RTCP_XR_Metrics::PacketEvent event)
 {
   if (m_packetsReceived == 0) {
     m_periodBeginTimestamp.SetCurrentTime();
@@ -621,7 +609,7 @@ void RTCP_XR_Metrics::markov(RTCP_XR_Metrics::PacketEvent event)
 
         if (m_currentPeriodType == BURST) {
           /* The burst period ended with the last packet loss */
-          createIePeriod(createTimePeriod(m_currentPeriodType, m_periodBeginTimestamp, m_lastLossTimestamp));
+          CreateIePeriod(CreateTimePeriod(m_currentPeriodType, m_periodBeginTimestamp, m_lastLossTimestamp));
           /* mark as a gap */
           m_currentPeriodType = GAP;
           m_periodBeginTimestamp = m_lastLossTimestamp;
@@ -645,7 +633,7 @@ void RTCP_XR_Metrics::markov(RTCP_XR_Metrics::PacketEvent event)
     case PACKET_RECEIVED :
       if (m_currentPeriodType == GAP) {
         /* The burst period ended with the packet received before the last loss */
-        createIePeriod(createTimePeriod(m_currentPeriodType, m_periodBeginTimestamp, m_lastLossTimestamp));
+        CreateIePeriod(CreateTimePeriod(m_currentPeriodType, m_periodBeginTimestamp, m_lastLossTimestamp));
          /* mark as a burst */
         m_currentPeriodType = BURST;
         m_periodBeginTimestamp = m_lastLossTimestamp;
@@ -679,8 +667,8 @@ void RTCP_XR_Metrics::markov(RTCP_XR_Metrics::PacketEvent event)
 
 
 void RTCP_XR_Metrics::InsertExtendedReportPacket(unsigned PTRACE_PARAM(sessionID),
-                                                 DWORD syncSourceOut,
-                                                 OpalRTPSession::JitterBufferPtr jitter,
+                                                 RTP_SyncSourceId syncSourceOut,
+                                                 OpalJitterBufferPtr jitter,
                                                  RTP_ControlFrame & report)
 {
   report.StartNewPacket(RTP_ControlFrame::e_ExtendedReport);
@@ -698,47 +686,47 @@ void RTCP_XR_Metrics::InsertExtendedReportPacket(unsigned PTRACE_PARAM(sessionID
   xr.length = 0x08;
   xr.ssrc = syncSourceOut;
   
-  xr.loss_rate = GetLossRate();
-  xr.discard_rate = GetDiscardRate();
-  xr.burst_density = GetBurstDensity();
-  xr.gap_density = GetGapDensity();
-  xr.burst_duration = GetBurstDuration();
-  xr.gap_duration = GetGapDuration();
-  xr.round_trip_delay = GetRoundTripDelay();
-  xr.end_system_delay = GetEndSystemDelay();
+  xr.loss_rate = (uint8_t)GetLossRate();
+  xr.discard_rate = (uint8_t)GetDiscardRate();
+  xr.burst_density = (uint8_t)GetBurstDensity();
+  xr.gap_density = (uint8_t)GetGapDensity();
+  xr.burst_duration = (uint16_t)GetBurstDuration();
+  xr.gap_duration = (uint16_t)GetGapDuration();
+  xr.round_trip_delay = (uint16_t)GetRoundTripDelay();
+  xr.end_system_delay = (uint16_t)GetEndSystemDelay();
   xr.signal_level = 0x7F;
   xr.noise_level = 0x7F;
   xr.rerl = 0x7F;	
   xr.gmin = 16;
-  xr.r_factor = RFactor();
+  xr.r_factor = (uint8_t)GetRFactor();
   xr.ext_r_factor = 0x7F;
-  xr.mos_lq = MOS_LQ();
-  xr.mos_cq = MOS_CQ();
+  xr.mos_lq = (uint8_t)GetMOS_LQ();
+  xr.mos_cq = (uint8_t)GetMOS_CQ();
   xr.rx_config = 0x00;
   xr.reserved = 0x00;
 
   if (jitter != NULL) {
-    xr.jb_nominal = (WORD)(jitter->GetMinJitterDelay()/jitter->GetTimeUnits());
-    xr.jb_maximum = (WORD)(jitter->GetCurrentJitterDelay()/jitter->GetTimeUnits());
-    xr.jb_absolute = (WORD)(jitter->GetMaxJitterDelay()/jitter->GetTimeUnits());
+    xr.jb_nominal = (uint16_t)(jitter->GetMinJitterDelay()/jitter->GetTimeUnits());
+    xr.jb_maximum = (uint16_t)(jitter->GetCurrentJitterDelay()/jitter->GetTimeUnits());
+    xr.jb_absolute = (uint16_t)(jitter->GetMaxJitterDelay()/jitter->GetTimeUnits());
   }
   
   report.EndPacket();
   
   PTRACE(3, "RTP\tSession " << sessionID << ", SentExtendedReport:"
             " ssrc=" << RTP_TRACE_SRC(xr.ssrc)
-         << " loss_rate=" << (PUInt32b) xr.loss_rate
-         << " discard_rate=" << (PUInt32b) xr.discard_rate
-         << " burst_density=" << (PUInt32b) xr.burst_density
-         << " gap_density=" << (PUInt32b) xr.gap_density
+         << " loss_rate=" << (unsigned)xr.loss_rate
+         << " discard_rate=" << (unsigned)xr.discard_rate
+         << " burst_density=" << (unsigned)xr.burst_density
+         << " gap_density=" << (unsigned)xr.gap_density
          << " burst_duration=" << xr.burst_duration
          << " gap_duration=" << xr.gap_duration
          << " round_trip_delay="<< xr.round_trip_delay
          << " end_system_delay="<< xr.end_system_delay
-         << " gmin="<< (PUInt32b) xr.gmin
-         << " r_factor="<< (PUInt32b) xr.r_factor
-         << " mos_lq="<< (PUInt32b) xr.mos_lq
-         << " mos_cq="<< (PUInt32b) xr.mos_cq
+         << " gmin="<< (unsigned)xr.gmin
+         << " r_factor="<< (unsigned)xr.r_factor
+         << " mos_lq="<< (unsigned)xr.mos_lq
+         << " mos_cq="<< (unsigned)xr.mos_cq
          << " jb_nominal_delay="<< xr.jb_nominal
          << " jb_maximum_delay="<< xr.jb_maximum
          << " jb_absolute_delay="<< xr.jb_absolute);
@@ -746,7 +734,7 @@ void RTCP_XR_Metrics::InsertExtendedReportPacket(unsigned PTRACE_PARAM(sessionID
 }
 
 
-bool RTCP_XR_Metrics::ParseExtendedReportArray(const RTP_ControlFrame & frame, DWORD & ssrc, RTP_ExtendedReportArray & reports)
+bool RTCP_XR_Metrics::ParseExtendedReportArray(const RTP_ControlFrame & frame, RTP_SyncSourceId & ssrc, RTP_ExtendedReportArray & reports)
 {
   size_t size = frame.GetPayloadSize();
   size_t count = frame.GetCount();
@@ -779,7 +767,7 @@ bool RTCP_XR_Metrics::ParseExtendedReportArray(const RTP_ControlFrame & frame, D
 }
 
 
-void OpalRTPSession::OnRxExtendedReport(DWORD PTRACE_PARAM(src), const RTP_ExtendedReportArray & PTRACE_PARAM(reports))
+void OpalRTPSession::OnRxExtendedReport(RTP_SyncSourceId PTRACE_PARAM(src), const RTP_ExtendedReportArray & PTRACE_PARAM(reports))
 {
 #if PTRACING
   if (PTrace::CanTrace(3)) {

@@ -6976,7 +6976,7 @@ bool VideoControlDialog::TransferDataFromWindow()
   OpalMediaStreamPtr stream = GetStream();
   if (stream != NULL) {
     if (m_remote) {
-      stream->ExecuteCommand(OpalMediaFlowControl(m_TargetBitRate->GetValue()*1000));
+      stream->ExecuteCommand(OpalMediaFlowControl(m_TargetBitRate->GetValue()*1000, OpalMediaType::Video()));
       stream->ExecuteCommand(OpalTemporalSpatialTradeOff(m_FrameRate->GetValue()));
     }
     else {
