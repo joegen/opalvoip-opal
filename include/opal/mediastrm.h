@@ -47,11 +47,9 @@
 #include <ptclib/guid.h>
 
 
-class OpalRTPSession;
 class OpalMediaPatch;
 class OpalLine;
 class OpalConnection;
-class OpalRTPConnection;
 class OpalMediaStatistics;
 
 
@@ -327,7 +325,7 @@ class OpalMediaStream : public PSafeObject
 
        The default behaviour does nothing and returns false.
       */
-    virtual bool EnableJitterBuffer(bool enab = true) const;
+    virtual bool EnableJitterBuffer(bool enab = true);
   //@}
 
   /**@name Member variable access */
@@ -438,7 +436,7 @@ class OpalMediaStream : public PSafeObject
     bool InternalWriteData(const BYTE * data, PINDEX length, PINDEX & written);
     OpalMediaPatchPtr InternalSetPatchPart1(OpalMediaPatch * newPatch);
     void InternalSetPatchPart2(const OpalMediaPatchPtr & oldPatch);
-    virtual bool InternalSetJitterBuffer(const OpalJitterBuffer::Init & init) const;
+    virtual bool InternalSetJitterBuffer(const OpalJitterBuffer::Init & init);
 
     /**Close any internal components of the stream.
        This should be used in preference to overriding the Close() function as
@@ -574,114 +572,6 @@ class OpalNullMediaStream : public OpalMediaStream, public OpalMediaStreamPacing
     bool m_isSynchronous;
     bool m_requiresPatchThread;
 };
-
-
-/**This class describes a media stream that transfers data to/from a RTP
-   session.
-  */
-class OpalRTPMediaStream : public OpalMediaStream
-{
-    PCLASSINFO(OpalRTPMediaStream, OpalMediaStream);
-  public:
-  /**@name Construction */
-  //@{
-    /**Construct a new media stream for RTP sessions.
-       This will add a reference to the rtpSession passed in.
-      */
-    OpalRTPMediaStream(
-      OpalRTPConnection & conn,            ///<  Connection that owns the stream
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      bool isSource,                       ///<  Is a source stream
-      OpalRTPSession & rtpSession          ///<  RTP session to stream to/from
-    );
-
-    /**Destroy the media stream for RTP sessions.
-       This will release the reference to the rtpSession passed into the constructor.
-      */
-    ~OpalRTPMediaStream();
-  //@}
-
-  /**@name Overrides of OpalMediaStream class */
-  //@{
-    /**Open the media stream using the media format.
-
-       The default behaviour simply sets the isOpen variable to true.
-      */
-    virtual PBoolean Open();
-
-    /**Returns true if the media stream is open.
-      */
-    virtual bool IsOpen() const;
-
-    /**Callback that is called on the source stream once the media patch has started.
-       The default behaviour calls OpalConnection::OnMediaPatchStart()
-      */
-    virtual void OnStartMediaPatch();
-
-    /**Read an RTP frame of data from the source media stream.
-       The new behaviour simply calls OpalRTPSession::ReadData().
-      */
-    virtual PBoolean ReadPacket(
-      RTP_DataFrame & packet
-    );
-
-    /**Write an RTP frame of data to the sink media stream.
-       The new behaviour simply calls OpalRTPSession::WriteData().
-      */
-    virtual PBoolean WritePacket(
-      RTP_DataFrame & packet
-    );
-
-    /**Set the data size in bytes that is expected to be used.
-      */
-    virtual PBoolean SetDataSize(
-      PINDEX dataSize,  ///< New data size (in total)
-      PINDEX frameTime  ///< Individual frame time (if applicable)
-    );
-
-    /**Indicate if the media stream is synchronous.
-       Returns false for RTP streams.
-      */
-    virtual PBoolean IsSynchronous() const;
-
-    /**Indicate if the media stream requires a OpalMediaPatch thread (active patch).
-       The default behaviour dermines if the media will be flowing between two
-       RTP sessions within the same process. If so the
-       OpalRTPConnection::OnLocalRTP() is called, and if it returns true
-       indicating local handling then this function returns faklse to disable
-       the patch thread.
-      */
-    virtual PBoolean RequiresPatchThread() const;
-
-    /**Set the patch thread that is using this stream.
-      */
-    virtual PBoolean SetPatch(
-      OpalMediaPatch * patch  ///<  Media patch thread
-    );
-
-    /** Return current RTP session
-      */
-    virtual OpalRTPSession & GetRtpSession() const
-    { return rtpSession; }
-
-#if OPAL_STATISTICS
-    virtual void GetStatistics(OpalMediaStatistics & statistics, bool fromPatch = false) const;
-#endif
-  //@}
-
-  protected:
-    virtual void InternalClose();
-    virtual bool InternalSetJitterBuffer(const OpalJitterBuffer::Init & init) const;
-    virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat);
-    virtual bool InternalSetPaused(bool pause, bool fromUser, bool fromPatch);
-
-    OpalRTPSession & rtpSession;
-#if OPAL_VIDEO
-    bool             m_forceIntraFrameFlag;
-    PSimpleTimer     m_forceIntraFrameTimer;
-#endif
-};
-
 
 
 /**This class describes a media stream that transfers PCM-16 data to/from a PChannel.

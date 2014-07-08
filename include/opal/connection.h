@@ -1304,8 +1304,7 @@ class OpalConnection : public PSafeObject
       */
     virtual bool ExecuteMediaCommand(
       const OpalMediaCommand & command, ///< Media command to be executed
-      unsigned sessionID = 0,           ///< Session for media stream, 0 is use first \p mediaType stream
-      const OpalMediaType & mediaType = OpalMediaType() ///< Media type to search for in open streams
+      bool aync = false                 ///< Execute asyncronously, in another pooled thread
     ) const;
 
     /**Get transports for the media session on the connection.
@@ -1334,15 +1333,6 @@ class OpalConnection : public PSafeObject
       bool force = false      ///< Indicate is a picture loss or forced I-Frame
     ) const;
     void SendVideoUpdatePictureCallback(unsigned sessionID, bool force) { SendVideoUpdatePicture(sessionID, force); }
-
-    /**Callback from the RTP session after an IntraFrameRequest is receieved.
-       The default behaviour executes an OpalVideoUpdatePicture command on the
-       connection's source video stream if it exists.
-      */
-    virtual void OnRxIntraFrameRequest(
-      const OpalMediaSession & session,   ///<  Session with statistics
-      bool force                          ///<  Force Intra frame, or just indicate picture loss
-    );
 #endif // OPAL_VIDEO
 
     /**Set the volume (gain) for the audio media channel.
@@ -1906,6 +1896,7 @@ class OpalConnection : public PSafeObject
 
     bool InternalRelease(CallEndReason reason);
     void InternalOnReleased();
+    void InternalExecuteMediaCommand(OpalMediaCommand * command);
 
 #if OPAL_HAS_MIXER
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnRecordAudio);
@@ -2058,6 +2049,7 @@ class OpalConnection : public PSafeObject
     P_REMOVE_VIRTUAL(PNatMethod *, GetNatMethod(const PIPSocket::Address &) const,NULL);
 #endif
     P_REMOVE_VIRTUAL(bool,Hold(bool,bool),false);
+    P_REMOVE_VIRTUAL(bool,ExecuteMediaCommand(const OpalMediaCommand &,unsigned,const OpalMediaType &) const,0);
 };
 
 #endif // OPAL_OPAL_CONNECTION_H

@@ -3106,7 +3106,7 @@ void OpalManagerCLI::CmdVideoReceive(PCLI::Arguments & args, P_INT_PTR)
 
   OpalBandwidth bitRate;
   if (GetValueFromArgs(args, "bit-rate", bitRate, AbsoluteMinBitRate, stream->GetMediaFormat().GetMaxBandwidth(), " for flow control request") > 0)
-    stream->ExecuteCommand(OpalMediaFlowControl(bitRate));
+    stream->ExecuteCommand(OpalMediaFlowControl(bitRate, OpalMediaType::Video()));
 
   unsigned tsto;
   if (GetValueFromArgs(args, "tsto", tsto, 1U, 31U, " for temporal/spatial trade-off request") > 0)

@@ -189,7 +189,7 @@ class OpalVideoTranscoder : public OpalTranscoder
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OPAL_DEFINE_MEDIA_COMMAND(OpalVideoFreezePicture, "Freeze Picture");
+OPAL_DEFINE_MEDIA_COMMAND(OpalVideoFreezePicture, "Freeze Picture", OpalMediaType::Video());
 
 /**This indicates that a force video picture update is required, that
    is an Intra or Key frame MUST be sent. This may be called when the
@@ -200,6 +200,10 @@ class OpalVideoUpdatePicture : public OpalMediaCommand
 {
     PCLASSINFO_WITH_CLONE(OpalVideoUpdatePicture, OpalMediaCommand);
   public:
+    OpalVideoUpdatePicture(
+      unsigned sessionID = 0,          ///< Session for media stream, 0 is use first \p mediaType stream
+      unsigned ssrc = 0                ///< Sync Source for media stream (if RTP)
+    );
     virtual PString GetName() const;
 };
 
@@ -212,7 +216,12 @@ class OpalVideoPictureLoss : public OpalVideoUpdatePicture
 {
     PCLASSINFO_WITH_CLONE(OpalVideoPictureLoss, OpalVideoUpdatePicture);
   public:
-    OpalVideoPictureLoss(unsigned sequenceNumber = 0, unsigned timestamp = 0);
+    OpalVideoPictureLoss(
+      unsigned sequenceNumber = 0,
+      unsigned timestamp = 0,
+      unsigned sessionID = 0,          ///< Session for media stream, 0 is use first \p mediaType stream
+      unsigned ssrc = 0                ///< Sync Source for media stream (if RTP)
+    );
 
     virtual PString GetName() const;
 
@@ -237,7 +246,11 @@ class OpalTemporalSpatialTradeOff : public OpalMediaCommand
 {
     PCLASSINFO_WITH_CLONE(OpalTemporalSpatialTradeOff, OpalMediaCommand);
   public:
-    OpalTemporalSpatialTradeOff(int tradeoff) : m_tradeOff(tradeoff) { }
+    OpalTemporalSpatialTradeOff(
+      unsigned tradeoff,
+      unsigned sessionID = 0,          ///< Session for media stream, 0 is use first \p mediaType stream
+      unsigned ssrc = 0                ///< Sync Source for media stream (if RTP)
+    );
 
     virtual PString GetName() const;
 

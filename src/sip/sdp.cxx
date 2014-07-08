@@ -1878,19 +1878,21 @@ bool SDPRTPAVPMediaDescription::FromSession(const OpalMediaSession * session, co
 {
   const OpalRTPSession * rtpSession = dynamic_cast<const OpalRTPSession *>(session);
   if (rtpSession != NULL) {
-    DWORD ssrc = rtpSession->GetSyncSourceOut();
-    PStringOptions & info = m_ssrcInfo[ssrc];
-    info.SetAt("cname", rtpSession->GetCanonicalName());
-    PString mslabel = rtpSession->GetGroupId();
-    if (!mslabel.IsEmpty()) {
-      PString label = mslabel + '+' + session->GetMediaType();
-      info.SetAt("mslabel", mslabel);
-      info.SetAt("label", label);
-      info.SetAt("msid", mslabel & label);
+    RTP_SyncSourceArray ssrc = rtpSession->GetSyncSources(OpalRTPSession::e_Transmit);
+    for (PINDEX i = 0; i < ssrc.GetSize(); ++i) {
+      PStringOptions & info = m_ssrcInfo[ssrc[i]];
+      info.SetAt("cname", rtpSession->GetCanonicalName(ssrc[i]));
+      PString mslabel = rtpSession->GetGroupId();
+      if (!mslabel.IsEmpty()) {
+        PString label = mslabel + '+' + session->GetMediaType();
+        info.SetAt("mslabel", mslabel);
+        info.SetAt("label", label);
+        info.SetAt("msid", mslabel & label);
 
-      // Probably should be arbitrary string, but everyone seems to use
-      // the media type, as in "audio" and "video".
-      m_mediaGroupId = GetMediaType();
+        // Probably should be arbitrary string, but everyone seems to use
+        // the media type, as in "audio" and "video".
+        m_mediaGroupId = GetMediaType();
+      }
     }
   }
 
@@ -1908,6 +1910,17 @@ bool SDPRTPAVPMediaDescription::FromSession(const OpalMediaSession * session, co
 
 bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session) const
 {
+  OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
+  if (rtpSession != NULL) {
+    for (SsrcInfo::const_iterator it = m_ssrcInfo.begin(); it != m_ssrcInfo.end(); ++it) {
+      PString cname(it->second.GetString("cname"));
+      if (!cname.IsEmpty()) {
+        rtpSession->AddSyncSource(it->first, OpalRTPSession::e_Receive, it->second.GetString("cname"));
+        rtpSession->SetAnySyncSource(false);
+      }
+    }
+  }
+
 #if OPAL_SRTP
   OpalDTLSSRTPSession* dltsMediaSession = dynamic_cast<OpalDTLSSRTPSession*>(session);
   if (dltsMediaSession) { // DTLS

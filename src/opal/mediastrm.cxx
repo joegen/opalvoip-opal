@@ -43,16 +43,11 @@
 #include <codec/vidcodec.h>
 #endif
 
-#include <ptlib/sound.h>
 #include <opal/patch.h>
-#include <lids/lid.h>
-#include <rtp/rtp.h>
-#include <opal/transports.h>
-#include <rtp/rtpconn.h>
-#include <rtp/rtpep.h>
+#include <opal/endpoint.h>
 #include <opal/call.h>
-
-#define MAX_PAYLOAD_TYPE_MISMATCHES 10
+#include <lids/lid.h>
+#include <ptlib/sound.h>
 
 
 #define new PNEW
@@ -449,7 +444,7 @@ PBoolean OpalMediaStream::RequiresPatchThread() const
 }
 
 
-bool OpalMediaStream::EnableJitterBuffer(bool enab) const
+bool OpalMediaStream::EnableJitterBuffer(bool enab)
 {
   if (!IsOpen())
     return false;
@@ -466,7 +461,7 @@ bool OpalMediaStream::EnableJitterBuffer(bool enab) const
 }
 
 
-bool OpalMediaStream::InternalSetJitterBuffer(const OpalJitterBuffer::Init &) const
+bool OpalMediaStream::InternalSetJitterBuffer(const OpalJitterBuffer::Init &)
 {
   return false;
 }
@@ -613,38 +608,6 @@ void OpalMediaStream::PrintDetail(ostream & strm, const char * prefix, Details d
     strm << ", " << &OpalVideoFormat::ContentRoleToString(contentRole)[1] << " video";
 #endif
 
-  const OpalRTPConnection * rtpConnection = dynamic_cast<const OpalRTPConnection *>(&connection);
-  OpalMediaSession * session = rtpConnection != NULL ? rtpConnection->GetMediaSession(sessionID) : NULL;
-
-#if OPAL_PTLIB_NAT || OPAL_SRTP || OPAL_RTP_FEC
-  if (session != NULL) {
-#if OPAL_PTLIB_NAT
-    OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
-    if ((details & DetailNAT) && rtpSession != NULL && session->IsOpen()) {
-      PString sockName = rtpSession->GetDataSocket().GetName();
-      if (sockName.NumCompare("udp") != PObject::EqualTo)
-        strm << ", " << sockName.Left(sockName.Find(':'));
-    }
-#endif // OPAL_PTLIB_NAT
-
-#if OPAL_SRTP
-    if ((details & DetailSecured) && session->IsCryptoSecured(IsSource()))
-      strm << ", " << "secured";
-#endif // OPAL_SRTP
-
-#if OPAL_RTP_FEC
-    if ((details & DetailFEC) && rtpSession != NULL && rtpSession->GetUlpFecPayloadType() != RTP_DataFrame::IllegalPayloadType)
-      strm << ", " << "error correction";
-#endif // OPAL_RTP_FEC
-  }
-#endif // OPAL_PTLIB_NAT || OPAL_SRTP || OPAL_RTP_FEC
-
-  if ((details & DetailAddresses) && session != NULL) {
-    strm << "\n  media=" << session->GetRemoteAddress(true) << "<if=" << session->GetLocalAddress(true) << '>';
-    if (!session->GetRemoteAddress(false).IsEmpty())
-      strm << "\n  control=" << session->GetRemoteAddress(false) << "<if=" << session->GetLocalAddress(false) << '>';
-  }
-
   if (details & DetailEOL)
     strm << endl;
 }
@@ -786,227 +749,6 @@ bool OpalNullMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & newM
          OpalMediaStreamPacing::UpdateMediaFormat(mediaFormat); // use the newly adjusted mediaFormat
 }
 
-
-///////////////////////////////////////////////////////////////////////////////
-
-OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
-                                   const OpalMediaFormat & mediaFormat,
-                                                  PBoolean isSource,
-                                          OpalRTPSession & rtp)
-  : OpalMediaStream(conn, mediaFormat, rtp.GetSessionID(), isSource),
-    rtpSession(rtp)
-{
-  /* If we are a source then we should set our buffer size to the max
-     practical UDP packet size. This means we have a buffer that can accept
-     whatever the RTP sender throws at us. For sink, we set it to the
-     maximum size based on MTU (or other criteria). */
-  m_defaultDataSize = isSource ? conn.GetEndPoint().GetManager().GetMaxRtpPacketSize() : conn.GetMaxRtpPayloadSize();
-
-  rtpSession.SafeReference();
-
-  PTRACE(5, "Media\tCreated RTP media session, RTP=" << &rtp);
-}
-
-
-OpalRTPMediaStream::~OpalRTPMediaStream()
-{
-  Close();
-  rtpSession.SafeDereference();
-}
-
-
-PBoolean OpalRTPMediaStream::Open()
-{
-  if (m_isOpen)
-    return true;
-
-  rtpSession.Restart(IsSource());
-
-#if OPAL_VIDEO
-  m_forceIntraFrameFlag = mediaFormat.GetMediaType() == OpalMediaType::Video();
-  m_forceIntraFrameTimer = 500;
-#endif
-
-  return OpalMediaStream::Open();
-}
-
-
-bool OpalRTPMediaStream::IsOpen() const
-{
-  return OpalMediaStream::IsOpen() && rtpSession.IsOpen();
-}
-
-
-void OpalRTPMediaStream::OnStartMediaPatch()
-{
-  // Make sure a RTCP packet goes out as early as possible, helps with issues
-  // to do with ICE, DTLS, NAT etc.
-  if (IsSink())
-    rtpSession.SendReport(true);
-
-  OpalMediaStream::OnStartMediaPatch();
-}
-
-
-void OpalRTPMediaStream::InternalClose()
-{
-  // Break any I/O blocks and wait for the thread that uses this object to
-  // terminate before we allow it to be deleted.
-  rtpSession.Shutdown(IsSource());
-}
-
-
-bool OpalRTPMediaStream::InternalSetPaused(bool pause, bool fromUser, bool fromPatch)
-{
-  if (!OpalMediaStream::InternalSetPaused(pause, fromUser, fromPatch))
-    return false;
-
-  // If coming out of pause, reopen the RTP session, even though it is probably
-  // still open, to make sure any pending error/statistic conditions are reset.
-  if (!pause)
-    rtpSession.Restart(IsSource());
-
-  if (IsSource()) {
-    // We make referenced copy of pointer so can't be deleted out from under us
-    OpalMediaPatchPtr mediaPatch = m_mediaPatch;
-    if (mediaPatch != NULL)
-      mediaPatch->EnableJitterBuffer(!pause);
-  }
-
-  return true;
-}
-
-
-PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
-{
-  if (!IsOpen())
-    return false;
-
-  if (IsSink()) {
-    PTRACE(1, "Media\tTried to read from sink media stream");
-    return false;
-  }
-
-  if (!rtpSession.ReadData(packet))
-    return false;
-
-#if OPAL_VIDEO
-  if (packet.GetDiscontinuity() > 0 && mediaFormat.GetMediaType() == OpalMediaType::Video()) {
-    PTRACE(3, "Media\tAutomatically requiring video update due to " << packet.GetDiscontinuity() << " missing packets.");
-    ExecuteCommand(OpalVideoPictureLoss(packet.GetSequenceNumber(), packet.GetTimestamp()));
-  }
-#endif
-
-  timestamp = packet.GetTimestamp();
-  return true;
-}
-
-
-PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
-{
-  if (!IsOpen())
-    return false;
-
-  if (IsSource()) {
-    PTRACE(1, "Media\tTried to write to source media stream");
-    return false;
-  }
-
-#if OPAL_VIDEO
-  /* This is to allow for remote systems that are not quite ready to receive
-     video immediately after the stream is set up. Specification says they
-     MUST, but ... sigh. So, they sometime miss the first few packets which
-     contains Intra-Frame and then, though further failure of implementation,
-     do not subsequently ask for a new Intra-Frame using one of the several
-     mechanisms available. Net result, no video. It won't hurt to send another
-     Intra-Frame, so we do. Thus, interoperability is improved! */
-  if (m_forceIntraFrameFlag && m_forceIntraFrameTimer.HasExpired()) {
-    PTRACE(3, "Media\tForcing I-Frame after start up in case remote does not ask");
-    ExecuteCommand(OpalVideoUpdatePicture());
-    m_forceIntraFrameFlag = false;
-  }
-#endif
-
-  timestamp = packet.GetTimestamp();
-
-  OpalMediaPatchPtr mediaPatch = m_mediaPatch;
-  if (mediaPatch != NULL && mediaPatch->IsBypassed())
-    return rtpSession.WriteData(packet);
-
-  if (packet.GetPayloadSize() == 0)
-    return true;
-
-  packet.SetPayloadType(m_payloadType);
-  return rtpSession.WriteData(packet);
-}
-
-
-PBoolean OpalRTPMediaStream::SetDataSize(PINDEX PTRACE_PARAM(dataSize), PINDEX /*frameTime*/)
-{
-  PTRACE(3, "Media\tRTP data size cannot be changed to " << dataSize << ", fixed at " << GetDataSize());
-  return true;
-}
-
-
-PBoolean OpalRTPMediaStream::IsSynchronous() const
-{
-  // Sinks never block
-  if (!IsSource())
-    return false;
-
-  // Source will bock if no jitter buffer, either not needed ...
-  if (!mediaFormat.NeedsJitterBuffer())
-    return true;
-
-  // ... or is disabled
-  if (connection.GetMaxAudioJitterDelay() == 0)
-    return true;
-
-  // Finally, are asynchonous if external or in RTP bypass mode. These are the
-  // same conditions as used when not creating patch thread at all.
-  return RequiresPatchThread();
-}
-
-
-PBoolean OpalRTPMediaStream::RequiresPatchThread() const
-{
-  return !dynamic_cast<OpalRTPEndPoint &>(connection.GetEndPoint()).CheckForLocalRTP(*this);
-}
-
-
-bool OpalRTPMediaStream::InternalSetJitterBuffer(const OpalJitterBuffer::Init & init) const
-{
-  return IsSource() && RequiresPatchThread() && rtpSession.SetJitterBufferSize(init);
-}
-
-
-bool OpalRTPMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & newMediaFormat)
-{
-  return OpalMediaStream::InternalUpdateMediaFormat(newMediaFormat) &&
-         rtpSession.UpdateMediaFormat(mediaFormat); // use the newly adjusted mediaFormat
-}
-
-
-PBoolean OpalRTPMediaStream::SetPatch(OpalMediaPatch * patch)
-{
-  if (!IsOpen() || IsSink())
-    return OpalMediaStream::SetPatch(patch);
-
-  OpalMediaPatchPtr oldPatch = InternalSetPatchPart1(patch);
-  rtpSession.Shutdown(true);
-  InternalSetPatchPart2(oldPatch);
-  rtpSession.Restart(true);
-  return true;
-}
-
-
-#if OPAL_STATISTICS
-void OpalRTPMediaStream::GetStatistics(OpalMediaStatistics & statistics, bool fromPatch) const
-{
-  rtpSession.GetStatistics(statistics, IsSource());
-  OpalMediaStream::GetStatistics(statistics, fromPatch);
-}
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1699,6 +1441,14 @@ void OpalUDPMediaStream::InternalClose()
 
 ///////////////////////////////////////////////////////////////////////////////
 
+OpalMediaCommand::OpalMediaCommand(const OpalMediaType & mediaType, unsigned sessionID, unsigned ssrc)
+  : m_mediaType(mediaType)
+  , m_sessionID(sessionID)
+  , m_ssrc(ssrc)
+{
+}
+
+
 void OpalMediaCommand::PrintOn(ostream & strm) const
 {
   strm << GetName();
@@ -1720,6 +1470,16 @@ void * OpalMediaCommand::GetPlugInData() const
 unsigned * OpalMediaCommand::GetPlugInSize() const
 {
   return NULL;
+}
+
+
+OpalMediaFlowControl::OpalMediaFlowControl(unsigned maxBitRate,
+                                           const OpalMediaType & mediaType,
+                                           unsigned sessionID,
+                                           unsigned ssrc)
+  : OpalMediaCommand(mediaType, sessionID, ssrc)
+  , m_maxBitRate(maxBitRate)
+{
 }
 
 

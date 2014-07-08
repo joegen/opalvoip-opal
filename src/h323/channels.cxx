@@ -243,35 +243,32 @@ void H323Channel::OnFlowControl(long bitRateRestriction)
 
   OpalMediaStreamPtr stream = GetMediaStream();
   if (stream != NULL)
-    stream->ExecuteCommand(OpalMediaFlowControl(bitRateRestriction*100));
+    connection.ExecuteMediaCommand(OpalMediaFlowControl(bitRateRestriction*100, stream->GetMediaFormat().GetMediaType(), GetSessionID()));
 }
 
 
 void H323Channel::OnMiscellaneousCommand(const H245_MiscellaneousCommand_type & type)
 {
   PTRACE(3, "LogChan\tOnMiscellaneousCommand: chan=" << number << ", type=" << type.GetTagName());
-  OpalMediaStreamPtr mediaStream = GetMediaStream();
-  if (mediaStream == NULL)
-    return;
 
 #if OPAL_VIDEO
   switch (type.GetTag())
   {
     case H245_MiscellaneousCommand_type::e_videoFreezePicture :
-      mediaStream->ExecuteCommand(OpalVideoFreezePicture());
+      connection.ExecuteMediaCommand(OpalVideoFreezePicture(GetSessionID()));
       break;
 
     case H245_MiscellaneousCommand_type::e_videoFastUpdatePicture:
-      mediaStream->ExecuteCommand(OpalVideoUpdatePicture());
+      connection.ExecuteMediaCommand(OpalVideoUpdatePicture(GetSessionID()));
       break;
 
     case H245_MiscellaneousCommand_type::e_videoFastUpdateGOB :
     case H245_MiscellaneousCommand_type::e_videoFastUpdateMB :
-      mediaStream->ExecuteCommand(OpalVideoPictureLoss());
+      connection.ExecuteMediaCommand(OpalVideoPictureLoss(0, 0, GetSessionID()));
       break;
 
     case H245_MiscellaneousCommand_type::e_videoTemporalSpatialTradeOff :
-      mediaStream->ExecuteCommand(OpalTemporalSpatialTradeOff((const PASN_Integer &)type));
+      connection.ExecuteMediaCommand(OpalTemporalSpatialTradeOff((const PASN_Integer &)type, GetSessionID()));
       break;
 
     default:

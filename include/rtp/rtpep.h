@@ -38,6 +38,9 @@
 #include <opal/endpoint.h>
 
 
+class OpalRTPMediaStream;
+
+
 #if OPAL_RTP_FEC
 namespace OpalFEC
 {
