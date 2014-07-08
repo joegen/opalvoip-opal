@@ -331,7 +331,7 @@ PBoolean OpalRTPMediaStream::SetPatch(OpalMediaPatch * patch)
 #if OPAL_STATISTICS
 void OpalRTPMediaStream::GetStatistics(OpalMediaStatistics & statistics, bool fromPatch) const
 {
-  m_rtpSession.GetStatistics(statistics, IsSource());
+  m_rtpSession.GetStatistics(statistics, IsSource(), m_syncSource);
 
   if (m_jitterBuffer != NULL) {
     statistics.m_packetsTooLate    = m_jitterBuffer->GetPacketsTooLate();
