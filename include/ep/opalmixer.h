@@ -1023,7 +1023,7 @@ class OpalMixerMediaStream : public OpalMediaStream
 
   protected:
     virtual void InternalClose();
-    virtual bool InternalSetJitterBuffer(const OpalJitterBuffer::Init & init) const;
+    virtual bool InternalSetJitterBuffer(const OpalJitterBuffer::Init & init);
 
     PSafePtr<OpalMixerNode> m_node;
     bool m_listenOnly;

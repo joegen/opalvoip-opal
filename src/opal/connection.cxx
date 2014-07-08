@@ -1157,20 +1157,12 @@ bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, bool force) cons
   ++const_cast<OpalConnection *>(this)->m_VideoUpdateRequestsReceived;
 #endif
 
-  bool ok = force ? ExecuteMediaCommand(OpalVideoUpdatePicture(), sessionID, OpalMediaType::Video())
-                  : ExecuteMediaCommand(OpalVideoPictureLoss(),   sessionID, OpalMediaType::Video());
+  bool ok = force ? ExecuteMediaCommand(OpalVideoUpdatePicture(sessionID))
+                  : ExecuteMediaCommand(OpalVideoPictureLoss(0, 0, sessionID));
 
   PTRACE(3, "Video " << (force ? "force update picture" : "picture loss") << " (I-Frame) requested on " << *this << ", ok=" << ok);
   return ok;
 }
-
-
-void OpalConnection::OnRxIntraFrameRequest(const OpalMediaSession & session, bool force)
-{
-  GetEndPoint().GetManager().QueueDecoupledEvent(new PSafeWorkArg2<OpalConnection, unsigned, bool>(
-              this, session.GetSessionID(), force, &OpalConnection::SendVideoUpdatePictureCallback));
-}
-
 #endif // OPAL_VIDEO
 
 
@@ -1760,10 +1752,24 @@ bool OpalConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCom
 }
 
 
-bool OpalConnection::ExecuteMediaCommand(const OpalMediaCommand & command,
-                                         unsigned sessionID,
-                                         const OpalMediaType & mediaType) const
+void OpalConnection::InternalExecuteMediaCommand(OpalMediaCommand * command)
 {
+  ExecuteMediaCommand(*command, false);
+  delete command;
+}
+
+
+bool OpalConnection::ExecuteMediaCommand(const OpalMediaCommand & command, bool async) const
+{
+  if (async) {
+    GetEndPoint().GetManager().QueueDecoupledEvent(
+                    new PSafeWorkArg1<OpalConnection, OpalMediaCommand *>(
+                            const_cast<OpalConnection *>(this),
+                            command.CloneAs<OpalMediaCommand>(),
+                            &OpalConnection::InternalExecuteMediaCommand));
+    return true;
+  }
+
   PSafeLockReadOnly safeLock(*this);
   if (!safeLock.IsLocked())
     return false;
@@ -1771,14 +1777,14 @@ bool OpalConnection::ExecuteMediaCommand(const OpalMediaCommand & command,
   if (IsReleased())
     return false;
 
-  OpalMediaStreamPtr stream = sessionID != 0 ? GetMediaStream(sessionID, false)
-                                             : GetMediaStream(mediaType, false);
+  OpalMediaStreamPtr stream = command.GetSessionID() != 0 ? GetMediaStream(command.GetSessionID(), false)
+                                                          : GetMediaStream(command.GetMediaType(), false);
   if (stream == NULL) {
-    PTRACE(3, "No " << mediaType << " stream to do " << command << " in connection " << *this);
+    PTRACE(3, "No " << command.GetMediaType() << " stream to do " << command << " in connection " << *this);
     return false;
   }
 
-  PTRACE(5, "Execute " << mediaType << " stream command " << command << " in connection " << *this);
+  PTRACE(5, "Execute " << command.GetMediaType() << " stream command " << command << " in connection " << *this);
   return stream->ExecuteCommand(command);
 }
 

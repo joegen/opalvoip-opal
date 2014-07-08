@@ -47,7 +47,7 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-OPAL_DEFINE_MEDIA_COMMAND(OpalFaxTerminate, PLUGINCODEC_CONTROL_TERMINATE_CODEC);
+OPAL_DEFINE_MEDIA_COMMAND(OpalFaxTerminate, PLUGINCODEC_CONTROL_TERMINATE_CODEC, OpalMediaType::Fax());
 
 #define new PNEW
 

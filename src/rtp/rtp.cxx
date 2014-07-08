@@ -149,7 +149,7 @@ void RTP_DataFrame::SetPayloadType(PayloadTypes t)
 }
 
 
-DWORD RTP_DataFrame::GetContribSource(PINDEX idx) const
+RTP_SyncSourceId RTP_DataFrame::GetContribSource(PINDEX idx) const
 {
   PAssert(idx < GetContribSrcCount(), PInvalidParameter);
   return ((PUInt32b *)&theArray[MinHeaderSize])[idx];
@@ -174,7 +174,7 @@ bool RTP_DataFrame::AdjustHeaderSize(PINDEX newHeaderSize)
 }
 
 
-void RTP_DataFrame::SetContribSource(PINDEX idx, DWORD src)
+void RTP_DataFrame::SetContribSource(PINDEX idx, RTP_SyncSourceId src)
 {
   PAssert(idx <= 15, PInvalidParameter);
 
@@ -243,7 +243,7 @@ bool RTP_DataFrame::SetExtensionSizeDWORDs(PINDEX sz)
     return false;
 
   theArray[0] |= 0x10;
-  *(PUInt16b *)&theArray[extHdrOffset + 2] = (WORD)sz;
+  *(PUInt16b *)&theArray[extHdrOffset + 2] = (uint16_t)sz;
   return true;
 }
 
@@ -399,7 +399,7 @@ bool RTP_DataFrame::SetHeaderExtension(unsigned id, PINDEX length, const BYTE * 
       return false;
 
     BYTE * hdr = (BYTE *)&theArray[headerBase];
-    *(PUInt16b *)hdr = (WORD)id;
+    *(PUInt16b *)hdr = (uint16_t)id;
     dataPtr = hdr += 4;
   }
   else {
@@ -680,7 +680,7 @@ bool RTP_ControlFrame::SetPayloadSize(PINDEX sz)
   m_payloadSize = sz;
 
   // compound size is in words, rounded up to nearest word
-  WORD compoundDWORDs = (WORD)((m_payloadSize + 3)/4);
+  unsigned compoundDWORDs = (m_payloadSize + 3)/4;
   PAssert(compoundDWORDs <= 0x3fff, PInvalidParameter);
 
   // transmitted length is the offset of the last compound block
@@ -692,7 +692,7 @@ bool RTP_ControlFrame::SetPayloadSize(PINDEX sz)
     return false;
 
   // put the new compound size into the packet (always at offset 2)
-  *(PUInt16b *)&theArray[m_compoundOffset+2] = compoundDWORDs;
+  *(PUInt16b *)&theArray[m_compoundOffset+2] = (uint16_t)compoundDWORDs;
   return true;
 }
 
@@ -744,7 +744,7 @@ void RTP_ControlFrame::EndPacket()
 }
 
 
-bool RTP_ControlFrame::ParseGoodbye(DWORD & ssrc, PDWORDArray & csrc, PString & msg)
+bool RTP_ControlFrame::ParseGoodbye(RTP_SyncSourceId & ssrc, RTP_SyncSourceArray & csrc, PString & msg)
 {
   size_t size = GetPayloadSize();
   size_t count = GetCount();
@@ -781,15 +781,15 @@ static void ParseReceiverReportArray(RTP_ReceiverReportArray & reports, const BY
     report->totalLost = rr->GetLostPackets();
     report->lastSequenceNumber = rr->last_seq;
     report->jitter = rr->jitter;
-    report->lastTimestamp.SetNTP((PInt64)(DWORD)rr->lsr << 16);
-    report->delay.SetInterval(((DWORD)rr->dlsr*1000LL)/65536); // units of 1/65536 seconds
+    report->lastTimestamp.SetNTP((uint64_t)(uint32_t)rr->lsr << 16);
+    report->delay.SetInterval(((uint32_t)rr->dlsr*1000LL)/65536); // units of 1/65536 seconds
     reports.SetAt(repIdx, report);
     rr++;
   }
 }
 
 
-bool RTP_ControlFrame::ParseReceiverReport(DWORD & ssrc, RTP_ReceiverReportArray & reports)
+bool RTP_ControlFrame::ParseReceiverReport(RTP_SyncSourceId & ssrc, RTP_ReceiverReportArray & reports)
 {
   size_t size = GetPayloadSize();
   size_t count = GetCount();
@@ -824,7 +824,7 @@ bool RTP_ControlFrame::ParseSenderReport(RTP_SenderReport & txReport, RTP_Receiv
 }
 
 
-void RTP_ControlFrame::StartSourceDescription(DWORD src)
+void RTP_ControlFrame::StartSourceDescription(RTP_SyncSourceId src)
 {
   // extend payload to include SSRC + END
   SetPayloadSize(m_payloadSize + 4 + 1);  
@@ -889,7 +889,7 @@ bool RTP_ControlFrame::ParseSourceDescriptions(RTP_SourceDescriptionArray & desc
 }
 
 
-void RTP_ControlFrame::AddIFR(DWORD syncSourceIn)
+void RTP_ControlFrame::AddIFR(RTP_SyncSourceId syncSourceIn)
 {
   StartNewPacket(e_IntraFrameRequest);
   SetPayloadSize(4);
@@ -901,7 +901,7 @@ void RTP_ControlFrame::AddIFR(DWORD syncSourceIn)
 }
 
 
-void RTP_ControlFrame::AddNACK(DWORD syncSourceOut, DWORD syncSourceIn, const std::set<unsigned> & lostPackets)
+void RTP_ControlFrame::AddNACK(RTP_SyncSourceId syncSourceOut, RTP_SyncSourceId syncSourceIn, const std::set<unsigned> & lostPackets)
 {
   if (lostPackets.empty())
     return;
@@ -914,27 +914,27 @@ void RTP_ControlFrame::AddNACK(DWORD syncSourceOut, DWORD syncSourceIn, const st
 
   std::set<unsigned>::const_iterator it = lostPackets.begin();
   size_t i = 0;
-  nack->fld[i].packetID = (WORD)*it++;
+  nack->fld[i].packetID = (uint16_t)*it++;
   unsigned bitmask = 0;
   while (it != lostPackets.end()) {
     unsigned bit = (*it - nack->fld[i].packetID)-1;
     if (bit < 16)
       bitmask |= (1 << bit);
     else {
-      nack->fld[i].bitmask = (WORD)bitmask;
+      nack->fld[i].bitmask = (uint16_t)bitmask;
       bitmask = 0;
 
       ++i;
       SetPayloadSize(sizeof(FbNACK)+sizeof(FbNACK::Field)*i);
-      nack->fld[i].packetID = (WORD)*it;
+      nack->fld[i].packetID = (uint16_t)*it;
     }
     ++it;
   }
-  nack->fld[i].bitmask = (WORD)bitmask;
+  nack->fld[i].bitmask = (uint16_t)bitmask;
 }
 
 
-bool RTP_ControlFrame::ParseNACK(DWORD & senderSSRC, DWORD & targetSSRC, std::set<unsigned> & lostPackets)
+bool RTP_ControlFrame::ParseNACK(RTP_SyncSourceId & senderSSRC, RTP_SyncSourceId & targetSSRC, std::set<unsigned> & lostPackets)
 {
   size_t size = GetPayloadSize();
   if (size < sizeof(FbNACK))
@@ -971,7 +971,7 @@ static void SplitBitRate(unsigned bitRate, unsigned & exponent, unsigned & manti
 }
 
 
-void RTP_ControlFrame::AddTMMB(DWORD syncSourceOut, DWORD syncSourceIn, unsigned maxBitRate, unsigned overhead, bool notify)
+void RTP_ControlFrame::AddTMMB(RTP_SyncSourceId syncSourceOut, RTP_SyncSourceId syncSourceIn, unsigned maxBitRate, unsigned overhead, bool notify)
 {
   FbTMMB * tmmb;
   AddFeedback(e_TransportLayerFeedBack, notify ? e_TMMBN : e_TMMBR, tmmb);
@@ -986,7 +986,7 @@ void RTP_ControlFrame::AddTMMB(DWORD syncSourceOut, DWORD syncSourceIn, unsigned
 }
 
 
-bool RTP_ControlFrame::ParseTMMB(DWORD & senderSSRC, DWORD & targetSSRC, unsigned & maxBitRate, unsigned & overhead)
+bool RTP_ControlFrame::ParseTMMB(RTP_SyncSourceId & senderSSRC, RTP_SyncSourceId & targetSSRC, unsigned & maxBitRate, unsigned & overhead)
 {
   size_t size = GetPayloadSize();
   if (size < sizeof(FbTMMB))
@@ -1001,7 +1001,7 @@ bool RTP_ControlFrame::ParseTMMB(DWORD & senderSSRC, DWORD & targetSSRC, unsigne
 }
 
 
-void RTP_ControlFrame::AddPLI(DWORD syncSourceOut, DWORD syncSourceIn)
+void RTP_ControlFrame::AddPLI(RTP_SyncSourceId syncSourceOut, RTP_SyncSourceId syncSourceIn)
 {
   FbHeader * hdr = AddFeedback(e_PayloadSpecificFeedBack, e_PictureLossIndication, sizeof(FbHeader));
   hdr->senderSSRC = syncSourceOut;
@@ -1009,7 +1009,7 @@ void RTP_ControlFrame::AddPLI(DWORD syncSourceOut, DWORD syncSourceIn)
 }
 
 
-bool RTP_ControlFrame::ParsePLI(DWORD & senderSSRC, DWORD & targetSSRC)
+bool RTP_ControlFrame::ParsePLI(RTP_SyncSourceId & senderSSRC, RTP_SyncSourceId & targetSSRC)
 {
   size_t size = GetPayloadSize();
   if (size < sizeof(FbHeader))
@@ -1022,7 +1022,7 @@ bool RTP_ControlFrame::ParsePLI(DWORD & senderSSRC, DWORD & targetSSRC)
 }
 
 
-void RTP_ControlFrame::AddFIR(DWORD syncSourceOut, DWORD syncSourceIn, unsigned sequenceNumber)
+void RTP_ControlFrame::AddFIR(RTP_SyncSourceId syncSourceOut, RTP_SyncSourceId syncSourceIn, unsigned sequenceNumber)
 {
   FbFIR * fir;
   AddFeedback(e_PayloadSpecificFeedBack, e_FullIntraRequest, fir);
@@ -1034,7 +1034,7 @@ void RTP_ControlFrame::AddFIR(DWORD syncSourceOut, DWORD syncSourceIn, unsigned 
 }
 
 
-bool RTP_ControlFrame::ParseFIR(DWORD & senderSSRC, DWORD & targetSSRC, unsigned & sequenceNumber)
+bool RTP_ControlFrame::ParseFIR(RTP_SyncSourceId & senderSSRC, RTP_SyncSourceId & targetSSRC, unsigned & sequenceNumber)
 {
   size_t size = GetPayloadSize();
   if (size < sizeof(FbFIR))
@@ -1048,7 +1048,7 @@ bool RTP_ControlFrame::ParseFIR(DWORD & senderSSRC, DWORD & targetSSRC, unsigned
 }
 
 
-void RTP_ControlFrame::AddTSTO(DWORD syncSourceOut, DWORD syncSourceIn, unsigned tradeOff, unsigned sequenceNumber)
+void RTP_ControlFrame::AddTSTO(RTP_SyncSourceId syncSourceOut, RTP_SyncSourceId syncSourceIn, unsigned tradeOff, unsigned sequenceNumber)
 {
   FbTSTO * tsto;
   AddFeedback(e_PayloadSpecificFeedBack, e_TemporalSpatialTradeOffRequest, tsto);
@@ -1061,7 +1061,7 @@ void RTP_ControlFrame::AddTSTO(DWORD syncSourceOut, DWORD syncSourceIn, unsigned
 }
 
 
-bool RTP_ControlFrame::ParseTSTO(DWORD & senderSSRC, DWORD & targetSSRC, unsigned & tradeOff, unsigned & sequenceNumber)
+bool RTP_ControlFrame::ParseTSTO(RTP_SyncSourceId & senderSSRC, RTP_SyncSourceId & targetSSRC, unsigned & tradeOff, unsigned & sequenceNumber)
 {
   size_t size = GetPayloadSize();
   if (size < sizeof(FbTSTO))
@@ -1078,7 +1078,7 @@ bool RTP_ControlFrame::ParseTSTO(DWORD & senderSSRC, DWORD & targetSSRC, unsigne
 
 static const char REMB_ID[4] = { 'R', 'E', 'M', 'B' };
 
-void RTP_ControlFrame::AddREMB(DWORD syncSourceOut, DWORD syncSourceIn, unsigned maxBitRate)
+void RTP_ControlFrame::AddREMB(RTP_SyncSourceId syncSourceOut, RTP_SyncSourceId syncSourceIn, unsigned maxBitRate)
 {
   FbREMB * remb;
   AddFeedback(e_PayloadSpecificFeedBack, e_ApplicationLayerFbMessage, remb);
@@ -1097,7 +1097,7 @@ void RTP_ControlFrame::AddREMB(DWORD syncSourceOut, DWORD syncSourceIn, unsigned
 }
 
 
-bool RTP_ControlFrame::ParseREMB(DWORD & senderSSRC, DWORD & targetSSRC, unsigned & maxBitRate)
+bool RTP_ControlFrame::ParseREMB(RTP_SyncSourceId & senderSSRC, RTP_SyncSourceId & targetSSRC, unsigned & maxBitRate)
 {
   size_t size = GetPayloadSize();
   if (size < sizeof(FbREMB))
@@ -1116,7 +1116,7 @@ bool RTP_ControlFrame::ParseREMB(DWORD & senderSSRC, DWORD & targetSSRC, unsigne
 
 RTP_ControlFrame::ApplDefinedInfo::ApplDefinedInfo(const char * type,
                                                    unsigned subType,
-                                                   DWORD ssrc,
+                                                   RTP_SyncSourceId ssrc,
                                                    const BYTE * data,
                                                    PINDEX size)
   : m_subType(subType)

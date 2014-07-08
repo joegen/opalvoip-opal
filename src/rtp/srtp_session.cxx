@@ -69,7 +69,7 @@ struct OpalLibSRTP::Context
   ~Context();
 
   bool SetKey(DWORD ssrc, OpalMediaCryptoKeyInfo* key);
-  bool Change(DWORD from_ssrc, DWORD to_ssrc);
+  bool AddStream(DWORD ssrc);
   void Close();
   OpalRTPSession::SendReceiveStatus ProtectRTP(RTP_DataFrame & frame);
   OpalRTPSession::SendReceiveStatus ProtectRTCP(RTP_ControlFrame & frame);
@@ -447,6 +447,25 @@ OpalLibSRTP::~OpalLibSRTP()
 }
 
 
+OpalLibSRTP::Context::Context()
+  : m_keyInfo(NULL)
+#if PTRACING
+  , m_firstRTP(true)
+  , m_firstRTCP(true)
+#endif
+{
+  CHECK_ERROR(srtp_create,(&m_ctx, NULL));
+  memset(m_key_salt, 0, sizeof(m_key_salt));
+}
+
+
+OpalLibSRTP::Context::~Context()
+{
+  Close();
+  delete m_keyInfo;
+}
+
+
 bool OpalLibSRTP::Context::SetKey(DWORD ssrc, OpalMediaCryptoKeyInfo* ki)
 {
   OpalSRTPKeyInfo * keyInfo = dynamic_cast<OpalSRTPKeyInfo*>(ki);
@@ -495,38 +514,18 @@ bool OpalLibSRTP::Context::SetKey(DWORD ssrc, OpalMediaCryptoKeyInfo* ki)
 }
 
 
-bool OpalLibSRTP::Context::Change(DWORD from_ssrc, DWORD to_ssrc)
+bool OpalLibSRTP::Context::AddStream(DWORD ssrc)
 {
-  srtp_policy_t policy = m_policies[from_ssrc];
-  if (policy.ssrc.type == ssrc_specific) {
-    policy.ssrc.value = to_ssrc;
-    if( !CHECK_ERROR(srtp_add_stream, (m_ctx, &policy)) ||
-        !CHECK_ERROR(srtp_remove_stream, (m_ctx, from_ssrc)))
-    {
-      PTRACE(2, "SRTP\tUnable to change ssrc from " << from_ssrc << " to " << to_ssrc);
-    }
-  }
+  srtp_policy_t policy = m_policies[ssrc];
+  if (policy.ssrc.type != ssrc_specific)
+    return true;
 
-  return true;
-}
+  policy.ssrc.value = ssrc;
+  if (CHECK_ERROR(srtp_add_stream, (m_ctx, &policy)))
+    return true;
 
-
-OpalLibSRTP::Context::Context()
-  : m_keyInfo(NULL)
-#if PTRACING
-  , m_firstRTP(true)
-  , m_firstRTCP(true)
-#endif
-{
-  CHECK_ERROR(srtp_create,(&m_ctx, NULL));
-  memset(m_key_salt, 0, sizeof(m_key_salt));
-}
-
-
-OpalLibSRTP::Context::~Context()
-{
-  Close();
-  delete m_keyInfo;
+  PTRACE(2, "SRTP\tUnable to add stream with SSRC " << ssrc);
+  return false;
 }
 
 
@@ -679,12 +678,6 @@ bool OpalLibSRTP::IsSecured(bool rx) const
 }
 
 
-void OpalLibSRTP::Change(DWORD from_ssrc, DWORD to_ssrc)
-{
-  m_rx->Change(from_ssrc, to_ssrc);
-}
-
-
 OpalSRTPKeyInfo* OpalLibSRTP::CreateKeyInfo(bool rx)
 {
   if (rx)
@@ -724,16 +717,16 @@ OpalMediaCryptoKeyList & OpalSRTPSession::GetOfferedCryptoKeys()
 }
 
 
-bool OpalSRTPSession::SetCryptoKey(OpalMediaCryptoKeyInfo* key, bool rx)
+bool OpalSRTPSession::SetCryptoKey(OpalMediaCryptoKeyInfo* key, Direction dir)
 {
-  return rx ? m_rx->SetKey(GetSyncSourceIn(), key) : m_tx->SetKey(GetSyncSourceOut(), key);
+  return dir == e_Receive ? m_rx->SetKey(GetSyncSourceIn(), key) : m_tx->SetKey(GetSyncSourceOut(), key);
 }
 
 
-bool OpalSRTPSession::ApplyCryptoKey(OpalMediaCryptoKeyList & keys, bool rx)
+bool OpalSRTPSession::ApplyCryptoKey(OpalMediaCryptoKeyList & keys, Direction dir)
 {
   for (OpalMediaCryptoKeyList::iterator it = keys.begin(); it != keys.end(); ++it) {
-    if (SetCryptoKey(&*it, rx))
+    if (SetCryptoKey(&*it, dir))
     {
       keys.Select(it);
       return true;
@@ -743,9 +736,18 @@ bool OpalSRTPSession::ApplyCryptoKey(OpalMediaCryptoKeyList & keys, bool rx)
 }
 
 
-bool OpalSRTPSession::IsCryptoSecured(bool rx) const
+bool OpalSRTPSession::IsCryptoSecured(Direction dir) const
 {
-  return IsSecured(rx);
+  return IsSecured(dir == e_Receive);
+}
+
+
+RTP_SyncSourceId OpalSRTPSession::AddSyncSource(RTP_SyncSourceId id, Direction dir, const char * cname)
+{
+  id = OpalRTPSession::AddSyncSource(id, dir, cname);
+  if (id != 0)
+    (dir == e_Receive ? m_rx : m_tx)->AddStream(id);
+  return id;
 }
 
 
@@ -774,9 +776,6 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
   SendReceiveStatus status = OpalRTPSession::OnReceiveData(frame, pduSize);
   if (status != e_ProcessPacket)
     return status;
-
-  if (GetSyncSourceIn() != frame.GetSyncSource())
-    Change(GetSyncSourceIn(), frame.GetSyncSource());
 
   return UnprotectRTP(frame);
 }

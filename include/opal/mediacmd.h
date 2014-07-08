@@ -44,6 +44,12 @@ class OpalMediaCommand : public PObject
 {
   PCLASSINFO(OpalMediaCommand, PObject);
   public:
+    OpalMediaCommand(
+      const OpalMediaType & mediaType, ///< Media type to search for in open streams
+      unsigned sessionID = 0,          ///< Session for media stream, 0 is use first \p mediaType stream
+      unsigned ssrc = 0                ///< Sync Source for media stream (if RTP)
+    );
+
   /**@name Overrides from PObject */
   //@{
     /**Standard stream print function.
@@ -87,15 +93,27 @@ class OpalMediaCommand : public PObject
       */
     virtual unsigned * GetPlugInSize() const;
   //@}
+
+  /**@name Memebers */
+  //@{
+    const OpalMediaType & GetMediaType() const { return m_mediaType; }
+    unsigned GetSessionID() const { return m_sessionID; }
+    unsigned GetSyncSource() const { return m_ssrc; }
+  //@}
+
+  protected:
+    OpalMediaType m_mediaType;
+    unsigned      m_sessionID;
+    unsigned      m_ssrc;
 };
 
 
-#define OPAL_DEFINE_MEDIA_COMMAND(cls, name) \
+#define OPAL_DEFINE_MEDIA_COMMAND(cls, name, mediaType) \
   class cls : public OpalMediaCommand \
   { \
       PCLASSINFO_WITH_CLONE(cls, OpalMediaCommand) \
     public: \
-      cls() { } \
+      cls(unsigned id = 0, unsigned ssrc = 0) : OpalMediaCommand(mediaType, id, ssrc) { } \
       virtual PString GetName() const { return name; } \
   }
 
@@ -106,8 +124,12 @@ class OpalMediaFlowControl : public OpalMediaCommand
 {
     PCLASSINFO_WITH_CLONE(OpalMediaFlowControl, OpalMediaCommand);
   public:
-    OpalMediaFlowControl(unsigned maxBitRate)
-      : m_maxBitRate(maxBitRate)  { }
+    OpalMediaFlowControl(
+      unsigned maxBitRate,
+      const OpalMediaType & mediaType, ///< Media type to search for in open streams
+      unsigned sessionID = 0,          ///< Session for media stream, 0 is use first \p mediaType stream
+      unsigned ssrc = 0                ///< Sync Source for media stream (if RTP)
+    );
 
     virtual PString GetName() const;
 

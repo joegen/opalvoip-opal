@@ -51,18 +51,18 @@ class RTP_ExtendedReport : public PObject
   public:
     void PrintOn(ostream &) const;
 
-    DWORD sourceIdentifier;
-    DWORD lossRate;            /* fraction of RTP data packets lost */ 
-    DWORD discardRate;         /* fraction of RTP data packets discarded */
-    DWORD burstDensity;        /* fraction of RTP data packets within burst periods */
-    DWORD gapDensity;          /* fraction of RTP data packets within inter-burst gaps */
-    DWORD roundTripDelay;  /* the most recently calculated round trip time */    
-    DWORD RFactor;            /* voice quality metric of the call */
-    DWORD mosLQ;               /* MOS for listen quality */
-    DWORD mosCQ;               /* MOS for conversational quality */
-    DWORD jbNominal;      /* current nominal jitter buffer delay, in ms */ 
-    DWORD jbMaximum;      /* current maximum jitter buffer delay, in ms */
-    DWORD jbAbsolute;     /* current absolute maximum jitter buffer delay, in ms */
+    RTP_SyncSourceId sourceIdentifier;
+    unsigned         lossRate;            /* fraction of RTP data packets lost */ 
+    unsigned         discardRate;         /* fraction of RTP data packets discarded */
+    unsigned         burstDensity;        /* fraction of RTP data packets within burst periods */
+    unsigned         gapDensity;          /* fraction of RTP data packets within inter-burst gaps */
+    unsigned         roundTripDelay;  /* the most recently calculated round trip time */    
+    unsigned         RFactor;            /* voice quality metric of the call */
+    unsigned         mosLQ;               /* MOS for listen quality */
+    unsigned         mosCQ;               /* MOS for conversational quality */
+    unsigned         jbNominal;      /* current nominal jitter buffer delay, in ms */ 
+    unsigned         jbMaximum;      /* current maximum jitter buffer delay, in ms */
+    unsigned         jbAbsolute;     /* current absolute maximum jitter buffer delay, in ms */
 };
 
 class RTP_ExtendedReportArray : public PArray<RTP_ExtendedReport>
@@ -133,7 +133,7 @@ class RTCP_XR_Metrics : public PObject
        This must be called to obtain the Id parameter.
       */
     void SetJitterDelay(
-      DWORD delay   ///<  The jitter buffer delay in milliseconds
+      unsigned delay   ///<  The jitter buffer delay in milliseconds
     );
 
     /**Called when a packet is received.
@@ -151,7 +151,7 @@ class RTCP_XR_Metrics : public PObject
     /**Called when several packets are lost.
       */
     void OnPacketLost(
-      DWORD dropped   ///< Number of lost packets.
+      unsigned dropped   ///< Number of lost packets.
     );
 
     /**Called when a Sender Report is receveid.
@@ -163,68 +163,68 @@ class RTCP_XR_Metrics : public PObject
 
     /**Get the fraction of RTP packets lost since the beginning of the reception.
       */
-    BYTE GetLossRate();
+    unsigned GetLossRate() const;
 
     /**Get the fraction of RTP packets discarded since the beginning of the reception.
       */
-    BYTE GetDiscardRate();
+    unsigned GetDiscardRate() const;
 
     /**Get the fraction of RTP packets lost/discarded within burst periods since
        the beginning of the reception.
       */
-    BYTE GetBurstDensity();
+    unsigned GetBurstDensity() const;
 
     /**Get the fraction of RTP packets lost/discarded within gap periods since
        the beginning of the reception.
       */
-    BYTE GetGapDensity();
+    unsigned GetGapDensity() const;
 
     /**Get the mean duration, in milliseconds, of burst periods since the
        beginning of the reception.
      */
-    PUInt16b GetBurstDuration();
+    unsigned GetBurstDuration() const;
 
     /**Get the mean duration, in milliseconds, of gap periods since the beginning
        of the reception.
       */
-    PUInt16b GetGapDuration();
+    unsigned GetGapDuration() const;
 
     /**Get the most recently calculated round trip time between RTP interfaces,
        expressed in millisecond.
       */
-    PUInt16b GetRoundTripDelay ();
+    unsigned GetRoundTripDelay() const;
 
     /**Get the most recently estimated end system delay, expressed in millisecond.
       */
-    PUInt16b GetEndSystemDelay();
+    unsigned GetEndSystemDelay() const;
 
     /**Get the R factor for the current RTP session, expressed in the range of 0 to 100.
       */
-    BYTE RFactor();
+    unsigned GetRFactor() const;
 
     /**Get the estimated MOS score for listening quality of the current RTP session,
        expressed in the range of 10 to 50.
        This metric not includes the effects of delay.
       */
-    BYTE MOS_LQ();
+    unsigned GetMOS_LQ() const;
 
     /**Get the estimated MOS score for conversational quality of the current RTP session,
        expressed in the range of 10 to 50.
        This metric includes the effects of delay.
       */
-    BYTE MOS_CQ();
+    unsigned GetMOS_CQ() const;
 
     // Internal functions
     void InsertExtendedReportPacket(
       unsigned sessionID,
-      DWORD syncSourceOut,
-      OpalRTPSession::JitterBufferPtr jitter, // Note do not make JitterBufferPtr a reference, needs to be a copy
+      RTP_SyncSourceId syncSourceOut,
+      OpalJitterBufferPtr jitter, // Note do not make JitterBufferPtr a reference, needs to be a copy
       RTP_ControlFrame & report
     );
 
     static bool ParseExtendedReportArray(
       const RTP_ControlFrame & frame,
-      DWORD & ssrc,
+      RTP_SyncSourceId & ssrc,
       RTP_ExtendedReportArray & reports
     );
 
@@ -238,7 +238,7 @@ class RTCP_XR_Metrics : public PObject
 
        This function models the transitions of a Markov chain with the states above.
       */
-    void markov(
+    void Markov(
       PacketEvent event   ///< Event triggered
     );
 
@@ -248,51 +248,51 @@ class RTCP_XR_Metrics : public PObject
 
     /**Get the R factor for the current RTP session, expressed in the range of 0 to 100.
       */
-    BYTE RFactor(
+    unsigned GetRFactor(
       QualityType qt   ///< Listening or Conversational quality
-    );
+    ) const;
 
     /**Get the R factor at the end of the RTP session, expressed in the range of 0 to 100.
       */
-    BYTE EndOfCallRFactor();
+    unsigned GetEndOfCallRFactor() const;
 
     /**Get the estimated MOS score for the current RTP session,
        expressed in the range of 1 to 5.
       */
-    float MOS(
+    float GetMOS(
       QualityType qt   ///< Listening or Conversational quality
-    );
+    ) const;
 
     /**Get the estimated MOS score at the end of the RTP session,
        expressed in the range of 1 to 5.
       */
-    float EndOfCallMOS();
+    float GetEndOfCallMOS() const;
 
     /**Get instantaneous Id factor.
       */
-    float IdFactor();
+    float GetIdFactor() const;
 
     /**Get a ponderated value of Id factor.
       */
-    float GetPonderateId();
+    float GetPonderateId() const;
 
     /**Get instantaneous Ieff factor.
       */
-    float Ieff(
+    float GetIeff(
       PeriodType type   ///< The type of period (burst or gap).
-    );
+    ) const;
 
     /**Get a value of Ie factor at the end of the RTP session.
       */
-    float GetEndOfCallIe();
+    float GetEndOfCallIe() const;
 
     /**Get a ponderated value of Ie factor.
       */
-    float GetPonderateIe();
+    float GetPonderateIe() const;
 
     /**Create a a burst or gap period.
       */
-    TimePeriod createTimePeriod(
+    TimePeriod CreateTimePeriod(
       PeriodType type,        ///< The type of period (burst or gap).
       PTime beginTimestamp,   ///< Beginning of period timestamp.
       PTime endTimestamp      ///< End of period timestamp.
@@ -300,14 +300,14 @@ class RTCP_XR_Metrics : public PObject
 
     /**Create a period of time with an Id value associated.
       */
-    IdPeriod createIdPeriod(
+    IdPeriod CreateIdPeriod(
       PTime beginTimestamp,   ///< Beginning of period timestamp.
       PTime endTimestamp      ///< End of period timestamp.
     );
 
     /**Create a period of time with an Ie value associated.
       */
-    IePeriod createIePeriod(
+    IePeriod CreateIePeriod(
       TimePeriod timePeriod   ///< Period of time to calculate the Ie.
     );
 
@@ -318,19 +318,19 @@ class RTCP_XR_Metrics : public PObject
     PINDEX   m_payloadSize;
     unsigned m_payloadBitrate;
 
-    DWORD m_gmin;                    /* gap threshold */
-    DWORD m_lostInBurst;             /* number of lost packets within the current burst */
-    DWORD m_packetsReceived;         /* packets received since the beggining of the reception */
-    DWORD m_packetsSinceLastLoss;    /* packets received since the last loss or discard event */
-    DWORD m_packetsLost;             /* packets lost since the beggining of the reception */
-    DWORD m_packetsDiscarded;        /* packets discarded since the beggining of the receptions */
-    DWORD m_srPacketsReceived;       /* count of SR packets received */
+    unsigned m_gmin;                    /* gap threshold */
+    unsigned m_lostInBurst;             /* number of lost packets within the current burst */
+    unsigned m_packetsReceived;         /* packets received since the beggining of the reception */
+    unsigned m_packetsSinceLastLoss;    /* packets received since the last loss or discard event */
+    unsigned m_packetsLost;             /* packets lost since the beggining of the reception */
+    unsigned m_packetsDiscarded;        /* packets discarded since the beggining of the receptions */
+    unsigned m_srPacketsReceived;       /* count of SR packets received */
 
-    DWORD m_packetsReceivedInGap;    /* packets received within gap periods */
-    DWORD m_packetsLostInGap;        /* packets lost within gap periods */
+    unsigned m_packetsReceivedInGap;    /* packets received within gap periods */
+    unsigned m_packetsLostInGap;        /* packets lost within gap periods */
 
-    DWORD m_packetsReceivedInBurst;  /* packets received within burst periods */
-    DWORD m_packetsLostInBurst;      /* packets lost within burst periods */
+    unsigned m_packetsReceivedInBurst;  /* packets received within burst periods */
+    unsigned m_packetsLostInBurst;      /* packets lost within burst periods */
 
     /**Given the following definition of states:
        state 1 = received a packet during a gap;
@@ -341,24 +341,24 @@ class RTCP_XR_Metrics : public PObject
        Variables below correspond to state transition counts.
        To reset these counters, call the ResetCounters() function.
       */
-    DWORD c5;
-    DWORD c11;
-    DWORD c13;
-    DWORD c14;
-    DWORD c22;
-    DWORD c23;
-    DWORD c31;
-    DWORD c32;
-    DWORD c33;
+    unsigned c5;
+    unsigned c11;
+    unsigned c13;
+    unsigned c14;
+    unsigned c22;
+    unsigned c23;
+    unsigned c31;
+    unsigned c32;
+    unsigned c33;
 
     /* variables to calculate round trip delay */
     PTime         m_lsrTime;
     PTimeInterval m_dlsrTime;
     PTime         m_arrivalTime;
 
-    DWORD m_jitterDelay;  /* jitter buffer delay, in milliseconds */
-    float m_lastId;       /* last Id calculated */
-    float m_lastIe;       /* last Ie calculated */
+    unsigned m_jitterDelay;  /* jitter buffer delay, in milliseconds */
+    float    m_lastId;       /* last Id calculated */
+    float    m_lastIe;       /* last Ie calculated */
 
     std::list<TimePeriod> m_timePeriods;
     std::list<IePeriod>   m_iePeriods;

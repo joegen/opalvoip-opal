@@ -3023,7 +3023,7 @@ H323Capabilities::H323Capabilities(H323Connection & connection,
 #endif
 
   if (!m_mediaPacketizations.IsEmpty()) { // also update the mediaPacketizations option
-    for (PINDEX i = 0; i < table.GetSize();) {
+    for (PINDEX i = 0; i < table.GetSize(); ++i) {
       OpalMediaFormat & mediaFormat = table[i].GetWritableMediaFormat();
       PStringSet intersection;
       if (PStringSet::Intersection(m_mediaPacketizations, mediaFormat.GetMediaPacketizationSet(), &intersection))

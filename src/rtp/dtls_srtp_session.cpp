@@ -311,14 +311,14 @@ OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::ExecuteHandshake(bool dat
   keyPtr->SetAuthSalt(PBYTEArray(remoteSalt, masterSaltLength));
 
   if (dataChannel) // Data socket context
-    SetCryptoKey(keyPtr.get(), true);
+    SetCryptoKey(keyPtr.get(), e_Receive);
 
   keyPtr.reset(dynamic_cast<OpalSRTPKeyInfo*>(cryptoSuite->CreateKeyInfo()));
   keyPtr->SetCipherKey(PBYTEArray(localKey, masterKeyLength));
   keyPtr->SetAuthSalt(PBYTEArray(localSalt, masterSaltLength));
 
   if (dataChannel) // Data socket context
-    SetCryptoKey(keyPtr.get(), false);
+    SetCryptoKey(keyPtr.get(), e_Transmit);
 
   sslChannel.Detach(PChannel::ShutdownWrite); // Do not close the socket!
   delete m_sslChannel[dataChannel];

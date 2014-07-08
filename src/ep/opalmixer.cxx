@@ -1219,7 +1219,7 @@ PBoolean OpalMixerMediaStream::RequiresPatchThread() const
 }
 
 
-bool OpalMixerMediaStream::InternalSetJitterBuffer(const OpalJitterBuffer::Init & init) const
+bool OpalMixerMediaStream::InternalSetJitterBuffer(const OpalJitterBuffer::Init & init)
 {
   return IsSink() && m_node->SetJitterBufferSize(GetID(), init);
 }

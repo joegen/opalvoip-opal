@@ -344,6 +344,7 @@
     <Lib />
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\rtp\rtp_stream.cxx" />
     <ClCompile Include="..\rtp\rtp_fec.cxx" />
     <ClCompile Include="..\csharp\csharp_msvc_wrapper.cxx">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
@@ -1413,6 +1414,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\rtp\rtp_stream.h" />
     <ClInclude Include="..\..\include\ep\skinnyep.h" />
     <ClInclude Include="..\..\include\h323\h235dh.h" />
     <ClInclude Include="..\..\include\rtp\dtls_srtp_session.h" />

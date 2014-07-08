@@ -118,7 +118,6 @@ class OpalLibSRTP
 
     void Close();
     bool IsSecured(bool rx) const;
-    void Change(DWORD from_ssrc, DWORD to_ssrc);
 
     OpalSRTPKeyInfo* CreateKeyInfo(bool rx);
 
@@ -143,8 +142,10 @@ class OpalSRTPSession : public OpalRTPSession, protected OpalLibSRTP
     virtual const PCaselessString & GetSessionType() const { return RTP_SAVP(); }
     virtual bool Close();
     virtual OpalMediaCryptoKeyList & GetOfferedCryptoKeys();
-    virtual bool ApplyCryptoKey(OpalMediaCryptoKeyList & keys, bool rx);
-    virtual bool IsCryptoSecured(bool rx) const;
+    virtual bool ApplyCryptoKey(OpalMediaCryptoKeyList & keys, Direction dir);
+    virtual bool IsCryptoSecured(Direction dir) const;
+
+    virtual RTP_SyncSourceId AddSyncSource(RTP_SyncSourceId id, Direction dir, const char * cname = NULL);
 
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, bool rewriteHeader);
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
@@ -152,7 +153,7 @@ class OpalSRTPSession : public OpalRTPSession, protected OpalLibSRTP
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
 
   protected:
-    virtual bool SetCryptoKey(OpalMediaCryptoKeyInfo* key, bool rx);
+    virtual bool SetCryptoKey(OpalMediaCryptoKeyInfo* key, Direction dir);
 };
 
 

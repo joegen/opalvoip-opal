@@ -36,6 +36,7 @@
 
 #include <rtp/rtpep.h>
 #include <rtp/rtpconn.h>
+#include <rtp/rtp_stream.h>
 
 
 #if OPAL_RTP_FEC

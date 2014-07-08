@@ -45,6 +45,12 @@
 #include <set>
 
 
+typedef uint32_t RTP_Timestamp;
+typedef uint16_t RTP_SequenceNumber;
+typedef uint32_t RTP_SyncSourceId;
+typedef PScalarArray<RTP_SyncSourceId> RTP_SyncSourceArray;
+
+
 ///////////////////////////////////////////////////////////////////////////////
 // Real Time Protocol - IETF RFC1889 and RFC1890
 
@@ -56,13 +62,13 @@ class RTP_ReceiverReport : public PObject
     void PrintOn(ostream &) const;
 #endif
 
-    DWORD         sourceIdentifier;     /* data source being reported */
-    DWORD         fractionLost;         /* fraction lost since last SR/RR */
-    DWORD         totalLost;	          /* cumulative number of packets lost (signed!) */
-    DWORD         lastSequenceNumber;   /* extended last sequence number received */
-    DWORD         jitter;               /* interarrival jitter */
-    PTime         lastTimestamp;        /* last SR packet from this source */
-    PTimeInterval delay;                /* delay since last SR packet */
+    RTP_SyncSourceId sourceIdentifier;     /* data source being reported */
+    unsigned         fractionLost;         /* fraction lost since last SR/RR */
+    unsigned         totalLost;	          /* cumulative number of packets lost (signed!) */
+    unsigned         lastSequenceNumber;   /* extended last sequence number received */
+    unsigned         jitter;               /* interarrival jitter */
+    PTime            lastTimestamp;        /* last SR packet from this source */
+    PTimeInterval    delay;                /* delay since last SR packet */
 };
 
 typedef PArray<RTP_ReceiverReport> RTP_ReceiverReportArray;
@@ -76,11 +82,11 @@ class RTP_SenderReport : public PObject
     void PrintOn(ostream &) const;
 #endif
 
-    DWORD sourceIdentifier;
-    PTime realTimestamp;
-    DWORD rtpTimestamp;
-    DWORD packetsSent;
-    DWORD octetsSent;
+    RTP_SyncSourceId sourceIdentifier;
+    PTime            realTimestamp;
+    RTP_Timestamp    rtpTimestamp;
+    unsigned         packetsSent;
+    unsigned         octetsSent;
 };
 
 
@@ -88,12 +94,12 @@ class RTP_SourceDescription : public PObject
 {
     PCLASSINFO(RTP_SourceDescription, PObject);
   public:
-    RTP_SourceDescription(DWORD src) { sourceIdentifier = src; }
+    RTP_SourceDescription(RTP_SyncSourceId src) { sourceIdentifier = src; }
 #if PTRACING
     void PrintOn(ostream &) const;
 #endif
 
-    DWORD            sourceIdentifier;
+    RTP_SyncSourceId sourceIdentifier;
     POrdinalToString items;
 };
 
@@ -146,7 +152,7 @@ class RTP_ControlFrame : public PBYTEArray
     PINDEX GetPacketSize() const { return m_packetSize; }
     bool SetPacketSize(PINDEX size);
 
-    bool ParseGoodbye(DWORD & ssrc, PDWORDArray & csrc, PString & msg);
+    bool ParseGoodbye(RTP_SyncSourceId & ssrc, RTP_SyncSourceArray & csrc, PString & msg);
 
 #pragma pack(1)
     struct ReceiverReport {
@@ -162,7 +168,7 @@ class RTP_ControlFrame : public PBYTEArray
       void SetLostPackets(unsigned lost);
     };
 
-    bool ParseReceiverReport(DWORD & ssrc, RTP_ReceiverReportArray & reports);
+    bool ParseReceiverReport(RTP_SyncSourceId & ssrc, RTP_ReceiverReportArray & reports);
 
     struct SenderReport {
       PUInt64b ntp_ts;    /* NTP timestamp */
@@ -233,7 +239,7 @@ class RTP_ControlFrame : public PBYTEArray
     };
 
     void StartSourceDescription(
-      DWORD src   ///<  SSRC/CSRC identifier
+      RTP_SyncSourceId src   ///<  SSRC/CSRC identifier
     );
 
     void AddSourceDescriptionItem(
@@ -247,7 +253,7 @@ class RTP_ControlFrame : public PBYTEArray
 
     // Add RFC2032 Intra Frame Request
     void AddIFR(
-      DWORD syncSourceIn
+      RTP_SyncSourceId syncSourceIn
     );
 
 
@@ -278,13 +284,13 @@ class RTP_ControlFrame : public PBYTEArray
       } fld[1];
     };
     void AddNACK(
-      DWORD syncSourceOut,
-      DWORD syncSourceIn,
+      RTP_SyncSourceId syncSourceOut,
+      RTP_SyncSourceId syncSourceIn,
       const std::set<unsigned> & lostPackets
     );
     bool ParseNACK(
-      DWORD & senderSSRC,
-      DWORD & targetSSRC,
+      RTP_SyncSourceId & senderSSRC,
+      RTP_SyncSourceId & targetSSRC,
       std::set<unsigned> & lostPackets
     );
 
@@ -295,15 +301,15 @@ class RTP_ControlFrame : public PBYTEArray
       PUInt32b bitRateAndOverhead; // Various bit fields
     };
     void AddTMMB(
-      DWORD syncSourceOut,
-      DWORD syncSourceIn,
+      RTP_SyncSourceId syncSourceOut,
+      RTP_SyncSourceId syncSourceIn,
       unsigned maxBitRate,
       unsigned overhead,
       bool notify
     );
     bool ParseTMMB(
-      DWORD & senderSSRC,
-      DWORD & targetSSRC,
+      RTP_SyncSourceId & senderSSRC,
+      RTP_SyncSourceId & targetSSRC,
       unsigned & maxBitRate,
       unsigned & overhead
     );
@@ -320,12 +326,12 @@ class RTP_ControlFrame : public PBYTEArray
     };
 
     void AddPLI(
-      DWORD syncSourceOut,
-      DWORD syncSourceIn
+      RTP_SyncSourceId syncSourceOut,
+      RTP_SyncSourceId syncSourceIn
     );
     bool ParsePLI(
-      DWORD & senderSSRC,
-      DWORD & targetSSRC
+      RTP_SyncSourceId & senderSSRC,
+      RTP_SyncSourceId & targetSSRC
     );
 
     struct FbFIR {
@@ -334,13 +340,13 @@ class RTP_ControlFrame : public PBYTEArray
       BYTE     sequenceNumber;
     };
     void AddFIR(
-      DWORD syncSourceOut,
-      DWORD syncSourceIn,
+      RTP_SyncSourceId syncSourceOut,
+      RTP_SyncSourceId syncSourceIn,
       unsigned sequenceNumber
     );
     bool ParseFIR(
-      DWORD & senderSSRC,
-      DWORD & targetSSRC,
+      RTP_SyncSourceId & senderSSRC,
+      RTP_SyncSourceId & targetSSRC,
       unsigned & sequenceNumber
     );
 
@@ -352,14 +358,14 @@ class RTP_ControlFrame : public PBYTEArray
       BYTE     tradeOff;
     };
     void AddTSTO(
-      DWORD syncSourceOut,
-      DWORD syncSourceIn,
+      RTP_SyncSourceId syncSourceOut,
+      RTP_SyncSourceId syncSourceIn,
       unsigned tradeOff,
       unsigned sequenceNumber
     );
     bool ParseTSTO(
-      DWORD & senderSSRC,
-      DWORD & targetSSRC,
+      RTP_SyncSourceId & senderSSRC,
+      RTP_SyncSourceId & targetSSRC,
       unsigned & tradeOff,
       unsigned & sequenceNumber
     );
@@ -372,25 +378,25 @@ class RTP_ControlFrame : public PBYTEArray
       PUInt32b feedbackSSRC[1];
     };
     void AddREMB(
-      DWORD syncSourceOut,
-      DWORD syncSourceIn,
+      RTP_SyncSourceId syncSourceOut,
+      RTP_SyncSourceId syncSourceIn,
       unsigned maxBitRate
     );
     bool ParseREMB(
-      DWORD & senderSSRC,
-      DWORD & targetSSRC,
+      RTP_SyncSourceId & senderSSRC,
+      RTP_SyncSourceId & targetSSRC,
       unsigned & maxBitRate
     );
 
 #pragma pack()
 
     struct ApplDefinedInfo {
-      char         m_type[5];
-      unsigned     m_subType;
-      DWORD        m_SSRC;
-      PBYTEArray   m_data;
+      char             m_type[5];
+      unsigned         m_subType;
+      RTP_SyncSourceId m_SSRC;
+      PBYTEArray       m_data;
 
-      ApplDefinedInfo(const char * type = NULL, unsigned subType = 0, DWORD ssrc = 0, const BYTE * data = NULL, PINDEX size = 0);
+      ApplDefinedInfo(const char * type = NULL, unsigned subType = 0, RTP_SyncSourceId ssrc = 0, const BYTE * data = NULL, PINDEX size = 0);
     };
     void AddApplDefined(const ApplDefinedInfo & info);
     bool ParseApplDefined(ApplDefinedInfo & info);
@@ -482,18 +488,18 @@ class RTP_DataFrame : public PBYTEArray
     PayloadTypes GetPayloadType() const { return (PayloadTypes)(theArray[1]&0x7f); }
     void         SetPayloadType(PayloadTypes t);
 
-    WORD GetSequenceNumber() const { return *(PUInt16b *)&theArray[2]; }
-    void SetSequenceNumber(WORD n) { *(PUInt16b *)&theArray[2] = n; }
+    RTP_SequenceNumber GetSequenceNumber() const { return *(PUInt16b *)&theArray[2]; }
+    void SetSequenceNumber(RTP_SequenceNumber n) { *(PUInt16b *)&theArray[2] = n; }
 
-    DWORD GetTimestamp() const  { return *(PUInt32b *)&theArray[4]; }
-    void  SetTimestamp(DWORD t) { *(PUInt32b *)&theArray[4] = t; }
+    RTP_Timestamp GetTimestamp() const  { return *(PUInt32b *)&theArray[4]; }
+    void  SetTimestamp(RTP_Timestamp t) { *(PUInt32b *)&theArray[4] = t; }
 
-    DWORD GetSyncSource() const  { return *(PUInt32b *)&theArray[8]; }
-    void  SetSyncSource(DWORD s) { *(PUInt32b *)&theArray[8] = s; }
+    RTP_SyncSourceId GetSyncSource() const  { return *(PUInt32b *)&theArray[8]; }
+    void  SetSyncSource(RTP_SyncSourceId s) { *(PUInt32b *)&theArray[8] = s; }
 
     PINDEX GetContribSrcCount() const { return theArray[0]&0xf; }
-    DWORD  GetContribSource(PINDEX idx) const;
-    void   SetContribSource(PINDEX idx, DWORD src);
+    RTP_SyncSourceId  GetContribSource(PINDEX idx) const;
+    void   SetContribSource(PINDEX idx, RTP_SyncSourceId src);
 
     PINDEX GetHeaderSize() const { return m_headerSize; }
 
@@ -635,7 +641,7 @@ typedef std::set<RTPExtensionHeaderInfo> RTPExtensionHeaders;
 class RTP_TRACE_SRC
 {
   public:
-    RTP_TRACE_SRC(DWORD src)
+    RTP_TRACE_SRC(RTP_SyncSourceId src)
       : m_src(src)
     {
     }
@@ -646,7 +652,7 @@ class RTP_TRACE_SRC
     }
 
   protected:
-    DWORD m_src;
+    RTP_SyncSourceId m_src;
 };
 #endif // PTRACING
 
