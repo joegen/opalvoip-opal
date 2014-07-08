@@ -121,6 +121,11 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
 OpalRTPMediaStream::~OpalRTPMediaStream()
 {
   Close();
+
+  // Fail safe
+  m_rtpSession.SetJitterBuffer(NULL, m_syncSource);
+  delete m_jitterBuffer;
+
   m_rtpSession.SafeDereference();
 }
 
