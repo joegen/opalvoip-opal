@@ -419,8 +419,21 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
 OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_DataFrame & frame, bool rewriteHeader)
 {
   if (rewriteHeader) {
-    if (m_lastSequenceNumber == 0)
+    if (m_lastSequenceNumber == 0) {
       m_lastSequenceNumber = (uint16_t)PRandom::Number(1, 65535);
+      PTRACE(3, &m_session, "RTP\tSession " << m_session.GetSessionID() << ", first sent data:"
+                " ver=" << frame.GetVersion()
+             << " pt=" << frame.GetPayloadType()
+             << " psz=" << frame.GetPayloadSize()
+             << " m=" << frame.GetMarker()
+             << " x=" << frame.GetExtension()
+             << " seq=" << m_lastSequenceNumber
+             << " ts=" << frame.GetTimestamp()
+             << " src=" << RTP_TRACE_SRC(m_sourceIdentifier)
+             << " ccnt=" << frame.GetContribSrcCount()
+             << " rem=" << m_session.GetRemoteAddress()
+             << " local=" << m_session.GetLocalAddress());
+    }
     else {
       m_lastSequenceNumber += (RTP_SequenceNumber)(frame.GetDiscontinuity() + 1);
       PTRACE_IF(6, frame.GetDiscontinuity() > 0, &m_session,
