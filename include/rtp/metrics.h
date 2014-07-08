@@ -218,7 +218,7 @@ class RTCP_XR_Metrics : public PObject
     void InsertExtendedReportPacket(
       unsigned sessionID,
       RTP_SyncSourceId syncSourceOut,
-      OpalJitterBufferPtr jitter, // Note do not make JitterBufferPtr a reference, needs to be a copy
+      OpalJitterBuffer * jitter, // Note do not make JitterBufferPtr a reference, needs to be a copy
       RTP_ControlFrame & report
     );
 

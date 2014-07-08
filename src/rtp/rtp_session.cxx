@@ -287,6 +287,7 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
 #if OPAL_RTCP_XR
   , m_metrics(NULL)
 #endif
+  , m_jitterBuffer(NULL)
 {
   if (m_canonicalName.IsEmpty()) {
     /* CNAME is no longer just a username@host string, for security!
@@ -1630,7 +1631,7 @@ void OpalRTPSession::AddFilter(const FilterNotifier & filter)
 }
 
 
-void OpalRTPSession::SetJitterBuffer(OpalJitterBufferPtr jitterBuffer, RTP_SyncSourceId ssrc)
+void OpalRTPSession::SetJitterBuffer(OpalJitterBuffer * jitterBuffer, RTP_SyncSourceId ssrc)
 {
   SyncSource * receiver;
   if (GetSyncSource(ssrc, e_Receive, receiver)) {

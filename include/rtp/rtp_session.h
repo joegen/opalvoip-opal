@@ -585,7 +585,7 @@ class OpalRTPSession : public OpalMediaSession
     #define PCREATE_RTPFilterNotifier(fn) PCREATE_NOTIFIER2(fn, OpalRTPSession::SendReceiveStatus &)
 
     void AddFilter(const FilterNotifier & filter);
-    void SetJitterBuffer(OpalJitterBufferPtr jitterBuffer, RTP_SyncSourceId ssrc = 0);
+    void SetJitterBuffer(OpalJitterBuffer * jitterBuffer, RTP_SyncSourceId ssrc = 0);
 
     virtual bool WriteRawPDU(
       const BYTE * framePtr,
@@ -702,10 +702,10 @@ class OpalRTPSession : public OpalMediaSession
       unsigned           m_statisticsCount;
 
 #if OPAL_RTCP_XR
-      RTCP_XR_Metrics * m_metrics; // Calculate the VoIP Metrics for RTCP-XR
+      RTCP_XR_Metrics  * m_metrics; // Calculate the VoIP Metrics for RTCP-XR
 #endif
 
-      OpalJitterBufferPtr m_jitterBuffer;
+      OpalJitterBuffer * m_jitterBuffer;
     };
     typedef std::map<RTP_SyncSourceId, SyncSource *> SyncSourceMap;
     SyncSourceMap m_SSRC;
