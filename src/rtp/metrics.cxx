@@ -668,7 +668,7 @@ void RTCP_XR_Metrics::Markov(RTCP_XR_Metrics::PacketEvent event)
 
 void RTCP_XR_Metrics::InsertExtendedReportPacket(unsigned PTRACE_PARAM(sessionID),
                                                  RTP_SyncSourceId syncSourceOut,
-                                                 OpalJitterBufferPtr jitter,
+                                                 OpalJitterBuffer * jitter,
                                                  RTP_ControlFrame & report)
 {
   report.StartNewPacket(RTP_ControlFrame::e_ExtendedReport);
