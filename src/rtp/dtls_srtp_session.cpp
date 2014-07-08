@@ -320,6 +320,7 @@ OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::ExecuteHandshake(bool dat
   if (dataChannel) // Data socket context
     SetCryptoKey(keyPtr.get(), e_Transmit);
 
+  m_queueChannel[dataChannel].Close();
   sslChannel.Detach(PChannel::ShutdownWrite); // Do not close the socket!
   delete m_sslChannel[dataChannel];
   m_sslChannel[dataChannel] = NULL;
