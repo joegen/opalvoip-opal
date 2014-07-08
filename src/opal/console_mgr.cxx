@@ -2353,8 +2353,12 @@ void OpalConsoleManager::OnStartMediaPatch(OpalConnection & connection, OpalMedi
 {
   OpalManager::OnStartMediaPatch(connection, patch);
 
-  if (m_verbose && connection.IsNetworkConnection())
-    patch.GetSource().PrintDetail(LockedOutput(), "Started");
+  if (m_verbose && connection.IsNetworkConnection()) {
+    OpalMediaStreamPtr stream(patch.GetSink());
+    if (stream == NULL || &stream->GetConnection() != &connection)
+      stream = &patch.GetSource();
+    stream->PrintDetail(LockedOutput(), "Started");
+  }
 }
 
 
