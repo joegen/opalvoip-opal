@@ -377,6 +377,7 @@ class H323Capability : public PObject
 
     /// Do some post processing after decoding TCS
     virtual bool PostTCS(
+      const H323Connection & connection,
       const H323Capabilities & capabilities
     );
 #endif
@@ -1717,6 +1718,7 @@ class H235SecurityCapability : public H323Capability
 
     /// Do some post processing after decoding TCS
     virtual bool PostTCS(
+      const H323Connection & connection,
       const H323Capabilities & capabilities
     );
   //@}
