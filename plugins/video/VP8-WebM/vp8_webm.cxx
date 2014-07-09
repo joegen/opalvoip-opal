@@ -927,7 +927,7 @@ class VP8DecoderRFC : public VP8Decoder
       if (rtp.GetPayloadSize() == 0)
         return true;
 
-      if (rtp.GetPayloadSize() < 3) {
+      if (rtp.GetPayloadSize() < 2) {
         PTRACE(3, MY_CODEC_LOG, "RTP packet far too small.");
         return false;
       }
