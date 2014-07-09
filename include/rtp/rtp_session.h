@@ -154,7 +154,7 @@ class OpalRTPSession : public OpalMediaSession
 
     /**Send a report to remote.
       */
-    void SendReport(bool force);
+    bool SendReport(bool force);
 
     /**Write a control frame from the RTP channel.
       */

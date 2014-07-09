@@ -1121,7 +1121,7 @@ void OpalRTPSession::TimedSendReport(PTimer&, P_INT_PTR)
 }
 
 
-void OpalRTPSession::SendReport(bool force)
+bool OpalRTPSession::SendReport(bool force)
 {
   PWaitAndSignal mutex(m_reportMutex);
 
@@ -1137,9 +1137,12 @@ void OpalRTPSession::SendReport(bool force)
         it->second->m_metrics->InsertExtendedReportPacket(m_sessionId, it->second->m_sourceIdentifier, it->second->m_jitterBuffer, report);
 #endif
 
-      WriteControl(report);
+      if (!WriteControl(report))
+        return false;
     }
   }
+
+  return true;
 }
 
 
@@ -1183,7 +1186,7 @@ void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics)
 
 bool OpalRTPSession::CheckControlSSRC(RTP_SyncSourceId senderSSRC, RTP_SyncSourceId targetSSRC, SyncSource * & info PTRACE_PARAM(, const char * pduName)) const
 {
-  PTRACE_IF(4, m_SSRC.find(senderSSRC) != m_SSRC.end(),
+  PTRACE_IF(4, m_SSRC.find(senderSSRC) == m_SSRC.end(),
             "Session " << m_sessionId << ", " << pduName << " from incorrect SSRC " << RTP_TRACE_SRC(senderSSRC));
 
   if (GetSyncSource(targetSSRC, e_Receive, info))
@@ -2424,6 +2427,7 @@ bool OpalRTPSession::WriteData(RTP_DataFrame & frame,
         return WriteRawPDU(frame, frame.GetPacketSize(), true, remote);
 
       case e_AbortTransport :
+        Close();
         return false;
 
       case e_IgnorePacket :
@@ -2449,6 +2453,7 @@ bool OpalRTPSession::WriteControl(RTP_ControlFrame & frame, const PIPSocketAddre
         return WriteRawPDU(frame.GetPointer(), frame.GetPacketSize(), m_socket[e_Control] == NULL, remote);
 
       case e_AbortTransport :
+        Close();
         return false;
 
       case e_IgnorePacket :
