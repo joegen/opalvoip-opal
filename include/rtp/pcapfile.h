@@ -50,10 +50,12 @@ class OpalPCAPFile : public PFile
   public:
     OpalPCAPFile();
 
-    bool Open(const PFilePath & filename);
+    bool Open(const PFilePath & filename, OpenMode mode = ReadOnly);
     bool Restart();
 
     void PrintOn(ostream & strm) const;
+
+    bool WriteFrame(const PEthSocket::Frame & frame);
 
     int GetDataLink(PBYTEArray & payload);
     int GetIP(PBYTEArray & payload);
@@ -170,6 +172,7 @@ class OpalPCAPFile : public PFile
         bool m_otherEndian;
     };
     Frame m_rawPacket;
+    PCriticalSection m_writeMutex;
 
     PIPSocketAddressAndPort m_filterSrc;
     PIPSocketAddressAndPort m_filterDst;
