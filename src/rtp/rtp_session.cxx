@@ -241,7 +241,7 @@ bool OpalRTPSession::GetSyncSource(RTP_SyncSourceId ssrc, Direction dir, SyncSou
   }
 
   if (it == m_SSRC.end()) {
-    PTRACE(3, "Cannot find " << (dir == e_Receive ? "receive" : "transmit")
+    PTRACE(3, "Cannot find " << (dir == e_Receive ? "receiver" : "sender")
            << " SyncSource for SSRC=" << RTP_TRACE_SRC(ssrc));
     return false;
   }
@@ -255,6 +255,7 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
   : m_session(session)
   , m_direction(dir)
   , m_sourceIdentifier(id)
+  , m_loopbackIdentifier(0)
   , m_canonicalName(cname)
   , m_lastSequenceNumber(0)
   , m_lastFIRSequenceNumber(0)
@@ -310,7 +311,7 @@ OpalRTPSession::SyncSource::~SyncSource()
       duration = 1;
     ostream & trace = PTRACE_BEGIN(Level, &m_session, PTraceModule());
     trace << "Session " << m_session.GetSessionID() << ", "
-          << (m_direction == e_Receive ? "receive" : "transmit") << " statistics:\n"
+          << (m_direction == e_Receive ? "receiver" : "sender") << " statistics:\n"
                "    Sync Source ID       = " << RTP_TRACE_SRC(m_sourceIdentifier) << "\n"
                "    first packet         = " << m_firstPacketTime << "\n"
                "    total packets        = " << m_packets << "\n"
@@ -397,7 +398,7 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
   if (PTrace::CanTrace(Level)) {
     ostream & trace = PTRACE_BEGIN(Level, &m_session, PTraceModule());
     trace << "Session " << m_session.GetSessionID() << ", "
-          << (m_direction == e_Receive ? "receive" : "transmit") << " statistics:"
+          << (m_direction == e_Receive ? "receiver" : "sender") << " statistics:"
                  " packets=" << m_packets <<
                  " octets=" << m_octets;
     if (m_direction == e_Receive) {
@@ -923,10 +924,26 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
 
   RTP_SyncSourceId ssrc = frame.GetSyncSource();
   SyncSource * syncSource;
-  if (!GetSyncSource(ssrc, e_Transmit, syncSource)) {
-    if ((ssrc = AddSyncSource(ssrc, e_Transmit)) == 0)
+  if (GetSyncSource(ssrc, e_Sender, syncSource)) {
+    if (syncSource->m_direction == e_Receive) {
+      // Got a loopback
+      ssrc = syncSource->m_loopbackIdentifier;
+      if (ssrc == 0) {
+        if ((ssrc = AddSyncSource(ssrc, e_Sender)) == 0)
+          return e_AbortTransport;
+        PTRACE(4, "Session " << GetSessionID() << ", added loopback SSRC " << RTP_TRACE_SRC(ssrc)
+               << " for receiver SSRC " << RTP_TRACE_SRC(syncSource->m_sourceIdentifier));
+        syncSource->m_loopbackIdentifier = ssrc;
+      }
+      if (!GetSyncSource(ssrc, e_Sender, syncSource))
+        return e_AbortTransport;
+    }
+  }
+  else {
+    if ((ssrc = AddSyncSource(ssrc, e_Sender)) == 0)
       return e_AbortTransport;
-    GetSyncSource(ssrc, e_Transmit, syncSource);
+    PTRACE(4, "Session " << GetSessionID() << ", added sender SSRC " << RTP_TRACE_SRC(ssrc));
+    GetSyncSource(ssrc, e_Sender, syncSource);
   }
 
   status = syncSource->OnSendData(frame, rewriteHeader);
@@ -984,6 +1001,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
     }
     if (AddSyncSource(ssrc, e_Receive) != ssrc)
       return e_AbortTransport;
+    PTRACE(4, "Session " << GetSessionID() << ", added receiver SSRC " << RTP_TRACE_SRC(ssrc));
     it = m_SSRC.find(ssrc);
   }
 
@@ -1020,7 +1038,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
   // No packets sent yet, so only set RR
   if (sender.m_packets == 0) {
 
-    // Send RR as we are not transmitting
+    // Send RR as we are not sending data yet
     report.StartNewPacket(RTP_ControlFrame::e_ReceiverReport);
 
     // if no packets received, put in an empty report
@@ -1129,7 +1147,7 @@ void OpalRTPSession::SendReport(bool force)
 void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, bool receiver, RTP_SyncSourceId ssrc) const
 {
   SyncSource * info;
-  if (GetSyncSource(ssrc, receiver ? e_Receive : e_Transmit, info))
+  if (GetSyncSource(ssrc, receiver ? e_Receive : e_Sender, info))
     info->GetStatistics(statistics);
   else {
     statistics.m_totalBytes        = 0;
@@ -1440,9 +1458,9 @@ void OpalRTPSession::OnRxReceiverReport(RTP_SyncSourceId PTRACE_PARAM(src), cons
 void OpalRTPSession::OnRxReceiverReports(const ReceiverReportArray & reports)
 {
   for (PINDEX i = 0; i < reports.GetSize(); i++) {
-    // This is report for their receiver, our transmitter
+    // This is report for their receiver, our sender
     SyncSource * sender;
-    if (GetSyncSource(reports[i].sourceIdentifier, e_Transmit, sender))
+    if (GetSyncSource(reports[i].sourceIdentifier, e_Sender, sender))
       sender->OnRxReceiverReport(reports[i]);
   }
 }
@@ -1499,7 +1517,7 @@ bool OpalRTPSession::SendNACK(const std::set<unsigned> & lostPackets, RTP_SyncSo
   }
 
   SyncSource * sender;
-  if (!GetSyncSource(0, e_Transmit, sender))
+  if (!GetSyncSource(0, e_Sender, sender))
     return false;
 
   SyncSource * receiver;
@@ -1529,7 +1547,7 @@ bool OpalRTPSession::SendFlowControl(unsigned maxBitRate, unsigned overhead, boo
   }
 
   SyncSource * sender;
-  if (!GetSyncSource(0, e_Transmit, sender))
+  if (!GetSyncSource(0, e_Sender, sender))
     return false;
 
   SyncSource * receiver;
@@ -1568,7 +1586,7 @@ bool OpalRTPSession::SendFlowControl(unsigned maxBitRate, unsigned overhead, boo
 bool OpalRTPSession::SendIntraFrameRequest(unsigned options, RTP_SyncSourceId syncSourceIn)
 {
   SyncSource * sender;
-  if (!GetSyncSource(0, e_Transmit, sender))
+  if (!GetSyncSource(0, e_Sender, sender))
     return false;
 
   SyncSource * receiver;
@@ -1613,7 +1631,7 @@ bool OpalRTPSession::SendTemporalSpatialTradeOff(unsigned tradeOff, RTP_SyncSour
   }
 
   SyncSource * sender;
-  if (!GetSyncSource(0, e_Transmit, sender))
+  if (!GetSyncSource(0, e_Sender, sender))
     return false;
 
   SyncSource * receiver;
@@ -1925,7 +1943,7 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
 
   m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
 
-  AddSyncSource(0, e_Transmit); // Add default transmit SSRC
+  AddSyncSource(0, e_Sender); // Add default sender SSRC
 
   PTRACE(3, "Session " << m_sessionId << " opened: "
             " local=" << m_localAddress << ':' << m_localPort[e_Data] << '-' << m_localPort[e_Control]

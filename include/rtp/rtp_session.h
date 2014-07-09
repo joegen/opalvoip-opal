@@ -115,7 +115,7 @@ class OpalRTPSession : public OpalMediaSession
     enum Direction
     {
       e_Receive,
-      e_Transmit
+      e_Sender
     };
 
     /** Add a syncronisation source.
@@ -258,8 +258,6 @@ class OpalRTPSession : public OpalMediaSession
   //@{
     /**Set flag for single port receive.
        This must be done before Open() is called to take effect.
-       This is only for incoming RTP/RTCP, for transmit, simple make the the
-       remote data port and remote control port the same.
       */
     void SetSinglePortRx(bool v = true) { m_singlePortRx = v; }
 
@@ -307,11 +305,11 @@ class OpalRTPSession : public OpalMediaSession
 
     /**Get the canonical name for the RTP session.
       */
-    PString GetCanonicalName(RTP_SyncSourceId ssrc = 0, Direction dir = e_Transmit) const;
+    PString GetCanonicalName(RTP_SyncSourceId ssrc = 0, Direction dir = e_Sender) const;
 
     /**Set the canonical name for the RTP session.
       */
-    void SetCanonicalName(const PString & name, RTP_SyncSourceId ssrc = 0, Direction dir = e_Transmit);
+    void SetCanonicalName(const PString & name, RTP_SyncSourceId ssrc = 0, Direction dir = e_Sender);
 
     /**Get the group id for the RTP session.
     */
@@ -343,7 +341,7 @@ class OpalRTPSession : public OpalMediaSession
 
     /**Get the source output identifier.
       */
-    RTP_SyncSourceId GetSyncSourceOut() const { return GetSyncSource(0, e_Transmit).m_sourceIdentifier; }
+    RTP_SyncSourceId GetSyncSourceOut() const { return GetSyncSource(0, e_Sender).m_sourceIdentifier; }
 
     /**Indicate if will ignore all but first received SSRC value.
       */
@@ -448,11 +446,11 @@ class OpalRTPSession : public OpalMediaSession
 
     /**Get total number of packets sent in session.
       */
-    unsigned GetPacketsSent(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Transmit).m_packets; }
+    unsigned GetPacketsSent(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_packets; }
 
     /**Get total number of octets sent in session.
       */
-    uint64_t GetOctetsSent(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Transmit).m_octets; }
+    uint64_t GetOctetsSent(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_octets; }
 
     /**Get total number of packets received in session.
       */
@@ -469,7 +467,7 @@ class OpalRTPSession : public OpalMediaSession
     /**Get total number transmitted packets lost by remote in session.
        Determined via RTCP.
       */
-    unsigned GetPacketsLostByRemote(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Transmit).m_packetsLost; }
+    unsigned GetPacketsLostByRemote(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_packetsLost; }
 
     /**Get total number of packets received out of order in session.
       */
@@ -479,7 +477,7 @@ class OpalRTPSession : public OpalMediaSession
        This is averaged over the last txStatisticsInterval packets and is in
        milliseconds.
       */
-    unsigned GetAverageSendTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Transmit).m_averagePacketTime; }
+    unsigned GetAverageSendTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_averagePacketTime; }
 
     /**Get the number of marker packets received this session.
        This can be used to find out the number of frames received in a video
@@ -491,19 +489,19 @@ class OpalRTPSession : public OpalMediaSession
        This can be used to find out the number of frames sent in a video
        RTP stream.
       */
-    unsigned GetMarkerSendCount(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Transmit).m_markerCount; }
+    unsigned GetMarkerSendCount(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_markerCount; }
 
     /**Get maximum time between sent packets.
        This is over the last txStatisticsInterval packets and is in
        milliseconds.
       */
-    unsigned GetMaximumSendTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Transmit).m_maximumPacketTime; }
+    unsigned GetMaximumSendTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_maximumPacketTime; }
 
     /**Get minimum time between sent packets.
        This is over the last txStatisticsInterval packets and is in
        milliseconds.
       */
-    unsigned GetMinimumSendTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Transmit).m_minimumPacketTime; }
+    unsigned GetMinimumSendTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_minimumPacketTime; }
 
     /**Get average time between received packets.
        This is averaged over the last rxStatisticsInterval packets and is in
@@ -538,7 +536,7 @@ class OpalRTPSession : public OpalMediaSession
        This is the calculated statistical variance of the interarrival
        time of received packets in milliseconds.
       */
-    unsigned GetJitterTimeOnRemote(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Transmit).m_jitter; }
+    unsigned GetJitterTimeOnRemote(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_jitter; }
 
     /**Get round trip time to remote.
        This is calculated according to the RFC 3550 algorithm.
@@ -577,8 +575,8 @@ class OpalRTPSession : public OpalMediaSession
     virtual bool SendTemporalSpatialTradeOff(unsigned tradeOff, RTP_SyncSourceId ssrc = 0);
 #endif
 
-    RTP_Timestamp GetLastSentTimestamp(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Transmit).m_lastTimestamp; }
-    const PTimeInterval & GetLastSentPacketTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Transmit).m_lastPacketTick; }
+    RTP_Timestamp GetLastSentTimestamp(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_lastTimestamp; }
+    const PTimeInterval & GetLastSentPacketTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_lastPacketTick; }
 
     typedef PNotifierTemplate<SendReceiveStatus &> FilterNotifier;
     #define PDECLARE_RTPFilterNotifier(cls, fn) PDECLARE_NOTIFIER2(RTP_DataFrame, cls, fn, OpalRTPSession::SendReceiveStatus &)
@@ -651,6 +649,7 @@ class OpalRTPSession : public OpalMediaSession
       OpalRTPSession  & m_session;
       Direction         m_direction;
       RTP_SyncSourceId  m_sourceIdentifier;
+      RTP_SyncSourceId  m_loopbackIdentifier;
       PString           m_canonicalName;
 
       // Sequence handling
@@ -696,7 +695,7 @@ class OpalRTPSession : public OpalMediaSession
       RTP_SequenceNumber m_lastRRSequenceNumber;
 
       // For e_Receive, arrival time of last SR from remote
-      // For e_Transmit, time we sent last RR to remote
+      // For e_Sender, time we sent last RR to remote
       PTime              m_lastReportTime;
 
       unsigned           m_statisticsCount;
