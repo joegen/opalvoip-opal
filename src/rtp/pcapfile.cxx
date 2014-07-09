@@ -67,10 +67,26 @@ OpalPCAPFile::OpalPCAPFile()
 }
 
 
-bool OpalPCAPFile::Open(const PFilePath & filename)
+bool OpalPCAPFile::Open(const PFilePath & filename, OpenMode mode)
 {
-  if (!PFile::Open(filename, PFile::ReadOnly))
+  PAssert(mode != PFile::ReadWrite, PInvalidParameter);
+
+  if (!PFile::Open(filename, mode))
     return false;
+
+  if (mode == PFile::WriteOnly) {
+    m_fileHeader.magic_number = 0xa1b2c3d4;
+    m_fileHeader.version_major = 2;
+    m_fileHeader.version_minor = 4;
+    m_fileHeader.thiszone = PTime().GetTimeZone();
+    m_fileHeader.sigfigs = 0;
+    m_fileHeader.snaplen = 65535;
+    m_fileHeader.network = 1;
+    if (Write(&m_fileHeader, sizeof(m_fileHeader)))
+      return true;
+    PTRACE(1, "PCAPFile\tCould not write header to \"" << filename << '"');
+    return false;
+  }
 
   if (!Read(&m_fileHeader, sizeof(m_fileHeader))) {
     PTRACE(1, "PCAPFile\tCould not read header from \"" << filename << '"');
@@ -113,6 +129,17 @@ void OpalPCAPFile::PrintOn(ostream & strm) const
 {
   strm << "PCAP v" << m_fileHeader.version_major << '.' << m_fileHeader.version_minor
                    << " file \"" << GetFilePath() << '"';
+}
+
+
+bool OpalPCAPFile::WriteFrame(const PEthSocket::Frame & frame)
+{
+  RecordHeader header;
+  header.ts_sec  = (uint32_t)frame.GetTimestamp().GetTimeInSeconds();
+  header.ts_usec = frame.GetTimestamp().GetMicrosecond();
+  header.incl_len = header.orig_len = frame.GetSize();
+  PWaitAndSignal mutex(m_writeMutex);
+  return Write(&header, sizeof(header)) && frame.Write(*this);
 }
 
 
