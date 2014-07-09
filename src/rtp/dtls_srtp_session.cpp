@@ -318,7 +318,7 @@ OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::ExecuteHandshake(bool dat
   keyPtr->SetAuthSalt(PBYTEArray(localSalt, masterSaltLength));
 
   if (dataChannel) // Data socket context
-    SetCryptoKey(keyPtr.get(), e_Transmit);
+    SetCryptoKey(keyPtr.get(), e_Sender);
 
   m_queueChannel[dataChannel].Close();
   sslChannel.Detach(PChannel::ShutdownWrite); // Do not close the socket!
