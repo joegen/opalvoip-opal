@@ -43,6 +43,9 @@
 #include <ptclib/cypher.h>
 
 
+#define PTraceModule() "SRTP"
+
+
 /////////////////////////////////////////////////////////////////////////////////////
 //
 //  SRTP implementation using Cisco libSRTP
@@ -94,8 +97,8 @@ static bool CheckError(err_status_t err, const char * fn, const char * file, int
   if (err == err_status_ok)
     return true;
 
-  ostream & trace = PTrace::Begin(2, file, line);
-  trace << "SRTP\tLibrary error " << err << " from " << fn << "() - ";
+  ostream & trace = PTrace::Begin(2, file, line, NULL, PTraceModule());
+  trace << "Library error " << err << " from " << fn << "() - ";
   switch (err) {
     case err_status_fail :
       trace << "unspecified failure";
@@ -221,7 +224,7 @@ extern "C" {
 	break;
     }
 
-    PTRACE(level, "SRTP\t" << pvsprintf(format, args));
+    PTRACE(level, "libsrtp: " << pvsprintf(format, args));
 #endif //PTRACING
   }
 };
@@ -356,7 +359,7 @@ bool OpalSRTPKeyInfo::FromString(const PString & str)
 {
   PBYTEArray key_salt;
   if (!PBase64::Decode(str, key_salt)) {
-    PTRACE2(2, &m_cryptoSuite, "SDP\tIllegal key/salt \"" << str << '"');
+    PTRACE2(2, &m_cryptoSuite, "Illegal key/salt \"" << str << '"');
     return false;
   }
 
@@ -364,7 +367,7 @@ bool OpalSRTPKeyInfo::FromString(const PString & str)
   PINDEX saltBytes = (m_cryptoSuite.GetAuthSaltBits()+7)/8;
 
   if (key_salt.GetSize() < keyBytes+saltBytes) {
-    PTRACE2(2, &m_cryptoSuite, "Crypto\tIncorrect combined key/salt size (" << key_salt.GetSize()
+    PTRACE2(2, &m_cryptoSuite, "Incorrect combined key/salt size (" << key_salt.GetSize()
             << " bytes) for " << m_cryptoSuite.GetDescription());
     return false;
   }
@@ -398,7 +401,7 @@ void OpalSRTPKeyInfo::Randomise()
 bool OpalSRTPKeyInfo::SetCipherKey(const PBYTEArray & key)
 {
   if (key.GetSize() < (m_cryptoSuite.GetCipherKeyBits()+7)/8) {
-    PTRACE2(2, &m_cryptoSuite, "Crypto\tIncorrect key size (" << key.GetSize() << " bytes) for " << m_cryptoSuite.GetDescription());
+    PTRACE2(2, &m_cryptoSuite, "Incorrect key size (" << key.GetSize() << " bytes) for " << m_cryptoSuite.GetDescription());
     return false;
   }
 
@@ -410,7 +413,7 @@ bool OpalSRTPKeyInfo::SetCipherKey(const PBYTEArray & key)
 bool OpalSRTPKeyInfo::SetAuthSalt(const PBYTEArray & salt)
 {
   if (salt.GetSize() < (m_cryptoSuite.GetAuthSaltBits()+7)/8) {
-    PTRACE2(2, &m_cryptoSuite, "Crypto\tIncorrect salt size (" << salt.GetSize() << " bytes) for " << m_cryptoSuite.GetDescription());
+    PTRACE2(2, &m_cryptoSuite, "Incorrect salt size (" << salt.GetSize() << " bytes) for " << m_cryptoSuite.GetDescription());
     return false;
   }
 
@@ -454,7 +457,6 @@ OpalLibSRTP::Context::Context()
   , m_firstRTCP(true)
 #endif
 {
-  CHECK_ERROR(srtp_create,(&m_ctx, NULL));
   memset(m_key_salt, 0, sizeof(m_key_salt));
 }
 
@@ -470,7 +472,7 @@ bool OpalLibSRTP::Context::SetKey(DWORD ssrc, OpalMediaCryptoKeyInfo* ki)
 {
   OpalSRTPKeyInfo * keyInfo = dynamic_cast<OpalSRTPKeyInfo*>(ki);
   if (keyInfo == NULL) {
-    PTRACE(2, "SRTP\tUnsuitable crypto suite " << ki->GetCryptoSuite().GetDescription());
+    PTRACE(2, "Unsuitable crypto suite " << ki->GetCryptoSuite().GetDescription());
     return false;
   }
 
@@ -481,13 +483,18 @@ bool OpalLibSRTP::Context::SetKey(DWORD ssrc, OpalMediaCryptoKeyInfo* ki)
 
   if (memcmp(tmp_key_salt, m_key_salt, 32) == 0){
     if (m_policies[ssrc].ssrc.type != ssrc_undefined){
-      PTRACE(2, "SRTP\tPolicy for ssrc " << ssrc << " already in this context");
+      PTRACE(3, "Policy already in this context for SSRC=" << RTP_TRACE_SRC(ssrc) << "");
       return true;
     }
   }
   else {
-    PTRACE(3, "SRTP\tDifferent keys in context " << this << ", now using " << keyInfo->ToString());
-    CHECK_ERROR(srtp_dealloc,(m_ctx));
+    if (m_ctx != NULL) {
+      PTRACE(3, "Different keys in context, now using " << keyInfo->ToString());
+      CHECK_ERROR(srtp_dealloc,(m_ctx));
+    }
+    else {
+      PTRACE(4, "Created context, using key " << keyInfo->ToString());
+    }
     CHECK_ERROR(srtp_create,(&m_ctx, NULL));
   }
 
@@ -505,17 +512,24 @@ bool OpalLibSRTP::Context::SetKey(DWORD ssrc, OpalMediaCryptoKeyInfo* ki)
   policy.key = m_key_salt;
 
   if (CHECK_ERROR(srtp_add_stream,(m_ctx, &policy))) {
+    PTRACE(4, "Added stream for SSRC=" << RTP_TRACE_SRC(ssrc));
     m_policies[ssrc] = policy;
     m_keyInfo = new OpalSRTPKeyInfo(*keyInfo);
     return true;
   }
 
+  PTRACE(2, "Could not add stream (srtp_add_stream failed) for SSRC=" << RTP_TRACE_SRC(ssrc));
   return false;
 }
 
 
 bool OpalLibSRTP::Context::AddStream(DWORD ssrc)
 {
+  if (m_ctx == NULL) {
+    PTRACE(2, "Could not add stream (no context) for SSRC=" << RTP_TRACE_SRC(ssrc));
+    return false;
+  }
+
   srtp_policy_t policy = m_policies[ssrc];
   if (policy.ssrc.type != ssrc_specific)
     return true;
@@ -524,7 +538,7 @@ bool OpalLibSRTP::Context::AddStream(DWORD ssrc)
   if (CHECK_ERROR(srtp_add_stream, (m_ctx, &policy)))
     return true;
 
-  PTRACE(2, "SRTP\tUnable to add stream with SSRC " << ssrc);
+  PTRACE(2, "Unable to add stream with SSRC " << ssrc);
   return false;
 }
 
@@ -560,7 +574,7 @@ OpalRTPSession::SendReceiveStatus OpalLibSRTP::Context::ProtectRTP(RTP_DataFrame
 
 #if PTRACING
   if (m_firstRTP) {
-    PTRACE(3, "SRTP\tProtected first RTP packet: " << frame.GetPacketSize() << "->" << len);
+    PTRACE(3, "Protected first RTP packet: " << frame.GetPacketSize() << "->" << len);
     m_firstRTP = false;
   }
 #endif
@@ -593,7 +607,7 @@ OpalRTPSession::SendReceiveStatus OpalLibSRTP::Context::ProtectRTCP(RTP_ControlF
 
 #if PTRACING
   if (m_firstRTCP) {
-    PTRACE(3, "SRTP\tProtected first RTCP packet: " << frame.GetPacketSize() << "->" << len);
+    PTRACE(3, "Protected first RTCP packet: " << frame.GetPacketSize() << "->" << len);
     m_firstRTCP = false;
   }
 #endif
@@ -624,7 +638,7 @@ OpalRTPSession::SendReceiveStatus OpalLibSRTP::Context::UnprotectRTP(RTP_DataFra
 
 #if PTRACING
   if (m_firstRTP) {
-    PTRACE(3, "SRTP\tUnprotected first RTP packet: " << frame.GetPacketSize() << "->" << len);
+    PTRACE(3, "Unprotected first RTP packet: " << frame.GetPacketSize() << "->" << len);
     m_firstRTP = false;
   }
 #endif
@@ -655,7 +669,7 @@ OpalRTPSession::SendReceiveStatus OpalLibSRTP::Context::UnprotectRTCP(RTP_Contro
 
 #if PTRACING
   if (m_firstRTCP) {
-    PTRACE(3, "SRTP\tUnprotected first RTCP packet: " << frame.GetPacketSize() << "->" << len);
+    PTRACE(3, "Unprotected first RTCP packet: " << frame.GetPacketSize() << "->" << len);
     m_firstRTCP = false;
   }
 #endif

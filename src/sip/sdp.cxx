@@ -49,7 +49,7 @@
 
 static const char SDPBandwidthPrefix[] = "SDP-Bandwidth-";
 
-
+#define PTraceModule() "SDP"
 #define new PNEW
 
 #define SDP_MIN_PTIME 10
@@ -172,29 +172,29 @@ static OpalTransportAddress ParseConnectAddress(const PStringArray & tokens, PIN
 #endif
         ) {
         if (tokens[offset+2] == "255.255.255.255") {
-          PTRACE(2, "SDP\tInvalid connection address 255.255.255.255 used, treating like HOLD request.");
+          PTRACE(2, "Invalid connection address 255.255.255.255 used, treating like HOLD request.");
         }
         else if (tokens[offset+2] == "0.0.0.0") {
-          PTRACE(3, "SDP\tConnection address of 0.0.0.0 specified for HOLD request.");
+          PTRACE(3, "Connection address of 0.0.0.0 specified for HOLD request.");
         }
         else {
           PIPSocket::Address ip(tokens[offset+2]);
           if (ip.IsValid())
             return OpalTransportAddress(ip, port, OpalTransportAddress::UdpPrefix());
-          PTRACE(1, "SDP\tConnect address has invalid IP address \"" << tokens[offset+2] << '"');
+          PTRACE(1, "Connect address has invalid IP address \"" << tokens[offset+2] << '"');
         }
       }
       else
       {
-        PTRACE(1, "SDP\tConnect address has invalid address type \"" << tokens[offset+1] << '"');
+        PTRACE(1, "Connect address has invalid address type \"" << tokens[offset+1] << '"');
       }
     }
     else {
-      PTRACE(1, "SDP\tConnect address has invalid network \"" << tokens[offset] << '"');
+      PTRACE(1, "Connect address has invalid network \"" << tokens[offset] << '"');
     }
   }
   else {
-    PTRACE(1, "SDP\tConnect address has invalid (" << tokens.GetSize() << ") elements");
+    PTRACE(1, "Connect address has invalid (" << tokens.GetSize() << ") elements");
   }
 
   return OpalTransportAddress();
@@ -376,7 +376,7 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
 
     PCaselessString key = m_fmtp(sep1prev, sep2pos-1).Trim();
     if (key.IsEmpty()) {
-      PTRACE(2, "SDP\tBadly formed FMTP parameter \"" << m_fmtp << '"');
+      PTRACE(2, "Badly formed FMTP parameter \"" << m_fmtp << '"');
       continue;
     }
 
@@ -390,7 +390,7 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
       }
     }
     if (option == NULL) {
-      PTRACE(2, "SDP\tUnknown FMTP parameter \"" << key << '"');
+      PTRACE(2, "Unknown FMTP parameter \"" << key << '"');
       continue;
     }
 
@@ -419,7 +419,7 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
     }
 
     if (!option->FromString(value)) {
-      PTRACE(2, "SDP\tCould not set FMTP parameter \"" << key << "\" to value \"" << value << '"');
+      PTRACE(2, "Could not set FMTP parameter \"" << key << "\" to value \"" << value << '"');
     }
   }
 }
@@ -439,7 +439,7 @@ bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsign
     m_encodingName = m_mediaFormat.GetEncodingName();
 
   if (m_mediaFormat.IsEmpty()) {
-    PTRACE(5, "SDP\tMatching \"" << m_encodingName << "\", pt=" << m_payloadType << ", clock=" << m_clockRate);
+    PTRACE(5, "Matching \"" << m_encodingName << "\", pt=" << m_payloadType << ", clock=" << m_clockRate);
     for (OpalMediaFormatList::const_iterator iterFormat = mediaFormats.FindFormat(m_payloadType, m_clockRate, m_encodingName, "sip");
          iterFormat != mediaFormats.end();
          iterFormat = mediaFormats.FindFormat(m_payloadType, m_clockRate, m_encodingName, "sip", iterFormat)) {
@@ -447,17 +447,17 @@ bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsign
       SetMediaFormatOptions(adjustedFormat);
       // skip formats whose fmtp don't match options
       if (iterFormat->ValidateMerge(adjustedFormat)) {
-        PTRACE(3, "SDP\tMatched payload type " << m_payloadType << " to " << *iterFormat);
+        PTRACE(3, "Matched payload type " << m_payloadType << " to " << *iterFormat);
         m_mediaFormat = adjustedFormat;
         break;
       }
 
-      PTRACE(4, "SDP\tDid not match \"" << m_encodingName << "\", pt=" << m_payloadType
+      PTRACE(4, "Did not match \"" << m_encodingName << "\", pt=" << m_payloadType
              << ", clock=" << m_clockRate << " fmtp=\"" << m_fmtp << "\" to " << *iterFormat);
     }
 
     if (m_mediaFormat.IsEmpty()) {
-      PTRACE(2, "SDP\tCould not find media format for \"" << m_encodingName << "\", "
+      PTRACE(2, "Could not find media format for \"" << m_encodingName << "\", "
                 "pt=" << m_payloadType << ", clock=" << m_clockRate << " fmtp=\"" << m_fmtp << '"');
       return false;
     }
@@ -480,7 +480,7 @@ bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsign
   }
 
   if (bandwidth > 1000 && bandwidth < (unsigned)m_mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption())) {
-    PTRACE(4, "SDP\tAdjusting format \"" << m_mediaFormat << "\" bandwidth to " << bandwidth);
+    PTRACE(4, "Adjusting format \"" << m_mediaFormat << "\" bandwidth to " << bandwidth);
     m_mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), bandwidth);
   }
 
@@ -488,7 +488,7 @@ bool SDPMediaFormat::PostDecode(const OpalMediaFormatList & mediaFormats, unsign
   if (m_mediaFormat.ToNormalisedOptions())
     return true;
 
-  PTRACE(2, "SDP\tCould not normalise format \"" << m_encodingName << "\", pt=" << m_payloadType << ", removing.");
+  PTRACE(2, "Could not normalise format \"" << m_encodingName << "\", pt=" << m_payloadType << ", removing.");
   return false;
 }
 
@@ -520,7 +520,7 @@ bool SDPBandwidth::Parse(const PString & param)
 {
   PINDEX pos = param.FindSpan(TokenChars); // Legal chars from RFC
   if (pos == P_MAX_INDEX || param[pos] != ':') {
-    PTRACE(2, "SDP\tMalformed bandwidth attribute " << param);
+    PTRACE(2, "Malformed bandwidth attribute " << param);
     return false;
   }
 
@@ -554,7 +554,7 @@ void SDPCommonAttributes::ParseAttribute(const PString & value)
   else if (value[pos] == ':')
     SetAttribute(attr, value.Mid(pos + 1));
   else {
-    PTRACE(2, "SDP\tMalformed media attribute " << value);
+    PTRACE(2, "Malformed media attribute " << value);
   }
 }
 
@@ -600,7 +600,7 @@ void SDPCommonAttributes::SetAttribute(const PString & attr, const PString & val
     else if (value == "actpass")
       SetSetup(SetupActive | SetupPassive);
     else
-      PTRACE(2, "SDP\tUnknow parameter in setup attribute: \"" << value << '"');
+      PTRACE(2, "Unknown parameter in setup attribute: \"" << value << '"');
     return;
   }
 
@@ -616,12 +616,12 @@ void SDPCommonAttributes::SetAttribute(const PString & attr, const PString & val
     PSSLCertificateFingerprint fp(value);
     if (!fp.IsValid())
     {
-      PTRACE(2, "SDP\tInvalid fingerprint value: \"" << value << '"');
+      PTRACE(2, "Invalid fingerprint value: \"" << value << '"');
       return;
     }
     if (fp.GetHash() != PSSLCertificateFingerprint::HashSha256 && fp.GetHash() != PSSLCertificateFingerprint::HashSha1)
     {
-      PTRACE(2, "SDP\tNot supported fingerprint hash: \"" << value << '"');
+      PTRACE(2, "Not supported fingerprint hash: \"" << value << '"');
       return;
     }
     SetFingerprint(fp);
@@ -649,7 +649,7 @@ void SDPCommonAttributes::SetAttribute(const PString & attr, const PString & val
 #endif //OPAL_ICE
 
   // unknown attributes
-  PTRACE(2, "SDP\tUnknown attribute " << attr);
+  PTRACE(2, "Unknown attribute " << attr);
 }
 
 
@@ -850,7 +850,7 @@ bool SDPMediaDescription::ToSession(OpalMediaSession * session) const
   if (rtpSession != NULL) {
     // Set single port or disjoint RTCP port, must be done before Open()
     if (m_stringOptions.GetBoolean(OPAL_OPT_RTCP_MUX) || m_controlAddress == m_mediaAddress) {
-      PTRACE(3, "SIP\tSetting single port mode for answer RTP session " << session->GetSessionID() << " for media type " << m_mediaType);
+      PTRACE(3, "Setting single port mode for answer RTP session " << session->GetSessionID() << " for media type " << m_mediaType);
       rtpSession->SetSinglePortRx();
       rtpSession->SetSinglePortTx();
     }
@@ -875,7 +875,7 @@ bool SDPMediaDescription::ToSession(OpalMediaSession * session) const
 bool SDPMediaDescription::Decode(const PStringArray & tokens)
 {
   if (tokens.GetSize() < 3) {
-    PTRACE(1, "SDP\tUnknown SDP media type " << tokens[0]);
+    PTRACE(1, "Unknown SDP media type " << tokens[0]);
     return false;
   }
 
@@ -885,7 +885,7 @@ bool SDPMediaDescription::Decode(const PStringArray & tokens)
   if (pos == P_MAX_INDEX)
     m_portCount = 1;
   else {
-    PTRACE(3, "SDP\tMedia header contains port count - " << portStr);
+    PTRACE(3, "Media header contains port count - " << portStr);
     m_portCount = (WORD)portStr.Mid(pos+1).AsUnsigned();
     portStr = portStr.Left(pos);
   }
@@ -894,13 +894,13 @@ bool SDPMediaDescription::Decode(const PStringArray & tokens)
   // check everything
   switch (m_port) {
     case 0 :
-      PTRACE(3, "SDP\tIgnoring media session " << m_mediaType << " with port=0");
+      PTRACE(3, "Ignoring media session " << m_mediaType << " with port=0");
       m_direction = Inactive;
       m_mediaAddress = m_controlAddress = PString::Empty();
       break;
 
     case 65535 :
-      PTRACE(2, "SDP\tIllegal port=65535 in media session " << m_mediaType << ", trying to continue.");
+      PTRACE(2, "Illegal port=65535 in media session " << m_mediaType << ", trying to continue.");
       m_port = 65534;
       // Do next case
 
@@ -908,10 +908,10 @@ bool SDPMediaDescription::Decode(const PStringArray & tokens)
       PIPSocket::Address ip;
       if (m_mediaAddress.GetIpAddress(ip)) {
         m_mediaAddress = OpalTransportAddress(ip, m_port, OpalTransportAddress::UdpPrefix());
-        PTRACE(4, "SDP\tSetting media connection address " << m_mediaAddress);
+        PTRACE(4, "Setting media connection address " << m_mediaAddress);
       }
       else {
-        PTRACE(4, "SDP\tMedia session port=" << m_port);
+        PTRACE(4, "Media session port=" << m_port);
       }
   }
 
@@ -933,7 +933,7 @@ void SDPMediaDescription::CreateSDPMediaFormats(const PStringArray & tokens)
         delete fmt;
     }
     else {
-      PTRACE(2, "SDP\tCannot create SDP media format for port " << tokens[i]);
+      PTRACE(2, "Cannot create SDP media format for port " << tokens[i]);
     }
   }
 }
@@ -956,7 +956,7 @@ bool SDPMediaDescription::Decode(char key, const PString & value)
     case 'c' : // connection information - optional if included at session-level
       if (m_port != 0) {
         m_mediaAddress = ParseConnectAddress(value, m_port);
-        PTRACE_IF(4, !m_mediaAddress.IsEmpty(), "SDP\tParsed media connection address " << m_mediaAddress);
+        PTRACE_IF(4, !m_mediaAddress.IsEmpty(), "Parsed media connection address " << m_mediaAddress);
       }
       break;
 
@@ -965,7 +965,7 @@ bool SDPMediaDescription::Decode(char key, const PString & value)
       break;
 
     default:
-      PTRACE(1, "SDP\tUnknown media information key " << key);
+      PTRACE(1, "Unknown media information key " << key);
   }
 
   return true;
@@ -1039,7 +1039,7 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
   if (attr *= "candidate") {
     PStringArray words = value.Tokenise(WhiteSpace, false); // Spec says space only, but lets be forgiving
     if (words.GetSize() < 8) {
-      PTRACE(2, "SDP\tNot enough parameters in candidate: \"" << value << '"');
+      PTRACE(2, "Not enough parameters in candidate: \"" << value << '"');
       return;
     }
 
@@ -1051,7 +1051,7 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
 
     PIPSocket::Address ip(words[4]);
     if (!ip.IsValid()) {
-      PTRACE(2, "SDP\tIllegal IP address in candidate: \"" << words[4] << '"');
+      PTRACE(2, "Illegal IP address in candidate: \"" << words[4] << '"');
       return;
     }
 
@@ -1061,10 +1061,10 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
         if (words[7] *= CandidateTypeNames[candidate.m_type])
           break;
       }
-      PTRACE_IF(3, candidate.m_type == PNatCandidate::EndTypes, "SDP\tUnknown candidate type: \"" << words[7] << '"');
+      PTRACE_IF(3, candidate.m_type == PNatCandidate::EndTypes, "Unknown candidate type: \"" << words[7] << '"');
     }
     else {
-      PTRACE(2, "SDP\tMissing candidate type: \"" << words[6] << '"');
+      PTRACE(2, "Missing candidate type: \"" << words[6] << '"');
       return;
     }
 
@@ -1103,7 +1103,7 @@ SDPMediaFormat * SDPMediaDescription::FindFormat(PString & params) const
   }
 
   if (format == m_formats.end()) {
-    PTRACE(2, "SDP\tMedia attribute found for unknown RTP type/name " << params.Left(pos));
+    PTRACE(2, "Media attribute found for unknown RTP type/name " << params.Left(pos));
     return NULL;
   }
 
@@ -1258,7 +1258,7 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats() const
       if (mediaFormat.IsValid())
         list += mediaFormat;
       else {
-        PTRACE(2, "SDP\tRTP payload type " << format->GetPayloadType()
+        PTRACE(2, "RTP payload type " << format->GetPayloadType()
                << ", name=" << format->GetEncodingName() << ", not matched to supported codecs");
       }
     }
@@ -1278,7 +1278,7 @@ void SDPMediaDescription::AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat)
 void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
 {
   if (!mediaFormat.IsTransportable() || !mediaFormat.IsValidForProtocol("sip")) {
-    PTRACE(4, "SDP\tSDP not including " << mediaFormat << " as it is not a SIP transportable format");
+    PTRACE(4, "Not including " << mediaFormat << " as it is not a SIP transportable format");
     return;
   }
 
@@ -1289,20 +1289,19 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat)
   for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
     const OpalMediaFormat & sdpMediaFormat = format->GetMediaFormat();
     if (mediaFormat == sdpMediaFormat) {
-      PTRACE(2, "SDP\tSDP not including " << mediaFormat << " as already included");
+      PTRACE(2, "Not including " << mediaFormat << " as already included");
       return;
     }
 
     if (format->GetPayloadType() == payloadType) {
-      PTRACE(2, "SDP\tSDP not including " << mediaFormat << " as it is has duplicate payload type " << payloadType);
+      PTRACE(2, "Not including " << mediaFormat << " as it is has duplicate payload type " << payloadType);
       return;
     }
 
     if (format->GetEncodingName() == encodingName &&
         format->GetClockRate() == clockRate &&
         mediaFormat.ValidateMerge(sdpMediaFormat)) {
-      PTRACE(2, "SDP\tSDP not including " << mediaFormat
-             << " as an equivalent (" << sdpMediaFormat << ") is already included");
+      PTRACE(2, "Not including " << mediaFormat << " as an equivalent (" << sdpMediaFormat << ") is already included");
       return;
     }
   }
@@ -1420,7 +1419,7 @@ SDPCryptoSuite::SDPCryptoSuite(unsigned tag)
 bool SDPCryptoSuite::Decode(const PString & sdp)
 {
   if (sdp.GetLength() < 7 || !isdigit(sdp[0]) || sdp[1] != ' ') {
-    PTRACE(2, "SDP", "Illegal format crypto attribute \"" << sdp << '"');
+    PTRACE(2, "Illegal format crypto attribute \"" << sdp << '"');
     return false;
   }
 
@@ -1439,7 +1438,7 @@ bool SDPCryptoSuite::Decode(const PString & sdp)
   for (PINDEX kp =0; kp < keyParams.GetSize(); ++kp) {
     PCaselessString method, info;
     if (!keyParams[kp].Split(':', method, info) || method != "inline" || info.IsEmpty()) {
-      PTRACE(2, "SDP", "Unsupported method \"" << method << '"');
+      PTRACE(2, "Unsupported method \"" << method << '"');
       return false;
     }
 
@@ -1452,15 +1451,15 @@ bool SDPCryptoSuite::Decode(const PString & sdp)
         {
           PString idx, len;
           if (!keyParts[2].Split(':', idx, len)) {
-            PTRACE(2, "SDP", "Expected colon in mki index/length: \"" << keyParts[2] << '"');
+            PTRACE(2, "Expected colon in mki index/length: \"" << keyParts[2] << '"');
             return false;
           }
           if ((newKeyParam.m_mkiIndex = idx.AsUnsigned()) == 0) {
-            PTRACE(2, "SDP", "Must have non-zero mki index");
+            PTRACE(2, "Must have non-zero mki index");
             return false;
           }
           if ((newKeyParam.m_mkiLength = len.AsUnsigned()) == 0) {
-            PTRACE(2, "SDP", "Must have non-zero mki length");
+            PTRACE(2, "Must have non-zero mki length");
             return false;
           }
         }
@@ -1474,7 +1473,7 @@ bool SDPCryptoSuite::Decode(const PString & sdp)
           else
             newKeyParam.m_lifetime = lifetime.AsUnsigned64();
           if (newKeyParam.m_lifetime == 0) {
-            PTRACE(2, "SDP", "Must have non-zero lifetime");
+            PTRACE(2, "Must have non-zero lifetime");
             return false;
           }
         }
@@ -1503,7 +1502,7 @@ OpalMediaCryptoKeyInfo * SDPCryptoSuite::GetKeyInfo() const
 {
   OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(m_suiteName);
   if (cryptoSuite == NULL) {
-    PTRACE(2, "SDP\tUnknown crypto suite \"" << m_suiteName << '"');
+    PTRACE(2, "Unknown crypto suite \"" << m_suiteName << '"');
     return NULL;
   }
 
@@ -1571,7 +1570,7 @@ bool SDPRTPAVPMediaDescription::Decode(const PStringArray & tokens)
   PIPSocket::Address ip;
   if (m_mediaAddress.GetIpAddress(ip)) {
     m_controlAddress = OpalTransportAddress(ip, m_port+1, OpalTransportAddress::UdpPrefix());
-    PTRACE(4, "SDP\tSetting rtcp connection address " << m_controlAddress);
+    PTRACE(4, "Setting rtcp connection address " << m_controlAddress);
   }
 
   m_transportType = tokens[2];
@@ -1664,7 +1663,7 @@ void SDPRTPAVPMediaDescription::Format::AddRTCP_FB(const PString & str)
       break;
     }
   }
-  PTRACE(5, "SDP\tAdded feedback options, result: " << m_rtcp_fb);
+  PTRACE(5, "Added feedback options, result: " << m_rtcp_fb);
 }
 
 
@@ -1818,7 +1817,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
 
     PStringArray tokens = params.Tokenise('/');
     if (tokens.GetSize() < 2) {
-      PTRACE(2, "SDP\tMalformed rtpmap attribute for " << format->GetEncodingName());
+      PTRACE(2, "Malformed rtpmap attribute for " << format->GetEncodingName());
       return;
     }
 
@@ -1837,7 +1836,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
       m_cryptoSuites.Append(cryptoSuite);
     else {
       delete cryptoSuite;
-      PTRACE(2, "SDP\tCannot decode SDP crypto attribute: \"" << value << '"');
+      PTRACE(2, "Cannot decode crypto attribute: \"" << value << '"');
     }
     return;
   }
@@ -1850,7 +1849,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
 
   if (attr *= "rtcp") {
     m_controlAddress = ParseConnectAddress(value.Mid(value.Find(' ')+1), (WORD)value.AsUnsigned());
-    PTRACE_IF(4, !m_controlAddress.IsEmpty(), "SDP\tParsed rtcp connection address " << m_controlAddress);
+    PTRACE_IF(4, !m_controlAddress.IsEmpty(), "Parsed rtcp connection address " << m_controlAddress);
     return;
   }
 
@@ -1859,13 +1858,13 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
     PINDEX space = value.Find(' ');
     PINDEX endToken = value.FindSpan(TokenChars, space+1);
     if (ssrc == 0 || space == P_MAX_INDEX || (endToken != P_MAX_INDEX && value[endToken] != ':')) {
-      PTRACE(2, "SDP\tCannot decode ssrc attribute: \"" << value << '"');
+      PTRACE(2, "Cannot decode ssrc attribute: \"" << value << '"');
     }
     else {
       PCaselessString key = value(space + 1, endToken - 1);
       PString val = value.Mid(endToken + 1);
       m_ssrcInfo[ssrc].SetAt(key, val);
-      PTRACE_IF(4, key == "cname", "SDP\tSSRC: " << RTP_TRACE_SRC(ssrc) << " CNAME: " << val);
+      PTRACE_IF(4, key == "cname", "SSRC: " << RTP_TRACE_SRC(ssrc) << " CNAME: " << val);
     }
     return;
   }
@@ -2031,7 +2030,7 @@ void SDPAudioMediaDescription::SetAttribute(const PString & attr, const PString 
   if (attr *= "ptime") {
     unsigned newTime = value.AsUnsigned();
     if (newTime < SDP_MIN_PTIME) {
-      PTRACE(2, "SDP\tMalformed ptime attribute value " << value);
+      PTRACE(2, "Malformed ptime attribute value " << value);
       return;
     }
     m_PTime = newTime;
@@ -2041,7 +2040,7 @@ void SDPAudioMediaDescription::SetAttribute(const PString & attr, const PString 
   if (attr *= "maxptime") {
     unsigned newTime = value.AsUnsigned();
     if (newTime < SDP_MIN_PTIME) {
-      PTRACE(2, "SDP\tMalformed maxptime attribute value " << value);
+      PTRACE(2, "Malformed maxptime attribute value " << value);
       return;
     }
     m_maxPTime = newTime;
@@ -2127,7 +2126,7 @@ void SDPVideoMediaDescription::SetAttribute(const PString & attr, const PString 
 
           if (m_contentRole == OpalVideoFormat::eNoRole) {
             m_contentRole = content;
-            PTRACE(4, "SDP\tContent Role set to " << m_contentRole << " from \"" << value << '"');
+            PTRACE(4, "Content Role set to " << m_contentRole << " from \"" << value << '"');
           }
         }
       }
@@ -2281,7 +2280,7 @@ static bool AdjustResolution(OpalMediaFormat & mediaFormat, const PString & name
   unsigned oldValue = mediaFormat.GetOptionInteger(name);
   if (lower ? (value < oldValue) : (value > oldValue)) {
     mediaFormat.SetOptionInteger(name, value);
-    PTRACE(4, "SDP\tAdjusted " << mediaFormat << " option \"" << name << "\" from " << oldValue << " to " << value);
+    PTRACE(4, "Adjusted " << mediaFormat << " option \"" << name << "\" from " << oldValue << " to " << value);
   }
 
   return true;
@@ -2299,7 +2298,7 @@ void SDPVideoMediaDescription::Format::SetMediaFormatOptions(OpalMediaFormat & m
               AdjustResolution(mediaFormat, OpalVideoFormat::MaxRxFrameHeightOption(), m_maxRxHeight, true);
     mediaFormat.SetOptionEnum(OpalVideoFormat::UseImageAttributeInSDP(), ok ? OpalVideoFormat::ImageAttrAnswerRequired
                                                                             : OpalVideoFormat::ImageAttrSuppressed);
-    PTRACE(4, "SDP\t" << (ok ? "Enabled" : "Disabled") << " imageattr "
+    PTRACE(4, (ok ? "Enabled" : "Disabled") << " imageattr "
               "("  << m_minRxWidth << 'x' << m_minRxHeight <<
               ".." << m_maxRxWidth << 'x' << m_maxRxHeight << ")"
               " in reply for " << mediaFormat);
@@ -2336,14 +2335,14 @@ void SDPVideoMediaDescription::Format::ParseImageAttr(const PString & params)
     }
 
     if (params[pos] != '[') {
-      PTRACE(2, "SDP\tIllegal imageattr (expected '['): \"" << params << '"');
+      PTRACE(2, "Illegal imageattr (expected '['): \"" << params << '"');
       return;
     }
 
     do {
       PINDEX equal = params.Find('=', pos);
       if (equal == P_MAX_INDEX) {
-        PTRACE(2, "SDP\tIllegal imageattr (expected '='): \"" << params << '"');
+        PTRACE(2, "Illegal imageattr (expected '='): \"" << params << '"');
         return;
       }
 
@@ -2353,7 +2352,7 @@ void SDPVideoMediaDescription::Format::ParseImageAttr(const PString & params)
       PString attrValue;
       if (params[pos] == '[') {
         if ((pos = params.Find(']', equal)) == P_MAX_INDEX) {
-          PTRACE(2, "SDP\tIllegal imageattr (expected ']'): \"" << params << '"');
+          PTRACE(2, "Illegal imageattr (expected ']'): \"" << params << '"');
           return;
         }
 
@@ -2361,14 +2360,14 @@ void SDPVideoMediaDescription::Format::ParseImageAttr(const PString & params)
 
         ++pos;
         if (params[pos] != ',' && params[pos] != ']') {
-          PTRACE(2, "SDP\tIllegal imageattr (expected ',' or ']'): \"" << params << '"');
+          PTRACE(2, "Illegal imageattr (expected ',' or ']'): \"" << params << '"');
           return;
         }
       }
       else {
         while (params[pos] != ',' && params[pos] != ']') {
           if (++pos >= params.GetLength()) {
-            PTRACE(2, "SDP\tIllegal imageattr (expected ',' or ']'): \"" << params << '"');
+            PTRACE(2, "Illegal imageattr (expected ',' or ']'): \"" << params << '"');
             return;
           }
         }
@@ -2391,7 +2390,7 @@ void SDPVideoMediaDescription::Format::ParseImageAttr(const PString & params)
             break;
 
           default :
-            PTRACE(2, "SDP\tIllegal imageattr (expected ':'): \"" << params << '"');
+            PTRACE(2, "Illegal imageattr (expected ':'): \"" << params << '"');
             return;
         }
 
@@ -2422,7 +2421,7 @@ void SDPVideoMediaDescription::Format::ParseImageAttr(const PString & params)
       else if (attrName == "par") {
         PString w, h;
         if (!attrValue.Split('-', w, h) {
-          PTRACE(2, "SDP\tIllegal imageattr (expected '-'): \"" << params << '"');
+          PTRACE(2, "Illegal imageattr (expected '-'): \"" << params << '"');
           return;
         }
       }
@@ -2433,18 +2432,18 @@ void SDPVideoMediaDescription::Format::ParseImageAttr(const PString & params)
       }
 #endif
       else {
-        PTRACE(3, "SDP\tUnknown/unsupported imageattr attribute: \"" << params << '"');
+        PTRACE(3, "Unknown/unsupported imageattr attribute: \"" << params << '"');
       }
     } while (params[pos] == ',');
 
     if (params[pos++] != ']') {
-      PTRACE(2, "SDP\tIllegal imageattr (expected ']'): \"" << params << '"');
+      PTRACE(2, "Illegal imageattr (expected ']'): \"" << params << '"');
       return;
     }
   }
 
   // Allow response SDP to include imageattr from RFC 6263
-  PTRACE(4, "SDP\tparsed imageattr:"
+  PTRACE(4, "Parsed imageattr:"
              " minRx=" << m_minRxWidth << 'x' << m_minRxHeight
           << " maxRx=" << m_maxRxWidth << 'x' << m_maxRxHeight
           << " minTx=" << m_minTxWidth << 'x' << m_minTxHeight
@@ -2575,7 +2574,7 @@ PString SDPSessionDescription::Encode() const
 
 bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatList & mediaFormats)
 {
-  PTRACE(5, "SDP\tDecode using media formats:\n    " << setfill(',') << mediaFormats << setfill(' '));
+  PTRACE(5, "Decode using media formats:\n    " << setfill(',') << mediaFormats << setfill(' '));
 
   bool atLeastOneValidMedia = false;
   bool ok = true;
@@ -2617,7 +2616,7 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
 
         case 'c' : // connection information - not required if included in all media
           defaultConnectAddress = ParseConnectAddress(value);
-          PTRACE_IF(4, !defaultConnectAddress.IsEmpty(), "SDP\tParsed default connection address " << defaultConnectAddress);
+          PTRACE_IF(4, !defaultConnectAddress.IsEmpty(), "Parsed default connection address " << defaultConnectAddress);
           break;
 
         case 't' : // time the session is active (mandatory)
@@ -2640,7 +2639,7 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
         case 'm' : // media name and transport address (mandatory)
           {
             if (currentMedia != NULL) {
-              PTRACE(3, "SDP\tParsed media session with " << currentMedia->GetSDPMediaFormats().GetSize()
+              PTRACE(3, "Parsed media session with " << currentMedia->GetSDPMediaFormats().GetSize()
                                                           << " '" << currentMedia->GetSDPMediaType() << "' formats");
               if (!currentMedia->PostDecode(mediaFormats))
                 ok = false;
@@ -2652,16 +2651,16 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
             OpalMediaTypeDefinition * defn;
             PStringArray tokens = value.Tokenise(WhiteSpace, false); // Spec says space only, but lets be forgiving
             if (tokens.GetSize() < 4) {
-              PTRACE(1, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
+              PTRACE(1, "Media session has only " << tokens.GetSize() << " elements");
             }
             else if ((mediaType = GetMediaTypeFromSDP(tokens[0], tokens[2], lines, i)).empty()) {
-              PTRACE(1, "SDP\tUnknown SDP media type parsing \"" << lines[i] << '"');
+              PTRACE(1, "Unknown SDP media type parsing \"" << lines[i] << '"');
             }
             else if ((defn = mediaType.GetDefinition()) == NULL) {
-              PTRACE(1, "SDP\tNo definition for media type " << mediaType << " parsing \"" << lines[i] << '"');
+              PTRACE(1, "No definition for media type " << mediaType << " parsing \"" << lines[i] << '"');
             }
             else if ((currentMedia = defn->CreateSDPMediaDescription(defaultConnectAddress)) == NULL) {
-              PTRACE(1, "SDP\tCould not create SDP media description for media type " << mediaType << " parsing \"" << lines[i] << '"');
+              PTRACE(1, "Could not create SDP media description for media type " << mediaType << " parsing \"" << lines[i] << '"');
             }
             else {
               PTRACE_CONTEXT_ID_TO(currentMedia);
@@ -2686,13 +2685,13 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
           break;
 
         default:
-          PTRACE(1, "SDP\tUnknown session information key " << line[0]);
+          PTRACE(1, "Unknown session information key " << line[0]);
       }
     }
   }
 
   if (currentMedia != NULL) {
-    PTRACE(3, "SDP\tParsed final media session with " << currentMedia->GetSDPMediaFormats().GetSize()
+    PTRACE(3, "Parsed final media session with " << currentMedia->GetSDPMediaFormats().GetSize()
                                                 << " '" << currentMedia->GetSDPMediaType() << "' formats");
     if (!currentMedia->PostDecode(mediaFormats))
       ok = false;
@@ -2741,14 +2740,14 @@ void SDPSessionDescription::ParseOwner(const PString & str)
   PStringArray tokens = str.Tokenise(WhiteSpace, false); // Spec says space only, but lets be forgiving
 
   if (tokens.GetSize() != 6) {
-    PTRACE(2, "SDP\tOrigin has incorrect number of elements (" << tokens.GetSize() << ')');
+    PTRACE(2, "Origin has incorrect number of elements (" << tokens.GetSize() << ')');
   }
   else {
     ownerUsername    = tokens[0];
     ownerSessionId   = tokens[1].AsUnsigned();
     ownerVersion     = tokens[2].AsUnsigned();
     ownerAddress = defaultConnectAddress = ParseConnectAddress(tokens, 3);
-    PTRACE_IF(4, !ownerAddress.IsEmpty(), "SDP\tParsed owner connection address " << ownerAddress);
+    PTRACE_IF(4, !ownerAddress.IsEmpty(), "Parsed owner connection address " << ownerAddress);
   }
 }
 

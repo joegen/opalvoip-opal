@@ -1946,11 +1946,15 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
 
   m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
 
+#if PTRACING
+  RTP_SyncSourceId ssrc =
+#endif
   AddSyncSource(0, e_Sender); // Add default sender SSRC
 
   PTRACE(3, "Session " << m_sessionId << " opened: "
             " local=" << m_localAddress << ':' << m_localPort[e_Data] << '-' << m_localPort[e_Control]
-         << " remote=" << m_remoteAddress);
+         << " remote=" << m_remoteAddress
+         << " added default sender SSRC=" << RTP_TRACE_SRC(ssrc));
 
   return true;
 }
@@ -2421,6 +2425,9 @@ bool OpalRTPSession::WriteData(RTP_DataFrame & frame,
 {
   PWaitAndSignal m(m_dataMutex);
 
+#if PTRACING
+  unsigned delayedTraceCount = 0;
+#endif
   while (IsOpen() && !m_shutdownWrite) {
     switch (OnSendData(frame, rewriteHeader)) {
       case e_ProcessPacket :
@@ -2432,7 +2439,7 @@ bool OpalRTPSession::WriteData(RTP_DataFrame & frame,
 
       case e_IgnorePacket :
         m_dataMutex.Signal();
-        PTRACE(5, "Session " << m_sessionId << ", data packet write delayed.");
+        PTRACE_IF(4, (delayedTraceCount++)%10 == 0, "Session " << m_sessionId << ", data packet write delayed.");
         PThread::Sleep(20);
         m_dataMutex.Wait();
     }
@@ -2447,6 +2454,9 @@ bool OpalRTPSession::WriteControl(RTP_ControlFrame & frame, const PIPSocketAddre
 {
   PWaitAndSignal m(m_dataMutex);
 
+#if PTRACING
+  unsigned delayedTraceCount = 0;
+#endif
   while (IsOpen() && !m_shutdownWrite) {
     switch (OnSendControl(frame)) {
       case e_ProcessPacket :
@@ -2458,7 +2468,7 @@ bool OpalRTPSession::WriteControl(RTP_ControlFrame & frame, const PIPSocketAddre
 
       case e_IgnorePacket :
         m_dataMutex.Signal();
-        PTRACE(5, "Session " << m_sessionId << ", control packet write delayed.");
+        PTRACE_IF(4, (delayedTraceCount++)%10 == 0, "Session " << m_sessionId << ", control packet write delayed.");
         PThread::Sleep(20);
         m_dataMutex.Wait();
     }
