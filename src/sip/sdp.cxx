@@ -1913,10 +1913,11 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session) const
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
   if (rtpSession != NULL) {
     for (SsrcInfo::const_iterator it = m_ssrcInfo.begin(); it != m_ssrcInfo.end(); ++it) {
+      RTP_SyncSourceId ssrc = it->first;
       PString cname(it->second.GetString("cname"));
-      if (!cname.IsEmpty()) {
-        rtpSession->AddSyncSource(it->first, OpalRTPSession::e_Receive, it->second.GetString("cname"));
+      if (!cname.IsEmpty() && rtpSession->AddSyncSource(ssrc, OpalRTPSession::e_Receive, cname) == ssrc) {
         rtpSession->SetAnySyncSource(false);
+        PTRACE(4, "Session " << session->GetSessionID() << ", added receiver SSRC " << RTP_TRACE_SRC(ssrc));
       }
     }
   }
