@@ -191,36 +191,9 @@ class OpalRTPSession : public OpalMediaSession
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, bool rewriteHeader);
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize);
+    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
     virtual SendReceiveStatus OnOutOfOrderPacket(RTP_DataFrame & frame);
-
-#if OPAL_RTP_FEC
-    virtual SendReceiveStatus OnSendRedundantFrame(RTP_DataFrame & frame);
-    virtual SendReceiveStatus OnSendRedundantData(RTP_DataFrame & primary, RTP_DataFrameList & redundancies);
-    virtual SendReceiveStatus OnReceiveRedundantFrame(RTP_DataFrame & frame);
-    virtual SendReceiveStatus OnReceiveRedundantData(RTP_DataFrame & primary, RTP_DataFrame::PayloadTypes payloadType, unsigned timestamp, const BYTE * data, PINDEX size);
-
-    struct FecLevel
-    {
-      PBYTEArray m_mask; // Points to 16 or 48 bits
-      PBYTEArray m_data;
-    };
-    struct FecData
-    {
-      unsigned m_timestamp;
-      bool     m_pRecovery;
-      bool     m_xRecovery;
-      unsigned m_ccRecovery;
-      bool     m_mRecovery;
-      unsigned m_ptRecovery;
-      unsigned m_snBase;
-      unsigned m_tsRecovery;
-      unsigned m_lenRecovery;
-      vector<FecLevel> m_level;
-    };
-    virtual SendReceiveStatus OnSendFEC(RTP_DataFrame & primary, FecData & fec);
-    virtual SendReceiveStatus OnReceiveFEC(RTP_DataFrame & primary, const FecData & fec);
-#endif // OPAL_RTP_FEC
 
     typedef RTP_SenderReport           SenderReport;
     typedef RTP_ReceiverReport         ReceiverReport;
@@ -287,6 +260,25 @@ class OpalRTPSession : public OpalMediaSession
     ) { m_isAudio = aud; }
 
 #if OPAL_RTP_FEC
+    struct FecLevel
+    {
+      PBYTEArray m_mask; // Points to 16 or 48 bits
+      PBYTEArray m_data;
+    };
+    struct FecData
+    {
+      RTP_Timestamp    m_timestamp;
+      bool             m_pRecovery;
+      bool             m_xRecovery;
+      unsigned         m_ccRecovery;
+      bool             m_mRecovery;
+      unsigned         m_ptRecovery;
+      unsigned         m_snBase;
+      unsigned         m_tsRecovery;
+      unsigned         m_lenRecovery;
+      vector<FecLevel> m_level;
+    };
+
     /// Get the RFC 2198 redundent data payload type
     RTP_DataFrame::PayloadTypes GetRedundencyPayloadType() const { return m_redundencyPayloadType; }
 
@@ -624,12 +616,13 @@ class OpalRTPSession : public OpalMediaSession
     PTimeInterval       m_waitOutOfOrderTime;   // Milliseconds before we give up on an out of order packet
     unsigned            m_txStatisticsInterval;
     unsigned            m_rxStatisticsInterval;
+    OpalMediaFormat::RTCPFeedback m_feedback;
+
 #if OPAL_RTP_FEC
     RTP_DataFrame::PayloadTypes m_redundencyPayloadType;
     RTP_DataFrame::PayloadTypes m_ulpFecPayloadType;
     unsigned                    m_ulpFecSendLevel;
-#endif
-    OpalMediaFormat::RTCPFeedback m_feedback;
+#endif // OPAL_RTP_FEC
 
     friend struct SyncSource;
     struct SyncSource
@@ -638,9 +631,18 @@ class OpalRTPSession : public OpalMediaSession
       virtual ~SyncSource();
 
       virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, bool rewriteHeader);
-      virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, PINDEX pduSiz);
+      virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, bool newData);
       virtual SendReceiveStatus OnOutOfOrderPacket(RTP_DataFrame & frame);
       virtual SendReceiveStatus GetPendingFrame(RTP_DataFrame & frame);
+#if OPAL_RTP_FEC
+      virtual SendReceiveStatus OnSendRedundantFrame(RTP_DataFrame & frame);
+      virtual SendReceiveStatus OnSendRedundantData(RTP_DataFrame & primary, RTP_DataFrameList & redundancies);
+      virtual SendReceiveStatus OnReceiveRedundantFrame(RTP_DataFrame & frame);
+      virtual SendReceiveStatus OnReceiveRedundantData(RTP_DataFrame & primary, RTP_DataFrame::PayloadTypes payloadType, unsigned timestamp, const BYTE * data, PINDEX size);
+      virtual SendReceiveStatus OnSendFEC(RTP_DataFrame & primary, FecData & fec);
+      virtual SendReceiveStatus OnReceiveFEC(RTP_DataFrame & primary, const FecData & fec);
+#endif // OPAL_RTP_FEC
+
 
       virtual void CalculateStatistics(const RTP_DataFrame & frame);
       virtual void GetStatistics(OpalMediaStatistics & statistics) const;
@@ -708,7 +710,14 @@ class OpalRTPSession : public OpalMediaSession
 #endif
 
       OpalJitterBuffer * m_jitterBuffer;
+
+#if PTRACING
+      unsigned m_levelTxRED;
+      unsigned m_levelRxRED;
+      unsigned m_levelRxUnknownFEC;
+#endif
     };
+
     typedef std::map<RTP_SyncSourceId, SyncSource *> SyncSourceMap;
     SyncSourceMap m_SSRC;
     SyncSource    m_dummySyncSource;
@@ -789,9 +798,6 @@ class OpalRTPSession : public OpalMediaSession
     unsigned m_levelRxSR;
     unsigned m_levelRxRR;
     unsigned m_levelRxSDES;
-    unsigned m_levelTxRED;
-    unsigned m_levelRxRED;
-    unsigned m_levelRxUnknownFEC;
 #endif
 
   private:
@@ -802,7 +808,6 @@ class OpalRTPSession : public OpalMediaSession
     P_REMOVE_VIRTUAL(SendReceiveStatus,ReadDataOrControlPDU(BYTE *,PINDEX,bool),e_AbortTransport);
     P_REMOVE_VIRTUAL(bool,WriteDataOrControlPDU(const BYTE *,PINDEX,bool),false);
     P_REMOVE_VIRTUAL(SendReceiveStatus,OnSendData(RTP_DataFrame &),e_AbortTransport);
-    P_REMOVE_VIRTUAL(SendReceiveStatus,OnReceiveData(RTP_DataFrame &),e_AbortTransport);
 
   friend class RTCP_XR_Metrics;
 };

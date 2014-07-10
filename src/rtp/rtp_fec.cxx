@@ -38,7 +38,7 @@
 #define PTraceModule() "RTP_FEC"
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendRedundantFrame(RTP_DataFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendRedundantFrame(RTP_DataFrame & frame)
 {
   RTP_DataFrameList redundancies;
   OpalRTPSession::SendReceiveStatus status = OnSendRedundantData(frame, redundancies);
@@ -47,7 +47,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendRedundantFrame(RTP_DataF
 
   RTP_DataFrame red;
   red.CopyHeader(frame);
-  red.SetPayloadType(m_redundencyPayloadType);
+  red.SetPayloadType(m_session.m_redundencyPayloadType);
 
   PINDEX redPayloadSize = 0;
   for (RTP_DataFrameList::iterator it = redundancies.begin(); it != redundancies.end(); ++it) {
@@ -72,7 +72,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendRedundantFrame(RTP_DataF
   *payload++ = (BYTE)frame.GetPayloadType();
   memmove(payload, frame.GetPayloadPtr(), frame.GetPayloadSize());
 
-  PTRACE(m_levelTxRED, "Session " << m_sessionId << ", redundant packet " << red.GetPayloadType()
+  PTRACE(m_levelTxRED, &m_session, m_session << "redundant packet " << red.GetPayloadType()
          << " primary block inserted : " << frame.GetPayloadType() << ", sz=" << frame.GetPayloadSize());
 #if PTRACING
     m_levelTxRED = 6;
@@ -82,15 +82,15 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendRedundantFrame(RTP_DataF
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendRedundantData(RTP_DataFrame & primary, RTP_DataFrameList & redundancies)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendRedundantData(RTP_DataFrame & primary, RTP_DataFrameList & redundancies)
 {
-  if (m_ulpFecPayloadType == RTP_DataFrame::IllegalPayloadType) {
-    PTRACE(m_levelTxRED, "Session " << m_sessionId << ", no redundant blocks added");
+  if (m_session.m_ulpFecPayloadType == RTP_DataFrame::IllegalPayloadType) {
+    PTRACE(m_levelTxRED, &m_session, m_session << "no redundant blocks added");
     return e_ProcessPacket; // No redundancies, add primary data and return
   }
 
   FecData fec;
-  fec.m_level.resize(m_ulpFecSendLevel);
+  fec.m_level.resize(m_session.m_ulpFecSendLevel);
 
   switch (OnSendFEC(primary, fec)) {
     case e_AbortTransport :
@@ -123,7 +123,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendRedundantData(RTP_DataFr
   RTP_DataFrame * red = new RTP_DataFrame(size);
   redundancies.Append(red);
   red->CopyHeader(primary);
-  red->SetPayloadType(m_ulpFecPayloadType);
+  red->SetPayloadType(m_session.m_ulpFecPayloadType);
 
   BYTE * data = red->GetPayloadPtr();
   if (maskSize == 6)
@@ -154,18 +154,18 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendRedundantData(RTP_DataFr
     data += it->m_data.size();
   }
 
-  PTRACE(5, "Session " << m_sessionId << ", adding (eventually) redundant ULP-FEC");
+  PTRACE(5, &m_session, m_session << "adding (eventually) redundant ULP-FEC");
   return e_ProcessPacket;
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendFEC(RTP_DataFrame & primary, FecData & fec)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendFEC(RTP_DataFrame & primary, FecData & fec)
 {
   return e_IgnorePacket;
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveRedundantFrame(RTP_DataFrame & frame)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveRedundantFrame(RTP_DataFrame & frame)
 {
   const BYTE * payload = frame.GetPayloadPtr();
   PINDEX size = frame.GetPayloadSize();
@@ -174,7 +174,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveRedundantFrame(RTP_Da
   while (size >= 4 && (*payload & 0x80) != 0) {
     PINDEX len = (((payload[2] & 3) << 8) | payload[3]) + 4;
     if (len >= size) {
-      PTRACE(2, "Session " << m_sessionId << ", redundant packet too small");
+      PTRACE(2, &m_session, m_session << "redundant packet too small: " << size << " bytes, expecting " << len << '\n' << frame);
       return e_IgnorePacket;
     }
     payload += len;
@@ -182,7 +182,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveRedundantFrame(RTP_Da
   }
 
   if (size <= 0) {
-    PTRACE(2, "Session " << m_sessionId << ", redundant packet primary block missing");
+    PTRACE(2, &m_session, m_session << "redundant packet primary block missing:\n" << frame);
     return e_IgnorePacket;
   }
 
@@ -192,7 +192,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveRedundantFrame(RTP_Da
   primary.SetPayloadType((RTP_DataFrame::PayloadTypes)(*payload & 0x7f));
   primary.SetPayloadSize(--size);
   memmove(primary.GetPayloadPtr(), ++payload, size);
-  PTRACE(m_levelRxRED, "Session " << m_sessionId << ", redundant packet " << frame.GetPayloadType()
+  PTRACE(m_levelRxRED, &m_session, m_session << "redundant packet " << frame.GetPayloadType()
          << " primary block extracted: " << primary.GetPayloadType() << ", sz=" << size);
 #if PTRACING
     m_levelRxRED = 6;
@@ -222,15 +222,15 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveRedundantFrame(RTP_Da
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveRedundantData(RTP_DataFrame & primary,
+OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveRedundantData(RTP_DataFrame & primary,
                                                                          RTP_DataFrame::PayloadTypes payloadType,
                                                                          unsigned timestamp,
                                                                          const BYTE * data,
                                                                          PINDEX size)
 {
-  if (payloadType != m_ulpFecPayloadType) {
-    PTRACE(m_levelRxUnknownFEC, "Session " << m_sessionId << ", unknown redundant block: "
-                                           << payloadType << ", ts=" << timestamp << ", sz=" << size);
+  if (payloadType != m_session.m_ulpFecPayloadType) {
+    PTRACE(m_levelRxUnknownFEC, &m_session, m_session << "unknown redundant block: "
+           << payloadType << ", ts=" << timestamp << ", sz=" << size << '\n' << hex << setfill('0') << PBYTEArray(data-4, size+4, false));
 #if PTRACING
     m_levelRxUnknownFEC = 6;
 #endif
@@ -238,7 +238,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveRedundantData(RTP_Dat
   }
 
   if (size <= 16) {
-    PTRACE(2, "Session " << m_sessionId << ", redundant ULP-FEC too small");
+    PTRACE(2, &m_session, m_session << "redundant ULP-FEC too small: " << size << " bytes");
     return e_IgnorePacket; // This is abort processing redundant data and just return the primary frame
   }
 
@@ -271,13 +271,13 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveRedundantData(RTP_Dat
     size -= hdrLen;
   }
 
-  PTRACE(5, "Session " << m_sessionId << ", redundant ULP-FEC:"
+  PTRACE(5, &m_session, m_session << "redundant ULP-FEC:"
             " ts=" << timestamp << ", levels=" << fec.m_level.size());
   return OnReceiveFEC(primary, fec);
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveFEC(RTP_DataFrame & primary, const FecData & fec)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveFEC(RTP_DataFrame & primary, const FecData & fec)
 {
   /* If there is something in m_pendingPackets, then there was a missing
      packet(s). From the primary data packet and the FEC info, it should be
