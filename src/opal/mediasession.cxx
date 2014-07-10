@@ -45,6 +45,7 @@
 #include <ptclib/cypher.h>
 
 
+#define PTraceModule() "Media"
 #define new PNEW
 
 
@@ -298,7 +299,13 @@ OpalMediaSession::OpalMediaSession(const Init & init)
   , m_localPassword(PBase64::Encode(PRandom::Octets(18)))
 {
   PTRACE_CONTEXT_ID_FROM(init.m_connection);
-  PTRACE(5, "Media\tSession " << m_sessionId << " for " << m_mediaType << " created.");
+  PTRACE(5, *this << "created for " << m_mediaType);
+}
+
+
+void OpalMediaSession::PrintOn(ostream & strm) const
+{
+  strm << "Session " << m_sessionId << ", ";
 }
 
 
@@ -306,7 +313,7 @@ bool OpalMediaSession::Open(const PString & PTRACE_PARAM(localInterface),
                             const OpalTransportAddress & remoteAddress,
                             bool isMediaAddress)
 {
-  PTRACE(5, "Media\tSession " << m_sessionId << ", opening on interface \"" << localInterface << "\" to "
+  PTRACE(5, *this << "opening on interface \"" << localInterface << "\" to "
          << (isMediaAddress ? "media" : "control") << " address " << remoteAddress);
   return SetRemoteAddress(remoteAddress, isMediaAddress);
 }
@@ -377,7 +384,7 @@ void OpalMediaSession::OfferCryptoSuite(const PString & cryptoSuiteName)
 {
   OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(cryptoSuiteName);
   if (cryptoSuite == NULL) {
-    PTRACE(1, "Media\tCannot create crypto suite for " << cryptoSuiteName);
+    PTRACE(1, *this << "cannot create crypto suite for " << cryptoSuiteName);
     return;
   }
 
@@ -458,7 +465,7 @@ bool OpalDummySession::Open(const PString &, const OpalTransportAddress & remote
     }
   }
 
-  PTRACE(5, "Media\tSession " << m_sessionId << ", dummy opened at local media address " << GetLocalAddress());
+  PTRACE(5, *this << "dummy opened at local media address " << GetLocalAddress());
 
   return SetRemoteAddress(remoteAddress, isMediaAddress);
 }
@@ -492,7 +499,7 @@ bool OpalDummySession::SetRemoteAddress(const OpalTransportAddress & remoteAddre
   else
     m_remoteTransportAddress[isMediaAddress] = remoteAddress;
 
-  PTRACE(5, "Media\tSession " << m_sessionId << ", dummy remote "
+  PTRACE(5, *this << "dummy remote "
          << (isMediaAddress ? "media" : "control") << " address set to "
          << m_remoteTransportAddress[isMediaAddress]);
 

@@ -123,6 +123,8 @@ class RTP_ControlFrame : public PBYTEArray
     unsigned GetCount() const { return (BYTE)theArray[m_compoundOffset]&0x1f; }
     void     SetCount(unsigned count);
 
+    RTP_SyncSourceId GetSenderSyncSource() const { return *(PUInt32b *)(theArray + 4); } // Always first DWORD in the first payload
+
     enum PayloadTypes {
       e_FirstValidPayloadType   = 192, // RFC5761
       e_IntraFrameRequest       = 192,
