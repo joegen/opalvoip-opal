@@ -47,6 +47,7 @@
 #if OPAL_SRTP
 
 class OpalSRTPCryptoSuite;
+struct srtp_ctx_t;
 
 
 ////////////////////////////////////////////////////////////////////
@@ -63,7 +64,9 @@ class OpalSRTPCryptoSuite;
 //     STRONGHOLD
 //
 
-struct OpalSRTPKeyInfo : public OpalMediaCryptoKeyInfo {
+class OpalSRTPKeyInfo : public OpalMediaCryptoKeyInfo
+{
+    PCLASSINFO(OpalSRTPKeyInfo, OpalMediaCryptoKeyInfo);
   public:
     OpalSRTPKeyInfo(const OpalSRTPCryptoSuite & cryptoSuite);
 
@@ -84,6 +87,9 @@ struct OpalSRTPKeyInfo : public OpalMediaCryptoKeyInfo {
     const OpalSRTPCryptoSuite & m_cryptoSuite;
     PBYTEArray m_key;
     PBYTEArray m_salt;
+    BYTE       m_key_salt[32]; // libsrtp internal
+
+  friend class OpalSRTPSession;
 };
 
 
@@ -105,31 +111,10 @@ class OpalSRTPCryptoSuite : public OpalMediaCryptoSuite
     virtual void SetCryptoPolicy(struct crypto_policy_t & policy) const = 0;
 };
 
-class OpalLibSRTP
-{
-  protected:
-    OpalLibSRTP();
-    ~OpalLibSRTP();
-
-    OpalRTPSession::SendReceiveStatus ProtectRTP(RTP_DataFrame & frame);
-    OpalRTPSession::SendReceiveStatus ProtectRTCP(RTP_ControlFrame & frame);
-    OpalRTPSession::SendReceiveStatus UnprotectRTP(RTP_DataFrame & frame);
-    OpalRTPSession::SendReceiveStatus UnprotectRTCP(RTP_ControlFrame & frame);
-
-    void Close();
-    bool IsSecured(bool rx) const;
-
-    OpalSRTPKeyInfo* CreateKeyInfo(bool rx);
-
-    struct Context;
-    Context * m_rx;
-    Context * m_tx;
-};
-
 
 /** This class implements SRTP using libSRTP
   */
-class OpalSRTPSession : public OpalRTPSession, protected OpalLibSRTP
+class OpalSRTPSession : public OpalRTPSession
 {
   PCLASSINFO(OpalSRTPSession, OpalRTPSession);
   public:
@@ -153,7 +138,16 @@ class OpalSRTPSession : public OpalRTPSession, protected OpalLibSRTP
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
 
   protected:
-    virtual bool SetCryptoKey(OpalMediaCryptoKeyInfo* key, Direction dir);
+    virtual bool ApplyKeyToSRTP(OpalSRTPKeyInfo & keyInfo, Direction dir);
+    virtual bool AddStreamToSRTP(RTP_SyncSourceId ssrc, Direction dir);
+
+    struct srtp_ctx_t * m_context;
+    OpalSRTPKeyInfo   * m_keyInfo[2]; // rx & tx
+
+#if PTRACING
+    unsigned m_traceLevel[2][2];
+    unsigned m_traceUnsecuredCount[2][2];
+#endif
 };
 
 

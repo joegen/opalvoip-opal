@@ -144,7 +144,9 @@ class OpalMediaStatistics : public PObject
 
 /** Class for contianing the cryptographic keys for use by OpalMediaCryptoSuite.
   */
-class OpalMediaCryptoKeyInfo : public PObject {
+class OpalMediaCryptoKeyInfo : public PObject
+{
+    PCLASSINFO(OpalMediaCryptoKeyInfo, PObject);
   protected:
     OpalMediaCryptoKeyInfo(const OpalMediaCryptoSuite & cryptoSuite) : m_cryptoSuite(cryptoSuite) { }
 
@@ -253,6 +255,8 @@ class OpalMediaSession : public PSafeObject
     OpalMediaSession(const Init & init);
 
   public:
+    virtual void PrintOn(ostream & strm) const;
+
     virtual const PCaselessString & GetSessionType() const = 0;
     virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool isMediaAddress);
     virtual bool IsOpen() const;
