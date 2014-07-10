@@ -286,25 +286,25 @@ OpalRTPSession::SendReceiveStatus H2356_Session::OnSendData(RTP_DataFrame & fram
 }
 
 
+#if !H235_6_CODED_TO_CORRECT_SPECIFICATION
 OpalRTPSession::SendReceiveStatus H2356_Session::OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize)
 {
-  SendReceiveStatus status;
-#if CODED_TO_CORRECT_SPECIFICATION
-  status = OpalRTPSession::OnReceiveData(frame, pduSize);
-#else
   // Allow for broken implementations that set padding bit but do not set the padding length!
   bool padding = frame.GetPadding();
   frame.SetPadding(false);
 
-  status = OpalRTPSession::OnReceiveData(frame, pduSize);
+  SendReceiveStatus status = OpalRTPSession::OnReceiveData(frame, pduSize);
 
   frame.SetPadding(padding);
+
+  return status;
+}
 #endif
 
-  if (status != e_ProcessPacket)
-    return status;
 
-  return m_rx.Decrypt(frame) ? e_ProcessPacket : e_IgnorePacket;
+OpalRTPSession::SendReceiveStatus H2356_Session::OnReceiveData(RTP_DataFrame & frame)
+{
+  return m_rx.Decrypt(frame) ? OpalRTPSession::OnReceiveData(frame) : e_IgnorePacket;
 }
 
 
@@ -353,7 +353,7 @@ bool H2356_Session::Context::Encrypt(RTP_DataFrame & frame)
 
   PINDEX len = m_cipher.GetBlockedDataSize(frame.GetPayloadSize());
 
-#if CODED_TO_CORRECT_SPECIFICATION
+#if H235_6_CODED_TO_CORRECT_SPECIFICATION
   frame.SetPaddingSize(len - frame.GetPayloadSize());
 #else
   // Allow for broken implementations that set padding bit but not set the padding length!

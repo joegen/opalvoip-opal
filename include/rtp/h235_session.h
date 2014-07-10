@@ -51,6 +51,9 @@
 class H2356_CryptoSuite;
 
 
+#define H235_6_CODED_TO_CORRECT_SPECIFICATION 0
+
+
 ////////////////////////////////////////////////////////////////////
 //
 //  this class holds the parameters required for an AES session
@@ -120,7 +123,10 @@ class H2356_Session : public OpalRTPSession
     virtual bool IsCryptoSecured(bool rx) const;
 
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, bool rewriteHeader);
+#if !H235_6_CODED_TO_CORRECT_SPECIFICATION
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize);
+#endif
+    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
 
   protected:
     struct Context {
