@@ -615,12 +615,8 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize)
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame & frame)
 {
-  SendReceiveStatus status = OpalRTPSession::OnReceiveData(frame, pduSize);
-  if (status != e_ProcessPacket)
-    return status;
-
   if (!IsCryptoSecured(e_Receiver)) {
     PTRACE_IF(3, (m_traceUnsecuredCount[e_Data][e_Receiver]++ % 100) == 0,
               *this << "keys not set, cannot protect control: " << m_traceUnsecuredCount[e_Data][e_Receiver]);
@@ -640,7 +636,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
 #endif
 
   frame.SetPayloadSize(len - frame.GetHeaderSize());
-  return OpalRTPSession::e_ProcessPacket;
+  return OpalRTPSession::OnReceiveData(frame);
 }
 
 
