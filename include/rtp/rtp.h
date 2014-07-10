@@ -116,6 +116,10 @@ class RTP_ControlFrame : public PBYTEArray
     RTP_ControlFrame(PINDEX compoundSize = 2048);
     RTP_ControlFrame(const BYTE * data, PINDEX size, bool dynamic = true);
 
+#if PTRACING
+    virtual void PrintOn(ostream &) const;
+#endif
+
     bool IsValid() const;
 
     unsigned GetVersion() const { return (BYTE)theArray[m_compoundOffset]>>6; }

@@ -629,6 +629,16 @@ RTP_ControlFrame::RTP_ControlFrame(const BYTE * data, PINDEX size, bool dynamic)
 }
 
 
+void RTP_ControlFrame::PrintOn(ostream & strm) const
+{
+  char fill = strm.fill();
+  strm << "RTCP frame, " << m_packetSize << " bytes:\n"
+       << hex << setprecision(2) << setfill('0')
+       << PBYTEArray((const BYTE *)theArray, m_packetSize, false)
+       << dec << setfill(fill);
+}
+
+
 bool RTP_ControlFrame::IsValid() const
 {
   if (m_packetSize < m_compoundOffset + 4)
