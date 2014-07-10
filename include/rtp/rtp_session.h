@@ -114,9 +114,12 @@ class OpalRTPSession : public OpalMediaSession
   //@{
     enum Direction
     {
-      e_Receive,
+      e_Receiver,
       e_Sender
     };
+#if PTRACING
+    friend ostream & operator<<(ostream & strm, Direction dir);
+#endif
 
     /** Add a syncronisation source.
         If no call is made to this function, then the first sent/received
@@ -337,7 +340,7 @@ class OpalRTPSession : public OpalMediaSession
 
     /**Get the source output identifier.
       */
-    RTP_SyncSourceId GetSyncSourceIn() const { return GetSyncSource(0, e_Receive).m_sourceIdentifier; }
+    RTP_SyncSourceId GetSyncSourceIn() const { return GetSyncSource(0, e_Receiver).m_sourceIdentifier; }
 
     /**Get the source output identifier.
       */
@@ -454,15 +457,15 @@ class OpalRTPSession : public OpalMediaSession
 
     /**Get total number of packets received in session.
       */
-    unsigned GetPacketsReceived(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receive).m_packets; }
+    unsigned GetPacketsReceived(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_packets; }
 
     /**Get total number of octets received in session.
       */
-    uint64_t GetOctetsReceived(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receive).m_octets; }
+    uint64_t GetOctetsReceived(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_octets; }
 
     /**Get total number received packets lost in session.
       */
-    unsigned GetPacketsLost(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receive).m_packetsLost; }
+    unsigned GetPacketsLost(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_packetsLost; }
 
     /**Get total number transmitted packets lost by remote in session.
        Determined via RTCP.
@@ -471,7 +474,7 @@ class OpalRTPSession : public OpalMediaSession
 
     /**Get total number of packets received out of order in session.
       */
-    unsigned GetPacketsOutOfOrder(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receive).m_packetsOutOfOrder; }
+    unsigned GetPacketsOutOfOrder(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_packetsOutOfOrder; }
 
     /**Get average time between sent packets.
        This is averaged over the last txStatisticsInterval packets and is in
@@ -483,7 +486,7 @@ class OpalRTPSession : public OpalMediaSession
        This can be used to find out the number of frames received in a video
        RTP stream.
       */
-    unsigned GetMarkerRecvCount(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receive).m_markerCount; }
+    unsigned GetMarkerRecvCount(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_markerCount; }
 
     /**Get the number of marker packets sent this session.
        This can be used to find out the number of frames sent in a video
@@ -507,30 +510,30 @@ class OpalRTPSession : public OpalMediaSession
        This is averaged over the last rxStatisticsInterval packets and is in
        milliseconds.
       */
-    unsigned GetAverageReceiveTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receive).m_averagePacketTime; }
+    unsigned GetAverageReceiveTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_averagePacketTime; }
 
     /**Get maximum time between received packets.
        This is over the last rxStatisticsInterval packets and is in
        milliseconds.
       */
-    unsigned GetMaximumReceiveTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receive).m_maximumPacketTime; }
+    unsigned GetMaximumReceiveTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_maximumPacketTime; }
 
     /**Get minimum time between received packets.
        This is over the last rxStatisticsInterval packets and is in
        milliseconds.
       */
-    unsigned GetMinimumReceiveTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receive).m_minimumPacketTime; }
+    unsigned GetMinimumReceiveTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_minimumPacketTime; }
 
     /**Get averaged jitter time for received packets.
        This is the calculated statistical variance of the interarrival
        time of received packets in milliseconds.
       */
-    unsigned GetAvgJitterTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receive).m_jitter; }
+    unsigned GetAvgJitterTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_jitter; }
 
     /**Get averaged jitter time for received packets.
        This is the maximum value of jitterLevel for the session.
       */
-    unsigned GetMaxJitterTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receive).m_maximumJitter; }
+    unsigned GetMaxJitterTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Receiver).m_maximumJitter; }
 
     /**Get jitter time for received packets on remote.
        This is the calculated statistical variance of the interarrival

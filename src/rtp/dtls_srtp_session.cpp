@@ -277,8 +277,10 @@ OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::ExecuteHandshake(bool dat
     }
   }
 
-  if (profile == srtp_profile_reserved || cryptoSuite == NULL)
+  if (profile == srtp_profile_reserved || cryptoSuite == NULL) {
+    PTRACE(2, "Error in SRTP profile.");
     return e_AbortTransport;
+  }
 
   PINDEX masterKeyLength = srtp_profile_get_master_key_length(profile);
   PINDEX masterSaltLength = srtp_profile_get_master_salt_length(profile);
@@ -287,38 +289,18 @@ OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::ExecuteHandshake(bool dat
   if (keyMaterial.IsEmpty())
     return e_AbortTransport;
 
-  const uint8_t *localKey;
-  const uint8_t *localSalt;
-  const uint8_t *remoteKey;
-  const uint8_t *remoteSalt;
-  if (sslChannel.IsServer()) {
-    remoteKey = keyMaterial;
-    localKey = remoteKey + masterKeyLength;
-    remoteSalt = (localKey + masterKeyLength);
-    localSalt = (remoteSalt + masterSaltLength);
-  }
-  else {
-    localKey = keyMaterial;
-    remoteKey = localKey + masterKeyLength;
-    localSalt = (remoteKey + masterKeyLength); 
-    remoteSalt = (localSalt + masterSaltLength);
-  }
+  OpalSRTPKeyInfo * keyInfo = dynamic_cast<OpalSRTPKeyInfo*>(cryptoSuite->CreateKeyInfo());
+  PAssertNULL(keyInfo);
 
-  std::auto_ptr<OpalSRTPKeyInfo> keyPtr;
+  keyInfo->SetCipherKey(PBYTEArray(keyMaterial, masterKeyLength));
+  keyInfo->SetAuthSalt(PBYTEArray(keyMaterial + masterKeyLength*2, masterSaltLength));
+  ApplyKeyToSRTP(*keyInfo, sslChannel.IsServer() ? e_Receiver : e_Sender);
 
-  keyPtr.reset(dynamic_cast<OpalSRTPKeyInfo*>(cryptoSuite->CreateKeyInfo()));
-  keyPtr->SetCipherKey(PBYTEArray(remoteKey, masterKeyLength));
-  keyPtr->SetAuthSalt(PBYTEArray(remoteSalt, masterSaltLength));
+  keyInfo->SetCipherKey(PBYTEArray(keyMaterial + masterKeyLength, masterKeyLength));
+  keyInfo->SetAuthSalt(PBYTEArray(keyMaterial + masterKeyLength*2 + masterSaltLength, masterSaltLength));
+  ApplyKeyToSRTP(*keyInfo, sslChannel.IsServer() ? e_Sender : e_Receiver);
 
-  if (dataChannel) // Data socket context
-    SetCryptoKey(keyPtr.get(), e_Receive);
-
-  keyPtr.reset(dynamic_cast<OpalSRTPKeyInfo*>(cryptoSuite->CreateKeyInfo()));
-  keyPtr->SetCipherKey(PBYTEArray(localKey, masterKeyLength));
-  keyPtr->SetAuthSalt(PBYTEArray(localSalt, masterSaltLength));
-
-  if (dataChannel) // Data socket context
-    SetCryptoKey(keyPtr.get(), e_Sender);
+  delete keyInfo;
 
   m_queueChannel[dataChannel].Close();
   sslChannel.Detach(PChannel::ShutdownWrite); // Do not close the socket!

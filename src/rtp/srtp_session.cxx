@@ -66,33 +66,10 @@
 #endif
 
 
-struct OpalLibSRTP::Context
-{
-  Context();
-  ~Context();
-
-  bool SetKey(DWORD ssrc, OpalMediaCryptoKeyInfo* key);
-  bool AddStream(DWORD ssrc);
-  void Close();
-  OpalRTPSession::SendReceiveStatus ProtectRTP(RTP_DataFrame & frame);
-  OpalRTPSession::SendReceiveStatus ProtectRTCP(RTP_ControlFrame & frame);
-  OpalRTPSession::SendReceiveStatus UnprotectRTP(RTP_DataFrame & frame);
-  OpalRTPSession::SendReceiveStatus UnprotectRTCP(RTP_ControlFrame & frame);
-
-  OpalSRTPKeyInfo * m_keyInfo;
-  struct srtp_ctx_t * m_ctx;
-  BYTE m_key_salt[32]; // libsrtp vague on size, looking at source code, says 32 bytes
-#if PTRACING
-  bool m_firstRTP;
-  bool m_firstRTCP;
-#endif
-  std::map<DWORD, srtp_policy_t> m_policies;
-};
-
 ///////////////////////////////////////////////////////
 
 #if PTRACING
-static bool CheckError(err_status_t err, const char * fn, const char * file, int line)
+static bool CheckError(err_status_t err, const char * fn, const char * file, int line, RTP_SyncSourceId ssrc = 0)
 {
   if (err == err_status_ok)
     return true;
@@ -175,13 +152,15 @@ static bool CheckError(err_status_t err, const char * fn, const char * file, int
     default :
       trace << "unknown error (" << err << ')';
   }
+  if (ssrc != 0)
+    trace << " - SSRC=" << RTP_TRACE_SRC(ssrc);
   trace << PTrace::End;
   return false;
 }
 
-#define CHECK_ERROR(fn, param) CheckError(fn param, #fn, __FILE__, __LINE__)
+#define CHECK_ERROR(fn, param, ...) CheckError(fn param, #fn, __FILE__, __LINE__, ##__VA_ARGS__)
 #else //PTRACING
-#define CHECK_ERROR(fn, param) ((fn param) == err_status_ok)
+#define CHECK_ERROR(fn, param, ...) ((fn param) == err_status_ok)
 #endif //PTRACING
 
 extern "C" {
@@ -203,25 +182,25 @@ extern "C" {
       case err_level_emergency:
       case err_level_alert:
       case err_level_critical:
-	level = 0;
-	break;
+         level = 0;
+         break;
       case err_level_error:
-	level = 1;
-	break;
+         level = 1;
+         break;
       case err_level_warning:
-	level = 2;
-	break;
+         level = 2;
+         break;
       case err_level_notice:
-	level = 3;
-	break;
+         level = 3;
+         break;
       case err_level_info:
-	level = 4;
-	break;
+         level = 4;
+         break;
       case err_level_debug:
       case err_level_none:
       default:
-	level = 5;
-	break;
+         level = 5;
+         break;
     }
 
     PTRACE(level, "libsrtp: " << pvsprintf(format, args));
@@ -434,314 +413,61 @@ PBYTEArray OpalSRTPKeyInfo::GetAuthSalt() const
 }
 
 
-///////////////////////////////////////////////////////
-
-OpalLibSRTP::OpalLibSRTP()
-  : m_rx(new Context)
-  , m_tx(new Context)
-{
-}
-
-
-OpalLibSRTP::~OpalLibSRTP()
-{
-  delete m_rx;
-  delete m_tx;
-}
-
-
-OpalLibSRTP::Context::Context()
-  : m_keyInfo(NULL)
-#if PTRACING
-  , m_firstRTP(true)
-  , m_firstRTCP(true)
-#endif
-{
-  memset(m_key_salt, 0, sizeof(m_key_salt));
-}
-
-
-OpalLibSRTP::Context::~Context()
-{
-  Close();
-  delete m_keyInfo;
-}
-
-
-bool OpalLibSRTP::Context::SetKey(DWORD ssrc, OpalMediaCryptoKeyInfo* ki)
-{
-  OpalSRTPKeyInfo * keyInfo = dynamic_cast<OpalSRTPKeyInfo*>(ki);
-  if (keyInfo == NULL) {
-    PTRACE(2, "Unsuitable crypto suite " << ki->GetCryptoSuite().GetDescription());
-    return false;
-  }
-
-  BYTE tmp_key_salt[32];
-  // This is all a bit vague in docs for libSRTP. Had to look into source to figure it out.
-  memcpy(tmp_key_salt, keyInfo->GetCipherKey(), std::min((PINDEX)16, keyInfo->GetCipherKey().GetSize()));
-  memcpy(&tmp_key_salt[16], keyInfo->GetAuthSalt(), std::min((PINDEX)14, keyInfo->GetAuthSalt().GetSize()));
-
-  if (memcmp(tmp_key_salt, m_key_salt, 32) == 0){
-    if (m_policies[ssrc].ssrc.type != ssrc_undefined){
-      PTRACE(3, "Policy already in this context for SSRC=" << RTP_TRACE_SRC(ssrc) << "");
-      return true;
-    }
-  }
-  else {
-    if (m_ctx != NULL) {
-      PTRACE(3, "Different keys in context, now using " << keyInfo->ToString());
-      CHECK_ERROR(srtp_dealloc,(m_ctx));
-    }
-    else {
-      PTRACE(4, "Created context, using key " << keyInfo->ToString());
-    }
-    CHECK_ERROR(srtp_create,(&m_ctx, NULL));
-  }
-
-  srtp_policy_t policy;
-  memset(&policy, 0, sizeof(policy));
-
-  policy.ssrc.value = ssrc;
-  policy.ssrc.type = ssrc != 0 ? ssrc_specific : ssrc_any_inbound;
-
-  const OpalSRTPCryptoSuite & cryptoSuite = keyInfo->GetCryptoSuite();
-  cryptoSuite.SetCryptoPolicy(policy.rtp);
-  cryptoSuite.SetCryptoPolicy(policy.rtcp);
-
-  memcpy(m_key_salt, tmp_key_salt, 32);
-  policy.key = m_key_salt;
-
-  if (CHECK_ERROR(srtp_add_stream,(m_ctx, &policy))) {
-    PTRACE(4, "Added stream for SSRC=" << RTP_TRACE_SRC(ssrc));
-    m_policies[ssrc] = policy;
-    m_keyInfo = new OpalSRTPKeyInfo(*keyInfo);
-    return true;
-  }
-
-  PTRACE(2, "Could not add stream (srtp_add_stream failed) for SSRC=" << RTP_TRACE_SRC(ssrc));
-  return false;
-}
-
-
-bool OpalLibSRTP::Context::AddStream(DWORD ssrc)
-{
-  if (m_ctx == NULL) {
-    PTRACE(2, "Could not add stream (no context) for SSRC=" << RTP_TRACE_SRC(ssrc));
-    return false;
-  }
-
-  srtp_policy_t policy = m_policies[ssrc];
-  if (policy.ssrc.type != ssrc_specific)
-    return true;
-
-  policy.ssrc.value = ssrc;
-  if (CHECK_ERROR(srtp_add_stream, (m_ctx, &policy)))
-    return true;
-
-  PTRACE(2, "Unable to add stream with SSRC " << ssrc);
-  return false;
-}
-
-
-void OpalLibSRTP::Context::Close()
-{
-  if (m_ctx != NULL) {
-    CHECK_ERROR(srtp_dealloc,(m_ctx));
-    m_ctx = NULL;
-  }
-}
-
-
-OpalRTPSession::SendReceiveStatus OpalLibSRTP::ProtectRTP(RTP_DataFrame & frame)
-{
-  return m_tx->ProtectRTP(frame);
-}
-
-
-OpalRTPSession::SendReceiveStatus OpalLibSRTP::Context::ProtectRTP(RTP_DataFrame & frame)
-{
-  if (m_ctx == NULL) {
-    PTRACE(6, "Keys not set, cannot protect data.");
-    return OpalRTPSession::e_IgnorePacket;
-  }
-
-  frame.MakeUnique();
-
-  int len = frame.GetPacketSize();
-  frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
-  if (!CHECK_ERROR(srtp_protect,(m_ctx, frame.GetPointer(), &len)))
-    return OpalRTPSession::e_AbortTransport;
-
-#if PTRACING
-  if (m_firstRTP) {
-    PTRACE(3, "Protected first RTP packet: " << frame.GetPacketSize() << "->" << len);
-    m_firstRTP = false;
-  }
-#endif
-
-  frame.SetPayloadSize(len - frame.GetHeaderSize());
-  return OpalRTPSession::e_ProcessPacket;
-}
-
-
-OpalRTPSession::SendReceiveStatus OpalLibSRTP::ProtectRTCP(RTP_ControlFrame & frame)
-{
-  return m_tx->ProtectRTCP(frame);
-}
-
-
-OpalRTPSession::SendReceiveStatus OpalLibSRTP::Context::ProtectRTCP(RTP_ControlFrame & frame)
-{
-  if (m_ctx == NULL) {
-    PTRACE(6, "Keys not set, cannot protect control.");
-    return OpalRTPSession::e_IgnorePacket;
-  }
-
-  frame.MakeUnique();
-
-  int len = frame.GetPacketSize();
-  frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
-
-  if (!CHECK_ERROR(srtp_protect_rtcp,(m_ctx, frame.GetPointer(), &len)))
-    return OpalRTPSession::e_AbortTransport;
-
-#if PTRACING
-  if (m_firstRTCP) {
-    PTRACE(3, "Protected first RTCP packet: " << frame.GetPacketSize() << "->" << len);
-    m_firstRTCP = false;
-  }
-#endif
-
-  frame.SetPacketSize(len);
-  return OpalRTPSession::e_ProcessPacket;
-}
-
-
-OpalRTPSession::SendReceiveStatus OpalLibSRTP::UnprotectRTP(RTP_DataFrame & frame)
-{
-  return m_rx->UnprotectRTP(frame);
-}
-
-
-OpalRTPSession::SendReceiveStatus OpalLibSRTP::Context::UnprotectRTP(RTP_DataFrame & frame)
-{
-  if (m_ctx == NULL) {
-    PTRACE(6, "Keys not set, cannot protect control.");
-    return OpalRTPSession::e_IgnorePacket;
-  }
-
-  frame.MakeUnique();
-
-  int len = frame.GetPacketSize();
-  if (!CHECK_ERROR(srtp_unprotect,(m_ctx, frame.GetPointer(), &len)))
-    return OpalRTPSession::e_AbortTransport;
-
-#if PTRACING
-  if (m_firstRTP) {
-    PTRACE(3, "Unprotected first RTP packet: " << frame.GetPacketSize() << "->" << len);
-    m_firstRTP = false;
-  }
-#endif
-
-  frame.SetPayloadSize(len - frame.GetHeaderSize());
-  return OpalRTPSession::e_ProcessPacket;
-}
-
-
-OpalRTPSession::SendReceiveStatus OpalLibSRTP::UnprotectRTCP(RTP_ControlFrame & frame)
-{
-  return m_rx->UnprotectRTCP(frame);
-}
-
-
-OpalRTPSession::SendReceiveStatus OpalLibSRTP::Context::UnprotectRTCP(RTP_ControlFrame & frame)
-{
-  if (m_ctx == NULL) {
-    PTRACE(6, "Keys not set, cannot protect control.");
-    return OpalRTPSession::e_IgnorePacket;
-  }
-
-  frame.MakeUnique();
-
-  int len = frame.GetSize();
-  if (!CHECK_ERROR(srtp_unprotect_rtcp,(m_ctx, frame.GetPointer(), &len)))
-    return OpalRTPSession::e_AbortTransport;
-
-#if PTRACING
-  if (m_firstRTCP) {
-    PTRACE(3, "Unprotected first RTCP packet: " << frame.GetPacketSize() << "->" << len);
-    m_firstRTCP = false;
-  }
-#endif
-
-  frame.SetPacketSize(len);
-  return OpalRTPSession::e_ProcessPacket;
-}
-
-
-void OpalLibSRTP::Close()
-{
-  m_rx->Close();
-  m_tx->Close();
-}
-
-
-bool OpalLibSRTP::IsSecured(bool rx) const
-{
-  return (rx ? m_rx : m_tx)->m_keyInfo != NULL;
-}
-
-
-OpalSRTPKeyInfo* OpalLibSRTP::CreateKeyInfo(bool rx)
-{
-  if (rx)
-    return new OpalSRTPKeyInfo(*m_rx->m_keyInfo);
-
-  return new OpalSRTPKeyInfo(*m_tx->m_keyInfo);
-}
-
-
-///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 OpalSRTPSession::OpalSRTPSession(const Init & init)
   : OpalRTPSession(init)
 {
+  CHECK_ERROR(srtp_create, (&m_context, NULL));
+
+  for (int i = 0; i < 2; ++i) {
+    m_keyInfo[i] = NULL;
+#if PTRACING
+    for (int j = 0; j < 2; ++j) {
+      m_traceLevel[i][j] = 3;
+      m_traceUnsecuredCount[i][j] = 0;
+    }
+#endif
+  }
 }
 
 
 OpalSRTPSession::~OpalSRTPSession()
 {
   Close();
+
+  if (m_context != NULL)
+    CHECK_ERROR(srtp_dealloc,(m_context));
 }
 
 
 bool OpalSRTPSession::Close()
 {
-  OpalLibSRTP::Close();
+  for (int i = 0; i < 2; ++i) {
+    delete m_keyInfo[i];
+    m_keyInfo[i] = NULL;
+  }
+
   return OpalRTPSession::Close();
 }
 
 
 OpalMediaCryptoKeyList & OpalSRTPSession::GetOfferedCryptoKeys()
 {
-  if (m_offeredCryptokeys.IsEmpty() && IsSecured(false))
-    m_offeredCryptokeys.Append(CreateKeyInfo(false));
+  if (m_offeredCryptokeys.IsEmpty() && m_keyInfo[e_Sender] != NULL)
+    m_offeredCryptokeys.Append(m_keyInfo[e_Sender]->CloneAs<OpalMediaCryptoKeyInfo>());
 
   return OpalRTPSession::GetOfferedCryptoKeys();
-}
-
-
-bool OpalSRTPSession::SetCryptoKey(OpalMediaCryptoKeyInfo* key, Direction dir)
-{
-  return dir == e_Receive ? m_rx->SetKey(GetSyncSourceIn(), key) : m_tx->SetKey(GetSyncSourceOut(), key);
 }
 
 
 bool OpalSRTPSession::ApplyCryptoKey(OpalMediaCryptoKeyList & keys, Direction dir)
 {
   for (OpalMediaCryptoKeyList::iterator it = keys.begin(); it != keys.end(); ++it) {
-    if (SetCryptoKey(&*it, dir))
-    {
+    OpalSRTPKeyInfo * keyInfo = dynamic_cast<OpalSRTPKeyInfo*>(&*it);
+    if (keyInfo == NULL)
+      PTRACE(2, *this << "unsuitable crypto suite " << it->GetCryptoSuite().GetDescription());
+    else if (ApplyKeyToSRTP(*keyInfo, dir)) {
       keys.Select(it);
       return true;
     }
@@ -750,18 +476,81 @@ bool OpalSRTPSession::ApplyCryptoKey(OpalMediaCryptoKeyList & keys, Direction di
 }
 
 
-bool OpalSRTPSession::IsCryptoSecured(Direction dir) const
+bool OpalSRTPSession::ApplyKeyToSRTP(OpalSRTPKeyInfo & keyInfo, Direction dir)
 {
-  return IsSecured(dir == e_Receive);
+  // This is all a bit vague in docs for libSRTP. Had to look into source to figure it out.
+  BYTE tmp_key_salt[32];
+  memcpy(tmp_key_salt, keyInfo.GetCipherKey(), std::min((PINDEX)16, keyInfo.GetCipherKey().GetSize()));
+  memcpy(&tmp_key_salt[16], keyInfo.GetAuthSalt(), std::min((PINDEX)14, keyInfo.GetAuthSalt().GetSize()));
+
+  if (m_keyInfo[dir] != NULL) {
+    if (memcmp(tmp_key_salt, m_keyInfo[dir]->m_key_salt, 32) == 0) {
+      PTRACE(3, *this << "crypto key for " << dir << " already set.");
+      return true;
+    }
+    PTRACE(3, *this << "changing crypto keys for " << dir);
+    delete m_keyInfo[dir];
+  }
+  else {
+    PTRACE(3, *this << "setting crypto keys for " << dir);
+  }
+
+  m_keyInfo[dir] = new OpalSRTPKeyInfo(keyInfo);
+  memcpy(m_keyInfo[dir]->m_key_salt, tmp_key_salt, 32);
+
+  for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
+    if (it->second->m_direction == dir && !AddStreamToSRTP(it->first, dir))
+      return false;
+  }
+
+  return true;
 }
 
 
-RTP_SyncSourceId OpalSRTPSession::AddSyncSource(RTP_SyncSourceId id, Direction dir, const char * cname)
+bool OpalSRTPSession::IsCryptoSecured(Direction dir) const
 {
-  id = OpalRTPSession::AddSyncSource(id, dir, cname);
-  if (id != 0)
-    (dir == e_Receive ? m_rx : m_tx)->AddStream(id);
-  return id;
+  return m_keyInfo[dir] != NULL;
+}
+
+
+RTP_SyncSourceId OpalSRTPSession::AddSyncSource(RTP_SyncSourceId ssrc, Direction dir, const char * cname)
+{
+  if ((ssrc = OpalRTPSession::AddSyncSource(ssrc, dir, cname)) == 0)
+    return 0;
+
+  if (m_keyInfo[dir] == NULL) {
+    PTRACE(2, *this << "could not add stream for SSRC=" << RTP_TRACE_SRC(ssrc) << ", no " << dir << " key (yet)");
+    return ssrc;
+  }
+
+  if (AddStreamToSRTP(ssrc, dir))
+    return ssrc;
+
+  m_SSRC.erase(m_SSRC.find(ssrc));
+  return 0;
+}
+
+
+bool OpalSRTPSession::AddStreamToSRTP(RTP_SyncSourceId ssrc, Direction dir)
+{
+  // Get policy, create blank one if needed
+  srtp_policy_t policy;
+  memset(&policy, 0, sizeof(policy));
+
+  policy.ssrc.type = ssrc_specific;
+  policy.ssrc.value = ssrc;
+
+  const OpalSRTPCryptoSuite & cryptoSuite = m_keyInfo[dir]->GetCryptoSuite();
+  cryptoSuite.SetCryptoPolicy(policy.rtp);
+  cryptoSuite.SetCryptoPolicy(policy.rtcp);
+
+  policy.key = m_keyInfo[dir]->m_key_salt;
+
+  if (!CHECK_ERROR(srtp_add_stream, (m_context, &policy), ssrc))
+    return false;
+
+  PTRACE(4, *this << "added " << dir << " stream for SSRC=" << RTP_TRACE_SRC(ssrc));
+  return true;
 }
 
 
@@ -771,7 +560,27 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
   if (status != e_ProcessPacket)
     return status;
 
-  return ProtectRTP(frame);
+  if (!IsCryptoSecured(e_Sender)) {
+    PTRACE_IF(3, (m_traceUnsecuredCount[e_Data][e_Sender]++ % 100) == 0,
+              *this << "keys not set, cannot protect data: " << m_traceUnsecuredCount[e_Data][e_Sender]);
+    return OpalRTPSession::e_IgnorePacket;
+  }
+
+  frame.MakeUnique();
+
+  int len = frame.GetPacketSize();
+  frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
+  if (!CHECK_ERROR(srtp_protect,(m_context, frame.GetPointer(), &len), frame.GetSyncSource()))
+    return OpalRTPSession::e_AbortTransport;
+
+  PTRACE(m_traceLevel[e_Data][e_Sender], *this << "protected RTP packet: "
+         << frame.GetPacketSize() << "->" << len << " SSRC=" << frame.GetSyncSource());
+#if PTRACING
+  m_traceLevel[e_Data][e_Sender] = 6;
+#endif
+
+  frame.SetPayloadSize(len - frame.GetHeaderSize());
+  return OpalRTPSession::e_ProcessPacket;
 }
 
 
@@ -781,7 +590,28 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
   if (status != e_ProcessPacket)
     return status;
 
-  return ProtectRTCP(frame);
+  if (!IsCryptoSecured(e_Sender)) {
+    PTRACE_IF(3, (m_traceUnsecuredCount[e_Control][e_Sender]++ % 100) == 0,
+              *this << "keys not set, cannot protect control: " << m_traceUnsecuredCount[e_Control][e_Sender]);
+    return OpalRTPSession::e_IgnorePacket;
+  }
+
+  frame.MakeUnique();
+
+  int len = frame.GetPacketSize();
+  frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
+
+  if (!CHECK_ERROR(srtp_protect_rtcp,(m_context, frame.GetPointer(), &len), frame.GetSenderSyncSource()))
+    return OpalRTPSession::e_AbortTransport;
+
+  PTRACE(m_traceLevel[e_Control][e_Sender], *this << "protected RTCP packet: "
+         << frame.GetPacketSize() << "->" << len << " SSRC=" << frame.GetSenderSyncSource());
+#if PTRACING
+  m_traceLevel[e_Control][e_Sender] = 6;
+#endif
+
+  frame.SetPacketSize(len);
+  return OpalRTPSession::e_ProcessPacket;
 }
 
 
@@ -791,16 +621,52 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
   if (status != e_ProcessPacket)
     return status;
 
-  return UnprotectRTP(frame);
+  if (!IsCryptoSecured(e_Receiver)) {
+    PTRACE_IF(3, (m_traceUnsecuredCount[e_Data][e_Receiver]++ % 100) == 0,
+              *this << "keys not set, cannot protect control: " << m_traceUnsecuredCount[e_Data][e_Receiver]);
+    return OpalRTPSession::e_IgnorePacket;
+  }
+
+  frame.MakeUnique();
+
+  int len = frame.GetPacketSize();
+  if (!CHECK_ERROR(srtp_unprotect,(m_context, frame.GetPointer(), &len), frame.GetSyncSource()))
+    return OpalRTPSession::e_AbortTransport;
+
+  PTRACE(m_traceLevel[e_Data][e_Receiver], *this << "unprotected RTP packet: "
+         << frame.GetPacketSize() << "->" << len << " SSRC=" << frame.GetSyncSource());
+#if PTRACING
+  m_traceLevel[e_Data][e_Receiver] = 6;
+#endif
+
+  frame.SetPayloadSize(len - frame.GetHeaderSize());
+  return OpalRTPSession::e_ProcessPacket;
 }
 
 
 OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlFrame & frame)
 {
-  SendReceiveStatus status = UnprotectRTCP(frame);
-  if (status == e_ProcessPacket)
-    status = OpalRTPSession::OnReceiveControl(frame);
-  return status;
+  if (!IsCryptoSecured(e_Receiver)) {
+    PTRACE_IF(3, (m_traceUnsecuredCount[e_Control][e_Receiver]++ % 100) == 0,
+              *this << "keys not set, cannot protect control: " << m_traceUnsecuredCount[e_Control][e_Receiver]);
+    return OpalRTPSession::e_IgnorePacket;
+  }
+
+  frame.MakeUnique();
+
+  int len = frame.GetSize();
+  if (!CHECK_ERROR(srtp_unprotect_rtcp,(m_context, frame.GetPointer(), &len), frame.GetSenderSyncSource()))
+    return OpalRTPSession::e_AbortTransport;
+
+  PTRACE(m_traceLevel[e_Control][e_Receiver], *this << "unprotected RTCP packet: "
+         << frame.GetPacketSize() << "->" << len << " SSRC=" << frame.GetSenderSyncSource());
+#if PTRACING
+  m_traceLevel[e_Control][e_Receiver] = 6;
+#endif
+
+  frame.SetPacketSize(len);
+
+  return OpalRTPSession::OnReceiveControl(frame);
 }
 
 
