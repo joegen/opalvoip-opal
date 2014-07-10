@@ -1193,8 +1193,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
   if (frame.GetPacketSize() == 0)
     return e_IgnorePacket;
 
-  PTRACE(6, *this << "OnReceiveControl - " << frame.GetPacketSize() << " bytes:\n"
-         << hex << setprecision(2) << setfill('0') << PBYTEArray(frame, frame.GetPacketSize(), false) << dec);
+  PTRACE(6, *this << "OnReceiveControl - " << frame);
 
   m_firstControl = false;
 
@@ -1207,7 +1206,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
         if (frame.ParseSenderReport(txReport, rxReports))
           OnRxSenderReport(txReport, rxReports);
         else {
-          PTRACE(2, *this << "SenderReport packet truncated");
+          PTRACE(2, *this << "SenderReport packet truncated - " << frame);
         }
         break;
       }
@@ -1219,7 +1218,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
         if (frame.ParseReceiverReport(ssrc, reports))
           OnRxReceiverReport(ssrc, reports);
         else {
-          PTRACE(2, *this << "ReceiverReport packet truncated");
+          PTRACE(2, *this << "ReceiverReport packet truncated - " << frame);
         }
         break;
       }
@@ -1230,7 +1229,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
         if (frame.ParseSourceDescriptions(descriptions))
           OnRxSourceDescription(descriptions);
         else {
-          PTRACE(2, *this << "SourceDescription packet malformed");
+          PTRACE(2, *this << "SourceDescription packet malformed - " << frame);
         }
         break;
       }
@@ -1243,7 +1242,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
         if (frame.ParseGoodbye(rxSSRC, csrc, msg))
           OnRxGoodbye(csrc, msg);
         else {
-          PTRACE(2, *this << "Goodbye packet truncated");
+          PTRACE(2, *this << "Goodbye packet truncated - " << frame);
         }
         break;
       }
@@ -1254,7 +1253,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
         if (frame.ParseApplDefined(info))
           OnRxApplDefined(info);
         else {
-          PTRACE(2, *this << "ApplDefined packet truncated");
+          PTRACE(2, *this << "ApplDefined packet truncated - " << frame);
         }
         break;
       }
@@ -1267,7 +1266,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
         if (RTCP_XR_Metrics::ParseExtendedReportArray(frame, rxSSRC, reports))
           OnRxExtendedReport(rxSSRC, reports);
         else {
-          PTRACE(2, *this << "ReceiverReport packet truncated");
+          PTRACE(2, *this << "ReceiverReport packet truncated - " << frame);
         }
         break;
       }
@@ -1285,7 +1284,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
                 OnRxNACK(targetSSRC, lostPackets);
             }
             else {
-              PTRACE(2, *this << "NACK packet truncated");
+              PTRACE(2, *this << "NACK packet truncated - " << frame);
             }
             break;
           }
@@ -1303,7 +1302,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
               }
             }
             else {
-              PTRACE(2, *this << "TMMB" << (frame.GetFbType() == RTP_ControlFrame::e_TMMBR ? 'R' : 'N') << " packet truncated");
+              PTRACE(2, *this << "TMMB" << (frame.GetFbType() == RTP_ControlFrame::e_TMMBR ? 'R' : 'N') << " packet truncated - " << frame);
             }
             break;
           }
@@ -1331,7 +1330,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
               }
             }
             else {
-              PTRACE(2, *this << "PLI packet truncated");
+              PTRACE(2, *this << "PLI packet truncated - " << frame);
             }
             break;
           }
@@ -1353,7 +1352,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
               }
             }
             else {
-              PTRACE(2, *this << "FIR packet truncated");
+              PTRACE(2, *this << "FIR packet truncated - " << frame);
             }
             break;
           }
@@ -1375,7 +1374,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
               }
             }
             else {
-              PTRACE(2, *this << "TSTO packet truncated");
+              PTRACE(2, *this << "TSTO packet truncated - " << frame);
             }
             break;
           }
