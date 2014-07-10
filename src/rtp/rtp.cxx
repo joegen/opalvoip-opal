@@ -482,6 +482,8 @@ bool RTP_DataFrame::SetPaddingSize(PINDEX paddingSize)
 #if PTRACING
 void RTP_DataFrame::PrintOn(ostream & strm) const
 {
+  bool summary = strm.width() == 1;
+
   int csrcCount = GetContribSrcCount();
 
   strm <<  "V="  << GetVersion()
@@ -495,7 +497,7 @@ void RTP_DataFrame::PrintOn(ostream & strm) const
        << " hdr-sz=" << GetHeaderSize()
        << " pay-sz=" << GetPayloadSize();
 
-  if (strm.width() == 1)
+  if (summary)
     return;
 
   strm << '\n';
