@@ -204,20 +204,20 @@ bool OpalDTLSSRTPSession::Close()
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::ReadRawPDU(BYTE * framePtr, PINDEX & frameSize, bool fromDataChannel)
+OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::ReadRawPDU(BYTE * framePtr, PINDEX & frameSize, Channel channel)
 {
-  OpalRTPSession::SendReceiveStatus status = OpalSRTPSession::ReadRawPDU(framePtr, frameSize, fromDataChannel);
-  if (status != e_ProcessPacket || !m_queueChannel[fromDataChannel].IsOpen())
+  OpalRTPSession::SendReceiveStatus status = OpalSRTPSession::ReadRawPDU(framePtr, frameSize, channel);
+  if (status != e_ProcessPacket || !m_queueChannel[channel].IsOpen())
     return status;
 
   PTRACE(5, "Queueing packet to SSL: " << frameSize << " bytes.");
-  return m_queueChannel[fromDataChannel].Write(framePtr, frameSize) ? e_IgnorePacket : e_AbortTransport;
+  return m_queueChannel[channel].Write(framePtr, frameSize) ? e_IgnorePacket : e_AbortTransport;
 }
 
 
 OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::OnSendData(RTP_DataFrame & frame, bool rewriteHeader)
 {
-  SendReceiveStatus status = ExecuteHandshake(true);
+  SendReceiveStatus status = ExecuteHandshake(e_Data);
   if (status == e_ProcessPacket)
     status = OpalSRTPSession::OnSendData(frame, rewriteHeader);
   return status;
@@ -226,7 +226,7 @@ OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::OnSendData(RTP_DataFrame 
 
 OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::OnSendControl(RTP_ControlFrame & frame)
 {
-  SendReceiveStatus status = ExecuteHandshake(IsSinglePortRx() || IsSinglePortTx());
+  SendReceiveStatus status = ExecuteHandshake(IsSinglePortRx() || IsSinglePortTx() ? e_Data : e_Control);
   if (status == e_ProcessPacket)
     status = OpalSRTPSession::OnSendControl(frame);
   return status;
@@ -251,19 +251,19 @@ const PSSLCertificateFingerprint& OpalDTLSSRTPSession::GetRemoteFingerprint() co
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::ExecuteHandshake(bool dataChannel)
+OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::ExecuteHandshake(Channel channel)
 {
   {
     PWaitAndSignal mutex(m_dataMutex);
 
-    if (m_remotePort[dataChannel] == 0)
+    if (m_remotePort[channel] == 0)
       return e_IgnorePacket; // Too early
 
-    if (m_sslChannel[dataChannel] == NULL)
+    if (m_sslChannel[channel] == NULL)
       return e_ProcessPacket; // Too late (done)
   }
 
-  SSLChannel & sslChannel = *m_sslChannel[dataChannel];
+  SSLChannel & sslChannel = *m_sslChannel[channel];
   if (!sslChannel.ExecuteHandshake())
     return e_AbortTransport;
 
@@ -302,10 +302,10 @@ OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::ExecuteHandshake(bool dat
 
   delete keyInfo;
 
-  m_queueChannel[dataChannel].Close();
+  m_queueChannel[channel].Close();
   sslChannel.Detach(PChannel::ShutdownWrite); // Do not close the socket!
-  delete m_sslChannel[dataChannel];
-  m_sslChannel[dataChannel] = NULL;
+  delete m_sslChannel[channel];
+  m_sslChannel[channel] = NULL;
   return e_ProcessPacket;
 }
 

@@ -580,14 +580,13 @@ class OpalRTPSession : public OpalMediaSession
     void AddFilter(const FilterNotifier & filter);
     void SetJitterBuffer(OpalJitterBuffer * jitterBuffer, RTP_SyncSourceId ssrc = 0);
 
-    virtual bool WriteRawPDU(
-      const BYTE * framePtr,
-      PINDEX frameSize,
-      bool toDataChannel,
-      const PIPSocketAddressAndPort * remote = NULL
-    );
-
   protected:
+    enum Channel
+    {
+      e_Control,
+      e_Data
+    };
+
     ReceiverReportArray BuildReceiverReportArray(const RTP_ControlFrame & frame, PINDEX offset);
     virtual SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame);
     
@@ -597,9 +596,16 @@ class OpalRTPSession : public OpalMediaSession
     virtual SendReceiveStatus ReadRawPDU(
       BYTE * framePtr,
       PINDEX & frameSize,
-      bool fromDataChannel
+      Channel channel
     );
     virtual bool HandleUnreachable(PTRACE_PARAM(const char * channelName));
+
+    virtual bool WriteRawPDU(
+      const BYTE * framePtr,
+      PINDEX frameSize,
+      Channel channel,
+      const PIPSocketAddressAndPort * remote = NULL
+    );
 
     OpalRTPEndPoint   & m_endpoint;
     bool                m_singlePortRx;
@@ -742,11 +748,6 @@ class OpalRTPSession : public OpalMediaSession
 
     list<FilterNotifier> m_filters;
 
-    enum
-    {
-      e_Control,
-      e_Data
-    };
     PIPAddress m_localAddress;
     WORD       m_localPort[2];
 
@@ -768,13 +769,13 @@ class OpalRTPSession : public OpalMediaSession
 
 #if OPAL_ICE
     virtual SendReceiveStatus OnReceiveICE(
-      bool fromDataChannel,
+      Channel channel,
       const BYTE * framePtr,
       PINDEX frameSize,
       const PIPSocket::AddressAndPort & ap
     );
     virtual SendReceiveStatus OnSendICE(
-      bool toDataChannel
+      Channel channel
     );
 
     struct CandidateState {

@@ -65,7 +65,7 @@ class OpalDTLSSRTPSession : public OpalSRTPSession
     virtual bool Close();
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, bool rewriteHeader);
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
-    virtual SendReceiveStatus ReadRawPDU(BYTE * framePtr, PINDEX & frameSize, bool fromDataChannel);
+    virtual SendReceiveStatus ReadRawPDU(BYTE * framePtr, PINDEX & frameSize, Channel channel);
 
     // New members
     void SetPassiveMode(bool passive) { m_passiveMode = passive; }
@@ -76,7 +76,7 @@ class OpalDTLSSRTPSession : public OpalSRTPSession
     const PSSLCertificateFingerprint& GetRemoteFingerprint() const;
 
   protected:
-    virtual SendReceiveStatus ExecuteHandshake(bool dataChannel);
+    virtual SendReceiveStatus ExecuteHandshake(Channel channel);
     PDECLARE_SSLVerifyNotifier(OpalDTLSSRTPSession, OnVerify);
 
 
