@@ -59,6 +59,7 @@ class OpalPCAPFile : public PFile
 
     int GetDataLink(PBYTEArray & payload);
     int GetIP(PBYTEArray & payload);
+    int GetTCP(PBYTEArray & payload);
     int GetUDP(PBYTEArray & payload);
     int GetRTP(RTP_DataFrame & rtp);
 
