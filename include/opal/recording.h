@@ -38,6 +38,9 @@
 
 #if OPAL_HAS_MIXER
 
+class OpalMediaFormat;
+class RTP_DataFrame;
+
 
 /** This is an abstract class for recording OPAL calls.
     A factory is used to created concrete classes based on the file extension
