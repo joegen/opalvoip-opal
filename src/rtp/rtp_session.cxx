@@ -897,8 +897,17 @@ void OpalRTPSession::SyncSource::OnRxReceiverReport(const ReceiverReport & repor
 #endif
 
   if (m_lastReportTime.IsValid()) {
-    m_session.m_roundTripTime = std::max(1U,(unsigned)((PTime() - m_lastReportTime) - report.delay).GetMilliSeconds());
-    PTRACE(4, &m_session, m_session << "determined round trip time: " << m_session.m_roundTripTime << "ms");
+    PTimeInterval myDelay = PTime() - m_lastReportTime;
+    if (m_session.m_roundTripTime > 0 && myDelay <= report.delay)
+      PTRACE(4, &m_session, m_session << "not calculating round trip time, RR arrived too soon after SR.");
+    else if (myDelay <= report.delay) {
+      m_session.m_roundTripTime = 1;
+      PTRACE(4, &m_session, m_session << "very fast round trip time, using 1ms");
+    }
+    else {
+      m_session.m_roundTripTime = (myDelay - report.delay).GetInterval();
+      PTRACE(4, &m_session, m_session << "determined round trip time: " << m_session.m_roundTripTime << "ms");
+    }
   }
 }
 
