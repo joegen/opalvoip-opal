@@ -438,7 +438,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
     else {
       m_lastSequenceNumber += (RTP_SequenceNumber)(frame.GetDiscontinuity() + 1);
       PTRACE_IF(6, frame.GetDiscontinuity() > 0, &m_session,
-                m_session << "ave discontinuity: " << frame.GetDiscontinuity() << ", sn=" << m_lastSequenceNumber);
+                m_session << "have discontinuity: " << frame.GetDiscontinuity() << ", sn=" << m_lastSequenceNumber);
     }
 
     frame.SetSequenceNumber(m_lastSequenceNumber);
@@ -967,7 +967,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
   status = syncSource->OnSendData(frame, rewriteHeader);
 
 #if OPAL_RTP_FEC
-  if (m_redundencyPayloadType != RTP_DataFrame::IllegalPayloadType)
+  if (m_redundencyPayloadType != RTP_DataFrame::IllegalPayloadType && m_redundencyPayloadType != frame.GetPayloadType())
     status = syncSource->OnSendRedundantFrame(frame);
 #endif
 
