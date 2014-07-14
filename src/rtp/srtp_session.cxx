@@ -560,10 +560,13 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
   if (status != e_ProcessPacket)
     return status;
 
+  if (!rewriteHeader)
+    return e_ProcessPacket;
+
   if (!IsCryptoSecured(e_Sender)) {
     PTRACE_IF(3, (m_traceUnsecuredCount[e_Data][e_Sender]++ % 100) == 0,
               *this << "keys not set, cannot protect data: " << m_traceUnsecuredCount[e_Data][e_Sender]);
-    return OpalRTPSession::e_IgnorePacket;
+    return e_IgnorePacket;
   }
 
   frame.MakeUnique();
@@ -571,7 +574,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
   int len = frame.GetPacketSize();
   frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
   if (!CHECK_ERROR(srtp_protect,(m_context, frame.GetPointer(), &len), frame.GetSyncSource()))
-    return OpalRTPSession::e_AbortTransport;
+    return e_AbortTransport;
 
   PTRACE(m_traceLevel[e_Data][e_Sender], *this << "protected RTP packet: "
          << frame.GetPacketSize() << "->" << len << " SSRC=" << frame.GetSyncSource());
@@ -580,7 +583,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
 #endif
 
   frame.SetPayloadSize(len - frame.GetHeaderSize());
-  return OpalRTPSession::e_ProcessPacket;
+  return e_ProcessPacket;
 }
 
 
