@@ -653,7 +653,7 @@ class OpalRTPSession : public OpalMediaSession
       virtual void CalculateStatistics(const RTP_DataFrame & frame);
       virtual void GetStatistics(OpalMediaStatistics & statistics) const;
 
-      virtual void OnSendReceiverReport(RTP_ControlFrame::ReceiverReport & report, SyncSource & sender);
+      virtual void OnSendReceiverReport(RTP_ControlFrame::ReceiverReport & report);
       virtual void OnRxSenderReport(const RTP_SenderReport & report);
       virtual void OnRxReceiverReport(const ReceiverReport & report);
 
