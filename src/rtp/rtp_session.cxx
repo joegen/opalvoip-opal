@@ -833,7 +833,7 @@ bool OpalRTPSession::ReadData(RTP_DataFrame & frame)
 }
 
 
-void OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::ReceiverReport & report, SyncSource & sender)
+void OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::ReceiverReport & report)
 {
   report.ssrc = m_sourceIdentifier;
 
@@ -853,13 +853,10 @@ void OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::Receiver
 
   report.jitter = m_jitterAccum >> JitterRoundingGuardBits; // Allow for rounding protection bits
 
-  PTime now;
-  sender.m_lastReportTime = now; // Remember when we last sent RR
-
   // Time remote sent us an SR
   if (m_lastReportTime.IsValid()) {
     report.lsr  = (uint32_t)(m_syncRealTime.GetNTP() >> 16);
-    report.dlsr = (uint32_t)((now - m_lastReportTime).GetMilliSeconds()*65536/1000); // Delay since last received SR
+    report.dlsr = (uint32_t)((PTime() - m_lastReportTime).GetMilliSeconds()*65536/1000); // Delay since last received SR
   }
   else {
     report.lsr = 0;
@@ -902,12 +899,16 @@ void OpalRTPSession::SyncSource::OnRxReceiverReport(const ReceiverReport & repor
       PTRACE(4, &m_session, m_session << "not calculating round trip time, RR arrived too soon after SR.");
     else if (myDelay <= report.delay) {
       m_session.m_roundTripTime = 1;
-      PTRACE(4, &m_session, m_session << "very fast round trip time, using 1ms");
+      PTRACE(4, &m_session, m_session << "very small round trip time, using 1ms");
+    }
+    else if (myDelay > 1000) {
+      PTRACE(4, &m_session, m_session << "very large round trip time, ignoring");
     }
     else {
       m_session.m_roundTripTime = (myDelay - report.delay).GetInterval();
       PTRACE(4, &m_session, m_session << "determined round trip time: " << m_session.m_roundTripTime << "ms");
     }
+    m_lastReportTime = 0;
   }
 }
 
@@ -1104,6 +1105,9 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
            << " psent=" << sr->psent
            << " osent=" << sr->osent);
 
+    if (!sender.m_lastReportTime.IsValid())
+      sender.m_lastReportTime.SetCurrentTime(); // Remember when we last sent SR
+
     // add the RR's after the SR
     rr = (RTP_ControlFrame::ReceiverReport *)(payload + sizeof(PUInt32b) + sizeof(RTP_ControlFrame::SenderReport));
   }
@@ -1111,7 +1115,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
   if (rr != NULL) {
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
       if (it->second->m_direction == e_Receiver && it->second->m_packets > 0)
-        it->second->OnSendReceiverReport(*rr++, sender);
+        it->second->OnSendReceiverReport(*rr++);
     }
   }
 
@@ -1448,7 +1452,7 @@ void OpalRTPSession::OnRxSenderReport(const SenderReport & senderReport, const R
   }
 #endif
 
-  // This is report for their treanmitter, our receiver
+  // This is report for their sender, our receiver
   SyncSource * receiver;
   if (GetSyncSource(senderReport.sourceIdentifier, e_Receiver, receiver))
     receiver->OnRxSenderReport(senderReport);
