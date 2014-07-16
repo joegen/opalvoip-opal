@@ -196,6 +196,16 @@ int OpalPCAPFile::GetIP(PBYTEArray & payload)
 }
 
 
+int OpalPCAPFile::GetTCP(PBYTEArray & payload)
+{
+  return m_rawPacket.Read(*this) &&
+         m_rawPacket.GetTCP(payload, m_packetSrc, m_packetDst) &&
+         m_packetSrc.MatchWildcard(m_filterSrc) &&
+         m_packetDst.MatchWildcard(m_filterDst)
+         ? payload.GetSize() : -1;
+}
+
+
 int OpalPCAPFile::GetUDP(PBYTEArray & payload)
 {
   return m_rawPacket.Read(*this) &&
