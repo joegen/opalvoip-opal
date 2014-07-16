@@ -203,9 +203,18 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
     return false;
   }
 
+  bool directRead = true;
   {
     PWaitAndSignal mutex(m_jitterMutex);
-    if (!(m_jitterBuffer != NULL ? m_jitterBuffer->ReadData(packet) : m_rtpSession.ReadData(packet)))
+    if (m_jitterBuffer != NULL) {
+      if (!m_jitterBuffer->ReadData(packet))
+        return false;
+      directRead = false;
+    }
+  }
+
+  if (directRead) {
+    if (!m_rtpSession.ReadData(packet))
       return false;
   }
 
