@@ -2173,6 +2173,9 @@ bool OpalRTPSession::HandleUnreachable(PTRACE_PARAM(const char * channelName))
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadDataPDU(RTP_DataFrame & frame)
 {
+  if (!frame.SetMinSize(m_connection.GetEndPoint().GetManager().GetMaxRtpPacketSize()))
+    return e_AbortTransport;
+
   PINDEX pduSize = frame.GetSize();
   SendReceiveStatus status = ReadRawPDU(frame.GetPointer(), pduSize, true);
   if (status != e_ProcessPacket)
