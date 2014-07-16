@@ -672,6 +672,7 @@ class OpalRTPMediaStream : public OpalMediaStream
     OpalRTPSession & rtpSession;
     unsigned         minAudioJitterDelay;
     unsigned         maxAudioJitterDelay;
+    bool             m_nonBypassedMedia;
 };
 
 
