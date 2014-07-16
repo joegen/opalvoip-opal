@@ -697,14 +697,6 @@ void OpalMediaPatch::Main()
       continue;
     }
 
-    sourceFrame.MakeUnique();
-    sourceFrame.SetPayloadType(source.GetMediaFormat().GetPayloadType());
-
-    // We do the following to make sure that the buffer size is large enough,
-    // in case something in previous loop adjusted it
-    sourceFrame.SetPayloadSize(source.GetDataSize());
-    sourceFrame.SetPayloadSize(0);
-
     if (!source.ReadPacket(sourceFrame)) {
       PTRACE(4, "Patch\tThread ended because source read failed");
       break;
