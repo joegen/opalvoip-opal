@@ -180,6 +180,9 @@ OpalDTLSSRTPSession::~OpalDTLSSRTPSession()
 
 bool OpalDTLSSRTPSession::Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool mediaAddress)
 {
+  if (IsOpen())
+    return true;
+
   if (!OpalSRTPSession::Open(localInterface, remoteAddress, mediaAddress))
     return false;
 
