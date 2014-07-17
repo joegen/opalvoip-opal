@@ -656,15 +656,17 @@ class OpalRTPMediaStream : public OpalMediaStream
       OpalMediaPatch * patch  ///<  Media patch thread
     );
 
+#if OPAL_STATISTICS
+    virtual void GetStatistics(OpalMediaStatistics & statistics, bool fromPatch = false) const;
+#endif
+  //@}
+
     /** Return current RTP session
       */
     virtual OpalRTPSession & GetRtpSession() const
     { return rtpSession; }
 
-#if OPAL_STATISTICS
-    virtual void GetStatistics(OpalMediaStatistics & statistics, bool fromPatch = false) const;
-#endif
-  //@}
+    void SetRewriteHeaders(bool v) { m_rewriteHeaders = v; }
 
   protected:
     virtual void InternalClose();
@@ -672,7 +674,7 @@ class OpalRTPMediaStream : public OpalMediaStream
     OpalRTPSession & rtpSession;
     unsigned         minAudioJitterDelay;
     unsigned         maxAudioJitterDelay;
-    bool             m_nonBypassedMedia;
+    bool             m_rewriteHeaders;
 };
 
 

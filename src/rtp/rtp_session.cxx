@@ -581,9 +581,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
 {
   PWaitAndSignal mutex(m_dataMutex);
 
-  if (rewriteHeader) {
-    PTimeInterval tick = PTimer::Tick();  // Timestamp set now
+  PTimeInterval tick = PTimer::Tick();  // Timestamp set now
 
+  if (rewriteHeader) {
     lastSentSequenceNumber += (WORD)(frame.GetDiscontinuity() + 1);
     PTRACE_IF(6, frame.GetDiscontinuity() > 0, "RTP\tHave discontinuity: "
               << frame.GetDiscontinuity() << ", sn=" << lastSentSequenceNumber);
@@ -628,10 +628,14 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
         txStatisticsCount++;
       }
     }
-
-    lastSentTimestamp = frame.GetTimestamp();
-    lastSentPacketTime = tick;
   }
+  else {
+    syncSourceOut = frame.GetSyncSource();
+    lastSentSequenceNumber = frame.GetSequenceNumber();
+  }
+
+  lastSentTimestamp = frame.GetTimestamp();
+  lastSentPacketTime = tick;
 
   octetsSent += frame.GetPayloadSize();
   packetsSent++;

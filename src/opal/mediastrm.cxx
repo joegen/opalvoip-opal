@@ -700,7 +700,7 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
   , rtpSession(rtp)
   , minAudioJitterDelay(minJitter)
   , maxAudioJitterDelay(maxJitter)
-  , m_nonBypassedMedia(false)
+  , m_rewriteHeaders(true)
 {
   if (!mediaFormat.NeedsJitterBuffer())
     minAudioJitterDelay = maxAudioJitterDelay = 0;
@@ -789,16 +789,15 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
   timestamp = packet.GetTimestamp();
 
   OpalMediaPatchPtr mediaPatch = m_mediaPatch;
-  if (mediaPatch != NULL && mediaPatch->IsBypassed())
-    return rtpSession.WriteData(packet, NULL, m_nonBypassedMedia);
+  if (mediaPatch == NULL || !mediaPatch->IsBypassed()) {
+    if (packet.GetPayloadSize() == 0)
+      return true;
 
-  m_nonBypassedMedia = true;
+    if (m_rewriteHeaders)
+      packet.SetPayloadType(m_payloadType);
+  }
 
-  if (packet.GetPayloadSize() == 0)
-    return true;
-
-  packet.SetPayloadType(m_payloadType);
-  return rtpSession.WriteData(packet);
+  return rtpSession.WriteData(packet, NULL, m_rewriteHeaders);
 }
 
 
