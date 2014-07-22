@@ -716,6 +716,7 @@ class OpalRTPSession : public OpalMediaSession
     // Make sure JB is last to make sure it is destroyed first.
     typedef PSafePtr<OpalJitterBuffer, PSafePtrMultiThreaded> JitterBufferPtr;
     JitterBufferPtr m_jitterBuffer;
+    bool            m_jbShuttingDown;
 
 #if PTRACING
     unsigned m_levelTxRR;
