@@ -86,12 +86,12 @@ public:
      PTRACE(4, "Jitter\tDestroying jitter buffer " << *this);
 
      m_running = false;
-     bool reopen = m_session.Shutdown(true);
+     m_session.m_jbShuttingDown = true;
+     if (m_session.Shutdown(true))
+       m_session.Restart(true);
+     m_session.m_jbShuttingDown = false;
 
      WaitForThreadTermination();
-
-     if (reopen)
-       m_session.Restart(true);
    }
 
     virtual PBoolean OnReadPacket(RTP_DataFrame & frame)
@@ -182,6 +182,7 @@ OpalRTPSession::OpalRTPSession(OpalConnection & conn, unsigned sessionId, const 
   , m_remoteBehindNAT(conn.RemoteIsNAT())
   , m_localHasRestrictedNAT(false)
   , m_noTransmitErrors(0)
+  , m_jbShuttingDown(false)
 #if PTRACING
   , m_levelTxRR(3)
   , m_levelRxSR(3)
@@ -465,12 +466,15 @@ unsigned OpalRTPSession::GetJitterBufferSize() const
 
 bool OpalRTPSession::ReadData(RTP_DataFrame & frame)
 {
-  if (!IsOpen() || m_shutdownRead)
+  if (!IsOpen())
     return false;
 
   JitterBufferPtr jitter = m_jitterBuffer; // Increase reference count
   if (jitter != NULL)
     return jitter->ReadData(frame);
+
+  while (m_jbShuttingDown)
+    PThread::Sleep(10);
 
   if (m_outOfOrderPackets.empty())
     return InternalReadData(frame);
@@ -2050,16 +2054,23 @@ bool OpalRTPSession::InternalReadData(RTP_DataFrame & frame)
 {
   SendReceiveStatus receiveStatus = e_IgnorePacket;
   while (receiveStatus == e_IgnorePacket) {
-    if (m_shutdownRead || PAssertNULL(m_dataSocket) == NULL)
+    if (PAssertNULL(m_dataSocket) == NULL)
       return false;
+
+    if (m_shutdownRead) {
+      PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", read shut down");
+      return false;
+    }
 
     if (m_controlSocket == NULL)
       receiveStatus = ReadDataPDU(frame);
     else {
       int selectStatus = PSocket::Select(*m_dataSocket, *m_controlSocket, m_maxNoReceiveTime);
 
-      if (m_shutdownRead)
+      if (m_shutdownRead) {
+        PTRACE(2, "RTP_UDP\tSession " << m_sessionId << ", read shut down");
         return false;
+      }
 
       if (selectStatus > 0) {
         PTRACE(1, "RTP_UDP\tSession " << m_sessionId << ", Select error: "
