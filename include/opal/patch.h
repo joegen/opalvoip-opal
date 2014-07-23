@@ -329,6 +329,9 @@ class OpalPassiveMediaPatch : public OpalMediaPatch
     );
 
     virtual void Start();
+
+  protected:
+    bool m_started;
 };
 
 
