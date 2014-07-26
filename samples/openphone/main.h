@@ -32,6 +32,10 @@
 #ifndef _OpenPhone_MAIN_H
 #define _OpenPhone_MAIN_H
 
+#if WXVER>29
+  #define WXUSINGDLL 1
+#endif
+
 #include <ptlib_wx.h>
 #include <opal/manager.h>
 
