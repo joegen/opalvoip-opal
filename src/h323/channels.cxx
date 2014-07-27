@@ -552,12 +552,15 @@ PBoolean H323_RealTimeChannel::OnSendingPDU(H245_H2250LogicalChannelParameters &
 }
 
 
-void H323_RealTimeChannel::OnSendOpenAck(H245_H2250LogicalChannelAckParameters & /*param*/) const
+void H323_RealTimeChannel::OnSendOpenAck(H245_H2250LogicalChannelAckParameters & param) const
 {
+  // set session ID
+  param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID);
+  param.m_sessionID = GetSessionID();
 }
 
 
-void H323_RealTimeChannel::OnSendOpenAck(const H245_OpenLogicalChannel & open,
+void H323_RealTimeChannel::OnSendOpenAck(const H245_OpenLogicalChannel & /*open*/,
                                          H245_OpenLogicalChannelAck & ack) const
 {
   PTRACE(3, "H323RTP\tOnSendOpenAck");
@@ -570,14 +573,7 @@ void H323_RealTimeChannel::OnSendOpenAck(const H245_OpenLogicalChannel & open,
       H245_OpenLogicalChannelAck_forwardMultiplexAckParameters::e_h2250LogicalChannelAckParameters);
 
   // get H225 parms
-  H245_H2250LogicalChannelAckParameters & param = ack.m_forwardMultiplexAckParameters;
-
-  // set session ID
-  param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID);
-  const H245_H2250LogicalChannelParameters & openparam =
-                          open.m_forwardLogicalChannelParameters.m_multiplexParameters;
-  unsigned sessionID = openparam.m_sessionID;
-  param.m_sessionID = sessionID;
+  OnSendOpenAck(ack.m_forwardMultiplexAckParameters);
 
 #if OPAL_H235_6 || OPAL_H235_8
   if (capability->OnSendingPDU(ack.m_encryptionSync, connection, GetSessionID(), true)) {
@@ -586,9 +582,7 @@ void H323_RealTimeChannel::OnSendOpenAck(const H245_OpenLogicalChannel & open,
   }
 #endif // OPAL_H235_6 || OPAL_H235_8
 
-  OnSendOpenAck(param);
-
-  PTRACE(3, "H323RTP\tSending open logical channel ACK: sessionID=" << sessionID);
+  PTRACE(3, "H323RTP\tSending open logical channel ACK: sessionID=" << GetSessionID());
 }
 
 
@@ -638,6 +632,7 @@ PBoolean H323_RealTimeChannel::OnReceivedPDU(const H245_H2250LogicalChannelParam
   unsigned sessionID = param.m_sessionID;
 
   if (connection.IsH245Master()) {
+    PAssert(GetSessionID() < 256, PLogicError);
     if (sessionID == 0)
       return true;
   }
