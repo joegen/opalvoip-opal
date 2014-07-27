@@ -194,7 +194,7 @@ void OpalG711_PLC::scalespeech(short *inout, int c, int size, bool decay) const
     }
     else {
       if(g<1)
-	inout[index] = short(round(inout[index] * g));
+	inout[index] = short(std::round(inout[index] * g));
       if(decay)
         g -= attenincr;
     }
@@ -433,7 +433,7 @@ void OpalG711_PLC::addtohistory(short *s, int size)
 	  */
 	channel[c].transition_len = channel[c].pitch_overlap;
 	if(channel[c].conceal_count > ms2samples(TRANSITION_START))
-	  channel[c].transition_len += int(round((channel[c].conceal_count - ms2samples(TRANSITION_START))*TRANSITION_RATIO));
+	  channel[c].transition_len += int(std::round((channel[c].conceal_count - ms2samples(TRANSITION_START))*TRANSITION_RATIO));
 	if(channel[c].transition_len > ms2samples(TRANSITION_MAX))
 	  channel[c].transition_len = ms2samples(TRANSITION_MAX);
 	getfespeech(transition_buf, c, channel[c].transition_len);
