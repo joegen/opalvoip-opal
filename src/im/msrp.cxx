@@ -889,14 +889,20 @@ bool MSRPProtocol::SendREPORT(const PString & chunkId,
   *this << "-------" << chunkId << "$" << CRLF;
   flush();
 
-  {
-    PStringStream str; str << ::setfill('\r') << mime.PrintContents(str);
-    PTRACE(4, "Sending MSRP REPORT\n" << "MSRP " << chunkId << " " << MSRPCommands[REPORT] << CRLF 
-                                                 << "To-Path: " << toUrl << CRLF 
-                                                 << "From-Path: "<< fromUrl << CRLF 
-                                                 << str << CRLF
-                                                 << "-------" << chunkId << "$");
+#if PTRACING
+  static const unsigned Level = 4;
+  if (PTrace::CanTrace(Level)) {
+    ostream & trace = PTRACE_BEGIN(Level, "MSRP");
+    trace << "Sending MSRP REPORT\n"
+             "MSRP " << chunkId << " " << MSRPCommands[REPORT] << "\n"
+             "To-Path: " << toUrl << "\n"
+             "From-Path: " << fromUrl << '\n'
+             << ::setfill('\r');
+    mime.PrintContents(trace);
+    trace << "-------" << chunkId << '$'
+          << PTrace::End;
   }
+#endif
 
   return true;
 }
