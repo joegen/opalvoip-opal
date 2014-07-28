@@ -417,7 +417,8 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
                  " maxTime=" << m_maximumPacketTime <<
                  " minTime=" << m_minimumPacketTime <<
                  " jitter=" << m_jitter <<
-                 " maxJitter=" << m_maximumJitter;
+                 " maxJitter=" << m_maximumJitter
+          << PTrace::End;
   }
 #endif
 }
@@ -1701,7 +1702,8 @@ void OpalRTPSession::SetJitterBuffer(OpalJitterBuffer * jitterBuffer, RTP_SyncSo
         trace << "attached jitter buffer " << *jitterBuffer << " to";
       else
         trace << "detached jitter buffer from";
-      trace << "SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier) << PTrace::End;
+      trace << "SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier)
+            << PTrace::End;
     }
 #endif
   }
