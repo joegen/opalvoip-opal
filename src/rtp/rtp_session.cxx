@@ -61,7 +61,21 @@
 #define RTP_CTRL_BUFFER_SIZE     0x1000   // 4kb
 
 
-#define PTraceModule() "RTP"
+#if OPAL_ICE
+
+class OpalRTPSession::ICEServer : public PSTUNServer
+{
+  PCLASSINFO(ICEServer, PSTUNServer);
+public:
+  ICEServer(OpalRTPSession & session) : m_session(session) { }
+  virtual void OnBindingResponse(const PSTUNMessage & request, PSTUNMessage & response);
+
+protected:
+  OpalRTPSession & m_session;
+};
+
+#endif
+
 
 enum { JitterRoundingGuardBits = 4 };
 
@@ -82,6 +96,7 @@ ostream & operator<<(ostream & strm, OpalRTPSession::Direction dir)
 }
 #endif
 
+#define PTraceModule() "RTP"
 
 #define new PNEW
 
@@ -140,7 +155,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_localHasRestrictedNAT(false)
   , m_noTransmitErrors(0)
 #if OPAL_ICE
-  , m_stunServer(NULL)
+  , m_iceServer(NULL)
   , m_stunClient(NULL)
 #endif
 #if PTRACING
@@ -177,7 +192,7 @@ OpalRTPSession::~OpalRTPSession()
     delete it->second;
 
 #if OPAL_ICE
-  delete m_stunServer;
+  delete m_iceServer;
   delete m_stunClient;
 #endif
 }
@@ -2195,10 +2210,11 @@ bool OpalRTPSession::InternalSetRemoteAddress(const PIPSocket::AddressAndPort & 
 
 
 #if OPAL_ICE
+
 void OpalRTPSession::SetICE(const PString & user, const PString & pass, const PNatCandidateList & candidates)
 {
-  delete m_stunServer;
-  m_stunServer = NULL;
+  delete m_iceServer;
+  m_iceServer = NULL;
 
   delete m_stunClient;
   m_stunClient = NULL;
@@ -2215,9 +2231,9 @@ void OpalRTPSession::SetICE(const PString & user, const PString & pass, const PN
       m_candidates[it->m_component-1].push_back(it->m_localTransportAddress);
   }
 
-  m_stunServer = new PSTUNServer;
-  m_stunServer->Open(m_socket[e_Data], m_socket[e_Control]);
-  m_stunServer->SetCredentials(m_localUsername + ':' + m_remoteUsername, m_localPassword, PString::Empty());
+  m_iceServer = new ICEServer(*this);
+  m_iceServer->Open(m_socket[e_Data], m_socket[e_Control]);
+  m_iceServer->SetCredentials(m_localUsername + ':' + m_remoteUsername, m_localPassword, PString::Empty());
 
   m_stunClient = new PSTUNClient;
   m_stunClient->SetCredentials(m_remoteUsername + ':' + m_localUsername, m_remoteUsername, PString::Empty());
@@ -2234,7 +2250,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveICE(Channel channel,
                                                                PINDEX frameSize,
                                                                const PIPSocket::AddressAndPort & ap)
 {
-  if (m_stunServer == NULL)
+  if (m_iceServer == NULL)
     return e_ProcessPacket;
 
   PSTUNMessage message(framePtr, frameSize, ap);
@@ -2242,7 +2258,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveICE(Channel channel,
     return e_ProcessPacket;
 
   if (message.IsRequest()) {
-    if (!m_stunServer->OnReceiveMessage(message, PSTUNServer::SocketInfo(m_socket[channel])))
+    if (!m_iceServer->OnReceiveMessage(message, PSTUNServer::SocketInfo(m_socket[channel])))
       return e_IgnorePacket;
 
     if (!m_candidates[channel].empty() && message.FindAttribute(PSTUNAttribute::USE_CANDIDATE) == NULL)
@@ -2264,6 +2280,12 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveICE(Channel channel,
     InternalSetRemoteAddress(ap, channel PTRACE_PARAM(, "ICE"));
   m_candidates[channel].clear();
   return e_IgnorePacket;
+}
+
+
+void OpalRTPSession::ICEServer::OnBindingResponse(const PSTUNMessage &, PSTUNMessage & response)
+{
+  response.AddAttribute(PSTUNAttribute::USE_CANDIDATE);
 }
 
 
