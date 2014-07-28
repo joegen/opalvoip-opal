@@ -60,7 +60,7 @@ static const double PITCH_LOW=66.6;/**< minimum allowed channel[c].pitch. defaul
 static const double PITCH_HIGH=200;/**< maximum allowed channel[c].pitch. default 200 Hz [Hz] */
 
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && _MSC_VER < 1700
 __inline double round(const double & value)
 {
   return value < 0 ? floor(value-0.5) : ceil(value+0.5);
@@ -194,7 +194,7 @@ void OpalG711_PLC::scalespeech(short *inout, int c, int size, bool decay) const
     }
     else {
       if(g<1)
-	inout[index] = short(std::round(inout[index] * g));
+	inout[index] = short(round(inout[index] * g));
       if(decay)
         g -= attenincr;
     }
@@ -433,7 +433,7 @@ void OpalG711_PLC::addtohistory(short *s, int size)
 	  */
 	channel[c].transition_len = channel[c].pitch_overlap;
 	if(channel[c].conceal_count > ms2samples(TRANSITION_START))
-	  channel[c].transition_len += int(std::round((channel[c].conceal_count - ms2samples(TRANSITION_START))*TRANSITION_RATIO));
+	  channel[c].transition_len += int(round((channel[c].conceal_count - ms2samples(TRANSITION_START))*TRANSITION_RATIO));
 	if(channel[c].transition_len > ms2samples(TRANSITION_MAX))
 	  channel[c].transition_len = ms2samples(TRANSITION_MAX);
 	getfespeech(transition_buf, c, channel[c].transition_len);
