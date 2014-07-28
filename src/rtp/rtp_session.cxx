@@ -425,32 +425,34 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_DataFrame & frame, bool rewriteHeader)
 {
-  if (rewriteHeader) {
-    frame.SetSyncSource(m_sourceIdentifier);
+  frame.SetSyncSource(m_sourceIdentifier);
 
-    if (m_lastSequenceNumber == 0) {
-      m_lastSequenceNumber = (uint16_t)PRandom::Number(1, 65535);
-      PTRACE(3, &m_session, m_session << "first sent data: "
-             << setw(1) << frame
-             << " rem=" << m_session.GetRemoteAddress()
-             << " local=" << m_session.GetLocalAddress());
-    }
-    else {
-      m_lastSequenceNumber += (RTP_SequenceNumber)(frame.GetDiscontinuity() + 1);
-      PTRACE_IF(5, frame.GetDiscontinuity() > 0, &m_session,
-                m_session << "have discontinuity: " << frame.GetDiscontinuity() << ", sn=" << m_lastSequenceNumber);
-    }
-
-    frame.SetSequenceNumber(m_lastSequenceNumber);
+  if (m_lastSequenceNumber == 0) {
+    if (rewriteHeader)
+      frame.SetSequenceNumber(m_lastSequenceNumber = (RTP_SequenceNumber)PRandom::Number(1, 65535));
+    else
+      m_lastSequenceNumber = frame.GetSequenceNumber();
+    PTRACE(3, &m_session, m_session << "first sent data: "
+            << setw(1) << frame
+            << " rem=" << m_session.GetRemoteAddress()
+            << " local=" << m_session.GetLocalAddress());
+  }
+  else {
+    if (rewriteHeader)
+      frame.SetSequenceNumber(m_lastSequenceNumber += (RTP_SequenceNumber)(frame.GetDiscontinuity() + 1));
+    else
+      m_lastSequenceNumber = frame.GetSequenceNumber();
+    PTRACE_IF(5, frame.GetDiscontinuity() > 0, &m_session,
+              m_session << "have discontinuity: " << frame.GetDiscontinuity() << ", sn=" << m_lastSequenceNumber);
+  }
 
 #if OPAL_RTP_FEC
-    if (m_session.GetRedundencyPayloadType() != RTP_DataFrame::IllegalPayloadType) {
-      SendReceiveStatus status = OnSendRedundantFrame(frame);
-      if (status != e_ProcessPacket)
-        return status;
-    }
-#endif
+  if (rewriteHeader && m_session.GetRedundencyPayloadType() != RTP_DataFrame::IllegalPayloadType) {
+    SendReceiveStatus status = OnSendRedundantFrame(frame);
+    if (status != e_ProcessPacket)
+      return status;
   }
+#endif
 
   CalculateStatistics(frame);
   return e_ProcessPacket;
