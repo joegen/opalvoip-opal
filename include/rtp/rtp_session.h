@@ -790,7 +790,8 @@ class OpalRTPSession : public OpalMediaSession
     typedef std::list<CandidateState> CandidateStates;
 
     CandidateStates m_candidates[2];
-    PSTUNServer   * m_stunServer;
+    class ICEServer;
+    ICEServer     * m_iceServer;
     PSTUNClient   * m_stunClient;
 #endif // OPAL_ICE
 
