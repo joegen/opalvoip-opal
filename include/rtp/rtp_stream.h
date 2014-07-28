@@ -144,13 +144,16 @@ class OpalRTPMediaStream : public OpalMediaStream
       Details details = Details::All()
     ) const;
 
-  protected:
+    void SetRewriteHeaders(bool v) { m_rewriteHeaders = v; }
+
+protected:
     virtual void InternalClose();
     virtual bool InternalSetJitterBuffer(const OpalJitterBuffer::Init & init);
     virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat);
     virtual bool InternalSetPaused(bool pause, bool fromUser, bool fromPatch);
 
     OpalRTPSession   & m_rtpSession;
+    bool               m_rewriteHeaders;
     RTP_SyncSourceId   m_syncSource;
     OpalJitterBuffer * m_jitterBuffer;
     PMutex             m_jitterMutex;

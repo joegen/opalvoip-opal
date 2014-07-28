@@ -103,6 +103,7 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
                                           OpalRTPSession & rtp)
   : OpalMediaStream(conn, mediaFormat, rtp.GetSessionID(), isSource)
   , m_rtpSession(rtp)
+  , m_rewriteHeaders(true)
   , m_syncSource(0)
   , m_jitterBuffer(NULL)
 {
@@ -257,15 +258,17 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
 
   timestamp = packet.GetTimestamp();
 
-  OpalMediaPatchPtr mediaPatch = m_mediaPatch;
-  if (mediaPatch != NULL && mediaPatch->IsBypassed())
-    return m_rtpSession.WriteData(packet);
+  if (m_rewriteHeaders && packet.GetPayloadSize() == 0
+#if OPAL_VIDEO
+          && (!packet.GetMarker() || GetMediaFormat().GetMediaType() != OpalMediaType::Video())
+#endif
+      )
+    return true; // Ignore empty packets, except for video with marker, which can plausibly be empty
 
-  if (packet.GetPayloadSize() == 0)
-    return true;
+  if (m_syncSource != 0)
+    packet.SetSyncSource(m_syncSource);
 
-  packet.SetPayloadType(m_payloadType);
-  return m_rtpSession.WriteData(packet);
+  return m_rtpSession.WriteData(packet, NULL, m_rewriteHeaders);
 }
 
 
