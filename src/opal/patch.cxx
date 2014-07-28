@@ -1105,7 +1105,7 @@ void OpalPassiveMediaPatch::Start()
   if (CanStart()) {
     m_started = true;
     PTRACE(4, "Patch\tPassive media patch started: " << *this);
-    OnStartMediaPatch();
+    m_source.GetConnection().GetEndPoint().GetManager().QueueDecoupledEvent(new PSafeWorkNoArg<OpalMediaPatch, bool>(this, &OpalMediaPatch::OnStartMediaPatch));
   }
 }
 
