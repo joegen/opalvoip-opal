@@ -268,7 +268,7 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
   if (m_syncSource != 0)
     packet.SetSyncSource(m_syncSource);
 
-  return m_rtpSession.WriteData(packet, NULL, m_rewriteHeaders);
+  return m_rtpSession.WriteData(packet, m_rewriteHeaders ? OpalRTPSession::e_RewriteHeader : OpalRTPSession::e_RewriteSSRC);
 }
 
 

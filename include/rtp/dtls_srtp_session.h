@@ -63,7 +63,7 @@ class OpalDTLSSRTPSession : public OpalSRTPSession
     // OVerrides from OpalRTPSession
     virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool mediaAddress);
     virtual bool Close();
-    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, bool rewriteHeader);
+    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite);
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
     virtual SendReceiveStatus ReadRawPDU(BYTE * framePtr, PINDEX & frameSize, Channel channel);
 

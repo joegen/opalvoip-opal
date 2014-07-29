@@ -218,11 +218,11 @@ OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::ReadRawPDU(BYTE * framePt
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::OnSendData(RTP_DataFrame & frame, bool rewriteHeader)
+OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::OnSendData(RTP_DataFrame & frame, RewriteMode rewrite)
 {
   SendReceiveStatus status = ExecuteHandshake(e_Data);
   if (status == e_ProcessPacket)
-    status = OpalSRTPSession::OnSendData(frame, rewriteHeader);
+    status = OpalSRTPSession::OnSendData(frame, rewrite);
   return status;
 }
 

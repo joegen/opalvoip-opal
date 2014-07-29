@@ -132,7 +132,7 @@ class OpalSRTPSession : public OpalRTPSession
 
     virtual RTP_SyncSourceId AddSyncSource(RTP_SyncSourceId id, Direction dir, const char * cname = NULL);
 
-    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, bool rewriteHeader);
+    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite);
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);

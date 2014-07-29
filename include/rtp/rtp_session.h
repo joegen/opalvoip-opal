@@ -145,14 +145,19 @@ class OpalRTPSession : public OpalMediaSession
       RTP_DataFrame & frame   ///<  Frame read from the RTP session
     );
 
+    enum RewriteMode
+    {
+      e_RewriteHeader,
+      e_RewriteSSRC,
+      e_RewriteNothing
+    };
+
     /**Write a data frame from the RTP channel.
       */
     virtual bool WriteData(
       RTP_DataFrame & frame,                          ///<  Frame to write to the RTP session
-      const PIPSocketAddressAndPort * remote = NULL,  ///< Alternate address to transmit data frame
-      bool rewriteHeader = true                       /**< Indicate header fields like sequence
-                                                           numbers are to be rewritten according to
-                                                           session status */
+      RewriteMode rewrite = e_RewriteHeader,          ///< Indicate what headers are to be rewritten
+      const PIPSocketAddressAndPort * remote = NULL   ///< Alternate address to transmit data frame
     );
 
     /**Send a report to remote.
@@ -188,7 +193,7 @@ class OpalRTPSession : public OpalMediaSession
       e_IgnorePacket,
       e_AbortTransport
     };
-    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, bool rewriteHeader);
+    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite);
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
@@ -636,7 +641,7 @@ class OpalRTPSession : public OpalMediaSession
       SyncSource(OpalRTPSession & session, RTP_SyncSourceId id, Direction dir, const char * cname);
       virtual ~SyncSource();
 
-      virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, bool rewriteHeader);
+      virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite);
       virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, bool newData);
       virtual SendReceiveStatus OnOutOfOrderPacket(RTP_DataFrame & frame);
       virtual SendReceiveStatus GetPendingFrame(RTP_DataFrame & frame);
@@ -722,6 +727,8 @@ class OpalRTPSession : public OpalMediaSession
       unsigned m_levelRxRED;
       unsigned m_levelRxUnknownFEC;
 #endif
+
+      P_REMOVE_VIRTUAL(SendReceiveStatus, OnSendData(RTP_DataFrame &, bool), e_AbortTransport);
     };
 
     typedef std::map<RTP_SyncSourceId, SyncSource *> SyncSourceMap;
@@ -810,6 +817,9 @@ class OpalRTPSession : public OpalMediaSession
     P_REMOVE_VIRTUAL(SendReceiveStatus,ReadDataOrControlPDU(BYTE *,PINDEX,bool),e_AbortTransport);
     P_REMOVE_VIRTUAL(bool,WriteDataOrControlPDU(const BYTE *,PINDEX,bool),false);
     P_REMOVE_VIRTUAL(SendReceiveStatus,OnSendData(RTP_DataFrame &),e_AbortTransport);
+    P_REMOVE_VIRTUAL(SendReceiveStatus, OnSendData(RTP_DataFrame &,bool), e_AbortTransport);
+    P_REMOVE_VIRTUAL(bool,WriteData(RTP_DataFrame &,const PIPSocketAddressAndPort*,bool),false);
+
 
   friend class RTCP_XR_Metrics;
 };
