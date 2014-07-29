@@ -275,9 +275,9 @@ bool H2356_Session::IsCryptoSecured(bool rx) const
 }
 
 
-OpalRTPSession::SendReceiveStatus H2356_Session::OnSendData(RTP_DataFrame & frame, bool rewriteHeader)
+OpalRTPSession::SendReceiveStatus H2356_Session::OnSendData(RTP_DataFrame & frame, RewriteMode rewrite)
 {
-  SendReceiveStatus status = OpalRTPSession::OnSendData(frame, rewriteHeader);
+  SendReceiveStatus status = OpalRTPSession::OnSendData(frame, rewrite);
   if (status == e_ProcessPacket) {
     if (!m_tx.Encrypt(frame))
       return e_IgnorePacket;

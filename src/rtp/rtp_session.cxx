@@ -439,31 +439,31 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_DataFrame & frame, bool rewriteHeader)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_DataFrame & frame, RewriteMode rewrite)
 {
-  frame.SetSyncSource(m_sourceIdentifier);
+  if (rewrite != e_RewriteNothing)
+    frame.SetSyncSource(m_sourceIdentifier);
 
   if (m_lastSequenceNumber == 0) {
-    if (rewriteHeader)
+    if (rewrite == e_RewriteHeader)
       frame.SetSequenceNumber(m_lastSequenceNumber = (RTP_SequenceNumber)PRandom::Number(1, 65535));
-    else
-      m_lastSequenceNumber = frame.GetSequenceNumber();
     PTRACE(3, &m_session, m_session << "first sent data: "
             << setw(1) << frame
             << " rem=" << m_session.GetRemoteAddress()
             << " local=" << m_session.GetLocalAddress());
   }
   else {
-    if (rewriteHeader)
+    if (rewrite == e_RewriteHeader)
       frame.SetSequenceNumber(m_lastSequenceNumber += (RTP_SequenceNumber)(frame.GetDiscontinuity() + 1));
-    else
-      m_lastSequenceNumber = frame.GetSequenceNumber();
     PTRACE_IF(5, frame.GetDiscontinuity() > 0, &m_session,
               m_session << "have discontinuity: " << frame.GetDiscontinuity() << ", sn=" << m_lastSequenceNumber);
   }
 
+  if (rewrite != e_RewriteHeader)
+    m_lastSequenceNumber = frame.GetSequenceNumber();
+
 #if OPAL_RTP_FEC
-  if (rewriteHeader && m_session.GetRedundencyPayloadType() != RTP_DataFrame::IllegalPayloadType) {
+  if (rewrite != e_RewriteNothing && m_session.GetRedundencyPayloadType() != RTP_DataFrame::IllegalPayloadType) {
     SendReceiveStatus status = OnSendRedundantFrame(frame);
     if (status != e_ProcessPacket)
       return status;
@@ -939,7 +939,7 @@ void OpalRTPSession::SyncSource::OnRxReceiverReport(const ReceiverReport & repor
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & frame, bool rewriteHeader)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & frame, RewriteMode rewrite)
 {
   SendReceiveStatus status;
 #if OPAL_ICE
@@ -991,7 +991,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
     GetSyncSource(ssrc, e_Sender, syncSource);
   }
 
-  return syncSource->OnSendData(frame, rewriteHeader);
+  return syncSource->OnSendData(frame, rewrite);
 }
 
 
@@ -2456,9 +2456,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::InternalReadControl()
 }
 
 
-bool OpalRTPSession::WriteData(RTP_DataFrame & frame,
-                               const PIPSocketAddressAndPort * remote,
-                               bool rewriteHeader)
+bool OpalRTPSession::WriteData(RTP_DataFrame & frame, RewriteMode rewrite, const PIPSocketAddressAndPort * remote)
 {
   PWaitAndSignal m(m_dataMutex);
 
@@ -2466,7 +2464,7 @@ bool OpalRTPSession::WriteData(RTP_DataFrame & frame,
   unsigned delayedTraceCount = 0;
 #endif
   while (IsOpen() && !m_shutdownWrite) {
-    switch (OnSendData(frame, rewriteHeader)) {
+    switch (OnSendData(frame, rewrite)) {
       case e_ProcessPacket :
         return WriteRawPDU(frame, frame.GetPacketSize(), e_Data, remote);
 
