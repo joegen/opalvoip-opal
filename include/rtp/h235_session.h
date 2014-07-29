@@ -122,7 +122,7 @@ class H2356_Session : public OpalRTPSession
     virtual bool ApplyCryptoKey(OpalMediaCryptoKeyList & keys, bool rx);
     virtual bool IsCryptoSecured(bool rx) const;
 
-    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, bool rewriteHeader);
+    virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite);
 #if !H235_6_CODED_TO_CORRECT_SPECIFICATION
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize);
 #endif

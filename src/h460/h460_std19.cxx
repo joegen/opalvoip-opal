@@ -514,7 +514,7 @@ void H46019UDPSocket::SendKeepAliveRTP(const PIPSocketAddressAndPort & ipAndPort
   RTP_DataFrame rtp;
   rtp.SetSequenceNumber(m_keepAliveSequence);
   rtp.SetPayloadType(m_keepAlivePayloadType);
-  m_session.WriteData(rtp, &ipAndPort, false);
+  m_session.WriteData(rtp, OpalRTPSession::e_RewriteSSRC, &ipAndPort);
 }
 
 

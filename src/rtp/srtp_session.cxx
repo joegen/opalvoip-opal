@@ -554,13 +554,13 @@ bool OpalSRTPSession::AddStreamToSRTP(RTP_SyncSourceId ssrc, Direction dir)
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & frame, bool rewriteHeader)
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & frame, RewriteMode rewrite)
 {
-  SendReceiveStatus status = OpalRTPSession::OnSendData(frame, rewriteHeader);
+  SendReceiveStatus status = OpalRTPSession::OnSendData(frame, rewrite);
   if (status != e_ProcessPacket)
     return status;
 
-  if (!rewriteHeader)
+  if (rewrite == e_RewriteNothing)
     return e_ProcessPacket;
 
   if (!IsCryptoSecured(e_Sender)) {
