@@ -193,6 +193,8 @@ void RTP_DataFrame::CopyHeader(const RTP_DataFrame & other)
 {
   if (AdjustHeaderSize(other.m_headerSize))
     memcpy(theArray, other.theArray, m_headerSize);
+  SetDiscontinuity(other.GetDiscontinuity());
+  SetAbsoluteTime(other.GetAbsoluteTime());
 }
 
 
@@ -204,6 +206,8 @@ void RTP_DataFrame::Copy(const RTP_DataFrame & other)
     m_headerSize = other.m_headerSize;
     m_payloadSize = other.m_payloadSize;
     m_paddingSize = other.m_paddingSize;
+    SetDiscontinuity(other.GetDiscontinuity());
+    SetAbsoluteTime(other.GetAbsoluteTime());
   }
 }
 
