@@ -49,6 +49,7 @@
 
 #include <algorithm>
 
+#define PTraceModule() "RTPCon"
 
 #define new PNEW
 
@@ -143,36 +144,36 @@ vector<bool> OpalRTPConnection::CreateAllMediaSessions(CreateMediaSessionsSecuri
       continue;
 
     if (GetAutoStart(mediaType) == OpalMediaType::DontOffer) {
-      PTRACE(4, "RTPCon\tNot offerring " << mediaType);
+      PTRACE(4, "Not offerring " << mediaType);
       continue;
     }
 
     // See if any media formats of this session id, so don't create unused RTP session
     if (!m_localMediaFormats.HasType(mediaType)) {
-      PTRACE(3, "RTPCon\tNo media formats of type " << mediaType << ", not creating media session");
+      PTRACE(3, "No media formats of type " << mediaType << ", not creating media session");
       continue;
     }
 
     for (PINDEX csIdx = 0; csIdx < cryptoSuites.GetSize(); ++csIdx) {
       PCaselessString cryptoSuiteName = cryptoSuites[csIdx];
       if (cryptoSuiteName == OpalMediaCryptoSuite::ClearText() && !(security & e_ClearMediaSession)) {
-        PTRACE(4, "RTPCon\tSkipping " << cryptoSuiteName << " as secure media required.");
+        PTRACE(4, "Skipping " << cryptoSuiteName << " as secure media required.");
         continue;
       }
       if (cryptoSuiteName != OpalMediaCryptoSuite::ClearText() && !(security & e_SecureMediaSession)) {
-        PTRACE(4, "RTPCon\tSkipping " << cryptoSuiteName << " as non-secure media required.");
+        PTRACE(4, "Skipping " << cryptoSuiteName << " as non-secure media required.");
         continue;
       }
 
       OpalMediaCryptoSuite * cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(cryptoSuiteName);
       if (cryptoSuite == NULL) {
-        PTRACE(1, "RTPCon\tCannot create crypto suite for " << cryptoSuiteName);
+        PTRACE(1, "Cannot create crypto suite for " << cryptoSuiteName);
         continue;
       }
 
       PCaselessString sessionType = mediaType->GetMediaSessionType();
       if (!cryptoSuite->ChangeSessionType(sessionType)) {
-        PTRACE(3, "RTPCon\tCannot use crypto suite " << cryptoSuiteName << " with media type " << mediaType);
+        PTRACE(3, "Cannot use crypto suite " << cryptoSuiteName << " with media type " << mediaType);
         continue;
       }
 
@@ -189,7 +190,7 @@ vector<bool> OpalRTPConnection::CreateAllMediaSessions(CreateMediaSessionsSecuri
       }
 
       if (session == NULL && (session = UseMediaSession(nextSessionId, mediaType, sessionType)) == NULL) {
-        PTRACE(1, "RTPCon\tCould not create RTP session for media type " << mediaType);
+        PTRACE(1, "Could not create RTP session for media type " << mediaType);
         continue;
       }
 
@@ -238,7 +239,7 @@ OpalMediaSession * OpalRTPConnection::UseMediaSession(unsigned sessionId,
 {
   SessionMap::iterator it = m_sessions.find(sessionId);
   if (it != m_sessions.end()) {
-    PTRACE(4, "RTPCon\tFound existing " << it->second->GetMediaType() << " session " << sessionId);
+    PTRACE(4, "Found existing " << it->second->GetMediaType() << " session " << sessionId);
     return it->second;
   }
 
@@ -263,7 +264,7 @@ OpalMediaSession * OpalRTPConnection::CreateMediaSession(unsigned sessionId,
       // Make sure we do not include any transcoded format combinations
       m_localMediaFormats.Remove(PString('@')+mediaType);
       m_localMediaFormats += otherConnection->GetMediaFormats();
-      PTRACE(4, "RTPCon\tCreated dummy " << mediaType << " session " << sessionId << " using formats " << setfill(',') << m_localMediaFormats);
+      PTRACE(4, "Created dummy " << mediaType << " session " << sessionId << " using formats " << setfill(',') << m_localMediaFormats);
       return new OpalDummySession(init, transports);
     }
   }
@@ -274,11 +275,11 @@ OpalMediaSession * OpalRTPConnection::CreateMediaSession(unsigned sessionId,
 
   OpalMediaSession * session = OpalMediaSessionFactory::CreateInstance(actualSessionType, init);
   if (session == NULL) {
-    PTRACE(1, "RTPCon\tCannot create session for " << actualSessionType);
+    PTRACE(1, "Cannot create session for " << actualSessionType);
     return NULL;
   }
 
-  PTRACE(4, "RTPCon\tCreated " << mediaType << " session " << sessionId << " using " << actualSessionType);
+  PTRACE(4, "Created " << mediaType << " session " << sessionId << " using " << actualSessionType);
   return session;
 }
 
@@ -293,7 +294,7 @@ bool OpalRTPConnection::GetMediaTransportAddresses(OpalConnection & otherConnect
   for (SessionMap::const_iterator session = m_sessions.begin(); session != m_sessions.end(); ++session) {
     if (session->second->GetMediaType() == mediaType &&
         transports.SetAddressPair(session->second->GetRemoteAddress(true), session->second->GetRemoteAddress(false))) {
-      PTRACE(3, "RTPCon\tGetMediaTransportAddresses of " << mediaType << " found session addresses "
+      PTRACE(3, "GetMediaTransportAddresses of " << mediaType << " found session addresses "
               << setfill(',') << transports << " for " << otherConnection << " on " << *this);
       return true;
     }
@@ -308,7 +309,7 @@ bool OpalRTPConnection::NoMediaBypass(const OpalConnection & otherConnection, co
   if (endpoint.GetManager().GetMediaTransferMode(*this, otherConnection, mediaType) == OpalManager::MediaTransferBypass)
     return false;
 
-  PTRACE(4, "OpalCon\tGetMediaTransportAddresses for " << mediaType << " not using MediaTransferBypass.");
+  PTRACE(4, "GetMediaTransportAddresses for " << mediaType << " not using MediaTransferBypass.");
   return true;
 }
 
@@ -333,7 +334,7 @@ OpalMediaFormatList OpalRTPConnection::NegotiateFECMediaFormats(OpalMediaSession
           else if (fmt->GetName().NumCompare(OPAL_ULP_FEC_PREFIX) == EqualTo)
             rtpSession->SetUlpFecPayloadType(fmt->GetPayloadType());
 
-          PTRACE(4, "OpalCon\tAccepted FEC format " << *fmt << ", pt=" << fmt->GetPayloadType());
+          PTRACE(4, "Accepted redundant format " << *fmt << ", pt=" << fmt->GetPayloadType());
         }
       }
     }
@@ -348,18 +349,18 @@ bool OpalRTPConnection::ChangeSessionID(unsigned fromSessionID, unsigned toSessi
 {
   SessionMap::iterator from = m_sessions.find(fromSessionID);
   if (from == m_sessions.end()) {
-    PTRACE(2, "RTPCon\tAttempt to renumber unknown session " << fromSessionID << " to session ID " << toSessionID);
+    PTRACE(2, "Attempt to renumber unknown session " << fromSessionID << " to session ID " << toSessionID);
     return false;
   }
 
   SessionMap::iterator to = m_sessions.find(toSessionID);
   if (to != m_sessions.end()) {
-    PTRACE(2, "RTPCon\tAttempt to renumber session " << fromSessionID << " to existing session ID " << toSessionID);
+    PTRACE(2, "Attempt to renumber session " << fromSessionID << " to existing session ID " << toSessionID);
 
     m_sessions.erase(from);
   }
   else {
-    PTRACE(3, "RTPCon\tChanging session ID " << fromSessionID << " to " << toSessionID);
+    PTRACE(3, "Changing session ID " << fromSessionID << " to " << toSessionID);
 
     PSafePtr<OpalMediaSession> session = from->second;
     m_sessions.DisallowDeleteObjects();
@@ -390,7 +391,7 @@ void OpalRTPConnection::ReplaceMediaSession(unsigned sessionId, OpalMediaSession
   {
     SessionMap::iterator it = m_sessions.find(sessionId);
     if (it == m_sessions.end()) {
-      PTRACE(4, "RTPCon\tReplacing empty session " << sessionId);
+      PTRACE(4, "Replacing empty session " << sessionId);
       m_sessions.SetAt(sessionId, mediaSession);
       return;
     }
@@ -403,7 +404,7 @@ void OpalRTPConnection::ReplaceMediaSession(unsigned sessionId, OpalMediaSession
 
     mediaSession->SetRemoteAddress(remoteMedia, true);
     mediaSession->SetRemoteAddress(remoteCtrl, false);
-    PTRACE(4, "RTPCon\tReplacing session " << sessionId << " media=" << remoteMedia << " ctrl=" << remoteCtrl);
+    PTRACE(4, "Replacing session " << sessionId << " media=" << remoteMedia << " ctrl=" << remoteCtrl);
   }
 
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(mediaSession);
@@ -425,7 +426,7 @@ void OpalRTPConnection::ReleaseMediaSession(unsigned sessionID)
 {
   SessionMap::iterator it = m_sessions.find(sessionID);
   if (it == m_sessions.end()) {
-    PTRACE(2, "RTPCon\tAttempt to release unknown session " << sessionID);
+    PTRACE(2, "Attempt to release unknown session " << sessionID);
     return;
   }
 
@@ -465,7 +466,7 @@ void OpalRTPConnection::DetermineRTPNAT(const OpalTransport & transport, const O
 
 bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
 {
-  PTRACE(5, "RTPCon\tOnMediaCommand \"" << command << "\" for " << *this);
+  PTRACE(5, "OnMediaCommand \"" << command << "\" for " << *this);
 
   if (stream.IsSource() != (&stream.GetConnection() == this))
     return OpalConnection::OnMediaCommand(stream, command);
@@ -496,7 +497,7 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
       return session->SendIntraFrameRequest(options);
     }
 
-    PTRACE(4, "RTPCon\tRTCP Intra-Frame Request disabled in string options");
+    PTRACE(4, "RTCP Intra-Frame Request disabled in string options");
   }
 #endif // OPAL_VIDEO
 
@@ -514,7 +515,7 @@ PBoolean OpalRTPConnection::SendUserInputTone(char tone, unsigned duration)
          m_rfc2833Handler->SendToneAsync(tone, duration))
       return true;
 
-    PTRACE(2, "RTPCon\tCould not send tone '" << tone << "' via RFC2833.");
+    PTRACE(2, "Could not send tone '" << tone << "' via RFC2833.");
   }
 
   return OpalConnection::SendUserInputTone(tone, duration);
@@ -529,7 +530,7 @@ OpalMediaStream * OpalRTPConnection::CreateMediaStream(const OpalMediaFormat & m
   if (mediaSession != NULL)
     return mediaSession->CreateMediaStream(mediaFormat, sessionID, isSource);
 
-  PTRACE(1, "RTPCon\tUnable to create media stream for session " << sessionID);
+  PTRACE(1, "Unable to create media stream for session " << sessionID);
   return NULL;
 }
 

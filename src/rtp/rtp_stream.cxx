@@ -47,6 +47,9 @@
 #endif
 
 
+#define PTraceModule() "RTPStream"
+
+
 /////////////////////////////////////////////////////////////////////////////
 /**A descendant of the OpalJitterBuffer that reads RTP_DataFrame instances
    from the OpalRTPSession
@@ -115,7 +118,7 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
 
   m_rtpSession.SafeReference();
 
-  PTRACE(5, "Media\tCreated RTP media session, RTP=" << &rtp);
+  PTRACE(5, "Using RTP media session " << &rtp);
 }
 
 
@@ -200,7 +203,7 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
     return false;
 
   if (IsSink()) {
-    PTRACE(1, "Media\tTried to read from sink media stream");
+    PTRACE(1, "Tried to read from sink media stream");
     return false;
   }
 
@@ -221,7 +224,7 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
 
 #if OPAL_VIDEO
   if (packet.GetDiscontinuity() > 0 && mediaFormat.GetMediaType() == OpalMediaType::Video()) {
-    PTRACE(3, "Media\tAutomatically requiring video update due to " << packet.GetDiscontinuity() << " missing packets.");
+    PTRACE(3, "Automatically requiring video update due to " << packet.GetDiscontinuity() << " missing packets.");
     ExecuteCommand(OpalVideoPictureLoss(packet.GetSequenceNumber(), packet.GetTimestamp()));
   }
 #endif
@@ -237,7 +240,7 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
     return false;
 
   if (IsSource()) {
-    PTRACE(1, "Media\tTried to write to source media stream");
+    PTRACE(1, "Tried to write to source media stream");
     return false;
   }
 
@@ -250,7 +253,7 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
      mechanisms available. Net result, no video. It won't hurt to send another
      Intra-Frame, so we do. Thus, interoperability is improved! */
   if (m_forceIntraFrameFlag && m_forceIntraFrameTimer.HasExpired()) {
-    PTRACE(3, "Media\tForcing I-Frame after start up in case remote does not ask");
+    PTRACE(3, "Forcing I-Frame after start up in case remote does not ask");
     ExecuteCommand(OpalVideoUpdatePicture());
     m_forceIntraFrameFlag = false;
   }
@@ -274,7 +277,7 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
 
 PBoolean OpalRTPMediaStream::SetDataSize(PINDEX PTRACE_PARAM(dataSize), PINDEX /*frameTime*/)
 {
-  PTRACE(3, "Media\tRTP data size cannot be changed to " << dataSize << ", fixed at " << GetDataSize());
+  PTRACE(3, "Data size cannot be changed to " << dataSize << ", fixed at " << GetDataSize());
   return true;
 }
 

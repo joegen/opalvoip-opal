@@ -48,6 +48,8 @@
 #include <codec/vidcodec.h>
 #endif
 
+#define PTraceModule() "Patch"
+
 #define new PNEW
 
 
@@ -62,7 +64,7 @@ OpalMediaPatch::OpalMediaPatch(OpalMediaStream & src)
 {
   PTRACE_CONTEXT_ID_FROM(src);
 
-  PTRACE(5, "Patch\tCreated media patch " << this << ", session " << src.GetSessionID());
+  PTRACE(5, "Created media patch " << this << ", session " << src.GetSessionID());
   src.SetPatch(this);
   m_source.SafeReference();
 }
@@ -72,7 +74,7 @@ OpalMediaPatch::~OpalMediaPatch()
 {
   StopThread();
   m_source.SafeDereference();
-  PTRACE(5, "Patch\tDestroyed media patch " << this);
+  PTRACE(5, "Destroyed media patch " << this);
 }
 
 
@@ -104,18 +106,18 @@ void OpalMediaPatch::PrintOn(ostream & strm) const
 bool OpalMediaPatch::CanStart() const
 {
   if (!m_source.IsOpen()) {
-    PTRACE(4, "Media\tDelaying patch start till source stream open: " << *this);
+    PTRACE(4, "Delaying patch start till source stream open: " << *this);
     return false;
   }
 
   if (m_sinks.IsEmpty()) {
-    PTRACE(4, "Media\tDelaying patch start till have sink stream: " << *this);
+    PTRACE(4, "Delaying patch start till have sink stream: " << *this);
     return false;
   }
 
   for (PList<Sink>::const_iterator s = m_sinks.begin(); s != m_sinks.end(); ++s) {
     if (!s->m_stream->IsOpen()) {
-      PTRACE(4, "Media\tDelaying patch start till sink stream open: " << *this);
+      PTRACE(4, "Delaying patch start till sink stream open: " << *this);
       return false;
     }
   }
@@ -124,20 +126,20 @@ bool OpalMediaPatch::CanStart() const
   if (connection == NULL)
     connection = m_source.GetConnection().GetOtherPartyConnectionAs<OpalRTPConnection>();
   if (connection == NULL) {
-    PTRACE(4, "Media\tAllow patch start as connection not RTP: " << *this);
+    PTRACE(4, "Allow patch start as connection not RTP: " << *this);
     return true;
 	}
 
   OpalMediaSession * session = connection->GetMediaSession(m_source.GetSessionID());
   if (session == NULL) {
-    PTRACE(4, "Media\tAllow patch start as does not have session " << session->GetSessionID() << ": " << *this);
+    PTRACE(4, "Allow patch start as does not have session " << session->GetSessionID() << ": " << *this);
     return true;
 	}
 
   if (session->IsOpen())
     return true;
 
-  PTRACE(4, "Media\tDelaying patch start till session " << session->GetSessionID() << " open: " << *this);
+  PTRACE(4, "Delaying patch start till session " << session->GetSessionID() << " open: " << *this);
   return false;
 }
 
@@ -147,7 +149,7 @@ void OpalMediaPatch::Start()
   PWaitAndSignal m(m_patchThreadMutex);
 	
   if(m_patchThread != NULL) {
-    PTRACE(5, "Media\tAlready started thread " << m_patchThread->GetThreadName());
+    PTRACE(5, "Already started thread " << m_patchThread->GetThreadName());
     return;
   }
 
@@ -155,7 +157,7 @@ void OpalMediaPatch::Start()
     m_patchThread = new PThreadObj<OpalMediaPatch>(*this, &OpalMediaPatch::Main, false, "Media Patch", PThread::HighPriority);
     PTRACE_CONTEXT_ID_TO(m_patchThread);
     PThread::Yield();
-    PTRACE(4, "Media\tStarting thread " << m_patchThread->GetThreadName());
+    PTRACE(4, "Starting thread " << m_patchThread->GetThreadName());
   }
 }
 
@@ -171,7 +173,7 @@ void OpalMediaPatch::StopThread()
     return;
 
   if (!thread->IsSuspended()) {
-    PTRACE(4, "Patch\tWaiting for media patch thread to stop " << *this);
+    PTRACE(4, "Waiting for media patch thread to stop " << *this);
     PAssert(thread->WaitForTermination(10000), "Media patch thread not terminated.");
   }
 
@@ -181,7 +183,7 @@ void OpalMediaPatch::StopThread()
 
 void OpalMediaPatch::Close()
 {
-  PTRACE(3, "Patch\tClosing media patch " << *this);
+  PTRACE(3, "Closing media patch " << *this);
 
   if (!LockReadWrite())
     return;
@@ -227,7 +229,7 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & sinkStream)
   PAssert(sinkStream->IsSink(), "Attempt to set source stream as sink!");
 
   if (!sinkStream->SetPatch(this)) {
-    PTRACE(2, "Patch\tCould not set patch in stream " << *sinkStream);
+    PTRACE(2, "Could not set patch in stream " << *sinkStream);
     return false;
   }
 
@@ -262,7 +264,7 @@ static bool SetStreamDataSize(OpalMediaStream & stream, OpalTranscoder & codec)
   if (stream.SetDataSize(size, format.GetFrameTime()*stream.GetMediaFormat().GetClockRate()/format.GetClockRate()))
     return true;
 
-  PTRACE(1, "Patch\tStream " << stream << " cannot support data size " << size);
+  PTRACE(1, "Stream " << stream << " cannot support data size " << size);
   return false;
 }
 
@@ -278,7 +280,7 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
   OpalMediaFormat sourceFormat = m_patch.m_source.GetMediaFormat();
   OpalMediaFormat destinationFormat = m_stream->GetMediaFormat();
 
-  PTRACE(5, "Patch\tAddSink\n"
+  PTRACE(5, "AddSink\n"
             "Source format:\n" << setw(-1) << sourceFormat << "\n"
             "Destination format:\n" << setw(-1) << destinationFormat);
 
@@ -295,7 +297,7 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
     if (sourceFormat.GetMediaType() == OpalMediaType::Video())
       m_videoFormat = sourceFormat;
 #endif // OPAL_VIDEO
-    PTRACE(3, "Patch\tAdded direct media stream sink " << *m_stream);
+    PTRACE(3, "Added direct media stream sink " << *m_stream);
     return true;
   }
 
@@ -303,7 +305,7 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
   m_primaryCodec = OpalTranscoder::Create(sourceFormat, destinationFormat, (const BYTE *)id, id.GetLength());
   if (m_primaryCodec != NULL) {
     PTRACE_CONTEXT_ID_TO(m_primaryCodec);
-    PTRACE(4, "Patch\tCreated primary codec " << sourceFormat << "->" << destinationFormat << " with ID " << id);
+    PTRACE(4, "Created primary codec " << sourceFormat << "->" << destinationFormat << " with ID " << id);
 
     if (!SetStreamDataSize(*m_stream, *m_primaryCodec))
       return false;
@@ -316,15 +318,15 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
     m_patch.m_source.InternalUpdateMediaFormat(m_primaryCodec->GetInputFormat());
     m_stream->InternalUpdateMediaFormat(m_primaryCodec->GetOutputFormat());
 
-    PTRACE(3, "Patch\tAdded media stream sink " << *m_stream
+    PTRACE(3, "Added media stream sink " << *m_stream
            << " using transcoder " << *m_primaryCodec << ", data size=" << m_stream->GetDataSize());
     return true;
   }
 
-  PTRACE(4, "Patch\tCreating two stage transcoders for " << sourceFormat << "->" << destinationFormat << " with ID " << id);
+  PTRACE(4, "Creating two stage transcoders for " << sourceFormat << "->" << destinationFormat << " with ID " << id);
   OpalMediaFormat intermediateFormat;
   if (!OpalTranscoder::FindIntermediateFormat(sourceFormat, destinationFormat, intermediateFormat)) {
-    PTRACE(1, "Patch\tCould find compatible media format for " << *m_stream);
+    PTRACE(1, "Could find compatible media format for " << *m_stream);
     return false;
   }
 
@@ -335,7 +337,7 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
     // Merge phase in FindIntermediateFormat)
     int destinationPacketTime = destinationFormat.GetFrameTime()*destinationFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1);
     if ((destinationPacketTime % intermediateFormat.GetFrameTime()) != 0) {
-      PTRACE(1, "Patch\tCould produce without buffered media format converting (which not implemented yet) for " << *m_stream);
+      PTRACE(1, "Could produce without buffered media format converting (which not implemented yet) for " << *m_stream);
       return false;
     }
     intermediateFormat.AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::TxFramesPerPacketOption(),
@@ -352,7 +354,7 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
 
   PTRACE_CONTEXT_ID_TO(m_primaryCodec);
   PTRACE_CONTEXT_ID_TO(m_secondaryCodec);
-  PTRACE(3, "Patch\tCreated two stage codec " << sourceFormat << "/" << intermediateFormat << "/" << destinationFormat << " with ID " << id);
+  PTRACE(3, "Created two stage codec " << sourceFormat << "/" << intermediateFormat << "/" << destinationFormat << " with ID " << id);
 
   m_primaryCodec->SetMaxOutputSize(m_secondaryCodec->GetOptimalDataFrameSize(true));
   m_primaryCodec->SetSessionID(m_patch.m_source.GetSessionID());
@@ -371,7 +373,7 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
   m_patch.m_source.InternalUpdateMediaFormat(m_primaryCodec->GetInputFormat());
   m_stream->InternalUpdateMediaFormat(m_secondaryCodec->GetOutputFormat());
 
-  PTRACE(3, "Patch\tAdded media stream sink " << *m_stream
+  PTRACE(3, "Added media stream sink " << *m_stream
           << " using transcoders " << *m_primaryCodec
           << " and " << *m_secondaryCodec << ", data size=" << m_stream->GetDataSize());
   return true;
@@ -380,7 +382,7 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
 
 void OpalMediaPatch::RemoveSink(const OpalMediaStream & stream)
 {
-  PTRACE(3, "Patch\tRemoving sink " << stream << " from " << *this);
+  PTRACE(3, "Removing sink " << stream << " from " << *this);
 
   bool closeSource = false;
 
@@ -390,7 +392,7 @@ void OpalMediaPatch::RemoveSink(const OpalMediaStream & stream)
   for (PList<Sink>::iterator s = m_sinks.begin(); s != m_sinks.end(); ++s) {
     if (s->m_stream == &stream) {
       m_sinks.erase(s);
-      PTRACE(5, "Patch\tRemoved sink " << stream << " from " << *this);
+      PTRACE(5, "Removed sink " << stream << " from " << *this);
       break;
     }
   }
@@ -513,7 +515,7 @@ OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s)
   SetRateControlParameters(m_stream->GetMediaFormat());
 #endif
 
-  PTRACE(3, "Patch\tCreated Sink for " << p);
+  PTRACE(3, "Created Sink for " << p);
 }
 
 
@@ -537,7 +539,7 @@ void OpalMediaPatch::AddFilter(const PNotifier & filter, const OpalMediaFormat &
   // ensures that a filter is added only once
   for (PList<Filter>::iterator f = m_filters.begin(); f != m_filters.end(); ++f) {
     if (f->m_notifier == filter && f->m_stage == stage) {
-      PTRACE(4, "OpalCon\tFilter already added for stage " << stage);
+      PTRACE(4, "Filter already added for stage " << stage);
       return;
     }
   }
@@ -556,7 +558,7 @@ PBoolean OpalMediaPatch::RemoveFilter(const PNotifier & filter, const OpalMediaF
     }
   }
 
-  PTRACE(4, "OpalCon\tNo filter to remove for stage " << stage);
+  PTRACE(4, "No filter to remove for stage " << stage);
   return false;
 }
 
@@ -589,7 +591,7 @@ bool OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
     }
   }
 
-  PTRACE_IF(2, !atLeastOne, "Patch\tCould not update media format for any stream/transcoder in " << *this);
+  PTRACE_IF(2, !atLeastOne, "Could not update media format for any stream/transcoder in " << *this);
   return atLeastOne;
 }
 
@@ -632,7 +634,7 @@ PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command)
 #if PTRACING
   if (PTrace::CanTrace(5)) {
     ostream & trace = PTrace::Begin(5, __FILE__, __LINE__, this);
-    trace << "Patch\tExecute" << (atLeastOne ? "d" : "fail for ")
+    trace << "Execute" << (atLeastOne ? "d" : "fail for ")
           << " command \"" << command << '"';
     if (fromPatch != this)
       trace << " bypassing " << *fromPatch << " to " << *this;
@@ -717,7 +719,7 @@ bool OpalMediaPatch::EnableJitterBuffer(bool enab)
 
 void OpalMediaPatch::Main()
 {
-  PTRACE(4, "Patch\tThread started for " << *this);
+  PTRACE(4, "Thread started for " << *this);
 	
   bool asynchronous = OnStartMediaPatch();
   PAdaptiveDelay asynchPacing;
@@ -742,12 +744,12 @@ void OpalMediaPatch::Main()
     }
 
     if (!m_source.ReadPacket(sourceFrame)) {
-      PTRACE(4, "Patch\tThread ended because source read failed");
+      PTRACE(4, "Thread ended because source read failed");
       break;
     }
  
     if (!DispatchFrame(sourceFrame)) {
-      PTRACE(4, "Patch\tThread ended because all sink writes failed");
+      PTRACE(4, "Thread ended because all sink writes failed");
       break;
     }
  
@@ -771,10 +773,10 @@ void OpalMediaPatch::Main()
     if (PTimer::Tick() - lastTick > SampleTimeMS) {
       PThread::Times threadTimes;
       if (PThread::Current()->GetTimes(threadTimes)) {
-        PTRACE(5, "Patch\tCPU for " << *this << " is " << threadTimes);
+        PTRACE(5, "CPU for " << *this << " is " << threadTimes);
         if ((threadTimes.m_user - lastThreadTimes.m_user + threadTimes.m_kernel - lastThreadTimes.m_kernel)
                                       > (threadTimes.m_real - lastThreadTimes.m_real)*ThresholdPercent/100) {
-          PTRACE(2, "Patch\tGreater that 90% CPU usage for " << *this);
+          PTRACE(2, "Greater that 90% CPU usage for " << *this);
           PThread::Sleep(SampleTimeMS*(100-ThresholdPercent)/100);
         }
         lastThreadTimes = threadTimes;
@@ -785,7 +787,7 @@ void OpalMediaPatch::Main()
 
   m_source.OnStopMediaPatch(*this);
 
-  PTRACE(4, "Patch\tThread ended for " << *this);
+  PTRACE(4, "Thread ended for " << *this);
 }
 
 
@@ -799,7 +801,7 @@ bool OpalMediaPatch::SetBypassPatch(const OpalMediaPatchPtr & patch)
   if (m_bypassToPatch == patch)
     return true; // Already set
 
-  PTRACE(4, "Patch\tSetting media patch bypass to " << patch << " on " << *this);
+  PTRACE(4, "Setting media patch bypass to " << patch << " on " << *this);
 
   if (m_bypassToPatch != NULL) {
     if (!PAssert(m_bypassToPatch->m_bypassFromPatch == this, PLogicError))
@@ -852,15 +854,15 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
   if (m_transcoderChanged) {
     m_transcoderChanged = false;
     UnlockReadOnly();
-    PTRACE(3, "Patch\tIgnoring source data with transcoder change on " << *this);
+    PTRACE(3, "Ignoring source data with transcoder change on " << *this);
     return true;
   }
 
   if (m_bypassFromPatch != NULL) {
-    PTRACE(3, "Patch\tMedia patch bypass started by " << *m_bypassFromPatch << " on " << *this);
+    PTRACE(3, "Media patch bypass started by " << *m_bypassFromPatch << " on " << *this);
     UnlockReadOnly();
     m_bypassEnded.Wait();
-    PTRACE(4, "Patch\tMedia patch bypass ended on " << *this);
+    PTRACE(4, "Media patch bypass ended on " << *this);
     return true;
   }
 
@@ -901,7 +903,7 @@ bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat
     SetRateControlParameters(m_stream->GetMediaFormat());
 #endif
 
-  PTRACE(3, "Patch\tUpdated Sink: format=" << mediaFormat << " ok=" << ok);
+  PTRACE(3, "Updated Sink: format=" << mediaFormat << " ok=" << ok);
   return ok;
 }
 
@@ -929,10 +931,10 @@ void OpalMediaPatch::Sink::SetRateControlParameters(const OpalMediaFormat & medi
     if (!rc.IsEmpty()) {
       m_rateController = PFactory<OpalVideoRateController>::CreateInstance(rc);
       if (m_rateController != NULL) {   
-        PTRACE(3, "Patch\tCreated " << rc << " rate controller");
+        PTRACE(3, "Created " << rc << " rate controller");
       }
       else {
-        PTRACE(3, "Patch\tCould not create " << rc << " rate controller");
+        PTRACE(3, "Could not create " << rc << " rate controller");
       }
     }
   }
@@ -947,7 +949,7 @@ bool OpalMediaPatch::Sink::RateControlExceeded(bool & forceIFrame)
   if ((m_rateController == NULL) || !m_rateController->SkipFrame(forceIFrame)) 
     return false;
 
-  PTRACE(4, "Patch\tRate controller skipping frame.");
+  PTRACE(4, "Rate controller skipping frame.");
   return true;
 }
 
@@ -995,13 +997,13 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
       case OpalVideoFormat::e_IntraFrame :
           ++m_videoFrames;
           ++m_keyFrames;
-          PTRACE(4, "Patch\tI-Frame detected: SSRC=" << RTP_TRACE_SRC(sourceFrame.GetSyncSource())
+          PTRACE(4, "I-Frame detected: SSRC=" << RTP_TRACE_SRC(sourceFrame.GetSyncSource())
                  << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoFrames << ", key=" << m_keyFrames << ", on " << m_patch);
           break;
 
         case OpalVideoFormat::e_InterFrame :
           ++m_videoFrames;
-          PTRACE(5, "Patch\tP-Frame detected SSRC=" << RTP_TRACE_SRC(sourceFrame.GetSyncSource())
+          PTRACE(5, "P-Frame detected SSRC=" << RTP_TRACE_SRC(sourceFrame.GetSyncSource())
                  << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoFrames << ", key=" << m_keyFrames << ", on " << m_patch);
           break;
 
@@ -1015,7 +1017,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
     if (!m_writeSuccessful)
       return false;
 
-    PTRACE_IF(6, bypassing, "Patch\tBypassed packet "
+    PTRACE_IF(6, bypassing, "Bypassed packet "
                          << " M="  << sourceFrame.GetMarker()
                          << " PT=" << sourceFrame.GetPayloadType()
                          << " SN=" << sourceFrame.GetSequenceNumber()
@@ -1026,17 +1028,17 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
   }
 
   if (!m_primaryCodec->ConvertFrames(sourceFrame, m_intermediateFrames)) {
-    PTRACE(1, "Patch\tMedia conversion (primary) failed");
+    PTRACE(1, "Media conversion (primary) failed");
     return false;
   }
 
 #if OPAL_VIDEO
   if (m_secondaryCodec == NULL && m_rateController != NULL) {
-    PTRACE(4, "Patch\tPushing " << m_intermediateFrames.GetSize() << " packet into RC");
+    PTRACE(4, "Pushing " << m_intermediateFrames.GetSize() << " packet into RC");
     m_rateController->Push(m_intermediateFrames, ((OpalVideoTranscoder *)m_primaryCodec)->WasLastFrameIFrame());
     bool wasIFrame = false;
     if (m_rateController->Pop(m_intermediateFrames, wasIFrame, false)) {
-      PTRACE(4, "Patch\tPulled " << m_intermediateFrames.GetSize() << " frames from RC");
+      PTRACE(4, "Pulled " << m_intermediateFrames.GetSize() << " frames from RC");
       for (RTP_DataFrameList::iterator interFrame = m_intermediateFrames.begin(); interFrame != m_intermediateFrames.end(); ++interFrame) {
         m_patch.FilterFrame(*interFrame, m_primaryCodec->GetOutputFormat());
         if (!m_stream->WritePacket(*interFrame))
@@ -1064,7 +1066,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
     }
 
     if (!m_secondaryCodec->ConvertFrames(*interFrame, m_finalFrames)) {
-      PTRACE(1, "Patch\tMedia conversion (secondary) failed");
+      PTRACE(1, "Media conversion (secondary) failed");
       return false;
     }
 
@@ -1104,7 +1106,7 @@ void OpalPassiveMediaPatch::Start()
 
   if (CanStart()) {
     m_started = true;
-    PTRACE(4, "Patch\tPassive media patch started: " << *this);
+    PTRACE(4, "Passive media patch started: " << *this);
     m_source.GetConnection().GetEndPoint().GetManager().QueueDecoupledEvent(new PSafeWorkNoArg<OpalMediaPatch, bool>(this, &OpalMediaPatch::OnStartMediaPatch));
   }
 }
