@@ -45,6 +45,11 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendRedundantFra
   if (status != e_ProcessPacket)
     return status;
 
+  if (redundancies.empty()) {
+    PTRACE(m_levelTxRED, &m_session, m_session << "no redundant blocks added");
+    return e_ProcessPacket;
+  }
+
   RTP_DataFrame red;
   red.CopyHeader(frame);
   red.SetPayloadType(m_session.m_redundencyPayloadType);
@@ -84,10 +89,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendRedundantFra
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendRedundantData(RTP_DataFrame & primary, RTP_DataFrameList & redundancies)
 {
-  if (m_session.m_ulpFecPayloadType == RTP_DataFrame::IllegalPayloadType) {
-    PTRACE(m_levelTxRED, &m_session, m_session << "no redundant blocks added");
+  if (m_session.m_ulpFecPayloadType == RTP_DataFrame::IllegalPayloadType)
     return e_ProcessPacket; // No redundancies, add primary data and return
-  }
 
   FecData fec;
   fec.m_level.resize(m_session.m_ulpFecSendLevel);
