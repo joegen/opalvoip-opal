@@ -466,10 +466,12 @@ void OpalRTPConnection::DetermineRTPNAT(const OpalTransport & transport, const O
 
 bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
 {
-  PTRACE(5, "OnMediaCommand \"" << command << "\" for " << *this);
-
-  if (stream.IsSource() != (&stream.GetConnection() == this))
+  if (stream.IsSource() != (&stream.GetConnection() == this)) {
+    PTRACE(5, "OnMediaCommand \"" << command << "\" on " << stream << " not processed for " << *this);
     return OpalConnection::OnMediaCommand(stream, command);
+  }
+
+  PTRACE(5, "OnMediaCommand \"" << command << "\" on " << stream << " processed for " << *this);
 
   unsigned sessionID = stream.GetSessionID();
   OpalRTPSession * session = dynamic_cast<OpalRTPSession *>(GetMediaSession(sessionID));
@@ -486,7 +488,8 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
   if (tsto != NULL)
     return session->SendTemporalSpatialTradeOff(tsto->GetTradeOff());
 
-  if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
+  const OpalVideoUpdatePicture * vup = dynamic_cast<const OpalVideoUpdatePicture *>(&command);
+  if (vup != NULL) {
     unsigned options = m_stringOptions.GetInteger(OPAL_OPT_VIDUP_METHODS, OPAL_OPT_VIDUP_METHOD_DEFAULT);
     if ((options&(OPAL_OPT_VIDUP_METHOD_RTCP | OPAL_OPT_VIDUP_METHOD_PLI | OPAL_OPT_VIDUP_METHOD_FIR)) != 0) {
 #if OPAL_STATISTICS
@@ -494,7 +497,7 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
 #endif
       if (PIsDescendant(&command, OpalVideoPictureLoss))
         options |= OPAL_OPT_VIDUP_METHOD_PREFER_PLI;
-      return session->SendIntraFrameRequest(options);
+      return session->SendIntraFrameRequest(options, vup->GetSyncSource());
     }
 
     PTRACE(4, "RTCP Intra-Frame Request disabled in string options");
