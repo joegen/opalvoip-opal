@@ -722,11 +722,9 @@ class OpalRTPSession : public OpalMediaSession
 
       OpalJitterBuffer * m_jitterBuffer;
 
-#if PTRACING
-      unsigned m_levelTxRED;
-      unsigned m_levelRxRED;
-      unsigned m_levelRxUnknownFEC;
-#endif
+      PTRACE_THROTTLE(m_throttleTxRED,3,60000);
+      PTRACE_THROTTLE(m_throttleRxRED,3,60000);
+      PTRACE_THROTTLE(m_throttleRxUnknownFEC,3,10000);
 
       P_REMOVE_VIRTUAL(SendReceiveStatus, OnSendData(RTP_DataFrame &, bool), e_AbortTransport);
     };
@@ -802,12 +800,10 @@ class OpalRTPSession : public OpalMediaSession
     PSTUNClient   * m_stunClient;
 #endif // OPAL_ICE
 
-#if PTRACING
-    unsigned m_levelTxRR;
-    unsigned m_levelRxSR;
-    unsigned m_levelRxRR;
-    unsigned m_levelRxSDES;
-#endif
+    PTRACE_THROTTLE(m_throttleTxRR,4,60000);
+    PTRACE_THROTTLE(m_throttleRxSR,4,60000);
+    PTRACE_THROTTLE(m_throttleRxRR,4,60000);
+    PTRACE_THROTTLE(m_throttleRxSDES,4,60000);
 
   private:
     OpalRTPSession(const OpalRTPSession &);
