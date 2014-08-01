@@ -46,10 +46,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendRedundantFra
     return status;
 
   if (redundancies.empty()) {
-    PTRACE(m_levelTxRED, &m_session, m_session << "no redundant blocks added");
-#if PTRACING
-    m_levelTxRED = 6;
-#endif
+    PTRACE(m_throttleTxRED, &m_session, m_session << "no redundant blocks added");
     return e_ProcessPacket;
   }
 
@@ -80,11 +77,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendRedundantFra
   *payload++ = (BYTE)frame.GetPayloadType();
   memmove(payload, frame.GetPayloadPtr(), frame.GetPayloadSize());
 
-  PTRACE(m_levelTxRED, &m_session, m_session << "redundant packet " << red.GetPayloadType()
+  PTRACE(m_throttleTxRED, &m_session, m_session << "redundant packet " << red.GetPayloadType()
          << " primary block inserted : " << frame.GetPayloadType() << ", sz=" << frame.GetPayloadSize());
-#if PTRACING
-    m_levelTxRED = 6;
-#endif
   frame = red;
   return e_ProcessPacket;
 }
@@ -198,11 +192,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveRedundant
   primary.SetPayloadType((RTP_DataFrame::PayloadTypes)(*payload & 0x7f));
   primary.SetPayloadSize(--size);
   memmove(primary.GetPayloadPtr(), ++payload, size);
-  PTRACE(m_levelRxRED, &m_session, m_session << "redundant packet " << frame.GetPayloadType()
+  PTRACE(m_throttleRxRED, &m_session, m_session << "redundant packet " << frame.GetPayloadType()
          << " primary block extracted: " << primary.GetPayloadType() << ", sz=" << size);
-#if PTRACING
-    m_levelRxRED = 6;
-#endif
 
   // Then go through the redundant entries again
   payload = frame.GetPayloadPtr();
@@ -235,11 +226,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveRedundant
                                                                          PINDEX size)
 {
   if (payloadType != m_session.m_ulpFecPayloadType) {
-    PTRACE(m_levelRxUnknownFEC, &m_session, m_session << "unknown redundant block: "
+    PTRACE(m_throttleRxUnknownFEC, &m_session, m_session << "unknown redundant block: "
            << payloadType << ", ts=" << timestamp << ", sz=" << size << '\n' << hex << setfill('0') << PBYTEArray(data-4, size+4, false));
-#if PTRACING
-    m_levelRxUnknownFEC = 6;
-#endif
     return e_ProcessPacket;
   }
 
