@@ -144,12 +144,17 @@ typedef struct OpalMessage OpalMessage;
       }
       </code>
   */
-OpalHandle OPAL_EXPORT OpalInitialise(unsigned * version, const char * options);
+extern OpalHandle OPAL_EXPORT OpalInitialise(unsigned * version, const char * options);
 
 /** String representation of the OpalIntialise() which may be used for late
     binding to the library.
  */
-#define OPAL_INITIALISE_FUNCTION   "OpalInitialise"
+#if _WIN32
+  #define OPAL_INITIALISE_FUNCTION (LPCSTR)1
+#else
+  #define OPAL_INITIALISE_FUNCTION "OpalInitialise"
+#endif
+
 
 /** Typedef representation of the pointer to the OpalIntialise() function which
     may be used for late binding to the library.
@@ -167,12 +172,16 @@ typedef OpalHandle (OPAL_EXPORT *OpalInitialiseFunction)(unsigned * version, con
       OpalShutDown(hOPAL);
       </code>
   */
-void OPAL_EXPORT OpalShutDown(OpalHandle opal);
+extern void OPAL_EXPORT OpalShutDown(OpalHandle opal);
 
 /** String representation of the OpalShutDown() which may be used for late
     binding to the library.
  */
-#define OPAL_SHUTDOWN_FUNCTION     "OpalShutDown"
+#if _WIN32
+  #define OPAL_SHUTDOWN_FUNCTION (LPCSTR)2
+#else
+  #define OPAL_SHUTDOWN_FUNCTION "OpalShutDown"
+#endif
 
 /** Typedef representation of the pointer to the OpalShutDown() function which
     may be used for late binding to the library.
@@ -218,12 +227,16 @@ typedef void (OPAL_EXPORT *OpalShutDownFunction)(OpalHandle opal);
       }
       </code>
   */
-OpalMessage * OPAL_EXPORT OpalGetMessage(OpalHandle opal, unsigned timeout);
+extern OpalMessage * OPAL_EXPORT OpalGetMessage(OpalHandle opal, unsigned timeout);
 
 /** String representation of the OpalGetMessage() which may be used for late
     binding to the library.
  */
-#define OPAL_GET_MESSAGE_FUNCTION  "OpalGetMessage"
+#if _WIN32
+  #define OPAL_GET_MESSAGE_FUNCTION (LPCSTR)3
+#else
+  #define OPAL_GET_MESSAGE_FUNCTION "OpalGetMessage"
+#endif
 
 /** Typedef representation of the pointer to the OpalGetMessage() function which
     may be used for late binding to the library.
@@ -273,7 +286,7 @@ typedef OpalMessage * (OPAL_EXPORT *OpalGetMessageFunction)(OpalHandle opal, uns
       }
       </code>
   */
-OpalMessage * OPAL_EXPORT OpalSendMessage(OpalHandle opal, const OpalMessage * message);
+extern OpalMessage * OPAL_EXPORT OpalSendMessage(OpalHandle opal, const OpalMessage * message);
 
 /** String representation of the OpalSendMessage() which may be used for late
     binding to the library.
@@ -283,7 +296,11 @@ typedef OpalMessage * (OPAL_EXPORT *OpalSendMessageFunction)(OpalHandle opal, co
 /** Typedef representation of the pointer to the OpalSendMessage() function which
     may be used for late binding to the library.
  */
-#define OPAL_SEND_MESSAGE_FUNCTION "OpalSendMessage"
+#if _WIN32
+  #define OPAL_SEND_MESSAGE_FUNCTION (LPCSTR)4
+#else
+  #define OPAL_SEND_MESSAGE_FUNCTION "OpalSendMessage"
+#endif
 
 
 ///////////////////////////////////////
@@ -291,12 +308,16 @@ typedef OpalMessage * (OPAL_EXPORT *OpalSendMessageFunction)(OpalHandle opal, co
 /** Free memeory in message the OPAL system has sent. The parameter must be
     the message returned by OpalGetMessage() or OpalSendMessage().
   */
-void OPAL_EXPORT OpalFreeMessage(OpalMessage * message);
+extern void OPAL_EXPORT OpalFreeMessage(OpalMessage * message);
 
 /** String representation of the OpalFreeMessage() which may be used for late
     binding to the library.
  */
-#define OPAL_FREE_MESSAGE_FUNCTION "OpalFreeMessage"
+#if _WIN32
+  #define OPAL_FREE_MESSAGE_FUNCTION (LPCSTR)5
+#else
+  #define OPAL_FREE_MESSAGE_FUNCTION "OpalFreeMessage"
+#endif
 
 /** Typedef representation of the pointer to the OpalFreeMessage() function which
     may be used for late binding to the library.

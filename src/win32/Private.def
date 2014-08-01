@@ -611,11 +611,6 @@ EXPORTS
     _octet_string_is_eq @58053 NONAME
     _octet_string_set_to_zero @58054 NONAME
     _octet_weight @58055 NONAME
-    _OpalFreeMessage@4 @50794 NONAME
-    _OpalGetMessage@8 @50795 NONAME
-    _OpalInitialise@8 @50796 NONAME
-    _OpalSendMessage@8 @50797 NONAME
-    _OpalShutDown@4 @50798 NONAME
     _rand_source_deinit @58056 NONAME
     _rand_source_get_octet_string @58057 NONAME
     _rand_source_init @58058 NONAME
