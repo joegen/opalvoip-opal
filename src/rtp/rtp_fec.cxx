@@ -47,6 +47,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendRedundantFra
 
   if (redundancies.empty()) {
     PTRACE(m_levelTxRED, &m_session, m_session << "no redundant blocks added");
+#if PTRACING
+    m_levelTxRED = 6;
+#endif
     return e_ProcessPacket;
   }
 

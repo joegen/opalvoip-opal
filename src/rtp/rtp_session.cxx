@@ -459,7 +459,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
               m_session << "have discontinuity: " << frame.GetDiscontinuity() << ", sn=" << m_lastSequenceNumber);
   }
 
-  if (rewrite != e_RewriteHeader)
+  if (rewrite == e_RewriteSSRC)
     m_lastSequenceNumber = frame.GetSequenceNumber();
 
 #if OPAL_RTP_FEC
