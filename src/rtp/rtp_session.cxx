@@ -158,12 +158,6 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_iceServer(NULL)
   , m_stunClient(NULL)
 #endif
-#if PTRACING
-  , m_levelTxRR(3)
-  , m_levelRxSR(3)
-  , m_levelRxRR(3)
-  , m_levelRxSDES(3)
-#endif
 {
   m_localAddress = PIPSocket::GetInvalidAddress();
   m_localPort[e_Data] = m_localPort[e_Control] = 0;
@@ -305,11 +299,6 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
   , m_metrics(NULL)
 #endif
   , m_jitterBuffer(NULL)
-#if PTRACING
-  , m_levelTxRED(3)
-  , m_levelRxRED(3)
-  , m_levelRxUnknownFEC(3)
-#endif
 {
   if (m_canonicalName.IsEmpty()) {
     /* CNAME is no longer just a username@host string, for security!
@@ -1086,7 +1075,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
       // add the SSRC to the start of the payload
       *(PUInt32b *)report.GetPayloadPtr() = sender.m_sourceIdentifier;
-      PTRACE(m_levelTxRR, *this << "sending empty ReceiverReport");
+      PTRACE(m_throttleTxRR, *this << "sending empty ReceiverReport");
     }
     else {
       report.SetPayloadSize(sizeof(PUInt32b) + receivers*sizeof(RTP_ControlFrame::ReceiverReport));  // length is SSRC of packet sender plus RRs
@@ -1117,7 +1106,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
     sr->psent  = sender.m_packets;
     sr->osent  = (uint32_t)sender.m_octets;
 
-    PTRACE(m_levelTxRR, *this << "sending SenderReport:"
+    PTRACE(m_throttleTxRR, *this << "sending SenderReport:"
               " SSRC=" << RTP_TRACE_SRC(sender.m_sourceIdentifier)
            << " ntp=0x" << hex << sr->ntp_ts << dec
            << " rtp=" << sr->rtp_ts
@@ -1141,7 +1130,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
   report.EndPacket();
 
   // Add the SDES part to compound RTCP packet
-  PTRACE(m_levelTxRR, *this << "sending SDES: " << sender.m_canonicalName);
+  PTRACE(m_throttleTxRR, *this << "sending SDES: " << sender.m_canonicalName);
   report.StartNewPacket(RTP_ControlFrame::e_SourceDescription);
 
   report.SetCount(0); // will be incremented automatically
@@ -1149,10 +1138,6 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
   report.AddSourceDescriptionItem(RTP_ControlFrame::e_CNAME, sender.m_canonicalName);
   report.AddSourceDescriptionItem(RTP_ControlFrame::e_TOOL, m_toolName);
   report.EndPacket();
-  
-#if PTRACING
-  m_levelTxRR = 4;
-#endif
 }
 
 
@@ -1461,13 +1446,12 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
 void OpalRTPSession::OnRxSenderReport(const SenderReport & senderReport, const ReceiverReportArray & receiveReports)
 {
 #if PTRACING
-  if (PTrace::CanTrace(m_levelRxSR)) {
-    ostream & strm = PTrace::Begin(m_levelRxSR, __FILE__, __LINE__, this);
+  if (PTrace::CanTrace(m_throttleRxSR)) {
+    ostream & strm = PTrace::Begin(m_throttleRxSR, __FILE__, __LINE__, this);
     strm << *this << "OnRxSenderReport: " << senderReport << '\n';
     for (PINDEX i = 0; i < receiveReports.GetSize(); i++)
       strm << "  RR: " << receiveReports[i] << '\n';
     strm << PTrace::End;
-    m_levelRxSR = 4;
   }
 #endif
 
@@ -1483,13 +1467,12 @@ void OpalRTPSession::OnRxSenderReport(const SenderReport & senderReport, const R
 void OpalRTPSession::OnRxReceiverReport(RTP_SyncSourceId PTRACE_PARAM(src), const ReceiverReportArray & reports)
 {
 #if PTRACING
-  if (PTrace::CanTrace(m_levelRxRR)) {
-    ostream & strm = PTrace::Begin(m_levelRxRR, __FILE__, __LINE__, this);
+  if (PTrace::CanTrace(m_throttleRxRR)) {
+    ostream & strm = PTrace::Begin(m_throttleRxRR, __FILE__, __LINE__, this);
     strm << *this << "OnReceiverReport: SSRC=" << RTP_TRACE_SRC(src) << '\n';
     for (PINDEX i = 0; i < reports.GetSize(); i++)
       strm << "  RR: " << reports[i] << '\n';
     strm << PTrace::End;
-    m_levelRxRR = 4;
   }
 #endif
   OnRxReceiverReports(reports);
@@ -1510,13 +1493,12 @@ void OpalRTPSession::OnRxReceiverReports(const ReceiverReportArray & reports)
 void OpalRTPSession::OnRxSourceDescription(const SourceDescriptionArray & PTRACE_PARAM(description))
 {
 #if PTRACING
-  if (PTrace::CanTrace(m_levelRxSDES)) {
-    ostream & strm = PTrace::Begin(m_levelRxSDES, __FILE__, __LINE__, this);
+  if (PTrace::CanTrace(m_throttleRxSDES)) {
+    ostream & strm = PTrace::Begin(m_throttleRxSDES, __FILE__, __LINE__, this);
     strm << *this << "OnSourceDescription: " << description.GetSize() << " entries";
     for (PINDEX i = 0; i < description.GetSize(); i++)
       strm << "\n  " << description[i];
     strm << PTrace::End;
-    m_levelRxSDES = 4;
   }
 #endif
 }

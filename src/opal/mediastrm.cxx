@@ -646,9 +646,11 @@ void OpalMediaStreamPacing::Pace(bool reading, PINDEX bytes, bool & marker)
       return;
   }
 
-  PTRACE(5, "Media", "Pacing delay: " << timeToWait << " (" << (timeToWait/m_timeUnits) << "ms), "
+  PTRACE(m_throttleLog, "Media", "Pacing delay: " << timeToWait
+         << " (" << (timeToWait / m_timeUnits) << "ms), "
             "time=" << m_frameTime << " (" << (m_frameTime/m_timeUnits) << "ms), "
-            "bytes=" << bytes << ", size=" << m_frameSize);
+            "bytes=" << bytes << ", size=" << m_frameSize
+         << m_throttleLog);
   m_delay.Delay(timeToWait/m_timeUnits);
 }
 
