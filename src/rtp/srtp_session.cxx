@@ -69,7 +69,7 @@
 ///////////////////////////////////////////////////////
 
 #if PTRACING
-static bool CheckError(err_status_t err, const char * fn, const char * file, int line, RTP_SyncSourceId ssrc = 0)
+static bool CheckError(err_status_t err, const char * fn, const char * file, int line, RTP_SyncSourceId ssrc = 0, RTP_SequenceNumber sn = 0)
 {
   if (err == err_status_ok)
     return true;
@@ -154,6 +154,8 @@ static bool CheckError(err_status_t err, const char * fn, const char * file, int
   }
   if (ssrc != 0)
     trace << " - SSRC=" << RTP_TRACE_SRC(ssrc);
+  if (sn != 0)
+    trace << " SN=" << sn;
   trace << PTrace::End;
   return false;
 }
@@ -573,7 +575,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
 
   int len = frame.GetPacketSize();
   frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
-  if (!CHECK_ERROR(srtp_protect,(m_context, frame.GetPointer(), &len), frame.GetSyncSource()))
+  if (!CHECK_ERROR(srtp_protect,(m_context, frame.GetPointer(), &len), frame.GetSyncSource(), frame.GetSequenceNumber()))
     return e_AbortTransport;
 
   PTRACE(m_traceLevel[e_Data][e_Sender], *this << "protected RTP packet: "
@@ -629,7 +631,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
   frame.MakeUnique();
 
   int len = frame.GetPacketSize();
-  if (!CHECK_ERROR(srtp_unprotect,(m_context, frame.GetPointer(), &len), frame.GetSyncSource()))
+  if (!CHECK_ERROR(srtp_unprotect, (m_context, frame.GetPointer(), &len), frame.GetSyncSource(), frame.GetSequenceNumber()))
     return OpalRTPSession::e_AbortTransport;
 
   PTRACE(m_traceLevel[e_Data][e_Receiver], *this << "unprotected RTP packet: "
