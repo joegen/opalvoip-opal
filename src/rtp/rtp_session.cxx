@@ -433,7 +433,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
   if (rewrite != e_RewriteNothing)
     frame.SetSyncSource(m_sourceIdentifier);
 
-  if (m_lastSequenceNumber == 0) {
+  if (m_packets == 0) {
     if (rewrite == e_RewriteHeader)
       frame.SetSequenceNumber(m_lastSequenceNumber = (RTP_SequenceNumber)PRandom::Number(1, 65535));
     PTRACE(3, &m_session, m_session << "first sent data: "
@@ -442,10 +442,12 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
             << " local=" << m_session.GetLocalAddress());
   }
   else {
-    if (rewrite == e_RewriteHeader)
-      frame.SetSequenceNumber(m_lastSequenceNumber += (RTP_SequenceNumber)(frame.GetDiscontinuity() + 1));
     PTRACE_IF(5, frame.GetDiscontinuity() > 0, &m_session,
               m_session << "have discontinuity: " << frame.GetDiscontinuity() << ", sn=" << m_lastSequenceNumber);
+    if (rewrite == e_RewriteHeader) {
+      frame.SetSequenceNumber(m_lastSequenceNumber += (RTP_SequenceNumber)(frame.GetDiscontinuity() + 1));
+      PTRACE_IF(4, m_lastSequenceNumber == 0, &m_session, m_session << "sequence number wraparound");
+    }
   }
 
   if (rewrite == e_RewriteSSRC)
