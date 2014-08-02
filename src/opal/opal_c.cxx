@@ -1388,6 +1388,19 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
       if (definition != NULL)
         definition->SetAutoStart(autoStart, true);
     }
+
+#if PTRACING
+    static unsigned const Level = 3;
+    if (PTrace::CanTrace(Level)) {
+      ostream & strm = PTRACE_BEGIN(Level);
+      strm << "Auto start " << (autoStart == OpalMediaType::Receive ? "receive" : "transmit") << ':';
+      for (iterMediaType = allMediaTypes.begin(); iterMediaType != allMediaTypes.end(); ++iterMediaType) {
+        if (((*iterMediaType)->GetAutoStart()&autoStart) != 0)
+          strm << ' ' << *iterMediaType;
+      }
+      strm << PTrace::End;
+    }
+#endif
   }
 
 #if OPAL_PTLIB_NAT
