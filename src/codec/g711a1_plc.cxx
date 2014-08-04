@@ -60,7 +60,7 @@ static const double PITCH_LOW=66.6;/**< minimum allowed channel[c].pitch. defaul
 static const double PITCH_HIGH=200;/**< maximum allowed channel[c].pitch. default 200 Hz [Hz] */
 
 
-#if defined(_MSC_VER) && _MSC_VER < 1700
+#if defined(_MSC_VER) && _MSC_VER <= 1800
 __inline double round(const double & value)
 {
   return value < 0 ? floor(value-0.5) : ceil(value+0.5);
