@@ -948,11 +948,12 @@ PStringArray MySkinnyEndPoint::ExpandWildcards(const PStringArray & names)
     if (!Wildcards.Execute(name, starts, ends))
       expanded.AppendString(name);
     else {
-      unsigned number = name(starts[1], ends[1] - 1).AsUnsigned();
-      unsigned lastNumber = name(starts[2], ends[2] - 1).AsUnsigned();
+      uint64_t number = name(starts[1], ends[1] - 1).AsUnsigned64();
+      uint64_t lastNumber = name(starts[2], ends[2] - 1).AsUnsigned64();
       unsigned digits = ends[2] - starts[2];
+      name.Delete(starts[1], P_MAX_INDEX);
       while (number <= lastNumber)
-        expanded.AppendString(name.Left(starts[1]) + psprintf("%0*u", digits, number++));
+        expanded.AppendString(PSTRSTRM(name << setfill('0') << setw(digits) << number++));
     }
   }
 
