@@ -371,25 +371,20 @@ bool OpalH281Client::Action(PVideoControlInfo::Types actionType, int direction, 
 
   SendStopAction();
 
+  if (direction == 0)
+    return true;
+
+  PTRACE(3, "Starting action for " << actionType << ", dir=" << direction);
+
   m_transmitFrame.SetRequestType(H281_Frame::StartAction);
   m_transmitFrame.SetDirection(actionType, direction);
+  m_transmitFrame.SetTimeout(0); //800msec
 
-  for (PVideoControlInfo::Types type = PVideoControlInfo::BeginTypes; type < PVideoControlInfo::EndTypes; ++type) {
-    if (m_transmitFrame.GetDirection(type) != 0) {
-      PTRACE(3, "Starting action for " << type << ", dir=" << direction);
+  m_h224Handler->TransmitClientFrame(*this, m_transmitFrame);
 
-      m_transmitFrame.SetTimeout(0); //800msec
-
-      m_h224Handler->TransmitClientFrame(*this, m_transmitFrame);
-
-      // send a ContinueAction every 400msec
-      m_continueTimer.RunContinuous(400);
-      m_stopTimer = duration;
-      return true;
-    }
-  }
-
-  m_transmitFrame.SetRequestType(H281_Frame::IllegalRequest);
+  // send a ContinueAction every 400msec
+  m_continueTimer.RunContinuous(400);
+  m_stopTimer = duration;
   return true;
 }
 
@@ -402,6 +397,8 @@ void OpalH281Client::SendStopAction()
   PTRACE(3, "Stopping action");
   m_continueTimer.Stop();
   m_transmitFrame.SetRequestType(H281_Frame::StopAction);
+  for (PVideoControlInfo::Types type = PVideoControlInfo::BeginTypes; type < PVideoControlInfo::EndTypes; ++type)
+    m_transmitFrame.SetDirection(type, 0);
   m_h224Handler->TransmitClientFrame(*this, m_transmitFrame);
   m_transmitFrame.SetRequestType(H281_Frame::IllegalRequest);
 }
