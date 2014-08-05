@@ -2623,7 +2623,7 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
 #if OPAL_HAS_H281
   m_cli->SetCommand("camera", PCREATE_NOTIFIER(CmdFarEndCamera),
                     "Far End Camera Control",
-                    "{ \"pan\" | \"tilt\" | \"zoom\" | \"focus\" } { \"in\" | \"out\" } <milliseconds>",
+                    "{ \"left\" | \"right\" | \"up\" | \"down\" | \"tight\" | \"wide\" | \"in\" | \"out\" } <milliseconds>",
                     "c-call: Indicate the call token to use, default is first call");
 #endif
 
@@ -2892,25 +2892,73 @@ void OpalManagerCLI::CmdStatistics(PCLI::Arguments & args, P_INT_PTR)
 
 
 #if OPAL_HAS_H281
+struct OpalCmdFarEndCameraControlDirection
+{
+  P_DECLARE_STREAMABLE_ENUM(Cmd, left, right, up, down, tight, wide, in, out);
+};
+
 void OpalManagerCLI::CmdFarEndCamera(PCLI::Arguments & args, P_INT_PTR)
 {
-  if (args.GetCount() < 3) {
+  if (args.GetCount() < 2) {
     args.WriteUsage();
     return;
   }
 
-  PVideoControlInfo::Types type = PVideoControlInfo::TypesFromString(args[0], false);
-  if (type == PVideoControlInfo::NumTypes) {
-    args.WriteUsage();
-    return;
-  }
-
+  PVideoControlInfo::Types type;
   int dir;
-  if (args[1] *= "in")
-    dir = 1;
-  else if (args[1] *= "out")
-    dir = -1;
-  else {
+  switch (OpalCmdFarEndCameraControlDirection::CmdFromString(args[0], false)) {
+    case OpalCmdFarEndCameraControlDirection::left :
+      type = PVideoControlInfo::Pan;
+      dir = -1;
+      break;
+
+    case OpalCmdFarEndCameraControlDirection::right :
+      type = PVideoControlInfo::Pan;
+      dir = 1;
+      break;
+
+    case OpalCmdFarEndCameraControlDirection::down :
+      type = PVideoControlInfo::Tilt;
+      dir = -1;
+      break;
+
+    case OpalCmdFarEndCameraControlDirection::up :
+      type = PVideoControlInfo::Tilt;
+      dir = 1;
+      break;
+
+    case OpalCmdFarEndCameraControlDirection::wide :
+      type = PVideoControlInfo::Zoom;
+      dir = -1;
+      break;
+
+    case OpalCmdFarEndCameraControlDirection::tight :
+      type = PVideoControlInfo::Zoom;
+      dir = 1;
+      break;
+
+    case OpalCmdFarEndCameraControlDirection::out :
+      type = PVideoControlInfo::Focus;
+      dir = -1;
+      break;
+
+    case OpalCmdFarEndCameraControlDirection::in :
+      type = PVideoControlInfo::Focus;
+      dir = 1;
+      break;
+
+    default :
+      args.WriteUsage();
+      return;
+  }
+
+  PCaselessString arg = args[2];
+  PTimeInterval duration;
+  if (isdigit(arg[0]))
+    duration = arg.AsUnsigned();
+  else if (arg == "stop")
+    dir = 0;
+  else if (arg != "stop") {
     args.WriteUsage();
     return;
   }
@@ -2937,7 +2985,7 @@ void OpalManagerCLI::CmdFarEndCamera(PCLI::Arguments & args, P_INT_PTR)
     return;
   }
 
-  if (connection->FarEndCameraControl(type, dir, args[2].AsUnsigned()))
+  if (connection->FarEndCameraControl(type, dir, duration))
     args.WriteError() << "Executing far end camera control." << endl;
   else
     args.WriteError() << "Could not perform far end camera control." << endl;
@@ -3133,7 +3181,7 @@ void OpalManagerCLI::CmdPresentationToken(PCLI::Arguments & args, P_INT_PTR)
     if (args.GetCount() == 0)
       args.GetContext() << "Presentation token is " << (connection->HasPresentationRole() ? "acquired." : "released.") << endl;
     else {
-      switch (OpalCmdPresentationToken::CmdFromString(args[0])) {
+      switch (OpalCmdPresentationToken::CmdFromString(args[0], false)) {
         case OpalCmdPresentationToken::request :
           if (connection->HasPresentationRole())
             args.GetContext() << "Presentation token is already acquired." << endl;
