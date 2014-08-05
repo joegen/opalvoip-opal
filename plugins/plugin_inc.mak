@@ -33,8 +33,8 @@ include $(OPAL_PLATFORM_DIR)/plugins/plugin_config.mak
 
 ##############################################################################
 
-ifneq (,$(BASENAME_$(target_os)))
-  BASENAME = $(BASENAME_$(target_os))
+ifneq (,$(PLUGIN_NAME_$(target_os)))
+  PLUGIN_NAME = $(PLUGIN_NAME_$(target_os))
 endif
 
 ifneq (,$(BASENAME))
