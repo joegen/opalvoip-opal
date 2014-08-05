@@ -23,9 +23,9 @@
 # $Author$
 # $Date$
 
-BASENAME_win32 := x264plugin_helper.exe
 BASENAME       := h264_video_pwplugin_helper
 PLUGIN_NAME    := $(BASENAME)
+PLUGIN_NAME_mingw := x264plugin_helper.exe
 
 SRCDIR   := $(CURDIR)
 SOURCES  := $(SRCDIR)/h264_helper.cxx
