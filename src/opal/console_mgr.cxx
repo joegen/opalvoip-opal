@@ -2952,13 +2952,13 @@ void OpalManagerCLI::CmdFarEndCamera(PCLI::Arguments & args, P_INT_PTR)
       return;
   }
 
-  PCaselessString arg = args[2];
+  PCaselessString arg = args[1];
   PTimeInterval duration;
   if (isdigit(arg[0]))
     duration = arg.AsUnsigned();
   else if (arg == "stop")
     dir = 0;
-  else if (arg != "stop") {
+  else if (arg != "start") {
     args.WriteUsage();
     return;
   }
