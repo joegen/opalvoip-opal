@@ -1131,7 +1131,7 @@ OpalMediaStreamPtr OpalConnection::GetMediaStream(const OpalMediaType & mediaTyp
     ++mediaStream;
 
   while (mediaStream != NULL) {
-    if ((mediaType.empty() || mediaStream->GetMediaFormat().GetMediaType() == mediaType) && mediaStream->IsSource() == source)
+    if ((mediaType.empty() || mediaStream->GetMediaFormat().IsMediaType(mediaType)) && mediaStream->IsSource() == source)
       return mediaStream;
     ++mediaStream;
   }
@@ -1671,7 +1671,7 @@ void OpalConnection::OnApplyStringOptions()
     m_dtmfScaleDivisor    = m_stringOptions.GetInteger(OPAL_OPT_DTMF_DIV,  m_dtmfScaleDivisor);
 #endif
 
-    m_autoStartInfo.Initialise(m_stringOptions);
+    m_autoStartInfo.Add(m_stringOptions(OPAL_OPT_AUTO_START));
 
     if (m_stringOptions.GetBoolean(OPAL_OPT_DISABLE_JITTER))
       SetAudioJitterDelay(0, 0);
@@ -1792,88 +1792,6 @@ bool OpalConnection::RequireSymmetricMediaStreams() const
 OpalMediaType::AutoStartMode OpalConnection::GetAutoStart(const OpalMediaType & mediaType) const
 {
   return m_autoStartInfo.GetAutoStart(mediaType);
-}
-
-
-OpalConnection::AutoStartMap::AutoStartMap()
-{
-}
-
-
-void OpalConnection::AutoStartMap::Initialise(const OpalConnection::StringOptions & stringOptions)
-{
-  PWaitAndSignal m(m_mutex);
-
-  // get autostart option as lines
-  PStringArray lines = stringOptions(OPAL_OPT_AUTO_START).Lines();
-  for (PINDEX i = 0; i < lines.GetSize(); ++i) {
-    PCaselessString mediaType, mode;
-    if (!lines[i].Split(':', mediaType, mode))
-      SetAutoStart(lines[i], OpalMediaType::ReceiveTransmit);
-    else if (mode == "offer" || mode == "inactive")
-      SetAutoStart(mediaType, OpalMediaType::OfferInactive);
-    else if (mode == "recvonly")
-      SetAutoStart(mediaType, OpalMediaType::Receive);
-    else if (mode == "sendonly")
-      SetAutoStart(mediaType, OpalMediaType::Transmit);
-    else if (mode == "yes" || mode == "true" || mode == "1" || mode == "sendrecv")
-      SetAutoStart(mediaType, OpalMediaType::ReceiveTransmit);
-    else if (mode == "no" || mode == "false" || mode == "0")
-      SetAutoStart(mediaType, OpalMediaType::DontOffer);
-    else if (mode == "exclusive") {
-      OpalMediaTypeList types = OpalMediaType::GetList();
-      for (OpalMediaTypeList::iterator it = types.begin(); it != types.end(); ++it)
-        SetAutoStart(*it, mediaType == it->c_str() ? OpalMediaType::ReceiveTransmit : OpalMediaType::DontOffer);
-      break; // No point in doing others.
-    }
-    else {
-      PTRACE(2, PTraceModule(), "Illegal AutoStart mode \"" << mode << '"');
-    }
-  }
-}
-
-
-void OpalConnection::AutoStartMap::SetAutoStart(const PString & mediaTypeName, OpalMediaType::AutoStartMode autoStart)
-{
-  OpalMediaType mediaType(mediaTypeName);
-  if (mediaType.empty()) {
-    PTRACE(2, PTraceModule(), "Illegal/unknown AutoStart media type \"" << mediaTypeName << '"');
-    return;
-  }
-
-  PWaitAndSignal m(m_mutex);
-
-  // deconflict session ID
-  unsigned sessionID = mediaType->GetDefaultSessionId();
-  if (size() == 0) {
-    if (sessionID == 0)
-      sessionID = 1;
-  }
-  else {
-    iterator r = begin();
-    while (r != end()) {
-      if (r->second.preferredSessionId != sessionID)
-        ++r;
-      else {
-        ++sessionID;
-        r = begin();
-      }
-    }
-  }
-
-  AutoStartInfo info;
-  info.autoStart = autoStart;
-  info.preferredSessionId = sessionID;
-
-  insert(value_type(mediaType, info));
-}
-
-
-OpalMediaType::AutoStartMode OpalConnection::AutoStartMap::GetAutoStart(const OpalMediaType & mediaType) const
-{
-  PWaitAndSignal m(m_mutex);
-  const_iterator r = find(mediaType);
-  return r == end() ? mediaType.GetAutoStart() : r->second.autoStart;
 }
 
 

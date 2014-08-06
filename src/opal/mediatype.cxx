@@ -53,6 +53,7 @@ OPAL_INSTANTIATE_MEDIATYPE(OpalAudioMediaDefinition);
 
 #if OPAL_VIDEO
 OPAL_INSTANTIATE_MEDIATYPE(OpalVideoMediaDefinition);
+OPAL_INSTANTIATE_MEDIATYPE(OpalPresentationVideoMediaDefinition);
 #endif
 
 OPAL_INSTANTIATE_SIMPLE_MEDIATYPE(UserInputMediaDefinition, "userinput");
@@ -68,6 +69,97 @@ const OpalMediaType & OpalMediaType::Video()     { static const OpalMediaType ty
 const OpalMediaType & OpalMediaType::Fax()       { static const OpalMediaType type = OpalFaxMediaDefinition::Name();   return type; };
 #endif
 const OpalMediaType & OpalMediaType::UserInput() { static const OpalMediaType type = UserInputMediaDefinition::Name(); return type; };
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+OpalMediaType::AutoStartMap::AutoStartMap()
+{
+}
+
+
+bool OpalMediaType::AutoStartMap::Add(const PString & stringOption)
+{
+  PWaitAndSignal m(m_mutex);
+
+  // get autostart option as lines
+  PStringArray lines = stringOption.Lines();
+  for (PINDEX i = 0; i < lines.GetSize(); ++i) {
+    PCaselessString mediaTypeName, modeName;
+    if (lines[i].Split(':', mediaTypeName, modeName))
+      Add(mediaTypeName, modeName);
+    else
+      Add(lines[i], "sendrecv");
+  }
+
+  return !empty();
+}
+
+
+bool OpalMediaType::AutoStartMap::Add(const PCaselessString & mediaTypeName, const PCaselessString & modeName)
+{
+  OpalMediaType mediaType(mediaTypeName);
+  if (mediaType.GetDefinition() == NULL) {
+    PTRACE(2, PTraceModule(), "Illegal/unknown AutoStart media type \"" << mediaTypeName << '"');
+    return false;
+  }
+
+  OpalMediaType::AutoStartMode mode;
+  if (modeName == "offer" || modeName == "inactive")
+    mode = OpalMediaType::OfferInactive;
+  else if (modeName == "recvonly")
+    mode = OpalMediaType::Receive;
+  else if (modeName == "sendonly")
+    mode = OpalMediaType::Transmit;
+  else if (modeName == "yes" || modeName == "true" || modeName == "1" || modeName == "sendrecv" || modeName == "recvsend")
+    mode = OpalMediaType::ReceiveTransmit;
+  else if (modeName == "no" || modeName == "false" || modeName == "0" || modeName == "no-offer")
+    mode = OpalMediaType::DontOffer;
+  else if (modeName == "exclusive") {
+    OpalMediaTypeList types = OpalMediaType::GetList();
+    for (OpalMediaTypeList::iterator it = types.begin(); it != types.end(); ++it)
+      insert(value_type(*it, mediaType == it->c_str() ? OpalMediaType::ReceiveTransmit : OpalMediaType::DontOffer));
+    return true;
+  }
+  else {
+    PTRACE(2, PTraceModule(), "Illegal AutoStart mode \"" << modeName << '"');
+    return false;
+  }
+
+  return insert(value_type(mediaType, mode)).second;
+}
+
+
+ostream & operator<<(ostream & strm, OpalMediaType::AutoStartMode mode)
+{
+  switch (mode) {
+    case OpalMediaType::OfferInactive :
+      return strm << "inactive";
+    case OpalMediaType::Receive :
+      return strm << "recvonly";
+    case OpalMediaType::Transmit :
+      return strm << "sendonly";
+    case OpalMediaType::ReceiveTransmit :
+      return strm << "sendrecv";
+    default:
+      return strm << "no-offer";
+  }
+}
+
+
+OpalMediaType::AutoStartMode OpalMediaType::AutoStartMap::GetAutoStart(const OpalMediaType & mediaType) const
+{
+  PWaitAndSignal m(m_mutex);
+  const_iterator it = find(mediaType);
+  return it == end() ? mediaType.GetAutoStart() : it->second;
+}
+
+
+void OpalMediaType::AutoStartMap::SetGlobalAutoStart()
+{
+  for (iterator it = begin(); it != end(); ++it)
+    it->first->SetAutoStart(it->second);
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -132,6 +224,18 @@ OpalMediaTypeDefinition::~OpalMediaTypeDefinition()
 }
 
 
+void OpalMediaTypeDefinition::SetAutoStart(OpalMediaType::AutoStartMode mode, bool on)
+{
+  if (on) {
+    if (!(mode&OpalMediaType::DontOffer))
+      m_autoStart -= OpalMediaType::DontOffer;
+    m_autoStart += mode;
+  }
+  else
+    m_autoStart -= mode;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalRTPAVPMediaDefinition::OpalRTPAVPMediaDefinition(const char * mediaType,
@@ -160,7 +264,20 @@ const char * OpalVideoMediaDefinition::Name() { return "video"; }
 
 OpalVideoMediaDefinition::OpalVideoMediaDefinition()
   : OpalRTPAVPMediaDefinition(Name(), 2)
-{ }
+{
+}
+
+OpalVideoMediaDefinition::OpalVideoMediaDefinition(const char * mediaType, unsigned defaultSessionId)
+  : OpalRTPAVPMediaDefinition(mediaType, defaultSessionId)
+{
+}
+
+const char * OpalPresentationVideoMediaDefinition::Name() { return "presentation"; }
+
+OpalPresentationVideoMediaDefinition::OpalPresentationVideoMediaDefinition(const char * mediaType)
+  : OpalVideoMediaDefinition(mediaType, 0)
+{
+}
 
 #endif // OPAL_VIDEO
 

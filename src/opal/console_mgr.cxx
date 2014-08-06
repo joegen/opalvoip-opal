@@ -1729,7 +1729,9 @@ PString OpalConsoleManager::GetArgumentSpec() const
          "D-disable:         Disable use of specified media formats (codecs).\n"
          "P-prefer:          Set preference order for media formats (codecs).\n"
          "O-option:          Set options for media format, argument is of form fmt:opt=val or @type:opt=val.\n"
+         "-auto-start:       Set auto-start option for media type, e.g audio:sendrecv or video:sendonly.\n"
          "-tel:              Protocol to use for tel: URI, e.g. sip\n"
+
          "[Audio options:]"
          "-jitter:           Set audio jitter buffer size (min[,max] default 50,250)\n"
          "-silence-detect:   Set audio silence detect mode (\"none\", \"fixed\" or default \"adaptive\")\n"
@@ -1832,7 +1834,7 @@ static bool SetMediaFormatOption(ostream & output, bool verbose, const PString &
     OpalMediaFormatList allFormats;
     OpalMediaFormat::GetAllRegisteredMediaFormats(allFormats);
     for (OpalMediaFormatList::iterator it = allFormats.begin(); it != allFormats.end(); ++it) {
-      if (it->GetMediaType() == mediaType && !SetMediaFormatOption(output, verbose, it->GetName(), name, value))
+      if (it->IsMediaType(mediaType) && !SetMediaFormatOption(output, verbose, it->GetName(), name, value))
         return false;
     }
 
@@ -1886,6 +1888,12 @@ bool OpalConsoleManager::Initialise(PArgList & args, bool verbose, const PString
     if (args.HasOption("password"))
       output << " (with password)";
     output << '\n';
+  }
+
+  {
+    OpalMediaType::AutoStartMap autoStart;
+    if (autoStart.Add(args.GetOptionString("auto-start")))
+      autoStart.SetGlobalAutoStart();
   }
 
   if (args.HasOption("jitter")) {
@@ -2664,6 +2672,11 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
 
   m_cli->SetCommand("pc vad", PCREATE_NOTIFIER(CmdSilenceDetect),
                     "Voice Activity Detection (aka Silence Detection)", "\"on\" | \"adaptive\" | <level>");
+
+  m_cli->SetCommand("auto-start", PCREATE_NOTIFIER(CmdAutoStart),
+                    "Set media type auto-start mode",
+                    "[ <media-type> [ \"inactive\" | \"sendonly\" | \"recvonly\" | \"sendrecv\" | \"dontoffer\" | \"exclusive\" ] ]");
+
   m_cli->SetCommand("codec list", PCREATE_NOTIFIER(CmdCodecList),
                     "List available codecs");
   m_cli->SetCommand("codec order", PCREATE_NOTIFIER(CmdCodecOrder),
@@ -2991,6 +3004,43 @@ void OpalManagerCLI::CmdFarEndCamera(PCLI::Arguments & args, P_INT_PTR)
     args.WriteError() << "Could not perform far end camera control." << endl;
 }
 #endif // OPAL_HAS_H281
+
+
+void OpalManagerCLI::CmdAutoStart(PCLI::Arguments & args, P_INT_PTR)
+{
+  switch (args.GetCount()) {
+    case 0:
+    {
+      OpalMediaTypeList mediaTypes = OpalMediaType::GetList();
+      string::size_type maxWidth = 0;
+      for (OpalMediaTypeList::iterator it = mediaTypes.begin(); it != mediaTypes.end(); ++it)
+        maxWidth = std::max(maxWidth, it->length());
+      for (OpalMediaTypeList::iterator it = mediaTypes.begin(); it != mediaTypes.end(); ++it)
+        args.GetContext() << setw(maxWidth+1) << *it << ' ' << (*it)->GetAutoStart() << endl;
+      break;
+    }
+
+    case 1:
+    {
+      OpalMediaType mediaType(args[0]);
+      if (mediaType.empty())
+        args.WriteUsage();
+      else
+        args.GetContext() << mediaType << ' ' << mediaType->GetAutoStart() << endl;
+      break;
+    }
+
+    default:
+    {
+      OpalMediaType::AutoStartMap autoStart;
+      if (autoStart.Add(args[0], args[1]))
+        autoStart.SetGlobalAutoStart();
+      else
+        args.WriteUsage();
+      break;
+    }
+  }
+}
 
 
 void OpalManagerCLI::CmdCodecList(PCLI::Arguments & args, P_INT_PTR)

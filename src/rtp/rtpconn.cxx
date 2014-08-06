@@ -147,12 +147,6 @@ vector<bool> OpalRTPConnection::CreateAllMediaSessions(CreateMediaSessionsSecuri
       continue;
     }
 
-    // See if any media formats of this session id, so don't create unused RTP session
-    if (!m_localMediaFormats.HasType(mediaType)) {
-      PTRACE(3, "RTPCon\tNo media formats of type " << mediaType << ", not creating media session");
-      continue;
-    }
-
     for (PINDEX csIdx = 0; csIdx < cryptoSuites.GetSize(); ++csIdx) {
       PCaselessString cryptoSuiteName = cryptoSuites[csIdx];
       if (cryptoSuiteName == OpalMediaCryptoSuite::ClearText() && !(security & e_ClearMediaSession)) {
