@@ -1990,24 +1990,7 @@ class OpalConnection : public PSafeObject
     unsigned m_VideoUpdateRequestsReceived;
 #endif
 
-    struct AutoStartInfo {
-      unsigned preferredSessionId;  // preferred session ID (only used for originating)
-      OpalMediaType::AutoStartMode autoStart;// Mode for this session when the call is started
-    };
-
-    class AutoStartMap : public std::map<OpalMediaType, AutoStartInfo>
-    {
-      public:
-        AutoStartMap();
-        void Initialise(const OpalConnection::StringOptions & stringOptions);
-        OpalMediaType::AutoStartMode GetAutoStart(const OpalMediaType & mediaType) const;
-
-      protected:
-        void SetAutoStart(const PString & mediaType, OpalMediaType::AutoStartMode autoStart);
-
-        PMutex m_mutex;
-    };
-    AutoStartMap m_autoStartInfo;
+    OpalMediaType::AutoStartMap m_autoStartInfo;
 
 #if OPAL_SCRIPT
     PString m_scriptTableName;
