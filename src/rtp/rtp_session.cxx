@@ -503,7 +503,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
 
     // Check for Cisco bug where sequence numbers suddenly start incrementing
     // from a different base.
-    if (++m_consecutiveOutOfOrderPackets > 10) {
+    if (m_session.m_allowAnySyncSource && ++m_consecutiveOutOfOrderPackets > 10) {
       PTRACE(2, &m_session, m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier)
               << ", abnormal change of sequence numbers, adjusting from " << m_lastSequenceNumber << " to " << sequenceNumber);
       m_lastSequenceNumber = sequenceNumber;
@@ -2402,6 +2402,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::InternalReadData(RTP_DataFrame
   SendReceiveStatus status = ReadRawPDU(frame.GetPointer(), pduSize, e_Data);
   if (status != e_ProcessPacket)
     return status;
+
+  PWaitAndSignal mutex(m_dataMutex);
 
   // Check for single port operation, incoming RTCP on RTP
   RTP_ControlFrame control(frame, pduSize, false);
