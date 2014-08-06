@@ -132,7 +132,7 @@ bool OpalMediaType::AutoStartMap::Add(const PCaselessString & mediaTypeName, con
 
 ostream & operator<<(ostream & strm, OpalMediaType::AutoStartMode mode)
 {
-  switch (mode) {
+  switch (mode.AsBits()) {
     case OpalMediaType::OfferInactive :
       return strm << "inactive";
     case OpalMediaType::Receive :
