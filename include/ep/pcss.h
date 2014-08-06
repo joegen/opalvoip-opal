@@ -326,7 +326,7 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
 #if OPAL_VIDEO
     /**Set the name for the video device to be used for sent video.
      */
-    virtual bool SetVideoGrabberDevice(const PVideoDevice::OpenArgs & args) { return GetManager().SetVideoInputDevice(args); }
+    virtual bool SetVideoGrabberDevice(const PVideoDevice::OpenArgs & args);
 
     /**Get the name for the video device to be used for sent video.
      */
@@ -334,7 +334,7 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
 
     /**Set the name for the video device to be used for displaying sent video.
      */
-    virtual bool SetVideoPreviewDevice(const PVideoDevice::OpenArgs & args) { return GetManager().SetVideoPreviewDevice(args); }
+    virtual bool SetVideoPreviewDevice(const PVideoDevice::OpenArgs & args);
 
     /**Get the name for the video device to be used for displaying sent video.
      */
