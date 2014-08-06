@@ -342,7 +342,7 @@ class OpalPCSSEndPoint : public OpalLocalEndPoint
 
     /**Set the name for the video device to be used for displaying received video.
      */
-    virtual bool SetVideoDisplayDevice(const PVideoDevice::OpenArgs & args) { return GetManager().SetVideoOutputDevice(args); }
+    virtual bool SetVideoDisplayDevice(const PVideoDevice::OpenArgs & args);
 
     /**Get the name for the video device to be used for displaying received video.
      */
