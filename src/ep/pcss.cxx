@@ -423,6 +423,12 @@ bool OpalPCSSEndPoint::CreateVideoInputDevice(const OpalConnection & connection,
 }
 
 
+bool OpalPCSSEndPoint::SetVideoDisplayDevice(const PVideoDevice::OpenArgs & args)
+{
+  return GetManager().SetVideoOutputDevice(args) && GetManager().SetVideoOutputDevice(args, OpalVideoFormat::eMainRole);
+}
+
+
 bool OpalPCSSEndPoint::SetVideoOnHoldDevice(const PVideoDevice::OpenArgs & args)
 {
   return args.Validate<PVideoInputDevice>(m_videoOnHoldDevice);
