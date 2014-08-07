@@ -37,6 +37,7 @@
 #include <opal_config.h>
 
 #include <opal/mediastrm.h>
+#include <opal/mediasession.h>
 
 #if OPAL_VIDEO
 #include <ptlib/videoio.h>
