@@ -908,28 +908,31 @@ bool SIPConnection::OnSendOfferSDPSession(unsigned   sessionId,
 #endif
 
 #if OPAL_RTP_FEC
-  OpalMediaFormat redundantMediaFormat;
-  for (OpalMediaFormatList::iterator it = m_localMediaFormats.begin(); it != m_localMediaFormats.end(); ++it) {
-    if (it->GetMediaType() == OpalFEC::MediaType() && it->GetOptionString(OpalFEC::MediaTypeOption()) == mediaType) {
-      if (it->GetName().NumCompare(OPAL_REDUNDANT_PREFIX) == EqualTo)
-        redundantMediaFormat = *it;
-      else
-        localMedia->AddMediaFormat(*it);
-    }
-  }
-  if (redundantMediaFormat.IsValid()) {
-    // Calculate the fmtp for red
-    PStringStream fmtp;
-    OpalMediaFormatList formats = localMedia->GetMediaFormats();
-    for (OpalMediaFormatList::iterator it = formats.begin(); it != formats.end(); ++it) {
-      if (it->IsTransportable() && *it != redundantMediaFormat) {
-        if (!fmtp.IsEmpty())
-          fmtp << '/';
-        fmtp << (unsigned)it->GetPayloadType();
+  if (GetAutoStart(OpalFEC::MediaType()) != OpalMediaType::DontOffer) {
+    OpalMediaFormat redundantMediaFormat;
+    for (OpalMediaFormatList::iterator it = m_localMediaFormats.begin(); it != m_localMediaFormats.end(); ++it) {
+      if (it->GetMediaType() == OpalFEC::MediaType() && it->GetOptionString(OpalFEC::MediaTypeOption()) == mediaType) {
+        if (it->GetName().NumCompare(OPAL_REDUNDANT_PREFIX) == EqualTo)
+          redundantMediaFormat = *it;
+        else
+          localMedia->AddMediaFormat(*it);
       }
     }
-    redundantMediaFormat.SetOptionString("FMTP", fmtp);
-    localMedia->AddMediaFormat(redundantMediaFormat);
+
+    if (redundantMediaFormat.IsValid()) {
+      // Calculate the fmtp for red
+      PStringStream fmtp;
+      OpalMediaFormatList formats = localMedia->GetMediaFormats();
+      for (OpalMediaFormatList::iterator it = formats.begin(); it != formats.end(); ++it) {
+        if (it->IsTransportable() && *it != redundantMediaFormat) {
+          if (!fmtp.IsEmpty())
+            fmtp << '/';
+          fmtp << (unsigned)it->GetPayloadType();
+        }
+      }
+      redundantMediaFormat.SetOptionString("FMTP", fmtp);
+      localMedia->AddMediaFormat(redundantMediaFormat);
+    }
   }
 #endif // OPAL_RTP_FEC
 
