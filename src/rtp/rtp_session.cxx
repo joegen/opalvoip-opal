@@ -1212,7 +1212,10 @@ void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics)
 }
 
 
-bool OpalRTPSession::CheckControlSSRC(RTP_SyncSourceId senderSSRC, RTP_SyncSourceId targetSSRC, SyncSource * & info PTRACE_PARAM(, const char * pduName)) const
+bool OpalRTPSession::CheckControlSSRC(RTP_SyncSourceId PTRACE_PARAM(senderSSRC),
+                                      RTP_SyncSourceId targetSSRC,
+                                      SyncSource * & info
+                                      PTRACE_PARAM(, const char * pduName)) const
 {
   PTRACE_IF(4, m_SSRC.find(senderSSRC) == m_SSRC.end(), *this << pduName << " from incorrect SSRC " << RTP_TRACE_SRC(senderSSRC));
 
