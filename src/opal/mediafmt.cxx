@@ -1216,7 +1216,7 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
   AddOption(new OpalMediaOptionEnum(OpalMediaFormat::RTCPFeedbackOption(), false,
                                     OpalMediaFormat::RTCPFeedback().Names(), P_MAX_INDEX,
                                     OpalMediaOption::IntersectionMerge,
-                                    OpalMediaFormat::e_PLI|OpalMediaFormat::e_FIR|OpalMediaFormat::e_TMMBR|OpalMediaFormat::e_TSTR));
+                                    OpalMediaFormat::e_NoRTCPFb));
 
   AddOption(new OpalMediaOptionString(OpalMediaFormat::ProtocolOption(), true));
 
@@ -1923,6 +1923,7 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
   FindOption(OpalVideoFormat::MaxBitRateOption())->SetReadOnly(false);
   FindOption(OpalVideoFormat::FrameTimeOption())->SetReadOnly(false);
   FindOption(OpalVideoFormat::FrameTimeOption())->SetMerge(OpalMediaOption::MaxMerge);
+  SetOptionEnum(OpalMediaFormat::RTCPFeedbackOption(), OpalMediaFormat::e_PLI|OpalMediaFormat::e_FIR|OpalMediaFormat::e_TMMBR|OpalMediaFormat::e_TSTR);
 }
 
 
