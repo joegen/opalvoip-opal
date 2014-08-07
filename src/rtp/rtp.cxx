@@ -633,6 +633,7 @@ RTP_ControlFrame::RTP_ControlFrame(const BYTE * data, PINDEX size, bool dynamic)
 }
 
 
+#if PTRACING
 void RTP_ControlFrame::PrintOn(ostream & strm) const
 {
   char fill = strm.fill();
@@ -641,6 +642,7 @@ void RTP_ControlFrame::PrintOn(ostream & strm) const
        << PBYTEArray((const BYTE *)theArray, m_packetSize, false)
        << dec << setfill(fill);
 }
+#endif
 
 
 bool RTP_ControlFrame::IsValid() const
