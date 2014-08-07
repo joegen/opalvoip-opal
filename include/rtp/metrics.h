@@ -49,7 +49,9 @@ class RTP_ExtendedReport : public PObject
 {
     PCLASSINFO(RTP_ExtendedReport, PObject);
   public:
+#if PTRACING
     void PrintOn(ostream &) const;
+#endif
 
     RTP_SyncSourceId sourceIdentifier;
     unsigned         lossRate;            /* fraction of RTP data packets lost */ 
