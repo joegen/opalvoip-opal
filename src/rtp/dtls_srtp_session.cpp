@@ -151,6 +151,29 @@ public:
       Connect();
   }
 
+  virtual int BioWrite(const char * buf, int len)
+  {
+    PUDPSocket * udp = dynamic_cast<PUDPSocket *>(GetBaseReadChannel());
+    if (udp == NULL)
+      return PSSLChannel::BioWrite(buf, len);
+
+    PIPSocketAddressAndPort rx;
+    udp->GetLastReceiveAddress(rx);
+    if (!rx.IsValid())
+      return PSSLChannel::BioWrite(buf, len);
+
+    // Make sure we send replies to the address that the packet came in on
+    PIPSocketAddressAndPort old;
+    udp->GetSendAddress(old);
+    udp->SetSendAddress(rx);
+
+    int ret = PSSLChannel::BioWrite(buf, len);
+
+    udp->SetSendAddress(old);
+
+    return ret;
+  }
+
   OpalDTLSSRTPSession & m_session;
 };
 
