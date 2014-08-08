@@ -602,6 +602,8 @@ class OpalRTPSession : public OpalMediaSession
 
     virtual void SendBYE();
 
+    bool SetQoS(const PIPSocket::QoS & qos);
+
   protected:
     ReceiverReportArray BuildReceiverReportArray(const RTP_ControlFrame & frame, PINDEX offset);
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
@@ -735,6 +737,7 @@ class OpalRTPSession : public OpalMediaSession
     WORD               m_remoteDataPort;
     WORD               m_remoteControlPort;
 
+    PIPSocket::QoS m_qos;
 
     PUDPSocket * m_dataSocket;
     PUDPSocket * m_controlSocket;
