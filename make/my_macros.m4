@@ -513,7 +513,6 @@ case "$target_os" in
 
    mingw* )
       target_os=mingw
-      CPPFLAGS="$CPPFLAGS -mms-bitfields"
       LIBS="-lwinmm -lwsock32 -lws2_32 -lsnmpapi -lmpr -lcomdlg32 -lgdi32 -lavicap32 -liphlpapi -lole32 -lquartz $LIBS"
    ;;
 
