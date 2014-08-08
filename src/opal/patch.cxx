@@ -681,6 +681,8 @@ bool OpalMediaPatch::InternalSetPaused(bool pause, bool fromUser)
 
 bool OpalMediaPatch::OnStartMediaPatch()
 {
+  PSafeLockReadOnly mutex(*this);
+
   m_source.OnStartMediaPatch();
 
   for (PList<Sink>::iterator s = m_sinks.begin(); s != m_sinks.end(); ++s)
