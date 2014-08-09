@@ -1917,8 +1917,9 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session) const
       if (!cname.IsEmpty() && rtpSession->AddSyncSource(ssrc, OpalRTPSession::e_Receiver, cname) == ssrc) {
         rtpSession->SetAnySyncSource(false);
         PTRACE(4, "Session " << session->GetSessionID() << ", added receiver SSRC " << RTP_TRACE_SRC(ssrc));
-        if (it != m_ssrcInfo.begin() && rtpSession->AddSyncSource(0, OpalRTPSession::e_Sender))
+        if (it != m_ssrcInfo.begin() && rtpSession->AddSyncSource(0, OpalRTPSession::e_Sender)) {
           PTRACE(4, "Session " << session->GetSessionID() << ", added loopback place holding sender SSRC " << RTP_TRACE_SRC(ssrc));
+        }
       }
     }
   }
