@@ -1803,44 +1803,42 @@ OpalMediaStream * OpalRTPSession::CreateMediaStream(const OpalMediaFormat & medi
                                                     unsigned sessionId, 
                                                     bool isSource)
 {
-  if (m_socket[e_Data] != NULL) {
-    PIPSocket::QoS qos = m_connection.GetEndPoint().GetManager().GetMediaQoS(m_mediaType);
-    qos.m_remote.SetAddress(m_remoteAddress, m_remotePort[e_Data]);
+  m_qos = m_connection.GetEndPoint().GetManager().GetMediaQoS(m_mediaType);
 
-    unsigned maxBitRate = mediaFormat.GetMaxBandwidth();
-    if (maxBitRate != 0) {
-      unsigned overheadBytes = m_localAddress.GetVersion() == 4 ? (20+8+12) : (40+8+12);
-      unsigned overheadBits = overheadBytes*8;
+  unsigned maxBitRate = mediaFormat.GetMaxBandwidth();
+  if (maxBitRate != 0) {
+    unsigned overheadBytes = m_localAddress.GetVersion() == 4 ? (20+8+12) : (40+8+12);
+    unsigned overheadBits = overheadBytes*8;
 
-      unsigned frameSize = mediaFormat.GetFrameSize();
-      if (frameSize == 0)
-        frameSize = m_connection.GetEndPoint().GetManager().GetMaxRtpPayloadSize();
+    unsigned frameSize = mediaFormat.GetFrameSize();
+    if (frameSize == 0)
+      frameSize = m_connection.GetEndPoint().GetManager().GetMaxRtpPayloadSize();
 
-      unsigned packetSize = frameSize*mediaFormat.GetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption(), 1);
+    unsigned packetSize = frameSize*mediaFormat.GetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption(), 1);
 
-      qos.m_receive.m_maxPacketSize = packetSize + overheadBytes;
-      packetSize *= 8;
-      qos.m_receive.m_maxBandwidth = maxBitRate + (maxBitRate+packetSize-1)/packetSize * overheadBits;
+    m_qos.m_receive.m_maxPacketSize = packetSize + overheadBytes;
+    packetSize *= 8;
+    m_qos.m_receive.m_maxBandwidth = maxBitRate + (maxBitRate+packetSize-1)/packetSize * overheadBits;
 
-      maxBitRate = mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption(), maxBitRate);
-      packetSize = frameSize*mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1);
+    maxBitRate = mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption(), maxBitRate);
+    packetSize = frameSize*mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1);
 
-      qos.m_transmit.m_maxPacketSize = packetSize + overheadBytes;
-      packetSize *= 8;
-      qos.m_transmit.m_maxBandwidth = maxBitRate + (maxBitRate+packetSize-1)/packetSize * overheadBits;
-    }
-
-    // Audio has tighter constraints to video
-    if (m_isAudio) {
-      qos.m_transmit.m_maxLatency = qos.m_receive.m_maxLatency = 250000; // 250ms
-      qos.m_transmit.m_maxJitter = qos.m_receive.m_maxJitter = 100000; // 100ms
-    }
-    else {
-      qos.m_transmit.m_maxLatency = qos.m_receive.m_maxLatency = 750000; // 750ms
-      qos.m_transmit.m_maxJitter = qos.m_receive.m_maxJitter = 250000; // 250ms
-    }
-    m_socket[e_Data]->SetQoS(qos);
+    m_qos.m_transmit.m_maxPacketSize = packetSize + overheadBytes;
+    packetSize *= 8;
+    m_qos.m_transmit.m_maxBandwidth = maxBitRate + (maxBitRate+packetSize-1)/packetSize * overheadBits;
   }
+
+  // Audio has tighter constraints to video
+  if (m_isAudio) {
+    m_qos.m_transmit.m_maxLatency = m_qos.m_receive.m_maxLatency = 250000; // 250ms
+    m_qos.m_transmit.m_maxJitter = m_qos.m_receive.m_maxJitter = 100000; // 100ms
+  }
+  else {
+    m_qos.m_transmit.m_maxLatency = m_qos.m_receive.m_maxLatency = 750000; // 750ms
+    m_qos.m_transmit.m_maxJitter = m_qos.m_receive.m_maxJitter = 250000; // 250ms
+  }
+
+  SetQoS(m_qos);
 
   if (PAssert(m_sessionId == sessionId && m_mediaType == mediaFormat.GetMediaType(), PLogicError))
     return new OpalRTPMediaStream(dynamic_cast<OpalRTPConnection &>(m_connection), mediaFormat, isSource, *this);
@@ -1971,6 +1969,8 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
   if (m_socket[e_Control] == NULL)
     m_localPort[e_Control] = m_localPort[e_Data];
 
+  SetQoS(m_qos);
+
   manager.TranslateIPAddress(m_localAddress, m_remoteAddress);
 
   m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
@@ -1986,6 +1986,17 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
          << " added default sender SSRC=" << RTP_TRACE_SRC(ssrc));
 
   return true;
+}
+
+
+bool OpalRTPSession::SetQoS(const PIPSocket::QoS & qos)
+{
+  if (m_socket[e_Data] == NULL || !m_remoteAddress.IsValid() || m_remotePort[e_Data] == 0)
+    return false;
+
+  m_qos = qos;
+  m_qos.m_remote.SetAddress(m_remoteAddress, m_remotePort[e_Data]);
+  return m_socket[e_Data]->SetQoS(m_qos);
 }
 
 

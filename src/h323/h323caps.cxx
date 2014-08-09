@@ -1707,14 +1707,12 @@ PBoolean H323GenericControlCapability::IsMatch(const PASN_Object & subTypePDU, c
 
 /////////////////////////////////////////////////////////////////////////////
 
-OPAL_INSTANTIATE_SIMPLE_MEDIATYPE(OpalH239MediaType, "H.239");
-
 const OpalMediaFormat & GetH239VideoMediaFormat()
 {
   static class H239VideoMediaFormat : public OpalMediaFormat {
     public:
       H239VideoMediaFormat()
-        : OpalMediaFormat("H.239-Video", OpalH239MediaType::Name(), RTP_DataFrame::MaxPayloadType, NULL, false, 0, 0, 0, 0)
+        : OpalMediaFormat("H.239-Video", OpalPresentationVideoMediaDefinition::Name(), RTP_DataFrame::MaxPayloadType, NULL, false, 0, 0, 0, 0)
       {
         OpalMediaOption * option = new OpalMediaOptionUnsigned(OpalVideoFormat::ContentRoleMaskOption(),
                                                                true, OpalMediaOption::IntersectionMerge, 1, 1, 3);
@@ -1809,7 +1807,7 @@ PObject * H323H239ControlCapability::Clone() const
 
 PString H323H239ControlCapability::GetFormatName() const
 {
-  static const OpalMediaFormat name("H.239-Control", OpalH239MediaType::Name(), RTP_DataFrame::MaxPayloadType, NULL, false, 0, 0, 0, 0);
+  static const OpalMediaFormat name("H.239-Control", OpalPresentationVideoMediaDefinition::Name(), RTP_DataFrame::MaxPayloadType, NULL, false, 0, 0, 0, 0);
   return name;
 }
 
