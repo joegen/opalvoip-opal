@@ -373,14 +373,6 @@ CFLAGS=
 CXXFLAGS=
 
 
-dnl Most unix'ish platforms are like this
-AC_SUBST(LD, $CXX)
-AC_SUBST(SHARED_CPPFLAGS, "-fPIC")
-AC_SUBST(SHARED_LDFLAGS, [['-shared -Wl,-soname,$(LIB_SONAME)']])
-AC_SUBST(SHAREDLIBEXT, "so")
-AC_SUBST(STATICLIBEXT, "a")
-AC_SUBST(ARFLAGS, "rc")
-
 dnl Find some tools
 AC_PROG_LN_S()
 AC_PROG_RANLIB()
@@ -422,6 +414,14 @@ AC_TYPE_UNSIGNED_LONG_LONG_INT()
 AC_TYPE_LONG_DOUBLE()
 
 
+dnl Most unix'ish platforms are like this
+AC_SUBST(LD, $CXX)
+AC_SUBST(SHARED_CPPFLAGS, "-fPIC")
+AC_SUBST(SHARED_LDFLAGS, [['-shared -Wl,-soname,$(LIB_SONAME)']])
+AC_SUBST(SHAREDLIBEXT, "so")
+AC_SUBST(STATICLIBEXT, "a")
+AC_SUBST(ARFLAGS, "rc")
+
 case "$target_os" in
    darwin* | iPhone* )
       SHARED_LDFLAGS="-dynamiclib"
@@ -435,6 +435,7 @@ case "$target_os" in
    ;;
 
    cygwin* | mingw* )
+      SHARED_CPPFLAGS=""
       SHARED_LDFLAGS="-shared -Wl,--kill-at"
       SHAREDLIBEXT="dll"
       STATICLIBEXT="lib"
