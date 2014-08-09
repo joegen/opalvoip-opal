@@ -592,6 +592,8 @@ class OpalRTPSession : public OpalMediaSession
       e_Data
     };
 
+    bool SetQoS(const PIPSocket::QoS & qos);
+
     ReceiverReportArray BuildReceiverReportArray(const RTP_ControlFrame & frame, PINDEX offset);
     virtual SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame);
     
@@ -759,6 +761,7 @@ class OpalRTPSession : public OpalMediaSession
     PIPAddress m_remoteAddress;
     WORD       m_remotePort[2];
 
+    PIPSocket::QoS m_qos;
     PUDPSocket * m_socket[2]; // 0=control, 1=data
 
     bool m_shutdownRead;
