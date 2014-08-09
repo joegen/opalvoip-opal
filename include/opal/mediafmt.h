@@ -999,6 +999,11 @@ class OpalMediaFormat : public PContainer
       */
     OpalMediaType GetMediaType() const { PWaitAndSignal m(m_mutex); return m_info == NULL ? OpalMediaType() : m_info->mediaType; }
 
+    /** Test if media type for this format.
+        Note this should be used 
+      */
+    bool IsMediaType(const OpalMediaType & mediaType) const;
+
     /**Determine if the media format requires a jitter buffer. As a rule an
        audio codec needs a jitter buffer and all others do not.
       */

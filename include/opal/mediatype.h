@@ -107,6 +107,22 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
                               TransmitReceive = Receive|Transmit);
 
     AutoStartMode GetAutoStart() const;
+
+    class AutoStartMap : public std::map<OpalMediaType, OpalMediaType::AutoStartMode>
+    {
+      public:
+        AutoStartMap();
+
+        bool Add(const PString & stringOption);
+        bool Add(const PCaselessString & mediaTypeName, const PCaselessString & modeName);
+
+        OpalMediaType::AutoStartMode GetAutoStart(const OpalMediaType & mediaType) const;
+
+        void SetGlobalAutoStart();
+
+      protected:
+        PMutex m_mutex;
+    };
 };
 
 
@@ -114,6 +130,8 @@ __inline ostream & operator << (ostream & strm, const OpalMediaType & mediaType)
 {
   return strm << mediaType.c_str();
 }
+
+ostream & operator<<(ostream & strm, OpalMediaType::AutoStartMode mode);
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -153,7 +171,7 @@ class OpalMediaTypeDefinition
     /** Set flag for media type can auto-start receive on call initiation.
       */
     void SetAutoStart(OpalMediaType::AutoStartMode v) { m_autoStart = v; }
-    void SetAutoStart(OpalMediaType::AutoStartMode v, bool on) { if (on) m_autoStart |= v; else m_autoStart -= v; }
+    void SetAutoStart(OpalMediaType::AutoStartMode v, bool on);
 
     /** Return the default session ID for this media type.
       */
@@ -270,8 +288,18 @@ class OpalVideoMediaDefinition : public OpalRTPAVPMediaDefinition
 #if OPAL_SDP
     SDPMediaDescription * CreateSDPMediaDescription(const OpalTransportAddress &) const;
 #endif
+
+  protected:
+    OpalVideoMediaDefinition(const char * mediaType, unsigned defaultSessionId);
 };
 
+class OpalPresentationVideoMediaDefinition : public OpalVideoMediaDefinition
+{
+  public:
+    static const char * Name();
+
+    OpalPresentationVideoMediaDefinition(const char * mediaType = Name());
+};
 #endif // OPAL_VIDEO
 
 

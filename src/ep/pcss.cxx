@@ -423,6 +423,24 @@ bool OpalPCSSEndPoint::CreateVideoInputDevice(const OpalConnection & connection,
 }
 
 
+bool OpalPCSSEndPoint::SetVideoGrabberDevice(const PVideoDevice::OpenArgs & args)
+{
+  return GetManager().SetVideoInputDevice(args) && GetManager().SetVideoInputDevice(args, OpalVideoFormat::eMainRole);
+}
+
+
+bool OpalPCSSEndPoint::SetVideoPreviewDevice(const PVideoDevice::OpenArgs & args)
+{
+  return GetManager().SetVideoPreviewDevice(args) && GetManager().SetVideoPreviewDevice(args, OpalVideoFormat::eMainRole);
+}
+
+
+bool OpalPCSSEndPoint::SetVideoDisplayDevice(const PVideoDevice::OpenArgs & args)
+{
+  return GetManager().SetVideoOutputDevice(args) && GetManager().SetVideoOutputDevice(args, OpalVideoFormat::eMainRole);
+}
+
+
 bool OpalPCSSEndPoint::SetVideoOnHoldDevice(const PVideoDevice::OpenArgs & args)
 {
   return args.Validate<PVideoInputDevice>(m_videoOnHoldDevice);

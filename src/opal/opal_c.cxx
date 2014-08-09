@@ -1604,7 +1604,7 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
       if (!mediaType.empty()) {
         // Known media type name, change all codecs of that type
         for (OpalMediaFormatList::iterator it = allCodecs.begin(); it != allCodecs.end(); ++it) {
-          if (it->GetMediaType() == mediaType) {
+          if (it->IsMediaType(mediaType)) {
             if (it->SetOptionValue(optionName, optionValue)) {
               OpalMediaFormat::SetRegisteredMediaFormat(*it);
               PTRACE(4, "Set " << mediaType << " media format \"" << *it

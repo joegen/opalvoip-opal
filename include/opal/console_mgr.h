@@ -522,6 +522,7 @@ class OpalManagerCLI : public OpalConsoleManager
 #endif // OPAL_VIDEO
 
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdSilenceDetect);
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdAutoStart);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdCodecList);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdCodecOrder);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdCodecMask);

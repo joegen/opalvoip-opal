@@ -293,6 +293,24 @@ OpalManager::OpalManager()
       PTRACE(3, "Default video grabber set to \"" << dev << '"');
       m_videoInputDevice[OpalVideoFormat::eNoRole].deviceName = m_videoInputDevice[OpalVideoFormat::eMainRole].deviceName = dev;
       SetAutoStartTransmitVideo(true);
+#if PTRACING
+      static unsigned const Level = 3;
+      if (PTrace::CanTrace(Level)) {
+        ostream & trace = PTRACE_BEGIN(Level);
+        trace << "Default video input device set to \"" << dev << '"';
+        PVideoInputDevice * device = PVideoInputDevice::CreateOpenedDevice(m_videoInputDevice[OpalVideoFormat::eNoRole]);
+        if (device == NULL)
+          trace << " (unavailable!)";
+        else {
+          PVideoInputDevice::Capabilities caps;
+          if (device->GetDeviceCapabilities(&caps))
+            trace << '\n' << caps;
+          else
+            trace << " - no capabilities.";
+        }
+        trace << PTrace::End;
+      }
+#endif
       break;
     }
   }
@@ -306,6 +324,7 @@ OpalManager::OpalManager()
         m_videoOutputDevice[role].deviceName = dev;
       m_videoPreviewDevice[OpalVideoFormat::eNoRole] = m_videoOutputDevice[OpalVideoFormat::eNoRole];
       SetAutoStartReceiveVideo(true);
+      PTRACE(3, "Default video output/preview device set to \"" << devices[i] << '"');
       break;
     }
   }

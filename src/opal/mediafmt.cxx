@@ -982,6 +982,34 @@ void OpalMediaFormat::ReadFrom(istream & strm)
 }
 
 
+#if OPAL_VIDEO
+static bool IsPresentationRole(const OpalMediaFormat & mediaFormat)
+{
+  unsigned mask = mediaFormat.GetOptionInteger(OpalVideoFormat::ContentRoleMaskOption());
+  mask &= ~OpalVideoFormat::ContentRoleBit(OpalVideoFormat::eMainRole);
+  return mask != 0;
+}
+#endif
+
+
+bool OpalMediaFormat::IsMediaType(const OpalMediaType & mediaType) const
+{
+  PWaitAndSignal m(m_mutex);
+  if (m_info == NULL)
+    return false;
+
+  if (m_info->mediaType == mediaType)
+    return true;
+
+#if OPAL_VIDEO
+  if (mediaType == OpalPresentationVideoMediaDefinition::Name() && IsPresentationRole(*this))
+    return true;
+#endif
+
+  return false;
+}
+
+
 bool OpalMediaFormat::ToNormalisedOptions()
 {
   PWaitAndSignal m(m_mutex);
@@ -2253,14 +2281,22 @@ void OpalMediaFormatList::Reorder(const PStringArray & order)
   AllowDeleteObjects();
 }
 
+
 bool OpalMediaFormatList::HasType(const OpalMediaType & type, bool mustBeTransportable) const
 {
   for (OpalMediaFormatList::const_iterator format = begin(); format != end(); ++format) {
-    if (format->GetMediaType() == type && (!mustBeTransportable || format->IsTransportable()))
-      return true;
+    if ((!mustBeTransportable || format->IsTransportable()) && format->IsMediaType(type))
+        return true;
   }
 
   return false;
+}
+
+
+static void AddMediaType(OpalMediaTypeList & mediaTypes, const OpalMediaType & mediaType)
+{
+  if (std::find(mediaTypes.begin(), mediaTypes.end(), mediaType) == mediaTypes.end())
+    mediaTypes.push_back(mediaType);
 }
 
 
@@ -2269,9 +2305,11 @@ OpalMediaTypeList OpalMediaFormatList::GetMediaTypes() const
   OpalMediaTypeList mediaTypes;
 
   for (OpalMediaFormatList::const_iterator format = begin(); format != end(); ++format) {
-    OpalMediaType mediaType = format->GetMediaType();
-    if (std::find(mediaTypes.begin(), mediaTypes.end(), mediaType) == mediaTypes.end())
-      mediaTypes.push_back(mediaType);
+    AddMediaType(mediaTypes, format->GetMediaType());
+#if OPAL_VIDEO
+    if (IsPresentationRole(*format))
+      AddMediaType(mediaTypes, OpalPresentationVideoMediaDefinition::Name());
+#endif
   }
 
   return mediaTypes;
