@@ -1024,8 +1024,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
   RTP_SyncSourceId ssrc = frame.GetSyncSource();
   SyncSourceMap::iterator it = m_SSRC.find(ssrc);
   if (it == m_SSRC.end()) {
-    if (!m_allowAnySyncSource) {
-      PTRACE(4, *this << "ignoring SSRC " << RTP_TRACE_SRC(ssrc));
+    SyncSource * existing;
+    if (!m_allowAnySyncSource && GetSyncSource(0, e_Receiver, existing)) {
+      PTRACE(2, *this  << "packet from SSRC=" << RTP_TRACE_SRC(ssrc) << " ignored, "
+                "expecting SSRC=" << RTP_TRACE_SRC(existing->m_sourceIdentifier));
       return e_IgnorePacket;
     }
     if (AddSyncSource(ssrc, e_Receiver) != ssrc)
