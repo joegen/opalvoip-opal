@@ -728,6 +728,12 @@ OPT_CFLAGS
 OPT_CPPFLAGS
 DEBUG_CFLAGS
 DEBUG_CPPFLAGS
+ARFLAGS
+STATICLIBEXT
+SHAREDLIBEXT
+SHARED_LDFLAGS
+SHARED_CPPFLAGS
+LD
 EGREP
 GREP
 CPP
@@ -739,12 +745,6 @@ SVN
 MKDIR_P
 RANLIB
 LN_S
-ARFLAGS
-STATICLIBEXT
-SHAREDLIBEXT
-SHARED_LDFLAGS
-SHARED_CPPFLAGS
-LD
 ac_ct_CXX
 CXXFLAGS
 CXX
@@ -4028,19 +4028,6 @@ CFLAGS=
 CXXFLAGS=
 
 
-LD=$CXX
-
-SHARED_CPPFLAGS="-fPIC"
-
-SHARED_LDFLAGS='-shared -Wl,-soname,$(LIB_SONAME)'
-
-SHAREDLIBEXT="so"
-
-STATICLIBEXT="a"
-
-ARFLAGS="rc"
-
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ln -s works" >&5
 $as_echo_n "checking whether ln -s works... " >&6; }
 LN_S=$as_ln_s
@@ -5301,6 +5288,19 @@ $as_echo "#define HAVE_LONG_DOUBLE 1" >>confdefs.h
 
 
 
+LD=$CXX
+
+SHARED_CPPFLAGS="-fPIC"
+
+SHARED_LDFLAGS='-shared -Wl,-soname,$(LIB_SONAME)'
+
+SHAREDLIBEXT="so"
+
+STATICLIBEXT="a"
+
+ARFLAGS="rc"
+
+
 case "$target_os" in
    darwin* | iPhone* )
       SHARED_LDFLAGS="-dynamiclib"
@@ -5314,6 +5314,7 @@ case "$target_os" in
    ;;
 
    cygwin* | mingw* )
+      SHARED_CPPFLAGS=""
       SHARED_LDFLAGS="-shared -Wl,--kill-at"
       SHAREDLIBEXT="dll"
       STATICLIBEXT="lib"
