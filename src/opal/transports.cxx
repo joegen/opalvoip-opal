@@ -1072,6 +1072,49 @@ PBoolean OpalTransport::IsRunning() const
 }
 
 
+bool OpalTransport::IsOpen() const
+{
+  PSafeLockReadOnly lock(*this);
+  return lock.IsLocked() && m_channel != NULL && m_channel->IsOpen();
+}
+
+
+bool OpalTransport::IsGood() const
+{
+  PSafeLockReadOnly lock(*this);
+  return lock.IsLocked() && m_channel != NULL && m_channel->IsOpen() && !m_channel->bad() && !m_channel->eof();
+}
+
+
+PChannel::Errors OpalTransport::GetErrorCode(PChannel::ErrorGroup group) const
+{
+  PSafeLockReadOnly lock(*this);
+  return lock.IsLocked() && m_channel != NULL ? m_channel->GetErrorCode(group) : PChannel::NotOpen;
+}
+
+
+PString OpalTransport::GetErrorText(PChannel::ErrorGroup group) const
+{
+  PSafeLockReadOnly lock(*this);
+  return lock.IsLocked() && m_channel != NULL ? m_channel->GetErrorText(group) : PString::Empty();
+}
+
+
+int OpalTransport::GetErrorNumber(PChannel::ErrorGroup group) const
+{
+  PSafeLockReadOnly lock(*this);
+  return lock.IsLocked() && m_channel != NULL ? m_channel->GetErrorNumber(group) : -1;
+}
+
+
+void OpalTransport::SetReadTimeout(const PTimeInterval & t)
+{
+  PSafeLockReadOnly lock(*this);
+  if (lock.IsLocked() && m_channel != NULL)
+    m_channel->SetReadTimeout(t);
+}
+
+
 void OpalTransport::SetKeepAlive(const PTimeInterval & timeout, const PBYTEArray & data)
 {
   if (!LockReadWrite())
