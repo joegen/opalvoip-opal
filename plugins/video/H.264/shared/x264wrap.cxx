@@ -38,10 +38,6 @@
 #include <unistd.h>
 #endif
 
-#if defined(X264_LICENSED)
-  #pragma message("x264 licensed version")
-#endif
-
 #if defined(X264_LICENSED) || defined(GPL_HELPER_APP)
 
 #if PLUGINCODEC_TRACING

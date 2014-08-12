@@ -46,8 +46,6 @@
 
 #if OPAL_IVR
 
-#pragma message("IVR support (via VXML/Expat) enabled")
-
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -461,11 +459,4 @@ PBoolean OpalIVRMediaStream::IsSynchronous() const
 {
   return true;
 }
-
-
-#else
-  #pragma message("IVR support (via VXML/Expat) DISABLED")
 #endif // OPAL_IVR
-
-
-/////////////////////////////////////////////////////////////////////////////
