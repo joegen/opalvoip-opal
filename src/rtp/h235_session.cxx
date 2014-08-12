@@ -414,8 +414,4 @@ bool H2356_Session::Context::Decrypt(RTP_DataFrame & frame)
   frame.SetPayloadSize(len);
   return ok;
 }
-
-
-#else
-  #pragma message("AES RTP support DISABLED")
 #endif // OPAL_H235_6
