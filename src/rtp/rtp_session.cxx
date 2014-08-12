@@ -242,18 +242,21 @@ const OpalRTPSession::SyncSource & OpalRTPSession::GetSyncSource(RTP_SyncSourceI
 bool OpalRTPSession::GetSyncSource(RTP_SyncSourceId ssrc, Direction dir, SyncSource * & info) const
 {
   SyncSourceMap::const_iterator it;
-  if (ssrc != 0)
-    it = m_SSRC.find(ssrc);
+  if (ssrc != 0) {
+    if ((it = m_SSRC.find(ssrc)) == m_SSRC.end()) {
+      PTRACE(3, *this << "cannot find info for " << dir << " SSRC=" << RTP_TRACE_SRC(ssrc));
+      return false;
+    }
+  }
   else {
     for (it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
       if (it->second->m_direction == dir)
         break;
     }
-  }
-
-  if (it == m_SSRC.end()) {
-    PTRACE(3, *this << "cannot find data for " << dir << " SSRC=" << RTP_TRACE_SRC(ssrc));
-    return false;
+    if (it == m_SSRC.end()) {
+      PTRACE(3, *this << "cannot find info for any " << dir);
+      return false;
+    }
   }
 
   info = const_cast<SyncSource *>(it->second);
