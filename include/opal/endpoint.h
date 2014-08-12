@@ -341,8 +341,10 @@ class OpalEndPoint : public PObject
        The default behaviour calls the OpalManager function of the same name.
      */
     virtual void OnAlerting(
-      OpalConnection & connection   ///<  Connection that is alerting
+      OpalConnection & connection,   ///<  Connection that indicates it is alerting
+      bool withMedia                 ///<  Indicated media should be started, if possible
     );
+    virtual void OnAlerting(OpalConnection & connection); // For backward compatibility
 
     /**Call back for answering an incoming call.
        This function is called after the connection has been acknowledged

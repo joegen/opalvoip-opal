@@ -966,18 +966,25 @@ void OpalManager::OnProceeding(OpalConnection & connection)
 }
 
 
-void OpalManager::OnAlerting(OpalConnection & connection)
+void OpalManager::OnAlerting(OpalConnection & connection, bool withMedia)
 {
-  PTRACE(3, "OnAlerting " << connection);
+  PTRACE(3, "OnAlerting " << connection << (withMedia ? " with media" : " normal"));
 
-  connection.GetCall().OnAlerting(connection);
+  connection.GetCall().OnAlerting(connection, withMedia);
 
 #if OPAL_SCRIPT
   if (m_script != NULL)
-    m_script->Call("OnAlerting", "ss",
+    m_script->Call("OnAlerting", "ssb",
                    (const char *)connection.GetCall().GetToken(),
-                   (const char *)connection.GetToken());
+                   (const char *)connection.GetToken(),
+                   withMedia);
 #endif
+}
+
+
+void OpalManager::OnAlerting(OpalConnection & connection)
+{
+  connection.GetCall().OnAlerting(connection);
 }
 
 
