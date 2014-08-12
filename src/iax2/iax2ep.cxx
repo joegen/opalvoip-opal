@@ -35,8 +35,6 @@
 
 #if OPAL_IAX2
 
-#pragma message("IAX2 support enabled")
-
 #ifdef P_USE_PRAGMA
 #pragma implementation "iax2ep.h"
 #endif
@@ -852,20 +850,4 @@ void IAX2IncomingEthernetFrames::Main()
   PTRACE(3, "Distribute\tEnd of thread - Do no more work now");
   return;
 }
-
-
-#else
-  #pragma message("IAX2 support DISABLED")
 #endif // OPAL_IAX2
-
-/* The comment below is magic for those who use emacs to edit this file. 
- * With the comment below, the tab key does auto indent to 2 spaces.     
- *
- * Local Variables:
- * mode:c
- * c-basic-offset:2
- * End:
- */
-
-
-
