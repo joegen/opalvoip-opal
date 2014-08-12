@@ -36,8 +36,6 @@
 
 #if OPAL_HAS_MIXER
 
-#pragma message("Mixer (MCU) support enabled")
-
 #include <opal/patch.h>
 #include <rtp/rtp.h>
 #include <rtp/jitter.h>
@@ -2110,10 +2108,4 @@ OpalVideoStreamMixer * OpalMixerNodeManager::CreateVideoMixer(const OpalMixerNod
   return new OpalVideoStreamMixer(info);
 }
 #endif
-
-#else
-  #pragma message("Mixer (MCU) support DISABLED")
 #endif // OPAL_HAS_MIXER
-
-
-//////////////////////////////////////////////////////////////////////////////

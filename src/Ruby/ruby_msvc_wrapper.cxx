@@ -37,7 +37,6 @@
 
   #define MAKESTRING_(s) #s
   #define MAKESTRING(s) MAKESTRING_(s)
-  #pragma message("Using MSVC " MAKESTRING(_MSC_VER) " while the Ruby interface is expecting MSVC " MAKESTRING(RUBY_MSC_VER) ", faking it!")
   #undef MAKESTRING_
   #undef MAKESTRING
 

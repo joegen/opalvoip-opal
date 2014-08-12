@@ -53,12 +53,6 @@
 #include <ptclib/cypher.h>
 
 
-#if OPAL_H460_24A
-  #pragma message("H.460.24 Annex A Enabled. Contact consulting@h323plus.org for licensing terms.")
-#else
-  #pragma message("H.460.24 Enabled. Contact consulting@h323plus.org for licensing terms.")
-#endif // OPAL_H460_24A
-
 #define PTraceModule() "H46024"
 
 

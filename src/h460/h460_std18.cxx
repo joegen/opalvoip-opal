@@ -51,8 +51,6 @@
 #include <h460/h46018.h>
 
 
-#pragma message("H.460.18 Enabled. See Tandberg Patent License. http://www.tandberg.com/collateral/tandberg-ITU-license.pdf")
-
 const H460_FeatureID & H460_FeatureStd18::ID() { static const H460_FeatureID id(18); return id; }
 
 static const H460_FeatureID IncomingCallIndication_ID(1);
