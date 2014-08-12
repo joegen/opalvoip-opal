@@ -159,7 +159,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendRedundantDat
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendFEC(RTP_DataFrame & primary, FecData & fec)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendFEC(RTP_DataFrame & /*primary*/, FecData & /*fec*/)
 {
   return e_IgnorePacket;
 }
@@ -271,7 +271,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveRedundant
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveFEC(RTP_DataFrame & primary, const FecData & fec)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveFEC(RTP_DataFrame & /*primary*/, const FecData & /*fec*/)
 {
   /* If there is something in m_pendingPackets, then there was a missing
      packet(s). From the primary data packet and the FEC info, it should be
