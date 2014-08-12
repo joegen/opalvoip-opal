@@ -980,23 +980,12 @@ class OpalTransport : public PSafeObject
       */
     virtual const PCaselessString & GetProtoPrefix() const = 0;
 
-    bool IsOpen() const
-      { return m_channel != NULL && m_channel->IsOpen(); }
-
-    bool IsGood() const
-      { return IsOpen() && !m_channel->bad() && !m_channel->eof(); }
-
-    PChannel::Errors GetErrorCode(PChannel::ErrorGroup group = PChannel::NumErrorGroups) const
-      { return m_channel != NULL ? m_channel->GetErrorCode(group) : PChannel::NotOpen; }
-
-    PString GetErrorText(PChannel::ErrorGroup group = PChannel::NumErrorGroups) const
-      { return m_channel != NULL ? m_channel->GetErrorText(group) : PString::Empty(); }
-
-    int GetErrorNumber(PChannel::ErrorGroup group = PChannel::NumErrorGroups) const
-      { return m_channel != NULL ? m_channel->GetErrorNumber(group) : -1; }
-
-    void SetReadTimeout(const PTimeInterval & t)
-      { if (m_channel != NULL) m_channel->SetReadTimeout(t); }
+    bool IsOpen() const;
+    bool IsGood() const;
+    PChannel::Errors GetErrorCode(PChannel::ErrorGroup group = PChannel::NumErrorGroups) const;
+    PString GetErrorText(PChannel::ErrorGroup group = PChannel::NumErrorGroups) const;
+    int GetErrorNumber(PChannel::ErrorGroup group = PChannel::NumErrorGroups) const;
+    void SetReadTimeout(const PTimeInterval & t);
 
     PChannel * GetChannel() const { return m_channel; }
 
