@@ -534,6 +534,13 @@ void OpalConnection::OnProceeding()
   endpoint.OnProceeding(*this);
 }
 
+
+void OpalConnection::OnAlerting(bool withMedia)
+{
+  endpoint.OnAlerting(*this, withMedia);
+}
+
+
 void OpalConnection::OnAlerting()
 {
   endpoint.OnAlerting(*this);

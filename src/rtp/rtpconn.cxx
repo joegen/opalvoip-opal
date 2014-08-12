@@ -258,7 +258,8 @@ OpalMediaSession * OpalRTPConnection::CreateMediaSession(unsigned sessionId,
       // Make sure we do not include any transcoded format combinations
       m_localMediaFormats.Remove(PString('@')+mediaType);
       m_localMediaFormats += otherConnection->GetMediaFormats();
-      PTRACE(4, "Created dummy " << mediaType << " session " << sessionId << " using formats " << setfill(',') << m_localMediaFormats);
+      PTRACE(4, "Created dummy " << mediaType << " session " << sessionId
+             << " using formats " << setfill(',') << m_localMediaFormats << " on " << *this);
       return new OpalDummySession(init, transports);
     }
   }
@@ -269,11 +270,11 @@ OpalMediaSession * OpalRTPConnection::CreateMediaSession(unsigned sessionId,
 
   OpalMediaSession * session = OpalMediaSessionFactory::CreateInstance(actualSessionType, init);
   if (session == NULL) {
-    PTRACE(1, "Cannot create session for " << actualSessionType);
+    PTRACE(1, "Cannot create session for " << actualSessionType << " on " << *this);
     return NULL;
   }
 
-  PTRACE(4, "Created " << mediaType << " session " << sessionId << " using " << actualSessionType);
+  PTRACE(4, "Created " << mediaType << " session " << sessionId << " using " << actualSessionType << " on " << *this);
   return session;
 }
 
