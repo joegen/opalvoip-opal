@@ -2152,7 +2152,7 @@ void SIP_PDU::PrintOn(ostream & strm) const
 
 SIP_PDU::StatusCodes SIP_PDU::Read()
 {
-  if (PAssertNULL(m_transport) == NULL)
+  if (m_transport == NULL)
     return Local_TransportLost;
 
   if (!m_transport->IsOpen()) {
