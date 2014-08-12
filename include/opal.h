@@ -150,7 +150,7 @@ extern OpalHandle OPAL_EXPORT OpalInitialise(unsigned * version, const char * op
     binding to the library.
  */
 #if _WIN32
-  #define OPAL_INITIALISE_FUNCTION (LPCSTR)1
+  #define OPAL_INITIALISE_FUNCTION MAKEINTRESOURCE(1)
 #else
   #define OPAL_INITIALISE_FUNCTION "OpalInitialise"
 #endif
@@ -178,7 +178,7 @@ extern void OPAL_EXPORT OpalShutDown(OpalHandle opal);
     binding to the library.
  */
 #if _WIN32
-  #define OPAL_SHUTDOWN_FUNCTION (LPCSTR)2
+  #define OPAL_SHUTDOWN_FUNCTION MAKEINTRESOURCE(2)
 #else
   #define OPAL_SHUTDOWN_FUNCTION "OpalShutDown"
 #endif
@@ -233,7 +233,7 @@ extern OpalMessage * OPAL_EXPORT OpalGetMessage(OpalHandle opal, unsigned timeou
     binding to the library.
  */
 #if _WIN32
-  #define OPAL_GET_MESSAGE_FUNCTION (LPCSTR)3
+  #define OPAL_GET_MESSAGE_FUNCTION MAKEINTRESOURCE(3)
 #else
   #define OPAL_GET_MESSAGE_FUNCTION "OpalGetMessage"
 #endif
@@ -297,7 +297,7 @@ typedef OpalMessage * (OPAL_EXPORT *OpalSendMessageFunction)(OpalHandle opal, co
     may be used for late binding to the library.
  */
 #if _WIN32
-  #define OPAL_SEND_MESSAGE_FUNCTION (LPCSTR)4
+  #define OPAL_SEND_MESSAGE_FUNCTION MAKEINTRESOURCE(4)
 #else
   #define OPAL_SEND_MESSAGE_FUNCTION "OpalSendMessage"
 #endif
@@ -314,7 +314,7 @@ extern void OPAL_EXPORT OpalFreeMessage(OpalMessage * message);
     binding to the library.
  */
 #if _WIN32
-  #define OPAL_FREE_MESSAGE_FUNCTION (LPCSTR)5
+  #define OPAL_FREE_MESSAGE_FUNCTION MAKEINTRESOURCE(5)
 #else
   #define OPAL_FREE_MESSAGE_FUNCTION "OpalFreeMessage"
 #endif
