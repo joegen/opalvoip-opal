@@ -818,8 +818,10 @@ class OpalManager : public PObject
        associated OpalCall object.
      */
     virtual void OnAlerting(
-      OpalConnection & connection   ///<  Connection that was established
+      OpalConnection & connection,   ///<  Connection that indicates it is alerting
+      bool withMedia                 ///<  Indicated media should be started, if possible
     );
+    virtual void OnAlerting(OpalConnection & connection); // For backward compatibility
 
     /**Call back for answering an incoming call.
        This function is called after the connection has been acknowledged

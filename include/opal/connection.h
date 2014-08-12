@@ -783,7 +783,10 @@ class OpalConnection : public PSafeObject
 
        The default behaviour calls the OpalEndPoint function of the same name.
      */
-    virtual void OnAlerting();
+    virtual void OnAlerting(
+      bool withMedia      ///<  Indicated media should be started, if possible
+    );
+    virtual void OnAlerting(); // For backward compatibility
 
     /**Indicate to remote endpoint an alert is in progress.
        If this is an incoming connection and the AnswerCallResponse is in a

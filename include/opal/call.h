@@ -192,8 +192,6 @@ class OpalCall : public PSafeObject
        remote endpoint is "ringing". Generally some time after the
        MakeConnection() function was called, this is function is called.
 
-       If false is returned the connection is aborted.
-
        If an application overrides this function, it should generally call the
        ancestor version for correct operation. An application would typically
        only intercept this function if it wishes to do some form of logging.
@@ -203,9 +201,11 @@ class OpalCall : public PSafeObject
        The default behaviour is to call SetAlerting() on all the other
        connections in the call.
       */
-    virtual PBoolean OnAlerting(
-      OpalConnection & connection   ///<  Connection that indicates it is alerting
+    virtual void OnAlerting(
+      OpalConnection & connection,   ///<  Connection that indicates it is alerting
+      bool withMedia                 ///<  Indicated media should be started, if possible
     );
+    virtual PBoolean OnAlerting(OpalConnection & connection); // For backward compatibility
 
     /**Call back for answering an incoming call.
        This function is called after the connection has been acknowledged

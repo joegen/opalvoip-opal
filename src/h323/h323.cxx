@@ -124,7 +124,7 @@ H323Connection::H323Connection(OpalCall & call,
   , mustSendDRQ(false)
   , mediaWaitForConnect(false)
   , m_holdToRemote(false)
-  , earlyStart(false)
+  , m_earlyStart(false)
   , m_releaseCompleteNeeded(true)
   , m_endSessionNeeded(false)
   , isConsultationTransfer(false)
@@ -2163,7 +2163,7 @@ PBoolean H323Connection::SetAlerting(const PString & calleeName, PBoolean withMe
   if (withMedia && !mediaWaitForConnect) {
     if (SendFastStartAcknowledge(alerting.m_fastStart))
       alerting.IncludeOptionalField(H225_Alerting_UUIE::e_fastStart);
-    earlyStart = true;
+    m_earlyStart = true;
   }
 
   bool startH245 = !endpoint.IsH245Disabled();
@@ -2784,13 +2784,19 @@ PBoolean H323Connection::StartControlNegotiations()
 {
   PTRACE(3, "H245\tStarted control channel");
 
-
   if (endpoint.IsH245Disabled()){
     PTRACE(2, "H245\tStartControlNegotiations h245 is disabled, do not start negotiation");
     return false;
   }
+
   // Get the local capabilities before fast start is handled
   OnSetLocalCapabilities();
+
+  H323SignalPDU localTunnelPDU;
+  if (h245TunnelTxPDU == NULL) {
+    localTunnelPDU.BuildFacility(*this, true);
+    h245TunnelTxPDU = &localTunnelPDU;
+  }
 
   // Begin the capability exchange procedure
   if (!capabilityExchangeProcedure->Start(false)) {
@@ -2802,6 +2808,11 @@ PBoolean H323Connection::StartControlNegotiations()
   if (!masterSlaveDeterminationProcedure->Start(false)) {
     PTRACE(1, "H245\tStart of Master/Slave determination failed");
     return false;
+  }
+
+  if (localTunnelPDU.GetQ931().GetMessageType() == Q931::FacilityMsg) {
+    WriteSignalPDU(localTunnelPDU);
+    h245TunnelTxPDU = NULL;
   }
 
   m_endSessionNeeded = true;
@@ -3995,6 +4006,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
             "connectionState=" << connectionState << ", "
             "m_fastStartState=" << m_fastStartState << ", "
             "m_holdFromRemote=" << m_holdFromRemote << ", "
+            "earlyStart=" << m_earlyStart << ", "
             "H.245 is " << (h245_available ? "ready" : "unavailable"));
 
   // Check for if all the 245 conditions are met so can start up logical
@@ -4013,7 +4025,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
         }
       }
       else {
-        if (chan == NULL && (connectionState >= HasExecutedSignalConnect || (earlyStart && m_fastStartState != FastStartAcknowledged)))
+        if (chan == NULL && (connectionState >= HasExecutedSignalConnect || (m_earlyStart && m_fastStartState != FastStartAcknowledged)))
           OnSelectLogicalChannels();
       }
     }

@@ -247,26 +247,29 @@ void OpalCall::OnProceeding(OpalConnection & PTRACE_PARAM(connection))
 }
 
 
-PBoolean OpalCall::OnAlerting(OpalConnection & connection)
+void OpalCall::OnAlerting(OpalConnection & connection, bool withMedia)
 {
   PTRACE(3, "OnAlerting " << connection);
 
   if (m_isClearing)
-    return false;
-
-  bool ok = false;
+    return;
 
   PSafePtr<OpalConnection> otherConnection;
   while (EnumerateConnections(otherConnection, PSafeReadWrite, &connection)) {
-    if (otherConnection->SetAlerting(connection.GetRemotePartyName(),
-                                     connection.GetMediaStream(OpalMediaType(), true) != NULL))
-      ok = true;
+    if (!otherConnection->SetAlerting(connection.GetRemotePartyName(), withMedia))
+      return;
   }
 
   SetPartyNames();
-
-  return ok;
 }
+
+
+PBoolean OpalCall::OnAlerting(OpalConnection & connection)
+{
+  connection.OnAlerting(connection.GetMediaStream(OpalMediaType(), true) != NULL);
+  return true;
+}
+
 
 OpalConnection::AnswerCallResponse OpalCall::OnAnswerCall(OpalConnection & PTRACE_PARAM(connection),
                                                           const PString & PTRACE_PARAM(caller))

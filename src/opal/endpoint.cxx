@@ -457,6 +457,13 @@ void OpalEndPoint::OnProceeding(OpalConnection & connection)
   manager.OnProceeding(connection);
 }
 
+
+void OpalEndPoint::OnAlerting(OpalConnection & connection, bool withMedia)
+{
+  manager.OnAlerting(connection, withMedia);
+}
+
+
 void OpalEndPoint::OnAlerting(OpalConnection & connection)
 {
   manager.OnAlerting(connection);

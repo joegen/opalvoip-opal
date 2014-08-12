@@ -2188,7 +2188,7 @@ class H323Connection : public OpalRTPConnection
     bool       mustSendDRQ;
     bool       mediaWaitForConnect;
     bool       m_holdToRemote;
-    bool       earlyStart;
+    bool       m_earlyStart;
     PString    t38ModeChangeCapabilities;
     PSyncPoint digitsWaitFlag;
     bool       m_releaseCompleteNeeded;
