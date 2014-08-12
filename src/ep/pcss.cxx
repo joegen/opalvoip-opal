@@ -40,8 +40,6 @@
 
 #if OPAL_HAS_PCSS
 
-#pragma message("PC Sound System support enabled")
-
 #if OPAL_VIDEO
 #include <ptlib/videoio.h>
 #include <codec/vidcodec.h>
@@ -724,11 +722,4 @@ void OpalPCSSConnection::AcceptIncoming()
 
   OpalLocalConnection::AcceptIncoming();
 }
-
-
-#else
-  #pragma message("PC Sound System support DISABLED")
 #endif // OPAL_HAS_PCSS
-
-
-/////////////////////////////////////////////////////////////////////////////

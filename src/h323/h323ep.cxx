@@ -36,8 +36,6 @@
 #include <opal_config.h>
 #if OPAL_H323
 
-#pragma message("H.323 support enabled")
-
 #ifdef __GNUC__
 #pragma implementation "h323ep.h"
 #endif
@@ -1811,10 +1809,4 @@ bool H323EndPoint::HasCompatibilityIssue(H323Connection::CompatibilityIssues iss
             "regex=\"" << (it != m_compatibility.end() ? it->second.GetPattern() : PString::Empty()) << '"');
   return found;
 }
-
-
-#else
-  #pragma message("H.323 support DISABLED")
 #endif // OPAL_H323
-
-/////////////////////////////////////////////////////////////////////////////

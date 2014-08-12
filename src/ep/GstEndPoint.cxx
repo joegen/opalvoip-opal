@@ -1125,12 +1125,4 @@ bool GstMediaStream::StartPlaying(PGstElement::States & state)
   m_pipeline.GetState(state);
   return true;
 }
-
- 
-#else // OPAL_GSTREAMER
-
-  #ifdef _MSC_VER
-    #pragma message("GStreamer support DISABLED")
-  #endif
-
 #endif // OPAL_GSTREAMER

@@ -55,8 +55,6 @@
 #include <ptclib/random.h>
 
 
-#pragma message("H.460.19 Enabled. See Tandberg Patent License. http://www.tandberg.com/collateral/tandberg-ITU-license.pdf")
-
 #define PTraceModule() "H46019"
 
 PCREATE_NAT_PLUGIN(H46019, "H.460.19");
