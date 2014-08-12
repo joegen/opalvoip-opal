@@ -297,16 +297,11 @@ OpalManager::OpalManager()
       if (PTrace::CanTrace(Level)) {
         ostream & trace = PTRACE_BEGIN(Level);
         trace << "Default video input device set to \"" << dev << '"';
-        PVideoInputDevice * device = PVideoInputDevice::CreateOpenedDevice(m_videoInputDevice[OpalVideoFormat::eNoRole]);
-        if (device == NULL)
-          trace << " (unavailable!)";
-        else {
-          PVideoInputDevice::Capabilities caps;
-          if (device->GetDeviceCapabilities(&caps))
-            trace << '\n' << caps;
-          else
-            trace << " - no capabilities.";
-        }
+        PVideoInputDevice::Capabilities caps;
+        if (PVideoInputDevice::GetDeviceCapabilities(dev, &caps))
+          trace << '\n' << caps;
+        else
+          trace << " - no capabilities.";
         trace << PTrace::End;
       }
 #endif
