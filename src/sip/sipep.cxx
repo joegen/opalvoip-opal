@@ -33,8 +33,6 @@
 
 #if OPAL_SIP
 
-#pragma message("SIP support enabled")
-
 #ifdef __GNUC__
 #pragma implementation "sipep.h"
 #endif
@@ -2317,10 +2315,4 @@ void SIPEndPoint::OnLowPriorityInterfaceChange(PInterfaceMonitor &, PInterfaceMo
     }
   }
 }
-
-
-#else
-  #pragma message("SIP support DISABLED")
 #endif // OPAL_SIP
-
-// End of file ////////////////////////////////////////////////////////////////

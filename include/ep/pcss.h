@@ -664,12 +664,5 @@ class OpalPCSSConnection : public OpalLocalConnection
     PSyncPoint m_ringbackStop;
     void RingbackMain();
 };
-
-#else
-  #pragma message("PTLib soundcard support not available")
 #endif // OPAL_HAS_PCSS
-
 #endif // OPAL_OPAL_PCSS_H
-
-
-// End of File ///////////////////////////////////////////////////////////////

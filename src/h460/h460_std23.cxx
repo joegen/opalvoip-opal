@@ -55,8 +55,6 @@
 #include "h460/upnpcp.h"
 #endif
 
-#pragma message("H.460.23 Enabled. Contact consulting@h323plus.org for licensing terms.")
-
 #define PTraceModule() "H46023"
 
 

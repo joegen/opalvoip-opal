@@ -38,8 +38,6 @@
 
 #if OPAL_LID
 
-#pragma message("Line Interface Device support enabled")
-
 #include <opal/manager.h>
 #include <opal/call.h>
 #include <opal/patch.h>
@@ -1187,11 +1185,4 @@ unsigned OpalLineSilenceDetector::GetAverageSignalLevel(const BYTE *, PINDEX)
 {
   return line.GetAverageSignalLevel(true);
 }
-
-
-#else
-  #pragma message("Line Interface Device support DISABLED")
 #endif // OPAL_LID
-
-
-/////////////////////////////////////////////////////////////////////////////

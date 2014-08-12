@@ -38,8 +38,6 @@
 
 #if OPAL_FAX
 
-#pragma message("T.38 Fax (spandsp) support enabled")
-
 #include <asn/t38.h>
 #include <opal/patch.h>
 #include <codec/opalpluginmgr.h>
@@ -1083,9 +1081,4 @@ void OpalFaxConnection::InternalOnFaxCompleted()
 
   OnFaxCompleted(m_finalStatistics.m_fax.m_result != OpalMediaStatistics::FaxSuccessful);
 }
-
-
-#else
-  #pragma message("T.38 Fax (spandsp) support DISABLED")
 #endif // OPAL_FAX
-
