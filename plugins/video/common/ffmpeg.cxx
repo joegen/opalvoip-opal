@@ -413,7 +413,7 @@ void FFMPEGCodec::SetEncoderOptions(unsigned frameTime,
     m_context->rtp_payload_size = maxRTPSize;
   else {
     m_fullFrame->SetMaxPayloadSize(maxRTPSize);
-    m_context->rtp_payload_size = m_fullFrame->GetMaxPayloadSize(); // Might be adjusted to smaller value
+    m_context->rtp_payload_size = (int)m_fullFrame->GetMaxPayloadSize(); // Might be adjusted to smaller value
   }
 
   m_context->qmax = tsto;
@@ -521,7 +521,7 @@ int FFMPEGCodec::EncodeVideoFrame(uint8_t * frame, size_t length, unsigned & fla
   int gotPacket = result > 0;
 #else
   m_packet.data = frame;
-  m_packet.size = length;
+  m_packet.size = (int)length;
   int gotPacket = 0;
   int result = avcodec_encode_video2(m_context, &m_packet, m_picture, &gotPacket);
 #endif
@@ -602,7 +602,7 @@ bool FFMPEGCodec::DecodeVideoFrame(const uint8_t * frame, size_t length, unsigne
   int bytesDecoded = avcodec_decode_video(m_context, m_picture, &gotPicture, frame, length);
 #else
   m_packet.data = (uint8_t *)frame;
-  m_packet.size = length;
+  m_packet.size = (int)length;
   int bytesDecoded = avcodec_decode_video2(m_context, m_picture, &gotPicture, &m_packet);
 #endif
 
