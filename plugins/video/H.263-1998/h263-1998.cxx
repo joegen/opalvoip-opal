@@ -538,7 +538,7 @@ class H263_Base_Encoder : public PluginVideoEncoder<MY_CODEC>, public FFMPEGCode
       if (!EncodeVideoPacket(PluginCodec_RTP(fromPtr, fromLen), dstRTP, flags))
         return false;
 
-      toLen = dstRTP.GetHeaderSize() + dstRTP.GetPayloadSize();
+      toLen = (unsigned)(dstRTP.GetHeaderSize() + dstRTP.GetPayloadSize());
       return true;
     }
 

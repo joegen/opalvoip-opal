@@ -258,7 +258,7 @@ class MPEG4_EncodedFrame : public FFMPEGCodec::EncodedFrame
   protected:
     // packet sizes generating in RtpCallback
     deque<size_t> m_packetSizes;
-    unsigned m_fragmentationOffset;
+    size_t m_fragmentationOffset;
 
   public:
     MPEG4_EncodedFrame()
@@ -410,7 +410,7 @@ class MPEG4_Encoder : public PluginVideoEncoder<MY_CODEC>, public FFMPEGCodec
       if (!EncodeVideoPacket(PluginCodec_RTP(fromPtr, fromLen), dstRTP, flags))
         return false;
 
-      toLen = dstRTP.GetHeaderSize() + dstRTP.GetPayloadSize();
+      toLen = (unsigned)dstRTP.GetPacketSize();
       return true;
     }
 
