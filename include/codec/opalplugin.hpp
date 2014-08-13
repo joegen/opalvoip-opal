@@ -122,7 +122,7 @@ class PluginCodec_RTP
     {
       if (m_headerSize+size > m_maxSize)
         return false;
-      m_payloadSize = size;
+      m_payloadSize = (unsigned int)size;
       return true;
     }
 
