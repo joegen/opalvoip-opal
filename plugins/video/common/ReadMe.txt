@@ -33,7 +33,7 @@ course, there are never any guarantees!
 Windows
 -------
 
-There is the easy way to get libav on Windows; and there is the hard way.
+There is the easy way to get ffmpeg/libav on Windows; and there is the hard way.
 
 Please, choose the easy way. Pretty please. And if you don't, then, really,
 do not come crying to us!
@@ -41,13 +41,13 @@ do not come crying to us!
 
 1) Easy way: get precompiled binaries from:
 
-   http://www.opalvoip.org/bin/libav_DLLs.zip
+   http://ffmpeg.zeranoe.com/builds/
 
-and drop its contents into wherever you are putting the plug ins, typically
-C:\PTLib_Plugins.
-
-Note: When using this method, you will get a x264plugin_helper.exe as well,
-      you will not need to compile it using Visual Studio.
+and get the "Dev" 7z file. Drop its contents into opal/plugins/video/common,
+making sure you rename it to ffmpeg-win32-dev or ffmpeg-win64-dev. Then you
+need to get the "Shared" 7z file and extract the avcodec-XX.dll,
+avutil-XX.dll and swresample-X.dll files from it, placing them in the same
+directory as the compiled plug in, typically "C:\Program Files\PTLib Plug Ins"
 
 
 2) The hard way. Building it from source.

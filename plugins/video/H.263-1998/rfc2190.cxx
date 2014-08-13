@@ -43,26 +43,28 @@ static int MacroblocksPerGOBTable[] = {
 };
 
 
-static int FindByteAlignedCode(const unsigned char * base, int len, const unsigned char * code, const unsigned char * mask, int codeLen)
+static size_t FindByteAlignedCode(const unsigned char * base, size_t len, const unsigned char * code, const unsigned char * mask, size_t codeLen)
 {
   const unsigned char * ptr = base;
   while (len > codeLen) {
-    int i;
+    size_t i;
     for (i = 0; i < codeLen; ++i) {
       if ((ptr[i] & mask[i]) != code[i])
         break;
     }
     if (i == codeLen)
-      return (int)(ptr - base);
+      return ptr - base;
     ++ptr;
     --len;
   }
-  return -1;
+  return len;
 }
 
 
-static int FindPSC(const unsigned char * base, int len)
-{ return FindByteAlignedCode(base, len, PSC, PSC_Mask, sizeof(PSC)); }
+static int FindPSC(const unsigned char * base, size_t len)
+{
+  return FindByteAlignedCode(base, len, PSC, PSC_Mask, sizeof(PSC));
+}
 
 #if 0
 
@@ -242,7 +244,7 @@ bool RFC2190Packetizer::Reset(size_t len)
   FragmentListType::iterator r;
   for (r = fragments.begin(); r != fragments.end(); ++r) {
     while (r->length > m_maxPayloadSize) {
-      int oldLen = r->length;
+      size_t oldLen = r->length;
       size_t newLen = m_maxPayloadSize;
       if ((oldLen - newLen) < m_maxPayloadSize)
         newLen = oldLen / 2;
@@ -405,7 +407,7 @@ bool RFC2190Depacketizer::AddPacket(const PluginCodec_RTP & packet, unsigned & f
     return true;
   }
 
-  unsigned payloadLen = packet.GetPayloadSize();
+  size_t payloadLen = packet.GetPayloadSize();
 
   // payload must be at least as long as mode A header + 1 byte
   if (payloadLen < 5)

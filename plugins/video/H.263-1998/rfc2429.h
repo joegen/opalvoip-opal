@@ -55,7 +55,7 @@ public:
   uint32_t PeekBits (uint32_t numBits);
   void PutBits(uint32_t posBits, uint32_t numBits, uint32_t value);
   void SetPos(uint32_t pos);
-  uint32_t GetPos();
+  size_t GetPos();
 private:
   data_t  m_data;
   uint8_t m_sbits;
