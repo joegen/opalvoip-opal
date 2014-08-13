@@ -114,11 +114,11 @@ class PluginCodec_RTP
     {
     }
 
-    __inline unsigned GetMaxSize() const           { return m_maxSize; }
-    __inline unsigned GetPacketSize() const        { return m_headerSize+m_payloadSize; }
-    __inline unsigned GetHeaderSize() const        { return m_headerSize; }
-    __inline unsigned GetPayloadSize() const       { return m_payloadSize; }
-    __inline bool     SetPayloadSize(unsigned size)
+    __inline size_t GetMaxSize() const           { return m_maxSize; }
+    __inline size_t GetPacketSize() const        { return m_headerSize+m_payloadSize; }
+    __inline size_t GetHeaderSize() const        { return m_headerSize; }
+    __inline size_t GetPayloadSize() const       { return m_payloadSize; }
+    __inline bool   SetPayloadSize(size_t size)
     {
       if (m_headerSize+size > m_maxSize)
         return false;
@@ -892,7 +892,7 @@ class PluginCodec : public PluginCodec_Utilities
 
     static int GetOutputDataSize_s(const PluginCodec_Definition *, void * context, const char *, void *, unsigned *)
     {
-      return context != NULL ? ((PluginCodec *)context)->GetOutputDataSize() : 0;
+      return context != NULL ? (int)((PluginCodec *)context)->GetOutputDataSize() : 0;
     }
 
     typedef PluginCodec_MediaFormat<NAME> MediaFormat;
@@ -1215,7 +1215,7 @@ class PluginVideoDecoder : public PluginVideoCodec<NAME>
           planeInfo[plane].Copy();
       }
 
-      return rtp.GetPacketSize();
+      return (unsigned)rtp.GetPacketSize();
     }
 };
 

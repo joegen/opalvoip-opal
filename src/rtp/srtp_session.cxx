@@ -669,4 +669,18 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
 
   return OpalRTPSession::OnReceiveControl(frame);
 }
+
+
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame & frame)
+{
+  if (GetSyncSourceIn() != frame.GetSyncSource())
+    m_rx->Change(GetSyncSourceIn(), frame.GetSyncSource());
+  return UnprotectRTP(frame) ? OpalRTPSession::OnReceiveData(frame) : e_IgnorePacket;
+}
+
+
+OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlFrame & frame)
+{
+  return UnprotectRTCP(frame) ? OpalRTPSession::OnReceiveControl(frame) : e_IgnorePacket;
+}
 #endif // OPAL_SRTP
