@@ -107,7 +107,7 @@ uint32_t Bitstream::PeekBits(uint32_t numBits)
 {
     uint8_t i;
     uint32_t result = 0;
-    uint32_t offset = m_data.pos / 8;
+    size_t offset = m_data.pos / 8;
     uint8_t  offsetBits = (uint8_t)(m_data.pos % 8);
     if (((m_data.len << 3) - m_ebits - m_sbits) < (m_data.pos  + numBits)) {
       PTRACE(2, "RFC2429",
@@ -138,7 +138,7 @@ void Bitstream::PutBits(uint32_t posBits, uint32_t numBits, uint32_t value)
 {
   uint8_t i;
   posBits += m_sbits;
-  uint32_t offset = m_data.pos / 8;
+  size_t offset = m_data.pos / 8;
   uint8_t  offsetBits = (uint8_t)(m_data.pos % 8);
   static const uint8_t maskClear[8] = {
     0x7f, 0xbf, 0xdf, 0xef,
@@ -168,7 +168,7 @@ void Bitstream::SetPos(uint32_t pos)
   m_data.pos = pos;
 }
 
-uint32_t Bitstream::GetPos()
+size_t Bitstream::GetPos()
 {
   return (m_data.pos);
 }
@@ -195,7 +195,7 @@ bool RFC2429Frame::GetPacket(PluginCodec_RTP & frame, unsigned int & flags)
       if (m_buffer[i-1] == 0 && m_buffer[i] == 0)
         m_startCodes.push_back(i);
     }  
-    unsigned requiredPackets = (m_length+m_maxPayloadSize-1)/m_maxPayloadSize;
+    size_t requiredPackets = (m_length+m_maxPayloadSize-1)/m_maxPayloadSize;
     if (m_length > m_maxPayloadSize)
       m_minPayloadSize = m_length/requiredPackets;
     else
@@ -289,7 +289,7 @@ bool RFC2429Frame::AddPacket(const PluginCodec_RTP & packet, unsigned int & flag
     payloadPtr += headerPLEN;
   }
 
-  unsigned remBytes = payloadSize - headerPLEN - (headerV ? 3 : 2);
+  size_t remBytes = payloadSize - headerPLEN - (headerV ? 3 : 2);
 
   if (headerP) {
     PTRACE(6, GetName(), "Adding startcode of 2 bytes to frame of " << remBytes << " bytes");
