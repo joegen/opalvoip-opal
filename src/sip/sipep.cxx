@@ -78,7 +78,6 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr, unsigned maxThreads)
   , ackTimeout(0, 32)                // 32 seconds
   , registrarTimeToLive(0, 0, 0, 1)  // 1 hour
   , notifierTimeToLive(0, 0, 0, 1)   // 1 hour
-  , natBindingTimeout(0, 0, 1)       // 1 minute
   , m_keepAliveTimeout(0, 0, 1)      // 1 minute
   , m_keepAliveType(NoKeepAlive)
   , m_registeredUserMode(false)
