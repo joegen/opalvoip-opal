@@ -5095,7 +5095,7 @@ bool OptionsDialog::TransferDataFromWindow()
     if (old == m_manager.m_LocalInterfaces.end() || newInterfaces[i] != *old)
       changed = true;
     wxString key;
-    key.sprintf(wxT("%u"), i+1);
+    key << (i+1);
     config->Write(key, PwxString(newInterfaces[i]));
   }
   if (changed) {
