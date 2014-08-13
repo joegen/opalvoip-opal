@@ -1013,7 +1013,6 @@ class SIPEndPoint : public OpalRTPEndPoint
     PTimeInterval ackTimeout;
     PTimeInterval registrarTimeToLive;
     PTimeInterval notifierTimeToLive;
-    PTimeInterval natBindingTimeout;
     PTimeInterval m_keepAliveTimeout;
     KeepAliveType m_keepAliveType;
     bool          m_registeredUserMode;
