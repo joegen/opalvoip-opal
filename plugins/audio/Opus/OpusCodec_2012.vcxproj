@@ -65,17 +65,17 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\bin\plugins\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)$(ProjectName)\$(Platform)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     </LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\bin\plugins\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)$(ProjectName)\$(Platform)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">opus_x64_ptplugin</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">opus_ptplugin</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">opus_x64_ptplugin</TargetName>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">opus_x64_ptplugin</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">opus_ptplugin</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">opus_x64_ptplugin</TargetName>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">./opus/include;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">./opus/include;$(IncludePath)</IncludePath>
@@ -114,7 +114,12 @@
     </Link>
     <PostBuildEvent>
       <Message>Copying codec and debug information to plug in directory</Message>
-      <Command>if exist c:\ptlib_plugins xcopy /y/f "$(TargetDir)$(TargetName).*d*" c:\ptlib_plugins</Command>
+      <Command>if exist "C:\Program Files (x86)\PTLib Plug Ins" goto copy_x86
+if exist "C:\Program Files\PTLib Plug Ins" xcopy /y/f "$(TargetDir)$(TargetName).*d*" "C:\Program Files\PTLib Plug Ins"
+exit
+:copy_x86
+xcopy /y/f "$(TargetDir)$(TargetName).*d*" "C:\Program Files (x86)\PTLib Plug Ins"
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -140,7 +145,7 @@
     </Link>
     <PostBuildEvent>
       <Message>Copying codec and debug information to plug in directory</Message>
-      <Command>if exist c:\ptlib_plugins xcopy /y/f "$(TargetDir)$(TargetName).*d*" c:\ptlib_plugins</Command>
+      <Command>if exist "C:\Program Files\PTLib Plug Ins" xcopy /y/f "$(TargetDir)$(TargetName).*d*" "C:\Program Files\PTLib Plug Ins"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -188,7 +193,6 @@
       </DebugInformationFormat>
     </ClCompile>
     <Link>
-      <OutputFile>$(OutDir)opus_ptplugin.dll</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

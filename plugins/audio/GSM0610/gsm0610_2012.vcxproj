@@ -70,13 +70,13 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\bin\plugins\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)$(ProjectName)\$(Platform)\</IntDir>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</IgnoreImportLibrary>
     <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</IgnoreImportLibrary>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\bin\plugins\$(Configuration)\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)$(ProjectName)\$(Platform)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     </LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
@@ -157,7 +157,6 @@
       <Culture>0x0c09</Culture>
     </ResourceCompile>
     <Link>
-      <OutputFile>$(OutDir)gsm0610_ptplugin.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -200,9 +199,11 @@
     </Link>
     <PostBuildEvent>
       <Message>Copying codec and debug information to plug in directory</Message>
-      <Command>if not exist c:\ptlib_plugins exit
-copy $(TargetPath) c:\ptlib_plugins
-copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins
+      <Command>if exist "C:\Program Files (x86)\PTLib Plug Ins" goto copy_x86
+if exist "C:\Program Files\PTLib Plug Ins" xcopy /y/f "$(TargetDir)$(TargetName).*d*" "C:\Program Files\PTLib Plug Ins"
+exit
+:copy_x86
+xcopy /y/f "$(TargetDir)$(TargetName).*d*" "C:\Program Files (x86)\PTLib Plug Ins"
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -239,10 +240,7 @@ copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins
     </Link>
     <PostBuildEvent>
       <Message>Copying codec and debug information to plug in directory</Message>
-      <Command>if not exist c:\ptlib_plugins exit
-copy $(TargetPath) c:\ptlib_plugins
-copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins
-</Command>
+      <Command>if exist "C:\Program Files\PTLib Plug Ins" xcopy /y/f "$(TargetDir)$(TargetName).*d*" "C:\Program Files\PTLib Plug Ins"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
