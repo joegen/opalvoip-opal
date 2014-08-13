@@ -63,7 +63,7 @@ static size_t FindByteAlignedCode(const unsigned char * base, size_t len, const 
 
 static int FindPSC(const unsigned char * base, size_t len)
 {
-  return FindByteAlignedCode(base, len, PSC, PSC_Mask, sizeof(PSC));
+  return (int)FindByteAlignedCode(base, len, PSC, PSC_Mask, sizeof(PSC));
 }
 
 #if 0
