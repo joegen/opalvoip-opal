@@ -101,9 +101,9 @@
 class PluginCodec_RTP
 {
     unsigned char * m_packet;
-    unsigned        m_maxSize;
-    unsigned        m_headerSize;
-    unsigned        m_payloadSize;
+    size_t          m_maxSize;
+    size_t          m_headerSize;
+    size_t          m_payloadSize;
 
   public:
     PluginCodec_RTP(const void * packet, unsigned size)
@@ -1157,6 +1157,9 @@ class PluginVideoDecoder : public PluginVideoCodec<NAME>
 
     virtual bool CanOutputImage(unsigned width, unsigned height, PluginCodec_RTP & rtp, unsigned & flags)
     {
+      if (width == 0 || height == 0)
+        return false;
+
       size_t newSize = this->GetRawFrameSize(width, height) + sizeof(PluginCodec_Video_FrameHeader);
       if (!rtp.SetPayloadSize(newSize)) {
         m_outputSize = newSize + rtp.GetHeaderSize();
