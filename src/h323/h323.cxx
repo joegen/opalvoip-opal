@@ -4481,8 +4481,18 @@ void H323Connection::OnSelectLogicalChannels()
 
 void H323Connection::SelectDefaultLogicalChannel(const OpalMediaType & mediaType, unsigned sessionID)
 {
-  if (sessionID > 0 && FindChannel(sessionID, false))
-    return;
+  if (sessionID > 0) {
+    if (FindChannel(sessionID, false))
+      return;
+  }
+  else {
+    for (H245LogicalChannelDict::iterator it  = logicalChannels->GetChannels().begin();
+                                          it != logicalChannels->GetChannels().end(); ++it) {
+      H323Channel * channel = it->second.GetChannel();
+      if (channel != NULL && !channel->GetNumber().IsFromRemote() && channel->GetMediaFormat().GetMediaType() == mediaType)
+        return;
+    }
+  }
 
   PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
   if (otherConnection == NULL) {
