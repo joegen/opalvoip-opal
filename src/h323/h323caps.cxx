@@ -2996,7 +2996,7 @@ H323Capabilities::H323Capabilities(H323Connection & connection,
       if (pdu.m_capabilityTable[i].HasOptionalField(H245_CapabilityTableEntry::e_capability)) {
         H323Capability * capability = allCapabilities.FindCapability(pdu.m_capabilityTable[i].m_capability);
         if (capability != NULL) {
-          H323Capability * copy = (H323Capability *)capability->Clone();
+          H323Capability * copy = capability->CloneAs<H323Capability>();
           OpalMediaFormatList::const_iterator it = localFormats.FindFormat(copy->GetMediaFormat());
           if (it != localFormats.end())
             copy->UpdateMediaFormat(*it);
@@ -3063,30 +3063,7 @@ H323Capabilities::H323Capabilities(const H323Capabilities & original)
 H323Capabilities & H323Capabilities::operator=(const H323Capabilities & original)
 {
   RemoveAll();
-
-  m_table.SetSize(original.GetSize());
-  for (PINDEX i = 0; i < original.GetSize(); i++)
-    m_table.SetAt(i, original[i].CloneAs<H323Capability>());
-
-  PINDEX outerSize = original.m_set.GetSize();
-  m_set.SetSize(outerSize);
-  for (PINDEX outer = 0; outer < outerSize; outer++) {
-    PINDEX middleSize = original.m_set[outer].GetSize();
-    m_set[outer].SetSize(middleSize);
-    for (PINDEX middle = 0; middle < middleSize; middle++) {
-      PINDEX innerSize = original.m_set[outer][middle].GetSize();
-      for (PINDEX inner = 0; inner < innerSize; inner++) {
-        unsigned capabilityNumber = original.m_set[outer][middle][inner].GetCapabilityNumber();
-        for (PINDEX i = 0; i < m_table.GetSize(); i++) {
-          if (m_table[i].GetCapabilityNumber() == capabilityNumber) {
-            m_set[outer][middle].Append(&m_table[i]);
-            break;
-          }
-        }
-      }
-    }
-  }
-
+  Merge(original);
   return *this;
 }
 
@@ -3118,12 +3095,19 @@ PINDEX H323Capabilities::SetCapability(PINDEX descriptorNum,
   // Make sure capability has been added to table.
   Add(capability);
 
-  PBoolean newDescriptor = descriptorNum == P_MAX_INDEX;
+  bool newDescriptor = descriptorNum == P_MAX_INDEX;
   if (newDescriptor)
     descriptorNum = m_set.GetSize();
 
   // Make sure the outer array is big enough
   m_set.SetMinSize(descriptorNum+1);
+
+  // Set to unique value
+  m_set[descriptorNum].m_capabilityDescriptorNumber = 1;
+  for (PINDEX i = 0; i < descriptorNum; ++i) {
+    if (m_set[i].m_capabilityDescriptorNumber >= m_set[descriptorNum].m_capabilityDescriptorNumber)
+      m_set[descriptorNum].m_capabilityDescriptorNumber = m_set[i].m_capabilityDescriptorNumber+1;
+  }
 
   if (simultaneousNum == P_MAX_INDEX)
     simultaneousNum = m_set[descriptorNum].GetSize();
@@ -3767,30 +3751,37 @@ PBoolean H323Capabilities::Merge(const H323Capabilities & newCaps)
 {
   PTRACE_IF(4, !m_table.IsEmpty(), "H323\tCapability merge of:\n" << newCaps << "\nInto:\n" << *this);
 
-  // Add any new capabilities if not already there, otherwise just update media format.
-  for (PINDEX i = 0; i < newCaps.GetSize(); i++) {
-    H323Capability * cap = FindCapability(newCaps[i].GetCapabilityNumber());
-    if (cap == NULL)
-      Copy(newCaps[i]);
-    else
-      cap->GetWritableMediaFormat() = newCaps[i].GetMediaFormat();
-  }
-
   // Remove any descriptors we already have, then add them back in.
-  PINDEX outerSize = newCaps.m_set.GetSize();
-  for (PINDEX outer1 = 0; outer1 < outerSize; outer1++) {
-    for (PINDEX outer2 = 0; outer2 < m_set.GetSize(); outer2++) {
-      if (newCaps.m_set[outer1].m_capabilityDescriptorNumber == m_set[outer2].m_capabilityDescriptorNumber) {
-        m_set.RemoveAt(outer2);
+  for (PINDEX newDesc = 0; newDesc < newCaps.m_set.GetSize(); ++newDesc) {
+    for (PINDEX oldDesc = 0; oldDesc < m_set.GetSize(); ++oldDesc) {
+      if (newCaps.m_set[newDesc].m_capabilityDescriptorNumber == m_set[oldDesc].m_capabilityDescriptorNumber) {
+        m_set.RemoveAt(oldDesc);
         break;
       }
     }
   }
 
+  // Remove any capabilities from old set that are in the new set, then add them back in.
+  for (PINDEX newCap = 0; newCap < newCaps.m_table.GetSize(); ++newCap) {
+    for (PINDEX oldCap = 0; oldCap < m_table.GetSize(); ++oldCap) {
+      if (newCaps.m_table[newCap].assignedCapabilityNumber == m_table[oldCap].assignedCapabilityNumber) {
+        Remove(&m_table[oldCap]);
+        break;
+      }
+    }
+  }
+
+  // Add any new and replacement capabilities.
+  for (PINDEX i = 0; i < newCaps.m_table.GetSize(); i++)
+    Copy(newCaps.m_table[i]);
+
+  // Add any new and replacement descriptors.
+  PINDEX outerSize = newCaps.m_set.GetSize();
   PINDEX outerBase = m_set.GetSize();
   m_set.SetSize(outerBase+outerSize);
   for (PINDEX outer = 0; outer < outerSize; outer++) {
     PINDEX middleSize = newCaps.m_set[outer].GetSize();
+    m_set[outerBase+outer].m_capabilityDescriptorNumber = newCaps.m_set[outer].m_capabilityDescriptorNumber;
     m_set[outerBase+outer].SetSize(middleSize);
     for (PINDEX middle = 0; middle < middleSize; middle++) {
       PINDEX innerSize = newCaps.m_set[outer][middle].GetSize();
@@ -3802,7 +3793,6 @@ PBoolean H323Capabilities::Merge(const H323Capabilities & newCaps)
     }
   }
 
-  PTRACE(3, "H323\tReceived capability set, is " << (m_table.IsEmpty() ? "rejected" : "accepted") << ", merge result:\n" << *this);
   return !m_table.IsEmpty();
 }
 

@@ -3756,8 +3756,11 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
 
     PINDEX previousCaps = remoteCapabilities.GetSize();
 
-    if (!remoteCapabilities.Merge(remoteCaps))
+    if (!remoteCapabilities.Merge(remoteCaps)) {
+      PTRACE(3, "H323\tReceived capability set, rejected as empty merge result");
       return false;
+    }
+    PTRACE(3, "H323\tReceived capability set accepted, merge result:\n" << remoteCapabilities);
 
     if (m_holdFromRemote == eOnHoldFromRemote) {
       PTRACE(3, "H323\tReceived CapabilitySet while paused, re-starting transmitters.");
