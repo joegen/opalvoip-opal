@@ -1420,6 +1420,51 @@ void OpalConsolePCSSEndPoint::CmdCloseVideoStream(PCLI::Arguments & args, P_INT_
 }
 #endif // OPAL_VIDEO
 
+#if OPAL_HAS_H281
+struct OpalCmdFarEndCameraControlMode
+{
+  P_DECLARE_STREAMABLE_ENUM(Cmd, external, device);
+};
+
+void OpalConsolePCSSEndPoint::CmdExternalCameraControl(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() == 0) {
+    args.WriteUsage();
+    return;
+  }
+
+  switch (OpalCmdFarEndCameraControlMode::CmdFromString(args[0])) {
+    case OpalCmdFarEndCameraControlMode::external :
+      SetFarEndCameraActionNotifier(PCREATE_NOTIFIER(ExternalCameraControlNotification));
+      break;
+
+    case OpalCmdFarEndCameraControlMode::device :
+      SetFarEndCameraActionNotifier(PNotifier());
+      break;
+
+    default :
+      args.WriteUsage();
+      return;
+  }
+}
+
+void OpalConsolePCSSEndPoint::ExternalCameraControlNotification(OpalH281Client &, P_INT_PTR param)
+{
+  PStringStream str;
+  if (param == 0)
+    str << "FECC STOPPED";
+  else {
+    const int * directions = (const int *)param;
+    str << "FECC START";
+    for (PVideoControlInfo::Types type = PVideoControlInfo::BeginTypes; type < PVideoControlInfo::EndTypes; ++type) {
+      if (directions[type] != 0)
+        str << ' ' << type << '=' << directions[type];
+    }
+  }
+  m_console.Broadcast(str);
+}
+#endif
+
 
 void OpalConsolePCSSEndPoint::AddCommands(PCLI & cli)
 {
@@ -1481,6 +1526,11 @@ void OpalConsolePCSSEndPoint::AddCommands(PCLI & cli)
                  "[ <options> ... ] [ main | presentation | speaker | sign ]",
                  "c-call:       Token for call to change\n");
 #endif // OPAL_VIDEO
+
+#if OPAL_HAS_H281
+  cli.SetCommand("pc fecc", PCREATE_NOTIFIER(CmdExternalCameraControl),
+                 "Set far end camera control mode", "{ \"device\" | \"external\" }");
+#endif
 }
 #endif // P_CLI
 
