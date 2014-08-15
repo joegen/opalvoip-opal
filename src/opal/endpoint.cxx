@@ -562,6 +562,15 @@ void OpalEndPoint::AdjustMediaFormats(bool local,
 }
 
 
+bool OpalEndPoint::GetMediaTransportAddresses(const OpalConnection & source,
+                                              const OpalConnection & destination,
+                                               const OpalMediaType & mediaType,
+                                         OpalTransportAddressArray & transports) const
+{
+  return manager.GetMediaTransportAddresses(source, destination, mediaType, transports);
+}
+
+
 PBoolean OpalEndPoint::OnOpenMediaStream(OpalConnection & connection,
                                      OpalMediaStream & stream)
 {
