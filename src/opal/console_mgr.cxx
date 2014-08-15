@@ -1429,7 +1429,9 @@ struct OpalCmdFarEndCameraControlMode
 void OpalConsolePCSSEndPoint::CmdExternalCameraControl(PCLI::Arguments & args, P_INT_PTR)
 {
   if (args.GetCount() == 0) {
-    args.WriteUsage();
+    args.GetContext() << "Far End Camera Control mode: "
+                      << (GetFarEndCameraActionNotifier().IsNULL() ? OpalCmdFarEndCameraControlMode::device : OpalCmdFarEndCameraControlMode::external)
+                      << endl;
     return;
   }
 
@@ -1463,7 +1465,7 @@ void OpalConsolePCSSEndPoint::ExternalCameraControlNotification(OpalH281Client &
   }
   m_console.Broadcast(str);
 }
-#endif
+#endif // OPAL_HAS_H281
 
 
 void OpalConsolePCSSEndPoint::AddCommands(PCLI & cli)
