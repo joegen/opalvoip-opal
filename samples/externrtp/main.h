@@ -39,41 +39,6 @@ class MyLocalEndPoint : public OpalLocalEndPoint
   public:
     MyLocalEndPoint(OpalManager & manager)
       : OpalLocalEndPoint(manager, EXTERNAL_SCHEME) { }
-
-    virtual bool OnOutgoingCall(
-      const OpalLocalConnection & connection
-    );
-    virtual bool OnIncomingCall(
-      OpalLocalConnection & connection
-    );
-
-    virtual OpalLocalConnection * CreateConnection(
-      OpalCall & call,    ///<  Owner of connection
-      void * userData,    ///<  Arbitrary data to pass to connection
-      unsigned options,   ///< Option bit mask to pass to connection
-      OpalConnection::StringOptions * stringOptions ///< Options to pass to connection
-    );
-};
-
-
-class MyLocalConnection : public OpalLocalConnection
-{
-    PCLASSINFO(MyLocalConnection, OpalLocalConnection)
-
-  public:
-    MyLocalConnection(
-      OpalCall & call,
-      OpalLocalEndPoint & endpoint,
-      void * userData,
-      unsigned options,
-      OpalConnection::StringOptions * stringOptions
-    ) : OpalLocalConnection(call, endpoint, userData, options, stringOptions, 'X') { }
-
-    virtual bool GetMediaTransportAddresses(
-      OpalConnection & otherConnection,
-      const OpalMediaType & mediaType,
-      OpalTransportAddressArray & transports
-    ) const;
 };
 
 
@@ -84,6 +49,7 @@ class MyManager : public OpalManagerConsole
   public:
     virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute = PString::Empty());
     virtual MediaTransferMode GetMediaTransferMode(const OpalConnection &, const OpalConnection &, const OpalMediaType &) const;
+    virtual bool GetMediaTransportAddresses(const OpalConnection &, const OpalConnection &, const OpalMediaType &, OpalTransportAddressArray &) const;
     virtual PBoolean OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
     virtual void OnClearedCall(OpalCall & call);
 };
