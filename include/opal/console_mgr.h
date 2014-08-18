@@ -368,6 +368,7 @@ class OpalConsoleManager : public OpalManager
     virtual void OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & patch);
     virtual void OnClosedMediaStream(const OpalMediaStream & stream);
     virtual void OnFailedMediaStream(OpalConnection & connection, bool fromRemote, const PString & reason);
+    virtual void OnUserInputString(OpalConnection & connection, const PString & value);
     virtual void OnClearedCall(OpalCall & call);
 
     class LockedStream : PWaitAndSignal

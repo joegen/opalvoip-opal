@@ -2458,6 +2458,14 @@ void OpalConsoleManager::OnFailedMediaStream(OpalConnection & connection, bool f
 }
 
 
+void OpalConsoleManager::OnUserInputString(OpalConnection & connection, const PString & value)
+{
+  if (connection.IsNetworkConnection())
+    Broadcast(PSTRSTRM('\n' << connection.GetCall().GetToken() << ": received user input \"" << value << '"'));
+  OpalManager::OnUserInputString(connection, value);
+}
+
+
 void OpalConsoleManager::OnClearedCall(OpalCall & call)
 {
   OpalManager::OnClearedCall(call);
