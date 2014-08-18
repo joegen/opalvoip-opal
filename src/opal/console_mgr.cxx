@@ -320,7 +320,9 @@ void OpalRTPConsoleEndPoint::CmdCryptoSuites(PCLI::Arguments & args, P_INT_PTR)
 void OpalRTPConsoleEndPoint::CmdBandwidth(PCLI::Arguments & args, P_INT_PTR)
 {
   if (args.GetCount() < 1)
-    args.WriteUsage();
+    args.GetContext() << "Bandwidth:"
+                         " rx=" << m_endpoint.GetInitialBandwidth(OpalBandwidth::Rx) <<
+                         " tx=" << m_endpoint.GetInitialBandwidth(OpalBandwidth::Tx) << endl;
   else {
     OpalBandwidth bandwidth(args[0]);
     if (bandwidth == 0)
