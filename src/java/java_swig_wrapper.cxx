@@ -403,6 +403,18 @@ SWIGEXPORT jstring JNICALL Java_org_opalvoip_opal_OPALJNI_OPAL_1PREFIX_1SIP_1get
 }
 
 
+SWIGEXPORT jstring JNICALL Java_org_opalvoip_opal_OPALJNI_OPAL_1PREFIX_1SDP_1get(JNIEnv *jenv, jclass jcls) {
+  jstring jresult = 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  result = (char *)("sdp");
+  if (result) jresult = jenv->NewStringUTF((const char *)result);
+  return jresult;
+}
+
+
 SWIGEXPORT jstring JNICALL Java_org_opalvoip_opal_OPALJNI_OPAL_1PREFIX_1IAX2_1get(JNIEnv *jenv, jclass jcls) {
   jstring jresult = 0 ;
   char *result = 0 ;
@@ -565,7 +577,7 @@ SWIGEXPORT jstring JNICALL Java_org_opalvoip_opal_OPALJNI_OPAL_1PREFIX_1ALL_1get
   
   (void)jenv;
   (void)jcls;
-  result = (char *)("sip h323 iax2 pc local pots pstn fax t38 ivr mcu im");
+  result = (char *)("sip h323 iax2 sdp pc local pots pstn fax t38 ivr mcu im");
   if (result) jresult = jenv->NewStringUTF((const char *)result);
   return jresult;
 }

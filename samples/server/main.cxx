@@ -333,6 +333,10 @@ PBoolean MyProcess::Initialise(const char * initMsg)
   httpNameSpace.AddResource(rsrc, PHTTPSpace::Overwrite);
 
   httpNameSpace.AddResource(new OpalHTTPConnector(*m_manager, "/websocket", authority), PHTTPSpace::Overwrite);
+#if OPAL_SDP
+  httpNameSpace.AddResource(new OpalSDPHTTPResource(*m_manager->FindEndPointAs<OpalSDPHTTPEndPoint>(OPAL_PREFIX_SDP), "/sdp", authority), PHTTPSpace::Overwrite);
+#endif
+
 
   RegistrationStatusPage * registrationStatusPage = new RegistrationStatusPage(*m_manager, authority);
   httpNameSpace.AddResource(registrationStatusPage, PHTTPSpace::Overwrite);
@@ -660,17 +664,25 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
 #if OPAL_H323
   if (!GetH323EndPoint().Configure(cfg, rsrc))
     return false;
-#endif
+#endif // OPAL_H323
 
 #if OPAL_SIP
   if (!GetSIPEndPoint().Configure(cfg, rsrc))
     return false;
-#endif
+#endif // OPAL_SIP
+
+#if OPAL_SDP_HTTP
+  {
+    OpalSDPHTTPEndPoint * ep = FindEndPointAs<OpalSDPHTTPEndPoint>(OPAL_PREFIX_SDP);
+    if (!ConfigureCommon(ep, "SDP", cfg, rsrc))
+      return false;
+  }
+#endif // OPAL_SDP_HTTP
 
 #if OPAL_SKINNY
   if (!GetSkinnyEndPoint().Configure(cfg, rsrc))
     return false;
-#endif
+#endif // OPAL_SKINNY
 
 #if OPAL_LID
   // Add POTS and PSTN endpoints

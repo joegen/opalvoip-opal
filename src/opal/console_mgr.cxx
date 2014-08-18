@@ -209,7 +209,7 @@ void OpalConsoleEndPoint::AddRoutesFor(const OpalEndPoint * endpoint, const PStr
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_SIP || OPAL_H323
+#if OPAL_H323 || OPAL_SIP || OPAL_SDP_HTTP
 OpalRTPConsoleEndPoint::OpalRTPConsoleEndPoint(OpalConsoleManager & console, OpalRTPEndPoint * endpoint)
   : OpalConsoleEndPoint(console)
   , m_endpoint(*endpoint)
@@ -393,180 +393,6 @@ void OpalRTPConsoleEndPoint::AddCommands(PCLI & cli)
 }
 #endif //P_CLI
 #endif // OPAL_SIP || OPAL_H323
-
-
-/////////////////////////////////////////////////////////////////////////////
-
-#if OPAL_SIP
-SIPConsoleEndPoint::SIPConsoleEndPoint(OpalConsoleManager & manager)
-  : SIPEndPoint(manager)
-  , P_DISABLE_MSVC_WARNINGS(4355, OpalRTPConsoleEndPoint(manager, this))
-{
-}
-
-
-void SIPConsoleEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
-{
-  SIPEndPoint::OnRegistrationStatus(status);
-
-  unsigned reasonClass = status.m_reason/100;
-  if (reasonClass == 1 || (status.m_reRegistering && reasonClass == 2))
-    return;
-
-  m_console.Broadcast(PSTRSTRM('\n' << status));
-}
-
-
-bool SIPConsoleEndPoint::DoRegistration(ostream & output,
-                                        bool verbose,
-                                        const PString & aor,
-                                        const PString & pwd,
-                                        const PArgList & args, 
-                                        const char * authId,
-                                        const char * realm,
-                                        const char * proxy,
-                                        const char * mode,
-                                        const char * ttl)
-{
-  SIPRegister::Params params;
-  params.m_addressOfRecord  = aor;
-  params.m_password         = pwd;
-  params.m_authID           = args.GetOptionString(authId);
-  params.m_realm            = args.GetOptionString(realm);
-  params.m_proxyAddress     = args.GetOptionString(proxy);
-
-  PCaselessString str = args.GetOptionString(mode);
-  if (str == "normal")
-    params.m_compatibility = SIPRegister::e_FullyCompliant;
-  else if (str == "single")
-    params.m_compatibility = SIPRegister::e_CannotRegisterMultipleContacts;
-  else if (str == "public")
-    params.m_compatibility = SIPRegister::e_CannotRegisterPrivateContacts;
-  else if (str == "ALG")
-    params.m_compatibility = SIPRegister::e_HasApplicationLayerGateway;
-  else if (str == "RFC5626")
-    params.m_compatibility = SIPRegister::e_RFC5626;
-  else if (!str.IsEmpty()) {
-    output << "Unknown SIP registration mode \"" << str << '"' << endl;
-    return false;
-  }
-
-  params.m_expire = args.GetOptionAs(ttl, 300);
-  if (params.m_expire < 30) {
-    output << "SIP registrar Time To Live must be more than 30 seconds\n";
-    return false;
-  }
-
-  if (verbose)
-    output << "SIP registrar: " << flush;
-
-  PString finalAoR;
-  SIP_PDU::StatusCodes status;
-  if (!Register(params, finalAoR, &status)) {
-    output << "\nSIP registration to " << params.m_addressOfRecord
-            << " failed (" << status << ')' << endl;
-    return false;
-  }
-
-  if (verbose)
-    output << finalAoR << endl;
-
-  return true;
-}
-
-
-void SIPConsoleEndPoint::GetArgumentSpec(ostream & strm) const
-{
-  strm << "[SIP options:]"
-          "-no-sip.           Disable SIP\n"
-          "S-sip:             Listen on interface(s), defaults to udp$*:5060.\n";
-  OpalRTPConsoleEndPoint::GetArgumentSpec(strm);
-  strm << "r-register:        Registration to server.\n"
-          "-register-auth-id: Registration authorisation id, default is username.\n"
-          "-register-realm:   Registration authorisation realm, default is any.\n"
-          "-register-proxy:   Registration proxy, default is none.\n"
-          "-register-ttl:     Registration Time To Live, default 300 seconds.\n"
-          "-register-mode:    Registration mode (normal, single, public, ALG, RFC5626).\n"
-          "-proxy:            Outbound proxy.\n";
-}
-
-
-bool SIPConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
-{
-  OpalConsoleManager::LockedStream lockedOutput(m_console);
-  ostream & output = lockedOutput;
-
-  // Set up SIP
-  if (args.HasOption("no-sip")) {
-    if (verbose)
-      output << "SIP protocol disabled.\n";
-    return true;
-  }
-
-  if (!OpalRTPConsoleEndPoint::Initialise(args, output, verbose))
-    return false;
-
-  if (args.HasOption("proxy")) {
-    SetProxy(args.GetOptionString("proxy"), args.GetOptionString("user"), args.GetOptionString("password"));
-    if (verbose)
-      output << "SIP proxy: " << GetProxy() << '\n';
-  }
-
-  if (args.HasOption("register")) {
-    if (!DoRegistration(output, verbose,
-                        args.GetOptionString("register"),
-                        args.GetOptionString("password"),
-                        args,
-                        "register-auth-id",
-                        "register-realm",
-                        "register-proxy",
-                        "register-mode",
-                        "register-ttl"))
-      return false;
-  }
-
-  AddRoutesFor(this, defaultRoute);
-  return true;
-}
-
-
-#if P_CLI
-void SIPConsoleEndPoint::CmdProxy(PCLI::Arguments & args, P_INT_PTR)
-{
-  if (args.GetCount() < 1)
-    args.WriteUsage();
-  else {
-    SetProxy(args[0], args.GetOptionString("user"), args.GetOptionString("password"));
-    args.GetContext() << "SIP proxy: " << GetProxy() << endl;
-  }
-}
-
-
-void SIPConsoleEndPoint::CmdRegister(PCLI::Arguments & args, P_INT_PTR)
-{
-  DoRegistration(args.GetContext(), true, args[0], args[1], args, "auth-id", "realm", "proxy", "mode", "ttl");
-}
-
-
-void SIPConsoleEndPoint::AddCommands(PCLI & cli)
-{
-  OpalRTPConsoleEndPoint::AddCommands(cli);
-  cli.SetCommand("sip proxy", PCREATE_NOTIFIER(CmdProxy),
-                  "Set listener interfaces",
-                  "[ <options> ... ] <uri>",
-                  "-u-user: Username for proxy\n"
-                  "-p-password: Password for proxy");
-  cli.SetCommand("sip register", PCREATE_NOTIFIER(CmdRegister),
-                  "Register with SIP registrar",
-                  "[ <options> ... ] <address> [ <password> ]",
-                  "a-auth-id: Override user for authorisation\n"
-                  "r-realm: Set realm for authorisation\n"
-                  "p-proxy: Set proxy for registration\n"
-                  "m-mode: Set registration mode (normal, single, public)\n"
-                  "t-ttl: Set Time To Live for registration\n");
-}
-#endif // P_CLI
-#endif // OPAL_SIP
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -821,6 +647,209 @@ void H323ConsoleEndPoint::AddCommands(PCLI & cli)
 }
 #endif // P_CLI
 #endif // OPAL_H323
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_SIP
+SIPConsoleEndPoint::SIPConsoleEndPoint(OpalConsoleManager & manager)
+  : SIPEndPoint(manager)
+  , P_DISABLE_MSVC_WARNINGS(4355, OpalRTPConsoleEndPoint(manager, this))
+{
+}
+
+
+void SIPConsoleEndPoint::OnRegistrationStatus(const RegistrationStatus & status)
+{
+  SIPEndPoint::OnRegistrationStatus(status);
+
+  unsigned reasonClass = status.m_reason/100;
+  if (reasonClass == 1 || (status.m_reRegistering && reasonClass == 2))
+    return;
+
+  m_console.Broadcast(PSTRSTRM('\n' << status));
+}
+
+
+bool SIPConsoleEndPoint::DoRegistration(ostream & output,
+                                        bool verbose,
+                                        const PString & aor,
+                                        const PString & pwd,
+                                        const PArgList & args, 
+                                        const char * authId,
+                                        const char * realm,
+                                        const char * proxy,
+                                        const char * mode,
+                                        const char * ttl)
+{
+  SIPRegister::Params params;
+  params.m_addressOfRecord  = aor;
+  params.m_password         = pwd;
+  params.m_authID           = args.GetOptionString(authId);
+  params.m_realm            = args.GetOptionString(realm);
+  params.m_proxyAddress     = args.GetOptionString(proxy);
+
+  PCaselessString str = args.GetOptionString(mode);
+  if (str == "normal")
+    params.m_compatibility = SIPRegister::e_FullyCompliant;
+  else if (str == "single")
+    params.m_compatibility = SIPRegister::e_CannotRegisterMultipleContacts;
+  else if (str == "public")
+    params.m_compatibility = SIPRegister::e_CannotRegisterPrivateContacts;
+  else if (str == "ALG")
+    params.m_compatibility = SIPRegister::e_HasApplicationLayerGateway;
+  else if (str == "RFC5626")
+    params.m_compatibility = SIPRegister::e_RFC5626;
+  else if (!str.IsEmpty()) {
+    output << "Unknown SIP registration mode \"" << str << '"' << endl;
+    return false;
+  }
+
+  params.m_expire = args.GetOptionAs(ttl, 300);
+  if (params.m_expire < 30) {
+    output << "SIP registrar Time To Live must be more than 30 seconds\n";
+    return false;
+  }
+
+  if (verbose)
+    output << "SIP registrar: " << flush;
+
+  PString finalAoR;
+  SIP_PDU::StatusCodes status;
+  if (!Register(params, finalAoR, &status)) {
+    output << "\nSIP registration to " << params.m_addressOfRecord
+            << " failed (" << status << ')' << endl;
+    return false;
+  }
+
+  if (verbose)
+    output << finalAoR << endl;
+
+  return true;
+}
+
+
+void SIPConsoleEndPoint::GetArgumentSpec(ostream & strm) const
+{
+  strm << "[SIP options:]"
+          "-no-sip.           Disable SIP\n"
+          "S-sip:             Listen on interface(s), defaults to udp$*:5060.\n";
+  OpalRTPConsoleEndPoint::GetArgumentSpec(strm);
+  strm << "r-register:        Registration to server.\n"
+          "-register-auth-id: Registration authorisation id, default is username.\n"
+          "-register-realm:   Registration authorisation realm, default is any.\n"
+          "-register-proxy:   Registration proxy, default is none.\n"
+          "-register-ttl:     Registration Time To Live, default 300 seconds.\n"
+          "-register-mode:    Registration mode (normal, single, public, ALG, RFC5626).\n"
+          "-proxy:            Outbound proxy.\n";
+}
+
+
+bool SIPConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PString & defaultRoute)
+{
+  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  ostream & output = lockedOutput;
+
+  // Set up SIP
+  if (args.HasOption("no-sip")) {
+    if (verbose)
+      output << "SIP protocol disabled.\n";
+    return true;
+  }
+
+  if (!OpalRTPConsoleEndPoint::Initialise(args, output, verbose))
+    return false;
+
+  if (args.HasOption("proxy")) {
+    SetProxy(args.GetOptionString("proxy"), args.GetOptionString("user"), args.GetOptionString("password"));
+    if (verbose)
+      output << "SIP proxy: " << GetProxy() << '\n';
+  }
+
+  if (args.HasOption("register")) {
+    if (!DoRegistration(output, verbose,
+                        args.GetOptionString("register"),
+                        args.GetOptionString("password"),
+                        args,
+                        "register-auth-id",
+                        "register-realm",
+                        "register-proxy",
+                        "register-mode",
+                        "register-ttl"))
+      return false;
+  }
+
+  AddRoutesFor(this, defaultRoute);
+  return true;
+}
+
+
+#if P_CLI
+void SIPConsoleEndPoint::CmdProxy(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() < 1)
+    args.WriteUsage();
+  else {
+    SetProxy(args[0], args.GetOptionString("user"), args.GetOptionString("password"));
+    args.GetContext() << "SIP proxy: " << GetProxy() << endl;
+  }
+}
+
+
+void SIPConsoleEndPoint::CmdRegister(PCLI::Arguments & args, P_INT_PTR)
+{
+  DoRegistration(args.GetContext(), true, args[0], args[1], args, "auth-id", "realm", "proxy", "mode", "ttl");
+}
+
+
+void SIPConsoleEndPoint::AddCommands(PCLI & cli)
+{
+  OpalRTPConsoleEndPoint::AddCommands(cli);
+  cli.SetCommand("sip proxy", PCREATE_NOTIFIER(CmdProxy),
+                  "Set listener interfaces",
+                  "[ <options> ... ] <uri>",
+                  "-u-user: Username for proxy\n"
+                  "-p-password: Password for proxy");
+  cli.SetCommand("sip register", PCREATE_NOTIFIER(CmdRegister),
+                  "Register with SIP registrar",
+                  "[ <options> ... ] <address> [ <password> ]",
+                  "a-auth-id: Override user for authorisation\n"
+                  "r-realm: Set realm for authorisation\n"
+                  "p-proxy: Set proxy for registration\n"
+                  "m-mode: Set registration mode (normal, single, public)\n"
+                  "t-ttl: Set Time To Live for registration\n");
+}
+#endif // P_CLI
+#endif // OPAL_SIP
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_SDP_HTTP
+
+OpalSDPHTTPConsoleEndPoint::OpalSDPHTTPConsoleEndPoint(OpalConsoleManager & manager)
+  : OpalSDPHTTPEndPoint(manager)
+  , P_DISABLE_MSVC_WARNINGS(4355, OpalRTPConsoleEndPoint(manager, this))
+{
+}
+
+
+void OpalSDPHTTPConsoleEndPoint::GetArgumentSpec(ostream & strm) const
+{
+  strm << "[SDP over HTTP options:]"
+          "-no-sdp. Disable SDP over HTTP\n"
+          "-sdp:    Listens on interface(s), defaults to tcp$*:8080.\n";
+  OpalRTPConsoleEndPoint::GetArgumentSpec(strm);
+}
+
+
+bool OpalSDPHTTPConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PString &)
+{
+  OpalConsoleManager::LockedStream lockedOutput(m_console);
+  ostream & output = lockedOutput;
+  return OpalRTPConsoleEndPoint::Initialise(args, output, verbose);
+}
+#endif // OPAL_SDP_HTTP
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2195,16 +2224,21 @@ OpalConsoleEndPoint * OpalConsoleManager::GetConsoleEndPoint(const PString & pre
 {
   OpalEndPoint * ep = FindEndPoint(prefix);
   if (ep == NULL) {
-#if OPAL_SIP
-    if (prefix == OPAL_PREFIX_SIP)
-      ep = CreateSIPEndPoint();
-    else
-#endif // OPAL_SIP
 #if OPAL_H323
     if (prefix == OPAL_PREFIX_H323)
       ep = CreateH323EndPoint();
     else
 #endif // OPAL_H323
+#if OPAL_SIP
+    if (prefix == OPAL_PREFIX_SIP)
+      ep = CreateSIPEndPoint();
+    else
+#endif // OPAL_SIP
+#if OPAL_SDP_HTTP
+    if (prefix == OPAL_PREFIX_SDP)
+      ep = CreateSDPHTTPEndPoint();
+    else
+#endif
 #if OPAL_SKINNY
     if (prefix == OPAL_PREFIX_SKINNY)
       ep = CreateSkinnyEndPoint();
@@ -2245,6 +2279,14 @@ OpalConsoleEndPoint * OpalConsoleManager::GetConsoleEndPoint(const PString & pre
 }
 
 
+#if OPAL_H323
+H323ConsoleEndPoint * OpalConsoleManager::CreateH323EndPoint()
+{
+  return new H323ConsoleEndPoint(*this);
+}
+#endif // OPAL_H323
+
+
 #if OPAL_SIP
 SIPConsoleEndPoint * OpalConsoleManager::CreateSIPEndPoint()
 {
@@ -2253,12 +2295,12 @@ SIPConsoleEndPoint * OpalConsoleManager::CreateSIPEndPoint()
 #endif // OPAL_SIP
 
 
-#if OPAL_H323
-H323ConsoleEndPoint * OpalConsoleManager::CreateH323EndPoint()
+#if OPAL_SDP_HTTP
+OpalSDPHTTPConsoleEndPoint * OpalConsoleManager::CreateSDPHTTPEndPoint()
 {
-  return new H323ConsoleEndPoint(*this);
+  return new OpalSDPHTTPConsoleEndPoint(*this);
 }
-#endif // OPAL_H323
+#endif // OPAL_SDP_HTTP
 
 
 #if OPAL_SKINNY

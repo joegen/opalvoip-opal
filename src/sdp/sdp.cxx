@@ -37,7 +37,7 @@
 #pragma implementation "sdp.h"
 #endif
 
-#include <sip/sdp.h>
+#include <sdp/sdp.h>
 
 #include <ptlib/socket.h>
 #include <opal/transports.h>
@@ -657,16 +657,16 @@ void SDPCommonAttributes::OutputAttributes(ostream & strm) const
 {
   // media format direction
   switch (m_direction) {
-    case SDPMediaDescription::RecvOnly:
+    case RecvOnly:
       strm << "a=recvonly\r\n";
       break;
-    case SDPMediaDescription::SendOnly:
+    case SendOnly:
       strm << "a=sendonly\r\n";
       break;
-    case SDPMediaDescription::SendRecv:
+    case SendRecv:
       strm << "a=sendrecv\r\n";
       break;
-    case SDPMediaDescription::Inactive:
+    case Inactive:
       strm << "a=inactive\r\n";
       break;
     default:

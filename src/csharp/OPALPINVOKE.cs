@@ -227,6 +227,9 @@ class OPALPINVOKE {
   [DllImport("OPAL", EntryPoint="CSharp_OPAL_PREFIX_SIP_get")]
   public static extern string OPAL_PREFIX_SIP_get();
 
+  [DllImport("OPAL", EntryPoint="CSharp_OPAL_PREFIX_SDP_get")]
+  public static extern string OPAL_PREFIX_SDP_get();
+
   [DllImport("OPAL", EntryPoint="CSharp_OPAL_PREFIX_IAX2_get")]
   public static extern string OPAL_PREFIX_IAX2_get();
 

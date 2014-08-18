@@ -43,7 +43,7 @@
 #include <rtp/rtpconn.h>
 #include <sip/sippdu.h>
 #include <sip/handlers.h>
-#include <sip/sdp.h>
+#include <sdp/sdpep.h>
 
 
 class OpalSIPIMContext;
@@ -72,23 +72,6 @@ class OpalSIPIMContext;
   */
 #define OPAL_OPT_INITIAL_OFFER "Initial-Offer"
 
-/**OpalConnection::StringOption key to a string for a regular expression to
-   match the product information, which if matching the remote system, will
-   indicate the remote does not support asymmetric hold as required by the
-   standard.
-   
-   This fault is when SDP sendonly is sent (us putting them on hold), and
-   they reply inactive, which implies them putting us on hold. When we
-   subsequently send recvonly to release our hold to them, they continue to
-   send inactive, and hold is never released.
-
-   Note the OpalProductInfo vendor, name & version strings are concatenated
-   before comparison with the regular expression.
-
-   Defaults to empty string.
-  */
-#define OPAL_OPT_SYMMETRIC_HOLD_PRODUCT "Symmetric-Hold-Product"
-
 /**Allow INVITE with Replaces to operate on "early" dialog.
    While RFC 3891 explicitly forbids and incoming INVITE with Replaces to
    replace a call which was incoming to the UA. It is allowed for a dialog
@@ -113,14 +96,6 @@ class OpalSIPIMContext;
   */
 #define OPAL_OPT_EXTERNAL_SDP "External-SDP"
 
-/**Enable audio/video grouping in SDP.
-   This add various identifiers to the SDP to link the audio and video
-   medis sessions together. For example, to do lip sync.
-
-   Defaults to true.
-*/
-#define OPAL_OPT_AV_GROUPING "AV-Grouping"
-
 /**Enable SRTP when not using secure signalling (sips)
    Normally SRTP and SDES only applies to secure signalling, sips or
    transport=tls, however this flag will allow it on unsecure connections
@@ -144,9 +119,9 @@ class OpalSIPIMContext;
 /**Session Initiation Protocol connection.
  */
 
-class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
+class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
 {
-    PCLASSINFO(SIPConnection, OpalRTPConnection);
+    PCLASSINFO(SIPConnection, OpalSDPConnection);
   public:
 
   /**@name Construction */
@@ -184,16 +159,6 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
 
   /**@name Overrides from OpalConnection */
   //@{
-    /**Get indication of connection being to a "network".
-       This indicates the if the connection may be regarded as a "network"
-       connection. The distinction is about if there is a concept of a "remote"
-       party being connected to and is best described by example: sip, h323,
-       iax and pstn are all "network" connections as they connect to something
-       "remote". While pc, pots and ivr are not as the entity being connected
-       to is intrinsically local.
-      */
-    virtual bool IsNetworkConnection() const { return true; }
-
     /**Get this connections protocol prefix for URLs.
       */
     virtual PString GetPrefixName() const;
@@ -240,6 +205,10 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
        endpoint is prepended to the destination address.
       */
     virtual PString GetCalledPartyURL();
+
+    /**Get the local name/alias.
+      */
+    virtual PString GetLocalPartyURL() const;
 
     /**Get alerting type information of an incoming call.
        The type of "distinctive ringing" for the call. The string is protocol
@@ -304,32 +273,6 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
       const PString & remoteParty   ///<  Remote party to transfer the existing call to
     );
 
-    /**Put the current connection on hold, suspending media streams.
-       The streams from the remote are always paused. The streams from the
-       local to the remote are conditionally paused depending on underlying
-       logic for "music on hold" functionality.
-
-       The \p fromRemote parameter indicates if we a putting the remote on
-       hold (false) or it is a request for the remote to put us on hold (true).
-
-       The /p placeOnHold parameter indicates of the command/request is for
-       going on hold or retrieving from hold.
-
-       @return true if hold request successfully initiated. The OnHold() call
-               back must be monitored for final confirmation of hold state.
-     */
-    virtual bool HoldRemote(
-      bool placeOnHold  ///< Flag for setting on or off hold
-    );
-
-    /**Return true if the current connection is on hold.
-       The \p fromRemote parameter indicates if we are testing if the remote
-       system has us on hold, or we have them on hold.
-     */
-    virtual bool IsOnHold(
-      bool fromRemote  ///< Flag for if remote has us on hold, or we have them
-    ) const;
-
     /**Indicate to remote endpoint an alert is in progress.
        If this is an incoming connection and the AnswerCallResponse is in a
        AnswerCallDeferred or AnswerCallPending state, then this function is
@@ -354,7 +297,7 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     /**Get the data formats this endpoint is capable of operating in.
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
-    
+
     /**Indicate connection requires symmetric media.
        Default behaviour returns false.
       */
@@ -704,9 +647,9 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     virtual void OnReceivedMESSAGE(SIP_PDU & pdu);
     virtual void OnReceivedSUBSCRIBE(SIP_PDU & pdu);
 
-    PString GetLocalPartyURL() const;
+    virtual PString GetMediaInterface();
+    virtual OpalTransportAddress GetRemoteMediaAddress();
 
-    virtual void PrintOn(ostream & strm) const { OpalRTPConnection::PrintOn(strm); }
 
   protected:
     virtual bool GarbageCollection();
@@ -715,54 +658,20 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     void OnInviteResponseRetry();
     void OnInviteResponseTimeout();
     void OnInviteCollision();
+    virtual bool OnHoldStateChanged(bool placeOnHold);
+    virtual void OnMediaStreamOpenFailed(bool rx);
 
     void OnReceivedAlertingResponse(
       SIPTransaction & transaction,
       SIP_PDU & response
     );
-    virtual bool OnSendOfferSDP(
-      SDPSessionDescription & sdpOut,
-      bool offerCurrentOnly
+    virtual bool OnSendAnswer(
+      SIP_PDU::StatusCodes response
     );
-    virtual bool OnSendOfferSDPSession(
-      unsigned sessionID,
-      SDPSessionDescription & sdpOut,
-      bool offerOpenMediaStreamOnly
-    );
-
-    virtual bool OnSendAnswerSDP(
-      SDPSessionDescription & sdpOut
-    );
-    virtual bool OnSendAnswerSDP(
-      const SDPSessionDescription & sdpOffer,
-      SDPSessionDescription & sdpAnswer
-    );
-    virtual SDPMediaDescription * OnSendAnswerSDPSession(
-      SDPMediaDescription * incomingMedia,
-      unsigned sessionId,
-      SDPMediaDescription::Direction otherSidesDir
-    );
-
-    virtual bool OnReceivedAnswerSDP(
+    virtual bool OnReceivedAnswer(
       SIP_PDU & response,
       SIPTransaction * transaction
     );
-    virtual bool OnReceivedAnswerSDPSession(
-      SDPSessionDescription & sdp,
-      unsigned sessionId,
-      bool & multipleFormats
-    );
-
-    virtual OpalMediaSession * SetUpMediaSession(
-      const unsigned rtpSessionId,
-      const OpalMediaType & mediaType,
-      const SDPMediaDescription & mediaDescription,
-      OpalTransportAddress & localAddress,
-      bool & remoteChanged
-    );
-#if OPAL_VIDEO
-    void SetAudioVideoGroup();
-#endif
 
     bool SendReINVITE(PTRACE_PARAM(const char * msg));
     bool StartPendingReINVITE();
@@ -772,8 +681,6 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
 
     virtual bool SendDelayedACK(bool force);
     void OnDelayedAckTimeout();
-
-    void RetryHoldRemote(bool placeOnHold);
 
     virtual bool SendInviteOK();
     virtual PBoolean SendInviteResponse(
@@ -801,16 +708,6 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     unsigned              m_allowedMethods;
     PStringSet            m_allowedEvents;
 
-    enum HoldState {
-      eHoldOff,
-      eRetrieveInProgress,
-
-      // Order is important!
-      eHoldOn,
-      eHoldInProgress
-    };
-    HoldState             m_holdToRemote;
-    bool                  m_holdFromRemote;
     PString               m_forwardParty;
     OpalTransportAddress  m_remoteAddress;
     PString               m_remoteIdentity;
@@ -854,8 +751,6 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
       ReleaseWithNothing,
     } releaseMethod;
 
-    OpalMediaFormatList m_remoteFormatList;
-    OpalMediaFormatList m_answerFormatList;
     int SetRemoteMediaFormats(SIP_PDU & pdu);
 
     std::map<std::string, SIP_PDU *> m_responses;

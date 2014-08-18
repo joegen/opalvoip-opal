@@ -124,9 +124,12 @@
 // Protocol support
 //
 
-#undef	OPAL_SIP
 #if P_ASN
   #undef OPAL_H323
+#endif
+#undef  OPAL_SDP
+#if OPAL_SDP
+  #undef OPAL_SIP
 #endif
 #undef  OPAL_IAX2
 #undef  OPAL_SKINNY
@@ -139,11 +142,12 @@
   #undef OPAL_IVR
 #endif
 
-#if OPAL_SIP
-  #define OPAL_SDP 1
-  #if P_STUNSRVR
-    #define OPAL_ICE 1
-  #endif
+#if OPAL_SDP && OPAL_PTLIB_HTTP
+  #define OPAL_SDP_HTTP 1
+#endif
+
+#if OPAL_SIP && P_STUNSRVR
+  #define OPAL_ICE 1
 #endif
 
 #if OPAL_H323

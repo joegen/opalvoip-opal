@@ -427,6 +427,16 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_OPAL_PREFIX_SIP_get() {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_OPAL_PREFIX_SDP_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *)("sdp");
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_OPAL_PREFIX_IAX2_get() {
   char * jresult ;
   char *result = 0 ;
@@ -561,7 +571,7 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_OPAL_PREFIX_ALL_get() {
   char * jresult ;
   char *result = 0 ;
   
-  result = (char *)("sip h323 iax2 pc local pots pstn fax t38 ivr mcu im");
+  result = (char *)("sip h323 iax2 sdp pc local pots pstn fax t38 ivr mcu im");
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }

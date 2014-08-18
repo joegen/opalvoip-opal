@@ -44,7 +44,7 @@
 
 #if OPAL_SIP
 
-#include <rtp/rtpep.h>
+#include <sdp/sdpep.h>
 #include <sip/sipcon.h>
 #include <sip/handlers.h> 
 
@@ -53,9 +53,9 @@
 
 /**Session Initiation Protocol endpoint.
  */
-class SIPEndPoint : public OpalRTPEndPoint
+class SIPEndPoint : public OpalSDPEndPoint
 {
-    PCLASSINFO(SIPEndPoint, OpalRTPEndPoint);
+    PCLASSINFO(SIPEndPoint, OpalSDPEndPoint);
   public:
   /**@name Construction */
   //@{
@@ -184,7 +184,7 @@ class SIPEndPoint : public OpalRTPEndPoint
     /** Get available string option names.
       */
     virtual PStringList GetAvailableStringOptions() const;
-    //@}
+  //@}
 
   /**@name Customisation call backs */
   //@{
@@ -194,15 +194,6 @@ class SIPEndPoint : public OpalRTPEndPoint
     virtual SIPConnection * CreateConnection(
       const SIPConnection::Init & init     ///< Initialisation parameters
 
-    );
-
-    /**Create a SDP instance for the SIP packet.
-       The default implementation is to create a SDPSessionDescription.
-      */
-    virtual SDPSessionDescription * CreateSDP(
-      time_t sessionId,
-      unsigned version,
-      const OpalTransportAddress & address
     );
 
     /**Setup a connection transfer a connection for the SIP endpoint.

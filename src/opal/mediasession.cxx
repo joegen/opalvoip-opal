@@ -39,7 +39,7 @@
 #include <opal/mediasession.h>
 #include <opal/connection.h>
 #include <h323/h323caps.h>
-#include <sip/sdp.h>
+#include <sdp/sdp.h>
 
 #include <ptclib/random.h>
 #include <ptclib/cypher.h>
