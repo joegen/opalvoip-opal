@@ -510,7 +510,7 @@
     <ClCompile Include="..\sip\handlers.cxx">
       <Filter>Source Files\SIP</Filter>
     </ClCompile>
-    <ClCompile Include="..\sip\sdp.cxx">
+    <ClCompile Include="..\sdp\sdp.cxx">
       <Filter>Source Files\SIP</Filter>
     </ClCompile>
     <ClCompile Include="..\sip\sipcon.cxx">
@@ -953,7 +953,7 @@
     <ClInclude Include="..\..\include\sip\handlers.h">
       <Filter>Header Files\SIP</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\sip\sdp.h">
+    <ClInclude Include="..\..\include\sdp\sdp.h">
       <Filter>Header Files\SIP</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\sip\sip.h">

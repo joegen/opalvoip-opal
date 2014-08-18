@@ -46,10 +46,7 @@
 #include <opal/connection.h>
 #include <opal/endpoint.h>
 #include <im/t140.h>
-
-#if OPAL_SIP
-#include <sip/sdp.h>
-#endif
+#include <sdp/sdp.h>
 
 
 #define CRLF "\r\n"

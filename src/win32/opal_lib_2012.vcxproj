@@ -1391,8 +1391,9 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\rtp\libsrtp\win32;..\rtp\libsrtp\include;..\rtp\libsrtp\crypto\include;..\..\include;..\..\..\ptlib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <ClCompile Include="..\rtp\zrtpudp.cxx" />
+    <ClCompile Include="..\sdp\sdpep.cxx" />
     <ClCompile Include="..\sip\handlers.cxx" />
-    <ClCompile Include="..\sip\sdp.cxx" />
+    <ClCompile Include="..\sdp\sdp.cxx" />
     <ClCompile Include="..\sip\sipcon.cxx" />
     <ClCompile Include="..\sip\sipep.cxx" />
     <ClCompile Include="..\sip\sippdu.cxx" />
@@ -1554,8 +1555,9 @@
     <ClInclude Include="..\..\include\rtp\rtp_session.h" />
     <ClInclude Include="..\..\include\rtp\srtp_session.h" />
     <ClInclude Include="..\..\include\rtp\zrtpudp.h" />
+    <ClInclude Include="..\..\include\sdp\sdpep.h" />
     <ClInclude Include="..\..\include\sip\handlers.h" />
-    <ClInclude Include="..\..\include\sip\sdp.h" />
+    <ClInclude Include="..\..\include\sdp\sdp.h" />
     <ClInclude Include="..\..\include\sip\sip.h" />
     <ClInclude Include="..\..\include\sip\sipcon.h" />
     <ClInclude Include="..\..\include\sip\sipep.h" />

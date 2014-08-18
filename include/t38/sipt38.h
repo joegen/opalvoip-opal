@@ -39,7 +39,7 @@
 
 #if OPAL_SIP
 
-#include <sip/sdp.h>
+#include <sdp/sdp.h>
 
 #if OPAL_T38_CAPABILITY
 

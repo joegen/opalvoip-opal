@@ -40,7 +40,7 @@
 #include <sip/sipep.h>
 
 #include <ptclib/enum.h>
-#include <sip/sdp.h>
+#include <sdp/sdp.h>
 #include <sip/sippres.h>
 #include <im/sipim.h>
 
@@ -65,7 +65,7 @@ static BYTE DefaultKeepAliveData[] = { '\r', '\n', '\r', '\n' };
 ////////////////////////////////////////////////////////////////////////////
 
 SIPEndPoint::SIPEndPoint(OpalManager & mgr, unsigned maxThreads)
-  : OpalRTPEndPoint(mgr, "sip", IsNetworkEndPoint | SupportsE164)
+  : OpalSDPEndPoint(mgr, "sip", IsNetworkEndPoint | SupportsE164)
   , m_defaultPrackMode(SIPConnection::e_prackSupported)
   , m_maxPacketSizeUDP(1300)         // As per RFC 3261 section 18.1.1
   , maxRetries(10)
@@ -158,16 +158,17 @@ void SIPEndPoint::ShutDown()
 
 PString SIPEndPoint::GetDefaultTransport() const 
 {
-  return          OpalTransportAddress::UdpPrefix()
-          + ',' + OpalTransportAddress::TcpPrefix()
+  PStringStream strm;
+  strm << OpalTransportAddress::UdpPrefix() << ',' << OpalTransportAddress::TcpPrefix()
 #if OPAL_PTLIB_SSL
-          + ',' + OpalTransportAddress::TlsPrefix() + ":5061"
+       << ',' + OpalTransportAddress::TlsPrefix() << ':' << SIPURL::DefaultSecurePort
 #if OPAL_PTLIB_HTTP
-          + ',' + OpalTransportAddress::WsPrefix() + ":10080"
-          + ',' + OpalTransportAddress::WssPrefix() + ":10081"
+       << ',' << OpalTransportAddress::WsPrefix() << ":10080"
+       << ',' << OpalTransportAddress::WssPrefix() << ":10081"
 #endif
 #endif
-    ; 
+       ;
+    return strm;
 }
 
 
@@ -577,12 +578,6 @@ PBoolean SIPEndPoint::IsAcceptedAddress(const SIPURL & /*toAddr*/)
 SIPConnection * SIPEndPoint::CreateConnection(const SIPConnection::Init & init)
 {
   return new SIPConnection(init);
-}
-
-
-SDPSessionDescription * SIPEndPoint::CreateSDP(time_t sessionId, unsigned version, const OpalTransportAddress & address)
-{
-  return new SDPSessionDescription(sessionId, version, address);
 }
 
 
@@ -1107,7 +1102,7 @@ bool SIPEndPoint::OnReceivedINVITE(SIP_PDU * request)
     // Do not currently support anything other than SDP, in particular multipart stuff.
     PTRACE(2, "SIP\tIncoming INVITE for " << request->GetURI() << " does not contain SDP");
     SIP_PDU response(*request, SIP_PDU::Failure_UnsupportedMediaType);
-    response.GetMIME().SetAccept("application/sdp");
+    response.GetMIME().SetAccept(OpalSDPEndPoint::ContentType());
     response.GetMIME().SetAcceptEncoding("identity");
     response.SetAllow(GetAllowedMethods());
     response.Send();

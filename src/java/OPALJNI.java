@@ -22,6 +22,7 @@ public class OPALJNI {
   public final static native String OPAL_FREE_MESSAGE_FUNCTION_get();
   public final static native String OPAL_PREFIX_H323_get();
   public final static native String OPAL_PREFIX_SIP_get();
+  public final static native String OPAL_PREFIX_SDP_get();
   public final static native String OPAL_PREFIX_IAX2_get();
   public final static native String OPAL_PREFIX_PCSS_get();
   public final static native String OPAL_PREFIX_LOCAL_get();

@@ -39,7 +39,7 @@
 
 #if OPAL_HAS_H224
 
-#include <sip/sdp.h>
+#include <sdp/sdp.h>
 
 
 #define H224_MAX_HEADER_SIZE 6+5

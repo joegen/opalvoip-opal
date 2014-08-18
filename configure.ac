@@ -26,6 +26,7 @@ dnl Defaults
 dnl ########################################################################
 
 OPAL_H323=yes
+OPAL_SDP=yes
 OPAL_SIP=yes
 OPAL_IAX2=yes
 OPAL_SKINNY=yes
@@ -347,9 +348,13 @@ dnl MSWIN_DISPLAY  video,Video
 dnl MSWIN_DEFINE   video,OPAL_VIDEO
 OPAL_SIMPLE_OPTION(video,OPAL_VIDEO, [video support], [OPAL_PTLIB_VIDEO])
 
+dnl MSWIN_DISPLAY  sdp,SDP support
+dnl MSWIN_DEFINE   sdp,OPAL_SDP
+OPAL_SIMPLE_OPTION(sdp,OPAL_SDP, [SDP protocol support])
+
 dnl MSWIN_DISPLAY  sip,SIP support
 dnl MSWIN_DEFINE   sip,OPAL_SIP
-OPAL_SIMPLE_OPTION(sip,OPAL_SIP, [SIP protocol support])
+OPAL_SIMPLE_OPTION(sip,OPAL_SIP, [SIP protocol support], [OPAL_SDP])
 
 dnl MSWIN_DISPLAY  h323,H.323 support
 dnl MSWIN_DEFINE   h323,OPAL_H323
