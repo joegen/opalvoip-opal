@@ -116,7 +116,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
+    <OutDir>..\..\lib\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(ProjectDir)..\..\lib\</OutDir>
@@ -132,13 +132,13 @@
     <IncludePath>$(ProjectDir)..\..\Lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
+    <OutDir>..\..\lib\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(ProjectDir)..\..\lib\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">
-    <OutDir>$(ProjectDir)..\..\lib\</OutDir>
+    <OutDir>..\..\lib\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">
     <OutDir>$(ProjectDir)..\..\lib\</OutDir>
@@ -344,6 +344,7 @@
     <Lib />
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\sdp\sdphttpep.cxx" />
     <ClCompile Include="..\rtp\rtp_stream.cxx" />
     <ClCompile Include="..\rtp\rtp_fec.cxx" />
     <ClCompile Include="..\csharp\csharp_msvc_wrapper.cxx">
@@ -1415,6 +1416,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\sdp\sdphttpep.h" />
     <ClInclude Include="..\..\include\rtp\rtp_stream.h" />
     <ClInclude Include="..\..\include\ep\skinnyep.h" />
     <ClInclude Include="..\..\include\h323\h235dh.h" />
