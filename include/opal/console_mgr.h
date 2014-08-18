@@ -103,7 +103,7 @@ protected:
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdInterfaces);
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdCryptoSuites);
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdBandwidth);
-  PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdUserInput);
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdUserInputMode);
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdStringOption);
   void AddCommands(PCLI & cli);
 #endif //P_CLI
@@ -533,6 +533,7 @@ class OpalManagerCLI : public OpalConsoleManager
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdCodecMask);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdCodecOption);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdShowCalls);
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdSendUserInput);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdHangUp);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdDelay);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdVersion);
