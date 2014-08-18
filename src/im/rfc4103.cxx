@@ -41,7 +41,7 @@
 #include <opal/connection.h>
 #include <im/im_ep.h>
 #include <im/t140.h>
-#include <sip/sdp.h>
+#include <sdp/sdp.h>
 
 
 class OpalT140MediaDefinition : public OpalRTPAVPMediaDefinition

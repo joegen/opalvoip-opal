@@ -42,7 +42,7 @@
 #include <ptclib/pdns.h>
 #include <sip/sipep.h>
 #include <sip/sipcon.h>
-#include <sip/sdp.h>
+#include <sdp/sdp.h>
 #include <codec/opalplugin.h>
 
 
@@ -197,6 +197,7 @@ static struct {
   { 'k', "Supported" },
   { 'o', "Event" }
 };
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -2499,7 +2500,7 @@ void  SIP_PDU::SetEntityBody()
 {
   if (m_SDP != NULL && m_entityBody.IsEmpty()) {
     m_entityBody = m_SDP->Encode();
-    m_mime.SetContentType("application/sdp");
+    m_mime.SetContentType(OpalSDPEndPoint::ContentType());
   }
 
   m_mime.SetContentLength(m_entityBody.GetLength());
@@ -2536,7 +2537,7 @@ bool SIP_PDU::IsContentSDP(bool emptyOK) const
     return emptyOK;
 
   if (m_mime.GetContentEncoding().IsEmpty())
-    return m_mime.GetContentType() == "application/sdp";
+    return m_mime.GetContentType() == OpalSDPEndPoint::ContentType();
 
   PTRACE(3, "SIP\tUnsupported content encoding.");
   return false;

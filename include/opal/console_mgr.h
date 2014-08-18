@@ -54,6 +54,7 @@ class OpalConsoleManager;
 
 #define OPAL_CONSOLE_PREFIXES OPAL_PREFIX_SIP   " " \
                               OPAL_PREFIX_H323  " " \
+                              OPAL_PREFIX_SDP   " " \
                               OPAL_PREFIX_SKINNY" " \
                               OPAL_PREFIX_PSTN  " " \
                               OPAL_PREFIX_CAPI  " "
@@ -144,6 +145,18 @@ public:
                       const char * ttl);
 };
 #endif // OPAL_SIP
+
+
+#if OPAL_SDP && OPAL_PTLIB_HTTP
+class OpalSDPHTTPConsoleEndPoint : public OpalSDPHTTPEndPoint, public OpalRTPConsoleEndPoint
+{
+  PCLASSINFO(OpalSDPHTTPConsoleEndPoint, OpalSDPHTTPEndPoint)
+public:
+  OpalSDPHTTPConsoleEndPoint(OpalConsoleManager & manager);
+  virtual void GetArgumentSpec(ostream & strm) const;
+  virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute);
+};
+#endif // OPAL_SDP && OPAL_PTLIB_HTTP
 
 
 #if OPAL_H323
@@ -408,11 +421,14 @@ class OpalConsoleManager : public OpalManager
   protected:
     OpalConsoleEndPoint * GetConsoleEndPoint(const PString & prefix);
 
+#if OPAL_H323
+    virtual H323ConsoleEndPoint * CreateH323EndPoint();
+#endif
 #if OPAL_SIP
     virtual SIPConsoleEndPoint * CreateSIPEndPoint();
 #endif
-#if OPAL_H323
-    virtual H323ConsoleEndPoint * CreateH323EndPoint();
+#if OPAL_SDP_HTTP
+    virtual OpalSDPHTTPConsoleEndPoint * CreateSDPHTTPEndPoint();
 #endif
 #if OPAL_SKINNY
     virtual OpalConsoleSkinnyEndPoint * CreateSkinnyEndPoint();

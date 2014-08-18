@@ -329,6 +329,7 @@ typedef void (OPAL_EXPORT *OpalFreeMessageFunction)(OpalMessage * message);
 
 #define OPAL_PREFIX_H323  "h323"    ///< H.323 Protocol supported string for OpalInitialise()
 #define OPAL_PREFIX_SIP   "sip"     ///< SIP Protocol supported string for OpalInitialise()
+#define OPAL_PREFIX_SDP   "sdp"     ///< SDP over HTTP (e.g. for WebRTC) supported string for OpalInitialise()
 #define OPAL_PREFIX_IAX2  "iax2"    ///< IAX2 Protocol supported string for OpalInitialise()
 #define OPAL_PREFIX_PCSS  "pc"      ///< PC sound system supported string for OpalInitialise()
 #define OPAL_PREFIX_LOCAL "local"   ///< Local endpoint supported string for OpalInitialise()
@@ -346,6 +347,7 @@ typedef void (OPAL_EXPORT *OpalFreeMessageFunction)(OpalMessage * message);
 #define OPAL_PREFIX_ALL OPAL_PREFIX_SIP   " " \
                         OPAL_PREFIX_H323  " " \
                         OPAL_PREFIX_IAX2  " " \
+                        OPAL_PREFIX_SDP   " " \
                         OPAL_PREFIX_PCSS  " " \
                         OPAL_PREFIX_LOCAL " " \
                         OPAL_PREFIX_POTS  " " \

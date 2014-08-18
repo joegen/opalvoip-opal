@@ -127,6 +127,12 @@
     <Filter Include="Source Files\SWIG\C#">
       <UniqueIdentifier>{2c2965e8-baa1-4ba4-8e81-53750c9b9c27}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\SDP">
+      <UniqueIdentifier>{2c87d927-5f99-43a8-850e-0df889bd00c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\SDP">
+      <UniqueIdentifier>{041b848a-3efd-46c0-9599-044a70687352}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\asn\h4506.cxx">
@@ -510,9 +516,6 @@
     <ClCompile Include="..\sip\handlers.cxx">
       <Filter>Source Files\SIP</Filter>
     </ClCompile>
-    <ClCompile Include="..\sip\sdp.cxx">
-      <Filter>Source Files\SIP</Filter>
-    </ClCompile>
     <ClCompile Include="..\sip\sipcon.cxx">
       <Filter>Source Files\SIP</Filter>
     </ClCompile>
@@ -710,6 +713,12 @@
     </ClCompile>
     <ClCompile Include="..\rtp\rtp_stream.cxx">
       <Filter>Source Files\RTP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sdp\sdp.cxx">
+      <Filter>Source Files\SDP</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sdp\sdpep.cxx">
+      <Filter>Source Files\SDP</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -951,9 +960,6 @@
       <Filter>Header Files\T.38</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\sip\handlers.h">
-      <Filter>Header Files\SIP</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\sip\sdp.h">
       <Filter>Header Files\SIP</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\sip\sip.h">
@@ -1276,6 +1282,12 @@
     </ClInclude>
     <ClInclude Include="..\..\include\rtp\rtp_stream.h">
       <Filter>Header Files\RTP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\sdp\sdpep.h">
+      <Filter>Header Files\SDP</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\sdp\sdp.h">
+      <Filter>Header Files\SDP</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
