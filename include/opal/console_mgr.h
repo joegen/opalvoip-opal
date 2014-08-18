@@ -51,6 +51,7 @@
 
 
 class OpalConsoleManager;
+class OpalH281Client;
 
 
 #define OPAL_CONSOLE_PREFIXES OPAL_PREFIX_SIP   " " \
@@ -104,7 +105,7 @@ protected:
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdInterfaces);
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdCryptoSuites);
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdBandwidth);
-  PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdUserInput);
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdUserInputMode);
   PDECLARE_NOTIFIER(PCLI::Arguments, OpalRTPConsoleEndPoint, CmdStringOption);
   void AddCommands(PCLI & cli);
 #endif //P_CLI
@@ -279,6 +280,10 @@ public:
   bool SetSignOutputDevice(const PVideoDevice::OpenArgs & args) { return manager.SetVideoOutputDevice(args, OpalVideoFormat::eSignLanguage); }
   const PVideoDevice::OpenArgs & GetSignOutputDevice() const { return manager.GetVideoOutputDevice(OpalVideoFormat::eSignLanguage); }
 #endif // OPAL_VIDEO
+#if OPAL_HAS_H281
+  PDECLARE_NOTIFIER(PCLI::Arguments, OpalConsolePCSSEndPoint, CmdExternalCameraControl);
+  PDECLARE_NOTIFIER(OpalH281Client, OpalConsolePCSSEndPoint, ExternalCameraControlNotification);
+#endif
 
   virtual void AddCommands(PCLI & cli);
 #endif // P_CLI
@@ -377,6 +382,7 @@ class OpalConsoleManager : public OpalManager
     virtual void OnStartMediaPatch(OpalConnection & connection, OpalMediaPatch & patch);
     virtual void OnClosedMediaStream(const OpalMediaStream & stream);
     virtual void OnFailedMediaStream(OpalConnection & connection, bool fromRemote, const PString & reason);
+    virtual void OnUserInputString(OpalConnection & connection, const PString & value);
     virtual void OnClearedCall(OpalCall & call);
 
     class LockedStream : PWaitAndSignal
@@ -545,6 +551,7 @@ class OpalManagerCLI : public OpalConsoleManager
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdCodecMask);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdCodecOption);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdShowCalls);
+    PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdSendUserInput);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdHangUp);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdDelay);
     PDECLARE_NOTIFIER(PCLI::Arguments, OpalManagerCLI, CmdVersion);
