@@ -306,6 +306,7 @@ endif # OPAL_IAX2
 ifeq ($(OPAL_SDP),yes)
   VPATH_CXX += $(OPAL_SRCDIR)/sdp
   SOURCES += $(OPAL_SRCDIR)/sdp/sdpep.cxx \
+             $(OPAL_SRCDIR)/sdp/sdphttpep.cxx \
              $(OPAL_SRCDIR)/sip/sdp.cxx
 endif # OPAL_SDP
 

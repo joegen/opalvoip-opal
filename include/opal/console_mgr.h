@@ -37,8 +37,9 @@
 
 #include <opal.h>
 #include <opal/manager.h>
-#include <sip/sipep.h>
 #include <h323/h323ep.h>
+#include <sip/sipep.h>
+#include <sdp/sdphttpep.h>
 #include <lids/lidep.h>
 #include <lids/capi_ep.h>
 #include <ep/pcss.h>
