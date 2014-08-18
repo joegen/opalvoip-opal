@@ -339,7 +339,7 @@ void OpalRTPConsoleEndPoint::CmdBandwidth(PCLI::Arguments & args, P_INT_PTR)
 }
 
 
-void OpalRTPConsoleEndPoint::CmdUserInput(PCLI::Arguments & args, P_INT_PTR)
+void OpalRTPConsoleEndPoint::CmdUserInputMode(PCLI::Arguments & args, P_INT_PTR)
 {
   if (args.GetCount() < 1)
     args.WriteUsage();
@@ -382,7 +382,7 @@ void OpalRTPConsoleEndPoint::AddCommands(PCLI & cli)
                   "[ <dir> ] <bps>",
                   "-rx. Receive bandwidth\n"
                   "-tx. Transmit bandwidth");
-  cli.SetCommand(m_endpoint.GetPrefixName() & "ui", PCREATE_NOTIFIER(CmdUserInput),
+  cli.SetCommand(m_endpoint.GetPrefixName() & "ui", PCREATE_NOTIFIER(CmdUserInputMode),
                   "Set user input mode",
                   "\"inband\" | \"rfc2833\" | \"signal\" | \"string\"");
   cli.SetCommand(m_endpoint.GetPrefixName() & "option", PCREATE_NOTIFIER(CmdStringOption),
@@ -2742,11 +2742,13 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
                     "<format> [ <name> [ <value> ] ]");
 
   m_cli->SetCommand("show calls", PCREATE_NOTIFIER(CmdShowCalls), "Show all active calls");
+  m_cli->SetCommand("send input", PCREATE_NOTIFIER(CmdSendUserInput), "Send user input indication",
+                    "[ --call ] <string>", "c-call: Token for call.");
   m_cli->SetCommand("hangup", PCREATE_NOTIFIER(CmdHangUp), "Hang up call",
                     "[ --call ]", "c-call: Token for call to hang up");
   m_cli->SetCommand("delay", PCREATE_NOTIFIER(CmdDelay),
                     "Delay for the specified number of seconds",
-                    "seconds");
+                    "<seconds>");
   m_cli->SetCommand("version", PCREATE_NOTIFIER(CmdVersion),
                     "Print application vesion number and library details.");
   m_cli->SetCommand("quit\nexit", PCREATE_NOTIFIER(CmdQuit),
@@ -3410,6 +3412,19 @@ void OpalManagerCLI::CmdShowCalls(PCLI::Arguments & args, P_INT_PTR)
       out << endl;
     }
   }
+}
+
+
+void OpalManagerCLI::CmdSendUserInput(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() == 0) {
+    args.WriteUsage();
+    return;
+  }
+
+  PSafePtr<OpalLocalConnection> connection;
+  if (GetConnectionFromArgs(args, connection))
+    connection->OnUserInputString(args[0]);
 }
 
 
