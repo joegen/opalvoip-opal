@@ -617,6 +617,22 @@ class OpalEndPoint : public PObject
       OpalMediaFormatList & mediaFormats  ///<  Media formats to use
     ) const;
 
+    /**Get transports for the media session on the connection.
+       This is primarily used by the media bypass feature controlled by the
+       OpalManager::GetMediaTransferMode() function. It allows one side of the
+       call to get the transport address of the media on the other side, so it
+       can pass it on, bypassing the local host.
+
+       @return true if a transport address is available and may be used to pass
+               on to a remote system for direct access.
+     */
+    virtual bool GetMediaTransportAddresses(
+      const OpalConnection & source,         ///< Half of call providing media transport addresses
+      const OpalConnection & destination,    ///< Other half of call needing media transport addresses
+      const OpalMediaType & mediaType,       ///< Media type for session to return information
+      OpalTransportAddressArray & transports ///<  Information on media session
+    ) const;
+
     /**Call back when opening a media stream.
        This function is called when a connection has created a new media
        stream according to the logic of its underlying protocol.

@@ -84,34 +84,12 @@ void MyManager::OnClearedCall(OpalCall & call)
 }
 
 
-bool MyLocalEndPoint::OnOutgoingCall(const OpalLocalConnection & connection)
+bool MyManager::GetMediaTransportAddresses(const OpalConnection & source,
+                                           const OpalConnection &,
+                                            const OpalMediaType & mediaType,
+                                      OpalTransportAddressArray & transports) const
 {
-  // Default action is to return true allowing the outgoing call.
-  return OpalLocalEndPoint::OnOutgoingCall(connection);
-}
-
-
-bool MyLocalEndPoint::OnIncomingCall(OpalLocalConnection & connection)
-{
-  // Default action is to return true answering the outgoing call.
-  return OpalLocalEndPoint::OnIncomingCall(connection);
-}
-
-
-OpalLocalConnection * MyLocalEndPoint::CreateConnection(OpalCall & call,
-                                                        void * userData,
-                                                        unsigned options,
-                                                        OpalConnection::StringOptions * stringOptions)
-{
-  return new MyLocalConnection(call, *this, userData, options, stringOptions);
-}
-
-
-bool MyLocalConnection::GetMediaTransportAddresses(OpalConnection & connection,
-                                              const OpalMediaType & mediaType,
-                                        OpalTransportAddressArray & transports) const
-{
-  dynamic_cast<MyManager &>(GetEndPoint().GetManager()).LockedOutput() << connection.GetToken() << ' ' << mediaType << ::flush;
+  dynamic_cast<MyManager &>(source.GetEndPoint().GetManager()).LockedOutput() << source.GetToken() << ' ' << mediaType << ::flush;
   while (cin.good()) {
     OpalTransportAddress address;
     cin >> address;

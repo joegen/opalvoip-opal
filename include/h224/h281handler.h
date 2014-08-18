@@ -157,6 +157,13 @@ class OpalH281Client : public OpalH224Client
       */
     void SetCapabilityChangedNotifier(const PNotifier & notifier);
 
+    /**Set notifier for when remote system sends action to local side.
+       The notifier PINT_PTR parameter is actually a pointer to an array of
+       integers, PVideoControlInfo::NumTypes long, with -1, 0 or 1 in them.
+       A NULL pointer indicates that the action has stopped for all types.
+      */
+    void SetOnActionNotifier(const PNotifier & notifier);
+
     struct Capability
     {
       Capability();
@@ -203,6 +210,7 @@ class OpalH281Client : public OpalH224Client
     PMutex m_mutex;
 
     PNotifier      m_capabilityChanged;
+    PNotifier      m_onAction;
 
     VideoSourceIds m_localSourceId;
     Capability     m_localCapability[NumVideoSourceIds];

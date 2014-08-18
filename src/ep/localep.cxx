@@ -285,6 +285,8 @@ OpalLocalConnection::OpalLocalConnection(OpalCall & call,
 
 #if OPAL_HAS_H281
   m_farEndCameraControl = new OpalFarEndCameraControl;
+  m_farEndCameraControl->SetCapabilityChangedNotifier(ep.GetFarEndCameraCapabilityChangedNotifier());
+  m_farEndCameraControl->SetOnActionNotifier(ep.GetFarEndCameraActionNotifier());
   m_h224Handler->AddClient(*m_farEndCameraControl);
 #endif
 
@@ -643,6 +645,12 @@ bool OpalLocalConnection::FarEndCameraControl(PVideoControlInfo::Types what, int
 void OpalLocalConnection::SetFarEndCameraCapabilityChangedNotifier(const PNotifier & notifier)
 {
   m_farEndCameraControl->SetCapabilityChangedNotifier(notifier);
+}
+
+
+void OpalLocalConnection::SetFarEndCameraActionNotifier(const PNotifier & notifier)
+{
+  m_farEndCameraControl->SetOnActionNotifier(notifier);
 }
 #endif // OPAL_HAS_H281
 

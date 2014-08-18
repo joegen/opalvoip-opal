@@ -414,6 +414,20 @@ class OpalLocalEndPoint : public OpalEndPoint
        If system will send music on hold or similar, then this should be set to false.
       */
     void SetPauseTransmitMediaOnHold(bool pause) { m_pauseTransmitMediaOnHold = pause; }
+
+#if OPAL_HAS_H281
+    /// Set a callback for when the far end camera control capabilities change.
+    void SetFarEndCameraCapabilityChangedNotifier(const PNotifier & notifier) { m_farEndCameraCapabilityChangedNotifier = notifier; }
+
+    /// Get a callback for when the far end camera control capabilities change.
+    const PNotifier & GetFarEndCameraCapabilityChangedNotifier() const { return m_farEndCameraCapabilityChangedNotifier; }
+
+    /// Set a callback for when a far end camera control action comes from remote.
+    void SetFarEndCameraActionNotifier(const PNotifier & notifier) { m_farEndCameraActionNotifier = notifier; }
+
+    /// Get a callback for when a far end camera control action comes from remote.
+    const PNotifier & GetFarEndCameraActionNotifier() const { return m_farEndCameraActionNotifier; }
+#endif // OPAL_HAS_H281
   //@}
 
   protected:
@@ -425,6 +439,11 @@ class OpalLocalEndPoint : public OpalEndPoint
 
     Synchronicity m_defaultAudioSynchronicity;
     Synchronicity m_defaultVideoSourceSynchronicity;
+
+#if OPAL_HAS_H281
+    PNotifier m_farEndCameraCapabilityChangedNotifier;
+    PNotifier m_farEndCameraActionNotifier;
+#endif // OPAL_HAS_H281
 
   private:
     P_REMOVE_VIRTUAL(OpalLocalConnection *, CreateConnection(OpalCall &, void *), 0);
@@ -786,6 +805,9 @@ class OpalLocalConnection : public OpalConnection
 
     /// Set a callback for when the far end camera control capabilities change.
     void SetFarEndCameraCapabilityChangedNotifier(const PNotifier & notifier);
+
+    /// Set a callback for when a far end camera control action comes from remote.
+    void SetFarEndCameraActionNotifier(const PNotifier & notifier);
 #endif // OPAL_HAS_H281
   //@}
 

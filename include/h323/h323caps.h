@@ -2487,7 +2487,11 @@ class H323SimultaneousCapabilities : public H323CapabilitiesListArray
 {
   PCLASSINFO(H323SimultaneousCapabilities, H323CapabilitiesListArray);
   public:
+    H323SimultaneousCapabilities() : m_capabilityDescriptorNumber(0) { }
+
     PBoolean SetSize(PINDEX newSize);
+
+    unsigned m_capabilityDescriptorNumber;
 };
 
 
@@ -2552,11 +2556,11 @@ class H323Capabilities : public PObject
   //@{
     /**Get the number of capabilities in the set.
       */
-    PINDEX GetSize() const { return table.GetSize(); }
+    PINDEX GetSize() const { return m_table.GetSize(); }
 
     /**Get the capability at the specified index.
       */
-    H323Capability & operator[](PINDEX i) const { return table[i]; }
+    H323Capability & operator[](PINDEX i) const { return m_table[i]; }
 
     /**Set the capability descriptor lists. This is three tier set of
        codecs. The top most level is a list of particular capabilities. Each
@@ -2812,12 +2816,12 @@ class H323Capabilities : public PObject
 
     const PStringSet & GetMediaPacketizations() const { return m_mediaPacketizations; }
 
-    const H323CapabilitiesSet & GetSet() const { return set; }
+    const H323CapabilitiesSet & GetSet() const { return m_set; }
   //@}
 
   protected:
-    H323CapabilitiesList table;
-    H323CapabilitiesSet  set;
+    H323CapabilitiesList m_table;
+    H323CapabilitiesSet  m_set;
     PStringSet           m_mediaPacketizations;
 };
 

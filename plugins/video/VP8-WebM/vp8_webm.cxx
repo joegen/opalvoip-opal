@@ -563,7 +563,7 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
 
       PluginCodec_RTP dstRTP(toPtr, toLen);
       Packetise(dstRTP);
-      toLen = dstRTP.GetPacketSize();
+      toLen = (unsigned)dstRTP.GetPacketSize();
 
       if (m_offset >= m_packet->data.frame.sz) {
         flags |= PluginCodec_ReturnCoderLastFrame;
@@ -823,7 +823,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
         if (!srcRTP.GetMarker() || m_fullFrame.empty())
           return true;
 
-        vpx_codec_err_t err = vpx_codec_decode(&m_codec, &m_fullFrame[0], m_fullFrame.size(), NULL, 0);
+        vpx_codec_err_t err = vpx_codec_decode(&m_codec, &m_fullFrame[0], (unsigned)m_fullFrame.size(), NULL, 0);
         switch (err) {
           case VPX_CODEC_OK :
             m_consecutiveErrors = 0;
@@ -1111,7 +1111,7 @@ class VP8DecoderOM : public VP8Decoder
         }
       }
 
-      return rtp.GetPacketSize();
+      return (unsigned)rtp.GetPacketSize();
     }
 
 

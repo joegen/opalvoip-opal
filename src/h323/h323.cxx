@@ -3767,8 +3767,11 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
 
     PINDEX previousCaps = remoteCapabilities.GetSize();
 
-    if (!remoteCapabilities.Merge(remoteCaps))
+    if (!remoteCapabilities.Merge(remoteCaps)) {
+      PTRACE(3, "H323\tReceived capability set, rejected as empty merge result");
       return false;
+    }
+    PTRACE(3, "H323\tReceived capability set accepted, merge result:\n" << remoteCapabilities);
 
     if (m_holdFromRemote == eOnHoldFromRemote) {
       PTRACE(3, "H323\tReceived CapabilitySet while paused, re-starting transmitters.");
@@ -3785,9 +3788,11 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
          time entry. */
       m_phaseTime[ForwardingPhase].SetCurrentTime();
     }
-    else if (connectionState > HasExecutedSignalConnect && previousCaps > 0 && remoteCapabilities.GetSize() > previousCaps) {
-      PTRACE(3, "H323\tReceived CapabilitySet with more media types.");
-      OnSelectLogicalChannels();
+    else if (connectionState > HasExecutedSignalConnect && previousCaps > 0) {
+      if (remoteCapabilities.GetSize() > previousCaps) {
+        PTRACE(3, "H323\tReceived CapabilitySet with more media types.");
+        OnSelectLogicalChannels();
+      }
     }
     else {
       if (localCapabilities.GetSize() > 0)
@@ -3797,6 +3802,18 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
     // Adjust the RF2388 transitter to remotes capabilities.
     H323Capability * capability = remoteCapabilities.FindCapability(H323_UserInputCapability::GetSubTypeName(H323_UserInputCapability::SignalToneRFC2833));
     m_rfc2833Handler->SetTxMediaFormat(capability != NULL ? capability->GetMediaFormat() : OpalMediaFormat());
+
+    // Adjust any media transmitters
+    OpalMediaFormatList remoteFormats = remoteCapabilities.GetMediaFormats();
+    for (OpalMediaStreamPtr stream = mediaStreams; stream != NULL; ++stream) {
+      if (stream->IsSink()) {
+        OpalMediaFormatList::const_iterator format = remoteFormats.FindFormat(stream->GetMediaFormat());
+        if (format != remoteFormats.end()) {
+          PTRACE(4, "H323\tReceived new CapabilitySet and updating media stream " << *stream);
+          stream->UpdateMediaFormat(*format, true);
+        }
+      }
+    }
   }
 
   return true;
