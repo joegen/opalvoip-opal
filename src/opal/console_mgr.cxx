@@ -151,7 +151,7 @@ static bool GetVideoFormatFromArgs(PCLI::Arguments & args, OpalMediaFormat & med
         mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(), height);
     }
 
-    switch (GetValueFromArgs(args, "max-bit-rate", bitRate, AbsoluteMinBitRate, mediaFormat.GetMaxBandwidth(), errorContext)) {
+    switch (GetValueFromArgs(args, "max-bit-rate", bitRate, AbsoluteMinBitRate, AbsoluteMaxBitRate, errorContext)) {
       case -1:
         return false;
       case 1:
