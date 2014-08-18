@@ -1136,6 +1136,16 @@ OpalManager::MediaTransferMode OpalManager::GetMediaTransferMode(const OpalConne
 }
 
 
+bool OpalManager::GetMediaTransportAddresses(const OpalConnection & PTRACE_PARAM(source),
+                                             const OpalConnection & PTRACE_PARAM(destination),
+                                              const OpalMediaType & PTRACE_PARAM(mediaType),
+                                        OpalTransportAddressArray &) const
+{
+  PTRACE(3, "GetMediaTransportAddresses of " << mediaType << " could not find transports for " << destination << " on " << source);
+  return false;
+}
+
+
 PBoolean OpalManager::OnOpenMediaStream(OpalConnection & PTRACE_PARAM(connection),
                                         OpalMediaStream & PTRACE_PARAM(stream))
 {

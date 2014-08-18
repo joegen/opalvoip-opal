@@ -151,7 +151,7 @@ static bool GetVideoFormatFromArgs(PCLI::Arguments & args, OpalMediaFormat & med
         mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(), height);
     }
 
-    switch (GetValueFromArgs(args, "max-bit-rate", bitRate, AbsoluteMinBitRate, mediaFormat.GetMaxBandwidth(), errorContext)) {
+    switch (GetValueFromArgs(args, "max-bit-rate", bitRate, AbsoluteMinBitRate, AbsoluteMaxBitRate, errorContext)) {
       case -1:
         return false;
       case 1:
@@ -320,7 +320,9 @@ void OpalRTPConsoleEndPoint::CmdCryptoSuites(PCLI::Arguments & args, P_INT_PTR)
 void OpalRTPConsoleEndPoint::CmdBandwidth(PCLI::Arguments & args, P_INT_PTR)
 {
   if (args.GetCount() < 1)
-    args.WriteUsage();
+    args.GetContext() << "Bandwidth:"
+                         " rx=" << m_endpoint.GetInitialBandwidth(OpalBandwidth::Rx) <<
+                         " tx=" << m_endpoint.GetInitialBandwidth(OpalBandwidth::Tx) << endl;
   else {
     OpalBandwidth bandwidth(args[0]);
     if (bandwidth == 0)
@@ -339,7 +341,7 @@ void OpalRTPConsoleEndPoint::CmdBandwidth(PCLI::Arguments & args, P_INT_PTR)
 }
 
 
-void OpalRTPConsoleEndPoint::CmdUserInput(PCLI::Arguments & args, P_INT_PTR)
+void OpalRTPConsoleEndPoint::CmdUserInputMode(PCLI::Arguments & args, P_INT_PTR)
 {
   if (args.GetCount() < 1)
     args.WriteUsage();
@@ -382,7 +384,7 @@ void OpalRTPConsoleEndPoint::AddCommands(PCLI & cli)
                   "[ <dir> ] <bps>",
                   "-rx. Receive bandwidth\n"
                   "-tx. Transmit bandwidth");
-  cli.SetCommand(m_endpoint.GetPrefixName() & "ui", PCREATE_NOTIFIER(CmdUserInput),
+  cli.SetCommand(m_endpoint.GetPrefixName() & "ui", PCREATE_NOTIFIER(CmdUserInputMode),
                   "Set user input mode",
                   "\"inband\" | \"rfc2833\" | \"signal\" | \"string\"");
   cli.SetCommand(m_endpoint.GetPrefixName() & "option", PCREATE_NOTIFIER(CmdStringOption),
@@ -1449,6 +1451,53 @@ void OpalConsolePCSSEndPoint::CmdCloseVideoStream(PCLI::Arguments & args, P_INT_
 }
 #endif // OPAL_VIDEO
 
+#if OPAL_HAS_H281
+struct OpalCmdFarEndCameraControlMode
+{
+  P_DECLARE_STREAMABLE_ENUM(Cmd, external, device);
+};
+
+void OpalConsolePCSSEndPoint::CmdExternalCameraControl(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() == 0) {
+    args.GetContext() << "Far End Camera Control mode: "
+                      << (GetFarEndCameraActionNotifier().IsNULL() ? OpalCmdFarEndCameraControlMode::device : OpalCmdFarEndCameraControlMode::external)
+                      << endl;
+    return;
+  }
+
+  switch (OpalCmdFarEndCameraControlMode::CmdFromString(args[0])) {
+    case OpalCmdFarEndCameraControlMode::external :
+      SetFarEndCameraActionNotifier(PCREATE_NOTIFIER(ExternalCameraControlNotification));
+      break;
+
+    case OpalCmdFarEndCameraControlMode::device :
+      SetFarEndCameraActionNotifier(PNotifier());
+      break;
+
+    default :
+      args.WriteUsage();
+      return;
+  }
+}
+
+void OpalConsolePCSSEndPoint::ExternalCameraControlNotification(OpalH281Client &, P_INT_PTR param)
+{
+  PStringStream str;
+  if (param == 0)
+    str << "FECC STOPPED";
+  else {
+    const int * directions = (const int *)param;
+    str << "FECC START";
+    for (PVideoControlInfo::Types type = PVideoControlInfo::BeginTypes; type < PVideoControlInfo::EndTypes; ++type) {
+      if (directions[type] != 0)
+        str << ' ' << type << '=' << directions[type];
+    }
+  }
+  m_console.Broadcast(str);
+}
+#endif // OPAL_HAS_H281
+
 
 void OpalConsolePCSSEndPoint::AddCommands(PCLI & cli)
 {
@@ -1510,6 +1559,11 @@ void OpalConsolePCSSEndPoint::AddCommands(PCLI & cli)
                  "[ <options> ... ] [ main | presentation | speaker | sign ]",
                  "c-call:       Token for call to change\n");
 #endif // OPAL_VIDEO
+
+#if OPAL_HAS_H281
+  cli.SetCommand("pc fecc", PCREATE_NOTIFIER(CmdExternalCameraControl),
+                 "Set far end camera control mode", "{ \"device\" | \"external\" }");
+#endif
 }
 #endif // P_CLI
 
@@ -2446,6 +2500,14 @@ void OpalConsoleManager::OnFailedMediaStream(OpalConnection & connection, bool f
 }
 
 
+void OpalConsoleManager::OnUserInputString(OpalConnection & connection, const PString & value)
+{
+  if (connection.IsNetworkConnection())
+    Broadcast(PSTRSTRM('\n' << connection.GetCall().GetToken() << ": received user input \"" << value << '"'));
+  OpalManager::OnUserInputString(connection, value);
+}
+
+
 void OpalConsoleManager::OnClearedCall(OpalCall & call)
 {
   OpalManager::OnClearedCall(call);
@@ -2732,11 +2794,13 @@ bool OpalManagerCLI::Initialise(PArgList & args, bool verbose, const PString & d
                     "<format> [ <name> [ <value> ] ]");
 
   m_cli->SetCommand("show calls", PCREATE_NOTIFIER(CmdShowCalls), "Show all active calls");
+  m_cli->SetCommand("send input", PCREATE_NOTIFIER(CmdSendUserInput), "Send user input indication",
+                    "[ --call ] <string>", "c-call: Token for call.");
   m_cli->SetCommand("hangup", PCREATE_NOTIFIER(CmdHangUp), "Hang up call",
                     "[ --call ]", "c-call: Token for call to hang up");
   m_cli->SetCommand("delay", PCREATE_NOTIFIER(CmdDelay),
                     "Delay for the specified number of seconds",
-                    "seconds");
+                    "<seconds>");
   m_cli->SetCommand("version", PCREATE_NOTIFIER(CmdVersion),
                     "Print application vesion number and library details.");
   m_cli->SetCommand("quit\nexit", PCREATE_NOTIFIER(CmdQuit),
@@ -3400,6 +3464,19 @@ void OpalManagerCLI::CmdShowCalls(PCLI::Arguments & args, P_INT_PTR)
       out << endl;
     }
   }
+}
+
+
+void OpalManagerCLI::CmdSendUserInput(PCLI::Arguments & args, P_INT_PTR)
+{
+  if (args.GetCount() == 0) {
+    args.WriteUsage();
+    return;
+  }
+
+  PSafePtr<OpalLocalConnection> connection;
+  if (GetConnectionFromArgs(args, connection))
+    connection->OnUserInputString(args[0]);
 }
 
 

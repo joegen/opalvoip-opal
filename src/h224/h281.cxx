@@ -601,16 +601,17 @@ void OpalH281Client::OnReceivedMessage(const H224_Frame & h224Frame)
 {
   const H281_Frame & message = (const H281_Frame &)h224Frame;
   H281_Frame::RequestType requestType = message.GetRequestType();
+  PTRACE(4, "Received message: type=" << requestType);
 
   switch (requestType) {
     case H281_Frame::StartAction :
-      if (m_receiveTimer.IsRunning())
-        OnStopAction(); // an action is already running and thus is stopped
-
       int directions[PVideoControlInfo::NumTypes];
       for (PVideoControlInfo::Types type = PVideoControlInfo::BeginTypes; type < PVideoControlInfo::EndTypes; ++type)
         directions[type] = message.GetDirection(type);
-      OnStartAction(directions);
+      if (m_onAction.IsNULL())
+        OnStartAction(directions);
+      else
+        m_onAction(*this, (P_INT_PTR)directions);
       // Do continue action case, restart timer;
 
     case H281_Frame::ContinueAction :
@@ -618,7 +619,11 @@ void OpalH281Client::OnReceivedMessage(const H224_Frame & h224Frame)
       break;
 
     case H281_Frame::StopAction :
-      OnStopAction();
+      m_receiveTimer.Stop();
+      if (m_onAction.IsNULL())
+        OnStopAction();
+      else
+        m_onAction(*this, 0);
       break;
 
     case H281_Frame::SelectVideoSource :
@@ -652,6 +657,12 @@ void OpalH281Client::SetCapabilityChangedNotifier(const PNotifier & notifier)
 {
   m_capabilityChanged = notifier;
   OnRemoteCapabilitiesChanged();
+}
+
+
+void OpalH281Client::SetOnActionNotifier(const PNotifier & notifier)
+{
+  m_onAction = notifier;
 }
 
 
@@ -691,8 +702,13 @@ void OpalH281Client::StopAction(PTimer &, P_INT_PTR)
 
 void OpalH281Client::ReceiveActionTimeout(PTimer &, P_INT_PTR)
 {
+  PTRACE(4, "Action timeout");
+
   // Never got explicit stop action, so timeout does it
-  OnStopAction();
+  if (m_onAction.IsNULL())
+    OnStopAction();
+  else
+    m_onAction(*this, 0);
 }
 
 
