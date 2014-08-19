@@ -82,18 +82,6 @@
     <CharacterSet>MultiByte</CharacterSet>
     <PlatformToolset>Windows7.1SDK</PlatformToolset>
   </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <AndroidAPILevel>android-14</AndroidAPILevel>
-  </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <AndroidAPILevel>android-14</AndroidAPILevel>
-  </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|Android'">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <AndroidAPILevel>android-14</AndroidAPILevel>
-  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -170,27 +158,6 @@
     <IncludePath>$(ProjectDir)..\..\Lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\Lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)..\..\..\ptlib\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">
-    <OutDir>$(ProjectDir)..\..\Lib\$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)..\..\Lib\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\include;$(AndroidIncludeDir);$(AndroidStlIncludeDir);</IncludePath>
-    <LibraryPath>$(OutDir);$(ProjectDir)..\..\..\ptlib\Lib\Android;$(AndroidLibDir);$(AndroidStlLibPath);</LibraryPath>
-    <TargetName>opald</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">
-    <OutDir>$(ProjectDir)..\..\Lib\$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)..\..\Lib\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\include;$(AndroidIncludeDir);$(AndroidStlIncludeDir);</IncludePath>
-    <LibraryPath>$(OutDir);$(ProjectDir)..\..\..\ptlib\Lib\Android;$(AndroidLibDir);$(AndroidStlLibPath);</LibraryPath>
-    <TargetName>opaln</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Android'">
-    <OutDir>$(ProjectDir)..\..\Lib\$(Platform)\</OutDir>
-    <IntDir>$(ProjectDir)..\..\Lib\$(Platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\include;$(AndroidIncludeDir);$(AndroidStlIncludeDir);</IncludePath>
-    <LibraryPath>$(OutDir);$(ProjectDir)..\..\..\ptlib\Lib\Android;$(AndroidLibDir);$(AndroidStlLibPath);</LibraryPath>
-    <TargetName>opal</TargetName>
-  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -215,6 +182,10 @@
       <LinkLibraryDependencies>
       </LinkLibraryDependencies>
     </ProjectReference>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;PTRACING=2;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0c09</Culture>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -240,6 +211,10 @@
       <LinkLibraryDependencies>
       </LinkLibraryDependencies>
     </ProjectReference>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;PTRACING=2;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0c09</Culture>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -269,6 +244,10 @@
       <LinkLibraryDependencies>
       </LinkLibraryDependencies>
     </ProjectReference>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;PTRACING=2;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0c09</Culture>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -298,6 +277,10 @@
       <LinkLibraryDependencies>
       </LinkLibraryDependencies>
     </ProjectReference>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;PTRACING=2;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0c09</Culture>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">
     <ClCompile>
@@ -327,6 +310,10 @@
       <LinkLibraryDependencies>
       </LinkLibraryDependencies>
     </ProjectReference>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0c09</Culture>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">
     <ClCompile>
@@ -356,21 +343,10 @@
       <LinkLibraryDependencies>
       </LinkLibraryDependencies>
     </ProjectReference>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">
-    <Link>
-      <AndroidSystemLibs>dl;c;m;log;gcc</AndroidSystemLibs>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">
-    <Link>
-      <AndroidSystemLibs>dl;c;m;log;gcc</AndroidSystemLibs>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Android'">
-    <Link>
-      <AndroidSystemLibs>dl;c;m;log;gcc</AndroidSystemLibs>
-    </Link>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0c09</Culture>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\ptlib\src\ptlib\msos\PTLib_2010.vcxproj">
@@ -386,18 +362,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="dllmain.cxx">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Android'">true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="dllmain.cxx" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="libver.rc">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Android'">true</ExcludedFromBuild>
-    </ResourceCompile>
+    <ResourceCompile Include="libver.rc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\lib\Win32\Debug\opald.def">
