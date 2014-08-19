@@ -136,7 +136,7 @@ static bool AllocateAlignedMemory(void * & baseMemory, uint8_t * & alignedMemory
 
 ///////////////////////////////////////////////////////////////////////////////
 
-FFMPEGCodec::FFMPEGCodec(const char * prefix, EncodedFrame * fullFrame)
+FFMPEGCodec::FFMPEGCodec(const char * prefix, OpalPluginFrame * fullFrame)
   : m_prefix(prefix)
   , m_codec(NULL)
   , m_context(NULL)
@@ -635,69 +635,6 @@ bool FFMPEGCodec::DecodeVideoFrame(const uint8_t * frame, size_t length, unsigne
   }
 
   return true;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-FFMPEGCodec::EncodedFrame::EncodedFrame()
-  : m_length(0)
-  , m_maxSize(0)
-  , m_memory(NULL)
-  , m_buffer(NULL)
-  , m_maxPayloadSize(PluginCodec_RTP_MaxPayloadSize)
-{
-}
-
-
-FFMPEGCodec::EncodedFrame::~EncodedFrame()
-{
-  if (m_memory != NULL)
-    free(m_memory);
-}
-
-
-void FFMPEGCodec::EncodedFrame::SetMaxPayloadSize(size_t size)
-{
-  m_maxPayloadSize = size;
-}
-
-
-bool FFMPEGCodec::EncodedFrame::SetResolution(unsigned width, unsigned height)
-{
-  return AllocateAlignedMemory(m_memory, m_buffer, m_maxSize, width*height*2);
-}
-
-
-bool FFMPEGCodec::EncodedFrame::Append(const uint8_t * data, size_t len)
-{
-  size_t newSize = m_length + len;
-  if (newSize > m_maxSize) {
-    if ((m_buffer = (uint8_t *)realloc(m_buffer, newSize)) == NULL) {
-      PTRACE(1, "FFMPEG", "Could not (re)allocate " << newSize << " bytes of memory.");
-      return false;
-    }
-    m_maxSize = newSize;
-  }
-
-  memcpy(m_buffer+m_length, data, len);
-  m_length += len;
-  return true;
-}
-
-
-bool FFMPEGCodec::EncodedFrame::Reset(size_t len)
-{
-  if (len > m_maxSize)
-    return false;
-
-  m_length = len;
-  return true;
-}
-
-
-void FFMPEGCodec::EncodedFrame::RTPCallBack(void *, int, int)
-{
 }
 
 

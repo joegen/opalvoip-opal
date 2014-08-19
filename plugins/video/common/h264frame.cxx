@@ -31,10 +31,6 @@
 
 #include "h264frame.h"
 
-#include <codec/opalplugin.hpp>
-#include <stdlib.h>
-#include <memory.h>
-
 
 H264Frame::H264Frame()
   : m_profile(0)
@@ -63,7 +59,7 @@ bool H264Frame::Reset(size_t len)
 
   m_currentFU = 0;
 
-  return FFMPEGCodec::EncodedFrame::Reset(len);
+  return OpalPluginFrame::Reset(len);
 }
 
 
@@ -73,14 +69,14 @@ void H264Frame::Allocate(uint32_t numberOfNALs)
 }
 
 
-bool H264Frame::AddNALU(uint8_t type, uint32_t length, const uint8_t * payload)
+bool H264Frame::AddNALU(uint8_t type, size_t length, const uint8_t * payload)
 {
   if (m_numberOfNALsInFrame + 1 >= m_NALs.size())
     m_NALs.resize(m_numberOfNALsInFrame + 1);
 
   m_NALs[m_numberOfNALsInFrame].type = type;
-  m_NALs[m_numberOfNALsInFrame].length = length;
-  m_NALs[m_numberOfNALsInFrame].offset = m_length;
+  m_NALs[m_numberOfNALsInFrame].length = (uint32_t)length;
+  m_NALs[m_numberOfNALsInFrame].offset = (uint32_t)m_length;
   ++m_numberOfNALsInFrame;
 
   if (payload != NULL) {
@@ -225,7 +221,7 @@ bool H264Frame::EncapsulateFU(PluginCodec_RTP & frame, unsigned int & flags)
     }
     else
     {
-      curFULen = m_maxPayloadSize - 2;
+      curFULen = (uint32_t)(m_maxPayloadSize - 2);
     }
 
     frame.SetPayloadSize(curFULen + 2);
@@ -312,10 +308,10 @@ bool H264Frame::IsIntraFrame() const
 }
 
 
-bool H264Frame::DeencapsulateSTAP(const uint8_t *payloadPtr, uint32_t payloadSize)
+bool H264Frame::DeencapsulateSTAP(const uint8_t *payloadPtr, size_t payloadSize)
 {
   const uint8_t* curSTAP = payloadPtr + 1;
-  uint32_t curSTAPLen = payloadSize - 1; 
+  size_t curSTAPLen = payloadSize - 1; 
 
   PTRACE(6, GetName(), "Deencapsulating a STAP of " << curSTAPLen << " bytes");
   while (curSTAPLen > 0)
@@ -347,10 +343,10 @@ bool H264Frame::DeencapsulateSTAP(const uint8_t *payloadPtr, uint32_t payloadSiz
 }
 
 
-bool H264Frame::DeencapsulateFU(const uint8_t *payloadPtr, uint32_t payloadSize)
+bool H264Frame::DeencapsulateFU(const uint8_t *payloadPtr, size_t payloadSize)
 {
   const uint8_t* curFUPtr = payloadPtr;
-  uint32_t curFULen = payloadSize; 
+  size_t curFULen = payloadSize; 
   uint8_t header;
 
   if ((curFUPtr[1] & 0x80) && !(curFUPtr[1] & 0x40))
@@ -427,7 +423,7 @@ void H264Frame::SetSPS(const uint8_t * payload)
 }
 
 
-bool H264Frame::AddDataToEncodedFrame(const uint8_t *data, uint32_t payloadSize, uint8_t header, bool addHeader)
+bool H264Frame::AddDataToEncodedFrame(const uint8_t *data, size_t payloadSize, uint8_t header, bool addHeader)
 {
   if (addHeader) 
   {
@@ -444,7 +440,7 @@ bool H264Frame::AddDataToEncodedFrame(const uint8_t *data, uint32_t payloadSize,
   }
   else {
     PTRACE(6, GetName(), "Adding a NAL unit of " << payloadSize << " bytes to buffer");
-    m_NALs[m_numberOfNALsInFrame - 1].length += payloadSize;
+    m_NALs[m_numberOfNALsInFrame - 1].length += (uint32_t)payloadSize;
   }
 
   PTRACE(6, GetName(), "Reserved memory for  " << m_NALs.size() <<" NALs, Inframe/current: "<< m_numberOfNALsInFrame <<" Offset: "
