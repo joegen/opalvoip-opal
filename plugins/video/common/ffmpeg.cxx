@@ -97,7 +97,7 @@ static void logCallbackFFMPEG(void * avcl, int severity, const char* fmt , va_li
 
 ///////////////////////////////////////////////////////////////////////////////
 
-FFMPEGCodec::FFMPEGCodec(const char * prefix, EncodedFrame * fullFrame)
+FFMPEGCodec::FFMPEGCodec(const char * prefix, OpalPluginFrame * fullFrame)
   : m_prefix(prefix)
   , m_codec(NULL)
   , m_context(NULL)
@@ -587,70 +587,6 @@ bool FFMPEGCodec::DecodeVideoFrame(const uint8_t * frame, size_t length, unsigne
   }
 
   return true;
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-FFMPEGCodec::EncodedFrame::EncodedFrame()
-  : m_length(0)
-  , m_maxSize(0)
-  , m_buffer(NULL)
-  , m_maxPayloadSize(PluginCodec_RTP_MaxPayloadSize)
-{
-}
-
-
-FFMPEGCodec::EncodedFrame::~EncodedFrame()
-{
-  if (m_buffer != NULL)
-    free(m_buffer);
-}
-
-
-bool FFMPEGCodec::EncodedFrame::SetResolution(unsigned width, unsigned height)
-{
-  return SetMaxSize(width*height*2);
-}
-
-
-bool FFMPEGCodec::EncodedFrame::SetMaxSize(size_t newSize)
-{
-  if (newSize <= m_maxSize)
-    return true;
-
-  m_buffer = (uint8_t *)realloc(m_buffer, newSize);
-  if (m_buffer == NULL)
-    return false;
-
-  m_maxSize = newSize;
-  return true;
-}
-
-
-bool FFMPEGCodec::EncodedFrame::Append(const uint8_t * data, size_t len)
-{
-  if (!SetMaxSize(m_length + len))
-    return false;
-
-  memcpy(m_buffer+m_length, data, len);
-  m_length += len;
-  return true;
-}
-
-
-bool FFMPEGCodec::EncodedFrame::Reset(size_t len)
-{
-  if (len > m_maxSize)
-    return false;
-
-  m_length = len;
-  return true;
-}
-
-
-void FFMPEGCodec::EncodedFrame::RTPCallBack(void *, int, int)
-{
 }
 
 

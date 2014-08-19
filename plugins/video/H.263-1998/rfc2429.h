@@ -63,7 +63,7 @@ private:
 };
 
 
-class RFC2429Frame : public FFMPEGCodec::EncodedFrame
+class RFC2429Frame : public OpalPluginFrame
 {
 public:
   RFC2429Frame();
