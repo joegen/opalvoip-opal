@@ -267,7 +267,7 @@ if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
       [X264],
       [x264],
       [VideoLan x264 H.264 video codec],
-      [$PLUGIN_SRC_DIR/video/H.264],
+      [$PLUGIN_SRC_DIR/video/x264],
       [x264 >= 0.102],
       [],
       [-lx264],
@@ -302,6 +302,21 @@ else
    HAVE_MPEG4="no (missing FFMPEG)"
 fi
 
+
+OPAL_SYSTEM_PLUGIN(
+   [OPENH264],
+   [],
+   [Cisco Open264 H.264 video codec],
+   [$PLUGIN_SRC_DIR/video/openH264],
+   [],
+   [],
+   [-lopen264],
+   [#include "$PLUGIN_SRC_DIR/video/openH264/svc/codec_api.h]
+   [
+      ISVCEncoder * encoder;
+      WelsCreateSVCEncoder(&encoder);
+   ]
+ )
 
 OPAL_SYSTEM_PLUGIN(
    [VP8],
@@ -426,7 +441,8 @@ echo ""
 
 echo "                           H.261  :  ${HAVE_H261} (internal)"
 echo "                     H.263/H.263+ :  ${HAVE_H263} (ffmpeg)"
-echo "                           H.264  :  ${HAVE_X264}"
+echo "                   VideoLAN x264  :  ${HAVE_X264}"
+echo "                  Cisco OpenH264  :  ${HAVE_OPEN264}"
 echo "                             VP8  :  ${HAVE_VP8}"
 echo "                          THEORA  :  ${HAVE_THEORA}"
 echo "                    MPEG4 Part 2  :  ${HAVE_MPEG4}"
