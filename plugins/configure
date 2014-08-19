@@ -819,9 +819,9 @@ enable_mpeg4
 enable_x264
 with_x264_dir
 enable_x264_licensed
-enable_
-enable_local
-with__dir
+enable_openh264
+enable_localopenh264
+with_openh264_dir
 enable_VP8
 with_VP8_dir
 enable_theora
@@ -1519,8 +1519,8 @@ Optional Features:
   --disable-mpeg4         disable MPEG4 part 2 video codec
   --disable-x264          disable VideoLan x264 H.264 video codec
   --enable-x264-licensed  enable commercially licensed x264
-  --disable-              disable Cisco Open264 H.264 video codec
-  --enable-local          force use internal source for Cisco Open264 H.264
+  --disable-openh264      disable Cisco Open264 H.264 video codec
+  --enable-localopenh264  force use internal source for Cisco Open264 H.264
                           video codec
   --disable-VP8           disable VP8 (WebM) video codec
   --disable-theora        disable Theora video codec
@@ -1542,7 +1542,8 @@ Optional Packages:
   --with-libavutil-dir=<dir>
                           location for FFMPEG libavutil library
   --with-x264-dir=<dir>   location for VideoLan x264 H.264 video codec
-  --with--dir=<dir>       location for Cisco Open264 H.264 video codec
+  --with-openh264-dir=<dir>
+                          location for Cisco Open264 H.264 video codec
   --with-VP8-dir=<dir>    location for VP8 (WebM) video codec
   --with-theora-dir=<dir> location for Theora video codec
   --with-vpb-dir=<dir>    location for Voicetronics VPB telephony card
@@ -8993,9 +8994,9 @@ fi
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking Cisco Open264 H.264 video codec" >&5
 $as_echo_n "checking Cisco Open264 H.264 video codec... " >&6; }
 
-   # Check whether --enable- was given.
-if test "${enable_+set}" = set; then :
-  enableval=$enable_;
+   # Check whether --enable-openh264 was given.
+if test "${enable_openh264+set}" = set; then :
+  enableval=$enable_openh264;
          if test "x$enableval" = "xno"; then
             { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
@@ -9039,14 +9040,14 @@ else
 fi
 
 
-   enable_="$enableval"
+   enable_openh264="$enableval"
 
 
    if test "x$usable" = "xyes" ; then
 
-         # Check whether --enable-local was given.
-if test "${enable_local+set}" = set; then :
-  enableval=$enable_local;
+         # Check whether --enable-localopenh264 was given.
+if test "${enable_localopenh264+set}" = set; then :
+  enableval=$enable_localopenh264;
                if test "x$enableval" = "xyes" ; then
                   OPENH264_SYSTEM="no"
                   { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for Cisco Open264 H.264 video codec" >&5
@@ -9062,9 +9063,9 @@ fi
 
       if test "x$OPENH264_SYSTEM" = "xyes" ; then
 
-# Check whether --with--dir was given.
-if test "${with__dir+set}" = set; then :
-  withval=$with__dir;
+# Check whether --with-openh264-dir was given.
+if test "${with_openh264_dir+set}" = set; then :
+  withval=$with_openh264_dir;
                   { $as_echo "$as_me:${as_lineno-$LINENO}: Using directory $withval for Cisco Open264 H.264 video codec" >&5
 $as_echo "$as_me: Using directory $withval for Cisco Open264 H.264 video codec" >&6;}
                   OPENH264_CFLAGS="-I$withval/include "
