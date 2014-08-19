@@ -638,6 +638,10 @@ VP8_USABLE
 VP8_LIBS
 VP8_CFLAGS
 VP8_SYSTEM
+OPENH264_USABLE
+OPENH264_LIBS
+OPENH264_CFLAGS
+OPENH264_SYSTEM
 X264_USABLE
 X264_LIBS
 X264_CFLAGS
@@ -815,6 +819,9 @@ enable_mpeg4
 enable_x264
 with_x264_dir
 enable_x264_licensed
+enable_openh264
+enable_localopenh264
+with_openh264_dir
 enable_VP8
 with_VP8_dir
 enable_theora
@@ -857,6 +864,8 @@ LIBAVUTIL_CFLAGS
 LIBAVUTIL_LIBS
 X264_CFLAGS
 X264_LIBS
+OPENH264_CFLAGS
+OPENH264_LIBS
 VP8_CFLAGS
 VP8_LIBS
 THEORA_CFLAGS
@@ -1510,6 +1519,9 @@ Optional Features:
   --disable-mpeg4         disable MPEG4 part 2 video codec
   --disable-x264          disable VideoLan x264 H.264 video codec
   --enable-x264-licensed  enable commercially licensed x264
+  --disable-openh264      disable Cisco Open264 H.264 video codec
+  --enable-localopenh264  force use internal source for Cisco Open264 H.264
+                          video codec
   --disable-VP8           disable VP8 (WebM) video codec
   --disable-theora        disable Theora video codec
   --disable-vpb           disable Voicetronics VPB telephony card
@@ -1530,6 +1542,8 @@ Optional Packages:
   --with-libavutil-dir=<dir>
                           location for FFMPEG libavutil library
   --with-x264-dir=<dir>   location for VideoLan x264 H.264 video codec
+  --with-openh264-dir=<dir>
+                          location for Cisco Open264 H.264 video codec
   --with-VP8-dir=<dir>    location for VP8 (WebM) video codec
   --with-theora-dir=<dir> location for Theora video codec
   --with-vpb-dir=<dir>    location for Voicetronics VPB telephony card
@@ -1575,6 +1589,10 @@ Some influential environment variables:
               linker flags for LIBAVUTIL, overriding pkg-config
   X264_CFLAGS C compiler flags for X264, overriding pkg-config
   X264_LIBS   linker flags for X264, overriding pkg-config
+  OPENH264_CFLAGS
+              C compiler flags for OPENH264, overriding pkg-config
+  OPENH264_LIBS
+              linker flags for OPENH264, overriding pkg-config
   VP8_CFLAGS  C compiler flags for VP8, overriding pkg-config
   VP8_LIBS    linker flags for VP8, overriding pkg-config
   THEORA_CFLAGS
@@ -8688,7 +8706,7 @@ fi
 
 
 
-   if test -d "$PLUGIN_SRC_DIR/video/H.264" ; then
+   if test -d "$PLUGIN_SRC_DIR/video/x264" ; then
                   OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    X264_SYSTEM="yes"
@@ -8934,7 +8952,7 @@ fi
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$X264_SYSTEM" = "xno" ; then
          if test "x$usable" = "xyes" ; then
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/H.264"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/x264"
             HAVE_X264="yes (internal)"
          else
             HAVE_X264="no (internal library incompatible with build environment)"
@@ -8943,7 +8961,7 @@ fi
          if test "x$usable" = "xyes" ; then
 
 
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/H.264"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/x264"
 
             if test "x$X264_SYSTEM" = "xyes" ; then
                HAVE_X264="yes (system)"
@@ -8955,7 +8973,7 @@ fi
          fi
       fi
    else
-      HAVE_X264="no (missing directory $PLUGIN_SRC_DIR/video/H.264)"
+      HAVE_X264="no (missing directory $PLUGIN_SRC_DIR/video/x264)"
    fi
 
 else
@@ -8963,6 +8981,278 @@ else
    HAVE_H264="no (missing FFMPEG)"
    HAVE_MPEG4="no (missing FFMPEG)"
 fi
+
+
+
+   if test -d "$PLUGIN_SRC_DIR/video/openh264" ; then
+                  OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
+
+   OPENH264_SYSTEM="yes"
+
+
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Cisco Open264 H.264 video codec" >&5
+$as_echo_n "checking Cisco Open264 H.264 video codec... " >&6; }
+
+   # Check whether --enable-openh264 was given.
+if test "${enable_openh264+set}" = set; then :
+  enableval=$enable_openh264;
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+$as_echo "disabled by user" >&6; }
+         fi
+
+else
+
+         enableval=${DEFAULT_OPENH264:-yes}
+         if test "x$enableval" = "xno"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+$as_echo "disabled by default" >&6; }
+         fi
+
+
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   if test "x${enableval}" = "xyes"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+   fi
+
+
+   if test "x$enableval" = "xyes"; then :
+  usable=yes
+else
+  usable=no
+fi
+
+
+   enable_openh264="$enableval"
+
+
+   if test "x$usable" = "xyes" ; then
+
+         # Check whether --enable-localopenh264 was given.
+if test "${enable_localopenh264+set}" = set; then :
+  enableval=$enable_localopenh264;
+               if test "x$enableval" = "xyes" ; then
+                  OPENH264_SYSTEM="no"
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for Cisco Open264 H.264 video codec" >&5
+$as_echo "$as_me: Forced use of internal source for Cisco Open264 H.264 video codec" >&6;}
+               else
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: Using system source for Cisco Open264 H.264 video codec" >&5
+$as_echo "$as_me: Using system source for Cisco Open264 H.264 video codec" >&6;}
+               fi
+
+
+fi
+
+
+      if test "x$OPENH264_SYSTEM" = "xyes" ; then
+
+# Check whether --with-openh264-dir was given.
+if test "${with_openh264_dir+set}" = set; then :
+  withval=$with_openh264_dir;
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: Using directory $withval for Cisco Open264 H.264 video codec" >&5
+$as_echo "$as_me: Using directory $withval for Cisco Open264 H.264 video codec" >&6;}
+                  OPENH264_CFLAGS="-I$withval/include "
+                  OPENH264_LIBS="-L$withval/lib -lopenh264 -lpthread"
+
+else
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for OPENH264" >&5
+$as_echo_n "checking for OPENH264... " >&6; }
+
+if test -n "$OPENH264_CFLAGS"; then
+    pkg_cv_OPENH264_CFLAGS="$OPENH264_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_OPENH264_CFLAGS=`$PKG_CONFIG --cflags "" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$OPENH264_LIBS"; then
+    pkg_cv_OPENH264_LIBS="$OPENH264_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_OPENH264_LIBS=`$PKG_CONFIG --libs "" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        OPENH264_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "" 2>&1`
+        else
+	        OPENH264_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$OPENH264_PKG_ERRORS" >&5
+
+
+                     OPENH264_CFLAGS=""
+                     OPENH264_LIBS="-lopenh264 -lpthread"
+
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+                     OPENH264_CFLAGS=""
+                     OPENH264_LIBS="-lopenh264 -lpthread"
+
+
+else
+	OPENH264_CFLAGS=$pkg_cv_OPENH264_CFLAGS
+	OPENH264_LIBS=$pkg_cv_OPENH264_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+fi
+
+fi
+
+
+         if test "x$usable" = "xyes" ; then
+
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
+   CPPFLAGS="$CPPFLAGS $OPENH264_CFLAGS"
+   LIBS="$OPENH264_LIBS $LIBS"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Cisco Open264 H.264 video codec usability" >&5
+$as_echo_n "checking for Cisco Open264 H.264 video codec usability... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include "$PLUGIN_SRC_DIR/video/openh264/svc/codec_api.h"
+int
+main ()
+{
+
+      ISVCEncoder * encoder;
+      WelsCreateSVCEncoder(&encoder);
+
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
+
+   if test "x$usable" = "xyes"; then :
+
+
+   LIBS="$OPENH264_LIBS $LIBS"
+   CPPFLAGS="$CPPFLAGS $OPENH264_CFLAGS"
+
+
+
+
+else
+  usable=no
+
+fi
+
+
+         fi
+
+
+            if test "x$usable" = "xno" ; then
+               OPENH264_SYSTEM="no"
+               OPENH264_CFLAGS=
+               OPENH264_LIBS=
+               { $as_echo "$as_me:${as_lineno-$LINENO}: Using internal source for Cisco Open264 H.264 video codec" >&5
+$as_echo "$as_me: Using internal source for Cisco Open264 H.264 video codec" >&6;}
+            fi
+
+      fi
+   fi
+
+   OPENH264_USABLE=$usable
+
+
+
+
+
+
+      LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
+      if test "x$OPENH264_SYSTEM" = "xno" ; then
+         if test "x$usable" = "xyes" ; then
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/openh264"
+            HAVE_OPENH264="yes (internal)"
+         else
+            HAVE_OPENH264="no (internal library incompatible with build environment)"
+         fi
+      else
+         if test "x$usable" = "xyes" ; then
+
+
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/openh264"
+
+            if test "x$OPENH264_SYSTEM" = "xyes" ; then
+               HAVE_OPENH264="yes (system)"
+            else
+               HAVE_OPENH264="yes"
+            fi
+         else
+            HAVE_OPENH264="no (package local-source not found)"
+         fi
+      fi
+   else
+      HAVE_OPENH264="no (missing directory $PLUGIN_SRC_DIR/video/openh264)"
+   fi
 
 
 
@@ -11461,7 +11751,8 @@ echo ""
 
 echo "                           H.261  :  ${HAVE_H261} (internal)"
 echo "                     H.263/H.263+ :  ${HAVE_H263} (ffmpeg)"
-echo "                           H.264  :  ${HAVE_X264}"
+echo "                   VideoLAN x264  :  ${HAVE_X264}"
+echo "                  Cisco OpenH264  :  ${HAVE_OPENH264}"
 echo "                             VP8  :  ${HAVE_VP8}"
 echo "                          THEORA  :  ${HAVE_THEORA}"
 echo "                    MPEG4 Part 2  :  ${HAVE_MPEG4}"
