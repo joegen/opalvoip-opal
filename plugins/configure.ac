@@ -305,7 +305,7 @@ fi
 
 OPAL_SYSTEM_PLUGIN(
    [OPENH264],
-   [],
+   [openh264],
    [Cisco Open264 H.264 video codec],
    [$PLUGIN_SRC_DIR/video/openh264],
    [local-source],
