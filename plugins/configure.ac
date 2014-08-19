@@ -305,13 +305,13 @@ fi
 
 OPAL_SYSTEM_PLUGIN(
    [OPENH264],
-   [],
+   [openh264],
    [Cisco Open264 H.264 video codec],
-   [$PLUGIN_SRC_DIR/video/openH264],
+   [$PLUGIN_SRC_DIR/video/openh264],
+   [local-source],
    [],
-   [],
-   [-lopen264],
-   [#include "$PLUGIN_SRC_DIR/video/openH264/svc/codec_api.h]
+   [-lopenh264 -lpthread],
+   [#include "$PLUGIN_SRC_DIR/video/openh264/svc/codec_api.h"],
    [
       ISVCEncoder * encoder;
       WelsCreateSVCEncoder(&encoder);
@@ -442,7 +442,7 @@ echo ""
 echo "                           H.261  :  ${HAVE_H261} (internal)"
 echo "                     H.263/H.263+ :  ${HAVE_H263} (ffmpeg)"
 echo "                   VideoLAN x264  :  ${HAVE_X264}"
-echo "                  Cisco OpenH264  :  ${HAVE_OPEN264}"
+echo "                  Cisco OpenH264  :  ${HAVE_OPENH264}"
 echo "                             VP8  :  ${HAVE_VP8}"
 echo "                          THEORA  :  ${HAVE_THEORA}"
 echo "                    MPEG4 Part 2  :  ${HAVE_MPEG4}"
