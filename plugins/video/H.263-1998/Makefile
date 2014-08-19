@@ -31,8 +31,8 @@ SRCDIR    := $(CURDIR)
 SOURCES   := $(CURDIR)/h263-1998.cxx \
              $(CURDIR)/rfc2429.cxx \
              $(CURDIR)/rfc2190.cxx \
-             $(COMMONDIR)/ffmpeg.cxx \
-             $(COMMONDIR)/dyna.cxx
+             $(COMMONDIR)/encframe.cxx \
+             $(COMMONDIR)/ffmpeg.cxx
 
 PLUGIN_CPPFLAGS = $(LIBAVCODEC_CFLAGS) -I$(COMMONDIR) -DLIBAVCODEC_RTP_MODE=$(subst yes,1,$(HAVE_LIBAVCODEC_RTP_MODE))
 PLUGIN_LIBS     = $(LIBAVCODEC_LIBS) $(DLFCN_LIBS)

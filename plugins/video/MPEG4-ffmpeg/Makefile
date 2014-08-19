@@ -29,8 +29,8 @@ BASENAME := mpeg4_ffmpeg
 COMMONDIR := $(abspath ../common)
 SRCDIR    := $(CURDIR)
 SOURCES   := $(CURDIR)/mpeg4.cxx \
-             $(COMMONDIR)/ffmpeg.cxx \
-             $(COMMONDIR)/dyna.cxx
+             $(COMMONDIR)/encframe.cxx \
+             $(COMMONDIR)/ffmpeg.cxx
 
 PLUGIN_CPPFLAGS = $(LIBAVCODEC_CFLAGS) -I$(COMMONDIR)
 PLUGIN_LIBS     = $(LIBAVCODEC_LIBS) $(DLFCN_LIBS)
