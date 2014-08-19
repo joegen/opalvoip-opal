@@ -84,13 +84,13 @@
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Speex_x64_ptplugin</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IntDir>$(OutDir)$(ProjectName)\$(Platform)\</IntDir>
     <OutDir>..\..\..\bin\plugins\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)$(ProjectName)\$(Platform)\</IntDir>
     <IncludePath>..\..\..\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IntDir>$(OutDir)$(ProjectName)\$(Platform)\</IntDir>
     <OutDir>..\..\..\bin\plugins\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)$(ProjectName)\$(Platform)\</IntDir>
     <IncludePath>..\..\..\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSDK_IncludePath);</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
