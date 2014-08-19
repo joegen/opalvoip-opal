@@ -26,8 +26,15 @@
 
 BASENAME := openh264
 
+COMMONDIR := $(abspath ../common)
 SRCDIR    := $(CURDIR)
-SOURCES   := $(CURDIR)/openh264.cxx
+SOURCES   := $(CURDIR)/openh264.cxx \
+             $(COMMONDIR)/encframe.cxx \
+             $(COMMONDIR)/h264frame.cxx \
+
+PLUGIN_LIBS = -lopenh264
+
+vpath   %.cxx $(COMMONDIR)
 
 INSTALL_DIR = $(VID_PLUGIN_DIR)
 include $(dir $(lastword $(MAKEFILE_LIST)))../../plugin_inc.mak
