@@ -1195,18 +1195,20 @@ void TranscoderThread::Main()
     }
 
     if (detectorSaysIntra || encoderSaysIntra || decoderSaysIntra) {
-      int count = (detectorSaysIntra ? 1 : 0) + (encoderSaysIntra ? 1 : 0) + (decoderSaysIntra ? 1 : 0);
-
       coutMutex.Wait();
       cout << "I-Frame at input frame " << totalInputFrameCount - 1 << " from ";
-      if (detectorSaysIntra)
+      if (detectorSaysIntra) {
         cout << "detector";
-      if (count == 3)
-        cout << ", ";
-      if (encoderSaysIntra)
+        if (encoderSaysIntra && decoderSaysIntra)
+          cout << ", ";
+        else if (encoderSaysIntra || decoderSaysIntra)
+          cout << " and ";
+      }
+      if (encoderSaysIntra) {
         cout << "encoder";
-      if (count > 1)
-        cout << " and ";
+        if (decoderSaysIntra)
+          cout << " and ";
+      }
       if (decoderSaysIntra)
         cout << "decoder";
       cout << '.' << endl;
