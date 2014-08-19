@@ -61,7 +61,7 @@ static size_t FindByteAlignedCode(const unsigned char * base, size_t len, const 
 }
 
 
-static int FindPSC(const unsigned char * base, size_t len)
+static size_t FindPSC(const unsigned char * base, size_t len)
 {
   return (int)FindByteAlignedCode(base, len, PSC, PSC_Mask, sizeof(PSC));
 }
@@ -267,7 +267,7 @@ bool RFC2190Packetizer::Reset(size_t len)
   currFrag = fragments.begin();
   fragPtr = m_buffer;
 
-  return FFMPEGCodec::EncodedFrame::Reset(len);
+  return OpalPluginFrame::Reset(len);
 }
 
 
