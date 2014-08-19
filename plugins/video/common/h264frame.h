@@ -36,8 +36,7 @@
 // GVX 3000 does not like STAP packets... So we waste 40 bytes per connection...
 //#define SEND_STAP_PACKETS 1
 
-#include "../../common/ffmpeg.h"
-#include <codec/opalplugin.hpp>
+#include "encframe.h"
 
 #include <vector>
 
@@ -58,7 +57,7 @@
 
 
 
-class H264Frame : public FFMPEGCodec::EncodedFrame
+class H264Frame : public OpalPluginFrame
 {
 public:
   H264Frame();
@@ -71,7 +70,7 @@ public:
 
 
   void Allocate(uint32_t numberOfNALs);
-  bool AddNALU(uint8_t type, uint32_t length, const uint8_t * payload);
+  bool AddNALU(uint8_t type, size_t length, const uint8_t * payload);
 
   void SetTimestamp (uint32_t timestamp) 
   {
@@ -94,9 +93,9 @@ private:
   bool EncapsulateSTAP  (PluginCodec_RTP & frame, unsigned int & flags);
   bool EncapsulateFU    (PluginCodec_RTP & frame, unsigned int & flags);
 
-  bool DeencapsulateFU(const uint8_t *payloadPtr, uint32_t payloadSize);
-  bool DeencapsulateSTAP(const uint8_t *payloadPtr, uint32_t payloadSize);
-  bool AddDataToEncodedFrame(const uint8_t *payloadPtr, uint32_t payloadSize, uint8_t header, bool addHeader);
+  bool DeencapsulateFU(const uint8_t *payloadPtr, size_t payloadSize);
+  bool DeencapsulateSTAP(const uint8_t *payloadPtr, size_t payloadSize);
+  bool AddDataToEncodedFrame(const uint8_t *payloadPtr, size_t payloadSize, uint8_t header, bool addHeader);
   void SetSPS(const uint8_t * payload);
 
     // general stuff
@@ -116,8 +115,8 @@ private:
   };
 
   std::vector<NALU> m_NALs;
-  size_t m_numberOfNALsInFrame;
-  size_t m_currentNAL; 
+  uint32_t m_numberOfNALsInFrame;
+  uint32_t m_currentNAL; 
   
   // for encapsulation
   uint32_t m_currentNALFURemainingLen;

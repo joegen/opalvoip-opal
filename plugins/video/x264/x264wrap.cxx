@@ -363,7 +363,7 @@ bool H264Encoder::EncodeFrames(const unsigned char * src, unsigned & srcLen,
   // create RTP frame from destination buffer
   PluginCodec_RTP dstRTP(dst, dstLen);
   m_encapsulation.GetPacket(dstRTP, flags);
-  dstLen = dstRTP.GetPacketSize();
+  dstLen = (unsigned)dstRTP.GetPacketSize();
   return 1;
 }
 
@@ -554,7 +554,7 @@ bool H264Encoder::ReadPipe(void * ptr, size_t len)
 {
   Overlapped overlapped(m_hEvent);
   DWORD bytesRead;
-  if ((ReadFile(m_hNamedPipe, ptr, len, &bytesRead, &overlapped) ||
+  if ((ReadFile(m_hNamedPipe, ptr, (DWORD)len, &bytesRead, &overlapped) ||
        CheckCompleted(overlapped, &bytesRead)) && bytesRead == len)
     return true;
 
@@ -567,7 +567,7 @@ bool H264Encoder::WritePipe(const void * ptr, size_t len)
 {
   Overlapped overlapped(m_hEvent);
   DWORD bytesWritten;
-  if ((WriteFile(m_hNamedPipe, ptr, len, &bytesWritten, &overlapped) ||
+  if ((WriteFile(m_hNamedPipe, ptr, (DWORD)len, &bytesWritten, &overlapped) ||
        CheckCompleted(overlapped, &bytesWritten)) && bytesWritten == len)
     return true;
 
