@@ -329,7 +329,7 @@ bool RFC2429Frame::Reset(size_t len)
   m_customClock = false;
   m_startCodes.clear();
 
-  return FFMPEGCodec::EncodedFrame::Reset(len);
+  return OpalPluginFrame::Reset(len);
 }
 
 

@@ -417,7 +417,7 @@ class H263_Base_Encoder : public PluginVideoEncoder<MY_CODEC>, public FFMPEGCode
   typedef PluginVideoEncoder<MY_CODEC> BaseClass;
 
   public:
-    H263_Base_Encoder(const PluginCodec_Definition * defn, const char * prefix, EncodedFrame * packetizer)
+    H263_Base_Encoder(const PluginCodec_Definition * defn, const char * prefix, OpalPluginFrame * packetizer)
       : BaseClass(defn)
       , FFMPEGCodec(prefix, packetizer)
     { 
@@ -649,7 +649,7 @@ class H263_Base_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCode
   typedef PluginVideoDecoder<MY_CODEC> BaseClass;
 
   public:
-    H263_Base_Decoder(const PluginCodec_Definition * defn, const char * prefix, EncodedFrame * depacketizer)
+    H263_Base_Decoder(const PluginCodec_Definition * defn, const char * prefix, OpalPluginFrame * depacketizer)
       : BaseClass(defn)
       , FFMPEGCodec(prefix, depacketizer)
     {
