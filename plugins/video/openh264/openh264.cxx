@@ -496,7 +496,6 @@ static H264_PluginMediaFormat const MyMediaFormatInfo_Mode1("Open"OPAL_H264_MODE
 
 #if PLUGINCODEC_TRACING
 
-extern "C"
 static void TraceCallback(void*, int level, const char* string)
 {
   ++level; // Slightly lower level in OPAL
@@ -866,7 +865,7 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>
                                                         (int)m_encapsulation.GetLength(),
                                                         m_bufferData,
                                                         &m_bufferInfo);
-        if (status != cmResultSuccess) {
+        if (status != dsErrorFree) {
           PTRACE(1, MY_CODEC_LOG, "Fatal error decoding frame: error=" << status);
           return false;
         }

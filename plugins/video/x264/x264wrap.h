@@ -32,7 +32,7 @@
 #ifndef OPAL_H264ENC_H
 #define OPAL_H264ENC_H 1
 
-#include "../../common/platform.h"
+#include "../common/platform.h"
 #include <string>
 
 
