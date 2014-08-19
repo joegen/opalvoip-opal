@@ -202,9 +202,11 @@
     </Link>
     <PostBuildEvent>
       <Message>Copying codec and debug information to plug in directory</Message>
-      <Command>if not exist c:\ptlib_plugins exit
-copy $(TargetPath) c:\ptlib_plugins
-copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins
+      <Command>if exist "C:\Program Files (x86)\PTLib Plug Ins" goto copy_x86
+if exist "C:\Program Files\PTLib Plug Ins" xcopy /y/f "$(TargetDir)$(TargetName).*d*" "C:\Program Files\PTLib Plug Ins"
+exit
+:copy_x86
+xcopy /y/f "$(TargetDir)$(TargetName).*d*" "C:\Program Files (x86)\PTLib Plug Ins"
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>

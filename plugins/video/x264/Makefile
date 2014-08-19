@@ -26,21 +26,19 @@
 
 BASENAME := h264_x264
 
-SHAREDDIR := $(CURDIR)/shared
 COMMONDIR := $(abspath ../common)
 SRCDIR    := $(CURDIR)
 SOURCES   := $(CURDIR)/h264-x264.cxx \
+             $(CURDIR)/x264wrap.cxx \
              $(COMMONDIR)/h264frame.cxx \
-             $(SHAREDDIR)/x264wrap.cxx \
-             $(COMMONDIR)/ffmpeg.cxx \
-             $(COMMONDIR)/dyna.cxx
+             $(COMMONDIR)/encframe.cxx \
+             $(COMMONDIR)/ffmpeg.cxx
 
 PLUGIN_CPPFLAGS = $(X264_CFLAGS) $(LIBAVCODEC_CFLAGS) -I$(COMMONDIR) -DVID_PLUGIN_DIR='"$(VID_PLUGIN_DIR)"'
 PLUGIN_LIBS     = $(X264_LIBS) $(LIBAVCODEC_LIBS) $(DLFCN_LIBS)
 
 SUBDIRS := $(CURDIR)/gpl
 
-vpath	%.cxx $(SHAREDDIR)
 vpath	%.cxx $(COMMONDIR)
 
 INSTALL_DIR = $(VID_PLUGIN_DIR)
