@@ -29,15 +29,15 @@
 
 
 #ifndef PRODUCT
-#define	PRODUCT OpenH323
+  #define	PRODUCT OPAL
 #endif
 
 #ifndef MANUFACTURER_NAME
-#define	MANUFACTURER_NAME   "Equivalence Pty. Ltd."
+  #define	MANUFACTURER_NAME   "Equivalence Pty. Ltd."
 #endif
 
 #ifndef PRODUCT_DESCRIPTION
-#define PRODUCT_DESCRIPTION "Open H.323 Library"
+  #define PRODUCT_DESCRIPTION "Open Phone Abstraction Library"
 #endif
 
 
@@ -54,19 +54,17 @@
 
 
 #ifndef PRODUCT_NAME
-#define	PRODUCT_NAME MkStr(PRODUCT)
+  #define	PRODUCT_NAME MkStr(PRODUCT)
 #endif
 
 #ifndef EXECUTABLE_NAME
-#ifdef _DEBUG
-#define EXECUTABLE_NAME	PRODUCT_NAME "d.dll"
-#else
-#ifdef PTRACING
-#define EXECUTABLE_NAME	PRODUCT_NAME ".dll"
-#else
-#define EXECUTABLE_NAME	PRODUCT_NAME "n.dll"
-#endif
-#endif
+  #ifdef _DEBUG
+    #define EXECUTABLE_NAME	PRODUCT_NAME "d.dll"
+  #elif PTRACING
+    #define EXECUTABLE_NAME	PRODUCT_NAME  ".dll"
+  #else
+    #define EXECUTABLE_NAME	PRODUCT_NAME "n.dll"
+  #endif
 #endif
 
 
