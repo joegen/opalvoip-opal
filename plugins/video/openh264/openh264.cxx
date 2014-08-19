@@ -1,16 +1,7 @@
 /*
- * H.264 Plugin codec for OPAL
+ * OpenH264 Plugin codec for OPAL
  *
- * This the starting point for creating new H.264 plug in codecs for
- * OPAL in C++. The requirements of H.264 over H.323 and SIP are quite
- * complex. The mapping of width/height/frame rate/bit rate to the
- * H.264 profile/level with possible overrides (e.g. MaxMBS for maximum
- * macro blocks per second) which are not universally supported by all
- * endpoints make precise control of the video difficult and in some
- * cases impossible.
- *
- *
- * Copyright (C) 2010 Vox Lucida Pty Ltd, All Rights Reserved
+ * Copyright (C) 2014 Vox Lucida Pty Ltd, All Rights Reserved
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -40,17 +31,14 @@
 #include "../common/platform.h"
 #endif
 
-#define MY_CODEC x264  // Name of codec (use C variable characters)
+#define MY_CODEC openH264  // Name of codec (use C variable characters)
 
 #define OPAL_H323 1
 #define OPAL_SIP 1
 
 #include "../../../src/codec/h264mf_inc.cxx"
-
-#include "../common/ffmpeg.h"
-
-#include "shared/h264frame.h"
-#include "shared/x264wrap.h"
+#include "../common/h264frame.h"
+#include "svc/codec_api.h"
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -59,30 +47,25 @@ class MY_CODEC { };
 
 PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
 
-static const char MyDescription[] = "ITU-T H.264 - Video Codec (x264 & FFMPEG)";     // Human readable description of codec
+static const char MyDescription[] = "ITU-T H.264 - Video Codec (OpenH264)";     // Human readable description of codec
 
 PLUGINCODEC_LICENSE(
-  "Matthias Schneider\n"
   "Robert Jongbloed, Vox Lucida Pty.Ltd.",                      // source code author
   "1.0",                                                        // source code version
   "robertj@voxlucida.com.au",                                   // source code email
   "http://www.voxlucida.com.au",                                // source code URL
-  "Copyright (C) 2006 by Matthias Schneider\n"
   "Copyright (C) 2011 by Vox Lucida Pt.Ltd., All Rights Reserved", // source code copyright
   "MPL 1.0",                                                    // source code license
   PluginCodec_License_MPL,                                      // source code license
   
   MyDescription,                                                // codec description
-  "x264: Laurent Aimar, ffmpeg: Michael Niedermayer",           // codec author
-  "", 							        // codec version
-  "fenrir@via.ecp.fr, ffmpeg-devel-request@mplayerhq.hu",       // codec email
-  "http://developers.videolan.org/x264.html, \
-   http://ffmpeg.mplayerhq.hu", 				// codec URL
-  "x264: Copyright (C) 2003 Laurent Aimar, \
-   ffmpeg: Copyright (c) 2002-2003 Michael Niedermayer",        // codec copyright information
-  "x264: GNU General Public License as published Version 2, \
-   ffmpeg: GNU Lesser General Public License, Version 2.1",     // codec license
-  PluginCodec_License_LGPL                                      // codec license code
+  "Cisco Systems",                                              // codec author
+  "1.1.0", 							                                        // codec version
+  "",                                                           // codec email
+  "http://www.openh264.org", 				                            // codec URL
+  "Copyright (c) 2013, Cisco Systems. All rights reserved.",    // codec copyright information
+  "BSD",                                                        // codec license
+  PluginCodec_License_BSD                                       // codec license code
 );
 
 
@@ -420,53 +403,6 @@ static struct PluginCodec_Option const PacketizationModeSDP_1 =
   "2"                                 // Maximum value
 };
 
-static struct PluginCodec_Option const TemporalSpatialTradeOff =
-{
-  PluginCodec_IntegerOption,          // Option type
-  PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF, // User visible name
-  false,                              // User Read/Only flag
-  PluginCodec_AlwaysMerge,            // Merge mode
-  "31",                               // Initial value
-  NULL,                               // FMTP option name
-  NULL,                               // FMTP default value
-  0,                                  // H.245 generic capability code and bit mask
-  "1",                                // Minimum value
-  "31"                                // Maximum value
-};
-
-static struct PluginCodec_Option const SendAccessUnitDelimiters =
-{
-  PluginCodec_BoolOption,                         // Option type
-  "Send Access Unit Delimiters",                  // User visible name
-  false,                                          // User Read/Only flag
-  PluginCodec_AndMerge,                           // Merge mode
-  STRINGIZE(DefaultSendAccessUnitDelimiters)      // Initial value
-};
-
-static struct PluginCodec_Option const * const MyOptionTable_High[] = {
-  &HiProfile,
-  &Level,
-  &HiH241Profiles,
-  &H241Level,
-  &SDPProfileAndLevel,
-  &MaxMBPS_H241,
-  &MaxMBPS_SDP,
-  &MaxSMBPS_H241,
-  &MaxSMBPS_SDP,
-  &MaxFS_H241,
-  &MaxFS_SDP,
-  &MaxBR_H241,
-  &MaxBR_SDP,
-  &H241Forced,
-  &SDPForced,
-  &MaxNaluSize,
-  &TemporalSpatialTradeOff,
-  &SendAccessUnitDelimiters,
-  &PacketizationModeSDP_1,
-  &MediaPacketizationsH323_1,  // Note: must be last entry
-  NULL
-};
-
 static struct PluginCodec_Option const * const MyOptionTable_0[] = {
   &Profile,
   &Level,
@@ -484,8 +420,6 @@ static struct PluginCodec_Option const * const MyOptionTable_0[] = {
   &H241Forced,
   &SDPForced,
   &MaxNaluSize,
-  &TemporalSpatialTradeOff,
-  &SendAccessUnitDelimiters,
   &PacketizationModeSDP_0,
   &MediaPacketizationsH323_0,  // Note: must be last entry
   NULL
@@ -508,8 +442,6 @@ static struct PluginCodec_Option const * const MyOptionTable_1[] = {
   &H241Forced,
   &SDPForced,
   &MaxNaluSize,
-  &TemporalSpatialTradeOff,
-  &SendAccessUnitDelimiters,
   &PacketizationModeSDP_1,
   &MediaPacketizationsH323_1,  // Note: must be last entry
   NULL
@@ -556,10 +488,44 @@ public:
 
 /* SIP requires two completely independent media formats for packetisation
    modes zero and one. */
-static H264_PluginMediaFormat const MyMediaFormatInfo_Mode0(H264_Mode0_FormatName, MyOptionTable_0);
-static H264_PluginMediaFormat const MyMediaFormatInfo_Mode1(H264_Mode1_FormatName, MyOptionTable_1);
-static H264_PluginMediaFormat const MyMediaFormatInfo_High (H264_High_FormatName,  MyOptionTable_High);
+static H264_PluginMediaFormat const MyMediaFormatInfo_Mode0("Open"OPAL_H264_MODE0, MyOptionTable_0);
+static H264_PluginMediaFormat const MyMediaFormatInfo_Mode1("Open"OPAL_H264_MODE1, MyOptionTable_1);
 
+
+///////////////////////////////////////////////////////////////////////////////
+
+#if PLUGINCODEC_TRACING
+
+extern "C"
+static void TraceCallback(void*, int level, const char* string)
+{
+  ++level; // Slightly lower level in OPAL
+
+  if (!PTRACE_CHECK(level))
+    return;
+
+  const char * msg;
+  if (strncmp(string, "[OpenH264]", 10) == 0 && (msg = strchr(string, ':')) != NULL)
+    ++msg;
+  else
+    msg = string;
+
+  size_t len = strlen(msg);
+  while (len > 0 && isspace(msg[len - 1]))
+    --len;
+  if (len == 0)
+    return;
+
+  char * buf = (char *)alloca(len+1);
+  strncpy(buf, msg, len);
+  buf[len] = '\0';
+  PluginCodec_LogFunctionInstance(level, __FILE__, __LINE__, "OpenH264-Lib", buf);
+}
+
+static int TraceLevel = 100;
+static WelsTraceCallback TraceCallbackPtr = TraceCallback;
+
+#endif // PLUGINCODEC_TRACING
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -568,57 +534,58 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
     typedef PluginVideoEncoder<MY_CODEC> BaseClass;
 
   protected:
-    unsigned m_profile;
-    unsigned m_level;
-    unsigned m_constraints;
-    unsigned m_sdpMBPS;
-    unsigned m_h241MBPS;
-    unsigned m_maxNALUSize;
-    unsigned m_packetisationModeSDP;
-    unsigned m_packetisationModeH323;
-    bool     m_isH323;
-    unsigned m_rateControlPeriod;
+    EProfileIdc m_profile;
+    ELevelIdc   m_level;
+    unsigned    m_sdpMBPS;
+    unsigned    m_h241MBPS;
+    unsigned    m_maxNALUSize;
+    unsigned    m_packetisationModeSDP;
+    unsigned    m_packetisationModeH323;
+    bool        m_isH323;
 
-    H264Encoder m_encoder;
+    ISVCEncoder * m_encoder;
+    H264Frame     m_encapsulation;
 
   public:
     H264_Encoder(const PluginCodec_Definition * defn)
       : BaseClass(defn)
-      , m_profile(DefaultProfileInt)
-      , m_level(DefaultLevelInt)
-      , m_constraints(0)
+      , m_profile((EProfileIdc)DefaultProfileInt)
+      , m_level(LEVEL_3_1)
       , m_sdpMBPS(MAX_MBPS_SDP)
       , m_h241MBPS(MAX_MBPS_H241)
       , m_maxNALUSize(H241_MAX_NALU_SIZE)
       , m_packetisationModeSDP(1)
       , m_packetisationModeH323(1)
       , m_isH323(false)
-      , m_rateControlPeriod(1000)
+      , m_encoder(NULL)
     {
       PTRACE(4, MY_CODEC_LOG, "Created encoder $Revision$");
     }
 
 
+    ~H264_Encoder()
+    {
+      if (m_encoder != NULL)
+        WelsDestroySVCEncoder(m_encoder);
+    }
+
     virtual bool Construct()
     {
-      /* Complete construction of object after it has been created. This
-         allows you to fail the create operation (return false), which cannot
-         be done in the normal C++ constructor. */
+      if (WelsCreateSVCEncoder(&m_encoder) != cmResultSuccess) {
+        PTRACE(1, MY_CODEC_LOG, "Could not create encoder.");
+        return false;
+      }
 
-      // ABR with bit rate tolerance = 1 is CBR...
-      if (m_encoder.Load(this))
-        return true;
-
-      PTRACE(1, MY_CODEC_LOG, "Could not open encoder.");
-      return false;
+#if PLUGINCODEC_TRACING
+      m_encoder->SetOption(ENCODER_OPTION_TRACE_CALLBACK, &TraceCallbackPtr);
+      m_encoder->SetOption(ENCODER_OPTION_TRACE_LEVEL, &TraceLevel);
+#endif
+      return true;
     }
 
 
     virtual bool SetOption(const char * optionName, const char * optionValue)
     {
-      if (strcasecmp(optionName, PLUGINCODEC_OPTION_RATE_CONTROL_PERIOD) == 0)
-        return SetOptionUnsigned(m_rateControlPeriod, optionValue, 100, 60000);
-
       if (strcasecmp(optionName, MaxNaluSize.m_name) == 0)
         return SetOptionUnsigned(m_maxNALUSize, optionValue, 256, 8192);
 
@@ -631,7 +598,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       if (strcasecmp(optionName, Profile.m_name) == 0) {
         for (size_t i = 0; i < sizeof(ProfileInfo)/sizeof(ProfileInfo[0]); ++i) {
           if (strcasecmp(optionValue, ProfileInfo[i].m_Name) == 0) {
-            m_profile = ProfileInfo[i].m_H264;
+            m_profile = (EProfileIdc)ProfileInfo[i].m_H264;
             m_optionsSame = false;
             return true;
           }
@@ -642,7 +609,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       if (strcasecmp(optionName, Level.m_name) == 0) {
         for (size_t i = 0; i < sizeof(LevelInfo)/sizeof(LevelInfo[0]); i++) {
           if (strcasecmp(optionValue, LevelInfo[i].m_Name) == 0) {
-            m_level = LevelInfo[i].m_H264;
+            m_level = (ELevelIdc)(i+1);
             m_optionsSame = false;
             return true;
           }
@@ -694,67 +661,42 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
 
     virtual bool OnChangedOptions()
     {
-      /* After all the options are set via SetOptions() this is called if any
-         of them changed. This would do whatever is needed to set parmaeters
-         for the actual codec. */
+      m_encoder->Uninitialize();
 
-      // do some checks on limits
-      size_t levelIndex = sizeof(LevelInfo)/sizeof(LevelInfo[0]);
-      while (--levelIndex > 0) {
-        if (m_level == LevelInfo[levelIndex].m_H264)
-          break;
-      }
+      SEncParamExt param;
+      m_encoder->GetDefaultParams(&param);
+      param.iUsageType = CAMERA_VIDEO_REAL_TIME;
+      param.iInputCsp = videoFormatI420;
+      param.iPicWidth = m_width;
+      param.iPicHeight = m_height;
+      param.iTargetBitrate = param.iMaxBitrate = m_maxBitRate;
+      param.iRCMode = RC_BITRATE_MODE;
+      param.fMaxFrameRate = (float)PLUGINCODEC_VIDEO_CLOCK/m_frameTime;
+      param.uiIntraPeriod = m_keyFramePeriod;
+      param.bPrefixNalAddingCtrl = false;
 
-      unsigned h241MBPS = (m_h241MBPS%MAX_MBPS_H241)*500;
-      unsigned sdpMBPS = m_sdpMBPS%MAX_MBPS_SDP;
+      param.sSpatialLayers[0].uiProfileIdc = m_profile;
+      param.sSpatialLayers[0].uiLevelIdc = m_level;
+      param.sSpatialLayers[0].iVideoWidth = m_width;
+      param.sSpatialLayers[0].iVideoHeight = m_height;
+      param.sSpatialLayers[0].fFrameRate = param.fMaxFrameRate;
+      param.sSpatialLayers[0].iMaxSpatialBitrate = param.sSpatialLayers[0].iSpatialBitrate = m_maxBitRate;
 
-      unsigned minFrameTime = PLUGINCODEC_VIDEO_CLOCK*GetMacroBlocks(m_width, m_height) /
-                        std::max(LevelInfo[levelIndex].m_MaxMBPS, std::max(h241MBPS, sdpMBPS));
-
-      PTRACE(3, MY_CODEC_LOG, "For level " << LevelInfo[levelIndex].m_Name << ", "
-                              "H.241 MBPS=" << h241MBPS << ", "
-                              "SDP MBPS=" << h241MBPS << ", "
-                              " and " << m_width << 'x' << m_height
-               << ", max frame rate is " << (PLUGINCODEC_VIDEO_CLOCK/minFrameTime) << ", "
-               << (m_frameTime < minFrameTime ? "lowered" : "unchanged") << " from "
-               << (PLUGINCODEC_VIDEO_CLOCK/m_frameTime));
-
-      if (m_frameTime < minFrameTime)
-        m_frameTime = minFrameTime;
-
-      m_encoder.SetProfileLevel(m_profile, m_level, m_constraints);
-      m_encoder.SetFrameWidth(m_width);
-      m_encoder.SetFrameHeight(m_height);
-      m_encoder.SetFrameRate(PLUGINCODEC_VIDEO_CLOCK/m_frameTime);      
-      m_encoder.SetTargetBitrate(m_maxBitRate/1000);
-      m_encoder.SetRateControlPeriod(m_rateControlPeriod);
-      m_encoder.SetTSTO(m_tsto);
-      m_encoder.SetMaxKeyFramePeriod(m_keyFramePeriod != 0 ? m_keyFramePeriod : 10*PLUGINCODEC_VIDEO_CLOCK/m_frameTime); // Every 10 seconds
-
-      unsigned mode = m_isH323 ? m_packetisationModeH323 : m_packetisationModeSDP;
-      if (mode == 0) {
-        unsigned size = std::min(m_maxRTPSize, m_maxNALUSize);
-        m_encoder.SetMaxRTPPayloadSize(size);
-        m_encoder.SetMaxNALUSize(size);
+      if ((m_isH323 ? m_packetisationModeH323 : m_packetisationModeSDP) == 1) {
+        param.sSpatialLayers[0].sSliceCfg.uiSliceMode = SM_SINGLE_SLICE;
       }
       else {
-        m_encoder.SetMaxRTPPayloadSize(m_maxRTPSize);
-        m_encoder.SetMaxNALUSize(m_maxNALUSize);
+        param.sSpatialLayers[0].sSliceCfg.uiSliceMode = SM_DYN_SLICE;
+        param.sSpatialLayers[0].sSliceCfg.sSliceArgument.uiSliceSizeConstraint = param.uiMaxNalSize = m_maxNALUSize;
       }
 
-      m_encoder.ApplyOptions();
+      if (m_encoder->InitializeExt(&param) != cmResultSuccess) {
+        PTRACE(1, MY_CODEC_LOG, "Could not initialise encoder.");
+        return false;
+      }
 
-      PTRACE(3, MY_CODEC_LOG, "Applied options: "
-                              "prof=" << m_profile << " "
-                              "lev=" << m_level << " "
-                              "res=" << m_width << 'x' << m_height << " "
-                              "fps=" << (PLUGINCODEC_VIDEO_CLOCK/m_frameTime) << " "
-                              "bps=" << m_maxBitRate << " "
-                              "period=" << m_rateControlPeriod << " "
-                              "RTP=" << m_maxRTPSize << " "
-                              "NALU=" << m_maxNALUSize << " "
-                              "TSTO=" << m_tsto << " "
-                              "Mode=" << mode);
+      m_encapsulation.SetMaxPayloadSize(m_maxRTPSize);
+      PTRACE(4, MY_CODEC_LOG, "Initialised encoder.");
       return true;
     }
 
@@ -773,49 +715,134 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
                              unsigned & toLen,
                              unsigned & flags)
     {
-      return m_encoder.EncodeFrames((const unsigned char *)fromPtr, fromLen,
-                                    (unsigned char *)toPtr, toLen,
-                                     PluginCodec_RTP_GetHeaderLength(toPtr),
-                                     flags);
+      if (!m_encapsulation.HasRTPFrames()) {
+        if (flags&PluginCodec_ReturnCoderRequestIFrame)
+          m_encoder->ForceIntraFrame(true);
+
+        PluginCodec_RTP from(fromPtr, fromLen);
+
+        PluginCodec_Video_FrameHeader * header = from.GetVideoHeader();
+
+        SSourcePicture picture;
+        picture.iColorFormat = videoFormatI420;	// color space type
+        picture.iPicWidth = header->width;
+        picture.iPicHeight = header->height;
+        picture.iStride[0] = picture.iPicWidth;
+        picture.iStride[1] = picture.iStride[2] = picture.iPicWidth / 2;
+        picture.pData[0] = from.GetVideoFrameData();
+        picture.pData[1] = picture.pData[0] + picture.iPicWidth*picture.iPicHeight;
+        picture.pData[2] = picture.pData[1] + picture.iPicWidth*picture.iPicHeight / 4;
+        picture.uiTimeStamp = 0;
+
+        SFrameBSInfo  bitstream;
+        memset(&bitstream, 0, sizeof(bitstream));
+        if (m_encoder->EncodeFrame(&picture, &bitstream) != cmResultSuccess) {
+          PTRACE(1, MY_CODEC_LOG, "Fatal error encoding frame.");
+          return false;
+        }
+
+        switch (bitstream.eFrameType) {
+          case videoFrameTypeInvalid :
+            PTRACE(1, MY_CODEC_LOG, "Fatal error encoding frame.");
+            return false;
+
+          case videoFrameTypeSkip :
+            PTRACE(5, MY_CODEC_LOG, "Output frame skipped.");
+            toLen = 0;
+            return true;
+
+          case videoFrameTypeIDR :
+          case videoFrameTypeI :
+            flags |= PluginCodec_ReturnCoderIFrame;
+          case videoFrameTypeP :
+          case videoFrameTypeIPMixed :
+            uint32_t numberOfNALUs = 0;
+            for (int layer = 0; layer < bitstream.iLayerNum; ++layer) {
+              for (int nalu = 0; nalu < bitstream.sLayerInfo[layer].iNalCount; ++nalu)
+                ++numberOfNALUs;
+            }
+
+            m_encapsulation.Reset();
+            m_encapsulation.Allocate(numberOfNALUs);
+            m_encapsulation.SetTimestamp(from.GetTimestamp());
+
+            for (int layer = 0; layer < bitstream.iLayerNum; ++layer) {
+              for (int nalu = 0; nalu < bitstream.sLayerInfo[layer].iNalCount; ++nalu) {
+                size_t len = bitstream.sLayerInfo[layer].pNalLengthInByte[nalu];
+                m_encapsulation.AddNALU(bitstream.sLayerInfo[layer].pBsBuf[4], len, bitstream.sLayerInfo[layer].pBsBuf);
+                bitstream.sLayerInfo[layer].pBsBuf += len;
+              }
+            }
+        }
+      }
+
+      // create RTP frame from destination buffer
+      PluginCodec_RTP to(toPtr, toLen);
+      m_encapsulation.GetPacket(to, flags);
+      toLen = (unsigned)to.GetPacketSize();
+      return true;
     }
 };
 
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class H264_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCodec
+class H264_Decoder : public PluginVideoDecoder<MY_CODEC>
 {
     typedef PluginVideoDecoder<MY_CODEC> BaseClass;
+
+  protected:
+    ISVCDecoder * m_decoder;
+    SBufferInfo   m_bufferInfo;
+    uint8_t     * m_bufferData[3];
+    int           m_lastId;
+    H264Frame     m_encapsulation;
 
   public:
     H264_Decoder(const PluginCodec_Definition * defn)
       : BaseClass(defn)
-      , FFMPEGCodec(MY_CODEC_LOG, new H264Frame)
+      , m_decoder(NULL)
+      , m_lastId(-1)
     {
+      memset(&m_bufferInfo, 0, sizeof(m_bufferInfo));
+      memset(&m_bufferData, 0, sizeof(m_bufferData));
       PTRACE(4, MY_CODEC_LOG, "Created decoder $Revision$");
+    }
+
+
+    ~H264_Decoder()
+    {
+      if (m_decoder != NULL)
+        WelsDestroyDecoder(m_decoder);
     }
 
 
     virtual bool Construct()
     {
-      if (!InitDecoder(AV_CODEC_ID_H264))
+      if (WelsCreateDecoder(&m_decoder) != cmResultSuccess) {
+        PTRACE(1, MY_CODEC_LOG, "Could not create decoder.");
         return false;
+      }
 
-#ifdef FF_IDCT_H264
-      m_context->idct_algo = FF_IDCT_H264;
-#else
-      m_context->idct_algo = FF_IDCT_AUTO;
-#endif
-      m_context->flags = CODEC_FLAG_INPUT_PRESERVED | CODEC_FLAG_EMU_EDGE;
-      m_context->flags2 =
-#ifdef CODEC_FLAG2_DROP_FRAME_TIMECODE
-                          CODEC_FLAG2_DROP_FRAME_TIMECODE |
-#endif
-                          CODEC_FLAG2_CHUNKS;
+      SDecodingParam param;
+      param.pFileNameRestructed = NULL;	// File name of restructed frame used for PSNR calculation based debug
+      param.iOutputColorFormat = videoFormatI420;// color space format to be outputed, EVideoFormatType specified in codec_def.h
+      param.uiCpuLoad = 0;		// CPU load
+      param.uiTargetDqLayer = 0;	// Setting target dq layer id
+      param.uiEcActiveFlag = ERROR_CON_DISABLE;		// Whether active error concealment feature in decoder
+      param.sVideoProperty.size = sizeof(param.sVideoProperty);
+      param.sVideoProperty.eVideoBsType = VIDEO_BITSTREAM_DEFAULT;
 
-      if (!OpenCodec())
+      if (m_decoder->Initialize(&param) != cmResultSuccess) {
+        PTRACE(1, MY_CODEC_LOG, "Could not initialise decoder.");
         return false;
+      }
 
+#if PLUGINCODEC_TRACING
+      m_decoder->SetOption(DECODER_OPTION_TRACE_CALLBACK, &TraceCallbackPtr);
+      m_decoder->SetOption(DECODER_OPTION_TRACE_LEVEL, &TraceLevel);
+#endif
+      PTRACE(4, MY_CODEC_LOG, "Opened decoder.");
       return true;
     }
 
@@ -826,27 +853,54 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCodec
                              unsigned & toLen,
                              unsigned & flags)
     {
-      if (!DecodeVideoPacket(PluginCodec_RTP(fromPtr, fromLen), flags))
+      PluginCodec_RTP from(fromPtr, fromLen);
+
+      if (from.GetPayloadSize() > 0 && !m_encapsulation.AddPacket(from, flags))
         return false;
 
-      if ((flags&PluginCodec_ReturnCoderLastFrame) == 0)
+      if (!from.GetMarker())
         return true;
 
-      PluginCodec_RTP out(toPtr, toLen);
-      toLen = OutputImage(m_picture->data, m_picture->linesize, PICTURE_WIDTH, PICTURE_HEIGHT, out, flags);
-
-      return true;
-    }
-
-
-    bool DecodeVideoFrame(const uint8_t * frame, size_t length, unsigned & flags)
-    {
-      if (((H264Frame *)m_fullFrame)->GetProfile() == H264_PROFILE_INT_BASELINE && m_context->has_b_frames > 0) {
-        PTRACE(5, MY_CODEC_LOG, "Resetting B-Frame count to zero as Baseline profile");
-        m_context->has_b_frames = 0;
+      if (from.GetPayloadSize() > 0 || m_encapsulation.GetLength() > 0) {
+        DECODING_STATE status = m_decoder->DecodeFrame2(m_encapsulation.GetBuffer(),
+                                                        (int)m_encapsulation.GetLength(),
+                                                        m_bufferData,
+                                                        &m_bufferInfo);
+        if (status != cmResultSuccess) {
+          PTRACE(1, MY_CODEC_LOG, "Fatal error decoding frame: error=" << status);
+          return false;
+        }
+        m_encapsulation.Reset();
       }
 
-      return FFMPEGCodec::DecodeVideoFrame(frame, length, flags);
+      if (m_bufferInfo.iBufferStatus != 0) {
+        PluginCodec_RTP out(toPtr, toLen);
+
+        // Why make it so hard?
+        int raster[3] = {
+          m_bufferInfo.UsrData.sSystemBuffer.iStride[0],
+          m_bufferInfo.UsrData.sSystemBuffer.iStride[1],
+          m_bufferInfo.UsrData.sSystemBuffer.iStride[1]
+        };
+        toLen = OutputImage(m_bufferData,
+                            raster,
+                            m_bufferInfo.UsrData.sSystemBuffer.iWidth,
+                            m_bufferInfo.UsrData.sSystemBuffer.iHeight,
+                            out,
+                            flags);
+
+        if ((flags & PluginCodec_ReturnCoderBufferTooSmall) == 0) {
+          int id = 0;
+          if (m_decoder->GetOption(DECODER_OPTION_IDR_PIC_ID, &id) == cmResultSuccess && m_lastId != id) {
+            m_lastId = id;
+            flags |= PluginCodec_ReturnCoderIFrame;
+          }
+
+          m_bufferInfo.iBufferStatus = 0;
+        }
+      }
+
+      return true;
     }
 };
 
@@ -857,7 +911,6 @@ static struct PluginCodec_Definition CodecDefinition[] =
 {
   PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_Mode0, H264_Encoder, H264_Decoder),
   PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_Mode1, H264_Encoder, H264_Decoder),
-  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_High,  H264_Encoder, H264_Decoder)
 };
 
 

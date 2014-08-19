@@ -30,7 +30,7 @@ SHAREDDIR := $(CURDIR)/shared
 COMMONDIR := $(abspath ../common)
 SRCDIR    := $(CURDIR)
 SOURCES   := $(CURDIR)/h264-x264.cxx \
-             $(SHAREDDIR)/h264frame.cxx \
+             $(COMMONDIR)/h264frame.cxx \
              $(SHAREDDIR)/x264wrap.cxx \
              $(COMMONDIR)/ffmpeg.cxx \
              $(COMMONDIR)/dyna.cxx
