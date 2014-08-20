@@ -2581,11 +2581,13 @@ H245_UnicastAddress_iPAddress::H245_UnicastAddress_iPAddress(unsigned tag, PASN_
 #ifndef PASN_NOPRINTON
 void H245_UnicastAddress_iPAddress::PrintOn(ostream & strm) const
 {
-  std::streamsize indent = strm.precision() + 2;
-  strm << "{\n";
-  strm << setw(indent+10) << "network = " << setprecision(indent) << m_network << '\n';
-  strm << setw(indent+17) << "tsapIdentifier = " << setprecision(indent) << m_tsapIdentifier << '\n';
-  strm << setw(indent-1) << setprecision(indent-2) << "}";
+  strm << "{ "
+       << (unsigned)m_network[0] << '.'
+       << (unsigned)m_network[1] << '.'
+       << (unsigned)m_network[2] << '.'
+       << (unsigned)m_network[3] << ':'
+       << m_tsapIdentifier
+       << " }";
 }
 #endif
 
