@@ -1126,8 +1126,15 @@ void OpalTransport::SetKeepAlive(const PTimeInterval & timeout, const PBYTEArray
   if (data.IsEmpty())
     m_keepAliveTimer.Stop(false);
   else {
-    PTRACE(4, "Opal\tTransport keep alive (" << data.GetSize() << " bytes) set for " << timeout << " seconds on " << *this);
-    m_keepAliveTimer = timeout;
+    static const PTimeInterval MinKeepAlive(0, 10);
+    if (timeout < MinKeepAlive) {
+      PTRACE(4, "Opal\tTransport keep alive (" << data.GetSize() << " bytes) set for minimum " << MinKeepAlive << " seconds on " << *this);
+      m_keepAliveTimer.RunContinuous(MinKeepAlive);
+    }
+    else {
+      PTRACE(4, "Opal\tTransport keep alive (" << data.GetSize() << " bytes) set for " << timeout << " seconds on " << *this);
+      m_keepAliveTimer.RunContinuous(timeout);
+    }
   }
 }
 
