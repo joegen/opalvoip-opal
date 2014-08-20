@@ -46,7 +46,7 @@ OPAL_T120DATA=no
 OPAL_LID=yes
 OPAL_CAPI=yes
 OPAL_STATISTICS=yes
-OPAL_RTP_FEC=yes
+OPAL_RTP_FEC=no
 OPAL_RTCP_XR=yes
 OPAL_AEC=yes
 OPAL_IVR=yes
@@ -492,6 +492,7 @@ dnl MSWIN_DEFINE   g711plc,OPAL_G711PLC
 OPAL_SIMPLE_OPTION(g711plc,OPAL_G711PLC, [Packet Loss Concealment for G.711])
 
 dnl MSWIN_DISPLAY  rtpfec,RTP Forward Error Correction (incomplete and experimental!)
+dnl MSWIN_DEFAULT  rtpfec,Disabled
 dnl MSWIN_DEFINE   rtpfec,OPAL_RTP_FEC
 OPAL_SIMPLE_OPTION(rtpfec,OPAL_RTP_FEC, [RTP Forward Error Correction (incomplete and experimental!)])
 
