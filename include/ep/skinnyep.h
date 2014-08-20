@@ -422,7 +422,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       PUInt32l m_callInstance;
       PUInt32l m_callSecurityStatus;
       PUInt32l m_partyPIRestrictionBits;
-      char     m_strings[50];
+      char     m_strings[10]; // Allow enough space for 10 empty strings (up to called party name)
 
       virtual CallType GetType() const { return (CallType)(uint32_t)m_callType; }
       virtual const char * GetCalledPartyName() const { return GetStringByIndex(9); }
