@@ -1515,7 +1515,7 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
   if (sdp == NULL || transaction.GetSDP() != NULL)
     return statusCode >= 200; // Don't send ACK if only provisional response
 
-  // EMpty INVITE means offer in remotes response, get the media formats out of it
+  // Empty INVITE means offer in remotes response, get the media formats out of it
   if (SetRemoteMediaFormats(response) <= 0) {
     Release(EndedByCapabilityExchange);
     return true;
@@ -1528,10 +1528,13 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
      But all that is in the future, so we need to save the 200 OK until the
      above has happened and we can actually send the ACK with SDP. */
 
-  PTRACE(3, "SIP\tSaving INVITE response for delayed ACK, timeout=" << m_delayedAckTimeout1);
   m_delayedAckInviteResponse = new SIP_PDU(response);
-  m_delayedAckTimer = m_delayedAckTimeout1;
 
+  if (SendDelayedACK(false))
+    return false; // Don't send ACK ... already sent!
+
+  PTRACE(3, "SIP\tSaving INVITE response " << response.GetStatusCode() << " for delayed ACK, timeout=" << m_delayedAckTimeout1);
+  m_delayedAckTimer = m_delayedAckTimeout1;
   return false; // Don't send ACK ... yet
 }
 
