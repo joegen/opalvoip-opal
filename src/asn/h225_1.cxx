@@ -7848,11 +7848,13 @@ H225_TransportAddress_ipAddress::H225_TransportAddress_ipAddress(unsigned tag, P
 #ifndef PASN_NOPRINTON
 void H225_TransportAddress_ipAddress::PrintOn(ostream & strm) const
 {
-  std::streamsize indent = strm.precision() + 2;
-  strm << "{\n";
-  strm << setw(indent+5) << "ip = " << setprecision(indent) << m_ip << '\n';
-  strm << setw(indent+7) << "port = " << setprecision(indent) << m_port << '\n';
-  strm << setw(indent-1) << setprecision(indent-2) << "}";
+  strm << "{ "
+       << (unsigned)m_ip[0] << '.'
+       << (unsigned)m_ip[1] << '.'
+       << (unsigned)m_ip[2] << '.'
+       << (unsigned)m_ip[3] << ':'
+       << m_port
+       << " }";
 }
 #endif
 
