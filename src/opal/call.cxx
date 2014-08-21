@@ -512,7 +512,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
 {
   PTRACE_CONTEXT_ID_PUSH_THREAD(this);
 
-  PSafeLockReadOnly lock(*this);
+  PSafeLockReadWrite lock(*this);
   if (m_isClearing || !lock.IsLocked())
     return false;
 
@@ -719,26 +719,23 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection,
     return false;
   }
 
+  if (!sourceStream.SetSafetyMode(PSafeReadOnly))
+    return false;
+
   if (startPaused) {
     sourceStream->InternalSetPaused(true, false, false);
     sinkStream->InternalSetPaused(true, false, false);
   }
 
-  // if a patch was created, make sure the callback is called, just once per
-  // connection. Note must lock connection before stream or we can deadlock.
-  while (EnumerateConnections(otherConnection, PSafeReadWrite)) {
-    if (!sourceStream.SetSafetyMode(PSafeReadOnly))
-      return false;
-
-    OpalMediaPatchPtr patch = sourceStream->GetPatch();
-    if (patch == NULL) {
-      PTRACE(3, "OpenSourceMediaStreams patch failed session " << sessionID << " on " << connection);
-      return false;
-    }
-
-    otherConnection->OnPatchMediaStream(otherConnection == &connection, *patch);
-    sourceStream.SetSafetyMode(PSafeReference);
+  OpalMediaPatchPtr patch = sourceStream->GetPatch();
+  if (patch == NULL) {
+    PTRACE(3, "OpenSourceMediaStreams patch failed session " << sessionID << " on " << connection);
+    return false;
   }
+
+  // If a patch was created, make sure the callback is called once per connection.
+  while (EnumerateConnections(otherConnection, PSafeReadWrite))
+    otherConnection->OnPatchMediaStream(otherConnection == &connection, *patch);
 
   PTRACE(4, "OpenSourceMediaStreams completed session " << sessionID << " on " << connection);
   return true;
