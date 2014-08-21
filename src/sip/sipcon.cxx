@@ -554,7 +554,7 @@ PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean wit
     return false;
   }
 
-  PTRACE(3, "SIP\tSetAlerting");
+  PTRACE(3, "SIP\tSetAlerting " << (withMedia ? "with" : "no") << " media");
 
   if (!withMedia && (!m_prackEnabled || m_lastReceivedINVITE->GetSDP() != NULL))
     SendInviteResponse(SIP_PDU::Information_Ringing);
