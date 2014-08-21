@@ -2294,19 +2294,6 @@ void OpalRTPSession::ICEServer::OnBindingResponse(const PSTUNMessage &, PSTUNMes
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendICE(Channel channel)
 {
-  if (m_candidates[channel].empty()) {
-    if (m_remotePort[channel] != 0)
-      return e_ProcessPacket;
-
-    PTRACE(4, *this << "waiting for " << (channel == e_Data ? "data" : "control") << " remote address.");
-
-    while (m_remotePort[channel] == 0) {
-      if (m_shutdownWrite)
-        return e_AbortTransport;
-      PThread::Sleep(10);
-    }
-  }
-
   for (CandidateStates::iterator it = m_candidates[channel].begin(); it != m_candidates[channel].end(); ++it) {
     PSTUNMessage request(PSTUNMessage::BindingRequest);
     m_stunClient->AppendMessageIntegrity(request);
@@ -2314,7 +2301,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendICE(Channel channel)
       return e_AbortTransport;
   }
 
-  return e_IgnorePacket;
+  return m_remotePort[channel] != 0 ? e_ProcessPacket : e_IgnorePacket;
 }
 
 
@@ -2465,9 +2452,6 @@ bool OpalRTPSession::WriteData(RTP_DataFrame & frame, RewriteMode rewrite, const
 {
   PWaitAndSignal m(m_dataMutex);
 
-#if PTRACING
-  unsigned delayedTraceCount = 0;
-#endif
   while (IsOpen() && !m_shutdownWrite) {
     switch (OnSendData(frame, rewrite)) {
       case e_ProcessPacket :
@@ -2479,7 +2463,7 @@ bool OpalRTPSession::WriteData(RTP_DataFrame & frame, RewriteMode rewrite, const
 
       case e_IgnorePacket :
         m_dataMutex.Signal();
-        PTRACE_IF(4, (delayedTraceCount++)%10 == 0, *this << "data packet write delayed.");
+        PTRACE(m_throttleWriteData, *this << "data packet write delayed.");
         PThread::Sleep(20);
         m_dataMutex.Wait();
     }
@@ -2494,9 +2478,6 @@ bool OpalRTPSession::WriteControl(RTP_ControlFrame & frame, const PIPSocketAddre
 {
   PWaitAndSignal m(m_dataMutex);
 
-#if PTRACING
-  unsigned delayedTraceCount = 0;
-#endif
   while (IsOpen() && !m_shutdownWrite) {
     switch (OnSendControl(frame)) {
       case e_ProcessPacket :
@@ -2508,7 +2489,7 @@ bool OpalRTPSession::WriteControl(RTP_ControlFrame & frame, const PIPSocketAddre
 
       case e_IgnorePacket :
         m_dataMutex.Signal();
-        PTRACE_IF(4, (delayedTraceCount++)%10 == 0, *this << "control packet write delayed.");
+        PTRACE(m_throttleWriteControl, *this << "control packet write delayed.");
         PThread::Sleep(20);
         m_dataMutex.Wait();
     }
