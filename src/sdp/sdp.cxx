@@ -2771,7 +2771,7 @@ SDPMediaDescription * SDPSessionDescription::GetMediaDescriptionByType(const Opa
 
 SDPMediaDescription * SDPSessionDescription::GetMediaDescriptionByIndex(PINDEX index) const
 {
-  if (index > mediaDescriptions.GetSize())
+  if (index <= 0 || index > mediaDescriptions.GetSize())
     return NULL;
 
   return &mediaDescriptions[index-1];
