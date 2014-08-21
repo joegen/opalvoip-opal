@@ -612,7 +612,7 @@ bool SIPConnection::GetMediaTransportAddresses(OpalConnection & otherConnection,
                                           const OpalMediaType & mediaType,
                                     OpalTransportAddressArray & transports) const
 {
-  if (NoMediaBypass(otherConnection, mediaType))
+  if (!OpalSDPConnection::GetMediaTransportAddresses(otherConnection, mediaType, transports))
     return false;
 
   SDPSessionDescription * sdp = NULL;
@@ -622,14 +622,11 @@ bool SIPConnection::GetMediaTransportAddresses(OpalConnection & otherConnection,
     sdp = m_lastReceivedINVITE->GetSDP();
 
   SDPMediaDescription * md = sdp != NULL ? sdp->GetMediaDescriptionByType(mediaType) : NULL;
-  if (md == NULL)
-    return OpalRTPConnection::GetMediaTransportAddresses(otherConnection, mediaType, transports);
+  if (md != NULL && transports.SetAddressPair(md->GetMediaAddress(), md->GetControlAddress())) {
+    PTRACE(3, "SIP\tGetMediaTransportAddresses of " << mediaType << " found remote SDP "
+           << setfill(',') << transports << " for " << otherConnection << " on " << *this);
+  }
 
-  if (!transports.SetAddressPair(md->GetMediaAddress(), md->GetControlAddress()))
-    return false;
-
-  PTRACE(3, "SIP\tGetMediaTransportAddresses of " << mediaType << " found remote SDP "
-         << setfill(',') << transports << " for " << otherConnection << " on " << *this);
   return true;
 }
 
@@ -1590,7 +1587,7 @@ bool SIPConnection::SendDelayedACK(bool force)
     }
   }
 
-  PSafePtr<SIPTransaction> transaction = GetEndPoint().GetTransaction(m_delayedAckInviteResponse->GetTransactionID(), PSafeReference);
+  PSafePtr<SIPTransaction> transaction = GetEndPoint().GetTransaction(m_delayedAckInviteResponse->GetTransactionID(), PSafeReadOnly);
   if (transaction == NULL) {
     PTRACE(3, "SIP\tDelayed ACK failed, could not find transaction");
     Release(EndedByCapabilityExchange);

@@ -1126,23 +1126,26 @@ void OpalManager::AdjustMediaFormats(bool local,
 }
 
 
-OpalManager::MediaTransferMode OpalManager::GetMediaTransferMode(const OpalConnection & PTRACE_PARAM(source),
-                                                                 const OpalConnection & PTRACE_PARAM(destination),
-                                                                  const OpalMediaType & PTRACE_PARAM(mediaType)) const
+OpalManager::MediaTransferMode OpalManager::GetMediaTransferMode(const OpalConnection & /*provider*/,
+                                                                 const OpalConnection & /*consumer*/,
+                                                                  const OpalMediaType & /*mediaType*/) const
 {
-  PTRACE(3, "Media transfer mode set to forwarding for " << mediaType << ", "
-            "from " << source << " to " << destination);
   return MediaTransferForward;
 }
 
 
-bool OpalManager::GetMediaTransportAddresses(const OpalConnection & PTRACE_PARAM(source),
-                                             const OpalConnection & PTRACE_PARAM(destination),
+bool OpalManager::GetMediaTransportAddresses(const OpalConnection & provider,
+                                             const OpalConnection & consumer,
                                               const OpalMediaType & PTRACE_PARAM(mediaType),
                                         OpalTransportAddressArray &) const
 {
-  PTRACE(3, "GetMediaTransportAddresses of " << mediaType << " could not find transports for " << destination << " on " << source);
-  return false;
+  if (!provider.IsNetworkConnection() || !consumer.IsNetworkConnection())
+    return false;
+
+  MediaTransferMode mode = GetMediaTransferMode(provider, consumer, mediaType);
+  PTRACE(3, "Media transfer mode set to " << mode << " for " << mediaType << ", "
+            "from " << provider << " to " << consumer);
+  return mode == OpalManager::MediaTransferBypass;
 }
 
 

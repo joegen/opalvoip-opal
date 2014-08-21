@@ -283,28 +283,20 @@ bool OpalRTPConnection::GetMediaTransportAddresses(OpalConnection & otherConnect
                                               const OpalMediaType & mediaType,
                                         OpalTransportAddressArray & transports) const
 {
-  if (NoMediaBypass(otherConnection, mediaType))
+  if (!OpalConnection::GetMediaTransportAddresses(otherConnection, mediaType, transports))
     return false;
 
-  for (SessionMap::const_iterator session = m_sessions.begin(); session != m_sessions.end(); ++session) {
-    if (session->second->GetMediaType() == mediaType &&
-        transports.SetAddressPair(session->second->GetRemoteAddress(true), session->second->GetRemoteAddress(false))) {
-      PTRACE(3, "GetMediaTransportAddresses of " << mediaType << " found session addresses "
-              << setfill(',') << transports << " for " << otherConnection << " on " << *this);
-      return true;
+  if (transports.IsEmpty()) {
+    for (SessionMap::const_iterator session = m_sessions.begin(); session != m_sessions.end(); ++session) {
+      if (session->second->GetMediaType() == mediaType &&
+          transports.SetAddressPair(session->second->GetRemoteAddress(true), session->second->GetRemoteAddress(false))) {
+        PTRACE(3, "GetMediaTransportAddresses of " << mediaType << " found session addresses "
+               << setfill(',') << transports << " for " << otherConnection << " on " << *this);
+        break;
+      }
     }
   }
 
-  return OpalConnection::GetMediaTransportAddresses(otherConnection, mediaType, transports);
-}
-
-
-bool OpalRTPConnection::NoMediaBypass(const OpalConnection & otherConnection, const OpalMediaType & mediaType) const
-{
-  if (endpoint.GetManager().GetMediaTransferMode(*this, otherConnection, mediaType) == OpalManager::MediaTransferBypass)
-    return false;
-
-  PTRACE(4, "GetMediaTransportAddresses for " << mediaType << " not using MediaTransferBypass.");
   return true;
 }
 
