@@ -627,8 +627,8 @@ class OpalEndPoint : public PObject
                on to a remote system for direct access.
      */
     virtual bool GetMediaTransportAddresses(
-      const OpalConnection & source,         ///< Half of call providing media transport addresses
-      const OpalConnection & destination,    ///< Other half of call needing media transport addresses
+      const OpalConnection & provider,       ///< Half of call providing media transport addresses
+      const OpalConnection & consumer,       ///< Other half of call needing media transport addresses
       const OpalMediaType & mediaType,       ///< Media type for session to return information
       OpalTransportAddressArray & transports ///<  Information on media session
     ) const;

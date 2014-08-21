@@ -309,8 +309,6 @@ class OpalRTPConnection : public OpalConnection
     virtual bool GarbageCollection();
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalRTPConnection, OnUserInputInlineRFC2833);
 
-    virtual bool NoMediaBypass(const OpalConnection & otherConnection, const OpalMediaType & mediaType) const;
-
 #if OPAL_RTP_FEC
     OpalMediaFormatList NegotiateFECMediaFormats(OpalMediaSession & session);
 #endif

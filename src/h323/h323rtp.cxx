@@ -100,20 +100,6 @@ PBoolean H323_RTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameters & para
 {
   PTRACE(3, "RTP\tOnSendingPDU");
 
-  OpalMediaType mediaType = m_session->GetMediaType();
-
-  if (dynamic_cast<OpalDummySession *>(m_session) == NULL) {
-    PSafePtr<OpalConnection> otherParty = connection.GetOtherPartyConnection();
-    if (otherParty != NULL) {
-      OpalTransportAddressArray transports;
-      if (otherParty->GetMediaTransportAddresses(connection, mediaType, transports)) {
-        unsigned sessionID = GetSessionID();
-        const_cast<H323_RTPChannel *>(this)->m_session = new OpalDummySession(OpalMediaSession::Init(connection, sessionID, mediaType, false), transports);
-        connection.ReplaceMediaSession(sessionID, m_session);
-      }
-    }
-  }
-
   param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaGuaranteedDelivery);
   param.m_mediaGuaranteedDelivery = false;
 
@@ -124,7 +110,7 @@ PBoolean H323_RTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameters & para
 
   if (GetDirection() == H323Channel::IsTransmitter) {
     // Set flag for we are going to stop sending audio on silence
-    if (mediaType == OpalMediaType::Audio()) {
+    if (m_session->GetMediaType() == OpalMediaType::Audio()) {
       PSafePtr<OpalConnection> otherConnection = connection.GetOtherPartyConnection();
       if (otherConnection != NULL) {
         OpalSilenceDetector * silenceDetector = otherConnection->GetSilenceDetector();
