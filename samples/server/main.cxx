@@ -896,17 +896,18 @@ MySkinnyEndPoint::MySkinnyEndPoint(MyManager & mgr)
 
 bool MySkinnyEndPoint::Configure(PConfig &, PConfigPage * rsrc)
 {
-  m_server = rsrc->AddStringField(SkinnyServerKey, 20, PString::Empty(),
-                                  "Server for Skinny Client Control Protocol (SCCP).");
+  m_defaultServer = rsrc->AddStringField(SkinnyServerKey, 20, PString::Empty(),
+                                  "Default server for Skinny Client Control Protocol (SCCP).");
   m_deviceType = rsrc->AddIntegerField(SkinnyTypeKey, 1, 32767, m_deviceType, "",
                                        "Device type for SCCP. Default 30016 = Cisco IP Communicator.");
-  m_deviceNames = rsrc->AddStringArrayField(SkinnyNamesKey, false, 30, m_deviceNames,
-                                            "Names of all devices to simulate for SCCP.");
+  m_deviceNames = rsrc->AddStringArrayField(SkinnyNamesKey, false, 0, m_deviceNames,
+                                            "Names of all devices to simulate for SCCP.", 1, 50);
   SetSimulatedAudioFile(rsrc->AddStringField(SkinnySimulatedAudioFileKey, 0, GetSimulatedAudioFile(),
                         "WAV file to simulate audio on SCCP when can't gateway channel.", 1, 80));
 
   PStringArray oldNames = GetPhoneDeviceNames();
-  PStringArray newNames = ExpandWildcards(m_deviceNames);
+  PStringArray newNames, servers;
+  ExpandWildcards(m_deviceNames, newNames, servers);
   for (PINDEX i = 0; i < oldNames.GetSize(); ++i) {
     if (newNames.GetValuesIndex(oldNames[i]) == P_MAX_INDEX) {
       if (!Unregister(oldNames[i])) {
@@ -916,8 +917,8 @@ bool MySkinnyEndPoint::Configure(PConfig &, PConfigPage * rsrc)
   }
 
   for (PINDEX i = 0; i < newNames.GetSize(); ++i) {
-    if (!Register(m_server, newNames[i], m_deviceType)) {
-      PSYSTEMLOG(Error, "Could not register " << newNames[i] << " with skinny server \"" << m_server << '"');
+    if (!Register(servers[i], newNames[i], m_deviceType)) {
+      PSYSTEMLOG(Error, "Could not register " << newNames[i] << " with skinny server \"" << servers[i] << '"');
     }
   }
 
@@ -927,9 +928,10 @@ bool MySkinnyEndPoint::Configure(PConfig &, PConfigPage * rsrc)
 
 void MySkinnyEndPoint::AutoRegister(const PString & server, const PString & wildcard, bool registering)
 {
-  PString actualServer = server.IsEmpty() ? m_server : server;
+  PString actualServer = server.IsEmpty() ? m_defaultServer : server;
 
-  PStringArray names = ExpandWildcards(wildcard);
+  PStringArray names, servers;
+  ExpandWildcards(wildcard, names, servers);
 
   for (PINDEX i = 0; i < names.GetSize(); ++i) {
     PString name = names[i];
@@ -948,28 +950,36 @@ void MySkinnyEndPoint::AutoRegister(const PString & server, const PString & wild
 }
 
 
-PStringArray MySkinnyEndPoint::ExpandWildcards(const PStringArray & names)
+void MySkinnyEndPoint::ExpandWildcards(const PStringArray & input, PStringArray & names, PStringArray & servers)
 {
-  PStringArray expanded;
+  for (PINDEX i = 0; i < input.GetSize(); ++i) {
+    PString str = input[i];
 
-  for (PINDEX i = 0; i < names.GetSize(); ++i) {
-    PString name = names[i];
-
-    PIntArray starts(3), ends(3);
-    static PRegularExpression const Wildcards("([0-9]+)\\.\\.([0-9]+)$", PRegularExpression::Extended);
-    if (!Wildcards.Execute(name, starts, ends))
-      expanded.AppendString(name);
-    else {
-      uint64_t number = name(starts[1], ends[1] - 1).AsUnsigned64();
-      uint64_t lastNumber = name(starts[2], ends[2] - 1).AsUnsigned64();
+    PIntArray starts(4), ends(4);
+    static PRegularExpression const Wildcards("([0-9]+)\\.\\.([0-9]+)(@.*)?$", PRegularExpression::Extended);
+    if (Wildcards.Execute(str, starts, ends)) {
+      PString server = (ends[3] - starts[3]) > 2 ? str(starts[3]+1, ends[3]-1) : m_defaultServer;
+      uint64_t number = str(starts[1], ends[1] - 1).AsUnsigned64();
+      uint64_t lastNumber = str(starts[2], ends[2] - 1).AsUnsigned64();
       unsigned digits = ends[2] - starts[2];
-      name.Delete(starts[1], P_MAX_INDEX);
-      while (number <= lastNumber)
-        expanded.AppendString(PSTRSTRM(name << setfill('0') << setw(digits) << number++));
+      str.Delete(starts[1], P_MAX_INDEX);
+      while (number <= lastNumber) {
+        names.AppendString(PSTRSTRM(str << setfill('0') << setw(digits) << number++));
+        servers.AppendString(server);
+      }
+    }
+    else {
+      PString name, server;
+      if (str.Split('@', name, server)) {
+        names.AppendString(name);
+        servers.AppendString(server);
+      }
+      else {
+        names.AppendString(str);
+        servers.AppendString(m_defaultServer);
+      }
     }
   }
-
-  return expanded;
 }
 
 #endif // OPAL_SKINNY

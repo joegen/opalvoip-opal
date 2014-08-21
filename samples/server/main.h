@@ -318,11 +318,11 @@ public:
   bool Configure(PConfig & cfg, PConfigPage * rsrc);
 
   void AutoRegister(const PString & server, const PString & name, bool registering);
-  static PStringArray ExpandWildcards(const PStringArray & names);
+  void ExpandWildcards(const PStringArray & input, PStringArray & names, PStringArray & servers);
 
 protected:
   MyManager  & m_manager;
-  PString      m_server;
+  PString      m_defaultServer;
   unsigned     m_deviceType;
   PStringArray m_deviceNames;
 };
