@@ -712,7 +712,7 @@ bool SIPEndPoint::OnReceivedPDU(SIP_PDU * pdu)
     case SIP_PDU::NumMethods :  // Response
       {
         PString id = pdu->GetTransactionID();
-        PSafePtr<SIPTransaction> transaction = GetTransaction(id, PSafeReadOnly);
+        PSafePtr<SIPTransaction> transaction = GetTransaction(id, PSafeReference); // GetConnection() immutable so don't need read only
         if (transaction != NULL) {
           SIPConnection * connection = transaction->GetConnection();
           new SIP_PDU_Work(*this, connection != NULL ? connection->GetToken() : id, pdu);
@@ -2207,7 +2207,7 @@ void SIP_PDU_Work::Work()
         transaction->OnReceivedResponse(*m_pdu);
         PTRACE(4, "SIP\tHandled PDU \"" << *m_pdu << '"');
       }
-      else {
+      else if (transaction.SetSafetyMode(PSafeReadWrite)) {
         PTRACE(4, "SIP\tRetransmitting previous response for transaction id=" << transactionID);
         transaction->InitialiseHeaders(*m_pdu);
         transaction->Send();
