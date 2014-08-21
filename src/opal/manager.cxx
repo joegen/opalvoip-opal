@@ -1136,7 +1136,7 @@ OpalManager::MediaTransferMode OpalManager::GetMediaTransferMode(const OpalConne
 
 bool OpalManager::GetMediaTransportAddresses(const OpalConnection & provider,
                                              const OpalConnection & consumer,
-                                              const OpalMediaType & PTRACE_PARAM(mediaType),
+                                              const OpalMediaType & mediaType,
                                         OpalTransportAddressArray &) const
 {
   if (!provider.IsNetworkConnection() || !consumer.IsNetworkConnection())
