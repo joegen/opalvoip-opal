@@ -1104,8 +1104,8 @@ static struct {
 } AudioDeviceVariables[] = {
   { PSoundChannel::Recorder, "record-audio",    "recorder (transmit)", &OpalPCSSEndPoint::GetSoundChannelRecordDevice, &OpalPCSSEndPoint::SetSoundChannelRecordDevice },
   { PSoundChannel::Player,   "play-audio",      "player (receive)",    &OpalPCSSEndPoint::GetSoundChannelPlayDevice,   &OpalPCSSEndPoint::SetSoundChannelPlayDevice   },
-  { PSoundChannel::Recorder, "hold-audio\nmoh", "on hold",             &OpalPCSSEndPoint::GetSoundChannelOnHoldDevice, &OpalPCSSEndPoint::SetSoundChannelOnHoldDevice },
-  { PSoundChannel::Recorder, "ring-audio\naor", "on ring",             &OpalPCSSEndPoint::GetSoundChannelOnRingDevice, &OpalPCSSEndPoint::SetSoundChannelOnRingDevice }
+  { PSoundChannel::Recorder, "hold-audio",      "on hold",             &OpalPCSSEndPoint::GetSoundChannelOnHoldDevice, &OpalPCSSEndPoint::SetSoundChannelOnHoldDevice },
+  { PSoundChannel::Recorder, "ring-audio ",     "on ring",             &OpalPCSSEndPoint::GetSoundChannelOnRingDevice, &OpalPCSSEndPoint::SetSoundChannelOnRingDevice }
 };
 
 #if OPAL_VIDEO
