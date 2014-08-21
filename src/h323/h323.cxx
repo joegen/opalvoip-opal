@@ -4382,22 +4382,24 @@ bool H323Connection::GetMediaTransportAddresses(OpalConnection & otherConnection
                                            const OpalMediaType & mediaType,
                                      OpalTransportAddressArray & transports) const
 {
-  if (NoMediaBypass(otherConnection, mediaType))
+  if (!OpalRTPConnection::GetMediaTransportAddresses(otherConnection, mediaType, transports))
     return false;
 
-  // If have fast connect, use addresses from them as don't have sessions yet
-  for (H323LogicalChannelList::const_iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel) {
-    if (channel->GetCapability().GetMediaFormat().GetMediaType() == mediaType) {
-      OpalTransportAddress media, control;
-      if (channel->GetMediaTransportAddress(media, control) && transports.SetAddressPair(media, control)) {
-        PTRACE(3, "H323\tGetMediaTransportAddresses of " << mediaType << " found fast connect "
-               << setfill(',') << transports << " for " << otherConnection << " on " << *this);
-        return true;
+  if (transports.IsEmpty()) {
+    // If have fast connect, use addresses from them as don't have sessions yet
+    for (H323LogicalChannelList::const_iterator channel = m_fastStartChannels.begin(); channel != m_fastStartChannels.end(); ++channel) {
+      if (channel->GetCapability().GetMediaFormat().GetMediaType() == mediaType) {
+        OpalTransportAddress media, control;
+        if (channel->GetMediaTransportAddress(media, control) && transports.SetAddressPair(media, control)) {
+          PTRACE(3, "H323\tGetMediaTransportAddresses of " << mediaType << " found fast connect "
+                 << setfill(',') << transports << " for " << otherConnection << " on " << *this);
+          break;
+        }
       }
     }
   }
 
-  return OpalRTPConnection::GetMediaTransportAddresses(otherConnection, mediaType, transports);
+  return true;
 }
 
 

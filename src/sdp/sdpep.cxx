@@ -669,16 +669,6 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
 
   bool replaceSession = false;
 
-  PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
-  if (otherParty != NULL) {
-    OpalTransportAddressArray transports;
-    if (otherParty->GetMediaTransportAddresses(*this, mediaType, transports) && dynamic_cast<OpalDummySession *>(mediaSession) == NULL) {
-      PTRACE(4, "Created replacement dummy " << mediaType << " session " << sessionId);
-      mediaSession = new OpalDummySession(OpalMediaSession::Init(*this, sessionId, mediaType, m_remoteBehindNAT), transports);
-      replaceSession = true;
-    }
-  }
-
   // For fax for example, we have to switch the media session according to mediaType
   if (mediaSession->GetMediaType() != mediaType) {
     PTRACE(3, "Replacing " << mediaSession->GetMediaType() << " session " << sessionId << " with " << mediaType);
@@ -784,6 +774,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
      We open tx (other party source) side first so we follow the remote
      endpoints preferences. */
   if (!incomingMedia->GetMediaAddress().IsEmpty()) {
+    PSafePtr<OpalConnection> otherParty = GetOtherPartyConnection();
     if (otherParty != NULL && sendStream == NULL) {
       if ((sendStream = GetMediaStream(sessionId, false)) == NULL) {
         PTRACE(5, "Opening tx " << mediaType << " stream from offer SDP");

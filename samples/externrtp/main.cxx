@@ -64,12 +64,6 @@ bool MyManager::Initialise(PArgList & args, bool verbose, const PString &)
 }
 
 
-MyManager::MediaTransferMode MyManager::GetMediaTransferMode(const OpalConnection &, const OpalConnection &, const OpalMediaType &) const
-{
-  return MyManager::MediaTransferBypass;
-}
-
-
 PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
 {
   stream.PrintDetail(*LockedOutput());
@@ -89,7 +83,7 @@ bool MyManager::GetMediaTransportAddresses(const OpalConnection & source,
                                             const OpalMediaType & mediaType,
                                       OpalTransportAddressArray & transports) const
 {
-  dynamic_cast<MyManager &>(source.GetEndPoint().GetManager()).LockedOutput() << source.GetToken() << ' ' << mediaType << ::flush;
+  LockedOutput() << source.GetToken() << ' ' << mediaType << ::flush;
   while (cin.good()) {
     OpalTransportAddress address;
     cin >> address;

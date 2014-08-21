@@ -1024,8 +1024,8 @@ class OpalManager : public PObject
        transcoding and full media bypass.
      */
     virtual MediaTransferMode GetMediaTransferMode(
-      const OpalConnection & source,      ///<  Source connection
-      const OpalConnection & destination, ///<  Destination connection
+      const OpalConnection & provider,    ///< Half of call providing media transport addresses
+      const OpalConnection & consumer,    ///< Other half of call needing media transport addresses
       const OpalMediaType & mediaType     ///<  Media type for session
     ) const;
 
@@ -1035,12 +1035,21 @@ class OpalManager : public PObject
        call to get the transport address of the media on the other side, so it
        can pass it on, bypassing the local host.
 
+       It may also be sued by "external" RTP systems where a non network
+       connection can redirect media to seom other transport address.
+
+       Default behaviour checks if both connections a "network" and if so uses
+       GetMediaTransferMode() to determine if in bypass mode, otherwise returns
+       false. Note this default implementation does not fill in the \p
+       transports, as that is usually done by derived OpalConnection class. If
+       the \p transports is set, then the derived classes to no override it.
+
        @return true if a transport address is available and may be used to pass
                on to a remote system for direct access.
      */
     virtual bool GetMediaTransportAddresses(
-      const OpalConnection & source,         ///< Half of call providing media transport addresses
-      const OpalConnection & destination,    ///< Other half of call needing media transport addresses
+      const OpalConnection & provider,       ///< Half of call providing media transport addresses
+      const OpalConnection & consumer,       ///< Other half of call needing media transport addresses
       const OpalMediaType & mediaType,       ///< Media type for session to return information
       OpalTransportAddressArray & transports ///<  Information on media session
     ) const;
