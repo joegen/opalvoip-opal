@@ -920,7 +920,7 @@ class SIPEndPoint : public OpalSDPEndPoint
       SIPTransaction * transaction
     ) { m_transactions.Append(transaction); }
 
-    PSafePtr<SIPTransaction> GetTransaction(const PString & transactionID, PSafetyMode mode = PSafeReadWrite)
+    PSafePtr<SIPTransaction> GetTransaction(const PString & transactionID, PSafetyMode mode)
     { return PSafePtrCast<SIPTransactionBase, SIPTransaction>(m_transactions.FindWithLock(transactionID, mode)); }
     
     /**Return the next CSEQ for the next transaction.
