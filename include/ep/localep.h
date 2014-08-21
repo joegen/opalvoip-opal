@@ -595,14 +595,6 @@ class OpalLocalConnection : public OpalConnection
       PBoolean isSource                    ///<  Is a source stream
     );
 
-    /**Open source or sink media stream for session.
-      */
-    virtual OpalMediaStreamPtr OpenMediaStream(
-      const OpalMediaFormat & mediaFormat, ///<  Media format to open
-      unsigned sessionID,                  ///<  Session to start stream on
-      bool isSource                        ///< Stream is a source/sink
-    );
-
     /**Call back for closed a media stream.
 
        The default behaviour calls the OpalEndPoint function of the same name.
