@@ -432,7 +432,7 @@ void H323ConsoleEndPoint::GetArgumentSpec(ostream & strm) const
           "-alias-pattern:     Alias pattern, may be multiple entries.\n"
           "-no-fast.           Fast connect disabled.\n"
           "-no-tunnel.         H.245 tunnel disabled.\n"
-          "-no-h235-setup.     H.245 tunnel during SETUP disabled.\n"
+          "-no-h245-setup.     H.245 tunnel during SETUP disabled.\n"
           "-h239-control.      H.239 control capability.\n"
           "-h323-term-type:    Terminal type value (1..255, default 50).\n";
 }
@@ -464,7 +464,7 @@ bool H323ConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PStrin
     DisableFastStart(true);
   if (args.HasOption("no-tunnel"))
     DisableH245Tunneling(true);
-  if (args.HasOption("no-h245-tunnel"))
+  if (args.HasOption("no-h245-setup"))
     DisableH245inSetup(true);
 
   if (args.HasOption("h323-term-type")) {
@@ -1133,8 +1133,8 @@ static struct {
 } AudioDeviceVariables[] = {
   { PSoundChannel::Recorder, "record-audio",    "recorder (transmit)", &OpalPCSSEndPoint::GetSoundChannelRecordDevice, &OpalPCSSEndPoint::SetSoundChannelRecordDevice },
   { PSoundChannel::Player,   "play-audio",      "player (receive)",    &OpalPCSSEndPoint::GetSoundChannelPlayDevice,   &OpalPCSSEndPoint::SetSoundChannelPlayDevice   },
-  { PSoundChannel::Recorder, "hold-audio\nmoh", "on hold",             &OpalPCSSEndPoint::GetSoundChannelOnHoldDevice, &OpalPCSSEndPoint::SetSoundChannelOnHoldDevice },
-  { PSoundChannel::Recorder, "ring-audio\naor", "on ring",             &OpalPCSSEndPoint::GetSoundChannelOnRingDevice, &OpalPCSSEndPoint::SetSoundChannelOnRingDevice }
+  { PSoundChannel::Recorder, "hold-audio",      "on hold",             &OpalPCSSEndPoint::GetSoundChannelOnHoldDevice, &OpalPCSSEndPoint::SetSoundChannelOnHoldDevice },
+  { PSoundChannel::Recorder, "ring-audio ",     "on ring",             &OpalPCSSEndPoint::GetSoundChannelOnRingDevice, &OpalPCSSEndPoint::SetSoundChannelOnRingDevice }
 };
 
 #if OPAL_VIDEO
