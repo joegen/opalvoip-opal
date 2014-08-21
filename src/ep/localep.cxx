@@ -488,7 +488,7 @@ void OpalLocalConnection::AlertingIncoming(bool withMedia)
         AutoStartMediaStreams();
 
       SetPhase(AlertingPhase);
-      OnAlerting();
+      OnAlerting(withMedia);
 
       if (withMedia)
         StartMediaStreams();
