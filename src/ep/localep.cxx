@@ -441,22 +441,6 @@ OpalMediaStream * OpalLocalConnection::CreateMediaStream(const OpalMediaFormat &
 }
 
 
-OpalMediaStreamPtr OpalLocalConnection::OpenMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
-{
-#if OPAL_VIDEO
-  if ( isSource &&
-       mediaFormat.GetMediaType() == OpalMediaType::Video() &&
-      !ownerCall.IsEstablished() &&
-      !endpoint.GetManager().CanAutoStartTransmitVideo()) {
-    PTRACE(3, "LocalCon\tOpenMediaStream auto start disabled, refusing video open");
-    return NULL;
-  }
-#endif
-
-  return OpalConnection::OpenMediaStream(mediaFormat, sessionID, isSource);
-}
-
-
 void OpalLocalConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 {
 #if OPAL_HAS_H281
