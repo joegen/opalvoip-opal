@@ -1581,8 +1581,8 @@ bool SIPConnection::SendDelayedACK(bool force)
             return false;
           }
 
-          if (session->GetRemoteAddress().IsEmpty()) {
-            PTRACE(4, "SIP\tDelayed ACK does not have " << *mediaType << " session " << stream->GetSessionID() << " remote address yet");
+          if (session->GetLocalAddress().IsEmpty()) {
+            PTRACE(4, "SIP\tDelayed ACK does not have " << *mediaType << " session " << stream->GetSessionID() << " local address yet");
             return false;
           }
         }
@@ -1590,7 +1590,7 @@ bool SIPConnection::SendDelayedACK(bool force)
     }
   }
 
-  PSafePtr<SIPTransaction> transaction = GetEndPoint().GetTransaction(m_delayedAckInviteResponse->GetTransactionID());
+  PSafePtr<SIPTransaction> transaction = GetEndPoint().GetTransaction(m_delayedAckInviteResponse->GetTransactionID(), PSafeReference);
   if (transaction == NULL) {
     PTRACE(3, "SIP\tDelayed ACK failed, could not find transaction");
     Release(EndedByCapabilityExchange);
@@ -2161,7 +2161,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   }
 
   // Replaces header string has already been validated in SIPEndPoint::OnReceivedINVITE
-  PSafePtr<SIPConnection> replacedConnection = GetEndPoint().GetSIPConnectionWithLock(replaces, PSafeReference);
+  PSafePtr<SIPConnection> replacedConnection = GetEndPoint().GetSIPConnectionWithLock(replaces, PSafeReadOnly);
   if (replacedConnection == NULL) {
     /* Allow for a race condition where between when SIPEndPoint::OnReceivedINVITE()
        is executed and here, the call to be replaced was released. */

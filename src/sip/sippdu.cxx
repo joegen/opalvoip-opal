@@ -3321,10 +3321,6 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     return false;
   }
 
-  PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
-    return false;
-
   /* Really need to check if response is actually meant for us. Have a
      temporary cheat in assuming that we are only sending a given CSeq to one
      and one only host, so anything coming back with that CSeq is OK. This has
@@ -3333,6 +3329,10 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
   if (IsInProgress()) {
     if (response.GetStatusCode()/100 == 1) {
       PTRACE(3, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " proceeding.");
+
+      PSafeLockReadWrite lock(*this);
+      if (!lock.IsLocked())
+        return false;
 
       if (m_state == Trying)
         m_state = Proceeding;
@@ -3364,7 +3364,10 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     }
 
     if (m_state == Completed) {
-      OnCompleted(response);
+      if (LockReadWrite()) {
+        OnCompleted(response);
+        UnlockReadWrite();
+      }
       m_completed.Signal();
       PTRACE(3, "SIP\t" << GetMethod() << " transaction id=" << GetTransactionID() << " completed.");
     }
