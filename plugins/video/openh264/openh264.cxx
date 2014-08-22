@@ -715,7 +715,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
                              unsigned & flags)
     {
       if (!m_encapsulation.HasRTPFrames()) {
-        if (flags&PluginCodec_ReturnCoderRequestIFrame)
+        if (flags&PluginCodec_CoderForceIFrame)
           m_encoder->ForceIntraFrame(true);
 
         PluginCodec_RTP from(fromPtr, fromLen);
