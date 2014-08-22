@@ -961,7 +961,7 @@ void MySkinnyEndPoint::ExpandWildcards(const PStringArray & input, PStringArray 
       PString server = (ends[3] - starts[3]) > 2 ? str(starts[3]+1, ends[3]-1) : m_defaultServer;
       uint64_t number = str(starts[1], ends[1] - 1).AsUnsigned64();
       uint64_t lastNumber = str(starts[2], ends[2] - 1).AsUnsigned64();
-      unsigned digits = ends[2] - starts[2];
+      unsigned digits = ends[1] - starts[1];
       str.Delete(starts[1], P_MAX_INDEX);
       while (number <= lastNumber) {
         names.AppendString(PSTRSTRM(str << setfill('0') << setw(digits) << number++));
