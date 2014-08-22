@@ -1150,7 +1150,11 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
 void OpalRTPSession::TimedSendReport(PTimer&, P_INT_PTR)
 {
-  SendReport(false);
+  if (m_reportMutex.Wait(0)) {
+    SendReport(false);
+    m_reportMutex.Signal();
+  }
+  // If can't lock timer will try again later.
 }
 
 
