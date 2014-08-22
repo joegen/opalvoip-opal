@@ -668,6 +668,19 @@ class OpalSkinnyConnection : public OpalRTPConnection
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
 
+    /**Indicate to remote endpoint an alert is in progress.
+       If this is an incoming connection and the AnswerCallResponse is in a
+       AnswerCallDeferred or AnswerCallPending state, then this function is
+       used to indicate to that endpoint that an alert is in progress. This is
+       usually due to another connection which is in the call (the B party)
+       has received an OnAlerting() indicating that its remoteendpoint is
+       "ringing".
+      */
+    virtual PBoolean SetAlerting(
+      const PString & calleeName,   ///<  Name of endpoint being alerted.
+      PBoolean withMedia                ///<  Open media with alerting
+    );
+
     /**Indicate to remote endpoint we are connected.
       */
     virtual PBoolean SetConnected();
@@ -714,7 +727,19 @@ class OpalSkinnyConnection : public OpalRTPConnection
 
   protected:
     bool OnReceiveCallInfo(const OpalSkinnyEndPoint::CallInfoCommon & msg);
-    OpalMediaSession * SetUpMediaSession(unsigned sessionId, uint32_t payloadCapability, const OpalTransportAddress & mediaAddress);
+
+    struct MediaInfo
+    {
+      MediaInfo()
+        : m_passThruPartyId(0)
+        , m_payloadCapability(0)
+      { }
+
+      uint32_t             m_passThruPartyId;
+      uint32_t             m_payloadCapability;
+      OpalTransportAddress m_mediaAddress;
+    };
+    void OpenMediaChannel(MediaInfo & info);
     void DelayCloseMediaStream(OpalMediaStreamPtr mediaStream);
 
     OpalSkinnyEndPoint & m_endpoint;
@@ -724,6 +749,8 @@ class OpalSkinnyConnection : public OpalRTPConnection
     uint32_t m_callIdentifier;
     PString  m_alertingType;
     bool     m_needSoftKeyEndcall;
+
+    MediaInfo m_OpenReceiveChannelInfo, m_StartMediaTransmissionInfo;
 
     OpalMediaFormatList m_remoteMediaFormats;
 
