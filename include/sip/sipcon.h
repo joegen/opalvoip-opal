@@ -729,6 +729,9 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
     OpalGloballyUniqueID  m_dialogNotifyId;
     int                   m_appearanceCode;
     PString               m_alertInfo;
+#if OPAL_VIDEO
+    bool                  m_canDoVideoFastUpdateINFO;
+#endif
     PoolTimer             m_sessionTimer;
 
     PRACKMode      m_prackMode;
