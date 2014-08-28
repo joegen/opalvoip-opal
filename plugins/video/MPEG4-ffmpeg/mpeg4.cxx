@@ -248,7 +248,7 @@ static MPEG4_PluginMediaFormat MyMediaFormatInfo;
 
 /////////////////////////////////////////////////////////////////////////////
 
-class MPEG4_EncodedFrame : public OpalPluginFrame
+class MPEG4_EncodedFrame : public FFMPEGCodec::EncodedFrame
 {
   protected:
     // packet sizes generating in RtpCallback

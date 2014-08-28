@@ -30,7 +30,7 @@
 class PluginCodec_RTP;
 
 
-class RFC2190EncodedFrame : public OpalPluginFrame
+class RFC2190EncodedFrame : public FFMPEGCodec::EncodedFrame
 {
   public:
     RFC2190EncodedFrame();

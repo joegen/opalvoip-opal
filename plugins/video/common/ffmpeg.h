@@ -44,7 +44,6 @@
 #define __FFMPEG_H__ 1
 
 #include "platform.h"
-#include "encframe.h"
 #include <codec/opalplugin.hpp>
 
 extern "C" {
@@ -71,6 +70,41 @@ extern "C" {
 
 class FFMPEGCodec
 {
+  public:
+    class EncodedFrame
+    {
+      protected:
+        size_t    m_length;
+        size_t    m_maxSize;
+        uint8_t * m_buffer;
+        size_t    m_maxPayloadSize;
+
+      public:
+        EncodedFrame();
+        virtual ~EncodedFrame();
+
+        virtual const char * GetName() const { return ""; }
+
+        uint8_t * GetBuffer() const { return m_buffer; }
+        size_t GetMaxSize() const { return m_maxSize; }
+        size_t GetLength() const { return m_length; }
+        void SetMaxPayloadSize(size_t size) { m_maxPayloadSize = size; }
+
+        virtual bool SetResolution(unsigned width, unsigned height);
+        virtual bool SetMaxSize(size_t newSize);
+        virtual bool Reset(size_t len = 0);
+
+        virtual bool GetPacket(PluginCodec_RTP & rtp, unsigned & flags) = 0;
+        virtual bool AddPacket(const PluginCodec_RTP & rtp, unsigned & flags) = 0;
+
+        virtual bool IsIntraFrame() const = 0;
+
+        virtual void RTPCallBack(void * data, int size, int mbCount);
+
+      protected:
+        virtual bool Append(const uint8_t * data, size_t len);
+    };
+
   protected:
     const char     * m_prefix;
     AVCodec        * m_codec;
@@ -79,12 +113,12 @@ class FFMPEGCodec
     AVPacket         m_packet;
     uint8_t        * m_alignedInputYUV;
     size_t           m_alignedInputSize;
-    OpalPluginFrame *m_fullFrame;
+    EncodedFrame   * m_fullFrame;
     int              m_errorCount;
     bool             m_ignorePackets;
 
   public:
-    FFMPEGCodec(const char * prefix, OpalPluginFrame * fullFrame);
+    FFMPEGCodec(const char * prefix, EncodedFrame * fullFrame);
     ~FFMPEGCodec();
 
     virtual bool InitEncoder(CodecID codecId);
@@ -108,7 +142,7 @@ class FFMPEGCodec
     virtual int EncodeVideoFrame(uint8_t * frame, size_t length, unsigned & flags);
     virtual bool DecodeVideoFrame(const uint8_t * frame, size_t length, unsigned & flags);
 
-    OpalPluginFrame * GetEncodedFrame() const { return m_fullFrame; }
+    EncodedFrame * GetEncodedFrame() const { return m_fullFrame; }
 
     virtual void ErrorCallback(unsigned level, const char * msg);
 
