@@ -173,6 +173,12 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       const PString & name         ///< Name of client "psuedo device" to unregister
     );
 
+    /// Create a new PhoneDevice object
+    PhoneDevice * CreatePhoneDevice(
+      const PString & name,   ///< Name of cient "psuedo device" to register
+      unsigned deviceType     ///< Device type code
+    );
+
     PhoneDevice * GetPhoneDevice(
       const PString & name         ///< Name of client "psuedo device" to unregister
     ) const { return m_phoneDevices.GetAt(name); }
@@ -188,6 +194,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       PCLASSINFO(PhoneDevice, PObject);
       public:
         PhoneDevice(OpalSkinnyEndPoint & ep, const PString & name, unsigned deviceType);
+        ~PhoneDevice() { Close(); }
 
         virtual void PrintOn(ostream & strm) const;
 
@@ -198,6 +205,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
         bool SendSkinnyMsg(const SkinnyMsg & msg);
 
         const PString & GetName() const { return m_name; }
+        unsigned GetDeviceType() const { return m_deviceType; }
         const PString & GetStatus() const { return m_status; }
         OpalTransportAddress GetRemoteAddress() const { return m_transport.GetRemoteAddress(); }
 
