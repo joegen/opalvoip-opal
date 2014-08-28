@@ -2558,14 +2558,28 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
             break;
 
           default :
-            if (m_referInProgress && transaction.GetMethod() == SIP_PDU::Method_REFER) {
-              m_referInProgress = false;
+            switch (transaction.GetMethod()) {
+              case SIP_PDU::Method_REFER :
+                if (m_referInProgress) {
+                  m_referInProgress = false;
 
-              PStringToString info;
-              info.SetAt("result", "error");
-              info.SetAt("party", "B");
-              info.SetAt("code", psprintf("%u", response.GetStatusCode()));
-              OnTransferNotify(info, this);
+                  PStringToString info;
+                  info.SetAt("result", "error");
+                  info.SetAt("party", "B");
+                  info.SetAt("code", psprintf("%u", response.GetStatusCode()));
+                  OnTransferNotify(info, this);
+                }
+                break;
+
+              case SIP_PDU::Method_INFO :
+                if (transaction.GetMIME().GetContentType().NumCompare(ApplicationMediaControlXMLKey) == EqualTo) {
+                  PTRACE(3, "SIP\tError response to video fast update INFO, not sending another.");
+                  m_canDoVideoFastUpdateINFO = false;
+                }
+                break;
+
+              default :
+                break;
             }
         }
     }
