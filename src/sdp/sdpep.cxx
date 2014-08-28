@@ -214,7 +214,8 @@ PString OpalSDPConnection::AnswerOfferSDP(const PString & offer)
   if (!sdpIn->Decode(offer, formats))
     return PString::Empty();
 
-  std::auto_ptr<SDPSessionDescription> sdpOut(m_endpoint.CreateSDP(0, 0, OpalTransportAddress()));
+  std::auto_ptr<SDPSessionDescription> sdpOut(m_endpoint.CreateSDP(0, 0,
+                            OpalTransportAddress(GetMediaInterface(), 0, OpalTransportAddress::UdpPrefix())));
   PTRACE_CONTEXT_ID_TO(*sdpOut);
 
   if (!OnSendAnswerSDP(*sdpIn, *sdpOut))
