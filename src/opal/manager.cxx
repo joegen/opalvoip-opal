@@ -601,19 +601,23 @@ bool OpalManager::SetUpConference(OpalCall & call, const char * mixerURI, const 
 #endif // OPAL_HAS_MIXER
 
 
-static void AsynchCallSetUp(PSafePtr<OpalConnection> connection)
+static void SynchCallSetUp(PSafePtr<OpalConnection> connection)
 {
-  if (!connection.SetSafetyMode(PSafeReadWrite))
-    return;
-
-  PTRACE_CONTEXT_ID_PUSH_THREAD(connection);
-
   if (connection->SetUpConnection())
     return;
 
   PTRACE(2, "Could not set up connection on " << *connection);
   if (connection->GetCallEndReason() == OpalConnection::NumCallEndReasons)
     connection->Release(OpalConnection::EndedByTemporaryFailure);
+}
+
+
+static void AsynchCallSetUp(PSafePtr<OpalConnection> connection)
+{
+  PTRACE_CONTEXT_ID_PUSH_THREAD(connection);
+
+  if (connection.SetSafetyMode(PSafeReadWrite))
+    SynchCallSetUp(connection);
 }
 
 
@@ -639,8 +643,12 @@ PSafePtr<OpalCall> OpalManager::SetUpCall(const PString & partyA,
   // thread.
   PSafePtr<OpalConnection> connection = MakeConnection(*call, partyA.Trim(), userData, options, stringOptions);
   if (connection != NULL) {
-    PTRACE(4, "SetUpCall started, call=" << *call);
-    new PThread1Arg< PSafePtr<OpalConnection> >(connection, AsynchCallSetUp, true, "SetUpCall");
+    if ((options & OpalConnection::SynchronousSetUp) != 0)
+      SynchCallSetUp(connection);
+    else {
+      PTRACE(4, "SetUpCall started, call=" << *call);
+      new PThread1Arg< PSafePtr<OpalConnection> >(connection, AsynchCallSetUp, true, "SetUpCall");
+    }
     return call;
   }
 
