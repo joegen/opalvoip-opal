@@ -499,7 +499,9 @@ class OpalConnection : public PSafeObject
       SendDTMFAsString             = 0x0400,
       SendDTMFAsTone               = 0x0800,
       SendDTMFAsRFC2833            = 0x0c00,
-      SendDTMFMask                 = 0x0c00
+      SendDTMFMask                 = 0x0c00,
+
+      SynchronousSetUp             = 0x1000
     };
 
     class StringOptions : public PStringOptions 
