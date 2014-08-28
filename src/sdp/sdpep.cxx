@@ -183,6 +183,12 @@ PBoolean OpalSDPConnection::IsOnHold(bool fromRemote) const
 
 PString OpalSDPConnection::GetOfferSDP(bool offerOpenMediaStreamsOnly)
 {
+  if (GetPhase() == UninitialisedPhase) {
+    InternalSetAsOriginating();
+    SetPhase(SetUpPhase);
+    OnApplyStringOptions();
+  }
+
   std::auto_ptr<SDPSessionDescription> sdp(m_endpoint.CreateSDP(0, 0, OpalTransportAddress()));
   PTRACE_CONTEXT_ID_TO(*sdp);
   return OnSendOfferSDP(*sdp, offerOpenMediaStreamsOnly) ? sdp->Encode() : PString::Empty();
@@ -191,14 +197,31 @@ PString OpalSDPConnection::GetOfferSDP(bool offerOpenMediaStreamsOnly)
 
 PString OpalSDPConnection::AnswerOfferSDP(const PString & offer)
 {
+  if (GetPhase() == UninitialisedPhase) {
+    SetPhase(SetUpPhase);
+    OnApplyStringOptions();
+    if (!OnIncomingConnection(0, NULL))
+      return PString::Empty();
+  }
+
   OpalMediaFormatList formats = GetLocalMediaFormats();
   if (formats.IsEmpty())
     formats = OpalMediaFormat::GetAllRegisteredMediaFormats();
 
   std::auto_ptr<SDPSessionDescription> sdpIn(m_endpoint.CreateSDP(0, 0, OpalTransportAddress()));
-  std::auto_ptr<SDPSessionDescription> sdpOut(m_endpoint.CreateSDP(0, 0, OpalTransportAddress()));
   PTRACE_CONTEXT_ID_TO(*sdpIn);
-  return sdpIn->Decode(offer, formats) && OnSendAnswerSDP(*sdpIn, *sdpOut) ? sdpOut->Encode() : PString::Empty();
+
+  if (!sdpIn->Decode(offer, formats))
+    return PString::Empty();
+
+  std::auto_ptr<SDPSessionDescription> sdpOut(m_endpoint.CreateSDP(0, 0, OpalTransportAddress()));
+  PTRACE_CONTEXT_ID_TO(*sdpOut);
+
+  if (!OnSendAnswerSDP(*sdpIn, *sdpOut))
+    return PString::Empty();
+
+  SetConnected();
+  return sdpOut->Encode();
 }
 
 
@@ -210,8 +233,16 @@ bool OpalSDPConnection::HandleAnswerSDP(const PString & answer)
 
   std::auto_ptr<SDPSessionDescription> sdp(m_endpoint.CreateSDP(0, 0, OpalTransportAddress()));
   PTRACE_CONTEXT_ID_TO(*sdp);
+
+  if (!sdp->Decode(answer, formats))
+    return false;
+
   bool dummy;
-  return sdp->Decode(answer, formats) && OnReceivedAnswerSDP(*sdp, dummy);
+  if (!OnReceivedAnswerSDP(*sdp, dummy))
+    return false;
+
+  OnConnected();
+  return true;
 }
 
 
