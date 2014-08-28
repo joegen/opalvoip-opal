@@ -258,12 +258,22 @@ bool OpalSkinnyEndPoint::Register(const PString & server, const PString & name, 
 
   PWaitAndSignal mutex(m_phoneDevicesMutex);
 
-  if (m_phoneDevices.Contains(name)) {
-    PTRACE(3, "PhoneDevice \"" << name << "\" already registered");
+  PhoneDevice * phoneDevice = m_phoneDevices.GetAt(name);
+  if (phoneDevice != NULL) {
+    if (phoneDevice->m_deviceType == deviceType) {
+      PTRACE(3, "PhoneDevice \"" << name << "\" already registered");
+      return false;
+    }
+
+    m_phoneDevices.RemoveAt(name);
+  }
+
+  phoneDevice = CreatePhoneDevice(name, deviceType);
+  if (phoneDevice == NULL) {
+    PTRACE(3, "Could not create PhoneDevice for \"" << name << '"');
     return false;
   }
 
-  PhoneDevice * phoneDevice = new PhoneDevice(*this, name, deviceType);
   if (phoneDevice->Start(server)) {
     m_phoneDevices.SetAt(name, phoneDevice);
     return true;
@@ -278,16 +288,20 @@ bool OpalSkinnyEndPoint::Unregister(const PString & name)
 {
   PWaitAndSignal mutex(m_phoneDevicesMutex);
 
-  PhoneDevice * phoneDevice = m_phoneDevices.GetAt(name);
-  if (phoneDevice == NULL) {
-    PTRACE(3, "PhoneDevice \"" << name << "\" not registered");
-    return false;
+  PhoneDeviceDict::iterator it = m_phoneDevices.find(name);
+  if (it != m_phoneDevices.end()) {
+    m_phoneDevices.erase(it);
+    return true;
   }
 
-  phoneDevice->Stop();
-  phoneDevice->Close();
-  m_phoneDevices.RemoveAt(name);
-  return true;
+  PTRACE(3, "PhoneDevice \"" << name << "\" not registered");
+  return false;
+}
+
+
+OpalSkinnyEndPoint::PhoneDevice * OpalSkinnyEndPoint::CreatePhoneDevice(const PString & name, unsigned deviceType)
+{
+  return new PhoneDevice(*this, name, deviceType);
 }
 
 
@@ -362,6 +376,8 @@ void OpalSkinnyEndPoint::PhoneDevice::Stop()
 void OpalSkinnyEndPoint::PhoneDevice::Close()
 {
   PTRACE(4, "Closing " << m_name);
+
+  Stop();
 
   // Wait a bit for ack reply.
   if (m_status == RegisteredStatusText) {
