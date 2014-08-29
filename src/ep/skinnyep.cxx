@@ -969,12 +969,10 @@ void OpalSkinnyConnection::OpenMediaChannel(const MediaInfo & info)
 
   m_remoteMediaFormats += mediaFormat;
 
-  bool receiver = info.m_mediaAddress.IsEmpty();
-
   OpalMediaType mediaType = mediaFormat.GetMediaType();
 
   if (info.m_sessionId == 0)
-    info.m_sessionId = GetNextSessionID(mediaType, receiver);
+    info.m_sessionId = GetNextSessionID(mediaType, info.m_receiver);
 
   OpalMediaSession * mediaSession = UseMediaSession(info.m_sessionId, mediaType);
   if (mediaSession == NULL) {
@@ -983,19 +981,19 @@ void OpalSkinnyConnection::OpenMediaChannel(const MediaInfo & info)
     return;
   }
 
-  if (!mediaSession->Open(m_client.m_transport.GetInterface(), receiver ? m_client.m_transport.GetRemoteAddress() : info.m_mediaAddress, true)) {
+  if (!mediaSession->Open(m_client.m_transport.GetInterface(), info.m_receiver ? m_client.m_transport.GetRemoteAddress() : info.m_mediaAddress, true)) {
     PTRACE(2, "Could not open session " << info.m_sessionId << " for " << mediaFormat);
     return;
   }
 
-  PSafePtr<OpalConnection> con = receiver ? this : GetOtherPartyConnection();
+  PSafePtr<OpalConnection> con = info.m_receiver ? this : GetOtherPartyConnection();
   if (con == NULL)
     return;
 
   if (ownerCall.OpenSourceMediaStreams(*con, mediaType, info.m_sessionId, mediaFormat)) {
-    PTRACE(3, "Opened " << (receiver ? 'r' : 't') << "x " << mediaType << " stream, session=" << info.m_sessionId);
+    PTRACE(3, "Opened " << (info.m_receiver ? 'r' : 't') << "x " << mediaType << " stream, session=" << info.m_sessionId);
 
-    if (receiver) {
+    if (info.m_receiver) {
       PIPSocket::AddressAndPort ap;
       mediaSession->GetLocalAddress().GetIpAndPort(ap);
 
@@ -1009,8 +1007,8 @@ void OpalSkinnyConnection::OpenMediaChannel(const MediaInfo & info)
     StartMediaStreams();
   }
   else {
-    if (receiver || mediaType != OpalMediaType::Audio() || m_endpoint.GetSimulatedAudioFile().IsEmpty()) {
-      PTRACE(2, "Could not open " << (receiver ? 'r' : 't') << "x " << mediaType << " stream, session=" << info.m_sessionId);
+    if (info.m_receiver || mediaType != OpalMediaType::Audio() || m_endpoint.GetSimulatedAudioFile().IsEmpty()) {
+      PTRACE(2, "Could not open " << (info.m_receiver ? 'r' : 't') << "x " << mediaType << " stream, session=" << info.m_sessionId);
       return;
     }
 
@@ -1088,7 +1086,7 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::OpenReceiveCha
 
 bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CloseReceiveChannelMsg & msg)
 {
-  std::set<MediaInfo>::iterator it = m_passThruMedia.find(msg.m_passThruPartyId);
+  std::set<MediaInfo>::iterator it = m_passThruMedia.find(msg);
   if (it == m_passThruMedia.end())
     return true;
 
@@ -1112,7 +1110,7 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::StartMediaTran
 
 bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::StopMediaTransmissionMsg & msg)
 {
-  std::set<MediaInfo>::iterator it = m_passThruMedia.find(msg.m_passThruPartyId);
+  std::set<MediaInfo>::iterator it = m_passThruMedia.find(msg);
   if (it == m_passThruMedia.end())
     return true;
 
@@ -1151,28 +1149,50 @@ void OpalSkinnyConnection::DelayCloseMediaStream(OpalMediaStreamPtr mediaStream)
 }
 
 
-OpalSkinnyConnection::MediaInfo::MediaInfo(const PUInt32l & passThruPartyId)
-  : m_passThruPartyId(passThruPartyId)
+OpalSkinnyConnection::MediaInfo::MediaInfo(const OpalSkinnyEndPoint::OpenReceiveChannelMsg & msg)
+  : m_receiver(true)
+  , m_passThruPartyId(msg.m_passThruPartyId)
+  , m_payloadCapability(msg.m_payloadCapability)
+  , m_sessionId(0)
+{
+}
+
+
+OpalSkinnyConnection::MediaInfo::MediaInfo(const OpalSkinnyEndPoint::CloseReceiveChannelMsg & msg)
+  : m_receiver(true)
+  , m_passThruPartyId(msg.m_passThruPartyId)
   , m_payloadCapability(0)
   , m_sessionId(0)
 {
 }
 
 
-OpalSkinnyConnection::MediaInfo::MediaInfo(const OpalSkinnyEndPoint::OpenReceiveChannelMsg & msg)
-  : m_passThruPartyId(msg.m_passThruPartyId)
+OpalSkinnyConnection::MediaInfo::MediaInfo(const OpalSkinnyEndPoint::StartMediaTransmissionMsg & msg)
+  : m_receiver(false)
+  , m_passThruPartyId(msg.m_passThruPartyId)
   , m_payloadCapability(msg.m_payloadCapability)
+  , m_mediaAddress(msg.m_ip, msg.m_port, OpalTransportAddress::UdpPrefix())
   , m_sessionId(0)
 {
 }
 
 
-OpalSkinnyConnection::MediaInfo::MediaInfo(const OpalSkinnyEndPoint::StartMediaTransmissionMsg & msg)
-  : m_passThruPartyId(msg.m_passThruPartyId)
-  , m_payloadCapability(msg.m_payloadCapability)
-  , m_mediaAddress(msg.m_ip, msg.m_port, OpalTransportAddress::UdpPrefix())
+OpalSkinnyConnection::MediaInfo::MediaInfo(const OpalSkinnyEndPoint::StopMediaTransmissionMsg & msg)
+  : m_receiver(false)
+  , m_passThruPartyId(msg.m_passThruPartyId)
+  , m_payloadCapability(0)
   , m_sessionId(0)
 {
+}
+
+
+bool OpalSkinnyConnection::MediaInfo::operator<(const MediaInfo & other) const
+{
+  if (!m_receiver && other.m_receiver)
+    return true;
+  if (m_receiver && !other.m_receiver)
+    return false;
+  return m_passThruPartyId < other.m_passThruPartyId;
 }
 
 
