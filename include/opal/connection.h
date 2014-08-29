@@ -1323,6 +1323,7 @@ class OpalConnection : public PSafeObject
      */
     virtual bool GetMediaTransportAddresses(
       OpalConnection & otherConnection,      ///< Other half of call needing media transport addresses
+      unsigned sessionId,                    ///< Session identifier
       const OpalMediaType & mediaType,       ///< Media type for session to return information
       OpalTransportAddressArray & transports ///<  Information on media session
     ) const;
@@ -2033,6 +2034,7 @@ class OpalConnection : public PSafeObject
     P_REMOVE_VIRTUAL_VOID(OnSwitchedFaxMediaStreams(bool));
     P_REMOVE_VIRTUAL(bool, CloseMediaStream(OpalMediaStream &),false);
     P_REMOVE_VIRTUAL(bool,GetMediaTransportAddresses(const OpalMediaType&,OpalTransportAddressArray&) const,false);
+    P_REMOVE_VIRTUAL(bool,GetMediaTransportAddresses(OpalConnection&,const OpalMediaType&,OpalTransportAddressArray &) const,false);
 #if OPAL_PTLIB_NAT
     P_REMOVE_VIRTUAL(PNatMethod *, GetNatMethod(const PIPSocket::Address &) const,NULL);
 #endif

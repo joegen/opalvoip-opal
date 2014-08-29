@@ -80,10 +80,11 @@ void MyManager::OnClearedCall(OpalCall & call)
 
 bool MyManager::GetMediaTransportAddresses(const OpalConnection & source,
                                            const OpalConnection &,
+                                                       unsigned   sessionId,
                                             const OpalMediaType & mediaType,
                                       OpalTransportAddressArray & transports) const
 {
-  LockedOutput() << source.GetToken() << ' ' << mediaType << ::flush;
+  LockedOutput() << source.GetToken() << ' ' << mediaType << " session " << sessionId << ' ' << ::flush;
   while (cin.good()) {
     OpalTransportAddress address;
     cin >> address;
