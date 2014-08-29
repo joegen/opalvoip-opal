@@ -139,6 +139,10 @@ bool OpalMediaPatch::CanStart() const
   if (session->IsOpen())
     return true;
 
+  // Special case for some gateway modes, really weird place to put it, but this is a good time
+  if (dynamic_cast<OpalDummySession *>(session) != NULL && session->Open(PString::Empty(), session->GetRemoteAddress(), true))
+    return true;
+
   PTRACE(4, "Delaying patch start till session " << session->GetSessionID() << " open: " << *this);
   return false;
 }

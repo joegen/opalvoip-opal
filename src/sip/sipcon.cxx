@@ -1588,8 +1588,8 @@ bool SIPConnection::SendDelayedACK(bool force)
             return false;
           }
 
-          if (session->GetLocalAddress().IsEmpty()) {
-            PTRACE(4, "SIP\tDelayed ACK does not have " << *mediaType << " session " << stream->GetSessionID() << " local address yet");
+          if (session->IsOpen()) {
+            PTRACE(4, "SIP\tDelayed ACK does not have " << *mediaType << " session " << stream->GetSessionID() << " open yet");
             return false;
           }
         }
