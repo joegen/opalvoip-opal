@@ -784,8 +784,8 @@ PBoolean OpalSkinnyConnection::SetAlerting(const PString & calleeName, PBoolean 
 {
   if (withMedia) {
     // In case we have already received them, try starting them now
-    OpenMediaChannel(m_OpenReceiveChannelInfo);
-    OpenMediaChannel(m_StartMediaTransmissionInfo);
+    for (set<MediaInfo>::iterator it = m_passThruMedia.begin(); it != m_passThruMedia.end(); ++it)
+      OpenMediaChannel(*it);
   }
 
   return OpalRTPConnection::SetAlerting(calleeName, withMedia);
@@ -800,8 +800,8 @@ PBoolean OpalSkinnyConnection::SetConnected()
   SetPhase(ConnectedPhase);
 
   // In case we have already received them, start them now
-  OpenMediaChannel(m_OpenReceiveChannelInfo);
-  OpenMediaChannel(m_StartMediaTransmissionInfo);
+  for (set<MediaInfo>::iterator it = m_passThruMedia.begin(); it != m_passThruMedia.end(); ++it)
+    OpenMediaChannel(*it);
 
   OpalSkinnyEndPoint::SoftKeyEventMsg msg;
   msg.m_event = OpalSkinnyEndPoint::eSoftKeyAnswer;
@@ -954,7 +954,7 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::SetRingerMsg &
 }
 
 
-void OpalSkinnyConnection::OpenMediaChannel(MediaInfo & info)
+void OpalSkinnyConnection::OpenMediaChannel(const MediaInfo & info)
 {
   if (info.m_passThruPartyId == 0)
     return;
@@ -972,19 +972,18 @@ void OpalSkinnyConnection::OpenMediaChannel(MediaInfo & info)
 
   OpalMediaType mediaType = mediaFormat.GetMediaType();
 
-  unsigned sessionId = m_passThruIdToSessionId[info.m_passThruPartyId];
-  if (sessionId == 0)
-    sessionId = GetNextSessionID(mediaType, receiver);
+  if (info.m_sessionId == 0)
+    info.m_sessionId = GetNextSessionID(mediaType, receiver);
 
-  OpalMediaSession * mediaSession = UseMediaSession(sessionId, mediaType);
+  OpalMediaSession * mediaSession = UseMediaSession(info.m_sessionId, mediaType);
   if (mediaSession == NULL) {
-    PTRACE(2, "Could not create session " << sessionId << " for " << mediaFormat);
+    PTRACE(2, "Could not create session " << info.m_sessionId << " for " << mediaFormat);
     Release(EndedByCapabilityExchange);
     return;
   }
 
   if (!mediaSession->Open(m_client.m_transport.GetInterface(), receiver ? m_client.m_transport.GetRemoteAddress() : info.m_mediaAddress, true)) {
-    PTRACE(2, "Could not open session " << sessionId << " for " << mediaFormat);
+    PTRACE(2, "Could not open session " << info.m_sessionId << " for " << mediaFormat);
     return;
   }
 
@@ -992,90 +991,107 @@ void OpalSkinnyConnection::OpenMediaChannel(MediaInfo & info)
   if (con == NULL)
     return;
 
-  if (ownerCall.OpenSourceMediaStreams(*con, mediaType, sessionId, mediaFormat))
-    PTRACE(3, "Opened " << (receiver ? 'r' : 't') << "x " << mediaType << " stream, session=" << sessionId);
+  if (ownerCall.OpenSourceMediaStreams(*con, mediaType, info.m_sessionId, mediaFormat)) {
+    PTRACE(3, "Opened " << (receiver ? 'r' : 't') << "x " << mediaType << " stream, session=" << info.m_sessionId);
+
+    if (receiver) {
+      PIPSocket::AddressAndPort ap;
+      mediaSession->GetLocalAddress().GetIpAndPort(ap);
+
+      OpalSkinnyEndPoint::OpenReceiveChannelAckMsg ack;
+      ack.m_passThruPartyId = info.m_passThruPartyId;
+      ack.m_ip = ap.GetAddress();
+      ack.m_port = ap.GetPort();
+      m_client.SendSkinnyMsg(ack);
+    }
+
+    StartMediaStreams();
+  }
   else {
     if (receiver || mediaType != OpalMediaType::Audio() || m_endpoint.GetSimulatedAudioFile().IsEmpty()) {
-      PTRACE(2, "Could not open " << (receiver ? 'r' : 't') << "x " << mediaType << " stream, session=" << sessionId);
+      PTRACE(2, "Could not open " << (receiver ? 'r' : 't') << "x " << mediaType << " stream, session=" << info.m_sessionId);
       return;
     }
 
-    if (dynamic_cast<OpalRTPSession *>(mediaSession) == NULL) {
-      mediaSession = new OpalRTPSession(OpalMediaSession::Init(*this, sessionId, mediaType, false));
-      if (!mediaSession->Open(m_client.m_transport.GetInterface(), info.m_mediaAddress, true)) {
-        PTRACE(2, "Could not open RTP session " << sessionId << " for " << mediaFormat << " using " << info.m_mediaAddress);
-        delete mediaSession;
-        return;
-      }
-      m_sessions.SetAt(sessionId, mediaSession);
-    }
+    OpenSimulatedMediaChannel(info.m_sessionId, mediaFormat);
+  }
+}
 
-    OpalMediaStreamPtr sinkStream = OpenMediaStream(mediaFormat, sessionId, false);
-    if (sinkStream != NULL) {
-      OpalMediaStreamPtr sourceStream;
-      OpalWAVFile * wavFile = new OpalWAVFile(m_endpoint.GetSimulatedAudioFile(), PFile::ReadOnly, PFile::ModeDefault, PWAVFile::fmt_PCM, false);
-      if (!wavFile->IsOpen()) {
-        PTRACE(3, "Could not simulate transmit " << mediaType << " stream, session=" << sessionId
-                << ", file=" << m_endpoint.GetSimulatedAudioFile() << ": " << wavFile->GetErrorText());
-        return;
-      }
-      if (wavFile->GetFormatString() == mediaFormat)
-        sourceStream = new OpalFileMediaStream(*this, mediaFormat, sessionId, true, wavFile);
-      else {
-        if (!wavFile->SetAutoconvert()) {
-          PTRACE(3, "Could not simulate transmit " << mediaType << " stream, session=" << sessionId
-                  << ", file=" << m_endpoint.GetSimulatedAudioFile() << ": unsupported codec");
-          return;
-        }
-        sourceStream = new OpalFileMediaStream(*this, OpalPCM16, sessionId, true, wavFile);
-      }
 
-      if (!sourceStream->Open()) {
-        PTRACE(2, "Could not open stream for simulated transmit " << mediaType << " stream, session=" << sessionId);
-        return;
-      }
-
-      mediaStreams.Append(sourceStream);
-      OpalMediaPatchPtr patch = m_endpoint.GetManager().CreateMediaPatch(*sourceStream, true);
-      if (patch == NULL || !patch->AddSink(sinkStream)) {
-        PTRACE(2, "Could not create patch for simulated transmit " << mediaType << " stream, session=" << sessionId);
-        return;
-      }
-
-      PTRACE(3, "Simulating transmit " << mediaType << " stream, session=" << sessionId << ", file=" << m_endpoint.GetSimulatedAudioFile());
-    }
+void OpalSkinnyConnection::OpenSimulatedMediaChannel(unsigned sessionId, const OpalMediaFormat & mediaFormat)
+{
+  OpalMediaSession * mediaSession = GetMediaSession(sessionId);
+  if (mediaSession == NULL) {
+    PTRACE(2, "No session " << sessionId << " for " << mediaFormat << " to simulate");
+    return;
   }
 
-  if (receiver) {
-    PIPSocket::AddressAndPort ap;
-    mediaSession->GetLocalAddress().GetIpAndPort(ap);
-
-    OpalSkinnyEndPoint::OpenReceiveChannelAckMsg ack;
-    ack.m_passThruPartyId = m_OpenReceiveChannelInfo.m_passThruPartyId;
-    ack.m_ip = ap.GetAddress();
-    ack.m_port = ap.GetPort();
-    m_client.SendSkinnyMsg(ack);
+  if (dynamic_cast<OpalRTPSession *>(mediaSession) == NULL) {
+    OpalTransportAddress mediaAddress = mediaSession->GetRemoteAddress();
+    mediaSession = new OpalRTPSession(OpalMediaSession::Init(*this, sessionId, mediaFormat.GetMediaType(), false));
+    if (!mediaSession->Open(m_client.m_transport.GetInterface(), mediaAddress, true)) {
+      PTRACE(2, "Could not open RTP session " << sessionId << " for " << mediaFormat << " using " << mediaAddress);
+      delete mediaSession;
+      return;
+    }
+    m_sessions.SetAt(sessionId, mediaSession);
   }
 
-  m_passThruIdToSessionId[info.m_passThruPartyId] = sessionId;
-  info.m_passThruPartyId = 0;
+  OpalMediaStreamPtr sinkStream = OpenMediaStream(mediaFormat, sessionId, false);
+  if (sinkStream == NULL)
+    return;
 
+  OpalMediaStreamPtr sourceStream;
+  OpalWAVFile * wavFile = new OpalWAVFile(m_endpoint.GetSimulatedAudioFile(), PFile::ReadOnly, PFile::ModeDefault, PWAVFile::fmt_PCM, false);
+  if (!wavFile->IsOpen()) {
+    PTRACE(3, "Could not simulate transmit " << mediaFormat << " stream, session=" << sessionId
+            << ", file=" << m_endpoint.GetSimulatedAudioFile() << ": " << wavFile->GetErrorText());
+    return;
+  }
+  if (wavFile->GetFormatString() == mediaFormat)
+    sourceStream = new OpalFileMediaStream(*this, mediaFormat, sessionId, true, wavFile);
+  else {
+    if (!wavFile->SetAutoconvert()) {
+      PTRACE(3, "Could not simulate transmit " << mediaFormat << " stream, session=" << sessionId
+              << ", file=" << m_endpoint.GetSimulatedAudioFile() << ": unsupported codec");
+      return;
+    }
+    sourceStream = new OpalFileMediaStream(*this, OpalPCM16, sessionId, true, wavFile);
+  }
+
+  if (!sourceStream->Open()) {
+    PTRACE(2, "Could not open stream for simulated transmit " << mediaFormat << " stream, session=" << sessionId);
+    return;
+  }
+
+  mediaStreams.Append(sourceStream);
+  OpalMediaPatchPtr patch = m_endpoint.GetManager().CreateMediaPatch(*sourceStream, true);
+  if (patch == NULL || !patch->AddSink(sinkStream)) {
+    PTRACE(2, "Could not create patch for simulated transmit " << mediaFormat << " stream, session=" << sessionId);
+    return;
+  }
+
+  PTRACE(3, "Simulating transmit " << mediaFormat << " stream, session=" << sessionId << ", file=" << m_endpoint.GetSimulatedAudioFile());
   StartMediaStreams();
 }
 
 
 bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::OpenReceiveChannelMsg & msg)
 {
-  m_OpenReceiveChannelInfo.m_passThruPartyId = msg.m_passThruPartyId;
-  m_OpenReceiveChannelInfo.m_payloadCapability = msg.m_payloadCapability;
-  OpenMediaChannel(m_OpenReceiveChannelInfo);
+  std::pair<std::set<MediaInfo>::iterator, bool> result = m_passThruMedia.insert(msg);
+  if (result.second)
+    OpenMediaChannel(*result.first);
   return true;
 }
 
 
 bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CloseReceiveChannelMsg & msg)
 {
-  OpalMediaStreamPtr mediaStream = GetMediaStream(m_passThruIdToSessionId[msg.m_passThruPartyId], true);
+  std::set<MediaInfo>::iterator it = m_passThruMedia.find(msg.m_passThruPartyId);
+  if (it == m_passThruMedia.end())
+    return true;
+
+  OpalMediaStreamPtr mediaStream = GetMediaStream(it->m_sessionId, true);
   if (mediaStream != NULL)
     m_endpoint.GetManager().QueueDecoupledEvent(
                      new PSafeWorkArg1<OpalSkinnyConnection, OpalMediaStreamPtr>(this,
@@ -1086,22 +1102,36 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CloseReceiveCh
 
 bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::StartMediaTransmissionMsg & msg)
 {
-  m_StartMediaTransmissionInfo.m_passThruPartyId = msg.m_passThruPartyId;
-  m_StartMediaTransmissionInfo.m_payloadCapability = msg.m_payloadCapability;
-  m_StartMediaTransmissionInfo.m_mediaAddress = OpalTransportAddress(msg.m_ip, msg.m_port, OpalTransportAddress::UdpPrefix());
-  OpenMediaChannel(m_StartMediaTransmissionInfo);
+  std::pair<std::set<MediaInfo>::iterator, bool> result = m_passThruMedia.insert(msg);
+  if (result.second)
+    OpenMediaChannel(*result.first);
   return true;
 }
 
 
 bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::StopMediaTransmissionMsg & msg)
 {
-  OpalMediaStreamPtr mediaStream = GetMediaStream(m_passThruIdToSessionId[msg.m_passThruPartyId], false);
+  std::set<MediaInfo>::iterator it = m_passThruMedia.find(msg.m_passThruPartyId);
+  if (it == m_passThruMedia.end())
+    return true;
+
+  OpalMediaStreamPtr mediaStream = GetMediaStream(it->m_sessionId, false);
   if (mediaStream != NULL)
     m_endpoint.GetManager().QueueDecoupledEvent(
                      new PSafeWorkArg1<OpalSkinnyConnection, OpalMediaStreamPtr>(this,
                             mediaStream, &OpalSkinnyConnection::DelayCloseMediaStream));
   return true;
+}
+
+
+void OpalSkinnyConnection::OnClosedMediaStream(const OpalMediaStream & stream)
+{
+  OpalRTPConnection::OnClosedMediaStream(stream);
+
+  if (IsReleased())
+    return;
+
+  OpenSimulatedMediaChannel(stream.GetSessionID(), stream.GetMediaFormat());
 }
 
 
@@ -1117,6 +1147,31 @@ void OpalSkinnyConnection::DelayCloseMediaStream(OpalMediaStreamPtr mediaStream)
   }
 
   mediaStream->Close();
+}
+
+
+OpalSkinnyConnection::MediaInfo::MediaInfo(const PUInt32l & passThruPartyId)
+  : m_passThruPartyId(passThruPartyId)
+  , m_payloadCapability(0)
+  , m_sessionId(0)
+{
+}
+
+
+OpalSkinnyConnection::MediaInfo::MediaInfo(const OpalSkinnyEndPoint::OpenReceiveChannelMsg & msg)
+  : m_passThruPartyId(msg.m_passThruPartyId)
+  , m_payloadCapability(msg.m_payloadCapability)
+  , m_sessionId(0)
+{
+}
+
+
+OpalSkinnyConnection::MediaInfo::MediaInfo(const OpalSkinnyEndPoint::StartMediaTransmissionMsg & msg)
+  : m_passThruPartyId(msg.m_passThruPartyId)
+  , m_payloadCapability(msg.m_payloadCapability)
+  , m_mediaAddress(msg.m_ip, msg.m_port, OpalTransportAddress::UdpPrefix())
+  , m_sessionId(0)
+{
 }
 
 
