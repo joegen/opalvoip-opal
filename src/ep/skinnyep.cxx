@@ -97,8 +97,9 @@ static PConstString const RegisteredStatusText("Registered");
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalSkinnyEndPoint::SkinnyMsg::SkinnyMsg(uint32_t id, PINDEX sizeofClass)
-  : m_length(0)
+OpalSkinnyEndPoint::SkinnyMsg::SkinnyMsg(uint32_t id, PINDEX sizeofClass, PINDEX extraSpace)
+  : m_extraSpace(extraSpace)
+  , m_length(0)
   , m_headerVersion(0)
 {
   m_length = sizeofClass - ((char *)&m_messageId - (char *)this);
@@ -111,7 +112,7 @@ void OpalSkinnyEndPoint::SkinnyMsg::Construct(const PBYTEArray & pdu)
 {
   PINDEX len = m_length + sizeof(m_headerVersion);
   memcpy(&m_headerVersion, pdu, std::min(len, pdu.GetSize()));
-  PTRACE_IF(3, len > pdu.GetSize(), &pdu, PTraceModule(), "Received message size error: "
+  PTRACE_IF(2, pdu.GetSize() < len - m_extraSpace, &pdu, PTraceModule(), "Received message size error: "
             "id=0x" << hex << GetID() << dec << ", expected = " << len << ", received = " << pdu.GetSize());
 }
 
