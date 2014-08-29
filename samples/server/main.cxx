@@ -35,86 +35,71 @@
 
 PCREATE_PROCESS(MyProcess);
 
-static const char ParametersSection[] = "Parameters";
-
 const WORD DefaultHTTPPort = 1719;
 const WORD DefaultTelnetPort = 1718;
-static const char UsernameKey[] = "Username";
-static const char PasswordKey[] = "Password";
-static const char LogLevelKey[] = "Log Level";
-static const char LogFileKey[] = "Log File";
-static const char LogRotateDirKey[]  = "Log Rotate Directory";
-static const char LogRotateSizeKey[] = "Log Rotate File Size";
-static const char LogRotateCountKey[] = "Log Rotate File Count";
-static const char LogRotateAgeKey[] = "Log Rotate File Age";
-static const char DefaultAddressFamilyKey[] = "AddressFamily";
-#if OPAL_PTLIB_SSL
-static const char HTTPCertificateFileKey[]  = "HTTP Certificate";
-#endif
-static const char HttpPortKey[] = "HTTP Port";
-static const char TelnetPortKey[] = "Console Port";
-static const char DisplayNameKey[] = "Display Name";
-static const char MediaTransferModeKey[] = "Media Transfer Mode";
-static const char AutoStartKeyPrefix[] = "Auto Start ";
-static const char PreferredMediaKey[] = "Preferred Media";
-static const char RemovedMediaKey[] = "Removed Media";
-static const char MinJitterKey[] = "Minimum Jitter";
-static const char MaxJitterKey[] = "Maximum Jitter";
-static const char TCPPortBaseKey[] = "TCP Port Base";
-static const char TCPPortMaxKey[] = "TCP Port Max";
-static const char UDPPortBaseKey[] = "UDP Port Base";
-static const char UDPPortMaxKey[] = "UDP Port Max";
-static const char RTPPortBaseKey[] = "RTP Port Base";
-static const char RTPPortMaxKey[] = "RTP Port Max";
-static const char RTPTOSKey[] = "RTP Type of Service";
+static const PConstString TelnetPortKey("Console Port");
+static const PConstString DisplayNameKey("Display Name");
+static const PConstString MediaTransferModeKey("Media Transfer Mode");
+static const PConstString AutoStartKeyPrefix("Auto Start ");
+static const PConstString PreferredMediaKey("Preferred Media");
+static const PConstString RemovedMediaKey("Removed Media");
+static const PConstString MinJitterKey("Minimum Jitter");
+static const PConstString MaxJitterKey("Maximum Jitter");
+static const PConstString TCPPortBaseKey("TCP Port Base");
+static const PConstString TCPPortMaxKey("TCP Port Max");
+static const PConstString UDPPortBaseKey("UDP Port Base");
+static const PConstString UDPPortMaxKey("UDP Port Max");
+static const PConstString RTPPortBaseKey("RTP Port Base");
+static const PConstString RTPPortMaxKey("RTP Port Max");
+static const PConstString RTPTOSKey("RTP Type of Service");
 #if P_NAT
-static const char NATActiveKey[] = "Active";
-static const char NATServerKey[] = "Server";
+static const PConstString NATActiveKey("Active");
+static const PConstString NATServerKey("Server");
 #endif
 
-static const char OverrideProductInfoKey[] = "Override Product Info";
-static const char VendorNameKey[] = "Product Vendor";
-static const char ProductNameKey[] = "Product Name";
-static const char ProductVersionKey[] = "Product Version";
+static const PConstString OverrideProductInfoKey("Override Product Info");
+static const PConstString VendorNameKey("Product Vendor");
+static const PConstString ProductNameKey("Product Name");
+static const PConstString ProductVersionKey("Product Version");
 
 #if OPAL_SKINNY
-static const char SkinnyServerKey[] = "SCCP Server";
-static const char SkinnyTypeKey[] = "SCCP Device Type";
-static const char SkinnyNamesKey[] = "SCCP Device Names";
-static const char SkinnySimulatedAudioFileKey[] = "SCCP Simulated Audio File";
+static const PConstString SkinnyServerKey("SCCP Server");
+static const PConstString SkinnyTypeKey("SCCP Device Type");
+static const PConstString SkinnyNamesKey("SCCP Device Names");
+static const PConstString SkinnySimulatedAudioFileKey("SCCP Simulated Audio File");
 #endif
 
 #if OPAL_LID
-static const char LIDKey[] = "Line Interface Devices";
+static const PConstString LIDKey("Line Interface Devices");
 #endif
 
 #if OPAL_CAPI
-static const char EnableCAPIKey[] = "CAPI ISDN";
+static const PConstString EnableCAPIKey("CAPI ISDN");
 #endif
 
 #if OPAL_IVR
-static const char VXMLKey[] = "VXML Script";
-static const char IVRCacheKey[] = "TTS Cache Directory";
-static const char IVRRecordDirKey[] = "Record Message Directory";
+static const PConstString VXMLKey("VXML Script");
+static const PConstString IVRCacheKey("TTS Cache Directory");
+static const PConstString IVRRecordDirKey("Record Message Directory");
 #endif
 
 #if OPAL_HAS_MIXER
-static const char ConfAudioOnlyKey[] = "Conference Audio Only";
-static const char ConfMediaPassThruKey[] = "Conference Media Pass Through";
-static const char ConfVideoResolutionKey[] = "Conference Video Resolution";
+static const PConstString ConfAudioOnlyKey("Conference Audio Only");
+static const PConstString ConfMediaPassThruKey("Conference Media Pass Through");
+static const PConstString ConfVideoResolutionKey("Conference Video Resolution");
 #endif
 
 #if OPAL_SCRIPT
-static const char ScriptLanguageKey[] = "Language";
-static const char ScriptTextKey[] = "Script";
+static const PConstString ScriptLanguageKey("Language");
+static const PConstString ScriptTextKey("Script");
 #endif
 
 #define ROUTES_SECTION "Routes"
 #define ROUTES_KEY     ROUTES_SECTION"\\Route %u\\"
 
-static const char RouteAPartyKey[] = "A Party";
-static const char RouteBPartyKey[] = "B Party";
-static const char RouteDestKey[]   = "Destination";
+static const PConstString RouteAPartyKey("A Party");
+static const PConstString RouteBPartyKey("B Party");
+static const PConstString RouteDestKey("Destination");
 
 #define CONFERENCE_NAME "conference"
 
@@ -153,7 +138,7 @@ static const char * const DefaultRoutes[] = {
 #endif
 };
 
-static char LoopbackPrefix[] = "loopback";
+static PConstString LoopbackPrefix("loopback");
 
 
 #if P_STUN
@@ -192,21 +177,8 @@ MyProcess::~MyProcess()
 PBoolean MyProcess::OnStart()
 {
   // Set log level as early as possible
-  {
-    PConfig cfg(ParametersSection);
-    PString file = cfg.GetString(LogFileKey);
-    if (!file.IsEmpty()) {
-      PSystemLogToFile * logFile = new PSystemLogToFile(file);
-      PSystemLogToFile::RotateInfo info = logFile->GetRotateInfo();
-      info.m_directory = cfg.GetString(LogRotateDirKey, info.m_directory);
-      info.m_maxSize = cfg.GetInteger(LogRotateSizeKey, info.m_maxSize / 1000) * 1000;
-      info.m_maxFileCount = cfg.GetInteger(LogRotateCountKey, info.m_maxFileCount);
-      info.m_maxFileAge.SetInterval(0, 0, 0, 0, cfg.GetInteger(LogRotateAgeKey, info.m_maxFileAge.GetDays()));
-      logFile->SetRotateInfo(info, true);
-      PSystemLog::SetTarget(logFile);
-    }
-    SetLogLevel(cfg.GetEnum(LogLevelKey, GetLogLevel()));
-  }
+  Params params(NULL);
+  InitialiseBase(params);
 
   if (m_manager == NULL)
     m_manager = new MyManager();
@@ -251,128 +223,44 @@ void MyProcess::OnConfigChanged()
 
 PBoolean MyProcess::Initialise(const char * initMsg)
 {
-  PConfig cfg(ParametersSection);
-
-  // Get the HTTP basic authentication info
-  PString username = cfg.GetString(UsernameKey);
-  PString password = PHTTPPasswordField::Decrypt(cfg.GetString(PasswordKey));
-
-  PString addressFamily = cfg.GetString(DefaultAddressFamilyKey, "IPV4");
-#if P_HAS_IPV6
-  if(addressFamily *= "IPV6")
-	 PIPSocket::SetDefaultIpAddressFamilyV6();
-#endif
-
-  PHTTPSimpleAuth authority(GetName(), username, password);
-
-  // Create the parameters URL page, and start adding fields to it
-  PConfigPage * rsrc = new PConfigPage(*this, "Parameters", ParametersSection, authority);
-
-  // HTTP authentication username/password
-  rsrc->AddStringField(UsernameKey, 25, username, "User name to access HTTP user interface for server.");
-  rsrc->Add(new PHTTPPasswordField(PasswordKey, 20, password));
-
-  // Log level for messages
-  rsrc->AddIntegerField(LogLevelKey,
-                        PSystemLog::Fatal, PSystemLog::NumLogLevels-1,
-                        GetLogLevel(),
-                        "0=Fatal only, 1=Errors, 2=Warnings, 3=Info, 4=Debug, 5=Detailed");
-  SetLogLevel(cfg.GetEnum(LogLevelKey, GetLogLevel()));
-
-  PSystemLogToFile * logFile = dynamic_cast<PSystemLogToFile *>(&PSystemLog::GetTarget());
-
-  PString logFileName = rsrc->AddStringField(LogFileKey, 0, logFile != NULL ? logFile->GetFilePath() : PString::Empty(),
-                                             "File for logging output, empty string disables logging", 1, 80);
-  if (logFileName.IsEmpty()) {
-    if (logFile != NULL)
-      PSystemLog::SetTarget(new PSystemLogToNowhere);
-  }
-  else {
-    if (logFile == NULL || logFile->GetFilePath() != logFileName)
-      PSystemLog::SetTarget(new PSystemLogToFile(logFileName));
-  }
-
-  if ((logFile = dynamic_cast<PSystemLogToFile *>(&PSystemLog::GetTarget())) != NULL) {
-    PSystemLogToFile::RotateInfo info = logFile->GetRotateInfo();
-    info.m_directory = rsrc->AddStringField(LogRotateDirKey, 0, info.m_directory,
-                                           "Directory path for log file rotation", 1, 80);
-    info.m_maxSize = rsrc->AddIntegerField(LogRotateSizeKey, 0, INT_MAX, info.m_maxSize / 1000,
-                                           "kb", "Size of log file to trigger rotation, zero disables")*1000;
-    info.m_maxFileCount = rsrc->AddIntegerField(LogRotateCountKey, 0, 10000, info.m_maxFileCount,
-                                                "", "Number of rotated log file to keep, zero is infinite");
-    info.m_maxFileAge.SetInterval(0, 0, 0, 0, rsrc->AddIntegerField(LogRotateAgeKey,
-                                              0, 10000, info.m_maxFileAge.GetDays(),
-                                              "days", "Number of days to keep rotated log files, zero is infinite"));
-    logFile->SetRotateInfo(info);
-  }
-
-#if OPAL_PTLIB_SSL
-  // SSL certificate file.
-  PString certificateFile = cfg.GetString(HTTPCertificateFileKey);
-  rsrc->AddStringField(HTTPCertificateFileKey, 250, certificateFile,
-      "Certificate for HTTPS user interface, if empty HTTP is used.", 1, 50);
-  if (certificateFile.IsEmpty())
-    DisableSSL();
-  else if (!SetServerCertificate(certificateFile, true)) {
-    PSYSTEMLOG(Fatal, "MyProcess\tCould not load certificate \"" << certificateFile << '"');
+  Params params("Parameters");
+  if (!InitialiseBase(params))
     return false;
-  }
-#endif
-
-  // HTTP Port number to use.
-  WORD httpPort = (WORD)rsrc->AddIntegerField(HttpPortKey, 1, 65535, DefaultHTTPPort,
-                                      "", "Port for HTTP user interface for server.");
 
   // Configure the core of the system
-  if (!m_manager->Configure(cfg, rsrc))
+  PConfig cfg(params.m_section);
+  if (!m_manager->Configure(cfg, params.m_configPage))
     return false;
 
   // Finished the resource to add, generate HTML for it and add to name space
   PServiceHTML html("System Parameters");
-  rsrc->BuildHTML(html);
-  httpNameSpace.AddResource(rsrc, PHTTPSpace::Overwrite);
+  params.m_configPage->BuildHTML(html);
 
-  httpNameSpace.AddResource(new OpalHTTPConnector(*m_manager, "/websocket", authority), PHTTPSpace::Overwrite);
+  m_httpNameSpace.AddResource(new OpalHTTPConnector(*m_manager, "/websocket", params.m_authority), PHTTPSpace::Overwrite);
 #if OPAL_SDP
-  httpNameSpace.AddResource(new OpalSDPHTTPResource(*m_manager->FindEndPointAs<OpalSDPHTTPEndPoint>(OPAL_PREFIX_SDP), "/sdp", authority), PHTTPSpace::Overwrite);
+  m_httpNameSpace.AddResource(new OpalSDPHTTPResource(*m_manager->FindEndPointAs<OpalSDPHTTPEndPoint>(OPAL_PREFIX_SDP), "/sdp", params.m_authority), PHTTPSpace::Overwrite);
 #endif
 
 
-  RegistrationStatusPage * registrationStatusPage = new RegistrationStatusPage(*m_manager, authority);
-  httpNameSpace.AddResource(registrationStatusPage, PHTTPSpace::Overwrite);
+  RegistrationStatusPage * registrationStatusPage = new RegistrationStatusPage(*m_manager, params.m_authority);
+  m_httpNameSpace.AddResource(registrationStatusPage, PHTTPSpace::Overwrite);
 
-  CallStatusPage * callStatusPage = new CallStatusPage(*m_manager, authority);
-  httpNameSpace.AddResource(callStatusPage, PHTTPSpace::Overwrite);
+  CallStatusPage * callStatusPage = new CallStatusPage(*m_manager, params.m_authority);
+  m_httpNameSpace.AddResource(callStatusPage, PHTTPSpace::Overwrite);
 
 #if OPAL_H323
-  GkStatusPage * gkStatusPage = new GkStatusPage(*m_manager, authority);
-  httpNameSpace.AddResource(gkStatusPage, PHTTPSpace::Overwrite);
+  GkStatusPage * gkStatusPage = new GkStatusPage(*m_manager, params.m_authority);
+  m_httpNameSpace.AddResource(gkStatusPage, PHTTPSpace::Overwrite);
 #endif // OPAL_H323
 
-  CDRListPage * cdrListPage = new CDRListPage(*m_manager, authority);
-  httpNameSpace.AddResource(cdrListPage, PHTTPSpace::Overwrite);
-  httpNameSpace.AddResource(new CDRPage(*m_manager, authority), PHTTPSpace::Overwrite);
-
-  // Log file resource
-  PHTTPFile * fullLog = NULL;
-  ClearLogPage * clearLog = NULL;
-  PHTTPTailFile * tailLog = NULL;
-
-  if (logFile != NULL) {
-    fullLog = new PHTTPFile("FullLog", logFile->GetFilePath(), PMIMEInfo::TextPlain(), authority);
-    httpNameSpace.AddResource(fullLog, PHTTPSpace::Overwrite);
-
-    clearLog = new ClearLogPage(*m_manager, authority);
-    httpNameSpace.AddResource(clearLog, PHTTPSpace::Overwrite);
-
-    tailLog = new PHTTPTailFile("TailLog", logFile->GetFilePath(), PMIMEInfo::TextPlain(), authority);
-    httpNameSpace.AddResource(tailLog, PHTTPSpace::Overwrite);
-  }
+  CDRListPage * cdrListPage = new CDRListPage(*m_manager, params.m_authority);
+  m_httpNameSpace.AddResource(cdrListPage, PHTTPSpace::Overwrite);
+  m_httpNameSpace.AddResource(new CDRPage(*m_manager, params.m_authority), PHTTPSpace::Overwrite);
 
   // Create the home page
   static const char welcomeHtml[] = "welcome.html";
   if (PFile::Exists(welcomeHtml))
-    httpNameSpace.AddResource(new PServiceHTTPFile(welcomeHtml, true), PHTTPSpace::Overwrite);
+    m_httpNameSpace.AddResource(new PServiceHTTPFile(welcomeHtml, true), PHTTPSpace::Overwrite);
   else {
     PHTML html;
     html << PHTML::Title("Welcome to " + GetName())
@@ -380,7 +268,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
          << GetPageGraphic()
          << PHTML::Paragraph() << "<center>"
 
-         << PHTML::HotLink(rsrc->GetHotLink()) << "System Parameters" << PHTML::HotLink()
+         << PHTML::HotLink(params.m_configPage->GetHotLink()) << "System Parameters" << PHTML::HotLink()
          << PHTML::Paragraph()
          << PHTML::HotLink(callStatusPage->GetHotLink()) << "Call Status" << PHTML::HotLink()
 #if OPAL_H323
@@ -395,22 +283,21 @@ PBoolean MyProcess::Initialise(const char * initMsg)
          << PHTML::HotLink(cdrListPage->GetHotLink()) << "Call Detail Records" << PHTML::HotLink()
          << PHTML::Paragraph();
 
-    if (logFile != NULL)
-      html << PHTML::HotLink(fullLog->GetHotLink()) << "Full Log File" << PHTML::HotLink()
-           << PHTML::BreakLine()
-           << PHTML::HotLink(clearLog->GetHotLink()) << "Clear Log File" << PHTML::HotLink()
-           << PHTML::BreakLine()
-           << PHTML::HotLink(tailLog->GetHotLink()) << "Tail Log File" << PHTML::HotLink()
-           << PHTML::Paragraph();
+    if (params.m_fullLogPage != NULL)
+      html << PHTML::HotLink(params.m_fullLogPage->GetHotLink()) << "Full Log File" << PHTML::HotLink() << PHTML::BreakLine();
+    if (params.m_clearLogPage != NULL)
+      html << PHTML::HotLink(params.m_clearLogPage->GetHotLink()) << "Clear Log File" << PHTML::HotLink() << PHTML::BreakLine();
+    if (params.m_tailLogPage != NULL)
+      html << PHTML::HotLink(params.m_tailLogPage->GetHotLink()) << "Tail Log File" << PHTML::HotLink() << PHTML::BreakLine();
 
     html << PHTML::HRule()
          << GetCopyrightText()
          << PHTML::Body();
-    httpNameSpace.AddResource(new PServiceHTTPString(welcomeHtml, html), PHTTPSpace::Overwrite);
+    m_httpNameSpace.AddResource(new PServiceHTTPString(welcomeHtml, html), PHTTPSpace::Overwrite);
   }
 
   // set up the HTTP port for listening & start the first HTTP thread
-  if (ListenForHTTP(httpPort))
+  if (ListenForHTTP(params.m_httpPort))
     PSYSTEMLOG(Info, "Opened master socket(s) for HTTP: " << m_httpListeningSockets.front().GetPort());
   else {
     PSYSTEMLOG(Fatal, "Cannot run without HTTP");
