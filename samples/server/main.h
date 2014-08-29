@@ -346,7 +346,7 @@ class BaseStatusPage : public PServiceHTTPString
       PHTTPRequest & request,
       const PStringToString &,
       PHTML & msg
-      );
+    );
 
     MyManager & m_manager;
 
@@ -357,21 +357,6 @@ class BaseStatusPage : public PServiceHTTPString
     virtual bool OnPostControl(const PStringToString & /*data*/, PHTML & /*msg*/) { return false; }
 
     unsigned m_refreshRate;
-};
-
-
-///////////////////////////////////////
-
-class ClearLogPage : public BaseStatusPage
-{
-  PCLASSINFO(ClearLogPage, BaseStatusPage);
-public:
-  ClearLogPage(MyManager & mgr, const PHTTPAuthority & auth);
-
-protected:
-  virtual const char * GetTitle() const;
-  virtual void CreateContent(PHTML & html, const PStringToString & query) const;
-  virtual bool OnPostControl(const PStringToString & data, PHTML & msg);
 };
 
 
