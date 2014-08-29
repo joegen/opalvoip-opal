@@ -237,7 +237,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
     {
         PCLASSINFO(SkinnyMsg, PObject);
       protected:
-        SkinnyMsg(uint32_t id, PINDEX len);
+        SkinnyMsg(uint32_t id, PINDEX len, PINDEX extraSpace);
         void Construct(const PBYTEArray & pdu);
 
       public:
@@ -247,25 +247,28 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
         PINDEX       GetPacketLen() const { return m_length + sizeof(m_length) + sizeof(m_headerVersion); }
 
       protected:
+        PINDEX   m_extraSpace;
+
+        // Data after here is mapped to "over the wire" PDU, no polymorhic classes
         PUInt32l m_length;
         PUInt32l m_headerVersion;
         PUInt32l m_messageId;
     };
 
     // Note: all derived classes MUST NOT have composite members, e.g. PString
-#define OPAL_SKINNY_MSG2(cls, base, id, vars) \
+#define OPAL_SKINNY_MSG2(cls, base, id, extraSpace, vars) \
     class cls : public base \
     { \
         PCLASSINFO(cls, base); \
       public: \
         enum { ID = id }; \
-        cls() : base(ID, sizeof(*this)) { } \
-        cls(const PBYTEArray & pdu) : base(ID, sizeof(*this)) { Construct(pdu); } \
+        cls() : base(ID, sizeof(*this), extraSpace) { } \
+        cls(const PBYTEArray & pdu) : base(ID, sizeof(*this), extraSpace) { Construct(pdu); } \
         vars \
     }; \
     virtual bool OnReceiveMsg(PhoneDevice & client, const cls & msg)
 
-#define OPAL_SKINNY_MSG(cls, id, vars) OPAL_SKINNY_MSG2(cls, SkinnyMsg, id, vars)
+#define OPAL_SKINNY_MSG(cls, id, vars) OPAL_SKINNY_MSG2(cls, SkinnyMsg, id, 0, vars)
 
     OPAL_SKINNY_MSG(KeepAliveMsg, 0x0000,
       PUInt32l m_unknown;
@@ -379,9 +382,8 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
     class CallInfoCommon : public SkinnyMsg
     {
     protected:
-      CallInfoCommon(uint32_t id, PINDEX len) : SkinnyMsg(id, len) { }
+      CallInfoCommon(uint32_t id, PINDEX len, PINDEX extraSpace) : SkinnyMsg(id, len, extraSpace) { }
     public:
-
       virtual CallType GetType() const = 0;
       virtual const char * GetCalledPartyName() const = 0;
       virtual const char * GetCalledPartyNumber() const = 0;
@@ -390,7 +392,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       virtual const char * GetRedirectingPartyNumber() const = 0;
     };
 
-    OPAL_SKINNY_MSG2(CallInfoMsg,  CallInfoCommon, 0x008f,
+    OPAL_SKINNY_MSG2(CallInfoMsg,  CallInfoCommon, 0x008f, 0,
       char     m_callingPartyName[40];
       char     m_callingPartyNumber[24];
       char     m_calledPartyName[40];
@@ -421,7 +423,8 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       virtual void PrintOn(ostream & strm) const { strm << GetClass() << ' ' << GetType() << " line=" << m_lineInstance << " call=" << m_callIdentifier; }
     );
 
-    OPAL_SKINNY_MSG2(CallInfo5Msg, CallInfoCommon, 0x014a,
+    enum { CallInfo5MsgStringSpace = 200 };
+    OPAL_SKINNY_MSG2(CallInfo5Msg, CallInfoCommon, 0x014a, CallInfo5MsgStringSpace,
       PUInt32l m_lineInstance;
       PUInt32l m_callIdentifier;
       PUInt32l m_callType;
@@ -430,7 +433,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       PUInt32l m_callInstance;
       PUInt32l m_callSecurityStatus;
       PUInt32l m_partyPIRestrictionBits;
-      char     m_strings[10]; // Allow enough space for 10 empty strings (up to called party name)
+      char     m_strings[CallInfo5MsgStringSpace+11]; // Allow space for strings
 
       virtual CallType GetType() const { return (CallType)(uint32_t)m_callType; }
       virtual const char * GetCalledPartyName() const { return GetStringByIndex(9); }
