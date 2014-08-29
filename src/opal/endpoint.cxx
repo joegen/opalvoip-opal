@@ -571,10 +571,11 @@ void OpalEndPoint::AdjustMediaFormats(bool local,
 
 bool OpalEndPoint::GetMediaTransportAddresses(const OpalConnection & provider,
                                               const OpalConnection & consumer,
+                                                          unsigned   sessionId,
                                                const OpalMediaType & mediaType,
                                          OpalTransportAddressArray & transports) const
 {
-  return manager.GetMediaTransportAddresses(provider, consumer, mediaType, transports);
+  return manager.GetMediaTransportAddresses(provider, consumer, sessionId, mediaType, transports);
 }
 
 

@@ -48,7 +48,7 @@ class MyManager : public OpalManagerConsole
 
   public:
     virtual bool Initialise(PArgList & args, bool verbose, const PString & defaultRoute = PString::Empty());
-    virtual bool GetMediaTransportAddresses(const OpalConnection &, const OpalConnection &, const OpalMediaType &, OpalTransportAddressArray &) const;
+    virtual bool GetMediaTransportAddresses(const OpalConnection &, const OpalConnection &, unsigned, const OpalMediaType &, OpalTransportAddressArray &) const;
     virtual PBoolean OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
     virtual void OnClearedCall(OpalCall & call);
 };

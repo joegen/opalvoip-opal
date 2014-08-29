@@ -254,7 +254,7 @@ OpalMediaSession * OpalRTPConnection::CreateMediaSession(unsigned sessionId,
   {
     OpalTransportAddressArray transports;
     PSafePtr<OpalConnection> otherConnection = GetOtherPartyConnection();
-    if (otherConnection != NULL && otherConnection->GetMediaTransportAddresses(*this, mediaType, transports)) {
+    if (otherConnection != NULL && otherConnection->GetMediaTransportAddresses(*this, sessionId, mediaType, transports)) {
       // Make sure we do not include any transcoded format combinations
       m_localMediaFormats.Remove(PString('@')+mediaType);
       m_localMediaFormats += otherConnection->GetMediaFormats();
@@ -280,21 +280,29 @@ OpalMediaSession * OpalRTPConnection::CreateMediaSession(unsigned sessionId,
 
 
 bool OpalRTPConnection::GetMediaTransportAddresses(OpalConnection & otherConnection,
+                                                         unsigned   sessionId,
                                               const OpalMediaType & mediaType,
                                         OpalTransportAddressArray & transports) const
 {
-  if (!OpalConnection::GetMediaTransportAddresses(otherConnection, mediaType, transports))
+  if (!OpalConnection::GetMediaTransportAddresses(otherConnection, sessionId, mediaType, transports))
     return false;
 
-  if (transports.IsEmpty()) {
-    for (SessionMap::const_iterator session = m_sessions.begin(); session != m_sessions.end(); ++session) {
-      if (session->second->GetMediaType() == mediaType &&
-          transports.SetAddressPair(session->second->GetRemoteAddress(true), session->second->GetRemoteAddress(false))) {
-        PTRACE(3, "GetMediaTransportAddresses of " << mediaType << " found session addresses "
-               << setfill(',') << transports << " for " << otherConnection << " on " << *this);
+  if (!transports.IsEmpty())
+    return true;
+
+  SessionMap::const_iterator session = m_sessions.find(sessionId);
+  if (session == m_sessions.end() || session->second->GetMediaType() != mediaType) {
+    for (session = m_sessions.begin(); session != m_sessions.end(); ++session) {
+      if (session->second->GetMediaType() == mediaType)
         break;
-      }
     }
+    if (session == m_sessions.end())
+      return true;
+  }
+
+  if (transports.SetAddressPair(session->second->GetRemoteAddress(true), session->second->GetRemoteAddress(false))) {
+      PTRACE(3, "GetMediaTransportAddresses of " << mediaType << " found session addresses "
+              << setfill(',') << transports << " for " << otherConnection << " on " << *this);
   }
 
   return true;

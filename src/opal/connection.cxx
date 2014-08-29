@@ -1148,10 +1148,11 @@ OpalMediaStreamPtr OpalConnection::GetMediaStream(const OpalMediaType & mediaTyp
 
 
 bool OpalConnection::GetMediaTransportAddresses(OpalConnection & otherConnection,
+                                                      unsigned   sessionId,
                                            const OpalMediaType & mediaType,
                                      OpalTransportAddressArray & transports) const
 {
-  return endpoint.GetMediaTransportAddresses(*this, otherConnection, mediaType, transports);
+  return endpoint.GetMediaTransportAddresses(*this, otherConnection, sessionId, mediaType, transports);
 }
 
 

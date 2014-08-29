@@ -455,7 +455,7 @@ bool OpalDummySession::Open(const PString &, const OpalTransportAddress & remote
   PSafePtr<OpalConnection> otherParty = m_connection.GetOtherPartyConnection();
   if (otherParty != NULL) {
     OpalTransportAddressArray transports;
-    if (otherParty->GetMediaTransportAddresses(m_connection, m_mediaType, transports)) {
+    if (otherParty->GetMediaTransportAddresses(m_connection, m_sessionId, m_mediaType, transports)) {
       switch (transports.GetSize()) {
         case 2:
           m_localTransportAddress[false] = transports[1]; // Control

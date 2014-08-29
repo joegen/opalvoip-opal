@@ -1144,6 +1144,7 @@ OpalManager::MediaTransferMode OpalManager::GetMediaTransferMode(const OpalConne
 
 bool OpalManager::GetMediaTransportAddresses(const OpalConnection & provider,
                                              const OpalConnection & consumer,
+                                                         unsigned   PTRACE_PARAM(sessionId),
                                               const OpalMediaType & mediaType,
                                         OpalTransportAddressArray &) const
 {
@@ -1151,8 +1152,8 @@ bool OpalManager::GetMediaTransportAddresses(const OpalConnection & provider,
     return false;
 
   MediaTransferMode mode = GetMediaTransferMode(provider, consumer, mediaType);
-  PTRACE(3, "Media transfer mode set to " << mode << " for " << mediaType << ", "
-            "from " << provider << " to " << consumer);
+  PTRACE(3, "Media transfer mode set to " << mode << " for " << mediaType
+         << " session " << sessionId << ", from " << provider << " to " << consumer);
   return mode == OpalManager::MediaTransferBypass;
 }
 
