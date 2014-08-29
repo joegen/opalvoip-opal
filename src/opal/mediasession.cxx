@@ -473,7 +473,7 @@ bool OpalDummySession::Open(const PString &, const OpalTransportAddress & remote
 
 bool OpalDummySession::IsOpen() const
 {
-  return !m_remoteTransportAddress[true].IsEmpty();
+  return !m_localTransportAddress[true].IsEmpty() && !m_remoteTransportAddress[true].IsEmpty();
 }
 
 
