@@ -1741,6 +1741,10 @@ class OpalConnection : public PSafeObject
       */
     const OpalProductInfo & GetRemoteProductInfo() const { return remoteProductInfo; }
 
+    /** Set the remote product info.
+      */
+    void SetRemoteProductInfo(const OpalProductInfo & info) { remoteProductInfo = info; }
+
     /**Get the redirecting party.
        This is the party that caused an incoming call to arrive at this endpoint.
       */
