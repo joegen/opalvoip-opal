@@ -749,12 +749,14 @@ class OpalSkinnyConnection : public OpalRTPConnection
 
     struct MediaInfo
     {
-      MediaInfo(const PUInt32l & passThruPartyId);
       MediaInfo(const OpalSkinnyEndPoint::OpenReceiveChannelMsg & msg);
+      MediaInfo(const OpalSkinnyEndPoint::CloseReceiveChannelMsg & msg);
       MediaInfo(const OpalSkinnyEndPoint::StartMediaTransmissionMsg & msg);
+      MediaInfo(const OpalSkinnyEndPoint::StopMediaTransmissionMsg & msg);
 
-      bool operator<(const MediaInfo & other) const { return m_passThruPartyId < other.m_passThruPartyId; }
+      bool operator<(const MediaInfo & other) const;
 
+      bool                 m_receiver;
       uint32_t             m_passThruPartyId;
       uint32_t             m_payloadCapability;
       OpalTransportAddress m_mediaAddress;
