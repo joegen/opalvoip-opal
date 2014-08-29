@@ -116,60 +116,6 @@ PBoolean BaseStatusPage::Post(PHTTPRequest & request,
 
 ///////////////////////////////////////////////////////////////
 
-ClearLogPage::ClearLogPage(MyManager & mgr, const PHTTPAuthority & auth)
-  : BaseStatusPage(mgr, auth, "ClearLogFile")
-{
-  m_refreshRate = 0;
-}
-
-
-const char * ClearLogPage::GetTitle() const
-{
-  return "OPAL Server Clear Log File";
-}
-
-
-static PConstString const ClearLogFileStr("Clear Log File");
-static PConstString const RotateLogFilesStr("Rotate Log Files");
-
-void ClearLogPage::CreateContent(PHTML & html, const PStringToString &) const
-{
-  html << PHTML::Paragraph() << "<center>" << PHTML::SubmitButton(ClearLogFileStr);
-  PSystemLogToFile * logFile = dynamic_cast<PSystemLogToFile *>(&PSystemLog::GetTarget());
-  if (logFile != NULL && logFile->GetRotateInfo().CanRotate())
-    html << PHTML::Paragraph() << "<center>" << PHTML::SubmitButton(RotateLogFilesStr);
-}
-
-
-bool ClearLogPage::OnPostControl(const PStringToString & data, PHTML & msg)
-{
-  PSystemLogToFile * logFile = dynamic_cast<PSystemLogToFile *>(&PSystemLog::GetTarget());
-  if (logFile == NULL) {
-    msg << "Not logging to a file";
-    return true;
-  }
-
-  if (data("submit") == ClearLogFileStr) {
-    if (logFile->Clear())
-      msg << "Cleared ";
-    else
-      msg << "Could not clear ";
-    msg << " log file " << logFile->GetFilePath();
-  }
-  else if (data("submit") == RotateLogFilesStr) {
-    if (logFile->Rotate(true))
-      msg << "Rotated";
-    else
-      msg << "Could not rotate";
-    msg << " log file " << logFile->GetFilePath() << " to " << logFile->GetRotateInfo().m_directory;
-  }
-
-  return true;
-}
-
-
-///////////////////////////////////////////////////////////////
-
 RegistrationStatusPage::RegistrationStatusPage(MyManager & mgr, const PHTTPAuthority & auth)
   : BaseStatusPage(mgr, auth, "RegistrationStatus")
 {
