@@ -1050,6 +1050,7 @@ class OpalManager : public PObject
     virtual bool GetMediaTransportAddresses(
       const OpalConnection & provider,       ///< Half of call providing media transport addresses
       const OpalConnection & consumer,       ///< Other half of call needing media transport addresses
+      unsigned sessionId,                    ///< Session identifier
       const OpalMediaType & mediaType,       ///< Media type for session to return information
       OpalTransportAddressArray & transports ///<  Information on media session
     ) const;

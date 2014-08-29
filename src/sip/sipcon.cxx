@@ -612,10 +612,11 @@ PBoolean SIPConnection::SetConnected()
 
 
 bool SIPConnection::GetMediaTransportAddresses(OpalConnection & otherConnection,
+                                                     unsigned   sessionId,
                                           const OpalMediaType & mediaType,
                                     OpalTransportAddressArray & transports) const
 {
-  if (!OpalSDPConnection::GetMediaTransportAddresses(otherConnection, mediaType, transports))
+  if (!OpalSDPConnection::GetMediaTransportAddresses(otherConnection, sessionId, mediaType, transports))
     return false;
 
   SDPSessionDescription * sdp = NULL;
@@ -624,7 +625,13 @@ bool SIPConnection::GetMediaTransportAddresses(OpalConnection & otherConnection,
   else if (m_lastReceivedINVITE != NULL)
     sdp = m_lastReceivedINVITE->GetSDP();
 
-  SDPMediaDescription * md = sdp != NULL ? sdp->GetMediaDescriptionByType(mediaType) : NULL;
+  SDPMediaDescription * md = NULL;
+  if (sdp != NULL) {
+    md = sdp->GetMediaDescriptionByIndex(sessionId);
+    if (md == NULL || md->GetMediaType() != mediaType)
+      md = sdp->GetMediaDescriptionByType(mediaType);
+  }
+
   if (md != NULL && transports.SetAddressPair(md->GetMediaAddress(), md->GetControlAddress())) {
     PTRACE(3, "SIP\tGetMediaTransportAddresses of " << mediaType << " found remote SDP "
            << setfill(',') << transports << " for " << otherConnection << " on " << *this);

@@ -122,6 +122,7 @@ class OpalRTPConnection : public OpalConnection
      */
     virtual bool GetMediaTransportAddresses(
       OpalConnection & otherConnection,      ///< Other half of call needing media transport addresses
+      unsigned sessionId,                    ///< Session identifier
       const OpalMediaType & mediaType,       ///< Media type for session to return information
       OpalTransportAddressArray & transports ///<  Information on media session
     ) const;
