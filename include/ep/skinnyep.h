@@ -716,6 +716,14 @@ class OpalSkinnyConnection : public OpalRTPConnection
     */
     virtual PString GetAlertingType() const;
 
+    /**Call back for closed a media stream.
+
+       The default behaviour calls the OpalEndPoint function of the same name.
+      */
+    virtual void OnClosedMediaStream(
+      const OpalMediaStream & stream     ///<  Media stream being closed
+    );
+
     /** Get the remote transport address
       */
     virtual OpalTransportAddress GetRemoteAddress() const;
@@ -738,16 +746,19 @@ class OpalSkinnyConnection : public OpalRTPConnection
 
     struct MediaInfo
     {
-      MediaInfo()
-        : m_passThruPartyId(0)
-        , m_payloadCapability(0)
-      { }
+      MediaInfo(const PUInt32l & passThruPartyId);
+      MediaInfo(const OpalSkinnyEndPoint::OpenReceiveChannelMsg & msg);
+      MediaInfo(const OpalSkinnyEndPoint::StartMediaTransmissionMsg & msg);
+
+      bool operator<(const MediaInfo & other) const { return m_passThruPartyId < other.m_passThruPartyId; }
 
       uint32_t             m_passThruPartyId;
       uint32_t             m_payloadCapability;
       OpalTransportAddress m_mediaAddress;
+      mutable unsigned     m_sessionId;
     };
-    void OpenMediaChannel(MediaInfo & info);
+    void OpenMediaChannel(const MediaInfo & info);
+    void OpenSimulatedMediaChannel(unsigned sessionId, const OpalMediaFormat & mediaFormat);
     void DelayCloseMediaStream(OpalMediaStreamPtr mediaStream);
 
     OpalSkinnyEndPoint & m_endpoint;
@@ -758,11 +769,8 @@ class OpalSkinnyConnection : public OpalRTPConnection
     PString  m_alertingType;
     bool     m_needSoftKeyEndcall;
 
-    MediaInfo m_OpenReceiveChannelInfo, m_StartMediaTransmissionInfo;
-
     OpalMediaFormatList m_remoteMediaFormats;
-
-    std::map<unsigned, unsigned> m_passThruIdToSessionId;
+    std::set<MediaInfo> m_passThruMedia;
 };
 
 
