@@ -51,6 +51,7 @@
 #include <ptlib/sound.h>
 
 
+#define PTraceModule() "Media"
 #define new PNEW
 
 
@@ -76,7 +77,7 @@ OpalMediaStream::OpalMediaStream(OpalConnection & conn, const OpalMediaFormat & 
   PTRACE_CONTEXT_ID_TO(identifier);
 
   connection.SafeReference();
-  PTRACE(5, "Media\tCreated " << (IsSource() ? "Source" : "Sink") << ' ' << this);
+  PTRACE(5, "Created " << (IsSource() ? "Source" : "Sink") << ' ' << this);
 }
 
 
@@ -84,7 +85,7 @@ OpalMediaStream::~OpalMediaStream()
 {
   Close();
   connection.SafeDereference();
-  PTRACE(5, "Media\tDestroyed " << (IsSource() ? "Source" : "Sink") << ' ' << this);
+  PTRACE(5, "Destroyed " << (IsSource() ? "Source" : "Sink") << ' ' << this);
 }
 
 
@@ -115,7 +116,7 @@ bool OpalMediaStream::SetMediaFormat(const OpalMediaFormat & newMediaFormat)
     return true;
   }
 
-  PTRACE(4, "Media\tSwitch media format from " << mediaFormat << " to " << newMediaFormat << " on " << *this);
+  PTRACE(4, "Switch media format from " << mediaFormat << " to " << newMediaFormat << " on " << *this);
 
   OpalMediaFormat oldMediaFormat = mediaFormat;
   mediaFormat = newMediaFormat;
@@ -165,7 +166,7 @@ bool OpalMediaStream::InternalUpdateMediaFormat(const OpalMediaFormat & newMedia
   if (!mediaFormat.Update(newMediaFormat))
     return false;
 
-  PTRACE(4, "Media\tMedia format updated on " << *this);
+  PTRACE(4, "Media format updated on " << *this);
   m_payloadType = mediaFormat.GetPayloadType();
   m_frameTime = mediaFormat.GetFrameTime();
   m_frameSize = mediaFormat.GetFrameSize();
@@ -186,11 +187,11 @@ bool OpalMediaStream::ExecuteCommand(const OpalMediaCommand & command) const
 bool OpalMediaStream::InternalExecuteCommand(const OpalMediaCommand & command)
 {
   if (IsSink()) {
-    PTRACE(4, "Media\tEnded processing ExecuteCommand \"" << command << "\" on " << *this);
+    PTRACE(4, "Ended processing ExecuteCommand \"" << command << "\" on " << *this);
     return false;
   }
 
-  PTRACE(4, "Media\tPassing on ExecuteCommand \"" << command << "\" on " << *this << " to " << connection);
+  PTRACE(4, "Passing on ExecuteCommand \"" << command << "\" on " << *this << " to " << connection);
   return connection.OnMediaCommand(*this, command);
 }
 
@@ -220,11 +221,11 @@ PBoolean OpalMediaStream::Start()
     return false;
 
   if (IsPaused()) {
-    PTRACE(4, "Media\tStarting (paused) stream " << *this);
+    PTRACE(4, "Starting (paused) stream " << *this);
     return false;
   }
 
-  PTRACE(4, "Media\tStarting stream " << *this);
+  PTRACE(4, "Starting stream " << *this);
   mediaPatch->Start();
   return true;
 }
@@ -235,14 +236,14 @@ PBoolean OpalMediaStream::Close()
   if (!m_isOpen)
     return false;
 
-  PTRACE(4, "Media\tClosing stream " << *this);
+  PTRACE(4, "Closing stream " << *this);
 
   if (!LockReadWrite())
     return false;
 
   // Allow for race condition where it is closed in another thread during the above wait
   if (!m_isOpen) {
-    PTRACE(4, "Media\tAlready closed stream " << *this);
+    PTRACE(4, "Already closed stream " << *this);
     UnlockReadWrite();
     return false;
   }
@@ -256,7 +257,7 @@ PBoolean OpalMediaStream::Close()
   connection.OnClosedMediaStream(*this);
   SetPatch(NULL);
 
-  PTRACE(5, "Media\tClosed stream " << *this);
+  PTRACE(5, "Closed stream " << *this);
 
   connection.RemoveMediaStream(*this);
   // Don't do anything after above as object may be deleted
@@ -346,7 +347,7 @@ PBoolean OpalMediaStream::WritePacket(RTP_DataFrame & packet)
       ptr += written;
     }
 
-    PTRACE_IF(1, size < 0, "Media\tRTP payload size too small, short " << -size << " bytes.");
+    PTRACE_IF(1, size < 0, "RTP payload size too small, short " << -size << " bytes.");
   }
 
   packet.SetTimestamp(timestamp);
@@ -360,7 +361,7 @@ bool OpalMediaStream::InternalWriteData(const BYTE * data, PINDEX length, PINDEX
   unsigned oldTimestamp = timestamp;
 
   if (!WriteData(data, length, written) || (length > 0 && written == 0)) {
-    PTRACE(2, "Media\tWriteData failed, written=" << written);
+    PTRACE(2, "WriteData failed, written=" << written);
     return false;
   }
 
@@ -428,7 +429,7 @@ PBoolean OpalMediaStream::SetDataSize(PINDEX dataSize, PINDEX /*frameTime*/)
   if (dataSize <= 0)
     return false;
 
-  PTRACE_IF(4, GetDataSize() != dataSize, "Media\tSet data size from "
+  PTRACE_IF(4, GetDataSize() != dataSize, "Set data size from "
             << GetDataSize() << " to " << dataSize << " on " << *this);
   m_defaultDataSize = dataSize;
   return true;
@@ -486,7 +487,7 @@ bool OpalMediaStream::InternalSetPaused(bool pause, bool fromUser, bool fromPatc
   if (m_paused == pause)
     return false;
 
-  PTRACE(3, "Media\t" << (pause ? "Paused" : "Resumed") << " stream " << *this);
+  PTRACE(3, (pause ? "Paused" : "Resumed") << " stream " << *this);
   m_paused = pause;
 
   if (fromUser)
@@ -503,7 +504,7 @@ OpalMediaPatchPtr OpalMediaStream::InternalSetPatchPart1(OpalMediaPatch * newPat
 
 #if PTRACING
   if (PTrace::CanTrace(4) && (newPatch != NULL || oldPatch != NULL)) {
-    ostream & trace = PTrace::Begin(4, __FILE__, __LINE__, this);
+    ostream & trace = PTRACE_BEGIN(4);
     if (newPatch == NULL)
       trace << "Removing patch " << *oldPatch;
     else if (oldPatch == NULL)
@@ -629,7 +630,7 @@ OpalMediaStreamPacing::OpalMediaStreamPacing(const OpalMediaFormat & mediaFormat
   , m_delay(1000)
 {
   PAssert(m_timeOnMarkers || m_frameSize > 0, PInvalidParameter);
-  PTRACE(4, "Media", "Pacing " << mediaFormat << ", time=" << m_frameTime << " (" << (m_frameTime/m_timeUnits) << "ms), "
+  PTRACE(4, "Pacing " << mediaFormat << ", time=" << m_frameTime << " (" << (m_frameTime/m_timeUnits) << "ms), "
             "size=" << m_frameSize << ", time " << (m_timeOnMarkers ? "on markers" : "every packet"));
 }
 
@@ -647,7 +648,7 @@ void OpalMediaStreamPacing::Pace(bool reading, PINDEX bytes, bool & marker)
       return;
   }
 
-  PTRACE(m_throttleLog, "Media", "Pacing delay: " << timeToWait
+  PTRACE(m_throttleLog, "Pacing delay: " << timeToWait
          << " (" << (timeToWait / m_timeUnits) << "ms), "
             "time=" << m_frameTime << " (" << (m_frameTime/m_timeUnits) << "ms), "
             "bytes=" << bytes << ", size=" << m_frameSize
@@ -661,7 +662,7 @@ bool OpalMediaStreamPacing::UpdateMediaFormat(const OpalMediaFormat & mediaForma
   m_frameTime = mediaFormat.GetFrameTime();
   m_frameSize = mediaFormat.GetFrameSize();
   m_timeUnits = mediaFormat.GetTimeUnits();
-  PTRACE(4, "Media", "Pacing updated: " << mediaFormat << ",  time=" << m_frameTime
+  PTRACE(4, "Pacing updated: " << mediaFormat << ",  time=" << m_frameTime
          << " (" << (m_frameTime/m_timeUnits) << "ms), size=" << m_frameSize);
   return true;
 }
@@ -790,7 +791,7 @@ PBoolean OpalRawMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & lengt
   length = 0;
 
   if (IsSink()) {
-    PTRACE(1, "Media\tTried to read from sink media stream");
+    PTRACE(1, "Tried to read from sink media stream");
     return false;
   }
 
@@ -805,8 +806,19 @@ PBoolean OpalRawMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & lengt
   unsigned consecutiveZeroReads = 0;
   while (size > 0) {
     if (!m_channel->Read(buffer, size)) {
-      PTRACE_IF(2, m_channel->GetErrorCode(PChannel::LastReadError) != PChannel::NotOpen,
-                "Media\tRaw channel read error: " << m_channel->GetErrorText(PChannel::LastReadError));
+#if PTRACING
+      if (PTrace::CanTrace(2)) {
+        switch (m_channel->GetErrorCode(PChannel::LastReadError)) {
+          case PChannel::NotOpen:
+            break;
+          case PChannel::NoError:
+            PTRACE_BEGIN(3) << "Raw channel end of file" << PTrace::End;
+            break;
+          default:
+            PTRACE_BEGIN(2) << "Raw channel read error: " << m_channel->GetErrorText(PChannel::LastReadError) << PTrace::End;
+        }
+      }
+#endif
       return false;
     }
 
@@ -814,7 +826,7 @@ PBoolean OpalRawMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & lengt
     if (lastReadCount != 0)
       consecutiveZeroReads = 0;
     else if (++consecutiveZeroReads > 10) {
-      PTRACE(1, "Media\tRaw channel returned success with zero data multiple consecutive times, aborting.");
+      PTRACE(1, "Raw channel returned success with zero data multiple consecutive times, aborting.");
       return false;
     }
 
@@ -832,21 +844,21 @@ PBoolean OpalRawMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & lengt
 PBoolean OpalRawMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & written)
 {
   if (!IsOpen()) {
-    PTRACE(1, "Media\tTried to write to closed media stream");
+    PTRACE(1, "Tried to write to closed media stream");
     return false;
   }
 
   written = 0;
 
   if (IsSource()) {
-    PTRACE(1, "Media\tTried to write to source media stream");
+    PTRACE(1, "Tried to write to source media stream");
     return false;
   }
   
   PWaitAndSignal mutex(m_channelMutex);
 
   if (!IsOpen() || m_channel == NULL) {
-    PTRACE(1, "Media\tTried to write to media stream with no channel");
+    PTRACE(1, "Tried to write to media stream with no channel");
     return false;
   }
 
@@ -866,12 +878,12 @@ PBoolean OpalRawMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDE
   else {
     length = m_silence.GetSize();
     buffer = m_silence;
-    PTRACE(6, "Media\tPlaying silence " << length << " bytes");
+    PTRACE(6, "Playing silence " << length << " bytes");
   }
 
   if (!m_channel->Write(buffer, length)) {
     PTRACE_IF(2, m_channel->GetErrorCode(PChannel::LastWriteError) != PChannel::NotOpen,
-              "Media\tChannel write error: " << m_channel->GetErrorText(PChannel::LastWriteError));
+              "Channel write error: " << m_channel->GetErrorText(PChannel::LastWriteError));
     return false;
   }
 
@@ -901,7 +913,7 @@ bool OpalRawMediaStream::SetChannel(PChannel * chan, bool autoDelete)
 
   delete channelToDelete; // Outside mutex
 
-  PTRACE(4, "Media\tSet raw media channel to \"" << m_channel->GetName() << '"');
+  PTRACE(4, "Set raw media channel to \"" << m_channel->GetName() << '"');
   return true;
 }
 
@@ -1066,7 +1078,7 @@ PBoolean OpalAudioMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameTime)
     bufferCount = std::max(bufferCount, (dataSize + frameSize - 1) / frameSize);
 
   PINDEX adjustedSize = (dataSize + frameSize - 1) / frameSize * frameSize;
-  PTRACE(3, "Media\tAudio " << (IsSource() ? "source" : "sink") << " "
+  PTRACE(3, "Audio " << (IsSource() ? "source" : "sink") << " "
             "data size set to " << adjustedSize << " (" << dataSize << "), "
             "frameTime=" << frameTime << ", "
             "clock=" << mediaFormat.GetClockRate() << ", "
@@ -1149,7 +1161,7 @@ void OpalVideoMediaStream::SetVideoInputDevice(PVideoInputDevice * device, bool 
   InternalAdjustDevices();
 
   if (!m_inputDevice->Start()) {
-    PTRACE(1, "Media\tCould not start video grabber");
+    PTRACE(1, "Could not start video grabber");
   }
   m_lastGrabTime = PTimer::Tick();
 }
@@ -1192,7 +1204,7 @@ bool OpalVideoMediaStream::InternalAdjustDevices()
       return false;
   }
 
-  PTRACE(4, "Media\tAdjusted video devices to " << video << " on " << *this);
+  PTRACE(4, "Adjusted video devices to " << video << " on " << *this);
   return true;
 }
 
@@ -1206,7 +1218,7 @@ PBoolean OpalVideoMediaStream::Open()
 
   if (m_inputDevice != NULL) {
     if (!m_inputDevice->Start()) {
-      PTRACE(1, "Media\tCould not start video grabber");
+      PTRACE(1, "Could not start video grabber");
       return false;
     }
     m_lastGrabTime = PTimer::Tick();
@@ -1239,7 +1251,7 @@ void OpalVideoMediaStream::InternalClose()
 bool OpalVideoMediaStream::InternalExecuteCommand(const OpalMediaCommand & command)
 {
   if (IsSource() && PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    PTRACE_IF(3, !m_needKeyFrame, "Media\tKey frame forced in video stream");
+    PTRACE_IF(3, !m_needKeyFrame, "Key frame forced in video stream");
     m_needKeyFrame = true; // Reset when I-Frame is sent
   }
 
@@ -1253,19 +1265,19 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
     return false;
 
   if (IsSink()) {
-    PTRACE(1, "Media\tTried to read from sink media stream");
+    PTRACE(1, "Tried to read from sink media stream");
     return false;
   }
 
   PWaitAndSignal mutex(m_devicesMutex);
 
   if (m_inputDevice == NULL) {
-    PTRACE(1, "Media\tTried to read from video display device");
+    PTRACE(1, "Tried to read from video display device");
     return false;
   }
 
   if (size < m_inputDevice->GetMaxFrameBytes()) {
-    PTRACE(1, "Media\tTried to read with insufficient buffer size - " << size << " < " << m_inputDevice->GetMaxFrameBytes());
+    PTRACE(1, "Tried to read with insufficient buffer size - " << size << " < " << m_inputDevice->GetMaxFrameBytes());
     return false;
   }
 
@@ -1279,7 +1291,7 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
   bool keyFrame = m_needKeyFrame;
   PINDEX bytesReturned = size - sizeof(OpalVideoTranscoder::FrameHeader);
   if (!m_inputDevice->GetFrameData((BYTE *)OPAL_VIDEO_FRAME_DATA_PTR(frame), &bytesReturned, keyFrame)) {
-    PTRACE(2, "Media\tFailed to grab frame from " << m_inputDevice->GetDeviceName());
+    PTRACE(2, "Failed to grab frame from " << m_inputDevice->GetDeviceName());
     return false;
   }
 
@@ -1300,7 +1312,7 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
     return true;
 
   if (!m_outputDevice->Start()) {
-    PTRACE(1, "Media\tCould not start video display device");
+    PTRACE(1, "Could not start video display device");
     if (m_autoDeleteOutput)
       delete m_outputDevice;
     m_outputDevice = NULL;
@@ -1317,14 +1329,14 @@ PBoolean OpalVideoMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
     return false;
 
   if (IsSource()) {
-    PTRACE(1, "Media\tTried to write to source media stream");
+    PTRACE(1, "Tried to write to source media stream");
     return false;
   }
 
   PWaitAndSignal mutex(m_devicesMutex);
 
   if (m_outputDevice == NULL) {
-    PTRACE(1, "Media\tTried to write to video capture device");
+    PTRACE(1, "Tried to write to video capture device");
     return false;
   }
 
@@ -1338,12 +1350,12 @@ PBoolean OpalVideoMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
   const OpalVideoTranscoder::FrameHeader * frame = (const OpalVideoTranscoder::FrameHeader *)data;
 
   if (!m_outputDevice->SetFrameSize(frame->width, frame->height)) {
-    PTRACE(1, "Media\tCould not resize video display device to " << frame->width << 'x' << frame->height);
+    PTRACE(1, "Could not resize video display device to " << frame->width << 'x' << frame->height);
     return false;
   }
 
   if (!m_outputDevice->Start()) {
-    PTRACE(1, "Media\tCould not start video display device");
+    PTRACE(1, "Could not start video display device");
     return false;
   }
 
@@ -1393,13 +1405,13 @@ PBoolean OpalUDPMediaStream::ReadPacket(RTP_DataFrame & packet)
   packet.SetPayloadSize(0);
 
   if (IsSink()) {
-    PTRACE(1, "Media\tTried to read from sink media stream");
+    PTRACE(1, "Tried to read from sink media stream");
     return false;
   }
 
   PBYTEArray rawData;
   if (!udpTransport.ReadPDU(rawData)) {
-    PTRACE(2, "Media\tRead on UDP transport failed: "
+    PTRACE(2, "Read on UDP transport failed: "
        << udpTransport.GetErrorText() << " transport: " << udpTransport);
     return false;
   }
@@ -1416,13 +1428,13 @@ PBoolean OpalUDPMediaStream::ReadPacket(RTP_DataFrame & packet)
 PBoolean OpalUDPMediaStream::WritePacket(RTP_DataFrame & Packet)
 {
   if (IsSource()) {
-    PTRACE(1, "Media\tTried to write to source media stream");
+    PTRACE(1, "Tried to write to source media stream");
     return false;
   }
 
   if (Packet.GetPayloadSize() > 0) {
     if (!udpTransport.Write(Packet.GetPayloadPtr(), Packet.GetPayloadSize())) {
-      PTRACE(2, "Media\tWrite on UDP transport failed: "
+      PTRACE(2, "Write on UDP transport failed: "
          << udpTransport.GetErrorText() << " transport: " << udpTransport);
       return false;
     }
