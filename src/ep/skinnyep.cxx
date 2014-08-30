@@ -356,12 +356,12 @@ bool OpalSkinnyEndPoint::PhoneDevice::SendRegisterMsg()
   msg.m_ip = ip;
   msg.m_maxStreams = 5;
   msg.m_deviceType = m_deviceType;
-  msg.m_protocolVersion = 15;
+  msg.m_protocol.m_version = 15;
 
   if (!SendSkinnyMsg(msg))
     return false;
   
-  PTRACE(4, "Sent register message for " << m_name << ", type=" << m_deviceType << ", protocol=" << msg.m_protocolVersion);
+  PTRACE(4, "Sent register message for " << m_name << ", type=" << m_deviceType << ", " << msg.m_protocol);
   return true;
 }
 
@@ -523,7 +523,8 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const RegisterAckMsg
 {
   client.m_status = RegisteredStatusText;
 
-  PTRACE(2, "Server protocol version " << ack.m_protocolVersion);
+  PTRACE(2, "Registered: Server " << ack.m_protocol);
+
 
   PIPSocket::AddressAndPort ap;
   if (client.m_transport.GetLocalAddress().GetIpAndPort(ap)) {
