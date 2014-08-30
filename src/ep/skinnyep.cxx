@@ -121,6 +121,7 @@ void OpalSkinnyEndPoint::SkinnyMsg::Construct(const PBYTEArray & pdu)
 
 OpalSkinnyEndPoint::OpalSkinnyEndPoint(OpalManager & manager, const char *prefix)
   : OpalRTPEndPoint(manager, prefix, IsNetworkEndPoint | SupportsE164)
+  , m_secondaryAudioAlwaysSimulated(true)
 {
 }
 
@@ -990,35 +991,41 @@ void OpalSkinnyConnection::OpenMediaChannel(const MediaInfo & info)
   if (con == NULL)
     return;
 
-  if (ownerCall.OpenSourceMediaStreams(*con, mediaType, info.m_sessionId, mediaFormat)) {
-    PTRACE(3, "Opened " << (info.m_receiver ? 'r' : 't') << "x " << mediaType << " stream, session=" << info.m_sessionId);
+  bool canSimulate = !info.m_receiver && !m_endpoint.GetSimulatedAudioFile().IsEmpty() && mediaType == OpalMediaType::Audio();
 
-    if (info.m_receiver) {
-      PIPSocket::AddressAndPort ap;
-      mediaSession->GetLocalAddress().GetIpAndPort(ap);
-
-      OpalSkinnyEndPoint::OpenReceiveChannelAckMsg ack;
-      ack.m_passThruPartyId = info.m_passThruPartyId;
-      ack.m_ip = ap.GetAddress();
-      ack.m_port = ap.GetPort();
-      m_client.SendSkinnyMsg(ack);
-    }
-
-    StartMediaStreams();
-  }
-  else {
-    if (info.m_receiver || mediaType != OpalMediaType::Audio() || m_endpoint.GetSimulatedAudioFile().IsEmpty()) {
-      PTRACE(2, "Could not open " << (info.m_receiver ? 'r' : 't') << "x " << mediaType << " stream, session=" << info.m_sessionId);
-      return;
-    }
-
+  if (canSimulate && info.m_sessionId > 1 && m_endpoint.IsSecondaryAudioAlwaysSimulated()) {
     OpenSimulatedMediaChannel(info.m_sessionId, mediaFormat);
+    return;
   }
+
+  if (!ownerCall.OpenSourceMediaStreams(*con, mediaType, info.m_sessionId, mediaFormat)) {
+    PTRACE(2, "Could not open " << (info.m_receiver ? 'r' : 't') << "x " << mediaType << " stream, session=" << info.m_sessionId);
+    if (canSimulate)
+      OpenSimulatedMediaChannel(info.m_sessionId, mediaFormat);
+    return;
+  }
+
+  PTRACE(3, "Opened " << (info.m_receiver ? 'r' : 't') << "x " << mediaType << " stream, session=" << info.m_sessionId);
+
+  if (info.m_receiver) {
+    PIPSocket::AddressAndPort ap;
+    mediaSession->GetLocalAddress().GetIpAndPort(ap);
+
+    OpalSkinnyEndPoint::OpenReceiveChannelAckMsg ack;
+    ack.m_passThruPartyId = info.m_passThruPartyId;
+    ack.m_ip = ap.GetAddress();
+    ack.m_port = ap.GetPort();
+    m_client.SendSkinnyMsg(ack);
+  }
+
+  StartMediaStreams();
 }
 
 
 void OpalSkinnyConnection::OpenSimulatedMediaChannel(unsigned sessionId, const OpalMediaFormat & mediaFormat)
 {
+  m_simulatedTransmitters.insert(sessionId);
+
   OpalMediaSession * mediaSession = GetMediaSession(sessionId);
   if (mediaSession == NULL) {
     PTRACE(2, "No session " << sessionId << " for " << mediaFormat << " to simulate");
@@ -1130,7 +1137,12 @@ void OpalSkinnyConnection::OnClosedMediaStream(const OpalMediaStream & stream)
   if (IsReleased())
     return;
 
-  OpenSimulatedMediaChannel(stream.GetSessionID(), stream.GetMediaFormat());
+  unsigned sessionId =stream.GetSessionID();
+  if (m_simulatedTransmitters.find(sessionId) == m_simulatedTransmitters.end())
+    OpenSimulatedMediaChannel(sessionId, stream.GetMediaFormat());
+  else {
+    PTRACE(4, "Session " << sessionId << " had already tried simulation, not trying again.");
+  }
 }
 
 
