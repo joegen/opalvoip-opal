@@ -277,6 +277,20 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
     OPAL_SKINNY_MSG(KeepAliveAckMsg, 0x0100,
     );
 
+    struct Proto {
+      uint8_t  m_version;
+      uint8_t  m_flags;
+      BYTE     m_unknown1;
+      uint8_t  m_features; // 0x01=Dynamic Messages, 0x80=Abbreviated dialing
+
+      friend ostream & operator<<(ostream&strm, const Proto & protocol)
+      {
+        return strm << "protocol=" << (unsigned)protocol.m_version << ", "
+                       "flags=0x" << hex << (unsigned)protocol.m_flags << dec << ", "
+                       "features=0x" << hex << (unsigned)protocol.m_features << dec;
+      }
+    };
+
     OPAL_SKINNY_MSG(RegisterMsg, 0x0001,
       enum { MaxNameSize = 15 };
       char     m_deviceName[MaxNameSize+1];
@@ -286,8 +300,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       PUInt32l m_deviceType;
       PUInt32l m_maxStreams;
       PUInt32l m_activeStreams;
-      PUInt16l m_protocolVersion;
-      PUInt16l m_phoneFeatures; // 0x0100=Dynamic Messages, 0x8000=Abbreviated dialing
+      Proto    m_protocol;
       PUInt32l m_socketType;    // 0=ASCII, 1=HEX
       BYTE     m_unknown2[4];
       char     m_macAddress[12];
@@ -300,8 +313,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       char     m_dateFormat[6];
       BYTE     m_unknown1[2];
       PUInt32l m_secondaryKeepAlive;
-      PUInt16l m_protocolVersion;
-      BYTE     m_unknown2[2];
+      Proto    m_protocol;
 
       virtual void PrintOn(ostream & strm) const { strm << GetClass() << " keepAlive=" << m_keepAlive; }
     );
