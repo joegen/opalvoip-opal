@@ -253,7 +253,7 @@ OpalSkinnyConnection * OpalSkinnyEndPoint::CreateConnection(OpalCall & call,
 bool OpalSkinnyEndPoint::Register(const PString & server, const PString & name, unsigned deviceType)
 {
   if (name.IsEmpty() || name.GetLength() > RegisterMsg::MaxNameSize) {
-    PTRACE(2, "Illegal client device anme \"" << name << '"');
+    PTRACE(2, "Illegal client device name \"" << name << '"');
     return false;
   }
 
