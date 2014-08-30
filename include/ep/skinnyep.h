@@ -605,6 +605,9 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
     const PFilePath & GetSimulatedAudioFile() const { return m_simulatedAudioFile; }
     void SetSimulatedAudioFile(const PString str) { m_simulatedAudioFile = str; }
 
+    bool IsSecondaryAudioAlwaysSimulated() const { return m_secondaryAudioAlwaysSimulated; }
+    void SetSecondaryAudioAlwaysSimulated(bool v) { m_secondaryAudioAlwaysSimulated = v; }
+
   protected:
     PSafePtr<OpalSkinnyConnection> GetSkinnyConnection(const PhoneDevice & client, uint32_t callIdentifier, PSafetyMode mode = PSafeReadWrite);
     template <class MSG> bool DelegateMsg(const PhoneDevice & client, const MSG & msg);
@@ -613,6 +616,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
     PhoneDeviceDict m_phoneDevices;
     PMutex          m_phoneDevicesMutex;
     PFilePath       m_simulatedAudioFile;
+    bool            m_secondaryAudioAlwaysSimulated;
 };
 
 
@@ -776,6 +780,7 @@ class OpalSkinnyConnection : public OpalRTPConnection
 
     OpalMediaFormatList m_remoteMediaFormats;
     std::set<MediaInfo> m_passThruMedia;
+    std::set<unsigned>  m_simulatedTransmitters;
 };
 
 
