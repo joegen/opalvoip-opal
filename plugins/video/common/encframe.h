@@ -34,6 +34,15 @@
 #include <codec/opalplugin.hpp>
 
 
+namespace OpalMemory
+{
+  size_t const Alignment = 16;
+
+  __inline static bool IsAligned(uint8_t * ptr) { return (((intptr_t)ptr)&(Alignment-1)) == 0; }
+
+  bool AllocateAligned(void * & baseMemory, uint8_t * & alignedMemory, size_t & alignedSize, size_t requestedSize);
+};
+
 class OpalPluginFrame
 {
   protected:
