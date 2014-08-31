@@ -48,6 +48,7 @@
 
 
 #include "../x264wrap.cxx"
+#include "../../common/encframe.cxx"
 #include "../../common/h264frame.cxx"
 #include "../../common/ffmpeg.cxx"
 #include "../../common/dyna.cxx"
