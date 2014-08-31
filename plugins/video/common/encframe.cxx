@@ -33,15 +33,10 @@
 #endif
 
 
-static size_t const MemoryAlignment = 16;
-
-__inline static bool IsAlignedMemory(uint8_t * ptr)
+namespace OpalMemory
 {
-  return (((intptr_t)ptr)&(MemoryAlignment-1)) == 0;
-}
 
-
-static bool AllocateAlignedMemory(void * & baseMemory, uint8_t * & alignedMemory, size_t & alignedSize, size_t requestedSize)
+bool AllocateAligned(void * & baseMemory, uint8_t * & alignedMemory, size_t & alignedSize, size_t requestedSize)
 {
   if (requestedSize > alignedSize && baseMemory != NULL) {
     free(baseMemory);
@@ -50,9 +45,9 @@ static bool AllocateAlignedMemory(void * & baseMemory, uint8_t * & alignedMemory
 
   if (baseMemory == NULL) {
 #if HAVE_POSIX_MEMALIGN
-    if (posix_memalign(&baseMemory, MemoryAlignment, requestedSize) != 0)
+    if (posix_memalign(&baseMemory, Alignment, requestedSize) != 0)
 #else
-    if ((baseMemory = malloc(requestedSize+MemoryAlignment)) == NULL)
+    if ((baseMemory = malloc(requestedSize+Alignment)) == NULL)
 #endif
     {
       PTRACE(1, "FFMPEG", "Unable to allocate " << requestedSize << " bytes for aligned buffer.");
@@ -65,11 +60,13 @@ static bool AllocateAlignedMemory(void * & baseMemory, uint8_t * & alignedMemory
 #if HAVE_POSIX_MEMALIGN
   alignedMemory = (uint8_t *)baseMemory;
 #else
-  alignedMemory = (uint8_t *)((MemoryAlignment-1+(intptr_t)baseMemory)&(-(intptr_t)MemoryAlignment));
+  alignedMemory = (uint8_t *)((Alignment-1+(intptr_t)baseMemory)&(-(intptr_t)Alignment));
 #endif
 
   return true;
 }
+
+};
 
 
 OpalPluginFrame::OpalPluginFrame()
@@ -97,7 +94,7 @@ void OpalPluginFrame::SetMaxPayloadSize(size_t size)
 
 bool OpalPluginFrame::SetResolution(unsigned width, unsigned height)
 {
-  return AllocateAlignedMemory(m_memory, m_buffer, m_maxSize, width*height*2);
+  return OpalMemory::AllocateAligned(m_memory, m_buffer, m_maxSize, width*height*2);
 }
 
 
