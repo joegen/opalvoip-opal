@@ -95,45 +95,6 @@ static void logCallbackFFMPEG(void * avcl, int severity, const char* fmt , va_li
 #endif
 
 
-static size_t const MemoryAlignment = 16;
-
-__inline static bool IsAlignedMemory(uint8_t * ptr)
-{
-  return (((intptr_t)ptr)&(MemoryAlignment-1)) == 0;
-}
-
-
-static bool AllocateAlignedMemory(void * & baseMemory, uint8_t * & alignedMemory, size_t & alignedSize, size_t requestedSize)
-{
-  if (requestedSize > alignedSize && baseMemory != NULL) {
-    free(baseMemory);
-    baseMemory = NULL;
-  }
-
-  if (baseMemory == NULL) {
-#if HAVE_POSIX_MEMALIGN
-    if (posix_memalign(&baseMemory, MemoryAlignment, requestedSize) != 0)
-#else
-    if ((baseMemory = malloc(requestedSize+MemoryAlignment)) == NULL)
-#endif
-    {
-      PTRACE(1, "FFMPEG", "Unable to allocate " << requestedSize << " bytes for aligned buffer.");
-      return false;
-    }
-    alignedSize = requestedSize;
-    PTRACE(5, "FFMPEG", "Allocated " << requestedSize << " byte aligned buffer.");
-  }
-
-#if HAVE_POSIX_MEMALIGN
-  alignedMemory = (uint8_t *)baseMemory;
-#else
-  alignedMemory = (uint8_t *)((MemoryAlignment-1+(intptr_t)baseMemory)&(-(intptr_t)MemoryAlignment));
-#endif
-
-  return true;
-}
-
-
 ///////////////////////////////////////////////////////////////////////////////
 
 FFMPEGCodec::FFMPEGCodec(const char * prefix, OpalPluginFrame * fullFrame)
@@ -469,9 +430,9 @@ bool FFMPEGCodec::EncodeVideoPacket(const PluginCodec_RTP & in, PluginCodec_RTP 
 
   // May need to copy to local buffer to guarantee 16 byte alignment
   uint8_t * yuv = OPAL_VIDEO_FRAME_DATA_PTR(header);
-  if (!IsAlignedMemory(yuv)) {
+  if (!OpalMemory::IsAligned(yuv)) {
     size_t frameSize = planeSize*3/2;
-    if (!AllocateAlignedMemory(m_alignedInputYUV, yuv, m_alignedInputSize, frameSize))
+    if (!OpalMemory::AllocateAligned(m_alignedInputYUV, yuv, m_alignedInputSize, frameSize))
       return false;
     memcpy(yuv, OPAL_VIDEO_FRAME_DATA_PTR(header), frameSize);
   }
