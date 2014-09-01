@@ -2574,12 +2574,14 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
                 }
                 break;
 
+#if OPAL_VIDEO
               case SIP_PDU::Method_INFO :
                 if (transaction.GetMIME().GetContentType().NumCompare(ApplicationMediaControlXMLKey) == EqualTo) {
                   PTRACE(3, "SIP\tError response to video fast update INFO, not sending another.");
                   m_canDoVideoFastUpdateINFO = false;
                 }
                 break;
+#endif // OPAL_VIDEO
 
               default :
                 break;
