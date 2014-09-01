@@ -59,7 +59,7 @@ OpalPresenceInfo::OpalPresenceInfo(State state)
 OpalPresenceInfo::OpalPresenceInfo(const PString & str)
   : m_state(FromString(str))
 {
-  if (m_state == InternalError) {
+  if (m_state == EndState) {
     m_state = Available;
     m_activities += str;
   }
