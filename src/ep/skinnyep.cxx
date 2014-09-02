@@ -56,9 +56,9 @@ PURL_LEGACY_SCHEME(sccp,
                    2000);
 
 
-static PString CreateToken(const OpalSkinnyEndPoint::PhoneDevice & client, unsigned callIdentifier)
+static PString CreateToken(const OpalSkinnyEndPoint::PhoneDevice & phone, unsigned callIdentifier)
 {
-  PString token = "sccp-" + client.GetName();
+  PString token = "sccp-" + phone.GetName();
   if (callIdentifier > 0)
     token.sprintf("-%u", callIdentifier);
 
@@ -213,23 +213,39 @@ PSafePtr<OpalConnection> OpalSkinnyEndPoint::MakeConnection(OpalCall & call,
 
   PWaitAndSignal mutex(m_phoneDevicesMutex);
 
-  PhoneDevice * client;
+  PhoneDevice * phone;
+
   if (name.IsEmpty()) {
-    if (m_phoneDevices.IsEmpty()) {
-      PTRACE(2, "Cannot call, nothing registered.");
+    PhoneDeviceDict::iterator dev = m_phoneDevices.begin();
+    if (dev == m_phoneDevices.end()) {
+      PTRACE(2, "Cannot call, no phone devices registered.");
       return NULL;
     }
-    client = &m_phoneDevices.begin()->second;
+
+    while (dev->second.m_activeConnection != NULL) {
+      if (++dev == m_phoneDevices.end()) {
+        PTRACE(2, "Cannot call, all phone devices are in use.");
+        return NULL;
+      }
+    }
+
+    phone = &dev->second;
   }
   else {
-    client = m_phoneDevices.GetAt(name);
-    if (client == NULL) {
-      PTRACE(2, "Local client \"" << name << "\" does not exist.");
+    phone = m_phoneDevices.GetAt(name);
+
+    if (phone == NULL) {
+      PTRACE(2, "Cannot call, phone device \"" << name << "\" does not exist.");
+      return NULL;
+    }
+
+    if (phone->m_activeConnection != NULL) {
+      PTRACE(2, "Cannot call, phone device \"" << name << "\" is in use.");
       return NULL;
     }
   }
 
-  return AddConnection(CreateConnection(call, *client, 0, number, userData, options, stringOptions));
+  return AddConnection(CreateConnection(call, *phone, 0, number, userData, options, stringOptions));
 }
 
 
@@ -240,21 +256,21 @@ PBoolean OpalSkinnyEndPoint::GarbageCollection()
 
 
 OpalSkinnyConnection * OpalSkinnyEndPoint::CreateConnection(OpalCall & call,
-                                                            OpalSkinnyEndPoint::PhoneDevice & client,
+                                                            OpalSkinnyEndPoint::PhoneDevice & phone,
                                                             unsigned callIdentifier,
                                                             const PString & dialNumber,
                                                             void * userData,
                                                             unsigned int options,
                                                             OpalConnection::StringOptions * stringOptions)
 {
-  return new OpalSkinnyConnection(call, *this, client, callIdentifier, dialNumber, userData, options, stringOptions);
+  return new OpalSkinnyConnection(call, *this, phone, callIdentifier, dialNumber, userData, options, stringOptions);
 }
 
 
 bool OpalSkinnyEndPoint::Register(const PString & server, const PString & name, unsigned deviceType)
 {
   if (name.IsEmpty() || name.GetLength() > RegisterMsg::MaxNameSize) {
-    PTRACE(2, "Illegal client device name \"" << name << '"');
+    PTRACE(2, "Illegal phone device name \"" << name << '"');
     return false;
   }
 
@@ -263,7 +279,7 @@ bool OpalSkinnyEndPoint::Register(const PString & server, const PString & name, 
   PhoneDevice * phoneDevice = m_phoneDevices.GetAt(name);
   if (phoneDevice != NULL) {
     if (phoneDevice->m_deviceType == deviceType) {
-      PTRACE(3, "PhoneDevice \"" << name << "\" already registered");
+      PTRACE(3, "Phone device \"" << name << "\" already registered");
       return false;
     }
 
@@ -272,7 +288,7 @@ bool OpalSkinnyEndPoint::Register(const PString & server, const PString & name, 
 
   phoneDevice = CreatePhoneDevice(name, deviceType);
   if (phoneDevice == NULL) {
-    PTRACE(3, "Could not create PhoneDevice for \"" << name << '"');
+    PTRACE(3, "Could not create phone device for \"" << name << '"');
     return false;
   }
 
@@ -296,7 +312,7 @@ bool OpalSkinnyEndPoint::Unregister(const PString & name)
     return true;
   }
 
-  PTRACE(3, "PhoneDevice \"" << name << "\" not registered");
+  PTRACE(3, "Phone device \"" << name << "\" not registered");
   return false;
 }
 
@@ -408,7 +424,7 @@ bool OpalSkinnyEndPoint::PhoneDevice::SendSkinnyMsg(const SkinnyMsg & msg)
 
 void OpalSkinnyEndPoint::PhoneDevice::HandleTransport()
 {
-  PTRACE(4, "Started client handler thread: " << m_name << ", delay=" << m_delay);
+  PTRACE(4, "Started phone device handler thread: " << m_name << ", delay=" << m_delay);
 
   bool running = true;
 
@@ -497,13 +513,13 @@ void OpalSkinnyEndPoint::PhoneDevice::HandleTransport()
   }
 
   m_transport.Close();
-  PTRACE(4, "Ended client handler thread: " << m_name);
+  PTRACE(4, "Ended phone device handler thread: " << m_name);
 }
 
 
-bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const KeepAliveMsg &)
+bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & phone, const KeepAliveMsg &)
 {
-  return client.SendSkinnyMsg(KeepAliveAckMsg());
+  return phone.SendSkinnyMsg(KeepAliveAckMsg());
 }
 
 
@@ -519,30 +535,53 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice &, const RegisterMsg &)
 }
 
 
-bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const RegisterAckMsg & ack)
+void OpalSkinnyEndPoint::RegisterMsg::PrintOn(ostream & strm) const
 {
-  client.m_status = RegisteredStatusText;
+  strm << GetClass() << " device=" << m_deviceName
+        << " type=" << m_deviceType
+        << " streams=" << m_maxStreams
+        << " ip=" << PIPAddress(m_ip);
+}
+
+
+ostream & operator<<(ostream&strm, const OpalSkinnyEndPoint::Proto & protocol)
+{
+  return strm << "protocol=" << (unsigned)protocol.m_version << ", "
+                  "flags=0x" << hex << (unsigned)protocol.m_flags << dec << ", "
+                  "features=0x" << hex << (unsigned)protocol.m_features << dec;
+}
+
+
+bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & phone, const RegisterAckMsg & ack)
+{
+  phone.m_status = RegisteredStatusText;
 
   PTRACE(2, "Registered: Server " << ack.m_protocol);
 
 
   PIPSocket::AddressAndPort ap;
-  if (client.m_transport.GetLocalAddress().GetIpAndPort(ap)) {
+  if (phone.m_transport.GetLocalAddress().GetIpAndPort(ap)) {
     PortMsg msg;
     msg.m_port = ap.GetPort();
-    client.SendSkinnyMsg(msg);
+    phone.SendSkinnyMsg(msg);
   }
 
   KeepAliveMsg msg;
-  client.m_transport.SetKeepAlive(PTimeInterval(0, ack.m_keepAlive-1), PBYTEArray(msg.GetPacketPtr(), msg.GetPacketLen()));
+  phone.m_transport.SetKeepAlive(PTimeInterval(0, ack.m_keepAlive-1), PBYTEArray(msg.GetPacketPtr(), msg.GetPacketLen()));
   return true;
 }
 
 
-bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const RegisterRejectMsg & msg)
+void OpalSkinnyEndPoint::RegisterAckMsg::PrintOn(ostream & strm) const
 {
-  PTRACE(2, "Server rejected registration for " << client.m_name << ": " << msg.m_errorText);
-  client.m_status = PConstString("Rejected: ") + msg.m_errorText;
+  strm << GetClass() << " keepAlive=" << m_keepAlive;
+}
+
+
+bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & phone, const RegisterRejectMsg & msg)
+{
+  PTRACE(2, "Server rejected registration for " << phone.m_name << ": " << msg.m_errorText);
+  phone.m_status = PConstString("Rejected: ") + msg.m_errorText;
   return false;
 }
 
@@ -553,10 +592,10 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice &, const UnregisterMsg &)
 }
 
 
-bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const UnregisterAckMsg &)
+bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & phone, const UnregisterAckMsg &)
 {
-  PTRACE(2, "Unregistered " << client.m_name << " from server");
-  client.m_status = "Unregistered";
+  PTRACE(2, "Unregistered " << phone.m_name << " from server");
+  phone.m_status = "Unregistered";
   return false;
 }
 
@@ -567,7 +606,13 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice &, const PortMsg &)
 }
 
 
-bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const CapabilityRequestMsg &)
+void OpalSkinnyEndPoint::PortMsg::PrintOn(ostream & strm) const
+{
+  strm << GetClass() << ' ' << m_port;
+}
+
+
+bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & phone, const CapabilityRequestMsg &)
 {
   CapabilityResponseMsg msg;
 
@@ -588,7 +633,7 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const CapabilityRequ
   PTRACE_IF(2, count == 0, "Must have a valid codec!");
   msg.SetCount(count);
 
-  return client.SendSkinnyMsg(msg);
+  return phone.SendSkinnyMsg(msg);
 }
 
 
@@ -598,25 +643,24 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice &, const CapabilityResponseMsg
 }
 
 
-bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const CallStateMsg & msg)
+void OpalSkinnyEndPoint::CapabilityResponseMsg::PrintOn(ostream & strm) const
 {
-  // See if we are dialling out 
-  PString dialOutToken = CreateToken(client, 0);
-  PSafePtr<OpalSkinnyConnection> connection = PSafePtrCast<OpalConnection, OpalSkinnyConnection>(connectionsActive.FindWithLock(dialOutToken, PSafeReadWrite));
-  if (connection != NULL) {
-    PTRACE_CONTEXT_ID_PUSH_THREAD(connection);
-    if (!connection->OnReceiveMsg(msg))
-      return false;
+  strm << GetClass() << ' ' << m_count << " codecs";
+}
 
-    // Now have call/line id's do token swapping
-    connectionsActive.Move(dialOutToken, connection->GetToken());
-    return true;
-  }
 
-  connection = GetSkinnyConnection(client, msg.m_callIdentifier);
-  if (connection != NULL) {
-    PTRACE_CONTEXT_ID_PUSH_THREAD(connection);
-    return connection->OnReceiveMsg(msg);
+void OpalSkinnyEndPoint::CapabilityResponseMsg::SetCount(PINDEX count)
+{
+  m_count = count;
+  m_length = m_length - (PARRAYSIZE(m_capability) - count) * sizeof(Info);
+}
+
+
+bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & phone, const CallStateMsg & msg)
+{
+  if (phone.m_activeConnection != NULL) {
+    PTRACE_CONTEXT_ID_PUSH_THREAD(phone.m_activeConnection);
+    return phone.m_activeConnection->OnReceiveMsg(msg);
   }
 
   if (msg.GetState() != eStateRingIn) {
@@ -631,7 +675,7 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const CallStateMsg &
     return true;
   }
 
-  connection = CreateConnection(*call, client, msg.m_callIdentifier, PString::Empty(), NULL, 0, NULL);
+  OpalSkinnyConnection * connection = CreateConnection(*call, phone, msg.m_callIdentifier, PString::Empty(), NULL, 0, NULL);
   if (AddConnection(connection) == NULL)
     return true;
 
@@ -640,21 +684,46 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const CallStateMsg &
 }
 
 
-bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const CallInfoMsg & msg)
+void OpalSkinnyEndPoint::CallStateMsg::PrintOn(ostream & strm) const
 {
-  return DelegateMsg(client, msg);
+  strm << GetClass() << ' ' << GetState() << " line=" << m_lineInstance << " call=" << m_callIdentifier;
 }
 
 
-bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const CallInfo5Msg & msg)
+bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & phone, const CallInfoMsg & msg)
 {
-  return DelegateMsg(client, msg);
+  return DelegateMsg(phone, msg);
 }
 
 
-bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const SetRingerMsg & msg)
+bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & phone, const CallInfo5Msg & msg)
 {
-  return DelegateMsg(client, msg);
+  return DelegateMsg(phone, msg);
+}
+
+
+void OpalSkinnyEndPoint::CallInfoCommon::PrintOn(ostream & strm) const
+{
+  strm << GetClass() << ' ' << GetType()
+       << " line=" << GetLineInstance()
+       << " call=" << GetCallIdentifier()
+       << " called=" << GetCalledPartyNumber()
+       << " calling=" << GetCallingPartyNumber();
+}
+
+
+bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & phone, const SetRingerMsg & msg)
+{
+  return DelegateMsg(phone, msg);
+}
+
+
+void OpalSkinnyEndPoint::SetRingerMsg::PrintOn(ostream & strm) const
+{
+  strm << GetClass() << ' ' << GetType()
+       << " mode=" << m_ringMode
+       << " line=" << m_lineInstance
+       << " call=" << m_callIdentifier;
 }
 
 
@@ -664,9 +733,21 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice &, const OffHookMsg &)
 }
 
 
+void OpalSkinnyEndPoint::OffHookMsg::PrintOn(ostream & strm) const
+{
+  strm << GetClass() << " line=" << m_lineInstance << " call=" << m_callIdentifier;
+}
+
+
 bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice &, const OnHookMsg &)
 {
   return true;
+}
+
+
+void OpalSkinnyEndPoint::OnHookMsg::PrintOn(ostream & strm) const
+{
+  strm << GetClass() << " line=" << m_lineInstance << " call=" << m_callIdentifier;
 }
 
 
@@ -676,9 +757,21 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice &, const StartToneMsg &)
 }
 
 
+void OpalSkinnyEndPoint::StartToneMsg::PrintOn(ostream & strm) const
+{
+  strm << GetClass() << ' ' << GetType() << " line=" << m_lineInstance << " call=" << m_callIdentifier;
+}
+
+
 bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice &, const StopToneMsg &)
 {
   return true;
+}
+
+
+void OpalSkinnyEndPoint::StopToneMsg::PrintOn(ostream & strm) const
+{
+  strm << GetClass() << " line=" << m_lineInstance << " call=" << m_callIdentifier;
 }
 
 
@@ -688,15 +781,36 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice &, const KeyPadButtonMsg &)
 }
 
 
+void OpalSkinnyEndPoint::KeyPadButtonMsg::PrintOn(ostream & strm) const
+{
+  strm << GetClass() << " '" << m_button<< "' line=" << m_lineInstance << " call=" << m_callIdentifier;
+}
+
+
 bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice &, const SoftKeyEventMsg &)
 {
   return true;
 }
 
 
-bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const OpenReceiveChannelMsg & msg)
+void OpalSkinnyEndPoint::SoftKeyEventMsg::PrintOn(ostream & strm) const
 {
-  return DelegateMsg(client, msg);
+  strm << GetClass() << ' ' << GetEvent() << " line=" << m_lineInstance << " call=" << m_callIdentifier;
+}
+
+
+bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & phone, const OpenReceiveChannelMsg & msg)
+{
+  return DelegateMsg(phone, msg);
+}
+
+
+void OpalSkinnyEndPoint::OpenReceiveChannelMsg::PrintOn(ostream & strm) const
+{
+  strm << GetClass()
+       << " call=" << m_callIdentifier
+       << " id=" << m_passThruPartyId
+       << " payload=" << m_payloadCapability;
 }
 
 
@@ -706,27 +820,52 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice &, const OpenReceiveChannelAck
 }
 
 
-bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const CloseReceiveChannelMsg & msg)
+void OpalSkinnyEndPoint::OpenReceiveChannelAckMsg::PrintOn(ostream & strm) const
 {
-  return DelegateMsg(client, msg);
+  strm << GetClass()
+       << " id=" << m_passThruPartyId
+       << ' ' << PIPAddress(m_ip) << ':' << m_port
+       << " status=" << m_status;
 }
 
 
-bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const StartMediaTransmissionMsg & msg)
+bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & phone, const CloseReceiveChannelMsg & msg)
 {
-  return DelegateMsg(client, msg);
+  return DelegateMsg(phone, msg);
 }
 
 
-bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & client, const StopMediaTransmissionMsg & msg)
+void OpalSkinnyEndPoint::CloseReceiveChannelMsg::PrintOn(ostream & strm) const
 {
-  return DelegateMsg(client, msg);
+  strm << GetClass() << " call=" << m_callIdentifier << " id=" << m_passThruPartyId;
 }
 
 
-PSafePtr<OpalSkinnyConnection> OpalSkinnyEndPoint::GetSkinnyConnection(const PhoneDevice & client, uint32_t callIdentifier, PSafetyMode mode)
+bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & phone, const StartMediaTransmissionMsg & msg)
 {
-  return PSafePtrCast<OpalConnection, OpalSkinnyConnection>(connectionsActive.FindWithLock(CreateToken(client, callIdentifier), mode));
+  return DelegateMsg(phone, msg);
+}
+
+
+void OpalSkinnyEndPoint::StartMediaTransmissionMsg::PrintOn(ostream & strm) const
+{
+  strm << GetClass()
+       << " call=" << m_callIdentifier
+       << " id=" << m_passThruPartyId
+       << ' ' << PIPAddress(m_ip) << ':' << m_port
+       << " payload=" << m_payloadCapability;
+}
+
+
+bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & phone, const StopMediaTransmissionMsg & msg)
+{
+  return DelegateMsg(phone, msg);
+}
+
+
+void OpalSkinnyEndPoint::StopMediaTransmissionMsg::PrintOn(ostream & strm) const
+{
+  strm << GetClass() << " call=" << m_callIdentifier << " id=" << m_passThruPartyId;
 }
 
 
@@ -734,20 +873,21 @@ PSafePtr<OpalSkinnyConnection> OpalSkinnyEndPoint::GetSkinnyConnection(const Pho
 
 OpalSkinnyConnection::OpalSkinnyConnection(OpalCall & call,
                                            OpalSkinnyEndPoint & ep,
-                                           OpalSkinnyEndPoint::PhoneDevice & client,
+                                           OpalSkinnyEndPoint::PhoneDevice & phone,
                                            unsigned callIdentifier,
                                            const PString & dialNumber,
                                            void * /*userData*/,
                                            unsigned options,
                                            OpalConnection::StringOptions * stringOptions)
-  : OpalRTPConnection(call, ep, CreateToken(client, callIdentifier), options, stringOptions)
+  : OpalRTPConnection(call, ep, CreateToken(phone, callIdentifier), options, stringOptions)
   , m_endpoint(ep)
-  , m_client(client)
+  , m_phoneDevice(phone)
   , m_lineInstance(0)
   , m_callIdentifier(callIdentifier)
   , m_needSoftKeyEndcall(true)
 {
   m_calledPartyNumber = dialNumber;
+  m_phoneDevice.m_activeConnection = this;
 }
 
 
@@ -757,8 +897,8 @@ PBoolean OpalSkinnyConnection::SetUpConnection()
   SetPhase(SetUpPhase);
   OnApplyStringOptions();
 
-  // At this point we just go off hook, wait for CallStateMsg which creates the connection
-  m_client.SendSkinnyMsg(OpalSkinnyEndPoint::OffHookMsg());
+  // At this point we just go off hook, wait for CallStateMsg which starts dialing
+  m_phoneDevice.SendSkinnyMsg(OpalSkinnyEndPoint::OffHookMsg());
   return true;
 }
 
@@ -770,9 +910,10 @@ void OpalSkinnyConnection::OnReleased()
     msg.m_event = OpalSkinnyEndPoint::eSoftKeyEndcall;
     msg.m_callIdentifier = m_callIdentifier;
     msg.m_lineInstance = m_lineInstance;
-    m_client.SendSkinnyMsg(msg);
+    m_phoneDevice.SendSkinnyMsg(msg);
   }
 
+  m_phoneDevice.m_activeConnection.SetNULL();
   OpalRTPConnection::OnReleased();
 }
 
@@ -810,7 +951,7 @@ PBoolean OpalSkinnyConnection::SetConnected()
   msg.m_event = OpalSkinnyEndPoint::eSoftKeyAnswer;
   msg.m_callIdentifier = m_callIdentifier;
   msg.m_lineInstance = m_lineInstance;
-  return m_client.SendSkinnyMsg(msg);
+  return m_phoneDevice.SendSkinnyMsg(msg);
 }
 
 
@@ -829,7 +970,7 @@ PString OpalSkinnyConnection::GetAlertingType() const
 
 OpalTransportAddress OpalSkinnyConnection::GetRemoteAddress() const
 {
-  return m_client.GetRemoteAddress();
+  return m_phoneDevice.GetRemoteAddress();
 }
 
 
@@ -838,7 +979,7 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg &
   if (m_callIdentifier != msg.m_callIdentifier) {
     m_callIdentifier = msg.m_callIdentifier;
     PTRACE(3, "Call identifier set to " << m_callIdentifier);
-    PString newToken = CreateToken(m_client, m_callIdentifier);
+    PString newToken = CreateToken(m_phoneDevice, m_callIdentifier);
     if (callToken != newToken) {
       callToken = newToken;
       PTRACE(3, "Set incoming calls new token to \"" << callToken << '"');
@@ -855,8 +996,17 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg &
       break;
 
     case OpalSkinnyEndPoint::eStateOffHook:
-      if (IsOriginating())
+      if (IsOriginating()) {
         OnProceeding();
+        for (PINDEX i = 0; i < m_calledPartyNumber.GetLength(); ++i) {
+          OpalSkinnyEndPoint::KeyPadButtonMsg keypad;
+          keypad.m_button = m_calledPartyNumber[i];
+          keypad.m_callIdentifier = m_callIdentifier;
+          keypad.m_lineInstance = m_lineInstance;
+          if (!m_phoneDevice.SendSkinnyMsg(keypad))
+            return false;
+        }
+      }
       break;
 
     case OpalSkinnyEndPoint::eStateOnHook:
@@ -899,12 +1049,14 @@ bool OpalSkinnyConnection::OnReceiveCallInfo(const OpalSkinnyEndPoint::CallInfoC
   if (msg.GetType() == OpalSkinnyEndPoint::eTypeOutboundCall) {
     remotePartyName = msg.GetCalledPartyName();
     remotePartyNumber = msg.GetCalledPartyNumber();
+    displayName = msg.GetCallingPartyName();
+    localPartyName = msg.GetCallingPartyNumber();
   }
   else {
     remotePartyName = msg.GetCallingPartyName();
     remotePartyNumber = msg.GetCallingPartyNumber();
-    m_calledPartyName = msg.GetCalledPartyName();
-    m_calledPartyNumber = msg.GetCalledPartyNumber();
+    m_calledPartyName = displayName = msg.GetCalledPartyName();
+    m_calledPartyNumber = localPartyName = msg.GetCalledPartyNumber();
     m_redirectingParty = GetPrefixName() + ':' + msg.GetRedirectingPartyNumber();
   }
 
@@ -913,7 +1065,7 @@ bool OpalSkinnyConnection::OnReceiveCallInfo(const OpalSkinnyEndPoint::CallInfoC
   if (m_calledPartyNumber.IsEmpty() && OpalIsE164(m_calledPartyName))
     m_calledPartyNumber = m_calledPartyName;
 
-  PTRACE(3, "Called party: number=\"" << m_calledPartyNumber << "\", name=\"" << m_calledPartyName << "\" - "
+  PTRACE(3, "Local party: number=\"" << localPartyName << "\", name=\"" << displayName << "\" - "
             "Remote party: number=\"" << remotePartyNumber << "\", name=\"" << remotePartyName << "\" "
             "for " << *this);
 
@@ -983,7 +1135,7 @@ void OpalSkinnyConnection::OpenMediaChannel(const MediaInfo & info)
     return;
   }
 
-  if (!mediaSession->Open(m_client.m_transport.GetInterface(), info.m_receiver ? m_client.m_transport.GetRemoteAddress() : info.m_mediaAddress, true)) {
+  if (!mediaSession->Open(m_phoneDevice.m_transport.GetInterface(), info.m_receiver ? m_phoneDevice.m_transport.GetRemoteAddress() : info.m_mediaAddress, true)) {
     PTRACE(2, "Could not open session " << info.m_sessionId << " for " << mediaFormat);
     return;
   }
@@ -1016,7 +1168,7 @@ void OpalSkinnyConnection::OpenMediaChannel(const MediaInfo & info)
     ack.m_passThruPartyId = info.m_passThruPartyId;
     ack.m_ip = ap.GetAddress();
     ack.m_port = ap.GetPort();
-    m_client.SendSkinnyMsg(ack);
+    m_phoneDevice.SendSkinnyMsg(ack);
   }
 
   StartMediaStreams();
@@ -1036,7 +1188,7 @@ void OpalSkinnyConnection::OpenSimulatedMediaChannel(unsigned sessionId, const O
   if (dynamic_cast<OpalRTPSession *>(mediaSession) == NULL) {
     OpalTransportAddress mediaAddress = mediaSession->GetRemoteAddress();
     mediaSession = new OpalRTPSession(OpalMediaSession::Init(*this, sessionId, mediaFormat.GetMediaType(), false));
-    if (!mediaSession->Open(m_client.m_transport.GetInterface(), mediaAddress, true)) {
+    if (!mediaSession->Open(m_phoneDevice.m_transport.GetInterface(), mediaAddress, true)) {
       PTRACE(2, "Could not open RTP session " << sessionId << " for " << mediaFormat << " using " << mediaAddress);
       delete mediaSession;
       return;
