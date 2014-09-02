@@ -224,6 +224,7 @@ void MyProcess::OnConfigChanged()
 PBoolean MyProcess::Initialise(const char * initMsg)
 {
   Params params("Parameters");
+  params.m_httpPort = DefaultHTTPPort;
   if (!InitialiseBase(params))
     return false;
 
