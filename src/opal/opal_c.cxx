@@ -352,9 +352,7 @@ class OpalManager_C : public OpalManager
 
     unsigned                  m_apiVersion;
     bool                      m_manualAlerting;
-    std::queue<OpalMessage *> m_messageQueue;
-    PMutex                    m_messageMutex;
-    PSemaphore                m_messagesAvailable;
+    PSyncQueue<OpalMessage>   m_messageQueue;
     OpalMessageAvailableFunction m_messageAvailableCallback;
     bool                      m_shuttingDown;
 
@@ -986,7 +984,6 @@ static bool CheckProto(const PArgList & args, const char * proto, PString & defN
 OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
   : m_apiVersion(version)
   , m_manualAlerting(false)
-  , m_messagesAvailable(0, INT_MAX)
   , m_shuttingDown(false)
 {
   PString defProto, defUser;
@@ -1136,19 +1133,14 @@ OpalManager_C::~OpalManager_C()
   ShutDownEndpoints();
 
   m_shuttingDown = true;
-  m_messagesAvailable.Signal();
-  PThread::Sleep(100); // Make sure external message thread has stopped.
+  m_messageQueue.Close(true);
 }
 
 
 void OpalManager_C::PostMessage(OpalMessageBuffer & message)
 {
-  m_messageMutex.Wait();
-  if (m_messageAvailableCallback == NULL || m_messageAvailableCallback(message)) {
-    m_messageQueue.push(message.Detach());
-    m_messagesAvailable.Signal();
-  }
-  m_messageMutex.Signal();
+  if (m_messageAvailableCallback == NULL || m_messageAvailableCallback(message))
+    m_messageQueue.Enqueue(message.Detach());
 }
 
 
@@ -1157,24 +1149,12 @@ OpalMessage * OpalManager_C::GetMessage(unsigned timeout)
   if (m_shuttingDown)
     return NULL;
 
-  OpalMessage * msg = NULL;
-
   PTRACE(5, "GetMessage: timeout=" << timeout);
-  if (m_messagesAvailable.Wait(timeout)) {
-    if (m_shuttingDown)
-      return NULL;
+  OpalMessage * msg = m_messageQueue.Dequeue(timeout);
+  if (m_shuttingDown || msg == NULL)
+    return NULL;
 
-    m_messageMutex.Wait();
-
-    if (!m_messageQueue.empty()) {
-      msg = m_messageQueue.front();
-      m_messageQueue.pop();
-    }
-
-    m_messageMutex.Signal();
-  }
-
-  PTRACE_IF(4, msg != NULL, "Giving message " << msg->m_type << " to application");
+  PTRACE(4, "Giving message " << msg->m_type << " to application");
   return msg;
 }
 
@@ -1565,10 +1545,8 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
   if (m_apiVersion < 8)
     return;
 
-  m_messageMutex.Wait();
   response->m_param.m_general.m_messageAvailable = m_messageAvailableCallback;
   m_messageAvailableCallback = command.m_param.m_general.m_messageAvailable;
-  m_messageMutex.Signal();
 
   if (m_apiVersion < 14)
     return;
