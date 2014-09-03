@@ -282,11 +282,7 @@ class OpalPresentity : public PSafeObject
         As commands have protocol specific implementations, we use a factory
         to create them.
       */
-    template <class cls>
-    __inline cls * CreateCommand()
-    {
-      return dynamic_cast<cls *>(OpalPresentityCommand::Create(*this, typeid(cls).name()));
-    }
+    template <class cls> __inline cls * CreateCommand();
 
     /** Lowlevel function to send a command to the presentity handler.
         All commands are asynchronous. They will usually initiate an action
@@ -734,6 +730,11 @@ class OpalSendMessageToCommand : public OpalPresentityCommand
 #if OPAL_SIP_PRESENCE
   PFACTORY_LOAD(SIP_Presentity);
 #endif
+
+template <class cls> __inline cls * OpalPresentity::CreateCommand()
+{
+  return dynamic_cast<cls *>(OpalPresentityCommand::Create(*this, typeid(cls).name()));
+}
 
 
 #endif // OPAL_HAS_PRESENCE
