@@ -90,10 +90,10 @@ static struct SIPAttributeInfo {
   /* 12 */ { OpalPresentity::TimeToLiveKey(),    "Integer\n1,999999999\n300" }
 };
 
-OPAL_DEFINE_COMMAND(OpalSetLocalPresenceCommand,     SIP_Presentity, Internal_SendLocalPresence);
-OPAL_DEFINE_COMMAND(OpalSubscribeToPresenceCommand,  SIP_Presentity, Internal_SubscribeToPresence);
-OPAL_DEFINE_COMMAND(SIPWatcherInfoCommand,           SIP_Presentity, Internal_SubscribeToWatcherInfo);
-OPAL_DEFINE_COMMAND(OpalAuthorisationRequestCommand, SIP_Presentity, Internal_AuthorisationRequest);
+OPAL_PRESENTITY_COMMAND(OpalSetLocalPresenceCommand,     SIP_Presentity, Internal_SendLocalPresence);
+OPAL_PRESENTITY_COMMAND(OpalSubscribeToPresenceCommand,  SIP_Presentity, Internal_SubscribeToPresence);
+OPAL_PRESENTITY_COMMAND(SIPWatcherInfoCommand,           SIP_Presentity, Internal_SubscribeToWatcherInfo);
+OPAL_PRESENTITY_COMMAND(OpalAuthorisationRequestCommand, SIP_Presentity, Internal_AuthorisationRequest);
 
 static const char * const AuthNames[OpalPresentity::NumAuthorisations] = { "allow", "block", "polite-block", "confirm", "remove" };
 

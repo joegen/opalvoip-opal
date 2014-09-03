@@ -41,6 +41,10 @@
 #include <ptclib/url.h>
 #include <sip/sipep.h>
 
+
+#define PTraceModule() "Presence"
+
+
 ///////////////////////////////////////////////////////////////////////
 
 PURL_LEGACY_SCHEME(pres, true, false, true, true, false, true, true, false, false, false, 0)
@@ -162,7 +166,7 @@ bool OpalPresentity::Open()
   if (m_open.TestAndSet(true))
     return false; // Already open
 
-  PTRACE(3, "OpalPres\t'" << m_aor << "' opening.");
+  PTRACE(3, m_aor << " opening.");
   return true;
 }
 
@@ -172,7 +176,7 @@ bool OpalPresentity::Close()
   if (!m_open.TestAndSet(false))
     return false; // Aleady closed
 
-  PTRACE(3, "OpalPres\t'" << m_aor << "' closing.");
+  PTRACE(3, m_aor << " closing.");
   return true;
 }
 
@@ -482,21 +486,25 @@ bool OpalPresentity::SendCommand(OpalPresentityCommand * cmd)
 }
 
 
-OpalPresentityCommand * OpalPresentity::InternalCreateCommand(const char * cmdName)
+OpalPresentityCommand * OpalPresentityCommand::Create(OpalPresentity & presentity, const char * cmdName)
 {
-  PDefaultPFactoryKey partialKey(cmdName);
-  const char * className;
-
-  for (unsigned ancestor = 0; *(className = GetClass(ancestor)) != '\0'; ++ancestor) {
-    OpalPresentityCommand * cmd = PFactory<OpalPresentityCommand>::CreateInstance(className+partialKey);
-    if (cmd != NULL) {
-      PTRACE(3, "OpalPres\tCreating presentity command '" << className+partialKey << "'");
-      return cmd;
-    }
+  OpalPresentityCommand * cmd = PFactory<OpalPresentityCommand>::CreateInstance(OpalPresentityCommand::MakeKey(presentity.GetClass(), cmdName));
+  if (cmd == NULL && (cmd = PFactory<OpalPresentityCommand>::CreateInstance(OpalPresentityCommand::MakeKey(typeid(OpalPresentity).name(), cmdName))) == NULL) {
+    PAssertAlways(PUnimplementedFunction);
+    return NULL;
   }
 
-  PAssertAlways(PUnimplementedFunction);
-  return NULL;
+  PTRACE(3, &presentity, "Creating presentity command '" << typeid(*cmd).name() << "'");
+  return cmd;
+}
+
+
+PDefaultPFactoryKey OpalPresentityCommand::MakeKey(const char * className, const char * cmdName)
+{
+  PDefaultPFactoryKey key(className);
+  key += '\t';
+  key += cmdName;
+  return key;
 }
 
 
@@ -506,7 +514,7 @@ void OpalPresentity::Internal_SendMessageToCommand(const OpalSendMessageToComman
 {
   OpalEndPoint * endpoint = m_manager->FindEndPoint(m_aor.GetScheme());
   if (endpoint == NULL) {
-    PTRACE(1, "OpalPres\tCannot find endpoint for '" << m_aor.GetScheme() << "'");
+    PTRACE(1, "Cannot find endpoint for '" << m_aor.GetScheme() << "'");
     return;
   }
 
@@ -520,7 +528,7 @@ void OpalPresentity::Internal_SendMessageToCommand(const OpalSendMessageToComman
 }
 
 
-OPAL_DEFINE_COMMAND(OpalSendMessageToCommand, OpalPresentity, Internal_SendMessageToCommand);
+OPAL_PRESENTITY_COMMAND(OpalSendMessageToCommand, OpalPresentity, Internal_SendMessageToCommand);
 
 #endif // OPAL_HAS_IM
 
@@ -578,7 +586,7 @@ void OpalPresentityWithCommandThread::StartQueue(bool startQueue)
 void OpalPresentityWithCommandThread::StopThread()
 {
   if (m_threadRunning && m_thread != NULL) {
-    PTRACE(4, "OpalPres\tStopping command thread " << *m_thread);
+    PTRACE(4, "Stopping command thread " << *m_thread);
     m_threadRunning = false;
     m_commandQueueSync.Signal();
     PAssert(m_thread->WaitForTermination(5000), "Could not terminate presentity command thread");
@@ -610,7 +618,7 @@ bool OpalPresentityWithCommandThread::SendCommand(OpalPresentityCommand * cmd)
 
 void OpalPresentityWithCommandThread::ThreadMain()
 {
-  PTRACE(4, "OpalPres\tCommand thread started");
+  PTRACE(4, "Command thread started");
 
   while (m_threadRunning) {
     if (m_queueRunning) {
@@ -633,7 +641,7 @@ void OpalPresentityWithCommandThread::ThreadMain()
     m_commandQueueSync.Wait(1000);
   }
 
-  PTRACE(4, "OpalPres\tCommand thread ended");
+  PTRACE(4, "Command thread ended");
 }
 
 #endif // OPAL_HAS_PRESENCE
