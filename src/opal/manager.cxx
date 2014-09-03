@@ -329,7 +329,7 @@ OpalManager::OpalManager()
   PInterfaceMonitor::GetInstance().AddNotifier(m_onInterfaceChange);
 #endif
 
-  PTRACE(4, "Created manager.");
+  PTRACE(4, "Created manager, OPAL version " << OpalGetVersion());
 }
 
 
