@@ -285,7 +285,7 @@ class OpalPresentity : public PSafeObject
     template <class cls>
     __inline cls * CreateCommand()
     {
-      return dynamic_cast<cls *>(InternalCreateCommand(typeid(cls).name()));
+      return dynamic_cast<cls *>(OpalPresentityCommand::Create(*this, typeid(cls).name()));
     }
 
     /** Lowlevel function to send a command to the presentity handler.
@@ -537,8 +537,6 @@ class OpalPresentity : public PSafeObject
     OpalManager & GetManager() const { return *m_manager; }
 
   protected:
-    OpalPresentityCommand * InternalCreateCommand(const char * cmdName);
-
     OpalManager        * m_manager;
     PGloballyUniqueID    m_guid;
     PURL                 m_aor;
@@ -661,6 +659,9 @@ class OpalPresentityCommand {
       OpalPresentity & presentity
     ) = 0;
 
+    static OpalPresentityCommand * Create(OpalPresentity & presentity, const char * cmdName);
+    static PDefaultPFactoryKey MakeKey(const char * className, const char * cmdName);
+
     typedef PAtomicInteger::IntegerType CmdSeqType;
     CmdSeqType m_sequence;
     bool       m_responseNeeded;
@@ -669,12 +670,12 @@ class OpalPresentityCommand {
 
 /** Macro to define the factory that creates a concrete command class.
   */
-#define OPAL_DEFINE_COMMAND(command, entity, func) \
+#define OPAL_PRESENTITY_COMMAND(command, entity, func) \
   class entity##_##command : public command \
   { \
     public: virtual void Process(OpalPresentity & presentity) { dynamic_cast<entity &>(presentity).func(*this); } \
   }; \
-  PFACTORY_CREATE(PFactory<OpalPresentityCommand>, entity##_##command, PDefaultPFactoryKey(entity::Class())+typeid(command).name())
+  PFACTORY_CREATE(PFactory<OpalPresentityCommand>, entity##_##command, OpalPresentityCommand::MakeKey(typeid(entity).name(), typeid(command).name()))
 
 
 /** Command for subscribing to the status of another presentity.
