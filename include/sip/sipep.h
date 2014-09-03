@@ -1026,6 +1026,7 @@ class SIPEndPoint : public OpalSDPEndPoint
   protected:
     void AddTransport(const OpalTransportPtr & transport);
     void TransportThreadMain(OpalTransportPtr transport);
+    SIP_PDU::StatusCodes InternalHandleREGISTER(SIP_PDU & request, SIP_PDU * response);
 
     SIPURL        m_proxy;
     PString       m_userAgentString;
