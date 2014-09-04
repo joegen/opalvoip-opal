@@ -212,6 +212,33 @@ RTP_SyncSourceId OpalRTPSession::AddSyncSource(RTP_SyncSourceId id, Direction di
 }
 
 
+OpalRTPSession::SyncSource * OpalRTPSession::UseSyncSource(RTP_SyncSourceId ssrc, Direction dir, bool force)
+{
+  SyncSourceMap::iterator it = m_SSRC.find(ssrc);
+  if (it != m_SSRC.end())
+    return it->second;
+
+  if ((force || m_allowAnySyncSource) && AddSyncSource(ssrc, e_Receiver) == ssrc) {
+    PTRACE(4, *this << "automatically added " << dir << " SSRC " << RTP_TRACE_SRC(ssrc));
+    return m_SSRC.find(ssrc)->second;
+  }
+
+#if PTRACING
+  static const unsigned Level = 2;
+  if (PTrace::CanTrace(Level)) {
+    ostream & trace = PTRACE_BEGIN(Level);
+    trace << *this << "packet from SSRC=" << RTP_TRACE_SRC(ssrc) << " ignored";
+    SyncSource * existing;
+    if (GetSyncSource(0, e_Receiver, existing))
+      trace << ", expecting SSRC=" << RTP_TRACE_SRC(existing->m_sourceIdentifier);
+    trace << PTrace::End;
+  }
+#endif
+
+  return NULL;
+}
+
+
 OpalRTPSession::SyncSource * OpalRTPSession::CreateSyncSource(RTP_SyncSourceId id, Direction dir, const char * cname)
 {
   return new SyncSource(*this, id, dir, cname);
@@ -976,22 +1003,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
   if (!frame.SetPacketSize(pduSize))
     return e_IgnorePacket; // Non fatal error, just ignore
 
-  RTP_SyncSourceId ssrc = frame.GetSyncSource();
-  SyncSourceMap::iterator it = m_SSRC.find(ssrc);
-  if (it == m_SSRC.end()) {
-    SyncSource * existing;
-    if (!m_allowAnySyncSource && GetSyncSource(0, e_Receiver, existing)) {
-      PTRACE(2, *this  << "packet from SSRC=" << RTP_TRACE_SRC(ssrc) << " ignored, "
-                "expecting SSRC=" << RTP_TRACE_SRC(existing->m_sourceIdentifier));
-      return e_IgnorePacket;
-    }
-    if (AddSyncSource(ssrc, e_Receiver) != ssrc)
-      return e_AbortTransport;
-    PTRACE(4, *this << "added receiver SSRC " << RTP_TRACE_SRC(ssrc));
-    it = m_SSRC.find(ssrc);
-  }
-
-  return it->second->OnReceiveData(frame, true);
+  SyncSource * receiver = UseSyncSource(frame.GetSyncSource(), e_Receiver, false);
+  return receiver != NULL ? receiver->OnReceiveData(frame, true) : e_IgnorePacket;
 }
 
 

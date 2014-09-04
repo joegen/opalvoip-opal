@@ -655,6 +655,10 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
 
   frame.MakeUnique();
 
+  /* Need to guarantee a receiver SSRC (their sender) even if never been told
+     about it, or we can't decrypt the RTCP packet. */
+  UseSyncSource(frame.GetSenderSyncSource(), e_Receiver, true);
+
   int len = frame.GetSize();
   if (!CHECK_ERROR(srtp_unprotect_rtcp,(m_context, frame.GetPointer(), &len), frame.GetSenderSyncSource()))
     return OpalRTPSession::e_AbortTransport;
