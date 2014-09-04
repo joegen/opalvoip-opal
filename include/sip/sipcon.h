@@ -683,7 +683,6 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
     virtual bool SendDelayedACK(bool force);
     void OnDelayedAckTimeout();
 
-    virtual bool SendInviteOK();
     virtual PBoolean SendInviteResponse(
       SIP_PDU::StatusCodes code,
       const SDPSessionDescription * sdp = NULL
