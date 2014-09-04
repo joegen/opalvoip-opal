@@ -92,6 +92,16 @@ OpalSDPConnection::~OpalSDPConnection()
 }
 
 
+PBoolean OpalSDPConnection::SetUpConnection()
+{
+  if (ownerCall.IsEstablished())
+    return OpalRTPConnection::SetUpConnection();
+
+  // This is really done externally via AnswerOfferSDP() function.
+  return true;
+}
+
+
 OpalMediaFormatList OpalSDPConnection::GetMediaFormats() const
 {
   // Need to limit the media formats to what the other side provided in a re-INVITE
@@ -228,6 +238,16 @@ PString OpalSDPConnection::AnswerOfferSDP(const PString & offer)
 
 bool OpalSDPConnection::HandleAnswerSDP(const PString & answer)
 {
+  if (GetPhase() == UninitialisedPhase) {
+    PTRACE(1, "Did not get offer before handling answer");
+    return false;
+  }
+
+  if (!IsOriginating() && !IsEstablished()) {
+    PTRACE(1, "No offer sent, not originating call");
+    return false;
+  }
+
   OpalMediaFormatList formats = GetLocalMediaFormats();
   if (formats.IsEmpty())
     formats = OpalMediaFormat::GetAllRegisteredMediaFormats();
