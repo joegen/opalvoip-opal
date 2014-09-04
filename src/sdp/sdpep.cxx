@@ -92,16 +92,6 @@ OpalSDPConnection::~OpalSDPConnection()
 }
 
 
-PBoolean OpalSDPConnection::SetUpConnection()
-{
-  if (ownerCall.IsEstablished())
-    return OpalRTPConnection::SetUpConnection();
-
-  // This is really done externally via AnswerOfferSDP() function.
-  return true;
-}
-
-
 OpalMediaFormatList OpalSDPConnection::GetMediaFormats() const
 {
   // Need to limit the media formats to what the other side provided in a re-INVITE
