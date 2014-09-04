@@ -135,14 +135,13 @@ class OpalDTLSSRTPSession::SSLChannel : public PSSLChannelDTLS
 {
   PCLASSINFO(SSLChannel, PSSLChannelDTLS);
 public:
-  SSLChannel(OpalDTLSSRTPSession & session, PUDPSocket * socket, PQueueChannel & queue, bool isServer)
+  SSLChannel(OpalDTLSSRTPSession & session, PUDPSocket * socket, bool isServer)
     : PSSLChannelDTLS(*DTLSContextSingleton())
     , m_session(session)
   {
     SetVerifyMode(PSSLContext::VerifyPeerMandatory, PCREATE_NOTIFIER2_EXT(session, OpalDTLSSRTPSession, OnVerify, PSSLChannel::VerifyInfo &));
 
-    queue.Open(2000);
-    Open(&queue, socket, false, false);
+    Open(socket, false);
     SetReadTimeout(2000);
 
     if (isServer)
@@ -211,9 +210,10 @@ bool OpalDTLSSRTPSession::Open(const PString & localInterface, const OpalTranspo
 
   for (int i = 0; i < 2; ++i) {
     if (m_socket[i] != NULL)
-      m_sslChannel[i] = new SSLChannel(*this, m_socket[i], m_queueChannel[i], m_passiveMode);
+      m_sslChannel[i] = new SSLChannel(*this, m_socket[i], m_passiveMode);
   }
 
+  m_opened.Signal();
   return true;
 }
 
@@ -221,7 +221,6 @@ bool OpalDTLSSRTPSession::Open(const PString & localInterface, const OpalTranspo
 bool OpalDTLSSRTPSession::Close()
 {
   for (int i = 0; i < 2; ++i) {
-    m_queueChannel[i].Close();
     delete m_sslChannel[i];
     m_sslChannel[i] = NULL;
   }
@@ -230,32 +229,26 @@ bool OpalDTLSSRTPSession::Close()
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::ReadRawPDU(BYTE * framePtr, PINDEX & frameSize, Channel channel)
+void OpalDTLSSRTPSession::ThreadMain()
 {
-  OpalRTPSession::SendReceiveStatus status = OpalSRTPSession::ReadRawPDU(framePtr, frameSize, channel);
-  if (status != e_ProcessPacket || !m_queueChannel[channel].IsOpen())
-    return status;
+  m_opened.Wait();
 
-  PTRACE(5, "Queueing packet to SSL: " << frameSize << " bytes.");
-  return m_queueChannel[channel].Write(framePtr, frameSize) ? e_IgnorePacket : e_AbortTransport;
+  if (ExecuteHandshake(e_Data) && ExecuteHandshake(e_Control))
+    OpalSRTPSession::ThreadMain();
+  else
+    Close();
 }
 
 
 OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::OnSendData(RTP_DataFrame & frame, RewriteMode rewrite)
 {
-  SendReceiveStatus status = ExecuteHandshake(e_Data);
-  if (status == e_ProcessPacket)
-    status = OpalSRTPSession::OnSendData(frame, rewrite);
-  return status;
+  return m_sslChannel[e_Data] != NULL ? e_IgnorePacket : OpalSRTPSession::OnSendData(frame, rewrite);
 }
 
 
 OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::OnSendControl(RTP_ControlFrame & frame)
 {
-  SendReceiveStatus status = ExecuteHandshake(IsSinglePortRx() || IsSinglePortTx() ? e_Data : e_Control);
-  if (status == e_ProcessPacket)
-    status = OpalSRTPSession::OnSendControl(frame);
-  return status;
+  return m_sslChannel[IsSinglePortRx() || IsSinglePortTx() ? e_Data : e_Control] != NULL ? e_IgnorePacket : OpalSRTPSession::OnSendControl(frame);
 }
 
 
@@ -277,26 +270,25 @@ const PSSLCertificateFingerprint& OpalDTLSSRTPSession::GetRemoteFingerprint() co
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::ExecuteHandshake(Channel channel)
+bool OpalDTLSSRTPSession::ExecuteHandshake(Channel channel)
 {
-  {
-    PWaitAndSignal mutex(m_dataMutex);
+  if (m_sslChannel[channel] == NULL)
+    return true;
 
-    if (m_remotePort[channel] == 0)
-      return e_IgnorePacket; // Too early
-
-    if (m_sslChannel[channel] == NULL)
-      return e_ProcessPacket; // Too late (done)
+  while (!m_remoteAddress.IsValid() || m_remotePort[channel] == 0) {
+    if (!InternalRead())
+      return false;
   }
 
-  SSLChannel & sslChannel = *m_sslChannel[channel];
-  if (!sslChannel.ExecuteHandshake())
-    return e_AbortTransport;
+  if (!m_sslChannel[channel]->ExecuteHandshake()) {
+    PTRACE(2, *this << "error in DTLS handshake.");
+    return false;
+  }
 
   const OpalMediaCryptoSuite* cryptoSuite = NULL;
   srtp_profile_t profile = srtp_profile_reserved;
   for (PINDEX i = 0; i < PARRAYSIZE(ProfileNames); ++i) {
-    if (sslChannel.GetSelectedProfile() == ProfileNames[i].m_dtlsName) {
+    if (m_sslChannel[channel]->GetSelectedProfile() == ProfileNames[i].m_dtlsName) {
       profile = ProfileNames[i].m_profile;
       cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(ProfileNames[i].m_opalName);
       break;
@@ -304,35 +296,37 @@ OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::ExecuteHandshake(Channel 
   }
 
   if (profile == srtp_profile_reserved || cryptoSuite == NULL) {
-    PTRACE(2, "Error in SRTP profile.");
-    return e_AbortTransport;
+    PTRACE(2, *this << "error in SRTP profile after DTLS handshake.");
+    return false;
   }
 
   PINDEX masterKeyLength = srtp_profile_get_master_key_length(profile);
   PINDEX masterSaltLength = srtp_profile_get_master_salt_length(profile);
 
-  PBYTEArray keyMaterial = sslChannel.GetKeyMaterial(((masterSaltLength + masterKeyLength) << 1), "EXTRACTOR-dtls_srtp");
-  if (keyMaterial.IsEmpty())
-    return e_AbortTransport;
+  PBYTEArray keyMaterial = m_sslChannel[channel]->GetKeyMaterial(((masterSaltLength + masterKeyLength) << 1), "EXTRACTOR-dtls_srtp");
+  if (keyMaterial.IsEmpty()) {
+    PTRACE(2, *this << "no SRTP keys after DTLS handshake.");
+    return false;
+  }
 
   OpalSRTPKeyInfo * keyInfo = dynamic_cast<OpalSRTPKeyInfo*>(cryptoSuite->CreateKeyInfo());
   PAssertNULL(keyInfo);
 
   keyInfo->SetCipherKey(PBYTEArray(keyMaterial, masterKeyLength));
   keyInfo->SetAuthSalt(PBYTEArray(keyMaterial + masterKeyLength*2, masterSaltLength));
-  ApplyKeyToSRTP(*keyInfo, sslChannel.IsServer() ? e_Receiver : e_Sender);
+  ApplyKeyToSRTP(*keyInfo, m_sslChannel[channel]->IsServer() ? e_Receiver : e_Sender);
 
   keyInfo->SetCipherKey(PBYTEArray(keyMaterial + masterKeyLength, masterKeyLength));
   keyInfo->SetAuthSalt(PBYTEArray(keyMaterial + masterKeyLength*2 + masterSaltLength, masterSaltLength));
-  ApplyKeyToSRTP(*keyInfo, sslChannel.IsServer() ? e_Sender : e_Receiver);
+  ApplyKeyToSRTP(*keyInfo, m_sslChannel[channel]->IsServer() ? e_Sender : e_Receiver);
 
   delete keyInfo;
 
-  m_queueChannel[channel].Close();
-  sslChannel.Detach(PChannel::ShutdownWrite); // Do not close the socket!
+  m_sslChannel[channel]->Detach();
   delete m_sslChannel[channel];
   m_sslChannel[channel] = NULL;
-  return e_ProcessPacket;
+  PTRACE(2, *this << "completed DTLS handshake.");
+  return true;
 }
 
 

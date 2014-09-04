@@ -1424,10 +1424,13 @@ void OpalManager::OnStopMediaPatch(OpalConnection & connection, OpalMediaPatch &
 
 bool OpalManager::OnMediaFailed(OpalConnection & connection, unsigned PTRACE_PARAM(sessionId), bool PTRACE_PARAM(source))
 {
-  PTRACE(2, "Session " << sessionId << ' '
-         << (source ? "receive" : "transmit") << " media failed, releasing " << connection);
-  if (connection.AllMediaFailed())
+  if (connection.AllMediaFailed()) {
+    PTRACE(2, "All media failed for " << connection);
     connection.Release(OpalConnection::EndedByMediaFailed);
+  }
+  else {
+    PTRACE(3, "Session " << sessionId << ' ' << (source ? "receive" : "transmit") << " media failed for " << connection);
+  }
   return true;
 }
 

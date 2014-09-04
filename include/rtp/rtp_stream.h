@@ -156,11 +156,14 @@ protected:
     bool               m_rewriteHeaders;
     RTP_SyncSourceId   m_syncSource;
     OpalJitterBuffer * m_jitterBuffer;
-    PMutex             m_jitterMutex;
+    PReadWriteMutex    m_jitterMutex;
 #if OPAL_VIDEO
     bool             m_forceIntraFrameFlag;
     PSimpleTimer     m_forceIntraFrameTimer;
 #endif
+
+    PDECLARE_RTPDataNotifier(OpalRTPMediaStream, OnReceivedPacket);
+    OpalRTPSession::DataNotifier  m_receiveNotifier;
 };
 
 

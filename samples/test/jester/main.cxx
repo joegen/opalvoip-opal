@@ -130,7 +130,7 @@ void JesterProcess::Main()
 
   PTRACE_INITIALISE(args);
 
-  OpalJitterBuffer::Init init(50, 250);
+  OpalJitterBuffer::Init init(OpalMediaType::Audio(), 50, 250);
 
   if (args.HasOption('j')) {
     unsigned minJitterNew;

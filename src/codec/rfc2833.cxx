@@ -217,7 +217,7 @@ OpalRFC2833Proto::OpalRFC2833Proto(const PNotifier & rx, const OpalMediaFormat &
   , m_txPayloadType(RTP_DataFrame::IllegalPayloadType)
   , m_rxPayloadType(RTP_DataFrame::IllegalPayloadType)
   , m_receiveNotifier(rx)
-  , m_receiveHandler(PCREATE_RTPFilterNotifier(ReceivedPacket))
+  , m_receiveHandler(PCREATE_RTPDataNotifier(ReceivedPacket))
   , m_rtpSession(NULL)
   , m_transmitState(TransmitIdle)
   , m_transmitTimestamp(0)
@@ -250,7 +250,7 @@ void OpalRFC2833Proto::UseRTPSession(bool rx, OpalRTPSession * rtpSession)
   if (rx) {
     if (rtpSession != NULL) {
       PTRACE(3, "RTPCon\tSetting receive handler for " << m_baseMediaFormat);
-      rtpSession->AddFilter(m_receiveHandler);
+      rtpSession->AddDataNotifier(m_receiveHandler);
     }
   }
   else {
@@ -532,21 +532,21 @@ void OpalRFC2833Proto::OnEndReceive()
 }
 
 
-void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, OpalRTPSession::SendReceiveStatus & status)
+void OpalRFC2833Proto::ReceivedPacket(OpalRTPSession &, OpalRTPSession::Data & data)
 {
-  if (frame.GetPayloadType() != m_rxPayloadType || frame.GetPayloadSize() == 0)
+  if (data.m_frame.GetPayloadType() != m_rxPayloadType || data.m_frame.GetPayloadSize() == 0)
     return;
 
-  status = OpalRTPSession::e_IgnorePacket;
+  data.m_status = OpalRTPSession::e_IgnorePacket;
 
   PWaitAndSignal mutex(m_receiveMutex);
 
-  if (frame.GetPayloadSize() < 4) {
-    PTRACE(2, "RFC2833\tIgnoring packet size " << frame.GetPayloadSize() << " - too small for " << m_baseMediaFormat);
+  if (data.m_frame.GetPayloadSize() < 4) {
+    PTRACE(2, "RFC2833\tIgnoring packet size " << data.m_frame.GetPayloadSize() << " - too small for " << m_baseMediaFormat);
     return;
   }
 
-  const BYTE * payload = frame.GetPayloadPtr();
+  const BYTE * payload = data.m_frame.GetPayloadPtr();
 
   char tone = RFC2833ToASCII(payload[0], m_rxEvents[NSECodeBase]);
   if (tone == '\0') {
@@ -563,9 +563,9 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, OpalRTPSession::Sen
 
   bool     endTone = (payload[1] & 0x80) != 0;
   m_receivedDuration = (WORD)((payload[2] << 8) + payload[3]);
-  unsigned timestamp = frame.GetTimestamp();
+  unsigned timestamp = data.m_frame.GetTimestamp();
   PTRACE(4, "RFC2833\tReceived " << (endTone ? "end" : "tone") << ": code='" << (unsigned)payload[0]
-         << "', dur=" << m_receivedDuration << ", vol=" << volume << ", ts=" << timestamp << ", mkr=" << frame.GetMarker()
+         << "', dur=" << m_receivedDuration << ", vol=" << volume << ", ts=" << timestamp << ", mkr=" << data.m_frame.GetMarker()
          << " for " << m_baseMediaFormat);
 
   if (m_receivedTimestamp == timestamp) {

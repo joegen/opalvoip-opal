@@ -372,7 +372,7 @@ bool OpalAudioMixer::SetJitterBufferSize(const Key_T & key, const OpalJitterBuff
     jitter->SetDelay(init);
   else {
     PTRACE(4, "Jitter buffer enabled");
-    jitter = new OpalJitterBuffer(init);
+    jitter = OpalJitterBuffer::Create(init);
     PTRACE_CONTEXT_ID_SET(*jitter, audioStream);
   }
 
