@@ -1878,10 +1878,11 @@ bool SDPRTPAVPMediaDescription::FromSession(const OpalMediaSession * session, co
   const OpalRTPSession * rtpSession = dynamic_cast<const OpalRTPSession *>(session);
   if (rtpSession != NULL) {
     RTP_SyncSourceArray ssrc = rtpSession->GetSyncSources(OpalRTPSession::e_Sender);
+    PTRACE(4, "Adding " << ssrc.GetSize() << " sender SSRC entries.");
     for (PINDEX i = 0; i < ssrc.GetSize(); ++i) {
       PStringOptions & info = m_ssrcInfo[ssrc[i]];
       PString cname = rtpSession->GetCanonicalName(ssrc[i]);
-      if (cname.IsEmpty())
+      if (!cname.IsEmpty())
         info.SetAt("cname", cname);
       PString mslabel = rtpSession->GetGroupId();
       if (!mslabel.IsEmpty()) {
