@@ -1968,6 +1968,7 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
 
   m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
   m_thread = new PThreadObj<OpalRTPSession>(*this, &OpalRTPSession::ThreadMain, false, "RTP", PThread::HighPriority);
+  PTRACE_CONTEXT_ID_TO(m_thread);
 
 #if PTRACING
   RTP_SyncSourceId ssrc =
@@ -2162,10 +2163,12 @@ void OpalRTPSession::SetICE(const PString & user, const PString & pass, const PN
   }
 
   m_iceServer = new ICEServer(*this);
+  PTRACE_CONTEXT_ID_TO(m_iceServer);
   m_iceServer->Open(m_socket[e_Data], m_socket[e_Control]);
   m_iceServer->SetCredentials(m_localUsername + ':' + m_remoteUsername, m_localPassword, PString::Empty());
 
   m_stunClient = new PSTUNClient;
+  PTRACE_CONTEXT_ID_TO(m_stunClient);
   m_stunClient->SetCredentials(m_remoteUsername + ':' + m_localUsername, m_remoteUsername, PString::Empty());
 
   m_remoteBehindNAT = true;
