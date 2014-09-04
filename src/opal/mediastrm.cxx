@@ -453,14 +453,11 @@ bool OpalMediaStream::EnableJitterBuffer(bool enab)
   if (!IsOpen())
     return false;
 
-  OpalJitterBuffer::Init init;
-  if (enab && mediaFormat.NeedsJitterBuffer()) {
-    init.m_minJitterDelay = connection.GetMinAudioJitterDelay()*mediaFormat.GetTimeUnits();
-    init.m_maxJitterDelay = connection.GetMaxAudioJitterDelay()*mediaFormat.GetTimeUnits();
-  }
-
-  init.m_timeUnits = mediaFormat.GetTimeUnits();
-  init.m_packetSize = connection.GetEndPoint().GetManager().GetMaxRtpPacketSize();
+  OpalJitterBuffer::Init init(mediaFormat.GetMediaType(),
+                              enab ? connection.GetMinAudioJitterDelay()*mediaFormat.GetTimeUnits() : 0,
+                              enab ? connection.GetMaxAudioJitterDelay()*mediaFormat.GetTimeUnits() : 0,
+                              mediaFormat.GetTimeUnits(),
+                              connection.GetEndPoint().GetManager().GetMaxRtpPacketSize());
   return InternalSetJitterBuffer(init);
 }
 

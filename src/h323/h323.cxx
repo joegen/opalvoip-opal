@@ -4960,10 +4960,6 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
     return NULL;
   }
 
-  OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(session);
-  if (rtpSession != NULL)
-    rtpSession->Restart(dir == H323Channel::IsReceiver);
-
   return CreateRTPChannel(capability, dir, *session);
 }
 

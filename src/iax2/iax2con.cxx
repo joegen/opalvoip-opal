@@ -66,7 +66,7 @@ IAX2Connection::IAX2Connection(OpalCall & call,               /* Owner call for 
   : OpalConnection(call, ep, token)
   , endpoint(ep)
   , iax2Processor(*new IAX2CallProcessor(ep))
-  , jitterBuffer(OpalJitterBuffer::Init(400, 2000))
+  , m_jitterBuffer(OpalJitterBuffer::Create(OpalJitterBuffer::Init(OpalMediaType::Audio(), 400, 2000)))
 {  
   opalPayloadType = RTP_DataFrame::IllegalPayloadType;
 
@@ -101,6 +101,7 @@ IAX2Connection::~IAX2Connection()
   PTRACE(3, "connection has terminated");
 
   delete & iax2Processor;
+  delete m_jitterBuffer;
 }
 
 void IAX2Connection::StartOperation()
@@ -175,7 +176,8 @@ PBoolean IAX2Connection::SetConnected()
     if (otherParty != NULL)
       ownerCall.OpenSourceMediaStreams(*otherParty, OpalMediaType::Audio(), 1);
 
-    jitterBuffer.SetDelay(OpalJitterBuffer::Init(endpoint.GetManager().GetMinAudioJitterDelay() * 8, 
+    m_jitterBuffer->SetDelay(OpalJitterBuffer::Init(OpalMediaType::Audio(), 
+                                                 endpoint.GetManager().GetMinAudioJitterDelay() * 8, 
                                                  endpoint.GetManager().GetMaxAudioJitterDelay() * 8));
     PTRACE(5, "Iax2Con\t Start jitter buffer");
   }  
@@ -215,8 +217,9 @@ void IAX2Connection::OnConnected()
       ownerCall.OpenSourceMediaStreams(*otherParty, OpalMediaType::Audio(), 1);
 
 
-    jitterBuffer.SetDelay(OpalJitterBuffer::Init(endpoint.GetManager().GetMinAudioJitterDelay() * 8, 
-			                         endpoint.GetManager().GetMaxAudioJitterDelay() * 8));
+    m_jitterBuffer->SetDelay(OpalJitterBuffer::Init(OpalMediaType::Audio(),
+                                                 endpoint.GetManager().GetMinAudioJitterDelay() * 8, 
+			                                           endpoint.GetManager().GetMaxAudioJitterDelay() * 8));
     PTRACE(5, "Iax2Con\t Start jitter buffer");
   }
 
@@ -465,7 +468,7 @@ void IAX2Connection::ReceivedSoundPacketFromNetwork(IAX2Frame *soundFrame)
     mediaFrame.SetPayloadType(opalPayloadType);
 
     memcpy(mediaFrame.GetPayloadPtr(), soundFrame->GetMediaDataPointer(), soundFrame->GetMediaDataSize());
-    jitterBuffer.WriteData(mediaFrame);
+    m_jitterBuffer->WriteData(mediaFrame);
     PTRACE(5, "RTP\tIAX2 frame now on jitter buffer (As a RTP frame)");
     delete soundFrame;
 }
@@ -476,7 +479,7 @@ PBoolean IAX2Connection::ReadSoundPacket(RTP_DataFrame & packet)
     return false;   /* Sending sound now is meaningless */
   
   PTRACE(6, "Iax2Con\t Start read from  jitter buffer"); 
-  if (!jitterBuffer.ReadData(packet)) {
+  if (!m_jitterBuffer->ReadData(packet)) {
     PINDEX zeroBytes = packet.GetSize() - packet.GetHeaderSize();
     memset(packet.GetPayloadPtr() + packet.GetHeaderSize(), 0, zeroBytes);
     PTRACE(5, "Iax2Con\t faulty  read from  jitter buffer"); 
