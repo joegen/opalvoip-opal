@@ -334,12 +334,15 @@ PBoolean OpalLocalConnection::OnIncomingConnection(unsigned int options, OpalCon
 
 PBoolean OpalLocalConnection::SetUpConnection()
 {
-  bool notIncoming = ownerCall.GetConnection(0) == this || ownerCall.IsEstablished();
+  if (ownerCall.IsEstablished())
+    return OpalConnection::SetUpConnection();
+
+  InternalSetAsOriginating();
 
   if (!OpalConnection::SetUpConnection())
     return false;
 
-  if (notIncoming)
+  if (ownerCall.GetConnection(0) == this)
     return true;
 
   if (!OnIncoming()) {
