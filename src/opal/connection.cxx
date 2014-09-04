@@ -283,8 +283,6 @@ void OpalConnection::InternalSetAsOriginating()
 
 PBoolean OpalConnection::SetUpConnection()
 {
-  InternalSetAsOriginating();
-
   // Check if we are A-Party in this call, so need to do things differently
   if (ownerCall.GetConnection(0) == this) {
     SetPhase(SetUpPhase);
@@ -306,6 +304,7 @@ PBoolean OpalConnection::SetUpConnection()
     OnConnectedInternal();
   }
   else {
+    InternalSetAsOriginating();
     PTRACE(3, "Incoming call from " << remotePartyName << " to " << *this);
 
     OnApplyStringOptions();
