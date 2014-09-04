@@ -398,7 +398,7 @@ PBoolean OpalAudioJitterBuffer::WriteData(const RTP_DataFrame & frame, PTimeInte
     are unlucky at the start and get a missing packet, in which case we are
     twice as big (or more) as we should be. Se we make sure we do not have
     a missing packet by inspecting sequence numbers. */
-  if (m_lastSequenceNum != UINT_MAX) {
+  if (m_lastSequenceNum != USHRT_MAX) {
     if (timestamp < m_lastTimestamp) {
       PTRACE(3, "Jitter\tTimestamps abruptly changed from "
               << m_lastTimestamp << " to " << timestamp << ", resynching");
