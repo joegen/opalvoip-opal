@@ -46,6 +46,7 @@
 
 
 class OpalManager;
+class OpalRTPSession;
 
 
 /**This class manages a call.

@@ -445,7 +445,7 @@ class IAX2Connection : public OpalConnection
 
   /**This jitter buffer smooths out the delivery times from the network, so
      that packets arrive in schedule at the far end. */
-  OpalJitterBuffer jitterBuffer;
+  OpalJitterBuffer * m_jitterBuffer;
 
   /**The payload type, which we put on all RTP_DataFrame packets. This
      variable is placed on all RTP_DataFrame instances, prior to placing these

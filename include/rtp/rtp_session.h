@@ -90,7 +90,6 @@ class OpalRTPSession : public OpalMediaSession
     virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool isMediaAddress);
     virtual bool IsOpen() const;
     virtual bool Close();
-    virtual bool Shutdown(bool reading);
     virtual OpalTransportAddress GetLocalAddress(bool isMediaAddress = true) const;
     virtual OpalTransportAddress GetRemoteAddress(bool isMediaAddress = true) const;
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress = true);
@@ -137,14 +136,6 @@ class OpalRTPSession : public OpalMediaSession
       */
     RTP_SyncSourceArray GetSyncSources(Direction dir) const;
 
-    /**Read a data frame from the RTP channel.
-       This function will conditionally read data from the jitter buffer or
-       directly if there is no jitter buffer enabled.
-      */
-    virtual bool ReadData(
-      RTP_DataFrame & frame   ///<  Frame read from the RTP session
-    );
-
     enum RewriteMode
     {
       e_RewriteHeader,
@@ -171,12 +162,6 @@ class OpalRTPSession : public OpalMediaSession
       const PIPSocketAddressAndPort * remote = NULL  ///< Alternate address to transmit control frame
     );
 
-   /**Restarts an existing session in the given direction.
-      */
-    virtual void Restart(
-      bool isReading
-    );
-
     /**Get the local host name as used in SDES packes.
       */
     virtual PString GetLocalHostName();
@@ -193,6 +178,34 @@ class OpalRTPSession : public OpalMediaSession
       e_IgnorePacket,
       e_AbortTransport
     };
+
+    struct Data
+    {
+      Data(const RTP_DataFrame & frame)
+        : m_frame(frame)
+        , m_status(e_ProcessPacket)
+        { }
+      RTP_DataFrame     m_frame;
+      SendReceiveStatus m_status;
+    };
+    typedef PNotifierTemplate<Data &> DataNotifier;
+    #define PDECLARE_RTPDataNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalRTPSession, cls, fn, OpalRTPSession::Data &)
+    #define PCREATE_RTPDataNotifier(fn)       PCREATE_NOTIFIER2(fn, OpalRTPSession::Data &)
+
+    /** Set the notifier for received RTP data.
+        Note an SSRC of zero usually means first SSRC, in this case it measn all SSRC's
+      */
+    void AddDataNotifier(
+      const DataNotifier & notifier,
+      RTP_SyncSourceId ssrc = 0
+    );
+
+    /// Remove the data notifier
+    void RemoveDataNotifier(
+      const DataNotifier & notifier,
+      RTP_SyncSourceId ssrc = 0
+    );
+
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite);
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, PINDEX pduSize);
@@ -578,11 +591,7 @@ class OpalRTPSession : public OpalMediaSession
     RTP_Timestamp GetLastSentTimestamp(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_lastTimestamp; }
     const PTimeInterval & GetLastSentPacketTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_lastPacketTick; }
 
-    typedef PNotifierTemplate<SendReceiveStatus &> FilterNotifier;
-    #define PDECLARE_RTPFilterNotifier(cls, fn) PDECLARE_NOTIFIER2(RTP_DataFrame, cls, fn, OpalRTPSession::SendReceiveStatus &)
-    #define PCREATE_RTPFilterNotifier(fn) PCREATE_NOTIFIER2(fn, OpalRTPSession::SendReceiveStatus &)
-
-    void AddFilter(const FilterNotifier & filter);
+    /// Set the jitter buffer to get certain RTCP statustics from.
     void SetJitterBuffer(OpalJitterBuffer * jitterBuffer, RTP_SyncSourceId ssrc = 0);
 
   protected:
@@ -595,16 +604,12 @@ class OpalRTPSession : public OpalMediaSession
     bool SetQoS(const PIPSocket::QoS & qos);
 
     ReceiverReportArray BuildReceiverReportArray(const RTP_ControlFrame & frame, PINDEX offset);
-    virtual SendReceiveStatus OnReadTimeout(RTP_DataFrame & frame);
     
     virtual bool InternalSetRemoteAddress(const PIPSocket::AddressAndPort & ap, bool isMediaAddress PTRACE_PARAM(, const char * source));
-    virtual SendReceiveStatus InternalReadData(RTP_DataFrame & frame);
-    virtual SendReceiveStatus InternalReadControl();
-    virtual SendReceiveStatus ReadRawPDU(
-      BYTE * framePtr,
-      PINDEX & frameSize,
-      Channel channel
-    );
+    virtual bool InternalRead();
+    virtual bool InternalReadData();
+    virtual bool InternalReadControl();
+    virtual SendReceiveStatus ReadRawPDU(BYTE * framePtr, PINDEX & frameSize, Channel channel);
     virtual bool HandleUnreachable(PTRACE_PARAM(const char * channelName));
 
     virtual bool WriteRawPDU(
@@ -669,6 +674,8 @@ class OpalRTPSession : public OpalMediaSession
       RTP_SyncSourceId  m_sourceIdentifier;
       RTP_SyncSourceId  m_loopbackIdentifier;
       PString           m_canonicalName;
+
+      std::list<DataNotifier> m_notifiers;
 
       // Sequence handling
       RTP_SequenceNumber m_lastSequenceNumber;
@@ -753,8 +760,6 @@ class OpalRTPSession : public OpalMediaSession
     PMutex m_dataMutex;
     PMutex m_readMutex;
 
-    list<FilterNotifier> m_filters;
-
     PIPAddress m_localAddress;
     WORD       m_localPort[2];
 
@@ -764,8 +769,9 @@ class OpalRTPSession : public OpalMediaSession
     PIPSocket::QoS m_qos;
     PUDPSocket * m_socket[2]; // 0=control, 1=data
 
-    bool m_shutdownRead;
-    bool m_shutdownWrite;
+    PThread * m_thread;
+    virtual void ThreadMain();
+
     bool m_remoteBehindNAT;
     bool m_localHasRestrictedNAT;
     bool m_firstControl;
@@ -820,6 +826,8 @@ class OpalRTPSession : public OpalMediaSession
     P_REMOVE_VIRTUAL(SendReceiveStatus,OnSendData(RTP_DataFrame &),e_AbortTransport);
     P_REMOVE_VIRTUAL(SendReceiveStatus, OnSendData(RTP_DataFrame &,bool), e_AbortTransport);
     P_REMOVE_VIRTUAL(bool,WriteData(RTP_DataFrame &,const PIPSocketAddressAndPort*,bool),false);
+    P_REMOVE_VIRTUAL(SendReceiveStatus,OnReadTimeout(RTP_DataFrame&),e_AbortTransport);
+    P_REMOVE_VIRTUAL(SendReceiveStatus,InternalReadData(RTP_DataFrame &),e_AbortTransport);
 
 
   friend class RTCP_XR_Metrics;

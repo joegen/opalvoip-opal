@@ -145,7 +145,7 @@ class OpalRFC2833Proto : public PObject
     bool AbortTransmit();
     WORD GetTimestampSince(const PTimeInterval & tick) const;
 
-    PDECLARE_RTPFilterNotifier(OpalRFC2833Proto, ReceivedPacket);
+    PDECLARE_RTPDataNotifier(OpalRFC2833Proto, ReceivedPacket);
     PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, ReceiveTimeout);
     PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, TransmitTimeout);
 
@@ -155,7 +155,7 @@ class OpalRFC2833Proto : public PObject
     OpalRFC2833EventsMask          m_txEvents;
     OpalRFC2833EventsMask          m_rxEvents;
     PNotifier                      m_receiveNotifier;
-    OpalRTPSession::FilterNotifier m_receiveHandler;
+    OpalRTPSession::DataNotifier   m_receiveHandler;
 
     OpalRTPSession * m_rtpSession;
 

@@ -40,52 +40,162 @@
 
 #include <opal_config.h>
 
+#include <opal/mediatype.h>
 #include <rtp/rtp.h>
-#include <ptlib/safecoll.h>
-
-
-class RTP_JitterBuffer;
-class RTP_JitterBufferAnalyser;
-class OpalRTPSession;
 
 
 ///////////////////////////////////////////////////////////////////////////////
-/**This is an Abstract jitter buffer, which can be used simply in any
-   application. The user is required to use a descendant of this class, and
-   provide a "OnReadPacket" method, so that network packets can be placed in
-   this class instance */
-class OpalJitterBuffer : public PSafeObject
-{
-  PCLASSINFO(OpalJitterBuffer, PSafeObject);
 
+/**This is an Abstract jitter buffer. 
+  */
+class OpalJitterBuffer : public PObject
+{
+    PCLASSINFO(OpalJitterBuffer, PObject);
   public:
     /// Initialisation information
-    struct Init {
-      Init(unsigned minDelay = 0, unsigned maxDelay = 0)
-        : m_minJitterDelay(minDelay)
-        , m_maxJitterDelay(maxDelay != 0 ? maxDelay : minDelay)
+    struct Init
+    {
+      Init()
+        : m_minJitterDelay(0)
+        , m_maxJitterDelay(0)
         , m_timeUnits(8)
         , m_packetSize(2048)
-      { }
+      {
+      }
 
-      unsigned m_minJitterDelay; ///<  Minimum delay in RTP timestamp units
-      unsigned m_maxJitterDelay; ///<  Maximum delay in RTP timestamp units
-      unsigned m_timeUnits;      ///<  Time units, usually 8 or 16
-      PINDEX m_packetSize;       ///<  Max RTP packet size
+      Init(
+        const OpalMediaType & mediaType,
+        unsigned minDelay,
+        unsigned maxDelay = 0,
+        unsigned timeUnits = 8,
+        unsigned packetSize = 2048
+      )
+        : m_mediaType(mediaType)
+        , m_minJitterDelay(minDelay)
+        , m_maxJitterDelay(maxDelay != 0 ? maxDelay : minDelay)
+        , m_timeUnits(timeUnits)
+        , m_packetSize(packetSize)
+      {
+      }
+
+      OpalMediaType m_mediaType;
+      unsigned      m_minJitterDelay; ///<  Minimum delay in RTP timestamp units
+      unsigned      m_maxJitterDelay; ///<  Maximum delay in RTP timestamp units
+      unsigned      m_timeUnits;      ///<  Time units, usually 8 or 16
+      PINDEX        m_packetSize;     ///<  Max RTP packet size
     };
 
+    /**@name Construction */
+    //@{
+    /**Constructor for this jitter buffer. The size of this buffer can be
+       altered later with the SetDelay method
+       */
+    OpalJitterBuffer(
+      const Init & init  ///< Initialisation information
+    );
+
+    /** Destructor, which closes this down and deletes the internal list of frames
+      */
+    virtual ~OpalJitterBuffer();
+
+    // Create an appropriate jitter buffer for the media type
+    static OpalJitterBuffer * Create(
+      const Init & init  ///< Initialisation information
+    );
+    //@}
+
+  /**@name Operations */
+  //@{
+    /**Set the maximum delay the jitter buffer will operate to.
+      */
+    virtual void SetDelay(
+      const Init & init  ///< Initialisation information
+    );
+
+    /**Close jitter buffer.
+      */
+    virtual void Close() = 0;
+
+    /**Restart jitter buffer.
+      */
+    virtual void Restart() = 0;
+
+    /**Write data frame from the RTP channel.
+      */
+    virtual bool WriteData(
+      const RTP_DataFrame & frame,        ///< Frame to feed into jitter buffer
+      PTimeInterval tick = PTimer::Tick() ///< Real time tick for packet arrival
+    ) = 0;
+
+    /**Read a data frame from the jitter buffer.
+       This function never blocks. If no data is available, an RTP packet
+       with zero payload size is returned.
+      */
+    virtual bool ReadData(
+      RTP_DataFrame & frame,              ///<  Frame to extract from jitter buffer
+      PTimeInterval tick = PTimer::Tick() ///< Real time tick for packet removal
+    ) = 0;
+
+    /**Get current delay for jitter buffer.
+      */
+    virtual unsigned GetCurrentJitterDelay() const { return 0; }
+
+    /**Get time units.
+      */
+    unsigned GetTimeUnits() const { return m_timeUnits; }
+    
+    /**Get minimum delay for jitter buffer.
+      */
+    RTP_Timestamp GetMinJitterDelay() const { return m_minJitterDelay; }
+    
+    /**Get maximum delay for jitter buffer.
+      */
+    RTP_Timestamp GetMaxJitterDelay() const { return m_maxJitterDelay; }
+
+    /**Get total number received packets too late to go into jitter buffer.
+      */
+    unsigned GetPacketsTooLate() const { return m_packetsTooLate; }
+
+    /**Get total number received packets that overran the jitter buffer.
+      */
+    unsigned GetBufferOverruns() const { return m_bufferOverruns; }
+  //@}
+
+  protected:
+    unsigned      m_timeUnits;
+    PINDEX        m_packetSize;
+    RTP_Timestamp m_minJitterDelay;      ///< Minimum jitter delay in timestamp units
+    RTP_Timestamp m_maxJitterDelay;      ///< Maximum jitter delay in timestamp units
+    unsigned      m_packetsTooLate;
+    unsigned      m_bufferOverruns;
+
+    class Analyser;
+    Analyser * m_analyser;
+};
+
+
+typedef PParamFactory<OpalJitterBuffer, OpalJitterBuffer::Init, OpalMediaType> OpalJitterBufferFactory;
+
+
+/**This is an Audio jitter buffer.
+  */
+class OpalAudioJitterBuffer : public OpalJitterBuffer
+{
+  PCLASSINFO(OpalAudioJitterBuffer, OpalJitterBuffer);
+
+  public:
   /**@name Construction */
   //@{
     /**Constructor for this jitter buffer. The size of this buffer can be
        altered later with the SetDelay method
       */
-    OpalJitterBuffer(
+    OpalAudioJitterBuffer(
       const Init & init  ///< Initialisation information
     );
     
     /** Destructor, which closes this down and deletes the internal list of frames
       */
-    virtual ~OpalJitterBuffer();
+    virtual ~OpalAudioJitterBuffer();
   //@}
 
   /**@name Overrides from PObject */
@@ -98,22 +208,23 @@ class OpalJitterBuffer : public PSafeObject
 
   /**@name Operations */
   //@{
-    /// Start jitter buffer.
-    virtual void Start() { }
-
     /**Set the maximum delay the jitter buffer will operate to.
       */
-    void SetDelay(
+    virtual void SetDelay(
       const Init & init  ///< Initialisation information
     );
 
     /**Reset jitter buffer.
       */
-    void Reset();
+    virtual void Close();
+
+    /**Restart jitter buffer.
+      */
+    virtual void Restart();
 
     /**Write data frame from the RTP channel.
       */
-    virtual PBoolean WriteData(
+    virtual bool WriteData(
       const RTP_DataFrame & frame,        ///< Frame to feed into jitter buffer
       PTimeInterval tick = PTimer::Tick() ///< Real time tick for packet arrival
     );
@@ -122,79 +233,55 @@ class OpalJitterBuffer : public PSafeObject
        This function never blocks. If no data is available, an RTP packet
        with zero payload size is returned.
       */
-    virtual PBoolean ReadData(
+    virtual bool ReadData(
       RTP_DataFrame & frame,              ///<  Frame to extract from jitter buffer
       PTimeInterval tick = PTimer::Tick() ///< Real time tick for packet removal
     );
 
     /**Get current delay for jitter buffer.
       */
-    DWORD GetCurrentJitterDelay() const { return m_currentJitterDelay; }
-    
-    /**Get minimum delay for jitter buffer.
-      */
-    DWORD GetMinJitterDelay() const { return m_minJitterDelay; }
-    
-    /**Get maximum delay for jitter buffer.
-      */
-    DWORD GetMaxJitterDelay() const { return m_maxJitterDelay; }
-
-    /**Get time units.
-      */
-    unsigned GetTimeUnits() const { return m_timeUnits; }
-    
-    /**Get total number received packets too late to go into jitter buffer.
-      */
-    DWORD GetPacketsTooLate() const { return m_packetsTooLate; }
-
-    /**Get total number received packets that overran the jitter buffer.
-      */
-    DWORD GetBufferOverruns() const { return m_bufferOverruns; }
+    virtual unsigned GetCurrentJitterDelay() const { return m_currentJitterDelay; }
 
     /**Get maximum consecutive marker bits before buffer starts to ignore them.
       */
-    DWORD GetMaxConsecutiveMarkerBits() const { return m_maxConsecutiveMarkerBits; }
+    unsigned GetMaxConsecutiveMarkerBits() const { return m_maxConsecutiveMarkerBits; }
 
     /**Set maximum consecutive marker bits before buffer starts to ignore them.
       */
-    void SetMaxConsecutiveMarkerBits(DWORD max) { m_maxConsecutiveMarkerBits = max; }
+    void SetMaxConsecutiveMarkerBits(unsigned max) { m_maxConsecutiveMarkerBits = max; }
   //@}
 
   protected:
-    DWORD CalculateRequiredTimestamp(DWORD playOutTimestamp) const;
+    void Reset();
+    RTP_Timestamp CalculateRequiredTimestamp(RTP_Timestamp playOutTimestamp) const;
     bool AdjustCurrentJitterDelay(int delta);
 
-    unsigned m_timeUnits;
-    PINDEX   m_packetSize;
-    DWORD    m_minJitterDelay;      ///< Minimum jitter delay in timestamp units
-    DWORD    m_maxJitterDelay;      ///< Maximum jitter delay in timestamp units
-    int      m_jitterGrowTime;      ///< Amount to increase jitter delay by when get "late" packet
-    DWORD    m_jitterShrinkPeriod;  ///< Period (in timestamp units) over which buffer is
+    int           m_jitterGrowTime;      ///< Amount to increase jitter delay by when get "late" packet
+    RTP_Timestamp m_jitterShrinkPeriod;  ///< Period (in timestamp units) over which buffer is
                                     ///< consistently filled before shrinking
-    int      m_jitterShrinkTime;    ///< Amount to shrink jitter delay by if consistently filled
-    DWORD    m_silenceShrinkPeriod; ///< Reduce jitter delay is silent for this long
-    int      m_silenceShrinkTime;   ///< Amount to shrink jitter delay by if consistently silent
-    DWORD    m_jitterDriftPeriod;
+    int           m_jitterShrinkTime;    ///< Amount to shrink jitter delay by if consistently filled
+    RTP_Timestamp m_silenceShrinkPeriod; ///< Reduce jitter delay is silent for this long
+    int           m_silenceShrinkTime;   ///< Amount to shrink jitter delay by if consistently silent
+    RTP_Timestamp m_jitterDriftPeriod;
 
+    bool     m_closed;
     int      m_currentJitterDelay;
-    DWORD    m_packetsTooLate;
-    DWORD    m_bufferOverruns;
-    DWORD    m_consecutiveMarkerBits;
-    DWORD    m_maxConsecutiveMarkerBits;
-    DWORD    m_consecutiveLatePackets;
-    DWORD    m_consecutiveOverflows;
-    DWORD    m_consecutiveEmpty;
+    unsigned m_consecutiveMarkerBits;
+    unsigned m_maxConsecutiveMarkerBits;
+    unsigned m_consecutiveLatePackets;
+    unsigned m_consecutiveOverflows;
+    unsigned m_consecutiveEmpty;
 
-    unsigned m_frameTimeCount;
-    uint64_t m_frameTimeSum;
-    DWORD    m_incomingFrameTime;
-    DWORD    m_lastSequenceNum;
-    DWORD    m_lastTimestamp;
-    DWORD    m_lastSyncSource;
-    DWORD    m_bufferFilledTime;
-    DWORD    m_bufferLowTime;
-    DWORD    m_bufferEmptiedTime;
-    int      m_timestampDelta;
+    unsigned           m_frameTimeCount;
+    uint64_t           m_frameTimeSum;
+    RTP_Timestamp      m_incomingFrameTime;
+    RTP_SequenceNumber m_lastSequenceNum;
+    RTP_Timestamp      m_lastTimestamp;
+    RTP_SyncSourceId   m_lastSyncSource;
+    RTP_Timestamp      m_bufferFilledTime;
+    RTP_Timestamp      m_bufferLowTime;
+    RTP_Timestamp      m_bufferEmptiedTime;
+    int                m_timestampDelta;
 
     enum {
       e_SynchronisationStart,
@@ -203,7 +290,7 @@ class OpalJitterBuffer : public PSafeObject
       e_SynchronisationDone
     } m_synchronisationState;
 
-    typedef std::map<DWORD, RTP_DataFrame> FrameMap;
+    typedef std::map<RTP_Timestamp, RTP_DataFrame> FrameMap;
     FrameMap m_frames;
     PMutex   m_bufferMutex;
 
@@ -211,53 +298,53 @@ class OpalJitterBuffer : public PSafeObject
     PTimeInterval m_lastInsertTick;
     PTimeInterval m_lastRemoveTick;
 #endif
-
-    RTP_JitterBufferAnalyser * m_analyser;
 };
 
 
-/**A descendant of the OpalJitterBuffer that starts a thread to read
-   from something continuously and feed it into the jitter buffer.
-  */
-class OpalJitterBufferThread : public OpalJitterBuffer
+/// Null jitter buffer, just a simpple queue
+class OpalNonJitterBuffer : public OpalJitterBuffer
 {
-    PCLASSINFO(OpalJitterBufferThread, OpalJitterBuffer);
- public:
-    OpalJitterBufferThread(
+    PCLASSINFO(OpalNonJitterBuffer, OpalJitterBuffer);
+  public:
+  /**@name Construction */
+  //@{
+    /**Constructor for this jitter buffer. The size of this buffer can be
+       altered later with the SetDelay method
+      */
+    OpalNonJitterBuffer(
       const Init & init  ///< Initialisation information
     );
-    ~OpalJitterBufferThread();
+  //@}
 
-    /// Start jiter buffer
-    virtual void Start();
+  /**@name Operations */
+  //@{
+    /**Reset jitter buffer.
+      */
+    virtual void Close();
+
+    /**Restart jitter buffer.
+      */
+    virtual void Restart();
+
+    /**Write data frame from the RTP channel.
+      */
+    virtual bool WriteData(
+      const RTP_DataFrame & frame,        ///< Frame to feed into jitter buffer
+      PTimeInterval tick = PTimer::Tick() ///< Real time tick for packet arrival
+    );
 
     /**Read a data frame from the jitter buffer.
        This function never blocks. If no data is available, an RTP packet
        with zero payload size is returned.
-
-       Override of base class so can terminate caller when shutting down.
       */
-    virtual PBoolean ReadData(
-      RTP_DataFrame & frame,  ///<  Frame to extract from jitter buffer
-      const PTimeInterval & tick = 0 ///< Real time tick for packet removal
+    virtual bool ReadData(
+      RTP_DataFrame & frame,              ///<  Frame to extract from jitter buffer
+      PTimeInterval tick = PTimer::Tick() ///< Real time tick for packet removal
     );
-
-    /**This class instance collects data from the outside world in this
-       method.
-
-       @return true on successful read, false on faulty read. */
-    virtual PBoolean OnReadPacket(
-      RTP_DataFrame & frame   ///<  Frame read from the RTP session
-    ) = 0;
+  //@}
 
   protected:
-    PDECLARE_NOTIFIER(PThread, OpalJitterBufferThread, JitterThreadMain);
-
-    /// Internal function to be called from derived class destructor
-    void WaitForThreadTermination();
-
-    PThread * m_jitterThread;
-    bool      m_running;
+    PSyncQueue<RTP_DataFrame> m_queue;
 };
 
 

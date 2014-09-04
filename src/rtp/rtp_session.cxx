@@ -149,8 +149,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_reportTimer(0, 12)  // Seconds
   , m_localAddress(PIPSocket::GetInvalidAddress())
   , m_remoteAddress(PIPSocket::GetInvalidAddress())
-  , m_shutdownRead(false)
-  , m_shutdownWrite(false)
+  , m_thread(NULL)
   , m_remoteBehindNAT(init.m_remoteBehindNAT)
   , m_localHasRestrictedNAT(false)
   , m_noTransmitErrors(0)
@@ -560,12 +559,20 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     status = OnReceiveRedundantFrame(frame);
 #endif
 
-  // Final user handling of the read frame
-  for (list<FilterNotifier>::iterator filter = m_session.m_filters.begin(); filter != m_session.m_filters.end(); ++filter) 
-    (*filter)(frame, status);
-
   CalculateStatistics(frame);
-  return status;
+
+  // Final user handling of the read frame
+  if (status != e_ProcessPacket)
+    return status;
+
+  Data data(frame);
+  for (list<DataNotifier>::iterator it = m_notifiers.begin(); it != m_notifiers.end(); ++it) {
+    (*it)(m_session, data);
+    if (data.m_status != e_ProcessPacket)
+      return data.m_status;
+  }
+
+  return e_ProcessPacket;
 }
 
 
@@ -666,7 +673,6 @@ OpalMediaSession::Transport OpalRTPSession::DetachTransport()
 
   m_endpoint.RegisterLocalRTP(this, true);
 
-  Shutdown(true);
   m_readMutex.Wait();
   m_dataMutex.Wait();
 
@@ -796,60 +802,6 @@ void OpalRTPSession::SetExtensionHeader(const RTPExtensionHeaders & ext)
 {
   PWaitAndSignal mutex(m_reportMutex);
   m_extensionHeaders = ext;
-}
-
-
-bool OpalRTPSession::ReadData(RTP_DataFrame & frame)
-{
-  if (!IsOpen() || m_shutdownRead)
-    return false;
-
-  for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-    switch (it->second->GetPendingFrame(frame)) {
-      case e_AbortTransport:
-        return false;
-      case e_IgnorePacket:
-        break;
-      case e_ProcessPacket:
-        return true;
-    }
-  }
-
-  PWaitAndSignal mutex(m_readMutex);
-
-  SendReceiveStatus receiveStatus = e_IgnorePacket;
-  while (receiveStatus == e_IgnorePacket) {
-    if (m_shutdownRead || PAssertNULL(m_socket[e_Data]) == NULL)
-      return false;
-
-    if (m_socket[e_Control] == NULL)
-      receiveStatus = InternalReadData(frame);
-    else {
-      int selectStatus = PSocket::Select(*m_socket[e_Data], *m_socket[e_Control], m_maxNoReceiveTime);
-
-      if (m_shutdownRead)
-        return false;
-
-      if (selectStatus > 0) {
-        PTRACE(1, *this << "select error: "
-                << PChannel::GetErrorText((PChannel::Errors)selectStatus));
-        return false;
-      }
-
-      if (selectStatus == 0)
-        receiveStatus = OnReadTimeout(frame);
-
-      if ((-selectStatus & 2) != 0) {
-        if (InternalReadControl() == e_AbortTransport)
-          return false;
-      }
-
-      if ((-selectStatus & 1) != 0)
-        receiveStatus = InternalReadData(frame);
-    }
-  }
-
-  return receiveStatus == e_ProcessPacket;
 }
 
 
@@ -1461,7 +1413,7 @@ void OpalRTPSession::OnRxSenderReport(const SenderReport & senderReport, const R
 {
 #if PTRACING
   if (PTrace::CanTrace(m_throttleRxSR)) {
-    ostream & strm = PTrace::Begin(m_throttleRxSR, __FILE__, __LINE__, this);
+    ostream & strm = PTRACE_BEGIN(m_throttleRxSR);
     strm << *this << "OnRxSenderReport: " << senderReport << '\n';
     for (PINDEX i = 0; i < receiveReports.GetSize(); i++)
       strm << "  RR: " << receiveReports[i] << '\n';
@@ -1482,7 +1434,7 @@ void OpalRTPSession::OnRxReceiverReport(RTP_SyncSourceId PTRACE_PARAM(src), cons
 {
 #if PTRACING
   if (PTrace::CanTrace(m_throttleRxRR)) {
-    ostream & strm = PTrace::Begin(m_throttleRxRR, __FILE__, __LINE__, this);
+    ostream & strm = PTRACE_BEGIN(m_throttleRxRR);
     strm << *this << "OnReceiverReport: SSRC=" << RTP_TRACE_SRC(src) << '\n';
     for (PINDEX i = 0; i < reports.GetSize(); i++)
       strm << "  RR: " << reports[i] << '\n';
@@ -1508,7 +1460,7 @@ void OpalRTPSession::OnRxSourceDescription(const SourceDescriptionArray & PTRACE
 {
 #if PTRACING
   if (PTrace::CanTrace(m_throttleRxSDES)) {
-    ostream & strm = PTrace::Begin(m_throttleRxSDES, __FILE__, __LINE__, this);
+    ostream & strm = PTRACE_BEGIN(m_throttleRxSDES);
     strm << *this << "OnSourceDescription: " << description.GetSize() << " entries";
     for (PINDEX i = 0; i < description.GetSize(); i++)
       strm << "\n  " << description[i];
@@ -1522,7 +1474,7 @@ void OpalRTPSession::OnRxGoodbye(const RTP_SyncSourceArray & PTRACE_PARAM(src), 
 {
 #if PTRACING
   if (PTrace::CanTrace(3)) {
-    ostream & strm = PTrace::Begin(3, __FILE__, __LINE__, this);
+    ostream & strm = PTRACE_BEGIN(3);
     strm << *this << "OnGoodbye: " << reason << "\" SSRC=";
     for (PINDEX i = 0; i < src.GetSize(); i++)
       strm << RTP_TRACE_SRC(src[i]) << ' ';
@@ -1691,11 +1643,34 @@ bool OpalRTPSession::SendTemporalSpatialTradeOff(unsigned tradeOff, RTP_SyncSour
 #endif // OPAL_VIDEO
 
 
-void OpalRTPSession::AddFilter(const FilterNotifier & filter)
+void OpalRTPSession::AddDataNotifier(const DataNotifier & notifier, RTP_SyncSourceId ssrc)
 {
-  // ensures that a filter is added only once
-  if (std::find(m_filters.begin(), m_filters.end(), filter) == m_filters.end())
-    m_filters.push_back(filter);
+  if (ssrc != 0) {
+    SyncSource * receiver;
+    if (GetSyncSource(ssrc, e_Receiver, receiver) &&
+        std::find(receiver->m_notifiers.begin(), receiver->m_notifiers.end(), notifier) == receiver->m_notifiers.end())
+      receiver->m_notifiers.push_back(notifier);
+  }
+  else {
+    for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
+      if (it->second->m_direction == e_Receiver)
+        it->second->m_notifiers.push_back(notifier);
+    }
+  }
+}
+
+
+void OpalRTPSession::RemoveDataNotifier(const DataNotifier & notifier, RTP_SyncSourceId ssrc)
+{
+  if (ssrc != 0) {
+    SyncSource * receiver;
+    if (GetSyncSource(ssrc, e_Receiver, receiver))
+      receiver->m_notifiers.remove(notifier);
+  }
+  else {
+    for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it)
+      it->second->m_notifiers.remove(notifier);
+  }
 }
 
 
@@ -1866,8 +1841,6 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
     return false;
 
   m_firstControl = true;
-  m_shutdownRead = false;
-  m_shutdownWrite = false;
 
   for (int i = 0; i < 2; ++i) {
     delete m_socket[i];
@@ -1981,6 +1954,7 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
   manager.TranslateIPAddress(m_localAddress, m_remoteAddress);
 
   m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
+  m_thread = new PThreadObj<OpalRTPSession>(*this, &OpalRTPSession::ThreadMain, false, "RTP", PThread::HighPriority);
 
 #if PTRACING
   RTP_SyncSourceId ssrc =
@@ -2016,11 +1990,16 @@ bool OpalRTPSession::IsOpen() const
 
 bool OpalRTPSession::Close()
 {
-  bool ok = Shutdown(true) | Shutdown(false);
-
   m_reportTimer.Stop(true);
 
   m_endpoint.RegisterLocalRTP(this, true);
+
+  for (int i = 0; i < 2; ++i) {
+    if (m_socket[i] != NULL)
+      m_socket[i]->Close();
+  }
+
+  m_thread->WaitForTermination();
 
   m_readMutex.Wait();
   m_dataMutex.Wait();
@@ -2038,76 +2017,7 @@ bool OpalRTPSession::Close()
   m_dataMutex.Signal();
   m_readMutex.Signal();
 
-  return ok;
-}
-
-
-bool OpalRTPSession::Shutdown(bool reading)
-{
-  if (reading) {
-    {
-      PWaitAndSignal mutex(m_dataMutex);
-
-      if (m_shutdownRead) {
-        PTRACE(4, *this << "read already shut down .");
-        return false;
-      }
-
-      PTRACE(3, *this << "shutting down read.");
-
-      m_shutdownRead = true;
-
-      if (m_socket[e_Data] != NULL) {
-        PIPSocketAddressAndPort addrAndPort;
-        m_socket[e_Data]->PUDPSocket::InternalGetLocalAddress(addrAndPort);
-        if (!addrAndPort.IsValid())
-          addrAndPort.Parse(PIPSocket::GetHostName());
-        BYTE dummy = 0;
-        PUDPSocket::Slice slice(&dummy, 1);
-        if (!m_socket[e_Data]->PUDPSocket::InternalWriteTo(&slice, 1, addrAndPort)) {
-          PTRACE(1, *this << "could not write to unblock read socket: "
-                 << m_socket[e_Data]->GetErrorText(PChannel::LastReadError));
-          m_socket[e_Data]->Close();
-        }
-      }
-    }
-  }
-  else {
-    if (m_shutdownWrite) {
-      PTRACE(4, *this << "write already shut down .");
-      return false;
-    }
-
-    PTRACE(3, *this << "shutting down write.");
-    m_shutdownWrite = true;
-  }
-
-  // If shutting down write, no reporting any more
-  if (m_shutdownWrite)
-    m_reportTimer.Stop(false);
-
   return true;
-}
-
-
-void OpalRTPSession::Restart(bool reading)
-{
-  PWaitAndSignal mutex(m_dataMutex);
-
-  if (reading) {
-    if (!m_shutdownRead)
-      return;
-    m_shutdownRead = false;
-  }
-  else {
-    if (!m_shutdownWrite)
-      return;
-    m_shutdownWrite = false;
-    m_noTransmitErrors = 0;
-    m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
-  }
-
-  PTRACE(3, *this << "reopened for " << (reading ? "reading" : "writing"));
 }
 
 
@@ -2312,9 +2222,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendICE(Channel channel)
 #endif // OPAL_ICE
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr,
-                                                             PINDEX & frameSize,
-                                                             Channel channel)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr, PINDEX & frameSize, Channel channel)
 {
   if (m_socket[e_Control] == NULL)
     channel = e_Data;
@@ -2356,8 +2264,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr,
 
   switch (socket.GetErrorCode(PChannel::LastReadError)) {
     case PChannel::Unavailable :
-      if (!HandleUnreachable(PTRACE_PARAM(channelName)))
-        Shutdown(false); // Terminate transmission
+      HandleUnreachable(PTRACE_PARAM(channelName));
       return e_IgnorePacket;
 
     case PChannel::BufferTooSmall :
@@ -2377,8 +2284,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr,
       PTRACE(1, *this << channelName
              << " read error (" << socket.GetErrorNumber(PChannel::LastReadError) << "): "
              << socket.GetErrorText(PChannel::LastReadError));
-      m_connection.OnMediaFailed(m_sessionId, true);
-      return e_AbortTransport;
+      return m_connection.OnMediaFailed(m_sessionId, true) ? e_AbortTransport : e_IgnorePacket;
   }
 }
 
@@ -2394,7 +2300,7 @@ bool OpalRTPSession::HandleUnreachable(PTRACE_PARAM(const char * channelName))
   if (m_noTransmitErrors < 10 || m_noTransmitTimer.IsRunning())
     return true;
 
-  PTRACE(2, *this << channelName << ' ' << m_maxNoTransmitTime << " seconds of transmit fails - informing connection");
+  PTRACE(2, *this << channelName << ' ' << m_maxNoTransmitTime << " seconds of transmit fails");
   if (m_connection.OnMediaFailed(m_sessionId, false))
     return false;
 
@@ -2403,52 +2309,94 @@ bool OpalRTPSession::HandleUnreachable(PTRACE_PARAM(const char * channelName))
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::InternalReadData(RTP_DataFrame & frame)
+void OpalRTPSession::ThreadMain()
 {
-  if (!frame.SetMinSize(m_connection.GetEndPoint().GetManager().GetMaxRtpPacketSize()))
-    return e_AbortTransport;
+  PTRACE(4, "Thread started");
 
-  PINDEX pduSize = frame.GetSize();
-  SendReceiveStatus status = ReadRawPDU(frame.GetPointer(), pduSize, e_Data);
-  if (status != e_ProcessPacket)
-    return status;
+  while (InternalRead())
+    ;
+
+  PTRACE(4, "Thread ended normally");
+}
+
+
+bool OpalRTPSession::InternalRead()
+{
+  if (!IsOpen())
+    return false;
+
+  if (m_socket[e_Control] == NULL)
+    return InternalReadData();
+
+  int selectStatus = PSocket::Select(*m_socket[e_Data], *m_socket[e_Control], m_maxNoReceiveTime);
+  switch (selectStatus) {
+    case -3 :
+      return InternalReadData() && InternalReadControl();
+
+    case -2 :
+      return InternalReadControl();
+
+    case -1 :
+      return InternalReadData();
+
+    case 0 :
+      PTRACE(2, *this << "timeout on received RTP and RTCP sockets.");
+      if (m_connection.OnMediaFailed(m_sessionId, true))
+        Close();
+      return IsOpen();
+
+    default :
+      PTRACE(2, *this << "select error: " << PChannel::GetErrorText((PChannel::Errors)selectStatus));
+      return false;
+  }
+}
+
+
+bool OpalRTPSession::InternalReadData()
+{
+  PINDEX pduSize = m_connection.GetEndPoint().GetManager().GetMaxRtpPacketSize();
+  RTP_DataFrame frame((PINDEX)0, pduSize);
+  switch (ReadRawPDU(frame.GetPointer(), pduSize, e_Data)) {
+    case e_AbortTransport :
+      return false;
+
+    case e_IgnorePacket :
+      return true;
+
+    case e_ProcessPacket :
+      break;
+  }
 
   PWaitAndSignal mutex(m_dataMutex);
 
   // Check for single port operation, incoming RTCP on RTP
   RTP_ControlFrame control(frame, pduSize, false);
   unsigned type = control.GetPayloadType();
-  if (type < RTP_ControlFrame::e_FirstValidPayloadType || type > RTP_ControlFrame::e_LastValidPayloadType)
-    status = OnReceiveData(frame, pduSize);
-  else if ((status = OnReceiveControl(control)) == e_ProcessPacket)
-    status = e_IgnorePacket;
-
-  return status;
+  return (type >= RTP_ControlFrame::e_FirstValidPayloadType && type <= RTP_ControlFrame::e_LastValidPayloadType
+                                ? OnReceiveControl(control) : OnReceiveData(frame, pduSize)) != e_AbortTransport;
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReadTimeout(RTP_DataFrame & /*frame*/)
-{
-  if (m_connection.OnMediaFailed(m_sessionId, true))
-    return e_AbortTransport;
-
-  return e_IgnorePacket;
-}
-
-
-OpalRTPSession::SendReceiveStatus OpalRTPSession::InternalReadControl()
+bool OpalRTPSession::InternalReadControl()
 {
   PINDEX pduSize = 2048;
   RTP_ControlFrame frame(pduSize);
-  SendReceiveStatus status = ReadRawPDU(frame.GetPointer(), pduSize, m_socket[e_Control] != NULL ? e_Control : e_Data);
-  if (status != e_ProcessPacket)
-    return status;
+  switch (ReadRawPDU(frame.GetPointer(), pduSize, m_socket[e_Control] != NULL ? e_Control : e_Data)) {
+    case e_AbortTransport:
+      return false;
+
+    case e_IgnorePacket:
+      return true;
+
+    case e_ProcessPacket:
+      break;
+  }
 
   if (frame.SetPacketSize(pduSize))
-    return OnReceiveControl(frame);
+    return OnReceiveControl(frame) != e_AbortTransport;
 
   PTRACE_IF(2, pduSize != 1 || !m_firstControl, *this << "received control packet too small: " << pduSize << " bytes");
-  return e_IgnorePacket;
+  return true;
 }
 
 
@@ -2456,7 +2404,7 @@ bool OpalRTPSession::WriteData(RTP_DataFrame & frame, RewriteMode rewrite, const
 {
   PWaitAndSignal m(m_dataMutex);
 
-  while (IsOpen() && !m_shutdownWrite) {
+  while (IsOpen()) {
     switch (OnSendData(frame, rewrite)) {
       case e_ProcessPacket :
         return WriteRawPDU(frame, frame.GetPacketSize(), e_Data, remote);
@@ -2482,7 +2430,7 @@ bool OpalRTPSession::WriteControl(RTP_ControlFrame & frame, const PIPSocketAddre
 {
   PWaitAndSignal m(m_dataMutex);
 
-  while (IsOpen() && !m_shutdownWrite) {
+  while (IsOpen()) {
     switch (OnSendControl(frame)) {
       case e_ProcessPacket :
         return WriteRawPDU(frame.GetPointer(), frame.GetPacketSize(), m_socket[e_Control] != NULL ? e_Control : e_Data, remote);
