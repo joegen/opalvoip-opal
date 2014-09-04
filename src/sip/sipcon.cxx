@@ -596,9 +596,21 @@ PBoolean SIPConnection::SetConnected()
   GetLocalMediaFormats();
 
   // send the 200 OK response
-  if (!SendInviteOK()) {
-    Release(EndedByCapabilityExchange);
-    return false;
+  PString externalSDP = m_stringOptions(OPAL_OPT_EXTERNAL_SDP);
+  if (externalSDP.IsEmpty()) {
+    if (!OnSendAnswer(SIP_PDU::Successful_OK)) {
+      Release(EndedByCapabilityExchange);
+      return false;
+    }
+  }
+  else {
+    SIP_PDU response(*m_lastReceivedINVITE, SIP_PDU::Successful_OK);
+    AdjustInviteResponse(response);
+    response.SetEntityBody(externalSDP);
+    if (!response.Send()) {
+      Release(EndedByTransportFail);
+      return false;
+    }
   }
 
   releaseMethod = ReleaseWithBYE;
@@ -2248,7 +2260,7 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
   m_handlingINVITE = true;
 
   // send the 200 OK response
-  if (SendInviteOK())
+  if (OnSendAnswer(SIP_PDU::Successful_OK))
     StartMediaStreams();
   else
     SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
@@ -2849,22 +2861,6 @@ PBoolean SIPConnection::ForwardCall (const PString & fwdParty)
   Release(EndedByCallForwarded);
 
   return true;
-}
-
-
-bool SIPConnection::SendInviteOK()
-{
-  PString externalSDP = m_stringOptions(OPAL_OPT_EXTERNAL_SDP);
-  if (externalSDP.IsEmpty()) {
-    if (!OnSendAnswer(SIP_PDU::Successful_OK))
-      return false;
-  }
-
-  SIP_PDU response(*m_lastReceivedINVITE, SIP_PDU::Successful_OK);
-  AdjustInviteResponse(response);
-
-  response.SetEntityBody(externalSDP);
-  return response.Send(); 
 }
 
 
