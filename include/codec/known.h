@@ -85,6 +85,8 @@
 #define OPAL_GSM0610        "GSM-06.10"
 #define OPAL_GSMAMR         "GSM-AMR"
 #define OPAL_iLBC           "iLBC"
+#define OPAL_SPEEX_NB       "SpeexNB"
+#define OPAL_SPEEX_WB       "SpeexWB"
 
 #define OPAL_RGB24          "RGB24"
 #define OPAL_RGB32          "RGB32"
