@@ -6706,26 +6706,20 @@ $as_echo "$as_me: Using internal source for GSM 06.10 audio codec" >&6;}
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$GSM_SYSTEM" = "xno" ; then
-         if test "x$usable" = "xyes" ; then
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/GSM0610"
-            HAVE_GSM="yes (internal)"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/GSM0610"
+         HAVE_GSM="yes (internal)"
+      elif test "x$usable" = "xyes" ; then
+
+
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/GSM0610"
+
+         if test "x$GSM_SYSTEM" = "xyes" ; then
+            HAVE_GSM="yes (system)"
          else
-            HAVE_GSM="no (internal library incompatible with build environment)"
+            HAVE_GSM="yes"
          fi
       else
-         if test "x$usable" = "xyes" ; then
-
-
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/GSM0610"
-
-            if test "x$GSM_SYSTEM" = "xyes" ; then
-               HAVE_GSM="yes (system)"
-            else
-               HAVE_GSM="yes"
-            fi
-         else
-            HAVE_GSM="no (package gsm local-source not found)"
-         fi
+         HAVE_GSM="no (package gsm local-source not found)"
       fi
    else
       HAVE_GSM="no (missing directory $PLUGIN_SRC_DIR/audio/GSM0610)"
@@ -6985,26 +6979,20 @@ fi
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$ILBC_SYSTEM" = "xno" ; then
-         if test "x$usable" = "xyes" ; then
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/iLBC"
-            HAVE_ILBC="yes (internal)"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/iLBC"
+         HAVE_ILBC="yes (internal)"
+      elif test "x$usable" = "xyes" ; then
+
+
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/iLBC"
+
+         if test "x$ILBC_SYSTEM" = "xyes" ; then
+            HAVE_ILBC="yes (system)"
          else
-            HAVE_ILBC="no (internal library incompatible with build environment)"
+            HAVE_ILBC="yes"
          fi
       else
-         if test "x$usable" = "xyes" ; then
-
-
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/iLBC"
-
-            if test "x$ILBC_SYSTEM" = "xyes" ; then
-               HAVE_ILBC="yes (system)"
-            else
-               HAVE_ILBC="yes"
-            fi
-         else
-            HAVE_ILBC="no (package ilbc local-source not found)"
-         fi
+         HAVE_ILBC="no (package ilbc local-source not found)"
       fi
    else
       HAVE_ILBC="no (missing directory $PLUGIN_SRC_DIR/audio/iLBC)"
@@ -7261,26 +7249,20 @@ fi
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$SPEEX_SYSTEM" = "xno" ; then
-         if test "x$usable" = "xyes" ; then
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/Speex"
-            HAVE_SPEEX="yes (internal)"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/Speex"
+         HAVE_SPEEX="yes (internal)"
+      elif test "x$usable" = "xyes" ; then
+
+
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/Speex"
+
+         if test "x$SPEEX_SYSTEM" = "xyes" ; then
+            HAVE_SPEEX="yes (system)"
          else
-            HAVE_SPEEX="no (internal library incompatible with build environment)"
+            HAVE_SPEEX="yes"
          fi
       else
-         if test "x$usable" = "xyes" ; then
-
-
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/Speex"
-
-            if test "x$SPEEX_SYSTEM" = "xyes" ; then
-               HAVE_SPEEX="yes (system)"
-            else
-               HAVE_SPEEX="yes"
-            fi
-         else
-            HAVE_SPEEX="no (package speex local-source not found)"
-         fi
+         HAVE_SPEEX="no (package speex local-source not found)"
       fi
    else
       HAVE_SPEEX="no (missing directory $PLUGIN_SRC_DIR/audio/Speex)"
@@ -7506,26 +7488,20 @@ fi
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$SBC_SYSTEM" = "xno" ; then
-         if test "x$usable" = "xyes" ; then
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/SBC/bluez_sbc"
-            HAVE_SBC="yes (internal)"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/SBC/bluez_sbc"
+         HAVE_SBC="yes (internal)"
+      elif test "x$usable" = "xyes" ; then
+
+
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/SBC/bluez_sbc"
+
+         if test "x$SBC_SYSTEM" = "xyes" ; then
+            HAVE_SBC="yes (system)"
          else
-            HAVE_SBC="no (internal library incompatible with build environment)"
+            HAVE_SBC="yes"
          fi
       else
-         if test "x$usable" = "xyes" ; then
-
-
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/SBC/bluez_sbc"
-
-            if test "x$SBC_SYSTEM" = "xyes" ; then
-               HAVE_SBC="yes (system)"
-            else
-               HAVE_SBC="yes"
-            fi
-         else
-            HAVE_SBC="no (package samplerate not found)"
-         fi
+         HAVE_SBC="no (package samplerate not found)"
       fi
    else
       HAVE_SBC="no (missing directory $PLUGIN_SRC_DIR/audio/SBC/bluez_sbc)"
@@ -7738,26 +7714,20 @@ fi
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$CELT_SYSTEM" = "xno" ; then
-         if test "x$usable" = "xyes" ; then
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/celt"
-            HAVE_CELT="yes (internal)"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/celt"
+         HAVE_CELT="yes (internal)"
+      elif test "x$usable" = "xyes" ; then
+
+
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/celt"
+
+         if test "x$CELT_SYSTEM" = "xyes" ; then
+            HAVE_CELT="yes (system)"
          else
-            HAVE_CELT="no (internal library incompatible with build environment)"
+            HAVE_CELT="yes"
          fi
       else
-         if test "x$usable" = "xyes" ; then
-
-
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/celt"
-
-            if test "x$CELT_SYSTEM" = "xyes" ; then
-               HAVE_CELT="yes (system)"
-            else
-               HAVE_CELT="yes"
-            fi
-         else
-            HAVE_CELT="no (package celt not found)"
-         fi
+         HAVE_CELT="no (package celt not found)"
       fi
    else
       HAVE_CELT="no (missing directory $PLUGIN_SRC_DIR/audio/celt)"
@@ -8021,26 +7991,20 @@ fi
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$OPUS_SYSTEM" = "xno" ; then
-         if test "x$usable" = "xyes" ; then
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/Opus"
-            HAVE_OPUS="yes (internal)"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/Opus"
+         HAVE_OPUS="yes (internal)"
+      elif test "x$usable" = "xyes" ; then
+
+
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/Opus"
+
+         if test "x$OPUS_SYSTEM" = "xyes" ; then
+            HAVE_OPUS="yes (system)"
          else
-            HAVE_OPUS="no (internal library incompatible with build environment)"
+            HAVE_OPUS="yes"
          fi
       else
-         if test "x$usable" = "xyes" ; then
-
-
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/Opus"
-
-            if test "x$OPUS_SYSTEM" = "xyes" ; then
-               HAVE_OPUS="yes (system)"
-            else
-               HAVE_OPUS="yes"
-            fi
-         else
-            HAVE_OPUS="no (package opus local-source not found)"
-         fi
+         HAVE_OPUS="no (package opus local-source not found)"
       fi
    else
       HAVE_OPUS="no (missing directory $PLUGIN_SRC_DIR/audio/Opus)"
@@ -8951,26 +8915,20 @@ fi
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$X264_SYSTEM" = "xno" ; then
-         if test "x$usable" = "xyes" ; then
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/x264"
-            HAVE_X264="yes (internal)"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/x264"
+         HAVE_X264="yes (internal)"
+      elif test "x$usable" = "xyes" ; then
+
+
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/x264"
+
+         if test "x$X264_SYSTEM" = "xyes" ; then
+            HAVE_X264="yes (system)"
          else
-            HAVE_X264="no (internal library incompatible with build environment)"
+            HAVE_X264="yes"
          fi
       else
-         if test "x$usable" = "xyes" ; then
-
-
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/x264"
-
-            if test "x$X264_SYSTEM" = "xyes" ; then
-               HAVE_X264="yes (system)"
-            else
-               HAVE_X264="yes"
-            fi
-         else
-            HAVE_X264="no (package x264 >= 0.102 not found)"
-         fi
+         HAVE_X264="no (package x264 >= 0.102 not found)"
       fi
    else
       HAVE_X264="no (missing directory $PLUGIN_SRC_DIR/video/x264)"
@@ -9229,26 +9187,20 @@ $as_echo "$as_me: Using internal source for Cisco Open264 H.264 video codec" >&6
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$OPENH264_SYSTEM" = "xno" ; then
-         if test "x$usable" = "xyes" ; then
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/openh264"
-            HAVE_OPENH264="yes (internal)"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/openh264"
+         HAVE_OPENH264="yes (internal)"
+      elif test "x$usable" = "xyes" ; then
+
+
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/openh264"
+
+         if test "x$OPENH264_SYSTEM" = "xyes" ; then
+            HAVE_OPENH264="yes (system)"
          else
-            HAVE_OPENH264="no (internal library incompatible with build environment)"
+            HAVE_OPENH264="yes"
          fi
       else
-         if test "x$usable" = "xyes" ; then
-
-
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/openh264"
-
-            if test "x$OPENH264_SYSTEM" = "xyes" ; then
-               HAVE_OPENH264="yes (system)"
-            else
-               HAVE_OPENH264="yes"
-            fi
-         else
-            HAVE_OPENH264="no (package local-source not found)"
-         fi
+         HAVE_OPENH264="no (package local-source not found)"
       fi
    else
       HAVE_OPENH264="no (missing directory $PLUGIN_SRC_DIR/video/openh264)"
@@ -9474,26 +9426,20 @@ fi
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$VP8_SYSTEM" = "xno" ; then
-         if test "x$usable" = "xyes" ; then
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/VP8-WebM"
-            HAVE_VP8="yes (internal)"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/VP8-WebM"
+         HAVE_VP8="yes (internal)"
+      elif test "x$usable" = "xyes" ; then
+
+
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/VP8-WebM"
+
+         if test "x$VP8_SYSTEM" = "xyes" ; then
+            HAVE_VP8="yes (system)"
          else
-            HAVE_VP8="no (internal library incompatible with build environment)"
+            HAVE_VP8="yes"
          fi
       else
-         if test "x$usable" = "xyes" ; then
-
-
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/VP8-WebM"
-
-            if test "x$VP8_SYSTEM" = "xyes" ; then
-               HAVE_VP8="yes (system)"
-            else
-               HAVE_VP8="yes"
-            fi
-         else
-            HAVE_VP8="no (package vpx not found)"
-         fi
+         HAVE_VP8="no (package vpx not found)"
       fi
    else
       HAVE_VP8="no (missing directory $PLUGIN_SRC_DIR/video/VP8-WebM)"
@@ -9722,26 +9668,20 @@ fi
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$THEORA_SYSTEM" = "xno" ; then
-         if test "x$usable" = "xyes" ; then
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/THEORA"
-            HAVE_THEORA="yes (internal)"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/THEORA"
+         HAVE_THEORA="yes (internal)"
+      elif test "x$usable" = "xyes" ; then
+
+
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/THEORA"
+
+         if test "x$THEORA_SYSTEM" = "xyes" ; then
+            HAVE_THEORA="yes (system)"
          else
-            HAVE_THEORA="no (internal library incompatible with build environment)"
+            HAVE_THEORA="yes"
          fi
       else
-         if test "x$usable" = "xyes" ; then
-
-
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/THEORA"
-
-            if test "x$THEORA_SYSTEM" = "xyes" ; then
-               HAVE_THEORA="yes (system)"
-            else
-               HAVE_THEORA="yes"
-            fi
-         else
-            HAVE_THEORA="no (package theora not found)"
-         fi
+         HAVE_THEORA="no (package theora not found)"
       fi
    else
       HAVE_THEORA="no (missing directory $PLUGIN_SRC_DIR/video/THEORA)"
@@ -9969,26 +9909,20 @@ fi
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$VPB_SYSTEM" = "xno" ; then
-         if test "x$usable" = "xyes" ; then
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/LID/VPB"
-            HAVE_VPB="yes (internal)"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/LID/VPB"
+         HAVE_VPB="yes (internal)"
+      elif test "x$usable" = "xyes" ; then
+
+
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/LID/VPB"
+
+         if test "x$VPB_SYSTEM" = "xyes" ; then
+            HAVE_VPB="yes (system)"
          else
-            HAVE_VPB="no (internal library incompatible with build environment)"
+            HAVE_VPB="yes"
          fi
       else
-         if test "x$usable" = "xyes" ; then
-
-
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/LID/VPB"
-
-            if test "x$VPB_SYSTEM" = "xyes" ; then
-               HAVE_VPB="yes (system)"
-            else
-               HAVE_VPB="yes"
-            fi
-         else
-            HAVE_VPB="no (package vpb not found)"
-         fi
+         HAVE_VPB="no (package vpb not found)"
       fi
    else
       HAVE_VPB="no (missing directory $PLUGIN_SRC_DIR/LID/VPB)"
@@ -10216,26 +10150,20 @@ fi
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$SPANDSP_SYSTEM" = "xno" ; then
-         if test "x$usable" = "xyes" ; then
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/fax/fax_spandsp"
-            HAVE_SPANDSP="yes (internal)"
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/fax/fax_spandsp"
+         HAVE_SPANDSP="yes (internal)"
+      elif test "x$usable" = "xyes" ; then
+
+
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/fax/fax_spandsp"
+
+         if test "x$SPANDSP_SYSTEM" = "xyes" ; then
+            HAVE_SPANDSP="yes (system)"
          else
-            HAVE_SPANDSP="no (internal library incompatible with build environment)"
+            HAVE_SPANDSP="yes"
          fi
       else
-         if test "x$usable" = "xyes" ; then
-
-
-            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/fax/fax_spandsp"
-
-            if test "x$SPANDSP_SYSTEM" = "xyes" ; then
-               HAVE_SPANDSP="yes (system)"
-            else
-               HAVE_SPANDSP="yes"
-            fi
-         else
-            HAVE_SPANDSP="no (package spandsp not found)"
-         fi
+         HAVE_SPANDSP="no (package spandsp not found)"
       fi
    else
       HAVE_SPANDSP="no (missing directory $PLUGIN_SRC_DIR/fax/fax_spandsp)"
