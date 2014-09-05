@@ -258,12 +258,12 @@ static int valid_for_h323(
 }
 
 static const char * default_narrow_sip_options[][3] = {
-  { "fmtp",                       "sr=8000,mode=any" ,      "s" },
+  { "fmtp", "mode=any", "s" },
   { NULL, NULL, NULL }
 };
 
 static const char * default_wide_sip_options[][3] = {
-  { "fmtp",                       "sr=16000,mode=any" ,     "s" },
+  { "fmtp", "mode=any", "s" },
   { NULL, NULL, NULL }
 };
 

@@ -702,6 +702,9 @@
     <ClCompile Include="..\csharp\csharp_msvc_wrapper.cxx">
       <Filter>Source Files\SWIG\C#</Filter>
     </ClCompile>
+    <ClCompile Include="..\codec\speexmf.cxx">
+      <Filter>Source Files\Codec</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\codec\echocancel.h">
