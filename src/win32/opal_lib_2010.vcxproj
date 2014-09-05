@@ -325,6 +325,7 @@
     <Lib />
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\codec\speexmf.cxx" />
     <ClCompile Include="..\sdp\sdphttpep.cxx" />
     <ClCompile Include="..\rtp\rtp_stream.cxx" />
     <ClCompile Include="..\rtp\rtp_fec.cxx" />
