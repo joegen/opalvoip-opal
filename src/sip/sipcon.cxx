@@ -1787,7 +1787,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
                   m_canDoVideoFastUpdateINFO = false;
                 }
                 break;
-#endif
+#endif // OPAL_VIDEO
 
               default :
                 break;
