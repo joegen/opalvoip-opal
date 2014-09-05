@@ -821,11 +821,13 @@ void MySkinnyEndPoint::AutoRegister(const PString & server, const PString & wild
   PStringArray names, servers;
   ExpandWildcards(wildcard, names, servers);
 
+  PStringArray oldNames = GetPhoneDeviceNames();
+
   for (PINDEX i = 0; i < names.GetSize(); ++i) {
     PString name = names[i];
 
     if (registering) {
-      if (!Register(actualServer, name, m_deviceType)) {
+      if (oldNames.GetValuesIndex(name) == P_MAX_INDEX && !Register(actualServer, name, m_deviceType)) {
         PSYSTEMLOG(Error, "Could not register " << name << " with skinny server \"" << actualServer << '"');
       }
     }
