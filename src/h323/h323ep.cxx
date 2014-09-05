@@ -440,7 +440,7 @@ static void AddInterfaces(PIPSocketAddressAndPortVector & gatekeeperInterfaces, 
   PIPSocket::GetInterfaceTable(interfaces);
 
   for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
-    if (interfaces[i].GetAddress().GetVersion() == version)
+    if (interfaces[i].GetAddress().GetVersion() == version && !interfaces[i].GetAddress().IsLoopback())
       gatekeeperInterfaces.push_back(PIPSocketAddressAndPort(interfaces[i].GetAddress(), port));
   }
 }
