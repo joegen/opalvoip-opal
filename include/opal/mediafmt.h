@@ -1569,6 +1569,8 @@ extern const OpalAudioFormat & GetOpalG7231_Cisco_AR();
 extern const OpalAudioFormat & GetOpalGSM0610();
 extern const OpalAudioFormat & GetOpalGSMAMR();
 extern const OpalAudioFormat & GetOpaliLBC();
+extern const OpalAudioFormat & GetOpalSpeexNB();
+extern const OpalAudioFormat & GetOpalSpeexWB();
 
 #if OPAL_VIDEO
 extern const OpalVideoFormat & GetOpalH261();
@@ -1635,6 +1637,8 @@ extern const OpalMediaFormat & GetOpalT38();
 #define OpalGSM0610        GetOpalGSM0610()
 #define OpalGSMAMR         GetOpalGSMAMR()
 #define OpaliLBC           GetOpaliLBC()
+#define OpalSpeexNB        GetOpalSpeexNB()
+#define OpalSpeexWB        GetOpalSpeexWB()
 #define OpalRFC2833        GetOpalRFC2833()
 #define OpalCiscoNSE       GetOpalCiscoNSE()
 #define OpalT38            GetOpalT38()
