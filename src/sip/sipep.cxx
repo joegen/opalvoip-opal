@@ -553,6 +553,8 @@ PBoolean SIPEndPoint::GarbageCollection()
   for (PSafePtr<RegistrarAoR> ua(m_registeredUAs); ua != NULL; ++ua) {
     if (ua->ExpireBindings())
       OnChangedRegistrarAoR(*ua);
+    if (!ua->HasBindings())
+      m_registeredUAs.Remove(ua);
   }
   bool registrarDone = m_registeredUAs.DeleteObjectsToBeRemoved();
 
@@ -834,7 +836,7 @@ bool SIPEndPoint::OnReceivedREGISTER(SIP_PDU & request)
     return true;
   }
 
-  SIP_PDU response(request);
+  SIP_PDU response(request, SIP_PDU::Successful_OK);
   response.SetStatusCode(InternalHandleREGISTER(request, &response));
   if (response.GetStatusCode() == SIP_PDU::Successful_OK) {
     // Private extension for mass registration.
@@ -878,7 +880,7 @@ SIP_PDU::StatusCodes SIPEndPoint::InternalHandleREGISTER(SIP_PDU & request, SIP_
   SIP_PDU::StatusCodes status = ua->OnReceivedREGISTER(*this, request);
   if (status == SIP_PDU::Successful_OK) {
     OnChangedRegistrarAoR(*ua);
-    if (response != NULL)
+    if (response != NULL && ua->HasBindings())
       response->GetMIME().SetContact(ua->GetContacts().ToString());
   }
   return status;
