@@ -121,19 +121,11 @@ static struct GstInitInfo {
   { OPAL_GSM0610,       "rtpgsmdepay",   "gsmdec",      "rtpgsmpay",          "gsmenc"     },
   { OPAL_GSMAMR,        "rtpamrdepay",   "amrnbdec",    "rtpamrpay",          "amrnbenc"   },
   { OPAL_G7222,         "rtpamrdepay",   "amrwbdec",    "rtpamrpay",          "amrwbenc"   },
-  { OPAL_G726_40K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726"
-                                                                              " bitrate=40000"
-  },
-  { OPAL_G726_32K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726"
-                                                                              " bitrate=32000"
-  },
-  { OPAL_G726_24K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726"
-                                                                              " bitrate=24000"
-  },
-#if 0
-  { "CELT-32K",         "rtpceltdepay",  "celtdec",     "rtpceltpay",         "celtenc"    },
-  { "Speex",            "rtpspeexdepay", "speexdec",    "rtpspeexpay",        "speexenc"   },
-#endif
+  { OPAL_G726_40K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726 bitrate=40000" },
+  { OPAL_G726_32K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726 bitrate=32000" },
+  { OPAL_G726_24K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726 bitrate=24000" },
+  { "SpeexNB"           "rtpspeexdepay", "speexdec",    "rtpspeexpay",        "speexenc mode=nb" },
+  { "SpeexWB"           "rtpspeexdepay", "speexdec",    "rtpspeexpay",        "speexenc mode=wb" },
 #if OPAL_VIDEO
   { OPAL_H261,          "",              "ffdec_h261",  "",                   "ffenc_h261" },
   { OPAL_H263,          "rtph263depay",  "ffdec_h263",  "rtph263pay",         "ffenc_h263"
