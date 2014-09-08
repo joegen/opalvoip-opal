@@ -203,8 +203,7 @@ PSafePtr<OpalConnection> OpalSkinnyEndPoint::MakeConnection(OpalCall & call,
     numberName = party;
 
   PString number, name;
-  if (!numberName.Split('@', number, name))
-    number = numberName;
+  numberName.Split('@', number, name, PString::SplitDefaultToBefore|PString::SplitTrim);
 
   if (!OpalIsE164(number)) {
     PTRACE(2, "Remote party \"" << number << "\" is not an E.164 number.");

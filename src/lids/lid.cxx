@@ -490,8 +490,7 @@ bool OpalLineInterfaceDevice::SetToneDescription(unsigned line,
     return true;
 
   PString freqDesc, cadenceDesc;
-  if (!description.Split(':', freqDesc, cadenceDesc))
-    freqDesc = description;
+  description.Split(':', freqDesc, cadenceDesc, PString::SplitTrim|PString::SplitDefaultToBefore);
 
   ToneMixingModes mode = SimpleTone;
   unsigned low_freq, high_freq;
@@ -1004,9 +1003,7 @@ OpalLineInterfaceDevice * OpalLineInterfaceDevice::CreateAndOpen(const PString &
                                                                  void * parameters)
 {
   PString deviceType, deviceName;
-  descriptor.Split(':', deviceType, deviceName);
-
-  if (deviceType.IsEmpty() || deviceName.IsEmpty()) {
+  if (!descriptor.Split(':', deviceType, deviceName, PString::SplitTrim|PString::SplitNonEmpty)) {
     PTRACE2(1, NULL, "LID\tInvalid device description \"" << descriptor << '"');
     return NULL;
   }

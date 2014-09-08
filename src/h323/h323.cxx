@@ -1883,8 +1883,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
 
   if (addAccessTokenToSetup && !gkAccessTokenOID && !gkAccessTokenData.IsEmpty()) {
     PString oid1, oid2;
-    if (!gkAccessTokenOID.Split(',', oid1, oid2))
-      oid1 = oid2 = gkAccessTokenOID;
+    gkAccessTokenOID.Split(',', oid1, oid2, PString::SplitTrim|PString::SplitDefaultToBefore|PString::SplitDefaultToAfter);
     setup.IncludeOptionalField(H225_Setup_UUIE::e_tokens);
     PINDEX last = setup.m_tokens.GetSize();
     setup.m_tokens.SetSize(last+1);
