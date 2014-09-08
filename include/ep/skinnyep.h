@@ -164,7 +164,8 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
     bool Register(
       const PString & server,      ///< Server to register with
       const PString & name,        ///< Name of cient "psuedo device" to register
-      unsigned deviceType = DefaultDeviceType  ///< Device type code
+      unsigned deviceType = DefaultDeviceType,  ///< Device type code
+      const PString & localInterface = PString::Empty()  ///< Local binding interface
     );
 
     /** Unregister from server.
@@ -175,8 +176,9 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
 
     /// Create a new PhoneDevice object
     PhoneDevice * CreatePhoneDevice(
-      const PString & name,   ///< Name of cient "psuedo device" to register
-      unsigned deviceType     ///< Device type code
+      const PString & name,           ///< Name of cient "psuedo device" to register
+      unsigned deviceType,            ///< Device type code
+      const PString & localInterface  ///< Local binding interface
     );
 
     PhoneDevice * GetPhoneDevice(
@@ -193,7 +195,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
     {
       PCLASSINFO(PhoneDevice, PObject);
       public:
-        PhoneDevice(OpalSkinnyEndPoint & ep, const PString & name, unsigned deviceType);
+        PhoneDevice(OpalSkinnyEndPoint & ep, const PString & name, unsigned deviceType, const PString & localInterface);
         ~PhoneDevice() { Close(); }
 
         virtual void PrintOn(ostream & strm) const;

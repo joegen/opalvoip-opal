@@ -64,6 +64,7 @@ static const PConstString ProductVersionKey("Product Version");
 
 #if OPAL_SKINNY
 static const PConstString SkinnyServerKey("SCCP Server");
+static const PConstString SkinnyInterfaceKey("SCCP Interface");
 static const PConstString SkinnyTypeKey("SCCP Device Type");
 static const PConstString SkinnyNamesKey("SCCP Device Names");
 static const PConstString SkinnySimulatedAudioFileKey("SCCP Simulated Audio File");
@@ -784,8 +785,10 @@ MySkinnyEndPoint::MySkinnyEndPoint(MyManager & mgr)
 
 bool MySkinnyEndPoint::Configure(PConfig &, PConfigPage * rsrc)
 {
-  m_defaultServer = rsrc->AddStringField(SkinnyServerKey, 20, PString::Empty(),
-                                  "Default server for Skinny Client Control Protocol (SCCP).");
+  m_defaultServer = rsrc->AddStringField(SkinnyServerKey, 0, PString::Empty(),
+                                  "Default server for Skinny Client Control Protocol (SCCP).", 1, 30);
+  m_defaultInterface = rsrc->AddStringField(SkinnyInterfaceKey, 0, m_defaultInterface,
+                                  "Default network interface for Skinny Client Control Protocol (SCCP).", 1, 30);
   m_deviceType = rsrc->AddIntegerField(SkinnyTypeKey, 1, 32767, m_deviceType, "",
                                        "Device type for SCCP. Default 30016 = Cisco IP Communicator.");
   m_deviceNames = rsrc->AddStringArrayField(SkinnyNamesKey, false, 0, m_deviceNames,

@@ -323,6 +323,7 @@ public:
 protected:
   MyManager  & m_manager;
   PString      m_defaultServer;
+  PString      m_defaultInterface;
   unsigned     m_deviceType;
   PStringArray m_deviceNames;
 };

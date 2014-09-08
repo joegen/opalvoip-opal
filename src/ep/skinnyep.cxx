@@ -267,7 +267,7 @@ OpalSkinnyConnection * OpalSkinnyEndPoint::CreateConnection(OpalCall & call,
 }
 
 
-bool OpalSkinnyEndPoint::Register(const PString & server, const PString & name, unsigned deviceType)
+bool OpalSkinnyEndPoint::Register(const PString & server, const PString & name, unsigned deviceType, const PString & localInterface)
 {
   if (name.IsEmpty() || name.GetLength() > RegisterMsg::MaxNameSize) {
     PTRACE(2, "Illegal phone device name \"" << name << '"');
@@ -286,7 +286,7 @@ bool OpalSkinnyEndPoint::Register(const PString & server, const PString & name, 
     m_phoneDevices.RemoveAt(name);
   }
 
-  phoneDevice = CreatePhoneDevice(name, deviceType);
+  phoneDevice = CreatePhoneDevice(name, deviceType, localInterface);
   if (phoneDevice == NULL) {
     PTRACE(3, "Could not create phone device for \"" << name << '"');
     return false;
@@ -317,17 +317,17 @@ bool OpalSkinnyEndPoint::Unregister(const PString & name)
 }
 
 
-OpalSkinnyEndPoint::PhoneDevice * OpalSkinnyEndPoint::CreatePhoneDevice(const PString & name, unsigned deviceType)
+OpalSkinnyEndPoint::PhoneDevice * OpalSkinnyEndPoint::CreatePhoneDevice(const PString & name, unsigned deviceType, const PString & localInterface)
 {
-  return new PhoneDevice(*this, name, deviceType);
+  return new PhoneDevice(*this, name, deviceType, localInterface);
 }
 
 
-OpalSkinnyEndPoint::PhoneDevice::PhoneDevice(OpalSkinnyEndPoint & ep, const PString & name, unsigned deviceType)
+OpalSkinnyEndPoint::PhoneDevice::PhoneDevice(OpalSkinnyEndPoint & ep, const PString & name, unsigned deviceType, const PString & localInterface)
   : m_endpoint(ep)
   , m_name(name)
   , m_deviceType(deviceType)
-  , m_transport(ep)
+  , m_transport(ep, PIPAddress(localInterface))
 {
   m_transport.SetPDULengthFormat(-4, 4);
 }
