@@ -555,7 +555,8 @@ bool H323EndPoint::InternalRestartGatekeeper(bool adjustingRegistrations)
     }
     if (deletedOne) {
       gk->SetAliases(aliases);
-      gk->ReRegisterNow();
+      if (!aliases.IsEmpty())
+        gk->ReRegisterNow();
     }
   }
 
