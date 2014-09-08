@@ -290,7 +290,6 @@ GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
 {
   OpalMediaFormat::RegisterKnownMediaFormats(); // Make sure codecs are loaded
 
-  PStringToString gstEncoderToMediaFormat;
   for (PINDEX i = 0; i < PARRAYSIZE(DefaultMediaFormatToGStreamer); ++i) {
     OpalMediaFormat mediaFormat(DefaultMediaFormatToGStreamer[i].m_mediaFormat);
     if (PAssert(mediaFormat.IsValid(), "Unknown media format")) {
@@ -299,7 +298,6 @@ GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
       info.m_packetiser   = DefaultMediaFormatToGStreamer[i].m_packetiser;
       info.m_decoder      = DefaultMediaFormatToGStreamer[i].m_decoder;
       info.m_depacketiser = DefaultMediaFormatToGStreamer[i].m_depacketiser;
-      gstEncoderToMediaFormat.SetAt(FirstWord(info.m_encoder), mediaFormat);
     }
   }
 
@@ -315,19 +313,11 @@ GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
   PTRACE(4, "Video decoder elements:\n" << setfill('\n') << PGstPluginFeature::Inspect("Codec/Decoder/Video", true));
 #endif // OPAL_VIDEO
 
-  for (PStringList::iterator enc = encoders.begin(); enc != encoders.end(); ++enc) {
-    OpalMediaFormat mediaFormat = gstEncoderToMediaFormat(*enc);
-    if (mediaFormat.IsValid()) {
-      CodecPipelineMap::iterator inf = m_MediaFormatToGStreamer.find(mediaFormat);
-      if (inf != m_MediaFormatToGStreamer.end()) {
-        for (PStringList::iterator dec = decoders.begin(); dec != decoders.end(); ++dec) {
-          if (inf->second.m_decoder.NumCompare(*dec) == EqualTo) {
-            m_mediaFormatsAvailable += mediaFormat;
-            break;
-          }
-        }
-      }
-    }
+  for (CodecPipelineMap::iterator it = m_MediaFormatToGStreamer.begin(); it != m_MediaFormatToGStreamer.end(); ++it) {
+    PStringList::iterator enc = encoders.find(FirstWord(it->second.m_encoder));
+    PStringList::iterator dec = decoders.find(FirstWord(it->second.m_decoder));
+    if (enc != encoders.end() && dec != decoders.end())
+      m_mediaFormatsAvailable += it->first;
   }
 
   PTRACE(3, "Constructed GStream endpoint: media formats=" << setfill(',') << m_mediaFormatsAvailable);
