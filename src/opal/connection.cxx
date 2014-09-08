@@ -664,7 +664,7 @@ void OpalConnection::AdjustMediaFormats(bool   local,
     for (PStringToString::const_iterator it = m_stringOptions.begin(); it != m_stringOptions.end(); ++it) {
       PString key = it->first;
       PString fmtName, optName;
-      if (key.Split(':', fmtName, optName) && !fmtName.IsEmpty() && !optName.IsEmpty()) {
+      if (key.Split(':', fmtName, optName, PString::SplitTrimBefore|PString::SplitNonEmpty)) {
         PString optValue = it->second;
         OpalMediaFormatList::const_iterator iterFormat;
         while ((iterFormat = mediaFormats.FindFormat(fmtName, iterFormat)) != mediaFormats.end()) {

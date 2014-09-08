@@ -1437,7 +1437,7 @@ bool SDPCryptoSuite::Decode(const PString & sdp)
   PStringArray keyParams = sdp(space+1, sessionParamsPos-1).Tokenise(';');
   for (PINDEX kp =0; kp < keyParams.GetSize(); ++kp) {
     PCaselessString method, info;
-    if (!keyParams[kp].Split(':', method, info) || method != "inline" || info.IsEmpty()) {
+    if (!keyParams[kp].Split(':', method, info, PString::SplitTrim|PString::SplitDefaultToBefore|PString::SplitAfterNonEmpty) || method != "inline") {
       PTRACE(2, "Unsupported method \"" << method << '"');
       return false;
     }

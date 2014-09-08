@@ -178,7 +178,7 @@ void OpalFaxSession::ApplyMediaOptions(const OpalMediaFormat & mediaFormat)
 
     for (PINDEX i = 0 ; i < value.GetSize() ; i++) {
       PString size, redundancy;
-      if (value[i].Split(':', size, redundancy))
+      if (value[i].Split(':', size, redundancy, PString::SplitTrim|PString::SplitBeforeNonEmpty|PString::SplitAfterNonEmpty))
         m_redundancy[size.AsInteger()] = redundancy.AsInteger();
     }
 

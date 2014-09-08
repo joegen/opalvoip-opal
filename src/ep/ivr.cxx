@@ -314,8 +314,7 @@ bool OpalIVRConnection::StartScript(const PString & script)
     }
 
     PString key, val;
-    if (!str.Split('=', key, val))
-      key = str;
+    str.Split('=', key, val, PString::SplitDefaultToBefore|PString::SplitTrimBefore);
 
     if (key *= "repeat") {
       if (!val.IsEmpty())
