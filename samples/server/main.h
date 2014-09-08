@@ -317,7 +317,7 @@ public:
 
   bool Configure(PConfig & cfg, PConfigPage * rsrc);
 
-  void AutoRegister(const PString & server, const PString & name, bool registering);
+  void AutoRegister(const PString & server, const PString & name, const PString & localInterface, bool registering);
   void ExpandWildcards(const PStringArray & input, PStringArray & names, PStringArray & servers);
 
 protected:

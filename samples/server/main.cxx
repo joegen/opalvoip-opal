@@ -817,9 +817,10 @@ bool MySkinnyEndPoint::Configure(PConfig &, PConfigPage * rsrc)
 }
 
 
-void MySkinnyEndPoint::AutoRegister(const PString & server, const PString & wildcard, bool registering)
+void MySkinnyEndPoint::AutoRegister(const PString & server, const PString & wildcard, const PString & localInterface, bool registering)
 {
   PString actualServer = server.IsEmpty() ? m_defaultServer : server;
+  PString actualInterface = localInterface.IsEmpty() ? m_defaultInterface : localInterface;
 
   PStringArray names, servers;
   ExpandWildcards(wildcard, names, servers);
@@ -830,7 +831,7 @@ void MySkinnyEndPoint::AutoRegister(const PString & server, const PString & wild
     PString name = names[i];
 
     if (registering) {
-      if (oldNames.GetValuesIndex(name) == P_MAX_INDEX && !Register(actualServer, name, m_deviceType)) {
+      if (oldNames.GetValuesIndex(name) == P_MAX_INDEX && !Register(actualServer, name, m_deviceType, actualInterface)) {
         PSYSTEMLOG(Error, "Could not register " << name << " with skinny server \"" << actualServer << '"');
       }
     }

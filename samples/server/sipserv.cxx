@@ -147,9 +147,9 @@ void MyManager::OnChangedRegistrarAoR(const PURL & aor, bool registering)
 
 #if OPAL_SKINNY
   if (aor.GetScheme() == "sccp")
-    GetSkinnyEndPoint().AutoRegister(aor.GetHostPort(), aor.GetUserName(), registering);
+    GetSkinnyEndPoint().AutoRegister(aor.GetHostPort(), aor.GetUserName(), aor.GetParamVars()("interface"), registering);
   else if (GetSIPEndPoint().m_autoRegisterSkinny && aor.GetScheme().NumCompare("sip") == EqualTo)
-    GetSkinnyEndPoint().AutoRegister(PString::Empty(), aor.GetUserName(), registering);
+    GetSkinnyEndPoint().AutoRegister(PString::Empty(), aor.GetUserName(), aor.GetParamVars()("interface"), registering);
 #endif // OPAL_SKINNY
 }
 #endif // OPAL_H323 || OPAL_SKINNY
