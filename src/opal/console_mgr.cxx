@@ -666,8 +666,10 @@ bool H323ConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PStrin
   if (args.HasOption("gk-suppress-grq"))
     SetSendGRQ(false);
 
+#if OPAL_H239
   if (args.HasOption("h239-control"))
     SetDefaultH239Control(true);
+#endif
 
   if (verbose)
     output << "H.323 Aliases: " << setfill(',') << GetAliasNames() << setfill(' ') << "\n"
@@ -799,7 +801,9 @@ void H323ConsoleEndPoint::AddCommands(PCLI & cli)
   cli.SetCommand("h323 fast-connect-disable", disableFastStart, "Fast Connect Disable");
   cli.SetCommand("h323 tunnel-h245-disable", disableH245Tunneling, "H.245 Tunnelling Disable");
   cli.SetCommand("h323 h245-in-setup-disable", disableH245inSetup, "H.245 in SETUP Disable");
+#if OPAL_H239
   cli.SetCommand("h323 h239-control", m_defaultH239Control, "H.239 control capability enable");
+#endif
   cli.SetCommand("h323 term-type", PCREATE_NOTIFIER(CmdTerminalType), "Terminal type value (1..255, default 50)");
   cli.SetCommand("h323 compatibility", PCREATE_NOTIFIER(CmdCompatibility),
                  "Set remote system identification extended regular expression for compatibility issues.",
