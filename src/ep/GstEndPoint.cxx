@@ -121,19 +121,11 @@ static struct GstInitInfo {
   { OPAL_GSM0610,       "rtpgsmdepay",   "gsmdec",      "rtpgsmpay",          "gsmenc"     },
   { OPAL_GSMAMR,        "rtpamrdepay",   "amrnbdec",    "rtpamrpay",          "amrnbenc"   },
   { OPAL_G7222,         "rtpamrdepay",   "amrwbdec",    "rtpamrpay",          "amrwbenc"   },
-  { OPAL_G726_40K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726"
-                                                                              " bitrate=40000"
-  },
-  { OPAL_G726_32K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726"
-                                                                              " bitrate=32000"
-  },
-  { OPAL_G726_24K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726"
-                                                                              " bitrate=24000"
-  },
-#if 0
-  { "CELT-32K",         "rtpceltdepay",  "celtdec",     "rtpceltpay",         "celtenc"    },
-  { "Speex",            "rtpspeexdepay", "speexdec",    "rtpspeexpay",        "speexenc"   },
-#endif
+  { OPAL_G726_40K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726 bitrate=40000" },
+  { OPAL_G726_32K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726 bitrate=32000" },
+  { OPAL_G726_24K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726 bitrate=24000" },
+  { OPAL_SPEEX_NB,      "rtpspeexdepay", "speexdec",    "rtpspeexpay",        "speexenc mode=nb" },
+  { OPAL_SPEEX_WB,      "rtpspeexdepay", "speexdec",    "rtpspeexpay",        "speexenc mode=wb" },
 #if OPAL_VIDEO
   { OPAL_H261,          "",              "ffdec_h261",  "",                   "ffenc_h261" },
   { OPAL_H263,          "rtph263depay",  "ffdec_h263",  "rtph263pay",         "ffenc_h263"
@@ -298,7 +290,6 @@ GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
 {
   OpalMediaFormat::RegisterKnownMediaFormats(); // Make sure codecs are loaded
 
-  PStringToString gstEncoderToMediaFormat;
   for (PINDEX i = 0; i < PARRAYSIZE(DefaultMediaFormatToGStreamer); ++i) {
     OpalMediaFormat mediaFormat(DefaultMediaFormatToGStreamer[i].m_mediaFormat);
     if (PAssert(mediaFormat.IsValid(), "Unknown media format")) {
@@ -307,7 +298,6 @@ GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
       info.m_packetiser   = DefaultMediaFormatToGStreamer[i].m_packetiser;
       info.m_decoder      = DefaultMediaFormatToGStreamer[i].m_decoder;
       info.m_depacketiser = DefaultMediaFormatToGStreamer[i].m_depacketiser;
-      gstEncoderToMediaFormat.SetAt(FirstWord(info.m_encoder), mediaFormat);
     }
   }
 
@@ -323,19 +313,11 @@ GstEndPoint::GstEndPoint(OpalManager & manager, const char *prefix)
   PTRACE(4, "Video decoder elements:\n" << setfill('\n') << PGstPluginFeature::Inspect("Codec/Decoder/Video", true));
 #endif // OPAL_VIDEO
 
-  for (PStringList::iterator enc = encoders.begin(); enc != encoders.end(); ++enc) {
-    OpalMediaFormat mediaFormat = gstEncoderToMediaFormat(*enc);
-    if (mediaFormat.IsValid()) {
-      CodecPipelineMap::iterator inf = m_MediaFormatToGStreamer.find(mediaFormat);
-      if (inf != m_MediaFormatToGStreamer.end()) {
-        for (PStringList::iterator dec = decoders.begin(); dec != decoders.end(); ++dec) {
-          if (inf->second.m_decoder.NumCompare(*dec) == EqualTo) {
-            m_mediaFormatsAvailable += mediaFormat;
-            break;
-          }
-        }
-      }
-    }
+  for (CodecPipelineMap::iterator it = m_MediaFormatToGStreamer.begin(); it != m_MediaFormatToGStreamer.end(); ++it) {
+    PStringList::iterator enc = encoders.find(FirstWord(it->second.m_encoder));
+    PStringList::iterator dec = decoders.find(FirstWord(it->second.m_decoder));
+    if (enc != encoders.end() && dec != decoders.end())
+      m_mediaFormatsAvailable += it->first;
   }
 
   PTRACE(3, "Constructed GStream endpoint: media formats=" << setfill(',') << m_mediaFormatsAvailable);
