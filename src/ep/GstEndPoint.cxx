@@ -124,8 +124,8 @@ static struct GstInitInfo {
   { OPAL_G726_40K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726 bitrate=40000" },
   { OPAL_G726_32K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726 bitrate=32000" },
   { OPAL_G726_24K,      "rtpg726depay",  "ffdec_g726",  "rtpg726pay",         "ffenc_g726 bitrate=24000" },
-  { "SpeexNB"           "rtpspeexdepay", "speexdec",    "rtpspeexpay",        "speexenc mode=nb" },
-  { "SpeexWB"           "rtpspeexdepay", "speexdec",    "rtpspeexpay",        "speexenc mode=wb" },
+  { OPAL_SPEEX_NB,      "rtpspeexdepay", "speexdec",    "rtpspeexpay",        "speexenc mode=nb" },
+  { OPAL_SPEEX_WB,      "rtpspeexdepay", "speexdec",    "rtpspeexpay",        "speexenc mode=wb" },
 #if OPAL_VIDEO
   { OPAL_H261,          "",              "ffdec_h261",  "",                   "ffenc_h261" },
   { OPAL_H263,          "rtph263depay",  "ffdec_h263",  "rtph263pay",         "ffenc_h263"
