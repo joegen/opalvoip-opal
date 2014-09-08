@@ -808,7 +808,9 @@ bool MySkinnyEndPoint::Configure(PConfig &, PConfigPage * rsrc)
   }
 
   for (PINDEX i = 0; i < newNames.GetSize(); ++i) {
-    if (!Register(servers[i], newNames[i], m_deviceType)) {
+    PString server, localInterface;
+    servers[i].Split(";interface=", server, localInterface, PString::SplitDefaultToBefore | PString::SplitTrim);
+    if (!Register(server, newNames[i], m_deviceType, localInterface)) {
       PSYSTEMLOG(Error, "Could not register " << newNames[i] << " with skinny server \"" << servers[i] << '"');
     }
   }
