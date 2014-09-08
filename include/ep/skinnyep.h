@@ -201,7 +201,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
         virtual void PrintOn(ostream & strm) const;
 
         bool Start(const PString & server);
-        void Stop();
+        bool Stop();
         void Close();
 
         bool SendSkinnyMsg(const SkinnyMsg & msg);

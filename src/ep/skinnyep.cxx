@@ -135,27 +135,33 @@ void OpalSkinnyEndPoint::ShutDown()
 {
   PTRACE(3, "Endpoint shutting down.");
 
+  PhoneDeviceDict::iterator it;
+
   m_phoneDevicesMutex.Wait();
 
-  for (PhoneDeviceDict::iterator it = m_phoneDevices.begin(); it != m_phoneDevices.end(); ++it)
-    it->second.Stop();
-
-  // Wait a bit for ack replies.
-  for (PINDEX wait = 0; wait < 10; ++wait) {
-    PhoneDeviceDict::iterator it;
-    for (it = m_phoneDevices.begin(); it != m_phoneDevices.end(); ++it) {
-      if (it->second.m_status == RegisteredStatusText)
-        break;
-    }
-    if (it == m_phoneDevices.end())
-      break;
-
-    m_phoneDevicesMutex.Signal();
-    PThread::Sleep(200);
-    m_phoneDevicesMutex.Wait();
+  bool waitForAtLeastOne = false;
+  for (it = m_phoneDevices.begin(); it != m_phoneDevices.end(); ++it) {
+    if (it->second.Stop())
+      waitForAtLeastOne = true;
   }
 
-  for (PhoneDeviceDict::iterator it = m_phoneDevices.begin(); it != m_phoneDevices.end(); ++it)
+  if (waitForAtLeastOne) {
+    // Wait a bit for ack replies.
+    for (PINDEX wait = 0; wait < 10; ++wait) {
+      for (it = m_phoneDevices.begin(); it != m_phoneDevices.end(); ++it) {
+        if (it->second.m_status == RegisteredStatusText)
+          break;
+      }
+      if (it == m_phoneDevices.end())
+        break;
+
+      m_phoneDevicesMutex.Signal();
+      PThread::Sleep(200);
+      m_phoneDevicesMutex.Wait();
+    }
+  }
+
+  for (it = m_phoneDevices.begin(); it != m_phoneDevices.end(); ++it)
     it->second.Close();
 
   m_phoneDevicesMutex.Signal();
@@ -250,6 +256,13 @@ PSafePtr<OpalConnection> OpalSkinnyEndPoint::MakeConnection(OpalCall & call,
 
 PBoolean OpalSkinnyEndPoint::GarbageCollection()
 {
+  for (PhoneDeviceDict::iterator it = m_phoneDevices.begin(); it != m_phoneDevices.end(); ) {
+    if (it->second.m_transport.IsRunning())
+      ++it;
+    else
+      m_phoneDevices.erase(it++);
+  }
+
   return OpalEndPoint::GarbageCollection();
 }
 
@@ -307,7 +320,8 @@ bool OpalSkinnyEndPoint::Unregister(const PString & name)
 
   PhoneDeviceDict::iterator it = m_phoneDevices.find(name);
   if (it != m_phoneDevices.end()) {
-    m_phoneDevices.erase(it);
+    if (!it->second.Stop())
+      it->second.m_exit.Signal();
     return true;
   }
 
@@ -381,12 +395,13 @@ bool OpalSkinnyEndPoint::PhoneDevice::SendRegisterMsg()
 }
 
 
-void OpalSkinnyEndPoint::PhoneDevice::Stop()
+bool OpalSkinnyEndPoint::PhoneDevice::Stop()
 {
-  if (m_status == RegisteredStatusText) {
-    PTRACE(4, "Unregistering " << m_name);
-    SendSkinnyMsg(UnregisterMsg());
-  }
+  if (m_status != RegisteredStatusText)
+    return false;
+
+  PTRACE(4, "Unregistering " << m_name);
+  return SendSkinnyMsg(UnregisterMsg());
 }
 
 
@@ -394,12 +409,10 @@ void OpalSkinnyEndPoint::PhoneDevice::Close()
 {
   PTRACE(4, "Closing " << m_name);
 
-  Stop();
-
-  // Wait a bit for ack reply.
-  if (m_status == RegisteredStatusText) {
+  if (Stop()) {
+    // Wait a bit for ack reply.
     for (PINDEX wait = 0; wait < 10; ++wait) {
-      if (!m_transport.IsOpen())
+      if (m_status != RegisteredStatusText)
         break;
       PThread::Sleep(200);
     }
@@ -412,11 +425,11 @@ void OpalSkinnyEndPoint::PhoneDevice::Close()
 
 bool OpalSkinnyEndPoint::PhoneDevice::SendSkinnyMsg(const SkinnyMsg & msg)
 {
-  PTRACE(3, "Sending " << msg);
+  PTRACE(4, "Sending " << msg << " for " << m_name << " on " << m_transport);
   if (m_transport.Write(msg.GetPacketPtr(), msg.GetPacketLen()))
     return true;
 
-  PTRACE(2, "Error writing message for " << m_name << " to " << m_transport.GetRemoteAddress().GetHostName());
+  PTRACE(2, "Error writing message for " << m_name << " on " << m_transport);
   return false;
 }
 
