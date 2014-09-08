@@ -125,6 +125,7 @@ RegistrationStatusPage::RegistrationStatusPage(MyManager & mgr, const PHTTPAutho
 PString RegistrationStatusPage::LoadText(PHTTPRequest & request)
 {
 #if OPAL_H323
+  m_h323.clear();
   const PList<H323Gatekeeper> gkList = m_manager.GetH323EndPoint().GetGatekeepers();
   for (PList<H323Gatekeeper>::const_iterator gk = gkList.begin(); gk != gkList.end(); ++gk) {
     PString addr = '@' + gk->GetTransport().GetRemoteAddress().GetHostName(true);
@@ -142,6 +143,7 @@ PString RegistrationStatusPage::LoadText(PHTTPRequest & request)
 #endif
 
 #if OPAL_SIP
+  m_sip.clear();
   SIPEndPoint & sipEP = m_manager.GetSIPEndPoint();
   const PStringList & registrations = sipEP.GetRegistrations(true);
   for (PStringList::const_iterator it = registrations.begin(); it != registrations.end(); ++it)
@@ -150,6 +152,7 @@ PString RegistrationStatusPage::LoadText(PHTTPRequest & request)
 #endif
 
 #if OPAL_SKINNY
+  m_skinny.clear();
   OpalSkinnyEndPoint * ep = m_manager.FindEndPointAs<OpalSkinnyEndPoint>(OPAL_PREFIX_SKINNY);
   if (ep != NULL) {
     PArray<PString> names = ep->GetPhoneDeviceNames();
