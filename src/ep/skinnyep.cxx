@@ -658,9 +658,12 @@ void OpalSkinnyEndPoint::CapabilityResponseMsg::SetCount(PINDEX count)
 
 bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & phone, const CallStateMsg & msg)
 {
-  if (phone.m_activeConnection != NULL) {
-    PTRACE_CONTEXT_ID_PUSH_THREAD(phone.m_activeConnection);
-    return phone.m_activeConnection->OnReceiveMsg(msg);
+  {
+    PSafePtr<OpalSkinnyConnection> connection = phone.m_activeConnection;
+    if (connection != NULL) {
+      PTRACE_CONTEXT_ID_PUSH_THREAD(connection);
+      return connection->OnReceiveMsg(msg);
+    }
   }
 
   if (msg.GetState() != eStateRingIn) {
