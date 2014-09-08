@@ -411,8 +411,7 @@ void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
 void OpalSIPIMContext::PopulateParams(SIPMessage::Params & params, const OpalIM & message)
 {
   PString tag;
-  if (!message.m_conversationId.Split(ConversationIdSeparator, params.m_id, tag))
-    params.m_id = message.m_conversationId;
+  message.m_conversationId.Split(ConversationIdSeparator, params.m_id, tag, PString::SplitTrim|PString::SplitDefaultToBefore);
 
   SIPURL from(message.m_from);
   from.SetDisplayName(m_localName);
