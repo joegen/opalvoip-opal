@@ -221,11 +221,18 @@ bool OpalDTLSSRTPSession::Open(const PString & localInterface, const OpalTranspo
 bool OpalDTLSSRTPSession::Close()
 {
   for (int i = 0; i < 2; ++i) {
+    if (m_sslChannel[i] != NULL)
+      m_sslChannel[i]->Close();
+  }
+
+  bool ok = OpalSRTPSession::Close();
+
+  for (int i = 0; i < 2; ++i) {
     delete m_sslChannel[i];
     m_sslChannel[i] = NULL;
   }
 
-  return OpalSRTPSession::Close();
+  return ok;
 }
 
 
