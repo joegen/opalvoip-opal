@@ -54,9 +54,9 @@ typedef map<DWORD, DWORD> JitterProfileMap;
 
 /////////////////////////////////////////////////////////////////////////////
 /**we use this class primarily to access variables in the OpalJitterBuffer*/
-class JesterJitterBuffer : public OpalJitterBuffer
+class JesterJitterBuffer : public OpalAudioJitterBuffer
 {
-    PCLASSINFO(JesterJitterBuffer, OpalJitterBuffer);
+    PCLASSINFO(JesterJitterBuffer, OpalAudioJitterBuffer);
  public:
     JesterJitterBuffer();
 

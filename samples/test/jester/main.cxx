@@ -63,7 +63,7 @@ ostream & operator<<(ostream & strm, const JitterProfileMap & profile)
 
 ///////////////////////////////////////////////////////////////
 JesterJitterBuffer::JesterJitterBuffer()
-  : OpalJitterBuffer(OpalJitterBuffer::Init(400, 2000))
+  : OpalAudioJitterBuffer(OpalJitterBuffer::Init(OpalMediaType::Audio(), 400, 2000))
 {
 
 }
