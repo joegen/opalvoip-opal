@@ -128,7 +128,7 @@ class DTLSContext : public PSSLContext
     PSSLCertificate m_cert;
 };
 
-typedef PSingleton<DTLSContext> DTLSContextSingleton;
+typedef PSingleton<DTLSContext, PAtomicInteger> DTLSContextSingleton;
 
 
 class OpalDTLSSRTPSession::SSLChannel : public PSSLChannelDTLS
