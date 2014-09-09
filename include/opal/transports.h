@@ -330,51 +330,61 @@ class OpalTransportAddress : public PCaselessString
 class OpalTransportAddressArray : public PArray<OpalTransportAddress>
 {
     typedef PArray<OpalTransportAddress> ParentClass;
-    PCLASSINFO(OpalTransportAddressArray, ParentClass);
-
-  protected:
-    inline OpalTransportAddressArray(int dummy, const OpalTransportAddressArray * c)
-      : ParentClass(dummy, c) { }
+    PCLASSINFO_WITH_CLONE(OpalTransportAddressArray, ParentClass);
 
   public:
     OpalTransportAddressArray(PINDEX initialSize = 0)
       : ParentClass(initialSize) { }
     OpalTransportAddressArray(
+      const PString & address
+    ) { AppendString(address); }
+    OpalTransportAddressArray(
       const OpalTransportAddress & address
     ) { AppendAddress(address); }
     OpalTransportAddressArray(
-      const PStringArray & array
-    ) { AppendStringCollection(array); }
-    OpalTransportAddressArray(
-      const PStringList & list
-    ) { AppendStringCollection(list); }
-    OpalTransportAddressArray(
-      const PSortedStringList & list
-    ) { AppendStringCollection(list); }
+      const PCollection & coll
+    ) { AppendStringCollection(coll); }
 
-    void AppendString(
-      const char * address
-    );
-    void AppendString(
+    /** Append a string with special cases.
+        If address is a string containing ',', ';', tab or newline separated
+        sub-strings, each one is added using AppendStringCollection().
+      */
+    bool AppendString(
       const PString & address
     );
+
+    /// Append one address to array
     bool AppendAddress(
       const OpalTransportAddress & address
     );
+
+    /** Append all the strings in the collection.
+        Note the collection must contain PString objects.
+        The special string "<<ip4>>" and "<<ip6>>" will map to all interfaces
+        of that IP version, not including loopback.
+      */
+    bool AppendStringCollection(
+      const PCollection & coll
+    );
+
+    /// Set the array to 1 or 2 entries.
     bool SetAddressPair(
       const OpalTransportAddress & addr1,
       const OpalTransportAddress & addr2
     );
 
-    virtual PObject * Clone() const
-    {
-      return new OpalTransportAddressArray(0, this);
-    }
+    /** Get IP addres and port at the index, modulus the size of the array.
+        If the ap is already valid, then it is returned as is. If the array
+        is empty or the entry is invalid, then IPv4 INADDR_ANY and port zero
+        is returned.
+      */
+    void GetIpAndPort(
+      PINDEX index,
+      PIPAddressAndPort & ap
+    );
 
   protected:
-    void AppendStringCollection(
-      const PCollection & coll
-    );
+    bool AddInterfaces(const PString & address, unsigned version);
 };
 
 

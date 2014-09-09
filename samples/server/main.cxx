@@ -787,8 +787,8 @@ bool MySkinnyEndPoint::Configure(PConfig &, PConfigPage * rsrc)
 {
   m_defaultServer = rsrc->AddStringField(SkinnyServerKey, 0, PString::Empty(),
                                   "Default server for Skinny Client Control Protocol (SCCP).", 1, 30);
-  m_defaultInterface = rsrc->AddStringField(SkinnyInterfaceKey, 0, m_defaultInterface,
-                                  "Default network interface for Skinny Client Control Protocol (SCCP).", 1, 30);
+  SetServerInterfaces(m_defaultInterface = rsrc->AddStringField(SkinnyInterfaceKey, 0, m_defaultInterface,
+                                  "Default network interface for Skinny Client Control Protocol (SCCP).", 1, 30));
   m_deviceType = rsrc->AddIntegerField(SkinnyTypeKey, 1, 32767, m_deviceType, "",
                                        "Device type for SCCP. Default 30016 = Cisco IP Communicator.");
   m_deviceNames = rsrc->AddStringArrayField(SkinnyNamesKey, false, 0, m_deviceNames,
@@ -822,7 +822,6 @@ bool MySkinnyEndPoint::Configure(PConfig &, PConfigPage * rsrc)
 void MySkinnyEndPoint::AutoRegister(const PString & server, const PString & wildcard, const PString & localInterface, bool registering)
 {
   PString actualServer = server.IsEmpty() ? m_defaultServer : server;
-  PString actualInterface = localInterface.IsEmpty() ? m_defaultInterface : localInterface;
 
   PStringArray names, servers;
   ExpandWildcards(wildcard, names, servers);
@@ -833,7 +832,7 @@ void MySkinnyEndPoint::AutoRegister(const PString & server, const PString & wild
     PString name = names[i];
 
     if (registering) {
-      if (oldNames.GetValuesIndex(name) == P_MAX_INDEX && !Register(actualServer, name, m_deviceType, actualInterface)) {
+      if (oldNames.GetValuesIndex(name) == P_MAX_INDEX && !Register(actualServer, name, m_deviceType, localInterface)) {
         PSYSTEMLOG(Error, "Could not register " << name << " with skinny server \"" << actualServer << '"');
       }
     }
