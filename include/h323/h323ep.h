@@ -1396,17 +1396,17 @@ class H323EndPoint : public OpalRTPEndPoint
 
     H323Capabilities m_capabilities;
 
-    PList<H323Gatekeeper>   m_gatekeepers;
-    PIPSocketAddressAndPortVector m_gatekeeperInterfaces;
-    PString                 m_gatekeeperUsername;
-    PString                 m_gatekeeperPassword;
-    PINDEX                  m_gatekeeperAliasLimit;
-    bool                    m_gatekeeperSimulatePattern;
-    bool                    m_gatekeeperRasRedirect;
-    PThread               * m_gatekeeperMonitor;
-    bool                    m_gatekeeperMonitorStop;
-    PSyncPoint              m_gatekeeperMonitorTickle;
-    PMutex                  m_gatekeeperMutex;
+    PList<H323Gatekeeper>     m_gatekeepers;
+    OpalTransportAddressArray m_gatekeeperInterfaces;
+    PString                   m_gatekeeperUsername;
+    PString                   m_gatekeeperPassword;
+    PINDEX                    m_gatekeeperAliasLimit;
+    bool                      m_gatekeeperSimulatePattern;
+    bool                      m_gatekeeperRasRedirect;
+    PThread                 * m_gatekeeperMonitor;
+    bool                      m_gatekeeperMonitorStop;
+    PSyncPoint                m_gatekeeperMonitorTickle;
+    PMutex                    m_gatekeeperMutex;
 
 #if OPAL_H450
     H323CallIdentityDict   m_secondaryConnectionsActive;

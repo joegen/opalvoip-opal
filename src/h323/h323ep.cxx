@@ -431,20 +431,6 @@ PBoolean H323EndPoint::DiscoverGatekeeper(const PString & localAddress)
 }
 
 
-static void AddInterfaces(PIPSocketAddressAndPortVector & gatekeeperInterfaces, const PString & localAddress, unsigned version)
-{
-  PINDEX colon = localAddress.Find(':');
-  WORD port = (WORD)(colon != P_MAX_INDEX ? localAddress.Mid(colon + 1).AsUnsigned() : 0);
-
-  PIPSocket::InterfaceTable interfaces;
-  PIPSocket::GetInterfaceTable(interfaces);
-
-  for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
-    if (interfaces[i].GetAddress().GetVersion() == version && !interfaces[i].GetAddress().IsLoopback())
-      gatekeeperInterfaces.push_back(PIPSocketAddressAndPort(interfaces[i].GetAddress(), port));
-  }
-}
-
 bool H323EndPoint::InternalStartGatekeeper(const H323TransportAddress & remoteAddress, const PString & localAddress)
 {
   RemoveGatekeeper(H225_UnregRequestReason::e_reregistrationRequired);
@@ -482,30 +468,17 @@ bool H323EndPoint::InternalStartGatekeeper(const H323TransportAddress & remoteAd
         return false;
       }
     }
-    m_gatekeeperInterfaces.push_back(interfaceIP);
+
+    if (m_gatekeeperInterfaces.AppendAddress(interfaceIP))
+      return InternalRestartGatekeeper(false);
   }
   else {
-    PStringArray localAddresses = localAddress.Tokenise(",;\t\n");
-    for (PINDEX i = 0; i < localAddresses.GetSize(); ++i) {
-      PCaselessString addr = localAddresses[i];
-      if (addr.NumCompare("<<ip4>>") == EqualTo)
-        AddInterfaces(m_gatekeeperInterfaces, addr, 4);
-      else if (addr.NumCompare("<<ip6>>") == EqualTo)
-        AddInterfaces(m_gatekeeperInterfaces, addr, 6);
-      else {
-        PIPSocketAddressAndPort ap;
-        if (OpalTransportAddress(addr).GetIpAndPort(ap))
-          m_gatekeeperInterfaces.push_back(ap);
-      }
-    }
-
-    if (m_gatekeeperInterfaces.empty()) {
-      PTRACE(2, "H323\tNo legal local interface address in \"" << localAddress << '"');
-      return false;
-    }
+    if (m_gatekeeperInterfaces.AppendString(localAddress))
+      return InternalRestartGatekeeper(false);
   }
 
-  return InternalRestartGatekeeper(false);
+  PTRACE(2, "H323\tNo legal local interface address in \"" << localAddress << '"');
+  return false;
 }
 
 
@@ -611,9 +584,10 @@ bool H323EndPoint::InternalRestartGatekeeper(bool adjustingRegistrations)
 
 bool H323EndPoint::InternalCreateGatekeeper(bool adjustingRegistrations, const PStringList & aliases)
 {
-  OpalTransportUDP * transport = NULL;
-  PIPSocketAddressAndPort & ap = m_gatekeeperInterfaces[m_gatekeepers.GetSize()%m_gatekeeperInterfaces.size()];
-  transport = new OpalTransportUDP(*this, ap.GetAddress(), ap.GetPort(), false, true);
+  PIPAddressAndPort ap;
+  m_gatekeeperInterfaces.GetIpAndPort(m_gatekeepers.GetSize(), ap);
+
+  OpalTransportUDP * transport = new OpalTransportUDP(*this, ap.GetAddress(), ap.GetPort(), false, true);
   if (!transport->IsOpen()) {
     PTRACE(2, "H323\tCannot bind to local interface address.");
     return false;

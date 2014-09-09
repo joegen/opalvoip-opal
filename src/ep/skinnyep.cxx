@@ -298,7 +298,10 @@ bool OpalSkinnyEndPoint::Register(const PString & server, const PString & name, 
     m_phoneDevices.RemoveAt(name);
   }
 
-  phoneDevice = CreatePhoneDevice(name, deviceType, localInterface);
+  PIPAddressAndPort ap(localInterface);
+  m_serverInterfaces.GetIpAndPort(m_phoneDevices.GetSize(), ap);
+
+  phoneDevice = CreatePhoneDevice(name, deviceType, ap);
   if (phoneDevice == NULL) {
     PTRACE(3, "Could not create phone device for \"" << name << '"');
     return false;
@@ -330,17 +333,17 @@ bool OpalSkinnyEndPoint::Unregister(const PString & name)
 }
 
 
-OpalSkinnyEndPoint::PhoneDevice * OpalSkinnyEndPoint::CreatePhoneDevice(const PString & name, unsigned deviceType, const PString & localInterface)
+OpalSkinnyEndPoint::PhoneDevice * OpalSkinnyEndPoint::CreatePhoneDevice(const PString & name, unsigned deviceType, const PIPAddressAndPort & binding)
 {
-  return new PhoneDevice(*this, name, deviceType, localInterface);
+  return new PhoneDevice(*this, name, deviceType, binding);
 }
 
 
-OpalSkinnyEndPoint::PhoneDevice::PhoneDevice(OpalSkinnyEndPoint & ep, const PString & name, unsigned deviceType, const PString & localInterface)
+OpalSkinnyEndPoint::PhoneDevice::PhoneDevice(OpalSkinnyEndPoint & ep, const PString & name, unsigned deviceType, const PIPAddressAndPort & binding)
   : m_endpoint(ep)
   , m_name(name)
   , m_deviceType(deviceType)
-  , m_transport(ep, PIPAddress(localInterface))
+  , m_transport(ep, binding.GetAddress(), binding.GetPort())
 {
   m_transport.SetPDULengthFormat(-4, 4);
 }
