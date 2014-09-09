@@ -445,12 +445,14 @@ OpalSRTPSession::~OpalSRTPSession()
 
 bool OpalSRTPSession::Close()
 {
+  bool ok = OpalRTPSession::Close();
+
   for (int i = 0; i < 2; ++i) {
     delete m_keyInfo[i];
     m_keyInfo[i] = NULL;
   }
 
-  return OpalRTPSession::Close();
+  return ok;
 }
 
 
