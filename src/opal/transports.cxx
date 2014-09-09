@@ -276,15 +276,9 @@ void OpalTransportAddress::SetInternalTransport(WORD port, const char * proto)
 
 /////////////////////////////////////////////////////////////////
 
-void OpalTransportAddressArray::AppendString(const char * str)
+bool OpalTransportAddressArray::AppendString(const PString & str)
 {
-  AppendAddress(OpalTransportAddress(str));
-}
-
-
-void OpalTransportAddressArray::AppendString(const PString & str)
-{
-  AppendAddress(OpalTransportAddress(str));
+  return AppendStringCollection(str.Tokenise(",;\t\n"));
 }
 
 
@@ -312,13 +306,55 @@ bool OpalTransportAddressArray::SetAddressPair(const OpalTransportAddress & addr
 }
 
 
-void OpalTransportAddressArray::AppendStringCollection(const PCollection & coll)
+void OpalTransportAddressArray::GetIpAndPort(PINDEX index, PIPAddressAndPort & ap)
 {
+  if (ap.IsValid())
+    return;
+
+  if (!IsEmpty() && (*this)[index % GetSize()].GetIpAndPort(ap))
+    return;
+
+  ap.SetAddress(PIPSocket::GetDefaultIpAny());
+  ap.SetPort(0);
+}
+
+
+bool OpalTransportAddressArray::AppendStringCollection(const PCollection & coll)
+{
+  bool atLeastOne = false;
   for (PINDEX i = 0; i < coll.GetSize(); i++) {
-    PObject * obj = coll.GetAt(i);
-    if (obj != NULL && PIsDescendant(obj, PString))
-      AppendAddress(OpalTransportAddress(*(PString *)obj));
+    PString * str = dynamic_cast<PString *>(coll.GetAt(i));
+    if (str != NULL) {
+      PCaselessString addr = *str;
+
+      if (addr.NumCompare("<<ip4>>") == EqualTo || addr.NumCompare("0.0.0.0") == EqualTo)
+        atLeastOne = AddInterfaces(addr, 4) || atLeastOne;
+      else if (addr.NumCompare("<<ip6>>") == EqualTo || addr.NumCompare("[::]") == EqualTo)
+        atLeastOne = AddInterfaces(addr, 6) || atLeastOne;
+      else
+        atLeastOne = AppendAddress(addr) || atLeastOne;
+    }
   }
+  return atLeastOne;
+}
+
+
+bool OpalTransportAddressArray::AddInterfaces(const PString & localAddress, unsigned version)
+{
+  bool atLeastOne = false;
+  PINDEX colon = localAddress.Find(':');
+  WORD port = (WORD)(colon != P_MAX_INDEX ? localAddress.Mid(colon + 1).AsUnsigned() : 0);
+
+  PIPSocket::InterfaceTable interfaces;
+  PIPSocket::GetInterfaceTable(interfaces);
+
+  for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
+    if (  interfaces[i].GetAddress().GetVersion() == version &&
+         !interfaces[i].GetAddress().IsLoopback() &&
+          AppendAddress(OpalTransportAddress(interfaces[i].GetAddress(), port)))
+      atLeastOne = true;
+  }
+  return atLeastOne;
 }
 
 

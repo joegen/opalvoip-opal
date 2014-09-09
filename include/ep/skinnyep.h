@@ -176,9 +176,9 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
 
     /// Create a new PhoneDevice object
     PhoneDevice * CreatePhoneDevice(
-      const PString & name,           ///< Name of cient "psuedo device" to register
-      unsigned deviceType,            ///< Device type code
-      const PString & localInterface  ///< Local binding interface
+      const PString & name,             ///< Name of cient "psuedo device" to register
+      unsigned deviceType,              ///< Device type code
+      const PIPAddressAndPort & binding ///< Local binding interface/port
     );
 
     PhoneDevice * GetPhoneDevice(
@@ -195,7 +195,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
     {
       PCLASSINFO(PhoneDevice, PObject);
       public:
-        PhoneDevice(OpalSkinnyEndPoint & ep, const PString & name, unsigned deviceType, const PString & localInterface);
+        PhoneDevice(OpalSkinnyEndPoint & ep, const PString & name, unsigned deviceType, const PIPAddressAndPort & binding);
         ~PhoneDevice() { Close(); }
 
         virtual void PrintOn(ostream & strm) const;
@@ -621,14 +621,17 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
     bool IsSecondaryAudioAlwaysSimulated() const { return m_secondaryAudioAlwaysSimulated; }
     void SetSecondaryAudioAlwaysSimulated(bool v) { m_secondaryAudioAlwaysSimulated = v; }
 
+    void SetServerInterfaces(const PString & addresses) { m_serverInterfaces = OpalTransportAddressArray(addresses); }
+
   protected:
     template <class MSG> bool DelegateMsg(const PhoneDevice & client, const MSG & msg);
 
     typedef PDictionary<PString, PhoneDevice> PhoneDeviceDict;
-    PhoneDeviceDict m_phoneDevices;
-    PMutex          m_phoneDevicesMutex;
-    PFilePath       m_simulatedAudioFile;
-    bool            m_secondaryAudioAlwaysSimulated;
+    PhoneDeviceDict           m_phoneDevices;
+    PMutex                    m_phoneDevicesMutex;
+    OpalTransportAddressArray m_serverInterfaces;
+    PFilePath                 m_simulatedAudioFile;
+    bool                      m_secondaryAudioAlwaysSimulated;
 };
 
 
