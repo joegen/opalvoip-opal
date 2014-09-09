@@ -52,7 +52,7 @@ class OpalG7221Format : public OpalAudioFormatInternal
     {
       OpalMediaOption * option;
 
-#if OPAL_SIP
+#if OPAL_SDP
       option = new OpalMediaOptionInteger(G7221BitRateOptionName,
                                           true,
                                           OpalMediaOption::EqualMerge,

@@ -142,15 +142,18 @@ istream & operator>>(istream & strm, OpalRFC2833EventsMask & mask)
 }
 
 
-static void AddEventsOption(OpalMediaFormat & mediaFormat,
-                            const char * defaultValues,
-                            const char * fmtpDefaults)
+#if OPAL_SDP
+static void AddEventsOption(OpalMediaFormat & mediaFormat, const char * defaultValues, const char * fmtpDefaults)
+#else
+#define AddEventsOption(mf,dv,fd) AddEventsOption2(mf,dv)
+static void AddEventsOption2(OpalMediaFormat & mediaFormat, const char * defaultValues)
+#endif
 {
   OpalRFC288EventsOption * option = new OpalRFC288EventsOption(OpalRFC288EventsName(),
                                                                false,
                                                                OpalMediaOption::IntersectionMerge,
                                                                OpalRFC2833EventsMask(defaultValues));
-#if OPAL_SIP
+#if OPAL_SDP
   option->SetFMTPName("FMTP");
   option->SetFMTPDefault(fmtpDefaults);
 #endif

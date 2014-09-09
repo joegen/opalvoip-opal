@@ -361,7 +361,7 @@ class OpalMediaOption : public PObject
     MergeType GetMerge() const { return m_merge; }
     void SetMerge(MergeType merge) { m_merge = merge; }
 
-#if OPAL_SIP
+#if OPAL_SDP
     const PString & GetFMTPName() const { return m_FMTPName; }
     void SetFMTPName(const char * name) { m_FMTPName = name; }
 
@@ -376,7 +376,7 @@ class OpalMediaOption : public PObject
 #define OPAL_SET_MEDIA_OPTION_FMTP(opt, name, dflt) (opt)->SetFMTP(name, dflt)
 #else
 #define OPAL_SET_MEDIA_OPTION_FMTP(opt, name, dflt)
-#endif // OPAL_SIP
+#endif // OPAL_SDP
 
 #if OPAL_H323
     struct H245GenericInfo {
@@ -419,10 +419,10 @@ class OpalMediaOption : public PObject
     bool            m_readOnly;
     MergeType       m_merge;
 
-#if OPAL_SIP
+#if OPAL_SDP
     PCaselessString m_FMTPName;
     PString         m_FMTPDefault;
-#endif // OPAL_SIP
+#endif // OPAL_SDP
 
 #if OPAL_H323
     H245GenericInfo m_H245Generic;
@@ -1477,7 +1477,7 @@ class OpalVideoFormat : public OpalMediaFormat
     static const PString & ContentRoleOption();
     static const PString & ContentRoleMaskOption();
 
-#if OPAL_SIP
+#if OPAL_SDP
     /// Enum for media option to include imageattr from RFC 6236
     P_DECLARE_STREAMABLE_ENUM(ImageAttributeInSDP,
       ImageAttrSuppressed,
@@ -1486,7 +1486,7 @@ class OpalVideoFormat : public OpalMediaFormat
     );
     /// ImageAttributeInSDP enum media option to include imageattr from RFC 6236
     static const PString & UseImageAttributeInSDP();
-#endif
+#endif // OPAL_SDP
 
     enum VideoFrameType {
       e_UnknownFrameType,
