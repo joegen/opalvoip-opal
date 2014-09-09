@@ -1727,10 +1727,10 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
     else
       strm << "Unknown";
 
-#if OPAL_SIP
+#if OPAL_SDP
     if (!option.GetFMTPName().IsEmpty())
       strm << " FMTP name: " << option.GetFMTPName() << " (" << option.GetFMTPDefault() << ')';
-#endif // OPAL_SIP
+#endif // OPAL_SDP
 
 #if OPAL_H323
     if (genericInfo.mode != OpalMediaOption::H245GenericInfo::None) {
@@ -1852,7 +1852,7 @@ const PString & OpalVideoFormat::RateControllerOption()           { static const
 const PString & OpalVideoFormat::FreezeUntilIntraFrameOption()    { static const PConstString s("Freeze Until Intra-Frame");                            return s; }
 const PString & OpalVideoFormat::ContentRoleOption()              { static const PConstString s("Content Role");                               return s; }
 const PString & OpalVideoFormat::ContentRoleMaskOption()          { static const PConstString s("Content Role Mask");                          return s; }
-#if OPAL_SIP
+#if OPAL_SDP
 const PString & OpalVideoFormat::UseImageAttributeInSDP()         { static const PConstString s("Use Image Attribute in SDP"); return s; }
 #endif
 
@@ -1924,7 +1924,7 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
     AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxTxPacketSizeOption(),          true,  OpalMediaOption::AlwaysMerge, PluginCodec_RTP_MaxPayloadSize, 100    ));
     AddOption(new OpalMediaOptionString  (OpalVideoFormat::RateControllerOption(),           false                                                                       ));
     AddOption(new OpalMediaOptionBoolean (OpalVideoFormat::FreezeUntilIntraFrameOption(),    false, OpalMediaOption::NoMerge,     false                                  ));
-#if OPAL_SIP
+#if OPAL_SDP
     AddOption(new OpalMediaOptionEnum    (OpalVideoFormat::UseImageAttributeInSDP(),         false,
                                           OpalVideoFormat::PEnumNames_ImageAttributeInSDP::Names(), OpalVideoFormat::NumImageAttributeInSDP,
                                           OpalMediaOption::AlwaysMerge, OpalVideoFormat::ImageAddrOffered));

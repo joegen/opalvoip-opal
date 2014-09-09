@@ -634,7 +634,7 @@ class RTPExtensionHeaderInfo : public PObject
     RTPExtensionHeaderInfo();
     virtual Comparison Compare(const PObject & other) const;
 
-#if OPAL_SIP
+#if OPAL_SDP
     bool ParseSDP(const PString & param);
     void OutputSDP(ostream & strm) const;
 #endif

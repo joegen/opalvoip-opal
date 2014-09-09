@@ -109,7 +109,7 @@ RFC2435VideoFormatInternal::RFC2435VideoFormatInternal(
 {
   OpalMediaOption * option;
 
-#if OPAL_SIP
+#if OPAL_SDP
   // add mandatory fields
   option = FindOption(OpalVideoFormat::ClockRateOption());
   if (option != NULL)
@@ -122,7 +122,7 @@ RFC2435VideoFormatInternal::RFC2435VideoFormatInternal(
   option = FindOption(OpalVideoFormat::FrameHeightOption());
   if (option != NULL)
     option->SetFMTPName("height");
-#endif // OPAL_SIP
+#endif // OPAL_SDP
 }
 
 /////////////////////////////////////////////////////////////////////////////

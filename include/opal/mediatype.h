@@ -257,7 +257,7 @@ class OpalRTPAVPMediaDefinition : public OpalMediaTypeDefinition
       OpalMediaType::AutoStartMode autoStart = OpalMediaType::DontOffer
     );
 
-#if OPAL_SIP
+#if OPAL_SDP
     virtual bool MatchesSDP(const PCaselessString &, const PCaselessString &, const PStringArray &, PINDEX);
 #endif
 };
@@ -320,7 +320,7 @@ class OpalFaxMediaDefinition : public OpalMediaTypeDefinition
     SDPMediaDescription * CreateSDPMediaDescription(
       const OpalTransportAddress & localAddress
     ) const;
-#endif // OPAL_SIP
+#endif // OPAL_SDP
 };
 
 #endif // OPAL_T38_CAPABILITY

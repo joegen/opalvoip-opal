@@ -37,7 +37,7 @@
 
 #include <opal_config.h>
 
-#if OPAL_SIP
+#if OPAL_SDP
 
 #include <sdp/sdp.h>
 
@@ -73,7 +73,7 @@ class SDPFaxMediaDescription : public SDPMediaDescription
 
 #endif // OPAL_T38_CAPABILITY
 
-#endif // OPAL_SIP
+#endif // OPAL_SDP
 
 #endif // OPAL_T38_SIPT38_H
 

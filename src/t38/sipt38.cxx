@@ -60,7 +60,7 @@ Either, or both, can be used in a call
 #include <t38/sipt38.h>
 
 
-#if OPAL_SIP
+#if OPAL_SDP
 #if OPAL_T38_CAPABILITY
 
 #include <t38/t38proto.h>
@@ -195,5 +195,5 @@ bool SDPFaxMediaDescription::PostDecode(const OpalMediaFormatList & mediaFormats
 
 
 #endif // OPAL_T38_CAPABILITY
-#endif // OPAL_SIP
+#endif // OPAL_SDP
 

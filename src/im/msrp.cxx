@@ -131,7 +131,7 @@ const OpalMediaFormat & GetOpalMSRP()
 } 
 
 
-#if OPAL_SIP
+#if OPAL_SDP
 
 /////////////////////////////////////////////////////////
 //
@@ -270,7 +270,7 @@ void SDPMSRPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat
 }
 
 
-#endif // OPAL_SIP
+#endif // OPAL_SDP
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
