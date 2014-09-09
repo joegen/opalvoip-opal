@@ -54,19 +54,19 @@ class OpalSpeexFormat : public OpalAudioFormatInternal
     OpalSpeexFormat(const char * name, unsigned frameSize, unsigned sampleRate)
       : OpalAudioFormatInternal(name, RTP_DataFrame::DynamicBase, "speex",  50, frameSize, 1, 1, 1, sampleRate, 0)
     {
-#if OPAL_SIP
+#if OPAL_SDP
       OpalMediaOption * option = new OpalMediaOptionString("mode", false);
-      OPAL_SET_MEDIA_OPTION_FMTP(option, "mode", "3,any");
+      option->SetFMTP("mode", "3,any");
       AddOption(option);
 
       const char * const VBR[] = { "off", "on", "vad" };
       option = new OpalMediaOptionEnum("Variable Bitrate", false, VBR, PARRAYSIZE(VBR), OpalMediaOption::MinMerge);
-      OPAL_SET_MEDIA_OPTION_FMTP(option, "vbr", VBR[0]);
+      option->SetFMTP("vbr", VBR[0]);
       AddOption(option);
 
       const char * const CNG[] = { "off", "on" };
       option = new OpalMediaOptionEnum("Comfort Noise", false, CNG, PARRAYSIZE(CNG), OpalMediaOption::MinMerge);
-      OPAL_SET_MEDIA_OPTION_FMTP(option, "cng", CNG[0]);
+      option->SetFMTP("cng", CNG[0]);
       AddOption(option);
 #endif
     }

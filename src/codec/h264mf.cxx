@@ -126,7 +126,7 @@ class OpalH264Format : public OpalVideoFormatInternal
       AddOption(new OpalMediaOptionString(PLUGINCODEC_MEDIA_PACKETIZATIONS, false, PacketizationModes[mode]));
 #endif
 
-#if OPAL_SIP
+#if OPAL_SDP
       option = new OpalMediaOptionOctets(SDPProfileAndLevelName, true, OpalMediaOption::NoMerge, false);
       option->SetFMTP(SDPProfileAndLevelFMTPName, SDPProfileAndLevelFMTPDflt);
       option->FromString(DefaultSDPProfileAndLevel);

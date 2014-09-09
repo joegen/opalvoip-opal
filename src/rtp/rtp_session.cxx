@@ -914,8 +914,8 @@ void OpalRTPSession::SyncSource::OnRxReceiverReport(const ReceiverReport & repor
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & frame, RewriteMode rewrite)
 {
-  SendReceiveStatus status;
 #if OPAL_ICE
+  SendReceiveStatus status;
   if ((status = OnSendICE(e_Data)) != e_ProcessPacket)
     return status;
 #else
@@ -1171,6 +1171,7 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, bool receiv
 #endif
 
 
+#if OPAL_STATISTICS
 void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics) const
 {
   statistics.m_startTime         = m_firstPacketTime;
@@ -1184,6 +1185,7 @@ void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics)
   statistics.m_averageJitter     = m_jitter;
   statistics.m_maximumJitter     = m_maximumJitter;
 }
+#endif // OPAL_STATISTICS
 
 
 bool OpalRTPSession::CheckControlSSRC(RTP_SyncSourceId PTRACE_PARAM(senderSSRC),

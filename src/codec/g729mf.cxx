@@ -106,7 +106,7 @@ class OpalG729Format : public OpalAudioFormat
       bool isAnnexB = strchr(variant, 'B') != NULL;
       static const char * const yesno[] = { "no", "yes" };
       OpalMediaOption * option = new OpalMediaOptionEnum(PLUGINCODEC_OPTION_VOICE_ACTIVITY_DETECT, true, yesno, 2, OpalMediaOption::AndMerge, isAnnexB);
-#if OPAL_SIP
+#if OPAL_SDP
       option->SetFMTPName("annexb");
       option->SetFMTPDefault("yes");
 #endif

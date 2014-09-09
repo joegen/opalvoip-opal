@@ -1209,7 +1209,7 @@ PObject::Comparison RTPExtensionHeaderInfo::Compare(const PObject & obj) const
 }
 
 
-#if OPAL_SIP
+#if OPAL_SDP
 bool RTPExtensionHeaderInfo::ParseSDP(const PString & param)
 {
   PINDEX space = param.Find(' ');
