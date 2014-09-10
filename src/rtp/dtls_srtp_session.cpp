@@ -202,6 +202,11 @@ OpalDTLSSRTPSession::~OpalDTLSSRTPSession()
 
 bool OpalDTLSSRTPSession::Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool mediaAddress)
 {
+  PWriteWaitAndSignal lock1(m_readMutex);
+  PSafeLockReadWrite  lock2(*this);
+  if (!lock2.IsLocked())
+    return false;
+
   if (IsOpen())
     return true;
 
@@ -213,24 +218,31 @@ bool OpalDTLSSRTPSession::Open(const PString & localInterface, const OpalTranspo
       m_sslChannel[i] = new SSLChannel(*this, m_socket[i], m_passiveMode);
   }
 
-  m_opened.Signal();
   return true;
 }
 
 
 bool OpalDTLSSRTPSession::Close()
 {
+  m_readMutex.StartRead();
   for (int i = 0; i < 2; ++i) {
     if (m_sslChannel[i] != NULL)
       m_sslChannel[i]->Close();
   }
+  m_readMutex.EndRead();
 
   bool ok = OpalSRTPSession::Close();
+
+  m_readMutex.StartWrite();
+  LockReadWrite();
 
   for (int i = 0; i < 2; ++i) {
     delete m_sslChannel[i];
     m_sslChannel[i] = NULL;
   }
+
+  UnlockReadWrite();
+  m_readMutex.EndWrite();
 
   return ok;
 }
@@ -238,8 +250,6 @@ bool OpalDTLSSRTPSession::Close()
 
 void OpalDTLSSRTPSession::ThreadMain()
 {
-  m_opened.Wait();
-
   if (ExecuteHandshake(e_Data) && ExecuteHandshake(e_Control))
     OpalSRTPSession::ThreadMain();
   else
@@ -249,12 +259,14 @@ void OpalDTLSSRTPSession::ThreadMain()
 
 OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::OnSendData(RTP_DataFrame & frame, RewriteMode rewrite)
 {
+  // Already locked on entry
   return m_sslChannel[e_Data] != NULL ? e_IgnorePacket : OpalSRTPSession::OnSendData(frame, rewrite);
 }
 
 
 OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::OnSendControl(RTP_ControlFrame & frame)
 {
+  // Already locked on entry
   return m_sslChannel[IsSinglePortRx() || IsSinglePortTx() ? e_Data : e_Control] != NULL ? e_IgnorePacket : OpalSRTPSession::OnSendControl(frame);
 }
 
@@ -279,8 +291,9 @@ const PSSLCertificateFingerprint& OpalDTLSSRTPSession::GetRemoteFingerprint() co
 
 bool OpalDTLSSRTPSession::ExecuteHandshake(Channel channel)
 {
+  PReadWaitAndSignal lock1(m_readMutex);
   if (m_sslChannel[channel] == NULL)
-    return true;
+    return IsOpen();
 
   while (!m_remoteAddress.IsValid() || m_remotePort[channel] == 0) {
     if (!InternalRead())
@@ -291,6 +304,8 @@ bool OpalDTLSSRTPSession::ExecuteHandshake(Channel channel)
     PTRACE(2, *this << "error in DTLS handshake.");
     return false;
   }
+
+  PSafeLockReadWrite lock2(*this);
 
   const OpalMediaCryptoSuite* cryptoSuite = NULL;
   srtp_profile_t profile = srtp_profile_reserved;
