@@ -122,8 +122,35 @@ RegistrationStatusPage::RegistrationStatusPage(MyManager & mgr, const PHTTPAutho
 }
 
 
+#if OPAL_H323
+void RegistrationStatusPage::GetH323(StatusMap & copy) const
+{
+  PWaitAndSignal lock(m_mutex);
+  copy = m_h323;
+}
+#endif
+
+#if OPAL_SIP
+void RegistrationStatusPage::GetSIP(StatusMap & copy) const
+{
+  PWaitAndSignal lock(m_mutex);
+  copy = m_sip;
+}
+#endif
+
+#if OPAL_SKINNY
+void RegistrationStatusPage::GetSkinny(StatusMap & copy) const
+{
+  PWaitAndSignal lock(m_mutex);
+  copy = m_skinny;
+}
+#endif
+
+
 PString RegistrationStatusPage::LoadText(PHTTPRequest & request)
 {
+  m_mutex.Wait();
+
 #if OPAL_H323
   m_h323.clear();
   const PList<H323Gatekeeper> gkList = m_manager.GetH323EndPoint().GetGatekeepers();
@@ -168,6 +195,9 @@ PString RegistrationStatusPage::LoadText(PHTTPRequest & request)
     }
   }
 #endif
+
+  m_mutex.Signal();
+
   return BaseStatusPage::LoadText(request);
 }
 
@@ -238,14 +268,13 @@ void RegistrationStatusPage::CreateContent(PHTML & html, const PStringToString &
 }
 
 
-typedef const RegistrationStatusPage::StatusMap & (RegistrationStatusPage::*StatusFunc)() const;
-static PINDEX GetRegistrationCount(PHTTPRequest & resource, StatusFunc func)
+static PINDEX GetRegistrationCount(PHTTPRequest & resource, size_t (RegistrationStatusPage::*func)() const)
 {
   RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
   if (PAssertNULL(status) == NULL)
     return 2;
 
-  PINDEX count = (status->*func)().size();
+  PINDEX count = (status->*func)();
   if (count == 0)
     return 2;
 
@@ -253,13 +282,16 @@ static PINDEX GetRegistrationCount(PHTTPRequest & resource, StatusFunc func)
 }
 
 
-static PString GetRegistrationStatus(PHTTPRequest & resource, const PString htmlBlock, StatusFunc func)
+static PString GetRegistrationStatus(PHTTPRequest & resource,
+                                     const PString htmlBlock,
+                                     void (RegistrationStatusPage::*func)(RegistrationStatusPage::StatusMap &) const)
 {
   PString substitution;
 
   RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
   if (PAssertNULL(status) != NULL) {
-    const RegistrationStatusPage::StatusMap & statuses = (status->*func)();
+    RegistrationStatusPage::StatusMap statuses;
+    (status->*func)(statuses);
     for (RegistrationStatusPage::StatusMap::const_iterator it = statuses.begin(); it != statuses.end(); ++it) {
       PString insert = htmlBlock;
       PServiceHTML::SpliceMacro(insert, "status Name", it->first);
@@ -281,7 +313,7 @@ static PString GetRegistrationStatus(PHTTPRequest & resource, const PString html
 #if OPAL_H323
 PCREATE_SERVICE_MACRO(H323Count, resource, P_EMPTY)
 {
-  return GetRegistrationCount(resource, &RegistrationStatusPage::GetH323);
+  return GetRegistrationCount(resource, &RegistrationStatusPage::GetH323Count);
 }
 
 
@@ -294,7 +326,7 @@ PCREATE_SERVICE_MACRO_BLOCK(H323RegistrationStatus, resource, P_EMPTY, htmlBlock
 #if OPAL_SIP
 PCREATE_SERVICE_MACRO(SIPCount, resource, P_EMPTY)
 {
-  return GetRegistrationCount(resource, &RegistrationStatusPage::GetSIP);
+  return GetRegistrationCount(resource, &RegistrationStatusPage::GetSIPCount);
 }
 
 
@@ -307,7 +339,7 @@ PCREATE_SERVICE_MACRO_BLOCK(SIPRegistrationStatus, resource, P_EMPTY, htmlBlock)
 #if OPAL_SKINNY
 PCREATE_SERVICE_MACRO(SkinnyCount, resource, P_EMPTY)
 {
-  return GetRegistrationCount(resource, &RegistrationStatusPage::GetSkinny);
+  return GetRegistrationCount(resource, &RegistrationStatusPage::GetSkinnyCount);
 }
 
 
@@ -374,9 +406,19 @@ CallStatusPage::CallStatusPage(MyManager & mgr, const PHTTPAuthority & auth)
 }
 
 
+void CallStatusPage::GetCalls(PArray<PString> & copy) const
+{
+  PWaitAndSignal lock(m_mutex);
+  copy = m_calls;
+  copy.MakeUnique();
+}
+
+
 PString CallStatusPage::LoadText(PHTTPRequest & request)
 {
+  m_mutex.Wait();
   m_calls = m_manager.GetAllCalls();
+  m_mutex.Signal();
   return BaseStatusPage::LoadText(request);
 }
 
@@ -437,7 +479,7 @@ bool CallStatusPage::OnPostControl(const PStringToString & data, PHTML & msg)
 PCREATE_SERVICE_MACRO(CallCount, resource, P_EMPTY)
 {
   CallStatusPage * status = dynamic_cast<CallStatusPage *>(resource.m_resource);
-  return PAssertNULL(status) == NULL ? 0 : status->GetCalls().GetSize();
+  return PAssertNULL(status) == NULL ? 0 : status->GetCallCount();
 }
 
 
@@ -449,7 +491,8 @@ PCREATE_SERVICE_MACRO_BLOCK(CallStatus,resource,P_EMPTY,htmlBlock)
 
   PString substitution;
 
-  const PArray<PString> & calls = status->GetCalls();
+  PArray<PString> calls;
+  status->GetCalls(calls);
   for (PINDEX i = 0; i < calls.GetSize(); ++i) {
     PSafePtr<OpalCall> call = status->m_manager.FindCallWithLock(calls[i], PSafeReadOnly);
     if (call == NULL)
