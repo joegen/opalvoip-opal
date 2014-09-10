@@ -371,13 +371,16 @@ class RegistrationStatusPage : public BaseStatusPage
 
     typedef map<PString, PString> StatusMap;
 #if OPAL_H323
-    const StatusMap & GetH323() const { return m_h323; }
+    void GetH323(StatusMap & copy) const;
+    size_t GetH323Count() const { return m_h323.size(); }
 #endif
 #if OPAL_SIP
-    const StatusMap & GetSIP() const { return m_sip; }
+    void GetSIP(StatusMap & copy) const;
+    size_t GetSIPCount() const { return m_sip.size(); }
 #endif
 #if OPAL_SKINNY
-    const StatusMap & GetSkinny() const { return m_skinny; }
+    void GetSkinny(StatusMap & copy) const;
+    size_t GetSkinnyCount() const { return m_skinny.size(); }
 #endif
 
   protected:
@@ -394,6 +397,7 @@ class RegistrationStatusPage : public BaseStatusPage
 #if OPAL_SKINNY
     StatusMap m_skinny;
 #endif
+    PMutex m_mutex;
 };
 
 
@@ -405,7 +409,8 @@ class CallStatusPage : public BaseStatusPage
   public:
     CallStatusPage(MyManager & mgr, const PHTTPAuthority & auth);
 
-    const PArray<PString> & GetCalls() const { return m_calls; }
+    void GetCalls(PArray<PString> & copy) const;
+    PINDEX GetCallCount() const { return m_calls.GetSize(); }
 
   protected:
     virtual PString LoadText(PHTTPRequest & request);
@@ -414,6 +419,7 @@ class CallStatusPage : public BaseStatusPage
     virtual bool OnPostControl(const PStringToString & data, PHTML & msg);
 
     PArray<PString> m_calls;
+    PMutex m_mutex;
 };
 
 
