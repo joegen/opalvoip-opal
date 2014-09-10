@@ -125,7 +125,6 @@ class OpalSRTPSession : public OpalRTPSession
     ~OpalSRTPSession();
 
     virtual const PCaselessString & GetSessionType() const { return RTP_SAVP(); }
-    virtual bool Close();
     virtual OpalMediaCryptoKeyList & GetOfferedCryptoKeys();
     virtual bool ApplyCryptoKey(OpalMediaCryptoKeyList & keys, Direction dir);
     virtual bool IsCryptoSecured(Direction dir) const;

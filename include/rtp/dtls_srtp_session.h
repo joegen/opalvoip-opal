@@ -87,7 +87,6 @@ class OpalDTLSSRTPSession : public OpalSRTPSession
 
     // One each for Media and Control channels
     SSLChannel  * m_sslChannel[2];
-    PSyncPoint    m_opened;
 };
 
 
