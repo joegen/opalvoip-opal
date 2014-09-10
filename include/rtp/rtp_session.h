@@ -610,9 +610,10 @@ class OpalRTPSession : public OpalMediaSession
     virtual bool InternalReadData();
     virtual bool InternalReadControl();
     virtual SendReceiveStatus ReadRawPDU(BYTE * framePtr, PINDEX & frameSize, Channel channel);
+    virtual void InternalStopRead();
     virtual bool HandleUnreachable(PTRACE_PARAM(const char * channelName));
 
-    virtual bool WriteRawPDU(
+    virtual SendReceiveStatus WriteRawPDU(
       const BYTE * framePtr,
       PINDEX frameSize,
       Channel channel,
@@ -620,6 +621,7 @@ class OpalRTPSession : public OpalMediaSession
     );
 
     OpalRTPEndPoint   & m_endpoint;
+    OpalManager       & m_manager;
     bool                m_singlePortRx;
     bool                m_singlePortTx;
     bool                m_isAudio;
@@ -756,12 +758,8 @@ class OpalRTPSession : public OpalMediaSession
     unsigned m_rtcpPacketsSent;
     unsigned m_roundTripTime;
 
-    PMutex m_reportMutex;
     PTimer m_reportTimer;
     PDECLARE_NOTIFIER(PTimer, OpalRTPSession, TimedSendReport);
-
-    PMutex m_dataMutex;
-    PMutex m_readMutex;
 
     PIPAddress m_localAddress;
     WORD       m_localPort[2];
@@ -769,8 +767,9 @@ class OpalRTPSession : public OpalMediaSession
     PIPAddress m_remoteAddress;
     WORD       m_remotePort[2];
 
-    PIPSocket::QoS m_qos;
-    PUDPSocket * m_socket[2]; // 0=control, 1=data
+    PIPSocket::QoS  m_qos;
+    PUDPSocket    * m_socket[2]; // 0=control, 1=data
+    PReadWriteMutex m_readMutex;
 
     PThread * m_thread;
     virtual void ThreadMain();

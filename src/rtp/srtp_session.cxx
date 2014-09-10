@@ -443,21 +443,10 @@ OpalSRTPSession::~OpalSRTPSession()
 }
 
 
-bool OpalSRTPSession::Close()
-{
-  bool ok = OpalRTPSession::Close();
-
-  for (int i = 0; i < 2; ++i) {
-    delete m_keyInfo[i];
-    m_keyInfo[i] = NULL;
-  }
-
-  return ok;
-}
-
-
 OpalMediaCryptoKeyList & OpalSRTPSession::GetOfferedCryptoKeys()
 {
+  PSafeLockReadOnly lock(*this);
+
   if (m_offeredCryptokeys.IsEmpty() && m_keyInfo[e_Sender] != NULL)
     m_offeredCryptokeys.Append(m_keyInfo[e_Sender]->CloneAs<OpalMediaCryptoKeyInfo>());
 
@@ -467,6 +456,8 @@ OpalMediaCryptoKeyList & OpalSRTPSession::GetOfferedCryptoKeys()
 
 bool OpalSRTPSession::ApplyCryptoKey(OpalMediaCryptoKeyList & keys, Direction dir)
 {
+  PSafeLockReadOnly lock(*this);
+
   for (OpalMediaCryptoKeyList::iterator it = keys.begin(); it != keys.end(); ++it) {
     OpalSRTPKeyInfo * keyInfo = dynamic_cast<OpalSRTPKeyInfo*>(&*it);
     if (keyInfo == NULL)
@@ -482,7 +473,8 @@ bool OpalSRTPSession::ApplyCryptoKey(OpalMediaCryptoKeyList & keys, Direction di
 
 bool OpalSRTPSession::ApplyKeyToSRTP(OpalSRTPKeyInfo & keyInfo, Direction dir)
 {
-  // This is all a bit vague in docs for libSRTP. Had to look into source to figure it out.
+  // Aleady locked on entry
+
   BYTE tmp_key_salt[32];
   memcpy(tmp_key_salt, keyInfo.GetCipherKey(), std::min((PINDEX)16, keyInfo.GetCipherKey().GetSize()));
   memcpy(&tmp_key_salt[16], keyInfo.GetAuthSalt(), std::min((PINDEX)14, keyInfo.GetAuthSalt().GetSize()));
@@ -519,6 +511,10 @@ bool OpalSRTPSession::IsCryptoSecured(Direction dir) const
 
 RTP_SyncSourceId OpalSRTPSession::AddSyncSource(RTP_SyncSourceId ssrc, Direction dir, const char * cname)
 {
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return 0;
+
   if ((ssrc = OpalRTPSession::AddSyncSource(ssrc, dir, cname)) == 0)
     return 0;
 
@@ -537,6 +533,8 @@ RTP_SyncSourceId OpalSRTPSession::AddSyncSource(RTP_SyncSourceId ssrc, Direction
 
 bool OpalSRTPSession::AddStreamToSRTP(RTP_SyncSourceId ssrc, Direction dir)
 {
+  // Aleady locked on entry
+
   // Get policy, create blank one if needed
   srtp_policy_t policy;
   memset(&policy, 0, sizeof(policy));
@@ -560,6 +558,8 @@ bool OpalSRTPSession::AddStreamToSRTP(RTP_SyncSourceId ssrc, Direction dir)
 
 OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & frame, RewriteMode rewrite)
 {
+  // Aleady locked on entry
+
   SendReceiveStatus status = OpalRTPSession::OnSendData(frame, rewrite);
   if (status != e_ProcessPacket)
     return status;
@@ -593,6 +593,8 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
 
 OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFrame & frame)
 {
+  // Aleady locked on entry
+
   SendReceiveStatus status = OpalRTPSession::OnSendControl(frame);
   if (status != e_ProcessPacket)
     return status;
@@ -624,6 +626,8 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
 
 OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame & frame)
 {
+  // Aleady locked on entry
+
   if (!IsCryptoSecured(e_Receiver)) {
     PTRACE_IF(3, (m_traceUnsecuredCount[e_Data][e_Receiver]++ % 100) == 0,
               *this << "keys not set, cannot protect control: " << m_traceUnsecuredCount[e_Data][e_Receiver]);
@@ -649,6 +653,8 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
 
 OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlFrame & frame)
 {
+  // Aleady locked on entry
+
   if (!IsCryptoSecured(e_Receiver)) {
     PTRACE_IF(3, (m_traceUnsecuredCount[e_Control][e_Receiver]++ % 100) == 0,
               *this << "keys not set, cannot protect control: " << m_traceUnsecuredCount[e_Control][e_Receiver]);
