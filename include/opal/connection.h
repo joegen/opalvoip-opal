@@ -1622,6 +1622,14 @@ class OpalConnection : public PSafeObject
      */
     const PString & GetToken() const { return callToken; }
 
+    /**Set the token for this connection.
+       Extreme care must be used in this function, the token must be unique for
+       all calls and connections.
+     */
+    virtual void SetToken(
+      const PString & newToken
+    );
+
     /**Get the call direction for this connection.
      */
     PBoolean IsOriginating() const { return m_originating; }

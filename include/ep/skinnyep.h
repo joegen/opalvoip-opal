@@ -494,12 +494,12 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
 
     enum Tones
     {
-      eToneSilence     = 0x00,
-      eToneDial        = 0x21,
-      eToneBusy        = 0x23,
-      eToneAlert       = 0x24,
-      eToneReorder     = 0x25,
-      eToneCallWaiting = 0x2d,
+      eToneSilence     = 0,
+      eToneDial        = 33,
+      eToneBusy        = 35,
+      eToneAlert       = 36,
+      eToneReorder     = 37,
+      eToneCallWaiting = 45,
       eToneNoTone      = 0x7f
     };
     OPAL_SKINNY_MSG(StartToneMsg, 0x0082,
@@ -520,7 +520,8 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
     );
 
     OPAL_SKINNY_MSG(KeyPadButtonMsg, 0x0003,
-      char     m_button;
+      BYTE     m_dtmf;
+      BYTE     m_padding[3];
       PUInt32l m_lineInstance;
       PUInt32l m_callIdentifier;
 
@@ -757,6 +758,7 @@ class OpalSkinnyConnection : public OpalRTPConnection
     virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::CallInfoMsg & msg);
     virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::CallInfo5Msg & msg);
     virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::SetRingerMsg & msg);
+    virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::StartToneMsg & msg);
     virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::OpenReceiveChannelMsg & msg);
     virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::CloseReceiveChannelMsg & msg);
     virtual bool OnReceiveMsg(const OpalSkinnyEndPoint::StartMediaTransmissionMsg & msg);
