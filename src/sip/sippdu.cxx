@@ -294,21 +294,12 @@ void SIPURL::ParseAsAddress(const PString & name,
   if (!address.GetIpAndPort(ip, port))
     return;
 
-  PStringStream uri;
-  uri << actualScheme << ':';
-  if (!name.IsEmpty())
-    uri << name << '@';
-  uri << ip.AsString(true, true);
-
-  if (port != 0 && port != defaultPort)
-    uri << ':' << port;
-
-  if (proto != defaultProto) {
-    proto.Delete(proto.Find('$'), 1); // Remove dollar
-    uri << ";transport=" << proto;
-  }
-
-  Parse(uri);
+  SetScheme(actualScheme);
+  SetUserName(name);
+  SetHostName(ip.AsString(true, true));
+  SetPort(port != defaultPort ? port : 0);
+  if (proto != defaultProto)
+    SetParamVar("transport", proto.Left(proto.Find('$'))); // Remove dollar
 }
 
 
