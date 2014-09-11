@@ -1679,20 +1679,6 @@ void OpalManager::SetRouteTable(const RouteTable & table)
 }
 
 
-static void ReplaceNDU(PString & destination, const PString & subst)
-{
-  if (subst.Find('@') != P_MAX_INDEX) {
-    PINDEX at = destination.Find('@');
-    if (at != P_MAX_INDEX) {
-      PINDEX du = destination.Find("<!du>", at);
-      if (du != P_MAX_INDEX)
-        destination.Delete(at, du-at);
-    }
-  }
-  destination.Replace("<!du>", subst, true);
-}
-
-
 PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_party, PINDEX & routeIndex)
 {
   PString destination;
@@ -1747,68 +1733,76 @@ PString OpalManager::ApplyRouteTable(const PString & a_party, const PString & b_
   if (destination.IsEmpty())
     return PString::Empty();
 
+  // See if B-Party a parsable URL
+  PURL b_url(b_party, NULL);
+
   // We are backward compatibility mode and the supplied address can be called
-  PINDEX colon = b_party.Find(':');
-  if (colon == P_MAX_INDEX)
-    colon = 0;
-  else if (FindEndPoint(b_party.Left(colon)) != NULL) {
-    // Hack to make some modes work
-    if (destination.Find("<da>") != P_MAX_INDEX)
-      return b_party;
-    colon++;
-  }
-  else if (b_party.NumCompare("tel", colon) == EqualTo) // Small cheat for tel: URI (RFC3966)
-    colon++;
-  else
-    colon = 0;
-
-  PINDEX nonDigitPos = b_party.FindSpan("0123456789*#-.()", colon + (b_party[colon] == '+'));
-  PString digits = b_party(colon, nonDigitPos-1);
-
-  PINDEX at = b_party.Find('@', colon);
-
-  // Another tel: URI hack
-  static const char PhoneContext[] = ";phone-context=";
-  PINDEX pos = b_party.Find(PhoneContext);
-  if (pos != P_MAX_INDEX) {
-    pos += sizeof(PhoneContext)-1;
-    PINDEX end = b_party.Find(';', pos)-1;
-    if (b_party[pos] == '+') // Phone context is a prefix
-      digits.Splice(b_party(pos+1, end), 0);
-    else // Otherwise phone context is a domain name
-      ReplaceNDU(destination, '@'+b_party(pos, end));
-  }
-
-  // Filter out the non E.164 digits, mainly for tel: URI support.
-  while ((pos = digits.FindOneOf("+-.()")) != P_MAX_INDEX)
-    digits.Delete(pos, 1);
-
-  PString user = b_party(colon, at-1);
-
-  destination.Replace("<da>", b_party, true);
-  destination.Replace("<db>", b_party, true);
-
-  if (destination.Find("<du>") != P_MAX_INDEX) {
-    if (at != P_MAX_INDEX) {
-      destination.Replace("<du>", user, true);
-      ReplaceNDU(destination, b_party.Mid(at));
-    }
-    else if (PIPSocket::IsLocalHost(user.Left(user.Find(':')))) {
-      destination.Replace("<du>", "", true);
-      ReplaceNDU(destination, user);
+  if (destination.Find("<da>") != P_MAX_INDEX) {
+    if (b_url.IsEmpty()) {
+      PINDEX colon = b_party.Find(':');
+      if (colon != P_MAX_INDEX && FindEndPoint(b_party.Left(colon)) != NULL)
+        return b_party;
     }
     else {
-      destination.Replace("<du>", user, true);
-      ReplaceNDU(destination, "");
+      if (FindEndPoint(b_url.GetScheme()) != NULL)
+        return b_party;
     }
   }
 
+  PString user, nonUser, digits, nonDigits;
+  if (b_url.IsEmpty()) {
+    PINDEX colon = b_party.Find(':');
+    if (colon == P_MAX_INDEX)
+      colon = 0;
+    else
+      ++colon;
+
+    PINDEX at = b_party.Find('@', colon);
+    user = b_party(colon, at-1);
+    nonUser = b_party.Mid('@');
+
+    if (nonUser.IsEmpty() && PIPSocket::IsLocalHost(user.Left(user.Find(':')))) {
+      nonUser = user;
+      user.MakeEmpty();
+    }
+
+    PINDEX nonDigitPos = b_party.FindSpan("0123456789*#-.()", colon + (b_party[colon] == '+'));
+    digits = b_party(colon, nonDigitPos-1);
+    nonDigits = b_party.Mid(nonDigitPos);
+  }
+  else {
+    user = b_url.GetUserName();
+    nonUser = b_url.GetHostPort() + b_url.AsString(PURL::RelativeOnly);
+    if (OpalIsE164(user)) {
+      digits = user;
+      nonDigits = nonUser;
+    }
+    else
+      nonDigits = b_party;
+  }
+
+  // This hack is to avoid double '@'
+  if (nonUser.Find('@') != P_MAX_INDEX) {
+    PINDEX at = destination.Find('@');
+    if (at != P_MAX_INDEX) {
+      PINDEX du = destination.Find("<!du>", at);
+      if (du != P_MAX_INDEX)
+        destination.Delete(at, du-at);
+    }
+  }
+
+  // Substute from source(s) to destination
+  destination.Replace("<da>", b_party, true);
+  destination.Replace("<db>", b_party, true);
+  destination.Replace("<du>", user, true);
+  destination.Replace("<!du>", nonUser, true);
   destination.Replace("<cu>", a_party(a_party.Find(':') + 1, a_party.Find('@') - 1), true);
-
   destination.Replace("<dn>", digits, true);
-  destination.Replace("<!dn>", b_party.Mid(nonDigitPos), true);
+  destination.Replace("<!dn>", nonDigits, true);
 
-  while ((pos = destination.FindRegEx("<dn[1-9]>")) != P_MAX_INDEX)
+  PINDEX pos;
+  static PRegularExpression const DNx("<dn[1-9]>");
+  while (DNx.Execute(destination, pos))
     destination.Splice(digits.Mid(destination[pos+3]-'0'), pos, 5);
 
   // Do meta character substitutions
