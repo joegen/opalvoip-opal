@@ -1118,7 +1118,8 @@ bool OpalMediaFormat::RegisterKnownMediaFormats(const PString & name)
   static struct {
     const char * m_name;
     MediaFormatFunction m_function;
-    #define KNOWN(codec) { OPAL_##codec, (MediaFormatFunction)GetOpal##codec }
+    #define KNOWN2(name, func) { OPAL_##name, (MediaFormatFunction)GetOpal##func }
+    #define KNOWN(codec) KNOWN2(codec, codec)
   } const known[] = {
     KNOWN(G722),
     KNOWN(G7221_24K),
@@ -1142,6 +1143,8 @@ bool OpalMediaFormat::RegisterKnownMediaFormats(const PString & name)
     KNOWN(GSM0610),
     KNOWN(GSMAMR),
     KNOWN(iLBC),
+    KNOWN2(SPEEX_NB, SpeexNB),
+    KNOWN2(SPEEX_WB, SpeexWB),
 #if OPAL_VIDEO
     KNOWN(H261),
     KNOWN(H263),
