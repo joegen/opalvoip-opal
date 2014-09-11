@@ -1223,7 +1223,8 @@ bool SIPEndPoint::OnReceivedNOTIFY(SIP_PDU & request)
 
   if (handler == NULL && eventPackage == SIPSubscribe::MessageSummary) {
     PTRACE(4, "Work around Asterisk bug in message-summary event package.");
-    SIPURL to(mime.GetTo().GetUserName() + "@" + mime.GetFrom().GetHostName());
+    SIPURL to(mime.GetFrom().GetHostName());
+    to.SetUserName(mime.GetTo().GetUserName());
     handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, eventPackage, PSafeReadWrite);
   }
 
@@ -2103,7 +2104,9 @@ void SIPEndPoint::AdjustToRegistration(SIP_PDU & pdu, SIPConnection * connection
   PSafePtr<SIPHandler> handler;
 
   if (to.GetScheme() != "tel") {
-    handler = activeSIPHandlers.FindSIPHandlerByUrl("sip:"+user+'@'+domain, SIP_PDU::Method_REGISTER, PSafeReadOnly);
+    SIPURL url(domain);
+    url.SetUserName(user);
+    handler = activeSIPHandlers.FindSIPHandlerByUrl(url, SIP_PDU::Method_REGISTER, PSafeReadOnly);
     PTRACE_IF(4, handler != NULL, "Found registrar on aor sip:" << user << '@' << domain);
   }
   else if (domain.IsEmpty() || OpalIsE164(domain)) {
