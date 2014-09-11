@@ -45,7 +45,7 @@
 PURL_LEGACY_SCHEME(sccp,
                    true,  /* URL scheme has a username */
                    false, /* URL scheme has a password */
-                   true,  /* URL scheme has a host:port */
+                   true,  /* URL scheme has a host:port - but default port == 0, so no port, and represents a device name not a host */
                    true,  /* URL scheme is username if no @, otherwise host:port */
                    false, /* URL scheme defaults to PIPSocket::GetHostName() if not present */
                    false, /* URL scheme has a query section */
@@ -53,7 +53,10 @@ PURL_LEGACY_SCHEME(sccp,
                    false, /* URL scheme has a fragment section */
                    false, /* URL scheme has a path */
                    false, /* URL scheme has relative path (no //) then scheme: is not output */
-                   2000);
+                   0);
+
+
+static PConstString SkinnyToneIndexes("0123456789ABCD*#");
 
 
 static PString CreateToken(const OpalSkinnyEndPoint::PhoneDevice & phone, unsigned callIdentifier)
@@ -769,9 +772,9 @@ void OpalSkinnyEndPoint::OnHookMsg::PrintOn(ostream & strm) const
 }
 
 
-bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice &, const StartToneMsg &)
+bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & phone, const StartToneMsg & msg)
 {
-  return true;
+  return DelegateMsg(phone, msg);
 }
 
 
@@ -801,7 +804,7 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice &, const KeyPadButtonMsg &)
 
 void OpalSkinnyEndPoint::KeyPadButtonMsg::PrintOn(ostream & strm) const
 {
-  strm << GetClass() << " '" << m_button<< "' line=" << m_lineInstance << " call=" << m_callIdentifier;
+  strm << GetClass() << " '" << SkinnyToneIndexes[m_dtmf] << "' line=" << m_lineInstance << " call=" << m_callIdentifier;
 }
 
 
@@ -917,6 +920,7 @@ PBoolean OpalSkinnyConnection::SetUpConnection()
 
   // At this point we just go off hook, wait for CallStateMsg which starts dialing
   m_phoneDevice.SendSkinnyMsg(OpalSkinnyEndPoint::OffHookMsg());
+  m_needSoftKeyEndcall = true;
   return true;
 }
 
@@ -997,11 +1001,7 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg &
   if (m_callIdentifier != msg.m_callIdentifier) {
     m_callIdentifier = msg.m_callIdentifier;
     PTRACE(3, "Call identifier set to " << m_callIdentifier);
-    PString newToken = CreateToken(m_phoneDevice, m_callIdentifier);
-    if (callToken != newToken) {
-      callToken = newToken;
-      PTRACE(3, "Set incoming calls new token to \"" << callToken << '"');
-    }
+    SetToken(CreateToken(m_phoneDevice, m_callIdentifier));
   }
 
   if (m_lineInstance != msg.m_lineInstance) {
@@ -1013,25 +1013,19 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg &
     case OpalSkinnyEndPoint::eStateRingIn :
       break;
 
-    case OpalSkinnyEndPoint::eStateOffHook:
-      if (IsOriginating()) {
-        OnProceeding();
-        for (PINDEX i = 0; i < m_calledPartyNumber.GetLength(); ++i) {
-          OpalSkinnyEndPoint::KeyPadButtonMsg keypad;
-          keypad.m_button = m_calledPartyNumber[i];
-          keypad.m_callIdentifier = m_callIdentifier;
-          keypad.m_lineInstance = m_lineInstance;
-          if (!m_phoneDevice.SendSkinnyMsg(keypad))
-            return false;
-        }
-      }
-      break;
-
     case OpalSkinnyEndPoint::eStateOnHook:
       if (IsEstablished()) {
         m_needSoftKeyEndcall = false;
         Release(EndedByRemoteUser);
       }
+      break;
+
+    case OpalSkinnyEndPoint::eStateProceed :
+      OnProceeding();
+      break;
+
+    case OpalSkinnyEndPoint::eStateRingOut :
+      OnAlerting();
       break;
 
     case OpalSkinnyEndPoint::eStateConnected :
@@ -1120,6 +1114,38 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::SetRingerMsg &
       break;
 
     default:
+      break;
+  }
+
+  return true;
+}
+
+
+bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::StartToneMsg & msg)
+{
+  switch (msg.GetType()) {
+    case OpalSkinnyEndPoint::eToneDial :
+      if (IsOriginating() && GetPhase() == SetUpPhase) {
+        for (PINDEX i = 0; i < m_calledPartyNumber.GetLength(); ++i) {
+          PINDEX index = SkinnyToneIndexes.Find(m_calledPartyNumber[i]);
+          if (index != P_MAX_INDEX) {
+            OpalSkinnyEndPoint::KeyPadButtonMsg keypad;
+            keypad.m_dtmf = (BYTE)index;
+            keypad.m_callIdentifier = m_callIdentifier;
+            keypad.m_lineInstance = m_lineInstance;
+            if (!m_phoneDevice.SendSkinnyMsg(keypad))
+              return false;
+          }
+        }
+      }
+      break;
+
+    case OpalSkinnyEndPoint::eToneBusy :
+      Release(EndedByRemoteBusy);
+      break;
+
+    case OpalSkinnyEndPoint::eToneReorder :
+      Release(EndedByNoAnswer);
       break;
   }
 

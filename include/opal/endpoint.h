@@ -944,6 +944,7 @@ class OpalEndPoint : public PObject
     OpalConnection * AddConnection(OpalConnection * connection);
 
     friend void OpalManager::GarbageCollection();
+    friend void OpalConnection::SetToken(const PString & newToken);
 
   private:
     P_REMOVE_VIRTUAL(PBoolean, OnIncomingConnection(OpalConnection &, unsigned), false);

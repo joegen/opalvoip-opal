@@ -269,6 +269,21 @@ bool OpalConnection::GarbageCollection()
 }
 
 
+void OpalConnection::SetToken(const PString & newToken)
+{
+  if (callToken == newToken)
+    return;
+
+  PTRACE(3, "Set new token from \"" << callToken << "\" to \"" << newToken << '"');
+
+  endpoint.connectionsActive.DisallowDeleteObjects();
+  endpoint.connectionsActive.RemoveAt(callToken);
+  endpoint.connectionsActive.AllowDeleteObjects();
+  callToken = newToken;
+  endpoint.connectionsActive.SetAt(newToken, this);
+}
+
+
 void OpalConnection::InternalSetAsOriginating()
 {
   PTRACE(4, "Set originating " << *this);
