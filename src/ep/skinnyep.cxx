@@ -205,25 +205,21 @@ PSafePtr<OpalConnection> OpalSkinnyEndPoint::MakeConnection(OpalCall & call,
                                                             unsigned int options,
                                                             OpalConnection::StringOptions * stringOptions)
 {
-  PString numberName;
-  if (party.NumCompare(GetPrefixName() + ':') == EqualTo)
-    numberName = party.Mid(GetPrefixName().GetLength() + 1);
-  else
-    numberName = party;
-
-  PString number, name;
-  numberName.Split('@', number, name, PString::SplitDefaultToBefore|PString::SplitTrim);
-
-  if (!OpalIsE164(number)) {
-    PTRACE(2, "Remote party \"" << number << "\" is not an E.164 number.");
+  PURL url(party, "sccp");
+  if (!OpalIsE164(url.GetUserName())) {
+    PTRACE(2, "Remote party \"" << party << "\" does not have E.164 number.");
     return NULL;
   }
+
+  PString deviceName = url.GetHostName();
+  if (deviceName.IsEmpty())
+   deviceName = url.GetParamVars().Get(OPAL_OPT_CALLING_PARTY_NAME);
 
   PWaitAndSignal mutex(m_phoneDevicesMutex);
 
   PhoneDevice * phone;
 
-  if (name.IsEmpty()) {
+  if (deviceName.IsEmpty()) {
     PhoneDeviceDict::iterator dev = m_phoneDevices.begin();
     if (dev == m_phoneDevices.end()) {
       PTRACE(2, "Cannot call, no phone devices registered.");
@@ -240,20 +236,20 @@ PSafePtr<OpalConnection> OpalSkinnyEndPoint::MakeConnection(OpalCall & call,
     phone = &dev->second;
   }
   else {
-    phone = m_phoneDevices.GetAt(name);
+    phone = m_phoneDevices.GetAt(deviceName);
 
     if (phone == NULL) {
-      PTRACE(2, "Cannot call, phone device \"" << name << "\" does not exist.");
+      PTRACE(2, "Cannot call, phone device \"" << deviceName << "\" does not exist.");
       return NULL;
     }
 
     if (phone->m_activeConnection != NULL) {
-      PTRACE(2, "Cannot call, phone device \"" << name << "\" is in use.");
+      PTRACE(2, "Cannot call, phone device \"" << deviceName << "\" is in use.");
       return NULL;
     }
   }
 
-  return AddConnection(CreateConnection(call, *phone, 0, number, userData, options, stringOptions));
+  return AddConnection(CreateConnection(call, *phone, 0, url.GetUserName(), userData, options, stringOptions));
 }
 
 
