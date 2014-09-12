@@ -270,6 +270,8 @@ class MyH323EndPoint : public H323ConsoleEndPoint
   protected:
     MyManager        & m_manager;
     MyGatekeeperServer m_gkServer;
+    PStringArray       m_configuredAliases;
+    PStringArray       m_configuredAliasPatterns;
 };
 
 #endif // OPAL_H323
@@ -318,14 +320,16 @@ public:
   bool Configure(PConfig & cfg, PConfigPage * rsrc);
 
   void AutoRegister(const PString & server, const PString & name, const PString & localInterface, bool registering);
-  void ExpandWildcards(const PStringArray & input, PStringArray & names, PStringArray & servers);
 
 protected:
+  void ExpandWildcards(const PStringArray & input, PStringArray & names, PStringArray & servers);
+
   MyManager  & m_manager;
   PString      m_defaultServer;
   PString      m_defaultInterface;
   unsigned     m_deviceType;
   PStringArray m_deviceNames;
+  PStringArray m_expandedDeviceNames;
 };
 
 #endif // OPAL_SKINNY
