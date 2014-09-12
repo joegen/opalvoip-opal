@@ -290,7 +290,7 @@ bool OpalSkinnyEndPoint::Register(const PString & server, const PString & name, 
   PhoneDevice * phoneDevice = m_phoneDevices.GetAt(name);
   if (phoneDevice != NULL) {
     if (phoneDevice->m_deviceType == deviceType) {
-      PTRACE(3, "Phone device \"" << name << "\" already registered");
+      PTRACE(4, "Phone device \"" << name << "\" already registered");
       return false;
     }
 
