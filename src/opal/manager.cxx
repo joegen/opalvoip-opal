@@ -436,8 +436,9 @@ void OpalManager::AttachEndPoint(OpalEndPoint * endpoint, const PString & prefix
 
   PWriteWaitAndSignal mutex(endpointsMutex);
 
-  if (endpointMap.find(thePrefix) != endpointMap.end()) {
-    PTRACE(1, "Cannot re-attach endpoint prefix " << thePrefix);
+  std::map<PString, OpalEndPoint *>::iterator it = endpointMap.find(thePrefix);
+  if (it != endpointMap.end()) {
+    PTRACE_IF(1, it->second != endpoint, "An endpoint is already attached to prefix " << thePrefix);
     return;
   }
 
