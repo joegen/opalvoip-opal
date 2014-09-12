@@ -798,25 +798,28 @@ bool MySkinnyEndPoint::Configure(PConfig &, PConfigPage * rsrc)
   SetSimulatedAudioFile(rsrc->AddStringField(SkinnySimulatedAudioFileKey, 0, GetSimulatedAudioFile(),
                         "WAV file to simulate audio on SCCP when can't gateway channel.", 1, 80));
 
-  PStringArray oldNames = GetPhoneDeviceNames();
-  PStringArray newNames, servers;
-  ExpandWildcards(m_deviceNames, newNames, servers);
-  for (PINDEX i = 0; i < oldNames.GetSize(); ++i) {
-    if (newNames.GetValuesIndex(oldNames[i]) == P_MAX_INDEX) {
-      if (!Unregister(oldNames[i])) {
-        PSYSTEMLOG(Error, "Could not unregister " << oldNames[i]);
-      }
+  PStringArray newExpandedNames, servers;
+  ExpandWildcards(m_deviceNames, newExpandedNames, servers);
+  unsigned unregisterCount = 0;
+  for (PINDEX i = 0; i < m_expandedDeviceNames.GetSize(); ++i) {
+    if (newExpandedNames.GetValuesIndex(m_expandedDeviceNames[i]) == P_MAX_INDEX) {
+      Unregister(m_expandedDeviceNames[i]);
+      ++unregisterCount;
     }
   }
 
-  for (PINDEX i = 0; i < newNames.GetSize(); ++i) {
+  unsigned registerCount = 0;
+  for (PINDEX i = 0; i < newExpandedNames.GetSize(); ++i) {
     PString server, localInterface;
     servers[i].Split(";interface=", server, localInterface, PString::SplitDefaultToBefore | PString::SplitTrim);
-    if (!Register(server, newNames[i], m_deviceType, localInterface)) {
-      PSYSTEMLOG(Error, "Could not register " << newNames[i] << " with skinny server \"" << servers[i] << '"');
-    }
+    if (Register(server, newExpandedNames[i], m_deviceType, localInterface))
+      ++registerCount;
   }
 
+  PSYSTEMLOG(Info, "SCCP unregistered " << unregisterCount << " of " << m_expandedDeviceNames.GetSize()
+                          << " devices and registered " << registerCount << " new devices");
+
+  m_expandedDeviceNames = newExpandedNames;
   return true;
 }
 
@@ -828,21 +831,13 @@ void MySkinnyEndPoint::AutoRegister(const PString & server, const PString & wild
   PStringArray names, servers;
   ExpandWildcards(wildcard, names, servers);
 
-  PStringArray oldNames = GetPhoneDeviceNames();
-
   for (PINDEX i = 0; i < names.GetSize(); ++i) {
     PString name = names[i];
 
-    if (registering) {
-      if (oldNames.GetValuesIndex(name) == P_MAX_INDEX && !Register(actualServer, name, m_deviceType, localInterface)) {
-        PSYSTEMLOG(Error, "Could not register " << name << " with skinny server \"" << actualServer << '"');
-      }
-    }
-    else {
-      if (!Unregister(name)) {
-        PSYSTEMLOG(Error, "Could not unregister " << name);
-      }
-    }
+    if (registering)
+      Register(actualServer, name, m_deviceType, localInterface);
+    else
+      Unregister(name);
   }
 }
 

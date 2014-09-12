@@ -106,15 +106,28 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
 
   // Add H.323 parameters
   {
-    PStringArray aliases = rsrc->AddStringArrayField(H323AliasesKey, false, 0, GetAliasNames(), "H.323 Alias names for local user", 1, 30);
-    if (!aliases.IsEmpty()) {
-      SetLocalUserName(aliases[0]);
-      for (PINDEX i = 1; i < aliases.GetSize(); i++)
-        AddAliasName(aliases[i]);
+    if (m_configuredAliases.IsEmpty())
+      m_configuredAliases = GetAliasNames();
+    PStringArray newAliases = rsrc->AddStringArrayField(H323AliasesKey, false, 0, m_configuredAliases, "H.323 Alias names for local user", 1, 30);
+    for (PINDEX i = 0; i < m_configuredAliases.GetSize(); ++i) {
+      if (newAliases.GetValuesIndex(m_configuredAliases[i]) == P_MAX_INDEX)
+        RemoveAliasName(m_configuredAliases[i]);
     }
+    for (PINDEX i = 0; i < newAliases.GetSize(); i++)
+      AddAliasName(newAliases[i]);
   }
 
-  SetAliasNamePatterns(rsrc->AddStringArrayField(H323AliasPatternsKey, false, 0, GetAliasNamePatterns(), "H.323 Alias patterns for local user", 1, 30));
+  {
+    if (m_configuredAliasPatterns.IsEmpty())
+      m_configuredAliasPatterns = GetAliasNamePatterns();
+    PStringArray newPatterns = rsrc->AddStringArrayField(H323AliasPatternsKey, false, 0, m_configuredAliasPatterns, "H.323 Alias patterns for local user", 1, 30);
+    for (PINDEX i = 0; i < m_configuredAliasPatterns.GetSize(); ++i) {
+      if (newPatterns.GetValuesIndex(m_configuredAliasPatterns[i]) == P_MAX_INDEX)
+        RemoveAliasNamePattern(m_configuredAliasPatterns[i]);
+    }
+    for (PINDEX i = 0; i < newPatterns.GetSize(); i++)
+      AddAliasNamePattern(newPatterns[i]);
+  }
 
   SetTerminalType((TerminalTypes)rsrc->AddIntegerField(H323TerminalTypeKey, 0, 255, GetTerminalType(), "",
                   "H.323 Terminal Type code for master/slave resolution:<BR>"
