@@ -224,6 +224,8 @@ void MyProcess::OnConfigChanged()
 
 PBoolean MyProcess::Initialise(const char * initMsg)
 {
+  PSYSTEMLOG(Warning, "Service " << GetName() << ' ' << initMsg);
+
   Params params("Parameters");
   params.m_httpPort = DefaultHTTPPort;
   if (!InitialiseBase(params))
@@ -306,7 +308,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
     return false;
   }
 
-  PSYSTEMLOG(Info, "Service " << GetName() << ' ' << initMsg);
+  PSYSTEMLOG(Info, "Completed configuring service " << GetName() << " (" << initMsg << ')');
   return true;
 }
 
