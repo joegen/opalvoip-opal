@@ -803,8 +803,9 @@ class OpalSkinnyConnection : public OpalRTPConnection
 
 template <class MSG> bool OpalSkinnyEndPoint::DelegateMsg(const PhoneDevice & phone, const MSG & msg)
 {
-  PTRACE_CONTEXT_ID_PUSH_THREAD(phone.m_activeConnection);
-  return phone.m_activeConnection == NULL || phone.m_activeConnection->OnReceiveMsg(msg);
+  PSafePtr<OpalSkinnyConnection> connection = phone.m_activeConnection;
+  PTRACE_CONTEXT_ID_PUSH_THREAD(connection);
+  return connection == NULL || connection->OnReceiveMsg(msg);
 }
 
 
