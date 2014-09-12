@@ -1498,7 +1498,7 @@ bool H323EndPoint::AddAliasName(const PString & name)
   PAssert(!name, "Must have non-empty string in alias name!");
 
   if (localAliasNames.find(name) != localAliasNames.end()) {
-    PTRACE(3, "H323\tAlias already present: \"" << name << '"');
+    PTRACE(4, "H323\tAlias already present: \"" << name << '"');
     return false;
   }
 
