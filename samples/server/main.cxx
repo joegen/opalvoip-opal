@@ -250,6 +250,8 @@ void MyProcess::OnConfigChanged()
 
 PBoolean MyProcess::Initialise(const char * initMsg)
 {
+  PSYSTEMLOG(Warning, "Service " << GetName() << ' ' << initMsg);
+
   PConfig cfg(ParametersSection);
 
   // Get the HTTP basic authentication info
@@ -412,7 +414,7 @@ PBoolean MyProcess::Initialise(const char * initMsg)
     return false;
   }
 
-  PSYSTEMLOG(Info, "Service " << GetName() << ' ' << initMsg);
+  PSYSTEMLOG(Info, "Completed configuring service " << GetName() << " (" << initMsg << ')');
   return true;
 }
 
