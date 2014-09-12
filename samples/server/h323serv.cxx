@@ -167,14 +167,8 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
   SetGatekeeperRasRedirect(rsrc->AddBooleanField(GatekeeperRasRedirectKey, GetGatekeeperRasRedirect(),
             "Compatibility issue with some gatekeepers using RAS address for alternate gatekeeper."));
 
-  if (gkEnable) {
-    if (UseGatekeeper(gkAddress, gkIdentifier, gkInterface)) {
-      PSYSTEMLOG(Info, "Register with gatekeeper " << *GetGatekeeper());
-    }
-    else {
-      PSYSTEMLOG(Error, "Could not register with gatekeeper!");
-    }
-  }
+  if (gkEnable)
+    UseGatekeeper(gkAddress, gkIdentifier, gkInterface);
   else {
     PSYSTEMLOG(Info, "Not using remote gatekeeper.");
     RemoveGatekeeper();
