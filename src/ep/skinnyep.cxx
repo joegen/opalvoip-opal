@@ -327,7 +327,7 @@ bool OpalSkinnyEndPoint::Unregister(const PString & name)
     return true;
   }
 
-  PTRACE(3, "Phone device \"" << name << "\" not registered");
+  PTRACE(4, "Phone device \"" << name << "\" not registered");
   return false;
 }
 
@@ -570,7 +570,7 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & phone, const RegisterAckMsg 
 {
   phone.m_status = RegisteredStatusText;
 
-  PTRACE(2, "Registered: Server " << ack.m_protocol);
+  PTRACE(3, "Registered " << phone.GetName() << ": Server " << ack.m_protocol);
 
 
   PIPSocket::AddressAndPort ap;
@@ -608,7 +608,7 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice &, const UnregisterMsg &)
 
 bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & phone, const UnregisterAckMsg &)
 {
-  PTRACE(2, "Unregistered " << phone.m_name << " from server");
+  PTRACE(3, "Unregistered " << phone.m_name << " from server");
   phone.m_status = "Unregistered";
   return false;
 }
@@ -688,7 +688,7 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & phone, const CallStateMsg & 
   // Incoming call
   OpalCall * call = manager.InternalCreateCall();
   if (call == NULL) {
-    PTRACE(2, "Internal failure to create call");
+    PTRACE(3, "Internal failure to create call");
     return true;
   }
 
