@@ -179,6 +179,7 @@ PBoolean MyProcess::OnStart()
 {
   // Set log level as early as possible
   Params params(NULL);
+  params.m_forceRotate = true;
   InitialiseBase(params);
 
   if (m_manager == NULL)
