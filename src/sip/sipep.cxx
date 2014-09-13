@@ -836,6 +836,8 @@ bool SIPEndPoint::OnReceivedREGISTER(SIP_PDU & request)
     return true;
   }
 
+  PTRACE(3, "SIP-Reg", "Handling REGISTER: " << mime.GetTo());
+
   SIP_PDU response(request, SIP_PDU::Successful_OK);
   response.SetStatusCode(InternalHandleREGISTER(request, &response));
   if (response.GetStatusCode() == SIP_PDU::Successful_OK) {
@@ -997,9 +999,11 @@ SIP_PDU::StatusCodes SIPEndPoint::RegistrarAoR::OnReceivedREGISTER(SIPEndPoint &
       m_bindings.erase(it++);
   }
 
+  unsigned expires = mime.GetExpires(0);
+
   // Special case of '*', everything says removed
   if (newContacts.size() == 1 && newContacts.front().GetHostName() == "*") {
-    if (mime.GetExpires() != 0) {
+    if (expires != 0) {
       PTRACE(2, "SIP-Reg", "Non zero Expires with '*' Contacts");
       return SIP_PDU::Failure_BadRequest;
     }
@@ -1007,9 +1011,9 @@ SIP_PDU::StatusCodes SIPEndPoint::RegistrarAoR::OnReceivedREGISTER(SIPEndPoint &
     return SIP_PDU::Successful_OK;
   }
 
-  // PUt bindings we have been given back again, effectively updating them
+  // Put bindings we have been given back again, effectively updating them
   for (SIPURLList::const_iterator contact = newContacts.begin(); contact != newContacts.end(); ++contact) {
-    if (contact->GetFieldParameters().GetInteger("expires") > 0)
+    if (contact->GetFieldParameters().GetInteger("expires", expires) > 0)
       m_bindings[*contact].m_id = id;
   }
 
