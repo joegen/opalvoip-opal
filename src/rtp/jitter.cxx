@@ -282,13 +282,15 @@ OpalAudioJitterBuffer::~OpalAudioJitterBuffer()
 void OpalAudioJitterBuffer::Close()
 {
   m_closed = true;
+  m_frameCount.Signal();
 }
 
 
 void OpalAudioJitterBuffer::Restart()
 {
-  m_closed = false;
+  m_frameCount.Reset();
   Reset();
+  m_closed = false;
 }
 
 
@@ -445,7 +447,7 @@ PBoolean OpalAudioJitterBuffer::WriteData(const RTP_DataFrame & frame, PTimeInte
   FrameMap::iterator oldestFrame = m_frames.begin();
   if (oldestFrame != m_frames.end()) {
     RTP_Timestamp delta = timestamp - oldestFrame->second.GetTimestamp();
-    if (delta < m_maxJitterDelay*2)
+    if (delta < (m_maxJitterDelay > 0 ? (m_maxJitterDelay*2) : (m_timeUnits*1000)))
       m_consecutiveOverflows = 0;
     else {
       ANALYSE(In, timestamp, "Overflow");
@@ -467,6 +469,7 @@ PBoolean OpalAudioJitterBuffer::WriteData(const RTP_DataFrame & frame, PTimeInte
 #if PTRACING
     m_lastInsertTick = tick;
 #endif
+    m_frameCount.Signal();
   }
   else {
     PTRACE(2, "Jitter\tAttempt to insert two RTP packets with same timestamp: " << timestamp);
@@ -509,6 +512,9 @@ PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, PTimeInterval PT
 {
   // Default response is an empty frame, ie silence
   frame.SetPayloadSize(0);
+
+  if (m_maxJitterDelay == 0)
+    m_frameCount.Wait(); // Go synchronous
 
   PWaitAndSignal mutex(m_bufferMutex);
 

@@ -65,7 +65,7 @@ class OpalJitterBuffer : public PObject
 
       Init(
         const OpalMediaType & mediaType,
-        unsigned minDelay,
+        unsigned minDelay = 0,
         unsigned maxDelay = 0,
         unsigned timeUnits = 8,
         unsigned packetSize = 2048
@@ -291,8 +291,9 @@ class OpalAudioJitterBuffer : public OpalJitterBuffer
     } m_synchronisationState;
 
     typedef std::map<RTP_Timestamp, RTP_DataFrame> FrameMap;
-    FrameMap m_frames;
-    PMutex   m_bufferMutex;
+    FrameMap   m_frames;
+    PMutex     m_bufferMutex;
+    PSemaphore m_frameCount;
 
 #if PTRACING
     PTimeInterval m_lastInsertTick;

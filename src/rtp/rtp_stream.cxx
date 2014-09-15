@@ -61,7 +61,7 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
   , m_rtpSession(rtp)
   , m_rewriteHeaders(true)
   , m_syncSource(0)
-  , m_jitterBuffer(OpalJitterBuffer::Create(OpalJitterBuffer::Init()))
+  , m_jitterBuffer(NULL)
   , m_receiveNotifier(PCREATE_RTPDataNotifier(OnReceivedPacket))
 {
   /* If we are a source then we should set our buffer size to the max
@@ -80,10 +80,6 @@ OpalRTPMediaStream::~OpalRTPMediaStream()
 {
   Close();
 
-  m_rtpSession.RemoveDataNotifier(m_receiveNotifier);
-
-  // Fail safe
-  m_rtpSession.SetJitterBuffer(NULL, m_syncSource);
   delete m_jitterBuffer;
 
   m_rtpSession.SafeDereference();
@@ -95,8 +91,12 @@ PBoolean OpalRTPMediaStream::Open()
   if (m_isOpen)
     return true;
 
-  if (IsSource())
+  if (IsSource()) {
+    delete m_jitterBuffer;
+    m_jitterBuffer = OpalJitterBuffer::Create(OpalJitterBuffer::Init(mediaFormat.GetMediaType()));
+    m_rtpSession.SetJitterBuffer(m_jitterBuffer, m_syncSource);
     m_rtpSession.AddDataNotifier(m_receiveNotifier);
+  }
 
 #if OPAL_VIDEO
   m_forceIntraFrameFlag = mediaFormat.GetMediaType() == OpalMediaType::Video();
@@ -128,8 +128,12 @@ void OpalRTPMediaStream::InternalClose()
 {
   // Break any I/O blocks and wait for the thread that uses this object to
   // terminate before we allow it to be deleted.
-  if (IsSource())
+  if (m_jitterBuffer != NULL) {
+    m_rtpSession.RemoveDataNotifier(m_receiveNotifier);
+    m_rtpSession.SetJitterBuffer(NULL, m_syncSource);
     m_jitterBuffer->Close();
+    // Don't delete m_jitterBuffer as read thread may still be running
+  }
 }
 
 
@@ -138,14 +142,11 @@ bool OpalRTPMediaStream::InternalSetPaused(bool pause, bool fromUser, bool fromP
   if (!OpalMediaStream::InternalSetPaused(pause, fromUser, fromPatch))
     return false; // Had not changed
 
-  if (IsSource()) {
-    if (!pause)
+  if (m_jitterBuffer != NULL) {
+    if (pause)
       m_jitterBuffer->Close();
-
-    // We make referenced copy of pointer so can't be deleted out from under us
-    OpalMediaPatchPtr mediaPatch = m_mediaPatch;
-    if (mediaPatch != NULL)
-      mediaPatch->EnableJitterBuffer(!pause);
+    else
+      m_jitterBuffer->Restart();
   }
 
   return true;
@@ -154,8 +155,8 @@ bool OpalRTPMediaStream::InternalSetPaused(bool pause, bool fromUser, bool fromP
 
 void OpalRTPMediaStream::OnReceivedPacket(OpalRTPSession &, OpalRTPSession::Data & data)
 {
-  PReadWaitAndSignal mutex(m_jitterMutex);
-  m_jitterBuffer->WriteData(data.m_frame);
+  if (m_jitterBuffer != NULL)
+    m_jitterBuffer->WriteData(data.m_frame);
 }
 
 
@@ -169,11 +170,8 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
     return false;
   }
 
-  {
-    PReadWaitAndSignal mutex(m_jitterMutex);
-    if (!m_jitterBuffer->ReadData(packet))
-      return false;
-  }
+  if (m_jitterBuffer == NULL || !m_jitterBuffer->ReadData(packet))
+    return false;
 
 #if OPAL_VIDEO
   if (packet.GetDiscontinuity() > 0 && mediaFormat.GetMediaType() == OpalMediaType::Video()) {
@@ -263,22 +261,11 @@ PBoolean OpalRTPMediaStream::RequiresPatchThread() const
 
 bool OpalRTPMediaStream::InternalSetJitterBuffer(const OpalJitterBuffer::Init & init)
 {
-  if (!IsOpen() || IsSink() || !RequiresPatchThread())
+  if (!IsOpen() || IsSink() || !RequiresPatchThread() || m_jitterBuffer == NULL)
     return false;
 
   PTRACE_IF(4, init.m_maxJitterDelay == 0, "Jitter", "Switching off jitter buffer " << *m_jitterBuffer);
-
-  m_jitterMutex.StartRead();
-  m_jitterBuffer->Close();
-  m_jitterMutex.StartWrite();
-
-  delete m_jitterBuffer;
-  m_jitterBuffer = OpalJitterBuffer::Create(init);
-  m_jitterMutex.EndWrite();
-
-  PTRACE(4, "Jitter", "Created RTP jitter buffer " << *m_jitterBuffer);
-  m_rtpSession.SetJitterBuffer(m_jitterBuffer, m_syncSource);
-  m_jitterMutex.EndRead();
+  m_jitterBuffer->SetDelay(init);
 
   return true;
 }
@@ -296,6 +283,9 @@ PBoolean OpalRTPMediaStream::SetPatch(OpalMediaPatch * patch)
   if (!IsOpen() || IsSink())
     return OpalMediaStream::SetPatch(patch);
 
+  if (m_jitterBuffer == NULL)
+    return false;
+
   OpalMediaPatchPtr oldPatch = InternalSetPatchPart1(patch);
   m_jitterBuffer->Close();
   InternalSetPatchPart2(oldPatch);
@@ -309,8 +299,6 @@ void OpalRTPMediaStream::GetStatistics(OpalMediaStatistics & statistics, bool fr
 {
   OpalMediaStream::GetStatistics(statistics, fromPatch);
   m_rtpSession.GetStatistics(statistics, IsSource(), m_syncSource);
-
-  PReadWaitAndSignal mutex(m_jitterMutex);
 
   if (m_jitterBuffer != NULL) {
     statistics.m_packetsTooLate    = m_jitterBuffer->GetPacketsTooLate();
