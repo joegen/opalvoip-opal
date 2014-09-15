@@ -2675,13 +2675,12 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
 
 void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
-  if (IsReleased()) {
-    PTRACE(2, "SIP\tNot processing OK as released " << *this);
-    return;
-  }
-
   switch (transaction.GetMethod()) {
     case SIP_PDU::Method_INVITE :
+      if (IsReleased()) {
+        PTRACE(2, "SIP\tNot processing INVITE OK as released " << *this);
+        return;
+      }
       break;
 
     case SIP_PDU::Method_MESSAGE :
