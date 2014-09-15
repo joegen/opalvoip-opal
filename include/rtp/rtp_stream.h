@@ -156,7 +156,6 @@ protected:
     bool               m_rewriteHeaders;
     RTP_SyncSourceId   m_syncSource;
     OpalJitterBuffer * m_jitterBuffer;
-    PReadWriteMutex    m_jitterMutex;
 #if OPAL_VIDEO
     bool             m_forceIntraFrameFlag;
     PSimpleTimer     m_forceIntraFrameTimer;
