@@ -672,6 +672,7 @@ class OpalRTPSession : public OpalMediaSession
       virtual void OnSendReceiverReport(RTP_ControlFrame::ReceiverReport & report);
       virtual void OnRxSenderReport(const RTP_SenderReport & report);
       virtual void OnRxReceiverReport(const ReceiverReport & report);
+      virtual SendReceiveStatus SendBYE();
 
       OpalRTPSession  & m_session;
       Direction         m_direction;

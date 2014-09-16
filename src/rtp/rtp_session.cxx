@@ -735,41 +735,15 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendBYE(RTP_SyncSourceId ssrc)
   if (!IsOpen())
     return e_AbortTransport;
 
-  RTP_ControlFrame report;
+  PSafeLockReadOnly lock(*this);
+  if (!lock.IsLocked())
+    return e_AbortTransport;
 
-  {
-    PSafeLockReadOnly lock(*this);
-    if (!lock.IsLocked())
-      return e_AbortTransport;
+  SyncSource * sender;
+  if (!GetSyncSource(ssrc, e_Sender, sender))
+    return e_ProcessPacket;
 
-    SyncSource * sender;
-    if (!GetSyncSource(ssrc, e_Sender, sender))
-      return e_ProcessPacket;
-
-    InitialiseControlFrame(report, *sender);
-  }
-
-  PTRACE(3, *this << "sending BYE, SSRC=" << RTP_TRACE_SRC(ssrc));
-
-  static char const ReasonStr[] = "Session ended";
-  static size_t ReasonLen = sizeof(ReasonStr);
-
-  // insert BYE
-  report.StartNewPacket(RTP_ControlFrame::e_Goodbye);
-  report.SetPayloadSize(4+1+ReasonLen);  // length is SSRC + ReasonLen + reason
-
-  BYTE * payload = report.GetPayloadPtr();
-
-  // one SSRC
-  report.SetCount(1);
-  *(PUInt32b *)payload = ssrc;
-
-  // insert reason
-  payload[4] = (BYTE)ReasonLen;
-  memcpy((char *)(payload+5), ReasonStr, ReasonLen);
-
-  report.EndPacket();
-  SendReceiveStatus status = WriteControl(report);
+  SendReceiveStatus status = sender->SendBYE();
   if (status == e_ProcessPacket) {
     // Now remove the shut down SSRC
     LockReadWrite();
@@ -784,6 +758,35 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendBYE(RTP_SyncSourceId ssrc)
   }
 
   return status;
+}
+
+
+OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::SendBYE()
+{
+  PTRACE(3, &m_session, m_session << "sending BYE, SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier));
+
+  RTP_ControlFrame report;
+  m_session.InitialiseControlFrame(report, *this);
+
+  static char const ReasonStr[] = "Session ended";
+  static size_t ReasonLen = sizeof(ReasonStr);
+
+  // insert BYE
+  report.StartNewPacket(RTP_ControlFrame::e_Goodbye);
+  report.SetPayloadSize(4+1+ReasonLen);  // length is SSRC + ReasonLen + reason
+
+  BYTE * payload = report.GetPayloadPtr();
+
+  // one SSRC
+  report.SetCount(1);
+  *(PUInt32b *)payload = m_sourceIdentifier;
+
+  // insert reason
+  payload[4] = (BYTE)ReasonLen;
+  memcpy((char *)(payload+5), ReasonStr, ReasonLen);
+
+  report.EndPacket();
+  return m_session.WriteControl(report);
 }
 
 
@@ -2117,6 +2120,14 @@ bool OpalRTPSession::Close()
     return false;
 
   PTRACE(4, "Closing RTP.");
+
+  if (LockReadOnly()) {
+    for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
+      if (it->second->m_direction == e_Sender && it->second->m_packets > 0)
+        it->second->SendBYE();
+    }
+    UnlockReadOnly();
+  }
 
   InternalStopRead();
 
