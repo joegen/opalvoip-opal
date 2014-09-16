@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{80caeb72-2f61-47d3-a18e-36ef42706f72}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="G.726">
+      <UniqueIdentifier>{925cbe9f-a206-440f-a9c6-de8be40829fd}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="g711.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="g726codec.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="g726\g726_16.c">
+      <Filter>G.726</Filter>
+    </ClCompile>
+    <ClCompile Include="g726\g726_24.c">
+      <Filter>G.726</Filter>
+    </ClCompile>
+    <ClCompile Include="g726\g726_32.c">
+      <Filter>G.726</Filter>
+    </ClCompile>
+    <ClCompile Include="g726\g726_40.c">
+      <Filter>G.726</Filter>
+    </ClCompile>
+    <ClCompile Include="g726\g72x.c">
+      <Filter>G.726</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="g726\g72x.h">
+      <Filter>G.726</Filter>
+    </ClInclude>
+    <ClInclude Include="g726\private.h">
+      <Filter>G.726</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
