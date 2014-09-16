@@ -769,7 +769,6 @@ class OpalRTPSession : public OpalMediaSession
 
     PIPSocket::QoS  m_qos;
     PUDPSocket    * m_socket[2]; // 0=control, 1=data
-    PReadWriteMutex m_readMutex;
 
     PThread * m_thread;
     virtual void ThreadMain();

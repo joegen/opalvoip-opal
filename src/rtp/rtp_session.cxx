@@ -686,22 +686,20 @@ void OpalRTPSession::AttachTransport(Transport & transport)
 
   transport.DisallowDeleteObjects();
 
-  m_readMutex.StartWrite();
-  LockReadWrite();
-
-  for (int i = 1; i >= 0; --i) {
-    PObject * channel = transport.RemoveHead();
-    m_socket[i] = dynamic_cast<PUDPSocket *>(channel);
-    if (m_socket[i] == NULL)
-      delete channel;
-    else {
-      PTRACE_CONTEXT_ID_TO(m_socket[i]);
-      m_socket[i]->GetLocalAddress(m_localAddress, m_localPort[i]);
+  if (LockReadWrite()) {
+    for (int i = 1; i >= 0; --i) {
+      PObject * channel = transport.RemoveHead();
+      m_socket[i] = dynamic_cast<PUDPSocket *>(channel);
+      if (m_socket[i] == NULL)
+        delete channel;
+      else {
+        PTRACE_CONTEXT_ID_TO(m_socket[i]);
+        m_socket[i]->GetLocalAddress(m_localAddress, m_localPort[i]);
+      }
     }
-  }
 
-  UnlockReadWrite();
-  m_readMutex.EndWrite();
+    UnlockReadWrite();
+  }
 
   m_endpoint.RegisterLocalRTP(this, false);
   transport.AllowDeleteObjects();
@@ -716,18 +714,16 @@ OpalMediaSession::Transport OpalRTPSession::DetachTransport()
 
   InternalStopRead();
 
-  m_readMutex.StartWrite();
-  LockReadWrite();
-
-  for (int i = 1; i >= 0; --i) {
-    if (m_socket[i] != NULL) {
-      temp.Append(m_socket[i]);
-      m_socket[i] = NULL;
+  if (LockReadWrite()) {
+    for (int i = 1; i >= 0; --i) {
+      if (m_socket[i] != NULL) {
+        temp.Append(m_socket[i]);
+        m_socket[i] = NULL;
+      }
     }
-  }
 
-  UnlockReadWrite();
-  m_readMutex.EndWrite();
+    UnlockReadWrite();
+  }
 
   PTRACE_IF(2, temp.IsEmpty(), *this << "detaching transport from closed session.");
   return temp;
@@ -1931,9 +1927,8 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
   if (IsOpen())
     return true;
 
-  PWriteWaitAndSignal lock1(m_readMutex);
-  PSafeLockReadWrite  lock2(*this);
-  if (!lock2.IsLocked())
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
     return false;
 
   if (!OpalMediaSession::Open(localInterface, remoteAddress, mediaAddress))
@@ -2070,10 +2065,9 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
 
 bool OpalRTPSession::SetQoS(const PIPSocket::QoS & qos)
 {
-  PReadWaitAndSignal lock1(m_readMutex);
-  PSafeLockReadWrite lock2(*this);
+  PSafeLockReadOnly lock(*this);
 
-  if (m_socket[e_Data] == NULL || !m_remoteAddress.IsValid() || m_remotePort[e_Data] == 0)
+  if (!lock.IsLocked() || m_socket[e_Data] == NULL || !m_remoteAddress.IsValid() || m_remotePort[e_Data] == 0)
     return false;
 
   m_qos = qos;
@@ -2084,30 +2078,36 @@ bool OpalRTPSession::SetQoS(const PIPSocket::QoS & qos)
 
 bool OpalRTPSession::IsOpen() const
 {
-  PReadWaitAndSignal lock(m_readMutex);
+  PSafeLockReadOnly lock(*this);
 
-  return m_socket[e_Data] != NULL && m_socket[e_Data]->IsOpen() &&
+  return lock.IsLocked() &&
+         m_socket[e_Data   ] != NULL && m_socket[e_Data   ]->IsOpen() &&
         (m_socket[e_Control] == NULL || m_socket[e_Control]->IsOpen());
 }
 
 
 void OpalRTPSession::InternalStopRead()
 {
-  if (m_thread == NULL)
-    return;
+  PThread * thread;
+  {
+    PSafeLockReadWrite lock(*this);
+    if (m_thread == NULL)
+      return;
+    thread = m_thread;
+    m_thread = NULL;
+  }
 
   m_reportTimer.Stop(true);
 
   m_endpoint.RegisterLocalRTP(this, true);
 
-  m_readMutex.StartRead();
   for (int i = 0; i < 2; ++i) {
     if (m_socket[i] != NULL)
       m_socket[i]->Close();
   }
-  m_readMutex.EndRead();
 
-  m_thread->WaitForTermination();
+  PAssert(thread->WaitForTermination(2000), "RTP thread failed to terminate");
+  delete thread;
 }
 
 
@@ -2116,10 +2116,11 @@ bool OpalRTPSession::Close()
   if (!IsOpen())
     return false;
 
+  PTRACE(4, "Closing RTP.");
+
   InternalStopRead();
 
-  PWriteWaitAndSignal lock1(m_readMutex);
-  PSafeLockReadWrite  lock2(*this);
+  PSafeLockReadWrite lock(*this);
 
   for (int i = 0; i < 2; ++i) {
     delete m_socket[i];
@@ -2439,7 +2440,8 @@ void OpalRTPSession::ThreadMain()
 
 bool OpalRTPSession::InternalRead()
 {
-  PReadWaitAndSignal lock(m_readMutex);
+  /* Note this should only be called from within the RTP read thread.
+     The locking strategy depends on it. */
 
   if (!IsOpen())
     return false;
@@ -2473,6 +2475,9 @@ bool OpalRTPSession::InternalRead()
 
 bool OpalRTPSession::InternalReadData()
 {
+  /* Note this should only be called from within the RTP read thread.
+     The locking strategy depends on it. */
+
   PINDEX pduSize = m_manager.GetMaxRtpPacketSize();
   RTP_DataFrame frame((PINDEX)0, pduSize);
   switch (ReadRawPDU(frame.GetPointer(), pduSize, e_Data)) {
@@ -2500,6 +2505,9 @@ bool OpalRTPSession::InternalReadData()
 
 bool OpalRTPSession::InternalReadControl()
 {
+  /* Note this should only be called from within the RTP read thread.
+     The locking strategy depends on it. */
+
   PINDEX pduSize = 2048;
   RTP_ControlFrame frame(pduSize);
   switch (ReadRawPDU(frame.GetPointer(), pduSize, m_socket[e_Control] != NULL ? e_Control : e_Data)) {
@@ -2525,34 +2533,32 @@ bool OpalRTPSession::InternalReadControl()
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteData(RTP_DataFrame & frame, RewriteMode rewrite, const PIPSocketAddressAndPort * remote)
 {
-  SendReceiveStatus status = e_AbortTransport;
-  if (IsOpen() && LockReadWrite()) {
-    status = OnSendData(frame, rewrite);
-    UnlockReadWrite();
-    if (status == e_ProcessPacket)
-      status = WriteRawPDU(frame.GetPointer(), frame.GetPacketSize(), e_Data, remote);
-  }
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked() || !IsOpen())
+    return e_AbortTransport;
+
+  SendReceiveStatus status = OnSendData(frame, rewrite);
+  if (status == e_ProcessPacket)
+    status = WriteRawPDU(frame.GetPointer(), frame.GetPacketSize(), e_Data, remote);
   return status;
 }
 
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteControl(RTP_ControlFrame & frame, const PIPSocketAddressAndPort * remote)
 {
-  SendReceiveStatus status = e_AbortTransport;
-  if (IsOpen() && LockReadWrite()) {
-    status = OnSendControl(frame);
-    UnlockReadWrite();
-    if (status == e_ProcessPacket)
-      status = WriteRawPDU(frame.GetPointer(), frame.GetPacketSize(), e_Control, remote);
-  }
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked() || !IsOpen())
+    return e_AbortTransport;
+
+  SendReceiveStatus status = OnSendControl(frame);
+  if (status == e_ProcessPacket)
+    status = WriteRawPDU(frame.GetPointer(), frame.GetPacketSize(), e_Control, remote);
   return status;
 }
 
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteRawPDU(const BYTE * framePtr, PINDEX frameSize, Channel channel, const PIPSocketAddressAndPort * remote)
 {
-  PReadWaitAndSignal lock(m_readMutex);
-
   PIPSocketAddressAndPort remoteAddressAndPort;
   if (remote == NULL) {
     remoteAddressAndPort.SetAddress(m_remoteAddress, m_remotePort[channel]);
