@@ -136,6 +136,12 @@ class OpalRTPSession : public OpalMediaSession
       */
     RTP_SyncSourceArray GetSyncSources(Direction dir) const;
 
+    enum SendReceiveStatus {
+      e_IgnorePacket = -1,
+      e_AbortTransport, // Abort is zero so equvalent to false
+      e_ProcessPacket
+    };
+
     enum RewriteMode
     {
       e_RewriteHeader,
@@ -145,7 +151,7 @@ class OpalRTPSession : public OpalMediaSession
 
     /**Write a data frame from the RTP channel.
       */
-    virtual bool WriteData(
+    virtual SendReceiveStatus WriteData(
       RTP_DataFrame & frame,                          ///<  Frame to write to the RTP session
       RewriteMode rewrite = e_RewriteHeader,          ///< Indicate what headers are to be rewritten
       const PIPSocketAddressAndPort * remote = NULL   ///< Alternate address to transmit data frame
@@ -153,11 +159,11 @@ class OpalRTPSession : public OpalMediaSession
 
     /**Send a report to remote.
       */
-    bool SendReport(bool force);
+    SendReceiveStatus SendReport(bool force);
 
     /**Write a control frame from the RTP channel.
       */
-    virtual bool WriteControl(
+    virtual SendReceiveStatus WriteControl(
       RTP_ControlFrame & frame,                      ///<  Frame to write to the RTP session
       const PIPSocketAddressAndPort * remote = NULL  ///< Alternate address to transmit control frame
     );
@@ -173,12 +179,6 @@ class OpalRTPSession : public OpalMediaSession
 
   /**@name Call back functions */
   //@{
-    enum SendReceiveStatus {
-      e_ProcessPacket,
-      e_IgnorePacket,
-      e_AbortTransport
-    };
-
     struct Data
     {
       Data(const RTP_DataFrame & frame)
@@ -558,16 +558,16 @@ class OpalRTPSession : public OpalMediaSession
   //@}
 
     /// Send BYE command
-    virtual void SendBYE(RTP_SyncSourceId ssrc = 0);
+    virtual SendReceiveStatus SendBYE(RTP_SyncSourceId ssrc = 0);
 
-    virtual bool SendNACK(const std::set<unsigned> & lostPackets, RTP_SyncSourceId ssrc = 0);
+    virtual SendReceiveStatus SendNACK(const std::set<unsigned> & lostPackets, RTP_SyncSourceId ssrc = 0);
 
     /**Send flow control Request/Notification.
        This uses Temporary Maximum Media Stream Bit Rate from RFC 5104.
        If \p notify is false, and TMMBR is not available, and the Google
        specific REMB is available, that is sent instead.
       */
-    virtual bool SendFlowControl(
+    virtual SendReceiveStatus SendFlowControl(
       unsigned maxBitRate,    ///< New temporary maximum bit rate
       unsigned overhead = 0,  ///< Protocol overhead, defaults to IP/UDP/RTP header size
       bool notify = false,    ///< Send request/notification
@@ -579,13 +579,13 @@ class OpalRTPSession : public OpalMediaSession
         This is called when the media stream receives an OpalVideoUpdatePicture
         media command.
       */
-    virtual bool SendIntraFrameRequest(unsigned options, RTP_SyncSourceId ssrc = 0);
+    virtual SendReceiveStatus SendIntraFrameRequest(unsigned options, RTP_SyncSourceId ssrc = 0);
 
     /** Tell the rtp session to send out an temporal spatial trade off request
         control packet. This is called when the media stream receives an
         OpalTemporalSpatialTradeOff media command.
       */
-    virtual bool SendTemporalSpatialTradeOff(unsigned tradeOff, RTP_SyncSourceId ssrc = 0);
+    virtual SendReceiveStatus SendTemporalSpatialTradeOff(unsigned tradeOff, RTP_SyncSourceId ssrc = 0);
 #endif
 
     RTP_Timestamp GetLastSentTimestamp(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_lastTimestamp; }
@@ -815,8 +815,6 @@ class OpalRTPSession : public OpalMediaSession
     PTRACE_THROTTLE(m_throttleRxSR,4,60000);
     PTRACE_THROTTLE(m_throttleRxRR,4,60000);
     PTRACE_THROTTLE(m_throttleRxSDES,4,60000);
-    PTRACE_THROTTLE(m_throttleWriteData,3,500);
-    PTRACE_THROTTLE(m_throttleWriteControl,3,500);
 
   private:
     OpalRTPSession(const OpalRTPSession &);
