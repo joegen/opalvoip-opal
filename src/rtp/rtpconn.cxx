@@ -86,11 +86,8 @@ void OpalRTPConnection::OnReleased()
 {
   OpalConnection::OnReleased();
 
-  for (SessionMap::iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
-    OpalRTPSession * rtp = dynamic_cast<OpalRTPSession * >(&*it->second);
-    if (rtp != NULL && (rtp->GetPacketsSent() != 0 || rtp->GetPacketsReceived() != 0))
-      rtp->SendBYE();
-  }
+  for (SessionMap::iterator it = m_sessions.begin(); it != m_sessions.end(); ++it)
+    it->second->Close();
 
   if (m_rfc2833Handler != NULL)
     m_rfc2833Handler->UseRTPSession(false, NULL);
@@ -424,6 +421,8 @@ void OpalRTPConnection::ReleaseMediaSession(unsigned sessionID)
     PTRACE(2, "Attempt to release unknown session " << sessionID);
     return;
   }
+
+  it->second->Close();
 
   OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(&*it->second);
   if (rtpSession != NULL && rtpSession->IsAudio()) {
