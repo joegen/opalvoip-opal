@@ -38,7 +38,6 @@
 #include <config.h>
 #endif
 
-#include "inttypes.h"
 #include <memory.h>
 #include <stdlib.h>
 #if defined(HAVE_TGMATH_H)
@@ -46,6 +45,7 @@
 #endif
 #include <math.h>
 
+#include "inttypes.h"
 #include "telephony.h"
 #include "dc_restore.h"
 #include "g722.h"
