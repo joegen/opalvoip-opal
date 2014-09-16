@@ -604,7 +604,8 @@ class OpalRTPSession : public OpalMediaSession
     bool SetQoS(const PIPSocket::QoS & qos);
 
     ReceiverReportArray BuildReceiverReportArray(const RTP_ControlFrame & frame, PINDEX offset);
-    
+
+    virtual void InternalClose();
     virtual bool InternalSetRemoteAddress(const PIPSocket::AddressAndPort & ap, bool isMediaAddress PTRACE_PARAM(, const char * source));
     virtual bool InternalRead();
     virtual bool InternalReadData();

@@ -62,7 +62,6 @@ class OpalDTLSSRTPSession : public OpalSRTPSession
 
     // OVerrides from OpalRTPSession
     virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool mediaAddress);
-    virtual bool Close();
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite);
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
 
@@ -78,6 +77,7 @@ class OpalDTLSSRTPSession : public OpalSRTPSession
     class SSLChannel;
 
     virtual void ThreadMain();
+    virtual void InternalClose();
     virtual bool ExecuteHandshake(Channel channel);
     PDECLARE_SSLVerifyNotifier(OpalDTLSSRTPSession, OnVerify);
 

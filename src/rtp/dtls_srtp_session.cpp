@@ -221,25 +221,24 @@ bool OpalDTLSSRTPSession::Open(const PString & localInterface, const OpalTranspo
 }
 
 
-bool OpalDTLSSRTPSession::Close()
+void OpalDTLSSRTPSession::InternalClose()
 {
-  PTRACE(4, "Closing DTLS.");
-
-  bool ok = OpalSRTPSession::Close();
-
-  PSafeLockReadWrite lock(*this);
-
   for (int i = 0; i < 2; ++i) {
     delete m_sslChannel[i];
     m_sslChannel[i] = NULL;
   }
 
-  return ok;
+  OpalSRTPSession::InternalClose();
 }
 
 
 void OpalDTLSSRTPSession::ThreadMain()
 {
+  // The below assures Open() has completed before we start
+  if (!LockReadOnly())
+    return;
+  UnlockReadOnly();
+
   if (ExecuteHandshake(e_Data) && ExecuteHandshake(e_Control))
     OpalSRTPSession::ThreadMain();
 }
