@@ -62,6 +62,8 @@
  *
  ********/
 
+#ifndef _VIC_CONFIG_H
+#define _VIC_CONFIG_H
 #include <string.h>
 
 typedef unsigned char u_char;
@@ -101,3 +103,5 @@ typedef int intptr_t;
 #else
   #define SWAP32(left,right) *(long*)(left)=*(const long*)(right)
 #endif
+
+#endif // _VIC_CONFIG_H
