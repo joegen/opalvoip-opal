@@ -234,14 +234,14 @@ bool OpalDTLSSRTPSession::Close()
   bool ok = OpalSRTPSession::Close();
 
   m_readMutex.StartWrite();
-  LockReadWrite();
+  if (LockReadWrite()) {
+    for (int i = 0; i < 2; ++i) {
+      delete m_sslChannel[i];
+      m_sslChannel[i] = NULL;
+    }
 
-  for (int i = 0; i < 2; ++i) {
-    delete m_sslChannel[i];
-    m_sslChannel[i] = NULL;
+    UnlockReadWrite();
   }
-
-  UnlockReadWrite();
   m_readMutex.EndWrite();
 
   return ok;
