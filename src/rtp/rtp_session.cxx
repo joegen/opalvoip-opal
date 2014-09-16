@@ -734,21 +734,21 @@ OpalMediaSession::Transport OpalRTPSession::DetachTransport()
 }
 
 
-void OpalRTPSession::SendBYE(RTP_SyncSourceId ssrc)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::SendBYE(RTP_SyncSourceId ssrc)
 {
   if (!IsOpen())
-    return;
+    return e_AbortTransport;
 
   RTP_ControlFrame report;
 
   {
     PSafeLockReadOnly lock(*this);
     if (!lock.IsLocked())
-      return;
+      return e_AbortTransport;
 
     SyncSource * sender;
     if (!GetSyncSource(ssrc, e_Sender, sender))
-      return;
+      return e_ProcessPacket;
 
     InitialiseControlFrame(report, *sender);
   }
@@ -773,18 +773,21 @@ void OpalRTPSession::SendBYE(RTP_SyncSourceId ssrc)
   memcpy((char *)(payload+5), ReasonStr, ReasonLen);
 
   report.EndPacket();
-  WriteControl(report);
+  SendReceiveStatus status = WriteControl(report);
+  if (status == e_ProcessPacket) {
+    // Now remove the shut down SSRC
+    LockReadWrite();
 
-  // Now remove the shut down SSRC
-  LockReadWrite();
+    SyncSourceMap::iterator it = m_SSRC.find(ssrc);
+    if (it != m_SSRC.end()) {
+      delete it->second;
+      m_SSRC.erase(it);
+    }
 
-  SyncSourceMap::iterator it = m_SSRC.find(ssrc);
-  if (it != m_SSRC.end()) {
-    delete it->second;
-    m_SSRC.erase(it);
+    UnlockReadWrite();
   }
 
-  UnlockReadWrite();
+  return status;
 }
 
 
@@ -1149,10 +1152,10 @@ void OpalRTPSession::TimedSendReport(PTimer&, P_INT_PTR)
 }
 
 
-bool OpalRTPSession::SendReport(bool force)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(bool force)
 {
   if (!LockReadOnly())
-    return false;
+    return e_AbortTransport;
 
   std::list<RTP_ControlFrame> reports;
 
@@ -1174,11 +1177,12 @@ bool OpalRTPSession::SendReport(bool force)
   UnlockReadOnly();
 
   for (std::list<RTP_ControlFrame>::iterator it = reports.begin(); it != reports.end(); ++it) {
-    if (!WriteControl(*it))
-      return false;
+    SendReceiveStatus status = WriteControl(*it);
+    if (status != e_ProcessPacket)
+      return status;
   }
 
-  return true;
+  return e_ProcessPacket;
 }
 
 
@@ -1547,27 +1551,27 @@ void OpalRTPSession::OnRxApplDefined(const RTP_ControlFrame::ApplDefinedInfo & i
 }
 
 
-bool OpalRTPSession::SendNACK(const std::set<unsigned> & lostPackets, RTP_SyncSourceId syncSourceIn)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::SendNACK(const std::set<unsigned> & lostPackets, RTP_SyncSourceId syncSourceIn)
 {
   RTP_ControlFrame request;
 
   {
     PSafeLockReadOnly lock(*this);
     if (!lock.IsLocked())
-      return false;
+      return e_AbortTransport;
 
     if (!(m_feedback&OpalMediaFormat::e_NACK)) {
       PTRACE(3, *this << "remote not capable of NACK");
-      return false;
+      return e_ProcessPacket;
     }
 
     SyncSource * sender;
     if (!GetSyncSource(0, e_Sender, sender))
-      return false;
+      return e_ProcessPacket;
 
     SyncSource * receiver;
     if (!GetSyncSource(syncSourceIn, e_Receiver, receiver))
-      return false;
+      return e_ProcessPacket;
 
     InitialiseControlFrame(request, *sender);
 
@@ -1584,27 +1588,27 @@ bool OpalRTPSession::SendNACK(const std::set<unsigned> & lostPackets, RTP_SyncSo
 }
 
 
-bool OpalRTPSession::SendFlowControl(unsigned maxBitRate, unsigned overhead, bool notify, RTP_SyncSourceId syncSourceIn)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::SendFlowControl(unsigned maxBitRate, unsigned overhead, bool notify, RTP_SyncSourceId syncSourceIn)
 {
   RTP_ControlFrame request;
 
   {
     PSafeLockReadOnly lock(*this);
     if (!lock.IsLocked())
-      return false;
+      return e_AbortTransport;
 
     if (!(m_feedback&(OpalMediaFormat::e_TMMBR | OpalMediaFormat::e_REMB))) {
       PTRACE(3, *this << "remote not capable of flow control (TMMBR or REMB)");
-      return false;
+      return e_ProcessPacket;
     }
 
     SyncSource * sender;
     if (!GetSyncSource(0, e_Sender, sender))
-      return false;
+      return e_ProcessPacket;
 
     SyncSource * receiver;
     if (!GetSyncSource(syncSourceIn, e_Receiver, receiver))
-      return false;
+      return e_ProcessPacket;
 
     InitialiseControlFrame(request, *sender);
 
@@ -1634,22 +1638,22 @@ bool OpalRTPSession::SendFlowControl(unsigned maxBitRate, unsigned overhead, boo
 
 #if OPAL_VIDEO
 
-bool OpalRTPSession::SendIntraFrameRequest(unsigned options, RTP_SyncSourceId syncSourceIn)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::SendIntraFrameRequest(unsigned options, RTP_SyncSourceId syncSourceIn)
 {
   RTP_ControlFrame request;
 
   {
     PSafeLockReadOnly lock(*this);
     if (!lock.IsLocked())
-      return false;
+      return e_AbortTransport;
 
     SyncSource * sender;
     if (!GetSyncSource(0, e_Sender, sender))
-      return false;
+      return e_ProcessPacket;
 
     SyncSource * receiver;
     if (!GetSyncSource(syncSourceIn, e_Receiver, receiver))
-      return false;
+      return e_ProcessPacket;
 
     InitialiseControlFrame(request, *sender);
 
@@ -1680,27 +1684,27 @@ bool OpalRTPSession::SendIntraFrameRequest(unsigned options, RTP_SyncSourceId sy
 }
 
 
-bool OpalRTPSession::SendTemporalSpatialTradeOff(unsigned tradeOff, RTP_SyncSourceId syncSourceIn)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::SendTemporalSpatialTradeOff(unsigned tradeOff, RTP_SyncSourceId syncSourceIn)
 {
   RTP_ControlFrame request;
 
   {
     PSafeLockReadOnly lock(*this);
     if (!lock.IsLocked())
-      return false;
+      return e_AbortTransport;
 
     if (!(m_feedback&OpalMediaFormat::e_TSTR)) {
       PTRACE(3, *this << "remote not capable of Temporal/Spatial Tradeoff (TSTR)");
-      return false;
+      return e_ProcessPacket;
     }
 
     SyncSource * sender;
     if (!GetSyncSource(0, e_Sender, sender))
-      return false;
+      return e_ProcessPacket;
 
     SyncSource * receiver;
     if (!GetSyncSource(syncSourceIn, e_Receiver, receiver))
-      return false;
+      return e_ProcessPacket;
 
     InitialiseControlFrame(request, *sender);
 
@@ -2519,61 +2523,29 @@ bool OpalRTPSession::InternalReadControl()
 }
 
 
-bool OpalRTPSession::WriteData(RTP_DataFrame & frame, RewriteMode rewrite, const PIPSocketAddressAndPort * remote)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteData(RTP_DataFrame & frame, RewriteMode rewrite, const PIPSocketAddressAndPort * remote)
 {
-  while (IsOpen()) {
-    if (!LockReadWrite())
-      return false;
-    SendReceiveStatus status = OnSendData(frame, rewrite);
+  SendReceiveStatus status = e_AbortTransport;
+  if (IsOpen() && LockReadWrite()) {
+    status = OnSendData(frame, rewrite);
     UnlockReadWrite();
-
     if (status == e_ProcessPacket)
       status = WriteRawPDU(frame.GetPointer(), frame.GetPacketSize(), e_Data, remote);
-
-    switch (status) {
-      case e_ProcessPacket :
-        return true;
-
-      case e_AbortTransport :
-        return false;
-
-      case e_IgnorePacket :
-        PTRACE(m_throttleWriteData, *this << "data packet write delayed.");
-        PThread::Sleep(20);
-    }
   }
-
-  PTRACE(3, *this << "data packet write shutdown.");
-  return false;
+  return status;
 }
 
 
-bool OpalRTPSession::WriteControl(RTP_ControlFrame & frame, const PIPSocketAddressAndPort * remote)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteControl(RTP_ControlFrame & frame, const PIPSocketAddressAndPort * remote)
 {
-  while (IsOpen()) {
-    if (!LockReadWrite())
-      return false;
-    SendReceiveStatus status = OnSendControl(frame);
+  SendReceiveStatus status = e_AbortTransport;
+  if (IsOpen() && LockReadWrite()) {
+    status = OnSendControl(frame);
     UnlockReadWrite();
-
     if (status == e_ProcessPacket)
       status = WriteRawPDU(frame.GetPointer(), frame.GetPacketSize(), e_Control, remote);
-
-    switch (status) {
-      case e_ProcessPacket :
-        return true;
-
-      case e_AbortTransport :
-        return false;
-
-      case e_IgnorePacket :
-        PTRACE(m_throttleWriteControl, *this << "control packet write delayed.");
-        PThread::Sleep(20);
-    }
   }
-
-  PTRACE(3, *this << "control packet write shutdown.");
-  return false;
+  return status;
 }
 
 

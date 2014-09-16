@@ -117,8 +117,12 @@ void OpalRTPMediaStream::OnStartMediaPatch()
 {
   // Make sure a RTCP packet goes out as early as possible, helps with issues
   // to do with ICE, DTLS, NAT etc.
-  if (IsSink())
-    m_rtpSession.SendReport(true);
+  if (IsSink()) {
+    while (IsOpen() && m_rtpSession.SendReport(true) == OpalRTPSession::e_IgnorePacket) {
+      PTRACE(m_throttleSendReport, m_rtpSession << "initial send report write delayed.");
+      PThread::Sleep(20);
+    }
+  }
 
   OpalMediaStream::OnStartMediaPatch();
 }
@@ -222,7 +226,22 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
   if (m_syncSource != 0)
     packet.SetSyncSource(m_syncSource);
 
-  return m_rtpSession.WriteData(packet, m_rewriteHeaders ? OpalRTPSession::e_RewriteHeader : OpalRTPSession::e_RewriteSSRC);
+  while (IsOpen()) {
+    switch (m_rtpSession.WriteData(packet, m_rewriteHeaders ? OpalRTPSession::e_RewriteHeader : OpalRTPSession::e_RewriteSSRC)) {
+      case OpalRTPSession::e_AbortTransport :
+        return false;
+
+      case OpalRTPSession::e_ProcessPacket :
+        return true;
+
+      case OpalRTPSession::e_IgnorePacket :
+        PTRACE(m_throttleWriteData, m_rtpSession << "write data delayed.");
+        PThread::Sleep(20);
+        break;
+    }
+  }
+
+  return false;
 }
 
 
