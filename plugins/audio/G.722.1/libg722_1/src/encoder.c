@@ -20,6 +20,7 @@
 #include <config.h>
 #endif
 
+#include <math.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
