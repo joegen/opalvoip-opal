@@ -27,11 +27,12 @@
 
 #include <codec/opalplugin.h>
 
-extern "C" {
-#include "spandsp.h"
-};
-
 #include <stdlib.h>
+#include <sstream>
+#include <vector>
+#include <queue>
+#include <map>
+
 
 #if defined(_WIN32) || defined(_WIN32_WCE)
   #define WIN32_LEAN_AND_MEAN
@@ -47,10 +48,9 @@ extern "C" {
   #define DIR_SEPERATORS "/"
 #endif
 
-#include <sstream>
-#include <vector>
-#include <queue>
-#include <map>
+extern "C" {
+#include "spandsp.h"
+};
 
 
 #define LOGGING 1
