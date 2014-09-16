@@ -163,6 +163,9 @@ protected:
 
     PDECLARE_RTPDataNotifier(OpalRTPMediaStream, OnReceivedPacket);
     OpalRTPSession::DataNotifier  m_receiveNotifier;
+
+    PTRACE_THROTTLE(m_throttleWriteData,3,500);
+    PTRACE_THROTTLE(m_throttleSendReport,3,500);
 };
 
 
