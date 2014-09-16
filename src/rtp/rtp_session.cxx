@@ -2119,7 +2119,7 @@ bool OpalRTPSession::Close()
   if (!IsOpen())
     return false;
 
-  PTRACE(4, "Closing RTP.");
+  PTRACE(4, *this << "closing RTP.");
 
   if (LockReadOnly()) {
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
@@ -2132,7 +2132,13 @@ bool OpalRTPSession::Close()
   InternalStopRead();
 
   PSafeLockReadWrite lock(*this);
+  InternalClose();
+  return true;
+}
 
+
+void OpalRTPSession::InternalClose()
+{
   for (int i = 0; i < 2; ++i) {
     delete m_socket[i];
     m_socket[i] = NULL;
@@ -2142,8 +2148,6 @@ bool OpalRTPSession::Close()
   m_localPort[e_Data] = m_localPort[e_Control] = 0;
   m_remoteAddress = PIPSocket::GetInvalidAddress();
   m_remotePort[e_Data] = m_remotePort[e_Control] = 0;
-
-  return true;
 }
 
 
@@ -2440,12 +2444,12 @@ bool OpalRTPSession::HandleUnreachable(PTRACE_PARAM(const char * channelName))
 
 void OpalRTPSession::ThreadMain()
 {
-  PTRACE(4, "Thread started");
+  PTRACE(4, *this << "thread started");
 
   while (InternalRead())
     ;
 
-  PTRACE(4, "Thread ended normally");
+  PTRACE(4, *this << "thread ended normally");
 }
 
 
