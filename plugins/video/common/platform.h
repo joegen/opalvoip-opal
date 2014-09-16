@@ -51,7 +51,9 @@
   #include <malloc.h>
   #include <stdio.h>
 
-  #define round(d)  ((int)((double)(d)+0.5))
+  #if _MSC_VER < 1800
+    #define round(d)  ((int)((double)(d)+0.5))
+  #endif
   #define strdup(s) _strdup(s)
   #define STRCMPI  _strcmpi
   #define snprintf  _snprintf

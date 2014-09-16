@@ -67,7 +67,7 @@
 // Needed C++ headers
 #include <deque>
 #include <vector>
-
+#include <algorithm>
 
 using namespace std;
 

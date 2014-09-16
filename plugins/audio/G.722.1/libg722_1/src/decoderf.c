@@ -20,10 +20,10 @@
 #include <config.h>
 #endif
 
-#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <inttypes.h>
 
 #include "g722_1/g722_1.h"
 
