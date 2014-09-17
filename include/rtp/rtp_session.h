@@ -657,7 +657,7 @@ class OpalRTPSession : public OpalMediaSession
       virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite);
       virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, bool newData);
       virtual SendReceiveStatus OnOutOfOrderPacket(RTP_DataFrame & frame);
-      virtual SendReceiveStatus GetPendingFrame(RTP_DataFrame & frame);
+      virtual bool HandlePendingFrames();
 #if OPAL_RTP_FEC
       virtual SendReceiveStatus OnSendRedundantFrame(RTP_DataFrame & frame);
       virtual SendReceiveStatus OnSendRedundantData(RTP_DataFrame & primary, RTP_DataFrameList & redundancies);

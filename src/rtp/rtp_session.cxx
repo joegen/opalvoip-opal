@@ -571,7 +571,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     m_packetsLost += dropped;
     m_packetsLostSinceLastRR += dropped;
     PTRACE(2, &m_session, m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier)
-            << ", " << dropped << " packet(s) missing at " << expectedSequenceNumber);
+            << ", " << dropped << " packet(s) missing at " << expectedSequenceNumber
+            << ", processing from " << sequenceNumber);
     m_lastSequenceNumber = sequenceNumber;
     m_consecutiveOutOfOrderPackets = 0;
 #if OPAL_RTCP_XR
@@ -662,26 +663,24 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnOutOfOrderPacket
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::GetPendingFrame(RTP_DataFrame & frame)
+bool OpalRTPSession::SyncSource::HandlePendingFrames()
 {
-  if (m_pendingPackets.empty())
-    return e_IgnorePacket;
+  while (!m_pendingPackets.empty()) {
+    unsigned sequenceNumber = m_pendingPackets.back().GetSequenceNumber();
+    unsigned expectedSequenceNumber = m_lastSequenceNumber + 1;
+    if (sequenceNumber != expectedSequenceNumber)
+      return true;
 
-  unsigned sequenceNumber = m_pendingPackets.back().GetSequenceNumber();
-  unsigned expectedSequenceNumber = m_lastSequenceNumber + 1;
-  if (sequenceNumber != expectedSequenceNumber) {
-    PTRACE(5, &m_session, m_session << "SSRC=" << RTP_TRACE_SRC(m_pendingPackets.back().GetSyncSource()) << ", "
-              "still out of order packets, next " << sequenceNumber << " expected " << expectedSequenceNumber);
-    return e_IgnorePacket;
+    PTRACE(m_pendingPackets.size() == 1 ? 2 : 5, &m_session, m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier) << ", "
+           "resequenced " << (m_pendingPackets.empty() ? "last" : "next") << " out of order packet " << sequenceNumber);
+
+    if (OnReceiveData(m_pendingPackets.back(), false) == e_AbortTransport)
+      return false;
+
+    m_pendingPackets.pop_back();
   }
 
-  frame = m_pendingPackets.back();
-  m_pendingPackets.pop_back();
-
-  PTRACE(m_pendingPackets.empty() ? 2 : 5, &m_session, m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier) << ", "
-         "resequenced " << (m_pendingPackets.empty() ? "last" : "next") << " out of order packet " << sequenceNumber);
-
-  return OnReceiveData(frame, false);
+  return true;
 }
 
 
@@ -2525,8 +2524,16 @@ bool OpalRTPSession::InternalReadData()
   // Check for single port operation, incoming RTCP on RTP
   RTP_ControlFrame control(frame, pduSize, false);
   unsigned type = control.GetPayloadType();
-  return (type >= RTP_ControlFrame::e_FirstValidPayloadType && type <= RTP_ControlFrame::e_LastValidPayloadType
-                                ? OnReceiveControl(control) : OnReceiveData(frame, pduSize)) != e_AbortTransport;
+  if ((type >= RTP_ControlFrame::e_FirstValidPayloadType && type <= RTP_ControlFrame::e_LastValidPayloadType
+                            ? OnReceiveControl(control) : OnReceiveData(frame, pduSize)) == e_AbortTransport)
+    return false;
+
+  for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
+    if (!it->second->HandlePendingFrames())
+      return false;
+  }
+
+  return true;
 }
 
 
