@@ -239,6 +239,8 @@ void OpalDTLSSRTPSession::ThreadMain()
     return;
   UnlockReadOnly();
 
+  PTRACE(4, *this << "thread started with DTLS");
+
   if (ExecuteHandshake(e_Data) && ExecuteHandshake(e_Control))
     OpalSRTPSession::ThreadMain();
 }

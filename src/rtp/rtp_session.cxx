@@ -94,6 +94,11 @@ ostream & operator<<(ostream & strm, OpalRTPSession::Direction dir)
 {
   return strm << (dir == OpalRTPSession::e_Receiver ? "receiver" : "sender");
 }
+
+ostream & operator<<(ostream & strm, OpalRTPSession::Channel chan)
+{
+  return strm << (chan == OpalRTPSession::e_Data ? "Data" : "Control");
+}
 #endif
 
 #define PTraceModule() "RTP"
@@ -528,7 +533,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     m_lastSequenceNumber = sequenceNumber;
   }
   else if (sequenceNumber == expectedSequenceNumber) {
-    ++m_lastSequenceNumber;
+    m_lastSequenceNumber = sequenceNumber;
     m_consecutiveOutOfOrderPackets = 0;
   }
   else if (sequenceNumber < expectedSequenceNumber) {
@@ -620,7 +625,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnOutOfOrderPacket
   else if (m_pendingPackets.GetSize() > m_session.GetMaxOutOfOrderPackets() || m_waitOutOfOrderTimer.HasExpired())
     waiting = false;
 
-  PTRACE(m_pendingPackets.empty() ? 2 : 5, &m_session,
+  PTRACE(m_pendingPackets.empty() ? 3 : waiting ? 5 : 4, &m_session,
          m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier) << ", " <<
          (m_pendingPackets.empty() ? "first" : (waiting ? "next" : "last")) <<
          " out of order packet, got " << sequenceNumber << " expected " << expectedSequenceNumber);
@@ -2084,6 +2089,8 @@ bool OpalRTPSession::IsOpen() const
   PSafeLockReadOnly lock(*this);
 
   return lock.IsLocked() &&
+         m_thread != NULL &&
+        !m_thread->IsTerminated() &&
          m_socket[e_Data   ] != NULL && m_socket[e_Data   ]->IsOpen() &&
         (m_socket[e_Control] == NULL || m_socket[e_Control]->IsOpen());
 }
@@ -2358,12 +2365,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendICE(Channel channel)
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr, PINDEX & frameSize, Channel channel)
 {
-  if (m_socket[e_Control] == NULL)
-    channel = e_Data;
+  if (PAssertNULL(m_socket[channel]) == NULL)
+    return e_AbortTransport;
 
-#if PTRACING
-  const char * channelName = channel == e_Data ? "Data" : "Control";
-#endif
   PUDPSocket & socket = *m_socket[channel];
   PIPSocket::AddressAndPort ap;
 
@@ -2375,7 +2379,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr, PI
       PIPSocketAddressAndPort localAP;
       socket.PUDPSocket::InternalGetLocalAddress(localAP);
       if (ap == localAP) {
-        PTRACE(5, *this << channelName << " I/O block breaker ignored.");
+        PTRACE(5, *this << channel << " I/O block breaker ignored.");
         return e_IgnorePacket;
       }
     }
@@ -2398,34 +2402,38 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr, PI
 
   switch (socket.GetErrorCode(PChannel::LastReadError)) {
     case PChannel::Unavailable :
-      return HandleUnreachable(PTRACE_PARAM(channelName)) ? e_IgnorePacket : e_AbortTransport;
+      return HandleUnreachable(PTRACE_PARAM(channel)) ? e_IgnorePacket : e_AbortTransport;
 
     case PChannel::BufferTooSmall :
-      PTRACE(2, *this << channelName << " read packet too large for buffer of " << frameSize << " bytes.");
+      PTRACE(2, *this << channel << " read packet too large for buffer of " << frameSize << " bytes.");
       return e_IgnorePacket;
 
     case PChannel::Interrupted :
-      PTRACE(4, *this << channelName << " read packet interrupted.");
+      PTRACE(4, *this << channel << " read packet interrupted.");
       // Shouldn't happen, but it does.
       return e_IgnorePacket;
 
     case PChannel::NoError :
-      PTRACE(3, *this << channelName << " received UDP packet with no payload.");
+      PTRACE(3, *this << channel << " received UDP packet with no payload.");
       return e_IgnorePacket;
 
+    case PChannel::Timeout :
+      PTRACE(1, *this << "Timeout receiving " << channel << " packets");
+      return channel == e_Data ? e_AbortTransport : e_IgnorePacket;
+
     default:
-      PTRACE(1, *this << channelName
+      PTRACE(1, *this << channel
              << " read error (" << socket.GetErrorNumber(PChannel::LastReadError) << "): "
              << socket.GetErrorText(PChannel::LastReadError));
-      return m_connection.OnMediaFailed(m_sessionId, true) ? e_AbortTransport : e_IgnorePacket;
+      return e_AbortTransport;
   }
 }
 
 
-bool OpalRTPSession::HandleUnreachable(PTRACE_PARAM(const char * channelName))
+bool OpalRTPSession::HandleUnreachable(PTRACE_PARAM(Channel channel))
 {
   if (++m_noTransmitErrors == 1) {
-    PTRACE(2, *this << channelName << " port on remote not ready.");
+    PTRACE(2, *this << channel << " port on remote not ready.");
     m_noTransmitTimer = m_maxNoTransmitTime;
     return true;
   }
@@ -2433,7 +2441,7 @@ bool OpalRTPSession::HandleUnreachable(PTRACE_PARAM(const char * channelName))
   if (m_noTransmitErrors < 10 || m_noTransmitTimer.IsRunning())
     return true;
 
-  PTRACE(2, *this << channelName << ' ' << m_maxNoTransmitTime << " seconds of transmit fails");
+  PTRACE(2, *this << channel << ' ' << m_maxNoTransmitTime << " seconds of transmit fails");
   if (m_connection.OnMediaFailed(m_sessionId, false))
     return false;
 
@@ -2449,7 +2457,7 @@ void OpalRTPSession::ThreadMain()
   while (InternalRead())
     ;
 
-  PTRACE(4, *this << "thread ended normally");
+  PTRACE(4, *this << "thread ended");
 }
 
 
@@ -2477,9 +2485,7 @@ bool OpalRTPSession::InternalRead()
 
     case 0 :
       PTRACE(2, *this << "timeout on received RTP and RTCP sockets.");
-      if (m_connection.OnMediaFailed(m_sessionId, true))
-        Close();
-      return IsOpen();
+      return !(m_connection.OnMediaFailed(m_sessionId, true) && m_connection.OnMediaFailed(m_sessionId, false));
 
     default :
       PTRACE(2, *this << "select error: " << PChannel::GetErrorText((PChannel::Errors)selectStatus));
@@ -2497,7 +2503,13 @@ bool OpalRTPSession::InternalReadData()
   RTP_DataFrame frame((PINDEX)0, pduSize);
   switch (ReadRawPDU(frame.GetPointer(), pduSize, e_Data)) {
     case e_AbortTransport :
-      return false;
+      if (m_connection.OnMediaFailed(m_sessionId, true) &&
+          m_socket[e_Control] == NULL &&
+          m_connection.OnMediaFailed(m_sessionId, false)) {
+        PTRACE(4, *this << "aborting single port read");
+        return false;
+      }
+      // Do next case
 
     case e_IgnorePacket :
       return true;
@@ -2525,8 +2537,9 @@ bool OpalRTPSession::InternalReadControl()
 
   PINDEX pduSize = 2048;
   RTP_ControlFrame frame(pduSize);
-  switch (ReadRawPDU(frame.GetPointer(), pduSize, m_socket[e_Control] != NULL ? e_Control : e_Data)) {
+  switch (ReadRawPDU(frame.GetPointer(), pduSize, e_Control)) {
     case e_AbortTransport:
+      m_connection.OnMediaFailed(m_sessionId, false);
       return false;
 
     case e_IgnorePacket:
@@ -2592,13 +2605,12 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteRawPDU(const BYTE * frame
   if (socket.GetErrorCode(PChannel::LastWriteError) == PChannel::Unavailable)
     return e_IgnorePacket;
 
-  if (HandleUnreachable(PTRACE_PARAM(channel == e_Data ? "Data" : "Control")))
+  if (HandleUnreachable(PTRACE_PARAM(channel)))
     return e_IgnorePacket;
 
   PTRACE(1, *this << "write (" << frameSize << " bytes) error on "
-          << (channel == e_Data ? "data" : "control") << " port ("
-          << socket.GetErrorNumber(PChannel::LastWriteError) << "): "
-          << socket.GetErrorText(PChannel::LastWriteError));
+         << channel << " port (" << socket.GetErrorNumber(PChannel::LastWriteError) << "): "
+         << socket.GetErrorText(PChannel::LastWriteError));
   return e_AbortTransport;
 }
 

@@ -600,6 +600,9 @@ class OpalRTPSession : public OpalMediaSession
       e_Control,
       e_Data
     };
+#if PTRACING
+    friend ostream & operator<<(ostream & strm, Channel channel);
+#endif
 
     bool SetQoS(const PIPSocket::QoS & qos);
 
@@ -612,7 +615,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual bool InternalReadControl();
     virtual SendReceiveStatus ReadRawPDU(BYTE * framePtr, PINDEX & frameSize, Channel channel);
     virtual void InternalStopRead();
-    virtual bool HandleUnreachable(PTRACE_PARAM(const char * channelName));
+    virtual bool HandleUnreachable(PTRACE_PARAM(Channel channel));
 
     virtual SendReceiveStatus WriteRawPDU(
       const BYTE * framePtr,
