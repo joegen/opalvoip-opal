@@ -513,8 +513,16 @@ PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, PTimeInterval PT
   // Default response is an empty frame, ie silence
   frame.SetPayloadSize(0);
 
-  if (m_maxJitterDelay == 0)
+  if (m_maxJitterDelay == 0) {
     m_frameCount.Wait(); // Go synchronous
+    PWaitAndSignal mutex(m_bufferMutex);
+    if (!m_frames.empty()) {
+      FrameMap::iterator oldestFrame = m_frames.begin();
+      frame = oldestFrame->second;
+      m_frames.erase(oldestFrame);
+    }
+    return !m_closed;
+  }
 
   PWaitAndSignal mutex(m_bufferMutex);
 
