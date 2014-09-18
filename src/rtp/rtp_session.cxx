@@ -223,7 +223,7 @@ RTP_SyncSourceId OpalRTPSession::AddSyncSource(RTP_SyncSourceId id, Direction di
 }
 
 
-OpalRTPSession::SyncSource * OpalRTPSession::UseSyncSource(RTP_SyncSourceId ssrc, Direction dir, bool force)
+OpalRTPSession::SyncSource * OpalRTPSession::UseSyncSource(RTP_SyncSourceId ssrc, Direction PTRACE_PARAM(dir), bool force)
 {
   SyncSourceMap::iterator it = m_SSRC.find(ssrc);
   if (it != m_SSRC.end())
