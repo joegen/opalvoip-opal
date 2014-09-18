@@ -409,7 +409,7 @@ static void OutputRTPCaps(ostream & description, const OpalMediaFormat & mediaFo
   description << "application/x-rtp, "
                  "media=" << mediaFormat.GetMediaType() << ", "
                  "payload=" << (unsigned)mediaFormat.GetPayloadType() << ", "
-                 "clock-rate=" << mediaFormat.GetClockRate() << ", "
+                 "clock-rate=" << (mediaFormat == OpalG722 ? 16000 : mediaFormat.GetClockRate()) << ", "
                  "encoding-name=" << mediaFormat.GetEncodingName();
 }
 
