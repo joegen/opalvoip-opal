@@ -84,7 +84,7 @@ OpalCall::OpalCall(OpalManager & mgr)
   }
 #endif
 
-  PTRACE(3, "Created " << *this);
+  PTRACE(3, "Created " << *this << " ptr=" << this);
 }
 
 
@@ -102,7 +102,7 @@ OpalCall::~OpalCall()
   }
 #endif
 
-  PTRACE(3, "Destroyed " << *this);
+  PTRACE(3, "Destroyed " << *this << " ptr=" << this);
 }
 
 
