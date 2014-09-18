@@ -517,7 +517,7 @@ static void OutputRawAudioCaps(ostream & desc, const OpalMediaFormat & mediaForm
           "depth=16, "
           "width=16, "
           "channels=" << mediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption(), 1) << ", "
-          "rate=" << mediaFormat.GetClockRate() << ", "
+          "rate=" << (mediaFormat == OpalG722 ? 16000 : mediaFormat.GetClockRate()) << ", "
           "signed=true, "
           "endianness=1234";
 }
