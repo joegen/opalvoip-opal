@@ -906,7 +906,7 @@ void SIPConnection::OnInviteCollision()
 }
 
 
-void SIPConnection::OnMediaStreamOpenFailed(bool rx)
+void SIPConnection::OnMediaStreamOpenFailed(bool PTRACE_PARAM(rx))
 {
   SendReINVITE(PTRACE_PARAM(rx ? "close after rx open fail" : "close after tx open fail"));
 }
