@@ -161,7 +161,7 @@ OpalConnection::OpalConnection(OpalCall & call,
 {
   PTRACE_CONTEXT_ID_FROM(call);
 
-  PTRACE(3, "Created connection " << *this);
+  PTRACE(3, "Created connection " << *this << " ptr=" << this);
 
   PAssert(ownerCall.SafeReference(), PLogicError);
 
@@ -253,7 +253,7 @@ OpalConnection::~OpalConnection()
   ownerCall.connectionsActive.Remove(this);
   ownerCall.SafeDereference();
 
-  PTRACE(3, "Connection " << *this << " destroyed.");
+  PTRACE(3, "Destroyed connection " << *this << " ptr=" << this);
 }
 
 
