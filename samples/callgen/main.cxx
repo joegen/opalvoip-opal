@@ -141,33 +141,37 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
 #endif // P_WAVFILE
 
 #if OPAL_VIDEO
-  PVideoDevice::OpenArgs videoDevice = GetVideoInputDevice();
-  videoDevice.deviceName = P_FAKE_VIDEO_NTSC;
+  {
+    PVideoDevice::OpenArgs videoDevice = GetVideoInputDevice();
+    videoDevice.deviceName = P_FAKE_VIDEO_NTSC;
 
-  if (!args.HasOption('Y'))
-    cout << "Not using outgoing video file." << endl;
-  else {
-    PString yuvFile = args.GetOptionString('Y');
-    PINDEX last = yuvFile.GetLength()-1;
-    if (PFile::Exists(yuvFile[last] == '*' ? yuvFile.Left(last) : yuvFile)) {
-      cout << "Using outgoing video file: " << yuvFile << endl;
-      videoDevice.deviceName = yuvFile;
-    }
+    if (!args.HasOption('Y'))
+      cout << "Not using outgoing video file." << endl;
     else {
-      cout << "Outgoing video file  \"" << yuvFile << "\" does not exist!" << endl;
-      PTRACE(1, "CallGen\tOutgoing video file \"" << yuvFile << "\" does not exist");
+      PString yuvFile = args.GetOptionString('Y');
+    PINDEX last = yuvFile.GetLength()-1;
+      if (PFile::Exists(yuvFile[last] == '*' ? yuvFile.Left(last) : yuvFile)) {
+        cout << "Using outgoing video file: " << yuvFile << endl;
+        videoDevice.deviceName = yuvFile;
+      }
+      else {
+        cout << "Outgoing video file  \"" << yuvFile << "\" does not exist!" << endl;
+        PTRACE(1, "CallGen\tOutgoing video file \"" << yuvFile << "\" does not exist");
+      }
     }
-  }
-  SetVideoInputDevice(videoDevice);
+    SetVideoInputDevice(videoDevice);
 
-  videoDevice = GetVideoPreviewDevice();
-  videoDevice.deviceName.MakeEmpty();  // Don't want any preview for video, there could be ... lots
-  SetVideoPreviewDevice(videoDevice);
+    videoDevice = GetVideoPreviewDevice();
+    videoDevice.deviceName.MakeEmpty();  // Don't want any preview for video, there could be ... lots
+    SetVideoPreviewDevice(videoDevice);
+  }
 #endif // OPAL_VIDEO
 
   {
+#if OPAL_VIDEO
     PVideoDevice::OpenArgs videoDevice = GetVideoOutputDevice();
     videoDevice.deviceName = P_NULL_VIDEO_DEVICE;
+#endif
 
     PString incomingMediaDirectory = args.GetOptionString('I');
     if (incomingMediaDirectory.IsEmpty())
@@ -188,7 +192,9 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
       PTRACE(1, "CallGen\tCould not create incoming media directory \"" << incomingMediaDirectory << '"');
     }
 
+#if OPAL_VIDEO
     SetVideoOutputDevice(videoDevice);
+#endif
   }
 
   unsigned simultaneous = args.GetOptionString('m').AsUnsigned();
