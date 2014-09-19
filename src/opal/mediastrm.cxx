@@ -1487,12 +1487,12 @@ unsigned * OpalMediaCommand::GetPlugInSize() const
 }
 
 
-OpalMediaFlowControl::OpalMediaFlowControl(unsigned maxBitRate,
+OpalMediaFlowControl::OpalMediaFlowControl(unsigned bitRate,
                                            const OpalMediaType & mediaType,
                                            unsigned sessionID,
                                            unsigned ssrc)
   : OpalMediaCommand(mediaType, sessionID, ssrc)
-  , m_maxBitRate(maxBitRate)
+  , m_bitRate(bitRate)
 {
 }
 
