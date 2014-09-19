@@ -406,16 +406,24 @@ bool OpalPCSSEndPoint::CreateVideoInputDevice(const OpalConnection & connection,
                                               PVideoInputDevice * & device,
                                               bool & autoDelete)
 {
-  if (connection.GetPhase() < OpalConnection::AlertingPhase) {
+  if (connection.GetCall().IsNetworkOriginated() && connection.GetPhase() < OpalConnection::AlertingPhase) {
     const OpalPCSSConnection * pcss = dynamic_cast<const OpalPCSSConnection *>(&connection);
-    if (pcss != NULL && !pcss->GetSoundChannelOnRingDevice().IsEmpty()) {
+    if (pcss != NULL) {
       PVideoDevice::OpenArgs args = pcss->GetVideoOnRingDevice();
-      if (args.deviceName != P_FAKE_VIDEO_TEXT) {
+      if (!args.deviceName.IsEmpty() && args.deviceName != P_NULL_VIDEO_DEVICE) {
         mediaFormat.AdjustVideoArgs(args);
         return manager.CreateVideoInputDevice(connection, args, device, autoDelete);
       }
     }
   }
+
+  PSafePtr<OpalConnection> other = connection.GetOtherPartyConnection();
+  if (other == NULL)
+    return false;
+
+  if (connection.GetPhase() < OpalConnection::ConnectedPhase &&
+          other->GetPhase() < OpalConnection::ConnectedPhase)
+    return false;
 
   return OpalLocalEndPoint::CreateVideoInputDevice(connection, mediaFormat, device, autoDelete);
 }
