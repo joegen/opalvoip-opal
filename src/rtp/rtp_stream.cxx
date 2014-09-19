@@ -96,6 +96,10 @@ PBoolean OpalRTPMediaStream::Open()
     m_jitterBuffer = OpalJitterBuffer::Create(OpalJitterBuffer::Init(mediaFormat.GetMediaType()));
     m_rtpSession.SetJitterBuffer(m_jitterBuffer, m_syncSource);
     m_rtpSession.AddDataNotifier(m_receiveNotifier);
+    PTRACE(4, "Opening source stream " << *this << " jb=" << *m_jitterBuffer);
+  }
+  else {
+    PTRACE(4, "Opening sink stream " << *this);
   }
 
 #if OPAL_VIDEO
@@ -146,11 +150,11 @@ bool OpalRTPMediaStream::InternalSetPaused(bool pause, bool fromUser, bool fromP
   if (!OpalMediaStream::InternalSetPaused(pause, fromUser, fromPatch))
     return false; // Had not changed
 
-  if (m_jitterBuffer != NULL) {
-    if (pause)
-      m_jitterBuffer->Close();
-    else
-      m_jitterBuffer->Restart();
+  if (IsSource()) {
+    // We make referenced copy of pointer so can't be deleted out from under us
+    OpalMediaPatchPtr mediaPatch = m_mediaPatch;
+    if (mediaPatch != NULL)
+      mediaPatch->EnableJitterBuffer(!pause);
   }
 
   return true;
@@ -166,15 +170,17 @@ void OpalRTPMediaStream::OnReceivedPacket(OpalRTPSession &, OpalRTPSession::Data
 
 PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
 {
-  if (!IsOpen())
+  if (!IsOpen()) {
+    PTRACE(4, "Read from closed stream");
     return false;
+  }
 
   if (IsSink()) {
     PTRACE(1, "Tried to read from sink media stream");
     return false;
   }
 
-  if (m_jitterBuffer == NULL || !m_jitterBuffer->ReadData(packet))
+  if (PAssertNULL(m_jitterBuffer) == NULL || !m_jitterBuffer->ReadData(packet))
     return false;
 
 #if OPAL_VIDEO
@@ -191,8 +197,10 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
 
 PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
 {
-  if (!IsOpen())
+  if (!IsOpen()) {
+    PTRACE(4, "Write to closed stream");
     return false;
+  }
 
   if (IsSource()) {
     PTRACE(1, "Tried to write to source media stream");
