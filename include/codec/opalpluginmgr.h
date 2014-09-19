@@ -237,6 +237,9 @@ class OpalPluginTranscoder
     OpalPluginControl freeOptionsControl;
     OpalPluginControl getOutputDataSizeControl;
     OpalPluginControl getCodecStatistics;
+#if PTRACING
+    bool m_firstLoggedUpdateOptions[2];
+#endif
 };
 
 

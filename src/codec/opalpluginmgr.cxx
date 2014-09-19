@@ -595,6 +595,10 @@ OpalPluginTranscoder::OpalPluginTranscoder(const PluginCodec_Definition * defn, 
   , getOutputDataSizeControl(defn, PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE)
   , getCodecStatistics(defn, PLUGINCODEC_CONTROL_GET_STATISTICS)
 {
+#if PTRACING
+  m_firstLoggedUpdateOptions[true] = m_firstLoggedUpdateOptions[false] = true;
+#endif
+
   if (codecDef->createCodec == NULL)
     context = NULL;
   else {
@@ -616,7 +620,32 @@ bool OpalPluginTranscoder::UpdateOptions(OpalMediaFormat & fmt)
   if (context == NULL)
     return false;
 
-  PTRACE(4, "OpalPlugin\t" << (isEncoder ? "Setting encoder options" : "Setting decoder options") << ":\n" << setw(-1) << fmt);
+#if PTRACING
+  if (PTrace::CanTrace(3)) {
+    ostream & trace = PTRACE_BEGIN(3, "OpalPlugin");
+    trace << "Setting " << (isEncoder ? "encoder" : "decoder") << " options:";
+    if (m_firstLoggedUpdateOptions[isEncoder] || PTrace::CanTrace(5)) {
+      m_firstLoggedUpdateOptions[isEncoder] = false;
+      trace << '\n' << setw(-1) << fmt;
+    }
+    else {
+      trace << ' ' << fmt;
+#if OPAL_VIDEO
+      if (fmt.GetMediaType() == OpalMediaType::Video()) {
+        if (isEncoder)
+          trace << " res=" << fmt.GetOptionInteger(OpalVideoFormat::FrameWidthOption())
+                <<     'x' << fmt.GetOptionInteger(OpalVideoFormat::FrameHeightOption());
+        else
+          trace << " max=" << fmt.GetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption())
+                <<     'x' << fmt.GetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption());
+      }
+#endif // OPAL_VIDEO
+      if (isEncoder)
+        trace << " target=" << fmt.GetOptionInteger(OpalMediaFormat::TargetBitRateOption());
+    }
+    trace << PTrace::End;
+  }
+#endif // PTRACING
 
   char ** options = fmt.GetOptions().ToCharArray(false);
   bool ok = setCodecOptionsControl.Call(options, sizeof(options), context) != 0;
