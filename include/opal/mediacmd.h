@@ -125,7 +125,7 @@ class OpalMediaFlowControl : public OpalMediaCommand
     PCLASSINFO_WITH_CLONE(OpalMediaFlowControl, OpalMediaCommand);
   public:
     OpalMediaFlowControl(
-      unsigned maxBitRate,
+      unsigned bitRate,
       const OpalMediaType & mediaType, ///< Media type to search for in open streams
       unsigned sessionID = 0,          ///< Session for media stream, 0 is use first \p mediaType stream
       unsigned ssrc = 0                ///< Sync Source for media stream (if RTP)
@@ -133,10 +133,10 @@ class OpalMediaFlowControl : public OpalMediaCommand
 
     virtual PString GetName() const;
 
-    unsigned GetMaxBitRate() const { return m_maxBitRate; }
+    const OpalBandwidth & GetMaxBitRate() const { return m_bitRate; }
 
   protected:
-    unsigned m_maxBitRate;
+    OpalBandwidth m_bitRate;
 };
 
 #endif // OPAL_OPAL_MEDIACMD_H
