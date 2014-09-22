@@ -407,52 +407,37 @@ AC_OUTPUT()
 dnl ########################################################################
 dnl Summary
 dnl ########################################################################
-echo ""
-echo "========================= Plugin configuration ========================="
-echo "                         OS Type  :  $target_os"
-echo "                    Machine Type  :  $target_cpu"
-echo "                          prefix  :  $prefix"
-echo "                     exec_prefix  :  $exec_prefix"
-echo "                          libdir  :  $libdir"
-echo "  Audio Codec plugin install dir  :  "'${libdir}'"/$AUD_PLUGIN_DIR"
-echo "  Video Codec plugin install dir  :  "'${libdir}'"/$VID_PLUGIN_DIR"
-echo "       LID plugin install prefix  :  "'${libdir}'"/$LID_PLUGIN_DIR"
-echo "       FAX plugin install prefix  :  "'${libdir}'"/$FAX_PLUGIN_DIR"
-
-echo ""
-
-echo "                              GSM :  ${HAVE_GSM}"
-echo "                          GSM-AMR :  ${HAVE_GSMAMR}"
-echo "                             iLBC :  ${HAVE_ILBC}"
-echo "                             iSAC :  ${HAVE_ISAC}"
-echo "                            Speex :  ${HAVE_SPEEX}"
-echo "                            G.722 :  ${HAVE_G722}"
-echo "                          G.722.1 :  ${HAVE_G7221}"
-echo "                          G.722.2 :  ${HAVE_G7222}"
-echo "                            G.726 :  ${HAVE_G726}"
-echo "                            LPC10 :  ${HAVE_LPC10}"
-echo "                        IMA_ADPCM :  ${HAVE_IMA_ADPCM}"
-echo "                              SBC :  ${HAVE_SBC}"
-echo "                             CELT :  ${HAVE_CELT}"
-echo "                             SILK :  ${HAVE_SILK}"
-echo "                             Opus :  ${HAVE_OPUS}"
-
-echo ""
-
-echo "                           H.261  :  ${HAVE_H261} (internal)"
-echo "                     H.263/H.263+ :  ${HAVE_H263} (ffmpeg)"
-echo "                   VideoLAN x264  :  ${HAVE_X264}"
-echo "                  Cisco OpenH264  :  ${HAVE_OPENH264}"
-echo "                             VP8  :  ${HAVE_VP8}"
-echo "                          THEORA  :  ${HAVE_THEORA}"
-echo "                    MPEG4 Part 2  :  ${HAVE_MPEG4}"
-
-echo ""
-echo "                     SpanDSP FAX  :  $HAVE_SPANDSP"
-
-echo ""
-
-echo "         Voicetronics VPB support :  $HAVE_VPB"
-
-echo ""
-echo "========================================================================"
+MY_OUTPUT_SUMMARY(
+   [   Audio Codec plugin install dir], AUD_PLUGIN_DIR,
+   [   Video Codec plugin install dir], VID_PLUGIN_DIR,
+   [        LID plugin install prefix], LID_PLUGIN_DIR,
+   [        FAX plugin install prefix], FAX_PLUGIN_DIR,
+   [], [],
+   [                              GSM], HAVE_GSM,
+   [                          GSM-AMR], HAVE_GSMAMR,
+   [                             iLBC], HAVE_ILBC,
+   [                             iSAC], HAVE_ISAC,
+   [                            Speex], HAVE_SPEEX,
+   [                            G.722], HAVE_G722,
+   [                          G.722.1], HAVE_G7221,
+   [                          G.722.2], HAVE_G7222,
+   [                            G.726], HAVE_G726,
+   [                            LPC10], HAVE_LPC10,
+   [                        IMA_ADPCM], HAVE_IMA_ADPCM,
+   [                              SBC], HAVE_SBC,
+   [                             CELT], HAVE_CELT,
+   [                             SILK], HAVE_SILK,
+   [                             Opus], HAVE_OPUS,
+   [], [],
+   [                      H.261 (vic)], HAVE_H261,
+   [            H.263/H.263+ (ffmpeg)], HAVE_H263,
+   [                    VideoLAN x264], HAVE_X264,
+   [                   Cisco OpenH264], HAVE_OPENH264,
+   [                              VP8], HAVE_VP8,
+   [                           THEORA], HAVE_THEORA,
+   [                     MPEG4 Part 2], HAVE_MPEG4,
+   [], [],
+   [                     SpanDSP FAX ], HAVE_SPANDSP,
+   [], [],
+   [         Voicetronics VPB support], [HAVE_VPB]dnl
+)

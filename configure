@@ -725,6 +725,7 @@ OPAL_BUILD
 OPAL_MINOR
 OPAL_MAJOR
 makedir
+P_PROFILING
 OPT_CFLAGS
 OPT_CPPFLAGS
 DEBUG_CFLAGS
@@ -814,6 +815,7 @@ ac_user_opts='
 enable_option_checking
 enable_ios
 enable_force32
+enable_profiling
 with_ptlib
 enable_srtp
 enable_localsrtp
@@ -1519,6 +1521,7 @@ Optional Features:
   --enable-ios=iphone|simulator
                           enable iOS support
   --enable-force32        Force 32-bit x86 build
+  --enable-profiling      Enable compiler generated profiling (gprof)
   --disable-srtp          disable SRTP protocol support
   --enable-localsrtp      force use internal source for SRTP protocol support
   --disable-zrtp          disable ZRTP protocol support
@@ -2727,6 +2730,11 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
+
+
+
+
+
 if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
 	if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
@@ -2976,6 +2984,9 @@ test -n "$target_alias" &&
   program_prefix=${target_alias}-
 fi
 
+
+oldCFLAGS="$CFLAGS"
+oldCXXFLAGS="$CXXFLAGS"
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -4027,8 +4038,8 @@ if test -z "$CXX" ; then
    as_fn_error 1 "C++ compiler is required" "$LINENO" 5
 fi
 
-CFLAGS=
-CXXFLAGS=
+CFLAGS="$oldCFLAGS"
+CXXFLAGS="$oldCXXFLAGS"
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ln -s works" >&5
@@ -5520,6 +5531,8 @@ else
 $as_echo "no" >&6; }
             target_cpu=x86
             target_64bit=0
+            CFLAGS="-march=i686 $CFLAGS"
+            CXXFLAGS="-march=i686 $CXXFLAGS"
 
 
 fi
@@ -5603,13 +5616,13 @@ $as_echo "$as_me: Platform: \"$target_os\" release \"$target_release\" on \"$tar
 
 
 
-DEBUG_CPPFLAGS="-D_DEBUG"
+DEBUG_CPPFLAGS="-D_DEBUG $DEBUG_CPPFLAGS"
 
 
    oldCPPFLAGS="$CPPFLAGS"
    CPPFLAGS="$CPPFLAGS -g3 -ggdb -O0"
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking debug build -g3 -ggdb -O0" >&5
-$as_echo_n "checking debug build -g3 -ggdb -O0... " >&6; }
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking debug build (-g3 -ggdb -O0)" >&5
+$as_echo_n "checking debug build (-g3 -ggdb -O0)... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -5633,22 +5646,22 @@ $as_echo "$usable" >&6; }
    CPPFLAGS="$oldCPPFLAGS"
 
    if test "x$usable" = "xyes"; then :
-  DEBUG_CFLAGS="$DEBUG_CFLAGS -g3 -ggdb -O0"
+  DEBUG_CFLAGS="-g3 -ggdb -O0 $DEBUG_CFLAGS"
 else
-  DEBUG_CFLAGS="$DEBUG_CFLAGS -g"
+  DEBUG_CFLAGS="-g $DEBUG_CFLAGS"
 
 fi
 
 
 
 
-OPT_CPPFLAGS="-DNDEBUG"
+OPT_CPPFLAGS="-DNDEBUG $OPT_CPPFLAGS"
 
 
    oldCPPFLAGS="$CPPFLAGS"
    CPPFLAGS="$CPPFLAGS -O3"
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking optimised build -O3" >&5
-$as_echo_n "checking optimised build -O3... " >&6; }
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking optimised build (-O3)" >&5
+$as_echo_n "checking optimised build (-O3)... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -5672,13 +5685,66 @@ $as_echo "$usable" >&6; }
    CPPFLAGS="$oldCPPFLAGS"
 
    if test "x$usable" = "xyes"; then :
-  OPT_CFLAGS="$OPT_FLAGS -O3"
+  OPT_CFLAGS="-O3 $OPT_CFLAGS"
 else
-  OPT_CFLAGS="$OPT_FLAGS -O2"
+  OPT_CFLAGS="-O2 $OPT_CFLAGS"
 
 fi
 
 
+
+
+
+# Check whether --enable-profiling was given.
+if test "${enable_profiling+set}" = set; then :
+  enableval=$enable_profiling;
+      if test "x$enableval" = "xyes"; then
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -pg"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking has compiler supported profiling (-pg)" >&5
+$as_echo_n "checking has compiler supported profiling (-pg)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+
+
+   LIBS="-pg $LIBS"
+
+   CFLAGS="-pg $CFLAGS"
+   CXXFLAGS="-pg $CXXFLAGS"
+
+               P_PROFILING="yes"
+
+
+
+fi
+
+
+      fi
+
+
+fi
 
 
 
@@ -6366,7 +6432,7 @@ $as_echo "$usable" >&6; }
 
 
    LIBS="$SRTP_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $SRTP_CFLAGS"
+   CPPFLAGS="$SRTP_CFLAGS $CPPFLAGS"
 
 
 
@@ -6616,7 +6682,7 @@ $as_echo "$usable" >&6; }
 
 
    LIBS="$ZRTP_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $ZRTP_CFLAGS"
+   CPPFLAGS="$ZRTP_CFLAGS $CPPFLAGS"
 
 
 
@@ -6855,7 +6921,7 @@ $as_echo "$usable" >&6; }
 
 
    LIBS="$SPEEXDSP_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $SPEEXDSP_CFLAGS"
+   CPPFLAGS="$SPEEXDSP_CFLAGS $CPPFLAGS"
 
 
 
@@ -7207,7 +7273,7 @@ $as_echo "$usable" >&6; }
 
 
    LIBS="$CAPI_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $CAPI_CFLAGS"
+   CPPFLAGS="$CAPI_CFLAGS $CPPFLAGS"
 
 
 
@@ -7474,7 +7540,7 @@ $as_echo "$usable" >&6; }
 
 
    LIBS="$JAVA_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $JAVA_CFLAGS"
+   CPPFLAGS="$JAVA_CFLAGS $CPPFLAGS"
 
 
 
@@ -7761,7 +7827,7 @@ $as_echo "$usable" >&6; }
 
 
    LIBS="$RUBY_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $RUBY_CFLAGS"
+   CPPFLAGS="$RUBY_CFLAGS $CPPFLAGS"
 
 
 
@@ -9635,7 +9701,7 @@ $as_echo "$usable" >&6; }
 
 
    LIBS="$DAHDI_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $DAHDI_CFLAGS"
+   CPPFLAGS="$DAHDI_CFLAGS $CPPFLAGS"
 
 
 
@@ -11922,66 +11988,416 @@ fi
 
 
 
-echo ""
-echo "=========================== Configuration =============================="
-echo "                          OS Type :  $target_os"
-echo "                     Machine Type :  $target_cpu"
-echo ""
-echo "                           prefix :  $prefix"
-echo "                      exec_prefix :  $exec_prefix"
-echo "                       includedir :  $includedir"
-echo "                           libdir :  $libdir"
-echo "                      datarootdir :  $datarootdir"
-echo "                          makedir :  $makedir"
-echo "                Plug in directory :  $OPAL_PLUGIN_DIR"
-echo ""
-echo "                            PTLib :  $OPAL_PTLIB_DIR"
-echo ""
 
-echo "                            Audio :  $OPAL_PTLIB_AUDIO"
-echo "                            Video :  $OPAL_PTLIB_VIDEO"
-echo ""
+   $as_echo ""
+   $as_echo "=========================== Configuration =============================="
 
-echo "                            H.323 :  $OPAL_H323"
-echo "                            H.450 :  $OPAL_H450"
-echo "                            H.460 :  $OPAL_H460"
-echo "                H.460.18/19 (NAT) :  $OPAL_H460_NAT"
-echo "                            H.239 :  $OPAL_H239"
-echo "                            H.501 :  $OPAL_H501"
-echo ""
-echo "                              SIP :  $OPAL_SIP"
-echo "                 SIPIM capability :  $OPAL_HAS_SIPIM"
-echo "                  MSRP capability :  $OPAL_HAS_MSRP"
-echo "         RFC-4103 (IM) capability :  $OPAL_HAS_RFC4103"
-echo ""
-echo "                     IAX2 support :  $OPAL_IAX2"
-echo "      Cisco SCCP (skinny) support :  $OPAL_SKINNY"
-echo "            Line Interface Device :  $OPAL_LID"
-echo "                      CAPI (ISDN) :  $OPAL_CAPI"
-echo "                     DAHDI (PSTN) :  $OPAL_DAHDI"
-echo ""
-echo "                  T.38 capability :  $OPAL_T38_CAPABILITY"
-echo "                T.38 FAX protocol :  $OPAL_FAX"
-echo "     H.224 (H.221 media channels) :  $OPAL_HAS_H224"
-echo "   H.281 (Far End Camera Control) :  $OPAL_HAS_H281"
-echo ""
-echo "                             SRTP :  $SRTP_MSG"
-echo "               RFC-4175 Raw Video :  $OPAL_RFC4175"
-echo "              RFC-2435 JPEG Video :  $OPAL_RFC2435  (experimental)"
-echo "      Accoustic Echo Cancellation :  $OPAL_AEC"
-echo "Packet Loss Concealment for G.711 :  $OPAL_G711PLC"
-echo "    RTCP Extended Reports support :  $OPAL_RTCP_XR"
-echo "     RTP Forward Error Correction :  $OPAL_RTP_FEC"
-echo ""
-echo "         PC Sound System Endpoint :  $OPAL_HAS_PCSS"
-echo "                      IVR support :  $OPAL_IVR"
-echo "       Media mixing (conferences) :  $OPAL_HAS_MIXER"
-echo "                         Presence :  $OPAL_HAS_PRESENCE"
-echo "     Statistics gathering support :  $OPAL_STATISTICS"
-echo "        Script language interface :  $OPAL_SCRIPT"
-echo "                     Java support :  $OPAL_JAVA"
-echo "                       C# support :  $OPAL_CSHARP"
-echo "                     Ruby support :  $OPAL_RUBY"
+   if test "x${target_os}" = "x"; then :
+  $as_echo "                          OS Type : no"
+else
+  $as_echo "                          OS Type : ${target_os}"
 
-echo ""
-echo "========================================================================"
+fi
+
+
+
+   if test "x${target_cpu}" = "x"; then :
+  $as_echo "                     Machine Type : no"
+else
+  $as_echo "                     Machine Type : ${target_cpu}"
+
+fi
+
+
+   if test "x$P_PROFILING" = "xyes"; then :
+  $as_echo ""
+      $as_echo "                        Profiling : ***** ENABLED *****"
+
+fi
+   $as_echo ""
+
+   if test "x${prefix}" = "x"; then :
+  $as_echo "                           prefix : no"
+else
+  $as_echo "                           prefix : ${prefix}"
+
+fi
+
+
+
+   if test "x${exec_prefix}" = "x"; then :
+  $as_echo "                      exec_prefix : no"
+else
+  $as_echo "                      exec_prefix : ${exec_prefix}"
+
+fi
+
+
+
+   if test "x${includedir}" = "x"; then :
+  $as_echo "                       includedir : no"
+else
+  $as_echo "                       includedir : ${includedir}"
+
+fi
+
+
+
+   if test "x${libdir}" = "x"; then :
+  $as_echo "                           libdir : no"
+else
+  $as_echo "                           libdir : ${libdir}"
+
+fi
+
+
+
+   if test "x${datarootdir}" = "x"; then :
+  $as_echo "                      datarootdir : no"
+else
+  $as_echo "                      datarootdir : ${datarootdir}"
+
+fi
+
+
+
+   if test "x${makedir}" = "x"; then :
+  $as_echo "                          makedir : no"
+else
+  $as_echo "                          makedir : ${makedir}"
+
+fi
+
+
+
+   $as_echo ""
+
+   if test "x${OPAL_PLUGIN_DIR}" = "x"; then :
+  $as_echo "                Plug in directory : no"
+else
+  $as_echo "                Plug in directory : ${OPAL_PLUGIN_DIR}"
+
+fi
+
+
+   if test "x${OPAL_PTLIB_DIR}" = "x"; then :
+  $as_echo "                  PTLib directory : no"
+else
+  $as_echo "                  PTLib directory : ${OPAL_PTLIB_DIR}"
+
+fi
+
+
+   $as_echo ""
+
+   if test "x${OPAL_PTLIB_AUDIO}" = "x"; then :
+  $as_echo "                            Audio : no"
+else
+  $as_echo "                            Audio : ${OPAL_PTLIB_AUDIO}"
+
+fi
+
+
+   if test "x${OPAL_PTLIB_VIDEO}" = "x"; then :
+  $as_echo "                            Video : no"
+else
+  $as_echo "                            Video : ${OPAL_PTLIB_VIDEO}"
+
+fi
+
+
+   $as_echo ""
+
+   if test "x${OPAL_H323}" = "x"; then :
+  $as_echo "                            H.323 : no"
+else
+  $as_echo "                            H.323 : ${OPAL_H323}"
+
+fi
+
+
+   if test "x${OPAL_H450}" = "x"; then :
+  $as_echo "                            H.450 : no"
+else
+  $as_echo "                            H.450 : ${OPAL_H450}"
+
+fi
+
+
+   if test "x${OPAL_H460}" = "x"; then :
+  $as_echo "                            H.460 : no"
+else
+  $as_echo "                            H.460 : ${OPAL_H460}"
+
+fi
+
+
+   if test "x${OPAL_H460_NAT}" = "x"; then :
+  $as_echo "                H.460.18/19 (NAT) : no"
+else
+  $as_echo "                H.460.18/19 (NAT) : ${OPAL_H460_NAT}"
+
+fi
+
+
+   if test "x${OPAL_H239}" = "x"; then :
+  $as_echo "                            H.239 : no"
+else
+  $as_echo "                            H.239 : ${OPAL_H239}"
+
+fi
+
+
+   if test "x${OPAL_H501}" = "x"; then :
+  $as_echo "                            H.501 : no"
+else
+  $as_echo "                            H.501 : ${OPAL_H501}"
+
+fi
+
+
+   $as_echo ""
+
+   if test "x${OPAL_SIP}" = "x"; then :
+  $as_echo "                              SIP : no"
+else
+  $as_echo "                              SIP : ${OPAL_SIP}"
+
+fi
+
+
+   if test "x${OPAL_HAS_SIPIM}" = "x"; then :
+  $as_echo "                 SIPIM capability : no"
+else
+  $as_echo "                 SIPIM capability : ${OPAL_HAS_SIPIM}"
+
+fi
+
+
+   if test "x${OPAL_HAS_MSRP}" = "x"; then :
+  $as_echo "                  MSRP capability : no"
+else
+  $as_echo "                  MSRP capability : ${OPAL_HAS_MSRP}"
+
+fi
+
+
+   if test "x${OPAL_HAS_RFC4103}" = "x"; then :
+  $as_echo "         RFC-4103 (IM) capability : no"
+else
+  $as_echo "         RFC-4103 (IM) capability : ${OPAL_HAS_RFC4103}"
+
+fi
+
+
+   $as_echo ""
+
+   if test "x${OPAL_IAX2}" = "x"; then :
+  $as_echo "                     IAX2 support : no"
+else
+  $as_echo "                     IAX2 support : ${OPAL_IAX2}"
+
+fi
+
+
+   if test "x${OPAL_SKINNY}" = "x"; then :
+  $as_echo "      Cisco SCCP (skinny) support : no"
+else
+  $as_echo "      Cisco SCCP (skinny) support : ${OPAL_SKINNY}"
+
+fi
+
+
+   if test "x${OPAL_LID}" = "x"; then :
+  $as_echo "            Line Interface Device : no"
+else
+  $as_echo "            Line Interface Device : ${OPAL_LID}"
+
+fi
+
+
+   if test "x${OPAL_CAPI}" = "x"; then :
+  $as_echo "                      CAPI (ISDN) : no"
+else
+  $as_echo "                      CAPI (ISDN) : ${OPAL_CAPI}"
+
+fi
+
+
+   if test "x${OPAL_DAHDI}" = "x"; then :
+  $as_echo "                     DAHDI (PSTN) : no"
+else
+  $as_echo "                     DAHDI (PSTN) : ${OPAL_DAHDI}"
+
+fi
+
+
+   $as_echo ""
+
+   if test "x${OPAL_T38_CAPABILITY}" = "x"; then :
+  $as_echo "                  T.38 capability : no"
+else
+  $as_echo "                  T.38 capability : ${OPAL_T38_CAPABILITY}"
+
+fi
+
+
+   if test "x${OPAL_FAX}" = "x"; then :
+  $as_echo "                T.38 FAX protocol : no"
+else
+  $as_echo "                T.38 FAX protocol : ${OPAL_FAX}"
+
+fi
+
+
+   if test "x${OPAL_HAS_H224}" = "x"; then :
+  $as_echo "     H.224 (H.221 media channels) : no"
+else
+  $as_echo "     H.224 (H.221 media channels) : ${OPAL_HAS_H224}"
+
+fi
+
+
+   if test "x${OPAL_HAS_H281}" = "x"; then :
+  $as_echo "   H.281 (Far End Camera Control) : no"
+else
+  $as_echo "   H.281 (Far End Camera Control) : ${OPAL_HAS_H281}"
+
+fi
+
+
+   $as_echo ""
+
+   if test "x${SRTP_MSG}" = "x"; then :
+  $as_echo "                             SRTP : no"
+else
+  $as_echo "                             SRTP : ${SRTP_MSG}"
+
+fi
+
+
+   if test "x${OPAL_RFC4175}" = "x"; then :
+  $as_echo "               RFC-4175 Raw Video : no"
+else
+  $as_echo "               RFC-4175 Raw Video : ${OPAL_RFC4175}"
+
+fi
+
+
+   if test "x${OPAL_RFC2435}" = "x"; then :
+  $as_echo "     RFC-2435 JPEG (experimental) : no"
+else
+  $as_echo "     RFC-2435 JPEG (experimental) : ${OPAL_RFC2435}"
+
+fi
+
+
+   if test "x${OPAL_AEC}" = "x"; then :
+  $as_echo "      Accoustic Echo Cancellation : no"
+else
+  $as_echo "      Accoustic Echo Cancellation : ${OPAL_AEC}"
+
+fi
+
+
+   if test "x${OPAL_G711PLC}" = "x"; then :
+  $as_echo "  Packet Loss Concealment (G.711) : no"
+else
+  $as_echo "  Packet Loss Concealment (G.711) : ${OPAL_G711PLC}"
+
+fi
+
+
+   if test "x${OPAL_RTCP_XR}" = "x"; then :
+  $as_echo "    RTCP Extended Reports support : no"
+else
+  $as_echo "    RTCP Extended Reports support : ${OPAL_RTCP_XR}"
+
+fi
+
+
+   if test "x${OPAL_RTP_FEC}" = "x"; then :
+  $as_echo "     RTP Forward Error Correction : no"
+else
+  $as_echo "     RTP Forward Error Correction : ${OPAL_RTP_FEC}"
+
+fi
+
+
+   $as_echo ""
+
+   if test "x${OPAL_HAS_PCSS}" = "x"; then :
+  $as_echo "         PC Sound System Endpoint : no"
+else
+  $as_echo "         PC Sound System Endpoint : ${OPAL_HAS_PCSS}"
+
+fi
+
+
+   if test "x${OPAL_IVR}" = "x"; then :
+  $as_echo "                      IVR support : no"
+else
+  $as_echo "                      IVR support : ${OPAL_IVR}"
+
+fi
+
+
+   if test "x${OPAL_HAS_MIXER}" = "x"; then :
+  $as_echo "       Media mixing (conferences) : no"
+else
+  $as_echo "       Media mixing (conferences) : ${OPAL_HAS_MIXER}"
+
+fi
+
+
+   if test "x${OPAL_HAS_PRESENCE}" = "x"; then :
+  $as_echo "                         Presence : no"
+else
+  $as_echo "                         Presence : ${OPAL_HAS_PRESENCE}"
+
+fi
+
+
+   if test "x${OPAL_STATISTICS}" = "x"; then :
+  $as_echo "     Statistics gathering support : no"
+else
+  $as_echo "     Statistics gathering support : ${OPAL_STATISTICS}"
+
+fi
+
+
+   if test "x${OPAL_SCRIPT}" = "x"; then :
+  $as_echo "        Script language interface : no"
+else
+  $as_echo "        Script language interface : ${OPAL_SCRIPT}"
+
+fi
+
+
+   if test "x${OPAL_JAVA}" = "x"; then :
+  $as_echo "                     Java support : no"
+else
+  $as_echo "                     Java support : ${OPAL_JAVA}"
+
+fi
+
+
+   if test "x${OPAL_CSHARP}" = "x"; then :
+  $as_echo "                  C-sharp support : no"
+else
+  $as_echo "                  C-sharp support : ${OPAL_CSHARP}"
+
+fi
+
+
+   if test "x${OPAL_RUBY}" = "x"; then :
+  $as_echo "                     Ruby support : no"
+else
+  $as_echo "                     Ruby support : ${OPAL_RUBY}"
+
+fi
+
+
+   $as_echo ""
+   $as_echo "========================================================================"
+
