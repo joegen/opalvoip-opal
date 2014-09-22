@@ -695,6 +695,7 @@ OPAL_MAJOR
 DLFCN_LIBS
 LDD
 NM
+P_PROFILING
 OPT_CFLAGS
 OPT_CPPFLAGS
 DEBUG_CFLAGS
@@ -784,6 +785,7 @@ ac_user_opts='
 enable_option_checking
 enable_ios
 enable_force32
+enable_profiling
 with_plugin_installdir
 enable_silk
 enable_gsmamr
@@ -1492,6 +1494,7 @@ Optional Features:
   --enable-ios=iphone|simulator
                           enable iOS support
   --enable-force32        Force 32-bit x86 build
+  --enable-profiling      Enable compiler generated profiling (gprof)
   --disable-silk          disable Skype SILK audio codec
   --disable-gsmamr        disable GSM-AMR audio codec
   --disable-g.726         disable G.726 audio codec
@@ -2712,6 +2715,11 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
+
+
+
+
+
 if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
 	if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}pkg-config", so it can be a program name with args.
@@ -2961,6 +2969,9 @@ test -n "$target_alias" &&
   program_prefix=${target_alias}-
 fi
 
+
+oldCFLAGS="$CFLAGS"
+oldCXXFLAGS="$CXXFLAGS"
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -4012,8 +4023,8 @@ if test -z "$CXX" ; then
    as_fn_error 1 "C++ compiler is required" "$LINENO" 5
 fi
 
-CFLAGS=
-CXXFLAGS=
+CFLAGS="$oldCFLAGS"
+CXXFLAGS="$oldCXXFLAGS"
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ln -s works" >&5
@@ -5505,6 +5516,8 @@ else
 $as_echo "no" >&6; }
             target_cpu=x86
             target_64bit=0
+            CFLAGS="-march=i686 $CFLAGS"
+            CXXFLAGS="-march=i686 $CXXFLAGS"
 
 
 fi
@@ -5588,13 +5601,13 @@ $as_echo "$as_me: Platform: \"$target_os\" release \"$target_release\" on \"$tar
 
 
 
-DEBUG_CPPFLAGS="-D_DEBUG"
+DEBUG_CPPFLAGS="-D_DEBUG $DEBUG_CPPFLAGS"
 
 
    oldCPPFLAGS="$CPPFLAGS"
    CPPFLAGS="$CPPFLAGS -g3 -ggdb -O0"
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking debug build -g3 -ggdb -O0" >&5
-$as_echo_n "checking debug build -g3 -ggdb -O0... " >&6; }
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking debug build (-g3 -ggdb -O0)" >&5
+$as_echo_n "checking debug build (-g3 -ggdb -O0)... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -5618,22 +5631,22 @@ $as_echo "$usable" >&6; }
    CPPFLAGS="$oldCPPFLAGS"
 
    if test "x$usable" = "xyes"; then :
-  DEBUG_CFLAGS="$DEBUG_CFLAGS -g3 -ggdb -O0"
+  DEBUG_CFLAGS="-g3 -ggdb -O0 $DEBUG_CFLAGS"
 else
-  DEBUG_CFLAGS="$DEBUG_CFLAGS -g"
+  DEBUG_CFLAGS="-g $DEBUG_CFLAGS"
 
 fi
 
 
 
 
-OPT_CPPFLAGS="-DNDEBUG"
+OPT_CPPFLAGS="-DNDEBUG $OPT_CPPFLAGS"
 
 
    oldCPPFLAGS="$CPPFLAGS"
    CPPFLAGS="$CPPFLAGS -O3"
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking optimised build -O3" >&5
-$as_echo_n "checking optimised build -O3... " >&6; }
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking optimised build (-O3)" >&5
+$as_echo_n "checking optimised build (-O3)... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -5657,13 +5670,66 @@ $as_echo "$usable" >&6; }
    CPPFLAGS="$oldCPPFLAGS"
 
    if test "x$usable" = "xyes"; then :
-  OPT_CFLAGS="$OPT_FLAGS -O3"
+  OPT_CFLAGS="-O3 $OPT_CFLAGS"
 else
-  OPT_CFLAGS="$OPT_FLAGS -O2"
+  OPT_CFLAGS="-O2 $OPT_CFLAGS"
 
 fi
 
 
+
+
+
+# Check whether --enable-profiling was given.
+if test "${enable_profiling+set}" = set; then :
+  enableval=$enable_profiling;
+      if test "x$enableval" = "xyes"; then
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -pg"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking has compiler supported profiling (-pg)" >&5
+$as_echo_n "checking has compiler supported profiling (-pg)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+
+
+   LIBS="-pg $LIBS"
+
+   CFLAGS="-pg $CFLAGS"
+   CXXFLAGS="-pg $CXXFLAGS"
+
+               P_PROFILING="yes"
+
+
+
+fi
+
+
+      fi
+
+
+fi
 
 
 
@@ -6672,7 +6738,7 @@ $as_echo "$usable" >&6; }
 
 
    LIBS="$GSM_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $GSM_CFLAGS"
+   CPPFLAGS="$GSM_CFLAGS $CPPFLAGS"
 
 
 
@@ -6937,7 +7003,7 @@ $as_echo "$usable" >&6; }
 
 
    LIBS="$ILBC_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $ILBC_CFLAGS"
+   CPPFLAGS="$ILBC_CFLAGS $CPPFLAGS"
 
 
 
@@ -7207,7 +7273,7 @@ $as_echo "$usable" >&6; }
 
 
    LIBS="$SPEEX_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $SPEEX_CFLAGS"
+   CPPFLAGS="$SPEEX_CFLAGS $CPPFLAGS"
 
 
 
@@ -7462,7 +7528,7 @@ $as_echo "$usable" >&6; }
 
 
    LIBS="$SBC_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $SBC_CFLAGS"
+   CPPFLAGS="$SBC_CFLAGS $CPPFLAGS"
 
 
 
@@ -7682,7 +7748,7 @@ $as_echo "$usable" >&6; }
 
 
    LIBS="$CELT_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $CELT_CFLAGS"
+   CPPFLAGS="$CELT_CFLAGS $CPPFLAGS"
 
 
 
@@ -7943,7 +8009,7 @@ $as_echo "$usable" >&6; }
 
 
    LIBS="$OPUS_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $OPUS_CFLAGS"
+   CPPFLAGS="$OPUS_CFLAGS $CPPFLAGS"
 
 
 
@@ -8233,7 +8299,7 @@ $as_echo "$usable" >&6; }
 
 
    LIBS="$LIBAVCODEC_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $LIBAVCODEC_CFLAGS"
+   CPPFLAGS="$LIBAVCODEC_CFLAGS $CPPFLAGS"
 
 
 
@@ -8444,7 +8510,7 @@ $as_echo "$usable" >&6; }
 
 
    LIBS="$LIBAVUTIL_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $LIBAVUTIL_CFLAGS"
+   CPPFLAGS="$LIBAVUTIL_CFLAGS $CPPFLAGS"
 
 
 
@@ -8874,7 +8940,7 @@ $as_echo "$usable" >&6; }
 
 
    LIBS="$X264_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $X264_CFLAGS"
+   CPPFLAGS="$X264_CFLAGS $CPPFLAGS"
 
 
 
@@ -9153,7 +9219,7 @@ $as_echo "$usable" >&6; }
 
 
    LIBS="$OPENH264_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $OPENH264_CFLAGS"
+   CPPFLAGS="$OPENH264_CFLAGS $CPPFLAGS"
 
 
 
@@ -9400,7 +9466,7 @@ $as_echo "$usable" >&6; }
 
 
    LIBS="$VP8_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $VP8_CFLAGS"
+   CPPFLAGS="$VP8_CFLAGS $CPPFLAGS"
 
 
 
@@ -9642,7 +9708,7 @@ $as_echo "$usable" >&6; }
 
 
    LIBS="$THEORA_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $THEORA_CFLAGS"
+   CPPFLAGS="$THEORA_CFLAGS $CPPFLAGS"
 
 
 
@@ -9883,7 +9949,7 @@ $as_echo "$usable" >&6; }
 
 
    LIBS="$VPB_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $VPB_CFLAGS"
+   CPPFLAGS="$VPB_CFLAGS $CPPFLAGS"
 
 
 
@@ -10124,7 +10190,7 @@ $as_echo "$usable" >&6; }
 
 
    LIBS="$SPANDSP_LIBS $LIBS"
-   CPPFLAGS="$CPPFLAGS $SPANDSP_CFLAGS"
+   CPPFLAGS="$SPANDSP_CFLAGS $CPPFLAGS"
 
 
 
@@ -11645,52 +11711,322 @@ fi
 
 
 
-echo ""
-echo "========================= Plugin configuration ========================="
-echo "                         OS Type  :  $target_os"
-echo "                    Machine Type  :  $target_cpu"
-echo "                          prefix  :  $prefix"
-echo "                     exec_prefix  :  $exec_prefix"
-echo "                          libdir  :  $libdir"
-echo "  Audio Codec plugin install dir  :  "'${libdir}'"/$AUD_PLUGIN_DIR"
-echo "  Video Codec plugin install dir  :  "'${libdir}'"/$VID_PLUGIN_DIR"
-echo "       LID plugin install prefix  :  "'${libdir}'"/$LID_PLUGIN_DIR"
-echo "       FAX plugin install prefix  :  "'${libdir}'"/$FAX_PLUGIN_DIR"
 
-echo ""
+   $as_echo ""
+   $as_echo "=========================== Configuration =============================="
 
-echo "                              GSM :  ${HAVE_GSM}"
-echo "                          GSM-AMR :  ${HAVE_GSMAMR}"
-echo "                             iLBC :  ${HAVE_ILBC}"
-echo "                             iSAC :  ${HAVE_ISAC}"
-echo "                            Speex :  ${HAVE_SPEEX}"
-echo "                            G.722 :  ${HAVE_G722}"
-echo "                          G.722.1 :  ${HAVE_G7221}"
-echo "                          G.722.2 :  ${HAVE_G7222}"
-echo "                            G.726 :  ${HAVE_G726}"
-echo "                            LPC10 :  ${HAVE_LPC10}"
-echo "                        IMA_ADPCM :  ${HAVE_IMA_ADPCM}"
-echo "                              SBC :  ${HAVE_SBC}"
-echo "                             CELT :  ${HAVE_CELT}"
-echo "                             SILK :  ${HAVE_SILK}"
-echo "                             Opus :  ${HAVE_OPUS}"
+   if test "x${target_os}" = "x"; then :
+  $as_echo "                          OS Type : no"
+else
+  $as_echo "                          OS Type : ${target_os}"
 
-echo ""
+fi
 
-echo "                           H.261  :  ${HAVE_H261} (internal)"
-echo "                     H.263/H.263+ :  ${HAVE_H263} (ffmpeg)"
-echo "                   VideoLAN x264  :  ${HAVE_X264}"
-echo "                  Cisco OpenH264  :  ${HAVE_OPENH264}"
-echo "                             VP8  :  ${HAVE_VP8}"
-echo "                          THEORA  :  ${HAVE_THEORA}"
-echo "                    MPEG4 Part 2  :  ${HAVE_MPEG4}"
 
-echo ""
-echo "                     SpanDSP FAX  :  $HAVE_SPANDSP"
 
-echo ""
+   if test "x${target_cpu}" = "x"; then :
+  $as_echo "                     Machine Type : no"
+else
+  $as_echo "                     Machine Type : ${target_cpu}"
 
-echo "         Voicetronics VPB support :  $HAVE_VPB"
+fi
 
-echo ""
-echo "========================================================================"
+
+   if test "x$P_PROFILING" = "xyes"; then :
+  $as_echo ""
+      $as_echo "                        Profiling : ***** ENABLED *****"
+
+fi
+   $as_echo ""
+
+   if test "x${prefix}" = "x"; then :
+  $as_echo "                           prefix : no"
+else
+  $as_echo "                           prefix : ${prefix}"
+
+fi
+
+
+
+   if test "x${exec_prefix}" = "x"; then :
+  $as_echo "                      exec_prefix : no"
+else
+  $as_echo "                      exec_prefix : ${exec_prefix}"
+
+fi
+
+
+
+   if test "x${includedir}" = "x"; then :
+  $as_echo "                       includedir : no"
+else
+  $as_echo "                       includedir : ${includedir}"
+
+fi
+
+
+
+   if test "x${libdir}" = "x"; then :
+  $as_echo "                           libdir : no"
+else
+  $as_echo "                           libdir : ${libdir}"
+
+fi
+
+
+
+   if test "x${datarootdir}" = "x"; then :
+  $as_echo "                      datarootdir : no"
+else
+  $as_echo "                      datarootdir : ${datarootdir}"
+
+fi
+
+
+
+   if test "x${makedir}" = "x"; then :
+  $as_echo "                          makedir : no"
+else
+  $as_echo "                          makedir : ${makedir}"
+
+fi
+
+
+
+   $as_echo ""
+
+   if test "x${AUD_PLUGIN_DIR}" = "x"; then :
+  $as_echo "   Audio Codec plugin install dir : no"
+else
+  $as_echo "   Audio Codec plugin install dir : ${AUD_PLUGIN_DIR}"
+
+fi
+
+
+   if test "x${VID_PLUGIN_DIR}" = "x"; then :
+  $as_echo "   Video Codec plugin install dir : no"
+else
+  $as_echo "   Video Codec plugin install dir : ${VID_PLUGIN_DIR}"
+
+fi
+
+
+   if test "x${LID_PLUGIN_DIR}" = "x"; then :
+  $as_echo "        LID plugin install prefix : no"
+else
+  $as_echo "        LID plugin install prefix : ${LID_PLUGIN_DIR}"
+
+fi
+
+
+   if test "x${FAX_PLUGIN_DIR}" = "x"; then :
+  $as_echo "        FAX plugin install prefix : no"
+else
+  $as_echo "        FAX plugin install prefix : ${FAX_PLUGIN_DIR}"
+
+fi
+
+
+   $as_echo ""
+
+   if test "x${HAVE_GSM}" = "x"; then :
+  $as_echo "                              GSM : no"
+else
+  $as_echo "                              GSM : ${HAVE_GSM}"
+
+fi
+
+
+   if test "x${HAVE_GSMAMR}" = "x"; then :
+  $as_echo "                          GSM-AMR : no"
+else
+  $as_echo "                          GSM-AMR : ${HAVE_GSMAMR}"
+
+fi
+
+
+   if test "x${HAVE_ILBC}" = "x"; then :
+  $as_echo "                             iLBC : no"
+else
+  $as_echo "                             iLBC : ${HAVE_ILBC}"
+
+fi
+
+
+   if test "x${HAVE_ISAC}" = "x"; then :
+  $as_echo "                             iSAC : no"
+else
+  $as_echo "                             iSAC : ${HAVE_ISAC}"
+
+fi
+
+
+   if test "x${HAVE_SPEEX}" = "x"; then :
+  $as_echo "                            Speex : no"
+else
+  $as_echo "                            Speex : ${HAVE_SPEEX}"
+
+fi
+
+
+   if test "x${HAVE_G722}" = "x"; then :
+  $as_echo "                            G.722 : no"
+else
+  $as_echo "                            G.722 : ${HAVE_G722}"
+
+fi
+
+
+   if test "x${HAVE_G7221}" = "x"; then :
+  $as_echo "                          G.722.1 : no"
+else
+  $as_echo "                          G.722.1 : ${HAVE_G7221}"
+
+fi
+
+
+   if test "x${HAVE_G7222}" = "x"; then :
+  $as_echo "                          G.722.2 : no"
+else
+  $as_echo "                          G.722.2 : ${HAVE_G7222}"
+
+fi
+
+
+   if test "x${HAVE_G726}" = "x"; then :
+  $as_echo "                            G.726 : no"
+else
+  $as_echo "                            G.726 : ${HAVE_G726}"
+
+fi
+
+
+   if test "x${HAVE_LPC10}" = "x"; then :
+  $as_echo "                            LPC10 : no"
+else
+  $as_echo "                            LPC10 : ${HAVE_LPC10}"
+
+fi
+
+
+   if test "x${HAVE_IMA_ADPCM}" = "x"; then :
+  $as_echo "                        IMA_ADPCM : no"
+else
+  $as_echo "                        IMA_ADPCM : ${HAVE_IMA_ADPCM}"
+
+fi
+
+
+   if test "x${HAVE_SBC}" = "x"; then :
+  $as_echo "                              SBC : no"
+else
+  $as_echo "                              SBC : ${HAVE_SBC}"
+
+fi
+
+
+   if test "x${HAVE_CELT}" = "x"; then :
+  $as_echo "                             CELT : no"
+else
+  $as_echo "                             CELT : ${HAVE_CELT}"
+
+fi
+
+
+   if test "x${HAVE_SILK}" = "x"; then :
+  $as_echo "                             SILK : no"
+else
+  $as_echo "                             SILK : ${HAVE_SILK}"
+
+fi
+
+
+   if test "x${HAVE_OPUS}" = "x"; then :
+  $as_echo "                             Opus : no"
+else
+  $as_echo "                             Opus : ${HAVE_OPUS}"
+
+fi
+
+
+   $as_echo ""
+
+   if test "x${HAVE_H261}" = "x"; then :
+  $as_echo "                      H.261 (vic) : no"
+else
+  $as_echo "                      H.261 (vic) : ${HAVE_H261}"
+
+fi
+
+
+   if test "x${HAVE_H263}" = "x"; then :
+  $as_echo "            H.263/H.263+ (ffmpeg) : no"
+else
+  $as_echo "            H.263/H.263+ (ffmpeg) : ${HAVE_H263}"
+
+fi
+
+
+   if test "x${HAVE_X264}" = "x"; then :
+  $as_echo "                    VideoLAN x264 : no"
+else
+  $as_echo "                    VideoLAN x264 : ${HAVE_X264}"
+
+fi
+
+
+   if test "x${HAVE_OPENH264}" = "x"; then :
+  $as_echo "                   Cisco OpenH264 : no"
+else
+  $as_echo "                   Cisco OpenH264 : ${HAVE_OPENH264}"
+
+fi
+
+
+   if test "x${HAVE_VP8}" = "x"; then :
+  $as_echo "                              VP8 : no"
+else
+  $as_echo "                              VP8 : ${HAVE_VP8}"
+
+fi
+
+
+   if test "x${HAVE_THEORA}" = "x"; then :
+  $as_echo "                           THEORA : no"
+else
+  $as_echo "                           THEORA : ${HAVE_THEORA}"
+
+fi
+
+
+   if test "x${HAVE_MPEG4}" = "x"; then :
+  $as_echo "                     MPEG4 Part 2 : no"
+else
+  $as_echo "                     MPEG4 Part 2 : ${HAVE_MPEG4}"
+
+fi
+
+
+   $as_echo ""
+
+   if test "x${HAVE_SPANDSP}" = "x"; then :
+  $as_echo "                     SpanDSP FAX  : no"
+else
+  $as_echo "                     SpanDSP FAX  : ${HAVE_SPANDSP}"
+
+fi
+
+
+   $as_echo ""
+
+   if test "x${HAVE_VPB}" = "x"; then :
+  $as_echo "         Voicetronics VPB support : no"
+else
+  $as_echo "         Voicetronics VPB support : ${HAVE_VPB}"
+
+fi
+
+
+   $as_echo ""
+   $as_echo "========================================================================"
+
