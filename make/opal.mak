@@ -115,15 +115,10 @@ endif
 
 
 ifeq ($(OPAL_BUILDING_ITSELF),yes)
-
   LIBS := $(PTLIB_LIBS) $(LIBS)
-
 else
-
-  LIBS := $(OPAL_LIBS) $(LIBS)
-
-  include $(PTLIB_MAKE_DIR)/ptlib.mak
-
+  LIBS := $(OPAL_LIBS) $(PTLIB_LIBS) $(LIBS)
+  include $(PTLIB_MAKE_DIR)/post.mak
 endif
 
 
