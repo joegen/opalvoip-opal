@@ -587,66 +587,51 @@ AC_OUTPUT
 dnl ########################################################################
 dnl Summary
 dnl ########################################################################
-echo ""
-echo "=========================== Configuration =============================="
-echo "                          OS Type :  $target_os"
-echo "                     Machine Type :  $target_cpu"
-echo ""
-echo "                           prefix :  $prefix"
-echo "                      exec_prefix :  $exec_prefix"
-echo "                       includedir :  $includedir"
-echo "                           libdir :  $libdir"
-echo "                      datarootdir :  $datarootdir"
-echo "                          makedir :  $makedir"
-echo "                Plug in directory :  $OPAL_PLUGIN_DIR"
-echo ""
-echo "                            PTLib :  $OPAL_PTLIB_DIR"
-echo ""
-
-echo "                            Audio :  $OPAL_PTLIB_AUDIO"
-echo "                            Video :  $OPAL_PTLIB_VIDEO"
-echo ""
-
-echo "                            H.323 :  $OPAL_H323"
-echo "                            H.450 :  $OPAL_H450"
-echo "                            H.460 :  $OPAL_H460"
-echo "                H.460.18/19 (NAT) :  $OPAL_H460_NAT"
-echo "                            H.239 :  $OPAL_H239"
-echo "                            H.501 :  $OPAL_H501"
-echo ""
-echo "                              SIP :  $OPAL_SIP"
-echo "                 SIPIM capability :  $OPAL_HAS_SIPIM"
-echo "                  MSRP capability :  $OPAL_HAS_MSRP"
-echo "         RFC-4103 (IM) capability :  $OPAL_HAS_RFC4103"
-echo ""
-echo "                     IAX2 support :  $OPAL_IAX2"
-echo "      Cisco SCCP (skinny) support :  $OPAL_SKINNY"
-echo "            Line Interface Device :  $OPAL_LID"
-echo "                      CAPI (ISDN) :  $OPAL_CAPI"
-echo "                     DAHDI (PSTN) :  $OPAL_DAHDI"
-echo ""
-echo "                  T.38 capability :  $OPAL_T38_CAPABILITY"
-echo "                T.38 FAX protocol :  $OPAL_FAX"
-echo "     H.224 (H.221 media channels) :  $OPAL_HAS_H224"
-echo "   H.281 (Far End Camera Control) :  $OPAL_HAS_H281"
-echo ""
-echo "                             SRTP :  $SRTP_MSG"
-echo "               RFC-4175 Raw Video :  $OPAL_RFC4175"
-echo "              RFC-2435 JPEG Video :  $OPAL_RFC2435  (experimental)"
-echo "      Accoustic Echo Cancellation :  $OPAL_AEC"
-echo "Packet Loss Concealment for G.711 :  $OPAL_G711PLC"
-echo "    RTCP Extended Reports support :  $OPAL_RTCP_XR"
-echo "     RTP Forward Error Correction :  $OPAL_RTP_FEC"
-echo ""
-echo "         PC Sound System Endpoint :  $OPAL_HAS_PCSS"
-echo "                      IVR support :  $OPAL_IVR"
-echo "       Media mixing (conferences) :  $OPAL_HAS_MIXER"
-echo "                         Presence :  $OPAL_HAS_PRESENCE"
-echo "     Statistics gathering support :  $OPAL_STATISTICS"
-echo "        Script language interface :  $OPAL_SCRIPT"
-echo "                     Java support :  $OPAL_JAVA"
-echo "                       C# support :  $OPAL_CSHARP"
-echo "                     Ruby support :  $OPAL_RUBY"
-
-echo ""
-echo "========================================================================"
+MY_OUTPUT_SUMMARY(
+   [                Plug in directory], OPAL_PLUGIN_DIR,
+   [                  PTLib directory], OPAL_PTLIB_DIR,
+   [], [],
+   [                            Audio], OPAL_PTLIB_AUDIO,
+   [                            Video], OPAL_PTLIB_VIDEO,
+   [], [],
+   [                            H.323], OPAL_H323,
+   [                            H.450], OPAL_H450,
+   [                            H.460], OPAL_H460,
+   [                H.460.18/19 (NAT)], OPAL_H460_NAT,
+   [                            H.239], OPAL_H239,
+   [                            H.501], OPAL_H501,
+   [], [],
+   [                              SIP], OPAL_SIP,
+   [                 SIPIM capability], OPAL_HAS_SIPIM,
+   [                  MSRP capability], OPAL_HAS_MSRP,
+   [         RFC-4103 (IM) capability], OPAL_HAS_RFC4103,
+   [], [],
+   [                     IAX2 support], OPAL_IAX2,
+   [      Cisco SCCP (skinny) support], OPAL_SKINNY,
+   [            Line Interface Device], OPAL_LID,
+   [                      CAPI (ISDN)], OPAL_CAPI,
+   [                     DAHDI (PSTN)], OPAL_DAHDI,
+   [], [],
+   [                  T.38 capability], OPAL_T38_CAPABILITY,
+   [                T.38 FAX protocol], OPAL_FAX,
+   [     H.224 (H.221 media channels)], OPAL_HAS_H224,
+   [   H.281 (Far End Camera Control)], OPAL_HAS_H281,
+   [], [],
+   [                             SRTP], SRTP_MSG,
+   [               RFC-4175 Raw Video], OPAL_RFC4175,
+   [     RFC-2435 JPEG (experimental)], OPAL_RFC2435,
+   [      Accoustic Echo Cancellation], OPAL_AEC,
+   [  Packet Loss Concealment (G.711)], OPAL_G711PLC,
+   [    RTCP Extended Reports support], OPAL_RTCP_XR,
+   [     RTP Forward Error Correction], OPAL_RTP_FEC,
+   [], [],
+   [         PC Sound System Endpoint], OPAL_HAS_PCSS,
+   [                      IVR support], OPAL_IVR,
+   [       Media mixing (conferences)], OPAL_HAS_MIXER,
+   [                         Presence], OPAL_HAS_PRESENCE,
+   [     Statistics gathering support], OPAL_STATISTICS,
+   [        Script language interface], OPAL_SCRIPT,
+   [                     Java support], OPAL_JAVA,
+   [                  C-sharp support], OPAL_CSHARP,
+   [                     Ruby support], [OPAL_RUBY]dnl
+)
