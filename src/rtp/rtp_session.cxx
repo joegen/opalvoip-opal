@@ -605,8 +605,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     return status;
 
   Data data(frame);
-  for (list<DataNotifier>::iterator it = m_notifiers.begin(); it != m_notifiers.end(); ++it) {
-    (*it)(m_session, data);
+  for (NotifierMap::iterator it = m_notifiers.begin(); it != m_notifiers.end(); ++it) {
+    it->second(m_session, data);
     if (data.m_status != e_ProcessPacket)
       return data.m_status;
   }
@@ -1725,7 +1725,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendTemporalSpatialTradeOff(un
 #endif // OPAL_VIDEO
 
 
-void OpalRTPSession::AddDataNotifier(const DataNotifier & notifier, RTP_SyncSourceId ssrc)
+void OpalRTPSession::AddDataNotifier(unsigned priority, const DataNotifier & notifier, RTP_SyncSourceId ssrc)
 {
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
@@ -1733,16 +1733,22 @@ void OpalRTPSession::AddDataNotifier(const DataNotifier & notifier, RTP_SyncSour
 
   if (ssrc != 0) {
     SyncSource * receiver;
-    if (GetSyncSource(ssrc, e_Receiver, receiver) &&
-        std::find(receiver->m_notifiers.begin(), receiver->m_notifiers.end(), notifier) == receiver->m_notifiers.end())
-      receiver->m_notifiers.push_back(notifier);
+    if (GetSyncSource(ssrc, e_Receiver, receiver))
+      receiver->AddDataNotifier(priority, notifier);
   }
   else {
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
       if (it->second->m_direction == e_Receiver)
-        it->second->m_notifiers.push_back(notifier);
+        it->second->AddDataNotifier(priority, notifier);
     }
   }
+}
+
+
+void OpalRTPSession::SyncSource::AddDataNotifier(unsigned priority, const DataNotifier & notifier)
+{
+  RemoveDataNotifier(notifier);
+  m_notifiers.insert(make_pair(priority, notifier));
 }
 
 
@@ -1755,11 +1761,22 @@ void OpalRTPSession::RemoveDataNotifier(const DataNotifier & notifier, RTP_SyncS
   if (ssrc != 0) {
     SyncSource * receiver;
     if (GetSyncSource(ssrc, e_Receiver, receiver))
-      receiver->m_notifiers.remove(notifier);
+      receiver->RemoveDataNotifier(notifier);
   }
   else {
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it)
-      it->second->m_notifiers.remove(notifier);
+      it->second->RemoveDataNotifier(notifier);
+  }
+}
+
+
+void OpalRTPSession::SyncSource::RemoveDataNotifier(const DataNotifier & notifier)
+{
+  for (NotifierMap::iterator it = m_notifiers.begin(); it != m_notifiers.end(); ++it) {
+    if (it->second == notifier) {
+      m_notifiers.erase(it);
+      break;
+    }
   }
 }
 

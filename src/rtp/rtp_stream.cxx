@@ -95,7 +95,7 @@ PBoolean OpalRTPMediaStream::Open()
     delete m_jitterBuffer;
     m_jitterBuffer = OpalJitterBuffer::Create(OpalJitterBuffer::Init(mediaFormat.GetMediaType()));
     m_rtpSession.SetJitterBuffer(m_jitterBuffer, m_syncSource);
-    m_rtpSession.AddDataNotifier(m_receiveNotifier);
+    m_rtpSession.AddDataNotifier(100, m_receiveNotifier);
     PTRACE(4, "Opening source stream " << *this << " jb=" << *m_jitterBuffer);
   }
   else {
