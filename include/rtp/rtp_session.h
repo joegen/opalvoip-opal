@@ -196,6 +196,7 @@ class OpalRTPSession : public OpalMediaSession
         Note an SSRC of zero usually means first SSRC, in this case it measn all SSRC's
       */
     void AddDataNotifier(
+      unsigned priority,
       const DataNotifier & notifier,
       RTP_SyncSourceId ssrc = 0
     );
@@ -684,7 +685,10 @@ class OpalRTPSession : public OpalMediaSession
       RTP_SyncSourceId  m_loopbackIdentifier;
       PString           m_canonicalName;
 
-      std::list<DataNotifier> m_notifiers;
+      void AddDataNotifier(unsigned priority, const DataNotifier & notifier);
+      void RemoveDataNotifier(const DataNotifier & notifier);
+      typedef std::multimap<unsigned, DataNotifier> NotifierMap;
+      NotifierMap m_notifiers;
 
       // Sequence handling
       RTP_SequenceNumber m_lastSequenceNumber;
