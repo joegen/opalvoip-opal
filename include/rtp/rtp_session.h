@@ -649,6 +649,14 @@ class OpalRTPSession : public OpalMediaSession
     unsigned                    m_ulpFecSendLevel;
 #endif // OPAL_RTP_FEC
 
+    class NotifierMap : public std::multimap<unsigned, DataNotifier>
+    {
+    public:
+      void Add(unsigned priority, const DataNotifier & notifier);
+      void Remove(const DataNotifier & notifier);
+    };
+    NotifierMap m_notifiers;
+
     friend struct SyncSource;
     struct SyncSource
     {
@@ -685,9 +693,6 @@ class OpalRTPSession : public OpalMediaSession
       RTP_SyncSourceId  m_loopbackIdentifier;
       PString           m_canonicalName;
 
-      void AddDataNotifier(unsigned priority, const DataNotifier & notifier);
-      void RemoveDataNotifier(const DataNotifier & notifier);
-      typedef std::multimap<unsigned, DataNotifier> NotifierMap;
       NotifierMap m_notifiers;
 
       // Sequence handling

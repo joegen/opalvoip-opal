@@ -307,6 +307,7 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
   , m_sourceIdentifier(id)
   , m_loopbackIdentifier(0)
   , m_canonicalName(cname)
+  , m_notifiers(m_session.m_notifiers)
   , m_lastSequenceNumber(0)
   , m_lastFIRSequenceNumber(0)
   , m_lastTSTOSequenceNumber(0)
@@ -607,8 +608,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
   Data data(frame);
   for (NotifierMap::iterator it = m_notifiers.begin(); it != m_notifiers.end(); ++it) {
     it->second(m_session, data);
-    if (data.m_status != e_ProcessPacket)
+    if (data.m_status != e_ProcessPacket) {
+      PTRACE(5, &m_session, "Data processing ended, notifier returned " << data.m_status);
       return data.m_status;
+    }
   }
 
   return e_ProcessPacket;
@@ -1734,21 +1737,13 @@ void OpalRTPSession::AddDataNotifier(unsigned priority, const DataNotifier & not
   if (ssrc != 0) {
     SyncSource * receiver;
     if (GetSyncSource(ssrc, e_Receiver, receiver))
-      receiver->AddDataNotifier(priority, notifier);
+      receiver->m_notifiers.Add(priority, notifier);
   }
   else {
-    for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-      if (it->second->m_direction == e_Receiver)
-        it->second->AddDataNotifier(priority, notifier);
-    }
+    for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it)
+      it->second->m_notifiers.Add(priority, notifier);
+    m_notifiers.Add(priority, notifier);
   }
-}
-
-
-void OpalRTPSession::SyncSource::AddDataNotifier(unsigned priority, const DataNotifier & notifier)
-{
-  RemoveDataNotifier(notifier);
-  m_notifiers.insert(make_pair(priority, notifier));
 }
 
 
@@ -1761,22 +1756,31 @@ void OpalRTPSession::RemoveDataNotifier(const DataNotifier & notifier, RTP_SyncS
   if (ssrc != 0) {
     SyncSource * receiver;
     if (GetSyncSource(ssrc, e_Receiver, receiver))
-      receiver->RemoveDataNotifier(notifier);
+      receiver->m_notifiers.Remove(notifier);
   }
   else {
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it)
-      it->second->RemoveDataNotifier(notifier);
+      it->second->m_notifiers.Remove(notifier);
+    m_notifiers.Remove(notifier);
   }
 }
 
 
-void OpalRTPSession::SyncSource::RemoveDataNotifier(const DataNotifier & notifier)
+void OpalRTPSession::NotifierMap::Add(unsigned priority, const DataNotifier & notifier)
 {
-  for (NotifierMap::iterator it = m_notifiers.begin(); it != m_notifiers.end(); ++it) {
-    if (it->second == notifier) {
-      m_notifiers.erase(it);
-      break;
-    }
+  Remove(notifier);
+  insert(make_pair(priority, notifier));
+}
+
+
+void OpalRTPSession::NotifierMap::Remove(const DataNotifier & notifier)
+{
+  NotifierMap::iterator it = begin();
+  while (it != end()) {
+    if (it->second != notifier)
+      ++it;
+    else
+      erase(it++);
   }
 }
 
