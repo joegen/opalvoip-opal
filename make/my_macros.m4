@@ -14,12 +14,12 @@ AC_DEFUN([MY_IFELSE],[
 dnl internal macro help
 AC_DEFUN([MY_ARG_DEPENDENCY],[
    m4_ifnblank([$1],[
-      if    test "x${enableval}" = "xyes" && \
-            test "x$m4_normalize($1)" != "x1" && \
-            test "x$m4_normalize($1)" != "xyes"; then
+      AS_IF([test "x${enableval}" = "xyes" && \
+             test "x$m4_normalize($1)" != "x1" && \
+             test "x$m4_normalize($1)" != "xyes"],[
          AC_MSG_RESULT([disabled due to disabled dependency $1=$$1])
          enableval=no
-      fi
+      ])
    ])
 ])
 
@@ -37,18 +37,12 @@ AC_DEFUN([MY_ARG_ENABLE],[
 
    AC_ARG_ENABLE(
       [$1],
-      [AC_HELP_STRING([--m4_bmatch([$2],[enable.*],[enable],[disable])-$1],
-                         m4_bmatch([$2],[enable.*],[],[disable ])[$2])],
-      [
-         if test "x$enableval" = "xno"; then
-            AC_MSG_RESULT([disabled by user])
-         fi
-      ],
+      AC_HELP_STRING([--m4_bmatch([$2],[enable.*],[enable],[disable])-$1],
+                         m4_bmatch([$2],[enable.*],[],[disable ])[$2]),
+      AS_VAR_IF([enableval], [no], AC_MSG_RESULT([disabled by user])),
       [
          enableval=m4_default([$3],m4_bmatch([$2],[enable.*],[no],[yes]))
-         if test "x$enableval" = "xno"; then
-            AC_MSG_RESULT([disabled by default])
-         fi
+         AS_VAR_IF([enableval], [no], AC_MSG_RESULT([disabled by default]))
       ]
    )
 
@@ -57,10 +51,7 @@ AC_DEFUN([MY_ARG_ENABLE],[
    MY_ARG_DEPENDENCY([$8])
    MY_ARG_DEPENDENCY([$9])
 
-   if test "x${enableval}" = "xyes"; then
-      AC_MSG_RESULT([yes])
-   fi
-
+   AS_VAR_IF([enableval], [yes], AC_MSG_RESULT([yes]))
    MY_IFELSE([enableval], [$4], [$5])
 
    enable_$1="$enableval"
@@ -189,22 +180,21 @@ AC_DEFUN([MY_MODULE_OPTION],[
 
    MY_ARG_ENABLE([$2], [$3], [${DEFAULT_$1:-yes}], [usable=yes], [usable=no], [$11], [$12], [$13], [$14])
 
-   if test "x$usable" = "xyes" ; then
+   AS_VAR_IF([usable], [yes], [
       m4_bmatch([$4], [.*local-source.*], [
          AC_ARG_ENABLE(
             [local$2],
             [AC_HELP_STRING([--enable-local$2],[force use internal source for $3])],
-            [
-               if test "x$enableval" = "xyes" ; then
-                  $1[_SYSTEM]="no"
-                  AC_MSG_NOTICE(Forced use of internal source for $3)
-               else
-                  AC_MSG_NOTICE(Using system source for $3)
-               fi
-            ]
+            AS_VAR_IF([enableval], [yes], [
+               $1[_SYSTEM]="no"
+               AC_MSG_NOTICE(Forced use of internal source for $3)
+            ],
+               AC_MSG_NOTICE(Using system source for $3)
+            )
          )
       ])
-      if test "x$$1[_SYSTEM]" = "xyes" ; then
+
+      AS_VAR_IF([$1[_SYSTEM]], [yes], [
          m4_ifnblank([$5$6],
             [AC_ARG_WITH(
                [$2-dir],
@@ -232,7 +222,7 @@ AC_DEFUN([MY_MODULE_OPTION],[
             )]
          )
 
-         if test "x$usable" = "xyes" ; then
+         AS_VAR_IF([usable], [yes],
             MY_LINK_IFELSE(
                [for $3 usability],
                [$$1[_CFLAGS]],
@@ -242,18 +232,18 @@ AC_DEFUN([MY_MODULE_OPTION],[
                [MY_ADD_MODULE_FLAGS([$1])],
                [usable=no]
             )
-         fi
+         )
 
          m4_bmatch([$4], [.*local-source.*], [
-            if test "x$usable" = "xno" ; then
+            AS_VAR_IF([usable], [no], [
                $1[_SYSTEM]="no"
                $1[_CFLAGS]=
                $1[_LIBS]=
                AC_MSG_NOTICE(Using internal source for $3)
-            fi
+            ])
          ])
-      fi
-   fi
+      ])
+   ])
 
    AC_SUBST($1[_USABLE], $usable)
 
@@ -266,31 +256,29 @@ dnl Check for dlopen function and make sure library set in LIBS
 dnl $1 action if found
 dnl $2 action of not found
 AC_DEFUN([MY_CHECK_DLFCN],[
-   case "$target_os" in
-      cygwin* | mingw* )
+   AS_CASE([$target_os],
+      cygwin* | mingw*,
+      [
          usable=yes
-      ;;
-
-      *)
+      ],
+      AC_CHECK_LIB(
+         [dl],
+         [dlopen],
+         [
+            usable=yes
+            DLFCN_LIBS="-ldl"
+         ],
          AC_CHECK_LIB(
-            [dl],
+            [c],
             [dlopen],
             [
                usable=yes
-               DLFCN_LIBS="-ldl"
+               DLFCN_LIBS-"-lc"
             ],
-               [AC_CHECK_LIB(
-               [c],
-               [dlopen],
-               [
-                  usable=yes
-                  DLFCN_LIBS-"-lc"
-               ],
-               [usable=no]
-            )]
+            [usable=no]
          )
-      ;;
-   esac
+      )
+   )
 
    MY_IFELSE([usable], [$1], [$2])
 ])
@@ -307,9 +295,7 @@ AC_DEFUN([MY_VERSION_FILE],[
    stage=`cat $1 | grep BUILD_TYPE | cut -f 3 -d ' ' | sed 's/BetaCode/-beta/' | sed 's/AlphaCode/-alpha/' | sed 's/ReleaseCode/\./'`
    version="${major}.${minor}.${build}"
 
-   if test -z "$major" -o -z "$minor" -o -z "$build"; then
-      AC_MSG_ERROR(Could not determine version number from $1)
-   fi
+   AS_IF([test -z "$major" -o -z "$minor" -o -z "$build"], AC_MSG_ERROR(Could not determine version number from $1))
 
    AC_SUBST($2[_MAJOR], $major)
    AC_SUBST($2[_MINOR], $minor)
@@ -329,10 +315,9 @@ AC_DEFUN([MY_VERSION_FILE],[
 AC_DEFUN([INTERNAL_OUTPUT_SUMMARY],[
    m4_ifblank([$2],
       AS_ECHO("$1"),
-      AS_IF(
-         [test "x${$2}" = "x"],
-         AS_ECHO("$1 : no"),
-         AS_ECHO("$1 : ${$2}")
+      AS_VAR_SET_IF([$2],
+         AS_ECHO("$1 : ${$2}"),
+         AS_ECHO("$1 : no")
       )
    )
 ])
@@ -344,11 +329,10 @@ AC_DEFUN([MY_OUTPUT_SUMMARY],[
    AS_ECHO("=========================== Configuration ==============================")
    INTERNAL_OUTPUT_SUMMARY([                          OS Type],[target_os])
    INTERNAL_OUTPUT_SUMMARY([                     Machine Type],[target_cpu])
-   AS_IF(
-      [test "x$P_PROFILING" = "xyes"],
+   AS_VAR_SET_IF([P_PROFILING], [
       AS_ECHO("")
-      AS_ECHO("                        Profiling : ***** ENABLED *****")
-   )
+      INTERNAL_OUTPUT_SUMMARY([           ***** Profiling ***** ], P_PROFILING)
+   ])
    AS_ECHO("")
    INTERNAL_OUTPUT_SUMMARY([                           prefix],[prefix])
    INTERNAL_OUTPUT_SUMMARY([                      exec_prefix],[exec_prefix])
@@ -369,9 +353,7 @@ dnl ##################################################################
 dnl Now the common stuff, checks for stuffwe always use
 
 PKG_PROG_PKG_CONFIG()
-if test -z "$PKG_CONFIG" ; then
-   AC_MSG_ERROR(pkg-config is required, 1)
-fi
+AS_VAR_SET_IF([PKG_CONFIG], , AC_MSG_ERROR(pkg-config is required, 1))
 
 dnl  This generates "normalised" target_os, target_cpu, target_64bit and target
 dnl  variables. The standard ones are a little too detailed for our use. Also,
@@ -382,21 +364,25 @@ dnl  and flags that are used by pretty much any build.
 
 AC_ARG_ENABLE([ios], [AS_HELP_STRING([--enable-ios=iphone|simulator],[enable iOS support])])
 
-if test "$enable_ios" = "iphone" ; then
-   target_vendor=apple
-   target_os=iPhoneOS
-   target_cpu=armv7
-   target_release=`xcodebuild -showsdks | sed -n 's/.*iphoneos\(.*\)/\1/p' | sort | tail -n 1`
-elif test "$enable_ios" = "simulator" ; then
-   target_vendor=apple
-   target_os=iPhoneSimulator
-   target_cpu=i686
-   target_release=`xcodebuild -showsdks | sed -n 's/.*iphonesimulator\(.*\)/\1/p' | sort | tail -n 1`
-elif test "x$enable_ios" != "x" ; then
-   AC_MSG_ERROR([Unknown iOS variant \"${enable_ios}\" - use either iphone or simulator])
-else
-   AC_CANONICAL_TARGET()
-fi
+AS_CASE([$enable_ios],
+   "", [
+      AC_CANONICAL_TARGET()
+   ],
+   iphone, [
+      target_vendor=apple
+      target_os=iPhoneOS
+      target_cpu=armv7
+      target_release=`xcodebuild -showsdks | sed -n 's/.*iphoneos\(.*\)/\1/p' | sort | tail -n 1`
+   ],
+   simulator, [
+      target_vendor=apple
+      target_os=iPhoneSimulator
+      target_cpu=i686
+      target_release=`xcodebuild -showsdks | sed -n 's/.*iphonesimulator\(.*\)/\1/p' | sort | tail -n 1`
+   ],
+   dnl default
+      AC_MSG_ERROR([Unknown iOS variant \"${enable_ios}\" - use either iphone or simulator])
+)
 
 
 dnl Set up compiler by platform
@@ -405,9 +391,7 @@ oldCXXFLAGS="$CXXFLAGS"
 
 AC_PROG_CC()
 AC_PROG_CXX()
-if test -z "$CXX" ; then
-   AC_MSG_ERROR(C++ compiler is required, 1)
-fi
+AS_VAR_SET_IF([CXX], , AC_MSG_ERROR(C++ compiler is required, 1))
 
 dnl Restore flags changed by AC_PROC_CC/AC_PROG_CXX
 CFLAGS="$oldCFLAGS"
@@ -424,18 +408,16 @@ AC_PATH_PROG(SVN, svn)
 AC_PROG_INSTALL()
 AC_MSG_CHECKING([install support for -C])
 touch /tmp/ptlib_install_test1
-if $INSTALL -C /tmp/ptlib_install_test1 /tmp/ptlib_install_test2 2> /dev/null ; then
+AS_IF([$INSTALL -C /tmp/ptlib_install_test1 /tmp/ptlib_install_test2 2> /dev/null],[
    AC_MSG_RESULT(yes)
    INSTALL="$INSTALL -C"
-else
+],
    AC_MSG_RESULT(no)
-fi
+)
 rm /tmp/ptlib_install_test?
 
 AC_CHECK_TOOL(AR, ar)
-if test -z "$AR" ; then
-   AC_CHECK_TOOL(AR, gar)
-fi
+dnl AS_VAR_SET_IF([AR], , AC_CHECK_TOOL(AR, gar))
 
 
 dnl Integer sizes, also defines HAVE_STDINT_H and HAVE_INTTYPES_H
@@ -486,14 +468,10 @@ esac
 dnl Simplify the "known" platform type names
 case "$target_os" in
    iPhone* )
-      if test "x$target_release" == "x" ; then
-         AC_MSG_ERROR([Unable to determine iOS release number])
-      fi
+      AS_VAR_SET_IF([target_release], , AC_MSG_ERROR([Unable to determine iOS release number]))
 
       MIN_IOS_VER="6.0"
-      if test $target_release \< $MIN_IOS_VER ; then
-         AC_MSG_ERROR([Requires iOS release $MIN_IOS_VER, has $target_release])
-      fi
+      AS_IF([test $target_release \< $MIN_IOS_VER], AC_MSG_ERROR([Requires iOS release $MIN_IOS_VER, has $target_release]))
 
       IOS_DEVROOT="`xcode-select -print-path`/Platforms/${target_os}.platform/Developer"
       IOS_SDKROOT=${IOS_DEVROOT}/SDKs/${target_os}${target_release}.sdk
@@ -507,9 +485,7 @@ case "$target_os" in
       target_release=`sw_vers -productVersion`
 
       MIN_MACOSX_VER="10.8"
-      if test $target_release \< $MIN_MACOSX_VER ; then
-         AC_MSG_ERROR([Requires Mac OS-X release $MIN_MACOSX_VER, is $target_release])
-      fi
+      AS_IF([test $target_release \< $MIN_MACOSX_VER], AC_MSG_ERROR([Requires Mac OS-X release $MIN_MACOSX_VER, is $target_release]))
 
       CPPFLAGS="${CPPFLAGS} -mmacosx-version-min=$MIN_MACOSX_VER"
       LIBS="-framework QTKit -framework CoreVideo -framework AudioUnit $LIBS"
@@ -563,12 +539,10 @@ case "$target_os" in
    ;;
 esac
 
-if test "x$target_release" = "x"; then
-   target_release="`uname -r`"
-fi
+AS_VAR_SET_IF([target_release], , target_release="`uname -r`")
 
-case "$target_cpu" in
-   x86 | i686 | i586 | i486 | i386 )
+AS_CASE([$target_cpu],
+   x86 | i686 | i586 | i486 | i386, [
       AC_MSG_CHECKING([64 bit system masquerading as 32 bit])
       AC_COMPILE_IFELSE(
          [AC_LANG_SOURCE([int t = __amd64__;])],
@@ -585,70 +559,65 @@ case "$target_cpu" in
             CXXFLAGS="-march=i686 $CXXFLAGS"
          ]
       )
-   ;;
+   ],
 
-   x86_64 | amd64 )
+   x86_64 | amd64, [
       target_cpu=x86_64
       target_64bit=1
-   ;;
+   ],
 
-   alpha* )
+   alpha*, [
       target_cpu=alpha
       target_64bit=1
-   ;;
+   ],
 
-   sparc* )
+   sparc*, [
       target_cpu=sparc
       target_64bit=1
-   ;;
+   ],
 
-   ppc | powerpc )
+   ppc | powerpc, [
       target_cpu=ppc
       target_64bit=0
-   ;;
+   ],
 
-   ppc64 | powerpc64 )
+   ppc64 | powerpc64, [
       target_cpu=ppc64
       target_64bit=1
-   ;;
+   ],
 
-   hppa64 | ia64 | s390x )
+   hppa64 | ia64 | s390x, [
       target_64bit=1
-   ;;
+   ],
 
-   arm* )
+   arm*, [
       target_64bit=0
-   ;;
+   ],
 
-   aarch64* )
+   aarch64*, [
       target_64bit=1
-   ;;
-
-   * )
+   ],
       AC_MSG_WARN([CPU \"$target_cpu\" not recognized - assuming 32 bit])
       target_64bit=0
-   ;;
-esac
+)
 
 AC_ARG_ENABLE(force32, AS_HELP_STRING([--enable-force32],[Force 32-bit x86 build]))
-if test "${enable_force32}" = "yes" ; then
-   if test "$target_cpu" != "x86_64" ; then
-      AC_MSG_ERROR([force32 option only available for 64 bit x86])
-   fi
+AS_VAR_IF([enable_force32], [yes], [
+   AS_VAR_IF([target_cpu], [x86_64], [], AC_MSG_ERROR([force32 option only available for 64 bit x86]))
 
    target_cpu=x86
    target_64bit=0
 
-   if test "$target_os" = "Darwin"; then
+   AS_VAR_IF([target_os], [Darwin], [
       CPPFLAGS="$CPPFLAGS -arch i386"
       LDFLAGS="$LDFLAGS -arch i386"
-   else
+   ],[
       CPPFLAGS="$CPPFLAGS -m32"
       LDFLAGS="$LDFLAGS -m32"
-   fi
+   ])
 
    AC_MSG_NOTICE(Forcing 32 bit x86 compile)
-fi
+])
 
 
 target=${target_os}_${target_cpu}
@@ -682,22 +651,54 @@ MY_COMPILE_IFELSE(
 AC_SUBST(OPT_CFLAGS)
 
 
-AC_ARG_ENABLE(
+AC_ARG_WITH(
    [profiling],
-   [AC_HELP_STRING([--enable-profiling], [Enable compiler generated profiling (gprof)])],
+   AC_HELP_STRING([--with-profiling], [Enable profiling: gprof, eccam, raw or manual]),
    [
-      if test "x$enableval" = "xyes"; then
-         MY_COMPILE_IFELSE(
-            [has compiler supported profiling (-pg)],
-            [-pg],
-            [],
-            [],
-            [
-               MY_ADD_FLAGS([-pg],[],[-pg],[-pg])
-               AC_SUBST(P_PROFILING, "yes")
-            ]
-         )
-      fi
+      AS_CASE([$with_profiling],
+         [gprof], [
+            MY_COMPILE_IFELSE(
+               [has compiler supported profiling (-pg)],
+               [-pg],
+               [],
+               [],
+               [MY_ADD_FLAGS([],[],[-pg],[-pg])],
+               [AC_MSG_ERROR([Compiler does not support gprof profiling])]
+            )
+         ],
+         [eccam|raw], [
+            MY_COMPILE_IFELSE(
+               [has compiler supported instrumentation (-finstrument-functions)],
+               [-finstrument-functions],
+               [],
+               [],
+               [
+                  AS_VAR_IF([with_profiling], [raw], [
+                     AC_DEFINE(P_PROFILING, 1),
+                  ],[
+                     MY_COMPILE_IFELSE(
+                        [has Eccam embedded profile libraries (-lEProfiler)],
+                        [],
+                        [-lEProfiler],
+                        [],
+                        [
+                           MY_ADD_FLAGS([-lEProfiler],[],[],[])
+                        ],
+                        [AC_MSG_ERROR([Eccam profiling not installed])]
+                     )
+                  ])
+                  MY_ADD_FLAGS([],[],[-finstrument-functions],[-finstrument-functions])
+               ],
+               [AC_MSG_ERROR([Compiler does not support gprof profiling])]
+            )
+         ],
+         [manual], [
+            AC_DEFINE(P_PROFILING, 2)
+         ],
+         AC_MSG_ERROR([Unknown profile method \"$with_profiling\"])
+      )
+
+      AC_SUBST(P_PROFILING, $with_profiling)
    ]
 )
 
