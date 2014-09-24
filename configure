@@ -815,7 +815,7 @@ ac_user_opts='
 enable_option_checking
 enable_ios
 enable_force32
-enable_profiling
+with_profiling
 with_ptlib
 enable_srtp
 enable_localsrtp
@@ -1521,7 +1521,6 @@ Optional Features:
   --enable-ios=iphone|simulator
                           enable iOS support
   --enable-force32        Force 32-bit x86 build
-  --enable-profiling      Enable compiler generated profiling (gprof)
   --disable-srtp          disable SRTP protocol support
   --enable-localsrtp      force use internal source for SRTP protocol support
   --disable-zrtp          disable ZRTP protocol support
@@ -1574,6 +1573,7 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-profiling        Enable profiling: gprof, eccam, raw or manual
   --with-ptlib=<dir>      location of PTLib
   --with-srtp-dir=<dir>   location for SRTP protocol support
   --with-zrtp-dir=<dir>   location for ZRTP protocol support
@@ -2848,8 +2848,10 @@ $as_echo "no" >&6; }
 		PKG_CONFIG=""
 	fi
 fi
-if test -z "$PKG_CONFIG" ; then
-   as_fn_error 1 "pkg-config is required" "$LINENO" 5
+if ${PKG_CONFIG+:} false; then :
+
+else
+  as_fn_error 1 "pkg-config is required" "$LINENO" 5
 fi
 
 
@@ -2859,20 +2861,7 @@ if test "${enable_ios+set}" = set; then :
 fi
 
 
-if test "$enable_ios" = "iphone" ; then
-   target_vendor=apple
-   target_os=iPhoneOS
-   target_cpu=armv7
-   target_release=`xcodebuild -showsdks | sed -n 's/.*iphoneos\(.*\)/\1/p' | sort | tail -n 1`
-elif test "$enable_ios" = "simulator" ; then
-   target_vendor=apple
-   target_os=iPhoneSimulator
-   target_cpu=i686
-   target_release=`xcodebuild -showsdks | sed -n 's/.*iphonesimulator\(.*\)/\1/p' | sort | tail -n 1`
-elif test "x$enable_ios" != "x" ; then
-   as_fn_error $? "Unknown iOS variant \"${enable_ios}\" - use either iphone or simulator" "$LINENO" 5
-else
-   # Make sure we can run config.sub.
+# Make sure we can run config.sub.
 $SHELL "$ac_aux_dir/config.sub" sun4 >/dev/null 2>&1 ||
   as_fn_error $? "cannot run $SHELL $ac_aux_dir/config.sub" "$LINENO" 5
 
@@ -2982,7 +2971,29 @@ test -n "$target_alias" &&
   test "$program_prefix$program_suffix$program_transform_name" = \
     NONENONEs,x,x, &&
   program_prefix=${target_alias}-
-fi
+case $enable_ios in #(
+  "") :
+
+
+    ;; #(
+  iphone) :
+
+      target_vendor=apple
+      target_os=iPhoneOS
+      target_cpu=armv7
+      target_release=`xcodebuild -showsdks | sed -n 's/.*iphoneos\(.*\)/\1/p' | sort | tail -n 1`
+    ;; #(
+  simulator) :
+
+      target_vendor=apple
+      target_os=iPhoneSimulator
+      target_cpu=i686
+      target_release=`xcodebuild -showsdks | sed -n 's/.*iphonesimulator\(.*\)/\1/p' | sort | tail -n 1`
+    ;; #(
+  *) :
+          as_fn_error $? "Unknown iOS variant \"${enable_ios}\" - use either iphone or simulator" "$LINENO" 5
+ ;;
+esac
 
 
 oldCFLAGS="$CFLAGS"
@@ -4034,8 +4045,10 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-if test -z "$CXX" ; then
-   as_fn_error 1 "C++ compiler is required" "$LINENO" 5
+if ${CXX+:} false; then :
+
+else
+  as_fn_error 1 "C++ compiler is required" "$LINENO" 5
 fi
 
 CFLAGS="$oldCFLAGS"
@@ -4284,13 +4297,16 @@ test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking install support for -C" >&5
 $as_echo_n "checking install support for -C... " >&6; }
 touch /tmp/ptlib_install_test1
-if $INSTALL -C /tmp/ptlib_install_test1 /tmp/ptlib_install_test2 2> /dev/null ; then
+if $INSTALL -C /tmp/ptlib_install_test1 /tmp/ptlib_install_test2 2> /dev/null; then :
+
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
    INSTALL="$INSTALL -C"
+
 else
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+
 fi
 rm /tmp/ptlib_install_test?
 
@@ -4386,100 +4402,6 @@ else
   AR="$ac_cv_prog_AR"
 fi
 
-if test -z "$AR" ; then
-   if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}gar", so it can be a program name with args.
-set dummy ${ac_tool_prefix}gar; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_AR+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$AR"; then
-  ac_cv_prog_AR="$AR" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_AR="${ac_tool_prefix}gar"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-AR=$ac_cv_prog_AR
-if test -n "$AR"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $AR" >&5
-$as_echo "$AR" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-fi
-if test -z "$ac_cv_prog_AR"; then
-  ac_ct_AR=$AR
-  # Extract the first word of "gar", so it can be a program name with args.
-set dummy gar; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_ac_ct_AR+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ac_ct_AR"; then
-  ac_cv_prog_ac_ct_AR="$ac_ct_AR" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_AR="gar"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_AR=$ac_cv_prog_ac_ct_AR
-if test -n "$ac_ct_AR"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_AR" >&5
-$as_echo "$ac_ct_AR" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-  if test "x$ac_ct_AR" = x; then
-    AR=""
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    AR=$ac_ct_AR
-  fi
-else
-  AR="$ac_cv_prog_AR"
-fi
-
-fi
 
 
 
@@ -5337,14 +5259,18 @@ esac
 
 case "$target_os" in
    iPhone* )
-      if test "x$target_release" == "x" ; then
-         as_fn_error $? "Unable to determine iOS release number" "$LINENO" 5
-      fi
+      if ${target_release+:} false; then :
+
+else
+  as_fn_error $? "Unable to determine iOS release number" "$LINENO" 5
+fi
 
       MIN_IOS_VER="6.0"
-      if test $target_release \< $MIN_IOS_VER ; then
-         as_fn_error $? "Requires iOS release $MIN_IOS_VER, has $target_release" "$LINENO" 5
-      fi
+      if test $target_release \< $MIN_IOS_VER; then :
+  as_fn_error $? "Requires iOS release $MIN_IOS_VER
+else
+  has $target_release" "$LINENO" 5
+fi
 
       IOS_DEVROOT="`xcode-select -print-path`/Platforms/${target_os}.platform/Developer"
       IOS_SDKROOT=${IOS_DEVROOT}/SDKs/${target_os}${target_release}.sdk
@@ -5358,9 +5284,11 @@ case "$target_os" in
       target_release=`sw_vers -productVersion`
 
       MIN_MACOSX_VER="10.8"
-      if test $target_release \< $MIN_MACOSX_VER ; then
-         as_fn_error $? "Requires Mac OS-X release $MIN_MACOSX_VER, is $target_release" "$LINENO" 5
-      fi
+      if test $target_release \< $MIN_MACOSX_VER; then :
+  as_fn_error $? "Requires Mac OS-X release $MIN_MACOSX_VER
+else
+  is $target_release" "$LINENO" 5
+fi
 
       CPPFLAGS="${CPPFLAGS} -mmacosx-version-min=$MIN_MACOSX_VER"
       LIBS="-framework QTKit -framework CoreVideo -framework AudioUnit $LIBS"
@@ -5506,12 +5434,15 @@ $as_echo "$as_me: WARNING: Operating system \"$target_os\" not recognized - proc
    ;;
 esac
 
-if test "x$target_release" = "x"; then
-   target_release="`uname -r`"
+if ${target_release+:} false; then :
+
+else
+  target_release="`uname -r`"
 fi
 
-case "$target_cpu" in
-   x86 | i686 | i586 | i486 | i386 )
+case $target_cpu in #(
+  x86 | i686 | i586 | i486 | i386) :
+
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking 64 bit system masquerading as 32 bit" >&5
 $as_echo_n "checking 64 bit system masquerading as 32 bit... " >&6; }
       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -5537,50 +5468,49 @@ $as_echo "no" >&6; }
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-   ;;
+    ;; #(
+  x86_64 | amd64) :
 
-   x86_64 | amd64 )
       target_cpu=x86_64
       target_64bit=1
-   ;;
+    ;; #(
+  alpha*) :
 
-   alpha* )
       target_cpu=alpha
       target_64bit=1
-   ;;
+    ;; #(
+  sparc*) :
 
-   sparc* )
       target_cpu=sparc
       target_64bit=1
-   ;;
+    ;; #(
+  ppc | powerpc) :
 
-   ppc | powerpc )
       target_cpu=ppc
       target_64bit=0
-   ;;
+    ;; #(
+  ppc64 | powerpc64) :
 
-   ppc64 | powerpc64 )
       target_cpu=ppc64
       target_64bit=1
-   ;;
+    ;; #(
+  hppa64 | ia64 | s390x) :
 
-   hppa64 | ia64 | s390x )
       target_64bit=1
-   ;;
+    ;; #(
+  arm*) :
 
-   arm* )
       target_64bit=0
-   ;;
+    ;; #(
+  aarch64*) :
 
-   aarch64* )
       target_64bit=1
-   ;;
-
-   * )
-      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: CPU \"$target_cpu\" not recognized - assuming 32 bit" >&5
+    ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: CPU \"$target_cpu\" not recognized - assuming 32 bit" >&5
 $as_echo "$as_me: WARNING: CPU \"$target_cpu\" not recognized - assuming 32 bit" >&2;}
       target_64bit=0
-   ;;
+ ;;
 esac
 
 # Check whether --enable-force32 was given.
@@ -5588,24 +5518,32 @@ if test "${enable_force32+set}" = set; then :
   enableval=$enable_force32;
 fi
 
-if test "${enable_force32}" = "yes" ; then
-   if test "$target_cpu" != "x86_64" ; then
-      as_fn_error $? "force32 option only available for 64 bit x86" "$LINENO" 5
-   fi
+if test "x$enable_force32" = xyes; then :
+
+   if test "x$target_cpu" = xx86_64; then :
+
+else
+  as_fn_error $? "force32 option only available for 64 bit x86" "$LINENO" 5
+fi
 
    target_cpu=x86
    target_64bit=0
 
-   if test "$target_os" = "Darwin"; then
+   if test "x$target_os" = xDarwin; then :
+
       CPPFLAGS="$CPPFLAGS -arch i386"
       LDFLAGS="$LDFLAGS -arch i386"
-   else
+
+else
+
       CPPFLAGS="$CPPFLAGS -m32"
       LDFLAGS="$LDFLAGS -m32"
-   fi
+
+fi
 
    { $as_echo "$as_me:${as_lineno-$LINENO}: Forcing 32 bit x86 compile" >&5
 $as_echo "$as_me: Forcing 32 bit x86 compile" >&6;}
+
 fi
 
 
@@ -5695,10 +5633,13 @@ fi
 
 
 
-# Check whether --enable-profiling was given.
-if test "${enable_profiling+set}" = set; then :
-  enableval=$enable_profiling;
-      if test "x$enableval" = "xyes"; then
+
+# Check whether --with-profiling was given.
+if test "${with_profiling+set}" = set; then :
+  withval=$with_profiling;
+      case $with_profiling in #(
+  gprof) :
+
 
    oldCPPFLAGS="$CPPFLAGS"
    CPPFLAGS="$CPPFLAGS -pg"
@@ -5729,19 +5670,125 @@ $as_echo "$usable" >&6; }
    if test "x$usable" = "xyes"; then :
 
 
-   LIBS="-pg $LIBS"
 
    CFLAGS="-pg $CFLAGS"
    CXXFLAGS="-pg $CXXFLAGS"
 
-               P_PROFILING="yes"
+else
+  as_fn_error $? "Compiler does not support gprof profiling" "$LINENO" 5
+
+fi
+
+
+          ;; #(
+  eccam|raw) :
+
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -finstrument-functions"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking has compiler supported instrumentation (-finstrument-functions)" >&5
+$as_echo_n "checking has compiler supported instrumentation (-finstrument-functions)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+
+                  if test "x$with_profiling" = xraw; then :
+
+                     $as_echo "#define P_PROFILING 1" >>confdefs.h
+,
+
+else
+
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS "
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking has Eccam embedded profile libraries (-lEProfiler)" >&5
+$as_echo_n "checking has Eccam embedded profile libraries (-lEProfiler)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+-lEProfiler
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+
+
+   LIBS="-lEProfiler $LIBS"
+
+
+
+
+
+else
+  as_fn_error $? "Eccam profiling not installed" "$LINENO" 5
+
+fi
 
 
 
 fi
 
 
-      fi
+
+   CFLAGS="-finstrument-functions $CFLAGS"
+   CXXFLAGS="-finstrument-functions $CXXFLAGS"
+
+
+else
+  as_fn_error $? "Compiler does not support gprof profiling" "$LINENO" 5
+
+fi
+
+
+          ;; #(
+  manual) :
+
+            $as_echo "#define P_PROFILING 2" >>confdefs.h
+
+          ;; #(
+  *) :
+    as_fn_error $? "Unknown profile method \"$with_profiling\"" "$LINENO" 5
+       ;;
+esac
+
+      P_PROFILING=$with_profiling
+
 
 
 fi
@@ -5858,9 +5905,9 @@ fi
    stage=`cat $VERSION_DIR/version.h | grep BUILD_TYPE | cut -f 3 -d ' ' | sed 's/BetaCode/-beta/' | sed 's/AlphaCode/-alpha/' | sed 's/ReleaseCode/\./'`
    version="${major}.${minor}.${build}"
 
-   if test -z "$major" -o -z "$minor" -o -z "$build"; then
-      as_fn_error $? "Could not determine version number from $VERSION_DIR/version.h" "$LINENO" 5
-   fi
+   if test -z "$major" -o -z "$minor" -o -z "$build"; then :
+  as_fn_error $? "Could not determine version number from $VERSION_DIR/version.h" "$LINENO" 5
+fi
 
    OPAL_MAJOR=$major
 
@@ -6234,19 +6281,17 @@ $as_echo_n "checking SRTP protocol support... " >&6; }
 
    # Check whether --enable-srtp was given.
 if test "${enable_srtp+set}" = set; then :
-  enableval=$enable_srtp;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_srtp; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=${DEFAULT_SRTP:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -6265,11 +6310,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
   usable=yes
@@ -6281,25 +6325,29 @@ fi
    enable_srtp="$enableval"
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$usable" = xyes; then :
+
 
          # Check whether --enable-localsrtp was given.
 if test "${enable_localsrtp+set}" = set; then :
-  enableval=$enable_localsrtp;
-               if test "x$enableval" = "xyes" ; then
-                  SRTP_SYSTEM="no"
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for SRTP protocol support" >&5
-$as_echo "$as_me: Forced use of internal source for SRTP protocol support" >&6;}
-               else
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: Using system source for SRTP protocol support" >&5
-$as_echo "$as_me: Using system source for SRTP protocol support" >&6;}
-               fi
+  enableval=$enable_localsrtp; if test "x$enableval" = xyes; then :
 
+               SRTP_SYSTEM="no"
+               { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for SRTP protocol support" >&5
+$as_echo "$as_me: Forced use of internal source for SRTP protocol support" >&6;}
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Using system source for SRTP protocol support" >&5
+$as_echo "$as_me: Using system source for SRTP protocol support" >&6;}
+
+fi
 
 fi
 
 
-      if test "x$SRTP_SYSTEM" = "xyes" ; then
+
+      if test "x$SRTP_SYSTEM" = xyes; then :
+
 
 # Check whether --with-srtp-dir was given.
 if test "${with_srtp_dir+set}" = set; then :
@@ -6393,7 +6441,7 @@ fi
 fi
 
 
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = xyes; then :
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
@@ -6443,19 +6491,24 @@ else
 fi
 
 
-         fi
+
+fi
 
 
-            if test "x$usable" = "xno" ; then
+            if test "x$usable" = xno; then :
+
                SRTP_SYSTEM="no"
                SRTP_CFLAGS=
                SRTP_LIBS=
                { $as_echo "$as_me:${as_lineno-$LINENO}: Using internal source for SRTP protocol support" >&5
 $as_echo "$as_me: Using internal source for SRTP protocol support" >&6;}
-            fi
 
-      fi
-   fi
+fi
+
+
+fi
+
+fi
 
    SRTP_USABLE=$usable
 
@@ -6502,19 +6555,17 @@ $as_echo_n "checking ZRTP protocol support... " >&6; }
 
    # Check whether --enable-zrtp was given.
 if test "${enable_zrtp+set}" = set; then :
-  enableval=$enable_zrtp;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_zrtp; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=${DEFAULT_ZRTP:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -6533,11 +6584,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
   usable=yes
@@ -6549,9 +6599,12 @@ fi
    enable_zrtp="$enableval"
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$usable" = xyes; then :
 
-      if test "x$ZRTP_SYSTEM" = "xyes" ; then
+
+
+      if test "x$ZRTP_SYSTEM" = xyes; then :
+
 
 # Check whether --with-zrtp-dir was given.
 if test "${with_zrtp_dir+set}" = set; then :
@@ -6645,7 +6698,7 @@ fi
 fi
 
 
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = xyes; then :
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
@@ -6693,11 +6746,14 @@ else
 fi
 
 
-         fi
+
+fi
 
 
-      fi
-   fi
+
+fi
+
+fi
 
    ZRTP_USABLE=$usable
 
@@ -6726,19 +6782,17 @@ $as_echo_n "checking Speex DSP support... " >&6; }
 
    # Check whether --enable-speexdsp was given.
 if test "${enable_speexdsp+set}" = set; then :
-  enableval=$enable_speexdsp;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_speexdsp; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=${DEFAULT_SPEEXDSP:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -6757,11 +6811,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
   usable=yes
@@ -6773,25 +6826,29 @@ fi
    enable_speexdsp="$enableval"
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$usable" = xyes; then :
+
 
          # Check whether --enable-localspeexdsp was given.
 if test "${enable_localspeexdsp+set}" = set; then :
-  enableval=$enable_localspeexdsp;
-               if test "x$enableval" = "xyes" ; then
-                  SPEEXDSP_SYSTEM="no"
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for Speex DSP support" >&5
-$as_echo "$as_me: Forced use of internal source for Speex DSP support" >&6;}
-               else
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: Using system source for Speex DSP support" >&5
-$as_echo "$as_me: Using system source for Speex DSP support" >&6;}
-               fi
+  enableval=$enable_localspeexdsp; if test "x$enableval" = xyes; then :
 
+               SPEEXDSP_SYSTEM="no"
+               { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for Speex DSP support" >&5
+$as_echo "$as_me: Forced use of internal source for Speex DSP support" >&6;}
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Using system source for Speex DSP support" >&5
+$as_echo "$as_me: Using system source for Speex DSP support" >&6;}
+
+fi
 
 fi
 
 
-      if test "x$SPEEXDSP_SYSTEM" = "xyes" ; then
+
+      if test "x$SPEEXDSP_SYSTEM" = xyes; then :
+
 
 # Check whether --with-speexdsp-dir was given.
 if test "${with_speexdsp_dir+set}" = set; then :
@@ -6885,7 +6942,7 @@ fi
 fi
 
 
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = xyes; then :
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
@@ -6932,19 +6989,24 @@ else
 fi
 
 
-         fi
+
+fi
 
 
-            if test "x$usable" = "xno" ; then
+            if test "x$usable" = xno; then :
+
                SPEEXDSP_SYSTEM="no"
                SPEEXDSP_CFLAGS=
                SPEEXDSP_LIBS=
                { $as_echo "$as_me:${as_lineno-$LINENO}: Using internal source for Speex DSP support" >&5
 $as_echo "$as_me: Using internal source for Speex DSP support" >&6;}
-            fi
 
-      fi
-   fi
+fi
+
+
+fi
+
+fi
 
    SPEEXDSP_USABLE=$usable
 
@@ -7017,19 +7079,17 @@ $as_echo_n "checking accoustic echo cancellation support... " >&6; }
 
    # Check whether --enable-aec was given.
 if test "${enable_aec+set}" = set; then :
-  enableval=$enable_aec;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_aec; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_AEC
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -7037,13 +7097,15 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$SPEEXDSP_USABLE" != "x1" && \
-            test "x$SPEEXDSP_USABLE" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$SPEEXDSP_USABLE" != "x1" && \
+             test "x$SPEEXDSP_USABLE" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency SPEEXDSP_USABLE=$SPEEXDSP_USABLE" >&5
 $as_echo "disabled due to disabled dependency SPEEXDSP_USABLE=$SPEEXDSP_USABLE" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
@@ -7056,11 +7118,10 @@ $as_echo "disabled due to disabled dependency SPEEXDSP_USABLE=$SPEEXDSP_USABLE" 
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -7093,19 +7154,17 @@ $as_echo_n "checking CAPI ISDN support... " >&6; }
 
    # Check whether --enable-capi was given.
 if test "${enable_capi+set}" = set; then :
-  enableval=$enable_capi;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_capi; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=${DEFAULT_CAPI:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -7124,11 +7183,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
   usable=yes
@@ -7140,9 +7198,12 @@ fi
    enable_capi="$enableval"
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$usable" = xyes; then :
 
-      if test "x$CAPI_SYSTEM" = "xyes" ; then
+
+
+      if test "x$CAPI_SYSTEM" = xyes; then :
+
 
 # Check whether --with-capi-dir was given.
 if test "${with_capi_dir+set}" = set; then :
@@ -7236,7 +7297,7 @@ fi
 fi
 
 
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = xyes; then :
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
@@ -7284,11 +7345,14 @@ else
 fi
 
 
-         fi
+
+fi
 
 
-      fi
-   fi
+
+fi
+
+fi
 
    CAPI_USABLE=$usable
 
@@ -7360,19 +7424,17 @@ $as_echo_n "checking Java JNI support... " >&6; }
 
    # Check whether --enable-java was given.
 if test "${enable_java+set}" = set; then :
-  enableval=$enable_java;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_java; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=${DEFAULT_JAVA:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -7391,11 +7453,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
   usable=yes
@@ -7407,9 +7468,12 @@ fi
    enable_java="$enableval"
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$usable" = xyes; then :
 
-      if test "x$JAVA_SYSTEM" = "xyes" ; then
+
+
+      if test "x$JAVA_SYSTEM" = xyes; then :
+
 
 # Check whether --with-java-dir was given.
 if test "${with_java_dir+set}" = set; then :
@@ -7503,7 +7567,7 @@ fi
 fi
 
 
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = xyes; then :
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
@@ -7551,11 +7615,14 @@ else
 fi
 
 
-         fi
+
+fi
 
 
-      fi
-   fi
+
+fi
+
+fi
 
    JAVA_USABLE=$usable
 
@@ -7580,19 +7647,17 @@ $as_echo_n "checking C-sharp interface... " >&6; }
 
    # Check whether --enable-csharp was given.
 if test "${enable_csharp+set}" = set; then :
-  enableval=$enable_csharp;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_csharp; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_CSHARP
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -7611,11 +7676,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -7647,19 +7711,17 @@ $as_echo_n "checking Ruby support... " >&6; }
 
    # Check whether --enable-ruby was given.
 if test "${enable_ruby+set}" = set; then :
-  enableval=$enable_ruby;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_ruby; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=${DEFAULT_RUBY:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -7678,11 +7740,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
   usable=yes
@@ -7694,9 +7755,12 @@ fi
    enable_ruby="$enableval"
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$usable" = xyes; then :
 
-      if test "x$RUBY_SYSTEM" = "xyes" ; then
+
+
+      if test "x$RUBY_SYSTEM" = xyes; then :
+
 
 # Check whether --with-ruby-dir was given.
 if test "${with_ruby_dir+set}" = set; then :
@@ -7790,7 +7854,7 @@ fi
 fi
 
 
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = xyes; then :
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
@@ -7838,11 +7902,14 @@ else
 fi
 
 
-         fi
+
+fi
 
 
-      fi
-   fi
+
+fi
+
+fi
 
    RUBY_USABLE=$usable
 
@@ -7868,19 +7935,17 @@ $as_echo_n "checking video support... " >&6; }
 
    # Check whether --enable-video was given.
 if test "${enable_video+set}" = set; then :
-  enableval=$enable_video;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_video; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_VIDEO
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -7888,13 +7953,15 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_PTLIB_VIDEO" != "x1" && \
-            test "x$OPAL_PTLIB_VIDEO" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_PTLIB_VIDEO" != "x1" && \
+             test "x$OPAL_PTLIB_VIDEO" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_PTLIB_VIDEO=$OPAL_PTLIB_VIDEO" >&5
 $as_echo "disabled due to disabled dependency OPAL_PTLIB_VIDEO=$OPAL_PTLIB_VIDEO" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
@@ -7907,11 +7974,10 @@ $as_echo "disabled due to disabled dependency OPAL_PTLIB_VIDEO=$OPAL_PTLIB_VIDEO
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -7937,19 +8003,17 @@ $as_echo_n "checking SDP protocol support... " >&6; }
 
    # Check whether --enable-sdp was given.
 if test "${enable_sdp+set}" = set; then :
-  enableval=$enable_sdp;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_sdp; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_SDP
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -7968,11 +8032,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -7998,19 +8061,17 @@ $as_echo_n "checking SIP protocol support... " >&6; }
 
    # Check whether --enable-sip was given.
 if test "${enable_sip+set}" = set; then :
-  enableval=$enable_sip;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_sip; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_SIP
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -8018,13 +8079,15 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_SDP" != "x1" && \
-            test "x$OPAL_SDP" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_SDP" != "x1" && \
+             test "x$OPAL_SDP" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_SDP=$OPAL_SDP" >&5
 $as_echo "disabled due to disabled dependency OPAL_SDP=$OPAL_SDP" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
@@ -8037,11 +8100,10 @@ $as_echo "disabled due to disabled dependency OPAL_SDP=$OPAL_SDP" >&6; }
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -8067,19 +8129,17 @@ $as_echo_n "checking H.323 protocol support... " >&6; }
 
    # Check whether --enable-h323 was given.
 if test "${enable_h323+set}" = set; then :
-  enableval=$enable_h323;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_h323; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_H323
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -8087,13 +8147,15 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_PTLIB_ASN" != "x1" && \
-            test "x$OPAL_PTLIB_ASN" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_PTLIB_ASN" != "x1" && \
+             test "x$OPAL_PTLIB_ASN" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_PTLIB_ASN=$OPAL_PTLIB_ASN" >&5
 $as_echo "disabled due to disabled dependency OPAL_PTLIB_ASN=$OPAL_PTLIB_ASN" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
@@ -8106,11 +8168,10 @@ $as_echo "disabled due to disabled dependency OPAL_PTLIB_ASN=$OPAL_PTLIB_ASN" >&
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -8136,19 +8197,17 @@ $as_echo_n "checking IAX2 protocol support... " >&6; }
 
    # Check whether --enable-iax2 was given.
 if test "${enable_iax2+set}" = set; then :
-  enableval=$enable_iax2;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_iax2; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_IAX2
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -8167,11 +8226,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -8197,19 +8255,17 @@ $as_echo_n "checking Cisco SCCP (skinny) support... " >&6; }
 
    # Check whether --enable-skinny was given.
 if test "${enable_skinny+set}" = set; then :
-  enableval=$enable_skinny;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_skinny; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_SKINNY
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -8228,11 +8284,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -8258,19 +8313,17 @@ $as_echo_n "checking H.224 protocol support... " >&6; }
 
    # Check whether --enable-h224 was given.
 if test "${enable_h224+set}" = set; then :
-  enableval=$enable_h224;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_h224; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_HAS_H224
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -8278,13 +8331,15 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_PTLIB_ASN" != "x1" && \
-            test "x$OPAL_PTLIB_ASN" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_PTLIB_ASN" != "x1" && \
+             test "x$OPAL_PTLIB_ASN" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_PTLIB_ASN=$OPAL_PTLIB_ASN" >&5
 $as_echo "disabled due to disabled dependency OPAL_PTLIB_ASN=$OPAL_PTLIB_ASN" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
@@ -8297,11 +8352,10 @@ $as_echo "disabled due to disabled dependency OPAL_PTLIB_ASN=$OPAL_PTLIB_ASN" >&
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -8327,19 +8381,17 @@ $as_echo_n "checking H.281 (Far End Camera Control) protocol support... " >&6; }
 
    # Check whether --enable-h281 was given.
 if test "${enable_h281+set}" = set; then :
-  enableval=$enable_h281;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_h281; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_HAS_H281
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -8347,13 +8399,15 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_HAS_H224" != "x1" && \
-            test "x$OPAL_HAS_H224" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_HAS_H224" != "x1" && \
+             test "x$OPAL_HAS_H224" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_HAS_H224=$OPAL_HAS_H224" >&5
 $as_echo "disabled due to disabled dependency OPAL_HAS_H224=$OPAL_HAS_H224" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
@@ -8366,11 +8420,10 @@ $as_echo "disabled due to disabled dependency OPAL_HAS_H224=$OPAL_HAS_H224" >&6;
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -8396,19 +8449,17 @@ $as_echo_n "checking T.38 capability support... " >&6; }
 
    # Check whether --enable-t38 was given.
 if test "${enable_t38+set}" = set; then :
-  enableval=$enable_t38;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_t38; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_T38_CAPABILITY
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -8427,11 +8478,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -8457,19 +8507,17 @@ $as_echo_n "checking presence support... " >&6; }
 
    # Check whether --enable-presence was given.
 if test "${enable_presence+set}" = set; then :
-  enableval=$enable_presence;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_presence; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_HAS_PRESENCE
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -8488,11 +8536,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -8518,19 +8565,17 @@ $as_echo_n "checking MSRP support... " >&6; }
 
    # Check whether --enable-msrp was given.
 if test "${enable_msrp+set}" = set; then :
-  enableval=$enable_msrp;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_msrp; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_HAS_MSRP
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -8538,13 +8583,15 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_HAS_PRESENCE" != "x1" && \
-            test "x$OPAL_HAS_PRESENCE" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_HAS_PRESENCE" != "x1" && \
+             test "x$OPAL_HAS_PRESENCE" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_HAS_PRESENCE=$OPAL_HAS_PRESENCE" >&5
 $as_echo "disabled due to disabled dependency OPAL_HAS_PRESENCE=$OPAL_HAS_PRESENCE" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
@@ -8557,11 +8604,10 @@ $as_echo "disabled due to disabled dependency OPAL_HAS_PRESENCE=$OPAL_HAS_PRESEN
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -8587,19 +8633,17 @@ $as_echo_n "checking SIPIM session support... " >&6; }
 
    # Check whether --enable-sipim was given.
 if test "${enable_sipim+set}" = set; then :
-  enableval=$enable_sipim;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_sipim; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_HAS_SIPIM
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -8607,24 +8651,28 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_HAS_PRESENCE" != "x1" && \
-            test "x$OPAL_HAS_PRESENCE" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_HAS_PRESENCE" != "x1" && \
+             test "x$OPAL_HAS_PRESENCE" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_HAS_PRESENCE=$OPAL_HAS_PRESENCE" >&5
 $as_echo "disabled due to disabled dependency OPAL_HAS_PRESENCE=$OPAL_HAS_PRESENCE" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_SIP" != "x1" && \
-            test "x$OPAL_SIP" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_SIP" != "x1" && \
+             test "x$OPAL_SIP" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_SIP=$OPAL_SIP" >&5
 $as_echo "disabled due to disabled dependency OPAL_SIP=$OPAL_SIP" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
@@ -8634,11 +8682,10 @@ $as_echo "disabled due to disabled dependency OPAL_SIP=$OPAL_SIP" >&6; }
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -8664,19 +8711,17 @@ $as_echo_n "checking RFC4103 support... " >&6; }
 
    # Check whether --enable-rfc4103 was given.
 if test "${enable_rfc4103+set}" = set; then :
-  enableval=$enable_rfc4103;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_rfc4103; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_HAS_RFC4103
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -8684,13 +8729,15 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_HAS_PRESENCE" != "x1" && \
-            test "x$OPAL_HAS_PRESENCE" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_HAS_PRESENCE" != "x1" && \
+             test "x$OPAL_HAS_PRESENCE" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_HAS_PRESENCE=$OPAL_HAS_PRESENCE" >&5
 $as_echo "disabled due to disabled dependency OPAL_HAS_PRESENCE=$OPAL_HAS_PRESENCE" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
@@ -8703,11 +8750,10 @@ $as_echo "disabled due to disabled dependency OPAL_HAS_PRESENCE=$OPAL_HAS_PRESEN
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -8733,19 +8779,17 @@ $as_echo_n "checking statistics gathering support... " >&6; }
 
    # Check whether --enable-statistics was given.
 if test "${enable_statistics+set}" = set; then :
-  enableval=$enable_statistics;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_statistics; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_STATISTICS
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -8764,11 +8808,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -8794,19 +8837,17 @@ $as_echo_n "checking T.38 FAX protocol support... " >&6; }
 
    # Check whether --enable-fax was given.
 if test "${enable_fax+set}" = set; then :
-  enableval=$enable_fax;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_fax; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_FAX
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -8814,31 +8855,36 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_T38_CAPABILITY" != "x1" && \
-            test "x$OPAL_T38_CAPABILITY" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_T38_CAPABILITY" != "x1" && \
+             test "x$OPAL_T38_CAPABILITY" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_T38_CAPABILITY=$OPAL_T38_CAPABILITY" >&5
 $as_echo "disabled due to disabled dependency OPAL_T38_CAPABILITY=$OPAL_T38_CAPABILITY" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_PTLIB_ASN" != "x1" && \
-            test "x$OPAL_PTLIB_ASN" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_PTLIB_ASN" != "x1" && \
+             test "x$OPAL_PTLIB_ASN" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_PTLIB_ASN=$OPAL_PTLIB_ASN" >&5
 $as_echo "disabled due to disabled dependency OPAL_PTLIB_ASN=$OPAL_PTLIB_ASN" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_STATISTICS" != "x1" && \
-            test "x$OPAL_STATISTICS" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_STATISTICS" != "x1" && \
+             test "x$OPAL_STATISTICS" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_STATISTICS
    =$OPAL_STATISTICS
    " >&5
@@ -8846,18 +8892,18 @@ $as_echo "disabled due to disabled dependency OPAL_STATISTICS
    =$OPAL_STATISTICS
    " >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -8883,19 +8929,17 @@ $as_echo_n "checking H.450... " >&6; }
 
    # Check whether --enable-h450 was given.
 if test "${enable_h450+set}" = set; then :
-  enableval=$enable_h450;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_h450; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_H450
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -8903,13 +8947,15 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_H323" != "x1" && \
-            test "x$OPAL_H323" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_H323" != "x1" && \
+             test "x$OPAL_H323" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&5
 $as_echo "disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
@@ -8922,11 +8968,10 @@ $as_echo "disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&6; }
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -8952,19 +8997,17 @@ $as_echo_n "checking H.460... " >&6; }
 
    # Check whether --enable-h460 was given.
 if test "${enable_h460+set}" = set; then :
-  enableval=$enable_h460;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_h460; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_H460
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -8972,13 +9015,15 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_H323" != "x1" && \
-            test "x$OPAL_H323" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_H323" != "x1" && \
+             test "x$OPAL_H323" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&5
 $as_echo "disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
@@ -8991,11 +9036,10 @@ $as_echo "disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&6; }
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -9021,19 +9065,17 @@ $as_echo_n "checking H.460.24... " >&6; }
 
    # Check whether --enable-h460nat was given.
 if test "${enable_h460nat+set}" = set; then :
-  enableval=$enable_h460nat;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_h460nat; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_H460_NAT
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -9041,13 +9083,15 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_H323" != "x1" && \
-            test "x$OPAL_H323" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_H323" != "x1" && \
+             test "x$OPAL_H323" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&5
 $as_echo "disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
@@ -9060,11 +9104,10 @@ $as_echo "disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&6; }
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -9090,19 +9133,17 @@ $as_echo_n "checking H.239... " >&6; }
 
    # Check whether --enable-h239 was given.
 if test "${enable_h239+set}" = set; then :
-  enableval=$enable_h239;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_h239; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_H239
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -9110,13 +9151,15 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_H323" != "x1" && \
-            test "x$OPAL_H323" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_H323" != "x1" && \
+             test "x$OPAL_H323" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&5
 $as_echo "disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
@@ -9129,11 +9172,10 @@ $as_echo "disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&6; }
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -9159,19 +9201,17 @@ $as_echo_n "checking H.235.6... " >&6; }
 
    # Check whether --enable-h2356 was given.
 if test "${enable_h2356+set}" = set; then :
-  enableval=$enable_h2356;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_h2356; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_H235_6
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -9179,13 +9219,15 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_H323" != "x1" && \
-            test "x$OPAL_H323" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_H323" != "x1" && \
+             test "x$OPAL_H323" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&5
 $as_echo "disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
@@ -9198,11 +9240,10 @@ $as_echo "disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&6; }
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -9228,19 +9269,17 @@ $as_echo_n "checking H.235.8... " >&6; }
 
    # Check whether --enable-h2358 was given.
 if test "${enable_h2358+set}" = set; then :
-  enableval=$enable_h2358;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_h2358; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_H235_8
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -9248,24 +9287,28 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_H323" != "x1" && \
-            test "x$OPAL_H323" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_H323" != "x1" && \
+             test "x$OPAL_H323" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&5
 $as_echo "disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_PTLIB_SSL" != "x1" && \
-            test "x$OPAL_PTLIB_SSL" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_PTLIB_SSL" != "x1" && \
+             test "x$OPAL_PTLIB_SSL" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_PTLIB_SSL=$OPAL_PTLIB_SSL" >&5
 $as_echo "disabled due to disabled dependency OPAL_PTLIB_SSL=$OPAL_PTLIB_SSL" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
@@ -9275,11 +9318,10 @@ $as_echo "disabled due to disabled dependency OPAL_PTLIB_SSL=$OPAL_PTLIB_SSL" >&
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -9305,19 +9347,17 @@ $as_echo_n "checking H.501... " >&6; }
 
    # Check whether --enable-h501 was given.
 if test "${enable_h501+set}" = set; then :
-  enableval=$enable_h501;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_h501; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_H501
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -9325,13 +9365,15 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_H323" != "x1" && \
-            test "x$OPAL_H323" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_H323" != "x1" && \
+             test "x$OPAL_H323" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&5
 $as_echo "disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
@@ -9344,11 +9386,10 @@ $as_echo "disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&6; }
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -9374,19 +9415,17 @@ $as_echo_n "checking T.120... " >&6; }
 
    # Check whether --enable-t120 was given.
 if test "${enable_t120+set}" = set; then :
-  enableval=$enable_t120;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_t120; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_T120DATA
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -9394,13 +9433,15 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_H323" != "x1" && \
-            test "x$OPAL_H323" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_H323" != "x1" && \
+             test "x$OPAL_H323" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&5
 $as_echo "disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
@@ -9413,11 +9454,10 @@ $as_echo "disabled due to disabled dependency OPAL_H323=$OPAL_H323" >&6; }
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -9443,19 +9483,17 @@ $as_echo_n "checking LID support... " >&6; }
 
    # Check whether --enable-lid was given.
 if test "${enable_lid+set}" = set; then :
-  enableval=$enable_lid;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_lid; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_LID
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -9474,11 +9512,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -9510,19 +9547,17 @@ $as_echo_n "checking DAHDI E1 support... " >&6; }
 
    # Check whether --enable-dahdi was given.
 if test "${enable_dahdi+set}" = set; then :
-  enableval=$enable_dahdi;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_dahdi; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=${DEFAULT_DAHDI:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -9533,9 +9568,10 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_PTLIB_DTMF" != "x1" && \
-            test "x$OPAL_PTLIB_DTMF" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_PTLIB_DTMF" != "x1" && \
+             test "x$OPAL_PTLIB_DTMF" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_PTLIB_DTMF
    =$OPAL_PTLIB_DTMF
    " >&5
@@ -9543,7 +9579,8 @@ $as_echo "disabled due to disabled dependency OPAL_PTLIB_DTMF
    =$OPAL_PTLIB_DTMF
    " >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
@@ -9553,11 +9590,10 @@ $as_echo "disabled due to disabled dependency OPAL_PTLIB_DTMF
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
   usable=yes
@@ -9569,9 +9605,12 @@ fi
    enable_dahdi="$enableval"
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$usable" = xyes; then :
 
-      if test "x$DAHDI_SYSTEM" = "xyes" ; then
+
+
+      if test "x$DAHDI_SYSTEM" = xyes; then :
+
 
 # Check whether --with-dahdi-dir was given.
 if test "${with_dahdi_dir+set}" = set; then :
@@ -9665,7 +9704,7 @@ fi
 fi
 
 
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = xyes; then :
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
@@ -9712,11 +9751,14 @@ else
 fi
 
 
-         fi
+
+fi
 
 
-      fi
-   fi
+
+fi
+
+fi
 
    DAHDI_USABLE=$usable
 
@@ -9742,19 +9784,17 @@ $as_echo_n "checking IVR support... " >&6; }
 
    # Check whether --enable-ivr was given.
 if test "${enable_ivr+set}" = set; then :
-  enableval=$enable_ivr;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_ivr; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_IVR
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -9762,24 +9802,28 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_PTLIB_EXPAT" != "x1" && \
-            test "x$OPAL_PTLIB_EXPAT" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_PTLIB_EXPAT" != "x1" && \
+             test "x$OPAL_PTLIB_EXPAT" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_PTLIB_EXPAT=$OPAL_PTLIB_EXPAT" >&5
 $as_echo "disabled due to disabled dependency OPAL_PTLIB_EXPAT=$OPAL_PTLIB_EXPAT" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_PTLIB_VXML" != "x1" && \
-            test "x$OPAL_PTLIB_VXML" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_PTLIB_VXML" != "x1" && \
+             test "x$OPAL_PTLIB_VXML" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_PTLIB_VXML=$OPAL_PTLIB_VXML" >&5
 $as_echo "disabled due to disabled dependency OPAL_PTLIB_VXML=$OPAL_PTLIB_VXML" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
@@ -9789,11 +9833,10 @@ $as_echo "disabled due to disabled dependency OPAL_PTLIB_VXML=$OPAL_PTLIB_VXML" 
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -9819,19 +9862,17 @@ $as_echo_n "checking RFC4175 support... " >&6; }
 
    # Check whether --enable-rfc4175 was given.
 if test "${enable_rfc4175+set}" = set; then :
-  enableval=$enable_rfc4175;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_rfc4175; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_RFC4175
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -9839,13 +9880,15 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_VIDEO" != "x1" && \
-            test "x$OPAL_VIDEO" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_VIDEO" != "x1" && \
+             test "x$OPAL_VIDEO" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_VIDEO=$OPAL_VIDEO" >&5
 $as_echo "disabled due to disabled dependency OPAL_VIDEO=$OPAL_VIDEO" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
@@ -9858,11 +9901,10 @@ $as_echo "disabled due to disabled dependency OPAL_VIDEO=$OPAL_VIDEO" >&6; }
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -9888,19 +9930,17 @@ $as_echo_n "checking RFC2435 support (experimental)... " >&6; }
 
    # Check whether --enable-rfc2435 was given.
 if test "${enable_rfc2435+set}" = set; then :
-  enableval=$enable_rfc2435;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_rfc2435; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_RFC2435
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -9908,13 +9948,15 @@ fi
 
 
 
-      if    test "x${enableval}" = "xyes" && \
-            test "x$OPAL_VIDEO" != "x1" && \
-            test "x$OPAL_VIDEO" != "xyes"; then
+      if test "x${enableval}" = "xyes" && \
+             test "x$OPAL_VIDEO" != "x1" && \
+             test "x$OPAL_VIDEO" != "xyes"; then :
+
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled due to disabled dependency OPAL_VIDEO=$OPAL_VIDEO" >&5
 $as_echo "disabled due to disabled dependency OPAL_VIDEO=$OPAL_VIDEO" >&6; }
          enableval=no
-      fi
+
+fi
 
 
 
@@ -9927,11 +9969,10 @@ $as_echo "disabled due to disabled dependency OPAL_VIDEO=$OPAL_VIDEO" >&6; }
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -9957,19 +9998,17 @@ $as_echo_n "checking Packet Loss Concealment for G.711... " >&6; }
 
    # Check whether --enable-g711plc was given.
 if test "${enable_g711plc+set}" = set; then :
-  enableval=$enable_g711plc;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_g711plc; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_G711PLC
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -9988,11 +10027,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -10018,19 +10056,17 @@ $as_echo_n "checking RTP Forward Error Correction (incomplete and experimental!)
 
    # Check whether --enable-rtpfec was given.
 if test "${enable_rtpfec+set}" = set; then :
-  enableval=$enable_rtpfec;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_rtpfec; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_RTP_FEC
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -10049,11 +10085,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -10079,19 +10114,17 @@ $as_echo_n "checking RTCP Extended Reports support... " >&6; }
 
    # Check whether --enable-rtcpxr was given.
 if test "${enable_rtcpxr+set}" = set; then :
-  enableval=$enable_rtcpxr;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_rtcpxr; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_RTCP_XR
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -10110,11 +10143,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -10140,19 +10172,17 @@ $as_echo_n "checking media mixing support... " >&6; }
 
    # Check whether --enable-mixer was given.
 if test "${enable_mixer+set}" = set; then :
-  enableval=$enable_mixer;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_mixer; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_HAS_MIXER
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -10171,11 +10201,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -10201,19 +10230,17 @@ $as_echo_n "checking PC sound system support... " >&6; }
 
    # Check whether --enable-pcss was given.
 if test "${enable_pcss+set}" = set; then :
-  enableval=$enable_pcss;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_pcss; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_HAS_PCSS
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -10232,11 +10259,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -10262,19 +10288,17 @@ $as_echo_n "checking script language support... " >&6; }
 
    # Check whether --enable-script was given.
 if test "${enable_script+set}" = set; then :
-  enableval=$enable_script;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_script; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_SCRIPT
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -10293,11 +10317,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -10375,19 +10398,17 @@ $as_echo_n "checking enable samples build... " >&6; }
 
    # Check whether --enable-samples was given.
 if test "${enable_samples+set}" = set; then :
-  enableval=$enable_samples;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_samples; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_SAMPLES
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -10406,11 +10427,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -10436,19 +10456,17 @@ $as_echo_n "checking plugin support... " >&6; }
 
    # Check whether --enable-plugins was given.
 if test "${enable_plugins+set}" = set; then :
-  enableval=$enable_plugins;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_plugins; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=$OPAL_PLUGINS
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -10467,11 +10485,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
 
@@ -11992,79 +12009,88 @@ fi
    $as_echo ""
    $as_echo "=========================== Configuration =============================="
 
-   if test "x${target_os}" = "x"; then :
-  $as_echo "                          OS Type : no"
-else
+   if ${target_os+:} false; then :
   $as_echo "                          OS Type : ${target_os}"
+else
+  $as_echo "                          OS Type : no"
 
 fi
 
 
 
-   if test "x${target_cpu}" = "x"; then :
-  $as_echo "                     Machine Type : no"
-else
+   if ${target_cpu+:} false; then :
   $as_echo "                     Machine Type : ${target_cpu}"
+else
+  $as_echo "                     Machine Type : no"
 
 fi
 
 
-   if test "x$P_PROFILING" = "xyes"; then :
-  $as_echo ""
-      $as_echo "                        Profiling : ***** ENABLED *****"
+   if ${P_PROFILING+:} false; then :
+
+      $as_echo ""
+
+   if ${P_PROFILING+:} false; then :
+  $as_echo "           ***** Profiling *****  : ${P_PROFILING}"
+else
+  $as_echo "           ***** Profiling *****  : no"
+
+fi
+
+
 
 fi
    $as_echo ""
 
-   if test "x${prefix}" = "x"; then :
-  $as_echo "                           prefix : no"
-else
+   if ${prefix+:} false; then :
   $as_echo "                           prefix : ${prefix}"
+else
+  $as_echo "                           prefix : no"
 
 fi
 
 
 
-   if test "x${exec_prefix}" = "x"; then :
-  $as_echo "                      exec_prefix : no"
-else
+   if ${exec_prefix+:} false; then :
   $as_echo "                      exec_prefix : ${exec_prefix}"
+else
+  $as_echo "                      exec_prefix : no"
 
 fi
 
 
 
-   if test "x${includedir}" = "x"; then :
-  $as_echo "                       includedir : no"
-else
+   if ${includedir+:} false; then :
   $as_echo "                       includedir : ${includedir}"
+else
+  $as_echo "                       includedir : no"
 
 fi
 
 
 
-   if test "x${libdir}" = "x"; then :
-  $as_echo "                           libdir : no"
-else
+   if ${libdir+:} false; then :
   $as_echo "                           libdir : ${libdir}"
+else
+  $as_echo "                           libdir : no"
 
 fi
 
 
 
-   if test "x${datarootdir}" = "x"; then :
-  $as_echo "                      datarootdir : no"
-else
+   if ${datarootdir+:} false; then :
   $as_echo "                      datarootdir : ${datarootdir}"
+else
+  $as_echo "                      datarootdir : no"
 
 fi
 
 
 
-   if test "x${makedir}" = "x"; then :
-  $as_echo "                          makedir : no"
-else
+   if ${makedir+:} false; then :
   $as_echo "                          makedir : ${makedir}"
+else
+  $as_echo "                          makedir : no"
 
 fi
 
@@ -12072,328 +12098,328 @@ fi
 
    $as_echo ""
 
-   if test "x${OPAL_PLUGIN_DIR}" = "x"; then :
-  $as_echo "                Plug in directory : no"
-else
+   if ${OPAL_PLUGIN_DIR+:} false; then :
   $as_echo "                Plug in directory : ${OPAL_PLUGIN_DIR}"
+else
+  $as_echo "                Plug in directory : no"
 
 fi
 
 
-   if test "x${OPAL_PTLIB_DIR}" = "x"; then :
-  $as_echo "                  PTLib directory : no"
-else
+   if ${OPAL_PTLIB_DIR+:} false; then :
   $as_echo "                  PTLib directory : ${OPAL_PTLIB_DIR}"
+else
+  $as_echo "                  PTLib directory : no"
 
 fi
 
 
    $as_echo ""
 
-   if test "x${OPAL_PTLIB_AUDIO}" = "x"; then :
-  $as_echo "                            Audio : no"
-else
+   if ${OPAL_PTLIB_AUDIO+:} false; then :
   $as_echo "                            Audio : ${OPAL_PTLIB_AUDIO}"
+else
+  $as_echo "                            Audio : no"
 
 fi
 
 
-   if test "x${OPAL_PTLIB_VIDEO}" = "x"; then :
-  $as_echo "                            Video : no"
-else
+   if ${OPAL_PTLIB_VIDEO+:} false; then :
   $as_echo "                            Video : ${OPAL_PTLIB_VIDEO}"
+else
+  $as_echo "                            Video : no"
 
 fi
 
 
    $as_echo ""
 
-   if test "x${OPAL_H323}" = "x"; then :
-  $as_echo "                            H.323 : no"
-else
+   if ${OPAL_H323+:} false; then :
   $as_echo "                            H.323 : ${OPAL_H323}"
+else
+  $as_echo "                            H.323 : no"
 
 fi
 
 
-   if test "x${OPAL_H450}" = "x"; then :
-  $as_echo "                            H.450 : no"
-else
+   if ${OPAL_H450+:} false; then :
   $as_echo "                            H.450 : ${OPAL_H450}"
+else
+  $as_echo "                            H.450 : no"
 
 fi
 
 
-   if test "x${OPAL_H460}" = "x"; then :
-  $as_echo "                            H.460 : no"
-else
+   if ${OPAL_H460+:} false; then :
   $as_echo "                            H.460 : ${OPAL_H460}"
+else
+  $as_echo "                            H.460 : no"
 
 fi
 
 
-   if test "x${OPAL_H460_NAT}" = "x"; then :
-  $as_echo "                H.460.18/19 (NAT) : no"
-else
+   if ${OPAL_H460_NAT+:} false; then :
   $as_echo "                H.460.18/19 (NAT) : ${OPAL_H460_NAT}"
+else
+  $as_echo "                H.460.18/19 (NAT) : no"
 
 fi
 
 
-   if test "x${OPAL_H239}" = "x"; then :
-  $as_echo "                            H.239 : no"
-else
+   if ${OPAL_H239+:} false; then :
   $as_echo "                            H.239 : ${OPAL_H239}"
+else
+  $as_echo "                            H.239 : no"
 
 fi
 
 
-   if test "x${OPAL_H501}" = "x"; then :
-  $as_echo "                            H.501 : no"
-else
+   if ${OPAL_H501+:} false; then :
   $as_echo "                            H.501 : ${OPAL_H501}"
+else
+  $as_echo "                            H.501 : no"
 
 fi
 
 
    $as_echo ""
 
-   if test "x${OPAL_SIP}" = "x"; then :
-  $as_echo "                              SIP : no"
-else
+   if ${OPAL_SIP+:} false; then :
   $as_echo "                              SIP : ${OPAL_SIP}"
+else
+  $as_echo "                              SIP : no"
 
 fi
 
 
-   if test "x${OPAL_HAS_SIPIM}" = "x"; then :
-  $as_echo "                 SIPIM capability : no"
-else
+   if ${OPAL_HAS_SIPIM+:} false; then :
   $as_echo "                 SIPIM capability : ${OPAL_HAS_SIPIM}"
+else
+  $as_echo "                 SIPIM capability : no"
 
 fi
 
 
-   if test "x${OPAL_HAS_MSRP}" = "x"; then :
-  $as_echo "                  MSRP capability : no"
-else
+   if ${OPAL_HAS_MSRP+:} false; then :
   $as_echo "                  MSRP capability : ${OPAL_HAS_MSRP}"
+else
+  $as_echo "                  MSRP capability : no"
 
 fi
 
 
-   if test "x${OPAL_HAS_RFC4103}" = "x"; then :
-  $as_echo "         RFC-4103 (IM) capability : no"
-else
+   if ${OPAL_HAS_RFC4103+:} false; then :
   $as_echo "         RFC-4103 (IM) capability : ${OPAL_HAS_RFC4103}"
+else
+  $as_echo "         RFC-4103 (IM) capability : no"
 
 fi
 
 
    $as_echo ""
 
-   if test "x${OPAL_IAX2}" = "x"; then :
-  $as_echo "                     IAX2 support : no"
-else
+   if ${OPAL_IAX2+:} false; then :
   $as_echo "                     IAX2 support : ${OPAL_IAX2}"
+else
+  $as_echo "                     IAX2 support : no"
 
 fi
 
 
-   if test "x${OPAL_SKINNY}" = "x"; then :
-  $as_echo "      Cisco SCCP (skinny) support : no"
-else
+   if ${OPAL_SKINNY+:} false; then :
   $as_echo "      Cisco SCCP (skinny) support : ${OPAL_SKINNY}"
+else
+  $as_echo "      Cisco SCCP (skinny) support : no"
 
 fi
 
 
-   if test "x${OPAL_LID}" = "x"; then :
-  $as_echo "            Line Interface Device : no"
-else
+   if ${OPAL_LID+:} false; then :
   $as_echo "            Line Interface Device : ${OPAL_LID}"
+else
+  $as_echo "            Line Interface Device : no"
 
 fi
 
 
-   if test "x${OPAL_CAPI}" = "x"; then :
-  $as_echo "                      CAPI (ISDN) : no"
-else
+   if ${OPAL_CAPI+:} false; then :
   $as_echo "                      CAPI (ISDN) : ${OPAL_CAPI}"
+else
+  $as_echo "                      CAPI (ISDN) : no"
 
 fi
 
 
-   if test "x${OPAL_DAHDI}" = "x"; then :
-  $as_echo "                     DAHDI (PSTN) : no"
-else
+   if ${OPAL_DAHDI+:} false; then :
   $as_echo "                     DAHDI (PSTN) : ${OPAL_DAHDI}"
+else
+  $as_echo "                     DAHDI (PSTN) : no"
 
 fi
 
 
    $as_echo ""
 
-   if test "x${OPAL_T38_CAPABILITY}" = "x"; then :
-  $as_echo "                  T.38 capability : no"
-else
+   if ${OPAL_T38_CAPABILITY+:} false; then :
   $as_echo "                  T.38 capability : ${OPAL_T38_CAPABILITY}"
+else
+  $as_echo "                  T.38 capability : no"
 
 fi
 
 
-   if test "x${OPAL_FAX}" = "x"; then :
-  $as_echo "                T.38 FAX protocol : no"
-else
+   if ${OPAL_FAX+:} false; then :
   $as_echo "                T.38 FAX protocol : ${OPAL_FAX}"
+else
+  $as_echo "                T.38 FAX protocol : no"
 
 fi
 
 
-   if test "x${OPAL_HAS_H224}" = "x"; then :
-  $as_echo "     H.224 (H.221 media channels) : no"
-else
+   if ${OPAL_HAS_H224+:} false; then :
   $as_echo "     H.224 (H.221 media channels) : ${OPAL_HAS_H224}"
+else
+  $as_echo "     H.224 (H.221 media channels) : no"
 
 fi
 
 
-   if test "x${OPAL_HAS_H281}" = "x"; then :
-  $as_echo "   H.281 (Far End Camera Control) : no"
-else
+   if ${OPAL_HAS_H281+:} false; then :
   $as_echo "   H.281 (Far End Camera Control) : ${OPAL_HAS_H281}"
+else
+  $as_echo "   H.281 (Far End Camera Control) : no"
 
 fi
 
 
    $as_echo ""
 
-   if test "x${SRTP_MSG}" = "x"; then :
-  $as_echo "                             SRTP : no"
-else
+   if ${SRTP_MSG+:} false; then :
   $as_echo "                             SRTP : ${SRTP_MSG}"
+else
+  $as_echo "                             SRTP : no"
 
 fi
 
 
-   if test "x${OPAL_RFC4175}" = "x"; then :
-  $as_echo "               RFC-4175 Raw Video : no"
-else
+   if ${OPAL_RFC4175+:} false; then :
   $as_echo "               RFC-4175 Raw Video : ${OPAL_RFC4175}"
+else
+  $as_echo "               RFC-4175 Raw Video : no"
 
 fi
 
 
-   if test "x${OPAL_RFC2435}" = "x"; then :
-  $as_echo "     RFC-2435 JPEG (experimental) : no"
-else
+   if ${OPAL_RFC2435+:} false; then :
   $as_echo "     RFC-2435 JPEG (experimental) : ${OPAL_RFC2435}"
+else
+  $as_echo "     RFC-2435 JPEG (experimental) : no"
 
 fi
 
 
-   if test "x${OPAL_AEC}" = "x"; then :
-  $as_echo "      Accoustic Echo Cancellation : no"
-else
+   if ${OPAL_AEC+:} false; then :
   $as_echo "      Accoustic Echo Cancellation : ${OPAL_AEC}"
+else
+  $as_echo "      Accoustic Echo Cancellation : no"
 
 fi
 
 
-   if test "x${OPAL_G711PLC}" = "x"; then :
-  $as_echo "  Packet Loss Concealment (G.711) : no"
-else
+   if ${OPAL_G711PLC+:} false; then :
   $as_echo "  Packet Loss Concealment (G.711) : ${OPAL_G711PLC}"
+else
+  $as_echo "  Packet Loss Concealment (G.711) : no"
 
 fi
 
 
-   if test "x${OPAL_RTCP_XR}" = "x"; then :
-  $as_echo "    RTCP Extended Reports support : no"
-else
+   if ${OPAL_RTCP_XR+:} false; then :
   $as_echo "    RTCP Extended Reports support : ${OPAL_RTCP_XR}"
+else
+  $as_echo "    RTCP Extended Reports support : no"
 
 fi
 
 
-   if test "x${OPAL_RTP_FEC}" = "x"; then :
-  $as_echo "     RTP Forward Error Correction : no"
-else
+   if ${OPAL_RTP_FEC+:} false; then :
   $as_echo "     RTP Forward Error Correction : ${OPAL_RTP_FEC}"
+else
+  $as_echo "     RTP Forward Error Correction : no"
 
 fi
 
 
    $as_echo ""
 
-   if test "x${OPAL_HAS_PCSS}" = "x"; then :
-  $as_echo "         PC Sound System Endpoint : no"
-else
+   if ${OPAL_HAS_PCSS+:} false; then :
   $as_echo "         PC Sound System Endpoint : ${OPAL_HAS_PCSS}"
+else
+  $as_echo "         PC Sound System Endpoint : no"
 
 fi
 
 
-   if test "x${OPAL_IVR}" = "x"; then :
-  $as_echo "                      IVR support : no"
-else
+   if ${OPAL_IVR+:} false; then :
   $as_echo "                      IVR support : ${OPAL_IVR}"
+else
+  $as_echo "                      IVR support : no"
 
 fi
 
 
-   if test "x${OPAL_HAS_MIXER}" = "x"; then :
-  $as_echo "       Media mixing (conferences) : no"
-else
+   if ${OPAL_HAS_MIXER+:} false; then :
   $as_echo "       Media mixing (conferences) : ${OPAL_HAS_MIXER}"
+else
+  $as_echo "       Media mixing (conferences) : no"
 
 fi
 
 
-   if test "x${OPAL_HAS_PRESENCE}" = "x"; then :
-  $as_echo "                         Presence : no"
-else
+   if ${OPAL_HAS_PRESENCE+:} false; then :
   $as_echo "                         Presence : ${OPAL_HAS_PRESENCE}"
+else
+  $as_echo "                         Presence : no"
 
 fi
 
 
-   if test "x${OPAL_STATISTICS}" = "x"; then :
-  $as_echo "     Statistics gathering support : no"
-else
+   if ${OPAL_STATISTICS+:} false; then :
   $as_echo "     Statistics gathering support : ${OPAL_STATISTICS}"
+else
+  $as_echo "     Statistics gathering support : no"
 
 fi
 
 
-   if test "x${OPAL_SCRIPT}" = "x"; then :
-  $as_echo "        Script language interface : no"
-else
+   if ${OPAL_SCRIPT+:} false; then :
   $as_echo "        Script language interface : ${OPAL_SCRIPT}"
+else
+  $as_echo "        Script language interface : no"
 
 fi
 
 
-   if test "x${OPAL_JAVA}" = "x"; then :
-  $as_echo "                     Java support : no"
-else
+   if ${OPAL_JAVA+:} false; then :
   $as_echo "                     Java support : ${OPAL_JAVA}"
+else
+  $as_echo "                     Java support : no"
 
 fi
 
 
-   if test "x${OPAL_CSHARP}" = "x"; then :
-  $as_echo "                  C-sharp support : no"
-else
+   if ${OPAL_CSHARP+:} false; then :
   $as_echo "                  C-sharp support : ${OPAL_CSHARP}"
+else
+  $as_echo "                  C-sharp support : no"
 
 fi
 
 
-   if test "x${OPAL_RUBY}" = "x"; then :
-  $as_echo "                     Ruby support : no"
-else
+   if ${OPAL_RUBY+:} false; then :
   $as_echo "                     Ruby support : ${OPAL_RUBY}"
+else
+  $as_echo "                     Ruby support : no"
 
 fi
 

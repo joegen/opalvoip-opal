@@ -785,7 +785,7 @@ ac_user_opts='
 enable_option_checking
 enable_ios
 enable_force32
-enable_profiling
+with_profiling
 with_plugin_installdir
 enable_silk
 enable_gsmamr
@@ -1494,7 +1494,6 @@ Optional Features:
   --enable-ios=iphone|simulator
                           enable iOS support
   --enable-force32        Force 32-bit x86 build
-  --enable-profiling      Enable compiler generated profiling (gprof)
   --disable-silk          disable Skype SILK audio codec
   --disable-gsmamr        disable GSM-AMR audio codec
   --disable-g.726         disable G.726 audio codec
@@ -1533,6 +1532,7 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-profiling        Enable profiling: gprof, eccam, raw or manual
   --with-plugin-installdir=DIR
                           Location where plugins are installed
   --with-gsm-dir=<dir>    location for GSM 06.10 audio codec
@@ -2833,8 +2833,10 @@ $as_echo "no" >&6; }
 		PKG_CONFIG=""
 	fi
 fi
-if test -z "$PKG_CONFIG" ; then
-   as_fn_error 1 "pkg-config is required" "$LINENO" 5
+if ${PKG_CONFIG+:} false; then :
+
+else
+  as_fn_error 1 "pkg-config is required" "$LINENO" 5
 fi
 
 
@@ -2844,20 +2846,7 @@ if test "${enable_ios+set}" = set; then :
 fi
 
 
-if test "$enable_ios" = "iphone" ; then
-   target_vendor=apple
-   target_os=iPhoneOS
-   target_cpu=armv7
-   target_release=`xcodebuild -showsdks | sed -n 's/.*iphoneos\(.*\)/\1/p' | sort | tail -n 1`
-elif test "$enable_ios" = "simulator" ; then
-   target_vendor=apple
-   target_os=iPhoneSimulator
-   target_cpu=i686
-   target_release=`xcodebuild -showsdks | sed -n 's/.*iphonesimulator\(.*\)/\1/p' | sort | tail -n 1`
-elif test "x$enable_ios" != "x" ; then
-   as_fn_error $? "Unknown iOS variant \"${enable_ios}\" - use either iphone or simulator" "$LINENO" 5
-else
-   # Make sure we can run config.sub.
+# Make sure we can run config.sub.
 $SHELL "$ac_aux_dir/config.sub" sun4 >/dev/null 2>&1 ||
   as_fn_error $? "cannot run $SHELL $ac_aux_dir/config.sub" "$LINENO" 5
 
@@ -2967,7 +2956,29 @@ test -n "$target_alias" &&
   test "$program_prefix$program_suffix$program_transform_name" = \
     NONENONEs,x,x, &&
   program_prefix=${target_alias}-
-fi
+case $enable_ios in #(
+  "") :
+
+
+    ;; #(
+  iphone) :
+
+      target_vendor=apple
+      target_os=iPhoneOS
+      target_cpu=armv7
+      target_release=`xcodebuild -showsdks | sed -n 's/.*iphoneos\(.*\)/\1/p' | sort | tail -n 1`
+    ;; #(
+  simulator) :
+
+      target_vendor=apple
+      target_os=iPhoneSimulator
+      target_cpu=i686
+      target_release=`xcodebuild -showsdks | sed -n 's/.*iphonesimulator\(.*\)/\1/p' | sort | tail -n 1`
+    ;; #(
+  *) :
+          as_fn_error $? "Unknown iOS variant \"${enable_ios}\" - use either iphone or simulator" "$LINENO" 5
+ ;;
+esac
 
 
 oldCFLAGS="$CFLAGS"
@@ -4019,8 +4030,10 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-if test -z "$CXX" ; then
-   as_fn_error 1 "C++ compiler is required" "$LINENO" 5
+if ${CXX+:} false; then :
+
+else
+  as_fn_error 1 "C++ compiler is required" "$LINENO" 5
 fi
 
 CFLAGS="$oldCFLAGS"
@@ -4269,13 +4282,16 @@ test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking install support for -C" >&5
 $as_echo_n "checking install support for -C... " >&6; }
 touch /tmp/ptlib_install_test1
-if $INSTALL -C /tmp/ptlib_install_test1 /tmp/ptlib_install_test2 2> /dev/null ; then
+if $INSTALL -C /tmp/ptlib_install_test1 /tmp/ptlib_install_test2 2> /dev/null; then :
+
    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
    INSTALL="$INSTALL -C"
+
 else
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+
 fi
 rm /tmp/ptlib_install_test?
 
@@ -4371,100 +4387,6 @@ else
   AR="$ac_cv_prog_AR"
 fi
 
-if test -z "$AR" ; then
-   if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}gar", so it can be a program name with args.
-set dummy ${ac_tool_prefix}gar; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_AR+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$AR"; then
-  ac_cv_prog_AR="$AR" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_AR="${ac_tool_prefix}gar"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-AR=$ac_cv_prog_AR
-if test -n "$AR"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $AR" >&5
-$as_echo "$AR" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-fi
-if test -z "$ac_cv_prog_AR"; then
-  ac_ct_AR=$AR
-  # Extract the first word of "gar", so it can be a program name with args.
-set dummy gar; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_ac_ct_AR+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ac_ct_AR"; then
-  ac_cv_prog_ac_ct_AR="$ac_ct_AR" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_AR="gar"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_AR=$ac_cv_prog_ac_ct_AR
-if test -n "$ac_ct_AR"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_ct_AR" >&5
-$as_echo "$ac_ct_AR" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-  if test "x$ac_ct_AR" = x; then
-    AR=""
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    AR=$ac_ct_AR
-  fi
-else
-  AR="$ac_cv_prog_AR"
-fi
-
-fi
 
 
 
@@ -5322,14 +5244,18 @@ esac
 
 case "$target_os" in
    iPhone* )
-      if test "x$target_release" == "x" ; then
-         as_fn_error $? "Unable to determine iOS release number" "$LINENO" 5
-      fi
+      if ${target_release+:} false; then :
+
+else
+  as_fn_error $? "Unable to determine iOS release number" "$LINENO" 5
+fi
 
       MIN_IOS_VER="6.0"
-      if test $target_release \< $MIN_IOS_VER ; then
-         as_fn_error $? "Requires iOS release $MIN_IOS_VER, has $target_release" "$LINENO" 5
-      fi
+      if test $target_release \< $MIN_IOS_VER; then :
+  as_fn_error $? "Requires iOS release $MIN_IOS_VER
+else
+  has $target_release" "$LINENO" 5
+fi
 
       IOS_DEVROOT="`xcode-select -print-path`/Platforms/${target_os}.platform/Developer"
       IOS_SDKROOT=${IOS_DEVROOT}/SDKs/${target_os}${target_release}.sdk
@@ -5343,9 +5269,11 @@ case "$target_os" in
       target_release=`sw_vers -productVersion`
 
       MIN_MACOSX_VER="10.8"
-      if test $target_release \< $MIN_MACOSX_VER ; then
-         as_fn_error $? "Requires Mac OS-X release $MIN_MACOSX_VER, is $target_release" "$LINENO" 5
-      fi
+      if test $target_release \< $MIN_MACOSX_VER; then :
+  as_fn_error $? "Requires Mac OS-X release $MIN_MACOSX_VER
+else
+  is $target_release" "$LINENO" 5
+fi
 
       CPPFLAGS="${CPPFLAGS} -mmacosx-version-min=$MIN_MACOSX_VER"
       LIBS="-framework QTKit -framework CoreVideo -framework AudioUnit $LIBS"
@@ -5491,12 +5419,15 @@ $as_echo "$as_me: WARNING: Operating system \"$target_os\" not recognized - proc
    ;;
 esac
 
-if test "x$target_release" = "x"; then
-   target_release="`uname -r`"
+if ${target_release+:} false; then :
+
+else
+  target_release="`uname -r`"
 fi
 
-case "$target_cpu" in
-   x86 | i686 | i586 | i486 | i386 )
+case $target_cpu in #(
+  x86 | i686 | i586 | i486 | i386) :
+
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking 64 bit system masquerading as 32 bit" >&5
 $as_echo_n "checking 64 bit system masquerading as 32 bit... " >&6; }
       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -5522,50 +5453,49 @@ $as_echo "no" >&6; }
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-   ;;
+    ;; #(
+  x86_64 | amd64) :
 
-   x86_64 | amd64 )
       target_cpu=x86_64
       target_64bit=1
-   ;;
+    ;; #(
+  alpha*) :
 
-   alpha* )
       target_cpu=alpha
       target_64bit=1
-   ;;
+    ;; #(
+  sparc*) :
 
-   sparc* )
       target_cpu=sparc
       target_64bit=1
-   ;;
+    ;; #(
+  ppc | powerpc) :
 
-   ppc | powerpc )
       target_cpu=ppc
       target_64bit=0
-   ;;
+    ;; #(
+  ppc64 | powerpc64) :
 
-   ppc64 | powerpc64 )
       target_cpu=ppc64
       target_64bit=1
-   ;;
+    ;; #(
+  hppa64 | ia64 | s390x) :
 
-   hppa64 | ia64 | s390x )
       target_64bit=1
-   ;;
+    ;; #(
+  arm*) :
 
-   arm* )
       target_64bit=0
-   ;;
+    ;; #(
+  aarch64*) :
 
-   aarch64* )
       target_64bit=1
-   ;;
-
-   * )
-      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: CPU \"$target_cpu\" not recognized - assuming 32 bit" >&5
+    ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: CPU \"$target_cpu\" not recognized - assuming 32 bit" >&5
 $as_echo "$as_me: WARNING: CPU \"$target_cpu\" not recognized - assuming 32 bit" >&2;}
       target_64bit=0
-   ;;
+ ;;
 esac
 
 # Check whether --enable-force32 was given.
@@ -5573,24 +5503,32 @@ if test "${enable_force32+set}" = set; then :
   enableval=$enable_force32;
 fi
 
-if test "${enable_force32}" = "yes" ; then
-   if test "$target_cpu" != "x86_64" ; then
-      as_fn_error $? "force32 option only available for 64 bit x86" "$LINENO" 5
-   fi
+if test "x$enable_force32" = xyes; then :
+
+   if test "x$target_cpu" = xx86_64; then :
+
+else
+  as_fn_error $? "force32 option only available for 64 bit x86" "$LINENO" 5
+fi
 
    target_cpu=x86
    target_64bit=0
 
-   if test "$target_os" = "Darwin"; then
+   if test "x$target_os" = xDarwin; then :
+
       CPPFLAGS="$CPPFLAGS -arch i386"
       LDFLAGS="$LDFLAGS -arch i386"
-   else
+
+else
+
       CPPFLAGS="$CPPFLAGS -m32"
       LDFLAGS="$LDFLAGS -m32"
-   fi
+
+fi
 
    { $as_echo "$as_me:${as_lineno-$LINENO}: Forcing 32 bit x86 compile" >&5
 $as_echo "$as_me: Forcing 32 bit x86 compile" >&6;}
+
 fi
 
 
@@ -5680,10 +5618,13 @@ fi
 
 
 
-# Check whether --enable-profiling was given.
-if test "${enable_profiling+set}" = set; then :
-  enableval=$enable_profiling;
-      if test "x$enableval" = "xyes"; then
+
+# Check whether --with-profiling was given.
+if test "${with_profiling+set}" = set; then :
+  withval=$with_profiling;
+      case $with_profiling in #(
+  gprof) :
+
 
    oldCPPFLAGS="$CPPFLAGS"
    CPPFLAGS="$CPPFLAGS -pg"
@@ -5714,19 +5655,125 @@ $as_echo "$usable" >&6; }
    if test "x$usable" = "xyes"; then :
 
 
-   LIBS="-pg $LIBS"
 
    CFLAGS="-pg $CFLAGS"
    CXXFLAGS="-pg $CXXFLAGS"
 
-               P_PROFILING="yes"
+else
+  as_fn_error $? "Compiler does not support gprof profiling" "$LINENO" 5
+
+fi
+
+
+          ;; #(
+  eccam|raw) :
+
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -finstrument-functions"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking has compiler supported instrumentation (-finstrument-functions)" >&5
+$as_echo_n "checking has compiler supported instrumentation (-finstrument-functions)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+
+                  if test "x$with_profiling" = xraw; then :
+
+                     $as_echo "#define P_PROFILING 1" >>confdefs.h
+,
+
+else
+
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS "
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking has Eccam embedded profile libraries (-lEProfiler)" >&5
+$as_echo_n "checking has Eccam embedded profile libraries (-lEProfiler)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+-lEProfiler
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+
+
+   LIBS="-lEProfiler $LIBS"
+
+
+
+
+
+else
+  as_fn_error $? "Eccam profiling not installed" "$LINENO" 5
+
+fi
 
 
 
 fi
 
 
-      fi
+
+   CFLAGS="-finstrument-functions $CFLAGS"
+   CXXFLAGS="-finstrument-functions $CXXFLAGS"
+
+
+else
+  as_fn_error $? "Compiler does not support gprof profiling" "$LINENO" 5
+
+fi
+
+
+          ;; #(
+  manual) :
+
+            $as_echo "#define P_PROFILING 2" >>confdefs.h
+
+          ;; #(
+  *) :
+    as_fn_error $? "Unknown profile method \"$with_profiling\"" "$LINENO" 5
+       ;;
+esac
+
+      P_PROFILING=$with_profiling
+
 
 
 fi
@@ -6059,13 +6106,13 @@ fi
 
 
 
-   case "$target_os" in
-      cygwin* | mingw* )
-         usable=yes
-      ;;
+   case $target_os in #(
+  cygwin* | mingw*) :
 
-      *)
-         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dlopen in -ldl" >&5
+         usable=yes
+       ;; #(
+  *) :
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dlopen in -ldl" >&5
 $as_echo_n "checking for dlopen in -ldl... " >&6; }
 if ${ac_cv_lib_dl_dlopen+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -6103,8 +6150,8 @@ fi
 $as_echo "$ac_cv_lib_dl_dlopen" >&6; }
 if test "x$ac_cv_lib_dl_dlopen" = xyes; then :
 
-               usable=yes
-               DLFCN_LIBS="-ldl"
+            usable=yes
+            DLFCN_LIBS="-ldl"
 
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dlopen in -lc" >&5
@@ -6145,8 +6192,8 @@ fi
 $as_echo "$ac_cv_lib_c_dlopen" >&6; }
 if test "x$ac_cv_lib_c_dlopen" = xyes; then :
 
-                  usable=yes
-                  DLFCN_LIBS-"-lc"
+               usable=yes
+               DLFCN_LIBS-"-lc"
 
 else
   usable=no
@@ -6156,8 +6203,8 @@ fi
 
 fi
 
-      ;;
-   esac
+    ;;
+esac
 
 
 
@@ -6180,9 +6227,9 @@ fi
    stage=`cat $VERSION_DIR/version.h | grep BUILD_TYPE | cut -f 3 -d ' ' | sed 's/BetaCode/-beta/' | sed 's/AlphaCode/-alpha/' | sed 's/ReleaseCode/\./'`
    version="${major}.${minor}.${build}"
 
-   if test -z "$major" -o -z "$minor" -o -z "$build"; then
-      as_fn_error $? "Could not determine version number from $VERSION_DIR/version.h" "$LINENO" 5
-   fi
+   if test -z "$major" -o -z "$minor" -o -z "$build"; then :
+  as_fn_error $? "Could not determine version number from $VERSION_DIR/version.h" "$LINENO" 5
+fi
 
    OPAL_MAJOR=$major
 
@@ -6542,19 +6589,17 @@ $as_echo_n "checking GSM 06.10 audio codec... " >&6; }
 
    # Check whether --enable-gsm was given.
 if test "${enable_gsm+set}" = set; then :
-  enableval=$enable_gsm;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_gsm; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=${DEFAULT_GSM:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -6573,11 +6618,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
   usable=yes
@@ -6589,25 +6633,29 @@ fi
    enable_gsm="$enableval"
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$usable" = xyes; then :
+
 
          # Check whether --enable-localgsm was given.
 if test "${enable_localgsm+set}" = set; then :
-  enableval=$enable_localgsm;
-               if test "x$enableval" = "xyes" ; then
-                  GSM_SYSTEM="no"
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for GSM 06.10 audio codec" >&5
-$as_echo "$as_me: Forced use of internal source for GSM 06.10 audio codec" >&6;}
-               else
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: Using system source for GSM 06.10 audio codec" >&5
-$as_echo "$as_me: Using system source for GSM 06.10 audio codec" >&6;}
-               fi
+  enableval=$enable_localgsm; if test "x$enableval" = xyes; then :
 
+               GSM_SYSTEM="no"
+               { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for GSM 06.10 audio codec" >&5
+$as_echo "$as_me: Forced use of internal source for GSM 06.10 audio codec" >&6;}
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Using system source for GSM 06.10 audio codec" >&5
+$as_echo "$as_me: Using system source for GSM 06.10 audio codec" >&6;}
+
+fi
 
 fi
 
 
-      if test "x$GSM_SYSTEM" = "xyes" ; then
+
+      if test "x$GSM_SYSTEM" = xyes; then :
+
 
 # Check whether --with-gsm-dir was given.
 if test "${with_gsm_dir+set}" = set; then :
@@ -6701,7 +6749,7 @@ fi
 fi
 
 
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = xyes; then :
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
@@ -6749,19 +6797,24 @@ else
 fi
 
 
-         fi
+
+fi
 
 
-            if test "x$usable" = "xno" ; then
+            if test "x$usable" = xno; then :
+
                GSM_SYSTEM="no"
                GSM_CFLAGS=
                GSM_LIBS=
                { $as_echo "$as_me:${as_lineno-$LINENO}: Using internal source for GSM 06.10 audio codec" >&5
 $as_echo "$as_me: Using internal source for GSM 06.10 audio codec" >&6;}
-            fi
 
-      fi
-   fi
+fi
+
+
+fi
+
+fi
 
    GSM_USABLE=$usable
 
@@ -6805,19 +6858,17 @@ $as_echo_n "checking iLBC audio codec... " >&6; }
 
    # Check whether --enable-iLBC was given.
 if test "${enable_iLBC+set}" = set; then :
-  enableval=$enable_iLBC;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_iLBC; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=${DEFAULT_ILBC:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -6836,11 +6887,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
   usable=yes
@@ -6852,25 +6902,29 @@ fi
    enable_iLBC="$enableval"
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$usable" = xyes; then :
+
 
          # Check whether --enable-localiLBC was given.
 if test "${enable_localiLBC+set}" = set; then :
-  enableval=$enable_localiLBC;
-               if test "x$enableval" = "xyes" ; then
-                  ILBC_SYSTEM="no"
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for iLBC audio codec" >&5
-$as_echo "$as_me: Forced use of internal source for iLBC audio codec" >&6;}
-               else
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: Using system source for iLBC audio codec" >&5
-$as_echo "$as_me: Using system source for iLBC audio codec" >&6;}
-               fi
+  enableval=$enable_localiLBC; if test "x$enableval" = xyes; then :
 
+               ILBC_SYSTEM="no"
+               { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for iLBC audio codec" >&5
+$as_echo "$as_me: Forced use of internal source for iLBC audio codec" >&6;}
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Using system source for iLBC audio codec" >&5
+$as_echo "$as_me: Using system source for iLBC audio codec" >&6;}
+
+fi
 
 fi
 
 
-      if test "x$ILBC_SYSTEM" = "xyes" ; then
+
+      if test "x$ILBC_SYSTEM" = xyes; then :
+
 
 # Check whether --with-iLBC-dir was given.
 if test "${with_iLBC_dir+set}" = set; then :
@@ -6964,7 +7018,7 @@ fi
 fi
 
 
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = xyes; then :
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
@@ -7014,19 +7068,24 @@ else
 fi
 
 
-         fi
+
+fi
 
 
-            if test "x$usable" = "xno" ; then
+            if test "x$usable" = xno; then :
+
                ILBC_SYSTEM="no"
                ILBC_CFLAGS=
                ILBC_LIBS=
                { $as_echo "$as_me:${as_lineno-$LINENO}: Using internal source for iLBC audio codec" >&5
 $as_echo "$as_me: Using internal source for iLBC audio codec" >&6;}
-            fi
 
-      fi
-   fi
+fi
+
+
+fi
+
+fi
 
    ILBC_USABLE=$usable
 
@@ -7078,19 +7137,17 @@ $as_echo_n "checking Speex audio codec... " >&6; }
 
    # Check whether --enable-speex was given.
 if test "${enable_speex+set}" = set; then :
-  enableval=$enable_speex;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_speex; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=${DEFAULT_SPEEX:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -7109,11 +7166,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
   usable=yes
@@ -7125,25 +7181,29 @@ fi
    enable_speex="$enableval"
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$usable" = xyes; then :
+
 
          # Check whether --enable-localspeex was given.
 if test "${enable_localspeex+set}" = set; then :
-  enableval=$enable_localspeex;
-               if test "x$enableval" = "xyes" ; then
-                  SPEEX_SYSTEM="no"
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for Speex audio codec" >&5
-$as_echo "$as_me: Forced use of internal source for Speex audio codec" >&6;}
-               else
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: Using system source for Speex audio codec" >&5
-$as_echo "$as_me: Using system source for Speex audio codec" >&6;}
-               fi
+  enableval=$enable_localspeex; if test "x$enableval" = xyes; then :
 
+               SPEEX_SYSTEM="no"
+               { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for Speex audio codec" >&5
+$as_echo "$as_me: Forced use of internal source for Speex audio codec" >&6;}
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Using system source for Speex audio codec" >&5
+$as_echo "$as_me: Using system source for Speex audio codec" >&6;}
+
+fi
 
 fi
 
 
-      if test "x$SPEEX_SYSTEM" = "xyes" ; then
+
+      if test "x$SPEEX_SYSTEM" = xyes; then :
+
 
 # Check whether --with-speex-dir was given.
 if test "${with_speex_dir+set}" = set; then :
@@ -7237,7 +7297,7 @@ fi
 fi
 
 
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = xyes; then :
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
@@ -7284,19 +7344,24 @@ else
 fi
 
 
-         fi
+
+fi
 
 
-            if test "x$usable" = "xno" ; then
+            if test "x$usable" = xno; then :
+
                SPEEX_SYSTEM="no"
                SPEEX_CFLAGS=
                SPEEX_LIBS=
                { $as_echo "$as_me:${as_lineno-$LINENO}: Using internal source for Speex audio codec" >&5
 $as_echo "$as_me: Using internal source for Speex audio codec" >&6;}
-            fi
 
-      fi
-   fi
+fi
+
+
+fi
+
+fi
 
    SPEEX_USABLE=$usable
 
@@ -7348,19 +7413,17 @@ $as_echo_n "checking Bluetooth SBC audio codec... " >&6; }
 
    # Check whether --enable-sbc was given.
 if test "${enable_sbc+set}" = set; then :
-  enableval=$enable_sbc;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_sbc; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=${DEFAULT_SBC:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -7379,11 +7442,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
   usable=yes
@@ -7395,9 +7457,12 @@ fi
    enable_sbc="$enableval"
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$usable" = xyes; then :
 
-      if test "x$SBC_SYSTEM" = "xyes" ; then
+
+
+      if test "x$SBC_SYSTEM" = xyes; then :
+
 
 # Check whether --with-sbc-dir was given.
 if test "${with_sbc_dir+set}" = set; then :
@@ -7491,7 +7556,7 @@ fi
 fi
 
 
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = xyes; then :
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
@@ -7539,11 +7604,14 @@ else
 fi
 
 
-         fi
+
+fi
 
 
-      fi
-   fi
+
+fi
+
+fi
 
    SBC_USABLE=$usable
 
@@ -7587,19 +7655,17 @@ $as_echo_n "checking CELT audio codec... " >&6; }
 
    # Check whether --enable-celt was given.
 if test "${enable_celt+set}" = set; then :
-  enableval=$enable_celt;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_celt; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=${DEFAULT_CELT:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -7618,11 +7684,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
   usable=yes
@@ -7634,9 +7699,12 @@ fi
    enable_celt="$enableval"
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$usable" = xyes; then :
 
-      if test "x$CELT_SYSTEM" = "xyes" ; then
+
+
+      if test "x$CELT_SYSTEM" = xyes; then :
+
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CELT" >&5
@@ -7712,7 +7780,7 @@ $as_echo "yes" >&6; }
 fi
 
 
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = xyes; then :
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
@@ -7759,11 +7827,14 @@ else
 fi
 
 
-         fi
+
+fi
 
 
-      fi
-   fi
+
+fi
+
+fi
 
    CELT_USABLE=$usable
 
@@ -7814,19 +7885,17 @@ $as_echo_n "checking Opus Interactive Audio Codec... " >&6; }
 
    # Check whether --enable-opus was given.
 if test "${enable_opus+set}" = set; then :
-  enableval=$enable_opus;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_opus; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=${DEFAULT_OPUS:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -7845,11 +7914,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
   usable=yes
@@ -7861,25 +7929,29 @@ fi
    enable_opus="$enableval"
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$usable" = xyes; then :
+
 
          # Check whether --enable-localopus was given.
 if test "${enable_localopus+set}" = set; then :
-  enableval=$enable_localopus;
-               if test "x$enableval" = "xyes" ; then
-                  OPUS_SYSTEM="no"
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for Opus Interactive Audio Codec" >&5
-$as_echo "$as_me: Forced use of internal source for Opus Interactive Audio Codec" >&6;}
-               else
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: Using system source for Opus Interactive Audio Codec" >&5
-$as_echo "$as_me: Using system source for Opus Interactive Audio Codec" >&6;}
-               fi
+  enableval=$enable_localopus; if test "x$enableval" = xyes; then :
 
+               OPUS_SYSTEM="no"
+               { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for Opus Interactive Audio Codec" >&5
+$as_echo "$as_me: Forced use of internal source for Opus Interactive Audio Codec" >&6;}
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Using system source for Opus Interactive Audio Codec" >&5
+$as_echo "$as_me: Using system source for Opus Interactive Audio Codec" >&6;}
+
+fi
 
 fi
 
 
-      if test "x$OPUS_SYSTEM" = "xyes" ; then
+
+      if test "x$OPUS_SYSTEM" = xyes; then :
+
 
 # Check whether --with-opus-dir was given.
 if test "${with_opus_dir+set}" = set; then :
@@ -7973,7 +8045,7 @@ fi
 fi
 
 
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = xyes; then :
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
@@ -8020,19 +8092,24 @@ else
 fi
 
 
-         fi
+
+fi
 
 
-            if test "x$usable" = "xno" ; then
+            if test "x$usable" = xno; then :
+
                OPUS_SYSTEM="no"
                OPUS_CFLAGS=
                OPUS_LIBS=
                { $as_echo "$as_me:${as_lineno-$LINENO}: Using internal source for Opus Interactive Audio Codec" >&5
 $as_echo "$as_me: Using internal source for Opus Interactive Audio Codec" >&6;}
-            fi
 
-      fi
-   fi
+fi
+
+
+fi
+
+fi
 
    OPUS_USABLE=$usable
 
@@ -8120,19 +8197,17 @@ $as_echo_n "checking FFMPEG libavcodec library... " >&6; }
 
    # Check whether --enable-libavcodec was given.
 if test "${enable_libavcodec+set}" = set; then :
-  enableval=$enable_libavcodec;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_libavcodec; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=${DEFAULT_LIBAVCODEC:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -8151,11 +8226,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
   usable=yes
@@ -8167,9 +8241,12 @@ fi
    enable_libavcodec="$enableval"
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$usable" = xyes; then :
 
-      if test "x$LIBAVCODEC_SYSTEM" = "xyes" ; then
+
+
+      if test "x$LIBAVCODEC_SYSTEM" = xyes; then :
+
 
 # Check whether --with-libavcodec-dir was given.
 if test "${with_libavcodec_dir+set}" = set; then :
@@ -8263,7 +8340,7 @@ fi
 fi
 
 
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = xyes; then :
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
@@ -8310,11 +8387,14 @@ else
 fi
 
 
-         fi
+
+fi
 
 
-      fi
-   fi
+
+fi
+
+fi
 
    LIBAVCODEC_USABLE=$usable
 
@@ -8331,19 +8411,17 @@ $as_echo_n "checking FFMPEG libavutil library... " >&6; }
 
    # Check whether --enable-libavutil was given.
 if test "${enable_libavutil+set}" = set; then :
-  enableval=$enable_libavutil;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_libavutil; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=${DEFAULT_LIBAVUTIL:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -8362,11 +8440,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
   usable=yes
@@ -8378,9 +8455,12 @@ fi
    enable_libavutil="$enableval"
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$usable" = xyes; then :
 
-      if test "x$LIBAVUTIL_SYSTEM" = "xyes" ; then
+
+
+      if test "x$LIBAVUTIL_SYSTEM" = xyes; then :
+
 
 # Check whether --with-libavutil-dir was given.
 if test "${with_libavutil_dir+set}" = set; then :
@@ -8474,7 +8554,7 @@ fi
 fi
 
 
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = xyes; then :
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
@@ -8521,11 +8601,14 @@ else
 fi
 
 
-         fi
+
+fi
 
 
-      fi
-   fi
+
+fi
+
+fi
 
    LIBAVUTIL_USABLE=$usable
 
@@ -8748,19 +8831,17 @@ $as_echo_n "checking VideoLan x264 H.264 video codec... " >&6; }
 
    # Check whether --enable-x264 was given.
 if test "${enable_x264+set}" = set; then :
-  enableval=$enable_x264;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_x264; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=${DEFAULT_X264:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -8779,11 +8860,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
   usable=yes
@@ -8795,9 +8875,12 @@ fi
    enable_x264="$enableval"
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$usable" = xyes; then :
 
-      if test "x$X264_SYSTEM" = "xyes" ; then
+
+
+      if test "x$X264_SYSTEM" = xyes; then :
+
 
 # Check whether --with-x264-dir was given.
 if test "${with_x264_dir+set}" = set; then :
@@ -8891,7 +8974,7 @@ fi
 fi
 
 
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = xyes; then :
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
@@ -8951,11 +9034,14 @@ else
 fi
 
 
-         fi
+
+fi
 
 
-      fi
-   fi
+
+fi
+
+fi
 
    X264_USABLE=$usable
 
@@ -9020,19 +9106,17 @@ $as_echo_n "checking Cisco Open264 H.264 video codec... " >&6; }
 
    # Check whether --enable-openh264 was given.
 if test "${enable_openh264+set}" = set; then :
-  enableval=$enable_openh264;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_openh264; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=${DEFAULT_OPENH264:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -9051,11 +9135,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
   usable=yes
@@ -9067,25 +9150,29 @@ fi
    enable_openh264="$enableval"
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$usable" = xyes; then :
+
 
          # Check whether --enable-localopenh264 was given.
 if test "${enable_localopenh264+set}" = set; then :
-  enableval=$enable_localopenh264;
-               if test "x$enableval" = "xyes" ; then
-                  OPENH264_SYSTEM="no"
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for Cisco Open264 H.264 video codec" >&5
-$as_echo "$as_me: Forced use of internal source for Cisco Open264 H.264 video codec" >&6;}
-               else
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: Using system source for Cisco Open264 H.264 video codec" >&5
-$as_echo "$as_me: Using system source for Cisco Open264 H.264 video codec" >&6;}
-               fi
+  enableval=$enable_localopenh264; if test "x$enableval" = xyes; then :
 
+               OPENH264_SYSTEM="no"
+               { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for Cisco Open264 H.264 video codec" >&5
+$as_echo "$as_me: Forced use of internal source for Cisco Open264 H.264 video codec" >&6;}
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Using system source for Cisco Open264 H.264 video codec" >&5
+$as_echo "$as_me: Using system source for Cisco Open264 H.264 video codec" >&6;}
+
+fi
 
 fi
 
 
-      if test "x$OPENH264_SYSTEM" = "xyes" ; then
+
+      if test "x$OPENH264_SYSTEM" = xyes; then :
+
 
 # Check whether --with-openh264-dir was given.
 if test "${with_openh264_dir+set}" = set; then :
@@ -9179,7 +9266,7 @@ fi
 fi
 
 
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = xyes; then :
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
@@ -9230,19 +9317,24 @@ else
 fi
 
 
-         fi
+
+fi
 
 
-            if test "x$usable" = "xno" ; then
+            if test "x$usable" = xno; then :
+
                OPENH264_SYSTEM="no"
                OPENH264_CFLAGS=
                OPENH264_LIBS=
                { $as_echo "$as_me:${as_lineno-$LINENO}: Using internal source for Cisco Open264 H.264 video codec" >&5
 $as_echo "$as_me: Using internal source for Cisco Open264 H.264 video codec" >&6;}
-            fi
 
-      fi
-   fi
+fi
+
+
+fi
+
+fi
 
    OPENH264_USABLE=$usable
 
@@ -9286,19 +9378,17 @@ $as_echo_n "checking VP8 (WebM) video codec... " >&6; }
 
    # Check whether --enable-VP8 was given.
 if test "${enable_VP8+set}" = set; then :
-  enableval=$enable_VP8;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_VP8; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=${DEFAULT_VP8:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -9317,11 +9407,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
   usable=yes
@@ -9333,9 +9422,12 @@ fi
    enable_VP8="$enableval"
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$usable" = xyes; then :
 
-      if test "x$VP8_SYSTEM" = "xyes" ; then
+
+
+      if test "x$VP8_SYSTEM" = xyes; then :
+
 
 # Check whether --with-VP8-dir was given.
 if test "${with_VP8_dir+set}" = set; then :
@@ -9429,7 +9521,7 @@ fi
 fi
 
 
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = xyes; then :
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
@@ -9477,11 +9569,14 @@ else
 fi
 
 
-         fi
+
+fi
 
 
-      fi
-   fi
+
+fi
+
+fi
 
    VP8_USABLE=$usable
 
@@ -9525,19 +9620,17 @@ $as_echo_n "checking Theora video codec... " >&6; }
 
    # Check whether --enable-theora was given.
 if test "${enable_theora+set}" = set; then :
-  enableval=$enable_theora;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_theora; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=${DEFAULT_THEORA:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -9556,11 +9649,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
   usable=yes
@@ -9572,9 +9664,12 @@ fi
    enable_theora="$enableval"
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$usable" = xyes; then :
 
-      if test "x$THEORA_SYSTEM" = "xyes" ; then
+
+
+      if test "x$THEORA_SYSTEM" = xyes; then :
+
 
 # Check whether --with-theora-dir was given.
 if test "${with_theora_dir+set}" = set; then :
@@ -9668,7 +9763,7 @@ fi
 fi
 
 
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = xyes; then :
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
@@ -9719,11 +9814,14 @@ else
 fi
 
 
-         fi
+
+fi
 
 
-      fi
-   fi
+
+fi
+
+fi
 
    THEORA_USABLE=$usable
 
@@ -9769,19 +9867,17 @@ $as_echo_n "checking Voicetronics VPB telephony card... " >&6; }
 
    # Check whether --enable-vpb was given.
 if test "${enable_vpb+set}" = set; then :
-  enableval=$enable_vpb;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_vpb; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=${DEFAULT_VPB:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -9800,11 +9896,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
   usable=yes
@@ -9816,9 +9911,12 @@ fi
    enable_vpb="$enableval"
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$usable" = xyes; then :
 
-      if test "x$VPB_SYSTEM" = "xyes" ; then
+
+
+      if test "x$VPB_SYSTEM" = xyes; then :
+
 
 # Check whether --with-vpb-dir was given.
 if test "${with_vpb_dir+set}" = set; then :
@@ -9912,7 +10010,7 @@ fi
 fi
 
 
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = xyes; then :
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
@@ -9960,11 +10058,14 @@ else
 fi
 
 
-         fi
+
+fi
 
 
-      fi
-   fi
+
+fi
+
+fi
 
    VPB_USABLE=$usable
 
@@ -10010,19 +10111,17 @@ $as_echo_n "checking SpanDSP based fax... " >&6; }
 
    # Check whether --enable-spandsp was given.
 if test "${enable_spandsp+set}" = set; then :
-  enableval=$enable_spandsp;
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
+  enableval=$enable_spandsp; if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
-         fi
-
+fi
 else
 
          enableval=${DEFAULT_SPANDSP:-yes}
-         if test "x$enableval" = "xno"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
+         if test "x$enableval" = xno; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by default" >&5
 $as_echo "disabled by default" >&6; }
-         fi
+fi
 
 
 fi
@@ -10041,11 +10140,10 @@ fi
 
 
 
-   if test "x${enableval}" = "xyes"; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+   if test "x$enableval" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-   fi
-
+fi
 
    if test "x$enableval" = "xyes"; then :
   usable=yes
@@ -10057,9 +10155,12 @@ fi
    enable_spandsp="$enableval"
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$usable" = xyes; then :
 
-      if test "x$SPANDSP_SYSTEM" = "xyes" ; then
+
+
+      if test "x$SPANDSP_SYSTEM" = xyes; then :
+
 
 # Check whether --with-spandsp-dir was given.
 if test "${with_spandsp_dir+set}" = set; then :
@@ -10153,7 +10254,7 @@ fi
 fi
 
 
-         if test "x$usable" = "xyes" ; then
+         if test "x$usable" = xyes; then :
 
    MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
    MY_LINK_IFELSE_LIBS="$LIBS"
@@ -10201,11 +10302,14 @@ else
 fi
 
 
-         fi
+
+fi
 
 
-      fi
-   fi
+
+fi
+
+fi
 
    SPANDSP_USABLE=$usable
 
@@ -11715,79 +11819,88 @@ fi
    $as_echo ""
    $as_echo "=========================== Configuration =============================="
 
-   if test "x${target_os}" = "x"; then :
-  $as_echo "                          OS Type : no"
-else
+   if ${target_os+:} false; then :
   $as_echo "                          OS Type : ${target_os}"
+else
+  $as_echo "                          OS Type : no"
 
 fi
 
 
 
-   if test "x${target_cpu}" = "x"; then :
-  $as_echo "                     Machine Type : no"
-else
+   if ${target_cpu+:} false; then :
   $as_echo "                     Machine Type : ${target_cpu}"
+else
+  $as_echo "                     Machine Type : no"
 
 fi
 
 
-   if test "x$P_PROFILING" = "xyes"; then :
-  $as_echo ""
-      $as_echo "                        Profiling : ***** ENABLED *****"
+   if ${P_PROFILING+:} false; then :
+
+      $as_echo ""
+
+   if ${P_PROFILING+:} false; then :
+  $as_echo "           ***** Profiling *****  : ${P_PROFILING}"
+else
+  $as_echo "           ***** Profiling *****  : no"
+
+fi
+
+
 
 fi
    $as_echo ""
 
-   if test "x${prefix}" = "x"; then :
-  $as_echo "                           prefix : no"
-else
+   if ${prefix+:} false; then :
   $as_echo "                           prefix : ${prefix}"
+else
+  $as_echo "                           prefix : no"
 
 fi
 
 
 
-   if test "x${exec_prefix}" = "x"; then :
-  $as_echo "                      exec_prefix : no"
-else
+   if ${exec_prefix+:} false; then :
   $as_echo "                      exec_prefix : ${exec_prefix}"
+else
+  $as_echo "                      exec_prefix : no"
 
 fi
 
 
 
-   if test "x${includedir}" = "x"; then :
-  $as_echo "                       includedir : no"
-else
+   if ${includedir+:} false; then :
   $as_echo "                       includedir : ${includedir}"
+else
+  $as_echo "                       includedir : no"
 
 fi
 
 
 
-   if test "x${libdir}" = "x"; then :
-  $as_echo "                           libdir : no"
-else
+   if ${libdir+:} false; then :
   $as_echo "                           libdir : ${libdir}"
+else
+  $as_echo "                           libdir : no"
 
 fi
 
 
 
-   if test "x${datarootdir}" = "x"; then :
-  $as_echo "                      datarootdir : no"
-else
+   if ${datarootdir+:} false; then :
   $as_echo "                      datarootdir : ${datarootdir}"
+else
+  $as_echo "                      datarootdir : no"
 
 fi
 
 
 
-   if test "x${makedir}" = "x"; then :
-  $as_echo "                          makedir : no"
-else
+   if ${makedir+:} false; then :
   $as_echo "                          makedir : ${makedir}"
+else
+  $as_echo "                          makedir : no"
 
 fi
 
@@ -11795,234 +11908,234 @@ fi
 
    $as_echo ""
 
-   if test "x${AUD_PLUGIN_DIR}" = "x"; then :
-  $as_echo "   Audio Codec plugin install dir : no"
-else
+   if ${AUD_PLUGIN_DIR+:} false; then :
   $as_echo "   Audio Codec plugin install dir : ${AUD_PLUGIN_DIR}"
+else
+  $as_echo "   Audio Codec plugin install dir : no"
 
 fi
 
 
-   if test "x${VID_PLUGIN_DIR}" = "x"; then :
-  $as_echo "   Video Codec plugin install dir : no"
-else
+   if ${VID_PLUGIN_DIR+:} false; then :
   $as_echo "   Video Codec plugin install dir : ${VID_PLUGIN_DIR}"
+else
+  $as_echo "   Video Codec plugin install dir : no"
 
 fi
 
 
-   if test "x${LID_PLUGIN_DIR}" = "x"; then :
-  $as_echo "        LID plugin install prefix : no"
-else
+   if ${LID_PLUGIN_DIR+:} false; then :
   $as_echo "        LID plugin install prefix : ${LID_PLUGIN_DIR}"
+else
+  $as_echo "        LID plugin install prefix : no"
 
 fi
 
 
-   if test "x${FAX_PLUGIN_DIR}" = "x"; then :
-  $as_echo "        FAX plugin install prefix : no"
-else
+   if ${FAX_PLUGIN_DIR+:} false; then :
   $as_echo "        FAX plugin install prefix : ${FAX_PLUGIN_DIR}"
+else
+  $as_echo "        FAX plugin install prefix : no"
 
 fi
 
 
    $as_echo ""
 
-   if test "x${HAVE_GSM}" = "x"; then :
-  $as_echo "                              GSM : no"
-else
+   if ${HAVE_GSM+:} false; then :
   $as_echo "                              GSM : ${HAVE_GSM}"
+else
+  $as_echo "                              GSM : no"
 
 fi
 
 
-   if test "x${HAVE_GSMAMR}" = "x"; then :
-  $as_echo "                          GSM-AMR : no"
-else
+   if ${HAVE_GSMAMR+:} false; then :
   $as_echo "                          GSM-AMR : ${HAVE_GSMAMR}"
+else
+  $as_echo "                          GSM-AMR : no"
 
 fi
 
 
-   if test "x${HAVE_ILBC}" = "x"; then :
-  $as_echo "                             iLBC : no"
-else
+   if ${HAVE_ILBC+:} false; then :
   $as_echo "                             iLBC : ${HAVE_ILBC}"
+else
+  $as_echo "                             iLBC : no"
 
 fi
 
 
-   if test "x${HAVE_ISAC}" = "x"; then :
-  $as_echo "                             iSAC : no"
-else
+   if ${HAVE_ISAC+:} false; then :
   $as_echo "                             iSAC : ${HAVE_ISAC}"
+else
+  $as_echo "                             iSAC : no"
 
 fi
 
 
-   if test "x${HAVE_SPEEX}" = "x"; then :
-  $as_echo "                            Speex : no"
-else
+   if ${HAVE_SPEEX+:} false; then :
   $as_echo "                            Speex : ${HAVE_SPEEX}"
+else
+  $as_echo "                            Speex : no"
 
 fi
 
 
-   if test "x${HAVE_G722}" = "x"; then :
-  $as_echo "                            G.722 : no"
-else
+   if ${HAVE_G722+:} false; then :
   $as_echo "                            G.722 : ${HAVE_G722}"
+else
+  $as_echo "                            G.722 : no"
 
 fi
 
 
-   if test "x${HAVE_G7221}" = "x"; then :
-  $as_echo "                          G.722.1 : no"
-else
+   if ${HAVE_G7221+:} false; then :
   $as_echo "                          G.722.1 : ${HAVE_G7221}"
+else
+  $as_echo "                          G.722.1 : no"
 
 fi
 
 
-   if test "x${HAVE_G7222}" = "x"; then :
-  $as_echo "                          G.722.2 : no"
-else
+   if ${HAVE_G7222+:} false; then :
   $as_echo "                          G.722.2 : ${HAVE_G7222}"
+else
+  $as_echo "                          G.722.2 : no"
 
 fi
 
 
-   if test "x${HAVE_G726}" = "x"; then :
-  $as_echo "                            G.726 : no"
-else
+   if ${HAVE_G726+:} false; then :
   $as_echo "                            G.726 : ${HAVE_G726}"
+else
+  $as_echo "                            G.726 : no"
 
 fi
 
 
-   if test "x${HAVE_LPC10}" = "x"; then :
-  $as_echo "                            LPC10 : no"
-else
+   if ${HAVE_LPC10+:} false; then :
   $as_echo "                            LPC10 : ${HAVE_LPC10}"
+else
+  $as_echo "                            LPC10 : no"
 
 fi
 
 
-   if test "x${HAVE_IMA_ADPCM}" = "x"; then :
-  $as_echo "                        IMA_ADPCM : no"
-else
+   if ${HAVE_IMA_ADPCM+:} false; then :
   $as_echo "                        IMA_ADPCM : ${HAVE_IMA_ADPCM}"
+else
+  $as_echo "                        IMA_ADPCM : no"
 
 fi
 
 
-   if test "x${HAVE_SBC}" = "x"; then :
-  $as_echo "                              SBC : no"
-else
+   if ${HAVE_SBC+:} false; then :
   $as_echo "                              SBC : ${HAVE_SBC}"
+else
+  $as_echo "                              SBC : no"
 
 fi
 
 
-   if test "x${HAVE_CELT}" = "x"; then :
-  $as_echo "                             CELT : no"
-else
+   if ${HAVE_CELT+:} false; then :
   $as_echo "                             CELT : ${HAVE_CELT}"
+else
+  $as_echo "                             CELT : no"
 
 fi
 
 
-   if test "x${HAVE_SILK}" = "x"; then :
-  $as_echo "                             SILK : no"
-else
+   if ${HAVE_SILK+:} false; then :
   $as_echo "                             SILK : ${HAVE_SILK}"
+else
+  $as_echo "                             SILK : no"
 
 fi
 
 
-   if test "x${HAVE_OPUS}" = "x"; then :
-  $as_echo "                             Opus : no"
-else
+   if ${HAVE_OPUS+:} false; then :
   $as_echo "                             Opus : ${HAVE_OPUS}"
+else
+  $as_echo "                             Opus : no"
 
 fi
 
 
    $as_echo ""
 
-   if test "x${HAVE_H261}" = "x"; then :
-  $as_echo "                      H.261 (vic) : no"
-else
+   if ${HAVE_H261+:} false; then :
   $as_echo "                      H.261 (vic) : ${HAVE_H261}"
+else
+  $as_echo "                      H.261 (vic) : no"
 
 fi
 
 
-   if test "x${HAVE_H263}" = "x"; then :
-  $as_echo "            H.263/H.263+ (ffmpeg) : no"
-else
+   if ${HAVE_H263+:} false; then :
   $as_echo "            H.263/H.263+ (ffmpeg) : ${HAVE_H263}"
+else
+  $as_echo "            H.263/H.263+ (ffmpeg) : no"
 
 fi
 
 
-   if test "x${HAVE_X264}" = "x"; then :
-  $as_echo "                    VideoLAN x264 : no"
-else
+   if ${HAVE_X264+:} false; then :
   $as_echo "                    VideoLAN x264 : ${HAVE_X264}"
+else
+  $as_echo "                    VideoLAN x264 : no"
 
 fi
 
 
-   if test "x${HAVE_OPENH264}" = "x"; then :
-  $as_echo "                   Cisco OpenH264 : no"
-else
+   if ${HAVE_OPENH264+:} false; then :
   $as_echo "                   Cisco OpenH264 : ${HAVE_OPENH264}"
+else
+  $as_echo "                   Cisco OpenH264 : no"
 
 fi
 
 
-   if test "x${HAVE_VP8}" = "x"; then :
-  $as_echo "                              VP8 : no"
-else
+   if ${HAVE_VP8+:} false; then :
   $as_echo "                              VP8 : ${HAVE_VP8}"
+else
+  $as_echo "                              VP8 : no"
 
 fi
 
 
-   if test "x${HAVE_THEORA}" = "x"; then :
-  $as_echo "                           THEORA : no"
-else
+   if ${HAVE_THEORA+:} false; then :
   $as_echo "                           THEORA : ${HAVE_THEORA}"
+else
+  $as_echo "                           THEORA : no"
 
 fi
 
 
-   if test "x${HAVE_MPEG4}" = "x"; then :
-  $as_echo "                     MPEG4 Part 2 : no"
-else
+   if ${HAVE_MPEG4+:} false; then :
   $as_echo "                     MPEG4 Part 2 : ${HAVE_MPEG4}"
+else
+  $as_echo "                     MPEG4 Part 2 : no"
 
 fi
 
 
    $as_echo ""
 
-   if test "x${HAVE_SPANDSP}" = "x"; then :
-  $as_echo "                     SpanDSP FAX  : no"
-else
+   if ${HAVE_SPANDSP+:} false; then :
   $as_echo "                     SpanDSP FAX  : ${HAVE_SPANDSP}"
+else
+  $as_echo "                     SpanDSP FAX  : no"
 
 fi
 
 
    $as_echo ""
 
-   if test "x${HAVE_VPB}" = "x"; then :
-  $as_echo "         Voicetronics VPB support : no"
-else
+   if ${HAVE_VPB+:} false; then :
   $as_echo "         Voicetronics VPB support : ${HAVE_VPB}"
+else
+  $as_echo "         Voicetronics VPB support : no"
 
 fi
 
