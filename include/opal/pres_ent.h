@@ -544,7 +544,7 @@ class OpalPresentity : public PSafeObject
     ReceivedMessageNotifier      m_onReceivedMessageNotifier;
 #endif // OPAL_HAS_IM
 
-    PAtomicBoolean m_open;
+    atomic<bool> m_open;
     PMutex m_notificationMutex;
     bool m_temporarilyUnavailable;
     OpalPresenceInfo m_localInfo;
@@ -629,7 +629,7 @@ class OpalPresentityWithCommandThread : public OpalPresentity
     typedef std::queue<OpalPresentityCommand *> CommandQueue;
     CommandQueue   m_commandQueue;
     PMutex         m_commandQueueMutex;
-    PAtomicInteger m_commandSequence;
+    atomic<uint32_t> m_commandSequence;
     PSyncPoint     m_commandQueueSync;
 
     bool      m_threadRunning;
@@ -658,7 +658,7 @@ class OpalPresentityCommand {
     static OpalPresentityCommand * Create(OpalPresentity & presentity, const char * cmdName);
     static PDefaultPFactoryKey MakeKey(const char * className, const char * cmdName);
 
-    typedef PAtomicInteger::IntegerType CmdSeqType;
+    typedef uint32_t CmdSeqType;
     CmdSeqType m_sequence;
     bool       m_responseNeeded;
     PURL       m_presentity;

@@ -2077,7 +2077,7 @@ class OpalManager : public PObject
     PList<OpalEndPoint> endpointList;
     std::map<PString, OpalEndPoint *> endpointMap;
 
-    PAtomicInteger lastCallTokenID;
+    atomic<uint32_t> lastCallTokenID;
 
     class CallDict : public PSafeDictionary<PString, OpalCall>
     {
@@ -2091,7 +2091,7 @@ class OpalManager : public PObject
     PSafeDictionary<PString, OpalPresentity> m_presentities;
 #endif // OPAL_HAS_PRESENCE
 
-    PAtomicInteger m_clearingAllCallsCount;
+    atomic<uint32_t> m_clearingAllCallsCount;
     PMutex         m_clearingAllCallsMutex;
     PSyncPoint     m_allCallsCleared;
     void InternalClearAllCalls(OpalConnection::CallEndReason reason, bool wait, bool first);

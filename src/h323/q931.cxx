@@ -522,7 +522,7 @@ PString Q931::GetMessageTypeName() const
 
 unsigned Q931::GenerateCallReference()
 {
-  static PAtomicInteger lastCallReference;
+  static atomic<uint32_t> lastCallReference;
 
   unsigned ref = ++lastCallReference & 0x7fff;
   if (ref == 0)

@@ -179,7 +179,7 @@ class OpalMSRPManager : public PObject
         bool m_running;
         PThread * m_handlerThread;
         bool m_originating;
-        PAtomicInteger m_refCount;
+        atomic<uint32_t> m_refCount;
     };
 
     //
@@ -246,7 +246,7 @@ class OpalMSRPManager : public PObject
     OpalManager & opalManager;
     WORD m_listenerPort;
     PMutex mutex;
-    PAtomicInteger lastID;
+    atomic<uint32_t> lastID;
     PTCPSocket m_listenerSocket;
     PThread * m_listenerThread;
 

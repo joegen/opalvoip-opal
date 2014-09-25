@@ -281,7 +281,7 @@ class OpalFaxConnection : public OpalLocalConnection
     PTimer m_switchTimer;
 
     OpalMediaStatistics m_finalStatistics;
-    PAtomicBoolean      m_completed;
+    atomic<bool>        m_completed;
 };
 
 
