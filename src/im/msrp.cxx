@@ -704,7 +704,7 @@ OpalMSRPManager::Connection::Connection(OpalMSRPManager & manager, const std::st
   PTRACE(3, "MSRP\tCreating connection");
   if (m_protocol == NULL)
     m_protocol = new MSRPProtocol();
-  m_refCount.SetValue(1);
+  m_refCount = 1;
 }
 
 void OpalMSRPManager::Connection::StartHandler()

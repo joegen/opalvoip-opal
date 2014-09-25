@@ -785,7 +785,7 @@ class OpalMixerEndPoint : public OpalLocalEndPoint, public OpalMixerNodeManager
     OpalMixerNodeInfo  * m_adHocNodeInfo;
     OpalMixerNodeInfo  * m_factoryNodeInfo;
     PMutex               m_infoMutex; // For above two fields
-    PAtomicInteger       m_factoryIndex;
+    atomic<uint32_t>     m_factoryIndex;
 };
 
 
@@ -1288,7 +1288,7 @@ class OpalMixerNode : public PSafeObject
     PStringSet             m_names;
     OpalMixerNodeInfo    * m_info;
     PTime                  m_creationTime;
-    PAtomicBoolean         m_shuttingDown;
+    atomic<bool>           m_shuttingDown;
 
     PSafeList<OpalConnection> m_connections;
     PString                   m_ownerConnection;

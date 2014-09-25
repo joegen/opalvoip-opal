@@ -46,6 +46,7 @@
 #include <ptclib/pxml.h>
 #include <ptclib/threadpool.h>
 #include <opal/transports.h>
+#include <opal/pres_ent.h>
 #include <rtp/rtpconn.h>
 
  
@@ -1525,10 +1526,10 @@ class SIPMessage : public SIPTransaction
         m_expire = 3600; // Try to get mesage through for an hour
       }
 
-      PCaselessString             m_contentType;
-      PString                     m_id;
-      PString                     m_body;
-      PAtomicInteger::IntegerType m_messageId;
+      PCaselessString   m_contentType;
+      PString           m_id;
+      PString           m_body;
+      OpalIM::MessageID m_messageId;
     };
 
     SIPMessage(

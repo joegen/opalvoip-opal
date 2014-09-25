@@ -91,10 +91,11 @@ class OpalIM : public PObject
     PString               m_fromName; ///< Alias (human readable) name for source of message
     PStringToString       m_bodies;   ///< Map of MIME types to body text, e.g. "text/plain", "Hello Bob!"
 
-    PAtomicInteger::IntegerType m_messageId;  /**< Unique identifier for OpalIM instance for matching
-                                                   multiple simultaneous message states. */
+    typedef uint32_t MessageID;
+    MessageID m_messageId;            /**< Unique identifier for OpalIM instance for matching
+                                           multiple simultaneous message states. */
 
-    static PAtomicInteger::IntegerType GetNextMessageId();
+    static MessageID GetNextMessageId();
 };
 
 
@@ -201,9 +202,9 @@ class OpalIMContext : public PSafeObject
     /**Information on the message disposition.
       */
     struct DispositionInfo {
-      PString                     m_conversationId; ///< Conversation ID to get OpalIMContext
-      PAtomicInteger::IntegerType m_messageId;      ///< Id of message disposition is of
-      MessageDisposition          m_disposition;    ///< Disposition status
+      PString            m_conversationId; ///< Conversation ID to get OpalIMContext
+      OpalIM::MessageID  m_messageId;      ///< Id of message disposition is of
+      MessageDisposition m_disposition;    ///< Disposition status
     };
 
     /**Callback indicating the dispostion of a messagesent via Send().

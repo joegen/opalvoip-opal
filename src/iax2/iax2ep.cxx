@@ -63,7 +63,7 @@ IAX2EndPoint::IAX2EndPoint(OpalManager & mgr)
   transmitter = NULL;
   receiver = NULL;
   sock = NULL;
-  callsEstablished.SetValue(0);
+  callsEstablished = 0;
 
   IAX2IeCallToken::InitialiseKey();
   //We handle the deletion of regProcessor objects.

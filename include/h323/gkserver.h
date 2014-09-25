@@ -1788,10 +1788,10 @@ class H323GatekeeperServer : public H323TransactionServer
 
     PINDEX         m_peakRegistrations;
     PINDEX         m_totalRegistrations;
-    PAtomicInteger m_rejectedRegistrations;
+    atomic<uint32_t> m_rejectedRegistrations;
     PINDEX         m_peakCalls;
     PINDEX         m_totalCalls;
-    PAtomicInteger m_rejectedCalls;
+    atomic<uint32_t> m_rejectedCalls;
 
   friend class H323GatekeeperRRQ;
   friend class H323GatekeeperARQ;

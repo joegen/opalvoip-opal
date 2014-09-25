@@ -1267,7 +1267,7 @@ OpalMixerNode::~OpalMixerNode()
 
 void OpalMixerNode::ShutDown()
 {
-  if (m_shuttingDown.TestAndSet(true))
+  if (m_shuttingDown.exchange(true))
     return;
 
   PTRACE(4, "Shutting down " << *this);

@@ -542,7 +542,7 @@ void SIPHandler::OnExpireTimeout()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static PAtomicInteger LastRegId;
+static atomic<uint32_t> LastRegId;
 
 SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister::Params & params)
   : SIPHandler(SIP_PDU::Method_REGISTER, endpoint, params)

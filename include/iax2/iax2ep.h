@@ -499,7 +499,7 @@ class IAX2EndPoint : public OpalEndPoint
 
   /**Thread safe counter which keeps track of the calls created by this endpoint.
      This value is used when giving outgoing calls a unique ID */
-  PAtomicInteger callsEstablished;
+  atomic<uint32_t> callsEstablished;
 
   /**Local copy of the media types we can handle*/
   OpalMediaFormatList localMediaFormats;

@@ -1074,7 +1074,7 @@ void OpalFaxConnection::InternalOpenFaxStreams()
 
 void OpalFaxConnection::InternalOnFaxCompleted()
 {
-  if (m_completed.TestAndSet(true))
+  if (m_completed.exchange(true))
     return;
 
   PTRACE(4, "FAX", "OnFaxCompleted, result=" << m_finalStatistics.m_fax.m_result);
