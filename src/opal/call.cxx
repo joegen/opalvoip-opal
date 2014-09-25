@@ -182,7 +182,7 @@ void OpalCall::InternalOnClear()
   if (!connectionsActive.IsEmpty())
     return;
 
-  if (m_isCleared.TestAndSet(true))
+  if (m_isCleared.exchange(true))
     return;
 
   OnCleared();

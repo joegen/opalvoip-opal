@@ -332,7 +332,7 @@ class H323Channel : public PObject
     H323ChannelNumber      number;
     H323ChannelNumber      reverseChannel;
     bool                   opened;
-    PAtomicInteger         m_terminating;
+    atomic<uint32_t>       m_terminating;
 
   private:
     OpalBandwidth m_bandwidthUsed;

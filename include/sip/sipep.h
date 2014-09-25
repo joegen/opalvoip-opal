@@ -1062,7 +1062,7 @@ class SIPEndPoint : public OpalSDPEndPoint
 
     PSafeSortedList<SIPTransactionBase> m_transactions;
 
-    PAtomicInteger m_lastSentCSeq;
+    atomic<uint32_t> m_lastSentCSeq;
     int            m_defaultAppearanceCode;
 
     struct RegistrationCompletion {

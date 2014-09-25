@@ -214,7 +214,7 @@ protected:
   SIPURLList           m_contactAddresses;
   SIPURLList           m_serviceRoute;
   OpalTransportAddress m_externalAddress;
-  PAtomicInteger::IntegerType m_rfc5626_reg_id;
+  uint32_t             m_rfc5626_reg_id;
 };
 
 

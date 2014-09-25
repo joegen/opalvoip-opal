@@ -62,9 +62,9 @@ OpalIM::OpalIM()
 }
 
 
-PAtomicInteger::IntegerType OpalIM::GetNextMessageId()
+OpalIM::MessageID OpalIM::GetNextMessageId()
 {
-  static PAtomicInteger messageIdCounter;
+  static atomic<OpalIM::MessageID> messageIdCounter;
   return ++messageIdCounter;
 }
 

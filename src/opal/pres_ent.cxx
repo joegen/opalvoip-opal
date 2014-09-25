@@ -163,7 +163,7 @@ OpalPresentity * OpalPresentity::Create(OpalManager & manager, const PURL & url,
 
 bool OpalPresentity::Open()
 {
-  if (m_open.TestAndSet(true))
+  if (m_open.exchange(true))
     return false; // Already open
 
   PTRACE(3, m_aor << " opening.");
@@ -173,7 +173,7 @@ bool OpalPresentity::Open()
 
 bool OpalPresentity::Close()
 {
-  if (!m_open.TestAndSet(false))
+  if (!m_open.exchange(false))
     return false; // Aleady closed
 
   PTRACE(3, m_aor << " closing.");

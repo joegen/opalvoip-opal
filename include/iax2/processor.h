@@ -314,10 +314,10 @@ class IAX2Processor : public PThread
   PBoolean ProcessOneIncomingEthernetFrame();
   
   /**Count of the number of control frames sent */
-  PAtomicInteger controlFramesSent;
+  atomic<uint32_t> controlFramesSent;
   
   /**Count of the number of control frames received */
-  PAtomicInteger controlFramesRcvd;
+  atomic<uint32_t> controlFramesRcvd;
   
   /**Increment the count of full frames sent*/
   void IncControlFramesSent() { ++controlFramesSent; }

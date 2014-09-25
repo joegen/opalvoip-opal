@@ -461,16 +461,16 @@ class IAX2CallProcessor : public IAX2Processor
   IAX2FullFrameProtocol *BuildNewFrameForSending(IAX2FullFrameProtocol *inReplyTo = NULL);
   
   /**Count of the number of sound frames sent */
-  PAtomicInteger audioFramesSent;
+  atomic<uint32_t> audioFramesSent;
   
   /**Count of the number of sound frames received */
-  PAtomicInteger audioFramesRcvd;
+  atomic<uint32_t> audioFramesRcvd;
   
   /**Count of the number of video frames sent */
-  PAtomicInteger videoFramesSent;
+  atomic<uint32_t> videoFramesSent;
   
   /**Count of the number of video frames received */
-  PAtomicInteger videoFramesRcvd;
+  atomic<uint32_t> videoFramesRcvd;
   
   /**Phone number of the remote  endpoint */
   SafeString remotePhoneNumber;
