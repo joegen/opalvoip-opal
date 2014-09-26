@@ -508,7 +508,6 @@ OpalMSRPManager::OpalMSRPManager(OpalManager & _opalManager, WORD _port)
   : opalManager(_opalManager)
   , m_listenerPort(_port)
   , m_listenerThread(NULL)
-  , lastID(0)
 {
   if (m_listenerSocket.Listen(5, m_listenerPort, PSocket::CanReuseAddress)) 
     m_listenerThread = new PThreadObj<OpalMSRPManager>(*this, &OpalMSRPManager::ListenerThread);
