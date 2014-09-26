@@ -62,10 +62,11 @@ OpalIM::OpalIM()
 }
 
 
+static atomic<OpalIM::MessageID> s_messageIdCounter;
+
 OpalIM::MessageID OpalIM::GetNextMessageId()
 {
-  static atomic<OpalIM::MessageID> messageIdCounter(0);
-  return ++messageIdCounter;
+  return ++s_messageIdCounter;
 }
 
 
