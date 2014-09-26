@@ -60,6 +60,7 @@ OpalCall::OpalCall(OpalManager & mgr)
   , m_isEstablished(false)
   , m_isClearing(false)
   , m_handlingHold(false)
+  , m_isCleared(false)
   , callEndReason(OpalConnection::NumCallEndReasons)
 #if OPAL_HAS_MIXER
   , m_recordManager(NULL)

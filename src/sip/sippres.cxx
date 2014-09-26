@@ -562,7 +562,7 @@ void SIP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceComman
 
   SIPPresenceInfo sipPresence(cmd);
 
-  static atomic<uint32_t> g_idNumber;
+  static atomic<uint32_t> g_idNumber(0);
   sipPresence.m_personId = PString(++g_idNumber);
   SetPIDFEntity(sipPresence.m_entity);
   sipPresence.m_contact =  m_aor;  // As required by OMA-TS-Presence_SIMPLE-V2_0-20090917-C

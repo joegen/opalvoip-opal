@@ -2612,6 +2612,8 @@ void H323GatekeeperListener::OnReceiveFeatureSet(H460_MessageType pduType, const
 
 H323GatekeeperServer::H323GatekeeperServer(H323EndPoint & ep)
   : H323TransactionServer(ep)
+  , m_rejectedRegistrations(0)
+  , m_rejectedCalls(0)
 {
   m_totalBandwidth = UINT_MAX;      // Unlimited total bandwidth
   m_usedBandwidth = 0;              // None used so far

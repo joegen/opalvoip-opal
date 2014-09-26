@@ -505,7 +505,10 @@ void OpalMSRPMediaStream::OnReceiveMSRP(OpalMSRPManager &, OpalMSRPManager::Inco
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 OpalMSRPManager::OpalMSRPManager(OpalManager & _opalManager, WORD _port)
-  : opalManager(_opalManager), m_listenerPort(_port), m_listenerThread(NULL)
+  : opalManager(_opalManager)
+  , m_listenerPort(_port)
+  , m_listenerThread(NULL)
+  , lastID(0)
 {
   if (m_listenerSocket.Listen(5, m_listenerPort, PSocket::CanReuseAddress)) 
     m_listenerThread = new PThreadObj<OpalMSRPManager>(*this, &OpalMSRPManager::ListenerThread);
@@ -699,12 +702,12 @@ OpalMSRPManager::Connection::Connection(OpalMSRPManager & manager, const std::st
   , m_protocol(protocol)
   , m_running(true)
   , m_handlerThread(NULL)
+  , m_refCount(1)
 
 {
   PTRACE(3, "MSRP\tCreating connection");
   if (m_protocol == NULL)
     m_protocol = new MSRPProtocol();
-  m_refCount = 1;
 }
 
 void OpalMSRPManager::Connection::StartHandler()

@@ -72,6 +72,10 @@
 
 IAX2CallProcessor::IAX2CallProcessor(IAX2EndPoint &ep)
   : IAX2Processor(ep)
+  , audioFramesSent(0)
+  , audioFramesRcvd(0)
+  , videoFramesSent(0)
+  , videoFramesRcvd(0)
 {
   callStatus = 0;
   
