@@ -113,8 +113,10 @@ PString IAX2WaitingForAck::GetResponseAsString() const
 ////////////////////////////////////////////////////////////////////////////////
 
 IAX2Processor::IAX2Processor(IAX2EndPoint &ep)
-  : PThread(1000, NoAutoDeleteThread, NormalPriority, "IAX2 Processor"),
-    endpoint(ep)
+  : PThread(1000, NoAutoDeleteThread, NormalPriority, "IAX2 Processor")
+  , endpoint(ep)
+  , controlFramesSent(0)
+  , controlFramesRcvd(0)
 {
   endThread = false;
   

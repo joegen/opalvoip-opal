@@ -786,6 +786,7 @@ OpalFaxConnection::OpalFaxConnection(OpalCall        & call,
   , m_disableT38(disableT38)
   , m_switchTime(0)
   , m_tiffFileFormat(TIFF_File_FormatName)
+  , m_completed(false)
 {
   SetFaxMediaFormatOptions(m_tiffFileFormat);
 

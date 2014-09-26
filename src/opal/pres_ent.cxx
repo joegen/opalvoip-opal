@@ -121,6 +121,7 @@ PObject::Comparison OpalPresenceInfo::Compare(const PObject & obj) const
 
 OpalPresentity::OpalPresentity()
   : m_manager(NULL)
+  , m_open(false)
   , m_temporarilyUnavailable(false)
   , m_localInfo(OpalPresenceInfo::NoPresence)
 {
@@ -130,6 +131,7 @@ OpalPresentity::OpalPresentity()
 OpalPresentity::OpalPresentity(const OpalPresentity & other)
   : PSafeObject(other)
   , m_manager(other.m_manager)
+  , m_open(false)
   , m_attributes(other.m_attributes)
   , m_temporarilyUnavailable(false)
   , m_localInfo(OpalPresenceInfo::NoPresence)
@@ -536,7 +538,8 @@ OPAL_PRESENTITY_COMMAND(OpalSendMessageToCommand, OpalPresentity, Internal_SendM
 /////////////////////////////////////////////////////////////////////////////
 
 OpalPresentityWithCommandThread::OpalPresentityWithCommandThread()
-  : m_threadRunning(false)
+  : m_commandSequence(0)
+  , m_threadRunning(false)
   , m_queueRunning(false)
   , m_thread(NULL)
 {
@@ -546,6 +549,7 @@ OpalPresentityWithCommandThread::OpalPresentityWithCommandThread()
 OpalPresentityWithCommandThread::OpalPresentityWithCommandThread(
                            const OpalPresentityWithCommandThread & other)
   : OpalPresentity(other)
+  , m_commandSequence(0)
   , m_threadRunning(false)
   , m_queueRunning(false)
   , m_thread(NULL)

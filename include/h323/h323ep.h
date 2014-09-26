@@ -1410,7 +1410,7 @@ class H323EndPoint : public OpalRTPEndPoint
 
 #if OPAL_H450
     H323CallIdentityDict   m_secondaryConnectionsActive;
-    mutable atomic<uint32_t> m_nextH450CallIdentity;
+    mutable atomic<unsigned> m_nextH450CallIdentity;
             /// Next available callIdentity for H450 Transfer operations via consultation.
 #endif
 

@@ -627,10 +627,10 @@ class OpalPresentityWithCommandThread : public OpalPresentity
     void ThreadMain();
 
     typedef std::queue<OpalPresentityCommand *> CommandQueue;
-    CommandQueue   m_commandQueue;
-    PMutex         m_commandQueueMutex;
-    atomic<uint32_t> m_commandSequence;
-    PSyncPoint     m_commandQueueSync;
+    CommandQueue     m_commandQueue;
+    PMutex           m_commandQueueMutex;
+    atomic<unsigned> m_commandSequence;
+    PSyncPoint       m_commandQueueSync;
 
     bool      m_threadRunning;
     bool      m_queueRunning;
