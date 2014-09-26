@@ -246,7 +246,6 @@ class OpalMSRPManager : public PObject
     OpalManager & opalManager;
     WORD m_listenerPort;
     PMutex mutex;
-    atomic<uint32_t> lastID;
     PTCPSocket m_listenerSocket;
     PThread * m_listenerThread;
 
