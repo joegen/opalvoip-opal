@@ -97,6 +97,8 @@ OPAL_PRESENTITY_COMMAND(OpalAuthorisationRequestCommand, SIP_Presentity, Interna
 
 static const char * const AuthNames[OpalPresentity::NumAuthorisations] = { "allow", "block", "polite-block", "confirm", "remove" };
 
+static atomic<unsigned> NextRuleId(PRandom::Number());
+
 
 //////////////////////////////////////////////////////////////////////////////////////
 
@@ -556,13 +558,14 @@ void SIP_Presentity::OnReceivedWatcherStatus(PXMLElement * watcher)
 }
 
 
+static atomic<uint32_t> g_idNumber;
+
 void SIP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceCommand & cmd)
 {
   PTRACE(3, "SIPPres\t'" << m_aor << "' sending own presence " << cmd.m_state << "/" << cmd.m_note);
 
   SIPPresenceInfo sipPresence(cmd);
 
-  static atomic<uint32_t> g_idNumber(0);
   sipPresence.m_personId = PString(++g_idNumber);
   SetPIDFEntity(sipPresence.m_entity);
   sipPresence.m_contact =  m_aor;  // As required by OMA-TS-Presence_SIMPLE-V2_0-20090917-C
@@ -756,7 +759,6 @@ void SIP_Presentity::Internal_AuthorisationRequest(const OpalAuthorisationReques
   }
 
   // Create new rule with id as per http://www.w3.org/TR/1999/REC-xml-names-19990114/#NT-NCName
-  static atomic<uint32_t> NextRuleId(PRandom::Number());
   PString newRuleId(PString::Printf, "wp_prs%s_one_%lu",
                     cmd.m_authorisation == AuthorisationPermitted ? "_allow" : "",
                     ++NextRuleId);
