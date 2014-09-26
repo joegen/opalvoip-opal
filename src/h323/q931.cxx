@@ -520,13 +520,13 @@ PString Q931::GetMessageTypeName() const
 }
 
 
+static atomic<unsigned> s_lastCallReference;
+
 unsigned Q931::GenerateCallReference()
 {
-  static atomic<unsigned> lastCallReference(0);
-
-  unsigned ref = ++lastCallReference & 0x7fff;
+  unsigned ref = ++s_lastCallReference & 0x7fff;
   if (ref == 0)
-    ref = ++lastCallReference & 0x7fff;
+    ref = ++s_lastCallReference & 0x7fff;
 
   return ref;
 }
