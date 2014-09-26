@@ -1062,8 +1062,8 @@ class SIPEndPoint : public OpalSDPEndPoint
 
     PSafeSortedList<SIPTransactionBase> m_transactions;
 
-    atomic<uint32_t> m_lastSentCSeq;
-    int            m_defaultAppearanceCode;
+    atomic<unsigned> m_lastSentCSeq;
+    int              m_defaultAppearanceCode;
 
     struct RegistrationCompletion {
       PSyncPoint           m_sync;

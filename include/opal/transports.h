@@ -1013,10 +1013,10 @@ class OpalTransport : public PSafeObject
     PTimer         m_keepAliveTimer;
     PBYTEArray     m_keepAliveData;
     PSimpleTimer   m_idleTimer;
-    atomic<uint32_t> m_referenceCount;
+    atomic<unsigned> m_referenceCount;
 
   private:
-    OpalTransport(const OpalTransport & other) : PSafeObject(other), m_endpoint(other.m_endpoint) { }
+    OpalTransport(const OpalTransport & other) : PSafeObject(other), m_endpoint(other.m_endpoint), m_referenceCount(0) { }
     void operator=(const OpalTransport &) { }
 };
 

@@ -785,6 +785,7 @@ OpalMixerEndPoint::OpalMixerEndPoint(OpalManager & manager, const char * prefix)
   , OpalMixerNodeManager(manager)
   , m_adHocNodeInfo(NULL)
   , m_factoryNodeInfo(NULL)
+  , m_factoryIndex(0)
 {
   PTRACE(4, "Constructed");
 }
@@ -1242,6 +1243,7 @@ OpalMixerNode::OpalMixerNode(OpalMixerNodeManager & manager,
                                 OpalMixerNodeInfo * info)
   : m_manager(manager)
   , m_info(info != NULL ? info : new OpalMixerNodeInfo)
+  , m_shuttingDown(false)
   , m_audioMixer(manager.CreateAudioMixer(*m_info))
 {
   PTRACE_CONTEXT_ID_NEW();

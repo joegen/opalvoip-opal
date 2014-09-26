@@ -107,6 +107,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   , m_gatekeeperRasRedirect(true)
   , m_gatekeeperMonitor(NULL)
   , m_gatekeeperMonitorStop(false)
+  , m_nextH450CallIdentity(0)
 #if OPAL_H460
   , m_features(NULL)
 #endif

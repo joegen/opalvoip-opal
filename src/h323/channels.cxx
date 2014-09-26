@@ -146,6 +146,7 @@ H323Channel::H323Channel(H323Connection & conn, const H323Capability & cap)
   , capability((H323Capability *)cap.Clone())
   , opened(false)
   , m_bandwidthUsed(0)
+  , m_terminating(false)
 {
   PTRACE_CONTEXT_ID_FROM(conn);
   PTRACE_CONTEXT_ID_TO(capability);
@@ -185,7 +186,7 @@ PBoolean H323Channel::GetMediaTransportAddress(OpalTransportAddress & /*data*/,
 
 void H323Channel::Close()
 {
-  if (m_terminating++ == 0)
+  if (!m_terminating.exchange(true))
     InternalClose();
 }
 
