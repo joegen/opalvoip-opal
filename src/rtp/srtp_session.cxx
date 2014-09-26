@@ -573,12 +573,15 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
     return e_IgnorePacket;
   }
 
-  frame.MakeUnique();
-
   int len = frame.GetPacketSize();
-  frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
-  if (!CHECK_ERROR(srtp_protect,(m_context, frame.GetPointer(), &len), frame.GetSyncSource(), frame.GetSequenceNumber()))
-    return e_AbortTransport;
+  {
+    PPROFILE_BLOCK("srtp_protect");
+    frame.MakeUnique();
+
+    frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
+    if (!CHECK_ERROR(srtp_protect, (m_context, frame.GetPointer(), &len), frame.GetSyncSource(), frame.GetSequenceNumber()))
+      return e_AbortTransport;
+  }
 
   PTRACE(m_traceLevel[e_Data][e_Sender], *this << "protected RTP packet: "
          << frame.GetPacketSize() << "->" << len << " SSRC=" << frame.GetSyncSource());
@@ -605,13 +608,16 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
     return OpalRTPSession::e_IgnorePacket;
   }
 
-  frame.MakeUnique();
-
   int len = frame.GetPacketSize();
-  frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
+  {
+    PPROFILE_BLOCK("srtp_protect_rtcp");
+    frame.MakeUnique();
 
-  if (!CHECK_ERROR(srtp_protect_rtcp,(m_context, frame.GetPointer(), &len), frame.GetSenderSyncSource()))
-    return OpalRTPSession::e_AbortTransport;
+    frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
+
+    if (!CHECK_ERROR(srtp_protect_rtcp, (m_context, frame.GetPointer(), &len), frame.GetSenderSyncSource()))
+      return OpalRTPSession::e_AbortTransport;
+  }
 
   PTRACE(m_traceLevel[e_Control][e_Sender], *this << "protected RTCP packet: "
          << frame.GetPacketSize() << "->" << len << " SSRC=" << frame.GetSenderSyncSource());
@@ -634,11 +640,13 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
     return OpalRTPSession::e_IgnorePacket;
   }
 
-  frame.MakeUnique();
-
   int len = frame.GetPacketSize();
-  if (!CHECK_ERROR(srtp_unprotect, (m_context, frame.GetPointer(), &len), frame.GetSyncSource(), frame.GetSequenceNumber()))
-    return OpalRTPSession::e_AbortTransport;
+  {
+    PPROFILE_BLOCK("srtp_unprotect");
+    frame.MakeUnique();
+    if (!CHECK_ERROR(srtp_unprotect, (m_context, frame.GetPointer(), &len), frame.GetSyncSource(), frame.GetSequenceNumber()))
+      return OpalRTPSession::e_AbortTransport;
+  }
 
   PTRACE(m_traceLevel[e_Data][e_Receiver], *this << "unprotected RTP packet: "
          << frame.GetPacketSize() << "->" << len << " SSRC=" << frame.GetSyncSource());
@@ -661,15 +669,18 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
     return OpalRTPSession::e_IgnorePacket;
   }
 
-  frame.MakeUnique();
-
-  /* Need to guarantee a receiver SSRC (their sender) even if never been told
-     about it, or we can't decrypt the RTCP packet. */
-  UseSyncSource(frame.GetSenderSyncSource(), e_Receiver, true);
-
   int len = frame.GetSize();
-  if (!CHECK_ERROR(srtp_unprotect_rtcp,(m_context, frame.GetPointer(), &len), frame.GetSenderSyncSource()))
-    return OpalRTPSession::e_AbortTransport;
+  {
+    PPROFILE_BLOCK("srtp_unprotect_rtcp");
+    frame.MakeUnique();
+
+    /* Need to guarantee a receiver SSRC (their sender) even if never been told
+       about it, or we can't decrypt the RTCP packet. */
+    UseSyncSource(frame.GetSenderSyncSource(), e_Receiver, true);
+
+    if (!CHECK_ERROR(srtp_unprotect_rtcp, (m_context, frame.GetPointer(), &len), frame.GetSenderSyncSource()))
+      return OpalRTPSession::e_AbortTransport;
+  }
 
   PTRACE(m_traceLevel[e_Control][e_Receiver], *this << "unprotected RTCP packet: "
          << frame.GetPacketSize() << "->" << len << " SSRC=" << frame.GetSenderSyncSource());
