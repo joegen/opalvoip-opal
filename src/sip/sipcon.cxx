@@ -66,6 +66,9 @@ static const char ApplicationMediaControlXMLKey[] = "application/media_control+x
 
 static SIP_PDU::StatusCodes GetStatusCodeFromReason(OpalConnection::CallEndReason reason)
 {
+  if (reason.code == OpalConnection::EndedByCustomCode)
+    return reason.custom < 200 ? SIP_PDU::Failure_InternalServerError : SIP_PDU::StatusCodes(reason.custom);
+
   static const struct {
     unsigned             q931Code;
     SIP_PDU::StatusCodes sipCode;
