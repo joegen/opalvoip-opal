@@ -436,7 +436,8 @@ class OpalConnection : public PSafeObject
       EndedByMediaFailed,            ///< Call cleared due to loss of media flow.
       EndedByCallCompletedElsewhere, ///< Call cleared because it was answered by another extension.
       EndedByCertificateAuthority,   ///< When using TLS, the remote certifcate was not authenticated
-      EndedByIllegalAddress          ///< Destination Address  format was incorrect format
+      EndedByIllegalAddress,         ///< Destination Address  format was incorrect format
+      EndedByCustomCode              ///< End call with custom protocol specific code (e.g. SIP)
     );
 
     struct CallEndReason {
@@ -452,8 +453,12 @@ class OpalConnection : public PSafeObject
 
       __inline int AsInteger() const { return code|(q931<<8); }
 
-      CallEndReasonCodes code:8; // Normalised OPAL code
-      unsigned           q931:8; // PSTN Interworking code, actually Q.850
+      CallEndReasonCodes code:8;    // Normalised OPAL code
+      union
+      {
+        unsigned         q931:16;   // PSTN Interworking code, actually Q.850
+        unsigned         custom:16; // Custom code
+      };
     };
 
 #if PTRACING
