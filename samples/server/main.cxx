@@ -513,6 +513,52 @@ PBoolean MyManager::Configure(PConfig & cfg, PConfigPage * rsrc)
     "media type, e.g. <code>@video</code> removes all video "
     "codecs."));
 
+  {
+    PString section = "Media Options";
+    PHTTPCompositeField * optionsFields = new PHTTPCompositeField(section + "\\Option %u\\", section,
+        "Default options for media formats.<p>"
+        "The \"Format\" field may contain wildcard '*' character, e.g. \"G.711*\""
+        " or begin with an '@' to indicate a media type, e.g. \"@audio\". The"
+        " media option will be set on all media formats that match.");
+    optionsFields->Append(new PHTTPBooleanField("Set", true));
+    optionsFields->Append(new PHTTPStringField("Format", 0, NULL, NULL, 1, 15));
+    optionsFields->Append(new PHTTPStringField("Option", 0, NULL, NULL, 1, 20));
+    optionsFields->Append(new PHTTPStringField("Value", 0, NULL, NULL, 1, 10));
+    PHTTPFieldArray * optionsArray = new PHTTPFieldArray(optionsFields, false);
+    rsrc->Add(optionsArray);
+
+    if (!optionsArray->LoadFromConfig(cfg)) {
+      for (PINDEX i = 0; i < optionsArray->GetSize(); ++i) {
+        PHTTPCompositeField & item = dynamic_cast<PHTTPCompositeField &>((*optionsArray)[i]);
+        if (item[0].GetValue() *= "true") {
+          PString wildcard = item[1].GetValue();
+          PString option = item[2].GetValue();
+          PString value = item[3].GetValue();
+
+          OpalMediaFormatList all;
+          OpalMediaFormat::GetAllRegisteredMediaFormats(all);
+
+          bool notSet = true;
+          OpalMediaFormatList::const_iterator it;
+          while ((it = all.FindFormat(wildcard, it)) != all.end()) {
+            if (const_cast<OpalMediaFormat &>(*it).SetOptionValue(option, value)) {
+              PSYSTEMLOG(Info, "Set media format \"" << *it << "\", option \"" << option << "\", to \"" << value << '"');
+              OpalMediaFormat::SetRegisteredMediaFormat(*it);
+              notSet = false;
+            }
+            else
+              PSYSTEMLOG(Warning, "Could not set media format \"" << *it << "\", option \"" << option << "\", to \"" << value << '"');
+          }
+          if (notSet) {
+            PSYSTEMLOG(Warning, "Could not set any media formats using wildcare \"" << wildcard << '"');
+            item[0].SetValue("false");
+            optionsArray->SaveToConfig(cfg);
+          }
+        }
+      }
+    }
+  }
+
   SetAudioJitterDelay(rsrc->AddIntegerField(MinJitterKey, 20, 2000, GetMinAudioJitterDelay(), "ms", "Minimum jitter buffer size"),
                       rsrc->AddIntegerField(MaxJitterKey, 20, 2000, GetMaxAudioJitterDelay(), "ms", "Maximum jitter buffer size"));
 
