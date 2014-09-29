@@ -17,11 +17,11 @@
 #undef G722_1_USE_FIXED_POINT
 
 #include <stdlib.h>
+#include <inttypes.h>
 #include <string.h>
 #include <limits.h>
 #include <time.h>
 #include <math.h>
-#include <inttypes.h>
 
 #include <g722_1/g722_1.h>
 
