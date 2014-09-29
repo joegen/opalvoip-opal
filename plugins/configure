@@ -7912,6 +7912,7 @@ int
 main ()
 {
 opus_get_version_string()
+
   ;
   return 0;
 }
@@ -7962,21 +7963,7 @@ $as_echo "$as_me: Using internal source for Opus Interactive Audio Codec" >&6;}
 
 
 
-   if test "x$usable" = "xyes"; then :
 
-      if test "x$OPUS_SYSTEM" != "xyes" ; then
-         if test -n "${srcdir}" && test `cd ${srcdir} ; pwd` != `pwd`; then
-            HAVE_OPUS="no (internal libopus does not support out-of-source configure)"
-            usable=no
-         else
-            subdirs="$subdirs ./audio/Opus/opus"
-
-            ac_configure_args="$ac_configure_args --with-pic"
-         fi
-      fi
-
-
-fi
 
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
@@ -8001,6 +7988,16 @@ fi
    fi
 
 
+if test "x$OPUS_SYSTEM" != "xyes" ; then
+   if test -n "${srcdir}" && test `cd ${srcdir} ; pwd` != `pwd`; then
+      HAVE_OPUS="no (internal libopus does not support out-of-source configure)"
+      usable=no
+   else
+      subdirs="$subdirs ./audio/Opus/opus"
+
+      ac_configure_args="$ac_configure_args --with-pic"
+   fi
+fi
 
 
 
