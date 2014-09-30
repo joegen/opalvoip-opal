@@ -97,6 +97,12 @@ void OpalMediaStream::PrintOn(ostream & strm) const
 }
 
 
+PString OpalMediaStream::GetPatchThreadName() const
+{
+  return PString::Empty(); // Use default
+}
+
+
 OpalMediaFormat OpalMediaStream::GetMediaFormat() const
 {
   return mediaFormat;

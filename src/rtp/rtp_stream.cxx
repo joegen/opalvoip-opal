@@ -260,6 +260,12 @@ PBoolean OpalRTPMediaStream::SetDataSize(PINDEX PTRACE_PARAM(dataSize), PINDEX /
 }
 
 
+PString OpalRTPMediaStream::GetPatchThreadName() const
+{
+  return PSTRSTRM((IsSource() ? 'R' : 'T') << "x " << GetMediaFormat().GetMediaType());
+}
+
+
 PBoolean OpalRTPMediaStream::IsSynchronous() const
 {
   // Sinks never block
