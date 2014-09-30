@@ -144,6 +144,8 @@ class OpalRTPMediaStream : public OpalMediaStream
       Details details = Details::All()
     ) const;
 
+    virtual PString GetPatchThreadName() const;
+
     void SetRewriteHeaders(bool v) { m_rewriteHeaders = v; }
 
 protected:

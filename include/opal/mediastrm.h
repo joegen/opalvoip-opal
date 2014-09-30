@@ -427,6 +427,7 @@ class OpalMediaStream : public PSafeObject
     ) const;
   //@}
 
+    virtual PString GetPatchThreadName() const;
     virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat);
     virtual bool InternalSetPaused(bool pause, bool fromUser, bool fromPatch);
     virtual bool InternalExecuteCommand(const OpalMediaCommand & command);
