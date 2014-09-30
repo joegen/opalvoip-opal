@@ -2358,7 +2358,7 @@ bool OpalRTPSession::WriteRawPDU(const BYTE * framePtr, PINDEX frameSize, bool t
 #if OPAL_RTP_FEC
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendRedundantFrame(RTP_DataFrame & frame)
 {
-  RTP_DataFrame red(0, frame.GetSize()*2);
+  RTP_DataFrame red((PINDEX)0, frame.GetSize()*2);
   red.CopyHeader(frame);
   red.SetPayloadType(m_redundencyPayloadType);
 
