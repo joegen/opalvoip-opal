@@ -110,7 +110,7 @@ PBoolean OpalTranscoder::ExecuteCommand(const OpalMediaCommand & command)
     const OpalMediaFlowControl * flow = dynamic_cast<const OpalMediaFlowControl *>(&command);
     if (flow != NULL) {
       unsigned bitRate = std::min(flow->GetMaxBitRate(), outputMediaFormat.GetMaxBandwidth());
-      if (outputMediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption()) != bitRate) {
+      if ((unsigned)outputMediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption()) != bitRate) {
         outputMediaFormat.SetOptionInteger(OpalMediaFormat::TargetBitRateOption(), bitRate);
         UpdateMediaFormats(OpalMediaFormat(), outputMediaFormat);
       }
