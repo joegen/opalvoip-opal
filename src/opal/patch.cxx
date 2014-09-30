@@ -158,7 +158,12 @@ void OpalMediaPatch::Start()
   }
 
   if (CanStart()) {
-    m_patchThread = new PThreadObj<OpalMediaPatch>(*this, &OpalMediaPatch::Main, false, "Media Patch", PThread::HighPriority);
+    PString threadName = m_source.GetPatchThreadName();
+    if (threadName.IsEmpty() && !m_sinks.empty())
+      threadName = m_sinks.front().m_stream->GetPatchThreadName();
+    if (threadName.IsEmpty())
+      threadName = "Media Patch";
+    m_patchThread = new PThreadObj<OpalMediaPatch>(*this, &OpalMediaPatch::Main, false, threadName, PThread::HighPriority);
     PTRACE_CONTEXT_ID_TO(m_patchThread);
     PThread::Yield();
     PTRACE(4, "Starting thread " << m_patchThread->GetThreadName());
