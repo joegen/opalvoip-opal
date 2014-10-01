@@ -17,11 +17,11 @@
 @G722_1_USE_FIXED_POINT@
 
 #include <stdlib.h>
-@INSERT_INTTYPES_HEADER@
 #include <string.h>
 #include <limits.h>
 #include <time.h>
 @INSERT_MATH_HEADER@
+@INSERT_INTTYPES_HEADER@
 
 #include <g722_1/g722_1.h>
 

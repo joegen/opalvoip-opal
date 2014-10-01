@@ -169,20 +169,18 @@ OPAL_SYSTEM_PLUGIN(
    [],
    [-lopus],
    [#include <opus.h>],
-   [opus_get_version_string()],
-   [
-      if test "x$OPUS_SYSTEM" != "xyes" ; then
-         if test -n "${srcdir}" && test `cd ${srcdir} ; pwd` != `pwd`; then
-            HAVE_OPUS="no (internal libopus does not support out-of-source configure)"
-            usable=no
-         else
-            AC_CONFIG_SUBDIRS(./audio/Opus/opus)
-            ac_configure_args="$ac_configure_args --with-pic"
-         fi
-      fi
-   ]
+   [opus_get_version_string()]
 )
 
+if test "x$OPUS_SYSTEM" != "xyes" ; then
+   if test -n "${srcdir}" && test `cd ${srcdir} ; pwd` != `pwd`; then
+      HAVE_OPUS="no (internal libopus does not support out-of-source configure)"
+      usable=no
+   else
+      AC_CONFIG_SUBDIRS(./audio/Opus/opus)
+      ac_configure_args="$ac_configure_args --with-pic"
+   fi
+fi
 
 dnl ########################################################################
 dnl Video Codecs
@@ -303,20 +301,26 @@ else
 fi
 
 
-OPAL_SYSTEM_PLUGIN(
-   [OPENH264],
-   [openh264],
-   [Cisco Open264 H.264 video codec],
-   [$PLUGIN_SRC_DIR/video/openh264],
-   [local-source],
+MY_LINK_IFELSE(
+   [Open H.264 shared library],
    [],
    [-lopenh264 -lpthread],
    [#include "$PLUGIN_SRC_DIR/video/openh264/svc/codec_api.h"],
    [
       ISVCEncoder * encoder;
       WelsCreateSVCEncoder(&encoder);
+   ],
+   OPAL_SYSTEM_PLUGIN(
+      [OPENH264],
+      [openh264],
+      [Cisco Open264 H.264 video codec],
+      [],
+      [local-source]
+   ),
+   [
+      HAVE_OPENH264="no (missing shared library)"
    ]
- )
+)
 
 OPAL_SYSTEM_PLUGIN(
    [VP8],
