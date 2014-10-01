@@ -2080,7 +2080,8 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
   m_manager.TranslateIPAddress(m_localAddress, m_remoteAddress);
 
   m_reportTimer.RunContinuous(m_reportTimer.GetResetTime());
-  m_thread = new PThreadObj<OpalRTPSession>(*this, &OpalRTPSession::ThreadMain, false, "RTP", PThread::HighPriority);
+  m_thread = new PThreadObj<OpalRTPSession>(*this, &OpalRTPSession::ThreadMain,
+                                            false, PSTRSTRM("RTP-"<<m_sessionId), PThread::HighPriority);
   PTRACE_CONTEXT_ID_TO(m_thread);
 
 #if PTRACING
