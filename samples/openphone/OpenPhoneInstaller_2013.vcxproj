@@ -40,13 +40,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\bin\$(ProjectName)\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\bin\OpenPhone\Installer\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)\$(Platform)\</IntDir>
     <ExtensionsToDeleteOnClean Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">*.wixobj%3b*.msi%3b$(TargetPath)</ExtensionsToDeleteOnClean>
     <ExtensionsToDeleteOnClean Condition="'$(Configuration)|$(Platform)'=='Release|x64'">*.wixobj%3b*.msi%3b$(TargetPath)</ExtensionsToDeleteOnClean>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>..\..\bin\$(ProjectName)\</OutDir>
+    <OutDir>..\..\bin\OpenPhone\Installer\</OutDir>
     <IntDir>$(OutDir)\$(Platform)\</IntDir>
     <TargetName>OpenPhone_$(Platform)</TargetName>
   </PropertyGroup>
@@ -175,11 +175,11 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling WiX ...</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">PATH "$(WIX)\bin";%PATH%
 candle -nologo -dMSVCRT_VER=$(PlatformToolsetVersion) -dPlatform=$(Platform) -dArchitecture=$(PlatformTargetAsMSBuildArchitecture) -out "$(IntDir)%(Filename).wixobj" "%(FullPath)"
-light -nologo -sice:ICE60 -sice:ICE61 -ext WixUIExtension -out "$(OutDir)$(TargetName).msi" "$(IntDir)%(Filename).wixobj"
+light -nologo -sice:ICE60 -sice:ICE61 -ext WixUIExtension -pdbout "$(IntDir)%(Filename).wixpdb" -out "$(OutDir)$(TargetName).msi" "$(IntDir)%(Filename).wixobj"
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">PATH "$(WIX)\bin";%PATH%
 candle -nologo -dMSVCRT_VER=$(PlatformToolsetVersion) -dPlatform=$(Platform) -dArchitecture=$(PlatformTargetAsMSBuildArchitecture) -out "$(IntDir)%(Filename).wixobj" "%(FullPath)"
-light -nologo -sice:ICE60 -sice:ICE61 -ext WixUIExtension -out "$(OutDir)$(TargetName).msi" "$(IntDir)%(Filename).wixobj"
+light -nologo -sice:ICE60 -sice:ICE61 -ext WixUIExtension -pdbout "$(IntDir)%(Filename).wixpdb" -out "$(OutDir)$(TargetName).msi" "$(IntDir)%(Filename).wixobj"
 </Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)$(TargetName).msi;%(Outputs)</Outputs>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)$(TargetName).msi;%(Outputs)</Outputs>
