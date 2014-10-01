@@ -471,6 +471,8 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_DataFrame & frame, RewriteMode rewrite)
 {
+  PPROFILE_FUNCTION();
+
   if (rewrite != e_RewriteNothing)
     frame.SetSyncSource(m_sourceIdentifier);
 
@@ -509,6 +511,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_DataFrame & frame, bool newData)
 {
+  PPROFILE_FUNCTION();
+
   RTP_SequenceNumber sequenceNumber = frame.GetSequenceNumber();
   RTP_SequenceNumber expectedSequenceNumber = m_lastSequenceNumber + 1;
 
@@ -620,6 +624,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnOutOfOrderPacket(RTP_DataFrame & frame)
 {
+  PPROFILE_FUNCTION();
+
   RTP_SequenceNumber sequenceNumber = frame.GetSequenceNumber();
   RTP_SequenceNumber expectedSequenceNumber = m_lastSequenceNumber + 1;
 
@@ -2330,6 +2336,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveICE(Channel channel,
 {
   if (m_iceServer == NULL)
     return e_ProcessPacket;
+
+  PPROFILE_FUNCTION();
 
   PSTUNMessage message(framePtr, frameSize, ap);
   if (!message.IsValid())
