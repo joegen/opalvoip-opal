@@ -674,6 +674,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnOutOfOrderPacket
 
 bool OpalRTPSession::SyncSource::HandlePendingFrames()
 {
+  PPROFILE_FUNCTION();
+
   while (!m_pendingPackets.empty()) {
     unsigned sequenceNumber = m_pendingPackets.back().GetSequenceNumber();
     unsigned expectedSequenceNumber = m_lastSequenceNumber + 1;
@@ -959,6 +961,8 @@ void OpalRTPSession::SyncSource::OnRxReceiverReport(const ReceiverReport & repor
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & frame, RewriteMode rewrite)
 {
+  PPROFILE_FUNCTION();
+
 #if OPAL_ICE
   SendReceiveStatus status;
   if ((status = OnSendICE(e_Data)) != e_ProcessPacket)
@@ -1257,6 +1261,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
 {
   if (frame.GetPacketSize() == 0)
     return e_IgnorePacket;
+
+  PPROFILE_FUNCTION();
 
   PTRACE(6, *this << "OnReceiveControl - " << frame);
 
