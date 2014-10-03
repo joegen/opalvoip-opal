@@ -762,6 +762,7 @@ bool OpalNonJitterBuffer::ReadData(RTP_DataFrame & frame, PTimeInterval tick)
     return false;
 
   frame = *data;
+  delete data;
   return true;
 }
 
