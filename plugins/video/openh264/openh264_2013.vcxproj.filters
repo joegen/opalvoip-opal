@@ -9,10 +9,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\SVN-3.14-Lacaille-2012\opal\plugins\video\common\encframe.h">
+    <ClInclude Include="..\common\encframe.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\SVN-3.14-Lacaille-2012\opal\plugins\video\common\h264frame.h">
+    <ClInclude Include="..\common\h264frame.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -20,10 +20,10 @@
     <ClCompile Include="openh264.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\SVN-3.14-Lacaille-2012\opal\plugins\video\common\h264frame.cxx">
+    <ClCompile Include="..\common\h264frame.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\SVN-3.14-Lacaille-2012\opal\plugins\video\common\encframe.cxx">
+    <ClCompile Include="..\common\encframe.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

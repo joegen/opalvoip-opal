@@ -2269,7 +2269,27 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
     SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
 
   SIPURL newRemotePartyID(request.GetMIME(), RemotePartyID);
-  if (newRemotePartyID.IsEmpty() || m_ciscoRemotePartyID == newRemotePartyID)
+  if (newRemotePartyID.IsEmpty())
+    UpdateRemoteAddresses();
+  else if (m_referInProgress) {
+    m_referInProgress = false;
+
+    UpdateRemoteAddresses();
+    PStringToString info = m_ciscoRemotePartyID.GetParamVars();
+    if (m_ciscoRemotePartyID == newRemotePartyID) {
+      // We did a REFER but remote address did not change party-ID
+      info.SetAt("result", "failed");
+      info.SetAt("party", "B");
+    }
+    else {
+      // We did a REFER and remote address did change party-ID
+      info.SetAt("result", "success");
+      info.SetAt("party", "B");
+      info.SetAt("Remote-Party", newRemotePartyID.AsString());
+    }
+    OnTransferNotify(info, this);
+  }
+  else if (m_ciscoRemotePartyID == newRemotePartyID)
     UpdateRemoteAddresses();
   else {
     PTRACE(3, "SIP\tOld style Remote-Party-ID used for transfer indication to \"" << newRemotePartyID << '"');
