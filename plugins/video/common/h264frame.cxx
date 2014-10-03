@@ -32,6 +32,9 @@
 #include "h264frame.h"
 
 
+static uint8_t const StartCode[] = { 0, 0, 0, 1 };
+
+
 H264Frame::H264Frame()
   : m_profile(0)
   , m_level(0)
@@ -69,8 +72,24 @@ void H264Frame::Allocate(uint32_t numberOfNALs)
 }
 
 
+static void SkipStartCode(const uint8_t * & payload, size_t & length)
+{
+  if (memcmp(payload, StartCode, sizeof(StartCode)) == 0) {
+    payload += sizeof(StartCode);
+    length -= sizeof(StartCode);
+  }
+  else if (memcmp(payload, StartCode+1, sizeof(StartCode)-1) == 0) {
+    payload += sizeof(StartCode)-1;
+    length -= sizeof(StartCode)-1;
+  }
+}
+
+
 bool H264Frame::AddNALU(uint8_t type, size_t length, const uint8_t * payload)
 {
+  if (payload != NULL)
+    SkipStartCode(payload, length);
+
   if (m_numberOfNALsInFrame + 1 >= m_NALs.size())
     m_NALs.resize(m_numberOfNALsInFrame + 1);
 
@@ -250,15 +269,7 @@ bool H264Frame::AddPacket(const PluginCodec_RTP & frame, unsigned & flags)
   size_t payloadSize = frame.GetPayloadSize();
 
   // Some clients stupidly send the start code in the RTP packet
-  static uint8_t const StartCode[4] = { 0, 0, 0, 1 };
-  if (payloadSize > 4 && memcmp(payloadPtr, StartCode, 4) == 0) {
-    payloadPtr += 4;
-    payloadSize -= 4;
-  }
-  else if (payloadSize > 3 && memcmp(payloadPtr, &StartCode[1], 3) == 0) {
-    payloadPtr += 3;
-    payloadSize -= 3;
-  }
+  SkipStartCode(payloadPtr, payloadSize);
 
   uint8_t curNALType = *payloadPtr & 0x1f;
 
@@ -432,8 +443,7 @@ bool H264Frame::AddDataToEncodedFrame(const uint8_t *data, size_t payloadSize, u
       SetSPS(data);
 
     // add 00 00 01 [headerbyte] header
-    static uint8_t const marker[] = { 0, 0, 0, 1 };
-    if (!Append(marker, sizeof(marker)) ||
+    if (!Append(StartCode, sizeof(StartCode)) ||
         !AddNALU(header & 0x1f, payloadSize + 1, NULL) ||
         !Append(&header, 1))
       return false;
