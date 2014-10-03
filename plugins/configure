@@ -1521,9 +1521,9 @@ Optional Features:
   --disable-mpeg4         disable MPEG4 part 2 video codec
   --disable-x264          disable VideoLan x264 H.264 video codec
   --enable-x264-licensed  enable commercially licensed x264
-  --disable-openh264      disable Cisco Open264 H.264 video codec
-  --enable-localopenh264  force use internal source for Cisco Open264 H.264
-                          video codec
+  --disable-openh264      disable Cisco Open H.264 video codec
+  --enable-localopenh264  force use internal source for Cisco Open H.264 video
+                          codec
   --disable-VP8           disable VP8 (WebM) video codec
   --disable-theora        disable Theora video codec
   --disable-vpb           disable Voicetronics VPB telephony card
@@ -1546,7 +1546,7 @@ Optional Packages:
                           location for FFMPEG libavutil library
   --with-x264-dir=<dir>   location for VideoLan x264 H.264 video codec
   --with-openh264-dir=<dir>
-                          location for Cisco Open264 H.264 video codec
+                          location for Cisco Open H.264 video codec
   --with-VP8-dir=<dir>    location for VP8 (WebM) video codec
   --with-theora-dir=<dir> location for Theora video codec
   --with-vpb-dir=<dir>    location for Voicetronics VPB telephony card
@@ -8060,6 +8060,7 @@ int
 main ()
 {
 opus_get_version_string()
+
   ;
   return 0;
 }
@@ -8115,21 +8116,7 @@ fi
 
 
 
-   if test "x$usable" = "xyes"; then :
 
-      if test "x$OPUS_SYSTEM" != "xyes" ; then
-         if test -n "${srcdir}" && test `cd ${srcdir} ; pwd` != `pwd`; then
-            HAVE_OPUS="no (internal libopus does not support out-of-source configure)"
-            usable=no
-         else
-            subdirs="$subdirs ./audio/Opus/opus"
-
-            ac_configure_args="$ac_configure_args --with-pic"
-         fi
-      fi
-
-
-fi
 
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
@@ -8154,6 +8141,16 @@ fi
    fi
 
 
+if test "x$OPUS_SYSTEM" != "xyes" ; then
+   if test -n "${srcdir}" && test `cd ${srcdir} ; pwd` != `pwd`; then
+      HAVE_OPUS="no (internal libopus does not support out-of-source configure)"
+      usable=no
+   else
+      subdirs="$subdirs ./audio/Opus/opus"
+
+      ac_configure_args="$ac_configure_args --with-pic"
+   fi
+fi
 
 
 
@@ -9094,6 +9091,41 @@ fi
 
 
 
+   MY_LINK_IFELSE_CPPFLAGS="$CPPFLAGS"
+   MY_LINK_IFELSE_LIBS="$LIBS"
+   CPPFLAGS="$CPPFLAGS "
+   LIBS="-lopenh264 -lpthread $LIBS"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Cisco Open H.264 shared library" >&5
+$as_echo_n "checking Cisco Open H.264 shared library... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include "$PLUGIN_SRC_DIR/video/openh264/svc/codec_api.h"
+int
+main ()
+{
+
+      ISVCEncoder * encoder;
+      WelsCreateSVCEncoder(&encoder);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$MY_LINK_IFELSE_CPPFLAGS"
+   LIBS="$MY_LINK_IFELSE_LIBS"
+
+   if test "x$usable" = "xyes"; then :
+
    if test -d "$PLUGIN_SRC_DIR/video/openh264" ; then
                   OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
@@ -9101,8 +9133,8 @@ fi
 
 
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Cisco Open264 H.264 video codec" >&5
-$as_echo_n "checking Cisco Open264 H.264 video codec... " >&6; }
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Cisco Open H.264 video codec" >&5
+$as_echo_n "checking Cisco Open H.264 video codec... " >&6; }
 
    # Check whether --enable-openh264 was given.
 if test "${enable_openh264+set}" = set; then :
@@ -9158,12 +9190,12 @@ if test "${enable_localopenh264+set}" = set; then :
   enableval=$enable_localopenh264; if test "x$enableval" = xyes; then :
 
                OPENH264_SYSTEM="no"
-               { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for Cisco Open264 H.264 video codec" >&5
-$as_echo "$as_me: Forced use of internal source for Cisco Open264 H.264 video codec" >&6;}
+               { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for Cisco Open H.264 video codec" >&5
+$as_echo "$as_me: Forced use of internal source for Cisco Open H.264 video codec" >&6;}
 
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: Using system source for Cisco Open264 H.264 video codec" >&5
-$as_echo "$as_me: Using system source for Cisco Open264 H.264 video codec" >&6;}
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Using system source for Cisco Open H.264 video codec" >&5
+$as_echo "$as_me: Using system source for Cisco Open H.264 video codec" >&6;}
 
 fi
 
@@ -9177,10 +9209,11 @@ fi
 # Check whether --with-openh264-dir was given.
 if test "${with_openh264_dir+set}" = set; then :
   withval=$with_openh264_dir;
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: Using directory $withval for Cisco Open264 H.264 video codec" >&5
-$as_echo "$as_me: Using directory $withval for Cisco Open264 H.264 video codec" >&6;}
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: Using directory $withval for Cisco Open H.264 video codec" >&5
+$as_echo "$as_me: Using directory $withval for Cisco Open H.264 video codec" >&6;}
                   OPENH264_CFLAGS="-I$withval/include "
-                  OPENH264_LIBS="-L$withval/lib -lopenh264 -lpthread"
+                  OPENH264_LIBS="-L$withval/lib -lopenh264 -lpthread
+   "
 
 else
 
@@ -9244,7 +9277,8 @@ fi
 
 
                      OPENH264_CFLAGS=""
-                     OPENH264_LIBS="-lopenh264 -lpthread"
+                     OPENH264_LIBS="-lopenh264 -lpthread
+   "
 
 
 elif test $pkg_failed = untried; then
@@ -9252,7 +9286,8 @@ elif test $pkg_failed = untried; then
 $as_echo "no" >&6; }
 
                      OPENH264_CFLAGS=""
-                     OPENH264_LIBS="-lopenh264 -lpthread"
+                     OPENH264_LIBS="-lopenh264 -lpthread
+   "
 
 
 else
@@ -9272,18 +9307,14 @@ fi
    MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $OPENH264_CFLAGS"
    LIBS="$OPENH264_LIBS $LIBS"
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Cisco Open264 H.264 video codec usability" >&5
-$as_echo_n "checking for Cisco Open264 H.264 video codec usability... " >&6; }
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Cisco Open H.264 video codec usability" >&5
+$as_echo_n "checking for Cisco Open H.264 video codec usability... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include "$PLUGIN_SRC_DIR/video/openh264/svc/codec_api.h"
+
 int
 main ()
 {
-
-      ISVCEncoder * encoder;
-      WelsCreateSVCEncoder(&encoder);
-
 
   ;
   return 0;
@@ -9326,8 +9357,8 @@ fi
                OPENH264_SYSTEM="no"
                OPENH264_CFLAGS=
                OPENH264_LIBS=
-               { $as_echo "$as_me:${as_lineno-$LINENO}: Using internal source for Cisco Open264 H.264 video codec" >&5
-$as_echo "$as_me: Using internal source for Cisco Open264 H.264 video codec" >&6;}
+               { $as_echo "$as_me:${as_lineno-$LINENO}: Using internal source for Cisco Open H.264 video codec" >&5
+$as_echo "$as_me: Using internal source for Cisco Open H.264 video codec" >&6;}
 
 fi
 
@@ -9363,6 +9394,14 @@ fi
    else
       HAVE_OPENH264="no (missing directory $PLUGIN_SRC_DIR/video/openh264)"
    fi
+
+else
+
+      HAVE_OPENH264="no (missing shared library)"
+
+
+fi
+
 
 
 
