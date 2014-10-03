@@ -883,7 +883,7 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>
             PTRACE(3, MY_CODEC_LOG, "No parameter sets received");
           if (status & dsDataErrorConcealed)
             PTRACE(4, MY_CODEC_LOG, "Data error concealed");
-          if (status > dsDataErrorConcealed)
+          if (status >= dsDataErrorConcealed*2)
             PTRACE(4, MY_CODEC_LOG, "Unknown error: status=0x" << std::hex << status);
           if (status != dsDataErrorConcealed)
             flags = PluginCodec_ReturnCoderRequestIFrame;
