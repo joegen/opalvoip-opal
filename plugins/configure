@@ -821,6 +821,7 @@ with_x264_dir
 enable_x264_licensed
 enable_openh264
 enable_localopenh264
+with_openh264_dir
 enable_VP8
 with_VP8_dir
 enable_theora
@@ -1518,6 +1519,9 @@ Optional Features:
   --disable-mpeg4         disable MPEG4 part 2 video codec
   --disable-x264          disable VideoLan x264 H.264 video codec
   --enable-x264-licensed  enable commercially licensed x264
+  --disable-openh264      disable Cisco Open H.264 video codec
+  --enable-localopenh264  force use internal source for Cisco Open H.264 video
+                          codec
   --disable-VP8           disable VP8 (WebM) video codec
   --disable-theora        disable Theora video codec
   --disable-vpb           disable Voicetronics VPB telephony card
@@ -1538,6 +1542,8 @@ Optional Packages:
   --with-libavutil-dir=<dir>
                           location for FFMPEG libavutil library
   --with-x264-dir=<dir>   location for VideoLan x264 H.264 video codec
+  --with-openh264-dir=<dir>
+                          location for Cisco Open H.264 video codec
   --with-VP8-dir=<dir>    location for VP8 (WebM) video codec
   --with-theora-dir=<dir> location for Theora video codec
   --with-vpb-dir=<dir>    location for Voicetronics VPB telephony card
@@ -1583,6 +1589,10 @@ Some influential environment variables:
               linker flags for LIBAVUTIL, overriding pkg-config
   X264_CFLAGS C compiler flags for X264, overriding pkg-config
   X264_LIBS   linker flags for X264, overriding pkg-config
+  OPENH264_CFLAGS
+              C compiler flags for OPENH264, overriding pkg-config
+  OPENH264_LIBS
+              linker flags for OPENH264, overriding pkg-config
   VP8_CFLAGS  C compiler flags for VP8, overriding pkg-config
   VP8_LIBS    linker flags for VP8, overriding pkg-config
   THEORA_CFLAGS
@@ -5060,18 +5070,18 @@ else
 /* end confdefs.h.  */
 
   /* For now, do not test the preprocessor; as of 2007 there are too many
-         implementations with broken preprocessors.  Perhaps this can
-         be revisited in 2012.  In the meantime, code should not expect
-         #if to work with literals wider than 32 bits.  */
+	 implementations with broken preprocessors.  Perhaps this can
+	 be revisited in 2012.  In the meantime, code should not expect
+	 #if to work with literals wider than 32 bits.  */
       /* Test literals.  */
       long long int ll = 9223372036854775807ll;
       long long int nll = -9223372036854775807LL;
       unsigned long long int ull = 18446744073709551615ULL;
       /* Test constant expressions.   */
       typedef int a[((-9223372036854775807LL < 0 && 0 < 9223372036854775807ll)
-                     ? 1 : -1)];
+		     ? 1 : -1)];
       typedef int b[(18446744073709551615ULL <= (unsigned long long int) -1
-                     ? 1 : -1)];
+		     ? 1 : -1)];
       int i = 63;
 int
 main ()
@@ -5080,9 +5090,9 @@ main ()
       long long int llmax = 9223372036854775807ll;
       unsigned long long int ullmax = 18446744073709551615ull;
       return ((ll << 63) | (ll >> 63) | (ll < i) | (ll > i)
-              | (llmax / ll) | (llmax % ll)
-              | (ull << 63) | (ull >> 63) | (ull << i) | (ull >> i)
-              | (ullmax / ull) | (ullmax % ull));
+	      | (llmax / ll) | (llmax % ll)
+	      | (ull << 63) | (ull >> 63) | (ull << i) | (ull >> i)
+	      | (ullmax / ull) | (ullmax % ull));
   ;
   return 0;
 }
@@ -5114,33 +5124,33 @@ if ${ac_cv_type_long_long_int+:} false; then :
 else
   ac_cv_type_long_long_int=yes
       if test "x${ac_cv_prog_cc_c99-no}" = xno; then
-        ac_cv_type_long_long_int=$ac_cv_type_unsigned_long_long_int
-        if test $ac_cv_type_long_long_int = yes; then
-                                        if test "$cross_compiling" = yes; then :
+	ac_cv_type_long_long_int=$ac_cv_type_unsigned_long_long_int
+	if test $ac_cv_type_long_long_int = yes; then
+	  	  	  	  if test "$cross_compiling" = yes; then :
   :
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <limits.h>
-                 #ifndef LLONG_MAX
-                 # define HALF \
-                          (1LL << (sizeof (long long int) * CHAR_BIT - 2))
-                 # define LLONG_MAX (HALF - 1 + HALF)
-                 #endif
+		 #ifndef LLONG_MAX
+		 # define HALF \
+			  (1LL << (sizeof (long long int) * CHAR_BIT - 2))
+		 # define LLONG_MAX (HALF - 1 + HALF)
+		 #endif
 int
 main ()
 {
 long long int n = 1;
-                 int i;
-                 for (i = 0; ; i++)
-                   {
-                     long long int m = n << i;
-                     if (m >> i != n)
-                       return 1;
-                     if (LLONG_MAX / 2 < m)
-                       break;
-                   }
-                 return 0;
+		 int i;
+		 for (i = 0; ; i++)
+		   {
+		     long long int m = n << i;
+		     if (m >> i != n)
+		       return 1;
+		     if (LLONG_MAX / 2 < m)
+		       break;
+		   }
+		 return 0;
   ;
   return 0;
 }
@@ -5154,7 +5164,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
-        fi
+	fi
       fi
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_type_long_long_int" >&5
@@ -5177,18 +5187,18 @@ else
 /* end confdefs.h.  */
 
   /* For now, do not test the preprocessor; as of 2007 there are too many
-         implementations with broken preprocessors.  Perhaps this can
-         be revisited in 2012.  In the meantime, code should not expect
-         #if to work with literals wider than 32 bits.  */
+	 implementations with broken preprocessors.  Perhaps this can
+	 be revisited in 2012.  In the meantime, code should not expect
+	 #if to work with literals wider than 32 bits.  */
       /* Test literals.  */
       long long int ll = 9223372036854775807ll;
       long long int nll = -9223372036854775807LL;
       unsigned long long int ull = 18446744073709551615ULL;
       /* Test constant expressions.   */
       typedef int a[((-9223372036854775807LL < 0 && 0 < 9223372036854775807ll)
-                     ? 1 : -1)];
+		     ? 1 : -1)];
       typedef int b[(18446744073709551615ULL <= (unsigned long long int) -1
-                     ? 1 : -1)];
+		     ? 1 : -1)];
       int i = 63;
 int
 main ()
@@ -5197,9 +5207,9 @@ main ()
       long long int llmax = 9223372036854775807ll;
       unsigned long long int ullmax = 18446744073709551615ull;
       return ((ll << 63) | (ll >> 63) | (ll < i) | (ll > i)
-              | (llmax / ll) | (llmax % ll)
-              | (ull << 63) | (ull >> 63) | (ull << i) | (ull >> i)
-              | (ullmax / ull) | (ullmax % ull));
+	      | (llmax / ll) | (llmax % ll)
+	      | (ull << 63) | (ull >> 63) | (ull << i) | (ull >> i)
+	      | (ullmax / ull) | (ullmax % ull));
   ;
   return 0;
 }
@@ -8933,8 +8943,8 @@ fi
    MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS "
    LIBS="-lopenh264 -lpthread $LIBS"
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Open H.264 shared library" >&5
-$as_echo_n "checking Open H.264 shared library... " >&6; }
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Cisco Open H.264 shared library" >&5
+$as_echo_n "checking Cisco Open H.264 shared library... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include "$PLUGIN_SRC_DIR/video/openh264/svc/codec_api.h"
@@ -8964,18 +8974,17 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-   if test -d "" ; then
+   if test -d "$PLUGIN_SRC_DIR/video/openh264" ; then
                   OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    OPENH264_SYSTEM="yes"
 
 
 
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Cisco Open264 H.264 video codec" >&5
-$as_echo_n "checking Cisco Open264 H.264 video codec... " >&6; }
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Cisco Open H.264 video codec" >&5
+$as_echo_n "checking Cisco Open H.264 video codec... " >&6; }
 
-     --disable-openh264      disable Cisco Open264 H.264 video codec
-# Check whether --enable-openh264 was given.
+   # Check whether --enable-openh264 was given.
 if test "${enable_openh264+set}" = set; then :
   enableval=$enable_openh264;
          if test "x$enableval" = "xno"; then
@@ -9026,18 +9035,16 @@ fi
 
    if test "x$usable" = "xyes" ; then
 
-           --enable-localopenh264  force use internal source for Cisco Open264 H.264
-                          video codec
-# Check whether --enable-localopenh264 was given.
+         # Check whether --enable-localopenh264 was given.
 if test "${enable_localopenh264+set}" = set; then :
   enableval=$enable_localopenh264;
                if test "x$enableval" = "xyes" ; then
                   OPENH264_SYSTEM="no"
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for Cisco Open264 H.264 video codec" >&5
-$as_echo "$as_me: Forced use of internal source for Cisco Open264 H.264 video codec" >&6;}
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: Forced use of internal source for Cisco Open H.264 video codec" >&5
+$as_echo "$as_me: Forced use of internal source for Cisco Open H.264 video codec" >&6;}
                else
-                  { $as_echo "$as_me:${as_lineno-$LINENO}: Using system source for Cisco Open264 H.264 video codec" >&5
-$as_echo "$as_me: Using system source for Cisco Open264 H.264 video codec" >&6;}
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: Using system source for Cisco Open H.264 video codec" >&5
+$as_echo "$as_me: Using system source for Cisco Open H.264 video codec" >&6;}
                fi
 
 
@@ -9045,10 +9052,17 @@ fi
 
 
       if test "x$OPENH264_SYSTEM" = "xyes" ; then
-           OPENH264_CFLAGS
-              C compiler flags for OPENH264, overriding pkg-config
-  OPENH264_LIBS
-              linker flags for OPENH264, overriding pkg-config
+
+# Check whether --with-openh264-dir was given.
+if test "${with_openh264_dir+set}" = set; then :
+  withval=$with_openh264_dir;
+                  { $as_echo "$as_me:${as_lineno-$LINENO}: Using directory $withval for Cisco Open H.264 video codec" >&5
+$as_echo "$as_me: Using directory $withval for Cisco Open H.264 video codec" >&6;}
+                  OPENH264_CFLAGS="-I$withval/include "
+                  OPENH264_LIBS="-L$withval/lib -lopenh264 -lpthread
+   "
+
+else
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OPENH264" >&5
@@ -9058,15 +9072,12 @@ if test -n "$OPENH264_CFLAGS"; then
     pkg_cv_OPENH264_CFLAGS="$OPENH264_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"
-   \""; } >&5
-  ($PKG_CONFIG --exists --print-errors "
-   ") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_OPENH264_CFLAGS=`$PKG_CONFIG --cflags "
-   " 2>/dev/null`
+  pkg_cv_OPENH264_CFLAGS=`$PKG_CONFIG --cflags "" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -9078,15 +9089,12 @@ if test -n "$OPENH264_LIBS"; then
     pkg_cv_OPENH264_LIBS="$OPENH264_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"
-   \""; } >&5
-  ($PKG_CONFIG --exists --print-errors "
-   ") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_OPENH264_LIBS=`$PKG_CONFIG --libs "
-   " 2>/dev/null`
+  pkg_cv_OPENH264_LIBS=`$PKG_CONFIG --libs "" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -9107,27 +9115,35 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        OPENH264_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "
-   " 2>&1`
+	        OPENH264_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "" 2>&1`
         else
-	        OPENH264_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "
-   " 2>&1`
+	        OPENH264_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$OPENH264_PKG_ERRORS" >&5
 
-	usable=no
+
+                     OPENH264_CFLAGS=""
+                     OPENH264_LIBS="-lopenh264 -lpthread
+   "
+
 
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-	usable=no
+
+                     OPENH264_CFLAGS=""
+                     OPENH264_LIBS="-lopenh264 -lpthread
+   "
+
 
 else
 	OPENH264_CFLAGS=$pkg_cv_OPENH264_CFLAGS
 	OPENH264_LIBS=$pkg_cv_OPENH264_LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
+
+fi
 
 fi
 
@@ -9138,8 +9154,8 @@ fi
    MY_LINK_IFELSE_LIBS="$LIBS"
    CPPFLAGS="$CPPFLAGS $OPENH264_CFLAGS"
    LIBS="$OPENH264_LIBS $LIBS"
-   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Cisco Open264 H.264 video codec usability" >&5
-$as_echo_n "checking for Cisco Open264 H.264 video codec usability... " >&6; }
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Cisco Open H.264 video codec usability" >&5
+$as_echo_n "checking for Cisco Open H.264 video codec usability... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9186,8 +9202,8 @@ fi
                OPENH264_SYSTEM="no"
                OPENH264_CFLAGS=
                OPENH264_LIBS=
-               { $as_echo "$as_me:${as_lineno-$LINENO}: Using internal source for Cisco Open264 H.264 video codec" >&5
-$as_echo "$as_me: Using internal source for Cisco Open264 H.264 video codec" >&6;}
+               { $as_echo "$as_me:${as_lineno-$LINENO}: Using internal source for Cisco Open H.264 video codec" >&5
+$as_echo "$as_me: Using internal source for Cisco Open H.264 video codec" >&6;}
             fi
 
       fi
@@ -9202,12 +9218,12 @@ $as_echo "$as_me: Using internal source for Cisco Open264 H.264 video codec" >&6
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
       if test "x$OPENH264_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS "
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/openh264"
          HAVE_OPENH264="yes (internal)"
       elif test "x$usable" = "xyes" ; then
 
 
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS "
+         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/openh264"
 
          if test "x$OPENH264_SYSTEM" = "xyes" ; then
             HAVE_OPENH264="yes (system)"
@@ -9215,11 +9231,10 @@ $as_echo "$as_me: Using internal source for Cisco Open264 H.264 video codec" >&6
             HAVE_OPENH264="yes"
          fi
       else
-         HAVE_OPENH264="no (package local-source
-    not found)"
+         HAVE_OPENH264="no (package local-source not found)"
       fi
    else
-      HAVE_OPENH264="no (missing directory )"
+      HAVE_OPENH264="no (missing directory $PLUGIN_SRC_DIR/video/openh264)"
    fi
 
 else
