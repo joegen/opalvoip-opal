@@ -357,7 +357,7 @@ bool H264Encoder::EncodeFrames(const unsigned char * src, unsigned & srcLen,
     m_encapsulation.Allocate(numberOfNALUs);
     m_encapsulation.SetTimestamp(srcRTP.GetTimestamp());
     for (int i = 0; i < numberOfNALUs; i++)
-      m_encapsulation.AddNALU(NALUs[i].i_type, NALUs[i].i_payload-4, NALUs[i].p_payload+4);
+      m_encapsulation.AddNALU(NALUs[i].i_type, NALUs[i].i_payload, NALUs[i].p_payload);
   }
 
   // create RTP frame from destination buffer
