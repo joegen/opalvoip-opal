@@ -750,20 +750,13 @@ void OpalNonJitterBuffer::Restart()
 
 bool OpalNonJitterBuffer::WriteData(const RTP_DataFrame & frame, PTimeInterval)
 {
-  m_queue.Enqueue(frame.CloneAs<RTP_DataFrame>());
-  return true;
+  return m_queue.Enqueue(frame);
 }
 
 
 bool OpalNonJitterBuffer::ReadData(RTP_DataFrame & frame, PTimeInterval tick)
 {
-  RTP_DataFrame * data = m_queue.Dequeue();
-  if (data == NULL)
-    return false;
-
-  frame = *data;
-  delete data;
-  return true;
+  return m_queue.Dequeue(frame);
 }
 
 
