@@ -302,7 +302,7 @@ fi
 
 
 MY_LINK_IFELSE(
-   [Open H.264 shared library],
+   [Cisco Open H.264 shared library],
    [],
    [-lopenh264 -lpthread],
    [#include "$PLUGIN_SRC_DIR/video/openh264/svc/codec_api.h"],
@@ -310,13 +310,15 @@ MY_LINK_IFELSE(
       ISVCEncoder * encoder;
       WelsCreateSVCEncoder(&encoder);
    ],
-   OPAL_SYSTEM_PLUGIN(
+   [OPAL_SYSTEM_PLUGIN(
       [OPENH264],
       [openh264],
-      [Cisco Open264 H.264 video codec],
+      [Cisco Open H.264 video codec],
+      [$PLUGIN_SRC_DIR/video/openh264],
+      [local-source],
       [],
-      [local-source]
-   ),
+      [-lopenh264 -lpthread]
+   )],
    [
       HAVE_OPENH264="no (missing shared library)"
    ]
