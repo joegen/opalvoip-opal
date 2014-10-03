@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\SVN-3.14-Lacaille-2012\opal\plugins\video\common\encframe.cxx">
+    <ClCompile Include="..\common\encframe.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\common\ffmpeg.cxx">
@@ -20,10 +20,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\SVN-3.14-Lacaille-2012\opal\plugins\video\common\encframe.h">
+    <ClInclude Include="..\common\encframe.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\SVN-3.14-Lacaille-2012\opal\plugins\video\common\ffmpeg.h">
+    <ClInclude Include="..\common\ffmpeg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -260,13 +260,13 @@ xcopy /y/f "$(TargetDir)$(TargetName).*d*" "C:\Program Files (x86)\PTLib Plug In
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\SVN-3.14-Lacaille-2012\opal\plugins\video\common\encframe.cxx" />
+    <ClCompile Include="..\common\encframe.cxx" />
     <ClCompile Include="..\common\ffmpeg.cxx" />
     <ClCompile Include="mpeg4.cxx" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\SVN-3.14-Lacaille-2012\opal\plugins\video\common\encframe.h" />
-    <ClInclude Include="..\..\..\..\SVN-3.14-Lacaille-2012\opal\plugins\video\common\ffmpeg.h" />
+    <ClInclude Include="..\common\encframe.h" />
+    <ClInclude Include="..\common\ffmpeg.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
