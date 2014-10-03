@@ -352,7 +352,7 @@ class OpalManager_C : public OpalManager
 
     unsigned                  m_apiVersion;
     bool                      m_manualAlerting;
-    PSyncQueue<OpalMessage>   m_messageQueue;
+    PSyncQueue<OpalMessage *> m_messageQueue;
     OpalMessageAvailableFunction m_messageAvailableCallback;
     bool                      m_shuttingDown;
 
@@ -1150,11 +1150,10 @@ OpalMessage * OpalManager_C::GetMessage(unsigned timeout)
     return NULL;
 
   PTRACE(5, "GetMessage: timeout=" << timeout);
-  OpalMessage * msg = m_messageQueue.Dequeue(timeout);
-  if (m_shuttingDown || msg == NULL)
-    return NULL;
-
-  PTRACE(4, "Giving message " << msg->m_type << " to application");
+  OpalMessage * msg = NULL;
+  if (m_messageQueue.Dequeue(msg, timeout)) {
+    PTRACE(4, "Giving message " << msg->m_type << " to application");
+  }
   return msg;
 }
 
