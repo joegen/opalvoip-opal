@@ -768,7 +768,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
             for (int layer = 0; layer < bitstream.iLayerNum; ++layer) {
               for (int nalu = 0; nalu < bitstream.sLayerInfo[layer].iNalCount; ++nalu) {
                 size_t len = bitstream.sLayerInfo[layer].pNalLengthInByte[nalu];
-                m_encapsulation.AddNALU(bitstream.sLayerInfo[layer].pBsBuf[4], len, bitstream.sLayerInfo[layer].pBsBuf+4);
+                m_encapsulation.AddNALU(bitstream.sLayerInfo[layer].pBsBuf[4], len, bitstream.sLayerInfo[layer].pBsBuf);
                 bitstream.sLayerInfo[layer].pBsBuf += len;
               }
             }
