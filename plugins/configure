@@ -5070,18 +5070,18 @@ else
 /* end confdefs.h.  */
 
   /* For now, do not test the preprocessor; as of 2007 there are too many
-	 implementations with broken preprocessors.  Perhaps this can
-	 be revisited in 2012.  In the meantime, code should not expect
-	 #if to work with literals wider than 32 bits.  */
+         implementations with broken preprocessors.  Perhaps this can
+         be revisited in 2012.  In the meantime, code should not expect
+         #if to work with literals wider than 32 bits.  */
       /* Test literals.  */
       long long int ll = 9223372036854775807ll;
       long long int nll = -9223372036854775807LL;
       unsigned long long int ull = 18446744073709551615ULL;
       /* Test constant expressions.   */
       typedef int a[((-9223372036854775807LL < 0 && 0 < 9223372036854775807ll)
-		     ? 1 : -1)];
+                     ? 1 : -1)];
       typedef int b[(18446744073709551615ULL <= (unsigned long long int) -1
-		     ? 1 : -1)];
+                     ? 1 : -1)];
       int i = 63;
 int
 main ()
@@ -5090,9 +5090,9 @@ main ()
       long long int llmax = 9223372036854775807ll;
       unsigned long long int ullmax = 18446744073709551615ull;
       return ((ll << 63) | (ll >> 63) | (ll < i) | (ll > i)
-	      | (llmax / ll) | (llmax % ll)
-	      | (ull << 63) | (ull >> 63) | (ull << i) | (ull >> i)
-	      | (ullmax / ull) | (ullmax % ull));
+              | (llmax / ll) | (llmax % ll)
+              | (ull << 63) | (ull >> 63) | (ull << i) | (ull >> i)
+              | (ullmax / ull) | (ullmax % ull));
   ;
   return 0;
 }
@@ -5124,33 +5124,33 @@ if ${ac_cv_type_long_long_int+:} false; then :
 else
   ac_cv_type_long_long_int=yes
       if test "x${ac_cv_prog_cc_c99-no}" = xno; then
-	ac_cv_type_long_long_int=$ac_cv_type_unsigned_long_long_int
-	if test $ac_cv_type_long_long_int = yes; then
-	  	  	  	  if test "$cross_compiling" = yes; then :
+        ac_cv_type_long_long_int=$ac_cv_type_unsigned_long_long_int
+        if test $ac_cv_type_long_long_int = yes; then
+                                        if test "$cross_compiling" = yes; then :
   :
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <limits.h>
-		 #ifndef LLONG_MAX
-		 # define HALF \
-			  (1LL << (sizeof (long long int) * CHAR_BIT - 2))
-		 # define LLONG_MAX (HALF - 1 + HALF)
-		 #endif
+                 #ifndef LLONG_MAX
+                 # define HALF \
+                          (1LL << (sizeof (long long int) * CHAR_BIT - 2))
+                 # define LLONG_MAX (HALF - 1 + HALF)
+                 #endif
 int
 main ()
 {
 long long int n = 1;
-		 int i;
-		 for (i = 0; ; i++)
-		   {
-		     long long int m = n << i;
-		     if (m >> i != n)
-		       return 1;
-		     if (LLONG_MAX / 2 < m)
-		       break;
-		   }
-		 return 0;
+                 int i;
+                 for (i = 0; ; i++)
+                   {
+                     long long int m = n << i;
+                     if (m >> i != n)
+                       return 1;
+                     if (LLONG_MAX / 2 < m)
+                       break;
+                   }
+                 return 0;
   ;
   return 0;
 }
@@ -5164,7 +5164,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
-	fi
+        fi
       fi
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_type_long_long_int" >&5
@@ -5187,18 +5187,18 @@ else
 /* end confdefs.h.  */
 
   /* For now, do not test the preprocessor; as of 2007 there are too many
-	 implementations with broken preprocessors.  Perhaps this can
-	 be revisited in 2012.  In the meantime, code should not expect
-	 #if to work with literals wider than 32 bits.  */
+         implementations with broken preprocessors.  Perhaps this can
+         be revisited in 2012.  In the meantime, code should not expect
+         #if to work with literals wider than 32 bits.  */
       /* Test literals.  */
       long long int ll = 9223372036854775807ll;
       long long int nll = -9223372036854775807LL;
       unsigned long long int ull = 18446744073709551615ULL;
       /* Test constant expressions.   */
       typedef int a[((-9223372036854775807LL < 0 && 0 < 9223372036854775807ll)
-		     ? 1 : -1)];
+                     ? 1 : -1)];
       typedef int b[(18446744073709551615ULL <= (unsigned long long int) -1
-		     ? 1 : -1)];
+                     ? 1 : -1)];
       int i = 63;
 int
 main ()
@@ -5207,9 +5207,9 @@ main ()
       long long int llmax = 9223372036854775807ll;
       unsigned long long int ullmax = 18446744073709551615ull;
       return ((ll << 63) | (ll >> 63) | (ll < i) | (ll > i)
-	      | (llmax / ll) | (llmax % ll)
-	      | (ull << 63) | (ull >> 63) | (ull << i) | (ull >> i)
-	      | (ullmax / ull) | (ullmax % ull));
+              | (llmax / ll) | (llmax % ll)
+              | (ull << 63) | (ull >> 63) | (ull << i) | (ull >> i)
+              | (ullmax / ull) | (ullmax % ull));
   ;
   return 0;
 }
@@ -6166,11 +6166,15 @@ if test "${with_plugin_installdir+set}" = set; then :
   withval=$with_plugin_installdir; OPAL_PLUGIN_DIR="\${libdir}/$withval"
 else
 
-         if test "x$OPALDIR" != "x" && test "x$prefix" = "xNONE" ; then
+         if test "x$OPALDIR" != "x" && test "x$prefix" = "xNONE"; then :
+
             OPAL_PLUGIN_DIR="$OPALDIR/lib_$target/plugins"
-         else
+
+else
+
             OPAL_PLUGIN_DIR="\${libdir}/opal-${OPAL_VERSION}"
-         fi
+
+fi
 
 
 fi
@@ -6199,249 +6203,352 @@ PLUGIN_SUBDIRS=""
 
 
 
-   if test -d "$PLUGIN_SRC_DIR/audio/SILK" ; then
+   if test -d "$PLUGIN_SRC_DIR/audio/SILK"; then :
+
       # Check whether --enable-silk was given.
 if test "${enable_silk+set}" = set; then :
   enableval=$enable_silk;
-            if test "x$enableval" = "xno" ; then
+            if test "x$enableval" = xno; then :
+
                HAVE_SILK="no (disabled by user)"
-            else
-               HAVE_SILK="yes"
-            fi
 
 else
 
-            if test "x${HAVE_SILK}" = "x" ; then
                HAVE_SILK="yes"
-            fi
+
+fi
+
+else
+
+            if ${HAVE_SILK+:} false; then :
+
+else
+  HAVE_SILK="yes"
+fi
 
 
 fi
 
 
-      if test "x$HAVE_SILK" = "xyes" ; then
+      if test "x$HAVE_SILK" = xyes; then :
+
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/SILK"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_SILK="no (missing directory $PLUGIN_SRC_DIR/audio/SILK)"
-   fi
+
+fi
 
 
-   if test -d "$PLUGIN_SRC_DIR/audio/gsm-amr" ; then
+   if test -d "$PLUGIN_SRC_DIR/audio/gsm-amr"; then :
+
       # Check whether --enable-gsmamr was given.
 if test "${enable_gsmamr+set}" = set; then :
   enableval=$enable_gsmamr;
-            if test "x$enableval" = "xno" ; then
+            if test "x$enableval" = xno; then :
+
                HAVE_GSMAMR="no (disabled by user)"
-            else
-               HAVE_GSMAMR="yes"
-            fi
 
 else
 
-            if test "x${HAVE_GSMAMR}" = "x" ; then
                HAVE_GSMAMR="yes"
-            fi
+
+fi
+
+else
+
+            if ${HAVE_GSMAMR+:} false; then :
+
+else
+  HAVE_GSMAMR="yes"
+fi
 
 
 fi
 
 
-      if test "x$HAVE_GSMAMR" = "xyes" ; then
+      if test "x$HAVE_GSMAMR" = xyes; then :
+
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/gsm-amr"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_GSMAMR="no (missing directory $PLUGIN_SRC_DIR/audio/gsm-amr)"
-   fi
+
+fi
 
 
-   if test -d "$PLUGIN_SRC_DIR/audio/G726" ; then
+   if test -d "$PLUGIN_SRC_DIR/audio/G726"; then :
+
       # Check whether --enable-g.726 was given.
 if test "${enable_g_726+set}" = set; then :
   enableval=$enable_g_726;
-            if test "x$enableval" = "xno" ; then
+            if test "x$enableval" = xno; then :
+
                HAVE_G726="no (disabled by user)"
-            else
-               HAVE_G726="yes"
-            fi
 
 else
 
-            if test "x${HAVE_G726}" = "x" ; then
                HAVE_G726="yes"
-            fi
+
+fi
+
+else
+
+            if ${HAVE_G726+:} false; then :
+
+else
+  HAVE_G726="yes"
+fi
 
 
 fi
 
 
-      if test "x$HAVE_G726" = "xyes" ; then
+      if test "x$HAVE_G726" = xyes; then :
+
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/G726"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_G726="no (missing directory $PLUGIN_SRC_DIR/audio/G726)"
-   fi
+
+fi
 
 
-   if test -d "$PLUGIN_SRC_DIR/audio/IMA_ADPCM" ; then
+   if test -d "$PLUGIN_SRC_DIR/audio/IMA_ADPCM"; then :
+
       # Check whether --enable-ima-adpcm was given.
 if test "${enable_ima_adpcm+set}" = set; then :
   enableval=$enable_ima_adpcm;
-            if test "x$enableval" = "xno" ; then
+            if test "x$enableval" = xno; then :
+
                HAVE_IMA_ADPCM="no (disabled by user)"
-            else
-               HAVE_IMA_ADPCM="yes"
-            fi
 
 else
 
-            if test "x${HAVE_IMA_ADPCM}" = "x" ; then
                HAVE_IMA_ADPCM="yes"
-            fi
+
+fi
+
+else
+
+            if ${HAVE_IMA_ADPCM+:} false; then :
+
+else
+  HAVE_IMA_ADPCM="yes"
+fi
 
 
 fi
 
 
-      if test "x$HAVE_IMA_ADPCM" = "xyes" ; then
+      if test "x$HAVE_IMA_ADPCM" = xyes; then :
+
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/IMA_ADPCM"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_IMA_ADPCM="no (missing directory $PLUGIN_SRC_DIR/audio/IMA_ADPCM)"
-   fi
+
+fi
 
 
-   if test -d "$PLUGIN_SRC_DIR/audio/G722" ; then
+   if test -d "$PLUGIN_SRC_DIR/audio/G722"; then :
+
       # Check whether --enable-g.722 was given.
 if test "${enable_g_722+set}" = set; then :
   enableval=$enable_g_722;
-            if test "x$enableval" = "xno" ; then
+            if test "x$enableval" = xno; then :
+
                HAVE_G722="no (disabled by user)"
-            else
-               HAVE_G722="yes"
-            fi
 
 else
 
-            if test "x${HAVE_G722}" = "x" ; then
                HAVE_G722="yes"
-            fi
+
+fi
+
+else
+
+            if ${HAVE_G722+:} false; then :
+
+else
+  HAVE_G722="yes"
+fi
 
 
 fi
 
 
-      if test "x$HAVE_G722" = "xyes" ; then
+      if test "x$HAVE_G722" = xyes; then :
+
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/G722"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_G722="no (missing directory $PLUGIN_SRC_DIR/audio/G722)"
-   fi
+
+fi
 
 
-   if test -d "$PLUGIN_SRC_DIR/audio/G.722.2" ; then
+   if test -d "$PLUGIN_SRC_DIR/audio/G.722.2"; then :
+
       # Check whether --enable-g.722.2 was given.
 if test "${enable_g_722_2+set}" = set; then :
   enableval=$enable_g_722_2;
-            if test "x$enableval" = "xno" ; then
+            if test "x$enableval" = xno; then :
+
                HAVE_G7222="no (disabled by user)"
-            else
-               HAVE_G7222="yes"
-            fi
 
 else
 
-            if test "x${HAVE_G7222}" = "x" ; then
                HAVE_G7222="yes"
-            fi
+
+fi
+
+else
+
+            if ${HAVE_G7222+:} false; then :
+
+else
+  HAVE_G7222="yes"
+fi
 
 
 fi
 
 
-      if test "x$HAVE_G7222" = "xyes" ; then
+      if test "x$HAVE_G7222" = xyes; then :
+
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/G.722.2"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_G7222="no (missing directory $PLUGIN_SRC_DIR/audio/G.722.2)"
-   fi
+
+fi
 
 
-   if test -d "$PLUGIN_SRC_DIR/audio/LPC_10" ; then
+   if test -d "$PLUGIN_SRC_DIR/audio/LPC_10"; then :
+
       # Check whether --enable-lpc10 was given.
 if test "${enable_lpc10+set}" = set; then :
   enableval=$enable_lpc10;
-            if test "x$enableval" = "xno" ; then
+            if test "x$enableval" = xno; then :
+
                HAVE_LPC10="no (disabled by user)"
-            else
-               HAVE_LPC10="yes"
-            fi
 
 else
 
-            if test "x${HAVE_LPC10}" = "x" ; then
                HAVE_LPC10="yes"
-            fi
+
+fi
+
+else
+
+            if ${HAVE_LPC10+:} false; then :
+
+else
+  HAVE_LPC10="yes"
+fi
 
 
 fi
 
 
-      if test "x$HAVE_LPC10" = "xyes" ; then
+      if test "x$HAVE_LPC10" = xyes; then :
+
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/LPC_10"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_LPC10="no (missing directory $PLUGIN_SRC_DIR/audio/LPC_10)"
-   fi
+
+fi
 
 
-   if test -d "$PLUGIN_SRC_DIR/audio/iSAC" ; then
+   if test -d "$PLUGIN_SRC_DIR/audio/iSAC"; then :
+
       # Check whether --enable-isac was given.
 if test "${enable_isac+set}" = set; then :
   enableval=$enable_isac;
-            if test "x$enableval" = "xno" ; then
+            if test "x$enableval" = xno; then :
+
                HAVE_ISAC="no (disabled by user)"
-            else
-               HAVE_ISAC="yes"
-            fi
 
 else
 
-            if test "x${HAVE_ISAC}" = "x" ; then
                HAVE_ISAC="yes"
-            fi
+
+fi
+
+else
+
+            if ${HAVE_ISAC+:} false; then :
+
+else
+  HAVE_ISAC="yes"
+fi
 
 
 fi
 
 
-      if test "x$HAVE_ISAC" = "xyes" ; then
+      if test "x$HAVE_ISAC" = xyes; then :
+
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/iSAC"
-      fi
-   else
-      HAVE_ISAC="no (missing directory $PLUGIN_SRC_DIR/audio/iSAC)"
-   fi
 
-
-
-
-
-
-   if test -d "$PLUGIN_SRC_DIR/audio/G.722.1" ; then
-      # Check whether --enable-g.722.1 was given.
-if test "${enable_g_722_1+set}" = set; then :
-  enableval=$enable_g_722_1;
-            if test "x$enableval" = "xno" ; then
-               HAVE_G7221="no (disabled by user)"
-            else
-               HAVE_G7221="yes"
-            fi
+fi
 
 else
 
-            if test "x${HAVE_G7221}" = "x" ; then
+      HAVE_ISAC="no (missing directory $PLUGIN_SRC_DIR/audio/iSAC)"
+
+fi
+
+
+
+
+
+
+   if test -d "$PLUGIN_SRC_DIR/audio/G.722.1"; then :
+
+      # Check whether --enable-g.722.1 was given.
+if test "${enable_g_722_1+set}" = set; then :
+  enableval=$enable_g_722_1;
+            if test "x$enableval" = xno; then :
+
+               HAVE_G7221="no (disabled by user)"
+
+else
+
                HAVE_G7221="yes"
-            fi
+
+fi
+
+else
+
+            if ${HAVE_G7221+:} false; then :
+
+else
+  HAVE_G7221="yes"
+fi
 
 
 fi
@@ -6454,17 +6561,23 @@ fi
 
    fi
 
-      if test "x$HAVE_G7221" = "xyes" ; then
+      if test "x$HAVE_G7221" = xyes; then :
+
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/G.722.1"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_G7221="no (missing directory $PLUGIN_SRC_DIR/audio/G.722.1)"
-   fi
+
+fi
 
 
 
 
-   if test -d "$PLUGIN_SRC_DIR/audio/GSM0610" ; then
+   if test -d "$PLUGIN_SRC_DIR/audio/GSM0610"; then :
+
                   OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    GSM_SYSTEM="yes"
@@ -6705,29 +6818,38 @@ $as_echo "$as_me: Using internal source for GSM 06.10 audio codec" >&6;}
 
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
-      if test "x$GSM_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/GSM0610"
-         HAVE_GSM="yes (internal)"
-      elif test "x$usable" = "xyes" ; then
+      if test "x$GSM_USABLE" = xyes; then :
 
+         if test "x$GSM_SYSTEM" = xno; then :
 
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/GSM0610"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/GSM0610"
+            HAVE_GSM="yes (internal)"
 
-         if test "x$GSM_SYSTEM" = "xyes" ; then
+else
+
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/GSM0610"
             HAVE_GSM="yes (system)"
-         else
-            HAVE_GSM="yes"
-         fi
-      else
+
+
+
+fi
+
+else
+
          HAVE_GSM="no (package gsm local-source not found)"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_GSM="no (missing directory $PLUGIN_SRC_DIR/audio/GSM0610)"
-   fi
+
+fi
 
 
 
-   if test -d "$PLUGIN_SRC_DIR/audio/iLBC" ; then
+   if test -d "$PLUGIN_SRC_DIR/audio/iLBC"; then :
+
                   OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    ILBC_SYSTEM="yes"
@@ -6978,29 +7100,38 @@ fi
 
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
-      if test "x$ILBC_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/iLBC"
-         HAVE_ILBC="yes (internal)"
-      elif test "x$usable" = "xyes" ; then
+      if test "x$ILBC_USABLE" = xyes; then :
 
+         if test "x$ILBC_SYSTEM" = xno; then :
 
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/iLBC"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/iLBC"
+            HAVE_ILBC="yes (internal)"
 
-         if test "x$ILBC_SYSTEM" = "xyes" ; then
+else
+
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/iLBC"
             HAVE_ILBC="yes (system)"
-         else
-            HAVE_ILBC="yes"
-         fi
-      else
+
+
+
+fi
+
+else
+
          HAVE_ILBC="no (package ilbc local-source not found)"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_ILBC="no (missing directory $PLUGIN_SRC_DIR/audio/iLBC)"
-   fi
+
+fi
 
 
 
-   if test -d "$PLUGIN_SRC_DIR/audio/Speex" ; then
+   if test -d "$PLUGIN_SRC_DIR/audio/Speex"; then :
+
                   OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    SPEEX_SYSTEM="yes"
@@ -7248,29 +7379,38 @@ fi
 
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
-      if test "x$SPEEX_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/Speex"
-         HAVE_SPEEX="yes (internal)"
-      elif test "x$usable" = "xyes" ; then
+      if test "x$SPEEX_USABLE" = xyes; then :
 
+         if test "x$SPEEX_SYSTEM" = xno; then :
 
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/Speex"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/Speex"
+            HAVE_SPEEX="yes (internal)"
 
-         if test "x$SPEEX_SYSTEM" = "xyes" ; then
+else
+
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/Speex"
             HAVE_SPEEX="yes (system)"
-         else
-            HAVE_SPEEX="yes"
-         fi
-      else
+
+
+
+fi
+
+else
+
          HAVE_SPEEX="no (package speex local-source not found)"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_SPEEX="no (missing directory $PLUGIN_SRC_DIR/audio/Speex)"
-   fi
+
+fi
 
 
 
-   if test -d "$PLUGIN_SRC_DIR/audio/SBC/bluez_sbc" ; then
+   if test -d "$PLUGIN_SRC_DIR/audio/SBC/bluez_sbc"; then :
+
                   OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    SBC_SYSTEM="yes"
@@ -7487,29 +7627,38 @@ fi
 
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
-      if test "x$SBC_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/SBC/bluez_sbc"
-         HAVE_SBC="yes (internal)"
-      elif test "x$usable" = "xyes" ; then
+      if test "x$SBC_USABLE" = xyes; then :
 
+         if test "x$SBC_SYSTEM" = xno; then :
 
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/SBC/bluez_sbc"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/SBC/bluez_sbc"
+            HAVE_SBC="yes (internal)"
 
-         if test "x$SBC_SYSTEM" = "xyes" ; then
+else
+
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/SBC/bluez_sbc"
             HAVE_SBC="yes (system)"
-         else
-            HAVE_SBC="yes"
-         fi
-      else
+
+
+
+fi
+
+else
+
          HAVE_SBC="no (package samplerate not found)"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_SBC="no (missing directory $PLUGIN_SRC_DIR/audio/SBC/bluez_sbc)"
-   fi
+
+fi
 
 
 
-   if test -d "$PLUGIN_SRC_DIR/audio/celt" ; then
+   if test -d "$PLUGIN_SRC_DIR/audio/celt"; then :
+
                   OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    CELT_SYSTEM="yes"
@@ -7713,30 +7862,39 @@ fi
 
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
-      if test "x$CELT_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/celt"
-         HAVE_CELT="yes (internal)"
-      elif test "x$usable" = "xyes" ; then
+      if test "x$CELT_USABLE" = xyes; then :
 
+         if test "x$CELT_SYSTEM" = xno; then :
 
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/celt"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/celt"
+            HAVE_CELT="yes (internal)"
 
-         if test "x$CELT_SYSTEM" = "xyes" ; then
+else
+
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/celt"
             HAVE_CELT="yes (system)"
-         else
-            HAVE_CELT="yes"
-         fi
-      else
+
+
+
+fi
+
+else
+
          HAVE_CELT="no (package celt not found)"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_CELT="no (missing directory $PLUGIN_SRC_DIR/audio/celt)"
-   fi
+
+fi
 
 
 
 
-   if test -d "$PLUGIN_SRC_DIR/audio/Opus" ; then
+   if test -d "$PLUGIN_SRC_DIR/audio/Opus"; then :
+
                   OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    OPUS_SYSTEM="yes"
@@ -7922,7 +8080,6 @@ int
 main ()
 {
 opus_get_version_string()
-
   ;
   return 0;
 }
@@ -7973,70 +8130,97 @@ $as_echo "$as_me: Using internal source for Opus Interactive Audio Codec" >&6;}
 
 
 
+   if test "x$usable" = "xyes"; then :
+  if test "x$OPUS_SYSTEM" = xno; then :
 
+      if test -n "${srcdir}" && test `cd ${srcdir} ; pwd` != `pwd`; then :
 
-
-      LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
-      if test "x$OPUS_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/Opus"
-         HAVE_OPUS="yes (internal)"
-      elif test "x$usable" = "xyes" ; then
-
-
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/Opus"
-
-         if test "x$OPUS_SYSTEM" = "xyes" ; then
-            HAVE_OPUS="yes (system)"
-         else
-            HAVE_OPUS="yes"
-         fi
-      else
-         HAVE_OPUS="no (package opus local-source not found)"
-      fi
-   else
-      HAVE_OPUS="no (missing directory $PLUGIN_SRC_DIR/audio/Opus)"
-   fi
-
-
-if test "x$OPUS_SYSTEM" != "xyes" ; then
-   if test -n "${srcdir}" && test `cd ${srcdir} ; pwd` != `pwd`; then
-      HAVE_OPUS="no (internal libopus does not support out-of-source configure)"
-      usable=no
-   else
-      subdirs="$subdirs ./audio/Opus/opus"
-
-      ac_configure_args="$ac_configure_args --with-pic"
-   fi
-fi
-
-
-
-   if test -d "$PLUGIN_SRC_DIR/video/H.261-vic" ; then
-      # Check whether --enable-h.261 was given.
-if test "${enable_h_261+set}" = set; then :
-  enableval=$enable_h_261;
-            if test "x$enableval" = "xno" ; then
-               HAVE_H261="no (disabled by user)"
-            else
-               HAVE_H261="yes"
-            fi
+         HAVE_OPUS="no (internal libopus does not support out-of-source configure)"
+         OPUS_USABLE=no
 
 else
 
-            if test "x${HAVE_H261}" = "x" ; then
+         subdirs="$subdirs ./audio/Opus/opus"
+
+         ac_configure_args="$ac_configure_args --with-pic"
+
+fi
+
+fi
+
+fi
+
+
+      LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
+      if test "x$OPUS_USABLE" = xyes; then :
+
+         if test "x$OPUS_SYSTEM" = xno; then :
+
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/Opus"
+            HAVE_OPUS="yes (internal)"
+
+else
+
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/audio/Opus"
+            HAVE_OPUS="yes (system)"
+
+
+
+fi
+
+else
+
+         HAVE_OPUS="no (package opus local-source not found)"
+
+fi
+
+else
+
+      HAVE_OPUS="no (missing directory $PLUGIN_SRC_DIR/audio/Opus)"
+
+fi
+
+
+
+
+   if test -d "$PLUGIN_SRC_DIR/video/H.261-vic"; then :
+
+      # Check whether --enable-h.261 was given.
+if test "${enable_h_261+set}" = set; then :
+  enableval=$enable_h_261;
+            if test "x$enableval" = xno; then :
+
+               HAVE_H261="no (disabled by user)"
+
+else
+
                HAVE_H261="yes"
-            fi
+
+fi
+
+else
+
+            if ${HAVE_H261+:} false; then :
+
+else
+  HAVE_H261="yes"
+fi
 
 
 fi
 
 
-      if test "x$HAVE_H261" = "xyes" ; then
+      if test "x$HAVE_H261" = xyes; then :
+
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/H.261-vic"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_H261="no (missing directory $PLUGIN_SRC_DIR/video/H.261-vic)"
-   fi
+
+fi
 
 
 oldLIBS="$LIBS"
@@ -8610,64 +8794,89 @@ fi
 
 
 
-   if test -d "$PLUGIN_SRC_DIR/video/H.263-1998" ; then
+   if test -d "$PLUGIN_SRC_DIR/video/H.263-1998"; then :
+
       # Check whether --enable-h.263 was given.
 if test "${enable_h_263+set}" = set; then :
   enableval=$enable_h_263;
-            if test "x$enableval" = "xno" ; then
+            if test "x$enableval" = xno; then :
+
                HAVE_H263="no (disabled by user)"
-            else
-               HAVE_H263="yes"
-            fi
 
 else
 
-            if test "x${HAVE_H263}" = "x" ; then
                HAVE_H263="yes"
-            fi
+
+fi
+
+else
+
+            if ${HAVE_H263+:} false; then :
+
+else
+  HAVE_H263="yes"
+fi
 
 
 fi
 
 
-      if test "x$HAVE_H263" = "xyes" ; then
+      if test "x$HAVE_H263" = xyes; then :
+
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/H.263-1998"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_H263="no (missing directory $PLUGIN_SRC_DIR/video/H.263-1998)"
-   fi
+
+fi
 
 
-   if test -d "$PLUGIN_SRC_DIR/video/MPEG4-ffmpeg" ; then
+   if test -d "$PLUGIN_SRC_DIR/video/MPEG4-ffmpeg"; then :
+
       # Check whether --enable-mpeg4 was given.
 if test "${enable_mpeg4+set}" = set; then :
   enableval=$enable_mpeg4;
-            if test "x$enableval" = "xno" ; then
+            if test "x$enableval" = xno; then :
+
                HAVE_MPEG4="no (disabled by user)"
-            else
-               HAVE_MPEG4="yes"
-            fi
 
 else
 
-            if test "x${HAVE_MPEG4}" = "x" ; then
                HAVE_MPEG4="yes"
-            fi
+
+fi
+
+else
+
+            if ${HAVE_MPEG4+:} false; then :
+
+else
+  HAVE_MPEG4="yes"
+fi
 
 
 fi
 
 
-      if test "x$HAVE_MPEG4" = "xyes" ; then
+      if test "x$HAVE_MPEG4" = xyes; then :
+
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/MPEG4-ffmpeg"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_MPEG4="no (missing directory $PLUGIN_SRC_DIR/video/MPEG4-ffmpeg)"
-   fi
+
+fi
 
 
 
-   if test -d "$PLUGIN_SRC_DIR/video/x264" ; then
+   if test -d "$PLUGIN_SRC_DIR/video/x264"; then :
+
                   OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    X264_SYSTEM="yes"
@@ -8911,25 +9120,33 @@ fi
 
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
-      if test "x$X264_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/x264"
-         HAVE_X264="yes (internal)"
-      elif test "x$usable" = "xyes" ; then
+      if test "x$X264_USABLE" = xyes; then :
 
+         if test "x$X264_SYSTEM" = xno; then :
 
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/x264"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/x264"
+            HAVE_X264="yes (internal)"
 
-         if test "x$X264_SYSTEM" = "xyes" ; then
+else
+
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/x264"
             HAVE_X264="yes (system)"
-         else
-            HAVE_X264="yes"
-         fi
-      else
+
+
+
+fi
+
+else
+
          HAVE_X264="no (package x264 >= 0.102 not found)"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_X264="no (missing directory $PLUGIN_SRC_DIR/video/x264)"
-   fi
+
+fi
 
 else
    HAVE_H263="no (missing FFMPEG)"
@@ -8974,7 +9191,8 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
 
-   if test -d "$PLUGIN_SRC_DIR/video/openh264" ; then
+   if test -d "$PLUGIN_SRC_DIR/video/openh264"; then :
+
                   OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    OPENH264_SYSTEM="yes"
@@ -9217,25 +9435,33 @@ $as_echo "$as_me: Using internal source for Cisco Open H.264 video codec" >&6;}
 
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
-      if test "x$OPENH264_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/openh264"
-         HAVE_OPENH264="yes (internal)"
-      elif test "x$usable" = "xyes" ; then
+      if test "x$OPENH264_USABLE" = xyes; then :
 
+         if test "x$OPENH264_SYSTEM" = xno; then :
 
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/openh264"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/openh264"
+            HAVE_OPENH264="yes (internal)"
 
-         if test "x$OPENH264_SYSTEM" = "xyes" ; then
+else
+
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/openh264"
             HAVE_OPENH264="yes (system)"
-         else
-            HAVE_OPENH264="yes"
-         fi
-      else
+
+
+
+fi
+
+else
+
          HAVE_OPENH264="no (package local-source not found)"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_OPENH264="no (missing directory $PLUGIN_SRC_DIR/video/openh264)"
-   fi
+
+fi
 
 else
 
@@ -9247,7 +9473,8 @@ fi
 
 
 
-   if test -d "$PLUGIN_SRC_DIR/video/VP8-WebM" ; then
+   if test -d "$PLUGIN_SRC_DIR/video/VP8-WebM"; then :
+
                   OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    VP8_SYSTEM="yes"
@@ -9464,29 +9691,38 @@ fi
 
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
-      if test "x$VP8_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/VP8-WebM"
-         HAVE_VP8="yes (internal)"
-      elif test "x$usable" = "xyes" ; then
+      if test "x$VP8_USABLE" = xyes; then :
 
+         if test "x$VP8_SYSTEM" = xno; then :
 
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/VP8-WebM"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/VP8-WebM"
+            HAVE_VP8="yes (internal)"
 
-         if test "x$VP8_SYSTEM" = "xyes" ; then
+else
+
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/VP8-WebM"
             HAVE_VP8="yes (system)"
-         else
-            HAVE_VP8="yes"
-         fi
-      else
+
+
+
+fi
+
+else
+
          HAVE_VP8="no (package vpx not found)"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_VP8="no (missing directory $PLUGIN_SRC_DIR/video/VP8-WebM)"
-   fi
+
+fi
 
 
 
-   if test -d "$PLUGIN_SRC_DIR/video/THEORA" ; then
+   if test -d "$PLUGIN_SRC_DIR/video/THEORA"; then :
+
                   OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    THEORA_SYSTEM="yes"
@@ -9706,31 +9942,40 @@ fi
 
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
-      if test "x$THEORA_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/THEORA"
-         HAVE_THEORA="yes (internal)"
-      elif test "x$usable" = "xyes" ; then
+      if test "x$THEORA_USABLE" = xyes; then :
 
+         if test "x$THEORA_SYSTEM" = xno; then :
 
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/THEORA"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/THEORA"
+            HAVE_THEORA="yes (internal)"
 
-         if test "x$THEORA_SYSTEM" = "xyes" ; then
+else
+
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/video/THEORA"
             HAVE_THEORA="yes (system)"
-         else
-            HAVE_THEORA="yes"
-         fi
-      else
+
+
+
+fi
+
+else
+
          HAVE_THEORA="no (package theora not found)"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_THEORA="no (missing directory $PLUGIN_SRC_DIR/video/THEORA)"
-   fi
+
+fi
 
 
 
 
 
-   if test -d "$PLUGIN_SRC_DIR/LID/VPB" ; then
+   if test -d "$PLUGIN_SRC_DIR/LID/VPB"; then :
+
                   OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    VPB_SYSTEM="yes"
@@ -9947,31 +10192,40 @@ fi
 
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
-      if test "x$VPB_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/LID/VPB"
-         HAVE_VPB="yes (internal)"
-      elif test "x$usable" = "xyes" ; then
+      if test "x$VPB_USABLE" = xyes; then :
 
+         if test "x$VPB_SYSTEM" = xno; then :
 
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/LID/VPB"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/LID/VPB"
+            HAVE_VPB="yes (internal)"
 
-         if test "x$VPB_SYSTEM" = "xyes" ; then
+else
+
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/LID/VPB"
             HAVE_VPB="yes (system)"
-         else
-            HAVE_VPB="yes"
-         fi
-      else
+
+
+
+fi
+
+else
+
          HAVE_VPB="no (package vpb not found)"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_VPB="no (missing directory $PLUGIN_SRC_DIR/LID/VPB)"
-   fi
+
+fi
 
 
 
 
 
-   if test -d "$PLUGIN_SRC_DIR/fax/fax_spandsp" ; then
+   if test -d "$PLUGIN_SRC_DIR/fax/fax_spandsp"; then :
+
                   OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
 
    SPANDSP_SYSTEM="yes"
@@ -10188,25 +10442,33 @@ fi
 
 
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
-      if test "x$SPANDSP_SYSTEM" = "xno" ; then
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/fax/fax_spandsp"
-         HAVE_SPANDSP="yes (internal)"
-      elif test "x$usable" = "xyes" ; then
+      if test "x$SPANDSP_USABLE" = xyes; then :
 
+         if test "x$SPANDSP_SYSTEM" = xno; then :
 
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/fax/fax_spandsp"
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/fax/fax_spandsp"
+            HAVE_SPANDSP="yes (internal)"
 
-         if test "x$SPANDSP_SYSTEM" = "xyes" ; then
+else
+
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $PLUGIN_SRC_DIR/fax/fax_spandsp"
             HAVE_SPANDSP="yes (system)"
-         else
-            HAVE_SPANDSP="yes"
-         fi
-      else
+
+
+
+fi
+
+else
+
          HAVE_SPANDSP="no (package spandsp not found)"
-      fi
-   else
+
+fi
+
+else
+
       HAVE_SPANDSP="no (missing directory $PLUGIN_SRC_DIR/fax/fax_spandsp)"
-   fi
+
+fi
 
 
 

@@ -5960,9 +5960,11 @@ $as_echo "${OPAL_PTLIB_URL}" >&6; }
 
 
 
-      if test "x$OPAL_PTLIB_URL" != "xyes" ; then
+      if test "x$OPAL_PTLIB_URL" = xno; then :
+
          as_fn_error $? "Must have URL functionality enabled in PTLib" "$LINENO" 5
-      fi
+
+fi
 
 
 
@@ -5974,9 +5976,11 @@ $as_echo "${OPAL_PTLIB_HTTP}" >&6; }
 
 
 
-      if test "x$OPAL_PTLIB_HTTP" != "xyes" ; then
+      if test "x$OPAL_PTLIB_HTTP" = xno; then :
+
          as_fn_error $? "Must have HTTP functionality enabled in PTLib" "$LINENO" 5
-      fi
+
+fi
 
 
 
@@ -6401,11 +6405,13 @@ $as_echo "$as_me: Using internal source for SRTP protocol support" >&6;}
 fi
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$SRTP_USABLE" = xyes; then :
+
       $as_echo "#define OPAL_SRTP 1" >>confdefs.h
 
-   fi
-   OPAL_SRTP=$usable
+
+fi
+   OPAL_SRTP=$SRTP_USABLE
 
 
 
@@ -6636,11 +6642,13 @@ fi
 
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$ZRTP_USABLE" = xyes; then :
+
       $as_echo "#define OPAL_ZRTP 1" >>confdefs.h
 
-   fi
-   OPAL_ZRTP=$usable
+
+fi
+   OPAL_ZRTP=$ZRTP_USABLE
 
 
 
@@ -7227,11 +7235,13 @@ fi
 
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$CAPI_USABLE" = xyes; then :
+
       $as_echo "#define OPAL_CAPI 1" >>confdefs.h
 
-   fi
-   OPAL_CAPI=$usable
+
+fi
+   OPAL_CAPI=$CAPI_USABLE
 
 
 
@@ -7494,11 +7504,13 @@ fi
 
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$JAVA_USABLE" = xyes; then :
+
       $as_echo "#define OPAL_JAVA 1" >>confdefs.h
 
-   fi
-   OPAL_JAVA=$usable
+
+fi
+   OPAL_JAVA=$JAVA_USABLE
 
 
 
@@ -7781,11 +7793,13 @@ fi
 
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$RUBY_USABLE" = xyes; then :
+
       $as_echo "#define OPAL_RUBY 1" >>confdefs.h
 
-   fi
-   OPAL_RUBY=$usable
+
+fi
+   OPAL_RUBY=$RUBY_USABLE
 
 
 
@@ -9586,11 +9600,13 @@ fi
 
 
 
-   if test "x$usable" = "xyes" ; then
+   if test "x$DAHDI_USABLE" = xyes; then :
+
       $as_echo "#define OPAL_DAHDI 1" >>confdefs.h
 
-   fi
-   OPAL_DAHDI=$usable
+
+fi
+   OPAL_DAHDI=$DAHDI_USABLE
 
 
 fi
@@ -10366,11 +10382,15 @@ if test "${with_plugin_installdir+set}" = set; then :
   withval=$with_plugin_installdir; OPAL_PLUGIN_DIR="\${libdir}/$withval"
 else
 
-         if test "x$OPALDIR" != "x" && test "x$prefix" = "xNONE" ; then
+         if test "x$OPALDIR" != "x" && test "x$prefix" = "xNONE"; then :
+
             OPAL_PLUGIN_DIR="$OPALDIR/lib_$target/plugins"
-         else
+
+else
+
             OPAL_PLUGIN_DIR="\${libdir}/opal-${OPAL_VERSION}"
-         fi
+
+fi
 
 
 fi
