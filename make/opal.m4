@@ -40,9 +40,9 @@ AC_DEFUN([OPAL_CHECK_PTLIB_OPTION],[
    AC_SUBST(OPAL_$2)
 
    m4_ifnblank([$3],[
-      if test "x$OPAL_$2" != "xyes" ; then
+      AS_VAR_IF([OPAL_$2],[no],[
          AC_MSG_ERROR([$3])
-      fi
+      ])
   ])
 ])
 
@@ -51,10 +51,10 @@ dnl OPAL_MODULE_OPTION
 dnl as MY_MODULE_OPTION but defines OPAL_xxx for make and define
 AC_DEFUN([OPAL_MODULE_OPTION],[
    MY_MODULE_OPTION([$1],[$2],[$3],[$4],[$5],[$6],[$7],[$8],[$9],[$10],[$11],[$12],[$13],[$14])
-   if test "x$usable" = "xyes" ; then
+   AS_VAR_IF([$1[_USABLE]],[yes],[
       AC_DEFINE(OPAL_$1, 1)
-   fi
-   AC_SUBST(OPAL_$1, $usable)
+   ])
+   AC_SUBST(OPAL_$1, $$1[_USABLE])
 ])
 
 
@@ -70,11 +70,11 @@ AC_DEFUN([OPAL_DETERMINE_PLUGIN_DIR],[
       AS_HELP_STRING([--with-plugin-installdir=DIR],[Location where plugins are installed]),
       [OPAL_PLUGIN_DIR="\${libdir}/$withval"],
       [
-         if test "x$OPALDIR" != "x" && test "x$prefix" = "xNONE" ; then
+         AS_IF([test "x$OPALDIR" != "x" && test "x$prefix" = "xNONE"],[
             OPAL_PLUGIN_DIR="$OPALDIR/lib_$target/plugins"
-         else
+         ],[
             OPAL_PLUGIN_DIR="\${libdir}/opal-${OPAL_VERSION}"
-         fi
+         ])
       ]
    )
 
@@ -90,61 +90,56 @@ dnl $3 command line help
 dnl $4 source directory
 dnl $5 optional extra test
 AC_DEFUN([OPAL_SIMPLE_PLUGIN],[
-   if test -d "$4" ; then
+   AS_IF([test -d "$4"],[
       AC_ARG_ENABLE(
          [$2],
          [AC_HELP_STRING([--disable-$2],[disable $3])],
          [
-            if test "x$enableval" = "xno" ; then
+            AS_VAR_IF([enableval],[no],[
                HAVE_$1="no (disabled by user)"
-            else
+            ],[
                HAVE_$1="yes"
-            fi
+            ])
          ],
          [
-            if test "x${HAVE_$1}" = "x" ; then
-               HAVE_$1="yes"
-            fi
+            AS_VAR_SET_IF([HAVE_$1],[],[HAVE_$1="yes"])
          ]
       )
       m4_ifnblank([$5],[$5])
-      if test "x$HAVE_$1" = "xyes" ; then
+      AS_VAR_IF([HAVE_$1],[yes],[
          PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $4"
-      fi
-   else
+      ])
+   ],[
       HAVE_$1="no (missing directory $4)"
-   fi
+   ])
 ])
 
 
 dnl OPAL_SYSTEM_PLUGIN
 dnl as MY_MODULE_OPTION but defines OPAL_xxx for make and define
 AC_DEFUN([OPAL_SYSTEM_PLUGIN],[
-   if test -d "$4" ; then
+   AS_IF([test -d "$4"],[
       dnl MY_MODULE_OPTION adds to LIBS and normally this right, but for plugins
       dnl we want each plugin to only have its libs so don't add it for everyone
       OPAL_SYSTEM_PLUGIN_LIBS="$LIBS"
       MY_MODULE_OPTION([$1],[$2],[$3],[$5],[$6],[$7],[$8],[$9],[$10],[$11],[$12],[$13],[$14],[$15])
       LIBS="$OPAL_SYSTEM_PLUGIN_LIBS"
-      if test "x$$1[_SYSTEM]" = "xno" ; then
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $4"
-         HAVE_$1="yes (internal)"
-      elif test "x$usable" = "xyes" ; then
-         AC_SUBST($1[_CFLAGS])
-         AC_SUBST($1[_LIBS])
-         PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $4"
-
-         if test "x$$1[_SYSTEM]" = "xyes" ; then
+      AS_VAR_IF($1[_USABLE],[yes],[
+         AS_VAR_IF($1[_SYSTEM], [no],[
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $4"
+            HAVE_$1="yes (internal)"
+         ],[
+            PLUGIN_SUBDIRS="$PLUGIN_SUBDIRS $4"
             HAVE_$1="yes (system)"
-         else
-            HAVE_$1="yes"
-         fi
-      else
+            AC_SUBST($1[_CFLAGS])
+            AC_SUBST($1[_LIBS])
+         ])
+      ],[
          HAVE_$1="no (package $5 not found)"
-      fi
-   else
+      ])
+   ],[
       HAVE_$1="no (missing directory $4)"
-   fi
+   ])
 ])
 
 
