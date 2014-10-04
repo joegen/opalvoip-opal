@@ -169,18 +169,17 @@ OPAL_SYSTEM_PLUGIN(
    [],
    [-lopus],
    [#include <opus.h>],
-   [opus_get_version_string()]
+   [opus_get_version_string()],
+   AS_VAR_IF([OPUS_SYSTEM],[no],[
+      AS_IF([test -n "${srcdir}" && test `cd ${srcdir} ; pwd` != `pwd`],[
+         HAVE_OPUS="no (internal libopus does not support out-of-source configure)"
+         OPUS_USABLE=no
+      ],[
+         AC_CONFIG_SUBDIRS(./audio/Opus/opus)
+         ac_configure_args="$ac_configure_args --with-pic"
+      ])
+   ])
 )
-
-if test "x$OPUS_SYSTEM" != "xyes" ; then
-   if test -n "${srcdir}" && test `cd ${srcdir} ; pwd` != `pwd`; then
-      HAVE_OPUS="no (internal libopus does not support out-of-source configure)"
-      usable=no
-   else
-      AC_CONFIG_SUBDIRS(./audio/Opus/opus)
-      ac_configure_args="$ac_configure_args --with-pic"
-   fi
-fi
 
 dnl ########################################################################
 dnl Video Codecs
