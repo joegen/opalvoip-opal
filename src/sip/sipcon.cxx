@@ -89,8 +89,7 @@ static SIP_PDU::StatusCodes GetStatusCodeFromReason(OpalConnection::CallEndReaso
     {  19, SIP_PDU::Failure_TemporarilyUnavailable }, // no answer from the user              
     {  20, SIP_PDU::Failure_TemporarilyUnavailable }, // subscriber absent                    
     {  21, SIP_PDU::Failure_Forbidden              }, // call rejected                        
-    {  22, SIP_PDU::Failure_Gone                   }, // number changed (w/o diagnostic)      
-    {  22, SIP_PDU::Redirection_MovedPermanently   }, // number changed (w/ diagnostic)       
+    {  22, SIP_PDU::Redirection_MovedPermanently   }, // number changed
     {  23, SIP_PDU::Failure_Gone                   }, // redirection to new destination       
     {  26, SIP_PDU::Failure_NotFound               }, // non-selected user clearing           
     {  27, SIP_PDU::Failure_BadGateway             }, // destination out of order             
