@@ -873,18 +873,24 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>
             return false;
           }
 
-          if (status & dsRefLost)
+          if (status & dsRefLost) {
             PTRACE(5, MY_CODEC_LOG, "Reference frame lost");
-          if (status & dsBitstreamError)
+          }
+          if (status & dsBitstreamError) {
             PTRACE(3, MY_CODEC_LOG, "Bit stream error decoding frame");
-          if (status & dsDepLayerLost)
+          }
+          if (status & dsDepLayerLost) {
             PTRACE(5, MY_CODEC_LOG, "Dependent layer lost");
-          if (status & dsNoParamSets)
+          }
+          if (status & dsNoParamSets) {
             PTRACE(3, MY_CODEC_LOG, "No parameter sets received");
-          if (status & dsDataErrorConcealed)
+          }
+          if (status & dsDataErrorConcealed) {
             PTRACE(4, MY_CODEC_LOG, "Data error concealed");
-          if (status >= dsDataErrorConcealed*2)
+          }
+          if (status >= dsDataErrorConcealed*2) {
             PTRACE(4, MY_CODEC_LOG, "Unknown error: status=0x" << std::hex << status);
+          }
           if (status != dsDataErrorConcealed)
             flags = PluginCodec_ReturnCoderRequestIFrame;
         }
