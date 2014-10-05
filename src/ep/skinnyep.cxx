@@ -1143,6 +1143,9 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::StartToneMsg &
     case OpalSkinnyEndPoint::eToneReorder :
       Release(EndedByNoAnswer);
       break;
+
+    default :
+      break;
   }
 
   return true;
