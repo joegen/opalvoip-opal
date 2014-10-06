@@ -1407,15 +1407,12 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   // have answer, so set timeout to interval for monitoring calls health
   m_signallingChannel->SetReadTimeout(connectionState < EstablishedConnection ? MonitorCallStartTime : MonitorCallStatusTime);
 
-  // NOTE h323plus checks for faststart here
-  // and bails if already started.
+  // Set connected phase now so logic for not sending media before connected is not triggered
+  OnConnectedInternal();
 
   // Check for fastStart data and start fast
-  if (connect.HasOptionalField(H225_Connect_UUIE::e_fastStart)) {
-    // We have fast started channels, can connect immediately, this starts the media streams.
-    if (HandleFastStartAcknowledge(connect.m_fastStart))
-      OnConnectedInternal();
-  }
+  if (connect.HasOptionalField(H225_Connect_UUIE::e_fastStart))
+    HandleFastStartAcknowledge(connect.m_fastStart);
 
   if (m_fastStartState != FastStartAcknowledged) {
     // If didn't get fast start channels accepted by remote then clear our
