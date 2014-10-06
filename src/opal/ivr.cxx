@@ -46,11 +46,13 @@
 
 #if OPAL_IVR
 
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalIVREndPoint::OpalIVREndPoint(OpalManager & mgr, const char * prefix)
-  : OpalLocalEndPoint(mgr, prefix),
-    defaultVXML("<?xml version=\"1.0\"?>\n"
+  : OpalLocalEndPoint(mgr, prefix)
+{
+  SetDefaultVXML("<?xml version=\"1.0\"?>\n"
                 "<vxml version=\"1.0\">\n"
                 "  <form id=\"root\">\n"
                 "    <audio src=\"file:welcome.wav\">\n"
@@ -58,15 +60,7 @@ OpalIVREndPoint::OpalIVREndPoint(OpalManager & mgr, const char * prefix)
                 "    </audio>\n"
                 "    <record name=\"msg\" beep=\"true\" dtmfterm=\"true\" dest=\"file:recording.wav\" maxtime=\"10s\"/>\n"
                 "  </form>\n"
-                "</vxml>\n")
-{
-  defaultMediaFormats += OpalPCM16;
-  defaultMediaFormats += OpalPCM16_48KHZ;
-  defaultMediaFormats += OpalPCM16S_48KHZ;
-  defaultMediaFormats += OpalRFC2833;
-#if OPAL_T38_CAPABILITY
-  defaultMediaFormats += OpalCiscoNSE;
-#endif
+                 "</vxml>\n");
 
   PTRACE(4, "IVR\tCreated endpoint.");
 }
@@ -94,8 +88,12 @@ PSafePtr<OpalConnection> OpalIVREndPoint::MakeConnection(OpalCall & call,
   PString vxml = ivrString.Mid(prefixLength);
   if (vxml.Left(2) == "//")
     vxml = vxml.Mid(2);
-  if (vxml.IsEmpty() || vxml == "*")
-    vxml = defaultVXML;
+  if (vxml.IsEmpty() || vxml == "*") {
+    m_defaultsMutex.Wait();
+    vxml = m_defaultVXML;
+    vxml.MakeUnique();
+    m_defaultsMutex.Signal();
+  }
 
   return AddConnection(CreateConnection(call, userData, vxml, options, stringOptions));
 }
@@ -103,8 +101,8 @@ PSafePtr<OpalConnection> OpalIVREndPoint::MakeConnection(OpalCall & call,
 
 OpalMediaFormatList OpalIVREndPoint::GetMediaFormats() const
 {
-  PWaitAndSignal mutex(inUseFlag);
-  return defaultMediaFormats;
+  PWaitAndSignal mutex(m_defaultsMutex);
+  return m_defaultMediaFormats;
 }
 
 
@@ -118,25 +116,40 @@ OpalIVRConnection * OpalIVREndPoint::CreateConnection(OpalCall & call,
 }
 
 
+static OpalMediaFormatList IncludeMediaFormatsFromVXML(const PString & vxml)
+{
+  OpalMediaFormatList mediaFormats;
+
+  mediaFormats += OpalPCM16;
+  mediaFormats += OpalRFC2833;
+#if OPAL_T38_CAPABILITY
+  mediaFormats += OpalCiscoNSE;
+#endif
+
+  OpalMediaFormatList allFormats = OpalMediaFormat::GetAllRegisteredMediaFormats();
+  for (OpalMediaFormatList::iterator format = allFormats.begin(); format != allFormats.end(); ++format) {
+    if (vxml.Find("<--" + format->GetName() + "-->") != P_MAX_INDEX)
+      mediaFormats += *format;
+  }
+
+  return mediaFormats;
+}
+
+
 void OpalIVREndPoint::SetDefaultVXML(const PString & vxml)
 {
-  inUseFlag.Wait();
-  defaultVXML = vxml;
-
-  if (vxml.Find("<--G.722.1-->") != P_MAX_INDEX)
-    defaultMediaFormats += OPAL_G7231;
-  if (vxml.Find("<--G.729-->") != P_MAX_INDEX)
-    defaultMediaFormats += OPAL_G729;
-
-  inUseFlag.Signal();
+  m_defaultsMutex.Wait();
+  m_defaultVXML = vxml;
+  m_defaultMediaFormats = IncludeMediaFormatsFromVXML(vxml);
+  m_defaultsMutex.Signal();
 }
 
 
 void OpalIVREndPoint::SetDefaultMediaFormats(const OpalMediaFormatList & formats)
 {
-  inUseFlag.Wait();
-  defaultMediaFormats = formats;
-  inUseFlag.Signal();
+  m_defaultsMutex.Wait();
+  m_defaultMediaFormats = formats;
+  m_defaultsMutex.Signal();
 }
 
 
@@ -156,19 +169,21 @@ OpalIVRConnection::OpalIVRConnection(OpalCall & call,
                                      const PString & vxml,
                                      unsigned int options,
                                      OpalConnection::StringOptions * stringOptions)
-  : OpalLocalConnection(call, ep, userData, options, stringOptions, 'I'),
-    endpoint(ep),
-    m_vxmlScript(vxml),
-    m_vxmlMediaFormats(ep.GetMediaFormats()),
+  : OpalLocalConnection(call, ep, userData, options, stringOptions, 'I')
+  , endpoint(ep)
+  , m_vxmlScript(vxml)
+  , m_vxmlMediaFormats(IncludeMediaFormatsFromVXML(vxml))
 #ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4355)
 #endif
-    m_vxmlSession(*this, PFactory<PTextToSpeech>::CreateInstance(ep.GetDefaultTextToSpeech()), true)
+  , m_vxmlSession(*this, PFactory<PTextToSpeech>::CreateInstance(ep.GetDefaultTextToSpeech()), true)
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
 {
+  m_vxmlSession.SetCache(ep.GetTextToSpeechCache());
+  m_vxmlSession.SetRecordDirectory(ep.GetRecordDirectory());
   PTRACE(4, "IVR\tConstructed");
 }
 
@@ -212,7 +227,9 @@ bool OpalIVRConnection::TransferConnection(const PString & remoteParty)
   if (remoteParty.Find(GetPrefixName()+":") == 0)
     prefixLength = GetPrefixName().GetLength()+1;
 
-  return StartVXML(remoteParty.Mid(prefixLength));
+  PString vxml = remoteParty.Mid(prefixLength);
+  m_vxmlMediaFormats = IncludeMediaFormatsFromVXML(vxml);
+  return StartVXML(vxml);
 }
 
 
@@ -379,7 +396,7 @@ OpalMediaStream * OpalIVRConnection::CreateMediaStream(const OpalMediaFormat & m
                                                        PBoolean isSource)
 {
   return mediaFormat.GetMediaType() != OpalMediaType::Audio()
-            ? OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource)
+            ? OpalLocalConnection::CreateMediaStream(mediaFormat, sessionID, isSource)
             : new OpalIVRMediaStream(*this, mediaFormat, sessionID, isSource, m_vxmlSession);
 }
 

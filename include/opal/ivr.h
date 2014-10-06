@@ -46,6 +46,9 @@
 class OpalIVRConnection;
 
 
+#define OPAL_IVR_PREFIX "ivr"
+
+
 /**Interactive Voice Response endpoint.
  */
 class OpalIVREndPoint : public OpalLocalEndPoint
@@ -58,7 +61,7 @@ class OpalIVREndPoint : public OpalLocalEndPoint
      */
     OpalIVREndPoint(
       OpalManager & manager,  ///<  Manager of all endpoints.
-      const char * prefix = "ivr" ///<  Prefix for URL style address strings
+      const char * prefix = OPAL_IVR_PREFIX ///<  Prefix for URL style address strings
     );
 
     /**Destroy endpoint.
@@ -95,7 +98,7 @@ class OpalIVREndPoint : public OpalLocalEndPoint
        mean that the connection will succeed, only that an attempt is being
        made.
 
-       The default behaviour is pure.
+       The default behaviour sets up an IVR connection.
      */
     virtual PSafePtr<OpalConnection> MakeConnection(
       OpalCall & call,          ///<  Owner of connection
@@ -113,7 +116,7 @@ class OpalIVREndPoint : public OpalLocalEndPoint
        Note that a specific connection may not actually support all of the
        media formats returned here, but should return no more.
 
-       The default behaviour is pure.
+       The default behaviour returns the basic media formats for PCM/YUV.
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
   //@}
@@ -145,7 +148,7 @@ class OpalIVREndPoint : public OpalLocalEndPoint
 
     /**Get the default VXML to use.
       */
-    const PString & GetDefaultVXML() const { return defaultVXML; }
+    const PString & GetDefaultVXML() const { return m_defaultVXML; }
 
     /** Set the default VXML to use.
       */
@@ -173,17 +176,35 @@ class OpalIVREndPoint : public OpalLocalEndPoint
     /** Set/get the default text to speech engine used by the IVR  
       */
     void SetDefaultTextToSpeech(const PString & tts)
-    { defaultTts = tts; }
+    { m_defaultTTS = tts; }
 
     PString GetDefaultTextToSpeech() const
-    { return defaultTts; }
+    { return m_defaultTTS; }
 
+    /**Get the text to speach cache directory to use.
+      */
+    const PDirectory & GetCacheDir() const { return m_ttsCache.GetDirectory(); }
+
+    /**Set the text to speach cache directory to use.
+      */
+    void SetCacheDir(
+      const PDirectory & dir
+    ) { m_ttsCache.SetDirectory(dir); }
+
+    void SetRecordDirectory(const PDirectory & dir) { m_recordDirectory = dir; }
+    const PDirectory & GetRecordDirectory() const   { return m_recordDirectory; }
   //@}
 
+    // Allow users to override cache algorithm
+    virtual PVXMLCache & GetTextToSpeechCache() { return m_ttsCache; }
+
   protected:
-    PString             defaultVXML;
-    OpalMediaFormatList defaultMediaFormats;
-    PString             defaultTts;
+    PString             m_defaultVXML;
+    OpalMediaFormatList m_defaultMediaFormats;
+    PString             m_defaultTTS;
+    PMutex              m_defaultsMutex;
+    PVXMLCache          m_ttsCache;
+    PDirectory          m_recordDirectory;
 
   private:
     P_REMOVE_VIRTUAL(OpalIVRConnection *, CreateConnection(OpalCall &,const PString &,void *,const PString &,OpalConnection::StringOptions *),0);
@@ -198,7 +219,7 @@ class OpalIVRConnection : public OpalLocalConnection
   public:
   /**@name Construction */
   //@{
-    /**Create a new endpoint.
+    /**Create a new connection.
      */
     OpalIVRConnection(
       OpalCall & call,            ///<  Owner calll for connection
@@ -209,7 +230,7 @@ class OpalIVRConnection : public OpalLocalConnection
       OpalConnection::StringOptions * stringOptions = NULL
     );
 
-    /**Destroy endpoint.
+    /**Destroy connection.
      */
     ~OpalIVRConnection();
   //@}
@@ -280,7 +301,7 @@ class OpalIVRConnection : public OpalLocalConnection
        protocol. This function is not the only way a stream can come into
        existance.
 
-       The default behaviour is pure.
+       The default behaviour creates a OpalIVRMediaStream.
      */
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
