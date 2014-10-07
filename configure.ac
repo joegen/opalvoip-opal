@@ -198,17 +198,15 @@ OPAL_MODULE_OPTION(
       crypto_policy_t p;
       p.cipher_key_len = SRTP_MASTER_KEY_LEN;
    ],
-   [
+   AS_VAR_IF([SRTP_SYSTEM],[yes],[
       AC_DEFINE(HAS_SRTP_SRTP_H,1)
       SRTP_MSG="yes (system)"
-   ]
+   ],[
+      AC_CONFIG_SUBDIRS(src/rtp/libsrtp)
+      AC_DEFINE(HAS_SRTP_SRTP_H,0)
+      SRTP_MSG="yes (internal)"
+   ])
 )
-
-if test "x$OPAL_SRTP$SRTP_SYSTEM" = "xyesno" ; then
-   AC_CONFIG_SUBDIRS(src/rtp/libsrtp)
-   AC_DEFINE(HAS_SRTP_SRTP_H,0)
-   SRTP_MSG="yes (internal)"
-fi
 
 
 dnl ########################################################################
