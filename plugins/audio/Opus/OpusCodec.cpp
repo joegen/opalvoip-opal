@@ -73,6 +73,9 @@ PLUGINCODEC_LICENSE(
 );
 
 
+#define MAX_BIT_RATE 510000
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 static struct PluginCodec_Option const UseInBandFEC =
@@ -106,7 +109,7 @@ static struct PluginCodec_Option const MaxPlaybackRate =
   "",
   0,
   "6000",
-  "510000"
+  STRINGIZE(MAX_BIT_RATE)
 };
 
 static struct PluginCodec_Option const MaxCaptureRate =
@@ -120,7 +123,7 @@ static struct PluginCodec_Option const MaxCaptureRate =
   "",
   0,
   "6000",
-  "510000"
+  STRINGIZE(MAX_BIT_RATE)
 };
 
 static struct PluginCodec_Option const PlaybackStereo =
@@ -162,8 +165,8 @@ class OpusPluginMediaFormat : public PluginCodec_AudioFormat<MY_CODEC>
 
     OpusPluginMediaFormat(const char * formatName, const char * rawFormat, unsigned actualSampleRate, unsigned actualChannels)
       : PluginCodec_AudioFormat<MY_CODEC>(formatName, "OPUS", MyDescription,
-                                           960,
-                                           640*actualChannels*actualSampleRate/48000,
+                                           960*actualChannels*actualSampleRate/48000,
+                                           MAX_BIT_RATE*20/1000/8, // 20ms and bits to bytes
                                            48000, MyOptions)
       , m_actualSampleRate(actualSampleRate)
       , m_actualChannels(actualChannels)
@@ -171,7 +174,7 @@ class OpusPluginMediaFormat : public PluginCodec_AudioFormat<MY_CODEC>
       m_rawFormat = rawFormat;
       m_recommendedFramesPerPacket = 1; // 20ms
       m_maxFramesPerPacket = 6; // 120ms
-      m_maxBandwidth = 512000;
+      m_maxBandwidth = MAX_BIT_RATE;
       m_flags |= PluginCodec_SetChannels(2) | PluginCodec_RTPTypeShared;
     }
 
