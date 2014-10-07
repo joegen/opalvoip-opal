@@ -619,7 +619,6 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-enable_option_checking=no
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
 OPAL_PLUGIN_DIR
@@ -690,12 +689,12 @@ ZRTP_USABLE
 ZRTP_LIBS
 ZRTP_CFLAGS
 ZRTP_SYSTEM
-subdirs
 OPAL_SRTP
 SRTP_USABLE
 SRTP_LIBS
 SRTP_CFLAGS
 SRTP_SYSTEM
+subdirs
 OPAL_PTLIB_GSTREAMER
 OPAL_PTLIB_CLI
 OPAL_PTLIB_HTTPSVC
@@ -5018,18 +5017,18 @@ else
 /* end confdefs.h.  */
 
   /* For now, do not test the preprocessor; as of 2007 there are too many
-         implementations with broken preprocessors.  Perhaps this can
-         be revisited in 2012.  In the meantime, code should not expect
-         #if to work with literals wider than 32 bits.  */
+	 implementations with broken preprocessors.  Perhaps this can
+	 be revisited in 2012.  In the meantime, code should not expect
+	 #if to work with literals wider than 32 bits.  */
       /* Test literals.  */
       long long int ll = 9223372036854775807ll;
       long long int nll = -9223372036854775807LL;
       unsigned long long int ull = 18446744073709551615ULL;
       /* Test constant expressions.   */
       typedef int a[((-9223372036854775807LL < 0 && 0 < 9223372036854775807ll)
-                     ? 1 : -1)];
+		     ? 1 : -1)];
       typedef int b[(18446744073709551615ULL <= (unsigned long long int) -1
-                     ? 1 : -1)];
+		     ? 1 : -1)];
       int i = 63;
 int
 main ()
@@ -5038,9 +5037,9 @@ main ()
       long long int llmax = 9223372036854775807ll;
       unsigned long long int ullmax = 18446744073709551615ull;
       return ((ll << 63) | (ll >> 63) | (ll < i) | (ll > i)
-              | (llmax / ll) | (llmax % ll)
-              | (ull << 63) | (ull >> 63) | (ull << i) | (ull >> i)
-              | (ullmax / ull) | (ullmax % ull));
+	      | (llmax / ll) | (llmax % ll)
+	      | (ull << 63) | (ull >> 63) | (ull << i) | (ull >> i)
+	      | (ullmax / ull) | (ullmax % ull));
   ;
   return 0;
 }
@@ -5072,33 +5071,33 @@ if ${ac_cv_type_long_long_int+:} false; then :
 else
   ac_cv_type_long_long_int=yes
       if test "x${ac_cv_prog_cc_c99-no}" = xno; then
-        ac_cv_type_long_long_int=$ac_cv_type_unsigned_long_long_int
-        if test $ac_cv_type_long_long_int = yes; then
-                                        if test "$cross_compiling" = yes; then :
+	ac_cv_type_long_long_int=$ac_cv_type_unsigned_long_long_int
+	if test $ac_cv_type_long_long_int = yes; then
+	  	  	  	  if test "$cross_compiling" = yes; then :
   :
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <limits.h>
-                 #ifndef LLONG_MAX
-                 # define HALF \
-                          (1LL << (sizeof (long long int) * CHAR_BIT - 2))
-                 # define LLONG_MAX (HALF - 1 + HALF)
-                 #endif
+		 #ifndef LLONG_MAX
+		 # define HALF \
+			  (1LL << (sizeof (long long int) * CHAR_BIT - 2))
+		 # define LLONG_MAX (HALF - 1 + HALF)
+		 #endif
 int
 main ()
 {
 long long int n = 1;
-                 int i;
-                 for (i = 0; ; i++)
-                   {
-                     long long int m = n << i;
-                     if (m >> i != n)
-                       return 1;
-                     if (LLONG_MAX / 2 < m)
-                       break;
-                   }
-                 return 0;
+		 int i;
+		 for (i = 0; ; i++)
+		   {
+		     long long int m = n << i;
+		     if (m >> i != n)
+		       return 1;
+		     if (LLONG_MAX / 2 < m)
+		       break;
+		   }
+		 return 0;
   ;
   return 0;
 }
@@ -5112,7 +5111,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
-        fi
+	fi
       fi
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_type_long_long_int" >&5
@@ -5135,18 +5134,18 @@ else
 /* end confdefs.h.  */
 
   /* For now, do not test the preprocessor; as of 2007 there are too many
-         implementations with broken preprocessors.  Perhaps this can
-         be revisited in 2012.  In the meantime, code should not expect
-         #if to work with literals wider than 32 bits.  */
+	 implementations with broken preprocessors.  Perhaps this can
+	 be revisited in 2012.  In the meantime, code should not expect
+	 #if to work with literals wider than 32 bits.  */
       /* Test literals.  */
       long long int ll = 9223372036854775807ll;
       long long int nll = -9223372036854775807LL;
       unsigned long long int ull = 18446744073709551615ULL;
       /* Test constant expressions.   */
       typedef int a[((-9223372036854775807LL < 0 && 0 < 9223372036854775807ll)
-                     ? 1 : -1)];
+		     ? 1 : -1)];
       typedef int b[(18446744073709551615ULL <= (unsigned long long int) -1
-                     ? 1 : -1)];
+		     ? 1 : -1)];
       int i = 63;
 int
 main ()
@@ -5155,9 +5154,9 @@ main ()
       long long int llmax = 9223372036854775807ll;
       unsigned long long int ullmax = 18446744073709551615ull;
       return ((ll << 63) | (ll >> 63) | (ll < i) | (ll > i)
-              | (llmax / ll) | (llmax % ll)
-              | (ull << 63) | (ull >> 63) | (ull << i) | (ull >> i)
-              | (ullmax / ull) | (ullmax % ull));
+	      | (llmax / ll) | (llmax % ll)
+	      | (ull << 63) | (ull >> 63) | (ull << i) | (ull >> i)
+	      | (ullmax / ull) | (ullmax % ull));
   ;
   return 0;
 }
@@ -6519,11 +6518,24 @@ fi
 
 
    if test "x$usable" = "xyes"; then :
+  if test "x$SRTP_SYSTEM" = xyes; then :
 
       $as_echo "#define HAS_SRTP_SRTP_H 1" >>confdefs.h
 
       SRTP_MSG="yes (system)"
 
+else
+
+      enable_option_checking=no
+
+
+subdirs="$subdirs src/rtp/libsrtp"
+
+      $as_echo "#define HAS_SRTP_SRTP_H 0" >>confdefs.h
+
+      SRTP_MSG="yes (internal)"
+
+fi
 
 fi
 
@@ -6537,16 +6549,6 @@ fi
    OPAL_SRTP=$SRTP_USABLE
 
 
-
-if test "x$OPAL_SRTP$SRTP_SYSTEM" = "xyesno" ; then
-
-
-subdirs="$subdirs src/rtp/libsrtp"
-
-   $as_echo "#define HAS_SRTP_SRTP_H 0" >>confdefs.h
-
-   SRTP_MSG="yes (internal)"
-fi
 
 
 
