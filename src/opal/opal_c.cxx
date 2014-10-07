@@ -962,15 +962,14 @@ void SIPEndPoint_C::OnDialogInfoReceived(const SIPDialogNotification & info)
 
 ///////////////////////////////////////
 
-static bool CheckProto(const PArgList & args, const char * proto, PString & defName, PINDEX & defPos)
+static bool CheckProto(const PArgList & args, const char * proto, const char * dest, PString & defName, PINDEX & defPos)
 {
   PCaselessString protocol = proto;
-  protocol.Delete(protocol.Find(':'), P_MAX_INDEX);
 
   for (PINDEX pos = 0; pos < args.GetCount(); ++pos) {
-    if (protocol == args[pos]) {
+    if (args[pos] *= proto) {
       if (pos < defPos) {
-        defName = proto;
+        defName = PSTRSTRM(proto << ':' << dest);
         defPos = pos;
       }
       return true;
@@ -990,47 +989,47 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
   PINDEX  defProtoPos = P_MAX_INDEX, defUserPos = P_MAX_INDEX;
 
 #if OPAL_H323
-  bool hasH323 = CheckProto(args, OPAL_PREFIX_H323, defProto, defProtoPos);
+  bool hasH323 = CheckProto(args, OPAL_PREFIX_H323, "<da>", defProto, defProtoPos);
 #endif
 
 #if OPAL_SIP
-  bool hasSIP = CheckProto(args, OPAL_PREFIX_SIP, defProto, defProtoPos);
+  bool hasSIP = CheckProto(args, OPAL_PREFIX_SIP, "<da>", defProto, defProtoPos);
 #endif
 
 #if OPAL_IAX2
-  bool hasIAX2 = CheckProto(args, OPAL_PREFIX_IAX2, defProto, defProtoPos);
+  bool hasIAX2 = CheckProto(args, OPAL_PREFIX_IAX2, "<da>", defProto, defProtoPos);
 #endif
 
 #if OPAL_SKINNY
-  bool hasSkinny = CheckProto(args, OPAL_PREFIX_SKINNY, defProto, defProtoPos);
+  bool hasSkinny = CheckProto(args, OPAL_PREFIX_SKINNY, "<dn>", defProto, defProtoPos);
 #endif
 
 #if OPAL_LID
-  bool hasPOTS = CheckProto(args, OPAL_PREFIX_POTS":<dn>", defUser, defUserPos);
-  bool hasPSTN = CheckProto(args, OPAL_PREFIX_PSTN":<dn>", defProto, defProtoPos);
+  bool hasPOTS = CheckProto(args, OPAL_PREFIX_POTS, "<dn>", defUser, defUserPos);
+  bool hasPSTN = CheckProto(args, OPAL_PREFIX_PSTN, "<dn>", defProto, defProtoPos);
 #endif
 
 #if OPAL_FAX
-  bool hasFAX = CheckProto(args, OPAL_PREFIX_FAX, defUser, defUserPos);
-  bool hasT38 = CheckProto(args, OPAL_PREFIX_T38, defUser, defUserPos);
+  bool hasFAX = CheckProto(args, OPAL_PREFIX_FAX, "<du>", defUser, defUserPos);
+  bool hasT38 = CheckProto(args, OPAL_PREFIX_T38, "<du>", defUser, defUserPos);
 #endif
 
 #if OPAL_HAS_PCSS
-  bool hasPC = CheckProto(args, OPAL_PREFIX_PCSS":*", defUser, defUserPos);
+  bool hasPC = CheckProto(args, OPAL_PREFIX_PCSS, "*", defUser, defUserPos);
 #endif
 
-  bool hasLocal = CheckProto(args, OPAL_PREFIX_LOCAL":<du>", defUser, defUserPos);
+  bool hasLocal = CheckProto(args, OPAL_PREFIX_LOCAL, "<du>", defUser, defUserPos);
 
 #if OPAL_GSTREAMER
-  bool hasGStreamer = CheckProto(args, OPAL_PREFIX_GST":*", defUser, defUserPos);
+  bool hasGStreamer = CheckProto(args, OPAL_PREFIX_GST, "*", defUser, defUserPos);
 #endif
 
 #if OPAL_IVR
-  bool hasIVR = CheckProto(args, OPAL_PREFIX_IVR, defUser, defUserPos);
+  bool hasIVR = CheckProto(args, OPAL_PREFIX_IVR, "", defUser, defUserPos);
 #endif
 
 #if OPAL_HAS_MIXER
-  bool hasMIX = CheckProto(args, OPAL_PREFIX_MIXER, defUser, defUserPos);
+  bool hasMIX = CheckProto(args, OPAL_PREFIX_MIXER, "", defUser, defUserPos);
 #endif
 
   AddRouteEntry(".*\t[0-9]+=tel:<du>");
@@ -1068,9 +1067,9 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
     new OpalLineEndPoint(*this);
 
     if (hasPOTS)
-      AddRouteEntry(OPAL_PREFIX_POTS":.*=" + defProto + ":<da>");
+      AddRouteEntry(OPAL_PREFIX_POTS":.*=" + defProto);
     if (hasPSTN)
-      AddRouteEntry(OPAL_PREFIX_PSTN":.*=" + defUser + ":<da>");
+      AddRouteEntry(OPAL_PREFIX_PSTN":.*=" + defUser);
   }
 #endif
 
@@ -1079,52 +1078,52 @@ OpalManager_C::OpalManager_C(unsigned version, const PArgList & args)
     new OpalFaxEndPoint(*this);
 
     if (hasFAX)
-      AddRouteEntry(OPAL_PREFIX_FAX":.*=" + defProto + ":<da>");
+      AddRouteEntry(OPAL_PREFIX_FAX":.*=" + defProto);
     if (hasT38)
-      AddRouteEntry(OPAL_PREFIX_T38":.*=" + defUser + ":<da>");
+      AddRouteEntry(OPAL_PREFIX_T38":.*=" + defProto);
   }
 #endif
 
   if (hasLocal) {
     new OpalLocalEndPoint_C(*this);
-    AddRouteEntry(OPAL_PREFIX_LOCAL":.*=" + defProto + ":<da>");
+    AddRouteEntry(OPAL_PREFIX_LOCAL":.*=" + defProto);
   }
 
 #if OPAL_HAS_PCSS
   if (hasPC) {
     new OpalPCSSEndPoint_C(*this);
-    AddRouteEntry(OPAL_PREFIX_PCSS":.*=" + defProto + ":<da>");
+    AddRouteEntry(OPAL_PREFIX_PCSS":.*=" + defProto);
   }
 #endif
 
 #if OPAL_GSTREAMER
   if (hasGStreamer) {
     new OpalGstEndPoint_C(*this);
-    AddRouteEntry(OPAL_PREFIX_GST":.*=" + defProto + ":<da>");
+    AddRouteEntry(OPAL_PREFIX_GST":.*=" + defProto);
   }
 #endif
 
 #if OPAL_IVR
   if (hasIVR) {
     new OpalIVREndPoint_C(*this);
-    AddRouteEntry(OPAL_PREFIX_IVR":.*=" + defProto + ":<da>");
+    AddRouteEntry(OPAL_PREFIX_IVR":.*=" + defProto);
   }
 #endif
 
 #if OPAL_HAS_MIXER
   if (hasMIX) {
     new OpalMixerEndPoint(*this, "mcu");
-    AddRouteEntry("mcu:.*=" + defProto + ":<da>");
+    AddRouteEntry("mcu:.*=" + defProto);
   }
 #endif
 
 #if OPAL_HAS_IM
-  if (CheckProto(args, OPAL_PREFIX_IM, defUser, defUserPos))
+  if (CheckProto(args, OPAL_PREFIX_IM, "", defUser, defUserPos))
     new OpalIMEndPoint(*this);
 #endif
 
   // Add synonym for tel URI to default protocol
-  AttachEndPoint(FindEndPoint(defProto), "tel");
+  AttachEndPoint(FindEndPoint(defProto.Left(defProto.Find(':'))), "tel");
 }
 
 
