@@ -1648,12 +1648,8 @@ bool SIPConnection::SendDelayedACK(bool force)
 
 void SIPConnection::UpdateRemoteAddresses()
 {
-  SIPURL remote = m_ciscoRemotePartyID;
-  if (remote.IsEmpty()) {
-    remote = m_dialog.GetRemoteURI();
-    remote.Sanitise(SIPURL::ExternalURI);
-  }
-  remotePartyName = remote.GetDisplayName();
+  SIPURL remote = !m_remoteIdentity.IsEmpty() ? m_remoteIdentity : !m_ciscoRemotePartyID.IsEmpty() ? m_ciscoRemotePartyID : m_dialog.GetRemoteURI();
+  remote.Sanitise(SIPURL::ExternalURI);
 
   remotePartyNumber = remote.GetUserName();
   if (!OpalIsE164(remotePartyNumber))
@@ -1662,7 +1658,9 @@ void SIPConnection::UpdateRemoteAddresses()
   remotePartyName = remote.GetDisplayName();
   if (remotePartyName.IsEmpty())
     remotePartyName = remotePartyNumber.IsEmpty() ? remote.GetUserName() : remote.AsString();
-  m_remotePartyURL = remote.AsString();
+
+  // This is the address to use to call the remote
+  m_remotePartyURL = PIPSocket::Address(remote.GetHostName()).IsValid() ? m_dialog.GetRemoteURI().AsString() : remote.AsString();
 
   // If no local name, then use what the remote thinks we are
   if (localPartyName.IsEmpty())
