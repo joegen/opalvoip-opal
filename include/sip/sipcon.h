@@ -822,7 +822,7 @@ class SIPConnection : public OpalRTPConnection, public SIPTransactionOwner
     bool                  m_holdFromRemote;
     PString               m_forwardParty;
     OpalTransportAddress  m_remoteAddress;
-    PString               m_remoteIdentity;
+    SIPURL                m_remoteIdentity;
     SIPURL                m_contactAddress;
     SIPURL                m_ciscoRemotePartyID;
 
