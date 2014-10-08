@@ -2454,7 +2454,7 @@ void SIPConnection::UpdateRemoteAddresses()
     remotePartyName = remotePartyNumber.IsEmpty() ? remote.GetUserName() : remote.AsString();
 
   // This is the address to use to call the remote
-  m_remotePartyURL = PIPSocket::Address(remote.GetHostName()).IsValid() ? m_dialog.GetRemoteURI().AsString() : remote.AsString();
+  m_remotePartyURL = PIPSocket::Address(remote.GetHostName()).IsValid() ? m_dialog.GetRequestURI().AsString() : remote.AsString();
 
   // If no local name, then use what the remote thinks we are
   if (localPartyName.IsEmpty())
