@@ -287,12 +287,18 @@ bool OpalRTPSession::GetSyncSource(RTP_SyncSourceId ssrc, Direction dir, SyncSou
   }
   else {
     for (it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-      if (it->second->m_direction == dir)
+      if (it->second->m_direction == dir && it->second->m_packets > 0)
         break;
     }
     if (it == m_SSRC.end()) {
-      PTRACE(3, *this << "cannot find info for any " << dir);
-      return false;
+      for (it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
+        if (it->second->m_direction == dir)
+          break;
+      }
+      if (it == m_SSRC.end()) {
+        PTRACE(3, *this << "cannot find info for any " << dir);
+        return false;
+      }
     }
   }
 
