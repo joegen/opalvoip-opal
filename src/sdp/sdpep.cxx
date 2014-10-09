@@ -688,6 +688,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
   if (!keys.IsEmpty() && !CanDoSRTP()) {
     PTRACE(2, "No secure signaling, cannot use SDES crypto for " << mediaType << " session " << sessionId);
     keys.RemoveAll();
+    incomingMedia->SetCryptoKeys(keys);
   }
 
   // See if we already have a secure version of the media session
