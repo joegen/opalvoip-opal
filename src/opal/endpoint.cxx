@@ -423,11 +423,18 @@ OpalConnection * OpalEndPoint::AddConnection(OpalConnection * connection)
   if (connection == NULL)
     return NULL;
 
+  PString token = connection->GetToken();
+  if (connectionsActive.Contains(token)) {
+    PTRACE(2, "Cannot add connection, duplicate token: " << token);
+    delete connection;
+    return NULL;
+  }
+
   connection->SetStringOptions(m_defaultStringOptions, false);
 
   OnNewConnection(connection->GetCall(), *connection);
 
-  connectionsActive.SetAt(connection->GetToken(), connection);
+  connectionsActive.SetAt(token, connection);
 
   return connection;
 }
