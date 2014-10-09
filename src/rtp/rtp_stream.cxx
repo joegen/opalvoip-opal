@@ -186,7 +186,7 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
 #if OPAL_VIDEO
   if (packet.GetDiscontinuity() > 0 && mediaFormat.GetMediaType() == OpalMediaType::Video()) {
     PTRACE(3, "Automatically requiring video update due to " << packet.GetDiscontinuity() << " missing packets.");
-    ExecuteCommand(OpalVideoPictureLoss(packet.GetSequenceNumber(), packet.GetTimestamp()));
+    ExecuteCommand(OpalVideoPictureLoss(packet.GetSequenceNumber(), packet.GetTimestamp(), 0, packet.GetSyncSource()));
   }
 #endif
 
