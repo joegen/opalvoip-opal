@@ -1205,22 +1205,46 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(bool force)
 #if OPAL_STATISTICS
 void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, bool receiver, RTP_SyncSourceId ssrc) const
 {
+  statistics.m_totalBytes        = 0;
+  statistics.m_totalPackets      = 0;
+  statistics.m_packetsLost       = 0;
+  statistics.m_packetsOutOfOrder = 0;
+  statistics.m_minimumPacketTime = 0;
+  statistics.m_averagePacketTime = 0;
+  statistics.m_maximumPacketTime = 0;
+  statistics.m_averageJitter     = 0;
+  statistics.m_maximumJitter     = 0;
+  statistics.m_roundTripTime     = m_roundTripTime;
+
+  Direction dir = receiver ? e_Receiver : e_Sender;
   SyncSource * info;
-  if (GetSyncSource(ssrc, receiver ? e_Receiver : e_Sender, info))
+  if (ssrc != 0 && GetSyncSource(ssrc, dir, info)) {
     info->GetStatistics(statistics);
-  else {
-    statistics.m_totalBytes        = 0;
-    statistics.m_totalPackets      = 0;
-    statistics.m_packetsLost       = 0;
-    statistics.m_packetsOutOfOrder = 0;
-    statistics.m_minimumPacketTime = 0;
-    statistics.m_averagePacketTime = 0;
-    statistics.m_maximumPacketTime = 0;
-    statistics.m_averageJitter     = 0;
-    statistics.m_maximumJitter     = 0;
+    return;
   }
 
-  statistics.m_roundTripTime = m_roundTripTime;
+  unsigned count = 0;
+  for (SyncSourceMap::const_iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
+    if (it->second->m_direction == dir) {
+      OpalMediaStatistics ssrcStats;
+      it->second->GetStatistics(ssrcStats);
+      if (ssrcStats.m_totalPackets > 0) {
+        statistics.m_totalBytes        += ssrcStats.m_totalBytes;
+        statistics.m_totalPackets      += ssrcStats.m_totalPackets;
+        statistics.m_packetsLost       += ssrcStats.m_packetsLost;
+        statistics.m_packetsOutOfOrder += ssrcStats.m_packetsOutOfOrder;
+        statistics.m_minimumPacketTime += ssrcStats.m_minimumPacketTime;
+        statistics.m_averagePacketTime += ssrcStats.m_averagePacketTime;
+        statistics.m_maximumPacketTime += ssrcStats.m_maximumPacketTime;
+        statistics.m_averageJitter     += ssrcStats.m_averageJitter;
+        ++count;
+      }
+    }
+  }
+  if (count > 1) {
+    statistics.m_averagePacketTime /= count;
+    statistics.m_averageJitter /= count;
+  }
 }
 #endif
 
@@ -1973,6 +1997,8 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
 
   if (!OpalMediaSession::Open(localInterface, remoteAddress, mediaAddress))
     return false;
+
+  PTRACE(4, *this << "opening: local=" << m_localAddress << " remote=" << m_remoteAddress);
 
   m_firstControl = true;
 
