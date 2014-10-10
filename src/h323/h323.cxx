@@ -2601,7 +2601,7 @@ PBoolean H323Connection::CreateOutgoingControlChannel(const PASN_Sequence & encl
 
   PIPAddress localInterface(m_signallingChannel->GetInterface());
 #if OPAL_PTLIB_SSL
-  if (enclosingPDU.HasOptionalField(h245SecurityField)) {
+  if (enclosingPDU.HasOptionalField(h245SecurityField) && h245Security.GetTag() != H225_H245Security::e_noSecurity) {
     if (h245Security.GetTag() != H225_H245Security::e_tls) {
       PTRACE(2, "H225\tUnsupported H.245 security mode");
       return false;
