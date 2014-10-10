@@ -2449,7 +2449,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveRedundantFrame(RTP_Da
 
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveRedundantData(RTP_DataFrame::PayloadTypes payloadType,
-                                                                       unsigned timestamp,
+                                                                       unsigned PTRACE_PARAM(timestamp),
                                                                        const BYTE * /*data*/,
                                                                        PINDEX size)
 {
