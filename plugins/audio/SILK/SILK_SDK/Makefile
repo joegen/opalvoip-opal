@@ -113,7 +113,7 @@ clean:
 		  $(SIGNALCMP_OBJS) $(TEST_OBJS) \
 		  encoder$(EXESUFFIX) decoder$(EXESUFFIX) signalcompare$(EXESUFFIX)
 ifdef OBJDIR
-	rmdir $(OBJDIR)
+	-rmdir $(OBJDIR)
 endif
 
 install uninstall:

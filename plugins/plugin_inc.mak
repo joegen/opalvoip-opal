@@ -128,7 +128,11 @@ ifneq (,$(PLUGIN_PATH))
 endif
 
 clean optclean debugclean distclean ::
+ifneq ($(OBJDIR),)
 	rm -rf $(OBJDIR)
+else
+	@true
+endif
 
 debug debugshared debugstatic :: DEBUG_BUILD=yes
 opt   optshared   optstatic   :: DEBUG_BUILD=no
