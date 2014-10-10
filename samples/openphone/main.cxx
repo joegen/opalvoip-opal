@@ -6638,8 +6638,8 @@ void OptionsDialog::BrowseTraceFile(wxCommandEvent & /*event*/)
 
 BEGIN_EVENT_TABLE(NetOptionsDialog, wxDialog)
 #if OPAL_PTLIB_SSL
-  EVT_RADIOBOX(XRCID("SignalingSecurityKey"), NetOptionsDialog::SignalingSecurityChanged)
-  EVT_LISTBOX(XRCID("MediaCryptoSuitesKey"),  NetOptionsDialog::MediaCryptoSuiteChanged)
+  EVT_RADIOBOX(XRCID("SignalingSecurity"), NetOptionsDialog::SignalingSecurityChanged)
+  EVT_LISTBOX(XRCID("MediaCryptoSuites"),  NetOptionsDialog::MediaCryptoSuiteChanged)
   EVT_BUTTON(XRCID("MediaCryptoSuiteUp"),     NetOptionsDialog::MediaCryptoSuiteUp)
   EVT_BUTTON(XRCID("MediaCryptoSuiteDown"),   NetOptionsDialog::MediaCryptoSuiteDown)
 #endif
@@ -6659,12 +6659,11 @@ NetOptionsDialog::NetOptionsDialog(MyManager * manager, OpalRTPEndPoint * ep)
     m_SignalingSecurity |= 2;
   --m_SignalingSecurity;
 
-  wxRadioBox * radio;
-  FindWindowByNameAs(radio, this, wxT("SignalingSecurity"))->SetValidator(wxGenericValidator(&m_SignalingSecurity));
-  for (size_t i = 0; i < radio->GetColumnCount(); ++i) {
-    wxString str = radio->GetString(i);
+  FindWindowByNameAs(m_SignalingSecurityButtons, this, wxT("SignalingSecurity"))->SetValidator(wxGenericValidator(&m_SignalingSecurity));
+  for (size_t i = 0; i < m_SignalingSecurityButtons->GetColumnCount(); ++i) {
+    wxString str = m_SignalingSecurityButtons->GetString(i);
     str.Replace(wxT("XXX"), PwxString(ep->GetPrefixName()));
-    radio->SetString(i, str);
+    m_SignalingSecurityButtons->SetString(i, str);
   }
 
   FindWindowByNameAs(m_MediaCryptoSuiteUp, this, wxT("MediaCryptoSuiteUp"));
@@ -6722,6 +6721,8 @@ void NetOptionsDialog::SaveOptions(wxConfigBase * config, const wxChar * stringO
 #if OPAL_PTLIB_SSL
 void NetOptionsDialog::InitSecurityFields()
 {
+  m_SignalingSecurityButtons->SetSelection(m_SignalingSecurity);
+
   PStringArray allMethods = m_endpoint->GetAllMediaCryptoSuites();
   PStringArray enabledMethods = m_endpoint->GetMediaCryptoSuites();
 
@@ -6786,7 +6787,9 @@ void NetOptionsDialog::SignalingSecurityChanged(wxCommandEvent & theEvent)
 {
   if (!wxDialog::TransferDataFromWindow())
     return;
-
+  wxRadioBox *signalingSecurityRadio;
+  FindWindowByNameAs(signalingSecurityRadio, this, wxT("SignalingSecurity"));
+  m_SignalingSecurity = signalingSecurityRadio->GetSelection();
   InitSecurityFields();
   MediaCryptoSuiteChanged(theEvent);
 }

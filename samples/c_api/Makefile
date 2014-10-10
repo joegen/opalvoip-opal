@@ -54,7 +54,7 @@ $(OBJDIR)/$(PROG): $(OBJECTS)
 
 optdepend debugdepend bothdepend optlibs debuglibs bothlibs:
 
-clean:
-	rm $(OBJECTS) $(OBJDIR)/$(PROG)
+clean optclean debugclean:
+	-rm $(OBJECTS) $(OBJDIR)/$(PROG)
 
 # End of Makefile
