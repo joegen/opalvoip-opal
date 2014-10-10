@@ -374,7 +374,9 @@ H225_CryptoH323Token * H235AuthSimpleMD5::CreateCryptoToken(bool digits)
   }
   else {
     cryptoEPPwdHash.m_alias.SetTag(H225_AliasAddress::e_h323_ID);
-    (PASN_BMPString &)cryptoEPPwdHash.m_alias = localId;
+    /* Avaya ECS Gatekeeper needs a trailing NULL character.
+       Awaiting compatibility errors with other gatekeepers now. */
+    (PASN_BMPString &)cryptoEPPwdHash.m_alias = localId + '\0';
   }
 
   // Use SetValueRaw to make sure trailing NULL is included
