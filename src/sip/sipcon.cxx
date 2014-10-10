@@ -3453,7 +3453,7 @@ void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
 PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response)
 {
   // No IsReleased() to allow for BYE authentication
-  if (SIPConnection::OnReceivedAuthenticationRequired) {
+  if (GetPhase() == ReleasedPhase) {
     PTRACE(2, "SIP\tNo authentication retry as released " << *this);
     return false;
   }
