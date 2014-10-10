@@ -618,6 +618,7 @@ class NetOptionsDialog : public wxDialog
 
 #if OPAL_PTLIB_SSL
     int              m_SignalingSecurity;
+    wxRadioBox     * m_SignalingSecurityButtons;
     wxCheckListBox * m_MediaCryptoSuites;
     wxButton       * m_MediaCryptoSuiteUp;
     wxButton       * m_MediaCryptoSuiteDown;
