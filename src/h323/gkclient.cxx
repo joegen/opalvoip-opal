@@ -1408,9 +1408,9 @@ PBoolean H323Gatekeeper::DisengageRequest(const H323Connection & connection, uns
 }
 
 
-PBoolean H323Gatekeeper::OnReceiveDisengageReject(const H323RasPDU &, const H225_DisengageReject & drj)
+PBoolean H323Gatekeeper::OnReceiveDisengageReject(const H323RasPDU &pdu, const H225_DisengageReject & drj)
 {
-  if (!H225_RAS::OnReceiveDisengageReject(drj))
+  if (!H225_RAS::OnReceiveDisengageReject(pdu, drj))
     return false;
 
   if (lastRequest->rejectReason == H225_DisengageRejectReason::e_notRegistered)
