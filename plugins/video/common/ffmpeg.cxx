@@ -297,6 +297,8 @@ bool FFMPEGCodec::SetResolution(unsigned width, unsigned height)
 
     m_context->width = width;
     m_context->height = height;
+	m_context->coded_width = width;
+	m_context->coded_height = height;
   }
 
   if (m_picture != NULL) {
