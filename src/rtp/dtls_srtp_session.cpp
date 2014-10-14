@@ -150,27 +150,37 @@ public:
       Connect();
   }
 
+
+  virtual int BioRead(char * buf, int len)
+  {
+    int result = PSSLChannelDTLS::BioRead(buf, len);
+    PTRACE_IF(2, result <= 0, "Read error: " << GetErrorText());
+    return result;
+  }
+
+
   virtual int BioWrite(const char * buf, int len)
   {
     PUDPSocket * udp = dynamic_cast<PUDPSocket *>(GetBaseReadChannel());
     if (udp == NULL)
-      return PSSLChannel::BioWrite(buf, len);
+      return PSSLChannelDTLS::BioWrite(buf, len);
 
     PIPSocketAddressAndPort rx;
     udp->GetLastReceiveAddress(rx);
     if (!rx.IsValid())
-      return PSSLChannel::BioWrite(buf, len);
+      return PSSLChannelDTLS::BioWrite(buf, len);
 
     // Make sure we send replies to the address that the packet came in on
     PIPSocketAddressAndPort old;
     udp->GetSendAddress(old);
     udp->SetSendAddress(rx);
 
-    int ret = PSSLChannel::BioWrite(buf, len);
+    int result = PSSLChannelDTLS::BioWrite(buf, len);
+    PTRACE_IF(2, result <= 0, "Write error: " << GetErrorText());
 
     udp->SetSendAddress(old);
 
-    return ret;
+    return result;
   }
 
   OpalDTLSSRTPSession & m_session;
