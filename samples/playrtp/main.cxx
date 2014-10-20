@@ -178,6 +178,7 @@ void PlayRTP::Main()
     pcap.SetFilterDstPort(PIPSocket::GetPortByService("udp", args.GetOptionString('d', "5000")));
   }
   else {
+    cout << "Scanning file for RTP sessions." << endl;
     OpalPCAPFile::DiscoveredRTPMap discoveredRTPMap;
     if (!pcap.DiscoverRTP(discoveredRTPMap)) {
       cerr << "No RTP sessions found - please use -S/-D/-s/-d option to specify session manually" << endl;
