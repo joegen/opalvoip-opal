@@ -586,7 +586,7 @@ void RTP_ReceiverReport::PrintOn(ostream & strm) const
 void RTP_SenderReport::PrintOn(ostream & strm) const
 {
   strm << "SSRC=" << RTP_TRACE_SRC(sourceIdentifier)
-       << " ntp=" << realTimestamp.AsString("yyyy/M/d-hh:m:s.uuuu")
+       << " ntp=" << realTimestamp.AsString("yyyy/M/d hh:mm:ss.uuuu")
        << " rtp=" << rtpTimestamp
        << " psent=" << packetsSent
        << " osent=" << octetsSent;
