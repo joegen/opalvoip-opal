@@ -1951,7 +1951,7 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session) const
 
 PString SDPRTPAVPMediaDescription::GetBundleId() const
 {
-  for (size_t i = 0; i < m_flowGroup[i]; ++i) {
+  for (size_t i = 0; i < m_flowGroup.size(); ++i) {
     SsrcInfo::const_iterator it = m_ssrcInfo.find(m_flowGroup[i]);
     if (it != m_ssrcInfo.end()) {
       if (it->second.Has("mslabel"))
@@ -2568,7 +2568,7 @@ void SDPSessionDescription::PrintOn(ostream & strm) const
         hasICE = true;
 #endif //OPAL_ICE
 
-      PString id = rtp->GetBundleId();
+      PString id = rtp->GetBundleMediaId();
       if (!id.IsEmpty()) {
         SDPRTPAVPMediaDescription::SsrcInfo::const_iterator it = rtp->GetSsrcInfo().begin();
         if (it != rtp->GetSsrcInfo().end())
