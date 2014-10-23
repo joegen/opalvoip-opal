@@ -1031,7 +1031,7 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
   }
 
   if (attr *= "mid") {
-    m_mediaGroupId = value;
+    m_bundleMediaId = value;
     return;
   }
 
@@ -1166,8 +1166,8 @@ void SDPMediaDescription::OutputAttributes(ostream & strm) const
 {
   SDPCommonAttributes::OutputAttributes(strm);
 
-  if (!m_mediaGroupId.IsEmpty())
-    strm << "a=mid:" << m_mediaGroupId << CRLF;
+  if (!m_bundleMediaId.IsEmpty())
+    strm << "a=mid:" << m_bundleMediaId << CRLF;
 
 #if OPAL_ICE
   if (m_username.IsEmpty() || m_password.IsEmpty())
@@ -1869,6 +1869,16 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
     return;
   }
 
+  if (attr *= "ssrc-group") {
+    PStringArray tokens = value.Tokenise(' ', false);
+    if (tokens.GetSize() > 1 && (tokens[0] *= "FID")) {
+      m_flowGroup.resize(tokens.GetSize() - 1);
+      for (PINDEX i = 1; i < tokens.GetSize(); ++i)
+        m_flowGroup[i - 1] = tokens[i].AsUnsigned();
+      return;
+    }
+  }
+
   SDPMediaDescription::SetAttribute(attr, value);
 }
 
@@ -1884,7 +1894,7 @@ bool SDPRTPAVPMediaDescription::FromSession(const OpalMediaSession * session, co
       PString cname = rtpSession->GetCanonicalName(ssrc[i]);
       if (!cname.IsEmpty())
         info.SetAt("cname", cname);
-      PString mslabel = rtpSession->GetGroupId();
+      PString mslabel = rtpSession->GetBundleId();
       if (!mslabel.IsEmpty()) {
         PString label = mslabel + '+' + session->GetMediaType();
         info.SetAt("mslabel", mslabel);
@@ -1893,7 +1903,7 @@ bool SDPRTPAVPMediaDescription::FromSession(const OpalMediaSession * session, co
 
         // Probably should be arbitrary string, but everyone seems to use
         // the media type, as in "audio" and "video".
-        m_mediaGroupId = GetMediaType();
+        m_bundleMediaId = GetMediaType();
       }
     }
   }
@@ -1936,6 +1946,20 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session) const
 #endif // OPAL_SRTP
 
   return SDPMediaDescription::ToSession(session);
+}
+
+
+PString SDPRTPAVPMediaDescription::GetBundleId() const
+{
+  for (size_t i = 0; i < m_flowGroup[i]; ++i) {
+    SsrcInfo::const_iterator it = m_ssrcInfo.find(m_flowGroup[i]);
+    if (it != m_ssrcInfo.end()) {
+      if (it->second.Has("mslabel"))
+        return it->second.Get("mslabel");
+    }
+  }
+
+  return m_ssrcInfo.empty() ? PString::Empty() : m_ssrcInfo.begin()->second.Get("mslabel");
 }
 
 
@@ -2544,7 +2568,7 @@ void SDPSessionDescription::PrintOn(ostream & strm) const
         hasICE = true;
 #endif //OPAL_ICE
 
-      PString id = rtp->GetMediaGroupId();
+      PString id = rtp->GetBundleId();
       if (!id.IsEmpty()) {
         SDPRTPAVPMediaDescription::SsrcInfo::const_iterator it = rtp->GetSsrcInfo().begin();
         if (it != rtp->GetSsrcInfo().end())
@@ -2758,11 +2782,21 @@ void SDPSessionDescription::ParseOwner(const PString & str)
 }
 
 
+SDPMediaDescription * SDPSessionDescription::GetMediaDescriptionByBundle(const PString & bid, const PString & mid) const
+{
+  for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
+    if (mediaDescriptions[i].GetBundleId() == bid && mediaDescriptions[i].GetBundleMediaId() == mid)
+      return &mediaDescriptions[i];
+  }
+
+  return NULL;
+}
+
+
 SDPMediaDescription * SDPSessionDescription::GetMediaDescriptionByType(const OpalMediaType & rtpMediaType) const
 {
   // look for matching media type
-  PINDEX i;
-  for (i = 0; i < mediaDescriptions.GetSize(); i++) {
+  for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
     if (mediaDescriptions[i].GetMediaType() == rtpMediaType)
       return &mediaDescriptions[i];
   }

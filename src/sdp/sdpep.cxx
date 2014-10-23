@@ -181,7 +181,7 @@ PBoolean OpalSDPConnection::IsOnHold(bool fromRemote) const
 }
 
 
-PString OpalSDPConnection::GetOfferSDP(bool offerOpenMediaStreamsOnly)
+bool OpalSDPConnection::GetOfferSDP(SDPSessionDescription & offer, bool offerOpenMediaStreamsOnly)
 {
   if (GetPhase() == UninitialisedPhase) {
     InternalSetAsOriginating();
@@ -189,9 +189,27 @@ PString OpalSDPConnection::GetOfferSDP(bool offerOpenMediaStreamsOnly)
     OnApplyStringOptions();
   }
 
-  std::auto_ptr<SDPSessionDescription> sdp(m_endpoint.CreateSDP(0, 0, OpalTransportAddress()));
-  PTRACE_CONTEXT_ID_TO(*sdp);
-  return OnSendOfferSDP(*sdp, offerOpenMediaStreamsOnly) ? sdp->Encode() : PString::Empty();
+  return OnSendOfferSDP(offer, offerOpenMediaStreamsOnly);
+}
+
+
+PString OpalSDPConnection::GetOfferSDP(bool offerOpenMediaStreamsOnly)
+{
+  std::auto_ptr<SDPSessionDescription> sdp(CreateSDP(PString::Empty()));
+  return sdp.get() != NULL && GetOfferSDP(*sdp, offerOpenMediaStreamsOnly) ? sdp->Encode() : PString::Empty();
+}
+
+
+bool OpalSDPConnection::AnswerOfferSDP(const SDPSessionDescription & offer, SDPSessionDescription & answer)
+{
+  if (GetPhase() == UninitialisedPhase) {
+    SetPhase(SetUpPhase);
+    OnApplyStringOptions();
+    if (!OnIncomingConnection(0, NULL))
+      return false;
+  }
+
+  return OnSendAnswerSDP(offer, answer);
 }
 
 
@@ -204,19 +222,10 @@ PString OpalSDPConnection::AnswerOfferSDP(const PString & offer)
       return PString::Empty();
   }
 
-  OpalMediaFormatList formats = GetLocalMediaFormats();
-  if (formats.IsEmpty())
-    formats = OpalMediaFormat::GetAllRegisteredMediaFormats();
-
-  std::auto_ptr<SDPSessionDescription> sdpIn(m_endpoint.CreateSDP(0, 0, OpalTransportAddress()));
-  PTRACE_CONTEXT_ID_TO(*sdpIn);
-
-  if (!sdpIn->Decode(offer, formats))
+  std::auto_ptr<SDPSessionDescription> sdpIn(CreateSDP(offer));
+  std::auto_ptr<SDPSessionDescription> sdpOut(CreateSDP(PString::Empty()));
+  if (sdpIn.get() == NULL || sdpOut.get() == NULL)
     return PString::Empty();
-
-  std::auto_ptr<SDPSessionDescription> sdpOut(m_endpoint.CreateSDP(0, 0,
-                            OpalTransportAddress(GetMediaInterface(), 0, OpalTransportAddress::UdpPrefix())));
-  PTRACE_CONTEXT_ID_TO(*sdpOut);
 
   if (!OnSendAnswerSDP(*sdpIn, *sdpOut))
     return PString::Empty();
@@ -226,7 +235,7 @@ PString OpalSDPConnection::AnswerOfferSDP(const PString & offer)
 }
 
 
-bool OpalSDPConnection::HandleAnswerSDP(const PString & answer)
+bool OpalSDPConnection::HandleAnswerSDP(const SDPSessionDescription & answer)
 {
   if (GetPhase() == UninitialisedPhase) {
     PTRACE(1, "Did not get offer before handling answer");
@@ -238,22 +247,39 @@ bool OpalSDPConnection::HandleAnswerSDP(const PString & answer)
     return false;
   }
 
-  OpalMediaFormatList formats = GetLocalMediaFormats();
-  if (formats.IsEmpty())
-    formats = OpalMediaFormat::GetAllRegisteredMediaFormats();
-
-  std::auto_ptr<SDPSessionDescription> sdp(m_endpoint.CreateSDP(0, 0, OpalTransportAddress()));
-  PTRACE_CONTEXT_ID_TO(*sdp);
-
-  if (!sdp->Decode(answer, formats))
-    return false;
-
   bool dummy;
-  if (!OnReceivedAnswerSDP(*sdp, dummy))
+  if (!OnReceivedAnswerSDP(answer, dummy))
     return false;
 
   OnConnected();
   return true;
+}
+
+
+bool OpalSDPConnection::HandleAnswerSDP(const PString & answer)
+{
+  std::auto_ptr<SDPSessionDescription> sdp(CreateSDP(answer));
+  return sdp.get() != NULL && HandleAnswerSDP(*sdp);
+}
+
+
+SDPSessionDescription * OpalSDPConnection::CreateSDP(const PString & sdpStr)
+{
+  if (sdpStr.IsEmpty())
+    return m_endpoint.CreateSDP(0, 0, OpalTransportAddress(GetMediaInterface(), 0, OpalTransportAddress::UdpPrefix()));
+
+  OpalMediaFormatList formats = GetLocalMediaFormats();
+  if (formats.IsEmpty())
+    formats = OpalMediaFormat::GetAllRegisteredMediaFormats();
+
+  SDPSessionDescription * sdpPtr = m_endpoint.CreateSDP(0, 0, OpalTransportAddress());
+  PTRACE_CONTEXT_ID_TO(*sdpPtr);
+
+  if (sdpPtr->Decode(sdpStr, formats))
+    return sdpPtr;
+
+  delete sdpPtr;
+  return NULL;
 }
 
 
@@ -447,9 +473,9 @@ void OpalSDPConnection::SetAudioVideoGroup()
   if (videoSession == NULL)
     return;
 
-  PString group = PBase64::Encode(PRandom::Octets(24));
-  audioSession->SetGroupId(group);
-  videoSession->SetGroupId(group);
+  PString bundle = PBase64::Encode(PRandom::Octets(24));
+  audioSession->SetBundleId(bundle);
+  videoSession->SetBundleId(bundle);
 }
 #endif // OPAL_VIDEO
 

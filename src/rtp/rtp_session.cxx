@@ -839,20 +839,20 @@ void OpalRTPSession::SetCanonicalName(const PString & name, RTP_SyncSourceId ssr
 }
 
 
-PString OpalRTPSession::GetGroupId() const
+PString OpalRTPSession::GetBundleId() const
 {
   PSafeLockReadOnly lock(*this);
-  PString s = m_groupId;
+  PString s = m_bundleId;
   s.MakeUnique();
   return s;
 }
 
 
-void OpalRTPSession::SetGroupId(const PString & id)
+void OpalRTPSession::SetBundleId(const PString & id)
 {
   PSafeLockReadWrite lock(*this);
-  m_groupId = id;
-  m_groupId.MakeUnique();
+  m_bundleId = id;
+  m_bundleId.MakeUnique();
 }
 
 
