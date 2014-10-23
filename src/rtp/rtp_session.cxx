@@ -591,8 +591,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
 #endif
   }
 
+  PTime absTime(0);
   if (m_syncRealTime.IsValid())
-    frame.SetAbsoluteTime(m_syncRealTime + PTimeInterval((frame.GetTimestamp() - m_syncTimestamp)/m_session.m_timeUnits));
+    absTime = m_syncRealTime + PTimeInterval((frame.GetTimestamp() - m_syncTimestamp)/m_session.m_timeUnits);
+  frame.SetAbsoluteTime(absTime);
 
 #if OPAL_RTCP_XR
   if (m_metrics != NULL) {
