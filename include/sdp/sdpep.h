@@ -193,8 +193,20 @@ class OpalSDPConnection : public OpalRTPConnection
   /**@name Actions */
   //@{
     /// Generate an offer.
+    bool GetOfferSDP(
+      SDPSessionDescription & offer,
+      bool offerOpenMediaStreamsOnly = false
+    );
+
+    /// Generate an offer.
     PString GetOfferSDP(
       bool offerOpenMediaStreamsOnly = false
+    );
+
+    /// Handle an offer from remote, provide answer
+    bool AnswerOfferSDP(
+      const SDPSessionDescription & offer,
+      SDPSessionDescription & answer
     );
 
     /// Handle an offer from remote, provide answer
@@ -204,9 +216,18 @@ class OpalSDPConnection : public OpalRTPConnection
 
     /// Handle an answer from remote
     bool HandleAnswerSDP(
+      const SDPSessionDescription & answer
+    );
+
+    /// Handle an answer from remote
+    bool HandleAnswerSDP(
       const PString & answer
     );
 
+    /// Decode SDP string, creating new SDP object.
+    SDPSessionDescription * CreateSDP(
+      const PString & sdp
+    );
 #if OPAL_SRTP
     /// Indicate if SRTP is available to be sued in this connection.
     virtual bool CanDoSRTP() const;
