@@ -310,8 +310,9 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     virtual bool FromSession(const OpalMediaSession * session, const SDPMediaDescription * offer);
     virtual bool ToSession(OpalMediaSession * session) const;
-    virtual PString GetMediaGroupId() const { return m_mediaGroupId; }
-    virtual void SetMediaGroupId(const PString & id) { m_mediaGroupId = id; }
+    virtual PString GetBundleId() const { return PString::Empty(); }
+    virtual PString GetBundleMediaId() const { return m_bundleMediaId; }
+    virtual void SetBundleMediaId(const PString & id) { m_bundleMediaId = id; }
 
     const OpalTransportAddress & GetMediaAddress() const { return m_mediaAddress; }
     const OpalTransportAddress & GetControlAddress() const { return m_controlAddress; }
@@ -359,7 +360,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     WORD                 m_port;
     WORD                 m_portCount;
     OpalMediaType        m_mediaType;
-    PString              m_mediaGroupId;
+    PString              m_bundleMediaId;
 #if OPAL_ICE
     PNatCandidateList    m_candidates;
 #endif //OPAL_ICE
@@ -460,11 +461,14 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual void SetAttribute(const PString & attr, const PString & value);
     virtual bool FromSession(const OpalMediaSession * session, const SDPMediaDescription * offer);
     virtual bool ToSession(OpalMediaSession * session) const;
+    virtual PString GetBundleId() const;
 
     virtual bool IsFeedbackEnabled() const;
 
-    typedef std::map<DWORD, PStringOptions> SsrcInfo;
+    typedef std::map<RTP_SyncSourceId, PStringOptions> SsrcInfo;
     const SsrcInfo & GetSsrcInfo() const { return m_ssrcInfo; }
+
+    const std::vector<RTP_SyncSourceId> & GetFlowGroup() const { return m_flowGroup;  }
 
   protected:
     class Format : public SDPMediaFormat
@@ -486,12 +490,13 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
         OpalMediaFormat::RTCPFeedback m_rtcp_fb; // RFC4585
     };
 
-    PCaselessString       m_transportType;
-    SsrcInfo              m_ssrcInfo;
-#if OPAL_SRTP
-    PList<SDPCryptoSuite> m_cryptoSuites;
-#endif
+    PCaselessString               m_transportType;
+    SsrcInfo                      m_ssrcInfo;
+    std::vector<RTP_SyncSourceId> m_flowGroup;
     OpalMediaFormat::RTCPFeedback m_rtcp_fb;
+#if OPAL_SRTP
+    PList<SDPCryptoSuite>         m_cryptoSuites;
+#endif
 };
 
 /////////////////////////////////////////////////////////
@@ -615,6 +620,7 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
 
     const SDPMediaDescriptionArray & GetMediaDescriptions() const { return mediaDescriptions; }
 
+    SDPMediaDescription * GetMediaDescriptionByBundle(const PString & label, const PString & mid) const;
     SDPMediaDescription * GetMediaDescriptionByType(const OpalMediaType & rtpMediaType) const;
     SDPMediaDescription * GetMediaDescriptionByIndex(PINDEX i) const;
     void AddMediaDescription(SDPMediaDescription * md) { mediaDescriptions.Append(PAssertNULL(md)); }

@@ -325,13 +325,15 @@ class OpalRTPSession : public OpalMediaSession
       */
     void SetCanonicalName(const PString & name, RTP_SyncSourceId ssrc = 0, Direction dir = e_Sender);
 
-    /**Get the group id for the RTP session.
+    /**Get the "bundle" id for the RTP session.
+       This is typically a mechanism for connecting audio and video together.
     */
-    PString GetGroupId() const;
+    PString GetBundleId() const;
 
-    /**Set the group id for the RTP session.
+    /**Set the "bundle" id for the RTP session.
+       This is typically a mechanism for connecting audio and video together.
     */
-    void SetGroupId(const PString & id);
+    void SetBundleId(const PString & id);
 
     /**Get the tool name for the RTP session.
       */
@@ -631,7 +633,7 @@ class OpalRTPSession : public OpalMediaSession
     bool                m_singlePortTx;
     bool                m_isAudio;
     unsigned            m_timeUnits;
-    PString             m_groupId;
+    PString             m_bundleId;
     PString             m_toolName;
     RTPExtensionHeaders m_extensionHeaders;
     bool                m_allowAnySyncSource;
