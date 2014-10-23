@@ -279,7 +279,7 @@ class OpalSDPConnection : public OpalRTPConnection
       bool & remoteChanged
     );
 #if OPAL_VIDEO
-    void SetAudioVideoGroup();
+    virtual void SetAudioVideoGroup();
 #endif
 
     void RetryHoldRemote(bool placeOnHold);
