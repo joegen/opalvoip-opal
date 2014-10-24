@@ -4926,7 +4926,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
 #if OPAL_H235_6 || OPAL_H235_8
   const OpalMediaCryptoSuite * cryptoSuite = capability.GetCryptoSuite();
   if (cryptoSuite != NULL)
-    cryptoSuite->ChangeSessionType(sessionType);
+    cryptoSuite->ChangeSessionType(sessionType, GetMediaCryptoKeyExchangeModes());
 #endif // OPAL_H235_6 || OPAL_H235_8
 
   OpalMediaSession * session = UseMediaSession(sessionID, mediaType, sessionType);

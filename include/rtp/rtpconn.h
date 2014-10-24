@@ -185,12 +185,10 @@ class OpalRTPConnection : public OpalConnection
       bool isSource                      ///< Stream is a source/sink
     );
 
-    P_DECLARE_BITWISE_ENUM(MediaSessionsSecurity, 2, (e_NoMediaSessions, e_ClearMediaSession, e_SecureMediaSession));
-
-    /**Indicate security modes available in media negotiation.
+    /**Indicate crypto key exchange modes available in media negotiation.
        For example, offers in CreateAllMediaSessions().
       */
-    virtual MediaSessionsSecurity GetMediaSessionsSecurity() const;
+    virtual OpalMediaCryptoSuite::KeyExchangeModes GetMediaCryptoKeyExchangeModes() const;
 
     /**Create all media sessions for available media types.
        Note that the sessions are not opened, just created.

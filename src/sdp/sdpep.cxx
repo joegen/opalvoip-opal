@@ -38,7 +38,7 @@
 
 #include <rtp/rtpconn.h>
 #include <rtp/rtp_stream.h>
-#include <rtp/srtp_session.h>
+#include <rtp/dtls_srtp_session.h>
 #include <codec/rfc2833.h>
 #include <opal/transcoders.h>
 #include <opal/patch.h>
@@ -705,7 +705,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
 
 #if OPAL_SRTP
   OpalMediaCryptoKeyList keys = incomingMedia->GetCryptoKeys();
-  if (!keys.IsEmpty() && !(GetMediaSessionsSecurity()&e_SecureMediaSession)) {
+  if (!keys.IsEmpty() && !(GetMediaCryptoKeyExchangeModes()&OpalMediaCryptoSuite::e_SecureSignalling)) {
     PTRACE(2, "No secure signaling, cannot use SDES crypto for " << mediaType << " session " << sessionId);
     keys.RemoveAll();
     incomingMedia->SetCryptoKeys(keys);
@@ -715,7 +715,10 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
   for (SessionMap::const_iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
     if (it->second->GetSessionID() != sessionId &&
         it->second->GetMediaType() == mediaType &&
-        it->second->GetSessionType() == OpalSRTPSession::RTP_SAVP() &&
+        (
+          it->second->GetSessionType() == OpalSRTPSession::RTP_SAVP() ||
+          it->second->GetSessionType() == OpalDTLSSRTPSession::RTP_DTLS_SAVPF()
+        ) &&
         it->second->IsOpen()) {
       PTRACE(3, "Not creating " << mediaType << " media session, already secure.");
       return NULL;

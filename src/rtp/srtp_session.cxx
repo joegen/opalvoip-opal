@@ -38,7 +38,7 @@
 
 #if OPAL_SRTP
 
-#include <rtp/srtp_session.h>
+#include <rtp/dtls_srtp_session.h>
 #include <h323/h323caps.h>
 #include <ptclib/cypher.h>
 
@@ -289,16 +289,30 @@ bool OpalSRTPCryptoSuite::Supports(const PCaselessString & proto) const
 }
 
 
-bool OpalSRTPCryptoSuite::ChangeSessionType(PCaselessString & mediaSession) const
+bool OpalSRTPCryptoSuite::ChangeSessionType(PCaselessString & mediaSession, KeyExchangeModes modes) const
 {
-  if (mediaSession == OpalRTPSession::RTP_AVP()) {
-    mediaSession = OpalSRTPSession::RTP_SAVP();
-    return true;
+  if (modes&e_InBandKeyEchange) {
+    if (mediaSession == OpalRTPSession::RTP_AVP()) {
+      mediaSession = OpalDTLSSRTPSession::RTP_DTLS_SAVP();
+      return true;
+    }
+
+    if (mediaSession == OpalRTPSession::RTP_AVPF()) {
+      mediaSession = OpalDTLSSRTPSession::RTP_DTLS_SAVPF();
+      return true;
+    }
   }
 
-  if (mediaSession == OpalRTPSession::RTP_AVPF()) {
-    mediaSession = OpalSRTPSession::RTP_SAVPF();
-    return true;
+  if (modes&e_SecureSignalling) {
+    if (mediaSession == OpalRTPSession::RTP_AVP()) {
+      mediaSession = OpalSRTPSession::RTP_SAVP();
+      return true;
+    }
+
+    if (mediaSession == OpalRTPSession::RTP_AVPF()) {
+      mediaSession = OpalSRTPSession::RTP_SAVPF();
+      return true;
+    }
   }
 
   return false;
