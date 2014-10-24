@@ -571,7 +571,8 @@ bool OpalSDPConnection::OnSendOfferSDPSession(unsigned   sessionId,
   }
 
 #if OPAL_SRTP
-  localMedia->SetCryptoKeys(mediaSession->GetOfferedCryptoKeys());
+  if (GetMediaCryptoKeyExchangeModes()&OpalMediaCryptoSuite::e_SecureSignalling)
+    localMedia->SetCryptoKeys(mediaSession->GetOfferedCryptoKeys());
 #endif
 
 #if OPAL_RTP_FEC
