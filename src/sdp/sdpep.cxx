@@ -509,8 +509,8 @@ bool OpalSDPConnection::OnSendOfferSDPSession(unsigned   sessionId,
     return false;
   }
 
-  localMedia->FromSession(mediaSession, NULL);
   localMedia->SetOptionStrings(m_stringOptions);
+  localMedia->FromSession(mediaSession, NULL);
 
   if (sdp.GetDefaultConnectAddress().IsEmpty())
     sdp.SetDefaultConnectAddress(mediaSession->GetLocalAddress());
