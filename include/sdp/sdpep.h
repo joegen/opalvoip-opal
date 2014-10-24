@@ -228,10 +228,6 @@ class OpalSDPConnection : public OpalRTPConnection
     SDPSessionDescription * CreateSDP(
       const PString & sdp
     );
-#if OPAL_SRTP
-    /// Indicate if SRTP is available to be sued in this connection.
-    virtual bool CanDoSRTP() const;
-#endif
 
     /// Get the media local interface to initialise the RTP session.
     virtual PString GetMediaInterface() = 0;

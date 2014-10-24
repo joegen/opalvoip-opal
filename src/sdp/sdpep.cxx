@@ -432,18 +432,12 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
       AdjustMediaFormats(false, NULL, m_remoteFormatList);
     }
 
-    // Create media sessions based on available media types and make sure audio and video are first two sessions
-    CreateMediaSessionsSecurity security = e_ClearMediaSession;
-#if OPAL_SRTP
-    if (CanDoSRTP())
-      security |= e_SecureMediaSession;
-#endif
-
 #if OPAL_VIDEO
     SetAudioVideoGroup(); // Googlish audio and video grouping id
 #endif
 
-    vector<bool> sessions = CreateAllMediaSessions(security);
+    // Create media sessions based on available media types and make sure audio and video are first two sessions
+    vector<bool> sessions = CreateAllMediaSessions();
     for (vector<bool>::size_type session = 1; session < sessions.size(); ++session) {
       if (sessions[session]) {
         if (OnSendOfferSDPSession(session, sdpOut, false))
@@ -711,7 +705,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
 
 #if OPAL_SRTP
   OpalMediaCryptoKeyList keys = incomingMedia->GetCryptoKeys();
-  if (!keys.IsEmpty() && !CanDoSRTP()) {
+  if (!keys.IsEmpty() && !(GetMediaSessionsSecurity()&e_SecureMediaSession)) {
     PTRACE(2, "No secure signaling, cannot use SDES crypto for " << mediaType << " session " << sessionId);
     keys.RemoveAll();
     incomingMedia->SetCryptoKeys(keys);
@@ -1132,14 +1126,6 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPSessionDescription &
 	PTRACE_IF(3, otherSidesDir == SDPMediaDescription::Inactive, "No streams opened as " << mediaType << " inactive");
   return true;
 }
-
-
-#if OPAL_SRTP
-bool OpalSDPConnection::CanDoSRTP() const
-{
-  return true;
-}
-#endif
 
 
 bool OpalSDPConnection::OnHoldStateChanged(bool)
