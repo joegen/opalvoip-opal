@@ -159,7 +159,7 @@ vector<bool> OpalRTPConnection::CreateAllMediaSessions()
         PTRACE(4, "Skipping " << cryptoSuiteName << " as secure media required.");
         continue;
       }
-      if (cryptoSuiteName != OpalMediaCryptoSuite::ClearText() && !(keyExchangeModes & OpalMediaCryptoSuite::e_AllowClear)) {
+      if (cryptoSuiteName != OpalMediaCryptoSuite::ClearText() && keyExchangeModes == OpalMediaCryptoSuite::e_AllowClear) {
         PTRACE(4, "Skipping " << cryptoSuiteName << " as non-secure media required.");
         continue;
       }
