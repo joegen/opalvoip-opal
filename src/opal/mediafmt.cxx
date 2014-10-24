@@ -1924,7 +1924,7 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
   if (rtpPayloadType < RTP_DataFrame::LastKnownPayloadType || encodingName != NULL) {
     AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::TxKeyFramePeriodOption(),         false, OpalMediaOption::AlwaysMerge, 125,                         0,    1000));
     AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::RateControlPeriodOption(),        false, OpalMediaOption::AlwaysMerge, 1000,                        100, 60000));
-    AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxTxPacketSizeOption(),          true,  OpalMediaOption::AlwaysMerge, PluginCodec_RTP_MaxPayloadSize, 100    ));
+    AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxTxPacketSizeOption(),          true,  OpalMediaOption::MinMerge,  PluginCodec_RTP_MaxPayloadSize, 100    ));
     AddOption(new OpalMediaOptionString  (OpalVideoFormat::RateControllerOption(),           false                                                                       ));
     AddOption(new OpalMediaOptionBoolean (OpalVideoFormat::FreezeUntilIntraFrameOption(),    false, OpalMediaOption::NoMerge,     false                                  ));
 #if OPAL_SDP
