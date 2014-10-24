@@ -194,7 +194,8 @@ class OpalMediaCryptoSuite : public PObject
 
     virtual const PCaselessString & GetFactoryName() const = 0;
     virtual bool Supports(const PCaselessString & proto) const = 0;
-    virtual bool ChangeSessionType(PCaselessString & mediaSession) const = 0;
+    P_DECLARE_BITWISE_ENUM(KeyExchangeModes, 3, (e_NoMode, e_AllowClear, e_SecureSignalling, e_InBandKeyEchange));
+    virtual bool ChangeSessionType(PCaselessString & mediaSession, KeyExchangeModes modes) const = 0;
 
     virtual const char * GetDescription() const = 0;
 #if OPAL_H235_6 || OPAL_H235_8

@@ -113,9 +113,12 @@ bool H2356_CryptoSuite::Supports(const PCaselessString & proto) const
 }
 
 
-bool H2356_CryptoSuite::ChangeSessionType(PCaselessString & mediaSession) const
+bool H2356_CryptoSuite::ChangeSessionType(PCaselessString & mediaSession, KeyExchangeModes modes) const
 {
   if (mediaSession != OpalRTPSession::RTP_AVP())
+    return false;
+
+  if (!(modes&(e_SecureSignalling | e_InBandKeyEchange)))
     return false;
 
   mediaSession = H2356_Session::SessionType();
