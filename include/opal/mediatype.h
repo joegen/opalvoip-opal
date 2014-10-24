@@ -51,13 +51,15 @@ class OpalConnection;
 //
 class OpalMediaType;
 typedef PFactory<OpalMediaTypeDefinition, OpalMediaType> OpalMediaTypesFactory;
-class OpalMediaTypeList : public OpalMediaTypesFactory::KeyList_T
+class OpalMediaTypeList : public OpalMediaTypesFactory::KeyList_T, public PObject
 {
   public:
     OpalMediaTypeList() { }
 
     OpalMediaTypeList(const OpalMediaTypesFactory::KeyList_T & list)
       : OpalMediaTypesFactory::KeyList_T(list) { }
+
+    virtual void PrintOn(ostream & strm) const;
 
     void PrioritiseAudioVideo();
 };

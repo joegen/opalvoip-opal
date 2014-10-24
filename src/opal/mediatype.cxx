@@ -184,6 +184,17 @@ OpalMediaTypeList OpalMediaType::GetList()
 }
 
 
+void OpalMediaTypeList::PrintOn(ostream & strm) const
+{
+  char f = strm.fill();
+  for (const_iterator it = begin(); it != end(); ++it) {
+    if (it != begin())
+      strm << f;
+    strm << *it;
+  }
+}
+
+
 void OpalMediaTypeList::PrioritiseAudioVideo()
 {
   OpalMediaTypesFactory::KeyList_T::iterator it;
