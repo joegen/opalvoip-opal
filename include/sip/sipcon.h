@@ -311,6 +311,10 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
     );
 #endif
 
+    /**Indicate security modes available in media negotiation.
+    */
+    virtual MediaSessionsSecurity GetMediaSessionsSecurity() const;
+
     /**Create a new media stream.
      */
     virtual OpalMediaStream * CreateMediaStream(
@@ -692,9 +696,6 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
     );
 
     void UpdateRemoteAddresses();
-#if OPAL_SRTP
-    virtual bool CanDoSRTP() const;
-#endif
 
     void NotifyDialogState(
       SIPDialogNotification::States state,
