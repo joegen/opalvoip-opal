@@ -261,7 +261,7 @@ class OpalMediaClearText : public OpalMediaCryptoSuite
 {
   virtual const PCaselessString & GetFactoryName() const { return ClearText(); }
   virtual bool Supports(const PCaselessString &) const { return true; }
-  virtual bool ChangeSessionType(PCaselessString & /*mediaSession*/) const { return true; }
+  virtual bool ChangeSessionType(PCaselessString & /*mediaSession*/, KeyExchangeModes modes) const { return modes&e_AllowClear; }
   virtual const char * GetDescription() const { return OpalMediaCryptoSuite::ClearText(); }
 #if OPAL_H235_6 || OPAL_H235_8
   virtual const char * GetOID() const { return "0.0.8.235.0.3.26"; }

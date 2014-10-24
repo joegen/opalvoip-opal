@@ -126,9 +126,9 @@ unsigned OpalRTPConnection::GetNextSessionID(const OpalMediaType & mediaType, bo
 }
 
 
-OpalRTPConnection::MediaSessionsSecurity OpalRTPConnection::GetMediaSessionsSecurity() const
+OpalMediaCryptoSuite::KeyExchangeModes OpalRTPConnection::GetMediaCryptoKeyExchangeModes() const
 {
-  return e_ClearMediaSession | e_SecureMediaSession;
+  return OpalMediaCryptoSuite::KeyExchangeModes::All();
 }
 
 
@@ -137,7 +137,7 @@ vector<bool> OpalRTPConnection::CreateAllMediaSessions()
   OpalMediaTypeList allMediaTypes = m_localMediaFormats.GetMediaTypes();
   allMediaTypes.PrioritiseAudioVideo();
 
-  MediaSessionsSecurity security = GetMediaSessionsSecurity();
+  OpalMediaCryptoSuite::KeyExchangeModes keyExchangeModes = GetMediaCryptoKeyExchangeModes();
   const PStringArray cryptoSuites = GetMediaCryptoSuites();
   PTRACE(4, "Creating media sessions: media=" << setfill(',') << allMediaTypes << " - crypto=" << cryptoSuites);
 
@@ -155,11 +155,11 @@ vector<bool> OpalRTPConnection::CreateAllMediaSessions()
 
     for (PINDEX csIdx = 0; csIdx < cryptoSuites.GetSize(); ++csIdx) {
       PCaselessString cryptoSuiteName = cryptoSuites[csIdx];
-      if (cryptoSuiteName == OpalMediaCryptoSuite::ClearText() && !(security & e_ClearMediaSession)) {
+      if (cryptoSuiteName == OpalMediaCryptoSuite::ClearText() && !(keyExchangeModes & OpalMediaCryptoSuite::e_AllowClear)) {
         PTRACE(4, "Skipping " << cryptoSuiteName << " as secure media required.");
         continue;
       }
-      if (cryptoSuiteName != OpalMediaCryptoSuite::ClearText() && !(security & e_SecureMediaSession)) {
+      if (cryptoSuiteName != OpalMediaCryptoSuite::ClearText() && !(keyExchangeModes & OpalMediaCryptoSuite::e_AllowClear)) {
         PTRACE(4, "Skipping " << cryptoSuiteName << " as non-secure media required.");
         continue;
       }
@@ -171,7 +171,7 @@ vector<bool> OpalRTPConnection::CreateAllMediaSessions()
       }
 
       PCaselessString sessionType = mediaType->GetMediaSessionType();
-      if (!cryptoSuite->ChangeSessionType(sessionType)) {
+      if (!cryptoSuite->ChangeSessionType(sessionType, keyExchangeModes)) {
         PTRACE(3, "Cannot use crypto suite " << cryptoSuiteName << " with media type " << mediaType);
         continue;
       }

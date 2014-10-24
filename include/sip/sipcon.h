@@ -313,7 +313,7 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
 
     /**Indicate security modes available in media negotiation.
     */
-    virtual MediaSessionsSecurity GetMediaSessionsSecurity() const;
+    virtual OpalMediaCryptoSuite::KeyExchangeModes GetMediaCryptoKeyExchangeModes() const;
 
     /**Create a new media stream.
      */
