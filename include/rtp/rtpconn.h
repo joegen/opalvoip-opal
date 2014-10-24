@@ -185,7 +185,12 @@ class OpalRTPConnection : public OpalConnection
       bool isSource                      ///< Stream is a source/sink
     );
 
-    P_DECLARE_BITWISE_ENUM(CreateMediaSessionsSecurity, 2, (e_NoMediaSessions, e_ClearMediaSession, e_SecureMediaSession));
+    P_DECLARE_BITWISE_ENUM(MediaSessionsSecurity, 2, (e_NoMediaSessions, e_ClearMediaSession, e_SecureMediaSession));
+
+    /**Indicate security modes available in media negotiation.
+       For example, offers in CreateAllMediaSessions().
+      */
+    virtual MediaSessionsSecurity GetMediaSessionsSecurity() const;
 
     /**Create all media sessions for available media types.
        Note that the sessions are not opened, just created.
@@ -196,9 +201,7 @@ class OpalRTPConnection : public OpalConnection
 
        @returns a list of the media types for which sessions where created.
       */
-    vector<bool> CreateAllMediaSessions(
-      CreateMediaSessionsSecurity security  ///< Wse secure media, or not
-    );
+    vector<bool> CreateAllMediaSessions();
 
     /**Create an RTP session for the specified ID.
        The type of RTP session that is created will be compatible with the

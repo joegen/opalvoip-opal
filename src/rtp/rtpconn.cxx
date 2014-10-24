@@ -126,12 +126,20 @@ unsigned OpalRTPConnection::GetNextSessionID(const OpalMediaType & mediaType, bo
 }
 
 
-vector<bool> OpalRTPConnection::CreateAllMediaSessions(CreateMediaSessionsSecurity security)
+OpalRTPConnection::MediaSessionsSecurity OpalRTPConnection::GetMediaSessionsSecurity() const
+{
+  return e_ClearMediaSession | e_SecureMediaSession;
+}
+
+
+vector<bool> OpalRTPConnection::CreateAllMediaSessions()
 {
   OpalMediaTypeList allMediaTypes = m_localMediaFormats.GetMediaTypes();
   allMediaTypes.PrioritiseAudioVideo();
 
+  MediaSessionsSecurity security = GetMediaSessionsSecurity();
   const PStringArray cryptoSuites = GetMediaCryptoSuites();
+  PTRACE(4, "Creating media sessions: media=" << setfill(',') << allMediaTypes << " - crypto=" << cryptoSuites);
 
   vector<bool> openedMediaSessions(allMediaTypes.size()*cryptoSuites.GetSize()+1);
 

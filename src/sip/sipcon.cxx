@@ -1670,13 +1670,15 @@ void SIPConnection::UpdateRemoteAddresses()
 }
 
 
-#if OPAL_SRTP
-bool SIPConnection::CanDoSRTP() const
+OpalRTPConnection::MediaSessionsSecurity SIPConnection::GetMediaSessionsSecurity() const
 {
-  return m_stringOptions.GetBoolean(OPAL_OPT_UNSECURE_SRTP) ||
-         m_dialog.GetRemoteTransportAddress(m_dnsEntry).GetProtoPrefix() == OpalTransportAddress::TlsPrefix();
+  MediaSessionsSecurity security = e_ClearMediaSession;
+  if (m_stringOptions.GetBoolean(OPAL_OPT_UNSECURE_SRTP) ||
+              m_dialog.GetRemoteTransportAddress(m_dnsEntry).GetProtoPrefix() == OpalTransportAddress::TlsPrefix())
+    security |= e_SecureMediaSession;
+  return security;
 }
-#endif
+
 
 void SIPConnection::NotifyDialogState(SIPDialogNotification::States state, SIPDialogNotification::Events eventType, unsigned eventCode)
 {
