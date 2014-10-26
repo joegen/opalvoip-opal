@@ -1593,13 +1593,32 @@ void SDPRTPAVPMediaDescription::SetSDPTransportType(const PString & type)
 
 PCaselessString SDPRTPAVPMediaDescription::GetSessionType() const
 {
+  bool feedbackEnabled;
+  switch (m_stringOptions.GetInteger(OPAL_OPT_OFFER_RTCP_FB, 1)) {
+    case 0:
+      feedbackEnabled = false;
+      break;
+    case 2:
+      feedbackEnabled = true;
+      break;
+    default:
+      feedbackEnabled = false;
+      for (SDPMediaFormatList::const_iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
+        const Format * avpFmt = dynamic_cast<const Format *>(&*format);
+        if (avpFmt != NULL && avpFmt->GetRTCP_FB() != OpalMediaFormat::e_NoRTCPFb) {
+          feedbackEnabled = true;
+          break;
+        }
+      }
+  }
+
 #if OPAL_SRTP
   if (GetFingerprint().IsValid()) // Prefer DTLS over SDES
-    return IsFeedbackEnabled() ? OpalDTLSSRTPSession::RTP_DTLS_SAVPF() : OpalDTLSSRTPSession::RTP_DTLS_SAVP();
+    return feedbackEnabled ? OpalDTLSSRTPSession::RTP_DTLS_SAVPF() : OpalDTLSSRTPSession::RTP_DTLS_SAVP();
   if (!m_cryptoSuites.IsEmpty()) // SDES
-    return IsFeedbackEnabled() ? OpalSRTPSession::RTP_SAVPF() : OpalSRTPSession::RTP_SAVP();
+    return feedbackEnabled ? OpalSRTPSession::RTP_SAVPF() : OpalSRTPSession::RTP_SAVP();
 #endif
-  return IsFeedbackEnabled() ? OpalRTPSession::RTP_AVPF() : OpalRTPSession::RTP_AVP();
+  return feedbackEnabled ? OpalRTPSession::RTP_AVPF() : OpalRTPSession::RTP_AVP();
 }
 
 
@@ -1695,17 +1714,17 @@ bool SDPRTPAVPMediaDescription::PreEncode()
 
   m_rtcp_fb = OpalMediaFormat::e_NoRTCPFb;
 
-  if (IsFeedbackEnabled() || m_stringOptions.GetInteger(OPAL_OPT_OFFER_RTCP_FB, 1) == 1) {
+  if (m_transportType.Find("AVPF") != P_MAX_INDEX || m_stringOptions.GetInteger(OPAL_OPT_OFFER_RTCP_FB, 1) != 0) {
     bool first = true;
     for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
-      Format * vidFmt = dynamic_cast<Format *>(&*format);
-      if (vidFmt == NULL)
+      Format * avpFmt = dynamic_cast<Format *>(&*format);
+      if (avpFmt == NULL)
         continue;
       if (first) {
         first = false;
-        m_rtcp_fb = vidFmt->GetRTCP_FB();
+        m_rtcp_fb = avpFmt->GetRTCP_FB();
       }
-      else if (m_rtcp_fb != vidFmt->GetRTCP_FB()) {
+      else if (m_rtcp_fb != avpFmt->GetRTCP_FB()) {
         m_rtcp_fb = OpalMediaFormat::e_NoRTCPFb;
         break;
       }
@@ -1714,9 +1733,9 @@ bool SDPRTPAVPMediaDescription::PreEncode()
 
   if (m_rtcp_fb != OpalMediaFormat::e_NoRTCPFb) {
     for (SDPMediaFormatList::iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
-      Format * vidFmt = dynamic_cast<Format *>(&*format);
-      if (PAssertNULL(vidFmt) != NULL)
-        vidFmt->SetRTCP_FB(OpalMediaFormat::e_NoRTCPFb);
+      Format * avpFmt = dynamic_cast<Format *>(&*format);
+      if (avpFmt != NULL)
+        avpFmt->SetRTCP_FB(OpalMediaFormat::e_NoRTCPFb);
     }
   }
 
@@ -1853,6 +1872,25 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
     return;
   }
 
+  if (attr *= "rtcp-fb") {
+    if (value[0] == '*') {
+      PString params = value.Mid(1).Trim();
+      SDPMediaFormatList::iterator format;
+      for (format = m_formats.begin(); format != m_formats.end(); ++format) {
+        Format * avpFmt = dynamic_cast<Format *>(&*format);
+        if (avpFmt != NULL)
+          avpFmt->AddRTCP_FB(params);
+      }
+    }
+    else {
+      PString params = value;
+      Format * avpFmt = dynamic_cast<Format *>(FindFormat(params));
+      if (avpFmt != NULL)
+        avpFmt->AddRTCP_FB(params);
+    }
+    return;
+  }
+
   if (attr *= "ssrc") {
     DWORD ssrc = value.AsUnsigned();
     PINDEX space = value.Find(' ');
@@ -1960,12 +1998,6 @@ PString SDPRTPAVPMediaDescription::GetBundleId() const
   }
 
   return m_ssrcInfo.empty() ? PString::Empty() : m_ssrcInfo.begin()->second.Get("mslabel");
-}
-
-
-bool SDPRTPAVPMediaDescription::IsFeedbackEnabled() const
-{
-  return m_transportType.Find("AVPF") != P_MAX_INDEX;
 }
 
 
@@ -2164,25 +2196,6 @@ void SDPVideoMediaDescription::SetAttribute(const PString & attr, const PString 
     return;
   }
 
-  if (attr *= "rtcp-fb") {
-    if (value[0] == '*') {
-      PString params = value.Mid(1).Trim();
-      SDPMediaFormatList::iterator format;
-      for (format = m_formats.begin(); format != m_formats.end(); ++format) {
-        Format * vidFmt = dynamic_cast<Format *>(&*format);
-        if (PAssertNULL(vidFmt) != NULL)
-          vidFmt->AddRTCP_FB(params);
-      }
-    }
-    else {
-      PString params = value;
-      Format * format = dynamic_cast<Format *>(FindFormat(params));
-      if (format != NULL)
-        format->AddRTCP_FB(params);
-    }
-    return;
-  }
-
   // As per RFC 6263
   if (attr *= "imageattr") {
     PString params = value;
@@ -2251,24 +2264,6 @@ bool SDPVideoMediaDescription::PreEncode()
   }
 
   return true;
-}
-
-
-bool SDPVideoMediaDescription::IsFeedbackEnabled() const
-{
-  if (!m_transportType.IsEmpty())
-    return SDPRTPAVPMediaDescription::IsFeedbackEnabled();
-
-  if (m_stringOptions.GetInteger(OPAL_OPT_OFFER_RTCP_FB, 1) == 0)
-    return false;
-
-  for (SDPMediaFormatList::const_iterator format = m_formats.begin(); format != m_formats.end(); ++format) {
-    const Format * vidFmt = dynamic_cast<const Format *>(&*format);
-    if (vidFmt != NULL && vidFmt->GetRTCP_FB() != OpalVideoFormat::e_NoRTCPFb)
-      return true;
-  }
-
-  return false;
 }
 
 

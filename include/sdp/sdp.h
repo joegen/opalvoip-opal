@@ -52,12 +52,15 @@
   */
 #define OPAL_OPT_OFFER_SDP_PTIME "Offer-SDP-PTime"
 
-/**OpalConnection::StringOption key to an integer indicating the SDP
-   rtpcp-fb parameter handling. A value of zero indicates it is not to be
-   offerred to the remote. A value of 1 indicates it is to be offerred
-   without requiring the RTP/AVPF transport, but is included in RTP/AVP.
-   A value of 2 indicates it is to be only offerred in RTP/AVPF with a
-   second session in RTP/AVP mode to be also offerred. Default is 1.
+/**OpalConnection::StringOption key to an integer indicating the SDP rtpcp-fb
+   parameter handling. A value of zero indicates no rtcp-fb options are ever
+   to be offered to the remote. A value of 1 indicates if some media formats
+   contain other than OpalMediaFormat::e_NoRTCPFb, an RTP/AVPF is to be
+   offered. Also, in this case, an answer will contain rtcp-fb options without
+   requiring the RTP/AVPF transport in the remote offer, but is included in
+   the basic RTP/AVP. A value of 2 indicates RTP/AVPF is offered even if no
+   media formats contains RTCPFb options. Nte if remote indicated RTP/AVPF
+   then mode 2 is assumed for the answer. Default is 1.
   */
 #define OPAL_OPT_OFFER_RTCP_FB  "Offer-RTCP-FB"
 
@@ -463,8 +466,6 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual bool ToSession(OpalMediaSession * session) const;
     virtual PString GetBundleId() const;
 
-    virtual bool IsFeedbackEnabled() const;
-
     typedef std::map<RTP_SyncSourceId, PStringOptions> SsrcInfo;
     const SsrcInfo & GetSsrcInfo() const { return m_ssrcInfo; }
 
@@ -536,7 +537,6 @@ class SDPVideoMediaDescription : public SDPRTPAVPMediaDescription
     virtual void OutputAttributes(ostream & str) const;
     virtual void SetAttribute(const PString & attr, const PString & value);
     virtual bool PostDecode(const OpalMediaFormatList & mediaFormats);
-    virtual bool IsFeedbackEnabled() const;
     virtual OpalVideoFormat::ContentRole GetContentRole() const { return m_contentRole; }
 
   protected:
