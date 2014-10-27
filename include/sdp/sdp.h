@@ -325,7 +325,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     virtual bool FromSession(OpalMediaSession * session, const SDPMediaDescription * offer);
     virtual bool ToSession(OpalMediaSession * session) const;
-    virtual PString GetBundleId() const { return PString::Empty(); }
+    virtual bool IsBundle(const PString &) const { return false; }
     virtual PString GetBundleMediaId() const { return m_bundleMediaId; }
     virtual void SetBundleMediaId(const PString & id) { m_bundleMediaId = id; }
 
@@ -476,12 +476,13 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual void SetAttribute(const PString & attr, const PString & value);
     virtual bool FromSession(OpalMediaSession * session, const SDPMediaDescription * offer);
     virtual bool ToSession(OpalMediaSession * session) const;
-    virtual PString GetBundleId() const;
+    virtual bool IsBundle(const PString & id) const { return m_flowGroup.find(id) != m_flowGroup.end(); }
 
     typedef std::map<RTP_SyncSourceId, PStringOptions> SsrcInfo;
     const SsrcInfo & GetSsrcInfo() const { return m_ssrcInfo; }
 
-    const std::vector<RTP_SyncSourceId> & GetFlowGroup() const { return m_flowGroup;  }
+    typedef std::map<PString, vector<RTP_SyncSourceId> > FlowGroupMap;
+    const FlowGroupMap & GetFlowGroup() const { return m_flowGroup;  }
 
   protected:
     class Format : public SDPMediaFormat
@@ -505,7 +506,8 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
 
     PCaselessString               m_transportType;
     SsrcInfo                      m_ssrcInfo;
-    std::vector<RTP_SyncSourceId> m_flowGroup;
+    std::vector<RTP_SyncSourceId> m_temporaryFlowSSRC;
+    FlowGroupMap                  m_flowGroup;
     OpalMediaFormat::RTCPFeedback m_rtcp_fb;
 #if OPAL_SRTP
     PList<SDPCryptoSuite>         m_cryptoSuites;
