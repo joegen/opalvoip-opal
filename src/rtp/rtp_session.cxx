@@ -2006,7 +2006,9 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
   if (!OpalMediaSession::Open(localInterface, remoteAddress, mediaAddress))
     return false;
 
-  PTRACE(4, *this << "opening: local=" << m_localAddress << " remote=" << m_remoteAddress);
+  PIPSocket::Address bindingAddress(localInterface);
+
+  PTRACE(4, *this << "opening: local=" << bindingAddress << " remote=" << m_remoteAddress);
 
   m_firstControl = true;
 
@@ -2014,8 +2016,6 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
     delete m_socket[i];
     m_socket[i] = NULL;
   }
-
-  PIPSocket::Address bindingAddress(localInterface);
 
 #if OPAL_PTLIB_NAT
   if (!m_manager.IsLocalAddress(m_remoteAddress)) {
@@ -2370,6 +2370,7 @@ void OpalRTPSession::SetICE(const PString & user, const PString & pass, const PN
   PTRACE_CONTEXT_ID_TO(m_stunClient);
   m_stunClient->SetCredentials(m_remoteUsername + ':' + m_localUsername, m_remoteUsername, PString::Empty());
 
+  m_remoteAddress = PIPSocket::GetInvalidAddress();
   m_remoteBehindNAT = true;
 
   PTRACE(4, *this << "configured for ICE (remote) with candidates: "
@@ -2413,6 +2414,9 @@ bool OpalRTPSession::GetICE(PString & user, PString & pass, PNatCandidateList & 
       m_candidates[channel].push_back(state);
     }
   }
+
+  m_remoteAddress = PIPSocket::GetInvalidAddress();
+  m_remoteBehindNAT = true;
 
   PTRACE(4, *this << "configured for ICE (local) with candidates: "
             "data=" << m_candidates[e_Data].size() << ", " "control=" << m_candidates[e_Control].size());
