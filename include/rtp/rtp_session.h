@@ -95,6 +95,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress = true);
 #if OPAL_ICE
     virtual void SetICE(const PString & user, const PString & pass, const PNatCandidateList & candidates);
+    virtual bool GetICE(PString & user, PString & pass, PNatCandidateList & candidates);
 #endif
 
     virtual void AttachTransport(Transport & transport);
@@ -810,11 +811,11 @@ class OpalRTPSession : public OpalMediaSession
     );
 
     struct CandidateState {
+      PIPSocketAddressAndPort m_localAP;
       PIPSocketAddressAndPort m_remoteAP;
       // Not sure what else might be necessary here. Work in progress!
 
-      CandidateState(const PIPSocketAddressAndPort& addressAndPort)
-        : m_remoteAP(addressAndPort)
+      CandidateState()
       {
       }
     };

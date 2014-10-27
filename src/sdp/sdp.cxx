@@ -776,30 +776,10 @@ static bool CanUseCandidate(const PNatCandidate & candidate)
           candidate.m_localTransportAddress.IsValid() &&
           candidate.m_type < PNatCandidate::NumTypes;
 }
-
-static void CalculateCandidatePriority(PNatCandidate & candidate)
-{
-  candidate.m_priority = (126 << 24) | (256 - candidate.m_component);
-
-  PIPSocket::Address ip = candidate.m_localTransportAddress.GetAddress();
-  if (ip.GetVersion() != 6)
-    candidate.m_priority |= 0xffff00;
-  else {
-    /* Incomplete need to get precedence from following table, for now use 50
-          Prefix        Precedence Label
-          ::1/128               50     0
-          ::/0                  40     1
-          2002::/16             30     2
-          ::/96                 20     3
-          ::ffff:0:0/96         10     4
-    */
-    candidate.m_priority |= 50 << 8;
-  }
-}
 #endif //OPAL_ICE
 
 
-bool SDPMediaDescription::FromSession(const OpalMediaSession * session,
+bool SDPMediaDescription::FromSession(OpalMediaSession * session,
 #if OPAL_ICE
                                       const SDPMediaDescription * offer)
 #else
@@ -822,20 +802,10 @@ bool SDPMediaDescription::FromSession(const OpalMediaSession * session,
 
 #if OPAL_ICE
   if (offer != NULL ? offer->HasICE() : m_stringOptions.GetBoolean(OPAL_OPT_OFFER_ICE)) {
+    PString user, pass;
     PNatCandidateList candidates;
-    PNatCandidate candidate(PNatCandidate::HostType, PNatMethod::eComponent_RTP, "xyzzy");
-    if (m_mediaAddress.GetIpAndPort(candidate.m_localTransportAddress)) {
-      CalculateCandidatePriority(candidate);
-      candidates.Append(new PNatCandidate(candidate));
-
-      if (m_controlAddress.GetIpAndPort(candidate.m_localTransportAddress)) {
-        candidate.m_component = PNatMethod::eComponent_RTCP;
-        CalculateCandidatePriority(candidate);
-        candidates.Append(new PNatCandidate(candidate));
-      }
-
-      SetICE(session->GetLocalUsername(), session->GetLocalPassword(), candidates);
-    }
+    session->GetICE(user, pass, candidates);
+    SetICE(user, pass, candidates);
   }
 #endif // OPAL_ICE
 
@@ -861,6 +831,8 @@ bool SDPMediaDescription::ToSession(OpalMediaSession * session) const
       // only need to respond to remote requests, and user/pass is enough.
       rtpSession->SetICE(m_username, m_password, m_stringOptions.GetBoolean(OPAL_OPT_ICE_LITE, true) ? PNatCandidateList() : m_candidates);
     }
+    else
+      rtpSession->SetICE(PString::Empty(), PString::Empty(), PNatCandidateList());
 #endif //OPAL_ICE
   }
 
@@ -1925,7 +1897,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
 }
 
 
-bool SDPRTPAVPMediaDescription::FromSession(const OpalMediaSession * session, const SDPMediaDescription * offer)
+bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session, const SDPMediaDescription * offer)
 {
   const OpalRTPSession * rtpSession = dynamic_cast<const OpalRTPSession *>(session);
   if (rtpSession != NULL) {
