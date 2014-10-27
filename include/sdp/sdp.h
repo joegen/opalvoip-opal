@@ -179,12 +179,15 @@ class SDPCommonAttributes
       SendRecv
     };
 
-    P_DECLARE_BITWISE_ENUM(SetupType, 3, (
+#if OPAL_SRTP // DTLS
+    P_DECLARE_BITWISE_ENUM_EX(SetupModes, 3, (
       SetupNotSet,
       SetupActive,
       SetupPassive,
       SetupHoldConnection
-    ));
+    ),
+      SetupActivePassive = SetupActive | SetupPassive
+    );
 
     enum ConnectionMode
     {
@@ -192,11 +195,12 @@ class SDPCommonAttributes
       ConnectionNew,
       ConnectionExisting
     };
+#endif
 
     SDPCommonAttributes()
       : m_direction(Undefined)
 #if OPAL_SRTP // DTLS
-      , m_setup(SetupNotSet)
+      , m_setupMode(SetupNotSet)
       , m_connectionMode(ConnectionNotSet)
 #endif
     { }
@@ -220,8 +224,8 @@ class SDPCommonAttributes
     virtual void OutputAttributes(ostream & strm) const;
 
 #if OPAL_SRTP
-    SetupType GetSetup() const { return m_setup; }
-    void SetSetup(SetupType setupType) { m_setup = setupType; }
+    SetupModes GetSetupMode() const { return m_setupMode; }
+    void SetSetupMode(SetupModes setupType) { m_setupMode = setupType; }
     ConnectionMode GetConnectionMode() const { return m_connectionMode; }
     void SetConnectionMode(ConnectionMode mode) { m_connectionMode = mode; }
     const PSSLCertificateFingerprint& GetFingerprint() const { return m_fingerprint; }
@@ -249,8 +253,8 @@ class SDPCommonAttributes
     SDPBandwidth        m_bandwidth;
     RTPExtensionHeaders m_extensionHeaders;
 #if OPAL_SRTP // DTLS
-    SetupType      m_setup;
-    ConnectionMode m_connectionMode;
+    SetupModes                 m_setupMode;
+    ConnectionMode             m_connectionMode;
     PSSLCertificateFingerprint m_fingerprint;
 #endif
 #if OPAL_ICE
