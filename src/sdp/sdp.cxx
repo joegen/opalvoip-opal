@@ -1926,7 +1926,12 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session, const SD
   const OpalDTLSSRTPSession* dltsMediaSession = dynamic_cast<const OpalDTLSSRTPSession*>(session);
   if (dltsMediaSession != NULL) {
     SetFingerprint(dltsMediaSession->GetLocalFingerprint());
-    SetSetupMode(dltsMediaSession->IsPassiveMode() ? SDPCommonAttributes::SetupPassive : SDPCommonAttributes::SetupActivePassive);
+    if (offer == NULL)
+      SetSetupMode(SDPCommonAttributes::SetupActivePassive); // We are making offer, allow other side to decide
+    else if (dltsMediaSession->IsPassiveMode())
+      SetSetupMode(SDPCommonAttributes::SetupPassive);
+    else
+      SetSetupMode(SDPCommonAttributes::SetupActive);
   }
 #endif
 
@@ -1955,7 +1960,8 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session) const
   OpalDTLSSRTPSession* dltsMediaSession = dynamic_cast<OpalDTLSSRTPSession*>(session);
   if (dltsMediaSession) { // DTLS
     dltsMediaSession->SetRemoteFingerprint(GetFingerprint());
-    dltsMediaSession->SetPassiveMode(GetSetupMode() & SDPCommonAttributes::SetupPassive);
+    // If they are active, we are passive
+    dltsMediaSession->SetPassiveMode(GetSetupMode() & SDPCommonAttributes::SetupActive);
   }
 #endif // OPAL_SRTP
 
