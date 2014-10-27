@@ -287,6 +287,8 @@ class OpalSDPConnection : public OpalRTPConnection
     OpalMediaFormatList m_remoteFormatList;
     OpalMediaFormatList m_answerFormatList;
 
+    bool m_offerPending;
+
     enum HoldState {
       eHoldOff,
       eRetrieveInProgress,
