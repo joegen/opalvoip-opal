@@ -66,7 +66,7 @@ class OpalDTLSSRTPSession : public OpalSRTPSession
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame);
 
     // New members
-    void SetPassiveMode(bool passive) { m_passiveMode = passive; }
+    void SetPassiveMode(bool passive);
     bool IsPassiveMode() const { return m_passiveMode; }
 
     PSSLCertificateFingerprint GetLocalFingerprint() const;
