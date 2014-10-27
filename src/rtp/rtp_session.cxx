@@ -161,6 +161,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_localHasRestrictedNAT(false)
   , m_noTransmitErrors(0)
 #if OPAL_ICE
+  , m_candidateType(e_UnknownCandidates)
   , m_iceServer(NULL)
   , m_stunClient(NULL)
 #endif
@@ -2350,14 +2351,16 @@ void OpalRTPSession::SetICE(const PString & user, const PString & pass, const PN
     return;
   }
 
+  if (m_candidateType == e_UnknownCandidates)
+    m_candidateType = e_RemoteCandidates;
+
   for (PNatCandidateList::const_iterator it = candidates.begin(); it != candidates.end(); ++it) {
-    if (it->m_protocol == "udp" &&
-        it->m_component >= PNatMethod::eComponent_RTP &&
-        it->m_component <= PNatMethod::eComponent_RTCP &&
-        it->m_localTransportAddress.GetPort() == m_remotePort[it->m_component - 1]) {
-      CandidateState state;
-      state.m_remoteAP = it->m_localTransportAddress;
-      m_candidates[it->m_component-1].push_back(state);
+    if (m_candidateType == e_RemoteCandidates &&
+         it->m_protocol == "udp" &&
+         it->m_component >= PNatMethod::eComponent_RTP &&
+         it->m_component <= PNatMethod::eComponent_RTCP &&
+         it->m_localTransportAddress.GetPort() == m_remotePort[it->m_component - 1]) {
+      m_candidates[it->m_component-1].push_back(it->m_localTransportAddress);
     }
   }
 
@@ -2386,6 +2389,9 @@ bool OpalRTPSession::GetICE(PString & user, PString & pass, PNatCandidateList & 
   if (!m_localAddress.IsValid())
     return false;
 
+  if (m_candidateType == e_UnknownCandidates)
+    m_candidateType = e_LocalCandidates;
+
   for (int channel = e_Control; channel <= e_Data; ++channel) {
     if (m_localPort[channel] != 0) {
       static const PNatMethod::Component ComponentId[2] = { PNatMethod::eComponent_RTP, PNatMethod::eComponent_RTCP };
@@ -2409,9 +2415,8 @@ bool OpalRTPSession::GetICE(PString & user, PString & pass, PNatCandidateList & 
 
       candidates.Append(new PNatCandidate(candidate));
 
-      CandidateState state;
-      state.m_localAP = candidate.m_localTransportAddress;
-      m_candidates[channel].push_back(state);
+      if (m_candidateType == e_LocalCandidates)
+        m_candidates[channel].push_back(candidate.m_localTransportAddress);
     }
   }
 
@@ -2443,7 +2448,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveICE(Channel channel,
     if (!m_iceServer->OnReceiveMessage(message, PSTUNServer::SocketInfo(m_socket[channel])))
       return e_IgnorePacket;
 
-    if (!m_candidates[channel].empty() && message.FindAttribute(PSTUNAttribute::USE_CANDIDATE) == NULL) {
+    if (m_candidateType == e_LocalCandidates && message.FindAttribute(PSTUNAttribute::USE_CANDIDATE) == NULL) {
       PTRACE(4, *this << "awaiting USE-CANDIDATE");
       return e_IgnorePacket;
     }
@@ -2456,7 +2461,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveICE(Channel channel,
     for (CandidateStates::const_iterator it = m_candidates[channel].begin(); ; ++it) {
       if (it == m_candidates[channel].end())
         return e_IgnorePacket;
-      if (it->m_remoteAP == ap)
+      if (it->m_ap == ap)
         break;
     }
   }
@@ -2480,13 +2485,15 @@ void OpalRTPSession::ICEServer::OnBindingResponse(const PSTUNMessage &, PSTUNMes
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendICE(Channel channel)
 {
-  for (CandidateStates::iterator it = m_candidates[channel].begin(); it != m_candidates[channel].end(); ++it) {
-    if (it->m_remoteAP.IsValid()) {
-      PTRACE(4, *this << "sending BINDING-REQUEST to " << it->m_remoteAP);
-      PSTUNMessage request(PSTUNMessage::BindingRequest);
-      m_stunClient->AppendMessageIntegrity(request);
-      if (!request.Write(*m_socket[channel], it->m_remoteAP))
-        return e_AbortTransport;
+  if (m_candidateType == e_RemoteCandidates) {
+    for (CandidateStates::iterator it = m_candidates[channel].begin(); it != m_candidates[channel].end(); ++it) {
+      if (it->m_ap.IsValid()) {
+        PTRACE(4, *this << "sending BINDING-REQUEST to " << it->m_ap);
+        PSTUNMessage request(PSTUNMessage::BindingRequest);
+        m_stunClient->AppendMessageIntegrity(request);
+        if (!request.Write(*m_socket[channel], it->m_ap))
+          return e_AbortTransport;
+      }
     }
   }
 

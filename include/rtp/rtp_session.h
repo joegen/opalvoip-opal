@@ -811,17 +811,23 @@ class OpalRTPSession : public OpalMediaSession
     );
 
     struct CandidateState {
-      PIPSocketAddressAndPort m_localAP;
-      PIPSocketAddressAndPort m_remoteAP;
+      PIPSocketAddressAndPort m_ap;
       // Not sure what else might be necessary here. Work in progress!
 
-      CandidateState()
+      CandidateState(const PIPSocketAddressAndPort & ap)
+        : m_ap(ap)
       {
       }
     };
     typedef std::list<CandidateState> CandidateStates;
 
     CandidateStates m_candidates[2];
+    enum {
+      e_UnknownCandidates,
+      e_LocalCandidates,
+      e_RemoteCandidates
+    } m_candidateType;
+
     class ICEServer;
     ICEServer     * m_iceServer;
     PSTUNClient   * m_stunClient;
