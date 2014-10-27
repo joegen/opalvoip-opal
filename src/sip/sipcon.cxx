@@ -2834,9 +2834,6 @@ bool SIPConnection::OnReceivedAnswer(SIP_PDU & response, SIPTransaction * transa
     return true;
   }
 
-  m_answerFormatList = sdp->GetMediaFormats();
-  AdjustMediaFormats(false, NULL, m_answerFormatList);
-
   if (transaction == NULL || transaction->GetSDP()->HasActiveSend()) {
     bool holdFromRemote = sdp->IsHold();
     if (m_holdFromRemote != holdFromRemote) {
