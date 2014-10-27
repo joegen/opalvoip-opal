@@ -1879,6 +1879,8 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
       PString val = value.Mid(endToken + 1);
       m_ssrcInfo[ssrc].SetAt(key, val);
       PTRACE_IF(4, key == "cname", "SSRC: " << RTP_TRACE_SRC(ssrc) << " CNAME: " << val);
+      if (key == "mslabel" && !m_temporaryFlowSSRC.empty())
+        m_flowGroup[val] = m_temporaryFlowSSRC;
     }
     return;
   }
@@ -1886,9 +1888,15 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
   if (attr *= "ssrc-group") {
     PStringArray tokens = value.Tokenise(' ', false);
     if (tokens.GetSize() > 1 && (tokens[0] *= "FID")) {
-      m_flowGroup.resize(tokens.GetSize() - 1);
+      m_temporaryFlowSSRC.resize(tokens.GetSize() - 1);
       for (PINDEX i = 1; i < tokens.GetSize(); ++i)
-        m_flowGroup[i - 1] = tokens[i].AsUnsigned();
+        m_temporaryFlowSSRC[i - 1] = tokens[i].AsUnsigned();
+
+      SsrcInfo::iterator it = m_ssrcInfo.find(m_temporaryFlowSSRC[0]);
+      if (it != m_ssrcInfo.end() && it->second.Has("mslabel")) {
+        m_flowGroup[it->second.Get("mslabel")] = m_temporaryFlowSSRC;
+        m_temporaryFlowSSRC.clear();
+      }
       return;
     }
   }
@@ -1967,20 +1975,6 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session) const
 #endif // OPAL_SRTP
 
   return SDPMediaDescription::ToSession(session);
-}
-
-
-PString SDPRTPAVPMediaDescription::GetBundleId() const
-{
-  for (size_t i = 0; i < m_flowGroup.size(); ++i) {
-    SsrcInfo::const_iterator it = m_ssrcInfo.find(m_flowGroup[i]);
-    if (it != m_ssrcInfo.end()) {
-      if (it->second.Has("mslabel"))
-        return it->second.Get("mslabel");
-    }
-  }
-
-  return m_ssrcInfo.empty() ? PString::Empty() : m_ssrcInfo.begin()->second.Get("mslabel");
 }
 
 
@@ -2763,7 +2757,7 @@ void SDPSessionDescription::ParseOwner(const PString & str)
 SDPMediaDescription * SDPSessionDescription::GetMediaDescriptionByBundle(const PString & bid, const PString & mid) const
 {
   for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
-    if (mediaDescriptions[i].GetBundleId() == bid && mediaDescriptions[i].GetBundleMediaId() == mid)
+    if (mediaDescriptions[i].IsBundle(bid) && mediaDescriptions[i].GetBundleMediaId() == mid)
       return &mediaDescriptions[i];
   }
 
