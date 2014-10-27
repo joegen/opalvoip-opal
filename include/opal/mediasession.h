@@ -309,8 +309,11 @@ class OpalMediaSession : public PSafeObject
       const PString & pass,
       const PNatCandidateList & candidates
     );
-    const PString & GetLocalUsername() const { return m_localUsername; }
-    const PString & GetLocalPassword() const { return m_localPassword; }
+    virtual bool GetICE(
+      PString & user,
+      PString & pass,
+      PNatCandidateList & candidates
+    );
 #endif
 
   protected:

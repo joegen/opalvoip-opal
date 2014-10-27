@@ -2343,15 +2343,22 @@ void OpalRTPSession::SetICE(const PString & user, const PString & pass, const PN
   m_stunClient = NULL;
 
   OpalMediaSession::SetICE(user, pass, candidates);
-  if (user.IsEmpty() || pass.IsEmpty())
+  if (user.IsEmpty() || pass.IsEmpty()) {
+    // No ICE
+    for (int channel = 0; channel < 2; ++channel)
+      m_candidates[channel].clear();
     return;
+  }
 
   for (PNatCandidateList::const_iterator it = candidates.begin(); it != candidates.end(); ++it) {
     if (it->m_protocol == "udp" &&
         it->m_component >= PNatMethod::eComponent_RTP &&
         it->m_component <= PNatMethod::eComponent_RTCP &&
-        it->m_localTransportAddress.GetPort() == m_remotePort[it->m_component-1])
-      m_candidates[it->m_component-1].push_back(it->m_localTransportAddress);
+        it->m_localTransportAddress.GetPort() == m_remotePort[it->m_component - 1]) {
+      CandidateState state;
+      state.m_remoteAP = it->m_localTransportAddress;
+      m_candidates[it->m_component-1].push_back(state);
+    }
   }
 
   m_iceServer = new ICEServer(*this);
@@ -2365,8 +2372,52 @@ void OpalRTPSession::SetICE(const PString & user, const PString & pass, const PN
 
   m_remoteBehindNAT = true;
 
-  PTRACE(4, *this << "configured for ICE with candidates: "
+  PTRACE(4, *this << "configured for ICE (remote) with candidates: "
             "data=" << m_candidates[e_Data].size() << ", " "control=" << m_candidates[e_Control].size());
+}
+
+
+bool OpalRTPSession::GetICE(PString & user, PString & pass, PNatCandidateList & candidates)
+{
+  if (!OpalMediaSession::GetICE(user, pass, candidates))
+    return false;
+
+  if (!m_localAddress.IsValid())
+    return false;
+
+  for (int channel = e_Control; channel <= e_Data; ++channel) {
+    if (m_localPort[channel] != 0) {
+      static const PNatMethod::Component ComponentId[2] = { PNatMethod::eComponent_RTP, PNatMethod::eComponent_RTCP };
+      PNatCandidate candidate(PNatCandidate::HostType, ComponentId[channel], "xyzzy");
+      candidate.m_localTransportAddress.SetAddress(m_localAddress, m_localPort[channel]);
+      candidate.m_priority = (126 << 24) | (256 - candidate.m_component);
+
+      if (m_localAddress.GetVersion() != 6)
+        candidate.m_priority |= 0xffff00;
+      else {
+        /* Incomplete need to get precedence from following table, for now use 50
+              Prefix        Precedence Label
+              ::1/128               50     0
+              ::/0                  40     1
+              2002::/16             30     2
+              ::/96                 20     3
+              ::ffff:0:0/96         10     4
+        */
+        candidate.m_priority |= 50 << 8;
+      }
+
+      candidates.Append(new PNatCandidate(candidate));
+
+      CandidateState state;
+      state.m_localAP = candidate.m_localTransportAddress;
+      m_candidates[channel].push_back(state);
+    }
+  }
+
+  PTRACE(4, *this << "configured for ICE (local) with candidates: "
+            "data=" << m_candidates[e_Data].size() << ", " "control=" << m_candidates[e_Control].size());
+
+  return !candidates.empty();
 }
 
 
@@ -2382,7 +2433,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveICE(Channel channel,
 
   PSTUNMessage message(framePtr, frameSize, ap);
   if (!message.IsValid())
-    return e_ProcessPacket;
+    return m_candidates[channel].empty() ? e_ProcessPacket : e_IgnorePacket;
 
   if (message.IsRequest()) {
     if (!m_iceServer->OnReceiveMessage(message, PSTUNServer::SocketInfo(m_socket[channel])))
@@ -2395,6 +2446,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveICE(Channel channel,
     if (!m_stunClient->ValidateMessageIntegrity(message))
       return e_IgnorePacket;
 
+    PTRACE(4, *this << "trying to match STUN answer to candidates");
     for (CandidateStates::const_iterator it = m_candidates[channel].begin(); ; ++it) {
       if (it == m_candidates[channel].end())
         return e_IgnorePacket;

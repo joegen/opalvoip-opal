@@ -295,10 +295,6 @@ OpalMediaSession::OpalMediaSession(const Init & init)
   : m_connection(init.m_connection)
   , m_sessionId(init.m_sessionId)
   , m_mediaType(init.m_mediaType)
-#if OPAL_ICE
-  , m_localUsername(PBase64::Encode(PRandom::Octets(12)))
-  , m_localPassword(PBase64::Encode(PRandom::Octets(18)))
-#endif
 {
   PTRACE_CONTEXT_ID_FROM(init.m_connection);
   PTRACE(5, *this << "created for " << m_mediaType);
@@ -419,6 +415,20 @@ void OpalMediaSession::SetICE(const PString & user, const PString & pass, const 
 {
   m_remoteUsername = user;
   m_remotePassword = pass;
+}
+
+
+bool OpalMediaSession::GetICE(PString & user, PString & pass, PNatCandidateList &)
+{
+  if (m_localUsername.IsEmpty())
+    m_localUsername = PBase64::Encode(PRandom::Octets(12));
+  user = m_localUsername;
+
+  if (m_localPassword.IsEmpty())
+    m_localPassword = PBase64::Encode(PRandom::Octets(18));
+  pass = m_localPassword;
+
+  return true;
 }
 #endif
 
