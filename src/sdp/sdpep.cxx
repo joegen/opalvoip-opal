@@ -81,6 +81,7 @@ OpalSDPConnection::OpalSDPConnection(OpalCall & call,
                                 StringOptions * stringOptions)
   : OpalRTPConnection(call, ep, token, options, stringOptions)
   , m_endpoint(ep)
+  , m_offerPending(false)
   , m_holdToRemote(eHoldOff)
   , m_holdFromRemote(false)
 {
@@ -189,6 +190,8 @@ bool OpalSDPConnection::GetOfferSDP(SDPSessionDescription & offer, bool offerOpe
     OnApplyStringOptions();
   }
 
+  m_offerPending = true;
+
   return OnSendOfferSDP(offer, offerOpenMediaStreamsOnly);
 }
 
@@ -202,6 +205,11 @@ PString OpalSDPConnection::GetOfferSDP(bool offerOpenMediaStreamsOnly)
 
 bool OpalSDPConnection::AnswerOfferSDP(const SDPSessionDescription & offer, SDPSessionDescription & answer)
 {
+  if (m_offerPending) {
+    PTRACE(2, "Outgoing offer pending, cannot handle incoming offer.");
+    return false;
+  }
+
   if (GetPhase() == UninitialisedPhase) {
     SetPhase(SetUpPhase);
     OnApplyStringOptions();
@@ -237,15 +245,12 @@ PString OpalSDPConnection::AnswerOfferSDP(const PString & offer)
 
 bool OpalSDPConnection::HandleAnswerSDP(const SDPSessionDescription & answer)
 {
-  if (GetPhase() == UninitialisedPhase) {
-    PTRACE(1, "Did not get offer before handling answer");
+  if (!m_offerPending) {
+    PTRACE(1, "Did not send an offer before handling answer");
     return false;
   }
 
-  if (!IsOriginating() && !IsEstablished()) {
-    PTRACE(1, "No offer sent, not originating call");
-    return false;
-  }
+  m_offerPending = false;
 
   bool dummy;
   if (!OnReceivedAnswerSDP(answer, dummy))
