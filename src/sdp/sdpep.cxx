@@ -973,6 +973,9 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
 
 bool OpalSDPConnection::OnReceivedAnswerSDP(const SDPSessionDescription & sdp, bool & multipleFormats)
 {
+  m_answerFormatList = sdp.GetMediaFormats();
+  AdjustMediaFormats(false, NULL, m_answerFormatList);
+
   unsigned sessionCount = sdp.GetMediaDescriptions().GetSize();
 
   bool ok = false;
