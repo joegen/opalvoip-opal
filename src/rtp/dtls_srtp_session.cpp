@@ -135,7 +135,7 @@ class OpalDTLSSRTPSession::SSLChannel : public PSSLChannelDTLS
 {
   PCLASSINFO(SSLChannel, PSSLChannelDTLS);
 public:
-  SSLChannel(OpalDTLSSRTPSession & session, PUDPSocket * socket, bool isServer)
+  SSLChannel(OpalDTLSSRTPSession & session, PUDPSocket * socket)
     : PSSLChannelDTLS(*DTLSContextSingleton())
     , m_session(session)
   {
@@ -143,18 +143,18 @@ public:
 
     Open(socket, false);
     SetReadTimeout(2000);
-
-    if (isServer)
-      Accept();
-    else
-      Connect();
   }
 
 
   virtual int BioRead(char * buf, int len)
   {
     int result = PSSLChannelDTLS::BioRead(buf, len);
-    PTRACE_IF(2, result <= 0, "Read error: " << GetErrorText());
+#if PTRACING
+    if (result > 0)
+      PTRACE(5, "Read " << result << " bytes");
+    else
+      PTRACE(2, "Read error: " << GetErrorText(PChannel::LastReadError));
+#endif
     return result;
   }
 
@@ -176,7 +176,12 @@ public:
     udp->SetSendAddress(rx);
 
     int result = PSSLChannelDTLS::BioWrite(buf, len);
-    PTRACE_IF(2, result <= 0, "Write error: " << GetErrorText());
+#if PTRACING
+    if (result > 0)
+      PTRACE(5, "Written " << result << " bytes to " << rx);
+    else
+      PTRACE(2, "Write error: " << GetErrorText(PChannel::LastWriteError));
+#endif
 
     udp->SetSendAddress(old);
 
@@ -224,9 +229,10 @@ bool OpalDTLSSRTPSession::Open(const PString & localInterface, const OpalTranspo
 
   for (int i = 0; i < 2; ++i) {
     if (m_socket[i] != NULL)
-      m_sslChannel[i] = new SSLChannel(*this, m_socket[i], m_passiveMode);
+      m_sslChannel[i] = new SSLChannel(*this, m_socket[i]);
   }
 
+  SetPassiveMode(m_passiveMode);
   return true;
 }
 
@@ -239,6 +245,22 @@ void OpalDTLSSRTPSession::InternalClose()
   }
 
   OpalSRTPSession::InternalClose();
+}
+
+
+void OpalDTLSSRTPSession::SetPassiveMode(bool passive)
+{
+  m_passiveMode = passive;
+  PTRACE(4, *this << "set DTLS to " << (passive ? "passive" : " active") << " mode");
+
+  for (int i = 0; i < 2; ++i) {
+    if (m_sslChannel[i] != NULL) {
+      if (passive)
+        m_sslChannel[i]->Accept();
+      else
+        m_sslChannel[i]->Connect();
+    }
+  }
 }
 
 
