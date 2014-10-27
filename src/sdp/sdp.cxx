@@ -1948,6 +1948,7 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session) const
       PString cname(it->second.GetString("cname"));
       if (!cname.IsEmpty() && rtpSession->AddSyncSource(ssrc, OpalRTPSession::e_Receiver, cname) == ssrc) {
         rtpSession->SetAnySyncSource(false);
+        rtpSession->SetBundleId(it->second.GetString("mslabel"), ssrc, OpalRTPSession::e_Receiver);
         PTRACE(4, "Session " << session->GetSessionID() << ", added receiver SSRC " << RTP_TRACE_SRC(ssrc));
         if (it != m_ssrcInfo.begin() && rtpSession->AddSyncSource(0, OpalRTPSession::e_Sender)) {
           PTRACE(4, "Session " << session->GetSessionID() << ", added loopback place holding sender SSRC " << RTP_TRACE_SRC(ssrc));
@@ -2727,7 +2728,7 @@ void SDPSessionDescription::SetAttribute(const PString & attr, const PString & v
 
   if (attr *= "msid-semantic") {
     if (value.NumCompare("WMS") == EqualTo)
-      m_groupId = value.Mid(3).Trim();
+      m_bundleIds = value.Mid(3).Tokenise(' ', false);
     return;
   }
 

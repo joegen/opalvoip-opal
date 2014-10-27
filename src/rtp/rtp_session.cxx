@@ -840,20 +840,27 @@ void OpalRTPSession::SetCanonicalName(const PString & name, RTP_SyncSourceId ssr
 }
 
 
-PString OpalRTPSession::GetBundleId() const
+PString OpalRTPSession::GetBundleId(RTP_SyncSourceId ssrc, Direction dir) const
 {
+  PString s;
   PSafeLockReadOnly lock(*this);
-  PString s = m_bundleId;
-  s.MakeUnique();
+  SyncSource * info;
+  if (GetSyncSource(ssrc, dir, info)) {
+    s = info->m_bundleId;
+    s.MakeUnique();
+  }
   return s;
 }
 
 
-void OpalRTPSession::SetBundleId(const PString & id)
+void OpalRTPSession::SetBundleId(const PString & id, RTP_SyncSourceId ssrc, Direction dir)
 {
   PSafeLockReadWrite lock(*this);
-  m_bundleId = id;
-  m_bundleId.MakeUnique();
+  SyncSource * info;
+  if (GetSyncSource(ssrc, dir, info)) {
+    info->m_bundleId = id;
+    info->m_bundleId.MakeUnique();
+  }
 }
 
 
