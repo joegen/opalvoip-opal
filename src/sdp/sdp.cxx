@@ -1613,8 +1613,12 @@ PCaselessString SDPRTPAVPMediaDescription::GetSessionType() const
   }
 
 #if OPAL_SRTP
-  if (GetFingerprint().IsValid()) // Prefer DTLS over SDES
-    return feedbackEnabled ? OpalDTLSSRTPSession::RTP_DTLS_SAVPF() : OpalDTLSSRTPSession::RTP_DTLS_SAVP();
+  if (GetFingerprint().IsValid()) { // Prefer DTLS over SDES
+    if (m_stringOptions.GetBoolean(OPAL_OPT_SUPPRESS_UDP_TLS))
+      return feedbackEnabled ? OpalDTLSSRTPSession::RTP_SAVPF() : OpalDTLSSRTPSession::RTP_SAVP();
+    else
+      return feedbackEnabled ? OpalDTLSSRTPSession::RTP_DTLS_SAVPF() : OpalDTLSSRTPSession::RTP_DTLS_SAVP();
+  }
   if (!m_cryptoSuites.IsEmpty()) // SDES
     return feedbackEnabled ? OpalSRTPSession::RTP_SAVPF() : OpalSRTPSession::RTP_SAVP();
 #endif

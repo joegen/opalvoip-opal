@@ -59,7 +59,7 @@
    offered. Also, in this case, an answer will contain rtcp-fb options without
    requiring the RTP/AVPF transport in the remote offer, but is included in
    the basic RTP/AVP. A value of 2 indicates RTP/AVPF is offered even if no
-   media formats contains RTCPFb options. Nte if remote indicated RTP/AVPF
+   media formats contains RTCPFb options. Note if remote indicated RTP/AVPF
    then mode 2 is assumed for the answer. Default is 1.
   */
 #define OPAL_OPT_OFFER_RTCP_FB  "Offer-RTCP-FB"
@@ -77,6 +77,14 @@
    Defaults to false.
   */
 #define OPAL_OPT_RTCP_MUX "RTCP-Mux"
+
+/**Suppress UDP/TLS in SDP transport offer.
+   When offering DTLS, should use UDP/TLS/RTP/SAVPF as the transport, but for
+   interoperability reasons (*cough*Chrome*cough*) need to set only the
+   RTP/SAVPF part.
+   Defaults to false.
+*/
+#define OPAL_OPT_SUPPRESS_UDP_TLS "Suppress-UDP-TLS"
 
 /**Enable ICE offerred in SDP.
    Defaults to false.
