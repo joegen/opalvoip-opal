@@ -592,13 +592,13 @@ void SDPCommonAttributes::SetAttribute(const PString & attr, const PString & val
 #if OPAL_SRTP
   if (attr *= "setup") {
     if (value == "holdconn")
-      SetSetup(SetupHoldConnection);
+      SetSetupMode(SetupHoldConnection);
     else if (value == "active")
-      SetSetup(SetupActive);
+      SetSetupMode(SetupActive);
     else if (value == "passive")
-      SetSetup(SetupPassive);
+      SetSetupMode(SetupPassive);
     else if (value == "actpass")
-      SetSetup(SetupActive | SetupPassive);
+      SetSetupMode(SetupActivePassive);
     else
       PTRACE(2, "Unknown parameter in setup attribute: \"" << value << '"');
     return;
@@ -674,16 +674,16 @@ void SDPCommonAttributes::OutputAttributes(ostream & strm) const
   }
 
 #if OPAL_SRTP
-  if (m_setup != SetupNotSet) {
+  if (GetSetupMode() != SetupNotSet) {
     strm << "a=setup:";
-    switch (m_setup.AsBits()) {
+    switch (GetSetupMode().AsBits()) {
       case SetupActive:
         strm << "active";
         break;
       case SetupPassive:
         strm << "passive";
         break;
-      case (unsigned)SetupActive | SetupPassive:
+      case SetupActivePassive:
         strm << "actpass";
         break;
       case SetupHoldConnection:
@@ -1950,7 +1950,7 @@ bool SDPRTPAVPMediaDescription::FromSession(const OpalMediaSession * session, co
   const OpalDTLSSRTPSession* dltsMediaSession = dynamic_cast<const OpalDTLSSRTPSession*>(session);
   if (dltsMediaSession != NULL) {
     SetFingerprint(dltsMediaSession->GetLocalFingerprint());
-    SetSetup(dltsMediaSession->IsPassiveMode() ? SDPCommonAttributes::SetupPassive : SDPCommonAttributes::SetupActive);
+    SetSetupMode(dltsMediaSession->IsPassiveMode() ? SDPCommonAttributes::SetupPassive : SDPCommonAttributes::SetupActivePassive);
   }
 #endif
 
@@ -1979,7 +1979,7 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session) const
   OpalDTLSSRTPSession* dltsMediaSession = dynamic_cast<OpalDTLSSRTPSession*>(session);
   if (dltsMediaSession) { // DTLS
     dltsMediaSession->SetRemoteFingerprint(GetFingerprint());
-    dltsMediaSession->SetPassiveMode(GetSetup() & SDPCommonAttributes::SetupPassive);
+    dltsMediaSession->SetPassiveMode(GetSetupMode() & SDPCommonAttributes::SetupPassive);
   }
 #endif // OPAL_SRTP
 
@@ -2724,7 +2724,7 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
 
 #if OPAL_SRTP
   // Reset setup flag for session...
-  SetSetup(SetupNotSet);
+  SetSetupMode(SetupNotSet);
 #endif
 
   return ok && (atLeastOneValidMedia || mediaDescriptions.IsEmpty());
