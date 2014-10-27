@@ -411,8 +411,18 @@ bool OpalMediaSession::IsCryptoSecured(bool) const
 
 
 #if OPAL_ICE
+static void InternalSetLocalUserPass(PString & user, PString & pass)
+{
+  if (user.IsEmpty())
+    user = PBase64::Encode(PRandom::Octets(12));
+
+  if (pass.IsEmpty())
+    pass = PBase64::Encode(PRandom::Octets(18));
+}
+
 void OpalMediaSession::SetICE(const PString & user, const PString & pass, const PNatCandidateList &)
 {
+  InternalSetLocalUserPass(m_localUsername, m_localPassword);
   m_remoteUsername = user;
   m_remotePassword = pass;
 }
@@ -420,14 +430,9 @@ void OpalMediaSession::SetICE(const PString & user, const PString & pass, const 
 
 bool OpalMediaSession::GetICE(PString & user, PString & pass, PNatCandidateList &)
 {
-  if (m_localUsername.IsEmpty())
-    m_localUsername = PBase64::Encode(PRandom::Octets(12));
+  InternalSetLocalUserPass(m_localUsername, m_localPassword);
   user = m_localUsername;
-
-  if (m_localPassword.IsEmpty())
-    m_localPassword = PBase64::Encode(PRandom::Octets(18));
   pass = m_localPassword;
-
   return true;
 }
 #endif
