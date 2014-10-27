@@ -2344,7 +2344,7 @@ void OpalRTPSession::SetICE(const PString & user, const PString & pass, const PN
 
   OpalMediaSession::SetICE(user, pass, candidates);
   if (user.IsEmpty() || pass.IsEmpty()) {
-    // No ICE
+    PTRACE(3, *this << "ICE disabled");
     for (int channel = 0; channel < 2; ++channel)
       m_candidates[channel].clear();
     return;
@@ -2427,7 +2427,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveICE(Channel channel,
                                                                const PIPSocket::AddressAndPort & ap)
 {
   if (m_iceServer == NULL)
-    return e_ProcessPacket;
+    return m_candidates[channel].empty() ? e_ProcessPacket : e_IgnorePacket;
 
   PPROFILE_FUNCTION();
 
@@ -2439,8 +2439,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveICE(Channel channel,
     if (!m_iceServer->OnReceiveMessage(message, PSTUNServer::SocketInfo(m_socket[channel])))
       return e_IgnorePacket;
 
-    if (!m_candidates[channel].empty() && message.FindAttribute(PSTUNAttribute::USE_CANDIDATE) == NULL)
+    if (!m_candidates[channel].empty() && message.FindAttribute(PSTUNAttribute::USE_CANDIDATE) == NULL) {
+      PTRACE(4, *this << "awaiting USE-CANDIDATE");
       return e_IgnorePacket;
+    }
   }
   else {
     if (!m_stunClient->ValidateMessageIntegrity(message))
@@ -2457,6 +2459,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveICE(Channel channel,
 
   if (!m_remoteAddress.IsValid())
     InternalSetRemoteAddress(ap, channel PTRACE_PARAM(, "ICE"));
+  else {
+    PTRACE(4, *this << "completed ICE, but remote address already set.");
+  }
+
   m_candidates[channel].clear();
   return e_IgnorePacket;
 }
@@ -2471,10 +2477,13 @@ void OpalRTPSession::ICEServer::OnBindingResponse(const PSTUNMessage &, PSTUNMes
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendICE(Channel channel)
 {
   for (CandidateStates::iterator it = m_candidates[channel].begin(); it != m_candidates[channel].end(); ++it) {
-    PSTUNMessage request(PSTUNMessage::BindingRequest);
-    m_stunClient->AppendMessageIntegrity(request);
-    if (!request.Write(*m_socket[channel], it->m_remoteAP))
-      return e_AbortTransport;
+    if (it->m_remoteAP.IsValid()) {
+      PTRACE(4, *this << "sending BINDING-REQUEST to " << it->m_remoteAP);
+      PSTUNMessage request(PSTUNMessage::BindingRequest);
+      m_stunClient->AppendMessageIntegrity(request);
+      if (!request.Write(*m_socket[channel], it->m_remoteAP))
+        return e_AbortTransport;
+    }
   }
 
   return m_remotePort[channel] != 0 ? e_ProcessPacket : e_IgnorePacket;
