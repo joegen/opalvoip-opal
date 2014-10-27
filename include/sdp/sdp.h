@@ -632,7 +632,7 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
 
     const SDPMediaDescriptionArray & GetMediaDescriptions() const { return mediaDescriptions; }
 
-    SDPMediaDescription * GetMediaDescriptionByBundle(const PString & label, const PString & mid) const;
+    SDPMediaDescription * GetMediaDescriptionByBundle(const PString & bid, const PString & mid) const;
     SDPMediaDescription * GetMediaDescriptionByType(const OpalMediaType & rtpMediaType) const;
     SDPMediaDescription * GetMediaDescriptionByIndex(PINDEX i) const;
     void AddMediaDescription(SDPMediaDescription * md) { mediaDescriptions.Append(PAssertNULL(md)); }
@@ -658,6 +658,8 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
     typedef PDictionary<PString, PStringArray> GroupDict;
     GroupDict GetGroups() const { return m_groups; }
 
+    PStringArray GetBundleIds() const { return m_bundleIds; }
+
 #if OPAL_ICE
     PStringSet GetICEOptions() const { return m_iceOptions; }
 #endif
@@ -678,8 +680,8 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
     OpalTransportAddress ownerAddress;
     OpalTransportAddress defaultConnectAddress;
 
-    GroupDict  m_groups;
-    PString    m_groupId;
+    GroupDict    m_groups;
+    PStringArray m_bundleIds;
 };
 
 /////////////////////////////////////////////////////////
