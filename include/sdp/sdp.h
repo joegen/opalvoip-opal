@@ -323,7 +323,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     virtual Direction GetDirection() const { return m_mediaAddress.IsEmpty() ? Inactive : m_direction; }
 
-    virtual bool FromSession(const OpalMediaSession * session, const SDPMediaDescription * offer);
+    virtual bool FromSession(OpalMediaSession * session, const SDPMediaDescription * offer);
     virtual bool ToSession(OpalMediaSession * session) const;
     virtual PString GetBundleId() const { return PString::Empty(); }
     virtual PString GetBundleMediaId() const { return m_bundleMediaId; }
@@ -474,7 +474,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual bool IsSecure() const;
 #endif
     virtual void SetAttribute(const PString & attr, const PString & value);
-    virtual bool FromSession(const OpalMediaSession * session, const SDPMediaDescription * offer);
+    virtual bool FromSession(OpalMediaSession * session, const SDPMediaDescription * offer);
     virtual bool ToSession(OpalMediaSession * session) const;
     virtual PString GetBundleId() const;
 
