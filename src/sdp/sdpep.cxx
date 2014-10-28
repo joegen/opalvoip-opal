@@ -474,9 +474,8 @@ void OpalSDPConnection::SetAudioVideoGroup()
   if (videoSession == NULL)
     return;
 
-  PString bundle = PBase64::Encode(PRandom::Octets(24));
-  audioSession->SetBundleId(bundle);
-  videoSession->SetBundleId(bundle);
+  audioSession->SetGroupId("BUNDLE");
+  videoSession->SetGroupId("BUNDLE");
 }
 #endif // OPAL_VIDEO
 
