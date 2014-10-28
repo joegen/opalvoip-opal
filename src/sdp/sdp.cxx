@@ -592,13 +592,13 @@ void SDPCommonAttributes::SetAttribute(const PString & attr, const PString & val
 #if OPAL_SRTP
   if (attr *= "setup") {
     if (value == "holdconn")
-      SetSetupMode(SetupHoldConnection);
+      m_setupMode = SetupHoldConnection;
     else if (value == "active")
-      SetSetupMode(SetupActive);
+      m_setupMode = SetupActive;
     else if (value == "passive")
-      SetSetupMode(SetupPassive);
+      m_setupMode = SetupPassive;
     else if (value == "actpass")
-      SetSetupMode(SetupActivePassive);
+      m_setupMode = SetupActivePassive;
     else
       PTRACE(2, "Unknown parameter in setup attribute: \"" << value << '"');
     return;
@@ -613,18 +613,14 @@ void SDPCommonAttributes::SetAttribute(const PString & attr, const PString & val
   }
 
   if (attr *= "fingerprint") {
-    PSSLCertificateFingerprint fp(value);
-    if (!fp.IsValid())
-    {
+    if (!m_fingerprint.FromString(value)) {
       PTRACE(2, "Invalid fingerprint value: \"" << value << '"');
-      return;
     }
-    if (fp.GetHash() != PSSLCertificateFingerprint::HashSha256 && fp.GetHash() != PSSLCertificateFingerprint::HashSha1)
-    {
-      PTRACE(2, "Not supported fingerprint hash: \"" << value << '"');
-      return;
+    else if (m_fingerprint.GetHash() != PSSLCertificateFingerprint::HashSha1 &&
+             m_fingerprint.GetHash() != PSSLCertificateFingerprint::HashSha256) {
+      PTRACE(2, "Unsupported fingerprint hash: \"" << value << '"');
+      m_fingerprint.SetHash(PSSLCertificateFingerprint::NumHashType); // Invalid
     }
-    SetFingerprint(fp);
     return;
   }
 #endif // OPAL_SRTP
@@ -674,9 +670,9 @@ void SDPCommonAttributes::OutputAttributes(ostream & strm) const
   }
 
 #if OPAL_SRTP
-  if (GetSetupMode() != SetupNotSet) {
+  if (m_setupMode != SetupNotSet) {
     strm << "a=setup:";
-    switch (GetSetupMode().AsBits()) {
+    switch (m_setupMode.AsBits()) {
       case SetupActive:
         strm << "active";
         break;
@@ -1585,7 +1581,7 @@ PCaselessString SDPRTPAVPMediaDescription::GetSessionType() const
   }
 
 #if OPAL_SRTP
-  if (GetFingerprint().IsValid()) { // Prefer DTLS over SDES
+  if (m_fingerprint.IsValid()) { // Prefer DTLS over SDES
     if (m_stringOptions.GetBoolean(OPAL_OPT_SUPPRESS_UDP_TLS))
       return feedbackEnabled ? OpalDTLSSRTPSession::RTP_SAVPF() : OpalDTLSSRTPSession::RTP_SAVP();
     else
@@ -1933,13 +1929,15 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session, const SD
 #if OPAL_SRTP
   const OpalDTLSSRTPSession* dltsMediaSession = dynamic_cast<const OpalDTLSSRTPSession*>(session);
   if (dltsMediaSession != NULL) {
-    SetFingerprint(dltsMediaSession->GetLocalFingerprint());
+    m_fingerprint = dltsMediaSession->GetLocalFingerprint(offer != NULL ? offer->GetFingerprint().GetHash()
+                                                                        : PSSLCertificateFingerprint::HashSha1);
+
     if (offer == NULL)
-      SetSetupMode(SDPCommonAttributes::SetupActivePassive); // We are making offer, allow other side to decide
+      m_setupMode = SDPCommonAttributes::SetupActivePassive; // We are making offer, allow other side to decide
     else if (dltsMediaSession->IsPassiveMode())
-      SetSetupMode(SDPCommonAttributes::SetupPassive);
+      m_setupMode = SDPCommonAttributes::SetupPassive;
     else
-      SetSetupMode(SDPCommonAttributes::SetupActive);
+      m_setupMode = SDPCommonAttributes::SetupActive;
   }
 #endif
 
@@ -1968,9 +1966,9 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session) const
 #if OPAL_SRTP
   OpalDTLSSRTPSession* dltsMediaSession = dynamic_cast<OpalDTLSSRTPSession*>(session);
   if (dltsMediaSession) { // DTLS
-    dltsMediaSession->SetRemoteFingerprint(GetFingerprint());
+    dltsMediaSession->SetRemoteFingerprint(m_fingerprint);
     // If they are active, we are passive
-    dltsMediaSession->SetPassiveMode(GetSetupMode() & SDPCommonAttributes::SetupActive);
+    dltsMediaSession->SetPassiveMode(m_setupMode & SDPCommonAttributes::SetupActive);
   }
 #endif // OPAL_SRTP
 
@@ -2701,7 +2699,7 @@ bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatLis
 
 #if OPAL_SRTP
   // Reset setup flag for session...
-  SetSetupMode(SetupNotSet);
+  m_setupMode = SetupNotSet;
 #endif
 
   return ok && (atLeastOneValidMedia || mediaDescriptions.IsEmpty());
