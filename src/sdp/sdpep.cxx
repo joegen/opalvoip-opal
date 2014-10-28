@@ -82,6 +82,8 @@ OpalSDPConnection::OpalSDPConnection(OpalCall & call,
   : OpalRTPConnection(call, ep, token, options, stringOptions)
   , m_endpoint(ep)
   , m_offerPending(false)
+  , m_sdpSessionId(PTime().GetTimeInSeconds())
+  , m_sdpVersion(0)
   , m_holdToRemote(eHoldOff)
   , m_holdFromRemote(false)
 {
@@ -271,7 +273,7 @@ bool OpalSDPConnection::HandleAnswerSDP(const PString & answer)
 SDPSessionDescription * OpalSDPConnection::CreateSDP(const PString & sdpStr)
 {
   if (sdpStr.IsEmpty())
-    return m_endpoint.CreateSDP(0, 0, OpalTransportAddress(GetMediaInterface(), 0, OpalTransportAddress::UdpPrefix()));
+    return m_endpoint.CreateSDP(m_sdpSessionId, ++m_sdpVersion, OpalTransportAddress(GetMediaInterface(), 0, OpalTransportAddress::UdpPrefix()));
 
   OpalMediaFormatList formats = GetLocalMediaFormats();
   if (formats.IsEmpty())

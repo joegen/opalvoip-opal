@@ -721,8 +721,6 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
     PTimeInterval         m_delayedAckTimeout1;
     PTimeInterval         m_delayedAckTimeout2;
     SIP_PDU             * m_delayedAckPDU;
-    time_t                m_sdpSessionId;
-    unsigned              m_sdpVersion; // Really a sequence number
     bool                  m_needReINVITE;
     bool                  m_handlingINVITE;
     bool                  m_resolveMultipleFormatReINVITE;
