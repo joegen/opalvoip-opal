@@ -119,9 +119,9 @@ class DTLSContext : public PSSLContext
       }
     }
 
-    PSSLCertificateFingerprint GetFingerprint(PSSLCertificateFingerprint::HashType aType) const
+    PSSLCertificateFingerprint GetFingerprint(PSSLCertificateFingerprint::HashType hashType) const
     {
-      return PSSLCertificateFingerprint(aType, m_cert);
+      return PSSLCertificateFingerprint(hashType, m_cert);
     }
 
   protected:
@@ -292,9 +292,11 @@ OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::OnSendControl(RTP_Control
 }
 
 
-PSSLCertificateFingerprint OpalDTLSSRTPSession::GetLocalFingerprint() const
+const PSSLCertificateFingerprint & OpalDTLSSRTPSession::GetLocalFingerprint(PSSLCertificateFingerprint::HashType preferredHashType) const
 {
-  return DTLSContextSingleton()->GetFingerprint(m_remoteFingerprint.IsValid() ? m_remoteFingerprint.GetHash() : PSSLCertificateFingerprint::HashSha1);
+  if (!m_localFingerprint.IsValid())
+    const_cast<OpalDTLSSRTPSession*>(this)->m_localFingerprint = DTLSContextSingleton()->GetFingerprint(preferredHashType);
+  return m_localFingerprint;
 }
 
 
