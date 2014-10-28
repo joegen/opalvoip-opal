@@ -999,7 +999,7 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
   }
 
   if (attr *= "mid") {
-    m_bundleMediaId = value;
+    m_groupMediaId = value;
     return;
   }
 
@@ -1134,8 +1134,8 @@ void SDPMediaDescription::OutputAttributes(ostream & strm) const
 {
   SDPCommonAttributes::OutputAttributes(strm);
 
-  if (!m_bundleMediaId.IsEmpty())
-    strm << "a=mid:" << m_bundleMediaId << CRLF;
+  if (!m_groupMediaId.IsEmpty())
+    strm << "a=mid:" << m_groupMediaId << CRLF;
 
 #if OPAL_ICE
   if (m_username.IsEmpty() || m_password.IsEmpty())
@@ -1876,7 +1876,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
       m_ssrcInfo[ssrc].SetAt(key, val);
       PTRACE_IF(4, key == "cname", "SSRC: " << RTP_TRACE_SRC(ssrc) << " CNAME: " << val);
       if (key == "mslabel" && !m_temporaryFlowSSRC.empty())
-        m_flowGroup[val] = m_temporaryFlowSSRC;
+        m_mediaStreams[val] = m_temporaryFlowSSRC;
     }
     return;
   }
@@ -1890,7 +1890,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
 
       SsrcInfo::iterator it = m_ssrcInfo.find(m_temporaryFlowSSRC[0]);
       if (it != m_ssrcInfo.end() && it->second.Has("mslabel")) {
-        m_flowGroup[it->second.Get("mslabel")] = m_temporaryFlowSSRC;
+        m_mediaStreams[it->second.Get("mslabel")] = m_temporaryFlowSSRC;
         m_temporaryFlowSSRC.clear();
       }
       return;
@@ -1912,18 +1912,20 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session, const SD
       PString cname = rtpSession->GetCanonicalName(ssrc[i]);
       if (!cname.IsEmpty())
         info.SetAt("cname", cname);
-      PString mslabel = rtpSession->GetBundleId();
+      PString mslabel = rtpSession->GetMediaStreamId(ssrc[i], OpalRTPSession::e_Sender);
       if (!mslabel.IsEmpty()) {
         PString label = mslabel + '+' + session->GetMediaType();
         info.SetAt("mslabel", mslabel);
         info.SetAt("label", label);
         info.SetAt("msid", mslabel & label);
-
-        // Probably should be arbitrary string, but everyone seems to use
-        // the media type, as in "audio" and "video".
-        m_bundleMediaId = GetMediaType();
       }
     }
+
+    // Probably should be arbitrary string, but everyone seems to use
+    // the media type, as in "audio" and "video".
+    m_groupId = rtpSession->GetGroupId();
+    if (!m_groupId.IsEmpty())
+      m_groupMediaId = GetMediaType();
   }
 
 #if OPAL_SRTP
@@ -1954,7 +1956,7 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session) const
       PString cname(it->second.GetString("cname"));
       if (!cname.IsEmpty() && rtpSession->AddSyncSource(ssrc, OpalRTPSession::e_Receiver, cname) == ssrc) {
         rtpSession->SetAnySyncSource(false);
-        rtpSession->SetBundleId(it->second.GetString("mslabel"), ssrc, OpalRTPSession::e_Receiver);
+        rtpSession->SetMediaStreamId(it->second.GetString("mslabel"), ssrc, OpalRTPSession::e_Receiver);
         PTRACE(4, "Session " << session->GetSessionID() << ", added receiver SSRC " << RTP_TRACE_SRC(ssrc));
         if (it != m_ssrcInfo.begin() && rtpSession->AddSyncSource(0, OpalRTPSession::e_Sender)) {
           PTRACE(4, "Session " << session->GetSessionID() << ", added loopback place holding sender SSRC " << RTP_TRACE_SRC(ssrc));
@@ -2526,35 +2528,42 @@ void SDPSessionDescription::PrintOn(ostream & strm) const
 
   OutputAttributes(strm);
 
-  // find groups
-  bool hasICE = false;
-  PString bundle;
-  PString msid;
+  // find groups, e.g. BUNDLE
+  PStringToString groups;
   for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
-    const SDPRTPAVPMediaDescription * rtp = dynamic_cast<const SDPRTPAVPMediaDescription *>(&mediaDescriptions[i]);
-    if (rtp != NULL) {
+    PString gid = mediaDescriptions[i].GetGroupId();
+    PString mid = mediaDescriptions[i].GetGroupMediaId();
+    if (!gid.IsEmpty() && !mid.IsEmpty())
+      groups[gid] &= mid;
+  }
+  for (PStringToString::iterator it = groups.begin(); it != groups.end(); ++it)
+    strm << "a=group:" << it->first << ' ' << it->second << CRLF;
+
+  // Check for ICE
 #if OPAL_ICE
-      if (rtp->HasICE())
-        hasICE = true;
+  for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
+    const SDPRTPAVPMediaDescription * avp = dynamic_cast<const SDPRTPAVPMediaDescription *>(&mediaDescriptions[i]);
+    if (avp != NULL && avp->HasICE()) {
+      strm << "a=" << IceLiteOption << CRLF;
+      break;
+    }
+  }
 #endif //OPAL_ICE
 
-      PString id = rtp->GetBundleMediaId();
-      if (!id.IsEmpty()) {
-        SDPRTPAVPMediaDescription::SsrcInfo::const_iterator it = rtp->GetSsrcInfo().begin();
-        if (it != rtp->GetSsrcInfo().end())
-          msid = it->second.GetString("mslabel");
-        bundle &= id;
+  // CHeck for MediaStream stuff: draft-alvestrand-mmusic-msid
+  PString msid_semantic;
+  for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
+    const SDPRTPAVPMediaDescription * avp = dynamic_cast<const SDPRTPAVPMediaDescription *>(&mediaDescriptions[i]);
+    if (avp != NULL) {
+      for (SDPRTPAVPMediaDescription::SsrcInfo::const_iterator it = avp->GetSsrcInfo().begin(); it != avp->GetSsrcInfo().end(); ++it) {
+        PString mslabel = it->second.GetString("mslabel");
+        if (!mslabel.IsEmpty() && msid_semantic.Find(mslabel) == P_MAX_INDEX)
+          msid_semantic &= mslabel;
       }
     }
   }
-
-  if (!bundle.IsEmpty())
-    strm << "a=group:BUNDLE " << bundle << CRLF;
-  if (!msid.IsEmpty())
-    strm << "a=msid-semantic: WMS " << msid << CRLF;
-
-  if (hasICE)
-    strm << "a=" << IceLiteOption << CRLF;
+  if (!msid_semantic.IsEmpty())
+    strm << "a=msid-semantic: WMS " << msid_semantic << CRLF;
 
   // encode media session information
   for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
@@ -2720,7 +2729,7 @@ void SDPSessionDescription::SetAttribute(const PString & attr, const PString & v
 
   if (attr *= "msid-semantic") {
     if (value.NumCompare("WMS") == EqualTo)
-      m_bundleIds = value.Mid(3).Tokenise(' ', false);
+      m_mediaStreamIds = value.Mid(3).Tokenise(' ', false);
     return;
   }
 
@@ -2749,17 +2758,6 @@ void SDPSessionDescription::ParseOwner(const PString & str)
     ownerAddress = defaultConnectAddress = ParseConnectAddress(tokens, 3);
     PTRACE_IF(4, !ownerAddress.IsEmpty(), "Parsed owner connection address " << ownerAddress);
   }
-}
-
-
-SDPMediaDescription * SDPSessionDescription::GetMediaDescriptionByBundle(const PString & bid, const PString & mid) const
-{
-  for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
-    if (mediaDescriptions[i].IsBundle(bid) && mediaDescriptions[i].GetBundleMediaId() == mid)
-      return &mediaDescriptions[i];
-  }
-
-  return NULL;
 }
 
 
@@ -2897,6 +2895,33 @@ void SDPSessionDescription::SetUserName(const PString & v)
   ownerUsername.Replace(' ', '_', true);
   if (ownerUsername.IsEmpty())
     ownerUsername = '-';
+}
+
+
+bool SDPSessionDescription::GetMediaStreams(MediaStreamMap & info) const
+{
+  info.clear();
+
+  for (PINDEX msIdx = 0; msIdx < m_mediaStreamIds.GetSize(); ++msIdx) {
+    PString msid = m_mediaStreamIds[msIdx];
+    for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
+      const SDPRTPAVPMediaDescription * avp = dynamic_cast<const SDPRTPAVPMediaDescription *>(&mediaDescriptions[i]);
+      if (avp != NULL) {
+        SDPRTPAVPMediaDescription::MediaStreamMap::const_iterator it = avp->GetMediaStreams().find(msid);
+        if (it != avp->GetMediaStreams().end())
+          info[msid] = it->second;
+        else {
+          for (SDPRTPAVPMediaDescription::SsrcInfo::const_iterator ssrc = avp->GetSsrcInfo().begin();
+                                                                  ssrc != avp->GetSsrcInfo().end(); ++ssrc) {
+            if (ssrc->second.GetString("mslabel") == msid)
+              info[msid].push_back(ssrc->first);
+          }
+        }
+      }
+    }
+  }
+
+  return !info.empty();
 }
 
 

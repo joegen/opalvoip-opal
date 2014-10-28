@@ -205,6 +205,8 @@ class SDPCommonAttributes
     };
 #endif
 
+    typedef std::map<PString, vector<RTP_SyncSourceId> > MediaStreamMap;
+
     SDPCommonAttributes()
       : m_direction(Undefined)
 #if OPAL_SRTP // DTLS
@@ -325,9 +327,10 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     virtual bool FromSession(OpalMediaSession * session, const SDPMediaDescription * offer);
     virtual bool ToSession(OpalMediaSession * session) const;
-    virtual bool IsBundle(const PString &) const { return false; }
-    virtual PString GetBundleMediaId() const { return m_bundleMediaId; }
-    virtual void SetBundleMediaId(const PString & id) { m_bundleMediaId = id; }
+    virtual PString GetGroupId() const { return m_groupId; }
+    virtual void SetGroupId(const PString & id) { m_groupId = id; }
+    virtual PString GetGroupMediaId() const { return m_groupMediaId; }
+    virtual void SetGroupMediaId(const PString & id) { m_groupMediaId = id; }
 
     const OpalTransportAddress & GetMediaAddress() const { return m_mediaAddress; }
     const OpalTransportAddress & GetControlAddress() const { return m_controlAddress; }
@@ -375,7 +378,8 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
     WORD                 m_port;
     WORD                 m_portCount;
     OpalMediaType        m_mediaType;
-    PString              m_bundleMediaId;
+    PString              m_groupId;
+    PString              m_groupMediaId;
 #if OPAL_ICE
     PNatCandidateList    m_candidates;
 #endif //OPAL_ICE
@@ -476,13 +480,11 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual void SetAttribute(const PString & attr, const PString & value);
     virtual bool FromSession(OpalMediaSession * session, const SDPMediaDescription * offer);
     virtual bool ToSession(OpalMediaSession * session) const;
-    virtual bool IsBundle(const PString & id) const { return m_flowGroup.find(id) != m_flowGroup.end(); }
 
     typedef std::map<RTP_SyncSourceId, PStringOptions> SsrcInfo;
     const SsrcInfo & GetSsrcInfo() const { return m_ssrcInfo; }
 
-    typedef std::map<PString, vector<RTP_SyncSourceId> > FlowGroupMap;
-    const FlowGroupMap & GetFlowGroup() const { return m_flowGroup;  }
+    const MediaStreamMap & GetMediaStreams() const { return m_mediaStreams;  }
 
   protected:
     class Format : public SDPMediaFormat
@@ -507,7 +509,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     PCaselessString               m_transportType;
     SsrcInfo                      m_ssrcInfo;
     std::vector<RTP_SyncSourceId> m_temporaryFlowSSRC;
-    FlowGroupMap                  m_flowGroup;
+    MediaStreamMap                m_mediaStreams;
     OpalMediaFormat::RTCPFeedback m_rtcp_fb;
 #if OPAL_SRTP
     PList<SDPCryptoSuite>         m_cryptoSuites;
@@ -634,7 +636,6 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
 
     const SDPMediaDescriptionArray & GetMediaDescriptions() const { return mediaDescriptions; }
 
-    SDPMediaDescription * GetMediaDescriptionByBundle(const PString & bid, const PString & mid) const;
     SDPMediaDescription * GetMediaDescriptionByType(const OpalMediaType & rtpMediaType) const;
     SDPMediaDescription * GetMediaDescriptionByIndex(PINDEX i) const;
     void AddMediaDescription(SDPMediaDescription * md) { mediaDescriptions.Append(PAssertNULL(md)); }
@@ -660,7 +661,7 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
     typedef PDictionary<PString, PStringArray> GroupDict;
     GroupDict GetGroups() const { return m_groups; }
 
-    PStringArray GetBundleIds() const { return m_bundleIds; }
+    bool GetMediaStreams(MediaStreamMap & info) const;
 
 #if OPAL_ICE
     PStringSet GetICEOptions() const { return m_iceOptions; }
@@ -683,7 +684,8 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
     OpalTransportAddress defaultConnectAddress;
 
     GroupDict    m_groups;
-    PStringArray m_bundleIds;
+
+    PStringArray m_mediaStreamIds;
 };
 
 /////////////////////////////////////////////////////////

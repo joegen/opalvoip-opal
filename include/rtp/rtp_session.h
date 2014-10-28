@@ -326,15 +326,25 @@ class OpalRTPSession : public OpalMediaSession
       */
     void SetCanonicalName(const PString & name, RTP_SyncSourceId ssrc = 0, Direction dir = e_Sender);
 
-    /**Get the "bundle" id for the RTP session.
-       This is typically a mechanism for connecting audio and video together.
+    /**Get the "group" id for the RTP session.
+       This is typically a mechanism for connecting audio and video together via BUNDLE.
     */
-    PString GetBundleId(RTP_SyncSourceId ssrc = 0, Direction dir = e_Sender) const;
+    PString GetGroupId() const;
 
-    /**Set the "bundle" id for the RTP session.
-       This is typically a mechanism for connecting audio and video together.
+    /**Set the "group" id for the RTP session.
+       This is typically a mechanism for connecting audio and video together via BUNDLE.
     */
-    void SetBundleId(const PString & id, RTP_SyncSourceId ssrc = 0, Direction dir = e_Sender);
+    void SetGroupId(const PString & id);
+
+    /**Get the "Media Stream" id for the RTP session SSRC.
+       See draft-alvestrand-mmusic-msid.
+    */
+    PString GetMediaStreamId(RTP_SyncSourceId ssrc, Direction dir) const;
+
+    /**Set the "Media Stream" id for the RTP session SSRC.
+       See draft-alvestrand-mmusic-msid.
+    */
+    void SetMediaStreamId(const PString & id, RTP_SyncSourceId ssrc, Direction dir);
 
     /**Get the tool name for the RTP session.
       */
@@ -635,6 +645,7 @@ class OpalRTPSession : public OpalMediaSession
     bool                m_isAudio;
     unsigned            m_timeUnits;
     PString             m_toolName;
+    PString             m_groupId;
     RTPExtensionHeaders m_extensionHeaders;
     bool                m_allowAnySyncSource;
     PTimeInterval       m_maxNoReceiveTime;
@@ -694,7 +705,7 @@ class OpalRTPSession : public OpalMediaSession
       RTP_SyncSourceId  m_sourceIdentifier;
       RTP_SyncSourceId  m_loopbackIdentifier;
       PString           m_canonicalName;
-      PString           m_bundleId;
+      PString           m_mediaStreamId;
 
       NotifierMap m_notifiers;
 
