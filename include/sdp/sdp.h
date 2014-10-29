@@ -641,6 +641,7 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
 
     const SDPMediaDescriptionArray & GetMediaDescriptions() const { return mediaDescriptions; }
 
+    PINDEX GetMediaDescriptionIndexByType(const OpalMediaType & rtpMediaType) const;
     SDPMediaDescription * GetMediaDescriptionByType(const OpalMediaType & rtpMediaType) const;
     SDPMediaDescription * GetMediaDescriptionByIndex(PINDEX i) const;
     void AddMediaDescription(SDPMediaDescription * md) { mediaDescriptions.Append(PAssertNULL(md)); }
