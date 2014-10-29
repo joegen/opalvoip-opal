@@ -76,34 +76,44 @@ void Test::Main()
     cout << sdp;
 
     if (args.HasOption('v')) {
-      cout << '\n';
+      cout << "\n\n";
+
+      for (PINDEX s = 1; s <= sdp.GetMediaDescriptions().GetSize(); ++s) {
+        SDPMediaDescription * md = sdp.GetMediaDescriptionByIndex(s);
+        cout << "Media " << s << ' ' << md->GetMediaType() << ' ' << md->GetSDPTransportType() << '\n';
+        SDPRTPAVPMediaDescription * avp = dynamic_cast<SDPRTPAVPMediaDescription *>(md);
+        if (avp != NULL) {
+          const SDPRTPAVPMediaDescription::SsrcInfo & ssrc = avp->GetSsrcInfo();
+          for (SDPRTPAVPMediaDescription::SsrcInfo::const_iterator it = ssrc.begin(); it != ssrc.end(); ++it)
+            cout << right << setw(12) << it->first << " cname=\"" << it->second("cname") << "\"\n";
+        }
+      }
+
+      cout << "\n\n";
       SDPSessionDescription::MediaStreamMap ms;
       if (sdp.GetMediaStreams(ms)) {
         cout << "Media streams:\n";
-        for (SDPSessionDescription::MediaStreamMap::iterator it = ms.begin(); it != ms.end(); ++it) {
-          cout << "id=" << it->first << "  SSRC=";
-          for (size_t i = 0; i < it->second.size(); ++i) {
-            if (i > 0)
-              cout << ',';
-            cout << it->second[i];
+        for (SDPSessionDescription::MediaStreamMap::iterator itms = ms.begin(); itms != ms.end(); ++itms) {
+          cout << "id=" << itms->first << '\n';
+          for (SDPSessionDescription::MediaStreamDescriptionMap::iterator itmsd = itms->second.begin(); itmsd != itms->second.end(); ++itmsd) {
+            SDPMediaDescription * md = sdp.GetMediaDescriptionByIndex(itmsd->first);
+            if (md == NULL)
+              cout << "  No description at index " << itmsd->first;
+            else {
+              cout << "  Media " << itmsd->first << ' ' << md->GetMediaType() << "  SSRC=";
+              for (size_t i = 0; i < itmsd->second.size(); ++i) {
+                if (i > 0)
+                  cout << ',';
+                cout << itmsd->second[i];
+              }
+            }
+            cout << '\n';
           }
         }
       }
       else
         cout << "No media streams present.";
-      cout << '\n';
 
-      for (PINDEX s = 1; s <= sdp.GetMediaDescriptions().GetSize(); ++s) {
-        SDPMediaDescription * md = sdp.GetMediaDescriptionByIndex(s);
-        cout << "Media " << s << ' ' << md->GetMediaType() << '\n';
-        SDPRTPAVPMediaDescription * avp = dynamic_cast<SDPRTPAVPMediaDescription *>(md);
-        if (avp != NULL) {
-          cout << "SSRC info:\n";
-          const SDPRTPAVPMediaDescription::SsrcInfo & ssrc = avp->GetSsrcInfo();
-          for (SDPRTPAVPMediaDescription::SsrcInfo::const_iterator it = ssrc.begin(); it != ssrc.end(); ++it)
-            cout << it->first << " cname=\"" << it->second("cname") << "\"\n";
-        }
-      }
       cout << endl;
     }
   }
