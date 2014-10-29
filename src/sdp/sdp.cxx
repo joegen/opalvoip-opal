@@ -1876,7 +1876,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
       m_ssrcInfo[ssrc].SetAt(key, val);
       PTRACE_IF(4, key == "cname", "SSRC: " << RTP_TRACE_SRC(ssrc) << " CNAME: " << val);
       if (key == "mslabel" && !m_temporaryFlowSSRC.empty())
-        m_mediaStreams[val] = m_temporaryFlowSSRC;
+        m_mediaStreams[val][0] = m_temporaryFlowSSRC;
     }
     return;
   }
@@ -1890,7 +1890,7 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
 
       SsrcInfo::iterator it = m_ssrcInfo.find(m_temporaryFlowSSRC[0]);
       if (it != m_ssrcInfo.end() && it->second.Has("mslabel")) {
-        m_mediaStreams[it->second.Get("mslabel")] = m_temporaryFlowSSRC;
+        m_mediaStreams[it->second.Get("mslabel")][0] = m_temporaryFlowSSRC;
         m_temporaryFlowSSRC.clear();
       }
       return;
@@ -2924,17 +2924,26 @@ bool SDPSessionDescription::GetMediaStreams(MediaStreamMap & info) const
 
   for (PINDEX msIdx = 0; msIdx < m_mediaStreamIds.GetSize(); ++msIdx) {
     PString msid = m_mediaStreamIds[msIdx];
-    for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
-      const SDPRTPAVPMediaDescription * avp = dynamic_cast<const SDPRTPAVPMediaDescription *>(&mediaDescriptions[i]);
+    for (PINDEX mdIdx = 1; mdIdx <= mediaDescriptions.GetSize(); ++mdIdx) {
+      const SDPRTPAVPMediaDescription * avp = dynamic_cast<const SDPRTPAVPMediaDescription *>(GetMediaDescriptionByIndex(mdIdx));
       if (avp != NULL) {
-        SDPRTPAVPMediaDescription::MediaStreamMap::const_iterator it = avp->GetMediaStreams().find(msid);
-        if (it != avp->GetMediaStreams().end())
-          info[msid] = it->second;
+        SDPRTPAVPMediaDescription::MediaStreamMap::const_iterator itms = avp->GetMediaStreams().find(msid);
+        if (itms != avp->GetMediaStreams().end() && !itms->second.empty()) {
+          const SyncSourceArray & from = itms->second.begin()->second;
+          SyncSourceArray & to = info[msid][mdIdx];
+          for (SyncSourceArray::const_iterator itFrom = from.begin(); itFrom != from.end(); ++itFrom) {
+            if (std::find(to.begin(), to.end(), *itFrom) == to.end())
+              to.push_back(*itFrom);
+          }
+        }
         else {
           for (SDPRTPAVPMediaDescription::SsrcInfo::const_iterator ssrc = avp->GetSsrcInfo().begin();
                                                                   ssrc != avp->GetSsrcInfo().end(); ++ssrc) {
-            if (ssrc->second.GetString("mslabel") == msid)
-              info[msid].push_back(ssrc->first);
+            if (ssrc->second.GetString("mslabel") == msid) {
+              SyncSourceArray & sa = info[msid][mdIdx];
+              if (find(sa.begin(), sa.end(), ssrc->first) == sa.end())
+                sa.push_back(ssrc->first);
+            }
           }
         }
       }
