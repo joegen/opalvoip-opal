@@ -205,7 +205,9 @@ class SDPCommonAttributes
     };
 #endif
 
-    typedef std::map<PString, vector<RTP_SyncSourceId> > MediaStreamMap;
+    typedef std::vector<RTP_SyncSourceId> SyncSourceArray;
+    typedef std::map<PINDEX, SyncSourceArray> MediaStreamDescriptionMap;
+    typedef std::map<PString, MediaStreamDescriptionMap> MediaStreamMap;
 
     SDPCommonAttributes()
       : m_direction(Undefined)
@@ -508,7 +510,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
 
     PCaselessString               m_transportType;
     SsrcInfo                      m_ssrcInfo;
-    std::vector<RTP_SyncSourceId> m_temporaryFlowSSRC;
+    SyncSourceArray               m_temporaryFlowSSRC;
     MediaStreamMap                m_mediaStreams;
     OpalMediaFormat::RTCPFeedback m_rtcp_fb;
 #if OPAL_SRTP
