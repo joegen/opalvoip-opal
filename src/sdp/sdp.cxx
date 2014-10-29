@@ -2781,16 +2781,23 @@ void SDPSessionDescription::ParseOwner(const PString & str)
 }
 
 
-SDPMediaDescription * SDPSessionDescription::GetMediaDescriptionByType(const OpalMediaType & rtpMediaType) const
+PINDEX SDPSessionDescription::GetMediaDescriptionIndexByType(const OpalMediaType & rtpMediaType) const
 {
   // look for matching media type
   for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
     if (mediaDescriptions[i].GetMediaType() == rtpMediaType)
-      return &mediaDescriptions[i];
+      return i+1;
   }
 
-  return NULL;
+  return 0;
 }
+
+
+SDPMediaDescription * SDPSessionDescription::GetMediaDescriptionByType(const OpalMediaType & rtpMediaType) const
+{
+  return GetMediaDescriptionByIndex(GetMediaDescriptionIndexByType(rtpMediaType));
+}
+
 
 SDPMediaDescription * SDPSessionDescription::GetMediaDescriptionByIndex(PINDEX index) const
 {
