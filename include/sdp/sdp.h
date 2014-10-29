@@ -624,8 +624,11 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
     );
 
     virtual void PrintOn(ostream & strm) const;
+    virtual void ReadFrom(istream & strm);
+
     virtual PString Encode() const;
     virtual bool Decode(const PString & str, const OpalMediaFormatList & mediaFormats);
+    virtual bool Decode(const PStringArray & lines, const OpalMediaFormatList & mediaFormats);
     virtual void SetAttribute(const PString & attr, const PString & value);
 
     void SetSessionName(const PString & v);

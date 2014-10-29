@@ -552,7 +552,7 @@ void SDPCommonAttributes::ParseAttribute(const PString & value)
   if (pos == P_MAX_INDEX)
     SetAttribute(attr, "1");
   else if (value[pos] == ':')
-    SetAttribute(attr, value.Mid(pos + 1));
+    SetAttribute(attr, value.Mid(pos + 1).LeftTrim());
   else {
     PTRACE(2, "Malformed media attribute " << value);
   }
@@ -2573,6 +2573,22 @@ void SDPSessionDescription::PrintOn(ostream & strm) const
 }
 
 
+void SDPSessionDescription::ReadFrom(istream & strm)
+{
+  PStringList lines;
+  while (strm.good()) {
+    PString line;
+    strm >> line;
+    if (line.IsEmpty())
+      break;
+    lines += line;
+  }
+
+  if (!Decode(lines, OpalMediaFormat::GetAllRegisteredMediaFormats()))
+    strm.setstate(ios::badbit);
+}
+
+
 PString SDPSessionDescription::Encode() const
 {
   PStringStream str;
@@ -2583,13 +2599,17 @@ PString SDPSessionDescription::Encode() const
 
 bool SDPSessionDescription::Decode(const PString & str, const OpalMediaFormatList & mediaFormats)
 {
+  // break string into lines
+  return Decode(str.Lines(), mediaFormats);
+}
+
+
+bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFormatList & mediaFormats)
+{
   PTRACE(5, "Decode using media formats:\n    " << setfill(',') << mediaFormats << setfill(' '));
 
   bool atLeastOneValidMedia = false;
   bool ok = true;
-
-  // break string into lines
-  PStringArray lines = str.Lines();
 
   // parse keyvalue pairs
   SDPMediaDescription * currentMedia = NULL;
