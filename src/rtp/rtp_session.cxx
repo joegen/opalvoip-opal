@@ -80,16 +80,6 @@ protected:
 enum { JitterRoundingGuardBits = 4 };
 
 #if PTRACING
-static ostream & operator<<(ostream & strm, const std::set<unsigned> & us)
-{
-  for (std::set<unsigned>::const_iterator it = us.begin(); it != us.end(); ++it) {
-    if (it != us.begin())
-      strm << ',';
-    strm << *it;
-  }
-  return strm;
-}
-
 ostream & operator<<(ostream & strm, OpalRTPSession::Direction dir)
 {
   return strm << (dir == OpalRTPSession::e_Receiver ? "receiver" : "sender");
@@ -1405,7 +1395,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
           case RTP_ControlFrame::e_TransportNACK:
           {
             RTP_SyncSourceId senderSSRC, targetSSRC;
-            std::set<unsigned> lostPackets;
+            RTP_ControlFrame::LostPacketMask lostPackets;
             if (frame.ParseNACK(senderSSRC, targetSSRC, lostPackets)) {
               SyncSource * ssrc;
               if (CheckControlSSRC(senderSSRC, targetSSRC, ssrc PTRACE_PARAM(,"NACK")))
@@ -1612,7 +1602,7 @@ void OpalRTPSession::OnRxGoodbye(const RTP_SyncSourceArray & PTRACE_PARAM(src), 
 }
 
 
-void OpalRTPSession::OnRxNACK(RTP_SyncSourceId PTRACE_PARAM(ssrc), const std::set<unsigned> PTRACE_PARAM(lostPackets))
+void OpalRTPSession::OnRxNACK(RTP_SyncSourceId PTRACE_PARAM(ssrc), const RTP_ControlFrame::LostPacketMask PTRACE_PARAM(lostPackets))
 {
   PTRACE(3, *this << "OnRxNACK: SSRC=" << RTP_TRACE_SRC(ssrc) << ", sn=" << lostPackets);
 }
@@ -1626,7 +1616,7 @@ void OpalRTPSession::OnRxApplDefined(const RTP_ControlFrame::ApplDefinedInfo & i
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::SendNACK(const std::set<unsigned> & lostPackets, RTP_SyncSourceId syncSourceIn)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::SendNACK(const RTP_ControlFrame::LostPacketMask & lostPackets, RTP_SyncSourceId syncSourceIn)
 {
   RTP_ControlFrame request;
 

@@ -226,7 +226,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual void OnRxReceiverReports(const ReceiverReportArray & reports);
     virtual void OnRxSourceDescription(const SourceDescriptionArray & descriptions);
     virtual void OnRxGoodbye(const RTP_SyncSourceArray & sources, const PString & reason);
-    virtual void OnRxNACK(RTP_SyncSourceId ssrc, const std::set<unsigned> lostPackets);
+    virtual void OnRxNACK(RTP_SyncSourceId ssrc, const RTP_ControlFrame::LostPacketMask lostPackets);
     virtual void OnRxApplDefined(const RTP_ControlFrame::ApplDefinedInfo & info);
 
     typedef PNotifierListTemplate<const RTP_ControlFrame::ApplDefinedInfo &> ApplDefinedNotifierList;
@@ -574,7 +574,7 @@ class OpalRTPSession : public OpalMediaSession
     /// Send BYE command
     virtual SendReceiveStatus SendBYE(RTP_SyncSourceId ssrc = 0);
 
-    virtual SendReceiveStatus SendNACK(const std::set<unsigned> & lostPackets, RTP_SyncSourceId ssrc = 0);
+    virtual SendReceiveStatus SendNACK(const RTP_ControlFrame::LostPacketMask & lostPackets, RTP_SyncSourceId ssrc = 0);
 
     /**Send flow control Request/Notification.
        This uses Temporary Maximum Media Stream Bit Rate from RFC 5104.
