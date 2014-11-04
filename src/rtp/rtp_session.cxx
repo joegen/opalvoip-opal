@@ -571,7 +571,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     }
   }
   else {
-    if (m_jitterBuffer == NULL) {
+    if (m_jitterBuffer == NULL || m_jitterBuffer->GetMaxJitterDelay() == 0) {
       SendReceiveStatus status = m_session.OnOutOfOrderPacket(frame);
       if (status != e_ProcessPacket)
         return status;
@@ -1872,7 +1872,7 @@ void OpalRTPSession::SetJitterBuffer(OpalJitterBuffer * jitterBuffer, RTP_SyncSo
         trace << "attached jitter buffer " << *jitterBuffer << " to";
       else
         trace << "detached jitter buffer from";
-      trace << "SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier)
+      trace << " SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier)
             << PTrace::End;
     }
 #endif
