@@ -571,7 +571,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     }
   }
   else {
-    if (m_jitterBuffer == NULL || m_jitterBuffer->GetMaxJitterDelay() == 0) {
+    if (m_jitterBuffer == NULL || m_jitterBuffer->GetCurrentJitterDelay() == 0) {
       SendReceiveStatus status = m_session.OnOutOfOrderPacket(frame);
       if (status != e_ProcessPacket)
         return status;
