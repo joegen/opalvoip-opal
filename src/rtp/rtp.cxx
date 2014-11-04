@@ -923,7 +923,18 @@ void RTP_ControlFrame::AddIFR(RTP_SyncSourceId syncSourceIn)
 }
 
 
-void RTP_ControlFrame::AddNACK(RTP_SyncSourceId syncSourceOut, RTP_SyncSourceId syncSourceIn, const std::set<unsigned> & lostPackets)
+ostream & operator<<(ostream & strm, const RTP_ControlFrame::LostPacketMask & mask)
+{
+  for (std::set<unsigned>::const_iterator it = mask.begin(); it != mask.end(); ++it) {
+    if (it != mask.begin())
+      strm << ',';
+    strm << *it;
+  }
+  return strm;
+}
+
+
+void RTP_ControlFrame::AddNACK(RTP_SyncSourceId syncSourceOut, RTP_SyncSourceId syncSourceIn, const LostPacketMask & lostPackets)
 {
   if (lostPackets.empty())
     return;
@@ -956,7 +967,7 @@ void RTP_ControlFrame::AddNACK(RTP_SyncSourceId syncSourceOut, RTP_SyncSourceId 
 }
 
 
-bool RTP_ControlFrame::ParseNACK(RTP_SyncSourceId & senderSSRC, RTP_SyncSourceId & targetSSRC, std::set<unsigned> & lostPackets)
+bool RTP_ControlFrame::ParseNACK(RTP_SyncSourceId & senderSSRC, RTP_SyncSourceId & targetSSRC, LostPacketMask & lostPackets)
 {
   size_t size = GetPayloadSize();
   if (size < sizeof(FbNACK))

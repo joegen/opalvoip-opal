@@ -289,15 +289,19 @@ class RTP_ControlFrame : public PBYTEArray
         PUInt16b bitmask;
       } fld[1];
     };
+    struct LostPacketMask : std::set<unsigned>
+    {
+      friend ostream & operator<<(ostream & strm, const LostPacketMask & mask);
+    };
     void AddNACK(
       RTP_SyncSourceId syncSourceOut,
       RTP_SyncSourceId syncSourceIn,
-      const std::set<unsigned> & lostPackets
+      const LostPacketMask & lostPackets
     );
     bool ParseNACK(
       RTP_SyncSourceId & senderSSRC,
       RTP_SyncSourceId & targetSSRC,
-      std::set<unsigned> & lostPackets
+      LostPacketMask & lostPackets
     );
 
     // Same for request (e_TMMBR) and notification (e_TMMBN)
