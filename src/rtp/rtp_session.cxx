@@ -2583,7 +2583,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr, PI
       return e_IgnorePacket;
 
     case PChannel::Timeout :
-      PTRACE(1, *this << "Timeout receiving " << channel << " packets");
+      PTRACE(1, *this << "Timeout (" << socket.GetReadTimeout() << "s) receiving " << channel << " packets");
       return channel == e_Data ? e_AbortTransport : e_IgnorePacket;
 
     default:
