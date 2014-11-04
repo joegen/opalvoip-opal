@@ -368,7 +368,7 @@ bool OpalDTLSSRTPSession::ExecuteHandshake(Channel channel)
 
   delete keyInfo;
 
-  m_sslChannel[channel]->Detach();
+  m_sslChannel[channel]->Detach()->SetReadTimeout(m_maxNoReceiveTime);
   delete m_sslChannel[channel];
   m_sslChannel[channel] = NULL;
   PTRACE(2, *this << "completed DTLS handshake.");
