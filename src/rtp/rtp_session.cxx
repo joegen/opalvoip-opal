@@ -60,6 +60,8 @@
 #define RTP_DATA_TX_BUFFER_SIZE  0x2000   // 8kb
 #define RTP_CTRL_BUFFER_SIZE     0x1000   // 4kb
 
+static const uint16_t MaxSequenceDiscontinuity = 1000;
+
 
 #if OPAL_ICE
 
@@ -541,7 +543,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     m_lastSequenceNumber = sequenceNumber;
     m_consecutiveOutOfOrderPackets = 0;
   }
-  else if (sequenceNumber < expectedSequenceNumber) {
+  else if ((sequenceNumber - expectedSequenceNumber) > MaxSequenceDiscontinuity) {
 #if OPAL_RTCP_XR
     if (m_metrics != NULL) m_metrics->OnPacketDiscarded();
 #endif
