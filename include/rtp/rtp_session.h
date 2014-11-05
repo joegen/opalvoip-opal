@@ -608,6 +608,8 @@ class OpalRTPSession : public OpalMediaSession
     /// Set the jitter buffer to get certain RTCP statustics from.
     void SetJitterBuffer(OpalJitterBuffer * jitterBuffer, RTP_SyncSourceId ssrc = 0);
 
+    bool HasFeedback(OpalMediaFormat::RTCPFeedback feature) const { return m_feedback&feature; }
+
   protected:
     enum Channel
     {
