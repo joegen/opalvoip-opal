@@ -137,6 +137,7 @@ class OpalSRTPSession : public OpalRTPSession
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
 
   protected:
+    virtual bool ResequenceOutOfOrderPackets(SyncSource & ssrc) const;
     virtual bool ApplyKeyToSRTP(OpalSRTPKeyInfo & keyInfo, Direction dir);
     virtual bool AddStreamToSRTP(RTP_SyncSourceId ssrc, Direction dir);
 

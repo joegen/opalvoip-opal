@@ -457,6 +457,12 @@ OpalSRTPSession::~OpalSRTPSession()
 }
 
 
+bool OpalSRTPSession::ResequenceOutOfOrderPackets(SyncSource &) const
+{
+  return true;  // With SRTP, always resequence
+}
+
+
 OpalMediaCryptoKeyList & OpalSRTPSession::GetOfferedCryptoKeys()
 {
   PSafeLockReadOnly lock(*this);
