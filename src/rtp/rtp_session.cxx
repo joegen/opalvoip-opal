@@ -320,6 +320,7 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
   , m_packets(0)
   , m_octets(0)
   , m_senderReports(0)
+  , m_NACKs(0)
   , m_packetsLost(0)
   , m_packetsOutOfOrder(0)
   , m_averagePacketTime(0)
@@ -1285,6 +1286,7 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, bool receiv
       if (ssrcStats.m_totalPackets > 0) {
         statistics.m_totalBytes        += ssrcStats.m_totalBytes;
         statistics.m_totalPackets      += ssrcStats.m_totalPackets;
+        statistics.m_NACKs             += ssrcStats.m_NACKs;
         statistics.m_packetsLost       += ssrcStats.m_packetsLost;
         statistics.m_packetsOutOfOrder += ssrcStats.m_packetsOutOfOrder;
         statistics.m_minimumPacketTime += ssrcStats.m_minimumPacketTime;
@@ -1309,6 +1311,7 @@ void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics)
   statistics.m_startTime         = m_firstPacketTime;
   statistics.m_totalBytes        = m_octets;
   statistics.m_totalPackets      = m_packets;
+  statistics.m_NACKs             = m_NACKs;
   statistics.m_packetsLost       = m_packetsLost;
   statistics.m_packetsOutOfOrder = m_packetsOutOfOrder;
   statistics.m_minimumPacketTime = m_minimumPacketTime;
@@ -1327,7 +1330,7 @@ bool OpalRTPSession::CheckControlSSRC(RTP_SyncSourceId PTRACE_PARAM(senderSSRC),
 {
   PTRACE_IF(4, m_SSRC.find(senderSSRC) == m_SSRC.end(), *this << pduName << " from incorrect SSRC " << RTP_TRACE_SRC(senderSSRC));
 
-  if (GetSyncSource(targetSSRC, e_Receiver, info))
+  if (GetSyncSource(targetSSRC, e_Sender, info))
     return true;
 
   PTRACE(2, *this << pduName << " for incorrect SSRC: " << RTP_TRACE_SRC(targetSSRC));
@@ -1429,8 +1432,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
             RTP_ControlFrame::LostPacketMask lostPackets;
             if (frame.ParseNACK(senderSSRC, targetSSRC, lostPackets)) {
               SyncSource * ssrc;
-              if (CheckControlSSRC(senderSSRC, targetSSRC, ssrc PTRACE_PARAM(,"NACK")))
+              if (CheckControlSSRC(senderSSRC, targetSSRC, ssrc PTRACE_PARAM(, "NACK"))) {
+                ++ssrc->m_NACKs;
                 OnRxNACK(targetSSRC, lostPackets);
+              }
             }
             else {
               PTRACE(2, *this << "NACK packet truncated - " << frame);
@@ -1676,6 +1681,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendNACK(const RTP_ControlFram
               "lost=" << lostPackets);
 
     request.AddNACK(sender->m_sourceIdentifier, receiver->m_sourceIdentifier, lostPackets);
+    ++receiver->m_NACKs;
   }
 
   // Send it
