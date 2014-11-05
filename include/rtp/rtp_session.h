@@ -778,6 +778,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual SyncSource * UseSyncSource(RTP_SyncSourceId ssrc, Direction dir, bool force);
     virtual SyncSource * CreateSyncSource(RTP_SyncSourceId id, Direction dir, const char * cname);
     virtual bool CheckControlSSRC(RTP_SyncSourceId senderSSRC, RTP_SyncSourceId targetSSRC, SyncSource * & info PTRACE_PARAM(, const char * pduName)) const;
+    virtual bool ResequenceOutOfOrderPackets(SyncSource & ssrc) const;
 
     /// Set up RTCP as per RFC rules
     virtual void InitialiseControlFrame(RTP_ControlFrame & report, SyncSource & ssrc);

@@ -104,16 +104,19 @@ PFACTORY_CREATE(OpalMediaSessionFactory, OpalRTPSession, OpalRTPSession::RTP_AVP
 PFACTORY_SYNONYM(OpalMediaSessionFactory, OpalRTPSession, AVPF, OpalRTPSession::RTP_AVPF());
 
 
-#define DEFAULT_OUT_OF_ORDER_WAIT_TIME 50
+#define DEFAULT_OUT_OF_ORDER_WAIT_TIME_AUDIO 40
+#define DEFAULT_OUT_OF_ORDER_WAIT_TIME_VIDEO 100
 
 #if P_CONFIG_FILE
-static PTimeInterval GetDefaultOutOfOrderWaitTime()
+static PTimeInterval GetDefaultOutOfOrderWaitTime(bool audio)
 {
-  static PTimeInterval ooowt(PConfig(PConfig::Environment).GetInteger("OPAL_RTP_OUT_OF_ORDER_TIME", DEFAULT_OUT_OF_ORDER_WAIT_TIME));
-  return ooowt;
+  static PTimeInterval dooowta(PConfig(PConfig::Environment).GetInteger("OPAL_RTP_OUT_OF_ORDER_TIME_AUDIO", DEFAULT_OUT_OF_ORDER_WAIT_TIME_AUDIO));
+  static PTimeInterval dooowtv(PConfig(PConfig::Environment).GetInteger("OPAL_RTP_OUT_OF_ORDER_TIME_VIDEO",
+                               PConfig(PConfig::Environment).GetInteger("OPAL_RTP_OUT_OF_ORDER_TIME",       DEFAULT_OUT_OF_ORDER_WAIT_TIME_VIDEO)));
+  return audio ? dooowta : dooowtv;
 }
 #else
-#define GetDefaultOutOfOrderWaitTime() (DEFAULT_OUT_OF_ORDER_WAIT_TIME)
+#define GetDefaultOutOfOrderWaitTime(audio) ((audio) ? DEFAULT_OUT_OF_ORDER_WAIT_TIME_AUDIO : DEFAULT_OUT_OF_ORDER_WAIT_TIME_VIDEO)
 #endif
 
 
@@ -130,7 +133,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_maxNoReceiveTime(m_manager.GetNoMediaTimeout())
   , m_maxNoTransmitTime(0, 10)          // Sending data for 10 seconds, ICMP says still not there
   , m_maxOutOfOrderPackets(20)
-  , m_waitOutOfOrderTime(GetDefaultOutOfOrderWaitTime())
+  , m_waitOutOfOrderTime(GetDefaultOutOfOrderWaitTime(m_isAudio))
   , m_txStatisticsInterval(100)
   , m_rxStatisticsInterval(100)
   , m_feedback(OpalMediaFormat::e_NoRTCPFb)
@@ -554,14 +557,14 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
       PTRACE(2, &m_session, m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier)
               << ", incorrect sequence, got " << sequenceNumber << " expected " << expectedSequenceNumber);
 
-      if (m_jitterBuffer == NULL)
+      if (m_session.ResequenceOutOfOrderPackets(*this))
         return e_IgnorePacket; // Non fatal error, just ignore
 
       m_packetsOutOfOrder++;
     }
   }
   else {
-    if (m_jitterBuffer == NULL || m_jitterBuffer->GetCurrentJitterDelay() == 0) {
+    if (m_session.ResequenceOutOfOrderPackets(*this)) {
       SendReceiveStatus status = m_session.OnOutOfOrderPacket(frame);
       if (status != e_ProcessPacket)
         return status;
@@ -621,6 +624,12 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
 }
 
 
+bool OpalRTPSession::ResequenceOutOfOrderPackets(SyncSource & ssrc) const
+{
+  return ssrc.m_jitterBuffer == NULL || ssrc.m_jitterBuffer->GetCurrentJitterDelay() == 0;
+}
+
+
 OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnOutOfOrderPacket(RTP_DataFrame & frame)
 {
   PPROFILE_FUNCTION();
@@ -629,15 +638,22 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnOutOfOrderPacket
   RTP_SequenceNumber expectedSequenceNumber = m_lastSequenceNumber + 1;
 
   bool waiting = true;
-  if (m_pendingPackets.empty())
+  if (m_pendingPackets.empty()) {
     m_waitOutOfOrderTimer = m_session.GetOutOfOrderWaitTime();
-  else if (m_pendingPackets.GetSize() > m_session.GetMaxOutOfOrderPackets() || m_waitOutOfOrderTimer.HasExpired())
+    PTRACE(3, &m_session, m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier) << ", " <<
+           "first out of order packet, got " << sequenceNumber << " expected " << expectedSequenceNumber <<
+           ", waiting " << m_session.GetOutOfOrderWaitTime() << 's');
+  }
+  else if (m_pendingPackets.GetSize() > m_session.GetMaxOutOfOrderPackets() || m_waitOutOfOrderTimer.HasExpired()) {
     waiting = false;
-
-  PTRACE(m_pendingPackets.empty() ? 3 : waiting ? 5 : 4, &m_session,
-         m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier) << ", " <<
-         (m_pendingPackets.empty() ? "first" : (waiting ? "next" : "last")) <<
-         " out of order packet, got " << sequenceNumber << " expected " << expectedSequenceNumber);
+    PTRACE(4, &m_session, m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier) << ", " <<
+           "last out of order packet, got " << sequenceNumber << " expected " << expectedSequenceNumber <<
+           ", waited " << m_waitOutOfOrderTimer.GetElapsed() << 's');
+  }
+  else {
+    PTRACE(5, &m_session, m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier) << ", " <<
+           "next out of order packet, got " << sequenceNumber << " expected " << expectedSequenceNumber);
+  }
 
   RTP_DataFrameList::iterator it;
   for (it = m_pendingPackets.begin(); it != m_pendingPackets.end(); ++it) {
@@ -676,18 +692,31 @@ bool OpalRTPSession::SyncSource::HandlePendingFrames()
   PPROFILE_FUNCTION();
 
   while (!m_pendingPackets.empty()) {
-    unsigned sequenceNumber = m_pendingPackets.back().GetSequenceNumber();
+    RTP_DataFrame resequencedPacket = m_pendingPackets.back();
+
+    unsigned sequenceNumber = resequencedPacket.GetSequenceNumber();
     unsigned expectedSequenceNumber = m_lastSequenceNumber + 1;
     if (sequenceNumber != expectedSequenceNumber)
       return true;
 
-    PTRACE(m_pendingPackets.size() == 1 ? 2 : 5, &m_session, m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier) << ", "
-           "resequenced " << (m_pendingPackets.empty() ? "last" : "next") << " out of order packet " << sequenceNumber);
-
-    if (OnReceiveData(m_pendingPackets.back(), false) == e_AbortTransport)
-      return false;
-
     m_pendingPackets.pop_back();
+
+#if PTRACING
+    unsigned level = m_pendingPackets.empty() ? 2 : 5;
+    if (PTrace::CanTrace(level)) {
+      ostream & trace = PTRACE_BEGIN(level, &m_session);
+      trace << m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier) << ", "
+               "resequenced out of order packet " << sequenceNumber;
+      if (m_pendingPackets.empty())
+        trace << ", time to resequence: " << m_waitOutOfOrderTimer.GetElapsed();
+      else
+        trace << ", " << m_pendingPackets.size() << " remaining";
+      trace << PTrace::End;
+    }
+#endif
+
+    if (OnReceiveData(resequencedPacket, false) == e_AbortTransport)
+      return false;
   }
 
   return true;
