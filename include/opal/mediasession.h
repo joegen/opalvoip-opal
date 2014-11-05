@@ -75,6 +75,7 @@ class OpalMediaStatistics : public PObject
     PUInt64  m_deltaBytes;
     unsigned m_totalPackets;
     unsigned m_deltaPackets;
+    unsigned m_NACKs;
     unsigned m_packetsLost;
     unsigned m_packetsOutOfOrder;
     unsigned m_packetsTooLate;
