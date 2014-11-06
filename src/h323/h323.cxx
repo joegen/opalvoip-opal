@@ -4360,11 +4360,6 @@ bool H323Connection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCom
       H323ControlPDU pdu;
       pdu.BuildMiscellaneousCommand(channel->GetNumber(), H245_MiscellaneousCommand_type::e_videoFastUpdatePicture);
       WriteControlPDU(pdu);
-
-#if OPAL_STATISTICS
-      m_VideoUpdateRequestsSent++;
-#endif
-
       return true;
     }
 #endif // OPAL_VIDEO

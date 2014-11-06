@@ -908,7 +908,7 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
   unsigned flags;
   m_lastFrameWasIFrame = false;
 
-  PTRACE_IF(4, m_forceIFrame, "OpalPlugin\tI-Frame forced from video codec at frame " << m_totalFrames);
+  PTRACE_IF(4, m_forceIFrame, "OpalPlugin\tI-Frame forced from video codec at frame " << m_statistics.m_totalFrames);
   do {
     // Some plug ins a very rude and use more memory than we say they can, so add an extra 1k
     RTP_DataFrame * dst = new RTP_DataFrame((PINDEX)0, outputDataSize+1024);
@@ -918,7 +918,7 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
     // call the codec function
     unsigned int fromLen = src.GetHeaderSize() + src.GetPayloadSize();
     unsigned int toLen = dst->GetHeaderSize() + outputDataSize;
-    flags = m_forceIFrame || m_totalFrames == 0 ? PluginCodec_CoderForceIFrame : 0;
+    flags = m_forceIFrame || m_statistics.m_totalFrames == 0 ? PluginCodec_CoderForceIFrame : 0;
 
     if (!Transcode((const BYTE *)src, &fromLen, dst->GetPointer(), &toLen, &flags)) {
       delete dst;
@@ -939,30 +939,29 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
   } while ((flags & PluginCodec_ReturnCoderLastFrame) == 0);
 
   if (dstList.IsEmpty()) {
-    PTRACE(4, "OpalPlugin\tEncoder skipping video frame at " << m_totalFrames);
+    PTRACE(4, "OpalPlugin\tEncoder skipping video frame at " << m_statistics.m_totalFrames);
     return true;
   }
 
-  m_totalFrames++;
-  if (m_lastFrameWasIFrame)
-    m_keyFrames++;
+#if OPAL_STATISTICS
+  m_statistics.IncrementFrames(m_lastFrameWasIFrame);
 
 #if PTRACING
   if (!m_lastFrameWasIFrame)
     m_consecutiveIntraFrames = 0;
   else if (m_forceIFrame)
-    PTRACE(3, "OpalPlugin\tEncoder sent forced I-Frame at frame " << m_totalFrames);
+    PTRACE(3, "OpalPlugin\tEncoder sent forced I-Frame at frame " << m_statistics.m_totalFrames);
   else if (++m_consecutiveIntraFrames == 1) 
-    PTRACE(4, "OpalPlugin\tEncoder sending I-Frame at frame " << m_totalFrames);
+    PTRACE(4, "OpalPlugin\tEncoder sending I-Frame at frame " << m_statistics.m_totalFrames);
   else if (m_consecutiveIntraFrames < 10)
-    PTRACE(4, "OpalPlugin\tEncoder sending consecutive I-Frame at frame " << m_totalFrames);
+    PTRACE(4, "OpalPlugin\tEncoder sending consecutive I-Frame at frame " << m_statistics.m_totalFrames);
   else if (m_consecutiveIntraFrames == 10) {
     PTRACE(3, "OpalPlugin\tEncoder has sent too many consecutive I-Frames - assuming codec cannot do P-Frames");
   }
 
   if (PTrace::CanTrace(6)) {
     ostream & trace = PTRACE_BEGIN(5);
-    trace << "OpalPlugin\tEncoded video frame " << m_totalFrames
+    trace << "OpalPlugin\tEncoded video frame " << m_statistics.m_totalFrames
           << " into " << dstList.GetSize() << " packets: ";
     for (RTP_DataFrameList::iterator it = dstList.begin(); it != dstList.end(); ++it) {
       if (it != dstList.begin())
@@ -972,8 +971,9 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
     trace << " (ts=" << src.GetTimestamp() << ')' << PTrace::End;
   }
   else
-    PTRACE(5, "OpalPlugin\tEncoded video frame " << m_totalFrames << " into " << dstList.GetSize() << " packets.");
-#endif
+    PTRACE(5, "OpalPlugin\tEncoded video frame " << m_statistics.m_totalFrames << " into " << dstList.GetSize() << " packets.");
+#endif // PTRACING
+#endif // OPAL_STATISTICS
 
   if (m_lastFrameWasIFrame)
     m_forceIFrame = false;
@@ -1158,10 +1158,9 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
     m_frozenTillIFrame = false;
   }
 
-  m_totalFrames++;
-
-  if (m_lastFrameWasIFrame)
-    m_keyFrames++;
+#if OPAL_STATISTICS
+  m_statistics.IncrementFrames(m_lastFrameWasIFrame);
+#endif
 
   PTRACE(m_lastFrameWasIFrame ? 4 : 5, "OpalPlugin\tVideo decoder returned "
          << (m_lastFrameWasIFrame ? 'I' : 'P') << "-Frame: "
@@ -1184,7 +1183,7 @@ void OpalPluginVideoTranscoder::GetStatistics(OpalMediaStatistics & statistics) 
   if (getCodecStatistics.Call(buf, sizeof(buf)-1, context) != 0) {
     PConstString str(buf);
     PStringOptions stats(str);
-    statistics.m_quality = stats.GetInteger("Quality", -1);
+    statistics.m_video.m_quality = stats.GetInteger("Quality", -1);
   }
 }
 #endif // OPAL_STATISTICS

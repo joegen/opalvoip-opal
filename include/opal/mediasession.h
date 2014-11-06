@@ -92,11 +92,20 @@ class OpalMediaStatistics : public PObject
 
 #if OPAL_VIDEO
     // Video
-    unsigned m_totalFrames;
-    unsigned m_deltaFrames;
-    unsigned m_keyFrames;
-    unsigned m_updateRequests;
-    int      m_quality; // -1 is none, 0 is very good > 0 is progressively worse
+    struct Video {
+      Video();
+      void IncrementFrames(bool key);
+      void IncrementUpdateCount();
+      void Merge(const Video & other);
+
+      unsigned m_totalFrames;
+      unsigned m_deltaFrames;
+      unsigned m_keyFrames;
+      PTime    m_lastKeyFrameTime;
+      unsigned m_updateRequests;
+      PTime    m_lastUpdateRequestTime;
+      int      m_quality; // -1 is none, 0 is very good > 0 is progressively worse
+    } m_video;
 #endif
 
     // Fax

@@ -496,11 +496,8 @@ void OpalMediaPatch::Sink::GetStatistics(OpalMediaStatistics & statistics, bool 
   if (m_secondaryCodec != NULL)
     m_secondaryCodec->GetStatistics(statistics);
 
-#if OPAL_VIDEO
-  if (m_videoFrames > 0 || statistics.m_totalFrames == 0)
-    statistics.m_totalFrames = m_videoFrames;
-  if (m_keyFrames > 0 || statistics.m_keyFrames == 0)
-    statistics.m_keyFrames = m_keyFrames;
+#if OPAL_VIDEO && OPAL_STATISTICS
+  statistics.m_video.Merge(m_statistics);
 #endif
 }
 #endif // OPAL_STATISTICS
@@ -514,8 +511,6 @@ OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s)
   , m_writeSuccessful(true)
 #if OPAL_VIDEO
   , m_rateController(NULL)
-  , m_videoFrames(0)
-  , m_keyFrames(0)
 #endif
 {
   PTRACE_CONTEXT_ID_FROM(p);
@@ -929,6 +924,11 @@ bool OpalMediaPatch::Sink::ExecuteCommand(const OpalMediaCommand & command)
   if (m_primaryCodec != NULL)
     atLeastOne = m_primaryCodec->ExecuteCommand(command) || atLeastOne;
 
+#if OPAL_VIDEO
+  if (dynamic_cast<const OpalVideoUpdatePicture *>(&command) != NULL)
+    m_statistics.IncrementUpdateCount();
+#endif
+
   return atLeastOne;
 }
 
@@ -1006,16 +1006,15 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
     if (m_videoFormat.IsValid()) {
       switch (m_videoFormat.GetVideoFrameType(sourceFrame.GetPayloadPtr(), sourceFrame.GetPayloadSize(), m_keyFrameDetectContext)) {
       case OpalVideoFormat::e_IntraFrame :
-          ++m_videoFrames;
-          ++m_keyFrames;
+          m_statistics.IncrementFrames(true);
           PTRACE(4, "I-Frame detected: SSRC=" << RTP_TRACE_SRC(sourceFrame.GetSyncSource())
-                 << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoFrames << ", key=" << m_keyFrames << ", on " << m_patch);
+                 << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_statistics.m_totalFrames << ", key=" << m_statistics.m_keyFrames << ", on " << m_patch);
           break;
 
         case OpalVideoFormat::e_InterFrame :
-          ++m_videoFrames;
+          m_statistics.IncrementFrames(false);
           PTRACE(5, "P-Frame detected SSRC=" << RTP_TRACE_SRC(sourceFrame.GetSyncSource())
-                 << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoFrames << ", key=" << m_keyFrames << ", on " << m_patch);
+                 << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_statistics.m_totalFrames << ", key=" << m_statistics.m_keyFrames << ", on " << m_patch);
           break;
 
         default :
@@ -1028,13 +1027,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
     if (!m_writeSuccessful)
       return false;
 
-    PTRACE_IF(6, bypassing, "Bypassed packet "
-                         << " M="  << sourceFrame.GetMarker()
-                         << " PT=" << sourceFrame.GetPayloadType()
-                         << " SN=" << sourceFrame.GetSequenceNumber()
-                         << " TS=" << sourceFrame.GetTimestamp()
-                         << " SSRC=" << RTP_TRACE_SRC(sourceFrame.GetSyncSource())
-                         << " P-SZ=" << sourceFrame.GetPayloadSize());
+    PTRACE_IF(6, bypassing, "Bypassed packet " << setw(1) << sourceFrame);
     return true;
   }
 
