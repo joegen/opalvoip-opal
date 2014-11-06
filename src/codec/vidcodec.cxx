@@ -127,8 +127,6 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
   , m_frozenTillIFrame(false)
   , m_forceIFrame(false)
   , m_lastFrameWasIFrame(false)
-  , m_totalFrames(0)
-  , m_keyFrames(0)
 {
   acceptEmptyPayload = true;
 }
@@ -229,8 +227,7 @@ PBoolean OpalVideoTranscoder::Convert(const RTP_DataFrame & /*input*/,
 #if OPAL_STATISTICS
 void OpalVideoTranscoder::GetStatistics(OpalMediaStatistics & statistics) const
 {
-  statistics.m_totalFrames = m_totalFrames;
-  statistics.m_keyFrames   = m_keyFrames;
+  statistics.m_video = m_statistics;
 }
 #endif
 

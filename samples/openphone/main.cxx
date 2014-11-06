@@ -8094,19 +8094,19 @@ STATISTICS_FIELD_BEG(RxVideo, MaxJitter)
 STATISTICS_FIELD_END(RxVideo, MaxJitter)
 
 STATISTICS_FIELD_BEG(RxVideo, Frames)
-  value.sprintf(m_printFormat, statistics.m_totalFrames);
+  value.sprintf(m_printFormat, statistics.m_video.m_totalFrames);
 STATISTICS_FIELD_END(RxVideo, Frames)
 
 STATISTICS_FIELD_BEG(RxVideo, KeyFrames)
-  value.sprintf(m_printFormat, statistics.m_keyFrames);
+  value.sprintf(m_printFormat, statistics.m_video.m_keyFrames);
 STATISTICS_FIELD_END(RxVideo, KeyFrames)
 
 STATISTICS_FIELD_BEG(RxVideo, FrameRate)
-  value.sprintf(m_printFormat, CalculateFrameRate(statistics.m_totalFrames));
+  value.sprintf(m_printFormat, CalculateFrameRate(statistics.m_video.m_totalFrames));
 STATISTICS_FIELD_END(RxVideo, FrameRate)
 
 STATISTICS_FIELD_BEG(RxVideo, VFU)
-  value.sprintf(m_printFormat, connection.GetVideoUpdateRequestsSent());
+  value.sprintf(m_printFormat, statistics.m_video.m_updateRequests);
 STATISTICS_FIELD_END(RxVideo, VFU)
 
 STATISTICS_FIELD_BEG(TxVideo, Bandwidth)
@@ -8142,16 +8142,20 @@ STATISTICS_FIELD_BEG(TxVideo, RoundTripTime)
 STATISTICS_FIELD_END(TxVideo, RoundTripTime)
 
 STATISTICS_FIELD_BEG(TxVideo, Frames)
-  value.sprintf(m_printFormat, statistics.m_totalFrames);
+  value.sprintf(m_printFormat, statistics.m_video.m_totalFrames);
 STATISTICS_FIELD_END(TxVideo, Frames)
 
 STATISTICS_FIELD_BEG(TxVideo, KeyFrames)
-  value.sprintf(m_printFormat, statistics.m_keyFrames);
+  value.sprintf(m_printFormat, statistics.m_video.m_keyFrames);
 STATISTICS_FIELD_END(TxVideo, KeyFrames)
 
 STATISTICS_FIELD_BEG(TxVideo, FrameRate)
-  value.sprintf(m_printFormat, CalculateFrameRate(statistics.m_totalFrames));
+  value.sprintf(m_printFormat, CalculateFrameRate(statistics.m_video.m_totalFrames));
 STATISTICS_FIELD_END(TxVideo, FrameRate)
+
+STATISTICS_FIELD_BEG(TxVideo, VFU)
+  value.sprintf(m_printFormat, statistics.m_video.m_updateRequests);
+STATISTICS_FIELD_END(TxVideo, VFU)
 
 STATISTICS_FIELD_BEG(RxFax, Bandwidth)
   value.sprintf(m_printFormat, CalculateBandwidth(statistics.m_totalBytes));

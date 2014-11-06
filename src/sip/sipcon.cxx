@@ -3389,7 +3389,7 @@ PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & request)
 #endif // OPAL_PTLIB_EXPAT
 
   if (ok)
-    SendVideoUpdatePicture(0, 0);
+    ExecuteMediaCommand(OpalVideoUpdatePicture());
   else {
     PTRACE(3, "SIP\tUnable to parse received PictureFastUpdate");
     // Error is sent in separate INFO message as per RFC5168

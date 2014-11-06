@@ -39,6 +39,7 @@
 #include <opal_config.h>
 
 #include <opal/mediastrm.h>
+#include <opal/mediasession.h>
 #include <opal/mediacmd.h>
 #include <codec/ratectl.h>
 
@@ -277,10 +278,11 @@ class OpalMediaPatch : public PSafeObject
         bool RateControlExceeded(bool & forceIFrame);
         OpalVideoRateController * m_rateController;
 
-        OpalVideoFormat m_videoFormat;
-        PBYTEArray      m_keyFrameDetectContext;
-        unsigned        m_videoFrames;
-        unsigned        m_keyFrames;
+#if OPAL_STATISTICS
+        OpalVideoFormat            m_videoFormat;
+        PBYTEArray                 m_keyFrameDetectContext;
+        OpalMediaStatistics::Video m_statistics;
+#endif
 #endif
     };
     PList<Sink> m_sinks;
