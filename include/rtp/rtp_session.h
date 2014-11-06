@@ -766,6 +766,8 @@ class OpalRTPSession : public OpalMediaSession
 
       OpalJitterBuffer * m_jitterBuffer;
 
+      PTRACE_THROTTLE(m_throttleSendData,4,10000);
+      PTRACE_THROTTLE(m_throttleReceiveData,4,10000);
       PTRACE_THROTTLE(m_throttleTxRED,3,60000);
       PTRACE_THROTTLE(m_throttleRxRED,3,60000);
       PTRACE_THROTTLE(m_throttleRxUnknownFEC,3,10000);
