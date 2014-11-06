@@ -143,6 +143,7 @@ class OpalSRTPSession : public OpalRTPSession
 
     struct srtp_ctx_t * m_context;
     OpalSRTPKeyInfo   * m_keyInfo[2]; // rx & tx
+    unsigned            m_consecutiveErrors;
 
 #if PTRACING
     unsigned m_traceLevel[2][2];
