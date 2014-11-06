@@ -494,9 +494,6 @@ bool OpalRTPConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMedia
   if (vup != NULL) {
     unsigned options = m_stringOptions.GetInteger(OPAL_OPT_VIDUP_METHODS, OPAL_OPT_VIDUP_METHOD_DEFAULT);
     if ((options&(OPAL_OPT_VIDUP_METHOD_RTCP | OPAL_OPT_VIDUP_METHOD_PLI | OPAL_OPT_VIDUP_METHOD_FIR)) != 0) {
-#if OPAL_STATISTICS
-      m_VideoUpdateRequestsSent++;
-#endif
       if (PIsDescendant(&command, OpalVideoPictureLoss))
         options |= OPAL_OPT_VIDUP_METHOD_PREFER_PLI;
       return session->SendIntraFrameRequest(options, vup->GetSyncSource());

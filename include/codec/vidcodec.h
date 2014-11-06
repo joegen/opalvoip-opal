@@ -182,8 +182,9 @@ class OpalVideoTranscoder : public OpalTranscoder
     PSimpleTimer  m_throttleSendIFrameTimer;
     PTimeInterval m_lastReceivedIFrameRequest;
 
-    DWORD m_totalFrames;
-    DWORD m_keyFrames;
+#if OPAL_STATISTICS
+    OpalMediaStatistics::Video m_statistics;
+#endif
 };
 
 

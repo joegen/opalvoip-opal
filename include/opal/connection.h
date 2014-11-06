@@ -1333,19 +1333,6 @@ class OpalConnection : public PSafeObject
       OpalTransportAddressArray & transports ///<  Information on media session
     ) const;
 
-#if OPAL_VIDEO
-    /** Send a Video Update Picture request to media stream.
-        If \p force is set then a "force Intra frame" is sent, otherwise a
-        "picture loss" is sent. The underlying protocol may or may not make a
-        distinction.
-      */
-    virtual bool SendVideoUpdatePicture(
-      unsigned sessionID = 0, ///< Session for media stream, 0 is use first Video stream
-      bool force = false      ///< Indicate is a picture loss or forced I-Frame
-    ) const;
-    void SendVideoUpdatePictureCallback(unsigned sessionID, bool force) { SendVideoUpdatePicture(sessionID, force); }
-#endif // OPAL_VIDEO
-
     /**Set the volume (gain) for the audio media channel.
        The volume range is 0 == muted, 100 == LOUDEST.
       */
@@ -1881,16 +1868,6 @@ class OpalConnection : public PSafeObject
        name.
       */
     virtual PINDEX GetMaxRtpPayloadSize() const;
-
-#if OPAL_STATISTICS
-    /**Get Video Update requests sent statistic.
-      */
-    unsigned GetVideoUpdateRequestsSent() const { return m_VideoUpdateRequestsSent; }
-
-    /**Get Video Update requests received statistic.
-      */
-    unsigned GetVideoUpdateRequestsReceived() const { return m_VideoUpdateRequestsReceived; }
-#endif
   //@}
 
     /// Get the string options associated with this connection.
@@ -1998,11 +1975,6 @@ class OpalConnection : public PSafeObject
 #if OPAL_VIDEO
     PNotifier     m_recordVideoNotifier;
 #endif
-#endif
-
-#if OPAL_STATISTICS
-    unsigned m_VideoUpdateRequestsSent;
-    unsigned m_VideoUpdateRequestsReceived;
 #endif
 
     OpalMediaType::AutoStartMap m_autoStartInfo;

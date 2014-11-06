@@ -154,10 +154,6 @@ OpalConnection::OpalConnection(OpalCall & call,
   , m_recordVideoNotifier(PCREATE_NOTIFIER(OnRecordVideo))
 #endif
 #endif
-#if OPAL_STATISTICS
-  , m_VideoUpdateRequestsSent(0)
-  , m_VideoUpdateRequestsReceived(0)
-#endif
 {
   PTRACE_CONTEXT_ID_FROM(call);
 
@@ -1168,23 +1164,6 @@ bool OpalConnection::GetMediaTransportAddresses(OpalConnection & otherConnection
 {
   return endpoint.GetMediaTransportAddresses(*this, otherConnection, sessionId, mediaType, transports);
 }
-
-
-#if OPAL_VIDEO
-
-bool OpalConnection::SendVideoUpdatePicture(unsigned sessionID, bool force) const
-{
-#if OPAL_STATISTICS
-  ++const_cast<OpalConnection *>(this)->m_VideoUpdateRequestsReceived;
-#endif
-
-  bool ok = force ? ExecuteMediaCommand(OpalVideoUpdatePicture(sessionID))
-                  : ExecuteMediaCommand(OpalVideoPictureLoss(0, 0, sessionID));
-
-  PTRACE(3, "Video " << (force ? "force update picture" : "picture loss") << " (I-Frame) requested on " << *this << ", ok=" << ok);
-  return ok;
-}
-#endif // OPAL_VIDEO
 
 
 PBoolean OpalConnection::SetAudioVolume(PBoolean /*source*/, unsigned /*percentage*/)
