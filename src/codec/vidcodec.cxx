@@ -224,14 +224,6 @@ PBoolean OpalVideoTranscoder::Convert(const RTP_DataFrame & /*input*/,
 }
 
 
-#if OPAL_STATISTICS
-void OpalVideoTranscoder::GetStatistics(OpalMediaStatistics & statistics) const
-{
-  statistics.m_video = m_statistics;
-}
-#endif
-
-
 void OpalVideoTranscoder::SendIFrameRequest(unsigned sequenceNumber, unsigned timestamp)
 {
   m_frozenTillIFrame = m_freezeTillIFrame;
