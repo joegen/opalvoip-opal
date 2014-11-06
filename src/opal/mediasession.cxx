@@ -94,6 +94,8 @@ void OpalMediaStatistics::Video::IncrementFrames(bool key)
   if (key) {
     ++m_keyFrames;
     m_lastKeyFrameTime.SetCurrentTime();
+    if (m_updateResponseTime == 0 && m_lastUpdateRequestTime.IsValid())
+      m_updateResponseTime = m_lastKeyFrameTime - m_lastUpdateRequestTime;
   }
 }
 
@@ -102,6 +104,7 @@ void OpalMediaStatistics::Video::IncrementUpdateCount()
 {
   ++m_updateRequests;
   m_lastUpdateRequestTime.SetCurrentTime();
+  m_updateResponseTime = 0;
 }
 
 

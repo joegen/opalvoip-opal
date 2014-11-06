@@ -98,13 +98,14 @@ class OpalMediaStatistics : public PObject
       void IncrementUpdateCount();
       void Merge(const Video & other);
 
-      unsigned m_totalFrames;
-      unsigned m_deltaFrames;
-      unsigned m_keyFrames;
-      PTime    m_lastKeyFrameTime;
-      unsigned m_updateRequests;
-      PTime    m_lastUpdateRequestTime;
-      int      m_quality; // -1 is none, 0 is very good > 0 is progressively worse
+      unsigned      m_totalFrames;
+      unsigned      m_deltaFrames;
+      unsigned      m_keyFrames;
+      PTime         m_lastKeyFrameTime;
+      unsigned      m_updateRequests;
+      PTime         m_lastUpdateRequestTime;
+      PTimeInterval m_updateResponseTime;
+      int           m_quality; // -1 is none, 0 is very good > 0 is progressively worse
     } m_video;
 #endif
 
