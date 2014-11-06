@@ -340,6 +340,7 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
     DWORD           m_lastMarkerTimestamp;  // For continuous marker bit detection
     unsigned        m_consecutiveMarkers;
     bool            m_badMarkers;
+    unsigned        m_totalFrames;
 
 #if PTRACING
     unsigned m_consecutiveIntraFrames;

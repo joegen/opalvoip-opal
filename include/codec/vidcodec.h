@@ -151,10 +151,6 @@ class OpalVideoTranscoder : public OpalTranscoder
       RTP_DataFrame & output        ///<  Output data
     );
 
-#if OPAL_STATISTICS
-    virtual void GetStatistics(OpalMediaStatistics & statistics) const;
-#endif
-
     static OpalVideoFormat::VideoFrameType GetVideoFrameType(
       const PCaselessString & rtpEncodingName,
       const BYTE * payloadPtr,
@@ -181,10 +177,6 @@ class OpalVideoTranscoder : public OpalTranscoder
     PSimpleTimer  m_throttleRequestIFrameTimer;
     PSimpleTimer  m_throttleSendIFrameTimer;
     PTimeInterval m_lastReceivedIFrameRequest;
-
-#if OPAL_STATISTICS
-    OpalMediaStatistics::Video m_statistics;
-#endif
 };
 
 
