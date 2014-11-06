@@ -507,6 +507,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
   }
 #endif
 
+  PTRACE(m_throttleSendData, &m_session, m_session << "sending " << setw(1) << frame);
   CalculateStatistics(frame);
   return e_ProcessPacket;
 }
@@ -541,6 +542,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     m_lastSequenceNumber = sequenceNumber;
   }
   else if (sequenceNumber == expectedSequenceNumber) {
+    PTRACE(m_throttleReceiveData, &m_session, m_session << "received " << setw(1) << frame);
     m_lastSequenceNumber = sequenceNumber;
     m_consecutiveOutOfOrderPackets = 0;
   }
@@ -711,9 +713,9 @@ bool OpalRTPSession::SyncSource::HandlePendingFrames()
       trace << m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier) << ", "
                "resequenced out of order packet " << sequenceNumber;
       if (m_pendingPackets.empty())
-        trace << ", time to resequence: " << m_waitOutOfOrderTimer.GetElapsed();
+        trace << ", completed. Time to resequence=" << m_waitOutOfOrderTimer.GetElapsed();
       else
-        trace << ", " << m_pendingPackets.size() << " remaining";
+        trace << ", " << m_pendingPackets.size() << " remaining.";
       trace << PTrace::End;
     }
 #endif
