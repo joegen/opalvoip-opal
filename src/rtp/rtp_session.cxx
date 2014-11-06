@@ -507,7 +507,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
   }
 #endif
 
-  PTRACE(m_throttleSendData, &m_session, m_session << "sending " << setw(1) << frame);
+  PTRACE(m_throttleSendData, &m_session, m_session << "sending packet " << setw(1) << frame << m_throttleSendData);
   CalculateStatistics(frame);
   return e_ProcessPacket;
 }
@@ -542,7 +542,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     m_lastSequenceNumber = sequenceNumber;
   }
   else if (sequenceNumber == expectedSequenceNumber) {
-    PTRACE(m_throttleReceiveData, &m_session, m_session << "received " << setw(1) << frame);
+    PTRACE(m_throttleReceiveData, &m_session, m_session << "received packet " << setw(1) << frame << m_throttleReceiveData);
     m_lastSequenceNumber = sequenceNumber;
     m_consecutiveOutOfOrderPackets = 0;
   }
