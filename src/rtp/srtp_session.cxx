@@ -46,6 +46,9 @@
 #define PTraceModule() "SRTP"
 
 
+static const unsigned MaxConsecutiveErrors = 100;
+
+
 /////////////////////////////////////////////////////////////////////////////////////
 //
 //  SRTP implementation using Cisco libSRTP
@@ -433,6 +436,7 @@ PBYTEArray OpalSRTPKeyInfo::GetAuthSalt() const
 
 OpalSRTPSession::OpalSRTPSession(const Init & init)
   : OpalRTPSession(init)
+  , m_consecutiveErrors(0)
 {
   CHECK_ERROR(srtp_create, (&m_context, NULL));
 
@@ -600,7 +604,8 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
 
     frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
     if (!CHECK_ERROR(srtp_protect, (m_context, frame.GetPointer(), &len), frame.GetSyncSource(), frame.GetSequenceNumber()))
-      return e_AbortTransport;
+      return ++m_consecutiveErrors > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
+    m_consecutiveErrors = 0;
   }
 
   PTRACE(m_traceLevel[e_Data][e_Sender], *this << "protected RTP packet: "
@@ -636,7 +641,8 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
     frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
 
     if (!CHECK_ERROR(srtp_protect_rtcp, (m_context, frame.GetPointer(), &len), frame.GetSenderSyncSource()))
-      return OpalRTPSession::e_AbortTransport;
+      return ++m_consecutiveErrors > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
+    m_consecutiveErrors = 0;
   }
 
   PTRACE(m_traceLevel[e_Control][e_Sender], *this << "protected RTCP packet: "
@@ -665,7 +671,8 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
     PPROFILE_BLOCK("srtp_unprotect");
     frame.MakeUnique();
     if (!CHECK_ERROR(srtp_unprotect, (m_context, frame.GetPointer(), &len), frame.GetSyncSource(), frame.GetSequenceNumber()))
-      return OpalRTPSession::e_AbortTransport;
+      return ++m_consecutiveErrors > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
+    m_consecutiveErrors = 0;
   }
 
   PTRACE(m_traceLevel[e_Data][e_Receiver], *this << "unprotected RTP packet: "
@@ -699,7 +706,8 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
     UseSyncSource(frame.GetSenderSyncSource(), e_Receiver, true);
 
     if (!CHECK_ERROR(srtp_unprotect_rtcp, (m_context, frame.GetPointer(), &len), frame.GetSenderSyncSource()))
-      return OpalRTPSession::e_AbortTransport;
+      return ++m_consecutiveErrors > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
+    m_consecutiveErrors = 0;
   }
 
   PTRACE(m_traceLevel[e_Control][e_Receiver], *this << "unprotected RTCP packet: "
