@@ -519,6 +519,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
 
   RTP_SequenceNumber sequenceNumber = frame.GetSequenceNumber();
   RTP_SequenceNumber expectedSequenceNumber = m_lastSequenceNumber + 1;
+  RTP_SequenceNumber dropped = sequenceNumber - expectedSequenceNumber;
 
   if (newData && !m_pendingPackets.empty() && sequenceNumber == expectedSequenceNumber) {
     PTRACE(5, &m_session, m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier)
@@ -546,7 +547,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     m_lastSequenceNumber = sequenceNumber;
     m_consecutiveOutOfOrderPackets = 0;
   }
-  else if ((sequenceNumber - expectedSequenceNumber) > MaxSequenceDiscontinuity) {
+  else if (dropped > MaxSequenceDiscontinuity) { // Must have gone backward
 #if OPAL_RTCP_XR
     if (m_metrics != NULL) m_metrics->OnPacketDiscarded();
 #endif
@@ -574,9 +575,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
       if (status != e_ProcessPacket)
         return status;
       sequenceNumber = frame.GetSequenceNumber();
+      dropped = sequenceNumber - expectedSequenceNumber;
     }
 
-    unsigned dropped = sequenceNumber - expectedSequenceNumber;
     frame.SetDiscontinuity(dropped);
     m_packetsLost += dropped;
     m_packetsLostSinceLastRR += dropped;
