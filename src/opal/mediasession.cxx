@@ -81,7 +81,8 @@ OpalMediaStatistics::Video::Video()
   , m_deltaFrames(0)
   , m_keyFrames(0)
   , m_lastKeyFrameTime(0)
-  , m_updateRequests(0)
+  , m_fullUpdateRequests(0)
+  , m_pictureLossRequests(0)
   , m_lastUpdateRequestTime(0)
   , m_quality(-1)
 {
@@ -100,9 +101,12 @@ void OpalMediaStatistics::Video::IncrementFrames(bool key)
 }
 
 
-void OpalMediaStatistics::Video::IncrementUpdateCount()
+void OpalMediaStatistics::Video::IncrementUpdateCount(bool full)
 {
-  ++m_updateRequests;
+  if (full)
+    ++m_fullUpdateRequests;
+  else
+    ++m_pictureLossRequests;
   m_lastUpdateRequestTime.SetCurrentTime();
   m_updateResponseTime = 0;
 }
@@ -110,16 +114,22 @@ void OpalMediaStatistics::Video::IncrementUpdateCount()
 
 void OpalMediaStatistics::Video::Merge(const Video & other)
 {
-  if (other.m_totalFrames > 0 || m_totalFrames == 0)
+  if (m_totalFrames == 0 && other.m_totalFrames > 0)
     m_totalFrames = other.m_totalFrames;
 
-  if (other.m_keyFrames > 0 || m_keyFrames == 0) {
+  if (m_keyFrames == 0 && other.m_keyFrames > 0) {
     m_keyFrames = other.m_keyFrames;
     m_lastKeyFrameTime = other.m_lastKeyFrameTime;
   }
 
-  if (other.m_updateRequests > 0 || m_updateRequests == 0) {
-    m_updateRequests = other.m_updateRequests;
+  if (m_fullUpdateRequests == 0 && other.m_fullUpdateRequests > 0) {
+    m_fullUpdateRequests = other.m_fullUpdateRequests;
+    m_lastUpdateRequestTime = other.m_lastUpdateRequestTime;
+    m_updateResponseTime = other.m_updateResponseTime;
+  }
+
+  if (m_pictureLossRequests == 0 && other.m_pictureLossRequests > 0) {
+    m_pictureLossRequests = other.m_pictureLossRequests;
     m_lastUpdateRequestTime = other.m_lastUpdateRequestTime;
     m_updateResponseTime = other.m_updateResponseTime;
   }

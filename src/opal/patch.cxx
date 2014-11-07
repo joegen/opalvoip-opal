@@ -926,7 +926,7 @@ bool OpalMediaPatch::Sink::ExecuteCommand(const OpalMediaCommand & command)
 
 #if OPAL_VIDEO
   if (dynamic_cast<const OpalVideoUpdatePicture *>(&command) != NULL)
-    m_statistics.IncrementUpdateCount();
+    m_statistics.IncrementUpdateCount(dynamic_cast<const OpalVideoPictureLoss *>(&command) == NULL);
 #endif
 
   return atLeastOne;
