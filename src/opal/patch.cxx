@@ -496,7 +496,7 @@ void OpalMediaPatch::Sink::GetStatistics(OpalMediaStatistics & statistics, bool 
   if (m_secondaryCodec != NULL)
     m_secondaryCodec->GetStatistics(statistics);
 
-#if OPAL_VIDEO && OPAL_STATISTICS
+#if OPAL_VIDEO
   statistics.m_video.Merge(m_statistics);
 #endif
 }
