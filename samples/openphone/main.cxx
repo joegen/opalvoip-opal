@@ -8106,7 +8106,7 @@ STATISTICS_FIELD_BEG(RxVideo, FrameRate)
 STATISTICS_FIELD_END(RxVideo, FrameRate)
 
 STATISTICS_FIELD_BEG(RxVideo, VFU)
-  value.sprintf(m_printFormat, statistics.m_video.m_updateRequests);
+  value.sprintf(m_printFormat, statistics.m_video.m_fullUpdateRequests+statistics.m_video.m_pictureLossRequests);
 STATISTICS_FIELD_END(RxVideo, VFU)
 
 STATISTICS_FIELD_BEG(TxVideo, Bandwidth)
@@ -8154,7 +8154,7 @@ STATISTICS_FIELD_BEG(TxVideo, FrameRate)
 STATISTICS_FIELD_END(TxVideo, FrameRate)
 
 STATISTICS_FIELD_BEG(TxVideo, VFU)
-  value.sprintf(m_printFormat, statistics.m_video.m_updateRequests);
+  value.sprintf(m_printFormat, statistics.m_video.m_fullUpdateRequests+statistics.m_video.m_pictureLossRequests);
 STATISTICS_FIELD_END(TxVideo, VFU)
 
 STATISTICS_FIELD_BEG(RxFax, Bandwidth)
