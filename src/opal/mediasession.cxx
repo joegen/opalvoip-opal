@@ -121,6 +121,7 @@ void OpalMediaStatistics::Video::Merge(const Video & other)
   if (other.m_updateRequests > 0 || m_updateRequests == 0) {
     m_updateRequests = other.m_updateRequests;
     m_lastUpdateRequestTime = other.m_lastUpdateRequestTime;
+    m_updateResponseTime = other.m_updateResponseTime;
   }
 }
 #endif
