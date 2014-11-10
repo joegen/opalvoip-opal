@@ -1682,7 +1682,11 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendNACK(const RTP_ControlFram
     if (!GetSyncSource(syncSourceIn, e_Receiver, receiver))
       return e_ProcessPacket;
 
-    InitialiseControlFrame(request, *sender);
+    // Packet always starts with SR or RR, use empty RR as place holder
+    request.StartNewPacket(RTP_ControlFrame::e_ReceiverReport);
+    request.SetPayloadSize(sizeof(PUInt32b));  // length is SSRC
+    request.SetCount(0);
+    *(PUInt32b *)request.GetPayloadPtr() = sender->m_sourceIdentifier; // add the SSRC to the start of the payload
 
     PTRACE(3, *this << "sending NACK, "
               "SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier) << ", "
@@ -1720,7 +1724,11 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendFlowControl(unsigned maxBi
     if (!GetSyncSource(syncSourceIn, e_Receiver, receiver))
       return e_ProcessPacket;
 
-    InitialiseControlFrame(request, *sender);
+    // Packet always starts with SR or RR, use empty RR as place holder
+    request.StartNewPacket(RTP_ControlFrame::e_ReceiverReport);
+    request.SetPayloadSize(sizeof(PUInt32b));  // length is SSRC
+    request.SetCount(0);
+    *(PUInt32b *)request.GetPayloadPtr() = sender->m_sourceIdentifier; // add the SSRC to the start of the payload
 
     if (m_feedback&OpalMediaFormat::e_TMMBR) {
       if (overhead == 0)
@@ -1765,7 +1773,11 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendIntraFrameRequest(unsigned
     if (!GetSyncSource(syncSourceIn, e_Receiver, receiver))
       return e_ProcessPacket;
 
-    InitialiseControlFrame(request, *sender);
+    // Packet always starts with SR or RR, use empty RR as place holder
+    request.StartNewPacket(RTP_ControlFrame::e_ReceiverReport);
+    request.SetPayloadSize(sizeof(PUInt32b));  // length is SSRC
+    request.SetCount(0);
+    *(PUInt32b *)request.GetPayloadPtr() = sender->m_sourceIdentifier; // add the SSRC to the start of the payload
 
     bool has_AVPF_PLI = (m_feedback & OpalMediaFormat::e_PLI) || (options & OPAL_OPT_VIDUP_METHOD_PLI);
     bool has_AVPF_FIR = (m_feedback & OpalMediaFormat::e_FIR) || (options & OPAL_OPT_VIDUP_METHOD_FIR);
@@ -1816,7 +1828,11 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendTemporalSpatialTradeOff(un
     if (!GetSyncSource(syncSourceIn, e_Receiver, receiver))
       return e_ProcessPacket;
 
-    InitialiseControlFrame(request, *sender);
+    // Packet always starts with SR or RR, use empty RR as place holder
+    request.StartNewPacket(RTP_ControlFrame::e_ReceiverReport);
+    request.SetPayloadSize(sizeof(PUInt32b));  // length is SSRC
+    request.SetCount(0);
+    *(PUInt32b *)request.GetPayloadPtr() = sender->m_sourceIdentifier; // add the SSRC to the start of the payload
 
     PTRACE(3, *this << "sending TSTO (temporal spatial trade off) "
            "value=" << tradeOff << ", SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier));
