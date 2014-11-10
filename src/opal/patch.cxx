@@ -1013,7 +1013,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
 
         case OpalVideoFormat::e_InterFrame :
           m_statistics.IncrementFrames(false);
-          PTRACE(5, "P-Frame detected SSRC=" << RTP_TRACE_SRC(sourceFrame.GetSyncSource())
+          PTRACE(5, "P-Frame detected: SSRC=" << RTP_TRACE_SRC(sourceFrame.GetSyncSource())
                  << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_statistics.m_totalFrames << ", key=" << m_statistics.m_keyFrames << ", on " << m_patch);
           break;
 

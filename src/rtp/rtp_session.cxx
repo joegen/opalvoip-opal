@@ -1657,6 +1657,11 @@ void OpalRTPSession::OnRxApplDefined(const RTP_ControlFrame::ApplDefinedInfo & i
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::SendNACK(const RTP_ControlFrame::LostPacketMask & lostPackets, RTP_SyncSourceId syncSourceIn)
 {
+  if (lostPackets.empty()) {
+    PTRACE(5, *this << "no packets provided for NACK");
+    return e_IgnorePacket;
+  }
+
   RTP_ControlFrame request;
 
   {
@@ -2034,6 +2039,8 @@ bool OpalRTPSession::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
   }
 
   SetQoS(m_qos);
+
+  PTRACE(4, *this << "updated media format " << mediaFormat << ": maxBitRate=" << maxBitRate << ", feedback=" << m_feedback);
   return true;
 }
 
