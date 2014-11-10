@@ -335,7 +335,6 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
     bool DecodeFrame(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
 
     RTP_DataFrame * m_bufferRTP;
-    DWORD           m_lastSequenceNumber;
     DWORD           m_lastDecodedTimestamp; // For missing marker bit detection
     DWORD           m_lastMarkerTimestamp;  // For continuous marker bit detection
     unsigned        m_consecutiveMarkers;
