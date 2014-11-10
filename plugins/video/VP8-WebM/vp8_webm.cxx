@@ -954,6 +954,14 @@ class VP8DecoderRFC : public VP8Decoder
         return false;
       }
 
+      if (m_ignoreTillKeyFrame) {
+        // Key frame is S bit == 1, partID == 0 and P bit == 0
+        if ((rtp[0]&0x1f) != 0x10 || (rtp[headerSize]&0x01) != 0)
+          return false;
+        m_ignoreTillKeyFrame =  false;
+        PTRACE(3, MY_CODEC_LOG, "Found next start of key frame.");
+      }
+
       if ((rtp[0]&0x10) != 0) { // Check S bit
         unsigned partitionID = rtp[0] & 0xf;
         if (partitionID != 0) {
@@ -968,18 +976,15 @@ class VP8DecoderRFC : public VP8Decoder
         else {
           m_partitionID = 0;
           if (!m_fullFrame.empty()) {
-            PTRACE(3, MY_CODEC_LOG, "Start bit seen but not completed previous frame, ignoring till next key frame.");
-            return false;
+            if ((rtp[headerSize] & 0x01) != 0) {
+              PTRACE(3, MY_CODEC_LOG, "Start bit seen, but not completed previous frame, ignoring till next key frame.");
+              return false;
+            }
+
+            PTRACE(3, MY_CODEC_LOG, "Start bit seen, but not completed previous frame, restarting key frame.");
+            m_fullFrame.clear();
           }
         }
-      }
-
-      if (m_ignoreTillKeyFrame) {
-        // Key frame is S bit == 1, partID == 0 & P bit == 0
-        if ((rtp[0]&0x10) != 0x10 || (rtp[headerSize]&0x01) != 0)
-          return false;
-        m_ignoreTillKeyFrame =  false;
-        PTRACE(3, MY_CODEC_LOG, "Found next start of key frame.");
       }
 
       Accumulate(rtp.GetPayloadPtr()+headerSize, rtp.GetPayloadSize()-headerSize);
