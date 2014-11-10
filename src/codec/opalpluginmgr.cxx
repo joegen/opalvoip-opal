@@ -832,7 +832,6 @@ OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const OpalTranscoderKey & k
   : OpalVideoTranscoder(key.first, key.second)
   , OpalPluginTranscoder(codecDefn, isEncoder)
   , m_bufferRTP(NULL)
-  , m_lastSequenceNumber(UINT_MAX)
   , m_lastDecodedTimestamp(UINT_MAX)
   , m_lastMarkerTimestamp(UINT_MAX)
   , m_consecutiveMarkers(0)
@@ -1045,7 +1044,6 @@ bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_Data
       if (!DecodeFrame(marker, dstList))
         return false;
       // As we are doing this packets SN twice, reset our out of sequence packet detection
-      m_lastSequenceNumber = src.GetSequenceNumber()-1;
       if (m_bufferRTP == NULL) {
         m_bufferRTP = new RTP_DataFrame((PINDEX)0, outputDataSize);
         m_lastFrameWasIFrame = false;
@@ -1065,8 +1063,7 @@ bool OpalPluginVideoTranscoder::DecodeFrame(const RTP_DataFrame & src, RTP_DataF
 {
   // Detect packet loss
   DWORD sequenceNumber = src.GetSequenceNumber();
-  bool packetsLost = (m_lastSequenceNumber != UINT_MAX && (m_lastSequenceNumber+1) != sequenceNumber);
-  m_lastSequenceNumber = sequenceNumber;
+  bool packetsLost = src.GetDiscontinuity() > 0;
 
   // call the codec function
   unsigned fromLen = src.GetPacketSize();
