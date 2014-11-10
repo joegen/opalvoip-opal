@@ -1592,9 +1592,9 @@ void OpalRTPSession::OnRxReceiverReport(RTP_SyncSourceId PTRACE_PARAM(src), cons
 #if PTRACING
   if (PTrace::CanTrace(m_throttleRxRR)) {
     ostream & strm = PTRACE_BEGIN(m_throttleRxRR);
-    strm << *this << "OnReceiverReport: SSRC=" << RTP_TRACE_SRC(src) << '\n';
+    strm << *this << "OnReceiverReport: SSRC=" << RTP_TRACE_SRC(src) << ", count=" << reports.GetSize();
     for (PINDEX i = 0; i < reports.GetSize(); i++)
-      strm << "  RR: " << reports[i] << '\n';
+      strm << "\n  RR: " << reports[i];
     strm << PTrace::End;
   }
 #endif
