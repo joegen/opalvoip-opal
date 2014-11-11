@@ -654,7 +654,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnOutOfOrderPacket
     waiting = false;
     PTRACE(4, &m_session, m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier) << ", " <<
            "last out of order packet, got " << sequenceNumber << " expected " << expectedSequenceNumber <<
-           ", waited " << m_waitOutOfOrderTimer.GetElapsed() << 's');
+           ", waited " << m_waitOutOfOrderTimer.GetElapsed() << "s, waiting " << m_session.GetOutOfOrderWaitTime() << 's');
+    m_waitOutOfOrderTimer = m_session.GetOutOfOrderWaitTime();
   }
   else {
     PTRACE(5, &m_session, m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier) << ", " <<
