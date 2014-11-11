@@ -2351,7 +2351,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 if test -z "$CFLAGS"; then
-      CFLAGS="-Wall -O4 -fexpensive-optimizations -funroll-loops"
+      CFLAGS="-Wall -O4 -fPIC -fexpensive-optimizations -funroll-loops"
 fi
 
 if test -n "$ac_tool_prefix"; then
