@@ -184,11 +184,16 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
     return false;
 
 #if OPAL_VIDEO
-  if (packet.GetDiscontinuity() > 0 && mediaFormat.GetMediaType() == OpalMediaType::Video() && m_pictureLossThrottle.HasExpired()) {
+  if (packet.GetDiscontinuity() > 0 && mediaFormat.GetMediaType() == OpalMediaType::Video() && m_pictureLossThrottleTimer.HasExpired()) {
     PTRACE(3, "Automatically requiring video update due to " << packet.GetDiscontinuity() << " missing packets.");
     ExecuteCommand(OpalVideoPictureLoss(packet.GetSequenceNumber(), packet.GetTimestamp(), 0, packet.GetSyncSource()));
-    unsigned rtt = m_rtpSession.GetRoundTripTime();
-    m_pictureLossThrottle = rtt != 0 ? rtt*2 : 1000;
+    PTimeInterval throttleTime = m_pictureLossThrottleTime;
+    if (throttleTime == 0) {
+      throttleTime = m_rtpSession.GetRoundTripTime()*2;
+      if (throttleTime == 0)
+        throttleTime.SetInterval(0, 1);
+    }
+    m_pictureLossThrottleTimer = throttleTime;
   }
 #endif
 
