@@ -637,7 +637,7 @@ PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command)
 
 #if PTRACING
   if (PTrace::CanTrace(5)) {
-    ostream & trace = PTrace::Begin(5, __FILE__, __LINE__, this);
+    ostream & trace = PTRACE_BEGIN(5);
     trace << "Execute" << (atLeastOne ? "d" : "fail for ")
           << " command \"" << command << '"';
     if (fromPatch != this)

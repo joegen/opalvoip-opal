@@ -491,7 +491,7 @@ void OpalConnection::OnReleased()
 #if PTRACING
   static const int Level = 3;
   if (PTrace::CanTrace(Level)) {
-    ostream & trace = PTrace::Begin(Level, __FILE__, __LINE__, this);
+    ostream & trace = PTRACE_BEGIN(Level);
     trace << "Connection " << *this << " released\n"
              "        Initial Time: " << m_phaseTime[UninitialisedPhase] << '\n';
     for (Phases ph = SetUpPhase; ph < NumPhases; ph = (Phases)(ph+1)) {

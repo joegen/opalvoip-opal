@@ -2343,7 +2343,7 @@ SIP_PDU::StatusCodes SIP_PDU::Parse(istream & stream, bool truncated)
 
 #if PTRACING
   if (PTrace::CanTrace(3)) {
-    ostream & trace = PTrace::Begin(3, __FILE__, __LINE__, this);
+    ostream & trace = PTRACE_BEGIN(3);
 
     trace << "";
     if (truncated)
@@ -2451,7 +2451,7 @@ SIP_PDU::StatusCodes SIP_PDU::InternalSend(bool canDoTCP)
 
 #if PTRACING
   if (PTrace::CanTrace(3)) {
-    ostream & trace = PTrace::Begin(3, __FILE__, __LINE__, this);
+    ostream & trace = PTRACE_BEGIN(3);
 
     trace << "Sending PDU ";
 

@@ -184,7 +184,7 @@ void OpalFaxSession::ApplyMediaOptions(const OpalMediaFormat & mediaFormat)
 
 #if PTRACING
     if (PTrace::CanTrace(3)) {
-      ostream & trace = PTrace::Begin(3, __FILE__, __LINE__, this);
+      ostream & trace = PTRACE_BEGIN(3);
       trace << "UDPTL\tUse redundancy \"";
       for (std::map<int, int>::iterator it = m_redundancy.begin() ; it != m_redundancy.end() ; it++) {
         if (it != m_redundancy.begin())
@@ -599,7 +599,7 @@ bool OpalFaxSession::ReadData(RTP_DataFrame & frame)
 #if PTRACING
     const unsigned Level = m_awaitingGoodPacket ? 4 : 2;
     if (PTrace::CanTrace(Level)) {
-      ostream & trace = PTrace::Begin(Level, __FILE__, __LINE__);
+      ostream & trace = PTRACE_BEGIN(Level);
       trace << "UDPTL\t";
       if (m_awaitingGoodPacket)
         trace << "Probable RTP packet: " << pduSize << " bytes.";

@@ -77,7 +77,7 @@ static bool CheckError(err_status_t err, const char * fn, const char * file, int
   if (err == err_status_ok)
     return true;
 
-  ostream & trace = PTrace::Begin(2, file, line, NULL, PTraceModule());
+  ostream & trace = PTRACE_BEGIN(2);
   trace << "Library error " << err << " from " << fn << "() - ";
   switch (err) {
     case err_status_fail :
