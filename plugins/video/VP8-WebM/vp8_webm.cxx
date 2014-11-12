@@ -34,6 +34,7 @@
 
 #ifdef _MSC_VER
 #pragma warning(disable:4505)
+#define snprintf _snprintf
 #endif
 
 
@@ -529,6 +530,15 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
     }
 
 
+    bool GetStatistics(char * stats, unsigned maxSize)
+    {
+      int quality = -1;
+      IS_ERROR(vpx_codec_control_VP8E_GET_LAST_QUANTIZER_64,(&m_codec, VP8E_GET_LAST_QUANTIZER_64, &quality));
+      snprintf(stats, maxSize, "Width=%u\nHeight=%u\nQuality=%i\n", m_width, m_height, quality);
+      return true;
+    }
+
+
     virtual bool Transcode(const void * fromPtr,
                              unsigned & fromLen,
                                  void * toPtr,
@@ -781,6 +791,13 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
     }
 
 
+    bool GetStatistics(char * stats, unsigned maxSize)
+    {
+      snprintf(stats, maxSize, "Width=%u\nHeight=%u\n", m_width, m_height);
+      return true;
+    }
+
+
     bool BadDecode(unsigned & flags, bool ok)
     {
       if (ok)
@@ -807,7 +824,7 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
 
       if (m_firstFrame || (image = vpx_codec_get_frame(&m_codec, &m_iterator)) == NULL) {
         /* Unless error concealment implemented, decoder has a problems with
-           missing data in the frame and can gets it;s knickers thorougly
+           missing data in the frame and can gets it's knickers thorougly
            twisted, so just ignore everything till next I-Frame. */
         if (BadDecode(flags,
 #ifdef VPX_CODEC_USE_ERROR_CONCEALMENT
@@ -882,6 +899,9 @@ class VP8Decoder : public PluginVideoDecoder<VP8_CODEC>
         PTRACE(1, MY_CODEC_LOG, "Unsupported image format from decoder.");
         return false;
       }
+
+      m_width = image->d_w;
+      m_height = image->d_h;
 
       PluginCodec_RTP dstRTP(toPtr, toLen);
       toLen = OutputImage(image->planes, image->stride, image->d_w, image->d_h, dstRTP, flags);

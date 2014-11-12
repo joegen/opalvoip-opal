@@ -379,7 +379,7 @@ struct StatisticsField
   double CalculateFrameRate(DWORD frames);
   virtual StatisticsField * Clone() const = 0;
   virtual void Update(const OpalConnection & connection, const OpalMediaStream & stream, const OpalMediaStatistics & statistics);
-  virtual void GetValue(const OpalConnection & connection, const OpalMediaStream & stream, const OpalMediaStatistics & statistics, wxString & value) = 0;
+  virtual void GetValue(const OpalConnection & connection, const OpalMediaStream & stream, const OpalMediaStatistics & statistics, PwxString & value) = 0;
 
   const wxChar    * m_name;
   StatisticsPages m_page;

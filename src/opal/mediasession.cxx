@@ -84,6 +84,10 @@ OpalMediaStatistics::Video::Video()
   , m_fullUpdateRequests(0)
   , m_pictureLossRequests(0)
   , m_lastUpdateRequestTime(0)
+  , m_width(0)
+  , m_height(0)
+  , m_bitRate(0)
+  , m_frameRate(0)
   , m_quality(-1)
 {
 }

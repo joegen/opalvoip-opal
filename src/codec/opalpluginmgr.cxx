@@ -1170,11 +1170,22 @@ void OpalPluginVideoTranscoder::GetStatistics(OpalMediaStatistics & statistics) 
 {
   OpalVideoTranscoder::GetStatistics(statistics);
 
+  const OpalMediaFormat & format = isEncoder ? outputMediaFormat : inputMediaFormat;
+  statistics.m_video.m_width     = format.GetOptionInteger(OpalVideoFormat::FrameWidthOption());
+  statistics.m_video.m_height    = format.GetOptionInteger(OpalVideoFormat::FrameHeightOption());
+  statistics.m_video.m_bitRate   = format.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
+  statistics.m_video.m_frameRate = (float)OpalVideoFormat::VideoClockRate/format.GetOptionInteger(OpalVideoFormat::FrameTimeOption());
+
   char buf[1000];
-  if (getCodecStatistics.Call(buf, sizeof(buf)-1, context) != 0) {
+  buf[sizeof(buf)-1] = '\0'; // Fail safe
+  if (getCodecStatistics.Call(buf, sizeof(buf), context) != 0) {
     PConstString str(buf);
     PStringOptions stats(str);
-    statistics.m_video.m_quality = stats.GetInteger("Quality", -1);
+    statistics.m_video.m_quality   = stats.GetInteger("Quality",   statistics.m_video.m_quality);
+    statistics.m_video.m_width     = stats.GetInteger("Width",     statistics.m_video.m_width);
+    statistics.m_video.m_height    = stats.GetInteger("Height",    statistics.m_video.m_height);
+    statistics.m_video.m_bitRate   = stats.GetInteger("BitRate",   statistics.m_video.m_bitRate);
+    statistics.m_video.m_frameRate = (float)stats.GetReal("FrameRate", statistics.m_video.m_frameRate);
   }
 }
 #endif // OPAL_STATISTICS
