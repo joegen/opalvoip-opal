@@ -544,6 +544,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
 
     ISVCEncoder * m_encoder;
     H264Frame     m_encapsulation;
+    int           m_quality;
 
   public:
     H264_Encoder(const PluginCodec_Definition * defn)
@@ -557,6 +558,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       , m_packetisationModeH323(1)
       , m_isH323(false)
       , m_encoder(NULL)
+      , m_quality(-1)
     {
       PTRACE(4, MY_CODEC_LOG, "Created encoder $Revision$");
     }
@@ -708,6 +710,13 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
     }
 
 
+    bool GetStatistics(char * stats, unsigned maxSize)
+    {
+      snprintf(stats, maxSize, "Width=%u\nHeight=%u\nQuality=%i\n", m_width, m_height, m_quality);
+      return true;
+    }
+
+
     virtual bool Transcode(const void * fromPtr,
                              unsigned & fromLen,
                                  void * toPtr,
@@ -724,8 +733,8 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
 
         SSourcePicture picture;
         picture.iColorFormat = videoFormatI420;	// color space type
-        picture.iPicWidth = header->width;
-        picture.iPicHeight = header->height;
+        picture.iPicWidth = m_width = header->width;
+        picture.iPicHeight = m_height = header->height;
         picture.iStride[0] = picture.iPicWidth;
         picture.iStride[1] = picture.iStride[2] = picture.iPicWidth / 2;
         picture.pData[0] = from.GetVideoFrameData();
@@ -765,11 +774,14 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
             m_encapsulation.Allocate(numberOfNALUs);
             m_encapsulation.SetTimestamp(from.GetTimestamp());
 
+            m_quality = -1;
             for (int layer = 0; layer < bitstream.iLayerNum; ++layer) {
               for (int nalu = 0; nalu < bitstream.sLayerInfo[layer].iNalCount; ++nalu) {
                 size_t len = bitstream.sLayerInfo[layer].pNalLengthInByte[nalu];
                 m_encapsulation.AddNALU(bitstream.sLayerInfo[layer].pBsBuf[4], len, bitstream.sLayerInfo[layer].pBsBuf);
                 bitstream.sLayerInfo[layer].pBsBuf += len;
+                if (bitstream.sLayerInfo[layer].uiQualityId > 0 && m_quality < bitstream.sLayerInfo[layer].uiQualityId)
+                  m_quality = bitstream.sLayerInfo[layer].uiQualityId;
               }
             }
         }
@@ -846,6 +858,13 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>
     }
 
 
+    bool GetStatistics(char * stats, unsigned maxSize)
+    {
+      snprintf(stats, maxSize, "Width=%u\nHeight=%u\n", m_width, m_height);
+      return true;
+    }
+
+
     virtual bool Transcode(const void * fromPtr,
                              unsigned & fromLen,
                                  void * toPtr,
@@ -899,18 +918,16 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>
       if (m_bufferInfo.iBufferStatus != 0) {
         PluginCodec_RTP out(toPtr, toLen);
 
+        m_width = m_bufferInfo.UsrData.sSystemBuffer.iWidth;
+        m_height = m_bufferInfo.UsrData.sSystemBuffer.iHeight;
+
         // Why make it so hard?
         int raster[3] = {
           m_bufferInfo.UsrData.sSystemBuffer.iStride[0],
           m_bufferInfo.UsrData.sSystemBuffer.iStride[1],
           m_bufferInfo.UsrData.sSystemBuffer.iStride[1]
         };
-        toLen = OutputImage(m_bufferData,
-                            raster,
-                            m_bufferInfo.UsrData.sSystemBuffer.iWidth,
-                            m_bufferInfo.UsrData.sSystemBuffer.iHeight,
-                            out,
-                            flags);
+        toLen = OutputImage(m_bufferData, raster, m_width, m_height, out, flags);
 
         if ((flags & PluginCodec_ReturnCoderBufferTooSmall) == 0) {
           int id = 0;
