@@ -161,6 +161,29 @@ bool OpalRTPMediaStream::InternalSetPaused(bool pause, bool fromUser, bool fromP
 }
 
 
+bool OpalRTPMediaStream::InternalExecuteCommand(const OpalMediaCommand & command)
+{
+#if OPAL_VIDEO
+  if (dynamic_cast<const OpalVideoUpdatePicture *>(&command) != NULL) {
+    if (m_videoUpdateThrottleTimer.IsRunning()) {
+      PTRACE(4, "Throttled " << command);
+      return false;
+    }
+
+    PTimeInterval throttleTime = m_videoUpdateThrottleTime;
+    if (throttleTime == 0) {
+      throttleTime = m_rtpSession.GetRoundTripTime()*2;
+      if (throttleTime == 0)
+        throttleTime.SetInterval(0, 1);
+    }
+    m_videoUpdateThrottleTimer = throttleTime;
+  }
+#endif
+
+  return OpalMediaStream::InternalExecuteCommand(command);
+}
+
+
 void OpalRTPMediaStream::OnReceivedPacket(OpalRTPSession &, OpalRTPSession::Data & data)
 {
   if (m_jitterBuffer != NULL)
@@ -184,16 +207,9 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
     return false;
 
 #if OPAL_VIDEO
-  if (packet.GetDiscontinuity() > 0 && mediaFormat.GetMediaType() == OpalMediaType::Video() && m_pictureLossThrottleTimer.HasExpired()) {
-    PTRACE(3, "Automatically requiring video update due to " << packet.GetDiscontinuity() << " missing packets.");
+  if (packet.GetDiscontinuity() > 0 && mediaFormat.GetMediaType() == OpalMediaType::Video()) {
+    PTRACE(3, "Automatically requesting video update due to " << packet.GetDiscontinuity() << " missing packets.");
     ExecuteCommand(OpalVideoPictureLoss(packet.GetSequenceNumber(), packet.GetTimestamp(), 0, packet.GetSyncSource()));
-    PTimeInterval throttleTime = m_pictureLossThrottleTime;
-    if (throttleTime == 0) {
-      throttleTime = m_rtpSession.GetRoundTripTime()*2;
-      if (throttleTime == 0)
-        throttleTime.SetInterval(0, 1);
-    }
-    m_pictureLossThrottleTimer = throttleTime;
   }
 #endif
 
