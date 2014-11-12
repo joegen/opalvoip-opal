@@ -270,7 +270,7 @@ class OpalAVIRecordManager : public OpalRecordManager
         if (!PTrace::CanTrace(2))
           return true;
 
-        ostream & strm = PTrace::Begin(2, __FILE__, __LINE__);
+        ostream & strm = PTRACE_BEGIN(2);
         strm << "Error " << msg << ": ";
         switch (result) {
           case AVIERR_UNSUPPORTED :
