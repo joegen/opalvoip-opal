@@ -152,7 +152,7 @@ class OpalRTPMediaStream : public OpalMediaStream
     /**Set time between consecutive I-Frame requests due to packet lss.
        If zero then this is set to Round Trip Time * 2.
       */
-    void SetPictureLossThrottleTime(const PTimeInterval & time) { m_pictureLossThrottleTime = time; }
+    void SetVideoUpdateThrottleTime(const PTimeInterval & time) { m_videoUpdateThrottleTime = time; }
 #endif
 
 protected:
@@ -160,6 +160,7 @@ protected:
     virtual bool InternalSetJitterBuffer(const OpalJitterBuffer::Init & init);
     virtual bool InternalUpdateMediaFormat(const OpalMediaFormat & mediaFormat);
     virtual bool InternalSetPaused(bool pause, bool fromUser, bool fromPatch);
+    virtual bool InternalExecuteCommand(const OpalMediaCommand & command);
 
     OpalRTPSession   & m_rtpSession;
     bool               m_rewriteHeaders;
@@ -168,8 +169,8 @@ protected:
 #if OPAL_VIDEO
     bool             m_forceIntraFrameFlag;
     PSimpleTimer     m_forceIntraFrameTimer;
-    PSimpleTimer     m_pictureLossThrottleTimer;
-    PTimeInterval    m_pictureLossThrottleTime;
+    PSimpleTimer     m_videoUpdateThrottleTimer;
+    PTimeInterval    m_videoUpdateThrottleTime;
 #endif
 
     PDECLARE_RTPDataNotifier(OpalRTPMediaStream, OnReceivedPacket);
