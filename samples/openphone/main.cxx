@@ -7943,7 +7943,7 @@ double StatisticsField::CalculateFrameRate(DWORD frames)
 
 void StatisticsField::Update(const OpalConnection & connection, const OpalMediaStream & stream, const OpalMediaStatistics & statistics)
 {
-  wxString value;
+  PwxString value;
   GetValue(connection, stream, statistics, value);
   m_staticText->SetLabel(value);
 }
@@ -7954,7 +7954,7 @@ void StatisticsField::Update(const OpalConnection & connection, const OpalMediaS
   public: type##name##StatisticsField() : StatisticsField(wxT(#type) wxT(#name), type) { } \
     virtual ~type##name##StatisticsField() { } \
     virtual StatisticsField * Clone() const { return new type##name##StatisticsField(*this); } \
-    virtual void GetValue(const OpalConnection & connection, const OpalMediaStream & stream, const OpalMediaStatistics & statistics, wxString & value) {
+    virtual void GetValue(const OpalConnection & connection, const OpalMediaStream & stream, const OpalMediaStatistics & statistics, PwxString & value) {
 
 #define STATISTICS_FIELD_END(type, name) \
     } } Static##type##name##StatisticsField;
@@ -8109,6 +8109,16 @@ STATISTICS_FIELD_BEG(RxVideo, VFU)
   value.sprintf(m_printFormat, statistics.m_video.m_fullUpdateRequests+statistics.m_video.m_pictureLossRequests);
 STATISTICS_FIELD_END(RxVideo, VFU)
 
+STATISTICS_FIELD_BEG(RxVideo, Resolution)
+  if (statistics.m_video.m_width > 0 && statistics.m_video.m_height > 0)
+    value = PVideoFrameInfo::AsString(statistics.m_video.m_width, statistics.m_video.m_height).GetPointer();
+STATISTICS_FIELD_END(RxVideo, Resolution)
+
+STATISTICS_FIELD_BEG(RxVideo, Quality)
+  if (statistics.m_video.m_quality >= 0)
+    value.sprintf("%i", statistics.m_video.m_quality);
+STATISTICS_FIELD_END(RxVideo, Quality)
+
 STATISTICS_FIELD_BEG(TxVideo, Bandwidth)
   value.sprintf(m_printFormat, CalculateBandwidth(statistics.m_totalBytes));
 STATISTICS_FIELD_END(TxVideo, Bandwidth)
@@ -8156,6 +8166,16 @@ STATISTICS_FIELD_END(TxVideo, FrameRate)
 STATISTICS_FIELD_BEG(TxVideo, VFU)
   value.sprintf(m_printFormat, statistics.m_video.m_fullUpdateRequests+statistics.m_video.m_pictureLossRequests);
 STATISTICS_FIELD_END(TxVideo, VFU)
+
+STATISTICS_FIELD_BEG(TxVideo, Resolution)
+  if (statistics.m_video.m_width > 0 && statistics.m_video.m_height > 0)
+    value = PVideoFrameInfo::AsString(statistics.m_video.m_width, statistics.m_video.m_height).GetPointer();
+STATISTICS_FIELD_END(TxVideo, Resolution)
+
+STATISTICS_FIELD_BEG(TxVideo, Quality)
+  if (statistics.m_video.m_quality >= 0)
+    value.sprintf("%i", statistics.m_video.m_quality);
+STATISTICS_FIELD_END(TxVideo, Quality)
 
 STATISTICS_FIELD_BEG(RxFax, Bandwidth)
   value.sprintf(m_printFormat, CalculateBandwidth(statistics.m_totalBytes));

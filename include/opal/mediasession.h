@@ -106,7 +106,11 @@ class OpalMediaStatistics : public PObject
       unsigned      m_pictureLossRequests;
       PTime         m_lastUpdateRequestTime;
       PTimeInterval m_updateResponseTime;
-      int           m_quality; // -1 is none, 0 is very good > 0 is progressively worse
+      unsigned      m_width;
+      unsigned      m_height;
+      unsigned      m_bitRate;    // As configured, not actual, which is calculated from m_totalBytes
+      float         m_frameRate;  // As configured, not actual, which is calculated from m_totalFrames
+      int           m_quality;    // -1 is none, 0 is very good > 0 is progressively worse
     } m_video;
 #endif
 
