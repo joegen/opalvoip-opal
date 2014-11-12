@@ -701,8 +701,8 @@ bool OpalRTPSession::SyncSource::HandlePendingFrames()
   while (!m_pendingPackets.empty()) {
     RTP_DataFrame resequencedPacket = m_pendingPackets.back();
 
-    unsigned sequenceNumber = resequencedPacket.GetSequenceNumber();
-    unsigned expectedSequenceNumber = m_lastSequenceNumber + 1;
+    RTP_SequenceNumber sequenceNumber = resequencedPacket.GetSequenceNumber();
+    RTP_SequenceNumber expectedSequenceNumber = m_lastSequenceNumber + 1;
     if (sequenceNumber != expectedSequenceNumber)
       return true;
 
