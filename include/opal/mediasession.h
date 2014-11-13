@@ -221,6 +221,7 @@ class OpalMediaCryptoSuite : public PObject
 #endif
 
     PINDEX GetCipherKeyBytes() const { return (GetCipherKeyBits()+7)/8; }
+    PINDEX GetAuthSaltBytes() const { return (GetAuthSaltBits()+7)/8; }
     virtual PINDEX GetCipherKeyBits() const = 0;
     virtual PINDEX GetAuthSaltBits() const = 0;
 
