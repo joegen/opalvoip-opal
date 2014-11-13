@@ -348,8 +348,8 @@ PObject * OpalSRTPKeyInfo::Clone() const
 
 bool OpalSRTPKeyInfo::IsValid() const
 {
-  return m_key.GetSize() == (m_cryptoSuite.GetCipherKeyBits()+7)/8 &&
-         m_salt.GetSize() == (m_cryptoSuite.GetAuthSaltBits()+7)/8;
+  return m_key.GetSize() == m_cryptoSuite.GetCipherKeyBytes() &&
+         m_salt.GetSize() == m_cryptoSuite.GetAuthSaltBytes();
 }
 
 
@@ -361,8 +361,8 @@ bool OpalSRTPKeyInfo::FromString(const PString & str)
     return false;
   }
 
-  PINDEX keyBytes = (m_cryptoSuite.GetCipherKeyBits()+7)/8;
-  PINDEX saltBytes = (m_cryptoSuite.GetAuthSaltBits()+7)/8;
+  PINDEX keyBytes = m_cryptoSuite.GetCipherKeyBytes();
+  PINDEX saltBytes = m_cryptoSuite.GetAuthSaltBytes();
 
   if (key_salt.GetSize() < keyBytes+saltBytes) {
     PTRACE2(2, &m_cryptoSuite, "Incorrect combined key/salt size (" << key_salt.GetSize()
@@ -388,17 +388,17 @@ PString OpalSRTPKeyInfo::ToString() const
 
 void OpalSRTPKeyInfo::Randomise()
 {
-  m_key.SetSize((m_cryptoSuite.GetCipherKeyBits()+7)/8);
+  m_key.SetSize(m_cryptoSuite.GetCipherKeyBytes());
   rand_source_get_octet_string(m_key.GetPointer(), m_key.GetSize());
 
-  m_salt.SetSize((m_cryptoSuite.GetAuthSaltBits()+7)/8);
+  m_salt.SetSize(m_cryptoSuite.GetAuthSaltBytes());
   rand_source_get_octet_string(m_salt.GetPointer(), m_salt.GetSize());
 }
 
 
 bool OpalSRTPKeyInfo::SetCipherKey(const PBYTEArray & key)
 {
-  if (key.GetSize() < (m_cryptoSuite.GetCipherKeyBits()+7)/8) {
+  if (key.GetSize() < m_cryptoSuite.GetCipherKeyBytes()) {
     PTRACE2(2, &m_cryptoSuite, "Incorrect key size (" << key.GetSize() << " bytes) for " << m_cryptoSuite.GetDescription());
     return false;
   }
@@ -410,7 +410,7 @@ bool OpalSRTPKeyInfo::SetCipherKey(const PBYTEArray & key)
 
 bool OpalSRTPKeyInfo::SetAuthSalt(const PBYTEArray & salt)
 {
-  if (salt.GetSize() < (m_cryptoSuite.GetAuthSaltBits()+7)/8) {
+  if (salt.GetSize() < m_cryptoSuite.GetAuthSaltBytes()) {
     PTRACE2(2, &m_cryptoSuite, "Incorrect salt size (" << salt.GetSize() << " bytes) for " << m_cryptoSuite.GetDescription());
     return false;
   }

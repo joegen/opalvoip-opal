@@ -2158,7 +2158,7 @@ bool H235SecurityAlgorithmCapability::OnReceivedPDU(const H245_EncryptionSync & 
       return false;
   }
 
-  if (sessionKey.GetSize()*8 < cryptoSuite->GetCipherKeyBits()) {
+  if (sessionKey.GetSize() < cryptoSuite->GetCipherKeyBytes()) {
     PTRACE(2, "H323\tH.235 media session key not expected length");
     return false;
   }
