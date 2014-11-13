@@ -43,16 +43,6 @@
 #pragma comment(lib, P_SSL_LIB2)
 #endif
 
-#if OPAL_SRTP==2
-#define uint32_t uint32_t
-#pragma warning(disable:4505)
-#include <srtp.h>
-#elif HAS_SRTP_SRTP_H
-#include <srtp/srtp.h>
-#else
-#include <srtp.h>
-#endif
-
 
 #define PTraceModule() "DTLS"
 
@@ -60,14 +50,13 @@
 // from srtp_profile_t
 static struct ProfileInfo
 {
-  srtp_profile_t m_profile;
   const char *   m_dtlsName;
   const char *   m_opalName;
 } const ProfileNames[] = {
-  { srtp_profile_aes128_cm_sha1_80, "SRTP_AES128_CM_SHA1_80", "AES_CM_128_HMAC_SHA1_80" },
-  { srtp_profile_aes128_cm_sha1_32, "SRTP_AES128_CM_SHA1_32", "AES_CM_128_HMAC_SHA1_32" },
-  { srtp_profile_aes256_cm_sha1_80, "SRTP_AES256_CM_SHA1_80", "AES_CM_256_HMAC_SHA1_80" },
-  { srtp_profile_aes256_cm_sha1_32, "SRTP_AES256_CM_SHA1_32", "AES_CM_256_HMAC_SHA1_32" },
+  { "SRTP_AES128_CM_SHA1_80", "AES_CM_128_HMAC_SHA1_80" },
+  { "SRTP_AES128_CM_SHA1_32", "AES_CM_128_HMAC_SHA1_32" },
+  { "SRTP_AES256_CM_SHA1_80", "AES_CM_256_HMAC_SHA1_80" },
+  { "SRTP_AES256_CM_SHA1_32", "AES_CM_256_HMAC_SHA1_32" },
 };
 
 
@@ -331,25 +320,24 @@ bool OpalDTLSSRTPSession::ExecuteHandshake(Channel channel)
   if (!lock.IsLocked())
     return false;
 
+  PCaselessString profileName = m_sslChannel[channel]->GetSelectedProfile();
   const OpalMediaCryptoSuite* cryptoSuite = NULL;
-  srtp_profile_t profile = srtp_profile_reserved;
   for (PINDEX i = 0; i < PARRAYSIZE(ProfileNames); ++i) {
-    if (m_sslChannel[channel]->GetSelectedProfile() == ProfileNames[i].m_dtlsName) {
-      profile = ProfileNames[i].m_profile;
+    if (profileName == ProfileNames[i].m_dtlsName) {
       cryptoSuite = OpalMediaCryptoSuiteFactory::CreateInstance(ProfileNames[i].m_opalName);
       break;
     }
   }
 
-  if (profile == srtp_profile_reserved || cryptoSuite == NULL) {
-    PTRACE(2, *this << "error in SRTP profile after DTLS handshake.");
+  if (cryptoSuite == NULL) {
+    PTRACE(2, *this << "error in SRTP profile (" << profileName << ") after DTLS handshake.");
     return false;
   }
 
-  PINDEX masterKeyLength = srtp_profile_get_master_key_length(profile);
-  PINDEX masterSaltLength = srtp_profile_get_master_salt_length(profile);
+  PINDEX keyLength = cryptoSuite->GetCipherKeyBytes();
+  PINDEX saltLength = std::max(cryptoSuite->GetAuthSaltBytes(), (PINDEX)14); // Weird, but 32 bit salt still needs 14 bytes,
 
-  PBYTEArray keyMaterial = m_sslChannel[channel]->GetKeyMaterial(((masterSaltLength + masterKeyLength) << 1), "EXTRACTOR-dtls_srtp");
+  PBYTEArray keyMaterial = m_sslChannel[channel]->GetKeyMaterial((saltLength + keyLength)*2, "EXTRACTOR-dtls_srtp");
   if (keyMaterial.IsEmpty()) {
     PTRACE(2, *this << "no SRTP keys after DTLS handshake.");
     return false;
@@ -358,12 +346,12 @@ bool OpalDTLSSRTPSession::ExecuteHandshake(Channel channel)
   OpalSRTPKeyInfo * keyInfo = dynamic_cast<OpalSRTPKeyInfo*>(cryptoSuite->CreateKeyInfo());
   PAssertNULL(keyInfo);
 
-  keyInfo->SetCipherKey(PBYTEArray(keyMaterial, masterKeyLength));
-  keyInfo->SetAuthSalt(PBYTEArray(keyMaterial + masterKeyLength*2, masterSaltLength));
+  keyInfo->SetCipherKey(PBYTEArray(keyMaterial, keyLength));
+  keyInfo->SetAuthSalt(PBYTEArray(keyMaterial + keyLength*2, saltLength));
   ApplyKeyToSRTP(*keyInfo, m_sslChannel[channel]->IsServer() ? e_Receiver : e_Sender);
 
-  keyInfo->SetCipherKey(PBYTEArray(keyMaterial + masterKeyLength, masterKeyLength));
-  keyInfo->SetAuthSalt(PBYTEArray(keyMaterial + masterKeyLength*2 + masterSaltLength, masterSaltLength));
+  keyInfo->SetCipherKey(PBYTEArray(keyMaterial + keyLength, keyLength));
+  keyInfo->SetAuthSalt(PBYTEArray(keyMaterial + keyLength*2 + saltLength, saltLength));
   ApplyKeyToSRTP(*keyInfo, m_sslChannel[channel]->IsServer() ? e_Sender : e_Receiver);
 
   delete keyInfo;

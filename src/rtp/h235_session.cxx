@@ -188,7 +188,7 @@ void H2356_KeyInfo::Randomise()
 
 bool H2356_KeyInfo::SetCipherKey(const PBYTEArray & key)
 {
-  if (key.GetSize() < (m_cryptoSuite.GetCipherKeyBits()+7)/8) {
+  if (key.GetSize() < m_cryptoSuite.GetCipherKeyBytes()) {
     PTRACE2(2, &m_cryptoSuite, "Crypto\tIncorrect key size (" << key.GetSize() << " bytes) for " << m_cryptoSuite.GetDescription());
     return false;
   }
