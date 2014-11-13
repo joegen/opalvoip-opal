@@ -678,8 +678,14 @@ class OpalRTPSession : public OpalMediaSession
       SyncSource(OpalRTPSession & session, RTP_SyncSourceId id, Direction dir, const char * cname);
       virtual ~SyncSource();
 
+#if PTRACING
+      friend ostream & operator<<(ostream & strm, const SyncSource & ssrc)
+      { return strm << ssrc.m_session << "SSRC=" << RTP_TRACE_SRC(ssrc.m_sourceIdentifier) << ", "; }
+#endif
+
       virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame, RewriteMode rewrite);
       virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame, bool newData);
+      virtual void SetLastSequenceNumber(RTP_SequenceNumber sequenceNumber);
       virtual SendReceiveStatus OnOutOfOrderPacket(RTP_DataFrame & frame);
       virtual bool HandlePendingFrames();
 #if OPAL_RTP_FEC
@@ -713,9 +719,11 @@ class OpalRTPSession : public OpalMediaSession
 
       // Sequence handling
       RTP_SequenceNumber m_lastSequenceNumber;
+      uint32_t           m_extendedSequenceNumber;
       unsigned           m_lastFIRSequenceNumber;
       unsigned           m_lastTSTOSequenceNumber;
       unsigned           m_consecutiveOutOfOrderPackets;
+      RTP_SequenceNumber m_nextOutOfOrderPacket;
       PSimpleTimer       m_waitOutOfOrderTimer;
       RTP_DataFrameList  m_pendingPackets;
 
@@ -752,7 +760,7 @@ class OpalRTPSession : public OpalMediaSession
 
       // Things to remember for filling in fields of sent RR
       unsigned           m_packetsLostSinceLastRR;
-      RTP_SequenceNumber m_lastRRSequenceNumber;
+      uint32_t           m_lastRRSequenceNumber;
 
       // For e_Receive, arrival time of last SR from remote
       // For e_Sender, time we sent last RR to remote

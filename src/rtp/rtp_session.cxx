@@ -60,7 +60,9 @@
 #define RTP_DATA_TX_BUFFER_SIZE  0x2000   // 8kb
 #define RTP_CTRL_BUFFER_SIZE     0x1000   // 4kb
 
-static const uint16_t MaxSequenceDiscontinuity = 1000;
+static const uint16_t SequenceReorderThreshold = (1<<16)-100;  // As per RFC3550 RTP_SEQ_MOD - MAX_MISORDER
+static const uint16_t SequenceRestartThreshold = 3000;         // As per RFC3550 MAX_DROPOUT
+static const uint16_t MaxConsecutiveOutOfOrder = 10;           // RFC3550 MIN_SEQUENTIAL is 2, we are more conservative
 
 
 #if OPAL_ICE
@@ -311,9 +313,11 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
   , m_canonicalName(cname)
   , m_notifiers(m_session.m_notifiers)
   , m_lastSequenceNumber(0)
+  , m_extendedSequenceNumber(0)
   , m_lastFIRSequenceNumber(0)
   , m_lastTSTOSequenceNumber(0)
   , m_consecutiveOutOfOrderPackets(0)
+  , m_nextOutOfOrderPacket(0)
   , m_syncTimestamp(0)
   , m_syncRealTime(0)
   , m_firstPacketTime(0)
@@ -451,7 +455,7 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
   unsigned Level = 4;
   if (PTrace::CanTrace(Level)) {
     ostream & trace = PTRACE_BEGIN(Level, &m_session, PTraceModule());
-    trace << m_session
+    trace << *this
           << m_direction << " statistics:"
                  " packets=" << m_packets <<
                  " octets=" << m_octets;
@@ -489,7 +493,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
   }
   else {
     PTRACE_IF(5, frame.GetDiscontinuity() > 0, &m_session,
-              m_session << "have discontinuity: " << frame.GetDiscontinuity() << ", sn=" << m_lastSequenceNumber);
+              *this << "have discontinuity: " << frame.GetDiscontinuity() << ", sn=" << m_lastSequenceNumber);
     if (rewrite == e_RewriteHeader) {
       frame.SetSequenceNumber(m_lastSequenceNumber += (RTP_SequenceNumber)(frame.GetDiscontinuity() + 1));
       PTRACE_IF(4, m_lastSequenceNumber == 0, &m_session, m_session << "sequence number wraparound");
@@ -519,11 +523,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
 
   RTP_SequenceNumber sequenceNumber = frame.GetSequenceNumber();
   RTP_SequenceNumber expectedSequenceNumber = m_lastSequenceNumber + 1;
-  RTP_SequenceNumber dropped = sequenceNumber - expectedSequenceNumber;
+  RTP_SequenceNumber sequenceDelta = sequenceNumber - expectedSequenceNumber;
 
   if (newData && !m_pendingPackets.empty() && sequenceNumber == expectedSequenceNumber) {
-    PTRACE(5, &m_session, m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier)
-            << ", received out of order packet " << sequenceNumber);
+    PTRACE(5, &m_session, *this << ", received out of order packet " << sequenceNumber);
     ++m_packetsOutOfOrder; // it arrived after all!
   }
 
@@ -540,34 +543,39 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     PTRACE_CONTEXT_ID_SET(m_metrics, m_session);
 #endif
 
-    m_lastSequenceNumber = sequenceNumber;
+    SetLastSequenceNumber(sequenceNumber);
   }
-  else if (sequenceNumber == expectedSequenceNumber) {
+  else if (sequenceDelta == 0) {
     PTRACE(m_throttleReceiveData, &m_session, m_session << "received packet " << setw(1) << frame << m_throttleReceiveData);
-    m_lastSequenceNumber = sequenceNumber;
+    SetLastSequenceNumber(sequenceNumber);
     m_consecutiveOutOfOrderPackets = 0;
   }
-  else if (dropped > MaxSequenceDiscontinuity) { // Must have gone backward
+  else if (sequenceDelta > SequenceReorderThreshold) {
+    // Duplicate or re-ordered packet
+    if (m_session.ResequenceOutOfOrderPackets(*this)) {
+      PTRACE(4, &m_session, *this << "duplicate packet, got " << sequenceNumber << " expected " << expectedSequenceNumber);
+      return e_IgnorePacket; // Non fatal error, just ignore
+    }
+
+    m_packetsOutOfOrder++; // Allow next layer up to deal with out of order packet
+    PTRACE(4, &m_session, *this << "out of order packet, got " << sequenceNumber << " expected " << expectedSequenceNumber);
 #if OPAL_RTCP_XR
     if (m_metrics != NULL) m_metrics->OnPacketDiscarded();
 #endif
+  }
+  else if (sequenceDelta > SequenceRestartThreshold) {
+    // Check for where sequence numbers suddenly start incrementing from a different base.
 
-    // Check for Cisco bug where sequence numbers suddenly start incrementing
-    // from a different base.
-    if (m_session.m_allowAnySyncSource && ++m_consecutiveOutOfOrderPackets > 10) {
-      PTRACE(2, &m_session, m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier)
-              << ", abnormal change of sequence numbers, adjusting from " << m_lastSequenceNumber << " to " << sequenceNumber);
-      m_lastSequenceNumber = sequenceNumber;
+    if (m_consecutiveOutOfOrderPackets > 0 && sequenceNumber != m_nextOutOfOrderPacket)
+      m_consecutiveOutOfOrderPackets = 0;
+    m_nextOutOfOrderPacket = sequenceNumber+1;
+    if (++m_consecutiveOutOfOrderPackets < MaxConsecutiveOutOfOrder) {
+      PTRACE(4, &m_session, *this << "incorrect sequence, got " << sequenceNumber << " expected " << expectedSequenceNumber);
+      return e_IgnorePacket; // Non fatal error, just ignore
     }
-    else {
-      PTRACE(2, &m_session, m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier)
-              << ", incorrect sequence, got " << sequenceNumber << " expected " << expectedSequenceNumber);
 
-      if (m_session.ResequenceOutOfOrderPackets(*this))
-        return e_IgnorePacket; // Non fatal error, just ignore
-
-      m_packetsOutOfOrder++;
-    }
+    PTRACE(2, &m_session, *this << "abnormal change of sequence numbers, adjusting from " << m_lastSequenceNumber << " to " << sequenceNumber);
+    SetLastSequenceNumber(sequenceNumber);
   }
   else {
     if (m_session.ResequenceOutOfOrderPackets(*this)) {
@@ -575,19 +583,17 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
       if (status != e_ProcessPacket)
         return status;
       sequenceNumber = frame.GetSequenceNumber();
-      dropped = sequenceNumber - expectedSequenceNumber;
+      sequenceDelta = sequenceNumber - expectedSequenceNumber;
     }
 
-    frame.SetDiscontinuity(dropped);
-    m_packetsLost += dropped;
-    m_packetsLostSinceLastRR += dropped;
-    PTRACE(2, &m_session, m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier)
-            << ", " << dropped << " packet(s) missing at " << expectedSequenceNumber
-            << ", processing from " << sequenceNumber);
-    m_lastSequenceNumber = sequenceNumber;
+    frame.SetDiscontinuity(sequenceDelta);
+    m_packetsLost += sequenceDelta;
+    m_packetsLostSinceLastRR += sequenceDelta;
+    PTRACE(2, &m_session, *this << sequenceDelta << " packet(s) missing at " << expectedSequenceNumber << ", processing from " << sequenceNumber);
+    SetLastSequenceNumber(sequenceNumber);
     m_consecutiveOutOfOrderPackets = 0;
 #if OPAL_RTCP_XR
-    if (m_metrics != NULL) m_metrics->OnPacketLost(dropped);
+    if (m_metrics != NULL) m_metrics->OnPacketLost(sequenceDelta);
 #endif
   }
 
@@ -630,6 +636,15 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
 }
 
 
+void OpalRTPSession::SyncSource::SetLastSequenceNumber(RTP_SequenceNumber sequenceNumber)
+{
+  if (sequenceNumber < m_lastSequenceNumber)
+    m_extendedSequenceNumber += 0x10000; // Next cycle
+  m_extendedSequenceNumber = (m_extendedSequenceNumber & 0xffff0000) | sequenceNumber;
+  m_lastSequenceNumber = sequenceNumber;
+}
+
+
 bool OpalRTPSession::ResequenceOutOfOrderPackets(SyncSource & ssrc) const
 {
   return ssrc.m_jitterBuffer == NULL || ssrc.m_jitterBuffer->GetCurrentJitterDelay() == 0;
@@ -646,20 +661,17 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnOutOfOrderPacket
   bool waiting = true;
   if (m_pendingPackets.empty()) {
     m_waitOutOfOrderTimer = m_session.GetOutOfOrderWaitTime();
-    PTRACE(3, &m_session, m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier) << ", " <<
-           "first out of order packet, got " << sequenceNumber << " expected " << expectedSequenceNumber <<
-           ", waiting " << m_session.GetOutOfOrderWaitTime() << 's');
+    PTRACE(3, &m_session, *this << "first out of order packet, got " << sequenceNumber
+           << " expected " << expectedSequenceNumber << ", waiting " << m_session.GetOutOfOrderWaitTime() << 's');
   }
   else if (m_pendingPackets.GetSize() > m_session.GetMaxOutOfOrderPackets() || m_waitOutOfOrderTimer.HasExpired()) {
     waiting = false;
-    PTRACE(4, &m_session, m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier) << ", " <<
-           "last out of order packet, got " << sequenceNumber << " expected " << expectedSequenceNumber <<
-           ", waited " << m_waitOutOfOrderTimer.GetElapsed() << "s, waiting " << m_session.GetOutOfOrderWaitTime() << 's');
-    m_waitOutOfOrderTimer = m_session.GetOutOfOrderWaitTime();
+    PTRACE(4, &m_session, *this << "last out of order packet, got " << sequenceNumber
+           << " expected " << expectedSequenceNumber << ", waited " << m_waitOutOfOrderTimer.GetElapsed() << 's');
   }
   else {
-    PTRACE(5, &m_session, m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier) << ", " <<
-           "next out of order packet, got " << sequenceNumber << " expected " << expectedSequenceNumber);
+    PTRACE(5, &m_session, *this << "next out of order packet, got " << sequenceNumber
+           << " expected " << expectedSequenceNumber);
   }
 
   RTP_DataFrameList::iterator it;
@@ -685,9 +697,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnOutOfOrderPacket
     if (sequenceNumber >= expectedSequenceNumber)
       return e_ProcessPacket;
 
-    PTRACE(2, &m_session, m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier)
-            << ", incorrect out of order packet, got "
-            << sequenceNumber << " expected " << expectedSequenceNumber);
+    PTRACE(2, &m_session, *this << "incorrect out of order packet, got " << sequenceNumber << " expected " << expectedSequenceNumber);
   }
 
   return e_ProcessPacket;
@@ -712,8 +722,7 @@ bool OpalRTPSession::SyncSource::HandlePendingFrames()
     unsigned level = m_pendingPackets.empty() ? 2 : 5;
     if (PTrace::CanTrace(level)) {
       ostream & trace = PTRACE_BEGIN(level, &m_session);
-      trace << m_session << "SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier) << ", "
-               "resequenced out of order packet " << sequenceNumber;
+      trace << *this << "resequenced out of order packet " << sequenceNumber;
       if (m_pendingPackets.empty())
         trace << ", completed. Time to resequence=" << m_waitOutOfOrderTimer.GetElapsed();
       else
@@ -813,7 +822,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendBYE(RTP_SyncSourceId ssrc)
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::SendBYE()
 {
-  PTRACE(3, &m_session, m_session << "sending BYE, SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier));
+  PTRACE(3, &m_session, *this << "sending BYE");
 
   RTP_ControlFrame report;
   m_session.InitialiseControlFrame(report, *this);
@@ -947,14 +956,14 @@ void OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::Receiver
     lost += m_jitterBuffer->GetPacketsTooLate();
   report.SetLostPackets(lost);
 
-  if (m_lastSequenceNumber >= m_lastRRSequenceNumber)
-    report.fraction = (BYTE)((m_packetsLostSinceLastRR<<8)/(m_lastSequenceNumber - m_lastRRSequenceNumber + 1));
+  if (m_extendedSequenceNumber >= m_lastRRSequenceNumber)
+    report.fraction = (BYTE)((m_packetsLostSinceLastRR<<8)/(m_extendedSequenceNumber - m_lastRRSequenceNumber + 1));
   else
     report.fraction = 0;
   m_packetsLostSinceLastRR = 0;
 
   report.last_seq = m_lastRRSequenceNumber;
-  m_lastRRSequenceNumber = m_lastSequenceNumber;
+  m_lastRRSequenceNumber = m_extendedSequenceNumber;
 
   report.jitter = m_jitterAccum >> JitterRoundingGuardBits; // Allow for rounding protection bits
 
@@ -968,9 +977,8 @@ void OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::Receiver
     report.dlsr = 0;
   }
 
-  PTRACE(4, &m_session, m_session << "sending ReceiverReport:"
-            " SSRC=" << RTP_TRACE_SRC(m_sourceIdentifier)
-         << " fraction=" << (unsigned)report.fraction
+  PTRACE(4, &m_session, *this << "sending ReceiverReport:"
+            " fraction=" << (unsigned)report.fraction
          << " lost=" << report.GetLostPackets()
          << " last_seq=" << report.last_seq
          << " jitter=" << report.jitter
@@ -1001,17 +1009,17 @@ void OpalRTPSession::SyncSource::OnRxReceiverReport(const ReceiverReport & repor
   if (m_lastReportTime.IsValid()) {
     PTimeInterval myDelay = PTime() - m_lastReportTime;
     if (m_session.m_roundTripTime > 0 && myDelay <= report.delay)
-      PTRACE(4, &m_session, m_session << "not calculating round trip time, RR arrived too soon after SR.");
+      PTRACE(4, &m_session, *this << "not calculating round trip time, RR arrived too soon after SR.");
     else if (myDelay <= report.delay) {
       m_session.m_roundTripTime = 1;
-      PTRACE(4, &m_session, m_session << "very small round trip time, using 1ms");
+      PTRACE(4, &m_session, *this << "very small round trip time, using 1ms");
     }
     else if (myDelay > 1000) {
-      PTRACE(4, &m_session, m_session << "very large round trip time, ignoring");
+      PTRACE(4, &m_session, *this << "very large round trip time, ignoring");
     }
     else {
       m_session.m_roundTripTime = (myDelay - report.delay).GetInterval();
-      PTRACE(4, &m_session, m_session << "determined round trip time: " << m_session.m_roundTripTime << "ms");
+      PTRACE(4, &m_session, *this << "determined round trip time: " << m_session.m_roundTripTime << "ms");
     }
     m_lastReportTime = 0;
   }
