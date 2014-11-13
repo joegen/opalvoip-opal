@@ -8116,7 +8116,7 @@ STATISTICS_FIELD_END(RxVideo, Resolution)
 
 STATISTICS_FIELD_BEG(RxVideo, Quality)
   if (statistics.m_video.m_quality >= 0)
-    value.sprintf("%i", statistics.m_video.m_quality);
+    value.sprintf(wxT("%i"), statistics.m_video.m_quality);
 STATISTICS_FIELD_END(RxVideo, Quality)
 
 STATISTICS_FIELD_BEG(TxVideo, Bandwidth)
@@ -8174,7 +8174,7 @@ STATISTICS_FIELD_END(TxVideo, Resolution)
 
 STATISTICS_FIELD_BEG(TxVideo, Quality)
   if (statistics.m_video.m_quality >= 0)
-    value.sprintf("%i", statistics.m_video.m_quality);
+    value.sprintf(wxT("%i"), statistics.m_video.m_quality);
 STATISTICS_FIELD_END(TxVideo, Quality)
 
 STATISTICS_FIELD_BEG(RxFax, Bandwidth)
