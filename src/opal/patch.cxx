@@ -1090,7 +1090,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
   //  rateController.AddFrame(totalPayloadSize, frameCount);
 
   OpalVideoTranscoder * videoCodec = dynamic_cast<OpalVideoTranscoder *>(m_primaryCodec);
-  if (videoCodec != NULL)
+  if (videoCodec != NULL && !m_intermediateFrames.IsEmpty())
     m_statistics.IncrementFrames(videoCodec->WasLastFrameIFrame());
 #endif
 
