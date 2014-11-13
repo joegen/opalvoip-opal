@@ -68,6 +68,7 @@
 #include "vpx/vp8dx.h"
 
 #include <vector>
+#include <stdio.h>
 
 
 /* Error concelment (handling missing data) does not appear to work. Or we are
