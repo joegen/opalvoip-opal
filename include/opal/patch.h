@@ -259,7 +259,7 @@ class OpalMediaPatch : public PSafeObject
         ~Sink();
         bool CreateTranscoders();
         bool UpdateMediaFormat(const OpalMediaFormat & mediaFormat);
-        bool ExecuteCommand(const OpalMediaCommand & command);
+        bool ExecuteCommand(const OpalMediaCommand & command, bool atLeastOne);
         bool WriteFrame(RTP_DataFrame & sourceFrame, bool bypassing);
 #if OPAL_STATISTICS
         void GetStatistics(OpalMediaStatistics & statistics, bool fromSource) const;
