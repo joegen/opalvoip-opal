@@ -551,19 +551,15 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     m_consecutiveOutOfOrderPackets = 0;
   }
   else if (sequenceDelta > SequenceReorderThreshold) {
-    // Duplicate or re-ordered packet
+    PTRACE(4, &m_session, *this << "out of order packet, got " << sequenceNumber << " expected " << expectedSequenceNumber);
+  }
+  else if (sequenceDelta > SequenceRestartThreshold) {
     if (m_session.ResequenceOutOfOrderPackets(*this)) {
+      // Duplicate or re-ordered packet
       PTRACE(4, &m_session, *this << "duplicate packet, got " << sequenceNumber << " expected " << expectedSequenceNumber);
       return e_IgnorePacket; // Non fatal error, just ignore
     }
 
-    m_packetsOutOfOrder++; // Allow next layer up to deal with out of order packet
-    PTRACE(4, &m_session, *this << "out of order packet, got " << sequenceNumber << " expected " << expectedSequenceNumber);
-#if OPAL_RTCP_XR
-    if (m_metrics != NULL) m_metrics->OnPacketDiscarded();
-#endif
-  }
-  else if (sequenceDelta > SequenceRestartThreshold) {
     // Check for where sequence numbers suddenly start incrementing from a different base.
 
     if (m_consecutiveOutOfOrderPackets > 0 && sequenceNumber != m_nextOutOfOrderPacket)
@@ -571,11 +567,16 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     m_nextOutOfOrderPacket = sequenceNumber+1;
     if (++m_consecutiveOutOfOrderPackets < MaxConsecutiveOutOfOrder) {
       PTRACE(4, &m_session, *this << "incorrect sequence, got " << sequenceNumber << " expected " << expectedSequenceNumber);
-      return e_IgnorePacket; // Non fatal error, just ignore
+      m_packetsOutOfOrder++; // Allow next layer up to deal with out of order packet
+    }
+    else {
+      PTRACE(2, &m_session, *this << "abnormal change of sequence numbers, adjusting from " << m_lastSequenceNumber << " to " << sequenceNumber);
+      SetLastSequenceNumber(sequenceNumber);
     }
 
-    PTRACE(2, &m_session, *this << "abnormal change of sequence numbers, adjusting from " << m_lastSequenceNumber << " to " << sequenceNumber);
-    SetLastSequenceNumber(sequenceNumber);
+#if OPAL_RTCP_XR
+    if (m_metrics != NULL) m_metrics->OnPacketDiscarded();
+#endif
   }
   else {
     if (m_session.ResequenceOutOfOrderPackets(*this)) {
