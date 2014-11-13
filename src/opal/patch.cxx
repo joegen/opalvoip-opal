@@ -629,7 +629,7 @@ PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command)
 
   if (toPatch.SetSafetyMode(PSafeReadOnly)) {
     for (PList<Sink>::iterator s = toPatch->m_sinks.begin(); s != toPatch->m_sinks.end(); ++s) {
-      if (s->ExecuteCommand(command))
+      if (s->ExecuteCommand(command, atLeastOne))
         atLeastOne = true;
     }
     toPatch.SetSafetyMode(PSafeReference);
@@ -914,9 +914,9 @@ bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat
 }
 
 
-bool OpalMediaPatch::Sink::ExecuteCommand(const OpalMediaCommand & command)
+bool OpalMediaPatch::Sink::ExecuteCommand(const OpalMediaCommand & command, bool atLeastOne)
 {
-  bool atLeastOne = m_stream->InternalExecuteCommand(command);
+  atLeastOne = m_stream->InternalExecuteCommand(command) || atLeastOne;
 
   if (m_secondaryCodec != NULL)
     atLeastOne = m_secondaryCodec->ExecuteCommand(command) || atLeastOne;
