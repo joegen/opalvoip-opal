@@ -247,7 +247,7 @@ static PString InternalGetRate(const PTime & lastUpdate,
   if (lastUpdate.IsValid() && previousUpdate.IsValid()) {
     PTimeInterval interval = lastUpdate - previousUpdate;
     if (interval == 0)
-      return '0' + units;
+      return PString('0') + units;
     return PString(PString::ScaleSI, (lastValue - previousValue)*1000.0/interval.GetMilliSeconds(), decimals) + units;
   }
 
