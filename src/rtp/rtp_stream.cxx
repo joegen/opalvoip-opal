@@ -161,22 +161,37 @@ bool OpalRTPMediaStream::InternalSetPaused(bool pause, bool fromUser, bool fromP
 }
 
 
+#if OPAL_VIDEO
+static bool VideoThrottled(PSimpleTimer & throttleTimer, PTimeInterval throttleTime, const OpalRTPSession & rtpSession)
+{
+  if (throttleTimer.IsRunning())
+    return true;
+
+  if (throttleTime == 0) {
+    throttleTime = rtpSession.GetRoundTripTime()*2;
+    if (throttleTime == 0)
+      throttleTime.SetInterval(0, 1);
+  }
+  throttleTimer = throttleTime;
+  return false;
+}
+#endif // OPAL_VIDEO
+
+
 bool OpalRTPMediaStream::InternalExecuteCommand(const OpalMediaCommand & command)
 {
 #if OPAL_VIDEO
-  if (dynamic_cast<const OpalVideoUpdatePicture *>(&command) != NULL) {
-    if (m_videoUpdateThrottleTimer.IsRunning()) {
+  if (dynamic_cast<const OpalVideoPictureLoss *>(&command) != NULL) {
+    if (VideoThrottled(m_pictureLossThrottleTimer, m_pictureLossThrottleTime, m_rtpSession)) {
       PTRACE(4, "Throttled " << command);
       return false;
     }
-
-    PTimeInterval throttleTime = m_videoUpdateThrottleTime;
-    if (throttleTime == 0) {
-      throttleTime = m_rtpSession.GetRoundTripTime()*2;
-      if (throttleTime == 0)
-        throttleTime.SetInterval(0, 1);
+  }
+  else if (dynamic_cast<const OpalVideoUpdatePicture *>(&command) != NULL) {
+    if (VideoThrottled(m_videoUpdateThrottleTimer, m_videoUpdateThrottleTime, m_rtpSession)) {
+      PTRACE(4, "Throttled " << command);
+      return false;
     }
-    m_videoUpdateThrottleTimer = throttleTime;
   }
 #endif
 
