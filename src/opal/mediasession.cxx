@@ -299,13 +299,14 @@ void OpalMediaStatistics::PrintOn(ostream & strm) const
        << setw(indent) <<    "Packets out of order" << " = " << m_packetsOutOfOrder << '\n'
        << setw(indent) <<        "Packets too late" << " = " << m_packetsTooLate << '\n';
 
-  if (m_mediaType == OpalMediaType::Audio())
+  if (m_mediaType == OpalMediaType::Audio()) {
     strm << setw(indent) <<       "Packet overruns" << " = " << m_packetOverruns << '\n';
     if (m_averageJitter > 0 || m_maximumJitter > 0)
       strm << setw(indent) <<      "Average jitter" << " = " << m_averageJitter << "ms\n"
            << setw(indent) <<      "Maximum jitter" << " = " << m_maximumJitter << "ms\n";
     if (m_jitterBufferDelay > 0)
       strm << setw(indent) << "Jitter buffer delay" << " = " << m_jitterBufferDelay << "ms\n";
+  }
 #if OPAL_VIDEO
   else if (m_mediaType == OpalMediaType::Video()) {
     strm << setw(indent) <<    "Total video frames" << " = " << m_totalFrames << '\n'
