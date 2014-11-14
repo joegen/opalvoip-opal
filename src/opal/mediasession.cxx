@@ -53,13 +53,10 @@
 
 #if OPAL_STATISTICS
 
-OpalMediaStatistics::OpalMediaStatistics()
-  : m_lastUpdateTime(PTimer::Tick())
-  , m_startTime(0)
+OpalNetworkStatistics::OpalNetworkStatistics()
+  : m_startTime(0)
   , m_totalBytes(0)
-  , m_deltaBytes(0)
   , m_totalPackets(0)
-  , m_deltaPackets(0)
   , m_NACKs(0)
   , m_packetsLost(0)
   , m_packetsOutOfOrder(0)
@@ -68,32 +65,42 @@ OpalMediaStatistics::OpalMediaStatistics()
   , m_minimumPacketTime(0)
   , m_averagePacketTime(0)
   , m_maximumPacketTime(0)
-
-    // Audio
   , m_averageJitter(0)
   , m_maximumJitter(0)
 {
 }
 
+
+OpalMediaStatistics::UpdateInfo::UpdateInfo()
+  : m_lastUpdateTime(0)
+  , m_previousUpdateTime(0)
+  , m_previousBytes(0)
+  , m_previousPackets(0)
 #if OPAL_VIDEO
-OpalMediaStatistics::Video::Video()
+  , m_previousFrames(0)
+#endif
+{
+}
+
+
+#if OPAL_VIDEO
+OpalVideoStatistics::OpalVideoStatistics()
   : m_totalFrames(0)
-  , m_deltaFrames(0)
   , m_keyFrames(0)
   , m_lastKeyFrameTime(0)
   , m_fullUpdateRequests(0)
   , m_pictureLossRequests(0)
   , m_lastUpdateRequestTime(0)
-  , m_width(0)
-  , m_height(0)
-  , m_bitRate(0)
-  , m_frameRate(0)
-  , m_quality(-1)
+  , m_frameWidth(0)
+  , m_frameHeight(0)
+  , m_targetBitRate(0)
+  , m_targetFrameRate(0)
+  , m_videoQuality(-1)
 {
 }
 
 
-void OpalMediaStatistics::Video::IncrementFrames(bool key)
+void OpalVideoStatistics::IncrementFrames(bool key)
 {
   ++m_totalFrames;
   if (key) {
@@ -105,7 +112,7 @@ void OpalMediaStatistics::Video::IncrementFrames(bool key)
 }
 
 
-void OpalMediaStatistics::Video::IncrementUpdateCount(bool full)
+void OpalVideoStatistics::IncrementUpdateCount(bool full)
 {
   if (full)
     ++m_fullUpdateRequests;
@@ -116,7 +123,7 @@ void OpalMediaStatistics::Video::IncrementUpdateCount(bool full)
 }
 
 
-void OpalMediaStatistics::Video::Merge(const Video & other)
+void OpalVideoStatistics::Merge(const OpalVideoStatistics & other)
 {
   if (m_totalFrames == 0 && other.m_totalFrames > 0)
     m_totalFrames = other.m_totalFrames;
@@ -138,11 +145,11 @@ void OpalMediaStatistics::Video::Merge(const Video & other)
     m_updateResponseTime = other.m_updateResponseTime;
   }
 }
-#endif
+#endif // OPAL_VIDEO
 
 #if OPAL_FAX
-OpalMediaStatistics::Fax::Fax()
-  : m_result(OpalMediaStatistics::FaxNotStarted)
+OpalFaxStatistics::OpalFaxStatistics()
+  : m_result(FaxNotStarted)
   , m_phase(' ')
   , m_bitRate(9600)
   , m_compression(FaxCompressionUnknown)
@@ -161,7 +168,8 @@ OpalMediaStatistics::Fax::Fax()
 {
 }
 
-ostream & operator<<(ostream & strm, OpalMediaStatistics::FaxCompression compression)
+
+ostream & operator<<(ostream & strm, OpalFaxStatistics::FaxCompression compression)
 {
   static const char * const Names[] = { "N/A", "T.4 1d", "T.4 2d", "T.6" };
   if (compression >= 0 && (PINDEX)compression < PARRAYSIZE(Names))
@@ -170,40 +178,102 @@ ostream & operator<<(ostream & strm, OpalMediaStatistics::FaxCompression compres
     strm << (unsigned)compression;
   return strm;
 }
+#endif // OPAL_FAX
+
+
+OpalMediaStatistics::OpalMediaStatistics()
+#if OPAL_FAX
+  : m_fax(*this) // Backward compatibility
 #endif
-
-
-OpalMediaStatistics & OpalMediaStatistics::Update(const OpalMediaStream & stream)
 {
-  PTimeInterval now = PTimer::Tick();
-  m_updateInterval = now > m_lastUpdateTime ? now - m_lastUpdateTime : 0;
-  m_lastUpdateTime = now;
+}
 
-  uint64_t previousBytes = m_totalBytes;
-  unsigned previousPackets = m_totalPackets;
-#if OPAL_VIDEO
-  unsigned previousFrames = m_video.m_totalFrames;
+
+OpalMediaStatistics::OpalMediaStatistics(const OpalMediaStatistics & other)
+  : PObject(other)
+  , OpalNetworkStatistics(other)
+  , OpalVideoStatistics(other)
+  , OpalFaxStatistics(other)
+  , m_mediaType(other.m_mediaType)
+  , m_mediaFormat(other.m_mediaFormat)
+#if OPAL_FAX
+  , m_fax(*this) // Backward compatibility
 #endif
+{
+}
 
-  stream.GetStatistics(*this);
 
-  m_deltaBytes = m_totalBytes > previousBytes ? m_totalBytes - previousBytes : 0;
-  m_deltaPackets = m_totalPackets > previousPackets ? m_totalPackets - previousPackets : 0;
-#if OPAL_VIDEO
-  m_video.m_deltaFrames = m_video.m_totalFrames > previousFrames ? m_video.m_totalFrames - previousFrames : 0;
-#endif
+OpalMediaStatistics & OpalMediaStatistics::operator=(const OpalMediaStatistics & other)
+{
+  // Copy everything but m_updateInfo
+  OpalNetworkStatistics::operator=(other);
+  OpalVideoStatistics::operator=(other);
+  OpalFaxStatistics::operator=(other);
+  m_mediaType = other.m_mediaType;
+  m_mediaFormat = other.m_mediaFormat;
 
   return *this;
 }
 
 
-static ostream & AsRate(ostream & strm, int64_t things, const PTimeInterval & interval, unsigned decimals, const char * units)
+void OpalMediaStatistics::PreUpdate()
 {
-  if (interval != 0)
-    strm << PString(PString::ScaleSI, things*1000.0/interval.GetMilliSeconds(), decimals) << ' ' << units;
-  else
-    strm << "N/A";
-  return strm;
+  m_updateInfo.m_previousUpdateTime = m_updateInfo.m_lastUpdateTime;
+  m_updateInfo.m_lastUpdateTime.SetCurrentTime();
+
+  m_updateInfo.m_previousBytes = m_totalBytes;
+  m_updateInfo.m_previousPackets = m_totalPackets;
+#if OPAL_VIDEO
+  m_updateInfo.m_previousFrames = m_totalFrames;
+#endif
+}
+
+
+OpalMediaStatistics & OpalMediaStatistics::Update(const OpalMediaStream & stream)
+{
+  PreUpdate();
+  stream.GetStatistics(*this);
+  return *this;
+}
+
+
+static PString InternalGetRate(const PTime & lastUpdate,
+                               const PTime & previousUpdate,
+                               int64_t lastValue,
+                               int64_t previousValue,
+                               const char * units,
+                               unsigned decimals)
+{
+  if (lastUpdate.IsValid() && previousUpdate.IsValid()) {
+    PTimeInterval interval = lastUpdate - previousUpdate;
+    if (interval > 0)
+      return PString(PString::ScaleSI, (lastValue - previousValue)*1000.0/interval.GetMilliSeconds(), decimals) + units;
+  }
+
+  return "N/A";
+}
+
+
+PString OpalMediaStatistics::GetRate(int64_t total, const char * units, unsigned decimals) const
+{
+  return InternalGetRate(m_updateInfo.m_lastUpdateTime, m_startTime, total, 0, units, decimals);
+}
+
+
+PString OpalMediaStatistics::GetRate(int64_t current, int64_t previous, const char * units, unsigned decimals) const
+{
+  return InternalGetRate(m_updateInfo.m_lastUpdateTime,
+                         m_updateInfo.m_previousUpdateTime.IsValid() ? m_updateInfo.m_previousUpdateTime : m_startTime,
+                         current, previous, units, decimals);
+}
+
+
+static PString InternalTimeDiff(const PTime & lastUpdate, const PTime & previousUpdate)
+{
+  if (lastUpdate.IsValid() && previousUpdate.IsValid())
+    return (lastUpdate - previousUpdate).AsString();
+
+  return "N/A";
 }
 
 
@@ -211,17 +281,16 @@ void OpalMediaStatistics::PrintOn(ostream & strm) const
 {
   std::streamsize indent = strm.precision()+20;
 
-  PTimeInterval totalDuration = (PTime() - m_startTime);
-
   strm << setw(indent) <<            "Media format" << " = " << m_mediaFormat << " (" << m_mediaType << ")\n"
        << setw(indent) <<      "Session start time" << " = " << m_startTime << '\n'
-       << setw(indent) <<        "Session duration" << " = " << totalDuration << " (" << m_updateInterval << ")\n"
+       << setw(indent) <<        "Session duration" << " = " << InternalTimeDiff(m_updateInfo.m_lastUpdateTime, m_startTime)
+                                                             << " (" << InternalTimeDiff(m_updateInfo.m_lastUpdateTime, m_updateInfo.m_previousUpdateTime) << ")\n"
        << setw(indent) <<             "Total bytes" << " = " << PString(PString::ScaleSI, m_totalBytes) << "B\n"
-       << setw(indent) <<        "Average bit rate" << " = "; AsRate(strm, m_totalBytes*8, totalDuration, 2, "bps") << '\n'
-       << setw(indent) <<        "Current bit rate" << " = "; AsRate(strm, m_deltaBytes*8, m_updateInterval, 2, "bps") << '\n'
+       << setw(indent) <<        "Average bit rate" << " = " << GetAverageBitRate("bps", 2) << '\n'
+       << setw(indent) <<        "Current bit rate" << " = " << GetCurrentBitRate("bps", 3) << '\n'
        << setw(indent) <<           "Total packets" << " = " << m_totalPackets << '\n'
-       << setw(indent) <<     "Average packet rate" << " = "; AsRate(strm, m_totalPackets, totalDuration, 0, "packets/second") << '\n'
-       << setw(indent) <<     "Current packet rate" << " = "; AsRate(strm, m_deltaPackets, m_updateInterval, 0, "packets/second") << '\n'
+       << setw(indent) <<     "Average packet rate" << " = " << GetAveragePacketRate("pkt/s") << '\n'
+       << setw(indent) <<     "Current packet rate" << " = " << GetCurrentPacketRate("pkt/s") << '\n'
        << setw(indent) <<     "Minimum packet time" << " = " << m_minimumPacketTime << "ms\n"
        << setw(indent) <<     "Average packet time" << " = " << m_averagePacketTime << "ms\n"
        << setw(indent) <<     "Maximum packet time" << " = " << m_maximumPacketTime << "ms\n"
@@ -238,12 +307,12 @@ void OpalMediaStatistics::PrintOn(ostream & strm) const
       strm << setw(indent) << "Jitter buffer delay" << " = " << m_jitterBufferDelay << "ms\n";
 #if OPAL_VIDEO
   else if (m_mediaType == OpalMediaType::Video()) {
-    strm << setw(indent) <<    "Total video frames" << " = " << m_video.m_totalFrames << '\n'
-         << setw(indent) <<    "Average Frame rate" << " = "; AsRate(strm, m_video.m_totalFrames, totalDuration, 1, "fps") << '\n'
-         << setw(indent) <<    "Current Frame rate" << " = "; AsRate(strm, m_video.m_deltaFrames, m_updateInterval, 1, "fps") << '\n'
-         << setw(indent) <<      "Total key frames" << " = " << m_video.m_keyFrames << '\n';
-    if (m_video.m_quality >= 0)
-      strm << setw(indent) <<  "Video quality (QP)" << " = " << m_video.m_quality << '\n';
+    strm << setw(indent) <<    "Total video frames" << " = " << m_totalFrames << '\n'
+         << setw(indent) <<    "Average Frame rate" << " = " << GetAverageFrameRate("fps", 1) << '\n'
+         << setw(indent) <<    "Current Frame rate" << " = " << GetCurrentFrameRate("fps", 1) << '\n'
+         << setw(indent) <<      "Total key frames" << " = " << m_keyFrames << '\n';
+    if (m_videoQuality >= 0)
+      strm << setw(indent) <<  "Video quality (QP)" << " = " << m_videoQuality << '\n';
   }
 #endif
 #if OPAL_FAX
