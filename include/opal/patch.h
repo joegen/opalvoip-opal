@@ -279,9 +279,9 @@ class OpalMediaPatch : public PSafeObject
         OpalVideoRateController * m_rateController;
 
 #if OPAL_STATISTICS
-        OpalVideoFormat            m_videoFormat;
-        PBYTEArray                 m_keyFrameDetectContext;
-        OpalMediaStatistics::Video m_statistics;
+        OpalVideoFormat     m_videoFormat;
+        PBYTEArray          m_keyFrameDetectContext;
+        OpalVideoStatistics m_videoStatistics;
 #endif
 #endif
     };

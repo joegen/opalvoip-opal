@@ -52,69 +52,53 @@ class H323Capability;
 
 #if OPAL_STATISTICS
 
-/**This class carries statistics on the media stream.
-  */
-class OpalMediaStatistics : public PObject
+struct OpalNetworkStatistics
 {
-    PCLASSINFO(OpalMediaStatistics, PObject);
-  public:
-    OpalMediaStatistics();
+  OpalNetworkStatistics();
 
-    OpalMediaStatistics & Update(const OpalMediaStream & stream);
-    virtual void PrintOn(ostream & strm) const;
+  PTime    m_startTime;
+  PUInt64  m_totalBytes;
+  unsigned m_totalPackets;
+  unsigned m_NACKs;
+  unsigned m_packetsLost;
+  unsigned m_packetsOutOfOrder;
+  unsigned m_packetsTooLate;
+  unsigned m_packetOverruns;
+  unsigned m_minimumPacketTime; // Milliseconds
+  unsigned m_averagePacketTime; // Milliseconds
+  unsigned m_maximumPacketTime; // Milliseconds
+  unsigned m_averageJitter;     // Milliseconds
+  unsigned m_maximumJitter;     // Milliseconds
+  unsigned m_jitterBufferDelay; // Milliseconds
+  unsigned m_roundTripTime;     // Milliseconds
+};
 
-    OpalMediaType m_mediaType;
-    PString       m_mediaFormat;
-
-    PTimeInterval m_updateInterval;
-    PTimeInterval m_lastUpdateTime;
-
-    // General info (typicallly from RTP)
-    PTime    m_startTime;
-    PUInt64  m_totalBytes;
-    PUInt64  m_deltaBytes;
-    unsigned m_totalPackets;
-    unsigned m_deltaPackets;
-    unsigned m_NACKs;
-    unsigned m_packetsLost;
-    unsigned m_packetsOutOfOrder;
-    unsigned m_packetsTooLate;
-    unsigned m_packetOverruns;
-    unsigned m_minimumPacketTime; // Milliseconds
-    unsigned m_averagePacketTime; // Milliseconds
-    unsigned m_maximumPacketTime; // Milliseconds
-    unsigned m_roundTripTime;     // Milliseconds
-
-    // Audio
-    unsigned m_averageJitter;     // Milliseconds
-    unsigned m_maximumJitter;     // Milliseconds
-    unsigned m_jitterBufferDelay; // Milliseconds
-
+struct OpalVideoStatistics
+{
 #if OPAL_VIDEO
-    // Video
-    struct Video {
-      Video();
-      void IncrementFrames(bool key);
-      void IncrementUpdateCount(bool full);
-      void Merge(const Video & other);
+  OpalVideoStatistics();
 
-      unsigned      m_totalFrames;
-      unsigned      m_deltaFrames;
-      unsigned      m_keyFrames;
-      PTime         m_lastKeyFrameTime;
-      unsigned      m_fullUpdateRequests;
-      unsigned      m_pictureLossRequests;
-      PTime         m_lastUpdateRequestTime;
-      PTimeInterval m_updateResponseTime;
-      unsigned      m_width;
-      unsigned      m_height;
-      unsigned      m_bitRate;    // As configured, not actual, which is calculated from m_totalBytes
-      float         m_frameRate;  // As configured, not actual, which is calculated from m_totalFrames
-      int           m_quality;    // -1 is none, 0 is very good > 0 is progressively worse
-    } m_video;
+  void IncrementFrames(bool key);
+  void IncrementUpdateCount(bool full);
+  void Merge(const OpalVideoStatistics & other);
+
+  unsigned      m_totalFrames;
+  unsigned      m_keyFrames;
+  PTime         m_lastKeyFrameTime;
+  unsigned      m_fullUpdateRequests;
+  unsigned      m_pictureLossRequests;
+  PTime         m_lastUpdateRequestTime;
+  PTimeInterval m_updateResponseTime;
+  unsigned      m_frameWidth;
+  unsigned      m_frameHeight;
+  unsigned      m_targetBitRate;    // As configured, not actual, which is calculated from m_totalBytes
+  float         m_targetFrameRate;  // As configured, not actual, which is calculated from m_totalFrames
+  int           m_videoQuality;    // -1 is none, 0 is very good > 0 is progressively worse
 #endif
+};
 
-    // Fax
+struct OpalFaxStatistics
+{
 #if OPAL_FAX
     enum {
       FaxNotStarted = -2,
@@ -129,29 +113,78 @@ class OpalMediaStatistics : public PObject
       FaxCompressionT6,
     };
     friend ostream & operator<<(ostream & strm, FaxCompression compression);
-    struct Fax {
-      Fax();
 
-      int  m_result;      // -2=not started, -1=progress, 0=success, >0=ended with error
-      char m_phase;       // 'A', 'B', 'D'
-      int  m_bitRate;     // e.g. 14400, 9600
-      FaxCompression m_compression; // 0=N/A, 1=T.4 1d, 2=T.4 2d, 3=T.6
-      bool m_errorCorrection;
-      int  m_txPages;
-      int  m_rxPages;
-      int  m_totalPages;
-      int  m_imageSize;   // In bytes
-      int  m_resolutionX; // Pixels per inch
-      int  m_resolutionY; // Pixels per inch
-      int  m_pageWidth;
-      int  m_pageHeight;
-      int  m_badRows;     // Total number of bad rows
-      int  m_mostBadRows; // Longest run of bad rows
-      int  m_errorCorrectionRetries;
+    OpalFaxStatistics();
 
-      PString m_stationId; // Remote station identifier
-      PString m_errorText;
-    } m_fax;
+    int  m_result;      // -2=not started, -1=progress, 0=success, >0=ended with error
+    char m_phase;       // 'A', 'B', 'D'
+    int  m_bitRate;     // e.g. 14400, 9600
+    FaxCompression m_compression; // 0=N/A, 1=T.4 1d, 2=T.4 2d, 3=T.6
+    bool m_errorCorrection;
+    int  m_txPages;
+    int  m_rxPages;
+    int  m_totalPages;
+    int  m_imageSize;   // In bytes
+    int  m_resolutionX; // Pixels per inch
+    int  m_resolutionY; // Pixels per inch
+    int  m_pageWidth;
+    int  m_pageHeight;
+    int  m_badRows;     // Total number of bad rows
+    int  m_mostBadRows; // Longest run of bad rows
+    int  m_errorCorrectionRetries;
+
+    PString m_stationId; // Remote station identifier
+    PString m_errorText;
+#endif // OPAL_FAX
+};
+
+
+/**This class carries statistics on the media stream.
+  */
+class OpalMediaStatistics : public PObject, public OpalNetworkStatistics, public OpalVideoStatistics, public OpalFaxStatistics
+{
+    PCLASSINFO(OpalMediaStatistics, PObject);
+  public:
+    OpalMediaStatistics();
+    OpalMediaStatistics(const OpalMediaStatistics & other);
+    OpalMediaStatistics & operator=(const OpalMediaStatistics & other);
+
+    OpalMediaType m_mediaType;
+    PString       m_mediaFormat;
+
+    // To following fields are not copied by
+    struct UpdateInfo
+    {
+      UpdateInfo();
+
+      PTime    m_lastUpdateTime;
+      PTime    m_previousUpdateTime;
+      PUInt64  m_previousBytes;
+      unsigned m_previousPackets;
+#if OPAL_VIDEO
+      unsigned m_previousFrames;
+#endif
+    } m_updateInfo;
+
+    void PreUpdate();
+    OpalMediaStatistics & Update(const OpalMediaStream & stream);
+    PString GetRate(int64_t total, const char * units = "", unsigned decimals = 0) const;
+    PString GetRate(int64_t current, int64_t previous, const char * units = "", unsigned decimals = 0) const;
+    PString GetAverageBitRate(const char * units = "", unsigned decimals = 0) const { return GetRate(m_totalBytes*8, units, decimals); }
+    PString GetCurrentBitRate(const char * units = "", unsigned decimals = 0) const { return GetRate(m_totalBytes*8, m_updateInfo.m_previousBytes*8, units, decimals); }
+    PString GetAveragePacketRate(const char * units = "", unsigned decimals = 0) const { return GetRate(m_totalPackets, units, decimals); }
+    PString GetCurrentPacketRate(const char * units = "", unsigned decimals = 0) const { return GetRate(m_totalPackets, m_updateInfo.m_previousPackets, units, decimals); }
+    virtual void PrintOn(ostream & strm) const;
+
+#if OPAL_VIDEO
+    // Video
+    PString GetAverageFrameRate(const char * units = "", unsigned decimals = 0) const { return GetRate(m_totalFrames, units, decimals); }
+    PString GetCurrentFrameRate(const char * units = "", unsigned decimals = 0) const { return GetRate(m_totalFrames, m_updateInfo.m_previousFrames, units, decimals); }
+#endif
+
+    // Fax
+#if OPAL_FAX
+    OpalFaxStatistics & m_fax; // For backward compatibility
 #endif // OPAL_FAX
 };
 

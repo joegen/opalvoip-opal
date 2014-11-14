@@ -528,8 +528,8 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
 
           OpalMediaStatistics stats;
           m_transcoder->GetStatistics(stats);
-          if (stats.m_video.m_quality >= 0)
-            qualitySum += stats.m_video.m_quality;
+          if (stats.m_videoQuality >= 0)
+            qualitySum += stats.m_videoQuality;
 
           OpalVideoTranscoder * video = (OpalVideoTranscoder *)m_transcoder;
           if (video->WasLastFrameIFrame()) {
