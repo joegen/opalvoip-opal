@@ -8094,29 +8094,29 @@ STATISTICS_FIELD_BEG(RxVideo, MaxJitter)
 STATISTICS_FIELD_END(RxVideo, MaxJitter)
 
 STATISTICS_FIELD_BEG(RxVideo, Frames)
-  value.sprintf(m_printFormat, statistics.m_video.m_totalFrames);
+  value.sprintf(m_printFormat, statistics.m_totalFrames);
 STATISTICS_FIELD_END(RxVideo, Frames)
 
 STATISTICS_FIELD_BEG(RxVideo, KeyFrames)
-  value.sprintf(m_printFormat, statistics.m_video.m_keyFrames);
+  value.sprintf(m_printFormat, statistics.m_keyFrames);
 STATISTICS_FIELD_END(RxVideo, KeyFrames)
 
 STATISTICS_FIELD_BEG(RxVideo, FrameRate)
-  value.sprintf(m_printFormat, CalculateFrameRate(statistics.m_video.m_totalFrames));
+  value.sprintf(m_printFormat, CalculateFrameRate(statistics.m_totalFrames));
 STATISTICS_FIELD_END(RxVideo, FrameRate)
 
 STATISTICS_FIELD_BEG(RxVideo, VFU)
-  value.sprintf(m_printFormat, statistics.m_video.m_fullUpdateRequests+statistics.m_video.m_pictureLossRequests);
+  value.sprintf(m_printFormat, statistics.m_fullUpdateRequests+statistics.m_pictureLossRequests);
 STATISTICS_FIELD_END(RxVideo, VFU)
 
 STATISTICS_FIELD_BEG(RxVideo, Resolution)
-  if (statistics.m_video.m_width > 0 && statistics.m_video.m_height > 0)
-    value = PVideoFrameInfo::AsString(statistics.m_video.m_width, statistics.m_video.m_height).GetPointer();
+  if (statistics.m_frameWidth > 0 && statistics.m_frameHeight > 0)
+    value = PVideoFrameInfo::AsString(statistics.m_frameWidth, statistics.m_frameHeight).GetPointer();
 STATISTICS_FIELD_END(RxVideo, Resolution)
 
 STATISTICS_FIELD_BEG(RxVideo, Quality)
-  if (statistics.m_video.m_quality >= 0)
-    value.sprintf(wxT("%i"), statistics.m_video.m_quality);
+  if (statistics.m_videoQuality >= 0)
+    value.sprintf(wxT("%i"), statistics.m_videoQuality);
 STATISTICS_FIELD_END(RxVideo, Quality)
 
 STATISTICS_FIELD_BEG(TxVideo, Bandwidth)
@@ -8152,29 +8152,29 @@ STATISTICS_FIELD_BEG(TxVideo, RoundTripTime)
 STATISTICS_FIELD_END(TxVideo, RoundTripTime)
 
 STATISTICS_FIELD_BEG(TxVideo, Frames)
-  value.sprintf(m_printFormat, statistics.m_video.m_totalFrames);
+  value.sprintf(m_printFormat, statistics.m_totalFrames);
 STATISTICS_FIELD_END(TxVideo, Frames)
 
 STATISTICS_FIELD_BEG(TxVideo, KeyFrames)
-  value.sprintf(m_printFormat, statistics.m_video.m_keyFrames);
+  value.sprintf(m_printFormat, statistics.m_keyFrames);
 STATISTICS_FIELD_END(TxVideo, KeyFrames)
 
 STATISTICS_FIELD_BEG(TxVideo, FrameRate)
-  value.sprintf(m_printFormat, CalculateFrameRate(statistics.m_video.m_totalFrames));
+  value.sprintf(m_printFormat, CalculateFrameRate(statistics.m_totalFrames));
 STATISTICS_FIELD_END(TxVideo, FrameRate)
 
 STATISTICS_FIELD_BEG(TxVideo, VFU)
-  value.sprintf(m_printFormat, statistics.m_video.m_fullUpdateRequests+statistics.m_video.m_pictureLossRequests);
+  value.sprintf(m_printFormat, statistics.m_fullUpdateRequests+statistics.m_pictureLossRequests);
 STATISTICS_FIELD_END(TxVideo, VFU)
 
 STATISTICS_FIELD_BEG(TxVideo, Resolution)
-  if (statistics.m_video.m_width > 0 && statistics.m_video.m_height > 0)
-    value = PVideoFrameInfo::AsString(statistics.m_video.m_width, statistics.m_video.m_height).GetPointer();
+  if (statistics.m_frameWidth > 0 && statistics.m_frameHeight > 0)
+    value = PVideoFrameInfo::AsString(statistics.m_frameWidth, statistics.m_frameHeight).GetPointer();
 STATISTICS_FIELD_END(TxVideo, Resolution)
 
 STATISTICS_FIELD_BEG(TxVideo, Quality)
-  if (statistics.m_video.m_quality >= 0)
-    value.sprintf(wxT("%i"), statistics.m_video.m_quality);
+  if (statistics.m_videoQuality >= 0)
+    value.sprintf(wxT("%i"), statistics.m_videoQuality);
 STATISTICS_FIELD_END(TxVideo, Quality)
 
 STATISTICS_FIELD_BEG(RxFax, Bandwidth)
