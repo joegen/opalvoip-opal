@@ -95,6 +95,7 @@ OpalVideoStatistics::OpalVideoStatistics()
   , m_frameHeight(0)
   , m_targetBitRate(0)
   , m_targetFrameRate(0)
+  , m_tsto(0)
   , m_videoQuality(-1)
 {
 }
