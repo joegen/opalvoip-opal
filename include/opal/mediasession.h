@@ -93,6 +93,7 @@ struct OpalVideoStatistics
   unsigned      m_frameHeight;
   unsigned      m_targetBitRate;    // As configured, not actual, which is calculated from m_totalBytes
   float         m_targetFrameRate;  // As configured, not actual, which is calculated from m_totalFrames
+  unsigned      m_tsto;             // Temporal/Spatial Trade Off, as configured
   int           m_videoQuality;    // -1 is none, 0 is very good > 0 is progressively worse
 #endif
 };

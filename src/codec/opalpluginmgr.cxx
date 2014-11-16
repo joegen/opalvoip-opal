@@ -1171,21 +1171,23 @@ void OpalPluginVideoTranscoder::GetStatistics(OpalMediaStatistics & statistics) 
   OpalVideoTranscoder::GetStatistics(statistics);
 
   const OpalMediaFormat & format = isEncoder ? outputMediaFormat : inputMediaFormat;
-  statistics.m_frameWidth     = format.GetOptionInteger(OpalVideoFormat::FrameWidthOption());
-  statistics.m_frameHeight    = format.GetOptionInteger(OpalVideoFormat::FrameHeightOption());
+  statistics.m_frameWidth      = format.GetOptionInteger(OpalVideoFormat::FrameWidthOption());
+  statistics.m_frameHeight     = format.GetOptionInteger(OpalVideoFormat::FrameHeightOption());
   statistics.m_targetBitRate   = format.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
   statistics.m_targetFrameRate = (float)OpalVideoFormat::VideoClockRate/format.GetOptionInteger(OpalVideoFormat::FrameTimeOption());
+  statistics.m_tsto            = format.GetOptionInteger(OpalVideoFormat::TemporalSpatialTradeOffOption());
 
   char buf[1000];
   buf[sizeof(buf)-1] = '\0'; // Fail safe
   if (getCodecStatistics.Call(buf, sizeof(buf), context) != 0) {
     PConstString str(buf);
     PStringOptions stats(str);
-    statistics.m_videoQuality    = stats.GetInteger("Quality", statistics.m_videoQuality);
-    statistics.m_frameWidth      = stats.GetInteger("Width",   statistics.m_frameWidth);
-    statistics.m_frameHeight     = stats.GetInteger("Height",  statistics.m_frameHeight);
-    statistics.m_targetBitRate   = stats.GetInteger("BitRate", statistics.m_targetBitRate);
-    statistics.m_targetFrameRate = (float)stats.GetReal("FrameRate", statistics.m_targetFrameRate);
+    statistics.m_videoQuality    =        stats.GetInteger("Quality",   statistics.m_videoQuality);
+    statistics.m_frameWidth      =        stats.GetInteger("Width",     statistics.m_frameWidth);
+    statistics.m_frameHeight     =        stats.GetInteger("Height",    statistics.m_frameHeight);
+    statistics.m_targetBitRate   =        stats.GetInteger("BitRate",   statistics.m_targetBitRate);
+    statistics.m_targetFrameRate = (float)stats.GetReal   ("FrameRate", statistics.m_targetFrameRate);
+    statistics.m_tsto            =        stats.GetInteger("TSTO",      statistics.m_tsto);
   }
 }
 #endif // OPAL_STATISTICS
