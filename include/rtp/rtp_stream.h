@@ -150,12 +150,12 @@ class OpalRTPMediaStream : public OpalMediaStream
 
 #if OPAL_VIDEO
     /**Set time between consecutive Full I-Frame requests.
-       If zero then this is set to Round Trip Time * 2.
+       If negative then this is set to Round Trip Time * 2.
       */
     void SetVideoUpdateThrottleTime(const PTimeInterval & time) { m_videoUpdateThrottleTime = time; }
 
     /**Set time between consecutive Picture Loss I-Frame requests.
-       If zero then this is set to Round Trip Time * 2.
+       If negative then this is set to Round Trip Time * 2.
       */
     void SetPictureLossThrottleTime(const PTimeInterval & time) { m_pictureLossThrottleTime = time; }
 #endif
