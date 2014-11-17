@@ -167,7 +167,7 @@ static bool VideoThrottled(PSimpleTimer & throttleTimer, PTimeInterval throttleT
   if (throttleTimer.IsRunning())
     return true;
 
-  if (throttleTime == 0) {
+  if (throttleTime < 0) {
     throttleTime = rtpSession.GetRoundTripTime()*2;
     if (throttleTime == 0)
       throttleTime.SetInterval(0, 1);
