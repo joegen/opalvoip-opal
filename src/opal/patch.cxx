@@ -60,6 +60,9 @@ OpalMediaPatch::OpalMediaPatch(OpalMediaStream & src)
   , m_bypassToPatch(NULL)
   , m_bypassFromPatch(NULL)
   , m_patchThread(NULL)
+#if OPAL_STATISTICS
+  , m_patchThreadId(PNullThreadIdentifier)
+#endif
   , m_transcoderChanged(false)
 {
   PTRACE_CONTEXT_ID_FROM(src);
@@ -475,6 +478,8 @@ void OpalMediaPatch::GetStatistics(OpalMediaStatistics & statistics, bool fromSi
   if (!LockReadOnly())
     return;
 
+  statistics.m_threadIdentifier = m_patchThreadId;
+
   if (fromSink)
     m_source.GetStatistics(statistics, true);
 
@@ -727,6 +732,10 @@ void OpalMediaPatch::Main()
 {
   PTRACE(4, "Thread started for " << *this);
 	
+#if OPAL_STATISTICS
+  m_patchThreadId = PThread::GetCurrentThreadId();
+#endif
+
   bool asynchronous = OnStartMediaPatch();
   PAdaptiveDelay asynchPacing;
   PThread::Times lastThreadTimes;
@@ -1087,7 +1096,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
     }
   }
 
-#if OPAL_VIDEO
+#if OPAL_VIDEO && OPAL_STATISTICS
   //if (rcEnabled)
   //  rateController.AddFrame(totalPayloadSize, frameCount);
 

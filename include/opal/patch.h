@@ -303,6 +303,10 @@ class OpalMediaPatch : public PSafeObject
 
     PThread * m_patchThread;
     PMutex    m_patchThreadMutex;
+#if OPAL_STATISTICS
+    PThreadIdentifier m_patchThreadId;
+#endif
+
 
     bool m_transcoderChanged;
 
