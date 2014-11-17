@@ -183,8 +183,9 @@ ostream & operator<<(ostream & strm, OpalFaxStatistics::FaxCompression compressi
 
 
 OpalMediaStatistics::OpalMediaStatistics()
+  : m_threadIdentifier(PNullThreadIdentifier)
 #if OPAL_FAX
-  : m_fax(*this) // Backward compatibility
+  , m_fax(*this) // Backward compatibility
 #endif
 {
 }
@@ -197,6 +198,7 @@ OpalMediaStatistics::OpalMediaStatistics(const OpalMediaStatistics & other)
   , OpalFaxStatistics(other)
   , m_mediaType(other.m_mediaType)
   , m_mediaFormat(other.m_mediaFormat)
+  , m_threadIdentifier(other.m_threadIdentifier)
 #if OPAL_FAX
   , m_fax(*this) // Backward compatibility
 #endif
@@ -212,6 +214,7 @@ OpalMediaStatistics & OpalMediaStatistics::operator=(const OpalMediaStatistics &
   OpalFaxStatistics::operator=(other);
   m_mediaType = other.m_mediaType;
   m_mediaFormat = other.m_mediaFormat;
+  m_threadIdentifier = other.m_threadIdentifier;
 
   return *this;
 }
@@ -227,6 +230,15 @@ void OpalMediaStatistics::PreUpdate()
 #if OPAL_VIDEO
   m_updateInfo.m_previousFrames = m_totalFrames;
 #endif
+
+  if (m_threadIdentifier != PNullThreadIdentifier) {
+    PThread::Times times;
+    PThread::GetTimes(m_threadIdentifier, times);
+    if (times.m_real > 0) {
+      m_updateInfo.m_previousCPU = m_updateInfo.m_usedCPU;
+      m_updateInfo.m_usedCPU = times.m_kernel + times.m_user;
+    }
+  }
 }
 
 
@@ -270,10 +282,24 @@ PString OpalMediaStatistics::GetRate(int64_t current, int64_t previous, const ch
 }
 
 
-static PString InternalTimeDiff(const PTime & lastUpdate, const PTime & previousUpdate)
+PString OpalMediaStatistics::GetCPU() const
 {
-  if (lastUpdate.IsValid() && previousUpdate.IsValid())
-    return (lastUpdate - previousUpdate).AsString();
+  if (m_updateInfo.m_usedCPU > 0 &&
+      m_updateInfo.m_previousCPU > 0 &&
+      m_updateInfo.m_lastUpdateTime.IsValid() &&
+      m_updateInfo.m_previousUpdateTime.IsValid() &&
+      m_updateInfo.m_lastUpdateTime > m_updateInfo.m_previousUpdateTime)
+    return (m_updateInfo.m_usedCPU - m_updateInfo.m_previousCPU).GetMilliSeconds()*100 /
+           (m_updateInfo.m_lastUpdateTime - m_updateInfo.m_previousUpdateTime).GetMilliSeconds();
+
+  return "N/A";
+}
+
+
+static PString InternalTimeDiff(PTime lastUpdate, const PTime & previousUpdate)
+{
+  if (previousUpdate.IsValid())
+    return ((lastUpdate.IsValid() ? lastUpdate : PTime()) - previousUpdate).AsString();
 
   return "N/A";
 }
@@ -287,6 +313,7 @@ void OpalMediaStatistics::PrintOn(ostream & strm) const
        << setw(indent) <<      "Session start time" << " = " << m_startTime << '\n'
        << setw(indent) <<        "Session duration" << " = " << InternalTimeDiff(m_updateInfo.m_lastUpdateTime, m_startTime)
                                                              << " (" << InternalTimeDiff(m_updateInfo.m_lastUpdateTime, m_updateInfo.m_previousUpdateTime) << ")\n"
+       << setw(indent) <<               "CPU usage" << " = " << GetCPU() << '\n'
        << setw(indent) <<             "Total bytes" << " = " << PString(PString::ScaleSI, m_totalBytes) << "B\n"
        << setw(indent) <<        "Average bit rate" << " = " << GetAverageBitRate("bps", 2) << '\n'
        << setw(indent) <<        "Current bit rate" << " = " << GetCurrentBitRate("bps", 3) << '\n'
