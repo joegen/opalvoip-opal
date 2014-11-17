@@ -257,14 +257,18 @@ static PString InternalGetRate(const PTime & lastUpdate,
                                const char * units,
                                unsigned decimals)
 {
+  PString value = "N/A";
+
   if (lastUpdate.IsValid() && previousUpdate.IsValid()) {
     PTimeInterval interval = lastUpdate - previousUpdate;
     if (interval == 0)
-      return PString('0') + units;
-    return PString(PString::ScaleSI, (lastValue - previousValue)*1000.0/interval.GetMilliSeconds(), decimals) + units;
+      value = '0';
+    else
+      value = PString(PString::ScaleSI, (lastValue - previousValue)*1000.0/interval.GetMilliSeconds(), decimals);
+    value += units;
   }
 
-  return "N/A";
+  return value;
 }
 
 
