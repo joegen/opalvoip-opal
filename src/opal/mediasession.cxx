@@ -293,8 +293,8 @@ PString OpalMediaStatistics::GetCPU() const
       m_updateInfo.m_lastUpdateTime.IsValid() &&
       m_updateInfo.m_previousUpdateTime.IsValid() &&
       m_updateInfo.m_lastUpdateTime > m_updateInfo.m_previousUpdateTime)
-    return (m_updateInfo.m_usedCPU - m_updateInfo.m_previousCPU).GetMilliSeconds()*100 /
-           (m_updateInfo.m_lastUpdateTime - m_updateInfo.m_previousUpdateTime).GetMilliSeconds();
+    return psprintf("%u%%", (unsigned)((m_updateInfo.m_usedCPU - m_updateInfo.m_previousCPU).GetMilliSeconds()*100 /
+                                       (m_updateInfo.m_lastUpdateTime - m_updateInfo.m_previousUpdateTime).GetMilliSeconds()));
 
   return "N/A";
 }
