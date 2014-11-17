@@ -150,8 +150,9 @@ class OpalMediaStatistics : public PObject, public OpalNetworkStatistics, public
     OpalMediaStatistics(const OpalMediaStatistics & other);
     OpalMediaStatistics & operator=(const OpalMediaStatistics & other);
 
-    OpalMediaType m_mediaType;
-    PString       m_mediaFormat;
+    OpalMediaType     m_mediaType;
+    PString           m_mediaFormat;
+    PThreadIdentifier m_threadIdentifier;
 
     // To following fields are not copied by
     struct UpdateInfo
@@ -165,6 +166,8 @@ class OpalMediaStatistics : public PObject, public OpalNetworkStatistics, public
 #if OPAL_VIDEO
       unsigned m_previousFrames;
 #endif
+      PTimeInterval m_usedCPU;
+      PTimeInterval m_previousCPU;
     } m_updateInfo;
 
     void PreUpdate();
@@ -175,6 +178,7 @@ class OpalMediaStatistics : public PObject, public OpalNetworkStatistics, public
     PString GetCurrentBitRate(const char * units = "", unsigned decimals = 0) const { return GetRate(m_totalBytes*8, m_updateInfo.m_previousBytes*8, units, decimals); }
     PString GetAveragePacketRate(const char * units = "", unsigned decimals = 0) const { return GetRate(m_totalPackets, units, decimals); }
     PString GetCurrentPacketRate(const char * units = "", unsigned decimals = 0) const { return GetRate(m_totalPackets, m_updateInfo.m_previousPackets, units, decimals); }
+    PString GetCPU() const; // As percentage or one core
     virtual void PrintOn(ostream & strm) const;
 
 #if OPAL_VIDEO
