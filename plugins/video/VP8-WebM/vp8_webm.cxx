@@ -455,8 +455,6 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
 
     virtual bool Construct()
     {
-      WaitAndSignal lock(m_mutex);
-
       if (IS_ERROR(vpx_codec_enc_config_default, (vpx_codec_vp8_cx(), &m_config, 0)))
         return false;
 
@@ -528,6 +526,8 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
       if (m_packet != NULL)
         return false;
 
+      WaitAndSignal lock(m_mutex);
+
       while ((m_packet = vpx_codec_get_cx_data(&m_codec, &m_iterator)) != NULL) {
         if (m_packet->kind == VPX_CODEC_CX_FRAME_PKT)
           return false;
@@ -555,8 +555,6 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
                              unsigned & toLen,
                              unsigned & flags)
     {
-      WaitAndSignal lock(m_mutex);
-
       while (NeedEncode()) {
         PluginCodec_RTP srcRTP(fromPtr, fromLen);
         PluginCodec_Video_FrameHeader * video = srcRTP.GetVideoHeader();
@@ -571,6 +569,8 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
 
         vpx_image_t image;
         vpx_img_wrap(&image, VPX_IMG_FMT_I420, video->width, video->height, 4, srcRTP.GetVideoFrameData());
+
+        WaitAndSignal lock(m_mutex);
 
         if (IS_ERROR(vpx_codec_encode, (&m_codec, &image,
                                         srcRTP.GetTimestamp(), m_frameTime,
