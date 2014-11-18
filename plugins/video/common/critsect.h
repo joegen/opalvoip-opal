@@ -33,18 +33,13 @@
 #ifndef __CRITSECT_H__
 #define __CRITSECT_H__ 1
 
-#if defined(_WIN32) || defined(_WIN32_WCE)
-  #include <windows.h>
-  #include <malloc.h>
-#ifndef _WIN32_WCE
-  #define STRCMPI  _strcmpi
-#else
-  #define STRCMPI  _stricmp
+#include "platform.h"
+
+
+#ifndef _WIN32
+  #include <pthread.h>
 #endif
-#else
-  #include <semaphore.h>
-  #define STRCMPI  strcasecmp
-#endif
+
 class CriticalSection
 {
   public:
@@ -53,7 +48,7 @@ class CriticalSection
 #ifdef _WIN32
       ::InitializeCriticalSection(&criticalSection); 
 #else
-      ::sem_init(&sem, 0, 1);
+      ::pthread_mutex_init(&mutex, NULL);
 #endif
     }
 
@@ -62,7 +57,7 @@ class CriticalSection
 #ifdef _WIN32
       ::DeleteCriticalSection(&criticalSection); 
 #else
-      ::sem_destroy(&sem);
+      ::pthread_mutex_destroy(&mutex);
 #endif
     }
 
@@ -71,7 +66,7 @@ class CriticalSection
 #ifdef _WIN32
       ::EnterCriticalSection(&criticalSection); 
 #else
-      ::sem_wait(&sem);
+      ::pthread_mutex_lock(&mutex);
 #endif
     }
 
@@ -80,16 +75,16 @@ class CriticalSection
 #ifdef _WIN32
       ::LeaveCriticalSection(&criticalSection); 
 #else
-      ::sem_post(&sem); 
+      ::pthread_mutex_unlock(&mutex); 
 #endif
     }
 
   private:
     CriticalSection & operator=(const CriticalSection &) { return *this; }
 #ifdef _WIN32
-    mutable CRITICAL_SECTION criticalSection; 
+    CRITICAL_SECTION criticalSection; 
 #else
-    mutable sem_t sem;
+    pthread_mutex_t mutex;
 #endif
 };
     
