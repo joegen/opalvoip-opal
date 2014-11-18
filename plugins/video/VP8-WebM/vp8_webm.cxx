@@ -31,6 +31,7 @@
 #endif
 
 #include <codec/opalplugin.hpp>
+#include "../common/critsect.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4505)
@@ -432,6 +433,8 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
     const vpx_codec_cx_pkt_t * m_packet;
     size_t                     m_offset;
 
+    CriticalSection m_mutex;
+
   public:
     VP8Encoder(const PluginCodec_Definition * defn)
       : BaseClass(defn)
@@ -452,6 +455,8 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
 
     virtual bool Construct()
     {
+      WaitAndSignal lock(m_mutex);
+
       if (IS_ERROR(vpx_codec_enc_config_default, (vpx_codec_vp8_cx(), &m_config, 0)))
         return false;
 
@@ -491,6 +496,8 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
 
     virtual bool OnChangedOptions()
     {
+      WaitAndSignal lock(m_mutex);
+
       m_config.kf_mode = VPX_KF_AUTO;
       if (m_keyFramePeriod != 0)
         m_config.kf_min_dist = m_config.kf_max_dist = m_keyFramePeriod;
@@ -533,6 +540,8 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
 
     bool GetStatistics(char * stats, unsigned maxSize)
     {
+      WaitAndSignal lock(m_mutex);
+
       int quality = -1;
       IS_ERROR(vpx_codec_control_VP8E_GET_LAST_QUANTIZER_64,(&m_codec, VP8E_GET_LAST_QUANTIZER_64, &quality));
       snprintf(stats, maxSize, "Width=%u\nHeight=%u\nQuality=%i\n", m_width, m_height, quality);
@@ -546,6 +555,8 @@ class VP8Encoder : public PluginVideoEncoder<VP8_CODEC>
                              unsigned & toLen,
                              unsigned & flags)
     {
+      WaitAndSignal lock(m_mutex);
+
       while (NeedEncode()) {
         PluginCodec_RTP srcRTP(fromPtr, fromLen);
         PluginCodec_Video_FrameHeader * video = srcRTP.GetVideoHeader();

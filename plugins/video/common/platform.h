@@ -47,6 +47,7 @@
   #include <windows.h>
   #undef min
   #undef max
+  #undef IS_ERROR
 
   #include <malloc.h>
   #include <stdio.h>
