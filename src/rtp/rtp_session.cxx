@@ -2353,7 +2353,12 @@ bool OpalRTPSession::InternalSetRemoteAddress(const PIPSocket::AddressAndPort & 
 {
   WORD port = ap.GetPort();
 
-  if (m_localAddress == ap.GetAddress() && m_remoteAddress == ap.GetAddress() && m_localPort[isMediaAddress] == port)
+  if (m_localAddress == ap.GetAddress() && m_localPort[isMediaAddress] == port) {
+    PTRACE(2, *this << "Cannot set remote address/port to same as local address/port: " << ap);
+    return false;
+  }
+
+  if (m_remoteAddress == ap.GetAddress() && m_remotePort[isMediaAddress] == port)
     return true;
 
   m_remoteAddress = ap.GetAddress();
@@ -2553,11 +2558,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveICE(Channel channel,
     }
   }
 
-  if (!m_remoteAddress.IsValid())
-    InternalSetRemoteAddress(ap, channel PTRACE_PARAM(, "ICE"));
-  else {
-    PTRACE(4, *this << "completed ICE, but remote address already set.");
-  }
+  InternalSetRemoteAddress(ap, channel PTRACE_PARAM(, "ICE"));
 
   m_candidates[channel].clear();
   return e_IgnorePacket;
