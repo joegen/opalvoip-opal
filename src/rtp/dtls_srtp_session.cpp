@@ -123,61 +123,67 @@ typedef PSingleton<DTLSContext, atomic<uint32_t> > DTLSContextSingleton;
 class OpalDTLSSRTPSession::SSLChannel : public PSSLChannelDTLS
 {
   PCLASSINFO(SSLChannel, PSSLChannelDTLS);
+
+  OpalDTLSSRTPSession   & m_session;
+  OpalRTPSession::Channel m_channel;
+  PUDPSocket            & m_socket;
+
 public:
-  SSLChannel(OpalDTLSSRTPSession & session, PUDPSocket * socket)
+  SSLChannel(OpalDTLSSRTPSession & session, OpalRTPSession::Channel channel, PUDPSocket & socket)
     : PSSLChannelDTLS(*DTLSContextSingleton())
     , m_session(session)
+    , m_channel(channel)
+    , m_socket(socket)
   {
     SetVerifyMode(PSSLContext::VerifyPeerMandatory, PCREATE_NOTIFIER2_EXT(session, OpalDTLSSRTPSession, OnVerify, PSSLChannel::VerifyInfo &));
 
-    Open(socket, false);
+    Open(socket);
     SetReadTimeout(2000);
+  }
+
+
+  OpalDTLSSRTPSession & GetSession() const
+  {
+    return m_session;
   }
 
 
   virtual int BioRead(char * buf, int len)
   {
-    int result = PSSLChannelDTLS::BioRead(buf, len);
-#if PTRACING
-    if (result > 0)
-      PTRACE(5, "Read " << result << " bytes");
-    else
-      PTRACE(2, "Read error: " << GetErrorText(PChannel::LastReadError));
-#endif
+    int result;
+    while ((result = PSSLChannelDTLS::BioRead(buf, len)) > 0) {
+      PIPSocket::AddressAndPort ap;
+      m_socket.GetLastReceiveAddress(ap);
+      switch (m_session.OnReceiveICE(m_channel, (const BYTE *)buf, result, ap)) {
+        case OpalRTPSession::e_AbortTransport:
+          PTRACE(2, "Read aborted by ICE");
+          return -1;
+
+        case OpalRTPSession::e_ProcessPacket:
+          PTRACE(5, "Read " << result << " bytes from " << ap);
+          return result;
+
+        default:
+          break;
+      }
+    }
+
+    PTRACE(2, "Read error: " << GetErrorText(PChannel::LastReadError));
     return result;
   }
 
 
+#if PTRACING
   virtual int BioWrite(const char * buf, int len)
   {
-    PUDPSocket * udp = dynamic_cast<PUDPSocket *>(GetBaseReadChannel());
-    if (udp == NULL)
-      return PSSLChannelDTLS::BioWrite(buf, len);
-
-    PIPSocketAddressAndPort rx;
-    udp->GetLastReceiveAddress(rx);
-    if (!rx.IsValid())
-      return PSSLChannelDTLS::BioWrite(buf, len);
-
-    // Make sure we send replies to the address that the packet came in on
-    PIPSocketAddressAndPort old;
-    udp->GetSendAddress(old);
-    udp->SetSendAddress(rx);
-
     int result = PSSLChannelDTLS::BioWrite(buf, len);
-#if PTRACING
     if (result > 0)
-      PTRACE(5, "Written " << result << " bytes to " << rx);
+      PTRACE(5, "Written " << result << " bytes to " << m_socket.GetSendAddress());
     else
       PTRACE(2, "Write error: " << GetErrorText(PChannel::LastWriteError));
-#endif
-
-    udp->SetSendAddress(old);
-
     return result;
   }
-
-  OpalDTLSSRTPSession & m_session;
+#endif
 };
 
 
@@ -216,9 +222,9 @@ bool OpalDTLSSRTPSession::Open(const PString & localInterface, const OpalTranspo
   if (!OpalSRTPSession::Open(localInterface, remoteAddress, mediaAddress))
     return false;
 
-  for (int i = 0; i < 2; ++i) {
-    if (m_socket[i] != NULL)
-      m_sslChannel[i] = new SSLChannel(*this, m_socket[i]);
+  for (Channel chan = e_Control; chan <= e_Data; chan = (Channel)(chan+1)) {
+    if (m_socket[chan] != NULL)
+      m_sslChannel[chan] = new SSLChannel(*this, chan, *m_socket[chan]);
   }
 
   SetPassiveMode(m_passiveMode);
@@ -264,6 +270,11 @@ void OpalDTLSSRTPSession::ThreadMain()
 
   if (ExecuteHandshake(e_Data) && ExecuteHandshake(e_Control))
     OpalSRTPSession::ThreadMain();
+  else {
+    m_connection.OnMediaFailed(m_sessionId, true);
+    m_connection.OnMediaFailed(m_sessionId, false);
+    PTRACE(4, *this << "thread ended with DTLS");
+  }
 }
 
 
