@@ -2353,13 +2353,19 @@ bool OpalRTPSession::InternalSetRemoteAddress(const PIPSocket::AddressAndPort & 
 {
   WORD port = ap.GetPort();
 
+  if (m_remoteAddress == ap.GetAddress() && m_remotePort[isMediaAddress] == port)
+    return true;
+
   if (m_localAddress == ap.GetAddress() && m_localPort[isMediaAddress] == port) {
-    PTRACE(2, *this << "Cannot set remote address/port to same as local address/port: " << ap);
+    PTRACE(2, *this << "cannot set remote address/port to same as local: " << ap);
     return false;
   }
 
-  if (m_remoteAddress == ap.GetAddress() && m_remotePort[isMediaAddress] == port)
-    return true;
+  if (m_remoteAddress.IsValid() && m_remotePort[isMediaAddress] != 0) {
+    PTRACE(2, *this << "cannot set remote address/port to " << ap
+                    << ", already set to " << m_remoteAddress << ':' << m_remotePort[isMediaAddress]);
+    return false;
+  }
 
   m_remoteAddress = ap.GetAddress();
   
