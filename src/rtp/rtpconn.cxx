@@ -84,10 +84,10 @@ OpalRTPConnection::~OpalRTPConnection()
 
 void OpalRTPConnection::OnReleased()
 {
-  OpalConnection::OnReleased();
-
   for (SessionMap::iterator it = m_sessions.begin(); it != m_sessions.end(); ++it)
     it->second->Close();
+
+  OpalConnection::OnReleased();
 
   if (m_rfc2833Handler != NULL)
     m_rfc2833Handler->UseRTPSession(false, NULL);
