@@ -723,6 +723,7 @@ class OpalRTPSession : public OpalMediaSession
       unsigned           m_lastFIRSequenceNumber;
       unsigned           m_lastTSTOSequenceNumber;
       unsigned           m_consecutiveOutOfOrderPackets;
+      PSimpleTimer       m_consecutiveOutOfOrderTimer;
       RTP_SequenceNumber m_nextOutOfOrderPacket;
       PSimpleTimer       m_waitOutOfOrderTimer;
       RTP_DataFrameList  m_pendingPackets;
