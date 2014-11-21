@@ -62,7 +62,6 @@
 
 static const uint16_t SequenceReorderThreshold = (1<<16)-100;  // As per RFC3550 RTP_SEQ_MOD - MAX_MISORDER
 static const uint16_t SequenceRestartThreshold = 3000;         // As per RFC3550 MAX_DROPOUT
-static const uint16_t MaxConsecutiveOutOfOrder = 10;           // RFC3550 MIN_SEQUENTIAL is 2, we are more conservative
 
 
 #if OPAL_ICE
@@ -554,18 +553,15 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     PTRACE(4, &m_session, *this << "out of order packet, got " << sequenceNumber << " expected " << expectedSequenceNumber);
   }
   else if (sequenceDelta > SequenceRestartThreshold) {
-    if (m_session.ResequenceOutOfOrderPackets(*this)) {
-      // Duplicate or re-ordered packet
-      PTRACE(4, &m_session, *this << "duplicate packet, got " << sequenceNumber << " expected " << expectedSequenceNumber);
-      return e_IgnorePacket; // Non fatal error, just ignore
-    }
-
     // Check for where sequence numbers suddenly start incrementing from a different base.
 
-    if (m_consecutiveOutOfOrderPackets > 0 && sequenceNumber != m_nextOutOfOrderPacket)
+    if (m_consecutiveOutOfOrderPackets > 0 && (sequenceNumber != m_nextOutOfOrderPacket || m_consecutiveOutOfOrderTimer.HasExpired())) {
       m_consecutiveOutOfOrderPackets = 0;
+      m_consecutiveOutOfOrderTimer = 1000;
+    }
     m_nextOutOfOrderPacket = sequenceNumber+1;
-    if (++m_consecutiveOutOfOrderPackets < MaxConsecutiveOutOfOrder) {
+
+    if (++m_consecutiveOutOfOrderPackets < 10) {
       PTRACE(4, &m_session, *this << "incorrect sequence, got " << sequenceNumber << " expected " << expectedSequenceNumber);
       m_packetsOutOfOrder++; // Allow next layer up to deal with out of order packet
     }
