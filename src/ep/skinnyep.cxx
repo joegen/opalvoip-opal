@@ -1178,7 +1178,11 @@ void OpalSkinnyConnection::OpenMediaChannel(const MediaInfo & info)
     return;
   }
 
-  if (!mediaSession->Open(m_phoneDevice.m_transport.GetInterface(), info.m_receiver ? m_phoneDevice.m_transport.GetRemoteAddress() : info.m_mediaAddress, true)) {
+  if (mediaSession->IsOpen()) {
+    if (!info.m_receiver)
+      mediaSession->SetRemoteAddress(info.m_mediaAddress);
+  }
+  else if (!mediaSession->Open(m_phoneDevice.m_transport.GetInterface(), info.m_receiver ? m_phoneDevice.m_transport.GetRemoteAddress() : info.m_mediaAddress, true)) {
     PTRACE(2, "Could not open session " << info.m_sessionId << " for " << mediaFormat);
     return;
   }
