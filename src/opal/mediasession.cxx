@@ -291,6 +291,24 @@ PString OpalMediaStatistics::GetRate(int64_t current, int64_t previous, const ch
 }
 
 
+#if OPAL_VIDEO
+PString OpalMediaStatistics::GetAverageFrameRate(const char * units, unsigned decimals) const
+{
+  if (m_mediaType != OpalMediaType::Video())
+    return "N/A";
+  return GetRate(m_totalFrames, units, decimals);
+}
+
+
+PString OpalMediaStatistics::GetCurrentFrameRate(const char * units, unsigned decimals) const
+{
+  if (m_mediaType != OpalMediaType::Video())
+    return "N/A";
+  return GetRate(m_totalFrames, m_updateInfo.m_previousFrames, units, decimals);
+}
+#endif
+
+
 PString OpalMediaStatistics::GetCPU() const
 {
   if (m_updateInfo.m_usedCPU > 0 &&
