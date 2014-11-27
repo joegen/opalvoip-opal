@@ -183,8 +183,8 @@ class OpalMediaStatistics : public PObject, public OpalNetworkStatistics, public
 
 #if OPAL_VIDEO
     // Video
-    PString GetAverageFrameRate(const char * units = "", unsigned decimals = 0) const { return GetRate(m_totalFrames, units, decimals); }
-    PString GetCurrentFrameRate(const char * units = "", unsigned decimals = 0) const { return GetRate(m_totalFrames, m_updateInfo.m_previousFrames, units, decimals); }
+    PString GetAverageFrameRate(const char * units = "", unsigned decimals = 0) const;
+    PString GetCurrentFrameRate(const char * units = "", unsigned decimals = 0) const;
 #endif
 
     // Fax
