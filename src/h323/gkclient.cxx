@@ -535,7 +535,8 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
     H323SetAliasAddresses(m_aliases, rrq.m_terminalAlias);
 
     if (!endpoint.GetAliasNamePatterns().IsEmpty() && !endpoint.GetGatekeeperSimulatePattern()) {
-      for (PStringList::const_iterator it = endpoint.GetAliasNamePatterns().begin(); it != endpoint.GetAliasNamePatterns().end(); ++it) {
+      const PStringList patterns = endpoint.GetAliasNamePatterns();
+      for (PStringList::const_iterator it = patterns.begin(); it != patterns.end(); ++it) {
         if (OpalIsE164(*it)) {
           H225_AddressPattern & addressPattern = AddTerminalAliasPattern(rrq);
           addressPattern.SetTag(H225_AddressPattern::e_wildcard);
@@ -1834,7 +1835,7 @@ void H323Gatekeeper::SetPassword(const PString & password,
 {
   PString localId = username;
   if (localId.IsEmpty())
-    localId = endpoint.GetLocalUserName();
+    localId = endpoint.GetGatekeeperUsername();
 
   for (H235Authenticators::iterator iterAuth = authenticators.begin(); iterAuth != authenticators.end(); ++iterAuth) {
     iterAuth->SetLocalId(localId);

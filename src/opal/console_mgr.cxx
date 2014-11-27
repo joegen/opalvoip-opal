@@ -539,23 +539,30 @@ void H323ConsoleEndPoint::CmdTerminalType(PCLI::Arguments & args, P_INT_PTR)
 
 void H323ConsoleEndPoint::CmdAlias(PCLI::Arguments & args, P_INT_PTR)
 {
+  if (args.GetCount() == 0) {
+    args.WriteUsage();
+    return;
+  }
+
   int operation = args.HasOption('d') ? 1 : 0;
   if (args.HasOption('p'))
     operation |= 2;
 
   if (args.HasOption('r')) {
-    if (operation < 2)
-      SetLocalUserName(GetLocalUserName());
-    else
-      SetAliasNamePatterns(PStringList());
-  }
-
-  for (PINDEX i = 0; i < args.GetCount(); ++i) {
     switch (operation) {
-      case 0: AddAliasName(args[i]); break;
-      case 1: RemoveAliasName(args[i]); break;
-      case 2: AddAliasNamePattern(args[i]); break;
-      case 3: RemoveAliasNamePattern(args[i]); break;
+      case 0: SetAliasNames(args.GetParameters()); break;
+      case 2: SetAliasNamePatterns(args.GetParameters()); break;
+      default :
+        args.WriteUsage();
+        return;
+    }
+  }
+  else {
+    switch (operation) {
+      case 0: AddAliasNames(args.GetParameters()); break;
+      case 1: RemoveAliasNames(args.GetParameters()); break;
+      case 2: AddAliasNamePatterns(args.GetParameters()); break;
+      case 3: RemoveAliasNamePatterns(args.GetParameters()); break;
     }
   }
 
