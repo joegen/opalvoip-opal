@@ -311,15 +311,16 @@ PString OpalMediaStatistics::GetCurrentFrameRate(const char * units, unsigned de
 
 PString OpalMediaStatistics::GetCPU() const
 {
-  if (m_updateInfo.m_usedCPU > 0 &&
-      m_updateInfo.m_previousCPU > 0 &&
-      m_updateInfo.m_lastUpdateTime.IsValid() &&
-      m_updateInfo.m_previousUpdateTime.IsValid() &&
-      m_updateInfo.m_lastUpdateTime > m_updateInfo.m_previousUpdateTime)
-    return psprintf("%u%%", (unsigned)((m_updateInfo.m_usedCPU - m_updateInfo.m_previousCPU).GetMilliSeconds()*100 /
-                                       (m_updateInfo.m_lastUpdateTime - m_updateInfo.m_previousUpdateTime).GetMilliSeconds()));
+  if (m_updateInfo.m_usedCPU <= 0 ||
+      m_updateInfo.m_previousCPU <= 0 ||
+     !m_updateInfo.m_lastUpdateTime.IsValid() ||
+     !m_updateInfo.m_previousUpdateTime.IsValid() ||
+      m_updateInfo.m_lastUpdateTime <= m_updateInfo.m_previousUpdateTime)
+    return "N/A";
 
-  return "N/A";
+  unsigned percentBy10 = (unsigned)((m_updateInfo.m_usedCPU - m_updateInfo.m_previousCPU).GetMilliSeconds() * 1000 /
+                                    (m_updateInfo.m_lastUpdateTime - m_updateInfo.m_previousUpdateTime).GetMilliSeconds());
+  return psprintf("%u.%u%%", percentBy10/10, percentBy10%10);
 }
 
 
