@@ -727,7 +727,7 @@ void OpalPluginFramedAudioTranscoder::GetStatistics(OpalMediaStatistics & statis
 
   const OpalMediaFormat & format = isEncoder ? outputMediaFormat : inputMediaFormat;
   statistics.m_targetBitRate   = format.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
-  statistics.m_targetFrameRate = (float)OpalVideoFormat::VideoClockRate/format.GetOptionInteger(OpalVideoFormat::FrameTimeOption());
+  statistics.m_targetFrameRate = (float)OpalVideoFormat::AudioClockRate/format.GetOptionInteger(OpalVideoFormat::FrameTimeOption());
 
   char buf[1000];
   buf[sizeof(buf)-1] = '\0'; // Fail safe
