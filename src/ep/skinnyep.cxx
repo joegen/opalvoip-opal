@@ -345,6 +345,7 @@ OpalSkinnyEndPoint::PhoneDevice::PhoneDevice(OpalSkinnyEndPoint & ep, const PStr
   , m_transport(ep, binding.GetAddress(), binding.GetPort())
 {
   m_transport.SetPDULengthFormat(-4, 4);
+  m_keepAliveTimer.SetNotifier(PCREATE_NOTIFIER(OnKeepAlive));
 }
 
 
@@ -399,6 +400,8 @@ bool OpalSkinnyEndPoint::PhoneDevice::SendRegisterMsg()
 
 bool OpalSkinnyEndPoint::PhoneDevice::Stop()
 {
+  m_keepAliveTimer.Stop();
+
   if (m_status != RegisteredStatusText)
     return false;
 
@@ -580,9 +583,14 @@ bool OpalSkinnyEndPoint::OnReceiveMsg(PhoneDevice & phone, const RegisterAckMsg 
     phone.SendSkinnyMsg(msg);
   }
 
-  KeepAliveMsg msg;
-  phone.m_transport.SetKeepAlive(PTimeInterval(0, ack.m_keepAlive-1), PBYTEArray(msg.GetPacketPtr(), msg.GetPacketLen()));
+  phone.m_keepAliveTimer.RunContinuous(PTimeInterval(0, ack.m_keepAlive-1));
   return true;
+}
+
+
+void OpalSkinnyEndPoint::PhoneDevice::OnKeepAlive(PTimer &, P_INT_PTR)
+{
+  SendSkinnyMsg(KeepAliveMsg());
 }
 
 
