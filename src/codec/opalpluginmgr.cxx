@@ -720,6 +720,28 @@ PBoolean OpalPluginFramedAudioTranscoder::ExecuteCommand(const OpalMediaCommand 
 }
 
 
+#if OPAL_STATISTICS
+void OpalPluginFramedAudioTranscoder::GetStatistics(OpalMediaStatistics & statistics) const
+{
+  OpalFramedTranscoder::GetStatistics(statistics);
+
+  const OpalMediaFormat & format = isEncoder ? outputMediaFormat : inputMediaFormat;
+  statistics.m_targetBitRate   = format.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
+  statistics.m_targetFrameRate = (float)OpalVideoFormat::VideoClockRate/format.GetOptionInteger(OpalVideoFormat::FrameTimeOption());
+
+  char buf[1000];
+  buf[sizeof(buf)-1] = '\0'; // Fail safe
+  if (getCodecStatistics.Call(buf, sizeof(buf), context) != 0) {
+    PConstString str(buf);
+    PStringOptions stats(str);
+    statistics.m_videoQuality    =        stats.GetInteger("Quality",   statistics.m_videoQuality);
+    statistics.m_targetBitRate   =        stats.GetInteger("BitRate",   statistics.m_targetBitRate);
+    statistics.m_targetFrameRate = (float)stats.GetReal   ("FrameRate", statistics.m_targetFrameRate);
+  }
+}
+#endif // OPAL_STATISTICS
+
+
 PBoolean OpalPluginFramedAudioTranscoder::ConvertFrame(const BYTE * input,
                                                    PINDEX & consumed,
                                                    BYTE * output,
