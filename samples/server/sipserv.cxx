@@ -135,14 +135,16 @@ void MyManager::OnChangedRegistrarAoR(const PURL & aor, bool registering)
 #if OPAL_H323
   if (aor.GetScheme() == "h323") {
     if (aor.GetUserName().IsEmpty())
-      GetH323EndPoint().AutoRegister(aor.GetHostName(), registering);
+      GetH323EndPoint().AutoRegister(aor.GetHostName(), PString::Empty(), registering);
     else if (aor.GetHostName().IsEmpty())
-      GetH323EndPoint().AutoRegister(aor.GetUserName(), registering);
-    else if (!aor.GetHostName().IsEmpty())
-      GetH323EndPoint().AutoRegister(PSTRSTRM(aor.GetUserName() << '@' << aor.GetHostName()), registering);
+      GetH323EndPoint().AutoRegister(aor.GetUserName(), PString::Empty(), registering);
+    else if (aor.GetParamVars()("type") *= "gk")
+      GetH323EndPoint().AutoRegister(aor.GetUserName(), aor.GetHostName(), registering);
+    else
+      GetH323EndPoint().AutoRegister(PSTRSTRM(aor.GetUserName() << '@' << aor.GetHostName()), PString::Empty(), registering);
   }
   else if (GetSIPEndPoint().m_autoRegisterH323 && aor.GetScheme().NumCompare("sip") == EqualTo)
-    GetH323EndPoint().AutoRegister(aor.GetUserName(), registering);
+    GetH323EndPoint().AutoRegister(aor.GetUserName(), aor.GetHostName(), registering);
 #endif // OPAL_H323
 
 #if OPAL_SKINNY

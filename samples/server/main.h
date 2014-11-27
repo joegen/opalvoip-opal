@@ -262,7 +262,7 @@ class MyH323EndPoint : public H323ConsoleEndPoint
 
     bool Configure(PConfig & cfg, PConfigPage * rsrc);
 
-    void AutoRegister(const PString & alias, bool registering);
+    void AutoRegister(const PString & alias, const PString & gk, bool registering);
 
     const MyGatekeeperServer & GetGatekeeperServer() const { return m_gkServer; }
           MyGatekeeperServer & GetGatekeeperServer()       { return m_gkServer; }
