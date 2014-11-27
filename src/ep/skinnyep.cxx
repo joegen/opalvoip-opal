@@ -1018,9 +1018,12 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg &
       break;
 
     case OpalSkinnyEndPoint::eStateOnHook:
-      if (IsEstablished()) {
+      if (GetPhase() >= (IsOriginating() ? ConnectedPhase : EstablishedPhase)) {
         m_needSoftKeyEndcall = false;
         Release(EndedByRemoteUser);
+      }
+      else {
+        PTRACE(4, "Unexpected on hook state change in call set up.");
       }
       break;
 
@@ -1038,6 +1041,9 @@ bool OpalSkinnyConnection::OnReceiveMsg(const OpalSkinnyEndPoint::CallStateMsg &
       else if (GetPhase() == ConnectedPhase) {
         SetPhase(EstablishedPhase);
         OnEstablished();
+      }
+      else {
+        PTRACE_IF(2, GetPhase() < ConnectedPhase, "State connected before we answered - server probably configured for auto-answer");
       }
       break;
 
