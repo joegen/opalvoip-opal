@@ -2580,6 +2580,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendICE(Channel channel)
       if (it->m_ap.IsValid()) {
         PTRACE(4, *this << "sending BINDING-REQUEST to " << it->m_ap);
         PSTUNMessage request(PSTUNMessage::BindingRequest);
+        request.AddAttribute(PSTUNAttribute::ICE_CONTROLLED); // We are lite and always controlled
         m_stunClient->AppendMessageIntegrity(request);
         if (!request.Write(*m_socket[channel], it->m_ap))
           return e_AbortTransport;

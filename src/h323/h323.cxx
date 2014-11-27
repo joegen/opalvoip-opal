@@ -325,7 +325,7 @@ void H323Connection::OnReleased()
 
   // Check for gatekeeper and do disengage if have one
   if (mustSendDRQ) {
-    H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper();
+    H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper(GetLocalPartyName());
     if (gatekeeper != NULL)
       gatekeeper->DisengageRequest(*this, H225_DisengageReason::e_normalDrop);
   }
@@ -434,7 +434,7 @@ PBoolean H323Connection::WriteSignalPDU(H323SignalPDU & pdu)
   if (m_signallingChannel != NULL && m_signallingChannel->IsOpen()) {
     pdu.m_h323_uu_pdu.m_h245Tunneling = h245Tunneling;
 
-    H323Gatekeeper * gk = endpoint.GetGatekeeper();
+    H323Gatekeeper * gk = endpoint.GetGatekeeper(GetLocalPartyName());
     if (gk != NULL)
       gk->InfoRequestResponse(*this, pdu.m_h323_uu_pdu, true);
 
@@ -651,7 +651,7 @@ PBoolean H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
   if (!digits)
     OnUserInputString(digits);
 
-  H323Gatekeeper * gk = endpoint.GetGatekeeper();
+  H323Gatekeeper * gk = endpoint.GetGatekeeper(GetLocalPartyName());
   if (gk != NULL)
     gk->InfoRequestResponse(*this, pdu.m_h323_uu_pdu, false);
 
@@ -998,7 +998,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
     PTRACE(3, "H225\tIncoming call accepted");
 
     // Check for gatekeeper and do admission check if have one
-    H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper();
+    H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper(GetLocalPartyName());
     if (gatekeeper != NULL) {
       H225_ArrayOf_AliasAddress destExtraCallInfoArray;
       H323Gatekeeper::AdmissionResponse response;
@@ -1201,7 +1201,7 @@ void H323Connection::SetRemotePartyInfo(const H323SignalPDU & pdu)
     remotePartyAddress = remotePartyNumber;
 
   PString remoteHostName;
-  H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper();
+  H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper(GetLocalPartyName());
   if (!gatekeeperRouted || gatekeeper == NULL)
     remoteHostName = m_signallingChannel->GetRemoteAddress().GetHostName(IsOriginating());
   else {
@@ -1806,7 +1806,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   H323TransportAddress gatekeeperRoute = address;
 
   // Check for gatekeeper and do admission check if have one
-  H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper();
+  H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper(GetLocalPartyName());
   if (gatekeeper != NULL) {
     H323Gatekeeper::AdmissionResponse response;
     response.transportAddress = &gatekeeperRoute;

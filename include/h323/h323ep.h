@@ -320,11 +320,13 @@ class H323EndPoint : public OpalRTPEndPoint
 
     /**Get the gatekeeper we are registered with.
      */
-    H323Gatekeeper * GetGatekeeper() const { return m_gatekeepers.IsEmpty() ? NULL : &m_gatekeepers.front(); }
+    H323Gatekeeper * GetGatekeeper(
+      const PString & alias = PString::Empty()
+    ) const;
 
     /**Get all the gatekeepers we are registered with.
     */
-    const PList<H323Gatekeeper> GetGatekeepers() const { return m_gatekeepers; }
+    const PList<H323Gatekeeper> GetGatekeepers() const;
 
     /**Return if endpoint is registered with gatekeeper.
       */
@@ -804,69 +806,93 @@ class H323EndPoint : public OpalRTPEndPoint
       const PString & name  /// Name for local party
     );
 
-    /**Set the user name to be used for the local end of any connections. This
-       defaults to the logged in user as obtained from the
-       PProcess::GetUserName() function.
-
-       Note that this name is technically the first alias for the endpoint.
-       Additional aliases may be added by the use of the AddAliasName()
-       function, however that list will be cleared when this function is used.
-     */
-    virtual void SetLocalUserName(
-      const PString & name  ///<  Local name of endpoint (prime alias)
-    );
-
-    /**Get the user name to be used for the local end of any connections. This
-       defaults to the logged in user as obtained from the
-       PProcess::GetUserName() function.
-     */
-    virtual const PString & GetLocalUserName() const { return localAliasNames.front(); }
-
-    /**Add alias names to be used for the local end of any connections. If
+    /**Set alias names to be used for the local end of any connections. If
        an alias name already exists in the list then is is not added again.
 
-       The list defaults to the value set in the SetLocalUserName() function.
+       The list defaults to the value set in the SetDefaultLocalPartyName() function.
        Note that this will clear the alias list and the first entry will become
        the value returned by GetLocalUserName().
      */
-    bool AddAliasNames(
+    bool SetAliasNames(
       const PStringList & names  ///< New alias names to add
+    );
+
+    /**Add alias names to be used for the local end of any connections. If
+       the alias name already exists in the list then is is not added again.
+
+       The list defaults to the value set in the SetDefaultLocalPartyName() function.
+       Note that calling SetDefaultLocalPartyName() will clear the alias list.
+     */
+    bool AddAliasNames(
+      const PStringList & names,  ///< New alias names to add
+      const PString & altGk = PString::Empty(), ///< Alternate gk for these aliases
+      bool updateGk = true        ///< Indicate gatekeeper(s) to be updated
+    );
+
+    /** Remove an alias name.
+        Note, you cannot remove the last alias name.
+     */
+    bool RemoveAliasNames(
+      const PStringList & names,  ///< Alias names to remove
+      bool updateGk = true        ///< Indicate gatekeeper(s) to be updated
     );
 
     /**Add an alias name to be used for the local end of any connections. If
        the alias name already exists in the list then is is not added again.
 
-       The list defaults to the value set in the SetLocalUserName() function.
-       Note that calling SetLocalUserName() will clear the alias list.
+       The list defaults to the value set in the SetDefaultLocalPartyName() function.
+       Note that calling SetDefaultLocalPartyName() will clear the alias list.
      */
     bool AddAliasName(
-      const PString & name  ///< New alias name to add
+      const PString & name,  ///< New alias name to add
+      const PString & altGk = PString::Empty(), ///< Alternate gk for this alias
+      bool updateGk = true   ///< Indicate gatekeeper(s) to be updated
     );
 
     /** Remove an alias name.
         Note, you cannot remove the last alias name.
      */
     bool RemoveAliasName(
-      const PString & name  ///< Alias name to remove
+      const PString & name,  ///< Alias name to remove
+      bool updateGk = true   ///< Indicate gatekeeper(s) to be updated
     );
 
     /**Get the user name to be used for the local end of any connections. This
        defaults to the logged in user as obtained from the
        PProcess::GetUserName() function.
      */
-    const PStringList & GetAliasNames() const { return localAliasNames; }
+    PStringList GetAliasNames() const;
+
+    /** Add alias patterns.
+        If the pattern already exists in the list then is is not added again.
+     */
+    bool AddAliasNamePatterns(
+      const PStringList & patterns, ///< Patterns to add
+      const PString & altGk = PString::Empty(), ///< Alternate gk for these patterns
+      bool updateGk = true          ///< Indicate gatekeeper(s) to be updated
+    );
+
+    /** Remove alias pattern.
+    */
+    bool RemoveAliasNamePatterns(
+      const PStringList & patterns, ///< Patterns to remove
+      bool updateGk = true          ///< Indicate gatekeeper(s) to be updated
+    );
 
     /** Add an alias pattern.
         If the pattern already exists in the list then is is not added again.
      */
     bool AddAliasNamePattern(
-      const PString & pattern  ///< Pattern to add
+      const PString & pattern,  ///< Pattern to add
+      const PString & altGk = PString::Empty(), ///< Alternate gk for this pattern
+      bool updateGk = true      ///< Indicate gatekeeper(s) to be updated
     );
 
     /** Remove an alias pattern.
     */
     bool RemoveAliasNamePattern(
-      const PString & pattern  ///< Pattern to add
+      const PString & pattern,  ///< Pattern to remove
+      bool updateGk = true      ///< Indicate gatekeeper(s) to be updated
     );
 
     /** Set all alias patterns.
@@ -878,7 +904,7 @@ class H323EndPoint : public OpalRTPEndPoint
 
     /**Get the alias patterns.
     */
-    const PStringList & GetAliasNamePatterns() const { return localAliasPatterns; }
+    PStringList GetAliasNamePatterns() const;
 
     static int ParseAliasPatternRange(const PString & pattern, PString & start, PString & end);
 
@@ -1308,10 +1334,14 @@ class H323EndPoint : public OpalRTPEndPoint
 
     void TickleGatekeeperMonitor() { m_gatekeeperMonitorTickle.Signal(); }
 
+    // For backward compatibility
+    void SetLocalUserName(const PString & name) { return SetDefaultLocalPartyName(name); }
+    const PString & GetLocalUserName() const { return GetDefaultLocalPartyName(); }
+
   protected:
     bool InternalStartGatekeeper(const H323TransportAddress & remoteAddress, const PString & localAddress);
     bool InternalRestartGatekeeper(bool adjustingRegistrations = true);
-    bool InternalCreateGatekeeper(bool adjustingRegistrations, const PStringList & aliases);
+    bool InternalCreateGatekeeper(const H323TransportAddress & remoteAddress, const PStringList & aliases);
     void GatekeeperMonitor();
 
     H323Connection * InternalMakeCall(
@@ -1326,8 +1356,9 @@ class H323EndPoint : public OpalRTPEndPoint
     );
 
     // Configuration variables, commonly changed
-    PStringList     localAliasNames;
-    PStringList     localAliasPatterns;
+    typedef map<PString, OpalTransportAddress> AliasToGkMap;
+    AliasToGkMap    m_localAliasNames;
+    AliasToGkMap    m_localAliasPatterns;
     PBoolean        autoCallForward;
     PBoolean        disableFastStart;
     PBoolean        disableH245Tunneling;
@@ -1396,7 +1427,8 @@ class H323EndPoint : public OpalRTPEndPoint
 
     H323Capabilities m_capabilities;
 
-    PList<H323Gatekeeper>     m_gatekeepers;
+    typedef PDictionary<OpalTransportAddress, H323Gatekeeper> GatekeeperMap;
+    GatekeeperMap             m_gatekeepers;
     OpalTransportAddressArray m_gatekeeperInterfaces;
     PString                   m_gatekeeperUsername;
     PString                   m_gatekeeperPassword;

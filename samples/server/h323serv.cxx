@@ -191,20 +191,20 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
 }
 
 
-void MyH323EndPoint::AutoRegister(const PString & alias, bool registering)
+void MyH323EndPoint::AutoRegister(const PString & alias, const PString & gk, bool registering)
 {
   if (alias.IsEmpty())
     return;
 
   if (alias.Find('-') == P_MAX_INDEX && alias.Find("..") != P_MAX_INDEX) {
     if (registering)
-      AddAliasNamePattern(alias);
+      AddAliasNamePattern(alias, gk);
     else
       RemoveAliasNamePattern(alias);
   }
   else {
     if (registering)
-      AddAliasName(alias);
+      AddAliasName(alias, gk);
     else
       RemoveAliasName(alias);
   }
