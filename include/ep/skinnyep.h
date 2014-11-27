@@ -214,6 +214,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
       protected:
         void HandleTransport();
         bool SendRegisterMsg();
+        PDECLARE_NOTIFIER(PTimer, OpalSkinnyEndPoint::PhoneDevice, OnKeepAlive);
 
         template <class MSG> bool OnReceiveMsg(const MSG & msg)
         {
@@ -228,6 +229,7 @@ class OpalSkinnyEndPoint : public OpalRTPEndPoint
         PTimeInterval        m_delay;
         PString              m_status;
         PSyncPoint           m_exit;
+        PTimer               m_keepAliveTimer;
 
         // Currently only support one call at a time
         PSafePtr<OpalSkinnyConnection> m_activeConnection;
