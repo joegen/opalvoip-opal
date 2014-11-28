@@ -836,18 +836,27 @@ class OpalRTPSession : public OpalMediaSession
       Channel channel
     );
 
-    struct CandidateState {
-      PIPSocketAddressAndPort m_ap;
+    enum CandidateStates
+    {
+      e_CandidateInProgress,
+      e_CandidateWaiting,
+      e_CandidateFrozen,
+      e_CandidateFailed,
+      e_CandidateSucceeded
+    };
+    struct CandidateState : PNatCandidate {
+      CandidateStates m_state;
       // Not sure what else might be necessary here. Work in progress!
 
-      CandidateState(const PIPSocketAddressAndPort & ap)
-        : m_ap(ap)
+      CandidateState(const PNatCandidate & cand)
+        : PNatCandidate(cand)
+        , m_state(e_CandidateInProgress)
       {
       }
     };
-    typedef std::list<CandidateState> CandidateStates;
+    typedef std::list<CandidateState> CandidateStateList;
 
-    CandidateStates m_candidates[2];
+    CandidateStateList m_candidates[2];
     enum {
       e_UnknownCandidates,
       e_LocalCandidates,

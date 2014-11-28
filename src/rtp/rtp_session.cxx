@@ -2437,24 +2437,31 @@ void OpalRTPSession::SetICE(const PString & user, const PString & pass, const PN
   delete m_stunClient;
   m_stunClient = NULL;
 
+  for (int channel = 0; channel < 2; ++channel)
+    m_candidates[channel].clear();
+
   OpalMediaSession::SetICE(user, pass, candidates);
   if (user.IsEmpty() || pass.IsEmpty()) {
     PTRACE(3, *this << "ICE disabled");
-    for (int channel = 0; channel < 2; ++channel)
-      m_candidates[channel].clear();
     return;
   }
 
   if (m_candidateType == e_UnknownCandidates)
     m_candidateType = e_RemoteCandidates;
 
-  for (PNatCandidateList::const_iterator it = candidates.begin(); it != candidates.end(); ++it) {
-    if (m_candidateType == e_RemoteCandidates &&
-         it->m_protocol == "udp" &&
-         it->m_component >= PNatMethod::eComponent_RTP &&
-         it->m_component <= PNatMethod::eComponent_RTCP &&
-         it->m_localTransportAddress.GetPort() == m_remotePort[it->m_component - 1]) {
-      m_candidates[it->m_component-1].push_back(it->m_localTransportAddress);
+  if (m_candidateType == e_RemoteCandidates) {
+    for (PNatCandidateList::const_iterator it = candidates.begin(); it != candidates.end(); ++it) {
+      PTRACE(4, "Checking candidate: " << *it);
+      if (it->m_protocol == "udp") {
+        switch (it->m_component) {
+          case PNatMethod::eComponent_RTP:
+            m_candidates[e_Data].push_back(*it);
+            break;
+          case PNatMethod::eComponent_RTCP:
+            m_candidates[e_Control].push_back(*it);
+            break;
+        }
+      }
     }
   }
 
@@ -2470,7 +2477,8 @@ void OpalRTPSession::SetICE(const PString & user, const PString & pass, const PN
   m_remoteAddress = PIPSocket::GetInvalidAddress();
   m_remoteBehindNAT = true;
 
-  PTRACE(4, *this << "configured for ICE (remote) with candidates: "
+  PTRACE(4, *this << "configured by remote for ICE with "
+         << (m_candidateType == e_RemoteCandidates ? "remote" : "local") << " candidates: "
             "data=" << m_candidates[e_Data].size() << ", " "control=" << m_candidates[e_Control].size());
 }
 
@@ -2486,11 +2494,12 @@ bool OpalRTPSession::GetICE(PString & user, PString & pass, PNatCandidateList & 
   if (m_candidateType == e_UnknownCandidates)
     m_candidateType = e_LocalCandidates;
 
-  for (int channel = e_Control; channel <= e_Data; ++channel) {
+  for (int channel = e_Data; channel >= e_Control; --channel) {
     if (m_localPort[channel] != 0) {
-      static const PNatMethod::Component ComponentId[2] = { PNatMethod::eComponent_RTP, PNatMethod::eComponent_RTCP };
+      // Only do ICE-Lite right now so just offer "host" type using local address.
+      static const PNatMethod::Component ComponentId[2] = { PNatMethod::eComponent_RTCP, PNatMethod::eComponent_RTP };
       PNatCandidate candidate(PNatCandidate::HostType, ComponentId[channel], "xyzzy");
-      candidate.m_localTransportAddress.SetAddress(m_localAddress, m_localPort[channel]);
+      candidate.m_baseTransportAddress.SetAddress(m_localAddress, m_localPort[channel]);
       candidate.m_priority = (126 << 24) | (256 - candidate.m_component);
 
       if (m_localAddress.GetVersion() != 6)
@@ -2510,14 +2519,15 @@ bool OpalRTPSession::GetICE(PString & user, PString & pass, PNatCandidateList & 
       candidates.Append(new PNatCandidate(candidate));
 
       if (m_candidateType == e_LocalCandidates)
-        m_candidates[channel].push_back(candidate.m_localTransportAddress);
+        m_candidates[channel].push_back(candidate);
     }
   }
 
   m_remoteAddress = PIPSocket::GetInvalidAddress();
   m_remoteBehindNAT = true;
 
-  PTRACE(4, *this << "configured for ICE (local) with candidates: "
+  PTRACE(4, *this << "configured locally for ICE with "
+         << (m_candidateType == e_RemoteCandidates ? "remote" : "local") << " candidates: "
             "data=" << m_candidates[e_Data].size() << ", " "control=" << m_candidates[e_Control].size());
 
   return !candidates.empty();
@@ -2542,20 +2552,26 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveICE(Channel channel,
     if (!m_iceServer->OnReceiveMessage(message, PSTUNServer::SocketInfo(m_socket[channel])))
       return e_IgnorePacket;
 
-    if (m_candidateType == e_LocalCandidates && message.FindAttribute(PSTUNAttribute::USE_CANDIDATE) == NULL) {
+    if (message.FindAttribute(PSTUNAttribute::USE_CANDIDATE) == NULL) {
       PTRACE(4, *this << "awaiting USE-CANDIDATE");
       return e_IgnorePacket;
     }
+    PTRACE(4, *this << "USE-CANDIDATE found");
   }
   else {
     if (!m_stunClient->ValidateMessageIntegrity(message))
       return e_IgnorePacket;
 
+    if (m_candidateType != e_LocalCandidates) {
+      PTRACE(3, *this << "Unexpected STUN response received.");
+      return e_IgnorePacket;
+    }
+
     PTRACE(4, *this << "trying to match STUN answer to candidates");
-    for (CandidateStates::const_iterator it = m_candidates[channel].begin(); ; ++it) {
+    for (CandidateStateList::const_iterator it = m_candidates[channel].begin(); ; ++it) {
       if (it == m_candidates[channel].end())
         return e_IgnorePacket;
-      if (it->m_ap == ap)
+      if (it->m_baseTransportAddress == ap)
         break;
     }
   }
@@ -2575,14 +2591,14 @@ void OpalRTPSession::ICEServer::OnBindingResponse(const PSTUNMessage &, PSTUNMes
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendICE(Channel channel)
 {
-  if (m_candidateType == e_RemoteCandidates) {
-    for (CandidateStates::iterator it = m_candidates[channel].begin(); it != m_candidates[channel].end(); ++it) {
-      if (it->m_ap.IsValid()) {
-        PTRACE(4, *this << "sending BINDING-REQUEST to " << it->m_ap);
+  if (m_candidateType == e_LocalCandidates && m_socket[channel] != NULL) {
+    for (CandidateStateList::iterator it = m_candidates[channel].begin(); it != m_candidates[channel].end(); ++it) {
+      if (it->m_baseTransportAddress.IsValid()) {
+        PTRACE(4, *this << "sending BINDING-REQUEST to " << *it);
         PSTUNMessage request(PSTUNMessage::BindingRequest);
-        request.AddAttribute(PSTUNAttribute::ICE_CONTROLLED); // We are lite and always controlled
+        request.AddAttribute(PSTUNAttribute::ICE_CONTROLLED); // We are ICE-lite and always controlled
         m_stunClient->AppendMessageIntegrity(request);
-        if (!request.Write(*m_socket[channel], it->m_ap))
+        if (!request.Write(*m_socket[channel], it->m_baseTransportAddress))
           return e_AbortTransport;
       }
     }
