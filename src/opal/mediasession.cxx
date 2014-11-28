@@ -265,8 +265,8 @@ static PString InternalGetRate(const PTime & lastUpdate,
       str = '0';
     else {
       double val = (lastValue - previousValue)*1000.0 / interval.GetMilliSeconds();
-      if (val < 0.1)
-        str = '0';
+      if (val < 10)
+        str = psprintf("%0.*f", (int)decimals, val);
       else
         str = PString(PString::ScaleSI, val, decimals);
     }
