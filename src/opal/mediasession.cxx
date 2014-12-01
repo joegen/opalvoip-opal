@@ -227,6 +227,7 @@ void OpalMediaStatistics::PreUpdate()
 
   m_updateInfo.m_previousBytes = m_totalBytes;
   m_updateInfo.m_previousPackets = m_totalPackets;
+  m_updateInfo.m_previousLost = m_packetsLost;
 #if OPAL_VIDEO
   m_updateInfo.m_previousFrames = m_totalFrames;
 #endif
