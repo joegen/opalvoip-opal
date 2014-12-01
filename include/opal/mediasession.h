@@ -163,6 +163,7 @@ class OpalMediaStatistics : public PObject, public OpalNetworkStatistics, public
       PTime    m_previousUpdateTime;
       PUInt64  m_previousBytes;
       unsigned m_previousPackets;
+      unsigned m_previousLost;
 #if OPAL_VIDEO
       unsigned m_previousFrames;
 #endif
@@ -178,6 +179,7 @@ class OpalMediaStatistics : public PObject, public OpalNetworkStatistics, public
     PString GetCurrentBitRate(const char * units = "", unsigned decimals = 0) const { return GetRate(m_totalBytes*8, m_updateInfo.m_previousBytes*8, units, decimals); }
     PString GetAveragePacketRate(const char * units = "", unsigned decimals = 0) const { return GetRate(m_totalPackets, units, decimals); }
     PString GetCurrentPacketRate(const char * units = "", unsigned decimals = 0) const { return GetRate(m_totalPackets, m_updateInfo.m_previousPackets, units, decimals); }
+    PString GetPacketLossRate(const char * units = "", unsigned decimals = 0) const { return GetRate(m_packetsLost, m_updateInfo.m_previousLost, units, decimals); }
     PString GetCPU() const; // As percentage or one core
     virtual void PrintOn(ostream & strm) const;
 
