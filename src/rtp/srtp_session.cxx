@@ -543,7 +543,7 @@ RTP_SyncSourceId OpalSRTPSession::AddSyncSource(RTP_SyncSourceId ssrc, Direction
     return 0;
 
   if (m_keyInfo[dir] == NULL) {
-    PTRACE(2, *this << "could not add stream for SSRC=" << RTP_TRACE_SRC(ssrc) << ", no " << dir << " key (yet)");
+    PTRACE(3, *this << "could not add stream for SSRC=" << RTP_TRACE_SRC(ssrc) << ", no " << dir << " key (yet)");
     return ssrc;
   }
 

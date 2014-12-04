@@ -390,7 +390,7 @@ void SDPMediaFormat::SetMediaFormatOptions(OpalMediaFormat & mediaFormat) const
       }
     }
     if (option == NULL) {
-      PTRACE(2, "Unknown FMTP parameter \"" << key << '"');
+      PTRACE(3, "Unknown FMTP parameter \"" << key << '"');
       continue;
     }
 
