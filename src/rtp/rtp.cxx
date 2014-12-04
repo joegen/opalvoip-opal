@@ -770,8 +770,8 @@ bool RTP_ControlFrame::ParseGoodbye(RTP_SyncSourceId & ssrc, RTP_SyncSourceArray
 {
   size_t size = GetPayloadSize();
   size_t count = GetCount();
-  size_t msgOffset = sizeof(PUInt32b)+count*sizeof(PUInt32b);
-  if (size < msgOffset)
+  size_t msgOffset = count*sizeof(PUInt32b);
+  if (count == 0 || size < msgOffset)
     return false;
 
   const BYTE * payload = GetPayloadPtr();
