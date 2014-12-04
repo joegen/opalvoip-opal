@@ -1328,7 +1328,7 @@ bool OpalMediaFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
     PString name = opt.GetName();
     OpalMediaOption * option = mediaFormat.FindOption(opt.GetName());
     if (option == NULL) {
-      PTRACE_IF(2, formatName == mediaFormat.formatName, "MediaFormat\tCannot merge unmatched option " << opt.GetName());
+      PTRACE_IF(3, formatName == mediaFormat.formatName, "MediaFormat\tCannot merge unmatched option " << opt.GetName());
     }
     else 
     {

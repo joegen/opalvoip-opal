@@ -716,7 +716,7 @@ bool OpalRTPSession::SyncSource::HandlePendingFrames()
     m_pendingPackets.pop_back();
 
 #if PTRACING
-    unsigned level = m_pendingPackets.empty() ? 2 : 5;
+    unsigned level = m_pendingPackets.empty() ? 3 : 5;
     if (PTrace::CanTrace(level)) {
       ostream & trace = PTRACE_BEGIN(level, &m_session);
       trace << *this << "resequenced out of order packet " << sequenceNumber;
@@ -2333,7 +2333,7 @@ bool OpalRTPSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress
     return false;
 
   if (m_remoteBehindNAT) {
-    PTRACE(2, *this << "ignoring remote address as is behind NAT");
+    PTRACE(3, *this << "ignoring remote address as is behind NAT");
     return true;
   }
 
