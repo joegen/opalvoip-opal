@@ -1271,6 +1271,7 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, bool receiv
 {
   statistics.m_totalBytes        = 0;
   statistics.m_totalPackets      = 0;
+  statistics.m_NACKs             = 0;
   statistics.m_packetsLost       = 0;
   statistics.m_packetsOutOfOrder = 0;
   statistics.m_minimumPacketTime = 0;
