@@ -208,6 +208,8 @@ void OpalRTPMediaStream::OnReceivedPacket(OpalRTPSession &, OpalRTPSession::Data
 
 PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
 {
+  PPROFILE_FUNCTION();
+
   if (!IsOpen()) {
     PTRACE(4, "Read from closed stream");
     return false;
@@ -235,6 +237,8 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
 
 PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
 {
+  PPROFILE_FUNCTION();
+
   if (!IsOpen()) {
     PTRACE(4, "Write to closed stream");
     return false;

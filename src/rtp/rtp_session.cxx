@@ -2613,6 +2613,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendICE(Channel channel)
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr, PINDEX & frameSize, Channel channel)
 {
+  PPROFILE_FUNCTION();
+
   if (PAssertNULL(m_socket[channel]) == NULL)
     return e_AbortTransport;
 
@@ -2711,6 +2713,8 @@ void OpalRTPSession::ThreadMain()
 
 bool OpalRTPSession::InternalRead()
 {
+  PPROFILE_FUNCTION();
+
   /* Note this should only be called from within the RTP read thread.
      The locking strategy depends on it. */
 
@@ -2744,6 +2748,8 @@ bool OpalRTPSession::InternalRead()
 
 bool OpalRTPSession::InternalReadData()
 {
+  PPROFILE_FUNCTION();
+
   /* Note this should only be called from within the RTP read thread.
      The locking strategy depends on it. */
 
@@ -2817,6 +2823,8 @@ bool OpalRTPSession::InternalReadControl()
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteData(RTP_DataFrame & frame, RewriteMode rewrite, const PIPSocketAddressAndPort * remote)
 {
+  PPROFILE_FUNCTION();
+
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked() || !IsOpen())
     return e_AbortTransport;
@@ -2843,6 +2851,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteControl(RTP_ControlFrame 
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteRawPDU(const BYTE * framePtr, PINDEX frameSize, Channel channel, const PIPSocketAddressAndPort * remote)
 {
+  PPROFILE_FUNCTION();
+
   PIPSocketAddressAndPort remoteAddressAndPort;
   if (remote == NULL) {
     remoteAddressAndPort.SetAddress(m_remoteAddress, m_remotePort[channel]);
