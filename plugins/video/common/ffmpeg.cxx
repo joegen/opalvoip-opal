@@ -39,6 +39,7 @@
  */
 
 #include "ffmpeg.h"
+#include "critsect.h"
 
 #include <stdio.h>
 #include <iomanip>
@@ -46,6 +47,9 @@
 #ifndef PLUGIN_CODEC_DLL_EXPORTS
 #include "plugin_config.h"
 #endif
+
+
+static CriticalSection g_avcodec_mutex;
 
 
 #if PLUGINCODEC_TRACING
@@ -109,14 +113,18 @@ FFMPEGCodec::FFMPEGCodec(const char * prefix, OpalPluginFrame * fullFrame)
   , m_errorCount(0)
   , m_hadMissingPacket(false)
 {
-  avcodec_register_all();
+  g_avcodec_mutex.Wait();
 
-  av_init_packet(&m_packet);
+  avcodec_register_all();
 
 #if PLUGINCODEC_TRACING
   av_log_set_level(AV_LOG_DEBUG);
   av_log_set_callback(&logCallbackFFMPEG);
 #endif
+
+  g_avcodec_mutex.Signal();
+
+  av_init_packet(&m_packet);
 }
 
 
@@ -254,6 +262,8 @@ bool FFMPEGCodec::OpenCodec()
     return false;
   }
 
+  g_avcodec_mutex.Wait();
+
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(53, 0, 0)
   int result = avcodec_open(m_context, m_codec);
 #else
@@ -261,6 +271,8 @@ bool FFMPEGCodec::OpenCodec()
   int result = avcodec_open2(m_context, m_codec, &options);
   av_dict_free(&options);
 #endif
+
+  g_avcodec_mutex.Signal();
 
   if (result < 0) {
     PTRACE(1, m_prefix, "Failed to open codec \"" << m_codec->long_name << '"');
