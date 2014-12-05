@@ -33,7 +33,7 @@ const unsigned char PSC_Mask[3] = { 0xff, 0xff, 0xfc };
 
 static int MacroblocksPerGOBTable[] = {
     -1,  // forbidden
-    -1,  // sub-QCIF
+       (96 / 16) * (128 / 16),  // sub-QCIF
      (144 / 16) *  (176 / 16),  //  QCIF = 99
      (288 / 16) *  (352 / 16),  //  CIF  = 396
      (576 / 32) *  (704 / 32),  //  4CIF = 396
