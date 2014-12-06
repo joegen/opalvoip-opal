@@ -882,7 +882,7 @@ class OpalEndPoint : public PObject
 
     /**Set the initial bandwidth parameter for a connection.
      */
-    void SetInitialBandwidth(
+    bool SetInitialBandwidth(
       OpalBandwidth::Direction dir,   ///< Bandwidth direction
       OpalBandwidth bandwidth         ///< New bandwidth
     );
