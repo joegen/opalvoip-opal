@@ -108,23 +108,31 @@ OpalBandwidth OpalEndPoint::GetInitialBandwidth(OpalBandwidth::Direction dir) co
 }
 
 
-void OpalEndPoint::SetInitialBandwidth(OpalBandwidth::Direction dir, OpalBandwidth bandwidth)
+bool OpalEndPoint::SetInitialBandwidth(OpalBandwidth::Direction dir, OpalBandwidth bandwidth)
 {
   switch (dir) {
     case OpalBandwidth::Rx :
+      if (bandwidth < 64000)
+        return false;
       m_initialRxBandwidth = bandwidth;
       break;
 
     case OpalBandwidth::Tx :
+      if (bandwidth < 64000)
+        return false;
       m_initialTxBandwidth = bandwidth;
       break;
 
     default :
       OpalBandwidth rx = (PUInt64)(unsigned)bandwidth*m_initialRxBandwidth/(m_initialRxBandwidth+m_initialTxBandwidth);
       OpalBandwidth tx = (PUInt64)(unsigned)bandwidth*m_initialTxBandwidth/(m_initialRxBandwidth+m_initialTxBandwidth);
+      if (rx < 64000 || tx < 64000)
+        return false;
       m_initialRxBandwidth = rx;
       m_initialTxBandwidth = tx;
   }
+
+  return true;
 }
 
 
