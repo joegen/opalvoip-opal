@@ -259,12 +259,18 @@ bool OpalRTPConsoleEndPoint::Initialise(PArgList & args, ostream & output, bool 
             << setfill(',') << m_endpoint.GetMediaCryptoSuites() << setfill(' ') << '\n';
 
 
-  m_endpoint.SetInitialBandwidth(OpalBandwidth::RxTx, args.GetOptionAs(m_endpoint.GetPrefixName() + "-bandwidth",
-                                                                       m_endpoint.GetInitialBandwidth(OpalBandwidth::RxTx)));
-  m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, args.GetOptionAs(m_endpoint.GetPrefixName() + "-rx-bandwidth",
-                                                                     m_endpoint.GetInitialBandwidth(OpalBandwidth::Rx)));
-  m_endpoint.SetInitialBandwidth(OpalBandwidth::Tx, args.GetOptionAs(m_endpoint.GetPrefixName() + "-tx-bandwidth",
-                                                                     m_endpoint.GetInitialBandwidth(OpalBandwidth::Tx)));
+  if (!m_endpoint.SetInitialBandwidth(OpalBandwidth::RxTx,
+                                      args.GetOptionAs(m_endpoint.GetPrefixName() + "-bandwidth",
+                                                       m_endpoint.GetInitialBandwidth(OpalBandwidth::RxTx))) ||
+      !m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx,
+                                      args.GetOptionAs(m_endpoint.GetPrefixName() + "-rx-bandwidth",
+                                                       m_endpoint.GetInitialBandwidth(OpalBandwidth::Rx))) ||
+      !m_endpoint.SetInitialBandwidth(OpalBandwidth::Tx,
+                                      args.GetOptionAs(m_endpoint.GetPrefixName() + "-tx-bandwidth",
+                                                       m_endpoint.GetInitialBandwidth(OpalBandwidth::Tx)))) {
+    output << "Invalid bandwidth for " << m_endpoint.GetPrefixName() << endl;
+    return false;
+  }
 
 
   if (!SetUIMode(args.GetOptionString(m_endpoint.GetPrefixName()+"-ui"))) {
@@ -325,18 +331,17 @@ void OpalRTPConsoleEndPoint::CmdBandwidth(PCLI::Arguments & args, P_INT_PTR)
                          " tx=" << m_endpoint.GetInitialBandwidth(OpalBandwidth::Tx) << endl;
   else {
     OpalBandwidth bandwidth(args[0]);
-    if (bandwidth == 0)
-      args.WriteError("Illegal bandwidth parameter");
+    bool ok = true;
+    if (!args.HasOption("rx") && !args.HasOption("tx"))
+      ok = m_endpoint.SetInitialBandwidth(OpalBandwidth::RxTx, bandwidth);
     else {
-      if (!args.HasOption("rx") && !args.HasOption("tx"))
-        m_endpoint.SetInitialBandwidth(OpalBandwidth::RxTx, bandwidth);
-      else {
-        if (args.HasOption("rx"))
-          m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, bandwidth);
-        if (args.HasOption("tx"))
-          m_endpoint.SetInitialBandwidth(OpalBandwidth::Tx, bandwidth);
-      }
+      if (args.HasOption("rx"))
+        ok = m_endpoint.SetInitialBandwidth(OpalBandwidth::Rx, bandwidth);
+      if (args.HasOption("tx"))
+        ok = ok && m_endpoint.SetInitialBandwidth(OpalBandwidth::Tx, bandwidth); // Do not do second call if first failed
     }
+    if (!ok)
+      args.WriteError("Illegal bandwidth parameter");
   }
 }
 
