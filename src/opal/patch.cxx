@@ -790,6 +790,11 @@ void OpalMediaPatch::Main()
 
   m_source.OnStopMediaPatch(*this);
 
+  if (m_sinks.IsEmpty())
+   m_source.GetConnection().GetEndPoint().GetManager().QueueDecoupledEvent(
+                new PSafeWorkArg1<OpalConnection, OpalMediaStreamPtr, bool>(&m_source.GetConnection(),
+                                                        &m_source, &OpalConnection::CloseMediaStream));
+
   PTRACE(4, "Patch\tThread ended for " << *this);
 }
 
