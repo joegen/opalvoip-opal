@@ -1419,9 +1419,6 @@ void OpalManager::OnStopMediaPatch(OpalConnection & connection, OpalMediaPatch &
 #if OPAL_SCRIPT
   OnStartStopMediaPatch(m_script, "OnStopMedia", connection, patch);
 #endif
-
-  QueueDecoupledEvent(new PSafeWorkArg1<OpalConnection, OpalMediaStreamPtr, bool>(&connection,
-                                        &patch.GetSource(), &OpalConnection::CloseMediaStream));
 }
 
 
