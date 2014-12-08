@@ -592,6 +592,34 @@ void OpalMediaStream::OnStopMediaPatch(OpalMediaPatch & patch)
 }
 
 
+bool OpalMediaStream::SetMediaPassThrough(OpalMediaStream & otherStream, bool bypass)
+{
+  if (IsSink())
+    return otherStream.SetMediaPassThrough(*this, bypass);
+
+  OpalMediaPatchPtr sourcePatch = GetPatch();
+  if (sourcePatch == NULL) {
+    PTRACE(2, "SetMediaPassThrough could not complete as source patch does not exist");
+    return false;
+  }
+
+  OpalMediaPatchPtr sinkPatch = otherStream.GetPatch();
+  if (sinkPatch == NULL) {
+    PTRACE(2, "SetMediaPassThrough could not complete as sink patch does not exist");
+    return false;
+  }
+
+  if (GetMediaFormat() != otherStream.GetMediaFormat()) {
+    PTRACE(3, "SetMediaPassThrough could not complete as different formats: "
+           << GetMediaFormat() << "!=" << otherStream.GetMediaFormat());
+    return false;
+  }
+
+  // Note SetBypassPatch() will do PTRACE() on status.
+  return sourcePatch->SetBypassPatch(bypass ? sinkPatch : NULL);
+}
+
+
 void OpalMediaStream::PrintDetail(ostream & strm, const char * prefix, Details details) const
 {
   if (prefix == NULL)
