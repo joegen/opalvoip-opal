@@ -1193,26 +1193,8 @@ static bool PassOneThrough(OpalMediaStreamPtr source,
     return false;
   }
 
-  OpalMediaPatchPtr sourcePatch = source->GetPatch();
-  if (sourcePatch == NULL) {
-    PTRACE(2, "SetMediaPassThrough could not complete as source patch does not exist");
-    return false;
-  }
-
-  OpalMediaPatchPtr sinkPatch = sink->GetPatch();
-  if (sinkPatch == NULL) {
-    PTRACE(2, "SetMediaPassThrough could not complete as sink patch does not exist");
-    return false;
-  }
-
-  if (source->GetMediaFormat() != sink->GetMediaFormat()) {
-    PTRACE(3, "SetMediaPassThrough could not complete as different formats: "
-           << source->GetMediaFormat() << "!=" << sink->GetMediaFormat());
-    return false;
-  }
-
   // Note SetBypassPatch() will do PTRACE() on status.
-  return sourcePatch->SetBypassPatch(bypass ? sinkPatch : NULL);
+  return source->SetMediaPassThrough(*sink, bypass);
 }
 
 

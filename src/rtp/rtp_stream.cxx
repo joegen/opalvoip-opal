@@ -132,6 +132,34 @@ void OpalRTPMediaStream::OnStartMediaPatch()
 }
 
 
+bool OpalRTPMediaStream::SetMediaPassThrough(OpalMediaStream & otherStream, bool bypass)
+{
+  if (IsSink())
+    return otherStream.SetMediaPassThrough(*this, bypass);
+
+  if (bypass) {
+    if (m_passThruStream != NULL) {
+      PTRACE(2, "Media pass through already in place from " << *this << " to " << *m_passThruStream);
+      return false;
+    }
+
+    PTRACE(3, "Media pass through set from " << *this << " to " << otherStream);
+    m_passThruStream = &otherStream;
+  }
+  else {
+    if (m_passThruStream == NULL) {
+      PTRACE(2, "No media pass through in effect on " << *this);
+      return false;
+    }
+
+    PTRACE(2, "Media pass through ceased from " << *this << " to " << *m_passThruStream);
+    m_passThruStream.SetNULL();
+  }
+
+  return OpalMediaStream::SetMediaPassThrough(otherStream, bypass);
+}
+
+
 void OpalRTPMediaStream::InternalClose()
 {
   // Break any I/O blocks and wait for the thread that uses this object to
@@ -201,8 +229,17 @@ bool OpalRTPMediaStream::InternalExecuteCommand(const OpalMediaCommand & command
 
 void OpalRTPMediaStream::OnReceivedPacket(OpalRTPSession &, OpalRTPSession::Data & data)
 {
-  if (m_jitterBuffer != NULL)
-    m_jitterBuffer->WriteData(data.m_frame);
+  if (m_passThruStream == NULL) {
+    if (m_jitterBuffer != NULL)
+      m_jitterBuffer->WriteData(data.m_frame);
+    return;
+  }
+
+  if (m_passThruStream->WritePacket(data.m_frame))
+    return;
+
+  PTRACE(3, "Media pass through write error from " << *this << " to " << *m_passThruStream);
+  m_passThruStream.SetNULL();
 }
 
 
