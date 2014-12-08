@@ -228,6 +228,14 @@ class OpalMediaStream : public PSafeObject
       OpalMediaPatch & patch    ///< Media patch that is stopping
     );
 
+    /** Bypass media patch.
+        Send media directly to/from the media streams.
+      */
+    virtual bool SetMediaPassThrough(
+      OpalMediaStream & otherStream,  ///< Stream to bypass media data to/from
+      bool bypass                     ///< Turn bypass on or off
+    );
+
     /**Write a list of RTP frames of data to the sink media stream.
        The default behaviour simply calls WritePacket() on each of the
        elements in the list.

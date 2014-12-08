@@ -87,6 +87,14 @@ class OpalRTPMediaStream : public OpalMediaStream
       */
     virtual void OnStartMediaPatch();
 
+    /** Bypass media patch.
+        Send media directly to/from the media streams.
+      */
+    virtual bool SetMediaPassThrough(
+      OpalMediaStream & otherStream,  ///< Stream to bypass media data to/from
+      bool bypass                     ///< Turn bypass on or off
+    );
+
     /**Read an RTP frame of data from the source media stream.
        The new behaviour simply calls OpalRTPSession::ReadData().
       */
@@ -167,21 +175,23 @@ protected:
     virtual bool InternalSetPaused(bool pause, bool fromUser, bool fromPatch);
     virtual bool InternalExecuteCommand(const OpalMediaCommand & command);
 
-    OpalRTPSession   & m_rtpSession;
-    bool               m_rewriteHeaders;
-    RTP_SyncSourceId   m_syncSource;
-    OpalJitterBuffer * m_jitterBuffer;
+    OpalRTPSession    & m_rtpSession;
+    bool                m_rewriteHeaders;
+    RTP_SyncSourceId    m_syncSource;
+    OpalMediaStreamPtr  m_passThruStream;
+    OpalJitterBuffer  * m_jitterBuffer;
+
 #if OPAL_VIDEO
-    bool             m_forceIntraFrameFlag;
-    PSimpleTimer     m_forceIntraFrameTimer;
-    PSimpleTimer     m_videoUpdateThrottleTimer;
-    PTimeInterval    m_videoUpdateThrottleTime;
-    PSimpleTimer     m_pictureLossThrottleTimer;
-    PTimeInterval    m_pictureLossThrottleTime;
+    bool          m_forceIntraFrameFlag;
+    PSimpleTimer  m_forceIntraFrameTimer;
+    PSimpleTimer  m_videoUpdateThrottleTimer;
+    PTimeInterval m_videoUpdateThrottleTime;
+    PSimpleTimer  m_pictureLossThrottleTimer;
+    PTimeInterval m_pictureLossThrottleTime;
 #endif
 
     PDECLARE_RTPDataNotifier(OpalRTPMediaStream, OnReceivedPacket);
-    OpalRTPSession::DataNotifier  m_receiveNotifier;
+    OpalRTPSession::DataNotifier m_receiveNotifier;
 
     PTRACE_THROTTLE(m_throttleWriteData,3,500);
     PTRACE_THROTTLE(m_throttleSendReport,3,500);
