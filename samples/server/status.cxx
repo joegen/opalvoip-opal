@@ -213,11 +213,21 @@ void RegistrationStatusPage::CreateContent(PHTML & html, const PStringToString &
   html << PHTML::TableStart(PHTML::Border1, PHTML::CellPad4)
        << PHTML::TableRow()
        << PHTML::TableHeader() << ' '
-       << PHTML::TableHeader(PHTML::NoWrap) << "Address"
+       << PHTML::TableHeader(PHTML::NoWrap) << "Name/Address"
        << PHTML::TableHeader(PHTML::NoWrap) << "Status"
 #if OPAL_H323
        << PHTML::TableRow()
-       << PHTML::TableHeader(PHTML::NoWrap, "rowspan=<!--#macro H323Count-->")
+       << PHTML::TableHeader(PHTML::NoWrap, "rowspan=<!--#macro H323ListenerCount-->")
+       << " H.323 Listeners"
+       << "<!--#macrostart H323ListenerStatus-->"
+           << PHTML::TableRow()
+           << PHTML::TableData(PHTML::NoWrap)
+           << "<!--#status Address-->"
+           << PHTML::TableData(PHTML::NoWrap, PHTML::AlignCentre)
+           << "<!--#status Status-->"
+       << "<!--#macroend H323ListenerStatus-->"
+       << PHTML::TableRow()
+       << PHTML::TableHeader(PHTML::NoWrap, "rowspan=<!--#macro H323RegistrationCount-->")
        << " H.323 Gatekeeper"
        << "<!--#macrostart H323RegistrationStatus-->"
            << PHTML::TableRow()
@@ -230,7 +240,17 @@ void RegistrationStatusPage::CreateContent(PHTML & html, const PStringToString &
 
 #if OPAL_SIP
        << PHTML::TableRow()
-       << PHTML::TableHeader(PHTML::NoWrap, "rowspan=<!--#macro SIPCount-->")
+       << PHTML::TableHeader(PHTML::NoWrap, "rowspan=<!--#macro SIPListenerCount-->")
+       << " SIP Listeners "
+       << "<!--#macrostart SIPListenerStatus-->"
+           << PHTML::TableRow()
+           << PHTML::TableData(PHTML::NoWrap)
+           << "<!--#status Address-->"
+           << PHTML::TableData(PHTML::NoWrap, PHTML::AlignCentre)
+           << "<!--#status Status-->"
+       << "<!--#macroend SIPListenerStatus-->"
+       << PHTML::TableRow()
+       << PHTML::TableHeader(PHTML::NoWrap, "rowspan=<!--#macro SIPRegistrationCount-->")
        << " SIP Registrars "
        << "<!--#macrostart SIPRegistrationStatus-->"
            << PHTML::TableRow()
@@ -243,7 +263,7 @@ void RegistrationStatusPage::CreateContent(PHTML & html, const PStringToString &
 
 #if OPAL_SKINNY
        << PHTML::TableRow()
-       << PHTML::TableHeader(PHTML::NoWrap, "rowspan=<!--#macro SkinnyCount-->")
+       << PHTML::TableHeader(PHTML::NoWrap, "rowspan=<!--#macro SkinnyRegistrationCount-->")
        << " SCCP Servers "
        << "<!--#macrostart SkinnyRegistrationStatus-->"
          << PHTML::TableRow()
@@ -265,6 +285,48 @@ void RegistrationStatusPage::CreateContent(PHTML & html, const PStringToString &
 #endif // OPAL_PTLIB_NAT
 
        << PHTML::TableEnd();
+}
+
+
+static PINDEX GetListenerCount(PHTTPRequest & resource, const char * prefix)
+{
+  RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
+  if (PAssertNULL(status) == NULL)
+    return 2;
+
+  OpalEndPoint * ep = status->m_manager.FindEndPoint(prefix);
+  if (ep == NULL)
+    return 2;
+
+  return ep->GetListeners().GetSize() + 1;
+}
+
+
+static PString GetListenerStatus(PHTTPRequest & resource, const PString htmlBlock, const char * prefix)
+{
+  PString substitution;
+
+  RegistrationStatusPage * status = dynamic_cast<RegistrationStatusPage *>(resource.m_resource);
+  if (PAssertNULL(status) != NULL) {
+    OpalEndPoint * ep = status->m_manager.FindEndPoint(prefix);
+    if (ep != NULL) {
+      const OpalListenerList & listeners = ep->GetListeners();
+      for (OpalListenerList::const_iterator it = listeners.begin(); it != listeners.end(); ++it) {
+        PString insert = htmlBlock;
+        PServiceHTML::SpliceMacro(insert, "status Address", it->GetLocalAddress());
+        PServiceHTML::SpliceMacro(insert, "status Status", it->IsOpen() ? "Active" : "Offline");
+        substitution += insert;
+      }
+    }
+  }
+
+  if (substitution.IsEmpty()) {
+    substitution = htmlBlock;
+    PServiceHTML::SpliceMacro(substitution, "status Address", "&nbsp;");
+    PServiceHTML::SpliceMacro(substitution, "status Status", "Not listening");
+  }
+
+  return substitution;
 }
 
 
@@ -311,7 +373,19 @@ static PString GetRegistrationStatus(PHTTPRequest & resource,
 
 
 #if OPAL_H323
-PCREATE_SERVICE_MACRO(H323Count, resource, P_EMPTY)
+PCREATE_SERVICE_MACRO(H323ListenerCount, resource, P_EMPTY)
+{
+  return GetListenerCount(resource, OPAL_PREFIX_H323);
+}
+
+
+PCREATE_SERVICE_MACRO_BLOCK(H323ListenerStatus, resource, P_EMPTY, htmlBlock)
+{
+  return GetListenerStatus(resource, htmlBlock, OPAL_PREFIX_H323);
+}
+
+
+PCREATE_SERVICE_MACRO(H323RegistrationCount, resource, P_EMPTY)
 {
   return GetRegistrationCount(resource, &RegistrationStatusPage::GetH323Count);
 }
@@ -324,7 +398,19 @@ PCREATE_SERVICE_MACRO_BLOCK(H323RegistrationStatus, resource, P_EMPTY, htmlBlock
 #endif // OPAL_H323
 
 #if OPAL_SIP
-PCREATE_SERVICE_MACRO(SIPCount, resource, P_EMPTY)
+PCREATE_SERVICE_MACRO(SIPListenerCount, resource, P_EMPTY)
+{
+  return GetListenerCount(resource, OPAL_PREFIX_SIP);
+}
+
+
+PCREATE_SERVICE_MACRO_BLOCK(SIPListenerStatus, resource, P_EMPTY, htmlBlock)
+{
+  return GetListenerStatus(resource, htmlBlock, OPAL_PREFIX_SIP);
+}
+
+
+PCREATE_SERVICE_MACRO(SIPRegistrationCount, resource, P_EMPTY)
 {
   return GetRegistrationCount(resource, &RegistrationStatusPage::GetSIPCount);
 }
@@ -337,7 +423,7 @@ PCREATE_SERVICE_MACRO_BLOCK(SIPRegistrationStatus, resource, P_EMPTY, htmlBlock)
 #endif // OPAL_SIP
 
 #if OPAL_SKINNY
-PCREATE_SERVICE_MACRO(SkinnyCount, resource, P_EMPTY)
+PCREATE_SERVICE_MACRO(SkinnyRegistrationCount, resource, P_EMPTY)
 {
   return GetRegistrationCount(resource, &RegistrationStatusPage::GetSkinnyCount);
 }
@@ -527,7 +613,7 @@ PCREATE_SERVICE_MACRO_BLOCK(CallStatus,resource,P_EMPTY,htmlBlock)
 
 GkStatusPage::GkStatusPage(MyManager & mgr, const PHTTPAuthority & auth)
   : BaseStatusPage(mgr, auth, "GkStatus")
-  , m_gkServer(mgr.FindEndPointAs<MyH323EndPoint>("h323")->GetGatekeeperServer())
+  , m_gkServer(mgr.FindEndPointAs<MyH323EndPoint>(OPAL_PREFIX_H323)->GetGatekeeperServer())
 {
 }
 
