@@ -99,7 +99,11 @@ PBoolean OpalRTPMediaStream::Open()
     PTRACE(4, "Opening source stream " << *this << " jb=" << *m_jitterBuffer);
   }
   else {
-    PTRACE(4, "Opening sink stream " << *this);
+    if (m_syncSource == 0)
+      m_syncSource = m_rtpSession.GetSyncSourceOut();
+    else
+      m_rtpSession.AddSyncSource(m_syncSource, OpalRTPSession::e_Sender);
+    PTRACE(4, "Opening sink stream " << *this << RTP_TRACE_SRC(m_syncSource));
   }
 
 #if OPAL_VIDEO
