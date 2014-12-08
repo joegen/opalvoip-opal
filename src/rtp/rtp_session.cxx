@@ -2557,7 +2557,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveICE(Channel channel,
       PTRACE(4, *this << "awaiting USE-CANDIDATE");
       return e_IgnorePacket;
     }
-    PTRACE(4, *this << "USE-CANDIDATE found");
+    PTRACE(m_throttleUseCandidate, *this << "USE-CANDIDATE found" << m_throttleUseCandidate);
   }
   else {
     if (!m_stunClient->ValidateMessageIntegrity(message))

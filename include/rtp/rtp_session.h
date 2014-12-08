@@ -872,6 +872,7 @@ class OpalRTPSession : public OpalMediaSession
     PTRACE_THROTTLE(m_throttleRxSR,4,60000);
     PTRACE_THROTTLE(m_throttleRxRR,4,60000);
     PTRACE_THROTTLE(m_throttleRxSDES,4,60000);
+    PTRACE_THROTTLE(m_throttleUseCandidate,4,60000);
 
   private:
     OpalRTPSession(const OpalRTPSession &);
