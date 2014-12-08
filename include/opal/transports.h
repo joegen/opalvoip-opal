@@ -437,7 +437,6 @@ class OpalListener : public PObject
     typedef PNotifierTemplate<const OpalTransportPtr &> AcceptHandler;
     #define PDECLARE_AcceptHandlerNotifier(cls, fn) PDECLARE_NOTIFIER2(OpalListener, cls, fn, const OpalTransportPtr &)
 
-
     /** Open the listener.
         A thread is spawned to listen for incoming connections. The notifier
         function acceptHandler is called when a new connection is created. The
@@ -497,6 +496,7 @@ class OpalListener : public PObject
     void CleanUpOnTermination() { CloseWait(); }
   //@}
 
+    virtual const PCaselessString & GetProtoPrefix() const = 0;
 
   protected:
     /**Handle incoming connections and dispatch them in new threads based on
@@ -562,8 +562,6 @@ class OpalListenerIP : public OpalListener
   /**@name Operations */
   //@{
     WORD GetListenerPort() const { return m_binding.GetPort(); }
-
-    virtual const PCaselessString & GetProtoPrefix() const = 0;
   //@}
 
 
