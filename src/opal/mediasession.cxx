@@ -123,29 +123,6 @@ void OpalVideoStatistics::IncrementUpdateCount(bool full)
   m_updateResponseTime = 0;
 }
 
-
-void OpalVideoStatistics::Merge(const OpalVideoStatistics & other)
-{
-  if (m_totalFrames == 0 && other.m_totalFrames > 0)
-    m_totalFrames = other.m_totalFrames;
-
-  if (m_keyFrames == 0 && other.m_keyFrames > 0) {
-    m_keyFrames = other.m_keyFrames;
-    m_lastKeyFrameTime = other.m_lastKeyFrameTime;
-  }
-
-  if (m_fullUpdateRequests == 0 && other.m_fullUpdateRequests > 0) {
-    m_fullUpdateRequests = other.m_fullUpdateRequests;
-    m_lastUpdateRequestTime = other.m_lastUpdateRequestTime;
-    m_updateResponseTime = other.m_updateResponseTime;
-  }
-
-  if (m_pictureLossRequests == 0 && other.m_pictureLossRequests > 0) {
-    m_pictureLossRequests = other.m_pictureLossRequests;
-    m_lastUpdateRequestTime = other.m_lastUpdateRequestTime;
-    m_updateResponseTime = other.m_updateResponseTime;
-  }
-}
 #endif // OPAL_VIDEO
 
 #if OPAL_FAX

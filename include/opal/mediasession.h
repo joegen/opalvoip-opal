@@ -80,7 +80,6 @@ struct OpalVideoStatistics
 
   void IncrementFrames(bool key);
   void IncrementUpdateCount(bool full);
-  void Merge(const OpalVideoStatistics & other);
 
   unsigned      m_totalFrames;
   unsigned      m_keyFrames;
