@@ -2622,6 +2622,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr, PI
   PUDPSocket & socket = *m_socket[channel];
   PIPSocket::AddressAndPort ap;
 
+  PTRACE(m_throttleReadPacket, *this << "Read " << channel << " packet: sz=" << frameSize << " timeout=" << socket.GetReadTimeout());
   if (socket.ReadFrom(framePtr, frameSize, ap)) {
     frameSize = socket.GetLastReadCount();
 
