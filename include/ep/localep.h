@@ -354,7 +354,7 @@ class OpalLocalEndPoint : public OpalEndPoint
     enum Synchronicity {
       e_Synchronous,        ///< Functions will block for correct real time
       e_Asynchronous,       ///< Functions will not block, and do not require any real time handling.
-      e_SimulateSyncronous  ///< Functions wlll not block, but do require real time handling.
+      e_SimulateSynchronous ///< Functions wlll not block, but do require real time handling.
     };
 
     /**Indicate the I/O synchronous mode.
