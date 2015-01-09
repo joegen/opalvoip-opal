@@ -2461,6 +2461,8 @@ void OpalRTPSession::SetICE(const PString & user, const PString & pass, const PN
           case PNatMethod::eComponent_RTCP:
             m_candidates[e_Control].push_back(*it);
             break;
+          default :
+            break;
         }
       }
     }
