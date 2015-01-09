@@ -686,7 +686,7 @@ PBoolean OpalLocalMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
   if (!m_connection.OnReadMediaData(*this, data, size, length))
     return false;
 
-  if (m_synchronicity == OpalLocalEndPoint::e_SimulateSyncronous)
+  if (m_synchronicity == OpalLocalEndPoint::e_SimulateSynchronous)
     Pace(true, size, marker);
   return true;
 }
@@ -707,7 +707,7 @@ PBoolean OpalLocalMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
   if (!m_connection.OnWriteMediaData(*this, data, length, written))
     return false;
 
-  if (m_synchronicity == OpalLocalEndPoint::e_SimulateSyncronous)
+  if (m_synchronicity == OpalLocalEndPoint::e_SimulateSynchronous)
     Pace(false, written, marker);
   return true;
 }
