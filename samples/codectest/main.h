@@ -31,6 +31,7 @@
 
 #include <codec/vidcodec.h>
 #include <opal/patch.h>
+#include <rtp/pcapfile.h>
 
 class TranscoderThread : public PThread
 {
@@ -99,6 +100,8 @@ class TranscoderThread : public PThread
     bool m_calcSNR;
     BYTE m_extensionHeader;
     int  m_dropPercent;
+
+    OpalPCAPFile m_pcapFile;
 };
 
 
