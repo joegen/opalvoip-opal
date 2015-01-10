@@ -497,7 +497,7 @@ class OpalMediaStreamPacing
 
     /// Delay appropriate time for the written bytes
     void Pace(
-      bool reading,     ///< Are reading from medium
+      bool generated,   ///< Are generating data, set marker true
       PINDEX bytes,     ///< Bytes read/written
       bool & marker     ///< RTP Marker
     );
