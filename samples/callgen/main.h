@@ -25,6 +25,9 @@
  */
 
 
+#include <rtp/pcapfile.h>
+
+
 class MyManager;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -96,13 +99,56 @@ class MyCall : public OpalCall
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class MyPCSSEndPoint : public OpalPCSSEndPoint
+class MyLocalEndPoint : public OpalLocalEndPoint
 {
-    PCLASSINFO(MyPCSSEndPoint, OpalPCSSEndPoint);
-  public:
-    MyPCSSEndPoint(OpalManager & mgr) : OpalPCSSEndPoint(mgr) { }
-    virtual PBoolean OnShowIncoming(const OpalPCSSConnection &);
-    virtual PBoolean OnShowOutgoing(const OpalPCSSConnection &);
+  PCLASSINFO(MyLocalEndPoint, OpalLocalEndPoint);
+public:
+  MyLocalEndPoint(OpalManager & mgr);
+  virtual OpalLocalConnection * CreateConnection(OpalCall & call, void * userData, unsigned options, OpalConnection::StringOptions * stringOptions);
+  OpalMediaFormatList GetMediaFormats() const;
+
+  bool Initialise(PArgList & args);
+
+  PFile * OpenAudioFile() const;
+#if OPAL_VIDEO
+  PFile * OpenVideoFile() const;
+#endif
+
+protected:
+  PFilePath       m_audioFilePath;
+  OpalMediaFormat m_audioFileFormat;
+#if OPAL_VIDEO
+  PFilePath       m_videoFilePath;
+  OpalMediaFormat m_videoFileFormat;
+#endif
+  PDirectory      m_incomingMediaDir;
+
+  friend class MyLocalConnection;
+};
+
+
+class MyLocalConnection : public OpalLocalConnection
+{
+  PCLASSINFO(MyLocalConnection, OpalLocalConnection);
+public:
+  MyLocalConnection(OpalCall & call, MyLocalEndPoint & ep, void * userData, unsigned options, OpalConnection::StringOptions * stringOptions);
+  ~MyLocalConnection();
+  virtual void AdjustMediaFormats(bool local, const OpalConnection * otherConnection, OpalMediaFormatList & mediaFormats) const;
+  virtual bool OnReadMediaData(const OpalMediaStream & mediaStream, void * data, PINDEX size, PINDEX & length);
+  virtual bool OnReadMediaFrame(const OpalMediaStream & mediaStream, RTP_DataFrame & frame);
+  virtual bool OnWriteMediaFrame(const OpalMediaStream & mediaStream, RTP_DataFrame & frame);
+
+protected:
+  MyLocalEndPoint & m_endpoint;
+  PFile           * m_audioFile;
+  PTones            m_tone;
+  PINDEX            m_toneOffset;
+#if OPAL_VIDEO
+  PFile           * m_videoFile;
+  vector<off_t>     m_frameOffsets;
+#endif
+
+  OpalPCAPFile      m_savedMedia;
 };
 
 

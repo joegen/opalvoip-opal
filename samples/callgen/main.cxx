@@ -28,7 +28,11 @@
 #include "main.h"
 #include "version.h"
 
+#include <ptclib/pvidfile.h>
 #include <opal/transcoders.h>
+
+
+#define PTraceModule() "CallGen"
 
 
 extern const char Manufacturer[] = "Equivalence";
@@ -73,8 +77,12 @@ PString MyManager::GetArgumentSpec() const
          "C-cycle.               Each simultaneous call cycles through destination list\r"
                                 "otherwise it only calls the destination for its position\r"
                                 "in the list.\n"
-         "W-wav:                 Audio WAV file to play.\n"
-         "Y-yuv:                 Video YUV file to play.\n"
+         "A-audio-file:          Audio file to play (.wav, .raw, .pcap).\n"
+         "-audio-format:         If audio file .pcap, indicate media format\n"
+#if OPAL_VIDEO
+         "Y-video-file:          Video file to play (.yuv, .pcap).\n"
+         "-video-format:         If audio file .pcap, indicate media format\n"
+#endif
          "[Timing:]"
          "-tmaxest:              Maximum time to wait for \"Established\" [0]\n"
          "-tmincall:             Minimum call duration in seconds [10]\n"
@@ -84,7 +92,7 @@ PString MyManager::GetArgumentSpec() const
          "[Reporting:]"
          "q-quiet.               Do not display call progress output.\n"
          "c-cdr:                 Specify Call Detail Record file [none]\n"
-         "I-in-dir:              Specify directory for incoming media files [disabled]\n"
+         "I-in-dir:              Specify directory for incoming media (.pcap) files [disabled]\n"
        + spec;
 }
 
@@ -106,96 +114,21 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
 {
   args.Parse(GetArgumentSpec());
 
-  if (args.HasOption('q'))
-    cout.rdbuf(NULL);
-
-  if (!OpalManagerConsole::Initialise(args, !args.HasOption('q'), "pc:"))
-    return false;
-
   if (args.GetCount() == 0 && !args.HasOption('l')) {
     cerr << "\nNeed either --listen or a destination argument\n\n";
     Usage(cerr, args);
     return false;
   }
 
-  OpalPCSSEndPoint * pcss = new MyPCSSEndPoint(*this);
-  pcss->SetSoundChannelRecordDevice(P_NULL_AUDIO_DEVICE);
-  pcss->SetSoundChannelPlayDevice(P_NULL_AUDIO_DEVICE);
+  if (args.HasOption('q'))
+    cout.rdbuf(NULL);
 
-#if P_WAVFILE
-  if (!args.HasOption('W'))
-    cout << "Not using outgoing audio file." << endl;
-  else {
-    PString wavFile = args.GetOptionString('W');
-    PINDEX last = wavFile.GetLength()-1;
-    PWAVFile check;
-    if (check.Open(wavFile[last] == '*' ? wavFile.Left(last) : wavFile, PFile::ReadOnly)) {
-      cout << "Using outgoing audio file: " << wavFile << endl;
-      pcss->SetSoundChannelRecordDevice(wavFile);
-    }
-    else {
-      cout << "Outgoing audio file  \"" << wavFile << "\" does not exist!" << endl;
-      PTRACE(1, "CallGen\tOutgoing audio file \"" << wavFile << "\" does not exist");
-    }
-  }
-#endif // P_WAVFILE
+  if (!OpalManagerConsole::Initialise(args, !args.HasOption('q'), "local:"))
+    return false;
 
-#if OPAL_VIDEO
-  {
-    PVideoDevice::OpenArgs videoDevice = GetVideoInputDevice();
-    videoDevice.deviceName = P_FAKE_VIDEO_NTSC;
-
-    if (!args.HasOption('Y'))
-      cout << "Not using outgoing video file." << endl;
-    else {
-      PString yuvFile = args.GetOptionString('Y');
-    PINDEX last = yuvFile.GetLength()-1;
-      if (PFile::Exists(yuvFile[last] == '*' ? yuvFile.Left(last) : yuvFile)) {
-        cout << "Using outgoing video file: " << yuvFile << endl;
-        videoDevice.deviceName = yuvFile;
-      }
-      else {
-        cout << "Outgoing video file  \"" << yuvFile << "\" does not exist!" << endl;
-        PTRACE(1, "CallGen\tOutgoing video file \"" << yuvFile << "\" does not exist");
-      }
-    }
-    SetVideoInputDevice(videoDevice);
-
-    videoDevice = GetVideoPreviewDevice();
-    videoDevice.deviceName.MakeEmpty();  // Don't want any preview for video, there could be ... lots
-    SetVideoPreviewDevice(videoDevice);
-  }
-#endif // OPAL_VIDEO
-
-  {
-#if OPAL_VIDEO
-    PVideoDevice::OpenArgs videoDevice = GetVideoOutputDevice();
-    videoDevice.deviceName = P_NULL_VIDEO_DEVICE;
-#endif
-
-    PString incomingMediaDirectory = args.GetOptionString('I');
-    if (incomingMediaDirectory.IsEmpty())
-      cout << "Not saving incoming media data." << endl;
-    else if (PDirectory::Exists(incomingMediaDirectory) ||
-             PDirectory::Create(incomingMediaDirectory)) {
-      incomingMediaDirectory = PDirectory(incomingMediaDirectory);
-      cout << "Using incoming media directory: " << incomingMediaDirectory << endl;
-#if P_WAVFILE
-      pcss->SetSoundChannelPlayDevice(incomingMediaDirectory + "*.wav");
-#endif
-#if OPAL_VIDEO
-      videoDevice.deviceName = incomingMediaDirectory + "*.yuv";
-#endif
-    }
-    else {
-      cout << "Could not create incoming media directory \"" << incomingMediaDirectory << "\"!" << endl;
-      PTRACE(1, "CallGen\tCould not create incoming media directory \"" << incomingMediaDirectory << '"');
-    }
-
-#if OPAL_VIDEO
-    SetVideoOutputDevice(videoDevice);
-#endif
-  }
+  MyLocalEndPoint * localEP = new MyLocalEndPoint(*this);
+  if (!localEP->Initialise(args))
+    return false;
 
   unsigned simultaneous = args.GetOptionString('m').AsUnsigned();
   if (simultaneous == 0)
@@ -204,7 +137,7 @@ bool MyManager::Initialise(PArgList & args, bool, const PString &)
   if (args.HasOption('c')) {
     if (m_cdrFile.Open(args.GetOptionString('c'), PFile::WriteOnly, PFile::Create)) {
       m_cdrFile.SetPosition(0, PFile::End);
-      PTRACE(1, "CallGen\tSetting CDR to \"" << m_cdrFile.GetFilePath() << '"');
+      PTRACE(1, "Setting CDR to \"" << m_cdrFile.GetFilePath() << '"');
       cout << "Sending Call Detail Records to \"" << m_cdrFile.GetFilePath() << '"' << endl;
     }
     else {
@@ -329,7 +262,7 @@ static unsigned RandomRange(PRandom & rand,
 
 void CallThread::Main()
 {
-  PTRACE(2, "CallGen\tStarted thread " << m_index);
+  PTRACE(2, "Started thread " << m_index);
 
   PRandom rand(PRandom::Number());
 
@@ -337,7 +270,7 @@ void CallThread::Main()
   OUTPUT(m_index, PString::Empty(), "Initial delay of " << delay << " seconds");
 
   if (m_exit.Wait(delay)) {
-    PTRACE(2, "CallGen\tAborted thread " << m_index);
+    PTRACE(2, "Aborted thread " << m_index);
   }
   else {
     // Loop "repeat" times for (repeat > 0), or loop forever for (repeat == 0)
@@ -347,15 +280,15 @@ void CallThread::Main()
 
       // trigger a call
       PString token;
-      PTRACE(1, "CallGen\tMaking call to " << destination);
+      PTRACE(1, "Making call to " << destination);
       unsigned totalAttempts = ++m_params.m_callgen.m_totalCalls;
-      if (!m_params.m_callgen.SetUpCall("pc:*", destination, token, this))
+      if (!m_params.m_callgen.SetUpCall("local:*", destination, token, this))
         OUTPUT(m_index, token, "Failed to start call to " << destination)
       else {
         bool stopping = false;
 
         delay = RandomRange(rand, m_params.m_tmin_call, m_params.m_tmax_call);
-        PTRACE(1, "CallGen\tMax call time " << delay);
+        PTRACE(1, "Max call time " << delay);
 
         START_OUTPUT(m_index, token) << "Making call " << count;
         if (m_params.m_repeat)
@@ -365,13 +298,13 @@ void CallThread::Main()
 
         if (m_params.m_tmax_est > 0) {
           OUTPUT(m_index, token, "Waiting " << m_params.m_tmax_est << " seconds for establishment");
-          PTRACE(1, "CallGen\tWaiting " << m_params.m_tmax_est << " seconds for establishment");
+          PTRACE(1, "Waiting " << m_params.m_tmax_est << " seconds for establishment");
 
           PTimer timeout = m_params.m_tmax_est;
           while (!m_params.m_callgen.IsCallEstablished(token)) {
             stopping = m_exit.Wait(100);
             if (stopping || !timeout.IsRunning() || !m_params.m_callgen.HasCall(token)) {
-              PTRACE(1, "CallGen\tTimeout/Stopped on establishment");
+              PTRACE(1, "Timeout/Stopped on establishment");
               delay = 0;
               break;
             }
@@ -380,13 +313,13 @@ void CallThread::Main()
 
         if (delay > 0) {
           // wait for a random time
-          PTRACE(1, "CallGen\tWaiting for " << delay);
+          PTRACE(1, "Waiting for " << delay);
           stopping = m_exit.Wait(delay);
         }
 
         // end the call
         OUTPUT(m_index, token, "Clearing call");
-        PTRACE(1, "CallGen\tClearing call");
+        PTRACE(1, "Clearing call");
 
         m_params.m_callgen.ClearCallSynchronous(token);
 
@@ -402,12 +335,12 @@ void CallThread::Main()
       delay = RandomRange(rand, m_params.m_tmin_wait, m_params.m_tmax_wait);
       OUTPUT(m_index, PString::Empty(), "Delaying for " << delay << " seconds");
 
-      PTRACE(1, "CallGen\tDelaying for " << delay);
+      PTRACE(1, "Delaying for " << delay);
       // wait for a random time
     } while (!m_exit.Wait(delay));
 
     OUTPUT(m_index, PString::Empty(), "Completed call set.");
-    PTRACE(2, "CallGen\tFinished thread " << m_index);
+    PTRACE(2, "Finished thread " << m_index);
   }
 
   m_running = false;
@@ -557,15 +490,283 @@ void MyCall::OnOpenMediaStream(OpalMediaStream & stream)
 }
 
 
-PBoolean MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
+MyLocalEndPoint::MyLocalEndPoint(OpalManager & mgr)
+  : OpalLocalEndPoint(mgr)
 {
-  AcceptIncomingConnection(connection.GetToken());
+  SetDefaultAudioSynchronicity(e_SimulateSynchronous);
+#if OPAL_VIDEO
+  SetDefaultVideoSourceSynchronicity(e_SimulateSynchronous);
+#endif
+}
+
+
+static bool SetMediaFormat(OpalMediaFormat & format, const PString & str)
+{
+  if (str.IsEmpty()) {
+    cout << "Outgoing format must be set for PCAP file!" << endl;
+    PTRACE(1, "Outgoing format must be set for PCAP file");
+    return false;
+  }
+
+  format = str;
+
+  if (format.IsEmpty()) {
+    cout << "Outgoing format  \"" << str << "\" is unknown!" << endl;
+    PTRACE(1, "Outgoing file \"" << str << "\" is unknown");
+    return false;
+  }
+
   return true;
 }
 
 
-PBoolean MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection &)
+bool MyLocalEndPoint::Initialise(PArgList & args)
 {
+#if P_WAVFILE
+  if (!args.HasOption('A'))
+    cout << "Not using outgoing audio file." << endl;
+  else {
+    m_audioFilePath = args.GetOptionString('A');
+    std::auto_ptr<PFile> file(OpenAudioFile());
+    if (file.get() == NULL) {
+      cout << "Outgoing audio file  \"" << m_audioFilePath << "\" does not exist!" << endl;
+      return false;
+    }
+
+    PWAVFile * wavFile = dynamic_cast<PWAVFile *>(file.get());
+    if (wavFile != NULL) {
+      if (!SetMediaFormat(m_audioFileFormat, wavFile->GetFormatString()))
+        return false;
+    }
+    else if (dynamic_cast<OpalPCAPFile *>(file.get()) != NULL) {
+      if (!SetMediaFormat(m_audioFileFormat, args.GetOptionString("audio-format")))
+        return false;
+    }
+    else
+      m_audioFileFormat = OpalPCM16;
+
+    cout << "Using outgoing audio file \"" << m_audioFilePath << "\" as " << m_audioFileFormat << endl;
+  }
+#endif // P_WAVFILE
+
+#if OPAL_VIDEO
+  if (!args.HasOption('Y'))
+    cout << "Not using outgoing video file." << endl;
+  else {
+    m_videoFilePath = args.GetOptionString('Y');
+    std::auto_ptr<PFile> file(OpenVideoFile());
+    if (file.get() == NULL) {
+      cout << "Outgoing video file  \"" << m_audioFilePath << "\" does not exist!" << endl;
+      return false;
+    }
+
+    if (dynamic_cast<OpalPCAPFile *>(file.get()) != NULL) {
+      if (!SetMediaFormat(m_videoFileFormat, args.GetOptionString("video-format")))
+        return false;
+    }
+    else
+      m_audioFileFormat = OpalYUV420P;
+
+    cout << "Using outgoing video file \"" << m_videoFilePath << "\" as " << m_videoFileFormat << endl;
+  }
+#endif // OPAL_VIDEO
+
+  if (!args.HasOption('I')) 
+    cout << "Not saving incoming media data." << endl;
+  else {
+    m_incomingMediaDir = args.GetOptionString('I');
+    if (m_incomingMediaDir.Exists() || m_incomingMediaDir.Create(PFileInfo::DefaultDirPerms, true))
+      cout << "Using incoming media directory \"" << m_incomingMediaDir << '"' << endl;
+    else {
+      cout << "Could not create incoming media directory \"" << m_incomingMediaDir << "\"!" << endl;
+      PTRACE(1, "Could not create incoming media directory \"" << m_incomingMediaDir << '"');
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+PFile * MyLocalEndPoint::OpenAudioFile() const
+{
+  if (m_audioFilePath.IsEmpty())
+    return NULL;
+
+  PFile * file;
+  if (m_audioFilePath.GetType() == ".raw")
+    file = new PFile();
+  else if (m_audioFilePath.GetType() == ".wav")
+    file = new PWAVFile();
+  else
+    file = new OpalPCAPFile();
+
+  if (file->Open(m_audioFilePath, PFile::ReadOnly))
+    return file;
+
+  PTRACE(2, "Could not open audio file \"" << m_audioFilePath << '"');
+  delete file;
+  return NULL;
+}
+
+
+PFile * MyLocalEndPoint::OpenVideoFile() const
+{
+  if (m_videoFilePath.IsEmpty())
+    return NULL;
+
+  PFile * file = PVideoFileFactory::CreateInstance(m_videoFilePath.GetType());
+  if (file == NULL)
+    file = new OpalPCAPFile();
+
+  if (file->Open(m_videoFilePath, PFile::ReadOnly))
+    return file;
+
+  PTRACE(2, "Could not open video file \"" << m_videoFilePath << '"');
+  delete file;
+  return NULL;
+}
+
+
+OpalLocalConnection * MyLocalEndPoint::CreateConnection(OpalCall & call, void * userData, unsigned options, OpalConnection::StringOptions * stringOptions)
+{
+  return new MyLocalConnection(call, *this, userData, options, stringOptions);
+}
+
+
+OpalMediaFormatList MyLocalEndPoint::GetMediaFormats() const
+{
+  OpalMediaFormatList mediaFormats = OpalLocalEndPoint::GetMediaFormats();
+
+  if (!m_audioFilePath.IsEmpty() && m_audioFileFormat.IsTransportable()) {
+    mediaFormats.Remove("@audio");
+    mediaFormats += m_audioFileFormat;
+  }
+#if OPAL_VIDEO
+  if (!m_videoFilePath.IsEmpty() && m_videoFileFormat.IsTransportable()) {
+    mediaFormats.Remove("@video");
+    mediaFormats += m_videoFileFormat;
+  }
+#endif
+
+  return mediaFormats;
+}
+
+
+MyLocalConnection::MyLocalConnection(OpalCall & call, MyLocalEndPoint & ep, void * userData, unsigned options, OpalConnection::StringOptions * stringOptions)
+  : OpalLocalConnection(call, ep, userData, options, stringOptions)
+  , m_endpoint(ep)
+  , m_audioFile(ep.OpenAudioFile())
+  , m_toneOffset(0)
+#if OPAL_VIDEO
+  , m_videoFile(ep.OpenVideoFile())
+#endif
+{
+}
+
+
+MyLocalConnection::~MyLocalConnection()
+{
+  delete m_audioFile;
+#if OPAL_VIDEO
+  delete m_videoFile;
+#endif
+}
+
+
+void MyLocalConnection::AdjustMediaFormats(bool local, const OpalConnection * otherConnection, OpalMediaFormatList & mediaFormats) const
+{
+  if (local) {
+    if (!m_endpoint.m_audioFilePath.IsEmpty() && m_endpoint.m_audioFileFormat.IsTransportable()) {
+      mediaFormats.Remove("@audio");
+      mediaFormats += m_endpoint.m_audioFileFormat;
+    }
+#if OPAL_VIDEO
+    if (!m_endpoint.m_videoFilePath.IsEmpty() && m_endpoint.m_videoFileFormat.IsTransportable()) {
+      mediaFormats.Remove("@video");
+      mediaFormats += m_endpoint.m_videoFileFormat;
+    }
+#endif
+  }
+
+  OpalConnection::AdjustMediaFormats(local, otherConnection, mediaFormats);
+}
+
+
+bool MyLocalConnection::OnReadMediaData(const OpalMediaStream & mediaStream, void * data, PINDEX size, PINDEX & length)
+{
+  if (m_audioFile != NULL) {
+    // WAV or RAW file
+    if (!m_audioFile->Read(data, size))
+      return false;
+    length = m_audioFile->GetLastReadCount();
+    return true;
+  }
+
+  if (m_tone.IsEmpty()) {
+    m_tone.SetSampleRate(mediaStream.GetMediaFormat().GetClockRate());
+    m_tone.Generate('-', 440, 0, 20); // 20ms of middle A
+  }
+
+  PINDEX bytesLeft = (m_tone.GetSize() - m_toneOffset) / 2;
+  if (bytesLeft >= size)
+    memcpy(data, &m_tone[m_toneOffset], size);
+  else {
+    memcpy(data, &m_tone[m_toneOffset], bytesLeft);
+    memcpy((char *)data + bytesLeft, &m_tone[0], size - bytesLeft);
+  }
+  m_toneOffset = (m_toneOffset + size / 2) % m_tone.GetSize();
+  length = size;
+  return true;
+}
+
+
+bool MyLocalConnection::OnReadMediaFrame(const OpalMediaStream & mediaStream, RTP_DataFrame & frame)
+{
+  OpalPCAPFile * pcapFile;
+  if (mediaStream.GetMediaFormat().GetMediaType() == OpalMediaType::Audio()) {
+    pcapFile = dynamic_cast<OpalPCAPFile *>(m_audioFile);
+    if (pcapFile == NULL)
+      return OpalLocalConnection::OnReadMediaFrame(mediaStream, frame);
+  }
+
+#if OPAL_VIDEO
+  else {
+    PVideoFile * videoFile = dynamic_cast<PVideoFile *>(m_videoFile);
+    if (videoFile != NULL) {
+      frame.SetPayloadSize(videoFile->GetFrameBytes() + sizeof(OpalVideoTranscoder::FrameHeader));
+      OpalVideoTranscoder::FrameHeader * hdr = (OpalVideoTranscoder::FrameHeader *)frame.GetPayloadPtr();
+      hdr->x = hdr->y = 0;
+      videoFile->GetFrameSize(hdr->width, hdr->height);
+      videoFile->ReadFrame(OPAL_VIDEO_FRAME_DATA_PTR(hdr));
+      return true;
+    }
+
+    if ((pcapFile = dynamic_cast<OpalPCAPFile *>(m_videoFile)) == NULL)
+      return true;
+  }
+#endif
+
+  if (pcapFile->GetRTP(frame) < 0) {
+    PTRACE(3, "Could not get RTP from PCAP file.");
+  }
+  return true;
+}
+
+
+bool MyLocalConnection::OnWriteMediaFrame(const OpalMediaStream & mediaStream, RTP_DataFrame & frame)
+{
+  if (!mediaStream.GetMediaFormat().IsTransportable())
+    return true;
+
+  if (!m_savedMedia.IsOpen()) {
+    if (m_endpoint.m_incomingMediaDir.IsEmpty())
+      return true;
+    if (!m_savedMedia.Open(m_endpoint.m_incomingMediaDir + GetToken() + ".pcap", PFile::WriteOnly))
+      return true;
+  }
+
+  m_savedMedia.WriteRTP(frame, mediaStream.GetMediaFormat().GetMediaType() == OpalMediaType::Audio() ? 5000 : 5002);
   return true;
 }
 
