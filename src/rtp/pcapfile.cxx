@@ -143,6 +143,17 @@ bool OpalPCAPFile::WriteFrame(const PEthSocket::Frame & frame)
 }
 
 
+bool OpalPCAPFile::WriteRTP(const RTP_DataFrame & rtp, WORD port)
+{
+  PEthSocket::Frame packet;
+  memcpy(packet.CreateUDP(PIPSocketAddressAndPort(GetFilterSrcIP(), port),
+                          PIPSocketAddressAndPort(GetFilterDstIP(), port),
+                          rtp.GetPacketSize()),
+         rtp, rtp.GetPacketSize());
+  return WriteFrame(packet);
+}
+
+
 bool OpalPCAPFile::Frame::Read(PChannel & channel, PINDEX)
 {
   PreRead();

@@ -56,6 +56,7 @@ class OpalPCAPFile : public PFile
     void PrintOn(ostream & strm) const;
 
     bool WriteFrame(const PEthSocket::Frame & frame);
+    bool WriteRTP(const RTP_DataFrame & rtp, WORD port = 5000);
 
     int GetDataLink(PBYTEArray & payload);
     int GetIP(PBYTEArray & payload);
