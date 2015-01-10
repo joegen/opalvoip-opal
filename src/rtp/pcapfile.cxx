@@ -67,11 +67,11 @@ OpalPCAPFile::OpalPCAPFile()
 }
 
 
-bool OpalPCAPFile::Open(const PFilePath & filename, OpenMode mode)
+bool OpalPCAPFile::InternalOpen(OpenMode mode, OpenOptions opts, PFileInfo::Permissions permissions)
 {
   PAssert(mode != PFile::ReadWrite, PInvalidParameter);
 
-  if (!PFile::Open(filename, mode))
+  if (!PFile::InternalOpen(mode, opts, permissions))
     return false;
 
   if (mode == PFile::WriteOnly) {
@@ -84,12 +84,12 @@ bool OpalPCAPFile::Open(const PFilePath & filename, OpenMode mode)
     m_fileHeader.network = 1;
     if (Write(&m_fileHeader, sizeof(m_fileHeader)))
       return true;
-    PTRACE(1, "PCAPFile\tCould not write header to \"" << filename << '"');
+    PTRACE(1, "PCAPFile\tCould not write header to \"" << GetFilePath() << '"');
     return false;
   }
 
   if (!Read(&m_fileHeader, sizeof(m_fileHeader))) {
-    PTRACE(1, "PCAPFile\tCould not read header from \"" << filename << '"');
+    PTRACE(1, "PCAPFile\tCould not read header from \"" << GetFilePath() << '"');
     return false;
   }
 
@@ -98,7 +98,7 @@ bool OpalPCAPFile::Open(const PFilePath & filename, OpenMode mode)
   else if (m_fileHeader.magic_number == 0xd4c3b2a1)
     m_rawPacket.m_otherEndian = true;
   else {
-    PTRACE(1, "PCAPFile\tFile \"" << filename << "\" is not a PCAP file, bad magic number.");
+    PTRACE(1, "PCAPFile\tFile \"" << GetFilePath() << "\" is not a PCAP file, bad magic number.");
     return false;
   }
 

@@ -50,7 +50,6 @@ class OpalPCAPFile : public PFile
   public:
     OpalPCAPFile();
 
-    bool Open(const PFilePath & filename, OpenMode mode = ReadOnly);
     bool Restart();
 
     void PrintOn(ostream & strm) const;
@@ -142,6 +141,8 @@ class OpalPCAPFile : public PFile
     OpalMediaFormat GetMediaFormat(const RTP_DataFrame & rtp) const;
 
   protected:
+    bool InternalOpen(OpenMode mode, OpenOptions opt, PFileInfo::Permissions permissions);
+
     struct FileHeader { 
       DWORD magic_number;   /* magic number */
       WORD  version_major;  /* major version number */
