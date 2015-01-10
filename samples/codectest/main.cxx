@@ -88,7 +88,7 @@ void CodecTest::Main()
              "m-suppress-marker. suppress marker bits to decoder\n"
              "M-force-marker. force marker bits to decoder\n"
              "p-payload-size: Set size of maximum RTP payload for encoded data\n"
-             "S-simultanoues: Number of simultaneous encode/decode threads\n"
+             "S-simultaneous: Number of simultaneous encode/decode threads\n"
              "T-statistics. output statistics files\n"
              "C-rate-control. enable rate control\n"
              "d-drop: randomly drop N% of encoded packets\n"
@@ -96,6 +96,7 @@ void CodecTest::Main()
              "-noprompt. do not prompt for commands, i.e. exit when input closes\n"
              "-snr. calculate signal-to-noise ratio between input and output\n"
              "i-info. display per-frame info (use multiple times for more info)\n"
+             "-pcap: save encoded packets in a PCAP file\n"
              "-list. list all available plugin codecs\n"
              PTRACE_ARGLIST
              "h-help. print this help message.\n"
@@ -295,6 +296,12 @@ int TranscoderThread::InitialiseCodec(PArgList & args,
   PString s = args.GetOptionString("count");
   if (!s.IsEmpty())
     m_framesToTranscode = s.AsInteger();
+
+  PString pcapFilename = args.GetOptionString("pcap");
+  if (!pcapFilename.IsEmpty() && !m_pcapFile.Open(pcapFilename, PFile::WriteOnly)) {
+    cout << "Could not write to PCAP file \"" << pcapFilename << '"' << endl;
+    return 0;
+  }
 
   m_calcSNR = args.HasOption("snr");
   m_extensionHeader = (BYTE)args.GetOptionString("ext-hdr", "255").AsUnsigned();
@@ -1031,6 +1038,8 @@ void TranscoderThread::Main()
           default :
             break;
         }
+
+        m_pcapFile.WriteRTP(encFrames[i]);
 
         if (g_infoCount > 0) {
           RTP_DataFrame & rtp = encFrames[i];
