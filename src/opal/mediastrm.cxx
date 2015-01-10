@@ -662,14 +662,14 @@ OpalMediaStreamPacing::OpalMediaStreamPacing(const OpalMediaFormat & mediaFormat
 }
 
 
-void OpalMediaStreamPacing::Pace(bool reading, PINDEX bytes, bool & marker)
+void OpalMediaStreamPacing::Pace(bool generated, PINDEX bytes, bool & marker)
 {
   unsigned timeToWait = m_frameTime;
 
   if (!m_timeOnMarkers)
     timeToWait *= (bytes + m_frameSize - 1) / m_frameSize;
   else {
-    if (reading)
+    if (generated)
       marker = true;
     else if (!marker)
       return;
