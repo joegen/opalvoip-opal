@@ -257,7 +257,7 @@ OpalLocalEndPoint::Synchronicity
   if (mediaFormat.GetMediaType() == OpalMediaType::Audio())
     return m_defaultAudioSynchronicity;
 
-  if (isSource && mediaFormat.GetMediaType() == OpalMediaType::Audio())
+  if (isSource && mediaFormat.GetMediaType() == OpalMediaType::Video())
     return m_defaultVideoSourceSynchronicity;
 
   return e_Asynchronous;
@@ -662,10 +662,15 @@ PBoolean OpalLocalMediaStream::ReadPacket(RTP_DataFrame & frame)
   if (!IsOpen())
     return false;
 
-  if (m_connection.OnReadMediaFrame(*this, frame))
-    return true;
+  if (!m_connection.OnReadMediaFrame(*this, frame))
+    return OpalMediaStream::ReadPacket(frame);
 
-  return OpalMediaStream::ReadPacket(frame);
+  marker = frame.GetMarker();
+  timestamp = frame.GetTimestamp();
+
+  if (m_synchronicity == OpalLocalEndPoint::e_SimulateSynchronous)
+    Pace(false, frame.GetPayloadSize(), marker);
+  return true;
 }
 
 
@@ -674,10 +679,12 @@ PBoolean OpalLocalMediaStream::WritePacket(RTP_DataFrame & frame)
   if (!IsOpen())
     return false;
 
-  if (m_connection.OnWriteMediaFrame(*this, frame))
-    return true;
+  if (!m_connection.OnWriteMediaFrame(*this, frame))
+    return OpalMediaStream::WritePacket(frame);
 
-  return OpalMediaStream::WritePacket(frame);
+  if (m_synchronicity == OpalLocalEndPoint::e_SimulateSynchronous)
+    Pace(false, frame.GetPayloadSize(), marker);
+  return true;
 }
 
 
@@ -687,7 +694,7 @@ PBoolean OpalLocalMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
     return false;
 
   if (m_synchronicity == OpalLocalEndPoint::e_SimulateSynchronous)
-    Pace(true, size, marker);
+    Pace(false, size, marker);
   return true;
 }
 
