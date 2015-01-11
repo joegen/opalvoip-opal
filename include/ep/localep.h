@@ -337,7 +337,7 @@ class OpalLocalEndPoint : public OpalEndPoint
        OnWriteMediaData() is sent 320 bytes of PCM data, it will block for
        20 milliseconds.
 
-       If GetSynchronicity() returns e_SimulateSyncronous, then the system will try and
+       If GetSynchronicity() returns e_SimulateSynchronous, then the system will try and
        simulate the correct timing using the operating system sleep function.
        This is not desirable as this function is notoriously inaccurate, and
        OPAL does it's best to compensate, but very often there is no other
