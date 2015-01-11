@@ -865,6 +865,13 @@ bool OpalSDPHTTPConsoleEndPoint::Initialise(PArgList & args, bool verbose, const
 {
   OpalConsoleManager::LockedStream lockedOutput(m_console);
   ostream & output = lockedOutput;
+
+  if (args.HasOption("no-sdp")) {
+    if (verbose)
+      output << "SDP over HTTP protocol disabled.\n";
+    return true;
+  }
+
   return OpalRTPConsoleEndPoint::Initialise(args, output, verbose);
 }
 #endif // OPAL_SDP_HTTP
