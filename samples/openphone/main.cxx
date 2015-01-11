@@ -3451,22 +3451,23 @@ void MyManager::OnDefVidWinPos(wxCommandEvent & /*event*/)
 
   wxRect rect(GetPosition(), GetSize());
 
-  int y = rect.GetBottom();
+  int x = rect.GetLeft();
   for (OpalVideoFormat::ContentRole role = OpalVideoFormat::BeginContentRole; role < OpalVideoFormat::EndContentRole; ++role) {
-    int x = rect.GetLeft();
+    int y = rect.GetBottom();
     for (int preview = 0; preview < 2; ++preview) {
       m_videoWindowInfo[preview][role].x = x;
       m_videoWindowInfo[preview][role].y = y;
       m_videoWindowInfo[preview][role].WriteConfig(config, VideoWindowKeyBase[preview][role]);
 
-      int w = PVideoFrameInfo::CIFWidth;
-      int h = PVideoFrameInfo::CIFHeight;
+      int w = 0;
+      int h = 0;
       PSafePtr<OpalVideoMediaStream> stream = ::PSafePtrCast<OpalMediaStream, OpalVideoMediaStream>(connection->GetMediaStream(OpalMediaType::Video(), preview));
       if (stream != NULL) {
         PVideoOutputDevice * device = stream->GetVideoOutputDevice();
         if (device != NULL) {
           w = device->GetFrameWidth();
           h = device->GetFrameHeight();
+          device->SetPosition(x, y);
         }
       }
 
