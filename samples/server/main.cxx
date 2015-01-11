@@ -395,7 +395,7 @@ MyManager::MyManager()
   , m_cdrListMax(100)
 {
   OpalLocalEndPoint * ep = new OpalLocalEndPoint(*this, LoopbackPrefix);
-  ep->SetDefaultAudioSynchronicity(OpalLocalEndPoint::e_SimulateSyncronous);
+  ep->SetDefaultAudioSynchronicity(OpalLocalEndPoint::e_SimulateSynchronous);
   OpalMediaFormat::RegisterKnownMediaFormats(); // Make sure codecs are loaded
   m_outputStream = &m_systemLog;
 }

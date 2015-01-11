@@ -125,7 +125,7 @@ bool MyLocalEndPoint::Initialise(PArgList & args)
     }
 
     // Need to simulate blocking write when going to disk file or jitter buffer breaks
-    SetDefaultAudioSynchronicity(OpalLocalEndPoint::e_SimulateSyncronous);
+    SetDefaultAudioSynchronicity(OpalLocalEndPoint::e_SimulateSynchronous);
   }
 
   // Set answer immediately
