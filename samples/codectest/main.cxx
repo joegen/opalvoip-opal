@@ -309,7 +309,13 @@ int TranscoderThread::InitialiseCodec(PArgList & args,
   for (PINDEX i = 0; i < args.GetCount(); i++) {
     mediaFormat = args[i];
     if (mediaFormat.IsEmpty()) {
-      cout << "Unknown media format name \"" << args[i] << '"' << endl;
+      cout << "Unknown media format name \"" << args[i] << "\", use one of:";
+      OpalMediaFormatList all = OpalMediaFormat::GetAllRegisteredMediaFormats();
+      for (OpalMediaFormatList::iterator it = all.begin(); it != all.end(); ++it) {
+        if (it->IsTransportable())
+          cout << "\n   " << *it;
+      }
+      cout << endl;
       return 0;
     }
 
