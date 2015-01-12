@@ -1167,6 +1167,7 @@ class SIPInvite : public SIPTransaction
       SIPConnection & connection,
       OpalTransport * transport = NULL
     );
+    ~SIPInvite();
 
     virtual SIPTransaction * CreateDuplicate() const;
 
