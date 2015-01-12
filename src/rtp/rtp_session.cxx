@@ -2728,7 +2728,7 @@ bool OpalRTPSession::InternalRead()
   if (m_socket[e_Control] == NULL)
     return InternalReadData();
 
-  int selectStatus = PSocket::Select(*m_socket[e_Data], *m_socket[e_Control], m_maxNoReceiveTime);
+  int selectStatus = PSocket::Select(*m_socket[e_Data], *m_socket[e_Control], m_socket[e_Data]->GetReadTimeout());
   switch (selectStatus) {
     case -3 :
       return InternalReadData() && InternalReadControl();
