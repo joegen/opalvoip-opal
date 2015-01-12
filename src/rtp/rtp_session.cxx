@@ -2026,6 +2026,7 @@ bool OpalRTPSession::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
   if (!OpalMediaSession::UpdateMediaFormat(mediaFormat))
     return false;
 
+  m_timeUnits = mediaFormat.GetTimeUnits();
   m_feedback = mediaFormat.GetOptionEnum(OpalMediaFormat::RTCPFeedbackOption(), OpalMediaFormat::e_NoRTCPFb);
 
   unsigned maxBitRate = mediaFormat.GetMaxBandwidth();
@@ -2063,7 +2064,7 @@ bool OpalRTPSession::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 
   SetQoS(m_qos);
 
-  PTRACE(4, *this << "updated media format " << mediaFormat << ": maxBitRate=" << maxBitRate << ", feedback=" << m_feedback);
+  PTRACE(4, *this << "updated media format " << mediaFormat << ": timeUnits=" << m_timeUnits << " maxBitRate=" << maxBitRate << ", feedback=" << m_feedback);
   return true;
 }
 
