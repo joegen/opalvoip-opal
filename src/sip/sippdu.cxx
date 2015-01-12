@@ -3725,6 +3725,13 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport * transport)
 }
 
 
+SIPInvite::~SIPInvite()
+{
+  for (OpalRTPConnection::SessionMap::iterator it = m_sessions.begin(); it != m_sessions.end(); ++it)
+    it->second->Close();
+}
+
+
 SIPTransaction * SIPInvite::CreateDuplicate() const
 {
   if (GetConnection()->m_sessions.IsEmpty())
