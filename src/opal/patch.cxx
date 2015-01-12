@@ -1020,7 +1020,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
   if (bypassing || m_primaryCodec == NULL) {
 #if OPAL_VIDEO
     if (m_videoFormat.IsValid()) {
-      PPROFILE_BLOCK("OpalMediaPatch::Sink::WriteFrame - video detect")
+      PPROFILE_BLOCK("OpalMediaPatch::Sink::WriteFrame - video detect");
       switch (m_videoFormat.GetVideoFrameType(sourceFrame.GetPayloadPtr(), sourceFrame.GetPayloadSize(), m_keyFrameDetectContext)) {
       case OpalVideoFormat::e_IntraFrame :
           m_videoStatistics.IncrementFrames(true);
