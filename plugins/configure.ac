@@ -282,17 +282,16 @@ if test "x$HAVE_LIBAVCODEC" = "xyes" ; then
       [
          x264_param_t param;
          x264_encoder_open(&param);
-      ],
-      [
-         AC_ARG_ENABLE([x264-licensed], [AC_HELP_STRING([--enable-x264-licensed],[enable commercially licensed x264])])
-         if test "$enableval" = "yes" ;  then
-            X264_CFLAGS="$X264_CFLAGS -DX264_LICENSED"
-            HAVE_H264="yes (Licensed x264)"
-         else
-            HAVE_H264="yes (GPL)"
-         fi
       ]
    )
+
+   AC_ARG_ENABLE([x264-licensed], [AC_HELP_STRING([--enable-x264-licensed],[enable commercially licensed x264])])
+   if test "$enable_x264_licensed" = "yes" ;  then
+      X264_CFLAGS="$X264_CFLAGS -DX264_LICENSED"
+      HAVE_X264="Licensed $HAVE_X264"
+   else
+      HAVE_X264="GPL $HAVE_X264"
+   fi
 else
    HAVE_H263="no (missing FFMPEG)"
    HAVE_H264="no (missing FFMPEG)"
