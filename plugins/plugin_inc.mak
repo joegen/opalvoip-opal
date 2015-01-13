@@ -42,7 +42,6 @@ ifneq (,$(BASENAME))
     LIB_SONAME  = $(BASENAME)_ptplugin
     PLUGIN_NAME = $(LIB_SONAME).$(SHAREDLIBEXT)
     CPPFLAGS   += $(SHARED_CPPFLAGS)
-    LDFLAGS    := $(SHARED_LDFLAGS) $(LDFLAGS)
   endif
   OBJDIR = $(abspath $(PLUGIN_SRC_DIR)/../lib_$(target)/plugins/$(BASENAME))
   PLUGIN_PATH = $(OBJDIR)/$(PLUGIN_NAME)
@@ -116,7 +115,11 @@ ifneq (,$(PLUGIN_PATH))
 
   $(PLUGIN_PATH): $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(patsubst %.cpp,%.o,$(patsubst %.c,%.o,$(notdir $(SOURCES))))))
 	@if [ ! -d $(dir $@) ] ; then $(MKDIR_P) $(dir $@) ; fi
+  ifeq (,$(LIB_SONAME))
 	$(Q_LD)$(CXX) -o $@ $(strip $(LDFLAGS) $^ $(LIBS))
+  else
+	$(Q_LD)$(CXX) -o $@ $(strip $(SHARED_LDFLAGS) $(LDFLAGS) $^ $(LIBS))
+  endif
 
   install ::
 	mkdir -p $(DESTDIR)$(INSTALL_DIR)
