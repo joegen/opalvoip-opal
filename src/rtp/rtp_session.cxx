@@ -2726,10 +2726,14 @@ bool OpalRTPSession::InternalRead()
   if (!IsOpen())
     return false;
 
-  if (m_socket[e_Control] == NULL)
-    return InternalReadData();
+  PTimeInterval readTimeout = m_remoteAddress.IsValid() && m_remotePort[e_Data] != 0 ? m_maxNoReceiveTime : PTimeInterval(0,5);
 
-  int selectStatus = PSocket::Select(*m_socket[e_Data], *m_socket[e_Control], m_socket[e_Data]->GetReadTimeout());
+  if (m_socket[e_Control] == NULL) {
+    m_socket[e_Data]->SetReadTimeout(readTimeout);
+    return InternalReadData();
+  }
+
+  int selectStatus = PSocket::Select(*m_socket[e_Data], *m_socket[e_Control], readTimeout);
   switch (selectStatus) {
     case -3 :
       return InternalReadData() && InternalReadControl();

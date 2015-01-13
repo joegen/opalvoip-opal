@@ -138,7 +138,6 @@ public:
     SetVerifyMode(PSSLContext::VerifyPeerMandatory, PCREATE_NOTIFIER2_EXT(session, OpalDTLSSRTPSession, OnVerify, PSSLChannel::VerifyInfo &));
 
     Open(socket);
-    SetReadTimeout(2000);
   }
 
 
@@ -321,6 +320,8 @@ bool OpalDTLSSRTPSession::ExecuteHandshake(Channel channel)
     if (!InternalRead())
       return false;
   }
+
+  m_sslChannel[channel]->SetReadTimeout(2000);
 
   if (!m_sslChannel[channel]->ExecuteHandshake()) {
     PTRACE(2, *this << "error in DTLS handshake.");
