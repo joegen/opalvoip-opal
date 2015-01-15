@@ -492,6 +492,7 @@ void MyCall::OnOpenMediaStream(OpalMediaStream & stream)
 
 MyLocalEndPoint::MyLocalEndPoint(OpalManager & mgr)
   : OpalLocalEndPoint(mgr)
+  , m_incomingMediaDir(PString::Empty())
 {
   SetDefaultAudioSynchronicity(e_SimulateSynchronous);
 #if OPAL_VIDEO
@@ -766,7 +767,8 @@ bool MyLocalConnection::OnWriteMediaFrame(const OpalMediaStream & mediaStream, R
       return true;
   }
 
-  m_savedMedia.WriteRTP(frame, mediaStream.GetMediaFormat().GetMediaType() == OpalMediaType::Audio() ? 5000 : 5002);
+  if (m_savedMedia.IsOpen())
+    m_savedMedia.WriteRTP(frame, mediaStream.GetMediaFormat().GetMediaType() == OpalMediaType::Audio() ? 5000 : 5002);
   return true;
 }
 
