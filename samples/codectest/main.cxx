@@ -487,8 +487,7 @@ bool AudioThread::Initialise(PArgList & args)
     return false;
   }
 
-  if (m_encoder == NULL) 
-    m_frameTime = mediaFormat.GetFrameTime();
+  m_frameTime = mediaFormat.GetFrameTime()*mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1);
 
   cout << "opened and initialised." << endl;
   m_running = true;
@@ -1011,6 +1010,7 @@ void TranscoderThread::Main()
 
         if (m_extensionHeader != 255)
           srcFrame.SetHeaderExtension(1, 1, &m_extensionHeader, RTP_DataFrame::RFC5285_OneByte);
+
 
         bool state = m_encoder->ConvertFrames(srcFrame, encFrames);
         if (oldEncState != state) {
