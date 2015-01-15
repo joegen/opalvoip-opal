@@ -1456,6 +1456,7 @@ OpalPluginCodecManager::OpalPluginCodecManager(PPluginManager * _pluginMgr)
   : PPluginModuleManager(PLUGIN_CODEC_GET_CODEC_FN_STR, _pluginMgr)
 {
 #ifdef OPAL_PLUGIN_DIR
+  if (::getenv(P_PTLIB_PLUGIN_DIR_ENV_VAR) == NULL && ::getenv(P_PWLIB_PLUGIN_DIR_ENV_VAR) == NULL)
    pluginMgr->AddDirectory(OPAL_PLUGIN_DIR); // Add default OPAL plug in directory so PPluginManager loads these too
 #endif // OPAL_PLUGIN_DIR
 
