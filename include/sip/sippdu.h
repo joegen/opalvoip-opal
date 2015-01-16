@@ -308,6 +308,8 @@ class SIPMIMEInfo : public PMIMEInfo
     PCaselessString GetContentType(bool includeParameters = false) const;
     void SetContentType(const PString & v);
 
+    bool GetSDP(const PString & entityBody, PString & sdp) const;
+
     PCaselessString GetContentEncoding() const;
     void SetContentEncoding(const PString & v);
 
