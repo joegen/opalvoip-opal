@@ -2726,7 +2726,11 @@ bool OpalRTPSession::InternalRead()
   if (!IsOpen())
     return false;
 
-  PTimeInterval readTimeout = m_remoteAddress.IsValid() && m_remotePort[e_Data] != 0 ? m_maxNoReceiveTime : PTimeInterval(0,5);
+  PTimeInterval readTimeout = m_maxNoReceiveTime;
+#if OPAL_ICE
+  if (m_iceServer == NULL ? !m_candidates[e_Data].empty() : (!m_remoteAddress.IsValid() || m_remotePort[e_Data] == 0))
+    readTimeout.SetInterval(0, 5);
+#endif
 
   if (m_socket[e_Control] == NULL) {
     m_socket[e_Data]->SetReadTimeout(readTimeout);
