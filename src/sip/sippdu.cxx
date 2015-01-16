@@ -2523,16 +2523,50 @@ void SIP_PDU::Build(PString & pduStr, PINDEX & pduLen)
 }
 
 
+bool SIPMIMEInfo::GetSDP(const PString & entityBody, PString & sdp) const
+{
+  if (entityBody.IsEmpty()) {
+    PTRACE(5, "No entity body, no SDP.");
+    return false;
+  }
+
+  if (!GetContentEncoding().IsEmpty()) {
+    PTRACE(3, "Unsupported content encoding \"" << GetContentEncoding() << '"');
+    return false;
+  }
+
+  if (GetContentType() == OpalSDPEndPoint::ContentType()) {
+    sdp = entityBody;
+    return true;
+  }
+
+  if (GetContentType().NumCompare("multipart/") != PObject::EqualTo) {
+    PTRACE(3, "Unsupported content type \"" << GetContentType() << '"');
+    return false;
+  }
+
+  PMultiPartList parts;
+  if (!DecodeMultiPartList(parts, entityBody)) {
+    PTRACE(3, "Invalid multipart MIME, no SDP.");
+    return false;
+  }
+
+  for (PMultiPartList::iterator it = parts.begin(); it != parts.end(); ++it) {
+    if (it->m_mime.GetString(PMIMEInfo::ContentTypeTag) == OpalSDPEndPoint::ContentType()) {
+      sdp = it->m_textBody;
+      return true;
+    }
+  }
+
+  PTRACE(3, "Cannot find SDP in multipart MIME.");
+  return false;
+}
+
+
 bool SIP_PDU::IsContentSDP(bool emptyOK) const
 {
-  if (m_entityBody.IsEmpty())
-    return emptyOK;
-
-  if (m_mime.GetContentEncoding().IsEmpty())
-    return m_mime.GetContentType() == OpalSDPEndPoint::ContentType();
-
-  PTRACE(3, "Unsupported content encoding.");
-  return false;
+  PString dummy;
+  return m_entityBody.IsEmpty() ? emptyOK : m_mime.GetSDP(m_entityBody, dummy);
 }
 
 
@@ -2541,12 +2575,13 @@ bool SIP_PDU::DecodeSDP(SIPEndPoint & endpoint, const OpalMediaFormatList & loca
   if (m_SDP != NULL)
     return true;
 
-  if (!IsContentSDP())
+  PString sdpText;
+  if (!m_mime.GetSDP(m_entityBody, sdpText))
     return false;
 
   m_SDP = endpoint.CreateSDP(0, 0, OpalTransportAddress());
   PTRACE_CONTEXT_ID_TO(m_SDP);
-  if (m_SDP->Decode(m_entityBody, localList.IsEmpty() ? OpalMediaFormat::GetAllRegisteredMediaFormats() : localList))
+  if (m_SDP->Decode(sdpText, localList.IsEmpty() ? OpalMediaFormat::GetAllRegisteredMediaFormats() : localList))
     return true;
 
   delete m_SDP;
