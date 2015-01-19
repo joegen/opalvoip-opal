@@ -132,7 +132,7 @@ void PlayRTP::Main()
   }
 
   OpalPCAPFile pcap;
-  if (!pcap.Open(args[0])) {
+  if (!pcap.Open(args[0], PFile::ReadOnly)) {
     cerr << "Could not open file \"" << args[0] << "\"\n";
     return;
   }
