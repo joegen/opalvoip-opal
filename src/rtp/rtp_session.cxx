@@ -1665,7 +1665,7 @@ void OpalRTPSession::OnRxApplDefined(const RTP_ControlFrame::ApplDefinedInfo & i
 OpalRTPSession::SendReceiveStatus OpalRTPSession::SendNACK(const RTP_ControlFrame::LostPacketMask & lostPackets, RTP_SyncSourceId syncSourceIn)
 {
   if (lostPackets.empty()) {
-    PTRACE(5, *this << "no packets provided for NACK");
+    PTRACE(5, *this << "no packet loss indicated, not sending NACK");
     return e_IgnorePacket;
   }
 
