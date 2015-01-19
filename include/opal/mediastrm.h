@@ -286,7 +286,7 @@ class OpalMediaStream : public PSafeObject
 
     /**Pushes a frame to the patch
       */
-    bool PushPacket(
+    virtual bool PushPacket(
       RTP_DataFrame & packet
     );
 
