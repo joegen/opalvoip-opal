@@ -453,11 +453,20 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
 
     if (!m_noDelay) {
       if (rtp.GetTimestamp() != lastTimeStamp) {
-        unsigned msecs = (rtp.GetTimestamp() - lastTimeStamp)/inputFmt.GetTimeUnits();
+        RTP_Timestamp delta = rtp.GetTimestamp() - lastTimeStamp;
+        unsigned msecs = delta/inputFmt.GetTimeUnits();
         if (msecs < 3000) 
           PThread::Sleep(msecs);
-        else 
-          cout << "ignoring timestamp jump > 3 seconds" << endl;
+        else {
+          cout << "Ignoring timestamp jump of ";
+          if (delta < 0x8000000)
+            cout << msecs << "ms (" << delta;
+          else {
+            delta = lastTimeStamp - rtp.GetTimestamp();
+            cout << '-' << delta/inputFmt.GetTimeUnits() << "ms (-" << delta;
+          }
+          cout << "), old=" << lastTimeStamp << ", new=" << rtp.GetTimestamp() << endl;
+        }
         lastTimeStamp = rtp.GetTimestamp();
       }
     }
