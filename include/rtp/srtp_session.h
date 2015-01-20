@@ -145,10 +145,14 @@ class OpalSRTPSession : public OpalRTPSession
     OpalSRTPKeyInfo   * m_keyInfo[2]; // rx & tx
     unsigned            m_consecutiveErrors;
 
-#if PTRACING
-    unsigned m_traceLevel[2][2];
-    unsigned m_traceUnsecuredCount[2][2];
-#endif
+    PTRACE_THROTTLE(m_throttleDataSenderProt, 4);
+    PTRACE_THROTTLE(m_throttleDataReceiverProt, 4);
+    PTRACE_THROTTLE(m_throttleControlSenderProt, 4);
+    PTRACE_THROTTLE(m_throttleControlReceiverProt, 4);
+    PTRACE_THROTTLE(m_throttleDataSenderUnprot, 3);
+    PTRACE_THROTTLE(m_throttleDataReceiverUnprot, 3);
+    PTRACE_THROTTLE(m_throttleControlSenderUnprot, 3);
+    PTRACE_THROTTLE(m_throttleControlReceiverUnprot, 3);
 };
 
 
