@@ -34,21 +34,11 @@
 #include <codec/opalplugin.hpp>
 
 
-namespace OpalMemory
-{
-  size_t const Alignment = 16;
-
-  __inline static bool IsAligned(uint8_t * ptr) { return (((intptr_t)ptr)&(Alignment-1)) == 0; }
-
-  bool AllocateAligned(void * & baseMemory, uint8_t * & alignedMemory, size_t & alignedSize, size_t requestedSize);
-};
-
 class OpalPluginFrame
 {
   protected:
     size_t    m_length;
     size_t    m_maxSize;
-    void    * m_memory;
     uint8_t * m_buffer;
     size_t    m_maxPayloadSize;
 
@@ -64,7 +54,7 @@ class OpalPluginFrame
     size_t GetMaxPayloadSize() const { return m_maxPayloadSize; }
 
     virtual void SetMaxPayloadSize(size_t size);
-    virtual bool SetResolution(unsigned width, unsigned height);
+    virtual bool SetSize(size_t size);
     virtual bool Reset(size_t len = 0);
 
     virtual bool GetPacket(PluginCodec_RTP & rtp, unsigned & flags) = 0;

@@ -106,8 +106,6 @@ FFMPEGCodec::FFMPEGCodec(const char * prefix, OpalPluginFrame * fullFrame)
   , m_codec(NULL)
   , m_context(NULL)
   , m_picture(NULL)
-  , m_alignedInputYUV(NULL)
-  , m_alignedInputSize(0)
   , m_fullFrame(fullFrame)
   , m_open(false)
   , m_errorCount(0)
@@ -125,6 +123,8 @@ FFMPEGCodec::FFMPEGCodec(const char * prefix, OpalPluginFrame * fullFrame)
   g_avcodec_mutex.Signal();
 
   av_init_packet(&m_packet);
+
+  m_alignedYUV[0] = m_alignedYUV[1] = m_alignedYUV[2] = NULL;
 }
 
 
@@ -134,7 +134,8 @@ FFMPEGCodec::~FFMPEGCodec()
 
   if (m_context != NULL)
     av_free(m_context);
-  if (m_picture != NULL)
+
+  if (m_picture != NULL) {
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(54, 0, 0)
     av_free(m_picture);
 #elif LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55, 0, 0)
@@ -142,8 +143,11 @@ FFMPEGCodec::~FFMPEGCodec()
 #else
     av_frame_free(&m_picture);
 #endif
-  if (m_alignedInputYUV != NULL)
-    free(m_alignedInputYUV);
+  }
+
+  av_free(m_alignedYUV[0]);
+  av_free(m_alignedYUV[1]);
+  av_free(m_alignedYUV[2]);
 
   delete m_fullFrame;
 
@@ -317,9 +321,15 @@ bool FFMPEGCodec::SetResolution(unsigned width, unsigned height)
     // YUV420P input
     m_picture->linesize[0] = width;
     m_picture->linesize[1] = m_picture->linesize[2] = width/2;
+    av_free(m_alignedYUV[0]);
+    av_free(m_alignedYUV[1]);
+    av_free(m_alignedYUV[2]);
+    m_picture->data[0] = (uint8_t *)(m_alignedYUV[0] = av_malloc(width*height));  // Allocate correctly aligned memory
+    m_picture->data[1] = (uint8_t *)(m_alignedYUV[1] = av_malloc(width*height / 4));
+    m_picture->data[2] = (uint8_t *)(m_alignedYUV[2] = av_malloc(width*height / 4));
   }
 
-  if (m_fullFrame != NULL && !m_fullFrame->SetResolution(width, height)) {
+  if (m_fullFrame != NULL && !m_fullFrame->SetSize(width*height*2)) {
     PTRACE(1, m_prefix, "Frame handler SetResolution failed");
     return false;
   }
@@ -442,18 +452,13 @@ bool FFMPEGCodec::EncodeVideoPacket(const PluginCodec_RTP & in, PluginCodec_RTP 
 
   size_t planeSize = m_context->width*m_context->height;
 
-  // May need to copy to local buffer to guarantee 16 byte alignment
+  // Need to copy to local buffer to guarantee byte alignment
   uint8_t * yuv = OPAL_VIDEO_FRAME_DATA_PTR(header);
-  if (!OpalMemory::IsAligned(yuv)) {
-    size_t frameSize = planeSize*3/2;
-    if (!OpalMemory::AllocateAligned(m_alignedInputYUV, yuv, m_alignedInputSize, frameSize))
-      return false;
-    memcpy(yuv, OPAL_VIDEO_FRAME_DATA_PTR(header), frameSize);
-  }
-
-  m_picture->data[0] = yuv;
-  m_picture->data[1] = m_picture->data[0] + planeSize;
-  m_picture->data[2] = m_picture->data[1] + planeSize/4;
+  memcpy(m_picture->data[0], yuv, planeSize);
+  yuv += planeSize;
+  planeSize /= 4;
+  memcpy(m_picture->data[1], yuv, planeSize);
+  memcpy(m_picture->data[2], yuv + planeSize, planeSize);
 
   /*
   m_picture->pts = (int64_t)srcRTP.GetTimestamp()*m_context->time_base.den/m_context->time_base.num/PLUGINCODEC_VIDEO_CLOCK;

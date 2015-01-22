@@ -90,8 +90,7 @@ class FFMPEGCodec
     AVCodecContext * m_context;
     AVFrame        * m_picture;
     AVPacket         m_packet;
-    void           * m_alignedInputYUV;
-    size_t           m_alignedInputSize;
+    void           * m_alignedYUV[3];
     OpalPluginFrame *m_fullFrame;
     bool             m_open;
     int              m_errorCount;
