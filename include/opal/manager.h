@@ -862,7 +862,7 @@ class OpalManager : public PObject
     /**A call back function whenever a connection is "established".
        This indicates that a connection to an endpoint was established. This
        usually occurs after OnConnected() and indicates that the connection
-       is both connected and has media flowing.
+       is both connected and media can flow.
 
        In the context of H.323 this means that the CONNECT pdu has been
        received and either fast start was in operation or the subsequent Open

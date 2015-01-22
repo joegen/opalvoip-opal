@@ -82,6 +82,10 @@ class OpalRTPMediaStream : public OpalMediaStream
       */
     virtual bool IsOpen() const;
 
+    /**Returns true if the media stream is established.
+    */
+    virtual bool IsEstablished() const;
+
     /**Callback that is called on the source stream once the media patch has started.
        The default behaviour calls OpalConnection::OnMediaPatchStart()
       */

@@ -875,7 +875,7 @@ class OpalConnection : public PSafeObject
     /**A call back function whenever a connection is established.
        This indicates that a connection to an endpoint was established. This
        usually occurs after OnConnected() and indicates that the connection
-       is both connected and has media flowing.
+       is both connected and media can flow.
 
        In the context of H.323 this means that the signalling and control
        channels are open and the TerminalCapabilitySet and MasterSlave
@@ -1884,29 +1884,27 @@ class OpalConnection : public PSafeObject
     virtual void OnApplyStringOptions();
 
 #if OPAL_HAS_MIXER
-
     virtual void EnableRecording();
     virtual void DisableRecording();
 
+    PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnRecordAudio);
+#if OPAL_VIDEO
+    PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnRecordVideo);
 #endif
 
-  protected:
-    void OnConnectedInternal();
+    virtual void OnStartRecording(OpalMediaPatch * patch);
+    virtual void OnStopRecording(OpalMediaPatch * patch);
+#endif
+
+    bool InternalOnConnected();
+    bool InternalOnEstablished();
     void InternalSetAsOriginating();
 
     bool InternalRelease(CallEndReason reason);
     void InternalOnReleased();
     void InternalExecuteMediaCommand(OpalMediaCommand * command);
 
-#if OPAL_HAS_MIXER
-    PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnRecordAudio);
-#if OPAL_VIDEO
-    PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnRecordVideo);
-#endif
-    void OnStartRecording(OpalMediaPatch * patch);
-    void OnStopRecording(OpalMediaPatch * patch);
-#endif
-
+  protected:
   // Member variables
     OpalCall             & ownerCall;
     OpalEndPoint         & endpoint;

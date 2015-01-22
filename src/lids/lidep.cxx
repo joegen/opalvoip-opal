@@ -710,7 +710,7 @@ void OpalLineConnection::Monitor()
       else {
         // If we are in alerting state then we are B-Party
         AutoStartMediaStreams();
-        OnConnectedInternal();
+        InternalOnConnected();
       }
     }
   }
@@ -848,7 +848,7 @@ PBoolean OpalLineConnection::SetUpConnection()
 
     PTRACE(3, "LID Con\tNo remote party indicated, going off hook without dialing.");
     AutoStartMediaStreams();
-    OnConnectedInternal();
+    InternalOnConnected();
     return true;
   }
 
@@ -879,7 +879,7 @@ PBoolean OpalLineConnection::SetUpConnection()
 
   // Wait for connection
   if (m_dialParams.m_progressTimeout == 0) {
-    OnConnectedInternal();
+    InternalOnConnected();
     return true;
   }
 
@@ -890,7 +890,7 @@ PBoolean OpalLineConnection::SetUpConnection()
       return false;
 
     if (line.IsConnected()) {
-      OnConnectedInternal();
+      InternalOnConnected();
       return true;
     }
 
@@ -912,7 +912,7 @@ PBoolean OpalLineConnection::SetUpConnection()
   }
 
   // Connect anyway
-  OnConnectedInternal();
+  InternalOnConnected();
   return true;
 }
 

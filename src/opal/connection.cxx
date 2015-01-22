@@ -312,7 +312,7 @@ PBoolean OpalConnection::SetUpConnection()
     PTRACE(3, "Transfer of connection in call " << ownerCall);
     OnApplyStringOptions();
     AutoStartMediaStreams();
-    OnConnectedInternal();
+    InternalOnConnected();
   }
   else {
     InternalSetAsOriginating();
@@ -594,7 +594,7 @@ void OpalConnection::AnsweringCall(AnswerCallResponse response)
 
     case AnswerCallNow:
       PTRACE(3, "Application has answered incoming call");
-      GetOtherPartyConnection()->OnConnectedInternal();
+      GetOtherPartyConnection()->InternalOnConnected();
       break;
 
     default : // AnswerCallDeferred etc
@@ -610,26 +610,42 @@ PBoolean OpalConnection::SetConnected()
   if (GetPhase() < ConnectedPhase)
     SetPhase(ConnectedPhase);
 
-  if (!mediaStreams.IsEmpty() && GetPhase() < EstablishedPhase) {
-    SetPhase(EstablishedPhase);
-    OnEstablished();
-  }
-
+  InternalOnEstablished();
   return true;
 }
 
 
-void OpalConnection::OnConnectedInternal()
+bool OpalConnection::InternalOnConnected()
 {
-  if (GetPhase() < ConnectedPhase) {
-    SetPhase(ConnectedPhase);
-    OnConnected();
+  if (GetPhase() >= ConnectedPhase)
+    return false;
+
+  SetPhase(ConnectedPhase);
+  OnConnected();
+  return true;
+}
+
+
+bool OpalConnection::InternalOnEstablished()
+{
+  if (GetPhase() >= EstablishedPhase)
+    return false;
+
+  if (mediaStreams.IsEmpty())
+    return false;
+
+  bool notAllEstablishedYet = false;
+  for (OpalMediaStreamPtr strm(mediaStreams); strm != NULL; ++strm) {
+    if (!strm->IsEstablished())
+      notAllEstablishedYet = true;
   }
 
-  if (!mediaStreams.IsEmpty() && GetPhase() < EstablishedPhase) {
-    SetPhase(EstablishedPhase);
-    OnEstablished();
-  }
+  if (notAllEstablishedYet)
+    return false;
+
+  SetPhase(EstablishedPhase);
+  OnEstablished();
+  return true;
 }
 
 
@@ -919,10 +935,7 @@ PBoolean OpalConnection::OnOpenMediaStream(OpalMediaStream & stream)
   if (!LockReadWrite())
     return false;
 
-  if (GetPhase() == ConnectedPhase) {
-    SetPhase(EstablishedPhase);
-    OnEstablished();
-  }
+  InternalOnEstablished();
 
   UnlockReadWrite();
 
