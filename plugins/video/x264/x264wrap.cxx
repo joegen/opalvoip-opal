@@ -690,7 +690,8 @@ bool H264Encoder::ReadPipe(void * ptr, size_t len)
   if (result == len)
     return true;
 
-  PTRACE(1, PipeTraceName, "Error reading pipe (" << result << ") - " << strerror(errno));
+  PTRACE(1, PipeTraceName, "Error reading pipe: sent=" << result << ", expected=" << len
+         << ", errno=" << errno << " - " << strerror(errno));
   if (kill(m_pid, 0) < 0)
     PTRACE(1, PipeTraceName, "Sub-process no longer running!");
   return false;
@@ -703,7 +704,8 @@ bool H264Encoder::WritePipe(const void * ptr, size_t len)
   if (result == len)
     return true;
 
-  PTRACE(1, PipeTraceName, "Error writing pipe (" << result << ") - " << strerror(errno));
+  PTRACE(1, PipeTraceName, "Error writing pipe: sent=" << result << ", expected=" << len
+         << ", errno=" << errno << " - " << strerror(errno));
   if (kill(m_pid, 0) < 0)
     PTRACE(1, PipeTraceName, "Sub-process no longer running!");
   return false;
