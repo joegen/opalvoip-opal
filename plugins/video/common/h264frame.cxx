@@ -45,7 +45,6 @@ H264Frame::H264Frame()
   , m_timestamp(0)
 {
   m_maxPayloadSize = 1400;
-  SetResolution(PLUGINCODEC_CIF_WIDTH, PLUGINCODEC_CIF_HEIGHT);
   Reset();
 }
 
