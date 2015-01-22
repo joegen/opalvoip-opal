@@ -33,46 +33,9 @@
 #endif
 
 
-namespace OpalMemory
-{
-
-bool AllocateAligned(void * & baseMemory, uint8_t * & alignedMemory, size_t & alignedSize, size_t requestedSize)
-{
-  if (requestedSize > alignedSize && baseMemory != NULL) {
-    free(baseMemory);
-    baseMemory = NULL;
-  }
-
-  if (baseMemory == NULL) {
-#if HAVE_POSIX_MEMALIGN
-    if (posix_memalign(&baseMemory, Alignment, requestedSize) != 0)
-#else
-    if ((baseMemory = malloc(requestedSize+Alignment)) == NULL)
-#endif
-    {
-      PTRACE(1, "FFMPEG", "Unable to allocate " << requestedSize << " bytes for aligned buffer.");
-      return false;
-    }
-    alignedSize = requestedSize;
-    PTRACE(5, "FFMPEG", "Allocated " << requestedSize << " byte aligned buffer.");
-  }
-
-#if HAVE_POSIX_MEMALIGN
-  alignedMemory = (uint8_t *)baseMemory;
-#else
-  alignedMemory = (uint8_t *)((Alignment-1+(intptr_t)baseMemory)&(-(intptr_t)Alignment));
-#endif
-
-  return true;
-}
-
-};
-
-
 OpalPluginFrame::OpalPluginFrame()
   : m_length(0)
   , m_maxSize(0)
-  , m_memory(NULL)
   , m_buffer(NULL)
   , m_maxPayloadSize(PluginCodec_RTP_MaxPayloadSize)
 {
@@ -81,8 +44,8 @@ OpalPluginFrame::OpalPluginFrame()
 
 OpalPluginFrame::~OpalPluginFrame()
 {
-  if (m_memory != NULL)
-    free(m_memory);
+  if (m_buffer != NULL)
+    free(m_buffer);
 }
 
 
@@ -92,22 +55,23 @@ void OpalPluginFrame::SetMaxPayloadSize(size_t size)
 }
 
 
-bool OpalPluginFrame::SetResolution(unsigned width, unsigned height)
+bool OpalPluginFrame::SetSize(size_t newSize)
 {
-  return OpalMemory::AllocateAligned(m_memory, m_buffer, m_maxSize, width*height*2);
+  if ((m_buffer = (uint8_t *)realloc(m_buffer, newSize)) == NULL) {
+    PTRACE(1, "FFMPEG", "Could not (re)allocate " << newSize << " bytes of memory.");
+    return false;
+  }
+
+  m_maxSize = newSize;
+  return true;
 }
 
 
 bool OpalPluginFrame::Append(const uint8_t * data, size_t len)
 {
   size_t newSize = m_length + len;
-  if (newSize > m_maxSize) {
-    if ((m_buffer = (uint8_t *)realloc(m_buffer, newSize)) == NULL) {
-      PTRACE(1, "FFMPEG", "Could not (re)allocate " << newSize << " bytes of memory.");
-      return false;
-    }
-    m_maxSize = newSize;
-  }
+  if (newSize > m_maxSize && !SetSize(newSize))
+    return false;
 
   memcpy(m_buffer+m_length, data, len);
   m_length += len;
