@@ -516,7 +516,7 @@ void OpalLocalConnection::InternalAcceptIncoming()
 
   if (LockReadWrite()) {
     AlertingIncoming();
-    OnConnectedInternal();
+    InternalOnConnected();
     AutoStartMediaStreams();
     UnlockReadWrite();
   }

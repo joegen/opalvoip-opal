@@ -1112,7 +1112,7 @@ void OpalCapiConnection::ProcessMessage(const OpalCapiMessage & message)
         case 0 :
           m_NCCI = message.param.connect_b3_conf.m_NCCI;
           AutoStartMediaStreams();
-          OnConnectedInternal();
+          InternalOnConnected();
           break;
 
         case 0x2004 :

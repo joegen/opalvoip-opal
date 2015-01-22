@@ -277,6 +277,12 @@ void OpalDTLSSRTPSession::ThreadMain()
 }
 
 
+bool OpalDTLSSRTPSession::IsEstablished() const
+{
+  return OpalSRTPSession::IsEstablished() && m_sslChannel[e_Data] == NULL;
+}
+
+
 OpalRTPSession::SendReceiveStatus OpalDTLSSRTPSession::OnSendData(RTP_DataFrame & frame, RewriteMode rewrite)
 {
   // Already locked on entry

@@ -266,7 +266,7 @@ class IAX2EndPoint : public OpalEndPoint
     /**A call back function whenever a connection is established.
        This indicates that a connection to an endpoint was established. This
        usually occurs after OnConnected() and indicates that the connection
-       is both connected and has media flowing.
+       is both connected and media can flow.
       */
     void OnEstablished(
        OpalConnection & con

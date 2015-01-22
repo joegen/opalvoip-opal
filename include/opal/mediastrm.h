@@ -202,6 +202,10 @@ class OpalMediaStream : public PSafeObject
       */
     virtual bool IsOpen() const;
 
+    /**Returns true if the media stream is established.
+    */
+    virtual bool IsEstablished() const;
+
     /**Start the media stream.
 
        The default behaviour calls Resume() on the associated OpalMediaPatch
