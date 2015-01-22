@@ -28,7 +28,15 @@ case $1 in
 
   debug )
     PROG=`ls $SRC_DIR/obj*d/$NAME`
-    COMMAND="gdb -tui --args $PROG --execute $ARGS --execute"
+    GDB=`which gdb`
+    if [ -z "$GDB" ]; then
+      GDB=`which ggdb`
+      if [ -z "$GDB" ]; then
+        echo "Could not find GDB."
+        exit 1
+      fi
+    fi
+    COMMAND="$GDB -tui --args $PROG --execute $ARGS --execute"
   ;;
 
   log )
