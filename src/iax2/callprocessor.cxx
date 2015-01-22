@@ -190,7 +190,7 @@ void IAX2CallProcessor::RemoteNodeHasAnswered()
   
   SetCallAnswered();
   PTRACE(3, "Processor\tRemote node has answered");
-  con->OnConnectedInternal();
+  con->InternalOnConnected();
 }
 
 void IAX2CallProcessor::Hangup(PString dieMessage)

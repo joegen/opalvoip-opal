@@ -2249,6 +2249,19 @@ bool OpalRTPSession::IsOpen() const
 }
 
 
+bool OpalRTPSession::IsEstablished() const
+{
+#if OPAL_ICE
+  if (m_iceServer == NULL)
+    return m_candidates[e_Data].empty();
+
+  return m_remoteAddress.IsValid() && m_remotePort[e_Data] != 0;
+#else
+  return true;
+#endif
+}
+
+
 void OpalRTPSession::InternalStopRead()
 {
   PThread * thread;

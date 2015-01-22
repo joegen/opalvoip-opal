@@ -215,6 +215,12 @@ bool OpalMediaStream::IsOpen() const
 }
 
 
+bool OpalMediaStream::IsEstablished() const
+{
+  return true;
+}
+
+
 PBoolean OpalMediaStream::Start()
 {
   if (!Open())

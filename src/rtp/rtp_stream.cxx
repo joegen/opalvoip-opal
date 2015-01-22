@@ -121,6 +121,12 @@ bool OpalRTPMediaStream::IsOpen() const
 }
 
 
+bool OpalRTPMediaStream::IsEstablished() const
+{
+  return m_rtpSession.IsEstablished();
+}
+
+
 void OpalRTPMediaStream::OnStartMediaPatch()
 {
   // Make sure a RTCP packet goes out as early as possible, helps with issues
@@ -264,6 +270,8 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
   if (PAssertNULL(m_jitterBuffer) == NULL || !m_jitterBuffer->ReadData(packet))
     return false;
 
+  connection.InternalOnEstablished();
+
 #if OPAL_VIDEO
   if (packet.GetDiscontinuity() > 0 && mediaFormat.GetMediaType() == OpalMediaType::Video()) {
     PTRACE(3, "Automatically requesting video update due to " << packet.GetDiscontinuity() << " missing packets.");
@@ -323,6 +331,7 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
         return false;
 
       case OpalRTPSession::e_ProcessPacket :
+        connection.InternalOnEstablished();
         return true;
 
       case OpalRTPSession::e_IgnorePacket :

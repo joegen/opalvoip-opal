@@ -2342,10 +2342,7 @@ void SIPConnection::OnReceivedACK(SIP_PDU & ack)
 
   m_handlingINVITE = false;
 
-  if (GetPhase() == ConnectedPhase) {
-    SetPhase(EstablishedPhase);
-    OnEstablished();
-  }
+  InternalOnEstablished();
 
   StartPendingReINVITE();
 }
@@ -2753,12 +2750,9 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
       return;
     }
 
-    OnConnected();
+    OnConnected(); // Not InternalOnConnected() as we set phase to ConnectedPhase above
 
-    if (!mediaStreams.IsEmpty() && GetPhase() == ConnectedPhase) {
-      SetPhase(EstablishedPhase);
-      OnEstablished();
-    }
+    InternalOnEstablished();
   }
 
   switch (m_holdToRemote) {

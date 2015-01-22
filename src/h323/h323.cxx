@@ -1408,7 +1408,7 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   m_signallingChannel->SetReadTimeout(connectionState < EstablishedConnection ? MonitorCallStartTime : MonitorCallStatusTime);
 
   // Set connected phase now so logic for not sending media before connected is not triggered
-  OnConnectedInternal();
+  InternalOnConnected();
 
   // Check for fastStart data and start fast
   if (connect.HasOptionalField(H225_Connect_UUIE::e_fastStart))
@@ -4059,7 +4059,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
             inProgressChannel = true;
         }
         if (hasEstablishedChannel && !inProgressChannel)
-          OnConnectedInternal();
+          InternalOnConnected();
       }
       break;
 

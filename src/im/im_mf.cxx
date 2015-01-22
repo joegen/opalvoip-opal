@@ -666,7 +666,7 @@ PBoolean OpalIMConnection::OnSetUpConnection()
   if (!LockReadWrite())
     return false;
 
-  OnConnectedInternal();
+  InternalOnConnected();
   UnlockReadWrite();
   return true;
 }

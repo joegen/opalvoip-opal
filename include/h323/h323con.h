@@ -212,7 +212,7 @@ class H323Connection : public OpalRTPConnection
     /** Called when a connection is established.
         This indicates that a connection to an endpoint was established. This
         usually occurs after OnConnected() and indicates that the connection
-        is both connected and has media flowing.
+        is both connected and media can flow.
 
         Default behaviour is to call H323EndPoint::OnConnectionEstablished
       */
