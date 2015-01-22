@@ -378,6 +378,9 @@ bool OpalDTLSSRTPSession::ExecuteHandshake(Channel channel)
   delete m_sslChannel[channel];
   m_sslChannel[channel] = NULL;
   PTRACE(3, *this << "completed DTLS handshake.");
+
+  m_connection.InternalOnEstablished();
+
   return true;
 }
 

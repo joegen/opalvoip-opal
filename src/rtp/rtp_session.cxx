@@ -2438,6 +2438,8 @@ bool OpalRTPSession::InternalSetRemoteAddress(const PIPSocket::AddressAndPort & 
     }
   }
 
+  m_connection.InternalOnEstablished();
+
   return true;
 }
 
