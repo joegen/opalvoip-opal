@@ -2438,7 +2438,7 @@ bool OpalRTPSession::InternalSetRemoteAddress(const PIPSocket::AddressAndPort & 
     }
   }
 
-  m_connection.InternalOnEstablished();
+  m_manager.QueueDecoupledEvent(new PSafeWorkNoArg<OpalConnection, bool>(&m_connection, &OpalConnection::InternalOnEstablished));
 
   return true;
 }
