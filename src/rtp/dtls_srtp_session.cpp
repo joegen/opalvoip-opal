@@ -43,6 +43,8 @@
 #pragma comment(lib, P_SSL_LIB2)
 #endif
 
+#include <opal/manager.h>
+
 
 #define PTraceModule() "DTLS"
 
@@ -379,7 +381,7 @@ bool OpalDTLSSRTPSession::ExecuteHandshake(Channel channel)
   m_sslChannel[channel] = NULL;
   PTRACE(3, *this << "completed DTLS handshake.");
 
-  m_connection.InternalOnEstablished();
+  m_manager.QueueDecoupledEvent(new PSafeWorkNoArg<OpalConnection, bool>(&m_connection, &OpalConnection::InternalOnEstablished));
 
   return true;
 }
