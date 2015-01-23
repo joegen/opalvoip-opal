@@ -646,7 +646,7 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
   // Aleady locked on entry
 
   if (!IsCryptoSecured(e_Receiver)) {
-    PTRACE(m_throttleDataReceiverUnprot, *this << "keys not set, cannot protect control" << m_throttleDataReceiverUnprot);
+    PTRACE(m_throttleDataReceiverUnprot, *this << "keys not set, cannot protect data" << m_throttleDataReceiverUnprot);
     return OpalRTPSession::e_IgnorePacket;
   }
 
