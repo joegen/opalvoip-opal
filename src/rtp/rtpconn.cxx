@@ -182,6 +182,7 @@ vector<bool> OpalRTPConnection::CreateAllMediaSessions()
       for (SessionMap::const_iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
         if (it->second->GetMediaType() == mediaType && it->second->GetSessionType() == sessionType) {
           session = it->second;
+          PTRACE(4, "Session " << session->GetSessionID() << " for " << mediaType << " and " << sessionType << " already created.");
           break;
         }
         if (nextSessionId <= it->first)
