@@ -186,13 +186,16 @@ PBoolean OpalSDPConnection::IsOnHold(bool fromRemote) const
 
 bool OpalSDPConnection::GetOfferSDP(SDPSessionDescription & offer, bool offerOpenMediaStreamsOnly)
 {
+  if (m_offerPending.exchange(true)) {
+    PTRACE(2, "Outgoing offer pending, cannot send another offer.");
+    return false;
+  }
+
   if (GetPhase() == UninitialisedPhase) {
     InternalSetAsOriginating();
     SetPhase(SetUpPhase);
     OnApplyStringOptions();
   }
-
-  m_offerPending = true;
 
   return OnSendOfferSDP(offer, offerOpenMediaStreamsOnly);
 }
@@ -247,12 +250,10 @@ PString OpalSDPConnection::AnswerOfferSDP(const PString & offer)
 
 bool OpalSDPConnection::HandleAnswerSDP(const SDPSessionDescription & answer)
 {
-  if (!m_offerPending) {
+  if (!m_offerPending.exchange(false)) {
     PTRACE(1, "Did not send an offer before handling answer");
     return false;
   }
-
-  m_offerPending = false;
 
   bool dummy;
   if (!OnReceivedAnswerSDP(answer, dummy))
