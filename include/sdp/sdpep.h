@@ -287,9 +287,9 @@ class OpalSDPConnection : public OpalRTPConnection
     OpalMediaFormatList m_remoteFormatList;
     OpalMediaFormatList m_answerFormatList;
 
-    bool     m_offerPending;
-    time_t   m_sdpSessionId;
-    unsigned m_sdpVersion; // Really a sequence number
+    atomic<bool> m_offerPending;
+    time_t       m_sdpSessionId;
+    unsigned     m_sdpVersion; // Really a sequence number
 
     enum HoldState {
       eHoldOff,
