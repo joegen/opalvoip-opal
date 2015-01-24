@@ -96,19 +96,21 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
 #if OPAL_H460
   , m_features(ep.InternalCreateFeatureSet(NULL))
 #endif
+  , m_onHighPriorityInterfaceChange(PCREATE_InterfaceNotifier(OnHighPriorityInterfaceChange))
+  , m_onLowPriorityInterfaceChange(PCREATE_InterfaceNotifier(OnLowPriorityInterfaceChange))
 {
   timeToLive.SetNotifier(PCREATE_NOTIFIER(TickleMonitor));
   infoRequestRate.SetNotifier(PCREATE_NOTIFIER(TickleMonitor));
 
-  PInterfaceMonitor::GetInstance().AddNotifier(PCREATE_InterfaceNotifier(OnHighPriorityInterfaceChange), 80);
-  PInterfaceMonitor::GetInstance().AddNotifier(PCREATE_InterfaceNotifier(OnLowPriorityInterfaceChange), 40);
+  PInterfaceMonitor::GetInstance().AddNotifier(m_onHighPriorityInterfaceChange, 80);
+  PInterfaceMonitor::GetInstance().AddNotifier(m_onLowPriorityInterfaceChange, 40);
 }
 
 
 H323Gatekeeper::~H323Gatekeeper()
 {
-  PInterfaceMonitor::GetInstance().RemoveNotifier(PCREATE_InterfaceNotifier(OnHighPriorityInterfaceChange));
-  PInterfaceMonitor::GetInstance().RemoveNotifier(PCREATE_InterfaceNotifier(OnLowPriorityInterfaceChange));
+  PInterfaceMonitor::GetInstance().RemoveNotifier(m_onHighPriorityInterfaceChange);
+  PInterfaceMonitor::GetInstance().RemoveNotifier(m_onLowPriorityInterfaceChange);
 
   StopChannel();
 

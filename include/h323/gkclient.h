@@ -367,7 +367,9 @@ class H323Gatekeeper : public H225_RAS
     void SetRegistrationFailReason(RegistrationFailReasons reason);
     
     PDECLARE_InterfaceNotifier(H323Gatekeeper, OnHighPriorityInterfaceChange);
+    PInterfaceMonitor::Notifier m_onHighPriorityInterfaceChange;
     PDECLARE_InterfaceNotifier(H323Gatekeeper, OnLowPriorityInterfaceChange);
+    PInterfaceMonitor::Notifier m_onLowPriorityInterfaceChange;
     
     class AlternateInfo : public PObject {
       PCLASSINFO(AlternateInfo, PObject);
