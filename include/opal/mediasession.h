@@ -71,6 +71,8 @@ struct OpalNetworkStatistics
   unsigned m_maximumJitter;     // Milliseconds
   unsigned m_jitterBufferDelay; // Milliseconds
   unsigned m_roundTripTime;     // Milliseconds
+  unsigned m_targetBitRate;    // As configured, not actual, which is calculated from m_totalBytes
+  float    m_targetFrameRate;  // As configured, not actual, which is calculated from m_totalFrames
 };
 
 struct OpalVideoStatistics
@@ -90,8 +92,6 @@ struct OpalVideoStatistics
   PTimeInterval m_updateResponseTime;
   unsigned      m_frameWidth;
   unsigned      m_frameHeight;
-  unsigned      m_targetBitRate;    // As configured, not actual, which is calculated from m_totalBytes
-  float         m_targetFrameRate;  // As configured, not actual, which is calculated from m_totalFrames
   unsigned      m_tsto;             // Temporal/Spatial Trade Off, as configured
   int           m_videoQuality;    // -1 is none, 0 is very good > 0 is progressively worse
 #endif

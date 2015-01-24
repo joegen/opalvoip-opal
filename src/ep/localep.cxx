@@ -257,8 +257,10 @@ OpalLocalEndPoint::Synchronicity
   if (mediaFormat.GetMediaType() == OpalMediaType::Audio())
     return m_defaultAudioSynchronicity;
 
+#if OPAL_VIDEO
   if (isSource && mediaFormat.GetMediaType() == OpalMediaType::Video())
     return m_defaultVideoSourceSynchronicity;
+#endif
 
   return e_Asynchronous;
 }

@@ -67,6 +67,8 @@ OpalNetworkStatistics::OpalNetworkStatistics()
   , m_maximumPacketTime(0)
   , m_averageJitter(0)
   , m_maximumJitter(0)
+  , m_targetBitRate(0)
+  , m_targetFrameRate(0)
 {
 }
 
@@ -93,8 +95,6 @@ OpalVideoStatistics::OpalVideoStatistics()
   , m_lastUpdateRequestTime(0)
   , m_frameWidth(0)
   , m_frameHeight(0)
-  , m_targetBitRate(0)
-  , m_targetFrameRate(0)
   , m_tsto(0)
   , m_videoQuality(-1)
 {
