@@ -726,15 +726,17 @@ void OpalPluginFramedAudioTranscoder::GetStatistics(OpalMediaStatistics & statis
   OpalFramedTranscoder::GetStatistics(statistics);
 
   const OpalMediaFormat & format = isEncoder ? outputMediaFormat : inputMediaFormat;
-  statistics.m_targetBitRate   = format.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
-  statistics.m_targetFrameRate = (float)format.GetClockRate()/format.GetOptionInteger(OpalVideoFormat::FrameTimeOption());
+  statistics.m_targetBitRate   = format.GetOptionInteger(OpalMediaFormat::TargetBitRateOption());
+  statistics.m_targetFrameRate = (float)format.GetClockRate()/format.GetOptionInteger(OpalMediaFormat::FrameTimeOption());
 
   char buf[1000];
   buf[sizeof(buf)-1] = '\0'; // Fail safe
   if (getCodecStatistics.Call(buf, sizeof(buf), context) != 0) {
     PConstString str(buf);
     PStringOptions stats(str);
+#if OPAL_VIDEO
     statistics.m_videoQuality    =        stats.GetInteger("Quality",   statistics.m_videoQuality);
+#endif
     statistics.m_targetBitRate   =        stats.GetInteger("BitRate",   statistics.m_targetBitRate);
     statistics.m_targetFrameRate = (float)stats.GetReal   ("FrameRate", statistics.m_targetFrameRate);
   }
