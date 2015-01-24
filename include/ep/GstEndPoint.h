@@ -152,8 +152,14 @@ class GstEndPoint : public OpalLocalEndPoint
 #endif
     );
 
+    /* Configure the pipeline when it is already in NULL state */
+    virtual bool ConfigurePipeline(PGstPipeline & pipeline, const GstMediaStream & stream);
+
     virtual bool BuildAudioSourcePipeline(ostream & desc, const GstMediaStream & stream, int rtpIndex);
     virtual bool BuildAudioSinkPipeline(ostream & desc, const GstMediaStream & stream, int rtpIndex);
+
+    virtual bool OutputRTPSource(ostream & desc, const GstMediaStream & stream, int rtpIndex);
+    virtual bool OutputRTPSink(ostream & desc, const GstMediaStream & stream, int rtpIndex);
 
     bool SetAudioSourceDevice(const PString & elementName);
     virtual bool BuildAudioSourceDevice(ostream & desc, const GstMediaStream & stream);
@@ -231,9 +237,9 @@ class GstEndPoint : public OpalLocalEndPoint
 
   protected:
     PString m_rtpbin;
+    PString m_jitterBuffer;
     PString m_audioSourceDevice;
     PString m_audioSinkDevice;
-    PString m_jitterBuffer;
 #if OPAL_VIDEO
     PString m_videoSourceDevice;
     PString m_videoSinkDevice;
@@ -306,9 +312,6 @@ class GstConnection : public OpalLocalConnection
 
   protected:
     GstEndPoint & m_endpoint;
-#if OPAL_VIDEO
-    PGstPipeline  m_freescaleVideoPipeline[2];
-#endif
 };
 
 
