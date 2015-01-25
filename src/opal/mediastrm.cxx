@@ -1449,10 +1449,8 @@ PBoolean OpalUDPMediaStream::ReadPacket(RTP_DataFrame & packet)
     return false;
   }
 
-  if (rawData.GetSize() > 0) {
-    packet.SetPayloadSize(rawData.GetSize());
-    memcpy(packet.GetPayloadPtr(), rawData.GetPointer(), rawData.GetSize());
-  }
+  if (rawData.GetSize() > 0)
+    packet.SetPayload(rawData, rawData.GetSize());
 
   return true;
 }
