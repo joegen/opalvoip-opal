@@ -460,6 +460,16 @@ bool RTP_DataFrame::SetPayloadSize(PINDEX sz)
 }
 
 
+bool RTP_DataFrame::SetPayload(const BYTE * data, PINDEX sz)
+{
+  if (!SetPayloadSize(sz))
+    return false;
+
+  memcpy(GetPayloadPtr(), data, sz);
+  return true;
+}
+
+
 bool RTP_DataFrame::SetPaddingSize(PINDEX paddingSize)
 {
   if (paddingSize == 0) {

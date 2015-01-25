@@ -562,6 +562,7 @@ class RTP_DataFrame : public PBYTEArray
 
     PINDEX GetPayloadSize() const { return m_payloadSize; }
     bool   SetPayloadSize(PINDEX sz);
+    bool   SetPayload(const BYTE * data, PINDEX sz);
     BYTE * GetPayloadPtr()     const { return (BYTE *)(theArray+m_headerSize); }
 
     virtual PObject * Clone() const { return new RTP_DataFrame(*this); }

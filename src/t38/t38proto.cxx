@@ -522,8 +522,7 @@ bool OpalFaxSession::WriteUDPTL()
 
 void OpalFaxSession::SetFrameFromIFP(RTP_DataFrame & frame, const PASN_OctetString & ifp, unsigned sequenceNumber)
 {
-  frame.SetPayloadSize(ifp.GetDataLength());
-  memcpy(frame.GetPayloadPtr(), (const BYTE *)ifp, ifp.GetDataLength());
+  frame.SetPayload(ifp, ifp.GetDataLength());
   frame.SetSequenceNumber((WORD)(sequenceNumber & 0xffff));
   if (m_secondaryPacket <= 0)
     m_expectedSequenceNumber = sequenceNumber+1;
