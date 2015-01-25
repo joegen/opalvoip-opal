@@ -266,8 +266,7 @@ PString OpalT140RTPFrame::GetContentType() const
 
 void OpalT140RTPFrame::SetContent(const T140String & text)
 {
-  SetPayloadSize(text.GetSize());
-  memcpy(GetPayloadPtr(), (const BYTE *)text, text.GetSize());
+  SetPayload(text, text.GetSize());
 }
 
 
