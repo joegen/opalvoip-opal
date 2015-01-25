@@ -84,6 +84,8 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   , discoveryComplete(false)
   , m_aliases(ep.GetAliasNames())
   , m_registrationFailReason(UnregisteredLocally)
+  , m_onHighPriorityInterfaceChange(PCREATE_InterfaceNotifier(OnHighPriorityInterfaceChange))
+  , m_onLowPriorityInterfaceChange(PCREATE_InterfaceNotifier(OnLowPriorityInterfaceChange))
   , m_alternateTemporary(false)
   , requestMutex(1, 1)
   , authenticators(ep.CreateAuthenticators())
@@ -96,8 +98,6 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
 #if OPAL_H460
   , m_features(ep.InternalCreateFeatureSet(NULL))
 #endif
-  , m_onHighPriorityInterfaceChange(PCREATE_InterfaceNotifier(OnHighPriorityInterfaceChange))
-  , m_onLowPriorityInterfaceChange(PCREATE_InterfaceNotifier(OnLowPriorityInterfaceChange))
 {
   timeToLive.SetNotifier(PCREATE_NOTIFIER(TickleMonitor));
   infoRequestRate.SetNotifier(PCREATE_NOTIFIER(TickleMonitor));
