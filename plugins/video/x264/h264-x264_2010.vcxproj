@@ -75,14 +75,14 @@
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug (licensed)|Win32'">h264_x264_ptplugin</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">h264_x264_ptplugin</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release (licensed)|Win32'">h264_x264_ptplugin</TargetName>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug (licensed)|Win32'">.\x264;..\..\..\..\external\x264;..\common;..\common\ffmpeg;..\..\..\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;</IncludePath>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\x264;..\..\..\..\external\x264;..\common;..\common\ffmpeg;..\..\..\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;</IncludePath>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release (licensed)|Win32'">.\x264;..\..\..\..\external\x264;..\common;..\common\ffmpeg;..\..\..\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;</IncludePath>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\x264;..\..\..\..\external\x264;..\common;..\common\ffmpeg;..\..\..\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;</IncludePath>
-    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug (licensed)|Win32'">.\x264;..\..\..\..\external\x264;..\common\ffmpeg\lib;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib</LibraryPath>
-    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\x264;..\..\..\..\external\x264;..\common\ffmpeg\lib;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib</LibraryPath>
-    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release (licensed)|Win32'">.\x264;..\..\..\..\external\x264;..\common\ffmpeg\lib;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib</LibraryPath>
-    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\x264;..\..\..\..\external\x264;..\common\ffmpeg\lib;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib</LibraryPath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug (licensed)|Win32'">.\x264;..\..\..\..\external\x264;..\common\ffmpeg-win32-dev\include;..\..\..\..\external\ffmpeg-win32-dev\include;..\common;..\..\..\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\x264;..\..\..\..\external\x264;..\common\ffmpeg-win32-dev\include;..\..\..\..\external\ffmpeg-win32-dev\include;..\common;..\..\..\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release (licensed)|Win32'">.\x264;..\..\..\..\external\x264;..\common\ffmpeg-win32-dev\include;..\..\..\..\external\ffmpeg-win32-dev\include;..\common;..\..\..\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\x264;..\..\..\..\external\x264;..\common\ffmpeg-win32-dev\include;..\..\..\..\external\ffmpeg-win32-dev\include;..\common;..\..\..\include;$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;</IncludePath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug (licensed)|Win32'">.\x264;..\..\..\..\external\x264;..\common\ffmpeg-win32-dev\lib;..\..\..\..\external\ffmpeg-win32-dev\lib;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\x264;..\..\..\..\external\x264;..\common\ffmpeg-win32-dev\lib;..\..\..\..\external\ffmpeg-win32-dev\lib;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release (licensed)|Win32'">.\x264;..\..\..\..\external\x264;..\common\ffmpeg-win32-dev\lib;..\..\..\..\external\ffmpeg-win32-dev\lib;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\x264;..\..\..\..\external\x264;..\common\ffmpeg-win32-dev\lib;..\..\..\..\external\ffmpeg-win32-dev\lib;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -233,15 +233,19 @@ copy "$(TargetDir)\$(TargetName).pdb" c:\ptlib_plugins
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\common\encframe.cxx" />
     <ClCompile Include="..\common\ffmpeg.cxx" />
+    <ClCompile Include="..\common\h264frame.cxx" />
     <ClCompile Include="h264-x264.cxx" />
-    <ClCompile Include="shared\x264wrap.cxx" />
-    <ClCompile Include="shared\h264frame.cxx" />
+    <ClCompile Include="x264wrap.cxx" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\common\encframe.h" />
     <ClInclude Include="..\common\ffmpeg.h" />
+    <ClInclude Include="..\common\h264frame.h" />
+    <ClInclude Include="..\common\platform.h" />
     <ClInclude Include="h264-x264.h" />
-    <ClInclude Include="shared\x264wrap.h" />
+    <ClInclude Include="x264wrap.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
