@@ -12,13 +12,16 @@
     <ClCompile Include="h264-x264.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="shared\x264wrap.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="shared\h264frame.cxx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\common\ffmpeg.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\encframe.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\h264frame.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x264wrap.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -26,10 +29,19 @@
     <ClInclude Include="h264-x264.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="shared\x264wrap.h">
+    <ClInclude Include="..\common\ffmpeg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\common\ffmpeg.h">
+    <ClInclude Include="..\common\encframe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\platform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\h264frame.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="x264wrap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
