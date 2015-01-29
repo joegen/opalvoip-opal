@@ -267,6 +267,10 @@ class OpalSDPConnection : public OpalRTPConnection
       bool & multipleFormats
     );
 
+    virtual void SetRemoteMediaFormats(
+        const OpalMediaFormatList & formats
+    );
+
     virtual OpalMediaSession * SetUpMediaSession(
       const unsigned rtpSessionId,
       const OpalMediaType & mediaType,

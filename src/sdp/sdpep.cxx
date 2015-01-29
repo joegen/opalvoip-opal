@@ -291,6 +291,15 @@ SDPSessionDescription * OpalSDPConnection::CreateSDP(const PString & sdpStr)
 }
 
 
+void OpalSDPConnection::SetRemoteMediaFormats(const OpalMediaFormatList & formats)
+{
+  if (m_remoteFormatList.IsEmpty()) {
+    m_remoteFormatList = formats;
+    m_remoteFormatList.MakeUnique();
+  }
+}
+
+
 OpalMediaSession * OpalSDPConnection::SetUpMediaSession(const unsigned sessionId,
                                                     const OpalMediaType & mediaType,
                                                     const SDPMediaDescription & mediaDescription,
@@ -631,6 +640,9 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
     PTRACE(3, "All media formats offered by remote have been removed.");
     return false;
   }
+
+  // Remember the initial offer list of media formats
+  SetRemoteMediaFormats(m_answerFormatList);
 
   size_t sessionCount = sdpOffer.GetMediaDescriptions().GetSize();
   vector<SDPMediaDescription *> sdpMediaDescriptions(sessionCount+1);
