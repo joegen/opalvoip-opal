@@ -2230,22 +2230,29 @@ SIP_PDU::StatusCodes SIP_PDU::Parse(istream & stream, bool truncated)
     transportName << " from " << m_transport->GetLastReceivedAddress() << " on " << *m_transport;
 #endif
 
+  stream.clear();
+
   // get the message from transport/datagram into cmd and parse MIME
   PString cmd;
   stream >> cmd >> m_mime;
 
-  if (stream.bad() || stream.fail() || cmd.IsEmpty() || m_mime.IsEmpty()) {
-    if (cmd.IsEmpty() && m_mime.IsEmpty()) {
-      if (!stream.good())
-        return Local_TransportLost;
+  if (cmd.IsEmpty() || m_mime.IsEmpty()) {
+    if (!stream.good())
+      return Local_TransportLost;
 
-      PTRACE(5, "Probable keep-alive" << transportName);
-      return Local_KeepAlive;
-    }
+    PTRACE(5, "Probable keep-alive" << transportName);
+    return Local_KeepAlive;
+  }
 
+  if (stream.fail()) {
+    PTRACE(3, "Truncated MIME:\n" << cmd << '\n' << m_mime);
+    return SIP_PDU::Failure_MessageTooLarge;
+  }
+
+  if (stream.bad()) {
     PTRACE(1, "Invalid message from" << transportName
            << ", request \"" << cmd << "\", mime:\n" << m_mime);
-    return SIP_PDU::Failure_BadRequest;
+    return stream.bad() ? SIP_PDU::Failure_BadRequest : SIP_PDU::Failure_MessageTooLarge;
   }
 
   if (cmd.Left(4) *= "SIP/") {
