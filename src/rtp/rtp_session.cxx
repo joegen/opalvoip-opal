@@ -2210,10 +2210,9 @@ bool OpalRTPSession::Open(const PString & localInterface, const OpalTransportAdd
                                             false, PSTRSTRM("RTP-"<<m_sessionId), PThread::HighPriority);
   PTRACE_CONTEXT_ID_TO(m_thread);
 
-#if PTRACING
-  RTP_SyncSourceId ssrc =
-#endif
-  AddSyncSource(0, e_Sender); // Add default sender SSRC
+  RTP_SyncSourceId ssrc = GetSyncSourceOut();
+  if (ssrc == 0)
+    ssrc = AddSyncSource(0, e_Sender); // Add default sender SSRC
 
   PTRACE(3, *this << "opened: "
             " local=" << m_localAddress << ':' << m_localPort[e_Data] << '-' << m_localPort[e_Control]
