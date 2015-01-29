@@ -787,7 +787,7 @@ bool RTP_ControlFrame::ParseGoodbye(RTP_SyncSourceId & ssrc, RTP_SyncSourceArray
   const BYTE * payload = GetPayloadPtr();
   ssrc = *(const PUInt32b *)payload;
 
-  csrc.SetSize(count);
+  csrc.resize(count);
   for (size_t i = 0; i < count; i++)
     csrc[i] = ((const PUInt32b *)payload)[i+1];
 
