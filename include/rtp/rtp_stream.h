@@ -158,6 +158,9 @@ class OpalRTPMediaStream : public OpalMediaStream
 
     virtual PString GetPatchThreadName() const;
 
+    RTP_SyncSourceId SetSyncSource() const { return m_syncSource; }
+    void SetSyncSource(RTP_SyncSourceId ssrc) { m_syncSource = ssrc; }
+
     void SetRewriteHeaders(bool v) { m_rewriteHeaders = v; }
 
 #if OPAL_VIDEO
