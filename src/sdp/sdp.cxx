@@ -1907,8 +1907,8 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session, const SD
   const OpalRTPSession * rtpSession = dynamic_cast<const OpalRTPSession *>(session);
   if (rtpSession != NULL) {
     RTP_SyncSourceArray ssrc = rtpSession->GetSyncSources(OpalRTPSession::e_Sender);
-    PTRACE(4, "Adding " << ssrc.GetSize() << " sender SSRC entries.");
-    for (PINDEX i = 0; i < ssrc.GetSize(); ++i) {
+    PTRACE(4, "Adding " << ssrc.size() << " sender SSRC entries.");
+    for (size_t i = 0; i < ssrc.size(); ++i) {
       PStringOptions & info = m_ssrcInfo[ssrc[i]];
       PString cname = rtpSession->GetCanonicalName(ssrc[i]);
       if (!cname.IsEmpty())
