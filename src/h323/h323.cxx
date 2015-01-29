@@ -1532,8 +1532,12 @@ PBoolean H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
   if (fac.HasOptionalField(H225_Facility_UUIE::e_alternativeAddress)) {
     // Handle routeCallToGatekeeper and send correct destCallSignalAddress
     // in the H.225 setup message
-    if (fac.m_reason.GetTag() == H225_FacilityReason::e_routeCallToGatekeeper)
-      addrURL.SetUserName(addrURL.GetUserName()+'@'+addrURL.GetHostName());
+    if (fac.m_reason.GetTag() == H225_FacilityReason::e_routeCallToGatekeeper) {
+      if (addrURL.GetHostName().IsEmpty())
+        addrURL.SetUserName ('@' + addrURL.GetUserName());
+      else
+        addrURL.SetUserName(addrURL.GetUserName() + '@' + addrURL.GetHostName());
+    }
 
     // Set the new host/port in URL from alternative address
     H323TransportAddress alternative(fac.m_alternativeAddress);
