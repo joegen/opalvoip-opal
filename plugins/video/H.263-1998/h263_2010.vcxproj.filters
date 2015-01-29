@@ -22,6 +22,9 @@
     <ClCompile Include="..\common\ffmpeg.cxx">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\common\encframe.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h263-1998.h">
@@ -34,6 +37,12 @@
       <Filter>Include Files</Filter>
     </ClInclude>
     <ClInclude Include="..\common\ffmpeg.h">
+      <Filter>Include Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\encframe.h">
+      <Filter>Include Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\platform.h">
       <Filter>Include Files</Filter>
     </ClInclude>
   </ItemGroup>
