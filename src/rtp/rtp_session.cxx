@@ -259,7 +259,7 @@ RTP_SyncSourceArray OpalRTPSession::GetSyncSources(Direction dir) const
 
   for (SyncSourceMap::const_iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
     if (it->second->m_direction == dir)
-      ssrcs.SetAt(ssrcs.GetSize(), it->first);
+      ssrcs.push_back(it->first);
   }
 
   return ssrcs;
@@ -1640,7 +1640,7 @@ void OpalRTPSession::OnRxGoodbye(const RTP_SyncSourceArray & PTRACE_PARAM(src), 
   if (PTrace::CanTrace(3)) {
     ostream & strm = PTRACE_BEGIN(3);
     strm << *this << "OnGoodbye: " << reason << "\" SSRC=";
-    for (PINDEX i = 0; i < src.GetSize(); i++)
+    for (size_t i = 0; i < src.size(); i++)
       strm << RTP_TRACE_SRC(src[i]) << ' ';
     strm << PTrace::End;
   }

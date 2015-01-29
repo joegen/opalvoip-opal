@@ -48,7 +48,7 @@
 typedef uint32_t RTP_Timestamp;
 typedef uint16_t RTP_SequenceNumber;
 typedef uint32_t RTP_SyncSourceId;
-typedef PScalarArray<RTP_SyncSourceId> RTP_SyncSourceArray;
+typedef std::vector<RTP_SyncSourceId> RTP_SyncSourceArray;
 
 
 ///////////////////////////////////////////////////////////////////////////////
