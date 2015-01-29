@@ -134,7 +134,7 @@ OpalMediaCryptoSuite::KeyExchangeModes OpalRTPConnection::GetMediaCryptoKeyExcha
 
 vector<bool> OpalRTPConnection::CreateAllMediaSessions()
 {
-  OpalMediaTypeList allMediaTypes = m_localMediaFormats.GetMediaTypes();
+  OpalMediaTypeList allMediaTypes = GetLocalMediaFormats().GetMediaTypes();
   allMediaTypes.PrioritiseAudioVideo();
 
   OpalMediaCryptoSuite::KeyExchangeModes keyExchangeModes = GetMediaCryptoKeyExchangeModes();
