@@ -628,11 +628,15 @@ bool OpalConnection::InternalOnConnected()
 
 bool OpalConnection::InternalOnEstablished()
 {
-  if (GetPhase() >= EstablishedPhase)
+  if (GetPhase() != ConnectedPhase) {
+    PTRACE(5, "Not in ConnectedPhase, cannot move to EstablishedPhase on " << *this);
     return false;
+  }
 
-  if (mediaStreams.IsEmpty())
+  if (mediaStreams.IsEmpty()) {
+    PTRACE(5, "No media streams, cannot move to EstablishedPhase on " << *this);
     return false;
+  }
 
   bool notAllEstablishedYet = false;
   for (OpalMediaStreamPtr strm(mediaStreams); strm != NULL; ++strm) {
@@ -640,8 +644,10 @@ bool OpalConnection::InternalOnEstablished()
       notAllEstablishedYet = true;
   }
 
-  if (notAllEstablishedYet)
+  if (notAllEstablishedYet) {
+    PTRACE(5, "A media stream not ready, cannot move to EstablishedPhase on " << *this);
     return false;
+  }
 
   SetPhase(EstablishedPhase);
   OnEstablished();
