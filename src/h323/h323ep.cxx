@@ -1360,6 +1360,8 @@ PBoolean H323EndPoint::ForwardConnection(H323Connection & connection,
                                      const PString & forwardParty,
                                      const H323SignalPDU & /*pdu*/)
 {
+  connection.SetPhase (OpalConnection::ForwardingPhase);
+
   if (InternalMakeCall(connection.GetCall(),
                        connection.GetCallToken(),
                        PString::Empty(),
