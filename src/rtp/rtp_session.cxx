@@ -220,6 +220,25 @@ RTP_SyncSourceId OpalRTPSession::AddSyncSource(RTP_SyncSourceId id, Direction di
 }
 
 
+bool OpalRTPSession::RemoveSyncSource(RTP_SyncSourceId ssrc)
+{
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return false;
+
+  SyncSourceMap::iterator it = m_SSRC.find(ssrc);
+  if (it == m_SSRC.end())
+    return false;
+
+  if (it->second->m_direction == e_Sender)
+    it->second->SendBYE();
+
+  delete it->second;
+  m_SSRC.erase(it);
+  return true;
+}
+
+
 OpalRTPSession::SyncSource * OpalRTPSession::UseSyncSource(RTP_SyncSourceId ssrc, Direction PTRACE_PARAM(dir), bool force)
 {
   SyncSourceMap::iterator it = m_SSRC.find(ssrc);
