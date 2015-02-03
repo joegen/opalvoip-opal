@@ -1761,7 +1761,7 @@ bool OpalConnection::AllMediaFailed() const
 bool OpalConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCommand & command)
 {
   if (&stream.GetConnection() != this) {
-    PTRACE(3, "Ended processing OnMediaCommand \"" << command << "\" on " << stream << " for " << *this);
+    PTRACE(4, "Ended processing OnMediaCommand \"" << command << "\" on " << stream << " for " << *this);
     return false;
   }
 
@@ -1769,7 +1769,7 @@ bool OpalConnection::OnMediaCommand(OpalMediaStream & stream, const OpalMediaCom
   if (other == NULL)
     return false;
 
-  PTRACE(3, "Passing on OnMediaCommand \"" << command << "\" on " << stream << " to " << *other);
+  PTRACE(4, "Passing on OnMediaCommand \"" << command << "\" on " << stream << " to " << *other);
   return other->OnMediaCommand(stream, command);
 }
 
