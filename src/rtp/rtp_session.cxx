@@ -2672,6 +2672,10 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr, PI
       }
     }
 
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return e_AbortTransport;
+
 #if OPAL_ICE
     SendReceiveStatus status = OnReceiveICE(channel, framePtr, frameSize, ap);
     if (status != e_ProcessPacket)
