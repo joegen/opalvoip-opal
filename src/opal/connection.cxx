@@ -622,6 +622,7 @@ bool OpalConnection::InternalOnConnected()
 
   SetPhase(ConnectedPhase);
   OnConnected();
+  InternalOnEstablished();
   return true;
 }
 
