@@ -259,7 +259,7 @@ bool OpalSDPConnection::HandleAnswerSDP(const SDPSessionDescription & answer)
   if (!OnReceivedAnswerSDP(answer, dummy))
     return false;
 
-  OnConnected();
+  InternalOnConnected();
   return true;
 }
 
