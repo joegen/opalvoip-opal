@@ -134,6 +134,12 @@ class OpalRTPSession : public OpalMediaSession
       const char * cname = NULL
     );
 
+    /** Remove the synchronisation source.
+      */
+    virtual bool RemoveSyncSource(
+      RTP_SyncSourceId id
+    );
+
     /**Get the all source identifiers.
       */
     RTP_SyncSourceArray GetSyncSources(Direction dir) const;
