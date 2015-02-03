@@ -405,7 +405,8 @@ void SIPEndPoint::HandlePDU(const OpalTransportPtr & transport)
 
     default :
       const SIPMIMEInfo & mime = pdu->GetMIME();
-      if (!mime.GetCSeq().IsEmpty() &&
+      if (pdu->GetMethod() != SIP_PDU::NumMethods &&
+          !mime.GetCSeq().IsEmpty() &&
           !mime.GetVia().IsEmpty() &&
           !mime.GetCallID().IsEmpty() &&
           !mime.GetFrom().IsEmpty() &&
