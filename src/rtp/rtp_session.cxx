@@ -1714,7 +1714,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendNACK(const RTP_ControlFram
     request.SetCount(0);
     *(PUInt32b *)request.GetPayloadPtr() = sender->m_sourceIdentifier; // add the SSRC to the start of the payload
 
-    PTRACE(3, *this << "sending NACK, "
+    PTRACE(4, *this << "sending NACK, "
               "SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier) << ", "
               "lost=" << lostPackets);
 
