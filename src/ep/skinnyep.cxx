@@ -262,7 +262,7 @@ PBoolean OpalSkinnyEndPoint::GarbageCollection()
       m_phoneDevices.erase(it++);
   }
 
-  return OpalEndPoint::GarbageCollection();
+  return OpalRTPEndPoint::GarbageCollection();
 }
 
 
