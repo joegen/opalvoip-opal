@@ -632,7 +632,12 @@ class OpalRTPSession : public OpalMediaSession
     ReceiverReportArray BuildReceiverReportArray(const RTP_ControlFrame & frame, PINDEX offset);
 
     virtual void InternalClose();
-    virtual bool InternalSetRemoteAddress(const PIPSocket::AddressAndPort & ap, bool isMediaAddress PTRACE_PARAM(, const char * source));
+    virtual bool InternalSetRemoteAddress(
+        const PIPSocket::AddressAndPort & ap,
+        bool isMediaAddress,
+        bool dontOverride
+        PTRACE_PARAM(, const char * source)
+    );
     virtual bool InternalRead();
     virtual bool InternalReadData();
     virtual bool InternalReadControl();

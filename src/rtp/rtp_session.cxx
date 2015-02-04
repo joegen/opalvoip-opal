@@ -2374,11 +2374,11 @@ bool OpalRTPSession::SetRemoteAddress(const OpalTransportAddress & remoteAddress
   if (!remoteAddress.GetIpAndPort(ap))
     return false;
 
-  return InternalSetRemoteAddress(ap, isMediaAddress PTRACE_PARAM(, "signalling"));
+  return InternalSetRemoteAddress(ap, isMediaAddress, false PTRACE_PARAM(, "signalling"));
 }
 
 
-bool OpalRTPSession::InternalSetRemoteAddress(const PIPSocket::AddressAndPort & ap, bool isMediaAddress PTRACE_PARAM(, const char * source))
+bool OpalRTPSession::InternalSetRemoteAddress(const PIPSocket::AddressAndPort & ap, bool isMediaAddress, bool dontOverride PTRACE_PARAM(, const char * source))
 {
   WORD port = ap.GetPort();
 
@@ -2390,7 +2390,7 @@ bool OpalRTPSession::InternalSetRemoteAddress(const PIPSocket::AddressAndPort & 
     return false;
   }
 
-  if (m_remoteAddress.IsValid() && m_remotePort[isMediaAddress] != 0) {
+  if (dontOverride && m_remoteAddress.IsValid() && m_remotePort[isMediaAddress] != 0) {
     PTRACE(2, *this << "cannot set remote address/port to " << ap
                     << ", already set to " << m_remoteAddress << ':' << m_remotePort[isMediaAddress]);
     return false;
@@ -2613,7 +2613,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveICE(Channel channel,
     }
   }
 
-  InternalSetRemoteAddress(ap, channel PTRACE_PARAM(, "ICE"));
+  InternalSetRemoteAddress(ap, channel, true PTRACE_PARAM(, "ICE"));
 
   m_candidates[channel].clear();
   return e_IgnorePacket;
@@ -2685,7 +2685,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr, PI
     // If remote address never set from higher levels, then try and figure
     // it out from the first packet received.
     if (m_remotePort[channel] == 0)
-      InternalSetRemoteAddress(ap, channel PTRACE_PARAM(, "first PDU"));
+      InternalSetRemoteAddress(ap, channel, true PTRACE_PARAM(, "first PDU"));
 
     m_noTransmitErrors = 0;
 
