@@ -310,7 +310,7 @@ void SIPConnection::OnApplyStringOptions()
 
 bool SIPConnection::GarbageCollection()
 {
-  return CleanPendingTransactions() & OpalRTPConnection::GarbageCollection();
+  return CleanPendingTransactions() & OpalSDPConnection::GarbageCollection();
 }
 
 
