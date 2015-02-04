@@ -2254,15 +2254,15 @@ SIP_PDU::StatusCodes SIP_PDU::Parse(istream & stream, bool truncated)
     return Local_KeepAlive;
   }
 
-  if (stream.fail()) {
-    PTRACE(3, "Truncated MIME:\n" << cmd << '\n' << m_mime);
-    return SIP_PDU::Failure_MessageTooLarge;
-  }
-
   if (stream.bad()) {
     PTRACE(1, "Invalid message from" << transportName
            << ", request \"" << cmd << "\", mime:\n" << m_mime);
     return stream.bad() ? SIP_PDU::Failure_BadRequest : SIP_PDU::Failure_MessageTooLarge;
+  }
+
+  if (stream.fail()) {
+    PTRACE(3, "Truncated MIME:\n" << cmd << '\n' << m_mime);
+    return SIP_PDU::Failure_MessageTooLarge;
   }
 
   if (cmd.Left(4) *= "SIP/") {
