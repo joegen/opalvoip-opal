@@ -560,7 +560,7 @@ PBoolean SIPEndPoint::GarbageCollection()
   }
   bool registrarDone = m_registeredUAs.DeleteObjectsToBeRemoved();
 
-  if (!OpalEndPoint::GarbageCollection())
+  if (!OpalSDPEndPoint::GarbageCollection())
     return false;
 
   if (m_shuttingDown)
