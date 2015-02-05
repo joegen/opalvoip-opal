@@ -98,9 +98,9 @@ OpalSDPConnection::~OpalSDPConnection()
 OpalMediaFormatList OpalSDPConnection::GetMediaFormats() const
 {
   // Need to limit the media formats to what the other side provided in a re-INVITE
-  if (!m_answerFormatList.IsEmpty()) {
+  if (!m_activeFormatList.IsEmpty()) {
     PTRACE(4, "Using offered media format list");
-    return m_answerFormatList;
+    return m_activeFormatList;
   }
 
   if (!m_remoteFormatList.IsEmpty()) {
@@ -291,12 +291,35 @@ SDPSessionDescription * OpalSDPConnection::CreateSDP(const PString & sdpStr)
 }
 
 
-void OpalSDPConnection::SetRemoteMediaFormats(const OpalMediaFormatList & formats)
+bool OpalSDPConnection::SetActiveMediaFormats(const OpalMediaFormatList & formats)
 {
+  if (formats.IsEmpty()) {
+    PTRACE(3, "No known media formats in remotes SDP.");
+    return false;
+  }
+
+  // get the remote media formats
+  m_activeFormatList = formats;
+
+  // Remove anything we never offerred
+  while (!m_activeFormatList.IsEmpty() && m_localMediaFormats.FindFormat(m_activeFormatList.front()) == m_localMediaFormats.end())
+    m_activeFormatList.RemoveHead();
+
+  if (!m_activeFormatList.IsEmpty())
+    AdjustMediaFormats(false, NULL, m_activeFormatList);
+
+  if (m_activeFormatList.IsEmpty()) {
+    PTRACE(3, "All media formats in remotes SDP have been removed.");
+    return false;
+  }
+
+  // Remember the initial set of media formats remote has told us about
   if (m_remoteFormatList.IsEmpty()) {
     m_remoteFormatList = formats;
     m_remoteFormatList.MakeUnique();
   }
+
+  return true;
 }
 
 
@@ -628,21 +651,7 @@ bool OpalSDPConnection::OnSendOfferSDPSession(unsigned   sessionId,
 
 bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, SDPSessionDescription & sdpOut)
 {
-  // get the remote media formats
-  m_answerFormatList = sdpOffer.GetMediaFormats();
-
-  // Remove anything we never offerred
-  while (!m_answerFormatList.IsEmpty() && m_localMediaFormats.FindFormat(m_answerFormatList.front()) == m_localMediaFormats.end())
-    m_answerFormatList.RemoveHead();
-
-  AdjustMediaFormats(false, NULL, m_answerFormatList);
-  if (m_answerFormatList.IsEmpty()) {
-    PTRACE(3, "All media formats offered by remote have been removed.");
-    return false;
-  }
-
-  // Remember the initial offer list of media formats
-  SetRemoteMediaFormats(m_answerFormatList);
+  SetActiveMediaFormats(sdpOffer.GetMediaFormats());
 
   size_t sessionCount = sdpOffer.GetMediaDescriptions().GetSize();
   vector<SDPMediaDescription *> sdpMediaDescriptions(sessionCount+1);
@@ -691,6 +700,8 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
   if (gotNothing)
     return false;
 
+  m_activeFormatList = OpalMediaFormatList(); // Don't do RemoveAll() in case of references
+
   /* Shut down any media that is in a session not mentioned in a re-INVITE.
       While the SIP/SDP specification says this shouldn't happen, it does
       anyway so we need to deal. */
@@ -715,7 +726,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
   OpalMediaType mediaType = incomingMedia->GetMediaType();
 
   // See if any media formats of this session id, so don't create unused RTP session
-  if (!m_answerFormatList.HasType(mediaType)) {
+  if (!m_activeFormatList.HasType(mediaType)) {
     PTRACE(3, "No media formats of type " << mediaType << ", not adding SDP");
     return NULL;
   }
@@ -843,11 +854,11 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
   // Check if we had a stream and the remote has either changed the codec or
   // changed the direction of the stream
   OpalMediaStreamPtr sendStream = GetMediaStream(sessionId, false);
-  if (PauseOrCloseMediaStream(sendStream, m_answerFormatList, remoteChanged || replaceSession, (otherSidesDir&SDPMediaDescription::RecvOnly) == 0))
+  if (PauseOrCloseMediaStream(sendStream, m_activeFormatList, remoteChanged || replaceSession, (otherSidesDir&SDPMediaDescription::RecvOnly) == 0))
     newDirection = SDPMediaDescription::SendOnly;
 
   OpalMediaStreamPtr recvStream = GetMediaStream(sessionId, true);
-  if (PauseOrCloseMediaStream(recvStream, m_answerFormatList, remoteChanged || replaceSession,
+  if (PauseOrCloseMediaStream(recvStream, m_activeFormatList, remoteChanged || replaceSession,
                               m_holdToRemote >= eHoldOn || (otherSidesDir&SDPMediaDescription::SendOnly) == 0))
     newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv : SDPMediaDescription::RecvOnly;
 
@@ -888,7 +899,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
 
     if (sendStream != NULL) {
       // In case is re-INVITE and remote has tweaked the streams paramters, we need to merge them
-      sendStream->UpdateMediaFormat(*m_answerFormatList.FindFormat(sendStream->GetMediaFormat()), true);
+      sendStream->UpdateMediaFormat(*m_activeFormatList.FindFormat(sendStream->GetMediaFormat()), true);
     }
 
     if (recvStream == NULL) {
@@ -917,7 +928,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
     }
 
     if (recvStream != NULL) {
-      OpalMediaFormat adjustedMediaFormat = *m_answerFormatList.FindFormat(recvStream->GetMediaFormat());
+      OpalMediaFormat adjustedMediaFormat = *m_activeFormatList.FindFormat(recvStream->GetMediaFormat());
 
       // If we are sendrecv we will receive the same payload type as we transmit.
       if (newDirection == SDPMediaDescription::SendRecv)
@@ -953,7 +964,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
 
     // RFC3264 says we MUST have an entry, but it should have port zero
     if (empty) {
-      localMedia->AddMediaFormat(m_answerFormatList.front());
+      localMedia->AddMediaFormat(m_activeFormatList.front());
       localMedia->FromSession(NULL, NULL);
     }
     else {
@@ -964,9 +975,9 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
 
   if (mediaType == OpalMediaType::Audio()) {
     // Set format if we have an RTP payload type for RFC2833 and/or NSE
-    SetNxECapabilities(m_rfc2833Handler, m_localMediaFormats, m_answerFormatList, OpalRFC2833, localMedia.get());
+    SetNxECapabilities(m_rfc2833Handler, m_localMediaFormats, m_activeFormatList, OpalRFC2833, localMedia.get());
 #if OPAL_T38_CAPABILITY
-    SetNxECapabilities(m_ciscoNSEHandler, m_localMediaFormats, m_answerFormatList, OpalCiscoNSE, localMedia.get());
+    SetNxECapabilities(m_ciscoNSEHandler, m_localMediaFormats, m_activeFormatList, OpalCiscoNSE, localMedia.get());
 #endif
   }
 
@@ -987,8 +998,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
 
 bool OpalSDPConnection::OnReceivedAnswerSDP(const SDPSessionDescription & sdp, bool & multipleFormats)
 {
-  m_answerFormatList = sdp.GetMediaFormats();
-  AdjustMediaFormats(false, NULL, m_answerFormatList);
+  SetActiveMediaFormats(sdp.GetMediaFormats());
 
   unsigned sessionCount = sdp.GetMediaDescriptions().GetSize();
 
@@ -1005,7 +1015,7 @@ bool OpalSDPConnection::OnReceivedAnswerSDP(const SDPSessionDescription & sdp, b
     }
   }
 
-  m_answerFormatList.RemoveAll();
+  m_activeFormatList = OpalMediaFormatList(); // Don't do RemoveAll() in case of references
 
   /* Shut down any media that is in a session not mentioned in a re-INVITE.
      While the SIP/SDP specification says this shouldn't happen, it does
@@ -1035,7 +1045,7 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPSessionDescription &
   /* Get the media the remote has answered to our offer. Remove the media
      formats we do not support, in case the remote is insane and replied
      with something we did not actually offer. */
-  if (!m_answerFormatList.HasType(mediaType)) {
+  if (!m_activeFormatList.HasType(mediaType)) {
     PTRACE(2, "Could not find supported media formats in SDP media description for session " << sessionId);
     return false;
   }
@@ -1089,11 +1099,11 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPSessionDescription &
   // changed the direction of the stream
   OpalMediaStreamPtr sendStream = GetMediaStream(sessionId, false);
   bool sendDisabled = (otherSidesDir&SDPMediaDescription::RecvOnly) == 0;
-  PauseOrCloseMediaStream(sendStream, m_answerFormatList, remoteChanged, sendDisabled);
+  PauseOrCloseMediaStream(sendStream, m_activeFormatList, remoteChanged, sendDisabled);
 
   OpalMediaStreamPtr recvStream = GetMediaStream(sessionId, true);
   bool recvDisabled = (otherSidesDir&SDPMediaDescription::SendOnly) == 0;
-  PauseOrCloseMediaStream(recvStream, m_answerFormatList, remoteChanged, recvDisabled);
+  PauseOrCloseMediaStream(recvStream, m_activeFormatList, remoteChanged, recvDisabled);
 
   // Then open the streams if the direction allows and if needed
   // If already open then update to new parameters/payload type
@@ -1134,10 +1144,10 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPSessionDescription &
 
   PINDEX maxFormats = 1;
   if (mediaType == OpalMediaType::Audio()) {
-    if (SetNxECapabilities(m_rfc2833Handler, m_localMediaFormats, m_answerFormatList, OpalRFC2833))
+    if (SetNxECapabilities(m_rfc2833Handler, m_localMediaFormats, m_activeFormatList, OpalRFC2833))
       ++maxFormats;
 #if OPAL_T38_CAPABILITY
-    if (SetNxECapabilities(m_ciscoNSEHandler, m_localMediaFormats, m_answerFormatList, OpalCiscoNSE))
+    if (SetNxECapabilities(m_ciscoNSEHandler, m_localMediaFormats, m_activeFormatList, OpalCiscoNSE))
       ++maxFormats;
 #endif
   }
