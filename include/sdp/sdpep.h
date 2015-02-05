@@ -267,7 +267,7 @@ class OpalSDPConnection : public OpalRTPConnection
       bool & multipleFormats
     );
 
-    virtual void SetRemoteMediaFormats(
+    virtual bool SetActiveMediaFormats(
         const OpalMediaFormatList & formats
     );
 
@@ -289,7 +289,7 @@ class OpalSDPConnection : public OpalRTPConnection
     OpalSDPEndPoint & m_endpoint;
 
     OpalMediaFormatList m_remoteFormatList;
-    OpalMediaFormatList m_answerFormatList;
+    OpalMediaFormatList m_activeFormatList;
 
     atomic<bool> m_offerPending;
     time_t       m_sdpSessionId;
