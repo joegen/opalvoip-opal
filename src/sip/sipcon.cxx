@@ -1490,9 +1490,11 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
 
   if (collapseForks) {
     // Save the sessions we are actually using out of all the forked INVITES sent
-    SessionMap & sessionsInTransaction = ((SIPInvite &)transaction).m_sessions;
+    SessionMap & sessionsInTransaction = dynamic_cast<SIPInvite &>(transaction).m_sessions;
     if (m_sessions.IsEmpty() && !sessionsInTransaction.IsEmpty())
       m_sessions.MoveFrom(sessionsInTransaction);
+    else
+      sessionsInTransaction = SessionMap(); // Break reference
 
     // Have a positive response to the INVITE, so cancel all the other invitations sent.
     for (PSafePtr<SIPTransaction> invitation(m_forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
