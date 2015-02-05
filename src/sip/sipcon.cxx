@@ -2806,7 +2806,6 @@ bool SIPConnection::OnSendAnswer(SIP_PDU::StatusCodes response)
     ok = OnSendAnswerSDP(*sdp, *sdpOut);
   }
 
-  m_answerFormatList.RemoveAll();
   return ok && SendInviteResponse(response, sdpOut.get());
 }
 
