@@ -2560,7 +2560,6 @@ bool OpalRTPSession::GetICE(PString & user, PString & pass, PNatCandidateList & 
     }
   }
 
-  m_remoteAddress = PIPSocket::GetInvalidAddress();
   m_remoteBehindNAT = true;
 
   PTRACE(4, *this << "configured locally for ICE with "
