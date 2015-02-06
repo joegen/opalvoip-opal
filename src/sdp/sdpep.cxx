@@ -97,7 +97,7 @@ OpalSDPConnection::~OpalSDPConnection()
 
 OpalMediaFormatList OpalSDPConnection::GetMediaFormats() const
 {
-  // Need to limit the media formats to what the other side provided in a re-INVITE
+  // Need to limit the media formats to what the other side provided in it's offer
   if (!m_activeFormatList.IsEmpty()) {
     PTRACE(4, "Using offered media format list");
     return m_activeFormatList;
@@ -422,7 +422,7 @@ static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
     return false;
 
   if (!stream->IsOpen()) {
-    PTRACE(4, "Re-INVITE of closed stream " << *stream);
+    PTRACE(4, "Answer SDP, stream closed " << *stream);
     stream.SetNULL();
     return false;
   }
@@ -430,14 +430,14 @@ static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
   if (!remoteChanged) {
     OpalMediaFormatList::const_iterator fmt = answerFormats.FindFormat(stream->GetMediaFormat());
     if (fmt != answerFormats.end() && stream->UpdateMediaFormat(*fmt, true)) {
-      PTRACE2(4, &*stream, "INVITE change needs to " << (paused ? "pause" : "resume") << " stream " << *stream);
+      PTRACE2(4, &*stream, "Answer SDP change needs to " << (paused ? "pause" : "resume") << " stream " << *stream);
       stream->InternalSetPaused(paused, false, false);
       return !paused;
     }
-    PTRACE(4, "Re-INVITE (format change) needs to close stream " << *stream);
+    PTRACE(4, "Answer SDP (format change) needs to close stream " << *stream);
   }
   else {
-    PTRACE(4, "Re-INVITE (address/port change) needs to close stream " << *stream);
+    PTRACE(4, "Answer SDP (address/port change) needs to close stream " << *stream);
   }
 
   OpalMediaPatchPtr patch = stream->GetPatch();
@@ -453,7 +453,7 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
   bool sdpOK = false;
 
   if (offerOpenMediaStreamsOnly && !mediaStreams.IsEmpty()) {
-    PTRACE(4, "Offering only current media streams in Re-INVITE");
+    PTRACE(4, "Offering only current media streams");
     for (SessionMap::iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
       if (OnSendOfferSDPSession(it->first, sdpOut, true))
         sdpOK = true;
@@ -702,7 +702,7 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
 
   m_activeFormatList = OpalMediaFormatList(); // Don't do RemoveAll() in case of references
 
-  /* Shut down any media that is in a session not mentioned in a re-INVITE.
+  /* Shut down any media that is in a session not mentioned in answer.
       While the SIP/SDP specification says this shouldn't happen, it does
       anyway so we need to deal. */
   for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
@@ -711,7 +711,7 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
       stream->Close();
   }
 
-  // In case some new streams got created in a re-INVITE.
+  // In case some new streams got created.
   if (IsEstablished())
     StartMediaStreams();
 
@@ -839,7 +839,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
 #endif // OPAL_SRTP
 
   if (GetPhase() < ConnectedPhase) {
-    // If processing initial INVITE and video, obey the auto-start flags
+    // If processing initial offer and video, obey the auto-start flags
     OpalMediaType::AutoStartMode autoStart = GetAutoStart(mediaType);
     if ((autoStart&OpalMediaType::Transmit) == 0)
       otherSidesDir = (otherSidesDir&SDPMediaDescription::SendOnly) != 0 ? SDPMediaDescription::SendOnly : SDPMediaDescription::Inactive;
@@ -898,7 +898,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
     }
 
     if (sendStream != NULL) {
-      // In case is re-INVITE and remote has tweaked the streams paramters, we need to merge them
+      // In case is new offer and remote has tweaked the streams paramters, we need to merge them
       sendStream->UpdateMediaFormat(*m_activeFormatList.FindFormat(sendStream->GetMediaFormat()), true);
     }
 
@@ -1017,7 +1017,7 @@ bool OpalSDPConnection::OnReceivedAnswerSDP(const SDPSessionDescription & sdp, b
 
   m_activeFormatList = OpalMediaFormatList(); // Don't do RemoveAll() in case of references
 
-  /* Shut down any media that is in a session not mentioned in a re-INVITE.
+  /* Shut down any media that is in a session not mentioned in answer to our offer.
      While the SIP/SDP specification says this shouldn't happen, it does
      anyway so we need to deal. */
   for (OpalMediaStreamPtr stream(mediaStreams, PSafeReference); stream != NULL; ++stream) {
