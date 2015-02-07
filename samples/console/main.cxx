@@ -56,6 +56,12 @@ PString MyManager::GetArgumentSpec() const
 }
 
 
+void MyManager::Usage(ostream & strm, const PArgList & args)
+{
+  args.Usage(strm, "[ <options> ... ]\n[ <options> ... ] <remote-URI>\n[ <options> ... ] <local-URI> <remote-URI>");
+}
+
+
 bool MyManager::Initialise(PArgList & args, bool verbose)
 {
   if (!OpalManagerCLI::Initialise(args, verbose, OPAL_PREFIX_PCSS":"))
@@ -71,6 +77,25 @@ bool MyManager::Initialise(PArgList & args, bool verbose)
   m_cli->SetCommand("hold",        PCREATE_NOTIFIER(CmdHold),     "Hold call");
   m_cli->SetCommand("retrieve",    PCREATE_NOTIFIER(CmdRetrieve), "Retrieve call from hold");
   m_cli->SetCommand("transfer",    PCREATE_NOTIFIER(CmdTransfer), "Transfer call", "<uri>");
+
+  switch (args.GetCount()) {
+    case 0 :
+      break;
+
+    case 1 :
+      if (SetUpCall(OPAL_PREFIX_PCSS":*", args[0]) != NULL)
+        *LockedStream(*this) << "Starting call to " << args[0] << endl;
+      break;
+
+    case 2 :
+      if (SetUpCall(args[0], args[1]) != NULL)
+        *LockedStream(*this) << "Starting call from " << args[0] << " to " << args[1] << endl;
+      break;
+
+    default :
+      Usage(cerr, args);
+      return false;
+  }
 
   return true;
 }
