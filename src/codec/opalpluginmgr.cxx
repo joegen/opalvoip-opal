@@ -493,7 +493,7 @@ OpalPluginAudioFormatInternal::OpalPluginAudioFormatInternal(const PluginCodec_D
                             GetPluginPayloadType(codecDefn),
                             rtpEncodingName,
                             codecDefn->parm.audio.bytesPerFrame,
-                            codecDefn->parm.audio.samplesPerFrame,
+                            codecDefn->usPerFrame*codecDefn->sampleRate/1000000,
                             codecDefn->parm.audio.maxFramesPerPacket,
                             codecDefn->parm.audio.recommendedFramesPerPacket,
                             codecDefn->parm.audio.maxFramesPerPacket,
