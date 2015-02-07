@@ -175,6 +175,7 @@ class OpusPluginMediaFormat : public PluginCodec_AudioFormat<MY_CODEC>
       m_recommendedFramesPerPacket = 1; // 20ms
       m_maxFramesPerPacket = 6; // 120ms
       m_maxBandwidth = MAX_BIT_RATE;
+      m_frameTime = 20000; // Rare occasion where frame time not derived from samplesPerFrame and sampleRate
       m_flags |= PluginCodec_SetChannels(2) | PluginCodec_RTPTypeShared;
     }
 
