@@ -2277,7 +2277,7 @@ void SIP_PDU_Work::Work()
 
   PSafePtr<SIPConnection> connection = m_endpoint.GetSIPConnectionWithLock(m_token, PSafeReadWrite);
   if (connection != NULL) {
-    PTRACE_CONTEXT_ID_PUSH_THREAD(connection);
+    PTRACE_CONTEXT_ID_PUSH_THREAD(*connection);
     PTRACE(3, "Handling connection PDU \"" << *m_pdu << "\" for token=" << m_token);
     connection->OnReceivedPDU(*m_pdu);
     PTRACE(4, "Handled connection PDU \"" << *m_pdu << '"');
