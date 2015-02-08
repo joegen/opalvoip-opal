@@ -524,16 +524,13 @@ void OpalFramedTranscoder::CalculateSizes()
   unsigned framesPerPacket = outputMediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(),
                               inputMediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1));
   // Use num channels from raw side, the network side is sometimes not actually what is used, e.g. Opus.
-  unsigned channels = inputMediaFormat.IsTransportable()
-                          ? outputMediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption(), 1)
-                          :  inputMediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption(), 1);
   unsigned inFrameSize = inputMediaFormat.GetFrameSize();
   unsigned outFrameSize = outputMediaFormat.GetFrameSize();
   unsigned inFrameTime = inputMediaFormat.GetFrameTime()*1000000/m_inClockRate;   // microseconds
   unsigned outFrameTime = outputMediaFormat.GetFrameTime()*1000000/m_outClockRate; // microseconds
   unsigned leastCommonMultiple = inFrameTime*outFrameTime/GreatestCommonDivisor(inFrameTime, outFrameTime);
-  inputBytesPerFrame = leastCommonMultiple/inFrameTime*inFrameSize*framesPerPacket*channels;
-  outputBytesPerFrame = leastCommonMultiple/outFrameTime*outFrameSize*framesPerPacket*channels;
+  inputBytesPerFrame = leastCommonMultiple/inFrameTime*inFrameSize*framesPerPacket;
+  outputBytesPerFrame = leastCommonMultiple/outFrameTime*outFrameSize*framesPerPacket;
 
   unsigned inMaxTimePerFrame  = inFrameTime*inputMediaFormat.GetOptionInteger(OpalAudioFormat::MaxFramesPerPacketOption(), 1);
   unsigned outMaxTimePerFrame = outFrameTime*outputMediaFormat.GetOptionInteger(OpalAudioFormat::MaxFramesPerPacketOption(), 1);

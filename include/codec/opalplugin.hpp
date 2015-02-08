@@ -552,6 +552,7 @@ class PluginCodec_AudioFormat : public PluginCodec_MediaFormat<NAME>
     unsigned m_sampleRate;
     unsigned m_recommendedFramesPerPacket;
     unsigned m_maxFramesPerPacket;
+    unsigned m_frameTime;
 
 
     PluginCodec_AudioFormat(
@@ -568,11 +569,11 @@ class PluginCodec_AudioFormat : public PluginCodec_MediaFormat<NAME>
       , m_sampleRate(sampleRate)
       , m_recommendedFramesPerPacket((50*sampleRate)/(1000*samplesPerFrame))
       , m_maxFramesPerPacket((120*sampleRate)/(1000*samplesPerFrame))
+      , m_frameTime(samplesPerFrame * 1000000 / sampleRate)
     {
       this->m_flags = PluginCodec_MediaTypeAudio /* audio codec */
                     | PluginCodec_InputTypeRaw   /* raw input data */
                     | PluginCodec_OutputTypeRaw; /* raw output data */
-
     }
 
     __inline PluginCodec_AudioFormat & SetFlags(unsigned b, unsigned m = 0) { this->Parent::SetFlags(b,m); return *this; }
@@ -585,7 +586,7 @@ class PluginCodec_AudioFormat : public PluginCodec_MediaFormat<NAME>
     __inline unsigned GetSamplesPerFrame() const { return this->m_samplesPerFrame; }
     __inline unsigned GetBytesPerFrame() const { return this->m_bytesPerFrame; }
     __inline unsigned GetSampleRate() const { return this->m_sampleRate; }
-    __inline unsigned GetFrameTime() const { return this->m_samplesPerFrame*1000000/this->m_sampleRate; }
+    __inline unsigned GetFrameTime() const { return this->m_frameTime; }
     __inline unsigned GetRecommendedFramesPerPacket() const { return this->m_recommendedFramesPerPacket; }
     __inline unsigned GetMaxFramesPerPacket() const { return this->m_maxFramesPerPacket; }
 };

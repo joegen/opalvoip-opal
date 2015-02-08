@@ -39,8 +39,9 @@ class MyManager : public OpalManagerCLI
   public:
     MyManager();
 
-    PString GetArgumentSpec() const;
-    bool Initialise(PArgList & args, bool verbose);
+    virtual PString GetArgumentSpec() const;
+    virtual void Usage(ostream & strm, const PArgList & args);
+    virtual bool Initialise(PArgList & args, bool verbose);
 
   protected:
     virtual bool OnLocalIncomingCall(OpalLocalConnection & connection);
