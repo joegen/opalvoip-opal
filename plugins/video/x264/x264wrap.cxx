@@ -382,7 +382,10 @@ bool H264Encoder::EncodeFrames(const unsigned char * src, unsigned & srcLen,
 #ifdef __MINGW32__
 static const char DefaultPluginDirs[] = "plugins";
 #else
-static const char DefaultPluginDirs[] = "." DIR_TOKENISER "C:\\PTLib_Plugins";
+static const char DefaultPluginDirs[] = "."
+                                        DIR_TOKENISER "C:\\Program Files\\PTLib Plug Ins"
+                                        DIR_TOKENISER "C:\\Program Files (x86)\\PTLib Plug Ins"
+                                        DIR_TOKENISER "C:\\PTLib_Plugins";
 #endif
 
 #include <io.h>
@@ -730,20 +733,27 @@ bool H264Encoder::Load(void * instance)
   static const char ExecutableName[] = EXECUTABLE_NAME;
 
   char executablePath[500];
-  char * tempDirs = strdup(pluginDirs);
-  const char * token = strtok(tempDirs, DIR_TOKENISER);
-  while (token != NULL) {
-    snprintf(executablePath, sizeof(executablePath), "%s/%s", token, ExecutableName);
-    if (IsExecutable(executablePath))
-      break;
+  if (GetModuleFileName(GetModuleHandle("h264_x264_ptplugin.dll"), executablePath, sizeof(executablePath)))
+    strcpy(strrchr(executablePath, '\\') + 1, ExecutableName);
+  else
+    executablePath[0] = '\0';
 
-    token = strtok(NULL, DIR_TOKENISER);
-  }
-  free(tempDirs);
+  if (!IsExecutable(executablePath)) {
+    char * tempDirs = strdup(pluginDirs);
+    const char * token = strtok(tempDirs, DIR_TOKENISER);
+    while (token != NULL) {
+      snprintf(executablePath, sizeof(executablePath), "%s\\%s", token, ExecutableName);
+      if (IsExecutable(executablePath))
+        break;
 
-  if (token == NULL) {
-    PTRACE(1, PipeTraceName, "Could not find GPL process executable " << ExecutableName << " in " << pluginDirs);
-    return false;
+      token = strtok(NULL, DIR_TOKENISER);
+    }
+    free(tempDirs);
+
+    if (token == NULL) {
+      PTRACE(1, PipeTraceName, "Could not find GPL process executable " << ExecutableName << " in " << pluginDirs);
+      return false;
+    }
   }
 
   if (!OpenPipeAndExecute(instance, executablePath))
