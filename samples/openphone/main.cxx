@@ -5763,7 +5763,7 @@ void OptionsDialog::TestPlayer(wxCommandEvent & /*event*/)
   if (!wxDialog::TransferDataFromWindow())
     return;
 
-  PSoundChannel::Params params(PSoundChannel::Player, m_SoundPlayer);
+  PSoundChannel::Params params(PSoundChannel::Player, AudioDeviceNameFromScreen(m_SoundPlayer));
   params.m_bufferCount = (m_SoundBufferTime*params.m_sampleRate/1000*2+params.m_bufferSize-1)/params.m_bufferSize;
   SoundProgressDialog progress(true);
   PwxString result = PSoundChannel::TestPlayer(params, progress.GetNotifier());
@@ -5779,8 +5779,8 @@ void OptionsDialog::TestRecorder(wxCommandEvent & /*event*/)
   if (!wxDialog::TransferDataFromWindow())
     return;
 
-  PSoundChannel::Params recorderParams(PSoundChannel::Recorder, m_SoundRecorder);
-  PSoundChannel::Params playerPrams(PSoundChannel::Player, m_SoundPlayer);
+  PSoundChannel::Params recorderParams(PSoundChannel::Recorder, AudioDeviceNameFromScreen(m_SoundRecorder));
+  PSoundChannel::Params playerPrams(PSoundChannel::Player, AudioDeviceNameFromScreen(m_SoundPlayer));
   playerPrams.m_bufferCount = 16;
   SoundProgressDialog progress(false);
   PwxString result = PSoundChannel::TestRecorder(recorderParams, playerPrams, progress.GetNotifier());
