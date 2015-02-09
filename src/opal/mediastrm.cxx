@@ -1280,16 +1280,17 @@ PBoolean OpalAudioMediaStream::SetDataSize(PINDEX dataSize, PINDEX frameTime)
   const unsigned MinBufferTimeMilliseconds = 10;
 
   unsigned timePerMS = mediaFormat.GetTimeUnits();
-  PINDEX frameSize = frameTime*sizeof(short);
+  unsigned channels = mediaFormat.GetOptionInteger(OpalAudioFormat::ChannelsOption(), 1);
+  PINDEX frameSize = frameTime*channels*sizeof(short);
   unsigned frameMilliseconds = (frameTime+timePerMS-1)/timePerMS;
 
   if (frameMilliseconds == 0) {
-    frameSize = MinBufferTimeMilliseconds*timePerMS*sizeof(short);
+    frameSize = MinBufferTimeMilliseconds*timePerMS*channels*sizeof(short);
     frameMilliseconds = MinBufferTimeMilliseconds;
   }
   else if (frameMilliseconds < MinBufferTimeMilliseconds) {
     PINDEX minFrameCount = (MinBufferTimeMilliseconds+frameMilliseconds-1)/frameMilliseconds;
-    frameSize = minFrameCount*frameTime*sizeof(short);
+    frameSize = minFrameCount*frameTime*channels*sizeof(short);
     frameMilliseconds = (minFrameCount*frameTime+timePerMS-1)/timePerMS;
   }
 
