@@ -731,12 +731,15 @@ bool H264Encoder::Load(void * instance)
   static const char ExecutableName[] = EXECUTABLE_NAME;
 
   char executablePath[500];
+#if WIN32
   if (GetModuleFileName(GetModuleHandle("h264_x264_ptplugin.dll"), executablePath, sizeof(executablePath)))
     strcpy(strrchr(executablePath, '\\') + 1, ExecutableName);
   else
     executablePath[0] = '\0';
 
-  if (!IsExecutable(executablePath)) {
+  if (!IsExecutable(executablePath))
+#endif
+  {
     char * tempDirs = strdup(pluginDirs);
     const char * token = strtok(tempDirs, DIR_TOKENISER);
     while (token != NULL) {
