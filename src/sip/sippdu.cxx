@@ -3769,6 +3769,7 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport * transport)
 
 SIPInvite::~SIPInvite()
 {
+  PTRACE_IF(3, !m_sessions.IsEmpty(), "Destroying INVITE " << m_transactionID << ", " << m_sessions.GetSize() << " sessions.");
   for (OpalRTPConnection::SessionMap::iterator it = m_sessions.begin(); it != m_sessions.end(); ++it)
     it->second->Close();
 }
