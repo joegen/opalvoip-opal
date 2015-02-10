@@ -457,6 +457,7 @@ OpalMediaSession::OpalMediaSession(const Init & init)
   : m_connection(init.m_connection)
   , m_sessionId(init.m_sessionId)
   , m_mediaType(init.m_mediaType)
+  , m_remoteBehindNAT(init.m_remoteBehindNAT)
 {
   PTRACE_CONTEXT_ID_FROM(init.m_connection);
   PTRACE(5, *this << "created for " << m_mediaType);

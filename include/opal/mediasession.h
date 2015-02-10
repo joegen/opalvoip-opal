@@ -344,6 +344,9 @@ class OpalMediaSession : public PSafeObject
     virtual void GetStatistics(OpalMediaStatistics & statistics, bool receiver) const;
 #endif
 
+    /// Indicate remote is behind NAT
+    void SetRemoteBehindNAT() { m_remoteBehindNAT = true; }
+
     void OfferCryptoSuite(const PString & cryptoSuite);
     virtual OpalMediaCryptoKeyList & GetOfferedCryptoKeys();
 
@@ -376,6 +379,7 @@ class OpalMediaSession : public PSafeObject
     OpalConnection & m_connection;
     unsigned         m_sessionId;  // unique session ID
     OpalMediaType    m_mediaType;  // media type for session
+    bool             m_remoteBehindNAT;
 #if OPAL_ICE
     PString          m_localUsername;    // ICE username sent to remote
     PString          m_localPassword;    // ICE password sent to remote
