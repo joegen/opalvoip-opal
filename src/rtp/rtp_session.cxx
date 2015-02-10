@@ -352,6 +352,7 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
   , m_maximumJitter(0)
   , m_markerCount(0)
   , m_lastTimestamp(0)
+  , m_lastAbsoluteTime(0)
   , m_averageTimeAccum(0)
   , m_maximumTimeAccum(0)
   , m_minimumTimeAccum(0)
@@ -437,6 +438,7 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
   unsigned diff = (tick - m_lastPacketTick).GetInterval();
   m_lastPacketTick = tick;
   m_lastTimestamp = frame.GetTimestamp();
+  m_lastAbsoluteTime = frame.GetAbsoluteTime();
 
   m_averageTimeAccum += diff;
   if (diff > m_maximumTimeAccum)
@@ -1205,7 +1207,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
     // add the SR after the SSRC
     RTP_ControlFrame::SenderReport * sr = (RTP_ControlFrame::SenderReport *)(payload+sizeof(PUInt32b));
-    sr->ntp_ts = PTime().GetNTP();
+    sr->ntp_ts = (sender.m_lastAbsoluteTime.IsValid() ? sender.m_lastAbsoluteTime : PTime()).GetNTP();
     sr->rtp_ts = sender.m_lastTimestamp;
     sr->psent  = sender.m_packets;
     sr->osent  = (uint32_t)sender.m_octets;
