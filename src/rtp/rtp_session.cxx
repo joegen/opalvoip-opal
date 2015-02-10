@@ -153,7 +153,6 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_remoteAddress(PIPSocket::GetInvalidAddress())
   , m_qos(m_manager.GetMediaQoS(init.m_mediaType))
   , m_thread(NULL)
-  , m_remoteBehindNAT(init.m_remoteBehindNAT)
   , m_localHasRestrictedNAT(false)
   , m_noTransmitErrors(0)
 #if OPAL_ICE

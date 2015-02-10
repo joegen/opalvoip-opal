@@ -2817,6 +2817,12 @@ bool SIPConnection::OnReceivedAnswer(SIP_PDU & response, SIPTransaction * transa
     return false;
   }
 
+  if (transaction != NULL) {
+      OpalTransportPtr transport = transaction->GetTransport();
+      if (transport != NULL)
+        DetermineRTPNAT(*transport, sdp->GetDefaultConnectAddress());
+  }
+
   if (transaction != NULL && transaction->GetSDP() == NULL) {
     PTRACE(4, "SIP", "No local offer made, processing remote offer in delayed ACK");
     if (!SendDelayedACK(false))

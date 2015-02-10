@@ -829,7 +829,6 @@ class OpalRTPSession : public OpalMediaSession
     PThread * m_thread;
     virtual void ThreadMain();
 
-    bool m_remoteBehindNAT;
     bool m_localHasRestrictedNAT;
     bool m_firstControl;
 
