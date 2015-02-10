@@ -1045,7 +1045,7 @@ void SIPConnection::WriteINVITE(OpalTransport & transport, bool & succeeded)
 
 void SIPConnection::OnCreatingINVITE(SIPInvite & request)
 {
-  PTRACE(3, "SIP\tCreating INVITE request");
+  PTRACE(3, "SIP\tCreating INVITE request " << request.GetTransactionID());
 
   SIPMIMEInfo & mime = request.GetMIME();
 
@@ -1493,8 +1493,11 @@ bool SIPConnection::OnReceivedResponseToINVITE(SIPTransaction & transaction, SIP
     SessionMap & sessionsInTransaction = dynamic_cast<SIPInvite &>(transaction).m_sessions;
     if (m_sessions.IsEmpty() && !sessionsInTransaction.IsEmpty())
       m_sessions.MoveFrom(sessionsInTransaction);
-    else
-      sessionsInTransaction = SessionMap(); // Break reference
+    else {
+      // Break references, so SIPInvite dtor does not close sessions
+      sessionsInTransaction.DisallowDeleteObjects();
+      sessionsInTransaction.RemoveAll();
+    }
 
     // Have a positive response to the INVITE, so cancel all the other invitations sent.
     for (PSafePtr<SIPTransaction> invitation(m_forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
@@ -2699,6 +2702,8 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
 
 void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
+  PTRACE(3, "SIP\tReceived OK response for " << transaction.GetMethod() << ' ' << transaction.GetTransactionID());
+
   switch (transaction.GetMethod()) {
     case SIP_PDU::Method_INVITE :
       if (IsReleased()) {
@@ -2734,7 +2739,6 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
       return;
   }
 
-  PTRACE(3, "SIP\tReceived INVITE OK response for " << transaction.GetMethod());
   m_sessionTimer = 10000;
 
   NotifyDialogState(SIPDialogNotification::Confirmed);
