@@ -234,7 +234,8 @@ SIPConnection::SIPConnection(const Init & init)
   , m_responseRetryTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnInviteResponseRetry)
   , m_responseRetryCount(0)
   , m_inviteCollisionTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnInviteCollision)
-  , m_referInProgress(false)
+  , m_referOfRemoteInProgress(false)
+  , m_delayedReferTimer(init.m_endpoint.GetThreadPool(), init.m_endpoint, init.m_token, &SIPConnection::OnDelayedRefer)
   , releaseMethod(ReleaseWithNothing)
   , m_receivedUserInputMethod(UserInputMethodUnknown)
 {
@@ -321,8 +322,8 @@ void SIPConnection::OnReleased()
   if (!PAssert(LockReadWrite(),PLogicError))
     return;
 
-  if (m_referInProgress) {
-    m_referInProgress = false;
+  if (m_referOfRemoteInProgress) {
+    m_referOfRemoteInProgress = false;
 
     PStringToString info;
     info.SetAt("result", "blind");
@@ -463,7 +464,7 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
     return false;
 
   // There is still an ongoing REFER transaction 
-  if (m_referInProgress) {
+  if (m_referOfRemoteInProgress) {
     PTRACE(2, "SIP\tTransfer already in progress for " << *this);
     return false;
   }
@@ -489,8 +490,8 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
   if (!PURL::ExtractScheme(remoteParty).IsEmpty()) {
     PTRACE(3, "SIP\tBlind transfer of " << *this << " to " << remoteParty);
     SIPRefer * referTransaction = new SIPRefer(*this, remoteParty, m_dialog.GetLocalURI(), referSub);
-    m_referInProgress = referTransaction->Start();
-    return m_referInProgress;
+    m_referOfRemoteInProgress = referTransaction->Start();
+    return m_referOfRemoteInProgress;
   }
 
   PSafePtr<OpalCall> call = endpoint.GetManager().FindCallWithLock(url.GetHostName(), PSafeReadOnly);
@@ -531,8 +532,8 @@ bool SIPConnection::TransferConnection(const PString & remoteParty)
 
       SIPRefer * referTransaction = new SIPRefer(*this, referTo, m_dialog.GetLocalURI(), referSub);
       referTransaction->GetMIME().AddSupported("replaces");
-      m_referInProgress = referTransaction->Start();
-      return m_referInProgress;
+      m_referOfRemoteInProgress = referTransaction->Start();
+      return m_referOfRemoteInProgress;
     }
   }
 
@@ -1257,7 +1258,7 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
       break;
 
     case SIP_PDU::Method_REFER :
-      m_referInProgress = false;
+      m_referOfRemoteInProgress = false;
       // Do next case
 
     default :
@@ -1771,8 +1772,8 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
           default :
             switch (transaction.GetMethod()) {
               case SIP_PDU::Method_REFER :
-                if (m_referInProgress) {
-                  m_referInProgress = false;
+                if (m_referOfRemoteInProgress) {
+                  m_referOfRemoteInProgress = false;
 
                   PStringToString info;
                   info.SetAt("result", "error");
@@ -2270,8 +2271,8 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
   SIPURL newRemotePartyID(request.GetMIME(), RemotePartyID);
   if (newRemotePartyID.IsEmpty())
     UpdateRemoteAddresses();
-  else if (m_referInProgress) {
-    m_referInProgress = false;
+  else if (m_referOfRemoteInProgress) {
+    m_referOfRemoteInProgress = false;
 
     UpdateRemoteAddresses();
     PStringToString info = m_ciscoRemotePartyID.GetParamVars();
@@ -2395,7 +2396,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
     return;
   }
 
-  if (!m_referInProgress) {
+  if (!m_referOfRemoteInProgress) {
     PTRACE(2, "SIP\tNOTIFY for REFER we never sent.");
     response->SetStatusCode(SIP_PDU::Failure_TransactionDoesNotExist);
     response->Send();
@@ -2422,11 +2423,11 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & request)
 
   PStringToString info;
   PCaselessString state = mime.GetSubscriptionState(info);
-  m_referInProgress = state != "terminated";
+  m_referOfRemoteInProgress = state != "terminated";
   info.SetAt("party", "B"); // We are B party in consultation transfer
   info.SetAt("state", state);
   info.SetAt("code", psprintf("%u", code));
-  info.SetAt("result", m_referInProgress ? "progress" : (code < 300 ? "success" : "failed"));
+  info.SetAt("result", m_referOfRemoteInProgress ? "progress" : (code < 300 ? "success" : "failed"));
 
   if (OnTransferNotify(info, this))
     return;
@@ -2451,10 +2452,17 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
     return;
   }
 
+  if (!m_delayedReferTo.IsEmpty()) {
+    PTRACE(2, "SIP\tRejecting REFER as already processing one on " << *this);
+    response->SetStatusCode(SIP_PDU::Failure_RequestPending);
+    response->Send();
+    return;
+  }
+
   const SIPMIMEInfo & requestMIME = request.GetMIME();
 
-  SIPURL referTo = requestMIME.GetReferTo();
-  if (referTo.IsEmpty()) {
+  m_delayedReferTo = requestMIME.GetReferTo();
+  if (m_delayedReferTo.IsEmpty()) {
     response->SetStatusCode(SIP_PDU::Failure_BadRequest);
     response->SetInfo("Missing refer-to header");
     response->Send();
@@ -2471,7 +2479,7 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
 
   if (referSub) {
     response->SetStatusCode(SIP_PDU::Successful_Accepted);
-    referTo.SetParamVar(OPAL_URL_PARAM_PREFIX OPAL_SIP_REFERRED_CONNECTION, GetToken());
+    m_delayedReferTo.SetParamVar(OPAL_URL_PARAM_PREFIX OPAL_SIP_REFERRED_CONNECTION, GetToken());
   }
 
   // RFC4579
@@ -2479,10 +2487,10 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
   if (other != NULL) {
     OpalConferenceState state;
     if (other->GetConferenceState(&state)) {
-      PCaselessString method = referTo.GetParamVars()("method", "INVITE");
+      PCaselessString method = m_delayedReferTo.GetParamVars()("method", "INVITE");
       if (method == "INVITE") {
         // Don't actually transfer, get conf to do INVITE to add participant
-        if (!InviteConferenceParticipant(state.m_internalURI, referTo.AsString()))
+        if (!InviteConferenceParticipant(state.m_internalURI, m_delayedReferTo.AsString()))
           response->SetStatusCode(SIP_PDU::Failure_NotFound);
       }
       else if (method == "BYE") {
@@ -2491,13 +2499,16 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
         response->SetStatusCode(SIP_PDU::Failure_NotImplemented);
 
       response->Send();
+      m_delayedReferTo = PString::Empty();
       return;
     }
   }
 
   // send response before attempting the transfer
-  if (!response->Send())
+  if (!response->Send()) {
+    m_delayedReferTo = PString::Empty();
     return;
+  }
 
   m_redirectingParty = requestMIME.GetReferredBy();
   if (m_redirectingParty.IsEmpty()) {
@@ -2512,12 +2523,33 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
   info.SetAt("Referred-By", m_redirectingParty);
   OnTransferNotify(info, this);
 
-  PString replaces = referTo.GetQueryVars()("Replaces");
-  referTo.SetQuery(PString::Empty());
+  // Add to our internal URI, does not actually get used in outgoing INVITE
+  m_delayedReferTo.SetQueryVar("ReferSub", referSub ? "true" : "false");
+
+  OnDelayedRefer();
+}
+
+
+void SIPConnection::OnDelayedRefer()
+{
+  SIPURL cleanedReferTo = m_delayedReferTo;
+  cleanedReferTo.SetQuery(PString::Empty());
+
+  SIPConnection * b2bua = GetOtherPartyConnectionAs<SIPConnection>();
+  if (b2bua != NULL && b2bua->m_handlingINVITE) {
+    m_delayedReferTimer = 500;
+    return;
+  }
 
   // send NOTIFY if transfer failed, but only if allowed by RFC4488
-  if (!GetEndPoint().SetupTransfer(GetToken(), replaces, referTo.AsQuotedString(), NULL) && referSub)
+  if (!GetEndPoint().SetupTransfer(GetToken(),
+                                   m_delayedReferTo.GetQueryVars()("Replaces"),
+                                   cleanedReferTo.AsQuotedString(),
+                                   NULL) &&
+      m_delayedReferTo.GetQueryVars().GetBoolean("ReferSub"))
     (new SIPReferNotify(*this, SIP_PDU::GlobalFailure_Decline))->Start();
+
+  m_delayedReferTo = PString::Empty();
 }
 
 
@@ -2714,10 +2746,10 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
      return;
 
     case SIP_PDU::Method_REFER :
-      if (m_referInProgress && !response.GetMIME().GetBoolean("Refer-Sub", true)) {
+      if (m_referOfRemoteInProgress && !response.GetMIME().GetBoolean("Refer-Sub", true)) {
         // Used RFC4488 to indicate we are NOT doing NOTIFYs, release now
         PTRACE(3, "SIP\tBlind transfer accepted, without NOTIFY so ending local call.");
-        m_referInProgress = false;
+        m_referOfRemoteInProgress = false;
 
         PStringToString info;
         info.SetAt("result", "blind");
