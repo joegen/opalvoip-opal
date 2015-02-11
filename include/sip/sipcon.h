@@ -658,11 +658,11 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
 
   protected:
     virtual bool GarbageCollection();
-    typedef SIPPoolTimer<SIPConnection> PoolTimer;
     void OnSessionTimeout();
     void OnInviteResponseRetry();
     void OnInviteResponseTimeout();
     void OnInviteCollision();
+    void OnDelayedRefer();
     virtual bool OnHoldStateChanged(bool placeOnHold);
     virtual void OnMediaStreamOpenFailed(bool rx);
 
@@ -705,6 +705,9 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
 
     virtual bool InviteConferenceParticipant(const PString & conf, const PString & dest);
 
+
+    typedef SIPPoolTimer<SIPConnection> PoolTimer;
+
     // Member variables
     unsigned              m_allowedMethods;
     PStringSet            m_allowedEvents;
@@ -732,17 +735,18 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
     bool                  m_canDoVideoFastUpdateINFO;
 #endif
     PoolTimer             m_sessionTimer;
+    PRACKMode             m_prackMode;
+    bool                  m_prackEnabled;
+    unsigned              m_prackSequenceNumber;
+    std::queue<SIP_PDU>   m_responsePackets;
+    PoolTimer             m_responseFailTimer;
+    PoolTimer             m_responseRetryTimer;
+    unsigned              m_responseRetryCount;
+    PoolTimer             m_inviteCollisionTimer;
+    bool                  m_referOfRemoteInProgress;
+    PoolTimer             m_delayedReferTimer;
+    SIPURL                m_delayedReferTo;
 
-    PRACKMode      m_prackMode;
-    bool           m_prackEnabled;
-    unsigned       m_prackSequenceNumber;
-    std::queue<SIP_PDU> m_responsePackets;
-    PoolTimer      m_responseFailTimer;
-    PoolTimer      m_responseRetryTimer;
-    unsigned       m_responseRetryCount;
-    PoolTimer      m_inviteCollisionTimer;
-
-    bool                      m_referInProgress;
     PSafeList<SIPTransaction> m_forkedInvitations; // Not for re-INVITE
     PSafeList<SIPTransaction> m_pendingInvitations; // For re-INVITE
 
