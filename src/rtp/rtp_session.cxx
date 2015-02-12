@@ -1006,9 +1006,16 @@ void OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::Receiver
 
 void OpalRTPSession::SyncSource::OnRxSenderReport(const RTP_SenderReport & report)
 {
-  m_lastReportTime.SetCurrentTime(); // Remember when we received the SR
-  m_syncTimestamp = report.rtpTimestamp;
+  PTime now;
+  PTRACE_IF(2, m_syncRealTime.IsValid() && m_lastReportTime.IsValid() &&
+               (report.realTimestamp - m_syncRealTime) > std::max(PTimeInterval(0,10),(now - m_lastReportTime)*2),
+            &m_session, m_session << "OnRxSenderReport: remote NTP time jumped by unexpectedly large amount,"
+            " was " << m_syncRealTime.AsString(PTime::LoggingFormat) << ","
+            " now " << report.realTimestamp.AsString(PTime::LoggingFormat) << ","
+                        " last report " << m_lastReportTime.AsString(PTime::LoggingFormat));
   m_syncRealTime = report.realTimestamp;
+  m_syncTimestamp = report.rtpTimestamp;
+  m_lastReportTime = now; // Remember when we received the SR
   m_senderReports++;
 }
 
@@ -1601,7 +1608,7 @@ void OpalRTPSession::OnRxSenderReport(const SenderReport & senderReport, const R
 #if PTRACING
   if (PTrace::CanTrace(m_throttleRxSR)) {
     ostream & strm = PTRACE_BEGIN(m_throttleRxSR);
-    strm << *this << "OnRxSenderReport: " << senderReport << '\n';
+    strm << *this << "OnRxSenderReport: " << senderReport << m_throttleRxSR << '\n';
     for (PINDEX i = 0; i < receiveReports.GetSize(); i++)
       strm << "  RR: " << receiveReports[i] << '\n';
     strm << PTrace::End;
@@ -1622,7 +1629,7 @@ void OpalRTPSession::OnRxReceiverReport(RTP_SyncSourceId PTRACE_PARAM(src), cons
 #if PTRACING
   if (PTrace::CanTrace(m_throttleRxRR)) {
     ostream & strm = PTRACE_BEGIN(m_throttleRxRR);
-    strm << *this << "OnReceiverReport: SSRC=" << RTP_TRACE_SRC(src) << ", count=" << reports.GetSize();
+    strm << *this << "OnReceiverReport: SSRC=" << RTP_TRACE_SRC(src) << ", count=" << reports.GetSize() << m_throttleRxRR;
     for (PINDEX i = 0; i < reports.GetSize(); i++)
       strm << "\n  RR: " << reports[i];
     strm << PTrace::End;
@@ -1645,15 +1652,7 @@ void OpalRTPSession::OnRxReceiverReports(const ReceiverReportArray & reports)
 
 void OpalRTPSession::OnRxSourceDescription(const SourceDescriptionArray & PTRACE_PARAM(description))
 {
-#if PTRACING
-  if (PTrace::CanTrace(m_throttleRxSDES)) {
-    ostream & strm = PTRACE_BEGIN(m_throttleRxSDES);
-    strm << *this << "OnSourceDescription: " << description.GetSize() << " entries";
-    for (PINDEX i = 0; i < description.GetSize(); i++)
-      strm << "\n  " << description[i];
-    strm << PTrace::End;
-  }
-#endif
+  PTRACE(m_throttleRxSDES, *this << "OnSourceDescription: " << description.GetSize() << " entries" << description);
 }
 
 

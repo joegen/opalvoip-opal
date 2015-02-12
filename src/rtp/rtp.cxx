@@ -597,7 +597,8 @@ void RTP_SenderReport::PrintOn(ostream & strm) const
 {
   strm << "SSRC=" << RTP_TRACE_SRC(sourceIdentifier)
        << " ntp=" << realTimestamp.AsString("yyyy/M/d hh:mm:ss.uuuu")
-       << " rtp=" << rtpTimestamp
+       << " (" << (PTime() - realTimestamp) << ")"
+          " rtp=" << rtpTimestamp
        << " psent=" << packetsSent
        << " osent=" << octetsSent;
 }
@@ -609,10 +610,10 @@ void RTP_SourceDescription::PrintOn(ostream & strm) const
     "END", "CNAME", "NAME", "EMAIL", "PHONE", "LOC", "TOOL", "NOTE", "PRIV"
   };
 
-  strm << "SSRC=" << RTP_TRACE_SRC(sourceIdentifier);
+  strm << "\n  SSRC=" << RTP_TRACE_SRC(sourceIdentifier);
   for (POrdinalToString::const_iterator it = items.begin(); it != items.end(); ++it) {
     unsigned typeNum = it->first;
-    strm << "\n  item[" << typeNum << "]: type=";
+    strm << "\n    item[" << typeNum << "]: type=";
     if (typeNum < PARRAYSIZE(DescriptionNames))
       strm << DescriptionNames[typeNum];
     else
