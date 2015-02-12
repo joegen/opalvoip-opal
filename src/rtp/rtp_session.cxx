@@ -994,7 +994,7 @@ void OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::Receiver
     report.dlsr = 0;
   }
 
-  PTRACE(4, &m_session, *this << "sending ReceiverReport:"
+  PTRACE((unsigned)m_session.m_throttleTxRR, &m_session, *this << "sending ReceiverReport:"
             " fraction=" << (unsigned)report.fraction
          << " lost=" << report.GetLostPackets()
          << " last_seq=" << report.last_seq
@@ -1180,7 +1180,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
       // add the SSRC to the start of the payload
       *(PUInt32b *)report.GetPayloadPtr() = sender.m_sourceIdentifier;
-      PTRACE(m_throttleTxRR, *this << "sending empty ReceiverReport");
+      PTRACE(m_throttleTxRR, *this << "sending empty ReceiverReport" << m_throttleTxRR);
     }
     else {
       report.SetPayloadSize(sizeof(PUInt32b) + receivers*sizeof(RTP_ControlFrame::ReceiverReport));  // length is SSRC of packet sender plus RRs
@@ -1192,6 +1192,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
       // add the RR's after the SSRC
       rr = (RTP_ControlFrame::ReceiverReport *)(payload + sizeof(PUInt32b));
+      PTRACE(m_throttleTxRR, *this << "not sending SenderReport" << m_throttleTxRR);
     }
   }
   else {
@@ -1214,9 +1215,11 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
     PTRACE(m_throttleTxRR, *this << "sending SenderReport:"
               " SSRC=" << RTP_TRACE_SRC(sender.m_sourceIdentifier)
            << " ntp=0x" << hex << sr->ntp_ts << dec
-           << " rtp=" << sr->rtp_ts
+           << " (" << (sender.m_lastAbsoluteTime.IsValid() ? sender.m_lastAbsoluteTime.AsString("hh:mm:ss.uuu") : PString("now")) << ")"
+              " rtp=" << sr->rtp_ts
            << " psent=" << sr->psent
-           << " osent=" << sr->osent);
+           << " osent=" << sr->osent
+           << m_throttleTxRR);
 
     if (!sender.m_lastReportTime.IsValid())
       sender.m_lastReportTime.SetCurrentTime(); // Remember when we last sent SR
@@ -1235,7 +1238,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
   report.EndPacket();
 
   // Add the SDES part to compound RTCP packet
-  PTRACE(m_throttleTxRR, *this << "sending SDES: " << sender.m_canonicalName);
+  PTRACE((unsigned)m_throttleTxRR, *this << "sending SDES: " << sender.m_canonicalName);
   report.StartNewPacket(RTP_ControlFrame::e_SourceDescription);
 
   report.SetCount(0); // will be incremented automatically
