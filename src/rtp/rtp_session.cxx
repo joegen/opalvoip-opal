@@ -1004,11 +1004,15 @@ void OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::Receiver
 } 
 
 
+#if PTRACING
+__inline PTimeInterval abs(const PTimeInterval & i) { return i < 0 ? -i : i; }
+#endif
+
 void OpalRTPSession::SyncSource::OnRxSenderReport(const RTP_SenderReport & report)
 {
   PTime now;
   PTRACE_IF(2, m_syncRealTime.IsValid() && m_lastReportTime.IsValid() &&
-               (report.realTimestamp - m_syncRealTime) > std::max(PTimeInterval(0,10),(now - m_lastReportTime)*2),
+               abs(report.realTimestamp - m_syncRealTime) > std::max(PTimeInterval(0,10),(now - m_lastReportTime)*2),
             &m_session, m_session << "OnRxSenderReport: remote NTP time jumped by unexpectedly large amount,"
             " was " << m_syncRealTime.AsString(PTime::LoggingFormat) << ","
             " now " << report.realTimestamp.AsString(PTime::LoggingFormat) << ","
