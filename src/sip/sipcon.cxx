@@ -845,7 +845,7 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
   if (makesymmetrical) {
     m_symmetricOpenStream = true;
 
-    PSafePtr<OpalConnection> otherConnection = isSource ? GetCall().GetOtherPartyConnection(*this) : this;
+    PSafePtr<OpalConnection> otherConnection = isSource ? GetOtherPartyConnection() : this;
     bool ok = false;
     if (otherConnection != NULL) {
       PTRACE(4, "SIP\tSymmetric media stream for " << mediaFormat << " required, opening");
@@ -860,9 +860,21 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
     }
   }
 
-  if (!m_symmetricOpenStream && !m_handlingINVITE && GetPhase() == EstablishedPhase &&
-              (newStream != oldStream || GetMediaStream(sessionID, !isSource) != otherStream))
-    SendReINVITE(PTRACE_PARAM("open channel"));
+  if (m_symmetricOpenStream)
+    PTRACE(4, "OpenMediaStream: no re-INVITE due to symmetric codec, will do in other stream");
+  else if (m_handlingINVITE)
+    PTRACE(4, "OpenMediaStream: no re-INVITE while already in INVITE");
+  else if (GetPhase() != EstablishedPhase)
+    PTRACE(4, "OpenMediaStream: no re-INVITE as not established");
+  else if (newStream == oldStream && GetMediaStream(sessionID, !isSource) == otherStream)
+    PTRACE(4, "OpenMediaStream: no re-INVITE as no change to streams");
+  else {
+    PSafePtr<SIPConnection> otherConnection = GetOtherPartyConnectionAs<SIPConnection>();
+    if (otherConnection != NULL && otherConnection->GetPhase() == ForwardingPhase)
+      PTRACE(4, "OpenMediaStream: no re-INVITE as other side of B2BUA is being forwarded");
+    else
+      SendReINVITE(PTRACE_PARAM("open channel"));
+  }
 
   return newStream;
 }
