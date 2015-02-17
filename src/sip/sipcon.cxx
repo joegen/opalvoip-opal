@@ -937,10 +937,12 @@ bool SIPConnection::SendReINVITE(PTRACE_PARAM(const char * msg,) bool mediaStrea
       return false;
     }
 
-    PSafePtr<SIPConnection> otherConnection = GetOtherPartyConnectionAs<SIPConnection>();
-    if (otherConnection != NULL && otherConnection->GetPhase() == ForwardingPhase) {
-      PTRACE(4, msg << ": no re-INVITE as other side of B2BUA is being forwarded");
-      return false;
+    for (PINDEX i = 0; i < GetCall().GetConnectionCount(); ++i) {
+        PSafePtr<OpalConnection> otherConnection = GetCall().GetConnection(i);
+        if (otherConnection != NULL && otherConnection->GetPhase() == ForwardingPhase) {
+            PTRACE(4, msg << ": no re-INVITE as other side (" << *otherConnection << ") of B2BUA is being forwarded");
+            return false;
+        }
     }
   }
 
