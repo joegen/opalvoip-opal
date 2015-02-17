@@ -589,9 +589,9 @@ bool H323EndPoint::InternalRestartGatekeeper(bool adjustingRegistrations)
         aliasSubset = PStringList(); /// Don't use RemoveAll() which does it for all references
       }
     }
+    if (!aliasSubset.IsEmpty() && !InternalCreateGatekeeper(it->first, aliasSubset))
+      return false;
   }
-  if (!aliasSubset.IsEmpty() && !InternalCreateGatekeeper(rotatedAliases.rend()->first, aliasSubset))
-    return false;
 
   if (m_gatekeepers.IsEmpty())
     return false;
