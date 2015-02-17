@@ -860,21 +860,10 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
     }
   }
 
-  if (m_symmetricOpenStream)
-    PTRACE(4, "OpenMediaStream: no re-INVITE due to symmetric codec, will do in other stream");
-  else if (m_handlingINVITE)
-    PTRACE(4, "OpenMediaStream: no re-INVITE while already in INVITE");
-  else if (GetPhase() != EstablishedPhase)
-    PTRACE(4, "OpenMediaStream: no re-INVITE as not established");
-  else if (newStream == oldStream && GetMediaStream(sessionID, !isSource) == otherStream)
+  if (newStream == oldStream && GetMediaStream(sessionID, !isSource) == otherStream)
     PTRACE(4, "OpenMediaStream: no re-INVITE as no change to streams");
-  else {
-    PSafePtr<SIPConnection> otherConnection = GetOtherPartyConnectionAs<SIPConnection>();
-    if (otherConnection != NULL && otherConnection->GetPhase() == ForwardingPhase)
-      PTRACE(4, "OpenMediaStream: no re-INVITE as other side of B2BUA is being forwarded");
-    else
-      SendReINVITE(PTRACE_PARAM("open channel"));
-  }
+  else
+    SendReINVITE(PTRACE_PARAM("open channel", ) true);
 
   return newStream;
 }
@@ -890,13 +879,12 @@ void SIPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch
 
 void SIPConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 {
-  if (!m_symmetricOpenStream &&
-      !m_handlingINVITE &&
 #if OPAL_T38_CAPABILITY
-      !ownerCall.IsSwitchingT38() &&
+  if (ownerCall.IsSwitchingT38())
+    PTRACE(4, "OnClosedMediaStream: no re-INVITE while switching to T.38");
+  else
 #endif // OPAL_T38_CAPABILITY
-      GetPhase() == EstablishedPhase)
-    SendReINVITE(PTRACE_PARAM("close channel"));
+    SendReINVITE(PTRACE_PARAM("close channel", ) true);
 
   OpalConnection::OnClosedMediaStream(stream);
 }
@@ -907,8 +895,9 @@ void SIPConnection::OnPauseMediaStream(OpalMediaStream & strm, bool paused)
   /* If we have pasued the transmit RTP, we really need to tell the other side
      via a re-INVITE or some systems disconnect the call becuase they have not
      received any RTP for too long. */
-  if (!m_symmetricOpenStream && !m_handlingINVITE && strm.IsSink())
-    SendReINVITE(PTRACE_PARAM(paused ? "pausing channel" : "resume channel"));
+  if (strm.IsSink())
+    SendReINVITE(PTRACE_PARAM(paused ? "pausing channel" : "resume channel", ) true);
+
   OpalConnection::OnPauseMediaStream(strm, paused);
 }
 
@@ -925,10 +914,33 @@ void SIPConnection::OnMediaStreamOpenFailed(bool PTRACE_PARAM(rx))
 }
 
 
-bool SIPConnection::SendReINVITE(PTRACE_PARAM(const char * msg))
+bool SIPConnection::SendReINVITE(PTRACE_PARAM(const char * msg,) bool mediaStreamOperation)
 {
   if (IsReleased())
     return false;
+
+  if (mediaStreamOperation) {
+    if (m_symmetricOpenStream) {
+      PTRACE(4, msg << ": no re-INVITE due to symmetric codec, will do in other stream");
+      return false;
+    }
+
+    if (m_handlingINVITE) {
+      PTRACE(4, msg << ": no re-INVITE while already in INVITE");
+      return false;
+    }
+
+    if (GetPhase() != EstablishedPhase) {
+      PTRACE(4, msg << ": no re-INVITE as not established");
+      return false;
+    }
+
+    PSafePtr<SIPConnection> otherConnection = GetOtherPartyConnectionAs<SIPConnection>();
+    if (otherConnection != NULL && otherConnection->GetPhase() == ForwardingPhase) {
+      PTRACE(4, msg << ": no re-INVITE as other side of B2BUA is being forwarded");
+      return false;
+    }
+  }
 
   bool startImmediate = !m_handlingINVITE && m_pendingInvitations.IsEmpty();
 
