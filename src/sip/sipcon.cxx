@@ -865,7 +865,7 @@ OpalMediaStreamPtr SIPConnection::OpenMediaStream(const OpalMediaFormat & mediaF
   if (newStream == oldStream && GetMediaStream(sessionID, !isSource) == otherStream)
     PTRACE(4, "OpenMediaStream: no re-INVITE as no change to streams");
   else
-    SendReINVITE(PTRACE_PARAM("open channel", ) true);
+    SendReINVITE(PTRACE_PARAM("open channel", ) otherStream != NULL ? 1 : 2);
 
   return newStream;
 }
@@ -886,7 +886,7 @@ void SIPConnection::OnClosedMediaStream(const OpalMediaStream & stream)
     PTRACE(4, "OnClosedMediaStream: no re-INVITE while switching to T.38");
   else
 #endif // OPAL_T38_CAPABILITY
-    SendReINVITE(PTRACE_PARAM("close channel", ) true);
+    SendReINVITE(PTRACE_PARAM("close channel", ) 1);
 
   OpalConnection::OnClosedMediaStream(stream);
 }
@@ -898,7 +898,7 @@ void SIPConnection::OnPauseMediaStream(OpalMediaStream & strm, bool paused)
      via a re-INVITE or some systems disconnect the call becuase they have not
      received any RTP for too long. */
   if (strm.IsSink())
-    SendReINVITE(PTRACE_PARAM(paused ? "pausing channel" : "resume channel", ) true);
+    SendReINVITE(PTRACE_PARAM(paused ? "pausing channel" : "resume channel", ) 1);
 
   OpalConnection::OnPauseMediaStream(strm, paused);
 }
@@ -916,12 +916,12 @@ void SIPConnection::OnMediaStreamOpenFailed(bool PTRACE_PARAM(rx))
 }
 
 
-bool SIPConnection::SendReINVITE(PTRACE_PARAM(const char * msg,) bool mediaStreamOperation)
+bool SIPConnection::SendReINVITE(PTRACE_PARAM(const char * msg,) int operation)
 {
   if (IsReleased())
     return false;
 
-  if (mediaStreamOperation) {
+  if (operation != 0) {
     if (m_symmetricOpenStream) {
       PTRACE(4, msg << ": no re-INVITE due to symmetric codec, will do in other stream");
       return false;
@@ -939,9 +939,20 @@ bool SIPConnection::SendReINVITE(PTRACE_PARAM(const char * msg,) bool mediaStrea
 
     for (PINDEX i = 0; i < GetCall().GetConnectionCount(); ++i) {
         PSafePtr<OpalConnection> otherConnection = GetCall().GetConnection(i);
-        if (otherConnection != NULL && otherConnection->GetPhase() == ForwardingPhase) {
+        if (otherConnection == NULL)
+            continue;
+
+        if (otherConnection->GetPhase() == ForwardingPhase) {
             PTRACE(4, msg << ": no re-INVITE as other side (" << *otherConnection << ") of B2BUA is being forwarded");
             return false;
+        }
+
+        if (operation == 2) {
+            SIPConnection * sipConn = dynamic_cast<SIPConnection *>(&*otherConnection);
+            if (sipConn != NULL && sipConn->m_handlingINVITE) {
+                PTRACE(4, msg << ": no re-INVITE as other side (" << *otherConnection << ") of B2BUA is handling INVITE");
+                return false;
+            }
         }
     }
   }
