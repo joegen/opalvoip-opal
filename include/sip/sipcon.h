@@ -678,7 +678,7 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
       SIPTransaction * transaction
     );
 
-    bool SendReINVITE(PTRACE_PARAM(const char * msg, ) bool mediaStreamOperation = false);
+    bool SendReINVITE(PTRACE_PARAM(const char * msg, ) int operation = 0);
     bool StartPendingReINVITE();
 
     friend class SIPInvite;
