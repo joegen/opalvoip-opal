@@ -704,6 +704,7 @@ class SIPConnection : public OpalSDPConnection, public SIPTransactionOwner
     );
 
     virtual bool InviteConferenceParticipant(const PString & conf, const PString & dest);
+    PSafePtr<SIPConnection> GetB2BUA();
 
 
     typedef SIPPoolTimer<SIPConnection> PoolTimer;
