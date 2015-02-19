@@ -920,7 +920,7 @@ PSafePtr<SIPConnection> SIPConnection::GetB2BUA()
 {
   for (PINDEX i = 0; i < GetCall().GetConnectionCount(); ++i) {
     PSafePtr<SIPConnection> b2bua = GetCall().GetConnectionAs<SIPConnection>(i);
-    if (b2bua != NULL && b2bua != this && b2bua->GetPhase() != OpalConnection::ForwardingPhase)
+    if (b2bua != NULL && this != b2bua && b2bua->GetPhase() != OpalConnection::ForwardingPhase)
       return b2bua;
   }
   return NULL;
@@ -1965,6 +1965,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
     case SIP_PDU::Failure_RequestPending :
       m_inviteCollisionTimer = (IsOriginating() ? PRandom::Number(2100, 4000) : PRandom::Number(1, 2000));
+      m_handlingINVITE = false;
       return;
 
     default :
@@ -2579,14 +2580,15 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & request)
 
 void SIPConnection::OnDelayedRefer()
 {
-  SIPURL cleanedReferTo = m_delayedReferTo;
-  cleanedReferTo.SetQuery(PString::Empty());
-
   PSafePtr<SIPConnection> b2bua = GetB2BUA();
   if (b2bua != NULL && b2bua->m_handlingINVITE) {
+    PTRACE(4, "Delaying REFER due to INVITE on other side of B2BUA in progress.");
     m_delayedReferTimer = 500;
     return;
   }
+
+  SIPURL cleanedReferTo = m_delayedReferTo;
+  cleanedReferTo.SetQuery(PString::Empty());
 
   // send NOTIFY if transfer failed, but only if allowed by RFC4488
   if (!GetEndPoint().SetupTransfer(GetToken(),
