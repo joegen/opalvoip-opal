@@ -2473,14 +2473,15 @@ bool OpalRTPSession::InternalSetRemoteAddress(const PIPSocket::AddressAndPort & 
 
 void OpalRTPSession::SetICE(const PString & user, const PString & pass, const PNatCandidateList & candidates)
 {
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return;
+
   delete m_iceServer;
   m_iceServer = NULL;
 
   delete m_stunClient;
   m_stunClient = NULL;
-
-  for (int channel = 0; channel < 2; ++channel)
-    m_candidates[channel].clear();
 
   OpalMediaSession::SetICE(user, pass, candidates);
   if (user.IsEmpty() || pass.IsEmpty()) {
@@ -2492,6 +2493,9 @@ void OpalRTPSession::SetICE(const PString & user, const PString & pass, const PN
     m_candidateType = e_RemoteCandidates;
 
   if (m_candidateType == e_RemoteCandidates) {
+    for (int channel = 0; channel < 2; ++channel)
+      m_candidates[channel].clear();
+
     for (PNatCandidateList::const_iterator it = candidates.begin(); it != candidates.end(); ++it) {
       PTRACE(4, "Checking candidate: " << *it);
       if (it->m_protocol == "udp") {
@@ -2529,6 +2533,10 @@ void OpalRTPSession::SetICE(const PString & user, const PString & pass, const PN
 
 bool OpalRTPSession::GetICE(PString & user, PString & pass, PNatCandidateList & candidates)
 {
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return false;
+
   if (!OpalMediaSession::GetICE(user, pass, candidates))
     return false;
 
