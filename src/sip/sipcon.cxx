@@ -919,8 +919,21 @@ void SIPConnection::OnMediaStreamOpenFailed(bool PTRACE_PARAM(rx))
 PSafePtr<SIPConnection> SIPConnection::GetB2BUA()
 {
   for (PINDEX i = 0; i < GetCall().GetConnectionCount(); ++i) {
-    PSafePtr<SIPConnection> b2bua = GetCall().GetConnectionAs<SIPConnection>(i);
-    if (b2bua != NULL && this != b2bua && b2bua->GetPhase() != OpalConnection::ForwardingPhase)
+    PSafePtr<OpalConnection> conn = GetCall().GetConnection(i);
+    if (conn == NULL) {
+      PTRACE(4, "GetB2BUA: " << i << " deleted");
+      continue;
+    }
+
+    SIPConnection * b2bua = dynamic_cast<SIPConnection *>(&*conn);
+    if (b2bua == NULL) {
+      PTRACE(4, "GetB2BUA: " << i << ' ' << *conn);
+      continue;
+    }
+
+    PTRACE(4, "GetB2BUA: " << i << ' ' << *b2bua << ' ' << b2bua->GetPhase() << boolalpha
+           << " is-this=" << (b2bua != this) << " handling-INVITE=" << b2bua->m_handlingINVITE);
+    if (this != b2bua && b2bua->GetPhase() != OpalConnection::ForwardingPhase)
       return b2bua;
   }
   return NULL;
@@ -1964,9 +1977,9 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
       return;
 
     case SIP_PDU::Failure_RequestPending :
-      m_inviteCollisionTimer = (IsOriginating() ? PRandom::Number(2100, 4000) : PRandom::Number(1, 2000));
-      m_handlingINVITE = false;
-      return;
+      m_inviteCollisionTimer = (IsOriginating() ? PRandom::Number(2100, 4000) : PRandom::Number(20, 2000));
+      handled = true;
+      break;
 
     default :
       switch (responseClass) {
@@ -1986,15 +1999,10 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
       }
   }
 
+  // 1xx does not get this far
+
   if (m_delayedAckInviteResponse == NULL)
     m_handlingINVITE = false;
-
-  // To avoid overlapping INVITE transactions, wait till here before
-  // starting the next one.
-  if (responseClass != 1) {
-    m_pendingInvitations.Remove(&transaction);
-    StartPendingReINVITE();
-  }
 
 #if OPAL_T38_CAPABILITY
   if (ownerCall.IsSwitchingT38()) {
@@ -2005,8 +2013,14 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   }
 #endif // OPAL_T38_CAPABILITY
 
+  // To avoid overlapping INVITE transactions, wait till here before starting the next one.
+  m_pendingInvitations.Remove(&transaction);
+  StartPendingReINVITE();
+
   if (handled)
     return;
+
+  // 1xx or 2xx does not get this far
 
   // If we are doing a local hold, and it failed, we do not release the connection
   switch (m_holdToRemote) {
