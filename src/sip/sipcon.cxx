@@ -932,8 +932,8 @@ PSafePtr<SIPConnection> SIPConnection::GetB2BUA()
     }
 
     PTRACE(4, "GetB2BUA: " << i << ' ' << *b2bua << ' ' << b2bua->GetPhase() << boolalpha
-           << " is-this=" << (b2bua != this) << " handling-INVITE=" << b2bua->m_handlingINVITE);
-    if (this != b2bua && b2bua->GetPhase() != OpalConnection::ForwardingPhase)
+           << " is-this=" << (b2bua == this) << " handling-INVITE=" << b2bua->m_handlingINVITE);
+    if (this != b2bua && b2bua->GetPhase() <= OpalConnection::EstablishedPhase)
       return b2bua;
   }
   return NULL;
