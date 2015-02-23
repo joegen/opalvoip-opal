@@ -36,9 +36,7 @@
  * $Date$
  */
 
-#ifndef PLUGIN_CODEC_DLL_EXPORTS
 #include "../common/platform.h"
-#endif
 
 #define MY_CODEC x264  // Name of codec (use C variable characters)
 
@@ -767,6 +765,20 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       options.SetUnsigned(m_frameTime, PLUGINCODEC_OPTION_FRAME_TIME);
       return true;
     }
+
+
+#ifdef WHEN_WE_FIGURE_OUT_HOW_TO_GET_QUALITY_FROM_X264
+    virtual int GetStatistics(char * bufferPtr, unsigned bufferSize)
+    {
+      size_t len = BaseClass::GetStatistics(bufferPtr, bufferSize);
+
+      int quality = m_encoder.GetQuality();
+      if (quality >= 0 && len < bufferSize)
+        len += snprintf(bufferPtr+len, bufferSize-len, "Quality=%u\n", quality);
+
+      return len;
+    }
+#endif
 
 
     virtual bool Transcode(const void * fromPtr,

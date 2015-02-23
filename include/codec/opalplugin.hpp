@@ -678,9 +678,9 @@ class PluginCodec : public PluginCodec_Utilities
 
 
     /// Gather any statistics as a string into the provide buffer.
-    virtual bool GetStatistics(char * /*bufferPtr*/, unsigned /*bufferSize*/)
+    virtual int GetStatistics(char * /*bufferPtr*/, unsigned /*bufferSize*/)
     {
-      return true;
+      return -1;
     }
 
 
@@ -972,8 +972,7 @@ class PluginCodec : public PluginCodec_Utilities
     static int GetStatistics_s(const PluginCodec_Definition *, void * context, const char *, void * parm, unsigned * len)
     {
       PluginCodec * codec = (PluginCodec *)context;
-      return len != NULL && parm != NULL &&
-             codec != NULL && codec->GetStatistics((char *)parm, *len);
+      return len != NULL && parm != NULL && codec != NULL ? codec->GetStatistics((char *)parm, *len) : -1;
     }
 
     static int Terminate_s(const PluginCodec_Definition *, void * context, const char *, void *, unsigned *)
@@ -1038,6 +1037,12 @@ class PluginVideoCodec : public PluginCodec<NAME>
       , m_width(DefaultWidth)
       , m_height(DefaultHeight)
     {
+    }
+
+
+    virtual int GetStatistics(char * bufferPtr, unsigned bufferSize)
+    {
+      return snprintf(bufferPtr, bufferSize, "Width=%u\nHeight=%u\n", m_width, m_height);
     }
 
 
@@ -1171,8 +1176,8 @@ class PluginVideoDecoder : public PluginVideoCodec<NAME>
       PluginCodec_Video_FrameHeader * videoHeader = rtp.GetVideoHeader();
       videoHeader->x = 0;
       videoHeader->y = 0;
-      videoHeader->width = width;
-      videoHeader->height = height;
+      videoHeader->width = this->m_width = width;
+      videoHeader->height = this->m_height = height;
 
       flags |= PluginCodec_ReturnCoderLastFrame;
       rtp.SetMarker(true);
