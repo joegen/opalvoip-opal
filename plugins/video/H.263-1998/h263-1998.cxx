@@ -543,14 +543,17 @@ class H263_Base_Encoder : public PluginVideoEncoder<MY_CODEC>, public FFMPEGCode
     }
 
 
-    bool GetStatistics(char * stats, unsigned maxSize)
+    virtual int GetStatistics(char * bufferPtr, unsigned bufferSize)
     {
       if (m_picture == NULL)
-        return false;
+        return -1;
 
-      snprintf(stats, maxSize, "Quality=%i\n", m_picture->quality);
-      stats[maxSize-1] = '\0';
-      return true;
+      size_t len = BaseClass::GetStatistics(bufferPtr, bufferSize);
+
+      if (m_picture->quality >= 0 && len < bufferSize)
+        len += snprintf(bufferPtr+len, bufferSize-len, "Quality=%u\n", m_picture->quality);
+
+      return len;
     }
 };
 
@@ -697,17 +700,6 @@ class H263_Base_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCode
       PluginCodec_RTP out(toPtr, toLen);
       toLen = OutputImage(m_picture->data, m_picture->linesize, PICTURE_WIDTH, PICTURE_HEIGHT, out, flags);
 
-      return true;
-    }
-
-
-    bool GetStatistics(char * stats, size_t maxSize)
-    {
-      if (m_picture == NULL)
-        return false;
-
-      snprintf(stats, maxSize, "Quality=%i\n", m_picture->quality);
-      stats[maxSize-1] = '\0';
       return true;
     }
 };
