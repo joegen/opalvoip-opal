@@ -1042,7 +1042,7 @@ class PluginVideoCodec : public PluginCodec<NAME>
 
     virtual int GetStatistics(char * bufferPtr, unsigned bufferSize)
     {
-      return snprintf(bufferPtr, bufferSize, "Width=%u\nHeight=%u\n", m_width, m_height);
+      return ::snprintf(bufferPtr, bufferSize, "Width=%u\nHeight=%u\n", this->m_width, this->m_height);
     }
 
 
