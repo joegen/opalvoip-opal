@@ -27,9 +27,7 @@
  * $Date$
  */
 
-#ifndef PLUGIN_CODEC_DLL_EXPORTS
 #include "../common/platform.h"
-#endif
 
 #define MY_CODEC openH264  // Name of codec (use C variable characters)
 
@@ -710,10 +708,14 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
     }
 
 
-    bool GetStatistics(char * stats, unsigned maxSize)
+    virtual int GetStatistics(char * bufferPtr, unsigned bufferSize)
     {
-      snprintf(stats, maxSize, "Width=%u\nHeight=%u\nQuality=%i\n", m_width, m_height, m_quality);
-      return true;
+      size_t len = BaseClass::GetStatistics(bufferPtr, bufferSize);
+
+      if (m_quality >= 0 && len < bufferSize)
+        len += snprintf(bufferPtr+len, bufferSize-len, "Quality=%u\n", m_quality);
+
+      return len;
     }
 
 
@@ -858,13 +860,6 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>
     }
 
 
-    bool GetStatistics(char * stats, unsigned maxSize)
-    {
-      snprintf(stats, maxSize, "Width=%u\nHeight=%u\n", m_width, m_height);
-      return true;
-    }
-
-
     virtual bool Transcode(const void * fromPtr,
                              unsigned & fromLen,
                                  void * toPtr,
@@ -918,16 +913,18 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>
       if (m_bufferInfo.iBufferStatus != 0) {
         PluginCodec_RTP out(toPtr, toLen);
 
-        m_width = m_bufferInfo.UsrData.sSystemBuffer.iWidth;
-        m_height = m_bufferInfo.UsrData.sSystemBuffer.iHeight;
-
         // Why make it so hard?
         int raster[3] = {
           m_bufferInfo.UsrData.sSystemBuffer.iStride[0],
           m_bufferInfo.UsrData.sSystemBuffer.iStride[1],
           m_bufferInfo.UsrData.sSystemBuffer.iStride[1]
         };
-        toLen = OutputImage(m_bufferData, raster, m_width, m_height, out, flags);
+        toLen = OutputImage(m_bufferData,
+                            raster,
+                            m_bufferInfo.UsrData.sSystemBuffer.iWidth,
+                            m_bufferInfo.UsrData.sSystemBuffer.iHeight,
+                            out,
+                            flags);
 
         if ((flags & PluginCodec_ReturnCoderBufferTooSmall) == 0) {
           int id = 0;

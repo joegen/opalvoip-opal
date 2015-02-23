@@ -731,7 +731,7 @@ void OpalPluginFramedAudioTranscoder::GetStatistics(OpalMediaStatistics & statis
 
   char buf[1000];
   buf[sizeof(buf)-1] = '\0'; // Fail safe
-  if (getCodecStatistics.Call(buf, sizeof(buf), context) != 0) {
+  if (getCodecStatistics.Call(buf, sizeof(buf), context) > 0) {
     PConstString str(buf);
     PStringOptions stats(str);
 #if OPAL_VIDEO
@@ -1203,7 +1203,7 @@ void OpalPluginVideoTranscoder::GetStatistics(OpalMediaStatistics & statistics) 
 
   char buf[1000];
   buf[sizeof(buf)-1] = '\0'; // Fail safe
-  if (getCodecStatistics.Call(buf, sizeof(buf), context) != 0) {
+  if (getCodecStatistics.Call(buf, sizeof(buf), context) > 0) {
     PConstString str(buf);
     PStringOptions stats(str);
     statistics.m_videoQuality    =        stats.GetInteger("Quality",   statistics.m_videoQuality);
@@ -1411,7 +1411,7 @@ class OpalFaxTranscoder : public OpalTranscoder, public OpalPluginTranscoder
     {
       statistics.m_fax.m_result = -2;
       char buf[1000];
-      if (getCodecStatistics.Call(buf, sizeof(buf)-1, context) != 0) {
+      if (getCodecStatistics.Call(buf, sizeof(buf)-1, context) > 0) {
         PConstString msg(buf);
         int result, compression, errorCorrection;
         PINDEX position = 0;
