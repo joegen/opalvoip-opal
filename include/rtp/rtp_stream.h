@@ -185,7 +185,6 @@ protected:
     OpalRTPSession    & m_rtpSession;
     bool                m_rewriteHeaders;
     RTP_SyncSourceId    m_syncSource;
-    RTP_SyncSourceId    m_lastSentSyncSource;
     OpalMediaStreamPtr  m_passThruStream;
     OpalJitterBuffer  * m_jitterBuffer;
 
