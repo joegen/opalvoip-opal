@@ -61,6 +61,7 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
   , m_rtpSession(rtp)
   , m_rewriteHeaders(true)
   , m_syncSource(0)
+  , m_lastSentSyncSource(0)
   , m_jitterBuffer(NULL)
   , m_receiveNotifier(PCREATE_RTPDataNotifier(OnReceivedPacket))
 {
@@ -329,6 +330,10 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
         return false;
 
       case OpalRTPSession::e_ProcessPacket :
+        if (m_lastSentSyncSource != packet.GetSyncSource()) {
+          m_lastSentSyncSource = packet.GetSyncSource();
+          m_rtpSession.SendReport(true);
+        }
         return true;
 
       case OpalRTPSession::e_IgnorePacket :
