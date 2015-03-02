@@ -321,6 +321,7 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
       )
     return true; // Ignore empty packets, except for video with marker, which can plausibly be empty
 
+  RTP_SyncSourceId sentSyncSource = packet.GetSyncSource();
   if (m_syncSource != 0)
     packet.SetSyncSource(m_syncSource);
 
@@ -330,8 +331,10 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
         return false;
 
       case OpalRTPSession::e_ProcessPacket :
-        if (m_lastSentSyncSource != packet.GetSyncSource()) {
-          m_lastSentSyncSource = packet.GetSyncSource();
+        if (m_lastSentSyncSource != sentSyncSource) {
+          PTRACE(4, m_rtpSession << "sending SenderReport in response to SSRC changing from "
+                 << RTP_TRACE_SRC(m_lastSentSyncSource) << " to " << RTP_TRACE_SRC(sentSyncSource));
+          m_lastSentSyncSource = sentSyncSource;
           m_rtpSession.SendReport(true);
         }
         return true;
