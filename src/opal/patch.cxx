@@ -1018,6 +1018,10 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
 #endif // OPAL_VIDEO
 
   if (bypassing || m_primaryCodec == NULL) {
+    m_writeSuccessful = m_stream->WritePacket(sourceFrame);
+    if (!m_writeSuccessful)
+      return false;
+
 #if OPAL_VIDEO
     if (m_videoFormat.IsValid()) {
       PPROFILE_BLOCK("OpalMediaPatch::Sink::WriteFrame - video detect");
@@ -1042,10 +1046,6 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
       }
     }
 #endif // OPAL_VIDEO
-
-    m_writeSuccessful = m_stream->WritePacket(sourceFrame);
-    if (!m_writeSuccessful)
-      return false;
 
     PTRACE_IF(6, bypassing, "Bypassed packet " << setw(1) << sourceFrame);
     return true;
