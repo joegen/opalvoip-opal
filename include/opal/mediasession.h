@@ -172,6 +172,8 @@ class OpalMediaStatistics : public PObject, public OpalNetworkStatistics, public
 
     void PreUpdate();
     OpalMediaStatistics & Update(const OpalMediaStream & stream);
+
+    bool IsValid() const;
     PString GetRate(int64_t total, const char * units = "", unsigned decimals = 0) const;
     PString GetRate(int64_t current, int64_t previous, const char * units = "", unsigned decimals = 0) const;
     PString GetAverageBitRate(const char * units = "", unsigned decimals = 0) const { return GetRate(m_totalBytes*8, units, decimals); }
