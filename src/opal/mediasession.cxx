@@ -228,6 +228,14 @@ OpalMediaStatistics & OpalMediaStatistics::Update(const OpalMediaStream & stream
 }
 
 
+bool OpalMediaStatistics::IsValid() const
+{
+  return m_updateInfo.m_lastUpdateTime.IsValid() &&
+         m_updateInfo.m_previousUpdateTime.IsValid() &&
+         m_updateInfo.m_lastUpdateTime > m_updateInfo.m_previousUpdateTime;
+}
+
+
 static PString InternalGetRate(const PTime & lastUpdate,
                                const PTime & previousUpdate,
                                int64_t lastValue,
