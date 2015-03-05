@@ -149,6 +149,8 @@ class OpalMediaStatistics : public PObject, public OpalNetworkStatistics, public
     OpalMediaStatistics(const OpalMediaStatistics & other);
     OpalMediaStatistics & operator=(const OpalMediaStatistics & other);
 
+    virtual void PrintOn(ostream & strm) const;
+
     OpalMediaType     m_mediaType;
     PString           m_mediaFormat;
     PThreadIdentifier m_threadIdentifier;
@@ -174,18 +176,25 @@ class OpalMediaStatistics : public PObject, public OpalNetworkStatistics, public
     OpalMediaStatistics & Update(const OpalMediaStream & stream);
 
     bool IsValid() const;
-    PString GetRate(int64_t total, const char * units = "", unsigned decimals = 0) const;
-    PString GetRate(int64_t current, int64_t previous, const char * units = "", unsigned decimals = 0) const;
-    PString GetAverageBitRate(const char * units = "", unsigned decimals = 0) const { return GetRate(m_totalBytes*8, units, decimals); }
-    PString GetCurrentBitRate(const char * units = "", unsigned decimals = 0) const { return GetRate(m_totalBytes*8, m_updateInfo.m_previousBytes*8, units, decimals); }
-    PString GetAveragePacketRate(const char * units = "", unsigned decimals = 0) const { return GetRate(m_totalPackets, units, decimals); }
-    PString GetCurrentPacketRate(const char * units = "", unsigned decimals = 0) const { return GetRate(m_totalPackets, m_updateInfo.m_previousPackets, units, decimals); }
-    PString GetPacketLossRate(const char * units = "", unsigned decimals = 0) const { return GetRate(m_packetsLost, m_updateInfo.m_previousLost, units, decimals); }
+
+    unsigned GetRateInt(int64_t current, int64_t previous) const;
+    unsigned GetBitRate() const { return GetRateInt(m_totalBytes*8, m_updateInfo.m_previousBytes*8); }
+    unsigned GetPacketRate() const { return GetRateInt(m_totalPackets, m_updateInfo.m_previousPackets); }
+    unsigned GetLossRate() const { return GetRateInt(m_packetsLost, m_updateInfo.m_previousLost); }
+
+    PString GetRateStr(int64_t total, const char * units = "", unsigned decimals = 0) const;
+    PString GetRateStr(int64_t current, int64_t previous, const char * units = "", unsigned decimals = 0) const;
+    PString GetAverageBitRate(const char * units = "", unsigned decimals = 0) const { return GetRateStr(m_totalBytes*8, units, decimals); }
+    PString GetCurrentBitRate(const char * units = "", unsigned decimals = 0) const { return GetRateStr(m_totalBytes*8, m_updateInfo.m_previousBytes*8, units, decimals); }
+    PString GetAveragePacketRate(const char * units = "", unsigned decimals = 0) const { return GetRateStr(m_totalPackets, units, decimals); }
+    PString GetCurrentPacketRate(const char * units = "", unsigned decimals = 0) const { return GetRateStr(m_totalPackets, m_updateInfo.m_previousPackets, units, decimals); }
+    PString GetPacketLossRate(const char * units = "", unsigned decimals = 0) const { return GetRateStr(m_packetsLost, m_updateInfo.m_previousLost, units, decimals); }
+
     PString GetCPU() const; // As percentage or one core
-    virtual void PrintOn(ostream & strm) const;
 
 #if OPAL_VIDEO
     // Video
+    unsigned GetFrameRate() const { return GetRateInt(m_totalFrames, m_updateInfo.m_previousFrames); }
     PString GetAverageFrameRate(const char * units = "", unsigned decimals = 0) const;
     PString GetCurrentFrameRate(const char * units = "", unsigned decimals = 0) const;
 #endif
