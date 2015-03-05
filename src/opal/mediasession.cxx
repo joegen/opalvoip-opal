@@ -263,17 +263,25 @@ static PString InternalGetRate(const PTime & lastUpdate,
 }
 
 
-PString OpalMediaStatistics::GetRate(int64_t total, const char * units, unsigned decimals) const
+PString OpalMediaStatistics::GetRateStr(int64_t total, const char * units, unsigned decimals) const
 {
   return InternalGetRate(m_updateInfo.m_lastUpdateTime, m_startTime, total, 0, units, decimals);
 }
 
 
-PString OpalMediaStatistics::GetRate(int64_t current, int64_t previous, const char * units, unsigned decimals) const
+PString OpalMediaStatistics::GetRateStr(int64_t current, int64_t previous, const char * units, unsigned decimals) const
 {
   return InternalGetRate(m_updateInfo.m_lastUpdateTime,
                          m_updateInfo.m_previousUpdateTime.IsValid() ? m_updateInfo.m_previousUpdateTime : m_startTime,
                          current, previous, units, decimals);
+}
+
+
+unsigned OpalMediaStatistics::GetRateInt(int64_t current, int64_t previous) const
+{
+  if (IsValid())
+    return (unsigned)((current - previous)*1000 / (m_updateInfo.m_lastUpdateTime - m_updateInfo.m_previousUpdateTime).GetMilliSeconds());
+  return 0;
 }
 
 
@@ -282,7 +290,7 @@ PString OpalMediaStatistics::GetAverageFrameRate(const char * units, unsigned de
 {
   if (m_mediaType != OpalMediaType::Video())
     return "N/A";
-  return GetRate(m_totalFrames, units, decimals);
+  return GetRateStr(m_totalFrames, units, decimals);
 }
 
 
@@ -290,7 +298,7 @@ PString OpalMediaStatistics::GetCurrentFrameRate(const char * units, unsigned de
 {
   if (m_mediaType != OpalMediaType::Video())
     return "N/A";
-  return GetRate(m_totalFrames, m_updateInfo.m_previousFrames, units, decimals);
+  return GetRateStr(m_totalFrames, m_updateInfo.m_previousFrames, units, decimals);
 }
 #endif
 
