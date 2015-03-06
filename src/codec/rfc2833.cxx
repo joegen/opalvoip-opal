@@ -539,7 +539,11 @@ void OpalRFC2833Proto::OnEndReceive()
 
 void OpalRFC2833Proto::ReceivedPacket(OpalRTPSession &, OpalRTPSession::Data & data)
 {
-  if (data.m_frame.GetPayloadType() != m_rxPayloadType || data.m_frame.GetPayloadSize() == 0)
+  // We have to have some payload, and we accept both the correctly negotiated rx payload type,
+  // and the tx payload type in case the remote has misinterpreted the specification and thinks
+  // the SDP is for what it sends and not what it receives. Idiots.
+  if (data.m_frame.GetPayloadSize() == 0 ||
+                (data.m_frame.GetPayloadType() != m_rxPayloadType && data.m_frame.GetPayloadType() != m_txPayloadType))
     return;
 
   data.m_status = OpalRTPSession::e_IgnorePacket;
