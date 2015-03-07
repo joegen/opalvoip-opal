@@ -573,10 +573,12 @@ bool H323EndPoint::InternalRestartGatekeeper(bool adjustingRegistrations)
   if (gk != m_gatekeepers.end())
     remoteAddress = gk->second.GetTransport().GetRemoteAddress();
 
+  PTRACE(4, allAliases.size() << " aliases left to create new gatekeepers.");
+
   // Rotate allaliases so grouped by gk address
   map<OpalTransportAddress, PStringList> rotatedAliases;
   for (AliasToGkMap::iterator alias = allAliases.begin(); alias != allAliases.end(); ++alias)
-    rotatedAliases[adjustingRegistrations && alias->second.IsEmpty() ? remoteAddress : alias->second].AppendString(alias->first);
+    rotatedAliases[adjustingRegistrations && !alias->second.IsEmpty() ? alias->second : remoteAddress].AppendString(alias->first);
 
   // Now add remaining aliases, creating new registrations as required.
   PStringList aliasSubset;
@@ -618,7 +620,7 @@ bool H323EndPoint::InternalCreateGatekeeper(const H323TransportAddress & remoteA
   if (gatekeeper == NULL)
     return false;
 
-  PTRACE(3, "H323\tAdded gatekeeper (if=" << transport->GetLocalAddress() << ") for aliases: " << setfill(',') << aliases);
+  PTRACE(3, "H323\tAdded gatekeeper (at=" << remoteAddress << ", if=" << transport->GetLocalAddress() << ") for aliases: " << setfill(',') << aliases);
   gatekeeper->SetAliases(aliases);
   gatekeeper->SetPassword(GetGatekeeperPassword(), GetGatekeeperUsername());
   m_gatekeepers.SetAt(transport->GetRemoteAddress(), gatekeeper);
@@ -1549,7 +1551,7 @@ bool H323EndPoint::AddAliasName(const PString & name, const PString & gk, bool u
   }
 
   OpalTransportAddress gkAddr(gk, H225_RAS::DefaultRasUdpPort, OpalTransportAddress::UdpPrefix());
-  PTRACE(3, "H323\tAdded alias: \"" << name << "\" to gk at " << gkAddr);
+  PTRACE(3, "H323\tAdded alias: \"" << name << "\" to gk at " << gkAddr << " update=" << boolalpha << updateGk);
   m_localAliasNames[name] = gkAddr;
 
   return !updateGk || InternalRestartGatekeeper();
@@ -1573,7 +1575,7 @@ bool H323EndPoint::RemoveAliasName(const PString & name, bool updateGk)
 
   m_localAliasNames.erase(it);
 
-  PTRACE(3, "H323\tAlias removed: \"" << name << '"');
+  PTRACE(3, "H323\tAlias removed: \"" << name << "\" update=" << boolalpha << updateGk);
   return !updateGk || InternalRestartGatekeeper();
 }
 
@@ -1675,7 +1677,7 @@ bool H323EndPoint::AddAliasNamePattern(const PString & pattern, const PString & 
   }
 
   OpalTransportAddress gkAddr(gk, H225_RAS::DefaultRasUdpPort, OpalTransportAddress::UdpPrefix());
-  PTRACE(3, "H323\tAdded alias pattern: \"" << pattern << "\" to gk at " << gkAddr);
+  PTRACE(3, "H323\tAdded alias pattern: \"" << pattern << "\" to gk at " << gkAddr << " update=" << boolalpha << updateGk);
   m_localAliasPatterns[pattern] = gkAddr;
 
   return !updateGk || InternalRestartGatekeeper();
@@ -1694,7 +1696,7 @@ bool H323EndPoint::RemoveAliasNamePattern(const PString & pattern, bool updateGk
 
   m_localAliasPatterns.erase(it);
 
-  PTRACE(3, "H323\tRemoved alias pattern: \"" << pattern << '"');
+  PTRACE(3, "H323\tRemoved alias pattern: \"" << pattern << "\" update=" << boolalpha << updateGk);
   return !updateGk || InternalRestartGatekeeper();
 }
 

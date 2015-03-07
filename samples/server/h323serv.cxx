@@ -113,8 +113,7 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
       if (newAliases.GetValuesIndex(m_configuredAliases[i]) == P_MAX_INDEX)
         RemoveAliasName(m_configuredAliases[i]);
     }
-    for (PINDEX i = 0; i < newAliases.GetSize(); i++)
-      AddAliasName(newAliases[i]);
+    AddAliasNames(newAliases);
   }
 
   {
@@ -125,8 +124,7 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
       if (newPatterns.GetValuesIndex(m_configuredAliasPatterns[i]) == P_MAX_INDEX)
         RemoveAliasNamePattern(m_configuredAliasPatterns[i]);
     }
-    for (PINDEX i = 0; i < newPatterns.GetSize(); i++)
-      AddAliasNamePattern(newPatterns[i]);
+    AddAliasNamePatterns(newPatterns);
   }
 
   SetTerminalType((TerminalTypes)rsrc->AddIntegerField(H323TerminalTypeKey, 0, 255, GetTerminalType(), "",

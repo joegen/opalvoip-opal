@@ -483,13 +483,8 @@ bool H323ConsoleEndPoint::Initialise(PArgList & args, bool verbose, const PStrin
       output << "H.323 terminal type: " << GetTerminalType() << '\n';
   }
 
-  PStringArray aliases = args.GetOptionString("alias").Lines();
-  for (PINDEX i = 0; i < aliases.GetSize(); ++i)
-    AddAliasName(aliases[i]);
-
-  aliases = args.GetOptionString("alias-pattern").Lines();
-  for (PINDEX i = 0; i < aliases.GetSize(); ++i)
-    AddAliasNamePattern(aliases[i]);
+  AddAliasNames(args.GetOptionString("alias").Lines());
+  AddAliasNamePatterns(args.GetOptionString("alias-pattern").Lines());
 
   if (args.HasOption("gk-sim-pattern"))
     SetGatekeeperSimulatePattern(true);

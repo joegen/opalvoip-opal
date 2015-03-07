@@ -50,6 +50,7 @@
 
 
 #define new PNEW
+#define PTraceModule() "GkClient"
 
 
 static PTimeInterval AdjustTimeout(unsigned seconds)
@@ -205,7 +206,7 @@ void H323RasPDU::WriteGRQ(H323Transport & transport, bool & succeeded)
 
   // Check if interface is used by signalling channel listeners
   if (transport.GetEndPoint().GetInterfaceAddresses(&transport).IsEmpty()) {
-    PTRACE(3, "RAS\tNot sending GRQ on " << localAddress << " as no signalling chanel is listening there.");
+    PTRACE(3, "Not sending GRQ on " << localAddress << " as no signalling chanel is listening there.");
     return;
   }
 
@@ -294,7 +295,7 @@ PBoolean H323Gatekeeper::WriteTo(H323TransactionPDU & pdu,
   bool ok = transport->WriteConnect(PCREATE_NOTIFIER_EXT(dynamic_cast<H323RasPDU&>(pdu.GetPDU()),H323RasPDU,WriteGRQ));
   transport->SetInterface(oldInterface);
 
-  PTRACE_IF(1, !ok, "RAS\tError writing discovery PDU: " << transport->GetErrorText());
+  PTRACE_IF(1, !ok, "Error writing discovery PDU: " << transport->GetErrorText());
 
   return ok;
 }
@@ -375,29 +376,29 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm
   OpalTransportAddress previousAddress(transport->GetRemoteAddress());
   H323TransportAddress locatedAddress(gcf.m_rasAddress, OpalTransportAddress::UdpPrefix());
   if (previousAddress == locatedAddress) {
-    PTRACE(3, "RAS\tGatekeeper address verified: " << *transport);
+    PTRACE(3, "Gatekeeper address verified: " << *transport);
     discoveryComplete = true;
     return true;
   }
 
   if (previousAddress.Find('*') != P_MAX_INDEX) {
-    PTRACE(3, "RAS\tGatekeeper discovered at: " << *transport);
+    PTRACE(3, "Gatekeeper discovered at: " << *transport);
     discoveryComplete = true;
   }
   else if (endpoint.GetGatekeeperRasRedirect()) {
-    PTRACE(3, "RAS\tRemote gatekeeper redirected to " << locatedAddress << " from " << *transport);
+    PTRACE(3, "Remote gatekeeper redirected to " << locatedAddress << " from " << *transport);
     discoveryComplete = false; // Need to do GRQ again
     ReRegisterNow();
   }
   else {
-    PTRACE(3, "RAS\tRemote gatekeeper RAS address (" << locatedAddress << ") different: " << *transport);
+    PTRACE(3, "Remote gatekeeper RAS address (" << locatedAddress << ") different: " << *transport);
     return true;
   }
 
   if (transport->SetRemoteAddress(locatedAddress))
     return true;
 
-  PTRACE(2, "RAS\tInvalid gatekeeper discovery address: \"" << locatedAddress << '"');
+  PTRACE(2, "Invalid gatekeeper discovery address: \"" << locatedAddress << '"');
   return false;
 }
 
@@ -525,7 +526,7 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
   }
   else {
     if (!SetListenerAddresses(rrq.m_callSignalAddress)) {
-      PTRACE(1, "RAS\tCannot register with Gatekeeper without a H323Listener!");
+      PTRACE(1, "Cannot register with Gatekeeper without a H323Listener!");
       return false;
     }
 
@@ -589,7 +590,7 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
   if (MakeRequest(request))
     return true;
 
-  PTRACE(3, "RAS\tFailed registration of " << EpIdAsStr(m_endpointIdentifier) << " with " << gatekeeperIdentifier);
+  PTRACE(3, "Failed registration of " << EpIdAsStr(m_endpointIdentifier) << " with " << gatekeeperIdentifier);
   switch (request.responseResult) {
     case Request::RejectReceived :
       switch (request.rejectReason) {
@@ -645,7 +646,7 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
   m_reregisterNow = false;
 
   m_endpointIdentifier = rcf.m_endpointIdentifier;
-  PTRACE(3, "RAS\tRegistered " << EpIdAsStr(m_endpointIdentifier) << " with " << *this);
+  PTRACE(3, "Registered " << EpIdAsStr(m_endpointIdentifier) << " with " << *this);
 
 
   if (rcf.HasOptionalField(H225_RegistrationConfirm::e_alternateGatekeeper))
@@ -704,7 +705,7 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
       }
     }
     for (PStringList::iterator alias = aliasesToChange.begin(); alias != aliasesToChange.end(); ++alias) {
-      PTRACE(3, "RAS\tGatekeeper add of alias \"" << *alias << '"');
+      PTRACE(3, "Gatekeeper add of alias \"" << *alias << '"');
       endpoint.AddAliasName(*alias);
     }
 
@@ -719,7 +720,7 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
         aliasesToChange.AppendString(*alias);
     }
     for (PStringList::iterator alias = aliasesToChange.begin(); alias != aliasesToChange.end(); ++alias) {
-      PTRACE(3, "RAS\tGatekeeper removal of alias \"" << *alias << '"');
+      PTRACE(3, "Gatekeeper removal of alias \"" << *alias << '"');
       endpoint.RemoveAliasName(*alias);
     }
   }
@@ -777,7 +778,7 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationReject(const H225_RegistrationReje
 
 void H323Gatekeeper::RegistrationTimeToLive()
 {
-  PTRACE(3, "RAS\tTime To Live reregistration");
+  PTRACE(3, "Time To Live reregistration");
   
   PBoolean didGkDiscovery = false;
 
@@ -785,25 +786,25 @@ void H323Gatekeeper::RegistrationTimeToLive()
     timeToLive.SetInterval(0, 0, 1);
     if (endpoint.GetSendGRQ()) {
       if (!DiscoverGatekeeper()) {
-        PTRACE_IF(2, !m_reregisterNow, "RAS\tDiscovery failed, retrying in 1 minute");
+        PTRACE_IF(2, !m_reregisterNow, "Discovery failed, retrying in 1 minute");
         return;
       }
       requiresDiscovery = false;
       didGkDiscovery = true;
     }
     else {
-      PTRACE_IF(3, !requiresDiscovery, "RAS\tSkipping gatekeeper discovery for " << transport->GetRemoteAddress());
+      PTRACE_IF(3, !requiresDiscovery, "Skipping gatekeeper discovery for " << transport->GetRemoteAddress());
       discoveryComplete = true;
     }
   }
 
   if (requiresDiscovery) {
-    PTRACE(3, "RAS\tRepeating discovery on gatekeepers request.");
+    PTRACE(3, "Repeating discovery on gatekeepers request.");
 
     H323RasPDU pdu;
     Request request(SetupGatekeeperRequest(pdu), pdu);
     if (!MakeRequest(request) || !discoveryComplete) {
-      PTRACE(2, "RAS\tRediscovery failed, retrying in 1 minute.");
+      PTRACE(2, "Rediscovery failed, retrying in 1 minute.");
       timeToLive = PTimeInterval(0, 0, 1);
       return;
     }
@@ -813,7 +814,7 @@ void H323Gatekeeper::RegistrationTimeToLive()
   }
 
   if (!RegistrationRequest(autoReregister, didGkDiscovery, !m_reregisterNow)) {
-    PTRACE_IF(2, !m_reregisterNow, "RAS\tTime To Live reregistration failed, retrying in 1 minute");
+    PTRACE_IF(2, !m_reregisterNow, "Time To Live reregistration failed, retrying in 1 minute");
     timeToLive = PTimeInterval(0, 0, 1);
   }
 }
@@ -902,23 +903,23 @@ PBoolean H323Gatekeeper::OnReceiveUnregistrationRequest(const H225_Unregistratio
   if (!H225_RAS::OnReceiveUnregistrationRequest(urq))
     return false;
 
-  PTRACE(3, "RAS\tUnregistration received");
+  PTRACE(3, "Unregistration received");
   if (!urq.HasOptionalField(H225_UnregistrationRequest::e_gatekeeperIdentifier) ||
        urq.m_gatekeeperIdentifier.GetValue() != gatekeeperIdentifier) {
-    PTRACE(2, "RAS\tInconsistent gatekeeperIdentifier!");
+    PTRACE(2, "Inconsistent gatekeeperIdentifier!");
     return false;
   }
 
   if (!urq.HasOptionalField(H225_UnregistrationRequest::e_endpointIdentifier) ||
       m_endpointIdentifier != (PWCharArray)urq.m_endpointIdentifier)
   {
-    PTRACE(2, "RAS\tInconsistent endpointIdentifier!");
+    PTRACE(2, "Inconsistent endpointIdentifier!");
     return false;
   }
 
   endpoint.ClearAllCalls(H323Connection::EndedByGatekeeper, false);
 
-  PTRACE(3, "RAS\tUnregistered, calls cleared");
+  PTRACE(3, "Unregistered, calls cleared");
   SetRegistrationFailReason(UnregisteredByGatekeeper);
   timeToLive = 0; // zero disables lightweight RRQ
 
@@ -930,7 +931,7 @@ PBoolean H323Gatekeeper::OnReceiveUnregistrationRequest(const H225_Unregistratio
   PBoolean ok = WritePDU(response);
 
   if (autoReregister) {
-    PTRACE(4, "RAS\tReregistering by setting timeToLive");
+    PTRACE(4, "Reregistering by setting timeToLive");
     discoveryComplete = false;
     ReRegisterNow();
   }
@@ -1054,7 +1055,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
     }
   }
 
-  PTRACE(3, "RAS\tAdmissionRequest answering = " << answeringCall << " local alias name " << connection.GetLocalAliasNames());
+  PTRACE(3, "AdmissionRequest answering = " << answeringCall << " local alias name " << connection.GetLocalAliasNames());
 
   H323RasPDU pdu;
   H225_AdmissionRequest & arq = pdu.BuildAdmissionRequest(GetNextSequenceNumber());
@@ -1140,7 +1141,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
   if (!authenticators.IsEmpty()) {
     H235Authenticators adjustedAuthenticators;
     if (connection.GetAdmissionRequestAuthentication(arq, adjustedAuthenticators)) {
-      PTRACE(3, "RAS\tAuthenticators credentials replaced with \""
+      PTRACE(3, "Authenticators credentials replaced with \""
              << setfill(',') << adjustedAuthenticators << setfill(' ') << "\" during ARQ");
 
       for (H235Authenticators::iterator iterAuth = adjustedAuthenticators.begin(); iterAuth != adjustedAuthenticators.end(); ++iterAuth) {
@@ -1163,7 +1164,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
         response.rejectReason != H225_AdmissionRejectReason::e_invalidEndpointIdentifier)
       return false;
 
-    PTRACE(2, "RAS\tEndpoint has become unregistered during ARQ from gatekeeper " << gatekeeperIdentifier);
+    PTRACE(2, "Endpoint has become unregistered during ARQ from gatekeeper " << gatekeeperIdentifier);
 
     // Have been told we are not registered (or gk offline)
     switch (request.responseResult) {
@@ -1265,13 +1266,13 @@ static void ExtractToken(const AdmissionRequestResponseInfo & info,
                          PBYTEArray & accessTokenData)
 {
   if (!info.accessTokenOID1 && tokens.GetSize() > 0) {
-    PTRACE(4, "RAS\tLooking for OID " << info.accessTokenOID1 << " in ACF to copy.");
+    PTRACE(4, "Looking for OID " << info.accessTokenOID1 << " in ACF to copy.");
     for (PINDEX i = 0; i < tokens.GetSize(); i++) {
       if (tokens[i].m_tokenOID == info.accessTokenOID1) {
-        PTRACE(4, "RAS\tLooking for OID " << info.accessTokenOID2 << " in token to copy.");
+        PTRACE(4, "Looking for OID " << info.accessTokenOID2 << " in token to copy.");
         if (tokens[i].HasOptionalField(H235_ClearToken::e_nonStandard) &&
             tokens[i].m_nonStandard.m_nonStandardIdentifier == info.accessTokenOID2) {
-          PTRACE(4, "RAS\tCopying ACF nonStandard OctetString.");
+          PTRACE(4, "Copying ACF nonStandard OctetString.");
           accessTokenData = tokens[i].m_nonStandard.m_data;
           break;
         }
@@ -1297,7 +1298,7 @@ PBoolean H323Gatekeeper::OnReceiveAdmissionConfirm(const H225_AdmissionConfirm &
   // ones that it really wants us to be.
   if (info.param.aliasAddresses != NULL &&
       acf.HasOptionalField(H225_AdmissionConfirm::e_destinationInfo)) {
-    PTRACE(3, "RAS\tGatekeeper specified " << acf.m_destinationInfo.GetSize() << " aliases in ACF");
+    PTRACE(3, "Gatekeeper specified " << acf.m_destinationInfo.GetSize() << " aliases in ACF");
     *info.param.aliasAddresses = acf.m_destinationInfo;
   }
 
@@ -1572,12 +1573,12 @@ PBoolean H323Gatekeeper::SendUnsolicitedIRR(H225_InfoRequestResponse & irr,
   irr.m_unsolicited = true;
 
   if (willRespondToIRR) {
-    PTRACE(4, "RAS\tSending unsolicited IRR and awaiting acknowledgement");
+    PTRACE(4, "Sending unsolicited IRR and awaiting acknowledgement");
     Request request(irr.m_requestSeqNum, response);
     return MakeRequest(request);
   }
 
-  PTRACE(4, "RAS\tSending unsolicited IRR and without acknowledgement");
+  PTRACE(4, "Sending unsolicited IRR and without acknowledgement");
   response.SetAuthenticators(authenticators);
   return WritePDU(response);
 }
@@ -1691,7 +1692,7 @@ void H323Gatekeeper::InfoRequestResponse(const H323Connection & connection,
   if ((connection.GetUUIEsRequested() & (1<<pdu.m_h323_message_body.GetTag())) == 0)
     return;
 
-  PTRACE(3, "RAS\tSending unsolicited IRR for requested UUIE");
+  PTRACE(3, "Sending unsolicited IRR for requested UUIE");
 
   // Report the PDU
   H323RasPDU response;
@@ -1807,7 +1808,7 @@ void H323Gatekeeper::OnServiceControlSessions(const H225_ArrayOf_ServiceControlS
       session = &serviceControlSessions[sessionId];
       if (pdu.HasOptionalField(H225_ServiceControlSession::e_contents)) {
         if (!session->OnReceivedPDU(pdu.m_contents)) {
-          PTRACE(2, "SvcCtrl\tService control for session has changed!");
+          PTRACE(2, "Service control for session has changed!");
           session = NULL;
         }
       }
@@ -1864,6 +1865,7 @@ void H323Gatekeeper::Monitor()
 
 void H323Gatekeeper::ReRegisterNow()
 {
+  PTRACE(4, "Triggering re-register for " << *this);
   m_reregisterNow = true;
   endpoint.TickleGatekeeperMonitor();
 }
@@ -1893,7 +1895,7 @@ void H323Gatekeeper::SetAlternates(const H225_ArrayOf_AlternateGK & alts, bool p
   while (it != m_alternates.end()) {
     AlternateList::iterator that = alternates.find(*it);
     if (that == alternates.end()) {
-      PTRACE(3, "RAS\tRemoving alternate gatekeeper: " << *it);
+      PTRACE(3, "Removing alternate gatekeeper: " << *it);
       m_alternates.erase(it++);
     }
     else {
@@ -1904,7 +1906,7 @@ void H323Gatekeeper::SetAlternates(const H225_ArrayOf_AlternateGK & alts, bool p
 
   alternates.DisallowDeleteObjects();
   for (AlternateList::iterator it = alternates.begin(); it != alternates.end(); ++it) {
-    PTRACE(3, "RAS\tAdding alternate gatekeeper: " << *it);
+    PTRACE(3, "Adding alternate gatekeeper: " << *it);
     m_alternates.Append(&*it);
   }
 
@@ -1921,7 +1923,7 @@ PBoolean H323Gatekeeper::MakeRequestWithReregister(Request & request, unsigned u
       request.rejectReason != unregisteredTag)
     return false;
 
-  PTRACE(2, "RAS\tEndpoint has become unregistered from gatekeeper " << gatekeeperIdentifier);
+  PTRACE(2, "Endpoint has become unregistered from gatekeeper " << gatekeeperIdentifier);
 
   // Have been told we are not registered (or gk offline)
   switch (request.responseResult) {
@@ -2076,7 +2078,7 @@ void H323Gatekeeper::OnHighPriorityInterfaceChange(PInterfaceMonitor & monitor, 
       // currently used interface went down. make transport listen
       // on all available interfaces.
       transport->SetInterface(PString::Empty());
-      PTRACE(3, "RAS\tInterface gatekeeper is bound to has gone down, restarting discovery");
+      PTRACE(3, "Interface gatekeeper is bound to has gone down, restarting discovery");
     }
   }
 }
