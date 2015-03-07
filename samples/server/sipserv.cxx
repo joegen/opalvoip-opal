@@ -144,7 +144,7 @@ void MyManager::OnChangedRegistrarAoR(const PURL & aor, bool registering)
       GetH323EndPoint().AutoRegister(PSTRSTRM(aor.GetUserName() << '@' << aor.GetHostName()), PString::Empty(), registering);
   }
   else if (GetSIPEndPoint().m_autoRegisterH323 && aor.GetScheme().NumCompare("sip") == EqualTo)
-    GetH323EndPoint().AutoRegister(aor.GetUserName(), aor.GetHostName(), registering);
+    GetH323EndPoint().AutoRegister(aor.GetUserName(), PString::Empty(), registering);
 #endif // OPAL_H323
 
 #if OPAL_SKINNY
