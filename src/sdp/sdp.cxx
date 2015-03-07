@@ -178,8 +178,8 @@ static OpalTransportAddress ParseConnectAddress(const PStringArray & tokens, PIN
           PTRACE(3, "Connection address of 0.0.0.0 specified for HOLD request.");
         }
         else {
-          PIPSocket::Address ip(tokens[offset+2]);
-          if (ip.IsValid())
+          PIPSocket::Address ip;
+          if (PIPSocket::GetHostAddress(tokens[offset+2], ip))
             return OpalTransportAddress(ip, port, OpalTransportAddress::UdpPrefix());
           PTRACE(1, "Connect address has invalid IP address \"" << tokens[offset+2] << '"');
         }
@@ -2608,6 +2608,7 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
 
   bool atLeastOneValidMedia = false;
   bool ok = true;
+  bool defaultConnectAddressPresent = false;
 
   // parse keyvalue pairs
   SDPMediaDescription * currentMedia = NULL;
@@ -2642,6 +2643,7 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
           break;
 
         case 'c' : // connection information - not required if included in all media
+          defaultConnectAddressPresent= true;
           defaultConnectAddress = ParseConnectAddress(value);
           PTRACE_IF(4, !defaultConnectAddress.IsEmpty(), "Parsed default connection address " << defaultConnectAddress);
           break;
@@ -2722,6 +2724,9 @@ bool SDPSessionDescription::Decode(const PStringArray & lines, const OpalMediaFo
                                                 << " '" << currentMedia->GetSDPMediaType() << "' formats");
     if (!currentMedia->PostDecode(mediaFormats))
       ok = false;
+
+    if (!defaultConnectAddressPresent && defaultConnectAddress.IsEmpty())
+      defaultConnectAddress = currentMedia->GetMediaAddress();
   }
 
 #if OPAL_SRTP
