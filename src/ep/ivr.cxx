@@ -242,7 +242,9 @@ PBoolean OpalIVRConnection::StartVXML(const PString & vxml)
 
   PURL remoteURL = GetRemotePartyURL();
   m_vxmlSession.SetVar("session.connection.local.uri", GetLocalPartyURL());
+  m_vxmlSession.SetVar("session.connection.local.dnis", GetCalledPartyNumber());
   m_vxmlSession.SetVar("session.connection.remote.ani", GetRemotePartyNumber());
+  m_vxmlSession.SetVar("session.connection.calltoken", GetCall().GetToken());
   m_vxmlSession.SetVar("session.connection.remote.uri", remoteURL);
   m_vxmlSession.SetVar("session.connection.remote.ip", remoteURL.GetHostName());
   m_vxmlSession.SetVar("session.connection.remote.port", remoteURL.GetPort());
