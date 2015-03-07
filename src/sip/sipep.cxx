@@ -658,6 +658,7 @@ PBoolean SIPEndPoint::ForwardConnection(SIPConnection & connection, const PStrin
   if (!AddConnection(conn))
     return false;
 
+  connection.SetPhase(OpalConnection::ForwardingPhase);
   conn->SetUpConnection();
   connection.Release(OpalConnection::EndedByCallForwarded);
 
