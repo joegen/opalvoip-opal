@@ -137,8 +137,8 @@ bool MyManager::Initialise(PArgList & args, bool verbose)
   m_cli->SetCommand("conf remove", PCREATE_NOTIFIER_EXT(m_mixer, MyMixerEndPoint, CmdConfRemove),
                     "Remove conferance:",
                     "<name> | <guid>");
-  m_cli->SetCommand("conf listen", PCREATE_NOTIFIER_EXT(m_mixer, MyMixerEndPoint, CmdConfListen),
-                    "Toggle listening to conferance:",
+  m_cli->SetCommand("conf hear", PCREATE_NOTIFIER_EXT(m_mixer, MyMixerEndPoint, CmdConfListen),
+                    "Toggle hearing a conferance:",
                     "{ <conf-name> | <guid> }");
   m_cli->SetCommand("conf record", PCREATE_NOTIFIER_EXT(m_mixer, MyMixerEndPoint, CmdConfRecord),
                     "Record conferance:",
