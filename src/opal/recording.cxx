@@ -176,7 +176,7 @@ bool OpalWAVRecordManager::Mixer::Open(const PFilePath & fn, const Options & opt
     return false;
   }
 
-  if (!m_file.Open(fn, PFile::ReadWrite, PFile::Create|PFile::Truncate)) {
+  if (!m_file.Open(fn, PFile::WriteOnly, PFile::Create|PFile::Truncate)) {
     PTRACE(2, "Could not open file \"" << fn << '"');
     return false;
   }
