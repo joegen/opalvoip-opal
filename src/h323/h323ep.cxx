@@ -573,12 +573,12 @@ bool H323EndPoint::InternalRestartGatekeeper(bool adjustingRegistrations)
   if (gk != m_gatekeepers.end())
     remoteAddress = gk->second.GetTransport().GetRemoteAddress();
 
-  PTRACE(4, allAliases.size() << " aliases left to create new gatekeepers.");
-
   // Rotate allaliases so grouped by gk address
   map<OpalTransportAddress, PStringList> rotatedAliases;
   for (AliasToGkMap::iterator alias = allAliases.begin(); alias != allAliases.end(); ++alias)
     rotatedAliases[adjustingRegistrations && !alias->second.IsEmpty() ? alias->second : remoteAddress].AppendString(alias->first);
+
+  PTRACE(4, allAliases.size() << " aliases, to " << rotatedAliases.size() << " remotes, left to create new gatekeepers.");
 
   // Now add remaining aliases, creating new registrations as required.
   PStringList aliasSubset;
@@ -623,7 +623,7 @@ bool H323EndPoint::InternalCreateGatekeeper(const H323TransportAddress & remoteA
   PTRACE(3, "H323\tAdded gatekeeper (at=" << remoteAddress << ", if=" << transport->GetLocalAddress() << ") for aliases: " << setfill(',') << aliases);
   gatekeeper->SetAliases(aliases);
   gatekeeper->SetPassword(GetGatekeeperPassword(), GetGatekeeperUsername());
-  m_gatekeepers.SetAt(transport->GetRemoteAddress(), gatekeeper);
+  m_gatekeepers.SetAt(remoteAddress, gatekeeper);
 
   if (remoteAddress.IsEmpty())
     return true;
