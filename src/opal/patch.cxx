@@ -741,7 +741,19 @@ void OpalMediaPatch::Main()
   bool asynchronous = OnStartMediaPatch();
   PAdaptiveDelay asynchPacing;
   PThread::Times lastThreadTimes;
-  PTimeInterval lastTick;
+  PSimpleTimer cpuCheck;
+  const unsigned CheckCPUTimeMS =
+#if P_CONFIG_FILE
+                                  PConfig(PConfig::Environment).GetInteger("OPAL_MEDIA_PATCH_CPU_CHECK",
+#else
+                                  (
+#endif
+                                   2000);
+  static const unsigned ThresholdPercent = 90;
+#if PTRACING
+  unsigned cpuCheckCount = 0;
+#endif
+
 
   /* Note the RTP frame is outside loop so that a) it is more efficient
      for memory usage, the buffer is only ever increased and not allocated
@@ -781,24 +793,21 @@ void OpalMediaPatch::Main()
        us, want to clear them as quickly as possible out of the UDP OS buffers
        or we overflow and lose some. Best compromise is to every X ms, sleep
        for X/10 ms so can not use more than about 90% of CPU. */
-#if P_CONFIG_FILE
-    static const unsigned SampleTimeMS = PConfig(PConfig::Environment).GetInteger("OPAL_MEDIA_PATCH_CPU_CHECK", 1000);
-#else
-    static const unsigned SampleTimeMS = 1000;
-#endif
-    static const unsigned ThresholdPercent = 90;
-    if (PTimer::Tick() - lastTick > SampleTimeMS) {
+    if (cpuCheck.HasExpired()) {
+      cpuCheck = CheckCPUTimeMS;
+
       PThread::Times threadTimes;
       if (PThread::Current()->GetTimes(threadTimes)) {
-        PTRACE(5, "CPU for " << *this << " is " << threadTimes);
-        if ((threadTimes.m_user - lastThreadTimes.m_user + threadTimes.m_kernel - lastThreadTimes.m_kernel)
-                                      > (threadTimes.m_real - lastThreadTimes.m_real)*ThresholdPercent/100) {
+        PThread::Times delta = threadTimes - lastThreadTimes;
+        lastThreadTimes = threadTimes;
+        PTRACE(cpuCheckCount++ % 30 == 0 ? 3 : 5, "CPU for " << *this << " since start is " << threadTimes
+               << " last " << CheckCPUTimeMS << "ms is " << delta);
+        if ((delta.m_user + delta.m_kernel) > delta.m_real*ThresholdPercent/100) {
           PTRACE(2, "Greater that 90% CPU usage for " << *this);
-          PThread::Sleep(SampleTimeMS*(100-ThresholdPercent)/100);
+          PThread::Sleep(CheckCPUTimeMS*(100-ThresholdPercent)/100);
         }
         lastThreadTimes = threadTimes;
       }
-      lastTick = PTimer::Tick();
     }
   }
 
