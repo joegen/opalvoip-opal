@@ -181,7 +181,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual PString GetLocalHostName();
 
 #if OPAL_STATISTICS
-    virtual void GetStatistics(OpalMediaStatistics & statistics, bool receiver, RTP_SyncSourceId ssrc) const;
+    virtual void GetStatistics(OpalMediaStatistics & statistics, Direction dir) const;
 #endif
   //@}
 

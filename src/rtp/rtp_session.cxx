@@ -1301,8 +1301,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(bool force)
 
 
 #if OPAL_STATISTICS
-void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, bool receiver, RTP_SyncSourceId ssrc) const
+void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction dir) const
 {
+  statistics.m_mediaType         = m_mediaType;
   statistics.m_totalBytes        = 0;
   statistics.m_totalPackets      = 0;
   statistics.m_NACKs             = 0;
@@ -1315,10 +1316,10 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, bool receiv
   statistics.m_maximumJitter     = 0;
   statistics.m_roundTripTime     = m_roundTripTime;
 
-  Direction dir = receiver ? e_Receiver : e_Sender;
-  SyncSource * info;
-  if (ssrc != 0 && GetSyncSource(ssrc, dir, info)) {
-    info->GetStatistics(statistics);
+  if (statistics.m_SSRC != 0) {
+    SyncSource * info;
+    if (GetSyncSource(statistics.m_SSRC, dir, info))
+      info->GetStatistics(statistics);
     return;
   }
 

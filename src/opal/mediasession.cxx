@@ -160,7 +160,8 @@ ostream & operator<<(ostream & strm, OpalFaxStatistics::FaxCompression compressi
 
 
 OpalMediaStatistics::OpalMediaStatistics()
-  : m_threadIdentifier(PNullThreadIdentifier)
+  : m_SSRC(0)
+  , m_threadIdentifier(PNullThreadIdentifier)
 #if OPAL_FAX
   , m_fax(*this) // Backward compatibility
 #endif
