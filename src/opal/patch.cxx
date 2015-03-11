@@ -496,7 +496,9 @@ void OpalMediaPatch::Sink::GetStatistics(OpalMediaStatistics & statistics, bool 
     m_stream->GetStatistics(statistics, true);
 
 #if OPAL_VIDEO
-  statistics.OpalVideoStatistics::operator=(m_videoStatistics);
+  VideoStatsMap::const_iterator it = m_videoStatistics.find(statistics.m_SSRC);
+  if (it != m_videoStatistics.end())
+    statistics.OpalVideoStatistics::operator=(it->second);
 #endif
 
   if (m_primaryCodec != NULL)
@@ -939,8 +941,15 @@ bool OpalMediaPatch::Sink::ExecuteCommand(const OpalMediaCommand & command, bool
     atLeastOne = m_primaryCodec->ExecuteCommand(command) || atLeastOne;
 
 #if OPAL_VIDEO
-  if (atLeastOne && dynamic_cast<const OpalVideoUpdatePicture *>(&command) != NULL)
-    m_videoStatistics.IncrementUpdateCount(dynamic_cast<const OpalVideoPictureLoss *>(&command) == NULL);
+  if (atLeastOne) {
+    const OpalVideoUpdatePicture * update = dynamic_cast<const OpalVideoUpdatePicture *>(&command);
+    if (update != NULL) {
+      bool full = dynamic_cast<const OpalVideoPictureLoss *>(&command) == NULL;
+      m_videoStatistics[0].IncrementUpdateCount(full);
+      if (update->GetSyncSource() != 0)
+        m_videoStatistics[update->GetSyncSource()].IncrementUpdateCount(full);
+    }
+  }
 #endif
 
   return atLeastOne;
@@ -1025,20 +1034,25 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
 #if OPAL_VIDEO
     if (m_videoFormat.IsValid()) {
       PPROFILE_BLOCK("OpalMediaPatch::Sink::WriteFrame - video detect");
+      RTP_SyncSourceId ssrc = sourceFrame.GetSyncSource();
       switch (m_videoFormat.GetVideoFrameType(sourceFrame.GetPayloadPtr(), sourceFrame.GetPayloadSize(), m_keyFrameDetectContext)) {
       case OpalVideoFormat::e_IntraFrame :
-          m_videoStatistics.IncrementFrames(true);
-          PTRACE(4, "I-Frame detected: SSRC=" << RTP_TRACE_SRC(sourceFrame.GetSyncSource())
-                 << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoStatistics.m_totalFrames
-                 << ", key=" << m_videoStatistics.m_keyFrames
-                 << ", req=" << m_videoStatistics.m_lastUpdateRequestTime << ", on " << m_patch);
+          m_videoStatistics[0].IncrementFrames(true);
+          if (ssrc != 0)
+            m_videoStatistics[ssrc].IncrementFrames(true);
+          PTRACE(4, "I-Frame detected: SSRC=" << RTP_TRACE_SRC(ssrc)
+                 << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoStatistics[ssrc].m_totalFrames
+                 << ", key=" << m_videoStatistics[ssrc].m_keyFrames
+                 << ", req=" << m_videoStatistics[ssrc].m_lastUpdateRequestTime << ", on " << m_patch);
           break;
 
         case OpalVideoFormat::e_InterFrame :
-          m_videoStatistics.IncrementFrames(false);
-          PTRACE(5, "P-Frame detected: SSRC=" << RTP_TRACE_SRC(sourceFrame.GetSyncSource())
-                 << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoStatistics.m_totalFrames
-                 << ", key=" << m_videoStatistics.m_keyFrames << ", on " << m_patch);
+          m_videoStatistics[0].IncrementFrames(false);
+          if (ssrc != 0)
+            m_videoStatistics[ssrc].IncrementFrames(false);
+          PTRACE(5, "P-Frame detected: SSRC=" << RTP_TRACE_SRC(ssrc)
+                 << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoStatistics[ssrc].m_totalFrames
+                 << ", key=" << m_videoStatistics[ssrc].m_keyFrames << ", on " << m_patch);
           break;
 
         default :
@@ -1110,7 +1124,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
 
   OpalVideoTranscoder * videoCodec = dynamic_cast<OpalVideoTranscoder *>(m_primaryCodec);
   if (videoCodec != NULL && !m_intermediateFrames.IsEmpty())
-    m_videoStatistics.IncrementFrames(videoCodec->WasLastFrameIFrame());
+    m_videoStatistics[0].IncrementFrames(videoCodec->WasLastFrameIFrame());
 #endif
 
   return true;
@@ -1118,7 +1132,6 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
 
 
 /////////////////////////////////////////////////////////////////////////////
-
 
 OpalPassiveMediaPatch::OpalPassiveMediaPatch(OpalMediaStream & source)
   : OpalMediaPatch(source)
