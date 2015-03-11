@@ -57,7 +57,7 @@ struct OpalNetworkStatistics
   OpalNetworkStatistics();
 
   PTime    m_startTime;
-  PUInt64  m_totalBytes;
+  uint64_t m_totalBytes;
   unsigned m_totalPackets;
   unsigned m_NACKs;
   unsigned m_packetsLost;
@@ -153,6 +153,7 @@ class OpalMediaStatistics : public PObject, public OpalNetworkStatistics, public
 
     OpalMediaType     m_mediaType;
     PString           m_mediaFormat;
+    uint32_t          m_SSRC;
     PThreadIdentifier m_threadIdentifier;
 
     // To following fields are not copied by
@@ -162,7 +163,7 @@ class OpalMediaStatistics : public PObject, public OpalNetworkStatistics, public
 
       PTime    m_lastUpdateTime;
       PTime    m_previousUpdateTime;
-      PUInt64  m_previousBytes;
+      uint64_t m_previousBytes;
       unsigned m_previousPackets;
       unsigned m_previousLost;
 #if OPAL_VIDEO
