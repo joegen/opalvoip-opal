@@ -812,6 +812,7 @@ class OpalRTPSession : public OpalMediaSession
 
     // Some statitsics not SSRC related
     unsigned m_rtcpPacketsSent;
+    unsigned m_rtcpPacketsReceived;
     unsigned m_roundTripTime;
 
     PTimer m_reportTimer;
