@@ -2521,12 +2521,12 @@ void OpalRTPSession::SetICE(const PString & user, const PString & pass, const PN
 
   m_stunClient = new PSTUNClient;
   PTRACE_CONTEXT_ID_TO(m_stunClient);
-  m_stunClient->SetCredentials(m_remoteUsername + ':' + m_localUsername, m_remoteUsername, PString::Empty());
+  m_stunClient->SetCredentials(m_remoteUsername + ':' + m_localUsername, m_remotePassword, PString::Empty());
 
   m_remoteAddress = PIPSocket::GetInvalidAddress();
   m_remoteBehindNAT = true;
 
-  PTRACE(4, *this << "configured by remote for ICE with "
+  PTRACE(3, *this << "configured by remote for ICE with "
          << (m_candidateType == e_RemoteCandidates ? "remote" : "local") << " candidates: "
             "data=" << m_candidates[e_Data].size() << ", " "control=" << m_candidates[e_Control].size());
 }
@@ -2578,7 +2578,7 @@ bool OpalRTPSession::GetICE(PString & user, PString & pass, PNatCandidateList & 
 
   m_remoteBehindNAT = true;
 
-  PTRACE(4, *this << "configured locally for ICE with "
+  PTRACE(3, *this << "configured locally for ICE with "
          << (m_candidateType == e_RemoteCandidates ? "remote" : "local") << " candidates: "
             "data=" << m_candidates[e_Data].size() << ", " "control=" << m_candidates[e_Control].size());
 
