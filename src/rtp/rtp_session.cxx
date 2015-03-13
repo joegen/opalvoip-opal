@@ -147,6 +147,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
 #endif
   , m_dummySyncSource(*this, 0, e_Receiver, "-")
   , m_rtcpPacketsSent(0)
+  , m_rtcpPacketsReceived(0)
   , m_roundTripTime(0)
   , m_reportTimer(0, 12)  // Seconds
   , m_localAddress(PIPSocket::GetInvalidAddress())
@@ -1306,6 +1307,7 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
   statistics.m_mediaType         = m_mediaType;
   statistics.m_totalBytes        = 0;
   statistics.m_totalPackets      = 0;
+  statistics.m_controlPackets    = m_rtcpPacketsReceived;
   statistics.m_NACKs             = 0;
   statistics.m_packetsLost       = 0;
   statistics.m_packetsOutOfOrder = 0;
@@ -1391,6 +1393,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
   PPROFILE_FUNCTION();
 
   PTRACE(6, *this << "OnReceiveControl - " << frame);
+
+  ++m_rtcpPacketsReceived;
 
   m_firstControl = false;
 
