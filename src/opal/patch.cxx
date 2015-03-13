@@ -1033,6 +1033,14 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
       return true;
     }
   }
+
+  OpalVideoFormat::VideoFrameType frameType;
+  if (m_videoFormat.IsValid()) {
+    PPROFILE_BLOCK("OpalMediaPatch::Sink::WriteFrame - video detect");
+    frameType = m_videoFormat.GetVideoFrameType(sourceFrame.GetPayloadPtr(), sourceFrame.GetPayloadSize(), m_keyFrameDetectContext);
+  }
+  else
+    frameType = OpalVideoFormat::e_UnknownFrameType;
 #endif // OPAL_VIDEO
 
   if (bypassing || m_primaryCodec == NULL) {
@@ -1041,32 +1049,29 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
       return false;
 
 #if OPAL_VIDEO
-    if (m_videoFormat.IsValid()) {
-      PPROFILE_BLOCK("OpalMediaPatch::Sink::WriteFrame - video detect");
-      RTP_SyncSourceId ssrc = sourceFrame.GetSyncSource();
-      switch (m_videoFormat.GetVideoFrameType(sourceFrame.GetPayloadPtr(), sourceFrame.GetPayloadSize(), m_keyFrameDetectContext)) {
-      case OpalVideoFormat::e_IntraFrame :
-          m_videoStatistics[0].IncrementFrames(true);
-          if (ssrc != 0)
-            m_videoStatistics[ssrc].IncrementFrames(true);
-          PTRACE(4, "I-Frame detected: SSRC=" << RTP_TRACE_SRC(ssrc)
-                 << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoStatistics[ssrc].m_totalFrames
-                 << ", key=" << m_videoStatistics[ssrc].m_keyFrames
-                 << ", req=" << m_videoStatistics[ssrc].m_lastUpdateRequestTime << ", on " << m_patch);
-          break;
+    RTP_SyncSourceId ssrc;
+    switch (frameType) {
+    case OpalVideoFormat::e_IntraFrame :
+        m_videoStatistics[0].IncrementFrames(true);
+        if ((ssrc = sourceFrame.GetSyncSource()) != 0)
+          m_videoStatistics[ssrc].IncrementFrames(true);
+        PTRACE(4, "I-Frame detected: SSRC=" << RTP_TRACE_SRC(ssrc)
+                << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoStatistics[ssrc].m_totalFrames
+                << ", key=" << m_videoStatistics[ssrc].m_keyFrames
+                << ", req=" << m_videoStatistics[ssrc].m_lastUpdateRequestTime << ", on " << m_patch);
+        break;
 
-        case OpalVideoFormat::e_InterFrame :
-          m_videoStatistics[0].IncrementFrames(false);
-          if (ssrc != 0)
-            m_videoStatistics[ssrc].IncrementFrames(false);
-          PTRACE(5, "P-Frame detected: SSRC=" << RTP_TRACE_SRC(ssrc)
-                 << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoStatistics[ssrc].m_totalFrames
-                 << ", key=" << m_videoStatistics[ssrc].m_keyFrames << ", on " << m_patch);
-          break;
+      case OpalVideoFormat::e_InterFrame :
+        m_videoStatistics[0].IncrementFrames(false);
+        if ((ssrc = sourceFrame.GetSyncSource()) != 0)
+          m_videoStatistics[ssrc].IncrementFrames(false);
+        PTRACE(5, "P-Frame detected: SSRC=" << RTP_TRACE_SRC(ssrc)
+                << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoStatistics[ssrc].m_totalFrames
+                << ", key=" << m_videoStatistics[ssrc].m_keyFrames << ", on " << m_patch);
+        break;
 
-        default :
-          break;
-      }
+      default :
+        break;
     }
 #endif // OPAL_VIDEO
 
