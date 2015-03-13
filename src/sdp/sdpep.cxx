@@ -453,7 +453,7 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
   bool sdpOK = false;
 
   if (offerOpenMediaStreamsOnly && !mediaStreams.IsEmpty()) {
-    PTRACE(4, "Offering only current media streams");
+    PTRACE(3, "Offering only current media streams");
     for (SessionMap::iterator it = m_sessions.begin(); it != m_sessions.end(); ++it) {
       if (OnSendOfferSDPSession(it->first, sdpOut, true))
         sdpOK = true;
@@ -462,7 +462,7 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
     }
   }
   else {
-    PTRACE(4, "Offering all configured media:\n    " << setfill(',') << m_localMediaFormats << setfill(' '));
+    PTRACE(3, "Offering all configured media:\n    " << setfill(',') << m_localMediaFormats << setfill(' '));
 
     if (m_remoteFormatList.IsEmpty()) {
       // Need to fake the remote formats with everything we do,
