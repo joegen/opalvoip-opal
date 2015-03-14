@@ -1361,6 +1361,7 @@ class H323EndPoint : public OpalRTPEndPoint
     typedef map<PString, OpalTransportAddress> AliasToGkMap;
     AliasToGkMap    m_localAliasNames;
     AliasToGkMap    m_localAliasPatterns;
+    PTimedMutex     m_aliasMutex;
     PBoolean        autoCallForward;
     PBoolean        disableFastStart;
     PBoolean        disableH245Tunneling;
