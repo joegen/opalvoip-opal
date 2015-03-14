@@ -1442,7 +1442,7 @@ class H323EndPoint : public OpalRTPEndPoint
     PThread                 * m_gatekeeperMonitor;
     bool                      m_gatekeeperMonitorStop;
     PSyncPoint                m_gatekeeperMonitorTickle;
-    PMutex                    m_gatekeeperMutex;
+    PTimedMutex               m_gatekeeperMutex;
 
 #if OPAL_H450
     H323CallIdentityDict   m_secondaryConnectionsActive;
