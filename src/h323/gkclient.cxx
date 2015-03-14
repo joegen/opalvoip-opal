@@ -688,30 +688,30 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
   // Remove the endpoint aliases that the gatekeeper did not like and add the
   // ones that it really wants us to be.
   if (rcf.HasOptionalField(H225_RegistrationConfirm::e_terminalAlias)) {
-    const PStringList & currentAliases = endpoint.GetAliasNames();
     PStringList aliasesToChange;
     PINDEX i, j;
 
     for (i = 0; i < rcf.m_terminalAlias.GetSize(); i++) {
       PString alias = H323GetAliasAddressString(rcf.m_terminalAlias[i]);
       if (!alias) {
-        PStringList::const_iterator currentAlias;
-        for (currentAlias = currentAliases.begin(); currentAlias != currentAliases.end(); ++currentAlias) {
+        PStringList::iterator currentAlias;
+        for (currentAlias = m_aliases.begin(); currentAlias != m_aliases.end(); ++currentAlias) {
           if (alias *= *currentAlias)
             break;
         }
-        if (currentAlias == currentAliases.end())
+        if (currentAlias == m_aliases.end())
           aliasesToChange.AppendString(alias);
       }
     }
     for (PStringList::iterator alias = aliasesToChange.begin(); alias != aliasesToChange.end(); ++alias) {
       PTRACE(3, "Gatekeeper add of alias \"" << *alias << '"');
       endpoint.AddAliasName(*alias);
+      m_aliases.AppendString(*alias);
     }
 
     aliasesToChange.RemoveAll();
 
-    for (PStringList::const_iterator alias = currentAliases.begin(); alias != currentAliases.end(); ++alias) {
+    for (PStringList::iterator alias = m_aliases.begin(); alias != m_aliases.end(); ++alias) {
       for (j = 0; j < rcf.m_terminalAlias.GetSize(); j++) {
         if (*alias *= H323GetAliasAddressString(rcf.m_terminalAlias[j]))
           break;
