@@ -721,7 +721,7 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
     }
     for (PStringList::iterator alias = aliasesToChange.begin(); alias != aliasesToChange.end(); ++alias) {
       PTRACE(3, "Gatekeeper removal of alias \"" << *alias << '"');
-      endpoint.RemoveAliasName(*alias);
+      endpoint.RemoveAliasName(*alias, false);
     }
   }
 
