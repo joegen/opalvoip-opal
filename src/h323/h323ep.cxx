@@ -1514,7 +1514,7 @@ bool H323EndPoint::SetAliasNames(const PStringList & names)
   if (!PAssert(!names.IsEmpty() && !names.front().IsEmpty(), "Must have non-empty string in AliasAddress!"))
     return false;
 
-  PWaitAndSignal mutex(m_gatekeeperMutex);
+  PWaitAndSignal mutex(m_aliasMutex);
   m_localAliasNames.clear();
   return AddAliasNames(names);
 }
@@ -1524,7 +1524,7 @@ bool H323EndPoint::AddAliasNames(const PStringList & names, const PString & gk, 
 {
   bool addedOne = false;
 
-  PWaitAndSignal mutex(m_gatekeeperMutex);
+  PWaitAndSignal mutex(m_aliasMutex);
 
   for (PStringList::const_iterator it = names.begin(); it != names.end(); ++it)
     addedOne = AddAliasName(*it, gk, false) || addedOne;
@@ -1537,7 +1537,7 @@ bool H323EndPoint::RemoveAliasNames(const PStringList & names, bool updateGk)
 {
   bool removedOne = false;
 
-  PWaitAndSignal mutex(m_gatekeeperMutex);
+  PWaitAndSignal mutex(m_aliasMutex);
 
   for (PStringList::const_iterator it = names.begin(); it != names.end(); ++it)
     removedOne = RemoveAliasName(*it, false) || removedOne;
@@ -1550,7 +1550,7 @@ bool H323EndPoint::AddAliasName(const PString & name, const PString & gk, bool u
 {
   PAssert(!name, "Must have non-empty string in alias name!");
 
-  PWaitAndSignal mutex(m_gatekeeperMutex);
+  PWaitAndSignal mutex(m_aliasMutex);
 
   if (m_localAliasNames.find(name) != m_localAliasNames.end()) {
     PTRACE(4, "H323\tAlias already present: \"" << name << '"');
@@ -1569,7 +1569,7 @@ bool H323EndPoint::RemoveAliasName(const PString & name, bool updateGk)
 {
   PAssert(!name, "Must have non-empty string in alias name!");
 
-  PWaitAndSignal mutex(m_gatekeeperMutex);
+  PWaitAndSignal mutex(m_aliasMutex);
 
   AliasToGkMap::iterator it = m_localAliasNames.find(name);
   if (it == m_localAliasNames.end()) {
@@ -1591,7 +1591,7 @@ bool H323EndPoint::RemoveAliasName(const PString & name, bool updateGk)
 
 PStringList H323EndPoint::GetAliasNames() const
 {
-  PWaitAndSignal mutex(m_gatekeeperMutex);
+  PWaitAndSignal mutex(m_aliasMutex);
 
   PStringList names;
   for (AliasToGkMap::const_iterator it = m_localAliasNames.begin(); it != m_localAliasNames.end(); ++it)
@@ -1636,7 +1636,7 @@ bool H323EndPoint::SetAliasNamePatterns(const PStringList & patterns)
     }
   }
 
-  PWaitAndSignal mutex(m_gatekeeperMutex);
+  PWaitAndSignal mutex(m_aliasMutex);
   m_localAliasPatterns.clear();
   return AddAliasNamePatterns(patterns);
 }
@@ -1646,7 +1646,7 @@ bool H323EndPoint::AddAliasNamePatterns(const PStringList & patterns, const PStr
 {
   bool addedOne = false;
 
-  PWaitAndSignal mutex(m_gatekeeperMutex);
+  PWaitAndSignal mutex(m_aliasMutex);
 
   for (PStringList::const_iterator it = patterns.begin(); it != patterns.end(); ++it)
     addedOne = AddAliasNamePattern(*it, gk, false) || addedOne;
@@ -1659,7 +1659,7 @@ bool H323EndPoint::RemoveAliasNamePatterns(const PStringList & patterns, bool up
 {
   bool removedOne = false;
 
-  PWaitAndSignal mutex(m_gatekeeperMutex);
+  PWaitAndSignal mutex(m_aliasMutex);
 
   for (PStringList::const_iterator it = patterns.begin(); it != patterns.end(); ++it)
     removedOne = RemoveAliasNamePattern(*it, false) || removedOne;
@@ -1683,7 +1683,7 @@ bool H323EndPoint::AddAliasNamePattern(const PString & pattern, const PString & 
     }
   }
 
-  PWaitAndSignal mutex(m_gatekeeperMutex);
+  PWaitAndSignal mutex(m_aliasMutex);
 
   if (m_localAliasPatterns.find(pattern) != m_localAliasPatterns.end()) {
     PTRACE(3, "H323\tAlias pattern already present: \"" << pattern << '"');
@@ -1702,7 +1702,7 @@ bool H323EndPoint::RemoveAliasNamePattern(const PString & pattern, bool updateGk
 {
   PAssert(!pattern, "Must have non-empty string in alias pattern !");
 
-  PWaitAndSignal mutex(m_gatekeeperMutex);
+  PWaitAndSignal mutex(m_aliasMutex);
 
   AliasToGkMap::iterator it = m_localAliasPatterns.find(pattern);
   if (it == m_localAliasPatterns.end()) {
@@ -1719,7 +1719,7 @@ bool H323EndPoint::RemoveAliasNamePattern(const PString & pattern, bool updateGk
 
 PStringList H323EndPoint::GetAliasNamePatterns() const
 {
-  PWaitAndSignal mutex(m_gatekeeperMutex);
+  PWaitAndSignal mutex(m_aliasMutex);
 
   PStringList names;
   for (AliasToGkMap::const_iterator it = m_localAliasPatterns.begin(); it != m_localAliasPatterns.end(); ++it)
