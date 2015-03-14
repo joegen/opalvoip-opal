@@ -702,7 +702,7 @@ PBoolean H323EndPoint::RemoveGatekeeper(int reason)
 
   bool ok = true;
 
-  m_gatekeeperMutex.Wait();
+  PWaitAndSignal mutex(m_gatekeeperMutex);
 
   for (GatekeeperList::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it) {
     if (it->IsRegistered()) { // If we are registered send a URQ
@@ -714,8 +714,6 @@ PBoolean H323EndPoint::RemoveGatekeeper(int reason)
 
   m_gatekeepers.RemoveAll();
   m_gatekeeperByAlias.RemoveAll();
-
-  m_gatekeeperMutex.Signal();
 
   return ok;
 }
@@ -1552,6 +1550,8 @@ bool H323EndPoint::AddAliasName(const PString & name, const PString & gk, bool u
 {
   PAssert(!name, "Must have non-empty string in alias name!");
 
+  PWaitAndSignal mutex(m_gatekeeperMutex);
+
   if (m_localAliasNames.find(name) != m_localAliasNames.end()) {
     PTRACE(4, "H323\tAlias already present: \"" << name << '"');
     return false;
@@ -1568,6 +1568,8 @@ bool H323EndPoint::AddAliasName(const PString & name, const PString & gk, bool u
 bool H323EndPoint::RemoveAliasName(const PString & name, bool updateGk)
 {
   PAssert(!name, "Must have non-empty string in alias name!");
+
+  PWaitAndSignal mutex(m_gatekeeperMutex);
 
   AliasToGkMap::iterator it = m_localAliasNames.find(name);
   if (it == m_localAliasNames.end()) {
@@ -1589,6 +1591,8 @@ bool H323EndPoint::RemoveAliasName(const PString & name, bool updateGk)
 
 PStringList H323EndPoint::GetAliasNames() const
 {
+  PWaitAndSignal mutex(m_gatekeeperMutex);
+
   PStringList names;
   for (AliasToGkMap::const_iterator it = m_localAliasNames.begin(); it != m_localAliasNames.end(); ++it)
     names += it->first;
@@ -1632,6 +1636,7 @@ bool H323EndPoint::SetAliasNamePatterns(const PStringList & patterns)
     }
   }
 
+  PWaitAndSignal mutex(m_gatekeeperMutex);
   m_localAliasPatterns.clear();
   return AddAliasNamePatterns(patterns);
 }
@@ -1678,6 +1683,8 @@ bool H323EndPoint::AddAliasNamePattern(const PString & pattern, const PString & 
     }
   }
 
+  PWaitAndSignal mutex(m_gatekeeperMutex);
+
   if (m_localAliasPatterns.find(pattern) != m_localAliasPatterns.end()) {
     PTRACE(3, "H323\tAlias pattern already present: \"" << pattern << '"');
     return false;
@@ -1695,6 +1702,8 @@ bool H323EndPoint::RemoveAliasNamePattern(const PString & pattern, bool updateGk
 {
   PAssert(!pattern, "Must have non-empty string in alias pattern !");
 
+  PWaitAndSignal mutex(m_gatekeeperMutex);
+
   AliasToGkMap::iterator it = m_localAliasPatterns.find(pattern);
   if (it == m_localAliasPatterns.end()) {
     PTRACE(3, "H323\tAlias pattern already removed: \"" << pattern << '"');
@@ -1710,6 +1719,8 @@ bool H323EndPoint::RemoveAliasNamePattern(const PString & pattern, bool updateGk
 
 PStringList H323EndPoint::GetAliasNamePatterns() const
 {
+  PWaitAndSignal mutex(m_gatekeeperMutex);
+
   PStringList names;
   for (AliasToGkMap::const_iterator it = m_localAliasPatterns.begin(); it != m_localAliasPatterns.end(); ++it)
     names += it->first;
