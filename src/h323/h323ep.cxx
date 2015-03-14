@@ -486,15 +486,19 @@ bool H323EndPoint::InternalStartGatekeeper(const H323TransportAddress & remoteAd
 
 bool H323EndPoint::InternalRestartGatekeeper(bool adjustingRegistrations)
 {
+  m_aliasMutex.Wait();
+  AliasToGkMap allAliases = m_localAliasNames;
+  AliasToGkMap patterns = m_localAliasPatterns;
+  m_aliasMutex.Signal();
+
   PWaitAndSignal mutex(m_gatekeeperMutex);
 
   if (adjustingRegistrations && m_gatekeepers.IsEmpty())
       return true;
 
   // Create list of all aliases, including synthesised ones
-  AliasToGkMap allAliases = m_localAliasNames;
   if (GetGatekeeperSimulatePattern()) {
-    for (AliasToGkMap::iterator it = m_localAliasPatterns.begin(); it != m_localAliasPatterns.end(); ++it) {
+    for (AliasToGkMap::iterator it = patterns.begin(); it != patterns.end(); ++it) {
       PString start, end;
       PINDEX fixedDigits = ParseAliasPatternRange(it->first, start, end);
       while (start != end) {
@@ -1514,9 +1518,15 @@ bool H323EndPoint::SetAliasNames(const PStringList & names)
   if (!PAssert(!names.IsEmpty() && !names.front().IsEmpty(), "Must have non-empty string in AliasAddress!"))
     return false;
 
-  PWaitAndSignal mutex(m_aliasMutex);
+  m_aliasMutex.Wait();
+
   m_localAliasNames.clear();
-  return AddAliasNames(names);
+  for (PStringList::const_iterator it = names.begin(); it != names.end(); ++it)
+    AddAliasName(*it, PString::Empty(), false);
+
+  m_aliasMutex.Signal();
+
+  return InternalRestartGatekeeper();
 }
 
 
@@ -1524,10 +1534,12 @@ bool H323EndPoint::AddAliasNames(const PStringList & names, const PString & gk, 
 {
   bool addedOne = false;
 
-  PWaitAndSignal mutex(m_aliasMutex);
+  m_aliasMutex.Wait();
 
   for (PStringList::const_iterator it = names.begin(); it != names.end(); ++it)
     addedOne = AddAliasName(*it, gk, false) || addedOne;
+
+  m_aliasMutex.Signal();
 
   return addedOne && (!updateGk || InternalRestartGatekeeper());
 }
@@ -1537,10 +1549,12 @@ bool H323EndPoint::RemoveAliasNames(const PStringList & names, bool updateGk)
 {
   bool removedOne = false;
 
-  PWaitAndSignal mutex(m_aliasMutex);
+  m_aliasMutex.Wait();
 
   for (PStringList::const_iterator it = names.begin(); it != names.end(); ++it)
     removedOne = RemoveAliasName(*it, false) || removedOne;
+
+  m_aliasMutex.Signal();
 
   return removedOne && (!updateGk || InternalRestartGatekeeper());
 }
@@ -1550,16 +1564,18 @@ bool H323EndPoint::AddAliasName(const PString & name, const PString & gk, bool u
 {
   PAssert(!name, "Must have non-empty string in alias name!");
 
-  PWaitAndSignal mutex(m_aliasMutex);
+  {
+    PWaitAndSignal mutex(m_aliasMutex);
 
-  if (m_localAliasNames.find(name) != m_localAliasNames.end()) {
-    PTRACE(4, "H323\tAlias already present: \"" << name << '"');
-    return false;
+    if (m_localAliasNames.find(name) != m_localAliasNames.end()) {
+      PTRACE(4, "H323\tAlias already present: \"" << name << '"');
+      return false;
+    }
+
+    OpalTransportAddress gkAddr(gk, H225_RAS::DefaultRasUdpPort, OpalTransportAddress::UdpPrefix());
+    PTRACE(3, "H323\tAdded alias: \"" << name << "\" to gk at " << gkAddr << " update=" << boolalpha << updateGk);
+    m_localAliasNames[name] = gkAddr;
   }
-
-  OpalTransportAddress gkAddr(gk, H225_RAS::DefaultRasUdpPort, OpalTransportAddress::UdpPrefix());
-  PTRACE(3, "H323\tAdded alias: \"" << name << "\" to gk at " << gkAddr << " update=" << boolalpha << updateGk);
-  m_localAliasNames[name] = gkAddr;
 
   return !updateGk || InternalRestartGatekeeper();
 }
@@ -1569,20 +1585,22 @@ bool H323EndPoint::RemoveAliasName(const PString & name, bool updateGk)
 {
   PAssert(!name, "Must have non-empty string in alias name!");
 
-  PWaitAndSignal mutex(m_aliasMutex);
+  {
+    PWaitAndSignal mutex(m_aliasMutex);
 
-  AliasToGkMap::iterator it = m_localAliasNames.find(name);
-  if (it == m_localAliasNames.end()) {
-    PTRACE(3, "H323\tAlias already removed: \"" << name << '"');
-    return false;
+    AliasToGkMap::iterator it = m_localAliasNames.find(name);
+    if (it == m_localAliasNames.end()) {
+      PTRACE(3, "H323\tAlias already removed: \"" << name << '"');
+      return false;
+    }
+
+    if (m_localAliasNames.size() == 1) {
+      PTRACE(3, "H323\tLast alias cannot be removed");
+      return false;
+    }
+
+    m_localAliasNames.erase(it);
   }
-
-  if (m_localAliasNames.size() == 1) {
-    PTRACE(3, "H323\tLast alias cannot be removed");
-    return false;
-  }
-
-  m_localAliasNames.erase(it);
 
   PTRACE(3, "H323\tAlias removed: \"" << name << "\" update=" << boolalpha << updateGk);
   return !updateGk || InternalRestartGatekeeper();
@@ -1646,10 +1664,12 @@ bool H323EndPoint::AddAliasNamePatterns(const PStringList & patterns, const PStr
 {
   bool addedOne = false;
 
-  PWaitAndSignal mutex(m_aliasMutex);
+  m_aliasMutex.Wait();
 
   for (PStringList::const_iterator it = patterns.begin(); it != patterns.end(); ++it)
     addedOne = AddAliasNamePattern(*it, gk, false) || addedOne;
+
+  m_aliasMutex.Signal();
 
   return addedOne && (!updateGk || InternalRestartGatekeeper());
 }
@@ -1659,10 +1679,12 @@ bool H323EndPoint::RemoveAliasNamePatterns(const PStringList & patterns, bool up
 {
   bool removedOne = false;
 
-  PWaitAndSignal mutex(m_aliasMutex);
+  m_aliasMutex.Wait();
 
   for (PStringList::const_iterator it = patterns.begin(); it != patterns.end(); ++it)
     removedOne = RemoveAliasNamePattern(*it, false) || removedOne;
+
+  m_aliasMutex.Signal();
 
   return removedOne && (!updateGk || InternalRestartGatekeeper());
 }
@@ -1683,16 +1705,18 @@ bool H323EndPoint::AddAliasNamePattern(const PString & pattern, const PString & 
     }
   }
 
-  PWaitAndSignal mutex(m_aliasMutex);
+  {
+    PWaitAndSignal mutex(m_aliasMutex);
 
-  if (m_localAliasPatterns.find(pattern) != m_localAliasPatterns.end()) {
-    PTRACE(3, "H323\tAlias pattern already present: \"" << pattern << '"');
-    return false;
+    if (m_localAliasPatterns.find(pattern) != m_localAliasPatterns.end()) {
+      PTRACE(3, "H323\tAlias pattern already present: \"" << pattern << '"');
+      return false;
+    }
+
+    OpalTransportAddress gkAddr(gk, H225_RAS::DefaultRasUdpPort, OpalTransportAddress::UdpPrefix());
+    PTRACE(3, "H323\tAdded alias pattern: \"" << pattern << "\" to gk at " << gkAddr << " update=" << boolalpha << updateGk);
+    m_localAliasPatterns[pattern] = gkAddr;
   }
-
-  OpalTransportAddress gkAddr(gk, H225_RAS::DefaultRasUdpPort, OpalTransportAddress::UdpPrefix());
-  PTRACE(3, "H323\tAdded alias pattern: \"" << pattern << "\" to gk at " << gkAddr << " update=" << boolalpha << updateGk);
-  m_localAliasPatterns[pattern] = gkAddr;
 
   return !updateGk || InternalRestartGatekeeper();
 }
@@ -1702,15 +1726,17 @@ bool H323EndPoint::RemoveAliasNamePattern(const PString & pattern, bool updateGk
 {
   PAssert(!pattern, "Must have non-empty string in alias pattern !");
 
-  PWaitAndSignal mutex(m_aliasMutex);
+  {
+    PWaitAndSignal mutex(m_aliasMutex);
 
-  AliasToGkMap::iterator it = m_localAliasPatterns.find(pattern);
-  if (it == m_localAliasPatterns.end()) {
-    PTRACE(3, "H323\tAlias pattern already removed: \"" << pattern << '"');
-    return false;
+    AliasToGkMap::iterator it = m_localAliasPatterns.find(pattern);
+    if (it == m_localAliasPatterns.end()) {
+      PTRACE(3, "H323\tAlias pattern already removed: \"" << pattern << '"');
+      return false;
+    }
+
+    m_localAliasPatterns.erase(it);
   }
-
-  m_localAliasPatterns.erase(it);
 
   PTRACE(3, "H323\tRemoved alias pattern: \"" << pattern << "\" update=" << boolalpha << updateGk);
   return !updateGk || InternalRestartGatekeeper();
