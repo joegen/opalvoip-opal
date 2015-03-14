@@ -96,6 +96,7 @@ MyH323EndPoint::MyH323EndPoint(MyManager & mgr)
   , P_DISABLE_MSVC_WARNINGS(4355, m_gkServer(*this))
 {
   terminalType = e_MCUWithAVMP;
+  m_firstConfig = true;
   m_configuredAliases = GetAliasNames();
   m_configuredAliasPatterns = GetAliasNamePatterns();
 }
@@ -113,7 +114,10 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
       if (newAliases.GetValuesIndex(m_configuredAliases[i]) == P_MAX_INDEX)
         RemoveAliasName(m_configuredAliases[i]);
     }
-    AddAliasNames(newAliases);
+    if (m_firstConfig)
+      SetAliasNames(newAliases);
+    else
+      AddAliasNames(newAliases);
     m_configuredAliases = newAliases;
   }
 
@@ -123,7 +127,10 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
       if (newPatterns.GetValuesIndex(m_configuredAliasPatterns[i]) == P_MAX_INDEX)
         RemoveAliasNamePattern(m_configuredAliasPatterns[i]);
     }
-    AddAliasNamePatterns(newPatterns);
+    if (m_firstConfig)
+      SetAliasNamePatterns(newPatterns);
+    else
+      AddAliasNamePatterns(newPatterns);
     m_configuredAliasPatterns = newPatterns;
   }
 
@@ -184,6 +191,8 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
     PSYSTEMLOG(Info, "Not using remote gatekeeper.");
     RemoveGatekeeper();
   }
+
+  m_firstConfig = false;
 
   return m_gkServer.Configure(cfg, rsrc);
 }

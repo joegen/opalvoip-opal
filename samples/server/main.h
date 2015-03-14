@@ -270,6 +270,7 @@ class MyH323EndPoint : public H323ConsoleEndPoint
   protected:
     MyManager        & m_manager;
     MyGatekeeperServer m_gkServer;
+    bool               m_firstConfig;
     PStringArray       m_configuredAliases;
     PStringArray       m_configuredAliasPatterns;
 };
