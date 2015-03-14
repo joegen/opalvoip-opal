@@ -1540,7 +1540,7 @@ bool H323EndPoint::RemoveAliasNames(const PStringList & names, bool updateGk)
   PWaitAndSignal mutex(m_gatekeeperMutex);
 
   for (PStringList::const_iterator it = names.begin(); it != names.end(); ++it)
-    removedOne = RemoveAliasName(*it) || removedOne;
+    removedOne = RemoveAliasName(*it, false) || removedOne;
 
   return removedOne && (!updateGk || InternalRestartGatekeeper());
 }
@@ -1662,7 +1662,7 @@ bool H323EndPoint::RemoveAliasNamePatterns(const PStringList & patterns, bool up
   PWaitAndSignal mutex(m_gatekeeperMutex);
 
   for (PStringList::const_iterator it = patterns.begin(); it != patterns.end(); ++it)
-    removedOne = RemoveAliasNamePattern(*it) || removedOne;
+    removedOne = RemoveAliasNamePattern(*it, false) || removedOne;
 
   return removedOne && (!updateGk || InternalRestartGatekeeper());
 }
