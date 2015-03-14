@@ -96,6 +96,8 @@ MyH323EndPoint::MyH323EndPoint(MyManager & mgr)
   , P_DISABLE_MSVC_WARNINGS(4355, m_gkServer(*this))
 {
   terminalType = e_MCUWithAVMP;
+  m_configuredAliases = GetAliasNames();
+  m_configuredAliasPatterns = GetAliasNamePatterns();
 }
 
 
@@ -106,25 +108,23 @@ bool MyH323EndPoint::Configure(PConfig & cfg, PConfigPage * rsrc)
 
   // Add H.323 parameters
   {
-    if (m_configuredAliases.IsEmpty())
-      m_configuredAliases = GetAliasNames();
     PStringArray newAliases = rsrc->AddStringArrayField(H323AliasesKey, false, 0, m_configuredAliases, "H.323 Alias names for local user", 1, 30);
     for (PINDEX i = 0; i < m_configuredAliases.GetSize(); ++i) {
       if (newAliases.GetValuesIndex(m_configuredAliases[i]) == P_MAX_INDEX)
         RemoveAliasName(m_configuredAliases[i]);
     }
     AddAliasNames(newAliases);
+    m_configuredAliases = newAliases;
   }
 
   {
-    if (m_configuredAliasPatterns.IsEmpty())
-      m_configuredAliasPatterns = GetAliasNamePatterns();
     PStringArray newPatterns = rsrc->AddStringArrayField(H323AliasPatternsKey, false, 0, m_configuredAliasPatterns, "H.323 Alias patterns for local user", 1, 30);
     for (PINDEX i = 0; i < m_configuredAliasPatterns.GetSize(); ++i) {
       if (newPatterns.GetValuesIndex(m_configuredAliasPatterns[i]) == P_MAX_INDEX)
         RemoveAliasNamePattern(m_configuredAliasPatterns[i]);
     }
     AddAliasNamePatterns(newPatterns);
+    m_configuredAliasPatterns = newPatterns;
   }
 
   SetTerminalType((TerminalTypes)rsrc->AddIntegerField(H323TerminalTypeKey, 0, 255, GetTerminalType(), "",
