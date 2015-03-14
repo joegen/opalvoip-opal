@@ -121,6 +121,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
 #if OPAL_H450
   m_secondaryConnectionsActive.DisallowDeleteObjects();
 #endif
+  m_gatekeeperByAlias.DisallowDeleteObjects();
 
   manager.AttachEndPoint(this, "h323s");
 
@@ -372,8 +373,8 @@ bool H323EndPoint::SetGatekeeper(const PString & remoteAddress, const PString & 
   if (!InternalStartGatekeeper(h323addr, localAddress))
     return false;
 
-  for (GatekeeperMap::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it) {
-    if (!it->second.DiscoverByAddress(h323addr))
+  for (GatekeeperList::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it) {
+    if (!it->DiscoverByAddress(h323addr))
       return false;
   }
 
@@ -391,8 +392,8 @@ bool H323EndPoint::SetGatekeeperZone(const PString & remoteAddress,
   if (!InternalStartGatekeeper(h323addr, localAddress))
     return false;
 
-  for (GatekeeperMap::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it) {
-    if (!it->second.DiscoverByNameAndAddress(identifier, h323addr))
+  for (GatekeeperList::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it) {
+    if (!it->DiscoverByNameAndAddress(identifier, h323addr))
       return false;
   }
 
@@ -407,8 +408,8 @@ PBoolean H323EndPoint::LocateGatekeeper(const PString & identifier, const PStrin
   if (!InternalStartGatekeeper(H323TransportAddress(), localAddress))
     return false;
 
-  for (GatekeeperMap::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it) {
-    if (!it->second.DiscoverByName(identifier))
+  for (GatekeeperList::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it) {
+    if (!it->DiscoverByName(identifier))
       return false;
   }
 
@@ -423,8 +424,8 @@ PBoolean H323EndPoint::DiscoverGatekeeper(const PString & localAddress)
   if (!InternalStartGatekeeper(H323TransportAddress(), localAddress))
     return false;
 
-  for (GatekeeperMap::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it) {
-    if (!it->second.DiscoverAny())
+  for (GatekeeperList::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it) {
+    if (!it->DiscoverAny())
       return false;
   }
 
@@ -510,11 +511,11 @@ bool H323EndPoint::InternalRestartGatekeeper(bool adjustingRegistrations)
     }
   }
 
-  GatekeeperMap::iterator gk;
+  GatekeeperList::iterator gk;
 
   // Now remove aliases already registered but no longer needed
   for (gk = m_gatekeepers.begin(); gk != m_gatekeepers.end(); ++gk) {
-    PStringList aliases = gk->second.GetAliases();
+    PStringList aliases = gk->GetAliases();
     bool deletedOne = false;
     for (PStringList::iterator alias = aliases.begin(); alias != aliases.end(); ) {
       AliasToGkMap::iterator existing = allAliases.find(*alias);
@@ -528,20 +529,20 @@ bool H323EndPoint::InternalRestartGatekeeper(bool adjustingRegistrations)
       }
     }
     if (deletedOne) {
-      gk->second.SetAliases(aliases);
+      gk->SetAliases(aliases);
       if (!aliases.IsEmpty())
-        gk->second.ReRegisterNow();
+        gk->ReRegisterNow();
     }
   }
 
   // Now add aliases not registered, filling partially filled registrations
   for (gk = m_gatekeepers.begin(); !allAliases.empty() && gk != m_gatekeepers.end(); ++gk) {
-    PStringList aliases = gk->second.GetAliases();
+    PStringList aliases = gk->GetAliases();
     bool addedOne = false;
     while (aliases.GetSize() < m_gatekeeperAliasLimit) {
       AliasToGkMap::iterator alias;
       for (alias = allAliases.begin(); alias != allAliases.end(); ++alias) {
-        if (alias->second.IsEmpty() || alias->second.IsEquivalent(gk->first))
+        if (alias->second.IsEmpty() || alias->second.IsEquivalent(gk->GetTransport().GetRemoteAddress()))
           break;
       }
       if (alias == allAliases.end())
@@ -551,16 +552,16 @@ bool H323EndPoint::InternalRestartGatekeeper(bool adjustingRegistrations)
       addedOne = true;
     }
     if (addedOne) {
-      gk->second.SetAliases(aliases);
-      gk->second.ReRegisterNow();
+      gk->SetAliases(aliases);
+      gk->ReRegisterNow();
     }
   }
 
   // If any sub-gatekeepers now have no aliases, remove them
   gk = m_gatekeepers.begin();
   while (gk != m_gatekeepers.end()) {
-    if (gk->second.GetAliases().IsEmpty()) {
-      gk->second.UnregistrationRequest(-1);
+    if (gk->GetAliases().IsEmpty()) {
+      gk->UnregistrationRequest(-1);
       m_gatekeepers.erase(gk++);
     }
     else
@@ -571,7 +572,7 @@ bool H323EndPoint::InternalRestartGatekeeper(bool adjustingRegistrations)
   OpalTransportAddress remoteAddress;
   gk = m_gatekeepers.begin();
   if (gk != m_gatekeepers.end())
-    remoteAddress = gk->second.GetTransport().GetRemoteAddress();
+    remoteAddress = gk->GetTransport().GetRemoteAddress();
 
   // Rotate allaliases so grouped by gk address
   map<OpalTransportAddress, PStringList> rotatedAliases;
@@ -598,6 +599,13 @@ bool H323EndPoint::InternalRestartGatekeeper(bool adjustingRegistrations)
   if (m_gatekeepers.IsEmpty())
     return false;
 
+  m_gatekeeperByAlias.RemoveAll();
+  for (gk = m_gatekeepers.begin(); gk != m_gatekeepers.end(); ++gk) {
+      const PStringList & aliases = gk->GetAliases();
+      for (PStringList::const_iterator alias = aliases.begin(); alias != aliases.end(); ++alias)
+          m_gatekeeperByAlias.SetAt(*alias, &*gk);
+  }
+
   if (m_gatekeeperMonitor == NULL)
     m_gatekeeperMonitor = new PThreadObj<H323EndPoint>(*this, &H323EndPoint::GatekeeperMonitor, false, "GkMonitor");
 
@@ -623,7 +631,7 @@ bool H323EndPoint::InternalCreateGatekeeper(const H323TransportAddress & remoteA
   PTRACE(3, "H323\tAdded gatekeeper (at=" << remoteAddress << ", if=" << transport->GetLocalAddress() << ") for aliases: " << setfill(',') << aliases);
   gatekeeper->SetAliases(aliases);
   gatekeeper->SetPassword(GetGatekeeperPassword(), GetGatekeeperUsername());
-  m_gatekeepers.SetAt(remoteAddress, gatekeeper);
+  m_gatekeepers.Append(gatekeeper);
 
   if (remoteAddress.IsEmpty())
     return true;
@@ -649,8 +657,8 @@ void H323EndPoint::GatekeeperMonitor()
 
     m_gatekeeperMutex.Wait();
 
-    for (GatekeeperMap::iterator gk = m_gatekeepers.begin(); gk != m_gatekeepers.end(); ++gk)
-      gk->second.Monitor();
+    for (GatekeeperList::iterator gk = m_gatekeepers.begin(); gk != m_gatekeepers.end(); ++gk)
+      gk->Monitor();
 
     m_gatekeeperMutex.Signal();
   }
@@ -664,29 +672,27 @@ H323Gatekeeper * H323EndPoint::GetGatekeeper(const PString & alias) const
   if (m_gatekeepers.IsEmpty())
     return NULL;
 
-  H323Gatekeeper * gk = alias.IsEmpty() ? NULL : m_gatekeepers.GetAt(alias);
-  return gk != NULL ? gk : &m_gatekeepers.GetDataAt(0);
+  H323Gatekeeper * gk = alias.IsEmpty() ? NULL : m_gatekeeperByAlias.GetAt(alias);
+  return gk != NULL ? gk : &m_gatekeepers.front();
 }
 
 
-const PList<H323Gatekeeper> H323EndPoint::GetGatekeepers() const
-{
-  PList<H323Gatekeeper> gkList;
-  gkList.DisallowDeleteObjects();
-  for (GatekeeperMap::const_iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it)
-    gkList.Append(const_cast<H323Gatekeeper*>(&it->second));
-  return gkList;
-}
-
-
-PBoolean H323EndPoint::IsRegisteredWithGatekeeper() const
+PBoolean H323EndPoint::IsRegisteredWithGatekeeper(bool all) const
 {
   PWaitAndSignal mutex(m_gatekeeperMutex);
 
-  if (m_gatekeepers.IsEmpty())
-    return false;
+  for (GatekeeperList::const_iterator gk = m_gatekeepers.begin(); gk != m_gatekeepers.end(); ++gk) {
+    if (gk->IsRegistered()) {
+      if (!all)
+        return true;
+    }
+    else {
+      if (all)
+        return false;
+    }
+  }
 
-  return m_gatekeepers.begin()->second.IsRegistered();
+  return all;
 }
 
 
@@ -698,15 +704,16 @@ PBoolean H323EndPoint::RemoveGatekeeper(int reason)
 
   m_gatekeeperMutex.Wait();
 
-  for (GatekeeperMap::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it) {
-    if (it->second.IsRegistered()) { // If we are registered send a URQ
+  for (GatekeeperList::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it) {
+    if (it->IsRegistered()) { // If we are registered send a URQ
       ClearAllCalls();
-      if (!it->second.UnregistrationRequest(reason))
+      if (!it->UnregistrationRequest(reason))
         ok = false;
     }
   }
 
   m_gatekeepers.RemoveAll();
+  m_gatekeeperByAlias.RemoveAll();
 
   m_gatekeeperMutex.Signal();
 
@@ -721,8 +728,8 @@ void H323EndPoint::SetGatekeeperPassword(const PString & password, const PString
   m_gatekeeperUsername = username;
   m_gatekeeperPassword = password;
 
-  for (GatekeeperMap::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it)
-    it->second.SetPassword(GetGatekeeperPassword(), GetGatekeeperUsername());
+  for (GatekeeperList::iterator it = m_gatekeepers.begin(); it != m_gatekeepers.end(); ++it)
+    it->SetPassword(GetGatekeeperPassword(), GetGatekeeperUsername());
 }
 
 

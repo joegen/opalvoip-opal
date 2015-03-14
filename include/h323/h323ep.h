@@ -324,13 +324,15 @@ class H323EndPoint : public OpalRTPEndPoint
       const PString & alias = PString::Empty()
     ) const;
 
+    typedef PList<H323Gatekeeper> GatekeeperList;
+
     /**Get all the gatekeepers we are registered with.
     */
-    const PList<H323Gatekeeper> GetGatekeepers() const;
+    const GatekeeperList & GetGatekeepers() const { return m_gatekeepers; }
 
-    /**Return if endpoint is registered with gatekeeper.
+    /**Return if endpoint is registered with any/all gatekeepers.
       */
-    PBoolean IsRegisteredWithGatekeeper() const;
+    PBoolean IsRegisteredWithGatekeeper(bool all = false) const;
 
     /**Unregister and delete the gatekeeper we are registered with.
        The return value indicates false if there was an error during the
@@ -338,7 +340,7 @@ class H323EndPoint : public OpalRTPEndPoint
        instance deleted regardless of this error.
      */
     PBoolean RemoveGatekeeper(
-      int reason = -1    ///<  Reason for gatekeeper removal
+      int reason = -1   ///<  Reason for gatekeeper removal
     );
 
     /**Set the H.235 password for the gatekeeper.
@@ -1427,8 +1429,10 @@ class H323EndPoint : public OpalRTPEndPoint
 
     H323Capabilities m_capabilities;
 
-    typedef PDictionary<OpalTransportAddress, H323Gatekeeper> GatekeeperMap;
-    GatekeeperMap             m_gatekeepers;
+    typedef PDictionary<PString, H323Gatekeeper> GatekeeperByAlias;
+
+    GatekeeperList            m_gatekeepers;
+    GatekeeperByAlias         m_gatekeeperByAlias;
     OpalTransportAddressArray m_gatekeeperInterfaces;
     PString                   m_gatekeeperUsername;
     PString                   m_gatekeeperPassword;
