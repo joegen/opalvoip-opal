@@ -1709,7 +1709,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendNACK(const RTP_ControlFram
 
     if (!(m_feedback&OpalMediaFormat::e_NACK)) {
       PTRACE(3, *this << "remote not capable of NACK");
-      return e_ProcessPacket;
+      return e_IgnorePacket;
     }
 
     SyncSource * sender;
@@ -1718,7 +1718,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendNACK(const RTP_ControlFram
 
     SyncSource * receiver;
     if (!GetSyncSource(syncSourceIn, e_Receiver, receiver))
-      return e_ProcessPacket;
+      return e_IgnorePacket;
 
     // Packet always starts with SR or RR, use empty RR as place holder
     request.StartNewPacket(RTP_ControlFrame::e_ReceiverReport);
@@ -2763,12 +2763,12 @@ bool OpalRTPSession::HandleUnreachable(PTRACE_PARAM(Channel channel))
 
 void OpalRTPSession::ThreadMain()
 {
-  PTRACE(4, *this << "thread started");
+  PTRACE(3, *this << "thread started");
 
   while (InternalRead())
     ;
 
-  PTRACE(4, *this << "thread ended");
+  PTRACE(3, *this << "thread ended");
 }
 
 
