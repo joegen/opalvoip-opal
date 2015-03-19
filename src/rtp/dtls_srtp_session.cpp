@@ -267,14 +267,14 @@ void OpalDTLSSRTPSession::ThreadMain()
     return;
   UnlockReadOnly();
 
-  PTRACE(4, *this << "thread started with DTLS");
+  PTRACE(3, *this << "thread started with DTLS");
 
   if (ExecuteHandshake(e_Data) && ExecuteHandshake(e_Control))
     OpalSRTPSession::ThreadMain();
   else {
     m_connection.OnMediaFailed(m_sessionId, true);
     m_connection.OnMediaFailed(m_sessionId, false);
-    PTRACE(4, *this << "thread ended with DTLS");
+    PTRACE(3, *this << "thread ended with DTLS");
   }
 }
 
