@@ -167,7 +167,7 @@ class OpalRTPSession : public OpalMediaSession
 
     /**Send a report to remote.
       */
-    SendReceiveStatus SendReport(bool force);
+    virtual SendReceiveStatus SendReport(bool force);
 
     /**Write a control frame from the RTP channel.
       */
