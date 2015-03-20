@@ -97,6 +97,8 @@ class OpalRTPSession : public OpalMediaSession
 #if OPAL_ICE
     virtual void SetICE(const PString & user, const PString & pass, const PNatCandidateList & candidates);
     virtual bool GetICE(PString & user, PString & pass, PNatCandidateList & candidates);
+    const PTimeInterval & GetICESetUpTime() const { return m_maxICESetUpTime; }
+    void SetICESetUpTime(const PTimeInterval & t) { m_maxICESetUpTime = t; }
 #endif
 
     virtual void AttachTransport(Transport & transport);
@@ -879,6 +881,7 @@ class OpalRTPSession : public OpalMediaSession
     class ICEServer;
     ICEServer     * m_iceServer;
     PSTUNClient   * m_stunClient;
+    PTimeInterval   m_maxICESetUpTime;
 #endif // OPAL_ICE
 
     PTRACE_THROTTLE(m_throttleTxRR,3,60000,5);
