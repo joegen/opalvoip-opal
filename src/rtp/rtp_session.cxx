@@ -160,6 +160,7 @@ OpalRTPSession::OpalRTPSession(const Init & init)
   , m_candidateType(e_UnknownCandidates)
   , m_iceServer(NULL)
   , m_stunClient(NULL)
+  , m_maxICESetUpTime(0, 5)
 #endif
 
 {
@@ -2785,7 +2786,7 @@ bool OpalRTPSession::InternalRead()
   PTimeInterval readTimeout = m_maxNoReceiveTime;
 #if OPAL_ICE
   if (m_iceServer == NULL ? !m_candidates[e_Data].empty() : (!m_remoteAddress.IsValid() || m_remotePort[e_Data] == 0))
-    readTimeout.SetInterval(0, 5);
+    readTimeout = m_maxICESetUpTime;
 #endif
 
   if (m_socket[e_Control] == NULL) {
