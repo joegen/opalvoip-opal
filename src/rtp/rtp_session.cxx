@@ -55,6 +55,8 @@
 
 #include <h323/h323con.h>
 
+#define EXPERIMENTAL_ICE 0
+
 #define RTP_VIDEO_RX_BUFFER_SIZE 0x100000 // 1Mb
 #define RTP_AUDIO_RX_BUFFER_SIZE 0x4000   // 16kb
 #define RTP_DATA_TX_BUFFER_SIZE  0x2000   // 8kb
@@ -2549,11 +2551,18 @@ bool OpalRTPSession::GetICE(PString & user, PString & pass, PNatCandidateList & 
   if (!m_localAddress.IsValid())
     return false;
 
+#if EXPERIMENTAL_ICE
   if (m_candidateType == e_UnknownCandidates)
     m_candidateType = e_LocalCandidates;
+#else
+  m_candidateType = e_RemoteCandidates;
+#endif
 
   for (int channel = e_Data; channel >= e_Control; --channel) {
-    if (m_localPort[channel] != 0) {
+    if (m_candidateType == e_LocalCandidates)
+      m_candidates[channel].clear();
+
+    if (m_localPort[channel] != 0 && m_socket[channel] != NULL) {
       // Only do ICE-Lite right now so just offer "host" type using local address.
       static const PNatMethod::Component ComponentId[2] = { PNatMethod::eComponent_RTCP, PNatMethod::eComponent_RTP };
       PNatCandidate candidate(PNatCandidate::HostType, ComponentId[channel], "xyzzy");
@@ -2648,6 +2657,7 @@ void OpalRTPSession::ICEServer::OnBindingResponse(const PSTUNMessage &, PSTUNMes
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendICE(Channel channel)
 {
+#if EXPERIMENTAL_ICE
   if (m_candidateType == e_LocalCandidates && m_socket[channel] != NULL) {
     for (CandidateStateList::iterator it = m_candidates[channel].begin(); it != m_candidates[channel].end(); ++it) {
       if (it->m_baseTransportAddress.IsValid()) {
@@ -2660,7 +2670,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendICE(Channel channel)
       }
     }
   }
-
+#endif
   return m_remotePort[channel] != 0 ? e_ProcessPacket : e_IgnorePacket;
 }
 
