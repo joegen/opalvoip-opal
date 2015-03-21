@@ -1385,16 +1385,7 @@ bool OpalMediaFormatInternal::IsValid() const
 
 bool OpalMediaFormatInternal::IsTransportable() const
 {
-  if (forceIsTransportable)
-    return true;
-
-  if (rtpPayloadType >= RTP_DataFrame::MaxPayloadType)
-    return false;
-
-  if (rtpPayloadType < RTP_DataFrame::LastKnownPayloadType)
-    return true;
-
-  return !rtpEncodingName.IsEmpty();
+  return forceIsTransportable || !rtpEncodingName.IsEmpty() || rtpPayloadType < RTP_DataFrame::LastKnownPayloadType;
 }
 
 
@@ -2127,7 +2118,11 @@ void OpalMediaFormatList::RemoveNonTransportable()
 }
 
 
-OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockRate, const char * name, const char * protocol, const_iterator format) const
+OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt,
+                                                                    const unsigned clockRate,
+                                                                    const char * name,
+                                                                    const char * protocol,
+                                                                    const_iterator format) const
 {
   if (format == const_iterator())
     format = begin();
