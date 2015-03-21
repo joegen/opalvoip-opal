@@ -2551,12 +2551,8 @@ bool OpalRTPSession::GetICE(PString & user, PString & pass, PNatCandidateList & 
   if (!m_localAddress.IsValid())
     return false;
 
-#if EXPERIMENTAL_ICE
   if (m_candidateType == e_UnknownCandidates)
     m_candidateType = e_LocalCandidates;
-#else
-  m_candidateType = e_RemoteCandidates;
-#endif
 
   for (int channel = e_Data; channel >= e_Control; --channel) {
     if (m_candidateType == e_LocalCandidates)
