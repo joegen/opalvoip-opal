@@ -1854,9 +1854,6 @@ SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & transport)
   if (m_body.IsEmpty())
     SetState(Unsubscribing);
 
-  if (GetState() == Unsubscribing)
-    return NULL;
-
   m_parameters.m_expire = m_originalExpireTime;
   return new SIPPublish(*this,
                         transport,
