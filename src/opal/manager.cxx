@@ -400,8 +400,6 @@ void OpalManager::ShutDownEndpoints()
   for (PSafePtr<OpalPresentity> presentity(m_presentities, PSafeReference); presentity != NULL; ++presentity)
     presentity->Close();
   m_presentities.RemoveAll();
-  while (!m_presentities.DeleteObjectsToBeRemoved())
-    PThread::Sleep(100);
 #endif // OPAL_HAS_PRESENCE
 
   PTRACE(4, "Shutting down endpoints.");
