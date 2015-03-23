@@ -1881,7 +1881,7 @@ PBoolean SIPEndPoint::Ping(const PURL & to)
 bool SIPEndPoint::Publish(const SIPSubscribe::Params & newParams, const PString & body, PString & aor)
 {
   SIPSubscribe::Params params(newParams);
-  if (!params.Normalise(GetDefaultLocalPartyName(), GetNotifierTimeToLive()))
+  if (!params.Normalise(GetDefaultLocalPartyName(), newParams.m_expire))
     return false;
 
   PTRACE(4, "Start PUBLISH\n" << params);

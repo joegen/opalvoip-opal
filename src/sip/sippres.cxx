@@ -256,9 +256,6 @@ bool SIP_Presentity::Close()
     m_endpoint->Unsubscribe(SIPSubscribe::Presence, subs->second, true);
   }
 
-  if (!m_publishedTupleId.IsEmpty() && m_subProtocol != e_PeerToPeer)
-    m_endpoint->Publish(m_aor.AsString(), PString::Empty(), 0);
-
   PTRACE(4, "SIPPres\t'" << m_aor << "' awaiting unsubscriptions to complete.");
   while (m_endpoint->IsSubscribed(SIPSubscribe::Presence | SIPSubscribe::Watcher, watcherSubscriptionAOR, true))
     PThread::Sleep(100);
@@ -576,7 +573,7 @@ void SIP_Presentity::Internal_SendLocalPresence(const OpalSetLocalPresenceComman
   sipPresence.m_service = m_publishedTupleId;
 
   if (m_subProtocol != e_PeerToPeer)
-    m_endpoint->PublishPresence(sipPresence, GetExpiryTime());
+    m_endpoint->PublishPresence(sipPresence, m_open ? GetExpiryTime() : 0);
   else
     m_endpoint->Notify(m_aor, SIPSubscribe::Presence, sipPresence.AsXML());
 }
