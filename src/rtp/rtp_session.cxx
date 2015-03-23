@@ -356,6 +356,7 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
   , m_markerCount(0)
   , m_lastTimestamp(0)
   , m_lastAbsoluteTime(0)
+  , m_synthesizeAbsTime(true)
   , m_averageTimeAccum(0)
   , m_maximumTimeAccum(0)
   , m_minimumTimeAccum(0)
@@ -442,6 +443,8 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
   m_lastPacketTick = tick;
   m_lastTimestamp = frame.GetTimestamp();
   m_lastAbsoluteTime = frame.GetAbsoluteTime();
+  if (m_synthesizeAbsTime && !m_lastAbsoluteTime.IsValid())
+    m_lastAbsoluteTime.SetCurrentTime();
 
   m_averageTimeAccum += diff;
   if (diff > m_maximumTimeAccum)
@@ -1182,8 +1185,8 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
   RTP_ControlFrame::ReceiverReport * rr = NULL;
 
-  // No packets sent yet, so only set RR
-  if (sender.m_packets == 0) {
+  // No valid packets sent yet, so only send RR
+  if (!sender.m_lastAbsoluteTime.IsValid()) {
 
     // Send RR as we are not sending data yet
     report.StartNewPacket(RTP_ControlFrame::e_ReceiverReport);
@@ -1222,7 +1225,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
     // add the SR after the SSRC
     RTP_ControlFrame::SenderReport * sr = (RTP_ControlFrame::SenderReport *)(payload+sizeof(PUInt32b));
-    sr->ntp_ts = (sender.m_lastAbsoluteTime.IsValid() ? sender.m_lastAbsoluteTime : PTime()).GetNTP();
+    sr->ntp_ts = sender.m_lastAbsoluteTime.GetNTP();
     sr->rtp_ts = sender.m_lastTimestamp;
     sr->psent  = sender.m_packets;
     sr->osent  = (uint32_t)sender.m_octets;
@@ -1230,8 +1233,8 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
     PTRACE(m_throttleTxRR, *this << "sending SenderReport:"
               " SSRC=" << RTP_TRACE_SRC(sender.m_sourceIdentifier)
            << " ntp=0x" << hex << sr->ntp_ts << dec
-           << " (" << (sender.m_lastAbsoluteTime.IsValid() ? sender.m_lastAbsoluteTime.AsString("hh:mm:ss.uuu") : PString("now")) << ")"
-              " rtp=" << sr->rtp_ts
+           << sender.m_lastAbsoluteTime.AsString("(hh:mm:ss.uuu)")
+           << " rtp=" << sr->rtp_ts
            << " psent=" << sr->psent
            << " osent=" << sr->osent
            << m_throttleTxRR);
