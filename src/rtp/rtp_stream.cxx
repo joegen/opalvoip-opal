@@ -131,7 +131,7 @@ void OpalRTPMediaStream::OnStartMediaPatch()
 {
   // Make sure a RTCP packet goes out as early as possible, helps with issues
   // to do with ICE, DTLS, NAT etc.
-  if (IsSink()) {
+  if (IsSink() && !m_rtpSession.IsSinglePortRx()) {
     while (IsOpen() && m_rtpSession.SendReport(true) == OpalRTPSession::e_IgnorePacket) {
       PTRACE(m_throttleSendReport, m_rtpSession << "initial send report write delayed.");
       PThread::Sleep(20);
