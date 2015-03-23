@@ -434,6 +434,9 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
   m_lastPacketTick = tick;
 
   m_lastTimestamp = frame.GetTimestamp();
+
+  PTRACE_IF(3, !m_lastAbsoluteTime.IsValid() && frame.GetAbsoluteTime().IsValid(), &m_session,
+            m_session << "sent first RTP with absolute time: " << frame.GetAbsoluteTime().AsString("hh:mm:dd.uuu"));
   m_lastAbsoluteTime = frame.GetAbsoluteTime();
   if (m_synthesizeAbsTime && !m_lastAbsoluteTime.IsValid())
     m_lastAbsoluteTime.SetCurrentTime();
