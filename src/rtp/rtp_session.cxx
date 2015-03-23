@@ -1266,7 +1266,8 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
   report.EndPacket();
 
   // Add the SDES part to compound RTCP packet
-  PTRACE((unsigned)m_throttleTxRR, *this << "sending SDES: " << sender.m_canonicalName);
+  PTRACE((unsigned)m_throttleTxRR, *this << "sending SDES for SSRC="
+         << RTP_TRACE_SRC(sender.m_sourceIdentifier) << ": \"" << sender.m_canonicalName << '"');
   report.StartNewPacket(RTP_ControlFrame::e_SourceDescription);
 
   report.SetCount(0); // will be incremented automatically
