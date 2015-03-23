@@ -427,6 +427,17 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
   if (frame.GetMarker())
     ++m_markerCount;
 
+  RTP_Timestamp lastTimestamp = m_lastTimestamp;
+  PTimeInterval lastPacketTick = m_lastPacketTick;
+
+  PTimeInterval tick = PTimer::Tick();
+  m_lastPacketTick = tick;
+
+  m_lastTimestamp = frame.GetTimestamp();
+  m_lastAbsoluteTime = frame.GetAbsoluteTime();
+  if (m_synthesizeAbsTime && !m_lastAbsoluteTime.IsValid())
+    m_lastAbsoluteTime.SetCurrentTime();
+
   /* For audio we do not do statistics on start of talk burst as that
       could be a substantial time and is not useful, so we only calculate
       when the marker bit os off.
@@ -435,16 +446,10 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
       normally indicated by the marker bit being on, but this is unreliable,
       many endpoints not sending it correctly, so use a change in timestamp
       as most reliable method. */
-  if (m_session.IsAudio() ? frame.GetMarker() : (m_lastTimestamp == frame.GetTimestamp()))
+  if (m_session.IsAudio() ? frame.GetMarker() : (lastTimestamp == frame.GetTimestamp()))
     return;
 
-  PTimeInterval tick = PTimer::Tick();
-  unsigned diff = (tick - m_lastPacketTick).GetInterval();
-  m_lastPacketTick = tick;
-  m_lastTimestamp = frame.GetTimestamp();
-  m_lastAbsoluteTime = frame.GetAbsoluteTime();
-  if (m_synthesizeAbsTime && !m_lastAbsoluteTime.IsValid())
-    m_lastAbsoluteTime.SetCurrentTime();
+  unsigned diff = (tick - lastPacketTick).GetInterval();
 
   m_averageTimeAccum += diff;
   if (diff > m_maximumTimeAccum)
