@@ -493,7 +493,7 @@ void H46019UDPSocket::ActivateKeepAliveRTCP(unsigned ttl)
   m_keepAliveTTL.SetInterval(0, ttl);
 
   PTRACE(4, "Started RTCP Keep Alive reports every " << m_keepAliveTTL << " secs.");
-  m_session.SendReport(true);
+  m_session.SendReport(0, true);
 }
 
 
@@ -501,7 +501,7 @@ void H46019UDPSocket::KeepAliveTimeout(PTimer &, P_INT_PTR)
 {
   PTRACE(4, "Keep Alive timer fired for " << (m_component == PNatMethod::eComponent_RTP ? "RTP" : "RTCP"));
   if (m_component == PNatMethod::eComponent_RTCP)
-    m_session.SendReport(true);
+    m_session.SendReport(0, true);
   else
     SendKeepAliveRTP(m_keepAliveAddress);
 }
