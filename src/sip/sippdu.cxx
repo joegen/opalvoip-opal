@@ -1036,8 +1036,15 @@ OpalTransportAddress SIPMIMEInfo::GetViaReceivedAddress() const
   // Get first via
   PCaselessString via = GetFirstVia();
 
-  if (via.Find("/UDP") == P_MAX_INDEX)
-    return OpalTransportAddress();
+  PINDEX space = via.Find(' ');
+  if (via.IsEmpty() || space == P_MAX_INDEX)
+    return OpalTransportAddress ();
+
+  // get the protocol type from Via header
+  PINDEX pos;
+  PString proto;
+  if ((pos = via.FindLast('/', space)) != P_MAX_INDEX)
+    proto = via(pos+1, space-1).ToLower();
 
   PINDEX start, val, end;
   if (!LocateFieldParameter(via, "rport", start, val, end) || val >= end)
@@ -1046,9 +1053,9 @@ OpalTransportAddress SIPMIMEInfo::GetViaReceivedAddress() const
   WORD port = (WORD)via(val, end).AsUnsigned();
   if (port == 0)
     return OpalTransportAddress();
-  
+
   if (LocateFieldParameter(via, "received", start, val, end) && val < end)
-    return OpalTransportAddress(via(val, end), port, OpalTransportAddress::UdpPrefix());
+    return OpalTransportAddress(via(val, end), port, proto);
 
   return OpalTransportAddress(via(via.Find(' ')+1, via.FindOneOf(";:")-1), port, OpalTransportAddress::UdpPrefix());
 }
