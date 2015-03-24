@@ -1280,41 +1280,40 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
 void OpalRTPSession::TimedSendReport(PTimer&, P_INT_PTR)
 {
-  SendReport(false);
+  SendReport(0, false);
 }
 
 
-OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(bool force)
+OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ssrc, bool force)
 {
   if (!LockReadOnly())
     return e_AbortTransport;
 
-  std::list<RTP_ControlFrame> reports;
+  RTP_ControlFrame packet;
 
-  // Have not got anything yet, do nothing
-  for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-    if (it->second->m_direction == e_Sender && (force || it->second->m_packets > 0)) {
-      reports.push_back(RTP_ControlFrame());
-      InitialiseControlFrame(reports.back(), *it->second);
+  if (ssrc != 0) {
+    SyncSource * sender;
+    if (GetSyncSource(ssrc, e_Sender, sender) && (force || sender->m_packets > 0))
+      InitialiseControlFrame(packet, *sender);
+  }
+  else {
+    // Have not got anything yet, do nothing
+    for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
+      if (it->second->m_direction == e_Sender && (force || it->second->m_packets > 0)) {
+        InitialiseControlFrame(packet, *it->second);
 
 #if OPAL_RTCP_XR
-      //Generate and send RTCP-XR packet
-      if (it->second->m_metrics != NULL)
-        it->second->m_metrics->InsertExtendedReportPacket(m_sessionId, it->second->m_sourceIdentifier, it->second->m_jitterBuffer, reports.back());
+        //Generate and send RTCP-XR packet
+        if (it->second->m_metrics != NULL)
+          it->second->m_metrics->InsertExtendedReportPacket(m_sessionId, it->second->m_sourceIdentifier, it->second->m_jitterBuffer, packet);
 #endif
-
+      }
     }
   }
 
   UnlockReadOnly();
 
-  for (std::list<RTP_ControlFrame>::iterator it = reports.begin(); it != reports.end(); ++it) {
-    SendReceiveStatus status = WriteControl(*it);
-    if (status != e_ProcessPacket)
-      return status;
-  }
-
-  return e_ProcessPacket;
+  return packet.IsValid() ? WriteControl(packet) : e_IgnorePacket;
 }
 
 

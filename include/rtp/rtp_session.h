@@ -169,7 +169,10 @@ class OpalRTPSession : public OpalMediaSession
 
     /**Send a report to remote.
       */
-    virtual SendReceiveStatus SendReport(bool force);
+    virtual SendReceiveStatus SendReport(
+      RTP_SyncSourceId ssrc,    ///< Zero means all senders, not just first.
+      bool force                ///< Send even if no packets sent yet
+    );
 
     /**Write a control frame from the RTP channel.
       */
@@ -904,6 +907,7 @@ class OpalRTPSession : public OpalMediaSession
     P_REMOVE_VIRTUAL(bool,WriteData(RTP_DataFrame &,const PIPSocketAddressAndPort*,bool),false);
     P_REMOVE_VIRTUAL(SendReceiveStatus,OnReadTimeout(RTP_DataFrame&),e_AbortTransport);
     P_REMOVE_VIRTUAL(SendReceiveStatus,InternalReadData(RTP_DataFrame &),e_AbortTransport);
+    P_REMOVE_VIRTUAL(SendReceiveStatus,SendReport(bool),e_AbortTransport);
 
 
   friend class RTCP_XR_Metrics;
