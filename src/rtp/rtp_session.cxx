@@ -374,10 +374,8 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
   if (m_canonicalName.IsEmpty()) {
     /* CNAME is no longer just a username@host string, for security!
        But RFC 6222 hopelessly complicated, while not exactly the same, just
-       using the base64 of the right most 12 bytes of GUID is very similar.
-       It will do. */
-    PGloballyUniqueID guid;
-    m_canonicalName = PBase64::Encode(&guid[PGloballyUniqueID::Size-12], 12);
+       using the base64 of a GUID is very similar. It will do. */
+    m_canonicalName = PBase64::Encode(PGloballyUniqueID());
   }
 }
 
@@ -1009,7 +1007,7 @@ void OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::Receiver
     report.dlsr = 0;
   }
 
-  PTRACE((unsigned)m_session.m_throttleTxRR, &m_session, *this << "sending ReceiverReport:"
+  PTRACE((unsigned)m_session.m_throttleTxReport, &m_session, *this << "sending ReceiverReport:"
             " fraction=" << (unsigned)report.fraction
          << " lost=" << report.GetLostPackets()
          << " last_seq=" << report.last_seq
@@ -1206,8 +1204,8 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
       // add the SSRC to the start of the payload
       *(PUInt32b *)report.GetPayloadPtr() = sender.m_sourceIdentifier;
-      PTRACE(m_throttleTxRR, *this << "sending empty ReceiverReport,"
-             " sender SSRC=" << RTP_TRACE_SRC(sender.m_sourceIdentifier) << m_throttleTxRR);
+      PTRACE(m_throttleTxReport, *this << "sending empty ReceiverReport,"
+             " sender SSRC=" << RTP_TRACE_SRC(sender.m_sourceIdentifier) << m_throttleTxReport);
     }
     else {
       report.SetPayloadSize(sizeof(PUInt32b) + receivers*sizeof(RTP_ControlFrame::ReceiverReport));  // length is SSRC of packet sender plus RRs
@@ -1219,8 +1217,8 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
       // add the RR's after the SSRC
       rr = (RTP_ControlFrame::ReceiverReport *)(payload + sizeof(PUInt32b));
-      PTRACE(m_throttleTxRR, *this << "not sending SenderReport for SSRC="
-             << RTP_TRACE_SRC(sender.m_sourceIdentifier) << m_throttleTxRR);
+      PTRACE(m_throttleTxReport, *this << "not sending SenderReport for SSRC="
+             << RTP_TRACE_SRC(sender.m_sourceIdentifier) << m_throttleTxReport);
     }
   }
   else {
@@ -1240,14 +1238,14 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
     sr->psent  = sender.m_packets;
     sr->osent  = (uint32_t)sender.m_octets;
 
-    PTRACE(m_throttleTxRR, *this << "sending SenderReport:"
+    PTRACE(m_throttleTxReport, *this << "sending SenderReport:"
               " SSRC=" << RTP_TRACE_SRC(sender.m_sourceIdentifier)
            << " ntp=0x" << hex << sr->ntp_ts << dec
            << sender.m_lastAbsoluteTime.AsString("(hh:mm:ss.uuu)")
            << " rtp=" << sr->rtp_ts
            << " psent=" << sr->psent
            << " osent=" << sr->osent
-           << m_throttleTxRR);
+           << m_throttleTxReport);
 
     if (!sender.m_lastReportTime.IsValid())
       sender.m_lastReportTime.SetCurrentTime(); // Remember when we last sent SR
@@ -1266,7 +1264,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
   report.EndPacket();
 
   // Add the SDES part to compound RTCP packet
-  PTRACE((unsigned)m_throttleTxRR, *this << "sending SDES for SSRC="
+  PTRACE((unsigned)m_throttleTxReport, *this << "sending SDES for SSRC="
          << RTP_TRACE_SRC(sender.m_sourceIdentifier) << ": \"" << sender.m_canonicalName << '"');
   report.StartNewPacket(RTP_ControlFrame::e_SourceDescription);
 
@@ -1313,7 +1311,15 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ss
 
   UnlockReadOnly();
 
-  return packet.IsValid() ? WriteControl(packet) : e_IgnorePacket;
+  SendReceiveStatus status = e_IgnorePacket;
+  if (packet.IsValid())
+      status = WriteControl(packet);
+
+  PTRACE((unsigned)m_throttleTxReport, *this << "sending " << (force ? "forced" : "periodic")
+         << " report for SSRC=" << RTP_TRACE_SRC(ssrc)
+         << " valid=" << boolalpha << packet.IsValid()
+         << " status=" << status);
+  return status;
 }
 
 

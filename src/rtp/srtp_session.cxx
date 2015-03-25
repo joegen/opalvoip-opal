@@ -585,7 +585,9 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
     return e_ProcessPacket;
 
   if (!IsCryptoSecured(e_Sender)) {
-    PTRACE(m_throttleDataSenderUnprot, *this << "keys not set, cannot protect data" << m_throttleDataSenderUnprot);
+    PTRACE(GetThrottle(e_Sender, e_Data, frame.GetSyncSource()),
+           *this << "keys not set, cannot protect data"
+           << GetThrottle(e_Sender, e_Data, frame.GetSyncSource()));
     return e_IgnorePacket;
   }
 
@@ -600,8 +602,10 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
     m_consecutiveErrors = 0;
   }
 
-  PTRACE(m_throttleDataSenderProt, *this << "protected RTP packet: " << frame.GetPacketSize()
-         << "->" << len << " SSRC=" << frame.GetSyncSource() << m_throttleDataSenderProt);
+  PTRACE(GetThrottle(e_Sender, e_Data, frame.GetSyncSource()),
+         *this << "protected RTP packet: " << frame.GetPacketSize()
+         << "->" << len << " SSRC=" << frame.GetSyncSource()
+         << GetThrottle(e_Sender, e_Data, frame.GetSyncSource()));
 
   frame.SetPayloadSize(len - frame.GetHeaderSize());
   return e_ProcessPacket;
@@ -617,7 +621,9 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
     return status;
 
   if (!IsCryptoSecured(e_Sender)) {
-    PTRACE(m_throttleControlSenderUnprot, *this << "keys not set, cannot protect control" << m_throttleControlSenderUnprot);
+    PTRACE(GetThrottle(e_Sender, e_Control, frame.GetSenderSyncSource()),
+           *this << "keys not set, cannot protect control"
+           << GetThrottle(e_Sender, e_Control, frame.GetSenderSyncSource()));
     return OpalRTPSession::e_IgnorePacket;
   }
 
@@ -633,8 +639,10 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
     m_consecutiveErrors = 0;
   }
 
-  PTRACE(m_throttleControlSenderProt, *this << "protected RTCP packet: " << frame.GetPacketSize()
-         << "->" << len << " SSRC=" << frame.GetSenderSyncSource() << m_throttleControlSenderProt);
+  PTRACE(GetThrottle(e_Sender, e_Control, frame.GetSenderSyncSource()),
+         *this << "protected RTCP packet: " << frame.GetPacketSize()
+         << "->" << len << " SSRC=" << frame.GetSenderSyncSource()
+         << GetThrottle(e_Sender, e_Control, frame.GetSenderSyncSource()));
 
   frame.SetPacketSize(len);
   return OpalRTPSession::e_ProcessPacket;
@@ -646,7 +654,9 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
   // Aleady locked on entry
 
   if (!IsCryptoSecured(e_Receiver)) {
-    PTRACE(m_throttleDataReceiverUnprot, *this << "keys not set, cannot protect data" << m_throttleDataReceiverUnprot);
+    PTRACE(GetThrottle(e_Receiver, e_Data, frame.GetSyncSource()),
+           *this << "keys not set, cannot protect data"
+           << GetThrottle(e_Receiver, e_Data, frame.GetSyncSource()));
     return OpalRTPSession::e_IgnorePacket;
   }
 
@@ -659,8 +669,10 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
     m_consecutiveErrors = 0;
   }
 
-  PTRACE(m_throttleDataReceiverProt, *this << "unprotected RTP packet: " << frame.GetPacketSize()
-         << "->" << len << " SSRC=" << frame.GetSyncSource() << m_throttleDataReceiverProt);
+  PTRACE(GetThrottle(e_Receiver, e_Data, frame.GetSyncSource()),
+         *this << "unprotected RTP packet: " << frame.GetPacketSize()
+         << "->" << len << " SSRC=" << frame.GetSyncSource()
+         << GetThrottle(e_Receiver, e_Data, frame.GetSyncSource()));
 
   frame.SetPayloadSize(len - frame.GetHeaderSize());
   return OpalRTPSession::OnReceiveData(frame);
@@ -672,7 +684,9 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
   // Aleady locked on entry
 
   if (!IsCryptoSecured(e_Receiver)) {
-    PTRACE(m_throttleControlReceiverUnprot, *this << "keys not set, cannot protect control: " << m_throttleControlReceiverUnprot);
+    PTRACE(GetThrottle(e_Receiver, e_Control, frame.GetSenderSyncSource()),
+           *this << "keys not set, cannot protect control: "
+           << GetThrottle(e_Receiver, e_Control, frame.GetSenderSyncSource()));
     return OpalRTPSession::e_IgnorePacket;
   }
 
@@ -690,8 +704,10 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
     m_consecutiveErrors = 0;
   }
 
-  PTRACE(m_throttleControlReceiverProt, *this << "unprotected RTCP packet: " << frame.GetPacketSize()
-         << "->" << len << " SSRC=" << frame.GetSenderSyncSource() << m_throttleControlReceiverProt);
+  PTRACE(GetThrottle(e_Receiver, e_Control, frame.GetSenderSyncSource()),
+         *this << "unprotected RTCP packet: " << frame.GetPacketSize()
+         << "->" << len << " SSRC=" << frame.GetSenderSyncSource()
+         << GetThrottle(e_Receiver, e_Control, frame.GetSenderSyncSource()));
 
   frame.SetPacketSize(len);
 

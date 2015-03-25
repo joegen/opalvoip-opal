@@ -145,14 +145,10 @@ class OpalSRTPSession : public OpalRTPSession
     OpalSRTPKeyInfo   * m_keyInfo[2]; // rx & tx
     unsigned            m_consecutiveErrors;
 
-    PTRACE_THROTTLE(m_throttleDataSenderProt, 4);
-    PTRACE_THROTTLE(m_throttleDataReceiverProt, 4);
-    PTRACE_THROTTLE(m_throttleControlSenderProt, 4);
-    PTRACE_THROTTLE(m_throttleControlReceiverProt, 4);
-    PTRACE_THROTTLE(m_throttleDataSenderUnprot, 3);
-    PTRACE_THROTTLE(m_throttleDataReceiverUnprot, 3);
-    PTRACE_THROTTLE(m_throttleControlSenderUnprot, 3);
-    PTRACE_THROTTLE(m_throttleControlReceiverUnprot, 3);
+#if PTRACING
+    map< uint64_t, PTrace::Throttle<3> > m_throttle;
+    _inline PTrace::Throttle<3> & GetThrottle(Direction dir, Channel chan, RTP_SyncSourceId ssrc) { return m_throttle[dir|(chan<<2)|((uint64_t)ssrc<<4)]; }
+#endif
 };
 
 
