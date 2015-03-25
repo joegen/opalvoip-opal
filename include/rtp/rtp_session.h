@@ -622,6 +622,9 @@ class OpalRTPSession : public OpalMediaSession
 
     bool HasFeedback(OpalMediaFormat::RTCPFeedback feature) const { return m_feedback&feature; }
 
+    static unsigned m_readPerformanceCheckHack;
+    static unsigned m_writePerformanceCheckHack;
+
   protected:
     enum Channel
     {
