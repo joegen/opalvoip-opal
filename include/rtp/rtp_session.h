@@ -888,7 +888,7 @@ class OpalRTPSession : public OpalMediaSession
     PTimeInterval   m_maxICESetUpTime;
 #endif // OPAL_ICE
 
-    PTRACE_THROTTLE(m_throttleTxRR,3,60000,5);
+    PTRACE_THROTTLE(m_throttleTxReport,3,60000,5);
     PTRACE_THROTTLE(m_throttleRxSR,3,60000,5);
     PTRACE_THROTTLE(m_throttleRxRR,4,60000);
     PTRACE_THROTTLE(m_throttleRxSDES,4,60000);
