@@ -147,7 +147,7 @@ class OpalSRTPSession : public OpalRTPSession
 
 #if PTRACING
     map< uint64_t, PTrace::Throttle<3> > m_throttle;
-    _inline PTrace::Throttle<3> & GetThrottle(Direction dir, Channel chan, RTP_SyncSourceId ssrc) { return m_throttle[dir|(chan<<2)|((uint64_t)ssrc<<4)]; }
+    __inline PTrace::Throttle<3> & GetThrottle(Direction dir, Channel chan, RTP_SyncSourceId ssrc) { return m_throttle[dir|(chan<<2)|((uint64_t)ssrc<<4)]; }
 #endif
 };
 
