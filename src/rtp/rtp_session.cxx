@@ -379,6 +379,7 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
        But RFC 6222 hopelessly complicated, while not exactly the same, just
        using the base64 of a GUID is very similar. It will do. */
     m_canonicalName = PBase64::Encode(PGloballyUniqueID());
+    m_canonicalName.Delete(m_canonicalName.GetLength()-2, 2); // Chop off == at end.
   }
 }
 
