@@ -755,6 +755,8 @@ bool RTP_ControlFrame::ReadNextPacket()
 
 bool RTP_ControlFrame::StartNewPacket(PayloadTypes pt)
 {
+  m_compoundOffset = m_packetSize;
+
   // allocate storage for new packet header
   if (!SetMinSize(m_compoundOffset + 4))
     return false;
@@ -772,7 +774,7 @@ void RTP_ControlFrame::EndPacket()
     ++m_payloadSize;
   }
 
-  m_compoundOffset += 4 + m_payloadSize;
+  m_packetSize = m_compoundOffset + 4 + m_payloadSize;
   m_payloadSize = 0;
 }
 
