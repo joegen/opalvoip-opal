@@ -105,6 +105,9 @@ ostream & operator<<(ostream & strm, OpalRTPSession::Channel chan)
 const PCaselessString & OpalRTPSession::RTP_AVP () { static const PConstCaselessString s("RTP/AVP" ); return s; }
 const PCaselessString & OpalRTPSession::RTP_AVPF() { static const PConstCaselessString s("RTP/AVPF"); return s; }
 
+unsigned OpalRTPSession::m_readPerformanceCheckHack = INT_MAX;
+unsigned OpalRTPSession::m_writePerformanceCheckHack = INT_MAX;
+
 PFACTORY_CREATE(OpalMediaSessionFactory, OpalRTPSession, OpalRTPSession::RTP_AVP());
 PFACTORY_SYNONYM(OpalMediaSessionFactory, OpalRTPSession, AVPF, OpalRTPSession::RTP_AVPF());
 
@@ -535,6 +538,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
   if (rewrite == e_RewriteSSRC)
     m_lastSequenceNumber = frame.GetSequenceNumber();
 
+  if (m_writePerformanceCheckHack < 5)
+    return e_ProcessPacket;
+
 #if OPAL_RTP_FEC
   if (rewrite != e_RewriteNothing && m_session.GetRedundencyPayloadType() != RTP_DataFrame::IllegalPayloadType) {
     SendReceiveStatus status = OnSendRedundantFrame(frame);
@@ -542,6 +548,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
       return status;
   }
 #endif
+
+  if (m_writePerformanceCheckHack < 6)
+    return e_ProcessPacket;
 
   PTRACE(m_throttleSendData, &m_session, m_session << "sending packet " << setw(1) << frame << m_throttleSendData);
   CalculateStatistics(frame);
@@ -627,6 +636,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
 #endif
   }
 
+  if (m_readPerformanceCheckHack < 7)
+    return e_ProcessPacket;
+
   PTime absTime(0);
   if (m_syncRealTime.IsValid())
     absTime = m_syncRealTime + PTimeInterval(((int64_t)frame.GetTimestamp() - (int64_t)m_syncTimestamp) / m_session.m_timeUnits);
@@ -642,15 +654,24 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
 
   SendReceiveStatus status = m_session.OnReceiveData(frame);
 
+  if (m_readPerformanceCheckHack < 8)
+    return status;
+
 #if OPAL_RTP_FEC
   if (status == e_ProcessPacket && frame.GetPayloadType() == m_session.m_redundencyPayloadType)
     status = OnReceiveRedundantFrame(frame);
 #endif
 
+  if (m_readPerformanceCheckHack < 9)
+    return status;
+
   CalculateStatistics(frame);
 
   // Final user handling of the read frame
   if (status != e_ProcessPacket)
+    return status;
+
+  if (m_readPerformanceCheckHack < 10)
     return status;
 
   Data data(frame);
@@ -1080,6 +1101,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
     return e_IgnorePacket;
 #endif // OPAL_ICE
 
+  if (m_writePerformanceCheckHack < 3)
+    return e_ProcessPacket;
+
   RTP_SyncSourceId ssrc = frame.GetSyncSource();
   SyncSource * syncSource;
   if (GetSyncSource(ssrc, e_Sender, syncSource)) {
@@ -1121,6 +1145,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
     GetSyncSource(ssrc, e_Sender, syncSource);
   }
 
+  if (m_writePerformanceCheckHack < 4)
+    return e_ProcessPacket;
+
   return syncSource->OnSendData(frame, rewrite);
 }
 
@@ -1160,7 +1187,14 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveData(RTP_DataFrame & 
   if (!frame.SetPacketSize(pduSize))
     return e_IgnorePacket; // Non fatal error, just ignore
 
+  if (m_readPerformanceCheckHack < 5)
+    return e_IgnorePacket;
+
   SyncSource * receiver = UseSyncSource(frame.GetSyncSource(), e_Receiver, false);
+
+  if (m_readPerformanceCheckHack < 6)
+    return e_IgnorePacket;
+
   return receiver != NULL ? receiver->OnReceiveData(frame, true) : e_IgnorePacket;
 }
 
@@ -2707,6 +2741,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr, PI
   if (socket.ReadFrom(framePtr, frameSize, ap)) {
     frameSize = socket.GetLastReadCount();
 
+    if (m_readPerformanceCheckHack < 1)
+      return e_IgnorePacket;
+
     // Ignore one byte packet from ourself, likely from the I/O block breaker in OpalRTPSession::Shutdown()
     if (frameSize == 1) {
       PIPSocketAddressAndPort localAP;
@@ -2720,6 +2757,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr, PI
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
     return e_AbortTransport;
+
+    if (m_readPerformanceCheckHack < 2)
+      return e_IgnorePacket;
 
 #if OPAL_ICE
     SendReceiveStatus status = OnReceiveICE(channel, framePtr, frameSize, ap);
@@ -2871,12 +2911,18 @@ bool OpalRTPSession::InternalReadData()
   if (!lock.IsLocked())
     return false;
 
+  if (m_readPerformanceCheckHack < 3)
+    return true;
+
   // Check for single port operation, incoming RTCP on RTP
   RTP_ControlFrame control(frame, pduSize, false);
   unsigned type = control.GetPayloadType();
   if ((type >= RTP_ControlFrame::e_FirstValidPayloadType && type <= RTP_ControlFrame::e_LastValidPayloadType
                             ? OnReceiveControl(control) : OnReceiveData(frame, pduSize)) == e_AbortTransport)
     return false;
+
+  if (m_readPerformanceCheckHack < 4)
+    return true;
 
   for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
     if (!it->second->HandlePendingFrames())
@@ -2920,12 +2966,18 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteData(RTP_DataFrame & fram
 {
   PPROFILE_FUNCTION();
 
+  if (m_writePerformanceCheckHack < 1)
+    return e_ProcessPacket;
+
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked() || !IsOpen())
     return e_AbortTransport;
 
+  if (m_writePerformanceCheckHack < 2)
+    return e_ProcessPacket;
+
   SendReceiveStatus status = OnSendData(frame, rewrite);
-  if (status == e_ProcessPacket)
+  if (status == e_ProcessPacket && m_writePerformanceCheckHack >= 7)
     status = WriteRawPDU(frame.GetPointer(), frame.GetPacketSize(), e_Data, remote);
   return status;
 }
