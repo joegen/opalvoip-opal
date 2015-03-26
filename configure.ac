@@ -66,6 +66,7 @@ OPAL_HAS_RFC4103=yes
 OPAL_HAS_MIXER=yes
 OPAL_HAS_PCSS=yes
 OPAL_HAS_PRESENCE=yes
+OPAL_PERFORMANCE_CHECK_HACK=yes
 
 # experimental options
 OPAL_DAHDI=no
@@ -509,6 +510,10 @@ OPAL_SIMPLE_OPTION(pcss,OPAL_HAS_PCSS, [PC sound system support])
 dnl MSWIN_DISPLAY  script,Script language interface
 dnl MSWIN_DEFINE   script,OPAL_SCRIPT
 OPAL_SIMPLE_OPTION(script,OPAL_SCRIPT, [script language support])
+
+dnl MSWIN_DISPLAY  perf-hack,Performance checking hack
+dnl MSWIN_DEFINE   perf-hack,OPAL_PERFORMANCE_CHECK_HACK
+OPAL_SIMPLE_OPTION(perf-hack,OPAL_PERFORMANCE_CHECK_HACK, [Performance checking hack])
 
 
 dnl ################################
