@@ -1357,7 +1357,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ss
   if (packet.IsValid())
       status = WriteControl(packet);
 
-  PTRACE((unsigned)m_throttleTxReport, *this << "sending " << (force ? "forced" : "periodic")
+  PTRACE(4, *this << "sending " << (force ? "forced" : "periodic")
          << " report for SSRC=" << RTP_TRACE_SRC(ssrc)
          << " valid=" << boolalpha << packet.IsValid()
          << " status=" << status);
