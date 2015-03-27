@@ -323,6 +323,7 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
   if (m_syncSource != 0)
     packet.SetSyncSource(m_syncSource);
 
+  PSimpleTimer failsafe(0, 5);
   while (IsOpen()) {
     switch (m_rtpSession.WriteData(packet, m_rewriteHeaders ? OpalRTPSession::e_RewriteHeader : OpalRTPSession::e_RewriteSSRC)) {
       case OpalRTPSession::e_AbortTransport :
@@ -335,6 +336,10 @@ PBoolean OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
         PTRACE(m_throttleWriteData, m_rtpSession << "write data delayed.");
         PThread::Sleep(20);
         break;
+    }
+    if (failsafe.HasExpired()) {
+        PTRACE(2, m_rtpSession << "write data failed, delayed for too long.");
+        return false;
     }
   }
 
