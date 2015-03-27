@@ -52,6 +52,17 @@
 
 #define new PNEW
 
+#if OPAL_PERFORMANCE_CHECK_HACK
+  unsigned OpalMediaPatch::m_performanceCheckHack = INT_MAX;
+  PTRACE_THROTTLE_STATIC(s_performanceCheckHackThrottle,3,1000);
+  #define PERFORMANCE_HACK(n,r) \
+    if (m_performanceCheckHack < n) { \
+      PTRACE(s_performanceCheckHackThrottle, NULL, "PerfHack", "Patch short circuit " << n); \
+      r; \
+    }
+#else
+  #define PERFORMANCE_HACK(n,r)
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -777,6 +788,8 @@ void OpalMediaPatch::Main()
       break;
     }
  
+    PERFORMANCE_HACK(1,continue)
+
     if (!DispatchFrame(sourceFrame)) {
       PTRACE(4, "Thread ended because all sink writes failed");
       break;
@@ -882,6 +895,8 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
   if (!LockReadOnly())
     return false;
 
+  PERFORMANCE_HACK(2,return true)
+
   if (m_transcoderChanged) {
     m_transcoderChanged = false;
     UnlockReadOnly();
@@ -897,7 +912,11 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
     return true;
   }
 
+  PERFORMANCE_HACK(3,return true)
+
   FilterFrame(frame, m_source.GetMediaFormat());
+
+  PERFORMANCE_HACK(4,return true)
 
   OpalMediaPatchPtr patch = m_bypassToPatch;
   if (patch == NULL)
@@ -907,6 +926,9 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
 
   bool written = false;
   PSafeLockReadOnly guard(*patch);
+
+  PERFORMANCE_HACK(5,return true)
+
   for (PList<Sink>::iterator s = patch->m_sinks.begin(); s != patch->m_sinks.end(); ++s) {
     if (s->WriteFrame(frame, patch != this))
       written = true;
@@ -1047,6 +1069,8 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
     m_writeSuccessful = m_stream->WritePacket(sourceFrame);
     if (!m_writeSuccessful)
       return false;
+
+  PERFORMANCE_HACK(6,return true)
 
 #if OPAL_VIDEO
     RTP_SyncSourceId ssrc;
