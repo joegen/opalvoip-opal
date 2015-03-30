@@ -449,22 +449,16 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
   RTP_Timestamp lastTimestamp = m_lastTimestamp;
   PTimeInterval lastPacketTick = m_lastPacketTick;
 
-  WRITE_PERFORMANCE_HACK(6,)
-
   PTimeInterval tick = PTimer::Tick();
   m_lastPacketTick = tick;
 
   m_lastTimestamp = frame.GetTimestamp();
-
-  WRITE_PERFORMANCE_HACK(7,)
 
   PTRACE_IF(3, !m_lastAbsoluteTime.IsValid() && frame.GetAbsoluteTime().IsValid(), &m_session,
             m_session << "sent first RTP with absolute time: " << frame.GetAbsoluteTime().AsString("hh:mm:dd.uuu"));
   m_lastAbsoluteTime = frame.GetAbsoluteTime();
   if (m_direction == e_Receiver && m_synthesizeAbsTime && !m_lastAbsoluteTime.IsValid())
     m_lastAbsoluteTime.SetCurrentTime();
-
-  WRITE_PERFORMANCE_HACK(8,)
 
   /* For audio we do not do statistics on start of talk burst as that
       could be a substantial time and is not useful, so we only calculate
@@ -486,8 +480,6 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
     m_minimumTimeAccum = diff;
   m_statisticsCount++;
 
-  WRITE_PERFORMANCE_HACK(9,)
-
   if (m_direction == e_Receiver) {
     // As per RFC3550 Appendix 8
     diff *= m_session.m_timeUnits; // Convert to timestamp units
@@ -498,8 +490,6 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
     if (m_jitter > m_maximumJitter)
       m_maximumJitter = m_jitter;
   }
-
-  WRITE_PERFORMANCE_HACK(10,)
 
   if (m_statisticsCount < (m_direction == e_Receiver ? m_session.GetRxStatisticsInterval() : m_session.GetTxStatisticsInterval()))
     return;
@@ -512,8 +502,6 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
   m_averageTimeAccum = 0;
   m_maximumTimeAccum = 0;
   m_minimumTimeAccum = 0xffffffff;
-
-  WRITE_PERFORMANCE_HACK(11,)
 
 #if PTRACING
   unsigned Level = 4;
@@ -567,7 +555,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
   if (rewrite == e_RewriteSSRC)
     m_lastSequenceNumber = frame.GetSequenceNumber();
 
-  WRITE_PERFORMANCE_HACK(4,e_ProcessPacket)
+  WRITE_PERFORMANCE_HACK(4,(++m_packets,e_IgnorePacket))
 
 #if OPAL_RTP_FEC
   if (rewrite != e_RewriteNothing && m_session.GetRedundencyPayloadType() != RTP_DataFrame::IllegalPayloadType) {
@@ -577,10 +565,13 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
   }
 #endif
 
-  WRITE_PERFORMANCE_HACK(5,e_ProcessPacket)
+  WRITE_PERFORMANCE_HACK(5,(++m_packets,e_IgnorePacket))
+
+  CalculateStatistics(frame);
+
+  WRITE_PERFORMANCE_HACK(6,e_IgnorePacket)
 
   PTRACE(m_throttleSendData, &m_session, m_session << "sending packet " << setw(1) << frame << m_throttleSendData);
-  CalculateStatistics(frame);
   return e_ProcessPacket;
 }
 
@@ -1126,7 +1117,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
     return e_IgnorePacket;
 #endif // OPAL_ICE
 
-  WRITE_PERFORMANCE_HACK(2,e_ProcessPacket)
+  WRITE_PERFORMANCE_HACK(2,e_IgnorePacket)
 
   RTP_SyncSourceId ssrc = frame.GetSyncSource();
   SyncSource * syncSource;
@@ -1169,7 +1160,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
     GetSyncSource(ssrc, e_Sender, syncSource);
   }
 
-  WRITE_PERFORMANCE_HACK(3,e_ProcessPacket)
+  WRITE_PERFORMANCE_HACK(3,e_IgnorePacket)
 
   return syncSource->OnSendData(frame, rewrite);
 }
@@ -2996,10 +2987,12 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteData(RTP_DataFrame & fram
   WRITE_PERFORMANCE_HACK(1,e_ProcessPacket)
 
   SendReceiveStatus status = OnSendData(frame, rewrite);
+
+  WRITE_PERFORMANCE_HACK(7,e_ProcessPacket)
+
   if (status != e_ProcessPacket)
       return status;
 
-  WRITE_PERFORMANCE_HACK(12,e_ProcessPacket)
   return WriteRawPDU(frame.GetPointer(), frame.GetPacketSize(), e_Data, remote);
 }
 
