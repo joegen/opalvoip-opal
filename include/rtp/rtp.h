@@ -594,6 +594,12 @@ class RTP_DataFrame : public PBYTEArray
 
     void SetDiscontinuity(unsigned lost) { m_discontinuity = lost; }
 
+    /** Get the "bundle" identifier that typically links audio and video
+        streams for "lip synch" purposes.
+    */
+    const PString & GetBundleId() const { return m_bundleId; }
+    void SetBundleId(const PString & id) { m_bundleId = id; }
+
   protected:
     bool AdjustHeaderSize(PINDEX newSize);
 
@@ -602,6 +608,7 @@ class RTP_DataFrame : public PBYTEArray
     PINDEX   m_paddingSize;
     PTime    m_absoluteTime;
     unsigned m_discontinuity;
+    PString  m_bundleId;
 
 #if PTRACING
     friend ostream & operator<<(ostream & o, PayloadTypes t);
