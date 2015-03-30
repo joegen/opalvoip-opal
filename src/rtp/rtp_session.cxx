@@ -457,7 +457,7 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
   PTRACE_IF(3, !m_lastAbsoluteTime.IsValid() && frame.GetAbsoluteTime().IsValid(), &m_session,
             m_session << "sent first RTP with absolute time: " << frame.GetAbsoluteTime().AsString("hh:mm:dd.uuu"));
   m_lastAbsoluteTime = frame.GetAbsoluteTime();
-  if (m_synthesizeAbsTime && !m_lastAbsoluteTime.IsValid())
+  if (m_direction == e_Receiver && m_synthesizeAbsTime && !m_lastAbsoluteTime.IsValid())
     m_lastAbsoluteTime.SetCurrentTime();
 
   /* For audio we do not do statistics on start of talk burst as that
@@ -1106,8 +1106,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
 {
   PPROFILE_FUNCTION();
 
-#if OPAL_ICE
   SendReceiveStatus status;
+#if OPAL_ICE
   if ((status = OnSendICE(e_Data)) != e_ProcessPacket)
     return status;
 #else
@@ -1160,7 +1160,12 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & fra
 
   WRITE_PERFORMANCE_HACK(4)
 
-  return syncSource->OnSendData(frame, rewrite);
+  status = syncSource->OnSendData(frame, rewrite);
+  if (status != e_ProcessPacket)
+      return status;
+
+  WRITE_PERFORMANCE_HACK(7)
+  return e_ProcessPacket;
 }
 
 
@@ -2988,7 +2993,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteData(RTP_DataFrame & fram
   if (status != e_ProcessPacket)
       return status;
 
-  WRITE_PERFORMANCE_HACK(7)
+  WRITE_PERFORMANCE_HACK(8)
   return WriteRawPDU(frame.GetPointer(), frame.GetPacketSize(), e_Data, remote);
 }
 
