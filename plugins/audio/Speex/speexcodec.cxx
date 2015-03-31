@@ -92,8 +92,6 @@ static int Speex_Bytes_Per_Frame(int mode, int sampleRate) {
 
 static void * create_encoder(const struct PluginCodec_Definition * codec)
 {
-  intptr_t mode = (intptr_t)codec->userData;
-
   struct PluginSpeexContext * context = new PluginSpeexContext;
 
   if (codec->sampleRate == 16000)
@@ -102,7 +100,12 @@ static void * create_encoder(const struct PluginCodec_Definition * codec)
     context->coderState = speex_encoder_init(&speex_nb_mode);
 
   speex_encoder_ctl(context->coderState, SPEEX_GET_FRAME_SIZE, &context->encoderFrameSize);
-  speex_encoder_ctl(context->coderState, SPEEX_SET_QUALITY,    &mode);
+
+  int value = 6;
+  speex_encoder_ctl(context->coderState, SPEEX_SET_QUALITY, &value);
+
+  value = 5;
+  speex_encoder_ctl(context->coderState, SPEEX_SET_COMPLEXITY, &value);
 
   return context;
 }
