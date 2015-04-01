@@ -324,9 +324,15 @@ bool FFMPEGCodec::SetResolution(unsigned width, unsigned height)
     av_free(m_alignedYUV[0]);
     av_free(m_alignedYUV[1]);
     av_free(m_alignedYUV[2]);
-    m_picture->data[0] = (uint8_t *)(m_alignedYUV[0] = av_malloc(width*height));  // Allocate correctly aligned memory
-    m_picture->data[1] = (uint8_t *)(m_alignedYUV[1] = av_malloc(width*height / 4));
-    m_picture->data[2] = (uint8_t *)(m_alignedYUV[2] = av_malloc(width*height / 4));
+
+    /* Allocate correctly aligned memory using av_malloc(), also pad out length
+       so don't overrrun the end of the allocated buffer.
+    */
+    size_t sz = ((width*height+15)/16)*16;
+    m_picture->data[0] = (uint8_t *)(m_alignedYUV[0] = av_malloc(sz));
+    sz = ((width*height/4+15)/16)*16;
+    m_picture->data[1] = (uint8_t *)(m_alignedYUV[1] = av_malloc(sz));
+    m_picture->data[2] = (uint8_t *)(m_alignedYUV[2] = av_malloc(sz));
   }
 
   if (m_fullFrame != NULL && !m_fullFrame->SetSize(width*height*2)) {
