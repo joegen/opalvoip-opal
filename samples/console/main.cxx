@@ -108,16 +108,21 @@ bool MyManager::OnLocalIncomingCall(OpalLocalConnection & connection)
          << PTime().AsString("w h : mma") << " from " << connection.GetCall().GetPartyA();
 
   if (!OpalManagerCLI::OnLocalIncomingCall(connection)) {
-    output << " refused as busy.";
+    output << " rejected.";
     Broadcast(output);
     return false;
   }
 
-  m_activeCall = &connection.GetCall();
-
   if (m_autoAnswerTime < 0)
     output << ", answer? ";
   else {
+    // If in a call and auto answer is on, we are busy
+    if (m_activeCall != NULL) {
+      output << " refused as busy.";
+      Broadcast(output);
+      return false;
+    }
+
     output << ", auto-answer";
     if (m_autoAnswerTime > 0) {
       output << " in " << m_autoAnswerTime.GetSeconds() << " seconds.";
@@ -130,6 +135,8 @@ bool MyManager::OnLocalIncomingCall(OpalLocalConnection & connection)
   }
 
   Broadcast(output);
+
+  m_activeCall = &connection.GetCall();
   return true;
 }
 
