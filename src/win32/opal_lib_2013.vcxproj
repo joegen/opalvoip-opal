@@ -1622,34 +1622,34 @@
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">Configuring Build Options</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Configuring Build Options</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Configuring Build Options</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\lib\$(Platform)\include\opal_config.h;%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\lib\$(Platform)\include\opal_config.h;%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">..\..\lib\$(Platform)\include\opal_config.h;%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\..\lib\$(Platform)\include\opal_config.h;%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\lib\$(Platform)\include\opal_config.h;%(Outputs)</Outputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\lib\$(Platform)\include\opal_config.h;%(Outputs)</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd ..\..
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\..\lib\$(Platform)\include\opal_config.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)..\..\lib\$(Platform)\include\opal_config.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(ProjectDir)..\..\lib\$(Platform)\include\opal_config.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">$(ProjectDir)..\..\lib\$(Platform)\include\opal_config.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\..\lib\$(Platform)\include\opal_config.h;%(Outputs)</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)..\..\lib\$(Platform)\include\opal_config.h;%(Outputs)</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectDir)..\..\configure.ac</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)..\..\configure.ac</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">$(ProjectDir)..\..\configure.ac</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">$(ProjectDir)..\..\configure.ac</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectDir)..\..\configure.ac</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)..\..\configure.ac</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">cd $(ProjectDir)..\..
 configure "-Dac_top_build_prefix=$(ProjectDir)../../Lib/$(Platform)/" --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %OPAL_CONFIGURE_OPTIONS%
 </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cd ..\..
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">cd $(ProjectDir)..\..
 configure "-Dac_top_build_prefix=$(ProjectDir)../../Lib/$(Platform)/" --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %OPAL_CONFIGURE_OPTIONS%
 </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">cd ..\..
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">cd $(ProjectDir)..\..
 configure "-Dac_top_build_prefix=$(ProjectDir)../../Lib/$(Platform)/" --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %OPAL_CONFIGURE_OPTIONS%
 </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">cd ..\..
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">cd $(ProjectDir)..\..
 configure "-Dac_top_build_prefix=$(ProjectDir)../../Lib/$(Platform)/" --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %OPAL_CONFIGURE_OPTIONS%
 </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd ..\..
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">cd $(ProjectDir)..\..
 configure "-Dac_top_build_prefix=$(ProjectDir)../../Lib/$(Platform)/" --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %OPAL_CONFIGURE_OPTIONS%
 </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cd ..\..
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">cd $(ProjectDir)..\..
 configure "-Dac_top_build_prefix=$(ProjectDir)../../Lib/$(Platform)/" --no-search --exclude-env=VSNET2010_PTLIB_CONFIGURE_EXCLUDE_DIRS %OPAL_CONFIGURE_OPTIONS%
 </Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">$(ProjectDir)..\..\configure.ac;%(AdditionalInputs)</AdditionalInputs>
