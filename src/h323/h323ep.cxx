@@ -973,13 +973,14 @@ H323Connection * H323EndPoint::InternalMakeCall(OpalCall & call,
   // Restriction: the call must be made on the same local interface as the one
   // that the gatekeeper is using.
   H323Transport * transport;
-  H323Gatekeeper * gatekeeper = GetGatekeeper();
-  if (gatekeeper == NULL && !stringOptions->Contains(OPAL_OPT_INTERFACE))
+  H323Gatekeeper * gatekeeper = GetGatekeeper(stringOptions->GetString(OPAL_OPT_CALLING_PARTY_NUMBER,
+                                              stringOptions->GetString(OPAL_OPT_CALLING_PARTY_NAME)));
+  OpalTransportAddress localInterface = stringOptions->GetString(OPAL_OPT_INTERFACE,
+                          gatekeeper != NULL ? gatekeeper->GetTransport().GetInterface() : PString::Empty());
+  if (localInterface.IsEmpty())
     transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
-  else {
-    OpalTransportAddress localInterface = stringOptions->GetString(OPAL_OPT_INTERFACE, gatekeeper->GetTransport().GetInterface());
+  else
     transport = localInterface.CreateTransport(*this, OpalTransportAddress::HostOnly);
-  }
 
   if (transport == NULL) {
     PTRACE(1, "H323\tInvalid transport in \"" << remoteParty << '"');
