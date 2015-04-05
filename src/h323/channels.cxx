@@ -664,11 +664,11 @@ PBoolean H323_RealTimeChannel::OnReceivedAckPDU(const H245_OpenLogicalChannelAck
     return false;
   }
 
-  if (ack.HasOptionalField(H245_OpenLogicalChannel::e_genericInformation))
+  if (ack.HasOptionalField(H245_OpenLogicalChannelAck::e_genericInformation))
     connection.OnReceiveOLCGenericInformation(GetSessionID(), ack.m_genericInformation, true);
 
 #if OPAL_H235_6 || OPAL_H235_8
-  if (ack.HasOptionalField(H245_OpenLogicalChannel::e_encryptionSync))
+  if (ack.HasOptionalField(H245_OpenLogicalChannelAck::e_encryptionSync))
     capability->OnReceivedPDU(ack.m_encryptionSync, connection, GetSessionID(), false);
 #endif // OPAL_H235_6 || OPAL_H235_8
 
