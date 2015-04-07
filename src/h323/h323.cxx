@@ -1780,6 +1780,11 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   // Start the call, first state is asking gatekeeper
   connectionState = AwaitingGatekeeperAdmission;
 
+  if (m_stringOptions.Has(OPAL_OPT_CALLING_PARTY_NUMBER))
+    SetLocalPartyName(m_stringOptions.GetString(OPAL_OPT_CALLING_PARTY_NUMBER));
+  else  if (m_stringOptions.Has(OPAL_OPT_CALLING_PARTY_NAME))
+    SetLocalPartyName(m_stringOptions.GetString(OPAL_OPT_CALLING_PARTY_NAME));
+
   // See if we are "proxied" that is the destCallSignalAddress is different
   // from the transport connection address
   H323TransportAddress destCallSignalAddress = address;
