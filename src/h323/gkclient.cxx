@@ -1035,7 +1035,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
                                       AdmissionResponse & response,
                                       PBoolean ignorePreGrantedARQ)
 {
-  PBoolean answeringCall = connection.HadAnsweredCall();
+  bool answeringCall = connection.HadAnsweredCall();
 
   if (!ignorePreGrantedARQ) {
     switch (answeringCall ? pregrantAnswerCall : pregrantMakeCall) {
@@ -1055,7 +1055,8 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
     }
   }
 
-  PTRACE(3, "AdmissionRequest answering = " << answeringCall << " local alias name " << connection.GetLocalAliasNames());
+  PTRACE(3, "AdmissionRequest " << (answeringCall ? "answering" : "originating")
+         << " call with local alias names: " << setfill(',') << connection.GetLocalAliasNames());
 
   H323RasPDU pdu;
   H225_AdmissionRequest & arq = pdu.BuildAdmissionRequest(GetNextSequenceNumber());
