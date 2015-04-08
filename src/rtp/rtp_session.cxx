@@ -2554,6 +2554,11 @@ void OpalRTPSession::SetICE(const PString & user, const PString & pass, const PN
   if (!lock.IsLocked())
     return;
 
+  if (user == m_remoteUsername && pass == m_remotePassword) {
+    PTRACE(3, *this << "ICE username/password not changed");
+    return;
+  }
+
   delete m_iceServer;
   m_iceServer = NULL;
 

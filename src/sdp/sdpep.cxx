@@ -324,10 +324,9 @@ bool OpalSDPConnection::SetActiveMediaFormats(const OpalMediaFormatList & format
 
 
 OpalMediaSession * OpalSDPConnection::SetUpMediaSession(const unsigned sessionId,
-                                                    const OpalMediaType & mediaType,
-                                                    const SDPMediaDescription & mediaDescription,
-                                                    OpalTransportAddress & localAddress,
-                                                    bool & remoteChanged)
+                                                        const OpalMediaType & mediaType,
+                                                        const SDPMediaDescription & mediaDescription,
+                                                        OpalTransportAddress & localAddress)
 {
   if (mediaDescription.GetPort() == 0) {
     PTRACE(2, "Received disabled/missing media description for " << mediaType);
@@ -351,20 +350,14 @@ OpalMediaSession * OpalSDPConnection::SetUpMediaSession(const unsigned sessionId
   OpalTransportAddress remoteMediaAddress = mediaDescription.GetMediaAddress();
   if (remoteMediaAddress.IsEmpty()) {
     PTRACE(2, "Received media description with no address for " << mediaType);
-    remoteChanged = true;
     return session;
   }
 
-  // see if remote socket information has changed
-  OpalTransportAddress oldRemoteMediaAddress = session->GetRemoteAddress();
-  remoteChanged = !oldRemoteMediaAddress.IsEmpty() && oldRemoteMediaAddress != remoteMediaAddress;
-
-  if (remoteChanged) {
-    PTRACE(3, "Remote changed IP address: "<< oldRemoteMediaAddress << "!=" << remoteMediaAddress);
-    ((OpalRTPEndPoint &)endpoint).CheckEndLocalRTP(*this, rtpSession);
-  }
+  PTRACE_IF(3, session->IsOpen() && session->GetRemoteAddress() != remoteMediaAddress,
+            "Remote changed IP address: " << session->GetRemoteAddress() << " -> " << remoteMediaAddress);
 
   if (mediaDescription.ToSession(session) && session->Open(GetMediaInterface(), remoteMediaAddress, true)) {
+    ((OpalRTPEndPoint &)endpoint).CheckEndLocalRTP(*this, rtpSession);
     localAddress = session->GetLocalAddress();
     return session;
   }
@@ -415,7 +408,7 @@ static bool SetNxECapabilities(OpalRFC2833Proto * handler,
 
 static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
                                     const OpalMediaFormatList & answerFormats,
-                                    bool remoteChanged,
+                                    bool changed,
                                     bool paused)
 {
   if (stream == NULL)
@@ -427,7 +420,7 @@ static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
     return false;
   }
 
-  if (!remoteChanged) {
+  if (!changed) {
     OpalMediaFormatList::const_iterator fmt = answerFormats.FindFormat(stream->GetMediaFormat());
     if (fmt != answerFormats.end() && stream->UpdateMediaFormat(*fmt, true)) {
       PTRACE2(4, &*stream, "Answer SDP change needs to " << (paused ? "pause" : "resume") << " stream " << *stream);
@@ -437,7 +430,7 @@ static bool PauseOrCloseMediaStream(OpalMediaStreamPtr & stream,
     PTRACE(4, "Answer SDP (format change) needs to close stream " << *stream);
   }
   else {
-    PTRACE(4, "Answer SDP (address/port change) needs to close stream " << *stream);
+    PTRACE(4, "Answer SDP (type change) needs to close stream " << *stream);
   }
 
   OpalMediaPatchPtr patch = stream->GetPatch();
@@ -759,8 +752,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
 
   // Create new media session
   OpalTransportAddress localAddress;
-  bool remoteChanged = false;
-  OpalMediaSession * mediaSession = SetUpMediaSession(sessionId, mediaType, *incomingMedia, localAddress, remoteChanged);
+  OpalMediaSession * mediaSession = SetUpMediaSession(sessionId, mediaType, *incomingMedia, localAddress);
   if (mediaSession == NULL)
     return NULL;
 
@@ -790,7 +782,6 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
     }
 
     // Set flag to force media stream close
-    remoteChanged = true;
     replaceSession = true;
   }
 
@@ -854,11 +845,11 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
   // Check if we had a stream and the remote has either changed the codec or
   // changed the direction of the stream
   OpalMediaStreamPtr sendStream = GetMediaStream(sessionId, false);
-  if (PauseOrCloseMediaStream(sendStream, m_activeFormatList, remoteChanged || replaceSession, (otherSidesDir&SDPMediaDescription::RecvOnly) == 0))
+  if (PauseOrCloseMediaStream(sendStream, m_activeFormatList, replaceSession, (otherSidesDir&SDPMediaDescription::RecvOnly) == 0))
     newDirection = SDPMediaDescription::SendOnly;
 
   OpalMediaStreamPtr recvStream = GetMediaStream(sessionId, true);
-  if (PauseOrCloseMediaStream(recvStream, m_activeFormatList, remoteChanged || replaceSession,
+  if (PauseOrCloseMediaStream(recvStream, m_activeFormatList, replaceSession,
                               m_holdToRemote >= eHoldOn || (otherSidesDir&SDPMediaDescription::SendOnly) == 0))
     newDirection = newDirection != SDPMediaDescription::Inactive ? SDPMediaDescription::SendRecv : SDPMediaDescription::RecvOnly;
 
@@ -1051,9 +1042,8 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPSessionDescription &
   }
 
   // Set up the media session, e.g. RTP
-  bool remoteChanged = false;
   OpalTransportAddress localAddress;
-  OpalMediaSession * mediaSession = SetUpMediaSession(sessionId, mediaType, *mediaDescription, localAddress, remoteChanged);
+  OpalMediaSession * mediaSession = SetUpMediaSession(sessionId, mediaType, *mediaDescription, localAddress);
   if (mediaSession == NULL)
     return false;
 
@@ -1099,11 +1089,11 @@ bool OpalSDPConnection::OnReceivedAnswerSDPSession(const SDPSessionDescription &
   // changed the direction of the stream
   OpalMediaStreamPtr sendStream = GetMediaStream(sessionId, false);
   bool sendDisabled = (otherSidesDir&SDPMediaDescription::RecvOnly) == 0;
-  PauseOrCloseMediaStream(sendStream, m_activeFormatList, remoteChanged, sendDisabled);
+  PauseOrCloseMediaStream(sendStream, m_activeFormatList, false, sendDisabled);
 
   OpalMediaStreamPtr recvStream = GetMediaStream(sessionId, true);
   bool recvDisabled = (otherSidesDir&SDPMediaDescription::SendOnly) == 0;
-  PauseOrCloseMediaStream(recvStream, m_activeFormatList, remoteChanged, recvDisabled);
+  PauseOrCloseMediaStream(recvStream, m_activeFormatList, false, recvDisabled);
 
   // Then open the streams if the direction allows and if needed
   // If already open then update to new parameters/payload type

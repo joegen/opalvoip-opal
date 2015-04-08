@@ -275,8 +275,7 @@ class OpalSDPConnection : public OpalRTPConnection
       const unsigned rtpSessionId,
       const OpalMediaType & mediaType,
       const SDPMediaDescription & mediaDescription,
-      OpalTransportAddress & localAddress,
-      bool & remoteChanged
+      OpalTransportAddress & localAddress
     );
 #if OPAL_VIDEO
     virtual void SetAudioVideoGroup();
