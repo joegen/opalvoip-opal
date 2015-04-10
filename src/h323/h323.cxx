@@ -1228,7 +1228,7 @@ void H323Connection::SetRemotePartyInfo(const H323SignalPDU & pdu)
   }
 
   remotePartyName = pdu.GetSourceAliases(m_signallingChannel);
-  PTRACE(3, "H225\tSet remote party name: \"" << remotePartyName << '"');
+  PTRACE(3, "H225\tSet remote party name: \"" << remotePartyName << "\", number: \"" << remotePartyNumber << '"');
 }
 
 
