@@ -327,31 +327,69 @@ bool OpalTransportAddressArray::AppendStringCollection(const PCollection & coll)
     if (str != NULL) {
       PCaselessString addr = *str;
 
-      if (addr.NumCompare("<<ip4>>") == EqualTo || addr.NumCompare("0.0.0.0") == EqualTo)
-        atLeastOne = AddInterfaces(addr, 4) || atLeastOne;
-      else if (addr.NumCompare("<<ip6>>") == EqualTo || addr.NumCompare("[::]") == EqualTo)
-        atLeastOne = AddInterfaces(addr, 6) || atLeastOne;
-      else
-        atLeastOne = AppendAddress(addr) || atLeastOne;
+      if (addr.NumCompare("0.0.0.0") == EqualTo)
+        atLeastOne = AddInterfaces(PIPAddress::GetAny(4), PIPAddress::GetAny(4), addr.Mid(7)) || atLeastOne;
+      else if (addr.NumCompare("[::]") == EqualTo)
+        atLeastOne = AddInterfaces(PIPAddress::GetAny(6), PIPAddress::GetAny(6), addr.Mid(4)) || atLeastOne;
+      else if (addr.NumCompare("<<ip4>>") == EqualTo)
+        atLeastOne = AddInterfaces(PIPAddress::GetAny(4), PIPAddress::GetAny(4), addr.Mid(7)) || atLeastOne;
+      else if (addr.NumCompare("<<ip6>>") == EqualTo)
+        atLeastOne = AddInterfaces(PIPAddress::GetAny(6), PIPAddress::GetAny(6), addr.Mid(7)) || atLeastOne;
+      else {
+        PINDEX star = addr.Find('*');
+        if (star == P_MAX_INDEX)
+          atLeastOne = AppendAddress(addr) || atLeastOne;
+        else if (star == 0) {
+          atLeastOne = AddInterfaces(PIPAddress::GetAny(4), PIPAddress::GetAny(4), addr.Mid(1)) || atLeastOne;
+          atLeastOne = AddInterfaces(PIPAddress::GetAny(6), PIPAddress::GetAny(6), addr.Mid(1)) || atLeastOne;
+        }
+        else {
+          PStringArray components = addr.Left(star).Tokenise('.');
+          if (components.GetSize() < 2) {
+            PTRACE(1, "Illegal IP wildcard address used: \"" << addr << '"');
+            continue;
+          }
+
+          PStringStream network;
+          PStringStream mask;
+          network << components[0];
+          mask << "255";
+          PINDEX count = components.GetSize()-1;
+          if (components[count].IsEmpty())
+            --count;
+          PINDEX i = 0;
+          while (++i <= count) {
+            if (!components[i].IsEmpty()) {
+              network << '.' << components[i];
+              mask << ".255";
+            }
+          }
+          while (i++ < 4) {
+            network << ".0";
+            mask << ".0";
+          }
+
+          atLeastOne = AddInterfaces(PIPAddress(network), PIPAddress(mask), addr.Mid(star + 1)) || atLeastOne;
+        }
+      }
     }
   }
   return atLeastOne;
 }
 
 
-bool OpalTransportAddressArray::AddInterfaces(const PString & localAddress, unsigned version)
+bool OpalTransportAddressArray::AddInterfaces(const PIPAddress & network, const PIPAddress & mask, const PString & portStr)
 {
   bool atLeastOne = false;
-  PINDEX colon = localAddress.Find(':');
-  WORD port = (WORD)(colon != P_MAX_INDEX ? localAddress.Mid(colon + 1).AsUnsigned() : 0);
+  PINDEX colon = portStr.Find(':');
+  WORD port = (WORD)(colon != P_MAX_INDEX ? portStr.Mid(colon + 1).AsUnsigned() : 0);
 
   PIPSocket::InterfaceTable interfaces;
   PIPSocket::GetInterfaceTable(interfaces);
 
   for (PINDEX i = 0; i < interfaces.GetSize(); ++i) {
-    if (  interfaces[i].GetAddress().GetVersion() == version &&
-         !interfaces[i].GetAddress().IsLoopback() &&
-          AppendAddress(OpalTransportAddress(interfaces[i].GetAddress(), port)))
+    PIPAddress addr = interfaces[i].GetAddress();
+    if (addr.IsSubNet(network, mask) && !addr.IsLoopback() && AppendAddress(OpalTransportAddress(addr, port)))
       atLeastOne = true;
   }
   return atLeastOne;
