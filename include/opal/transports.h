@@ -345,23 +345,30 @@ class OpalTransportAddressArray : public PArray<OpalTransportAddress>
       const PCollection & coll
     ) { AppendStringCollection(coll); }
 
-    /** Append a string with special cases.
-        If address is a string containing ',', ';', tab or newline separated
-        sub-strings, each one is added using AppendStringCollection().
-      */
-    bool AppendString(
-      const PString & address
-    );
-
     /// Append one address to array
     bool AppendAddress(
       const OpalTransportAddress & address
     );
 
+    /** Append a string with special cases.
+        If address is a string containing ',', ';', tab or newline separated
+        sub-strings, each one is added using AppendStringCollection().
+
+        This may contain wild card strings matching interfaces that are
+        availabe in the system. For example "192.168.*" will match any
+        interfaces starting with 192.168. The string "0.0.0.0" will match all
+        IPv4 interfaces. The string "[::]" will map to all IPv6 interfaces.
+        Note the loopback interface will only be included if explictly
+        indicated.
+      */
+    bool AppendString(
+      const PString & address
+    );
+
     /** Append all the strings in the collection.
         Note the collection must contain PString objects.
-        The special string "<<ip4>>" and "<<ip6>>" will map to all interfaces
-        of that IP version, not including loopback.
+        See AppendString() for how each string in the collection is
+        interpreted.
       */
     bool AppendStringCollection(
       const PCollection & coll
@@ -384,7 +391,7 @@ class OpalTransportAddressArray : public PArray<OpalTransportAddress>
     );
 
   protected:
-    bool AddInterfaces(const PString & address, unsigned version);
+    bool AddInterfaces(const PIPAddress & network, const PIPAddress & mask, const PString & portStr);
 };
 
 
