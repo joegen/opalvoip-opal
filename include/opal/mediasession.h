@@ -205,6 +205,9 @@ class OpalMediaStatistics : public PObject, public OpalNetworkStatistics, public
 #if OPAL_FAX
     OpalFaxStatistics & m_fax; // For backward compatibility
 #endif // OPAL_FAX
+
+    P_DEPRECATED PString GetRate(int64_t current, int64_t previous, const char * units = "", unsigned decimals = 0) const
+    { return GetRateStr(current, previous, units, decimals);  }
 };
 
 #endif
