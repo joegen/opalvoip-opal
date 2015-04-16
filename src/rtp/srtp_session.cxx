@@ -436,12 +436,14 @@ PBYTEArray OpalSRTPKeyInfo::GetAuthSalt() const
 
 OpalSRTPSession::OpalSRTPSession(const Init & init)
   : OpalRTPSession(init)
-  , m_consecutiveErrors(0)
 {
   CHECK_ERROR(srtp_create, (&m_context, NULL));
 
-  for (int i = 0; i < 2; ++i)
+  for (int i = 0; i < 2; ++i) {
     m_keyInfo[i] = NULL;
+    for (int j = 0; j < 2; j++)
+      m_consecutiveErrors[i][j] = 0;
+  }
 }
 
 
@@ -598,8 +600,8 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
 
     frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
     if (!CHECK_ERROR(srtp_protect, (m_context, frame.GetPointer(), &len), frame.GetSyncSource(), frame.GetSequenceNumber()))
-      return ++m_consecutiveErrors > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
-    m_consecutiveErrors = 0;
+      return ++m_consecutiveErrors[e_Sender][e_Data] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
+    m_consecutiveErrors[e_Sender][e_Data] = 0;
   }
 
   PTRACE(GetThrottle(e_Sender, e_Data, frame.GetSyncSource()),
@@ -635,8 +637,8 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
     frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
 
     if (!CHECK_ERROR(srtp_protect_rtcp, (m_context, frame.GetPointer(), &len), frame.GetSenderSyncSource()))
-      return ++m_consecutiveErrors > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
-    m_consecutiveErrors = 0;
+      return ++m_consecutiveErrors[e_Sender][e_Control] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
+    m_consecutiveErrors[e_Sender][e_Control] = 0;
   }
 
   PTRACE(GetThrottle(e_Sender, e_Control, frame.GetSenderSyncSource()),
@@ -665,8 +667,8 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
     PPROFILE_BLOCK("srtp_unprotect");
     frame.MakeUnique();
     if (!CHECK_ERROR(srtp_unprotect, (m_context, frame.GetPointer(), &len), frame.GetSyncSource(), frame.GetSequenceNumber()))
-      return ++m_consecutiveErrors > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
-    m_consecutiveErrors = 0;
+      return ++m_consecutiveErrors[e_Receiver][e_Data] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
+    m_consecutiveErrors[e_Receiver][e_Data] = 0;
   }
 
   PTRACE(GetThrottle(e_Receiver, e_Data, frame.GetSyncSource()),
@@ -700,8 +702,8 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
     UseSyncSource(frame.GetSenderSyncSource(), e_Receiver, true);
 
     if (!CHECK_ERROR(srtp_unprotect_rtcp, (m_context, frame.GetPointer(), &len), frame.GetSenderSyncSource()))
-      return ++m_consecutiveErrors > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
-    m_consecutiveErrors = 0;
+      return ++m_consecutiveErrors[e_Receiver][e_Control] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
+    m_consecutiveErrors[e_Receiver][e_Control] = 0;
   }
 
   PTRACE(GetThrottle(e_Receiver, e_Control, frame.GetSenderSyncSource()),

@@ -738,7 +738,7 @@ srtp_stream_init(srtp_stream_ctx_t *srtp,
      status = cipher_set_iv(stream->rtp_cipher, &iv);
    }
    if (status)
-     return err_status_cipher_fail;
+     return status;
 
    /* shift est, put into network byte order */
 #ifdef NO_64BIT_MATH
@@ -759,7 +759,7 @@ srtp_stream_init(srtp_stream_ctx_t *srtp,
     if (prefix_len) {
       status = cipher_output(stream->rtp_cipher, auth_tag, prefix_len);
       if (status)
-	return err_status_cipher_fail;
+        return status;
       debug_print(mod_srtp, "keystream prefix: %s", 
 		  octet_string_hex_string(auth_tag, prefix_len));
     }
@@ -770,7 +770,7 @@ srtp_stream_init(srtp_stream_ctx_t *srtp,
     status = cipher_encrypt(stream->rtp_cipher, 
 			    (uint8_t *)enc_start, &enc_octet_len);
     if (status)
-      return err_status_cipher_fail;
+      return status;
   }
 
   /*
@@ -913,7 +913,7 @@ srtp_unprotect(srtp_ctx_t *ctx, void *srtp_hdr, int *pkt_octet_len) {
     status = cipher_set_iv(stream->rtp_cipher, &iv);
   }
   if (status)
-    return err_status_cipher_fail;
+    return status;
 
   /* shift est, put into network byte order */
 #ifdef NO_64BIT_MATH
@@ -977,12 +977,13 @@ srtp_unprotect(srtp_ctx_t *ctx, void *srtp_hdr, int *pkt_octet_len) {
       debug_print(mod_srtp, "keystream prefix: %s", 
 		  octet_string_hex_string(tmp_tag, prefix_len));
       if (status)
-	return err_status_cipher_fail;
+        return status;
     } 
 
     /* initialize auth func context */
     status = auth_start(stream->rtp_auth);
-    if (status) return status;
+    if (status)
+      return status;
  
     /* now compute auth function over packet */
     status = auth_update(stream->rtp_auth, (uint8_t *)auth_start,  
@@ -996,7 +997,7 @@ srtp_unprotect(srtp_ctx_t *ctx, void *srtp_hdr, int *pkt_octet_len) {
     debug_print(mod_srtp, "packet auth tag:      %s", 
 		octet_string_hex_string(auth_tag, tag_len));
     if (status)
-      return err_status_auth_fail;   
+      return status;   
 
     if (octet_string_is_eq(tmp_tag, auth_tag, tag_len))
       return err_status_auth_fail;
@@ -1025,7 +1026,7 @@ srtp_unprotect(srtp_ctx_t *ctx, void *srtp_hdr, int *pkt_octet_len) {
     status = cipher_encrypt(stream->rtp_cipher, 
 			    (uint8_t *)enc_start, &enc_octet_len);
     if (status)
-      return err_status_cipher_fail;
+      return status;
   }
 
   /* 
@@ -1543,7 +1544,7 @@ srtp_protect_rtcp(srtp_t ctx, void *rtcp_hdr, int *pkt_octet_len) {
     status = cipher_set_iv(stream->rtcp_cipher, &iv);
   }
   if (status)
-    return err_status_cipher_fail;
+    return status;
 
   /* 
    * if we're authenticating using a universal hash, put the keystream
@@ -1561,7 +1562,7 @@ srtp_protect_rtcp(srtp_t ctx, void *rtcp_hdr, int *pkt_octet_len) {
 		octet_string_hex_string(auth_tag, prefix_len));
 
     if (status)
-      return err_status_cipher_fail;
+      return status;
   }
 
   /* if we're encrypting, exor keystream into the message */
@@ -1569,7 +1570,7 @@ srtp_protect_rtcp(srtp_t ctx, void *rtcp_hdr, int *pkt_octet_len) {
     status = cipher_encrypt(stream->rtcp_cipher, 
 			    (uint8_t *)enc_start, &enc_octet_len);
     if (status)
-      return err_status_cipher_fail;
+      return status;
   }
 
   /* initialize auth func context */
@@ -1697,7 +1698,7 @@ srtp_unprotect_rtcp(srtp_t ctx, void *srtcp_hdr, int *pkt_octet_len) {
 
   }
   if (status)
-    return err_status_cipher_fail;
+    return status;
 
   /* initialize auth func context */
   auth_start(stream->rtcp_auth);
@@ -1727,7 +1728,7 @@ srtp_unprotect_rtcp(srtp_t ctx, void *srtcp_hdr, int *pkt_octet_len) {
     debug_print(mod_srtp, "keystream prefix: %s", 
 		octet_string_hex_string(auth_tag, prefix_len));
     if (status)
-      return err_status_cipher_fail;
+      return status;
   }
 
   /* if we're decrypting, exor keystream into the message */
@@ -1735,7 +1736,7 @@ srtp_unprotect_rtcp(srtp_t ctx, void *srtcp_hdr, int *pkt_octet_len) {
     status = cipher_encrypt(stream->rtcp_cipher, 
 			    (uint8_t *)enc_start, &enc_octet_len);
     if (status)
-      return err_status_cipher_fail;
+      return status;
   }
 
   /* decrease the packet length by the length of the auth tag and seq_num*/
