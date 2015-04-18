@@ -1396,6 +1396,7 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
   statistics.m_maximumJitter     = 0;
   statistics.m_roundTripTime     = m_roundTripTime;
   statistics.m_lastPacketTime.SetTimestamp(0);
+  statistics.m_lastReportTime.SetTimestamp(0);
 
   if (statistics.m_SSRC != 0) {
     SyncSource * info;
@@ -1446,6 +1447,7 @@ void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics)
   statistics.m_averageJitter     = m_jitter;
   statistics.m_maximumJitter     = m_maximumJitter;
   statistics.m_lastPacketTime    = m_lastPacketAbsTime;
+  statistics.m_lastReportTime    = m_lastReportTime;
 }
 #endif // OPAL_STATISTICS
 
