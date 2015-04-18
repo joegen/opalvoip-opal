@@ -70,6 +70,7 @@ OpalNetworkStatistics::OpalNetworkStatistics()
   , m_averageJitter(0)
   , m_maximumJitter(0)
   , m_lastPacketTime(0)
+  , m_lastReportTime(0)
   , m_targetBitRate(0)
   , m_targetFrameRate(0)
 {
