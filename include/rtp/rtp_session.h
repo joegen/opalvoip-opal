@@ -614,7 +614,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual SendReceiveStatus SendTemporalSpatialTradeOff(unsigned tradeOff, RTP_SyncSourceId ssrc = 0);
 #endif
 
-    RTP_Timestamp GetLastSentTimestamp(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_lastTimestamp; }
+    RTP_Timestamp GetLastSentTimestamp(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_lastPacketTimestamp; }
     const PTimeInterval & GetLastSentPacketTime(RTP_SyncSourceId ssrc = 0) const { return GetSyncSource(ssrc, e_Sender).m_lastPacketTick; }
 
     /// Set the jitter buffer to get certain RTCP statustics from.
@@ -750,10 +750,12 @@ class OpalRTPSession : public OpalMediaSession
       PSimpleTimer       m_waitOutOfOrderTimer;
       RTP_DataFrameList  m_pendingPackets;
 
-      // Generating real time stamping in RTP packets as indicated by remote
-      // Only useful if local and remote system clocks are well synchronised
-      unsigned m_syncTimestamp;
-      PTime    m_syncRealTime;
+      // Generating real time stamping in RTP packets
+      // For e_Receive, times are from last received sender report
+      // For e_Sender, times are from RTP_DataFrame, or synthesized from local real time.
+      RTP_Timestamp      m_reportTimestamp;
+      PTime              m_reportAbsoluteTime;
+      bool               m_synthesizeAbsTime;
 
       // Statistics gathered
       PTime    m_firstPacketTime;
@@ -772,9 +774,8 @@ class OpalRTPSession : public OpalMediaSession
       unsigned m_markerCount;
 
       // Working for calculating statistics
-      RTP_Timestamp      m_lastTimestamp;
-      PTime              m_lastAbsoluteTime;
-      bool               m_synthesizeAbsTime;
+      RTP_Timestamp      m_lastPacketTimestamp;
+      PTime              m_lastPacketAbsTime;
       PTimeInterval      m_lastPacketTick;
 
       unsigned           m_averageTimeAccum;
