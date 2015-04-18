@@ -74,6 +74,7 @@ struct OpalNetworkStatistics
   unsigned m_jitterBufferDelay; // Milliseconds
   unsigned m_roundTripTime;     // Milliseconds
   PTime    m_lastPacketTime;
+  PTime    m_lastReportTime;
   unsigned m_targetBitRate;    // As configured, not actual, which is calculated from m_totalBytes
   float    m_targetFrameRate;  // As configured, not actual, which is calculated from m_totalFrames
 };
