@@ -359,8 +359,9 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
   , m_lastTSTOSequenceNumber(0)
   , m_consecutiveOutOfOrderPackets(0)
   , m_nextOutOfOrderPacket(0)
-  , m_syncTimestamp(0)
-  , m_syncRealTime(0)
+  , m_reportTimestamp(0)
+  , m_reportAbsoluteTime(0)
+  , m_synthesizeAbsTime(true)
   , m_firstPacketTime(0)
   , m_packets(0)
   , m_octets(0)
@@ -374,9 +375,8 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
   , m_jitter(0)
   , m_maximumJitter(0)
   , m_markerCount(0)
-  , m_lastTimestamp(0)
-  , m_lastAbsoluteTime(0)
-  , m_synthesizeAbsTime(true)
+  , m_lastPacketTimestamp(0)
+  , m_lastPacketAbsTime(0)
   , m_averageTimeAccum(0)
   , m_maximumTimeAccum(0)
   , m_minimumTimeAccum(0)
@@ -446,19 +446,15 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
   if (frame.GetMarker())
     ++m_markerCount;
 
-  RTP_Timestamp lastTimestamp = m_lastTimestamp;
+  RTP_Timestamp lastTimestamp = m_lastPacketTimestamp;
   PTimeInterval lastPacketTick = m_lastPacketTick;
 
   PTimeInterval tick = PTimer::Tick();
   m_lastPacketTick = tick;
+  m_lastPacketAbsTime = frame.GetAbsoluteTime();
+  m_lastPacketTimestamp = frame.GetTimestamp();
 
-  m_lastTimestamp = frame.GetTimestamp();
 
-  PTRACE_IF(3, !m_lastAbsoluteTime.IsValid() && frame.GetAbsoluteTime().IsValid(), &m_session,
-            m_session << "sent first RTP with absolute time: " << frame.GetAbsoluteTime().AsString("hh:mm:dd.uuu"));
-  m_lastAbsoluteTime = frame.GetAbsoluteTime();
-  if (m_direction == e_Receiver && m_synthesizeAbsTime && !m_lastAbsoluteTime.IsValid())
-    m_lastAbsoluteTime.SetCurrentTime();
 
   /* For audio we do not do statistics on start of talk burst as that
       could be a substantial time and is not useful, so we only calculate
@@ -567,6 +563,16 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
 
   WRITE_PERFORMANCE_HACK(5,(++m_packets,e_IgnorePacket))
 
+  // Update absolute time and RTP timestamp for next SR that goes out
+  if (m_synthesizeAbsTime && !frame.GetAbsoluteTime().IsValid())
+      frame.SetAbsoluteTime(PTime());
+
+  PTRACE_IF(3, !m_reportAbsoluteTime.IsValid() && frame.GetAbsoluteTime().IsValid(), &m_session,
+            m_session << "sent first RTP with absolute time: " << frame.GetAbsoluteTime().AsString("hh:mm:dd.uuu"));
+
+  m_reportAbsoluteTime = frame.GetAbsoluteTime();
+  m_reportTimestamp = frame.GetTimestamp();
+
   CalculateStatistics(frame);
 
   WRITE_PERFORMANCE_HACK(6,e_IgnorePacket)
@@ -659,8 +665,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
   READ_PERFORMANCE_HACK(6,e_ProcessPacket)
 
   PTime absTime(0);
-  if (m_syncRealTime.IsValid())
-    absTime = m_syncRealTime + PTimeInterval(((int64_t)frame.GetTimestamp() - (int64_t)m_syncTimestamp) / m_session.m_timeUnits);
+  if (m_reportAbsoluteTime.IsValid())
+    absTime = m_reportAbsoluteTime + PTimeInterval(((int64_t)frame.GetTimestamp() - (int64_t)m_reportTimestamp) / m_session.m_timeUnits);
   frame.SetAbsoluteTime(absTime);
 
 #if OPAL_RTCP_XR
@@ -1036,7 +1042,7 @@ void OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::Receiver
 
   // Time remote sent us an SR
   if (m_lastReportTime.IsValid()) {
-    report.lsr  = (uint32_t)(m_syncRealTime.GetNTP() >> 16);
+    report.lsr  = (uint32_t)(m_reportAbsoluteTime.GetNTP() >> 16);
     report.dlsr = (uint32_t)((PTime() - m_lastReportTime).GetMilliSeconds()*65536/1000); // Delay since last received SR
   }
   else {
@@ -1061,14 +1067,14 @@ __inline PTimeInterval abs(const PTimeInterval & i) { return i < 0 ? -i : i; }
 void OpalRTPSession::SyncSource::OnRxSenderReport(const RTP_SenderReport & report)
 {
   PTime now;
-  PTRACE_IF(2, m_syncRealTime.IsValid() && m_lastReportTime.IsValid() &&
-               abs(report.realTimestamp - m_syncRealTime) > std::max(PTimeInterval(0,10),(now - m_lastReportTime)*2),
+  PTRACE_IF(2, m_reportAbsoluteTime.IsValid() && m_lastReportTime.IsValid() &&
+               abs(report.realTimestamp - m_reportAbsoluteTime) > std::max(PTimeInterval(0,10),(now - m_lastReportTime)*2),
             &m_session, m_session << "OnRxSenderReport: remote NTP time jumped by unexpectedly large amount,"
-            " was " << m_syncRealTime.AsString(PTime::LoggingFormat) << ","
+            " was " << m_reportAbsoluteTime.AsString(PTime::LoggingFormat) << ","
             " now " << report.realTimestamp.AsString(PTime::LoggingFormat) << ","
                         " last report " << m_lastReportTime.AsString(PTime::LoggingFormat));
-  m_syncRealTime = report.realTimestamp;
-  m_syncTimestamp = report.rtpTimestamp;
+  m_reportAbsoluteTime = report.realTimestamp;
+  m_reportTimestamp = report.rtpTimestamp;
   m_lastReportTime = now; // Remember when we received the SR
   m_senderReports++;
 }
@@ -1242,7 +1248,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
   RTP_ControlFrame::ReceiverReport * rr = NULL;
 
   // No valid packets sent yet, so only send RR
-  if (!sender.m_lastAbsoluteTime.IsValid()) {
+  if (!sender.m_reportAbsoluteTime.IsValid()) {
 
     // Send RR as we are not sending data yet
     report.StartNewPacket(RTP_ControlFrame::e_ReceiverReport);
@@ -1283,15 +1289,15 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
     // add the SR after the SSRC
     RTP_ControlFrame::SenderReport * sr = (RTP_ControlFrame::SenderReport *)(payload+sizeof(PUInt32b));
-    sr->ntp_ts = sender.m_lastAbsoluteTime.GetNTP();
-    sr->rtp_ts = sender.m_lastTimestamp;
+    sr->ntp_ts = sender.m_reportAbsoluteTime.GetNTP();
+    sr->rtp_ts = sender.m_reportTimestamp;
     sr->psent  = sender.m_packets;
     sr->osent  = (uint32_t)sender.m_octets;
 
     PTRACE(m_throttleTxReport, *this << "sending SenderReport:"
               " SSRC=" << RTP_TRACE_SRC(sender.m_sourceIdentifier)
            << " ntp=0x" << hex << sr->ntp_ts << dec
-           << sender.m_lastAbsoluteTime.AsString("(hh:mm:ss.uuu)")
+           << sender.m_reportAbsoluteTime.AsString("(hh:mm:ss.uuu)")
            << " rtp=" << sr->rtp_ts
            << " psent=" << sr->psent
            << " osent=" << sr->osent
@@ -1389,6 +1395,7 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
   statistics.m_averageJitter     = 0;
   statistics.m_maximumJitter     = 0;
   statistics.m_roundTripTime     = m_roundTripTime;
+  statistics.m_lastPacketTime.SetTimestamp(0);
 
   if (statistics.m_SSRC != 0) {
     SyncSource * info;
@@ -1438,6 +1445,7 @@ void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics)
   statistics.m_maximumPacketTime = m_maximumPacketTime;
   statistics.m_averageJitter     = m_jitter;
   statistics.m_maximumJitter     = m_maximumJitter;
+  statistics.m_lastPacketTime    = m_lastPacketAbsTime;
 }
 #endif // OPAL_STATISTICS
 
