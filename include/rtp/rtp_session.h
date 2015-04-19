@@ -791,6 +791,7 @@ class OpalRTPSession : public OpalMediaSession
       // For e_Receive, arrival time of last SR from remote
       // For e_Sender, time we sent last RR to remote
       PTime              m_lastReportTime;
+      bool               m_canCalculateRTT;
 
       unsigned           m_statisticsCount;
 
