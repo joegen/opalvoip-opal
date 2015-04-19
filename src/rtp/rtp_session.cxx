@@ -385,6 +385,7 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
   , m_packetsLostSinceLastRR(0)
   , m_lastRRSequenceNumber(0)
   , m_lastReportTime(0)
+  , m_canCalculateRTT(false)
   , m_statisticsCount(0)
 #if OPAL_RTCP_XR
   , m_metrics(NULL)
@@ -1090,7 +1091,7 @@ void OpalRTPSession::SyncSource::OnRxReceiverReport(const ReceiverReport & repor
     m_metrics->OnRxSenderReport(report.lastTimestamp, report.delay);
 #endif
 
-  if (m_lastReportTime.IsValid()) {
+  if (m_canCalculateRTT) {
     PTimeInterval myDelay = PTime() - m_lastReportTime;
     if (m_session.m_roundTripTime > 0 && myDelay <= report.delay)
       PTRACE(4, &m_session, *this << "not calculating round trip time, RR arrived too soon after SR.");
@@ -1105,7 +1106,7 @@ void OpalRTPSession::SyncSource::OnRxReceiverReport(const ReceiverReport & repor
       m_session.m_roundTripTime = (myDelay - report.delay).GetInterval();
       PTRACE(4, &m_session, *this << "determined round trip time: " << m_session.m_roundTripTime << "ms");
     }
-    m_lastReportTime = 0;
+    m_canCalculateRTT = false;
   }
 }
 
@@ -1303,8 +1304,8 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
            << " osent=" << sr->osent
            << m_throttleTxReport);
 
-    if (!sender.m_lastReportTime.IsValid())
-      sender.m_lastReportTime.SetCurrentTime(); // Remember when we last sent SR
+    sender.m_lastReportTime.SetCurrentTime(); // Remember when we last sent SR
+    sender.m_canCalculateRTT = true;
 
     // add the RR's after the SR
     rr = (RTP_ControlFrame::ReceiverReport *)(payload + sizeof(PUInt32b) + sizeof(RTP_ControlFrame::SenderReport));
@@ -1395,8 +1396,8 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
   statistics.m_averageJitter     = 0;
   statistics.m_maximumJitter     = 0;
   statistics.m_roundTripTime     = m_roundTripTime;
-  statistics.m_lastPacketTime.SetTimestamp(0);
-  statistics.m_lastReportTime.SetTimestamp(0);
+  statistics.m_lastPacketTime    = 0;
+  statistics.m_lastReportTime    = 0;
 
   if (statistics.m_SSRC != 0) {
     SyncSource * info;
