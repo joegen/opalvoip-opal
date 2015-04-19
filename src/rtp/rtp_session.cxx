@@ -1420,6 +1420,10 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
         statistics.m_averagePacketTime += ssrcStats.m_averagePacketTime;
         statistics.m_maximumPacketTime += ssrcStats.m_maximumPacketTime;
         statistics.m_averageJitter     += ssrcStats.m_averageJitter;
+        if (statistics.m_lastPacketTime < ssrcStats.m_lastPacketTime)
+          statistics.m_lastPacketTime = ssrcStats.m_lastPacketTime;
+        if (statistics.m_lastReportTime < ssrcStats.m_lastReportTime)
+          statistics.m_lastPacketTime = ssrcStats.m_lastReportTime;
         ++count;
       }
     }
