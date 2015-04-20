@@ -619,7 +619,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     m_consecutiveOutOfOrderPackets = 0;
   }
   else if (sequenceDelta > SequenceReorderThreshold) {
-    PTRACE(4, &m_session, *this << "out of order packet, got " << sequenceNumber << " expected " << expectedSequenceNumber);
+    PTRACE(3, &m_session, *this << "late out of order packet, got " << sequenceNumber << " expected " << expectedSequenceNumber);
   }
   else if (sequenceDelta > SequenceRestartThreshold) {
     // Check for where sequence numbers suddenly start incrementing from a different base.
@@ -631,7 +631,8 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_
     m_nextOutOfOrderPacket = sequenceNumber+1;
 
     if (++m_consecutiveOutOfOrderPackets < 10) {
-      PTRACE(4, &m_session, *this << "incorrect sequence, got " << sequenceNumber << " expected " << expectedSequenceNumber);
+      PTRACE(m_consecutiveOutOfOrderPackets == 1 ? 3 : 4, &m_session,
+             *this << "incorrect sequence, got " << sequenceNumber << " expected " << expectedSequenceNumber);
       m_packetsOutOfOrder++; // Allow next layer up to deal with out of order packet
     }
     else {
