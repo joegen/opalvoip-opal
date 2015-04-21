@@ -6862,6 +6862,7 @@ fi
 
             if test "x$usable" = xno; then :
 
+               usable="yes"
                SRTP_SYSTEM="no"
                SRTP_CFLAGS=
                SRTP_LIBS=
@@ -7367,6 +7368,7 @@ fi
 
             if test "x$usable" = xno; then :
 
+               usable="yes"
                SPEEXDSP_SYSTEM="no"
                SPEEXDSP_CFLAGS=
                SPEEXDSP_LIBS=
