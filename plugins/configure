@@ -7274,6 +7274,7 @@ fi
 
             if test "x$usable" = xno; then :
 
+               usable="yes"
                GSM_SYSTEM="no"
                GSM_CFLAGS=
                GSM_LIBS=
@@ -7554,6 +7555,7 @@ fi
 
             if test "x$usable" = xno; then :
 
+               usable="yes"
                ILBC_SYSTEM="no"
                ILBC_CFLAGS=
                ILBC_LIBS=
@@ -7839,6 +7841,7 @@ fi
 
             if test "x$usable" = xno; then :
 
+               usable="yes"
                SPEEX_SYSTEM="no"
                SPEEX_CFLAGS=
                SPEEX_LIBS=
@@ -8614,6 +8617,7 @@ fi
 
             if test "x$usable" = xno; then :
 
+               usable="yes"
                OPUS_SYSTEM="no"
                OPUS_CFLAGS=
                OPUS_LIBS=
@@ -9928,6 +9932,7 @@ fi
 
             if test "x$usable" = xno; then :
 
+               usable="yes"
                OPENH264_SYSTEM="no"
                OPENH264_CFLAGS=
                OPENH264_LIBS=
