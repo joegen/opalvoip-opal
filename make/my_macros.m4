@@ -236,7 +236,6 @@ AC_DEFUN([MY_MODULE_OPTION],[
 
          m4_bmatch([$4], [.*local-source.*], [
             AS_VAR_IF([usable], [no], [
-               usable="yes"
                $1[_SYSTEM]="no"
                $1[_CFLAGS]=
                $1[_LIBS]=
@@ -420,6 +419,9 @@ rm /tmp/ptlib_install_test?
 AC_CHECK_TOOL(AR, ar)
 dnl AS_VAR_SET_IF([AR], , AC_CHECK_TOOL(AR, gar))
 
+AC_CHECK_TOOL(STRIP, strip)
+AC_CHECK_TOOL(OBJCOPY, objcopy)   dnl GNU (Linux)
+AC_CHECK_TOOL(DSYMUTIL, dsymutil) dnl clang (Mac-OS)
 
 dnl Integer sizes, also defines HAVE_STDINT_H and HAVE_INTTYPES_H
 AC_CHECK_SIZEOF(int)
@@ -444,18 +446,27 @@ AC_SUBST(SHARED_CPPFLAGS, "-fPIC")
 AC_SUBST(SHARED_LDFLAGS, [['-shared -Wl,-soname,$(LIB_SONAME)']])
 AC_SUBST(SHAREDLIBEXT, "so")
 AC_SUBST(STATICLIBEXT, "a")
+AC_SUBST(DEBUGINFOEXT, "debug")
 AC_SUBST(ARFLAGS, "rc")
 
 case "$target_os" in
    darwin* | iPhone* )
       SHARED_LDFLAGS="-dynamiclib"
       SHAREDLIBEXT="dylib"
+      DEBUGINFOEXT="dSYM"
       AR="libtool"
       ARFLAGS="-static -o"
       RANLIB=
       CPPFLAGS="${CPPFLAGS} -stdlib=libc++"
       LDFLAGS="${LDFLAGS} -stdlib=libc++"
       LIBS="-framework AudioToolbox -framework CoreAudio -framework SystemConfiguration -framework Foundation -lobjc $LIBS"
+      MY_COMPILE_IFELSE(
+         [debug build (-gdwarf-4)],
+         [-gdwarf-4],
+         [],
+         [],
+         [DEBUG_FLAG="-gdwarf-4"]
+      )
    ;;
 
    cygwin* | mingw* )
@@ -582,7 +593,7 @@ AS_CASE([$target_cpu],
       target_64bit=0
    ],
 
-   ppc64 | powerpc64, [
+   ppc64 | powerpc64 | ppc64el | powerpc64le, [
       target_cpu=ppc64
       target_64bit=1
    ],
@@ -596,6 +607,10 @@ AS_CASE([$target_cpu],
    ],
 
    aarch64*, [
+      target_64bit=1
+   ],
+
+   mips64 | mips64el, [
       target_64bit=1
    ],
       AC_MSG_WARN([CPU \"$target_cpu\" not recognized - assuming 32 bit])
@@ -630,15 +645,24 @@ dnl add additional information for the debugger to ensure the user can indeed
 dnl debug coredumps and macros.
 
 AC_SUBST(DEBUG_CPPFLAGS, "-D_DEBUG $DEBUG_CPPFLAGS")
-MY_COMPILE_IFELSE(
-   [debug build (-g3 -ggdb -O0)],
-   [-g3 -ggdb -O0],
-   [],
-   [],
-   [DEBUG_CFLAGS="-g3 -ggdb -O0 $DEBUG_CFLAGS"],
-   [DEBUG_CFLAGS="-g $DEBUG_CFLAGS"]
+AS_VAR_SET_IF([DEBUG_FLAG], ,
+   MY_COMPILE_IFELSE(
+      [debug build (-ggdb3)],
+      [-ggdb3],
+      [],
+      [],
+      [DEBUG_FLAG="-ggdb3"],
+      MY_COMPILE_IFELSE(
+         [debug build (-g3)],
+         [-g3],
+         [],
+         [],
+         [DEBUG_FLAG="-g3"],
+         [DEBUG_FLAG="-g"]
+      )
+   )
 )
-AC_SUBST(DEBUG_CFLAGS)
+AC_SUBST(DEBUG_CFLAGS, "$DEBUG_FLAG $DEBUG_CFLAGS")
 
 AC_SUBST(OPT_CPPFLAGS, "-DNDEBUG $OPT_CPPFLAGS")
 MY_COMPILE_IFELSE(
@@ -647,7 +671,7 @@ MY_COMPILE_IFELSE(
    [],
    [],
    [OPT_CFLAGS="-O3 $OPT_CFLAGS"],
-   [OPT_CFLAGS="-O2 $OPT_CFLAGS"]
+   [OPT_CFLAGS="-O $OPT_CFLAGS"]
 )
 AC_SUBST(OPT_CFLAGS)
 
