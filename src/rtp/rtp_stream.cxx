@@ -426,17 +426,6 @@ void OpalRTPMediaStream::GetStatistics(OpalMediaStatistics & statistics, bool fr
 {
   OpalMediaStream::GetStatistics(statistics, fromPatch);
   m_rtpSession.GetStatistics(statistics, IsSource() ? OpalRTPSession::e_Receiver : OpalRTPSession::e_Sender);
-
-  if (m_jitterBuffer != NULL) {
-    statistics.m_packetsTooLate    = m_jitterBuffer->GetPacketsTooLate();
-    statistics.m_packetOverruns    = m_jitterBuffer->GetBufferOverruns();
-    statistics.m_jitterBufferDelay = m_jitterBuffer->GetCurrentJitterDelay()/m_jitterBuffer->GetTimeUnits();
-  }
-  else {
-    statistics.m_packetsTooLate    = 0;
-    statistics.m_packetOverruns    = 0;
-    statistics.m_jitterBufferDelay = 0;
-  }
 }
 #endif
 
