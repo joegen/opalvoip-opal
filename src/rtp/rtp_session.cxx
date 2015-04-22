@@ -1392,6 +1392,7 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
   statistics.m_packetsLost       = 0;
   statistics.m_packetsOutOfOrder = 0;
   statistics.m_packetsTooLate    = 0;
+  statistics.m_packetOverruns    = 0;
   statistics.m_minimumPacketTime = 0;
   statistics.m_averagePacketTime = 0;
   statistics.m_maximumPacketTime = 0;
@@ -1420,6 +1421,7 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
         statistics.m_packetsLost       += ssrcStats.m_packetsLost;
         statistics.m_packetsOutOfOrder += ssrcStats.m_packetsOutOfOrder;
         statistics.m_packetsTooLate    += ssrcStats.m_packetsTooLate;
+        statistics.m_packetOverruns    += ssrcStats.m_packetOverruns;
         statistics.m_minimumPacketTime += ssrcStats.m_minimumPacketTime;
         statistics.m_averagePacketTime += ssrcStats.m_averagePacketTime;
         statistics.m_maximumPacketTime += ssrcStats.m_maximumPacketTime;
