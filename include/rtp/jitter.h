@@ -133,7 +133,8 @@ class OpalJitterBuffer : public PObject
       */
     virtual bool ReadData(
       RTP_DataFrame & frame,              ///<  Frame to extract from jitter buffer
-      PTimeInterval tick = PTimer::Tick() ///< Real time tick for packet removal
+      const PTimeInterval & timeout = PMaxTimeInterval  ///< Time out for read
+      PTRACE_PARAM(, PTimeInterval tick = PMaxTimeInterval)
     ) = 0;
 
     /**Get current delay for jitter buffer.
@@ -235,7 +236,8 @@ class OpalAudioJitterBuffer : public OpalJitterBuffer
       */
     virtual bool ReadData(
       RTP_DataFrame & frame,              ///<  Frame to extract from jitter buffer
-      PTimeInterval tick = PTimer::Tick() ///< Real time tick for packet removal
+      const PTimeInterval & timeout = PMaxTimeInterval  ///< Time out for read
+      PTRACE_PARAM(, PTimeInterval tick = PMaxTimeInterval)
     );
 
     /**Get current delay for jitter buffer.
@@ -340,7 +342,8 @@ class OpalNonJitterBuffer : public OpalJitterBuffer
       */
     virtual bool ReadData(
       RTP_DataFrame & frame,              ///<  Frame to extract from jitter buffer
-      PTimeInterval tick = PTimer::Tick() ///< Real time tick for packet removal
+      const PTimeInterval & timeout = PMaxTimeInterval  ///< Time out for read
+      PTRACE_PARAM(, PTimeInterval tick = PMaxTimeInterval)
     );
   //@}
 

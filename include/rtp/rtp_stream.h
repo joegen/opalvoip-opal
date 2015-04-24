@@ -161,6 +161,9 @@ class OpalRTPMediaStream : public OpalMediaStream
     RTP_SyncSourceId SetSyncSource() const { return m_syncSource; }
     void SetSyncSource(RTP_SyncSourceId ssrc) { m_syncSource = ssrc; }
 
+    const PTimeInterval & GetReadTimeout() const { return m_readTimeout; }
+    void SetReadTimeout(const PTimeInterval & t) { m_readTimeout = t; }
+
     void SetRewriteHeaders(bool v) { m_rewriteHeaders = v; }
 
 #if OPAL_VIDEO
@@ -187,6 +190,7 @@ protected:
     RTP_SyncSourceId    m_syncSource;
     OpalMediaStreamPtr  m_passThruStream;
     OpalJitterBuffer  * m_jitterBuffer;
+    PTimeInterval       m_readTimeout;
 
 #if OPAL_VIDEO
     bool          m_forceIntraFrameFlag;
