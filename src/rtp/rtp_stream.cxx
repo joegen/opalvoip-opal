@@ -62,6 +62,7 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
   , m_rewriteHeaders(true)
   , m_syncSource(0)
   , m_jitterBuffer(NULL)
+  , m_readTimeout(PMaxTimeInterval)
   , m_receiveNotifier(PCREATE_RTPDataNotifier(OnReceivedPacket))
 {
   /* If we are a source then we should set our buffer size to the max
@@ -267,7 +268,7 @@ PBoolean OpalRTPMediaStream::ReadPacket(RTP_DataFrame & packet)
     return false;
   }
 
-  if (PAssertNULL(m_jitterBuffer) == NULL || !m_jitterBuffer->ReadData(packet))
+  if (PAssertNULL(m_jitterBuffer) == NULL || !m_jitterBuffer->ReadData(packet, m_readTimeout))
     return false;
 
 #if OPAL_VIDEO

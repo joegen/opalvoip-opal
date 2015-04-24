@@ -239,7 +239,7 @@ void JesterProcess::Main()
       while (outTick <= genTick) {
         RTP_DataFrame readFrame(m_bytesPerBlock);
         readFrame.SetTimestamp(m_playbackTimestamp);
-        if (!m_jitterBuffer.ReadData(readFrame, outTick))
+        if (!m_jitterBuffer.ReadData(readFrame, 0, outTick))
           break;
 
         DWORD ts = readFrame.GetTimestamp();

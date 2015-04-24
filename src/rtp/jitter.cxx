@@ -521,7 +521,7 @@ bool OpalAudioJitterBuffer::AdjustCurrentJitterDelay(int delta)
 
 #define COMMON_TRACE_INFO ": ts=" << requiredTimestamp << " (" << playOutTimestamp << "), dT=" << removalDelta << ", size=" << m_frames.size()
 
-PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, PTimeInterval PTRACE_PARAM(tick))
+PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval & PTRACE_PARAM(, PTimeInterval tick))
 {
   // Default response is an empty frame, ie silence
   frame.SetPayloadSize(0);
@@ -543,6 +543,8 @@ PBoolean OpalAudioJitterBuffer::ReadData(RTP_DataFrame & frame, PTimeInterval PT
     return false;
 
 #if PTRACING
+  if (tick == PMaxTimeInterval)
+      tick = PTimer::Tick();
   PTimeInterval removalDelta = tick - m_lastRemoveTick;
   m_lastRemoveTick = tick;
 #endif
@@ -754,9 +756,11 @@ bool OpalNonJitterBuffer::WriteData(const RTP_DataFrame & frame, PTimeInterval)
 }
 
 
-bool OpalNonJitterBuffer::ReadData(RTP_DataFrame & frame, PTimeInterval tick)
+bool OpalNonJitterBuffer::ReadData(RTP_DataFrame & frame, const PTimeInterval & timeout PTRACE_PARAM(, PTimeInterval))
 {
-  return m_queue.Dequeue(frame);
+  if (!m_queue.Dequeue(frame, timeout))
+      frame.SetPayloadSize(0);
+  return m_queue.IsOpen();
 }
 
 
