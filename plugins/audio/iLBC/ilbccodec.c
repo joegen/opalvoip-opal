@@ -489,10 +489,12 @@ static struct PluginCodec_Definition iLBCCodecDefn[] =
     8000,                               // samples per second
     BITRATE_30MS,                       // raw bits per second (note we use highest value here)
     30000,                              // nanoseconds per frame (note we use highest value here)
-    BLOCKL_30MS,                        // samples per frame (note we use highest value here)
-    NO_OF_BYTES_30MS,                   // bytes per frame (note we use highest value here)
-    2,                                  // recommended number of frames per packet
-    5,                                  // maximum number of frames per packe
+    {{
+      BLOCKL_30MS,                      // samples per frame (note we use highest value here)
+      NO_OF_BYTES_30MS,                 // bytes per frame (note we use highest value here)
+      2,                                // recommended number of frames per packet
+      5,                                // maximum number of frames per packe
+    }},
     0,                                  // IANA RTP payload code
     sdpILBC,                            // RTP payload name
 
@@ -525,10 +527,12 @@ static struct PluginCodec_Definition iLBCCodecDefn[] =
     8000,                               // samples per second
     BITRATE_30MS,                       // raw bits per second (note we use highest value here)
     30000,                              // nanoseconds per frame (note we use highest value here)
-    BLOCKL_30MS,                        // samples per frame (note we use highest value here)
-    NO_OF_BYTES_30MS,                   // bytes per frame (note we use highest value here)
-    2,                                  // recommended number of frames per packet
-    5,                                  // maximum number of frames per packe
+    {{
+      BLOCKL_30MS,                      // samples per frame (note we use highest value here)
+      NO_OF_BYTES_30MS,                 // bytes per frame (note we use highest value here)
+      2,                                // recommended number of frames per packet
+      5,                                // maximum number of frames per packe
+    }},
     0,                                  // IANA RTP payload code
     sdpILBC,                            // RTP payload name
 
@@ -561,10 +565,12 @@ static struct PluginCodec_Definition iLBCCodecDefn[] =
     8000,                               // samples per second
     BITRATE_30MS,                       // raw bits per second
     30000,                              // nanoseconds per frame
-    BLOCKL_30MS,                        // samples per frame
-    NO_OF_BYTES_30MS,                   // bytes per frame
-    1,                                  // recommended number of frames per packet
-    1,                                  // maximum number of frames per packe
+    {{
+      BLOCKL_30MS,                      // samples per frame
+      NO_OF_BYTES_30MS,                 // bytes per frame
+      1,                                // recommended number of frames per packet
+      1,                                // maximum number of frames per packe
+    }},
     0,                                  // IANA RTP payload code
     sdpILBC,                            // RTP payload name
 
@@ -597,10 +603,12 @@ static struct PluginCodec_Definition iLBCCodecDefn[] =
     8000,                               // samples per second
     BITRATE_30MS,                       // raw bits per second
     30000,                              // nanoseconds per frame
-    BLOCKL_30MS,                        // samples per frame
-    NO_OF_BYTES_30MS,                   // bytes per frame
-    1,                                  // recommended number of frames per packet
-    1,                                  // maximum number of frames per packe
+    {{
+      BLOCKL_30MS,                      // samples per frame
+      NO_OF_BYTES_30MS,                 // bytes per frame
+      1,                                // recommended number of frames per packet
+      1,                                // maximum number of frames per packe
+    }},
     0,                                  // IANA RTP payload code
     sdpILBC,                            // RTP payload name
 
@@ -633,10 +641,12 @@ static struct PluginCodec_Definition iLBCCodecDefn[] =
     8000,                               // samples per second
     BITRATE_20MS,                       // raw bits per second
     20000,                              // nanoseconds per frame
-    BLOCKL_20MS,                        // samples per frame
-    NO_OF_BYTES_20MS,                   // bytes per frame
-    1,                                  // recommended number of frames per packet
-    1,                                  // maximum number of frames per packe
+    {{
+      BLOCKL_20MS,                      // samples per frame
+      NO_OF_BYTES_20MS,                 // bytes per frame
+      1,                                // recommended number of frames per packet
+      1,                                // maximum number of frames per packe
+    }},
     0,                                  // IANA RTP payload code
     sdpILBC,                            // RTP payload name
 
@@ -669,10 +679,12 @@ static struct PluginCodec_Definition iLBCCodecDefn[] =
     8000,                               // samples per second
     BITRATE_20MS,                       // raw bits per second
     20000,                              // nanoseconds per frame
-    BLOCKL_20MS,                        // samples per frame
-    NO_OF_BYTES_20MS,                   // bytes per frame
-    1,                                  // recommended number of frames per packet
-    1,                                  // maximum number of frames per packe
+    {{
+      BLOCKL_20MS,                      // samples per frame
+      NO_OF_BYTES_20MS,                 // bytes per frame
+      1,                                // recommended number of frames per packet
+      1,                                // maximum number of frames per packe
+    }},
     0,                                  // IANA RTP payload code
     sdpILBC,                            // RTP payload name
 
