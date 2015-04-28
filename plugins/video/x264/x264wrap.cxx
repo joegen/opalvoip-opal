@@ -696,7 +696,7 @@ bool H264Encoder::OpenPipeAndExecute(void * instance, const char * executablePat
 bool H264Encoder::ReadPipe(void * ptr, size_t len)
 {
   int result = read(m_pipeFromProcess, ptr, len);
-  if (result == len)
+  if (result == (int)len)
     return true;
 
   PTRACE(1, PipeTraceName, "Error reading pipe: sent=" << result << ", expected=" << len
@@ -711,7 +711,7 @@ bool H264Encoder::ReadPipe(void * ptr, size_t len)
 bool H264Encoder::WritePipe(const void * ptr, size_t len)
 {
   int result = write(m_pipeToProcess, ptr, len);
-  if (result == len)
+  if (result == (int)len)
     return true;
 
   PTRACE(1, PipeTraceName, "Error writing pipe: sent=" << result << ", expected=" << len

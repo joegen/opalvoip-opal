@@ -115,7 +115,7 @@ const UWord16 AMRWB_core_block_bits[16]= { 132, 177, 253, 285, 317, 365, 397, 46
 const UWord16 AMRWB_efficient_ToC_bits = 6;
 const UWord16 AMRWB_efficient_CMR_bits = 4;
 
-const UWord8 AMRWB_block_size_octet[16]= { 18, 24, 33, 37, 41, 47, 51, 59, 61, 6, 6, 0, 0, 0, 1, 1 };
+const unsigned AMRWB_block_size_octet[16]= { 18, 24, 33, 37, 41, 47, 51, 59, 61, 6, 6, 0, 0, 0, 1, 1 };
 
 // RFC 3267 octet-aligned ToC adds 8 bits to each core speech bits frame and 8 per packet for header
 // RFC 3267 bandwidth-efficient adds 6 bits to each core speech bits frame and 4 per packet for header
@@ -189,7 +189,7 @@ static int MyEncodeAudio(const struct PluginCodec_Definition * codec,
     //PTRACE(2, "Codec\tAMR-WB encoder: Audio data of size " << *fromLen << " did not match expected " << G7222_SAMPLES_PER_FRAME * sizeof(short));
     return 0;
   }
-  if (*toLen < (unsigned) AMRWB_block_size_octet[Context->mode] + 1)
+  if (*toLen < AMRWB_block_size_octet[Context->mode] + 1)
   {
     //PTRACE(2,"Codec\tAMR-WB encoder: Output buffer of size " << *toLen << " too short for mode " << mode);
     return 0;
@@ -363,7 +363,7 @@ static int MyDecodeAudio(const struct PluginCodec_Definition * codec,
       return 0;
 
     case -2:
-      //PTRACE(2, "Codec\tAMR-WB decoder: Packet size " << *fromLen << " did not match expected " << (unsigned)(AMRWB_block_size_octet[FrameType] + 1) << " for frame type " << FrameType);
+      //PTRACE(2, "Codec\tAMR-WB decoder: Packet size " << *fromLen << " did not match expected " << (AMRWB_block_size_octet[FrameType] + 1) << " for frame type " << FrameType);
       return 0;
 
     case -3:

@@ -176,7 +176,7 @@ bool OpalRFC4175Encoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
 {
   outputFrames.RemoveAll();
 
-  PAssert(sizeof(ScanLineHeader) == 6, "ScanLineHeader is not packed");
+  PAssert(sizeof(ScanLineHeader) == (size_t)6, "ScanLineHeader is not packed");
 
   // make sure the incoming frame is big enough for a frame header
   if (input.GetPayloadSize() < (int)(sizeof(PluginCodec_Video_FrameHeader))) {
@@ -343,7 +343,7 @@ bool OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
 {
   output.RemoveAll();
 
-  PAssert(sizeof(ScanLineHeader) == 6, "ScanLineHeader is not packed");
+  PAssert(sizeof(ScanLineHeader) == (size_t)6, "ScanLineHeader is not packed");
 
   // do quick sanity check on packet
   if (input.GetPayloadSize() < 2) {
