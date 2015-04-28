@@ -6072,7 +6072,7 @@ $as_echo "$usable" >&6; }
    CPPFLAGS="$oldCPPFLAGS"
 
    if test "x$usable" = "xyes"; then :
-  CPPFLAGS="-Wno-overloaded-virtual $CPPFLAGS"
+  CXXFLAGS="-Wno-overloaded-virtual $CXXFLAGS"
 
 fi
 

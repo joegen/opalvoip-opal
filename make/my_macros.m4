@@ -699,7 +699,7 @@ MY_COMPILE_IFELSE(
    [-Wno-overloaded-virtual],
    [],
    [],
-   [CPPFLAGS="-Wno-overloaded-virtual $CPPFLAGS"]
+   [CXXFLAGS="-Wno-overloaded-virtual $CXXFLAGS"]
 )
 
 MY_COMPILE_IFELSE(
