@@ -452,6 +452,7 @@ static struct PluginCodec_Option const OptionOctetAlign =
   G7222_H245_OCTET_ALIGNED            // H.245 generic capability code and bit mask
 };
 
+#if USE_MODE_SET
 static struct PluginCodec_Option const ModeSetG7222 =
 {
   PluginCodec_IntegerOption,          // Option type
@@ -463,6 +464,7 @@ static struct PluginCodec_Option const ModeSetG7222 =
   NULL,                               // FMTP default value
   G7222_H245_MODE_SET                 // H.245 generic capability code and bit mask
 };
+#endif
 
 static struct PluginCodec_Option const ModeChangePeriodG7222 =
 {
@@ -555,7 +557,9 @@ static struct PluginCodec_Option const * const OptionsTable[] = {
   &MediaPacketizationsRFC3267,
 #endif
   &OptionOctetAlign,
-  //&ModeSetG7222,
+#if USE_MODE_SET
+  &ModeSetG7222,
+#endif
   &ModeChangePeriodG7222,
   &ModeChangeNeighbourG7222,
   &CRC_G7222,

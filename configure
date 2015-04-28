@@ -4060,7 +4060,6 @@ fi
 CFLAGS="$oldCFLAGS"
 CXXFLAGS="$oldCXXFLAGS"
 
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ln -s works" >&5
 $as_echo_n "checking whether ln -s works... " >&6; }
 LN_S=$as_ln_s
@@ -5527,7 +5526,7 @@ case "$target_os" in
       AR="libtool"
       ARFLAGS="-static -o"
       RANLIB=
-      CPPFLAGS="${CPPFLAGS} -stdlib=libc++"
+      CPPFLAGS="-stdlib=libc++ $CPPFLAGS"
       LDFLAGS="${LDFLAGS} -stdlib=libc++"
       LIBS="-framework AudioToolbox -framework CoreAudio -framework SystemConfiguration -framework Foundation -lobjc $LIBS"
 
@@ -5591,7 +5590,7 @@ fi
       IOS_DEVROOT="`xcode-select -print-path`/Platforms/${target_os}.platform/Developer"
       IOS_SDKROOT=${IOS_DEVROOT}/SDKs/${target_os}${target_release}.sdk
       IOS_FLAGS="-arch $target_cpu -miphoneos-version-min=$MIN_IOS_VER -isysroot ${IOS_SDKROOT}"
-      CPPFLAGS="${CPPFLAGS} ${IOS_FLAGS}"
+      CPPFLAGS="${IOS_FLAGS} $CPPFLAGS"
       LDFLAGS="${IOS_FLAGS} -L${IOS_SDKROOT}/usr/lib $LDFLAGS"
    ;;
 
@@ -5606,7 +5605,7 @@ else
   is $target_release" "$LINENO" 5
 fi
 
-      CPPFLAGS="${CPPFLAGS} -mmacosx-version-min=$MIN_MACOSX_VER"
+      CPPFLAGS="-mmacosx-version-min=$MIN_MACOSX_VER $CPPFLAGS"
       LIBS="-framework QTKit -framework CoreVideo -framework AudioUnit $LIBS"
    ;;
 
@@ -5724,13 +5723,13 @@ fi
    solaris* | sunos* )
       target_os=solaris
       target_release=`uname -r | sed "s/5\.//g"`
-      CPPFLAGS="$CPPFLAGS -D__inline=inline -DSOLARIS"
+      CPPFLAGS="-D__inline=inline -DSOLARIS $CPPFLAGS"
       SHARED_LDFLAGS='-Bdynamic -G -h $(LIB_SONAME)'
    ;;
 
    beos* )
       target_os=beos
-      CPPFLAGS="$CPPFLAGS D__BEOS__ -DBE_THREADS -Wno-multichar -Wno-format"
+      CPPFLAGS="-D__BEOS__ -DBE_THREADS -Wno-multichar -Wno-format $CPPFLAGS"
       LIBS="-lstdc++.r4 -lbe -lmedia -lgame -lroot -lsocket -lbind -ldl $LIBS"
       SHARED_LDFLAGS="-shared -nostdlib -nostart"
    ;;
@@ -5851,12 +5850,12 @@ fi
 
    if test "x$target_os" = xDarwin; then :
 
-      CPPFLAGS="$CPPFLAGS -arch i386"
+      CPPFLAGS="-arch i386 $CPPFLAGS"
       LDFLAGS="$LDFLAGS -arch i386"
 
 else
 
-      CPPFLAGS="$CPPFLAGS -m32"
+      CPPFLAGS="-m32 $CPPFLAGS"
       LDFLAGS="$LDFLAGS -m32"
 
 fi
@@ -5986,6 +5985,145 @@ $as_echo "$usable" >&6; }
   OPT_CFLAGS="-O3 $OPT_CFLAGS"
 else
   OPT_CFLAGS="-O $OPT_CFLAGS"
+
+fi
+
+
+
+
+
+
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -Wno-unknown-pragmas"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Disable unknown-pragmas warning (-Wno-unknown-pragmas)" >&5
+$as_echo_n "checking Disable unknown-pragmas warning (-Wno-unknown-pragmas)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+  CPPFLAGS="-Wno-unknown-pragmas $CPPFLAGS"
+
+fi
+
+
+
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -Wno-unused-private-field"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Disable unused-private-field warning (-Wno-unused-private-field)" >&5
+$as_echo_n "checking Disable unused-private-field warning (-Wno-unused-private-field)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+  CPPFLAGS="-Wno-unused-private-field $CPPFLAGS"
+
+fi
+
+
+
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -Wno-overloaded-virtual"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Disable overloaded-virtual warning (-Wno-overloaded-virtual)" >&5
+$as_echo_n "checking Disable overloaded-virtual warning (-Wno-overloaded-virtual)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+  CPPFLAGS="-Wno-overloaded-virtual $CPPFLAGS"
+
+fi
+
+
+
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -Wall"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking warnings (-Wall)" >&5
+$as_echo_n "checking warnings (-Wall)... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+  CPPFLAGS="-Wall $CPPFLAGS"
 
 fi
 

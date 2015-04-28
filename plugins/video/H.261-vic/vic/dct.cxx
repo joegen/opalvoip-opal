@@ -257,6 +257,7 @@ static const int cross_stage[64] = {
 	FP_SCALE(B7 * B6),
 	FP_SCALE(B7 * B7),
 };
+#if 0
 static const float f_cross_stage[64] = {
 	(float)(B0 * B0),
 	(float)(B0 * B1),
@@ -330,6 +331,7 @@ static const float f_cross_stage[64] = {
 	(float)(B7 * B6),
 	(float)(B7 * B7),
 };
+#endif
 
 /*
  * Map a quantization table in natural, row-order,

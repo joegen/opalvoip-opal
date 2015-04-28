@@ -278,10 +278,12 @@ static struct PluginCodec_Definition g726CodecDefn[] =
     8000,                                 // samples per second
     32000,                                // raw bits per second
     1000,                                 // nanoseconds per frame
-    SAMPLES_PER_FRAME,                    // samples per frame
-    4,                                    // bytes per frame
-    PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
+    {{
+      SAMPLES_PER_FRAME,                  // samples per frame
+      4,                                  // bytes per frame
+      PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+      MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    }},
     PAYLOAD_CODE,                         // IANA RTP payload code
     sdpG726_32,                           // RTP payload name
 
@@ -314,10 +316,12 @@ static struct PluginCodec_Definition g726CodecDefn[] =
     8000,                                 // samples per second
     32000,                                // raw bits per second
     1000,                                 // nanoseconds per frame
-    SAMPLES_PER_FRAME,                    // samples per frame
-    4,                                    // bytes per frame
-    PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
+    {{
+      SAMPLES_PER_FRAME,                  // samples per frame
+      4,                                  // bytes per frame
+      PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+      MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    }},
     PAYLOAD_CODE,                         // IANA RTP payload code
     sdpG726_32,                           // RTP payload name
 
@@ -352,10 +356,12 @@ static struct PluginCodec_Definition g726CodecDefn[] =
     8000,                                 // samples per second
     24000,                                // raw bits per second
     1000,                                 // nanoseconds per frame
-    SAMPLES_PER_FRAME,                    // samples per frame
-    3,                                    // bytes per frame
-    PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
+    {{
+      SAMPLES_PER_FRAME,                  // samples per frame
+      3,                                  // bytes per frame
+      PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+      MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    }},
     PAYLOAD_CODE,                         // IANA RTP payload code
     sdpG726_24,                           // RTP payload name
 
@@ -388,10 +394,12 @@ static struct PluginCodec_Definition g726CodecDefn[] =
     8000,                                 // samples per second
     24000,                                // raw bits per second
     1000,                                 // nanoseconds per frame
-    SAMPLES_PER_FRAME,                    // samples per frame
-    3,                                    // bytes per frame
-    PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
+    {{
+      SAMPLES_PER_FRAME,                  // samples per frame
+      3,                                  // bytes per frame
+      PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+      MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    }},
     PAYLOAD_CODE,                         // IANA RTP payload code
     sdpG726_32,                           // RTP payload name
 
@@ -426,10 +434,12 @@ static struct PluginCodec_Definition g726CodecDefn[] =
     8000,                                 // samples per second
     16000,                                // raw bits per second
     1000,                                 // nanoseconds per frame
-    SAMPLES_PER_FRAME,                    // samples per frame
-    2,                                    // bytes per frame
-    PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
+    {{
+      SAMPLES_PER_FRAME,                  // samples per frame
+      2,                                  // bytes per frame
+      PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+      MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    }},
     PAYLOAD_CODE,                         // IANA RTP payload code
     sdpG726_16,                           // RTP payload name
 
@@ -462,10 +472,12 @@ static struct PluginCodec_Definition g726CodecDefn[] =
     8000,                                 // samples per second
     16000,                                // raw bits per second
     1000,                                 // nanoseconds per frame
-    SAMPLES_PER_FRAME,                    // samples per frame
-    2,                                    // bytes per frame
-    PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
+    {{
+      SAMPLES_PER_FRAME,                  // samples per frame
+      2,                                  // bytes per frame
+      PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+      MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    }},
     PAYLOAD_CODE,                         // IANA RTP payload code
     sdpG726_16,                           // RTP payload name
 

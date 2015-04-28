@@ -43,7 +43,6 @@
 static const int CORR_DECIMATION_RATE=4000;     /**< decimation to a rate of [Hz] */
 static const int corr_len_ms=20;       /**< Correlation length [ms] */
 
-static const int OVERLAPADD=4;             /**< length of the overlapadd windows [ms] */
 static const double CORR_MINPOWER=250./80.; /**< minimum power */
 
 static const int CONCEAL_ATTENUATION_PERIOD1=10;      /**< first 10 ms are not faded out */
@@ -55,9 +54,6 @@ static const int CONCEAL_PERIOD2=50;     /**< length of the second period uses j
 static const int TRANSITION_START=10;    /**< after 10ms of loss, the transition period will be prolonged (ITU G.711 I.2.7) [ms] */
 static const double TRANSITION_RATIO=0.4;  /**< for each 10ms of loss, the transition period will be prolonged by 4ms (ITU G.711 I.2.7) */
 static const int TRANSITION_MAX=10;      /**< the transition period will have a maximal length of 10ms (ITU G.711 I.2.7 [ms] */
-
-static const double PITCH_LOW=66.6;/**< minimum allowed channel[c].pitch. default 66 Hz [Hz] */
-static const double PITCH_HIGH=200;/**< maximum allowed channel[c].pitch. default 200 Hz [Hz] */
 
 
 #if defined(_MSC_VER) && _MSC_VER < 1800
