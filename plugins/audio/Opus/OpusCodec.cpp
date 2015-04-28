@@ -370,7 +370,7 @@ class OpusPluginDecoder : public OpusPluginCodec
         return false;
       }
 
-      if (samples*m_channels*2 > (int)toLen) {
+      if ((unsigned)samples*m_channels*2U > toLen) {
         PTRACE(1, MY_CODEC_LOG, "Provided sample buffer too small, " << toLen << " bytes");
         return false;
       }
