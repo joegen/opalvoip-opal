@@ -1383,7 +1383,7 @@ PBoolean OpalTransportTCP::ReadPDU(PBYTEArray & pdu)
 
   if (m_pduLengthFormat != 0) {
     PINDEX count = std::abs(m_pduLengthFormat);
-    if (PAssert(count > 0 && count <= sizeof(header), "Invalid PDU length") && m_channel->Read(header + 1, count - 1)) {
+    if (PAssert(count > 0 && count <= (PINDEX)sizeof(header), "Invalid PDU length") && m_channel->Read(header + 1, count - 1)) {
       packetLength = 0;
       while (count-- > 0)
         packetLength |= header[count] << (8 * (m_pduLengthFormat < 0 ? count : (m_pduLengthFormat - count - 1)));

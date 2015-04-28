@@ -113,7 +113,7 @@ void theoraFrame::assembleRTPFrame(PluginCodec_RTP & frame, data_t & frameData, 
   frame.SetMarker(0);
 
   if (frameData.pos > 0) {
-    if ((frameData.len - frameData.pos) <= (_maxPayloadSize - 6)) {
+    if ((frameData.len - frameData.pos) <= (_maxPayloadSize - 6U)) {
       // last fragmentation packet
       dataPtr[3] = sendPackedConfig ? 0xD0 : 0xC0;
       len = frameData.len - frameData.pos;
@@ -126,12 +126,12 @@ void theoraFrame::assembleRTPFrame(PluginCodec_RTP & frame, data_t & frameData, 
     else {
       // continuation fragmentation packet
       dataPtr[3] = sendPackedConfig ? 0x90 : 0x80;
-      len = (_maxPayloadSize - 6);
+      len = (_maxPayloadSize - 6U);
       PTRACE(4, "THEORA", "Encap\tEncapsulated fragmentation continuation packet with length of " << len << " bytes");
     }
   }
   else {
-    if (frameData.len <= (_maxPayloadSize - 6)) {
+    if (frameData.len <= (_maxPayloadSize - 6U)) {
       // single packet
       dataPtr[3] = sendPackedConfig ? 0x11 : 0x01;
       len = frameData.len;
@@ -144,7 +144,7 @@ void theoraFrame::assembleRTPFrame(PluginCodec_RTP & frame, data_t & frameData, 
     else {
       // start fragmentation packet
       dataPtr[3] = sendPackedConfig ? 0x50 : 0x40;
-      len = (_maxPayloadSize - 6);
+      len = (_maxPayloadSize - 6U);
       PTRACE(4, "THEORA", "Encap\tEncapsulated fragmentation start packet with length of " << len << " bytes");
     }
   }
