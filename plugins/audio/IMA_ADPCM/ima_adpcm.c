@@ -438,10 +438,12 @@ static struct PluginCodec_Definition imaADPCMCodecDefn[] =
     8000,                                 // samples per second
     IMA_BITS_SECOND,                      // raw bits per second
     IMA_NS_PER_FRAME,                     // nanoseconds per frame
-    IMA_SAMPLES_PER_FRAME,                // samples per frame
-    IMA_BYTES_PER_FRAME,                  // bytes per frame
-    PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
+    {{
+      IMA_SAMPLES_PER_FRAME,              // samples per frame
+      IMA_BYTES_PER_FRAME,                // bytes per frame
+      PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+      MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    }},
     0,                                    // no IANA RTP payload code
     NULL,                                 // RTP payload name
 
@@ -473,10 +475,12 @@ static struct PluginCodec_Definition imaADPCMCodecDefn[] =
     8000,                                 // samples per second
     IMA_BITS_SECOND,                      // raw bits per second
     IMA_NS_PER_FRAME,                     // nanoseconds per frame
-    IMA_SAMPLES_PER_FRAME,                // samples per frame
-    IMA_BYTES_PER_FRAME,                  // bytes per frame
-    PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
+    {{
+      IMA_SAMPLES_PER_FRAME,              // samples per frame
+      IMA_BYTES_PER_FRAME,                // bytes per frame
+      PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+      MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    }},
     0,                                    // no IANA RTP payload code
     NULL,                                 // RTP payload name
 

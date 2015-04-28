@@ -175,10 +175,12 @@ static struct PluginCodec_Definition g722CodecDefn[] =
     16000,                                // samples per second
     BITS_PER_SECOND,                      // raw bits per second
     FRAME_TIME_MS,                        // microseconds per frame
-    FRAME_TIME_RTP,                       // samples per frame
-    BYTES_PER_FRAME,                      // bytes per frame
-    PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
+    {{
+      FRAME_TIME_RTP,                     // samples per frame
+      BYTES_PER_FRAME,                    // bytes per frame
+      PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+      MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    }},
     PAYLOAD_CODE,                         // IANA RTP payload code
     sdpG722,                              // RTP payload name
 
@@ -210,10 +212,12 @@ static struct PluginCodec_Definition g722CodecDefn[] =
     16000,                                // samples per second
     BITS_PER_SECOND,                      // raw bits per second
     FRAME_TIME_MS,                        // microseconds per frame
-    FRAME_TIME_RTP,                       // samples per frame
-    BYTES_PER_FRAME,                      // bytes per frame
-    PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
+    {{
+      FRAME_TIME_RTP,                     // samples per frame
+      BYTES_PER_FRAME,                    // bytes per frame
+      PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+      MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    }},
     PAYLOAD_CODE,                         // IANA RTP payload code
     sdpG722,                              // RTP payload name
 
@@ -247,10 +251,12 @@ static struct PluginCodec_Definition g722CodecDefn[] =
     RTP_CLOCK_RATE,                       // samples per second (not really)
     BITS_PER_SECOND,                      // raw bits per second
     FRAME_TIME_MS,                        // microseconds per frame
-    FRAME_TIME_RTP,                       // samples per frame
-    BYTES_PER_FRAME,                      // bytes per frame
-    PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
+    {{
+      FRAME_TIME_RTP,                     // samples per frame
+      BYTES_PER_FRAME,                    // bytes per frame
+      PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+      MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    }},
     PAYLOAD_CODE,                         // IANA RTP payload code
     sdpG722,                              // RTP payload name
 
@@ -282,10 +288,12 @@ static struct PluginCodec_Definition g722CodecDefn[] =
     RTP_CLOCK_RATE,                       // samples per second (not really)
     BITS_PER_SECOND,                      // raw bits per second
     FRAME_TIME_MS,                        // microseconds per frame
-    FRAME_TIME_RTP,                       // samples per frame
-    BYTES_PER_FRAME,                      // bytes per frame
-    PREF_FRAMES_PER_PACKET,               // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,                // maximum number of frames per packe
+    {{
+      FRAME_TIME_RTP,                     // samples per frame
+      BYTES_PER_FRAME,                    // bytes per frame
+      PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
+      MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    }},
     PAYLOAD_CODE,                         // IANA RTP payload code
     sdpG722,                              // RTP payload name
 

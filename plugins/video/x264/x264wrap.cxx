@@ -421,18 +421,22 @@ H264Encoder::H264Encoder()
 
 H264Encoder::~H264Encoder()
 {
-  if (m_hStandardError != NULL && !CloseHandle(m_hStandardError))
+  if (m_hStandardError != NULL && !CloseHandle(m_hStandardError)) {
     PTRACE(1, PipeTraceName, "Failure on closing stderr handle (" << GetLastError() << ')');
-
-  if (m_hNamedPipe != NULL) {
-    if (!DisconnectNamedPipe(m_hNamedPipe))
-      PTRACE(1, PipeTraceName, "Failure on disconnecting pipe (" << GetLastError() << ')');
-    if (!CloseHandle(m_hNamedPipe))
-      PTRACE(1, PipeTraceName, "Failure on closing pipe handle (" << GetLastError() << ')');
   }
 
-  if (m_hEvent != NULL && !CloseHandle(m_hEvent))
+  if (m_hNamedPipe != NULL) {
+    if (!DisconnectNamedPipe(m_hNamedPipe)) {
+      PTRACE(1, PipeTraceName, "Failure on disconnecting pipe (" << GetLastError() << ')');
+    }
+    if (!CloseHandle(m_hNamedPipe)) {
+      PTRACE(1, PipeTraceName, "Failure on closing pipe handle (" << GetLastError() << ')');
+    }
+  }
+
+  if (m_hEvent != NULL && !CloseHandle(m_hEvent)) {
     PTRACE(1, PipeTraceName, "Failure on closing event handle (" << GetLastError() << ')');
+  }
 }
 
 
@@ -623,10 +627,12 @@ H264Encoder::~H264Encoder()
     m_pipeFromProcess = -1;
   }
 
-  if (remove(m_ulName) == -1)
+  if (remove(m_ulName) == -1) {
     PTRACE(1, PipeTraceName, "Error when trying to remove UL named pipe - " << strerror(errno));
-  if (remove(m_dlName) == -1)
+  }
+  if (remove(m_dlName) == -1) {
     PTRACE(1, PipeTraceName, "Error when trying to remove DL named pipe - " << strerror(errno));
+  }
 }
 
 
@@ -695,8 +701,9 @@ bool H264Encoder::ReadPipe(void * ptr, size_t len)
 
   PTRACE(1, PipeTraceName, "Error reading pipe: sent=" << result << ", expected=" << len
          << ", errno=" << errno << " - " << strerror(errno));
-  if (kill(m_pid, 0) < 0)
+  if (kill(m_pid, 0) < 0) {
     PTRACE(1, PipeTraceName, "Sub-process no longer running!");
+  }
   return false;
 }
 
@@ -709,8 +716,9 @@ bool H264Encoder::WritePipe(const void * ptr, size_t len)
 
   PTRACE(1, PipeTraceName, "Error writing pipe: sent=" << result << ", expected=" << len
          << ", errno=" << errno << " - " << strerror(errno));
-  if (kill(m_pid, 0) < 0)
+  if (kill(m_pid, 0) < 0) {
     PTRACE(1, PipeTraceName, "Sub-process no longer running!");
+  }
   return false;
 }
 

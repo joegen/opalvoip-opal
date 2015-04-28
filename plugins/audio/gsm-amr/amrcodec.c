@@ -401,11 +401,12 @@ static struct PluginCodec_Definition amrCodecDefn[] = {
     8000,                                   // samples per second
     12200,                                  // raw bits per second
     20000,                                  // microseconds per frame
-    L_FRAME,                                // samples per frame
-    33,                                     // bytes per frame
-    
-    1,                                      // recommended number of frames per packet
-    1,                                      // maximum number of frames per packet
+    {{
+      L_FRAME,                              // samples per frame
+      33,                                   // bytes per frame
+      1,                                    // recommended number of frames per packet
+      1,                                    // maximum number of frames per packet
+    }},
     0,                                      // IANA RTP payload code
     "AMR",                                  // RTP payload name
     
@@ -437,10 +438,12 @@ static struct PluginCodec_Definition amrCodecDefn[] = {
     8000,                                   // samples per second
     12200,                                  // raw bits per second
     30000,                                  // microseconds per frame
-    L_FRAME,                                // samples per frame
-    33,                                     // bytes per frame
-    1,                                      // recommended number of frames per packet
-    1,                                      // maximum number of frames per packet
+    {{
+      L_FRAME,                              // samples per frame
+      33,                                   // bytes per frame
+      1,                                    // recommended number of frames per packet
+      1,                                    // maximum number of frames per packet
+    }},
     0,                                      // IANA RTP payload code
     "AMR",                                  // RTP payload name
 

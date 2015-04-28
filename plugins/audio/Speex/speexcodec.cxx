@@ -61,9 +61,6 @@ extern "C" {
 #define NS_PER_FRAME                   20000
 
 
-const float MaxSampleValue   = 32767.0;
-const float MinSampleValue   = -32767.0;
-
 struct PluginSpeexContext {
   SpeexBits speexBits;
   void      * coderState;
@@ -83,10 +80,12 @@ static int Speex_Bits_Per_Second(int mode, int sampleRate) {
     return bitrate;
 }
 
+/*
 static int Speex_Bytes_Per_Frame(int mode, int sampleRate) {
     int bits_per_frame = Speex_Bits_Per_Second(mode, sampleRate) / 50; // (20ms frame size)
     return ((bits_per_frame+7)/8); // round up
 }
+*/
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -216,21 +215,6 @@ static void destroy_decoder(const struct PluginCodec_Definition * /*codec*/, voi
   //speex_bits_destroy(&context->speexBits);  // speex_decoder_destroy does this
   speex_decoder_destroy(context->coderState); 
   free(context);
-}
-
-static int encoder_get_options(
-      const PluginCodec_Definition * , 
-      void * /*context*/, 
-      const char * , 
-      void * parm , 
-      unsigned * parmLen)
-{
-  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char **))
-    return 0;
-
-  const char ***options = (const char ***)parm;
-
-  return 0;
 }
 
 static int valid_for_sip(
@@ -525,6 +509,11 @@ CREATE_IETFSPEEX_CAP_DATA(desc, suffix, ordinal, 8000) \
   PluginCodec_H323Codec_nonStandard,  /* h323CapabilityType */ \
   &prefix##suffix##Cap                /* h323CapabilityData */ \
 } \
+
+#if __GNUC__
+#pragma GCC diagnostic ignored "-Wunused-const-variable"
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#endif
 
 CREATE_NARROW_SPEEX_CAP_DATA(Narrow-5.95k, Narrow5k95,  2)
 CREATE_NARROW_SPEEX_CAP_DATA(Narrow-8k,    Narrow8k,    3)
@@ -863,7 +852,7 @@ extern "C" {
 
   void OutputInfo(int mode, int rate)
   {
-    int bps = Speex_Bits_Per_Second(mode, rate);
+    //int bps = Speex_Bits_Per_Second(mode, rate);
     //printf("mode = %i, rate = %i, bps = %i\n", mode, rate, bps);
   }
 
