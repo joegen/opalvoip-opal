@@ -6038,7 +6038,7 @@ $as_echo "$usable" >&6; }
    CPPFLAGS="$oldCPPFLAGS"
 
    if test "x$usable" = "xyes"; then :
-  CPPFLAGS="-Wno-unused-private-field $CPPFLAGS"
+  CXXFLAGS="-Wno-unused-private-field $CXXFLAGS"
 
 fi
 
