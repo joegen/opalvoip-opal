@@ -691,7 +691,7 @@ MY_COMPILE_IFELSE(
    [-Wno-unused-private-field],
    [],
    [],
-   [CPPFLAGS="-Wno-unused-private-field $CPPFLAGS"]
+   [CXXFLAGS="-Wno-unused-private-field $CXXFLAGS"]
 )
 
 MY_COMPILE_IFELSE(
