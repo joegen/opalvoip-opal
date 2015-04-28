@@ -1171,7 +1171,7 @@ RTP_ControlFrame::ApplDefinedInfo::ApplDefinedInfo(const char * type,
 {
   memset(m_type, 0, sizeof(m_type));
   if (type != NULL)
-    strncmp(m_type, type, sizeof(m_type)-1);
+    strncpy(m_type, type, sizeof(m_type)-1);
 }
 
 
