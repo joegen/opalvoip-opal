@@ -1239,8 +1239,16 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnOutOfOrderPacket(RTP_DataFra
 }
 
 
-void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSource & sender)
+void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSource & sender, int force)
 {
+  if (force == 0 && sender.m_packets == 0)
+    return;
+
+#if PTRACING
+  m_throttleTxReport.CanTrace(); // Sneakiness to make sure throttle works
+  unsigned logLevel = force > 0 ? 3 : m_throttleTxReport;
+#endif
+
   unsigned receivers = 0;
   for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
     if (it->second->m_direction == e_Receiver && it->second->m_packets > 0)
@@ -1262,8 +1270,8 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
       // add the SSRC to the start of the payload
       *(PUInt32b *)report.GetPayloadPtr() = sender.m_sourceIdentifier;
-      PTRACE(m_throttleTxReport, *this << "sending empty ReceiverReport,"
-             " sender SSRC=" << RTP_TRACE_SRC(sender.m_sourceIdentifier) << m_throttleTxReport);
+      PTRACE(logLevel, *this << "sending empty ReceiverReport,"
+             " SenderReport SSRC=" << RTP_TRACE_SRC(sender.m_sourceIdentifier) << m_throttleTxReport);
     }
     else {
       report.SetPayloadSize(sizeof(PUInt32b) + receivers*sizeof(RTP_ControlFrame::ReceiverReport));  // length is SSRC of packet sender plus RRs
@@ -1275,7 +1283,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
       // add the RR's after the SSRC
       rr = (RTP_ControlFrame::ReceiverReport *)(payload + sizeof(PUInt32b));
-      PTRACE(m_throttleTxReport, *this << "not sending SenderReport for SSRC="
+      PTRACE(logLevel, *this << "not sending SenderReport for SSRC="
              << RTP_TRACE_SRC(sender.m_sourceIdentifier) << m_throttleTxReport);
     }
   }
@@ -1296,7 +1304,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
     sr->psent  = sender.m_packets;
     sr->osent  = (uint32_t)sender.m_octets;
 
-    PTRACE(m_throttleTxReport, *this << "sending SenderReport:"
+    PTRACE(logLevel, *this << "sending SenderReport:"
               " SSRC=" << RTP_TRACE_SRC(sender.m_sourceIdentifier)
            << " ntp=0x" << hex << sr->ntp_ts << dec
            << sender.m_reportAbsoluteTime.AsString("(hh:mm:ss.uuu)")
@@ -1322,7 +1330,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
   report.EndPacket();
 
   // Add the SDES part to compound RTCP packet
-  PTRACE((unsigned)m_throttleTxReport, *this << "sending SDES for SSRC="
+  PTRACE(logLevel, *this << "sending SDES for SSRC="
          << RTP_TRACE_SRC(sender.m_sourceIdentifier) << ": \"" << sender.m_canonicalName << '"');
   report.StartNewPacket(RTP_ControlFrame::e_SourceDescription);
 
@@ -1349,14 +1357,14 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ss
 
   if (ssrc != 0) {
     SyncSource * sender;
-    if (GetSyncSource(ssrc, e_Sender, sender) && (force || sender->m_packets > 0))
-      InitialiseControlFrame(packet, *sender);
+    if (GetSyncSource(ssrc, e_Sender, sender))
+      InitialiseControlFrame(packet, *sender, force);
   }
   else {
     // Have not got anything yet, do nothing
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-      if (it->second->m_direction == e_Sender && (force || it->second->m_packets > 0)) {
-        InitialiseControlFrame(packet, *it->second);
+      if (it->second->m_direction == e_Sender) {
+        InitialiseControlFrame(packet, *it->second, force);
 
 #if OPAL_RTCP_XR
         //Generate and send RTCP-XR packet
