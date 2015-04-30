@@ -637,6 +637,14 @@ class OpalRTPSession : public OpalMediaSession
     friend ostream & operator<<(ostream & strm, Channel channel);
 #endif
 
+    enum ReportForce
+    {
+        e_OtherRTCP,
+        e_Periodic,
+        e_Forced
+    };
+
+
     bool SetQoS(const PIPSocket::QoS & qos);
 
     ReceiverReportArray BuildReceiverReportArray(const RTP_ControlFrame & frame, PINDEX offset);
@@ -725,7 +733,7 @@ class OpalRTPSession : public OpalMediaSession
       virtual void GetStatistics(OpalMediaStatistics & statistics) const;
 #endif
 
-      virtual void OnSendReceiverReport(RTP_ControlFrame::ReceiverReport & report);
+      virtual void OnSendReceiverReport(RTP_ControlFrame::ReceiverReport & report, ReportForce force);
       virtual void OnRxSenderReport(const RTP_SenderReport & report);
       virtual void OnRxReceiverReport(const ReceiverReport & report);
       virtual SendReceiveStatus SendBYE();
@@ -822,7 +830,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual bool ResequenceOutOfOrderPackets(SyncSource & ssrc) const;
 
     /// Set up RTCP as per RFC rules
-    virtual void InitialiseControlFrame(RTP_ControlFrame & report, SyncSource & ssrc, int force = -1);
+    virtual void InitialiseControlFrame(RTP_ControlFrame & report, SyncSource & ssrc, ReportForce force = e_OtherRTCP);
 
     // Some statitsics not SSRC related
     unsigned m_rtcpPacketsSent;

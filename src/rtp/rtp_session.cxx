@@ -1022,8 +1022,11 @@ void OpalRTPSession::SetExtensionHeader(const RTPExtensionHeaders & ext)
 }
 
 
-void OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::ReceiverReport & report)
+void OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::ReceiverReport & report, ReportForce force)
 {
+  if (force != e_Forced && m_packets == 0)
+    return;
+
   report.ssrc = m_sourceIdentifier;
 
   unsigned lost = m_session.GetPacketsLost();
@@ -1239,9 +1242,9 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnOutOfOrderPacket(RTP_DataFra
 }
 
 
-void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSource & sender, int force)
+void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSource & sender, ReportForce force)
 {
-  if (force == 0 && sender.m_packets == 0)
+  if (force == e_Periodic && sender.m_packets == 0)
     return;
 
 #if PTRACING
@@ -1322,8 +1325,8 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
   if (rr != NULL) {
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-      if (it->second->m_direction == e_Receiver && it->second->m_packets > 0)
-        it->second->OnSendReceiverReport(*rr++);
+      if (it->second->m_direction == e_Receiver)
+        it->second->OnSendReceiverReport(*rr++, force);
     }
   }
 
@@ -1358,13 +1361,13 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ss
   if (ssrc != 0) {
     SyncSource * sender;
     if (GetSyncSource(ssrc, e_Sender, sender))
-      InitialiseControlFrame(packet, *sender, force);
+      InitialiseControlFrame(packet, *sender, force ? e_Forced : e_Periodic);
   }
   else {
     // Have not got anything yet, do nothing
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
       if (it->second->m_direction == e_Sender) {
-        InitialiseControlFrame(packet, *it->second, force);
+        InitialiseControlFrame(packet, *it->second, force ? e_Forced : e_Periodic);
 
 #if OPAL_RTCP_XR
         //Generate and send RTCP-XR packet
