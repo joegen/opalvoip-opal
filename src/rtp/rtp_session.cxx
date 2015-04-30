@@ -1055,7 +1055,7 @@ void OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::Receiver
     report.dlsr = 0;
   }
 
-  PTRACE((unsigned)m_session.m_throttleTxReport, &m_session, *this << "sending ReceiverReport:"
+  PTRACE(force == e_Forced ? 3U : (unsigned)m_session.m_throttleTxReport, &m_session, *this << "sending ReceiverReport:"
             " fraction=" << (unsigned)report.fraction
          << " lost=" << report.GetLostPackets()
          << " last_seq=" << report.last_seq
@@ -1249,7 +1249,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
 #if PTRACING
   m_throttleTxReport.CanTrace(); // Sneakiness to make sure throttle works
-  unsigned logLevel = force > 0 ? 3 : m_throttleTxReport;
+  unsigned logLevel = force == e_Forced ? 3U : m_throttleTxReport;
 #endif
 
   unsigned receivers = 0;
