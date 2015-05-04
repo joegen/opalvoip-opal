@@ -780,7 +780,7 @@ void H323Gatekeeper::RegistrationTimeToLive()
 {
   PTRACE(3, "Time To Live reregistration");
   
-  PBoolean didGkDiscovery = false;
+  bool didGkDiscovery = discoveryComplete;
 
   if (!discoveryComplete) {
     timeToLive.SetInterval(0, 0, 1);
