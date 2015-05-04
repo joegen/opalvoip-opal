@@ -352,24 +352,46 @@ OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(const OpalTranspor
 {
   OpalTransportAddressArray interfaceAddresses;
 
-  if (associatedTransport == NULL) {
-    for (OpalListenerList::const_iterator listener = listeners.begin(); listener != listeners.end(); ++listener)
-      AddTransportAddress(interfaceAddresses, listener->GetLocalAddress());
-    PTRACE_IF(4, !interfaceAddresses.IsEmpty(),
-              "OpalMan\tListener interfaces: no associated transport\n    " << setfill(',') << interfaceAddresses);
-    return interfaceAddresses;
+  if (associatedTransport != NULL) {
+    OpalTransportAddress remoteAddress = associatedTransport->GetRemoteAddress();
+    PIPSocket::Address associatedInterfaceIP(associatedTransport->GetInterface());
+    AddTransportAddresses(interfaceAddresses, listeners, remoteAddress,
+                          OpalTransportAddress(associatedInterfaceIP, 65535, remoteAddress.GetProtoPrefix()));
+    AddTransportAddresses(interfaceAddresses, listeners, remoteAddress,
+                          OpalTransportAddress(associatedInterfaceIP, 65535, OpalTransportAddress::IpPrefix()));
   }
 
-  OpalTransportAddress remoteAddress = associatedTransport->GetRemoteAddress();
-  PIPSocket::Address associatedInterfaceIP(associatedTransport->GetInterface());
-  AddTransportAddresses(interfaceAddresses, listeners, remoteAddress,
-                        OpalTransportAddress(associatedInterfaceIP, 65535, remoteAddress.GetProtoPrefix()));
-  AddTransportAddresses(interfaceAddresses, listeners, remoteAddress,
-                        OpalTransportAddress(associatedInterfaceIP, 65535, OpalTransportAddress::IpPrefix()));
+  PIPSocket::InterfaceTable interfaceTable;
+  for (OpalListenerList::const_iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
+    OpalTransportAddress listenerInterface = listener->GetLocalAddress();
+    PIPSocket::Address listenerIP;
+    WORD listenerPort = 0;
+    if (!listenerInterface.GetIpAndPort(listenerIP, listenerPort) || !listenerIP.IsAny())
+      AddTransportAddress(interfaceAddresses, listenerInterface);
+    else {
+      if (interfaceTable.IsEmpty())
+        PIPSocket::GetInterfaceTable(interfaceTable);
+      for (PINDEX i = 0; i < interfaceTable.GetSize(); ++i) {
+        if (!interfaceTable[i].GetAddress().IsLoopback())
+          AddTransportAddress(interfaceAddresses, OpalTransportAddress(interfaceTable[i].GetAddress(), listenerPort));
+      }
+    }
+  }
 
-  PTRACE_IF(4, !interfaceAddresses.IsEmpty(),
-            "OpalMan\tListener interfaces: associated transport " << *associatedTransport
-            << "\n    " << setfill(',') << interfaceAddresses);
+#if PTRACING
+  if (PTrace::CanTrace(4) && !interfaceAddresses.IsEmpty()) {
+    ostream & trace = PTRACE_BEGIN(4, "OpalMan");
+    trace << "Listener interfaces: ";
+    if (associatedTransport == NULL)
+      trace << "no ";
+    trace << "associated transport";
+    if (associatedTransport != NULL)
+      trace << *associatedTransport;
+    trace << "\n    " << setfill(',') << interfaceAddresses
+          << PTrace::End;
+  }
+#endif
+
   return interfaceAddresses;
 }
 
