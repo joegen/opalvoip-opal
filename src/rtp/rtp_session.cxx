@@ -262,13 +262,13 @@ bool OpalRTPSession::RemoveSyncSource(RTP_SyncSourceId ssrc)
 }
 
 
-OpalRTPSession::SyncSource * OpalRTPSession::UseSyncSource(RTP_SyncSourceId ssrc, Direction PTRACE_PARAM(dir), bool force)
+OpalRTPSession::SyncSource * OpalRTPSession::UseSyncSource(RTP_SyncSourceId ssrc, Direction dir, bool force)
 {
   SyncSourceMap::iterator it = m_SSRC.find(ssrc);
   if (it != m_SSRC.end())
     return it->second;
 
-  if ((force || m_allowAnySyncSource) && AddSyncSource(ssrc, e_Receiver) == ssrc) {
+  if ((force || m_allowAnySyncSource) && AddSyncSource(ssrc, dir) == ssrc) {
     PTRACE(4, *this << "automatically added " << dir << " SSRC " << RTP_TRACE_SRC(ssrc));
     return m_SSRC.find(ssrc)->second;
   }
@@ -1248,8 +1248,21 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
     return;
 
 #if PTRACING
-  m_throttleTxReport.CanTrace(); // Sneakiness to make sure throttle works
-  unsigned logLevel = force == e_Forced ? 3U : m_throttleTxReport;
+  unsigned logLevel = 3U;
+  const char * forcedStr = "";
+  switch (force) {
+    case e_Forced :
+      m_throttleTxReport.CanTrace(); // Sneakiness to make sure throttle works
+      logLevel = m_throttleTxReport;
+      forcedStr = "(forced) ";
+      break;
+    case e_Periodic :
+      forcedStr = "(periodic) ";
+    default :
+      break;
+  }
+  if (force != e_Forced) {
+  }
 #endif
 
   unsigned receivers = 0;
@@ -1273,7 +1286,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
       // add the SSRC to the start of the payload
       *(PUInt32b *)report.GetPayloadPtr() = sender.m_sourceIdentifier;
-      PTRACE(logLevel, *this << "sending empty ReceiverReport,"
+      PTRACE(logLevel, *this << "sending " << forcedStr << "empty ReceiverReport,"
              " SenderReport SSRC=" << RTP_TRACE_SRC(sender.m_sourceIdentifier) << m_throttleTxReport);
     }
     else {
@@ -1286,7 +1299,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
       // add the RR's after the SSRC
       rr = (RTP_ControlFrame::ReceiverReport *)(payload + sizeof(PUInt32b));
-      PTRACE(logLevel, *this << "not sending SenderReport for SSRC="
+      PTRACE(logLevel, *this << "not sending " << forcedStr << "SenderReport for SSRC="
              << RTP_TRACE_SRC(sender.m_sourceIdentifier) << m_throttleTxReport);
     }
   }
@@ -1307,7 +1320,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
     sr->psent  = sender.m_packets;
     sr->osent  = (uint32_t)sender.m_octets;
 
-    PTRACE(logLevel, *this << "sending SenderReport:"
+    PTRACE(logLevel, *this << "sending " << forcedStr << "SenderReport:"
               " SSRC=" << RTP_TRACE_SRC(sender.m_sourceIdentifier)
            << " ntp=0x" << hex << sr->ntp_ts << dec
            << sender.m_reportAbsoluteTime.AsString("(hh:mm:ss.uuu)")
@@ -1471,7 +1484,7 @@ void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics)
   statistics.m_lastReportTime    = m_lastReportTime;
 
   if (m_jitterBuffer != NULL) {
-    statistics.m_packetsTooLate    = m_jitterBuffer->GetPacketsTooLate();
+    statistics.m_packetsTooLate    = m_jitterBuffer->GetPacketsTooLate() + m_packetsTooLate;
     statistics.m_packetOverruns    = m_jitterBuffer->GetBufferOverruns();
     statistics.m_jitterBufferDelay = m_jitterBuffer->GetCurrentJitterDelay()/m_jitterBuffer->GetTimeUnits();
   }
