@@ -1,0 +1,304 @@
+/*
+ * h323neg.h
+ *
+ * H.323 protocol handler
+ *
+ * Open H323 Library
+ *
+ * Copyright (c) 1998-2001 Equivalence Pty. Ltd.
+ *
+ * The contents of this file are subject to the Mozilla Public License
+ * Version 1.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+ * the License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is Open H323 Library.
+ *
+ * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
+ *
+ * Portions of this code were written with the assisance of funding from
+ * Vovida Networks, Inc. http://www.vovida.com.
+ *
+ * Contributor(s): ______________________________________.
+ *
+ * $Revision$
+ * $Author$
+ * $Date$
+ */
+
+#ifndef OPAL_H323_H323NEG_H
+#define OPAL_H323_H323NEG_H
+
+#ifdef P_USE_PRAGMA
+#pragma interface
+#endif
+
+#include <opal_config.h>
+
+#if OPAL_H323
+
+#include <h323/h323pdu.h>
+#include <h323/channels.h>
+
+
+class H323EndPoint;
+class H323Connection;
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+/**Base class for doing H245 negotiations
+ */
+class H245Negotiator : public PObject
+{
+  PCLASSINFO(H245Negotiator, PObject);
+
+  public:
+    H245Negotiator(H323EndPoint & endpoint, H323Connection & connection);
+
+  protected:
+    PDECLARE_NOTIFIER(PTimer, H245Negotiator, HandleTimeoutUnlocked);
+    virtual void HandleTimeout();
+
+    H323EndPoint   & endpoint;
+    H323Connection & connection;
+    PTimer           replyTimer;
+};
+
+
+/**Determine the master and slave on a H245 connection as per H245 section 8.2
+ */
+class H245NegMasterSlaveDetermination : public H245Negotiator
+{
+  PCLASSINFO(H245NegMasterSlaveDetermination, H245Negotiator);
+
+  public:
+    H245NegMasterSlaveDetermination(H323EndPoint & endpoint, H323Connection & connection);
+
+    PBoolean Start(PBoolean renegotiate);
+    void Stop();
+    PBoolean HandleIncoming(const H245_MasterSlaveDetermination & pdu);
+    PBoolean HandleAck(const H245_MasterSlaveDeterminationAck & pdu);
+    PBoolean HandleReject(const H245_MasterSlaveDeterminationReject & pdu);
+    PBoolean HandleRelease(const H245_MasterSlaveDeterminationRelease & pdu);
+    void HandleTimeout();
+
+    PBoolean IsMaster() const     { return m_status == e_DeterminedMaster; }
+    PBoolean IsDetermined() const { return m_status != e_Indeterminate; }
+
+  protected:
+    PBoolean Restart();
+
+    P_DECLARE_TRACED_ENUM(States, e_Idle, e_Outgoing, e_Incoming);
+    States m_state;
+
+    DWORD    m_determinationNumber;
+    unsigned m_retryCount;
+
+    P_DECLARE_TRACED_ENUM(MasterSlaveStatus, e_Indeterminate, e_DeterminedMaster, e_DeterminedSlave);
+    MasterSlaveStatus m_status;
+};
+
+
+/**Exchange capabilities on a H245 connection as per H245 section 8.3
+ */
+class H245NegTerminalCapabilitySet : public H245Negotiator
+{
+  PCLASSINFO(H245NegTerminalCapabilitySet, H245Negotiator);
+
+  public:
+    H245NegTerminalCapabilitySet(H323EndPoint & endpoint, H323Connection & connection);
+
+    PBoolean Start(PBoolean renegotiate, PBoolean empty = false);
+    void Stop(PBoolean dec = false);
+    PBoolean HandleIncoming(const H245_TerminalCapabilitySet & pdu);
+    PBoolean HandleAck(const H245_TerminalCapabilitySetAck & pdu);
+    PBoolean HandleReject(const H245_TerminalCapabilitySetReject & pdu);
+    PBoolean HandleRelease(const H245_TerminalCapabilitySetRelease & pdu);
+    void HandleTimeout();
+
+    bool HasSentCapabilities() const { return state >= e_InProgress; }
+    bool IsSendingCapabilities() const { return state == e_InProgress; }
+    bool ConfrimedCapabilitiesSent() const { return state == e_Confirmed; }
+    bool HasReceivedCapabilities() const { return receivedCapabilites; }
+
+  protected:
+    P_DECLARE_TRACED_ENUM(States, e_Idle, e_InProgress, e_Confirmed);
+    States state;
+
+    unsigned inSequenceNumber;
+    unsigned outSequenceNumber;
+
+    PBoolean receivedCapabilites;
+};
+
+
+/**Logical Channel signalling on a H245 connection as per H245 section 8.4
+ */
+class H245NegLogicalChannel : public H245Negotiator
+{
+  PCLASSINFO(H245NegLogicalChannel, H245Negotiator);
+
+  public:
+    H245NegLogicalChannel(H323EndPoint & endpoint,
+                          H323Connection & connection,
+                          const H323ChannelNumber & channelNumber);
+    H245NegLogicalChannel(H323EndPoint & endpoint,
+                          H323Connection & connection,
+                          H323Channel & channel);
+    ~H245NegLogicalChannel();
+
+    virtual PBoolean Open(
+      const H323Capability & capability,
+      unsigned sessionID,
+      unsigned replacementFor = 0,
+      OpalMediaStreamPtr mediaStream = NULL
+    );
+    virtual PBoolean Close();
+    virtual PBoolean HandleOpen(const H245_OpenLogicalChannel & pdu);
+    virtual PBoolean HandleOpenAck(const H245_OpenLogicalChannelAck & pdu);
+    virtual PBoolean HandleOpenConfirm(const H245_OpenLogicalChannelConfirm & pdu);
+    virtual PBoolean HandleReject(const H245_OpenLogicalChannelReject & pdu);
+    virtual PBoolean HandleClose(const H245_CloseLogicalChannel & pdu);
+    virtual PBoolean HandleCloseAck(const H245_CloseLogicalChannelAck & pdu);
+    virtual PBoolean HandleRequestClose(const H245_RequestChannelClose & pdu);
+    virtual PBoolean HandleRequestCloseAck(const H245_RequestChannelCloseAck & pdu);
+    virtual PBoolean HandleRequestCloseReject(const H245_RequestChannelCloseReject & pdu);
+    virtual PBoolean HandleRequestCloseRelease(const H245_RequestChannelCloseRelease & pdu);
+    virtual void HandleTimeout();
+
+    H323Channel * GetChannel() const;
+
+    bool IsAwaitingEstablishment() const { return state == e_AwaitingEstablishment || state == e_Establishing; }
+    bool IsEstablished() const { return state == e_Established; }
+
+  protected:
+    virtual void Release();
+
+
+    H323Channel * channel;
+
+    H323ChannelNumber channelNumber;
+
+    P_DECLARE_TRACED_ENUM(States,
+      e_Released,
+      e_AwaitingEstablishment,
+      e_Establishing,
+      e_Established,
+      e_AwaitingRelease,
+      e_AwaitingConfirmation,
+      e_AwaitingResponse,
+      e_NumStates
+    );
+    States state;
+
+  friend class H245NegLogicalChannels;
+};
+
+
+PDICTIONARY(H245LogicalChannelDict, H323ChannelNumber, H245NegLogicalChannel);
+
+/**Dictionary of all Logical Channels
+ */
+class H245NegLogicalChannels : public H245Negotiator
+{
+  PCLASSINFO(H245NegLogicalChannels, H245Negotiator);
+
+  public:
+    H245NegLogicalChannels(H323EndPoint & endpoint, H323Connection & connection);
+
+    virtual void Add(H323Channel & channel);
+
+    virtual PBoolean Open(
+      const H323Capability & capability,
+      unsigned sessionID,
+      unsigned replacementFor = 0,
+      OpalMediaStreamPtr mediaStream = NULL
+    );
+    virtual PBoolean Close(unsigned channelNumber, PBoolean fromRemote);
+    virtual PBoolean HandleOpen(const H245_OpenLogicalChannel & pdu);
+    virtual PBoolean HandleOpenAck(const H245_OpenLogicalChannelAck & pdu);
+    virtual PBoolean HandleOpenConfirm(const H245_OpenLogicalChannelConfirm & pdu);
+    virtual PBoolean HandleReject(const H245_OpenLogicalChannelReject & pdu);
+    virtual PBoolean HandleClose(const H245_CloseLogicalChannel & pdu);
+    virtual PBoolean HandleCloseAck(const H245_CloseLogicalChannelAck & pdu);
+    virtual PBoolean HandleRequestClose(const H245_RequestChannelClose & pdu);
+    virtual PBoolean HandleRequestCloseAck(const H245_RequestChannelCloseAck & pdu);
+    virtual PBoolean HandleRequestCloseReject(const H245_RequestChannelCloseReject & pdu);
+    virtual PBoolean HandleRequestCloseRelease(const H245_RequestChannelCloseRelease & pdu);
+
+    H323ChannelNumber GetNextChannelNumber();
+    H245LogicalChannelDict & GetChannels() { return channels; }
+    const H245LogicalChannelDict & GetChannels() const { return channels; }
+    H323Channel * FindChannel(unsigned channelNumber, PBoolean fromRemote);
+    H245NegLogicalChannel * FindNegLogicalChannel(unsigned channelNumber, PBoolean fromRemote);
+    H323Channel * FindChannelBySession(unsigned rtpSessionId, PBoolean fromRemote);
+    void RemoveAll();
+
+  protected:
+    H323ChannelNumber      lastChannelNumber;
+    H245LogicalChannelDict channels;
+};
+
+
+/**Request mode change as per H245 section 8.9
+ */
+class H245NegRequestMode : public H245Negotiator
+{
+  PCLASSINFO(H245NegRequestMode, H245Negotiator);
+
+  public:
+    H245NegRequestMode(H323EndPoint & endpoint, H323Connection & connection);
+
+    virtual PBoolean StartRequest(const PString & newModes);
+    virtual PBoolean StartRequest(const H245_ArrayOf_ModeDescription & newModes);
+    virtual PBoolean HandleRequest(const H245_RequestMode & pdu);
+    virtual PBoolean HandleAck(const H245_RequestModeAck & pdu);
+    virtual PBoolean HandleReject(const H245_RequestModeReject & pdu);
+    virtual PBoolean HandleRelease(const H245_RequestModeRelease & pdu);
+    virtual void HandleTimeout();
+
+  protected:
+    PBoolean awaitingResponse;
+    unsigned inSequenceNumber;
+    unsigned outSequenceNumber;
+};
+
+
+/**Request mode change as per H245 section 8.9
+ */
+class H245NegRoundTripDelay : public H245Negotiator
+{
+  PCLASSINFO(H245NegRoundTripDelay, H245Negotiator);
+
+  public:
+    H245NegRoundTripDelay(H323EndPoint & endpoint, H323Connection & connection);
+
+    PBoolean StartRequest();
+    PBoolean HandleRequest(const H245_RoundTripDelayRequest & pdu);
+    PBoolean HandleResponse(const H245_RoundTripDelayResponse & pdu);
+    void HandleTimeout();
+
+    PTimeInterval GetRoundTripDelay() const { return roundTripTime; }
+    PBoolean IsRemoteOffline() const { return retryCount == 0; }
+
+  protected:
+    PBoolean          awaitingResponse;
+    unsigned      sequenceNumber;
+    PTimeInterval tripStartTime;
+    PTimeInterval roundTripTime;
+    unsigned      retryCount;
+};
+
+
+#endif // OPAL_H323
+
+#endif // OPAL_H323_H323NEG_H
+
+
+/////////////////////////////////////////////////////////////////////////////

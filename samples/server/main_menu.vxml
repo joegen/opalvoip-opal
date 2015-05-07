@@ -1,0 +1,179 @@
+<?xml version="1.0"?>
+<vxml version="2.1" xmlns="http://www.w3.org/2001/vxml">
+
+    <!-- Main menu -->
+  <menu id="MainMenu">
+
+    <!-- Set this property for the time to wait for input -->
+    <property name="timeout" value="30s"/>
+
+    <!-- A prompt outputs to the remote -->
+    <prompt bargein="false">
+      <!-- Audio plays the URI in src, or if absent uses speech synthesis of the body text -->
+      <audio src="file:menu_prompt.wav">
+        Welcome to the OPAL I V R and conference server.
+      </audio>
+    </prompt>
+
+    <!-- The next attribute here indicats what <form> to go to when the menu is selected -->
+    <choice dtmf="1" next="#Conference">
+      Press 1 to create or join a conference
+    </choice>
+    
+    <choice dtmf="2" next="#PlayFile">
+      Press 2 to play a file
+    </choice>
+    
+    <choice dtmf="3" next="#PlayIP">
+      Press 3 to say your I P address
+    </choice>
+    
+    <choice dtmf="4" next="#RecordFile">
+      Press 4 to record a message
+    </choice>
+    
+    <choice dtmf="5" next="#PlayRecording">
+      Press 5 to play back recorded message
+    </choice>
+    
+    <choice dtmf="0" next="#HangUp">
+      Press 0 to disconnect
+    </choice>
+    
+    <!-- This section is executed when a timeout occurs -->
+    <noinput>
+      <audio src="file:menu_timeout.wav">
+        Nothing entered, disconnecting.
+      </audio>
+      
+      <!-- hang up the call -->
+      <disconnect/>
+    </noinput>
+
+    <!-- This section is executed when does not match any <choice> -->
+    <nomatch>
+      <audio src="file:menu_nomatch.wav">
+        Please enter 1 to 5 or 0.
+      </audio>
+
+      <!-- To play main menu again must explicitly go there, or it moves to next node -->
+      <goto nextitem="MainMenu"/>
+    </nomatch>
+  </menu>
+
+  <!-- This form is demonstrates how to just play some things -->
+  <form id="PlayFile">
+    <log expr="'Playing WAV file'"/>
+    <audio expr="application.path+'/b5.wav'"/>
+    <goto next="#MainMenu"/>
+  </form>
+
+  <!-- This form is demonstrates how to say the IP address of remote -->
+  <form id="PlayIP">
+    <log expr="'Playing IP 'i+session.connection.remote.ip"/>
+    <audio src="file:saying_ip.wav">
+      Your I P address is
+      <value expr="session.connection.remote.ip"/>
+    </audio>
+    <break time="1s"/>
+    <goto next="#MainMenu"/>
+  </form>
+
+  <!-- This form demonstrates how to record a message -->
+  <form id="RecordFile">
+    <log expr="'Recording message'"/>
+    
+    <record name="MyMessage" dtmfterm="true" finalsilence="5s" maxtime="60s">
+      <prompt>
+        <audio expr="application.path+'/ogm.wav'">
+          Please leave a message.
+        </audio>
+      </prompt>
+
+      <!-- This section is executed when the recording completes -->
+      <filled>
+        <log expr="'Recorded '+MyMessage$.duration+' seconds'"/>
+
+        <audio src="file:message_recorded.wav">
+          Message recorded.
+        </audio>
+
+        <!-- No stack, have to go back to main menu explicitly  -->
+        <goto next="#MainMenu"/>
+      </filled>
+    </record>
+  </form>
+
+  <!-- This form is demonstrates how to just play some things -->
+  <form id="PlayRecording">
+    <log expr="'Playing recorded file '+MyMessage$.uri"/>
+    <audio src="file:replaying.wav">
+      Replaying call of duration
+      <value expr="MyMessage$.duration"/>
+      milliseconds
+    </audio>
+    <break time="1s"/>
+    <audio expr="MyMessage$.uri"/>
+    <goto next="#MainMenu"/>
+  </form>
+
+  <!-- This form demonstrates how to do a more complicated transfer -->
+  <form id="Conference">
+    <log expr="'Creating/Joining conference'"/>
+    
+    <!-- A field is a place to enter digits -->
+    <field name="enteredDigits">
+      
+      <!-- A grammar is a description of the input. We do not support any of the
+           standards at this point, only a custom grammer that will accept n to m
+           digits with something as a termiantor. -->
+      <grammar mode="dtmf" type="X-OPAL/digits">
+        minDigits=1;
+        maxDigits=5;
+        terminators=#
+      </grammar>
+      
+      <prompt>
+        <!-- If prompt does not contain an <audio> then just speaks the text -->
+        Please enter the number of the conference you wish to create or join.
+      </prompt>
+    </field>
+    
+    <filled>
+      <!-- A <value> evaluates the expression then speaks it using speech synthesis -->
+      <value expr="'Conference number '+enteredDigits" />
+      
+      <!-- Transfer to the calculated expression. Note that we only support string
+           concatenation ('+' operator) at this time. -->
+      <transfer type="false" destexpr="'mcu:'+enteredDigits" />
+    </filled>
+
+    <!-- This happens if a timeout occurs -->
+    <noinput>
+      <audio src="file:transfer_timeout.wav">
+        Nothing entered, returning to main menu.
+      </audio>
+      <goto next="#MainMenu"/>
+    </noinput>
+
+    <!-- This is executed of the transfer does not succeed -->
+    <error>
+      <audio src="file:transfer_failed.wav">
+        Transfer failed.
+      </audio>
+      <goto next="#MainMenu"/>
+    </error>
+  </form>
+
+  <!-- This form demonstrates how to play a mesage and hang up -->
+  <form id="HangUp">
+    <log expr="'Hanging up'"/>
+    
+    <audio src="file:goodbye.wav">
+      Good bye.
+    </audio>
+
+    <!-- Seems obvious -->
+    <disconnect/>
+  </form>
+</vxml>

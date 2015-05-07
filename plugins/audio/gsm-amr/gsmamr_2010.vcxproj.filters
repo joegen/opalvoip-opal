@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{236ef849-acf0-434d-b7ea-a95793d36e46}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="AMR Files">
+      <UniqueIdentifier>{b3747ee2-0bc0-469c-b263-06204d99d182}</UniqueIdentifier>
+      <Extensions>.c</Extensions>
+    </Filter>
+    <Filter Include="AMR Files\AMR Source">
+      <UniqueIdentifier>{d87e177d-c44a-4899-aa19-527852daae5e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AMR Files\AMR Headers">
+      <UniqueIdentifier>{743a8cd9-b800-43fd-be12-67f0729d5996}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="amrcodec.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\interf_dec.c">
+      <Filter>AMR Files\AMR Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\interf_enc.c">
+      <Filter>AMR Files\AMR Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sp_dec.c">
+      <Filter>AMR Files\AMR Source</Filter>
+    </ClCompile>
+    <ClCompile Include="src\sp_enc.c">
+      <Filter>AMR Files\AMR Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\interf_dec.h">
+      <Filter>AMR Files\AMR Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\interf_enc.h">
+      <Filter>AMR Files\AMR Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\interf_rom.h">
+      <Filter>AMR Files\AMR Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rom_dec.h">
+      <Filter>AMR Files\AMR Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\rom_enc.h">
+      <Filter>AMR Files\AMR Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\sp_dec.h">
+      <Filter>AMR Files\AMR Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\sp_enc.h">
+      <Filter>AMR Files\AMR Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\typedef.h">
+      <Filter>AMR Files\AMR Headers</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

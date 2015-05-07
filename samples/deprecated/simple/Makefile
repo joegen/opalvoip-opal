@@ -1,0 +1,129 @@
+#
+# Makefile
+#
+# Simple OPAL sample
+#
+# Copyright (C) 2008 Post Increment, All Rights Reserved
+#
+# The contents of this file are subject to the Mozilla Public License
+# Version 1.0 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.mozilla.org/MPL/
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+# the License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is Open Phone Abstraction Library.
+#
+# The Initial Developer of the Original Code is Post Increment
+#
+# Contributor(s): Matthias Schneider (ma30002000@yahoo.de)
+#
+# $Revision: 21713 $
+# $Auther$
+# $Date: 2008-12-08 19:14:44 +1100 (Mon, 08 Dec 2008) $
+#
+
+PROG = simpleopal
+SRCS = main.cxx
+
+
+# using the following is SOOO much simpler, but in case you want a really
+# complex makefile where it doesn't work, this a sample of how to not use it
+
+# include $(shell pkg-config opal --variable=makedir)/opal.mak
+
+
+# Determine which package to use debug or release
+ifeq ($(DEBUG_BUILD), yes)
+  DEBUG_SUFFIX=_d
+  CFLAGS += -g
+else
+  DEBUG_SUFFIX=
+  CFLAGS += -O3
+endif
+
+ifeq ($(STATIC_BUILD), yes)
+  SUFFIX=$(DEBUG_SUFFIX)_s --static
+else
+  SUFFIX=$(DEBUG_SUFFIX)
+endif
+
+ifneq ($(SUFFIX),)
+  PKG_FLAGS = --define-variable=suffix=$(SUFFIX)
+endif
+# Get required flags from library
+
+# The -I option allows to build the simple application in the same time as opal
+# (as used by distribution packagers)
+CPPFLAGS += $(shell pkg-config $(PKG_FLAGS) --variable cppflags opal) \
+            $(shell pkg-config $(PKG_FLAGS) --variable cppflags ptlib)
+CXXFLAGS += $(shell pkg-config $(PKG_FLAGS) --variable cxxflags opal) \
+            $(shell pkg-config $(PKG_FLAGS) --variable cxxflags ptlib)
+LDFLAGS  += $(shell pkg-config $(PKG_FLAGS) --cflags opal)
+LDFLAGS  := $(shell pkg-config $(PKG_FLAGS) --libs opal) $(LDFLAGS)
+
+
+# This part is we like to be tidy and put all the build products
+# in a sub-directory of a name specific to platform type.
+OBJDIR = $(shell pkg-config $(PKG_FLAGS) --variable=objdir opal)
+
+vpath	%.o   $(OBJDIR)
+
+$(OBJDIR)/%.o : %.cxx
+	@mkdir -p $(OBJDIR) >/dev/null 2>&1
+	$(CXX) -o $@ $(CXXFLAGS) -c $<
+
+$(OBJDIR)/%.dep : %.cxx 
+	@if [ ! -d $(OBJDIR) ] ; then mkdir -p $(OBJDIR) ; fi
+	@printf %s $(OBJDIR)/ > $@
+	$(CXX) $(CPPFLAGS) -M $< >> $@
+
+
+# This builds the application
+
+OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SRCS)))))
+
+$(OBJDIR)/$(PROG): $(OBJECTS)
+	 $(CXX) $^ $(LDFLAGS) $(LDLIBS) -o $@
+
+distclean:
+	$(MAKE) DEBUG_BUILD=no  STATIC_BUILD=no  clean
+	$(MAKE) DEBUG_BUILD=yes STATIC_BUILD=no  clean
+	$(MAKE) DEBUG_BUILD=no  STATIC_BUILD=yes clean
+	$(MAKE) DEBUG_BUILD=yes STATIC_BUILD=yes clean
+
+clean:
+	rm -rf $(OBJDIR) $(OBJDIR)_d
+
+install_to:
+	cp $(OBJDIR)/$(PROG) $(DESTDIR)/$(PROG) 
+	chmod 755 $(DESTDIR)/$(PROG)
+
+# Some extra targets for convenience
+
+opt:
+	$(MAKE) DEBUG_BUILD=no STATIC_BUILD=no
+
+debug:
+	$(MAKE) DEBUG_BUILD=yes STATIC_BUILD=no
+	
+both: opt debug
+
+optnoshared:
+	$(MAKE) DEBUG_BUILD=no STATIC_BUILD=yes
+
+debugnoshared:
+	$(MAKE) DEBUG_BUILD=yes STATIC_BUILD=yes
+	
+bothnoshared: optnoshared debugnoshared
+
+depend debugdepend optdepend bothdepend: Makefile $(patsubst %.dep, $(OPAL_DEPDIR)/%.dep, $(SRCS) $(DEPS))
+	@echo Dependencies created.
+
+optlibs debuglibs bothlibs:
+
+
+# End of Makefile

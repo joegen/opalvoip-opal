@@ -1,0 +1,679 @@
+/*
+ * rtp.h
+ *
+ * RTP protocol handler
+ *
+ * Open H323 Library
+ *
+ * Copyright (c) 1998-2001 Equivalence Pty. Ltd.
+ *
+ * The contents of this file are subject to the Mozilla Public License
+ * Version 1.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+ * the License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is Open H323 Library.
+ *
+ * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
+ *
+ * Portions of this code were written with the assisance of funding from
+ * Vovida Networks, Inc. http://www.vovida.com.
+ *
+ * Contributor(s): ______________________________________.
+ *
+ * $Revision$
+ * $Author$
+ * $Date$
+ */
+
+#ifndef OPAL_RTP_RTP_H
+#define OPAL_RTP_RTP_H
+
+#ifdef P_USE_PRAGMA
+#pragma interface
+#endif
+
+#include <opal_config.h>
+
+#include <ptclib/url.h>
+
+#include <set>
+
+
+typedef uint32_t RTP_Timestamp;
+typedef uint16_t RTP_SequenceNumber;
+typedef uint32_t RTP_SyncSourceId;
+typedef std::vector<RTP_SyncSourceId> RTP_SyncSourceArray;
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Real Time Protocol - IETF RFC1889 and RFC1890
+
+class RTP_ReceiverReport : public PObject
+{
+    PCLASSINFO(RTP_ReceiverReport, PObject);
+  public:
+#if PTRACING
+    void PrintOn(ostream &) const;
+#endif
+
+    RTP_SyncSourceId sourceIdentifier;     /* data source being reported */
+    unsigned         fractionLost;         /* fraction lost since last SR/RR */
+    unsigned         totalLost;	          /* cumulative number of packets lost (signed!) */
+    unsigned         lastSequenceNumber;   /* extended last sequence number received */
+    unsigned         jitter;               /* interarrival jitter */
+    PTime            lastTimestamp;        /* last SR packet from this source */
+    PTimeInterval    delay;                /* delay since last SR packet */
+};
+
+typedef PArray<RTP_ReceiverReport> RTP_ReceiverReportArray;
+
+
+class RTP_SenderReport : public PObject
+{
+    PCLASSINFO(RTP_SenderReport, PObject);
+  public:
+#if PTRACING
+    void PrintOn(ostream &) const;
+#endif
+
+    RTP_SyncSourceId sourceIdentifier;
+    PTime            realTimestamp;
+    RTP_Timestamp    rtpTimestamp;
+    unsigned         packetsSent;
+    unsigned         octetsSent;
+};
+
+
+class RTP_SourceDescription : public PObject
+{
+    PCLASSINFO(RTP_SourceDescription, PObject);
+  public:
+    RTP_SourceDescription(RTP_SyncSourceId src) { sourceIdentifier = src; }
+#if PTRACING
+    void PrintOn(ostream &) const;
+#endif
+
+    RTP_SyncSourceId sourceIdentifier;
+    POrdinalToString items;
+};
+
+typedef PArray<RTP_SourceDescription> RTP_SourceDescriptionArray;
+
+
+/**An RTP control frame encapsulation.
+  */
+class RTP_ControlFrame : public PBYTEArray
+{
+  PCLASSINFO(RTP_ControlFrame, PBYTEArray);
+
+  public:
+    RTP_ControlFrame(PINDEX compoundSize = 2048);
+    RTP_ControlFrame(const BYTE * data, PINDEX size, bool dynamic = true);
+
+#if PTRACING
+    virtual void PrintOn(ostream &) const;
+#endif
+
+    bool IsValid() const;
+
+    unsigned GetVersion() const { return (BYTE)theArray[m_compoundOffset]>>6; }
+
+    unsigned GetCount() const { return (BYTE)theArray[m_compoundOffset]&0x1f; }
+    void     SetCount(unsigned count);
+
+    RTP_SyncSourceId GetSenderSyncSource() const { return *(PUInt32b *)(theArray + 4); } // Always first DWORD in the first payload
+
+    enum PayloadTypes {
+      e_FirstValidPayloadType   = 192, // RFC5761
+      e_IntraFrameRequest       = 192,
+      e_SenderReport            = 200,
+      e_ReceiverReport          = 201,
+      e_SourceDescription       = 202,
+      e_Goodbye                 = 203,
+      e_ApplDefined             = 204,
+      e_TransportLayerFeedBack  = 205, // RFC4585
+      e_PayloadSpecificFeedBack = 206,
+      e_ExtendedReport          = 207, // RFC3611
+      e_LastValidPayloadType    = 223  // RFC5761
+    };
+
+    PayloadTypes GetPayloadType() const { return (PayloadTypes)(BYTE)theArray[m_compoundOffset+1]; }
+    void         SetPayloadType(PayloadTypes pt);
+
+    PINDEX GetPayloadSize() const { return 4*(*(PUInt16b *)&theArray[m_compoundOffset+2]); }
+    bool   SetPayloadSize(PINDEX sz);
+
+    BYTE * GetPayloadPtr() const;
+
+    bool ReadNextPacket();
+    bool StartNewPacket(PayloadTypes pt);
+    void EndPacket();
+
+    PINDEX GetPacketSize() const { return m_packetSize; }
+    bool SetPacketSize(PINDEX size);
+
+    bool ParseGoodbye(RTP_SyncSourceId & ssrc, RTP_SyncSourceArray & csrc, PString & msg);
+
+#pragma pack(1)
+    struct ReceiverReport {
+      PUInt32b ssrc;      /* data source being reported */
+      BYTE     fraction;  /* fraction lost since last SR/RR */
+      BYTE     lost[3];	  /* cumulative number of packets lost (signed!) */
+      PUInt32b last_seq;  /* extended last sequence number received */
+      PUInt32b jitter;    /* interarrival jitter */
+      PUInt32b lsr;       /* last SR packet from this source */
+      PUInt32b dlsr;      /* delay since last SR packet */
+
+      unsigned GetLostPackets() const { return (lost[0]<<16U)+(lost[1]<<8U)+lost[2]; }
+      void SetLostPackets(unsigned lost);
+    };
+
+    bool ParseReceiverReport(RTP_SyncSourceId & ssrc, RTP_ReceiverReportArray & reports);
+
+    struct SenderReport {
+      PUInt64b ntp_ts;    /* NTP timestamp */
+      PUInt32b rtp_ts;    /* RTP timestamp */
+      PUInt32b psent;     /* packets sent */
+      PUInt32b osent;     /* octets sent */ 
+    };
+
+    bool ParseSenderReport(RTP_SenderReport & txReport, RTP_ReceiverReportArray & rxReports);
+
+    struct ExtendedReport {
+      /* VoIP Metrics Report Block */
+      BYTE     bt;                 /* block type */
+      BYTE     type_specific;      /* determined by the block definition */
+      PUInt16b length;             /* length of the report block */
+      PUInt32b ssrc;               /* data source being reported */
+      BYTE     loss_rate;          /* fraction of RTP data packets lost */ 
+      BYTE     discard_rate;       /* fraction of RTP data packets discarded */
+      BYTE     burst_density;      /* fraction of RTP data packets within burst periods */
+      BYTE     gap_density;        /* fraction of RTP data packets within inter-burst gaps */
+      PUInt16b burst_duration;     /* the mean duration, in ms, of burst periods */
+      PUInt16b gap_duration;       /* the mean duration, in ms, of gap periods */
+      PUInt16b round_trip_delay;   /* the most recently calculated round trip time */    
+      PUInt16b end_system_delay;   /* the most recently estimates end system delay */
+      BYTE     signal_level;       /* voice signal level related to 0 dBm */
+      BYTE     noise_level;        /* ratio of the silent background level to 0 dBm */
+      BYTE     rerl;               /* residual echo return loss */
+      BYTE     gmin;               /* gap threshold */
+      BYTE     r_factor;           /* voice quality metric of the call */
+      BYTE     ext_r_factor;       /* external R factor */
+      BYTE     mos_lq;             /* MOS for listen quality */
+      BYTE     mos_cq;             /* MOS for conversational quality */
+      BYTE     rx_config;          /* receiver configuration byte */
+      BYTE     reserved;           /* reserved for future definition */
+      PUInt16b jb_nominal;         /* current nominal jitter buffer delay, in ms */ 
+      PUInt16b jb_maximum;         /* current maximum jitter buffer delay, in ms */
+      PUInt16b jb_absolute;        /* current absolute maximum jitter buffer delay, in ms */
+    };
+
+    enum DescriptionTypes {
+      e_END,
+      e_CNAME,
+      e_NAME,
+      e_EMAIL,
+      e_PHONE,
+      e_LOC,
+      e_TOOL,
+      e_NOTE,
+      e_PRIV,
+      NumDescriptionTypes
+    };
+
+    struct SourceDescription {
+      PUInt32b src;       /* first SSRC/CSRC */
+      struct Item {
+        BYTE type;        /* type of SDES item (enum DescriptionTypes) */
+        BYTE length;      /* length of SDES item (in octets) */
+        char data[1];     /* text, not zero-terminated */
+
+        /* WARNING, SourceDescription may not be big enough to contain length and data, for 
+           instance, when type == RTP_ControlFrame::e_END.
+           Be careful whan calling the following function of it may read to over to 
+           memory allocated*/
+        unsigned int GetLengthTotal() const {return (unsigned int)(length + 2);} 
+        const Item * GetNextItem() const { return (const Item *)((char *)this + length + 2); }
+        Item * GetNextItem() { return (Item *)((char *)this + length + 2); }
+      } item[1];          /* list of SDES items */
+    };
+
+    void StartSourceDescription(
+      RTP_SyncSourceId src   ///<  SSRC/CSRC identifier
+    );
+
+    void AddSourceDescriptionItem(
+      unsigned type,            ///<  Description type
+      const PString & data      ///<  Data for description
+    );
+
+    bool ParseSourceDescriptions(
+      RTP_SourceDescriptionArray & descriptions
+    );
+
+    // Add RFC2032 Intra Frame Request
+    void AddIFR(
+      RTP_SyncSourceId syncSourceIn
+    );
+
+
+    // RFC4585 Feedback Message Type (FMT)
+    struct FbHeader {
+      PUInt32b senderSSRC;  /* data source of sender of message */
+      PUInt32b mediaSSRC;   /* data source of media */
+    };
+
+    unsigned GetFbType() const { return (BYTE)theArray[m_compoundOffset]&0x1f; }
+
+    FbHeader * AddFeedback(PayloadTypes pt, unsigned type, PINDEX fciSize);
+    template <typename FB> void AddFeedback(PayloadTypes pt, unsigned type, FB * & data) { data = (FB *)AddFeedback(pt, type, sizeof(FB)); }
+
+    // RFC4585 transport layer
+    enum TransportLayerFbTypes {
+      e_TransportNACK = 1,
+      e_TMMBR = 3,
+      e_TMMBN
+    };
+
+    struct FbNACK {
+      FbHeader hdr;
+      struct Field
+      {
+        PUInt16b packetID;
+        PUInt16b bitmask;
+      } fld[1];
+    };
+    struct LostPacketMask : std::set<unsigned>
+    {
+      friend ostream & operator<<(ostream & strm, const LostPacketMask & mask);
+    };
+    void AddNACK(
+      RTP_SyncSourceId syncSourceOut,
+      RTP_SyncSourceId syncSourceIn,
+      const LostPacketMask & lostPackets
+    );
+    bool ParseNACK(
+      RTP_SyncSourceId & senderSSRC,
+      RTP_SyncSourceId & targetSSRC,
+      LostPacketMask & lostPackets
+    );
+
+    // Same for request (e_TMMBR) and notification (e_TMMBN)
+    struct FbTMMB {
+      FbHeader hdr;
+      PUInt32b requestSSRC;
+      PUInt32b bitRateAndOverhead; // Various bit fields
+    };
+    void AddTMMB(
+      RTP_SyncSourceId syncSourceOut,
+      RTP_SyncSourceId syncSourceIn,
+      unsigned maxBitRate,
+      unsigned overhead,
+      bool notify
+    );
+    bool ParseTMMB(
+      RTP_SyncSourceId & senderSSRC,
+      RTP_SyncSourceId & targetSSRC,
+      unsigned & maxBitRate,
+      unsigned & overhead
+    );
+
+    enum PayloadSpecificFbTypes {
+      e_PictureLossIndication = 1,
+      e_SliceLostIndication,
+      e_ReferencePictureSelectionIndication,
+      e_FullIntraRequest,                     //RFC5104
+      e_TemporalSpatialTradeOffRequest,
+      e_TemporalSpatialTradeOffNotification,
+      e_VideoBackChannelMessage,
+      e_ApplicationLayerFbMessage = 15
+    };
+
+    void AddPLI(
+      RTP_SyncSourceId syncSourceOut,
+      RTP_SyncSourceId syncSourceIn
+    );
+    bool ParsePLI(
+      RTP_SyncSourceId & senderSSRC,
+      RTP_SyncSourceId & targetSSRC
+    );
+
+    struct FbFIR {
+      FbHeader hdr;
+      PUInt32b requestSSRC;
+      BYTE     sequenceNumber;
+    };
+    void AddFIR(
+      RTP_SyncSourceId syncSourceOut,
+      RTP_SyncSourceId syncSourceIn,
+      unsigned sequenceNumber
+    );
+    bool ParseFIR(
+      RTP_SyncSourceId & senderSSRC,
+      RTP_SyncSourceId & targetSSRC,
+      unsigned & sequenceNumber
+    );
+
+    struct FbTSTO {
+      FbHeader hdr;
+      PUInt32b requestSSRC;
+      BYTE     sequenceNumber;
+      BYTE     reserver[2];
+      BYTE     tradeOff;
+    };
+    void AddTSTO(
+      RTP_SyncSourceId syncSourceOut,
+      RTP_SyncSourceId syncSourceIn,
+      unsigned tradeOff,
+      unsigned sequenceNumber
+    );
+    bool ParseTSTO(
+      RTP_SyncSourceId & senderSSRC,
+      RTP_SyncSourceId & targetSSRC,
+      unsigned & tradeOff,
+      unsigned & sequenceNumber
+    );
+
+    struct FbREMB {
+      FbHeader hdr;
+      char     id[4]; // 'R' 'E' 'M' 'B'
+      BYTE     numSSRC;
+      BYTE     bitRate[3];
+      PUInt32b feedbackSSRC[1];
+    };
+    void AddREMB(
+      RTP_SyncSourceId syncSourceOut,
+      RTP_SyncSourceId syncSourceIn,
+      unsigned maxBitRate
+    );
+    bool ParseREMB(
+      RTP_SyncSourceId & senderSSRC,
+      RTP_SyncSourceId & targetSSRC,
+      unsigned & maxBitRate
+    );
+
+#pragma pack()
+
+    struct ApplDefinedInfo {
+      char             m_type[5];
+      unsigned         m_subType;
+      RTP_SyncSourceId m_SSRC;
+      PBYTEArray       m_data;
+
+      ApplDefinedInfo(const char * type = NULL, unsigned subType = 0, RTP_SyncSourceId ssrc = 0, const BYTE * data = NULL, PINDEX size = 0);
+    };
+    void AddApplDefined(const ApplDefinedInfo & info);
+    bool ParseApplDefined(ApplDefinedInfo & info);
+
+  protected:
+    PINDEX m_packetSize;
+    PINDEX m_compoundOffset;
+    PINDEX m_payloadSize;
+
+  private:
+    virtual PBoolean SetSize(PINDEX sz) { return PBYTEArray::SetSize(sz); }
+};
+
+
+/**An RTP data frame encapsulation.
+  */
+class RTP_DataFrame : public PBYTEArray
+{
+  PCLASSINFO(RTP_DataFrame, PBYTEArray);
+
+  public:
+    RTP_DataFrame(PINDEX payloadSize = 0, PINDEX bufferSize = 0);
+    RTP_DataFrame(const BYTE * data, PINDEX len, bool dynamic = true);
+
+    enum {
+      ProtocolVersion = 2,
+      MinHeaderSize = 12,
+      // Max safe MTU size (576 bytes as per RFC879) minus IP, UDP an RTP headers
+      MaxMtuPayloadSize = (576-20-16-12)
+    };
+
+    enum PayloadTypes {
+      PCMU,         // G.711 u-Law
+      FS1016,       // Federal Standard 1016 CELP
+      G721,         // ADPCM - Subsumed by G.726
+      G726 = G721,
+      GSM,          // GSM 06.10
+      G7231,        // G.723.1 at 6.3kbps or 5.3 kbps
+      DVI4_8k,      // DVI4 at 8kHz sample rate
+      DVI4_16k,     // DVI4 at 16kHz sample rate
+      LPC,          // LPC-10 Linear Predictive CELP
+      PCMA,         // G.711 A-Law
+      G722,         // G.722
+      L16_Stereo,   // 16 bit linear PCM
+      L16_Mono,     // 16 bit linear PCM
+      G723,         // G.723
+      CN,           // Confort Noise
+      MPA,          // MPEG1 or MPEG2 audio
+      G728,         // G.728 16kbps CELP
+      DVI4_11k,     // DVI4 at 11kHz sample rate
+      DVI4_22k,     // DVI4 at 22kHz sample rate
+      G729,         // G.729 8kbps
+      Cisco_CN,     // Cisco systems comfort noise (unofficial)
+
+      CelB = 25,    // Sun Systems Cell-B video
+      JPEG,         // Motion JPEG
+      H261 = 31,    // H.261
+      MPV,          // MPEG1 or MPEG2 video
+      MP2T,         // MPEG2 transport system
+      H263,         // H.263
+
+      T38 = 38,     // T.38 (internal)
+
+      LastKnownPayloadType,
+
+      StartConflictRTCP = RTP_ControlFrame::e_FirstValidPayloadType&0x7f,
+      EndConflictRTCP = RTP_ControlFrame::e_LastValidPayloadType&0x7f,
+
+      DynamicBase = 96,
+      MaxPayloadType = 127,
+      IllegalPayloadType
+    };
+
+    unsigned GetVersion() const { return (theArray[0]>>6)&3; }
+
+    bool GetExtension() const   { return (theArray[0]&0x10) != 0; }
+    void SetExtension(bool ext);
+
+    bool GetMarker() const { return (theArray[1]&0x80) != 0; }
+    void SetMarker(bool m);
+
+    bool GetPadding() const { return (theArray[0]&0x20) != 0; }
+    void SetPadding(bool v)  { if (v) theArray[0] |= 0x20; else theArray[0] &= 0xdf; }
+    BYTE * GetPaddingPtr() const { return (BYTE *)(theArray+m_headerSize+m_payloadSize); }
+
+    PINDEX GetPaddingSize() const { return m_paddingSize > 0 ? m_paddingSize-1 : 0; }
+    bool   SetPaddingSize(PINDEX sz);
+
+    PayloadTypes GetPayloadType() const { return (PayloadTypes)(theArray[1]&0x7f); }
+    void         SetPayloadType(PayloadTypes t);
+
+    RTP_SequenceNumber GetSequenceNumber() const { return *(PUInt16b *)&theArray[2]; }
+    void SetSequenceNumber(RTP_SequenceNumber n) { *(PUInt16b *)&theArray[2] = n; }
+
+    RTP_Timestamp GetTimestamp() const  { return *(PUInt32b *)&theArray[4]; }
+    void  SetTimestamp(RTP_Timestamp t) { *(PUInt32b *)&theArray[4] = t; }
+
+    RTP_SyncSourceId GetSyncSource() const  { return *(PUInt32b *)&theArray[8]; }
+    void  SetSyncSource(RTP_SyncSourceId s) { *(PUInt32b *)&theArray[8] = s; }
+
+    PINDEX GetContribSrcCount() const { return theArray[0]&0xf; }
+    RTP_SyncSourceId  GetContribSource(PINDEX idx) const;
+    void   SetContribSource(PINDEX idx, RTP_SyncSourceId src);
+
+    PINDEX GetHeaderSize() const { return m_headerSize; }
+
+    void CopyHeader(const RTP_DataFrame & other);
+    void Copy(const RTP_DataFrame & other);
+
+    /**Get header extension.
+       If idx < 0 then gets RFC 3550 format extension type.
+       If idx >= 0 then get RFC 5285 format extension type for the idx'th extension.
+
+       @returns NULL if no extension
+      */
+    BYTE * GetHeaderExtension(
+      unsigned & id,      ///< Identifier for extension
+      PINDEX & length,    ///< Length of extension in bytes
+      int idx = -1        ///< Index of extension
+    ) const;
+
+    /// Extension header types
+    enum HeaderExtensionType {
+      RFC3550,
+      RFC5285_OneByte,
+      RFC5285_TwoByte
+    };
+
+    /**Get header extension by specified id.
+       @returns NULL if no extension of that id and type is present.
+      */
+    BYTE * GetHeaderExtension(
+      HeaderExtensionType type, ///< Type of extension to get
+      unsigned id,              ///< Identifier for extension
+      PINDEX & length           ///< Length of extension in bytes
+    ) const;
+
+    /**Set header extension.
+       Note when RFC 5285 formats are used, the extension is appened to ones
+       already present.
+
+       @returns true if extension legal.
+      */
+    bool SetHeaderExtension(
+      unsigned id,        ///< Identifier for extension
+      PINDEX length,      ///< Length of extension in bytes
+      const BYTE * data,  ///< Data to put into extension
+      HeaderExtensionType type ///< RFC standard used
+    );
+
+    PINDEX GetExtensionSizeDWORDs() const;      // get the number of 32 bit words in the extension (excluding the header).
+    bool   SetExtensionSizeDWORDs(PINDEX sz);   // set the number of 32 bit words in the extension (excluding the header)
+
+    PINDEX GetPayloadSize() const { return m_payloadSize; }
+    bool   SetPayloadSize(PINDEX sz);
+    bool   SetPayload(const BYTE * data, PINDEX sz);
+    BYTE * GetPayloadPtr()     const { return (BYTE *)(theArray+m_headerSize); }
+
+    virtual PObject * Clone() const { return new RTP_DataFrame(*this); }
+#if PTRACING
+    virtual void PrintOn(ostream & strm) const;
+#endif
+
+    // Note this sets the whole packet length, and calculates the various
+    // sub-section sizes: header payload and padding.
+    bool SetPacketSize(PINDEX sz);
+
+    // Get the packet size including headers, padding etc.
+    PINDEX GetPacketSize() const;
+
+    /**Get absolute (wall clock) time of packet, if known.
+      */
+    PTime GetAbsoluteTime() const { return m_absoluteTime; }
+
+    /**Set absolute (wall clock) time of packet.
+      */
+    void SetAbsoluteTime() { m_absoluteTime.SetCurrentTime(); }
+    void SetAbsoluteTime(const PTime & t) { m_absoluteTime = t; }
+
+    /** Get sequence number discontinuity.
+        If non-zero this indicates the number of packets detected as missing
+        before this packet.
+      */
+    unsigned GetDiscontinuity() const { return m_discontinuity; }
+
+    void SetDiscontinuity(unsigned lost) { m_discontinuity = lost; }
+
+    /** Get the "bundle" identifier that typically links audio and video
+        streams for "lip synch" purposes.
+    */
+    const PString & GetBundleId() const { return m_bundleId; }
+    void SetBundleId(const PString & id) { m_bundleId = id; }
+
+  protected:
+    bool AdjustHeaderSize(PINDEX newSize);
+
+    PINDEX   m_headerSize;
+    PINDEX   m_payloadSize;
+    PINDEX   m_paddingSize;
+    PTime    m_absoluteTime;
+    unsigned m_discontinuity;
+    PString  m_bundleId;
+
+#if PTRACING
+    friend ostream & operator<<(ostream & o, PayloadTypes t);
+#endif
+
+  private:
+    virtual PBoolean SetSize(PINDEX sz) { return PBYTEArray::SetSize(sz); }
+};
+
+PLIST(RTP_DataFrameList, RTP_DataFrame);
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+/** Information for RFC 5285 header extensions.
+  */
+class RTPExtensionHeaderInfo : public PObject
+{
+    PCLASSINFO(RTPExtensionHeaderInfo, PObject);
+  public:
+    unsigned m_id;
+
+    enum Direction {
+      Undefined = -1,
+      Inactive,
+      RecvOnly,
+      SendOnly,
+      SendRecv
+    } m_direction;
+
+    PURL m_uri;
+
+    PString m_attributes;
+
+    RTPExtensionHeaderInfo();
+    virtual Comparison Compare(const PObject & other) const;
+
+#if OPAL_SDP
+    bool ParseSDP(const PString & param);
+    void OutputSDP(ostream & strm) const;
+#endif
+};
+
+typedef std::set<RTPExtensionHeaderInfo> RTPExtensionHeaders;
+
+
+#if PTRACING
+class RTP_TRACE_SRC
+{
+  public:
+    RTP_TRACE_SRC(RTP_SyncSourceId src)
+      : m_src(src)
+    {
+    }
+
+    friend std::ostream & operator<<(std::ostream & strm, const RTP_TRACE_SRC & src)
+    {
+      return strm << src.m_src << " (0x" << std::hex << src.m_src << std::dec << ')';
+    }
+
+  protected:
+    RTP_SyncSourceId m_src;
+};
+#endif // PTRACING
+
+#endif // OPAL_RTP_RTP_H
+
+/////////////////////////////////////////////////////////////////////////////

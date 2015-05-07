@@ -1,0 +1,80 @@
+/* plugin_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define to 1 if you have the system header */
+#undef HAVE_UNISTD_H
+#undef HAVE_MALLOC_H
+
+/* Standard integer types */
+#undef HAVE_INTTYPES_H
+#undef HAVE_STDINT_H
+#undef int8_t
+#undef int16_t
+#undef int32_t
+#undef int64_t
+#undef intptr_t
+#undef uint8_t
+#undef uint16_t
+#undef uint32_t
+#undef uint64_t
+#undef uintptr_t
+
+/* define if posix_memalign is available */
+#undef HAVE_POSIX_MEMALIGN
+
+/* Define to `int' if <sys/types.h> does not define. */
+#undef pid_t
+
+/* Define to 1 if you have the <capi20.h> header file. */
+#undef HAVE_CAPI20_H
+
+/* celt */
+#undef HAVE_CELT
+
+/* iLBC variants */
+#undef OPAL_SYSTEM_ILBC
+
+/* Speex */
+#undef OPAL_SYSTEM_SPEEX
+
+/* Define to 1 if you have the <linux/telephony.h> header file. */
+#undef HAVE_LINUX_TELEPHONY_H
+
+/* Define to 1 if you have the <sys/telephony.h> header file. */
+#undef HAVE_SYS_TELEPHONY_H
+
+/* Directory with libavcodec source code, for MPEG4 rate control correction */
+#undef LIBAVCODEC_HAVE_SOURCE_DIR
+
+/* Filename of the libavcodec library */
+#undef LIBAVCODEC_LIB_NAME
+
+/* Filename of the libavcodec library */
+#undef LIBAVUTIL_LIB_NAME
+
+/* Compatibilty with various versions of the libavcodec library */
+#undef AV_PICTURE_TYPE_NONE
+
+/* Compatibilty with various versions of the libavcodec library */
+#undef AV_PICTURE_TYPE_I
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* For win32 build */
+#undef PLUGIN_CODEC_DLL_EXPORTS
+
