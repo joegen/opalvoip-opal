@@ -293,7 +293,9 @@ void FFMPEGCodec::CloseCodec()
 {
   if (m_open) {
     PTRACE(4, m_prefix, "Closing codec \"" << m_codec->long_name << '"');
+    g_avcodec_mutex.Wait();
     avcodec_close(m_context);
+    g_avcodec_mutex.Signal();
     m_open = false;
   }
 }
