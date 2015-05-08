@@ -49,46 +49,12 @@ typedef uint32_t RTP_Timestamp;
 typedef uint16_t RTP_SequenceNumber;
 typedef uint32_t RTP_SyncSourceId;
 typedef std::vector<RTP_SyncSourceId> RTP_SyncSourceArray;
+class RTP_ReceiverReport;
+class RTP_SenderReport;
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // Real Time Protocol - IETF RFC1889 and RFC1890
-
-class RTP_ReceiverReport : public PObject
-{
-    PCLASSINFO(RTP_ReceiverReport, PObject);
-  public:
-#if PTRACING
-    void PrintOn(ostream &) const;
-#endif
-
-    RTP_SyncSourceId sourceIdentifier;     /* data source being reported */
-    unsigned         fractionLost;         /* fraction lost since last SR/RR */
-    unsigned         totalLost;	          /* cumulative number of packets lost (signed!) */
-    unsigned         lastSequenceNumber;   /* extended last sequence number received */
-    unsigned         jitter;               /* interarrival jitter */
-    PTime            lastTimestamp;        /* last SR packet from this source */
-    PTimeInterval    delay;                /* delay since last SR packet */
-};
-
-typedef PArray<RTP_ReceiverReport> RTP_ReceiverReportArray;
-
-
-class RTP_SenderReport : public PObject
-{
-    PCLASSINFO(RTP_SenderReport, PObject);
-  public:
-#if PTRACING
-    void PrintOn(ostream &) const;
-#endif
-
-    RTP_SyncSourceId sourceIdentifier;
-    PTime            realTimestamp;
-    RTP_Timestamp    rtpTimestamp;
-    unsigned         packetsSent;
-    unsigned         octetsSent;
-};
-
 
 class RTP_SourceDescription : public PObject
 {
@@ -174,22 +140,74 @@ class RTP_ControlFrame : public PBYTEArray
       void SetLostPackets(unsigned lost);
     };
 
-    bool ParseReceiverReport(RTP_SyncSourceId & ssrc, RTP_ReceiverReportArray & reports);
+    bool ParseReceiverReport(
+      RTP_SyncSourceId & ssrc,
+      const ReceiverReport * & rr,
+      unsigned & count
+    );
+    ReceiverReport * AddReceiverReport(
+      RTP_SyncSourceId ssrc,
+      unsigned receivers
+    );
 
     struct SenderReport {
+      PUInt32b ssrc;
       PUInt64b ntp_ts;    /* NTP timestamp */
       PUInt32b rtp_ts;    /* RTP timestamp */
       PUInt32b psent;     /* packets sent */
       PUInt32b osent;     /* octets sent */ 
     };
 
-    bool ParseSenderReport(RTP_SenderReport & txReport, RTP_ReceiverReportArray & rxReports);
+    bool ParseSenderReport(
+      RTP_SenderReport & txReport,
+      const ReceiverReport * & rr,
+      unsigned & count
+    );
+    ReceiverReport * AddSenderReport(
+      RTP_SyncSourceId ssrc,
+      const PTime & ntp,
+      RTP_Timestamp ts,
+      unsigned packets,
+      uint64_t octets,
+      unsigned receivers
+    );
 
     struct ExtendedReport {
-      /* VoIP Metrics Report Block */
       BYTE     bt;                 /* block type */
       BYTE     type_specific;      /* determined by the block definition */
       PUInt16b length;             /* length of the report block */
+    };
+
+    struct ReceiverReferenceTimeReport : ExtendedReport {
+      PUInt64b ntp;
+    };
+    void AddReceiverReferenceTimeReport(
+      RTP_SyncSourceId ssrc,
+      const PTime & ntp
+    );
+
+    struct DelayLastReceiverReport : ExtendedReport {
+      struct Receiver {
+        PUInt32b ssrc;
+        PUInt32b lrr;
+        PUInt32b dlrr;
+      } m_receiver[1];
+    };
+    DelayLastReceiverReport::Receiver * AddDelayLastReceiverReport(
+      RTP_SyncSourceId ssrc,
+      unsigned receivers
+    );
+    static void AddDelayLastReceiverReport(
+      DelayLastReceiverReport::Receiver & dlrr,
+      RTP_SyncSourceId ssrc,
+      const PTime & ntp,
+      const PTimeInterval & delay
+    );
+
+
+#if OPAL_RTCP_XR
+    struct MetricsReport : ExtendedReport {
+      /* VoIP Metrics Report Block */
       PUInt32b ssrc;               /* data source being reported */
       BYTE     loss_rate;          /* fraction of RTP data packets lost */ 
       BYTE     discard_rate;       /* fraction of RTP data packets discarded */
@@ -213,6 +231,8 @@ class RTP_ControlFrame : public PBYTEArray
       PUInt16b jb_maximum;         /* current maximum jitter buffer delay, in ms */
       PUInt16b jb_absolute;        /* current absolute maximum jitter buffer delay, in ms */
     };
+#endif
+
 
     enum DescriptionTypes {
       e_END,
@@ -256,6 +276,12 @@ class RTP_ControlFrame : public PBYTEArray
     bool ParseSourceDescriptions(
       RTP_SourceDescriptionArray & descriptions
     );
+    void AddSourceDescription(
+      RTP_SyncSourceId ssrc,
+      const PString & cname,
+      const PString & toolName,
+      bool endPacket = true
+    );
 
     // Add RFC2032 Intra Frame Request
     void AddIFR(
@@ -281,8 +307,7 @@ class RTP_ControlFrame : public PBYTEArray
       e_TMMBN
     };
 
-    struct FbNACK {
-      FbHeader hdr;
+    struct FbNACK : FbHeader {
       struct Field
       {
         PUInt16b packetID;
@@ -305,8 +330,7 @@ class RTP_ControlFrame : public PBYTEArray
     );
 
     // Same for request (e_TMMBR) and notification (e_TMMBN)
-    struct FbTMMB {
-      FbHeader hdr;
+    struct FbTMMB : FbHeader {
       PUInt32b requestSSRC;
       PUInt32b bitRateAndOverhead; // Various bit fields
     };
@@ -344,8 +368,7 @@ class RTP_ControlFrame : public PBYTEArray
       RTP_SyncSourceId & targetSSRC
     );
 
-    struct FbFIR {
-      FbHeader hdr;
+    struct FbFIR : FbHeader {
       PUInt32b requestSSRC;
       BYTE     sequenceNumber;
     };
@@ -360,8 +383,7 @@ class RTP_ControlFrame : public PBYTEArray
       unsigned & sequenceNumber
     );
 
-    struct FbTSTO {
-      FbHeader hdr;
+    struct FbTSTO : FbHeader {
       PUInt32b requestSSRC;
       BYTE     sequenceNumber;
       BYTE     reserver[2];
@@ -380,8 +402,7 @@ class RTP_ControlFrame : public PBYTEArray
       unsigned & sequenceNumber
     );
 
-    struct FbREMB {
-      FbHeader hdr;
+    struct FbREMB : FbHeader {
       char     id[4]; // 'R' 'E' 'M' 'B'
       BYTE     numSSRC;
       BYTE     bitRate[3];
@@ -418,6 +439,58 @@ class RTP_ControlFrame : public PBYTEArray
 
   private:
     virtual PBoolean SetSize(PINDEX sz) { return PBYTEArray::SetSize(sz); }
+};
+
+
+class RTP_SenderReport : public PObject
+{
+    PCLASSINFO(RTP_SenderReport, PObject);
+  public:
+    RTP_SenderReport();
+    RTP_SenderReport(const RTP_ControlFrame::SenderReport & report);
+#if PTRACING
+    void PrintOn(ostream &) const;
+#endif
+
+    RTP_SyncSourceId sourceIdentifier;
+    PTime            realTimestamp;
+    RTP_Timestamp    rtpTimestamp;
+    unsigned         packetsSent;
+    unsigned         octetsSent;
+};
+
+
+class RTP_ReceiverReport : public PObject
+{
+    PCLASSINFO(RTP_ReceiverReport, PObject);
+  public:
+    RTP_ReceiverReport(const RTP_ControlFrame::ReceiverReport & report);
+#if PTRACING
+    void PrintOn(ostream &) const;
+#endif
+
+    RTP_SyncSourceId sourceIdentifier;     /* data source being reported */
+    unsigned         fractionLost;         /* fraction lost since last SR/RR */
+    unsigned         totalLost;	          /* cumulative number of packets lost (signed!) */
+    unsigned         lastSequenceNumber;   /* extended last sequence number received */
+    unsigned         jitter;               /* interarrival jitter */
+    PTime            lastTimestamp;        /* last SR packet from this source */
+    PTimeInterval    delay;                /* delay since last SR packet */
+};
+
+
+class RTP_DelayLastReceiverReport : public PObject
+{
+    PCLASSINFO(RTP_DelayLastReceiverReport, PObject);
+  public:
+    RTP_DelayLastReceiverReport(const RTP_ControlFrame::DelayLastReceiverReport::Receiver & dlrr);
+#if PTRACING
+    void PrintOn(ostream &) const;
+#endif
+
+    RTP_SyncSourceId m_ssrc;
+    PTime            m_lastTimestamp;        /* last RR packet from this source */
+    PTimeInterval    m_delay;                /* delay since last RR packet */
 };
 
 
