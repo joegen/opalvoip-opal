@@ -604,6 +604,12 @@ void RTP_SenderReport::PrintOn(ostream & strm) const
 }
 
 
+void RTP_DelayLastReceiverReport::PrintOn(ostream & strm) const
+{
+  strm << "DLRR: lrr=" << m_lastTimestamp.AsString(PTime::LoggingFormat) << ", dlrr=" << m_delay;
+}
+
+
 void RTP_SourceDescription::PrintOn(ostream & strm) const
 {
   static const char * const DescriptionNames[RTP_ControlFrame::NumDescriptionTypes] = {
@@ -806,55 +812,90 @@ bool RTP_ControlFrame::ParseGoodbye(RTP_SyncSourceId & ssrc, RTP_SyncSourceArray
 }
 
 
-static void ParseReceiverReportArray(RTP_ReceiverReportArray & reports, const BYTE * payload, PINDEX count)
+RTP_SenderReport::RTP_SenderReport()
+  : sourceIdentifier(0)
+  , realTimestamp(0)
+  , rtpTimestamp(0)
+  , packetsSent(0)
+  , octetsSent(0)
 {
-  const RTP_ControlFrame::ReceiverReport * rr = (const RTP_ControlFrame::ReceiverReport *)payload;
-  for (PINDEX repIdx = 0; repIdx < count; repIdx++) {
-    RTP_ReceiverReport * report = new RTP_ReceiverReport;
-    report->sourceIdentifier = rr->ssrc;
-    report->fractionLost = rr->fraction;
-    report->totalLost = rr->GetLostPackets();
-    report->lastSequenceNumber = rr->last_seq;
-    report->jitter = rr->jitter;
-    report->lastTimestamp.SetNTP((uint64_t)(uint32_t)rr->lsr << 16);
-    report->delay.SetInterval(((uint32_t)rr->dlsr*1000LL)/65536); // units of 1/65536 seconds
-    reports.SetAt(repIdx, report);
-    rr++;
-  }
 }
 
 
-bool RTP_ControlFrame::ParseReceiverReport(RTP_SyncSourceId & ssrc, RTP_ReceiverReportArray & reports)
+RTP_SenderReport::RTP_SenderReport(const RTP_ControlFrame::SenderReport & sr)
+  : sourceIdentifier(sr.ssrc)
+  , realTimestamp(0)
+  , rtpTimestamp(sr.rtp_ts)
+  , packetsSent(sr.psent)
+  , octetsSent(sr.osent)
+{
+  realTimestamp.SetNTP(sr.ntp_ts);
+}
+
+
+RTP_ReceiverReport::RTP_ReceiverReport(const RTP_ControlFrame::ReceiverReport & rr)
+  : sourceIdentifier(rr.ssrc)
+  ,  fractionLost(rr.fraction)
+  , totalLost(rr.GetLostPackets())
+  , lastSequenceNumber(rr.last_seq)
+  , jitter(rr.jitter)
+  , lastTimestamp(0)
+  , delay(((uint32_t)rr.dlsr*1000LL)/65536) // units of 1/65536 seconds
+{
+  lastTimestamp.SetNTP((uint64_t)(uint32_t)rr.lsr << 16);
+}
+
+
+RTP_DelayLastReceiverReport::RTP_DelayLastReceiverReport(const RTP_ControlFrame::DelayLastReceiverReport::Receiver & dlrr)
+  : m_ssrc(dlrr.ssrc)
+  , m_lastTimestamp(0)
+  , m_delay(((uint32_t)dlrr.dlrr*1000LL)/65536) // units of 1/65536 seconds
+{
+  m_lastTimestamp.SetNTP((uint64_t)(uint32_t)dlrr.lrr << 16);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+bool RTP_ControlFrame::ParseReceiverReport(RTP_SyncSourceId & ssrc, const ReceiverReport * & rr, unsigned & count)
 {
   size_t size = GetPayloadSize();
-  size_t count = GetCount();
+  count = GetCount();
   if (size < sizeof(PUInt32b)+count*sizeof(ReceiverReport))
     return false;
 
-  const BYTE * payload = GetPayloadPtr();
-  ssrc = *(const PUInt32b *)payload;
-  ParseReceiverReportArray(reports, payload + sizeof(PUInt32b), count);
+  const PUInt32b * sender = (const PUInt32b *)GetPayloadPtr();
+  ssrc = *sender;
+  rr = (const RTP_ControlFrame::ReceiverReport *)(sender+1);
   return true;
 }
 
 
-bool RTP_ControlFrame::ParseSenderReport(RTP_SenderReport & txReport, RTP_ReceiverReportArray & rxReports)
+RTP_ControlFrame::ReceiverReport * RTP_ControlFrame::AddReceiverReport(RTP_SyncSourceId ssrc, unsigned receivers)
+{
+  SetPayloadSize(sizeof(PUInt32b) + receivers*sizeof(ReceiverReport));  // length is SSRC of packet sender plus RRs
+  SetCount(receivers);
+  PUInt32b * sender = (PUInt32b *)GetPayloadPtr();
+
+  // add the SSRC to the start of the payload
+  *sender = ssrc;
+
+  // add the RR's after the SSRC
+  return (ReceiverReport *)(sender + 1);
+}
+
+
+bool RTP_ControlFrame::ParseSenderReport(RTP_SenderReport & txReport, const ReceiverReport * & rr, unsigned & count)
 {
   size_t size = GetPayloadSize();
-  size_t count = GetCount();
-  if (size < sizeof(PUInt32b)+sizeof(SenderReport) + count*sizeof(ReceiverReport))
+  count = GetCount();
+  if (size < sizeof(SenderReport) + count*sizeof(ReceiverReport))
     return false;
 
-  const BYTE * payload = GetPayloadPtr();
+  const SenderReport * sr = (const SenderReport *)GetPayloadPtr();
+  txReport = RTP_SenderReport(*sr);
 
-  txReport.sourceIdentifier = *(const PUInt32b *)payload;
-  const SenderReport & sr = *(const SenderReport *)(payload+sizeof(PUInt32b));
-  txReport.realTimestamp.SetNTP(sr.ntp_ts);
-  txReport.rtpTimestamp = sr.rtp_ts;
-  txReport.packetsSent = sr.psent;
-  txReport.octetsSent = sr.osent;
-
-  ParseReceiverReportArray(rxReports, payload + sizeof(PUInt32b) + sizeof(SenderReport), count);
+  rr = (const RTP_ControlFrame::ReceiverReport *)(sr + 1);
   return true;
 }
 
@@ -870,6 +911,82 @@ void RTP_ControlFrame::StartSourceDescription(RTP_SyncSourceId src)
   BYTE * payload = GetPayloadPtr();
   *(PUInt32b *)payload = src;
   payload[4] = e_END;
+}
+
+
+RTP_ControlFrame::ReceiverReport * RTP_ControlFrame::AddSenderReport(RTP_SyncSourceId ssrc,
+                                                                     const PTime & ntp,
+                                                                     RTP_Timestamp ts,
+                                                                     unsigned packets,
+                                                                     uint64_t octets,
+                                                                     unsigned receivers)
+{
+    // send SR and RR
+    StartNewPacket(e_SenderReport);
+    SetPayloadSize(sizeof(SenderReport) + receivers*sizeof(ReceiverReport));  // length is SSRC of packet sender plus SR + RRs
+    SetCount(receivers);
+
+    // add the SR
+    SenderReport * sr = (SenderReport *)GetPayloadPtr();
+    sr->ssrc = ssrc;
+    sr->ntp_ts = ntp.GetNTP();
+    sr->rtp_ts = ts;
+    sr->psent  = packets;
+    sr->osent  = (uint32_t)octets;
+
+    // add the RR's after the SR
+    return (ReceiverReport *)(sr + 1);
+}
+
+
+void RTP_ControlFrame::AddReceiverReferenceTimeReport(RTP_SyncSourceId ssrc, const PTime & ntp)
+{
+  // Did not send SR, so send RRTR extended report
+  StartNewPacket(RTP_ControlFrame::e_ExtendedReport);
+  SetPayloadSize(sizeof(PUInt32b) + sizeof(ReceiverReferenceTimeReport));
+  PUInt32b * sender = (PUInt32b *)GetPayloadPtr();
+
+  // add the SSRC to the start of the payload
+  *sender = ssrc;
+
+  // add the RRTR after the SSRC
+  ReceiverReferenceTimeReport * rrtr = (ReceiverReferenceTimeReport *)(sender+1);
+  rrtr->bt = 4;
+  rrtr->length = 2;
+  rrtr->ntp = ntp.GetNTP();
+  EndPacket();
+}
+
+
+RTP_ControlFrame::DelayLastReceiverReport::Receiver *
+          RTP_ControlFrame::AddDelayLastReceiverReport(RTP_SyncSourceId ssrc, unsigned receivers)
+{
+  // Did not send RR, so send DLRR extended report
+  StartNewPacket(RTP_ControlFrame::e_ExtendedReport);
+  PINDEX xrSize = sizeof(RTP_ControlFrame::DelayLastReceiverReport) + (receivers-1)*sizeof(RTP_ControlFrame::DelayLastReceiverReport::Receiver);
+  SetPayloadSize(sizeof(PUInt32b) + xrSize);
+  PUInt32b * sender = (PUInt32b *)GetPayloadPtr();
+
+  // add the SSRC to the start of the payload
+  *sender = ssrc;
+
+  // add the RRTR after the SSRC
+  DelayLastReceiverReport * dlrr = (DelayLastReceiverReport *)(sender+1);
+  dlrr->bt = 5;
+  dlrr->length = (WORD)(xrSize/4-1);
+
+  return dlrr->m_receiver;
+}
+
+
+void RTP_ControlFrame::AddDelayLastReceiverReport(DelayLastReceiverReport::Receiver & dlrr,
+                                                 RTP_SyncSourceId ssrc,
+                                                 const PTime & ntp,
+                                                 const PTimeInterval & delay)
+{
+  dlrr.ssrc = ssrc;
+  dlrr.lrr = (uint32_t)(ntp.GetNTP()>>16);
+  dlrr.dlrr = (uint32_t)(delay.GetMilliSeconds()*65536/1000);
 }
 
 
@@ -924,6 +1041,23 @@ bool RTP_ControlFrame::ParseSourceDescriptions(RTP_SourceDescriptionArray & desc
 }
 
 
+void RTP_ControlFrame::AddSourceDescription(RTP_SyncSourceId ssrc,
+                                            const PString & cname,
+                                            const PString & toolName,
+                                            bool endPacket)
+{
+  StartNewPacket(RTP_ControlFrame::e_SourceDescription);
+
+  SetCount(0); // will be incremented automatically
+  StartSourceDescription(ssrc);
+  AddSourceDescriptionItem(RTP_ControlFrame::e_CNAME, cname);
+  AddSourceDescriptionItem(RTP_ControlFrame::e_TOOL, toolName);
+
+  if (endPacket)
+    EndPacket();
+}
+
+
 void RTP_ControlFrame::AddIFR(RTP_SyncSourceId syncSourceIn)
 {
   StartNewPacket(e_IntraFrameRequest);
@@ -955,8 +1089,8 @@ void RTP_ControlFrame::AddNACK(RTP_SyncSourceId syncSourceOut, RTP_SyncSourceId 
   FbNACK * nack;
   AddFeedback(e_TransportLayerFeedBack, e_TransportNACK, nack);
 
-  nack->hdr.senderSSRC = syncSourceOut;
-  nack->hdr.mediaSSRC = syncSourceIn;
+  nack->senderSSRC = syncSourceOut;
+  nack->mediaSSRC = syncSourceIn;
 
   std::set<unsigned>::const_iterator it = lostPackets.begin();
   size_t i = 0;
@@ -987,8 +1121,8 @@ bool RTP_ControlFrame::ParseNACK(RTP_SyncSourceId & senderSSRC, RTP_SyncSourceId
     return false;
 
   const FbNACK * nack = (const FbNACK *)GetPayloadPtr();
-  senderSSRC = nack->hdr.senderSSRC;
-  targetSSRC = nack->hdr.mediaSSRC;
+  senderSSRC = nack->senderSSRC;
+  targetSSRC = nack->mediaSSRC;
 
   size_t count = (size - sizeof(FbNACK)) / sizeof(FbNACK::Field) + 1;
 
@@ -1022,8 +1156,8 @@ void RTP_ControlFrame::AddTMMB(RTP_SyncSourceId syncSourceOut, RTP_SyncSourceId 
   FbTMMB * tmmb;
   AddFeedback(e_TransportLayerFeedBack, notify ? e_TMMBN : e_TMMBR, tmmb);
 
-  tmmb->hdr.senderSSRC = syncSourceOut;
-  tmmb->hdr.mediaSSRC = 0;
+  tmmb->senderSSRC = syncSourceOut;
+  tmmb->mediaSSRC = 0;
   tmmb->requestSSRC = syncSourceIn;
 
   unsigned exponent, mantissa;
@@ -1039,7 +1173,7 @@ bool RTP_ControlFrame::ParseTMMB(RTP_SyncSourceId & senderSSRC, RTP_SyncSourceId
     return false;
 
   const FbTMMB * tmmb = (const FbTMMB *)GetPayloadPtr();
-  senderSSRC = tmmb->hdr.senderSSRC;
+  senderSSRC = tmmb->senderSSRC;
   targetSSRC = tmmb->requestSSRC;
   maxBitRate = ((tmmb->bitRateAndOverhead >> 9)&0x1ffff)*(1 << (tmmb->bitRateAndOverhead >> 26));
   overhead = tmmb->bitRateAndOverhead & 0x1ff;
@@ -1073,8 +1207,8 @@ void RTP_ControlFrame::AddFIR(RTP_SyncSourceId syncSourceOut, RTP_SyncSourceId s
   FbFIR * fir;
   AddFeedback(e_PayloadSpecificFeedBack, e_FullIntraRequest, fir);
 
-  fir->hdr.senderSSRC = syncSourceOut;
-  fir->hdr.mediaSSRC = 0;
+  fir->senderSSRC = syncSourceOut;
+  fir->mediaSSRC = 0;
   fir->requestSSRC = syncSourceIn;
   fir->sequenceNumber = (BYTE)sequenceNumber;
 }
@@ -1087,7 +1221,7 @@ bool RTP_ControlFrame::ParseFIR(RTP_SyncSourceId & senderSSRC, RTP_SyncSourceId 
     return false;
 
   const FbFIR * fir = (const FbFIR *)GetPayloadPtr();
-  senderSSRC = fir->hdr.senderSSRC;
+  senderSSRC = fir->senderSSRC;
   targetSSRC = fir->requestSSRC;
   sequenceNumber = fir->sequenceNumber;
   return true;
@@ -1099,8 +1233,8 @@ void RTP_ControlFrame::AddTSTO(RTP_SyncSourceId syncSourceOut, RTP_SyncSourceId 
   FbTSTO * tsto;
   AddFeedback(e_PayloadSpecificFeedBack, e_TemporalSpatialTradeOffRequest, tsto);
 
-  tsto->hdr.senderSSRC = syncSourceOut;
-  tsto->hdr.mediaSSRC = 0;
+  tsto->senderSSRC = syncSourceOut;
+  tsto->mediaSSRC = 0;
   tsto->requestSSRC = syncSourceIn;
   tsto->sequenceNumber = (BYTE)sequenceNumber;
   tsto->tradeOff = (BYTE)tradeOff;
@@ -1114,7 +1248,7 @@ bool RTP_ControlFrame::ParseTSTO(RTP_SyncSourceId & senderSSRC, RTP_SyncSourceId
     return false;
 
   const FbTSTO * tsto = (const FbTSTO *)GetPayloadPtr();
-  senderSSRC = tsto->hdr.senderSSRC;
+  senderSSRC = tsto->senderSSRC;
   targetSSRC = tsto->requestSSRC;
   tradeOff = tsto->tradeOff;
   sequenceNumber = tsto->sequenceNumber;
@@ -1129,8 +1263,8 @@ void RTP_ControlFrame::AddREMB(RTP_SyncSourceId syncSourceOut, RTP_SyncSourceId 
   FbREMB * remb;
   AddFeedback(e_PayloadSpecificFeedBack, e_ApplicationLayerFbMessage, remb);
 
-  remb->hdr.senderSSRC = syncSourceOut;
-  remb->hdr.mediaSSRC = 0;
+  remb->senderSSRC = syncSourceOut;
+  remb->mediaSSRC = 0;
   memcpy(remb->id, REMB_ID, 4);
   remb->numSSRC = 1;
   remb->feedbackSSRC[0] = syncSourceIn;
@@ -1153,7 +1287,7 @@ bool RTP_ControlFrame::ParseREMB(RTP_SyncSourceId & senderSSRC, RTP_SyncSourceId
   if (memcmp(remb->id, REMB_ID, 4) != 0)
     return false;
 
-  senderSSRC = remb->hdr.senderSSRC;
+  senderSSRC = remb->senderSSRC;
   targetSSRC = remb->feedbackSSRC[0];
   maxBitRate = (((remb->bitRate[0]&0x3)<<16)|(remb->bitRate[1]<<8)|remb->bitRate[2])*(1 << (remb->bitRate[0] >> 2));
   return true;

@@ -58,7 +58,7 @@ class PNatMethod;
 class PSTUNServer;
 class PSTUNClient;
 class RTCP_XR_Metrics;
-class RTP_ExtendedReportArray;
+class RTP_MetricsReport;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -227,19 +227,15 @@ class OpalRTPSession : public OpalMediaSession
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
     virtual SendReceiveStatus OnOutOfOrderPacket(RTP_DataFrame & frame);
 
-    typedef RTP_SenderReport           SenderReport;
-    typedef RTP_ReceiverReport         ReceiverReport;
-    typedef RTP_ReceiverReportArray    ReceiverReportArray;
-    typedef RTP_SourceDescription      SourceDescription;
-    typedef RTP_SourceDescriptionArray SourceDescriptionArray;
-
-    virtual void OnRxSenderReport(const SenderReport & sender, const ReceiverReportArray & reports);
-    virtual void OnRxReceiverReport(RTP_SyncSourceId src, const ReceiverReportArray & reports);
-    virtual void OnRxReceiverReports(const ReceiverReportArray & reports);
-    virtual void OnRxSourceDescription(const SourceDescriptionArray & descriptions);
+    virtual void OnRxSenderReport(const RTP_SenderReport & sender);
+    virtual void OnRxReceiverReport(RTP_SyncSourceId src, const RTP_ReceiverReport & report);
+    virtual void OnRxSourceDescription(const RTP_SourceDescriptionArray & descriptions);
     virtual void OnRxGoodbye(const RTP_SyncSourceArray & sources, const PString & reason);
     virtual void OnRxNACK(RTP_SyncSourceId ssrc, const RTP_ControlFrame::LostPacketMask lostPackets);
     virtual void OnRxApplDefined(const RTP_ControlFrame::ApplDefinedInfo & info);
+    virtual bool OnReceiveExtendedReports(const RTP_ControlFrame & frame);
+    virtual void OnRxReceiverReferenceTimeReport(RTP_SyncSourceId ssrc, const PTime & ntp);
+    virtual void OnRxDelayLastReceiverReport(const RTP_DelayLastReceiverReport & dlrr);
 
     typedef PNotifierListTemplate<const RTP_ControlFrame::ApplDefinedInfo &> ApplDefinedNotifierList;
     typedef PNotifierTemplate<const RTP_ControlFrame::ApplDefinedInfo &> ApplDefinedNotifier;
@@ -255,9 +251,9 @@ class OpalRTPSession : public OpalMediaSession
     }
 
 #if OPAL_RTCP_XR
-    virtual void OnRxExtendedReport(
+    virtual void OnRxMetricsReport(
       RTP_SyncSourceId src,
-      const RTP_ExtendedReportArray & reports
+      const RTP_MetricsReport & report
     );
 #endif // OPAL_RTCP_XR
   //@}
@@ -647,8 +643,6 @@ class OpalRTPSession : public OpalMediaSession
 
     bool SetQoS(const PIPSocket::QoS & qos);
 
-    ReceiverReportArray BuildReceiverReportArray(const RTP_ControlFrame & frame, PINDEX offset);
-
     virtual void InternalClose();
     virtual bool InternalSetRemoteAddress(
         const PIPSocket::AddressAndPort & ap,
@@ -728,14 +722,17 @@ class OpalRTPSession : public OpalMediaSession
 #endif // OPAL_RTP_FEC
 
 
+      void CalculateRTT(const PTime & reportTime, const PTimeInterval & reportDelay);
       virtual void CalculateStatistics(const RTP_DataFrame & frame);
 #if OPAL_STATISTICS
       virtual void GetStatistics(OpalMediaStatistics & statistics) const;
 #endif
 
       virtual void OnSendReceiverReport(RTP_ControlFrame::ReceiverReport & report, ReportForce force);
+      virtual bool OnSendDelayLastReceiverReport(RTP_ControlFrame::DelayLastReceiverReport::Receiver * report);
       virtual void OnRxSenderReport(const RTP_SenderReport & report);
-      virtual void OnRxReceiverReport(const ReceiverReport & report);
+      virtual void OnRxReceiverReport(const RTP_ReceiverReport & report);
+      virtual void OnRxDelayLastReceiverReport(const RTP_DelayLastReceiverReport & dlrr);
       virtual SendReceiveStatus SendBYE();
 
       OpalRTPSession  & m_session;
@@ -759,7 +756,7 @@ class OpalRTPSession : public OpalMediaSession
       RTP_DataFrameList  m_pendingPackets;
 
       // Generating real time stamping in RTP packets
-      // For e_Receive, times are from last received sender report
+      // For e_Receive, times are from last received Sender Report, or Receiver Reference Time Report
       // For e_Sender, times are from RTP_DataFrame, or synthesized from local real time.
       RTP_Timestamp      m_reportTimestamp;
       PTime              m_reportAbsoluteTime;
@@ -793,14 +790,12 @@ class OpalRTPSession : public OpalMediaSession
       unsigned           m_jitterAccum;
       RTP_Timestamp      m_lastJitterTimestamp;
 
-      // Things to remember for filling in fields of sent RR
+      // Things to remember for filling in fields of sent SR/RR/DLRR
       unsigned           m_packetsLostSinceLastRR;
       uint32_t           m_lastRRSequenceNumber;
-
-      // For e_Receive, arrival time of last SR from remote
-      // For e_Sender, time we sent last RR to remote
-      PTime              m_lastReportTime;
-      bool               m_canCalculateRTT;
+      PTime              m_lastSenderReportTime;
+      PTime              m_referenceReportTime;
+      PTime              m_referenceReportNTP;
 
       unsigned           m_statisticsCount;
 
