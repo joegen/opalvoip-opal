@@ -1134,6 +1134,7 @@ void OpalRTPSession::SyncSource::CalculateRTT(const PTime & reportTime, const PT
 
 void OpalRTPSession::SyncSource::OnRxDelayLastReceiverReport(const RTP_DelayLastReceiverReport & dlrr)
 {
+  PTRACE(4, &m_session, m_session << "OnRxDelayLastReceiverReport: ssrc=" << RTP_TRACE_SRC(m_sourceIdentifier));
   CalculateRTT(dlrr.m_lastTimestamp, dlrr.m_delay);
 }
 
@@ -1345,11 +1346,13 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
   }
 
   if (receivers != 0) {
-    PTRACE(logLevel, *this << "sending DLSR for SSRC=" << RTP_TRACE_SRC(sender.m_sourceIdentifier));
     RTP_ControlFrame::DelayLastReceiverReport::Receiver * dlrr = report.AddDelayLastReceiverReport(sender.m_sourceIdentifier, receivers);
 
-    for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it, ++dlrr)
-      it->second->OnSendDelayLastReceiverReport(dlrr);
+    for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it, ++dlrr) {
+      if (it->second->OnSendDelayLastReceiverReport(dlrr)) {
+        PTRACE(logLevel, *this << "sending DLRR for SSRC=" << RTP_TRACE_SRC(it->second->m_sourceIdentifier));
+      }
+    }
     report.EndPacket();
   }
 }
@@ -1784,6 +1787,9 @@ bool OpalRTPSession::OnReceiveExtendedReports(const RTP_ControlFrame & frame)
         OnRxMetricsReport(ssrc, *(const RTP_ControlFrame::MetricsReport *)payload);
         break;
 #endif
+
+      default :
+        PTRACE(4, *this << "unknown extended report: code=" << (unsigned)xr.bt << " length=" << blockSize);
     }
 
     payload += blockSize;
@@ -1800,6 +1806,7 @@ void OpalRTPSession::OnRxReceiverReferenceTimeReport(RTP_SyncSourceId ssrc, cons
   if (receiver != NULL) {
     receiver->m_referenceReportNTP = ntp;
     receiver->m_referenceReportTime.SetCurrentTime();
+    PTRACE(4, *this << "OnRxReceiverReferenceTimeReport: ssrc=" << RTP_TRACE_SRC(ssrc) << " ntp=" << ntp.AsString("hh:m:ss.uuu"));
   }
 }
 
@@ -1809,6 +1816,9 @@ void OpalRTPSession::OnRxDelayLastReceiverReport(const RTP_DelayLastReceiverRepo
   SyncSource * receiver;
   if (GetSyncSource(dlrr.m_ssrc, e_Receiver, receiver))
     receiver->OnRxDelayLastReceiverReport(dlrr);
+  else {
+    PTRACE(4, *this << "OnRxDelayLastReceiverReport: unknown ssrc=" << RTP_TRACE_SRC(dlrr.m_ssrc));
+  }
 }
 
 
