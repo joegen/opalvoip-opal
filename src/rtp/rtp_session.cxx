@@ -569,7 +569,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
       frame.SetAbsoluteTime(PTime());
 
   PTRACE_IF(3, !m_reportAbsoluteTime.IsValid() && frame.GetAbsoluteTime().IsValid(), &m_session,
-            m_session << "sent first RTP with absolute time: " << frame.GetAbsoluteTime().AsString("hh:mm:dd.uuu"));
+            m_session << "sent first RTP with absolute time: " << frame.GetAbsoluteTime().AsString(PTime::TodayFormat));
 
   m_reportAbsoluteTime = frame.GetAbsoluteTime();
   m_reportTimestamp = frame.GetTimestamp();
@@ -1088,9 +1088,9 @@ void OpalRTPSession::SyncSource::OnRxSenderReport(const RTP_SenderReport & repor
   PTRACE_IF(2, m_reportAbsoluteTime.IsValid() && m_lastSenderReportTime.IsValid() && report.realTimestamp.IsValid() &&
                abs(report.realTimestamp - m_reportAbsoluteTime) > std::max(PTimeInterval(0,10),(now - m_lastSenderReportTime)*2),
             &m_session, m_session << "OnRxSenderReport: remote NTP time jumped by unexpectedly large amount,"
-            " was " << m_reportAbsoluteTime.AsString(PTime::LoggingFormat) << ","
-            " now " << report.realTimestamp.AsString(PTime::LoggingFormat) << ","
-                        " last report " << m_lastSenderReportTime.AsString(PTime::LoggingFormat));
+            " was " << m_reportAbsoluteTime.AsString(PTime::TodayFormat) << ","
+            " now " << report.realTimestamp.AsString(PTime::TodayFormat) << ","
+                        " last report " << m_lastSenderReportTime.AsString(PTime::TodayFormat));
   m_reportAbsoluteTime =  report.realTimestamp;
   m_reportTimestamp = report.rtpTimestamp;
   m_lastSenderReportTime = now; // Remember when SR came in to calculate dlsr in RR when we send it
@@ -1268,9 +1268,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnOutOfOrderPacket(RTP_DataFra
 
 void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSource & sender, ReportForce force)
 {
-  if (force == e_Periodic && sender.m_packets == 0)
-    return;
-
 #if PTRACING
   unsigned logLevel = 3U;
   const char * forcedStr = "";
@@ -1284,8 +1281,6 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
       forcedStr = "(periodic) ";
     default :
       break;
-  }
-  if (force != e_Forced) {
   }
 #endif
 
@@ -1316,15 +1311,17 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
     PTRACE(logLevel, *this << "sending " << forcedStr << "SenderReport:"
               " SSRC=" << RTP_TRACE_SRC(sender.m_sourceIdentifier)
-           << " ntp=" << sender.m_reportAbsoluteTime.AsString("(hh:mm:ss.uuu)")
+           << " ntp=" << sender.m_reportAbsoluteTime.AsString(PTime::TodayFormat)
            << " rtp=" << sender.m_reportTimestamp
            << " psent=" << sender.m_packets
            << " osent=" << sender.m_octets
            << m_throttleTxReport);
   }
 
-  for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it)
-    it->second->OnSendReceiverReport(*rr++, force);
+  for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
+    if (it->second->m_direction != e_Receiver)
+      it->second->OnSendReceiverReport(*rr++, force);
+  }
 
   report.EndPacket();
 
@@ -1360,6 +1357,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
 void OpalRTPSession::TimedSendReport(PTimer&, P_INT_PTR)
 {
+  PTRACE(5, *this << "periodic report");
   SendReport(0, false);
 }
 
@@ -1379,16 +1377,17 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ss
   else {
     // Have not got anything yet, do nothing
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-      if (it->second->m_direction == e_Sender) {
+      if (it->second->m_direction == e_Sender)
         InitialiseControlFrame(packet, *it->second, force ? e_Forced : e_Periodic);
+    }
 
 #if OPAL_RTCP_XR
-        //Generate and send RTCP-XR packet
-        if (it->second->m_metrics != NULL)
-          it->second->m_metrics->InsertMetricsReport(packet, *this, it->second->m_sourceIdentifier, it->second->m_jitterBuffer);
-#endif
-      }
+    for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
+      //Generate and send RTCP-XR packet
+      if (it->second->m_direction == e_Receiver && it->second->m_metrics != NULL)
+        it->second->m_metrics->InsertMetricsReport(packet, *this, it->second->m_sourceIdentifier, it->second->m_jitterBuffer);
     }
+#endif
   }
 
   UnlockReadOnly();
