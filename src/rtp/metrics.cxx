@@ -666,10 +666,10 @@ void RTCP_XR_Metrics::Markov(RTCP_XR_Metrics::PacketEvent event)
 }
 
 
-void RTCP_XR_Metrics::InsertExtendedReportPacket(unsigned PTRACE_PARAM(sessionID),
-                                                 RTP_SyncSourceId syncSourceOut,
-                                                 OpalJitterBuffer * jitter,
-                                                 RTP_ControlFrame & report)
+void RTCP_XR_Metrics::InsertMetricsReport(RTP_ControlFrame & report,
+                                          const OpalRTPSession & PTRACE_PARAM(session),
+                                          RTP_SyncSourceId syncSourceOut,
+                                          OpalJitterBuffer * jitter)
 {
   report.StartNewPacket(RTP_ControlFrame::e_ExtendedReport);
   report.SetPayloadSize(sizeof(PUInt32b) + sizeof(RTP_ControlFrame::ExtendedReport));  // length is SSRC of packet sender plus XR
@@ -679,7 +679,7 @@ void RTCP_XR_Metrics::InsertExtendedReportPacket(unsigned PTRACE_PARAM(sessionID
   // add the SSRC to the start of the payload
   *(PUInt32b *)payload = syncSourceOut;
   
-  RTP_ControlFrame::ExtendedReport & xr = *(RTP_ControlFrame::ExtendedReport *)(payload+4);
+  RTP_ControlFrame::MetricsReport & xr = *(RTP_ControlFrame::MetricsReport *)(payload+4);
   
   xr.bt = 0x07;
   xr.type_specific = 0x00;
@@ -713,7 +713,7 @@ void RTCP_XR_Metrics::InsertExtendedReportPacket(unsigned PTRACE_PARAM(sessionID
   
   report.EndPacket();
   
-  PTRACE(3, "RTP\tSession " << sessionID << ", SentExtendedReport:"
+  PTRACE(3, "RTP", session << "SentExtendedReport:"
             " ssrc=" << RTP_TRACE_SRC(xr.ssrc)
          << " loss_rate=" << (unsigned)xr.loss_rate
          << " discard_rate=" << (unsigned)xr.discard_rate
@@ -734,55 +734,31 @@ void RTCP_XR_Metrics::InsertExtendedReportPacket(unsigned PTRACE_PARAM(sessionID
 }
 
 
-bool RTCP_XR_Metrics::ParseExtendedReportArray(const RTP_ControlFrame & frame, RTP_SyncSourceId & ssrc, RTP_ExtendedReportArray & reports)
+RTP_MetricsReport::RTP_MetricsReport(const RTP_ControlFrame::MetricsReport & mr)
+  : sourceIdentifier(mr.ssrc)
+  , lossRate(mr.loss_rate)
+  , discardRate(mr.discard_rate)
+  , burstDensity(mr.burst_density)
+  , gapDensity(mr.gap_density)
+  , roundTripDelay(mr.round_trip_delay)
+  , RFactor(mr.r_factor)
+  , mosLQ(mr.mos_lq)
+  , mosCQ(mr.mos_cq)
+  , jbNominal(mr.jb_nominal)
+  , jbMaximum(mr.jb_maximum)
+  , jbAbsolute(mr.jb_absolute)
 {
-  size_t size = frame.GetPayloadSize();
-  size_t count = frame.GetCount();
-  if (size < sizeof(PUInt32b)+count*sizeof(RTP_ControlFrame::ExtendedReport))
-    return false;
-
-  const BYTE * payload = frame.GetPayloadPtr();
-
-  ssrc = *(const PUInt32b *)payload;
-  const RTP_ControlFrame::ExtendedReport * rr = (const RTP_ControlFrame::ExtendedReport *)(payload + sizeof(PUInt32b));
-  for (PINDEX repIdx = 0; repIdx < (PINDEX)frame.GetCount(); repIdx++) {
-    RTP_ExtendedReport * report = new RTP_ExtendedReport;
-    report->sourceIdentifier = rr->ssrc;
-    report->lossRate = rr->loss_rate;
-    report->discardRate = rr->discard_rate;
-    report->burstDensity = rr->burst_density;
-    report->gapDensity = rr->gap_density;
-    report->roundTripDelay = rr->round_trip_delay;
-    report->RFactor = rr->r_factor;
-    report->mosLQ = rr->mos_lq;
-    report->mosCQ = rr->mos_cq;
-    report->jbNominal = rr->jb_nominal;
-    report->jbMaximum = rr->jb_maximum;
-    report->jbAbsolute = rr->jb_absolute;
-    reports.SetAt(repIdx, report);
-    rr++;
-  }
-
-  return true;
 }
 
 
-void OpalRTPSession::OnRxExtendedReport(RTP_SyncSourceId PTRACE_PARAM(src), const RTP_ExtendedReportArray & PTRACE_PARAM(reports))
+void OpalRTPSession::OnRxMetricsReport(RTP_SyncSourceId PTRACE_PARAM(src), const RTP_MetricsReport & PTRACE_PARAM(report))
 {
-#if PTRACING
-  if (PTrace::CanTrace(3)) {
-    ostream & strm = PTRACE_BEGIN(3);
-    strm << "RTP\tSession " << m_sessionId << ", OnExtendedReport: ssrc=" << RTP_TRACE_SRC(src) << '\n';
-    for (PINDEX i = 0; i < reports.GetSize(); i++)
-      strm << "  XR: " << reports[i] << '\n';
-    strm << PTrace::End;
-  }
-#endif
+  PTRACE(4, "RTP", *this << "OnMetricsReport: ssrc=" << RTP_TRACE_SRC(src) << ' ' << report);
 }
 
 
 #if PTRACING
-void RTP_ExtendedReport::PrintOn(ostream & strm) const
+void RTP_MetricsReport::PrintOn(ostream & strm) const
 {
   strm << "ssrc=" << RTP_TRACE_SRC(sourceIdentifier)
        << " loss_rate=" << lossRate
