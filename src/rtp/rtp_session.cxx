@@ -1833,7 +1833,7 @@ void OpalRTPSession::OnRxSenderReport(const RTP_SenderReport & senderReport)
 }
 
 
-void OpalRTPSession::OnRxReceiverReport(RTP_SyncSourceId PTRACE_PARAM(src), const RTP_ReceiverReport & report)
+void OpalRTPSession::OnRxReceiverReport(RTP_SyncSourceId, const RTP_ReceiverReport & report)
 {
   PTRACE(m_throttleRxRR, *this << "OnReceiverReport: " << report << m_throttleRxSR);
 
