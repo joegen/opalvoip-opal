@@ -490,7 +490,8 @@ class OpalListener : public PObject
        external address and port.
       */
     virtual OpalTransportAddress GetLocalAddress(
-      const OpalTransportAddress & remoteAddress = OpalTransportAddress()
+      const OpalTransportAddress & remoteAddress = OpalTransportAddress(),
+      const OpalTransportAddress & defaultAddress = OpalTransportAddress() // If INADDR_ANY
     ) const = 0;
 
     /**Close channel and wait for associated thread to terminate.
@@ -562,7 +563,8 @@ class OpalListenerIP : public OpalListener
        external address and port.
       */
     virtual OpalTransportAddress GetLocalAddress(
-      const OpalTransportAddress & remoteAddress = OpalTransportAddress()
+      const OpalTransportAddress & remoteAddress = OpalTransportAddress(),
+      const OpalTransportAddress & defaultAddress = OpalTransportAddress() // If INADDR_ANY
     ) const;
   //@}
 
@@ -745,7 +747,8 @@ class OpalListenerUDP : public OpalListenerIP
        external address and port.
       */
     virtual OpalTransportAddress GetLocalAddress(
-      const OpalTransportAddress & remoteAddress = OpalTransportAddress()
+      const OpalTransportAddress & remoteAddress = OpalTransportAddress(),
+      const OpalTransportAddress & defaultAddress = OpalTransportAddress() // If INADDR_ANY
     ) const;
   //@}
 
