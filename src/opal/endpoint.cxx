@@ -343,7 +343,7 @@ static void AddTransportAddresses(OpalTransportAddressArray & interfaceAddresses
 {
   for (OpalListenerList::const_iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
     if (listener->GetLocalAddress().IsEquivalent(interfaceAddress, true))
-      AddTransportAddress(interfaceAddresses, listener->GetLocalAddress(remoteAddress));
+      AddTransportAddress(interfaceAddresses, listener->GetLocalAddress(remoteAddress, interfaceAddress));
   }
 }
 
@@ -355,6 +355,8 @@ OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(const OpalTranspor
   if (associatedTransport != NULL) {
     OpalTransportAddress remoteAddress = associatedTransport->GetRemoteAddress();
     PIPSocket::Address associatedInterfaceIP(associatedTransport->GetInterface());
+    if (!associatedInterfaceIP.IsValid())
+      associatedTransport->GetLocalAddress().GetIpAddress(associatedInterfaceIP);
     AddTransportAddresses(interfaceAddresses, listeners, remoteAddress,
                           OpalTransportAddress(associatedInterfaceIP, 65535, remoteAddress.GetProtoPrefix()));
     AddTransportAddresses(interfaceAddresses, listeners, remoteAddress,
