@@ -728,7 +728,7 @@ class OpalRTPSession : public OpalMediaSession
       virtual void GetStatistics(OpalMediaStatistics & statistics) const;
 #endif
 
-      virtual void OnSendReceiverReport(RTP_ControlFrame::ReceiverReport & report, ReportForce force);
+      virtual bool OnSendReceiverReport(RTP_ControlFrame::ReceiverReport * report, ReportForce force);
       virtual bool OnSendDelayLastReceiverReport(RTP_ControlFrame::DelayLastReceiverReport::Receiver * report);
       virtual void OnRxSenderReport(const RTP_SenderReport & report);
       virtual void OnRxReceiverReport(const RTP_ReceiverReport & report);

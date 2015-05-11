@@ -1023,45 +1023,49 @@ void OpalRTPSession::SetExtensionHeader(const RTPExtensionHeaders & ext)
 }
 
 
-void OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::ReceiverReport & report, ReportForce force)
+bool OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::ReceiverReport * report, ReportForce force)
 {
   if (m_direction != e_Receiver)
-    return;
+    return false;
 
-  if (force != e_Forced && m_packets == 0)
-    return;
+  if (force == e_OtherRTCP && m_packets == 0)
+    return false;
 
-  report.ssrc = m_sourceIdentifier;
+  if (report == NULL)
+    return true;
+
+  report->ssrc = m_sourceIdentifier;
 
   unsigned lost = m_session.GetPacketsLost();
   if (m_jitterBuffer != NULL)
     lost += m_jitterBuffer->GetPacketsTooLate();
-  report.SetLostPackets(lost);
+  report->SetLostPackets(lost);
 
   if (m_extendedSequenceNumber >= m_lastRRSequenceNumber)
-    report.fraction = (BYTE)((m_packetsLostSinceLastRR<<8)/(m_extendedSequenceNumber - m_lastRRSequenceNumber + 1));
+    report->fraction = (BYTE)((m_packetsLostSinceLastRR<<8)/(m_extendedSequenceNumber - m_lastRRSequenceNumber + 1));
   else
-    report.fraction = 0;
+    report->fraction = 0;
   m_packetsLostSinceLastRR = 0;
 
-  report.last_seq = m_lastRRSequenceNumber;
+  report->last_seq = m_lastRRSequenceNumber;
   m_lastRRSequenceNumber = m_extendedSequenceNumber;
 
-  report.jitter = m_jitterAccum >> JitterRoundingGuardBits; // Allow for rounding protection bits
+  report->jitter = m_jitterAccum >> JitterRoundingGuardBits; // Allow for rounding protection bits
 
   // Time remote sent us in SR
-  report.lsr  = m_reportAbsoluteTime.IsValid() ? (uint32_t)(m_reportAbsoluteTime.GetNTP() >> 16) : 0;
+  report->lsr  = m_reportAbsoluteTime.IsValid() ? (uint32_t)(m_reportAbsoluteTime.GetNTP() >> 16) : 0;
   // Delay since last received SR
-  report.dlsr = m_lastSenderReportTime.IsValid() ? (uint32_t)((PTime() - m_lastSenderReportTime).GetMilliSeconds()*65536/1000) : 0;
+  report->dlsr = m_lastSenderReportTime.IsValid() ? (uint32_t)((PTime() - m_lastSenderReportTime).GetMilliSeconds()*65536/1000) : 0;
 
   PTRACE(force == e_Forced ? 3U : (unsigned)m_session.m_throttleTxReport, &m_session, *this << "sending ReceiverReport:"
-            " fraction=" << (unsigned)report.fraction
-         << " lost=" << report.GetLostPackets()
-         << " last_seq=" << report.last_seq
-         << " jitter=" << report.jitter
-         << " lsr=" << report.lsr
-         << " dlsr=" << report.dlsr);
-} 
+            " fraction=" << (unsigned)report->fraction
+         << " lost=" << report->GetLostPackets()
+         << " last_seq=" << report->last_seq
+         << " jitter=" << report->jitter
+         << " lsr=" << report->lsr
+         << " dlsr=" << report->dlsr);
+  return true;
+}
 
 
 bool OpalRTPSession::SyncSource::OnSendDelayLastReceiverReport(RTP_ControlFrame::DelayLastReceiverReport::Receiver * report)
@@ -1286,7 +1290,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
   unsigned receivers = 0;
   for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-    if (it->second->m_direction == e_Receiver && it->second->m_packets > 0)
+    if (it->second->OnSendReceiverReport(NULL, force))
       ++receivers;
   }
 
@@ -1319,8 +1323,8 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
   }
 
   for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-    if (it->second->m_direction != e_Receiver)
-      it->second->OnSendReceiverReport(*rr++, force);
+    if (it->second->OnSendReceiverReport(rr, force))
+      ++rr;
   }
 
   report.EndPacket();
