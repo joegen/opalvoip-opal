@@ -826,6 +826,7 @@ class OpalRTPSession : public OpalMediaSession
     virtual bool ResequenceOutOfOrderPackets(SyncSource & ssrc) const;
 
     /// Set up RTCP as per RFC rules
+    virtual bool InternalSendReport(RTP_ControlFrame & report, SyncSource & sender, bool force);
     virtual void InitialiseControlFrame(RTP_ControlFrame & report, SyncSource & ssrc, ReportForce force = e_OtherRTCP);
 
     // Some statitsics not SSRC related
