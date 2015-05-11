@@ -781,7 +781,6 @@ void RTP_ControlFrame::EndPacket()
   }
 
   m_packetSize = m_compoundOffset + 4 + m_payloadSize;
-  m_payloadSize = 0;
 }
 
 
