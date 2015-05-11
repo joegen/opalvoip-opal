@@ -1769,14 +1769,15 @@ bool OpalRTPSession::OnReceiveExtendedReports(const RTP_ControlFrame & frame)
       case 5 :
         if (blockSize < sizeof(RTP_ControlFrame::DelayLastReceiverReport))
           return false;
-        do {
-          OnRxDelayLastReceiverReport(*(const RTP_ControlFrame::DelayLastReceiverReport::Receiver *)payload);
-          payload += sizeof(RTP_ControlFrame::DelayLastReceiverReport::Receiver);
-          size -= sizeof(RTP_ControlFrame::DelayLastReceiverReport::Receiver);
-          blockSize -= sizeof(RTP_ControlFrame::DelayLastReceiverReport::Receiver);
-        } while (blockSize >= sizeof(RTP_ControlFrame::DelayLastReceiverReport::Receiver));
-        if (blockSize != 0)
-          return false;
+        else {
+          PINDEX count = (blockSize - sizeof(RTP_ControlFrame::ExtendedReport)) / sizeof(RTP_ControlFrame::DelayLastReceiverReport::Receiver);
+          if (blockSize != count*sizeof(RTP_ControlFrame::DelayLastReceiverReport::Receiver)+sizeof(RTP_ControlFrame::ExtendedReport))
+            return false;
+
+          RTP_ControlFrame::DelayLastReceiverReport * dlrr = (RTP_ControlFrame::DelayLastReceiverReport *)payload;
+          for (PINDEX i = 0; i < count; ++i)
+            OnRxDelayLastReceiverReport(dlrr->m_receiver[i]);
+        }
         break;
 
 #if OPAL_RTCP_XR
