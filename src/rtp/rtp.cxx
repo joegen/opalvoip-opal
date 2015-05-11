@@ -825,7 +825,7 @@ RTP_SenderReport::RTP_SenderReport()
 
 RTP_SenderReport::RTP_SenderReport(const RTP_ControlFrame::SenderReport & sr)
   : sourceIdentifier(sr.ssrc)
-  , ntpPassThrough(sr.ntp_ts)
+  , ntpPassThrough((uint32_t)(((uint64_t)sr.ntp_ts)>>16))
   , realTimestamp(0)
   , rtpTimestamp(sr.rtp_ts)
   , packetsSent(sr.psent)
