@@ -453,6 +453,7 @@ class RTP_SenderReport : public PObject
 #endif
 
     RTP_SyncSourceId sourceIdentifier;
+    uint32_t         ntpPassThrough;
     PTime            realTimestamp;
     RTP_Timestamp    rtpTimestamp;
     unsigned         packetsSent;
