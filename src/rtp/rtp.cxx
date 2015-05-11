@@ -814,6 +814,7 @@ bool RTP_ControlFrame::ParseGoodbye(RTP_SyncSourceId & ssrc, RTP_SyncSourceArray
 
 RTP_SenderReport::RTP_SenderReport()
   : sourceIdentifier(0)
+  , ntpPassThrough(0)
   , realTimestamp(0)
   , rtpTimestamp(0)
   , packetsSent(0)
@@ -824,6 +825,7 @@ RTP_SenderReport::RTP_SenderReport()
 
 RTP_SenderReport::RTP_SenderReport(const RTP_ControlFrame::SenderReport & sr)
   : sourceIdentifier(sr.ssrc)
+  , ntpPassThrough(sr.ntp_ts)
   , realTimestamp(0)
   , rtpTimestamp(sr.rtp_ts)
   , packetsSent(sr.psent)

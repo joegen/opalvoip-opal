@@ -385,6 +385,7 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
   , m_lastJitterTimestamp(0)
   , m_packetsLostSinceLastRR(0)
   , m_lastRRSequenceNumber(0)
+  , m_ntpPassThrough(0)
   , m_lastSenderReportTime(0)
   , m_referenceReportTime(0)
   , m_referenceReportNTP(0)
@@ -1052,8 +1053,11 @@ bool OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::Receiver
 
   report->jitter = m_jitterAccum >> JitterRoundingGuardBits; // Allow for rounding protection bits
 
-  // Time remote sent us in SR
-  report->lsr  = m_reportAbsoluteTime.IsValid() ? (uint32_t)(m_reportAbsoluteTime.GetNTP() >> 16) : 0;
+  /* Time remote sent us in SR. Note this has to be IDENTICAL to what we
+     received in SR as some implementations (WebRTC!) do not use it as a NTP
+     time, but as a lookup key in a table to find the NTP value. Why? Why? Why? */
+  report->lsr = m_ntpPassThrough;
+
   // Delay since last received SR
   report->dlsr = m_lastSenderReportTime.IsValid() ? (uint32_t)((PTime() - m_lastSenderReportTime).GetMilliSeconds()*65536/1000) : 0;
 
@@ -1095,6 +1099,7 @@ void OpalRTPSession::SyncSource::OnRxSenderReport(const RTP_SenderReport & repor
             " was " << m_reportAbsoluteTime.AsString(PTime::TodayFormat) << ","
             " now " << report.realTimestamp.AsString(PTime::TodayFormat) << ","
                         " last report " << m_lastSenderReportTime.AsString(PTime::TodayFormat));
+  m_ntpPassThrough = report.ntpPassThrough;
   m_reportAbsoluteTime =  report.realTimestamp;
   m_reportTimestamp = report.rtpTimestamp;
   m_lastSenderReportTime = now; // Remember when SR came in to calculate dlsr in RR when we send it
