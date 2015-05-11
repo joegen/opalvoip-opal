@@ -793,6 +793,7 @@ class OpalRTPSession : public OpalMediaSession
       // Things to remember for filling in fields of sent SR/RR/DLRR
       unsigned           m_packetsLostSinceLastRR;
       uint32_t           m_lastRRSequenceNumber;
+      uint32_t           m_ntpPassThrough;
       PTime              m_lastSenderReportTime;
       PTime              m_referenceReportTime;
       PTime              m_referenceReportNTP;
