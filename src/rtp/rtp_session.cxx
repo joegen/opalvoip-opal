@@ -1333,6 +1333,27 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
   }
 
   report.EndPacket();
+}
+
+
+bool OpalRTPSession::InternalSendReport(RTP_ControlFrame & report, SyncSource & sender, bool force)
+{
+  if (sender.m_direction != e_Sender)
+    return false;
+
+  InitialiseControlFrame(report, sender, force ? e_Forced : e_Periodic);
+
+#if OPAL_RTCP_XR
+  for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
+    //Generate and send RTCP-XR packet
+    if (it->second->m_direction == e_Receiver && it->second->m_metrics != NULL)
+      it->second->m_metrics->InsertMetricsReport(report, *this, it->second->m_sourceIdentifier, it->second->m_jitterBuffer);
+  }
+#endif
+
+#if PTRACING
+  unsigned logLevel = force ? 3U : (unsigned)m_throttleTxReport;
+#endif
 
   // Add the SDES part to compound RTCP packet
   PTRACE(logLevel, *this << "sending SDES for SSRC="
@@ -1345,7 +1366,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
   }
 
   // Count receivers that have had a RRTR
-  receivers = 0;
+  unsigned receivers = 0;
   for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
     if (it->second->OnSendDelayLastReceiverReport(NULL))
       ++receivers;
@@ -1361,6 +1382,8 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
     }
     report.EndPacket();
   }
+
+  return report.IsValid();
 }
 
 
@@ -1373,42 +1396,38 @@ void OpalRTPSession::TimedSendReport(PTimer&, P_INT_PTR)
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ssrc, bool force)
 {
+  std::list<RTP_ControlFrame> frames;
+
   if (!LockReadOnly())
     return e_AbortTransport;
 
-  RTP_ControlFrame packet;
-
   if (ssrc != 0) {
     SyncSource * sender;
-    if (GetSyncSource(ssrc, e_Sender, sender))
-      InitialiseControlFrame(packet, *sender, force ? e_Forced : e_Periodic);
+    if (GetSyncSource(ssrc, e_Sender, sender)) {
+      RTP_ControlFrame frame;
+      if (InternalSendReport(frame, *sender, force))
+        frames.push_back(frame);
+    }
   }
   else {
-    // Have not got anything yet, do nothing
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-      if (it->second->m_direction == e_Sender)
-        InitialiseControlFrame(packet, *it->second, force ? e_Forced : e_Periodic);
+      RTP_ControlFrame frame;
+      if (InternalSendReport(frame, *it->second, force))
+        frames.push_back(frame);
     }
-
-#if OPAL_RTCP_XR
-    for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-      //Generate and send RTCP-XR packet
-      if (it->second->m_direction == e_Receiver && it->second->m_metrics != NULL)
-        it->second->m_metrics->InsertMetricsReport(packet, *this, it->second->m_sourceIdentifier, it->second->m_jitterBuffer);
-    }
-#endif
   }
 
   UnlockReadOnly();
 
-  SendReceiveStatus status = e_IgnorePacket;
-  if (packet.IsValid())
-      status = WriteControl(packet);
+  // Actual transmission has to be outside mutex
+  SendReceiveStatus status = e_ProcessPacket;
+  for (std::list<RTP_ControlFrame>::iterator it = frames.begin(); it != frames.end(); ++it) {
+    SendReceiveStatus status = WriteControl(*it);
+    if (status != e_ProcessPacket)
+      break;
+  }
 
-  PTRACE(4, *this << "sending " << (force ? "forced" : "periodic")
-         << " report for SSRC=" << RTP_TRACE_SRC(ssrc)
-         << " valid=" << boolalpha << packet.IsValid()
-         << " status=" << status);
+  PTRACE(4, *this << "sent " << frames.size() << ' ' << (force ? "forced" : "periodic") << " reports , status=" << status);
   return status;
 }
 
