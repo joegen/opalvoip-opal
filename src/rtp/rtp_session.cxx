@@ -1305,7 +1305,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
   if (!sender.m_reportAbsoluteTime.IsValid()) {
     rr = report.AddReceiverReport(sender.m_sourceIdentifier, receivers);
 
-    PTRACE(logLevel, *this << "sending " << forcedStr << (receivers == 0 ? "empty" : "") << " ReceiverReport,"
+    PTRACE(logLevel, *this << "sending " << forcedStr << (receivers == 0 ? "empty " : "") << "ReceiverReport,"
              " SenderReport SSRC=" << RTP_TRACE_SRC(sender.m_sourceIdentifier) << m_throttleTxReport);
   }
   else {
@@ -1366,7 +1366,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSourc
 
 void OpalRTPSession::TimedSendReport(PTimer&, P_INT_PTR)
 {
-  PTRACE(5, *this << "periodic report");
+  PTRACE(5, *this << "sending periodic report");
   SendReport(0, false);
 }
 
