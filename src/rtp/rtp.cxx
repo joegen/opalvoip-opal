@@ -874,6 +874,7 @@ bool RTP_ControlFrame::ParseReceiverReport(RTP_SyncSourceId & ssrc, const Receiv
 
 RTP_ControlFrame::ReceiverReport * RTP_ControlFrame::AddReceiverReport(RTP_SyncSourceId ssrc, unsigned receivers)
 {
+  StartNewPacket(e_ReceiverReport);
   SetPayloadSize(sizeof(PUInt32b) + receivers*sizeof(ReceiverReport));  // length is SSRC of packet sender plus RRs
   SetCount(receivers);
   PUInt32b * sender = (PUInt32b *)GetPayloadPtr();
@@ -922,21 +923,21 @@ RTP_ControlFrame::ReceiverReport * RTP_ControlFrame::AddSenderReport(RTP_SyncSou
                                                                      uint64_t octets,
                                                                      unsigned receivers)
 {
-    // send SR and RR
-    StartNewPacket(e_SenderReport);
-    SetPayloadSize(sizeof(SenderReport) + receivers*sizeof(ReceiverReport));  // length is SSRC of packet sender plus SR + RRs
-    SetCount(receivers);
+  // send SR and RR
+  StartNewPacket(e_SenderReport);
+  SetPayloadSize(sizeof(SenderReport) + receivers*sizeof(ReceiverReport));  // length is SSRC of packet sender plus SR + RRs
+  SetCount(receivers);
 
-    // add the SR
-    SenderReport * sr = (SenderReport *)GetPayloadPtr();
-    sr->ssrc = ssrc;
-    sr->ntp_ts = ntp.GetNTP();
-    sr->rtp_ts = ts;
-    sr->psent  = packets;
-    sr->osent  = (uint32_t)octets;
+  // add the SR
+  SenderReport * sr = (SenderReport *)GetPayloadPtr();
+  sr->ssrc = ssrc;
+  sr->ntp_ts = ntp.GetNTP();
+  sr->rtp_ts = ts;
+  sr->psent  = packets;
+  sr->osent  = (uint32_t)octets;
 
-    // add the RR's after the SR
-    return (ReceiverReport *)(sr + 1);
+  // add the RR's after the SR
+  return (ReceiverReport *)(sr + 1);
 }
 
 
