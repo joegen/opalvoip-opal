@@ -1029,6 +1029,9 @@ bool OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::Receiver
   if (m_direction != e_Receiver)
     return false;
 
+  if (m_packets == 0 && !m_lastSenderReportTime.IsValid())
+    return false;
+
   if (report == NULL)
     return true;
 
