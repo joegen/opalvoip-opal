@@ -1284,7 +1284,7 @@ void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & frame, SyncSource
 
 bool OpalRTPSession::InternalSendReport(RTP_ControlFrame & report, SyncSource * sender, bool includeReceivers, bool forced)
 {
-  if (sender != NULL && sender->m_direction != e_Sender)
+  if (sender != NULL && (sender->m_direction != e_Sender || sender->m_packets == 0))
     return false;
 
 #if PTRACING
