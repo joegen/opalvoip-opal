@@ -287,6 +287,7 @@ class OpalMediaPatch : public PSafeObject
         PBYTEArray          m_keyFrameDetectContext;
         typedef map<RTP_SyncSourceId, OpalVideoStatistics> VideoStatsMap;
         VideoStatsMap m_videoStatistics;
+        PMutex        m_videoStatsMutex;
 #endif
 #endif
     };
