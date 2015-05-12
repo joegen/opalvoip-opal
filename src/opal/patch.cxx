@@ -507,9 +507,12 @@ void OpalMediaPatch::Sink::GetStatistics(OpalMediaStatistics & statistics, bool 
     m_stream->GetStatistics(statistics, true);
 
 #if OPAL_VIDEO
-  VideoStatsMap::const_iterator it = m_videoStatistics.find(statistics.m_SSRC);
-  if (it != m_videoStatistics.end())
-    statistics.OpalVideoStatistics::operator=(it->second);
+  {
+    PWaitAndSignal mutex(m_videoStatsMutex);
+    VideoStatsMap::const_iterator it = m_videoStatistics.find(statistics.m_SSRC);
+    if (it != m_videoStatistics.end())
+      statistics.OpalVideoStatistics::operator=(it->second);
+  }
 #endif
 
   if (m_primaryCodec != NULL)
@@ -976,6 +979,7 @@ bool OpalMediaPatch::Sink::ExecuteCommand(const OpalMediaCommand & command, bool
     const OpalVideoUpdatePicture * update = dynamic_cast<const OpalVideoUpdatePicture *>(&command);
     if (update != NULL) {
       bool full = dynamic_cast<const OpalVideoPictureLoss *>(&command) == NULL;
+      PWaitAndSignal mutex(m_videoStatsMutex);
       m_videoStatistics[0].IncrementUpdateCount(full);
       if (update->GetSyncSource() != 0)
         m_videoStatistics[update->GetSyncSource()].IncrementUpdateCount(full);
@@ -1076,6 +1080,7 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
     RTP_SyncSourceId ssrc;
     switch (frameType) {
     case OpalVideoFormat::e_IntraFrame :
+        m_videoStatsMutex.Wait();
         m_videoStatistics[0].IncrementFrames(true);
         if ((ssrc = sourceFrame.GetSyncSource()) != 0)
           m_videoStatistics[ssrc].IncrementFrames(true);
@@ -1083,15 +1088,18 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
                 << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoStatistics[ssrc].m_totalFrames
                 << ", key=" << m_videoStatistics[ssrc].m_keyFrames
                 << ", req=" << m_videoStatistics[ssrc].m_lastUpdateRequestTime << ", on " << m_patch);
+        m_videoStatsMutex.Signal();
         break;
 
       case OpalVideoFormat::e_InterFrame :
+        m_videoStatsMutex.Wait();
         m_videoStatistics[0].IncrementFrames(false);
         if ((ssrc = sourceFrame.GetSyncSource()) != 0)
           m_videoStatistics[ssrc].IncrementFrames(false);
         PTRACE(5, "P-Frame detected: SSRC=" << RTP_TRACE_SRC(ssrc)
                 << ", ts=" << sourceFrame.GetTimestamp() << ", total=" << m_videoStatistics[ssrc].m_totalFrames
                 << ", key=" << m_videoStatistics[ssrc].m_keyFrames << ", on " << m_patch);
+        m_videoStatsMutex.Signal();
         break;
 
       default :
@@ -1161,8 +1169,10 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
   //  rateController.AddFrame(totalPayloadSize, frameCount);
 
   OpalVideoTranscoder * videoCodec = dynamic_cast<OpalVideoTranscoder *>(m_primaryCodec);
-  if (videoCodec != NULL && !m_intermediateFrames.IsEmpty())
+  if (videoCodec != NULL && !m_intermediateFrames.IsEmpty()) {
+    PWaitAndSignal mutex(m_videoStatsMutex);
     m_videoStatistics[0].IncrementFrames(videoCodec->WasLastFrameIFrame());
+  }
 #endif
 
   return true;
