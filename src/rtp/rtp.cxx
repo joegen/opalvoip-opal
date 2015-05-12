@@ -937,7 +937,7 @@ RTP_ControlFrame::ReceiverReport * RTP_ControlFrame::AddSenderReport(RTP_SyncSou
   sr->osent  = (uint32_t)octets;
 
   // add the RR's after the SR
-  return (ReceiverReport *)(sr + 1);
+  return receivers > 0 ? (ReceiverReport *)(sr + 1) : NULL;
 }
 
 
