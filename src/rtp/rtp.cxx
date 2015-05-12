@@ -883,7 +883,7 @@ RTP_ControlFrame::ReceiverReport * RTP_ControlFrame::AddReceiverReport(RTP_SyncS
   *sender = ssrc;
 
   // add the RR's after the SSRC
-  return (ReceiverReport *)(sender + 1);
+  return receivers > 0 ? (ReceiverReport *)(sender + 1) : NULL;
 }
 
 
