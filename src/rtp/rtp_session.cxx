@@ -1350,11 +1350,11 @@ bool OpalRTPSession::InternalSendReport(RTP_ControlFrame & report, SyncSource * 
     // Add the SDES part to compound RTCP packet
     PTRACE(logLevel, *sender << "sending SDES cname=\"" << sender->m_canonicalName << '"');
     report.AddSourceDescription(sender->m_sourceIdentifier, sender->m_canonicalName, m_toolName);
-
-    if (!sender->m_reportAbsoluteTime.IsValid()) {
-      report.AddReceiverReferenceTimeReport(sender->m_sourceIdentifier, sender->m_reportAbsoluteTime);
-      PTRACE(logLevel, *sender << "sending RRTR ntp=" << sender->m_reportAbsoluteTime.AsString(PTime::TodayFormat));
-    }
+  }
+  else {
+    PTime now;
+    report.AddReceiverReferenceTimeReport(1, now);
+    PTRACE(logLevel, *this << "SSRC=1, sending RRTR ntp=" << now.AsString(PTime::TodayFormat));
   }
 
   // Count receivers that have had a RRTR
