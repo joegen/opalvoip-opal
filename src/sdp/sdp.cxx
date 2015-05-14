@@ -1955,10 +1955,16 @@ bool SDPRTPAVPMediaDescription::ToSession(OpalMediaSession * session) const
     for (SsrcInfo::const_iterator it = m_ssrcInfo.begin(); it != m_ssrcInfo.end(); ++it) {
       RTP_SyncSourceId ssrc = it->first;
       PString cname(it->second.GetString("cname"));
-      if (!cname.IsEmpty() && rtpSession->AddSyncSource(ssrc, OpalRTPSession::e_Receiver, cname) == ssrc) {
-        rtpSession->SetAnySyncSource(false);
+      if (!cname.IsEmpty()) {
+        if (rtpSession->GetCanonicalName(ssrc, OpalRTPSession::e_Receiver) != cname) {
+          rtpSession->RemoveSyncSource(ssrc);
+          PTRACE(4, "Session " << session->GetSessionID() << ", removed receiver SSRC " << RTP_TRACE_SRC(ssrc));
+        }
+        if (rtpSession->AddSyncSource(ssrc, OpalRTPSession::e_Receiver, cname) == ssrc) {
+          rtpSession->SetAnySyncSource(false);
+          PTRACE(4, "Session " << session->GetSessionID() << ", added receiver SSRC " << RTP_TRACE_SRC(ssrc));
+        }
         rtpSession->SetMediaStreamId(it->second.GetString("mslabel"), ssrc, OpalRTPSession::e_Receiver);
-        PTRACE(4, "Session " << session->GetSessionID() << ", added receiver SSRC " << RTP_TRACE_SRC(ssrc));
       }
     }
   }
