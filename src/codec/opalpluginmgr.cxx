@@ -749,7 +749,6 @@ PBoolean OpalPluginFramedAudioTranscoder::ConvertFrame(const BYTE * input,
                                                    BYTE * output,
                                                    PINDEX & created)
 {
-  PPROFILE_FUNCTION();
   if (context == NULL)
     return false;
 
@@ -919,7 +918,6 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
 
 bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList)
 {
-  PPROFILE_FUNCTION();
   dstList.RemoveAll();
 
   if (src.GetPayloadSize() == 0)
@@ -1005,7 +1003,6 @@ bool OpalPluginVideoTranscoder::EncodeFrames(const RTP_DataFrame & src, RTP_Data
 
 bool OpalPluginVideoTranscoder::DecodeFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList)
 {
-  PPROFILE_FUNCTION();
   // We use the data size indicated by plug in as a payload size, we do not adjust the size
   // downward as many plug ins forget to add the RTP header size in its output data size and
   // it doesn't hurt to make this buffer an extra few bytes longer than needed.
