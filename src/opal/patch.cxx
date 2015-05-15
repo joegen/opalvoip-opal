@@ -1027,8 +1027,6 @@ bool OpalMediaPatch::Sink::RateControlExceeded(bool & forceIFrame)
 
 bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassing)
 {
-  PPROFILE_FUNCTION();
-
   if (!m_writeSuccessful)
     return false;
   

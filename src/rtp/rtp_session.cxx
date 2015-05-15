@@ -528,8 +528,6 @@ void OpalRTPSession::SyncSource::CalculateStatistics(const RTP_DataFrame & frame
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_DataFrame & frame, RewriteMode rewrite)
 {
-  PPROFILE_FUNCTION();
-
   if (rewrite != e_RewriteNothing)
     frame.SetSyncSource(m_sourceIdentifier);
 
@@ -586,8 +584,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveData(RTP_DataFrame & frame, bool newData)
 {
-  PPROFILE_FUNCTION();
-
   frame.SetBundleId(m_mediaStreamId);
 
   RTP_SequenceNumber sequenceNumber = frame.GetSequenceNumber();
@@ -730,8 +726,6 @@ bool OpalRTPSession::ResequenceOutOfOrderPackets(SyncSource & ssrc) const
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnOutOfOrderPacket(RTP_DataFrame & frame)
 {
-  PPROFILE_FUNCTION();
-
   RTP_SequenceNumber sequenceNumber = frame.GetSequenceNumber();
   RTP_SequenceNumber expectedSequenceNumber = m_lastSequenceNumber + 1;
 
@@ -783,8 +777,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnOutOfOrderPacket
 
 bool OpalRTPSession::SyncSource::HandlePendingFrames()
 {
-  PPROFILE_FUNCTION();
-
   while (!m_pendingPackets.empty()) {
     RTP_DataFrame resequencedPacket = m_pendingPackets.back();
 
@@ -1150,8 +1142,6 @@ void OpalRTPSession::SyncSource::OnRxDelayLastReceiverReport(const RTP_DelayLast
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendData(RTP_DataFrame & frame, RewriteMode rewrite)
 {
-  PPROFILE_FUNCTION();
-
   SendReceiveStatus status;
 #if OPAL_ICE
   if ((status = OnSendICE(e_Data)) != e_ProcessPacket)
@@ -1547,8 +1537,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
 {
   if (frame.GetPacketSize() == 0)
     return e_IgnorePacket;
-
-  PPROFILE_FUNCTION();
 
   PTRACE(6, *this << "OnReceiveControl - " << frame);
 
@@ -2811,8 +2799,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveICE(Channel channel,
   if (m_iceServer == NULL)
     return m_candidates[channel].empty() ? e_ProcessPacket : e_IgnorePacket;
 
-  PPROFILE_FUNCTION();
-
   PSTUNMessage message(framePtr, frameSize, ap);
   if (!message.IsValid())
     return m_candidates[channel].empty() ? e_ProcessPacket : e_IgnorePacket;
@@ -2883,8 +2869,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnSendICE(Channel channel)
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::ReadRawPDU(BYTE * framePtr, PINDEX & frameSize, Channel channel)
 {
-  PPROFILE_FUNCTION();
-
   if (PAssertNULL(m_socket[channel]) == NULL)
     return e_AbortTransport;
 
@@ -2992,8 +2976,6 @@ void OpalRTPSession::ThreadMain()
 
 bool OpalRTPSession::InternalRead()
 {
-  PPROFILE_FUNCTION();
-
   /* Note this should only be called from within the RTP read thread.
      The locking strategy depends on it. */
 
@@ -3035,8 +3017,6 @@ bool OpalRTPSession::InternalRead()
 
 bool OpalRTPSession::InternalReadData()
 {
-  PPROFILE_FUNCTION();
-
   /* Note this should only be called from within the RTP read thread.
      The locking strategy depends on it. */
 
@@ -3114,8 +3094,6 @@ bool OpalRTPSession::InternalReadControl()
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteData(RTP_DataFrame & frame, RewriteMode rewrite, const PIPSocketAddressAndPort * remote)
 {
-  PPROFILE_FUNCTION();
-
   WRITE_PERFORMANCE_HACK(0,e_ProcessPacket)
 
   PSafeLockReadWrite lock(*this);
@@ -3150,8 +3128,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteControl(RTP_ControlFrame 
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::WriteRawPDU(const BYTE * framePtr, PINDEX frameSize, Channel channel, const PIPSocketAddressAndPort * remote)
 {
-  PPROFILE_FUNCTION();
-
   PIPSocketAddressAndPort remoteAddressAndPort;
   if (remote == NULL) {
     remoteAddressAndPort.SetAddress(m_remoteAddress, m_remotePort[channel]);
