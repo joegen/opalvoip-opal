@@ -89,8 +89,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendRedundantDat
   if (m_session.m_ulpFecPayloadType == RTP_DataFrame::IllegalPayloadType)
     return e_ProcessPacket; // No redundancies, add primary data and return
 
-  PPROFILE_FUNCTION();
-
   FecData fec;
   fec.m_level.resize(m_session.m_ulpFecSendLevel);
 
@@ -169,8 +167,6 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendFEC(RTP_Data
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnReceiveRedundantFrame(RTP_DataFrame & frame)
 {
-  PPROFILE_FUNCTION();
-
   const BYTE * payload = frame.GetPayloadPtr();
   PINDEX size = frame.GetPayloadSize();
 
