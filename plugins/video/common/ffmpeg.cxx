@@ -632,7 +632,7 @@ bool FFMPEGCodec::DecodeVideoFrame(const uint8_t * frame, size_t length, unsigne
 
 void FFMPEGCodec::ErrorCallback(unsigned level, const char * msg)
 {
-  PTRACE(level, m_prefix, "FFMPEG(" << level << "): " << msg);
+  PTRACE(level > 2 ? level > 4 ? 5 : 4 : 3, m_prefix, "FFMPEG(" << level << "): " << msg);
 
   if (level < 2)
     ++m_errorCount;
