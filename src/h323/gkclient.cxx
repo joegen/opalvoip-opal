@@ -88,7 +88,6 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   , m_onHighPriorityInterfaceChange(PCREATE_InterfaceNotifier(OnHighPriorityInterfaceChange))
   , m_onLowPriorityInterfaceChange(PCREATE_InterfaceNotifier(OnLowPriorityInterfaceChange))
   , m_alternateTemporary(false)
-  , requestMutex(1, 1)
   , authenticators(ep.CreateAuthenticators())
   , pregrantMakeCall(RequireARQ)
   , pregrantAnswerCall(RequireARQ)
@@ -1968,7 +1967,7 @@ PBoolean H323Gatekeeper::MakeRequest(Request & request)
     return false;
 
   // Set authenticators if not already set by caller
-  requestMutex.Wait();
+  m_requestMutex.Wait();
 
   if (request.requestPDU.GetAuthenticators().IsEmpty())
     request.requestPDU.SetAuthenticators(authenticators);
@@ -1985,14 +1984,14 @@ PBoolean H323Gatekeeper::MakeRequest(Request & request)
     if (H225_RAS::MakeRequest(request)) {
       if (m_alternateTemporary && (transport->GetRemoteAddress() != tempAddr || gatekeeperIdentifier != tempIdentifier))
         Connect(tempAddr, tempIdentifier);
-      requestMutex.Signal();
+      m_requestMutex.Signal();
       return true;
     }
     
     if (request.responseResult != Request::NoResponseReceived &&
         request.responseResult != Request::TryAlternate) {
       // try alternate in those cases and see if it's successful
-      requestMutex.Signal();
+      m_requestMutex.Signal();
       return false;
     }
     
@@ -2001,7 +2000,7 @@ PBoolean H323Gatekeeper::MakeRequest(Request & request)
       if (alt == m_alternates.end()) {
         if (m_alternateTemporary) 
           Connect(tempAddr, tempIdentifier);
-        requestMutex.Signal();
+        m_requestMutex.Signal();
         return false;
       }
       
@@ -2018,7 +2017,7 @@ PBoolean H323Gatekeeper::MakeRequest(Request & request)
       Request req(SetupGatekeeperRequest(pdu), pdu);
       
       if (H225_RAS::MakeRequest(req)) {
-        requestMutex.Signal(); // avoid deadlock...
+        m_requestMutex.Signal(); // avoid deadlock...
         if (RegistrationRequest(autoReregister)) {
           altInfo->registrationState = AlternateInfo::IsRegistered;
           // The wanted registration is done, we can return
@@ -2028,7 +2027,7 @@ PBoolean H323Gatekeeper::MakeRequest(Request & request)
             return true;
           }
         }
-        requestMutex.Wait();
+        m_requestMutex.Wait();
       }
     }
   }
