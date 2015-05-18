@@ -499,9 +499,9 @@ class H323PeerElement : public H323_AnnexG
     PString localIdentifier;
     PString domainName;
 
-    PSemaphore requestMutex;
+    PMutex     m_requestMutex;
     PThread  * monitor;
-    PBoolean       monitorStop;
+    bool       monitorStop;
     PSyncPoint monitorTickle;
 
     PMutex basePeerOrdinalMutex;

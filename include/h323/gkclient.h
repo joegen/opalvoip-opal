@@ -398,7 +398,7 @@ class H323Gatekeeper : public H225_RAS
     AlternateList m_alternates;
     bool          m_alternateTemporary;
 
-    PSemaphore         requestMutex;
+    PMutex             m_requestMutex;
     H235Authenticators authenticators;
 
     enum {
