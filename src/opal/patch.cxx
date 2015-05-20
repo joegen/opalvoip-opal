@@ -1059,10 +1059,8 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame, bool bypassin
   }
 
   OpalVideoFormat::VideoFrameType frameType;
-  if (m_videoFormat.IsValid()) {
-    PPROFILE_BLOCK("OpalMediaPatch::Sink::WriteFrame - video detect");
+  if (m_videoFormat.IsValid())
     frameType = m_videoFormat.GetVideoFrameType(sourceFrame.GetPayloadPtr(), sourceFrame.GetPayloadSize(), m_keyFrameDetectContext);
-  }
   else
     frameType = OpalVideoFormat::e_UnknownFrameType;
 #endif // OPAL_VIDEO
