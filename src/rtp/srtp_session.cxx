@@ -595,7 +595,6 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendData(RTP_DataFrame & fr
 
   int len = frame.GetPacketSize();
   {
-    PPROFILE_BLOCK("srtp_protect");
     frame.MakeUnique();
 
     frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
@@ -631,7 +630,6 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnSendControl(RTP_ControlFram
 
   int len = frame.GetPacketSize();
   {
-    PPROFILE_BLOCK("srtp_protect_rtcp");
     frame.MakeUnique();
 
     frame.SetMinSize(len + SRTP_MAX_TRAILER_LEN);
@@ -664,7 +662,6 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveData(RTP_DataFrame &
 
   int len = frame.GetPacketSize();
   {
-    PPROFILE_BLOCK("srtp_unprotect");
     frame.MakeUnique();
     if (!CHECK_ERROR(srtp_unprotect, (m_context, frame.GetPointer(), &len), frame.GetSyncSource(), frame.GetSequenceNumber()))
       return ++m_consecutiveErrors[e_Receiver][e_Data] > MaxConsecutiveErrors ? e_AbortTransport : e_IgnorePacket;
@@ -694,7 +691,6 @@ OpalRTPSession::SendReceiveStatus OpalSRTPSession::OnReceiveControl(RTP_ControlF
 
   int len = frame.GetSize();
   {
-    PPROFILE_BLOCK("srtp_unprotect_rtcp");
     frame.MakeUnique();
 
     /* Need to guarantee a receiver SSRC (their sender) even if never been told
