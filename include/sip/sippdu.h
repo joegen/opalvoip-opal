@@ -1532,7 +1532,9 @@ class SIPMessage : public SIPTransaction
       PCaselessString   m_contentType;
       PString           m_id;
       PString           m_body;
+#if OPAL_HAS_IM
       OpalIM::MessageID m_messageId;
+#endif
     };
 
     SIPMessage(
