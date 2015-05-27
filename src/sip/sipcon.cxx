@@ -2736,7 +2736,8 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   // starting the next one.
   if (responseClass != 1) {
     m_pendingInvitations.Remove(&transaction);
-    StartPendingReINVITE();
+    if (responseClass == 2 || GetPhase() >= ConnectedPhase)
+      StartPendingReINVITE();
   }
 
 #if OPAL_T38_CAPABILITY
