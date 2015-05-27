@@ -2015,7 +2015,8 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
   // To avoid overlapping INVITE transactions, wait till here before starting the next one.
   m_pendingInvitations.Remove(&transaction);
-  StartPendingReINVITE();
+  if (responseClass == 2 || GetPhase() >= ConnectedPhase)
+    StartPendingReINVITE();
 
   if (handled)
     return;
