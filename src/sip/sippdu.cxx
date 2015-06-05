@@ -3231,15 +3231,20 @@ bool SIPTransaction::Start()
     return false;
   }
 
-  PSafeLockReadWrite mutex(*m_transport);
-
-  // Remember this for when we are forking on UDP
-  m_localInterface = m_transport->GetInterface();
-
   m_pduSizeOK = true;
   for (;;) {
+    if (!m_transport->LockReadWrite())
+      return false;
+
+    // Remember this for when we are forking on UDP
+    m_localInterface = m_transport->GetInterface();
+
+    SIP_PDU::StatusCodes status = InternalSend(m_pduSizeOK);
+
+    m_transport->UnlockReadWrite();
+
     // Use the transactions transport to send the request
-    switch (InternalSend(m_pduSizeOK)) {
+    switch (status) {
       case Successful_OK :
         if (!m_transport->IsReliable())
           m_retryTimer = m_retryTimeoutMin;
