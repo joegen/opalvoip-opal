@@ -105,8 +105,6 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   , m_gatekeeperAliasLimit(MaxGatekeeperAliasLimit)
   , m_gatekeeperSimulatePattern(false)
   , m_gatekeeperRasRedirect(true)
-  , m_gatekeeperMonitor(NULL)
-  , m_gatekeeperMonitorStop(false)
   , m_nextH450CallIdentity(0)
 #if OPAL_H460
   , m_features(NULL)
@@ -168,14 +166,6 @@ void H323EndPoint::ShutDown()
      down the gatekeeper (if there was one) before cleaning up the OpalEndpoint
      object which kills the listeners. */
   RemoveGatekeeper();
-
-  if (m_gatekeeperMonitor != NULL) {
-    m_gatekeeperMonitorStop = true;
-    m_gatekeeperMonitorTickle.Signal();
-    m_gatekeeperMonitor->WaitForTermination(10000);
-    delete m_gatekeeperMonitor;
-    m_gatekeeperMonitor = NULL;
-  }
 
   OpalEndPoint::ShutDown();
 }
@@ -610,9 +600,6 @@ bool H323EndPoint::InternalRestartGatekeeper(bool adjustingRegistrations)
           m_gatekeeperByAlias.SetAt(*alias, &*gk);
   }
 
-  if (m_gatekeeperMonitor == NULL)
-    m_gatekeeperMonitor = new PThreadObj<H323EndPoint>(*this, &H323EndPoint::GatekeeperMonitor, false, "GkMonitor");
-
   return true;
 }
 
@@ -647,27 +634,6 @@ bool H323EndPoint::InternalCreateGatekeeper(const H323TransportAddress & remoteA
 H323Gatekeeper * H323EndPoint::CreateGatekeeper(H323Transport * transport)
 {
   return new H323Gatekeeper(*this, transport);
-}
-
-
-void H323EndPoint::GatekeeperMonitor()
-{
-  PTRACE(4, "GkMon\tBackground thread started");
-
-  for (;;) {
-    m_gatekeeperMonitorTickle.Wait();
-    if (m_gatekeeperMonitorStop)
-      break;
-
-    m_gatekeeperMutex.Wait();
-
-    for (GatekeeperList::iterator gk = m_gatekeepers.begin(); gk != m_gatekeepers.end(); ++gk)
-      gk->Monitor();
-
-    m_gatekeeperMutex.Signal();
-  }
-
-  PTRACE(4, "GkMon\tBackground thread ended");
 }
 
 

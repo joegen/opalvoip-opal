@@ -313,7 +313,6 @@ class H323Gatekeeper : public H225_RAS
     H460_FeatureSet * GetFeatures() { return m_features; }
 #endif
 
-    void Monitor();
     void ReRegisterNow();
 
   protected:
@@ -322,8 +321,8 @@ class H323Gatekeeper : public H225_RAS
     unsigned SetupGatekeeperRequest(H323RasPDU & request);
 	
     void Connect(const H323TransportAddress & address, const PString & gatekeeperIdentifier);
-    PDECLARE_NOTIFIER(PTimer, H323Gatekeeper, TickleMonitor);
-    void RegistrationTimeToLive();
+    PDECLARE_NOTIFIER(PTimer, H323Gatekeeper, RegistrationTimeToLive);
+    PDECLARE_NOTIFIER(PTimer, H323Gatekeeper, PeriodicInfoRequestResponse);
 
     void SetInfoRequestRate(
       const PTimeInterval & rate
@@ -399,7 +398,7 @@ class H323Gatekeeper : public H225_RAS
     bool          m_alternateTemporary;
 
     PMutex             m_requestMutex;
-    H235Authenticators authenticators;
+    H235Authenticators m_authenticators;
 
     enum {
       RequireARQ,
@@ -409,12 +408,12 @@ class H323Gatekeeper : public H225_RAS
     H323TransportAddress gkRouteAddress;
 
     // Gatekeeper operation variables
-    bool       autoReregister;
+    bool       m_autoReregister;
     bool       m_reregisterNow;
-    PTimer     timeToLive;
-    bool       requiresDiscovery;
-    PTimer     infoRequestRate;
-    bool       willRespondToIRR;
+    PTimer     m_timeToLive;
+    bool       m_requiresDiscovery;
+    PTimer     m_infoRequestRate;
+    bool       m_willRespondToIRR;
 
     PDictionary<POrdinalKey, H323ServiceControlSession> serviceControlSessions;
 	

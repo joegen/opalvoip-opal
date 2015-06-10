@@ -88,19 +88,19 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   , m_onHighPriorityInterfaceChange(PCREATE_InterfaceNotifier(OnHighPriorityInterfaceChange))
   , m_onLowPriorityInterfaceChange(PCREATE_InterfaceNotifier(OnLowPriorityInterfaceChange))
   , m_alternateTemporary(false)
-  , authenticators(ep.CreateAuthenticators())
+  , m_authenticators(ep.CreateAuthenticators())
   , pregrantMakeCall(RequireARQ)
   , pregrantAnswerCall(RequireARQ)
-  , autoReregister(true)
+  , m_autoReregister(true)
   , m_reregisterNow(false)
-  , requiresDiscovery(false)
-  , willRespondToIRR(false)
+  , m_requiresDiscovery(false)
+  , m_willRespondToIRR(false)
 #if OPAL_H460
   , m_features(ep.InternalCreateFeatureSet(NULL))
 #endif
 {
-  timeToLive.SetNotifier(PCREATE_NOTIFIER(TickleMonitor));
-  infoRequestRate.SetNotifier(PCREATE_NOTIFIER(TickleMonitor));
+  m_timeToLive.SetNotifier(PCREATE_NOTIFIER(RegistrationTimeToLive));
+  m_infoRequestRate.SetNotifier(PCREATE_NOTIFIER(PeriodicInfoRequestResponse));
 
   PInterfaceMonitor::GetInstance().AddNotifier(m_onHighPriorityInterfaceChange, 80);
   PInterfaceMonitor::GetInstance().AddNotifier(m_onLowPriorityInterfaceChange, 40);
@@ -240,7 +240,7 @@ bool H323Gatekeeper::StartGatekeeper(const H323TransportAddress & initialAddress
   ReRegisterNow();
 
   // Make sure transctor (socket read) thread has started, before kicking off GRQ
-  timeToLive.SetInterval(500);
+  m_timeToLive.SetInterval(500);
   return true;
 }
 
@@ -334,7 +334,7 @@ void H323Gatekeeper::OnSendGatekeeperRequest(H225_GatekeeperRequest & grq)
 {
   H225_RAS::OnSendGatekeeperRequest(grq);
 
-  for (H235Authenticators::iterator iterAuth = authenticators.begin(); iterAuth != authenticators.end(); ++iterAuth) {
+  for (H235Authenticators::iterator iterAuth = m_authenticators.begin(); iterAuth != m_authenticators.end(); ++iterAuth) {
     if (iterAuth->SetCapability(grq.m_authenticationCapability, grq.m_algorithmOIDs)) {
       grq.IncludeOptionalField(H225_GatekeeperRequest::e_authenticationCapability);
       grq.IncludeOptionalField(H225_GatekeeperRequest::e_algorithmOIDs);
@@ -348,13 +348,13 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm
   if (!H225_RAS::OnReceiveGatekeeperConfirm(gcf))
     return false;
 
-  for (H235Authenticators::iterator iterAuth = authenticators.begin(); iterAuth != authenticators.end(); ++iterAuth) {
+  for (H235Authenticators::iterator iterAuth = m_authenticators.begin(); iterAuth != m_authenticators.end(); ++iterAuth) {
     if (iterAuth->UseGkAndEpIdentifiers())
       iterAuth->SetRemoteId(gatekeeperIdentifier);
   }
 
   if (gcf.HasOptionalField(H225_GatekeeperConfirm::e_authenticationMode) && gcf.HasOptionalField(H225_GatekeeperConfirm::e_algorithmOID)) {
-    for (H235Authenticators::iterator iterAuth = authenticators.begin(); iterAuth != authenticators.end(); ++iterAuth) {
+    for (H235Authenticators::iterator iterAuth = m_authenticators.begin(); iterAuth != m_authenticators.end(); ++iterAuth) {
       if (!iterAuth->IsCapability(gcf.m_authenticationMode, gcf.m_algorithmOID))
         iterAuth->Enable(false);
       else {
@@ -477,7 +477,7 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
   if (PAssertNULL(transport) == NULL)
     return false;
 
-  autoReregister = autoReg;
+  m_autoReregister = autoReg;
 
   H323RasPDU pdu;
   H225_RegistrationRequest & rrq = pdu.BuildRegistrationRequest(GetNextSequenceNumber());
@@ -596,7 +596,7 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
         case H225_RegistrationRejectReason::e_discoveryRequired :
           // If have been told by GK that we need to discover it again, set flag
           // for next register done by timeToLive handler to do discovery
-          requiresDiscovery = true;
+          m_requiresDiscovery = true;
           // Do next case
 
         case H225_RegistrationRejectReason::e_fullRegistrationRequired :
@@ -652,21 +652,24 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
     SetAlternates(rcf.m_alternateGatekeeper, false);
 
   // If gk does not include timetoLive then we assume it accepted what we offered
+  PTimeInterval ttl;
   if (rcf.HasOptionalField(H225_RegistrationConfirm::e_timeToLive))
-    timeToLive = AdjustTimeout(rcf.m_timeToLive);
+    ttl = AdjustTimeout(rcf.m_timeToLive);
   else
-    timeToLive = AdjustTimeout(endpoint.GetGatekeeperTimeToLive().GetSeconds());
+    ttl = endpoint.GetGatekeeperTimeToLive();
 
 #if OPAL_H460_NAT
-  if (m_features != NULL && m_features->HasFeature(H460_FeatureStd18::ID()) && timeToLive > endpoint.GetManager().GetNatKeepAliveTime())
-    timeToLive = endpoint.GetManager().GetNatKeepAliveTime();
+  if (m_features != NULL && m_features->HasFeature(H460_FeatureStd18::ID()) && ttl > endpoint.GetManager().GetNatKeepAliveTime())
+    ttl = endpoint.GetManager().GetNatKeepAliveTime();
 #endif
+
+  m_timeToLive = ttl;
 
   // At present only support first call signal address to GK
   if (rcf.m_callSignalAddress.GetSize() > 0)
     gkRouteAddress = rcf.m_callSignalAddress[0];
 
-  willRespondToIRR = rcf.m_willRespondToIRR;
+  m_willRespondToIRR = rcf.m_willRespondToIRR;
 
   pregrantMakeCall = pregrantAnswerCall = RequireARQ;
   if (rcf.HasOptionalField(H225_RegistrationConfirm::e_preGrantedARQ)) {
@@ -775,46 +778,46 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationReject(const H225_RegistrationReje
 }
 
 
-void H323Gatekeeper::RegistrationTimeToLive()
+void H323Gatekeeper::RegistrationTimeToLive(PTimer &, P_INT_PTR)
 {
   PTRACE(3, "Time To Live reregistration");
   
   bool didGkDiscovery = discoveryComplete;
 
   if (!discoveryComplete) {
-    timeToLive.SetInterval(0, 0, 1);
+    m_timeToLive.SetInterval(0, 0, 1);
     if (endpoint.GetSendGRQ()) {
       if (!DiscoverGatekeeper()) {
         PTRACE_IF(2, !m_reregisterNow, "Discovery failed, retrying in 1 minute");
         return;
       }
-      requiresDiscovery = false;
+      m_requiresDiscovery = false;
       didGkDiscovery = true;
     }
     else {
-      PTRACE_IF(3, !requiresDiscovery, "Skipping gatekeeper discovery for " << transport->GetRemoteAddress());
+      PTRACE_IF(3, !m_requiresDiscovery, "Skipping gatekeeper discovery for " << transport->GetRemoteAddress());
       discoveryComplete = true;
     }
   }
 
-  if (requiresDiscovery) {
+  if (m_requiresDiscovery) {
     PTRACE(3, "Repeating discovery on gatekeepers request.");
 
     H323RasPDU pdu;
     Request request(SetupGatekeeperRequest(pdu), pdu);
     if (!MakeRequest(request) || !discoveryComplete) {
       PTRACE(2, "Rediscovery failed, retrying in 1 minute.");
-      timeToLive = PTimeInterval(0, 0, 1);
+      m_timeToLive.SetInterval(0, 0, 1);
       return;
     }
 
-    requiresDiscovery = false;
+    m_requiresDiscovery = false;
     didGkDiscovery = true;
   }
 
-  if (!RegistrationRequest(autoReregister, didGkDiscovery, !m_reregisterNow)) {
+  if (!RegistrationRequest(m_autoReregister, didGkDiscovery, !m_reregisterNow)) {
     PTRACE_IF(2, !m_reregisterNow, "Time To Live reregistration failed, retrying in 1 minute");
-    timeToLive = PTimeInterval(0, 0, 1);
+    m_timeToLive.SetInterval(0, 0, 1);
   }
 }
 
@@ -868,12 +871,12 @@ PBoolean H323Gatekeeper::UnregistrationRequest(int reason)
   switch (request.responseResult) {
     case Request::NoResponseReceived :
       SetRegistrationFailReason(TransportError);
-      timeToLive = 0; // zero disables lightweight RRQ
+      m_timeToLive.Stop(); // disables lightweight RRQ
       break;
 
     case Request::BadCryptoTokens :
       SetRegistrationFailReason(SecurityDenied);
-      timeToLive = 0; // zero disables lightweight RRQ
+      m_timeToLive.Stop(); // disables lightweight RRQ
       break;
 
     default :
@@ -891,7 +894,7 @@ PBoolean H323Gatekeeper::OnReceiveUnregistrationConfirm(const H225_Unregistratio
     return false;
 
   SetRegistrationFailReason(UnregisteredLocally);
-  timeToLive = 0; // zero disables lightweight RRQ
+  m_timeToLive.Stop(); // disables lightweight RRQ
 
   return true;
 }
@@ -920,16 +923,16 @@ PBoolean H323Gatekeeper::OnReceiveUnregistrationRequest(const H225_Unregistratio
 
   PTRACE(3, "Unregistered, calls cleared");
   SetRegistrationFailReason(UnregisteredByGatekeeper);
-  timeToLive = 0; // zero disables lightweight RRQ
+  m_timeToLive.Stop(); // disables lightweight RRQ
 
   if (urq.HasOptionalField(H225_UnregistrationRequest::e_alternateGatekeeper))
     SetAlternates(urq.m_alternateGatekeeper, false);
 
-  H323RasPDU response(authenticators);
+  H323RasPDU response(m_authenticators);
   response.BuildUnregistrationConfirm(urq.m_requestSeqNum);
   PBoolean ok = WritePDU(response);
 
-  if (autoReregister) {
+  if (m_autoReregister) {
     PTRACE(4, "Reregistering by setting timeToLive");
     discoveryComplete = false;
     ReRegisterNow();
@@ -946,7 +949,7 @@ PBoolean H323Gatekeeper::OnReceiveUnregistrationReject(const H225_Unregistration
 
   if (lastRequest->rejectReason != H225_UnregRejectReason::e_callInProgress) {
     SetRegistrationFailReason(UnregisteredLocally);
-    timeToLive = 0; // zero disables lightweight RRQ
+    m_timeToLive.Stop(); // disables lightweight RRQ
   }
 
   return true;
@@ -1138,7 +1141,7 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
   Request request(arq.m_requestSeqNum, pdu);
   request.responseInfo = &info;
 
-  if (!authenticators.IsEmpty()) {
+  if (!m_authenticators.IsEmpty()) {
     H235Authenticators adjustedAuthenticators;
     if (connection.GetAdmissionRequestAuthentication(arq, adjustedAuthenticators)) {
       PTRACE(3, "Authenticators credentials replaced with \""
@@ -1183,11 +1186,11 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
     }
 
     // If we are not registered and auto register is set ...
-    if (!autoReregister)
+    if (!m_autoReregister)
       return false;
 
     // Then immediately reregister.
-    if (!RegistrationRequest(autoReregister))
+    if (!RegistrationRequest(m_autoReregister))
       return false;
 
     // Reset the gk info in ARQ
@@ -1328,7 +1331,7 @@ PBoolean H323Gatekeeper::OnReceiveAdmissionConfirm(const H225_AdmissionConfirm &
 
   if (acf.HasOptionalField(H225_AdmissionConfirm::e_irrFrequency))
     SetInfoRequestRate(AdjustTimeout(acf.m_irrFrequency));
-  willRespondToIRR = acf.m_willRespondToIRR;
+  m_willRespondToIRR = acf.m_willRespondToIRR;
 
   if (acf.HasOptionalField(H225_AdmissionConfirm::e_serviceControl))
     OnServiceControlSessions(acf.m_serviceControl, &info.connection);
@@ -1435,7 +1438,7 @@ PBoolean H323Gatekeeper::OnReceiveDisengageRequest(const H225_DisengageRequest &
   if (id == NULL)
     id = drq.m_conferenceID;
 
-  H323RasPDU response(authenticators);
+  H323RasPDU response(m_authenticators);
   PSafePtr<H323Connection> connection = endpoint.FindConnectionWithLock(id.AsString());
   if (connection == NULL)
     response.BuildDisengageReject(drq.m_requestSeqNum,
@@ -1502,7 +1505,7 @@ PBoolean H323Gatekeeper::OnReceiveBandwidthRequest(const H225_BandwidthRequest &
   OpalGloballyUniqueID id = brq.m_callIdentifier.m_guid;
   PSafePtr<H323Connection> connection = endpoint.FindConnectionWithLock(id.AsString());
 
-  H323RasPDU response(authenticators);
+  H323RasPDU response(m_authenticators);
   if (connection == NULL)
     response.BuildBandwidthReject(brq.m_requestSeqNum, H225_BandRejectReason::e_invalidConferenceID);
   else if (connection->SetBandwidthAllocated(OpalBandwidth::RxTx, OpalBandwidth(brq.m_bandWidth)))
@@ -1516,14 +1519,7 @@ PBoolean H323Gatekeeper::OnReceiveBandwidthRequest(const H225_BandwidthRequest &
 
 void H323Gatekeeper::SetInfoRequestRate(const PTimeInterval & rate)
 {
-  if (rate < infoRequestRate.GetResetTime() || infoRequestRate.GetResetTime() == 0) {
-    // Have to be sneaky here becuase we do not want to actually change the
-    // amount of time to run on the timer.
-    PTimeInterval timeToGo = infoRequestRate;
-    infoRequestRate = rate;
-    if (rate > timeToGo)
-      infoRequestRate.PTimeInterval::operator=(timeToGo);
-  }
+  m_infoRequestRate.RunContinuous(rate);
 }
 
 
@@ -1531,7 +1527,7 @@ void H323Gatekeeper::ClearInfoRequestRate()
 {
   // Only reset rate to zero (disabled) if no calls present
   if (endpoint.GetConnectionCount())
-    infoRequestRate = 0;
+    m_infoRequestRate.Stop(false);
 }
 
 
@@ -1572,14 +1568,14 @@ PBoolean H323Gatekeeper::SendUnsolicitedIRR(H225_InfoRequestResponse & irr,
 {
   irr.m_unsolicited = true;
 
-  if (willRespondToIRR) {
+  if (m_willRespondToIRR) {
     PTRACE(4, "Sending unsolicited IRR and awaiting acknowledgement");
     Request request(irr.m_requestSeqNum, response);
     return MakeRequest(request);
   }
 
   PTRACE(4, "Sending unsolicited IRR and without acknowledgement");
-  response.SetAuthenticators(authenticators);
+  response.SetAuthenticators(m_authenticators);
   return WritePDU(response);
 }
 
@@ -1655,6 +1651,13 @@ static PBoolean AddAllInfoRequestResponseCall(H225_InfoRequestResponse & irr,
 }
 
 
+void H323Gatekeeper::PeriodicInfoRequestResponse(PTimer &, P_INT_PTR)
+{
+  PTRACE(4, "Sending periodic IRR");
+  InfoRequestResponse();
+}
+
+
 void H323Gatekeeper::InfoRequestResponse()
 {
   PStringList tokens = endpoint.GetAllConnections();
@@ -1714,7 +1717,7 @@ PBoolean H323Gatekeeper::OnReceiveInfoRequest(const H225_InfoRequest & irq)
   if (!H225_RAS::OnReceiveInfoRequest(irq))
     return false;
 
-  H323RasPDU response(authenticators);
+  H323RasPDU response(m_authenticators);
   H225_InfoRequestResponse & irr = BuildInfoRequestResponse(response, irq.m_requestSeqNum);
 
   if (irq.m_callReferenceValue == 0) {
@@ -1789,7 +1792,7 @@ PBoolean H323Gatekeeper::OnReceiveServiceControlIndication(const H225_ServiceCon
 
   OnServiceControlSessions(sci.m_serviceControl, connection);
 
-  H323RasPDU response(authenticators);
+  H323RasPDU response(m_authenticators);
   response.BuildServiceControlResponse(sci.m_requestSeqNum);
   return WritePDU(response);
 }
@@ -1840,7 +1843,7 @@ void H323Gatekeeper::SetPassword(const PString & password,
   if (localId.IsEmpty())
     localId = endpoint.GetGatekeeperUsername();
 
-  for (H235Authenticators::iterator iterAuth = authenticators.begin(); iterAuth != authenticators.end(); ++iterAuth) {
+  for (H235Authenticators::iterator iterAuth = m_authenticators.begin(); iterAuth != m_authenticators.end(); ++iterAuth) {
     iterAuth->SetLocalId(localId);
     iterAuth->SetPassword(password);
   }
@@ -1849,31 +1852,11 @@ void H323Gatekeeper::SetPassword(const PString & password,
 }
 
 
-void H323Gatekeeper::Monitor()
-{
-  if (m_reregisterNow || (!timeToLive.IsRunning() && timeToLive.GetResetTime() > 0)) {
-    RegistrationTimeToLive();
-    timeToLive.Reset();
-  }
-
-  if (!infoRequestRate.IsRunning() && infoRequestRate.GetResetTime() > 0) {
-    InfoRequestResponse();
-    infoRequestRate.Reset();
-  }
-}
-
-
 void H323Gatekeeper::ReRegisterNow()
 {
   PTRACE(4, "Triggering re-register for " << *this);
   m_reregisterNow = true;
-  endpoint.TickleGatekeeperMonitor();
-}
-
-
-void H323Gatekeeper::TickleMonitor(PTimer &, P_INT_PTR)
-{
-  endpoint.TickleGatekeeperMonitor();
+  m_timeToLive = 1; // Very soon from now
 }
 
 
@@ -1940,7 +1923,7 @@ PBoolean H323Gatekeeper::MakeRequestWithReregister(Request & request, unsigned u
   }
 
   // If we are not registered and auto register is set ...
-  if (!autoReregister)
+  if (!m_autoReregister)
     return false;
 
   ReRegisterNow();
@@ -1970,7 +1953,7 @@ PBoolean H323Gatekeeper::MakeRequest(Request & request)
   m_requestMutex.Wait();
 
   if (request.requestPDU.GetAuthenticators().IsEmpty())
-    request.requestPDU.SetAuthenticators(authenticators);
+    request.requestPDU.SetAuthenticators(m_authenticators);
 
   /* To be sure that the H323 Cleaner, H225 Caller or Monitor don't set the
      transport address of the alternate while the other is in timeout. We
@@ -2018,7 +2001,7 @@ PBoolean H323Gatekeeper::MakeRequest(Request & request)
       
       if (H225_RAS::MakeRequest(req)) {
         m_requestMutex.Signal(); // avoid deadlock...
-        if (RegistrationRequest(autoReregister)) {
+        if (RegistrationRequest(m_autoReregister)) {
           altInfo->registrationState = AlternateInfo::IsRegistered;
           // The wanted registration is done, we can return
           if (request.requestPDU.GetChoice().GetTag() == H225_RasMessage::e_registrationRequest) {

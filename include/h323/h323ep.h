@@ -1334,8 +1334,6 @@ class H323EndPoint : public OpalRTPEndPoint
     ) const;
   //@}
 
-    void TickleGatekeeperMonitor() { m_gatekeeperMonitorTickle.Signal(); }
-
     // For backward compatibility
     void SetLocalUserName(const PString & name) { return SetDefaultLocalPartyName(name); }
     const PString & GetLocalUserName() const { return GetDefaultLocalPartyName(); }
@@ -1344,7 +1342,6 @@ class H323EndPoint : public OpalRTPEndPoint
     bool InternalStartGatekeeper(const H323TransportAddress & remoteAddress, const PString & localAddress);
     bool InternalRestartGatekeeper(bool adjustingRegistrations = true);
     bool InternalCreateGatekeeper(const H323TransportAddress & remoteAddress, const PStringList & aliases);
-    void GatekeeperMonitor();
 
     H323Connection * InternalMakeCall(
       OpalCall & call,
@@ -1440,9 +1437,6 @@ class H323EndPoint : public OpalRTPEndPoint
     PINDEX                    m_gatekeeperAliasLimit;
     bool                      m_gatekeeperSimulatePattern;
     bool                      m_gatekeeperRasRedirect;
-    PThread                 * m_gatekeeperMonitor;
-    bool                      m_gatekeeperMonitorStop;
-    PSyncPoint                m_gatekeeperMonitorTickle;
     PTimedMutex               m_gatekeeperMutex;
 
 #if OPAL_H450
