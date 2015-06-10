@@ -124,14 +124,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\lib\</IntDir>
     <TargetName>opalsd</TargetName>
-    <IncludePath>..\..\lib\$(Platform)\include;..\..\include;..\..\..\ptlib\lib\$(Platform)\include;..\..\..\ptlib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <IncludePath>$(ProjectDir)..\..\lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(PTLIBDIR)..\..\..\ptlib\lib\$(Platform)\include;$(PTLIBDIR)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(PTLIBDIR)..\..\..\ptlib\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\lib\</IntDir>
     <TargetName>opal64sd</TargetName>
-    <IncludePath>..\..\lib\$(Platform)\include;..\..\include;..\..\..\ptlib\lib\$(Platform)\include;..\..\..\ptlib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <IncludePath>$(ProjectDir)..\..\lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(PTLIBDIR)..\..\..\ptlib\lib\$(Platform)\include;$(PTLIBDIR)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(PTLIBDIR)..\..\..\ptlib\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(ProjectDir)..\..\lib\</OutDir>
@@ -148,26 +148,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\lib\</IntDir>
     <TargetName>opals</TargetName>
-    <IncludePath>..\..\lib\$(Platform)\include;..\..\include;..\..\..\ptlib\lib\$(Platform)\include;..\..\..\ptlib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <IncludePath>$(ProjectDir)..\..\lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(PTLIBDIR)..\..\..\ptlib\lib\$(Platform)\include;$(PTLIBDIR)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(PTLIBDIR)..\..\..\ptlib\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\lib\</IntDir>
     <TargetName>opal64s</TargetName>
-    <IncludePath>..\..\lib\$(Platform)\include;..\..\include;..\..\..\ptlib\lib\$(Platform)\include;..\..\..\ptlib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <IncludePath>$(ProjectDir)..\..\lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(PTLIBDIR)..\..\..\ptlib\lib\$(Platform)\include;$(PTLIBDIR)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(PTLIBDIR)..\..\..\ptlib\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\lib\</IntDir>
     <TargetName>opalsn</TargetName>
-    <IncludePath>..\..\lib\$(Platform)\include;..\..\include;..\..\..\ptlib\lib\$(Platform)\include;..\..\..\ptlib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <IncludePath>$(ProjectDir)..\..\lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(PTLIBDIR)..\..\..\ptlib\lib\$(Platform)\include;$(PTLIBDIR)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(PTLIBDIR)..\..\..\ptlib\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\lib\</IntDir>
     <TargetName>opal64sn</TargetName>
-    <IncludePath>..\..\lib\$(Platform)\include;..\..\include;..\..\..\ptlib\lib\$(Platform)\include;..\..\..\ptlib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <IncludePath>$(ProjectDir)..\..\lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(PTLIBDIR)..\..\..\ptlib\lib\$(Platform)\include;$(PTLIBDIR)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(PTLIBDIR)..\..\..\ptlib\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">
     <OutDir>$(ProjectDir)..\..\lib\$(Platform)\</OutDir>
