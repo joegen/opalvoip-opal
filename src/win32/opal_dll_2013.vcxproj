@@ -100,35 +100,35 @@
     <OutDir>$(ProjectDir)..\..\lib\</OutDir>
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\dll\</IntDir>
     <TargetName>opald</TargetName>
-    <ExecutablePath>..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
-    <IncludePath>..\..\lib\$(Platform)\include;..\..\include;..\..\..\ptlib\lib\$(Platform)\include;..\..\..\ptlib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
+    <IncludePath>$(ProjectDir)..\..\lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(PTLIBDIR)..\..\..\ptlib\lib\$(Platform)\include;$(PTLIBDIR)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(PTLIBDIR)..\..\..\ptlib\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(ProjectDir)..\..\lib\</OutDir>
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\dll\</IntDir>
     <TargetName>opal64d</TargetName>
-    <ExecutablePath>..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
-    <IncludePath>..\..\lib\$(Platform)\include;..\..\include;..\..\..\ptlib\lib\$(Platform)\include;..\..\..\ptlib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
+    <IncludePath>$(ProjectDir)..\..\lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(PTLIBDIR)..\..\..\ptlib\lib\$(Platform)\include;$(PTLIBDIR)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(PTLIBDIR)..\..\..\ptlib\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <ExecutablePath>..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
+    <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
     <OutDir>$(ProjectDir)..\..\lib\</OutDir>
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\dll\</IntDir>
     <TargetName>opal</TargetName>
-    <IncludePath>..\..\lib\$(Platform)\include;..\..\include;..\..\..\ptlib\lib\$(Platform)\include;..\..\..\ptlib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <IncludePath>$(ProjectDir)..\..\lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(PTLIBDIR)..\..\..\ptlib\lib\$(Platform)\include;$(PTLIBDIR)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(PTLIBDIR)..\..\..\ptlib\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <ExecutablePath>..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
+    <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
     <OutDir>$(ProjectDir)..\..\lib\</OutDir>
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\dll\</IntDir>
     <TargetName>opal64</TargetName>
-    <IncludePath>..\..\lib\$(Platform)\include;..\..\include;..\..\..\ptlib\lib\$(Platform)\include;..\..\..\ptlib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <IncludePath>$(ProjectDir)..\..\lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(PTLIBDIR)..\..\..\ptlib\lib\$(Platform)\include;$(PTLIBDIR)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(PTLIBDIR)..\..\..\ptlib\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">
@@ -136,18 +136,18 @@
     <OutDir>$(ProjectDir)..\..\lib\</OutDir>
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\dll\</IntDir>
     <TargetName>opaln</TargetName>
-    <ExecutablePath>..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
-    <IncludePath>..\..\lib\$(Platform)\include;..\..\include;..\..\..\ptlib\lib\$(Platform)\include;..\..\..\ptlib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
+    <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
+    <IncludePath>$(ProjectDir)..\..\lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(PTLIBDIR)..\..\..\ptlib\lib\$(Platform)\include;$(PTLIBDIR)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(PTLIBDIR)..\..\..\ptlib\lib;$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)..\..\lib\</OutDir>
     <IntDir>$(OutDir)$(Platform)\$(Configuration)\dll\</IntDir>
     <TargetName>opal64n</TargetName>
-    <ExecutablePath>..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
-    <IncludePath>..\..\lib\$(Platform)\include;..\..\include;..\..\..\ptlib\lib\$(Platform)\include;..\..\..\ptlib\include;$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\lib;..\..\..\ptlib\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+    <ExecutablePath>$(ProjectDir)..\..\..\ptlib\lib;$(ExecutablePath)</ExecutablePath>
+    <IncludePath>$(ProjectDir)..\..\lib\$(Platform)\include;$(ProjectDir)..\..\include;$(ProjectDir)..\..\..\ptlib\lib\$(Platform)\include;$(ProjectDir)..\..\..\ptlib\include;$(PTLIBDIR)..\..\..\ptlib\lib\$(Platform)\include;$(PTLIBDIR)..\..\..\ptlib\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)..\..\lib;$(ProjectDir)..\..\..\ptlib\lib;$(PTLIBDIR)..\..\..\ptlib\lib;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
