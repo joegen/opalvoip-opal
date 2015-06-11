@@ -408,12 +408,13 @@ class H323Gatekeeper : public H225_RAS
     H323TransportAddress gkRouteAddress;
 
     // Gatekeeper operation variables
-    bool       m_autoReregister;
-    bool       m_reregisterNow;
-    PTimer     m_timeToLive;
-    bool       m_requiresDiscovery;
-    PTimer     m_infoRequestRate;
-    bool       m_willRespondToIRR;
+    bool          m_autoReregister;
+    bool          m_periodicRegister;
+    PTimeInterval m_currentTimeToLive;
+    PTimer        m_registerTimer;
+    bool          m_requiresDiscovery;
+    PTimer        m_infoRequestTimer;
+    bool          m_willRespondToIRR;
 
     PDictionary<POrdinalKey, H323ServiceControlSession> serviceControlSessions;
 	
