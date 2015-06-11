@@ -147,16 +147,16 @@ AC_DEFUN([MY_PKG_CHECK_MODULE],[
 
 
 dnl MY_ADD_FLAGS
-dnl Add to CPPFLAGS, CFLAGS, CXXFLAGS & LIBS new flags
-dnl $1 new LIBS (prepended)
+dnl Prepend to CPPFLAGS, CFLAGS, CXXFLAGS & LIBS new flags
+dnl $1 new LIBS
 dnl $2 new CPPFLAGS
 dnl $3 new CFLAGS
 dnl $4 new CXXFLAGS
 AC_DEFUN([MY_ADD_FLAGS],[
    m4_ifnblank([$1], [LIBS="$1 $LIBS"])
-   m4_ifnblank([$2], [CPPFLAGS="$CPPFLAGS $2"])
-   m4_ifnblank([$3], [CFLAGS="$CPPFLAGS $3"])
-   m4_ifnblank([$4], [CXXFLAGS="$CPPFLAGS $4"])
+   m4_ifnblank([$2], [CPPFLAGS="$2 $CPPFLAGS"])
+   m4_ifnblank([$3], [CFLAGS="$3 $CFLAGS"])
+   m4_ifnblank([$4], [CXXFLAGS="$4 $CXXFLAGS"])
 ])
 
 
@@ -362,15 +362,18 @@ fi
 
 
 dnl Set up compiler by platform
+oldCFLAGS="$CFLAGS"
+oldCXXFLAGS="$CXXFLAGS"
+
 AC_PROG_CC()
 AC_PROG_CXX()
 if test -z "$CXX" ; then
    AC_MSG_ERROR(C++ compiler is required, 1)
 fi
 
-dnl Clear out the flags left behind by AC_PROC_CC/AC_PROG_CXX
-CFLAGS=
-CXXFLAGS=
+dnl Restore flags changed by AC_PROC_CC/AC_PROG_CXX
+CFLAGS="$oldCFLAGS"
+CXXFLAGS="$oldCXXFLAGS"
 
 
 dnl Find some tools
@@ -450,10 +453,6 @@ case "$target_os" in
       fi
 
       MIN_IOS_VER="6.0"
-      if test $target_release \< $MIN_IOS_VER ; then
-         AC_MSG_ERROR([Requires iOS release $MIN_IOS_VER, has $target_release])
-      fi
-
       IOS_DEVROOT="`xcode-select -print-path`/Platforms/${target_os}.platform/Developer"
       IOS_SDKROOT=${IOS_DEVROOT}/SDKs/${target_os}${target_release}.sdk
       IOS_FLAGS="-arch $target_cpu -miphoneos-version-min=$MIN_IOS_VER -isysroot ${IOS_SDKROOT}"
@@ -466,10 +465,6 @@ case "$target_os" in
       target_release=`sw_vers -productVersion`
 
       MIN_MACOSX_VER="10.8"
-      if test $target_release \< $MIN_MACOSX_VER ; then
-         AC_MSG_ERROR([Requires Mac OS-X release $MIN_MACOSX_VER, is $target_release])
-      fi
-
       CPPFLAGS="${CPPFLAGS} -mmacosx-version-min=$MIN_MACOSX_VER"
       LIBS="-framework QTKit -framework CoreVideo -framework AudioUnit $LIBS"
    ;;
@@ -540,6 +535,8 @@ case "$target_cpu" in
             AC_MSG_RESULT(no)
             target_cpu=x86
             target_64bit=0
+            CFLAGS="-march=i686 $CFLAGS"
+            CXXFLAGS="-march=i686 $CXXFLAGS"
          ]
       )
    ;;
@@ -564,7 +561,7 @@ case "$target_cpu" in
       target_64bit=0
    ;;
 
-   ppc64 | powerpc64 )
+   ppc64 | powerpc64 | ppc64el | powerpc64le )
       target_cpu=ppc64
       target_64bit=1
    ;;
@@ -578,6 +575,10 @@ case "$target_cpu" in
    ;;
 
    aarch64* )
+      target_64bit=1
+   ;;
+
+   mips64 | mips64el )
       target_64bit=1
    ;;
 
@@ -622,8 +623,8 @@ MY_COMPILE_IFELSE(
    [-g3 -ggdb -O0],
    [],
    [],
-   [DEBUG_CFLAGS="$DEBUG_CFLAGS -g3 -ggdb -O0"],
-   [DEBUG_CFLAGS="$DEBUG_CFLAGS -g"]
+   [DEBUG_CFLAGS="-g3 -ggdb -O0 $DEBUG_CFLAGS"],
+   [DEBUG_CFLAGS="-g $DEBUG_CFLAGS"]
 )
 AC_SUBST(DEBUG_CFLAGS)
 
@@ -633,8 +634,8 @@ MY_COMPILE_IFELSE(
    [-O3],
    [],
    [],
-   [OPT_CFLAGS="$OPT_FLAGS -O3"],
-   [OPT_CFLAGS="$OPT_FLAGS -O2"]
+   [OPT_CFLAGS="-O3 $OPT_CFLAGS"],
+   [OPT_CFLAGS="-O2 $OPT_CFLAGS"]
 )
 AC_SUBST(OPT_CFLAGS)
 
