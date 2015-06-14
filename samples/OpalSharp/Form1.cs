@@ -57,6 +57,11 @@ namespace OpalSharp
                                 MessageBox.Show("Registration complete to " + reg.serverName);
                                 EnableSafely(Unregister, true);
                                 break;
+                            case OpalRegistrationStates.OpalRegisterRemoved :
+                                MessageBox.Show("Registration removed from " + reg.serverName);
+                                EnableSafely(Unregister, false);
+                                EnableSafely(Register, true);
+                                break;
                             case OpalRegistrationStates.OpalRegisterFailed:
                                 MessageBox.Show("Registration failed: " + reg.error);
                                 EnableSafely(Register, true);
@@ -104,7 +109,8 @@ namespace OpalSharp
                     gen.natServer = StunServer.Text;
                     gen.autoRxMedia = gen.autoTxMedia = "audio video";
                     gen.mediaMask = "!G.711*\n!H.263*"; // Kind of backwards, it's a mask with negative entries, so just get G.711/H.263
-                    //gen.videoOutputDevice = "MSWIN STYLE=";
+                    gen.videoOutputDevice = "MSWIN STYLE=0x50000000 PARENT=" + VideoDisplay.Handle + " X=0 Y=0 WIDTH=" + VideoDisplay.Width + " HEIGHT=" + VideoDisplay.Height;
+                    gen.videoPreviewDevice = "MSWIN STYLE=0x50000000 PARENT=" + VideoPreview.Handle + " X=0 Y=0 WIDTH=" + VideoPreview.Width + " HEIGHT=" + VideoPreview.Height;
                     OpalMessagePtr result = new OpalMessagePtr();
                     if (!m_opalContext.SendMessage(msg, result))
                         MessageBox.Show("Could not set general parameters: " + result.GetCommandError(), "OPAL", MessageBoxButtons.OK);
@@ -171,7 +177,6 @@ namespace OpalSharp
                 reg.identifier = user.Text;
                 reg.password = password.Text;
                 reg.timeToLive = 300;
-                //reg.attributes = "compatibility=RFC5626"
                 OpalMessagePtr result = new OpalMessagePtr();
                 if (m_opalContext.SendMessage(msg, result))
                     return;
@@ -193,9 +198,7 @@ namespace OpalSharp
                 reg.protocol = "sip";
                 reg.hostName = host.Text;
                 reg.identifier = user.Text;
-                reg.password = password.Text;
-                reg.timeToLive = 300;
-                //reg.attributes = "compatibility=RFC5626"
+                reg.timeToLive = 0; // Zero unregisters
                 OpalMessagePtr result = new OpalMessagePtr();
                 if (!m_opalContext.SendMessage(msg, result))
                     MessageBox.Show("Could not set start registration: " + result.GetCommandError(), "OPAL", MessageBoxButtons.OK);

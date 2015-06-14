@@ -42,7 +42,11 @@
             this.LogFile = new System.Windows.Forms.TextBox();
             this.StunServer = new System.Windows.Forms.TextBox();
             this.Answer = new System.Windows.Forms.Button();
+            this.VideoDisplay = new System.Windows.Forms.PictureBox();
+            this.VideoPreview = new System.Windows.Forms.PictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.LogLevel)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.VideoDisplay)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.VideoPreview)).BeginInit();
             this.SuspendLayout();
             // 
             // Initialise
@@ -81,23 +85,23 @@
             // 
             this.host.Location = new System.Drawing.Point(128, 77);
             this.host.Name = "host";
-            this.host.Size = new System.Drawing.Size(100, 20);
+            this.host.Size = new System.Drawing.Size(89, 20);
             this.host.TabIndex = 3;
             this.host.Text = "ekiga.net";
             // 
             // user
             // 
-            this.user.Location = new System.Drawing.Point(234, 77);
+            this.user.Location = new System.Drawing.Point(223, 77);
             this.user.Name = "user";
-            this.user.Size = new System.Drawing.Size(100, 20);
+            this.user.Size = new System.Drawing.Size(67, 20);
             this.user.TabIndex = 4;
             this.user.Text = "user";
             // 
             // password
             // 
-            this.password.Location = new System.Drawing.Point(344, 77);
+            this.password.Location = new System.Drawing.Point(296, 77);
             this.password.Name = "password";
-            this.password.Size = new System.Drawing.Size(100, 20);
+            this.password.Size = new System.Drawing.Size(86, 20);
             this.password.TabIndex = 5;
             this.password.UseSystemPasswordChar = true;
             // 
@@ -116,7 +120,7 @@
             // 
             this.urlToCall.Location = new System.Drawing.Point(128, 143);
             this.urlToCall.Name = "urlToCall";
-            this.urlToCall.Size = new System.Drawing.Size(316, 20);
+            this.urlToCall.Size = new System.Drawing.Size(254, 20);
             this.urlToCall.TabIndex = 7;
             this.urlToCall.Text = "sip:500@ekiga.net";
             // 
@@ -159,7 +163,7 @@
             this.LogFile.AllowDrop = true;
             this.LogFile.Location = new System.Drawing.Point(169, 12);
             this.LogFile.Name = "LogFile";
-            this.LogFile.Size = new System.Drawing.Size(275, 20);
+            this.LogFile.Size = new System.Drawing.Size(213, 20);
             this.LogFile.TabIndex = 11;
             this.LogFile.Text = "C:\\work\\opal.log";
             // 
@@ -181,11 +185,31 @@
             this.Answer.Text = "Answer";
             this.Answer.UseVisualStyleBackColor = true;
             // 
+            // VideoDisplay
+            // 
+            this.VideoDisplay.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.VideoDisplay.Location = new System.Drawing.Point(30, 218);
+            this.VideoDisplay.Name = "VideoDisplay";
+            this.VideoDisplay.Size = new System.Drawing.Size(352, 288);
+            this.VideoDisplay.TabIndex = 14;
+            this.VideoDisplay.TabStop = false;
+            // 
+            // VideoPreview
+            // 
+            this.VideoPreview.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.VideoPreview.Location = new System.Drawing.Point(40, 424);
+            this.VideoPreview.Name = "VideoPreview";
+            this.VideoPreview.Size = new System.Drawing.Size(88, 72);
+            this.VideoPreview.TabIndex = 15;
+            this.VideoPreview.TabStop = false;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(476, 214);
+            this.ClientSize = new System.Drawing.Size(413, 518);
+            this.Controls.Add(this.VideoPreview);
+            this.Controls.Add(this.VideoDisplay);
             this.Controls.Add(this.Answer);
             this.Controls.Add(this.StunServer);
             this.Controls.Add(this.LogFile);
@@ -204,6 +228,8 @@
             this.Text = "OPAL";
             this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.LogLevel)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.VideoDisplay)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.VideoPreview)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -225,6 +251,8 @@
         private System.Windows.Forms.TextBox LogFile;
         private System.Windows.Forms.TextBox StunServer;
         private System.Windows.Forms.Button Answer;
+        private System.Windows.Forms.PictureBox VideoDisplay;
+        private System.Windows.Forms.PictureBox VideoPreview;
     }
 }
 
