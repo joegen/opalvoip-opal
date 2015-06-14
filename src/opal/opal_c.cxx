@@ -2833,7 +2833,7 @@ extern "C" {
                   "m-manufacturer:"
                   "n-name:"
                   "v-version:", false);
-    if (!PAssert(args.IsParsed(), "Invalid options: " + args.GetParseError()))
+    if (!args.IsParsed())
       return NULL;
 
     PTRACE_INITIALISE(args);
