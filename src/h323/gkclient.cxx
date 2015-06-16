@@ -64,20 +64,6 @@ static PTimeInterval AdjustTimeout(unsigned seconds)
 }
 
 
-PString EpIdAsStr(const PWCharArray & id)
-{
-  if (id.IsEmpty())
-    return "<<empty>>";
-
-  for (PINDEX i = 0; i < id.GetSize(); ++i) {
-    if (id[i] <= 0 || id[i] > 255 || !isprint(id[i]))
-      return PSTRSTRM('[' << hex << setfill('0') << setw(4) << id << ']');
-  }
-
-  return id; // Convert to string
-}
-
-
 /////////////////////////////////////////////////////////////////////////////
 
 H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
@@ -91,17 +77,16 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   , m_authenticators(ep.CreateAuthenticators())
   , pregrantMakeCall(RequireARQ)
   , pregrantAnswerCall(RequireARQ)
-  , m_autoReregister(true)
-  , m_periodicRegister(true)
-  , m_requiresDiscovery(false)
-  , m_willRespondToIRR(false)
 #if OPAL_H460
   , m_features(ep.InternalCreateFeatureSet(NULL))
 #endif
+  , m_autoReregister(true)
+  , m_forceRegister(false)
+  , m_requiresDiscovery(false)
+  , m_willRespondToIRR(false)
+  , m_monitorThread(NULL)
+  , m_monitorRunning(false)
 {
-  m_registerTimer.SetNotifier(PCREATE_NOTIFIER(RegistrationTimeToLive));
-  m_infoRequestTimer.SetNotifier(PCREATE_NOTIFIER(PeriodicInfoRequestResponse));
-
   PInterfaceMonitor::GetInstance().AddNotifier(m_onHighPriorityInterfaceChange, 80);
   PInterfaceMonitor::GetInstance().AddNotifier(m_onLowPriorityInterfaceChange, 40);
 }
@@ -111,6 +96,13 @@ H323Gatekeeper::~H323Gatekeeper()
 {
   PInterfaceMonitor::GetInstance().RemoveNotifier(m_onHighPriorityInterfaceChange);
   PInterfaceMonitor::GetInstance().RemoveNotifier(m_onLowPriorityInterfaceChange);
+
+  if (m_monitorThread != NULL) {
+    m_monitorRunning = false;
+    m_monitorTickle.Signal();
+    PAssert(m_monitorThread->WaitForTermination(10000), "Gatekeeper monitor thread did not stop");
+    delete m_monitorThread;
+  }
 
   StopChannel();
 
@@ -167,6 +159,17 @@ PString H323Gatekeeper::GetName() const
   PStringStream s;
   s << *this;
   return s;
+}
+
+
+PString H323Gatekeeper::GetEndpointIdentifier() const
+{
+  for (PINDEX i = 0; i < m_endpointIdentifier.GetSize(); ++i) {
+    if (m_endpointIdentifier[i] <= 0 || m_endpointIdentifier[i] > 255 || !isprint(m_endpointIdentifier[i]))
+      return PSTRSTRM('[' << hex << setfill('0') << setw(4) << m_endpointIdentifier << ']');
+  }
+
+  return m_endpointIdentifier; // Convert to string
 }
 
 
@@ -237,10 +240,12 @@ bool H323Gatekeeper::StartGatekeeper(const H323TransportAddress & initialAddress
     return false;
   }
 
-  ReRegisterNow();
+  if (m_monitorThread == NULL) {
+    m_monitorRunning = true;
+    m_monitorThread = new PThreadObj<H323Gatekeeper>(*this, &H323Gatekeeper::Monitor, false, "GkMonitor");
+  }
 
-  // Make sure transctor (socket read) thread has started, before kicking off GRQ
-  m_registerTimer.SetInterval(500);
+  ReRegisterNow();
   return true;
 }
 
@@ -589,7 +594,7 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
   if (MakeRequest(request))
     return true;
 
-  PTRACE(3, "Failed registration of " << EpIdAsStr(m_endpointIdentifier) << " with " << gatekeeperIdentifier);
+  PTRACE(3, "Failed registration of " << GetEndpointIdentifier() << " with " << *this);
   switch (request.responseResult) {
     case Request::RejectReceived :
       switch (request.rejectReason) {
@@ -642,11 +647,10 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
   if (!H225_RAS::OnReceiveRegistrationConfirm(rcf))
     return false;
 
-  m_periodicRegister = true;
+  m_forceRegister = false;
 
   m_endpointIdentifier = rcf.m_endpointIdentifier;
-  PTRACE(3, "Registered " << EpIdAsStr(m_endpointIdentifier) << " with " << *this);
-
+  PTRACE(3, "Registered " << GetEndpointIdentifier() << " with " << *this);
 
   if (rcf.HasOptionalField(H225_RegistrationConfirm::e_alternateGatekeeper))
     SetAlternates(rcf.m_alternateGatekeeper, false);
@@ -775,23 +779,43 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationReject(const H225_RegistrationReje
 }
 
 
-void H323Gatekeeper::RegistrationTimeToLive(PTimer &, P_INT_PTR)
+void H323Gatekeeper::Monitor()
 {
-  if (m_periodicRegister && m_currentTimeToLive == 0) {
-    PTRACE(3, "Periodic re-register stopped.");
-    return;
-  }
+  PTRACE(3, "Gatekeeper monitor thread started " << *this);
+  PSimpleTimer ttlTimer, irrTimer;
+  while (m_monitorRunning) {
+    PTimeInterval waitTime = PMaxTimeInterval;
+    if (m_currentTimeToLive > 0 && waitTime > ttlTimer.GetRemaining())
+      waitTime = ttlTimer.GetRemaining();
+    if (m_infoRequestTime > 0 && waitTime > irrTimer.GetRemaining())
+      waitTime = irrTimer.GetRemaining();
 
-  PTRACE(3, "Time To Live reregistration");
+    m_monitorTickle.Wait(waitTime);
+
+    if (m_forceRegister || (m_currentTimeToLive > 0 && ttlTimer.HasExpired()))
+      ttlTimer = InternalRegister();
+
+    if (m_infoRequestTime > 0 && irrTimer.HasExpired()) {
+      InfoRequestResponse();
+      irrTimer = m_infoRequestTime;
+    }
+  }
+  PTRACE(3, "Gatekeeper monitor thread ended " << *this);
+}
+
+PTimeInterval H323Gatekeeper::InternalRegister()
+{
+  static PTimeInterval const OffLineRetryTime(0, 0, 1);
+
+  PTRACE(3, "Time To Live reregistration of " << GetEndpointIdentifier() << " with " << *this);
   
   bool didGkDiscovery = discoveryComplete;
 
   if (!discoveryComplete) {
-    m_registerTimer.SetInterval(0, 0, 1);
     if (endpoint.GetSendGRQ()) {
       if (!DiscoverGatekeeper()) {
-        PTRACE_IF(2, m_periodicRegister, "Discovery failed, retrying in 1 minute");
-        return;
+        PTRACE_IF(2, !m_forceRegister, "Discovery failed, retrying in " << OffLineRetryTime);
+        return OffLineRetryTime;
       }
       m_requiresDiscovery = false;
       didGkDiscovery = true;
@@ -808,21 +832,19 @@ void H323Gatekeeper::RegistrationTimeToLive(PTimer &, P_INT_PTR)
     H323RasPDU pdu;
     Request request(SetupGatekeeperRequest(pdu), pdu);
     if (!MakeRequest(request) || !discoveryComplete) {
-      PTRACE(2, "Rediscovery failed, retrying in 1 minute.");
-      m_registerTimer.SetInterval(0, 0, 1);
-      return;
+      PTRACE(2, "Rediscovery failed, retrying in " << OffLineRetryTime);
+      return OffLineRetryTime;
     }
 
     m_requiresDiscovery = false;
     didGkDiscovery = true;
   }
 
-  if (RegistrationRequest(m_autoReregister, didGkDiscovery, m_periodicRegister))
-    m_registerTimer = m_currentTimeToLive;
-  else {
-    PTRACE_IF(2, m_periodicRegister, "Time To Live reregistration failed, retrying in 1 minute");
-    m_registerTimer.SetInterval(0, 0, 1);
-  }
+  if (RegistrationRequest(m_autoReregister, didGkDiscovery, !m_forceRegister))
+    return m_currentTimeToLive;
+
+  PTRACE_IF(2, !m_forceRegister, "Time To Live reregistration failed, retrying in " << OffLineRetryTime);
+  return OffLineRetryTime;
 }
 
 
@@ -1523,7 +1545,7 @@ PBoolean H323Gatekeeper::OnReceiveBandwidthRequest(const H225_BandwidthRequest &
 
 void H323Gatekeeper::SetInfoRequestRate(const PTimeInterval & rate)
 {
-  m_infoRequestTimer.RunContinuous(rate);
+  m_infoRequestTime = rate;
 }
 
 
@@ -1531,7 +1553,7 @@ void H323Gatekeeper::ClearInfoRequestRate()
 {
   // Only reset rate to zero (disabled) if no calls present
   if (endpoint.GetConnectionCount())
-    m_infoRequestTimer.Stop(false);
+    m_infoRequestTime = 0;
 }
 
 
@@ -1652,13 +1674,6 @@ static PBoolean AddAllInfoRequestResponseCall(H225_InfoRequestResponse & irr,
   }
 
   return addedOne;
-}
-
-
-void H323Gatekeeper::PeriodicInfoRequestResponse(PTimer &, P_INT_PTR)
-{
-  PTRACE(4, "Sending periodic IRR");
-  InfoRequestResponse();
 }
 
 
@@ -1859,8 +1874,8 @@ void H323Gatekeeper::SetPassword(const PString & password,
 void H323Gatekeeper::ReRegisterNow()
 {
   PTRACE(4, "Triggering re-register for " << *this);
-  m_periodicRegister = false;
-  m_registerTimer = 1; // Very soon from now
+  m_forceRegister = true;
+  m_monitorTickle.Signal();
 }
 
 
