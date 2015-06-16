@@ -1872,7 +1872,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
     mustSendDRQ = true;
     if (response.gatekeeperRouted) {
       setup.IncludeOptionalField(H225_Setup_UUIE::e_endpointIdentifier);
-      setup.m_endpointIdentifier = gatekeeper->GetEndpointIdentifier();
+      gatekeeper->GetEndpointIdentifier(setup.m_endpointIdentifier);
       gatekeeperRouted = true;
     }
   }

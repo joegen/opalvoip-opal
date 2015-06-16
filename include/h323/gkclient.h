@@ -282,7 +282,8 @@ class H323Gatekeeper : public H225_RAS
 
     /** Get the endpoint identifier
       */
-    PString GetEndpointIdentifier() const { return m_endpointIdentifier; }
+    PString GetEndpointIdentifier() const;
+    void GetEndpointIdentifier(PASN_BMPString & id) const { id.SetValueRaw(m_endpointIdentifier); }
 
     /**Set the H.235 password in the gatekeeper.
        If no username is present then it will default to the endpoint local
@@ -321,8 +322,6 @@ class H323Gatekeeper : public H225_RAS
     unsigned SetupGatekeeperRequest(H323RasPDU & request);
 	
     void Connect(const H323TransportAddress & address, const PString & gatekeeperIdentifier);
-    PDECLARE_NOTIFIER(PTimer, H323Gatekeeper, RegistrationTimeToLive);
-    PDECLARE_NOTIFIER(PTimer, H323Gatekeeper, PeriodicInfoRequestResponse);
 
     void SetInfoRequestRate(
       const PTimeInterval & rate
@@ -399,6 +398,10 @@ class H323Gatekeeper : public H225_RAS
 
     PMutex             m_requestMutex;
     H235Authenticators m_authenticators;
+	
+#if OPAL_H460
+    H460_FeatureSet * m_features;
+#endif
 
     enum {
       RequireARQ,
@@ -407,21 +410,20 @@ class H323Gatekeeper : public H225_RAS
     } pregrantMakeCall, pregrantAnswerCall;
     H323TransportAddress gkRouteAddress;
 
+    PDictionary<POrdinalKey, H323ServiceControlSession> serviceControlSessions;
+
     // Gatekeeper operation variables
     bool          m_autoReregister;
-    bool          m_periodicRegister;
+    bool          m_forceRegister;
     PTimeInterval m_currentTimeToLive;
-    PTimer        m_registerTimer;
     bool          m_requiresDiscovery;
-    PTimer        m_infoRequestTimer;
+    PTimeInterval m_infoRequestTime;
     bool          m_willRespondToIRR;
-
-    PDictionary<POrdinalKey, H323ServiceControlSession> serviceControlSessions;
-	
-#if OPAL_H460
-    H460_FeatureSet * m_features;
-#endif
-	
+    PThread     * m_monitorThread;
+    bool          m_monitorRunning;
+    PSyncPoint    m_monitorTickle;
+    void Monitor();
+    PTimeInterval InternalRegister();
 };
 
 
