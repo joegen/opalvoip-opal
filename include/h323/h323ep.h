@@ -910,6 +910,12 @@ class H323EndPoint : public OpalRTPEndPoint
 
     static int ParseAliasPatternRange(const PString & pattern, PString & start, PString & end);
 
+    /**Determine if enpoint has alias.
+      */
+    bool HasAlias(
+      const PString & alias
+    ) const;
+
     /**Get the default ILS server to use for user lookup.
       */
     const PString & GetDefaultILSServer() const { return manager.GetDefaultILSServer(); }

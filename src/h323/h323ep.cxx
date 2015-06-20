@@ -643,7 +643,7 @@ H323Gatekeeper * H323EndPoint::GetGatekeeper(const PString & alias) const
     return NULL;
 
   H323Gatekeeper * gk = alias.IsEmpty() ? NULL : m_gatekeeperByAlias.GetAt(alias);
-  return gk != NULL ? gk : &m_gatekeepers.front();
+  return gk != NULL ? gk : &m_gatekeepers[PRandom::Number(m_gatekeepers.GetSize())];
 }
 
 
@@ -1718,6 +1718,19 @@ PStringList H323EndPoint::GetAliasNamePatterns() const
   for (AliasToGkMap::const_iterator it = m_localAliasPatterns.begin(); it != m_localAliasPatterns.end(); ++it)
     names += it->first;
   return names;
+}
+
+
+bool H323EndPoint::HasAlias(const PString & alias) const
+{
+  PWaitAndSignal mutex(m_aliasMutex);
+
+  for (AliasToGkMap::const_iterator it = m_localAliasNames.begin(); it != m_localAliasNames.end(); ++it) {
+    if (alias == it->first)
+      return true;
+  }
+
+  return false;
 }
 
 
