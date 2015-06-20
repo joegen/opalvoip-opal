@@ -919,6 +919,9 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
       localDestinationAddress = '*';
   }
 
+  if (endpoint.HasAlias(localDestinationAddress))
+    SetLocalPartyName(localDestinationAddress);
+
   SetIncomingBearerCapabilities(*setupPDU);
 
 #if OPAL_H460
@@ -998,7 +1001,7 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
     PTRACE(3, "H225\tIncoming call accepted");
 
     // Check for gatekeeper and do admission check if have one
-    H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper(GetDestinationAddress());
+    H323Gatekeeper * gatekeeper = endpoint.GetGatekeeper(GetLocalPartyName());
     if (gatekeeper != NULL) {
       H225_ArrayOf_AliasAddress destExtraCallInfoArray;
       H323Gatekeeper::AdmissionResponse response;
