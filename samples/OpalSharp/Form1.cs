@@ -14,6 +14,7 @@ namespace OpalSharp
     {
         OpalContext m_opalContext;
         System.Threading.Thread m_opalThread;
+        string m_registrationIdentifier;
         string m_opalCallToken;
 
         delegate void EnableCallback(Control ctrl, bool enable);
@@ -179,7 +180,10 @@ namespace OpalSharp
                 reg.timeToLive = 300;
                 OpalMessagePtr result = new OpalMessagePtr();
                 if (m_opalContext.SendMessage(msg, result))
+                {
+                    m_registrationIdentifier = result.GetRegistrationParams().identifier;
                     return;
+                }
 
                 MessageBox.Show("Could not start registration: " + result.GetCommandError(), "OPAL", MessageBoxButtons.OK);
                 Register.Enabled = true;
@@ -196,8 +200,7 @@ namespace OpalSharp
                 OpalMessagePtr msg = new OpalMessagePtr(OpalMessageType.OpalCmdRegistration);
                 OpalParamRegistration reg = msg.GetRegistrationParams();
                 reg.protocol = "sip";
-                reg.hostName = host.Text;
-                reg.identifier = user.Text;
+                reg.identifier = m_registrationIdentifier;
                 reg.timeToLive = 0; // Zero unregisters
                 OpalMessagePtr result = new OpalMessagePtr();
                 if (!m_opalContext.SendMessage(msg, result))
