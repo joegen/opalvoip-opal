@@ -643,7 +643,7 @@ H323Gatekeeper * H323EndPoint::GetGatekeeper(const PString & alias) const
     return NULL;
 
   H323Gatekeeper * gk = alias.IsEmpty() ? NULL : m_gatekeeperByAlias.GetAt(alias);
-  return gk != NULL ? gk : &m_gatekeepers[PRandom::Number(m_gatekeepers.GetSize())];
+  return gk != NULL ? gk : &m_gatekeepers[PRandom::Number(m_gatekeepers.GetSize()-1)];
 }
 
 
