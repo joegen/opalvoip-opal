@@ -262,9 +262,9 @@ bool OpalMediaPatch::ResetTranscoders()
   for (PList<Sink>::iterator s = m_sinks.begin(); s != m_sinks.end(); ++s) {
     if (!s->CreateTranscoders())
       return false;
+    m_transcoderChanged = true;
   }
 
-  m_transcoderChanged = true;
   return true;
 }
 
@@ -309,7 +309,7 @@ bool OpalMediaPatch::Sink::CreateTranscoders()
     if (sourceFormat.GetMediaType() == OpalMediaType::Video())
       m_videoFormat = sourceFormat;
 #endif // OPAL_VIDEO
-    PTRACE(3, "Added direct media stream sink " << *m_stream);
+    PTRACE(3, "Changed to direct media on " << m_patch);
     return true;
   }
 
@@ -866,13 +866,6 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
   if (!LockReadOnly())
     return false;
 
-  if (m_transcoderChanged) {
-    m_transcoderChanged = false;
-    UnlockReadOnly();
-    PTRACE(3, "Ignoring source data with transcoder change on " << *this);
-    return true;
-  }
-
   if (m_bypassFromPatch != NULL) {
     PTRACE(3, "Media patch bypass started by " << *m_bypassFromPatch << " on " << *this);
     UnlockReadOnly();
@@ -889,8 +882,16 @@ bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
 
   UnlockReadOnly();
 
-  bool written = false;
   PSafeLockReadOnly guard(*patch);
+
+  if (patch->m_transcoderChanged) {
+    patch->m_transcoderChanged = false;
+    UnlockReadOnly();
+    PTRACE(3, "Ignoring source data with transcoder change on " << *this);
+    return true;
+  }
+
+  bool written = false;
   for (PList<Sink>::iterator s = patch->m_sinks.begin(); s != patch->m_sinks.end(); ++s) {
     if (s->WriteFrame(frame, patch != this))
       written = true;
