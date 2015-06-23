@@ -75,11 +75,11 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   , m_onLowPriorityInterfaceChange(PCREATE_InterfaceNotifier(OnLowPriorityInterfaceChange))
   , m_alternateTemporary(false)
   , m_authenticators(ep.CreateAuthenticators())
-  , pregrantMakeCall(RequireARQ)
-  , pregrantAnswerCall(RequireARQ)
 #if OPAL_H460
   , m_features(ep.InternalCreateFeatureSet(NULL))
 #endif
+  , pregrantMakeCall(RequireARQ)
+  , pregrantAnswerCall(RequireARQ)
   , m_autoReregister(true)
   , m_forceRegister(false)
   , m_requiresDiscovery(false)
