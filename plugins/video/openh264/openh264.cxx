@@ -689,13 +689,14 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
         param.sSpatialLayers[0].sSliceCfg.sSliceArgument.uiSliceSizeConstraint = param.uiMaxNalSize = m_maxNALUSize;
       }
 
-      if (m_encoder->InitializeExt(&param) != cmResultSuccess) {
-        PTRACE(1, MY_CODEC_LOG, "Could not initialise encoder.");
+      int err = m_encoder->InitializeExt(&param);
+      if (err != cmResultSuccess) {
+        PTRACE(1, MY_CODEC_LOG, "Could not initialise encoder: error=" << err);
         return false;
       }
 
       m_encapsulation.SetMaxPayloadSize(m_maxRTPSize);
-      PTRACE(4, MY_CODEC_LOG, "Initialised encoder.");
+      PTRACE(4, MY_CODEC_LOG, "Initialised encoder: " << m_width <<'x' << m_height << '@' << param.fMaxFrameRate);
       return true;
     }
 
@@ -846,8 +847,9 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>
       param.sVideoProperty.size = sizeof(param.sVideoProperty);
       param.sVideoProperty.eVideoBsType = VIDEO_BITSTREAM_DEFAULT;
 
-      if (m_decoder->Initialize(&param) != cmResultSuccess) {
-        PTRACE(1, MY_CODEC_LOG, "Could not initialise decoder.");
+      int err = m_decoder->Initialize(&param);
+      if (err != cmResultSuccess) {
+        PTRACE(1, MY_CODEC_LOG, "Could not initialise decoder: error=" << err);
         return false;
       }
 
