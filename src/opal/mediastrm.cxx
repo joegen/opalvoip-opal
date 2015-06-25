@@ -641,8 +641,11 @@ void OpalMediaStream::PrintDetail(ostream & strm, const char * prefix, Details d
 
 #if OPAL_VIDEO
   OpalVideoFormat::ContentRole contentRole = mediaFormat.GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole);
-  if (contentRole != OpalVideoFormat::eNoRole)
-    strm << ", " << &OpalVideoFormat::ContentRoleToString(contentRole)[1] << " video";
+  if (contentRole != OpalVideoFormat::eNoRole) {
+    PString roleStr = OpalVideoFormat::ContentRoleToString(contentRole);
+    roleStr.Delete(0,1);
+    strm << ", " << roleStr << " video";
+  }
 #endif
 
   if (details & DetailEOL)
