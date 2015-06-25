@@ -5978,7 +5978,7 @@ fi
 
 
    oldCPPFLAGS="$CPPFLAGS"
-   CPPFLAGS="$CPPFLAGS -Wno-unknown-pragmas"
+   CPPFLAGS="$CPPFLAGS -Werror -Wno-unknown-pragmas"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking Disable unknown-pragmas warning (-Wno-unknown-pragmas)" >&5
 $as_echo_n "checking Disable unknown-pragmas warning (-Wno-unknown-pragmas)... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -6012,7 +6012,7 @@ fi
 
 
    oldCPPFLAGS="$CPPFLAGS"
-   CPPFLAGS="$CPPFLAGS -Wno-unused-private-field"
+   CPPFLAGS="$CPPFLAGS -Werror -Wno-unused-private-field"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking Disable unused-private-field warning (-Wno-unused-private-field)" >&5
 $as_echo_n "checking Disable unused-private-field warning (-Wno-unused-private-field)... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -6046,7 +6046,7 @@ fi
 
 
    oldCPPFLAGS="$CPPFLAGS"
-   CPPFLAGS="$CPPFLAGS -Wno-overloaded-virtual"
+   CPPFLAGS="$CPPFLAGS -Werror -Wno-overloaded-virtual"
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking Disable overloaded-virtual warning (-Wno-overloaded-virtual)" >&5
 $as_echo_n "checking Disable overloaded-virtual warning (-Wno-overloaded-virtual)... " >&6; }
    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -6073,6 +6073,40 @@ $as_echo "$usable" >&6; }
 
    if test "x$usable" = "xyes"; then :
   CXXFLAGS="-Wno-overloaded-virtual $CXXFLAGS"
+
+fi
+
+
+
+
+   oldCPPFLAGS="$CPPFLAGS"
+   CPPFLAGS="$CPPFLAGS -Werror -Wno-deprecated-declarations"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking compiler -Wno-deprecated-declarations" >&5
+$as_echo_n "checking compiler -Wno-deprecated-declarations... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  usable=yes
+else
+  usable=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $usable" >&5
+$as_echo "$usable" >&6; }
+   CPPFLAGS="$oldCPPFLAGS"
+
+   if test "x$usable" = "xyes"; then :
+  CXXFLAGS="$CXXFLAGS -Wno-deprecated-declarations"
 
 fi
 
