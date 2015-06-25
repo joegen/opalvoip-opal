@@ -449,6 +449,11 @@ AC_SUBST(STATICLIBEXT, "a")
 AC_SUBST(DEBUGINFOEXT, "debug")
 AC_SUBST(ARFLAGS, "rc")
 
+
+dnl Check for latest and greatest
+AC_ARG_ENABLE(cpp11, AS_HELP_STRING([--enable-cpp11],[Enable C++11 build]),AC_SUBST(CPP11_FLAGS,"-std=c++11"))
+
+
 case "$target_os" in
    darwin* | iPhone* )
       SHARED_LDFLAGS="-dynamiclib"
