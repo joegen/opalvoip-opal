@@ -680,7 +680,7 @@ dnl Warn about everything, well, nearly everything
 
 MY_COMPILE_IFELSE(
    [Disable unknown-pragmas warning (-Wno-unknown-pragmas)],
-   [-Wno-unknown-pragmas],
+   [-Werror -Wno-unknown-pragmas],
    [],
    [],
    [CPPFLAGS="-Wno-unknown-pragmas $CPPFLAGS"]
@@ -688,7 +688,7 @@ MY_COMPILE_IFELSE(
 
 MY_COMPILE_IFELSE(
    [Disable unused-private-field warning (-Wno-unused-private-field)],
-   [-Wno-unused-private-field],
+   [-Werror -Wno-unused-private-field],
    [],
    [],
    [CXXFLAGS="-Wno-unused-private-field $CXXFLAGS"]
@@ -696,10 +696,18 @@ MY_COMPILE_IFELSE(
 
 MY_COMPILE_IFELSE(
    [Disable overloaded-virtual warning (-Wno-overloaded-virtual)],
-   [-Wno-overloaded-virtual],
+   [-Werror -Wno-overloaded-virtual],
    [],
    [],
    [CXXFLAGS="-Wno-overloaded-virtual $CXXFLAGS"]
+)
+
+MY_COMPILE_IFELSE(
+   [compiler -Wno-deprecated-declarations],
+   [-Werror -Wno-deprecated-declarations],
+   [],
+   [],
+   [CXXFLAGS="$CXXFLAGS -Wno-deprecated-declarations"]
 )
 
 MY_COMPILE_IFELSE(
