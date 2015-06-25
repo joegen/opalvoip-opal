@@ -694,6 +694,8 @@ MY_COMPILE_IFELSE(
    [CXXFLAGS="-Wno-unused-private-field $CXXFLAGS"]
 )
 
+AC_LANG(C++)
+
 MY_COMPILE_IFELSE(
    [Disable overloaded-virtual warning (-Wno-overloaded-virtual)],
    [-Werror -Wno-overloaded-virtual],
