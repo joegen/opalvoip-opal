@@ -664,7 +664,7 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
     OpalTransportAddress GetOwnerAddress() const { return ownerAddress; }
     void SetOwnerAddress(OpalTransportAddress addr) { ownerAddress = addr; }
 
-    typedef PDictionary<PString, PStringArray> GroupDict;
+    typedef PDictionary<PString, PStringSet> GroupDict;
     GroupDict GetGroups() const { return m_groups; }
 
     bool GetMediaStreams(MediaStreamMap & info) const;

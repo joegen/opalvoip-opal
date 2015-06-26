@@ -1924,7 +1924,7 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session, const SD
 
     // Probably should be arbitrary string, but everyone seems to use
     // the media type, as in "audio" and "video".
-    m_groupId = rtpSession->GetGroupId();
+    rtpSession->GetGroupId().Split(' ', m_groupId, m_groupMediaId, PString::SplitDefaultToBefore|PString::SplitTrimBefore);
     if (!m_groupId.IsEmpty())
       m_groupMediaId = GetMediaType();
   }
@@ -2533,15 +2533,26 @@ void SDPSessionDescription::PrintOn(ostream & strm) const
   OutputAttributes(strm);
 
   // find groups, e.g. BUNDLE
-  PStringToString groups;
+  GroupDict groups;
   for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
     PString gid = mediaDescriptions[i].GetGroupId();
     PString mid = mediaDescriptions[i].GetGroupMediaId();
-    if (!gid.IsEmpty() && !mid.IsEmpty())
-      groups[gid] &= mid;
+    if (!gid.IsEmpty() && !mid.IsEmpty()) {
+      GroupDict::iterator git = groups.find(gid);
+      if (git != groups.end())
+        git->second += mid;
+      else
+        groups.SetAt(gid, new PStringSet(mid));
+    }
   }
-  for (PStringToString::iterator it = groups.begin(); it != groups.end(); ++it)
-    strm << "a=group:" << it->first << ' ' << it->second << CRLF;
+  if (!groups.IsEmpty()) {
+    for (GroupDict::iterator git = groups.begin(); git != groups.end(); ++git) {
+      strm << "a=group:" << git->first;
+      for (PStringSet::iterator mit = git->second.begin(); mit != git->second.end(); ++mit)
+        strm << ' ' << *mit;
+      strm << CRLF;
+    }
+  }
 
   // Check for ICE
 #if OPAL_ICE
@@ -2554,7 +2565,7 @@ void SDPSessionDescription::PrintOn(ostream & strm) const
   }
 #endif //OPAL_ICE
 
-  // CHeck for MediaStream stuff: draft-alvestrand-mmusic-msid
+  // Check for MediaStream stuff: draft-alvestrand-mmusic-msid
   PString msid_semantic;
   for (PINDEX i = 0; i < mediaDescriptions.GetSize(); i++) {
     const SDPRTPAVPMediaDescription * avp = dynamic_cast<const SDPRTPAVPMediaDescription *>(&mediaDescriptions[i]);
@@ -2751,7 +2762,7 @@ void SDPSessionDescription::SetAttribute(const PString & attr, const PString & v
     if (tokens.GetSize() > 2) {
       PString name = tokens[0];
       tokens.RemoveAt(0);
-      m_groups.SetAt(name, new PStringArray(tokens));
+      m_groups.SetAt(name, new PStringSet(tokens));
     }
     return;
   }
