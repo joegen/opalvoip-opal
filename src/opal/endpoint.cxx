@@ -287,14 +287,10 @@ PStringArray OpalEndPoint::GetDefaultListeners() const
       transProto.Delete(pos, P_MAX_INDEX);
     }
     if (port != 0) {
-      if (transProto == OpalTransportAddress::UdpPrefix())
-        listenerAddresses += transProto + psprintf("*:%u", port);
-      else {
-        listenerAddresses += OpalTransportAddress(PIPSocket::Address::GetAny(4), port, transProto);
+      listenerAddresses += OpalTransportAddress(PIPSocket::Address::GetAny(4), port, transProto);
 #if OPAL_PTLIB_IPV6
-        listenerAddresses += OpalTransportAddress(PIPSocket::Address::GetAny(6), port, transProto);
+      listenerAddresses += OpalTransportAddress(PIPSocket::Address::GetAny(6), port, transProto);
 #endif
-      }
     }
   }
   return listenerAddresses;
