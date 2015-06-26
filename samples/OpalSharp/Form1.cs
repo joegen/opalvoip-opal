@@ -109,7 +109,9 @@ namespace OpalSharp
                     gen.natMethod = "STUN";
                     gen.natServer = StunServer.Text;
                     gen.autoRxMedia = gen.autoTxMedia = "audio video";
-                    gen.mediaMask = "!G.711*\n!H.263*"; // Kind of backwards, it's a mask with negative entries, so just get G.711/H.263
+                    gen.mediaMask = "!*uLaw*\n!*264-0\nH.263*"; // Kind of backwards, it's a mask with negative entries
+                    gen.audioPlayerDevice = "Default audio";
+                    gen.audioRecordDevice = "Default audio";
                     gen.videoOutputDevice = "MSWIN STYLE=0x50000000 PARENT=" + VideoDisplay.Handle + " X=0 Y=0 WIDTH=" + VideoDisplay.Width + " HEIGHT=" + VideoDisplay.Height;
                     gen.videoPreviewDevice = "MSWIN STYLE=0x50000000 PARENT=" + VideoPreview.Handle + " X=0 Y=0 WIDTH=" + VideoPreview.Width + " HEIGHT=" + VideoPreview.Height;
                     OpalMessagePtr result = new OpalMessagePtr();
