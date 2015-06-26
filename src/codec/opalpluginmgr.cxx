@@ -675,6 +675,16 @@ bool OpalPluginTranscoder::ExecuteCommand(const OpalMediaCommand & command)
   if (context == NULL)
     return false;
 
+  const OpalMediaPacketLoss * pl = dynamic_cast<const OpalMediaPacketLoss *>(&command);
+  if (pl != NULL) {
+      PStringToString opts;
+      opts.SetAt(PLUGINCODEC_OPTION_DYNAMIC_PACKET_LOSS, pl->GetPacketLoss());
+      char ** options = opts.ToCharArray(false);
+      bool ok = setCodecOptionsControl.Call(options, sizeof(options), context) != 0;
+      free(options);
+      return ok;
+  }
+
   OpalPluginControl cmd(codecDef, command.GetName());
   return cmd.Call(command.GetPlugInData(), command.GetPlugInSize(), context) > 0;
 }
