@@ -1525,7 +1525,7 @@ unsigned * OpalMediaCommand::GetPlugInSize() const
 }
 
 
-OpalMediaFlowControl::OpalMediaFlowControl(unsigned bitRate,
+OpalMediaFlowControl::OpalMediaFlowControl(OpalBandwidth bitRate,
                                            const OpalMediaType & mediaType,
                                            unsigned sessionID,
                                            unsigned ssrc)
@@ -1538,6 +1538,22 @@ OpalMediaFlowControl::OpalMediaFlowControl(unsigned bitRate,
 PString OpalMediaFlowControl::GetName() const
 {
   return "Flow Control";
+}
+
+
+OpalMediaPacketLoss::OpalMediaPacketLoss(unsigned packetLoss,
+                                         const OpalMediaType & mediaType,
+                                         unsigned sessionID,
+                                         unsigned ssrc)
+  : OpalMediaCommand(mediaType, sessionID, ssrc)
+  , m_packetLoss(packetLoss)
+{
+}
+
+
+PString OpalMediaPacketLoss::GetName() const
+{
+  return "Packet Loss";
 }
 
 

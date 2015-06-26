@@ -1859,8 +1859,10 @@ void OpalRTPSession::OnRxReceiverReport(RTP_SyncSourceId, const RTP_ReceiverRepo
   PTRACE(m_throttleRxRR, *this << "OnReceiverReport: " << report << m_throttleRxSR);
 
   SyncSource * sender;
-    if (GetSyncSource(report.sourceIdentifier, e_Sender, sender))
-      sender->OnRxReceiverReport(report);
+  if (GetSyncSource(report.sourceIdentifier, e_Sender, sender)) {
+    sender->OnRxReceiverReport(report);
+    m_connection.ExecuteMediaCommand(OpalMediaPacketLoss(report.fractionLost*100/255, m_mediaType, m_sessionId, report.sourceIdentifier), true);
+  }
 }
 
 
