@@ -185,6 +185,9 @@ class GstEndPoint : public OpalLocalEndPoint
     static const PString & GetPipelineAudioSinkName();
     virtual bool BuildAppSink(ostream & desc, const PString & name, int rtpIndex);
 
+    static const PString & GetPipelineVolumeName();
+    virtual bool BuildVolume(ostream & desc, const PString & name);
+
 #if OPAL_VIDEO
     virtual bool BuildVideoSourcePipeline(ostream & desc, const GstMediaStream & stream, int rtpIndex);
     virtual bool BuildVideoSinkPipeline(ostream & desc, const GstMediaStream & stream, int rtpIndex);
@@ -296,6 +299,36 @@ class GstConnection : public OpalLocalConnection
       unsigned sessionID,
       PBoolean isSource
     );
+
+    /**Set the volume (gain) for the audio media channel.
+       The volume range is 0 == muted, 100 == LOUDEST.
+      */
+    virtual PBoolean SetAudioVolume(
+      PBoolean source,        ///< true for source (microphone), false for sink (speaker)
+      unsigned percentage     ///< Gain, 0=silent, 100=maximun
+    );
+
+    /**Get the volume (gain) for the audio media channel.
+       The volume range is 0 == muted, 100 == LOUDEST.
+      */
+    virtual PBoolean GetAudioVolume(
+      PBoolean source,       ///< true for source (microphone), false for sink (speaker)
+      unsigned & percentage  ///< Gain, 0=silent, 100=maximun
+    );
+
+    /**Set the mute state for the audio media channel.
+      */
+    virtual bool SetAudioMute(
+      bool source,        ///< true for source (microphone), false for sink (speaker)
+      bool mute           ///< Flag for muted audio
+    );
+
+    /**Get the mute state for the audio media channel.
+      */
+    virtual bool GetAudioMute(
+      bool source,        ///< true for source (microphone), false for sink (speaker)
+      bool & mute         ///< Flag for muted audio
+    );
   //@}
 
   /**@name Customisation call backs for building GStreamer pipeline */
@@ -390,7 +423,31 @@ class GstMediaStream : public OpalMediaStream
       */
     virtual PBoolean RequiresPatchThread() const;
 
-    virtual bool InternalSetPaused(bool pause, bool fromUser, bool fromPatch);
+    /**Set the volume (gain) for the audio media channel.
+       The volume range is 0 == muted, 100 == LOUDEST.
+      */
+    virtual bool SetAudioVolume(
+      unsigned percentage     ///< Gain, 0=silent, 100=maximun
+    );
+
+    /**Get the volume (gain) for the audio media channel.
+       The volume range is 0 == muted, 100 == LOUDEST.
+      */
+    virtual bool GetAudioVolume(
+      unsigned & percentage  ///< Gain, 0=silent, 100=maximun
+    );
+
+    /**Set the mute state for the audio media channel.
+      */
+    virtual bool SetAudioMute(
+      bool mute           ///< Flag for muted audio
+    );
+
+    /**Get the mute state for the audio media channel.
+      */
+    virtual bool GetAudioMute(
+      bool & mute         ///< Flag for muted audio
+    );
   //@}
 
   protected:
@@ -400,6 +457,7 @@ class GstMediaStream : public OpalMediaStream
        the shut down sequence of a media stream.
       */
     virtual void InternalClose();
+    virtual bool InternalSetPaused(bool pause, bool fromUser, bool fromPatch);
 
     bool StartPlaying(
       PGstElement::States & state
@@ -410,6 +468,7 @@ class GstMediaStream : public OpalMediaStream
     PGstPipeline    m_pipeline;
     PGstAppSrc      m_pipeSource; // Must be after m_pipeline so is destroyed before it
     PGstAppSink     m_pipeSink;   // Ditto
+    PGstElement     m_pipeVolume;
 };
 
 
