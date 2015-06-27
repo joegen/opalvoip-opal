@@ -31,22 +31,22 @@
             this.Initialise = new System.Windows.Forms.Button();
             this.Shutdown = new System.Windows.Forms.Button();
             this.Register = new System.Windows.Forms.Button();
-            this.host = new System.Windows.Forms.TextBox();
-            this.user = new System.Windows.Forms.TextBox();
-            this.password = new System.Windows.Forms.TextBox();
             this.Call = new System.Windows.Forms.Button();
-            this.urlToCall = new System.Windows.Forms.TextBox();
-            this.LogLevel = new System.Windows.Forms.NumericUpDown();
             this.Unregister = new System.Windows.Forms.Button();
             this.HangUp = new System.Windows.Forms.Button();
-            this.LogFile = new System.Windows.Forms.TextBox();
-            this.StunServer = new System.Windows.Forms.TextBox();
             this.Answer = new System.Windows.Forms.Button();
             this.VideoDisplay = new System.Windows.Forms.PictureBox();
             this.VideoPreview = new System.Windows.Forms.PictureBox();
-            ((System.ComponentModel.ISupportInitialize)(this.LogLevel)).BeginInit();
+            this.StunServer = new System.Windows.Forms.TextBox();
+            this.LogFile = new System.Windows.Forms.TextBox();
+            this.LogLevel = new System.Windows.Forms.NumericUpDown();
+            this.urlToCall = new System.Windows.Forms.TextBox();
+            this.password = new System.Windows.Forms.TextBox();
+            this.user = new System.Windows.Forms.TextBox();
+            this.host = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.VideoDisplay)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.VideoPreview)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.LogLevel)).BeginInit();
             this.SuspendLayout();
             // 
             // Initialise
@@ -81,30 +81,6 @@
             this.Register.UseVisualStyleBackColor = true;
             this.Register.Click += new System.EventHandler(this.Register_Click);
             // 
-            // host
-            // 
-            this.host.Location = new System.Drawing.Point(128, 77);
-            this.host.Name = "host";
-            this.host.Size = new System.Drawing.Size(89, 20);
-            this.host.TabIndex = 3;
-            this.host.Text = "ekiga.net";
-            // 
-            // user
-            // 
-            this.user.Location = new System.Drawing.Point(223, 77);
-            this.user.Name = "user";
-            this.user.Size = new System.Drawing.Size(67, 20);
-            this.user.TabIndex = 4;
-            this.user.Text = "user";
-            // 
-            // password
-            // 
-            this.password.Location = new System.Drawing.Point(296, 77);
-            this.password.Name = "password";
-            this.password.Size = new System.Drawing.Size(86, 20);
-            this.password.TabIndex = 5;
-            this.password.UseSystemPasswordChar = true;
-            // 
             // Call
             // 
             this.Call.Enabled = false;
@@ -115,26 +91,6 @@
             this.Call.Text = "Call";
             this.Call.UseVisualStyleBackColor = true;
             this.Call.Click += new System.EventHandler(this.Call_Click);
-            // 
-            // urlToCall
-            // 
-            this.urlToCall.Location = new System.Drawing.Point(128, 143);
-            this.urlToCall.Name = "urlToCall";
-            this.urlToCall.Size = new System.Drawing.Size(254, 20);
-            this.urlToCall.TabIndex = 7;
-            this.urlToCall.Text = "sip:500@ekiga.net";
-            // 
-            // LogLevel
-            // 
-            this.LogLevel.Location = new System.Drawing.Point(128, 12);
-            this.LogLevel.Name = "LogLevel";
-            this.LogLevel.Size = new System.Drawing.Size(35, 20);
-            this.LogLevel.TabIndex = 8;
-            this.LogLevel.Value = new decimal(new int[] {
-            4,
-            0,
-            0,
-            0});
             // 
             // Unregister
             // 
@@ -157,23 +113,6 @@
             this.HangUp.Text = "Hang Up";
             this.HangUp.UseVisualStyleBackColor = true;
             this.HangUp.Click += new System.EventHandler(this.HangUp_Click);
-            // 
-            // LogFile
-            // 
-            this.LogFile.AllowDrop = true;
-            this.LogFile.Location = new System.Drawing.Point(169, 12);
-            this.LogFile.Name = "LogFile";
-            this.LogFile.Size = new System.Drawing.Size(213, 20);
-            this.LogFile.TabIndex = 11;
-            this.LogFile.Text = "C:\\work\\opal.log";
-            // 
-            // StunServer
-            // 
-            this.StunServer.Location = new System.Drawing.Point(128, 37);
-            this.StunServer.Name = "StunServer";
-            this.StunServer.Size = new System.Drawing.Size(131, 20);
-            this.StunServer.TabIndex = 12;
-            this.StunServer.Text = "stun.ekiga.net";
             // 
             // Answer
             // 
@@ -203,6 +142,71 @@
             this.VideoPreview.TabIndex = 15;
             this.VideoPreview.TabStop = false;
             // 
+            // StunServer
+            // 
+            this.StunServer.DataBindings.Add(new System.Windows.Forms.Binding("Text", global::OpalSharp.Properties.Settings.Default, "StunServer", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
+            this.StunServer.Location = new System.Drawing.Point(128, 37);
+            this.StunServer.Name = "StunServer";
+            this.StunServer.Size = new System.Drawing.Size(131, 20);
+            this.StunServer.TabIndex = 12;
+            this.StunServer.Text = global::OpalSharp.Properties.Settings.Default.StunServer;
+            // 
+            // LogFile
+            // 
+            this.LogFile.AllowDrop = true;
+            this.LogFile.DataBindings.Add(new System.Windows.Forms.Binding("Text", global::OpalSharp.Properties.Settings.Default, "LogFile", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
+            this.LogFile.Location = new System.Drawing.Point(169, 12);
+            this.LogFile.Name = "LogFile";
+            this.LogFile.Size = new System.Drawing.Size(213, 20);
+            this.LogFile.TabIndex = 11;
+            this.LogFile.Text = global::OpalSharp.Properties.Settings.Default.LogFile;
+            // 
+            // LogLevel
+            // 
+            this.LogLevel.DataBindings.Add(new System.Windows.Forms.Binding("Value", global::OpalSharp.Properties.Settings.Default, "LogLevel", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
+            this.LogLevel.Location = new System.Drawing.Point(128, 12);
+            this.LogLevel.Name = "LogLevel";
+            this.LogLevel.Size = new System.Drawing.Size(35, 20);
+            this.LogLevel.TabIndex = 8;
+            this.LogLevel.Value = global::OpalSharp.Properties.Settings.Default.LogLevel;
+            // 
+            // urlToCall
+            // 
+            this.urlToCall.DataBindings.Add(new System.Windows.Forms.Binding("Text", global::OpalSharp.Properties.Settings.Default, "URLtoCall", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
+            this.urlToCall.Location = new System.Drawing.Point(128, 143);
+            this.urlToCall.Name = "urlToCall";
+            this.urlToCall.Size = new System.Drawing.Size(254, 20);
+            this.urlToCall.TabIndex = 7;
+            this.urlToCall.Text = global::OpalSharp.Properties.Settings.Default.URLtoCall;
+            // 
+            // password
+            // 
+            this.password.DataBindings.Add(new System.Windows.Forms.Binding("Text", global::OpalSharp.Properties.Settings.Default, "Password", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
+            this.password.Location = new System.Drawing.Point(296, 77);
+            this.password.Name = "password";
+            this.password.Size = new System.Drawing.Size(86, 20);
+            this.password.TabIndex = 5;
+            this.password.Text = global::OpalSharp.Properties.Settings.Default.Password;
+            this.password.UseSystemPasswordChar = true;
+            // 
+            // user
+            // 
+            this.user.DataBindings.Add(new System.Windows.Forms.Binding("Text", global::OpalSharp.Properties.Settings.Default, "Username", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
+            this.user.Location = new System.Drawing.Point(223, 77);
+            this.user.Name = "user";
+            this.user.Size = new System.Drawing.Size(67, 20);
+            this.user.TabIndex = 4;
+            this.user.Text = global::OpalSharp.Properties.Settings.Default.Username;
+            // 
+            // host
+            // 
+            this.host.DataBindings.Add(new System.Windows.Forms.Binding("Text", global::OpalSharp.Properties.Settings.Default, "HostDomain", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
+            this.host.Location = new System.Drawing.Point(128, 77);
+            this.host.Name = "host";
+            this.host.Size = new System.Drawing.Size(89, 20);
+            this.host.TabIndex = 3;
+            this.host.Text = global::OpalSharp.Properties.Settings.Default.HostDomain;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -226,10 +230,11 @@
             this.Controls.Add(this.Initialise);
             this.Name = "Form1";
             this.Text = "OPAL";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Form1_FormClosed);
             this.Load += new System.EventHandler(this.Form1_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.LogLevel)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.VideoDisplay)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.VideoPreview)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.LogLevel)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
