@@ -1,7 +1,27 @@
 ﻿<?xml version='1.0' encoding='utf-8'?>
-<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)">
-  <Profiles>
-    <Profile Name="(Default)" />
-  </Profiles>
-  <Settings />
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="OpalSharp.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="LogLevel" Type="System.Decimal" Scope="User">
+      <Value Profile="(Default)">4</Value>
+    </Setting>
+    <Setting Name="LogFile" Type="System.String" Scope="User">
+      <Value Profile="(Default)">C:\opal.log</Value>
+    </Setting>
+    <Setting Name="StunServer" Type="System.String" Scope="User">
+      <Value Profile="(Default)">stun.ekiga.net</Value>
+    </Setting>
+    <Setting Name="HostDomain" Type="System.String" Scope="User">
+      <Value Profile="(Default)">ekiga.net</Value>
+    </Setting>
+    <Setting Name="Username" Type="System.String" Scope="User">
+      <Value Profile="(Default)">user</Value>
+    </Setting>
+    <Setting Name="Password" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="URLtoCall" Type="System.String" Scope="User">
+      <Value Profile="(Default)">sip:500@ekiga.net</Value>
+    </Setting>
+  </Settings>
 </SettingsFile>
