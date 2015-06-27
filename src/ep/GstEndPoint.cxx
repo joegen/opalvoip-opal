@@ -45,10 +45,11 @@
 #define APP_SINK_SUFFIX   "AppSink"
 
 // Note the start of these constanst must be same as OpalMediaType::Audio() & OpalMediaType::Video()
-const PString & GstEndPoint::GetPipelineRTPName()          { static PConstString const s("rtpbin");                  return s; }
+const PString & GstEndPoint::GetPipelineRTPName()          { static PConstString const s("rtpbin"                 ); return s; }
 const PString & GstEndPoint::GetPipelineAudioSourceName()  { static PConstString const s("audio" APP_SOURCE_SUFFIX); return s; }
 const PString & GstEndPoint::GetPipelineAudioSinkName()    { static PConstString const s("audio" APP_SINK_SUFFIX  ); return s; }
-const PString & GstEndPoint::GetPipelineJitterBufferName() { static PConstString const s("jitterBuffer");            return s; }
+const PString & GstEndPoint::GetPipelineVolumeName()       { static PConstString const s("volume"                 ); return s; }
+const PString & GstEndPoint::GetPipelineJitterBufferName() { static PConstString const s("jitterBuffer"           ); return s; }
 #if OPAL_VIDEO
 const PString & GstEndPoint::GetPipelineVideoSourceName()  { static PConstString const s("video" APP_SOURCE_SUFFIX); return s; }
 const PString & GstEndPoint::GetPipelineVideoSinkName()    { static PConstString const s("video" APP_SINK_SUFFIX  ); return s; }
@@ -574,6 +575,13 @@ bool GstEndPoint::BuildAppSink(ostream & description, const PString & name, int 
 }
 
 
+bool GstEndPoint::BuildVolume(ostream & description, const PString & name)
+{
+  description << " ! volume name=" << name;
+  return true;
+}
+
+
 static void OutputRawAudioCaps(ostream & desc, const OpalMediaFormat & mediaFormat)
 {
 #if P_GSTREAMER_1_0_API
@@ -609,7 +617,8 @@ bool GstEndPoint::BuildAudioSourcePipeline(ostream & description, const GstMedia
       return false;
   }
 
-  return BuildAppSink(description, GetPipelineAudioSinkName(), rtpIndex);
+  return BuildVolume(description, GetPipelineVolumeName()) &&
+         BuildAppSink(description, GetPipelineAudioSinkName(), rtpIndex);
 }
 
 
@@ -632,6 +641,9 @@ bool GstEndPoint::BuildAudioSinkPipeline(ostream & description, const GstMediaSt
 {
   if (rtpIndex < 0) {
     if (!BuildAppSource(description, GetPipelineAudioSourceName()))
+      return false;
+
+    if (!BuildVolume(description, GetPipelineVolumeName()))
       return false;
 
     OpalMediaFormat mediaFormat = stream.GetMediaFormat();
@@ -964,7 +976,7 @@ bool GstEndPoint::ConfigurePipeline(PGstPipeline & pipeline, const GstMediaStrea
   }
 
   P_INT_PTR rtcpHandle = session->GetLocalDataPort() == session->GetLocalControlPort()
-    ? session->GetDataSocket().GetHandle() : session->GetControlSocket().GetHandle();
+                              ? session->GetDataSocket().GetHandle() : session->GetControlSocket().GetHandle();
   const char *rtcp_suffixes[] = { "TxRTCP", "RxRTCP", };
   for (i = 0; i < PARRAYSIZE(rtcp_suffixes); i++) {
     if (pipeline.GetByName(media + rtcp_suffixes[i], el))
@@ -994,6 +1006,33 @@ OpalMediaStream* GstConnection::CreateMediaStream(const OpalMediaFormat & mediaF
                                                   PBoolean isSource)
 {
   return new GstMediaStream(*this, mediaFormat, sessionID, isSource);
+}
+
+
+PBoolean GstConnection::SetAudioVolume(PBoolean source, unsigned percentage)
+{
+  PSafePtr<GstMediaStream> stream = PSafePtrCast<OpalMediaStream, GstMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
+  return stream != NULL && stream->SetAudioVolume(percentage);
+}
+
+PBoolean GstConnection::GetAudioVolume(PBoolean source, unsigned & percentage)
+{
+  PSafePtr<GstMediaStream> stream = PSafePtrCast<OpalMediaStream, GstMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
+  return stream != NULL && stream->GetAudioVolume(percentage);
+}
+
+
+bool GstConnection::SetAudioMute(bool source, bool mute)
+{
+  PSafePtr<GstMediaStream> stream = PSafePtrCast<OpalMediaStream, GstMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
+  return stream != NULL && stream->SetAudioMute(mute);
+}
+
+
+bool GstConnection::GetAudioMute(bool source, bool & mute)
+{
+  PSafePtr<GstMediaStream> stream = PSafePtrCast<OpalMediaStream, GstMediaStream>(GetMediaStream(OpalMediaType::Audio(), source));
+  return stream != NULL && stream->GetAudioMute(mute);
 }
 
 
@@ -1117,6 +1156,10 @@ PBoolean GstMediaStream::Open()
         return false;
       }
     }
+  }
+
+  if (!m_pipeline.GetByName(GstEndPoint::GetPipelineVolumeName(), m_pipeVolume)) {
+    PTRACE(2, "Could not find Volume in pipeline for " << *this);
   }
 
   return OpalMediaStream::Open();
@@ -1249,4 +1292,35 @@ bool GstMediaStream::StartPlaying(PGstElement::States & state)
   m_pipeline.GetState(state);
   return true;
 }
+
+
+bool GstMediaStream::SetAudioVolume(unsigned percentage)
+{
+  return m_pipeVolume.Set("volume", percentage/100.0);
+}
+
+
+bool GstMediaStream::GetAudioVolume(unsigned & percentage)
+{
+  double value;
+  if (!m_pipeVolume.Get("volume", value))
+    return false;
+
+  percentage = (unsigned)(value*100);
+  return true;
+}
+
+
+bool GstMediaStream::SetAudioMute(bool mute)
+{
+  return m_pipeVolume.Set("mute", mute);
+}
+
+
+bool GstMediaStream::GetAudioMute(bool & mute)
+{
+  return m_pipeVolume.Get("mute", mute);
+}
+
+
 #endif // OPAL_GSTREAMER
