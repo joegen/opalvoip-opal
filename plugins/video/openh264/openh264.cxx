@@ -37,6 +37,10 @@
 #include "../../../src/codec/h264mf_inc.cxx"
 #include "../common/h264frame.h"
 #include "svc/codec_api.h"
+#include "svc/codec_ver.h"
+
+#include <iomanip>
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -58,9 +62,9 @@ PLUGINCODEC_LICENSE(
   
   MyDescription,                                                // codec description
   "Cisco Systems",                                              // codec author
-  "1.1.0", 							                                        // codec version
+  g_strCodecVer, 						// codec version
   "",                                                           // codec email
-  "http://www.openh264.org", 				                            // codec URL
+  "http://www.openh264.org", 				        // codec URL
   "Copyright (c) 2013, Cisco Systems. All rights reserved.",    // codec copyright information
   "BSD",                                                        // codec license
   PluginCodec_License_BSD                                       // codec license code
@@ -494,11 +498,23 @@ static H264_PluginMediaFormat const MyMediaFormatInfo_Mode1("Open"OPAL_H264_MODE
 
 #if PLUGINCODEC_TRACING
 
-static void TraceCallback(void*, int level, const char* string)
+static void TraceCallback(void*, int welsLevel, const char* string)
 {
-  ++level; // Slightly lower level in OPAL
+  unsigned ptraceLevel;
+  if (welsLevel <= WELS_LOG_ERROR)
+    ptraceLevel = 1;
+  else if (welsLevel <= WELS_LOG_WARNING)
+    ptraceLevel = 2;
+  else if (welsLevel <= WELS_LOG_INFO)
+    ptraceLevel = 3;
+  else if (welsLevel <= WELS_LOG_DEBUG)
+    ptraceLevel = 4;
+  else if (welsLevel <= WELS_LOG_DETAIL)
+    ptraceLevel = 5;
+  else
+    ptraceLevel = 6;
 
-  if (!PTRACE_CHECK(level))
+  if (!PTRACE_CHECK(ptraceLevel))
     return;
 
   const char * msg;
@@ -516,13 +532,30 @@ static void TraceCallback(void*, int level, const char* string)
   char * buf = (char *)alloca(len+1);
   strncpy(buf, msg, len);
   buf[len] = '\0';
-  PluginCodec_LogFunctionInstance(level, __FILE__, __LINE__, "OpenH264-Lib", buf);
+  PluginCodec_LogFunctionInstance(ptraceLevel, __FILE__, __LINE__, "OpenH264-Lib", buf);
 }
 
-static int TraceLevel = 100;
+static int TraceLevel = WELS_LOG_DETAIL;
 static WelsTraceCallback TraceCallbackPtr = TraceCallback;
 
 #endif // PLUGINCODEC_TRACING
+
+
+static void CheckVersion(bool encoder)
+{
+  OpenH264Version version;
+  WelsGetCodecVersionEx(&version);
+  if (version.uMajor == OPENH264_MAJOR && version.uMinor == OPENH264_MINOR && version.uRevision == OPENH264_REVISION) {
+    PTRACE(4, MY_CODEC_LOG, "Created " << (encoder ? "encoder" : "decoder")
+           << ", plugin $Revision$, DLL/API version " << version.uMajor << '.' << version.uMinor << '.' << version.uRevision);
+  }
+  else {
+    PTRACE(1, MY_CODEC_LOG, "WARNING! Created " << (encoder ? "encoder" : "decoder")
+           << ", plugin $Revision$, with DLL version " << version.uMajor << '.' << version.uMinor << '.' << version.uRevision
+           << " but API version " << OPENH264_MAJOR << '.' << OPENH264_MINOR << '.' << OPENH264_REVISION);
+  }
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -558,7 +591,7 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       , m_encoder(NULL)
       , m_quality(-1)
     {
-      PTRACE(4, MY_CODEC_LOG, "Created encoder $Revision$");
+      CheckVersion(true);
     }
 
 
@@ -665,7 +698,6 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       SEncParamExt param;
       m_encoder->GetDefaultParams(&param);
       param.iUsageType = CAMERA_VIDEO_REAL_TIME;
-      param.iInputCsp = videoFormatI420;
       param.iPicWidth = m_width;
       param.iPicHeight = m_height;
       param.iTargetBitrate = param.iMaxBitrate = m_maxBitRate;
@@ -681,23 +713,41 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
       param.sSpatialLayers[0].fFrameRate = param.fMaxFrameRate;
       param.sSpatialLayers[0].iMaxSpatialBitrate = param.sSpatialLayers[0].iSpatialBitrate = m_maxBitRate;
 
-      if ((m_isH323 ? m_packetisationModeH323 : m_packetisationModeSDP) == 1) {
-        param.sSpatialLayers[0].sSliceCfg.uiSliceMode = SM_SINGLE_SLICE;
-      }
-      else {
-        param.sSpatialLayers[0].sSliceCfg.uiSliceMode = SM_DYN_SLICE;
-        param.sSpatialLayers[0].sSliceCfg.sSliceArgument.uiSliceSizeConstraint = param.uiMaxNalSize = m_maxNALUSize;
-      }
+      unsigned mode = m_isH323 ? m_packetisationModeH323 : m_packetisationModeSDP;
+      switch (mode) {
+        case 0 :
+          param.sSpatialLayers[0].sSliceCfg.uiSliceMode = SM_DYN_SLICE;
+          param.sSpatialLayers[0].sSliceCfg.sSliceArgument.uiSliceSizeConstraint = param.uiMaxNalSize = m_maxNALUSize;
+          break;
 
-      int err = m_encoder->InitializeExt(&param);
-      if (err != cmResultSuccess) {
-        PTRACE(1, MY_CODEC_LOG, "Could not initialise encoder: error=" << err);
-        return false;
+        case 1 :
+          param.sSpatialLayers[0].sSliceCfg.uiSliceMode = SM_SINGLE_SLICE;
+          break;
+
+        default :
+          PTRACE(1, MY_CODEC_LOG, "Unsupported packetisation mode: " << mode);
+          return false;
       }
 
       m_encapsulation.SetMaxPayloadSize(m_maxRTPSize);
-      PTRACE(4, MY_CODEC_LOG, "Initialised encoder: " << m_width <<'x' << m_height << '@' << param.fMaxFrameRate);
-      return true;
+
+      int err = m_encoder->InitializeExt(&param);
+      switch (err) {
+        case cmResultSuccess :
+          PTRACE(4, MY_CODEC_LOG, "Initialised encoder: " << m_width <<'x' << m_height << '@' << param.fMaxFrameRate);
+          return true;
+
+        case cmInitParaError :
+          PTRACE(1, MY_CODEC_LOG, "Invalid parameter to encoder:"
+                    " profile=" << m_profile << " level=" << LevelInfo[m_level - 1].m_Name << '(' << m_level << ")"
+                    " " << m_width << 'x' << m_height << '@' << std::fixed << std::setprecision(1) << param.fMaxFrameRate <<
+                    " br=" << m_maxBitRate << " mode=" << mode);
+          return false;
+
+        default :
+          PTRACE(1, MY_CODEC_LOG, "Could not initialise encoder: error=" << err);
+          return false;
+      }
     }
 
 
@@ -726,12 +776,11 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
                              unsigned & toLen,
                              unsigned & flags)
     {
+      bool forceIntraFrame = (flags&PluginCodec_CoderForceIFrame) != 0;
+      flags = 0;
+
       if (!m_encapsulation.HasRTPFrames()) {
-        if (flags&PluginCodec_CoderForceIFrame)
-          m_encoder->ForceIntraFrame(true);
-
         PluginCodec_RTP from(fromPtr, fromLen);
-
         PluginCodec_Video_FrameHeader * header = from.GetVideoHeader();
 
         SSourcePicture picture;
@@ -744,6 +793,9 @@ class H264_Encoder : public PluginVideoEncoder<MY_CODEC>
         picture.pData[1] = picture.pData[0] + picture.iPicWidth*picture.iPicHeight;
         picture.pData[2] = picture.pData[1] + picture.iPicWidth*picture.iPicHeight / 4;
         picture.uiTimeStamp = 0;
+
+        if (forceIntraFrame)
+          m_encoder->ForceIntraFrame(true);
 
         SFrameBSInfo  bitstream;
         memset(&bitstream, 0, sizeof(bitstream));
@@ -820,7 +872,7 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>
     {
       memset(&m_bufferInfo, 0, sizeof(m_bufferInfo));
       memset(&m_bufferData, 0, sizeof(m_bufferData));
-      PTRACE(4, MY_CODEC_LOG, "Created decoder $Revision$");
+      CheckVersion(false);
     }
 
 
@@ -838,12 +890,15 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>
         return false;
       }
 
+#if PLUGINCODEC_TRACING
+      m_decoder->SetOption(DECODER_OPTION_TRACE_CALLBACK, &TraceCallbackPtr);
+      m_decoder->SetOption(DECODER_OPTION_TRACE_LEVEL, &TraceLevel);
+#endif
+
       SDecodingParam param;
-      param.pFileNameRestructed = NULL;	// File name of restructed frame used for PSNR calculation based debug
-      param.iOutputColorFormat = videoFormatI420;// color space format to be outputed, EVideoFormatType specified in codec_def.h
-      param.uiCpuLoad = 0;		// CPU load
-      param.uiTargetDqLayer = 0;	// Setting target dq layer id
-      param.uiEcActiveFlag = ERROR_CON_DISABLE;		// Whether active error concealment feature in decoder
+      memset(&param, 0, sizeof(param));
+      param.eOutputColorFormat = videoFormatI420;// color space format to be outputed, EVideoFormatType specified in codec_def.h
+      param.eEcActiveIdc = ERROR_CON_DISABLE;		// Whether active error concealment feature in decoder
       param.sVideoProperty.size = sizeof(param.sVideoProperty);
       param.sVideoProperty.eVideoBsType = VIDEO_BITSTREAM_DEFAULT;
 
@@ -853,10 +908,6 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>
         return false;
       }
 
-#if PLUGINCODEC_TRACING
-      m_decoder->SetOption(DECODER_OPTION_TRACE_CALLBACK, &TraceCallbackPtr);
-      m_decoder->SetOption(DECODER_OPTION_TRACE_LEVEL, &TraceLevel);
-#endif
       PTRACE(4, MY_CODEC_LOG, "Opened decoder.");
       return true;
     }
