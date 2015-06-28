@@ -1730,6 +1730,12 @@ bool H323EndPoint::HasAlias(const PString & alias) const
       return true;
   }
 
+  for (AliasToGkMap::const_iterator it = m_localAliasPatterns.begin(); it != m_localAliasPatterns.end(); ++it) {
+    PString start, end;
+    if (ParseAliasPatternRange(it->first, start, end) > 0 && start.GetLength() == alias.GetLength() && start <= alias && alias <= end)
+      return true;
+  }
+
   return false;
 }
 
