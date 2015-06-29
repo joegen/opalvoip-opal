@@ -548,6 +548,42 @@ bool OpalMediaSession::UpdateMediaFormat(const OpalMediaFormat &)
 
 
 #if OPAL_SDP
+PString OpalMediaSession::GetGroupId() const
+{
+  PSafeLockReadOnly lock(*this);
+  PString s = m_groupId;
+  s.MakeUnique();
+  return s;
+}
+
+
+void OpalMediaSession::SetGroupId(const PString & id)
+{
+  PSafeLockReadWrite lock(*this);
+  m_groupId = id;
+  m_groupId.MakeUnique();
+}
+
+
+PString OpalMediaSession::GetGroupMediaId() const
+{
+  PSafeLockReadOnly lock(*this);
+  if (m_groupMediaId.IsEmpty())
+    return m_mediaType;
+  PString s = m_groupMediaId;
+  s.MakeUnique();
+  return s;
+}
+
+
+void OpalMediaSession::SetGroupMediaId(const PString & id)
+{
+  PSafeLockReadWrite lock(*this);
+  m_groupMediaId = id;
+  m_groupMediaId.MakeUnique();
+}
+
+
 SDPMediaDescription * OpalMediaSession::CreateSDPMediaDescription()
 {
   return m_mediaType->CreateSDPMediaDescription(GetLocalAddress());

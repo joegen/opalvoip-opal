@@ -332,26 +332,89 @@ class OpalMediaSession : public PSafeObject
   public:
     virtual void PrintOn(ostream & strm) const;
 
+    /** Get the session type string (for factory).
+      */
     virtual const PCaselessString & GetSessionType() const = 0;
+
+    /**Open the media session.
+      */
     virtual bool Open(const PString & localInterface, const OpalTransportAddress & remoteAddress, bool isMediaAddress);
+
+    /**Indicate if media session is open.
+      */
     virtual bool IsOpen() const;
+
+    /**Close the media session.
+      */
     virtual bool Close();
+
+    /**Get the local transport address used by this media session.
+       The \p isMediaAddress can get an optional secondary channel address
+       when false.
+      */
     virtual OpalTransportAddress GetLocalAddress(bool isMediaAddress = true) const;
+
+    /**Get the remote transport address used by this media session.
+       The \p isMediaAddress can get an optional secondary channel address
+       when false.
+      */
     virtual OpalTransportAddress GetRemoteAddress(bool isMediaAddress = true) const;
+
+    /**Set the remote transport address used by this media session.
+       The \p isMediaAddress can get an optional secondary channel address
+       when false.
+      */
     virtual bool SetRemoteAddress(const OpalTransportAddress & remoteAddress, bool isMediaAddress = true);
 
     typedef PList<PChannel> Transport;
+
+    /**Attach an existing set of transport channels to media session.
+      */
     virtual void AttachTransport(Transport & transport);
+
+    /**Detach the transport channels from the media session.
+       Note that while the channels are not closed, the media session will be.
+       Also note that the channel objects are now owned by the Transport PList
+       so care must be take when removing them in such a way they are not
+       deleted unexpectedly.
+      */
     virtual Transport DetachTransport();
 
+    /**Update media stream with media options contained in the media format.
+      */
     virtual bool UpdateMediaFormat(
       const OpalMediaFormat & mediaFormat
     );
 
 #if OPAL_SDP
+    /**Get the "group" id for the RTP session.
+       This is typically a mechanism for connecting audio and video together via BUNDLE.
+    */
+    virtual PString GetGroupId() const;
+
+    /**Set the "group" id for the RTP session.
+       This is typically a mechanism for connecting audio and video together via BUNDLE.
+    */
+    virtual void SetGroupId(const PString & id);
+
+    /**Get the "group media" id for the RTP session.
+       This is typically a mechanism for connecting audio and video together via BUNDLE.
+       If not set, uses the media type.
+    */
+    virtual PString GetGroupMediaId() const;
+
+    /**Set the "group media" id for the RTP session.
+       This is typically a mechanism for connecting audio and video together via BUNDLE.
+    */
+    virtual void SetGroupMediaId(const PString & id);
+
+    /**Create an appropriate SDP media description object for this media session.
+      */
     virtual SDPMediaDescription * CreateSDPMediaDescription();
 #endif
 
+    /**Create an appropriate media stread for this media session.
+      */
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat,
       unsigned sessionID, 
@@ -359,33 +422,57 @@ class OpalMediaSession : public PSafeObject
     ) = 0;
 
 #if OPAL_STATISTICS
+    /**Get statistics for this media session.
+      */
     virtual void GetStatistics(OpalMediaStatistics & statistics, bool receiver) const;
 #endif
 
     /// Indicate remote is behind NAT
     void SetRemoteBehindNAT() { m_remoteBehindNAT = true; }
 
+    /**Create internal crypto keys for the suite.
+      */
     void OfferCryptoSuite(const PString & cryptoSuite);
+
+    /**Get the crypto keys we are offerring to remote.
+       Note, OfferCryptoSuite() must be called beforehand.
+      */
     virtual OpalMediaCryptoKeyList & GetOfferedCryptoKeys();
 
+    /**Apply crypto keys negotiated with remote.
+      */
     virtual bool ApplyCryptoKey(
       OpalMediaCryptoKeyList & keys,
       bool rx
     );
 
+    /**Indicate the media session is secured.
+      */
     virtual bool IsCryptoSecured(bool rx) const;
 
+    /**Get the conenction that owns this media session.
+      */
     OpalConnection & GetConnection() const { return m_connection; }
 
+    /**Get the identifier number of the media session.
+      */
     unsigned GetSessionID() const { return m_sessionId; }
+
+    /**Get the media type of the media session.
+      */
     const OpalMediaType & GetMediaType() const { return m_mediaType; }
 
 #if OPAL_ICE
+    /**Set the ICE parameters for use in this media session.
+      */
     virtual void SetICE(
       const PString & user,
       const PString & pass,
       const PNatCandidateList & candidates
     );
+
+    /**Get the ICE parameters for use in this media session.
+      */
     virtual bool GetICE(
       PString & user,
       PString & pass,
@@ -397,6 +484,10 @@ class OpalMediaSession : public PSafeObject
     OpalConnection & m_connection;
     unsigned         m_sessionId;  // unique session ID
     OpalMediaType    m_mediaType;  // media type for session
+#if OPAL_SDP
+    PString          m_groupId;
+    PString          m_groupMediaId;
+#endif
     bool             m_remoteBehindNAT;
 #if OPAL_ICE
     PString          m_localUsername;    // ICE username sent to remote
