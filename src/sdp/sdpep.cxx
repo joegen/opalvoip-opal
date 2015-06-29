@@ -74,6 +74,9 @@ SDPSessionDescription * OpalSDPEndPoint::CreateSDP(time_t sessionId, unsigned ve
 
 ///////////////////////////////////////////////////////////////////////////////
 
+const PString & OpalSDPConnection::GetBundleGroupId() { static PConstString const s("BUNDLE"); return s;  }
+
+
 OpalSDPConnection::OpalSDPConnection(OpalCall & call,
                              OpalSDPEndPoint  & ep,
                                 const PString & token,
@@ -466,7 +469,7 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
     }
 
 #if OPAL_VIDEO
-    SetAudioVideoGroup(); // Googlish audio and video grouping id
+    SetAudioVideoGroup();
 #endif
 
     // Create media sessions based on available media types and make sure audio and video are first two sessions
@@ -486,28 +489,28 @@ bool OpalSDPConnection::OnSendOfferSDP(SDPSessionDescription & sdpOut, bool offe
 
 
 #if OPAL_VIDEO
-void OpalSDPConnection::SetAudioVideoGroup()
+void OpalSDPConnection::SetAudioVideoGroup(const PString & id)
 {
   if (!m_stringOptions.GetBoolean(OPAL_OPT_AV_GROUPING))
     return;
 
-  // Googlish audio and video grouping id
-  OpalRTPSession * audioSession = dynamic_cast<OpalRTPSession *>(FindSessionByMediaType(OpalMediaType::Audio()));
+  // Audio and video grouping via BUNDLE, semantics still a little vague
+  OpalMediaSession * audioSession = FindSessionByMediaType(OpalMediaType::Audio());
   if (audioSession == NULL)
     return;
 
-  OpalRTPSession * videoSession = dynamic_cast<OpalRTPSession *>(FindSessionByMediaType(OpalMediaType::Video()));
+  OpalMediaSession * videoSession = FindSessionByMediaType(OpalMediaType::Video());
   if (videoSession == NULL)
     return;
 
-  audioSession->SetGroupId("BUNDLE");
-  videoSession->SetGroupId("BUNDLE");
+  audioSession->SetGroupId(id);
+  videoSession->SetGroupId(id);
 }
 #endif // OPAL_VIDEO
 
 
 bool OpalSDPConnection::OnSendOfferSDPSession(unsigned   sessionId,
-                             SDPSessionDescription & sdp,
+                                              SDPSessionDescription & sdp,
                                               bool   offerOpenMediaStreamOnly)
 {
   OpalMediaSession * mediaSession = GetMediaSession(sessionId);
@@ -535,19 +538,58 @@ bool OpalSDPConnection::OnSendOfferSDPSession(unsigned   sessionId,
     return false;
   }
 
+  if (sdp.GetDefaultConnectAddress().IsEmpty())
+    sdp.SetDefaultConnectAddress(mediaSession->GetLocalAddress());
+
+  if (mediaSession->GetGroupId() == GetBundleGroupId()) {
+    OpalRTPSession * rtpSession = dynamic_cast<OpalRTPSession *>(mediaSession);
+    if (rtpSession != NULL) {
+      RTP_SyncSourceArray ssrc = rtpSession->GetSyncSources(OpalRTPSession::e_Sender);
+      size_t count = 0;
+      for (RTP_SyncSourceArray::iterator it = ssrc.begin(); it != ssrc.end(); ++it) {
+        if (rtpSession->GetMediaStreamId(*it, OpalRTPSession::e_Sender).IsEmpty())
+          ++count;
+      }
+      if (count > 1) {
+        for (RTP_SyncSourceArray::iterator it = ssrc.begin(); it != ssrc.end(); ++it) {
+          if (rtpSession->GetMediaStreamId(*it, OpalRTPSession::e_Sender).IsEmpty()) {
+            SDPMediaDescription * localMedia = mediaSession->CreateSDPMediaDescription();
+            if (!OnSendOfferSDPSession(mediaSession, localMedia, offerOpenMediaStreamOnly, *it))
+              return false;
+
+            sdp.AddMediaDescription(localMedia);
+          }
+        }
+        return true;
+      }
+    }
+  }
+
   SDPMediaDescription * localMedia = mediaSession->CreateSDPMediaDescription();
+  if (!OnSendOfferSDPSession(mediaSession, localMedia, offerOpenMediaStreamOnly, 0))
+    return false;
+
+  sdp.AddMediaDescription(localMedia);
+  return true;
+}
+
+
+bool OpalSDPConnection::OnSendOfferSDPSession(OpalMediaSession * mediaSession,
+                                              SDPMediaDescription * localMedia,
+                                              bool offerOpenMediaStreamOnly,
+                                              RTP_SyncSourceId ssrc)
+{
+  OpalMediaType mediaType = mediaSession->GetMediaType();
   if (localMedia == NULL) {
     PTRACE(2, "Can't create SDP media description for media type " << mediaType);
     return false;
   }
 
   localMedia->SetOptionStrings(m_stringOptions);
-  localMedia->FromSession(mediaSession, NULL);
-
-  if (sdp.GetDefaultConnectAddress().IsEmpty())
-    sdp.SetDefaultConnectAddress(mediaSession->GetLocalAddress());
+  localMedia->FromSession(mediaSession, NULL, ssrc);
 
   if (offerOpenMediaStreamOnly) {
+    unsigned sessionId = mediaSession->GetSessionID();
     OpalMediaStreamPtr recvStream = GetMediaStream(sessionId, true);
     OpalMediaStreamPtr sendStream = GetMediaStream(sessionId, false);
     if (recvStream != NULL)
@@ -636,8 +678,6 @@ bool OpalSDPConnection::OnSendOfferSDPSession(unsigned   sessionId,
   }
 #endif // OPAL_RTP_FEC
 
-  sdp.AddMediaDescription(localMedia);
-
   return true;
 }
 
@@ -670,7 +710,7 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
 #endif // OPAL_SRTP
 
 #if OPAL_VIDEO
-  SetAudioVideoGroup(); // Googlish audio and video grouping id
+  SetAudioVideoGroup();
 #endif
 
   // Fill in refusal for media sessions we didn't like
@@ -684,7 +724,7 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
     if (md == NULL)
       sdpOut.AddMediaDescription(new SDPDummyMediaDescription(*incomingMedia));
     else {
-      md->FromSession(GetMediaSession(sessionId), incomingMedia);
+      md->FromSession(GetMediaSession(sessionId), incomingMedia, 0);
       sdpOut.AddMediaDescription(md);
       gotNothing = false;
     }
@@ -956,7 +996,7 @@ SDPMediaDescription * OpalSDPConnection::OnSendAnswerSDPSession(SDPMediaDescript
     // RFC3264 says we MUST have an entry, but it should have port zero
     if (empty) {
       localMedia->AddMediaFormat(m_activeFormatList.front());
-      localMedia->FromSession(NULL, NULL);
+      localMedia->FromSession(NULL, NULL, 0);
     }
     else {
       // We can do the media type but choose not to at this time
