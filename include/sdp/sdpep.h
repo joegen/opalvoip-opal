@@ -47,10 +47,10 @@ class OpalSDPHTTPConnection;
 
 
 /**Enable audio/video grouping in SDP.
-   This add various identifiers to the SDP to link the audio and video
-   medis sessions together. For example, to do lip sync.
+   This adds various identifiers to the SDP to link the audio and video
+   media sessions together. For example, to do lip sync.
 
-   Defaults to true.
+   Defaults to false.
 */
 #define OPAL_OPT_AV_GROUPING "AV-Grouping"
 
@@ -129,6 +129,7 @@ class OpalSDPConnection : public OpalRTPConnection
 {
     PCLASSINFO(OpalSDPConnection, OpalRTPConnection);
   public:
+    static const PString & GetBundleGroupId();
 
   /**@name Construction */
   //@{
@@ -246,6 +247,12 @@ class OpalSDPConnection : public OpalRTPConnection
       SDPSessionDescription & sdpOut,
       bool offerOpenMediaStreamOnly
     );
+    virtual bool OnSendOfferSDPSession(
+      OpalMediaSession * mediaSession,
+      SDPMediaDescription * localMedia,
+      bool offerOpenMediaStreamOnly,
+      RTP_SyncSourceId ssrc
+    );
 
     virtual bool OnSendAnswerSDP(
       const SDPSessionDescription & sdpOffer,
@@ -278,7 +285,9 @@ class OpalSDPConnection : public OpalRTPConnection
       OpalTransportAddress & localAddress
     );
 #if OPAL_VIDEO
-    virtual void SetAudioVideoGroup();
+    virtual void SetAudioVideoGroup(
+      const PString & id = GetBundleGroupId()
+    );
 #endif
 
     void RetryHoldRemote(bool placeOnHold);

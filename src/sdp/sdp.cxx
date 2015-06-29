@@ -776,11 +776,11 @@ static bool CanUseCandidate(const PNatCandidate & candidate)
 
 
 bool SDPMediaDescription::FromSession(OpalMediaSession * session,
+                                      const SDPMediaDescription *
 #if OPAL_ICE
-                                      const SDPMediaDescription * offer)
-#else
-                                      const SDPMediaDescription *)
+                                                                  offer
 #endif
+                                      , RTP_SyncSourceId)
 {
   if (session == NULL) {
     m_port = 0;
@@ -993,7 +993,7 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
   }
 
   if (attr *= "mid") {
-    m_groupMediaId = value;
+    SetGroupMediaId(value);
     return;
   }
 
@@ -1133,8 +1133,11 @@ void SDPMediaDescription::OutputAttributes(ostream & strm) const
 {
   SDPCommonAttributes::OutputAttributes(strm);
 
-  if (!m_groupMediaId.IsEmpty())
-    strm << "a=mid:" << m_groupMediaId << CRLF;
+  if (!GetGroupId().IsEmpty()) {
+    PString id = GetGroupMediaId();
+    if (!id.IsEmpty())
+      strm << "a=mid:" << id << CRLF;
+  }
 
 #if OPAL_ICE
   if (m_username.IsEmpty() || m_password.IsEmpty())
@@ -1902,18 +1905,25 @@ void SDPRTPAVPMediaDescription::SetAttribute(const PString & attr, const PString
 }
 
 
-bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session, const SDPMediaDescription * offer)
+bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session,
+                                            const SDPMediaDescription * offer,
+                                            RTP_SyncSourceId ssrc)
 {
   const OpalRTPSession * rtpSession = dynamic_cast<const OpalRTPSession *>(session);
   if (rtpSession != NULL) {
-    RTP_SyncSourceArray ssrc = rtpSession->GetSyncSources(OpalRTPSession::e_Sender);
-    PTRACE(4, "Adding " << ssrc.size() << " sender SSRC entries.");
-    for (size_t i = 0; i < ssrc.size(); ++i) {
-      PStringOptions & info = m_ssrcInfo[ssrc[i]];
-      PString cname = rtpSession->GetCanonicalName(ssrc[i]);
+    RTP_SyncSourceArray ssrcs;
+    if (ssrc != 0)
+      ssrcs.push_back(ssrc);
+    else
+      ssrcs = rtpSession->GetSyncSources(OpalRTPSession::e_Sender);
+
+    PTRACE(4, "Adding " << ssrcs.size() << " sender SSRC entries.");
+    for (RTP_SyncSourceArray::iterator it = ssrcs.begin(); it != ssrcs.end(); ++it) {
+      PStringOptions & info = m_ssrcInfo[*it];
+      PString cname = rtpSession->GetCanonicalName(*it);
       if (!cname.IsEmpty())
         info.SetAt("cname", cname);
-      PString mslabel = rtpSession->GetMediaStreamId(ssrc[i], OpalRTPSession::e_Sender);
+      PString mslabel = rtpSession->GetMediaStreamId(*it, OpalRTPSession::e_Sender);
       if (!mslabel.IsEmpty()) {
         PString label = mslabel + '+' + session->GetMediaType();
         info.SetAt("mslabel", mslabel);
@@ -1922,11 +1932,11 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session, const SD
       }
     }
 
-    // Probably should be arbitrary string, but everyone seems to use
-    // the media type, as in "audio" and "video".
-    rtpSession->GetGroupId().Split(' ', m_groupId, m_groupMediaId, PString::SplitDefaultToBefore|PString::SplitTrimBefore);
-    if (!m_groupId.IsEmpty())
-      m_groupMediaId = GetMediaType();
+    SetGroupId(rtpSession->GetGroupId());
+    if (ssrc != 0)
+      SetGroupMediaId(PSTRSTRM(rtpSession->GetGroupMediaId() << '_' << ssrc));
+    else
+      SetGroupMediaId(rtpSession->GetGroupMediaId());
   }
 
 #if OPAL_SRTP
@@ -1944,7 +1954,7 @@ bool SDPRTPAVPMediaDescription::FromSession(OpalMediaSession * session, const SD
   }
 #endif
 
-  return SDPMediaDescription::FromSession(session, offer);
+  return SDPMediaDescription::FromSession(session, offer, ssrc);
 }
 
 

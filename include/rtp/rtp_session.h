@@ -334,16 +334,6 @@ class OpalRTPSession : public OpalMediaSession
       */
     void SetCanonicalName(const PString & name, RTP_SyncSourceId ssrc = 0, Direction dir = e_Sender);
 
-    /**Get the "group" id for the RTP session.
-       This is typically a mechanism for connecting audio and video together via BUNDLE.
-    */
-    PString GetGroupId() const;
-
-    /**Set the "group" id for the RTP session.
-       This is typically a mechanism for connecting audio and video together via BUNDLE.
-    */
-    void SetGroupId(const PString & id);
-
     /**Get the "Media Stream" id for the RTP session SSRC.
        See draft-alvestrand-mmusic-msid.
     */
@@ -663,7 +653,6 @@ class OpalRTPSession : public OpalMediaSession
     bool                m_isAudio;
     unsigned            m_timeUnits;
     PString             m_toolName;
-    PString             m_groupId;
     RTPExtensionHeaders m_extensionHeaders;
     bool                m_allowAnySyncSource;
     PTimeInterval       m_maxNoReceiveTime;

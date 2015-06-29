@@ -944,23 +944,6 @@ void OpalRTPSession::SetCanonicalName(const PString & name, RTP_SyncSourceId ssr
 }
 
 
-PString OpalRTPSession::GetGroupId() const
-{
-  PSafeLockReadOnly lock(*this);
-  PString s = m_groupId;
-  s.MakeUnique();
-  return s;
-}
-
-
-void OpalRTPSession::SetGroupId(const PString & id)
-{
-  PSafeLockReadWrite lock(*this);
-  m_groupId = id;
-  m_groupId.MakeUnique();
-}
-
-
 PString OpalRTPSession::GetMediaStreamId(RTP_SyncSourceId ssrc, Direction dir) const
 {
   PString s;
