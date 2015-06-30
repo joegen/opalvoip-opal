@@ -1655,6 +1655,12 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     }
   }
 #endif
+
+  if (m_apiVersion < 31)
+    return;
+
+  if (command.m_param.m_general.m_noMediaTimeout > 0)
+    SetNoMediaTimeout(command.m_param.m_general.m_noMediaTimeout);
 }
 
 

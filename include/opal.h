@@ -80,7 +80,7 @@ typedef struct OpalHandleStruct * OpalHandle;
 typedef struct OpalMessage OpalMessage;
 
 /// Current API version
-#define OPAL_C_API_VERSION 30
+#define OPAL_C_API_VERSION 31
 
 
 ///////////////////////////////////////
@@ -779,6 +779,8 @@ typedef struct OpalParamGeneral {
                                            as for OPAL_PREFIX_LOCAL is executed for that media stream and
                                            m_mediaReadData/m_mediaWriteData is called. See
                                            OpalMediaDataFunction for more information. */
+  unsigned m_noMediaTimeout;          /**< Time in milliseconds for which, if no media is received, the
+                                           call is cleared. */
 } OpalParamGeneral;
 
 
