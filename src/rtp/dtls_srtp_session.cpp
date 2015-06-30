@@ -68,7 +68,7 @@ class DTLSContext : public PSSLContext
     PCLASSINFO(DTLSContext, PSSLContext);
   public:
     DTLSContext()
-      : PSSLContext(PSSLContext::DTLSv1)
+      : PSSLContext(PSSLContext::DTLSv1_2)
     {
       PStringStream dn;
       dn << "/O=" << PProcess::Current().GetManufacturer()
