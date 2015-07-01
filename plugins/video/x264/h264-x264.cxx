@@ -883,6 +883,7 @@ class H264_FlashEncoder : public H264_Encoder
 {
     bool m_outputHeader;
     bool m_firstFrame;
+    std::vector<uint8_t> m_savedSPS;
   public:
     H264_FlashEncoder(const PluginCodec_Definition * defn)
       : H264_Encoder(defn)
@@ -898,25 +899,32 @@ class H264_FlashEncoder : public H264_Encoder
                              unsigned & toLen,
                              unsigned & flags)
     {
-      std::vector<unsigned char> tempData(toLen);
-      unsigned tempLen = toLen;
+      std::vector<unsigned char> naluBuffer(toLen);
+      unsigned naluLen = toLen;
       if (!m_encoder.EncodeFrames((const unsigned char *)fromPtr, fromLen,
-                                  tempData.data(), tempLen, 0, flags))
+                                  naluBuffer.data(), naluLen, PluginCodec_RTP_MinHeaderSize, flags))
         return false;
 
-      if (tempLen < 3) {
-        PTRACE(3, MY_CODEC_LOG, "Too small NALU generated: " << tempLen << " bytes");
+      if (naluLen < PluginCodec_RTP_MinHeaderSize+3) {
+        PTRACE(3, MY_CODEC_LOG, "Too small NALU generated: " << naluLen << " bytes");
         return false;
       }
 
-      bool bKey = (flags&PluginCodec_ReturnCoderIFrame);
+      const uint8_t * naluPtr = naluBuffer.data()+PluginCodec_RTP_MinHeaderSize;
+      naluLen -= PluginCodec_RTP_MinHeaderSize;
+
+      bool bKey = (flags&PluginCodec_ReturnCoderIFrame) != 0;
 
       PluginCodec_RTP rtp(toPtr, toLen);
       uint8_t * pBuffer = rtp.GetPayloadPtr();
 
       if (m_outputHeader) {
-        switch (tempData[0]&0x1f) {
+        switch (naluPtr[0]&0x1f) {
           case 0x07 : // SPS
+            m_savedSPS.assign(naluPtr,naluPtr+naluLen);
+            break;
+
+          case 0x08 :
             /* Pre-amble */
             *pBuffer++ = 0x17;
             *pBuffer++ = 0x00;
@@ -926,22 +934,22 @@ class H264_FlashEncoder : public H264_Encoder
 
             /* Start header */
             *pBuffer++ = 0x01; /* version */
-            *pBuffer++ = tempData[1]; /* profile */
-            *pBuffer++ = tempData[2]; /* profile compat */
-            *pBuffer++ = tempData[3]; /* level */
+            *pBuffer++ = m_savedSPS[1]; /* profile */
+            *pBuffer++ = m_savedSPS[2]; /* profile compat */
+            *pBuffer++ = m_savedSPS[3]; /* level */
             *pBuffer++ = 0xFF; /* 6 bits reserved (111111) + 2 bits nal size length - 1 (11) */
 
             /* Write SPSs */
             *pBuffer++ = 0xE1; // Only 1 for now
-            *pBuffer++ = tempLen >> 8;
-            *pBuffer++ = tempLen;
-            break;
+            *pBuffer++ = m_savedSPS.size() >> 8;
+            *pBuffer++ = m_savedSPS.size();
+            memcpy(pBuffer, m_savedSPS.data(), naluLen);
+            pBuffer += m_savedSPS.size();
 
-          case 0x08 :
             /* Write PPSs */
             *pBuffer++ = 0x01; // Only 1 for now
-            *pBuffer++ = tempLen >> 8;
-            *pBuffer++ = tempLen;
+            *pBuffer++ = naluLen >> 8;
+            *pBuffer++ = naluLen;
             break;
 
           default :
@@ -969,19 +977,26 @@ class H264_FlashEncoder : public H264_Encoder
             *pBuffer++ = 0x09;
             *pBuffer++ = bKey ? 0x10 : 0x30;
 
-            *pBuffer++ = tempLen >> 24;
-            *pBuffer++ = tempLen >> 16;
-            *pBuffer++ = tempLen >> 8;
-            *pBuffer++ = tempLen;
+            *pBuffer++ = naluLen >> 24;
+            *pBuffer++ = naluLen >> 16;
+            *pBuffer++ = naluLen >> 8;
+            *pBuffer++ = naluLen;
+            m_outputHeader = false;
        }
       }
+      else {
+        *pBuffer++ = naluLen >> 24;
+        *pBuffer++ = naluLen >> 16;
+        *pBuffer++ = naluLen >> 8;
+        *pBuffer++ = naluLen;
+      }
 
-      memcpy(pBuffer, tempData.data(), tempLen);
-      pBuffer += tempLen;
+      memcpy(pBuffer, naluPtr, naluLen);
+      pBuffer += naluLen;
 
       toLen = pBuffer - rtp.GetPayloadPtr();
 
-      if ((flags&PluginCodec_ReturnCoderLastFrame) == 0)
+      if ((flags&PluginCodec_ReturnCoderLastFrame) != 0)
         m_outputHeader = true;
 
       return true;
@@ -1025,19 +1040,25 @@ class H264_FlashDecoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCode
       static const size_t FlashHeaderSize = 5;
       static const uint8_t FlashSPS_PPS[FlashHeaderSize] = { 0x17, 0, 0, 0, 0 };
 
+      if (fromLen < PluginCodec_RTP_MinHeaderSize + 4) {
+          PTRACE(3, MY_CODEC_LOG, "Packet too small: " << fromLen << " bytes");
+          return true;
+      }
+
       PluginCodec_RTP rtp(fromPtr, fromLen);
       const uint8_t * headerPtr = rtp.GetPayloadPtr();
       const uint8_t * dataPtr = headerPtr + FlashHeaderSize;
       size_t dataSize = rtp.GetPayloadSize() - FlashHeaderSize;
 
       if (memcmp(headerPtr, FlashSPS_PPS, FlashHeaderSize) == 0) {
-        if (m_sps_pps.size() != dataSize && memcmp(m_sps_pps.data(), dataPtr, dataSize) != 0) {
+        if (m_sps_pps.size() != dataSize || memcmp(m_sps_pps.data(), dataPtr, dataSize) != 0) {
           CloseCodec();
           m_sps_pps.assign(dataPtr, dataPtr+dataSize);
           m_context->extradata = m_sps_pps.data();
           m_context->extradata_size = dataSize;
           if (!OpenCodec())
             return false;
+          PTRACE(4, MY_CODEC_LOG, "Re-opened decoder with new SPS/PPS: " << dataSize << " bytes");
         }
         return true;
       }
