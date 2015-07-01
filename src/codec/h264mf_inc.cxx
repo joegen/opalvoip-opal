@@ -46,6 +46,7 @@
 static const char H264_Mode0_FormatName[] = OPAL_H264_MODE0;
 static const char H264_Mode1_FormatName[] = OPAL_H264_MODE1;
 static const char H264_High_FormatName[]  = OPAL_H264_High;
+static const char H264_Flash_FormatName[] = OPAL_H264_Flash;
 
 static const char H264EncodingName[] = "H264";
 
