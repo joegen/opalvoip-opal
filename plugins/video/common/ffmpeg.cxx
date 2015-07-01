@@ -546,7 +546,8 @@ bool FFMPEGCodec::DecodeVideoPacket(const PluginCodec_RTP & in, unsigned & flags
   if (!m_hadMissingPacket && (flags & PluginCodec_CoderPacketLoss) != 0) {
     PTRACE(3, m_prefix, "Decoder throwing away entire video frame due to packet loss");
     m_hadMissingPacket = true;
-    m_fullFrame->Reset();
+    if (m_fullFrame != NULL)
+        m_fullFrame->Reset();
   }
 
   flags = 0;
