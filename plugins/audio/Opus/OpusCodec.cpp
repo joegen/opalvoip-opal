@@ -146,6 +146,15 @@ static struct PluginCodec_Option const CaptureStereo =
   "sprop-stereo"
 };
 
+static struct PluginCodec_Option const DynamicPacketLoss =
+{
+  PluginCodec_IntegerOption,
+  PLUGINCODEC_OPTION_DYNAMIC_PACKET_LOSS,
+  false,
+  PluginCodec_NoMerge,
+  "0"
+};
+
 static struct PluginCodec_Option const * const MyOptions[] = {
   &UseInBandFEC,
   &UseDTX,
@@ -153,6 +162,7 @@ static struct PluginCodec_Option const * const MyOptions[] = {
   &MaxCaptureRate,
   &PlaybackStereo,
   &CaptureStereo,
+  &DynamicPacketLoss,
   NULL
 };
 
@@ -176,7 +186,7 @@ class OpusPluginMediaFormat : public PluginCodec_AudioFormat<MY_CODEC>
       m_maxFramesPerPacket = 6; // 120ms
       m_maxBandwidth = MAX_BIT_RATE;
       m_frameTime = 20000; // Rare occasion where frame time not derived from samplesPerFrame and sampleRate
-      m_flags |= PluginCodec_SetChannels(2) | PluginCodec_RTPTypeShared;
+      m_flags |= PluginCodec_SetChannels(2) | PluginCodec_RTPTypeShared | PluginCodec_EmptyPayload;
     }
 
     virtual bool IsValidForProtocol(const char * protocol) const
@@ -221,15 +231,27 @@ class OpusPluginCodec : public PluginCodec<MY_CODEC>
 {
   protected:
     unsigned m_sampleRate;
+    bool     m_useInBandFEC;
     unsigned m_channels;
 
   public:
     OpusPluginCodec(const PluginCodec_Definition * defn)
       : PluginCodec<MY_CODEC>(defn)
+      , m_useInBandFEC(false)
     {
       const OpusPluginMediaFormat *mediaFormat = reinterpret_cast<const OpusPluginMediaFormat *>(m_definition->userData);
       m_sampleRate = mediaFormat->m_actualSampleRate;
       m_channels = mediaFormat->m_actualChannels;
+    }
+
+
+    virtual bool SetOption(const char * optionName, const char * optionValue)
+    {
+      if (strcasecmp(optionName, UseInBandFEC.m_name) == 0)
+        return SetOptionBoolean(m_useInBandFEC, optionValue);
+
+      // Base class sets bit rate and frame time
+      return PluginCodec<MY_CODEC>::SetOption(optionName, optionValue);
     }
 };
 
@@ -240,7 +262,7 @@ class OpusPluginEncoder : public OpusPluginCodec
 {
   protected:
     OpusEncoder * m_encoder;
-    bool          m_useInBandFEC;
+    unsigned      m_dynamicPacketLoss;
     bool          m_useDTX;
     unsigned      m_bitRate;
 
@@ -248,7 +270,7 @@ class OpusPluginEncoder : public OpusPluginCodec
     OpusPluginEncoder(const PluginCodec_Definition * defn)
       : OpusPluginCodec(defn)
       , m_encoder(NULL)
-      , m_useInBandFEC(false)
+      , m_dynamicPacketLoss(0)
       , m_useDTX(false)
       , m_bitRate(12000)
     {
@@ -276,8 +298,8 @@ class OpusPluginEncoder : public OpusPluginCodec
 
     virtual bool SetOption(const char * optionName, const char * optionValue)
     {
-      if (strcasecmp(optionName, UseInBandFEC.m_name) == 0)
-        return SetOptionBoolean(m_useInBandFEC, optionValue);
+      if (strcasecmp(optionName, DynamicPacketLoss.m_name) == 0)
+        return SetOptionUnsigned(m_dynamicPacketLoss, optionValue, 0, 100);
 
       if (strcasecmp(optionName, UseDTX.m_name) == 0)
         return SetOptionBoolean(m_useDTX, optionValue);
@@ -286,7 +308,7 @@ class OpusPluginEncoder : public OpusPluginCodec
         return SetOptionUnsigned(m_bitRate, optionValue, 6000, 510000);
 
       // Base class sets bit rate and frame time
-      return PluginCodec<MY_CODEC>::SetOption(optionName, optionValue);
+      return OpusPluginCodec::SetOption(optionName, optionValue);
     }
 
 
@@ -296,6 +318,7 @@ class OpusPluginEncoder : public OpusPluginCodec
         return false;
 
       opus_encoder_ctl(m_encoder, OPUS_SET_INBAND_FEC(m_useInBandFEC));
+      opus_encoder_ctl(m_encoder, OPUS_SET_PACKET_LOSS_PERC(m_dynamicPacketLoss));
       opus_encoder_ctl(m_encoder, OPUS_SET_DTX(m_useDTX));
       opus_encoder_ctl(m_encoder, OPUS_SET_BITRATE(m_bitRate));
       return true;
@@ -376,8 +399,11 @@ class OpusPluginDecoder : public OpusPluginCodec
       }
 
       int result = opus_decode(m_decoder,
-                   (const unsigned char *)fromPtr, fromLen,
-                               (opus_int16 *)toPtr, samples, 0);
+                               fromLen > 0 ? (const unsigned char *)fromPtr : NULL,
+                               fromLen,
+                               (opus_int16 *)toPtr,
+                               samples,
+                               m_useInBandFEC);
       if (result < 0) {
         PTRACE(1, MY_CODEC_LOG, "Decoder error " << result << ' ' << opus_strerror(result));
         return false;
