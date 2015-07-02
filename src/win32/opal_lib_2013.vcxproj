@@ -1716,8 +1716,8 @@ exit 0
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Android'">Generating C# files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Android'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Android'">../../include/opal.h</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">path ..\..\..\external\swigwin;%PATH%
-swig -c++ -csharp -w451 "-I..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" "%(FullPath)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
 goto done
@@ -1730,8 +1730,8 @@ exit 0
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Generating C# files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../../include/opal.h;%(RootDir)%(Directory)csharp_swig_wrapper.cxx</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">path ..\..\..\external\swigwin;%PATH%
-swig -c++ -csharp -w451 "-I..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" "%(FullPath)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
 goto done
@@ -1744,8 +1744,8 @@ exit 0
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">Generating C# files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">../../include/opal.h;%(RootDir)%(Directory)csharp_swig_wrapper.cxx</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">path ..\..\..\external\swigwin;%PATH%
-swig -c++ -csharp -w451 "-I..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" "%(FullPath)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
 goto done
@@ -1758,8 +1758,8 @@ exit 0
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Generating C# files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">../../include/opal.h;%(RootDir)%(Directory)csharp_swig_wrapper.cxx</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">path ..\..\..\external\swigwin;%PATH%
-swig -c++ -csharp -w451 "-I..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.inc" "%(FullPath)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.inc" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
 copy "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" &gt; nul
@@ -1772,8 +1772,8 @@ exit 0
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating C# files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../../include/opal.h</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">path ..\..\..\external\swigwin;%PATH%
-swig -c++ -csharp -w451 "-I..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.inc" "%(FullPath)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.inc" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
 copy "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" &gt; nul
@@ -1786,8 +1786,8 @@ exit 0
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">Generating C# files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">%(RootDir)%(Directory)csharp_swig_wrapper.inc</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">../../include/opal.h</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">path ..\..\..\external\swigwin;%PATH%
-swig -c++ -csharp -w451 "-I..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.inc" "%(FullPath)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -csharp -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)csharp_swig_wrapper.inc" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
 copy "%(RootDir)%(Directory)\csharp_swig_wrapper.inc" "%(RootDir)%(Directory)csharp_swig_wrapper.cxx" &gt; nul
@@ -1898,8 +1898,8 @@ exit 0
     <None Include="..\asn\x880.asn" />
     <CustomBuild Include="..\java\opal.i">
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">path ..\..\..\external\swigwin;%PATH%
-swig -c++ -java -package org.opalvoip.opal -w451 "-I..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.inc" "%(FullPath)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.inc" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
 copy "%(RootDir)%(Directory)\java_swig_wrapper.inc" "%(RootDir)%(Directory)java_swig_wrapper.cxx" &gt; nul
@@ -1912,8 +1912,8 @@ exit 0
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">Generating Java JNI files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">%(RootDir)%(Directory)java_swig_wrapper.inc</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Android'">../../include/opal.h</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">path ..\..\..\external\swigwin;%PATH%
-swig -c++ -java -package org.opalvoip.opal -w451 "-I..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.inc" "%(FullPath)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.inc" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
 copy "%(RootDir)%(Directory)\java_swig_wrapper.inc" "%(RootDir)%(Directory)java_swig_wrapper.cxx" &gt; nul
@@ -1926,8 +1926,8 @@ exit 0
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">Generating Java JNI files</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">%(RootDir)%(Directory)java_swig_wrapper.inc</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='No Trace|Android'">../../include/opal.h</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Android'">path ..\..\..\external\swigwin;%PATH%
-swig -c++ -java -package org.opalvoip.opal -w451 "-I..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.inc" "%(FullPath)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Android'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.inc" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
 copy "%(RootDir)%(Directory)\java_swig_wrapper.inc" "%(RootDir)%(Directory)java_swig_wrapper.cxx" &gt; nul
@@ -1958,8 +1958,8 @@ exit 0
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating Java JNI files</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">Generating Java JNI files</Message>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating Java JNI files</Message>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">path ..\..\..\external\swigwin;%PATH%
-swig -c++ -java -package org.opalvoip.opal -w451 "-I..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(FullPath)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
 goto done
@@ -1969,8 +1969,8 @@ echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory
 copy "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(RootDir)%(Directory)java_swig_wrapper.inc" &gt; nul
 exit 0
 </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">path ..\..\..\external\swigwin;%PATH%
-swig -c++ -java -package org.opalvoip.opal -w451 "-I..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(FullPath)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|Win32'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
 goto done
@@ -1980,8 +1980,8 @@ echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory
 copy "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(RootDir)%(Directory)java_swig_wrapper.inc" &gt; nul
 exit 0
 </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">path ..\..\..\external\swigwin;%PATH%
-swig -c++ -java -package org.opalvoip.opal -w451 "-I..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(FullPath)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
 goto done
@@ -1991,8 +1991,8 @@ echo Ignoring missing SWIG and using pre-compiled version "%(RootDir)%(Directory
 copy "%(RootDir)%(Directory)java_swig_wrapper.cxx" "%(RootDir)%(Directory)java_swig_wrapper.inc" &gt; nul
 exit 0
 </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">path ..\..\..\external\swigwin;%PATH%
-swig -c++ -java -package org.opalvoip.opal -w451 "-I..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.inc" "%(FullPath)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.inc" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
 copy "%(RootDir)%(Directory)\java_swig_wrapper.inc" "%(RootDir)%(Directory)java_swig_wrapper.cxx" &gt; nul
@@ -2002,8 +2002,8 @@ echo Ignoring missing SWIG and using pre-compiled versions.
 copy "%(RootDir)%(Directory)\java_swig_wrapper.cxx" "%(RootDir)%(Directory)\java_swig_wrapper.inc" &gt; nul
 exit 0
 </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">path ..\..\..\external\swigwin;%PATH%
-swig -c++ -java -package org.opalvoip.opal -w451 "-I..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.inc" "%(FullPath)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='No Trace|x64'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.inc" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
 copy "%(RootDir)%(Directory)\java_swig_wrapper.inc" "%(RootDir)%(Directory)java_swig_wrapper.cxx" &gt; nul
@@ -2013,8 +2013,8 @@ echo Ignoring missing SWIG and using pre-compiled versions.
 copy "%(RootDir)%(Directory)\java_swig_wrapper.cxx" "%(RootDir)%(Directory)\java_swig_wrapper.inc" &gt; nul
 exit 0
 </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">path ..\..\..\external\swigwin;%PATH%
-swig -c++ -java -package org.opalvoip.opal -w451 "-I..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.inc" "%(FullPath)"
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">path $(ProjectDir)..\..\..\external\swigwin;%PATH%
+swig -c++ -java -package org.opalvoip.opal -w451 "-I$(ProjectDir)..\..\include" -o "%(RootDir)%(Directory)java_swig_wrapper.inc" "%(FullPath)"
 if errorlevel 2 goto missing
 if errorlevel 1 exit 1
 copy "%(RootDir)%(Directory)\java_swig_wrapper.inc" "%(RootDir)%(Directory)java_swig_wrapper.cxx" &gt; nul
