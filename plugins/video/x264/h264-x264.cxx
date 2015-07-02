@@ -881,22 +881,28 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCodec
 
 class H264_FlashEncoder : public H264_Encoder
 {
-    bool m_outputHeader;
+    std::vector<unsigned char> m_naluBuffer;
     bool m_firstFrame;
-    std::vector<uint8_t> m_savedSPS;
+
   public:
     H264_FlashEncoder(const PluginCodec_Definition * defn)
       : H264_Encoder(defn)
-      , m_outputHeader(true)
       , m_firstFrame(true)
     {
       m_profile = H264_PROFILE_INT_MAIN;
     }
 
 
+    virtual size_t GetOutputDataSize()
+    {
+      return 256000; // Need space to encode the enter video frame
+    }
+
+
     virtual bool OnChangedOptions()
     {
-      m_maxRTPSize = m_maxNALUSize = 256000;
+      m_maxNALUSize = GetOutputDataSize();
+      m_maxRTPSize = m_maxNALUSize+PluginCodec_RTP_MinHeaderSize;
       m_packetisationModeSDP = m_packetisationModeH323 = 0;
       return H264_Encoder::OnChangedOptions();
     }
@@ -908,118 +914,112 @@ class H264_FlashEncoder : public H264_Encoder
                              unsigned & toLen,
                              unsigned & flags)
     {
-      std::vector<unsigned char> naluBuffer(toLen);
-      unsigned naluLen = toLen;
-      if (!m_encoder.EncodeFrames((const unsigned char *)fromPtr, fromLen,
-                                  naluBuffer.data(), naluLen, PluginCodec_RTP_MinHeaderSize, flags))
-        return false;
-
-      if (naluLen < PluginCodec_RTP_MinHeaderSize+3) {
-        PTRACE(3, MY_CODEC_LOG, "Too small NALU generated: " << naluLen << " bytes");
-        return false;
-      }
-
-      const uint8_t * naluPtr = naluBuffer.data()+PluginCodec_RTP_MinHeaderSize;
-      naluLen -= PluginCodec_RTP_MinHeaderSize;
-
-      bool bKey = (flags&PluginCodec_ReturnCoderIFrame) != 0;
-
       PluginCodec_RTP rtp(toPtr, toLen);
       uint8_t * pBuffer = rtp.GetPayloadPtr();
 
-      if (m_outputHeader) {
-        switch (naluPtr[0]&0x1f) {
-          case 0x07 : // SPS
-            m_savedSPS.assign(naluPtr,naluPtr+naluLen);
+      const uint8_t * naluPtr;
+      unsigned naluLen;
+      if (!GetNALU(fromPtr, fromLen, naluPtr, naluLen, flags))
+        return false;
 
-            naluLen = toLen;
-            if (!m_encoder.EncodeFrames((const unsigned char *)fromPtr, fromLen,
-                                        naluBuffer.data(), naluLen, PluginCodec_RTP_MinHeaderSize, flags))
-              return false;
+      if ((naluPtr[0] & 0x1f) == 0x07) { // SPS
+        /* Pre-amble */
+        *pBuffer++ = 0x17;
+        *pBuffer++ = 0x00;
+        *pBuffer++ = 0x00;
+        *pBuffer++ = 0x00;
+        *pBuffer++ = 0x00;
 
-            /* Pre-amble */
-            *pBuffer++ = 0x17;
-            *pBuffer++ = 0x00;
-            *pBuffer++ = 0x00;
-            *pBuffer++ = 0x00;
-            *pBuffer++ = 0x00;
+        /* Start header */
+        *pBuffer++ = 0x01; /* version */
+        *pBuffer++ = naluPtr[1]; /* profile */
+        *pBuffer++ = naluPtr[2]; /* profile compat */
+        *pBuffer++ = naluPtr[3]; /* level */
+        *pBuffer++ = 0xFF; /* 6 bits reserved (111111) + 2 bits nal size length - 1 (11) */
 
-            /* Start header */
-            *pBuffer++ = 0x01; /* version */
-            *pBuffer++ = m_savedSPS[1]; /* profile */
-            *pBuffer++ = m_savedSPS[2]; /* profile compat */
-            *pBuffer++ = m_savedSPS[3]; /* level */
-            *pBuffer++ = 0xFF; /* 6 bits reserved (111111) + 2 bits nal size length - 1 (11) */
-
-            /* Write SPSs */
-            *pBuffer++ = 0xE1; // Only 1 for now
-            *pBuffer++ = m_savedSPS.size() >> 8;
-            *pBuffer++ = m_savedSPS.size();
-            memcpy(pBuffer, m_savedSPS.data(), m_savedSPS.size());
-            pBuffer += m_savedSPS.size();
-
-            /* Write PPSs */
-            *pBuffer++ = 0x01; // Only 1 for now
-            *pBuffer++ = naluLen >> 8;
-            *pBuffer++ = naluLen;
-            break;
-
-          case 0x06 :
-            naluLen = toLen;
-            if (!m_encoder.EncodeFrames((const unsigned char *)fromPtr, fromLen,
-                                        naluBuffer.data(), naluLen, PluginCodec_RTP_MinHeaderSize, flags))
-              return false;
-
-          default :
-            /* Pre-amble */
-            *pBuffer++ = bKey ? 0x17 : 0x27;
-            *pBuffer++ = 0x01;
-            *pBuffer++ = 0x00;
-            *pBuffer++ = 0x00;
-            *pBuffer++ = 0x00;
-
-            if (bKey && !m_firstFrame) {
-              /* End of previous GOP */
-              *pBuffer++ = 0x00;
-              *pBuffer++ = 0x00;
-              *pBuffer++ = 0x00;
-              *pBuffer++ = 0x01;
-              *pBuffer++ = 0x0A;
-            }
-
-            /* Access unit delimiter */
-            *pBuffer++ = 0x00;
-            *pBuffer++ = 0x00;
-            *pBuffer++ = 0x00;
-            *pBuffer++ = 0x02;
-            *pBuffer++ = 0x09;
-            *pBuffer++ = bKey ? 0x10 : 0x30;
-
-            *pBuffer++ = naluLen >> 24;
-            *pBuffer++ = naluLen >> 16;
-            *pBuffer++ = naluLen >> 8;
-            *pBuffer++ = naluLen;
-            m_outputHeader = false;
-            m_firstFrame = false;
-       }
-      }
-      else {
-        if ((flags&PluginCodec_ReturnCoderLastFrame) != 0)
-          m_outputHeader = true;
-
-        *pBuffer++ = naluLen >> 24;
-        *pBuffer++ = naluLen >> 16;
+        /* Write SPSs */
+        *pBuffer++ = 0xE1; // Only 1 for now
         *pBuffer++ = naluLen >> 8;
         *pBuffer++ = naluLen;
-      }
+        memcpy(pBuffer, naluPtr, naluLen);
+        pBuffer += naluLen;
 
-      memcpy(pBuffer, naluPtr, naluLen);
-      pBuffer += naluLen;
+        // We assume next thing is SPS
+        if (!GetNALU(fromPtr, fromLen, naluPtr, naluLen, flags))
+          return false;
+
+        /* Write PPSs */
+        *pBuffer++ = 0x01; // Only 1 for now
+        *pBuffer++ = naluLen >> 8;
+        *pBuffer++ = naluLen;
+        memcpy(pBuffer, naluPtr, naluLen);
+        pBuffer += naluLen;
+      }
+      else {
+        bool bKey = (flags&PluginCodec_ReturnCoderIFrame) != 0;
+
+        /* Pre-amble */
+        *pBuffer++ = bKey ? 0x17 : 0x27;
+        *pBuffer++ = 0x01;
+        *pBuffer++ = 0x00;
+        *pBuffer++ = 0x00;
+        *pBuffer++ = 0x00;
+
+        if (bKey && !m_firstFrame) {
+          /* End of previous GOP */
+          *pBuffer++ = 0x00;
+          *pBuffer++ = 0x00;
+          *pBuffer++ = 0x00;
+          *pBuffer++ = 0x01;
+          *pBuffer++ = 0x0A;
+        }
+
+        /* Access unit delimiter */
+        *pBuffer++ = 0x00;
+        *pBuffer++ = 0x00;
+        *pBuffer++ = 0x00;
+        *pBuffer++ = 0x02;
+        *pBuffer++ = 0x09;
+        *pBuffer++ = bKey ? 0x10 : 0x30;
+
+        for (;;) {
+          *pBuffer++ = naluLen >> 24;
+          *pBuffer++ = naluLen >> 16;
+          *pBuffer++ = naluLen >> 8;
+          *pBuffer++ = naluLen;
+          memcpy(pBuffer, naluPtr, naluLen);
+          pBuffer += naluLen;
+
+          if ((flags&PluginCodec_ReturnCoderLastFrame) != 0)
+            break;
+
+          if (!GetNALU(fromPtr, fromLen, naluPtr, naluLen, flags))
+            return false;
+        }
+
+        m_firstFrame = false;
+      }
 
       if (!rtp.SetPayloadSize(pBuffer - rtp.GetPayloadPtr()))
         return false;
 
       toLen = rtp.GetPacketSize();
+      return true;
+    }
+
+
+    bool GetNALU(const void * fromPtr, unsigned & fromLen, const uint8_t * & naluPtr, unsigned & naluLen, unsigned & flags)
+    {
+      if (m_naluBuffer.empty())
+        m_naluBuffer.resize(m_maxRTPSize);
+
+      naluLen = m_naluBuffer.size();
+      if (!m_encoder.EncodeFrames((const unsigned char *)fromPtr, fromLen,
+                                  m_naluBuffer.data(), naluLen, PluginCodec_RTP_MinHeaderSize, flags))
+        return false;
+
+      naluPtr = m_naluBuffer.data() + PluginCodec_RTP_MinHeaderSize;
+      naluLen -= PluginCodec_RTP_MinHeaderSize;
       return true;
     }
 };
@@ -1090,14 +1090,8 @@ class H264_FlashDecoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCode
         return true;
       }
 
-      if (payloadPtr[0] != '\0') {
-        if (!DecodeVideoFrame(payloadPtr+FlashHeaderSize, payloadLen-FlashHeaderSize, flags))
-          return false;
-      }
-      else {
-        if (!DecodeVideoFrame(payloadPtr, payloadLen, flags))
-          return false;
-      }
+      if (!DecodeVideoFrame(payloadPtr+FlashHeaderSize, payloadLen-FlashHeaderSize, flags))
+        return false;
 
       if ((flags&PluginCodec_ReturnCoderLastFrame) == 0)
         return true;
