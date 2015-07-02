@@ -253,8 +253,13 @@ static PString InternalGetRate(const PTime & lastUpdate,
     PTimeInterval interval = lastUpdate - previousUpdate;
     if (interval == 0)
       str = '0';
-    else
-      str = PString(PString::ScaleSI, (lastValue - previousValue)*1000.0 / interval.GetMilliSeconds(), significantFigures);
+    else {
+      double value = (lastValue - previousValue)*1000.0 / interval.GetMilliSeconds();
+      if (value == 0)
+        str = '0';
+      else
+        str = PString(PString::ScaleSI, value, significantFigures);
+    }
     str += units;
   }
 
