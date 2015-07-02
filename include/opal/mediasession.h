@@ -186,21 +186,21 @@ class OpalMediaStatistics : public PObject, public OpalNetworkStatistics, public
     unsigned GetPacketRate() const { return GetRateInt(m_totalPackets, m_updateInfo.m_previousPackets); }
     unsigned GetLossRate() const { return GetRateInt(m_packetsLost, m_updateInfo.m_previousLost); }
 
-    PString GetRateStr(int64_t total, const char * units = "", unsigned decimals = 0) const;
-    PString GetRateStr(int64_t current, int64_t previous, const char * units = "", unsigned decimals = 0) const;
-    PString GetAverageBitRate(const char * units = "", unsigned decimals = 0) const { return GetRateStr(m_totalBytes*8, units, decimals); }
-    PString GetCurrentBitRate(const char * units = "", unsigned decimals = 0) const { return GetRateStr(m_totalBytes*8, m_updateInfo.m_previousBytes*8, units, decimals); }
-    PString GetAveragePacketRate(const char * units = "", unsigned decimals = 0) const { return GetRateStr(m_totalPackets, units, decimals); }
-    PString GetCurrentPacketRate(const char * units = "", unsigned decimals = 0) const { return GetRateStr(m_totalPackets, m_updateInfo.m_previousPackets, units, decimals); }
-    PString GetPacketLossRate(const char * units = "", unsigned decimals = 0) const { return GetRateStr(m_packetsLost, m_updateInfo.m_previousLost, units, decimals); }
+    PString GetRateStr(int64_t total, const char * units = "", unsigned significantFigures = 0) const;
+    PString GetRateStr(int64_t current, int64_t previous, const char * units = "", unsigned significantFigures = 0) const;
+    PString GetAverageBitRate(const char * units = "", unsigned significantFigures = 0) const { return GetRateStr(m_totalBytes*8, units, significantFigures); }
+    PString GetCurrentBitRate(const char * units = "", unsigned significantFigures = 0) const { return GetRateStr(m_totalBytes*8, m_updateInfo.m_previousBytes*8, units, significantFigures); }
+    PString GetAveragePacketRate(const char * units = "", unsigned significantFigures = 0) const { return GetRateStr(m_totalPackets, units, significantFigures); }
+    PString GetCurrentPacketRate(const char * units = "", unsigned significantFigures = 0) const { return GetRateStr(m_totalPackets, m_updateInfo.m_previousPackets, units, significantFigures); }
+    PString GetPacketLossRate(const char * units = "", unsigned significantFigures = 0) const { return GetRateStr(m_packetsLost, m_updateInfo.m_previousLost, units, significantFigures); }
 
     PString GetCPU() const; // As percentage or one core
 
 #if OPAL_VIDEO
     // Video
     unsigned GetFrameRate() const { return GetRateInt(m_totalFrames, m_updateInfo.m_previousFrames); }
-    PString GetAverageFrameRate(const char * units = "", unsigned decimals = 0) const;
-    PString GetCurrentFrameRate(const char * units = "", unsigned decimals = 0) const;
+    PString GetAverageFrameRate(const char * units = "", unsigned significantFigures = 0) const;
+    PString GetCurrentFrameRate(const char * units = "", unsigned significantFigures = 0) const;
 #endif
 
     // Fax
@@ -208,8 +208,8 @@ class OpalMediaStatistics : public PObject, public OpalNetworkStatistics, public
     OpalFaxStatistics & m_fax; // For backward compatibility
 #endif // OPAL_FAX
 
-    P_DEPRECATED PString GetRate(int64_t current, int64_t previous, const char * units = "", unsigned decimals = 0) const
-    { return GetRateStr(current, previous, units, decimals);  }
+    P_DEPRECATED PString GetRate(int64_t current, int64_t previous, const char * units = "", unsigned significantFigures = 0) const
+    { return GetRateStr(current, previous, units, significantFigures);  }
 };
 
 #endif
