@@ -1381,8 +1381,9 @@ typedef struct OpalInstantMessage {
                                 provided by the caller if athe conversation
                                 exists. If starting a new conversation, leave
                                 empty and OpalCmdSendIM will return it. */
-  const char *  m_textBody;  /**<Simple text body, ignored if m_bodyCount > 0.
-                                 This will always be MIME type "text/plain" */
+  const char *  m_textBody;  /**<Simple text body, if present. This will always
+                                be MIME type "text/plain". It will also be included
+                                in the m_bodyCount and m_bodies. */
   unsigned      m_bodyCount; /**<Count of bodies in m_mimeType and m_bodies */
   const char ** m_mimeType;  /**<MIME type for each body, e.g. "text/html" */
   const char ** m_bodies;    /**<Body data for each MIME type */
@@ -1390,6 +1391,9 @@ typedef struct OpalInstantMessage {
                                  to match a message sent with OpalCmdSendIM with
                                  the disposition in OpalIndSentIM. It is not set
                                  by the user, and is returned by OpalCmdSendIM. */
+  const char *  m_htmlBody;  /**<HTML text body, if present. This will always
+                                be MIME type "text/html". It will also be included
+                                in the m_bodyCount and m_bodies. */
 } OpalInstantMessage;
 
 

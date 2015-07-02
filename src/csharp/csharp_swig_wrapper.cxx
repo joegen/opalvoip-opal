@@ -4182,6 +4182,35 @@ SWIGEXPORT unsigned int SWIGSTDCALL CSharp_OpalInstantMessage_messageId_get(void
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_OpalInstantMessage_htmlBody_set(void * jarg1, char * jarg2) {
+  OpalInstantMessage *arg1 = (OpalInstantMessage *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (OpalInstantMessage *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg2) {
+      arg1->m_htmlBody = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->m_htmlBody, (const char *)arg2);
+    } else {
+      arg1->m_htmlBody = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_OpalInstantMessage_htmlBody_get(void * jarg1) {
+  char * jresult ;
+  OpalInstantMessage *arg1 = (OpalInstantMessage *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (OpalInstantMessage *)jarg1; 
+  result = (char *) ((arg1)->m_htmlBody);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_OpalInstantMessage() {
   void * jresult ;
   OpalInstantMessage *result = 0 ;
