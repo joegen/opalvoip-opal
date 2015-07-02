@@ -1123,6 +1123,12 @@ class OPALPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalInstantMessage_messageId_get")]
   public static extern uint OpalInstantMessage_messageId_get(global::System.Runtime.InteropServices.HandleRef jarg1);
 
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalInstantMessage_htmlBody_set")]
+  public static extern void OpalInstantMessage_htmlBody_set(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_OpalInstantMessage_htmlBody_get")]
+  public static extern string OpalInstantMessage_htmlBody_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
   [global::System.Runtime.InteropServices.DllImport("OPAL", EntryPoint="CSharp_new_OpalInstantMessage")]
   public static extern global::System.IntPtr new_OpalInstantMessage();
 
