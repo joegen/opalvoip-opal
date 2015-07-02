@@ -2769,6 +2769,7 @@ void OpalManager_C::OnMessageReceived(const OpalIM & im)
   SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_to,   im.m_to.AsString());
   SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_conversationId, im.m_conversationId);
   SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_textBody, im.m_bodies(PMIMEInfo::TextPlain()));
+  SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_htmlBody, im.m_bodies(PMIMEInfo::TextHTML()));
 
   PINDEX count = im.m_bodies.GetSize();
   if (count > 0) {

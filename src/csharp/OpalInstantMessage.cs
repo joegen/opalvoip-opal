@@ -131,6 +131,16 @@ public class OpalInstantMessage : global::System.IDisposable {
     } 
   }
 
+  public string htmlBody {
+    set {
+      OPALPINVOKE.OpalInstantMessage_htmlBody_set(swigCPtr, value);
+    } 
+    get {
+      string ret = OPALPINVOKE.OpalInstantMessage_htmlBody_get(swigCPtr);
+      return ret;
+    } 
+  }
+
   public OpalInstantMessage() : this(OPALPINVOKE.new_OpalInstantMessage(), true) {
   }
 
