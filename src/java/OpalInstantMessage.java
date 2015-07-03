@@ -109,6 +109,14 @@ public class OpalInstantMessage {
     return OPALJNI.OpalInstantMessage_messageId_get(swigCPtr, this);
   }
 
+  public void setHtmlBody(String value) {
+    OPALJNI.OpalInstantMessage_htmlBody_set(swigCPtr, this, value);
+  }
+
+  public String getHtmlBody() {
+    return OPALJNI.OpalInstantMessage_htmlBody_get(swigCPtr, this);
+  }
+
   public OpalInstantMessage() {
     this(OPALJNI.new_OpalInstantMessage(), true);
   }

@@ -324,6 +324,8 @@ public class OPALJNI {
   public final static native long OpalInstantMessage_bodies_get(long jarg1, OpalInstantMessage jarg1_);
   public final static native void OpalInstantMessage_messageId_set(long jarg1, OpalInstantMessage jarg1_, long jarg2);
   public final static native long OpalInstantMessage_messageId_get(long jarg1, OpalInstantMessage jarg1_);
+  public final static native void OpalInstantMessage_htmlBody_set(long jarg1, OpalInstantMessage jarg1_, String jarg2);
+  public final static native String OpalInstantMessage_htmlBody_get(long jarg1, OpalInstantMessage jarg1_);
   public final static native long new_OpalInstantMessage();
   public final static native void delete_OpalInstantMessage(long jarg1);
   public final static native void OpalParamRecording_callToken_set(long jarg1, OpalParamRecording jarg1_, String jarg2);
