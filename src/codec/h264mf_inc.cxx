@@ -506,8 +506,8 @@ class H264FlashPacketizer
 
         /* Write SPSs */
         *pBuffer++ = 0xE1; // Only 1 for now
-        *pBuffer++ = naluLen >> 8;
-        *pBuffer++ = naluLen;
+        *pBuffer++ = (uint8_t)(naluLen >> 8);
+        *pBuffer++ = (uint8_t) naluLen;
         memcpy(pBuffer, naluPtr, naluLen);
         pBuffer += naluLen;
 
@@ -517,8 +517,8 @@ class H264FlashPacketizer
 
         /* Write PPSs */
         *pBuffer++ = 0x01; // Only 1 for now
-        *pBuffer++ = naluLen >> 8;
-        *pBuffer++ = naluLen;
+        *pBuffer++ = (uint8_t)(naluLen >> 8);
+        *pBuffer++ = (uint8_t) naluLen;
         memcpy(pBuffer, naluPtr, naluLen);
         pBuffer += naluLen;
       }
@@ -548,10 +548,10 @@ class H264FlashPacketizer
         *pBuffer++ = bKey ? 0x10 : 0x30;
 
         for (;;) {
-          *pBuffer++ = naluLen >> 24;
-          *pBuffer++ = naluLen >> 16;
-          *pBuffer++ = naluLen >> 8;
-          *pBuffer++ = naluLen;
+          *pBuffer++ = (uint8_t)(naluLen >> 24);
+          *pBuffer++ = (uint8_t)(naluLen >> 16);
+          *pBuffer++ = (uint8_t)(naluLen >>  8);
+          *pBuffer++ = (uint8_t) naluLen;
           memcpy(pBuffer, naluPtr, naluLen);
           pBuffer += naluLen;
 
