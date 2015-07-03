@@ -580,7 +580,7 @@ void OpalH281Client::OnReceivedExtraCapabilities(const BYTE *capabilities, PINDE
     VideoSourceIds sourceId = VideoSourceIdsFromInt((capabilities[pos] >> 4) & 0x0f);
     if (sourceId == CurrentVideoSource)
       sourceId = m_remoteSourceId == NumVideoSourceIds ? MainCameraId : m_remoteSourceId; // Zero shouldn't happen, but just in case
-    pos += m_remoteCapability[sourceId].Decode(sourceId, capabilities, pos);
+    pos = m_remoteCapability[sourceId].Decode(sourceId, capabilities, pos);
     if (m_remoteSourceId == NumVideoSourceIds && m_remoteCapability[sourceId].m_available)
       m_remoteSourceId = sourceId;
     PTRACE(4, "Received remote camera capability: id=" << sourceId << ' ' << m_remoteCapability[sourceId]);
