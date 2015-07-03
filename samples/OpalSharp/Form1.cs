@@ -32,6 +32,21 @@ namespace OpalSharp
             }
         }
 
+        delegate void SetTextCallback(Control ctrl, string text);
+
+        private void SetTextSafely(Control ctrl, string text)
+        {
+            if (ctrl.InvokeRequired)
+            {
+                SetTextCallback d = new SetTextCallback(SetTextSafely);
+                this.Invoke(d, new object[] { ctrl, text });
+            }
+            else
+            {
+                ctrl.Text = text;
+            }
+        }
+
         public Form1()
         {
             InitializeComponent();
@@ -60,16 +75,16 @@ namespace OpalSharp
                         switch (reg.status)
                         {
                             case OpalRegistrationStates.OpalRegisterSuccessful:
-                                MessageBox.Show("Registration complete to " + reg.serverName);
+                                SetTextSafely(RegisterStatus, "Registration complete to " + reg.serverName);
                                 EnableSafely(Unregister, true);
                                 break;
                             case OpalRegistrationStates.OpalRegisterRemoved :
-                                MessageBox.Show("Registration removed from " + reg.serverName);
+                                SetTextSafely(RegisterStatus, "Registration removed from " + reg.serverName);
                                 EnableSafely(Unregister, false);
                                 EnableSafely(Register, true);
                                 break;
                             case OpalRegistrationStates.OpalRegisterFailed:
-                                MessageBox.Show("Registration failed: " + reg.error);
+                                SetTextSafely(RegisterStatus, "Registration failed: " + reg.error);
                                 EnableSafely(Register, true);
                                 break;
                         }
@@ -79,13 +94,18 @@ namespace OpalSharp
                         EnableSafely(Call, false);
                         EnableSafely(Answer, true);
                         EnableSafely(HangUp, true);
+                        SetTextSafely(CallStatus, "Incoming call ..." + msg.GetIncomingCall().remoteDisplayName);
+                        break;
+
+                    case OpalMessageType.OpalIndEstablished :
+                        SetTextSafely(CallStatus, "Call established");
                         break;
 
                     case OpalMessageType.OpalIndCallCleared:
                         EnableSafely(Call, true);
                         EnableSafely(Answer, false);
                         EnableSafely(HangUp, false);
-                        MessageBox.Show("Call ended: " + msg.GetCallCleared().reason);
+                        SetTextSafely(CallStatus, "Call ended: " + msg.GetCallCleared().reason);
                         break;
                 }
             }
@@ -115,10 +135,12 @@ namespace OpalSharp
                     gen.natServer = StunServer.Text;
                     gen.autoRxMedia = gen.autoTxMedia = "audio video";
                     gen.mediaMask = "!*uLaw*\n!*264-0\nH.263*"; // Kind of backwards, it's a mask with negative entries
-                    gen.audioPlayerDevice = "Default audio";
-                    gen.audioRecordDevice = "Default audio";
+                    gen.mediaOptions = "video:Frame Width=640\nvideo:Frame Height=480\nvideo:Target Bit Rate=256000";
+                    gen.audioPlayerDevice = "Default communications";
+                    gen.audioRecordDevice = "Default communications";
                     gen.videoOutputDevice = "MSWIN STYLE=0x50000000 PARENT=" + VideoDisplay.Handle + " X=0 Y=0 WIDTH=" + VideoDisplay.Width + " HEIGHT=" + VideoDisplay.Height;
                     gen.videoPreviewDevice = "MSWIN STYLE=0x50000000 PARENT=" + VideoPreview.Handle + " X=0 Y=0 WIDTH=" + VideoPreview.Width + " HEIGHT=" + VideoPreview.Height;
+                    gen.noMediaTimeout = 15000;
                     OpalMessagePtr result = new OpalMessagePtr();
                     if (!m_opalContext.SendMessage(msg, result))
                         MessageBox.Show("Could not set general parameters: " + result.GetCommandError(), "OPAL", MessageBoxButtons.OK);
@@ -210,10 +232,10 @@ namespace OpalSharp
                 reg.identifier = m_registrationIdentifier;
                 reg.timeToLive = 0; // Zero unregisters
                 OpalMessagePtr result = new OpalMessagePtr();
-                if (!m_opalContext.SendMessage(msg, result))
-                    MessageBox.Show("Could not set start registration: " + result.GetCommandError(), "OPAL", MessageBoxButtons.OK);
-                else
+                if (m_opalContext.SendMessage(msg, result))
                     Register.Enabled = false;
+                else
+                    MessageBox.Show("Could not set start registration: " + result.GetCommandError(), "OPAL", MessageBoxButtons.OK);
             }
         }
 
@@ -225,14 +247,15 @@ namespace OpalSharp
                 OpalParamSetUpCall call = msg.GetCallSetUp();
                 call.partyB = urlToCall.Text;
                 OpalMessagePtr result = new OpalMessagePtr();
-                if (!m_opalContext.SendMessage(msg, result))
-                    MessageBox.Show("Could not start call: " + result.GetCommandError(), "OPAL", MessageBoxButtons.OK);
-                else
+                if (m_opalContext.SendMessage(msg, result))
                 {
                     m_opalCallToken = result.GetCallSetUp().callToken;
                     Call.Enabled = false;
                     HangUp.Enabled = true;
+                    CallStatus.Text = "Calling " + urlToCall.Text;
                 }
+                else
+                    MessageBox.Show("Could not start call: " + result.GetCommandError(), "OPAL", MessageBoxButtons.OK);
             }
         }
 
@@ -246,7 +269,9 @@ namespace OpalSharp
                 OpalParamCallCleared call = msg.GetClearCall();
                 call.callToken = m_opalCallToken;
                 OpalMessagePtr result = new OpalMessagePtr();
-                if (!m_opalContext.SendMessage(msg, result))
+                if (m_opalContext.SendMessage(msg, result))
+                    HangUp.Enabled = false;
+                else
                     MessageBox.Show("Could not hang up call: " + result.GetCommandError(), "OPAL", MessageBoxButtons.OK);
             }
         }
