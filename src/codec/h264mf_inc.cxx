@@ -33,6 +33,7 @@
 #include <codec/known.h>
 
 #include <stdio.h>
+#include <vector>
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -197,6 +198,10 @@ static struct LevelInfoStruct {
   { H264_LEVEL_STR_5_1,  51, 0x00, 113, 36864, 8320,  983040, 240000 * 1200 },
   { H264_LEVEL_STR_5_2,  52, 0x00, 120, 36864, 8320, 2073600, 240000 * 1200 },
 };
+
+
+static const size_t FlashHeaderSize = 5;
+static const uint8_t FlashSPS_PPS[FlashHeaderSize] = { 0x17, 0, 0, 0, 0 };
 
 
 static int hexdigit(char ch)
@@ -448,6 +453,125 @@ static bool MyToCustomised(PluginCodec_OptionMap & original, PluginCodec_OptionM
 
   return true;
 }
+
+
+class H264FlashPacketizer
+{
+  protected:
+    std::vector<unsigned char> m_naluBuffer;
+    bool m_firstFrame;
+
+    H264FlashPacketizer()
+      : m_firstFrame(true)
+    {
+    }
+
+    virtual ~H264FlashPacketizer()
+    {
+    }
+
+
+    virtual bool GetNALU(const void * fromPtr, unsigned & fromLen, const uint8_t * & naluPtr, unsigned & naluLen, unsigned & flags) = 0;
+
+    bool FlashTranscode(const void * fromPtr,
+                          unsigned & fromLen,
+                              void * toPtr,
+                          unsigned & toLen,
+                          unsigned & flags)
+    {
+      PluginCodec_RTP rtp(toPtr, toLen);
+      uint8_t * pBuffer = rtp.GetPayloadPtr();
+
+      const uint8_t * naluPtr;
+      unsigned naluLen;
+      if (!GetNALU(fromPtr, fromLen, naluPtr, naluLen, flags))
+        return false;
+
+      bool bKey = (flags&PluginCodec_ReturnCoderIFrame) != 0;
+
+      if (bKey && (naluPtr[0] & 0x1f) == 0x07) { // SPS
+        /* Pre-amble */
+        *pBuffer++ = 0x17;
+        *pBuffer++ = 0x00;
+        *pBuffer++ = 0x00;
+        *pBuffer++ = 0x00;
+        *pBuffer++ = 0x00;
+
+        /* Start header */
+        *pBuffer++ = 0x01; /* version */
+        *pBuffer++ = naluPtr[1]; /* profile */
+        *pBuffer++ = naluPtr[2]; /* profile compat */
+        *pBuffer++ = naluPtr[3]; /* level */
+        *pBuffer++ = 0xFF; /* 6 bits reserved (111111) + 2 bits nal size length - 1 (11) */
+
+        /* Write SPSs */
+        *pBuffer++ = 0xE1; // Only 1 for now
+        *pBuffer++ = naluLen >> 8;
+        *pBuffer++ = naluLen;
+        memcpy(pBuffer, naluPtr, naluLen);
+        pBuffer += naluLen;
+
+        // We assume next thing is SPS
+        if (!GetNALU(fromPtr, fromLen, naluPtr, naluLen, flags))
+            return false;
+
+        /* Write PPSs */
+        *pBuffer++ = 0x01; // Only 1 for now
+        *pBuffer++ = naluLen >> 8;
+        *pBuffer++ = naluLen;
+        memcpy(pBuffer, naluPtr, naluLen);
+        pBuffer += naluLen;
+      }
+      else {
+        /* Pre-amble */
+        *pBuffer++ = bKey ? 0x17 : 0x27;
+        *pBuffer++ = 0x01;
+        *pBuffer++ = 0x00;
+        *pBuffer++ = 0x00;
+        *pBuffer++ = 0x00;
+
+        if (bKey && !m_firstFrame) {
+          /* End of previous GOP */
+          *pBuffer++ = 0x00;
+          *pBuffer++ = 0x00;
+          *pBuffer++ = 0x00;
+          *pBuffer++ = 0x01;
+          *pBuffer++ = 0x0A;
+        }
+
+        /* Access unit delimiter */
+        *pBuffer++ = 0x00;
+        *pBuffer++ = 0x00;
+        *pBuffer++ = 0x00;
+        *pBuffer++ = 0x02;
+        *pBuffer++ = 0x09;
+        *pBuffer++ = bKey ? 0x10 : 0x30;
+
+        for (;;) {
+          *pBuffer++ = naluLen >> 24;
+          *pBuffer++ = naluLen >> 16;
+          *pBuffer++ = naluLen >> 8;
+          *pBuffer++ = naluLen;
+          memcpy(pBuffer, naluPtr, naluLen);
+          pBuffer += naluLen;
+
+          if ((flags&PluginCodec_ReturnCoderLastFrame) != 0)
+            break;
+
+          if (!GetNALU(fromPtr, fromLen, naluPtr, naluLen, flags))
+            return false;
+        }
+
+        m_firstFrame = false;
+      }
+
+      if (!rtp.SetPayloadSize(pBuffer - rtp.GetPayloadPtr()))
+        return false;
+
+      toLen = rtp.GetPacketSize();
+      return true;
+    }
+};
 
 
 // End of File ///////////////////////////////////////////////////////////////
