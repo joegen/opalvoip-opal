@@ -44,6 +44,8 @@
             this.password = new System.Windows.Forms.TextBox();
             this.user = new System.Windows.Forms.TextBox();
             this.host = new System.Windows.Forms.TextBox();
+            this.RegisterStatus = new System.Windows.Forms.Label();
+            this.CallStatus = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.VideoDisplay)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.VideoPreview)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.LogLevel)).BeginInit();
@@ -127,7 +129,7 @@
             // VideoDisplay
             // 
             this.VideoDisplay.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.VideoDisplay.Location = new System.Drawing.Point(30, 218);
+            this.VideoDisplay.Location = new System.Drawing.Point(53, 218);
             this.VideoDisplay.Name = "VideoDisplay";
             this.VideoDisplay.Size = new System.Drawing.Size(352, 288);
             this.VideoDisplay.TabIndex = 14;
@@ -136,7 +138,7 @@
             // VideoPreview
             // 
             this.VideoPreview.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.VideoPreview.Location = new System.Drawing.Point(40, 424);
+            this.VideoPreview.Location = new System.Drawing.Point(63, 424);
             this.VideoPreview.Name = "VideoPreview";
             this.VideoPreview.Size = new System.Drawing.Size(88, 72);
             this.VideoPreview.TabIndex = 15;
@@ -157,7 +159,7 @@
             this.LogFile.DataBindings.Add(new System.Windows.Forms.Binding("Text", global::OpalSharp.Properties.Settings.Default, "LogFile", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
             this.LogFile.Location = new System.Drawing.Point(169, 12);
             this.LogFile.Name = "LogFile";
-            this.LogFile.Size = new System.Drawing.Size(213, 20);
+            this.LogFile.Size = new System.Drawing.Size(286, 20);
             this.LogFile.TabIndex = 11;
             this.LogFile.Text = global::OpalSharp.Properties.Settings.Default.LogFile;
             // 
@@ -175,7 +177,7 @@
             this.urlToCall.DataBindings.Add(new System.Windows.Forms.Binding("Text", global::OpalSharp.Properties.Settings.Default, "URLtoCall", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
             this.urlToCall.Location = new System.Drawing.Point(128, 143);
             this.urlToCall.Name = "urlToCall";
-            this.urlToCall.Size = new System.Drawing.Size(254, 20);
+            this.urlToCall.Size = new System.Drawing.Size(327, 20);
             this.urlToCall.TabIndex = 7;
             this.urlToCall.Text = global::OpalSharp.Properties.Settings.Default.URLtoCall;
             // 
@@ -207,11 +209,31 @@
             this.host.TabIndex = 3;
             this.host.Text = global::OpalSharp.Properties.Settings.Default.HostDomain;
             // 
+            // RegisterStatus
+            // 
+            this.RegisterStatus.Location = new System.Drawing.Point(128, 108);
+            this.RegisterStatus.Name = "RegisterStatus";
+            this.RegisterStatus.Size = new System.Drawing.Size(327, 23);
+            this.RegisterStatus.TabIndex = 16;
+            this.RegisterStatus.Text = "Unregistered";
+            this.RegisterStatus.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
+            // CallStatus
+            // 
+            this.CallStatus.Location = new System.Drawing.Point(209, 172);
+            this.CallStatus.Name = "CallStatus";
+            this.CallStatus.Size = new System.Drawing.Size(246, 23);
+            this.CallStatus.TabIndex = 17;
+            this.CallStatus.Text = "No call in progress";
+            this.CallStatus.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(413, 518);
+            this.ClientSize = new System.Drawing.Size(467, 518);
+            this.Controls.Add(this.CallStatus);
+            this.Controls.Add(this.RegisterStatus);
             this.Controls.Add(this.VideoPreview);
             this.Controls.Add(this.VideoDisplay);
             this.Controls.Add(this.Answer);
@@ -258,6 +280,8 @@
         private System.Windows.Forms.Button Answer;
         private System.Windows.Forms.PictureBox VideoDisplay;
         private System.Windows.Forms.PictureBox VideoPreview;
+        private System.Windows.Forms.Label RegisterStatus;
+        private System.Windows.Forms.Label CallStatus;
     }
 }
 
