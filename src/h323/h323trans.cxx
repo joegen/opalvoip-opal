@@ -172,7 +172,7 @@ H323Transactor::H323Transactor(H323EndPoint & ep,
 
 void H323Transactor::Construct()
 {
-  nextSequenceNumber = PRandom::Number()%65536;
+  m_nextSequenceNumber = PRandom::Number()%65536;
   checkResponseCryptoTokens = true;
   lastRequest = NULL;
 
@@ -312,11 +312,11 @@ PBoolean H323Transactor::SetUpCallSignalAddresses(H225_ArrayOf_TransportAddress 
 
 unsigned H323Transactor::GetNextSequenceNumber()
 {
-  PWaitAndSignal mutex(nextSequenceNumberMutex);
-  nextSequenceNumber++;
-  if (nextSequenceNumber >= 65536)
-    nextSequenceNumber = 1;
-  return nextSequenceNumber;
+  unsigned sn;
+  do {
+    sn = ++m_nextSequenceNumber;
+  }  while (sn == 0);
+  return sn;
 }
 
 

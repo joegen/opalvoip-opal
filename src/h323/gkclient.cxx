@@ -318,7 +318,9 @@ unsigned H323Gatekeeper::SetupGatekeeperRequest(H323RasPDU & request)
   endpoint.SetEndpointTypeInfo(grq.m_endpointType);
 
   grq.IncludeOptionalField(H225_GatekeeperRequest::e_endpointAlias);
+  m_aliasMutex.Wait();
   H323SetAliasAddresses(m_aliases, grq.m_endpointAlias);
+  m_aliasMutex.Signal();
 
   if (!gatekeeperIdentifier) {
     grq.IncludeOptionalField(H225_GatekeeperRequest::e_gatekeeperIdentifier);
@@ -539,9 +541,11 @@ bool H323Gatekeeper::RegistrationRequest(bool autoReg, bool didGkDiscovery, bool
     endpoint.SetVendorIdentifierInfo(rrq.m_endpointVendor);
 
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_terminalAlias);
+    m_aliasMutex.Wait();
     H323SetAliasAddresses(m_aliases, rrq.m_terminalAlias);
+    m_aliasMutex.Signal();
 
-    if (!endpoint.GetAliasNamePatterns().IsEmpty() && !endpoint.GetGatekeeperSimulatePattern()) {
+    if (!endpoint.GetGatekeeperSimulatePattern()) {
       const PStringList patterns = endpoint.GetAliasNamePatterns();
       for (PStringList::const_iterator it = patterns.begin(); it != patterns.end(); ++it) {
         if (OpalIsE164(*it)) {
@@ -691,38 +695,36 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
   // Remove the endpoint aliases that the gatekeeper did not like and add the
   // ones that it really wants us to be.
   if (rcf.HasOptionalField(H225_RegistrationConfirm::e_terminalAlias)) {
-    PStringList aliasesToChange;
-    PINDEX i, j;
-
-    for (i = 0; i < rcf.m_terminalAlias.GetSize(); i++) {
+    PStringSet aliasesFromGk;
+    for (PINDEX i = 0; i < rcf.m_terminalAlias.GetSize(); i++) {
       PString alias = H323GetAliasAddressString(rcf.m_terminalAlias[i]);
-      if (!alias) {
-        PStringList::iterator currentAlias;
-        for (currentAlias = m_aliases.begin(); currentAlias != m_aliases.end(); ++currentAlias) {
-          if (alias *= *currentAlias)
-            break;
-        }
-        if (currentAlias == m_aliases.end())
-          aliasesToChange.AppendString(alias);
+      if (!alias)
+        aliasesFromGk += alias;
+    }
+
+    PStringList aliasesToAdd, aliasesToRemove;
+
+    m_aliasMutex.Wait();
+
+    for (PStringSet::iterator alias = aliasesFromGk.begin(); alias != aliasesFromGk.end(); ++alias) {
+      if (m_aliases.GetValuesIndex(*alias) == P_MAX_INDEX) {
+        aliasesToAdd.AppendString(*alias);
+        m_aliases.AppendString(*alias);
       }
     }
-    for (PStringList::iterator alias = aliasesToChange.begin(); alias != aliasesToChange.end(); ++alias) {
-      PTRACE(3, "Gatekeeper add of alias \"" << *alias << '"');
-      endpoint.AddAliasName(*alias);
-      m_aliases.AppendString(*alias);
-    }
-
-    aliasesToChange.RemoveAll();
 
     for (PStringList::iterator alias = m_aliases.begin(); alias != m_aliases.end(); ++alias) {
-      for (j = 0; j < rcf.m_terminalAlias.GetSize(); j++) {
-        if (*alias *= H323GetAliasAddressString(rcf.m_terminalAlias[j]))
-          break;
-      }
-      if (j >= rcf.m_terminalAlias.GetSize())
-        aliasesToChange.AppendString(*alias);
+      if (!aliasesFromGk.Contains(*alias))
+        aliasesToRemove.AppendString(*alias);
     }
-    for (PStringList::iterator alias = aliasesToChange.begin(); alias != aliasesToChange.end(); ++alias) {
+
+    m_aliasMutex.Signal();
+
+    for (PStringList::iterator alias = aliasesToAdd.begin(); alias != aliasesToAdd.end(); ++alias) {
+      PTRACE(3, "Gatekeeper add of alias \"" << *alias << '"');
+      endpoint.AddAliasName(*alias);
+    }
+    for (PStringList::iterator alias = aliasesToRemove.begin(); alias != aliasesToRemove.end(); ++alias) {
       PTRACE(3, "Gatekeeper removal of alias \"" << *alias << '"');
       endpoint.RemoveAliasName(*alias, false);
     }
@@ -861,7 +863,9 @@ PBoolean H323Gatekeeper::UnregistrationRequest(int reason)
   SetListenerAddresses(urq.m_callSignalAddress);
 
   urq.IncludeOptionalField(H225_UnregistrationRequest::e_endpointAlias);
+  m_aliasMutex.Wait();
   H323SetAliasAddresses(m_aliases, urq.m_endpointAlias);
+  m_aliasMutex.Signal();
 
   if (!gatekeeperIdentifier) {
     urq.IncludeOptionalField(H225_UnregistrationRequest::e_gatekeeperIdentifier);
@@ -1011,7 +1015,9 @@ PBoolean H323Gatekeeper::LocationRequest(const PStringList & aliases,
   replyAddress.SetPDU(lrq.m_replyAddress);
 
   lrq.IncludeOptionalField(H225_LocationRequest::e_sourceInfo);
+  m_aliasMutex.Wait();
   H323SetAliasAddresses(m_aliases, lrq.m_sourceInfo);
+  m_aliasMutex.Signal();
 
   if (!gatekeeperIdentifier) {
     lrq.IncludeOptionalField(H225_LocationRequest::e_gatekeeperIdentifier);
@@ -1583,7 +1589,9 @@ H225_InfoRequestResponse & H323Gatekeeper::BuildInfoRequestResponse(H323RasPDU &
   SetListenerAddresses(irr.m_callSignalAddress);
 
   irr.IncludeOptionalField(H225_InfoRequestResponse::e_endpointAlias);
+  m_aliasMutex.Wait();
   H323SetAliasAddresses(m_aliases, irr.m_endpointAlias);
+  m_aliasMutex.Signal();
 
   return irr;
 }
@@ -1870,6 +1878,23 @@ void H323Gatekeeper::SetPassword(const PString & password,
   ReRegisterNow();
 }
 
+
+void H323Gatekeeper::SetAliases(const PStringList & aliases)
+{
+  m_aliasMutex.Wait();
+  m_aliases = aliases;
+  m_aliases.MakeUnique();
+  m_aliasMutex.Signal();
+}
+
+
+PStringList H323Gatekeeper::GetAliases() const
+{
+  PWaitAndSignal mutex(m_aliasMutex);
+  PStringList aliases = m_aliases;
+  aliases.MakeUnique();
+  return aliases;
+}
 
 void H323Gatekeeper::ReRegisterNow()
 {
