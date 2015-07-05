@@ -145,6 +145,7 @@ H323Transactor::H323Transactor(H323EndPoint & ep,
     transport = trans;
   else
     transport = new H323TransportUDP(ep, PIPSocket::GetDefaultIpAny(), local_port);
+  PTRACE_CONTEXT_ID_TO(transport);
 
   Construct();
 }
@@ -164,6 +165,7 @@ H323Transactor::H323Transactor(H323EndPoint & ep,
     PIPSocket::Address addr;
     PAssert(iface.GetIpAndPort(addr, local_port), "Cannot parse address");
     transport = new H323TransportUDP(ep, addr, local_port);
+    PTRACE_CONTEXT_ID_TO(transport);
   }
 
   Construct();
@@ -217,8 +219,9 @@ PBoolean H323Transactor::SetTransport(const H323TransportAddress & iface)
   }
 
   transport = new H323TransportUDP(endpoint, addr, port);
+  PTRACE_CONTEXT_ID_TO(transport);
   transport->SetPromiscuous(H323Transport::AcceptFromAny);
-  return StartChannel();;
+  return StartChannel();
 }
 
 
@@ -867,6 +870,8 @@ PBoolean H323TransactionServer::AddListener(H323Transport * transport)
     PTRACE(2, "Trans\tTried to listen on NULL transport");
     return false;
   }
+
+  PTRACE_CONTEXT_ID_TO(transport);
 
   if (!transport->IsOpen()) {
     PTRACE(3, "Trans\tTransport is not open");

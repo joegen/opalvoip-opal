@@ -81,6 +81,11 @@ class H323Gatekeeper : public H225_RAS
     
   /**@name Overrides from H323Transactor */
   //@{
+    /**Stop the channel processing transactions.
+       Must be called in each descendants destructor.
+      */
+    virtual void StopChannel();
+
     virtual PBoolean WriteTo(
       H323TransactionPDU & pdu,
       const H323TransportAddressArray & addresses,
@@ -294,11 +299,6 @@ class H323Gatekeeper : public H225_RAS
       const PString & username = PString() ///<  Username for password
     );
 
-    /**Set fixed, single, alias for gatekeeper.
-       If not set, then all the aliases for the H323EndPoint are used.
-      */
-    void SetAliases(const PStringList & aliases);
-
     /**Get fixed, single, alias for gatekeeper.
       */
     PStringList GetAliases() const;
@@ -425,6 +425,8 @@ class H323Gatekeeper : public H225_RAS
     PSyncPoint    m_monitorTickle;
     void Monitor();
     PTimeInterval InternalRegister();
+
+  friend class H323EndPoint;
 };
 
 

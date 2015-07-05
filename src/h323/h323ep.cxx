@@ -509,31 +509,29 @@ bool H323EndPoint::InternalRestartGatekeeper(bool adjustingRegistrations)
 
   // Now remove aliases already registered but no longer needed
   for (gk = m_gatekeepers.begin(); gk != m_gatekeepers.end(); ++gk) {
-    PStringList aliases = gk->GetAliases();
+    gk->m_aliasMutex.Wait();
     bool deletedOne = false;
-    for (PStringList::iterator alias = aliases.begin(); alias != aliases.end(); ) {
+    for (PStringList::iterator alias = gk->m_aliases.begin(); alias != gk->m_aliases.end(); ) {
       AliasToGkMap::iterator existing = allAliases.find(*alias);
       if (existing != allAliases.end()) {
         allAliases.erase(existing); // Remove from set as do not need to register it again
         ++alias;
       }
       else {
-        aliases.erase(alias++);
+        gk->m_aliases.erase(alias++);
         deletedOne = true;
       }
     }
-    if (deletedOne) {
-      gk->SetAliases(aliases);
-      if (!aliases.IsEmpty())
-        gk->ReRegisterNow();
-    }
+    if (deletedOne && !gk->m_aliases.IsEmpty())
+      gk->ReRegisterNow();
+    gk->m_aliasMutex.Signal();
   }
 
   // Now add aliases not registered, filling partially filled registrations
   for (gk = m_gatekeepers.begin(); !allAliases.empty() && gk != m_gatekeepers.end(); ++gk) {
-    PStringList aliases = gk->GetAliases();
+    gk->m_aliasMutex.Wait();
     bool addedOne = false;
-    while (aliases.GetSize() < m_gatekeeperAliasLimit) {
+    while (gk->m_aliases.GetSize() < m_gatekeeperAliasLimit) {
       AliasToGkMap::iterator alias;
       for (alias = allAliases.begin(); alias != allAliases.end(); ++alias) {
         if (alias->second.IsEmpty() || alias->second.IsEquivalent(gk->GetTransport().GetRemoteAddress()))
@@ -541,20 +539,19 @@ bool H323EndPoint::InternalRestartGatekeeper(bool adjustingRegistrations)
       }
       if (alias == allAliases.end())
         break;
-      aliases += alias->first;
+      gk->m_aliases += alias->first.GetPointer(); // Do not wan't reference
       allAliases.erase(allAliases.begin());
       addedOne = true;
     }
-    if (addedOne) {
-      gk->SetAliases(aliases);
+    if (addedOne)
       gk->ReRegisterNow();
-    }
+    gk->m_aliasMutex.Signal();
   }
 
   // If any sub-gatekeepers now have no aliases, remove them
   gk = m_gatekeepers.begin();
   while (gk != m_gatekeepers.end()) {
-    if (gk->GetAliases().IsEmpty()) {
+    if (gk->m_aliases.IsEmpty()) {
       gk->UnregistrationRequest(-1);
       m_gatekeepers.erase(gk++);
     }
@@ -595,9 +592,10 @@ bool H323EndPoint::InternalRestartGatekeeper(bool adjustingRegistrations)
 
   m_gatekeeperByAlias.RemoveAll();
   for (gk = m_gatekeepers.begin(); gk != m_gatekeepers.end(); ++gk) {
-      const PStringList & aliases = gk->GetAliases();
-      for (PStringList::const_iterator alias = aliases.begin(); alias != aliases.end(); ++alias)
-          m_gatekeeperByAlias.SetAt(*alias, &*gk);
+    gk->m_aliasMutex.Wait();
+    for (PStringList::iterator alias = gk->m_aliases.begin(); alias != gk->m_aliases.end(); ++alias)
+      m_gatekeeperByAlias.SetAt(alias->GetPointer(), &*gk);
+    gk->m_aliasMutex.Signal();
   }
 
   return true;
@@ -620,7 +618,12 @@ bool H323EndPoint::InternalCreateGatekeeper(const H323TransportAddress & remoteA
     return false;
 
   PTRACE(3, "H323\tAdded gatekeeper (at=" << remoteAddress << ", if=" << transport->GetLocalAddress() << ") for aliases: " << setfill(',') << aliases);
-  gatekeeper->SetAliases(aliases);
+
+  gatekeeper->m_aliasMutex.Wait();
+  for (PStringList::const_iterator alias = aliases.begin(); alias != aliases.end(); ++alias)
+    gatekeeper->m_aliases = alias->GetPointer(); // Don't make reference
+  gatekeeper->m_aliasMutex.Signal();
+
   gatekeeper->SetPassword(GetGatekeeperPassword(), GetGatekeeperUsername());
   m_gatekeepers.Append(gatekeeper);
 
