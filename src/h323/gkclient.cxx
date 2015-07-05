@@ -87,6 +87,7 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   , m_monitorThread(NULL)
   , m_monitorRunning(false)
 {
+  PTRACE_CONTEXT_ID_NEW();
   PInterfaceMonitor::GetInstance().AddNotifier(m_onHighPriorityInterfaceChange, 80);
   PInterfaceMonitor::GetInstance().AddNotifier(m_onLowPriorityInterfaceChange, 40);
 }
@@ -96,13 +97,6 @@ H323Gatekeeper::~H323Gatekeeper()
 {
   PInterfaceMonitor::GetInstance().RemoveNotifier(m_onHighPriorityInterfaceChange);
   PInterfaceMonitor::GetInstance().RemoveNotifier(m_onLowPriorityInterfaceChange);
-
-  if (m_monitorThread != NULL) {
-    m_monitorRunning = false;
-    m_monitorTickle.Signal();
-    PAssert(m_monitorThread->WaitForTermination(10000), "Gatekeeper monitor thread did not stop");
-    delete m_monitorThread;
-  }
 
   StopChannel();
 
@@ -175,7 +169,7 @@ PString H323Gatekeeper::GetEndpointIdentifier() const
 
 PBoolean H323Gatekeeper::DiscoverAny()
 {
-  gatekeeperIdentifier = PString();
+  gatekeeperIdentifier.MakeEmpty();
   return StartGatekeeper(H323TransportAddress());
 }
 
@@ -189,7 +183,7 @@ PBoolean H323Gatekeeper::DiscoverByName(const PString & identifier)
 
 PBoolean H323Gatekeeper::DiscoverByAddress(const H323TransportAddress & address)
 {
-  gatekeeperIdentifier = PString();
+  gatekeeperIdentifier.MakeEmpty();
   return StartGatekeeper(address);
 }
 
@@ -208,7 +202,7 @@ void H323RasPDU::WriteGRQ(H323Transport & transport, bool & succeeded)
 
   // Check if interface is used by signalling channel listeners
   if (transport.GetEndPoint().GetInterfaceAddresses(&transport).IsEmpty()) {
-    PTRACE(3, "Not sending GRQ on " << localAddress << " as no signalling chanel is listening there.");
+    PTRACE(3, "Not sending GRQ on " << localAddress << " as no signalling channel is listening there.");
     return;
   }
 
@@ -243,6 +237,7 @@ bool H323Gatekeeper::StartGatekeeper(const H323TransportAddress & initialAddress
   if (m_monitorThread == NULL) {
     m_monitorRunning = true;
     m_monitorThread = new PThreadObj<H323Gatekeeper>(*this, &H323Gatekeeper::Monitor, false, "GkMonitor");
+    PTRACE_CONTEXT_ID_TO(m_monitorThread);
   }
 
   ReRegisterNow();
@@ -283,6 +278,20 @@ bool H323Gatekeeper::DiscoverGatekeeper()
       }
     }
   }
+}
+
+
+void H323Gatekeeper::StopChannel()
+{
+  if (m_monitorThread != NULL) {
+    m_monitorRunning = false;
+    m_monitorTickle.Signal();
+    PAssert(m_monitorThread->WaitForTermination(10000), "Gatekeeper monitor thread did not stop");
+    delete m_monitorThread;
+    m_monitorThread = 0;
+  }
+
+  H323Transactor::StopChannel();
 }
 
 
@@ -666,8 +675,10 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
     m_currentTimeToLive = endpoint.GetGatekeeperTimeToLive();
 
 #if OPAL_H460_NAT
-  if (m_features != NULL && m_features->HasFeature(H460_FeatureStd18::ID()) && m_currentTimeToLive > endpoint.GetManager().GetNatKeepAliveTime())
+  if (m_features != NULL && m_features->HasFeature(H460_FeatureStd18::ID()) && m_currentTimeToLive > endpoint.GetManager().GetNatKeepAliveTime()) {
+    PTRACE(4, "H.440.18 detected, reducing TTL from " << m_currentTimeToLive << " to " << endpoint.GetManager().GetNatKeepAliveTime());
     m_currentTimeToLive = endpoint.GetManager().GetNatKeepAliveTime();
+  }
 #endif
 
   // At present only support first call signal address to GK
@@ -722,7 +733,7 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
 
     for (PStringList::iterator alias = aliasesToAdd.begin(); alias != aliasesToAdd.end(); ++alias) {
       PTRACE(3, "Gatekeeper add of alias \"" << *alias << '"');
-      endpoint.AddAliasName(*alias);
+      endpoint.AddAliasName(*alias, PString::Empty(), false);
     }
     for (PStringList::iterator alias = aliasesToRemove.begin(); alias != aliasesToRemove.end(); ++alias) {
       PTRACE(3, "Gatekeeper removal of alias \"" << *alias << '"');
@@ -809,7 +820,7 @@ PTimeInterval H323Gatekeeper::InternalRegister()
 {
   static PTimeInterval const OffLineRetryTime(0, 0, 1);
 
-  PTRACE(3, "Time To Live reregistration of " << GetEndpointIdentifier() << " with " << *this);
+  PTRACE(3, (m_forceRegister ? "Forced" : "Time To Live") << " registration of \"" << GetEndpointIdentifier() << "\" with " << *this);
   
   bool didGkDiscovery = discoveryComplete;
 
@@ -1879,28 +1890,24 @@ void H323Gatekeeper::SetPassword(const PString & password,
 }
 
 
-void H323Gatekeeper::SetAliases(const PStringList & aliases)
-{
-  m_aliasMutex.Wait();
-  m_aliases = aliases;
-  m_aliases.MakeUnique();
-  m_aliasMutex.Signal();
-}
-
-
 PStringList H323Gatekeeper::GetAliases() const
 {
-  PWaitAndSignal mutex(m_aliasMutex);
-  PStringList aliases = m_aliases;
-  aliases.MakeUnique();
+  PStringList aliases;
+  {
+    PWaitAndSignal mutex(m_aliasMutex);
+    for (PStringList::const_iterator alias = m_aliases.begin(); alias != m_aliases.end(); ++alias)
+      aliases += alias->GetPointer(); // Do not use reference
+  }
   return aliases;
 }
 
 void H323Gatekeeper::ReRegisterNow()
 {
-  PTRACE(4, "Triggering re-register for " << *this);
-  m_forceRegister = true;
-  m_monitorTickle.Signal();
+  if (m_monitorRunning) {
+    PTRACE(4, "Triggering re-register for " << *this);
+    m_forceRegister = true;
+    m_monitorTickle.Signal();
+  }
 }
 
 
@@ -1978,8 +1985,10 @@ PBoolean H323Gatekeeper::MakeRequestWithReregister(Request & request, unsigned u
 void H323Gatekeeper::Connect(const H323TransportAddress & address,
                              const PString & gkid)
 {
-  if (transport == NULL)
+  if (transport == NULL) {
     transport = CreateTransport(PIPSocket::GetDefaultIpAny());
+    PTRACE_CONTEXT_ID_TO(transport);
+  }
 
   transport->SetRemoteAddress(address);
   transport->Connect();
