@@ -58,7 +58,8 @@ OpalNetworkStatistics::OpalNetworkStatistics()
   , m_startTime(0)
   , m_totalBytes(0)
   , m_totalPackets(0)
-  , m_controlPackets(0)
+  , m_controlPacketsIn(0)
+  , m_controlPacketsOut(0)
   , m_NACKs(0)
   , m_packetsLost(0)
   , m_packetsOutOfOrder(0)
@@ -245,7 +246,7 @@ static PString InternalGetRate(const PTime & lastUpdate,
                                int64_t lastValue,
                                int64_t previousValue,
                                const char * units,
-                               unsigned decimals)
+                               unsigned significantFigures)
 {
   PString str = "N/A";
 
@@ -254,11 +255,11 @@ static PString InternalGetRate(const PTime & lastUpdate,
     if (interval == 0)
       str = '0';
     else {
-      double val = (lastValue - previousValue)*1000.0 / interval.GetMilliSeconds();
-      if (val < 10)
-        str = psprintf("%0.*f", (int)decimals, val);
+      double value = (lastValue - previousValue)*1000.0 / interval.GetMilliSeconds();
+      if (value == 0)
+        str = '0';
       else
-        str = PString(PString::ScaleSI, val, decimals);
+        str = PString(PString::ScaleSI, value, significantFigures);
     }
     str += units;
   }
@@ -267,17 +268,17 @@ static PString InternalGetRate(const PTime & lastUpdate,
 }
 
 
-PString OpalMediaStatistics::GetRateStr(int64_t total, const char * units, unsigned decimals) const
+PString OpalMediaStatistics::GetRateStr(int64_t total, const char * units, unsigned significantFigures) const
 {
-  return InternalGetRate(m_updateInfo.m_lastUpdateTime, m_startTime, total, 0, units, decimals);
+  return InternalGetRate(m_updateInfo.m_lastUpdateTime, m_startTime, total, 0, units, significantFigures);
 }
 
 
-PString OpalMediaStatistics::GetRateStr(int64_t current, int64_t previous, const char * units, unsigned decimals) const
+PString OpalMediaStatistics::GetRateStr(int64_t current, int64_t previous, const char * units, unsigned significantFigures) const
 {
   return InternalGetRate(m_updateInfo.m_lastUpdateTime,
                          m_updateInfo.m_previousUpdateTime.IsValid() ? m_updateInfo.m_previousUpdateTime : m_startTime,
-                         current, previous, units, decimals);
+                         current, previous, units, significantFigures);
 }
 
 
@@ -290,19 +291,19 @@ unsigned OpalMediaStatistics::GetRateInt(int64_t current, int64_t previous) cons
 
 
 #if OPAL_VIDEO
-PString OpalMediaStatistics::GetAverageFrameRate(const char * units, unsigned decimals) const
+PString OpalMediaStatistics::GetAverageFrameRate(const char * units, unsigned significantFigures) const
 {
   if (m_mediaType != OpalMediaType::Video())
     return "N/A";
-  return GetRateStr(m_totalFrames, units, decimals);
+  return GetRateStr(m_totalFrames, units, significantFigures);
 }
 
 
-PString OpalMediaStatistics::GetCurrentFrameRate(const char * units, unsigned decimals) const
+PString OpalMediaStatistics::GetCurrentFrameRate(const char * units, unsigned significantFigures) const
 {
   if (m_mediaType != OpalMediaType::Video())
     return "N/A";
-  return GetRateStr(m_totalFrames, m_updateInfo.m_previousFrames, units, decimals);
+  return GetRateStr(m_totalFrames, m_updateInfo.m_previousFrames, units, significantFigures);
 }
 #endif
 
@@ -548,6 +549,42 @@ bool OpalMediaSession::UpdateMediaFormat(const OpalMediaFormat &)
 
 
 #if OPAL_SDP
+PString OpalMediaSession::GetGroupId() const
+{
+  PSafeLockReadOnly lock(*this);
+  PString s = m_groupId;
+  s.MakeUnique();
+  return s;
+}
+
+
+void OpalMediaSession::SetGroupId(const PString & id)
+{
+  PSafeLockReadWrite lock(*this);
+  m_groupId = id;
+  m_groupId.MakeUnique();
+}
+
+
+PString OpalMediaSession::GetGroupMediaId() const
+{
+  PSafeLockReadOnly lock(*this);
+  if (m_groupMediaId.IsEmpty())
+    return m_mediaType;
+  PString s = m_groupMediaId;
+  s.MakeUnique();
+  return s;
+}
+
+
+void OpalMediaSession::SetGroupMediaId(const PString & id)
+{
+  PSafeLockReadWrite lock(*this);
+  m_groupMediaId = id;
+  m_groupMediaId.MakeUnique();
+}
+
+
 SDPMediaDescription * OpalMediaSession::CreateSDPMediaDescription()
 {
   return m_mediaType->CreateSDPMediaDescription(GetLocalAddress());

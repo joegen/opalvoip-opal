@@ -12,7 +12,6 @@ int ulaw2linear(int u_val);
 int linear2alaw(int pcm_val);
 int alaw2linear(int u_val);
 
-static int fmult(int an, int srn);
 int predictor_zero(	g726_state *state_ptr);
 int predictor_pole(	g726_state *state_ptr);
 int step_size(	g726_state *state_ptr);

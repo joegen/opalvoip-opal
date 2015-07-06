@@ -958,17 +958,14 @@ bool MSRPProtocol::ReadMessage(int & command,
   body.MakeEmpty();
 
   // read MIME until empty line or terminator
-  bool terminated = false;
   {
     mime.RemoveAll();
     PString line;
     while (ReadLine(line, false)) {
       if (line.IsEmpty())
         break;
-      if (line.Find(terminator) == 0) {
-        terminated = true;
+      if (line.Find(terminator) == 0)
         break;
-      }
       mime.AddMIME(line);
     }
   }

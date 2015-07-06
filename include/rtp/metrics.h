@@ -45,10 +45,11 @@ class RTP_DataFrame;
 ///////////////////////////////////////////////////////////////////////////////
 // RTCP-XR - VoIP Metrics Report Block
 
-class RTP_ExtendedReport : public PObject
+class RTP_MetricsReport : public PObject
 {
-    PCLASSINFO(RTP_ExtendedReport, PObject);
+    PCLASSINFO(RTP_MetricsReport, PObject);
   public:
+    RTP_MetricsReport(const RTP_ControlFrame::MetricsReport & mr);
 #if PTRACING
     void PrintOn(ostream &) const;
 #endif
@@ -65,10 +66,6 @@ class RTP_ExtendedReport : public PObject
     unsigned         jbNominal;      /* current nominal jitter buffer delay, in ms */ 
     unsigned         jbMaximum;      /* current maximum jitter buffer delay, in ms */
     unsigned         jbAbsolute;     /* current absolute maximum jitter buffer delay, in ms */
-};
-
-class RTP_ExtendedReportArray : public PArray<RTP_ExtendedReport>
-{
 };
 
 
@@ -217,17 +214,11 @@ class RTCP_XR_Metrics : public PObject
     unsigned GetMOS_CQ() const;
 
     // Internal functions
-    void InsertExtendedReportPacket(
-      unsigned sessionID,
+    void InsertMetricsReport(
+      RTP_ControlFrame & report,
+      const OpalRTPSession & session,
       RTP_SyncSourceId syncSourceOut,
-      OpalJitterBuffer * jitter, // Note do not make JitterBufferPtr a reference, needs to be a copy
-      RTP_ControlFrame & report
-    );
-
-    static bool ParseExtendedReportArray(
-      const RTP_ControlFrame & frame,
-      RTP_SyncSourceId & ssrc,
-      RTP_ExtendedReportArray & reports
+      OpalJitterBuffer * jitter
     );
 
 

@@ -429,8 +429,8 @@ bool OpalWAVFile::AddMediaFormat(const OpalMediaFormat & mediaFormat)
   return false;
 }
 
-static bool uLaw = OpalWAVFile::AddMediaFormat(OpalG711_ULAW_64K);
-static bool ALaw = OpalWAVFile::AddMediaFormat(OpalG711_ALAW_64K);
+bool OpalLoadedFormat_uLaw = OpalWAVFile::AddMediaFormat(OpalG711_ULAW_64K);
+bool OpalLoadedFormat_ALaw = OpalWAVFile::AddMediaFormat(OpalG711_ALAW_64K);
 
 #endif
 

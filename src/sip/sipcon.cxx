@@ -2015,7 +2015,8 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
   // To avoid overlapping INVITE transactions, wait till here before starting the next one.
   m_pendingInvitations.Remove(&transaction);
-  StartPendingReINVITE();
+  if (responseClass == 2 || GetPhase() >= ConnectedPhase)
+    StartPendingReINVITE();
 
   if (handled)
     return;
@@ -2742,9 +2743,21 @@ void SIPConnection::OnReceivedAlertingResponse(SIPTransaction & transaction, SIP
 void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
 {
   SIPURL whereTo = response.GetMIME().GetContact();
+  if (whereTo == m_dialog.GetRequestURI()) {
+    PTRACE(3, "Cannot redirect to same destination: " << whereTo);
+    return;
+  }
+
   for (PStringOptions::iterator it = m_stringOptions.begin(); it != m_stringOptions.end(); ++it)
     whereTo.SetParamVar(OPAL_URL_PARAM_PREFIX + it->first, it->second);
   PTRACE(3, "Received redirect to " << whereTo);
+
+  PStringToString info = m_dialog.GetRequestURI().GetParamVars();
+  info.SetAt("result", "redirect");
+  info.SetAt("party", "A");
+  info.SetAt("Referred-By", m_dialog.GetRequestURI().AsString());
+  OnTransferNotify(info, this);
+
   GetEndPoint().ForwardConnection(*this, whereTo.AsString());
 }
 

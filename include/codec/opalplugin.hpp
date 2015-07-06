@@ -1190,7 +1190,7 @@ class PluginVideoDecoder : public PluginVideoCodec<NAME>
     {
       unsigned        m_width;
       unsigned        m_height;
-      unsigned        m_raster;
+      int             m_raster;
       unsigned char * m_source;
       unsigned char * m_destination;
 

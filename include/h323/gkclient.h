@@ -81,6 +81,11 @@ class H323Gatekeeper : public H225_RAS
     
   /**@name Overrides from H323Transactor */
   //@{
+    /**Stop the channel processing transactions.
+       Must be called in each descendants destructor.
+      */
+    virtual void StopChannel();
+
     virtual PBoolean WriteTo(
       H323TransactionPDU & pdu,
       const H323TransportAddressArray & addresses,
@@ -282,7 +287,8 @@ class H323Gatekeeper : public H225_RAS
 
     /** Get the endpoint identifier
       */
-    PString GetEndpointIdentifier() const { return m_endpointIdentifier; }
+    PString GetEndpointIdentifier() const;
+    void GetEndpointIdentifier(PASN_BMPString & id) const { id.SetValueRaw(m_endpointIdentifier); }
 
     /**Set the H.235 password in the gatekeeper.
        If no username is present then it will default to the endpoint local
@@ -293,14 +299,9 @@ class H323Gatekeeper : public H225_RAS
       const PString & username = PString() ///<  Username for password
     );
 
-    /**Set fixed, single, alias for gatekeeper.
-       If not set, then all the aliases for the H323EndPoint are used.
-      */
-    void SetAliases(const PStringList & aliases) { m_aliases = aliases; }
-
     /**Get fixed, single, alias for gatekeeper.
       */
-    const PStringList & GetAliases() const { return m_aliases; }
+    PStringList GetAliases() const;
 
     /*
      * Return the call signalling address for the gatekeeper (if present)
@@ -313,7 +314,6 @@ class H323Gatekeeper : public H225_RAS
     H460_FeatureSet * GetFeatures() { return m_features; }
 #endif
 
-    void Monitor();
     void ReRegisterNow();
 
   protected:
@@ -322,8 +322,6 @@ class H323Gatekeeper : public H225_RAS
     unsigned SetupGatekeeperRequest(H323RasPDU & request);
 	
     void Connect(const H323TransportAddress & address, const PString & gatekeeperIdentifier);
-    PDECLARE_NOTIFIER(PTimer, H323Gatekeeper, TickleMonitor);
-    void RegistrationTimeToLive();
 
     void SetInfoRequestRate(
       const PTimeInterval & rate
@@ -361,6 +359,7 @@ class H323Gatekeeper : public H225_RAS
     // Gatekeeper registration state variables
     bool                    discoveryComplete;
     PStringList             m_aliases;
+    PMutex                  m_aliasMutex;
     PWCharArray             m_endpointIdentifier;
     RegistrationFailReasons m_registrationFailReason;
     void SetRegistrationFailReason(unsigned reason, unsigned commandMask);
@@ -398,8 +397,12 @@ class H323Gatekeeper : public H225_RAS
     AlternateList m_alternates;
     bool          m_alternateTemporary;
 
-    PSemaphore         requestMutex;
-    H235Authenticators authenticators;
+    PMutex             m_requestMutex;
+    H235Authenticators m_authenticators;
+	
+#if OPAL_H460
+    H460_FeatureSet * m_features;
+#endif
 
     enum {
       RequireARQ,
@@ -408,20 +411,22 @@ class H323Gatekeeper : public H225_RAS
     } pregrantMakeCall, pregrantAnswerCall;
     H323TransportAddress gkRouteAddress;
 
-    // Gatekeeper operation variables
-    bool       autoReregister;
-    bool       m_reregisterNow;
-    PTimer     timeToLive;
-    bool       requiresDiscovery;
-    PTimer     infoRequestRate;
-    bool       willRespondToIRR;
-
     PDictionary<POrdinalKey, H323ServiceControlSession> serviceControlSessions;
-	
-#if OPAL_H460
-    H460_FeatureSet * m_features;
-#endif
-	
+
+    // Gatekeeper operation variables
+    bool          m_autoReregister;
+    bool          m_forceRegister;
+    PTimeInterval m_currentTimeToLive;
+    bool          m_requiresDiscovery;
+    PTimeInterval m_infoRequestTime;
+    bool          m_willRespondToIRR;
+    PThread     * m_monitorThread;
+    bool          m_monitorRunning;
+    PSyncPoint    m_monitorTickle;
+    void Monitor();
+    PTimeInterval InternalRegister();
+
+  friend class H323EndPoint;
 };
 
 

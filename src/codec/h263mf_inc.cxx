@@ -59,7 +59,7 @@ static const char H263plusEncodingName[] = "H263-1998";
 
 #define MAX_H263_CUSTOM_RESOLUTIONS 10
 #define H263_CUSTOM_RESOLUTION_BUFFER_SIZE (MAX_H263_CUSTOM_RESOLUTIONS*20)
-#define DEFAULT_CUSTOM_MPI "0,0,"STRINGIZE(PLUGINCODEC_MPI_DISABLED)
+#define DEFAULT_CUSTOM_MPI "0,0," STRINGIZE(PLUGINCODEC_MPI_DISABLED)
 
 static const char SQCIF_MPI[]  = PLUGINCODEC_SQCIF_MPI;
 static const char QCIF_MPI[]   = PLUGINCODEC_QCIF_MPI;
@@ -158,7 +158,8 @@ static int MergeCustomResolution(const char * dest, const char * src, char * res
 
   for (size_t s = 0; s < srcCount; ++s) {
     for (size_t d = 0; d < dstCount; ++d) {
-      if (srcRes[s].width == dstRes[d].width && srcRes[s].height == dstRes[d].height) {
+      // The below extra test is only there for stupid GCC 5.1.0 warning
+      if (d < MAX_H263_CUSTOM_RESOLUTIONS && srcRes[s].width == dstRes[d].width && srcRes[s].height == dstRes[d].height) {
         resultRes[resultCount].width = srcRes[s].width;
         resultRes[resultCount].height = srcRes[s].height;
         resultRes[resultCount].mpi = std::max(srcRes[s].mpi, dstRes[d].mpi);

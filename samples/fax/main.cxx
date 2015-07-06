@@ -84,11 +84,11 @@ void MyManager::Usage(ostream & strm, const PArgList & args)
   PrintOption(strm, OPAL_FaxHeaderInfo,         "string");
   PrintOption(strm, OPAL_T38UseECM,             "bool");
   PrintOption(strm, OPAL_T38FaxVersion,         "integer");
-  PrintOption(strm, OPAL_T38FaxRateManagement,  OPAL_T38localTCF" or "OPAL_T38transferredTCF);
+  PrintOption(strm, OPAL_T38FaxRateManagement,  OPAL_T38localTCF " or " OPAL_T38transferredTCF);
   PrintOption(strm, OPAL_T38MaxBitRate,         "integer");
   PrintOption(strm, OPAL_T38FaxMaxBuffer,       "integer");
   PrintOption(strm, OPAL_T38FaxMaxDatagram,     "integer");
-  PrintOption(strm, OPAL_T38FaxUdpEC,           OPAL_T38UDPFEC" or "OPAL_T38UDPRedundancy);
+  PrintOption(strm, OPAL_T38FaxUdpEC,           OPAL_T38UDPFEC " or " OPAL_T38UDPRedundancy);
   PrintOption(strm, OPAL_T38FaxFillBitRemoval,  "bool");
   PrintOption(strm, OPAL_T38FaxTranscodingMMR,  "bool");
   PrintOption(strm, OPAL_T38FaxTranscodingJBIG, "bool");

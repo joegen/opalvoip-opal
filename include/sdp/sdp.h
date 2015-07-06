@@ -327,7 +327,7 @@ class SDPMediaDescription : public PObject, public SDPCommonAttributes
 
     virtual Direction GetDirection() const { return m_mediaAddress.IsEmpty() ? Inactive : m_direction; }
 
-    virtual bool FromSession(OpalMediaSession * session, const SDPMediaDescription * offer);
+    virtual bool FromSession(OpalMediaSession * session, const SDPMediaDescription * offer, RTP_SyncSourceId ssrc);
     virtual bool ToSession(OpalMediaSession * session) const;
     virtual PString GetGroupId() const { return m_groupId; }
     virtual void SetGroupId(const PString & id) { m_groupId = id; }
@@ -480,7 +480,7 @@ class SDPRTPAVPMediaDescription : public SDPMediaDescription
     virtual bool IsSecure() const;
 #endif
     virtual void SetAttribute(const PString & attr, const PString & value);
-    virtual bool FromSession(OpalMediaSession * session, const SDPMediaDescription * offer);
+    virtual bool FromSession(OpalMediaSession * session, const SDPMediaDescription * offer, RTP_SyncSourceId ssrc);
     virtual bool ToSession(OpalMediaSession * session) const;
 
     typedef std::map<RTP_SyncSourceId, PStringOptions> SsrcInfo;
@@ -664,7 +664,7 @@ class SDPSessionDescription : public PObject, public SDPCommonAttributes
     OpalTransportAddress GetOwnerAddress() const { return ownerAddress; }
     void SetOwnerAddress(OpalTransportAddress addr) { ownerAddress = addr; }
 
-    typedef PDictionary<PString, PStringArray> GroupDict;
+    typedef PDictionary<PString, PStringSet> GroupDict;
     GroupDict GetGroups() const { return m_groups; }
 
     bool GetMediaStreams(MediaStreamMap & info) const;

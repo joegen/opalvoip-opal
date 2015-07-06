@@ -745,13 +745,14 @@ OpalListenerIP::OpalListenerIP(OpalEndPoint & endpoint,
 }
 
 
-OpalTransportAddress OpalListenerIP::GetLocalAddress(const OpalTransportAddress & remoteAddress) const
+OpalTransportAddress OpalListenerIP::GetLocalAddress(const OpalTransportAddress & remoteAddress,
+                                                     const OpalTransportAddress & defaultAddress) const
 {
   PIPSocket::Address localIP = m_binding.GetAddress();
 
   PIPSocket::Address remoteIP;
   if (remoteAddress.GetIpAddress(remoteIP)) {
-    if (!localIP.IsValid() || localIP.IsAny())
+    if ((!localIP.IsValid() || localIP.IsAny()) && (!defaultAddress.GetIpAddress(localIP) || localIP.IsAny()))
       localIP = PIPSocket::GetRouteInterfaceAddress(remoteIP);
     m_endpoint.GetManager().TranslateIPAddress(localIP, remoteIP);
   }
@@ -1004,19 +1005,21 @@ const PCaselessString & OpalListenerUDP::GetProtoPrefix() const
 }
 
 
-OpalTransportAddress OpalListenerUDP::GetLocalAddress(const OpalTransportAddress & remoteAddress) const
+OpalTransportAddress OpalListenerUDP::GetLocalAddress(const OpalTransportAddress & remoteAddress,
+                                                     const OpalTransportAddress & defaultAddress) const
 {
   if (IsOpen()) {
     PIPSocket::Address remoteIP;
     if (remoteAddress.GetIpAddress(remoteIP)) {
       PIPSocket::Address ip;
       WORD port;
+      defaultAddress.GetIpAddress(ip);
       if (m_listenerBundle->GetAddress(ip.AsString(), ip, port, !m_endpoint.GetManager().IsLocalAddress(remoteIP)))
         return OpalTransportAddress(ip, port, GetProtoPrefix());
     }
   }
 
-  return OpalListenerIP::GetLocalAddress(remoteAddress);
+  return OpalListenerIP::GetLocalAddress(remoteAddress, defaultAddress);
 }
 
 
@@ -1383,7 +1386,7 @@ PBoolean OpalTransportTCP::ReadPDU(PBYTEArray & pdu)
 
   if (m_pduLengthFormat != 0) {
     PINDEX count = std::abs(m_pduLengthFormat);
-    if (PAssert(count > 0 && count <= sizeof(header), "Invalid PDU length") && m_channel->Read(header + 1, count - 1)) {
+    if (PAssert(count > 0 && count <= (PINDEX)sizeof(header), "Invalid PDU length") && m_channel->Read(header + 1, count - 1)) {
       packetLength = 0;
       while (count-- > 0)
         packetLength |= header[count] << (8 * (m_pduLengthFormat < 0 ? count : (m_pduLengthFormat - count - 1)));

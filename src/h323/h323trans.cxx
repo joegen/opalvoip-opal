@@ -145,6 +145,7 @@ H323Transactor::H323Transactor(H323EndPoint & ep,
     transport = trans;
   else
     transport = new H323TransportUDP(ep, PIPSocket::GetDefaultIpAny(), local_port);
+  PTRACE_CONTEXT_ID_TO(transport);
 
   Construct();
 }
@@ -164,6 +165,7 @@ H323Transactor::H323Transactor(H323EndPoint & ep,
     PIPSocket::Address addr;
     PAssert(iface.GetIpAndPort(addr, local_port), "Cannot parse address");
     transport = new H323TransportUDP(ep, addr, local_port);
+    PTRACE_CONTEXT_ID_TO(transport);
   }
 
   Construct();
@@ -172,7 +174,7 @@ H323Transactor::H323Transactor(H323EndPoint & ep,
 
 void H323Transactor::Construct()
 {
-  nextSequenceNumber = PRandom::Number()%65536;
+  m_nextSequenceNumber = PRandom::Number()%65536;
   checkResponseCryptoTokens = true;
   lastRequest = NULL;
 
@@ -217,8 +219,9 @@ PBoolean H323Transactor::SetTransport(const H323TransportAddress & iface)
   }
 
   transport = new H323TransportUDP(endpoint, addr, port);
+  PTRACE_CONTEXT_ID_TO(transport);
   transport->SetPromiscuous(H323Transport::AcceptFromAny);
-  return StartChannel();;
+  return StartChannel();
 }
 
 
@@ -312,11 +315,11 @@ PBoolean H323Transactor::SetUpCallSignalAddresses(H225_ArrayOf_TransportAddress 
 
 unsigned H323Transactor::GetNextSequenceNumber()
 {
-  PWaitAndSignal mutex(nextSequenceNumberMutex);
-  nextSequenceNumber++;
-  if (nextSequenceNumber >= 65536)
-    nextSequenceNumber = 1;
-  return nextSequenceNumber;
+  unsigned sn;
+  do {
+    sn = ++m_nextSequenceNumber;
+  }  while (sn == 0);
+  return sn;
 }
 
 
@@ -867,6 +870,8 @@ PBoolean H323TransactionServer::AddListener(H323Transport * transport)
     PTRACE(2, "Trans\tTried to listen on NULL transport");
     return false;
   }
+
+  PTRACE_CONTEXT_ID_TO(transport);
 
   if (!transport->IsOpen()) {
     PTRACE(3, "Trans\tTransport is not open");
