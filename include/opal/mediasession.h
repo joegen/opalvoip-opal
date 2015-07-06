@@ -60,7 +60,8 @@ struct OpalNetworkStatistics
   PTime    m_startTime;
   uint64_t m_totalBytes;
   unsigned m_totalPackets;
-  unsigned m_controlPackets; // RTCP
+  unsigned m_controlPacketsIn;  // RTCP received for this channel
+  unsigned m_controlPacketsOut; // RTCP sent for this channel
   unsigned m_NACKs;
   unsigned m_packetsLost;
   unsigned m_packetsOutOfOrder;
