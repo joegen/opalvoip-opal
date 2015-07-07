@@ -215,10 +215,12 @@ static struct PluginCodec_Definition lpc10CodecDefn[2] =
     8000,                               // samples per second
     BitsPerSecond,                      // raw bits per second
     22500,                              // nanoseconds per frame
-    SamplesPerFrame,                    // samples per frame
-    BytesPerFrame,                      // bytes per frame
-    PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    {{
+      SamplesPerFrame,                  // samples per frame
+      BytesPerFrame,                    // bytes per frame
+      PREF_FRAMES_PER_PACKET,           // recommended number of frames per packet
+      MAX_FRAMES_PER_PACKET,            // maximum number of frames per packe
+    }},
     0,                                  // IANA RTP payload code
     sdpLPC10,                           // RTP payload name
 
@@ -250,10 +252,12 @@ static struct PluginCodec_Definition lpc10CodecDefn[2] =
     8000,                               // samples per second
     BitsPerSecond,                      // raw bits per second
     22500,                              // nanoseconds per frame
-    SamplesPerFrame,                    // samples per frame
-    BytesPerFrame,                      // bytes per frame
-    PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    {{
+      SamplesPerFrame,                  // samples per frame
+      BytesPerFrame,                    // bytes per frame
+      PREF_FRAMES_PER_PACKET,           // recommended number of frames per packet
+      MAX_FRAMES_PER_PACKET,            // maximum number of frames per packe
+    }},
     0,                                  // IANA RTP payload code
     sdpLPC10,                           // RTP payload name
 

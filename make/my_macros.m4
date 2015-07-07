@@ -398,7 +398,6 @@ dnl Restore flags changed by AC_PROC_CC/AC_PROG_CXX
 CFLAGS="$oldCFLAGS"
 CXXFLAGS="$oldCXXFLAGS"
 
-
 dnl Find some tools
 AC_PROG_LN_S()
 AC_PROG_RANLIB()
@@ -450,6 +449,11 @@ AC_SUBST(STATICLIBEXT, "a")
 AC_SUBST(DEBUGINFOEXT, "debug")
 AC_SUBST(ARFLAGS, "rc")
 
+
+dnl Check for latest and greatest
+AC_ARG_ENABLE(cpp11, AS_HELP_STRING([--enable-cpp11],[Enable C++11 build]),AC_SUBST(CPP11_FLAGS,"-std=c++11"))
+
+
 case "$target_os" in
    darwin* | iPhone* )
       SHARED_LDFLAGS="-dynamiclib"
@@ -458,7 +462,7 @@ case "$target_os" in
       AR="libtool"
       ARFLAGS="-static -o"
       RANLIB=
-      CPPFLAGS="${CPPFLAGS} -stdlib=libc++"
+      CPPFLAGS="-stdlib=libc++ $CPPFLAGS"
       LDFLAGS="${LDFLAGS} -stdlib=libc++"
       LIBS="-framework AudioToolbox -framework CoreAudio -framework SystemConfiguration -framework Foundation -lobjc $LIBS"
       MY_COMPILE_IFELSE(
@@ -489,7 +493,7 @@ case "$target_os" in
       IOS_DEVROOT="`xcode-select -print-path`/Platforms/${target_os}.platform/Developer"
       IOS_SDKROOT=${IOS_DEVROOT}/SDKs/${target_os}${target_release}.sdk
       IOS_FLAGS="-arch $target_cpu -miphoneos-version-min=$MIN_IOS_VER -isysroot ${IOS_SDKROOT}"
-      CPPFLAGS="${CPPFLAGS} ${IOS_FLAGS}"
+      CPPFLAGS="${IOS_FLAGS} $CPPFLAGS"
       LDFLAGS="${IOS_FLAGS} -L${IOS_SDKROOT}/usr/lib $LDFLAGS"
    ;;
 
@@ -500,7 +504,7 @@ case "$target_os" in
       MIN_MACOSX_VER="10.8"
       AS_IF([test $target_release \< $MIN_MACOSX_VER], AC_MSG_ERROR([Requires Mac OS-X release $MIN_MACOSX_VER, is $target_release]))
 
-      CPPFLAGS="${CPPFLAGS} -mmacosx-version-min=$MIN_MACOSX_VER"
+      CPPFLAGS="-mmacosx-version-min=$MIN_MACOSX_VER $CPPFLAGS"
       LIBS="-framework QTKit -framework CoreVideo -framework AudioUnit $LIBS"
    ;;
 
@@ -527,13 +531,13 @@ case "$target_os" in
    solaris* | sunos* )
       target_os=solaris
       target_release=`uname -r | sed "s/5\.//g"`
-      CPPFLAGS="$CPPFLAGS -D__inline=inline -DSOLARIS"
+      CPPFLAGS="-D__inline=inline -DSOLARIS $CPPFLAGS"
       SHARED_LDFLAGS='-Bdynamic -G -h $(LIB_SONAME)'
    ;;
 
    beos* )
       target_os=beos
-      CPPFLAGS="$CPPFLAGS D__BEOS__ -DBE_THREADS -Wno-multichar -Wno-format"
+      CPPFLAGS="-D__BEOS__ -DBE_THREADS -Wno-multichar -Wno-format $CPPFLAGS"
       LIBS="-lstdc++.r4 -lbe -lmedia -lgame -lroot -lsocket -lbind -ldl $LIBS"
       SHARED_LDFLAGS="-shared -nostdlib -nostart"
    ;;
@@ -626,10 +630,10 @@ AS_VAR_IF([enable_force32], [yes], [
    target_64bit=0
 
    AS_VAR_IF([target_os], [Darwin], [
-      CPPFLAGS="$CPPFLAGS -arch i386"
+      CPPFLAGS="-arch i386 $CPPFLAGS"
       LDFLAGS="$LDFLAGS -arch i386"
    ],[
-      CPPFLAGS="$CPPFLAGS -m32"
+      CPPFLAGS="-m32 $CPPFLAGS"
       LDFLAGS="$LDFLAGS -m32"
    ])
 
@@ -676,6 +680,55 @@ MY_COMPILE_IFELSE(
 )
 AC_SUBST(OPT_CFLAGS)
 
+
+dnl Warn about everything, well, nearly everything
+
+MY_COMPILE_IFELSE(
+   [Disable unknown-pragmas warning (-Wno-unknown-pragmas)],
+   [-Werror -Wno-unknown-pragmas],
+   [],
+   [],
+   [CPPFLAGS="-Wno-unknown-pragmas $CPPFLAGS"]
+)
+
+AC_LANG_PUSH(C++)
+
+MY_COMPILE_IFELSE(
+   [Disable unused-private-field warning (-Wno-unused-private-field)],
+   [-Werror -Wno-unused-private-field],
+   [],
+   [],
+   [CXXFLAGS="-Wno-unused-private-field $CXXFLAGS"]
+)
+
+MY_COMPILE_IFELSE(
+   [Disable overloaded-virtual warning (-Wno-overloaded-virtual)],
+   [-Werror -Wno-overloaded-virtual],
+   [],
+   [],
+   [CXXFLAGS="-Wno-overloaded-virtual $CXXFLAGS"]
+)
+
+MY_COMPILE_IFELSE(
+   [Disable deprecated-declarations warning (-Wno-deprecated-declarations)],
+   [-Werror -Wno-deprecated-declarations],
+   [],
+   [],
+   [CXXFLAGS="$CXXFLAGS -Wno-deprecated-declarations"]
+)
+
+AC_LANG_POP(C++)
+
+MY_COMPILE_IFELSE(
+   [warnings (-Wall)],
+   [-Wall],
+   [],
+   [],
+   [CPPFLAGS="-Wall $CPPFLAGS"]
+)
+
+
+dnl Check for profiling
 
 AC_ARG_WITH(
    [profiling],

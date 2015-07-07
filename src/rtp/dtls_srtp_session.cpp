@@ -68,7 +68,7 @@ class DTLSContext : public PSSLContext
     PCLASSINFO(DTLSContext, PSSLContext);
   public:
     DTLSContext()
-      : PSSLContext(PSSLContext::DTLSv1)
+      : PSSLContext(PSSLContext::DTLSv1_2_v1_0)
     {
       PStringStream dn;
       dn << "/O=" << PProcess::Current().GetManufacturer()
@@ -194,7 +194,7 @@ const PCaselessString & OpalDTLSSRTPSession::RTP_DTLS_SAVP () { static const PCo
 const PCaselessString & OpalDTLSSRTPSession::RTP_DTLS_SAVPF() { static const PConstCaselessString s("UDP/TLS/RTP/SAVPF" ); return s; }
 
 PFACTORY_CREATE(OpalMediaSessionFactory, OpalDTLSSRTPSession, OpalDTLSSRTPSession::RTP_DTLS_SAVP());
-static bool RegisteredSAVPF = OpalMediaSessionFactory::RegisterAs(OpalDTLSSRTPSession::RTP_DTLS_SAVPF(), OpalDTLSSRTPSession::RTP_DTLS_SAVP());
+bool OpalRegisteredSAVPF = OpalMediaSessionFactory::RegisterAs(OpalDTLSSRTPSession::RTP_DTLS_SAVPF(), OpalDTLSSRTPSession::RTP_DTLS_SAVP());
 
 
 OpalDTLSSRTPSession::OpalDTLSSRTPSession(const Init & init)

@@ -348,18 +348,13 @@ void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
                                          SIP_PDU & request)
 {
   // RFC3428
-  OpalIMEndPoint * imEP = endpoint.GetManager().FindEndPointAs<OpalIMEndPoint>(OpalIMEndPoint::Prefix());
-  if (imEP == NULL) {
-    PTRACE2(2, &endpoint, "SIPIM\tCannot find IM endpoint");
-    return;
-  }
 
-  SIPMIMEInfo & mime  = request.GetMIME();
-
-  OpalIMContext::MessageDisposition status;
+  OpalIMContext::MessageDisposition status = OpalIMContext::DeliveryOK;
   PString errorInfo;
   {
     OpalIM message;
+
+    SIPMIMEInfo & mime  = request.GetMIME();
 
     SIPURL to(mime.GetTo());
     to.SetTag(); // If not present
@@ -378,10 +373,16 @@ void OpalSIPIMContext::OnReceivedMESSAGE(SIPEndPoint & endpoint,
     message.m_fromAddr = request.GetTransport()->GetRemoteAddress();
 
     message.m_bodies.SetAt(mime.GetContentType(), request.GetEntityBody());
-    status = imEP->OnRawMessageReceived(message, connection, errorInfo);
+    OpalIMEndPoint * imEP = endpoint.GetManager().FindEndPointAs<OpalIMEndPoint>(OpalIMEndPoint::Prefix());
+    if (imEP != NULL)
+      status = imEP->OnRawMessageReceived(message, connection, errorInfo);
+    else
+      endpoint.OnMessageReceived(message);
 
-    to.SetTag(message.m_conversationId.Mid(message.m_conversationId.Find(ConversationIdSeparator)+1));
-    mime.SetTo(to);
+    if (!message.m_conversationId.IsEmpty()) {
+      to.SetTag(message.m_conversationId.Mid(message.m_conversationId.Find(ConversationIdSeparator) + 1));
+      mime.SetTo(to);
+    }
   }
 
   SIPResponse * response = new SIPResponse(endpoint, request, SIP_PDU::Failure_BadRequest);

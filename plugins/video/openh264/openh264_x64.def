@@ -1,0 +1,8 @@
+LIBRARY openh264_x86
+EXPORTS
+	WelsCreateDecoder @1
+	WelsCreateSVCEncoder @2
+	WelsDestroyDecoder @3
+	WelsDestroySVCEncoder @4
+	WelsGetCodecVersion @5
+	WelsGetCodecVersionEx @6

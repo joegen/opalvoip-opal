@@ -118,14 +118,14 @@ class OpalMediaCommand : public PObject
   }
 
 
-/**This indicates that the media flow (bit rate) is to be adjsuted.
+/**This indicates that the media flow (bit rate) is to be adjusted.
   */
 class OpalMediaFlowControl : public OpalMediaCommand
 {
     PCLASSINFO_WITH_CLONE(OpalMediaFlowControl, OpalMediaCommand);
   public:
     OpalMediaFlowControl(
-      unsigned bitRate,
+      OpalBandwidth bitRate,           ///< Bandwidth to use
       const OpalMediaType & mediaType, ///< Media type to search for in open streams
       unsigned sessionID = 0,          ///< Session for media stream, 0 is use first \p mediaType stream
       unsigned ssrc = 0                ///< Sync Source for media stream (if RTP)
@@ -138,6 +138,29 @@ class OpalMediaFlowControl : public OpalMediaCommand
   protected:
     OpalBandwidth m_bitRate;
 };
+
+
+/**This indicates the packet loss as percentage over the last arbitrary period.
+  */
+class OpalMediaPacketLoss : public OpalMediaCommand
+{
+    PCLASSINFO_WITH_CLONE(OpalMediaPacketLoss, OpalMediaCommand);
+  public:
+    OpalMediaPacketLoss(
+      unsigned packetLoss,             ///< Packet loss as percentage
+      const OpalMediaType & mediaType, ///< Media type to search for in open streams
+      unsigned sessionID = 0,          ///< Session for media stream, 0 is use first \p mediaType stream
+      unsigned ssrc = 0                ///< Sync Source for media stream (if RTP)
+    );
+
+    virtual PString GetName() const;
+
+    unsigned GetPacketLoss() const { return m_packetLoss; }
+
+  protected:
+    unsigned m_packetLoss;
+};
+
 
 #endif // OPAL_OPAL_MEDIACMD_H
 

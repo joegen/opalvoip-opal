@@ -236,7 +236,7 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
                                                    const BYTE * instance,
                                                        unsigned instanceLen)
 {
-  OpalTranscoder * transcoder = OpalTranscoderFactory::CreateInstance(OpalTranscoderKey(srcFormat, destFormat));
+  OpalTranscoder * transcoder = OpalTranscoderFactory::CreateInstance(OpalTranscoderKey(srcFormat.GetName(), destFormat.GetName()));
   if (transcoder == NULL) {
     PTRACE2(2, NULL, "Could not create transcoder instance from " << srcFormat << " to " << destFormat);
     return NULL;
@@ -384,7 +384,7 @@ bool OpalTranscoder::SelectFormats(const OpalMediaType & mediaType,
   for (d = dstFormats.begin(); d != dstFormats.end(); ++d) {
     for (s = srcFormats.begin(); s != srcFormats.end(); ++s) {
       if (s->GetMediaType() == mediaType || d->GetMediaType() == mediaType) {
-        OpalTranscoderKey search(*s, *d);
+        OpalTranscoderKey search(s->GetName(), d->GetName());
         OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
         for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
           if (search == *i && MergeFormats(allFormats, *s, *d, srcFormat, dstFormat))

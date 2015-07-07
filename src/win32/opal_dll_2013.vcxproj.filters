@@ -8,22 +8,22 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Private.def" />
-    <None Include="..\..\lib\Win32\Release\opal.def">
+    <None Include="..\..\lib\Win32\Release\dll\opal.def">
       <Filter>Win32</Filter>
     </None>
-    <None Include="..\..\lib\Win32\Debug\opald.def">
+    <None Include="..\..\lib\Win32\Debug\dll\opald.def">
       <Filter>Win32</Filter>
     </None>
-    <None Include="..\..\lib\Win32\No Trace\opaln.def">
+    <None Include="..\..\lib\Win32\No Trace\dll\opaln.def">
       <Filter>Win32</Filter>
     </None>
-    <None Include="..\..\lib\x64\Debug\opal64d.def">
+    <None Include="..\..\lib\x64\Release\dll\opal64.def">
       <Filter>Win64</Filter>
     </None>
-    <None Include="..\..\lib\x64\No Trace\opal64n.def">
+    <None Include="..\..\lib\x64\Debug\dll\opal64d.def">
       <Filter>Win64</Filter>
     </None>
-    <None Include="..\..\lib\x64\Release\opal64.def">
+    <None Include="..\..\lib\x64\No Trace\dll\opal64n.def">
       <Filter>Win64</Filter>
     </None>
   </ItemGroup>

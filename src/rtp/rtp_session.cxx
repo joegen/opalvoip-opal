@@ -262,13 +262,13 @@ bool OpalRTPSession::RemoveSyncSource(RTP_SyncSourceId ssrc)
 }
 
 
-OpalRTPSession::SyncSource * OpalRTPSession::UseSyncSource(RTP_SyncSourceId ssrc, Direction PTRACE_PARAM(dir), bool force)
+OpalRTPSession::SyncSource * OpalRTPSession::UseSyncSource(RTP_SyncSourceId ssrc, Direction dir, bool force)
 {
   SyncSourceMap::iterator it = m_SSRC.find(ssrc);
   if (it != m_SSRC.end())
     return it->second;
 
-  if ((force || m_allowAnySyncSource) && AddSyncSource(ssrc, e_Receiver) == ssrc) {
+  if ((force || m_allowAnySyncSource) && AddSyncSource(ssrc, dir) == ssrc) {
     PTRACE(4, *this << "automatically added " << dir << " SSRC " << RTP_TRACE_SRC(ssrc));
     return m_SSRC.find(ssrc)->second;
   }
@@ -385,8 +385,10 @@ OpalRTPSession::SyncSource::SyncSource(OpalRTPSession & session, RTP_SyncSourceI
   , m_lastJitterTimestamp(0)
   , m_packetsLostSinceLastRR(0)
   , m_lastRRSequenceNumber(0)
-  , m_lastReportTime(0)
-  , m_canCalculateRTT(false)
+  , m_ntpPassThrough(0)
+  , m_lastSenderReportTime(0)
+  , m_referenceReportTime(0)
+  , m_referenceReportNTP(0)
   , m_statisticsCount(0)
 #if OPAL_RTCP_XR
   , m_metrics(NULL)
@@ -566,7 +568,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SyncSource::OnSendData(RTP_Dat
       frame.SetAbsoluteTime(PTime());
 
   PTRACE_IF(3, !m_reportAbsoluteTime.IsValid() && frame.GetAbsoluteTime().IsValid(), &m_session,
-            m_session << "sent first RTP with absolute time: " << frame.GetAbsoluteTime().AsString("hh:mm:dd.uuu"));
+            m_session << "sent first RTP with absolute time: " << frame.GetAbsoluteTime().AsString(PTime::TodayFormat));
 
   m_reportAbsoluteTime = frame.GetAbsoluteTime();
   m_reportTimestamp = frame.GetTimestamp();
@@ -942,23 +944,6 @@ void OpalRTPSession::SetCanonicalName(const PString & name, RTP_SyncSourceId ssr
 }
 
 
-PString OpalRTPSession::GetGroupId() const
-{
-  PSafeLockReadOnly lock(*this);
-  PString s = m_groupId;
-  s.MakeUnique();
-  return s;
-}
-
-
-void OpalRTPSession::SetGroupId(const PString & id)
-{
-  PSafeLockReadWrite lock(*this);
-  m_groupId = id;
-  m_groupId.MakeUnique();
-}
-
-
 PString OpalRTPSession::GetMediaStreamId(RTP_SyncSourceId ssrc, Direction dir) const
 {
   PString s;
@@ -1014,44 +999,64 @@ void OpalRTPSession::SetExtensionHeader(const RTPExtensionHeaders & ext)
 }
 
 
-void OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::ReceiverReport & report)
+bool OpalRTPSession::SyncSource::OnSendReceiverReport(RTP_ControlFrame::ReceiverReport * report PTRACE_PARAM(, unsigned logLevel))
 {
-  report.ssrc = m_sourceIdentifier;
+  if (m_direction != e_Receiver)
+    return false;
+
+  if (m_packets == 0 && !m_lastSenderReportTime.IsValid())
+    return false;
+
+  if (report == NULL)
+    return true;
+
+  report->ssrc = m_sourceIdentifier;
 
   unsigned lost = m_session.GetPacketsLost();
   if (m_jitterBuffer != NULL)
     lost += m_jitterBuffer->GetPacketsTooLate();
-  report.SetLostPackets(lost);
+  report->SetLostPackets(lost);
 
   if (m_extendedSequenceNumber >= m_lastRRSequenceNumber)
-    report.fraction = (BYTE)((m_packetsLostSinceLastRR<<8)/(m_extendedSequenceNumber - m_lastRRSequenceNumber + 1));
+    report->fraction = (BYTE)((m_packetsLostSinceLastRR<<8)/(m_extendedSequenceNumber - m_lastRRSequenceNumber + 1));
   else
-    report.fraction = 0;
+    report->fraction = 0;
   m_packetsLostSinceLastRR = 0;
 
-  report.last_seq = m_lastRRSequenceNumber;
+  report->last_seq = m_lastRRSequenceNumber;
   m_lastRRSequenceNumber = m_extendedSequenceNumber;
 
-  report.jitter = m_jitterAccum >> JitterRoundingGuardBits; // Allow for rounding protection bits
+  report->jitter = m_jitterAccum >> JitterRoundingGuardBits; // Allow for rounding protection bits
 
-  // Time remote sent us an SR
-  if (m_lastReportTime.IsValid()) {
-    report.lsr  = (uint32_t)(m_reportAbsoluteTime.GetNTP() >> 16);
-    report.dlsr = (uint32_t)((PTime() - m_lastReportTime).GetMilliSeconds()*65536/1000); // Delay since last received SR
-  }
-  else {
-    report.lsr = 0;
-    report.dlsr = 0;
-  }
+  /* Time remote sent us in SR. Note this has to be IDENTICAL to what we
+     received in SR as some implementations (WebRTC!) do not use it as a NTP
+     time, but as a lookup key in a table to find the NTP value. Why? Why? Why? */
+  report->lsr = m_ntpPassThrough;
 
-  PTRACE((unsigned)m_session.m_throttleTxReport, &m_session, *this << "sending ReceiverReport:"
-            " fraction=" << (unsigned)report.fraction
-         << " lost=" << report.GetLostPackets()
-         << " last_seq=" << report.last_seq
-         << " jitter=" << report.jitter
-         << " lsr=" << report.lsr
-         << " dlsr=" << report.dlsr);
-} 
+  // Delay since last received SR
+  report->dlsr = m_lastSenderReportTime.IsValid() ? (uint32_t)((PTime() - m_lastSenderReportTime).GetMilliSeconds()*65536/1000) : 0;
+
+  PTRACE(logLevel, &m_session, *this << "sending ReceiverReport:"
+            " fraction=" << (unsigned)report->fraction
+         << " lost=" << report->GetLostPackets()
+         << " last_seq=" << report->last_seq
+         << " jitter=" << report->jitter
+         << " lsr=" << report->lsr
+         << " dlsr=" << report->dlsr);
+  return true;
+}
+
+
+bool OpalRTPSession::SyncSource::OnSendDelayLastReceiverReport(RTP_ControlFrame::DelayLastReceiverReport::Receiver * report)
+{
+  if (m_direction != e_Receiver || !m_referenceReportNTP.IsValid() || !m_referenceReportTime.IsValid())
+    return false;
+
+  if (report != NULL)
+    RTP_ControlFrame::AddDelayLastReceiverReport(*report, m_sourceIdentifier, m_referenceReportNTP, PTime() - m_referenceReportTime);
+
+  return true;
+}
 
 
 #if PTRACING
@@ -1060,35 +1065,43 @@ __inline PTimeInterval abs(const PTimeInterval & i) { return i < 0 ? -i : i; }
 
 void OpalRTPSession::SyncSource::OnRxSenderReport(const RTP_SenderReport & report)
 {
+  PAssert(m_direction == e_Receiver, PLogicError);
+
   PTime now;
-  PTRACE_IF(2, m_reportAbsoluteTime.IsValid() && m_lastReportTime.IsValid() &&
-               abs(report.realTimestamp - m_reportAbsoluteTime) > std::max(PTimeInterval(0,10),(now - m_lastReportTime)*2),
+  PTRACE_IF(2, m_reportAbsoluteTime.IsValid() && m_lastSenderReportTime.IsValid() && report.realTimestamp.IsValid() &&
+               abs(report.realTimestamp - m_reportAbsoluteTime) > std::max(PTimeInterval(0,10),(now - m_lastSenderReportTime)*2),
             &m_session, m_session << "OnRxSenderReport: remote NTP time jumped by unexpectedly large amount,"
-            " was " << m_reportAbsoluteTime.AsString(PTime::LoggingFormat) << ","
-            " now " << report.realTimestamp.AsString(PTime::LoggingFormat) << ","
-                        " last report " << m_lastReportTime.AsString(PTime::LoggingFormat));
-  m_reportAbsoluteTime = report.realTimestamp;
+            " was " << m_reportAbsoluteTime.AsString(PTime::TodayFormat) << ","
+            " now " << report.realTimestamp.AsString(PTime::TodayFormat) << ","
+                        " last report " << m_lastSenderReportTime.AsString(PTime::TodayFormat));
+  m_ntpPassThrough = report.ntpPassThrough;
+  m_reportAbsoluteTime =  report.realTimestamp;
   m_reportTimestamp = report.rtpTimestamp;
-  m_lastReportTime = now; // Remember when we received the SR
+  m_lastSenderReportTime = now; // Remember when SR came in to calculate dlsr in RR when we send it
   m_senderReports++;
 }
 
 
-void OpalRTPSession::SyncSource::OnRxReceiverReport(const ReceiverReport & report)
+void OpalRTPSession::SyncSource::OnRxReceiverReport(const RTP_ReceiverReport & report)
 {
   m_packetsLost = report.totalLost;
-  m_jitter = report.jitter/m_session.m_timeUnits;
+  m_jitter = report.jitter / m_session.m_timeUnits;
 
 #if OPAL_RTCP_XR
   if (m_metrics != NULL)
     m_metrics->OnRxSenderReport(report.lastTimestamp, report.delay);
 #endif
 
-  if (m_canCalculateRTT) {
-    PTimeInterval myDelay = PTime() - m_lastReportTime;
-    if (m_session.m_roundTripTime > 0 && myDelay <= report.delay)
+  CalculateRTT(report.lastTimestamp, report.delay);
+}
+
+void OpalRTPSession::SyncSource::CalculateRTT(const PTime & reportTime, const PTimeInterval & reportDelay)
+{
+  if (reportTime.IsValid()) {
+    PTimeInterval myDelay = PTime() - reportTime;
+    if (m_session.m_roundTripTime > 0 && myDelay <= reportDelay)
       PTRACE(4, &m_session, *this << "not calculating round trip time, RR arrived too soon after SR.");
-    else if (myDelay <= report.delay) {
+    else if (myDelay <= reportDelay) {
       m_session.m_roundTripTime = 1;
       PTRACE(4, &m_session, *this << "very small round trip time, using 1ms");
     }
@@ -1096,11 +1109,17 @@ void OpalRTPSession::SyncSource::OnRxReceiverReport(const ReceiverReport & repor
       PTRACE(4, &m_session, *this << "very large round trip time, ignoring");
     }
     else {
-      m_session.m_roundTripTime = (myDelay - report.delay).GetInterval();
+      m_session.m_roundTripTime = (myDelay - reportDelay).GetInterval();
       PTRACE(4, &m_session, *this << "determined round trip time: " << m_session.m_roundTripTime << "ms");
     }
-    m_canCalculateRTT = false;
   }
+}
+
+
+void OpalRTPSession::SyncSource::OnRxDelayLastReceiverReport(const RTP_DelayLastReceiverReport & dlrr)
+{
+  PTRACE(4, &m_session, m_session << "OnRxDelayLastReceiverReport: ssrc=" << RTP_TRACE_SRC(m_sourceIdentifier));
+  CalculateRTT(dlrr.m_lastTimestamp, dlrr.m_delay);
 }
 
 
@@ -1229,144 +1248,163 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnOutOfOrderPacket(RTP_DataFra
 }
 
 
-void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & report, SyncSource & sender)
+void OpalRTPSession::InitialiseControlFrame(RTP_ControlFrame & frame, SyncSource & sender)
 {
+  frame.AddReceiverReport(sender.m_sourceIdentifier, 0);
+  frame.EndPacket();
+}
+
+
+bool OpalRTPSession::InternalSendReport(RTP_ControlFrame & report, SyncSource * sender, bool includeReceivers, bool forced)
+{
+  if (sender != NULL && (sender->m_direction != e_Sender || sender->m_packets == 0))
+    return false;
+
+#if PTRACING
+  unsigned logLevel = 3U;
+  const char * forcedStr = "(periodic) ";
+  if (forced) {
+      m_throttleTxReport.CanTrace(); // Sneakiness to make sure throttle works
+      logLevel = m_throttleTxReport;
+      forcedStr = "(forced) ";
+  }
+#endif
+
   unsigned receivers = 0;
-  for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-    if (it->second->m_direction == e_Receiver && it->second->m_packets > 0)
-      ++receivers;
+  if (includeReceivers) {
+    for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
+      if (it->second->OnSendReceiverReport(NULL PTRACE_PARAM(, logLevel)))
+        ++receivers;
+    }
   }
 
   RTP_ControlFrame::ReceiverReport * rr = NULL;
+  if (sender == NULL) {
+    rr = report.AddReceiverReport(1, receivers);
 
-  // No valid packets sent yet, so only send RR
-  if (!sender.m_reportAbsoluteTime.IsValid()) {
-
-    // Send RR as we are not sending data yet
-    report.StartNewPacket(RTP_ControlFrame::e_ReceiverReport);
-
-    // if no packets received, put in an empty report
-    if (receivers == 0) {
-      report.SetPayloadSize(sizeof(PUInt32b));  // length is SSRC 
-      report.SetCount(0);
-
-      // add the SSRC to the start of the payload
-      *(PUInt32b *)report.GetPayloadPtr() = sender.m_sourceIdentifier;
-      PTRACE(m_throttleTxReport, *this << "sending empty ReceiverReport,"
-             " sender SSRC=" << RTP_TRACE_SRC(sender.m_sourceIdentifier) << m_throttleTxReport);
-    }
-    else {
-      report.SetPayloadSize(sizeof(PUInt32b) + receivers*sizeof(RTP_ControlFrame::ReceiverReport));  // length is SSRC of packet sender plus RRs
-      report.SetCount(receivers);
-      BYTE * payload = report.GetPayloadPtr();
-
-      // add the SSRC to the start of the payload
-      *(PUInt32b *)payload = sender.m_sourceIdentifier;
-
-      // add the RR's after the SSRC
-      rr = (RTP_ControlFrame::ReceiverReport *)(payload + sizeof(PUInt32b));
-      PTRACE(m_throttleTxReport, *this << "not sending SenderReport for SSRC="
-             << RTP_TRACE_SRC(sender.m_sourceIdentifier) << m_throttleTxReport);
-    }
+    PTRACE(logLevel, *this << "SSRC=1, sending " << forcedStr
+           << (receivers == 0 ? "empty " : "") << "ReceiverReport" << m_throttleTxReport);
   }
   else {
-    // send SR and RR
-    report.StartNewPacket(RTP_ControlFrame::e_SenderReport);
-    report.SetPayloadSize(sizeof(PUInt32b) + sizeof(RTP_ControlFrame::SenderReport) + receivers*sizeof(RTP_ControlFrame::ReceiverReport));  // length is SSRC of packet sender plus SR + RRs
-    report.SetCount(receivers);
-    BYTE * payload = report.GetPayloadPtr();
+    rr = report.AddSenderReport(sender->m_sourceIdentifier,
+                                sender->m_reportAbsoluteTime,
+                                sender->m_reportTimestamp,
+                                sender->m_packets,
+                                sender->m_octets,
+                                receivers);
 
-    // add the SSRC to the start of the payload
-    *(PUInt32b *)payload = sender.m_sourceIdentifier;
+    sender->m_lastSenderReportTime.SetCurrentTime();
 
-    // add the SR after the SSRC
-    RTP_ControlFrame::SenderReport * sr = (RTP_ControlFrame::SenderReport *)(payload+sizeof(PUInt32b));
-    sr->ntp_ts = sender.m_reportAbsoluteTime.GetNTP();
-    sr->rtp_ts = sender.m_reportTimestamp;
-    sr->psent  = sender.m_packets;
-    sr->osent  = (uint32_t)sender.m_octets;
-
-    PTRACE(m_throttleTxReport, *this << "sending SenderReport:"
-              " SSRC=" << RTP_TRACE_SRC(sender.m_sourceIdentifier)
-           << " ntp=0x" << hex << sr->ntp_ts << dec
-           << sender.m_reportAbsoluteTime.AsString("(hh:mm:ss.uuu)")
-           << " rtp=" << sr->rtp_ts
-           << " psent=" << sr->psent
-           << " osent=" << sr->osent
+    PTRACE(logLevel, *sender << "sending " << forcedStr << "SenderReport:"
+              " ntp=" << sender->m_reportAbsoluteTime.AsString(PTime::TodayFormat)
+           << " rtp=" << sender->m_reportTimestamp
+           << " psent=" << sender->m_packets
+           << " osent=" << sender->m_octets
            << m_throttleTxReport);
-
-    sender.m_lastReportTime.SetCurrentTime(); // Remember when we last sent SR
-    sender.m_canCalculateRTT = true;
-
-    // add the RR's after the SR
-    rr = (RTP_ControlFrame::ReceiverReport *)(payload + sizeof(PUInt32b) + sizeof(RTP_ControlFrame::SenderReport));
   }
 
   if (rr != NULL) {
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-      if (it->second->m_direction == e_Receiver && it->second->m_packets > 0)
-        it->second->OnSendReceiverReport(*rr++);
+      if (it->second->OnSendReceiverReport(rr PTRACE_PARAM(, logLevel)))
+        ++rr;
     }
   }
 
   report.EndPacket();
 
-  // Add the SDES part to compound RTCP packet
-  PTRACE((unsigned)m_throttleTxReport, *this << "sending SDES for SSRC="
-         << RTP_TRACE_SRC(sender.m_sourceIdentifier) << ": \"" << sender.m_canonicalName << '"');
-  report.StartNewPacket(RTP_ControlFrame::e_SourceDescription);
+#if OPAL_RTCP_XR
+  if (includeReceivers) {
+    for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
+      //Generate and send RTCP-XR packet
+      if (it->second->m_direction == e_Receiver && it->second->m_metrics != NULL)
+        it->second->m_metrics->InsertMetricsReport(report, *this, it->second->m_sourceIdentifier, it->second->m_jitterBuffer);
+    }
+  }
+#endif
 
-  report.SetCount(0); // will be incremented automatically
-  report.StartSourceDescription(sender.m_sourceIdentifier);
-  report.AddSourceDescriptionItem(RTP_ControlFrame::e_CNAME, sender.m_canonicalName);
-  report.AddSourceDescriptionItem(RTP_ControlFrame::e_TOOL, m_toolName);
-  report.EndPacket();
+  if (sender != NULL) {
+    // Add the SDES part to compound RTCP packet
+    PTRACE(logLevel, *sender << "sending SDES cname=\"" << sender->m_canonicalName << '"');
+    report.AddSourceDescription(sender->m_sourceIdentifier, sender->m_canonicalName, m_toolName);
+  }
+  else {
+    PTime now;
+    report.AddReceiverReferenceTimeReport(1, now);
+    PTRACE(logLevel, *this << "SSRC=1, sending RRTR ntp=" << now.AsString(PTime::TodayFormat));
+  }
+
+  // Count receivers that have had a RRTR
+  receivers = 0;
+  for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
+    if (it->second->OnSendDelayLastReceiverReport(NULL))
+      ++receivers;
+  }
+
+  if (receivers != 0) {
+    RTP_ControlFrame::DelayLastReceiverReport::Receiver * dlrr =
+            report.AddDelayLastReceiverReport(sender != NULL ? sender->m_sourceIdentifier : 1, receivers);
+
+    for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it, ++dlrr) {
+      if (it->second->OnSendDelayLastReceiverReport(dlrr)) {
+        PTRACE(logLevel, *it->second << "sending DLRR");
+      }
+    }
+    report.EndPacket();
+  }
+
+  return report.IsValid();
 }
 
 
 void OpalRTPSession::TimedSendReport(PTimer&, P_INT_PTR)
 {
+  PTRACE(5, *this << "sending periodic report");
   SendReport(0, false);
 }
 
 
 OpalRTPSession::SendReceiveStatus OpalRTPSession::SendReport(RTP_SyncSourceId ssrc, bool force)
 {
+  std::list<RTP_ControlFrame> frames;
+
   if (!LockReadOnly())
     return e_AbortTransport;
 
-  RTP_ControlFrame packet;
-
   if (ssrc != 0) {
     SyncSource * sender;
-    if (GetSyncSource(ssrc, e_Sender, sender) && (force || sender->m_packets > 0))
-      InitialiseControlFrame(packet, *sender);
+    if (GetSyncSource(ssrc, e_Sender, sender)) {
+      RTP_ControlFrame frame;
+      if (InternalSendReport(frame, sender, true, force))
+        frames.push_back(frame);
+    }
   }
   else {
-    // Have not got anything yet, do nothing
+    bool includeReceivers = true;
     for (SyncSourceMap::iterator it = m_SSRC.begin(); it != m_SSRC.end(); ++it) {
-      if (it->second->m_direction == e_Sender && (force || it->second->m_packets > 0)) {
-        InitialiseControlFrame(packet, *it->second);
-
-#if OPAL_RTCP_XR
-        //Generate and send RTCP-XR packet
-        if (it->second->m_metrics != NULL)
-          it->second->m_metrics->InsertExtendedReportPacket(m_sessionId, it->second->m_sourceIdentifier, it->second->m_jitterBuffer, packet);
-#endif
+      RTP_ControlFrame frame;
+      if (InternalSendReport(frame, it->second, includeReceivers, force)) {
+        frames.push_back(frame);
+        includeReceivers = false;
       }
+    }
+    if (includeReceivers) {
+      RTP_ControlFrame frame;
+      if (InternalSendReport(frame, NULL, true, force))
+        frames.push_back(frame);
     }
   }
 
   UnlockReadOnly();
 
-  SendReceiveStatus status = e_IgnorePacket;
-  if (packet.IsValid())
-      status = WriteControl(packet);
+  // Actual transmission has to be outside mutex
+  SendReceiveStatus status = e_ProcessPacket;
+  for (std::list<RTP_ControlFrame>::iterator it = frames.begin(); it != frames.end(); ++it) {
+    SendReceiveStatus status = WriteControl(*it);
+    if (status != e_ProcessPacket)
+      break;
+  }
 
-  PTRACE(4, *this << "sending " << (force ? "forced" : "periodic")
-         << " report for SSRC=" << RTP_TRACE_SRC(ssrc)
-         << " valid=" << boolalpha << packet.IsValid()
-         << " status=" << status);
+  PTRACE(4, *this << "sent " << frames.size() << ' ' << (force ? "forced" : "periodic") << " reports: status=" << status);
   return status;
 }
 
@@ -1377,7 +1415,8 @@ void OpalRTPSession::GetStatistics(OpalMediaStatistics & statistics, Direction d
   statistics.m_mediaType         = m_mediaType;
   statistics.m_totalBytes        = 0;
   statistics.m_totalPackets      = 0;
-  statistics.m_controlPackets    = m_rtcpPacketsReceived;
+  statistics.m_controlPacketsIn  = m_rtcpPacketsReceived;
+  statistics.m_controlPacketsOut = m_rtcpPacketsSent;
   statistics.m_NACKs             = 0;
   statistics.m_packetsLost       = 0;
   statistics.m_packetsOutOfOrder = 0;
@@ -1447,10 +1486,10 @@ void OpalRTPSession::SyncSource::GetStatistics(OpalMediaStatistics & statistics)
   statistics.m_averageJitter     = m_jitter;
   statistics.m_maximumJitter     = m_maximumJitter;
   statistics.m_lastPacketTime    = m_lastPacketAbsTime;
-  statistics.m_lastReportTime    = m_lastReportTime;
+  statistics.m_lastReportTime    = m_lastSenderReportTime;
 
   if (m_jitterBuffer != NULL) {
-    statistics.m_packetsTooLate    = m_jitterBuffer->GetPacketsTooLate();
+    statistics.m_packetsTooLate    = m_jitterBuffer->GetPacketsTooLate() + m_packetsTooLate;
     statistics.m_packetOverruns    = m_jitterBuffer->GetBufferOverruns();
     statistics.m_jitterBufferDelay = m_jitterBuffer->GetCurrentJitterDelay()/m_jitterBuffer->GetTimeUnits();
   }
@@ -1494,9 +1533,13 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
       case RTP_ControlFrame::e_SenderReport:
       {
         RTP_SenderReport txReport;
-        RTP_ReceiverReportArray rxReports;
-        if (frame.ParseSenderReport(txReport, rxReports))
-          OnRxSenderReport(txReport, rxReports);
+        const RTP_ControlFrame::ReceiverReport * rr;
+        unsigned count;
+        if (frame.ParseSenderReport(txReport, rr, count)) {
+          OnRxSenderReport(txReport);
+          for (unsigned i = 0; i < count; ++i)
+            OnRxReceiverReport(txReport.sourceIdentifier, rr[i]);
+        }
         else {
           PTRACE(2, *this << "SenderReport packet truncated - " << frame);
         }
@@ -1506,9 +1549,13 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
       case RTP_ControlFrame::e_ReceiverReport:
       {
         RTP_SyncSourceId ssrc;
-        RTP_ReceiverReportArray reports;
-        if (frame.ParseReceiverReport(ssrc, reports))
-          OnRxReceiverReport(ssrc, reports);
+        const RTP_ControlFrame::ReceiverReport * rr;
+        unsigned count;
+        if (frame.ParseReceiverReport(ssrc, rr, count)) {
+          PTRACE_IF(m_throttleRxRR, count == 0, *this << "received empty ReceiverReport for " << RTP_TRACE_SRC(ssrc));
+          for (unsigned i = 0; i < count; ++i)
+            OnRxReceiverReport(ssrc, rr[i]);
+        }
         else {
           PTRACE(2, *this << "ReceiverReport packet truncated - " << frame);
         }
@@ -1550,19 +1597,11 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
         break;
       }
 
-#if OPAL_RTCP_XR
       case RTP_ControlFrame::e_ExtendedReport:
-      {
-        RTP_SyncSourceId rxSSRC;
-        RTP_ExtendedReportArray reports;
-        if (RTCP_XR_Metrics::ParseExtendedReportArray(frame, rxSSRC, reports))
-          OnRxExtendedReport(rxSSRC, reports);
-        else {
-          PTRACE(2, *this << "ReceiverReport packet truncated - " << frame);
+        if (!OnReceiveExtendedReports(frame)) {
+          PTRACE(2, *this << "ExtendedReport packet truncated - " << frame);
         }
         break;
-      }
-#endif
 
       case RTP_ControlFrame::e_TransportLayerFeedBack :
         switch (frame.GetFbType()) {
@@ -1703,54 +1742,115 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::OnReceiveControl(RTP_ControlFr
 }
 
 
-void OpalRTPSession::OnRxSenderReport(const SenderReport & senderReport, const ReceiverReportArray & receiveReports)
+bool OpalRTPSession::OnReceiveExtendedReports(const RTP_ControlFrame & frame)
 {
-#if PTRACING
-  if (PTrace::CanTrace(m_throttleRxSR)) {
-    ostream & strm = PTRACE_BEGIN(m_throttleRxSR);
-    strm << *this << "OnRxSenderReport: " << senderReport << m_throttleRxSR << '\n';
-    for (PINDEX i = 0; i < receiveReports.GetSize(); i++)
-      strm << "  RR: " << receiveReports[i] << '\n';
-    strm << PTrace::End;
-  }
+  size_t size = frame.GetPayloadSize();
+  if (size < sizeof(PUInt32b))
+    return false;
+
+  const BYTE * payload = frame.GetPayloadPtr();
+  RTP_SyncSourceId ssrc = *(const PUInt32b *)payload;
+  payload += sizeof(PUInt32b);
+  size -= sizeof(PUInt32b);
+
+  while (size >= sizeof(RTP_ControlFrame::ExtendedReport)) {
+    const RTP_ControlFrame::ExtendedReport & xr = *(const RTP_ControlFrame::ExtendedReport *)payload;
+    size_t blockSize = (xr.length + 1) * 4;
+    if (size < blockSize)
+      return false;
+
+    switch (xr.bt) {
+      case 4 :
+        if (blockSize < sizeof(RTP_ControlFrame::ReceiverReferenceTimeReport))
+          return false;
+        else {
+          PTime ntp(0);
+          ntp.SetNTP(((const RTP_ControlFrame::ReceiverReferenceTimeReport *)payload)->ntp);
+          OnRxReceiverReferenceTimeReport(ssrc, ntp);
+        }
+        break;
+
+      case 5 :
+        if (blockSize < sizeof(RTP_ControlFrame::DelayLastReceiverReport))
+          return false;
+        else {
+          PINDEX count = (blockSize - sizeof(RTP_ControlFrame::ExtendedReport)) / sizeof(RTP_ControlFrame::DelayLastReceiverReport::Receiver);
+          if (blockSize != count*sizeof(RTP_ControlFrame::DelayLastReceiverReport::Receiver)+sizeof(RTP_ControlFrame::ExtendedReport))
+            return false;
+
+          RTP_ControlFrame::DelayLastReceiverReport * dlrr = (RTP_ControlFrame::DelayLastReceiverReport *)payload;
+          for (PINDEX i = 0; i < count; ++i)
+            OnRxDelayLastReceiverReport(dlrr->m_receiver[i]);
+        }
+        break;
+
+#if OPAL_RTCP_XR
+      case 7:
+        if (blockSize < sizeof(RTP_ControlFrame::MetricsReport))
+          return false;
+
+        OnRxMetricsReport(ssrc, *(const RTP_ControlFrame::MetricsReport *)payload);
+        break;
 #endif
+
+      default :
+        PTRACE(4, *this << "unknown extended report: code=" << (unsigned)xr.bt << " length=" << blockSize);
+    }
+
+    payload += blockSize;
+    size -= blockSize;
+  }
+
+  return size == 0;
+}
+
+
+void OpalRTPSession::OnRxReceiverReferenceTimeReport(RTP_SyncSourceId ssrc, const PTime & ntp)
+{
+  SyncSource * receiver = UseSyncSource(ssrc, e_Receiver, true);
+  if (receiver != NULL) {
+    receiver->m_referenceReportNTP = ntp;
+    receiver->m_referenceReportTime.SetCurrentTime();
+    PTRACE(4, *this << "OnRxReceiverReferenceTimeReport: ssrc=" << RTP_TRACE_SRC(ssrc) << " ntp=" << ntp.AsString("hh:m:ss.uuu"));
+  }
+}
+
+
+void OpalRTPSession::OnRxDelayLastReceiverReport(const RTP_DelayLastReceiverReport & dlrr)
+{
+  SyncSource * receiver;
+  if (GetSyncSource(dlrr.m_ssrc, e_Receiver, receiver))
+    receiver->OnRxDelayLastReceiverReport(dlrr);
+  else {
+    PTRACE(4, *this << "OnRxDelayLastReceiverReport: unknown ssrc=" << RTP_TRACE_SRC(dlrr.m_ssrc));
+  }
+}
+
+
+void OpalRTPSession::OnRxSenderReport(const RTP_SenderReport & senderReport)
+{
+  PTRACE(m_throttleRxSR, *this << "OnRxSenderReport: " << senderReport << m_throttleRxSR);
 
   // This is report for their sender, our receiver
   SyncSource * receiver;
   if (GetSyncSource(senderReport.sourceIdentifier, e_Receiver, receiver))
     receiver->OnRxSenderReport(senderReport);
-
-  OnRxReceiverReports(receiveReports);
 }
 
 
-void OpalRTPSession::OnRxReceiverReport(RTP_SyncSourceId PTRACE_PARAM(src), const ReceiverReportArray & reports)
+void OpalRTPSession::OnRxReceiverReport(RTP_SyncSourceId, const RTP_ReceiverReport & report)
 {
-#if PTRACING
-  if (PTrace::CanTrace(m_throttleRxRR)) {
-    ostream & strm = PTRACE_BEGIN(m_throttleRxRR);
-    strm << *this << "OnReceiverReport: SSRC=" << RTP_TRACE_SRC(src) << ", count=" << reports.GetSize() << m_throttleRxRR;
-    for (PINDEX i = 0; i < reports.GetSize(); i++)
-      strm << "\n  RR: " << reports[i];
-    strm << PTrace::End;
-  }
-#endif
-  OnRxReceiverReports(reports);
-}
+  PTRACE(m_throttleRxRR, *this << "OnReceiverReport: " << report << m_throttleRxSR);
 
-
-void OpalRTPSession::OnRxReceiverReports(const ReceiverReportArray & reports)
-{
-  for (PINDEX i = 0; i < reports.GetSize(); i++) {
-    // This is report for their receiver, our sender
-    SyncSource * sender;
-    if (GetSyncSource(reports[i].sourceIdentifier, e_Sender, sender))
-      sender->OnRxReceiverReport(reports[i]);
+  SyncSource * sender;
+  if (GetSyncSource(report.sourceIdentifier, e_Sender, sender)) {
+    sender->OnRxReceiverReport(report);
+    m_connection.ExecuteMediaCommand(OpalMediaPacketLoss(report.fractionLost*100/255, m_mediaType, m_sessionId, report.sourceIdentifier), true);
   }
 }
 
 
-void OpalRTPSession::OnRxSourceDescription(const SourceDescriptionArray & PTRACE_PARAM(description))
+void OpalRTPSession::OnRxSourceDescription(const RTP_SourceDescriptionArray & PTRACE_PARAM(description))
 {
   PTRACE(m_throttleRxSDES, *this << "OnSourceDescription: " << description.GetSize() << " entries" << description);
 }
@@ -1812,10 +1912,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendNACK(const RTP_ControlFram
       return e_IgnorePacket;
 
     // Packet always starts with SR or RR, use empty RR as place holder
-    request.StartNewPacket(RTP_ControlFrame::e_ReceiverReport);
-    request.SetPayloadSize(sizeof(PUInt32b));  // length is SSRC
-    request.SetCount(0);
-    *(PUInt32b *)request.GetPayloadPtr() = sender->m_sourceIdentifier; // add the SSRC to the start of the payload
+    InitialiseControlFrame(request, *sender);
 
     PTRACE(4, *this << "sending NACK, "
               "SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier) << ", "
@@ -1854,10 +1951,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendFlowControl(unsigned maxBi
       return e_ProcessPacket;
 
     // Packet always starts with SR or RR, use empty RR as place holder
-    request.StartNewPacket(RTP_ControlFrame::e_ReceiverReport);
-    request.SetPayloadSize(sizeof(PUInt32b));  // length is SSRC
-    request.SetCount(0);
-    *(PUInt32b *)request.GetPayloadPtr() = sender->m_sourceIdentifier; // add the SSRC to the start of the payload
+    InitialiseControlFrame(request, *sender);
 
     if (m_feedback&OpalMediaFormat::e_TMMBR) {
       if (overhead == 0)
@@ -1903,10 +1997,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendIntraFrameRequest(unsigned
       return e_ProcessPacket;
 
     // Packet always starts with SR or RR, use empty RR as place holder
-    request.StartNewPacket(RTP_ControlFrame::e_ReceiverReport);
-    request.SetPayloadSize(sizeof(PUInt32b));  // length is SSRC
-    request.SetCount(0);
-    *(PUInt32b *)request.GetPayloadPtr() = sender->m_sourceIdentifier; // add the SSRC to the start of the payload
+    InitialiseControlFrame(request, *sender);
 
     bool has_AVPF_PLI = (m_feedback & OpalMediaFormat::e_PLI) || (options & OPAL_OPT_VIDUP_METHOD_PLI);
     bool has_AVPF_FIR = (m_feedback & OpalMediaFormat::e_FIR) || (options & OPAL_OPT_VIDUP_METHOD_FIR);
@@ -1958,10 +2049,7 @@ OpalRTPSession::SendReceiveStatus OpalRTPSession::SendTemporalSpatialTradeOff(un
       return e_ProcessPacket;
 
     // Packet always starts with SR or RR, use empty RR as place holder
-    request.StartNewPacket(RTP_ControlFrame::e_ReceiverReport);
-    request.SetPayloadSize(sizeof(PUInt32b));  // length is SSRC
-    request.SetCount(0);
-    *(PUInt32b *)request.GetPayloadPtr() = sender->m_sourceIdentifier; // add the SSRC to the start of the payload
+    InitialiseControlFrame(request, *sender);
 
     PTRACE(3, *this << "sending TSTO (temporal spatial trade off) "
            "value=" << tradeOff << ", SSRC=" << RTP_TRACE_SRC(receiver->m_sourceIdentifier));

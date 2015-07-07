@@ -641,8 +641,11 @@ void OpalMediaStream::PrintDetail(ostream & strm, const char * prefix, Details d
 
 #if OPAL_VIDEO
   OpalVideoFormat::ContentRole contentRole = mediaFormat.GetOptionEnum(OpalVideoFormat::ContentRoleOption(), OpalVideoFormat::eNoRole);
-  if (contentRole != OpalVideoFormat::eNoRole)
-    strm << ", " << &OpalVideoFormat::ContentRoleToString(contentRole)[1] << " video";
+  if (contentRole != OpalVideoFormat::eNoRole) {
+    PString roleStr = OpalVideoFormat::ContentRoleToString(contentRole);
+    roleStr.Delete(0,1);
+    strm << ", " << roleStr << " video";
+  }
 #endif
 
   if (details & DetailEOL)
@@ -1522,7 +1525,7 @@ unsigned * OpalMediaCommand::GetPlugInSize() const
 }
 
 
-OpalMediaFlowControl::OpalMediaFlowControl(unsigned bitRate,
+OpalMediaFlowControl::OpalMediaFlowControl(OpalBandwidth bitRate,
                                            const OpalMediaType & mediaType,
                                            unsigned sessionID,
                                            unsigned ssrc)
@@ -1535,6 +1538,22 @@ OpalMediaFlowControl::OpalMediaFlowControl(unsigned bitRate,
 PString OpalMediaFlowControl::GetName() const
 {
   return "Flow Control";
+}
+
+
+OpalMediaPacketLoss::OpalMediaPacketLoss(unsigned packetLoss,
+                                         const OpalMediaType & mediaType,
+                                         unsigned sessionID,
+                                         unsigned ssrc)
+  : OpalMediaCommand(mediaType, sessionID, ssrc)
+  , m_packetLoss(packetLoss)
+{
+}
+
+
+PString OpalMediaPacketLoss::GetName() const
+{
+  return "Packet Loss";
 }
 
 

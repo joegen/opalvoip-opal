@@ -179,15 +179,13 @@ H323Transaction::Response H501AccessRequest::OnHandlePDU()
 ////////////////////////////////////////////////////////////////
 
 H323PeerElement::H323PeerElement(H323EndPoint & ep, H323Transport * trans)
-  : H323_AnnexG(ep, trans),
-    requestMutex(1, 1)
+  : H323_AnnexG(ep, trans)
 {
   Construct();
 }
 
 H323PeerElement::H323PeerElement(H323EndPoint & ep, const H323TransportAddress & addr)
-  : H323_AnnexG(ep, addr),
-    requestMutex(1, 1)
+  : H323_AnnexG(ep, addr)
 {
   Construct();
 }
@@ -1457,10 +1455,8 @@ PBoolean H323PeerElement::OnReceiveAccessRejection(const H501PDU & pdu, const H5
 
 PBoolean H323PeerElement::MakeRequest(Request & request)
 {
-  requestMutex.Wait();
-  PBoolean stat = H323_AnnexG::MakeRequest(request);
-  requestMutex.Signal();
-  return stat;
+  PWaitAndSignal muyex(m_requestMutex);
+  return H323_AnnexG::MakeRequest(request);
 }
 
 //////////////////////////////////////////////////////////////////////////////

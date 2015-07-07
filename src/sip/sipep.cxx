@@ -637,7 +637,7 @@ PBoolean SIPEndPoint::SetupTransfer(const PString & token,
   if (!AddConnection(connection))
     return false;
 
-  if (remoteParty.Find(";OPAL-"OPAL_SIP_REFERRED_CONNECTION) == P_MAX_INDEX)
+  if (remoteParty.Find(";OPAL-" OPAL_SIP_REFERRED_CONNECTION) == P_MAX_INDEX)
     otherConnection->Release(OpalConnection::EndedByCallForwarded);
   else
     otherConnection->SetPhase(OpalConnection::ForwardingPhase);

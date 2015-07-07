@@ -1,7 +1,7 @@
 LIBRARY opal
 EXPORTS
-    OpalInitialise @1
-    OpalShutDown @2
-    OpalGetMessage @3
-    OpalSendMessage @4
-    OpalFreeMessage @5
+    _OpalInitialise@8 @1
+    _OpalShutDown@4 @2
+    _OpalGetMessage@8 @3
+    _OpalSendMessage@8 @4
+    _OpalFreeMessage@4 @5
