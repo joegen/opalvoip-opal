@@ -192,27 +192,38 @@ dnl we want each plugin to only have its libs so don't add it for everyone
 oldLIBS="$LIBS"
 
 MY_MODULE_OPTION(
-   [LIBAVCODEC],
-   [libavcodec],
-   [FFMPEG libavcodec library],
-   [libavcodec >= 51.11.0],
+   [LIBAVUTIL],
+   [libavutil],
+   [FFMPEG libavutil library],
+   [libavutil >= 54.0.0],
    [],
-   [-lavcodec],
-   [#include <libavcodec/avcodec.h>],
-   [avcodec_version()],
+   [-lavutil],
+   [#include <libavutil/avutil.h>],
+   [avutil_version()],
    [MY_MODULE_OPTION(
-      [LIBAVUTIL],
-      [libavutil],
-      [FFMPEG libavutil library],
-      [libavutil >= 51.11.0],
+      [LIBSWRESAMPLE],
+      [libswresample],
+      [FFMPEG libswresample library],
+      [libswresample >= 1.1.0],
       [],
-      [-lavutil],
-      [#include <libavutil/avutil.h>],
-      [avutil_version()],
-      [
-         HAVE_LIBAVCODEC=yes
-         LIBAVCODEC_LIBS="$LIBAVCODEC_LIBS -lavutil"
-      ],
+      [-lswresample],
+      [#include <libswresample/swresample.h>],
+      [swresample_version()],
+      [MY_MODULE_OPTION(
+         [LIBAVCODEC],
+         [libavcodec],
+         [FFMPEG libavcodec library],
+         [libavcodec >= 56.0.0],
+         [],
+         [-lavcodec],
+         [#include <libavcodec/avcodec.h>],
+         [avcodec_version()],
+         [
+            HAVE_LIBAVCODEC=yes
+            LIBAVCODEC_LIBS="$LIBAVCODEC_LIBS $LIBAVUTIL_LIBS $LIBSWRESAMPLE_LIBS"
+         ],
+         [HAVE_LIBAVCODEC=no]
+      )],
       [HAVE_LIBAVCODEC=no]
    )],
    [HAVE_LIBAVCODEC=no]
