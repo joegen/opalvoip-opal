@@ -1655,6 +1655,12 @@ void OpalManager_C::HandleSetGeneral(const OpalMessage & command, OpalMessageBuf
     }
   }
 #endif
+
+  if (m_apiVersion < 31)
+    return;
+
+  if (command.m_param.m_general.m_noMediaTimeout > 0)
+    SetNoMediaTimeout(command.m_param.m_general.m_noMediaTimeout);
 }
 
 
@@ -2763,6 +2769,7 @@ void OpalManager_C::OnMessageReceived(const OpalIM & im)
   SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_to,   im.m_to.AsString());
   SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_conversationId, im.m_conversationId);
   SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_textBody, im.m_bodies(PMIMEInfo::TextPlain()));
+  SET_MESSAGE_STRING(message, m_param.m_instantMessage.m_htmlBody, im.m_bodies(PMIMEInfo::TextHTML()));
 
   PINDEX count = im.m_bodies.GetSize();
   if (count > 0) {
@@ -2833,7 +2840,7 @@ extern "C" {
                   "m-manufacturer:"
                   "n-name:"
                   "v-version:", false);
-    if (!PAssert(args.IsParsed(), "Invalid options: " + args.GetParseError()))
+    if (!args.IsParsed())
       return NULL;
 
     PTRACE_INITIALISE(args);

@@ -283,7 +283,7 @@ s*/
 	    ;
 
     /* System generated locals */
-    integer inbuf_offset, lpbuf_offset, i__1, i__2;
+    integer inbuf_offset = 0, lpbuf_offset = 0, i__1, i__2;
     real r__1, r__2;
 
     /* Builtin functions */

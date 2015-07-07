@@ -2022,9 +2022,9 @@ bool H235SecurityAlgorithmCapability::OnSendingPDU(H245_EncryptionSync & encrypt
     return false;
   }
 
-  PString endpointID;
+  PASN_BMPString endpointID;
   if (connection.GetEndPoint().GetGatekeeper() != NULL)
-    endpointID = connection.GetEndPoint().GetGatekeeper()->GetEndpointIdentifier();
+    connection.GetEndPoint().GetGatekeeper()->GetEndpointIdentifier(endpointID);
 
   const OpalMediaCryptoSuite & cryptoSuite = keys.front().GetCryptoSuite();
 
@@ -2038,7 +2038,7 @@ bool H235SecurityAlgorithmCapability::OnSendingPDU(H245_EncryptionSync & encrypt
     h235key.SetTag(H235_H235Key::e_secureSharedSecret);
     H235_V3KeySyncMaterial & v3data = h235key;
 
-    if (!endpointID.IsEmpty()) {
+    if (!((PWCharArray)endpointID).IsEmpty()) {
       v3data.IncludeOptionalField(H235_V3KeySyncMaterial::e_generalID);
       v3data.m_generalID = endpointID;
     }

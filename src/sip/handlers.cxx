@@ -2321,7 +2321,9 @@ void SIPMessageHandler::UpdateParameters(const SIPMessage::Params & params)
 {
   m_parameters.m_remoteAddress = params.m_remoteAddress;
   m_parameters.m_localAddress = params.m_localAddress;
+#if OPAL_HAS_IM
   m_parameters.m_messageId = params.m_messageId;
+#endif
 
   if (!params.m_body.IsEmpty()) {
     m_parameters.m_body = params.m_body;

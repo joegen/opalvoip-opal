@@ -67,8 +67,6 @@ static const char UsernameKey[] = "Username";
 static const char PasswordKey[] = "Password";
 static const char RouteAliasKey[] = "Alias";
 static const char RouteHostKey[] = "Host";
-static const char ClearingHouseKey[] = "H.501 Clearing House";
-static const char H501InterfaceKey[] = "H.501 Interface";
 static const char GkServerListenersKey[] = "Gatekeeper Server Interfaces";
 
 #ifdef H323_TRANSNEXUS_OSP

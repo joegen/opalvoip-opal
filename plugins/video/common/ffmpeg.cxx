@@ -374,6 +374,7 @@ void FFMPEGCodec::SetEncoderOptions(unsigned frameTime,
   // no effect.
   m_context->rc_initial_buffer_occupancy = m_context->rc_buffer_size * 1/2;
 
+#if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52, 0, 0)
   // And this is set to 1.
   // It seems to affect how aggressively the library will raise and lower
   // quantization to keep bandwidth constant. Except it's in reference to
@@ -383,6 +384,7 @@ void FFMPEGCodec::SetEncoderOptions(unsigned frameTime,
 
   // This is set to 0 in ffmpeg.c, the command-line utility.
   m_context->rc_initial_cplx = 0.0f;
+#endif
 
   // FFMPEG requires bit rate tolerance to be at least one frame size
   m_context->bit_rate_tolerance = maxBitRate/10;
@@ -398,9 +400,11 @@ void FFMPEGCodec::SetEncoderOptions(unsigned frameTime,
   m_context->max_qdiff = 10;  // was 3      // max q difference between frames
   m_context->qcompress = 0.5;               // qscale factor between easy & hard scenes (0.0-1.0)
 
+#if LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52, 0, 0)
   // Lagrange multipliers - this is how the context defaults do it:
   m_context->lmin = m_context->qmin * FF_QP2LAMBDA;
   m_context->lmax = m_context->qmax * FF_QP2LAMBDA; 
+#endif
 
   if (m_fullFrame == NULL)
     m_context->rtp_payload_size = maxRTPSize;
@@ -542,7 +546,8 @@ bool FFMPEGCodec::DecodeVideoPacket(const PluginCodec_RTP & in, unsigned & flags
   if (!m_hadMissingPacket && (flags & PluginCodec_CoderPacketLoss) != 0) {
     PTRACE(3, m_prefix, "Decoder throwing away entire video frame due to packet loss");
     m_hadMissingPacket = true;
-    m_fullFrame->Reset();
+    if (m_fullFrame != NULL)
+        m_fullFrame->Reset();
   }
 
   flags = 0;

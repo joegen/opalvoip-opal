@@ -733,40 +733,7 @@ static int free_codec_options(const struct PluginCodec_Definition *, void *, con
 }
 
 
-static int valid_for_protocol(const struct PluginCodec_Definition *, void *, const char *, void * parm, unsigned * parmLen)
-{
-  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
-    return 0;
-
-  return (STRCMPI((const char *)parm, "h.323") == 0 ||
-          STRCMPI((const char *)parm, "h323") == 0) ? 1 : 0;
-
-}
-
 PLUGINCODEC_CONTROL_LOG_FUNCTION_DEF
-
-static PluginCodec_ControlDefn h323EncoderControls[] = {
-  { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    valid_for_protocol },
-  { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
-  { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, to_normalised_options },
-  { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, to_customised_options },
-  { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    free_codec_options },
-  { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     encoder_set_options },
-  { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  encoder_get_output_data_size },
-  PLUGINCODEC_CONTROL_LOG_FUNCTION_INC
-  { NULL }
-};
-
-static PluginCodec_ControlDefn h323DecoderControls[] = {
-  { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    valid_for_protocol },
-  { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
-  { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, to_normalised_options },
-  { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, to_customised_options },
-  { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    free_codec_options },
-  { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     decoder_set_options },
-  { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  decoder_get_output_data_size },
-  { NULL }
-};
 
 static PluginCodec_ControlDefn EncoderControls[] = {
   { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
@@ -796,24 +763,6 @@ static struct PluginCodec_Option const maxRxFrameWidth =
   { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH,  true, PluginCodec_NoMerge, "352", NULL, NULL, 0, "176", "352"  };
 static struct PluginCodec_Option const maxRxFrameHeight =
   { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT, true, PluginCodec_NoMerge, "288", NULL, NULL, 0, "144", "288"  };
-
-static struct PluginCodec_Option const minRxFrameWidthQCIF =
-  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH,  true, PluginCodec_NoMerge, "176", NULL, NULL, 0, "176", "176" };
-static struct PluginCodec_Option const minRxFrameHeightQCIF =
-  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT, true, PluginCodec_NoMerge, "144", NULL, NULL, 0, "144", "144"  };
-static struct PluginCodec_Option const maxRxFrameWidthQCIF =
-  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH,  true, PluginCodec_NoMerge, "176", NULL, NULL, 0, "176", "176"  };
-static struct PluginCodec_Option const maxRxFrameHeightQCIF =
-  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT, true, PluginCodec_NoMerge, "144", NULL, NULL, 0, "144", "144"  };
-
-static struct PluginCodec_Option const minRxFrameWidthCIF =
-  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH,  true, PluginCodec_NoMerge, "352", NULL, NULL, 0, "352", "352" };
-static struct PluginCodec_Option const minRxFrameHeightCIF =
-  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT, true, PluginCodec_NoMerge, "288", NULL, NULL, 0, "288", "288"  };
-static struct PluginCodec_Option const maxRxFrameWidthCIF =
-  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH,  true, PluginCodec_NoMerge, "352", NULL, NULL, 0, "352", "352"  };
-static struct PluginCodec_Option const maxRxFrameHeightCIF =
-  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT, true, PluginCodec_NoMerge, "288", NULL, NULL, 0, "288", "288"  };
 
 static struct PluginCodec_Option const qcifMPI =
 {
@@ -858,26 +807,6 @@ static struct PluginCodec_Option const annexD =
   "0",                                  // Initial value
   "D",                                  // FMTP option name
   "0"                                   // FMTP default value
-};
-
-static struct PluginCodec_Option const * const qcifOptionTable[] = {
-  &qcifMPI,
-  &annexD,
-  &minRxFrameWidthQCIF,
-  &minRxFrameHeightQCIF,
-  &maxRxFrameWidthQCIF,
-  &maxRxFrameHeightQCIF,
-  NULL
-};
-
-static struct PluginCodec_Option const * const cifOptionTable[] = {
-  &cifMPI,
-  &annexD,
-  &minRxFrameWidthCIF,
-  &minRxFrameHeightCIF,
-  &maxRxFrameWidthCIF,
-  &maxRxFrameHeightCIF,
-  NULL
 };
 
 static struct PluginCodec_Option const * const xcifOptionTable[] = {

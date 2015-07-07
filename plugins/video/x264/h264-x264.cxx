@@ -515,6 +515,13 @@ static struct PluginCodec_Option const * const MyOptionTable_1[] = {
   NULL
 };
 
+static struct PluginCodec_Option const * const MyOptionTable_Flash[] = {
+  &Profile,
+  &Level,
+  &MaxNaluSize,
+  NULL
+};
+
 
 static struct PluginCodec_H323GenericCodecData MyH323GenericData = {
   OpalPluginCodec_Identifer_H264_Generic
@@ -538,7 +545,11 @@ public:
 
   virtual bool IsValidForProtocol(const char * protocol) const
   {
-    return strcasecmp(protocol, PLUGINCODEC_OPTION_PROTOCOL_SIP) == 0 || m_options != MyOptionTable_0;
+    if (m_options == MyOptionTable_Flash)
+      return false;
+    if (m_options != MyOptionTable_0)
+      return true;
+    return strcasecmp(protocol, PLUGINCODEC_OPTION_PROTOCOL_SIP) == 0;
   }
 
 
@@ -556,9 +567,14 @@ public:
 
 /* SIP requires two completely independent media formats for packetisation
    modes zero and one. */
-static H264_PluginMediaFormat const MyMediaFormatInfo_Mode0(H264_Mode0_FormatName, MyOptionTable_0);
-static H264_PluginMediaFormat const MyMediaFormatInfo_Mode1(H264_Mode1_FormatName, MyOptionTable_1);
-static H264_PluginMediaFormat const MyMediaFormatInfo_High (H264_High_FormatName,  MyOptionTable_High);
+static H264_PluginMediaFormat const MyMediaFormatInfo_Mode0 (H264_Mode0_FormatName, MyOptionTable_0);
+static H264_PluginMediaFormat const MyMediaFormatInfo_Mode1 (H264_Mode1_FormatName, MyOptionTable_1);
+static H264_PluginMediaFormat const MyMediaFormatInfo_High  (H264_High_FormatName,  MyOptionTable_High);
+static H264_PluginMediaFormat const MyMediaFormatInfo_Flash (H264_Flash_FormatName, MyOptionTable_Flash);
+static H264_PluginMediaFormat const MyMediaFormatInfo_xMode0("x" OPAL_H264_MODE0,   MyOptionTable_0);
+static H264_PluginMediaFormat const MyMediaFormatInfo_xMode1("x" OPAL_H264_MODE1,   MyOptionTable_1);
+static H264_PluginMediaFormat const MyMediaFormatInfo_xHigh ("x" OPAL_H264_High,    MyOptionTable_High);
+static H264_PluginMediaFormat const MyMediaFormatInfo_xFlash("x" OPAL_H264_Flash,   MyOptionTable_Flash);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -867,11 +883,146 @@ class H264_Decoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCodec
 
 ///////////////////////////////////////////////////////////////////////////////
 
+class H264_FlashEncoder : public H264_Encoder, protected H264FlashPacketizer
+{
+  public:
+    H264_FlashEncoder(const PluginCodec_Definition * defn)
+      : H264_Encoder(defn)
+    {
+      m_profile = H264_PROFILE_INT_MAIN;
+    }
+
+
+    virtual size_t GetOutputDataSize()
+    {
+      return 256000; // Need space to encode the enter video frame
+    }
+
+
+    virtual bool OnChangedOptions()
+    {
+      m_maxNALUSize = GetOutputDataSize();
+      m_maxRTPSize = m_maxNALUSize+PluginCodec_RTP_MinHeaderSize;
+      m_packetisationModeSDP = m_packetisationModeH323 = 0;
+      return H264_Encoder::OnChangedOptions();
+    }
+
+
+    virtual bool Transcode(const void * fromPtr,
+                             unsigned & fromLen,
+                                 void * toPtr,
+                             unsigned & toLen,
+                             unsigned & flags)
+    {
+      return FlashTranscode(fromPtr, fromLen, toPtr, toLen, flags);
+    }
+
+
+    bool GetNALU(const void * fromPtr, unsigned & fromLen, const uint8_t * & naluPtr, unsigned & naluLen, unsigned & flags)
+    {
+      if (m_naluBuffer.empty())
+        m_naluBuffer.resize(m_maxRTPSize);
+
+      naluLen = m_naluBuffer.size();
+      if (!m_encoder.EncodeFrames((const unsigned char *)fromPtr, fromLen,
+                                  m_naluBuffer.data(), naluLen, PluginCodec_RTP_MinHeaderSize, flags))
+        return false;
+
+      naluPtr = m_naluBuffer.data() + PluginCodec_RTP_MinHeaderSize;
+      naluLen -= PluginCodec_RTP_MinHeaderSize;
+      return true;
+    }
+};
+
+
+class H264_FlashDecoder : public PluginVideoDecoder<MY_CODEC>, public FFMPEGCodec
+{
+    typedef PluginVideoDecoder<MY_CODEC> BaseClass;
+
+    std::vector<uint8_t> m_sps_pps;
+
+  public:
+    H264_FlashDecoder(const PluginCodec_Definition * defn)
+      : BaseClass(defn)
+      , FFMPEGCodec(MY_CODEC_LOG, NULL)
+    {
+      PTRACE(4, MY_CODEC_LOG, "Created flash decoder $Revision$");
+    }
+
+
+    virtual bool Construct()
+    {
+      if (!InitDecoder(AV_CODEC_ID_H264))
+        return false;
+
+      m_context->error_concealment = 0;
+
+      if (!OpenCodec())
+        return false;
+
+      return true;
+    }
+
+
+    virtual bool Transcode(const void * fromPtr,
+                             unsigned & fromLen,
+                                 void * toPtr,
+                             unsigned & toLen,
+                             unsigned & flags)
+    {
+      if (fromLen == PluginCodec_RTP_MinHeaderSize)
+        return true;
+
+      if (fromLen < PluginCodec_RTP_MinHeaderSize + 4) {
+          PTRACE(3, MY_CODEC_LOG, "Packet too small: " << fromLen << " bytes");
+          return true;
+      }
+
+      PluginCodec_RTP rtp(fromPtr, fromLen);
+      const uint8_t * payloadPtr = rtp.GetPayloadPtr();
+      size_t payloadLen = rtp.GetPayloadSize();
+
+      if (memcmp(payloadPtr, FlashSPS_PPS, FlashHeaderSize) == 0) {
+        payloadPtr += FlashHeaderSize;
+        payloadLen -= FlashHeaderSize;
+        if (m_sps_pps.size() != payloadLen || memcmp(m_sps_pps.data(), payloadPtr, payloadLen) != 0) {
+          CloseCodec();
+          m_sps_pps.assign(payloadPtr, payloadPtr+payloadLen);
+          m_context->extradata = m_sps_pps.data();
+          m_context->extradata_size = payloadLen;
+          if (!OpenCodec())
+            return false;
+          PTRACE(4, MY_CODEC_LOG, "Re-opened decoder with new SPS/PPS: " << payloadLen << " bytes");
+        }
+        return true;
+      }
+
+      if (!DecodeVideoFrame(payloadPtr+FlashHeaderSize, payloadLen-FlashHeaderSize, flags))
+        return false;
+
+      if ((flags&PluginCodec_ReturnCoderLastFrame) == 0)
+        return true;
+
+      PluginCodec_RTP out(toPtr, toLen);
+      toLen = OutputImage(m_picture->data, m_picture->linesize, PICTURE_WIDTH, PICTURE_HEIGHT, out, flags);
+
+      return true;
+    }
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+
 static struct PluginCodec_Definition CodecDefinition[] =
 {
-  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_Mode0, H264_Encoder, H264_Decoder),
-  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_Mode1, H264_Encoder, H264_Decoder),
-  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_High,  H264_Encoder, H264_Decoder)
+  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_Mode0,  H264_Encoder, H264_Decoder),
+  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_Mode1,  H264_Encoder, H264_Decoder),
+  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_High,   H264_Encoder, H264_Decoder),
+  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_Flash,  H264_FlashEncoder, H264_FlashDecoder),
+  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_xMode0, H264_Encoder, H264_Decoder),
+  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_xMode1, H264_Encoder, H264_Decoder),
+  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_xHigh,  H264_Encoder, H264_Decoder),
+  PLUGINCODEC_VIDEO_CODEC_CXX(MyMediaFormatInfo_xFlash, H264_FlashEncoder, H264_FlashDecoder)
 };
 
 

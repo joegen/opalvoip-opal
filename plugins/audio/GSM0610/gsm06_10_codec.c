@@ -371,10 +371,12 @@ static struct PluginCodec_Definition gsmCodecDefn[4] =
     8000,                               // samples per second
     BITS_PER_SECOND,                    // raw bits per second
     20000,                              // nanoseconds per frame
-    SAMPLES_PER_FRAME,                  // samples per frame
-    BYTES_PER_FRAME,                    // bytes per frame
-    PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    {{
+      SAMPLES_PER_FRAME,                // samples per frame
+      BYTES_PER_FRAME,                  // bytes per frame
+      PREF_FRAMES_PER_PACKET,           // recommended number of frames per packet
+      MAX_FRAMES_PER_PACKET,            // maximum number of frames per packe
+    }},
     PAYLOAD_CODE,                       // IANA RTP payload code
     sdpGSM,                             // RTP payload name
 
@@ -406,10 +408,12 @@ static struct PluginCodec_Definition gsmCodecDefn[4] =
     8000,                               // samples per second
     BITS_PER_SECOND,                    // raw bits per second
     20000,                              // nanoseconds per frame
-    SAMPLES_PER_FRAME,                  // samples per frame
-    BYTES_PER_FRAME,                    // bytes per frame
-    PREF_FRAMES_PER_PACKET,             // recommended number of frames per packet
-    MAX_FRAMES_PER_PACKET,              // maximum number of frames per packe
+    {{
+      SAMPLES_PER_FRAME,                // samples per frame
+      BYTES_PER_FRAME,                  // bytes per frame
+      PREF_FRAMES_PER_PACKET,           // recommended number of frames per packet
+      MAX_FRAMES_PER_PACKET,            // maximum number of frames per packe
+    }},
     PAYLOAD_CODE,                       // IANA RTP payload code
     sdpGSM,                             // RTP payload name
 
@@ -444,10 +448,12 @@ static struct PluginCodec_Definition gsmCodecDefn[4] =
     8000,                               // samples per second
     BITS_PER_SECOND,                    // raw bits per second
     40000,                              // nanoseconds per frame
-    MSGSM_SAMPLES_PER_FRAME,            // samples per frame
-    MSGSM_BYTES_PER_FRAME,              // bytes per frame
-    1,                                  // recommended number of frames per packet
-    1,                                  // maximum number of frames per packe
+    {{
+      MSGSM_SAMPLES_PER_FRAME,          // samples per frame
+      MSGSM_BYTES_PER_FRAME,            // bytes per frame
+      1,                                // recommended number of frames per packet
+      1,                                // maximum number of frames per packe
+    }},
     0,                                  // IANA RTP payload code
     sdpMSGSM,                           // RTP payload name
 
@@ -479,10 +485,12 @@ static struct PluginCodec_Definition gsmCodecDefn[4] =
     8000,                               // samples per second
     BITS_PER_SECOND,                    // raw bits per second
     40000,                              // nanoseconds per frame
-    MSGSM_SAMPLES_PER_FRAME,            // samples per frame
-    MSGSM_BYTES_PER_FRAME,              // bytes per frame
-    1,                                  // recommended number of frames per packet
-    1,                                  // maximum number of frames per packe
+    {{
+      MSGSM_SAMPLES_PER_FRAME,          // samples per frame
+      MSGSM_BYTES_PER_FRAME,            // bytes per frame
+      1,                                // recommended number of frames per packet
+      1,                                // maximum number of frames per packe
+    }},
     0,                                  // IANA RTP payload code
     sdpMSGSM,                           // RTP payload name
 

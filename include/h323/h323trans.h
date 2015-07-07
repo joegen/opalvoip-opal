@@ -295,10 +295,9 @@ class H323Transactor : public PObject
     WORD            defaultLocalPort;
     WORD            defaultRemotePort;
     H323Transport * transport;
-    PBoolean            checkResponseCryptoTokens;
+    bool            checkResponseCryptoTokens;
 
-    unsigned  nextSequenceNumber;
-    PMutex    nextSequenceNumberMutex;
+    atomic<uint16_t> m_nextSequenceNumber;
 
     PDictionary<POrdinalKey, Request> requests;
     PMutex                            requestsMutex;
