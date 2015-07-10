@@ -145,6 +145,14 @@ class OpalRTPMediaStream : public OpalMediaStream
     virtual OpalRTPSession & GetRtpSession() const
     { return m_rtpSession; }
 
+    /** Return current jitter buffer info
+      */
+    virtual void GetJitterBufferDelay(OpalJitterBuffer::Init & info) const;
+
+    /** Return current jitter buffer info
+      */
+    virtual void SetJitterBufferDelay(const OpalJitterBuffer::Init & info);
+
 #if OPAL_STATISTICS
     virtual void GetStatistics(OpalMediaStatistics & statistics, bool fromPatch = false) const;
 #endif
