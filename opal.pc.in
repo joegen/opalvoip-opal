@@ -9,6 +9,7 @@ libdir=@libdir@
 includedir=@includedir@
 datarootdir=@datarootdir@
 makedir=@makedir@
+plugindir=@OPAL_PLUGIN_DIR@
 target_cpu=@target_cpu@
 target_os=@target_os@
 target=@target@
