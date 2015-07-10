@@ -6437,7 +6437,7 @@ OPAL_DAHDI=no
 $as_echo_n "checking OPAL directory... " >&6; }
    if test "x$prefix" != "x" && test "x$prefix" != "xNONE"; then :
 
-      if test `cd $prefix ; pwd` = `cd . ; pwd`; then :
+      if test `$prefix` = `cd . ; pwd`; then :
 
          INTERNAL_OPALDIR="$prefix"
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: prefix is current directory $INTERNAL_OPALDIR" >&5
