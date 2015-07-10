@@ -423,6 +423,22 @@ PBoolean OpalRTPMediaStream::SetPatch(OpalMediaPatch * patch)
 }
 
 
+void OpalRTPMediaStream::GetJitterBufferDelay(OpalJitterBuffer::Init & info) const
+{
+  info.m_mediaType = mediaFormat.GetMediaType();
+  info.m_maxJitterDelay = m_jitterBuffer->GetMaxJitterDelay();
+  info.m_minJitterDelay = m_jitterBuffer->GetMinJitterDelay();
+  info.m_currentJitterDelay = m_jitterBuffer->GetCurrentJitterDelay();
+  info.m_timeUnits = m_jitterBuffer->GetTimeUnits();
+}
+
+
+void OpalRTPMediaStream::SetJitterBufferDelay(const OpalJitterBuffer::Init & info)
+{
+  m_jitterBuffer->SetDelay(info);
+}
+
+
 #if OPAL_STATISTICS
 void OpalRTPMediaStream::GetStatistics(OpalMediaStatistics & statistics, bool fromPatch) const
 {
