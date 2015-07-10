@@ -5,6 +5,38 @@ dnl
 dnl Assumes my_macros.m4 has been incldued in configure.ac
 
 
+dnl OPAL_DETERMINE_DIRECTORIES
+dnl Check for non-installed "environment variable" mode
+AC_DEFUN([OPAL_DETERMINE_DIRECTORIES],[
+   AC_MSG_CHECKING([OPAL directory])
+   AS_IF([test "x$prefix" != "x" && test "x$prefix" != "xNONE"],[
+      AS_IF(test `cd $prefix ; pwd` = `cd $1 ; pwd`, [
+         INTERNAL_OPALDIR="$prefix"
+         AC_MSG_RESULT([prefix is current directory $INTERNAL_OPALDIR])
+      ])
+   ],[
+      AS_VAR_SET_IF([OPALDIR],[
+         ac_default_prefix=$OPALDIR
+         INTERNAL_OPALDIR="$OPALDIR"
+         AC_MSG_RESULT([using OPALDIR environment variable $INTERNAL_OPALDIR])
+      ])
+   ])
+
+   AS_VAR_SET_IF([INTERNAL_OPALDIR],[
+      libdir+=_$target
+      datarootdir="\${exec_prefix}"
+      makedir="\${datarootdir}/make"
+      VERSION_DIR="$INTERNAL_OPALDIR"
+   ],[
+      makedir="\${datarootdir}/opal/make"
+      VERSION_DIR=`cd $1 ; pwd`
+      AC_MSG_RESULT([local source and prefix install])
+   ])
+
+   AC_SUBST(makedir)
+])
+
+
 dnl OPAL_SIMPLE_OPTION
 dnl Change a given variable according to arguments and subst and define it
 dnl $1 name of configure option
@@ -70,8 +102,8 @@ AC_DEFUN([OPAL_DETERMINE_PLUGIN_DIR],[
       AS_HELP_STRING([--with-plugin-installdir=DIR],[Location where plugins are installed]),
       [OPAL_PLUGIN_DIR="\${libdir}/$withval"],
       [
-         AS_IF([test "x$OPALDIR" != "x" && test "x$prefix" = "xNONE"],[
-            OPAL_PLUGIN_DIR="$OPALDIR/lib_$target/plugins"
+         AS_VAR_SET_IF([INTERNAL_OPALDIR],[
+            OPAL_PLUGIN_DIR="$INTERNAL_OPALDIR/lib_$target/plugins"
          ],[
             OPAL_PLUGIN_DIR="\${libdir}/opal-${OPAL_VERSION}"
          ])
