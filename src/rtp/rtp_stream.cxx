@@ -63,6 +63,11 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
   , m_syncSource(0)
   , m_jitterBuffer(NULL)
   , m_readTimeout(PMaxTimeInterval)
+#if OPAL_VIDEO
+  , m_forceIntraFrameFlag(false)
+  , m_videoUpdateThrottleTime(-1)
+  , m_pictureLossThrottleTime(-1)
+#endif
   , m_receiveNotifier(PCREATE_RTPDataNotifier(OnReceivedPacket))
 {
   /* If we are a source then we should set our buffer size to the max
