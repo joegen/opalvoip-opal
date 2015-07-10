@@ -58,6 +58,7 @@ class OpalJitterBuffer : public PObject
       Init()
         : m_minJitterDelay(0)
         , m_maxJitterDelay(0)
+        , m_currentJitterDelay(0)
         , m_timeUnits(8)
         , m_packetSize(2048)
       {
@@ -73,16 +74,18 @@ class OpalJitterBuffer : public PObject
         : m_mediaType(mediaType)
         , m_minJitterDelay(minDelay)
         , m_maxJitterDelay(maxDelay != 0 ? maxDelay : minDelay)
+        , m_currentJitterDelay(minDelay)
         , m_timeUnits(timeUnits)
         , m_packetSize(packetSize)
       {
       }
 
       OpalMediaType m_mediaType;
-      unsigned      m_minJitterDelay; ///<  Minimum delay in RTP timestamp units
-      unsigned      m_maxJitterDelay; ///<  Maximum delay in RTP timestamp units
-      unsigned      m_timeUnits;      ///<  Time units, usually 8 or 16
-      PINDEX        m_packetSize;     ///<  Max RTP packet size
+      unsigned      m_minJitterDelay;     ///<  Minimum delay in RTP timestamp units
+      unsigned      m_maxJitterDelay;     ///<  Maximum delay in RTP timestamp units
+      unsigned      m_currentJitterDelay; ///< Current/initial delay in RTP timestamp units
+      unsigned      m_timeUnits;          ///<  Time units, usually 8 or 16
+      PINDEX        m_packetSize;         ///<  Max RTP packet size
     };
 
     /**@name Construction */
