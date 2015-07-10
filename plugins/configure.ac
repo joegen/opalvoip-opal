@@ -35,11 +35,7 @@ AC_SUBST(DLFCN_LIBS)
 dnl ########################################################################
 dnl Extract OPAL version number
 
-if test "x$OPALDIR" != "x" ; then
-   VERSION_DIR="$OPALDIR"
-else
-   VERSION_DIR=".."
-fi
+OPAL_DETERMINE_DIRECTORIES([..])
 
 MY_VERSION_FILE([$VERSION_DIR/version.h], [OPAL])
 

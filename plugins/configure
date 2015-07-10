@@ -696,6 +696,7 @@ OPAL_STAGE
 OPAL_BUILD
 OPAL_MINOR
 OPAL_MAJOR
+makedir
 DLFCN_LIBS
 LDD
 NM
@@ -6379,6 +6380,9 @@ fi
 
 
 
+
+
+
 if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}nm", so it can be a program name with args.
 set dummy ${ac_tool_prefix}nm; ac_word=$2
@@ -6786,11 +6790,50 @@ esac
 
 
 
-if test "x$OPALDIR" != "x" ; then
-   VERSION_DIR="$OPALDIR"
-else
-   VERSION_DIR=".."
+
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking OPAL directory" >&5
+$as_echo_n "checking OPAL directory... " >&6; }
+   if test "x$prefix" != "x" && test "x$prefix" != "xNONE"; then :
+
+      if test `cd $prefix ; pwd` = `cd .. ; pwd`; then :
+
+         INTERNAL_OPALDIR="$prefix"
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: prefix is current directory $INTERNAL_OPALDIR" >&5
+$as_echo "prefix is current directory $INTERNAL_OPALDIR" >&6; }
+
 fi
+
+else
+
+      if ${OPALDIR+:} false; then :
+
+         ac_default_prefix=$OPALDIR
+         INTERNAL_OPALDIR="$OPALDIR"
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: using OPALDIR environment variable $INTERNAL_OPALDIR" >&5
+$as_echo "using OPALDIR environment variable $INTERNAL_OPALDIR" >&6; }
+
+fi
+
+fi
+
+   if ${INTERNAL_OPALDIR+:} false; then :
+
+      libdir+=_$target
+      datarootdir="\${exec_prefix}"
+      makedir="\${datarootdir}/make"
+      VERSION_DIR="$INTERNAL_OPALDIR"
+
+else
+
+      makedir="\${datarootdir}/opal/make"
+      VERSION_DIR=`cd .. ; pwd`
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: local source and prefix install" >&5
+$as_echo "local source and prefix install" >&6; }
+
+fi
+
+
+
 
 
    major=`cat $VERSION_DIR/version.h | grep MAJOR_VERSION | cut -f3 -d' '`
@@ -6851,9 +6894,9 @@ if test "${with_plugin_installdir+set}" = set; then :
   withval=$with_plugin_installdir; OPAL_PLUGIN_DIR="\${libdir}/$withval"
 else
 
-         if test "x$OPALDIR" != "x" && test "x$prefix" = "xNONE"; then :
+         if ${INTERNAL_OPALDIR+:} false; then :
 
-            OPAL_PLUGIN_DIR="$OPALDIR/lib_$target/plugins"
+            OPAL_PLUGIN_DIR="$INTERNAL_OPALDIR/lib_$target/plugins"
 
 else
 
