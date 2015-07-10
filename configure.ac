@@ -74,31 +74,14 @@ OPAL_DAHDI=no
 
 dnl ########################################################################
 dnl Check for non-installed "environment variable" mode
-if test "x$prefix" != "x" && test "x$prefix" != "xNONE" ; then
-   if test "$prefix" = `pwd`; then
-      INTERNAL_OPALDIR="$prefix"
-   fi
-else
-   if test "x$OPALDIR" != "x" ; then
-      AC_MSG_NOTICE(OPALDIR environment variable detected as $OPALDIR)
-      ac_default_prefix=$OPALDIR
-      INTERNAL_OPALDIR="$OPALDIR"
-   fi
-fi
+
+OPAL_DETERMINE_DIRECTORIES([.])
 
 if test "x$INTERNAL_OPALDIR" != "x"; then
-   libdir+=_$target
-   datarootdir="\${exec_prefix}"
-   makedir="\${datarootdir}/make"
-   VERSION_DIR="$INTERNAL_OPALDIR"
    CPPFLAGS="${CPPFLAGS} -I\${includedir}"
 else
-   makedir="\${datarootdir}/opal/make"
-   VERSION_DIR=`pwd`
    CPPFLAGS="${CPPFLAGS} -I\${includedir}/opal"
 fi
-
-AC_SUBST(makedir)
 
 
 dnl ########################################################################
