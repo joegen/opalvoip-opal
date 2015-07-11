@@ -487,12 +487,9 @@ case "$target_os" in
    iPhone* )
       AS_VAR_SET_IF([target_release], , AC_MSG_ERROR([Unable to determine iOS release number]))
 
-      MIN_IOS_VER="6.0"
-      AS_IF([test $target_release \< $MIN_IOS_VER], AC_MSG_ERROR([Requires iOS release $MIN_IOS_VER, has $target_release]))
-
       IOS_DEVROOT="`xcode-select -print-path`/Platforms/${target_os}.platform/Developer"
       IOS_SDKROOT=${IOS_DEVROOT}/SDKs/${target_os}${target_release}.sdk
-      IOS_FLAGS="-arch $target_cpu -miphoneos-version-min=$MIN_IOS_VER -isysroot ${IOS_SDKROOT}"
+      IOS_FLAGS="-arch $target_cpu -miphoneos-version-min=6.0 -isysroot ${IOS_SDKROOT}"
       CPPFLAGS="${IOS_FLAGS} $CPPFLAGS"
       LDFLAGS="${IOS_FLAGS} -L${IOS_SDKROOT}/usr/lib $LDFLAGS"
    ;;
@@ -501,10 +498,7 @@ case "$target_os" in
       target_os=Darwin
       target_release=`sw_vers -productVersion`
 
-      MIN_MACOSX_VER="10.8"
-      AS_IF([test $target_release \< $MIN_MACOSX_VER], AC_MSG_ERROR([Requires Mac OS-X release $MIN_MACOSX_VER, is $target_release]))
-
-      CPPFLAGS="-mmacosx-version-min=$MIN_MACOSX_VER $CPPFLAGS"
+      CPPFLAGS="-mmacosx-version-min=10.8 $CPPFLAGS"
       LIBS="-framework QTKit -framework CoreVideo -framework AudioUnit $LIBS"
    ;;
 
