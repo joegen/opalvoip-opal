@@ -392,7 +392,7 @@ void SIPHandler::OnReceivedIntervalTooBrief(SIPTransaction & /*transaction*/, SI
 {
   SetExpire(response.GetMIME().GetMinExpires());
 
-  // Restart the transaction with new authentication handler
+  // Restart the transaction with new time to live
   SendRequest(GetState());
 }
 
@@ -896,16 +896,18 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport & transpor
 
 void SIPSubscribeHandler::OnFailed(SIP_PDU::StatusCodes responseCode)
 {
-  if (GetState() != Unsubscribing && responseCode == SIP_PDU::Failure_TransactionDoesNotExist) {
-    // Resubscribe as previous subscription totally lost, reset the dialog and
-    // hopefully tht Call-ID not changing is not a problem.
-    m_parameters.m_addressOfRecord = GetAddressOfRecord().AsString();
-    m_dialog.SetLocalTag(PString::Empty());     // If this is empty
-    m_dialog.SetLocalURI(GetAddressOfRecord()); // This will regenerate tag
-    m_dialog.SetRemoteTag(PString::Empty());
+  if (responseCode != SIP_PDU::Failure_TransactionDoesNotExist || GetState() == Unsubscribing) {
+    SIPHandler::OnFailed(responseCode);
+    return;
   }
 
-  SIPHandler::OnFailed(responseCode);
+  // Resubscribe as previous subscription totally lost, reset the dialog and
+  // hopefully that Call-ID not changing is not a problem.
+  m_parameters.m_addressOfRecord = GetAddressOfRecord().AsString();
+  m_dialog.SetLocalTag(PString::Empty());     // If this is empty
+  m_dialog.SetLocalURI(GetAddressOfRecord()); // This will regenerate tag
+  m_dialog.SetRemoteTag(PString::Empty());
+  SendRequest(GetState());
 }
 
 
