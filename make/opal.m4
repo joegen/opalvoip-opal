@@ -10,7 +10,7 @@ dnl Check for non-installed "environment variable" mode
 AC_DEFUN([OPAL_DETERMINE_DIRECTORIES],[
    AC_MSG_CHECKING([OPAL directory])
    AS_IF([test "x$prefix" != "x" && test "x$prefix" != "xNONE"],[
-      AS_IF(test `$prefix` = `cd $1 ; pwd`, [
+      AS_IF(test "$prefix" = `cd $1 ; pwd`, [
          INTERNAL_OPALDIR="$prefix"
          AC_MSG_RESULT([prefix is current directory $INTERNAL_OPALDIR])
       ])

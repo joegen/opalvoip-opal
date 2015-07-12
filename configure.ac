@@ -494,9 +494,9 @@ dnl MSWIN_DISPLAY  script,Script language interface
 dnl MSWIN_DEFINE   script,OPAL_SCRIPT
 OPAL_SIMPLE_OPTION(script,OPAL_SCRIPT, [script language support])
 
-dnl MSWIN_DISPLAY  perf-hack,Performance checking hack
-dnl MSWIN_DEFINE   perf-hack,OPAL_PERFORMANCE_CHECK_HACK
-OPAL_SIMPLE_OPTION(perf-hack,OPAL_PERFORMANCE_CHECK_HACK, [Performance checking hack])
+dnl MSWIN_DISPLAY  perfhack,Performance checking hack
+dnl MSWIN_DEFINE   perfhack,OPAL_PERFORMANCE_CHECK_HACK
+OPAL_SIMPLE_OPTION(perfhack,OPAL_PERFORMANCE_CHECK_HACK, [Performance checking hack])
 
 
 dnl ################################
