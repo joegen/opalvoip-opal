@@ -9,6 +9,7 @@ html
 include/opal_config.h
 make/opal_config.mak
 src/rtp/libsrtp/crypto/include/config.h
+samples/openphone/version.wxs
 plugins/config.log
 plugins/config.status
 plugins/plugin_config.h
@@ -38,4 +39,5 @@ plugins/audio/Opus/opus/silk/float/.deps/
 plugins/audio/Opus/opus/src/.deps/
 plugins/audio/Opus/opus/stamp-h1
 plugins/audio/Opus/opus/tests/.deps/
+plugins/audio/G.722.1/libg722_1/tests/regression_tests.sh
 
