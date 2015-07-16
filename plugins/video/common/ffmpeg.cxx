@@ -635,7 +635,7 @@ bool FFMPEGCodec::DecodeVideoFrame(const uint8_t * frame, size_t length, unsigne
 
 void FFMPEGCodec::ErrorCallback(unsigned level, const char * msg)
 {
-  // This is not really so severe an error, everything decodes fine! Happens with flash, a lot.
+  // This is not really so severe an error, everything decodes fine! But happens with flash, a lot.
   if (strcmp(msg, "non-existing SPS 32 referenced in buffering period") == 0)
     level = 4;
 
