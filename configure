@@ -874,7 +874,7 @@ enable_rtcpxr
 enable_mixer
 enable_pcss
 enable_script
-enable_perf_hack
+enable_perfhack
 enable_samples
 enable_plugins
 with_plugin_installdir
@@ -1575,7 +1575,7 @@ Optional Features:
   --disable-mixer         disable media mixing support
   --disable-pcss          disable PC sound system support
   --disable-script        disable script language support
-  --disable-perf-hack     disable Performance checking hack
+  --disable-perfhack      disable Performance checking hack
   --enable-samples        enable samples build
   --disable-plugins       disable plugin support
 
@@ -5592,16 +5592,9 @@ else
   as_fn_error $? "Unable to determine iOS release number" "$LINENO" 5
 fi
 
-      MIN_IOS_VER="6.0"
-      if test $target_release \< $MIN_IOS_VER; then :
-  as_fn_error $? "Requires iOS release $MIN_IOS_VER
-else
-  has $target_release" "$LINENO" 5
-fi
-
       IOS_DEVROOT="`xcode-select -print-path`/Platforms/${target_os}.platform/Developer"
       IOS_SDKROOT=${IOS_DEVROOT}/SDKs/${target_os}${target_release}.sdk
-      IOS_FLAGS="-arch $target_cpu -miphoneos-version-min=$MIN_IOS_VER -isysroot ${IOS_SDKROOT}"
+      IOS_FLAGS="-arch $target_cpu -miphoneos-version-min=6.0 -isysroot ${IOS_SDKROOT}"
       CPPFLAGS="${IOS_FLAGS} $CPPFLAGS"
       LDFLAGS="${IOS_FLAGS} -L${IOS_SDKROOT}/usr/lib $LDFLAGS"
    ;;
@@ -5610,14 +5603,7 @@ fi
       target_os=Darwin
       target_release=`sw_vers -productVersion`
 
-      MIN_MACOSX_VER="10.8"
-      if test $target_release \< $MIN_MACOSX_VER; then :
-  as_fn_error $? "Requires Mac OS-X release $MIN_MACOSX_VER
-else
-  is $target_release" "$LINENO" 5
-fi
-
-      CPPFLAGS="-mmacosx-version-min=$MIN_MACOSX_VER $CPPFLAGS"
+      CPPFLAGS="-mmacosx-version-min=10.8 $CPPFLAGS"
       LIBS="-framework QTKit -framework CoreVideo -framework AudioUnit $LIBS"
    ;;
 
@@ -6437,7 +6423,7 @@ OPAL_DAHDI=no
 $as_echo_n "checking OPAL directory... " >&6; }
    if test "x$prefix" != "x" && test "x$prefix" != "xNONE"; then :
 
-      if test `$prefix` = `cd . ; pwd`; then :
+      if test "$prefix" = `cd . ; pwd`; then :
 
          INTERNAL_OPALDIR="$prefix"
          { $as_echo "$as_me:${as_lineno-$LINENO}: result: prefix is current directory $INTERNAL_OPALDIR" >&5
@@ -10953,9 +10939,9 @@ fi
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking Performance checking hack" >&5
 $as_echo_n "checking Performance checking hack... " >&6; }
 
-   # Check whether --enable-perf-hack was given.
-if test "${enable_perf_hack+set}" = set; then :
-  enableval=$enable_perf_hack; if test "x$enableval" = xno; then :
+   # Check whether --enable-perfhack was given.
+if test "${enable_perfhack+set}" = set; then :
+  enableval=$enable_perfhack; if test "x$enableval" = xno; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled by user" >&5
 $as_echo "disabled by user" >&6; }
 fi
@@ -11002,7 +10988,7 @@ else
 fi
 
 
-   enable_perf-hack="$enableval"
+   enable_perfhack="$enableval"
 
 
 

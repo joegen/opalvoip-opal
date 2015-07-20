@@ -122,7 +122,7 @@ namespace OpalSharp
 
                 m_opalContext = new OpalContext();
                 if (m_opalContext.Initialise(OPAL.OPAL_PREFIX_SIP + " " + OPAL.OPAL_PREFIX_PCSS +
-                                             " --trace-level " + LogLevel.Value + " --output " + LogFile.Text) == 0)
+                                             " --trace-level " + LogLevel.Value + " --output \"" + LogFile.Text + "\"") == 0)
                     MessageBox.Show("Failed to initialise", "OPAL", MessageBoxButtons.OK);
                 else
                 {

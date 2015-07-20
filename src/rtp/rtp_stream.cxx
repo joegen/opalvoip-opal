@@ -63,6 +63,11 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
   , m_syncSource(0)
   , m_jitterBuffer(NULL)
   , m_readTimeout(PMaxTimeInterval)
+#if OPAL_VIDEO
+  , m_forceIntraFrameFlag(false)
+  , m_videoUpdateThrottleTime(-1)
+  , m_pictureLossThrottleTime(-1)
+#endif
   , m_receiveNotifier(PCREATE_RTPDataNotifier(OnReceivedPacket))
 {
   /* If we are a source then we should set our buffer size to the max
@@ -415,6 +420,22 @@ PBoolean OpalRTPMediaStream::SetPatch(OpalMediaPatch * patch)
   InternalSetPatchPart2(oldPatch);
   m_jitterBuffer->Restart();
   return true;
+}
+
+
+void OpalRTPMediaStream::GetJitterBufferDelay(OpalJitterBuffer::Init & info) const
+{
+  info.m_mediaType = mediaFormat.GetMediaType();
+  info.m_maxJitterDelay = m_jitterBuffer->GetMaxJitterDelay();
+  info.m_minJitterDelay = m_jitterBuffer->GetMinJitterDelay();
+  info.m_currentJitterDelay = m_jitterBuffer->GetCurrentJitterDelay();
+  info.m_timeUnits = m_jitterBuffer->GetTimeUnits();
+}
+
+
+void OpalRTPMediaStream::SetJitterBufferDelay(const OpalJitterBuffer::Init & info)
+{
+  m_jitterBuffer->SetDelay(info);
 }
 
 
