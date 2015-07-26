@@ -2948,13 +2948,6 @@ bool SIPConnection::OnSendAnswer(SIP_PDU::StatusCodes response)
   else {
     // The Re-INVITE can be sent to change the RTP Session parameters,
     // the current codecs, or to put the call on hold
-    bool holdFromRemote = sdp->IsHold();
-    if (m_holdFromRemote != holdFromRemote) {
-      PTRACE(3, "Remote " << (holdFromRemote ? "" : "retrieve from ") << "hold detected");
-      m_holdFromRemote = holdFromRemote;
-      OnHold(true, holdFromRemote);
-    }
-
     ok = OnSendAnswerSDP(*sdp, *sdpOut);
   }
 
@@ -2981,15 +2974,6 @@ bool SIPConnection::OnReceivedAnswer(SIP_PDU & response, SIPTransaction * transa
     if (!SendDelayedACK(false))
       m_delayedAckTimer = m_delayedAckTimeout1;
     return true;
-  }
-
-  if (transaction == NULL || transaction->GetSDP()->HasActiveSend()) {
-    bool holdFromRemote = sdp->IsHold();
-    if (m_holdFromRemote != holdFromRemote) {
-      PTRACE(3, "Remote " << (holdFromRemote ? "" : "retrieve from ") << "hold detected");
-      m_holdFromRemote = holdFromRemote;
-      OnHold(true, holdFromRemote);
-    }
   }
 
   bool multipleFormats = false;
