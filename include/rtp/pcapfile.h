@@ -92,26 +92,30 @@ class OpalPCAPFile : public PFile
 
 
     struct DiscoveredRTPInfo {
-      DiscoveredRTPInfo();
 
-      PIPSocketAddressAndPort     m_addr[2];
-      RTP_DataFrame::PayloadTypes m_payload[2];
-      bool                        m_found[2];
+      struct DirInfo
+      {
+        DirInfo();
 
-      DWORD m_ssrc[2];
-      WORD  m_seq[2];
-      DWORD m_ts[2];
+        PIPSocketAddressAndPort     m_addr;
+        RTP_DataFrame::PayloadTypes m_payload;
+        bool                        m_found;
 
-      unsigned m_ssrc_matches[2];
-      unsigned m_seq_matches[2];
-      unsigned m_ts_matches[2];
+        DWORD m_ssrc;
+        WORD  m_seq;
+        DWORD m_ts;
 
-      RTP_DataFrame m_firstFrame[2];
+        unsigned m_ssrc_matches;
+        unsigned m_seq_matches;
+        unsigned m_ts_matches;
 
-      PString m_type[2];
-      PString m_format[2];
+        RTP_DataFrameList m_firstFrames;
 
-      size_t m_index[2];
+        PString m_type;
+        PString m_format;
+
+        size_t m_index;
+      } m_direction[2];
     };
     class DiscoveredRTPMap : public PObject, public std::map<std::string, DiscoveredRTPInfo>
     {

@@ -191,10 +191,10 @@ void PlayRTP::Main()
         return;
       }
     }
-    else if (discoveredRTPMap.size() == 1 && OpalMediaFormat(discoveredRTPMap.begin()->second.m_format[0]).IsValid())
-      pcap.SetFilters(discoveredRTPMap, discoveredRTPMap.begin()->second.m_index[0], PString::Empty());
-    else if (discoveredRTPMap.size() == 1 && OpalMediaFormat(discoveredRTPMap.begin()->second.m_format[1]).IsValid())
-      pcap.SetFilters(discoveredRTPMap, discoveredRTPMap.begin()->second.m_index[1], PString::Empty());
+    else if (discoveredRTPMap.size() == 1 && OpalMediaFormat(discoveredRTPMap.begin()->second.m_direction[0].m_format).IsValid())
+      pcap.SetFilters(discoveredRTPMap, discoveredRTPMap.begin()->second.m_direction[0].m_index, PString::Empty());
+    else if (discoveredRTPMap.size() == 1 && OpalMediaFormat(discoveredRTPMap.begin()->second.m_direction[1].m_format).IsValid())
+      pcap.SetFilters(discoveredRTPMap, discoveredRTPMap.begin()->second.m_direction[1].m_index, PString::Empty());
     else {
       cout << "Select one of the following sessions (index [ format ]):\n" << discoveredRTPMap << endl;
       for (;;) {
@@ -380,7 +380,10 @@ void PlayRTP::Play(OpalPCAPFile & pcap)
 
   PTimeInterval playStartTick = PTimer::Tick();
 
+  unsigned packetCount = 0;
   while (!pcap.IsEndOfFile()) {
+    ++packetCount;
+
     RTP_DataFrame rtp;
     if (pcap.GetRTP(rtp) < 0)
       continue;
