@@ -599,14 +599,8 @@ bool OpalSDPConnection::OnSendOfferSDPSession(OpalMediaSession * mediaSession,
     else
       localMedia->AddMediaFormats(m_localMediaFormats, mediaType);
 
-    bool sending = sendStream != NULL && sendStream->IsOpen() && !sendStream->IsPaused();
-    if (sending && m_holdFromRemote) {
-      // OK we have (possibly) asymmetric hold, check if remote supports it.
-      PString regex = m_stringOptions(OPAL_OPT_SYMMETRIC_HOLD_PRODUCT);
-      if (regex.IsEmpty() || remoteProductInfo.AsString().FindRegEx(regex) == P_MAX_INDEX)
-        sending = false;
-    }
-    bool recving = m_holdToRemote < eHoldOn && recvStream != NULL && recvStream->IsOpen();
+    bool sending = !m_holdFromRemote         && sendStream != NULL && sendStream->IsOpen();
+    bool recving =  m_holdToRemote < eHoldOn && recvStream != NULL && recvStream->IsOpen();
 
     if (sending && recving)
       localMedia->SetDirection(SDPMediaDescription::SendRecv);
@@ -742,6 +736,13 @@ bool OpalSDPConnection::OnSendAnswerSDP(const SDPSessionDescription & sdpOffer, 
     unsigned session = stream->GetSessionID();
     if (session > sessionCount || sdpMediaDescriptions[session] == NULL)
       stream->Close();
+  }
+
+  bool holdFromRemote = sdpOffer.IsHold();
+  if (m_holdFromRemote != holdFromRemote) {
+    PTRACE(3, "Remote " << (holdFromRemote ? "" : "retrieve from ") << "hold detected");
+    m_holdFromRemote = holdFromRemote;
+    OnHold(true, holdFromRemote);
   }
 
   // In case some new streams got created.
