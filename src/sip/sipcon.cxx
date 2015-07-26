@@ -145,7 +145,7 @@ static SIP_PDU::StatusCodes GetStatusCodeFromReason(OpalConnection::CallEndReaso
   return SIP_PDU::Failure_BadGateway;
 }
 
-static OpalConnection::CallEndReason GetCallEndReasonFromResponse(SIP_PDU & response)
+static OpalConnection::CallEndReason GetCallEndReasonFromResponse(SIP_PDU::StatusCodes statusCode)
 {
   //
   // This table comes from RFC 3398 para 8.2.6.1
@@ -196,7 +196,7 @@ static OpalConnection::CallEndReason GetCallEndReasonFromResponse(SIP_PDU & resp
   };
 
   for (PINDEX i = 0; i < PARRAYSIZE(SIPCodeToReason); i++) {
-    if (response.GetStatusCode() == SIPCodeToReason[i].sipCode)
+    if (statusCode == SIPCodeToReason[i].sipCode)
       return OpalConnection::CallEndReason(SIPCodeToReason[i].reasonCode, SIPCodeToReason[i].q931Code);
   }
 
@@ -1350,7 +1350,7 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
 
   // All invitations failed, die now, with correct code
   if (allFailed && GetPhase() < ConnectedPhase)
-    Release(GetCallEndReasonFromResponse(transaction));
+    Release(GetCallEndReasonFromResponse(transaction.GetStatusCode()));
   else {
     switch (m_holdToRemote) {
       case eHoldInProgress :
@@ -2063,7 +2063,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
   // All other responses are errors, set Q931 code if available
   releaseMethod = ReleaseWithNothing;
-  Release(GetCallEndReasonFromResponse(response));
+  Release(GetCallEndReasonFromResponse(response.GetStatusCode()));
 }
 
 
@@ -2639,6 +2639,33 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
   m_dialog.Update(request);
   UpdateRemoteAddresses();
   request.GetMIME().GetProductInfo(remoteProductInfo);
+
+  PString reason = request.GetMIME().Get("Reason").LeftTrim();
+  if (!reason.IsEmpty()) {
+    PCaselessString token = reason.Left(reason.FindSpan("ABCDEFGHIJKLMNOPQRSTUVWXZabcdefghijklmnopqrstuvwxyz0123456789-.!%*_+`'~"));
+    PStringOptions parameters;
+    PURL::SplitVars(reason.Mid(token.GetLength()).LeftTrim(), parameters, ';', '=', PURL::QuotedParameterTranslation);
+    PCaselessString text = parameters.Get("text");
+    int cause = parameters.GetInteger("cause");
+    PTRACE(4, "BYE with reason token=" << token << " cause=" << cause << " text=\"" << text << '"');
+
+    if (token ==  "Q.850") {
+      Release(CallEndReason(EndedByQ931Cause, cause));
+      return;
+    }
+
+    if (token == "SIP") {
+      if (cause == 602 && text.Find("TIMEOUT") != P_MAX_INDEX) {
+        Release(EndedByDurationLimit);
+        return;
+      }
+
+      if (cause >= 200) {
+        Release(GetCallEndReasonFromResponse((SIP_PDU::StatusCodes)cause));
+        return;
+      }
+    }
+  }
 
   Release(EndedByRemoteUser);
 }
